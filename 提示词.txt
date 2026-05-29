@@ -1,0 +1,15 @@
+🟥 必读（每次任务开始）
+   CORE_RULES.md + ARCHITECTURE_RULES.md + 当前里程碑 ROADMAP_Mx_*.md
+
+🟧 按需读取（触发时才读，否则跳过）
+   涉及 UI 组件 / 布局 / 颜色 / 间距  →  ui/02_UI_RULES.md
+   涉及过渡动画 / easing              →  ui/03_MOTION_RULES.md
+   实现 AnalysisPage / 解析页布局     →  ui/04_ANALYSIS_PAGE_RULES.md
+   实现 WrongPage / 错题卡片          →  ui/05_WRONGBOOK_RULES.md
+   查全局进度 / 选下一个任务          →  roadmap/ROADMAP_PROGRESS.md
+   申报依赖 / 查历史决策              →  process/PROCESS_LOG.md
+
+🟩 无需读文档，直接调用代码
+   颜色 / 间距 / 圆角 / 阴影         →  import { ... } from '@/theme'
+   Canvas 物理量颜色 / 尺寸规范      →  import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+   动效 duration / easing            →  import { duration, easing, transition } from '@/theme/motion'
