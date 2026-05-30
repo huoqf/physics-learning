@@ -39,3 +39,24 @@ export function calculateInelasticCollision(m1: number, v1: number, m2: number, 
   const Ek_final = 0.5 * (m1 + m2) * vf * vf;
   return { vf, deltaEk: Ek_final - Ek_initial };
 }
+
+/**
+ * 一维带恢复系数 e 的碰撞：动量守恒 + 相对速度关系 v2f - v1f = e(v1 - v2)。
+ * e=1 退化为弹性碰撞，e=0 退化为完全非弹性碰撞。
+ * @param e 恢复系数 (0–1)
+ * @returns 碰后两物体速度与碰撞前后总动量
+ */
+export function calculateRestitutionCollision(
+  m1: number,
+  v1: number,
+  m2: number,
+  v2: number,
+  e: number
+): { v1f: number; v2f: number; pBefore: number; pAfter: number } {
+  const totalMass = m1 + m2;
+  const v1f = ((m1 - e * m2) * v1 + (1 + e) * m2 * v2) / totalMass;
+  const v2f = ((m2 - e * m1) * v2 + (1 + e) * m1 * v1) / totalMass;
+  const pBefore = m1 * v1 + m2 * v2;
+  const pAfter = m1 * v1f + m2 * v2f;
+  return { v1f, v2f, pBefore, pAfter };
+}

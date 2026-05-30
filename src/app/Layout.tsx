@@ -1,6 +1,6 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Home, BookOpen, Play, ClipboardList, BookOpenCheck } from 'lucide-react';
-import { PageTransition } from '@/components/UI';
+import { ErrorBoundary, PageTransition } from '@/components/UI';
 import { duration, easing } from '@/theme';
 
 export default function Layout() {
@@ -47,9 +47,11 @@ export default function Layout() {
         </div>
       </header>
       <main className="flex-1">
-        <PageTransition key={location.pathname}>
-          <Outlet />
-        </PageTransition>
+        <ErrorBoundary resetKey={location.pathname}>
+          <PageTransition key={location.pathname}>
+            <Outlet />
+          </PageTransition>
+        </ErrorBoundary>
       </main>
     </div>
   );

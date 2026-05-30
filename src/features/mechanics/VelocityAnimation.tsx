@@ -1,23 +1,11 @@
-import { useEffect, useState, useRef } from 'react'
+import { useCanvasSize } from '@/utils'
+import { useEffect } from 'react'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
 
 export default function VelocityAnimation() {
   const { params, time, showVectors, showFormulas, showGrid, setIsPlaying } = useAnimationStore()
-  const [canvasSize, setCanvasSize] = useState({ width: 600, height: 300 })
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const updateSize = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        setCanvasSize({ width: rect.width, height: rect.height })
-      }
-    }
-    updateSize()
-    window.addEventListener('resize', updateSize)
-    return () => window.removeEventListener('resize', updateSize)
-  }, [])
+  const [containerRef, canvasSize] = useCanvasSize({ width: 600, height: 300 })
 
   const { v = 5 } = params
   const scale = 30

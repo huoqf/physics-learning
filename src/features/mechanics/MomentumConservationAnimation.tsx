@@ -1,23 +1,10 @@
-import { useEffect, useState, useRef } from 'react'
+import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
 
 export default function MomentumConservationAnimation() {
   const { params, time, showVectors, showFormulas, showGrid } = useAnimationStore()
-  const [canvasSize, setCanvasSize] = useState({ width: 700, height: 400 })
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const updateSize = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        setCanvasSize({ width: rect.width, height: rect.height })
-      }
-    }
-    updateSize()
-    window.addEventListener('resize', updateSize)
-    return () => window.removeEventListener('resize', updateSize)
-  }, [])
+  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 400 })
 
   const { m1 = 2, v1 = 4, m2 = 1, v2 = 0, e = 0.8 } = params
 

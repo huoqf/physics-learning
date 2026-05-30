@@ -1,23 +1,10 @@
-import { useEffect, useState, useRef } from 'react'
+import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
 
 export default function FrictionAnimation() {
   const { params, showVectors, showFormulas, showGrid } = useAnimationStore()
-  const [canvasSize, setCanvasSize] = useState({ width: 650, height: 400 })
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const updateSize = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        setCanvasSize({ width: rect.width, height: rect.height })
-      }
-    }
-    updateSize()
-    window.addEventListener('resize', updateSize)
-    return () => window.removeEventListener('resize', updateSize)
-  }, [])
+  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 400 })
 
   const { m = 5, mu = 0.3, angle = 0, g = 9.8 } = params
   const F_gravity = m * g

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateOrbitalSpeed } from '@/physics'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
@@ -9,20 +9,7 @@ const TIME_SCALE = 120
 
 export default function SatelliteAnimation() {
   const { params, time, showVectors, showFormulas, showGrid } = useAnimationStore()
-  const [canvasSize, setCanvasSize] = useState({ width: 650, height: 450 })
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const updateSize = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        setCanvasSize({ width: rect.width, height: rect.height })
-      }
-    }
-    updateSize()
-    window.addEventListener('resize', updateSize)
-    return () => window.removeEventListener('resize', updateSize)
-  }, [])
+  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
 
   const { r = 7 } = params
   const scale = 25

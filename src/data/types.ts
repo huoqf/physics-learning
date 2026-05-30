@@ -1,3 +1,5 @@
+import type { LazyExoticComponent, ComponentType } from 'react'
+
 export interface KnowledgeNode {
   id: string
   title: string
@@ -13,7 +15,7 @@ export interface AnimationConfig {
   id: string
   title: string
   knowledgeId: string
-  componentPath: string
+  Component: LazyExoticComponent<ComponentType>
   defaultParams: Record<string, number>
 }
 

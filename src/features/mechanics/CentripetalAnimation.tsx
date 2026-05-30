@@ -1,23 +1,10 @@
-import { useEffect, useState, useRef } from 'react'
+import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
 
 export default function CentripetalAnimation() {
   const { params, time, showVectors, showFormulas, showGrid } = useAnimationStore()
-  const [canvasSize, setCanvasSize] = useState({ width: 600, height: 600 })
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const updateSize = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        setCanvasSize({ width: rect.width, height: rect.height })
-      }
-    }
-    updateSize()
-    window.addEventListener('resize', updateSize)
-    return () => window.removeEventListener('resize', updateSize)
-  }, [])
+  const [containerRef, canvasSize] = useCanvasSize({ width: 600, height: 600 })
 
   const { r = 2, v = 3, m = 1 } = params
   const omega = v / r

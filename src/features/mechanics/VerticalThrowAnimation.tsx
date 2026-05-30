@@ -1,23 +1,11 @@
-import { useEffect, useState, useRef } from 'react'
+import { useCanvasSize } from '@/utils'
+import { useEffect } from 'react'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
 
 export default function VerticalThrowAnimation() {
   const { params, time, showVectors, showFormulas, showGrid, setIsPlaying } = useAnimationStore()
-  const [canvasSize, setCanvasSize] = useState({ width: 550, height: 550 })
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const updateSize = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        setCanvasSize({ width: rect.width, height: rect.height })
-      }
-    }
-    updateSize()
-    window.addEventListener('resize', updateSize)
-    return () => window.removeEventListener('resize', updateSize)
-  }, [])
+  const [containerRef, canvasSize] = useCanvasSize({ width: 550, height: 550 })
 
   const { v0 = 15, g = 9.8 } = params
   const maxHeightTime = v0 / g

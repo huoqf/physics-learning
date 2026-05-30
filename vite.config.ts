@@ -13,4 +13,16 @@ export default defineConfig({
   server: {
     port: 5173,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // 将重型第三方库拆分为独立 vendor chunk，提升首屏与长期缓存命中
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-motion': ['framer-motion'],
+          'vendor-katex': ['katex'],
+        },
+      },
+    },
+  },
 })

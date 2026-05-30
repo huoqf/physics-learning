@@ -1,24 +1,11 @@
-import { useEffect, useState, useRef } from 'react'
+import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateMechanicalEnergy, calculateFreeFall } from '@/physics'
 import { PHYSICS_COLORS, CANVAS_STYLE, ENERGY_BAR_COLORS } from '@/theme/physicsColors'
 
 export default function EnergyConservationAnimation() {
   const { params, time, showVectors, showFormulas, showGrid } = useAnimationStore()
-  const [canvasSize, setCanvasSize] = useState({ width: 700, height: 500 })
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const updateSize = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        setCanvasSize({ width: rect.width, height: rect.height })
-      }
-    }
-    updateSize()
-    window.addEventListener('resize', updateSize)
-    return () => window.removeEventListener('resize', updateSize)
-  }, [])
+  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 500 })
 
   const { m = 2, h = 10, v0 = 0, g = 9.8 } = params
   const scale = 30

@@ -1,8 +1,9 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react'
 import { getAnalysisEntry, getProblemById } from '@/data/analysisRegistry'
 import { getKnowledgeNode } from '@/data/knowledgeTree'
+import { useWrongStore } from '@/stores'
 import { KatexFormula } from '@/components/UI/KatexFormula'
 import { Badge } from '@/components/UI/Badge'
 import { Button } from '@/components/UI/Button'
@@ -205,6 +206,23 @@ export default function AnalysisPage() {
   const analysisEntry = id ? getAnalysisEntry(id) : undefined
   const problem = id ? getProblemById(id) : undefined
 
+  const wrongRecord = useWrongStore((s) => s.records.find((r) => r.problemId === id))
+  const hydrateWrong = useWrongStore((s) => s.hydrate)
+  const addWrong = useWrongStore((s) => s.addWrong)
+  const markViewed = useWrongStore((s) => s.markViewed)
+  const markMastered = useWrongStore((s) => s.markMastered)
+
+  useEffect(() => {
+    void hydrateWrong()
+  }, [hydrateWrong])
+
+  // 进入已收录错题的解析页 → 标记“已查看”
+  useEffect(() => {
+    if (wrongRecord && wrongRecord.status === 'new') {
+      markViewed(wrongRecord.problemId)
+    }
+  }, [wrongRecord, markViewed])
+
   const completedKnowledgeIds = useMemo(() => {
     const completed = new Set<string>()
     for (let i = 0; i < currentStepIndex; i++) {
@@ -319,7 +337,32 @@ export default function AnalysisPage() {
               ) : null
             })}
           </div>
-          <h1 className="text-lg font-semibold text-neutral-800 mb-3">{analysisEntry.title}</h1>
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <h1 className="text-lg font-semibold text-neutral-800">{analysisEntry.title}</h1>
+            {wrongRecord && wrongRecord.status === 'mastered' ? (
+              <span className="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-success-100 text-success-700">
+                ✓ 已掌握
+              </span>
+            ) : wrongRecord ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="shrink-0"
+                onClick={() => markMastered(wrongRecord.problemId)}
+              >
+                标记已掌握
+              </Button>
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="shrink-0"
+                onClick={() => addWrong(problem.id, analysisEntry.knowledgeIds)}
+              >
+                加入错题本
+              </Button>
+            )}
+          </div>
           <div className="text-base leading-[1.7] text-neutral-700">
             {problem.content.split('\n').map((line, i) => (
               <p key={i} className="mb-2">

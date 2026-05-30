@@ -7,7 +7,7 @@ export const kinematicsProblems: Problem[] = [
     province: '全国甲',
     title: '匀变速直线运动 — v-t 图像分析',
     content:
-      '一物体沿直线运动，其速度—时间图像如图所示。已知 $t=0$ 时物体位于坐标原点，求：\n(1) 物体在 $0\\sim 4\,\\text{s}$ 内的位移；\n(2) 物体在 $4\\sim 6\,\\text{s}$ 内的加速度。',
+      '一物体沿直线运动，其速度—时间图像如图所示。已知 $t=0$ 时物体位于坐标原点，求：\n(1) 物体在 $0\\sim 4\\,\\text{s}$ 内的位移；\n(2) 物体在 $4\\sim 6\\,\\text{s}$ 内的加速度。',
     difficulty: 2,
     knowledgeIds: ['mechanics-2-1', 'mechanics-1-3', 'mechanics-1-4'],
     steps: [

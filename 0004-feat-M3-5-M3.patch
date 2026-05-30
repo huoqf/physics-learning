@@ -1,0 +1,1129 @@
+From 33f599bb0af0fbd07e587ded67686e36ccabd121 Mon Sep 17 00:00:00 2001
+From: agent <agent@local>
+Date: Sat, 30 May 2026 08:13:36 +0000
+Subject: [PATCH 4/4] =?UTF-8?q?feat:=20=E5=AE=8C=E6=88=90=20M3-5=20?=
+ =?UTF-8?q?=E7=BB=83=E4=B9=A0=E4=B8=8E=E6=B5=8B=E8=AF=95=E6=A8=A1=E5=BC=8F?=
+ =?UTF-8?q?=EF=BC=88[M3]=20=E6=94=B6=E5=AE=98=EF=BC=89?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+为分步解析式题库实现自评式答题，并接入错题本自动判错判对，完成 M3
+真题训练系统全部任务。关联 M3-5。
+
+答题会话 PracticeSession:
+- 练习模式：提示按钮（首步思路）+ 随时查看解析
+- 测试模式：正计时（可暂停）+ 提交后才揭示答案
+- 自评对错联动 useWrongStore（答错 addWrong / 答对 recordCorrect）
+- 激活此前未接线的 useProblemStore 管理会话状态
+
+成绩与报告:
+- 新增 usePracticeStore：成绩历史，IndexedDB 持久化，最多 50 条
+- ScoreReport：总分/正确率/用时 + 各模块正确率条形图 +
+  薄弱知识点（取自错题关联知识点）一键跳转复习动画
+
+PracticePage 重写为入口:
+- 模式选择卡（练习/测试）
+- 按模块/难度筛选；?mode= query 驱动会话
+- 成绩历史列表 + 浏览全部真题
+
+测试:
+- 新增 usePracticeStore 测试 4 项（共 60）
+
+文档:
+- 更新 PROCESS_LOG、ROADMAP_M3_EXAM（M3-5 全勾）、
+  ROADMAP_PROGRESS（[M3] 状态 → ✅，下一步 [M4]）
+
+验证: lint 0 警告 / tsc -b 通过 / vitest 60 通过 / vite build 成功
+说明: 页面/feature 不直接操作 IndexedDB，全部通过 store（遵循铁律）
+---
+ docs/agent-rules/process/PROCESS_LOG.md      |   1 +
+ docs/agent-rules/roadmap/ROADMAP_M3_EXAM.md  |  48 +--
+ docs/agent-rules/roadmap/ROADMAP_PROGRESS.md |   7 +-
+ src/components/UI/ScoreReport.tsx            | 144 +++++++++
+ src/components/UI/index.ts                   |   1 +
+ src/features/index.ts                        |   1 +
+ src/features/practice/PracticeSession.tsx    | 321 +++++++++++++++++++
+ src/features/practice/index.ts               |   1 +
+ src/pages/PracticePage.tsx                   | 264 +++++++++++----
+ src/stores/index.ts                          |   2 +
+ src/stores/usePracticeStore.ts               |  65 ++++
+ tests/stores/usePracticeStore.test.ts        |  70 ++++
+ 12 files changed, 847 insertions(+), 78 deletions(-)
+ create mode 100644 src/components/UI/ScoreReport.tsx
+ create mode 100644 src/features/practice/PracticeSession.tsx
+ create mode 100644 src/features/practice/index.ts
+ create mode 100644 src/stores/usePracticeStore.ts
+ create mode 100644 tests/stores/usePracticeStore.test.ts
+
+diff --git a/docs/agent-rules/process/PROCESS_LOG.md b/docs/agent-rules/process/PROCESS_LOG.md
+index b9ad8a1..cc38a55 100644
+--- a/docs/agent-rules/process/PROCESS_LOG.md
++++ b/docs/agent-rules/process/PROCESS_LOG.md
+@@ -55,6 +55,7 @@
+ 
+ | 日期 | 作者 | 里程碑 | 修改内容 | 影响文件 | 关联issue |
+ |------|------|--------|---------|---------|----------|
++| 2026-05-30 | agent | M3 | 完成 M3-5 练习与测试模式（[M3] 收官）：①因题目为分步解析式（无客观选项/标准答案）采用自评式答题——PracticeSession 会话组件支持练习模式（提示按钮+随时看解析）与测试模式（正计时可暂停+提交后才揭示），自评对错联动 useWrongStore（答错 addWrong/答对 recordCorrect），并激活此前未接线的 useProblemStore 管理会话状态（currentStep/currentProblem）；②新增 usePracticeStore 成绩历史 store（ScoreRecord：mode/total/correct/durationSec/wrongProblemIds/byModule，经 storage IndexedDB 持久化，最多 50 条）；③ScoreReport 成绩报告组件（总分+正确率+用时、各模块正确率条形图、薄弱知识点来自错题关联知识点并一键跳转复习动画）；④PracticePage 重写为入口（模式选择卡、按模块/难度筛选、成绩历史列表、浏览全部真题），mode 经 ?mode= query 驱动会话。新增 usePracticeStore 测试 4 项（共 60）。验证：lint 0 警告 / tsc 通过 / vitest 60 通过 / build 成功 | `src/stores/usePracticeStore.ts`, `src/stores/index.ts`, `src/features/practice/PracticeSession.tsx`, `src/features/practice/index.ts`, `src/features/index.ts`, `src/components/UI/ScoreReport.tsx`, `src/components/UI/index.ts`, `src/pages/PracticePage.tsx`, `tests/stores/usePracticeStore.test.ts` | M3-5 |
+ | 2026-05-30 | agent | M3 | 完成 M3-4 错题管理系统：①按 ui/05_WRONGBOOK_RULES 重写 useWrongStore——WrongRecord 结构（errorCount/correctStreak/status 四态/knowledgeIds/createdAt/lastAttemptTime/masteredAt/note），actions: addWrong/markViewed/recordCorrect/markMastered/addNote/removeWrong/clearAll/hydrate；连续答对≥2 自动判定已掌握；笔记 200 字上限；②IndexedDB 持久化——经 storage.setDB 写入、hydrate 从 storage.getDB 水合，刷新保持（禁止页面直接读写 IndexedDB，全部走 store）；③WrongPage 完整实现——四态 4px 色条 + 多次错误(≥3)角标、知识点标签(2+N)、统计面板(总数/未掌握/本周新增/本周掌握)、筛选(模块/难度/状态 chip 多选)、排序(最近/错误次数/难度)、已掌握折叠至底部、右键上下文菜单(标记已掌握/删除/笔记)、删除二次确认 Modal、笔记 Modal、全空+筛选无结果两种空态；④AnalysisPage 集成「加入错题本/标记已掌握」按钮，进入已收录题自动标记已查看。新增 useWrongStore 测试 8 项（共 56）。验证：lint 0 警告 / tsc 通过 / vitest 56 通过 / build 成功 | `src/stores/useWrongStore.ts`, `src/stores/index.ts`, `src/pages/WrongPage.tsx`, `src/pages/AnalysisPage.tsx`, `tests/stores/useWrongStore.test.ts` | M3-4 |
+ | 2026-05-30 | agent | M2/M3 | 架构改进（六项）：①代码分割(#PERF-008)——App.tsx 路由级 React.lazy+Suspense，vite manualChunks 拆 react/framer-motion/katex 三个 vendor chunk，主 bundle 596kB→191.89kB(gzip 60.9)，「>500kB」警告消除；②错误边界(#BUG-009)——新增 ErrorBoundary 组件，Layout 包裹 Outlet（resetKey=路由）+ AnimationPage 包裹动画（resetKey=动画id），单个动画/页面崩溃不再白屏全应用；③动画控制 Hook 化(#REFACTOR-010)——在 utils/animation.ts 新增按组件实例的 useAnimationFrame（遵循「动画统一入口」铁律，未在组件内裸调 rAF），AnimationPage 弃用全局单例，修复首帧时间戳为 0 的哨兵 bug；④消除 24 动画样板(#REFACTOR-011)——抽 utils/useCanvasSize Hook，24 个动画组件统一替换 getBoundingClientRect+resize 监听样板并清理无用 react 导入；⑤物理量计算下沉(#REFACTOR-012)——buildPhysicsQuantities 从 AnimationPage 巨型 switch 迁至 data/physicsQuantities.ts，统一调用 physics/ 纯函数，新增 physics/constants(GRAVITY/G/EARTH_MASS) 消除硬编码 g=9.8，新增 physics/energy 的 calculateRestitutionCollision；⑥死代码接线(#BUG-013)——PracticePage 接入 allProblems 真题列表、WrongPage 接入 useWrongStore 错题本（含空状态，对照 ui/05_WRONGBOOK_RULES），激活原先未被引用的题库数据层与 useWrongStore。新增测试：useAnimationFrame(5)、collision(3)、physicsQuantities(7)。验证：lint 0 警告 / tsc 通过 / vitest 48 通过 / build 成功且无大包警告 | `src/App.tsx`, `src/app/Layout.tsx`, `vite.config.ts`, `src/components/UI/ErrorBoundary.tsx`, `src/components/UI/index.ts`, `src/utils/animation.ts`, `src/utils/useCanvasSize.ts`, `src/utils/index.ts`, `src/pages/AnimationPage.tsx`, `src/features/mechanics/*Animation.tsx`(24), `src/data/physicsQuantities.ts`, `src/physics/constants.ts`, `src/physics/energy.ts`, `src/physics/index.ts`, `src/pages/PracticePage.tsx`, `src/pages/WrongPage.tsx`, `tests/utils/useAnimationFrame.test.tsx`, `tests/physics/collision.test.ts`, `tests/data/physicsQuantities.test.ts` | #PERF-008,#BUG-009,#REFACTOR-010,#REFACTOR-011,#REFACTOR-012,#BUG-013 |
+ | 2026-05-30 | agent | M2 | 质量闸门与架构治理（三合一）：①ESLint 9 flat config 迁移——新增 eslint.config.mjs（按 src(browser)/配置文件(node)/tests(vitest) 三环境分块，关闭核心 no-undef 交由 tsc 把关），删除失效的 .eslintrc.cjs，修正 lint 脚本移除 ESLint 8 的 --ext 参数，新增依赖 @eslint/js@^9 + globals@^15（须锁版本，裸装会拉 v10 与 eslint@9 冲突）；②动画注册表单一数据源重构——AnimationConfig.componentPath(死字段) 改为 Component: LazyExoticComponent，animationRegistry 改用 lazy(()=>import())，删除 AnimationPage 手写 animationComponents 双映射对象与 MechanicsAnimations 整包导入，改用 config.Component + Suspense，修正 anim-impulse 错配（指向不存在的 ImpulseAnimation → 真实 MomentumTheoremAnimation），删除 mechanics/index.ts 的 ImpulseAnimation 别名转接；③顺带修复迁移后暴露的既有报错（kinematics-sample.ts 的 \\, 转义同时修复 KaTeX 细空格渲染、AnimationPage useEffect 依赖数组补全 config）。效果：npm run lint 闸门真正生效且 0 error 0 warning；动画按需懒加载，主 bundle 676.92kB→596.10kB（gzip 193→179.66），24 个动画拆为独立异步 chunk；tsc 编译通过；Vitest 33/33；Vite build 成功 | `eslint.config.mjs`, `.eslintrc.cjs`(删), `package.json`, `src/data/types.ts`, `src/data/animationRegistry.ts`, `src/pages/AnimationPage.tsx`, `src/features/mechanics/index.ts`, `src/data/problems/mechanics/kinematics-sample.ts`, `.gitignore` | #BUG-005, #BUG-006, #PERF-007 |
+diff --git a/docs/agent-rules/roadmap/ROADMAP_M3_EXAM.md b/docs/agent-rules/roadmap/ROADMAP_M3_EXAM.md
+index be09606..c3a38fc 100644
+--- a/docs/agent-rules/roadmap/ROADMAP_M3_EXAM.md
++++ b/docs/agent-rules/roadmap/ROADMAP_M3_EXAM.md
+@@ -124,26 +124,34 @@
+ 
+ ---
+ 
+-## M3-5 练习与测试模式
+-
+-- [ ] **练习模式**（`/practice?mode=practice`）
+-  - 有提示按钮（可查看当前步骤提示）
+-  - 可随时查看完整解析
+-  - 答对/答错即时反馈
+-
+-- [ ] **测试模式**（`/practice?mode=test`）
+-  - 计时器（正计时，可暂停）
+-  - 无提示，提交后才显示答案
+-  - 成绩统计：得分/总分/用时/各知识点正确率
+-
+-- [ ] **`src/pages/PracticePage.tsx`** — 练习/测试入口
+-  - 模式选择（练习/测试）
+-  - 题目筛选（按模块/难度/知识点）
+-  - 成绩历史记录
+-
+-- [ ] **`src/components/UI/ScoreReport.tsx`** — 成绩报告
+-  - 总体得分、各模块得分、薄弱知识点标注
+-  - 建议复习的知识点列表（链接到 AnimationPage）
++## M3-5 练习与测试模式 ✅
++
++> 数据为「分步解析式」（题目无客观选项/标准答案），故答题采用**自评式**：
++> 展示题干 → 作答 → 揭示分步解析 → 学生自评对错 → 联动错题本（recordCorrect/addWrong）。
++
++- [x] **练习模式**（`/practice?mode=practice`）
++  - [x] 提示按钮（展示首步思路提示）
++  - [x] 可随时「查看解析」
++  - [x] 自评答对/答错即时反馈
++- [x] **测试模式**（`/practice?mode=test`）
++  - [x] 计时器（正计时，可暂停）
++  - [x] 无提示，「提交并查看答案」后才显示解析
++  - [x] 成绩统计：得分/总分/用时/各模块正确率
++- [x] **`src/features/practice/PracticeSession.tsx`** — 答题会话（两模式共用，激活 useProblemStore 管理会话状态）
++  - [x] 进度条 + 计时器 + 上一题/下一题/完成
++  - [x] 自评联动 useWrongStore：答错 addWrong、答对 recordCorrect
++- [x] **`src/pages/PracticePage.tsx`** — 练习/测试入口
++  - [x] 模式选择卡（练习/测试）
++  - [x] 题目筛选（按模块/难度）
++  - [x] 成绩历史记录（usePracticeStore + IndexedDB 持久化）
++  - [x] 浏览全部真题（跳转 AnalysisPage）
++- [x] **`src/components/UI/ScoreReport.tsx`** — 成绩报告
++  - [x] 总体得分 + 正确率 + 用时
++  - [x] 各模块正确率条形图
++  - [x] 薄弱知识点（来自错题关联知识点）+ 一键跳转复习动画
++
++> 新增 store：`src/stores/usePracticeStore.ts`（成绩历史，IndexedDB 持久化，最多保留 50 条）。
++> 至此 [M3] 真题训练系统全部任务完成 → 更新 ROADMAP_PROGRESS [M3] 状态。
+ 
+ ---
+ 
+diff --git a/docs/agent-rules/roadmap/ROADMAP_PROGRESS.md b/docs/agent-rules/roadmap/ROADMAP_PROGRESS.md
+index c1f5f81..bf866c3 100644
+--- a/docs/agent-rules/roadmap/ROADMAP_PROGRESS.md
++++ b/docs/agent-rules/roadmap/ROADMAP_PROGRESS.md
+@@ -22,7 +22,7 @@
+ | [M0] | 技术基础架构 | ✅ 已完成 | — | `roadmap/ROADMAP_M0_FOUNDATION.md` |
+ | [M1] | 力学模块（全8章） | ✅ 已完成 | [M0] | `roadmap/ROADMAP_M1_MECHANICS.md` |
+ | [M2] | 力学完善 + 导航系统 | ✅ 已完成 | [M1] | `roadmap/ROADMAP_M2_POLISH.md` |
+-| [M3] | 真题训练系统 | 🚧 即将开始 | [M1] | `roadmap/ROADMAP_M3_EXAM.md` |
++| [M3] | 真题训练系统 | ✅ 已完成 | [M1] | `roadmap/ROADMAP_M3_EXAM.md` |
+ | [M4] | 电磁/热/光/原子模块 | ⏳ 待开始 | [M2] | `roadmap/ROADMAP_M4_PHYSICS.md` |
+ 
+ **状态标记**：⏳ 待开始 / 🚧 进行中 / ✅ 已完成 / ⛔ 阻塞
+@@ -33,13 +33,14 @@
+ 
+ > 更新此区域反映每次任务的工作焦点
+ 
+-- **当前里程碑**：[M3] 真题训练系统 🚧
++- **当前里程碑**：[M3] 真题训练系统 ✅ 已完成 → 下一里程碑 [M4]
+ - **质量闸门治理（2026-05-30，归属 [M2]）**：完成 ESLint 9 flat config 迁移（#BUG-005，`npm run lint` 恢复并 0 警告）、动画注册表单一数据源重构（#BUG-006，消除 componentPath/animationComponents 双映射与 anim-impulse 错配）、动画懒加载分包（#PERF-007，主 bundle 676→596kB）。详见 `process/PROCESS_LOG.md`
+ - **架构改进六项（2026-05-30，归属 [M2]/[M3]）**：路由级代码分割+vendor manualChunks（#PERF-008，主 bundle 596→191.89kB，消除大包警告）、ErrorBoundary 错误边界（#BUG-009）、useAnimationFrame 按实例动画 Hook（#REFACTOR-010）、useCanvasSize 消除 24 动画样板（#REFACTOR-011）、物理量计算下沉至 data/physicsQuantities + physics/constants 消除硬编码 g（#REFACTOR-012）、PracticePage/WrongPage 接线激活题库与 useWrongStore 死代码（#BUG-013，完成 M3-4 错题本主体）。新增 15 项测试（共 48）。详见 `process/PROCESS_LOG.md`
+ - **M3-4 错题管理系统完成（2026-05-30）**：按 ui/05_WRONGBOOK_RULES 重写 useWrongStore（WrongRecord 四态 + IndexedDB 持久化 hydrate）、WrongPage 完整实现（统计面板/三类筛选/三种排序/已掌握折叠/右键菜单/删除二次确认/笔记 Modal/空态）、AnalysisPage 集成加入错题本入口。新增 8 项测试（共 56）。M3-4 主流程完整，答题自动判错判对待 M3-5 接入
+ - **当前任务**：M3-3 KaTeX 离线集成验证已完成，同时发现并修复知识树数据缺失 BUG
+ - **已完成**：M3-1 完成 — 创建 analysisRegistry.ts 题目解析注册表、problems/ 目录结构（6个分类22道力学真题）；M3-2 完成 — AnalysisPage 完整实现（题干区/分步解析区/知识链路区/步骤导航）；M3-3 完成 — KatexFormula 组件改用 mode 属性（inline/block），符合 UI 规范，KaTeX CSS 与字体全部离线打包验证通过；**关键修复** — 填充 knowledgeTree.ts 力学8章共35个知识节点，与 animationRegistry 23个动画完整关联，knowledgeIndex 索引正确构建
+-- **下一步**：M3-5 练习与测试模式（PracticePage 模式选择 + 答题交互 + ScoreReport，接入 useWrongStore 自动判错判对）
++- **M3-5 练习与测试模式完成（2026-05-30）**：自评式答题会话 PracticeSession（练习/测试双模式、计时器、提示、揭示解析、自评联动 useWrongStore 自动判错判对）、PracticePage 入口（模式选择+筛选+成绩历史+浏览真题）、ScoreReport 成绩报告（总分/各模块正确率/薄弱知识点跳转）、新增 usePracticeStore（成绩历史 IndexedDB 持久化）、激活此前未接线的 useProblemStore。新增 4 项测试（共 60）。**[M3] 全部完成**
++- **下一步**：进入 [M4] 电磁/热/光/原子模块（依赖 [M2]✅）
+ 
+ ---
+ 
+diff --git a/src/components/UI/ScoreReport.tsx b/src/components/UI/ScoreReport.tsx
+new file mode 100644
+index 0000000..2e57e5c
+--- /dev/null
++++ b/src/components/UI/ScoreReport.tsx
+@@ -0,0 +1,144 @@
++import { useMemo } from 'react'
++import { Award, TrendingUp, RotateCcw, BookOpen } from 'lucide-react'
++import type { ScoreRecord } from '@/stores'
++import { getKnowledgeNode } from '@/data/knowledgeTree'
++import { getProblemById } from '@/data/problems'
++import { colors } from '@/theme/colors'
++
++const MODULE_LABELS: Record<string, string> = {
++  mechanics: '力学',
++  electricity: '电磁学',
++  thermodynamics: '热学',
++  optics: '光学',
++  atomic: '原子物理',
++}
++
++interface ScoreReportProps {
++  record: Omit<ScoreRecord, 'id' | 'timestamp'>
++  onRetry: () => void
++  onExit: () => void
++  onReviewKnowledge?: (animId: string) => void
++}
++
++function formatDuration(sec?: number): string {
++  if (sec === undefined) return '—'
++  const m = Math.floor(sec / 60)
++  const s = sec % 60
++  return m > 0 ? `${m}分${s}秒` : `${s}秒`
++}
++
++export function ScoreReport({ record, onRetry, onExit, onReviewKnowledge }: ScoreReportProps) {
++  const rate = record.total > 0 ? Math.round((record.correct / record.total) * 100) : 0
++  const scoreColor =
++    rate >= 80 ? colors.success[600] : rate >= 60 ? colors.warning[500] : colors.danger[600]
++
++  // 薄弱知识点：来自答错题目的关联知识点，去重
++  const weakKnowledge = useMemo(() => {
++    const ids = new Set<string>()
++    record.wrongProblemIds.forEach((pid) => {
++      getProblemById(pid)?.knowledgeIds.forEach((k) => ids.add(k))
++    })
++    return Array.from(ids)
++      .map((k) => getKnowledgeNode(k))
++      .filter((n): n is NonNullable<typeof n> => Boolean(n))
++  }, [record.wrongProblemIds])
++
++  return (
++    <div className="max-w-2xl mx-auto">
++      {/* 总分卡 */}
++      <div className="bg-white rounded-xl shadow-md p-8 text-center mb-6">
++        <Award className="w-12 h-12 mx-auto mb-3" style={{ color: scoreColor }} />
++        <p className="text-neutral-500 text-sm mb-1">
++          {record.mode === 'test' ? '测试' : '练习'}完成
++        </p>
++        <div className="text-5xl font-bold font-mono mb-2" style={{ color: scoreColor }}>
++          {record.correct}
++          <span className="text-2xl text-neutral-400"> / {record.total}</span>
++        </div>
++        <p className="text-neutral-600">正确率 {rate}%</p>
++        {record.durationSec !== undefined && (
++          <p className="text-sm text-neutral-400 mt-1">用时 {formatDuration(record.durationSec)}</p>
++        )}
++      </div>
++
++      {/* 各模块正确率 */}
++      {Object.keys(record.byModule).length > 0 && (
++        <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-5 mb-6">
++          <h3 className="flex items-center gap-2 text-sm font-semibold text-neutral-800 mb-4">
++            <TrendingUp className="w-4 h-4" /> 各模块正确率
++          </h3>
++          <div className="space-y-3">
++            {Object.entries(record.byModule).map(([module, { correct, total }]) => {
++              const r = total > 0 ? Math.round((correct / total) * 100) : 0
++              return (
++                <div key={module}>
++                  <div className="flex justify-between text-xs text-neutral-600 mb-1">
++                    <span>{MODULE_LABELS[module] ?? module}</span>
++                    <span className="font-mono">
++                      {correct}/{total}（{r}%）
++                    </span>
++                  </div>
++                  <div className="w-full h-2 bg-neutral-200 rounded-full overflow-hidden">
++                    <div
++                      className="h-full rounded-full"
++                      style={{
++                        width: `${r}%`,
++                        backgroundColor:
++                          r >= 80 ? colors.success[500] : r >= 60 ? colors.warning[500] : colors.danger[500],
++                      }}
++                    />
++                  </div>
++                </div>
++              )
++            })}
++          </div>
++        </div>
++      )}
++
++      {/* 薄弱知识点 */}
++      {weakKnowledge.length > 0 && (
++        <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-5 mb-6">
++          <h3 className="flex items-center gap-2 text-sm font-semibold text-neutral-800 mb-3">
++            <BookOpen className="w-4 h-4" /> 建议复习
++          </h3>
++          <div className="flex flex-wrap gap-2">
++            {weakKnowledge.map((node) => {
++              const animId = node.animationIds?.[0]
++              return (
++                <button
++                  key={node.id}
++                  onClick={() => animId && onReviewKnowledge?.(animId)}
++                  disabled={!animId}
++                  className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
++                    animId
++                      ? 'border-primary-200 bg-primary-50 text-primary-700 hover:bg-primary-100 active:scale-[0.97]'
++                      : 'border-neutral-200 bg-neutral-50 text-neutral-500 cursor-default'
++                  }`}
++                >
++                  {node.title}
++                  {animId && ' →'}
++                </button>
++              )
++            })}
++          </div>
++        </div>
++      )}
++
++      {/* 操作 */}
++      <div className="flex justify-center gap-3">
++        <button
++          onClick={onRetry}
++          className="flex items-center gap-2 px-5 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 active:scale-[0.97]"
++        >
++          <RotateCcw className="w-4 h-4" /> 再来一组
++        </button>
++        <button
++          onClick={onExit}
++          className="px-5 py-2 bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200 active:scale-[0.97]"
++        >
++          返回
++        </button>
++      </div>
++    </div>
++  )
++}
+diff --git a/src/components/UI/index.ts b/src/components/UI/index.ts
+index 652f9a1..d296faa 100644
+--- a/src/components/UI/index.ts
++++ b/src/components/UI/index.ts
+@@ -11,3 +11,4 @@ export { PhysicsPanel } from './PhysicsPanel'
+ export { ProgressBadge } from './ProgressBadge'
+ export { PageTransition } from './PageTransition'
+ export { ErrorBoundary } from './ErrorBoundary'
++export { ScoreReport } from './ScoreReport'
+diff --git a/src/features/index.ts b/src/features/index.ts
+index a15524d..30faedd 100644
+--- a/src/features/index.ts
++++ b/src/features/index.ts
+@@ -1,2 +1,3 @@
+ export * from './mechanics'
+ export * from './knowledge'
++export * from './practice'
+diff --git a/src/features/practice/PracticeSession.tsx b/src/features/practice/PracticeSession.tsx
+new file mode 100644
+index 0000000..b9a1f36
+--- /dev/null
++++ b/src/features/practice/PracticeSession.tsx
+@@ -0,0 +1,321 @@
++import { useEffect, useRef, useState } from 'react'
++import { Clock, Pause, Play, Lightbulb, Eye, Check, X } from 'lucide-react'
++import type { Problem } from '@/data/types'
++import type { PracticeMode, ScoreRecord } from '@/stores'
++import { useProblemStore, usePracticeStore, useWrongStore } from '@/stores'
++import { getKnowledgeNode } from '@/data/knowledgeTree'
++import { KatexFormula } from '@/components/UI/KatexFormula'
++import { ScoreReport } from '@/components/UI'
++import { colors } from '@/theme/colors'
++
++interface PracticeSessionProps {
++  mode: PracticeMode
++  problems: Problem[]
++  onExit: () => void
++  onReviewKnowledge?: (animId: string) => void
++}
++
++function moduleOf(knowledgeIds: string[]): string {
++  const node = knowledgeIds.map((k) => getKnowledgeNode(k)).find(Boolean)
++  return node?.module ?? knowledgeIds[0]?.split('-')[0] ?? 'other'
++}
++
++/** 渲染含 $...$ / $$...$$ 的文本 */
++function RichText({ text }: { text: string }) {
++  const segs = text.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/g)
++  return (
++    <>
++      {segs.map((seg, i) => {
++        if (seg.startsWith('$$') && seg.endsWith('$$'))
++          return <KatexFormula key={i} formula={seg.slice(2, -2).trim()} mode="block" />
++        if (seg.startsWith('$') && seg.endsWith('$'))
++          return <KatexFormula key={i} formula={seg.slice(1, -1).trim()} mode="inline" />
++        return <span key={i} className="whitespace-pre-wrap">{seg.replace(/\\n/g, '\n')}</span>
++      })}
++    </>
++  )
++}
++
++export function PracticeSession({ mode, problems, onExit, onReviewKnowledge }: PracticeSessionProps) {
++  const isTest = mode === 'test'
++
++  // useProblemStore：当前作答会话状态（激活此前未接线的 store）
++  const currentIndex = useProblemStore((s) => s.currentStep)
++  const setCurrentIndex = useProblemStore((s) => s.setCurrentStep)
++  const setCurrentProblem = useProblemStore((s) => s.setCurrentProblem)
++  const resetProblem = useProblemStore((s) => s.reset)
++
++  const addRecord = usePracticeStore((s) => s.addRecord)
++  const hydratePractice = usePracticeStore((s) => s.hydrate)
++
++  const addWrong = useWrongStore((s) => s.addWrong)
++  const recordCorrect = useWrongStore((s) => s.recordCorrect)
++  const hydrateWrong = useWrongStore((s) => s.hydrate)
++
++  // 每题判定结果：index -> 'correct' | 'wrong'
++  const [results, setResults] = useState<Record<number, 'correct' | 'wrong'>>({})
++  const [revealed, setRevealed] = useState(false) // 当前题是否已揭示解析
++  const [showHint, setShowHint] = useState(false)
++  const [finished, setFinished] = useState(false)
++
++  // 计时器（仅测试模式）
++  const [elapsed, setElapsed] = useState(0)
++  const [paused, setPaused] = useState(false)
++  const startRef = useRef(Date.now())
++
++  useEffect(() => {
++    void hydratePractice()
++    void hydrateWrong()
++    setCurrentProblem(problems[0]?.id ?? null)
++    setCurrentIndex(0)
++    return () => resetProblem()
++    // eslint-disable-next-line react-hooks/exhaustive-deps
++  }, [])
++
++  useEffect(() => {
++    if (!isTest || paused || finished) return
++    const t = setInterval(() => setElapsed((e) => e + 1), 1000)
++    return () => clearInterval(t)
++  }, [isTest, paused, finished])
++
++  // 切换题目时重置揭示/提示态
++  useEffect(() => {
++    setRevealed(results[currentIndex] !== undefined)
++    setShowHint(false)
++  }, [currentIndex, results])
++
++  const problem = problems[currentIndex]
++
++  const answeredCount = Object.keys(results).length
++  const correctCount = Object.values(results).filter((r) => r === 'correct').length
++
++  const buildRecord = (): Omit<ScoreRecord, 'id' | 'timestamp'> => {
++    const byModule: Record<string, { correct: number; total: number }> = {}
++    const wrongProblemIds: string[] = []
++    problems.forEach((p, i) => {
++      const m = moduleOf(p.knowledgeIds)
++      byModule[m] ??= { correct: 0, total: 0 }
++      byModule[m].total += 1
++      if (results[i] === 'correct') byModule[m].correct += 1
++      else wrongProblemIds.push(p.id)
++    })
++    return {
++      mode,
++      total: problems.length,
++      correct: correctCount,
++      durationSec: isTest ? elapsed : undefined,
++      wrongProblemIds,
++      byModule,
++    }
++  }
++
++  const finishSession = () => {
++    const record = buildRecord()
++    addRecord(record)
++    setFinished(true)
++  }
++
++  // 自评：标记当前题对/错，并联动错题本
++  const judge = (correct: boolean) => {
++    setResults((prev) => ({ ...prev, [currentIndex]: correct ? 'correct' : 'wrong' }))
++    if (correct) recordCorrect(problem.id)
++    else addWrong(problem.id, problem.knowledgeIds)
++  }
++
++  const goNext = () => {
++    if (currentIndex < problems.length - 1) setCurrentIndex(currentIndex + 1)
++  }
++  const goPrev = () => {
++    if (currentIndex > 0) setCurrentIndex(currentIndex - 1)
++  }
++
++  if (finished) {
++    return (
++      <ScoreReport
++        record={buildRecord()}
++        onRetry={() => {
++          setResults({})
++          setRevealed(false)
++          setShowHint(false)
++          setElapsed(0)
++          setPaused(false)
++          startRef.current = Date.now()
++          setCurrentIndex(0)
++          setFinished(false)
++        }}
++        onExit={onExit}
++        onReviewKnowledge={onReviewKnowledge}
++      />
++    )
++  }
++
++  if (!problem) {
++    return <div className="text-center text-neutral-400 py-20">没有可练习的题目</div>
++  }
++
++  const fmtTime = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
++  const currentResult = results[currentIndex]
++
++  return (
++    <div className="max-w-3xl mx-auto">
++      {/* 顶栏：进度 + 计时器 */}
++      <div className="flex items-center justify-between mb-4">
++        <div className="flex items-center gap-3">
++          <span className="text-sm text-neutral-500">
++            第 {currentIndex + 1} / {problems.length} 题
++          </span>
++          <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-500">
++            已答 {answeredCount} · 对 {correctCount}
++          </span>
++        </div>
++        <div className="flex items-center gap-3">
++          {isTest && (
++            <div className="flex items-center gap-2 font-mono text-sm text-neutral-700">
++              <Clock className="w-4 h-4" />
++              {fmtTime(elapsed)}
++              <button
++                onClick={() => setPaused((p) => !p)}
++                className="text-neutral-500 hover:text-neutral-700"
++                aria-label={paused ? '继续' : '暂停'}
++              >
++                {paused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
++              </button>
++            </div>
++          )}
++          <button onClick={onExit} className="text-sm text-neutral-500 hover:text-neutral-700">
++            退出
++          </button>
++        </div>
++      </div>
++
++      {/* 进度条 */}
++      <div className="w-full h-1.5 bg-neutral-200 rounded-full overflow-hidden mb-6">
++        <div
++          className="h-full rounded-full transition-all"
++          style={{
++            width: `${(answeredCount / problems.length) * 100}%`,
++            backgroundColor: colors.primary[500],
++          }}
++        />
++      </div>
++
++      {/* 题干 */}
++      <div className="bg-white rounded-xl shadow-md p-6 mb-4">
++        <div className="flex items-center gap-2 mb-3 flex-wrap">
++          <span className="text-xs px-2 py-0.5 rounded bg-primary-50 text-primary-700">{problem.year}</span>
++          <span className="text-xs px-2 py-0.5 rounded bg-neutral-100 text-neutral-600">{problem.province}</span>
++          <span className="text-xs" style={{ color: colors.accent[500] }}>{'★'.repeat(problem.difficulty)}</span>
++        </div>
++        <h2 className="font-semibold text-neutral-800 mb-3">{problem.title}</h2>
++        <div className="text-[15px] leading-7 text-neutral-700">
++          {problem.content.split('\\n').map((line, i) => (
++            <p key={i} className="mb-1.5"><RichText text={line} /></p>
++          ))}
++        </div>
++
++        {/* 练习模式：提示按钮（展示首步描述作为思路提示） */}
++        {!isTest && !revealed && problem.steps[0] && (
++          <div className="mt-4">
++            <button
++              onClick={() => setShowHint((v) => !v)}
++              className="flex items-center gap-1 text-sm text-secondary-600 hover:text-secondary-700"
++            >
++              <Lightbulb className="w-4 h-4" /> {showHint ? '隐藏提示' : '查看提示'}
++            </button>
++            {showHint && (
++              <p className="mt-2 text-sm text-neutral-600 bg-secondary-50 rounded-lg px-3 py-2">
++                💡 {problem.steps[0].description}
++              </p>
++            )}
++          </div>
++        )}
++      </div>
++
++      {/* 揭示解析 */}
++      {!revealed ? (
++        <button
++          onClick={() => setRevealed(true)}
++          className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-neutral-200 rounded-xl text-neutral-700 hover:bg-neutral-50 active:scale-[0.99]"
++        >
++          <Eye className="w-4 h-4" />
++          {isTest ? '提交并查看答案' : '查看解析'}
++        </button>
++      ) : (
++        <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
++          <h3 className="text-sm font-semibold text-neutral-800 mb-3">分步解析</h3>
++          <ol className="space-y-4">
++            {problem.steps.map((step, i) => (
++              <li key={step.id} className="border-l-2 border-primary-200 pl-3">
++                <p className="text-sm font-medium text-neutral-700 mb-1">
++                  {i + 1}. {step.description}
++                </p>
++                {step.formula && <KatexFormula formula={step.formula.replace(/^\$\$|\$\$$/g, '').trim()} mode="block" />}
++                <p className="text-sm text-neutral-500 mt-1"><RichText text={step.explanation} /></p>
++              </li>
++            ))}
++          </ol>
++
++          {/* 自评 */}
++          {currentResult === undefined ? (
++            <div className="mt-5 pt-4 border-t border-neutral-100">
++              <p className="text-sm text-neutral-600 mb-2">对照解析，你答对了吗？</p>
++              <div className="flex gap-3">
++                <button
++                  onClick={() => judge(true)}
++                  className="flex items-center gap-1 px-4 py-2 rounded-lg bg-success-100 text-success-700 hover:bg-success-200 active:scale-[0.97]"
++                >
++                  <Check className="w-4 h-4" /> 答对了
++                </button>
++                <button
++                  onClick={() => judge(false)}
++                  className="flex items-center gap-1 px-4 py-2 rounded-lg bg-danger-100 text-danger-700 hover:bg-danger-200 active:scale-[0.97]"
++                >
++                  <X className="w-4 h-4" /> 答错了
++                </button>
++              </div>
++            </div>
++          ) : (
++            <div className="mt-5 pt-4 border-t border-neutral-100">
++              <span
++                className="inline-flex items-center gap-1 text-sm px-3 py-1 rounded-full"
++                style={{
++                  backgroundColor: currentResult === 'correct' ? `${colors.success[500]}22` : `${colors.danger[500]}22`,
++                  color: currentResult === 'correct' ? colors.success[600] : colors.danger[600],
++                }}
++              >
++                {currentResult === 'correct' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
++                {currentResult === 'correct' ? '已记为答对' : '已加入错题本'}
++              </span>
++            </div>
++          )}
++        </div>
++      )}
++
++      {/* 底部导航 */}
++      <div className="flex items-center justify-between mt-6">
++        <button
++          onClick={goPrev}
++          disabled={currentIndex === 0}
++          className="px-4 py-2 rounded-lg text-neutral-600 hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97]"
++        >
++          上一题
++        </button>
++        {currentIndex < problems.length - 1 ? (
++          <button
++            onClick={goNext}
++            className="px-5 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 active:scale-[0.97]"
++          >
++            下一题
++          </button>
++        ) : (
++          <button
++            onClick={finishSession}
++            className="px-5 py-2 rounded-lg bg-success-600 text-white hover:bg-success-700 active:scale-[0.97]"
++          >
++            完成并查看成绩
++          </button>
++        )}
++      </div>
++    </div>
++  )
++}
+diff --git a/src/features/practice/index.ts b/src/features/practice/index.ts
+new file mode 100644
+index 0000000..082d6d0
+--- /dev/null
++++ b/src/features/practice/index.ts
+@@ -0,0 +1 @@
++export { PracticeSession } from './PracticeSession'
+diff --git a/src/pages/PracticePage.tsx b/src/pages/PracticePage.tsx
+index 8801f18..bbf2f95 100644
+--- a/src/pages/PracticePage.tsx
++++ b/src/pages/PracticePage.tsx
+@@ -1,27 +1,118 @@
+-import { useMemo, useState } from 'react'
+-import { useNavigate } from 'react-router-dom'
+-import { ClipboardList } from 'lucide-react'
++import { useEffect, useMemo, useState } from 'react'
++import { useNavigate, useSearchParams } from 'react-router-dom'
++import { ClipboardList, GraduationCap, Timer, History, Trash2 } from 'lucide-react'
+ import { allProblems } from '@/data/problems'
++import { getKnowledgeNode } from '@/data/knowledgeTree'
++import { usePracticeStore, type PracticeMode } from '@/stores'
++import { PracticeSession } from '@/features/practice'
+ import { colors } from '@/theme/colors'
+ 
+ const MODULE_LABELS: Record<string, string> = {
+   mechanics: '力学',
++  electricity: '电磁学',
++  thermodynamics: '热学',
++  optics: '光学',
++  atomic: '原子物理',
+ }
+ 
+ function moduleOf(knowledgeIds: string[]): string {
+-  return knowledgeIds[0]?.split('-')[0] ?? 'other'
++  const node = knowledgeIds.map((k) => getKnowledgeNode(k)).find(Boolean)
++  return node?.module ?? knowledgeIds[0]?.split('-')[0] ?? 'other'
++}
++
++function formatDate(ts: number): string {
++  const d = new Date(ts)
++  const pad = (n: number) => String(n).padStart(2, '0')
++  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+ }
+ 
+ export default function PracticePage() {
+   const navigate = useNavigate()
+-  const [difficulty, setDifficulty] = useState<number | 'all'>('all')
++  const [searchParams, setSearchParams] = useSearchParams()
++  const modeParam = searchParams.get('mode')
++  const sessionMode: PracticeMode | null =
++    modeParam === 'practice' || modeParam === 'test' ? modeParam : null
++
++  const history = usePracticeStore((s) => s.history)
++  const hydrate = usePracticeStore((s) => s.hydrate)
++  const clearHistory = usePracticeStore((s) => s.clearHistory)
++
++  useEffect(() => {
++    void hydrate()
++  }, [hydrate])
++
++  // 题目筛选
++  const [moduleFilter, setModuleFilter] = useState<Set<string>>(new Set())
++  const [difficultyFilter, setDifficultyFilter] = useState<Set<number>>(new Set())
++
++  const availableModules = useMemo(() => {
++    const set = new Set(allProblems.map((p) => moduleOf(p.knowledgeIds)))
++    return Array.from(set)
++  }, [])
++
++  const filteredProblems = useMemo(() => {
++    return allProblems.filter((p) => {
++      if (moduleFilter.size > 0 && !moduleFilter.has(moduleOf(p.knowledgeIds))) return false
++      if (difficultyFilter.size > 0 && !difficultyFilter.has(p.difficulty)) return false
++      return true
++    })
++  }, [moduleFilter, difficultyFilter])
++
++  function toggle<T>(set: Set<T>, v: T): Set<T> {
++    const next = new Set(set)
++    if (next.has(v)) next.delete(v)
++    else next.add(v)
++    return next
++  }
++
++  const startSession = (mode: PracticeMode) => {
++    setSearchParams({ mode })
++  }
++  const exitSession = () => {
++    setSearchParams({})
++  }
+ 
+-  const problems = useMemo(() => {
+-    const list = difficulty === 'all'
+-      ? allProblems
+-      : allProblems.filter((p) => p.difficulty === difficulty)
+-    return [...list].sort((a, b) => b.year - a.year)
+-  }, [difficulty])
++  // ---- 会话进行中 ----
++  if (sessionMode) {
++    if (filteredProblems.length === 0) {
++      return (
++        <div className="min-h-screen bg-neutral-50 p-6">
++          <div className="max-w-3xl mx-auto text-center py-20">
++            <p className="text-neutral-500 mb-4">当前筛选下没有题目</p>
++            <button
++              onClick={exitSession}
++              className="px-5 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
++            >
++              返回
++            </button>
++          </div>
++        </div>
++      )
++    }
++    return (
++      <div className="min-h-screen bg-neutral-50 p-6">
++        <PracticeSession
++          mode={sessionMode}
++          problems={filteredProblems}
++          onExit={exitSession}
++          onReviewKnowledge={(animId) => navigate(`/animation/${animId}`)}
++        />
++      </div>
++    )
++  }
++
++  // ---- 入口页 ----
++  const chip = (active: boolean, label: string, onClick: () => void, key?: string) => (
++    <button
++      key={key ?? label}
++      onClick={onClick}
++      className={`px-3 py-1 rounded-full text-sm transition-colors active:scale-[0.97] ${
++        active ? 'bg-primary-600 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
++      }`}
++    >
++      {label}
++    </button>
++  )
+ 
+   return (
+     <div className="min-h-screen bg-neutral-50 p-6">
+@@ -30,65 +121,128 @@ export default function PracticePage() {
+           <ClipboardList className="w-8 h-8" style={{ color: colors.secondary[600] }} />
+           <div>
+             <h1 className="text-3xl font-bold text-neutral-900">真题练习</h1>
+-            <p className="text-neutral-600">精选高考力学真题，点击查看分步解析</p>
++            <p className="text-neutral-600">选择模式开始练习，或浏览全部真题解析</p>
+           </div>
+         </div>
+ 
+-        {/* 难度筛选 */}
+-        <div className="flex items-center gap-2 mb-6 flex-wrap">
+-          <span className="text-sm text-neutral-500">难度：</span>
+-          {(['all', 1, 2, 3, 4, 5] as const).map((d) => {
+-            const active = difficulty === d
+-            return (
+-              <button
+-                key={d}
+-                onClick={() => setDifficulty(d)}
+-                className={`px-3 py-1 rounded-full text-sm transition-colors active:scale-[0.97] ${
+-                  active
+-                    ? 'bg-primary-600 text-white'
+-                    : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-100'
+-                }`}
+-              >
+-                {d === 'all' ? '全部' : `${'★'.repeat(d)}`}
+-              </button>
+-            )
+-          })}
+-          <span className="text-sm text-neutral-400 ml-auto">共 {problems.length} 题</span>
++        {/* 题目筛选 */}
++        <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-4 mb-5 space-y-2">
++          {availableModules.length > 1 && (
++            <div className="flex items-center gap-2 flex-wrap">
++              <span className="text-sm text-neutral-400 w-12">模块</span>
++              {availableModules.map((m) =>
++                chip(moduleFilter.has(m), MODULE_LABELS[m] ?? m, () => setModuleFilter(toggle(moduleFilter, m)), m)
++              )}
++            </div>
++          )}
++          <div className="flex items-center gap-2 flex-wrap">
++            <span className="text-sm text-neutral-400 w-12">难度</span>
++            {[1, 2, 3, 4, 5].map((d) =>
++              chip(difficultyFilter.has(d), '★'.repeat(d), () => setDifficultyFilter(toggle(difficultyFilter, d)), `d${d}`)
++            )}
++            <span className="text-sm text-neutral-400 ml-auto">共 {filteredProblems.length} 题</span>
++          </div>
+         </div>
+ 
+-        {/* 题目列表 */}
+-        {problems.length === 0 ? (
+-          <div className="text-center text-neutral-400 py-20">该难度暂无题目</div>
++        {/* 模式选择 */}
++        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
++          <button
++            onClick={() => startSession('practice')}
++            disabled={filteredProblems.length === 0}
++            className="text-left bg-white rounded-xl shadow-md p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
++          >
++            <GraduationCap className="w-8 h-8 mb-3" style={{ color: colors.primary[600] }} />
++            <h3 className="font-semibold text-neutral-800 mb-1">练习模式</h3>
++            <p className="text-sm text-neutral-500">有提示、可随时看解析，适合巩固学习</p>
++          </button>
++          <button
++            onClick={() => startSession('test')}
++            disabled={filteredProblems.length === 0}
++            className="text-left bg-white rounded-xl shadow-md p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
++          >
++            <Timer className="w-8 h-8 mb-3" style={{ color: colors.accent[600] }} />
++            <h3 className="font-semibold text-neutral-800 mb-1">测试模式</h3>
++            <p className="text-sm text-neutral-500">计时、无提示，检验真实掌握程度</p>
++          </button>
++        </div>
++
++        {/* 成绩历史 */}
++        <div className="flex items-center justify-between mb-3">
++          <h2 className="flex items-center gap-2 text-lg font-semibold text-neutral-800">
++            <History className="w-5 h-5" /> 成绩历史
++          </h2>
++          {history.length > 0 && (
++            <button
++              onClick={clearHistory}
++              className="flex items-center gap-1 text-sm text-neutral-500 hover:text-danger-600 active:scale-[0.97]"
++            >
++              <Trash2 className="w-4 h-4" /> 清空
++            </button>
++          )}
++        </div>
++        {history.length === 0 ? (
++          <div className="text-center text-neutral-400 py-10 bg-white rounded-xl border border-neutral-200">
++            还没有练习记录，选择上方模式开始吧
++          </div>
+         ) : (
++          <div className="space-y-2">
++            {history.map((rec) => {
++              const rate = rec.total > 0 ? Math.round((rec.correct / rec.total) * 100) : 0
++              return (
++                <div
++                  key={rec.id}
++                  className="bg-white rounded-lg border border-neutral-200 p-3 flex items-center gap-4 text-sm"
++                >
++                  <span
++                    className="text-xs px-2 py-0.5 rounded-full"
++                    style={{
++                      backgroundColor: rec.mode === 'test' ? `${colors.accent[500]}22` : `${colors.primary[500]}22`,
++                      color: rec.mode === 'test' ? colors.accent[600] : colors.primary[600],
++                    }}
++                  >
++                    {rec.mode === 'test' ? '测试' : '练习'}
++                  </span>
++                  <span className="font-mono text-neutral-800">
++                    {rec.correct}/{rec.total}
++                  </span>
++                  <span
++                    className="font-mono"
++                    style={{ color: rate >= 80 ? colors.success[600] : rate >= 60 ? colors.warning[500] : colors.danger[600] }}
++                  >
++                    {rate}%
++                  </span>
++                  {rec.durationSec !== undefined && (
++                    <span className="text-neutral-400">
++                      {Math.floor(rec.durationSec / 60)}分{rec.durationSec % 60}秒
++                    </span>
++                  )}
++                  <span className="text-neutral-400 ml-auto">{formatDate(rec.timestamp)}</span>
++                </div>
++              )
++            })}
++          </div>
++        )}
++
++        {/* 浏览全部真题 */}
++        <div className="mt-8">
++          <h2 className="text-lg font-semibold text-neutral-800 mb-3">浏览全部真题</h2>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+-            {problems.map((p) => (
++            {filteredProblems.map((p) => (
+               <button
+                 key={p.id}
+                 onClick={() => navigate(`/analysis/${p.id}`)}
+-                className="text-left bg-white rounded-xl shadow-md p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-[0.99]"
++                className="text-left bg-white rounded-xl shadow-sm border border-neutral-200 p-4 hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-[0.99]"
+               >
+-                <div className="flex items-center gap-2 mb-2 flex-wrap">
+-                  <span className="text-xs px-2 py-0.5 rounded bg-primary-50 text-primary-700">
+-                    {p.year}
+-                  </span>
+-                  <span className="text-xs px-2 py-0.5 rounded bg-neutral-100 text-neutral-600">
+-                    {p.province}
+-                  </span>
+-                  <span className="text-xs px-2 py-0.5 rounded bg-neutral-100 text-neutral-500">
+-                    {MODULE_LABELS[moduleOf(p.knowledgeIds)] ?? '综合'}
+-                  </span>
+-                  <span className="text-xs" style={{ color: colors.accent[500] }}>
+-                    {'★'.repeat(p.difficulty)}
+-                  </span>
++                <div className="flex items-center gap-2 mb-1 flex-wrap">
++                  <span className="text-xs px-2 py-0.5 rounded bg-primary-50 text-primary-700">{p.year}</span>
++                  <span className="text-xs px-2 py-0.5 rounded bg-neutral-100 text-neutral-600">{p.province}</span>
++                  <span className="text-xs" style={{ color: colors.accent[500] }}>{'★'.repeat(p.difficulty)}</span>
+                 </div>
+-                <h3 className="font-semibold text-neutral-800 mb-1">{p.title}</h3>
+-                <p className="text-sm text-neutral-500 line-clamp-2">
+-                  {p.content.replace(/\$\$?/g, '').replace(/\\n/g, ' ')}
+-                </p>
++                <h3 className="font-medium text-neutral-800 text-sm">{p.title}</h3>
+               </button>
+             ))}
+           </div>
+-        )}
++        </div>
+       </div>
+     </div>
+   )
+diff --git a/src/stores/index.ts b/src/stores/index.ts
+index 2977d8d..4058db5 100644
+--- a/src/stores/index.ts
++++ b/src/stores/index.ts
+@@ -3,5 +3,7 @@ export { useKnowledgeStore } from './useKnowledgeStore'
+ export { useProblemStore } from './useProblemStore'
+ export { useWrongStore } from './useWrongStore'
+ export type { WrongRecord, WrongStatus } from './useWrongStore'
++export { usePracticeStore } from './usePracticeStore'
++export type { ScoreRecord, PracticeMode } from './usePracticeStore'
+ export { useAppStore } from './useAppStore'
+ export { useProgressStore } from './useProgressStore'
+diff --git a/src/stores/usePracticeStore.ts b/src/stores/usePracticeStore.ts
+new file mode 100644
+index 0000000..d23a384
+--- /dev/null
++++ b/src/stores/usePracticeStore.ts
+@@ -0,0 +1,65 @@
++import { create } from 'zustand'
++import { storage } from '@/utils/storage'
++
++export type PracticeMode = 'practice' | 'test'
++
++/** 一次练习/测试的成绩记录 */
++export interface ScoreRecord {
++  id: string
++  mode: PracticeMode
++  timestamp: number
++  total: number
++  correct: number
++  /** 用时（秒）；练习模式不计时则为 undefined */
++  durationSec?: number
++  /** 错题 problemId（用于薄弱知识点统计） */
++  wrongProblemIds: string[]
++  /** 各模块正确率：module -> { correct, total } */
++  byModule: Record<string, { correct: number; total: number }>
++}
++
++const STORAGE_KEY = 'practice-history'
++const MAX_HISTORY = 50
++
++interface PracticeState {
++  history: ScoreRecord[]
++  hydrated: boolean
++  hydrate: () => Promise<void>
++  addRecord: (record: Omit<ScoreRecord, 'id' | 'timestamp'>) => void
++  clearHistory: () => void
++}
++
++function persist(history: ScoreRecord[]): void {
++  void storage.setDB(STORAGE_KEY, history)
++}
++
++export const usePracticeStore = create<PracticeState>((set, get) => ({
++  history: [],
++  hydrated: false,
++
++  hydrate: async () => {
++    if (get().hydrated) return
++    const saved = await storage.getDB<ScoreRecord[]>(STORAGE_KEY)
++    set({ history: Array.isArray(saved) ? saved : [], hydrated: true })
++  },
++
++  addRecord: (record) =>
++    set((state) => {
++      const entry: ScoreRecord = {
++        ...record,
++        id: `score-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
++        timestamp: Date.now(),
++      }
++      // 最新在前，最多保留 MAX_HISTORY 条
++      const history = [entry, ...state.history].slice(0, MAX_HISTORY)
++      persist(history)
++      return { history }
++    }),
++
++  clearHistory: () => {
++    persist([])
++    set({ history: [] })
++  },
++}))
++
++export default usePracticeStore
+diff --git a/tests/stores/usePracticeStore.test.ts b/tests/stores/usePracticeStore.test.ts
+new file mode 100644
+index 0000000..f69eee6
+--- /dev/null
++++ b/tests/stores/usePracticeStore.test.ts
+@@ -0,0 +1,70 @@
++import { describe, it, expect, beforeEach, vi } from 'vitest'
++
++vi.mock('@/utils/storage', () => {
++  let store: Record<string, unknown> = {}
++  return {
++    storage: {
++      getDB: vi.fn(async (k: string) => store[k] ?? null),
++      setDB: vi.fn(async (k: string, v: unknown) => {
++        store[k] = v
++      }),
++      __reset: () => {
++        store = {}
++      },
++    },
++  }
++})
++
++import { usePracticeStore, type ScoreRecord } from '@/stores/usePracticeStore'
++
++const sample: Omit<ScoreRecord, 'id' | 'timestamp'> = {
++  mode: 'practice',
++  total: 3,
++  correct: 2,
++  durationSec: 90,
++  wrongProblemIds: ['p3'],
++  byModule: { mechanics: { correct: 2, total: 3 } },
++}
++
++function reset() {
++  usePracticeStore.setState({ history: [], hydrated: false })
++}
++
++describe('usePracticeStore', () => {
++  beforeEach(() => reset())
++
++  it('addRecord 添加成绩，最新在前并补全 id/timestamp', () => {
++    usePracticeStore.getState().addRecord(sample)
++    const h = usePracticeStore.getState().history
++    expect(h.length).toBe(1)
++    expect(h[0].id).toMatch(/^score-/)
++    expect(h[0].timestamp).toBeTypeOf('number')
++    expect(h[0].correct).toBe(2)
++  })
++
++  it('多条记录按最新在前排序', () => {
++    const s = usePracticeStore.getState()
++    s.addRecord({ ...sample, correct: 1 })
++    s.addRecord({ ...sample, correct: 3 })
++    const h = usePracticeStore.getState().history
++    expect(h[0].correct).toBe(3)
++    expect(h[1].correct).toBe(1)
++  })
++
++  it('clearHistory 清空', () => {
++    const s = usePracticeStore.getState()
++    s.addRecord(sample)
++    s.clearHistory()
++    expect(usePracticeStore.getState().history).toEqual([])
++  })
++
++  it('hydrate 从持久化层加载', async () => {
++    const { storage } = await import('@/utils/storage')
++    await storage.setDB('practice-history', [
++      { ...sample, id: 'score-x', timestamp: 1 },
++    ])
++    await usePracticeStore.getState().hydrate()
++    expect(usePracticeStore.getState().history[0].id).toBe('score-x')
++    expect(usePracticeStore.getState().hydrated).toBe(true)
++  })
++})
+-- 
+2.47.3
+

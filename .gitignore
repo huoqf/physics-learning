@@ -26,6 +26,11 @@ dist-ssr
 # Coverage
 coverage
 
+# Build artifacts / TS incremental cache (should not be committed)
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+
 # Environment
 .env
 .env.local

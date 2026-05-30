@@ -1,199 +1,18 @@
-import { useEffect, useRef } from 'react'
+import { Suspense, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { getAnimationConfig } from '@/data/animationRegistry'
+import { buildPhysicsQuantities } from '@/data/physicsQuantities'
 import { useAnimationStore, useProgressStore } from '@/stores'
 import {
   AnimationControls,
   PhysicsPanel,
   ParamControl,
+  ErrorBoundary,
 } from '@/components/UI'
-import * as MechanicsAnimations from '@/features/mechanics'
 import { duration, easing } from '@/theme'
 import { LAYOUT } from '@/theme/spacing'
-import { globalAnimationController } from '@/utils/animation'
-
-interface PhysicsQuantity {
-  label: string
-  value: number | string
-  unit: string
-  highlight?: 'positive' | 'negative' | 'zero' | 'extreme'
-}
-
-function buildPhysicsQuantities(
-  animId: string,
-  params: Record<string, number>,
-  time: number
-): PhysicsQuantity[] {
-  const g = 9.8
-  const base: PhysicsQuantity[] = [
-    { label: '时间 t', value: time, unit: 's' },
-  ]
-
-  switch (animId) {
-    case 'anim-velocity': {
-      const v = params.v ?? 5
-      return [...base, { label: '速度 v', value: v, unit: 'm/s' }, { label: '位移 s', value: v * time, unit: 'm' }]
-    }
-    case 'anim-acceleration': {
-      const v0 = params.v0 ?? 0
-      const a = params.a ?? 2
-      const v = v0 + a * time
-      const s = v0 * time + 0.5 * a * time * time
-      return [...base,
-        { label: '初速度 v₀', value: v0, unit: 'm/s' },
-        { label: '加速度 a', value: a, unit: 'm/s²', highlight: a > 0 ? 'positive' : a < 0 ? 'negative' : 'zero' },
-        { label: '速度 v', value: v, unit: 'm/s', highlight: v > 0 ? 'positive' : v < 0 ? 'negative' : 'zero' },
-        { label: '位移 s', value: s, unit: 'm' },
-      ]
-    }
-    case 'anim-uniform-acceleration': {
-      const v0 = params.v0 ?? 0
-      const a = params.a ?? 1.5
-      const v = v0 + a * time
-      const s = v0 * time + 0.5 * a * time * time
-      return [...base,
-        { label: '初速度 v₀', value: v0, unit: 'm/s' },
-        { label: '加速度 a', value: a, unit: 'm/s²' },
-        { label: '速度 v', value: v, unit: 'm/s' },
-        { label: '位移 s', value: s, unit: 'm' },
-      ]
-    }
-    case 'anim-free-fall': {
-      const v0 = params.v0 ?? 0
-      const gf = params.g ?? g
-      const v = v0 + gf * time
-      const y = v0 * time + 0.5 * gf * time * time
-      return [...base,
-        { label: '初速度 v₀', value: v0, unit: 'm/s' },
-        { label: '重力加速度 g', value: gf, unit: 'm/s²' },
-        { label: '速度 v', value: v, unit: 'm/s' },
-        { label: '位移 y', value: y, unit: 'm' },
-      ]
-    }
-    case 'anim-vertical-throw': {
-      const v0 = params.v0 ?? 15
-      const gf = params.g ?? g
-      const v = v0 - gf * time
-      const y = v0 * time - 0.5 * gf * time * time
-      return [...base,
-        { label: '初速度 v₀', value: v0, unit: 'm/s' },
-        { label: '重力加速度 g', value: gf, unit: 'm/s²' },
-        { label: '速度 v', value: v, unit: 'm/s', highlight: v > 0 ? 'positive' : v < 0 ? 'negative' : 'zero' },
-        { label: '位移 y', value: y, unit: 'm' },
-      ]
-    }
-    case 'anim-projectile': {
-      const v0x = params.v0x ?? 10
-      const gf = params.g ?? g
-      const x = v0x * time
-      const vy = gf * time
-      const y = 0.5 * gf * time * time
-      return [...base,
-        { label: '水平速度 v₀', value: v0x, unit: 'm/s' },
-        { label: '重力加速度 g', value: gf, unit: 'm/s²' },
-        { label: '水平位移 x', value: x, unit: 'm' },
-        { label: '竖直速度 vy', value: vy, unit: 'm/s' },
-        { label: '竖直位移 y', value: y, unit: 'm' },
-      ]
-    }
-    case 'anim-oblique-throw': {
-      const v0 = params.v0 ?? 15
-      const angle = (params.angle ?? 45) * Math.PI / 180
-      const gf = params.g ?? g
-      const vx = v0 * Math.cos(angle)
-      const vy = v0 * Math.sin(angle) - gf * time
-      const x = vx * time
-      const y = v0 * Math.sin(angle) * time - 0.5 * gf * time * time
-      return [...base,
-        { label: '初速度 v₀', value: v0, unit: 'm/s' },
-        { label: '抛射角 θ', value: params.angle ?? 45, unit: '°' },
-        { label: '水平速度 vx', value: vx, unit: 'm/s' },
-        { label: '竖直速度 vy', value: vy, unit: 'm/s' },
-        { label: '水平位移 x', value: x, unit: 'm' },
-        { label: '竖直位移 y', value: y, unit: 'm' },
-      ]
-    }
-    case 'anim-circular-motion': {
-      const r = params.r ?? 2
-      const omega = params.omega ?? 1
-      const v = omega * r
-      return [...base,
-        { label: '半径 r', value: r, unit: 'm' },
-        { label: '角速度 ω', value: omega, unit: 'rad/s' },
-        { label: '线速度 v', value: v, unit: 'm/s' },
-        { label: '周期 T', value: 2 * Math.PI / omega, unit: 's' },
-      ]
-    }
-    case 'anim-satellite': {
-      const r = params.r ?? 7
-      const G = 6.67e-11
-      const M = 5.97e24
-      const r_meters = r * 1e6
-      const v = Math.sqrt(G * M / r_meters)
-      const T_seconds = 2 * Math.PI * Math.sqrt(Math.pow(r_meters, 3) / (G * M))
-      const T_minutes = T_seconds / 60
-      return [...base,
-        { label: '轨道半径 r', value: r, unit: '×10⁶ m' },
-        { label: '线速度 v', value: v, unit: 'm/s' },
-        { label: '周期 T', value: T_minutes, unit: 'min' },
-      ]
-    }
-    case 'anim-momentum-conservation': {
-      const m1 = params.m1 ?? 2
-      const m2 = params.m2 ?? 3
-      const v1 = params.v1 ?? 5
-      const v2 = params.v2 ?? 0
-      const e = params.e ?? 0.8
-      const totalP_before = m1 * v1 + m2 * v2
-      const v1_final = ((m1 - e * m2) * v1 + (1 + e) * m2 * v2) / (m1 + m2)
-      const v2_final = ((m2 - e * m1) * v2 + (1 + e) * m1 * v1) / (m1 + m2)
-      const totalP_after = m1 * v1_final + m2 * v2_final
-      return [...base,
-        { label: '质量 m₁', value: m1, unit: 'kg' },
-        { label: '质量 m₂', value: m2, unit: 'kg' },
-        { label: '初速度 v₁', value: v1, unit: 'm/s' },
-        { label: '初速度 v₂', value: v2, unit: 'm/s' },
-        { label: '恢复系数 e', value: e, unit: '' },
-        { label: '碰前总动量', value: totalP_before, unit: 'kg·m/s' },
-        { label: '碰后总动量', value: totalP_after, unit: 'kg·m/s' },
-        { label: 'v₁末', value: v1_final, unit: 'm/s' },
-        { label: 'v₂末', value: v2_final, unit: 'm/s' },
-      ]
-    }
-    default:
-      return [...base, ...Object.entries(params).map(([key, value]) => ({
-        label: key, value, unit: '',
-      }))]
-  }
-}
-
-const animationComponents: Record<string, React.ComponentType> = {
-  'anim-velocity': MechanicsAnimations.VelocityAnimation,
-  'anim-acceleration': MechanicsAnimations.AccelerationAnimation,
-  'anim-uniform-acceleration': MechanicsAnimations.UniformAccelerationAnimation,
-  'anim-free-fall': MechanicsAnimations.FreeFallAnimation,
-  'anim-vertical-throw': MechanicsAnimations.VerticalThrowAnimation,
-  'anim-spring-force': MechanicsAnimations.SpringForceAnimation,
-  'anim-friction': MechanicsAnimations.FrictionAnimation,
-  'anim-vector-addition': MechanicsAnimations.VectorAdditionAnimation,
-  'anim-equilibrium': MechanicsAnimations.EquilibriumAnimation,
-  'anim-newton-second': MechanicsAnimations.NewtonSecondAnimation,
-  'anim-weightlessness': MechanicsAnimations.WeightlessnessAnimation,
-  'anim-connected-bodies': MechanicsAnimations.ConnectedBodiesAnimation,
-  'anim-projectile': MechanicsAnimations.ProjectileAnimation,
-  'anim-oblique-throw': MechanicsAnimations.ObliqueThrowAnimation,
-  'anim-circular-motion': MechanicsAnimations.CircularMotionAnimation,
-  'anim-centripetal': MechanicsAnimations.CentripetalAnimation,
-  'anim-kepler': MechanicsAnimations.KeplerAnimation,
-  'anim-gravity': MechanicsAnimations.GravityAnimation,
-  'anim-satellite': MechanicsAnimations.SatelliteAnimation,
-  'anim-kinetic-energy': MechanicsAnimations.KineticEnergyAnimation,
-  'anim-energy-conservation': MechanicsAnimations.EnergyConservationAnimation,
-  'anim-impulse': MechanicsAnimations.MomentumTheoremAnimation,
-  'anim-momentum-conservation': MechanicsAnimations.MomentumConservationAnimation,
-  'anim-collision': MechanicsAnimations.CollisionAnimation,
-}
+import { useAnimationFrame } from '@/utils/animation'
 
 // 每个动画的参数配置
 const paramConfigs: Record<string, Array<{
@@ -348,31 +167,18 @@ export default function AnimationPage() {
       setIsPlaying(false)
       markAnimationViewed(config.id)
     }
-    return () => {
-      globalAnimationController.pause()
-    }
-  }, [config?.id, setParams, setTime, setIsPlaying, markAnimationViewed])
+  }, [config, setParams, setTime, setIsPlaying, markAnimationViewed])
 
-  useEffect(() => {
-    globalAnimationController.setSpeed(speed)
-  }, [speed])
-
-  useEffect(() => {
-    if (isPlaying) {
-      globalAnimationController.start((deltaTime) => {
-        currentTimeRef.current += deltaTime / 1000
-        setTime(currentTimeRef.current)
-      })
-    } else {
-      globalAnimationController.pause()
-    }
-    return () => {
-      globalAnimationController.pause()
-    }
-  }, [isPlaying, setTime])
+  // 按组件实例运行的动画循环（统一动画控制入口，跟随组件生命周期自动清理）
+  useAnimationFrame(
+    (deltaTime) => {
+      currentTimeRef.current += deltaTime / 1000
+      setTime(currentTimeRef.current)
+    },
+    { playing: isPlaying, speed }
+  )
 
   const handleReset = () => {
-    globalAnimationController.pause()
     setTime(0)
     currentTimeRef.current = 0
     setIsPlaying(false)
@@ -381,7 +187,7 @@ export default function AnimationPage() {
     }
   }
 
-  if (!config || !animationComponents[config.id]) {
+  if (!config || !config.Component) {
     return (
       <div className="p-8 flex flex-col items-center justify-center min-h-[60vh]">
       <h2 className="text-2xl font-bold text-neutral-700 mb-4">动画未找到</h2>
@@ -395,7 +201,7 @@ export default function AnimationPage() {
     )
   }
 
-  const AnimationComponent = animationComponents[config.id]
+  const AnimationComponent = config.Component
   const paramConfig = paramConfigs[config.id] || []
   
   // 构建 ParamControl 需要的参数格式
@@ -438,7 +244,17 @@ export default function AnimationPage() {
               className="w-full h-full bg-white rounded-xl shadow-md overflow-hidden"
               style={{ transition: `all ${duration.normal}ms ${easing.standard}` }}
             >
-              <AnimationComponent />
+              <ErrorBoundary resetKey={config.id}>
+                <Suspense
+                  fallback={
+                    <div className="w-full h-full flex items-center justify-center text-neutral-400">
+                      加载动画中…
+                    </div>
+                  }
+                >
+                  <AnimationComponent />
+                </Suspense>
+              </ErrorBoundary>
             </div>
           </div>
 
