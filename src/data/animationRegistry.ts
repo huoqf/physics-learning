@@ -191,7 +191,7 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     title: '带电粒子在匀强电场中运动',
     knowledgeId: 'electricity-1-3',
     Component: lazy(() => import('@/features/electromagnetism/ChargeInEField')),
-    defaultParams: { E: 10, q: 2, m: 5, v0: 8, t: 0 }
+    defaultParams: { E: 10, q: 5, m: 200, v0: 20, t: 0 }
   },
   'anim-capacitor': {
     id: 'anim-capacitor',

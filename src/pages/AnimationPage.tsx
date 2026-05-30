@@ -148,8 +148,8 @@ const paramConfigs: Record<string, Array<{
   'anim-charge-in-efield': [
     { key: 'E', label: '电场强度 E', min: 1, max: 30, step: 1, unit: '×10³ N/C' },
     { key: 'q', label: '电量 q', min: 0.5, max: 10, step: 0.5, unit: 'μC' },
-    { key: 'm', label: '质量 m', min: 1, max: 20, step: 1, unit: '×10⁻⁶ kg' },
-    { key: 'v0', label: '初速度 v₀', min: 2, max: 20, step: 1, unit: 'm/s' },
+    { key: 'm', label: '质量 m', min: 50, max: 500, step: 10, unit: 'mg' },
+    { key: 'v0', label: '初速度 v₀', min: 5, max: 40, step: 1, unit: 'm/s' },
   ],
   'anim-capacitor': [
     { key: 'S', label: '正对面积 S', min: 20, max: 300, step: 10, unit: 'cm²' },

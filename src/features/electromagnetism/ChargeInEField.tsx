@@ -4,68 +4,100 @@ import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
 
 /**
- * 带电粒子在匀强电场中运动（类平抛）：水平匀速 + 竖直匀加速。
- * 参数：E(电场强度,N/C·10³) / q(电量,μC) / m(质量,×10⁻⁶kg) / v0(初速度,m/s)
+ * 带电粒子在匀强偏转电场中运动（类平抛 / 示波管模型）。
+ * 水平：匀速 x = v₀t；竖直：匀加速 a = qE/m，y = ½at²。
+ *
+ * 物理建模（真实几何，统一比例尺，符合高中物理）：
+ *   - 板长 L=0.4 m，板间距 D=0.2 m（粒子从左侧沿中线射入）
+ *   - 终止条件二选一：射出电场（x 达 L）或 打在极板上（|y| 达 D/2）
+ *   - vx、vy 同一速度比例尺，合速度方向即轨迹切线
+ * 参数：E(电场强度,×10³ N/C) / q(电量,μC) / m(质量,mg) / v0(初速度,m/s)
  */
+
+// 真实几何常量（SI）
+const PLATE_LENGTH = 0.4 // m
+const PLATE_GAP = 0.2 // m（上下板间距）
+const HALF_GAP = PLATE_GAP / 2
+// 慢放：真实过程约 20ms 级，放慢到便于观察
+const TIME_SCALE = 0.02
+
 export default function ChargeInEField() {
   const { params, time, showVectors, showFormulas, showGrid, setIsPlaying } = useAnimationStore()
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 450 })
 
-  const { E = 10, q = 2, m = 5, v0 = 8 } = params
-  // 单位换算到 SI
+  const { E = 10, q = 5, m = 200, v0 = 20 } = params
+  // SI 换算：E ×10³N/C，q μC(1e-6)，m mg(1e-6 kg)
   const ESI = E * 1e3
   const qSI = q * 1e-6
   const mSI = m * 1e-6
-  // 竖直加速度 a = qE/m
-  const a = (qSI * ESI) / mSI
+  const a = mSI > 0 ? (qSI * ESI) / mSI : 0 // 竖直加速度 a = qE/m
 
-  // 极板区域
-  const plateLeft = 90
-  const plateTop = 90
-  const plateBottom = canvasSize.height - 90
-  const plateRight = canvasSize.width - 200
-  const plateLen = plateRight - plateLeft
-  const midY = (plateTop + plateBottom) / 2
+  // 终止时刻：射出电场 vs 打在极板
+  const tExit = v0 > 0 ? PLATE_LENGTH / v0 : 0
+  const tHit = a > 0 ? Math.sqrt((2 * HALF_GAP) / a) : Infinity
+  const tEnd = Math.min(tExit, tHit)
+  const hitsPlate = tHit < tExit
 
-  // 比例：让运动在板内可见
-  const xScale = 40 // px per (m/s · s 量级)
-  const yScale = 4e-4 // px per m（a 量级较大，压缩）
+  // 仿真时间（慢放）
+  const tSim = Math.min(time * TIME_SCALE, tEnd)
 
-  // 出板时间（水平走完板长）
-  const exitTime = v0 > 0 ? plateLen / (v0 * xScale) : 0
-  const tEff = Math.min(time, exitTime)
+  // 物理位移（SI）
+  const xPhys = v0 * tSim
+  const yPhys = 0.5 * a * tSim * tSim
+  const vy = a * tSim
+  const vTotal = Math.sqrt(v0 * v0 + vy * vy)
 
-  const x = plateLeft + v0 * tEff * xScale
-  const yDrop = 0.5 * a * tEff * tEff * yScale
-  const y = midY + yDrop // 正电荷向下偏（设 E 向下）
-  const vy = a * tEff
+  // ---- 画布几何：统一比例尺 ----
+  const padX = 90
+  const padTop = 60
+  const region = {
+    left: padX,
+    right: canvasSize.width - 200,
+    top: padTop,
+    bottom: canvasSize.height - padTop,
+  }
+  const plateLenPx = region.right - region.left
+  const plateGapPx = region.bottom - region.top
+  const midY = (region.top + region.bottom) / 2
+  // 统一比例：x 与 y 用各自方向铺满板区，但比例相同（按 px/m 取较小者，保证不变形）
+  const scaleX = plateLenPx / PLATE_LENGTH
+  const scaleY = plateGapPx / PLATE_GAP
+  const scale = Math.min(scaleX, scaleY) // 单一 px/m，几何不变形
+  const velPxPerMs = 4 // 速度矢量显示比例（px per m/s）
 
-  // 到达板右端自动暂停
-  const atExit = time >= exitTime
+  // 屏幕坐标（正电荷向下偏，设 E 向下）
+  const cx = region.left + xPhys * scale
+  const cy = midY + yPhys * scale
+
+  // 终止自动暂停
+  const ended = time * TIME_SCALE >= tEnd
   useEffect(() => {
-    if (atExit && time > 0) setIsPlaying(false)
-  }, [atExit, time, setIsPlaying])
+    if (ended && time > 0) setIsPlaying(false)
+  }, [ended, time, setIsPlaying])
 
-  // 轨迹
+  // 轨迹点
   const pts: string[] = []
-  for (let t = 0; t <= tEff; t += exitTime / 60 || 1) {
-    const px = plateLeft + v0 * t * xScale
-    const py = midY + 0.5 * a * t * t * yScale
-    pts.push(`${px},${Math.min(plateBottom - 4, py)}`)
+  const steps = 60
+  for (let i = 0; i <= steps; i++) {
+    const t = (tSim * i) / steps
+    pts.push(`${region.left + v0 * t * scale},${midY + 0.5 * a * t * t * scale}`)
   }
 
   const gridLines = []
   if (showGrid) {
     for (let i = 0; i <= 8; i++) {
-      const gx = plateLeft + (i * plateLen) / 8
+      const gx = region.left + (i * plateLenPx) / 8
       gridLines.push(
-        <line key={`g-${i}`} x1={gx} y1={plateTop} x2={gx} y2={plateBottom}
+        <line key={`g-${i}`} x1={gx} y1={region.top} x2={gx} y2={region.bottom}
           stroke={PHYSICS_COLORS.grid} strokeWidth={1} strokeDasharray="4,4" />
       )
     }
+    // 中线
+    gridLines.push(
+      <line key="mid" x1={region.left} y1={midY} x2={region.right} y2={midY}
+        stroke={PHYSICS_COLORS.grid} strokeWidth={1} strokeDasharray="2,4" />
+    )
   }
-
-  const clampedY = Math.min(plateBottom - 6, y)
 
   return (
     <div ref={containerRef} className="w-full h-full">
@@ -73,20 +105,29 @@ export default function ChargeInEField() {
         {gridLines}
 
         {/* 上极板（+）与下极板（−），E 由上指向下 */}
-        <line x1={plateLeft} y1={plateTop} x2={plateRight} y2={plateTop} stroke={PHYSICS_COLORS.forceNet} strokeWidth={4} />
-        <text x={plateLeft - 16} y={plateTop + 5} fontSize="16" fill={PHYSICS_COLORS.forceNet}>＋</text>
-        <line x1={plateLeft} y1={plateBottom} x2={plateRight} y2={plateBottom} stroke={PHYSICS_COLORS.electricField} strokeWidth={4} />
-        <text x={plateLeft - 16} y={plateBottom + 5} fontSize="16" fill={PHYSICS_COLORS.electricField}>－</text>
+        <line x1={region.left} y1={region.top} x2={region.right} y2={region.top} stroke={PHYSICS_COLORS.forceNet} strokeWidth={4} />
+        <text x={region.left - 16} y={region.top + 5} fontSize="16" fill={PHYSICS_COLORS.forceNet}>＋</text>
+        <line x1={region.left} y1={region.bottom} x2={region.right} y2={region.bottom} stroke={PHYSICS_COLORS.electricField} strokeWidth={4} />
+        <text x={region.left - 16} y={region.bottom + 5} fontSize="16" fill={PHYSICS_COLORS.electricField}>－</text>
 
-        {/* 匀强电场线（向下） */}
+        {/* 板长 / 板间距标注 */}
+        <text x={(region.left + region.right) / 2} y={region.top - 10} fontSize="11" fill={PHYSICS_COLORS.axis} textAnchor="middle">
+          板长 L = {PLATE_LENGTH} m
+        </text>
+        <text x={region.right + 8} y={midY} fontSize="11" fill={PHYSICS_COLORS.axis}>d = {PLATE_GAP} m</text>
+
+        {/* 匀强电场线（向下，均匀分布） */}
         {showVectors && Array.from({ length: 6 }, (_, i) => {
-          const fx = plateLeft + 30 + (i * (plateLen - 40)) / 5
+          const fx = region.left + 30 + (i * (plateLenPx - 50)) / 5
           return (
-            <line key={`E-${i}`} x1={fx} y1={plateTop + 6} x2={fx} y2={plateBottom - 6}
+            <line key={`E-${i}`} x1={fx} y1={region.top + 6} x2={fx} y2={region.bottom - 6}
               stroke={PHYSICS_COLORS.electricField} strokeWidth={1} strokeDasharray="6,5"
-              markerEnd="url(#arrow-ef-down)" opacity={0.45} />
+              markerEnd="url(#arrow-ef-down)" opacity={0.4} />
           )
         })}
+
+        {/* 入射点参考 */}
+        <circle cx={region.left} cy={midY} r={3} fill={PHYSICS_COLORS.axis} />
 
         {/* 轨迹 */}
         {pts.length > 1 && (
@@ -95,31 +136,44 @@ export default function ChargeInEField() {
         )}
 
         {/* 粒子 */}
-        <circle cx={x} cy={clampedY} r={9} fill={PHYSICS_COLORS.forceNet} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={2} />
-        <text x={x} y={clampedY + 4} fontSize="12" fill="#fff" textAnchor="middle" fontWeight="bold">+</text>
+        <circle cx={cx} cy={cy} r={9} fill={PHYSICS_COLORS.forceNet} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={2} />
+        <text x={cx} y={cy + 4} fontSize="12" fill="#fff" textAnchor="middle" fontWeight="bold">+</text>
 
-        {/* 速度分量矢量 */}
-        {showVectors && tEff > 0 && (
+        {/* 速度分量矢量（同一比例，合矢量为真实切线） */}
+        {showVectors && tSim > 0 && (
           <g>
-            <line x1={x} y1={clampedY} x2={x + v0 * 4} y2={clampedY}
+            {/* vx */}
+            <line x1={cx} y1={cy} x2={cx + v0 * velPxPerMs} y2={cy}
               stroke={PHYSICS_COLORS.velocity} strokeWidth={CANVAS_STYLE.stroke.vectorSub} markerEnd="url(#arrow-ef-v)" />
-            <line x1={x} y1={clampedY} x2={x} y2={clampedY + Math.min(60, vy * 1.5)}
+            {/* vy */}
+            <line x1={cx} y1={cy} x2={cx} y2={cy + vy * velPxPerMs}
               stroke={PHYSICS_COLORS.acceleration} strokeWidth={CANVAS_STYLE.stroke.vectorSub} markerEnd="url(#arrow-ef-vy)" />
+            {/* 合速度（切线方向） */}
+            <line x1={cx} y1={cy} x2={cx + v0 * velPxPerMs} y2={cy + vy * velPxPerMs}
+              stroke={PHYSICS_COLORS.forceNet} strokeWidth={CANVAS_STYLE.stroke.vectorMain} markerEnd="url(#arrow-ef-vt)" opacity={0.85} />
           </g>
         )}
 
+        {/* 终止提示 */}
+        {ended && (
+          <text x={cx} y={cy - 18} fontSize="12" fill={hitsPlate ? PHYSICS_COLORS.electricField : PHYSICS_COLORS.kineticEnergy} textAnchor="middle" fontWeight="bold">
+            {hitsPlate ? '打在极板上' : '射出电场'}
+          </text>
+        )}
+
         {showFormulas && (
-          <g transform={`translate(${plateRight + 16}, ${plateTop})`}>
+          <g transform={`translate(${region.right + 16}, ${region.top})`}>
             <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">类平抛运动</text>
             <text x={0} y={24} fontSize="12" fill={PHYSICS_COLORS.axis}>水平：x = v₀t（匀速）</text>
-            <text x={0} y={44} fontSize="12" fill={PHYSICS_COLORS.axis}>竖直：a = qE/m</text>
-            <text x={0} y={64} fontSize="12" fill={PHYSICS_COLORS.axis}>y = ½at²</text>
-            <text x={0} y={90} fontSize="12" fill={PHYSICS_COLORS.acceleration} fontWeight="bold">
-              a = {a.toExponential(2)} m/s²
+            <text x={0} y={44} fontSize="12" fill={PHYSICS_COLORS.axis}>竖直：a = qE/m，y = ½at²</text>
+            <text x={0} y={68} fontSize="12" fill={PHYSICS_COLORS.acceleration} fontWeight="bold">
+              a = {a.toFixed(0)} m/s²
             </text>
-            <text x={0} y={110} fontSize="12" fill={PHYSICS_COLORS.velocity}>v₀ = {v0} m/s</text>
-            <text x={0} y={130} fontSize="12" fill={PHYSICS_COLORS.axis}>vy = {vy.toFixed(1)} m/s</text>
-            <text x={0} y={154} fontSize="12" fill={PHYSICS_COLORS.axis}>t = {tEff.toFixed(2)} s</text>
+            <text x={0} y={88} fontSize="12" fill={PHYSICS_COLORS.velocity}>v₀ = {v0} m/s</text>
+            <text x={0} y={106} fontSize="12" fill={PHYSICS_COLORS.acceleration}>vy = {vy.toFixed(2)} m/s</text>
+            <text x={0} y={124} fontSize="12" fill={PHYSICS_COLORS.forceNet}>v = {vTotal.toFixed(2)} m/s</text>
+            <text x={0} y={146} fontSize="12" fill={PHYSICS_COLORS.axis}>偏转 y = {(yPhys * 100).toFixed(2)} cm</text>
+            <text x={0} y={164} fontSize="12" fill={PHYSICS_COLORS.axis}>θ = {(Math.atan2(vy, v0) * 180 / Math.PI).toFixed(1)}°</text>
           </g>
         )}
 
@@ -132,6 +186,9 @@ export default function ChargeInEField() {
           </marker>
           <marker id="arrow-ef-vy" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
             <polygon points="0 0, 9 3.5, 0 7" fill={PHYSICS_COLORS.acceleration} />
+          </marker>
+          <marker id="arrow-ef-vt" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+            <polygon points="0 0, 9 3.5, 0 7" fill={PHYSICS_COLORS.forceNet} />
           </marker>
         </defs>
       </svg>

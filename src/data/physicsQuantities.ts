@@ -199,14 +199,22 @@ export function buildPhysicsQuantities(
       ]
     }
     case 'anim-charge-in-efield': {
+      // 偏转电场（示波管）模型：板长 L、板间距 D，单位 E ×10³N/C、q μC、m mg
+      const PLATE_LENGTH = 0.4
+      const HALF_GAP = 0.1
+      const TIME_SCALE = 0.02
       const E = (params.E ?? 10) * 1e3
-      const q = (params.q ?? 2) * 1e-6
-      const m = (params.m ?? 5) * 1e-6
-      const v0 = params.v0 ?? 8
-      const a = (q * E) / m
-      const vy = a * time
-      const x = v0 * time
-      const y = 0.5 * a * time * time
+      const q = (params.q ?? 5) * 1e-6
+      const m = (params.m ?? 200) * 1e-6
+      const v0 = params.v0 ?? 20
+      const a = m > 0 ? (q * E) / m : 0
+      const tExit = v0 > 0 ? PLATE_LENGTH / v0 : 0
+      const tHit = a > 0 ? Math.sqrt((2 * HALF_GAP) / a) : Infinity
+      const tEnd = Math.min(tExit, tHit)
+      const tSim = Math.min(time * TIME_SCALE, tEnd)
+      const x = v0 * tSim
+      const y = 0.5 * a * tSim * tSim
+      const vy = a * tSim
       return [
         ...base,
         { label: '加速度 a', value: a, unit: 'm/s²' },
@@ -214,6 +222,7 @@ export function buildPhysicsQuantities(
         { label: '水平位移 x', value: x, unit: 'm' },
         { label: '竖直速度 vy', value: vy, unit: 'm/s' },
         { label: '竖直位移 y', value: y, unit: 'm' },
+        { label: '结局', value: tHit < tExit ? '打在极板上' : '射出电场', unit: '' },
       ]
     }
     case 'anim-capacitor': {

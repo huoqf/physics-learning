@@ -59,11 +59,24 @@ describe('buildPhysicsQuantities', () => {
     expect(find(qs, '方向')).toBe('指向负电荷')
   })
 
-  it('带电粒子在匀强电场：a=qE/m，竖直位移 y=½at²', () => {
-    // E=10×10³, q=2×10⁻⁶, m=5×10⁻⁶ → a = qE/m = (2e-6*1e4)/5e-6 = 4000
-    const qs = buildPhysicsQuantities('anim-charge-in-efield', { E: 10, q: 2, m: 5, v0: 8 }, 1)
-    expect(find(qs, '加速度') as number).toBeCloseTo(4000, 6)
-    expect(find(qs, '竖直位移') as number).toBeCloseTo(2000, 6)
+  it('带电粒子在匀强电场：偏转电场模型 a=qE/m（合理量级）', () => {
+    // E=10×10³N/C, q=5μC, m=200mg → a = qE/m = (5e-6*1e4)/200e-6 = 250 m/s²
+    const qs = buildPhysicsQuantities('anim-charge-in-efield', { E: 10, q: 5, m: 200, v0: 20 }, 0)
+    expect(find(qs, '加速度') as number).toBeCloseTo(250, 6)
+    expect(find(qs, '初速度') as number).toBe(20)
+  })
+
+  it('带电粒子：默认参数下射出电场（偏转有界，vy < v0）', () => {
+    // t 取很大，应被钳到 tEnd；默认 a=250,v0=20,L=0.4 → tExit=0.02s, y=5cm, vy=5 < v0
+    const qs = buildPhysicsQuantities('anim-charge-in-efield', { E: 10, q: 5, m: 200, v0: 20 }, 999)
+    expect(find(qs, '结局')).toBe('射出电场')
+    expect(find(qs, '竖直速度') as number).toBeLessThan(20)
+    expect(find(qs, '竖直位移') as number).toBeCloseTo(0.05, 6)
+  })
+
+  it('带电粒子：强场+慢速 → 打在极板上', () => {
+    const qs = buildPhysicsQuantities('anim-charge-in-efield', { E: 20, q: 10, m: 50, v0: 10 }, 999)
+    expect(find(qs, '结局')).toBe('打在极板上')
   })
 
   it('电容器：增大 εᵣ 电容增大', () => {
