@@ -169,6 +169,59 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     knowledgeId: 'mechanics-8-5',
     Component: lazy(() => import('@/features/mechanics/CollisionAnimation')),
     defaultParams: { m1: 2, m2: 3, v1: 5, v2: -2, isElastic: 1 }
+  },
+
+  // ===== 电磁学 · 静电场（[M4-1]）=====
+  'anim-coulomb-law': {
+    id: 'anim-coulomb-law',
+    title: '库仑定律',
+    knowledgeId: 'electricity-1-1',
+    Component: lazy(() => import('@/features/electromagnetism/CoulombLaw')),
+    defaultParams: { q1: 2, q2: -3, r: 4 }
+  },
+  'anim-electric-field': {
+    id: 'anim-electric-field',
+    title: '点电荷电场强度',
+    knowledgeId: 'electricity-1-2',
+    Component: lazy(() => import('@/features/electromagnetism/ElectricField')),
+    defaultParams: { q: 5, rTest: 3 }
+  },
+  'anim-charge-in-efield': {
+    id: 'anim-charge-in-efield',
+    title: '带电粒子在匀强电场中运动',
+    knowledgeId: 'electricity-1-3',
+    Component: lazy(() => import('@/features/electromagnetism/ChargeInEField')),
+    defaultParams: { E: 10, q: 2, m: 5, v0: 8, t: 0 }
+  },
+  'anim-capacitor': {
+    id: 'anim-capacitor',
+    title: '平行板电容器',
+    knowledgeId: 'electricity-1-4',
+    Component: lazy(() => import('@/features/electromagnetism/Capacitor')),
+    defaultParams: { S: 100, d: 5, epsilon_r: 1, U: 12 }
+  },
+
+  // ===== 电磁学 · 恒定电流（[M4-1]）=====
+  'anim-ohm-law': {
+    id: 'anim-ohm-law',
+    title: '欧姆定律',
+    knowledgeId: 'electricity-2-1',
+    Component: lazy(() => import('@/features/electromagnetism/OhmLaw')),
+    defaultParams: { U: 6, R: 3 }
+  },
+  'anim-circuit-analysis': {
+    id: 'anim-circuit-analysis',
+    title: '串并联电路',
+    knowledgeId: 'electricity-2-2',
+    Component: lazy(() => import('@/features/electromagnetism/CircuitAnalysis')),
+    defaultParams: { U: 12, R1: 4, R2: 2, mode: 0 }
+  },
+  'anim-closed-circuit': {
+    id: 'anim-closed-circuit',
+    title: '闭合电路欧姆定律',
+    knowledgeId: 'electricity-2-3',
+    Component: lazy(() => import('@/features/electromagnetism/ClosedCircuit')),
+    defaultParams: { EMF: 6, r: 1, R: 5 }
   }
 }
 

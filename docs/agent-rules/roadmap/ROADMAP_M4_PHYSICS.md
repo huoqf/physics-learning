@@ -18,19 +18,22 @@
 ### 纯函数库 src/physics/electromagnetism.ts
 
 - [x] calculateCoulombForce(k, q1, q2, r) → { F }   // ⚠️ 已在 src/physics/dynamics.ts 实现，直接复用，禁止重复定义
-- [ ] calculateElectricField(k, q, r) → { E }
-- [ ] calculateElectricPotential(k, q, r) → { V }
-- [ ] calculateCapacitor(epsilon, S, d) → { C }
-- [ ] calculateOhmLaw(U, R) → { I }
-- [ ] calculateSeriesResistance(Rs: number[]) → { R_total }
-- [ ] calculateParallelResistance(Rs: number[]) → { R_total }
-- [ ] calculateClosedCircuit(EMF, r, R_ext) → { I, U_terminal, P_output, P_total, eta }
-- [ ] calculateAmpereForce(B, I, L, angleDeg) → { F }
-- [ ] calculateLorentzForce(q, v, B, angleDeg) → { F }
-- [ ] calculateChargeInMagField(q, m, v, B) → { r, T, omega }   // 带电粒子圆周
-- [ ] calculateFaradayEMF(N, dPhi_dt) → { EMF }
-- [ ] calculateTransformer(n1, n2, U1, I1) → { U2, I2 }
-- [ ] calculateACRMS(V_peak) → { V_rms, I_rms }
+- [x] calculateElectricField(k, q, r) → { E }
+- [x] calculateElectricPotential(k, q, r) → { V }
+- [x] calculateCapacitor(epsilon, S, d) → { C }
+- [x] calculateOhmLaw(U, R) → { I }
+- [x] calculateSeriesResistance(Rs: number[]) → { R_total }
+- [x] calculateParallelResistance(Rs: number[]) → { R_total }   // 空数组/含0电阻返回 0
+- [x] calculateClosedCircuit(EMF, r, R_ext) → { I, U_terminal, P_output, P_total, eta }
+- [x] calculateAmpereForce(B, I, L, angleDeg) → { F }
+- [x] calculateLorentzForce(q, v, B, angleDeg) → { F }
+- [x] calculateChargeInMagField(q, m, v, B) → { r, T, omega }   // 带电粒子圆周，含除零保护
+- [x] calculateFaradayEMF(N, dPhi_dt) → { EMF }
+- [x] calculateTransformer(n1, n2, U1, I1) → { U2, I2 }
+- [x] calculateACRMS(V_peak) → { V_rms, I_rms }
+
+> ✅ 2026-05-30：电磁学纯函数库 `src/physics/electromagnetism.ts` 完成（13 个新函数 + 复用库仑力），
+> 16 项单测通过。组件实现待后续分步推进。
 
 ### 知识点 + 组件
 
@@ -46,20 +49,23 @@
 | 带电粒子在匀强电场中运动 | ⭐⭐⭐⭐⭐ | ChargeInEField |
 | 电容器（C=Q/U） | ⭐⭐⭐⭐ | Capacitor |
 
-- [ ] **CoulombLaw.tsx** — 两点电荷间引力/斥力，距离/电量可调，平方反比可视化
-- [ ] **ElectricField.tsx** — 点电荷/匀强电场强度分布，矢量场可视化（PixiJS粒子辅助）
+- [x] **CoulombLaw.tsx** — 两点电荷间引力/斥力，距离/电量可调，同号斥/异号吸，F 实时计算（复用 calculateCoulombForce）
+- [x] **ElectricField.tsx** — 点电荷电场线（放射状，正向外/负向内）+ 试探点 P 场强，平方反比说明（calculateElectricField）
 - [ ] **FieldLines.tsx** — 电场线+等势面，同种/异种电荷对，可交互放置试探电荷
 - [ ] **ElectricPotential.tsx**
   - 电势分布三维色图，等势面与电场线垂直关系
   - 高考要点：沿电场线方向电势降低；等势面上移动电荷电场力不做功
-- [ ] **ChargeInEField.tsx**
-  - 带电粒子进入匀强电场（类平抛）：水平匀速+竖直加速
-  - 参数：电场强度E、粒子质量m、电荷量q、初速度v0
-  - 偏转角计算，打屏位置计算（示波管/质谱仪模型）
+- [x] **ChargeInEField.tsx**
+  - 带电粒子进入匀强电场（类平抛）：水平匀速+竖直加速，平行板模型 + 轨迹 + 速度分量，到达板端自动暂停
+  - 参数：电场强度E、粒子质量m、电荷量q、初速度v0；a=qE/m
   - 高考要点：与平抛运动类比，水平方向匀速，竖直方向匀加速
-- [ ] **Capacitor.tsx**
-  - 平行板电容器：C=ε₀S/d，改变S/d/介质时C和U的变化
-  - 高考要点：接电源时U不变C变则Q变；断开电源时Q不变C变则U变
+- [x] **Capacitor.tsx**
+  - 平行板电容器：C=εS/d（含相对介电常数 εᵣ），改变S/d/介质时 C 与 Q=CU 实时变化（calculateCapacitor）
+  - 高考要点：d↑→C↓；S↑→C↑；插入电介质 εᵣ↑→C↑
+
+> ✅ 2026-05-30：静电场高频 4 组件完成（CoulombLaw/ElectricField/ChargeInEField/Capacitor），
+> 注册表 + 知识点（electricity-1-1~1-4）+ 参数面板 + 物理量看板均接线，按需懒加载。
+> FieldLines / ElectricPotential 留待后续（电场线密集可视化将评估是否引入 PixiJS）。
 
 #### 恒定电流（⭐⭐⭐⭐⭐ 高考必考）
 
@@ -72,18 +78,20 @@
 | 电功与电功率 | ⭐⭐⭐⭐⭐ | ElectricPower |
 | 安培表/电压表内外接法 | ⭐⭐⭐⭐ | MeterConnection |
 
-- [ ] **OhmLaw.tsx** — U-I图像，线性关系，温度对电阻影响（非欧姆元件对比）
+- [x] **OhmLaw.tsx** — U-I 图像（过原点直线，斜率 1/R），工作点投影，calculateOhmLaw
 - [ ] **ResistivityLaw.tsx** — R=ρL/S，改变长度/截面积/材料，实时显示电阻值
-- [ ] **CircuitAnalysis.tsx**
-  - 串联：I相同，U按R分配，R总=ΣR
-  - 并联：U相同，I按1/R分配，1/R总=Σ(1/R)
-  - 混联电路化简步骤展示
-- [ ] **ClosedCircuit.tsx**
-  - 闭合电路：I=EMF/(R+r)，路端电压U=EMF-Ir
-  - 外电阻变化时各量动态变化，效率 η=P外/P总
-  - 高考要点：短路时I最大U=0；断路时I=0U=EMF
+- [x] **CircuitAnalysis.tsx**
+  - 串联：I相同，U按R分配，R总=ΣR；并联：U相同，I按1/R分配，1/R总=Σ(1/R)
+  - 串/并联可切换（mode 参数），电路示意图 + 各元件 I/U 实时标注
+- [x] **ClosedCircuit.tsx**
+  - 闭合电路：I=EMF/(R+r)，路端电压U=EMF-Ir，效率 η=P出/P总（含效率条）
+  - calculateClosedCircuit；高考要点：短路时I最大U=0
 - [ ] **ElectricPower.tsx** — P=UI=I²R=U²/R，焦耳热Q=I²Rt，额定功率vs实际功率
 - [ ] **MeterConnection.tsx** — 安培表内接/外接误差分析，选择方法（R被测大用外接）
+
+> ✅ 2026-05-30：恒定电流高频 3 组件完成（OhmLaw/CircuitAnalysis/ClosedCircuit），
+> 知识点 electricity-2-1~2-3 + 注册表 + 参数面板 + 物理量看板全接线。
+> ResistivityLaw / ElectricPower / MeterConnection 留待后续。
 
 #### 磁场（⭐⭐⭐⭐⭐ 高考重点）
 

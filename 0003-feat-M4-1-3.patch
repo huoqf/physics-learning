@@ -1,0 +1,606 @@
+From 1db165a8798f833b2540861f4b7bffcb15e146ff Mon Sep 17 00:00:00 2001
+From: agent <agent@local>
+Date: Sat, 30 May 2026 09:25:16 +0000
+Subject: [PATCH 3/3] =?UTF-8?q?feat:=20=E6=96=B0=E5=A2=9E=E6=81=92?=
+ =?UTF-8?q?=E5=AE=9A=E7=94=B5=E6=B5=81=E5=8A=A8=E7=94=BB=E7=BB=84=E4=BB=B6?=
+ =?UTF-8?q?=EF=BC=88M4-1=20=E7=AC=AC=203=20=E6=AD=A5=EF=BC=89?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+[M4] 分步推进第三步：实现恒定电流高频 3 个 SVG 动画组件，复用电磁学
+纯函数库。遵循 useCanvasSize + theme token 约定，未引入新依赖。关联 M4-1。
+
+新增组件 src/features/electromagnetism/:
+- OhmLaw：U-I 图像（过原点直线，斜率 1/R），工作点投影，calculateOhmLaw
+- CircuitAnalysis：串/并联可切换（mode），电路示意 + 各元件 I/U 标注，
+  calculateSeries/ParallelResistance
+- ClosedCircuit：I=EMF/(R+r)、路端电压、效率条，calculateClosedCircuit
+
+接线:
+- knowledgeTree 新增电磁学第2章知识点 electricity-2-1~2-3
+- animationRegistry 新增 3 条 lazy 注册
+- AnimationPage 补 3 组参数面板；physicsQuantities 补 3 个 case（调 physics 纯函数）
+
+测试:
+- 新增 physicsQuantities 恒定电流用例 3 项（共 83）
+
+文档:
+- 更新 PROCESS_LOG、ROADMAP_M4（勾选 3 组件）、ROADMAP_PROGRESS
+
+验证: lint 0 警告 / tsc -b 通过 / vitest 83 通过 / vite build 成功（3 动画独立 chunk）
+---
+ docs/agent-rules/process/PROCESS_LOG.md       |   1 +
+ .../agent-rules/roadmap/ROADMAP_M4_PHYSICS.md |  20 ++--
+ docs/agent-rules/roadmap/ROADMAP_PROGRESS.md  |   5 +-
+ src/data/animationRegistry.ts                 |  23 ++++
+ src/data/knowledgeTree.ts                     |  32 ++++++
+ src/data/physicsQuantities.ts                 |  49 +++++++++
+ .../electromagnetism/CircuitAnalysis.tsx      | 101 ++++++++++++++++++
+ .../electromagnetism/ClosedCircuit.tsx        |  66 ++++++++++++
+ src/features/electromagnetism/OhmLaw.tsx      |  87 +++++++++++++++
+ src/features/electromagnetism/index.ts        |   3 +
+ src/pages/AnimationPage.tsx                   |  16 +++
+ tests/data/physicsQuantities.test.ts          |  22 ++++
+ 12 files changed, 414 insertions(+), 11 deletions(-)
+ create mode 100644 src/features/electromagnetism/CircuitAnalysis.tsx
+ create mode 100644 src/features/electromagnetism/ClosedCircuit.tsx
+ create mode 100644 src/features/electromagnetism/OhmLaw.tsx
+
+diff --git a/docs/agent-rules/process/PROCESS_LOG.md b/docs/agent-rules/process/PROCESS_LOG.md
+index eaf1962..6c19d57 100644
+--- a/docs/agent-rules/process/PROCESS_LOG.md
++++ b/docs/agent-rules/process/PROCESS_LOG.md
+@@ -55,6 +55,7 @@
+ 
+ | 日期 | 作者 | 里程碑 | 修改内容 | 影响文件 | 关联issue |
+ |------|------|--------|---------|---------|----------|
++| 2026-05-30 | agent | M4 | M4-1 恒定电流组件（分步推进第 3 步）：新增 src/features/electromagnetism/ 3 个 SVG 动画——OhmLaw（U-I 图像，过原点直线斜率 1/R，工作点投影，calculateOhmLaw）、CircuitAnalysis（串/并联可切换 mode，电路示意 + 各元件 I/U 标注，calculateSeries/ParallelResistance）、ClosedCircuit（I=EMF/(R+r)、路端电压、效率条，calculateClosedCircuit）；knowledgeTree 新增电磁学第2章知识点 electricity-2-1~2-3（importance gaokao），animationRegistry 新增 3 条 lazy 注册（anim-ohm-law/circuit-analysis/closed-circuit），AnimationPage 补 3 组参数面板，physicsQuantities 补 3 个 case（调 physics 纯函数）；全部遵循 useCanvasSize + theme token 约定，未引入新依赖。新增 physicsQuantities 测试 3 项（共 83）。验证：lint 0 警告 / tsc 通过 / vitest 83 通过 / build 成功（3 动画各自独立 chunk） | `src/features/electromagnetism/OhmLaw.tsx`, `src/features/electromagnetism/CircuitAnalysis.tsx`, `src/features/electromagnetism/ClosedCircuit.tsx`, `src/features/electromagnetism/index.ts`, `src/data/knowledgeTree.ts`, `src/data/animationRegistry.ts`, `src/pages/AnimationPage.tsx`, `src/data/physicsQuantities.ts`, `tests/data/physicsQuantities.test.ts` | M4-1 |
+ | 2026-05-30 | agent | M4 | M4-1 静电场组件（分步推进第 2 步）：创建 src/features/electromagnetism/ 4 个 SVG 动画组件——CoulombLaw（库仑力，同号斥/异号吸，调电量与间距，复用 calculateCoulombForce）、ElectricField（点电荷放射状电场线 + 试探点场强，calculateElectricField）、ChargeInEField（类平抛：平行板 + 匀强电场线 + 轨迹 + 速度分量，a=qE/m，到达板端自动暂停，用 useAnimationStore 时间驱动）、Capacitor（C=εS/d 含介质 εᵣ，实时 C 与 Q=CU，calculateCapacitor）；全部遵循 useCanvasSize + theme token + showVectors/showFormulas/showGrid 约定；knowledgeTree 新增电磁学第1章 4 个知识点（electricity-1-1~1-4，importance gaokao/core），animationRegistry 新增 4 条 lazy 注册（anim-coulomb-law/electric-field/charge-in-efield/capacitor），AnimationPage 补 4 组参数面板，physicsQuantities 补 4 个 case（调用 physics 纯函数）；KnowledgeTree 章节排序改为先按模块（力学→电磁→热→光→原子）再按章号，避免电磁第1章与力学第1章混排；未引入新依赖（电场线密集可视化时再评估 PixiJS）。新增 physicsQuantities 测试 4 项（共 80）。验证：lint 0 警告 / tsc 通过 / vitest 80 通过 / build 成功（4 个动画各自独立 chunk） | `src/features/electromagnetism/CoulombLaw.tsx`, `src/features/electromagnetism/ElectricField.tsx`, `src/features/electromagnetism/ChargeInEField.tsx`, `src/features/electromagnetism/Capacitor.tsx`, `src/features/electromagnetism/index.ts`, `src/features/index.ts`, `src/data/knowledgeTree.ts`, `src/data/animationRegistry.ts`, `src/pages/AnimationPage.tsx`, `src/data/physicsQuantities.ts`, `src/features/knowledge/KnowledgeTree.tsx`, `tests/data/physicsQuantities.test.ts` | M4-1 |
+ | 2026-05-30 | agent | M4 | M4-1 电磁学纯函数库（分步推进第 1 步）：创建 src/physics/electromagnetism.ts，实现 13 个 SI 单位纯函数——electricField(E=kq/r²)、electricPotential(V=kq/r)、capacitor(C=εS/d)、ohmLaw(I=U/R)、series/parallelResistance（并联含空数组/零电阻保护）、closedCircuit(I/U端/P出/P总/η)、ampereForce(BILsinθ)、lorentzForce(qvBsinθ)、chargeInMagField(r=mv/qB,T,ω，含除零保护)、faradayEMF(NΔΦ/Δt)、transformer(理想变压器 U/I)、acRMS(峰值/√2)；库仑力复用 dynamics.ts 不重复定义（遵守规范）；physics/index.ts 导出；新增 16 项单测（共 76）。未引入新依赖（PixiJS 留待电磁场粒子组件时申报）。验证：lint 0 警告 / tsc 通过 / vitest 76 通过 / build 成功 | `src/physics/electromagnetism.ts`, `src/physics/index.ts`, `tests/physics/electromagnetism.test.ts` | M4-1 |
+ | 2026-05-30 | agent | M3 | 完成 M3-5 练习与测试模式（[M3] 收官）：①因题目为分步解析式（无客观选项/标准答案）采用自评式答题——PracticeSession 会话组件支持练习模式（提示按钮+随时看解析）与测试模式（正计时可暂停+提交后才揭示），自评对错联动 useWrongStore（答错 addWrong/答对 recordCorrect），并激活此前未接线的 useProblemStore 管理会话状态（currentStep/currentProblem）；②新增 usePracticeStore 成绩历史 store（ScoreRecord：mode/total/correct/durationSec/wrongProblemIds/byModule，经 storage IndexedDB 持久化，最多 50 条）；③ScoreReport 成绩报告组件（总分+正确率+用时、各模块正确率条形图、薄弱知识点来自错题关联知识点并一键跳转复习动画）；④PracticePage 重写为入口（模式选择卡、按模块/难度筛选、成绩历史列表、浏览全部真题），mode 经 ?mode= query 驱动会话。新增 usePracticeStore 测试 4 项（共 60）。验证：lint 0 警告 / tsc 通过 / vitest 60 通过 / build 成功 | `src/stores/usePracticeStore.ts`, `src/stores/index.ts`, `src/features/practice/PracticeSession.tsx`, `src/features/practice/index.ts`, `src/features/index.ts`, `src/components/UI/ScoreReport.tsx`, `src/components/UI/index.ts`, `src/pages/PracticePage.tsx`, `tests/stores/usePracticeStore.test.ts` | M3-5 |
+diff --git a/docs/agent-rules/roadmap/ROADMAP_M4_PHYSICS.md b/docs/agent-rules/roadmap/ROADMAP_M4_PHYSICS.md
+index 8a7aff9..d16d688 100644
+--- a/docs/agent-rules/roadmap/ROADMAP_M4_PHYSICS.md
++++ b/docs/agent-rules/roadmap/ROADMAP_M4_PHYSICS.md
+@@ -78,19 +78,21 @@
+ | 电功与电功率 | ⭐⭐⭐⭐⭐ | ElectricPower |
+ | 安培表/电压表内外接法 | ⭐⭐⭐⭐ | MeterConnection |
+ 
+-- [ ] **OhmLaw.tsx** — U-I图像，线性关系，温度对电阻影响（非欧姆元件对比）
++- [x] **OhmLaw.tsx** — U-I 图像（过原点直线，斜率 1/R），工作点投影，calculateOhmLaw
+ - [ ] **ResistivityLaw.tsx** — R=ρL/S，改变长度/截面积/材料，实时显示电阻值
+-- [ ] **CircuitAnalysis.tsx**
+-  - 串联：I相同，U按R分配，R总=ΣR
+-  - 并联：U相同，I按1/R分配，1/R总=Σ(1/R)
+-  - 混联电路化简步骤展示
+-- [ ] **ClosedCircuit.tsx**
+-  - 闭合电路：I=EMF/(R+r)，路端电压U=EMF-Ir
+-  - 外电阻变化时各量动态变化，效率 η=P外/P总
+-  - 高考要点：短路时I最大U=0；断路时I=0U=EMF
++- [x] **CircuitAnalysis.tsx**
++  - 串联：I相同，U按R分配，R总=ΣR；并联：U相同，I按1/R分配，1/R总=Σ(1/R)
++  - 串/并联可切换（mode 参数），电路示意图 + 各元件 I/U 实时标注
++- [x] **ClosedCircuit.tsx**
++  - 闭合电路：I=EMF/(R+r)，路端电压U=EMF-Ir，效率 η=P出/P总（含效率条）
++  - calculateClosedCircuit；高考要点：短路时I最大U=0
+ - [ ] **ElectricPower.tsx** — P=UI=I²R=U²/R，焦耳热Q=I²Rt，额定功率vs实际功率
+ - [ ] **MeterConnection.tsx** — 安培表内接/外接误差分析，选择方法（R被测大用外接）
+ 
++> ✅ 2026-05-30：恒定电流高频 3 组件完成（OhmLaw/CircuitAnalysis/ClosedCircuit），
++> 知识点 electricity-2-1~2-3 + 注册表 + 参数面板 + 物理量看板全接线。
++> ResistivityLaw / ElectricPower / MeterConnection 留待后续。
++
+ #### 磁场（⭐⭐⭐⭐⭐ 高考重点）
+ 
+ | 知识点 | 频率 | 组件 |
+diff --git a/docs/agent-rules/roadmap/ROADMAP_PROGRESS.md b/docs/agent-rules/roadmap/ROADMAP_PROGRESS.md
+index 57422de..2420c07 100644
+--- a/docs/agent-rules/roadmap/ROADMAP_PROGRESS.md
++++ b/docs/agent-rules/roadmap/ROADMAP_PROGRESS.md
+@@ -35,14 +35,15 @@
+ 
+ - **当前里程碑**：[M4] 电磁/热/光/原子模块 🚧 进行中（分步推进）
+ - **M4-1 电磁学纯函数库完成（2026-05-30）**：src/physics/electromagnetism.ts 实现 13 个纯函数（电场/电势/电容/欧姆/串并联/闭合电路/安培力/洛伦兹力/磁场圆周/法拉第/变压器/交流有效值），库仑力复用 dynamics.ts；新增 16 项单测
+-- **M4-1 静电场组件完成（2026-05-30）**：CoulombLaw / ElectricField / ChargeInEField（类平抛，自动暂停）/ Capacitor 四个 SVG 动画 + 知识点 electricity-1-1~1-4 + 注册表 + 参数面板 + 物理量看板全接线；KnowledgeTree 按模块分组排序。新增 4 项测试（共 80）。下一步：恒定电流 / 磁场 / 电磁感应等组件
++- **M4-1 静电场组件完成（2026-05-30）**：CoulombLaw / ElectricField / ChargeInEField（类平抛，自动暂停）/ Capacitor 四个 SVG 动画 + 知识点 electricity-1-1~1-4 + 全接线；KnowledgeTree 按模块分组排序。新增 4 项测试
++- **M4-1 恒定电流组件完成（2026-05-30）**：OhmLaw（U-I 图像）/ CircuitAnalysis（串并联可切换）/ ClosedCircuit（闭合电路+效率）三个 SVG 动画 + 知识点 electricity-2-1~2-3 + 注册表 + 参数面板 + 物理量看板全接线。新增 3 项测试（共 83）。下一步：磁场 / 电磁感应等组件
+ - **质量闸门治理（2026-05-30，归属 [M2]）**：完成 ESLint 9 flat config 迁移（#BUG-005，`npm run lint` 恢复并 0 警告）、动画注册表单一数据源重构（#BUG-006，消除 componentPath/animationComponents 双映射与 anim-impulse 错配）、动画懒加载分包（#PERF-007，主 bundle 676→596kB）。详见 `process/PROCESS_LOG.md`
+ - **架构改进六项（2026-05-30，归属 [M2]/[M3]）**：路由级代码分割+vendor manualChunks（#PERF-008，主 bundle 596→191.89kB，消除大包警告）、ErrorBoundary 错误边界（#BUG-009）、useAnimationFrame 按实例动画 Hook（#REFACTOR-010）、useCanvasSize 消除 24 动画样板（#REFACTOR-011）、物理量计算下沉至 data/physicsQuantities + physics/constants 消除硬编码 g（#REFACTOR-012）、PracticePage/WrongPage 接线激活题库与 useWrongStore 死代码（#BUG-013，完成 M3-4 错题本主体）。新增 15 项测试（共 48）。详见 `process/PROCESS_LOG.md`
+ - **M3-4 错题管理系统完成（2026-05-30）**：按 ui/05_WRONGBOOK_RULES 重写 useWrongStore（WrongRecord 四态 + IndexedDB 持久化 hydrate）、WrongPage 完整实现（统计面板/三类筛选/三种排序/已掌握折叠/右键菜单/删除二次确认/笔记 Modal/空态）、AnalysisPage 集成加入错题本入口。新增 8 项测试（共 56）。M3-4 主流程完整，答题自动判错判对待 M3-5 接入
+ - **当前任务**：M3-3 KaTeX 离线集成验证已完成，同时发现并修复知识树数据缺失 BUG
+ - **已完成**：M3-1 完成 — 创建 analysisRegistry.ts 题目解析注册表、problems/ 目录结构（6个分类22道力学真题）；M3-2 完成 — AnalysisPage 完整实现（题干区/分步解析区/知识链路区/步骤导航）；M3-3 完成 — KatexFormula 组件改用 mode 属性（inline/block），符合 UI 规范，KaTeX CSS 与字体全部离线打包验证通过；**关键修复** — 填充 knowledgeTree.ts 力学8章共35个知识节点，与 animationRegistry 23个动画完整关联，knowledgeIndex 索引正确构建
+ - **M3-5 练习与测试模式完成（2026-05-30）**：自评式答题会话 PracticeSession（练习/测试双模式、计时器、提示、揭示解析、自评联动 useWrongStore 自动判错判对）、PracticePage 入口（模式选择+筛选+成绩历史+浏览真题）、ScoreReport 成绩报告（总分/各模块正确率/薄弱知识点跳转）、新增 usePracticeStore（成绩历史 IndexedDB 持久化）、激活此前未接线的 useProblemStore。新增 4 项测试（共 60）。**[M3] 全部完成**
+-- **下一步**：M4-1 继续——恒定电流（OhmLaw/CircuitAnalysis/ClosedCircuit 等）或磁场（AmpereForce/LorentzForce/ChargeInBField）组件（纯函数已就绪）
++- **下一步**：M4-1 继续——磁场组件（AmpereForce/LorentzForce/ChargeInBField，纯函数已就绪）或电磁感应（FaradayLaw/LenzsLaw/CuttingEMF）
+ 
+ ---
+ 
+diff --git a/src/data/animationRegistry.ts b/src/data/animationRegistry.ts
+index 267a6b6..770da6e 100644
+--- a/src/data/animationRegistry.ts
++++ b/src/data/animationRegistry.ts
+@@ -199,6 +199,29 @@ export const animationRegistry: Record<string, AnimationConfig> = {
+     knowledgeId: 'electricity-1-4',
+     Component: lazy(() => import('@/features/electromagnetism/Capacitor')),
+     defaultParams: { S: 100, d: 5, epsilon_r: 1, U: 12 }
++  },
++
++  // ===== 电磁学 · 恒定电流（[M4-1]）=====
++  'anim-ohm-law': {
++    id: 'anim-ohm-law',
++    title: '欧姆定律',
++    knowledgeId: 'electricity-2-1',
++    Component: lazy(() => import('@/features/electromagnetism/OhmLaw')),
++    defaultParams: { U: 6, R: 3 }
++  },
++  'anim-circuit-analysis': {
++    id: 'anim-circuit-analysis',
++    title: '串并联电路',
++    knowledgeId: 'electricity-2-2',
++    Component: lazy(() => import('@/features/electromagnetism/CircuitAnalysis')),
++    defaultParams: { U: 12, R1: 4, R2: 2, mode: 0 }
++  },
++  'anim-closed-circuit': {
++    id: 'anim-closed-circuit',
++    title: '闭合电路欧姆定律',
++    knowledgeId: 'electricity-2-3',
++    Component: lazy(() => import('@/features/electromagnetism/ClosedCircuit')),
++    defaultParams: { EMF: 6, r: 1, R: 5 }
+   }
+ }
+ 
+diff --git a/src/data/knowledgeTree.ts b/src/data/knowledgeTree.ts
+index 905b842..169cb55 100644
+--- a/src/data/knowledgeTree.ts
++++ b/src/data/knowledgeTree.ts
+@@ -400,6 +400,38 @@ export const knowledgeTree: KnowledgeNode[] = [
+     problemIds: [],
+     prerequisites: ['electricity-1-2'],
+   },
++
++  // ===== 电磁学 · 第2章 恒定电流（[M4-1]）=====
++  {
++    id: 'electricity-2-1',
++    title: '欧姆定律 I=U/R',
++    chapter: '电磁学 第2章 恒定电流',
++    module: 'electricity',
++    importance: 'gaokao',
++    animationIds: ['anim-ohm-law'],
++    problemIds: [],
++    prerequisites: ['electricity-1-2'],
++  },
++  {
++    id: 'electricity-2-2',
++    title: '串并联电路',
++    chapter: '电磁学 第2章 恒定电流',
++    module: 'electricity',
++    importance: 'gaokao',
++    animationIds: ['anim-circuit-analysis'],
++    problemIds: [],
++    prerequisites: ['electricity-2-1'],
++  },
++  {
++    id: 'electricity-2-3',
++    title: '闭合电路欧姆定律',
++    chapter: '电磁学 第2章 恒定电流',
++    module: 'electricity',
++    importance: 'gaokao',
++    animationIds: ['anim-closed-circuit'],
++    problemIds: [],
++    prerequisites: ['electricity-2-1'],
++  },
+ ]
+ 
+ export const knowledgeIndex: Record<string, KnowledgeNode> = {}
+diff --git a/src/data/physicsQuantities.ts b/src/data/physicsQuantities.ts
+index fd0945b..7c8977e 100644
+--- a/src/data/physicsQuantities.ts
++++ b/src/data/physicsQuantities.ts
+@@ -19,6 +19,10 @@ import {
+   calculateCoulombForce,
+   calculateElectricField,
+   calculateCapacitor,
++  calculateOhmLaw,
++  calculateSeriesResistance,
++  calculateParallelResistance,
++  calculateClosedCircuit,
+ } from '@/physics'
+ 
+ const COULOMB_K = 9e9
+@@ -227,6 +231,51 @@ export function buildPhysicsQuantities(
+         { label: '电荷量 Q', value: C * U * 1e9, unit: 'nC' },
+       ]
+     }
++    case 'anim-ohm-law': {
++      const U = params.U ?? 6
++      const R = params.R ?? 3
++      const { I } = calculateOhmLaw(U, R)
++      return [
++        ...base,
++        { label: '电压 U', value: U, unit: 'V' },
++        { label: '电阻 R', value: R, unit: 'Ω' },
++        { label: '电流 I', value: I, unit: 'A' },
++      ]
++    }
++    case 'anim-circuit-analysis': {
++      const U = params.U ?? 12
++      const R1 = params.R1 ?? 4
++      const R2 = params.R2 ?? 2
++      const series = (params.mode ?? 0) < 0.5
++      const Rtotal = series
++        ? calculateSeriesResistance([R1, R2]).R_total
++        : calculateParallelResistance([R1, R2]).R_total
++      const Itotal = Rtotal > 0 ? calculateOhmLaw(U, Rtotal).I : 0
++      return [
++        ...base,
++        { label: '连接方式', value: series ? '串联' : '并联', unit: '' },
++        { label: '电阻 R₁', value: R1, unit: 'Ω' },
++        { label: '电阻 R₂', value: R2, unit: 'Ω' },
++        { label: '总电阻 R总', value: Rtotal, unit: 'Ω' },
++        { label: '总电流 I总', value: Itotal, unit: 'A' },
++      ]
++    }
++    case 'anim-closed-circuit': {
++      const EMF = params.EMF ?? 6
++      const r = params.r ?? 1
++      const R = params.R ?? 5
++      const { I, U_terminal, P_output, eta } = calculateClosedCircuit(EMF, r, R)
++      return [
++        ...base,
++        { label: '电动势 EMF', value: EMF, unit: 'V' },
++        { label: '内阻 r', value: r, unit: 'Ω' },
++        { label: '外电阻 R', value: R, unit: 'Ω' },
++        { label: '电流 I', value: I, unit: 'A' },
++        { label: '路端电压 U', value: U_terminal, unit: 'V' },
++        { label: '输出功率 P出', value: P_output, unit: 'W' },
++        { label: '效率 η', value: eta * 100, unit: '%' },
++      ]
++    }
+     default:
+       return [
+         ...base,
+diff --git a/src/features/electromagnetism/CircuitAnalysis.tsx b/src/features/electromagnetism/CircuitAnalysis.tsx
+new file mode 100644
+index 0000000..a42631a
+--- /dev/null
++++ b/src/features/electromagnetism/CircuitAnalysis.tsx
+@@ -0,0 +1,101 @@
++import { useCanvasSize } from '@/utils'
++import { useAnimationStore } from '@/stores'
++import { calculateSeriesResistance, calculateParallelResistance, calculateOhmLaw } from '@/physics'
++import { PHYSICS_COLORS } from '@/theme/physicsColors'
++
++/**
++ * 串并联电路：串联 I 相同、U 按 R 分配；并联 U 相同、I 按 1/R 分配。
++ * 参数：U(电源,V) / R1 / R2 / mode(0=串联 1=并联)
++ */
++export default function CircuitAnalysis() {
++  const { params, showFormulas } = useAnimationStore()
++  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 420 })
++
++  const { U = 12, R1 = 4, R2 = 2, mode = 0 } = params
++  const series = mode < 0.5
++
++  const Rtotal = series
++    ? calculateSeriesResistance([R1, R2]).R_total
++    : calculateParallelResistance([R1, R2]).R_total
++  const Itotal = Rtotal > 0 ? calculateOhmLaw(U, Rtotal).I : 0
++
++  // 各元件电流/电压
++  let I1: number, I2: number, U1: number, U2: number
++  if (series) {
++    I1 = I2 = Itotal
++    U1 = I1 * R1
++    U2 = I2 * R2
++  } else {
++    U1 = U2 = U
++    I1 = calculateOhmLaw(U, R1).I
++    I2 = calculateOhmLaw(U, R2).I
++  }
++
++  const cy = canvasSize.height / 2
++  const battColor = PHYSICS_COLORS.forceNet
++  const wire = PHYSICS_COLORS.labelText
++
++  // 简化电路示意：电源在左侧，两电阻按模式排布
++  const Resistor = ({ x, y, w, label, r, i, u }: { x: number; y: number; w: number; label: string; r: number; i: number; u: number }) => (
++    <g>
++      <rect x={x} y={y - 12} width={w} height={24} fill="none" stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={2} rx={3} />
++      <text x={x + w / 2} y={y - 18} fontSize="12" fill={PHYSICS_COLORS.labelText} textAnchor="middle">{label} = {r}Ω</text>
++      <text x={x + w / 2} y={y + 30} fontSize="11" fill={PHYSICS_COLORS.electricCurrent} textAnchor="middle">
++        I={i.toFixed(2)}A · U={u.toFixed(1)}V
++      </text>
++    </g>
++  )
++
++  return (
++    <div ref={containerRef} className="w-full h-full">
++      <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
++        {/* 电源 */}
++        <line x1={80} y1={cy - 60} x2={80} y2={cy + 60} stroke={battColor} strokeWidth={3} />
++        <text x={60} y={cy} fontSize="14" fill={battColor} fontWeight="bold">U={U}V</text>
++
++        {series ? (
++          <g>
++            {/* 串联：电源 → R1 → R2 → 回 */}
++            <polyline points={`80,${cy - 60} 200,${cy - 60} 200,${cy - 60}`} fill="none" stroke={wire} strokeWidth={2} />
++            <line x1={80} y1={cy - 60} x2={240} y2={cy - 60} stroke={wire} strokeWidth={2} />
++            <Resistor x={240} y={cy - 60} w={90} label="R₁" r={R1} i={I1} u={U1} />
++            <line x1={330} y1={cy - 60} x2={420} y2={cy - 60} stroke={wire} strokeWidth={2} />
++            <Resistor x={420} y={cy - 60} w={90} label="R₂" r={R2} i={I2} u={U2} />
++            <polyline points={`510,${cy - 60} 600,${cy - 60} 600,${cy + 60} 80,${cy + 60}`} fill="none" stroke={wire} strokeWidth={2} />
++          </g>
++        ) : (
++          <g>
++            {/* 并联：两支路 */}
++            <line x1={80} y1={cy - 60} x2={250} y2={cy - 60} stroke={wire} strokeWidth={2} />
++            <line x1={250} y1={cy - 60} x2={250} y2={cy + 60} stroke={wire} strokeWidth={2} />
++            {/* 支路1 */}
++            <line x1={250} y1={cy - 40} x2={320} y2={cy - 40} stroke={wire} strokeWidth={2} />
++            <Resistor x={320} y={cy - 40} w={90} label="R₁" r={R1} i={I1} u={U1} />
++            <line x1={410} y1={cy - 40} x2={500} y2={cy - 40} stroke={wire} strokeWidth={2} />
++            {/* 支路2 */}
++            <line x1={250} y1={cy + 40} x2={320} y2={cy + 40} stroke={wire} strokeWidth={2} />
++            <Resistor x={320} y={cy + 40} w={90} label="R₂" r={R2} i={I2} u={U2} />
++            <line x1={410} y1={cy + 40} x2={500} y2={cy + 40} stroke={wire} strokeWidth={2} />
++            {/* 汇合 */}
++            <line x1={500} y1={cy - 40} x2={500} y2={cy + 40} stroke={wire} strokeWidth={2} />
++            <polyline points={`500,${cy} 600,${cy} 600,${cy + 60} 80,${cy + 60}`} fill="none" stroke={wire} strokeWidth={2} />
++          </g>
++        )}
++
++        {showFormulas && (
++          <g transform="translate(20, 20)">
++            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">
++              {series ? '串联电路' : '并联电路'}
++            </text>
++            <text x={0} y={22} fontSize="12" fill={PHYSICS_COLORS.axis}>
++              {series ? 'I 相同，U 按 R 分配，R总 = R₁+R₂' : 'U 相同，I 按 1/R 分配，1/R总 = 1/R₁+1/R₂'}
++            </text>
++            <text x={0} y={44} fontSize="13" fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold">
++              R总 = {Rtotal.toFixed(2)} Ω，I总 = {Itotal.toFixed(2)} A
++            </text>
++          </g>
++        )}
++      </svg>
++    </div>
++  )
++}
+diff --git a/src/features/electromagnetism/ClosedCircuit.tsx b/src/features/electromagnetism/ClosedCircuit.tsx
+new file mode 100644
+index 0000000..98ea3fe
+--- /dev/null
++++ b/src/features/electromagnetism/ClosedCircuit.tsx
+@@ -0,0 +1,66 @@
++import { useCanvasSize } from '@/utils'
++import { useAnimationStore } from '@/stores'
++import { calculateClosedCircuit } from '@/physics'
++import { PHYSICS_COLORS } from '@/theme/physicsColors'
++
++/**
++ * 闭合电路欧姆定律 I = EMF/(R+r)，路端电压 U = EMF - Ir，效率 η = P出/P总。
++ * 参数：EMF(电动势,V) / r(内阻,Ω) / R(外电阻,Ω)
++ */
++export default function ClosedCircuit() {
++  const { params, showFormulas } = useAnimationStore()
++  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 420 })
++
++  const { EMF = 6, r = 1, R = 5 } = params
++  const { I, U_terminal, P_output, P_total, eta } = calculateClosedCircuit(EMF, r, R)
++
++  const cx = canvasSize.width / 2
++  const cy = canvasSize.height / 2
++  const wire = PHYSICS_COLORS.labelText
++  const left = 110, right = canvasSize.width - 110, top = cy - 90, bot = cy + 90
++
++  // 效率条
++  const barX = 40, barY = 40, barW = 160, barH = 14
++
++  return (
++    <div ref={containerRef} className="w-full h-full">
++      <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
++        {/* 回路 */}
++        <rect x={left} y={top} width={right - left} height={bot - top} fill="none" stroke={wire} strokeWidth={2} />
++
++        {/* 电源（含内阻 r） */}
++        <line x1={left} y1={cy - 26} x2={left} y2={cy + 26} stroke={PHYSICS_COLORS.forceNet} strokeWidth={4} />
++        <text x={left - 60} y={cy - 4} fontSize="13" fill={PHYSICS_COLORS.forceNet} fontWeight="bold">EMF={EMF}V</text>
++        <text x={left - 50} y={cy + 16} fontSize="12" fill={PHYSICS_COLORS.axis}>r={r}Ω</text>
++
++        {/* 外电阻 R（顶部） */}
++        <rect x={cx - 45} y={top - 12} width={90} height={24} fill="none" stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={2} rx={3} />
++        <text x={cx} y={top - 18} fontSize="13" fill={PHYSICS_COLORS.labelText} textAnchor="middle">R = {R}Ω</text>
++
++        {/* 电流方向箭头 */}
++        <polygon points={`${cx - 6},${top - 6} ${cx + 6},${top} ${cx - 6},${top + 6}`} fill={PHYSICS_COLORS.electricCurrent} />
++        <text x={cx + 70} y={top + 4} fontSize="12" fill={PHYSICS_COLORS.electricCurrent}>I = {I.toFixed(2)} A</text>
++
++        {/* 路端电压（右边） */}
++        <text x={right + 6} y={cy} fontSize="12" fill={PHYSICS_COLORS.electricPotential}>U端</text>
++        <text x={right + 6} y={cy + 18} fontSize="12" fill={PHYSICS_COLORS.electricPotential} fontWeight="bold">{U_terminal.toFixed(2)}V</text>
++
++        {/* 效率条 */}
++        <text x={barX} y={barY - 6} fontSize="12" fill={PHYSICS_COLORS.labelText}>效率 η = {(eta * 100).toFixed(1)}%</text>
++        <rect x={barX} y={barY} width={barW} height={barH} fill={PHYSICS_COLORS.grid} rx={3} />
++        <rect x={barX} y={barY} width={barW * eta} height={barH} fill={PHYSICS_COLORS.kineticEnergy} rx={3} />
++
++        {showFormulas && (
++          <g transform={`translate(${cx - 120}, ${bot + 24})`}>
++            <text fontSize="13" fill={PHYSICS_COLORS.axis}>I = EMF/(R+r) = {I.toFixed(2)} A</text>
++            <text x={0} y={20} fontSize="13" fill={PHYSICS_COLORS.electricPotential}>U端 = EMF − Ir = {U_terminal.toFixed(2)} V</text>
++            <text x={0} y={40} fontSize="12" fill={PHYSICS_COLORS.axis}>
++              P出 = {P_output.toFixed(2)}W，P总 = {P_total.toFixed(2)}W
++            </text>
++            <text x={0} y={60} fontSize="11" fill={PHYSICS_COLORS.axis}>R↓→I↑、U端↓；短路 R=0 时 I 最大、U端=0</text>
++          </g>
++        )}
++      </svg>
++    </div>
++  )
++}
+diff --git a/src/features/electromagnetism/OhmLaw.tsx b/src/features/electromagnetism/OhmLaw.tsx
+new file mode 100644
+index 0000000..1ebea40
+--- /dev/null
++++ b/src/features/electromagnetism/OhmLaw.tsx
+@@ -0,0 +1,87 @@
++import { useCanvasSize } from '@/utils'
++import { useAnimationStore } from '@/stores'
++import { calculateOhmLaw } from '@/physics'
++import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
++
++/** 欧姆定律 I = U/R：U-I 图像（过原点直线，斜率 1/R），工作点标注 */
++export default function OhmLaw() {
++  const { params, showFormulas, showGrid } = useAnimationStore()
++  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
++
++  const { U = 6, R = 3 } = params
++  const { I } = calculateOhmLaw(U, R)
++
++  // 坐标系：左下原点，x=U(0~12V)，y=I(0~ Umax/Rmin)
++  const padL = 60
++  const padB = 50
++  const padT = 30
++  const padR = 30
++  const ox = padL
++  const oy = canvasSize.height - padB
++  const plotW = canvasSize.width - padL - padR
++  const plotH = canvasSize.height - padT - padB
++
++  const Umax = 12
++  const Imax = 6 // 量程上限，A
++  const xOf = (u: number) => ox + (u / Umax) * plotW
++  const yOf = (i: number) => oy - (Math.min(i, Imax) / Imax) * plotH
++
++  // U-I 直线：I = U/R，取 U=0..Umax
++  const lineX2 = xOf(Umax)
++  const lineY2 = yOf(Umax / R)
++
++  const gridLines = []
++  if (showGrid) {
++    for (let u = 0; u <= Umax; u += 2) {
++      gridLines.push(<line key={`gx-${u}`} x1={xOf(u)} y1={padT} x2={xOf(u)} y2={oy} stroke={PHYSICS_COLORS.grid} strokeWidth={1} strokeDasharray="4,4" />)
++    }
++    for (let i = 0; i <= Imax; i += 1) {
++      gridLines.push(<line key={`gy-${i}`} x1={ox} y1={yOf(i)} x2={ox + plotW} y2={yOf(i)} stroke={PHYSICS_COLORS.grid} strokeWidth={1} strokeDasharray="4,4" />)
++    }
++  }
++
++  return (
++    <div ref={containerRef} className="w-full h-full">
++      <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
++        {gridLines}
++
++        {/* 坐标轴 */}
++        <line x1={ox} y1={oy} x2={ox + plotW} y2={oy} stroke={PHYSICS_COLORS.axis} strokeWidth={2} markerEnd="url(#arrow-ohm-axis)" />
++        <line x1={ox} y1={oy} x2={ox} y2={padT} stroke={PHYSICS_COLORS.axis} strokeWidth={2} markerEnd="url(#arrow-ohm-axis)" />
++        <text x={ox + plotW - 6} y={oy + 24} fontSize="13" fill={PHYSICS_COLORS.axis} textAnchor="end">U / V</text>
++        <text x={ox - 36} y={padT + 6} fontSize="13" fill={PHYSICS_COLORS.axis}>I / A</text>
++
++        {/* 刻度 */}
++        {[0, 2, 4, 6, 8, 10, 12].map((u) => (
++          <text key={`tx-${u}`} x={xOf(u)} y={oy + 16} fontSize="10" fill={PHYSICS_COLORS.axis} textAnchor="middle">{u}</text>
++        ))}
++        {[0, 1, 2, 3, 4, 5, 6].map((i) => (
++          <text key={`ty-${i}`} x={ox - 10} y={yOf(i) + 4} fontSize="10" fill={PHYSICS_COLORS.axis} textAnchor="end">{i}</text>
++        ))}
++
++        {/* U-I 直线 */}
++        <line x1={ox} y1={oy} x2={lineX2} y2={lineY2} stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={CANVAS_STYLE.stroke.vectorMain} />
++
++        {/* 工作点 + 投影 */}
++        <line x1={xOf(U)} y1={oy} x2={xOf(U)} y2={yOf(I)} stroke={PHYSICS_COLORS.electricPotential} strokeWidth={1} strokeDasharray="5,4" />
++        <line x1={ox} y1={yOf(I)} x2={xOf(U)} y2={yOf(I)} stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={1} strokeDasharray="5,4" />
++        <circle cx={xOf(U)} cy={yOf(I)} r={6} fill={PHYSICS_COLORS.forceNet} />
++
++        {showFormulas && (
++          <g transform="translate(80, 20)">
++            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">欧姆定律 I = U/R</text>
++            <text x={0} y={22} fontSize="12" fill={PHYSICS_COLORS.axis}>电压 U = {U} V，电阻 R = {R} Ω</text>
++            <text x={0} y={42} fontSize="13" fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold">电流 I = {I.toFixed(2)} A</text>
++            <text x={0} y={62} fontSize="11" fill={PHYSICS_COLORS.axis}>图线斜率 = 1/R = {(1 / R).toFixed(3)} S（越陡电阻越小）</text>
++          </g>
++        )}
++
++        <defs>
++          <marker id="arrow-ohm-axis" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
++            <polygon points="0 0, 9 3.5, 0 7" fill={PHYSICS_COLORS.axis} />
++          </marker>
++        </defs>
++      </svg>
++    </div>
++  )
++}
+diff --git a/src/features/electromagnetism/index.ts b/src/features/electromagnetism/index.ts
+index b942237..af658d5 100644
+--- a/src/features/electromagnetism/index.ts
++++ b/src/features/electromagnetism/index.ts
+@@ -2,3 +2,6 @@ export { default as CoulombLaw } from './CoulombLaw'
+ export { default as ElectricField } from './ElectricField'
+ export { default as ChargeInEField } from './ChargeInEField'
+ export { default as Capacitor } from './Capacitor'
++export { default as OhmLaw } from './OhmLaw'
++export { default as CircuitAnalysis } from './CircuitAnalysis'
++export { default as ClosedCircuit } from './ClosedCircuit'
+diff --git a/src/pages/AnimationPage.tsx b/src/pages/AnimationPage.tsx
+index 3230d5b..2ec5ea9 100644
+--- a/src/pages/AnimationPage.tsx
++++ b/src/pages/AnimationPage.tsx
+@@ -157,6 +157,22 @@ const paramConfigs: Record<string, Array<{
+     { key: 'epsilon_r', label: '相对介电常数 εᵣ', min: 1, max: 8, step: 0.5, unit: '' },
+     { key: 'U', label: '电压 U', min: 0, max: 50, step: 1, unit: 'V' },
+   ],
++  // ===== 电磁学 · 恒定电流（[M4-1]）=====
++  'anim-ohm-law': [
++    { key: 'U', label: '电压 U', min: 0, max: 12, step: 0.5, unit: 'V' },
++    { key: 'R', label: '电阻 R', min: 1, max: 10, step: 0.5, unit: 'Ω' },
++  ],
++  'anim-circuit-analysis': [
++    { key: 'U', label: '电源电压 U', min: 1, max: 24, step: 1, unit: 'V' },
++    { key: 'R1', label: '电阻 R₁', min: 1, max: 10, step: 1, unit: 'Ω' },
++    { key: 'R2', label: '电阻 R₂', min: 1, max: 10, step: 1, unit: 'Ω' },
++    { key: 'mode', label: '连接方式', min: 0, max: 1, step: 1, unit: '0=串联 1=并联' },
++  ],
++  'anim-closed-circuit': [
++    { key: 'EMF', label: '电动势 EMF', min: 1, max: 12, step: 0.5, unit: 'V' },
++    { key: 'r', label: '内阻 r', min: 0, max: 5, step: 0.5, unit: 'Ω' },
++    { key: 'R', label: '外电阻 R', min: 0, max: 20, step: 0.5, unit: 'Ω' },
++  ],
+ }
+ 
+ export default function AnimationPage() {
+diff --git a/tests/data/physicsQuantities.test.ts b/tests/data/physicsQuantities.test.ts
+index 9f3ab32..61482cb 100644
+--- a/tests/data/physicsQuantities.test.ts
++++ b/tests/data/physicsQuantities.test.ts
+@@ -71,4 +71,26 @@ describe('buildPhysicsQuantities', () => {
+     const c2 = find(buildPhysicsQuantities('anim-capacitor', { S: 100, d: 5, epsilon_r: 4, U: 12 }, 0), '电容') as number
+     expect(c2).toBeCloseTo(c1 * 4, 6)
+   })
++
++  // ===== 电磁学 · 恒定电流（M4-1）=====
++  it('欧姆定律：I = U/R', () => {
++    const qs = buildPhysicsQuantities('anim-ohm-law', { U: 6, R: 3 }, 0)
++    expect(find(qs, '电流') as number).toBeCloseTo(2, 10)
++  })
++
++  it('串并联：串联 R总=R₁+R₂，并联更小', () => {
++    const s = buildPhysicsQuantities('anim-circuit-analysis', { U: 12, R1: 4, R2: 2, mode: 0 }, 0)
++    expect(find(s, '连接方式')).toBe('串联')
++    expect(find(s, '总电阻') as number).toBeCloseTo(6, 10)
++    const p = buildPhysicsQuantities('anim-circuit-analysis', { U: 12, R1: 4, R2: 4, mode: 1 }, 0)
++    expect(find(p, '连接方式')).toBe('并联')
++    expect(find(p, '总电阻') as number).toBeCloseTo(2, 10)
++  })
++
++  it('闭合电路：EMF=6 r=1 R=5 → I=1, U端=5, η≈83.3%', () => {
++    const qs = buildPhysicsQuantities('anim-closed-circuit', { EMF: 6, r: 1, R: 5 }, 0)
++    expect(find(qs, '电流') as number).toBeCloseTo(1, 10)
++    expect(find(qs, '路端电压') as number).toBeCloseTo(5, 10)
++    expect(find(qs, '效率') as number).toBeCloseTo((5 / 6) * 100, 6)
++  })
+ })
+-- 
+2.47.3
+

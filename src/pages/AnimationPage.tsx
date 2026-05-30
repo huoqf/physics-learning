@@ -135,6 +135,44 @@ const paramConfigs: Record<string, Array<{
     { key: 'v2', label: '速度 v₂', min: -10, max: 10, step: 0.5, unit: 'm/s' },
     { key: 'isElastic', label: '弹性碰撞', min: 0, max: 1, step: 1, unit: '0=非弹性 1=弹性' },
   ],
+  // ===== 电磁学 · 静电场（[M4-1]）=====
+  'anim-coulomb-law': [
+    { key: 'q1', label: '电量 q₁', min: -5, max: 5, step: 0.5, unit: 'μC' },
+    { key: 'q2', label: '电量 q₂', min: -5, max: 5, step: 0.5, unit: 'μC' },
+    { key: 'r', label: '间距 r', min: 1, max: 8, step: 0.5, unit: 'cm' },
+  ],
+  'anim-electric-field': [
+    { key: 'q', label: '源电量 q', min: -10, max: 10, step: 0.5, unit: 'μC' },
+    { key: 'rTest', label: 'P 点距离', min: 1, max: 6, step: 0.5, unit: 'cm' },
+  ],
+  'anim-charge-in-efield': [
+    { key: 'E', label: '电场强度 E', min: 1, max: 30, step: 1, unit: '×10³ N/C' },
+    { key: 'q', label: '电量 q', min: 0.5, max: 10, step: 0.5, unit: 'μC' },
+    { key: 'm', label: '质量 m', min: 1, max: 20, step: 1, unit: '×10⁻⁶ kg' },
+    { key: 'v0', label: '初速度 v₀', min: 2, max: 20, step: 1, unit: 'm/s' },
+  ],
+  'anim-capacitor': [
+    { key: 'S', label: '正对面积 S', min: 20, max: 300, step: 10, unit: 'cm²' },
+    { key: 'd', label: '板间距 d', min: 1, max: 10, step: 0.5, unit: 'mm' },
+    { key: 'epsilon_r', label: '相对介电常数 εᵣ', min: 1, max: 8, step: 0.5, unit: '' },
+    { key: 'U', label: '电压 U', min: 0, max: 50, step: 1, unit: 'V' },
+  ],
+  // ===== 电磁学 · 恒定电流（[M4-1]）=====
+  'anim-ohm-law': [
+    { key: 'U', label: '电压 U', min: 0, max: 12, step: 0.5, unit: 'V' },
+    { key: 'R', label: '电阻 R', min: 1, max: 10, step: 0.5, unit: 'Ω' },
+  ],
+  'anim-circuit-analysis': [
+    { key: 'U', label: '电源电压 U', min: 1, max: 24, step: 1, unit: 'V' },
+    { key: 'R1', label: '电阻 R₁', min: 1, max: 10, step: 1, unit: 'Ω' },
+    { key: 'R2', label: '电阻 R₂', min: 1, max: 10, step: 1, unit: 'Ω' },
+    { key: 'mode', label: '连接方式', min: 0, max: 1, step: 1, unit: '0=串联 1=并联' },
+  ],
+  'anim-closed-circuit': [
+    { key: 'EMF', label: '电动势 EMF', min: 1, max: 12, step: 0.5, unit: 'V' },
+    { key: 'r', label: '内阻 r', min: 0, max: 5, step: 0.5, unit: 'Ω' },
+    { key: 'R', label: '外电阻 R', min: 0, max: 20, step: 0.5, unit: 'Ω' },
+  ],
 }
 
 export default function AnimationPage() {

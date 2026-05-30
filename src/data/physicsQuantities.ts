@@ -16,7 +16,17 @@ import {
   calculateCircularMotion,
   calculateOrbitalSpeed,
   calculateRestitutionCollision,
+  calculateCoulombForce,
+  calculateElectricField,
+  calculateCapacitor,
+  calculateOhmLaw,
+  calculateSeriesResistance,
+  calculateParallelResistance,
+  calculateClosedCircuit,
 } from '@/physics'
+
+const COULOMB_K = 9e9
+const VACUUM_PERMITTIVITY = 8.85e-12
 
 export interface PhysicsQuantity {
   label: string
@@ -160,6 +170,110 @@ export function buildPhysicsQuantities(
         { label: '碰后总动量', value: pAfter, unit: 'kg·m/s' },
         { label: 'v₁末', value: v1f, unit: 'm/s' },
         { label: 'v₂末', value: v2f, unit: 'm/s' },
+      ]
+    }
+    case 'anim-coulomb-law': {
+      const q1 = params.q1 ?? 2
+      const q2 = params.q2 ?? -3
+      const r = params.r ?? 4
+      const { F } = calculateCoulombForce(COULOMB_K, Math.abs(q1 * 1e-6), Math.abs(q2 * 1e-6), (r || 0.01) * 0.01)
+      return [
+        ...base,
+        { label: '电量 q₁', value: q1, unit: 'μC' },
+        { label: '电量 q₂', value: q2, unit: 'μC' },
+        { label: '间距 r', value: r, unit: 'cm' },
+        { label: '库仑力 F', value: F, unit: 'N' },
+        { label: '作用', value: q1 * q2 < 0 ? '相互吸引' : '相互排斥', unit: '' },
+      ]
+    }
+    case 'anim-electric-field': {
+      const q = params.q ?? 5
+      const rTest = params.rTest ?? 3
+      const { E } = calculateElectricField(COULOMB_K, Math.abs(q * 1e-6), (rTest || 0.01) * 0.01)
+      return [
+        ...base,
+        { label: '源电量 q', value: q, unit: 'μC' },
+        { label: 'P 点距离 r', value: rTest, unit: 'cm' },
+        { label: '场强 E', value: E, unit: 'N/C' },
+        { label: '方向', value: q >= 0 ? '背离正电荷' : '指向负电荷', unit: '' },
+      ]
+    }
+    case 'anim-charge-in-efield': {
+      const E = (params.E ?? 10) * 1e3
+      const q = (params.q ?? 2) * 1e-6
+      const m = (params.m ?? 5) * 1e-6
+      const v0 = params.v0 ?? 8
+      const a = (q * E) / m
+      const vy = a * time
+      const x = v0 * time
+      const y = 0.5 * a * time * time
+      return [
+        ...base,
+        { label: '加速度 a', value: a, unit: 'm/s²' },
+        { label: '初速度 v₀', value: v0, unit: 'm/s' },
+        { label: '水平位移 x', value: x, unit: 'm' },
+        { label: '竖直速度 vy', value: vy, unit: 'm/s' },
+        { label: '竖直位移 y', value: y, unit: 'm' },
+      ]
+    }
+    case 'anim-capacitor': {
+      const S = params.S ?? 100
+      const d = params.d ?? 5
+      const epsilon_r = params.epsilon_r ?? 1
+      const U = params.U ?? 12
+      const { C } = calculateCapacitor(VACUUM_PERMITTIVITY * epsilon_r, S * 1e-4, d * 1e-3)
+      return [
+        ...base,
+        { label: '正对面积 S', value: S, unit: 'cm²' },
+        { label: '板间距 d', value: d, unit: 'mm' },
+        { label: '相对介电常数 εᵣ', value: epsilon_r, unit: '' },
+        { label: '电容 C', value: C * 1e12, unit: 'pF' },
+        { label: '电荷量 Q', value: C * U * 1e9, unit: 'nC' },
+      ]
+    }
+    case 'anim-ohm-law': {
+      const U = params.U ?? 6
+      const R = params.R ?? 3
+      const { I } = calculateOhmLaw(U, R)
+      return [
+        ...base,
+        { label: '电压 U', value: U, unit: 'V' },
+        { label: '电阻 R', value: R, unit: 'Ω' },
+        { label: '电流 I', value: I, unit: 'A' },
+      ]
+    }
+    case 'anim-circuit-analysis': {
+      const U = params.U ?? 12
+      const R1 = params.R1 ?? 4
+      const R2 = params.R2 ?? 2
+      const series = (params.mode ?? 0) < 0.5
+      const Rtotal = series
+        ? calculateSeriesResistance([R1, R2]).R_total
+        : calculateParallelResistance([R1, R2]).R_total
+      const Itotal = Rtotal > 0 ? calculateOhmLaw(U, Rtotal).I : 0
+      return [
+        ...base,
+        { label: '连接方式', value: series ? '串联' : '并联', unit: '' },
+        { label: '电阻 R₁', value: R1, unit: 'Ω' },
+        { label: '电阻 R₂', value: R2, unit: 'Ω' },
+        { label: '总电阻 R总', value: Rtotal, unit: 'Ω' },
+        { label: '总电流 I总', value: Itotal, unit: 'A' },
+      ]
+    }
+    case 'anim-closed-circuit': {
+      const EMF = params.EMF ?? 6
+      const r = params.r ?? 1
+      const R = params.R ?? 5
+      const { I, U_terminal, P_output, eta } = calculateClosedCircuit(EMF, r, R)
+      return [
+        ...base,
+        { label: '电动势 EMF', value: EMF, unit: 'V' },
+        { label: '内阻 r', value: r, unit: 'Ω' },
+        { label: '外电阻 R', value: R, unit: 'Ω' },
+        { label: '电流 I', value: I, unit: 'A' },
+        { label: '路端电压 U', value: U_terminal, unit: 'V' },
+        { label: '输出功率 P出', value: P_output, unit: 'W' },
+        { label: '效率 η', value: eta * 100, unit: '%' },
       ]
     }
     default:

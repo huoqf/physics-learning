@@ -1,0 +1,907 @@
+From ea2fda2e087f606b9aa001a7254136b7bac29271 Mon Sep 17 00:00:00 2001
+From: agent <agent@local>
+Date: Sat, 30 May 2026 09:20:44 +0000
+Subject: [PATCH 2/3] =?UTF-8?q?feat:=20=E6=96=B0=E5=A2=9E=E9=9D=99?=
+ =?UTF-8?q?=E7=94=B5=E5=9C=BA=E5=8A=A8=E7=94=BB=E7=BB=84=E4=BB=B6=EF=BC=88?=
+ =?UTF-8?q?M4-1=20=E7=AC=AC=202=20=E6=AD=A5=EF=BC=89?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+[M4] 分步推进第二步：实现高频静电场 4 个 SVG 动画组件，复用上一步的
+电磁学纯函数库。遵循 useAnimationStore 时间驱动 + useCanvasSize + theme token
+约定（无组件级 rAF）；未引入新依赖。关联 M4-1。
+
+新增组件 src/features/electromagnetism/:
+- CoulombLaw：两点电荷引力/斥力，同号斥·异号吸，复用 calculateCoulombForce
+- ElectricField：点电荷放射状电场线 + 试探点场强，calculateElectricField
+- ChargeInEField：类平抛（平行板 + 电场线 + 轨迹 + 速度分量），a=qE/m，
+  到达板端自动暂停
+- Capacitor：C=εS/d 含介质 εᵣ，实时 C 与 Q=CU，calculateCapacitor
+
+接线:
+- knowledgeTree 新增电磁学第1章知识点 electricity-1-1~1-4
+- animationRegistry 新增 4 条 lazy 注册
+- AnimationPage 补 4 组参数面板；physicsQuantities 补 4 个 case（调 physics 纯函数）
+- KnowledgeTree 章节排序改为先按模块（力学→电磁→热→光→原子）再按章号
+
+测试:
+- 新增 physicsQuantities 电磁用例 4 项（共 80）
+
+文档:
+- 更新 PROCESS_LOG、ROADMAP_M4（勾选 4 组件）、ROADMAP_PROGRESS
+
+验证: lint 0 警告 / tsc -b 通过 / vitest 80 通过 / vite build 成功（4 动画独立 chunk）
+---
+ docs/agent-rules/process/PROCESS_LOG.md       |   1 +
+ .../agent-rules/roadmap/ROADMAP_M4_PHYSICS.md |  21 +--
+ docs/agent-rules/roadmap/ROADMAP_PROGRESS.md  |   5 +-
+ src/data/animationRegistry.ts                 |  30 ++++
+ src/data/knowledgeTree.ts                     |  42 ++++++
+ src/data/physicsQuantities.ts                 |  65 ++++++++
+ src/features/electromagnetism/Capacitor.tsx   | 109 ++++++++++++++
+ .../electromagnetism/ChargeInEField.tsx       | 140 ++++++++++++++++++
+ src/features/electromagnetism/CoulombLaw.tsx  | 111 ++++++++++++++
+ .../electromagnetism/ElectricField.tsx        |  97 ++++++++++++
+ src/features/electromagnetism/index.ts        |   4 +
+ src/features/index.ts                         |   1 +
+ src/features/knowledge/KnowledgeTree.tsx      |  14 +-
+ src/pages/AnimationPage.tsx                   |  22 +++
+ tests/data/physicsQuantities.test.ts          |  25 ++++
+ 15 files changed, 674 insertions(+), 13 deletions(-)
+ create mode 100644 src/features/electromagnetism/Capacitor.tsx
+ create mode 100644 src/features/electromagnetism/ChargeInEField.tsx
+ create mode 100644 src/features/electromagnetism/CoulombLaw.tsx
+ create mode 100644 src/features/electromagnetism/ElectricField.tsx
+ create mode 100644 src/features/electromagnetism/index.ts
+
+diff --git a/docs/agent-rules/process/PROCESS_LOG.md b/docs/agent-rules/process/PROCESS_LOG.md
+index dbe6f3c..eaf1962 100644
+--- a/docs/agent-rules/process/PROCESS_LOG.md
++++ b/docs/agent-rules/process/PROCESS_LOG.md
+@@ -55,6 +55,7 @@
+ 
+ | 日期 | 作者 | 里程碑 | 修改内容 | 影响文件 | 关联issue |
+ |------|------|--------|---------|---------|----------|
++| 2026-05-30 | agent | M4 | M4-1 静电场组件（分步推进第 2 步）：创建 src/features/electromagnetism/ 4 个 SVG 动画组件——CoulombLaw（库仑力，同号斥/异号吸，调电量与间距，复用 calculateCoulombForce）、ElectricField（点电荷放射状电场线 + 试探点场强，calculateElectricField）、ChargeInEField（类平抛：平行板 + 匀强电场线 + 轨迹 + 速度分量，a=qE/m，到达板端自动暂停，用 useAnimationStore 时间驱动）、Capacitor（C=εS/d 含介质 εᵣ，实时 C 与 Q=CU，calculateCapacitor）；全部遵循 useCanvasSize + theme token + showVectors/showFormulas/showGrid 约定；knowledgeTree 新增电磁学第1章 4 个知识点（electricity-1-1~1-4，importance gaokao/core），animationRegistry 新增 4 条 lazy 注册（anim-coulomb-law/electric-field/charge-in-efield/capacitor），AnimationPage 补 4 组参数面板，physicsQuantities 补 4 个 case（调用 physics 纯函数）；KnowledgeTree 章节排序改为先按模块（力学→电磁→热→光→原子）再按章号，避免电磁第1章与力学第1章混排；未引入新依赖（电场线密集可视化时再评估 PixiJS）。新增 physicsQuantities 测试 4 项（共 80）。验证：lint 0 警告 / tsc 通过 / vitest 80 通过 / build 成功（4 个动画各自独立 chunk） | `src/features/electromagnetism/CoulombLaw.tsx`, `src/features/electromagnetism/ElectricField.tsx`, `src/features/electromagnetism/ChargeInEField.tsx`, `src/features/electromagnetism/Capacitor.tsx`, `src/features/electromagnetism/index.ts`, `src/features/index.ts`, `src/data/knowledgeTree.ts`, `src/data/animationRegistry.ts`, `src/pages/AnimationPage.tsx`, `src/data/physicsQuantities.ts`, `src/features/knowledge/KnowledgeTree.tsx`, `tests/data/physicsQuantities.test.ts` | M4-1 |
+ | 2026-05-30 | agent | M4 | M4-1 电磁学纯函数库（分步推进第 1 步）：创建 src/physics/electromagnetism.ts，实现 13 个 SI 单位纯函数——electricField(E=kq/r²)、electricPotential(V=kq/r)、capacitor(C=εS/d)、ohmLaw(I=U/R)、series/parallelResistance（并联含空数组/零电阻保护）、closedCircuit(I/U端/P出/P总/η)、ampereForce(BILsinθ)、lorentzForce(qvBsinθ)、chargeInMagField(r=mv/qB,T,ω，含除零保护)、faradayEMF(NΔΦ/Δt)、transformer(理想变压器 U/I)、acRMS(峰值/√2)；库仑力复用 dynamics.ts 不重复定义（遵守规范）；physics/index.ts 导出；新增 16 项单测（共 76）。未引入新依赖（PixiJS 留待电磁场粒子组件时申报）。验证：lint 0 警告 / tsc 通过 / vitest 76 通过 / build 成功 | `src/physics/electromagnetism.ts`, `src/physics/index.ts`, `tests/physics/electromagnetism.test.ts` | M4-1 |
+ | 2026-05-30 | agent | M3 | 完成 M3-5 练习与测试模式（[M3] 收官）：①因题目为分步解析式（无客观选项/标准答案）采用自评式答题——PracticeSession 会话组件支持练习模式（提示按钮+随时看解析）与测试模式（正计时可暂停+提交后才揭示），自评对错联动 useWrongStore（答错 addWrong/答对 recordCorrect），并激活此前未接线的 useProblemStore 管理会话状态（currentStep/currentProblem）；②新增 usePracticeStore 成绩历史 store（ScoreRecord：mode/total/correct/durationSec/wrongProblemIds/byModule，经 storage IndexedDB 持久化，最多 50 条）；③ScoreReport 成绩报告组件（总分+正确率+用时、各模块正确率条形图、薄弱知识点来自错题关联知识点并一键跳转复习动画）；④PracticePage 重写为入口（模式选择卡、按模块/难度筛选、成绩历史列表、浏览全部真题），mode 经 ?mode= query 驱动会话。新增 usePracticeStore 测试 4 项（共 60）。验证：lint 0 警告 / tsc 通过 / vitest 60 通过 / build 成功 | `src/stores/usePracticeStore.ts`, `src/stores/index.ts`, `src/features/practice/PracticeSession.tsx`, `src/features/practice/index.ts`, `src/features/index.ts`, `src/components/UI/ScoreReport.tsx`, `src/components/UI/index.ts`, `src/pages/PracticePage.tsx`, `tests/stores/usePracticeStore.test.ts` | M3-5 |
+ | 2026-05-30 | agent | M3 | 完成 M3-4 错题管理系统：①按 ui/05_WRONGBOOK_RULES 重写 useWrongStore——WrongRecord 结构（errorCount/correctStreak/status 四态/knowledgeIds/createdAt/lastAttemptTime/masteredAt/note），actions: addWrong/markViewed/recordCorrect/markMastered/addNote/removeWrong/clearAll/hydrate；连续答对≥2 自动判定已掌握；笔记 200 字上限；②IndexedDB 持久化——经 storage.setDB 写入、hydrate 从 storage.getDB 水合，刷新保持（禁止页面直接读写 IndexedDB，全部走 store）；③WrongPage 完整实现——四态 4px 色条 + 多次错误(≥3)角标、知识点标签(2+N)、统计面板(总数/未掌握/本周新增/本周掌握)、筛选(模块/难度/状态 chip 多选)、排序(最近/错误次数/难度)、已掌握折叠至底部、右键上下文菜单(标记已掌握/删除/笔记)、删除二次确认 Modal、笔记 Modal、全空+筛选无结果两种空态；④AnalysisPage 集成「加入错题本/标记已掌握」按钮，进入已收录题自动标记已查看。新增 useWrongStore 测试 8 项（共 56）。验证：lint 0 警告 / tsc 通过 / vitest 56 通过 / build 成功 | `src/stores/useWrongStore.ts`, `src/stores/index.ts`, `src/pages/WrongPage.tsx`, `src/pages/AnalysisPage.tsx`, `tests/stores/useWrongStore.test.ts` | M3-4 |
+diff --git a/docs/agent-rules/roadmap/ROADMAP_M4_PHYSICS.md b/docs/agent-rules/roadmap/ROADMAP_M4_PHYSICS.md
+index 2fc5536..8a7aff9 100644
+--- a/docs/agent-rules/roadmap/ROADMAP_M4_PHYSICS.md
++++ b/docs/agent-rules/roadmap/ROADMAP_M4_PHYSICS.md
+@@ -49,20 +49,23 @@
+ | 带电粒子在匀强电场中运动 | ⭐⭐⭐⭐⭐ | ChargeInEField |
+ | 电容器（C=Q/U） | ⭐⭐⭐⭐ | Capacitor |
+ 
+-- [ ] **CoulombLaw.tsx** — 两点电荷间引力/斥力，距离/电量可调，平方反比可视化
+-- [ ] **ElectricField.tsx** — 点电荷/匀强电场强度分布，矢量场可视化（PixiJS粒子辅助）
++- [x] **CoulombLaw.tsx** — 两点电荷间引力/斥力，距离/电量可调，同号斥/异号吸，F 实时计算（复用 calculateCoulombForce）
++- [x] **ElectricField.tsx** — 点电荷电场线（放射状，正向外/负向内）+ 试探点 P 场强，平方反比说明（calculateElectricField）
+ - [ ] **FieldLines.tsx** — 电场线+等势面，同种/异种电荷对，可交互放置试探电荷
+ - [ ] **ElectricPotential.tsx**
+   - 电势分布三维色图，等势面与电场线垂直关系
+   - 高考要点：沿电场线方向电势降低；等势面上移动电荷电场力不做功
+-- [ ] **ChargeInEField.tsx**
+-  - 带电粒子进入匀强电场（类平抛）：水平匀速+竖直加速
+-  - 参数：电场强度E、粒子质量m、电荷量q、初速度v0
+-  - 偏转角计算，打屏位置计算（示波管/质谱仪模型）
++- [x] **ChargeInEField.tsx**
++  - 带电粒子进入匀强电场（类平抛）：水平匀速+竖直加速，平行板模型 + 轨迹 + 速度分量，到达板端自动暂停
++  - 参数：电场强度E、粒子质量m、电荷量q、初速度v0；a=qE/m
+   - 高考要点：与平抛运动类比，水平方向匀速，竖直方向匀加速
+-- [ ] **Capacitor.tsx**
+-  - 平行板电容器：C=ε₀S/d，改变S/d/介质时C和U的变化
+-  - 高考要点：接电源时U不变C变则Q变；断开电源时Q不变C变则U变
++- [x] **Capacitor.tsx**
++  - 平行板电容器：C=εS/d（含相对介电常数 εᵣ），改变S/d/介质时 C 与 Q=CU 实时变化（calculateCapacitor）
++  - 高考要点：d↑→C↓；S↑→C↑；插入电介质 εᵣ↑→C↑
++
++> ✅ 2026-05-30：静电场高频 4 组件完成（CoulombLaw/ElectricField/ChargeInEField/Capacitor），
++> 注册表 + 知识点（electricity-1-1~1-4）+ 参数面板 + 物理量看板均接线，按需懒加载。
++> FieldLines / ElectricPotential 留待后续（电场线密集可视化将评估是否引入 PixiJS）。
+ 
+ #### 恒定电流（⭐⭐⭐⭐⭐ 高考必考）
+ 
+diff --git a/docs/agent-rules/roadmap/ROADMAP_PROGRESS.md b/docs/agent-rules/roadmap/ROADMAP_PROGRESS.md
+index 25cceb3..57422de 100644
+--- a/docs/agent-rules/roadmap/ROADMAP_PROGRESS.md
++++ b/docs/agent-rules/roadmap/ROADMAP_PROGRESS.md
+@@ -34,14 +34,15 @@
+ > 更新此区域反映每次任务的工作焦点
+ 
+ - **当前里程碑**：[M4] 电磁/热/光/原子模块 🚧 进行中（分步推进）
+-- **M4-1 电磁学纯函数库完成（2026-05-30）**：src/physics/electromagnetism.ts 实现 13 个纯函数（电场/电势/电容/欧姆/串并联/闭合电路/安培力/洛伦兹力/磁场圆周/法拉第/变压器/交流有效值），库仑力复用 dynamics.ts；新增 16 项单测（共 76）。电磁学组件待后续分步实现
++- **M4-1 电磁学纯函数库完成（2026-05-30）**：src/physics/electromagnetism.ts 实现 13 个纯函数（电场/电势/电容/欧姆/串并联/闭合电路/安培力/洛伦兹力/磁场圆周/法拉第/变压器/交流有效值），库仑力复用 dynamics.ts；新增 16 项单测
++- **M4-1 静电场组件完成（2026-05-30）**：CoulombLaw / ElectricField / ChargeInEField（类平抛，自动暂停）/ Capacitor 四个 SVG 动画 + 知识点 electricity-1-1~1-4 + 注册表 + 参数面板 + 物理量看板全接线；KnowledgeTree 按模块分组排序。新增 4 项测试（共 80）。下一步：恒定电流 / 磁场 / 电磁感应等组件
+ - **质量闸门治理（2026-05-30，归属 [M2]）**：完成 ESLint 9 flat config 迁移（#BUG-005，`npm run lint` 恢复并 0 警告）、动画注册表单一数据源重构（#BUG-006，消除 componentPath/animationComponents 双映射与 anim-impulse 错配）、动画懒加载分包（#PERF-007，主 bundle 676→596kB）。详见 `process/PROCESS_LOG.md`
+ - **架构改进六项（2026-05-30，归属 [M2]/[M3]）**：路由级代码分割+vendor manualChunks（#PERF-008，主 bundle 596→191.89kB，消除大包警告）、ErrorBoundary 错误边界（#BUG-009）、useAnimationFrame 按实例动画 Hook（#REFACTOR-010）、useCanvasSize 消除 24 动画样板（#REFACTOR-011）、物理量计算下沉至 data/physicsQuantities + physics/constants 消除硬编码 g（#REFACTOR-012）、PracticePage/WrongPage 接线激活题库与 useWrongStore 死代码（#BUG-013，完成 M3-4 错题本主体）。新增 15 项测试（共 48）。详见 `process/PROCESS_LOG.md`
+ - **M3-4 错题管理系统完成（2026-05-30）**：按 ui/05_WRONGBOOK_RULES 重写 useWrongStore（WrongRecord 四态 + IndexedDB 持久化 hydrate）、WrongPage 完整实现（统计面板/三类筛选/三种排序/已掌握折叠/右键菜单/删除二次确认/笔记 Modal/空态）、AnalysisPage 集成加入错题本入口。新增 8 项测试（共 56）。M3-4 主流程完整，答题自动判错判对待 M3-5 接入
+ - **当前任务**：M3-3 KaTeX 离线集成验证已完成，同时发现并修复知识树数据缺失 BUG
+ - **已完成**：M3-1 完成 — 创建 analysisRegistry.ts 题目解析注册表、problems/ 目录结构（6个分类22道力学真题）；M3-2 完成 — AnalysisPage 完整实现（题干区/分步解析区/知识链路区/步骤导航）；M3-3 完成 — KatexFormula 组件改用 mode 属性（inline/block），符合 UI 规范，KaTeX CSS 与字体全部离线打包验证通过；**关键修复** — 填充 knowledgeTree.ts 力学8章共35个知识节点，与 animationRegistry 23个动画完整关联，knowledgeIndex 索引正确构建
+ - **M3-5 练习与测试模式完成（2026-05-30）**：自评式答题会话 PracticeSession（练习/测试双模式、计时器、提示、揭示解析、自评联动 useWrongStore 自动判错判对）、PracticePage 入口（模式选择+筛选+成绩历史+浏览真题）、ScoreReport 成绩报告（总分/各模块正确率/薄弱知识点跳转）、新增 usePracticeStore（成绩历史 IndexedDB 持久化）、激活此前未接线的 useProblemStore。新增 4 项测试（共 60）。**[M3] 全部完成**
+-- **下一步**：M4-1 电磁学组件（先做高频静电场：CoulombLaw / ElectricField / ChargeInEField 等；电磁场粒子可视化引入 PixiJS 前先申报）
++- **下一步**：M4-1 继续——恒定电流（OhmLaw/CircuitAnalysis/ClosedCircuit 等）或磁场（AmpereForce/LorentzForce/ChargeInBField）组件（纯函数已就绪）
+ 
+ ---
+ 
+diff --git a/src/data/animationRegistry.ts b/src/data/animationRegistry.ts
+index 2db58e3..267a6b6 100644
+--- a/src/data/animationRegistry.ts
++++ b/src/data/animationRegistry.ts
+@@ -169,6 +169,36 @@ export const animationRegistry: Record<string, AnimationConfig> = {
+     knowledgeId: 'mechanics-8-5',
+     Component: lazy(() => import('@/features/mechanics/CollisionAnimation')),
+     defaultParams: { m1: 2, m2: 3, v1: 5, v2: -2, isElastic: 1 }
++  },
++
++  // ===== 电磁学 · 静电场（[M4-1]）=====
++  'anim-coulomb-law': {
++    id: 'anim-coulomb-law',
++    title: '库仑定律',
++    knowledgeId: 'electricity-1-1',
++    Component: lazy(() => import('@/features/electromagnetism/CoulombLaw')),
++    defaultParams: { q1: 2, q2: -3, r: 4 }
++  },
++  'anim-electric-field': {
++    id: 'anim-electric-field',
++    title: '点电荷电场强度',
++    knowledgeId: 'electricity-1-2',
++    Component: lazy(() => import('@/features/electromagnetism/ElectricField')),
++    defaultParams: { q: 5, rTest: 3 }
++  },
++  'anim-charge-in-efield': {
++    id: 'anim-charge-in-efield',
++    title: '带电粒子在匀强电场中运动',
++    knowledgeId: 'electricity-1-3',
++    Component: lazy(() => import('@/features/electromagnetism/ChargeInEField')),
++    defaultParams: { E: 10, q: 2, m: 5, v0: 8, t: 0 }
++  },
++  'anim-capacitor': {
++    id: 'anim-capacitor',
++    title: '平行板电容器',
++    knowledgeId: 'electricity-1-4',
++    Component: lazy(() => import('@/features/electromagnetism/Capacitor')),
++    defaultParams: { S: 100, d: 5, epsilon_r: 1, U: 12 }
+   }
+ }
+ 
+diff --git a/src/data/knowledgeTree.ts b/src/data/knowledgeTree.ts
+index 764a06d..905b842 100644
+--- a/src/data/knowledgeTree.ts
++++ b/src/data/knowledgeTree.ts
+@@ -358,6 +358,48 @@ export const knowledgeTree: KnowledgeNode[] = [
+     problemIds: [],
+     prerequisites: ['mechanics-8-4'],
+   },
++
++  // ===== 电磁学 · 第1章 静电场（[M4-1]）=====
++  {
++    id: 'electricity-1-1',
++    title: '库仑定律',
++    chapter: '电磁学 第1章 静电场',
++    module: 'electricity',
++    importance: 'gaokao',
++    animationIds: ['anim-coulomb-law'],
++    problemIds: [],
++    prerequisites: [],
++  },
++  {
++    id: 'electricity-1-2',
++    title: '电场强度 E=F/q',
++    chapter: '电磁学 第1章 静电场',
++    module: 'electricity',
++    importance: 'gaokao',
++    animationIds: ['anim-electric-field'],
++    problemIds: [],
++    prerequisites: ['electricity-1-1'],
++  },
++  {
++    id: 'electricity-1-3',
++    title: '带电粒子在匀强电场中运动',
++    chapter: '电磁学 第1章 静电场',
++    module: 'electricity',
++    importance: 'gaokao',
++    animationIds: ['anim-charge-in-efield'],
++    problemIds: [],
++    prerequisites: ['electricity-1-2'],
++  },
++  {
++    id: 'electricity-1-4',
++    title: '电容器（C=Q/U）',
++    chapter: '电磁学 第1章 静电场',
++    module: 'electricity',
++    importance: 'core',
++    animationIds: ['anim-capacitor'],
++    problemIds: [],
++    prerequisites: ['electricity-1-2'],
++  },
+ ]
+ 
+ export const knowledgeIndex: Record<string, KnowledgeNode> = {}
+diff --git a/src/data/physicsQuantities.ts b/src/data/physicsQuantities.ts
+index e7668ab..fd0945b 100644
+--- a/src/data/physicsQuantities.ts
++++ b/src/data/physicsQuantities.ts
+@@ -16,8 +16,14 @@ import {
+   calculateCircularMotion,
+   calculateOrbitalSpeed,
+   calculateRestitutionCollision,
++  calculateCoulombForce,
++  calculateElectricField,
++  calculateCapacitor,
+ } from '@/physics'
+ 
++const COULOMB_K = 9e9
++const VACUUM_PERMITTIVITY = 8.85e-12
++
+ export interface PhysicsQuantity {
+   label: string
+   value: number | string
+@@ -162,6 +168,65 @@ export function buildPhysicsQuantities(
+         { label: 'v₂末', value: v2f, unit: 'm/s' },
+       ]
+     }
++    case 'anim-coulomb-law': {
++      const q1 = params.q1 ?? 2
++      const q2 = params.q2 ?? -3
++      const r = params.r ?? 4
++      const { F } = calculateCoulombForce(COULOMB_K, Math.abs(q1 * 1e-6), Math.abs(q2 * 1e-6), (r || 0.01) * 0.01)
++      return [
++        ...base,
++        { label: '电量 q₁', value: q1, unit: 'μC' },
++        { label: '电量 q₂', value: q2, unit: 'μC' },
++        { label: '间距 r', value: r, unit: 'cm' },
++        { label: '库仑力 F', value: F, unit: 'N' },
++        { label: '作用', value: q1 * q2 < 0 ? '相互吸引' : '相互排斥', unit: '' },
++      ]
++    }
++    case 'anim-electric-field': {
++      const q = params.q ?? 5
++      const rTest = params.rTest ?? 3
++      const { E } = calculateElectricField(COULOMB_K, Math.abs(q * 1e-6), (rTest || 0.01) * 0.01)
++      return [
++        ...base,
++        { label: '源电量 q', value: q, unit: 'μC' },
++        { label: 'P 点距离 r', value: rTest, unit: 'cm' },
++        { label: '场强 E', value: E, unit: 'N/C' },
++        { label: '方向', value: q >= 0 ? '背离正电荷' : '指向负电荷', unit: '' },
++      ]
++    }
++    case 'anim-charge-in-efield': {
++      const E = (params.E ?? 10) * 1e3
++      const q = (params.q ?? 2) * 1e-6
++      const m = (params.m ?? 5) * 1e-6
++      const v0 = params.v0 ?? 8
++      const a = (q * E) / m
++      const vy = a * time
++      const x = v0 * time
++      const y = 0.5 * a * time * time
++      return [
++        ...base,
++        { label: '加速度 a', value: a, unit: 'm/s²' },
++        { label: '初速度 v₀', value: v0, unit: 'm/s' },
++        { label: '水平位移 x', value: x, unit: 'm' },
++        { label: '竖直速度 vy', value: vy, unit: 'm/s' },
++        { label: '竖直位移 y', value: y, unit: 'm' },
++      ]
++    }
++    case 'anim-capacitor': {
++      const S = params.S ?? 100
++      const d = params.d ?? 5
++      const epsilon_r = params.epsilon_r ?? 1
++      const U = params.U ?? 12
++      const { C } = calculateCapacitor(VACUUM_PERMITTIVITY * epsilon_r, S * 1e-4, d * 1e-3)
++      return [
++        ...base,
++        { label: '正对面积 S', value: S, unit: 'cm²' },
++        { label: '板间距 d', value: d, unit: 'mm' },
++        { label: '相对介电常数 εᵣ', value: epsilon_r, unit: '' },
++        { label: '电容 C', value: C * 1e12, unit: 'pF' },
++        { label: '电荷量 Q', value: C * U * 1e9, unit: 'nC' },
++      ]
++    }
+     default:
+       return [
+         ...base,
+diff --git a/src/features/electromagnetism/Capacitor.tsx b/src/features/electromagnetism/Capacitor.tsx
+new file mode 100644
+index 0000000..23261e8
+--- /dev/null
++++ b/src/features/electromagnetism/Capacitor.tsx
+@@ -0,0 +1,109 @@
++import { useCanvasSize } from '@/utils'
++import { useAnimationStore } from '@/stores'
++import { calculateCapacitor } from '@/physics'
++import { PHYSICS_COLORS } from '@/theme/physicsColors'
++
++/**
++ * 平行板电容器 C = εS/d。
++ * 参数：S(正对面积,cm²) / d(板间距,mm) / epsilon_r(相对介电常数) / U(电压,V)
++ * 演示 d、S、介质对 C 的影响，及 Q=CU。
++ */
++export default function Capacitor() {
++  const { params, showFormulas, showGrid } = useAnimationStore()
++  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 450 })
++
++  const { S = 100, d = 5, epsilon_r = 1, U = 12 } = params
++  const eps0 = 8.85e-12
++  const SSI = S * 1e-4
++  const dSI = d * 1e-3
++  const epsilon = eps0 * epsilon_r
++  const { C } = calculateCapacitor(epsilon, SSI, dSI)
++  const Q = C * U // 库仑
++
++  const cx = canvasSize.width / 2
++  const cy = canvasSize.height / 2
++  // 板间距可视化（随 d 变化），板高随 √S 变化
++  const gapPx = Math.max(20, Math.min(160, d * 18))
++  const plateH = Math.max(80, Math.min(220, Math.sqrt(S) * 14))
++  const plateW = 16
++  const topY = cy - gapPx / 2
++  const botY = cy + gapPx / 2
++  const leftX = cx - 70
++  const rightX = cx + 70 - plateW
++
++  const gridLines = []
++  if (showGrid) {
++    for (let i = 0; i <= 8; i++) {
++      const gx = (i * canvasSize.width) / 8
++      gridLines.push(
++        <line key={`g-${i}`} x1={gx} y1={30} x2={gx} y2={canvasSize.height - 30}
++          stroke={PHYSICS_COLORS.grid} strokeWidth={1} strokeDasharray="4,4" />
++      )
++    }
++  }
++
++  // 介质填充
++  const hasDielectric = epsilon_r > 1
++
++  return (
++    <div ref={containerRef} className="w-full h-full">
++      <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
++        {gridLines}
++
++        {/* 介质 */}
++        {hasDielectric && (
++          <rect x={leftX} y={topY} width={rightX + plateW - leftX} height={botY - topY}
++            fill={PHYSICS_COLORS.electricField} opacity={0.12} />
++        )}
++
++        {/* 上极板（+Q） */}
++        <rect x={leftX} y={topY - plateH / 2} width={rightX + plateW - leftX} height={plateW}
++          fill={PHYSICS_COLORS.forceNet} rx={2} />
++        <text x={cx} y={topY - plateH / 2 - 8} fontSize="14" fill={PHYSICS_COLORS.forceNet} textAnchor="middle">+Q</text>
++
++        {/* 下极板（−Q） */}
++        <rect x={leftX} y={botY + plateH / 2 - plateW} width={rightX + plateW - leftX} height={plateW}
++          fill={PHYSICS_COLORS.electricField} rx={2} />
++        <text x={cx} y={botY + plateH / 2 + 18} fontSize="14" fill={PHYSICS_COLORS.electricField} textAnchor="middle">−Q</text>
++
++        {/* 板间电场线 */}
++        {Array.from({ length: 5 }, (_, i) => {
++          const fx = cx - 50 + i * 25
++          return (
++            <line key={`E-${i}`} x1={fx} y1={topY - plateH / 2 + plateW} x2={fx} y2={botY + plateH / 2 - plateW}
++              stroke={PHYSICS_COLORS.electricField} strokeWidth={1} strokeDasharray="5,4"
++              markerEnd="url(#arrow-cap-E)" opacity={0.5} />
++          )
++        })}
++
++        {/* 间距标注 */}
++        <line x1={rightX + plateW + 24} y1={topY - plateH / 2 + plateW} x2={rightX + plateW + 24} y2={botY + plateH / 2 - plateW}
++          stroke={PHYSICS_COLORS.axis} strokeWidth={1} />
++        <text x={rightX + plateW + 30} y={cy} fontSize="12" fill={PHYSICS_COLORS.axis}>d = {d} mm</text>
++
++        {showFormulas && (
++          <g transform="translate(20, 20)">
++            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">平行板电容器</text>
++            <text x={0} y={24} fontSize="12" fill={PHYSICS_COLORS.axis}>C = ε·S/d，ε = εᵣ·ε₀</text>
++            <text x={0} y={44} fontSize="12" fill={PHYSICS_COLORS.axis}>
++              S = {S} cm²，d = {d} mm，εᵣ = {epsilon_r}
++            </text>
++            <text x={0} y={68} fontSize="13" fill={PHYSICS_COLORS.electricField} fontWeight="bold">
++              C = {(C * 1e12).toFixed(2)} pF
++            </text>
++            <text x={0} y={88} fontSize="12" fill={PHYSICS_COLORS.forceNet} fontWeight="bold">
++              Q = CU = {(Q * 1e9).toFixed(2)} nC（U = {U} V）
++            </text>
++            <text x={0} y={112} fontSize="11" fill={PHYSICS_COLORS.axis}>d↑→C↓；S↑→C↑；插入电介质 εᵣ↑→C↑</text>
++          </g>
++        )}
++
++        <defs>
++          <marker id="arrow-cap-E" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
++            <polygon points="0 0, 9 3.5, 0 7" fill={PHYSICS_COLORS.electricField} />
++          </marker>
++        </defs>
++      </svg>
++    </div>
++  )
++}
+diff --git a/src/features/electromagnetism/ChargeInEField.tsx b/src/features/electromagnetism/ChargeInEField.tsx
+new file mode 100644
+index 0000000..d9ca4bf
+--- /dev/null
++++ b/src/features/electromagnetism/ChargeInEField.tsx
+@@ -0,0 +1,140 @@
++import { useEffect } from 'react'
++import { useCanvasSize } from '@/utils'
++import { useAnimationStore } from '@/stores'
++import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
++
++/**
++ * 带电粒子在匀强电场中运动（类平抛）：水平匀速 + 竖直匀加速。
++ * 参数：E(电场强度,N/C·10³) / q(电量,μC) / m(质量,×10⁻⁶kg) / v0(初速度,m/s)
++ */
++export default function ChargeInEField() {
++  const { params, time, showVectors, showFormulas, showGrid, setIsPlaying } = useAnimationStore()
++  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 450 })
++
++  const { E = 10, q = 2, m = 5, v0 = 8 } = params
++  // 单位换算到 SI
++  const ESI = E * 1e3
++  const qSI = q * 1e-6
++  const mSI = m * 1e-6
++  // 竖直加速度 a = qE/m
++  const a = (qSI * ESI) / mSI
++
++  // 极板区域
++  const plateLeft = 90
++  const plateTop = 90
++  const plateBottom = canvasSize.height - 90
++  const plateRight = canvasSize.width - 200
++  const plateLen = plateRight - plateLeft
++  const midY = (plateTop + plateBottom) / 2
++
++  // 比例：让运动在板内可见
++  const xScale = 40 // px per (m/s · s 量级)
++  const yScale = 4e-4 // px per m（a 量级较大，压缩）
++
++  // 出板时间（水平走完板长）
++  const exitTime = v0 > 0 ? plateLen / (v0 * xScale) : 0
++  const tEff = Math.min(time, exitTime)
++
++  const x = plateLeft + v0 * tEff * xScale
++  const yDrop = 0.5 * a * tEff * tEff * yScale
++  const y = midY + yDrop // 正电荷向下偏（设 E 向下）
++  const vy = a * tEff
++
++  // 到达板右端自动暂停
++  const atExit = time >= exitTime
++  useEffect(() => {
++    if (atExit && time > 0) setIsPlaying(false)
++  }, [atExit, time, setIsPlaying])
++
++  // 轨迹
++  const pts: string[] = []
++  for (let t = 0; t <= tEff; t += exitTime / 60 || 1) {
++    const px = plateLeft + v0 * t * xScale
++    const py = midY + 0.5 * a * t * t * yScale
++    pts.push(`${px},${Math.min(plateBottom - 4, py)}`)
++  }
++
++  const gridLines = []
++  if (showGrid) {
++    for (let i = 0; i <= 8; i++) {
++      const gx = plateLeft + (i * plateLen) / 8
++      gridLines.push(
++        <line key={`g-${i}`} x1={gx} y1={plateTop} x2={gx} y2={plateBottom}
++          stroke={PHYSICS_COLORS.grid} strokeWidth={1} strokeDasharray="4,4" />
++      )
++    }
++  }
++
++  const clampedY = Math.min(plateBottom - 6, y)
++
++  return (
++    <div ref={containerRef} className="w-full h-full">
++      <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
++        {gridLines}
++
++        {/* 上极板（+）与下极板（−），E 由上指向下 */}
++        <line x1={plateLeft} y1={plateTop} x2={plateRight} y2={plateTop} stroke={PHYSICS_COLORS.forceNet} strokeWidth={4} />
++        <text x={plateLeft - 16} y={plateTop + 5} fontSize="16" fill={PHYSICS_COLORS.forceNet}>＋</text>
++        <line x1={plateLeft} y1={plateBottom} x2={plateRight} y2={plateBottom} stroke={PHYSICS_COLORS.electricField} strokeWidth={4} />
++        <text x={plateLeft - 16} y={plateBottom + 5} fontSize="16" fill={PHYSICS_COLORS.electricField}>－</text>
++
++        {/* 匀强电场线（向下） */}
++        {showVectors && Array.from({ length: 6 }, (_, i) => {
++          const fx = plateLeft + 30 + (i * (plateLen - 40)) / 5
++          return (
++            <line key={`E-${i}`} x1={fx} y1={plateTop + 6} x2={fx} y2={plateBottom - 6}
++              stroke={PHYSICS_COLORS.electricField} strokeWidth={1} strokeDasharray="6,5"
++              markerEnd="url(#arrow-ef-down)" opacity={0.45} />
++          )
++        })}
++
++        {/* 轨迹 */}
++        {pts.length > 1 && (
++          <polyline points={pts.join(' ')} fill="none" stroke={PHYSICS_COLORS.trackHistory}
++            strokeWidth={CANVAS_STYLE.stroke.trackHistory} strokeDasharray="6,4" opacity={0.6} />
++        )}
++
++        {/* 粒子 */}
++        <circle cx={x} cy={clampedY} r={9} fill={PHYSICS_COLORS.forceNet} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={2} />
++        <text x={x} y={clampedY + 4} fontSize="12" fill="#fff" textAnchor="middle" fontWeight="bold">+</text>
++
++        {/* 速度分量矢量 */}
++        {showVectors && tEff > 0 && (
++          <g>
++            <line x1={x} y1={clampedY} x2={x + v0 * 4} y2={clampedY}
++              stroke={PHYSICS_COLORS.velocity} strokeWidth={CANVAS_STYLE.stroke.vectorSub} markerEnd="url(#arrow-ef-v)" />
++            <line x1={x} y1={clampedY} x2={x} y2={clampedY + Math.min(60, vy * 1.5)}
++              stroke={PHYSICS_COLORS.acceleration} strokeWidth={CANVAS_STYLE.stroke.vectorSub} markerEnd="url(#arrow-ef-vy)" />
++          </g>
++        )}
++
++        {showFormulas && (
++          <g transform={`translate(${plateRight + 16}, ${plateTop})`}>
++            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">类平抛运动</text>
++            <text x={0} y={24} fontSize="12" fill={PHYSICS_COLORS.axis}>水平：x = v₀t（匀速）</text>
++            <text x={0} y={44} fontSize="12" fill={PHYSICS_COLORS.axis}>竖直：a = qE/m</text>
++            <text x={0} y={64} fontSize="12" fill={PHYSICS_COLORS.axis}>y = ½at²</text>
++            <text x={0} y={90} fontSize="12" fill={PHYSICS_COLORS.acceleration} fontWeight="bold">
++              a = {a.toExponential(2)} m/s²
++            </text>
++            <text x={0} y={110} fontSize="12" fill={PHYSICS_COLORS.velocity}>v₀ = {v0} m/s</text>
++            <text x={0} y={130} fontSize="12" fill={PHYSICS_COLORS.axis}>vy = {vy.toFixed(1)} m/s</text>
++            <text x={0} y={154} fontSize="12" fill={PHYSICS_COLORS.axis}>t = {tEff.toFixed(2)} s</text>
++          </g>
++        )}
++
++        <defs>
++          <marker id="arrow-ef-down" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
++            <polygon points="0 0, 9 3.5, 0 7" fill={PHYSICS_COLORS.electricField} />
++          </marker>
++          <marker id="arrow-ef-v" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
++            <polygon points="0 0, 9 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
++          </marker>
++          <marker id="arrow-ef-vy" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
++            <polygon points="0 0, 9 3.5, 0 7" fill={PHYSICS_COLORS.acceleration} />
++          </marker>
++        </defs>
++      </svg>
++    </div>
++  )
++}
+diff --git a/src/features/electromagnetism/CoulombLaw.tsx b/src/features/electromagnetism/CoulombLaw.tsx
+new file mode 100644
+index 0000000..600f04a
+--- /dev/null
++++ b/src/features/electromagnetism/CoulombLaw.tsx
+@@ -0,0 +1,111 @@
++import { useCanvasSize } from '@/utils'
++import { useAnimationStore } from '@/stores'
++import { calculateCoulombForce } from '@/physics'
++import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
++
++/** 库仑定律 F = kq₁q₂/r²：两点电荷间引力/斥力，电量/距离可调 */
++export default function CoulombLaw() {
++  const { params, showVectors, showFormulas, showGrid } = useAnimationStore()
++  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 400 })
++
++  // 电量单位 μC，距离单位 cm（用于显示）；计算用 SI
++  const { q1 = 2, q2 = -3, r = 4 } = params
++  const k = 9e9
++  const q1SI = q1 * 1e-6
++  const q2SI = q2 * 1e-6
++  const rSI = r * 0.01
++  const { F } = calculateCoulombForce(k, Math.abs(q1SI), Math.abs(q2SI), rSI || 1e-9)
++
++  const attractive = q1 * q2 < 0 // 异号相吸
++  const centerY = canvasSize.height / 2
++  const pxPerCm = 28
++  const gap = r * pxPerCm
++  const cx = canvasSize.width / 2
++  const x1 = cx - gap / 2
++  const x2 = cx + gap / 2
++  const chargeR = 22
++
++  // 力箭头长度（对数压缩，避免极端值溢出画面）
++  const arrowLen = Math.max(20, Math.min(90, 30 * Math.log10(F * 1e3 + 10)))
++
++  const colorOf = (q: number) => (q >= 0 ? PHYSICS_COLORS.forceNet : PHYSICS_COLORS.electricField)
++
++  // 斥力箭头朝外，引力箭头朝内
++  const leftArrowDir = attractive ? 1 : -1 // +1 指向右(朝对方)
++  const rightArrowDir = attractive ? -1 : 1
++
++  const gridLines = []
++  if (showGrid) {
++    for (let i = 0; i <= 10; i++) {
++      const xPos = (i * canvasSize.width) / 10
++      gridLines.push(
++        <line key={`g-${i}`} x1={xPos} y1={40} x2={xPos} y2={canvasSize.height - 40}
++          stroke={PHYSICS_COLORS.grid} strokeWidth={1} strokeDasharray="4,4" />
++      )
++    }
++  }
++
++  return (
++    <div ref={containerRef} className="w-full h-full">
++      <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
++        {gridLines}
++
++        {/* 距离标注 */}
++        <line x1={x1} y1={centerY + 50} x2={x2} y2={centerY + 50} stroke={PHYSICS_COLORS.axis} strokeWidth={1} />
++        <text x={cx} y={centerY + 70} fontSize="13" fill={PHYSICS_COLORS.axis} textAnchor="middle">
++          r = {r.toFixed(1)} cm
++        </text>
++
++        {/* 力矢量 */}
++        {showVectors && (
++          <g>
++            <line x1={x1} y1={centerY} x2={x1 + leftArrowDir * arrowLen} y2={centerY}
++              stroke={PHYSICS_COLORS.forceNet} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
++              markerEnd="url(#arrow-coulomb)" />
++            <line x1={x2} y1={centerY} x2={x2 + rightArrowDir * arrowLen} y2={centerY}
++              stroke={PHYSICS_COLORS.forceNet} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
++              markerEnd="url(#arrow-coulomb)" />
++          </g>
++        )}
++
++        {/* 电荷 1 */}
++        <circle cx={x1} cy={centerY} r={chargeR} fill={colorOf(q1)} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={2} />
++        <text x={x1} y={centerY + 6} fontSize="20" fill="#fff" textAnchor="middle" fontWeight="bold">
++          {q1 >= 0 ? '+' : '−'}
++        </text>
++        <text x={x1} y={centerY - chargeR - 8} fontSize="13" fill={PHYSICS_COLORS.labelText} textAnchor="middle">
++          q₁ = {q1} μC
++        </text>
++
++        {/* 电荷 2 */}
++        <circle cx={x2} cy={centerY} r={chargeR} fill={colorOf(q2)} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={2} />
++        <text x={x2} y={centerY + 6} fontSize="20" fill="#fff" textAnchor="middle" fontWeight="bold">
++          {q2 >= 0 ? '+' : '−'}
++        </text>
++        <text x={x2} y={centerY - chargeR - 8} fontSize="13" fill={PHYSICS_COLORS.labelText} textAnchor="middle">
++          q₂ = {q2} μC
++        </text>
++
++        {showFormulas && (
++          <g transform="translate(20, 20)">
++            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">库仑定律</text>
++            <text x={0} y={24} fontSize="12" fill={PHYSICS_COLORS.axis}>F = k·q₁q₂/r²</text>
++            <text x={0} y={44} fontSize="12" fill={PHYSICS_COLORS.axis}>k = 9×10⁹ N·m²/C²</text>
++            <text x={0} y={68} fontSize="13" fill={PHYSICS_COLORS.forceNet} fontWeight="bold">
++              F = {F.toExponential(2)} N
++            </text>
++            <text x={0} y={88} fontSize="12" fill={attractive ? PHYSICS_COLORS.electricField : PHYSICS_COLORS.forceNet}>
++              {attractive ? '异号电荷 → 相互吸引' : '同号电荷 → 相互排斥'}
++            </text>
++          </g>
++        )}
++
++        <defs>
++          <marker id="arrow-coulomb" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
++            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.forceNet} />
++          </marker>
++        </defs>
++      </svg>
++    </div>
++  )
++}
+diff --git a/src/features/electromagnetism/ElectricField.tsx b/src/features/electromagnetism/ElectricField.tsx
+new file mode 100644
+index 0000000..2982027
+--- /dev/null
++++ b/src/features/electromagnetism/ElectricField.tsx
+@@ -0,0 +1,97 @@
++import { useCanvasSize } from '@/utils'
++import { useAnimationStore } from '@/stores'
++import { calculateElectricField } from '@/physics'
++import { PHYSICS_COLORS } from '@/theme/physicsColors'
++
++/** 点电荷电场 E = kq/r²：场强随距离平方反比衰减，矢量场 + 试探点 */
++export default function ElectricField() {
++  const { params, showVectors, showFormulas, showGrid } = useAnimationStore()
++  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 500 })
++
++  const { q = 5, rTest = 3 } = params // q: μC, rTest: 试探点距离 cm
++  const k = 9e9
++  const qSI = q * 1e-6
++  const positive = q >= 0
++  const cx = canvasSize.width / 2
++  const cy = canvasSize.height / 2
++  const pxPerCm = 26
++
++  // 场强（试探点）
++  const rTestSI = (rTest || 0.01) * 0.01
++  const { E } = calculateElectricField(k, Math.abs(qSI), rTestSI)
++
++  // 放射状电场线（8 方向），正电荷向外、负电荷向内
++  const directions = Array.from({ length: 16 }, (_, i) => (i * Math.PI * 2) / 16)
++  const lineInner = 26
++  const lineOuter = 150
++
++  const gridLines = []
++  if (showGrid) {
++    for (let i = 1; i <= 4; i++) {
++      gridLines.push(
++        <circle key={`ring-${i}`} cx={cx} cy={cy} r={i * 45}
++          fill="none" stroke={PHYSICS_COLORS.grid} strokeWidth={1} strokeDasharray="4,4" />
++      )
++    }
++  }
++
++  // 试探点位置（水平向右）
++  const testX = cx + rTest * pxPerCm
++  const testY = cy
++
++  return (
++    <div ref={containerRef} className="w-full h-full">
++      <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
++        {gridLines}
++
++        {/* 电场线 */}
++        {showVectors && directions.map((a, i) => {
++          const x1 = cx + Math.cos(a) * lineInner
++          const y1 = cy + Math.sin(a) * lineInner
++          const x2 = cx + Math.cos(a) * lineOuter
++          const y2 = cy + Math.sin(a) * lineOuter
++          // 正电荷：箭头在外端朝外；负电荷：朝内（交换起止点）
++          return (
++            <line key={i}
++              x1={positive ? x1 : x2} y1={positive ? y1 : y2}
++              x2={positive ? x2 : x1} y2={positive ? y2 : y1}
++              stroke={PHYSICS_COLORS.electricField} strokeWidth={1.5}
++              markerEnd="url(#arrow-efield)" opacity={0.7} />
++          )
++        })}
++
++        {/* 试探点电荷 + 该点场强方向 */}
++        <circle cx={testX} cy={testY} r={6} fill={PHYSICS_COLORS.forceNet} />
++        <text x={testX} y={testY - 12} fontSize="12" fill={PHYSICS_COLORS.forceNet} textAnchor="middle">P</text>
++
++        {/* 源电荷 */}
++        <circle cx={cx} cy={cy} r={24} fill={positive ? PHYSICS_COLORS.forceNet : PHYSICS_COLORS.electricField}
++          stroke={PHYSICS_COLORS.objectStroke} strokeWidth={2} />
++        <text x={cx} y={cy + 7} fontSize="22" fill="#fff" textAnchor="middle" fontWeight="bold">
++          {positive ? '+' : '−'}
++        </text>
++
++        {showFormulas && (
++          <g transform="translate(20, 20)">
++            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">点电荷电场强度</text>
++            <text x={0} y={24} fontSize="12" fill={PHYSICS_COLORS.axis}>E = k·q/r²（N/C）</text>
++            <text x={0} y={44} fontSize="12" fill={PHYSICS_COLORS.axis}>q = {q} μC，r = {rTest.toFixed(1)} cm</text>
++            <text x={0} y={68} fontSize="13" fill={PHYSICS_COLORS.electricField} fontWeight="bold">
++              P 点 E = {E.toExponential(2)} N/C
++            </text>
++            <text x={0} y={88} fontSize="12" fill={PHYSICS_COLORS.axis}>
++              方向：{positive ? '由正电荷指向外（背离）' : '指向负电荷'}
++            </text>
++            <text x={0} y={108} fontSize="12" fill={PHYSICS_COLORS.axis}>距离加倍 → 场强变为 1/4（平方反比）</text>
++          </g>
++        )}
++
++        <defs>
++          <marker id="arrow-efield" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
++            <polygon points="0 0, 9 3.5, 0 7" fill={PHYSICS_COLORS.electricField} />
++          </marker>
++        </defs>
++      </svg>
++    </div>
++  )
++}
+diff --git a/src/features/electromagnetism/index.ts b/src/features/electromagnetism/index.ts
+new file mode 100644
+index 0000000..b942237
+--- /dev/null
++++ b/src/features/electromagnetism/index.ts
+@@ -0,0 +1,4 @@
++export { default as CoulombLaw } from './CoulombLaw'
++export { default as ElectricField } from './ElectricField'
++export { default as ChargeInEField } from './ChargeInEField'
++export { default as Capacitor } from './Capacitor'
+diff --git a/src/features/index.ts b/src/features/index.ts
+index 30faedd..750a4a9 100644
+--- a/src/features/index.ts
++++ b/src/features/index.ts
+@@ -1,3 +1,4 @@
+ export * from './mechanics'
+ export * from './knowledge'
+ export * from './practice'
++export * from './electromagnetism'
+diff --git a/src/features/knowledge/KnowledgeTree.tsx b/src/features/knowledge/KnowledgeTree.tsx
+index 14b8dd1..bdfc0ab 100644
+--- a/src/features/knowledge/KnowledgeTree.tsx
++++ b/src/features/knowledge/KnowledgeTree.tsx
+@@ -175,13 +175,23 @@ export const KnowledgeTree: React.FC = () => {
+       groups.push({ chapter, nodes })
+     })
+ 
+-    // 提取章节中的数字部分进行正确排序
++    // 先按模块顺序（力学→电磁学→热学→光学→原子）分组，再按章节数字排序
++    const moduleOrder = ['mechanics', 'electricity', 'thermodynamics', 'optics', 'atomic']
++    const getModuleRank = (chapter: string): number => {
++      const sample = chapterMap.get(chapter)?.[0]
++      const idx = sample ? moduleOrder.indexOf(sample.module) : -1
++      return idx === -1 ? 999 : idx
++    }
+     const getChapterNumber = (chapter: string): number => {
+       const match = chapter.match(/第(\d+)章/)
+       return match ? parseInt(match[1]) : 999
+     }
+ 
+-    return groups.sort((a, b) => getChapterNumber(a.chapter) - getChapterNumber(b.chapter))
++    return groups.sort((a, b) => {
++      const mr = getModuleRank(a.chapter) - getModuleRank(b.chapter)
++      if (mr !== 0) return mr
++      return getChapterNumber(a.chapter) - getChapterNumber(b.chapter)
++    })
+   }, [])
+ 
+   const toggleChapter = (chapter: string) => {
+diff --git a/src/pages/AnimationPage.tsx b/src/pages/AnimationPage.tsx
+index f006471..3230d5b 100644
+--- a/src/pages/AnimationPage.tsx
++++ b/src/pages/AnimationPage.tsx
+@@ -135,6 +135,28 @@ const paramConfigs: Record<string, Array<{
+     { key: 'v2', label: '速度 v₂', min: -10, max: 10, step: 0.5, unit: 'm/s' },
+     { key: 'isElastic', label: '弹性碰撞', min: 0, max: 1, step: 1, unit: '0=非弹性 1=弹性' },
+   ],
++  // ===== 电磁学 · 静电场（[M4-1]）=====
++  'anim-coulomb-law': [
++    { key: 'q1', label: '电量 q₁', min: -5, max: 5, step: 0.5, unit: 'μC' },
++    { key: 'q2', label: '电量 q₂', min: -5, max: 5, step: 0.5, unit: 'μC' },
++    { key: 'r', label: '间距 r', min: 1, max: 8, step: 0.5, unit: 'cm' },
++  ],
++  'anim-electric-field': [
++    { key: 'q', label: '源电量 q', min: -10, max: 10, step: 0.5, unit: 'μC' },
++    { key: 'rTest', label: 'P 点距离', min: 1, max: 6, step: 0.5, unit: 'cm' },
++  ],
++  'anim-charge-in-efield': [
++    { key: 'E', label: '电场强度 E', min: 1, max: 30, step: 1, unit: '×10³ N/C' },
++    { key: 'q', label: '电量 q', min: 0.5, max: 10, step: 0.5, unit: 'μC' },
++    { key: 'm', label: '质量 m', min: 1, max: 20, step: 1, unit: '×10⁻⁶ kg' },
++    { key: 'v0', label: '初速度 v₀', min: 2, max: 20, step: 1, unit: 'm/s' },
++  ],
++  'anim-capacitor': [
++    { key: 'S', label: '正对面积 S', min: 20, max: 300, step: 10, unit: 'cm²' },
++    { key: 'd', label: '板间距 d', min: 1, max: 10, step: 0.5, unit: 'mm' },
++    { key: 'epsilon_r', label: '相对介电常数 εᵣ', min: 1, max: 8, step: 0.5, unit: '' },
++    { key: 'U', label: '电压 U', min: 0, max: 50, step: 1, unit: 'V' },
++  ],
+ }
+ 
+ export default function AnimationPage() {
+diff --git a/tests/data/physicsQuantities.test.ts b/tests/data/physicsQuantities.test.ts
+index c03bef3..9f3ab32 100644
+--- a/tests/data/physicsQuantities.test.ts
++++ b/tests/data/physicsQuantities.test.ts
+@@ -46,4 +46,29 @@ describe('buildPhysicsQuantities', () => {
+     const qs = buildPhysicsQuantities('anim-unknown', { foo: 1 }, 0)
+     expect(qs.some((q) => q.label === 'foo')).toBe(true)
+   })
++
++  // ===== 电磁学 · 静电场（M4-1）=====
++  it('库仑定律：异号判定相互吸引', () => {
++    const qs = buildPhysicsQuantities('anim-coulomb-law', { q1: 2, q2: -3, r: 4 }, 0)
++    expect(find(qs, '作用')).toBe('相互吸引')
++    expect(find(qs, '库仑力') as number).toBeGreaterThan(0)
++  })
++
++  it('点电荷电场：负电荷场强方向指向自身', () => {
++    const qs = buildPhysicsQuantities('anim-electric-field', { q: -5, rTest: 2 }, 0)
++    expect(find(qs, '方向')).toBe('指向负电荷')
++  })
++
++  it('带电粒子在匀强电场：a=qE/m，竖直位移 y=½at²', () => {
++    // E=10×10³, q=2×10⁻⁶, m=5×10⁻⁶ → a = qE/m = (2e-6*1e4)/5e-6 = 4000
++    const qs = buildPhysicsQuantities('anim-charge-in-efield', { E: 10, q: 2, m: 5, v0: 8 }, 1)
++    expect(find(qs, '加速度') as number).toBeCloseTo(4000, 6)
++    expect(find(qs, '竖直位移') as number).toBeCloseTo(2000, 6)
++  })
++
++  it('电容器：增大 εᵣ 电容增大', () => {
++    const c1 = find(buildPhysicsQuantities('anim-capacitor', { S: 100, d: 5, epsilon_r: 1, U: 12 }, 0), '电容') as number
++    const c2 = find(buildPhysicsQuantities('anim-capacitor', { S: 100, d: 5, epsilon_r: 4, U: 12 }, 0), '电容') as number
++    expect(c2).toBeCloseTo(c1 * 4, 6)
++  })
+ })
+-- 
+2.47.3
+

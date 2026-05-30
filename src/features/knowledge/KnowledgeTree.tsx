@@ -175,13 +175,23 @@ export const KnowledgeTree: React.FC = () => {
       groups.push({ chapter, nodes })
     })
 
-    // 提取章节中的数字部分进行正确排序
+    // 先按模块顺序（力学→电磁学→热学→光学→原子）分组，再按章节数字排序
+    const moduleOrder = ['mechanics', 'electricity', 'thermodynamics', 'optics', 'atomic']
+    const getModuleRank = (chapter: string): number => {
+      const sample = chapterMap.get(chapter)?.[0]
+      const idx = sample ? moduleOrder.indexOf(sample.module) : -1
+      return idx === -1 ? 999 : idx
+    }
     const getChapterNumber = (chapter: string): number => {
       const match = chapter.match(/第(\d+)章/)
       return match ? parseInt(match[1]) : 999
     }
 
-    return groups.sort((a, b) => getChapterNumber(a.chapter) - getChapterNumber(b.chapter))
+    return groups.sort((a, b) => {
+      const mr = getModuleRank(a.chapter) - getModuleRank(b.chapter)
+      if (mr !== 0) return mr
+      return getChapterNumber(a.chapter) - getChapterNumber(b.chapter)
+    })
   }, [])
 
   const toggleChapter = (chapter: string) => {
