@@ -47,3 +47,22 @@ export function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }
 
+/**
+ * 求解匀变速运动到达给定位移所需时间
+ * 基于公式 s = v₀t + ½at²，求解 t
+ * @param v0 初速度 [m/s]
+ * @param a 加速度 [m/s²]
+ * @param s 目标位移 [m]
+ * @returns 所需时间 [s]，若无正实数解返回 0
+ */
+export function solveQuadraticTime(v0: number, a: number, s: number): number {
+  if (Math.abs(a) < 1e-10) return Math.abs(v0) > 1e-10 ? s / v0 : 0
+  const discriminant = v0 * v0 + 2 * a * s
+  if (discriminant < 0) return 0
+  const sqrtDisc = Math.sqrt(discriminant)
+  const t1 = (-v0 + sqrtDisc) / a
+  const t2 = (-v0 - sqrtDisc) / a
+  const valid = [t1, t2].filter(t => t >= 0)
+  return valid.length === 0 ? 0 : Math.min(...valid)
+}
+

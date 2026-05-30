@@ -18,7 +18,7 @@
 
 ### 纯函数库 src/physics/
 
-- [ ] **kinematics.ts** — 运动学
+- [x] **kinematics.ts** — 运动学
   - calculateUniformMotion(v, t) → { s }
   - calculateAcceleratedMotion(v0, a, t) → { v, s }
   - calculateFreeFall(v0, g, t) → { v, y }  // v0=0自由落体，v0&gt;0上抛
@@ -28,7 +28,7 @@
   - calculateCircularMotion(r, omega, t) → { x, y, v, a_c, period }
   - calculateCircularFromPeriod(r, T) → { omega, v, a_c }
 
-- [ ] **dynamics.ts** — 动力学
+- [x] **dynamics.ts** — 动力学
   - calculateNewtonSecond(F_net, m) → { a }
   - calculateFriction(mu, N, isKinetic) → { f }
   - calculateElasticForce(k, x) → { F }
@@ -37,7 +37,7 @@
   - calculateInclinedPlane(m, angleDeg, mu, g) → { N, f, a, F_parallel, F_vertical }
   - calculateConnectedBody(m1, m2, F, mu, g) → { a, T }
 
-- [ ] **energy.ts** — 能量与动量
+- [x] **energy.ts** — 能量与动量
   - calculateWork(F, s, angleDeg) → { W }
   - calculateKineticEnergy(m, v) → { Ek }
   - calculateGravityPotential(m, g, h) → { Ep }
@@ -47,7 +47,7 @@
   - calculateElasticCollision(m1, v1, m2, v2) → { v1f, v2f, deltaEk }
   - calculateInelasticCollision(m1, v1, m2, v2) → { vf, deltaEk }
 
-- [ ] **celestial.ts** — 天体与卫星
+- [x] **celestial.ts** — 天体与卫星
   - calculateOrbitalSpeed(M, r, G) → { v, T, a_c }
   - calculateKeplerThird(r1, T1, r2) → { T2 }
   - calculateCentralMass(r, T, G) → { M }
@@ -56,7 +56,7 @@
 
 ### Zustand Store
 
-- [ ] **扩展 `src/stores/useAnimationStore.ts`**（在 M0-4 骨架基础上补充字段，**禁止另建 `usePhysicsState.ts`**）
+- [x] **扩展 `src/stores/useAnimationStore.ts`**（在 M0-4 骨架基础上补充字段，**禁止另建 `usePhysicsState.ts`**）
   > ⚠️ `usePhysicsState` 与 `useAnimationStore` 职责完全重叠（都管 animationType/params/time/isPlaying/speed），统一使用 `useAnimationStore`
 
 ```ts

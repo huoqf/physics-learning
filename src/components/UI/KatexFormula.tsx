@@ -4,13 +4,13 @@ import 'katex/dist/katex.min.css'
 
 interface KatexFormulaProps {
   formula: string
-  block?: boolean
+  mode?: 'inline' | 'block'
   className?: string
 }
 
 export const KatexFormula: React.FC<KatexFormulaProps> = ({
   formula,
-  block = false,
+  mode = 'inline',
   className = '',
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -20,18 +20,19 @@ export const KatexFormula: React.FC<KatexFormulaProps> = ({
       try {
         katex.render(formula, containerRef.current, {
           throwOnError: false,
-          displayMode: block,
+          displayMode: mode === 'block',
         })
-      } catch (error) {
-        console.error('KaTeX rendering error:', error)
+      } catch {
         containerRef.current.textContent = formula
       }
     }
-  }, [formula, block])
+  }, [formula, mode])
 
-  const baseClass = block
-    ? 'my-4 p-3 bg-primary-50 rounded-md overflow-x-auto'
-    : 'inline-block align-middle mx-1'
+  const isBlock = mode === 'block'
+
+  const baseClass = isBlock
+    ? 'my-4 px-4 py-3 bg-primary-50 rounded-sm overflow-x-auto'
+    : 'inline-block align-middle mx-1 my-0.5'
 
   return (
     <div

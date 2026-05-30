@@ -1,2 +1,2 @@
-// Features module entry (placeholder for future modules)
-export {};
+export * from './mechanics'
+export * from './knowledge'

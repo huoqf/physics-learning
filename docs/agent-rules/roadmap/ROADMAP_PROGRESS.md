@@ -1,6 +1,6 @@
 # ROADMAP — 高中物理交互动画学习软件
 
-&gt; 最后更新：2026-05-29
+&gt; 最后更新：2026-05-30
 
 ---
 
@@ -20,9 +20,9 @@
 | 里程碑 | 名称 | 状态 | 依赖 | 子文件 |
 |--------|------|------|------|--------|
 | [M0] | 技术基础架构 | ✅ 已完成 | — | `roadmap/ROADMAP_M0_FOUNDATION.md` |
-| [M1] | 力学模块（全8章） | ⏳ 待开始 | [M0] | `roadmap/ROADMAP_M1_MECHANICS.md` |
-| [M2] | 力学完善 + 导航系统 | ⏳ 待开始 | [M1] | `roadmap/ROADMAP_M2_POLISH.md` |
-| [M3] | 真题训练系统 | ⏳ 待开始 | [M1] | `roadmap/ROADMAP_M3_EXAM.md` |
+| [M1] | 力学模块（全8章） | ✅ 已完成 | [M0] | `roadmap/ROADMAP_M1_MECHANICS.md` |
+| [M2] | 力学完善 + 导航系统 | ✅ 已完成 | [M1] | `roadmap/ROADMAP_M2_POLISH.md` |
+| [M3] | 真题训练系统 | 🚧 即将开始 | [M1] | `roadmap/ROADMAP_M3_EXAM.md` |
 | [M4] | 电磁/热/光/原子模块 | ⏳ 待开始 | [M2] | `roadmap/ROADMAP_M4_PHYSICS.md` |
 
 **状态标记**：⏳ 待开始 / 🚧 进行中 / ✅ 已完成 / ⛔ 阻塞
@@ -31,11 +31,12 @@
 
 ## 🎯 当前活跃任务
 
-&gt; 更新此区域反映每次任务的工作焦点
+> 更新此区域反映每次任务的工作焦点
 
-- **当前里程碑**：[M0] 技术基础架构 ✅
-- **当前任务**：项目初始化完成，构建验证通过
-- **下一步**：可以开始执行 [M1] 或 [M3]（两者都依赖 M0）
+- **当前里程碑**：[M3] 真题训练系统 🚧
+- **当前任务**：M3-3 KaTeX 离线集成验证已完成，同时发现并修复知识树数据缺失 BUG
+- **已完成**：M3-1 完成 — 创建 analysisRegistry.ts 题目解析注册表、problems/ 目录结构（6个分类22道力学真题）；M3-2 完成 — AnalysisPage 完整实现（题干区/分步解析区/知识链路区/步骤导航）；M3-3 完成 — KatexFormula 组件改用 mode 属性（inline/block），符合 UI 规范，KaTeX CSS 与字体全部离线打包验证通过；**关键修复** — 填充 knowledgeTree.ts 力学8章共35个知识节点，与 animationRegistry 23个动画完整关联，knowledgeIndex 索引正确构建
+- **下一步**：M3-4 错题管理系统（useWrongStore.ts + WrongPage.tsx）
 
 ---
 

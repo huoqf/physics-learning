@@ -1,7 +1,7 @@
 # [M3] 真题训练系统
 
-&gt; 依赖：[M1] ✅ | 可与 [M2] 并行
-&gt; 最后更新：2026-05-29
+> 依赖：[M1] ✅ | 可与 [M2] 并行
+> 最后更新：2026-05-30
 
 ---
 
@@ -15,8 +15,8 @@
 
 ## M3-1 数据结构与注册表（必须最先完成）
 
-- [ ] 确认 `src/data/types.ts` 中 `Problem` / `ProblemStep` 类型定义完整（见 M0-8）
-- [ ] **`src/data/analysisRegistry.ts`** — 题目解析注册表
+- [x] 确认 `src/data/types.ts` 中 `Problem` / `ProblemStep` 类型定义完整（见 M0-8）
+- [x] **`src/data/analysisRegistry.ts`** — 题目解析注册表
   ```ts
   // 格式对照 animationRegistry.ts
   interface AnalysisEntry {
@@ -29,16 +29,21 @@
     dataPath: string        // 指向 src/data/problems/ 下具体文件
   }
   ```
-- [ ] **`src/data/problems/`** 目录结构：
+- [x] **`src/data/problems/`** 目录结构：
   ```
   src/data/problems/
   ├── mechanics/
-  │   ├── kinematics-sample.ts   // 运动学示例题（3-5题验证流程）
-  │   └── dynamics-sample.ts     // 动力学示例题
+  │   ├── kinematics-sample.ts   // 运动学3题
+  │   ├── dynamics-sample.ts     // 动力学4题
+  │   ├── energy-sample.ts       // 能量4题
+  │   ├── momentum-sample.ts     // 动量4题
+  │   ├── projectile-sample.ts   // 抛体/圆周4题
+  │   ├── celestial-sample.ts    // 天体3题
+  │   └── index.ts               // 统一导出
   ├── electricity/               // [M4] 后填充
-  └── index.ts                   // 统一导出
+  └── index.ts                   // 统一导出 + 查询工具函数
   ```
-- [ ] 知识点重要性标记完整（每个 KnowledgeNode 的 importance 字段）：
+- [x] 知识点重要性标记完整（每个 KnowledgeNode 的 importance 字段）：
   - `basic`：基础概念，必须掌握
   - `core`：核心定律，必考
   - `gaokao`：高考高频考点（近5年出现≥3次）
@@ -49,19 +54,19 @@
 
 ## M3-2 AnalysisPage 页面实现
 
-- [ ] **`src/pages/AnalysisPage.tsx`** — 页面骨架
+- [x] **`src/pages/AnalysisPage.tsx`** — 页面骨架
   - 通过 `src/data/analysisRegistry.ts` 按 id 查找题目配置
   - 通过 `React.lazy + Suspense` 按需加载题目详情组件
 
-- [ ] **版式实现** → 布局规范见 [`ui/04_ANALYSIS_PAGE_RULES.md §1`](../ui/04_ANALYSIS_PAGE_RULES.md)
+- [x] **版式实现** → 布局规范见 [`ui/04_ANALYSIS_PAGE_RULES.md §1`](../ui/04_ANALYSIS_PAGE_RULES.md)
 
-- [ ] **分步解析区**：
+- [x] **分步解析区**：
   - 每步默认折叠，点击展开公式与说明
   - 公式用 KaTeX 渲染，支持行内 `$...$` 和块级 `$$...$$`
   - 逐步揭示动画（展开时平滑过渡）
   - 「上一步/下一步」按钮导航
 
-- [ ] **知识链路区**：
+- [x] **知识链路区**：
   - 树形/线性排列：基础概念在上，综合考点在下
   - 节点按 importance 显示对应标签色（参见 `ui/02_UI_RULES.md` §6）
   - 当前步骤的关联节点：`box-shadow: 0 0 0 2px #60A5FA`（primary-400）
@@ -73,8 +78,8 @@
 
 ## M3-3 KaTeX 离线集成
 
-- [ ] `katex` 已在 M0-10 中离线化，此处验证 AnalysisPage 中的公式渲染
-- [ ] `src/components/UI/KatexFormula.tsx` 支持：
+- [x] `katex` 已在 M0-10 中离线化，此处验证 AnalysisPage 中的公式渲染
+- [x] `src/components/UI/KatexFormula.tsx` 支持：
   - `mode="inline"` → 行内公式，与文字间距 4px
   - `mode="block"` → 块级公式，上下间距 16px
   - 错误处理：公式解析失败时显示原始字符串

@@ -9,7 +9,7 @@ interface BadgeProps {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  gaokao: 'pl-2 bg-accent-100 text-accent-700 border-l-4 border-accent-400',
+  gaokao: 'bg-accent-100 text-accent-700 border-l-4 border-accent-400',
   hard: 'bg-danger-100 text-danger-700',
   core: 'bg-primary-100 text-primary-700',
   basic: 'bg-neutral-100 text-neutral-600',
