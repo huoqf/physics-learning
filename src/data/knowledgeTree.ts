@@ -359,7 +359,6 @@ export const knowledgeTree: KnowledgeNode[] = [
     prerequisites: ['mechanics-8-4'],
   },
 
-  // ===== 电磁学 · 第1章 静电场（[M4-1]）=====
   {
     id: 'electricity-1-1',
     title: '库仑定律',
@@ -401,7 +400,6 @@ export const knowledgeTree: KnowledgeNode[] = [
     prerequisites: ['electricity-1-2'],
   },
 
-  // ===== 电磁学 · 第2章 恒定电流（[M4-1]）=====
   {
     id: 'electricity-2-1',
     title: '欧姆定律 I=U/R',
@@ -431,6 +429,36 @@ export const knowledgeTree: KnowledgeNode[] = [
     animationIds: ['anim-closed-circuit'],
     problemIds: [],
     prerequisites: ['electricity-2-1'],
+  },
+  {
+    id: 'electricity-3-1',
+    title: '安培力 F=BIL',
+    chapter: '电磁学 第3章 磁场',
+    module: 'electricity',
+    importance: 'gaokao',
+    animationIds: ['anim-ampere-force'],
+    problemIds: [],
+    prerequisites: ['electricity-2-3'],
+  },
+  {
+    id: 'electricity-3-2',
+    title: '洛伦兹力 F=qvB',
+    chapter: '电磁学 第3章 磁场',
+    module: 'electricity',
+    importance: 'gaokao',
+    animationIds: ['anim-lorentz-force'],
+    problemIds: [],
+    prerequisites: ['electricity-3-1'],
+  },
+  {
+    id: 'electricity-3-3',
+    title: '带电粒子在磁场中运动',
+    chapter: '电磁学 第3章 磁场',
+    module: 'electricity',
+    importance: 'gaokao',
+    animationIds: ['anim-charge-in-bfield'],
+    problemIds: [],
+    prerequisites: ['electricity-3-2'],
   },
 ]
 
