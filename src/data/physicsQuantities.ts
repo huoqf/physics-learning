@@ -230,14 +230,23 @@ export function buildPhysicsQuantities(
       const d = params.d ?? 5
       const epsilon_r = params.epsilon_r ?? 1
       const U = params.U ?? 12
+      const isConnected = (params.connected ?? 1) >= 0.5
+      // 断开电源时保持的电荷基准（默认状态充电后断开）
+      const Q_FIXED = VACUUM_PERMITTIVITY * (100 * 1e-4) / (5 * 1e-3) * 12
       const { C } = calculateCapacitor(VACUUM_PERMITTIVITY * epsilon_r, S * 1e-4, d * 1e-3)
+      const voltage = isConnected ? U : Q_FIXED / C
+      const charge = isConnected ? C * voltage : Q_FIXED
+      const field = voltage / (d * 1e-3)
       return [
         ...base,
+        { label: '电源状态', value: isConnected ? '接电源(U不变)' : '断开(Q不变)', unit: '' },
         { label: '正对面积 S', value: S, unit: 'cm²' },
         { label: '板间距 d', value: d, unit: 'mm' },
         { label: '相对介电常数 εᵣ', value: epsilon_r, unit: '' },
         { label: '电容 C', value: C * 1e12, unit: 'pF' },
-        { label: '电荷量 Q', value: C * U * 1e9, unit: 'nC' },
+        { label: '电压 U', value: voltage, unit: 'V' },
+        { label: '电荷量 Q', value: charge * 1e9, unit: 'nC' },
+        { label: '场强 E', value: field, unit: 'V/m' },
       ]
     }
     case 'anim-ohm-law': {

@@ -80,9 +80,27 @@ describe('buildPhysicsQuantities', () => {
   })
 
   it('电容器：增大 εᵣ 电容增大', () => {
-    const c1 = find(buildPhysicsQuantities('anim-capacitor', { S: 100, d: 5, epsilon_r: 1, U: 12 }, 0), '电容') as number
-    const c2 = find(buildPhysicsQuantities('anim-capacitor', { S: 100, d: 5, epsilon_r: 4, U: 12 }, 0), '电容') as number
+    const c1 = find(buildPhysicsQuantities('anim-capacitor', { S: 100, d: 5, epsilon_r: 1, U: 12, connected: 1 }, 0), '电容') as number
+    const c2 = find(buildPhysicsQuantities('anim-capacitor', { S: 100, d: 5, epsilon_r: 4, U: 12, connected: 1 }, 0), '电容') as number
     expect(c2).toBeCloseTo(c1 * 4, 6)
+  })
+
+  it('电容器接电源：U 不变，Q=CU 随 C 变', () => {
+    const qs = buildPhysicsQuantities('anim-capacitor', { S: 100, d: 5, epsilon_r: 1, U: 12, connected: 1 }, 0)
+    expect(find(qs, '电源状态')).toBe('接电源(U不变)')
+    expect(find(qs, '电压') as number).toBeCloseTo(12, 6)
+  })
+
+  it('电容器断电源：默认状态 Q 守恒，增大 d 时 U 变大而 E 不变', () => {
+    const a = buildPhysicsQuantities('anim-capacitor', { S: 100, d: 5, epsilon_r: 1, U: 12, connected: 0 }, 0)
+    // 默认状态断开 → 还原 U=12、E=2400
+    expect(find(a, '电压') as number).toBeCloseTo(12, 4)
+    expect(find(a, '场强') as number).toBeCloseTo(2400, 2)
+    const b = buildPhysicsQuantities('anim-capacitor', { S: 100, d: 10, epsilon_r: 1, U: 12, connected: 0 }, 0)
+    // d 加倍：U 加倍(24)，E 不变(2400)，Q 不变
+    expect(find(b, '电压') as number).toBeCloseTo(24, 4)
+    expect(find(b, '场强') as number).toBeCloseTo(2400, 2)
+    expect(find(b, '电荷量') as number).toBeCloseTo(find(a, '电荷量') as number, 6)
   })
 
   // ===== 电磁学 · 恒定电流（M4-1）=====

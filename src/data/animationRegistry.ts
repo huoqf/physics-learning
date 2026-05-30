@@ -198,7 +198,7 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     title: '平行板电容器',
     knowledgeId: 'electricity-1-4',
     Component: lazy(() => import('@/features/electromagnetism/Capacitor')),
-    defaultParams: { S: 100, d: 5, epsilon_r: 1, U: 12 }
+    defaultParams: { S: 100, d: 5, epsilon_r: 1, U: 12, connected: 1 }
   },
 
   // ===== 电磁学 · 恒定电流（[M4-1]）=====

@@ -152,10 +152,11 @@ const paramConfigs: Record<string, Array<{
     { key: 'v0', label: '初速度 v₀', min: 5, max: 40, step: 1, unit: 'm/s' },
   ],
   'anim-capacitor': [
-    { key: 'S', label: '正对面积 S', min: 20, max: 300, step: 10, unit: 'cm²' },
+    { key: 'connected', label: '电源状态', min: 0, max: 1, step: 1, unit: '1=接电源 0=断开' },
+    { key: 'S', label: '正对面积 S', min: 20, max: 200, step: 10, unit: 'cm²' },
     { key: 'd', label: '板间距 d', min: 1, max: 10, step: 0.5, unit: 'mm' },
     { key: 'epsilon_r', label: '相对介电常数 εᵣ', min: 1, max: 8, step: 0.5, unit: '' },
-    { key: 'U', label: '电压 U', min: 0, max: 50, step: 1, unit: 'V' },
+    { key: 'U', label: '电源电压 U', min: 1, max: 50, step: 1, unit: 'V' },
   ],
   // ===== 电磁学 · 恒定电流（[M4-1]）=====
   'anim-ohm-law': [
