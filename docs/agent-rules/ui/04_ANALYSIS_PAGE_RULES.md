@@ -1,6 +1,6 @@
 # 04_ANALYSIS_PAGE_RULES — 真题拆解页规则
 
-&gt; 依赖：02_UI_RULES | 最后更新：2026-05-31
+&gt; 依赖：02_UI_RULES、06_NAVIGATION_RULES | 最后更新：2026-05-31
 &gt; 实现 AnalysisPage 时必须读本文件
 
 ---
@@ -80,6 +80,7 @@
 
 - 点击节点：新标签打开 `/animation/:id`（不打断当前解析进度）
 - 悬停：tooltip 显示知识点一句话说明（≤ 30字）
+- 步骤进度通过 URL hash 保持（`#step-N`），刷新后恢复（见 `06_NAVIGATION_RULES §2`）
 
 ---
 

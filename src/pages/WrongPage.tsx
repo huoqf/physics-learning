@@ -289,9 +289,9 @@ export default function WrongPage() {
         {!hasAny ? (
           /* 全空态 */
           <div className="flex flex-col items-center justify-center text-center py-24 gap-3">
-            <BookOpenCheck className="w-14 h-14 text-neutral-300" />
-            <p className="text-neutral-500">暂无错题，继续加油！</p>
-            <p className="text-sm text-neutral-400">在真题练习中做错的题目会自动收录到这里</p>
+            <BookOpenCheck className="w-14 h-14 text-neutral-200" />
+            <h3 className="text-neutral-600 font-semibold">暂无记录</h3>
+            <p className="text-sm text-neutral-400">完成练习后，错题将自动归档至此</p>
             <button
               onClick={() => navigate('/practice')}
               className="mt-2 px-5 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 active:scale-[0.97]"
