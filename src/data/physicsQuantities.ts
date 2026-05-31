@@ -18,11 +18,15 @@ import {
   calculateRestitutionCollision,
   calculateCoulombForce,
   calculateElectricField,
+  calculateElectricPotential,
   calculateCapacitor,
   calculateOhmLaw,
   calculateSeriesResistance,
   calculateParallelResistance,
   calculateClosedCircuit,
+  calculateAmpereForce,
+  calculateLorentzForce,
+  calculateChargeInMagField,
 } from '@/physics'
 
 const COULOMB_K = 9e9
@@ -249,6 +253,57 @@ export function buildPhysicsQuantities(
         { label: '场强 E', value: field, unit: 'V/m' },
       ]
     }
+    case 'anim-field-lines': {
+      const q1 = params.q1 ?? 5
+      const q2 = params.q2 ?? -5
+      const distance = params.distance ?? 8
+      const positive1 = q1 > 0
+      const positive2 = q2 > 0
+      const negative1 = q1 < 0
+      const negative2 = q2 < 0
+      const isOpposite = (positive1 && negative2) || (negative1 && positive2)
+      const isSame = (positive1 && positive2) || (negative1 && negative2)
+      const k = 9e9
+      const q1SI = Math.abs(q1) * 1e-6
+      const q2SI = Math.abs(q2) * 1e-6
+      const rSI = distance * 0.01
+      const F_coulomb = calculateCoulombForce(k, q1SI, q2SI, rSI).F
+      let chargeType = ''
+      if (q1 === 0 && q2 === 0) chargeType = '无电场'
+      else if (q1 === 0 || q2 === 0) chargeType = '单电荷'
+      else if (isOpposite) chargeType = '异种电荷'
+      else chargeType = '同种电荷'
+      let fieldLineDir = ''
+      if (isOpposite) fieldLineDir = '从正电荷→负电荷'
+      else if (isSame) fieldLineDir = '从两电荷向外辐射（或指向两电荷）'
+      else fieldLineDir = '从非零电荷向外辐射（或指向非零电荷）'
+      return [
+        ...base,
+        { label: '电荷类型', value: chargeType, unit: '' },
+        { label: '电荷量 q₁', value: q1, unit: 'μC' },
+        { label: '电荷量 q₂', value: q2, unit: 'μC' },
+        { label: '间距 d', value: distance, unit: 'cm' },
+        { label: '库仑力 F', value: F_coulomb, unit: 'N' },
+        { label: '电场线方向', value: fieldLineDir, unit: '' },
+      ]
+    }
+    case 'anim-electric-potential': {
+      const q = params.q ?? 5
+      const rTest = params.rTest ?? 5
+      const k = 9e9
+      const qSI = Math.abs(q) * 1e-6
+      const rTestSI = rTest * 0.01
+      const { V } = calculateElectricPotential(k, qSI, rTestSI)
+      const { E } = calculateElectricField(k, qSI, rTestSI)
+      return [
+        ...base,
+        { label: '电荷量 q', value: q, unit: 'μC' },
+        { label: '试探点距离 r', value: rTest, unit: 'cm' },
+        { label: '电势 V', value: V, unit: 'V' },
+        { label: '场强 E', value: E, unit: 'N/C' },
+        { label: '电势符号', value: q >= 0 ? '正（电势为正）' : '负（电势为负）', unit: '' },
+      ]
+    }
     case 'anim-ohm-law': {
       const U = params.U ?? 6
       const R = params.R ?? 3
@@ -292,6 +347,53 @@ export function buildPhysicsQuantities(
         { label: '路端电压 U', value: U_terminal, unit: 'V' },
         { label: '输出功率 P出', value: P_output, unit: 'W' },
         { label: '效率 η', value: eta * 100, unit: '%' },
+      ]
+    }
+    case 'anim-ampere-force': {
+      const B = params.B ?? 1
+      const I = params.I ?? 2
+      const L = params.L ?? 5
+      const angle = params.angle ?? 90
+      const { F } = calculateAmpereForce(B, I, L, angle)
+      return [
+        ...base,
+        { label: '磁感应强度 B', value: B, unit: 'T' },
+        { label: '电流 I', value: I, unit: 'A' },
+        { label: '导线长度 L', value: L, unit: 'm' },
+        { label: '夹角 θ', value: angle, unit: '°' },
+        { label: '安培力 F', value: F, unit: 'N' },
+      ]
+    }
+    case 'anim-lorentz-force': {
+      const q = params.q ?? 1
+      const v = params.v ?? 10
+      const B = params.B ?? 1
+      const angle = params.angle ?? 90
+      const { F } = calculateLorentzForce(Math.abs(q), Math.abs(v), B, angle)
+      return [
+        ...base,
+        { label: '电荷量 q', value: q, unit: 'C' },
+        { label: '速度 v', value: v, unit: 'm/s' },
+        { label: '磁感应强度 B', value: B, unit: 'T' },
+        { label: '夹角 θ', value: angle, unit: '°' },
+        { label: '洛伦兹力 F', value: F, unit: 'N' },
+      ]
+    }
+    case 'anim-charge-in-bfield': {
+      const q = params.q ?? 1
+      const m = params.m ?? 1
+      const v = params.v ?? 10
+      const B = params.B ?? 1
+      const { r, T, omega } = calculateChargeInMagField(Math.abs(q), m, Math.abs(v), B)
+      return [
+        ...base,
+        { label: '电荷量 q', value: q, unit: 'C' },
+        { label: '质量 m', value: m, unit: 'kg' },
+        { label: '速度 v', value: v, unit: 'm/s' },
+        { label: '磁感应强度 B', value: B, unit: 'T' },
+        { label: '轨道半径 r', value: r, unit: 'm' },
+        { label: '周期 T', value: T, unit: 's' },
+        { label: '角速度 ω', value: omega, unit: 'rad/s' },
       ]
     }
     default:

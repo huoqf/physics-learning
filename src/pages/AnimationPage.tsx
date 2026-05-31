@@ -158,6 +158,15 @@ const paramConfigs: Record<string, Array<{
     { key: 'epsilon_r', label: '相对介电常数 εᵣ', min: 1, max: 8, step: 0.5, unit: '' },
     { key: 'U', label: '电源电压 U', min: 1, max: 50, step: 1, unit: 'V' },
   ],
+  'anim-field-lines': [
+    { key: 'q1', label: '电荷量 q₁', min: -10, max: 10, step: 1, unit: 'μC' },
+    { key: 'q2', label: '电荷量 q₂', min: -10, max: 10, step: 1, unit: 'μC' },
+    { key: 'distance', label: '电荷间距 d', min: 3, max: 15, step: 1, unit: 'cm' },
+  ],
+  'anim-electric-potential': [
+    { key: 'q', label: '电荷量 q', min: -10, max: 10, step: 1, unit: 'μC' },
+    { key: 'rTest', label: '试探点距离 r', min: 2, max: 10, step: 0.5, unit: 'cm' },
+  ],
   // ===== 电磁学 · 恒定电流（[M4-1]）=====
   'anim-ohm-law': [
     { key: 'U', label: '电压 U', min: 0, max: 12, step: 0.5, unit: 'V' },
@@ -173,6 +182,25 @@ const paramConfigs: Record<string, Array<{
     { key: 'EMF', label: '电动势 EMF', min: 1, max: 12, step: 0.5, unit: 'V' },
     { key: 'r', label: '内阻 r', min: 0, max: 5, step: 0.5, unit: 'Ω' },
     { key: 'R', label: '外电阻 R', min: 0, max: 20, step: 0.5, unit: 'Ω' },
+  ],
+  // ===== 电磁学 · 磁场（[M4-1]）=====
+  'anim-ampere-force': [
+    { key: 'B', label: '磁感应强度 B', min: 0.1, max: 5, step: 0.1, unit: 'T' },
+    { key: 'I', label: '电流 I', min: 0.1, max: 10, step: 0.1, unit: 'A' },
+    { key: 'L', label: '导线长度 L', min: 0.5, max: 10, step: 0.5, unit: 'm' },
+    { key: 'angle', label: '夹角 θ', min: 0, max: 180, step: 5, unit: '°' },
+  ],
+  'anim-lorentz-force': [
+    { key: 'q', label: '电荷量 q', min: -5, max: 5, step: 0.1, unit: 'C' },
+    { key: 'v', label: '速度 v', min: 1, max: 50, step: 1, unit: 'm/s' },
+    { key: 'B', label: '磁感应强度 B', min: 0.1, max: 5, step: 0.1, unit: 'T' },
+    { key: 'angle', label: '夹角 θ', min: 0, max: 180, step: 5, unit: '°' },
+  ],
+  'anim-charge-in-bfield': [
+    { key: 'q', label: '电荷量 q', min: 0.1, max: 5, step: 0.1, unit: 'C' },
+    { key: 'm', label: '质量 m', min: 0.1, max: 5, step: 0.1, unit: 'kg' },
+    { key: 'v', label: '速度 v', min: 1, max: 50, step: 1, unit: 'm/s' },
+    { key: 'B', label: '磁感应强度 B', min: 0.1, max: 5, step: 0.1, unit: 'T' },
   ],
 }
 

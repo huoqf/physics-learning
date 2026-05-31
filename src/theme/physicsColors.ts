@@ -34,8 +34,10 @@ export const PHYSICS_COLORS = {
   // 电磁学
   electricField:   '#CA8A04', // 电场强度 E — Electric Yellow
   magneticField:   '#7E22CE', // 磁感应强度 B — Magnetic Purple
-  electricCurrent: '#C2410C', // 电流 I — Current Orange
+  electricCurrent: '#059669', // 电流 I — Current Emerald（与 forceNet 橙色区分）
   electricPotential:'#A16207',// 电势 φ — Potential Brown
+  positiveCharge:  '#EA580C', // 正电荷 — Charge Orange（与 forceNet 区分场景使用）
+  negativeCharge:  '#2563EB', // 负电荷 — Charge Blue（与 velocity 区分场景使用）
 
   // 热学
   temperature:     '#B91C1C', // 温度 T — Thermal Red
@@ -84,6 +86,7 @@ export const CANVAS_STYLE = {
     labelWeight: 'bold',
     axisSize:    12, // 坐标轴数值字号
     formulaSize: 12, // Canvas 内公式注释字号
+    bodySize:    14, // 标题/较大文字字号
     family:      "'Inter', 'PingFang SC', sans-serif",
   },
   dash: {

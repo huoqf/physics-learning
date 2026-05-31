@@ -200,6 +200,20 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     Component: lazy(() => import('@/features/electromagnetism/Capacitor')),
     defaultParams: { S: 100, d: 5, epsilon_r: 1, U: 12, connected: 1 }
   },
+  'anim-field-lines': {
+    id: 'anim-field-lines',
+    title: '电场线与等势面',
+    knowledgeId: 'electricity-1-5',
+    Component: lazy(() => import('@/features/electromagnetism/FieldLines')),
+    defaultParams: { q1: 5, q2: -5, distance: 8, mode: 1 } // mode: 1=异种, 0=同种
+  },
+  'anim-electric-potential': {
+    id: 'anim-electric-potential',
+    title: '电势与等势面',
+    knowledgeId: 'electricity-1-6',
+    Component: lazy(() => import('@/features/electromagnetism/ElectricPotential')),
+    defaultParams: { q: 5, rTest: 5 }
+  },
 
   // ===== 电磁学 · 恒定电流（[M4-1]）=====
   'anim-ohm-law': {
@@ -222,6 +236,29 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     knowledgeId: 'electricity-2-3',
     Component: lazy(() => import('@/features/electromagnetism/ClosedCircuit')),
     defaultParams: { EMF: 6, r: 1, R: 5 }
+  },
+
+  // ===== 电磁学 · 磁场（[M4-1]）=====
+  'anim-ampere-force': {
+    id: 'anim-ampere-force',
+    title: '安培力 F=BIL',
+    knowledgeId: 'electricity-3-1',
+    Component: lazy(() => import('@/features/electromagnetism/AmpereForce')),
+    defaultParams: { B: 1, I: 2, L: 5, angle: 90 }
+  },
+  'anim-lorentz-force': {
+    id: 'anim-lorentz-force',
+    title: '洛伦兹力 F=qvB',
+    knowledgeId: 'electricity-3-2',
+    Component: lazy(() => import('@/features/electromagnetism/LorentzForce')),
+    defaultParams: { q: 1, v: 10, B: 1, angle: 90 }
+  },
+  'anim-charge-in-bfield': {
+    id: 'anim-charge-in-bfield',
+    title: '带电粒子在磁场中运动',
+    knowledgeId: 'electricity-3-3',
+    Component: lazy(() => import('@/features/electromagnetism/ChargeInBField')),
+    defaultParams: { q: 1, m: 1, v: 10, B: 1 }
   }
 }
 

@@ -399,6 +399,26 @@ export const knowledgeTree: KnowledgeNode[] = [
     problemIds: [],
     prerequisites: ['electricity-1-2'],
   },
+  {
+    id: 'electricity-1-5',
+    title: '电场线与等势面关系',
+    chapter: '电磁学 第1章 静电场',
+    module: 'electricity',
+    importance: 'gaokao',
+    animationIds: ['anim-field-lines'],
+    problemIds: [],
+    prerequisites: ['electricity-1-2'],
+  },
+  {
+    id: 'electricity-1-6',
+    title: '电势与电势差',
+    chapter: '电磁学 第1章 静电场',
+    module: 'electricity',
+    importance: 'gaokao',
+    animationIds: ['anim-electric-potential'],
+    problemIds: [],
+    prerequisites: ['electricity-1-2'],
+  },
 
   {
     id: 'electricity-2-1',
