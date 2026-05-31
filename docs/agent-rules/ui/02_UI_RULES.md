@@ -2,7 +2,7 @@
 
 &gt; 优先级：低于 core/ARCHITECTURE_RULES，高于 03/04/05
 &gt; AI任务入口：涉及任何 UI 实现前必须读本文件，细节查 src/theme/ 代码
-&gt; 最后更新：2026-05-29
+&gt; 最后更新：2026-05-31
 
 ---
 
@@ -95,7 +95,7 @@ Canvas/SVG 中每类物理量有固定颜色，详见 `src/theme/physicsColors.t
 未学习（neutral-300）→ 已浏览（primary-400）→ 练习中（primary-600）→ 已掌握（success-500）
 ```
 
-状态变化有 300ms transition；已掌握节点有 `box-shadow: 0 0 0 2px #10B981` 光晕。
+状态变化有 300ms transition；已掌握节点有 `box-shadow: glowRing.mastered（详见 src/theme/shadow.ts）` 光晕。
 
 ### 高考重要性标签（5级，使用 accent 金色系）
 
@@ -113,7 +113,7 @@ Canvas/SVG 中每类物理量有固定颜色，详见 `src/theme/physicsColors.t
 |------|---------|
 | 播放中 | 顶部 2px primary-500 进度条 |
 | 暂停 | Canvas opacity 0.9 dimmed |
-| 慢放 &lt; 1x | 进度条变 secondary-500 |
+| 慢放 &lt; 1x | 进度条变 secondary-400 |
 | 快放 &gt; 1x | 进度条变 accent-500 |
 
 ---

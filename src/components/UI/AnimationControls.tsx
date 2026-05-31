@@ -29,16 +29,15 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
 
   // 根据播放速度确定进度条颜色
   const getProgressBarColor = () => {
-    if (speed < 1) return colors.secondary[500]
+    if (speed < 1) return colors.secondary[400]
     if (speed > 1) return colors.accent[500]
     return colors.primary[500]
   }
 
   const progressBarColor = getProgressBarColor()
 
-  // 根据播放速度确定进度条手柄颜色
   const getHandleColor = () => {
-    if (speed < 1) return colors.secondary[500]
+    if (speed < 1) return colors.secondary[400]
     if (speed > 1) return colors.accent[500]
     return colors.primary[500]
   }
@@ -110,6 +109,12 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
         </div>
 
         <div className="flex-1 flex items-center gap-3">
+          <span className="text-xs font-medium px-1.5 py-0.5 rounded" style={{
+            color: progressBarColor,
+            backgroundColor: `${progressBarColor}22`
+          }}>
+            {speed}x
+          </span>
           <span className="text-sm text-neutral-600 min-w-[40px]">
             {time.toFixed(1)}s
           </span>

@@ -34,6 +34,7 @@ export interface ProblemStep {
   id: string
   description: string
   formula?: string
+  svgContent?: string
   explanation: string
   knowledgeId?: string
 }

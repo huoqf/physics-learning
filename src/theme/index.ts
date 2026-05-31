@@ -24,7 +24,7 @@ export { spacing, LAYOUT, DENSITY }             from './spacing'
 export { radius }                               from './radius'
 export type { RadiusKey }                       from './radius'
 
-export { shadow }                               from './shadow'
+export { shadow, glowRing }                     from './shadow'
 export type { ShadowKey }                       from './shadow'
 
 export {

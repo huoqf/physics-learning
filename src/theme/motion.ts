@@ -12,7 +12,10 @@ export const duration = {
   fast:     200,  // 按钮状态切换、下拉展开
   normal:   300,  // 卡片进场、面板展开（默认）
   slow:     500,  // 页面级过渡、模态弹出
-  xslow:    800,  // 错题解析步骤揭示
+  xslow:        800,
+  celebration:  800,
+  stateChange:  300,
+  feedback:     400,
 } as const
 
 // ─── 缓动函数（CSS cubic-bezier / Framer Motion 字符串） ──────────────────

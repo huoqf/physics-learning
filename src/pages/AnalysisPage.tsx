@@ -7,6 +7,7 @@ import { useWrongStore } from '@/stores'
 import { KatexFormula } from '@/components/UI/KatexFormula'
 import { Badge } from '@/components/UI/Badge'
 import { Button } from '@/components/UI/Button'
+import { glowRing } from '@/theme/shadow'
 import type { ProblemStep, KnowledgeNode } from '@/data/types'
 
 function ContentWithKatex({ content }: { content: string }) {
@@ -35,6 +36,7 @@ interface StepCardProps {
   index: number
   status: 'unreached' | 'current' | 'completed'
   isExpanded: boolean
+  isSvgDegraded: boolean
   onToggle: () => void
   onClickAnimation?: (animId: string) => void
 }
@@ -44,6 +46,7 @@ const StepCard: React.FC<StepCardProps> = ({
   index,
   status,
   isExpanded,
+  isSvgDegraded,
   onToggle,
   onClickAnimation,
 }) => {
@@ -109,6 +112,18 @@ const StepCard: React.FC<StepCardProps> = ({
         `}
       >
         <div className={`px-4 py-4 ${bgColors[status]}`}>
+          {step.svgContent && (
+            <div
+              className="mb-4 flex justify-center"
+              style={{
+                opacity: isSvgDegraded ? 0.5 : 1,
+                transform: isSvgDegraded ? 'scale(0.5)' : 'scale(1)',
+                transformOrigin: 'top center',
+                transition: 'opacity 250ms ease-in-out, transform 250ms ease-in-out',
+              }}
+              dangerouslySetInnerHTML={{ __html: step.svgContent }}
+            />
+          )}
           {step.formula && (
             <div className="mb-4">
               <KatexFormula formula={step.formula} mode="block" />
@@ -180,9 +195,10 @@ const KnowledgeChain: React.FC<KnowledgeChainProps> = ({
             className={`
               w-full flex items-center gap-2 px-3 py-2 rounded-md text-left
               transition-all duration-200
-              ${isCurrent ? 'shadow-[0_0_0_2px_#60A5FA] bg-white' : 'hover:bg-white hover:shadow-sm'}
+              ${isCurrent ? 'bg-white' : 'hover:bg-white hover:shadow-sm'}
               ${isCompleted ? 'border-l-[3px] border-l-success-500' : ''}
             `}
+            style={isCurrent ? { boxShadow: glowRing.highlight } : undefined}
           >
             <Badge variant={node.importance as 'basic' | 'core' | 'gaokao' | 'hard' | 'extend'}>
               {node.importance === 'gaokao' ? '⭐' : ''}
@@ -378,21 +394,27 @@ export default function AnalysisPage() {
               <h2 className="text-base font-semibold text-neutral-800">分步解析</h2>
               <span className="text-xs text-neutral-400">
                 步骤 {currentStepIndex + 1} / {problem.steps.length}
+                <span className="ml-1">· 已展开 {expandedSteps.size}/2</span>
               </span>
             </div>
 
             <div className="space-y-3">
-              {problem.steps.map((step, index) => (
-                <StepCard
-                  key={step.id}
-                  step={step}
-                  index={index}
-                  status={getStepStatus(index)}
-                  isExpanded={expandedSteps.has(index)}
-                  onToggle={() => toggleStep(index)}
-                  onClickAnimation={handleAnimationClick}
-                />
-              ))}
+              {problem.steps.map((step, index) => {
+                const expandedArr = Array.from(expandedSteps)
+                const isFirstExpanded = expandedArr.length >= 2 && expandedArr[0] === index
+                return (
+                  <StepCard
+                    key={step.id}
+                    step={step}
+                    index={index}
+                    status={getStepStatus(index)}
+                    isExpanded={expandedSteps.has(index)}
+                    isSvgDegraded={isFirstExpanded}
+                    onToggle={() => toggleStep(index)}
+                    onClickAnimation={handleAnimationClick}
+                  />
+                )
+              })}
             </div>
 
             <div className="flex items-center justify-between mt-6 pt-4 border-t border-neutral-200">

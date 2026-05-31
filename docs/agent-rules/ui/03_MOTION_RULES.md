@@ -1,6 +1,6 @@
 # 03_MOTION_RULES — 动效规则
 
-&gt; 依赖：02_UI_RULES | 最后更新：2026-05-29
+&gt; 依赖：02_UI_RULES | 最后更新：2026-05-31
 &gt; 涉及任何动效实现时读本文件，详细 duration/easing 值见 `src/theme/motion.ts`
 
 ---
@@ -18,17 +18,20 @@
 
 ## 2. 时长规范
 
-| 场景 | 时长 | Easing | token |
-|------|------|--------|-------|
-| hover/focus 响应 | 150ms | ease-out | `duration.fast` |
-| 状态切换（展开/收起/显示）| 250ms | ease-in-out | `duration.normal` |
-| 卡片 hover 上浮 | 200ms | ease-out | `duration.normal` |
-| 页面路由切换（fade）| 300ms | ease-out | `duration.slow` |
-| 抽屉/侧边栏滑入 | 300ms | ease-out | `duration.slow` |
-| Modal 出现 | 200ms | ease-out | `duration.normal` |
-| 学习状态变化 | 300ms | ease-in-out | `duration.slow` |
-| 知识点已掌握庆祝 | 500ms | ease-in-out | `duration.celebration` |
-| 按钮 active 按压 | 100ms | ease-out | `duration.instant` |
+| 场景 | 时长 | 分类 | Easing | token |
+|------|------|------|--------|-------|
+| hover/focus 响应 | 150ms | 反馈类 | ease-out | `duration.fast` |
+| 答题对（scale 1.02）| 200ms | 反馈类 | ease-out | `duration.fast` |
+| 答题错（shake）| 400ms | 反馈类 | ease-out | `duration.feedback` |
+| 状态切换（展开/收起/显示）| 250ms | 状态类 | ease-in-out | `duration.normal` |
+| 卡片 hover 上浮 | 200ms | 反馈类 | ease-out | `duration.normal` |
+| 页面路由切换（fade）| 300–500ms | 页面级过渡 | ease-out | `duration.slow` |
+| 抽屉/侧边栏滑入 | 300ms | 页面级过渡 | ease-out | `duration.slow` |
+| Modal 出现 | 200ms | 状态类 | ease-out | `duration.normal` |
+| 学习状态变化 | 300ms | 状态类 | ease-in-out | `duration.stateChange` |
+| 已掌握光晕（手动标记）| 300ms | 状态类 | ease-in-out | `duration.stateChange` |
+| 知识点已掌握庆祝（连续答对≥2次）| 500–800ms | 庆祝类 | ease-in-out | `duration.celebration` |
+| 按钮 active 按压 | 100ms | 反馈类 | ease-out | `duration.instant` |
 
 ---
 
@@ -52,7 +55,7 @@
 
 ### 进度/状态变化
 - 颜色渐变：300ms transition-colors
-- 已掌握光晕出现：`box-shadow` 从 0 → `0 0 0 2px #10B981`，500ms
+- 已掌握光晕出现：`box-shadow` 从 0 → `glowRing.mastered`，300ms（状态类）；连续答对≥2次触发时归庆祝类，500–800ms
 
 ---
 
@@ -68,7 +71,7 @@
 
 | 播放速度 | 进度条颜色 | 含义 |
 |---------|---------|------|
-| 0.25x / 0.5x | secondary-500 `#06B6D4` | 慢放，细看 |
+| 0.25x / 0.5x | secondary-400 `#22D3EE` | 慢放，细看 |
 | 1x（正常）| primary-500 `#3B82F6` | 标准 |
 | 2x | accent-500 `#F59E0B` | 快放，概览 |
 
@@ -79,5 +82,16 @@
 - 禁止 bounce/弹跳 easing（任何场景）
 - 禁止 Canvas 动画之外的页面元素使用 `requestAnimationFrame`
 - 禁止在物理仿真中使用固定时间步（必须使用 deltaTime）
-- 禁止超过 500ms 的非庆祝类动效（庆祝类上限 800ms）
+- 禁止超过 300ms 的状态类动效、禁止超过 400ms 的反馈类动效（庆祝类上限 800ms，页面级过渡允许 300–500ms）
 - 禁止同时触发超过 3 个独立 CSS transition（性能与视觉干扰）
+
+---
+
+## 6. 动效分类定义
+
+| 分类 | 触发条件 | 时长上限 | 允许组合 | Easing |
+|------|---------|---------|---------|--------|
+| 庆祝类 | 连续答对 ≥ 2 次、首次完整掌握知识点 | 800ms | scale + 光晕 + 粒子（可选） | ease-in-out，禁止 bounce |
+| 状态类 | 任意 UI 状态变化（展开/收起/颜色变化/光晕出现） | 300ms | 单属性 transition，禁止同时超过 2 个属性 | ease-in-out 或 ease-out |
+| 反馈类 | 用户操作即时响应（答题对/错、按钮点击、shake） | 400ms | shake 可达 400ms，单色变化 ≤ 200ms | ease-out |
+| 页面级过渡 | 路由切换、全屏 Modal | 300–500ms | opacity + transform | ease-out |

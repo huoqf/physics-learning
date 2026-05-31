@@ -46,7 +46,8 @@
 - **当前任务**：M3-3 KaTeX 离线集成验证已完成，同时发现并修复知识树数据缺失 BUG
 - **已完成**：M3-1 完成 — 创建 analysisRegistry.ts 题目解析注册表、problems/ 目录结构（6个分类22道力学真题）；M3-2 完成 — AnalysisPage 完整实现（题干区/分步解析区/知识链路区/步骤导航）；M3-3 完成 — KatexFormula 组件改用 mode 属性（inline/block），符合 UI 规范，KaTeX CSS 与字体全部离线打包验证通过；**关键修复** — 填充 knowledgeTree.ts 力学8章共35个知识节点，与 animationRegistry 23个动画完整关联，knowledgeIndex 索引正确构建
 - **M3-5 练习与测试模式完成（2026-05-30）**：自评式答题会话 PracticeSession（练习/测试双模式、计时器、提示、揭示解析、自评联动 useWrongStore 自动判错判对）、PracticePage 入口（模式选择+筛选+成绩历史+浏览真题）、ScoreReport 成绩报告（总分/各模块正确率/薄弱知识点跳转）、新增 usePracticeStore（成绩历史 IndexedDB 持久化）、激活此前未接线的 useProblemStore。新增 4 项测试（共 60）。**[M3] 全部完成**
-- **下一步**：M4-1 继续——磁场组件（AmpereForce/LorentzForce/ChargeInBField，纯函数已就绪）或电磁感应（FaradayLaw/LenzsLaw/CuttingEMF）
+- **UI 主题一致性优化（2026-05-31，归属 [M2]）**：修复 4 份 UI 规范与主题代码间的语义不一致——①进度条撞色：慢放 `secondary-500`→`secondary-400`（与动能色 `#0891B2` 拉开 2 色阶），新增速度文字标签（色盲友好）；②光晕 token 统一：shadow.ts 新增 `glowRing` 对象（highlight/mastered/activeStep/error），AnalysisPage 硬编码→引用 token，旧 masteredGlow/focusGlow 标记 deprecated；③动效分类体系：motion.ts 新增 celebration/stateChange/feedback 时长 token，03_MOTION_RULES 新增 §6 动效分类定义表（庆祝类≤800ms/状态类≤300ms/反馈类≤400ms/页面级过渡300-500ms），消除原 §2 与 §5 的矛盾；④分析页信息密度：04_ANALYSIS 新增 §2.3 单步内容上限（SVG≤1/公式≤2/文字≤80字/标签≤3），两步展开时 SVG 降级为缩略图而非完全收起，新增"已展开 N/2 步"指示器。验证：tsc 通过 / lint 0 警告
+- **下一步**：M4-1 继续——电磁感应（FaradayLaw/LenzsLaw/CuttingEMF）
 
 ---
 

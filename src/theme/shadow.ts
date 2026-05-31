@@ -27,10 +27,10 @@ export const shadow = {
   // 输入框凹陷感
   inner: 'inset 0 2px 4px rgba(15,23,42,0.06)',
 
-  // 已掌握状态光晕（success-500）
+  // @deprecated 使用 glowRing.mastered 替代
   masteredGlow: '0 0 0 2px #10B981',
 
-  // 当前步骤知识节点高亮（primary-400）
+  // @deprecated 使用 glowRing.highlight 替代
   focusGlow: '0 0 0 2px #60A5FA',
 
   // 按钮 focus 可访问性环
@@ -38,3 +38,10 @@ export const shadow = {
 } as const
 
 export type ShadowKey = keyof typeof shadow
+
+export const glowRing = {
+  highlight: '0 0 0 2px #60A5FA',
+  mastered:  '0 0 0 2px #10B981',
+  activeStep:'0 0 0 2px #3B82F6',
+  error:     '0 0 0 2px #EF4444',
+} as const
