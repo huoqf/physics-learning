@@ -1,6 +1,6 @@
 # 05_WRONGBOOK_RULES — 错题本规则
 
-&gt; 依赖：02_UI_RULES | 最后更新：2026-05-29
+&gt; 依赖：02_UI_RULES | 最后更新：2026-05-31
 &gt; 实现 WrongPage / 错题卡片 时必须读本文件
 
 ---
@@ -12,7 +12,7 @@
 | 未复习 | danger-500 `#EF4444` | 做错后未查看 |
 | 已查看 | warning-500 `#F59E0B` | 已查看解析未重练 |
 | 重练中 | primary-500 `#3B82F6` | 正在重做 |
-| 已掌握 | success-500 `#10B981` | 连续答对 ≥ 2 次 |
+| 已掌握 | success-500 `#10B981` | 7天内连续答对 ≥ 2 次 |
 
 多次错误（≥ 3次）：danger-700 + 右上角数字角标（红色圆形 badge）
 
@@ -67,8 +67,11 @@
 - 错题数据唯一来源：`useWrongStore`（Zustand）
 - 持久化：IndexedDB via `storage.setDB`
 - 禁止 WrongPage 直接读写 IndexedDB（必须通过 useWrongStore）
-- 连续答对判定：同一题 `correctStreak &gt;= 2` 时触发已掌握状态
+- 连续答对判定：同一题 `correctStreak >= 2` 且最近两次答对间隔 ≤ 7天 时触发已掌握状态
+- 超过 7 天间隔的答对不计入连续，`correctStreak` 重置为 1
 - 笔记字数上限：200字
+- 首次掌握提示：触发已掌握时显示「太棒了，已掌握！」toast（success-500 色，3 秒后自动消失）
+- 7 天后复习提醒：已掌握超过 7 天的题目，右上角数字角标变为 🔄 图标（neutral-400 灰色，非 danger 红色），提示用户重新测试
 
 ---
 

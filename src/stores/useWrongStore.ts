@@ -9,7 +9,7 @@ export interface WrongRecord {
   problemId: string
   /** 累计做错次数 */
   errorCount: number
-  /** 连续答对次数，>=2 触发已掌握 */
+  /** 连续答对次数（7天内），>=2 触发已掌握 */
   correctStreak: number
   /** 当前状态 */
   status: WrongStatus
@@ -27,6 +27,7 @@ export interface WrongRecord {
 
 /** 连续答对达到此值判定为已掌握 */
 const MASTERY_STREAK = 2
+const MASTERY_WINDOW = 7 * 24 * 60 * 60 * 1000
 /** 笔记字数上限 */
 export const NOTE_MAX_LENGTH = 200
 /** IndexedDB 持久化键 */
@@ -123,10 +124,11 @@ export const useWrongStore = create<WrongState>((set, get) => ({
       const records = state.records.map((r) => {
         if (r.problemId !== problemId) return r
         const correctStreak = r.correctStreak + 1
-        const mastered = correctStreak >= MASTERY_STREAK
+        const withinWindow = (now - r.lastAttemptTime) <= MASTERY_WINDOW
+        const mastered = correctStreak >= MASTERY_STREAK && withinWindow
         return {
           ...r,
-          correctStreak,
+          correctStreak: mastered ? correctStreak : (withinWindow ? correctStreak : 1),
           status: (mastered ? 'mastered' : 'retrying') as WrongStatus,
           masteredAt: mastered ? (r.masteredAt ?? now) : r.masteredAt,
           lastAttemptTime: now,
