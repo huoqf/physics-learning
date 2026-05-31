@@ -38,6 +38,8 @@ export const PHYSICS_COLORS = {
   electricPotential:'#A16207',// 电势 φ — Potential Brown
   positiveCharge:  '#EA580C', // 正电荷 — Charge Orange（与 forceNet 区分场景使用）
   negativeCharge:  '#2563EB', // 负电荷 — Charge Blue（与 velocity 区分场景使用）
+  magnetNorth:     '#DC2626', // 磁铁 N 极 — Magnet North Red
+  magnetSouth:     '#2563EB', // 磁铁 S 极 — Magnet South Blue
 
   // 热学
   temperature:     '#B91C1C', // 温度 T — Thermal Red

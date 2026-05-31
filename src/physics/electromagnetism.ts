@@ -101,6 +101,73 @@ export function calculateFaradayEMF(N: number, dPhi_dt: number): { EMF: number }
 }
 
 /**
+ * 楞次定律计算。
+ *
+ * @param magnetPole    磁极指向：1=N极朝下, -1=S极朝下
+ * @param velocity      速度：正值=远离线圈, 负值=靠近线圈
+ * @param coilN         线圈匝数
+ * @returns 楞次定律分析结果
+ */
+export function calculateLenzsLaw(
+  magnetPole: number,
+  velocity: number
+): {
+  originalFieldDirection: 'up' | 'down'
+  fluxChange: 'increasing' | 'decreasing' | 'stable'
+  inducedFieldDirection: 'up' | 'down'
+  inducedCurrentDirection: 'clockwise' | 'counterclockwise'
+  equivalentPole: 'N' | 'S' | null
+  forceType: 'repulsion' | 'attraction' | null
+  currentAction: string
+} {
+  // 原磁场方向（N极朝下磁场向下，S极朝下磁场向上）
+  const originalFieldDirection: 'up' | 'down' = magnetPole > 0 ? 'down' : 'up'
+
+  // 磁通量变化（速度负=靠近=磁通增加，速度正=远离=磁通减少）
+  const fluxChange: 'increasing' | 'decreasing' | 'stable' =
+    velocity < -0.1 ? 'increasing' :
+    velocity > 0.1 ? 'decreasing' : 'stable'
+
+  // 楞次定律：感应磁场阻碍原磁通变化
+  const inducedFieldDirection: 'up' | 'down' =
+    fluxChange === 'increasing'
+      ? (originalFieldDirection === 'down' ? 'up' : 'down')
+      : fluxChange === 'decreasing'
+      ? originalFieldDirection
+      : 'up' // stable时默认向上
+
+  // 感应电流方向（右手定则：感应磁场向上=逆时针，向下=顺时针）
+  const inducedCurrentDirection: 'clockwise' | 'counterclockwise' =
+    inducedFieldDirection === 'up' ? 'counterclockwise' : 'clockwise'
+
+  // 等效磁极（上端与感应磁场方向对应）
+  const equivalentPole: 'N' | 'S' | null =
+    fluxChange === 'stable' ? null :
+    inducedFieldDirection === 'up' ? 'N' : 'S'
+
+  // 力反馈（阻碍原理：靠近排斥，远离吸引）
+  const forceType: 'repulsion' | 'attraction' | null =
+    fluxChange === 'increasing' ? 'repulsion' :
+    fluxChange === 'decreasing' ? 'attraction' : null
+
+  // 当前动作描述
+  const currentAction =
+    magnetPole > 0
+      ? (velocity < 0 ? 'N极靠近' : 'N极远离')
+      : (velocity < 0 ? 'S极靠近' : 'S极远离')
+
+  return {
+    originalFieldDirection,
+    fluxChange,
+    inducedFieldDirection,
+    inducedCurrentDirection,
+    equivalentPole,
+    forceType,
+    currentAction,
+  }
+}
+
+/**
  * 理想变压器。
  * U2 = U1·(n2/n1)，I2 = I1·(n1/n2)（功率守恒）
  */

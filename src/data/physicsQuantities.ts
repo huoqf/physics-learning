@@ -27,7 +27,9 @@ import {
   calculateAmpereForce,
   calculateLorentzForce,
   calculateChargeInMagField,
-} from '@/physics'
+  calculateFaradayEMF,
+  calculateLenzsLaw,
+} from '../physics'
 
 const COULOMB_K = 9e9
 const VACUUM_PERMITTIVITY = 8.85e-12
@@ -394,6 +396,87 @@ export function buildPhysicsQuantities(
         { label: '轨道半径 r', value: r, unit: 'm' },
         { label: '周期 T', value: T, unit: 's' },
         { label: '角速度 ω', value: omega, unit: 'rad/s' },
+      ]
+    }
+    case 'anim-faraday-law': {
+      const N = params.N ?? 10
+      const B = params.B ?? 1
+      const S = params.S ?? 50
+      const angle = params.angle ?? 0
+      const dPhiMode = params.dPhiMode ?? 0
+      const angleRad = (angle * Math.PI) / 180
+      const cosTheta = Math.cos(angleRad)
+      const omegaAnim = 0.5
+      const tAnim = time * omegaAnim
+      const mode1Omega = (30 * Math.PI) / 180
+      let dPhi_dt = 0
+      if (dPhiMode === 0) {
+        dPhi_dt = B * omegaAnim * Math.cos(tAnim) * (S * 1e-4) * cosTheta
+      } else if (dPhiMode === 1) {
+        const angleAnimRad = ((angle + (time * 30)) % 360) * Math.PI / 180
+        dPhi_dt = -B * (S * 1e-4) * mode1Omega * Math.sin(angleAnimRad)
+      } else {
+        dPhi_dt = B * (S * 1e-4) * 0.5 * omegaAnim * Math.cos(tAnim) * cosTheta
+      }
+      const { EMF } = calculateFaradayEMF(N, dPhi_dt)
+      return [
+        ...base,
+        { label: '匝数 N', value: N, unit: '匝' },
+        { label: '磁感应强度 B', value: B, unit: 'T' },
+        { label: '面积 S', value: S, unit: 'cm²' },
+        { label: '夹角 θ', value: angle, unit: '°' },
+        { label: 'dΦ/dt', value: dPhi_dt, unit: 'Wb/s' },
+        { label: '感应电动势 EMF', value: Math.abs(EMF), unit: 'V' },
+      ]
+    }
+    case 'anim-lenzs-law': {
+      const {
+        currentAction,
+        originalFieldDirection,
+        fluxChange,
+        inducedFieldDirection,
+        equivalentPole,
+        forceType,
+      } = calculateLenzsLaw(params.magnetPole ?? 1, params.velocity ?? 0)
+
+      return [
+        ...base,
+        { label: '当前动作', value: currentAction, unit: '' },
+        { label: '原磁场方向', value: originalFieldDirection === 'down' ? '向下' : '向上', unit: '' },
+        {
+          label: '磁通量变化',
+          value: fluxChange === 'increasing' ? '增加' : fluxChange === 'decreasing' ? '减少' : '稳定',
+          unit: '',
+          highlight: fluxChange === 'increasing' ? 'positive' : 'negative',
+        },
+        { label: '感应磁场方向', value: inducedFieldDirection === 'down' ? '向下' : '向上', unit: '' },
+        { label: '等效磁极', value: equivalentPole ? `上端 ${equivalentPole}极` : '无', unit: '' },
+        {
+          label: '洛伦兹力表现',
+          value: forceType === 'repulsion' ? '排斥(阻碍靠近)' : forceType === 'attraction' ? '吸引(阻碍远离)' : '无',
+          unit: '',
+        },
+        { label: '线圈匝数 N', value: params.coilN ?? 10, unit: '匝' },
+        { label: '时间 t', value: time.toFixed(2), unit: 's' },
+      ]
+    }
+    case 'anim-cutting-emf': {
+      const B = params.B ?? 1
+      const L = params.L ?? 0.5
+      const v = params.v ?? 2
+      const R = params.R ?? 2
+      const EMF = B * L * v
+      const I = R > 0 ? EMF / R : 0
+      const { F: F_ampere } = calculateAmpereForce(B, I, L, 90)
+      return [
+        ...base,
+        { label: '磁感应强度 B', value: B, unit: 'T' },
+        { label: '导轨宽度 L', value: L, unit: 'm' },
+        { label: '速度 v', value: v, unit: 'm/s' },
+        { label: '电阻 R', value: R, unit: 'Ω' },
+        { label: '感应电动势 EMF', value: EMF, unit: 'V' },
+        { label: '感应电流 I', value: I, unit: 'A' },
+        { label: '安培力 F安', value: F_ampere, unit: 'N' },
       ]
     }
     default:

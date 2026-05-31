@@ -259,6 +259,29 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     knowledgeId: 'electricity-3-3',
     Component: lazy(() => import('@/features/electromagnetism/ChargeInBField')),
     defaultParams: { q: 1, m: 1, v: 10, B: 1 }
+  },
+
+  // ===== 电磁学 · 电磁感应（[M4-1]）=====
+  'anim-faraday-law': {
+    id: 'anim-faraday-law',
+    title: '法拉第电磁感应定律',
+    knowledgeId: 'electricity-4-2',
+    Component: lazy(() => import('@/features/electromagnetism/FaradayLaw')),
+    defaultParams: { N: 10, B: 1, S: 50, angle: 0, dPhiMode: 0 }
+  },
+  'anim-lenzs-law': {
+    id: 'anim-lenzs-law',
+    title: '楞次定律',
+    knowledgeId: 'electricity-4-1',
+    Component: lazy(() => import('@/features/electromagnetism/LenzsLaw')),
+    defaultParams: { magnetSpeed: 2, magnetPole: 1, coilN: 10 }
+  },
+  'anim-cutting-emf': {
+    id: 'anim-cutting-emf',
+    title: '导体切割磁感线',
+    knowledgeId: 'electricity-4-3',
+    Component: lazy(() => import('@/features/electromagnetism/CuttingEMF')),
+    defaultParams: { B: 1, L: 0.5, v: 2, R: 2 }
   }
 }
 

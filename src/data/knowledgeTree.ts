@@ -480,6 +480,37 @@ export const knowledgeTree: KnowledgeNode[] = [
     problemIds: [],
     prerequisites: ['electricity-3-2'],
   },
+
+  {
+    id: 'electricity-4-1',
+    title: '电磁感应现象',
+    chapter: '电磁学 第4章 电磁感应',
+    module: 'electricity',
+    importance: 'gaokao',
+    animationIds: ['anim-lenzs-law'],
+    problemIds: [],
+    prerequisites: ['electricity-3-1'],
+  },
+  {
+    id: 'electricity-4-2',
+    title: '法拉第电磁感应定律',
+    chapter: '电磁学 第4章 电磁感应',
+    module: 'electricity',
+    importance: 'gaokao',
+    animationIds: ['anim-faraday-law'],
+    problemIds: [],
+    prerequisites: ['electricity-4-1'],
+  },
+  {
+    id: 'electricity-4-3',
+    title: '导线切割磁力线',
+    chapter: '电磁学 第4章 电磁感应',
+    module: 'electricity',
+    importance: 'gaokao',
+    animationIds: ['anim-cutting-emf'],
+    problemIds: [],
+    prerequisites: ['electricity-4-2'],
+  },
 ]
 
 export const knowledgeIndex: Record<string, KnowledgeNode> = {}

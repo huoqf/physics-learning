@@ -202,6 +202,26 @@ const paramConfigs: Record<string, Array<{
     { key: 'v', label: '速度 v', min: 1, max: 50, step: 1, unit: 'm/s' },
     { key: 'B', label: '磁感应强度 B', min: 0.1, max: 5, step: 0.1, unit: 'T' },
   ],
+  // ===== 电磁学 · 电磁感应（[M4-1]）=====
+  'anim-faraday-law': [
+    { key: 'N', label: '线圈匝数 N', min: 1, max: 50, step: 1, unit: '匝' },
+    { key: 'B', label: '磁感应强度 B', min: 0.1, max: 5, step: 0.1, unit: 'T' },
+    { key: 'S', label: '线圈面积 S', min: 10, max: 200, step: 10, unit: 'cm²' },
+    { key: 'angle', label: '夹角 θ', min: 0, max: 90, step: 5, unit: '°' },
+    { key: 'dPhiMode', label: '变化方式', min: 0, max: 2, step: 1, unit: '0=B变 1=角度转 2=S变' },
+  ],
+  'anim-lenzs-law': [
+    { key: 'magnetSpeed', label: '磁铁速度', min: 0.5, max: 5, step: 0.5, unit: '' },
+    { key: 'magnetPole', label: '磁极朝向', min: -1, max: 1, step: 2, unit: '1=N下 -1=S下' },
+    { key: 'coilN', label: '线圈匝数 N', min: 5, max: 30, step: 5, unit: '匝' },
+    { key: 'motionMode', label: '运动模式', min: -1, max: 1, step: 2, unit: '1=插入 -1=拔出' },
+  ],
+  'anim-cutting-emf': [
+    { key: 'B', label: '磁感应强度 B', min: 0.1, max: 5, step: 0.1, unit: 'T' },
+    { key: 'L', label: '导轨宽度 L', min: 0.1, max: 2, step: 0.1, unit: 'm' },
+    { key: 'v', label: '速度 v', min: 0.5, max: 10, step: 0.5, unit: 'm/s' },
+    { key: 'R', label: '回路电阻 R', min: 0.1, max: 10, step: 0.1, unit: 'Ω' },
+  ],
 }
 
 export default function AnimationPage() {

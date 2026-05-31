@@ -51,8 +51,8 @@
 
 - [x] **CoulombLaw.tsx** — 两点电荷间引力/斥力，距离/电量可调，同号斥/异号吸，F 实时计算（复用 calculateCoulombForce）
 - [x] **ElectricField.tsx** — 点电荷电场线（放射状，正向外/负向内）+ 试探点 P 场强，平方反比说明（calculateElectricField）
-- [ ] **FieldLines.tsx** — 电场线+等势面，同种/异种电荷对，可交互放置试探电荷
-- [ ] **ElectricPotential.tsx**
+- [x] **FieldLines.tsx** — 电场线+等势面，同种/异种电荷对，可交互放置试探电荷
+- [x] **ElectricPotential.tsx**
   - 电势分布三维色图，等势面与电场线垂直关系
   - 高考要点：沿电场线方向电势降低；等势面上移动电荷电场力不做功
 - [x] **ChargeInEField.tsx**
@@ -104,9 +104,15 @@
 | 质谱仪/回旋加速器原理 | ⭐⭐⭐⭐ | ChargeInBField |
 
 - [ ] **MagneticField.tsx** — 直导线/圆环/螺线管磁场可视化，右手定则演示
-- [ ] **AmpereForce.tsx** — 通电导线在磁场中受力，F=BILsinθ，左手定则交互
-- [ ] **LorentzForce.tsx** — 洛伦兹力方向（左手定则），F=qvBsinθ，不做功原理
-- [ ] **ChargeInBField.tsx**
+
+> ✅ 2026-05-31：磁场高频 3 组件完成（AmpereForce/LorentzForce/ChargeInBField），
+> 知识点 electricity-3-1~3-3 + 注册表 + 参数面板 + 物理量看板全接线。
+> 审查修复：LorentzForce angle 参数视觉反映 + 力线段比例计算，AmpereForce 力/电流颜色区分（electricCurrent→翡翠绿）。
+> MagneticField 留待后续。
+
+- [x] **AmpereForce.tsx** — 通电导线在磁场中受力，F=BILsinθ，左手定则交互
+- [x] **LorentzForce.tsx** — 洛伦兹力方向（左手定则），F=qvBsinθ，不做功原理
+- [x] **ChargeInBField.tsx**
   - 带电粒子进入匀强磁场做圆周运动：r=mv/(qB)，T=2πm/(qB)
   - 质谱仪模型（速度选择器→磁场偏转）
   - 回旋加速器工作原理（半圆加速，T与速度无关）
@@ -123,11 +129,19 @@
 | 自感与互感 | ⭐⭐⭐ | SelfInductance |
 
 - [ ] **InductionPhenomenon.tsx** — 磁通量变化→感应电流，各种改变磁通量方式
-- [ ] **LenzsLaw.tsx**
+
+> ✅ 2026-05-31：电磁感应高频 3 组件完成（LenzsLaw/FaradayLaw/CuttingEMF），
+> 知识点 electricity-4-1~4-3 + 注册表 + 参数面板 + 物理量看板全接线。
+> 审查修复：LenzsLaw 感应磁场线方向修正、CuttingEMF EMF箭头方向修正、
+> FaradayLaw Mode1 omega 修正+线圈旋转视觉、硬编码颜色/线宽→主题 token、
+> 新增 magnetNorth/magnetSouth 颜色 token、导体棒 ping-pong 循环。
+> InductionPhenomenon/SelfInductance 留待后续。
+
+- [x] **LenzsLaw.tsx**
   - 磁铁插入/拔出线圈，感应电流方向可视化（楞次定律：阻碍磁通量变化）
   - 高考要点：感应电流产生的磁场与原磁场关系；楞次定律判断方向
-- [ ] **FaradayLaw.tsx** — EMF=NΔΦ/Δt，磁通量变化率可调，感应电动势实时计算
-- [ ] **CuttingEMF.tsx**
+- [x] **FaradayLaw.tsx** — EMF=NΔΦ/Δt，磁通量变化率可调，感应电动势实时计算
+- [x] **CuttingEMF.tsx**
   - 导线在匀强磁场中切割：EMF=BLv，导轨模型（含电阻）
   - 安培力 vs 驱动力，达到匀速时安培力=驱动力
   - 高考要点：导轨问题能量守恒（电能=热能=安培力做的功）
