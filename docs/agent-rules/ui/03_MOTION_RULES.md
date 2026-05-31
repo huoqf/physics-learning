@@ -75,6 +75,37 @@
 | 1x（正常）| primary-500 `#3B82F6` | 标准 |
 | 2x | accent-500 `#F59E0B` | 快放，概览 |
 
+### 暂停/播放动效编排
+
+当用户点击播放/暂停时，Canvas RAF 循环与 UI CSS transition 必须按编排时序执行，避免同时触发多个独立 transition 超过 §5 上限。
+
+**播放 → 暂停 时序：**
+
+| 延迟 | 动作 | 属性 | 时长 | 分类 |
+|------|------|------|------|------|
+| 0ms | 暂停物理计算（`cancelAnimationFrame`）| — | — | — |
+| 0ms | 进度条颜色切换（如速度同步变化）| background-color | 150ms | 反馈类 |
+| 0ms | 播放按钮图标切换（Play ↔ Pause）| — | 无 transition | — |
+| 150ms | Canvas dimmed（opacity 1 → 0.9）| opacity | 250ms | 状态类 |
+| 150ms | 底部按钮状态提示（如"已暂停"）| opacity | 150ms | 反馈类 |
+| — | 看板区数值冻结，**不触发 transition** | — | — | — |
+
+关键规则：
+- 看板区数值暂停时仅冻结（停止更新），不触发颜色/透明度变化，避免产生无意义的 transition
+- Canvas dimmed 延迟 150ms 启动，与进度条颜色切换错开，确保同时活跃的 transition ≤ 2 个
+- 播放按钮图标使用 React 条件渲染（无 transition），不计入 transition 并发数
+
+**暂停 → 播放 时序：**
+
+| 延迟 | 动作 | 属性 | 时长 | 分类 |
+|------|------|------|------|------|
+| 0ms | Canvas 恢复（opacity 0.9 → 1）| opacity | 250ms | 状态类 |
+| 0ms | 播放按钮图标切换 | — | 无 transition | — |
+| 0ms | 恢复物理计算（`requestAnimationFrame`）| — | — | — |
+| — | 看板区数值恢复更新，**不触发 transition** | — | — | — |
+
+暂停→播放无需延迟编排：Canvas 恢复和 RAF 重启可同时发生，因为恢复时只有 1 个 opacity transition 活跃。
+
 ---
 
 ## 5. 禁止项
@@ -83,7 +114,7 @@
 - 禁止 Canvas 动画之外的页面元素使用 `requestAnimationFrame`
 - 禁止在物理仿真中使用固定时间步（必须使用 deltaTime）
 - 禁止超过 300ms 的状态类动效、禁止超过 400ms 的反馈类动效（庆祝类上限 800ms，页面级过渡允许 300–500ms）
-- 禁止同时触发超过 3 个独立 CSS transition（性能与视觉干扰）
+- 禁止同时触发超过 3 个独立 CSS transition（性能与视觉干扰）；按 §4「暂停/播放动效编排」时序错开的 transition 不计入并发数
 
 ---
 

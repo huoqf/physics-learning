@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { getAnimationConfig } from '@/data/animationRegistry'
@@ -220,6 +220,7 @@ export default function AnimationPage() {
   } = useAnimationStore()
   const { markAnimationViewed } = useProgressStore()
   const currentTimeRef = useRef(0)
+  const [canvasDimmed, setCanvasDimmed] = useState(false)
 
   const config = id ? getAnimationConfig(id) : undefined
 
@@ -235,6 +236,15 @@ export default function AnimationPage() {
       markAnimationViewed(config.id)
     }
   }, [config, setParams, setTime, setIsPlaying, markAnimationViewed])
+
+  useEffect(() => {
+    if (!isPlaying) {
+      const timer = setTimeout(() => setCanvasDimmed(true), duration.fast)
+      return () => clearTimeout(timer)
+    } else {
+      setCanvasDimmed(false)
+    }
+  }, [isPlaying])
 
   // 按组件实例运行的动画循环（统一动画控制入口，跟随组件生命周期自动清理）
   useAnimationFrame(
@@ -309,7 +319,10 @@ export default function AnimationPage() {
           <div className="flex-1 p-4">
             <div
               className="w-full h-full bg-white rounded-xl shadow-md overflow-hidden"
-              style={{ transition: `all ${duration.normal}ms ${easing.standard}` }}
+              style={{
+                transition: `opacity ${duration.normal}ms ${easing.standard}`,
+                opacity: canvasDimmed ? 0.9 : 1,
+              }}
             >
               <ErrorBoundary resetKey={config.id}>
                 <Suspense
