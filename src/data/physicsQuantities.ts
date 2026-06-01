@@ -399,34 +399,45 @@ export function buildPhysicsQuantities(
       ]
     }
     case 'anim-faraday-law': {
-      const N = params.N ?? 10
-      const B = params.B ?? 1
-      const S = params.S ?? 50
-      const angle = params.angle ?? 0
-      const dPhiMode = params.dPhiMode ?? 0
-      const angleRad = (angle * Math.PI) / 180
-      const cosTheta = Math.cos(angleRad)
-      const omegaAnim = 0.5
-      const tAnim = time * omegaAnim
-      const mode1Omega = (30 * Math.PI) / 180
-      let dPhi_dt = 0
-      if (dPhiMode === 0) {
-        dPhi_dt = B * omegaAnim * Math.cos(tAnim) * (S * 1e-4) * cosTheta
-      } else if (dPhiMode === 1) {
-        const angleAnimRad = ((angle + (time * 30)) % 360) * Math.PI / 180
-        dPhi_dt = -B * (S * 1e-4) * mode1Omega * Math.sin(angleAnimRad)
-      } else {
-        dPhi_dt = B * (S * 1e-4) * 0.5 * omegaAnim * Math.cos(tAnim) * cosTheta
-      }
+      const N = params.N ?? 5
+      const B = params.B ?? 1.2
+      const PHI0 = 0.45
+      const COIL_X_PX = 380
+      const MAGNET_LEN_PX = 110
+      const SCALE = 500
+      const COIL_RADIUS_M = 72 / SCALE
+      const MAGNET_MIN = 60
+      const magnetLeftPx = params.magnetX ?? MAGNET_MIN
+      const magnetVPx = params.magnetV ?? 0
+      const magnetCenterPx = magnetLeftPx + MAGNET_LEN_PX / 2
+      const dist = (COIL_X_PX - magnetCenterPx) / SCALE
+      const R = COIL_RADIUS_M
+      const halfLen = MAGNET_LEN_PX / 2 / SCALE
+      const uN = dist + halfLen
+      const uS = dist - halfLen
+      const termN = uN / Math.sqrt(uN * uN + R * R)
+      const termS = uS / Math.sqrt(uS * uS + R * R)
+      const phi = PHI0 * B * (termN - termS)
+      const v_m = magnetVPx / SCALE
+      const dx = 1 / SCALE
+      const dist2 = dist - dx
+      const uN2 = dist2 + halfLen
+      const uS2 = dist2 - halfLen
+      const termN2 = uN2 / Math.sqrt(uN2 * uN2 + R * R)
+      const termS2 = uS2 / Math.sqrt(uS2 * uS2 + R * R)
+      const phi2 = PHI0 * B * (termN2 - termS2)
+      const dPhi_dx = (phi2 - phi) / dx
+      const dPhi_dt = dPhi_dx * v_m
       const { EMF } = calculateFaradayEMF(N, dPhi_dt)
+      const current = EMF / 10
       return [
         ...base,
         { label: '匝数 N', value: N, unit: '匝' },
-        { label: '磁感应强度 B', value: B, unit: 'T' },
-        { label: '面积 S', value: S, unit: 'cm²' },
-        { label: '夹角 θ', value: angle, unit: '°' },
+        { label: '磁铁强度 B', value: B, unit: 'T' },
+        { label: '磁通量 Φ', value: phi, unit: 'Wb' },
         { label: 'dΦ/dt', value: dPhi_dt, unit: 'Wb/s' },
-        { label: '感应电动势 EMF', value: Math.abs(EMF), unit: 'V' },
+        { label: '感应电动势 E', value: Math.abs(EMF), unit: 'V' },
+        { label: '感应电流 I', value: Math.abs(current), unit: 'A' },
       ]
     }
     case 'anim-lenzs-law': {

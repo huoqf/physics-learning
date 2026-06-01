@@ -204,11 +204,8 @@ const paramConfigs: Record<string, Array<{
   ],
   // ===== 电磁学 · 电磁感应（[M4-1]）=====
   'anim-faraday-law': [
-    { key: 'N', label: '线圈匝数 N', min: 1, max: 50, step: 1, unit: '匝' },
-    { key: 'B', label: '磁感应强度 B', min: 0.1, max: 5, step: 0.1, unit: 'T' },
-    { key: 'S', label: '线圈面积 S', min: 10, max: 200, step: 10, unit: 'cm²' },
-    { key: 'angle', label: '夹角 θ', min: 0, max: 90, step: 5, unit: '°' },
-    { key: 'dPhiMode', label: '变化方式', min: 0, max: 2, step: 1, unit: '0=B变 1=角度转 2=S变' },
+    { key: 'N', label: '线圈匝数 N', min: 1, max: 10, step: 1, unit: '匝' },
+    { key: 'B', label: '磁铁强度 B', min: 0.2, max: 2.0, step: 0.1, unit: 'T' },
   ],
   'anim-lenzs-law': [
     { key: 'magnetSpeed', label: '磁铁速度', min: 0.5, max: 5, step: 0.5, unit: '' },

@@ -26,13 +26,13 @@
 | 测试 | Vitest + Testing Library |
 | 打包目标 | 浏览器本地运行优先，后期平滑迁移 Electron |
 
-&gt; HashRouter 原因：Electron 以 `file://` 加载时，BrowserRouter 路由失效。
+> HashRouter 原因：Electron 以 `file://` 加载时，BrowserRouter 路由失效。
 
 ---
 
 ## 2. 目录结构
 
-```
+```text
 src/
 ├── app/                    # 应用壳、路由、全局布局
 ├── components/
@@ -106,8 +106,204 @@ tests/
 ```
 页面组件 → 功能组件 → 通用组件 → 工具函数
                               ↗
-                    physics/ &amp; math/
+                    physics/ & math/
 ```
 
 - `physics/` 与 `math/` **不得**依赖 React、DOM、window、document
-- `physics/` **不得**直�
+- `physics/` **不得**直接依赖渲染副作用工具（如 `utils/canvas.ts`）
+- 页面层**不得**反向依赖底层计算实现细节
+
+---
+
+## 4. 纯函数规则
+
+### 4.1 定义
+
+纯函数必须满足：相同输入→相同输出，无副作用，不读外部可变状态，随机源必须通过 `seed` 显式注入。
+
+### 4.2 存放位置与命名
+
+| 位置 | 职责 | 命名示例 |
+|------|------|---------|
+| `src/physics/` | 物理量计算与状态求解 | `calculateUniformMotion` |
+| `src/math/` | 矢量、三角、矩阵、数值方法（如 RK4） | `vectorAdd` |
+| `src/utils/` | 坐标转换、动画控制、存储封装 | `physicsToCanvas` |
+
+- 物理计算函数：动宾结构，如 `calculateAcceleratedMotion(v0, a, t)`
+- 坐标转换函数：双域命名，如 `physicsToCanvas` / `canvasToPhysics`
+- 不得把渲染逻辑、页面状态、题目文案混入纯计算模块
+
+---
+
+## 5. 状态管理规则
+
+- 所有 Store 放入 `src/stores/`
+- Store 只保存「真值」，不保存可派生状态
+- 派生状态在组件层通过 `useMemo()` 或 selector 计算
+- Action 必须动词开头：`setParams`、`updateProgress`、`reset`
+
+| Store | 职责 |
+|-------|------|
+| `useAnimationStore` | 播放状态、时间轴、速度、参数 |
+| `useKnowledgeStore` | 知识树展开、当前节点、浏览历史 |
+| `useProblemStore` | 题目进度、当前步骤、答题状态 |
+| `useWrongStore` | 错题记录、复练状态、统计信息 |
+| `useAppStore`（可选） | 全局 UI 状态，不得与业务状态混写 |
+
+---
+
+## 6. 坐标系统规则
+
+- 所有图形渲染必须通过 `src/utils/coordinate.ts` 做坐标转换
+- 必须使用 `src/utils/canvas.ts` 的 `setupCanvas` 处理 DPR
+- **禁止**在组件中直接写像素换算逻辑或魔法数字定位
+
+| 坐标系 | 原点 | Y 轴方向 |
+|--------|------|---------|
+| 物理坐标系 | 屏幕中心 | 向上 |
+| Canvas 坐标系 | 左上角 | 向下 |
+
+转换函数必须双向可逆，且在测试中覆盖边界情况。
+
+---
+
+## 7. 动画系统规则
+
+- 所有动画必须使用 `src/utils/animation.ts`
+- **禁止**在组件中直接调用 `requestAnimationFrame`
+- **禁止**各组件自行实现 easing 曲线或时间控制器
+- 优先使用 `globalAnimationController`，特殊场景可创建独立 `AnimationController`
+- 动画回调必须处理 `deltaTime`，动画更新频率与物理计算频率解耦
+
+---
+
+## 8. 数据层规则
+
+### 8.1 数据位置
+
+| 数据类型 | 路径 |
+|---------|------|
+| 分模块知识库 | `src/data/knowledge/` |
+| 题目与解析 | `src/data/problems/` |
+| 知识树索引 | `src/data/knowledgeTree.ts` |
+| 动画注册表 | `src/data/animationRegistry.ts` |
+| 题目解析注册表 | `src/data/analysisRegistry.ts` |
+
+所有数据结构须满足：可序列化、可检索、可按章节拆分、可被知识树/动画页/题目解析页共同消费。
+
+### 8.2 错题数据流
+
+```
+用户作答(AnalysisPage) → useProblemStore → useWrongStore → IndexedDB
+WrongPage 只能通过 useWrongStore 读取，不得直接读写数据库
+```
+
+### 8.3 storage 接口约定
+
+```ts
+export const storage = {
+  getLocal(key: string): unknown,
+  setLocal(key: string, value: unknown): void,
+  removeLocal(key: string): void,
+  getDB<T>(key: string): Promise<T>,
+  setDB(key: string, value: unknown): Promise<void>,
+  removeDB(key: string): Promise<void>,
+  clearDB(): Promise<void>,
+}
+```
+
+IndexedDB 体积上限：**200MB**，超限时提示用户清理。
+
+---
+
+## 9. 路由与页面规则
+
+- 强制使用 `HashRouter`，禁止改为 `BrowserRouter`
+
+| 路由 | 页面 | 职责 |
+|------|------|------|
+| `/` | HomePage | 知识入口、学习概览、继续学习 |
+| `/animation/:id` | AnimationPage | 物理场景交互动画 |
+| `/analysis/:id` | AnalysisPage | 高考题拆解与逐步讲解 |
+| `/practice` | PracticePage | 练习与测验 |
+| `/wrong` | WrongPage | 错题回顾与重练 |
+
+**AnimationPage 组装约定**：
+- 通过 `animationRegistry.ts` 定位场景配置
+- 通过 `React.lazy` + `Suspense` 按需加载 `features/` 组件
+- 不得硬编码所有动画组件引用
+- 三屏联动布局尺寸（280px/320px）与信息密度规则见 `docs/rules/02_UI_RULES.md`
+
+---
+
+## 10. 代码规范
+
+| 类型 | 规范 | 示例 |
+|------|------|------|
+| 组件 | PascalCase | `AnimationPage` |
+| 函数 | camelCase | `calculateUniformMotion` |
+| 常量 | UPPER_SNAKE_CASE | `GRAVITY` |
+| 私有变量 | 下划线前缀 | `_internalState` |
+
+- `.ts` / `.tsx` 导入必须显式写出后缀，禁止依赖隐式扩展解析
+- 纯函数必须有 JSDoc，公开 API 写明参数、返回值和边界条件
+
+---
+
+## 11. 依赖管理
+
+### 11.1 已批准依赖
+
+**生产**：`react`、`react-dom`、`react-router-dom`、`zustand`、`lucide-react`
+
+**开发**：`vite`、`@vitejs/plugin-react`、`tailwindcss`、`postcss`、`autoprefixer`、`typescript`、`vitest`、`@testing-library/react`、`@testing-library/jest-dom`、`@vitest/coverage-v8`、`jsdom`、`eslint`、`prettier`
+
+**候选（按里程碑批准）**：`katex`、`idb`、`pixijs`
+
+### 11.2 新增流程
+
+新增依赖前必须先在 `PROCESS_LOG.md` 申报 → 更新本文件依赖清单 → 执行安装。
+
+### 11.3 主题 Token 约定
+
+Tailwind 颜色配置从 `src/theme/colors.ts` 导入，禁止在 `tailwind.config.*` 中重复定义颜色值：
+
+```ts
+// tailwind.config.ts
+import { tailwindColors } from './src/theme/colors'
+export default { theme: { extend: { colors: tailwindColors } } }
+```
+
+所有组件中的颜色/间距/动效值必须从 `src/theme/` 引用，禁止硬编码。
+
+---
+
+## 12. 性能与测试
+
+- 纯组件使用 `React.memo()`，计算密集逻辑使用 `useMemo()`，回调使用 `useCallback()`
+- 所有纯函数必须有测试，核心组件必须有基础交互测试
+- 测试文件放 `tests/`，结构与 `src/` 对齐，`tests/setup.ts` 必须导入 `@testing-library/jest-dom`
+
+```ts
+// vitest.config.ts
+test: {
+  environment: 'jsdom',
+  setupFiles: ['./tests/setup.ts'],
+  coverage: { provider: 'v8', reporter: ['text', 'lcov'] },
+}
+```
+
+---
+
+## 13. 构建与打包
+
+- `vite.config.ts` 必须配置 `base: './'`
+- 离线策略：KaTeX 字体、图标、题库 JSON 全部打包入本地资源，**禁止**运行时加载在线 CDN
+- Electron 预留：`contextIsolation: true`，禁用 `nodeIntegration`，通过 `preload.ts` 暴露有限能力
+
+---
+
+## 14. 文档维护规则
+
+- 每个模块必须有 `README.md`（唯一在此重申，其余更新规则见 `CORE_RULES.md` §2.3）
+- 新增 `src/theme/` token 后，同步更新 `docs/rules/02_UI_RULES.md` 对应章节

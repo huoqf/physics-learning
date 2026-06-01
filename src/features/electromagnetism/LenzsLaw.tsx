@@ -40,7 +40,7 @@ export default function LenzsLaw() {
         cancelAnimationFrame(decayTimer.current)
       }
     }
-  }, [isPlaying, motionMode, time === 0])
+  }, [isPlaying, motionMode, y_top, y_coil])
 
   // 播放结束自动暂停机制 (T = 2秒)
   useEffect(() => {

@@ -267,7 +267,7 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     title: '法拉第电磁感应定律',
     knowledgeId: 'electricity-4-2',
     Component: lazy(() => import('@/features/electromagnetism/FaradayLaw')),
-    defaultParams: { N: 10, B: 1, S: 50, angle: 0, dPhiMode: 0 }
+    defaultParams: { N: 5, B: 1.2 }
   },
   'anim-lenzs-law': {
     id: 'anim-lenzs-law',
