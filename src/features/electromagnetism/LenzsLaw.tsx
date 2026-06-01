@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
 import { calculateLenzsLaw } from '@/physics'
+import { useAnimationFrame } from '@/utils/animation'
 
 export default function LenzsLaw() {
   const { params, time, isPlaying, setIsPlaying } = useAnimationStore()
@@ -21,6 +22,7 @@ export default function LenzsLaw() {
   const [magnetYState, setMagnetYState] = useState(y_top)
   const [isDragging, setIsDragging] = useState(false)
   const [, setForceUpdate] = useState(0)
+  const [decayPlaying, setDecayPlaying] = useState(false)
 
   // 局部 Refs 用于拖动交互及粒子累加时钟
   const lastPointerY = useRef(0)
@@ -28,7 +30,6 @@ export default function LenzsLaw() {
   const dragVelocity = useRef(0)
   const particleTime = useRef(0)
   const lastDecayTime = useRef(0)
-  const decayTimer = useRef<number | null>(null)
 
   // 监听重置/模式切换，重置非播放状态下的磁铁位置
   useEffect(() => {
@@ -36,9 +37,7 @@ export default function LenzsLaw() {
       const initialY = motionMode === 1 ? y_top : y_coil
       setMagnetYState(initialY)
       dragVelocity.current = 0
-      if (decayTimer.current) {
-        cancelAnimationFrame(decayTimer.current)
-      }
+      setDecayPlaying(false)
     }
   }, [isPlaying, motionMode, y_top, y_coil])
 
@@ -52,31 +51,23 @@ export default function LenzsLaw() {
     }
   }, [time, isPlaying, setIsPlaying])
 
-  // 清理动画计时器
-  useEffect(() => {
-    return () => {
-      if (decayTimer.current) {
-        cancelAnimationFrame(decayTimer.current)
-      }
-    }
-  }, [])
-
-  // 衰减速度的帧循环
-  const decayVelocityDecay = () => {
-    const now = performance.now()
-    const dt = (now - lastDecayTime.current) / 1000
-    lastDecayTime.current = now
+  // 衰减速度的帧循环（通过 useAnimationFrame 驱动）
+  const decayVelocityDecay = useCallback((deltaTime: number) => {
+    const dt = deltaTime / 1000
+    lastDecayTime.current = performance.now()
 
     if (Math.abs(dragVelocity.current) > 0.05) {
       dragVelocity.current *= 0.82 // 物理衰减系数
       particleTime.current += Math.abs(dragVelocity.current) * dt * 6 // 衰减时依然累加粒子运动
       setForceUpdate(x => x + 1)
-      decayTimer.current = requestAnimationFrame(decayVelocityDecay)
     } else {
       dragVelocity.current = 0
       setForceUpdate(x => x + 1)
+      setDecayPlaying(false)
     }
-  }
+  }, [])
+
+  useAnimationFrame(decayVelocityDecay, { playing: decayPlaying })
 
   // Pointer Down 拖拽启动
   const handlePointerDown = (e: React.PointerEvent<SVGGElement>) => {
@@ -86,9 +77,7 @@ export default function LenzsLaw() {
     lastTime.current = performance.now()
     dragVelocity.current = 0
     setIsDragging(true)
-    if (decayTimer.current) {
-      cancelAnimationFrame(decayTimer.current)
-    }
+    setDecayPlaying(false)
   }
 
   // Pointer Move 拖动中位置和速度更新
@@ -103,7 +92,7 @@ export default function LenzsLaw() {
       // 将像素速度转换为适合 calculateLenzsLaw 计算的物理速度 (靠近负，远离正)
       const targetPhysVel = -pixelSpeed / 75
       dragVelocity.current = dragVelocity.current * 0.4 + targetPhysVel * 0.6
-      
+
       // 累加粒子流动时间
       particleTime.current += Math.abs(dragVelocity.current) * dt * 6
 
@@ -122,10 +111,7 @@ export default function LenzsLaw() {
     e.currentTarget.releasePointerCapture(e.pointerId)
     setIsDragging(false)
     lastDecayTime.current = performance.now()
-    if (decayTimer.current) {
-      cancelAnimationFrame(decayTimer.current)
-    }
-    decayTimer.current = requestAnimationFrame(decayVelocityDecay)
+    setDecayPlaying(true)
   }
 
   // 根据当前状态，计算磁铁位置和速度
@@ -269,10 +255,10 @@ export default function LenzsLaw() {
             height="35" 
             fill={magnetPole > 0 ? PHYSICS_COLORS.magnetNorth : PHYSICS_COLORS.magnetSouth} 
             rx="4" 
-            stroke={isDragging ? PHYSICS_COLORS.forceNet : 'none'}
+            stroke={isDragging ? PHYSICS_COLORS.forceNet : undefined}
             strokeWidth="1.5"
           />
-          <text x="25" y="22" textAnchor="middle" fill="white" fontWeight={CANVAS_STYLE.font.labelWeight} fontSize={CANVAS_STYLE.font.bodySize}>
+          <text x="25" y="22" textAnchor="middle" fill={PHYSICS_COLORS.objectFill} fontWeight={CANVAS_STYLE.font.labelWeight} fontSize={CANVAS_STYLE.font.bodySize}>
             {magnetPole > 0 ? 'N' : 'S'}
           </text>
           
@@ -282,10 +268,10 @@ export default function LenzsLaw() {
             height="35" 
             fill={magnetPole > 0 ? PHYSICS_COLORS.magnetSouth : PHYSICS_COLORS.magnetNorth} 
             rx="4" 
-            stroke={isDragging ? PHYSICS_COLORS.forceNet : 'none'}
+            stroke={isDragging ? PHYSICS_COLORS.forceNet : undefined}
             strokeWidth="1.5"
           />
-          <text x="25" y="57" textAnchor="middle" fill="white" fontWeight={CANVAS_STYLE.font.labelWeight} fontSize={CANVAS_STYLE.font.bodySize}>
+          <text x="25" y="57" textAnchor="middle" fill={PHYSICS_COLORS.objectFill} fontWeight={CANVAS_STYLE.font.labelWeight} fontSize={CANVAS_STYLE.font.bodySize}>
             {magnetPole > 0 ? 'S' : 'N'}
           </text>
 
