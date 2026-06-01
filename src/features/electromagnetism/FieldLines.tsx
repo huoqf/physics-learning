@@ -94,6 +94,7 @@ function traceFieldLine(
 
     let nearCharge = false
     for (const c of charges) {
+      if (c.q === 0) continue
       const d = Math.sqrt((x - c.x) ** 2 + (y - c.y) ** 2)
       if (d < CHARGE_RADIUS * 0.85) {
         nearCharge = true
@@ -105,7 +106,7 @@ function traceFieldLine(
     points.push([x, y])
     distSinceArrow += FIELD_LINE_STEP
     if (distSinceArrow >= ARROW_INTERVAL) {
-      arrowAt.push([x, y, Math.atan2(dy, dx)])
+      arrowAt.push([x, y, Math.atan2(direction * dy, direction * dx)])
       distSinceArrow = 0
     }
   }
@@ -240,6 +241,7 @@ export default function FieldLines() {
             const cellCy = (r + 0.5) * gridStep
             let nearAny = false
             for (const ch of charges) {
+              if (ch.q === 0) continue
               if (Math.sqrt((cellCx - ch.x) ** 2 + (cellCy - ch.y) ** 2) < CHARGE_RADIUS * 2) {
                 nearAny = true; break
               }
@@ -304,6 +306,9 @@ export default function FieldLines() {
       const baseLineCount = 16
 
       charges.forEach((ch) => {
+        // 跳过电荷量为0的电荷，0电荷不发射也不吸收电场线
+        if (ch.q === 0) return
+
         const lineCount = Math.round((Math.abs(ch.q) / maxQ) * baseLineCount)
         const lc = Math.max(4, lineCount)
         if (ch.q > 0) {
@@ -362,7 +367,11 @@ export default function FieldLines() {
       ctx.font = `bold ${FONT.title}px ${FONT.family}`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      ctx.fillText(isPos ? '+' : '−', ch.x, ch.y)
+      if (ch.q === 0) {
+        ctx.fillText('0', ch.x, ch.y)
+      } else {
+        ctx.fillText(ch.q > 0 ? '+' : '−', ch.x, ch.y)
+      }
 
       // Label
       ctx.font = `${FONT.axis}px ${FONT.family}`
