@@ -95,9 +95,125 @@ export function calculateChargeInMagField(
   return { r, T, omega }
 }
 
-/** 法拉第电磁感应定律 EMF = N·(dΦ/dt)（V） */
+/**
+ * 法拉第电磁感应定律 EMF = N·(dΦ/dt)（V）
+ */
 export function calculateFaradayEMF(N: number, dPhi_dt: number): { EMF: number } {
   return { EMF: N * dPhi_dt }
+}
+
+/**
+ * 导体切割磁感线计算（[M4-1.x]）。
+ *
+ * 物理模型：导体棒长 L 在匀强磁场 B 中以速度 v 沿垂直方向运动，θ 为 v 与棒方向
+ *          夹角（默认 90° 即垂直切割，sinθ=1 取最大值）。回路总电阻 = R + r
+ *          （外电阻 R + 内阻 r）。B_out = 0 表示 B 垂直纸面向里（⊗），1 表示向外（⊙）。
+ *
+ * 右手定则决定方向：F_lorentz = qv × B。
+ *  - B_out=0（向里）、v>0：正电荷受力向上，EMF 为正
+ *  - B_out=1（向外）、v>0：正电荷受力向下，EMF 为负
+ *  - v 反向则 EMF 同步反向
+ *
+ * 输出：
+ *  - EMF        感应电动势（V），符号反映方向
+ *  - I          回路电流（A），符号与 EMF 一致
+ *  - F_ampere   安培力大小（N），方向由楞次定律确定（与 v 反向）
+ *  - P_output   外电阻 R 消耗的功率（W）
+ *  - eta        输运效率 η = R / (R + r)，无量纲
+ */
+export function calculateCuttingEMF(
+  B: number,
+  L: number,
+  v: number,
+  R: number,
+  theta: number = 90,
+  r: number = 0,
+  B_out: number = 0
+): { EMF: number; I: number; F_ampere: number; P_output: number; eta: number } {
+  const sinTheta = Math.sin((theta * Math.PI) / 180)
+  const emfMagnitude = B * L * Math.abs(v) * sinTheta
+  const vSign = v >= 0 ? 1 : -1
+  const directionFactor = (B_out === 0 ? 1 : -1) * vSign
+  const EMF = emfMagnitude * directionFactor
+
+  const totalR = R + r
+  const I = totalR > 0 ? EMF / totalR : 0
+
+  const F_ampere = B * Math.abs(I) * L * sinTheta
+  const P_output = I * I * R
+  const eta = totalR > 0 && Math.abs(I) > 1e-12 ? R / totalR : 0
+
+  return { EMF, I, F_ampere, P_output, eta }
+}
+
+/**
+ * 受力运动模式单步积分（[M4-1.x] PR 2）。
+ *
+ * 物理模型：导体棒在驱动力 F_drive 推动下沿导轨运动，受到磁场的安培力 F_ampere 阻碍
+ *          （F_ampere 总是与 v 反向，由楞次定律保证）。m 为导体棒质量。
+ *
+ * 公式：
+ *  F_ampere = sign(v) · B²L²·|v|·sin²θ / (R + r)   // 大小
+ *  F_ampere_signed = -sign(v) · |F_ampere|           // 方向（与 v 反向）
+ *  F_net = F_drive + F_ampere_signed
+ *  a = F_net / m
+ *  v_new = v + a·dt                                  // semi-implicit Euler
+ *  x_new = x + v_new·dt
+ *
+ * 终端速度（v_terminal）= F_drive·(R + r) / (B²L²·sin²θ) — 当 F_net = 0 时
+ *
+ * @param B 磁感应强度（T）
+ * @param L 导体有效长度（m）
+ * @param v 当前速度（m/s，含符号）
+ * @param x 当前位移（m）
+ * @param R 外电阻（Ω）
+ * @param theta 夹角（°），默认 90°
+ * @param r 内阻（Ω），默认 0
+ * @param F_drive 驱动力（N），正方向沿 +x，默认 2N
+ * @param m 导体棒质量（kg），默认 0.1kg
+ * @param dt 时间步长（s），默认 1/60 ≈ 0.0167
+ *
+ * @returns v_new, x_new, F_ampere, F_drive, F_net, a, v_terminal
+ */
+export function simulateForceMotion(
+  B: number,
+  L: number,
+  v: number,
+  x: number,
+  R: number,
+  theta: number = 90,
+  r: number = 0,
+  F_drive: number = 2,
+  m: number = 0.1,
+  dt: number = 1 / 60
+): {
+  v_new: number
+  x_new: number
+  F_ampere: number
+  F_drive: number
+  F_net: number
+  a: number
+  v_terminal: number
+} {
+  const sinTheta = Math.sin((theta * Math.PI) / 180)
+  const totalR = R + r
+  const denomBL = B * B * L * L * sinTheta * sinTheta
+
+  const F_ampereMag = denomBL > 0 && totalR > 0
+    ? (denomBL * Math.abs(v)) / totalR
+    : 0
+  const F_ampere = F_ampereMag === 0 ? 0 : (v > 0 ? -F_ampereMag : F_ampereMag)
+
+  const F_net = F_drive + F_ampere
+  const a = m > 0 ? F_net / m : 0
+  const v_new = v + a * dt
+  const x_new = x + v_new * dt
+
+  const v_terminal = denomBL > 0 && totalR > 0 && B > 0
+    ? (F_drive * totalR) / denomBL
+    : 0
+
+  return { v_new, x_new, F_ampere, F_drive, F_net, a, v_terminal }
 }
 
 /**
@@ -256,4 +372,146 @@ export function calculatePowerTransmission(
   const eta = P_send === 0 ? 0 : P_user / P_send
 
   return { I_line, U_loss, P_loss, U_user, P_user, eta }
+}
+
+/**
+ * 手性约定：右手 / 左手。决定中指相对拇指的"绕向"。
+ * - 'right'：中指在拇指顺时针 90°（右手定则：B 出纸面时拇 v、食 B、中 I 满足 v×B=I）
+ * - 'left' ：中指在拇指逆时针 90°（左手定则：B 入纸面时拇 F、食 B、中 I 满足 F=BIL）
+ */
+export type HandChirality = 'right' | 'left'
+
+/**
+ * 2D 向量辅助（手指定位纯函数）。Canvas 坐标：+x 向右，+y 向下。
+ */
+export interface Vec2 { x: number; y: number }
+
+/**
+ * 右手拇指的静止方向（度，Canvas 坐标系）。
+ * 配合 `computeHandPose` 推算整只手的旋转角：
+ *   `rotationDeg = atan2(thumbDir.y, thumbDir.x) * 180/π - THUMB_BASE_ANGLE`
+ * 即"整只手额外旋转 `THUMB_BASE_ANGLE`"才能让拇指精确对齐 `thumbDir`。
+ * 该值与 `SkeletalHand.tsx` 的解剖学约定保持一致（拇指静止时指向左上方）。
+ */
+export const THUMB_BASE_ANGLE = -130
+
+/**
+ * 把角度（度）归一化到 (-180, 180]。
+ */
+export function normalizeAngleDeg(deg: number): number {
+  let a = deg % 360
+  if (a > 180) a -= 360
+  else if (a <= -180) a += 360
+  return a
+}
+
+/**
+ * 沿最短路径把 `current` 向 `target`（度）逼近一帧。
+ * 用于 2D 骨骼手的旋转、握拳/张开动画的平滑过渡。
+ *
+ * @param current  当前角度（度）
+ * @param target   目标角度（度）
+ * @param speed    插值速度 0~1，越大越快（默认 0.18）
+ */
+export function lerpAngleDeg(current: number, target: number, speed = 0.18): number {
+  const diff = normalizeAngleDeg(target - current)
+  return current + diff * speed
+}
+
+/**
+ * 手指定位结果：决定每根手指相对"手指根部局部坐标系"的旋转角。
+ * 渲染端会再叠加 `handRotation`（整只手的整体旋转）。
+ */
+export interface HandFingerAngles {
+  /** 拇指（拇）相对手掌的"外展角"（度） */
+  thumb: number
+  /** 食指（食）弯曲角（度）：0=伸直，>0=向掌心弯 */
+  index: number
+  /** 中指（中）弯曲角（度） */
+  middle: number
+  /** 无名指弯曲角（度） */
+  ring: number
+  /** 小拇指弯曲角（度） */
+  little: number
+}
+
+/**
+ * 整只手在画布上的姿态结果（[M4-1.x] 增强）。
+ *
+ * - rotationDeg ：整只手绕手掌中心的整体旋转角，使 拇指 与 `thumbDir` 同向、中指 与 `middleDir` 同向
+ * - chirality   ：手性，决定中指绕拇指的绕向（右手 = 中指在拇指顺时针 90°，左手 = 逆时针 90°）
+ * - pose        ：张开 / 半握 / 握拳
+ * - B_out       ：true 表示磁场方向 ⊙（出纸面），false 表示 ⊗（入纸面）
+ */
+export interface HandPoseResult {
+  rotationDeg: number
+  chirality: HandChirality
+  pose: 'open' | 'half-fist' | 'fist'
+  B_out: boolean
+}
+
+/**
+ * 由三个 2D 向量（v、B 投影、I）计算 2D 骨骼手的整体旋转。
+ *
+ * 物理含义：右手定则下，拇指沿 v 方向、中指沿 I 方向、整只手应旋转
+ *          `atan2(v.y, v.x)`，使拇指对齐 v。此时 B 必须满足 `v × B = I`
+ *          （B 在 +z 出纸面方向）；若方向相反则手性翻转为左手。
+ *
+ * 约定：传入的 v/I 均为 Canvas 2D 向量（+x 右，+y 下）。零向量返回 0。
+ *
+ * @param v 拇指方向（2D）
+ * @param I 中指方向（2D）
+ * @returns HandPoseResult
+ */
+export function computeHandPose(v: Vec2, I: Vec2): HandPoseResult {
+  const vMag = Math.sqrt(v.x * v.x + v.y * v.y)
+  const iMag = Math.sqrt(I.x * I.x + I.y * I.y)
+
+  if (vMag < 1e-9 || iMag < 1e-9) {
+    return { rotationDeg: 0, chirality: 'right', pose: 'open', B_out: true }
+  }
+
+  const vAngle = Math.atan2(v.y, v.x)
+  const cross = v.x * I.y - v.y * I.x
+
+  // 右手定则：中指在拇指顺时针 90°（canvas 中 +y 向下 = "拇指下方"）
+  //   I_canvas = (0, +1)（拇指 v=+x 右、中指 I 顺时针 90° 在 v 下方）→ cross = v.x*I.y - v.y*I.x = +1
+  //   此时手性 = right，B 出纸面（⊙），I 在拇指"右"侧（canvas 下方）
+  // 反之 cross < 0 → 中指在拇指上方 = 左手定则 / B 入纸面（⊗）
+  const chirality: HandChirality = cross > 0 ? 'right' : 'left'
+  const B_out = cross > 0
+
+  // 整只手的旋转：使拇指对齐 v 方向
+  // 静止姿态下右手拇指指向 THUMB_BASE_ANGLE（≈ -130°，左上方），
+  // 因此需要整体旋转 `atan2(v.y, v.x) - THUMB_BASE_ANGLE` 才能让拇指精确对齐 v。
+  const vAngleDeg = (vAngle * 180) / Math.PI
+  const rotationDeg = vAngleDeg - THUMB_BASE_ANGLE
+
+  // pose 暂默认 open，由调用方根据 "动画是否在跑 / 是否有 EMF" 决定
+  return {
+    rotationDeg,
+    chirality,
+    pose: 'open',
+    B_out,
+  }
+}
+
+/**
+ * 给定 (v, B, I) 三个 2D/3D 分量，输出整只手应当呈现的姿态。
+ *
+ * 用于"导体切割磁感线"动画：根据 v 方向（正/负）、B 方向（出/入纸面），
+ * 自动推导出 I 方向（I = v × B 右手螺旋），进而决定手的整体旋转与手性。
+ *
+ * @param vDir    速度方向：+1 向右、-1 向左
+ * @param B_out   0 = B 入纸面 ⊗，1 = B 出纸面 ⊙
+ * @returns HandPoseResult，含 rotationDeg / chirality / B_out
+ */
+export function computeCuttingEMFHandPose(vDir: number, B_out: 0 | 1): HandPoseResult {
+  const v: Vec2 = { x: vDir, y: 0 }
+  // I = v × B（右手定则）：v=(vx,0,0), B=(0,0,Bz) → I_3d = (0, -vx*Bz, 0)
+  //   Canvas 中 y 翻转：I_canvas = (0, vx*Bz, 0)
+  const sign = B_out === 0 ? -1 : 1
+  const I: Vec2 = { x: 0, y: vDir * sign }
+  const result = computeHandPose(v, I)
+  return { ...result, B_out: B_out === 1 }
 }

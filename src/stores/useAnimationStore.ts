@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 
+export type MotionMode = 'auto-v' | 'auto-F' | 'manual'
+
 interface AnimationState {
   animationType: string | null
   params: Record<string, number>
@@ -9,6 +11,7 @@ interface AnimationState {
   showVectors: boolean
   showFormulas: boolean
   showGrid: boolean
+  motionMode: MotionMode
   setAnimationType: (type: string | null) => void
   setParams: (params: Record<string, number>) => void
   updateParam: (key: string, value: number) => void
@@ -18,6 +21,7 @@ interface AnimationState {
   toggleVectors: () => void
   toggleFormulas: () => void
   toggleGrid: () => void
+  setMotionMode: (mode: MotionMode) => void
   reset: () => void
 }
 
@@ -30,6 +34,7 @@ export const useAnimationStore = create<AnimationState>((set) => ({
   showVectors: true,
   showFormulas: true,
   showGrid: true,
+  motionMode: 'auto-v',
   setAnimationType: (type) => set({ animationType: type }),
   setParams: (params) => set({ params }),
   updateParam: (key, value) => set((state) => ({
@@ -41,6 +46,7 @@ export const useAnimationStore = create<AnimationState>((set) => ({
   toggleVectors: () => set((state) => ({ showVectors: !state.showVectors })),
   toggleFormulas: () => set((state) => ({ showFormulas: !state.showFormulas })),
   toggleGrid: () => set((state) => ({ showGrid: !state.showGrid })),
+  setMotionMode: (mode) => set({ motionMode: mode }),
   reset: () => set({
     animationType: null,
     params: {},
@@ -49,6 +55,7 @@ export const useAnimationStore = create<AnimationState>((set) => ({
     speed: 1,
     showVectors: true,
     showFormulas: true,
-    showGrid: true
+    showGrid: true,
+    motionMode: 'auto-v',
   })
 }))

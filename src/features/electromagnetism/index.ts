@@ -11,6 +11,10 @@ export { default as ChargeInBField } from './ChargeInBField'
 export { default as FaradayLaw } from './FaradayLaw'
 export { default as LenzsLaw } from './LenzsLaw'
 export { default as CuttingEMF } from './CuttingEMF'
+export { default as SkeletalHand, getFingersForPose } from './SkeletalHand'
+export type { Bone, Finger, HandChirality, HandPose, SkeletonHandProps } from './SkeletalHand'
+export { default as HandRule, CuttingEMFHandRule } from './HandRule'
+export type { HandRuleProps, HandRuleMode, CuttingEMFHandRuleProps } from './HandRule'
 
 // ===== 电磁学 · 交变电流（[M4-1]）=====
 export { default as ACGeneration } from './ACGeneration'

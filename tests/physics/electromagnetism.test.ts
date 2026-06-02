@@ -16,6 +16,12 @@ import {
   calculateCoulombForce,
   calculateTransformerWithLoad,
   calculatePowerTransmission,
+  calculateCuttingEMF,
+  simulateForceMotion,
+  computeHandPose,
+  computeCuttingEMFHandPose,
+  lerpAngleDeg,
+  normalizeAngleDeg,
 } from '@/physics'
 
 const k = 9e9
@@ -159,5 +165,227 @@ describe('electromagnetism', () => {
     expect(res.I_line).toBe(0)
     const res2 = calculatePowerTransmission(0, 10000, 10, 100, 1000, 1000, 100)
     expect(res2.eta).toBe(0)
+  })
+
+  // ===== [M4-1.x] 导体切割磁感线扩展 =====
+
+  it('导体切割：EMF=BLv·sinθ（θ=90° 取最大）', () => {
+    const res = calculateCuttingEMF(1, 0.5, 2, 2, 90, 0, 0)
+    expect(res.EMF).toBeCloseTo(1, 10)
+    expect(res.I).toBeCloseTo(0.5, 10)
+    expect(res.F_ampere).toBeCloseTo(0.25, 10)
+    expect(res.P_output).toBeCloseTo(0.5, 10)
+    expect(res.eta).toBeCloseTo(1, 10)
+  })
+
+  it('导体切割：sinθ 因子（θ=30° → EMF 减半）', () => {
+    const res = calculateCuttingEMF(1, 0.5, 2, 2, 30, 0, 0)
+    const sin30 = 0.5
+    expect(res.EMF).toBeCloseTo(1 * sin30, 10)
+    // F_ampere = B * I * L * sinθ = 1 * (0.5/2) * 0.5 * 0.5 = 0.0625
+    expect(res.F_ampere).toBeCloseTo(0.0625, 10)
+  })
+
+  it('导体切割：含内阻 r（η = R/(R+r)）', () => {
+    const res = calculateCuttingEMF(1, 0.5, 2, 1, 90, 1, 0)
+    expect(res.I).toBeCloseTo(0.5, 10)
+    expect(res.eta).toBeCloseTo(0.5, 10)
+  })
+
+  it('导体切割：v 反向 → EMF 反向（大小相等）', () => {
+    const res1 = calculateCuttingEMF(1, 0.5, 2, 2, 90, 0, 0)
+    const res2 = calculateCuttingEMF(1, 0.5, -2, 2, 90, 0, 0)
+    expect(res1.EMF).toBeGreaterThan(0)
+    expect(res2.EMF).toBeLessThan(0)
+    expect(Math.abs(res1.EMF)).toBeCloseTo(Math.abs(res2.EMF), 10)
+  })
+
+  it('导体切割：B_out 切换 → EMF 反向（大小相等）', () => {
+    const res0 = calculateCuttingEMF(1, 0.5, 2, 2, 90, 0, 0)
+    const res1 = calculateCuttingEMF(1, 0.5, 2, 2, 90, 0, 1)
+    expect(res0.EMF).toBeGreaterThan(0)
+    expect(res1.EMF).toBeLessThan(0)
+    expect(Math.abs(res0.EMF)).toBeCloseTo(Math.abs(res1.EMF), 10)
+  })
+
+  it('导体切割：θ=0 → 无切割 EMF=0', () => {
+    const res = calculateCuttingEMF(1, 0.5, 2, 2, 0, 0, 0)
+    expect(res.EMF).toBe(0)
+    expect(res.I).toBe(0)
+    expect(res.F_ampere).toBe(0)
+    expect(res.P_output).toBe(0)
+    expect(res.eta).toBe(0)
+  })
+
+  it('导体切割：v=0 → 无运动 EMF=0', () => {
+    const res = calculateCuttingEMF(1, 0.5, 0, 2, 90, 0, 0)
+    expect(res.EMF).toBe(0)
+    expect(res.I).toBe(0)
+    expect(res.F_ampere).toBe(0)
+  })
+
+  it('导体切割：除零保护 R+r=0', () => {
+    const res = calculateCuttingEMF(1, 0.5, 2, 0, 90, 0, 0)
+    expect(res.I).toBe(0)
+    expect(res.F_ampere).toBe(0)
+    expect(res.P_output).toBe(0)
+    expect(res.eta).toBe(0)
+  })
+
+  it('导体切割：默认参数（省略 theta/r/B_out）兼容旧调用', () => {
+    const res = calculateCuttingEMF(1, 0.5, 2, 2)
+    expect(res.EMF).toBeCloseTo(1, 10)
+    expect(res.I).toBeCloseTo(0.5, 10)
+  })
+
+  // ===== [M4-1.x] PR 2：受力运动模式单步积分 =====
+
+  it('受力运动：v=0 起步 → F_net = F_drive，a = F_drive/m', () => {
+    const res = simulateForceMotion(1, 0.5, 0, 0, 2, 90, 0, 2, 0.1, 0.016)
+    expect(res.F_ampere).toBe(0)
+    expect(res.F_net).toBeCloseTo(2, 10)
+    expect(res.a).toBeCloseTo(20, 10)
+    expect(res.v_new).toBeCloseTo(0.32, 10)
+    expect(res.x_new).toBeCloseTo(0.32 * 0.016, 10)
+  })
+
+  it('受力运动：v = v_terminal → F_net = 0（平衡）', () => {
+    // v_terminal = F_drive·(R+r) / (B²L²sin²θ) = 2·2 / (1·0.25·1) = 16
+    const res = simulateForceMotion(1, 0.5, 16, 0, 2, 90, 0, 2, 0.1, 0.016)
+    // v=16>0，F_ampere 与 v 反向，F_ampere=-2
+    expect(res.F_ampere).toBeCloseTo(-2, 10)
+    expect(res.F_net).toBeCloseTo(0, 10)
+    expect(res.a).toBeCloseTo(0, 10)
+    expect(res.v_terminal).toBeCloseTo(16, 10)
+  })
+
+  it('受力运动：v > v_terminal → F_net < 0（减速）', () => {
+    const res = simulateForceMotion(1, 0.5, 20, 0, 2, 90, 0, 2, 0.1, 0.016)
+    // F_ampere_mag = 1·0.25·20·1/2 = 2.5 > F_drive=2
+    expect(res.F_ampere).toBeCloseTo(-2.5, 10)
+    expect(res.F_net).toBeCloseTo(-0.5, 10)
+    expect(res.a).toBeLessThan(0)
+  })
+
+  it('受力运动：v 负向 → F_ampere 仍与 v 反向（朝 +x 推动 v 向 0）', () => {
+    const res = simulateForceMotion(1, 0.5, -5, 0, 2, 90, 0, 2, 0.1, 0.016)
+    // F_ampere_mag = 1·0.25·5·1/2 = 0.625
+    // v<0, F_ampere_signed = +0.625（与 v 反向，朝 +x）
+    expect(res.F_ampere).toBeCloseTo(0.625, 10)
+    expect(res.F_net).toBeCloseTo(2.625, 10)
+  })
+
+  it('受力运动：F_drive=0 → 任意 v 衰减到 0（电磁阻尼）', () => {
+    let v = 5
+    for (let i = 0; i < 5000; i++) {
+      const res = simulateForceMotion(1, 0.5, v, 0, 2, 90, 0, 0, 0.1, 0.016)
+      v = res.v_new
+    }
+    expect(Math.abs(v)).toBeLessThan(0.01)
+  })
+
+  it('受力运动：sinθ=0 → F_ampere=0，F_net=F_drive，匀加速', () => {
+    const res = simulateForceMotion(1, 0.5, 0, 0, 2, 0, 0, 2, 0.1, 0.016)
+    expect(res.F_ampere).toBe(0)
+    expect(res.F_net).toBe(2)
+    expect(res.a).toBe(20)
+    expect(res.v_terminal).toBe(0)  // 分母含 sin²θ
+  })
+
+  it('受力运动：除零保护 m=0', () => {
+    const res = simulateForceMotion(1, 0.5, 0, 0, 2, 90, 0, 2, 0, 0.016)
+    expect(res.a).toBe(0)
+    expect(res.v_new).toBe(0)
+  })
+
+  // ===== [M4-1.x] 手指定则几何助手测试 =====
+
+  it('normalizeAngleDeg 把 370° 归一为 10°', () => {
+    expect(normalizeAngleDeg(370)).toBeCloseTo(10, 10)
+    expect(normalizeAngleDeg(-190)).toBeCloseTo(170, 10)
+    expect(normalizeAngleDeg(0)).toBe(0)
+  })
+
+  it('lerpAngleDeg 沿最短路径逼近 350° → 10° 仅 20°', () => {
+    const next = lerpAngleDeg(350, 10, 1.0)
+    // 直接相减是 -340°，但最短路径是 +20° → 10
+    expect(next).toBeCloseTo(370, 10)
+  })
+
+  it('lerpAngleDeg speed=0 不动，speed=1 一步到位', () => {
+    expect(lerpAngleDeg(0, 90, 0)).toBe(0)
+    expect(lerpAngleDeg(0, 90, 1)).toBeCloseTo(90, 10)
+  })
+
+  it('computeHandPose：v 右 (1,0) + I 下 (0,1) → 右手定则 (B_out=true, rotation=+130°)', () => {
+    // v = (1,0) → atan2 = 0°；I = (0,1) 顺时针 90° → cross = +1 → 右手
+    // 旋转 = 0° - THUMB_BASE_ANGLE(-130°) = +130°（把静止在 -130° 的拇指旋转到 +x）
+    const r = computeHandPose({ x: 1, y: 0 }, { x: 0, y: 1 })
+    expect(r.chirality).toBe('right')
+    expect(r.B_out).toBe(true)
+    expect(r.rotationDeg).toBeCloseTo(130, 10)
+  })
+
+  it('computeHandPose：v 右 + I 上 → 左手定则 (chirality=left)', () => {
+    // v = (1,0), I = (0,-1) 逆时针 90° → cross = -1 → 左手
+    const r = computeHandPose({ x: 1, y: 0 }, { x: 0, y: -1 })
+    expect(r.chirality).toBe('left')
+    expect(r.B_out).toBe(false)
+  })
+
+  it('computeHandPose：v 反向 → 整只手相对前者旋转 180°', () => {
+    const r1 = computeHandPose({ x: 1, y: 0 }, { x: 0, y: 1 })
+    const r2 = computeHandPose({ x: -1, y: 0 }, { x: 0, y: -1 })
+    // 两个 rotationDeg 之差应接近 180°（拇指从 +x 翻到 -x）
+    const diff = Math.abs(r2.rotationDeg - r1.rotationDeg)
+    const wrapped = Math.min(diff, 360 - diff)
+    expect(wrapped).toBeCloseTo(180, 10)
+  })
+
+  it('computeHandPose：v 向上 (0,-1) + I 向右 (1,0) → rotation = -90° - (-130°) = +40°', () => {
+    // atan2(-1, 0) = -π/2 → -90°；rotation = -90° - (-130°) = +40°
+    const r = computeHandPose({ x: 0, y: -1 }, { x: 1, y: 0 })
+    expect(r.rotationDeg).toBeCloseTo(40, 10)
+    // 拇指在 v=(0,-1) 方向（向上），中指在 I=(1,0) 方向（向右）：cross = 0*0 - (-1)*1 = +1 → 右手
+    expect(r.chirality).toBe('right')
+  })
+
+  it('computeHandPose：零向量降级为默认值（rotation=0，right，open）', () => {
+    const r1 = computeHandPose({ x: 0, y: 0 }, { x: 1, y: 0 })
+    const r2 = computeHandPose({ x: 1, y: 0 }, { x: 0, y: 0 })
+    expect(r1.rotationDeg).toBe(0)
+    expect(r1.chirality).toBe('right')
+    expect(r2.rotationDeg).toBe(0)
+  })
+
+  it('computeCuttingEMFHandPose：v=+1, B_out=1 → I_canvas=(0,1) down, 右手, rotation=+130°', () => {
+    // v=+1 向右, B_out=1 (出⊙), I_canvas.y = vDir * sign = 1*1 = 1 (down)
+    // rotation = 0° - (-130°) = +130°
+    const r = computeCuttingEMFHandPose(1, 1)
+    expect(r.chirality).toBe('right')
+    expect(r.B_out).toBe(true)
+    expect(r.rotationDeg).toBeCloseTo(130, 10)
+  })
+
+  it('computeCuttingEMFHandPose：v=+1, B_out=0 → I_canvas=(0,-1) up, 左手 (I 相对 v 逆时针)', () => {
+    // v=+1 向右, B_out=0 (入⊗), I_canvas.y = vDir * sign = 1*(-1) = -1 (up)
+    // cross = 1*(-1) - 0*0 = -1 < 0 → 左手（用左手手性以匹配 B 入纸面）
+    const r = computeCuttingEMFHandPose(1, 0)
+    expect(r.chirality).toBe('left')
+    expect(r.B_out).toBe(false)
+    // rotation 仍为 +130°（与右手情况相同，因为 v 相同）
+    expect(r.rotationDeg).toBeCloseTo(130, 10)
+  })
+
+  it('computeCuttingEMFHandPose：v=-1, B_out=1 → 整只手相对 v=+1 翻转 180°', () => {
+    const r1 = computeCuttingEMFHandPose(1, 1)
+    const r2 = computeCuttingEMFHandPose(-1, 1)
+    // 拇指从 +x 翻到 -x，整体翻转 180°
+    const diff = Math.abs(r2.rotationDeg - r1.rotationDeg)
+    const wrapped = Math.min(diff, 360 - diff)
+    expect(wrapped).toBeCloseTo(180, 10)
+    // v=-1, I_canvas.y = -1*1 = -1 (up) → cross = -1*(-1) - 0*0 = +1 → 右手（B 出纸面）
+    expect(r2.chirality).toBe('right')
+    expect(r2.B_out).toBe(true)
   })
 })

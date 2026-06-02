@@ -281,7 +281,7 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     title: '导体切割磁感线',
     knowledgeId: 'electricity-4-3',
     Component: lazy(() => import('@/features/electromagnetism/CuttingEMF')),
-    defaultParams: { B: 1, L: 0.5, v: 2, R: 2 }
+    defaultParams: { B: 1, L: 0.5, v: 2, R: 2, theta: 90, r: 0, B_out: 0, handRule: 0 }
   },
 
   // ===== 电磁学 · 交变电流（[M4-1]）=====

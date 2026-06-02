@@ -1,4 +1,5 @@
 export { useAnimationStore } from './useAnimationStore'
+export type { MotionMode } from './useAnimationStore'
 export { useKnowledgeStore } from './useKnowledgeStore'
 export { useProblemStore } from './useProblemStore'
 export { useWrongStore } from './useWrongStore'

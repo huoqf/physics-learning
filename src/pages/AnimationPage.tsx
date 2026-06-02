@@ -216,8 +216,12 @@ const paramConfigs: Record<string, Array<{
   'anim-cutting-emf': [
     { key: 'B', label: '磁感应强度 B', min: 0.1, max: 5, step: 0.1, unit: 'T' },
     { key: 'L', label: '导轨宽度 L', min: 0.1, max: 2, step: 0.1, unit: 'm' },
-    { key: 'v', label: '速度 v', min: 0.5, max: 10, step: 0.5, unit: 'm/s' },
-    { key: 'R', label: '回路电阻 R', min: 0.1, max: 10, step: 0.1, unit: 'Ω' },
+    { key: 'v', label: '速度 v', min: -5, max: 5, step: 0.5, unit: 'm/s' },
+    { key: 'R', label: '外电阻 R', min: 0.1, max: 10, step: 0.1, unit: 'Ω' },
+    { key: 'theta', label: '夹角 θ', min: 0, max: 90, step: 5, unit: '°' },
+    { key: 'r', label: '内阻 r', min: 0, max: 2, step: 0.1, unit: 'Ω' },
+    { key: 'B_out', label: '磁场方向', min: 0, max: 1, step: 1, unit: '0=向里⊗ 1=向外⊙' },
+    { key: 'handRule', label: '手指定则', min: 0, max: 2, step: 1, unit: '0=右手 1=左手 2=握拳' },
   ],
   // ===== 电磁学 · 交变电流（[M4-1]）=====
   'anim-ac-generation': [
