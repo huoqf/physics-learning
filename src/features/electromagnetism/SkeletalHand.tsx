@@ -51,31 +51,31 @@ const TIP_RING_LABEL = 'white'
 // THUMB_BASE_ANGLE 从 '@/physics' 导入，文档说明见那里。
 
 const OPEN_FINGERS: Finger[] = [
-  // 拇指：左下侧，指向左上方（-130° ≈ 西偏北 40°）
-  { name: 'thumb',  baseX: -26, baseY: 6, bones: [
-    { length: 30, angle: -130 },
-    { length: 24, angle: -25 },
+  // 拇指：右下侧，指向右上方（基部原为 -26, 6 -> 26, 6）
+  { name: 'thumb',  baseX: 26, baseY: 6, bones: [
+    { length: 30, angle: -50 }, // 调整角度以符合右手拇指位置
+    { length: 24, angle: 25 },
   ]},
-  // 食指：上方略偏左
-  { name: 'index',  baseX: -22, baseY: -30, bones: [
+  // 食指：上方略偏右（原 -22 -> 22）
+  { name: 'index',  baseX: 22, baseY: -30, bones: [
     { length: 30, angle: -90 },
     { length: 24, angle: 0 },
     { length: 18, angle: 0 },
   ]},
   // 中指：上方居中（最长）
-  { name: 'middle', baseX: -4, baseY: -34, bones: [
+  { name: 'middle', baseX: 4, baseY: -34, bones: [
     { length: 34, angle: -90 },
     { length: 28, angle: 0 },
     { length: 20, angle: 0 },
   ]},
-  // 无名指：上方略偏右
-  { name: 'ring',   baseX: 12, baseY: -32, bones: [
+  // 无名指：上方略偏左（原 12 -> -12）
+  { name: 'ring',   baseX: -12, baseY: -32, bones: [
     { length: 30, angle: -90 },
     { length: 24, angle: 0 },
     { length: 18, angle: 0 },
   ]},
-  // 小拇指：右上方（最短）
-  { name: 'little', baseX: 24, baseY: -26, bones: [
+  // 小拇指：左上方（最短，原 24 -> -24）
+  { name: 'little', baseX: -24, baseY: -26, bones: [
     { length: 24, angle: -90 },
     { length: 20, angle: 0 },
     { length: 14, angle: 0 },
@@ -83,66 +83,66 @@ const OPEN_FINGERS: Finger[] = [
 ]
 
 const FIST_FINGERS: Finger[] = [
-  // 拇指：基部不变（贴在食指外侧），末节微弯以"扣"住食指
-  { name: 'thumb',  baseX: -26, baseY: 6, bones: [
-    { length: 30, angle: -130 },
-    { length: 24, angle: -50 },
+  // 拇指：基部 26, 6
+  { name: 'thumb',  baseX: 26, baseY: 6, bones: [
+    { length: 30, angle: -50 },
+    { length: 24, angle: 50 },
   ]},
-  // 食指：完全卷起（指节1 直立，指节2/3 折回掌心）
-  { name: 'index',  baseX: -22, baseY: -30, bones: [
+  // 食指：完全卷起
+  { name: 'index',  baseX: 22, baseY: -30, bones: [
     { length: 30, angle: -90 },
-    { length: 24, angle: 90 },
-    { length: 18, angle: 80 },
+    { length: 24, angle: -90 },
+    { length: 18, angle: -80 },
   ]},
   // 中指：完全卷起
-  { name: 'middle', baseX: -4, baseY: -34, bones: [
+  { name: 'middle', baseX: 4, baseY: -34, bones: [
     { length: 34, angle: -90 },
-    { length: 28, angle: 90 },
-    { length: 20, angle: 80 },
+    { length: 28, angle: -90 },
+    { length: 20, angle: -80 },
   ]},
   // 无名指：完全卷起
-  { name: 'ring',   baseX: 12, baseY: -32, bones: [
+  { name: 'ring',   baseX: -12, baseY: -32, bones: [
     { length: 30, angle: -90 },
-    { length: 24, angle: 90 },
-    { length: 18, angle: 80 },
+    { length: 24, angle: -90 },
+    { length: 18, angle: -80 },
   ]},
   // 小拇指：完全卷起
-  { name: 'little', baseX: 24, baseY: -26, bones: [
+  { name: 'little', baseX: -24, baseY: -26, bones: [
     { length: 24, angle: -90 },
-    { length: 20, angle: 90 },
-    { length: 14, angle: 80 },
+    { length: 20, angle: -90 },
+    { length: 14, angle: -80 },
   ]},
 ]
 
 const HALF_FIST_FINGERS: Finger[] = [
   // 拇指：保持张开姿态
-  { name: 'thumb',  baseX: -26, baseY: 6, bones: [
-    { length: 30, angle: -130 },
-    { length: 24, angle: -25 },
+  { name: 'thumb',  baseX: 26, baseY: 6, bones: [
+    { length: 30, angle: -50 },
+    { length: 24, angle: 25 },
   ]},
-  // 食指：保持伸直（右手定则三指之一）
-  { name: 'index',  baseX: -22, baseY: -30, bones: [
+  // 食指：保持伸直
+  { name: 'index',  baseX: 22, baseY: -30, bones: [
     { length: 30, angle: -90 },
     { length: 24, angle: 0 },
     { length: 18, angle: 0 },
   ]},
   // 中指：保持伸直
-  { name: 'middle', baseX: -4, baseY: -34, bones: [
+  { name: 'middle', baseX: 4, baseY: -34, bones: [
     { length: 34, angle: -90 },
     { length: 28, angle: 0 },
     { length: 20, angle: 0 },
   ]},
-  // 无名指：半卷（强调"三指"模式：只有拇/食/中 伸出）
-  { name: 'ring',   baseX: 12, baseY: -32, bones: [
+  // 无名指：半卷
+  { name: 'ring',   baseX: -12, baseY: -32, bones: [
     { length: 30, angle: -90 },
-    { length: 24, angle: 55 },
-    { length: 18, angle: 45 },
+    { length: 24, angle: -55 },
+    { length: 18, angle: -45 },
   ]},
   // 小拇指：半卷
-  { name: 'little', baseX: 24, baseY: -26, bones: [
+  { name: 'little', baseX: -24, baseY: -26, bones: [
     { length: 24, angle: -90 },
-    { length: 20, angle: 60 },
-    { length: 14, angle: 50 },
+    { length: 20, angle: -60 },
+    { length: 14, angle: -50 },
   ]},
 ]
 
@@ -312,7 +312,11 @@ function FingerView({ finger, highlight, showTipMarker, tipLabel, tipColor }: Fi
 const PALM_W = 64
 const PALM_H = 72
 
-function Palm() {
+function Palm({ chirality }: { chirality: HandChirality }) {
+  // 按照人体结构，掌心朝向观察者时，是右手掌心。
+  // 我们直接标注明确，消除纹理带来的歧义。
+  const label = "掌心"
+  
   return (
     <>
       <rect
@@ -326,32 +330,18 @@ function Palm() {
         stroke={SKIN_STROKE}
         strokeWidth={1.4}
       />
-      {/* 掌纹（淡显，增加"手"的辨识度） */}
-      <path
-        d="M -22 -8 Q -8 -2 -2 10"
-        stroke={SKIN_STROKE}
-        strokeWidth={0.8}
-        fill="none"
-        opacity={0.35}
-      />
-      <path
-        d="M -6 -22 Q 4 -14 8 4"
-        stroke={SKIN_STROKE}
-        strokeWidth={0.8}
-        fill="none"
-        opacity={0.3}
-      />
-      <path d="M 12 -16 Q 18 -6 18 8" stroke={SKIN_STROKE} strokeWidth={0.8} fill="none" opacity={0.3} />
-      {/* 手背方向的虚线弧：在掌心上方画一条细虚线，暗示"另一侧是手背"，
-          不再叠文字（之前 "手心"/"手背" 文本标注在旋转后反而误导用户判断左右手）。 */}
-      <path
-        d="M -28 -40 Q 0 -52 28 -40"
-        stroke={SKIN_STROKE}
-        strokeWidth={0.6}
-        strokeDasharray="2,2"
-        fill="none"
-        opacity={0.4}
-      />
+      {/* 明确标注文字，确保清晰 */}
+      <text
+        x={0}
+        y={8}
+        textAnchor="middle"
+        fontSize={16}
+        fontWeight="bold"
+        fill={SKIN_STROKE}
+        style={{ userSelect: 'none', pointerEvents: 'none' }}
+      >
+        {label}
+      </text>
       {/* 手腕 */}
       <rect x={-18} y={PALM_H / 2 - 2} width={36} height={12} rx={6} fill={SKIN_FILL} stroke={SKIN_STROKE} strokeWidth={1.2} />
     </>
@@ -433,7 +423,7 @@ export function SkeletonHand({
       onPointerDown={onPointerDown}
       className={className}
     >
-      {showPalm && <Palm />}
+      {showPalm && <Palm chirality={chirality} />}
       {fingers.map((finger) => (
         <FingerView
           key={finger.name}
