@@ -1,6 +1,6 @@
 # ROADMAP — 高中物理交互动画学习软件
 
-&gt; 最后更新：2026-05-30
+&gt; 最后更新：2026-06-02
 
 ---
 
@@ -41,6 +41,7 @@
 - **M4-1 磁场组件审查修复（2026-05-31）**：LorentzForce 修复 angle 参数无视觉反映（新增 θ 弧线标注 + sinθ 数值显示）、力的线段长度随 F 大小正确变化（F/F_max 相对比例计算，钳位 [15,120]）；AmpereForce 修复力/电流箭头颜色混淆（electricCurrent 从 #C2410C 改为 #059669 翡翠绿，与 forceNet 橙色 #EA580C 区分）；影响范围验证确认新颜色不与 elasticForce 及其他电磁学组件混淆（elasticForce 仅力学、electricCurrent 仅电磁学，不同屏）。验证：lint 0 警告 / tsc 通过 / build 成功
 - **M4-1 静电场完成（2026-05-31）**：新增 FieldLines（电场线+等势面，同种/异种电荷可切换，电场线从正到负，等势面虚线圆与电场线垂直）/ ElectricPotential（电势分布，V=kq/r，不同电势值用颜色渐变环标注，沿电场线方向电势降低可视化）；知识点 electricity-1-5~1-6 + animationRegistry + 参数面板 + 物理量看板全接线。验证：lint 0 警告 / tsc 通过 / build 成功（36 个动画 chunk）
 - **M4-1 电磁感应组件完成（2026-05-31）**：FaradayLaw（法拉第电磁感应定律 EMF=N·dΦ/dt，三种磁通量变化方式可切换：B正弦变化/角度旋转/S变化，线圈匝数可视化+磁通量箭头+感应电流方向指示）/ LenzsLaw（楞次定律，磁铁插入/拔出线圈动画，N/S极可切换，原磁场线与感应磁场线分别标注，实时状态显示）/ CuttingEMF（导体切割磁感线 EMF=BLv，导轨模型，导体棒运动+电阻回路，速度/安培力/感应电动势矢量标注）；知识点 electricity-4-1~4-3 + animationRegistry 3 条 lazy 注册 + 参数面板 + 物理量看板全接线。验证：lint 0 警告 / tsc 通过 / build 成功（39 个动画 chunk）
+- **M4-1 交变电流模块完成（2026-06-02）**：[M4-1]收官！①ACGeneration 交变电流产生——线圈在匀强磁场中转动，3D 旋转视觉，e-t 图像，Em=NBSω 实时计算，中性面/最大值面切换；②ACValues 有效值与峰值——V_rms=V_peak/√2，交流电vs直流电热效应对比，可调节 V_peak/R/U_dc；③Transformer 理想变压器——匝数比 n1/n2 可调，U1:U2=n1:n2，I1:I2=n2:n1，功率守恒验证；④PowerTransmission 远距离输电——升压→高压输电→降压全流程，线路损耗 P_loss=I²R，提高输电电压减少损耗演示；⑤知识树新增 electricity-5-1~5-4（4个知识点），animationRegistry 新增 anim-ac-generation/anim-ac-values/anim-transformer/anim-power-transmission，physicsQuantities 补4个case，AnimationPage 补4组参数面板。全部组件符合主题 token + useCanvasSize 规范，未引入新依赖。验证：lint 0 警告 / tsc 通过 / build 成功（36→40 个动画 chunk）
 - **M4-1 电磁感应组件审查修复（2026-05-31）**：10 项问题修复——🔴严重：①LenzsLaw 感应磁场线方向反转（B_induced>0向下时线画成向上，重写起止坐标使线穿过线圈指向正确方向）；②CuttingEMF EMF方向箭头反转（B⊗+v→右手定则正电荷向上b→a，但箭头指向下，交换y1/y2修正）。🟡中等：③LenzsLaw N/S极硬编码颜色→PHYSICS_COLORS.magnetNorth/magnetSouth（新增 token）；④LenzsLaw/CuttingEMF/FaradayLaw 硬编码 strokeWidth→CANVAS_STYLE.stroke.*；⑤FaradayLaw Mode1 dΦ/dt 用 omegaAnim=0.5→实际角速度 mode1Omega=π/6≈0.524；⑥FaradayLaw Mode1 线圈不随角度旋转→coilRx=max(0.15,|cosθ|)椭圆投影；⑦删除未使用变量 Phi。🔵轻微：⑧CuttingEMF 移除未使用 m 参数（registry+paramConfigs+组件）；⑨导体棒到达右端后停止→ping-pong 往复运动+rodDirection 控制速度/安培力方向；⑩physicsQuantities FaradayLaw Mode1 omega 同步修正。验证：lint 0 警告 / tsc 通过 / build 成功
 - **质量闸门治理（2026-05-30，归属 [M2]）**：完成 ESLint 9 flat config 迁移（#BUG-005，`npm run lint` 恢复并 0 警告）、动画注册表单一数据源重构（#BUG-006，消除 componentPath/animationComponents 双映射与 anim-impulse 错配）、动画懒加载分包（#PERF-007，主 bundle 676→596kB）。详见 `process/PROCESS_LOG.md`
 - **架构改进六项（2026-05-30，归属 [M2]/[M3]）**：路由级代码分割+vendor manualChunks（#PERF-008，主 bundle 596→191.89kB，消除大包警告）、ErrorBoundary 错误边界（#BUG-009）、useAnimationFrame 按实例动画 Hook（#REFACTOR-010）、useCanvasSize 消除 24 动画样板（#REFACTOR-011）、物理量计算下沉至 data/physicsQuantities + physics/constants 消除硬编码 g（#REFACTOR-012）、PracticePage/WrongPage 接线激活题库与 useWrongStore 死代码（#BUG-013，完成 M3-4 错题本主体）。新增 15 项测试（共 48）。详见 `process/PROCESS_LOG.md`
@@ -49,7 +50,7 @@
 - **已完成**：M3-1 完成 — 创建 analysisRegistry.ts 题目解析注册表、problems/ 目录结构（6个分类22道力学真题）；M3-2 完成 — AnalysisPage 完整实现（题干区/分步解析区/知识链路区/步骤导航）；M3-3 完成 — KatexFormula 组件改用 mode 属性（inline/block），符合 UI 规范，KaTeX CSS 与字体全部离线打包验证通过；**关键修复** — 填充 knowledgeTree.ts 力学8章共35个知识节点，与 animationRegistry 23个动画完整关联，knowledgeIndex 索引正确构建
 - **M3-5 练习与测试模式完成（2026-05-30）**：自评式答题会话 PracticeSession（练习/测试双模式、计时器、提示、揭示解析、自评联动 useWrongStore 自动判错判对）、PracticePage 入口（模式选择+筛选+成绩历史+浏览真题）、ScoreReport 成绩报告（总分/各模块正确率/薄弱知识点跳转）、新增 usePracticeStore（成绩历史 IndexedDB 持久化）、激活此前未接线的 useProblemStore。新增 4 项测试（共 60）。**[M3] 全部完成**
 - **UI 主题一致性优化（2026-05-31，归属 [M2]）**：修复 4 份 UI 规范与主题代码间的语义不一致——①进度条撞色：慢放 `secondary-500`→`secondary-400`（与动能色 `#0891B2` 拉开 2 色阶），新增速度文字标签（色盲友好）；②光晕 token 统一：shadow.ts 新增 `glowRing` 对象（highlight/mastered/activeStep/error），AnalysisPage 硬编码→引用 token，旧 masteredGlow/focusGlow 标记 deprecated；③动效分类体系：motion.ts 新增 celebration/stateChange/feedback 时长 token，03_MOTION_RULES 新增 §6 动效分类定义表（庆祝类≤800ms/状态类≤300ms/反馈类≤400ms/页面级过渡300-500ms），消除原 §2 与 §5 的矛盾；④分析页信息密度：04_ANALYSIS 新增 §2.3 单步内容上限（SVG≤1/公式≤2/文字≤80字/标签≤3），两步展开时 SVG 降级为缩略图而非完全收起，新增"已展开 N/2 步"指示器。验证：tsc 通过 / lint 0 警告
-- **下一步**：M4-1 继续——交变电流（ACGeneration/ACValues/Transformer/PowerTransmission）
+- **下一步**：M4-2 热学模块——分子运动/分子力/气体定律/理想气体状态方程/热力学定律（BrownianMotion/MolecularForce/GasLaws/IdealGasState/FirstLawThermo/SecondLawThermo）
 
 ---
 

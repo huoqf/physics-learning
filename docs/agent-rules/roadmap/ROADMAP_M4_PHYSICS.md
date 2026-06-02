@@ -156,14 +156,18 @@
 | 变压器原理 | ⭐⭐⭐⭐⭐ | Transformer |
 | 远距离输电 | ⭐⭐⭐⭐ | PowerTransmission |
 
-- [ ] **ACGeneration.tsx** — 线圈在匀强磁场中转动，EMF-t图像，从最大值/零开始区别
-- [ ] **ACValues.tsx** — 峰值与有效值关系（正弦波：V_rms=V_peak/√2，热效应等效
-- [ ] **Transformer.tsx**
+- [x] **ACGeneration.tsx** — 线圈在匀强磁场中转动，EMF-t图像，从最大值/零开始区别
+- [x] **ACValues.tsx** — 峰值与有效值关系（正弦波：V_rms=V_peak/√2，热效应等效）
+- [x] **Transformer.tsx**
   - n1/n2可调，U1:U2=n1:n2，I1:I2=n2:n1（理想变压器）
   - 高考要点：升压变压器n2&gt;n1；匝数比决定电压，功率守恒决定电流
-- [ ] **PowerTransmission.tsx**
+- [x] **PowerTransmission.tsx**
   - 升压→长途输电→降压全流程，线路电阻热损耗计算
   - 高考要点：提高输电电压→减小电流→减少线路损耗
+
+> ✅ 2026-06-02：交变电流高频 4 组件完成（ACGeneration/ACValues/Transformer/PowerTransmission），
+> 知识点 electricity-5-1~5-4 + 注册表 + 参数面板 + 物理量看板全接线。
+> 全部组件符合主题 token 规范，动画流畅，物理计算准确。
 
 ---
 
