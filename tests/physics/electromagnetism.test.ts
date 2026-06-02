@@ -14,6 +14,8 @@ import {
   calculateTransformer,
   calculateACRMS,
   calculateCoulombForce,
+  calculateTransformerWithLoad,
+  calculatePowerTransmission,
 } from '@/physics'
 
 const k = 9e9
@@ -96,5 +98,66 @@ describe('electromagnetism', () => {
     const res = calculateACRMS(311)
     expect(res.V_rms).toBeCloseTo(311 / Math.SQRT2, 6)
     expect(res.I_rms).toBeCloseTo(311 / Math.SQRT2, 6)
+  })
+
+  // ===== [M4-1] 交变电流模块测试 =====
+
+  it('交流有效值：传入独立 I_peak 参数', () => {
+    const V_peak = 311
+    const I_peak = 5
+    const res = calculateACRMS(V_peak, I_peak)
+    expect(res.V_rms).toBeCloseTo(311 / Math.SQRT2, 6)
+    expect(res.I_rms).toBeCloseTo(5 / Math.SQRT2, 6)
+  })
+
+  it('带负载变压器：升压 n1=100 n2=200 U1=220 R=50 → U2=440, I2=8.8, I1=17.6', () => {
+    const res = calculateTransformerWithLoad(100, 200, 220, 50)
+    expect(res.U2).toBeCloseTo(440, 10)
+    expect(res.I2).toBeCloseTo(8.8, 10)
+    expect(res.I1).toBeCloseTo(17.6, 10)
+    expect(res.P_input).toBeCloseTo(220 * 17.6, 10)
+    expect(res.P_output).toBeCloseTo(440 * 8.8, 10)
+    // 功率守恒
+    expect(res.P_input).toBeCloseTo(res.P_output, 10)
+  })
+
+  it('带负载变压器：降压 n1=200 n2=100 U1=440 R=25', () => {
+    const res = calculateTransformerWithLoad(200, 100, 440, 25)
+    expect(res.U2).toBeCloseTo(220, 10)
+    expect(res.I2).toBeCloseTo(8.8, 10)
+    expect(res.I1).toBeCloseTo(4.4, 10)
+  })
+
+  it('带负载变压器：除零保护', () => {
+    const res = calculateTransformerWithLoad(0, 100, 220, 50)
+    expect(res.U2).toBe(0)
+    expect(res.I1).toBe(0)
+    const res2 = calculateTransformerWithLoad(100, 200, 220, 0)
+    expect(res2.I2).toBe(0)
+  })
+
+  it('远距离输电：高压输电低损耗', () => {
+    // P=100kW, U=10kV, R=10Ω
+    const res = calculatePowerTransmission(100000, 10000, 10, 100, 1000, 1000, 100)
+    expect(res.I_line).toBeCloseTo(10, 10) // I = P/U = 10A
+    expect(res.U_loss).toBeCloseTo(100, 10) // ΔU = IR = 100V
+    expect(res.P_loss).toBeCloseTo(1000, 10) // ΔP = I²R = 1kW
+    expect(res.eta).toBeCloseTo(0.99, 10) // 效率 99%
+  })
+
+  it('远距离输电：低压输电高损耗', () => {
+    // P=100kW, U=1kV, R=10Ω
+    const res = calculatePowerTransmission(100000, 1000, 10, 100, 1000, 1000, 100)
+    expect(res.I_line).toBeCloseTo(100, 10) // I = P/U = 100A
+    expect(res.U_loss).toBeCloseTo(1000, 10) // ΔU = IR = 1000V
+    expect(res.P_loss).toBeCloseTo(100000, 10) // ΔP = I²R = 100kW
+    expect(res.eta).toBeCloseTo(0, 10) // 效率 0%（全部损耗）
+  })
+
+  it('远距离输电：除零保护', () => {
+    const res = calculatePowerTransmission(100000, 0, 10, 100, 1000, 1000, 100)
+    expect(res.I_line).toBe(0)
+    const res2 = calculatePowerTransmission(0, 10000, 10, 100, 1000, 1000, 100)
+    expect(res2.eta).toBe(0)
   })
 })

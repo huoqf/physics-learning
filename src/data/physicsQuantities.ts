@@ -29,6 +29,9 @@ import {
   calculateChargeInMagField,
   calculateFaradayEMF,
   calculateLenzsLaw,
+  calculateACRMS,
+  calculateTransformerWithLoad,
+  calculatePowerTransmission,
 } from '../physics'
 
 const COULOMB_K = 9e9
@@ -490,6 +493,98 @@ export function buildPhysicsQuantities(
         { label: '安培力 F安', value: F_ampere, unit: 'N' },
       ]
     }
+
+    // ===== 电磁学 · 交变电流（[M4-1]）=====
+    case 'anim-ac-generation': {
+      const B = params.B ?? 0.5
+      const S = params.S ?? 0.04
+      const omega = params.omega ?? 2
+      const N = params.N ?? 100
+      const initialPhase = params.initialPhase ?? 0
+      // 峰值电动势 Em = NBSω
+      const Em = N * B * S * omega
+      const { V_rms } = calculateACRMS(Em)
+      const freq = omega / (2 * Math.PI)
+      return [
+        ...base,
+        { label: '磁感应强度 B', value: B, unit: 'T' },
+        { label: '线圈面积 S', value: S, unit: 'm²' },
+        { label: '角速度 ω', value: omega, unit: 'rad/s' },
+        { label: '匝数 N', value: N, unit: '匝' },
+        { label: '峰值电动势 Em', value: Em, unit: 'V' },
+        { label: '有效值 Erms', value: V_rms, unit: 'V' },
+        { label: '频率 f', value: freq, unit: 'Hz' },
+        { label: '初始位置', value: initialPhase < 0.5 ? '中性面' : '最大值面', unit: '' },
+      ]
+    }
+
+    case 'anim-ac-values': {
+      const V_peak = params.V_peak ?? 311
+      const R = params.R ?? 100
+      const f = params.f ?? 2
+      const U_dc = params.U_dc ?? 220
+      const I_peak = V_peak / R
+      const { V_rms, I_rms } = calculateACRMS(V_peak, I_peak)
+      const P_avg = V_rms * I_rms
+      const errorPercent = Math.abs((U_dc - V_rms) / V_rms) * 100
+      return [
+        ...base,
+        { label: '峰值电压 Vm', value: V_peak, unit: 'V' },
+        { label: '频率 f', value: f, unit: 'Hz' },
+        { label: '负载电阻 R', value: R, unit: 'Ω' },
+        { label: '直流电压 Udc', value: U_dc, unit: 'V', highlight: errorPercent <= 5 ? 'positive' : undefined },
+        { label: '有效电压 Vrms', value: V_rms, unit: 'V' },
+        { label: '有效电流 Irms', value: I_rms, unit: 'A' },
+        { label: '平均功率 P', value: P_avg, unit: 'W' },
+        { label: '误差', value: errorPercent.toFixed(1), unit: '%', highlight: errorPercent <= 5 ? 'positive' : 'negative' },
+      ]
+    }
+
+    case 'anim-transformer': {
+      const n1 = params.n1 ?? 100
+      const n2 = params.n2 ?? 200
+      const U1 = params.U1 ?? 220
+      const R = params.R ?? 50
+      const { U2, I2, I1, P_output } = calculateTransformerWithLoad(n1, n2, U1, R)
+      const turnsRatio = n1 === 0 ? 0 : n2 / n1
+      return [
+        ...base,
+        { label: '原线圈匝数 n₁', value: n1, unit: '匝' },
+        { label: '副线圈匝数 n₂', value: n2, unit: '匝' },
+        { label: '匝数比 n₂/n₁', value: turnsRatio, unit: '' },
+        { label: '输入电压 U₁', value: U1, unit: 'V' },
+        { label: '输出电压 U₂', value: U2, unit: 'V' },
+        { label: '原线圈电流 I₁', value: I1, unit: 'A' },
+        { label: '副线圈电流 I₂', value: I2, unit: 'A' },
+        { label: '输出功率 P₂', value: P_output, unit: 'W' },
+      ]
+    }
+
+    case 'anim-power-transmission': {
+      const P_send = params.P_send ?? 100000
+      const U_trans = params.U_trans ?? 10000
+      const R_line = params.R_line ?? 10
+      // 使用默认匝数比：升压 1:10，降压 10:1
+      const n1_step_up = 100
+      const n2_step_up = 1000
+      const n1_step_down = 1000
+      const n2_step_down = 100
+      const { I_line, U_loss, P_loss, U_user, P_user, eta } = calculatePowerTransmission(
+        P_send, U_trans, R_line, n1_step_up, n2_step_up, n1_step_down, n2_step_down
+      )
+      return [
+        ...base,
+        { label: '输送功率 P', value: P_send / 1000, unit: 'kW' },
+        { label: '输电电压 U', value: U_trans / 1000, unit: 'kV' },
+        { label: '输电线电流 I', value: I_line, unit: 'A' },
+        { label: '损耗电压 ΔU', value: U_loss, unit: 'V' },
+        { label: '损耗功率 ΔP', value: P_loss / 1000, unit: 'kW' },
+        { label: '用户电压 U', value: U_user, unit: 'V' },
+        { label: '用户功率 P', value: P_user / 1000, unit: 'kW' },
+        { label: '输电效率 η', value: eta * 100, unit: '%' },
+      ]
+    }
+
     default:
       return [
         ...base,

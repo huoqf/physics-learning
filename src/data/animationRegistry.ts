@@ -282,6 +282,36 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     knowledgeId: 'electricity-4-3',
     Component: lazy(() => import('@/features/electromagnetism/CuttingEMF')),
     defaultParams: { B: 1, L: 0.5, v: 2, R: 2 }
+  },
+
+  // ===== 电磁学 · 交变电流（[M4-1]）=====
+  'anim-ac-generation': {
+    id: 'anim-ac-generation',
+    title: '交变电流产生与图像',
+    knowledgeId: 'electricity-5-1',
+    Component: lazy(() => import('@/features/electromagnetism/ACGeneration')),
+    defaultParams: { B: 0.5, S: 0.04, omega: 2, N: 100, initialPhase: 0 }
+  },
+  'anim-ac-values': {
+    id: 'anim-ac-values',
+    title: '有效值与峰值关系',
+    knowledgeId: 'electricity-5-2',
+    Component: lazy(() => import('@/features/electromagnetism/ACValues')),
+    defaultParams: { V_peak: 311, R: 100, f: 2, U_dc: 220, isTesting: 0 }
+  },
+  'anim-transformer': {
+    id: 'anim-transformer',
+    title: '变压器原理',
+    knowledgeId: 'electricity-5-3',
+    Component: lazy(() => import('@/features/electromagnetism/Transformer')),
+    defaultParams: { n1: 100, n2: 200, U1: 220, R: 50 }
+  },
+  'anim-power-transmission': {
+    id: 'anim-power-transmission',
+    title: '远距离输电',
+    knowledgeId: 'electricity-5-4',
+    Component: lazy(() => import('@/features/electromagnetism/PowerTransmission')),
+    defaultParams: { P_send: 100000, U_trans: 10000, R_line: 10 }
   }
 }
 

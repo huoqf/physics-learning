@@ -219,6 +219,31 @@ const paramConfigs: Record<string, Array<{
     { key: 'v', label: '速度 v', min: 0.5, max: 10, step: 0.5, unit: 'm/s' },
     { key: 'R', label: '回路电阻 R', min: 0.1, max: 10, step: 0.1, unit: 'Ω' },
   ],
+  // ===== 电磁学 · 交变电流（[M4-1]）=====
+  'anim-ac-generation': [
+    { key: 'B', label: '磁感应强度 B', min: 0.1, max: 2, step: 0.1, unit: 'T' },
+    { key: 'S', label: '线圈面积 S', min: 0.01, max: 0.1, step: 0.01, unit: 'm²' },
+    { key: 'omega', label: '角速度 ω', min: 0.5, max: 10, step: 0.5, unit: 'rad/s' },
+    { key: 'N', label: '匝数 N', min: 1, max: 500, step: 10, unit: '匝' },
+    { key: 'initialPhase', label: '初始位置', min: 0, max: 1, step: 1, unit: '0=中性面 1=最大值面' },
+  ],
+  'anim-ac-values': [
+    { key: 'V_peak', label: '峰值电压 Vm', min: 50, max: 500, step: 10, unit: 'V' },
+    { key: 'f', label: '频率 f', min: 0.5, max: 20, step: 0.5, unit: 'Hz' },
+    { key: 'U_dc', label: '直流电压 Udc', min: 0, max: 350, step: 1, unit: 'V' },
+    { key: 'R', label: '负载电阻 R', min: 10, max: 500, step: 10, unit: 'Ω' },
+  ],
+  'anim-transformer': [
+    { key: 'n1', label: '原线圈匝数 n₁', min: 10, max: 500, step: 10, unit: '匝' },
+    { key: 'n2', label: '副线圈匝数 n₂', min: 10, max: 500, step: 10, unit: '匝' },
+    { key: 'U1', label: '输入电压 U₁', min: 10, max: 500, step: 10, unit: 'V' },
+    { key: 'R', label: '负载电阻 R', min: 5, max: 200, step: 5, unit: 'Ω' },
+  ],
+  'anim-power-transmission': [
+    { key: 'P_send', label: '输送功率 P', min: 10000, max: 500000, step: 10000, unit: 'W' },
+    { key: 'U_trans', label: '输电电压 U', min: 1000, max: 50000, step: 1000, unit: 'V' },
+    { key: 'R_line', label: '输电线电阻 R', min: 1, max: 50, step: 1, unit: 'Ω' },
+  ],
 }
 
 export default function AnimationPage() {
@@ -332,8 +357,8 @@ export default function AnimationPage() {
           </div>
         )}
 
-        <div className="flex-1 flex flex-col">
-          <div className="flex-1 p-4">
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 min-h-0 p-4">
             <div
               className="w-full h-full bg-white rounded-xl shadow-md overflow-hidden"
               style={{
@@ -355,7 +380,7 @@ export default function AnimationPage() {
             </div>
           </div>
 
-          <div className="h-12 px-4 pb-4">
+          <div className="px-4 pb-4 shrink-0">
             <AnimationControls
               isPlaying={isPlaying}
               speed={speed}

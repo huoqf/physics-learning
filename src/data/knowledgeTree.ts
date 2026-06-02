@@ -511,6 +511,47 @@ export const knowledgeTree: KnowledgeNode[] = [
     problemIds: [],
     prerequisites: ['electricity-4-2'],
   },
+
+  {
+    id: 'electricity-5-1',
+    title: '交变电流产生与图像',
+    chapter: '电磁学 第5章 交变电流',
+    module: 'electricity',
+    importance: 'core',
+    animationIds: ['anim-ac-generation'],
+    problemIds: [],
+    prerequisites: ['electricity-4-2'],
+  },
+  {
+    id: 'electricity-5-2',
+    title: '有效值与峰值关系',
+    chapter: '电磁学 第5章 交变电流',
+    module: 'electricity',
+    importance: 'gaokao',
+    animationIds: ['anim-ac-values'],
+    problemIds: [],
+    prerequisites: ['electricity-5-1'],
+  },
+  {
+    id: 'electricity-5-3',
+    title: '变压器原理',
+    chapter: '电磁学 第5章 交变电流',
+    module: 'electricity',
+    importance: 'gaokao',
+    animationIds: ['anim-transformer'],
+    problemIds: [],
+    prerequisites: ['electricity-5-1'],
+  },
+  {
+    id: 'electricity-5-4',
+    title: '远距离输电',
+    chapter: '电磁学 第5章 交变电流',
+    module: 'electricity',
+    importance: 'core',
+    animationIds: ['anim-power-transmission'],
+    problemIds: [],
+    prerequisites: ['electricity-5-3'],
+  },
 ]
 
 export const knowledgeIndex: Record<string, KnowledgeNode> = {}

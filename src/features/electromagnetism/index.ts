@@ -11,3 +11,9 @@ export { default as ChargeInBField } from './ChargeInBField'
 export { default as FaradayLaw } from './FaradayLaw'
 export { default as LenzsLaw } from './LenzsLaw'
 export { default as CuttingEMF } from './CuttingEMF'
+
+// ===== 电磁学 · 交变电流（[M4-1]）=====
+export { default as ACGeneration } from './ACGeneration'
+export { default as ACValues } from './ACValues'
+export { default as Transformer } from './Transformer'
+export { default as PowerTransmission } from './PowerTransmission'
