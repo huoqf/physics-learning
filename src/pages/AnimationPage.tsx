@@ -1,18 +1,24 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, FlaskConical, Play } from 'lucide-react'
 import { getAnimationConfig } from '@/data/animationRegistry'
 import { buildPhysicsQuantities } from '@/data/physicsQuantities'
 import { useAnimationStore, useProgressStore } from '@/stores'
+import { useAppStore } from '@/stores/useAppStore'
 import {
   AnimationControls,
   PhysicsPanel,
   ParamControl,
   ErrorBoundary,
+  DiscoveryGuide,
 } from '@/components/UI'
-import { duration, easing } from '@/theme'
-import { LAYOUT } from '@/theme/spacing'
+import type { DiscoveryStepData } from '@/components/UI/DiscoveryGuide'
+import { duration, easing } from '@/theme/motion'
+import { ThreePanel } from '@/components/Layout'
 import { useAnimationFrame } from '@/utils/animation'
+import UniformAccelerationDiscovery from '@/features/mechanics/UniformAccelerationDiscovery'
+import { useUniformAccelerationPhysics } from '@/features/mechanics/useUniformAccelerationPhysics'
+import { VTChart } from '@/components/Physics/VTChart'
 
 // 每个动画的参数配置
 const paramConfigs: Record<string, Array<{
@@ -135,7 +141,6 @@ const paramConfigs: Record<string, Array<{
     { key: 'v2', label: '速度 v₂', min: -10, max: 10, step: 0.5, unit: 'm/s' },
     { key: 'isElastic', label: '弹性碰撞', min: 0, max: 1, step: 1, unit: '0=非弹性 1=弹性' },
   ],
-  // ===== 电磁学 · 静电场（[M4-1]）=====
   'anim-coulomb-law': [
     { key: 'q1', label: '电量 q₁', min: -5, max: 5, step: 0.5, unit: 'μC' },
     { key: 'q2', label: '电量 q₂', min: -5, max: 5, step: 0.5, unit: 'μC' },
@@ -167,7 +172,6 @@ const paramConfigs: Record<string, Array<{
     { key: 'q', label: '电荷量 q', min: -10, max: 10, step: 1, unit: 'μC' },
     { key: 'rTest', label: '试探点距离 r', min: 2, max: 10, step: 0.5, unit: 'cm' },
   ],
-  // ===== 电磁学 · 恒定电流（[M4-1]）=====
   'anim-ohm-law': [
     { key: 'U', label: '电压 U', min: 0, max: 12, step: 0.5, unit: 'V' },
     { key: 'R', label: '电阻 R', min: 1, max: 10, step: 0.5, unit: 'Ω' },
@@ -183,7 +187,6 @@ const paramConfigs: Record<string, Array<{
     { key: 'r', label: '内阻 r', min: 0, max: 5, step: 0.5, unit: 'Ω' },
     { key: 'R', label: '外电阻 R', min: 0, max: 20, step: 0.5, unit: 'Ω' },
   ],
-  // ===== 电磁学 · 磁场（[M4-1]）=====
   'anim-ampere-force': [
     { key: 'B', label: '磁感应强度 B', min: 0.1, max: 5, step: 0.1, unit: 'T' },
     { key: 'I', label: '电流 I', min: 0.1, max: 10, step: 0.1, unit: 'A' },
@@ -202,7 +205,6 @@ const paramConfigs: Record<string, Array<{
     { key: 'v', label: '速度 v', min: 1, max: 50, step: 1, unit: 'm/s' },
     { key: 'B', label: '磁感应强度 B', min: 0.1, max: 5, step: 0.1, unit: 'T' },
   ],
-  // ===== 电磁学 · 电磁感应（[M4-1]）=====
   'anim-faraday-law': [
     { key: 'N', label: '线圈匝数 N', min: 1, max: 10, step: 1, unit: '匝' },
     { key: 'B', label: '磁铁强度 B', min: 0.2, max: 2.0, step: 0.1, unit: 'T' },
@@ -223,7 +225,6 @@ const paramConfigs: Record<string, Array<{
     { key: 'B_out', label: '磁场方向', min: 0, max: 1, step: 1, unit: '0=向里⊗ 1=向外⊙' },
     { key: 'handRule', label: '手指定则', min: 0, max: 2, step: 1, unit: '0=右手 1=左手 2=握拳' },
   ],
-  // ===== 电磁学 · 交变电流（[M4-1]）=====
   'anim-ac-generation': [
     { key: 'B', label: '磁感应强度 B', min: 0.1, max: 2, step: 0.1, unit: 'T' },
     { key: 'S', label: '线圈面积 S', min: 0.01, max: 0.1, step: 0.01, unit: 'm²' },
@@ -264,11 +265,107 @@ export default function AnimationPage() {
     setSpeed,
     updateParam,
   } = useAnimationStore()
+  const { mode, setMode, discoveryStep, setDiscoveryStep, nextDiscoveryStep, prevDiscoveryStep } = useAppStore()
   const { markAnimationViewed } = useProgressStore()
   const currentTimeRef = useRef(0)
   const [canvasDimmed, setCanvasDimmed] = useState(false)
 
   const config = id ? getAnimationConfig(id) : undefined
+
+  // 支持发现模式的动画 ID 列表
+  const discoverySupportedIds = ['anim-uniform-acceleration']
+  const isDiscoverySupported = config ? discoverySupportedIds.includes(config.id) : false
+  const isDiscoveryMode = mode === 'discovery' && isDiscoverySupported
+
+  // 发现模式步骤定义
+  const discoverySteps = isDiscoverySupported ? [
+    {
+      title: '观看运动过程',
+      description: '点击播放，观察小车的运动过程。注意速度箭头和位置的变化。',
+      hint: '速度箭头的长度代表速度大小，方向代表运动方向。',
+      content: (
+        <div className="text-xs text-neutral-500 py-2">
+          <p>观察要点：</p>
+          <ul className="list-disc ml-4 mt-1 space-y-1">
+            <li>速度箭头如何变化？</li>
+            <li>小车的运动快慢是否改变？</li>
+            <li>加速度箭头是否保持不变？</li>
+          </ul>
+        </div>
+      ),
+    },
+    {
+      title: '分析频闪数据',
+      description: '频闪点每隔 0.5s 记录一次小车的位置，观察数据变化规律。',
+      hint: '查看动画区域的频闪数据表格。',
+      content: (
+        <div className="text-xs text-neutral-500 py-2">
+          <p>频闪数据已显示在动画区域右上角。</p>
+          <p className="mt-1">比较相邻时刻的速度差，有什么特点？</p>
+        </div>
+      ),
+    },
+    {
+      title: '发现速度规律',
+      description: '计算相邻时间间隔的速度差，发现速度变化的规律。',
+      hint: 'Δv/Δt 的结果就是加速度 a',
+      content: (
+        <div className="text-xs text-neutral-500 py-2">
+          <p>v-t 图的斜率 = Δv/Δt = a（常量）</p>
+          <p className="mt-1">速度随时间均匀变化。</p>
+        </div>
+      ),
+    },
+    {
+      title: '推导 v = v₀ + at',
+      description: '速度随时间均匀变化，由此推导速度公式。',
+      hint: '由 Δv = a·t 推导',
+      content: (
+        <div className="text-xs text-neutral-500 py-2">
+          <p>由 Δv = a·t 得：v = v₀ + at</p>
+          <p className="mt-1">推导过程见动画区域。</p>
+        </div>
+      ),
+    },
+    {
+      title: '推导 x = v₀t + ½at²',
+      description: 'v-t 图像与时间轴围成的面积就是位移。',
+      hint: '梯形面积 = (上底 + 下底) × 高 / 2',
+      content: (
+        <div className="text-xs text-neutral-500 py-2">
+          <p>v-t 图面积 = 位移 x</p>
+          <p className="mt-1">x = (v₀ + v)·t / 2 = v₀t + ½at²</p>
+        </div>
+      ),
+    },
+    {
+      title: '验证 v²-v₀²=2ax',
+      description: '消去时间 t，推导速度与位移的关系式。',
+      hint: '注意刹车死区！',
+      content: (
+        <div className="text-xs text-neutral-500 py-2">
+          <p>由 v = v₀ + at 消去 t：</p>
+          <p className="mt-1 font-bold">v² - v₀² = 2ax</p>
+          {params.v0 > 0 && params.a < 0 && (
+            <div className="mt-2 p-2 rounded text-xs space-y-1" style={{ backgroundColor: '#fef2f2' }}>
+              <p className="font-bold" style={{ color: '#dc2626' }}>
+                 刹车死区
+              </p>
+              <p className="text-neutral-700">
+                t &gt; {(-params.v0 / params.a).toFixed(1)}s 时汽车已停止 v=0
+              </p>
+              <p className="text-neutral-700">
+                盲目代入公式会得到负速度！
+              </p>
+            </div>
+          )}
+        </div>
+      ),
+    },
+  ] : [] as DiscoveryStepData[]
+
+  // 获取物理引擎数据以用于 V-T 图
+  const physics = useUniformAccelerationPhysics(params.v0 ?? 0, params.a ?? 1.5, time, 100)
 
   const prevConfigIdRef = useRef<string | undefined>(undefined)
 
@@ -348,62 +445,133 @@ export default function AnimationPage() {
           <span className="font-medium">返回</span>
         </button>
         <h1 className="text-xl font-bold text-white">{config.title}</h1>
+
+        {/* 模式切换按钮 */}
+        {isDiscoverySupported && (
+          <button
+            onClick={() => setMode(isDiscoveryMode ? 'animation' : 'discovery')}
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white/80 hover:text-white hover:bg-white/10 active:scale-[0.97]"
+            style={{ transition: `all ${duration.fast}ms ${easing.standard}` }}
+          >
+            {isDiscoveryMode ? (
+              <>
+                <Play className="w-3.5 h-3.5" />
+                <span>动画模式</span>
+              </>
+            ) : (
+              <>
+                <FlaskConical className="w-3.5 h-3.5" />
+                <span>公式发现</span>
+              </>
+            )}
+          </button>
+        )}
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
-        {paramControlParams.length > 0 && (
-          <div className="bg-neutral-50 border-r border-neutral-200 p-4 overflow-y-auto" style={{ width: LAYOUT.leftPanelWidth }}>
+      <ThreePanel
+        left={paramControlParams.length > 0 ? (
+          <div className="p-4">
             <ParamControl
               params={paramControlParams}
               onParamChange={updateParam}
               onReset={handleReset}
+              disabled={isDiscoveryMode}
             />
           </div>
-        )}
-
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 min-h-0 p-4">
-            <div
-              className="w-full h-full bg-white rounded-xl shadow-md overflow-hidden"
-              style={{
-                transition: `opacity ${duration.normal}ms ${easing.standard}`,
-                opacity: canvasDimmed ? 0.9 : 1,
-              }}
-            >
-              <ErrorBoundary resetKey={config.id}>
-                <Suspense
-                  fallback={
-                    <div className="w-full h-full flex items-center justify-center text-neutral-400">
-                      加载动画中…
-                    </div>
-                  }
+        ) : undefined}
+        center={
+          <div className="flex flex-col h-full p-4 gap-4">
+            {isDiscoveryMode ? (
+              // 模式A：公式发现模式，保持原版组件内部布局
+              <div className="w-full h-full bg-white rounded-xl shadow-md overflow-hidden flex flex-col">
+ 
+                <div className="flex-1 overflow-auto">
+                  <ErrorBoundary resetKey={config.id}>
+                    <Suspense
+                      fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
+                    >
+                      <UniformAccelerationDiscovery />
+                    </Suspense>
+                  </ErrorBoundary>
+                </div>
+                {/* 底部控制栏 */}
+                <div className="px-4 pb-4 shrink-0 border-t border-neutral-100">
+                  <AnimationControls
+                    isPlaying={isPlaying}
+                    speed={speed}
+                    time={time}
+                    maxTime={30}
+                    onPlayPause={() => setIsPlaying(!isPlaying)}
+                    onReset={handleReset}
+                    onSpeedChange={setSpeed}
+                    onTimeChange={setTime}
+                  />
+                </div>
+              </div>
+            ) : (
+              // 模式B：动画模式，V-T图(60%) + 动画(40%)
+              <>
+                {discoverySupportedIds.includes(config?.id || '') && (
+                  <div className="h-[60%] w-full bg-white rounded-xl shadow-md p-2 flex items-center justify-center">
+                    <VTChart 
+                      physics={physics} 
+                      params={{ 
+                        v0: params.v0 ?? 0, 
+                        a: params.a ?? 0 
+                      }} 
+                    />
+                  </div>
+                )}
+                <div
+                  className={`w-full bg-white rounded-xl shadow-md overflow-hidden ${discoverySupportedIds.includes(config?.id || '') ? 'h-[40%]' : 'h-full'}`}
+                  style={{
+                    transition: `opacity ${duration.normal}ms ${easing.standard}`,
+                    opacity: canvasDimmed ? 0.9 : 1,
+                  }}
                 >
-                  <AnimationComponent />
-                </Suspense>
-              </ErrorBoundary>
+                  <ErrorBoundary resetKey={config.id}>
+                    <Suspense
+                      fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
+                    >
+                      <AnimationComponent />
+                    </Suspense>
+                  </ErrorBoundary>
+                </div>
+                {/* 底部控制栏 */}
+                <div className="px-4 pb-4 shrink-0">
+                  <AnimationControls
+                    isPlaying={isPlaying}
+                    speed={speed}
+                    time={time}
+                    maxTime={30}
+                    onPlayPause={() => setIsPlaying(!isPlaying)}
+                    onReset={handleReset}
+                    onSpeedChange={setSpeed}
+                    onTimeChange={setTime}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        }
+        right={
+          isDiscoveryMode ? (
+            <div className="p-3 h-full">
+              <DiscoveryGuide
+                steps={discoverySteps}
+                currentStep={discoveryStep}
+                onNext={nextDiscoveryStep}
+                onPrev={prevDiscoveryStep}
+                onStepClick={setDiscoveryStep}
+              />
             </div>
-          </div>
-
-          <div className="px-4 pb-4 shrink-0">
-            <AnimationControls
-              isPlaying={isPlaying}
-              speed={speed}
-              time={time}
-              maxTime={30}
-              onPlayPause={() => setIsPlaying(!isPlaying)}
-              onReset={handleReset}
-              onSpeedChange={setSpeed}
-              onTimeChange={setTime}
-            />
-          </div>
-        </div>
-
-        <div className="bg-neutral-50 border-l border-neutral-200 p-4 overflow-y-auto" style={{ width: LAYOUT.rightPanelWidth }}>
-          <PhysicsPanel
-            quantities={physicsQuantities}
-          />
-        </div>
-      </div>
+          ) : (
+            <div className="p-4">
+              <PhysicsPanel quantities={physicsQuantities} />
+            </div>
+          )
+        }
+      />
     </div>
   )
 }

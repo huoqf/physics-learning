@@ -2,7 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { useEffect } from 'react'
 import { useAnimationStore } from '@/stores'
 import { calculateObliqueThrow, calculateObliqueThrowRange } from '@/physics'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 
 export default function ObliqueThrowAnimation() {
   const { params, time, showVectors, showFormulas, showGrid, setIsPlaying } = useAnimationStore()

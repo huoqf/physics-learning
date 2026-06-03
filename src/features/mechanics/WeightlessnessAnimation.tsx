@@ -2,7 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { useEffect } from 'react'
 import { useAnimationStore } from '@/stores'
 import { solveQuadraticTime } from '@/math/numerical'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE, STROKE } from '@/theme/physics'
 
 export default function WeightlessnessAnimation() {
   const { params, time, showVectors, showFormulas, showGrid, setIsPlaying } = useAnimationStore()
@@ -85,7 +85,7 @@ export default function WeightlessnessAnimation() {
           height={elevatorHeight}
           fill={PHYSICS_COLORS.objectFill}
           stroke={PHYSICS_COLORS.axis}
-          strokeWidth={3}
+          strokeWidth={STROKE.groundLine}
         />
 
         <rect

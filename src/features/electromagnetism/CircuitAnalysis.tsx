@@ -1,7 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateSeriesResistance, calculateParallelResistance, calculateOhmLaw } from '@/physics'
-import { PHYSICS_COLORS } from '@/theme/physicsColors'
+import { PHYSICS_COLORS } from '@/theme/physics'
 
 /**
  * 串并联电路：串联 I 相同、U 按 R 分配；并联 U 相同、I 按 1/R 分配。

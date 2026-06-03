@@ -1,7 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateCircularMotion } from '@/physics'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
 
 export default function CircularMotionAnimation() {
   const { params, time, showVectors, showFormulas, showGrid } = useAnimationStore()
@@ -27,8 +27,8 @@ export default function CircularMotionAnimation() {
           r={i * scale}
           fill="none"
           stroke={PHYSICS_COLORS.grid}
-          strokeWidth={1}
-          strokeDasharray="4,4"
+          strokeWidth={STROKE.grid}
+          strokeDasharray={DASH.axis.join(' ')}
         />
       )
     }
@@ -46,8 +46,8 @@ export default function CircularMotionAnimation() {
           x2={x2}
           y2={y2}
           stroke={PHYSICS_COLORS.grid}
-          strokeWidth={1}
-          strokeDasharray="4,4"
+          strokeWidth={STROKE.grid}
+          strokeDasharray={DASH.axis.join(' ')}
         />
       )
     }
@@ -64,7 +64,7 @@ export default function CircularMotionAnimation() {
           r={r * scale}
           fill="none"
           stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={3}
+          strokeWidth={STROKE.trackLine}
         />
 
         <line
@@ -73,7 +73,7 @@ export default function CircularMotionAnimation() {
           x2={centerX + r * scale + 20}
           y2={centerY}
           stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={2}
+          strokeWidth={STROKE.axisBold}
         />
         <line
           x1={centerX}
@@ -81,11 +81,11 @@ export default function CircularMotionAnimation() {
           x2={centerX}
           y2={centerY + r * scale + 20}
           stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={2}
+          strokeWidth={STROKE.axisBold}
         />
 
-        <text x={centerX + r * scale + 10} y={centerY + 5} fontSize="12" fill={PHYSICS_COLORS.axis}>x</text>
-        <text x={centerX + 5} y={centerY - r * scale - 10} fontSize="12" fill={PHYSICS_COLORS.axis}>y</text>
+        <text x={centerX + r * scale + 10} y={centerY + 5} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>x</text>
+        <text x={centerX + 5} y={centerY - r * scale - 10} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>y</text>
 
         <line
           x1={centerX}
@@ -93,8 +93,8 @@ export default function CircularMotionAnimation() {
           x2={canvasX}
           y2={canvasY}
           stroke={PHYSICS_COLORS.axis}
-          strokeWidth={1}
-          strokeDasharray="4,4"
+          strokeWidth={STROKE.reference}
+          strokeDasharray={DASH.axis.join(' ')}
         />
 
         <circle
@@ -121,7 +121,7 @@ export default function CircularMotionAnimation() {
             <text
               x={canvasX - y * omega * 80 - 30}
               y={canvasY - x * omega * 80}
-              fontSize="14"
+              fontSize={FONT.bodySize}
               fill={PHYSICS_COLORS.velocity}
               fontWeight="bold"
             >
@@ -140,7 +140,7 @@ export default function CircularMotionAnimation() {
             <text
               x={(canvasX + centerX) / 2 - 15}
               y={(canvasY + centerY) / 2}
-              fontSize="14"
+              fontSize={FONT.bodySize}
               fill={PHYSICS_COLORS.displacement}
               fontWeight="bold"
             >
@@ -159,7 +159,7 @@ export default function CircularMotionAnimation() {
             <text
               x={canvasX - x * a_c * 20 - 20}
               y={canvasY + y * a_c * 20 - 10}
-              fontSize="14"
+              fontSize={FONT.bodySize}
               fill={PHYSICS_COLORS.acceleration}
               fontWeight="bold"
             >
@@ -170,20 +170,20 @@ export default function CircularMotionAnimation() {
 
         {showFormulas && (
           <g transform="translate(20, 20)">
-            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">匀速圆周运动公式</text>
-            <text x={0} y={25} fontSize="12" fill={PHYSICS_COLORS.axis}>ω = v / r</text>
-            <text x={0} y={45} fontSize="12" fill={PHYSICS_COLORS.axis}>a = ω²r = v²/r</text>
-            <text x={0} y={65} fontSize="12" fill={PHYSICS_COLORS.axis}>T = 2π/ω</text>
-            <text x={0} y={90} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text fontSize={FONT.bodySize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">匀速圆周运动公式</text>
+            <text x={0} y={25} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>ω = v / r</text>
+            <text x={0} y={45} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>a = ω²r = v²/r</text>
+            <text x={0} y={65} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>T = 2π/ω</text>
+            <text x={0} y={90} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               当前: ω={omega.toFixed(2)} rad/s
             </text>
-            <text x={0} y={110} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text x={0} y={110} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               v={v.toFixed(2)} m/s
             </text>
-            <text x={0} y={130} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text x={0} y={130} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               a={a_c.toFixed(2)} m/s²
             </text>
-            <text x={0} y={150} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text x={0} y={150} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               T={period.toFixed(2)} s
             </text>
           </g>

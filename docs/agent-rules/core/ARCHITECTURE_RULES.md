@@ -4,7 +4,7 @@
 
 本文件约束「高中物理交互动画学习系统」的前端、数据层、物理计算层、题目解析层与桌面打包层实现。
 
-本文件是技术架构的权威来源。**按需加载策略与文档优先级见 `CORE_RULES.md §2.1`**（每次任务必读，此处不重复）。
+本文件是技术架构的权威来源。**按需加载策略与文档优先级见 `AGENT.md` 按需加载速查**。
 
 ---
 
@@ -63,13 +63,19 @@ src/
     └── useWrongStore.ts
 
 theme/                      # 设计 token（颜色/间距/圆角/阴影/动效）
-├── colors.ts               # 唯一颜色来源，Tailwind 从此导入
-├── physicsColors.ts        # 物理量颜色语义映射 + Canvas 元素尺寸
+├── colors.ts               # UI 语义色，Tailwind 从此导入
+├── physics/                # 物理主题子模块（推荐入口 @/theme/physics）
+│   ├── colors.ts           # 物理量颜色（~110 token，8 分组）
+│   ├── sceneColors.ts      # 场景器材外观色（磁铁/线圈/灯泡/手势等）
+│   ├── chartColors.ts      # 物理图像配色（v-t/P-V/U-I 等 9 组）
+│   ├── canvasStyle.ts      # SVG/Canvas 绘制规范（线宽/箭头/SVG_ATTR/Marker）
+│   └── index.ts            # 统一导出
+├── physicsColors.ts        # 向后兼容层（re-export，新代码勿用）
 ├── spacing.ts              # 间距比例尺 + 布局固定尺寸 + 密度上限
 ├── radius.ts               # 圆角规范
 ├── shadow.ts               # 阴影规范
 ├── motion.ts               # 动效时长与 easing
-└── index.ts                # 统一导出入口
+└── index.ts                # 统一导出入口（可用，但子模块优先）
 
 electron/                   # Electron 预留目录
 ├── main.ts
@@ -232,7 +238,7 @@ IndexedDB 体积上限：**200MB**，超限时提示用户清理。
 - 通过 `animationRegistry.ts` 定位场景配置
 - 通过 `React.lazy` + `Suspense` 按需加载 `features/` 组件
 - 不得硬编码所有动画组件引用
-- 三屏联动布局尺寸（280px/320px）与信息密度规则见 `docs/rules/02_UI_RULES.md`
+- 三屏联动布局尺寸（280px/320px）与信息密度规则见 `docs/agent-rules/ui/02_UI_RULES.md`
 
 ---
 
@@ -245,8 +251,9 @@ IndexedDB 体积上限：**200MB**，超限时提示用户清理。
 | 常量 | UPPER_SNAKE_CASE | `GRAVITY` |
 | 私有变量 | 下划线前缀 | `_internalState` |
 
-- `.ts` / `.tsx` 导入必须显式写出后缀，禁止依赖隐式扩展解析
+- 禁止同一目录下存在同名 `.ts` 与 `.tsx` 文件（如 `foo.ts` + `foo.tsx`），避免隐式扩展解析歧义
 - 纯函数必须有 JSDoc，公开 API 写明参数、返回值和边界条件
+- import 路径从最具体的子模块入口引用（如 `@/theme/physics`、`@/theme/colors`、`@/theme/motion`），`@/theme` 统一入口仍可用但子模块优先
 
 ---
 
@@ -274,7 +281,7 @@ import { tailwindColors } from './src/theme/colors'
 export default { theme: { extend: { colors: tailwindColors } } }
 ```
 
-所有组件中的颜色/间距/动效值必须从 `src/theme/` 引用，禁止硬编码。
+所有组件中的颜色/间距/动效值必须从 `src/theme/` 子模块引用，禁止硬编码。import 路径详见 `ui/02_UI_RULES.md §2`。
 
 ---
 
@@ -305,5 +312,4 @@ test: {
 
 ## 14. 文档维护规则
 
-- 每个模块必须有 `README.md`（唯一在此重申，其余更新规则见 `CORE_RULES.md` §2.3）
-- 新增 `src/theme/` token 后，同步更新 `docs/rules/02_UI_RULES.md` 对应章节
+- 新增 `src/theme/` token 后，同步更新 `docs/agent-rules/ui/02_UI_RULES.md` 对应章节

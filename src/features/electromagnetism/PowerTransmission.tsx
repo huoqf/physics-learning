@@ -16,7 +16,7 @@
 import { useRef, useMemo, useCallback, useState } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { calculatePowerTransmission } from '@/physics'
 import { useAnimationFrame } from '@/utils/animation'
@@ -271,7 +271,7 @@ export default function PowerTransmission() {
           R = {R_line} Ω
         </text>
         <text x={(lineStartX + lineEndX) / 2} y={nodeY + 30}
-          fontSize={10} fill={PHYSICS_COLORS.temperature}
+          fontSize={CANVAS_STYLE.font.smallSize} fill={PHYSICS_COLORS.temperature}
           textAnchor="middle">
           ΔP = {(P_loss / 1000).toFixed(1)} kW
         </text>
@@ -297,11 +297,11 @@ export default function PowerTransmission() {
             strokeWidth={CANVAS_STYLE.stroke.objectLine} />
           <g transform={`rotate(${bladeAngle}, 0, 0)`}>
             <line x1={0} y1={-16} x2={0} y2={-4}
-              stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={3} strokeLinecap="round" />
+              stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={CANVAS_STYLE.stroke.vectorMain} strokeLinecap="round" />
             <line x1={0} y1={4} x2={14} y2={12}
-              stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={3} strokeLinecap="round" />
+              stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={CANVAS_STYLE.stroke.vectorMain} strokeLinecap="round" />
             <line x1={0} y1={4} x2={-14} y2={12}
-              stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={3} strokeLinecap="round" />
+              stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={CANVAS_STYLE.stroke.vectorMain} strokeLinecap="round" />
             <circle cx={0} cy={0} r={4}
               fill={PHYSICS_COLORS.electricCurrent} />
           </g>
@@ -321,9 +321,9 @@ export default function PowerTransmission() {
             stroke={PHYSICS_COLORS.magneticField}
             strokeWidth={CANVAS_STYLE.stroke.objectLine} />
           <circle cx={-6} cy={0} r={10}
-            fill="none" stroke={PHYSICS_COLORS.magneticField} strokeWidth={1.5} />
+            fill="none" stroke={PHYSICS_COLORS.magneticField} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
           <circle cx={6} cy={0} r={10}
-            fill="none" stroke={PHYSICS_COLORS.magneticField} strokeWidth={1.5} />
+            fill="none" stroke={PHYSICS_COLORS.magneticField} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
           <text x={0} y={34} fontSize={CANVAS_STYLE.font.axisSize}
             fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
             升压
@@ -365,9 +365,9 @@ export default function PowerTransmission() {
             stroke={PHYSICS_COLORS.magneticField}
             strokeWidth={CANVAS_STYLE.stroke.objectLine} />
           <circle cx={-6} cy={0} r={10}
-            fill="none" stroke={PHYSICS_COLORS.magneticField} strokeWidth={1.5} />
+            fill="none" stroke={PHYSICS_COLORS.magneticField} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
           <circle cx={6} cy={0} r={10}
-            fill="none" stroke={PHYSICS_COLORS.magneticField} strokeWidth={1.5} />
+            fill="none" stroke={PHYSICS_COLORS.magneticField} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
           <text x={0} y={34} fontSize={CANVAS_STYLE.font.axisSize}
             fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
             降压
@@ -393,15 +393,15 @@ export default function PowerTransmission() {
                 points={`-12,-18 0,-28 12,-18`}
                 fill={PHYSICS_COLORS.objectFill}
                 stroke={PHYSICS_COLORS.objectStroke}
-                strokeWidth={1.5} />
+                strokeWidth={CANVAS_STYLE.stroke.objectThin} />
               <rect x={-12} y={-18} width={24} height={22}
                 fill={PHYSICS_COLORS.objectFill}
                 stroke={PHYSICS_COLORS.objectStroke}
-                strokeWidth={1.5} />
+                strokeWidth={CANVAS_STYLE.stroke.objectThin} />
               <rect x={-4} y={-10} width={8} height={14}
                 fill={PHYSICS_COLORS.objectFill}
                 stroke={PHYSICS_COLORS.objectStroke}
-                strokeWidth={1} />
+                strokeWidth={CANVAS_STYLE.stroke.grid} />
               <circle cx={0} cy={-8} r={3}
                 fill={lightColor}
                 filter="url(#houseGlow)" />
@@ -438,13 +438,13 @@ export default function PowerTransmission() {
 
         <g transform={`translate(8, ${H - 70})`}>
           <rect width={W - 16} height="62" rx="5" fill={PHYSICS_COLORS.objectFill}
-            opacity="0.9" stroke={PHYSICS_COLORS.grid} strokeWidth="1" />
+            opacity="0.9" stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} />
 
           <text x="10" y="16" fontSize={CANVAS_STYLE.font.axisSize}
             fill={PHYSICS_COLORS.labelText} fontWeight="bold">
             输电效率 η = {(eta * 100).toFixed(1)}%
           </text>
-          <text x="10" y="32" fontSize={10} fill={PHYSICS_COLORS.axis}>
+          <text x="10" y="32" fontSize={CANVAS_STYLE.font.smallSize} fill={PHYSICS_COLORS.axis}>
             I = {I_line.toFixed(1)} A
             &nbsp;|&nbsp;
             ΔU = {U_loss.toFixed(0)} V

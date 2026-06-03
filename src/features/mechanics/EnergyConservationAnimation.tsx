@@ -1,7 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateMechanicalEnergy, calculateFreeFall } from '@/physics'
-import { PHYSICS_COLORS, CANVAS_STYLE, ENERGY_BAR_COLORS } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE, ENERGY_BAR_COLORS, STROKE, FONT, DASH } from '@/theme/physics'
 
 export default function EnergyConservationAnimation() {
   const { params, time, showVectors, showFormulas, showGrid } = useAnimationStore()
@@ -37,8 +37,8 @@ export default function EnergyConservationAnimation() {
           x2={canvasSize.width - 80}
           y2={yPos}
           stroke={PHYSICS_COLORS.grid}
-          strokeWidth={1}
-          strokeDasharray="4,4"
+          strokeWidth={STROKE.grid}
+          strokeDasharray={DASH.axis.join(' ')}
         />
       )
     }
@@ -55,9 +55,9 @@ export default function EnergyConservationAnimation() {
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
         {gridLines}
 
-        <line x1={80} y1={startY} x2={80} y2={groundY} stroke={PHYSICS_COLORS.labelText} strokeWidth={2} />
-        <line x1={80} y1={groundY} x2={canvasSize.width - 200} y2={groundY} stroke={PHYSICS_COLORS.labelText} strokeWidth={3} />
-        <text x={60} y={startY - 10} fontSize="12" fill={PHYSICS_COLORS.axis} textAnchor="middle">h={h}m</text>
+        <line x1={80} y1={startY} x2={80} y2={groundY} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.axisBold} />
+        <line x1={80} y1={groundY} x2={canvasSize.width - 200} y2={groundY} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.groundLine} />
+        <text x={60} y={startY - 10} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis} textAnchor="middle">h={h}m</text>
 
         <circle
           cx={150}
@@ -67,7 +67,7 @@ export default function EnergyConservationAnimation() {
           stroke={PHYSICS_COLORS.objectStroke}
           strokeWidth={CANVAS_STYLE.stroke.objectLine}
         />
-        <text x={150} y={currentY + 5} fontSize="12" fill="white" textAnchor="middle" fontWeight="bold">
+        <text x={150} y={currentY + 5} fontSize={FONT.axisSize} fill="white" textAnchor="middle" fontWeight="bold">
           m={m}
         </text>
 
@@ -91,9 +91,9 @@ export default function EnergyConservationAnimation() {
             height={ekHeight}
             fill={ENERGY_BAR_COLORS.kinetic}
             stroke={ENERGY_BAR_COLORS.kinetic}
-            strokeWidth={1}
+            strokeWidth={STROKE.grid}
           />
-          <text x={barWidth / 2} y={200 - ekHeight - 5} fontSize="12" fill={ENERGY_BAR_COLORS.kinetic} textAnchor="middle">
+          <text x={barWidth / 2} y={200 - ekHeight - 5} fontSize={FONT.axisSize} fill={ENERGY_BAR_COLORS.kinetic} textAnchor="middle">
             Ek
           </text>
 
@@ -104,9 +104,9 @@ export default function EnergyConservationAnimation() {
             height={epHeight}
             fill={ENERGY_BAR_COLORS.potential}
             stroke={ENERGY_BAR_COLORS.potential}
-            strokeWidth={1}
+            strokeWidth={STROKE.grid}
           />
-          <text x={barWidth + 20 + barWidth / 2} y={200 - epHeight - 5} fontSize="12" fill={ENERGY_BAR_COLORS.potential} textAnchor="middle">
+          <text x={barWidth + 20 + barWidth / 2} y={200 - epHeight - 5} fontSize={FONT.axisSize} fill={ENERGY_BAR_COLORS.potential} textAnchor="middle">
             Ep
           </text>
 
@@ -117,29 +117,29 @@ export default function EnergyConservationAnimation() {
             height={totalHeight}
             fill={ENERGY_BAR_COLORS.mechanical}
             stroke={ENERGY_BAR_COLORS.mechanical}
-            strokeWidth={1}
+            strokeWidth={STROKE.grid}
           />
-          <text x={2 * (barWidth + 20) + barWidth / 2} y={200 - totalHeight - 5} fontSize="12" fill={ENERGY_BAR_COLORS.mechanical} textAnchor="middle">
+          <text x={2 * (barWidth + 20) + barWidth / 2} y={200 - totalHeight - 5} fontSize={FONT.axisSize} fill={ENERGY_BAR_COLORS.mechanical} textAnchor="middle">
             E
           </text>
         </g>
 
         {showFormulas && (
           <g transform="translate(200, 30)">
-            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">机械能守恒定律</text>
-            <text x={0} y={25} fontSize="12" fill={ENERGY_BAR_COLORS.kinetic}>
+            <text fontSize={FONT.bodySize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">机械能守恒定律</text>
+            <text x={0} y={25} fontSize={FONT.axisSize} fill={ENERGY_BAR_COLORS.kinetic}>
               动能: Ek = ½mv² = {Ek.toFixed(1)}J
             </text>
-            <text x={0} y={45} fontSize="12" fill={ENERGY_BAR_COLORS.potential}>
+            <text x={0} y={45} fontSize={FONT.axisSize} fill={ENERGY_BAR_COLORS.potential}>
               势能: Ep = mgh = {Ep.toFixed(1)}J
             </text>
-            <text x={0} y={65} fontSize="12" fill={ENERGY_BAR_COLORS.mechanical} fontWeight="bold">
+            <text x={0} y={65} fontSize={FONT.axisSize} fill={ENERGY_BAR_COLORS.mechanical} fontWeight="bold">
               总机械能: E = Ek + Ep = {E.toFixed(1)}J
             </text>
-            <text x={0} y={90} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text x={0} y={90} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               初始总机械能: E₀ = {initialE.toFixed(1)}J
             </text>
-            <text x={0} y={110} fontSize="12" fill="#8b5cf6" fontWeight="bold">
+            <text x={0} y={110} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.annotation} fontWeight="bold">
               机械能守恒: E = E₀ = 常量
             </text>
           </g>

@@ -1,7 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateOrbitalSpeed } from '@/physics'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 
 const G = 6.67e-11
 const M = 5.97e24

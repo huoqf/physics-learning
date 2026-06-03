@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { calculateLenzsLaw } from '@/physics'
 import { useAnimationFrame } from '@/utils/animation'
 
@@ -256,20 +256,20 @@ export default function LenzsLaw() {
             fill={magnetPole > 0 ? PHYSICS_COLORS.magnetNorth : PHYSICS_COLORS.magnetSouth} 
             rx="4" 
             stroke={isDragging ? PHYSICS_COLORS.forceNet : undefined}
-            strokeWidth="1.5"
+            strokeWidth={CANVAS_STYLE.stroke.objectThin}
           />
           <text x="25" y="22" textAnchor="middle" fill={PHYSICS_COLORS.objectFill} fontWeight={CANVAS_STYLE.font.labelWeight} fontSize={CANVAS_STYLE.font.bodySize}>
             {magnetPole > 0 ? 'N' : 'S'}
           </text>
-          
-          <rect 
-            y="35" 
-            width="50" 
-            height="35" 
-            fill={magnetPole > 0 ? PHYSICS_COLORS.magnetSouth : PHYSICS_COLORS.magnetNorth} 
-            rx="4" 
+
+          <rect
+            y="35"
+            width="50"
+            height="35"
+            fill={magnetPole > 0 ? PHYSICS_COLORS.magnetSouth : PHYSICS_COLORS.magnetNorth}
+            rx="4"
             stroke={isDragging ? PHYSICS_COLORS.forceNet : undefined}
-            strokeWidth="1.5"
+            strokeWidth={CANVAS_STYLE.stroke.objectThin}
           />
           <text x="25" y="57" textAnchor="middle" fill={PHYSICS_COLORS.objectFill} fontWeight={CANVAS_STYLE.font.labelWeight} fontSize={CANVAS_STYLE.font.bodySize}>
             {magnetPole > 0 ? 'S' : 'N'}

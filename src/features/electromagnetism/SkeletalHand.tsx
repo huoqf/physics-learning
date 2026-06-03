@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
 
 /**
  * 2D 骨骼手 · 数据结构
@@ -24,13 +25,13 @@ export type HandChirality = 'right' | 'left'
 export type HandPose = 'open' | 'half-fist' | 'fist'
 
 // 主题色（与 theme/physicsColors 保持语义一致；纯渲染用，不引用 store）
-const SKIN_FILL = '#F3C7A6'
-const SKIN_JOINT = '#E6B896'
-const SKIN_STROKE = '#7C4A2E'
-const HIGHLIGHT_FILL = '#FFD9B0'
-const HIGHLIGHT_JOINT = '#F2BC92'
-const HIGHLIGHT_STROKE = '#9A3412'
-const TIP_RING = '#7E22CE' // magneticField
+const SKIN_FILL = SCENE_COLORS.hand.skinLight
+const SKIN_JOINT = SCENE_COLORS.hand.skinBase
+const SKIN_STROKE = SCENE_COLORS.hand.skinDark
+const HIGHLIGHT_FILL = SCENE_COLORS.hand.skinLight
+const HIGHLIGHT_JOINT = SCENE_COLORS.hand.skinMid
+const HIGHLIGHT_STROKE = SCENE_COLORS.hand.skinShadow
+const TIP_RING = PHYSICS_COLORS.magneticField // magneticField
 const TIP_RING_LABEL = 'white'
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -312,7 +313,7 @@ function FingerView({ finger, highlight, showTipMarker, tipLabel, tipColor }: Fi
 const PALM_W = 64
 const PALM_H = 72
 
-function Palm({ chirality, isBack }: { chirality: HandChirality, isBack: boolean }) {
+function Palm({ isBack }: { chirality: HandChirality, isBack: boolean }) {
   // 掌心朝向观察者时标注“掌心”，背向时标注“手背”
   const label = isBack ? "手背" : "掌心"
   
@@ -391,11 +392,11 @@ const DEFAULT_TIP_LABELS: Record<Finger['name'], string> = {
 }
 
 const DEFAULT_TIP_COLORS: Record<Finger['name'], string> = {
-  thumb: '#059669',     // electricCurrent
-  index: '#7E22CE',     // magneticField
-  middle: '#EA580C',    // forceNet
-  ring: '#94A3B8',
-  little: '#94A3B8',
+  thumb: PHYSICS_COLORS.electricCurrent,     // electricCurrent
+  index: PHYSICS_COLORS.magneticField,       // magneticField
+  middle: PHYSICS_COLORS.forceNet,            // forceNet
+  ring: PHYSICS_COLORS.trackHistory,
+  little: PHYSICS_COLORS.trackHistory,
 }
 
 export function SkeletonHand({

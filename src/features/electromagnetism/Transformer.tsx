@@ -13,7 +13,7 @@
 import { useMemo, useRef } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE, FONT } from '@/theme/physics'
 import { useAnimationFrame } from '@/utils/animation'
 import { calculateTransformerWithLoad } from '@/physics'
 
@@ -178,7 +178,7 @@ export default function Transformer() {
           d={path}
           fill="none"
           stroke={PHYSICS_COLORS.magneticField}
-          strokeWidth={1}
+          strokeWidth={CANVAS_STYLE.stroke.grid}
           strokeDasharray={CANVAS_STYLE.dash.reference.join(' ')}
           strokeDashoffset={-t * 30 - i * 15}
           opacity={fluxIntensity * (0.7 - i * 0.15)}
@@ -286,7 +286,7 @@ export default function Transformer() {
           strokeWidth={CANVAS_STYLE.stroke.objectLine + 1}
           rx="4"
         />
-        <text x={cx} y={cy + 5} fontSize={11} fill={PHYSICS_COLORS.axis}
+        <text x={cx} y={cy + 5} fontSize={FONT.subtickSize} fill={PHYSICS_COLORS.axis}
           textAnchor="middle" fontWeight="bold">
           铁芯
         </text>
@@ -378,9 +378,9 @@ export default function Transformer() {
           <circle cx={primaryLeft - 30} cy={cy} r={14}
             fill={PHYSICS_COLORS.objectFill}
             stroke={PHYSICS_COLORS.objectStroke}
-            strokeWidth={1.5} />
+            strokeWidth={CANVAS_STYLE.stroke.objectThin} />
           <text x={primaryLeft - 30} y={cy + 5}
-            fontSize={14} fill={PHYSICS_COLORS.electricCurrent}
+            fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.electricCurrent}
             textAnchor="middle" fontWeight="bold">
             ~
           </text>
@@ -413,7 +413,7 @@ export default function Transformer() {
             r={14}
             fill={PHYSICS_COLORS.objectFill}
             stroke={PHYSICS_COLORS.objectStroke}
-            strokeWidth={1.5}
+            strokeWidth={CANVAS_STYLE.stroke.objectThin}
             opacity={0.9}
           />
 
@@ -422,7 +422,7 @@ export default function Transformer() {
             d={`M ${bulbX - 5} ${bulbY + 3} L ${bulbX - 2} ${bulbY - 4} L ${bulbX + 2} ${bulbY - 4} L ${bulbX + 5} ${bulbY + 3}`}
             fill="none"
             stroke={PHYSICS_COLORS.lightRay}
-            strokeWidth={1.5}
+            strokeWidth={CANVAS_STYLE.stroke.objectThin}
             opacity={0.5 + bulbGlow.opacity * 0.5}
           />
 
@@ -432,13 +432,13 @@ export default function Transformer() {
             width={12} height={6}
             fill={PHYSICS_COLORS.axis}
             stroke={PHYSICS_COLORS.objectStroke}
-            strokeWidth={1}
+            strokeWidth={CANVAS_STYLE.stroke.grid}
             rx="1"
           />
 
           {/* 负载标注 */}
           <text x={bulbX} y={bulbY + 30}
-            fontSize={10} fill={PHYSICS_COLORS.labelText}
+            fontSize={CANVAS_STYLE.font.smallSize} fill={PHYSICS_COLORS.labelText}
             textAnchor="middle">
             R = {R} Ω
           </text>
@@ -447,12 +447,12 @@ export default function Transformer() {
         {/* ═══════════════════ 底部公式 ═══════════════════ */}
         <g transform={`translate(8, ${H - 42})`}>
           <rect width={W - 16} height="36" rx="5" fill={PHYSICS_COLORS.objectFill}
-            opacity="0.85" stroke={PHYSICS_COLORS.grid} strokeWidth="1" />
+            opacity="0.85" stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} />
           <text x="10" y="14" fontSize={CANVAS_STYLE.font.axisSize}
             fill={PHYSICS_COLORS.labelText} fontWeight="bold">
             理想变压器：U₂/U₁ = n₂/n₁，I₁/I₂ = n₂/n₁，P₁ = P₂
           </text>
-          <text x="10" y="28" fontSize={10} fill={PHYSICS_COLORS.axis}>
+          <text x="10" y="28" fontSize={CANVAS_STYLE.font.smallSize} fill={PHYSICS_COLORS.axis}>
             输入功率 P₁ = {P_input.toFixed(0)} W，输出功率 P₂ = {P_output.toFixed(0)} W
             {Math.abs(P_input - P_output) < 0.01 ? '（功率守恒 ✓）' : ''}
           </text>
@@ -464,18 +464,18 @@ export default function Transformer() {
             {/* 波形背景 */}
             <rect x={waveX} y={waveY} width={waveW} height={waveH}
               rx="5" fill={PHYSICS_COLORS.objectFill}
-              opacity="0.9" stroke={PHYSICS_COLORS.grid} strokeWidth="1" />
+              opacity="0.9" stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} />
 
             {/* 零线 */}
             <line x1={waveX} y1={waveY + waveH / 2} x2={waveX + waveW} y2={waveY + waveH / 2}
-              stroke={PHYSICS_COLORS.axis} strokeWidth={1} strokeDasharray="4 4" />
+              stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} strokeDasharray={CANVAS_STYLE.dash.axis.join(' ')} />
 
             {/* Φ(t) 波形轨迹（扫描点走过的路径） */}
             <path
               d={phiWavePath}
               fill="none"
               stroke={PHYSICS_COLORS.magneticField}
-              strokeWidth={1.5}
+              strokeWidth={CANVAS_STYLE.stroke.objectThin}
               strokeDasharray={CANVAS_STYLE.dash.reference.join(' ')}
             />
             <text x={waveX + 4} y={waveY + 12}
@@ -488,7 +488,7 @@ export default function Transformer() {
               d={e2WavePath}
               fill="none"
               stroke={PHYSICS_COLORS.electricCurrent}
-              strokeWidth={1.5}
+              strokeWidth={CANVAS_STYLE.stroke.objectThin}
             />
             <text x={waveX + 4} y={waveY + 24}
               fontSize={9} fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold">

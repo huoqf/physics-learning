@@ -1,7 +1,8 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateCoulombForce } from '@/physics'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 
 /** 库仑定律 F = kq₁q₂/r²：两点电荷间引力/斥力，电量/距离可调 */
 export default function CoulombLaw() {
@@ -40,7 +41,7 @@ export default function CoulombLaw() {
       const xPos = (i * canvasSize.width) / 10
       gridLines.push(
         <line key={`g-${i}`} x1={xPos} y1={40} x2={xPos} y2={canvasSize.height - 40}
-          stroke={PHYSICS_COLORS.grid} strokeWidth={1} strokeDasharray="4,4" />
+          stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} strokeDasharray={CANVAS_STYLE.dash.axis.join(' ')} />
       )
     }
   }
@@ -51,8 +52,8 @@ export default function CoulombLaw() {
         {gridLines}
 
         {/* 距离标注 */}
-        <line x1={x1} y1={centerY + 50} x2={x2} y2={centerY + 50} stroke={PHYSICS_COLORS.axis} strokeWidth={1} />
-        <text x={cx} y={centerY + 70} fontSize="13" fill={PHYSICS_COLORS.axis} textAnchor="middle">
+        <line x1={x1} y1={centerY + 50} x2={x2} y2={centerY + 50} stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} />
+        <text x={cx} y={centerY + 70} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.axis} textAnchor="middle">
           r = {r.toFixed(1)} cm
         </text>
 
@@ -69,32 +70,32 @@ export default function CoulombLaw() {
         )}
 
         {/* 电荷 1 */}
-        <circle cx={x1} cy={centerY} r={chargeR} fill={colorOf(q1)} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={2} />
-        <text x={x1} y={centerY + 6} fontSize="20" fill="#fff" textAnchor="middle" fontWeight="bold">
+        <circle cx={x1} cy={centerY} r={chargeR} fill={colorOf(q1)} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
+        <text x={x1} y={centerY + 6} fontSize="20" fill={colors.neutral[0]} textAnchor="middle" fontWeight="bold">
           {q1 >= 0 ? '+' : '−'}
         </text>
-        <text x={x1} y={centerY - chargeR - 8} fontSize="13" fill={PHYSICS_COLORS.labelText} textAnchor="middle">
+        <text x={x1} y={centerY - chargeR - 8} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
           q₁ = {q1} μC
         </text>
 
         {/* 电荷 2 */}
-        <circle cx={x2} cy={centerY} r={chargeR} fill={colorOf(q2)} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={2} />
-        <text x={x2} y={centerY + 6} fontSize="20" fill="#fff" textAnchor="middle" fontWeight="bold">
+        <circle cx={x2} cy={centerY} r={chargeR} fill={colorOf(q2)} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
+        <text x={x2} y={centerY + 6} fontSize="20" fill={colors.neutral[0]} textAnchor="middle" fontWeight="bold">
           {q2 >= 0 ? '+' : '−'}
         </text>
-        <text x={x2} y={centerY - chargeR - 8} fontSize="13" fill={PHYSICS_COLORS.labelText} textAnchor="middle">
+        <text x={x2} y={centerY - chargeR - 8} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
           q₂ = {q2} μC
         </text>
 
         {showFormulas && (
           <g transform="translate(20, 20)">
-            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">库仑定律</text>
-            <text x={0} y={24} fontSize="12" fill={PHYSICS_COLORS.axis}>F = k·q₁q₂/r²</text>
-            <text x={0} y={44} fontSize="12" fill={PHYSICS_COLORS.axis}>k = 9×10⁹ N·m²/C²</text>
-            <text x={0} y={68} fontSize="13" fill={PHYSICS_COLORS.forceNet} fontWeight="bold">
+            <text fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">库仑定律</text>
+            <text x={0} y={24} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.axis}>F = k·q₁q₂/r²</text>
+            <text x={0} y={44} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.axis}>k = 9×10⁹ N·m²/C²</text>
+            <text x={0} y={68} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.forceNet} fontWeight="bold">
               F = {F.toExponential(2)} N
             </text>
-            <text x={0} y={88} fontSize="12" fill={attractive ? PHYSICS_COLORS.electricField : PHYSICS_COLORS.forceNet}>
+            <text x={0} y={88} fontSize={CANVAS_STYLE.font.axisSize} fill={attractive ? PHYSICS_COLORS.electricField : PHYSICS_COLORS.forceNet}>
               {attractive ? '异号电荷 → 相互吸引' : '同号电荷 → 相互排斥'}
             </text>
           </g>

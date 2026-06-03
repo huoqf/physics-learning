@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 
 /**
  * 带电粒子在匀强偏转电场中运动（类平抛 / 示波管模型）。
@@ -137,7 +138,7 @@ export default function ChargeInEField() {
 
         {/* 粒子 */}
         <circle cx={cx} cy={cy} r={9} fill={PHYSICS_COLORS.forceNet} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={2} />
-        <text x={cx} y={cy + 4} fontSize="12" fill="#fff" textAnchor="middle" fontWeight="bold">+</text>
+        <text x={cx} y={cy + 4} fontSize="12" fill={colors.neutral[0]} textAnchor="middle" fontWeight="bold">+</text>
 
         {/* 速度分量矢量（同一比例，合矢量为真实切线） */}
         {showVectors && tSim > 0 && (

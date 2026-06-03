@@ -1,7 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateClosedCircuit } from '@/physics'
-import { PHYSICS_COLORS } from '@/theme/physicsColors'
+import { PHYSICS_COLORS } from '@/theme/physics'
 
 /**
  * 闭合电路欧姆定律 I = EMF/(R+r)，路端电压 U = EMF - Ir，效率 η = P出/P总。

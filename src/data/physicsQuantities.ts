@@ -29,6 +29,7 @@ import {
   calculateChargeInMagField,
   calculateFaradayEMF,
   calculateLenzsLaw,
+  calculateCuttingEMF,
   calculateACRMS,
   calculateTransformerWithLoad,
   calculatePowerTransmission,
@@ -475,21 +476,25 @@ export function buildPhysicsQuantities(
       ]
     }
     case 'anim-cutting-emf': {
+      // 导体切割磁感线：EMF=BLv·sinθ，I=EMF/(R+r)，F_安=BIL·sinθ
       const B = params.B ?? 1
       const L = params.L ?? 0.5
       const v = params.v ?? 2
       const R = params.R ?? 2
-      const EMF = B * L * v
-      const I = R > 0 ? EMF / R : 0
-      const { F: F_ampere } = calculateAmpereForce(B, I, L, 90)
+      const theta = params.theta ?? 90
+      const r = params.r ?? 0
+      const B_out = params.B_out ?? 0
+      const { EMF, I, F_ampere } = calculateCuttingEMF(B, L, v, R, theta, r, B_out)
       return [
         ...base,
         { label: '磁感应强度 B', value: B, unit: 'T' },
         { label: '导轨宽度 L', value: L, unit: 'm' },
         { label: '速度 v', value: v, unit: 'm/s' },
-        { label: '电阻 R', value: R, unit: 'Ω' },
-        { label: '感应电动势 EMF', value: EMF, unit: 'V' },
-        { label: '感应电流 I', value: I, unit: 'A' },
+        { label: '外电阻 R', value: R, unit: 'Ω' },
+        { label: '夹角 θ', value: theta, unit: '°' },
+        { label: '内阻 r', value: r, unit: 'Ω' },
+        { label: '感应电动势 EMF', value: Math.abs(EMF), unit: 'V' },
+        { label: '感应电流 I', value: Math.abs(I), unit: 'A' },
         { label: '安培力 F安', value: F_ampere, unit: 'N' },
       ]
     }

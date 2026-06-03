@@ -14,12 +14,12 @@
  */
 import { useRef, useState, useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
+import { colors } from '@/theme/colors'
 import {
-  colors,
   PHYSICS_COLORS,
   CANVAS_STYLE,
   ENERGY_BAR_COLORS,
-} from '@/theme'
+} from '@/theme/physics'
 
 interface Particle {
   id: number
@@ -135,8 +135,8 @@ export default function ACValues() {
 
     return (
       <g>
-        <rect x={chartX - 4} y={chartY - 4} width={chartW + 8} height={chartH + 8} fill={colors.neutral[0]} stroke={colors.neutral[200]} strokeWidth={1} rx={Math.min(chartW, chartH) * 0.03} />
-        <line x1={chartX} y1={toY(0)} x2={chartX + chartW} y2={toY(0)} stroke={PHYSICS_COLORS.grid} strokeWidth={1} strokeDasharray={CANVAS_STYLE.dash.guide.join(' ')} />
+        <rect x={chartX - 4} y={chartY - 4} width={chartW + 8} height={chartH + 8} fill={colors.neutral[0]} stroke={colors.neutral[200]} strokeWidth={CANVAS_STYLE.stroke.grid} rx={Math.min(chartW, chartH) * 0.03} />
+        <line x1={chartX} y1={toY(0)} x2={chartX + chartW} y2={toY(0)} stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} strokeDasharray={CANVAS_STYLE.dash.guide.join(' ')} />
         <line x1={chartX} y1={chartY + chartH} x2={chartX + chartW} y2={chartY + chartH} stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.axis} />
         <line x1={chartX} y1={chartY} x2={chartX} y2={chartY + chartH} stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.axis} />
 
@@ -245,11 +245,11 @@ export default function ACValues() {
     return (
       <g>
         <text x={x + w / 2} y={barY - layout.energyBarH * 0.04} fontSize={Math.max(11, layout.energyBarH * 0.08)} textAnchor="middle" fill={PHYSICS_COLORS.labelText}>{type === 'ac' ? 'Q_ac' : 'Q_dc'}</text>
-        <rect x={barX} y={barY} width={layout.barW} height={barH} fill={colors.neutral[100]} stroke={colors.neutral[300]} strokeWidth={1} rx={Math.min(layout.barW, barH) * 0.04} />
+        <rect x={barX} y={barY} width={layout.barW} height={barH} fill={colors.neutral[100]} stroke={colors.neutral[300]} strokeWidth={CANVAS_STYLE.stroke.grid} rx={Math.min(layout.barW, barH) * 0.04} />
         <rect x={barX} y={barY + barH - height} width={layout.barW} height={height} fill={fillColor} rx={Math.min(layout.barW, barH) * 0.04} opacity={0.85} />
         {[0, 0.5, 1].map((ratio) => (
           <g key={ratio}>
-            <line x1={barX + layout.barW + layout.barPad} y1={barY + barH - ratio * barH} x2={barX + layout.barW + layout.barPad * 2} y2={barY + barH - ratio * barH} stroke={PHYSICS_COLORS.axis} strokeWidth={1} />
+            <line x1={barX + layout.barW + layout.barPad} y1={barY + barH - ratio * barH} x2={barX + layout.barW + layout.barPad * 2} y2={barY + barH - ratio * barH} stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} />
             <text x={barX + layout.barW + layout.barPad * 2.5} y={barY + barH - ratio * barH + layout.energyBarH * 0.025} fontSize={Math.max(9, layout.energyBarH * 0.06)} fill={PHYSICS_COLORS.labelText}>{ratio * 100}%</text>
           </g>
         ))}
@@ -261,14 +261,14 @@ export default function ACValues() {
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg width="100%" height="100%" viewBox={`0 0 ${layout.W} ${layout.H}`} preserveAspectRatio="xMidYMid meet">
-        <rect x={layout.m} y={layout.m} width={layout.halfW - layout.m * 2} height={layout.H - layout.m * 2} fill={colors.primary[50]} stroke={colors.neutral[200]} strokeWidth={1} rx={Math.min(layout.halfW, layout.H) * 0.015} />
+        <rect x={layout.m} y={layout.m} width={layout.halfW - layout.m * 2} height={layout.H - layout.m * 2} fill={colors.primary[50]} stroke={colors.neutral[200]} strokeWidth={CANVAS_STYLE.stroke.grid} rx={Math.min(layout.halfW, layout.H) * 0.015} />
         {renderWaveform(layout.m, layout.halfW - layout.m * 2, 'ac')}
         {renderCircuit(layout.m, layout.halfW - layout.m * 2, 'ac')}
         {renderEnergyBar(layout.m, layout.halfW - layout.m * 2, 'ac')}
 
         <line x1={layout.halfW} y1={0} x2={layout.halfW} y2={layout.H} stroke={colors.neutral[200]} strokeWidth={Math.max(1, layout.W * 0.003)} />
 
-        <rect x={layout.halfW + layout.m} y={layout.m} width={layout.halfW - layout.m * 2} height={layout.H - layout.m * 2} fill={colors.secondary[50]} stroke={colors.neutral[200]} strokeWidth={1} rx={Math.min(layout.halfW, layout.H) * 0.015} />
+        <rect x={layout.halfW + layout.m} y={layout.m} width={layout.halfW - layout.m * 2} height={layout.H - layout.m * 2} fill={colors.secondary[50]} stroke={colors.neutral[200]} strokeWidth={CANVAS_STYLE.stroke.grid} rx={Math.min(layout.halfW, layout.H) * 0.015} />
         {renderWaveform(layout.halfW + layout.m, layout.halfW - layout.m * 2, 'dc')}
         {renderCircuit(layout.halfW + layout.m, layout.halfW - layout.m * 2, 'dc')}
         {renderEnergyBar(layout.halfW + layout.m, layout.halfW - layout.m * 2, 'dc')}

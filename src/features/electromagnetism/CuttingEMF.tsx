@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useCanvasSize, useAnimationFrame } from '@/utils'
 import { useAnimationStore, type MotionMode } from '@/stores'
 import { calculateCuttingEMF, simulateForceMotion } from '@/physics'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { CuttingEMFHandRule } from './HandRule'
 
 const GRID_MARGIN = 40
@@ -158,9 +158,9 @@ export default function CuttingEMF() {
       const yPos = (i * canvasSize.height) / 10
       gridLines.push(
         <line key={`gv-${i}`} x1={xPos} y1={GRID_MARGIN} x2={xPos} y2={canvasSize.height - GRID_MARGIN}
-          stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.reference} strokeDasharray="4,4" />,
+          stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} strokeDasharray={CANVAS_STYLE.dash.axis.join(' ')} />,
         <line key={`gh-${i}`} x1={GRID_MARGIN} y1={yPos} x2={canvasSize.width - GRID_MARGIN} y2={yPos}
-          stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.reference} strokeDasharray="4,4" />
+          stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} strokeDasharray={CANVAS_STYLE.dash.axis.join(' ')} />
       )
     }
   }
@@ -299,7 +299,7 @@ export default function CuttingEMF() {
           {theta < 90 && (
             <g>
               <path d={`M ${arcStartX} ${arcStartY} A ${arcRadius} ${arcRadius} 0 0 0 ${arcEndX} ${arcEndY}`}
-                stroke={PHYSICS_COLORS.labelText} strokeWidth={1.5} fill="none" strokeDasharray="3,2" opacity={0.7} />
+                stroke={PHYSICS_COLORS.labelText} strokeWidth={CANVAS_STYLE.stroke.objectThin} fill="none" strokeDasharray="3,2" opacity={0.7} />
               <text x={labelArcX} y={labelArcY + 4} fontSize={FONT.axis}
                 fill={PHYSICS_COLORS.labelText} fontWeight="bold" textAnchor="middle">θ</text>
             </g>
@@ -412,7 +412,7 @@ export default function CuttingEMF() {
 
           {isAutoF && (
             <g transform={`translate(${canvasSize.width - 200}, ${GRID_MARGIN + 10})`}>
-              <rect x={-4} y={-14} width={196} height={62} fill="white" stroke={PHYSICS_COLORS.grid} strokeWidth={1} rx={4} opacity={0.9} />
+              <rect x={-4} y={-14} width={196} height={62} fill="white" stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} rx={4} opacity={0.9} />
               <text fontSize={FONT.label} fill={PHYSICS_COLORS.labelText} fontWeight="bold">受力分析（受力模式）</text>
               <text x={0} y={14} fontSize={FONT.axis} fill={PHYSICS_COLORS.forceNet}>
                 F驱 = {F_DRIVE_DEFAULT.toFixed(2)} N
@@ -441,11 +441,11 @@ export default function CuttingEMF() {
             return (
               <g>
                 <rect x={pipX} y={pipY} width={pipW} height={pipH}
-                  fill="white" stroke={PHYSICS_COLORS.grid} strokeWidth={1} rx={6} opacity={0.95} />
-                <text x={pipX + 8} y={pipY + 14} fontSize={11} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
+                  fill="white" stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} rx={6} opacity={0.95} />
+                <text x={pipX + 8} y={pipY + 14} fontSize={CANVAS_STYLE.font.subtickSize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
                   放大镜：自由电子
                 </text>
-                <text x={pipX + pipW - 6} y={pipY + 14} fontSize={10} fill={PHYSICS_COLORS.axis} textAnchor="end">
+                <text x={pipX + pipW - 6} y={pipY + 14} fontSize={CANVAS_STYLE.font.smallSize} fill={PHYSICS_COLORS.axis} textAnchor="end">
                   v = {effectiveV.toFixed(2)} m/s
                 </text>
                 <line
@@ -454,11 +454,11 @@ export default function CuttingEMF() {
                   stroke={PHYSICS_COLORS.velocity} strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                   markerEnd="url(#arrow-cut-pipv)" opacity={0.8}
                 />
-                <text x={rodCx + Math.sign(effectiveV || 1) * 18} y={pipY + 28} fontSize={10}
+                <text x={rodCx + Math.sign(effectiveV || 1) * 18} y={pipY + 28} fontSize={CANVAS_STYLE.font.smallSize}
                   fill={PHYSICS_COLORS.velocity} fontWeight="bold" textAnchor="middle">
                   v
                 </text>
-                <text x={rodCx - 18} y={pipY + 28} fontSize={10}
+                <text x={rodCx - 18} y={pipY + 28} fontSize={CANVAS_STYLE.font.smallSize}
                   fill={PHYSICS_COLORS.magneticField} fontWeight="bold" textAnchor="middle">
                   {fieldSymbol}
                 </text>
@@ -510,13 +510,13 @@ export default function CuttingEMF() {
                   rx={8}
                   fill="white"
                   stroke={PHYSICS_COLORS.grid}
-                  strokeWidth={1}
+                  strokeWidth={CANVAS_STYLE.stroke.grid}
                   opacity={0.95}
                 />
                 <text
                   x={handX + handW / 2}
                   y={handY + 14}
-                  fontSize={11}
+                  fontSize={CANVAS_STYLE.font.subtickSize}
                   fontWeight="bold"
                   fill={PHYSICS_COLORS.labelText}
                   textAnchor="middle"

@@ -1,7 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateNewtonSecond, calculateFriction, calculateAcceleratedMotion } from '@/physics'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
 
 export default function NewtonSecondAnimation() {
   const { params, time, showVectors, showFormulas, showGrid } = useAnimationStore()
@@ -32,8 +32,8 @@ export default function NewtonSecondAnimation() {
           x2={xPos}
           y2={groundY + 10}
           stroke={PHYSICS_COLORS.grid}
-          strokeWidth={1}
-          strokeDasharray="4,4"
+          strokeWidth={STROKE.grid}
+          strokeDasharray={DASH.axis.join(' ')}
         />
       )
     }
@@ -50,7 +50,7 @@ export default function NewtonSecondAnimation() {
           x2={canvasSize.width - 50}
           y2={groundY}
           stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={3}
+          strokeWidth={STROKE.groundLine}
         />
 
         <polygon
@@ -73,8 +73,8 @@ export default function NewtonSecondAnimation() {
         <text
           x={originX + canvasS + 30}
           y={groundY - 50 - m * 10}
-          fontSize="14"
-          fill="#1e3a8a"
+          fontSize={FONT.bodySize}
+          fill={PHYSICS_COLORS.forceComponent}
           textAnchor="middle"
           fontWeight="bold"
         >
@@ -95,7 +95,7 @@ export default function NewtonSecondAnimation() {
             <text
               x={originX + canvasS + 60 + F * 3 + 15}
               y={groundY - 15 - m * 5}
-              fontSize="14"
+              fontSize={FONT.bodySize}
               fill={PHYSICS_COLORS.elasticForce}
               fontWeight="bold"
             >
@@ -116,7 +116,7 @@ export default function NewtonSecondAnimation() {
                 <text
                   x={originX + canvasS - f * 3 - 15}
                   y={groundY - 5 - m * 5}
-                  fontSize="12"
+                  fontSize={FONT.axisSize}
                   fill={PHYSICS_COLORS.friction}
                   fontWeight="bold"
                 >
@@ -129,31 +129,31 @@ export default function NewtonSecondAnimation() {
 
         {showFormulas && (
           <g transform="translate(20, 30)">
-            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">牛顿第二定律 F=ma</text>
-            <text x={0} y={25} fontSize="12" fill={PHYSICS_COLORS.axis}>F = {F}N</text>
-            <text x={0} y={45} fontSize="12" fill={PHYSICS_COLORS.axis}>m = {m}kg</text>
-            <text x={0} y={65} fontSize="12" fill={PHYSICS_COLORS.axis}>μ = {mu}</text>
-            <text x={0} y={90} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text fontSize={FONT.bodySize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">牛顿第二定律 F=ma</text>
+            <text x={0} y={25} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>F = {F}N</text>
+            <text x={0} y={45} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>m = {m}kg</text>
+            <text x={0} y={65} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>μ = {mu}</text>
+            <text x={0} y={90} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               N = mg = {N.toFixed(1)}N
             </text>
             {mu > 0 && (
-              <text x={0} y={110} fontSize="12" fill={PHYSICS_COLORS.axis}>
+              <text x={0} y={110} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
                 f = μN = {f.toFixed(1)}N
               </text>
             )}
-            <text x={0} y={135} fontSize="12" fill={PHYSICS_COLORS.forceNet} fontWeight="bold">
+            <text x={0} y={135} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.forceNet} fontWeight="bold">
               F合 = F - f = {F_net.toFixed(1)}N
             </text>
-            <text x={0} y={160} fontSize="12" fill={PHYSICS_COLORS.acceleration} fontWeight="bold">
+            <text x={0} y={160} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">
               a = F合/m = {a.toFixed(2)} m/s²
             </text>
-            <text x={0} y={185} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text x={0} y={185} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               t = {time.toFixed(2)}s
             </text>
-            <text x={0} y={205} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text x={0} y={205} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               v = at = {v.toFixed(2)} m/s
             </text>
-            <text x={0} y={225} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text x={0} y={225} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               s = ½at² = {s.toFixed(2)} m
             </text>
           </g>

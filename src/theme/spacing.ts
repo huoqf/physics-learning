@@ -21,14 +21,37 @@ export const spacing = {
   24:  '96px',
 } as const
 
+// ─── 响应式断点 ──────────────────────────────────────────────────────────
+export const BREAKPOINT = {
+  mobile:   1024,  // < 1024: 移动端（右侧下移，左侧抽屉）
+  tablet:   1280,  // 1024–1279: 平板（左侧抽屉）
+  desktop:  1440,  // ≥ 1440: 标准桌面
+} as const
+
+// ─── 面板宽度配置（按断点分级）────────────────────────────────────────────
+export const PANEL = {
+  left: {
+    standard: 280,  // ≥1440px
+    compact:   240,  // 1280–1439px
+    min:       200,
+    max:       320,
+  },
+  right: {
+    standard: 320,  // ≥1440px
+    compact:   280,  // 1280–1439px / 1024–1279px
+    min:       240,
+    max:       360,
+  },
+} as const
+
 // ─── 固定布局尺寸（三屏联动）────────────────────────────────────────────
 export const LAYOUT = {
   topBarHeight:     56,  // px
   bottomBarHeight:  48,  // px
-  leftPanelWidth:   280, // px 参数控制区
-  rightPanelWidth:  320, // px 数据看板
+  leftPanelWidth:   PANEL.left.standard,  // 向后兼容，标准宽度
+  rightPanelWidth:  PANEL.right.standard,  // 向后兼容，标准宽度
   canvasMinWidth:   400, // px 中间 Canvas 最小宽度
-  responsiveBreak:  1024,// px 折叠侧边栏的断点
+  responsiveBreak:  BREAKPOINT.mobile,     // 向后兼容，折叠侧边栏的断点
 } as const
 
 // ─── 内容密度上限 ────────────────────────────────────────────────────────

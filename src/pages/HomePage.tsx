@@ -3,7 +3,7 @@ import { BookOpen, Play, BookOpenCheck, ClipboardList } from 'lucide-react'
 import { useProgressStore } from '../stores'
 import { knowledgeTree } from '../data/knowledgeTree'
 import { animationRegistry } from '../data/animationRegistry'
-import { colors } from '../theme/colors'
+import { colors } from '@/theme/colors'
 import { useEffect } from 'react'
 
 export default function HomePage() {

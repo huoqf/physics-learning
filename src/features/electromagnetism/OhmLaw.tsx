@@ -1,7 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateOhmLaw } from '@/physics'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 
 /** 欧姆定律 I = U/R：U-I 图像（过原点直线，斜率 1/R），工作点标注 */
 export default function OhmLaw() {

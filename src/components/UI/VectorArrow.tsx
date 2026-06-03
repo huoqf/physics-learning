@@ -1,5 +1,5 @@
 import React from 'react'
-import { PHYSICS_COLORS } from '@/theme/physicsColors'
+import { PHYSICS_COLORS } from '@/theme/physics'
 
 interface VectorArrowProps {
   x1: number

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { duration, easing } from '@/theme'
+import { duration, easing } from '@/theme/motion'
 
 interface PageTransitionProps {
   children: React.ReactNode

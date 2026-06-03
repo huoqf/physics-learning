@@ -10,6 +10,8 @@ import { useRef } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useAnimationFrame } from '@/utils/animation'
+import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_STYLE, FONT } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 
 // 3D 点类型
 type Point3D = { x: number; y: number; z: number }
@@ -178,17 +180,17 @@ export default function ACGeneration() {
   const rOut2 = { x: 0.2 * cosT, y: 0.2 * sinT, z: -coilLength - 0.7 }
 
   // 线圈线段数据
-  const coilSegments = [
-    { pA: pMidBack, pB: p2, color: '#0055a4' },
-    { pA: p2, pB: p3, color: '#0055a4' },
-    { pA: p3, pB: pMidFront, color: '#0055a4' },
-    { pA: pMidFront, pB: bOut1, color: '#0055a4' },
-    { pA: bOut1, pB: bOut2, color: '#0055a4' },
-    { pA: pMidBack, pB: p1, color: '#cc1111' },
-    { pA: p1, pB: p4, color: '#cc1111' },
-    { pA: p4, pB: pMidFront, color: '#cc1111' },
-    { pA: pMidFront, pB: rOut1, color: '#cc1111' },
-    { pA: rOut1, pB: rOut2, color: '#cc1111' }
+  const coilSegments: { pA: Point3D; pB: Point3D; color: string; zAvg?: number }[] = [
+    { pA: pMidBack, pB: p2, color: SCENE_COLORS.magnet.southDark },
+    { pA: p2, pB: p3, color: SCENE_COLORS.magnet.southDark },
+    { pA: p3, pB: pMidFront, color: SCENE_COLORS.magnet.southDark },
+    { pA: pMidFront, pB: bOut1, color: SCENE_COLORS.magnet.southDark },
+    { pA: bOut1, pB: bOut2, color: SCENE_COLORS.magnet.southDark },
+    { pA: pMidBack, pB: p1, color: SCENE_COLORS.magnet.northMid },
+    { pA: p1, pB: p4, color: SCENE_COLORS.magnet.northMid },
+    { pA: p4, pB: pMidFront, color: SCENE_COLORS.magnet.northMid },
+    { pA: pMidFront, pB: rOut1, color: SCENE_COLORS.magnet.northMid },
+    { pA: rOut1, pB: rOut2, color: SCENE_COLORS.magnet.northMid }
   ]
 
   // 深度排序
@@ -196,7 +198,7 @@ export default function ACGeneration() {
     seg['zAvg'] = (seg.pA.z + seg.pB.z) / 2
     seg['zAvg'] += (Math.abs(seg.pA.x) + Math.abs(seg.pB.x)) * 0.0001
   })
-  coilSegments.sort((a, b) => b['zAvg'] - a['zAvg'])
+  coilSegments.sort((a, b) => (b.zAvg ?? 0) - (a.zAvg ?? 0))
 
   // 预计算线圈线段的 SVG path
   const coilPathElements = coilSegments.map((seg, i) => {
@@ -269,28 +271,28 @@ export default function ACGeneration() {
         <defs>
           {/* 磁感线箭头 */}
           <marker id="aB" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
-            <polygon points="0 0,7 2.5,0 5" fill="#7c9a22" />
+            <polygon points="0 0,7 2.5,0 5" fill={SCENE_COLORS.coil.enamelBase} />
           </marker>
         </defs>
 
         {/* 左右分界线 */}
-        <line x1={SIMW} y1={0} x2={SIMW} y2={H} stroke="#e2e8f0" strokeWidth={1} />
+        <line x1={SIMW} y1={0} x2={SIMW} y2={H} stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} />
 
         {/* ═══════════ 左侧仿真区 ═══════════ */}
         <g>
           {/* 磁场标注 */}
           <text x={OX} y={13} textAnchor="middle"
-            fontSize={11} fill="#2563eb" fontWeight="bold">
+            fontSize={FONT.subtickSize} fill={PHYSICS_COLORS.magnetSouth} fontWeight="bold">
             {'匀强磁场 B = ' + B.toFixed(1) + ' T'}
           </text>
 
           {/* ── 后层磁铁 ── */}
           <g id="layer-back-magnets">
-            <path d={nRightSidePath} fill="#0c3873" stroke="#000" strokeWidth={1.5} />
-            <path d={nBackSurfacePath} fill="#8c0b0b" stroke="#000" strokeWidth={1.5} />
-            <path d={sBackSurfacePath} fill="#0d4082" stroke="#000" strokeWidth={1.5} />
-            <path d={nTopSurfacePath} fill="#b51111" stroke="#000" strokeWidth={1.5} />
-            <path d={sTopSurfacePath} fill="#1150a3" stroke="#000" strokeWidth={1.5} />
+            <path d={nRightSidePath} fill={SCENE_COLORS.magnet.southShadow} stroke={SCENE_COLORS.magnet.southStroke} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
+            <path d={nBackSurfacePath} fill={SCENE_COLORS.magnet.northDark} stroke={SCENE_COLORS.magnet.northStroke} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
+            <path d={sBackSurfacePath} fill={SCENE_COLORS.magnet.southShadow} stroke={SCENE_COLORS.magnet.southStroke} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
+            <path d={nTopSurfacePath} fill={SCENE_COLORS.magnet.northMid} stroke={SCENE_COLORS.magnet.northStroke} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
+            <path d={sTopSurfacePath} fill={SCENE_COLORS.magnet.southMid} stroke={SCENE_COLORS.magnet.southStroke} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
           </g>
 
           {/* ── 磁感线层 ── */}
@@ -298,37 +300,37 @@ export default function ACGeneration() {
             {fieldLines.map((line, i) => (
               <g key={i}>
                 <line x1={line.p1.x} y1={line.p1.y} x2={line.p2.x} y2={line.p2.y}
-                  stroke="#7c9a22" strokeWidth={3} />
+                  stroke={SCENE_COLORS.coil.enamelBase} strokeWidth={CANVAS_STYLE.stroke.vectorMain} />
                 <polygon
                   points={`${line.p2.x},${line.p2.y} ${line.p2.x - 14},${line.p2.y - 8} ${line.p2.x - 14},${line.p2.y + 8}`}
-                  fill="#7c9a22" />
+                  fill={SCENE_COLORS.coil.enamelBase} />
               </g>
             ))}
 
             {/* 转轴 */}
             <line x1={axisStart.x} y1={axisStart.y} x2={axisEnd.x} y2={axisEnd.y}
-              stroke="#3a2010" strokeWidth={2.5} strokeDasharray="12,10" />
+              stroke={SCENE_COLORS.pendulum.axisDecor} strokeWidth={CANVAS_STYLE.stroke.chartMain} strokeDasharray="12,10" />
 
             {/* ω 符号 */}
             <text x={omegaPos.x - 35} y={omegaPos.y + 10}
               className="omega-text" fontWeight="bold" fontStyle="italic"
-              fontSize={28} fill="#3a2010" fontFamily="Times New Roman">ω</text>
+              fontSize={28} fill={SCENE_COLORS.pendulum.axisDecor} fontFamily="Times New Roman">ω</text>
 
             {/* 旋转箭头 */}
-            <path d={rotationArrowPath} fill="none" stroke="#3a2010" strokeWidth={3} />
+            <path d={rotationArrowPath} fill="none" stroke={SCENE_COLORS.pendulum.axisDecor} strokeWidth={CANVAS_STYLE.stroke.vectorMain} />
             <polygon
               points={`${omegaPos.x - 22},${omegaPos.y - 25} ${omegaPos.x - 10},${omegaPos.y - 24} ${omegaPos.x - 25},${omegaPos.y - 13}`}
-              fill="#3a2010" />
+              fill={SCENE_COLORS.pendulum.axisDecor} />
           </g>
 
           {/* ── 前层磁铁 ── */}
           <g id="layer-front-magnets">
-            <path d={getPathString(nFrontPoly)} fill="#d81515" stroke="#000" strokeWidth={1.5} />
-            <path d={getPathString(sFrontPoly)} fill="#1565cc" stroke="#000" strokeWidth={1.5} />
+            <path d={getPathString(nFrontPoly)} fill={SCENE_COLORS.magnet.northBase} stroke={SCENE_COLORS.magnet.northStroke} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
+            <path d={getPathString(sFrontPoly)} fill={SCENE_COLORS.magnet.southDark} stroke={SCENE_COLORS.magnet.southStroke} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
             <text x={nTextPos.x} y={nTextPos.y}
-              fontWeight="bold" fontSize={36} fill="#ffffff" fontFamily="Times New Roman">N</text>
+              fontWeight="bold" fontSize={36} fill={colors.neutral[0]} fontFamily="Times New Roman">N</text>
             <text x={sTextPos.x} y={sTextPos.y}
-              fontWeight="bold" fontSize={36} fill="#ffffff" fontFamily="Times New Roman">S</text>
+              fontWeight="bold" fontSize={36} fill={colors.neutral[0]} fontFamily="Times New Roman">S</text>
           </g>
 
           {/* ── 动态线圈层 ── */}
@@ -343,19 +345,19 @@ export default function ACGeneration() {
           {/* ── 状态标注 ── */}
           {isNeutral && (
             <text x={OX} y={H - 52} textAnchor="middle"
-              fontSize={11} fill="#2563eb" fontWeight="bold">
+              fontSize={FONT.subtickSize} fill={PHYSICS_COLORS.magnetSouth} fontWeight="bold">
               中性面：线圈面 ⊥ B，dΦ/dt = 0，e = 0
             </text>
           )}
           {isMaxEmf && (
             <text x={OX} y={H - 52} textAnchor="middle"
-              fontSize={11} fill="#dc2626" fontWeight="bold">
+              fontSize={FONT.subtickSize} fill={PHYSICS_COLORS.magnetNorth} fontWeight="bold">
               线圈面 ∥ B，|dΦ/dt| 最大，|e| = Em
             </text>
           )}
           {!isNeutral && !isMaxEmf && (
             <text x={OX} y={H - 52} textAnchor="middle"
-              fontSize={10} fill="#d97706">
+              fontSize={CANVAS_STYLE.font.smallSize} fill={CHART_COLORS.compareC}>
               {'线圈切割磁感线，e = ' + emfTxt + ' V'}
             </text>
           )}
@@ -363,11 +365,11 @@ export default function ACGeneration() {
           {/* ── 底部公式栏 ── */}
           <g transform={fmTr}>
             <rect width={SIMW - 12} height={36} rx={5}
-              fill="#f8fafc" opacity={0.95} stroke="#e2e8f0" strokeWidth={1} />
-            <text x={8} y={14} fontSize={10} fill="#1e293b" fontWeight="bold">
+              fill={colors.neutral[50]} opacity={0.95} stroke={PHYSICS_COLORS.grid} strokeWidth={1} />
+            <text x={8} y={14} fontSize={CANVAS_STYLE.font.smallSize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
               e = NBSω · sin(ωt)（中性面 θ=0 时线圈⊥B，e=0）
             </text>
-            <text x={8} y={28} fontSize={9.5} fill="#64748b">
+            <text x={8} y={28} fontSize={9.5} fill={colors.neutral[500]}>
               {'Em = ' + EmTxt + ' V   f = ' + fHz + ' Hz   θ = ' + degTxt + '°   e = ' + emfTxt + ' V'}
             </text>
           </g>
@@ -376,53 +378,53 @@ export default function ACGeneration() {
         {/* ═══════════ 右侧 e-t 波形图（右上区域）═══════════ */}
         <g>
           <text x={CHARTL + 4} y={ctTop + 16}
-            fontSize={12} fill="#f97316" fontWeight="bold">
+            fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.electricForce} fontWeight="bold">
             e − t 图（电动势随时间变化）
           </text>
 
           {/* 坐标轴 */}
           <line x1={CHARTL + 8} y1={ctMY} x2={W - 6} y2={ctMY}
-            stroke="#374151" strokeWidth={2} />
+            stroke={CHART_COLORS.axisArrow} strokeWidth={CANVAS_STYLE.stroke.axisBold} />
           <line x1={CHARTL + 8} y1={ctTop + 24} x2={CHARTL + 8} y2={ctBottom}
-            stroke="#374151" strokeWidth={2} />
+            stroke={CHART_COLORS.axisArrow} strokeWidth={CANVAS_STYLE.stroke.axisBold} />
 
           {/* 参考虚线 */}
           <line x1={CHARTL + 8} y1={ctMY - ctHH} x2={W - 6} y2={ctMY - ctHH}
-            stroke="#e2e8f0" strokeWidth={1} strokeDasharray="4,4" />
+            stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.chartRef} strokeDasharray={CANVAS_STYLE.dash.axis.join(' ')} />
           <line x1={CHARTL + 8} y1={ctMY + ctHH} x2={W - 6} y2={ctMY + ctHH}
-            stroke="#e2e8f0" strokeWidth={1} strokeDasharray="4,4" />
+            stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.chartRef} strokeDasharray={CANVAS_STYLE.dash.axis.join(' ')} />
 
           {/* 轴标签 */}
-          <text x={CHARTL + 4} y={ctMY - ctHH + 6} fontSize={11} fill="#9ca3af" textAnchor="end">+Em</text>
-          <text x={CHARTL + 4} y={ctMY + 6} fontSize={11} fill="#9ca3af" textAnchor="end">0</text>
-          <text x={CHARTL + 4} y={ctMY + ctHH + 6} fontSize={11} fill="#9ca3af" textAnchor="end">−Em</text>
-          <text x={W - 6} y={ctMY + 18} fontSize={11} fill="#374151" textAnchor="end">t/s</text>
-          <text x={CHARTL + 16} y={ctTop + 34} fontSize={10} fill="#374151">e/V</text>
+          <text x={CHARTL + 4} y={ctMY - ctHH + 6} fontSize={FONT.subtickSize} fill={CHART_COLORS.tickLabel} textAnchor="end">+Em</text>
+          <text x={CHARTL + 4} y={ctMY + 6} fontSize={FONT.subtickSize} fill={CHART_COLORS.tickLabel} textAnchor="end">0</text>
+          <text x={CHARTL + 4} y={ctMY + ctHH + 6} fontSize={FONT.subtickSize} fill={CHART_COLORS.tickLabel} textAnchor="end">−Em</text>
+          <text x={W - 6} y={ctMY + 18} fontSize={FONT.subtickSize} fill={CHART_COLORS.labelText} textAnchor="end">t/s</text>
+          <text x={CHARTL + 16} y={ctTop + 34} fontSize={CANVAS_STYLE.font.smallSize} fill={CHART_COLORS.labelText}>e/V</text>
 
           {/* 波形曲线 */}
           {hist.length > 1 && (
             <path d={makePath()} fill="none"
-              stroke="#f97316" strokeWidth={2.5}
+              stroke={PHYSICS_COLORS.electricForce} strokeWidth={CANVAS_STYLE.stroke.chartMain}
               strokeLinejoin="round" strokeLinecap="round" />
           )}
 
           {/* 当前时刻线 */}
           {hist.length > 0 && (
             <line x1={nowX} y1={ctTop + 24} x2={nowX} y2={ctBottom}
-              stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="3,3" />
+              stroke={PHYSICS_COLORS.trackHistory} strokeWidth={CANVAS_STYLE.stroke.vectorSub} strokeDasharray={CANVAS_STYLE.dash.guide.join(' ')} />
           )}
 
           {/* 当前值圆点 */}
           {hist.length > 0 && (
             <circle cx={nowX} cy={nowY} r={6}
-              fill="#f97316" stroke="white" strokeWidth={2.2} />
+              fill={PHYSICS_COLORS.electricForce} stroke="white" strokeWidth={2.2} />
           )}
 
           {/* 当前值文字 */}
           {hist.length > 0 && (
             <text x={nowX + 10}
               y={Math.max(ctTop + 30, Math.min(ctBottom - 10, nowY - 6))}
-              fontSize={13} fill="#f97316" fontWeight="bold">
+              fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.electricForce} fontWeight="bold">
               {emfTxt + ' V'}
             </text>
           )}

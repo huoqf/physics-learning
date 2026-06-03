@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { useAnimationStore } from '@/stores'
 import { calculateAcceleratedMotion } from '@/physics'
 import { solveQuadraticTime } from '@/math/numerical'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE, STROKE } from '@/theme/physics'
 
 export default function UniformAccelerationAnimation() {
   const { params, time, showVectors, showFormulas, showGrid, setIsPlaying } = useAnimationStore()
@@ -63,7 +63,7 @@ export default function UniformAccelerationAnimation() {
           x2={canvasSize.width - 50}
           y2={groundY}
           stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={3}
+          strokeWidth={STROKE.groundLine}
         />
 
         <line

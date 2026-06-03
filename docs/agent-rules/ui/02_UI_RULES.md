@@ -23,14 +23,17 @@
 
 所有实现必须从以下文件引用 token，**禁止硬编码任何颜色/间距/圆角值**：
 
-| 文件 | 内容 |
-|------|------|
-| `src/theme/colors.ts` | 5套色阶（primary/secondary/accent/neutral/状态色） |
-| `src/theme/physicsColors.ts` | 18个物理量颜色语义映射 |
-| `src/theme/spacing.ts` | 间距比例尺（4px基准） |
-| `src/theme/radius.ts` | 圆角规范 |
-| `src/theme/shadow.ts` | 阴影规范 |
-| `src/theme/motion.ts` | 动效时长与 easing |
+| 文件 | 内容 | import 路径 |
+|------|------|------------|
+| `src/theme/colors.ts` | 5套色阶（primary/secondary/accent/neutral/状态色） | `@/theme/colors` |
+| `src/theme/physics/colors.ts` | 物理量颜色（~110 token，8 分组） | `@/theme/physics` |
+| `src/theme/physics/sceneColors.ts` | 场景器材外观色（磁铁/线圈/灯泡/手势等） | `@/theme/physics` |
+| `src/theme/physics/chartColors.ts` | 物理图像配色（v-t/P-V/U-I 等 9 组） | `@/theme/physics` |
+| `src/theme/physics/canvasStyle.ts` | SVG/Canvas 绘制规范（线宽/箭头/SVG_ATTR/Marker） | `@/theme/physics` |
+| `src/theme/spacing.ts` | 间距比例尺（4px基准） | `@/theme/spacing` |
+| `src/theme/radius.ts` | 圆角规范 | `@/theme/radius` |
+| `src/theme/shadow.ts` | 阴影规范 | `@/theme/shadow` |
+| `src/theme/motion.ts` | 动效时长与 easing | `@/theme/motion` |
 
 Tailwind 配置从 `src/theme/colors.ts` 导入，不在 `tailwind.config.*` 中重复定义颜色值。
 
@@ -38,7 +41,7 @@ Tailwind 配置从 `src/theme/colors.ts` 导入，不在 `tailwind.config.*` 中
 
 ## 3. 物理量颜色语义（不可更改）
 
-Canvas/SVG 中每类物理量有固定颜色，详见 `src/theme/physicsColors.ts`。
+Canvas/SVG 中每类物理量有固定颜色，详见 `src/theme/physics/colors.ts`。
 核心摘要：
 
 | 物理量 | 颜色语义 | 用途 |
@@ -76,14 +79,18 @@ Canvas/SVG 中每类物理量有固定颜色，详见 `src/theme/physicsColors.t
 
 ## 5. 三屏联动布局规范
 
-```
-左侧 280px（bg-neutral-50）│ 中间自适应（bg-white）│ 右侧 320px（bg-neutral-50）
-分隔线：border-neutral-200 1px
-```
+使用 `ThreePanel` 组件（`@/components/Layout`），断点与面板宽度由 `BREAKPOINT` / `PANEL` 常量（`@/theme/spacing`）驱动：
 
+| 断点 | 左侧 | 中间 | 右侧 |
+|------|------|------|------|
+| ≥ 1440px（standard） | 280px 固定 | 自适应 | 320px 固定 |
+| 1280–1439px（compact） | 240px 固定 | 自适应 | 280px 固定 |
+| 1024–1279px（tablet） | 抽屉（齿轮图标触发） | 自适应 | 280px 固定 |
+| < 1024px（mobile） | 抽屉 | 自适应 | 下移至 Canvas 下方 |
+
+- 面板背景：bg-neutral-50；分隔线：border-neutral-200 1px
 - 顶部栏：高度 56px，bg-primary-800，白色文字
 - 底部控制栏：高度 48px，播放/暂停/重置/速度/进度条
-- 响应式降级（&lt; 1024px）：左侧折为抽屉（齿轮图标触发），右侧移至 Canvas 下方
 
 ---
 
@@ -164,7 +171,7 @@ Primary（primary-600）/ Secondary（white + primary边框）/ Ghost（transpar
 ## 8. UI 专属禁止项
 
 - 禁止硬编码任何颜色值（包括 Canvas 内部）
-- Canvas 物理量颜色必须从 `src/theme/physicsColors.ts` 引用
+- Canvas 物理量颜色必须从 `src/theme/physics/` 引用
 - 禁止在 Canvas 内使用 lucide 图标（用 SVG 路径手绘）
 - 禁止单页面试验深色模式（当前阶段浅色优先）
 - 禁止发明新颜色或新 token（先更新 src/theme/ 对应文件）
@@ -177,8 +184,8 @@ Primary（primary-600）/ Secondary（white + primary边框）/ Ghost（transpar
 | 需要查询 | 查阅位置 |
 |---------|---------|
 | 完整色阶 HEX 值 | `src/theme/colors.ts` |
-| 物理量颜色完整表 | `src/theme/physicsColors.ts` |
+| 物理量颜色完整表 | `src/theme/physics/colors.ts` |
 | 动效时长/easing | `src/theme/motion.ts` → `ui/03_MOTION_RULES.md` |
 | AnalysisPage 版式 | `ui/04_ANALYSIS_PAGE_RULES.md` |
 | 错题本卡片 | `ui/05_WRONGBOOK_RULES.md` |
-| Canvas 元素尺寸 | `src/theme/physicsColors.ts` 中 CANVAS_STYLE |
+| Canvas 元素尺寸 | `src/theme/physics/canvasStyle.ts` |

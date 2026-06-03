@@ -82,13 +82,23 @@ export const useProgressStore = create<ProgressState>()(
         totalAnimations: state.totalAnimations,
         totalKnowledge: state.totalKnowledge,
       }),
-      onRehydrateStorage: () => (state) => {
-        if (state && Array.isArray(state.viewedAnimations)) {
-          state.viewedAnimations = new Set(state.viewedAnimations as unknown as string[])
+      merge: (persistedState: unknown, currentState: ProgressState) => {
+        const persisted = persistedState as Record<string, unknown> | undefined
+        const merged = { ...currentState } as ProgressState
+        if (persisted) {
+          Object.assign(merged, persisted)
+          if (Array.isArray(persisted.viewedAnimations)) {
+            merged.viewedAnimations = new Set(persisted.viewedAnimations as string[])
+          } else if (!(persisted.viewedAnimations instanceof Set)) {
+            merged.viewedAnimations = new Set()
+          }
+          if (Array.isArray(persisted.masteredKnowledge)) {
+            merged.masteredKnowledge = new Set(persisted.masteredKnowledge as string[])
+          } else if (!(persisted.masteredKnowledge instanceof Set)) {
+            merged.masteredKnowledge = new Set()
+          }
         }
-        if (state && Array.isArray(state.masteredKnowledge)) {
-          state.masteredKnowledge = new Set(state.masteredKnowledge as unknown as string[])
-        }
+        return merged
       },
     }
   )

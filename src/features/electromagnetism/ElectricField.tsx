@@ -1,7 +1,8 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateElectricField } from '@/physics'
-import { PHYSICS_COLORS } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 
 /** 点电荷电场 E = kq/r²：场强随距离平方反比衰减，矢量场 + 试探点 */
 export default function ElectricField() {
@@ -30,7 +31,7 @@ export default function ElectricField() {
     for (let i = 1; i <= 4; i++) {
       gridLines.push(
         <circle key={`ring-${i}`} cx={cx} cy={cy} r={i * 45}
-          fill="none" stroke={PHYSICS_COLORS.grid} strokeWidth={1} strokeDasharray="4,4" />
+          fill="none" stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} strokeDasharray={CANVAS_STYLE.dash.axis.join(' ')} />
       )
     }
   }
@@ -55,34 +56,34 @@ export default function ElectricField() {
             <line key={i}
               x1={positive ? x1 : x2} y1={positive ? y1 : y2}
               x2={positive ? x2 : x1} y2={positive ? y2 : y1}
-              stroke={PHYSICS_COLORS.electricField} strokeWidth={1.5}
+              stroke={PHYSICS_COLORS.electricField} strokeWidth={CANVAS_STYLE.stroke.fieldLine}
               markerEnd="url(#arrow-efield)" opacity={0.7} />
           )
         })}
 
         {/* 试探点电荷 + 该点场强方向 */}
         <circle cx={testX} cy={testY} r={6} fill={PHYSICS_COLORS.forceNet} />
-        <text x={testX} y={testY - 12} fontSize="12" fill={PHYSICS_COLORS.forceNet} textAnchor="middle">P</text>
+        <text x={testX} y={testY - 12} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.forceNet} textAnchor="middle">P</text>
 
         {/* 源电荷 */}
         <circle cx={cx} cy={cy} r={24} fill={positive ? PHYSICS_COLORS.forceNet : PHYSICS_COLORS.electricField}
-          stroke={PHYSICS_COLORS.objectStroke} strokeWidth={2} />
-        <text x={cx} y={cy + 7} fontSize="22" fill="#fff" textAnchor="middle" fontWeight="bold">
+          stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
+        <text x={cx} y={cy + 7} fontSize="22" fill={colors.neutral[0]} textAnchor="middle" fontWeight="bold">
           {positive ? '+' : '−'}
         </text>
 
         {showFormulas && (
           <g transform="translate(20, 20)">
-            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">点电荷电场强度</text>
-            <text x={0} y={24} fontSize="12" fill={PHYSICS_COLORS.axis}>E = k·q/r²（N/C）</text>
-            <text x={0} y={44} fontSize="12" fill={PHYSICS_COLORS.axis}>q = {q} μC，r = {rTest.toFixed(1)} cm</text>
-            <text x={0} y={68} fontSize="13" fill={PHYSICS_COLORS.electricField} fontWeight="bold">
+            <text fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">点电荷电场强度</text>
+            <text x={0} y={24} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.axis}>E = k·q/r²（N/C）</text>
+            <text x={0} y={44} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.axis}>q = {q} μC，r = {rTest.toFixed(1)} cm</text>
+            <text x={0} y={68} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.electricField} fontWeight="bold">
               P 点 E = {E.toExponential(2)} N/C
             </text>
-            <text x={0} y={88} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text x={0} y={88} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.axis}>
               方向：{positive ? '由正电荷指向外（背离）' : '指向负电荷'}
             </text>
-            <text x={0} y={108} fontSize="12" fill={PHYSICS_COLORS.axis}>距离加倍 → 场强变为 1/4（平方反比）</text>
+            <text x={0} y={108} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.axis}>距离加倍 → 场强变为 1/4（平方反比）</text>
           </g>
         )}
 

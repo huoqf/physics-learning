@@ -1,6 +1,6 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
 
 export default function SpringForceAnimation() {
   const { params, time, showVectors, showFormulas, showGrid } = useAnimationStore()
@@ -31,8 +31,8 @@ export default function SpringForceAnimation() {
           x2={xPos}
           y2={groundY + 60}
           stroke={PHYSICS_COLORS.grid}
-          strokeWidth={1}
-          strokeDasharray="4,4"
+          strokeWidth={STROKE.grid}
+          strokeDasharray={DASH.axis.join(' ')}
         />
       )
     }
@@ -64,14 +64,14 @@ export default function SpringForceAnimation() {
           height={140}
           fill={PHYSICS_COLORS.axis}
           stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={2}
+          strokeWidth={STROKE.objectLine}
         />
         
         <polyline
           points={springPath(fixedX + 30, fixedX + currentX - boxSize / 2)}
           fill="none"
           stroke={PHYSICS_COLORS.axis}
-          strokeWidth={3}
+          strokeWidth={STROKE.groundLine}
         />
 
         <rect
@@ -88,7 +88,7 @@ export default function SpringForceAnimation() {
         <text
           x={fixedX + currentX}
           y={groundY + 5}
-          fontSize="12"
+          fontSize={FONT.axisSize}
           fill="white"
           textAnchor="middle"
           fontWeight="bold"
@@ -102,13 +102,13 @@ export default function SpringForceAnimation() {
           x2={fixedX}
           y2={groundY + 80}
           stroke={PHYSICS_COLORS.acceleration}
-          strokeWidth={1}
-          strokeDasharray="6,4"
+          strokeWidth={STROKE.reference}
+          strokeDasharray={DASH.reference.join(' ')}
         />
         <text
           x={fixedX}
           y={groundY - 90}
-          fontSize="12"
+          fontSize={FONT.axisSize}
           fill={PHYSICS_COLORS.acceleration}
           textAnchor="middle"
         >
@@ -132,7 +132,7 @@ export default function SpringForceAnimation() {
               <text
                 x={fixedX + currentX + springForce * 2 + (springForce > 0 ? 10 : -30)}
                 y={groundY - 10}
-                fontSize="12"
+                fontSize={FONT.axisSize}
                 fill={PHYSICS_COLORS.elasticForce}
                 fontWeight="bold"
               >
@@ -144,23 +144,23 @@ export default function SpringForceAnimation() {
 
         {showFormulas && (
           <g transform="translate(20, 20)">
-            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">弹力演示（胡克定律）</text>
-            <text x={0} y={25} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text fontSize={FONT.bodySize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">弹力演示（胡克定律）</text>
+            <text x={0} y={25} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               劲度系数 k = {k} N/m
             </text>
-            <text x={0} y={45} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text x={0} y={45} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               质量 m = {m} kg
             </text>
-            <text x={0} y={70} fontSize="12" fill={PHYSICS_COLORS.velocity} fontWeight="bold">
+            <text x={0} y={70} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.velocity} fontWeight="bold">
               胡克定律: F = -kx
             </text>
-            <text x={0} y={95} fontSize="12" fill={PHYSICS_COLORS.displacement}>
+            <text x={0} y={95} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.displacement}>
               当前位移 x = {displacement.toFixed(2)} m
             </text>
-            <text x={0} y={120} fontSize="12" fill={PHYSICS_COLORS.elasticForce}>
+            <text x={0} y={120} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.elasticForce}>
               弹力 F = {springForce.toFixed(1)} N
             </text>
-            <text x={0} y={145} fontSize="12" fill={PHYSICS_COLORS.potentialEnergy}>
+            <text x={0} y={145} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.potentialEnergy}>
               角频率 ω = {omega.toFixed(2)} rad/s
             </text>
           </g>

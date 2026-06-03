@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { CHART_COLORS } from '@/theme/physicsColors'
+import { CHART_COLORS } from '@/theme/physics'
 
 interface DataPoint {
   x: number
@@ -13,6 +13,13 @@ interface CurveData {
   strokeWidth?: number
 }
 
+export interface AreaFillConfig {
+  curveIndex: number
+  color: string
+  opacity?: number
+  toY?: number
+}
+
 interface PhysicsGraphProps {
   curves: CurveData[]
   xLabel?: string
@@ -24,6 +31,7 @@ interface PhysicsGraphProps {
   xDomain?: [number, number]
   yDomain?: [number, number]
   currentTime?: number
+  areaFill?: AreaFillConfig
 }
 
 export const PhysicsGraph: React.FC<PhysicsGraphProps> = ({
@@ -37,6 +45,7 @@ export const PhysicsGraph: React.FC<PhysicsGraphProps> = ({
   xDomain,
   yDomain,
   currentTime,
+  areaFill,
 }) => {
   const graphWidth = width - 2 * padding
   const graphHeight = height - 2 * padding
@@ -201,6 +210,24 @@ export const PhysicsGraph: React.FC<PhysicsGraphProps> = ({
           </g>
         )
       })}
+
+      {/* 面积填充 */}
+      {areaFill && (() => {
+        const curve = scaledCurves[areaFill.curveIndex]
+        if (!curve || curve.points.length < 2) return null
+        const toYValue = areaFill.toY ?? 0
+        const toYScaled = padding + graphHeight - ((toYValue - yRange[0]) / (yRange[1] - yRange[0])) * graphHeight
+        const firstPoint = curve.points[0]
+        const lastPoint = curve.points[curve.points.length - 1]
+        const areaPathD = `${pathStr(curve.points)} L ${lastPoint.x} ${toYScaled} L ${firstPoint.x} ${toYScaled} Z`
+        return (
+          <path
+            d={areaPathD}
+            fill={areaFill.color}
+            opacity={areaFill.opacity ?? 0.2}
+          />
+        )
+      })()}
 
       {scaledCurves.map((curve, curveIndex) => (
         <g key={`curve-${curveIndex}`}>

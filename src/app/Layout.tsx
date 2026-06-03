@@ -1,7 +1,7 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Home, BookOpen, Play, ClipboardList, BookOpenCheck } from 'lucide-react';
 import { ErrorBoundary, PageTransition } from '@/components/UI';
-import { duration, easing } from '@/theme';
+import { duration, easing } from '@/theme/motion';
 
 export default function Layout() {
   const location = useLocation();

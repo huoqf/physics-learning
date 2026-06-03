@@ -1,6 +1,6 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 
 export default function VectorAdditionAnimation() {
   const { params, showVectors, showFormulas, showGrid } = useAnimationStore()

@@ -1,6 +1,6 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE, STROKE } from '@/theme/physics'
 
 export default function MomentumTheoremAnimation() {
   const { params, time, showVectors, showFormulas, showGrid } = useAnimationStore()
@@ -53,7 +53,7 @@ export default function MomentumTheoremAnimation() {
           x2={canvasSize.width - 50}
           y2={groundY}
           stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={3}
+          strokeWidth={STROKE.groundLine}
         />
 
         <line

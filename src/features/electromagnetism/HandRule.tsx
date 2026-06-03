@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAnimationFrame } from '@/utils/animation'
-import { PHYSICS_COLORS } from '@/theme/physicsColors'
+import { PHYSICS_COLORS } from '@/theme/physics'
 import {
   computeHandPose,
   lerpAngleDeg,
@@ -63,9 +63,9 @@ const DEFAULT_TIP_LABELS: Record<'thumb' | 'index' | 'middle', string> = {
   middle: '中',
 }
 const DEFAULT_TIP_COLORS: Record<'thumb' | 'index' | 'middle', string> = {
-  thumb: '#059669',    // electricCurrent
-  index: '#7E22CE',    // magneticField
-  middle: '#EA580C',   // forceNet
+  thumb: PHYSICS_COLORS.electricCurrent,    // electricCurrent
+  index: PHYSICS_COLORS.magneticField,      // magneticField
+  middle: PHYSICS_COLORS.forceNet,          // forceNet
 }
 
 export function HandRule({

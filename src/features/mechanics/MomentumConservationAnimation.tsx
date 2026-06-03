@@ -1,6 +1,6 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
 
 export default function MomentumConservationAnimation() {
   const { params, time, showVectors, showFormulas, showGrid } = useAnimationStore()
@@ -58,8 +58,8 @@ export default function MomentumConservationAnimation() {
           x2={xPos}
           y2={groundY + 20}
           stroke={PHYSICS_COLORS.grid}
-          strokeWidth={1}
-          strokeDasharray="4,4"
+          strokeWidth={STROKE.grid}
+          strokeDasharray={DASH.axis.join(' ')}
         />
       )
     }
@@ -78,7 +78,7 @@ export default function MomentumConservationAnimation() {
           x2={canvasSize.width - 50}
           y2={groundY}
           stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={3}
+          strokeWidth={STROKE.groundLine}
         />
 
         {time >= collisionTime && (
@@ -88,11 +88,11 @@ export default function MomentumConservationAnimation() {
             x2={collisionX}
             y2={groundY + 20}
             stroke={PHYSICS_COLORS.potentialEnergy}
-            strokeWidth={2}
-            strokeDasharray="6,4"
+            strokeWidth={STROKE.axisBold}
+            strokeDasharray={DASH.reference.join(' ')}
           />
         )}
-        <text x={collisionX} y={groundY + 35} fontSize="12" fill={PHYSICS_COLORS.potentialEnergy} textAnchor="middle">碰撞点</text>
+        <text x={collisionX} y={groundY + 35} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.potentialEnergy} textAnchor="middle">碰撞点</text>
 
         <circle
           cx={x1}
@@ -105,7 +105,7 @@ export default function MomentumConservationAnimation() {
         <text
           x={x1}
           y={groundY - 25}
-          fontSize="10"
+          fontSize={FONT.smallSize}
           fill="white"
           textAnchor="middle"
           fontWeight="bold"
@@ -124,7 +124,7 @@ export default function MomentumConservationAnimation() {
         <text
           x={x2}
           y={groundY - 25}
-          fontSize="10"
+          fontSize={FONT.smallSize}
           fill="white"
           textAnchor="middle"
           fontWeight="bold"
@@ -148,7 +148,7 @@ export default function MomentumConservationAnimation() {
                 <text
                   x={x1 + currentV1 * 10 + (currentV1 > 0 ? 10 : -40)}
                   y={groundY - 25}
-                  fontSize="12"
+                  fontSize={FONT.axisSize}
                   fill={PHYSICS_COLORS.forceNet}
                   fontWeight="bold"
                 >
@@ -171,7 +171,7 @@ export default function MomentumConservationAnimation() {
                 <text
                   x={x2 + currentV2 * 10 + (currentV2 > 0 ? 10 : -40)}
                   y={groundY - 25}
-                  fontSize="12"
+                  fontSize={FONT.axisSize}
                   fill={PHYSICS_COLORS.elasticForce}
                   fontWeight="bold"
                 >
@@ -184,31 +184,31 @@ export default function MomentumConservationAnimation() {
 
         {showFormulas && (
           <g transform="translate(20, 20)">
-            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">动量守恒</text>
-            <text x={0} y={25} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text fontSize={FONT.bodySize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">动量守恒</text>
+            <text x={0} y={25} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               m₁ = {m1} kg, v₁₀ = {v1} m/s
             </text>
-            <text x={0} y={45} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text x={0} y={45} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               m₂ = {m2} kg, v₂₀ = {v2} m/s
             </text>
-            <text x={0} y={70} fontSize="12" fill={PHYSICS_COLORS.momentum} fontWeight="bold">
+            <text x={0} y={70} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.momentum} fontWeight="bold">
               碰撞前总动量 p前 = {totalP_before.toFixed(2)} kg·m/s
             </text>
-            <text x={0} y={95} fontSize="12" fill={PHYSICS_COLORS.velocity} fontWeight="bold">
+            <text x={0} y={95} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.velocity} fontWeight="bold">
               碰撞后总动量 p后 = {totalP_after.toFixed(2)} kg·m/s
             </text>
-            <text x={0} y={120} fontSize="12" fill={PHYSICS_COLORS.potentialEnergy} fontWeight="bold">
+            <text x={0} y={120} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.potentialEnergy} fontWeight="bold">
               动量守恒: p前 ≈ p后
             </text>
-            <text x={0} y={145} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text x={0} y={145} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               恢复系数 e = {e}
             </text>
             {time >= collisionTime && (
               <g>
-                <text x={0} y={170} fontSize="12" fill={PHYSICS_COLORS.velocity}>
+                <text x={0} y={170} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.velocity}>
                   v₁末 = {v1_final.toFixed(2)} m/s
                 </text>
-                <text x={0} y={190} fontSize="12" fill={PHYSICS_COLORS.tension}>
+                <text x={0} y={190} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.tension}>
                   v₂末 = {v2_final.toFixed(2)} m/s
                 </text>
               </g>

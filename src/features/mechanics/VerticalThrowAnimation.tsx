@@ -1,7 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useEffect } from 'react'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
 
 export default function VerticalThrowAnimation() {
   const { params, time, showVectors, showFormulas, showGrid, setIsPlaying } = useAnimationStore()
@@ -50,8 +50,8 @@ export default function VerticalThrowAnimation() {
           x2={canvasSize.width - 80}
           y2={yPos}
           stroke={PHYSICS_COLORS.grid}
-          strokeWidth={1}
-          strokeDasharray="4,4"
+          strokeWidth={STROKE.grid}
+          strokeDasharray={DASH.axis.join(' ')}
         />
       )
     }
@@ -68,7 +68,7 @@ export default function VerticalThrowAnimation() {
           x2={canvasSize.width - 80}
           y2={groundY}
           stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={3}
+          strokeWidth={STROKE.groundLine}
         />
         
         <line
@@ -77,12 +77,12 @@ export default function VerticalThrowAnimation() {
           x2={canvasSize.width / 2}
           y2={groundY + 20}
           stroke={PHYSICS_COLORS.axis}
-          strokeWidth={2}
-          strokeDasharray="8,4"
+          strokeWidth={STROKE.axisBold}
+          strokeDasharray={DASH.tangent.join(' ')}
         />
         
-        <text x={canvasSize.width / 2 + 15} y={startY + 5} fontSize="12" fill={PHYSICS_COLORS.axis}>y=0</text>
-        <text x={canvasSize.width / 2 + 15} y={groundY + 15} fontSize="12" fill={PHYSICS_COLORS.axis}>y (地面)</text>
+        <text x={canvasSize.width / 2 + 15} y={startY + 5} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>y=0</text>
+        <text x={canvasSize.width / 2 + 15} y={groundY + 15} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>y (地面)</text>
 
         <circle
           cx={canvasSize.width / 2}
@@ -110,7 +110,7 @@ export default function VerticalThrowAnimation() {
               <text
                 x={canvasSize.width / 2 + 20}
                 y={currentY - effectiveV * 2}
-                fontSize="12"
+                fontSize={FONT.axisSize}
                 fill={PHYSICS_COLORS.velocity}
                 fontWeight="bold"
               >
@@ -122,26 +122,26 @@ export default function VerticalThrowAnimation() {
 
         {showFormulas && (
           <g transform="translate(20, 20)">
-            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">竖直上抛运动</text>
-            <text x={0} y={25} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text fontSize={FONT.bodySize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">竖直上抛运动</text>
+            <text x={0} y={25} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               初速度 v₀ = {v0} m/s
             </text>
-            <text x={0} y={45} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text x={0} y={45} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               重力加速度 g = {g} m/s²
             </text>
-            <text x={0} y={65} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text x={0} y={65} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               时间 t = {effectiveTime.toFixed(2)} s
             </text>
-            <text x={0} y={90} fontSize="12" fill={PHYSICS_COLORS.velocity} fontWeight="bold">
+            <text x={0} y={90} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.velocity} fontWeight="bold">
               v = v₀ - gt = {effectiveV.toFixed(2)} m/s
             </text>
-            <text x={0} y={115} fontSize="12" fill={PHYSICS_COLORS.displacement} fontWeight="bold">
+            <text x={0} y={115} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.displacement} fontWeight="bold">
               y = v₀t - ½gt² = {effectiveY.toFixed(2)} m
             </text>
-            <text x={0} y={140} fontSize="12" fill={PHYSICS_COLORS.potentialEnergy} fontWeight="bold">
+            <text x={0} y={140} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.potentialEnergy} fontWeight="bold">
               最高点 t = {maxHeightTime.toFixed(2)} s, y = {maxHeight.toFixed(2)} m
             </text>
-            <text x={0} y={165} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text x={0} y={165} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               落地时间 t = {totalTime.toFixed(2)} s
             </text>
           </g>

@@ -1,7 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateElasticCollision, calculateInelasticCollision, calculateMomentum } from '@/physics'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
 
 export default function CollisionAnimation() {
   const { params, time, showVectors, showFormulas, showGrid } = useAnimationStore()
@@ -66,8 +66,8 @@ export default function CollisionAnimation() {
           x2={xPos}
           y2={groundY + 50}
           stroke={PHYSICS_COLORS.grid}
-          strokeWidth={1}
-          strokeDasharray="4,4"
+          strokeWidth={STROKE.grid}
+          strokeDasharray={DASH.axis.join(' ')}
         />
       )
     }
@@ -84,7 +84,7 @@ export default function CollisionAnimation() {
           x2={canvasSize.width - 50}
           y2={groundY}
           stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={2}
+          strokeWidth={STROKE.axisBold}
         />
 
         <line
@@ -93,13 +93,13 @@ export default function CollisionAnimation() {
           x2={actualCollisionX}
           y2={groundY + 60}
           stroke={PHYSICS_COLORS.friction}
-          strokeWidth={2}
+          strokeWidth={STROKE.axisBold}
           strokeDasharray={`${CANVAS_STYLE.dash.reference[0]},${CANVAS_STYLE.dash.reference[1]}`}
         />
         <text
           x={actualCollisionX}
           y={groundY - 70}
-          fontSize="12"
+          fontSize={FONT.axisSize}
           fill={PHYSICS_COLORS.friction}
           textAnchor="middle"
         >
@@ -110,15 +110,15 @@ export default function CollisionAnimation() {
           cx={canvas1X}
           cy={groundY}
           r={r1}
-          fill={isElasticCollision ? PHYSICS_COLORS.objectFill : '#f97316'}
-          stroke={isElasticCollision ? PHYSICS_COLORS.objectStroke : '#c2410c'}
+          fill={isElasticCollision ? PHYSICS_COLORS.objectFill : PHYSICS_COLORS.electricForce}
+          stroke={isElasticCollision ? PHYSICS_COLORS.objectStroke : PHYSICS_COLORS.forceNetArrow}
           strokeWidth={CANVAS_STYLE.stroke.objectLine}
           className="transition-all duration-75"
         />
         <text
           x={canvas1X}
           y={groundY + 4}
-          fontSize="12"
+          fontSize={FONT.axisSize}
           fill="white"
           textAnchor="middle"
           fontWeight="bold"
@@ -137,7 +137,7 @@ export default function CollisionAnimation() {
         <text
           x={canvas2X}
           y={groundY + 4}
-          fontSize="12"
+          fontSize={FONT.axisSize}
           fill="white"
           textAnchor="middle"
           fontWeight="bold"
@@ -161,7 +161,7 @@ export default function CollisionAnimation() {
                 <text
                   x={canvas1X + currentV1 * 8 + (currentV1 > 0 ? 10 : -40)}
                   y={groundY - r1 - 10}
-                  fontSize="12"
+                  fontSize={FONT.axisSize}
                   fill={PHYSICS_COLORS.velocity}
                   fontWeight="bold"
                 >
@@ -183,7 +183,7 @@ export default function CollisionAnimation() {
                 <text
                   x={canvas2X + currentV2 * 8 + (currentV2 > 0 ? 10 : -40)}
                   y={groundY - r2 - 10}
-                  fontSize="12"
+                  fontSize={FONT.axisSize}
                   fill={PHYSICS_COLORS.momentum}
                   fontWeight="bold"
                 >
@@ -196,42 +196,42 @@ export default function CollisionAnimation() {
 
         {showFormulas && (
           <g transform={`translate(${canvasSize.width - 220}, 20)`}>
-            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">
+            <text fontSize={FONT.bodySize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
               {isElasticCollision ? '弹性碰撞' : '完全非弹性碰撞'}
             </text>
-            <text x={0} y={25} fontSize="12" fill={PHYSICS_COLORS.axis}>m₁ = {m1}kg, v₁₀ = {v1}m/s</text>
-            <text x={0} y={45} fontSize="12" fill={PHYSICS_COLORS.axis}>m₂ = {m2}kg, v₂₀ = {v2}m/s</text>
+            <text x={0} y={25} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>m₁ = {m1}kg, v₁₀ = {v1}m/s</text>
+            <text x={0} y={45} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>m₂ = {m2}kg, v₂₀ = {v2}m/s</text>
 
-            <text x={0} y={75} fontSize="12" fill={PHYSICS_COLORS.axis}>碰撞前系统动量:</text>
-            <text x={0} y={95} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text x={0} y={75} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>碰撞前系统动量:</text>
+            <text x={0} y={95} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               p = m₁v₁ + m₂v₂ = {totalMomentumInitial.toFixed(2)} kg·m/s
             </text>
 
             {isElasticCollision ? (
               <>
-                <text x={0} y={125} fontSize="12" fill={PHYSICS_COLORS.velocity} fontWeight="bold">碰撞后速度:</text>
-                <text x={0} y={145} fontSize="12" fill={PHYSICS_COLORS.axis}>
+                <text x={0} y={125} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.velocity} fontWeight="bold">碰撞后速度:</text>
+                <text x={0} y={145} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
                   v₁' = {v1f.toFixed(2)} m/s
                 </text>
-                <text x={0} y={165} fontSize="12" fill={PHYSICS_COLORS.axis}>
+                <text x={0} y={165} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
                   v₂' = {v2f.toFixed(2)} m/s
                 </text>
               </>
             ) : (
               <>
-                <text x={0} y={125} fontSize="12" fill={PHYSICS_COLORS.potentialEnergy} fontWeight="bold">碰撞后速度:</text>
-                <text x={0} y={145} fontSize="12" fill={PHYSICS_COLORS.axis}>
+                <text x={0} y={125} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.potentialEnergy} fontWeight="bold">碰撞后速度:</text>
+                <text x={0} y={145} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
                   v' = {v1f.toFixed(2)} m/s
                 </text>
               </>
             )}
 
-            <text x={0} y={195} fontSize="12" fill={PHYSICS_COLORS.axis}>碰撞后系统动量:</text>
-            <text x={0} y={215} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text x={0} y={195} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>碰撞后系统动量:</text>
+            <text x={0} y={215} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               p' = {totalMomentumFinal.toFixed(2)} kg·m/s
             </text>
 
-            <text x={0} y={245} fontSize="12" fill={Math.abs(totalMomentumInitial - totalMomentumFinal) < 0.01 ? PHYSICS_COLORS.elasticForce : PHYSICS_COLORS.friction} fontWeight="bold">
+            <text x={0} y={245} fontSize={FONT.axisSize} fill={Math.abs(totalMomentumInitial - totalMomentumFinal) < 0.01 ? PHYSICS_COLORS.elasticForce : PHYSICS_COLORS.friction} fontWeight="bold">
               动量守恒: {Math.abs(totalMomentumInitial - totalMomentumFinal) < 0.01 ? '✓ 成立' : '✗ 不成立'}
             </text>
           </g>

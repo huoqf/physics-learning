@@ -2,7 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { useEffect } from 'react'
 import { useAnimationStore } from '@/stores'
 import { calculateFreeFall } from '@/physics'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
 
 export default function FreeFallAnimation() {
   const { params, time, showVectors, showFormulas, showGrid, setIsPlaying } = useAnimationStore()
@@ -45,8 +45,8 @@ export default function FreeFallAnimation() {
           x2={canvasSize.width - 50}
           y2={yPos}
           stroke={PHYSICS_COLORS.grid}
-          strokeWidth={1}
-          strokeDasharray="4,4"
+          strokeWidth={STROKE.grid}
+          strokeDasharray={DASH.axis.join(' ')}
         />
       )
     }
@@ -60,9 +60,9 @@ export default function FreeFallAnimation() {
         <line x1={50} y1={originY} x2={50} y2={groundY} stroke={PHYSICS_COLORS.labelText} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
         <line x1={50} y1={groundY} x2={canvasSize.width - 50} y2={groundY} stroke={PHYSICS_COLORS.labelText} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
         
-        <text x={30} y={originY - 5} fontSize="12" fill={PHYSICS_COLORS.axis} textAnchor="middle">y=0</text>
-        <text x={30} y={groundY + 20} fontSize="12" fill={PHYSICS_COLORS.axis} textAnchor="middle">y=-h</text>
-        <text x={canvasSize.width - 30} y={groundY + 20} fontSize="12" fill={PHYSICS_COLORS.axis} textAnchor="middle">x</text>
+        <text x={30} y={originY - 5} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis} textAnchor="middle">y=0</text>
+        <text x={30} y={groundY + 20} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis} textAnchor="middle">y=-h</text>
+        <text x={canvasSize.width - 30} y={groundY + 20} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis} textAnchor="middle">x</text>
 
         <circle
           cx={canvasSize.width / 2}
@@ -88,7 +88,7 @@ export default function FreeFallAnimation() {
             <text
               x={canvasSize.width / 2 + 20}
               y={canvasY + canvasVy / 2}
-              fontSize="14"
+              fontSize={FONT.bodySize}
               fill={PHYSICS_COLORS.velocity}
               fontWeight="bold"
             >
@@ -99,14 +99,14 @@ export default function FreeFallAnimation() {
 
         {showFormulas && (
           <g transform={`translate(${canvasSize.width - 150}, ${originY + 30})`}>
-            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">公式</text>
-            <text x={0} y={25} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text fontSize={FONT.bodySize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">公式</text>
+            <text x={0} y={25} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               v = v₀ - gt
             </text>
-            <text x={0} y={45} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text x={0} y={45} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               y = v₀t - ½gt²
             </text>
-            <text x={0} y={70} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text x={0} y={70} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               当前: v={effectiveV.toFixed(1)} m/s, y={y.toFixed(1)} m
             </text>
           </g>

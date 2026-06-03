@@ -15,7 +15,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, CANVAS_STYLE, CHART_COLORS } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE, CHART_COLORS, SCENE_COLORS, DASH } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 
 // ─── 物理常数 ─────────────────────────────────────────────────────────────
 const COIL_X = 280          // 线圈在 SVG 中的水平中心 px（左移以容纳右侧电路）
@@ -424,18 +425,18 @@ export default function FaradayLaw() {
         <defs>
           {/* 磁铁渐变 */}
           <linearGradient id="magnetGradN" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#FF4444" />
-            <stop offset="100%" stopColor="#CC0000" />
+            <stop offset="0%" stopColor={SCENE_COLORS.magnet.northBase} />
+            <stop offset="100%" stopColor={SCENE_COLORS.magnet.northMid} />
           </linearGradient>
           <linearGradient id="magnetGradS" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#4488FF" />
-            <stop offset="100%" stopColor="#0044CC" />
+            <stop offset="0%" stopColor={SCENE_COLORS.magnet.southLight} />
+            <stop offset="100%" stopColor={SCENE_COLORS.magnet.southDark} />
           </linearGradient>
           {/* 灯泡光晕 */}
           <radialGradient id="bulbGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#FFF9C4" stopOpacity={bulbBrightness * 0.95} />
-            <stop offset="60%" stopColor="#FFC107" stopOpacity={bulbBrightness * 0.5} />
-            <stop offset="100%" stopColor="#FF8F00" stopOpacity="0" />
+            <stop offset="0%" stopColor={SCENE_COLORS.bulb.glassNormal} stopOpacity={bulbBrightness * 0.95} />
+            <stop offset="60%" stopColor={SCENE_COLORS.bulb.glowMid} stopOpacity={bulbBrightness * 0.5} />
+            <stop offset="100%" stopColor={SCENE_COLORS.bulb.glowOuter} stopOpacity="0" />
           </radialGradient>
           {/* 磁感线 clipPath（限制在左侧沙盒区域） */}
           <clipPath id="sandboxClip">
@@ -450,7 +451,7 @@ export default function FaradayLaw() {
             <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.magneticField} opacity="0.5" />
           </marker>
           <marker id="arrFluxGold" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill="#B8860B" />
+            <polygon points="0 0, 8 3, 0 6" fill={SCENE_COLORS.coil.copperBase} />
           </marker>
         </defs>
 
@@ -469,7 +470,7 @@ export default function FaradayLaw() {
             const offset = (i - 3) * 22
             const isThrough = Math.abs(offset) < COIL_RY * 0.85
             const isHighlighted = isThrough && overlapRatioClamped > 0.15
-            const lineColor = isHighlighted ? '#B8860B' : PHYSICS_COLORS.magneticField
+            const lineColor = isHighlighted ? SCENE_COLORS.coil.copperBase : PHYSICS_COLORS.magneticField
             const lineOpacity = isHighlighted
               ? 0.35 + overlapRatioClamped * 0.55
               : 0.08 + overlapRatioClamped * 0.12
@@ -607,7 +608,7 @@ export default function FaradayLaw() {
           {(() => {
             const barMaxH = 50
             const barH = Math.min(barMaxH, Math.abs(phi) / maxPhi * barMaxH)
-            const barColor = phi >= 0 ? '#B8860B' : '#7E22CE'
+            const barColor = phi >= 0 ? SCENE_COLORS.coil.copperBase : PHYSICS_COLORS.magneticField
             return (
               <g>
                 <rect
@@ -622,8 +623,8 @@ export default function FaradayLaw() {
                 <text
                   x={COIL_X}
                   y={coilY + 10}
-                  fontSize={10}
-                  fill="#B8860B"
+                  fontSize={CANVAS_STYLE.font.smallSize}
+                  fill={SCENE_COLORS.coil.copperBase}
                   textAnchor="middle"
                   fontWeight="bold"
                 >
@@ -648,21 +649,21 @@ export default function FaradayLaw() {
             cx={bulbX}
             cy={bulbY}
             r={12}
-            fill={bulbBrightness > 0.05 ? `rgba(255,${Math.round(200 + bulbBrightness * 55)},${Math.round(50 + bulbBrightness * 50)},${0.6 + bulbBrightness * 0.4})` : '#F3F4F6'}
+            fill={bulbBrightness > 0.05 ? `rgba(255,${Math.round(200 + bulbBrightness * 55)},${Math.round(50 + bulbBrightness * 50)},${0.6 + bulbBrightness * 0.4})` : SCENE_COLORS.circuit.bulbGlassOff}
             stroke={PHYSICS_COLORS.objectStroke}
-            strokeWidth={1.5}
+            strokeWidth={CANVAS_STYLE.stroke.objectThin}
           />
           {/* 灯丝 */}
           <path
             d={`M ${bulbX - 5} ${bulbY + 3} Q ${bulbX} ${bulbY - 5} ${bulbX + 5} ${bulbY + 3}`}
             fill="none"
-            stroke={bulbBrightness > 0.05 ? '#FFF176' : '#9CA3AF'}
-            strokeWidth="1.5"
+            stroke={bulbBrightness > 0.05 ? SCENE_COLORS.bulb.glassBright : SCENE_COLORS.circuit.bulbGlassStroke}
+            strokeWidth={CANVAS_STYLE.stroke.objectThin}
           />
           <text
             x={bulbX + 18}
             y={bulbY + 4}
-            fontSize={10}
+            fontSize={CANVAS_STYLE.font.smallSize}
             fill={PHYSICS_COLORS.labelText}
           >
             灯泡
@@ -674,7 +675,7 @@ export default function FaradayLaw() {
             cx={meterX}
             cy={meterY}
             r={26}
-            fill="#F8FAFC"
+            fill={PHYSICS_COLORS.objectFillNeutral}
             stroke={PHYSICS_COLORS.objectStroke}
             strokeWidth={CANVAS_STYLE.stroke.objectLine}
           />
@@ -683,14 +684,14 @@ export default function FaradayLaw() {
             d={`M ${meterX - 22} ${meterY + 5} A 22 22 0 0 1 ${meterX + 22} ${meterY + 5}`}
             fill="none"
             stroke={PHYSICS_COLORS.trackHistory}
-            strokeWidth="1"
+            strokeWidth={CANVAS_STYLE.stroke.grid}
           />
           {/* 零刻度线（中心竖线） */}
           <line
             x1={meterX} y1={meterY - 20}
             x2={meterX} y2={meterY - 14}
             stroke={PHYSICS_COLORS.trackHistory}
-            strokeWidth="1"
+            strokeWidth={CANVAS_STYLE.stroke.grid}
           />
           {/* 指针 */}
           <line
@@ -707,7 +708,7 @@ export default function FaradayLaw() {
           <text
             x={meterX}
             y={meterY + 22}
-            fontSize={10}
+            fontSize={CANVAS_STYLE.font.smallSize}
             fill={PHYSICS_COLORS.labelText}
             textAnchor="middle"
           >
@@ -786,7 +787,7 @@ export default function FaradayLaw() {
               <text
                 x={magnetX + MAGNET_LEN / 2}
                 y={coilY - MAGNET_H / 2 - 8}
-                fontSize={10}
+                fontSize={CANVAS_STYLE.font.smallSize}
                 fill={PHYSICS_COLORS.trackHistory}
                 textAnchor="middle"
                 style={{ pointerEvents: 'none' }}
@@ -810,7 +811,7 @@ export default function FaradayLaw() {
 
           {/* ── 悬浮自动控制面板 ── */}
           <g transform="translate(8, 8)">
-            <rect width="158" height="116" rx="8" fill="#F8FAFC" stroke={PHYSICS_COLORS.grid} strokeWidth="1" opacity="0.97" />
+            <rect width="158" height="116" rx="8" fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} opacity="0.97" />
             <text x="79" y="17" fontSize="11" fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
               自动实验控制
             </text>
@@ -826,7 +827,7 @@ export default function FaradayLaw() {
                     width={46}
                     height={20}
                     rx="4"
-                    fill={active ? PHYSICS_COLORS.magneticField : '#E2E8F0'}
+                    fill={active ? PHYSICS_COLORS.magneticField : PHYSICS_COLORS.grid}
                   />
                   <text
                     x={27 + i * 50}
@@ -843,7 +844,7 @@ export default function FaradayLaw() {
               )
             })}
             {/* 速度选择 */}
-            <text x="6" y="60" fontSize="10" fill={PHYSICS_COLORS.trackHistory}>速度：</text>
+            <text x="6" y="60" fontSize={CANVAS_STYLE.font.smallSize} fill={PHYSICS_COLORS.trackHistory}>速度：</text>
             {(['slow', 'medium', 'fast'] as const).map((sp, i) => {
               const labels = { slow: '慢速', medium: '中速', fast: '快速' }
               const active = autoSpeed === sp
@@ -855,7 +856,7 @@ export default function FaradayLaw() {
                     width={46}
                     height={20}
                     rx="4"
-                    fill={active ? PHYSICS_COLORS.electricCurrent : '#E2E8F0'}
+                    fill={active ? PHYSICS_COLORS.electricCurrent : PHYSICS_COLORS.grid}
                   />
                   <text
                     x={27 + i * 50}
@@ -888,8 +889,8 @@ export default function FaradayLaw() {
               }}
               style={{ cursor: 'pointer' }}
             >
-              <rect x="4" y="90" width="150" height="20" rx="4" fill="#FEF3C7" />
-              <text x="79" y="104" fontSize="10" fill="#92400E" textAnchor="middle" fontWeight="bold" style={{ pointerEvents: 'none' }}>
+              <rect x="4" y="90" width="150" height="20" rx="4" fill={colors.accent[100]} />
+              <text x="79" y="104" fontSize={CANVAS_STYLE.font.smallSize} fill={colors.accent[800]} textAnchor="middle" fontWeight="bold" style={{ pointerEvents: 'none' }}>
                 ↺ 重置磁铁位置
               </text>
             </g>
@@ -897,11 +898,11 @@ export default function FaradayLaw() {
 
           {/* ── 底部物理定律说明 ── */}
           <g transform={`translate(8, ${H - 38})`}>
-            <rect width={sandboxW - 16} height="32" rx="5" fill={PHYSICS_COLORS.objectFill} opacity="0.85" stroke={PHYSICS_COLORS.grid} strokeWidth="1" />
+            <rect width={sandboxW - 16} height="32" rx="5" fill={PHYSICS_COLORS.objectFill} opacity="0.85" stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} />
             <text x="10" y="13" fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
               法拉第定律：EMF = −N · ΔΦ/Δt
             </text>
-            <text x="10" y="27" fontSize={10} fill={PHYSICS_COLORS.axis}>
+            <text x="10" y="27" fontSize={CANVAS_STYLE.font.smallSize} fill={PHYSICS_COLORS.axis}>
               磁通量变化越快(|ΔΦ/Δt|↑) 或 匝数 N 越大 → 感应电动势 |EMF| 越大
             </text>
           </g>
@@ -946,13 +947,13 @@ export default function FaradayLaw() {
             {history.length > 0 && (
               <>
                 <line x1={nowX} y1={yPhiMid - chartHalfH} x2={nowX} y2={yPhiMid + chartHalfH}
-                  stroke={CHART_COLORS.reference} strokeWidth="1" strokeDasharray="2,2" />
+                  stroke={CHART_COLORS.reference} strokeWidth={CANVAS_STYLE.stroke.chartRef} strokeDasharray={DASH.trackHistory.join(' ')} />
                 <circle
                   cx={nowX}
                   cy={Math.max(yPhiMid - chartHalfH, Math.min(yPhiMid + chartHalfH, toPhiY(phi)))}
                   r="4.5"
                   fill={PHYSICS_COLORS.magneticField}
-                  stroke="white" strokeWidth="1.5"
+                  stroke="white" strokeWidth={CANVAS_STYLE.stroke.objectThin}
                 />
                 <text
                   x={nowX + 6}
@@ -1017,13 +1018,13 @@ export default function FaradayLaw() {
             {history.length > 0 && (
               <>
                 <line x1={nowX} y1={yEmfMid - chartHalfH} x2={nowX} y2={yEmfMid + chartHalfH}
-                  stroke={CHART_COLORS.reference} strokeWidth="1" strokeDasharray="2,2" />
+                  stroke={CHART_COLORS.reference} strokeWidth={CANVAS_STYLE.stroke.chartRef} strokeDasharray={DASH.trackHistory.join(' ')} />
                 <circle
                   cx={nowX}
                   cy={Math.max(yEmfMid - chartHalfH, Math.min(yEmfMid + chartHalfH, toEmfY(emf)))}
                   r="4.5"
                   fill={PHYSICS_COLORS.electricCurrent}
-                  stroke="white" strokeWidth="1.5"
+                  stroke="white" strokeWidth={CANVAS_STYLE.stroke.objectThin}
                 />
                 <text
                   x={nowX + 6}

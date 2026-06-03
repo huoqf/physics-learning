@@ -1,6 +1,6 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE, STROKE } from '@/theme/physics'
 
 export default function ConnectedBodiesAnimation() {
   const { params, time, showVectors, showFormulas, showGrid } = useAnimationStore()
@@ -52,7 +52,7 @@ export default function ConnectedBodiesAnimation() {
           x2={canvasSize.width - 50}
           y2={groundY}
           stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={3}
+          strokeWidth={STROKE.groundLine}
         />
 
         <rect
@@ -105,7 +105,7 @@ export default function ConnectedBodiesAnimation() {
           x2={currentX + 90}
           y2={groundY - 25}
           stroke={PHYSICS_COLORS.axis}
-          strokeWidth={3}
+          strokeWidth={STROKE.groundLine}
         />
 
         {showVectors && (

@@ -1,7 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateCapacitor } from '@/physics'
-import { PHYSICS_COLORS } from '@/theme/physicsColors'
+import { PHYSICS_COLORS } from '@/theme/physics'
 
 /**
  * 平行板电容器 C = εS/d（ε = εᵣ·ε₀）。

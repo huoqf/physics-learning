@@ -2,7 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { useEffect } from 'react'
 import { useAnimationStore } from '@/stores'
 import { calculateProjectileMotion } from '@/physics'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physicsColors'
+import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
 
 export default function ProjectileAnimation() {
   const { params, time, showVectors, showFormulas, showGrid, setIsPlaying } = useAnimationStore()
@@ -47,8 +47,8 @@ export default function ProjectileAnimation() {
           x2={canvasSize.width - 50}
           y2={yPos}
           stroke={PHYSICS_COLORS.grid}
-          strokeWidth={1}
-          strokeDasharray="4,4"
+          strokeWidth={STROKE.grid}
+          strokeDasharray={DASH.axis.join(' ')}
         />
       )
     }
@@ -62,8 +62,8 @@ export default function ProjectileAnimation() {
           x2={xPos}
           y2={groundY}
           stroke={PHYSICS_COLORS.grid}
-          strokeWidth={1}
-          strokeDasharray="4,4"
+          strokeWidth={STROKE.grid}
+          strokeDasharray={DASH.axis.join(' ')}
         />
       )
     }
@@ -81,12 +81,12 @@ export default function ProjectileAnimation() {
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
         {gridLines}
         
-        <line x1={originX} y1={originY} x2={originX} y2={groundY} stroke={PHYSICS_COLORS.labelText} strokeWidth={2} />
-        <line x1={originX} y1={groundY} x2={canvasSize.width - 50} y2={groundY} stroke={PHYSICS_COLORS.labelText} strokeWidth={2} />
+        <line x1={originX} y1={originY} x2={originX} y2={groundY} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.axisBold} />
+        <line x1={originX} y1={groundY} x2={canvasSize.width - 50} y2={groundY} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.axisBold} />
         
-        <text x={originX - 30} y={originY - 5} fontSize="12" fill={PHYSICS_COLORS.axis} textAnchor="middle">y=0</text>
-        <text x={originX - 30} y={groundY + 20} fontSize="12" fill={PHYSICS_COLORS.axis} textAnchor="middle">y</text>
-        <text x={canvasSize.width - 30} y={groundY + 20} fontSize="12" fill={PHYSICS_COLORS.axis} textAnchor="middle">x</text>
+        <text x={originX - 30} y={originY - 5} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis} textAnchor="middle">y=0</text>
+        <text x={originX - 30} y={groundY + 20} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis} textAnchor="middle">y</text>
+        <text x={canvasSize.width - 30} y={groundY + 20} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis} textAnchor="middle">x</text>
 
         {pathD && (
           <path
@@ -94,7 +94,7 @@ export default function ProjectileAnimation() {
             fill="none"
             stroke={PHYSICS_COLORS.trackHistory}
             strokeWidth={CANVAS_STYLE.stroke.trackHistory}
-            strokeDasharray="6,4"
+            strokeDasharray={DASH.reference.join(' ')}
             opacity={0.5}
           />
         )}
@@ -120,7 +120,7 @@ export default function ProjectileAnimation() {
               strokeWidth={CANVAS_STYLE.stroke.vectorSub}
               markerEnd="url(#arrowhead-green)"
             />
-            <text x={canvasX + vx * 5 + 10} y={canvasY - 5} fontSize="12" fill={PHYSICS_COLORS.velocity} fontWeight="bold">vₓ</text>
+            <text x={canvasX + vx * 5 + 10} y={canvasY - 5} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.velocity} fontWeight="bold">vₓ</text>
             
             {effectiveVy !== 0 && (
               <line
@@ -134,7 +134,7 @@ export default function ProjectileAnimation() {
               />
             )}
             {effectiveVy !== 0 && (
-              <text x={canvasX + 15} y={canvasY + effectiveVy * 5} fontSize="12" fill={PHYSICS_COLORS.forceNet} fontWeight="bold">vᵧ</text>
+              <text x={canvasX + 15} y={canvasY + effectiveVy * 5} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.forceNet} fontWeight="bold">vᵧ</text>
             )}
             
             <line
@@ -142,15 +142,15 @@ export default function ProjectileAnimation() {
               y1={canvasY}
               x2={canvasX + vx * 5}
               y2={canvasY + effectiveVy * 5}
-              stroke="#8b5cf6"
+              stroke={PHYSICS_COLORS.annotation}
               strokeWidth={CANVAS_STYLE.stroke.vectorMain}
               markerEnd="url(#arrowhead-purple)"
             />
             <text
               x={canvasX + vx * 5 + 15}
               y={canvasY + effectiveVy * 5}
-              fontSize="12"
-              fill="#8b5cf6"
+              fontSize={FONT.axisSize}
+              fill={PHYSICS_COLORS.annotation}
               fontWeight="bold"
             >
               v
@@ -160,15 +160,15 @@ export default function ProjectileAnimation() {
 
         {showFormulas && (
           <g transform={`translate(${canvasSize.width - 180}, ${originY + 30})`}>
-            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">平抛运动公式</text>
-            <text x={0} y={25} fontSize="12" fill={PHYSICS_COLORS.axis}>x = v₀ₓ · t</text>
-            <text x={0} y={45} fontSize="12" fill={PHYSICS_COLORS.axis}>y = ½gt²</text>
-            <text x={0} y={65} fontSize="12" fill={PHYSICS_COLORS.axis}>vₓ = v₀ₓ（匀速）</text>
-            <text x={0} y={85} fontSize="12" fill={PHYSICS_COLORS.axis}>vᵧ = gt（自由落体）</text>
-            <text x={0} y={110} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text fontSize={FONT.bodySize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">平抛运动公式</text>
+            <text x={0} y={25} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>x = v₀ₓ · t</text>
+            <text x={0} y={45} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>y = ½gt²</text>
+            <text x={0} y={65} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>vₓ = v₀ₓ（匀速）</text>
+            <text x={0} y={85} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>vᵧ = gt（自由落体）</text>
+            <text x={0} y={110} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               当前: x={x.toFixed(1)}m, y={y.toFixed(1)}m
             </text>
-            <text x={0} y={130} fontSize="12" fill={PHYSICS_COLORS.axis}>
+            <text x={0} y={130} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
               v={effectiveV.toFixed(1)}m/s, θ={(Math.atan2(effectiveVy, vx) * 180 / Math.PI).toFixed(1)}°
             </text>
           </g>
@@ -182,7 +182,7 @@ export default function ProjectileAnimation() {
             <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.forceNet} />
           </marker>
           <marker id="arrowhead-purple" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill="#8b5cf6" />
+            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.annotation} />
           </marker>
         </defs>
       </svg>
