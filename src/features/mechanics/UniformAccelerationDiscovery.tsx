@@ -13,8 +13,6 @@ import {
 import { useUniformAccelerationPhysics } from './useUniformAccelerationPhysics'
 
 const VT_X_MAX = 8
-const VT_Y_MIN = 0 // v-t图从0开始
-const VT_Y_MAX = 10
 
 export default function UniformAccelerationDiscovery() {
   const { params, time, showVectors, showGrid, setIsPlaying } = useAnimationStore()
@@ -23,6 +21,23 @@ export default function UniformAccelerationDiscovery() {
 
   const { v0 = 0, a = 1.5 } = params
   const scale = 25
+  
+  // 动态确定Y轴范围（仅依赖v0和a，避免动画中闪动）
+  const { VT_Y_MIN, VT_Y_MAX } = useMemo(() => {
+    if (v0 > 0 && a < 0) {
+      return { VT_Y_MIN: -10, VT_Y_MAX: 10 }
+    }
+    return { VT_Y_MIN: 0, VT_Y_MAX: 10 }
+  }, [v0, a])
+  
+  // 生成Y轴刻度
+  const yticks = useMemo(() => {
+    const ticks = []
+    for (let v = VT_Y_MIN; v <= VT_Y_MAX; v += 2) {
+      ticks.push(v)
+    }
+    return ticks
+  }, [VT_Y_MIN, VT_Y_MAX])
 
   // 动态区域分配
   const upperHeight = canvasSize.height * 0.6
@@ -154,15 +169,21 @@ export default function UniformAccelerationDiscovery() {
           const vtToChartX = (t: number) => vtInnerLeft + (t / VT_X_MAX) * vtInnerW
           const vtToChartY = (v: number) => vtInnerTop + vtInnerH - ((v - VT_Y_MIN) / (VT_Y_MAX - VT_Y_MIN)) * vtInnerH
 
+          // 渐进式绘制：只绘制到当前时间的数据
+          const activeData = physics.vtChartData.filter((p: any) => p.x <= time)
+          
           // 重新计算v-t图路径
-          const vtVtPathD = physics.vtChartData.length >= 2
-            ? 'M ' + physics.vtChartData.map((p: any) => `${vtToChartX(p.x)},${vtToChartY(p.y)}`).join(' L ')
+          const vtVtPathD = activeData.length >= 2
+            ? 'M ' + activeData.map((p: any) => `${vtToChartX(p.x)},${vtToChartY(p.y)}`).join(' L ')
             : ''
+          
+          // 面积填充也只填充到当前时间
           const vtAreaPathD = vtVtPathD
-            ? `${vtVtPathD} L ${vtToChartX(physics.vtChartData[physics.vtChartData.length - 1].x)},${vtToChartY(0)} L ${vtToChartX(0)},${vtToChartY(0)} Z`
+            ? `${vtVtPathD} L ${vtToChartX(time)},${vtToChartY(0)} L ${vtToChartX(0)},${vtToChartY(0)} Z`
             : ''
+          
           const vtWrongPathD = physics.wrongVtData && physics.wrongVtData.length >= 2
-            ? 'M ' + physics.wrongVtData.map((p: any) => `${vtToChartX(p.x)},${vtToChartY(p.y)}`).join(' L ')
+            ? 'M ' + physics.wrongVtData.filter((p: any) => p.x <= time).map((p: any) => `${vtToChartX(p.x)},${vtToChartY(p.y)}`).join(' L ')
             : ''
 
           return (
@@ -176,16 +197,17 @@ export default function UniformAccelerationDiscovery() {
 
                 {/* 坐标轴 */}
                 <line x1={vtInnerLeft} y1={vtInnerTop} x2={vtInnerLeft} y2={vtInnerTop + vtInnerH} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-                <line x1={vtInnerLeft} y1={vtInnerTop + vtInnerH} x2={vtInnerLeft + vtInnerW} y2={vtInnerTop + vtInnerH} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
+                {/* 水平参考线在 v=0 位置 */}
+                <line x1={vtInnerLeft} y1={vtToChartY(0)} x2={vtInnerLeft + vtInnerW} y2={vtToChartY(0)} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
 
                 {/* 刻度 */}
                 {xticks.map(t => (
                   <g key={`xt-${t}`}>
-                    <line x1={vtToChartX(t)} y1={vtInnerTop + vtInnerH} x2={vtToChartX(t)} y2={vtInnerTop + vtInnerH + 5} stroke={CHART_COLORS.tickMark} />
-                    <text x={vtToChartX(t)} y={vtInnerTop + vtInnerH + 18} fontSize={9} textAnchor="middle" fill={CHART_COLORS.tickLabel}>{t}</text>
+                    <line x1={vtToChartX(t)} y1={vtToChartY(0) - 5} x2={vtToChartX(t)} y2={vtToChartY(0) + 5} stroke={CHART_COLORS.tickMark} />
+                    <text x={vtToChartX(t)} y={vtToChartY(0) + 18} fontSize={9} textAnchor="middle" fill={CHART_COLORS.tickLabel}>{t}</text>
                   </g>
                 ))}
-                {[0, 2, 4, 6, 8, 10].map(v => (
+                {yticks.map(v => (
                   <g key={`yt-${v}`}>
                     <line x1={vtInnerLeft - 5} y1={vtToChartY(v)} x2={vtInnerLeft} y2={vtToChartY(v)} stroke={CHART_COLORS.tickMark} />
                     <text x={vtInnerLeft - 10} y={vtToChartY(v) + 3} fontSize={9} textAnchor="end" fill={CHART_COLORS.tickLabel}>{v}</text>

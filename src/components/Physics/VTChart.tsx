@@ -11,6 +11,7 @@ interface VTChartProps {
     v0: number
     a: number
   }
+  time: number // 新增属性
 }
 
 const VT_X_MAX = 8
@@ -19,21 +20,20 @@ const chartAreaH = 200
 const chartAreaX = 0
 const chartAreaY = 0
 
-export const VTChart: FC<VTChartProps> = ({ physics, params }) => {
+export const VTChart: FC<VTChartProps> = ({ physics, params, time }) => { // 接收 time
   const { v0, a } = params
   
-  // 计算静态 Y 轴范围，基于 params 一次性计算
+  // 计算动态 Y 轴范围，确保包含负速度
   const { yMin, yMax } = useMemo(() => {
-    const tFinal = 8 // 假设图表显示 8s
-    const vEnd = v0 + a * tFinal
-    const min = Math.min(0, v0, vEnd)
-    const max = Math.max(0, v0, vEnd)
-    // 增加一点缓冲
+    const vValues = physics.vtChartData.map((p: any) => p.y)
+    const min = Math.min(...vValues, 0)
+    const max = Math.max(...vValues, 0)
+    const padding = (max - min) * 0.1 || 1
     return { 
-      yMin: min - Math.abs(min) * 0.1 - 1, 
-      yMax: max + Math.abs(max) * 0.1 + 1 
+      yMin: min - padding, 
+      yMax: max + padding 
     }
-  }, [v0, a])
+  }, [physics.vtChartData])
 
   const xticks = [0, 2, 4, 6, 8]
   const vtInnerTop = chartAreaY + 35
@@ -44,9 +44,13 @@ export const VTChart: FC<VTChartProps> = ({ physics, params }) => {
   const vtToChartX = (t: number) => vtInnerLeft + (t / VT_X_MAX) * vtInnerW
   const vtToChartY = (v: number) => vtInnerTop + vtInnerH - ((v - yMin) / (yMax - yMin)) * vtInnerH
 
-  const vtVtPathD = physics.vtChartData.length >= 2
-    ? 'M ' + physics.vtChartData.map((p: any) => `${vtToChartX(p.x)},${vtToChartY(p.y)}`).join(' L ')
-    : ''
+  // 根据当前 time 过滤路径数据
+  const vtVtPathD = useMemo(() => {
+    const activeData = physics.vtChartData.filter((p: any) => p.x <= time)
+    return activeData.length >= 2
+      ? 'M ' + activeData.map((p: any) => `${vtToChartX(p.x)},${vtToChartY(p.y)}`).join(' L ')
+      : ''
+  }, [physics.vtChartData, time])
 
   return (
     <svg width={chartAreaW} height={chartAreaH} className="bg-white rounded-lg shadow-inner w-full h-full" viewBox={`0 0 ${chartAreaW} ${chartAreaH}`}>

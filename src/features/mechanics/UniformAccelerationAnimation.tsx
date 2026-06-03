@@ -131,27 +131,6 @@ export default function UniformAccelerationAnimation() {
           </g>
         )}
 
-        {showFormulas && (
-          <g transform="translate(20, 20)">
-            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">匀变速直线运动</text>
-            <text x={0} y={25} fontSize="12" fill={PHYSICS_COLORS.axis}>
-              初速度 v₀ = {v0} m/s
-            </text>
-            <text x={0} y={45} fontSize="12" fill={PHYSICS_COLORS.axis}>
-              加速度 a = {a} m/s²
-            </text>
-            <text x={0} y={65} fontSize="12" fill={PHYSICS_COLORS.axis}>
-              时间 t = {displayTime.toFixed(2)} s
-            </text>
-            <text x={0} y={90} fontSize="12" fill={PHYSICS_COLORS.velocity} fontWeight="bold">
-              v = v₀ + at = {displayV.toFixed(2)} m/s
-            </text>
-            <text x={0} y={115} fontSize="12" fill={PHYSICS_COLORS.displacement} fontWeight="bold">
-              s = v₀t + ½at² = {displayS.toFixed(2)} m
-            </text>
-          </g>
-        )}
-
         <defs>
           <marker id="arrowhead-ua-v" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
             <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />

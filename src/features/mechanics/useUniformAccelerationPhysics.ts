@@ -65,25 +65,18 @@ export function useUniformAccelerationPhysics(
     return points
   }, [effectiveTime, stopTime, isStopped, v0, a])
 
-  // v-t 图数据（实际物理过程）
+  // v-t 图数据（修正：移除刹车截断，完整反映匀变速物理规律）
   const vtChartData = useMemo(() => {
-    const maxT = isStopped ? stopTime : effectiveTime
     const points: VtChartPoint[] = []
     const dt = 0.1
-    // 0 ~ stopTime: 匀变速
-    for (let t = 0; t <= maxT + dt; t += dt) {
-      const { v } = calculateAcceleratedMotion(v0, a, Math.min(t, maxT))
-      points.push({ x: parseFloat(t.toFixed(1)), y: isStopped && t > stopTime ? 0 : v })
-    }
-    // 刹车停止后：v=0 水平线
-    if (isStopped) {
-      const endT = Math.min(time + 2, maxT + 4)
-      for (let t = stopTime + dt; t <= endT; t += dt) {
-        points.push({ x: parseFloat(t.toFixed(1)), y: 0 })
-      }
+    // 固定绘制时长，保证图表稳定
+    const totalT = 8 
+    for (let t = 0; t <= totalT + dt; t += dt) {
+      const { v } = calculateAcceleratedMotion(v0, a, t)
+      points.push({ x: parseFloat(t.toFixed(1)), y: v })
     }
     return points
-  }, [effectiveTime, stopTime, isStopped, time, v0, a])
+  }, [v0, a])
 
   // 错误代入数据（刹车死区演示：盲目用公式得到的错误结果）
   const wrongVtData = useMemo(() => {

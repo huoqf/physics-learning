@@ -509,19 +509,35 @@ export default function AnimationPage() {
                 </div>
               </div>
             ) : (
-              // 模式B：动画模式，V-T图(60%) + 动画(40%)
+              // 模式B：动画模式，上部分(左参数+右图表)，下部分动画
               <>
                 {discoverySupportedIds.includes(config?.id || '') && (
-                  <div className="h-[60%] w-full bg-white rounded-xl shadow-md p-2 flex items-center justify-center">
-                    <VTChart 
-                      physics={physics} 
-                      params={{ 
-                        v0: params.v0 ?? 0, 
-                        a: params.a ?? 0 
-                      }} 
-                    />
+                  <div className="h-[60%] w-full flex flex-row gap-4 mb-4">
+                    {/* 左侧参数区：仅显示特定公式 */}
+                    <div className="w-[40%] h-full bg-white rounded-xl shadow-md p-6 flex flex-col justify-center">
+                      <h3 className="text-lg font-bold text-neutral-800 mb-6">匀变速直线运动</h3>
+                      <div className="text-sm text-neutral-700 space-y-4">
+                        <p>初速度 v₀ = {params.v0 ?? 0} m/s</p>
+                        <p>加速度 a = {params.a ?? 1.5} m/s²</p>
+                        <p>时间 t = {time.toFixed(2)} s</p>
+                        <p className="font-bold text-blue-700 pt-2 border-t">v = v₀ + at = {((params.v0 ?? 0) + (params.a ?? 1.5) * time).toFixed(2)} m/s</p>
+                        <p className="font-bold text-green-700">s = v₀t + ½at² = {((params.v0 ?? 0) * time + 0.5 * (params.a ?? 1.5) * Math.pow(time, 2)).toFixed(2)} m</p>
+                      </div>
+                    </div>
+                    {/* 右侧 V-T 图 */}
+                    <div className="w-[60%] h-full bg-white rounded-xl shadow-md p-2">
+                      <VTChart 
+                        physics={physics} 
+                        params={{ 
+                          v0: params.v0 ?? 0, 
+                          a: params.a ?? 0 
+                        }}
+                        time={time} // 传递 time
+                      />
+                    </div>
                   </div>
                 )}
+                {/* 下部分：动画区域 */}
                 <div
                   className={`w-full bg-white rounded-xl shadow-md overflow-hidden ${discoverySupportedIds.includes(config?.id || '') ? 'h-[40%]' : 'h-full'}`}
                   style={{
