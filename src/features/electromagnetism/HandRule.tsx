@@ -53,6 +53,8 @@ export interface HandRuleProps {
   title?: string
   /** 整体 opacity（外部控制） */
   opacity?: number
+  /** 是否手背 */
+  isBack?: boolean
 }
 
 const DEFAULT_TIP_LABELS: Record<'thumb' | 'index' | 'middle', string> = {
@@ -83,6 +85,7 @@ export function HandRule({
   active = true,
   title,
   opacity = 1,
+  isBack = false,
 }: HandRuleProps) {
   // ── 自动推算目标姿态（rotationDeg / chirality / pose）─────────────────
   // 故意只追踪 .x/.y，传入新对象但坐标未变时不会重新计算
@@ -220,6 +223,7 @@ export function HandRule({
           rotation={currentRotationRef.current}
           scale={scale}
           chirality={chirality}
+          isBack={isBack}
           pose={inferredPose}
           highlight={highlight}
           showTipMarker={showTipMarker}

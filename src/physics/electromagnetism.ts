@@ -463,31 +463,31 @@ export interface HandPoseResult {
  * @param I 中指方向（2D）
  * @returns HandPoseResult
  */
+/**
+ * 重构后的手部姿态计算：
+ * 以四指平面（中指指向）为旋转基准，确保手部角度自然垂直。
+ * 在右手右手定则中，四指指代 B 方向（或者更准确地，令掌心平面指向 I 方向）。
+ */
 export function computeHandPose(v: Vec2, I: Vec2): HandPoseResult {
-  const vMag = Math.sqrt(v.x * v.x + v.y * v.y)
-  const iMag = Math.sqrt(I.x * I.x + I.y * I.y)
+  const vMag = Math.hypot(v.x, v.y)
+  const iMag = Math.hypot(I.x, I.y)
 
   if (vMag < 1e-9 || iMag < 1e-9) {
     return { rotationDeg: 0, chirality: 'right', pose: 'open', B_out: true }
   }
 
-  const vAngle = Math.atan2(v.y, v.x)
-  const cross = v.x * I.y - v.y * I.x
+  // 计算中指（手掌中轴）应当指向的角度
+  const iAngle = Math.atan2(I.y, I.x)
+  
+  // 修正旋转角：使中指（掌心轴）指向 I 方向。
+  // 在静止姿态 (0°) 下，SkeletonHand 组件中的四指是朝上（-90°）定义的。
+  // 所以当 I 方向为 iAngle 时，需要旋转 `iAngle - (-90°)`.
+  const rotationDeg = (iAngle * 180) / Math.PI + 90
 
-  // 右手定则：中指在拇指顺时针 90°（canvas 中 +y 向下 = "拇指下方"）
-  //   I_canvas = (0, +1)（拇指 v=+x 右、中指 I 顺时针 90° 在 v 下方）→ cross = v.x*I.y - v.y*I.x = +1
-  //   此时手性 = right，B 出纸面（⊙），I 在拇指"右"侧（canvas 下方）
-  // 反之 cross < 0 → 中指在拇指上方 = 左手定则 / B 入纸面（⊗）
+  const cross = v.x * I.y - v.y * I.x
   const chirality: HandChirality = cross > 0 ? 'right' : 'left'
   const B_out = cross > 0
 
-  // 整只手的旋转：使拇指对齐 v 方向
-  // 静止姿态下右手拇指指向 THUMB_BASE_ANGLE（≈ -130°，左上方），
-  // 因此需要整体旋转 `atan2(v.y, v.x) - THUMB_BASE_ANGLE` 才能让拇指精确对齐 v。
-  const vAngleDeg = (vAngle * 180) / Math.PI
-  const rotationDeg = vAngleDeg - THUMB_BASE_ANGLE
-
-  // pose 暂默认 open，由调用方根据 "动画是否在跑 / 是否有 EMF" 决定
   return {
     rotationDeg,
     chirality,

@@ -312,10 +312,9 @@ function FingerView({ finger, highlight, showTipMarker, tipLabel, tipColor }: Fi
 const PALM_W = 64
 const PALM_H = 72
 
-function Palm({ chirality }: { chirality: HandChirality }) {
-  // 按照人体结构，掌心朝向观察者时，是右手掌心。
-  // 我们直接标注明确，消除纹理带来的歧义。
-  const label = "掌心"
+function Palm({ chirality, isBack }: { chirality: HandChirality, isBack: boolean }) {
+  // 掌心朝向观察者时标注“掌心”，背向时标注“手背”
+  const label = isBack ? "手背" : "掌心"
   
   return (
     <>
@@ -362,6 +361,8 @@ export interface SkeletonHandProps {
   scale?: number
   /** 手性：右手 / 左手（决定拇指在左/右侧） */
   chirality?: HandChirality
+  /** 是否手背 */
+  isBack?: boolean
   /** 姿态：张开 / 半握 / 握拳 */
   pose: HandPose
   /** 高亮哪几根手指（用于"拇/食/中"标识） */
@@ -403,6 +404,7 @@ export function SkeletonHand({
   rotation,
   scale = 1,
   chirality = 'right',
+  isBack = false,
   pose,
   highlight = {},
   showTipMarker = {},
@@ -423,7 +425,7 @@ export function SkeletonHand({
       onPointerDown={onPointerDown}
       className={className}
     >
-      {showPalm && <Palm chirality={chirality} />}
+      {showPalm && <Palm chirality={chirality} isBack={isBack} />}
       {fingers.map((finger) => (
         <FingerView
           key={finger.name}

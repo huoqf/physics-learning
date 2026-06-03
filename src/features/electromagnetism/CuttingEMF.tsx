@@ -493,7 +493,12 @@ export default function CuttingEMF() {
             const handY = 50
             const handW = 168
             const handH = 188
-            const rule: 'right' | 'left' = handRule === 1 ? 'left' : 'right'
+            
+            // 自动联动逻辑：匀速运动/手动用右手定则(发电机)，受力分析用左手定则(电动机)
+            let rule: 'right' | 'left' = motionMode === 'auto-F' ? 'left' : 'right'
+            if (handRule === 1) rule = 'left'
+            else if (handRule === 0) rule = 'right'
+            
             const fist = handRule === 2
             return (
               <g>
@@ -522,6 +527,7 @@ export default function CuttingEMF() {
                   svgRef={svgRef}
                   vDir={effectiveV > 0 ? 1 : effectiveV < 0 ? -1 : 0}
                   B_out={(B_out === 1 ? 1 : 0) as 0 | 1}
+                  isBack={B_out === 1}
                   rule={rule}
                   fist={fist}
                   cx={handX + handW / 2}
