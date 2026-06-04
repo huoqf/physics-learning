@@ -15,6 +15,14 @@
 - **FreeFallDiscoverySteps.tsx**（新建）：自由落体发现模式 5 步骤定义，从页面层下沉到 features/
 - **useAppStore.ts**：新增 `discoveryMaxStep`/`setDiscoveryMaxStep`，修复 `nextDiscoveryStep` 硬编码步数上限
 
+### 自由落体牛顿管实验逻辑修正（归属 [M1] 力学动画）
+
+原始实现 `isDual = showDualObjects && dragK > 0`，导致真空模式（dragK=0）下无法展示双物体同时落地——而这正是牛顿管实验的核心教学场景。同时存在羽毛缺少重力加速度箭头、v-t 曲线落地后未截断、阻力参数量级偏大等问题。
+
+- **FreeFallAnimation.tsx**：①`isDual` 判断改为仅 `showDualObjects`，与 `dragK` 解耦 ②牛顿管标注根据 `dragK` 值显示「真空」/「k=…」③新增羽毛重力加速度 g 箭头 ④羽毛 v-t 曲线落地后截断并添加零速水平线段
+- **FreeFallSidebar.tsx**：牛顿管按钮不再强制设 `dragK=0.5`，仅切换 `showDualObjects`；「空气阻力」预设值 `0.5` → `0.02`
+- **animationRegistry.ts**：`dragK` 参数范围 `0~2` → `0~0.2`，步长 `0.05` → `0.01`（对齐羽毛实际阻力量级）
+
 ### 项目规范整合至 .trae/rules/project_rules.md
 
 原规范散布在 AGENT.md + docs/agent-rules/core/ + docs/agent-rules/ui/ 多处，每次需手动查找。整合至 Trae IDE 默认加载位置，自动生效。

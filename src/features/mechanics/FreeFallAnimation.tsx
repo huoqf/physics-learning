@@ -87,8 +87,8 @@ export default function FreeFallAnimation() {
   const m2 = params.m2 ?? 0.003 // 羽毛质量（kg）
   const m1 = 0.5 // 铁球质量（kg）
 
-  // ── 双物体标志 ──────────────────────────────────────────────
-  const isDual = showDualObjects && dragK > 0
+  // ── 双物体标志（仅由 showDualObjects 控制，与 dragK 无关）───
+  const isDual = showDualObjects
 
   // ── 布局分区 ────────────────────────────────────────────────
   const stageRatio = isDual ? 0.55 : 0.45
@@ -203,12 +203,18 @@ export default function FreeFallAnimation() {
   const vtPoints2 = useMemo(() => {
     if (!isDual) return []
     const pts: string[] = []
-    for (let t = 0; t <= activeTime + 0.01; t += 0.05) {
+    // 落地后速度截断为 0
+    const effectiveMaxT = isLanded2 ? Math.min(groundTime2, activeTime) : activeTime
+    for (let t = 0; t <= effectiveMaxT + 0.01; t += 0.05) {
       const { v } = calcFreeFallWithDrag(v0, g, dragK, m2, t)
       pts.push(`${vtToX(t)},${vtToY(v)}`)
     }
+    // 落地后添加水平零速线段
+    if (isLanded2 && activeTime > groundTime2) {
+      pts.push(`${vtToX(groundTime2)},${vtToY(0)},${vtToX(activeTime)},${vtToY(0)}`)
+    }
     return pts
-  }, [isDual, v0, g, dragK, m2, activeTime])
+  }, [isDual, v0, g, dragK, m2, activeTime, groundTime2, isLanded2])
   const vtPathD2 = vtPoints2.length >= 2 ? `M ${vtPoints2.join(' L ')}` : ''
 
   // ── 频闪点 ──────────────────────────────────────────────────
@@ -323,8 +329,8 @@ export default function FreeFallAnimation() {
               fill="none" stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.axis} strokeDasharray={DASH.reference.join(' ')}
               rx={8} opacity={0.4} />
             <text x={stageWidth * 0.5} y={originY - 30} fontSize={FONT.axis}
-              fill={PHYSICS_COLORS.labelText} textAnchor="middle" opacity={0.6}>
-              牛顿管（k={dragK}）
+              fill={dragK === 0 ? PHYSICS_COLORS.forceNet : PHYSICS_COLORS.labelText} textAnchor="middle" opacity={0.6}>
+              牛顿管 {dragK === 0 ? '（真空）' : `（k=${dragK}）`}
             </text>
             <text x={ballX} y={originY - 30} fontSize={9}
               fill={PHYSICS_COLORS.velocity} textAnchor="middle">铁球</text>
@@ -366,7 +372,7 @@ export default function FreeFallAnimation() {
         )}
 
         {/* 速度矢量 - 铁球 */}
-        {showVectors && effectiveV1 > 0.5 && (
+        {showVectors && !isLanded1 && effectiveV1 > 0.5 && (
           <g>
             <line x1={ballX + 18} y1={Math.min(currentY1, groundY - 12)}
               x2={ballX + 18} y2={Math.min(currentY1 + effectiveV1 * 6, groundY - 5)}
@@ -390,13 +396,25 @@ export default function FreeFallAnimation() {
         )}
 
         {/* 重力加速度矢量 - 铁球 */}
-        {showVectors && (
+        {showVectors && !isLanded1 && (
           <g>
             <line x1={ballX - 28} y1={Math.min(currentY1, groundY - 12)}
               x2={ballX - 28} y2={Math.min(currentY1 + 45, groundY - 5)}
               stroke={PHYSICS_COLORS.acceleration} strokeWidth={STROKE.vectorMain}
               markerEnd="url(#arrow-freefall-g)" />
             <text x={ballX - 40} y={Math.min(currentY1 + 22, groundY - 10)}
+              fontSize={FONT.small} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">g</text>
+          </g>
+        )}
+
+        {/* 重力加速度矢量 - 羽毛 */}
+        {isDual && showVectors && !isLanded2 && (
+          <g>
+            <line x1={featherX - 28} y1={Math.min(currentY2, groundY - 12)}
+              x2={featherX - 28} y2={Math.min(currentY2 + 45, groundY - 5)}
+              stroke={PHYSICS_COLORS.acceleration} strokeWidth={STROKE.vectorMain}
+              markerEnd="url(#arrow-freefall-g)" />
+            <text x={featherX - 40} y={Math.min(currentY2 + 22, groundY - 10)}
               fontSize={FONT.small} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">g</text>
           </g>
         )}

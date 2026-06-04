@@ -59,10 +59,10 @@ export default function FreeFallSidebar({
             🪐 木星
           </button>
           <button
-            onClick={() => { updateParam('g', 9.8); updateParam('dragK', 0.5); }}
+            onClick={() => { updateParam('g', 9.8); updateParam('dragK', 0.02); }}
             disabled={disabled}
             className={`px-3 py-1.5 text-xs rounded-md transition-all active:scale-95 ${
-              params.g === 9.8 && params.dragK === 0.5
+              params.g === 9.8 && params.dragK === 0.02
                 ? 'bg-primary-100 text-primary-700 border border-primary-300'
                 : 'bg-neutral-50 text-neutral-700 border border-neutral-200 hover:bg-neutral-100'
             }`}
@@ -86,12 +86,7 @@ export default function FreeFallSidebar({
       </div>
       <div className="mt-4 pt-3 border-t border-neutral-200">
         <button
-          onClick={() => {
-            toggleDualObjects()
-            if (!showDualObjects) {
-              updateParam('dragK', 0.5)
-            }
-          }}
+          onClick={toggleDualObjects}
           disabled={disabled}
           className={`w-full py-2 rounded-md text-sm font-medium transition-all ${
             showDualObjects

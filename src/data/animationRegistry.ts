@@ -47,7 +47,7 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     paramMeta: [
       { key: 'v0', label: '初速度 v₀', min: -10, max: 10, step: 0.1, unit: 'm/s' },
       { key: 'g', label: '重力加速度 g', min: 1, max: 20, step: 0.1, unit: 'm/s²' },
-      { key: 'dragK', label: '空气阻力 k', min: 0, max: 2, step: 0.05, unit: 'kg/m' },
+      { key: 'dragK', label: '空气阻力 k', min: 0, max: 0.2, step: 0.01, unit: 'kg/m' },
     ],
     supportsDiscovery: true,
     DiscoveryComponent: lazy(() => import('@/features/mechanics/FreeFallDiscovery')),
