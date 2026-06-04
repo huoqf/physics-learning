@@ -1,5 +1,33 @@
 # 物理演示项目工程日志 (PROCESS_LOG)
 
+## 2026-06-05
+
+### 竖直上抛运动三屏联动重构 + 进阶模式（归属 [M1] 力学动画）
+
+原始 VerticalThrowAnimation 为简单单区 SVG（小球+速度箭头+公式文字叠加），不符合三屏联动设计。完全重写为中屏双核布局（物理演练区 + 图象联动区），并新增进阶模式。
+
+**基础模式改动：**
+- **VerticalThrowAnimation.tsx**（完全重写）：中屏左区物理演练（竖直轨道+小球+速度/加速度矢量+频闪点+目标高度线），右区图象联动（v-t 图穿轴零线+正负区域着色+时间悬标线 + y-t 图抛物线+最高点标注）
+- **physicsQuantities.ts**：`anim-vertical-throw` 分支从 4 个物理量增至动态结构（PhysicsPanelData），精简为 3 个动态量（速度v/位移y/运动阶段）+ 2 个内联公式 + 高考要点卡片；最高点时追加"v=0，但 a≠0！"警告
+- **PhysicsPanel.tsx**：公式区从 block 模式改为 inline 左对齐，去掉灰色背景容器，行间距收紧；支持 `formulas` 和 `gaokaoPoints` props
+- **AnimationPage.tsx**：传递 `formulas`/`gaokaoPoints` 给 PhysicsPanel
+
+**Bug 修复：**
+- 最高点自动暂停后无法继续播放：用 `hasPausedAtPeakRef` 记录已暂停过，仅首次经过时暂停，再次点击播放可正常继续
+
+**进阶模式改动：**
+- **VerticalThrowSidebar.tsx**（新建）：进阶模式 toggle 按钮 + 条件显示的三个高级滑块（微元切片密度/空气阻力k/目标高度线）
+- **animationRegistry.ts**：`anim-vertical-throw` 新增 `SidebarExtra` 指向 VerticalThrowSidebar，从 paramMeta 移除进阶参数
+- **types.ts**：`ParamMeta` 新增 `showIf` 可选字段（条件显示参数）
+- **kinematics.ts**：新增 `calculateVerticalThrowWithDrag`（欧拉法数值求解含空气阻力的竖直上抛）和 `precomputeVerticalThrowTrajectory`（预计算完整轨迹，避免渲染时重复欧拉积分）
+- **VerticalThrowAnimation.tsx** 进阶功能：
+  - 微元切片：v-t 图阶梯矩形 + 交叉线/斜线 SVG 图案 + 物理区频闪点
+  - 空气阻力：使用预计算轨迹 + 线性插值，v-t 曲线变弧线
+  - 目标高度双解：物理区水平虚线 + y-t 图双交点 t₁/t₂ 标注
+  - 面积数值：v-t 图右上角 S⁺/S⁻/y 实时显示
+  - 时间悬标拖拽：鼠标拖拽时间线，三屏联动
+- **physicsQuantities.ts** 进阶公式：位移方程/求根公式/Δy=gT² + 双解拦截索 + 落地对称性结论
+
 ## 2026-06-04
 
 ### AnimationPage 规范合规重构（归属 [M2] 架构完善）

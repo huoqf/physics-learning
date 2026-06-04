@@ -1,6 +1,6 @@
 # ROADMAP — 高中物理交互动画学习软件
 
-&gt; 最后更新：2026-06-03
+&gt; 最后更新：2026-06-05
 
 ---
 
@@ -36,6 +36,7 @@
 - **当前里程碑**：[M4] 电磁/热/光/原子模块 🚧 进行中
 - **当前焦点**：[M4-1] 电磁学 ✅ 已收官 · [M4-1.x] CuttingEMF 增强（PR 4 探索任务卡 ⏳）
 - **架构完善**：AnimationPage 规范合规重构（773→275行，registry 驱动）✅ · 项目规范整合至 .trae/rules/project_rules.md ✅
+- **力学增强**：竖直上抛运动三屏联动重构 + 进阶模式 ✅
 - **下一步**：[M4-2] 热学模块——BrownianMotion / MolecularForce / GasLaws / IdealGasState / FirstLawThermo / SecondLawThermo
 
 ---

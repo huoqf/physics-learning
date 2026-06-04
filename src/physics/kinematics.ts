@@ -84,7 +84,7 @@ export function calculateFreeFallWithDrag(v0: number, g: number, dragK: number, 
     return { positions: points, finalY, finalV, isTerminal: false };
   }
 
-  const points: FreeFallPoint[] = [];
+  const points: FreeFallPoint[] = []
   let currentV = v0;
   let currentY = 0;
   let t = 0;
@@ -110,4 +110,107 @@ export function calculateFreeFallWithDrag(v0: number, g: number, dragK: number, 
     finalV: currentV,
     isTerminal: Math.abs(currentV) >= terminalV * 0.999
   };
+}
+
+/**
+ * 竖直上抛运动（含空气阻力）——欧拉法数值求解
+ * 取向上为正方向，a = -g - k·v（k 为阻力系数，m=1）
+ * @param v0 初速度 (m/s)，向上为正
+ * @param g 重力加速度 (m/s²)，正值
+ * @param k 空气阻力系数 (kg/s)，0=无阻力
+ * @param t 查询时刻 (s)
+ * @param dt 积分步长 (s)，默认 0.01
+ * @returns 速度 v (m/s) 和位移 y (m)
+ */
+export function calculateVerticalThrowWithDrag(
+  v0: number,
+  g: number,
+  k: number,
+  t: number,
+  dt: number = 0.01
+): { v: number; y: number } {
+  // 无阻力时直接用解析解
+  if (k === 0) {
+    return calculateFreeFall(v0, -g, t)
+  }
+  if (t <= 0) return { v: v0, y: 0 }
+  // 欧拉法积分
+  let currentV = v0
+  let currentY = 0
+  let currentTime = 0
+  const maxSteps = Math.ceil(t / dt) + 1
+  for (let i = 0; i < maxSteps; i++) {
+    const nextTime = Math.min(currentTime + dt, t)
+    const actualDt = nextTime - currentTime
+    if (actualDt <= 0) break
+    // a = -g - k·v（阻力方向始终与速度方向相反）
+    const a = -g - k * currentV
+    currentV += a * actualDt
+    currentY += currentV * actualDt
+    currentTime = nextTime
+    // 落地检测
+    if (currentY < 0 && currentTime > dt) {
+      currentY = 0
+      currentV = 0
+      break
+    }
+  }
+  return { v: currentV, y: currentY }
+}
+
+/**
+ * 预计算竖直上抛运动完整轨迹（含空气阻力）
+ * @param v0 初速度 (m/s)
+ * @param g 重力加速度 (m/s²)
+ * @param k 空气阻力系数 (kg/s)
+ * @param dt 时间步长 (s)，默认 0.02
+ * @returns 轨迹点数组和关键时间
+ */
+export function precomputeVerticalThrowTrajectory(
+  v0: number,
+  g: number,
+  k: number,
+  dt: number = 0.02
+): { points: { t: number; v: number; y: number }[]; peakTime: number; landTime: number; maxHeight: number } {
+  if (k === 0) {
+    const peakTime = v0 / g
+    const maxHeight = (v0 * v0) / (2 * g)
+    const landTime = (2 * v0) / g
+    const points: { t: number; v: number; y: number }[] = []
+    for (let t = 0; t <= landTime + dt; t += dt) {
+      const v = v0 - g * t
+      const y = v0 * t - 0.5 * g * t * t
+      points.push({ t, v, y: Math.max(y, 0) })
+    }
+    return { points, peakTime, landTime, maxHeight }
+  }
+  // 欧拉法
+  let currentV = v0
+  let currentY = 0
+  let currentTime = 0
+  let peakTime = 0
+  let maxHeight = 0
+  let landTime = 0
+  const points: { t: number; v: number; y: number }[] = [{ t: 0, v: v0, y: 0 }]
+  const maxIter = 50000
+  for (let i = 0; i < maxIter; i++) {
+    const a = -g - k * currentV
+    currentV += a * dt
+    currentY += currentV * dt
+    currentTime += dt
+    if (currentY > maxHeight) {
+      maxHeight = currentY
+      peakTime = currentTime
+    }
+    if (currentY < 0 && currentTime > dt) {
+      currentY = 0
+      currentV = 0
+      landTime = currentTime
+      points.push({ t: currentTime, v: 0, y: 0 })
+      break
+    }
+    points.push({ t: currentTime, v: currentV, y: Math.max(currentY, 0) })
+  }
+  if (landTime === 0) landTime = currentTime
+  return { points, peakTime, landTime, maxHeight }
 }

@@ -59,11 +59,12 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     title: '竖直上抛运动',
     knowledgeId: 'mechanics-2-3',
     Component: lazy(() => import('@/features/mechanics/VerticalThrowAnimation')),
-    defaultParams: { v0: 15, g: 9.8, t: 0 },
+    defaultParams: { v0: 15, g: 9.8, t: 0, advancedMode: 0, sliceDensity: 0, airResistance: 0, targetHeight: 0 },
     paramMeta: [
       { key: 'v0', label: '初速度 v₀', min: 0, max: 30, step: 0.1, unit: 'm/s' },
       { key: 'g', label: '重力加速度 g', min: 5, max: 15, step: 0.1, unit: 'm/s²' },
     ],
+    SidebarExtra: lazy(() => import('@/features/mechanics/VerticalThrowSidebar')),
   },
   'anim-spring-force': {
     id: 'anim-spring-force',

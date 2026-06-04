@@ -78,13 +78,13 @@ export const PhysicsPanel: React.FC<PhysicsPanelProps> = ({
       {formulas.length > 0 && (
         <div className="mb-4">
           <h3 className="text-xs font-semibold text-neutral-700 mb-2">公式</h3>
-          <div className="space-y-3 bg-neutral-50 rounded-md p-3">
+          <div className="space-y-1.5">
             {formulas.map((formula, index) => (
               <div key={index} className="text-xs">
-                <span className="text-neutral-500 block mb-1">{formula.name}</span>
-                <div className="flex justify-center">
-                  <KatexFormula formula={formula.latex} mode="block" />
-                </div>
+                <span className="text-neutral-500 inline">{formula.name}：</span>
+                <span className="ml-1 inline-block">
+                  <KatexFormula formula={formula.latex} mode="inline" />
+                </span>
               </div>
             ))}
           </div>

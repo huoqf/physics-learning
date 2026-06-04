@@ -115,11 +115,13 @@ export default function AnimationPage() {
   const AnimationComponent = config.Component
   const paramMeta = config.paramMeta || []
 
-  // 构建 ParamControl 需要的参数格式
-  const paramControlParams = paramMeta.map((p) => ({
-    ...p,
-    value: params[p.key] ?? 0,
-  }))
+  // 构建 ParamControl 需要的参数格式（过滤 showIf 条件）
+  const paramControlParams = paramMeta
+    .filter((p) => !p.showIf || params[p.showIf])
+    .map((p) => ({
+      ...p,
+      value: params[p.key] ?? 0,
+    }))
 
   // 构建侧边栏扩展 props
   const sidebarExtraProps = {
@@ -270,7 +272,7 @@ export default function AnimationPage() {
           ) : (
             <div className="p-4 h-full flex flex-col">
               <div className="flex-1 min-h-0">
-                <PhysicsPanel quantities={physicsQuantities} />
+                <PhysicsPanel quantities={physicsQuantities.quantities} formulas={physicsQuantities.formulas} gaokaoPoints={physicsQuantities.gaokaoPoints} />
               </div>
               {id === 'anim-free-fall' && showTimeSlices && (
                 <TimeSliceFormulaPanel

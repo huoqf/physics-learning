@@ -20,6 +20,8 @@ export interface ParamMeta {
   max: number
   step?: number
   unit?: string
+  /** 仅当 params[showIf] 为真值时显示此参数 */
+  showIf?: string
 }
 
 /** 侧边栏扩展组件 props */
