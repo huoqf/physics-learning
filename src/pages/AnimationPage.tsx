@@ -225,7 +225,7 @@ export default function AnimationPage() {
                   </ErrorBoundary>
                 )}
                 <div
-                  className={`w-full bg-white rounded-xl shadow-md overflow-hidden ${config.CenterExtra ? 'h-[40%]' : 'flex-1'}`}
+                  className="w-full flex-1 bg-white rounded-xl shadow-md overflow-hidden"
                   style={{
                     transition: `opacity ${duration.normal}ms ${easing.standard}`,
                     opacity: canvasDimmed ? 0.9 : 1,
