@@ -1,5 +1,28 @@
 # 物理演示项目工程日志 (PROCESS_LOG)
 
+## 2026-06-04
+
+### AnimationPage 规范合规重构（归属 [M2] 架构完善）
+
+原始 AnimationPage 773 行，违反 §3.1 薄页面原则、§8.1 动画注册表唯一入口、§9 不得硬编码动画组件引用、§5 useAppStore 不得与业务状态混写等 5 条规范。重构后 275 行，通过 registry 驱动，新增动画只需改 registry 一处。
+
+- **types.ts**：新增 `ParamMeta`（参数控件元数据）、`SidebarExtraProps`（侧边栏扩展 props）类型；`AnimationConfig` 扩展 `paramMeta`/`supportsDiscovery`/`DiscoveryComponent`/`discoverySteps`/`SidebarExtra`/`CenterExtra` 可选字段
+- **animationRegistry.ts**：所有动画条目增加 `paramMeta`（原页面层 paramConfigs 230 行合并至此）；`anim-uniform-acceleration` 增加 `supportsDiscovery`/`DiscoveryComponent`/`discoverySteps`/`CenterExtra`；`anim-free-fall` 增加 `supportsDiscovery`/`DiscoveryComponent`/`discoverySteps`/`SidebarExtra`
+- **AnimationPage.tsx**：773→275 行，移除硬编码 paramConfigs/discoverySteps/特异 UI，通过 registry 可选字段驱动渲染，切换动画时重置 mode
+- **FreeFallSidebar.tsx**（新建）：自由落体特异 UI（环境预设/时间切片/牛顿管按钮组），从页面层下沉到 features/
+- **UniformAccelerationCenterExtra.tsx**（新建）：匀变速动画模式中心区域扩展（公式面板 + VT 图），从页面层下沉到 features/
+- **UniformAccelerationDiscoverySteps.tsx**（新建）：匀变速发现模式 6 步骤定义，从页面层下沉到 features/
+- **FreeFallDiscoverySteps.tsx**（新建）：自由落体发现模式 5 步骤定义，从页面层下沉到 features/
+- **useAppStore.ts**：新增 `discoveryMaxStep`/`setDiscoveryMaxStep`，修复 `nextDiscoveryStep` 硬编码步数上限
+
+### 项目规范整合至 .trae/rules/project_rules.md
+
+原规范散布在 AGENT.md + docs/agent-rules/core/ + docs/agent-rules/ui/ 多处，每次需手动查找。整合至 Trae IDE 默认加载位置，自动生效。
+
+- **.trae/rules/project_rules.md**（新建）：整合 AGENT.md + ARCHITECTURE_RULES + UI 规范核心内容（17 节），Trae IDE 每次任务自动加载
+- **AGENT.md**：精简为按需加载索引，指向 .trae/rules/project_rules.md 为自动加载入口
+- **ARCHITECTURE_RULES.md**：添加 .trae/rules/project_rules.md 引用说明
+
 ## 2026-06-03
 
 ### 三屏布局响应式改造
