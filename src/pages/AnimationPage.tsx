@@ -16,6 +16,7 @@ import type { DiscoveryStepData } from '@/components/UI/DiscoveryGuide'
 import { duration, easing } from '@/theme/motion'
 import { ThreePanel } from '@/components/Layout'
 import { useAnimationFrame } from '@/utils/animation'
+import TimeSliceFormulaPanel from '@/features/mechanics/TimeSliceFormulaPanel'
 
 export default function AnimationPage() {
   const { id } = useParams<{ id: string }>()
@@ -267,8 +268,16 @@ export default function AnimationPage() {
               />
             </div>
           ) : (
-            <div className="p-4">
-              <PhysicsPanel quantities={physicsQuantities} />
+            <div className="p-4 h-full flex flex-col">
+              <div className="flex-1 min-h-0">
+                <PhysicsPanel quantities={physicsQuantities} />
+              </div>
+              {id === 'anim-free-fall' && showTimeSlices && (
+                <TimeSliceFormulaPanel
+                  g={params.g ?? 9.8}
+                  v0={params.v0 ?? 0}
+                />
+              )}
             </div>
           )
         }

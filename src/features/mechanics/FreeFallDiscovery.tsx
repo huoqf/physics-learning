@@ -244,7 +244,7 @@ export default function FreeFallDiscovery() {
           </g>
         )}
 
-        {showVectors && (
+        {showVectors && !isLanded && (
           <g>
             <line
               x1={stageWidth * 0.5}
