@@ -8,12 +8,14 @@ interface AppState {
   sidebarOpen: boolean
   mode: AnimationMode
   discoveryStep: number
+  discoveryMaxStep: number
   setTheme: (theme: Theme) => void
   toggleTheme: () => void
   setSidebarOpen: (open: boolean) => void
   toggleSidebar: () => void
   setMode: (mode: AnimationMode) => void
   setDiscoveryStep: (step: number) => void
+  setDiscoveryMaxStep: (max: number) => void
   nextDiscoveryStep: () => void
   prevDiscoveryStep: () => void
   resetDiscovery: () => void
@@ -24,6 +26,7 @@ export const useAppStore = create<AppState>((set) => ({
   sidebarOpen: true,
   mode: 'animation',
   discoveryStep: 0,
+  discoveryMaxStep: 5,
   setTheme: (theme) => set({ theme }),
   toggleTheme: () => set((state) => ({
     theme: state.theme === 'light' ? 'dark' : 'light'
@@ -34,8 +37,9 @@ export const useAppStore = create<AppState>((set) => ({
   })),
   setMode: (mode) => set({ mode, discoveryStep: 0 }),
   setDiscoveryStep: (step) => set({ discoveryStep: step }),
+  setDiscoveryMaxStep: (max) => set({ discoveryMaxStep: max }),
   nextDiscoveryStep: () => set((state) => ({
-    discoveryStep: Math.min(state.discoveryStep + 1, 5)
+    discoveryStep: Math.min(state.discoveryStep + 1, state.discoveryMaxStep)
   })),
   prevDiscoveryStep: () => set((state) => ({
     discoveryStep: Math.max(state.discoveryStep - 1, 0)

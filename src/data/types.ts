@@ -1,4 +1,5 @@
 import type { LazyExoticComponent, ComponentType } from 'react'
+import type { DiscoveryStepData } from '@/components/UI/DiscoveryGuide'
 
 export interface KnowledgeNode {
   id: string
@@ -11,12 +12,45 @@ export interface KnowledgeNode {
   prerequisites: string[]
 }
 
+/** 参数控件元数据 */
+export interface ParamMeta {
+  key: string
+  label: string
+  min: number
+  max: number
+  step?: number
+  unit?: string
+}
+
+/** 侧边栏扩展组件 props */
+export interface SidebarExtraProps {
+  params: Record<string, number>
+  updateParam: (key: string, value: number) => void
+  showTimeSlices: boolean
+  toggleTimeSlices: () => void
+  showDualObjects: boolean
+  toggleDualObjects: () => void
+  disabled?: boolean
+}
+
 export interface AnimationConfig {
   id: string
   title: string
   knowledgeId: string
   Component: LazyExoticComponent<ComponentType>
   defaultParams: Record<string, number>
+  /** 参数控件元数据（替代页面层硬编码的 paramConfigs） */
+  paramMeta?: ParamMeta[]
+  /** 是否支持发现模式 */
+  supportsDiscovery?: boolean
+  /** 发现模式组件（lazy 加载） */
+  DiscoveryComponent?: LazyExoticComponent<ComponentType>
+  /** 发现模式步骤（lazy 加载） */
+  discoverySteps?: () => Promise<{ default: DiscoveryStepData[] }>
+  /** 左侧侧边栏扩展组件（环境预设、时间切片等特异 UI） */
+  SidebarExtra?: LazyExoticComponent<ComponentType<SidebarExtraProps>>
+  /** 中心区域扩展组件（VT图+公式面板等，动画模式下动画上方的特异布局） */
+  CenterExtra?: LazyExoticComponent<ComponentType>
 }
 
 export interface Problem {

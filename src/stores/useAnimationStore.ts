@@ -11,6 +11,8 @@ interface AnimationState {
   showVectors: boolean
   showFormulas: boolean
   showGrid: boolean
+  showTimeSlices: boolean
+  showDualObjects: boolean
   motionMode: MotionMode
   setAnimationType: (type: string | null) => void
   setParams: (params: Record<string, number>) => void
@@ -21,6 +23,8 @@ interface AnimationState {
   toggleVectors: () => void
   toggleFormulas: () => void
   toggleGrid: () => void
+  toggleTimeSlices: () => void
+  toggleDualObjects: () => void
   setMotionMode: (mode: MotionMode) => void
   reset: () => void
 }
@@ -34,6 +38,8 @@ export const useAnimationStore = create<AnimationState>((set) => ({
   showVectors: true,
   showFormulas: true,
   showGrid: true,
+  showTimeSlices: false,
+  showDualObjects: false,
   motionMode: 'auto-v',
   setAnimationType: (type) => set({ animationType: type }),
   setParams: (params) => set({ params }),
@@ -46,6 +52,8 @@ export const useAnimationStore = create<AnimationState>((set) => ({
   toggleVectors: () => set((state) => ({ showVectors: !state.showVectors })),
   toggleFormulas: () => set((state) => ({ showFormulas: !state.showFormulas })),
   toggleGrid: () => set((state) => ({ showGrid: !state.showGrid })),
+  toggleTimeSlices: () => set((state) => ({ showTimeSlices: !state.showTimeSlices })),
+  toggleDualObjects: () => set((state) => ({ showDualObjects: !state.showDualObjects })),
   setMotionMode: (mode) => set({ motionMode: mode }),
   reset: () => set({
     animationType: null,
@@ -56,6 +64,8 @@ export const useAnimationStore = create<AnimationState>((set) => ({
     showVectors: true,
     showFormulas: true,
     showGrid: true,
+    showTimeSlices: false,
+    showDualObjects: false,
     motionMode: 'auto-v',
   })
 }))

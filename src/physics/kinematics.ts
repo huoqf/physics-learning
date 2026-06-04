@@ -65,3 +65,49 @@ export function calculateCircularFromPeriod(r: number, T: number): { omega: numb
     a_c: r * omega * omega
   };
 }
+
+interface FreeFallPoint {
+  time: number;
+  y: number;
+  v: number;
+  a: number;
+}
+
+export function calculateFreeFallWithDrag(v0: number, g: number, dragK: number, m: number, totalTime: number, dt: number = 0.001): { positions: FreeFallPoint[]; finalY: number; finalV: number; isTerminal: boolean } {
+  if (dragK === 0) {
+    const points: FreeFallPoint[] = [];
+    for (let t = 0; t <= totalTime + 0.0001; t += 0.1) {
+      const { v, y } = calculateFreeFall(v0, g, t);
+      points.push({ time: t, y, v, a: g });
+    }
+    const { v: finalV, y: finalY } = calculateFreeFall(v0, g, totalTime);
+    return { positions: points, finalY, finalV, isTerminal: false };
+  }
+
+  const points: FreeFallPoint[] = [];
+  let currentV = v0;
+  let currentY = 0;
+  let t = 0;
+
+  points.push({ time: 0, y: 0, v: v0, a: g });
+
+  const terminalV = Math.sqrt((m * g) / dragK);
+
+  while (t <= totalTime + 0.0001) {
+    const acceleration = g - (dragK * currentV * Math.abs(currentV)) / m;
+    currentV += acceleration * dt;
+    currentY += currentV * dt;
+    t += dt;
+
+    if (Math.abs(acceleration) < 0.001 || Math.abs(currentV) >= terminalV * 0.999) {
+      break;
+    }
+  }
+
+  return {
+    positions: points,
+    finalY: currentY,
+    finalV: currentV,
+    isTerminal: Math.abs(currentV) >= terminalV * 0.999
+  };
+}

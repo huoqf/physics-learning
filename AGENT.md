@@ -1,31 +1,31 @@
 # AGENT.md — Trae VIBE CODE 执行入口
 
-> **面向 AI Agent / Trae VIBE CODE 的唯一自动加载入口。**
-> 每次任务开始前读本文件 + `ARCHITECTURE_RULES.md`，按需加载其余文档。
+> **面向 AI Agent / Trae VIBE CODE 的执行入口。**
+> 核心规范已整合至 `.trae/rules/project_rules.md`（Trae IDE 自动加载），本文件保留按需加载索引与任务标记约定。
 
 ---
 
-## 🎯 项目目标
+## 🚀 规范加载策略
 
-1. 建立完整且清晰的高中物理知识结构
-2. 用交互动画帮助理解物理现象与概念
-3. 通过真题拆解帮助学习者建立解题思路
-4. 可长期扩展，便于持续加入新章节、新题型与新场景
+### 自动加载（无需手动读取）
 
----
+```
+.trae/rules/project_rules.md — 核心规范（Trae IDE 每次任务自动加载）
+```
 
-## 🚀 按需加载速查
+该文件已整合：项目目标、技术栈、目录结构、组件分层、全局铁律、状态管理、数据层、坐标系统、动画系统、路由、代码规范、UI 规范核心摘要、依赖管理、性能测试、构建打包、任务 Checklist。
 
 ### 必读（每次任务）
 
 ```
-AGENT.md → ARCHITECTURE_RULES.md → 当前里程碑 ROADMAP_Mx_*.md
+.trae/rules/project_rules.md → 当前里程碑 ROADMAP_Mx_*.md
 ```
 
 ### 按需读取（触发时才读，否则跳过）
 
 | 触发条件 | 读取文档 |
 |---------|---------|
+| 需要架构细则/铁律权威定义 | `docs/agent-rules/core/ARCHITECTURE_RULES.md` |
 | 涉及 UI 组件 / 布局 / 颜色 / 间距 | `docs/agent-rules/ui/02_UI_RULES.md` |
 | 涉及过渡动画 / easing | `docs/agent-rules/ui/03_MOTION_RULES.md` |
 | 实现 AnalysisPage / 解析页布局 | `docs/agent-rules/ui/04_ANALYSIS_PAGE_RULES.md` |
@@ -34,7 +34,7 @@ AGENT.md → ARCHITECTURE_RULES.md → 当前里程碑 ROADMAP_Mx_*.md
 | 查看全局进度 / 选下一个任务 | `docs/agent-rules/roadmap/ROADMAP_PROGRESS.md` |
 | 申报依赖 / 查历史决策 / 追问题 | `docs/agent-rules/process/PROCESS_LOG.md` |
 
-> **文档优先级**：AGENT.md > ARCHITECTURE_RULES > 02_UI > 03~06
+> **文档优先级**：`.trae/rules/project_rules.md` > ARCHITECTURE_RULES > 02_UI > 03~06
 
 ### 无需读文档，直接 import 代码
 
@@ -56,46 +56,13 @@ AGENT.md → ARCHITECTURE_RULES.md → 当前里程碑 ROADMAP_Mx_*.md
 
 | 里程碑 | 文档 | 依赖 |
 |--------|------|------|
-| [M0] 基础架构 | `roadmap/ROADMAP_M0_FOUNDATION.md` | — |
-| [M1] 力学动画 | `roadmap/ROADMAP_M1_MECHANICS.md` | M0 |
-| [M2] 力学完善 | `roadmap/ROADMAP_M2_POLISH.md` | M1 |
-| [M3] 真题训练 | `roadmap/ROADMAP_M3_EXAM.md` | M1（可与 M2 并行）|
-| [M4] 电磁/热/光/原子 | `roadmap/ROADMAP_M4_PHYSICS.md` | M2 |
+| [M0] 基础架构 | `docs/agent-rules/roadmap/ROADMAP_M0_FOUNDATION.md` | — |
+| [M1] 力学动画 | `docs/agent-rules/roadmap/ROADMAP_M1_MECHANICS.md` | M0 |
+| [M2] 力学完善 | `docs/agent-rules/roadmap/ROADMAP_M2_POLISH.md` | M1 |
+| [M3] 真题训练 | `docs/agent-rules/roadmap/ROADMAP_M3_EXAM.md` | M1（可与 M2 并行）|
+| [M4] 电磁/热/光/原子 | `docs/agent-rules/roadmap/ROADMAP_M4_PHYSICS.md` | M2 |
 
 执行顺序：M0 → M1 → (M2 ‖ M3) → M4
-
----
-
-## 🔴 全局铁律（不得违反）
-
-1. **Token 唯一来源**：颜色/间距/圆角/阴影/动效一律从 `src/theme/` import，禁止组件内硬编码
-2. **Store 唯一命名**：动画状态统一使用 `useAnimationStore`，禁止另建 `usePhysicsState`
-3. **纯函数物理计算**：`src/physics/` 函数必须纯函数，无副作用，有 JSDoc + 单位注释
-4. **HashRouter Only**：禁止 `BrowserRouter`（Electron `file://` 兼容）
-5. **依赖先申报**：新增 npm 包必须先在 `PROCESS_LOG.md` 申报再安装
-6. **修改必记录**：每次提交前在 `PROCESS_LOG.md` 添加记录
-7. **里程碑顺序**：严格 M0→M1→(M2‖M3)→M4
-8. **Canvas 坐标**：物理坐标 y↑正方向，Canvas 渲染通过 `physicsToCanvas()` 反转，禁止魔法数字
-9. **calculateCoulombForce**：已在 `src/physics/dynamics.ts`，M4 直接 import，禁止重复实现
-
-> 铁律细则见 `ARCHITECTURE_RULES.md` 对应章节
-
----
-
-## 🗂️ 目录结构与路由表
-
-> 详见 `ARCHITECTURE_RULES.md §2（目录结构）+ §9（路由表）`
-
----
-
-## ✅ 任务完成 Checklist
-
-- [ ] 当前里程碑文件对应任务打 `[x]`
-- [ ] `PROCESS_LOG.md` 添加代码修改记录
-- [ ] 新增依赖已在 `PROCESS_LOG.md` 申报
-- [ ] 无 hardcode 颜色/间距（全部从 `src/theme` import）
-- [ ] 纯函数有 JSDoc + 参数单位注释
-- [ ] `ROADMAP_PROGRESS.md` 里程碑状态已更新
 
 ---
 
@@ -110,4 +77,4 @@ AGENT.md → ARCHITECTURE_RULES.md → 当前里程碑 ROADMAP_Mx_*.md
 
 ---
 
-*最后更新：2026-06-03 | 合并 CORE_RULES.md 入本文件，删除目录/路由重复，修复过时路径*
+*最后更新：2026-06-04 | 核心规范迁移至 .trae/rules/project_rules.md，本文件保留按需加载索引*

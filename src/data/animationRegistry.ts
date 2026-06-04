@@ -7,168 +7,289 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     title: '速度演示',
     knowledgeId: 'mechanics-1-3',
     Component: lazy(() => import('@/features/mechanics/VelocityAnimation')),
-    defaultParams: { v: 5, t: 0 }
+    defaultParams: { v: 5, t: 0 },
+    paramMeta: [
+      { key: 'v', label: '速度 v', min: 0, max: 20, step: 0.1, unit: 'm/s' },
+    ],
   },
   'anim-acceleration': {
     id: 'anim-acceleration',
     title: '加速度演示',
     knowledgeId: 'mechanics-1-4',
     Component: lazy(() => import('@/features/mechanics/AccelerationAnimation')),
-    defaultParams: { v0: 0, a: 2, t: 0 }
+    defaultParams: { v0: 0, a: 2, t: 0 },
+    paramMeta: [
+      { key: 'v0', label: '初速度 v₀', min: 0, max: 20, step: 0.1, unit: 'm/s' },
+      { key: 'a', label: '加速度 a', min: -5, max: 5, step: 0.1, unit: 'm/s²' },
+    ],
   },
   'anim-uniform-acceleration': {
     id: 'anim-uniform-acceleration',
     title: '匀变速直线运动',
     knowledgeId: 'mechanics-2-1',
     Component: lazy(() => import('@/features/mechanics/UniformAccelerationAnimation')),
-    defaultParams: { v0: 0, a: 1.5, t: 0 }
+    defaultParams: { v0: 0, a: 1.5, t: 0 },
+    paramMeta: [
+      { key: 'v0', label: '初速度 v₀', min: 0, max: 20, step: 0.1, unit: 'm/s' },
+      { key: 'a', label: '加速度 a', min: -5, max: 5, step: 0.1, unit: 'm/s²' },
+    ],
+    supportsDiscovery: true,
+    DiscoveryComponent: lazy(() => import('@/features/mechanics/UniformAccelerationDiscovery')),
+    discoverySteps: () => import('@/features/mechanics/UniformAccelerationDiscoverySteps').then(m => ({ default: m.default })),
+    CenterExtra: lazy(() => import('@/features/mechanics/UniformAccelerationCenterExtra')),
   },
   'anim-free-fall': {
     id: 'anim-free-fall',
     title: '自由落体运动',
     knowledgeId: 'mechanics-2-2',
     Component: lazy(() => import('@/features/mechanics/FreeFallAnimation')),
-    defaultParams: { v0: 0, g: 9.8, t: 0 }
+    defaultParams: { v0: 0, g: 9.8, dragK: 0, m2: 0.003, t: 0 },
+    paramMeta: [
+      { key: 'v0', label: '初速度 v₀', min: -10, max: 10, step: 0.1, unit: 'm/s' },
+      { key: 'g', label: '重力加速度 g', min: 1, max: 20, step: 0.1, unit: 'm/s²' },
+      { key: 'dragK', label: '空气阻力 k', min: 0, max: 2, step: 0.05, unit: 'kg/m' },
+    ],
+    supportsDiscovery: true,
+    DiscoveryComponent: lazy(() => import('@/features/mechanics/FreeFallDiscovery')),
+    discoverySteps: () => import('@/features/mechanics/FreeFallDiscoverySteps').then(m => ({ default: m.default })),
+    SidebarExtra: lazy(() => import('@/features/mechanics/FreeFallSidebar')),
   },
   'anim-vertical-throw': {
     id: 'anim-vertical-throw',
     title: '竖直上抛运动',
     knowledgeId: 'mechanics-2-3',
     Component: lazy(() => import('@/features/mechanics/VerticalThrowAnimation')),
-    defaultParams: { v0: 15, g: 9.8, t: 0 }
+    defaultParams: { v0: 15, g: 9.8, t: 0 },
+    paramMeta: [
+      { key: 'v0', label: '初速度 v₀', min: 0, max: 30, step: 0.1, unit: 'm/s' },
+      { key: 'g', label: '重力加速度 g', min: 5, max: 15, step: 0.1, unit: 'm/s²' },
+    ],
   },
   'anim-spring-force': {
     id: 'anim-spring-force',
     title: '弹力演示',
     knowledgeId: 'mechanics-3-2',
     Component: lazy(() => import('@/features/mechanics/SpringForceAnimation')),
-    defaultParams: { k: 100, x: 0, m: 1 }
+    defaultParams: { k: 100, x: 0, m: 1 },
+    paramMeta: [
+      { key: 'k', label: '劲度系数 k', min: 10, max: 200, step: 5, unit: 'N/m' },
+      { key: 'm', label: '质量 m', min: 0.5, max: 5, step: 0.1, unit: 'kg' },
+    ],
   },
   'anim-friction': {
     id: 'anim-friction',
     title: '摩擦力演示',
     knowledgeId: 'mechanics-3-3',
     Component: lazy(() => import('@/features/mechanics/FrictionAnimation')),
-    defaultParams: { m: 5, mu: 0.3, angle: 0, g: 9.8 }
+    defaultParams: { m: 5, mu: 0.3, angle: 0, g: 9.8 },
+    paramMeta: [
+      { key: 'm', label: '质量 m', min: 1, max: 20, step: 0.5, unit: 'kg' },
+      { key: 'mu', label: '动摩擦系数 μ', min: 0, max: 1, step: 0.05, unit: '' },
+      { key: 'g', label: '重力加速度 g', min: 5, max: 15, step: 0.1, unit: 'm/s²' },
+    ],
   },
   'anim-vector-addition': {
     id: 'anim-vector-addition',
     title: '力的合成与分解',
     knowledgeId: 'mechanics-3-4',
     Component: lazy(() => import('@/features/mechanics/VectorAdditionAnimation')),
-    defaultParams: { f1: 10, f2: 8, angle: 60 }
+    defaultParams: { f1: 10, f2: 8, angle: 60 },
+    paramMeta: [
+      { key: 'f1', label: '力 F₁', min: 1, max: 20, step: 0.5, unit: 'N' },
+      { key: 'f2', label: '力 F₂', min: 1, max: 20, step: 0.5, unit: 'N' },
+      { key: 'angle', label: '夹角 θ', min: 0, max: 180, step: 5, unit: '°' },
+    ],
   },
   'anim-equilibrium': {
     id: 'anim-equilibrium',
     title: '共点力平衡',
     knowledgeId: 'mechanics-3-5',
     Component: lazy(() => import('@/features/mechanics/EquilibriumAnimation')),
-    defaultParams: { f1: 10, f2: 10, f3: 10 }
+    defaultParams: { f1: 10, f2: 10, f3: 10 },
+    paramMeta: [
+      { key: 'f1', label: '力 F₁', min: 1, max: 20, step: 0.5, unit: 'N' },
+      { key: 'f2', label: '力 F₂', min: 1, max: 20, step: 0.5, unit: 'N' },
+      { key: 'f3', label: '力 F₃', min: 1, max: 20, step: 0.5, unit: 'N' },
+    ],
   },
   'anim-newton-second': {
     id: 'anim-newton-second',
     title: '牛顿第二定律',
     knowledgeId: 'mechanics-4-2',
     Component: lazy(() => import('@/features/mechanics/NewtonSecondAnimation')),
-    defaultParams: { F: 10, m: 2, mu: 0 }
+    defaultParams: { F: 10, m: 2, mu: 0 },
+    paramMeta: [
+      { key: 'F', label: '拉力 F', min: 0, max: 50, step: 1, unit: 'N' },
+      { key: 'm', label: '质量 m', min: 0.5, max: 10, step: 0.5, unit: 'kg' },
+      { key: 'mu', label: '动摩擦系数 μ', min: 0, max: 0.5, step: 0.05, unit: '' },
+    ],
   },
   'anim-weightlessness': {
     id: 'anim-weightlessness',
     title: '超重与失重',
     knowledgeId: 'mechanics-4-4',
     Component: lazy(() => import('@/features/mechanics/WeightlessnessAnimation')),
-    defaultParams: { a: 2, g: 9.8, m: 50 }
+    defaultParams: { a: 2, g: 9.8, m: 50 },
+    paramMeta: [
+      { key: 'a', label: '电梯加速度 a', min: -10, max: 10, step: 0.5, unit: 'm/s²' },
+      { key: 'm', label: '质量 m', min: 20, max: 100, step: 5, unit: 'kg' },
+    ],
   },
   'anim-connected-bodies': {
     id: 'anim-connected-bodies',
     title: '连接体问题',
     knowledgeId: 'mechanics-4-5',
     Component: lazy(() => import('@/features/mechanics/ConnectedBodiesAnimation')),
-    defaultParams: { m1: 2, m2: 3, F: 15, mu: 0.1 }
+    defaultParams: { m1: 2, m2: 3, F: 15, mu: 0.1 },
+    paramMeta: [
+      { key: 'm1', label: '质量 m₁', min: 1, max: 10, step: 0.5, unit: 'kg' },
+      { key: 'm2', label: '质量 m₂', min: 1, max: 10, step: 0.5, unit: 'kg' },
+      { key: 'F', label: '拉力 F', min: 5, max: 50, step: 1, unit: 'N' },
+    ],
   },
   'anim-projectile': {
     id: 'anim-projectile',
     title: '平抛运动',
     knowledgeId: 'mechanics-5-2',
     Component: lazy(() => import('@/features/mechanics/ProjectileAnimation')),
-    defaultParams: { v0x: 10, g: 9.8, t: 0 }
+    defaultParams: { v0x: 10, g: 9.8, t: 0 },
+    paramMeta: [
+      { key: 'v0x', label: '初速度 v₀', min: 0, max: 20, step: 0.1, unit: 'm/s' },
+      { key: 'g', label: '重力加速度 g', min: 5, max: 15, step: 0.1, unit: 'm/s²' },
+    ],
   },
   'anim-oblique-throw': {
     id: 'anim-oblique-throw',
     title: '斜抛运动',
     knowledgeId: 'mechanics-5-3',
     Component: lazy(() => import('@/features/mechanics/ObliqueThrowAnimation')),
-    defaultParams: { v0: 15, angle: 45, g: 9.8, t: 0 }
+    defaultParams: { v0: 15, angle: 45, g: 9.8, t: 0 },
+    paramMeta: [
+      { key: 'v0', label: '初速度 v₀', min: 5, max: 30, step: 0.1, unit: 'm/s' },
+      { key: 'angle', label: '抛射角 θ', min: 10, max: 80, step: 1, unit: '°' },
+      { key: 'g', label: '重力加速度 g', min: 5, max: 15, step: 0.1, unit: 'm/s²' },
+    ],
   },
   'anim-circular-motion': {
     id: 'anim-circular-motion',
     title: '匀速圆周运动',
     knowledgeId: 'mechanics-5-4',
     Component: lazy(() => import('@/features/mechanics/CircularMotionAnimation')),
-    defaultParams: { r: 2, omega: 1, t: 0 }
+    defaultParams: { r: 2, omega: 1, t: 0 },
+    paramMeta: [
+      { key: 'r', label: '半径 r', min: 1, max: 10, step: 0.1, unit: 'm' },
+      { key: 'omega', label: '角速度 ω', min: 0.1, max: 5, step: 0.1, unit: 'rad/s' },
+    ],
   },
   'anim-centripetal': {
     id: 'anim-centripetal',
     title: '向心加速度与向心力',
     knowledgeId: 'mechanics-5-5',
     Component: lazy(() => import('@/features/mechanics/CentripetalAnimation')),
-    defaultParams: { r: 2, v: 3, m: 1 }
+    defaultParams: { r: 2, v: 3, m: 1 },
+    paramMeta: [
+      { key: 'r', label: '半径 r', min: 1, max: 5, step: 0.1, unit: 'm' },
+      { key: 'v', label: '线速度 v', min: 1, max: 10, step: 0.5, unit: 'm/s' },
+      { key: 'm', label: '质量 m', min: 0.5, max: 5, step: 0.1, unit: 'kg' },
+    ],
   },
   'anim-kepler': {
     id: 'anim-kepler',
     title: '开普勒定律',
     knowledgeId: 'mechanics-6-1',
     Component: lazy(() => import('@/features/mechanics/KeplerAnimation')),
-    defaultParams: { a: 5, b: 3, period: 10 }
+    defaultParams: { a: 5, b: 3, period: 10 },
+    paramMeta: [
+      { key: 'a', label: '半长轴 a', min: 2, max: 10, step: 0.5, unit: '' },
+      { key: 'b', label: '半短轴 b', min: 1, max: 8, step: 0.5, unit: '' },
+      { key: 'period', label: '周期 T', min: 5, max: 30, step: 1, unit: 's' },
+    ],
   },
   'anim-gravity': {
     id: 'anim-gravity',
     title: '万有引力定律',
     knowledgeId: 'mechanics-6-2',
     Component: lazy(() => import('@/features/mechanics/GravityAnimation')),
-    defaultParams: { m1: 1000, m2: 10, r: 5 }
+    defaultParams: { m1: 1000, m2: 10, r: 5 },
+    paramMeta: [
+      { key: 'm1', label: '质量 m₁', min: 100, max: 5000, step: 100, unit: '' },
+      { key: 'm2', label: '质量 m₂', min: 1, max: 100, step: 1, unit: '' },
+      { key: 'r', label: '距离 r', min: 1, max: 20, step: 0.5, unit: '' },
+    ],
   },
   'anim-satellite': {
     id: 'anim-satellite',
     title: '人造卫星',
     knowledgeId: 'mechanics-6-3',
     Component: lazy(() => import('@/features/mechanics/SatelliteAnimation')),
-    defaultParams: { r: 7, M: 5.97e24, G: 6.67e-11 }
+    defaultParams: { r: 7, M: 5.97e24, G: 6.67e-11 },
+    paramMeta: [
+      { key: 'r', label: '轨道半径', min: 1, max: 20, step: 0.5, unit: '×10⁶ m' },
+    ],
   },
   'anim-kinetic-energy': {
     id: 'anim-kinetic-energy',
     title: '动能定理',
     knowledgeId: 'mechanics-7-3',
     Component: lazy(() => import('@/features/mechanics/KineticEnergyAnimation')),
-    defaultParams: { m: 2, v0: 0, F: 10, s: 5 }
+    defaultParams: { m: 2, v0: 0, F: 10, s: 5 },
+    paramMeta: [
+      { key: 'm', label: '质量 m', min: 0.5, max: 10, step: 0.5, unit: 'kg' },
+      { key: 'F', label: '拉力 F', min: 0, max: 50, step: 1, unit: 'N' },
+      { key: 's', label: '位移 s', min: 1, max: 20, step: 0.5, unit: 'm' },
+    ],
   },
   'anim-energy-conservation': {
     id: 'anim-energy-conservation',
     title: '机械能守恒定律',
     knowledgeId: 'mechanics-7-5',
     Component: lazy(() => import('@/features/mechanics/EnergyConservationAnimation')),
-    defaultParams: { m: 2, h: 10, v0: 0, g: 9.8 }
+    defaultParams: { m: 2, h: 10, v0: 0, g: 9.8 },
+    paramMeta: [
+      { key: 'm', label: '质量 m', min: 0.5, max: 10, step: 0.5, unit: 'kg' },
+      { key: 'h', label: '高度 h', min: 1, max: 20, step: 0.5, unit: 'm' },
+      { key: 'g', label: '重力加速度 g', min: 5, max: 15, step: 0.1, unit: 'm/s²' },
+    ],
   },
   'anim-impulse': {
     id: 'anim-impulse',
     title: '动量定理',
     knowledgeId: 'mechanics-8-3',
     Component: lazy(() => import('@/features/mechanics/MomentumTheoremAnimation')),
-    defaultParams: { m: 2, v0: 0, F: 10, t_duration: 3 }
+    defaultParams: { m: 2, v0: 0, F: 10, t_duration: 3 },
+    paramMeta: [
+      { key: 'm', label: '质量 m', min: 0.5, max: 10, step: 0.5, unit: 'kg' },
+      { key: 'F', label: '力 F', min: 1, max: 20, step: 0.5, unit: 'N' },
+      { key: 't_duration', label: '作用时间 Δt', min: 1, max: 10, step: 0.5, unit: 's' },
+    ],
   },
   'anim-momentum-conservation': {
     id: 'anim-momentum-conservation',
     title: '动量守恒定律',
     knowledgeId: 'mechanics-8-4',
     Component: lazy(() => import('@/features/mechanics/MomentumConservationAnimation')),
-    defaultParams: { m1: 2, m2: 3, v1: 5, v2: 0, e: 0.8 }
+    defaultParams: { m1: 2, m2: 3, v1: 5, v2: 0, e: 0.8 },
+    paramMeta: [
+      { key: 'm1', label: '质量 m₁', min: 0.5, max: 10, step: 0.5, unit: 'kg' },
+      { key: 'm2', label: '质量 m₂', min: 0.5, max: 10, step: 0.5, unit: 'kg' },
+      { key: 'v1', label: '速度 v₁', min: -10, max: 10, step: 0.5, unit: 'm/s' },
+      { key: 'v2', label: '速度 v₂', min: -10, max: 10, step: 0.5, unit: 'm/s' },
+      { key: 'e', label: '恢复系数 e', min: 0, max: 1, step: 0.1, unit: '' },
+    ],
   },
   'anim-collision': {
     id: 'anim-collision',
     title: '弹性碰撞与非弹性碰撞',
     knowledgeId: 'mechanics-8-5',
     Component: lazy(() => import('@/features/mechanics/CollisionAnimation')),
-    defaultParams: { m1: 2, m2: 3, v1: 5, v2: -2, isElastic: 1 }
+    defaultParams: { m1: 2, m2: 3, v1: 5, v2: -2, isElastic: 1 },
+    paramMeta: [
+      { key: 'm1', label: '质量 m₁', min: 0.5, max: 10, step: 0.5, unit: 'kg' },
+      { key: 'm2', label: '质量 m₂', min: 0.5, max: 10, step: 0.5, unit: 'kg' },
+      { key: 'v1', label: '速度 v₁', min: -10, max: 10, step: 0.5, unit: 'm/s' },
+      { key: 'v2', label: '速度 v₂', min: -10, max: 10, step: 0.5, unit: 'm/s' },
+      { key: 'isElastic', label: '弹性碰撞', min: 0, max: 1, step: 1, unit: '0=非弹性 1=弹性' },
+    ],
   },
 
   // ===== 电磁学 · 静电场（[M4-1]）=====
@@ -177,42 +298,73 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     title: '库仑定律',
     knowledgeId: 'electricity-1-1',
     Component: lazy(() => import('@/features/electromagnetism/CoulombLaw')),
-    defaultParams: { q1: 2, q2: -3, r: 4 }
+    defaultParams: { q1: 2, q2: -3, r: 4 },
+    paramMeta: [
+      { key: 'q1', label: '电量 q₁', min: -5, max: 5, step: 0.5, unit: 'μC' },
+      { key: 'q2', label: '电量 q₂', min: -5, max: 5, step: 0.5, unit: 'μC' },
+      { key: 'r', label: '间距 r', min: 1, max: 8, step: 0.5, unit: 'cm' },
+    ],
   },
   'anim-electric-field': {
     id: 'anim-electric-field',
     title: '点电荷电场强度',
     knowledgeId: 'electricity-1-2',
     Component: lazy(() => import('@/features/electromagnetism/ElectricField')),
-    defaultParams: { q: 5, rTest: 3 }
+    defaultParams: { q: 5, rTest: 3 },
+    paramMeta: [
+      { key: 'q', label: '源电量 q', min: -10, max: 10, step: 0.5, unit: 'μC' },
+      { key: 'rTest', label: 'P 点距离', min: 1, max: 6, step: 0.5, unit: 'cm' },
+    ],
   },
   'anim-charge-in-efield': {
     id: 'anim-charge-in-efield',
     title: '带电粒子在匀强电场中运动',
     knowledgeId: 'electricity-1-3',
     Component: lazy(() => import('@/features/electromagnetism/ChargeInEField')),
-    defaultParams: { E: 10, q: 5, m: 200, v0: 20, t: 0 }
+    defaultParams: { E: 10, q: 5, m: 200, v0: 20, t: 0 },
+    paramMeta: [
+      { key: 'E', label: '电场强度 E', min: 1, max: 30, step: 1, unit: '×10³ N/C' },
+      { key: 'q', label: '电量 q', min: 0.5, max: 10, step: 0.5, unit: 'μC' },
+      { key: 'm', label: '质量 m', min: 50, max: 500, step: 10, unit: 'mg' },
+      { key: 'v0', label: '初速度 v₀', min: 5, max: 40, step: 1, unit: 'm/s' },
+    ],
   },
   'anim-capacitor': {
     id: 'anim-capacitor',
     title: '平行板电容器',
     knowledgeId: 'electricity-1-4',
     Component: lazy(() => import('@/features/electromagnetism/Capacitor')),
-    defaultParams: { S: 100, d: 5, epsilon_r: 1, U: 12, connected: 1 }
+    defaultParams: { S: 100, d: 5, epsilon_r: 1, U: 12, connected: 1 },
+    paramMeta: [
+      { key: 'connected', label: '电源状态', min: 0, max: 1, step: 1, unit: '1=接电源 0=断开' },
+      { key: 'S', label: '正对面积 S', min: 20, max: 200, step: 10, unit: 'cm²' },
+      { key: 'd', label: '板间距 d', min: 1, max: 10, step: 0.5, unit: 'mm' },
+      { key: 'epsilon_r', label: '相对介电常数 εᵣ', min: 1, max: 8, step: 0.5, unit: '' },
+      { key: 'U', label: '电源电压 U', min: 1, max: 50, step: 1, unit: 'V' },
+    ],
   },
   'anim-field-lines': {
     id: 'anim-field-lines',
     title: '电场线与等势面',
     knowledgeId: 'electricity-1-5',
     Component: lazy(() => import('@/features/electromagnetism/FieldLines')),
-    defaultParams: { q1: 5, q2: -5, distance: 8, mode: 1 } // mode: 1=异种, 0=同种
+    defaultParams: { q1: 5, q2: -5, distance: 8, mode: 1 },
+    paramMeta: [
+      { key: 'q1', label: '电荷量 q₁', min: -10, max: 10, step: 1, unit: 'μC' },
+      { key: 'q2', label: '电荷量 q₂', min: -10, max: 10, step: 1, unit: 'μC' },
+      { key: 'distance', label: '电荷间距 d', min: 3, max: 15, step: 1, unit: 'cm' },
+    ],
   },
   'anim-electric-potential': {
     id: 'anim-electric-potential',
     title: '电势与等势面',
     knowledgeId: 'electricity-1-6',
     Component: lazy(() => import('@/features/electromagnetism/ElectricPotential')),
-    defaultParams: { q: 5, rTest: 5 }
+    defaultParams: { q: 5, rTest: 5 },
+    paramMeta: [
+      { key: 'q', label: '电荷量 q', min: -10, max: 10, step: 1, unit: 'μC' },
+      { key: 'rTest', label: '试探点距离 r', min: 2, max: 10, step: 0.5, unit: 'cm' },
+    ],
   },
 
   // ===== 电磁学 · 恒定电流（[M4-1]）=====
@@ -221,21 +373,36 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     title: '欧姆定律',
     knowledgeId: 'electricity-2-1',
     Component: lazy(() => import('@/features/electromagnetism/OhmLaw')),
-    defaultParams: { U: 6, R: 3 }
+    defaultParams: { U: 6, R: 3 },
+    paramMeta: [
+      { key: 'U', label: '电压 U', min: 0, max: 12, step: 0.5, unit: 'V' },
+      { key: 'R', label: '电阻 R', min: 1, max: 10, step: 0.5, unit: 'Ω' },
+    ],
   },
   'anim-circuit-analysis': {
     id: 'anim-circuit-analysis',
     title: '串并联电路',
     knowledgeId: 'electricity-2-2',
     Component: lazy(() => import('@/features/electromagnetism/CircuitAnalysis')),
-    defaultParams: { U: 12, R1: 4, R2: 2, mode: 0 }
+    defaultParams: { U: 12, R1: 4, R2: 2, mode: 0 },
+    paramMeta: [
+      { key: 'U', label: '电源电压 U', min: 1, max: 24, step: 1, unit: 'V' },
+      { key: 'R1', label: '电阻 R₁', min: 1, max: 10, step: 1, unit: 'Ω' },
+      { key: 'R2', label: '电阻 R₂', min: 1, max: 10, step: 1, unit: 'Ω' },
+      { key: 'mode', label: '连接方式', min: 0, max: 1, step: 1, unit: '0=串联 1=并联' },
+    ],
   },
   'anim-closed-circuit': {
     id: 'anim-closed-circuit',
     title: '闭合电路欧姆定律',
     knowledgeId: 'electricity-2-3',
     Component: lazy(() => import('@/features/electromagnetism/ClosedCircuit')),
-    defaultParams: { EMF: 6, r: 1, R: 5 }
+    defaultParams: { EMF: 6, r: 1, R: 5 },
+    paramMeta: [
+      { key: 'EMF', label: '电动势 EMF', min: 1, max: 12, step: 0.5, unit: 'V' },
+      { key: 'r', label: '内阻 r', min: 0, max: 5, step: 0.5, unit: 'Ω' },
+      { key: 'R', label: '外电阻 R', min: 0, max: 20, step: 0.5, unit: 'Ω' },
+    ],
   },
 
   // ===== 电磁学 · 磁场（[M4-1]）=====
@@ -244,21 +411,39 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     title: '安培力 F=BIL',
     knowledgeId: 'electricity-3-1',
     Component: lazy(() => import('@/features/electromagnetism/AmpereForce')),
-    defaultParams: { B: 1, I: 2, L: 5, angle: 90 }
+    defaultParams: { B: 1, I: 2, L: 5, angle: 90 },
+    paramMeta: [
+      { key: 'B', label: '磁感应强度 B', min: 0.1, max: 5, step: 0.1, unit: 'T' },
+      { key: 'I', label: '电流 I', min: 0.1, max: 10, step: 0.1, unit: 'A' },
+      { key: 'L', label: '导线长度 L', min: 0.5, max: 10, step: 0.5, unit: 'm' },
+      { key: 'angle', label: '夹角 θ', min: 0, max: 180, step: 5, unit: '°' },
+    ],
   },
   'anim-lorentz-force': {
     id: 'anim-lorentz-force',
     title: '洛伦兹力 F=qvB',
     knowledgeId: 'electricity-3-2',
     Component: lazy(() => import('@/features/electromagnetism/LorentzForce')),
-    defaultParams: { q: 1, v: 10, B: 1, angle: 90 }
+    defaultParams: { q: 1, v: 10, B: 1, angle: 90 },
+    paramMeta: [
+      { key: 'q', label: '电荷量 q', min: -5, max: 5, step: 0.1, unit: 'C' },
+      { key: 'v', label: '速度 v', min: 1, max: 50, step: 1, unit: 'm/s' },
+      { key: 'B', label: '磁感应强度 B', min: 0.1, max: 5, step: 0.1, unit: 'T' },
+      { key: 'angle', label: '夹角 θ', min: 0, max: 180, step: 5, unit: '°' },
+    ],
   },
   'anim-charge-in-bfield': {
     id: 'anim-charge-in-bfield',
     title: '带电粒子在磁场中运动',
     knowledgeId: 'electricity-3-3',
     Component: lazy(() => import('@/features/electromagnetism/ChargeInBField')),
-    defaultParams: { q: 1, m: 1, v: 10, B: 1 }
+    defaultParams: { q: 1, m: 1, v: 10, B: 1 },
+    paramMeta: [
+      { key: 'q', label: '电荷量 q', min: 0.1, max: 5, step: 0.1, unit: 'C' },
+      { key: 'm', label: '质量 m', min: 0.1, max: 5, step: 0.1, unit: 'kg' },
+      { key: 'v', label: '速度 v', min: 1, max: 50, step: 1, unit: 'm/s' },
+      { key: 'B', label: '磁感应强度 B', min: 0.1, max: 5, step: 0.1, unit: 'T' },
+    ],
   },
 
   // ===== 电磁学 · 电磁感应（[M4-1]）=====
@@ -267,21 +452,41 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     title: '法拉第电磁感应定律',
     knowledgeId: 'electricity-4-2',
     Component: lazy(() => import('@/features/electromagnetism/FaradayLaw')),
-    defaultParams: { N: 5, B: 1.2 }
+    defaultParams: { N: 5, B: 1.2 },
+    paramMeta: [
+      { key: 'N', label: '线圈匝数 N', min: 1, max: 10, step: 1, unit: '匝' },
+      { key: 'B', label: '磁铁强度 B', min: 0.2, max: 2.0, step: 0.1, unit: 'T' },
+    ],
   },
   'anim-lenzs-law': {
     id: 'anim-lenzs-law',
     title: '楞次定律',
     knowledgeId: 'electricity-4-1',
     Component: lazy(() => import('@/features/electromagnetism/LenzsLaw')),
-    defaultParams: { magnetSpeed: 2, magnetPole: 1, coilN: 10 }
+    defaultParams: { magnetSpeed: 2, magnetPole: 1, coilN: 10 },
+    paramMeta: [
+      { key: 'magnetSpeed', label: '磁铁速度', min: 0.5, max: 5, step: 0.5, unit: '' },
+      { key: 'magnetPole', label: '磁极朝向', min: -1, max: 1, step: 2, unit: '1=N下 -1=S下' },
+      { key: 'coilN', label: '线圈匝数 N', min: 5, max: 30, step: 5, unit: '匝' },
+      { key: 'motionMode', label: '运动模式', min: -1, max: 1, step: 2, unit: '1=插入 -1=拔出' },
+    ],
   },
   'anim-cutting-emf': {
     id: 'anim-cutting-emf',
     title: '导体切割磁感线',
     knowledgeId: 'electricity-4-3',
     Component: lazy(() => import('@/features/electromagnetism/CuttingEMF')),
-    defaultParams: { B: 1, L: 0.5, v: 2, R: 2, theta: 90, r: 0, B_out: 0, handRule: 0 }
+    defaultParams: { B: 1, L: 0.5, v: 2, R: 2, theta: 90, r: 0, B_out: 0, handRule: 0 },
+    paramMeta: [
+      { key: 'B', label: '磁感应强度 B', min: 0.1, max: 5, step: 0.1, unit: 'T' },
+      { key: 'L', label: '导轨宽度 L', min: 0.1, max: 2, step: 0.1, unit: 'm' },
+      { key: 'v', label: '速度 v', min: -5, max: 5, step: 0.5, unit: 'm/s' },
+      { key: 'R', label: '外电阻 R', min: 0.1, max: 10, step: 0.1, unit: 'Ω' },
+      { key: 'theta', label: '夹角 θ', min: 0, max: 90, step: 5, unit: '°' },
+      { key: 'r', label: '内阻 r', min: 0, max: 2, step: 0.1, unit: 'Ω' },
+      { key: 'B_out', label: '磁场方向', min: 0, max: 1, step: 1, unit: '0=向里⊗ 1=向外⊙' },
+      { key: 'handRule', label: '手指定则', min: 0, max: 2, step: 1, unit: '0=右手 1=左手 2=握拳' },
+    ],
   },
 
   // ===== 电磁学 · 交变电流（[M4-1]）=====
@@ -290,29 +495,53 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     title: '交变电流产生与图像',
     knowledgeId: 'electricity-5-1',
     Component: lazy(() => import('@/features/electromagnetism/ACGeneration')),
-    defaultParams: { B: 0.5, S: 0.04, omega: 2, N: 100, initialPhase: 0 }
+    defaultParams: { B: 0.5, S: 0.04, omega: 2, N: 100, initialPhase: 0 },
+    paramMeta: [
+      { key: 'B', label: '磁感应强度 B', min: 0.1, max: 2, step: 0.1, unit: 'T' },
+      { key: 'S', label: '线圈面积 S', min: 0.01, max: 0.1, step: 0.01, unit: 'm²' },
+      { key: 'omega', label: '角速度 ω', min: 0.5, max: 10, step: 0.5, unit: 'rad/s' },
+      { key: 'N', label: '匝数 N', min: 1, max: 500, step: 10, unit: '匝' },
+      { key: 'initialPhase', label: '初始位置', min: 0, max: 1, step: 1, unit: '0=中性面 1=最大值面' },
+    ],
   },
   'anim-ac-values': {
     id: 'anim-ac-values',
     title: '有效值与峰值关系',
     knowledgeId: 'electricity-5-2',
     Component: lazy(() => import('@/features/electromagnetism/ACValues')),
-    defaultParams: { V_peak: 311, R: 100, f: 2, U_dc: 220, isTesting: 0 }
+    defaultParams: { V_peak: 311, R: 100, f: 2, U_dc: 220, isTesting: 0 },
+    paramMeta: [
+      { key: 'V_peak', label: '峰值电压 Vm', min: 50, max: 500, step: 10, unit: 'V' },
+      { key: 'f', label: '频率 f', min: 0.5, max: 20, step: 0.5, unit: 'Hz' },
+      { key: 'U_dc', label: '直流电压 Udc', min: 0, max: 350, step: 1, unit: 'V' },
+      { key: 'R', label: '负载电阻 R', min: 10, max: 500, step: 10, unit: 'Ω' },
+    ],
   },
   'anim-transformer': {
     id: 'anim-transformer',
     title: '变压器原理',
     knowledgeId: 'electricity-5-3',
     Component: lazy(() => import('@/features/electromagnetism/Transformer')),
-    defaultParams: { n1: 100, n2: 200, U1: 220, R: 50 }
+    defaultParams: { n1: 100, n2: 200, U1: 220, R: 50 },
+    paramMeta: [
+      { key: 'n1', label: '原线圈匝数 n₁', min: 10, max: 500, step: 10, unit: '匝' },
+      { key: 'n2', label: '副线圈匝数 n₂', min: 10, max: 500, step: 10, unit: '匝' },
+      { key: 'U1', label: '输入电压 U₁', min: 10, max: 500, step: 10, unit: 'V' },
+      { key: 'R', label: '负载电阻 R', min: 5, max: 200, step: 5, unit: 'Ω' },
+    ],
   },
   'anim-power-transmission': {
     id: 'anim-power-transmission',
     title: '远距离输电',
     knowledgeId: 'electricity-5-4',
     Component: lazy(() => import('@/features/electromagnetism/PowerTransmission')),
-    defaultParams: { P_send: 100000, U_trans: 10000, R_line: 10 }
-  }
+    defaultParams: { P_send: 100000, U_trans: 10000, R_line: 10 },
+    paramMeta: [
+      { key: 'P_send', label: '输送功率 P', min: 10000, max: 500000, step: 10000, unit: 'W' },
+      { key: 'U_trans', label: '输电电压 U', min: 1000, max: 50000, step: 1000, unit: 'V' },
+      { key: 'R_line', label: '输电线电阻 R', min: 1, max: 50, step: 1, unit: 'Ω' },
+    ],
+  },
 }
 
 export function getAnimationConfig(id: string): AnimationConfig | undefined {

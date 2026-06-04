@@ -6,7 +6,7 @@ import { duration, easing } from '@/theme/motion'
 export interface DiscoveryStepData {
   title: string
   description: string
-  content: React.ReactNode
+  content?: React.ReactNode
   hint?: string
 }
 
@@ -27,9 +27,11 @@ export const DiscoveryGuide: React.FC<DiscoveryGuideProps> = ({
 }) => {
   const [showHint, setShowHint] = useState(false)
   const step = steps[currentStep]
-  const progress = ((currentStep + 1) / steps.length) * 100
+  const progress = steps.length > 0 ? ((currentStep + 1) / steps.length) * 100 : 0
   const isLast = currentStep === steps.length - 1
   const isFirst = currentStep === 0
+
+  if (!step) return null
 
   // 步骤切换时重置提示
   const handleStepClick = (s: number) => {
@@ -103,9 +105,11 @@ export const DiscoveryGuide: React.FC<DiscoveryGuideProps> = ({
       </div>
 
       {/* 步骤内容区（可滚动） */}
-      <div className="flex-1 overflow-y-auto px-3 pb-2 min-h-0">
-        {step.content}
-      </div>
+      {step.content && (
+        <div className="flex-1 overflow-y-auto px-3 pb-2 min-h-0">
+          {step.content}
+        </div>
+      )}
 
       {/* 提示区 */}
       {step.hint && (

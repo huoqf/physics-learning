@@ -16,7 +16,7 @@ interface VTChartProps {
 
 const VT_X_MAX = 8
 const chartAreaW = 300 
-const chartAreaH = 200
+const chartAreaH = 240
 const chartAreaX = 0
 const chartAreaY = 0
 
@@ -63,13 +63,32 @@ export const VTChart: FC<VTChartProps> = ({ physics, params, time }) => { // 接
       <line x1={vtInnerLeft} y1={vtInnerTop} x2={vtInnerLeft} y2={vtInnerTop + vtInnerH} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
       <line x1={vtInnerLeft} y1={vtToChartY(0)} x2={vtInnerLeft + vtInnerW} y2={vtToChartY(0)} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
 
-      {/* 刻度 */}
+      {/* X 轴刻度 */}
       {xticks.map(t => (
         <g key={`xt-${t}`}>
           <line x1={vtToChartX(t)} y1={vtToChartY(0) - 5} x2={vtToChartX(t)} y2={vtToChartY(0) + 5} stroke={CHART_COLORS.tickMark} />
           <text x={vtToChartX(t)} y={vtToChartY(0) + 18} fontSize={9} textAnchor="middle" fill={CHART_COLORS.tickLabel}>{t}</text>
         </g>
       ))}
+
+      {/* Y 轴刻度 */}
+      {(() => {
+        const yticks = []
+        const step = yMax - yMin > 50 ? 20 : (yMax - yMin > 20 ? 10 : 5)
+        for (let v = Math.ceil(yMin / step) * step; v <= yMax; v += step) {
+          yticks.push(v)
+        }
+        return yticks.map(v => (
+          <g key={`yt-${v}`}>
+            <line x1={vtInnerLeft - 5} y1={vtToChartY(v)} x2={vtInnerLeft} y2={vtToChartY(v)} stroke={CHART_COLORS.tickMark} />
+            <text x={vtInnerLeft - 10} y={vtToChartY(v) + 3} fontSize={9} textAnchor="end" fill={CHART_COLORS.tickLabel}>{v}</text>
+          </g>
+        ))
+      })()}
+
+      {/* 坐标轴标签 */}
+      <text x={vtInnerLeft + vtInnerW / 2} y={vtInnerTop + vtInnerH + 30} fontSize={10} textAnchor="middle" fill={CHART_COLORS.labelText}>t/s</text>
+      <text x={vtInnerLeft - 30} y={vtInnerTop + vtInnerH / 2} fontSize={10} textAnchor="middle" fill={CHART_COLORS.labelText} transform={`rotate(-90, ${vtInnerLeft - 30}, ${vtInnerTop + vtInnerH / 2})`}>v/(m·s⁻¹)</text>
 
       {/* v-t 曲线 */}
       {vtVtPathD && (
