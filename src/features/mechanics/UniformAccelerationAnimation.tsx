@@ -3,18 +3,31 @@ import { useEffect } from 'react'
 import { useAnimationStore } from '@/stores'
 import { calculateAcceleratedMotion } from '@/physics'
 import { solveQuadraticTime } from '@/math/numerical'
-import { PHYSICS_COLORS, CANVAS_STYLE, STROKE } from '@/theme/physics'
+import { PHYSICS_COLORS, STROKE } from '@/theme/physics'
 
 export default function UniformAccelerationAnimation() {
   const { params, time, showVectors, showFormulas, showGrid, setIsPlaying } = useAnimationStore()
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 400 })
 
   const { v0 = 0, a = 1.5 } = params
-  const scale = 25
-  const groundY = canvasSize.height - 80
-  const startX = 100
-  const objectWidth = 50
-  const maxVisibleX = canvasSize.width - 50 - objectWidth
+
+  // 完全动态计算，不写死任何像素值
+  const paddingPercent = 0.07
+  const padding = canvasSize.width * paddingPercent
+  const groundYPercent = 0.75
+  const groundY = canvasSize.height * groundYPercent
+
+  // 物体尺寸基于画布尺寸动态计算
+  const objectWidthPercent = 0.07
+  const objectWidth = canvasSize.width * objectWidthPercent
+  const objectHeight = objectWidth
+
+  // 缩放比例基于画布宽度动态计算
+  const scalePercent = 0.035
+  const scale = canvasSize.width * scalePercent
+
+  const startX = padding
+  const maxVisibleX = canvasSize.width - padding
   const maxDisplacement = (maxVisibleX - startX) / scale
   const { s: currentS } = calculateAcceleratedMotion(v0, a, time)
   const isAtBoundary = currentS >= maxDisplacement || currentS <= 0
@@ -33,96 +46,122 @@ export default function UniformAccelerationAnimation() {
     }
   }, [isAtBoundary, time, setIsPlaying])
 
+  // 字体大小动态计算
+  const fontSize = Math.max(10, canvasSize.width * 0.017)
+
+  // 网格线数量基于画布尺寸动态计算
   const gridLines = []
   if (showGrid) {
-    for (let i = 0; i <= 14; i++) {
-      const xPos = startX + (i * (canvasSize.width - 200)) / 14
+    const gridCount = Math.max(10, Math.floor(canvasSize.width / 50))
+    for (let i = 0; i <= gridCount; i++) {
+      const xPos = startX + (i * (maxVisibleX - startX)) / gridCount
       gridLines.push(
         <line
           key={`gridline-${i}`}
           x1={xPos}
-          y1={groundY - 80}
+          y1={groundY - objectHeight * 1.6}
           x2={xPos}
-          y2={groundY + 20}
+          y2={groundY + objectHeight * 0.4}
           stroke={PHYSICS_COLORS.grid}
-          strokeWidth={1}
-          strokeDasharray="4,4"
+          strokeWidth={STROKE.grid}
+          strokeDasharray={`${fontSize * 0.3},${fontSize * 0.3}`}
         />
       )
     }
   }
+
+  // 箭头尺寸动态计算
+  const arrowMarkerSize = fontSize * 0.8
 
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
         {gridLines}
 
+        {/* 地面线 */}
         <line
-          x1={50}
+          x1={padding * 0.5}
           y1={groundY}
-          x2={canvasSize.width - 50}
+          x2={canvasSize.width - padding * 0.5}
           y2={groundY}
           stroke={PHYSICS_COLORS.labelText}
           strokeWidth={STROKE.groundLine}
         />
 
+        {/* 起始线 */}
         <line
           x1={startX}
-          y1={groundY - 100}
+          y1={groundY - objectHeight * 2}
           x2={startX}
-          y2={groundY + 20}
+          y2={groundY + objectHeight * 0.4}
           stroke={PHYSICS_COLORS.axis}
           strokeWidth={2}
-          strokeDasharray="8,4"
+          strokeDasharray={`${fontSize * 0.7},${fontSize * 0.35}`}
         />
 
-        <text x={startX - 10} y={groundY + 35} fontSize="12" fill={PHYSICS_COLORS.axis} textAnchor="middle">0</text>
+        {/* 原点标签 */}
+        <text
+          x={startX - fontSize}
+          y={groundY + fontSize * 1.5}
+          fontSize={fontSize}
+          fill={PHYSICS_COLORS.axis}
+          textAnchor="middle"
+        >
+          0
+        </text>
 
+        {/* 运动物体 */}
         <rect
           x={currentX}
-          y={groundY - 60}
-          width={50}
-          height={50}
+          y={groundY - objectHeight}
+          width={objectWidth}
+          height={objectHeight}
           fill={PHYSICS_COLORS.objectFill}
           stroke={PHYSICS_COLORS.objectStroke}
-          strokeWidth={CANVAS_STYLE.stroke.objectLine}
-          rx={6}
+          strokeWidth={STROKE.objectLine}
+          rx={fontSize * 0.5}
         />
 
-        {showVectors && (
+        {/* 速度箭头 */}
+        {showVectors && displayV !== 0 && (
           <g>
             <line
-              x1={currentX + 50}
-              y1={groundY - 35}
-              x2={currentX + 50 + displayV * 5}
-              y2={groundY - 35}
+              x1={currentX + objectWidth}
+              y1={groundY - objectHeight * 0.6}
+              x2={currentX + objectWidth + displayV * scale * 0.2}
+              y2={groundY - objectHeight * 0.6}
               stroke={PHYSICS_COLORS.velocity}
-              strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+              strokeWidth={STROKE.vectorMain}
               markerEnd="url(#arrowhead-ua-v)"
             />
             <text
-              x={currentX + 50 + displayV * 5 + 15}
-              y={groundY - 30}
-              fontSize="12"
+              x={currentX + objectWidth + displayV * scale * 0.2 + fontSize * 1.2}
+              y={groundY - objectHeight * 0.6 + fontSize * 0.35}
+              fontSize={fontSize}
               fill={PHYSICS_COLORS.velocity}
               fontWeight="bold"
             >
               v
             </text>
+          </g>
+        )}
 
+        {/* 加速度箭头 */}
+        {showVectors && a !== 0 && (
+          <g>
             <line
-              x1={currentX + 25}
-              y1={groundY - 80}
-              x2={currentX + 25 + a * 10}
-              y2={groundY - 80}
+              x1={currentX + objectWidth * 0.5}
+              y1={groundY - objectHeight * 1.4}
+              x2={currentX + objectWidth * 0.5 + a * scale * 0.5}
+              y2={groundY - objectHeight * 1.4}
               stroke={PHYSICS_COLORS.acceleration}
-              strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+              strokeWidth={STROKE.vectorMain}
               markerEnd="url(#arrowhead-ua-a)"
             />
             <text
-              x={currentX + 25 + a * 10 + 15}
-              y={groundY - 75}
-              fontSize="12"
+              x={currentX + objectWidth * 0.5 + a * scale * 0.5 + fontSize * 1.2}
+              y={groundY - objectHeight * 1.4 + fontSize * 0.35}
+              fontSize={fontSize}
               fill={PHYSICS_COLORS.acceleration}
               fontWeight="bold"
             >
@@ -131,12 +170,33 @@ export default function UniformAccelerationAnimation() {
           </g>
         )}
 
+        {/* 箭头标记定义 */}
         <defs>
-          <marker id="arrowhead-ua-v" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
+          <marker
+            id="arrowhead-ua-v"
+            markerWidth={arrowMarkerSize}
+            markerHeight={arrowMarkerSize * 0.7}
+            refX={arrowMarkerSize * 0.9}
+            refY={arrowMarkerSize * 0.35}
+            orient="auto"
+          >
+            <polygon
+              points={`0 0, ${arrowMarkerSize} ${arrowMarkerSize * 0.35}, 0 ${arrowMarkerSize * 0.7}`}
+              fill={PHYSICS_COLORS.velocity}
+            />
           </marker>
-          <marker id="arrowhead-ua-a" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.acceleration} />
+          <marker
+            id="arrowhead-ua-a"
+            markerWidth={arrowMarkerSize}
+            markerHeight={arrowMarkerSize * 0.7}
+            refX={arrowMarkerSize * 0.9}
+            refY={arrowMarkerSize * 0.35}
+            orient="auto"
+          >
+            <polygon
+              points={`0 0, ${arrowMarkerSize} ${arrowMarkerSize * 0.35}, 0 ${arrowMarkerSize * 0.7}`}
+              fill={PHYSICS_COLORS.acceleration}
+            />
           </marker>
         </defs>
       </svg>
