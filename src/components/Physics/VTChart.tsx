@@ -20,8 +20,8 @@ const chartAreaH = 240
 const chartAreaX = 0
 const chartAreaY = 0
 
-export const VTChart: FC<VTChartProps> = ({ physics, params, time }) => { // 接收 time
-  const { v0, a } = params
+export const VTChart: FC<VTChartProps> = ({ physics, params: _params, time }) => { // 接收 time
+  // _params kept for future use; current implementation uses physics.vtChartData
   
   // 计算动态 Y 轴范围，确保包含负速度
   const { yMin, yMax } = useMemo(() => {

@@ -7,10 +7,18 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     title: '速度演示',
     knowledgeId: 'mechanics-1-3',
     Component: lazy(() => import('@/features/mechanics/VelocityAnimation')),
-    defaultParams: { v: 5, t: 0 },
+    defaultParams: {
+      v: 8, t: 0, scene: 0, deltaT: 2, t0: 0, totalDuration: 10, advancedMode: 0,
+      modelIdx: 0, modelK: 1, modelV0: 0, modelA: 5, modelOmega: 2,
+      modelA1: 2, modelVMax: 6, modelA3: 3, modelT1: 3, modelT2Dur: 2,
+      modelTStop: 2, modelA5: 3,
+    },
     paramMeta: [
-      { key: 'v', label: '速度 v', min: 0, max: 20, step: 0.1, unit: 'm/s' },
+      { key: 'v', label: '速度 v', min: 1, max: 20, step: 0.5, unit: 'm/s' },
+      { key: 't0', label: '考察时刻 t₀', min: 0, max: 8, step: 0.5, unit: 's' },
     ],
+    SidebarExtra: lazy(() => import('@/features/mechanics/VelocitySidebar')),
+    CenterExtra: lazy(() => import('@/features/mechanics/VelocityCenterExtra')),
   },
   'anim-acceleration': {
     id: 'anim-acceleration',

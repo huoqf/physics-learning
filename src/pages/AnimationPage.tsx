@@ -81,6 +81,14 @@ export default function AnimationPage() {
     }
   }, [isPlaying])
 
+  // 外部修改 store time 时（如重置、拖动进度条），同步到 currentTimeRef
+  useEffect(() => {
+    // 只在非动画驱动时同步（动画驱动时 time ≈ currentTimeRef）
+    if (!isPlaying) {
+      currentTimeRef.current = time
+    }
+  }, [time, isPlaying])
+
   useAnimationFrame(
     (deltaTime) => {
       currentTimeRef.current += deltaTime / 1000
@@ -220,40 +228,62 @@ export default function AnimationPage() {
               // 动画模式
               <>
                 {/* 中心区域扩展：VT图+公式面板等特异布局 */}
-                {config.CenterExtra && (
-                  <ErrorBoundary resetKey={config.id}>
-                    <Suspense fallback={null}>
-                      <config.CenterExtra />
-                    </Suspense>
-                  </ErrorBoundary>
-                )}
-                <div
-                  className="w-full flex-1 bg-white rounded-xl shadow-md overflow-hidden"
-                  style={{
-                    transition: `opacity ${duration.normal}ms ${easing.standard}`,
-                    opacity: canvasDimmed ? 0.9 : 1,
-                  }}
-                >
-                  <ErrorBoundary resetKey={config.id}>
-                    <Suspense
-                      fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
-                    >
-                      <AnimationComponent />
-                    </Suspense>
-                  </ErrorBoundary>
-                </div>
-                <div className="px-4 pb-4 shrink-0">
-                  <AnimationControls
-                    isPlaying={isPlaying}
-                    speed={speed}
-                    time={time}
-                    maxTime={30}
-                    onPlayPause={() => setIsPlaying(!isPlaying)}
-                    onReset={handleReset}
-                    onSpeedChange={setSpeed}
-                    onTimeChange={setTime}
-                  />
-                </div>
+                {(() => {
+                  const CenterExtraComponent = config.CenterExtra
+                  const isAdvancedVelocity = id === 'anim-velocity' && params.advancedMode === 1
+
+                  // 进阶模式：CenterExtra 接管全部布局（不显示原有 Canvas 和 Controls）
+                  if (isAdvancedVelocity && CenterExtraComponent) {
+                    return (
+                      <ErrorBoundary resetKey={config.id}>
+                        <Suspense fallback={null}>
+                          <CenterExtraComponent />
+                        </Suspense>
+                      </ErrorBoundary>
+                    )
+                  }
+
+                  // 基础模式：保持原有布局，不渲染 VelocityCenterExtra
+                  const isBasicVelocity = id === 'anim-velocity'
+                  return (
+                    <>
+                      {!isBasicVelocity && CenterExtraComponent && (
+                        <ErrorBoundary resetKey={config.id}>
+                          <Suspense fallback={null}>
+                            <CenterExtraComponent />
+                          </Suspense>
+                        </ErrorBoundary>
+                      )}
+                      <div
+                        className="w-full flex-1 bg-white rounded-xl shadow-md overflow-hidden"
+                        style={{
+                          transition: `opacity ${duration.normal}ms ${easing.standard}`,
+                          opacity: canvasDimmed ? 0.9 : 1,
+                        }}
+                      >
+                        <ErrorBoundary resetKey={config.id}>
+                          <Suspense
+                            fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
+                          >
+                            <AnimationComponent />
+                          </Suspense>
+                        </ErrorBoundary>
+                      </div>
+                      <div className="px-4 pb-4 shrink-0">
+                        <AnimationControls
+                          isPlaying={isPlaying}
+                          speed={speed}
+                          time={time}
+                          maxTime={30}
+                          onPlayPause={() => setIsPlaying(!isPlaying)}
+                          onReset={handleReset}
+                          onSpeedChange={setSpeed}
+                          onTimeChange={setTime}
+                        />
+                      </div>
+                    </>
+                  )
+                })()}
               </>
             )}
           </div>

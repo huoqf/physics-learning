@@ -1,3 +1,232 @@
+// ─── 速度概念教学：平均速度 / 瞬时速度 / 割线切线 ────────────────────────────
+
+/**
+ * 计算平均速度
+ * @param x1 初始位置 (m)
+ * @param x2 末位置 (m)
+ * @param t1 初始时刻 (s)
+ * @param t2 末时刻 (s)
+ * @returns 平均速度 v̄ (m/s)、位移差 Δx (m)、时间差 Δt (s)
+ */
+export function calculateAverageVelocity(
+  x1: number, x2: number, t1: number, t2: number
+): { vBar: number; deltaX: number; deltaT: number } {
+  const deltaT = t2 - t1
+  const deltaX = x2 - x1
+  const vBar = deltaT !== 0 ? deltaX / deltaT : 0
+  return { vBar, deltaX, deltaT }
+}
+
+/** 变加速运动模型类型 */
+export type VariableMotionModel = 'force-increasing' | 'shm' | 'multi-stage'
+
+/** 变加速运动模型参数 */
+export interface VariableMotionParams {
+  /** 力递增模型：加速度系数 k (m/s³)，a = k·t */
+  k?: number
+  /** 简谐振动：振幅 A (m) */
+  A?: number
+  /** 简谐振动：角频率 ω (rad/s) */
+  omega?: number
+  /** 多阶段模型：初速度 v0 (m/s) */
+  v0?: number
+  /** 多阶段模型：加速度 a1 (m/s²) */
+  a1?: number
+  /** 多阶段模型：匀速段速度 vMax (m/s) */
+  vMax?: number
+  /** 多阶段模型：减速段加速度 a3 (m/s²)，正值 */
+  a3?: number
+  /** 多阶段模型：加速段时长 t1 (s) */
+  t1?: number
+  /** 多阶段模型：匀速段时长 t2 (s) */
+  t2Duration?: number
+  /** 多阶段模型：卸货停留时长 tStop (s) */
+  tStop?: number
+  /** 多阶段模型：返回段加速度 a5 (m/s²)，正值 */
+  a5?: number
+}
+
+/**
+ * 计算变加速直线运动在时刻 t 的位置、速度、加速度
+ *
+ * 三种模型：
+ * - `'force-increasing'`：a = k·t，v = v₀ + ½k·t²，x = v₀·t + k·t³/6
+ * - `'shm'`：x = A·sin(ωt)，v = Aω·cos(ωt)，a = -Aω²·sin(ωt)
+ * - `'multi-stage'`：三段式（加速→匀速→减速）
+ *
+ * @param model 运动模型类型
+ * @param params 模型参数
+ * @param t 查询时刻 (s)
+ * @returns 位置 x (m)、速度 v (m/s)、加速度 a (m/s²)
+ */
+export function calculateVariableAcceleration(
+  model: VariableMotionModel,
+  params: VariableMotionParams,
+  t: number
+): { x: number; v: number; a: number } {
+  switch (model) {
+    case 'force-increasing': {
+      // a = k·t, v = v₀ + ½k·t², x = v₀·t + k·t³/6
+      const k = params.k ?? 1
+      const v0 = params.v0 ?? 0
+      return {
+        a: k * t,
+        v: v0 + 0.5 * k * t * t,
+        x: v0 * t + (k * t * t * t) / 6,
+      }
+    }
+    case 'shm': {
+      // x = A·sin(ωt), v = Aω·cos(ωt), a = -Aω²·sin(ωt)
+      const A = params.A ?? 5
+      const omega = params.omega ?? 2
+      return {
+        x: A * Math.sin(omega * t),
+        v: A * omega * Math.cos(omega * t),
+        a: -A * omega * omega * Math.sin(omega * t),
+      }
+    }
+    case 'multi-stage': {
+      // 五段式：正向加速(a1) → 正向匀速(vMax) → 正向减速(a3) → 卸货停留 → 快速返回(a5)
+      const v0 = params.v0 ?? 0
+      const a1 = params.a1 ?? 2
+      const vMax = params.vMax ?? 6
+      const a3 = params.a3 ?? 3
+      const t1 = params.t1 ?? 3
+      const t2Duration = params.t2Duration ?? 2
+      const tStop = params.tStop ?? 2
+      const a5 = params.a5 ?? 3
+
+      // 阶段1：正向加速 0→t1End
+      const t1End = t1
+      const x1End = v0 * t1 + 0.5 * a1 * t1 * t1
+
+      // 阶段2：正向匀速 t1End→t2End
+      const t2End = t1End + t2Duration
+      const x2End = x1End + vMax * t2Duration
+
+      // 阶段3：正向减速 t2End→t3End
+      const t3Duration = vMax / a3
+      const t3End = t2End + t3Duration
+      const x3End = x2End + vMax * t3Duration - 0.5 * a3 * t3Duration * t3Duration
+
+      // 阶段4：卸货停留 t3End→t4End
+      const t4End = t3End + tStop
+
+      // 阶段5：快速返回 t4End→t5End
+      const t5Duration = Math.sqrt(2 * x3End / a5)
+      const t5End = t4End + t5Duration
+
+      if (t <= t1End) {
+        // 阶段1：正向加速
+        return {
+          x: v0 * t + 0.5 * a1 * t * t,
+          v: v0 + a1 * t,
+          a: a1,
+        }
+      } else if (t <= t2End) {
+        // 阶段2：正向匀速
+        const dt = t - t1End
+        return {
+          x: x1End + vMax * dt,
+          v: vMax,
+          a: 0,
+        }
+      } else if (t <= t3End) {
+        // 阶段3：正向减速
+        const dt = t - t2End
+        return {
+          x: x2End + vMax * dt - 0.5 * a3 * dt * dt,
+          v: vMax - a3 * dt,
+          a: -a3,
+        }
+      } else if (t <= t4End) {
+        // 阶段4：卸货停留
+        return {
+          x: x3End,
+          v: 0,
+          a: 0,
+        }
+      } else if (t <= t5End) {
+        // 阶段5：快速返回（向左加速）
+        const dt = t - t4End
+        return {
+          x: x3End - 0.5 * a5 * dt * dt,
+          v: -a5 * dt,
+          a: -a5,
+        }
+      } else {
+        // 全程结束，回到起点
+        return { x: 0, v: 0, a: 0 }
+      }
+    }
+  }
+}
+
+/**
+ * 计算割线斜率（平均速度的几何意义）
+ *
+ * 在 x-t 图象上，连接 t₀ 和 t₀+Δt 两点的割线斜率即为该时间段的平均速度。
+ *
+ * @param model 运动模型类型
+ * @param params 模型参数
+ * @param t0 考察时刻 (s)
+ * @param deltaT 时间间隔 Δt (s)，必须 > 0
+ * @returns 割线斜率 slope (m/s)、位移差 deltaX (m)、时间差 deltaT (s)
+ */
+export function calculateSecantSlope(
+  model: VariableMotionModel,
+  params: VariableMotionParams,
+  t0: number,
+  deltaT: number
+): { slope: number; deltaX: number; deltaT: number } {
+  const p0 = calculateVariableAcceleration(model, params, t0)
+  const p1 = calculateVariableAcceleration(model, params, t0 + deltaT)
+  const deltaX = p1.x - p0.x
+  const slope = deltaT !== 0 ? deltaX / deltaT : 0
+  return { slope, deltaX, deltaT }
+}
+
+/**
+ * 计算切线斜率（瞬时速度的几何意义）
+ *
+ * 使用解析导数直接计算，而非数值逼近。
+ *
+ * @param model 运动模型类型
+ * @param params 模型参数
+ * @param t0 考察时刻 (s)
+ * @returns 切线斜率即瞬时速度 (m/s)
+ */
+export function calculateTangentSlope(
+  model: VariableMotionModel,
+  params: VariableMotionParams,
+  t0: number
+): number {
+  const { v } = calculateVariableAcceleration(model, params, t0)
+  return v
+}
+
+/**
+ * 计算瞬时速度逼近：同时给出割线斜率（平均速度）和切线斜率（瞬时速度）及其残差
+ *
+ * 用于进阶版"Δt→0 极限逼近"教学演示。
+ *
+ * @param model 运动模型类型
+ * @param params 模型参数
+ * @param t0 考察时刻 (s)
+ * @param deltaT 时间间隔 Δt (s)
+ * @returns 割线斜率 vBar (m/s)、切线斜率 vInst (m/s)、绝对残差 residual (m/s)
+ */
+export function calculateInstantaneousVelocity(
+  model: VariableMotionModel,
+  params: VariableMotionParams,
+  t0: number,
+  deltaT: number
+): { vBar: number; vInst: number; residual: number } {
+  const { slope: vBar } = calculateSecantSlope(model, params, t0, deltaT)
+  const vInst = calculateTangentSlope(model, params, t0)
+  return { vBar, vInst, residual: Math.abs(vBar - vInst) }
+}
+
 export function calculateUniformMotion(v: number, t: number): { s: number } {
   return { s: v * t };
 }

@@ -2,6 +2,37 @@
 
 ## 2026-06-05
 
+### 速度动画进阶版重构（归属 [M1] 力学动画 · 知识点 mechanics-1-3）
+
+原始速度动画为单一匀速运动页面，升级为基础版+进阶版双模式教学页面。
+
+**基础版改动：**
+- **VelocityAnimation.tsx**：保持原有 Canvas 动画（7元素+5标注），参数面板 Δt 步进器绑定 `updateParam('deltaT')` 修复无反应问题
+- **VelocitySidebar.tsx**：新增进阶模式 toggle 按钮（竖直上抛风格），进阶模式隐藏生活场景；Δt 步进器改为 `updateParam('deltaT')` 统一入口
+
+**进阶版新增：**
+- **kinematics.ts**：新增5个纯函数（`calculateAverageVelocity`/`calculateVariableAcceleration`/`calculateSecantSlope`/`calculateTangentSlope`/`calculateInstantaneousVelocity`）；`calculateVariableAcceleration` 支持三种模型：变加速(a=kt)、简谐振动(x=Asinωt)、往返多阶段5段式
+- **VelocityCenterExtra.tsx**（新建）：进阶版三合一布局容器，landscape 时图表左右并列在上动画在下；包含信息条（割线/切线斜率+残差）+ 动画控制栏
+- **VelocityXTChart.tsx**（新建）：x-t 图象独立组件（SVG viewBox），7元素：坐标系/曲线/P点/割线/切线/直角三角形/放大镜；支持滑动窗口（SHM 2周期+自动平移）；曲线随动画同步逐步绘制
+- **VelocityVTChart.tsx**（新建）：v-t 图象独立组件，6元素：坐标系/v(t)曲线/当前点/速度水平线/Δt面积/平均速度v̄水平线；同上滑动窗口+同步绘制
+- **VelocityAnimationStrip.tsx**（新建）：进阶版运动动画带（SVG），三种模型渲染不同动画：变加速小车+加速度箭头/简谐振动弹簧+小球/往返多阶段小车+A/B标志+路程/位移指示
+- **physicsQuantities.ts**：`anim-velocity` 分支重写为基础版6行+2卡片 / 进阶版8行+3卡片；多阶段专属看板（当前阶段/加速度/速度/位移/路程/平均速度/平均速率/核心对比）
+- **animationRegistry.ts**：`anim-velocity` 新增 `SidebarExtra`/`CenterExtra`，defaultParams 扩展进阶版参数（advancedMode/modelIdx/modelK~modelA5 共15个）
+- **colors.ts**：新增5个 token（averageVelocity/secantLine/tangentLine/deltaHighlight/magnifier）
+
+**Bug 修复：**
+- VelocityCenterExtra 缺少 `speed`/`setTime`/`setSpeed` 解构导致进阶版崩溃（"该内容暂时无法显示"）
+- VelocityAnimationStrip `toPixelX`/`scale` 定义在 useMemo 外部导致非响应式
+- SHM 的 xRange 用 tMax 时刻单点值计算导致范围极小且不对称，改为用振幅 A 对称计算
+- SHM 图表 tMax=30 导致9.5个周期挤成粗线，改为2个周期+滑动窗口自动平移
+- x-t 图曲线颜色用 velocity 蓝色与 v-t 图混淆，改为 displacement 靛蓝色
+- 切换运动模型时动画时间不重置，VelocitySidebar 切换时增加 `setTime(0)`+`setIsPlaying(false)`
+- 进阶版重置按钮只改 store time 不改 AnimationPage 的 currentTimeRef，播放从旧位置继续；AnimationPage 新增 useEffect 同步
+- x-t/v-t 图进入页面就显示全曲线，改为只绘制到当前动画时间 t0，y轴范围仍用全范围预计算避免跳动
+
+**测试：**
+- **kinematics.test.ts**（新建）：23个测试覆盖5个纯函数+5段式多阶段模型
+
 ### 竖直上抛运动三屏联动重构 + 进阶模式（归属 [M1] 力学动画）
 
 原始 VerticalThrowAnimation 为简单单区 SVG（小球+速度箭头+公式文字叠加），不符合三屏联动设计。完全重写为中屏双核布局（物理演练区 + 图象联动区），并新增进阶模式。

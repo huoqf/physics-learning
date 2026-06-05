@@ -26,6 +26,7 @@ export const KINEMATICS_COLORS = {
   velocity:           '#2563EB', // 速度 v            — Velocity Blue    (primary-600)
   velocityX:          '#3B82F6', // 速度 x 分量        — primary-500（分量浅一阶）   ★新增
   velocityY:          '#60A5FA', // 速度 y 分量        — primary-400                ★新增
+  averageVelocity:    '#D97706', // 平均速度 v̄         — Average Amber (amber-600)  ★新增
   acceleration:       '#DC2626', // 加速度 a           — Acceleration Red (danger-600)
   accelerationX:      '#EF4444', // 加速度 x 分量      — danger-500                 ★新增
   accelerationY:      '#F87171', // 加速度 y 分量      — danger-400                 ★新增
@@ -37,6 +38,10 @@ export const KINEMATICS_COLORS = {
   angularAccel:       '#B45309', // 角加速度 α         — accent-700（角量用暖黄系）   ★新增
   period:             '#64748B', // 周期 T             — neutral-500（辅助量，弱化）  ★新增
   frequency:          '#64748B', // 频率 f             — neutral-500                ★新增
+  secantLine:         '#6B7280', // 割线               — Secant Gray (gray-500)     ★新增
+  tangentLine:        '#DC2626', // 切线               — Tangent Red (danger-600)   ★新增
+  deltaHighlight:     '#93C5FD', // Δx/Δt 示性三角形   — Delta Blue (blue-300)      ★新增
+  magnifier:          '#374151', // 放大镜边框          — Magnifier Gray (gray-700)  ★新增
 } as const
 
 // ─── 动力学 (Dynamics) ────────────────────────────────────────────────────────

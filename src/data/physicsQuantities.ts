@@ -8,7 +8,6 @@ import {
   GRAVITY,
   GRAVITATIONAL_CONSTANT,
   EARTH_MASS,
-  calculateUniformMotion,
   calculateAcceleratedMotion,
   calculateFreeFall,
   calculateProjectileMotion,
@@ -33,7 +32,12 @@ import {
   calculateACRMS,
   calculateTransformerWithLoad,
   calculatePowerTransmission,
+  calculateAverageVelocity,
+  calculateVariableAcceleration,
+  calculateSecantSlope,
+  calculateInstantaneousVelocity,
 } from '../physics'
+import type { VariableMotionModel, VariableMotionParams } from '../physics'
 
 const COULOMB_K = 9e9
 const VACUUM_PERMITTIVITY = 8.85e-12
@@ -74,9 +78,133 @@ export function buildPhysicsQuantities(
 
   switch (animId) {
     case 'anim-velocity': {
-      const v = params.v ?? 5
-      const { s } = calculateUniformMotion(v, time)
-      return { quantities: [...base, { label: '速度 v', value: v, unit: 'm/s' }, { label: '位移 s', value: s, unit: 'm' }] }
+      const isAdvanced = (params.advancedMode ?? 0) === 1
+
+      if (!isAdvanced) {
+        // ── 基础版：生活场景，平均速度 vs 瞬时速度 ──
+        const v = params.v ?? 8
+        const deltaT = params.deltaT ?? 2
+        const t0 = params.t0 ?? 0
+        const t1 = t0
+        const t2 = t0 + deltaT
+        const x1 = v * t1
+        const x2 = v * t2
+        const { vBar, deltaX } = calculateAverageVelocity(x1, x2, t1, t2)
+        const isDeltaTSmall = deltaT <= 0.05
+        const conceptStatus = isDeltaTSmall
+          ? 'Δt 极小，平均速度≈瞬时速度'
+          : deltaT <= 0.5
+            ? 'Δt 较小，平均速度接近瞬时速度'
+            : 'Δt 较大，平均速度无法代表该瞬间'
+
+        return {
+          quantities: [
+            ...base,
+            { label: '当前时刻 t', value: t0, unit: 's' },
+            { label: '选定间隔 Δt', value: deltaT, unit: 's' },
+            { label: '通过位移 Δx', value: deltaX, unit: 'm' },
+            { label: '平均速度 v̄', value: vBar, unit: 'm/s', highlight: 'positive' as const },
+            { label: '仪表盘 v', value: v, unit: 'm/s' },
+            { label: '概念状态', value: conceptStatus, unit: '' },
+          ],
+          gaokaoPoints: [
+            { text: '速度是矢量，方向就是物体此时的运动方向', importance: 'core' as const },
+            { text: '平均速度大小不一定等于平均速率', importance: 'hard' as const },
+          ],
+        }
+      } else {
+        // ── 进阶版：图象极限逼近 ──
+        const modelIdx = params.modelIdx ?? 0
+        const model: VariableMotionModel = ['force-increasing', 'shm', 'multi-stage'][modelIdx] as VariableMotionModel
+        const modelParams: VariableMotionParams = {
+          k: params.modelK ?? 1,
+          v0: params.modelV0 ?? 0,
+          A: params.modelA ?? 5,
+          omega: params.modelOmega ?? 2,
+          a1: params.modelA1 ?? 2,
+          vMax: params.modelVMax ?? 6,
+          a3: params.modelA3 ?? 3,
+          t1: params.modelT1 ?? 3,
+          t2Duration: params.modelT2Dur ?? 2,
+          tStop: params.modelTStop ?? 2,
+          a5: params.modelA5 ?? 3,
+        }
+        const t0 = params.t0 ?? 2
+        const deltaT = params.deltaT ?? 0.5
+        const { vBar, vInst, residual } = calculateInstantaneousVelocity(model, modelParams, t0, deltaT)
+        const { deltaX } = calculateSecantSlope(model, modelParams, t0, deltaT)
+        const { a } = calculateVariableAcceleration(model, modelParams, t0)
+
+        if (model === 'multi-stage') {
+          // ── 多阶段专属看板 ──
+          const currentState = calculateVariableAcceleration(model, modelParams, time)
+          const vMax = modelParams.vMax ?? 6
+          const t1 = modelParams.t1 ?? 3
+          const t2Dur = modelParams.t2Duration ?? 2
+          const a3 = modelParams.a3 ?? 3
+          const tStop = modelParams.tStop ?? 2
+          const t1End = t1
+          const t2End = t1End + t2Dur
+          const t3Dur = vMax / a3
+          const t3End = t2End + t3Dur
+          const t4End = t3End + tStop
+          let stageName = '正向加速'
+          if (time > t4End) stageName = '快速返回'
+          else if (time > t3End) stageName = '卸货停留'
+          else if (time > t2End) stageName = '正向减速'
+          else if (time > t1End) stageName = '正向匀速'
+          // 路程近似计算
+          let totalDist = 0
+          const pathSteps = 200
+          let prevX = 0
+          for (let i = 1; i <= pathSteps; i++) {
+            const t = (time * i) / pathSteps
+            const s = calculateVariableAcceleration(model, modelParams, t)
+            totalDist += Math.abs(s.x - prevX)
+            prevX = s.x
+          }
+          const avgSpeed = time > 0 ? currentState.x / time : 0
+          const avgRate = time > 0 ? totalDist / time : 0
+
+          return {
+            quantities: [
+              ...base,
+              { label: '当前阶段', value: stageName, unit: '' },
+              { label: '加速度 a', value: currentState.a, unit: 'm/s²' },
+              { label: '瞬时速度 v', value: currentState.v, unit: 'm/s' },
+              { label: '位移 x', value: currentState.x, unit: 'm' },
+              { label: '路程 s', value: totalDist, unit: 'm' },
+              { label: '平均速度 v̄', value: avgSpeed, unit: 'm/s' },
+              { label: '平均速率 v_率', value: avgRate, unit: 'm/s' },
+              { label: '核心对比', value: '位移≠路程，平均速度≠平均速率', unit: '' },
+            ],
+            gaokaoPoints: [
+              { text: '往返全程位移为0，平均速度即为0', importance: 'gaokao' as const },
+              { text: '速度正负仅代表方向，不代表大小', importance: 'core' as const },
+              { text: '多阶段运动求全程平均速度，必须用总位移÷总时间', importance: 'hard' as const },
+            ],
+          }
+        }
+
+        return {
+          quantities: [
+            ...base,
+            { label: '目标时刻 t₀', value: t0, unit: 's' },
+            { label: '微元窗口 Δt', value: deltaT, unit: 's' },
+            { label: '坐标增量 Δx', value: deltaX, unit: 'm' },
+            { label: '割线斜率 v̄', value: vBar, unit: 'm/s' },
+            { label: '切线斜率 v', value: vInst, unit: 'm/s', highlight: 'positive' as const },
+            { label: '加速度 a', value: a, unit: 'm/s²' },
+            { label: '绝对残差 |v̄-v|', value: residual, unit: 'm/s', highlight: residual < 0.1 ? 'zero' as const : 'negative' as const },
+            { label: '微积分映射', value: 'v = dx/dt = x\'(t)', unit: '' },
+          ],
+          gaokaoPoints: [
+            { text: 'x-t 图线切线斜率表速度，拐点速度为零', importance: 'gaokao' as const },
+            { text: '运动方向由斜率正负决定', importance: 'core' as const },
+            { text: '纸带求瞬时速度，本质利用了中间时刻速度思想', importance: 'hard' as const },
+          ],
+        }
+      }
     }
     case 'anim-acceleration': {
       const v0 = params.v0 ?? 0
