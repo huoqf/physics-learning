@@ -37,6 +37,24 @@ export default function AccelerationSidebar({
     setIsPlaying(false)
   }
 
+  // ── 进阶版：转向点验证快捷 ──
+  const handleTurnPointVerify = () => {
+    updateParam('v0', 12)
+    updateParam('a', -3)
+    updateParam('motionMode', 0)
+    setTime(0)
+    setIsPlaying(false)
+  }
+
+  // ── 进阶版：变加速探究快捷 ──
+  const handleVariableAccel = () => {
+    updateParam('v0', 0)
+    updateParam('a', 4)
+    updateParam('motionMode', 1)
+    setTime(0)
+    setIsPlaying(false)
+  }
+
   return (
     <>
       {/* ── 基础版：Δt 三档切换 ── */}
@@ -105,6 +123,32 @@ export default function AccelerationSidebar({
           </p>
         )}
       </div>
+
+      {/* ── 进阶版：教学快捷操作 ── */}
+      {isAdvanced && (
+        <div className="mt-4 pt-3 border-t border-neutral-200">
+          <p className="text-xs font-semibold text-neutral-600 mb-2">教学快捷操作</p>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={handleTurnPointVerify}
+              disabled={disabled}
+              className="w-full py-2 text-xs rounded-md font-medium bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-all active:scale-95"
+            >
+              转向点验证：v₀=12, a=-3
+            </button>
+            <button
+              onClick={handleVariableAccel}
+              disabled={disabled}
+              className="w-full py-2 text-xs rounded-md font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-all active:scale-95"
+            >
+              变加速探究：v₀=0, a₀=4, 变加速
+            </button>
+          </div>
+          <p className="mt-2 text-[10px] text-neutral-400 leading-tight">
+            验证 v=0 时 a≠0 转向点特征，或观察变加速运动斜率直角三角形的连续变扁过程。
+          </p>
+        </div>
+      )}
     </>
   )
 }

@@ -10,6 +10,7 @@ import {
   EARTH_MASS,
   calculateAcceleratedMotion,
   calculateFreeFall,
+  calculateEarthGravity,
   calculateProjectileMotion,
   calculateObliqueThrow,
   calculateCircularMotion,
@@ -39,6 +40,8 @@ import {
   calculateDualObjectComparison,
   determineMotionState,
   calculateVariableAccelerationMotion,
+  calculateFrictionPullModel,
+  calculateFrictionInclineModel,
 } from '../physics'
 import type { VariableMotionModel, VariableMotionParams } from '../physics'
 
@@ -343,17 +346,85 @@ export function buildPhysicsQuantities(
       }
     }
     case 'anim-free-fall': {
-      const v0 = params.v0 ?? 0
-      const g = params.g ?? GRAVITY
-      const { v, y } = calculateFreeFall(v0, g, time)
-      return {
-        quantities: [
-          ...base,
-          { label: '初速度 v₀', value: v0, unit: 'm/s' },
-          { label: '重力加速度 g', value: g, unit: 'm/s²' },
-          { label: '速度 v', value: v, unit: 'm/s' },
-          { label: '位移 y', value: y, unit: 'm' },
-        ],
+      const advancedMode = params.advancedMode ?? 0
+
+      if (advancedMode === 0) {
+        // ── 基础模式：牛顿管实验 ──
+        const v0 = params.v0 ?? 0
+        const g = params.g ?? GRAVITY
+        const pressure = params.pressure ?? 0
+        const objectA = params.objectA ?? 0
+        const objectB = params.objectB ?? 0
+        const { v: vA } = calculateFreeFall(v0, g, time)
+        const { v: vB } = calculateFreeFall(v0, g, time)
+        // 阻力估算（简化：用当前速度估算阻力大小）
+        const baseDragA = objectA === 0 ? 0.001 : 0.01
+        const baseDragB = objectB === 0 ? 0.02 : 0.015
+        const dragK_A = pressure * baseDragA
+        const dragK_B = pressure * baseDragB
+        const fAirA = dragK_A * vA * Math.abs(vA)
+        const fAirB = dragK_B * vB * Math.abs(vB)
+        const envStatus = pressure < 0.01 ? '趋近自由落体' : pressure < 0.3 ? '空气阻力较小' : '空气阻力显著'
+
+        return {
+          quantities: [
+            ...base,
+            { label: 'A 动力学方程', value: pressure < 0.01 ? 'a = g' : 'mg - f = ma', unit: '' },
+            { label: 'B 动力学方程', value: pressure < 0.01 ? 'a = g' : 'mg - f = ma', unit: '' },
+            { label: 'A 速度 v_A', value: vA, unit: 'm/s', highlight: 'positive' as const },
+            { label: 'B 速度 v_B', value: vB, unit: 'm/s', highlight: sign(vB) },
+            { label: 'A 阻力 f_A', value: fAirA, unit: 'N', highlight: fAirA > 0.01 ? 'negative' as const : 'zero' as const },
+            { label: 'B 阻力 f_B', value: fAirB, unit: 'N', highlight: fAirB > 0.01 ? 'negative' as const : 'zero' as const },
+            { label: '环境状态', value: envStatus, unit: '', highlight: pressure < 0.01 ? 'positive' as const : undefined },
+          ],
+          formulas: [
+            { name: '自由落体速度', latex: 'v = gt' },
+            { name: '自由落体位移', latex: 'h = \\frac{1}{2}gt^2' },
+            { name: '速度位移关系', latex: 'v^2 = 2gh' },
+          ],
+          gaokaoPoints: [
+            { text: '自由落体是初速度为零、仅受重力、加速度为g的匀加速运动', importance: 'core' as const },
+            { text: '伽利略用"微斜面实验+合理外推"证明了自由落体规律', importance: 'gaokao' as const },
+            { text: '实际落体运动中，若重力远大于阻力，可近似看作自由落体', importance: 'hard' as const },
+          ],
+        }
+      } else {
+        // ── 进阶模式：滴水法测g ──
+        const latitude = params.latitude ?? 45
+        const altitude = params.altitude ?? 0
+        const dripPeriod = params.dripPeriod ?? 0.5
+        const R_EARTH = 6371e3
+        // 纬度修正
+        const gLat = 9.780 * (1 + 0.005302 * Math.sin(latitude * Math.PI / 180) ** 2)
+        // 海拔修正
+        const gAlt = gLat * (R_EARTH / (R_EARTH + altitude * 1000)) ** 2
+        // 滴水法测g：h = 0.5g(2T)²
+        const h2T = 0.5 * gAlt * (2 * dripPeriod) ** 2
+        const gMeasured = (2 * h2T) / ((2 * dripPeriod) ** 2)
+
+        return {
+          quantities: [
+            ...base,
+            { label: '滴水周期 T', value: dripPeriod, unit: 's' },
+            { label: '纬度 φ', value: latitude, unit: '°' },
+            { label: '海拔 H', value: altitude, unit: 'km' },
+            { label: '纬度修正 g', value: gLat, unit: 'm/s²' },
+            { label: '海拔修正 g\'', value: gAlt, unit: 'm/s²' },
+            { label: '2T内下落 h', value: h2T, unit: 'm' },
+            { label: '测得 g', value: gMeasured, unit: 'm/s²', highlight: 'positive' as const },
+          ],
+          formulas: [
+            { name: '滴水法核心', latex: 'h = \\frac{1}{2}g(2T)^2' },
+            { name: '纬度影响', latex: 'g = 9.780(1 + 0.005302\\sin^2\\phi)' },
+            { name: '海拔影响', latex: "g' = g_0 \\left(\\frac{R}{R+H}\\right)^2" },
+            { name: '重力与万有引力', latex: 'mg = G\\frac{Mm}{R^2}' },
+          ],
+          gaokaoPoints: [
+            { text: '重力加速度g随纬度升高而增大，随高度增加而减小', importance: 'core' as const },
+            { text: '滴水法测g相当于反向利用打点计时器，周期T的精度是关键', importance: 'gaokao' as const },
+            { text: '在地球两极，物体受到的重力等于万有引力', importance: 'hard' as const },
+          ],
+        }
       }
     }
     case 'anim-vertical-throw': {
@@ -951,6 +1022,208 @@ export function buildPhysicsQuantities(
       }
     }
 
+    case 'anim-gravity-basic': {
+      const mode = params.mode ?? 0
+      const BASE_CENTER = { x: 5, y: 5 }
+
+      if (mode === 0) {
+        // 地球自转模式
+        const latitude = params.latitude ?? 45
+        const omegaScale = params.omegaScale ?? 80
+        const m = 1.0
+        const F_gravitation = 100 // 相对基准大小
+        const { F_grav, F_centripetal, G_force, angleDeviation } = calculateEarthGravity(
+          latitude, m, F_gravitation, omegaScale
+        )
+        return {
+          quantities: [
+            ...base,
+            { label: '研究物体质量 m', value: m, unit: 'kg' },
+            { label: '地理纬度 φ', value: latitude, unit: '°' },
+            { label: '引力 F_引 (相对)', value: F_grav.toFixed(1), unit: 'N' },
+            { label: '向心力 F_向 (相对)', value: F_centripetal.toFixed(1), unit: 'N', highlight: F_centripetal > 1.5 ? 'positive' : undefined },
+            { label: '实际重力 G (相对)', value: G_force.toFixed(1), unit: 'N', highlight: 'positive' as const },
+            { label: '重力偏角 θ', value: angleDeviation.toFixed(2), unit: '°', highlight: angleDeviation > 0.5 ? 'extreme' : undefined }
+          ],
+          formulas: [
+            { name: '引力分解关系', latex: '\\vec{F}_{\\text{引}} = \\vec{G} + \\vec{F}_{\\text{向}}' },
+            { name: '极点状态(向心力=0)', latex: 'G = F_{\\text{引}}' },
+            { name: '赤道状态(向心力最大)', latex: 'G = F_{\\text{引}} - F_{\\text{向}}' }
+          ],
+          gaokaoPoints: [
+            { text: '重力是万有引力的一个分力，方向竖直向下不指向地心。', importance: 'core' as const },
+            { text: '重力加速度 g 随纬度升高而增大，随海拔升高而减小。', importance: 'gaokao' as const },
+            { text: '在两极重力等于引力；在赤道重力最小且方向指向地心。', importance: 'hard' as const }
+          ]
+        }
+      } else {
+        // 悬挂重心实验模式
+        const activeHoleIdx = params.suspendPoint ?? 0
+        const showWeight = params.showWeight ?? 0
+        const weightX = params.weightX ?? 25
+        const weightY = params.weightY ?? 25
+        const weightMass = params.weightMass ?? 1.2
+
+        let localCenterX = BASE_CENTER.x
+        let localCenterY = BASE_CENTER.y
+        if (showWeight === 1) {
+          const totalMass = 1.0 + weightMass
+          localCenterX = (BASE_CENTER.x * 1.0 + weightX * weightMass) / totalMass
+          localCenterY = (BASE_CENTER.y * 1.0 + weightY * weightMass) / totalMass
+        }
+
+        return {
+          quantities: [
+            ...base,
+            { label: '当前悬挂孔', value: `A${activeHoleIdx + 1}`, unit: '' },
+            { label: '板自身质量', value: '1.0', unit: '相对值' },
+            { label: '配重块状态', value: showWeight === 1 ? '已启用' : '未启用', unit: '' },
+            ...(showWeight === 1 ? [
+              { label: '配重相对质量 M', value: weightMass, unit: '倍' },
+              { label: '配重坐标 (x,y)', value: `(${weightX}, ${weightY})`, unit: '' }
+            ] : []),
+            { label: '组合重心坐标 X', value: localCenterX.toFixed(1), unit: '' },
+            { label: '组合重心坐标 Y', value: localCenterY.toFixed(1), unit: '' }
+          ],
+          formulas: [
+            { name: '重心位置公式', latex: 'x_C = \\frac{\\sum m_i x_i}{\\sum m_i}' },
+            { name: '静力矩平衡条件', latex: '\\sum M_i = 0' },
+            { name: '悬挂平衡原理', latex: 'G \\cdot d = 0 \\implies d = 0' }
+          ],
+          gaokaoPoints: [
+            { text: '重心是物体各部分受重力等效作用点，可处于实体之外。', importance: 'core' as const },
+            { text: '悬挂平衡时重力与拉力共线，多次悬挂交线交点即重心。', importance: 'gaokao' as const },
+            { text: '重心位置由物体几何形状和质量分布（如加配重）决定。', importance: 'hard' as const }
+          ]
+        }
+      }
+    }
+
+    case 'anim-gravity': {
+      const m1 = params.m1 ?? 1000
+      const m2 = params.m2 ?? 10
+      const r = params.r ?? 5
+      const G = 6.67e-11
+      const F = G * m1 * m2 / (r * r)
+      return {
+        quantities: [
+          ...base,
+          { label: '引力质量 m₁', value: m1, unit: '相对值' },
+          { label: '引力质量 m₂', value: m2, unit: '相对值' },
+          { label: '天体间距 r', value: r, unit: '相对值' },
+          { label: '万有引力 F', value: F.toExponential(2), unit: '相对值', highlight: 'positive' as const },
+          { label: '引力常数 G', value: '6.67×10⁻¹¹', unit: 'N·m²/kg²' }
+        ],
+        formulas: [
+          { name: '万有引力定律', latex: 'F = G \\frac{m_1 m_2}{r^2}' }
+        ],
+        gaokaoPoints: [
+          { text: '万有引力是重力的本源，重力通常是万有引力的一个分力。', importance: 'core' as const },
+          { text: '天体间距远大于自身半径时，天体才能简化为质点模型。', importance: 'basic' as const },
+          { text: '引力常数 G 由英国物理学家卡文迪什通过扭秤实验测得。', importance: 'gaokao' as const }
+        ]
+      }
+    }
+    case 'anim-spring-force': {
+      const k = params.k ?? 100
+      const m = params.m ?? 1
+      const omega = Math.sqrt(k / m)
+      const amplitude = 0.5
+      const displacement = amplitude * Math.sin(omega * time)
+      const springForce = -k * displacement
+      const potentialEnergy = 0.5 * k * displacement * displacement
+      return {
+        quantities: [
+          ...base,
+          { label: '劲度系数 k', value: k, unit: 'N/m' },
+          { label: '振子质量 m', value: m, unit: 'kg' },
+          { label: '实时位移 x', value: displacement.toFixed(2), unit: 'm', highlight: displacement > 0 ? 'positive' : displacement < 0 ? 'negative' : 'zero' },
+          { label: '实时弹力 F_弹', value: springForce.toFixed(1), unit: 'N', highlight: springForce > 0 ? 'positive' : springForce < 0 ? 'negative' : 'zero' },
+          { label: '弹性势能 E_p', value: potentialEnergy.toFixed(2), unit: 'J', highlight: potentialEnergy > 0.05 ? 'extreme' : undefined },
+          { label: '固有角频率 ω', value: omega.toFixed(2), unit: 'rad/s' }
+        ],
+        formulas: [
+          { name: '胡克定律', latex: 'F = -kx' },
+          { name: '弹性势能', latex: 'E_p = \\frac{1}{2}kx^2' }
+        ],
+        gaokaoPoints: [
+          { text: '胡克定律中的 x 是形变量（拉伸或压缩量），非弹簧长度。', importance: 'core' as const },
+          { text: '弹力方向总是指向弹簧形变恢复的方向，与形变方向相反。', importance: 'core' as const },
+          { text: 'F-x图像的斜率代表劲度系数k，图线围成的面积表弹性势能。', importance: 'gaokao' as const }
+        ]
+      }
+    }
+    case 'anim-friction': {
+      const mode = params.mode ?? 0
+      const m = params.m ?? 5
+      const mu = params.mu ?? 0.3
+      const g = params.g ?? GRAVITY
+
+      if (mode === 0) {
+        // 水平外力模型 (f-F)
+        const F_applied = params.F_applied ?? 15
+        const { F_normal, f_max, f_slip, f_actual, a, F_net, isSliding } = calculateFrictionPullModel(m, mu, F_applied, g)
+
+        return {
+          quantities: [
+            ...base,
+            { label: '木箱质量 m', value: m, unit: 'kg' },
+            { label: '动摩擦因数 μ', value: mu, unit: '' },
+            { label: '支持力 F_N', value: F_normal.toFixed(2), unit: 'N' },
+            { label: '外拉力 F', value: F_applied.toFixed(2), unit: 'N', highlight: 'positive' as const },
+            { label: '最大静摩擦力 f_max', value: f_max.toFixed(2), unit: 'N' },
+            { label: '滑动摩擦力 f_slip', value: f_slip.toFixed(2), unit: 'N' },
+            { label: '实际摩擦力 f', value: f_actual.toFixed(2), unit: 'N', highlight: isSliding ? 'negative' as const : undefined },
+            { label: '合外力 F_合', value: F_net.toFixed(2), unit: 'N', highlight: F_net > 0.05 ? 'positive' as const : 'zero' as const },
+            { label: '加速度 a', value: a.toFixed(2), unit: 'm/s²', highlight: a > 0.05 ? 'positive' as const : 'zero' as const },
+            { label: '运动状态', value: isSliding ? '匀加速滑动' : '静止', unit: '', highlight: isSliding ? 'positive' as const : undefined }
+          ],
+          formulas: [
+            { name: '最大静摩擦力', latex: 'f_{\\text{max}} = \\mu_s F_N = 1.12\\mu mg' },
+            { name: '滑动摩擦力', latex: 'f_{\\text{slip}} = \\mu F_N = \\mu mg' },
+            { name: '静止状态 (F \\le f_{\\text{max}})', latex: 'f = F' },
+            { name: '滑动状态 (F > f_{\\text{max}})', latex: 'f = f_{\\text{slip}},\\quad a = \\frac{F - f_{\\text{slip}}}{m}' }
+          ],
+          gaokaoPoints: [
+            { text: '静摩擦力是被动力，随外力变化而变化，范围为 0 至最大静摩擦力。', importance: 'core' as const },
+            { text: '滑动摩擦力大小仅取决于正压力和动摩擦因数，与物体的运动速度、接触面积均无关。', importance: 'core' as const },
+            { text: '最大静摩擦力略大于滑动摩擦力（本系统设为 1.12 倍），临界时摩擦力大小会发生突跳。', importance: 'gaokao' as const },
+            { text: '解答摩擦力问题必须先进行状态判定：究竟是静摩擦力还是滑动摩擦力。', importance: 'gaokao' as const }
+          ]
+        }
+      } else {
+        // 斜面倾角模型 (f-θ)
+        const angle = params.angle ?? 15
+        const { F_normal, F_gravity_parallel, f_max, f_actual, a, criticalAngle, isSliding } = calculateFrictionInclineModel(m, mu, angle, g)
+
+        return {
+          quantities: [
+            ...base,
+            { label: '木箱质量 m', value: m, unit: 'kg' },
+            { label: '斜面倾角 θ', value: angle.toFixed(0), unit: '°' },
+            { label: '支持力 F_N', value: F_normal.toFixed(2), unit: 'N' },
+            { label: '下滑分力 G_x', value: F_gravity_parallel.toFixed(2), unit: 'N' },
+            { label: '最大静摩擦力 f_max', value: f_max.toFixed(2), unit: 'N' },
+            { label: '实际摩擦力 f', value: f_actual.toFixed(2), unit: 'N', highlight: isSliding ? 'negative' as const : undefined },
+            { label: '临界下滑角 θ_c', value: criticalAngle.toFixed(1), unit: '°', highlight: 'extreme' as const },
+            { label: '加速度 a', value: a.toFixed(2), unit: 'm/s²', highlight: a > 0.05 ? 'positive' as const : 'zero' as const },
+            { label: '运动状态', value: isSliding ? '匀加速下滑' : '静止平衡', unit: '', highlight: isSliding ? 'positive' as const : undefined }
+          ],
+          formulas: [
+            { name: '斜面支持力', latex: 'F_N = mg\\cos\\theta' },
+            { name: '下滑重力分力', latex: 'G_x = mg\\sin\\theta' },
+            { name: '静止平衡 (\\theta \\le \\theta_c)', latex: 'f = G_x = mg\\sin\\theta' },
+            { name: '下滑滑动 (\\theta > \\theta_c)', latex: 'f = \\mu F_N = \\mu mg\\cos\\theta' }
+          ],
+          gaokaoPoints: [
+            { text: '物体是否会沿斜面下滑的临界条件为：tan θ_c = μ_s（在本例中为 1.12 μ）。', importance: 'gaokao' as const },
+            { text: '静止时摩擦力随倾角 θ 变大而变大（正弦规律）；滑动时随倾角 θ 变大而减小（余弦规律）。', importance: 'hard' as const },
+            { text: '临界下滑角是一个常考考点，当倾角超过临界角时摩擦力会瞬间突变（向下跳转）。', importance: 'gaokao' as const },
+            { text: '若物体的动摩擦因数满足 μ ≥ tan θ，则无论如何释放，物体都会在斜面上保持静止。', importance: 'hard' as const }
+          ]
+        }
+      }
+    }
     default:
       return {
         quantities: [

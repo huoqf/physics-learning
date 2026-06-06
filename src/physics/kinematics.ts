@@ -395,42 +395,79 @@ export function calculateVerticalThrowWithDrag(
  * @param dt 时间步长 (s)，默认 0.02
  * @returns 轨迹点数组和关键时间
  */
+export interface VerticalThrowTrajectoryPoint {
+  t: number
+  v: number
+  y: number
+}
+
+export interface VerticalThrowResult {
+  points: VerticalThrowTrajectoryPoint[]
+  vacuumPoints: VerticalThrowTrajectoryPoint[]
+  peakTime: number
+  landTime: number
+  maxHeight: number
+  peakTimeVac: number
+  landTimeVac: number
+  maxHeightVac: number
+}
+
 export function precomputeVerticalThrowTrajectory(
   v0: number,
   g: number,
   k: number,
   dt: number = 0.02
-): { points: { t: number; v: number; y: number }[]; peakTime: number; landTime: number; maxHeight: number } {
-  if (k === 0) {
-    const peakTime = v0 / g
-    const maxHeight = (v0 * v0) / (2 * g)
-    const landTime = (2 * v0) / g
-    const points: { t: number; v: number; y: number }[] = []
-    for (let t = 0; t <= landTime + dt; t += dt) {
-      const v = v0 - g * t
-      const y = v0 * t - 0.5 * g * t * t
-      points.push({ t, v, y: Math.max(y, 0) })
-    }
-    return { points, peakTime, landTime, maxHeight }
+): VerticalThrowResult {
+  // 1. 计算真空对照组 (vacuumPoints)
+  const peakTimeVac = v0 / g
+  const maxHeightVac = (v0 * v0) / (2 * g)
+  const landTimeVac = (2 * v0) / g
+  const vacuumPoints: VerticalThrowTrajectoryPoint[] = []
+  
+  const vacSteps = Math.ceil(landTimeVac / dt)
+  for (let i = 0; i <= vacSteps; i++) {
+    const t = Math.min(i * dt, landTimeVac)
+    const v = v0 - g * t
+    const y = v0 * t - 0.5 * g * t * t
+    vacuumPoints.push({ t, v, y: Math.max(y, 0) })
   }
-  // 欧拉法
+
+  // 2. 如果无空气阻力，直接复用真空组数据
+  if (k === 0) {
+    return {
+      points: [...vacuumPoints],
+      vacuumPoints,
+      peakTime: peakTimeVac,
+      landTime: landTimeVac,
+      maxHeight: maxHeightVac,
+      peakTimeVac,
+      landTimeVac,
+      maxHeightVac,
+    }
+  }
+
+  // 3. 计算有阻力组 (points)，采用欧拉法数值积分
   let currentV = v0
   let currentY = 0
   let currentTime = 0
   let peakTime = 0
   let maxHeight = 0
   let landTime = 0
-  const points: { t: number; v: number; y: number }[] = [{ t: 0, v: v0, y: 0 }]
+  const points: VerticalThrowTrajectoryPoint[] = [{ t: 0, v: v0, y: 0 }]
   const maxIter = 50000
+
   for (let i = 0; i < maxIter; i++) {
-    const a = -g - k * currentV
+    // 阻力方向与速度方向相反：a = -g - k * v * |v|
+    const a = -g - k * currentV * Math.abs(currentV)
     currentV += a * dt
     currentY += currentV * dt
     currentTime += dt
+
     if (currentY > maxHeight) {
       maxHeight = currentY
       peakTime = currentTime
     }
+
     if (currentY < 0 && currentTime > dt) {
       currentY = 0
       currentV = 0
@@ -440,8 +477,19 @@ export function precomputeVerticalThrowTrajectory(
     }
     points.push({ t: currentTime, v: currentV, y: Math.max(currentY, 0) })
   }
+
   if (landTime === 0) landTime = currentTime
-  return { points, peakTime, landTime, maxHeight }
+
+  return {
+    points,
+    vacuumPoints,
+    peakTime,
+    landTime,
+    maxHeight,
+    peakTimeVac,
+    landTimeVac,
+    maxHeightVac,
+  }
 }
 
 // ─── 加速度概念教学：双物体对比 / 运动状态判定 / 变加速运动 ──────────────────
@@ -555,4 +603,188 @@ export function calculateVariableAccelerationMotion(
   const v = v0 + a0 * t - 0.5 * k * t * t
   const s = v0 * t + 0.5 * a0 * t * t - (k * t * t * t) / 6
   return { v, s, a }
+}
+
+/**
+ * 根据纬度计算重力加速度（Somigliana 近似）
+ * @param latitude 纬度 φ (°)
+ * @returns g (m/s²)
+ */
+export function calcGByLatitude(latitude: number): number {
+  const phi = (latitude * Math.PI) / 180
+  return 9.780327 * (1 + 0.0053024 * Math.sin(phi) * Math.sin(phi) - 0.0000058 * Math.sin(2 * phi) * Math.sin(2 * phi))
+}
+
+/**
+ * 根据海拔修正重力加速度
+ * @param g0 海平面重力加速度 (m/s²)
+ * @param altitude 海拔高度 (km)
+ * @returns 修正后 g (m/s²)
+ */
+export function calcGByAltitude(g0: number, altitude: number): number {
+  const EARTH_RADIUS_KM = 6371
+  return g0 * (EARTH_RADIUS_KM / (EARTH_RADIUS_KM + altitude)) ** 2
+}
+
+export interface FreeFallTrajectoryPoint {
+  t: number
+  y: number
+  v: number
+  a: number
+  fDrag: number
+  swayAngle: number
+  swayDx: number
+}
+
+/**
+ * 预计算带阻力的自由落体轨迹
+ * @param v0 初速度 (m/s)
+ * @param g 重力加速度 (m/s²)
+ * @param dragK 阻力系数 (kg/m)
+ * @param m 质量 (kg)
+ * @param maxFallHeight 最大下落高度 (m)
+ * @param dt 积分步长 (s)，默认 0.001
+ * @param samplingInterval 采样间隔 (s)，默认 0.01
+ */
+export function precomputeFreeFallWithDrag(
+  v0: number,
+  g: number,
+  dragK: number,
+  m: number,
+  maxFallHeight: number,
+  dt: number = 0.001,
+  samplingInterval: number = 0.01
+): { points: FreeFallTrajectoryPoint[]; groundTime: number } {
+  const points: FreeFallTrajectoryPoint[] = []
+  let t = 0
+  let y = 0
+  let v = v0
+  let lastSampleTime = -samplingInterval
+
+  const maxSteps = 100000 // 安全阈值，防止死循环 (相当于 100 秒)
+  let steps = 0
+
+  const addPoint = (time: number, posY: number, velV: number, accA: number, dragF: number) => {
+    // 羽毛摆动物理模拟（与阻力及速度挂钩）
+    let swayAngle = 0
+    let swayDx = 0
+    if (dragK > 0 && velV > 0.01) {
+      const omega = 12 // 摆动角速度 (rad/s)
+      const maxAngle = Math.min(0.5, 3 * (dragF / m)) // 最大摆动幅度，上限 0.5rad
+      swayAngle = maxAngle * Math.sin(omega * time)
+      swayDx = 35 * maxAngle * Math.cos(omega * time)
+    }
+    points.push({
+      t: time,
+      y: posY,
+      v: velV,
+      a: accA,
+      fDrag: dragF,
+      swayAngle,
+      swayDx
+    })
+  }
+
+  // 初始状态
+  addPoint(0, 0, v0, g, 0)
+  lastSampleTime = 0
+
+  while (y < maxFallHeight && steps < maxSteps) {
+    const dragF = dragK * v * Math.abs(v)
+    const a = g - dragF / m
+    v += a * dt
+    y += v * dt
+    t += dt
+    steps++
+
+    // 落地截断
+    if (y >= maxFallHeight) {
+      y = maxFallHeight
+      v = 0 // 落地后速度归零
+      addPoint(t, y, v, 0, 0)
+      break
+    }
+
+    if (t - lastSampleTime >= samplingInterval - 1e-9) {
+      addPoint(t, y, v, a, dragF)
+      lastSampleTime = t
+    }
+  }
+
+  return {
+    points,
+    groundTime: t
+  }
+}
+
+export interface VariableMotionTrajectoryPoint {
+  t: number
+  x: number
+  v: number
+  a: number
+  s: number // 累计路程 (distance)
+}
+
+/**
+ * 预计算变加速/简谐/多阶段运动轨迹（含累计路程）
+ * @param model 运动模型
+ * @param params 运动参数
+ * @param tMax 最大预计算时间 (s)
+ * @param dt 积分步长 (s)，默认 0.001
+ * @param samplingInterval 采样间隔 (s)，默认 0.01
+ */
+export function precomputeVariableMotion(
+  model: VariableMotionModel,
+  params: VariableMotionParams,
+  tMax: number,
+  dt: number = 0.001,
+  samplingInterval: number = 0.01
+): VariableMotionTrajectoryPoint[] {
+  const points: VariableMotionTrajectoryPoint[] = []
+  let t = 0
+  let distance = 0
+  let lastSampleTime = -samplingInterval
+
+  // 初始状态
+  const init = calculateVariableAcceleration(model, params, 0)
+  points.push({
+    t: 0,
+    x: init.x,
+    v: init.v,
+    a: init.a,
+    s: 0
+  })
+  lastSampleTime = 0
+
+  let prevV = init.v
+  const steps = Math.ceil(tMax / dt)
+
+  for (let i = 1; i <= steps; i++) {
+    const nextT = Math.min(i * dt, tMax)
+    const actualDt = nextT - t
+    if (actualDt <= 0) break
+
+    const state = calculateVariableAcceleration(model, params, nextT)
+    
+    // 累加路程 ds = |平均速度| * dt
+    const avgV = 0.5 * (state.v + prevV)
+    distance += Math.abs(avgV) * actualDt
+    
+    t = nextT
+    prevV = state.v
+
+    // 离散点采样保留
+    if (t - lastSampleTime >= samplingInterval - 1e-9 || t >= tMax) {
+      points.push({
+        t,
+        x: state.x,
+        v: state.v,
+        a: state.a,
+        s: distance
+      })
+      lastSampleTime = t
+    }
+  }
+
+  return points
 }

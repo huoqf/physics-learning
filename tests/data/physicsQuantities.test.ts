@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { buildPhysicsQuantities } from '@/data/physicsQuantities'
 
 function find(qs: ReturnType<typeof buildPhysicsQuantities>, label: string) {
-  return qs.find((q) => q.label.startsWith(label))?.value
+  return qs.quantities.find((q) => q.label.startsWith(label))?.value
 }
 
 describe('buildPhysicsQuantities', () => {
@@ -12,14 +12,13 @@ describe('buildPhysicsQuantities', () => {
   })
 
   it('匀速运动 s = v·t', () => {
-    const qs = buildPhysicsQuantities('anim-velocity', { v: 5 }, 3)
-    expect(find(qs, '位移')).toBeCloseTo(15, 10)
+    const qs = buildPhysicsQuantities('anim-velocity', { v: 5, deltaT: 3 }, 0)
+    expect(find(qs, '通过位移')).toBeCloseTo(15, 10)
   })
 
   it('自由落体使用 physics 纯函数（v=v0+gt, y=v0t+½gt²）', () => {
-    const qs = buildPhysicsQuantities('anim-free-fall', { v0: 0, g: 10 }, 2)
-    expect(find(qs, '速度')).toBeCloseTo(20, 10)
-    expect(find(qs, '位移')).toBeCloseTo(20, 10)
+    const qs = buildPhysicsQuantities('anim-free-fall', { v0: 0, g: 10, pressure: 0 }, 2)
+    expect(find(qs, 'A 速度')).toBeCloseTo(20, 10)
   })
 
   it('竖直上抛取向上为正（v=v0-gt, y=v0t-½gt²）', () => {
@@ -29,8 +28,8 @@ describe('buildPhysicsQuantities', () => {
   })
 
   it('缺省 g 时回退到 GRAVITY 常量（非硬编码）', () => {
-    const qs = buildPhysicsQuantities('anim-free-fall', { v0: 0 }, 1)
-    expect(find(qs, '重力加速度')).toBeCloseTo(9.8, 10)
+    const qs = buildPhysicsQuantities('anim-free-fall', { v0: 0, pressure: 0 }, 1)
+    expect(find(qs, 'A 速度')).toBeCloseTo(9.8, 10)
   })
 
   it('动量守恒动画满足碰前=碰后总动量', () => {
@@ -44,7 +43,7 @@ describe('buildPhysicsQuantities', () => {
 
   it('未知动画回退为参数键值列表', () => {
     const qs = buildPhysicsQuantities('anim-unknown', { foo: 1 }, 0)
-    expect(qs.some((q) => q.label === 'foo')).toBe(true)
+    expect(qs.quantities.some((q) => q.label === 'foo')).toBe(true)
   })
 
   // ===== 电磁学 · 静电场（M4-1）=====

@@ -1,179 +1,382 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, CANVAS_STYLE, STROKE } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_STYLE, FONT } from '@/theme/physics'
+import { calculateFrictionPullModel, calculateFrictionInclineModel } from '@/physics'
 
 export default function FrictionAnimation() {
-  const { params, showVectors, showFormulas, showGrid } = useAnimationStore()
-  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 400 })
+  const { params, time, showVectors, showGrid } = useAnimationStore()
+  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 420 })
 
-  const { m = 5, mu = 0.3, angle = 0, g = 9.8 } = params
-  const F_gravity = m * g
-  const F_normal = F_gravity * Math.cos(angle * Math.PI / 180)
-  const F_friction_max = mu * F_normal
+  const mode = params.mode ?? 0 // 0=水平外力, 1=斜面倾角
+  const m = params.m ?? 5
+  const mu = params.mu ?? 0.3
+  const g = params.g ?? 9.8
+  const F_applied = params.F_applied ?? 15
+  const angle = params.angle ?? 15
 
-  const groundY = canvasSize.height - 80
-  const startX = 100
-  const boxSize = 50
+  const weight = m * g
 
+  // ── 科学网格背景 ──
   const gridLines = []
   if (showGrid) {
-    for (let i = 0; i <= 10; i++) {
-      const xPos = startX + (i * (canvasSize.width - 200)) / 10
+    const gridSpacing = 40
+    const cols = Math.floor(canvasSize.width / gridSpacing)
+    const rows = Math.floor(canvasSize.height / gridSpacing)
+    for (let i = 0; i <= cols; i++) {
       gridLines.push(
         <line
-          key={`gridline-${i}`}
-          x1={xPos}
-          y1={groundY - 80}
-          x2={xPos}
-          y2={groundY + 20}
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={1}
-          strokeDasharray="4,4"
+          key={`grid-x-${i}`}
+          x1={i * gridSpacing} y1={0} x2={i * gridSpacing} y2={canvasSize.height}
+          stroke={PHYSICS_COLORS.grid} strokeWidth={0.5} strokeDasharray="3,4"
+        />
+      )
+    }
+    for (let j = 0; j <= rows; j++) {
+      gridLines.push(
+        <line
+          key={`grid-y-${j}`}
+          x1={0} y1={j * gridSpacing} x2={canvasSize.width} y2={j * gridSpacing}
+          stroke={PHYSICS_COLORS.grid} strokeWidth={0.5} strokeDasharray="3,4"
         />
       )
     }
   }
 
+  // ─── 物理逻辑与运动状态计算 ───
+
+  // 1. 模式一：水平面拉力模型
+  const {
+    F_normal: F_normal_m1,
+    f_actual: f_actual_m1,
+    a: acceleration_m1,
+    isSliding: isSliding_m1
+  } = calculateFrictionPullModel(m, mu, F_applied, g)
+
+  // 运动距离计算 (4秒循环一次)
+  const loopTime_m1 = time % 4.0
+  const displacement_m1 = 0.5 * acceleration_m1 * loopTime_m1 * loopTime_m1 * 35 // 35为像素缩放比
+
+  // 水平运动坐标
+  const groundY_m1 = canvasSize.height - 110
+  const boxStartX_m1 = 140
+  const boxSize = 44
+  const boxX_m1 = boxStartX_m1 + displacement_m1
+  const boxY_m1 = groundY_m1 - boxSize
+
+  // 2. 模式二：斜面倾角模型
+  const angleRad = (angle * Math.PI) / 180
+  const {
+    F_normal: F_normal_m2,
+    f_actual: f_actual_m2,
+    a: acceleration_m2,
+    isSliding: isSliding_m2
+  } = calculateFrictionInclineModel(m, mu, angle, g)
+
+  // 下滑距离计算 (4秒循环一次)
+  const loopTime_m2 = time % 4.0
+  const displacement_m2 = isSliding_m2 ? 0.5 * acceleration_m2 * loopTime_m2 * loopTime_m2 * 25 : 0
+
+  // 斜面局部几何参数
+  const pivotX = 130 // 斜面固定转动支点
+  const pivotY = canvasSize.height - 100
+  const boardLength = 380 // 斜面板长度
+  const boxLocalStartX = 90 // 木箱初始沿斜面距离
+  const boxLocalX = boxLocalStartX + displacement_m2
+
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
-        {gridLines}
-
-        <line
-          x1={50}
-          y1={groundY}
-          x2={canvasSize.width - 50}
-          y2={groundY}
-          stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={STROKE.groundLine}
-        />
-
-        <path
-          d={`M ${canvasSize.width - 100} ${groundY} L ${canvasSize.width - 90} ${groundY - 8} L ${canvasSize.width - 80} ${groundY} L ${canvasSize.width - 70} ${groundY - 8} L ${canvasSize.width - 60} ${groundY}`}
-          fill="none"
-          stroke={PHYSICS_COLORS.friction}
-          strokeWidth={2}
-          opacity={0.5}
-        />
-
-        <rect
-          x={canvasSize.width / 2 - boxSize / 2}
-          y={groundY - boxSize}
-          width={boxSize}
-          height={boxSize}
-          fill={PHYSICS_COLORS.objectFill}
-          stroke={PHYSICS_COLORS.objectStroke}
-          strokeWidth={CANVAS_STYLE.stroke.objectLine}
-          rx={4}
-        />
-
-        <text
-          x={canvasSize.width / 2}
-          y={groundY - boxSize / 2 + 5}
-          fontSize="12"
-          fill="white"
-          textAnchor="middle"
-          fontWeight="bold"
-        >
-          m={m}
-        </text>
-
-        {showVectors && (
-          <g>
-            <line
-              x1={canvasSize.width / 2}
-              y1={groundY - boxSize / 2}
-              x2={canvasSize.width / 2}
-              y2={groundY - boxSize / 2 - F_normal * 4}
-              stroke={PHYSICS_COLORS.normalForce}
-              strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-              markerEnd="url(#arrowhead-fr-n)"
-            />
-            <text
-              x={canvasSize.width / 2 - 25}
-              y={groundY - boxSize / 2 - F_normal * 4 - 5}
-              fontSize="12"
-              fill={PHYSICS_COLORS.normalForce}
-              fontWeight="bold"
-            >
-              F_N
-            </text>
-
-            <line
-              x1={canvasSize.width / 2}
-              y1={groundY - boxSize / 2}
-              x2={canvasSize.width / 2}
-              y2={groundY - boxSize / 2 + F_gravity * 4}
-              stroke={PHYSICS_COLORS.gravity}
-              strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-              markerEnd="url(#arrowhead-fr-g)"
-            />
-            <text
-              x={canvasSize.width / 2 + 25}
-              y={groundY - boxSize / 2 + F_gravity * 4 + 15}
-              fontSize="12"
-              fill={PHYSICS_COLORS.gravity}
-              fontWeight="bold"
-            >
-              G
-            </text>
-
-            <line
-              x1={canvasSize.width / 2}
-              y1={groundY - boxSize / 2}
-              x2={canvasSize.width / 2 - F_friction_max * 4}
-              y2={groundY - boxSize / 2}
-              stroke={PHYSICS_COLORS.friction}
-              strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-              markerEnd="url(#arrowhead-fr-f)"
-            />
-            <text
-              x={canvasSize.width / 2 - F_friction_max * 4 - 30}
-              y={groundY - boxSize / 2 + 5}
-              fontSize="12"
-              fill={PHYSICS_COLORS.friction}
-              fontWeight="bold"
-            >
-              f
-            </text>
-          </g>
-        )}
-
-        {showFormulas && (
-          <g transform="translate(20, 20)">
-            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">摩擦力演示</text>
-            <text x={0} y={25} fontSize="12" fill={PHYSICS_COLORS.axis}>
-              质量 m = {m} kg
-            </text>
-            <text x={0} y={45} fontSize="12" fill={PHYSICS_COLORS.axis}>
-              重力加速度 g = {g} m/s²
-            </text>
-            <text x={0} y={70} fontSize="12" fill={PHYSICS_COLORS.gravity} fontWeight="bold">
-              重力 G = mg = {F_gravity.toFixed(1)} N
-            </text>
-            <text x={0} y={95} fontSize="12" fill={PHYSICS_COLORS.normalForce} fontWeight="bold">
-              法向力 F_N = {F_normal.toFixed(1)} N
-            </text>
-            <text x={0} y={120} fontSize="12" fill={PHYSICS_COLORS.axis}>
-              动摩擦系数 μ = {mu}
-            </text>
-            <text x={0} y={145} fontSize="12" fill={PHYSICS_COLORS.friction} fontWeight="bold">
-              最大静摩擦力 f_max = μF_N = {F_friction_max.toFixed(1)} N
-            </text>
-          </g>
-        )}
-
         <defs>
-          <marker id="arrowhead-fr-n" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.normalForce} />
+          {/* 木箱拉丝纹理 */}
+          <linearGradient id="box-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#FFF7ED" />
+            <stop offset="100%" stopColor="#FED7AA" />
+          </linearGradient>
+          {/* 钢体滑轨渐变 */}
+          <linearGradient id="steel-rail" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#CBD5E1" />
+            <stop offset="50%" stopColor="#94A3B8" />
+            <stop offset="100%" stopColor="#475569" />
+          </linearGradient>
+          {/* 力的矢量箭头 */}
+          <marker id="arr-applied" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.appliedForce} />
           </marker>
-          <marker id="arrowhead-fr-g" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.gravity} />
+          <marker id="arr-friction" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.friction} />
           </marker>
-          <marker id="arrowhead-fr-f" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.friction} />
+          <marker id="arr-normal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.normalForce} />
+          </marker>
+          <marker id="arr-gravity" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.gravity} />
           </marker>
         </defs>
+
+        {/* 网格 */}
+        {gridLines}
+
+        {/* ─── 模式一：水平面拉力模型渲染 ─── */}
+        {mode === 0 && (
+          <g>
+            {/* 水平地面平台 */}
+            <rect
+              x={60} y={groundY_m1} width={canvasSize.width - 120} height={18}
+              fill="url(#steel-rail)" stroke="#334155" strokeWidth={1.2} rx={2}
+            />
+
+            {/* 地面阴影斜线纹理 */}
+            <g opacity={0.15}>
+              {Array.from({ length: 22 }).map((_, i) => (
+                <line
+                  key={`floor-line-${i}`}
+                  x1={75 + i * 20} y1={groundY_m1 + 18}
+                  x2={65 + i * 20} y2={groundY_m1 + 32}
+                  stroke={PHYSICS_COLORS.labelText} strokeWidth={1.5}
+                />
+              ))}
+            </g>
+
+            {/* 绘制木箱阻尼摩擦力粒子 (仅在滑动时显示在箱后) */}
+            {isSliding_m1 && (
+              <g opacity={0.4}>
+                <circle cx={boxX_m1 - 15} cy={groundY_m1 - 4} r={2} fill={PHYSICS_COLORS.friction} />
+                <circle cx={boxX_m1 - 30} cy={groundY_m1 - 3} r={1.5} fill={PHYSICS_COLORS.friction} />
+                <circle cx={boxX_m1 - 8} cy={groundY_m1 - 6} r={2.5} fill={PHYSICS_COLORS.friction} />
+              </g>
+            )}
+
+            {/* 木箱 (滑块) */}
+            <rect
+              x={boxX_m1 - boxSize / 2} y={boxY_m1} width={boxSize} height={boxSize}
+              fill="url(#box-grad)" stroke="#C2410C" strokeWidth={1.8} rx={4}
+            />
+            <text
+              x={boxX_m1} y={boxY_m1 + boxSize / 2 + 5}
+              fontSize={FONT.axisSize} fill="#C2410C" textAnchor="middle" fontWeight="bold"
+            >
+              m = {m}kg
+            </text>
+
+            {/* 拉力拉绳 (连向右端) */}
+            <line
+              x1={boxX_m1 + boxSize / 2} y1={groundY_m1 - boxSize / 2}
+              x2={canvasSize.width - 60} y2={groundY_m1 - boxSize / 2}
+              stroke="#94A3B8" strokeWidth={1} strokeDasharray="3,3"
+            />
+
+            {/* 力的矢量绘制 (基准比例: 1.6) */}
+            {showVectors && (
+              <g>
+                {/* 1. 外拉力 F_applied (向右，作用在箱子右侧中心) */}
+                <line
+                  x1={boxX_m1 + boxSize / 2} y1={groundY_m1 - boxSize / 2}
+                  x2={boxX_m1 + boxSize / 2 + F_applied * 1.6} y2={groundY_m1 - boxSize / 2}
+                  stroke={PHYSICS_COLORS.appliedForce} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+                  markerEnd="url(#arr-applied)"
+                />
+                <text
+                  x={boxX_m1 + boxSize / 2 + F_applied * 1.6 + 6} y={groundY_m1 - boxSize / 2 + 4}
+                  fontSize={FONT.axisSize} fill={PHYSICS_COLORS.appliedForce} fontWeight="bold"
+                >
+                  F
+                </text>
+
+                {/* 2. 摩擦力 f (向左，作用在接触面) */}
+                {f_actual_m1 > 0.5 && (
+                  <line
+                    x1={boxX_m1} y1={groundY_m1}
+                    x2={boxX_m1 - f_actual_m1 * 1.6} y2={groundY_m1}
+                    stroke={PHYSICS_COLORS.friction} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+                    markerEnd="url(#arr-friction)"
+                  />
+                )}
+                {f_actual_m1 > 3 && (
+                  <text
+                    x={boxX_m1 - f_actual_m1 * 1.6 - 15} y={groundY_m1 - 4}
+                    fontSize={FONT.axisSize} fill={PHYSICS_COLORS.friction} fontWeight="bold"
+                  >
+                    f
+                  </text>
+                )}
+
+                {/* 3. 支持力 F_N (向上) */}
+                <line
+                  x1={boxX_m1} y1={groundY_m1 - boxSize / 2}
+                  x2={boxX_m1} y2={groundY_m1 - boxSize / 2 - F_normal_m1 * 1.6}
+                  stroke={PHYSICS_COLORS.normalForce} strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+                  markerEnd="url(#arr-normal)"
+                />
+                <text
+                  x={boxX_m1 - 16} y={groundY_m1 - boxSize / 2 - F_normal_m1 * 1.6 + 4}
+                  fontSize={FONT.axisSize} fill={PHYSICS_COLORS.normalForce} fontWeight="bold"
+                >
+                  F_N
+                </text>
+
+                {/* 4. 重力 G (向下) */}
+                <line
+                  x1={boxX_m1} y1={groundY_m1 - boxSize / 2}
+                  x2={boxX_m1} y2={groundY_m1 - boxSize / 2 + weight * 1.6}
+                  stroke={PHYSICS_COLORS.gravity} strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+                  markerEnd="url(#arr-gravity)"
+                />
+                <text
+                  x={boxX_m1 + 8} y={groundY_m1 - boxSize / 2 + weight * 1.6}
+                  fontSize={FONT.axisSize} fill={PHYSICS_COLORS.gravity} fontWeight="bold"
+                >
+                  G
+                </text>
+              </g>
+            )}
+          </g>
+        )}
+
+        {/* ─── 模式二：斜面倾角模型渲染 ─── */}
+        {mode === 1 && (
+          <g>
+            {/* 斜面基座支架底座 */}
+            <rect
+              x={80} y={pivotY + 14} width={380} height={14}
+              fill="#E2E8F0" stroke="#94A3B8" strokeWidth={1} rx={1}
+            />
+            {/* 轴销旋转点 (可见标注 1/5) */}
+            <circle cx={pivotX} cy={pivotY} r={6} fill="#475569" stroke="#1E293B" strokeWidth={1.5} />
+            <text x={pivotX} y={pivotY + 18} fontSize="9" fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">支点</text>
+
+            {/* 动态支撑升降液压缸 (根据角度动态调节伸长高度) */}
+            {(() => {
+              const supportX = 400
+              // 几何关系：气缸顶端连接位置在 board 上距离支点 dx = 270px。
+              // 顶端 Canvas 坐标：
+              const topX = pivotX + 270 * Math.cos(angleRad)
+              const topY = pivotY - 270 * Math.sin(angleRad)
+              return (
+                <g>
+                  {/* 外缸 (固定套管) */}
+                  <line
+                    x1={supportX} y1={pivotY + 14}
+                    x2={supportX} y2={pivotY - 40}
+                    stroke="#64748B" strokeWidth={5} strokeLinecap="round"
+                  />
+                  {/* 内活塞杆 (伸缩) */}
+                  <line
+                    x1={supportX} y1={pivotY - 40}
+                    x2={topX} y2={topY}
+                    stroke="#94A3B8" strokeWidth={3} strokeLinecap="round"
+                  />
+                  {/* 连接副销 */}
+                  <circle cx={topX} cy={topY} r={2.5} fill="#475569" />
+                </g>
+              )
+            })()}
+
+            {/* 使用旋转 transform 绘制斜面板和木箱 */}
+            <g transform={`translate(${pivotX}, ${pivotY}) rotate(${-angle})`}>
+              {/* 斜面板轨道 (在局部坐标系中为水平长矩形) */}
+              <rect
+                x={0} y={-8} width={boardLength} height={12}
+                fill="url(#steel-rail)" stroke="#334155" strokeWidth={1.2} rx={1}
+              />
+
+              {/* 轨道刻度线 */}
+              {Array.from({ length: 8 }).map((_, i) => (
+                <line
+                  key={`scale-${i}`}
+                  x1={50 + i * 40} y1={-8}
+                  x2={50 + i * 40} y2={-5}
+                  stroke="#FFFFFF" strokeWidth={0.5}
+                />
+              ))}
+
+              {/* 木箱 (沿斜面板下滑) */}
+              <rect
+                x={boxLocalX - boxSize / 2} y={-boxSize - 8} width={boxSize} height={boxSize}
+                fill="url(#box-grad)" stroke="#C2410C" strokeWidth={1.8} rx={4}
+              />
+              <text
+                x={boxLocalX} y={-boxSize / 2 - 5}
+                fontSize={FONT.axisSize} fill="#C2410C" textAnchor="middle" fontWeight="bold"
+              >
+                m
+              </text>
+
+              {/* 局部坐标系下的力矢量绘制 (旋转角度后，利用局部坐标渲染极其干净和正确) */}
+              {showVectors && (
+                <g>
+                  {/* 1. 支持力 F_N (垂直斜面向上) */}
+                  <line
+                    x1={boxLocalX} y1={-boxSize / 2 - 8}
+                    x2={boxLocalX} y2={-boxSize / 2 - 8 - F_normal_m2 * 1.6}
+                    stroke={PHYSICS_COLORS.normalForce} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+                    markerEnd="url(#arr-normal)"
+                  />
+                  <text
+                    x={boxLocalX - 16} y={-boxSize / 2 - 8 - F_normal_m2 * 1.6 + 4}
+                    fontSize={FONT.axisSize} fill={PHYSICS_COLORS.normalForce} fontWeight="bold"
+                  >
+                    F_N
+                  </text>
+
+                  {/* 2. 摩擦力 f (平行斜面向上，即向左) */}
+                  {f_actual_m2 > 0.5 && (
+                    <line
+                      x1={boxLocalX - boxSize / 2} y1={-8}
+                      x2={boxLocalX - boxSize / 2 - f_actual_m2 * 1.6} y2={-8}
+                      stroke={PHYSICS_COLORS.friction} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+                      markerEnd="url(#arr-friction)"
+                    />
+                  )}
+                  {f_actual_m2 > 3 && (
+                    <text
+                      x={boxLocalX - boxSize / 2 - f_actual_m2 * 1.6 - 12} y={-12}
+                      fontSize={FONT.axisSize} fill={PHYSICS_COLORS.friction} fontWeight="bold"
+                    >
+                      f
+                    </text>
+                  )}
+
+                  {/* 3. 重力 G (绝对垂直向下。在旋转了 angle 角度的坐标系下，方向应顺时针偏 angle 角) */}
+                  {(() => {
+                    // 局部坐标系下：重力矢量的分量为 (G_sin(θ), -G_cos(θ))
+                    const gx_local = weight * Math.sin(angleRad) * 1.6
+                    const gy_local = -weight * Math.cos(angleRad) * 1.6
+                    return (
+                      <g>
+                        <line
+                          x1={boxLocalX} y1={-boxSize / 2 - 8}
+                          x2={boxLocalX + gx_local} y2={-boxSize / 2 - 8 + gy_local}
+                          stroke={PHYSICS_COLORS.gravity} strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+                          markerEnd="url(#arr-gravity)"
+                        />
+                        <text
+                          x={boxLocalX + gx_local + 8} y={-boxSize / 2 - 8 + gy_local}
+                          fontSize={FONT.axisSize} fill={PHYSICS_COLORS.gravity} fontWeight="bold"
+                        >
+                          G
+                        </text>
+                      </g>
+                    )
+                  })()}
+                </g>
+              )}
+            </g>
+
+            {/* 倾斜角标注弧线 (在底座与斜面板间) */}
+            <g>
+              <path
+                d={`M ${pivotX + 50} ${pivotY} A 50 50 0 0 0 ${pivotX + 50 * Math.cos(angleRad)} ${pivotY - 50 * Math.sin(angleRad)}`}
+                fill="none" stroke={PHYSICS_COLORS.forceNet} strokeWidth={1.2}
+              />
+              <text
+                x={pivotX + 58} y={pivotY - 14}
+                fontSize="11" fill={PHYSICS_COLORS.forceNet} fontWeight="bold"
+              >
+                θ = {angle}°
+              </text>
+            </g>
+          </g>
+        )}
       </svg>
     </div>
   )

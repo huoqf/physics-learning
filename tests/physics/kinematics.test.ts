@@ -5,6 +5,11 @@ import {
   calculateSecantSlope,
   calculateTangentSlope,
   calculateInstantaneousVelocity,
+  calcGByLatitude,
+  calcGByAltitude,
+  precomputeFreeFallWithDrag,
+  precomputeVariableMotion,
+  precomputeVerticalThrowTrajectory,
 } from '@/physics'
 import type { VariableMotionModel, VariableMotionParams } from '@/physics'
 
@@ -199,3 +204,147 @@ describe('calculateInstantaneousVelocity', () => {
     expect(r.vInst).toBeCloseTo(5, 10)
   })
 })
+
+describe('calcGByLatitude & calcGByAltitude', () => {
+  it('不同纬度的 g 应符合 Somigliana 规律 (两极 g 略大于赤道)', () => {
+    const gEquator = calcGByLatitude(0)
+    const gMid = calcGByLatitude(45)
+    const gPole = calcGByLatitude(90)
+    expect(gEquator).toBeCloseTo(9.780327, 4)
+    expect(gPole).toBeGreaterThan(gMid)
+    expect(gMid).toBeGreaterThan(gEquator)
+  })
+
+  it('随着海拔升高，g 应当减少', () => {
+    const g0 = calcGByLatitude(45)
+    const gHigh = calcGByAltitude(g0, 10) // 10km 高空
+    expect(gHigh).toBeLessThan(g0)
+  })
+})
+
+describe('precomputeFreeFallWithDrag', () => {
+  it('在无阻力模式下能计算出正确的落地时间和位移轨迹', () => {
+    const v0 = 0
+    const g = 9.8
+    const dragK = 0
+    const m = 1
+    const maxFallHeight = 2.0
+    
+    const { points, groundTime } = precomputeFreeFallWithDrag(v0, g, dragK, m, maxFallHeight)
+    
+    // 解析时间为 t = sqrt(2*h/g) = sqrt(4/9.8) ≈ 0.6388s
+    expect(groundTime).toBeCloseTo(0.6388, 3)
+    
+    const lastPoint = points[points.length - 1]
+    expect(lastPoint.y).toBeCloseTo(2.0, 5)
+    expect(lastPoint.v).toBe(0) // 落地后速度置零
+  })
+
+  it('在有阻力模式下，物体的速度和落体时间会比无阻力时延长', () => {
+    const v0 = 0
+    const g = 9.8
+    const m = 0.003
+    const maxFallHeight = 2.0
+    
+    // 无阻力落地时间
+    const { groundTime: tVacuum } = precomputeFreeFallWithDrag(v0, g, 0, m, maxFallHeight)
+    
+    // 羽毛的阻力 dragK = 0.02
+    const { points, groundTime: tAir } = precomputeFreeFallWithDrag(v0, g, 0.02, m, maxFallHeight)
+    
+    expect(tAir).toBeGreaterThan(tVacuum)
+    expect(points.length).toBeGreaterThan(2)
+    
+    // 检查末端点位移是否精确为 maxFallHeight
+    const last = points[points.length - 1]
+    expect(last.y).toBeCloseTo(2.0, 5)
+  })
+})
+
+describe('precomputeVariableMotion', () => {
+  it('在 force-increasing 模型下能正确计算位移、速度、加速度和累计路程', () => {
+    const params: VariableMotionParams = { k: 2, v0: 0 }
+    const points = precomputeVariableMotion('force-increasing', params, 3.0, 0.001, 0.5)
+    
+    expect(points.length).toBeGreaterThanOrEqual(7)
+    
+    expect(points[0].t).toBe(0)
+    expect(points[0].x).toBe(0)
+    expect(points[0].v).toBe(0)
+    expect(points[0].a).toBe(0)
+    expect(points[0].s).toBe(0)
+
+    const lastPoint = points[points.length - 1]
+    expect(lastPoint.t).toBeCloseTo(3.0, 3)
+    expect(lastPoint.x).toBeCloseTo(9, 2)
+    expect(lastPoint.v).toBeCloseTo(9, 2)
+    expect(lastPoint.a).toBeCloseTo(6, 2)
+    expect(lastPoint.s).toBeCloseTo(9, 2)
+  })
+
+  it('在 shm 简谐运动下位移是波动的，但累计路程 s 单调递增且大于位移绝对值', () => {
+    const params: VariableMotionParams = { A: 5, omega: 2 }
+    const points = precomputeVariableMotion('shm', params, 6.28, 0.001, 0.01)
+
+    for (let i = 1; i < points.length; i++) {
+      expect(points[i].s).toBeGreaterThanOrEqual(points[i - 1].s)
+    }
+
+    const quarterPoint = points.reduce((prev, curr) => Math.abs(curr.t - 0.785) < Math.abs(prev.t - 0.785) ? curr : prev)
+    expect(quarterPoint.x).toBeCloseTo(5, 1)
+    expect(quarterPoint.s).toBeCloseTo(5, 1)
+
+    const halfPoint = points.reduce((prev, curr) => Math.abs(curr.t - 1.57) < Math.abs(prev.t - 1.57) ? curr : prev)
+    expect(halfPoint.x).toBeCloseTo(0, 1)
+    expect(halfPoint.s).toBeCloseTo(10, 1)
+
+    const lastPoint = points[points.length - 1]
+    expect(lastPoint.x).toBeCloseTo(0, 1)
+    expect(lastPoint.s).toBeCloseTo(40, 1)
+  })
+
+  it('在 multi-stage 往返运动中能正确积分出阶段累计路程', () => {
+    const params: VariableMotionParams = { v0: 0, a1: 2, vMax: 6, a3: 3, t1: 3, t2Duration: 2, tStop: 2, a5: 3 }
+    const points = precomputeVariableMotion('multi-stage', params, 15, 0.001, 0.1)
+
+    const lastPoint = points[points.length - 1]
+    expect(lastPoint.x).toBeCloseTo(0, 1)
+    expect(lastPoint.s).toBeCloseTo(54, 1)
+  })
+})
+
+describe('precomputeVerticalThrowTrajectory', () => {
+  it('在无阻力真空模式下，阻力轨道数据和真空轨道对照数据完全一致', () => {
+    const v0 = 20
+    const g = 10
+    const k = 0
+    const res = precomputeVerticalThrowTrajectory(v0, g, k, 0.02)
+
+    expect(res.peakTime).toBeCloseTo(2, 5)
+    expect(res.maxHeight).toBeCloseTo(20, 5)
+    expect(res.landTime).toBeCloseTo(4, 5)
+
+    expect(res.peakTimeVac).toBeCloseTo(2, 5)
+    expect(res.maxHeightVac).toBeCloseTo(20, 5)
+    expect(res.landTimeVac).toBeCloseTo(4, 5)
+
+    expect(res.points.length).toBe(res.vacuumPoints.length)
+    const midIdx = Math.floor(res.points.length / 2)
+    expect(res.points[midIdx].y).toBeCloseTo(res.vacuumPoints[midIdx].y, 5)
+  })
+
+  it('在有阻力模式下，阻力轨道上升最大高度变矮，且 peakTime 和 landTime 有所偏斜', () => {
+    const v0 = 20
+    const g = 10
+    const k = 0.15
+    const res = precomputeVerticalThrowTrajectory(v0, g, k, 0.01)
+
+    expect(res.maxHeight).toBeLessThan(res.maxHeightVac)
+    expect(res.maxHeightVac).toBeCloseTo(20, 5)
+    expect(res.peakTime).toBeLessThan(res.peakTimeVac)
+
+    const lastPoint = res.points[res.points.length - 1]
+    expect(lastPoint.y).toBeCloseTo(0, 5)
+  })
+})
+

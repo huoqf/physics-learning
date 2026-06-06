@@ -1,149 +1,120 @@
 import { useMemo } from 'react'
-import { calculateFreeFall } from '@/physics'
+import { precomputeFreeFallWithDrag, FreeFallTrajectoryPoint } from '@/physics'
 
-const FLASH_INTERVAL = 0.1
-const MAX_FLASH_POINTS = 20
-
-export interface FlashPoint {
-  time: number
-  velocity: number
-  displacement: number
-}
-
-export interface VtChartPoint {
-  x: number
+export interface FreeFallState {
   y: number
-}
-
-export interface DisplacementDiff {
-  n: number
-  deltaX: number
-  theoretical: number
-}
-
-export interface TimeSlice {
-  n: number
-  ratio: number
-  height: number
-  startY: number
-  endY: number
-  color: string
-}
-
-export interface FreeFallPhysicsData {
-  // 输入参数
-  v0: number
-  g: number
-  // 落地判断
-  groundTime: number
-  // 有效值
-  effectiveTime: number
-  effectiveV: number
-  effectiveY: number
+  v: number
+  a: number
+  fDrag: number
+  swayAngle: number
+  swayDx: number
   isLanded: boolean
-  // 频闪数据
-  flashPoints: FlashPoint[]
-  // v-t 图数据
-  vtChartData: VtChartPoint[]
-  // 位移差数据
-  displacementDiffs: DisplacementDiff[]
-  // 时间切片数据
-  timeSlices: TimeSlice[]
 }
 
+/**
+ * 线性插值器：根据时间从预计算离散轨迹点中计算出高精度物理状态
+ * 时间复杂度为 O(1)，因为可以直接通过 samplingInterval 计算数组索引
+ */
+export function getPhysicsAtTime(
+  points: FreeFallTrajectoryPoint[],
+  time: number,
+  groundTime: number,
+  samplingInterval: number = 0.01
+): FreeFallState {
+  if (points.length === 0) {
+    return { y: 0, v: 0, a: 0, fDrag: 0, swayAngle: 0, swayDx: 0, isLanded: false }
+  }
+
+  // 落地边界截断
+  if (time >= groundTime) {
+    const last = points[points.length - 1]
+    return {
+      y: last.y,
+      v: 0, // 落地后速度归零
+      a: 0,
+      fDrag: 0,
+      swayAngle: 0,
+      swayDx: 0,
+      isLanded: true
+    }
+  }
+
+  if (time <= 0) {
+    const first = points[0]
+    return {
+      y: first.y,
+      v: first.v,
+      a: first.a,
+      fDrag: first.fDrag,
+      swayAngle: first.swayAngle,
+      swayDx: first.swayDx,
+      isLanded: false
+    }
+  }
+
+  // 索引定位 + 线性插值
+  const idx = Math.floor(time / samplingInterval)
+  
+  if (idx >= points.length - 1) {
+    const last = points[points.length - 1]
+    return {
+      y: last.y,
+      v: last.v,
+      a: last.a,
+      fDrag: last.fDrag,
+      swayAngle: last.swayAngle,
+      swayDx: last.swayDx,
+      isLanded: false
+    }
+  }
+
+  const p0 = points[idx]
+  const p1 = points[idx + 1]
+  const tDiff = p1.t - p0.t
+  const ratio = tDiff > 0 ? (time - p0.t) / tDiff : 0
+
+  return {
+    y: p0.y + (p1.y - p0.y) * ratio,
+    v: p0.v + (p1.v - p0.v) * ratio,
+    a: p0.a + (p1.a - p0.a) * ratio,
+    fDrag: p0.fDrag + (p1.fDrag - p0.fDrag) * ratio,
+    swayAngle: p0.swayAngle + (p1.swayAngle - p0.swayAngle) * ratio,
+    swayDx: p0.swayDx + (p1.swayDx - p0.swayDx) * ratio,
+    isLanded: false
+  }
+}
+
+export interface UseFreeFallPhysicsResult {
+  points: FreeFallTrajectoryPoint[]
+  groundTime: number
+  currentState: FreeFallState
+}
+
+/**
+ * 自由落体自定义物理计算 Hook
+ * 仅在物理参数变化时执行离线预计算，而在 time 变化时仅做 O(1) 插值，彻底消除帧渲染卡顿。
+ */
 export function useFreeFallPhysics(
   v0: number,
   g: number,
-  time: number,
-  maxFallHeight: number = Infinity
-): FreeFallPhysicsData {
-  // 计算落地时间：解方程 v0*t + 0.5*g*t^2 = maxFallHeight
-  // 即 0.5*g*t^2 + v0*t - maxFallHeight = 0
-  const groundTime = maxFallHeight === Infinity 
-    ? Infinity 
-    : (-v0 + Math.sqrt(v0 * v0 + 2 * g * maxFallHeight)) / g
-  
-  const actualGroundTime = groundTime > 0 ? groundTime : Infinity
+  dragK: number,
+  mass: number,
+  maxFallHeight: number,
+  time: number
+): UseFreeFallPhysicsResult {
+  // 仅在物理参数变化时预计算，不包含 time 依赖
+  const { points, groundTime } = useMemo(() => {
+    return precomputeFreeFallWithDrag(v0, g, dragK, mass, maxFallHeight)
+  }, [v0, g, dragK, mass, maxFallHeight])
 
-  const effectiveTime = Math.min(time, actualGroundTime)
-  const isLanded = time >= actualGroundTime && actualGroundTime !== Infinity
-
-  const { v: displayV, y: displayY } = calculateFreeFall(v0, g, effectiveTime)
-  const effectiveY = Math.min(displayY, maxFallHeight)
-  const effectiveV = isLanded ? 0 : displayV
-
-  // 频闪点计算
-  const flashPoints = useMemo(() => {
-    const points: FlashPoint[] = []
-    const maxT = isLanded ? actualGroundTime : effectiveTime
-    const count = Math.min(Math.floor(maxT / FLASH_INTERVAL), MAX_FLASH_POINTS)
-    for (let i = 0; i <= count; i++) {
-      const t = i * FLASH_INTERVAL
-      const { v, y } = calculateFreeFall(v0, g, t)
-      points.push({ time: t, velocity: v, displacement: y })
-    }
-    return points
-  }, [effectiveTime, actualGroundTime, isLanded, v0, g])
-
-  // v-t 图数据（完整反映物理规律）
-  const vtChartData = useMemo(() => {
-    const points: VtChartPoint[] = []
-    const dt = 0.1
-    const totalT = 8 // 固定绘制时长，保证图表稳定
-    for (let t = 0; t <= totalT + dt; t += dt) {
-      const { v } = calculateFreeFall(v0, g, t)
-      points.push({ x: parseFloat(t.toFixed(1)), y: v })
-    }
-    return points
-  }, [v0, g])
-
-  // 位移差数据
-  const displacementDiffs = useMemo(() => {
-    const diffs: DisplacementDiff[] = []
-    for (let i = 0; i < flashPoints.length - 1; i++) {
-      const deltaX = flashPoints[i + 1].displacement - flashPoints[i].displacement
-      const theoretical = g * FLASH_INTERVAL * FLASH_INTERVAL
-      diffs.push({ n: i + 1, deltaX, theoretical })
-    }
-    return diffs
-  }, [flashPoints, g])
-
-  // 时间切片数据（1:3:5:7 比例）
-  const timeSlices = useMemo(() => {
-    const slices: TimeSlice[] = []
-    const colors = ['#2563EB', '#10B981', '#F59E0B', '#EF4444']
-    const ratios = [1, 3, 5, 7]
-    const sliceTime = actualGroundTime < Infinity ? actualGroundTime / 4 : 0.1
-
-    for (let i = 0; i < 4; i++) {
-      const t1 = i * sliceTime
-      const t2 = (i + 1) * sliceTime
-      const { y: y1 } = calculateFreeFall(v0, g, t1)
-      const { y: y2 } = calculateFreeFall(v0, g, t2)
-      const height = y2 - y1
-      slices.push({
-        n: i + 1,
-        ratio: ratios[i],
-        height,
-        startY: y1,
-        endY: y2,
-        color: colors[i]
-      })
-    }
-    return slices
-  }, [v0, g, actualGroundTime])
+  // 根据 time 进行 O(1) 线性插值
+  const currentState = useMemo(() => {
+    return getPhysicsAtTime(points, time, groundTime)
+  }, [points, time, groundTime])
 
   return {
-    v0,
-    g,
-    groundTime: actualGroundTime,
-    effectiveTime,
-    effectiveV,
-    effectiveY,
-    isLanded,
-    flashPoints,
-    vtChartData,
-    displacementDiffs,
-    timeSlices,
+    points,
+    groundTime,
+    currentState
   }
 }

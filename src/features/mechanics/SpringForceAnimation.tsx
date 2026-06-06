@@ -3,8 +3,8 @@ import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
 
 export default function SpringForceAnimation() {
-  const { params, time, showVectors, showFormulas, showGrid } = useAnimationStore()
-  const [containerRef, canvasSize] = useCanvasSize({ width: 600, height: 400 })
+  const { params, time, showVectors, showGrid } = useAnimationStore()
+  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 400 })
 
   const { k = 100, m = 1 } = params
   
@@ -13,23 +13,29 @@ export default function SpringForceAnimation() {
   const displacement = amplitude * Math.sin(omega * time)
   const springForce = -k * displacement
 
-  const fixedX = canvasSize.width / 2
-  const groundY = canvasSize.height / 2
-  const boxSize = 40
-  const scale = 100
-  const currentX = displacement * scale
+  // ── 科学布局坐标系 ──
+  const eqX = canvasSize.width / 2 // 平衡位置在 Canvas 中心 (325px)
+  const groundY = canvasSize.height / 2 + 30 // 地面 Y 坐标
+  const boxSize = 44 // 振子方块大小
+  const scale = 160  // 物理位移到 Canvas 像素的比例尺 (0.5m = 80px)
+  
+  const currentX = displacement * scale // 当前偏离平衡位置的像素位移
+  const centerX = eqX + currentX         // 振子当前的中心 X 坐标
+  const wallRightX = 80                  // 墙体右侧边缘，即弹簧固定端位置
 
+  // ── 网格线绘制 ──
   const gridLines = []
   if (showGrid) {
-    for (let i = -3; i <= 3; i++) {
-      const xPos = fixedX + i * 50
+    // 围绕平衡位置 eqX 绘制
+    for (let i = -4; i <= 4; i++) {
+      const xPos = eqX + i * 50
       gridLines.push(
         <line
           key={`gridline-${i}`}
           x1={xPos}
-          y1={groundY - 60}
+          y1={groundY - 110}
           x2={xPos}
-          y2={groundY + 60}
+          y2={groundY + 40}
           stroke={PHYSICS_COLORS.grid}
           strokeWidth={STROKE.grid}
           strokeDasharray={DASH.axis.join(' ')}
@@ -38,15 +44,30 @@ export default function SpringForceAnimation() {
     }
   }
 
+  // ── 3D 精密螺旋弹簧 (Helix) 路径生成 ──
   const springPath = (startX: number, endX: number) => {
     const points = []
-    const segments = 15
-    const amplitude = 15
+    const coils = 12 // 弹簧螺旋圈数
+    const rHelix = 13 // 螺旋管外径半径
+    const steps = 200 // 采样精细度
     const totalLength = endX - startX
-    for (let i = 0; i <= segments; i++) {
-      const t = i / segments
-      const x = startX + t * totalLength
-      const y = groundY + (i % 2 === 0 ? -amplitude : amplitude) * (i === 0 || i === segments ? 0 : 1)
+    const centerY = groundY - boxSize / 2 // 弹簧轴线高度居中于箱子
+
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps
+      
+      // 两端平滑收口包络函数，使其平滑连接到固定端和箱子
+      let factor = 1
+      if (t < 0.06) {
+        factor = t / 0.06
+      } else if (t > 0.94) {
+        factor = (1 - t) / 0.06
+      }
+      
+      const angle = 2 * Math.PI * coils * t
+      // 三维螺旋投影：x 方向叠加正弦环绕项，y 方向叠加余弦项
+      const x = startX + t * totalLength + rHelix * Math.sin(angle) * 0.4 * factor
+      const y = centerY + rHelix * Math.cos(angle) * factor
       points.push(`${x},${y}`)
     }
     return points.join(' ')
@@ -55,120 +76,189 @@ export default function SpringForceAnimation() {
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
+        {/* 1. 辅助网格 */}
         {gridLines}
         
-        <rect
-          x={fixedX - 30}
-          y={groundY - 70}
-          width={60}
-          height={140}
-          fill={PHYSICS_COLORS.axis}
-          stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={STROKE.objectLine}
-        />
-        
-        <polyline
-          points={springPath(fixedX + 30, fixedX + currentX - boxSize / 2)}
-          fill="none"
+        {/* 2. 精密实验室地面 */}
+        <line
+          x1={40}
+          y1={groundY}
+          x2={canvasSize.width - 40}
+          y2={groundY}
           stroke={PHYSICS_COLORS.axis}
           strokeWidth={STROKE.groundLine}
         />
+        <line
+          x1={40}
+          y1={groundY + 1}
+          x2={canvasSize.width - 40}
+          y2={groundY + 1}
+          stroke={PHYSICS_COLORS.grid}
+          strokeWidth={0.8}
+        />
 
+        {/* 3. 左侧固定墙体 */}
+        <g opacity={0.4}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <line
+              key={`wall-hatch-${i}`}
+              x1={40}
+              y1={groundY - 100 + i * 15}
+              x2={75}
+              y2={groundY - 100 + i * 15 + 15}
+              stroke={PHYSICS_COLORS.axis}
+              strokeWidth={1.5}
+            />
+          ))}
+        </g>
         <rect
-          x={fixedX + currentX - boxSize / 2}
-          y={groundY - boxSize / 2}
+          x={40}
+          y={groundY - 100}
+          width={40}
+          height={100}
+          fill={PHYSICS_COLORS.objectFillNeutral}
+          stroke={PHYSICS_COLORS.axis}
+          strokeWidth={CANVAS_STYLE.stroke.objectLine}
+        />
+        
+        {/* 4. 动态螺旋弹簧 */}
+        <polyline
+          points={springPath(wallRightX, centerX - boxSize / 2)}
+          fill="none"
+          stroke={PHYSICS_COLORS.elasticForce}
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* 5. 振子滑块 (质量块) */}
+        <rect
+          x={centerX - boxSize / 2}
+          y={groundY - boxSize}
           width={boxSize}
           height={boxSize}
           fill={PHYSICS_COLORS.objectFill}
           stroke={PHYSICS_COLORS.objectStroke}
           strokeWidth={CANVAS_STYLE.stroke.objectLine}
-          rx={4}
+          rx={6}
         />
-        
         <text
-          x={fixedX + currentX}
-          y={groundY + 5}
+          x={centerX}
+          y={groundY - boxSize / 2 + 5}
           fontSize={FONT.axisSize}
-          fill="white"
+          fill={PHYSICS_COLORS.objectStroke}
           textAnchor="middle"
           fontWeight="bold"
         >
-          m={m}
+          m = {m}kg
         </text>
-        
+
+        {/* 6. 平衡位置指示虚线 */}
         <line
-          x1={fixedX}
-          y1={groundY - 80}
-          x2={fixedX}
-          y2={groundY + 80}
-          stroke={PHYSICS_COLORS.acceleration}
+          x1={eqX}
+          y1={groundY - 110}
+          x2={eqX}
+          y2={groundY + 10}
+          stroke={PHYSICS_COLORS.axis}
           strokeWidth={STROKE.reference}
           strokeDasharray={DASH.reference.join(' ')}
         />
         <text
-          x={fixedX}
-          y={groundY - 90}
+          x={eqX}
+          y={groundY - 116}
           fontSize={FONT.axisSize}
-          fill={PHYSICS_COLORS.acceleration}
+          fill={PHYSICS_COLORS.labelTextLight}
           textAnchor="middle"
+          fontWeight="bold"
         >
-          平衡位置
+          平衡位置 (x=0)
         </text>
 
-        {showVectors && (
+        {/* 7. 形变量 Δx 尺寸标注线 (仅在非平衡位置时显示) */}
+        {Math.abs(displacement) > 0.01 && (
           <g>
-            {springForce !== 0 && (
-              <line
-                x1={fixedX + currentX}
-                y1={groundY}
-                x2={fixedX + currentX + springForce * 2}
-                y2={groundY}
-                stroke={PHYSICS_COLORS.elasticForce}
-                strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                markerEnd="url(#arrowhead-sf-f)"
-              />
-            )}
-            {springForce !== 0 && (
-              <text
-                x={fixedX + currentX + springForce * 2 + (springForce > 0 ? 10 : -30)}
-                y={groundY - 10}
-                fontSize={FONT.axisSize}
-                fill={PHYSICS_COLORS.elasticForce}
-                fontWeight="bold"
-              >
-                F弹
-              </text>
-            )}
+            {/* 尺寸辅助延伸虚线 */}
+            <line
+              x1={centerX}
+              y1={groundY - boxSize}
+              x2={centerX}
+              y2={groundY + 28}
+              stroke={PHYSICS_COLORS.displacement}
+              strokeWidth={0.5}
+              strokeDasharray="2,2"
+              opacity={0.6}
+            />
+            <line
+              x1={eqX}
+              y1={groundY}
+              x2={eqX}
+              y2={groundY + 28}
+              stroke={PHYSICS_COLORS.displacement}
+              strokeWidth={0.5}
+              strokeDasharray="2,2"
+              opacity={0.6}
+            />
+            {/* 尺寸双向箭头线 */}
+            <line
+              x1={eqX}
+              y1={groundY + 24}
+              x2={centerX}
+              y2={groundY + 24}
+              stroke={PHYSICS_COLORS.displacement}
+              strokeWidth={1.2}
+              markerStart="url(#arrow-displacement-start)"
+              markerEnd="url(#arrow-displacement-end)"
+            />
+            {/* 形变量数值说明文本 */}
+            <text
+              x={(eqX + centerX) / 2}
+              y={groundY + 36}
+              fontSize={11}
+              fill={PHYSICS_COLORS.displacement}
+              textAnchor="middle"
+              fontWeight="bold"
+            >
+              x = {displacement > 0 ? '+' : ''}{displacement.toFixed(2)}m
+            </text>
           </g>
         )}
 
-        {showFormulas && (
-          <g transform="translate(20, 20)">
-            <text fontSize={FONT.bodySize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">弹力演示（胡克定律）</text>
-            <text x={0} y={25} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
-              劲度系数 k = {k} N/m
-            </text>
-            <text x={0} y={45} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
-              质量 m = {m} kg
-            </text>
-            <text x={0} y={70} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.velocity} fontWeight="bold">
-              胡克定律: F = -kx
-            </text>
-            <text x={0} y={95} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.displacement}>
-              当前位移 x = {displacement.toFixed(2)} m
-            </text>
-            <text x={0} y={120} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.elasticForce}>
-              弹力 F = {springForce.toFixed(1)} N
-            </text>
-            <text x={0} y={145} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.potentialEnergy}>
-              角频率 ω = {omega.toFixed(2)} rad/s
+        {/* 8. 弹力矢量 F_弹 */}
+        {showVectors && Math.abs(springForce) > 0.1 && (
+          <g>
+            {/* 弹力矢量箭头线 (力的大小和长度成正比，系数为 2.2) */}
+            <line
+              x1={centerX}
+              y1={groundY - boxSize - 12}
+              x2={centerX + springForce * 2.2}
+              y2={groundY - boxSize - 12}
+              stroke={PHYSICS_COLORS.elasticForce}
+              strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+              markerEnd="url(#arrowhead-spring-force)"
+            />
+            <text
+              x={centerX + springForce * 2.2 + (springForce > 0 ? 8 : -20)}
+              y={groundY - boxSize - 8}
+              fontSize={FONT.axisSize}
+              fill={PHYSICS_COLORS.elasticForce}
+              fontWeight="bold"
+            >
+              F弹
             </text>
           </g>
         )}
 
         <defs>
-          <marker id="arrowhead-sf-f" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.elasticForce} />
+          {/* 弹力矢量箭头 */}
+          <marker id="arrowhead-spring-force" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.elasticForce} />
+          </marker>
+          {/* 尺寸线端点装饰箭头 */}
+          <marker id="arrow-displacement-start" markerWidth="6" markerHeight="6" refX="1" refY="3" orient="auto">
+            <polygon points="6 1, 0 3, 6 5" fill={PHYSICS_COLORS.displacement} />
+          </marker>
+          <marker id="arrow-displacement-end" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <polygon points="0 1, 6 3, 0 5" fill={PHYSICS_COLORS.displacement} />
           </marker>
         </defs>
       </svg>

@@ -27,11 +27,13 @@ export default function VelocityAnimation() {
   const startX = padding
   const maxVisibleX = canvasSize.width - padding
 
-  // ── 物体位置 ──
   const rawX = startX + v * time * scale
   const isAtBoundary = rawX >= maxVisibleX
   const currentX = Math.min(rawX, maxVisibleX)
   const displayTime = isAtBoundary ? (maxVisibleX - startX) / (v * scale) : time
+
+  // 奔跑小人步伐交替状态
+  const runnerState = isAtBoundary ? 0 : Math.floor(time * 9) % 2
 
   // ── 打点轨迹 ──
   const dotTrail = useMemo(() => {
@@ -97,6 +99,22 @@ export default function VelocityAnimation() {
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
+        {/* 定义科学美化渐变 */}
+        <defs>
+          <linearGradient id="bus-body-grad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#3B82F6" />
+            <stop offset="100%" stopColor="#1D4ED8" />
+          </linearGradient>
+          <linearGradient id="wheel-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#4B5563" />
+            <stop offset="100%" stopColor="#111827" />
+          </linearGradient>
+          <radialGradient id="runner-grad" cx="40%" cy="30%" r="70%">
+            <stop offset="0%" stopColor="#60A5FA" />
+            <stop offset="100%" stopColor="#2563EB" />
+          </radialGradient>
+        </defs>
+
         {/* ── 1. 地面坐标轴 + 地标 ── */}
         <line
           x1={padding * 0.5}
@@ -141,39 +159,71 @@ export default function VelocityAnimation() {
         />
         <text x={startX - fontSize} y={groundY + fontSize + 6} fontSize={fontSize} fill={PHYSICS_COLORS.axis} textAnchor="middle">0</text>
 
-        {/* ── 2. 运动物体（公交车/短跑运动员）── */}
+        {/* ── 2. 运动物体（公交车/科技奔跑剪影）── */}
         {scene === 0 ? (
-          // 公交车简笔画
+          // 公交车精化美化
           <g transform={`translate(${currentX}, ${groundY - objH})`}>
-            <rect width={objW} height={objH} rx={4} fill={PHYSICS_COLORS.objectFill} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={STROKE.objectLine} />
-            {/* 车顶 */}
-            <rect x={objW * 0.6} y={objH * 0.1} width={objW * 0.35} height={objH * 0.4} rx={2} fill={PHYSICS_COLORS.grid} />
-            {/* 车轮 */}
-            <circle cx={objW * 0.2} cy={objH - 2} r={objH * 0.12} fill={PHYSICS_COLORS.labelText} />
-            <circle cx={objW * 0.8} cy={objH - 2} r={objH * 0.12} fill={PHYSICS_COLORS.labelText} />
+            {/* 车身 */}
+            <rect width={objW} height={objH - 4} rx={4} fill="url(#bus-body-grad)" stroke="#1D4ED8" strokeWidth={1.5} />
+            {/* 车窗带折射高光线 */}
+            <rect x={objW * 0.1} y={objH * 0.15} width={objW * 0.25} height={objH * 0.3} rx={1} fill="#EFF6FF" opacity={0.85} />
+            <rect x={objW * 0.4} y={objH * 0.15} width={objW * 0.25} height={objH * 0.3} rx={1} fill="#EFF6FF" opacity={0.85} />
+            <rect x={objW * 0.7} y={objH * 0.15} width={objW * 0.2} height={objH * 0.3} rx={1} fill="#EFF6FF" opacity={0.85} />
+            <line x1={objW * 0.15} y1={objH * 0.15} x2={objW * 0.22} y2={objH * 0.45} stroke="#FFFFFF" strokeWidth={1} opacity={0.6} />
+            <line x1={objW * 0.45} y1={objH * 0.15} x2={objW * 0.52} y2={objH * 0.45} stroke="#FFFFFF" strokeWidth={1} opacity={0.6} />
+            {/* 刹车尾灯 */}
+            <rect x={-2} y={objH * 0.35} width={3} height={6} rx={1} fill="#EF4444" opacity={0.9} />
+            {/* 装饰条 */}
+            <line x1={objW * 0.05} y1={objH * 0.55} x2={objW * 0.95} y2={objH * 0.55} stroke="#60A5FA" strokeWidth={1} opacity={0.5} />
+            {/* 车轮（带钢圈） */}
+            <g transform={`translate(${objW * 0.22}, ${objH - 3})`}>
+              <circle r={objH * 0.18} fill="url(#wheel-grad)" />
+              <circle r={objH * 0.09} fill="#9CA3AF" stroke="#4B5563" strokeWidth={0.5} />
+              <circle r={objH * 0.04} fill="#F3F4F6" />
+            </g>
+            <g transform={`translate(${objW * 0.78}, ${objH - 3})`}>
+              <circle r={objH * 0.18} fill="url(#wheel-grad)" />
+              <circle r={objH * 0.09} fill="#9CA3AF" stroke="#4B5563" strokeWidth={0.5} />
+              <circle r={objH * 0.04} fill="#F3F4F6" />
+            </g>
           </g>
         ) : (
-          // 短跑运动员简笔画
+          // 科技感飞奔光流小人 (2 步伐交替)
           <g transform={`translate(${currentX}, ${groundY - objH})`}>
-            <circle cx={objW * 0.3} cy={objH * 0.15} r={objH * 0.15} fill={PHYSICS_COLORS.objectFill} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={STROKE.objectLine} />
-            <line x1={objW * 0.3} y1={objH * 0.3} x2={objW * 0.3} y2={objH * 0.7} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={STROKE.objectLine} />
-            <line x1={objW * 0.3} y1={objH * 0.7} x2={objW * 0.1} y2={objH} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={STROKE.objectLine} />
-            <line x1={objW * 0.3} y1={objH * 0.7} x2={objW * 0.5} y2={objH} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={STROKE.objectLine} />
-            <line x1={objW * 0.3} y1={objH * 0.45} x2={objW * 0.55} y2={objH * 0.3} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={STROKE.objectLine} />
-            <line x1={objW * 0.3} y1={objH * 0.45} x2={objW * 0.05} y2={objH * 0.55} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={STROKE.objectLine} />
+            {runnerState === 0 ? (
+              <g>
+                <circle cx={objW * 0.38} cy={objH * 0.18} r={objH * 0.13} fill="url(#runner-grad)" />
+                <path d={`M ${objW*0.38},${objH*0.3} L ${objW*0.25},${objH*0.5} L ${objW*0.42},${objH*0.7} L ${objW*0.7},${objH*0.96} 
+                          M ${objW*0.38},${objH*0.3} L ${objW*0.52},${objH*0.48} L ${objW*0.18},${objH*0.62} L ${objW*0.06},${objH*0.9} 
+                          M ${objW*0.38},${objH*0.3} L ${objW*0.72},${objH*0.34} L ${objW*0.6},${objH*0.18} 
+                          M ${objW*0.38},${objH*0.3} L ${objW*0.12},${objH*0.38} L ${objW*0.24},${objH*0.55}`} 
+                      stroke="url(#runner-grad)" strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              </g>
+            ) : (
+              <g>
+                <circle cx={objW * 0.42} cy={objH * 0.18} r={objH * 0.13} fill="url(#runner-grad)" />
+                <path d={`M ${objW*0.42},${objH*0.3} L ${objW*0.35},${objH*0.5} L ${objW*0.62},${objH*0.72} L ${objW*0.42},${objH*0.96} 
+                          M ${objW*0.42},${objH*0.3} L ${objW*0.52},${objH*0.48} L ${objW*0.75},${objH*0.6} L ${objW*0.82},${objH*0.88} 
+                          M ${objW*0.42},${objH*0.3} L ${objW*0.12},${objH*0.26} L ${objW*0.24},${objH*0.1} 
+                          M ${objW*0.42},${objH*0.3} L ${objW*0.64},${objH*0.38} L ${objW*0.52},${objH*0.55}`} 
+                      stroke="url(#runner-grad)" strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              </g>
+            )}
           </g>
         )}
 
-        {/* ── 3. 打点轨迹 ── */}
-        {dotTrail.map((dx, i) => (
-          <circle
-            key={`dot-${i}`}
-            cx={dx}
-            cy={groundY + 2}
-            r={OBJECT.minRadius}
-            fill={PHYSICS_COLORS.trackHistory}
-          />
-        ))}
+        {/* ── 3. 打点轨迹（含感光光晕衰减）── */}
+        {dotTrail.map((dx, i) => {
+          const opacity = dotTrail.length <= 1 ? 0.8 : 0.2 + 0.7 * (i / (dotTrail.length - 1))
+          return (
+            <g key={`dot-${i}`}>
+              {/* 外圈虚光晕 */}
+              <circle cx={dx} cy={groundY + 2} r={OBJECT.minRadius + 2.5} fill={PHYSICS_COLORS.trackHistory} opacity={opacity * 0.25} />
+              {/* 内点 */}
+              <circle cx={dx} cy={groundY + 2} r={OBJECT.minRadius} fill={PHYSICS_COLORS.trackHistory} opacity={opacity} />
+            </g>
+          )
+        })}
 
         {/* ── 4. 平均速度粗箭头 ── */}
         {showVectors && deltaT > 0 && (
