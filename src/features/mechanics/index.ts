@@ -9,6 +9,8 @@ export { default as EnergyConservationAnimation } from './EnergyConservationAnim
 export { default as CentripetalAnimation } from './CentripetalAnimation'
 export { default as VelocityAnimation } from './VelocityAnimation'
 export { default as AccelerationAnimation } from './AccelerationAnimation'
+export { default as AccelerationSidebar } from './AccelerationSidebar'
+export { default as AccelerationCenterExtra } from './AccelerationCenterExtra'
 export { default as UniformAccelerationAnimation } from './UniformAccelerationAnimation'
 export { default as VerticalThrowAnimation } from './VerticalThrowAnimation'
 export { default as MomentumTheoremAnimation } from './MomentumTheoremAnimation'

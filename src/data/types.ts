@@ -22,6 +22,8 @@ export interface ParamMeta {
   unit?: string
   /** 仅当 params[showIf] 为真值时显示此参数 */
   showIf?: string
+  /** 仅当 params[showIf] 等于此值时显示此参数 */
+  showIfValue?: number
 }
 
 /** 侧边栏扩展组件 props */
@@ -53,6 +55,8 @@ export interface AnimationConfig {
   SidebarExtra?: LazyExoticComponent<ComponentType<SidebarExtraProps>>
   /** 中心区域扩展组件（VT图+公式面板等，动画模式下动画上方的特异布局） */
   CenterExtra?: LazyExoticComponent<ComponentType>
+  /** 当 params[centerExtraMode] === 1 时，CenterExtra 接管全屏布局（替代页面层 id===硬编码） */
+  centerExtraMode?: string
 }
 
 export interface Problem {

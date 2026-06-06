@@ -36,6 +36,9 @@ import {
   calculateVariableAcceleration,
   calculateSecantSlope,
   calculateInstantaneousVelocity,
+  calculateDualObjectComparison,
+  determineMotionState,
+  calculateVariableAccelerationMotion,
 } from '../physics'
 import type { VariableMotionModel, VariableMotionParams } from '../physics'
 
@@ -207,31 +210,136 @@ export function buildPhysicsQuantities(
       }
     }
     case 'anim-acceleration': {
-      const v0 = params.v0 ?? 0
-      const a = params.a ?? 2
-      const { v, s } = calculateAcceleratedMotion(v0, a, time)
-      return {
-        quantities: [
-          ...base,
-          { label: '初速度 v₀', value: v0, unit: 'm/s' },
-          { label: '加速度 a', value: a, unit: 'm/s²', highlight: sign(a) },
-          { label: '速度 v', value: v, unit: 'm/s', highlight: sign(v) },
-          { label: '位移 s', value: s, unit: 'm' },
-        ],
+      const advancedMode = params.advancedMode ?? 0
+
+      if (advancedMode === 0) {
+        // ── 基础版：双物体赛跑 ──
+        const vA = params.vA ?? 200
+        const aB = params.aB ?? 5
+        const deltaT = params.deltaT ?? 1
+        const result = calculateDualObjectComparison(vA, aB, deltaT, time)
+        return {
+          quantities: [
+            ...base,
+            { label: '飞机速度 v_A', value: result.vA, unit: 'm/s', highlight: 'positive' as const },
+            { label: '跑车速度 v_B', value: result.vB, unit: 'm/s', highlight: sign(result.vB) },
+            { label: '飞机 Δv_A', value: result.deltaVA, unit: 'm/s', highlight: 'zero' as const },
+            { label: '跑车 Δv_B', value: result.deltaVB, unit: 'm/s', highlight: 'positive' as const },
+            { label: '飞机加速度 a_A', value: result.aA, unit: 'm/s²', highlight: 'zero' as const },
+            { label: '跑车加速度 a_B', value: result.aB, unit: 'm/s²', highlight: 'positive' as const },
+            { label: '核心结论', value: result.conclusion, unit: '', highlight: 'extreme' as const },
+          ],
+          gaokaoPoints: [
+            { text: '加速度大小反映速度变化的快慢，与速度大小无关', importance: 'core' as const },
+            { text: '速度大加速度可以为零；速度为零加速度可以很大', importance: 'hard' as const },
+            { text: '加速度由合外力决定，采用比值定义法', importance: 'basic' as const },
+          ],
+        }
+      } else {
+        // ── 进阶版：矢量方向与 v-t 图象联动 ──
+        const v0 = params.v0 ?? 0
+        const a = params.a ?? 2
+        const motionMode = params.motionMode ?? 0
+        let v: number
+        let currentA: number
+        if (motionMode === 0) {
+          // 匀变速
+          const result = calculateAcceleratedMotion(v0, a, time)
+          v = result.v
+          currentA = a
+        } else {
+          // 变加速：a(t) = a₀ - k·t，k 取 |a|/10 保证衰减可见
+          const k = Math.abs(a) / 10
+          const result = calculateVariableAccelerationMotion(v0, a, k, time)
+          v = result.v
+          currentA = result.a
+        }
+        const { direction, motion } = determineMotionState(v, currentA)
+        const isAccelerating = motion === '加速'
+        return {
+          quantities: [
+            ...base,
+            { label: '速度 v', value: v, unit: 'm/s', highlight: sign(v) },
+            { label: '加速度 a', value: currentA, unit: 'm/s²', highlight: sign(currentA) },
+            { label: '矢量方向关系', value: `v⃗ 与 a⃗ ${direction}`, unit: '' },
+            { label: '运动状态', value: motion, unit: '', highlight: isAccelerating ? 'positive' as const : motion === '减速' ? 'negative' as const : undefined },
+            { label: '图象斜率 k', value: currentA, unit: 'm/s²' },
+            { label: '微积分映射', value: 'a = dv/dt = v\'(t)', unit: '' },
+            { label: '核心结论', value: 'a 为负值，物体不一定做减速运动', unit: '', highlight: 'extreme' as const },
+          ],
+          gaokaoPoints: [
+            { text: '加速度与速度同向则加速，反向则减速，不看正负号', importance: 'core' as const },
+            { text: 'v-t 图象斜率绝对值表加速度大小，正负表方向', importance: 'gaokao' as const },
+            { text: '加速度减小时若与速度同向，速度依然在增大', importance: 'hard' as const },
+          ],
+        }
       }
     }
     case 'anim-uniform-acceleration': {
       const v0 = params.v0 ?? 0
       const a = params.a ?? 1.5
+      const advancedMode = params.advancedMode ?? 0
       const { v, s } = calculateAcceleratedMotion(v0, a, time)
-      return {
-        quantities: [
-          ...base,
-          { label: '初速度 v₀', value: v0, unit: 'm/s' },
-          { label: '加速度 a', value: a, unit: 'm/s²' },
-          { label: '速度 v', value: v, unit: 'm/s' },
-          { label: '位移 s', value: s, unit: 'm' },
-        ],
+
+      if (advancedMode === 0) {
+        // ── 基础模式：右侧看板只放中间屏幕没有的推论和验证 ──
+        const avgV = (v0 + v) / 2
+        const vAtHalfT = v0 + a * (time / 2)
+        const vSquared = v * v
+        const v0Squared = v0 * v0
+        const twoAS = 2 * a * s
+
+        return {
+          quantities: [
+            ...base,
+            { label: 'v²-v₀²', value: vSquared - v0Squared, unit: 'm²/s²' },
+            { label: '2ax', value: twoAS, unit: 'm²/s²', highlight: Math.abs(vSquared - v0Squared - twoAS) < 0.01 ? 'zero' as const : undefined },
+            { label: '平均速度 v̄', value: avgV, unit: 'm/s' },
+            { label: 'v(t/2)', value: vAtHalfT, unit: 'm/s' },
+            { label: 'v̄=v(t/2)?', value: Math.abs(avgV - vAtHalfT) < 0.01 ? '✓ 成立' : '✗', unit: '' },
+          ],
+          formulas: [
+            { name: '速度位移关系', latex: `v^2 - v_0^2 = 2ax` },
+          ],
+          gaokaoPoints: [
+            { text: 'v-t 图象面积代表位移，图象斜率代表加速度大小', importance: 'core' as const },
+            { text: '刹车问题中 v=0 后物体停止，不能盲目代公式——这是审题陷阱', importance: 'gaokao' as const },
+            { text: '熟记 1:3:5:7 比例，仅适用于 v₀=0 的匀加速直线运动', importance: 'hard' as const },
+          ],
+        }
+      } else {
+        // ── 进阶模式：逐差法与平均速度推论 ──
+        const T = params.flashPeriod ?? 1
+        const deltaX = a * T * T
+        const vAtHalfS = Math.sqrt((v0 * v0 + v * v) / 2)
+        const vAtHalfT = (v0 + v) / 2
+        const isAccelerating = v0 * a >= 0 && a !== 0
+
+        // 隔项逐差法：a = (x₃ - x₁) / (2T²)
+        const s1 = v0 * T + 0.5 * a * T * T
+        const s3 = v0 * 3 * T + 0.5 * a * 9 * T * T
+        const skipDiffA = (s3 - s1) / (2 * T * T)
+
+        return {
+          quantities: [
+            ...base,
+            { label: 'Δx = aT²', value: deltaX, unit: 'm', highlight: 'positive' as const },
+            { label: 'v(s/2)', value: isFinite(vAtHalfS) ? vAtHalfS : 0, unit: 'm/s' },
+            { label: 'v(t/2)', value: vAtHalfT, unit: 'm/s' },
+            { label: 'v(s/2) vs v(t/2)', value: isAccelerating ? 'v(s/2) > v(t/2)' : 'v(s/2) < v(t/2)', unit: '' },
+            { label: '隔项逐差 a', value: skipDiffA, unit: 'm/s²' },
+          ],
+          formulas: [
+            { name: '逐差法', latex: `\\Delta x = aT^2 = ${a} \\times ${T}^2 = ${deltaX.toFixed(3)}\\;\\text{m}` },
+            { name: '隔项逐差', latex: `a = \\frac{x_3 - x_1}{2T^2}` },
+            { name: '中间位置速度', latex: `v_{s/2} = \\sqrt{\\frac{v_0^2+v^2}{2}}` },
+          ],
+          gaokaoPoints: [
+            { text: '连续相等时间位移差恒定（Δx=aT²）是判断匀变速的依据', importance: 'core' as const },
+            { text: '中间时刻瞬时速度必等于全程平均速度，用于求加速度', importance: 'gaokao' as const },
+            { text: '计算加速度建议用隔项逐差法 a=(x₃-x₁)/(2T²)，减小误差', importance: 'hard' as const },
+          ],
+        }
       }
     }
     case 'anim-free-fall': {

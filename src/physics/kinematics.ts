@@ -443,3 +443,116 @@ export function precomputeVerticalThrowTrajectory(
   if (landTime === 0) landTime = currentTime
   return { points, peakTime, landTime, maxHeight }
 }
+
+// ─── 加速度概念教学：双物体对比 / 运动状态判定 / 变加速运动 ──────────────────
+
+/**
+ * 双物体加速度对比计算（基础版）。
+ * 飞机A做匀速运动（a=0），跑车B从静止做匀加速运动。
+ * @param vA - 飞机A恒定速度 (m/s)
+ * @param aB - 跑车B加速度 (m/s²)
+ * @param deltaT - 观测时间微元 (s)
+ * @param t - 当前时刻 (s)
+ * @returns 双物体各物理量及核心结论
+ */
+export function calculateDualObjectComparison(
+  vA: number,
+  aB: number,
+  deltaT: number,
+  t: number
+): {
+  /** 飞机当前速度 (m/s) */
+  vA: number
+  /** 跑车当前速度 (m/s) */
+  vB: number
+  /** 飞机速度变化量 (m/s)，恒为0 */
+  deltaVA: number
+  /** 跑车速度变化量 (m/s) */
+  deltaVB: number
+  /** 飞机加速度 (m/s²)，恒为0 */
+  aA: number
+  /** 跑车加速度 (m/s²) */
+  aB: number
+  /** 飞机位移 (m) */
+  sA: number
+  /** 跑车位移 (m) */
+  sB: number
+  /** 核心结论文字 */
+  conclusion: string
+} {
+  const vB = aB * t
+  const deltaVA = 0
+  const deltaVB = aB * deltaT
+  const aA = 0
+  const sA = vA * t
+  const sB = 0.5 * aB * t * t
+
+  let conclusion: string
+  if (t === 0) {
+    conclusion = '点击播放，观察速度与加速度的区别'
+  } else if (vA > vB) {
+    conclusion = `v_A > v_B，但 a_A < a_B`
+  } else {
+    conclusion = `v_B 已超过 v_A！加速度的"延迟回报"显现`
+  }
+
+  return { vA, vB, deltaVA, deltaVB, aA, aB, sA, sB, conclusion }
+}
+
+/**
+ * 根据速度与加速度方向判定运动状态（进阶版）。
+ * @param v - 当前速度 (m/s)
+ * @param a - 当前加速度 (m/s²)
+ * @returns 矢量方向关系与运动状态
+ */
+export function determineMotionState(
+  v: number,
+  a: number
+): {
+  /** v⃗ 与 a⃗ 的方向关系 */
+  direction: '同向' | '反向' | '速度为零'
+  /** 运动状态判定 */
+  motion: '加速' | '减速' | '匀速'
+} {
+  if (Math.abs(v) < 1e-9) {
+    return { direction: '速度为零', motion: a !== 0 ? '加速' : '匀速' }
+  }
+  if (Math.abs(a) < 1e-9) {
+    return { direction: v > 0 ? '同向' : '反向', motion: '匀速' }
+  }
+  const sameDirection = (v > 0 && a > 0) || (v < 0 && a < 0)
+  return {
+    direction: sameDirection ? '同向' : '反向',
+    motion: sameDirection ? '加速' : '减速',
+  }
+}
+
+/**
+ * 变加速直线运动计算（进阶版）。
+ * 加速度随时间线性减小：a(t) = a₀ - k·t
+ * v(t) = v₀ + a₀·t - ½·k·t²
+ * s(t) = v₀·t + ½·a₀·t² - (1/6)·k·t³
+ * @param v0 - 初速度 (m/s)
+ * @param a0 - 初始加速度 (m/s²)
+ * @param k - 加速度衰减率 (m/s³)，正值表示加速度在减小
+ * @param t - 当前时刻 (s)
+ * @returns 速度、位移、当前加速度
+ */
+export function calculateVariableAccelerationMotion(
+  v0: number,
+  a0: number,
+  k: number,
+  t: number
+): {
+  /** 当前速度 (m/s) */
+  v: number
+  /** 位移 (m) */
+  s: number
+  /** 当前加速度 (m/s²) */
+  a: number
+} {
+  const a = a0 - k * t
+  const v = v0 + a0 * t - 0.5 * k * t * t
+  const s = v0 * t + 0.5 * a0 * t * t - (k * t * t * t) / 6
+  return { v, s, a }
+}

@@ -1,7 +1,8 @@
 import { useCanvasSize } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, STROKE } from '@/theme/physics'
+import { PHYSICS_COLORS, STROKE, DASH, OBJECT } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 import { calculateAverageVelocity } from '@/physics'
 
 /**
@@ -107,7 +108,7 @@ export default function VelocityAnimation() {
         />
         {landmarkLabels.map((lm, i) => (
           <g key={`lm-${i}`}>
-            <line x1={lm.x} y1={groundY} x2={lm.x} y2={groundY + 6} stroke={PHYSICS_COLORS.labelText} strokeWidth={1} />
+            <line x1={lm.x} y1={groundY} x2={lm.x} y2={groundY + 6} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.tick} />
             <text x={lm.x} y={groundY + fontSize + 6} fontSize={smallFont} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
               {lm.text}
             </text>
@@ -124,7 +125,7 @@ export default function VelocityAnimation() {
             y2={groundY + 4}
             stroke={PHYSICS_COLORS.grid}
             strokeWidth={STROKE.grid}
-            strokeDasharray="4,4"
+            strokeDasharray={DASH.guide.join(',')}
           />
         ))}
 
@@ -135,8 +136,8 @@ export default function VelocityAnimation() {
           x2={startX}
           y2={groundY + 4}
           stroke={PHYSICS_COLORS.axis}
-          strokeWidth={2}
-          strokeDasharray="8,4"
+          strokeWidth={STROKE.axisBold}
+          strokeDasharray={DASH.boundary.join(',')}
         />
         <text x={startX - fontSize} y={groundY + fontSize + 6} fontSize={fontSize} fill={PHYSICS_COLORS.axis} textAnchor="middle">0</text>
 
@@ -169,7 +170,7 @@ export default function VelocityAnimation() {
             key={`dot-${i}`}
             cx={dx}
             cy={groundY + 2}
-            r={3}
+            r={OBJECT.minRadius}
             fill={PHYSICS_COLORS.trackHistory}
           />
         ))}
@@ -226,7 +227,7 @@ export default function VelocityAnimation() {
         {/* ── 6. 测速仪微观视窗 ── */}
         {isDeltaTSmall && (
           <g transform={`translate(${canvasSize.width - padding - 80}, ${padding})`}>
-            <rect width={70} height={50} rx={6} fill="#F8FAFC" stroke={PHYSICS_COLORS.magnifier} strokeWidth={1.5} />
+            <rect width={70} height={50} rx={6} fill={colors.neutral[50]} stroke={PHYSICS_COLORS.magnifier} strokeWidth={STROKE.annotation} />
             <text x={35} y={18} fontSize={smallFont} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">测速仪</text>
             <text x={35} y={40} fontSize={fontSize * 1.2} fill={PHYSICS_COLORS.velocity} fontWeight="bold" textAnchor="middle">
               {speedometerValue.toFixed(1)}
@@ -237,9 +238,9 @@ export default function VelocityAnimation() {
         {/* ── 7. 位移大括号示意线 ── */}
         {deltaT > 0 && showVectors && (
           <g>
-            <line x1={t1Pos} y1={groundY + 16} x2={t2Pos} y2={groundY + 16} stroke={PHYSICS_COLORS.displacement} strokeWidth={1.5} />
-            <line x1={t1Pos} y1={groundY + 12} x2={t1Pos} y2={groundY + 20} stroke={PHYSICS_COLORS.displacement} strokeWidth={1.5} />
-            <line x1={t2Pos} y1={groundY + 12} x2={t2Pos} y2={groundY + 20} stroke={PHYSICS_COLORS.displacement} strokeWidth={1.5} />
+            <line x1={t1Pos} y1={groundY + 16} x2={t2Pos} y2={groundY + 16} stroke={PHYSICS_COLORS.displacement} strokeWidth={STROKE.vectorThin} />
+            <line x1={t1Pos} y1={groundY + 12} x2={t1Pos} y2={groundY + 20} stroke={PHYSICS_COLORS.displacement} strokeWidth={STROKE.vectorThin} />
+            <line x1={t2Pos} y1={groundY + 12} x2={t2Pos} y2={groundY + 20} stroke={PHYSICS_COLORS.displacement} strokeWidth={STROKE.vectorThin} />
             <text
               x={(t1Pos + t2Pos) / 2}
               y={groundY + 30}

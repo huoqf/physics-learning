@@ -125,7 +125,11 @@ export default function AnimationPage() {
 
   // 构建 ParamControl 需要的参数格式（过滤 showIf 条件）
   const paramControlParams = paramMeta
-    .filter((p) => !p.showIf || params[p.showIf])
+    .filter((p) => {
+      if (!p.showIf) return true
+      if (p.showIfValue != null) return params[p.showIf] === p.showIfValue
+      return !!params[p.showIf]
+    })
     .map((p) => ({
       ...p,
       value: params[p.key] ?? 0,
@@ -230,10 +234,11 @@ export default function AnimationPage() {
                 {/* 中心区域扩展：VT图+公式面板等特异布局 */}
                 {(() => {
                   const CenterExtraComponent = config.CenterExtra
-                  const isAdvancedVelocity = id === 'anim-velocity' && params.advancedMode === 1
+                  const centerExtraModeKey = config.centerExtraMode
+                  const isCenterExtraFull = centerExtraModeKey != null && params[centerExtraModeKey] === 1
 
                   // 进阶模式：CenterExtra 接管全部布局（不显示原有 Canvas 和 Controls）
-                  if (isAdvancedVelocity && CenterExtraComponent) {
+                  if (isCenterExtraFull && CenterExtraComponent) {
                     return (
                       <ErrorBoundary resetKey={config.id}>
                         <Suspense fallback={null}>
@@ -243,11 +248,13 @@ export default function AnimationPage() {
                     )
                   }
 
-                  // 基础模式：保持原有布局，不渲染 VelocityCenterExtra
-                  const isBasicVelocity = id === 'anim-velocity'
+                  // 基础模式：有 centerExtraMode 的动画在基础模式下不显示 CenterExtra；
+                  // 无 centerExtraMode 的动画（如 Discovery）照常在动画上方展示
+                  const showCenterExtraInBasic = CenterExtraComponent && !centerExtraModeKey
+
                   return (
                     <>
-                      {!isBasicVelocity && CenterExtraComponent && (
+                      {showCenterExtraInBasic && (
                         <ErrorBoundary resetKey={config.id}>
                           <Suspense fallback={null}>
                             <CenterExtraComponent />

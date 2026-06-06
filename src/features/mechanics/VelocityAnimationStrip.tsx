@@ -1,7 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, STROKE } from '@/theme/physics'
+import { PHYSICS_COLORS, STROKE, DASH, OBJECT } from '@/theme/physics'
 import {
   calculateVariableAcceleration,
   calculateInstantaneousVelocity,
@@ -193,17 +193,10 @@ export default function VelocityAnimationStrip({
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
-        {/* ── 场景标签 ── */}
+        {/* ── 场景标签（含多阶段阶段名） ── */}
         <text x={padding} y={fontSize + 4} fontSize={fontSize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
-          {modelNames[model] ?? model} — v = {vInst.toFixed(2)} m/s
+          {modelNames[model] ?? model}{model === 'multi-stage' && stageName ? ` · ${stageName}` : ''} — v = {vInst.toFixed(2)} m/s
         </text>
-
-        {/* ── 多阶段阶段状态标签 ── */}
-        {model === 'multi-stage' && stageName && (
-          <text x={canvasSize.width - padding} y={fontSize + 4} fontSize={fontSize} fill={PHYSICS_COLORS.averageVelocity} fontWeight="bold" textAnchor="end">
-            {stageName}
-          </text>
-        )}
 
         {/* ── 地面线 ── */}
         <line
@@ -216,7 +209,7 @@ export default function VelocityAnimationStrip({
         {/* ── 地面刻度 ── */}
         {groundTicks.map((gt, i) => (
           <g key={`gt-${i}`}>
-            <line x1={gt.x} y1={groundY} x2={gt.x} y2={groundY + 6} stroke={PHYSICS_COLORS.labelText} strokeWidth={1} />
+            <line x1={gt.x} y1={groundY} x2={gt.x} y2={groundY + 6} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.tick} />
             <text x={gt.x} y={groundY + fontSize + 6} fontSize={smallFont} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
               {gt.label}m
             </text>
@@ -225,26 +218,26 @@ export default function VelocityAnimationStrip({
 
         {/* ── 打点轨迹 ── */}
         {dotTrail.filter((_, i) => i % 5 === 0).map((dx, i) => (
-          <circle key={`dot-${i}`} cx={dx} cy={groundY + 2} r={3} fill={PHYSICS_COLORS.trackHistory} />
+          <circle key={`dot-${i}`} cx={dx} cy={groundY + 2} r={OBJECT.minRadius} fill={PHYSICS_COLORS.trackHistory} />
         ))}
 
         {/* ── 当前时刻竖线 ── */}
         <line
           x1={currentX} y1={groundY - objH * 2}
           x2={currentX} y2={groundY + 4}
-          stroke={PHYSICS_COLORS.velocity} strokeWidth={1}
-          strokeDasharray="4,4" opacity={0.4}
+          stroke={PHYSICS_COLORS.velocity} strokeWidth={STROKE.reference}
+          strokeDasharray={DASH.guide.join(',')} opacity={0.4}
         />
 
         {/* ══════════ 多阶段专属元素 ══════════ */}
         {model === 'multi-stage' && (
           <>
             {/* 起点A标志 */}
-            <circle cx={pointA} cy={groundY} r={5} fill="none" stroke={PHYSICS_COLORS.displacement} strokeWidth={2} />
+            <circle cx={pointA} cy={groundY} r={5} fill="none" stroke={PHYSICS_COLORS.displacement} strokeWidth={STROKE.objectLine} />
             <text x={pointA} y={groundY + fontSize + 18} fontSize={fontSize} fill={PHYSICS_COLORS.displacement} fontWeight="bold" textAnchor="middle">A</text>
 
             {/* 终点B标志 */}
-            <circle cx={pointB} cy={groundY} r={5} fill="none" stroke={PHYSICS_COLORS.averageVelocity} strokeWidth={2} />
+            <circle cx={pointB} cy={groundY} r={5} fill="none" stroke={PHYSICS_COLORS.averageVelocity} strokeWidth={STROKE.objectLine} />
             <text x={pointB} y={groundY + fontSize + 18} fontSize={fontSize} fill={PHYSICS_COLORS.averageVelocity} fontWeight="bold" textAnchor="middle">B</text>
 
             {/* 路程填充带（从A到当前位置，折返时不缩短） */}
@@ -270,7 +263,7 @@ export default function VelocityAnimationStrip({
               x1={pointA} y1={groundY - objH - 8}
               x2={currentX} y2={groundY - objH - 8}
               stroke={PHYSICS_COLORS.displacement}
-              strokeWidth={2}
+              strokeWidth={STROKE.objectLine}
               markerEnd="url(#arrowhead-disp-strip)"
             />
             <text
@@ -290,8 +283,8 @@ export default function VelocityAnimationStrip({
             <line
               x1={toPixelX(0)} y1={groundY - objH * 2}
               x2={toPixelX(0)} y2={groundY + 4}
-              stroke={PHYSICS_COLORS.labelText} strokeWidth={1}
-              strokeDasharray="6,4" opacity={0.4}
+              stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.reference}
+              strokeDasharray={DASH.boundary.join(',')} opacity={0.4}
             />
             <text x={toPixelX(0)} y={groundY + fontSize + 6} fontSize={smallFont} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">0</text>
 
@@ -304,7 +297,7 @@ export default function VelocityAnimationStrip({
 
             {/* 弹簧 */}
             {springPathD && (
-              <path d={springPathD} fill="none" stroke={PHYSICS_COLORS.displacement} strokeWidth={2} />
+              <path d={springPathD} fill="none" stroke={PHYSICS_COLORS.displacement} strokeWidth={STROKE.objectLine} />
             )}
 
             {/* 小球 */}
