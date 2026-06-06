@@ -324,7 +324,7 @@ export default function AccelerationCenterExtra() {
                       </text>
 
                       {/* Y 轴读数标签背景与文字 */}
-                      <rect x={chartLeft - 38} y={pY - 6} width="34" height="12" rx="3" fill="#EFF6FF" stroke={PHYSICS_COLORS.objectStroke} strokeWidth={0.5} />
+                      <rect x={chartLeft - 38} y={pY - 6} width="34" height="12" rx="3" fill={PHYSICS_COLORS.objectFill} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={0.5} />
                       <text x={chartLeft - 21} y={pY + 3} fontSize={8} fill={PHYSICS_COLORS.velocity} textAnchor="middle" fontWeight="bold">
                         {currentV.toFixed(1)}
                       </text>
@@ -430,8 +430,8 @@ export default function AccelerationCenterExtra() {
                   </text>
 
                   {/* 精密滑轨槽（代替单线数轴，工程制图风格） */}
-                  <rect x={axisLeft - 10} y={axisY - 6} width={axisLen + 20} height="12" rx="4" fill="#E2E8F0" stroke="#CBD5E1" strokeWidth={1} />
-                  <line x1={axisLeft} y1={axisY} x2={axisRight} y2={axisY} stroke="#94A3B8" strokeWidth={1} strokeDasharray="5 3" />
+                  <rect x={axisLeft - 10} y={axisY - 6} width={axisLen + 20} height="12" rx="4" fill={CHART_COLORS.gridLine} stroke={CHART_COLORS.zeroline} strokeWidth={1} />
+                  <line x1={axisLeft} y1={axisY} x2={axisRight} y2={axisY} stroke={CHART_COLORS.asymptote} strokeWidth={1} strokeDasharray="5 3" />
 
                   {/* 原点标记 */}
                   <line x1={axisLeft + axisLen * axisCenter} y1={axisY - 12} x2={axisLeft + axisLen * axisCenter} y2={axisY + 12} stroke={CHART_COLORS.axisLine} strokeWidth={2} />
@@ -449,7 +449,7 @@ export default function AccelerationCenterExtra() {
                     const px = axisLeft + nx * axisLen
                     return (
                       <g key={`tick-${s}`}>
-                        <line x1={px} y1={axisY - 10} x2={px} y2={axisY + 10} stroke="#64748B" strokeWidth={1.5} />
+                        <line x1={px} y1={axisY - 10} x2={px} y2={axisY + 10} stroke={CHART_COLORS.tickLabel} strokeWidth={1.5} />
                         <text x={px} y={axisY + 22} fontSize={8} textAnchor="middle" fill={CHART_COLORS.tickLabel} fontWeight="bold">{s}m</text>
                       </g>
                     )
@@ -531,7 +531,7 @@ export default function AccelerationCenterExtra() {
                   {/* 运动状态文字标签 */}
                   <text x={200} y={270} fontSize={FONT.labelBold} fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
                     物理状态：
-                    <tspan fill={direction === '速度为零' ? '#D97706' : (motion === '加速' ? PHYSICS_COLORS.velocity : PHYSICS_COLORS.acceleration)}>
+                    <tspan fill={direction === '速度为零' ? PHYSICS_COLORS.friction : (motion === '加速' ? PHYSICS_COLORS.velocity : PHYSICS_COLORS.acceleration)}>
                       {direction === '速度为零' ? '瞬时静止' : `${direction} — ${motion}`}
                     </tspan>
                   </text>

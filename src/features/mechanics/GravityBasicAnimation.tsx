@@ -1,7 +1,7 @@
 import { FC, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
 
 // 定义悬挂薄板的本地顶点
 const PLATE_VERTICES = [
@@ -232,7 +232,7 @@ export const GravityBasicAnimation: FC = () => {
             <circle
               cx={cx} cy={cy} r={earthData.R_earth}
               fill="url(#earth-grad)"
-              stroke="#172554"
+              stroke={SCENE_COLORS.magnet.southStroke}
               strokeWidth={2}
             />
 
@@ -392,8 +392,8 @@ export const GravityBasicAnimation: FC = () => {
             {/* 悬挂钉子 (固定点) */}
             <circle
               cx={plateData.pinX} cy={plateData.pinY} r={5}
-              fill="#475569"
-              stroke="#1E293B"
+              fill={PHYSICS_COLORS.gravity}
+              stroke={SCENE_COLORS.pendulum.rodStroke}
               strokeWidth={1.5}
             />
 
@@ -433,7 +433,7 @@ export const GravityBasicAnimation: FC = () => {
                 <circle
                   key={`hole-${idx}`}
                   cx={hole.cx} cy={hole.cy} r={isActive ? 2.5 : 4}
-                  fill={isActive ? "#475569" : "#FFFFFF"} // 正在悬挂的孔内缩为钉子轴
+                  fill={isActive ? PHYSICS_COLORS.gravity : "#FFFFFF"} // 正在悬挂的孔内缩为钉子轴
                   stroke={PHYSICS_COLORS.labelText}
                   strokeWidth={1.2}
                 />

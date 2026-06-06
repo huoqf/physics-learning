@@ -4,6 +4,7 @@ import { useAnimationStore } from '@/stores'
 import {
   PHYSICS_COLORS,
   CHART_COLORS,
+  SCENE_COLORS,
   VT_CHART_COLORS,
   STROKE,
   OPACITY,
@@ -11,7 +12,8 @@ import {
   FONT,
 } from '@/theme/physics'
 import { calcGByLatitude, calcGByAltitude } from '@/physics'
-import { useFreeFallPhysics, getPhysicsAtTime } from './useFreeFallPhysics'
+import { useFreeFallPhysics } from './useFreeFallPhysics'
+import { getPhysicsAtTime } from '@/physics'
 
 // ─── 物理常量 ────────────────────────────────────────────────────────────────
 /** 管高度 (m) */
@@ -300,7 +302,7 @@ export default function FreeFallDripAnimation() {
           {/* 喷嘴 */}
           <rect
             x={tubeCenterX - 4} y={faucetY} width={8} height={8} rx={1}
-            fill="#374151" stroke="#1F2937"
+            fill={SCENE_COLORS.circuit.meterFrame} stroke={SCENE_COLORS.circuit.wire}
             strokeWidth={STROKE.objectThin}
           />
           {/* 正在形成与拉伸的水滴 */}
@@ -444,7 +446,7 @@ export default function FreeFallDripAnimation() {
                 const r = Math.max(1, 2.5 * (1 - progress))
                 return (
                   <circle key={`sp-${p}`} cx={px} cy={Math.min(py, tubeBottomY + 5)} r={r}
-                    fill="#60A5FA" opacity={opacity * 0.9} />
+                    fill={PHYSICS_COLORS.velocityY} opacity={opacity * 0.9} />
                 )
               })}
             </g>

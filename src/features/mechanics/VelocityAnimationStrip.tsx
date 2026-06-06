@@ -1,7 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, STROKE, DASH, OBJECT } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OBJECT } from '@/theme/physics'
 import { calculateInstantaneousVelocity } from '@/physics'
 import type { VariableMotionModel, VariableMotionParams } from '@/physics'
 import { useVelocityPhysics } from './useVelocityPhysics'
@@ -230,7 +230,7 @@ export default function VelocityAnimationStrip({
                 key={`tick-${idx}`}
                 x1={rx} y1={groundY - 5}
                 x2={rx} y2={groundY - 5 + tickH}
-                stroke="#374151" strokeWidth={0.5} opacity={0.6}
+                stroke={SCENE_COLORS.spring.coilDark} strokeWidth={0.5} opacity={0.6}
               />
             )
           })}
@@ -286,7 +286,7 @@ export default function VelocityAnimationStrip({
             <rect
               x={padding - 4} y={groundY - objH * 1.3}
               width={6} height={objH * 1.3}
-              fill="url(#slider-metal-grad)" stroke="#1F2937" strokeWidth={0.5} rx={1}
+              fill="url(#slider-metal-grad)" stroke={SCENE_COLORS.circuit.wire} strokeWidth={0.5} rx={1}
             />
           </>
         )}
@@ -297,25 +297,25 @@ export default function VelocityAnimationStrip({
           <circle
             cx={currentX} cy={groundY - objH / 2 - 2}
             r={objW * 0.4}
-            fill="url(#slider-metal-grad)" stroke="#374151" strokeWidth={STROKE.objectThin}
+            fill="url(#slider-metal-grad)" stroke={SCENE_COLORS.spring.coilDark} strokeWidth={STROKE.objectThin}
           />
         ) : (
           // 变加速 / 多阶段：不锈钢滑块小车
           <g transform={`translate(${currentX - objW / 2}, ${groundY - objH - 5})`}>
             {/* 滑块车身 */}
-            <rect width={objW} height={objH} rx={3} fill="url(#slider-metal-grad)" stroke="#1F2937" strokeWidth={STROKE.objectThin} />
+            <rect width={objW} height={objH} rx={3} fill="url(#slider-metal-grad)" stroke={SCENE_COLORS.circuit.wire} strokeWidth={STROKE.objectThin} />
             {/* 传感器激光红色指示灯 (播放时高频闪烁) */}
             <circle
               cx={objW - 4} cy={objH * 0.3} r={2}
-              fill="#EF4444"
+              fill={SCENE_COLORS.spring.compressed}
               opacity={isPlaying && Math.floor(time * 10) % 2 === 0 ? 1 : 0.3}
-              filter="drop-shadow(0 0 1.5px #EF4444)"
+              filter={`drop-shadow(0 0 1.5px ${SCENE_COLORS.spring.compressed})`}
             />
             {/* 车轮（带辐条） */}
             <circle cx={objW * 0.22} cy={objH} r={objH * 0.16} fill="url(#wheel-grad)" />
-            <circle cx={objW * 0.22} cy={objH} r={objH * 0.08} fill="#9CA3AF" />
+            <circle cx={objW * 0.22} cy={objH} r={objH * 0.08} fill={SCENE_COLORS.circuit.bulbGlassStroke} />
             <circle cx={objW * 0.78} cy={objH} r={objH * 0.16} fill="url(#wheel-grad)" />
-            <circle cx={objW * 0.78} cy={objH} r={objH * 0.08} fill="#9CA3AF" />
+            <circle cx={objW * 0.78} cy={objH} r={objH * 0.08} fill={SCENE_COLORS.circuit.bulbGlassStroke} />
           </g>
         )}
 

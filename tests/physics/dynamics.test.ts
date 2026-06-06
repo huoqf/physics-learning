@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { calculateEarthGravity, calculateElasticForce, calculateFrictionPullModel, calculateFrictionInclineModel } from '../../src/physics/dynamics'
+import {
+  calculateEarthGravity,
+  calculateElasticForce,
+  calculateFrictionPullModel,
+  calculateFrictionInclineModel,
+  calculateVectorAddition,
+  calculateOrthogonalDecomposition
+} from '../../src/physics/dynamics'
 
 describe('Dynamics physics calculations', () => {
   describe('calculateElasticForce', () => {
@@ -109,4 +116,39 @@ describe('Dynamics physics calculations', () => {
       expect(res.a).toBeCloseTo(2.35, 2)
     })
   })
+
+  describe('calculateVectorAddition', () => {
+    it('should synthesize perpendicular forces (3-4-5 triangle) correctly', () => {
+      const { fResultant, resultAngleDeg } = calculateVectorAddition(3, 4, 90)
+      expect(fResultant).toBeCloseTo(5, 5)
+      expect(resultAngleDeg).toBeCloseTo(53.13, 2)
+    })
+
+    it('should combine forces in the same direction correctly', () => {
+      const { fResultant, resultAngleDeg } = calculateVectorAddition(10, 8, 0)
+      expect(fResultant).toBeCloseTo(18, 5)
+      expect(resultAngleDeg).toBeCloseTo(0, 5)
+    })
+
+    it('should combine forces in opposite directions correctly', () => {
+      const { fResultant, resultAngleDeg } = calculateVectorAddition(10, 8, 180)
+      expect(fResultant).toBeCloseTo(2, 5)
+      expect(resultAngleDeg).toBeCloseTo(0, 5)
+    })
+  })
+
+  describe('calculateOrthogonalDecomposition', () => {
+    it('should decompose a force at 30 degrees correctly', () => {
+      const { fx, fy } = calculateOrthogonalDecomposition(10, 30)
+      expect(fx).toBeCloseTo(8.66, 2) // 10 * cos(30) = 8.66
+      expect(fy).toBeCloseTo(5, 2)    // 10 * sin(30) = 5
+    })
+
+    it('should decompose a vertical force correctly', () => {
+      const { fx, fy } = calculateOrthogonalDecomposition(10, 90)
+      expect(fx).toBeCloseTo(0, 5)
+      expect(fy).toBeCloseTo(10, 5)
+    })
+  })
 })
+

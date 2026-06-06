@@ -201,7 +201,7 @@ export default function AnimationPage() {
           </div>
         ) : undefined}
         center={
-          <div className="flex flex-col h-full p-4 gap-4">
+          <div className="flex flex-col h-full p-1.5 gap-2">
             {isDiscoveryMode && config.DiscoveryComponent ? (
               // 发现模式
               <div className="w-full h-full bg-white rounded-xl shadow-md overflow-hidden flex flex-col">
@@ -252,42 +252,80 @@ export default function AnimationPage() {
                   const showCenterExtraInBasic = CenterExtraComponent && !centerExtraModeKey
 
                   return (
-                    <>
-                      {showCenterExtraInBasic && (
-                        <ErrorBoundary resetKey={config.id}>
-                          <Suspense fallback={null}>
-                            <CenterExtraComponent />
-                          </Suspense>
-                        </ErrorBoundary>
-                      )}
-                      <div
-                        className="w-full flex-1 bg-white rounded-xl shadow-md overflow-hidden"
-                        style={{
-                          transition: `opacity ${duration.normal}ms ${easing.standard}`,
-                          opacity: canvasDimmed ? 0.9 : 1,
-                        }}
-                      >
-                        <ErrorBoundary resetKey={config.id}>
-                          <Suspense
-                            fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
+                    <div className="flex flex-col h-full">
+                      {showCenterExtraInBasic && CenterExtraComponent ? (
+                        // 有 CenterExtra 的动画（如摩擦力）：上下各占 50%
+                        <>
+                          <div className="h-1/2 min-h-0">
+                            <ErrorBoundary resetKey={config.id}>
+                              <Suspense fallback={null}>
+                                <CenterExtraComponent />
+                              </Suspense>
+                            </ErrorBoundary>
+                          </div>
+                          <div className="h-1/2 min-h-0 flex flex-col gap-2">
+                            <div
+                              className="flex-1 min-h-0 w-full bg-white rounded-xl shadow-md overflow-hidden"
+                              style={{
+                                transition: `opacity ${duration.normal}ms ${easing.standard}`,
+                                opacity: canvasDimmed ? 0.9 : 1,
+                              }}
+                            >
+                              <ErrorBoundary resetKey={config.id}>
+                                <Suspense
+                                  fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
+                                >
+                                  <AnimationComponent />
+                                </Suspense>
+                              </ErrorBoundary>
+                            </div>
+                            <div className="px-2 pb-2 pt-1 shrink-0">
+                              <AnimationControls
+                                isPlaying={isPlaying}
+                                speed={speed}
+                                time={time}
+                                maxTime={30}
+                                onPlayPause={() => setIsPlaying(!isPlaying)}
+                                onReset={handleReset}
+                                onSpeedChange={setSpeed}
+                                onTimeChange={setTime}
+                              />
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        // 没有 CenterExtra 的动画：Canvas 占满可用空间
+                        <>
+                          <div
+                            className="w-full flex-1 min-h-0 bg-white rounded-xl shadow-md overflow-hidden"
+                            style={{
+                              transition: `opacity ${duration.normal}ms ${easing.standard}`,
+                              opacity: canvasDimmed ? 0.9 : 1,
+                            }}
                           >
-                            <AnimationComponent />
-                          </Suspense>
-                        </ErrorBoundary>
-                      </div>
-                      <div className="px-4 pb-4 shrink-0">
-                        <AnimationControls
-                          isPlaying={isPlaying}
-                          speed={speed}
-                          time={time}
-                          maxTime={30}
-                          onPlayPause={() => setIsPlaying(!isPlaying)}
-                          onReset={handleReset}
-                          onSpeedChange={setSpeed}
-                          onTimeChange={setTime}
-                        />
-                      </div>
-                    </>
+                            <ErrorBoundary resetKey={config.id}>
+                              <Suspense
+                                fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
+                              >
+                                <AnimationComponent />
+                              </Suspense>
+                            </ErrorBoundary>
+                          </div>
+                          <div className="px-2 pb-2 pt-1 shrink-0">
+                            <AnimationControls
+                              isPlaying={isPlaying}
+                              speed={speed}
+                              time={time}
+                              maxTime={30}
+                              onPlayPause={() => setIsPlaying(!isPlaying)}
+                              onReset={handleReset}
+                              onSpeedChange={setSpeed}
+                              onTimeChange={setTime}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
                   )
                 })()}
               </>

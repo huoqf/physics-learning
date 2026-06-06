@@ -1,6 +1,6 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, CANVAS_STYLE, FONT } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_STYLE, FONT, SCENE_COLORS, CHART_COLORS } from '@/theme/physics'
 import { calculateFrictionPullModel, calculateFrictionInclineModel } from '@/physics'
 
 export default function FrictionAnimation() {
@@ -76,12 +76,13 @@ export default function FrictionAnimation() {
   const loopTime_m2 = time % 4.0
   const displacement_m2 = isSliding_m2 ? 0.5 * acceleration_m2 * loopTime_m2 * loopTime_m2 * 25 : 0
 
-  // 斜面局部几何参数
-  const pivotX = 130 // 斜面固定转动支点
-  const pivotY = canvasSize.height - 100
-  const boardLength = 380 // 斜面板长度
-  const boxLocalStartX = 90 // 木箱初始沿斜面距离
+  // 斜面局部几何参数 —— 全部基于 canvasSize 动态计算
+  const pivotX = canvasSize.width * 0.18 // 支点水平位置：画布宽度的18%
+  const pivotY = canvasSize.height * 0.82 // 支点垂直位置：距底部18%
+  const boardLength = canvasSize.width * 0.55 // 斜面板长度：画布宽度的55%
+  const boxLocalStartX = boardLength * 0.22 // 木箱初始沿斜面距离：板长的22%
   const boxLocalX = boxLocalStartX + displacement_m2
+  const groundLineY = canvasSize.height - 8 // 地面线位置
 
   return (
     <div ref={containerRef} className="w-full h-full">
@@ -122,7 +123,7 @@ export default function FrictionAnimation() {
             {/* 水平地面平台 */}
             <rect
               x={60} y={groundY_m1} width={canvasSize.width - 120} height={18}
-              fill="url(#steel-rail)" stroke="#334155" strokeWidth={1.2} rx={2}
+              fill="url(#steel-rail)" stroke={SCENE_COLORS.pendulum.pivotStroke} strokeWidth={1.2} rx={2}
             />
 
             {/* 地面阴影斜线纹理 */}
@@ -149,11 +150,11 @@ export default function FrictionAnimation() {
             {/* 木箱 (滑块) */}
             <rect
               x={boxX_m1 - boxSize / 2} y={boxY_m1} width={boxSize} height={boxSize}
-              fill="url(#box-grad)" stroke="#C2410C" strokeWidth={1.8} rx={4}
+              fill="url(#box-grad)" stroke={PHYSICS_COLORS.forceNetArrow} strokeWidth={1.8} rx={4}
             />
             <text
               x={boxX_m1} y={boxY_m1 + boxSize / 2 + 5}
-              fontSize={FONT.axisSize} fill="#C2410C" textAnchor="middle" fontWeight="bold"
+              fontSize={FONT.axisSize} fill={PHYSICS_COLORS.forceNetArrow} textAnchor="middle" fontWeight="bold"
             >
               m = {m}kg
             </text>
@@ -162,7 +163,7 @@ export default function FrictionAnimation() {
             <line
               x1={boxX_m1 + boxSize / 2} y1={groundY_m1 - boxSize / 2}
               x2={canvasSize.width - 60} y2={groundY_m1 - boxSize / 2}
-              stroke="#94A3B8" strokeWidth={1} strokeDasharray="3,3"
+              stroke={SCENE_COLORS.surface.smoothMark} strokeWidth={1} strokeDasharray="3,3"
             />
 
             {/* 力的矢量绘制 (基准比例: 1.6) */}
@@ -235,56 +236,51 @@ export default function FrictionAnimation() {
         {/* ─── 模式二：斜面倾角模型渲染 ─── */}
         {mode === 1 && (
           <g>
-            {/* 斜面基座支架底座 */}
+            {/* 地面基座：从支点延伸到画布底部的固定基座 */}
             <rect
-              x={80} y={pivotY + 14} width={380} height={14}
-              fill="#E2E8F0" stroke="#94A3B8" strokeWidth={1} rx={1}
+              x={pivotX - canvasSize.width * 0.06}
+              y={pivotY}
+              width={canvasSize.width * 0.12}
+              height={groundLineY - pivotY}
+              fill={CHART_COLORS.gridLine}
+              stroke={SCENE_COLORS.surface.smoothMark}
+              strokeWidth={1}
+              rx={2}
             />
-            {/* 轴销旋转点 (可见标注 1/5) */}
-            <circle cx={pivotX} cy={pivotY} r={6} fill="#475569" stroke="#1E293B" strokeWidth={1.5} />
-            <text x={pivotX} y={pivotY + 18} fontSize="9" fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">支点</text>
-
-            {/* 动态支撑升降液压缸 (根据角度动态调节伸长高度) */}
-            {(() => {
-              const supportX = 400
-              // 几何关系：气缸顶端连接位置在 board 上距离支点 dx = 270px。
-              // 顶端 Canvas 坐标：
-              const topX = pivotX + 270 * Math.cos(angleRad)
-              const topY = pivotY - 270 * Math.sin(angleRad)
-              return (
-                <g>
-                  {/* 外缸 (固定套管) */}
-                  <line
-                    x1={supportX} y1={pivotY + 14}
-                    x2={supportX} y2={pivotY - 40}
-                    stroke="#64748B" strokeWidth={5} strokeLinecap="round"
-                  />
-                  {/* 内活塞杆 (伸缩) */}
-                  <line
-                    x1={supportX} y1={pivotY - 40}
-                    x2={topX} y2={topY}
-                    stroke="#94A3B8" strokeWidth={3} strokeLinecap="round"
-                  />
-                  {/* 连接副销 */}
-                  <circle cx={topX} cy={topY} r={2.5} fill="#475569" />
-                </g>
-              )
-            })()}
+            {/* 地面线 */}
+            <line
+              x1={0} y1={groundLineY} x2={canvasSize.width} y2={groundLineY}
+              stroke="#64748B" strokeWidth={2}
+            />
+            {/* 地面阴影纹理 */}
+            <g opacity={0.12}>
+              {Array.from({ length: Math.floor(canvasSize.width / 18) + 1 }).map((_, i) => (
+                <line
+                  key={`ground-line-${i}`}
+                  x1={i * 18} y1={groundLineY}
+                  x2={i * 18 - 10} y2={groundLineY + 14}
+                  stroke={SCENE_COLORS.pendulum.pivotStroke} strokeWidth={1.5}
+                />
+              ))}
+            </g>
+            {/* 轴销旋转点 */}
+            <circle cx={pivotX} cy={pivotY} r={5} fill={PHYSICS_COLORS.gravity} stroke={PHYSICS_COLORS.labelText} strokeWidth={1.5} />
+            <text x={pivotX} y={pivotY + 16} fontSize="9" fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">支点</text>
 
             {/* 使用旋转 transform 绘制斜面板和木箱 */}
             <g transform={`translate(${pivotX}, ${pivotY}) rotate(${-angle})`}>
               {/* 斜面板轨道 (在局部坐标系中为水平长矩形) */}
               <rect
                 x={0} y={-8} width={boardLength} height={12}
-                fill="url(#steel-rail)" stroke="#334155" strokeWidth={1.2} rx={1}
+                fill="url(#steel-rail)" stroke={SCENE_COLORS.pendulum.pivotStroke} strokeWidth={1.2} rx={1}
               />
 
               {/* 轨道刻度线 */}
-              {Array.from({ length: 8 }).map((_, i) => (
+              {Array.from({ length: Math.floor(boardLength / 45) }).map((_, i) => (
                 <line
                   key={`scale-${i}`}
-                  x1={50 + i * 40} y1={-8}
-                  x2={50 + i * 40} y2={-5}
+                  x1={boardLength * 0.1 + i * (boardLength * 0.1)} y1={-8}
+                  x2={boardLength * 0.1 + i * (boardLength * 0.1)} y2={-5}
                   stroke="#FFFFFF" strokeWidth={0.5}
                 />
               ))}
@@ -292,16 +288,16 @@ export default function FrictionAnimation() {
               {/* 木箱 (沿斜面板下滑) */}
               <rect
                 x={boxLocalX - boxSize / 2} y={-boxSize - 8} width={boxSize} height={boxSize}
-                fill="url(#box-grad)" stroke="#C2410C" strokeWidth={1.8} rx={4}
+                fill="url(#box-grad)" stroke={PHYSICS_COLORS.forceNetArrow} strokeWidth={1.8} rx={4}
               />
               <text
                 x={boxLocalX} y={-boxSize / 2 - 5}
-                fontSize={FONT.axisSize} fill="#C2410C" textAnchor="middle" fontWeight="bold"
+                fontSize={FONT.axisSize} fill={PHYSICS_COLORS.forceNetArrow} textAnchor="middle" fontWeight="bold"
               >
                 m
               </text>
 
-              {/* 局部坐标系下的力矢量绘制 (旋转角度后，利用局部坐标渲染极其干净和正确) */}
+              {/* 局部坐标系下的力矢量绘制：F_N 和 f 相对于斜面，在旋转坐标系中绘制 */}
               {showVectors && (
                 <g>
                   {/* 1. 支持力 F_N (垂直斜面向上) */}
@@ -335,41 +331,46 @@ export default function FrictionAnimation() {
                       f
                     </text>
                   )}
-
-                  {/* 3. 重力 G (绝对垂直向下。在旋转了 angle 角度的坐标系下，方向应顺时针偏 angle 角) */}
-                  {(() => {
-                    // 局部坐标系下：重力矢量的分量为 (G_sin(θ), -G_cos(θ))
-                    const gx_local = weight * Math.sin(angleRad) * 1.6
-                    const gy_local = -weight * Math.cos(angleRad) * 1.6
-                    return (
-                      <g>
-                        <line
-                          x1={boxLocalX} y1={-boxSize / 2 - 8}
-                          x2={boxLocalX + gx_local} y2={-boxSize / 2 - 8 + gy_local}
-                          stroke={PHYSICS_COLORS.gravity} strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                          markerEnd="url(#arr-gravity)"
-                        />
-                        <text
-                          x={boxLocalX + gx_local + 8} y={-boxSize / 2 - 8 + gy_local}
-                          fontSize={FONT.axisSize} fill={PHYSICS_COLORS.gravity} fontWeight="bold"
-                        >
-                          G
-                        </text>
-                      </g>
-                    )
-                  })()}
                 </g>
               )}
             </g>
 
-            {/* 倾斜角标注弧线 (在底座与斜面板间) */}
+            {/* 3. 重力 G：在世界坐标系中绘制，起点为木箱几何重心，方向始终竖直向下 */}
+            {showVectors && (
+              <g>
+                {(() => {
+                  // 木箱几何重心在世界坐标系中的位置
+                  const boxCenterWorldX = pivotX + boxLocalX * Math.cos(angleRad)
+                  const boxCenterWorldY = pivotY - boxLocalX * Math.sin(angleRad) - boxSize / 2 - 8
+                  const gLen = weight * 1.6
+                  return (
+                    <g>
+                      <line
+                        x1={boxCenterWorldX} y1={boxCenterWorldY}
+                        x2={boxCenterWorldX} y2={boxCenterWorldY + gLen}
+                        stroke={PHYSICS_COLORS.gravity} strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+                        markerEnd="url(#arr-gravity)"
+                      />
+                      <text
+                        x={boxCenterWorldX + 8} y={boxCenterWorldY + gLen + 4}
+                        fontSize={FONT.axisSize} fill={PHYSICS_COLORS.gravity} fontWeight="bold"
+                      >
+                        G
+                      </text>
+                    </g>
+                  )
+                })()}
+              </g>
+            )}
+
+            {/* 倾斜角标注弧线 */}
             <g>
               <path
-                d={`M ${pivotX + 50} ${pivotY} A 50 50 0 0 0 ${pivotX + 50 * Math.cos(angleRad)} ${pivotY - 50 * Math.sin(angleRad)}`}
+                d={`M ${pivotX + 40} ${pivotY} A 40 40 0 0 0 ${pivotX + 40 * Math.cos(angleRad)} ${pivotY - 40 * Math.sin(angleRad)}`}
                 fill="none" stroke={PHYSICS_COLORS.forceNet} strokeWidth={1.2}
               />
               <text
-                x={pivotX + 58} y={pivotY - 14}
+                x={pivotX + 48} y={pivotY - 12}
                 fontSize="11" fill={PHYSICS_COLORS.forceNet} fontWeight="bold"
               >
                 θ = {angle}°

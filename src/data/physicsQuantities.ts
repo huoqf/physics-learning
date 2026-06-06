@@ -1024,7 +1024,6 @@ export function buildPhysicsQuantities(
 
     case 'anim-gravity-basic': {
       const mode = params.mode ?? 0
-      const BASE_CENTER = { x: 5, y: 5 }
 
       if (mode === 0) {
         // 地球自转模式
@@ -1052,53 +1051,12 @@ export function buildPhysicsQuantities(
           ],
           gaokaoPoints: [
             { text: '重力是万有引力的一个分力，方向竖直向下不指向地心。', importance: 'core' as const },
-            { text: '重力加速度 g 随纬度升高而增大，随海拔升高而减小。', importance: 'gaokao' as const },
-            { text: '在两极重力等于引力；在赤道重力最小且方向指向地心。', importance: 'hard' as const }
-          ]
-        }
-      } else {
-        // 悬挂重心实验模式
-        const activeHoleIdx = params.suspendPoint ?? 0
-        const showWeight = params.showWeight ?? 0
-        const weightX = params.weightX ?? 25
-        const weightY = params.weightY ?? 25
-        const weightMass = params.weightMass ?? 1.2
-
-        let localCenterX = BASE_CENTER.x
-        let localCenterY = BASE_CENTER.y
-        if (showWeight === 1) {
-          const totalMass = 1.0 + weightMass
-          localCenterX = (BASE_CENTER.x * 1.0 + weightX * weightMass) / totalMass
-          localCenterY = (BASE_CENTER.y * 1.0 + weightY * weightMass) / totalMass
-        }
-
-        return {
-          quantities: [
-            ...base,
-            { label: '当前悬挂孔', value: `A${activeHoleIdx + 1}`, unit: '' },
-            { label: '板自身质量', value: '1.0', unit: '相对值' },
-            { label: '配重块状态', value: showWeight === 1 ? '已启用' : '未启用', unit: '' },
-            ...(showWeight === 1 ? [
-              { label: '配重相对质量 M', value: weightMass, unit: '倍' },
-              { label: '配重坐标 (x,y)', value: `(${weightX}, ${weightY})`, unit: '' }
-            ] : []),
-            { label: '组合重心坐标 X', value: localCenterX.toFixed(1), unit: '' },
-            { label: '组合重心坐标 Y', value: localCenterY.toFixed(1), unit: '' }
-          ],
-          formulas: [
-            { name: '重心位置公式', latex: 'x_C = \\frac{\\sum m_i x_i}{\\sum m_i}' },
-            { name: '静力矩平衡条件', latex: '\\sum M_i = 0' },
-            { name: '悬挂平衡原理', latex: 'G \\cdot d = 0 \\implies d = 0' }
-          ],
-          gaokaoPoints: [
-            { text: '重心是物体各部分受重力等效作用点，可处于实体之外。', importance: 'core' as const },
-            { text: '悬挂平衡时重力与拉力共线，多次悬挂交线交点即重心。', importance: 'gaokao' as const },
-            { text: '重心位置由物体几何形状和质量分布（如加配重）决定。', importance: 'hard' as const }
+            { text: '重力加速度 g 随纬度升高而增大，赤道最小、两极最大。', importance: 'core' as const }
           ]
         }
       }
+      break
     }
-
     case 'anim-gravity': {
       const m1 = params.m1 ?? 1000
       const m2 = params.m2 ?? 10
@@ -1162,65 +1120,118 @@ export function buildPhysicsQuantities(
       if (mode === 0) {
         // 水平外力模型 (f-F)
         const F_applied = params.F_applied ?? 15
-        const { F_normal, f_max, f_slip, f_actual, a, F_net, isSliding } = calculateFrictionPullModel(m, mu, F_applied, g)
+        const { f_actual, a, F_net, isSliding } = calculateFrictionPullModel(m, mu, F_applied, g)
 
         return {
           quantities: [
             ...base,
-            { label: '木箱质量 m', value: m, unit: 'kg' },
-            { label: '动摩擦因数 μ', value: mu, unit: '' },
-            { label: '支持力 F_N', value: F_normal.toFixed(2), unit: 'N' },
-            { label: '外拉力 F', value: F_applied.toFixed(2), unit: 'N', highlight: 'positive' as const },
-            { label: '最大静摩擦力 f_max', value: f_max.toFixed(2), unit: 'N' },
-            { label: '滑动摩擦力 f_slip', value: f_slip.toFixed(2), unit: 'N' },
+            { label: '运动状态', value: isSliding ? '匀加速滑动' : '静止', unit: '', highlight: isSliding ? 'positive' as const : 'zero' as const },
             { label: '实际摩擦力 f', value: f_actual.toFixed(2), unit: 'N', highlight: isSliding ? 'negative' as const : undefined },
             { label: '合外力 F_合', value: F_net.toFixed(2), unit: 'N', highlight: F_net > 0.05 ? 'positive' as const : 'zero' as const },
             { label: '加速度 a', value: a.toFixed(2), unit: 'm/s²', highlight: a > 0.05 ? 'positive' as const : 'zero' as const },
-            { label: '运动状态', value: isSliding ? '匀加速滑动' : '静止', unit: '', highlight: isSliding ? 'positive' as const : undefined }
           ],
           formulas: [
             { name: '最大静摩擦力', latex: 'f_{\\text{max}} = \\mu_s F_N = 1.12\\mu mg' },
             { name: '滑动摩擦力', latex: 'f_{\\text{slip}} = \\mu F_N = \\mu mg' },
-            { name: '静止状态 (F \\le f_{\\text{max}})', latex: 'f = F' },
-            { name: '滑动状态 (F > f_{\\text{max}})', latex: 'f = f_{\\text{slip}},\\quad a = \\frac{F - f_{\\text{slip}}}{m}' }
+            { name: '滑动状态', latex: 'f = f_{\\text{slip}},\\quad a = \\frac{F - f_{\\text{slip}}}{m}' }
           ],
           gaokaoPoints: [
-            { text: '静摩擦力是被动力，随外力变化而变化，范围为 0 至最大静摩擦力。', importance: 'core' as const },
-            { text: '滑动摩擦力大小仅取决于正压力和动摩擦因数，与物体的运动速度、接触面积均无关。', importance: 'core' as const },
-            { text: '最大静摩擦力略大于滑动摩擦力（本系统设为 1.12 倍），临界时摩擦力大小会发生突跳。', importance: 'gaokao' as const },
-            { text: '解答摩擦力问题必须先进行状态判定：究竟是静摩擦力还是滑动摩擦力。', importance: 'gaokao' as const }
+            { text: '静摩擦力是被动力，范围为 0 至最大静摩擦力。', importance: 'core' as const },
+            { text: '滑动摩擦力仅取决于正压力和动摩擦因数，与速度、接触面积均无关。', importance: 'core' as const },
+            { text: '最大静摩擦力略大于滑动摩擦力（1.12 倍），临界时摩擦力会突跳。', importance: 'gaokao' as const },
+            { text: '解答摩擦力问题必须先判定：静摩擦还是滑动摩擦。', importance: 'gaokao' as const }
           ]
         }
       } else {
         // 斜面倾角模型 (f-θ)
         const angle = params.angle ?? 15
-        const { F_normal, F_gravity_parallel, f_max, f_actual, a, criticalAngle, isSliding } = calculateFrictionInclineModel(m, mu, angle, g)
+        const { f_actual, a, criticalAngle, isSliding } = calculateFrictionInclineModel(m, mu, angle, g)
 
         return {
           quantities: [
             ...base,
-            { label: '木箱质量 m', value: m, unit: 'kg' },
-            { label: '斜面倾角 θ', value: angle.toFixed(0), unit: '°' },
-            { label: '支持力 F_N', value: F_normal.toFixed(2), unit: 'N' },
-            { label: '下滑分力 G_x', value: F_gravity_parallel.toFixed(2), unit: 'N' },
-            { label: '最大静摩擦力 f_max', value: f_max.toFixed(2), unit: 'N' },
+            { label: '运动状态', value: isSliding ? '匀加速下滑' : '静止平衡', unit: '', highlight: isSliding ? 'positive' as const : 'zero' as const },
             { label: '实际摩擦力 f', value: f_actual.toFixed(2), unit: 'N', highlight: isSliding ? 'negative' as const : undefined },
             { label: '临界下滑角 θ_c', value: criticalAngle.toFixed(1), unit: '°', highlight: 'extreme' as const },
             { label: '加速度 a', value: a.toFixed(2), unit: 'm/s²', highlight: a > 0.05 ? 'positive' as const : 'zero' as const },
-            { label: '运动状态', value: isSliding ? '匀加速下滑' : '静止平衡', unit: '', highlight: isSliding ? 'positive' as const : undefined }
           ],
           formulas: [
             { name: '斜面支持力', latex: 'F_N = mg\\cos\\theta' },
             { name: '下滑重力分力', latex: 'G_x = mg\\sin\\theta' },
-            { name: '静止平衡 (\\theta \\le \\theta_c)', latex: 'f = G_x = mg\\sin\\theta' },
-            { name: '下滑滑动 (\\theta > \\theta_c)', latex: 'f = \\mu F_N = \\mu mg\\cos\\theta' }
+            { name: '静止平衡', latex: 'f = G_x = mg\\sin\\theta' },
+            { name: '下滑滑动', latex: 'f = \\mu F_N = \\mu mg\\cos\\theta' }
           ],
           gaokaoPoints: [
-            { text: '物体是否会沿斜面下滑的临界条件为：tan θ_c = μ_s（在本例中为 1.12 μ）。', importance: 'gaokao' as const },
-            { text: '静止时摩擦力随倾角 θ 变大而变大（正弦规律）；滑动时随倾角 θ 变大而减小（余弦规律）。', importance: 'hard' as const },
-            { text: '临界下滑角是一个常考考点，当倾角超过临界角时摩擦力会瞬间突变（向下跳转）。', importance: 'gaokao' as const },
-            { text: '若物体的动摩擦因数满足 μ ≥ tan θ，则无论如何释放，物体都会在斜面上保持静止。', importance: 'hard' as const }
+            { text: '临界条件 tan θ_c = μ_s，超过后摩擦力突跳减小。', importance: 'gaokao' as const },
+            { text: '静止时 f 随 θ 增大（正弦）；滑动时 f 随 θ 增大而减小（余弦）。', importance: 'hard' as const },
+            { text: '若 μ ≥ tan θ，物体无论如何释放均不下滑。', importance: 'hard' as const }
           ]
+        }
+      }
+    }
+    case 'anim-vector-addition': {
+      const mode = params.mode ?? 0 // 0 = 平行四边形, 1 = 三角形, 2 = 正交分解
+      const f1 = params.f1 ?? 10
+      const f2 = params.f2 ?? 8
+      const angle = params.angle ?? 60
+
+      if (mode === 2) {
+        // 正交分解模式：f1 充当合力，angle 充当方向角
+        const angleRad = (angle * Math.PI) / 180
+        const fx = f1 * Math.cos(angleRad)
+        const fy = f1 * Math.sin(angleRad)
+        return {
+          quantities: [
+            ...base,
+            { label: '待分解力 F', value: f1.toFixed(1), unit: 'N', highlight: 'positive' as const },
+            { label: '方向角 θ', value: angle.toFixed(1), unit: '°' },
+            { label: '水平分力 Fx', value: fx.toFixed(2), unit: 'N', highlight: sign(fx) },
+            { label: '竖直分力 Fy', value: fy.toFixed(2), unit: 'N', highlight: sign(fy) },
+            { label: '分量平方和', value: (fx * fx + fy * fy).toFixed(2), unit: 'N²' },
+          ],
+          formulas: [
+            { name: '水平投影分量', latex: 'F_x = F \\cos\\theta' },
+            { name: '竖直投影分量', latex: 'F_y = F \\sin\\theta' },
+            { name: '合力量值关系', latex: 'F = \\sqrt{F_x^2 + F_y^2}' },
+          ],
+          gaokaoPoints: [
+            { text: '正交分解法是处理复杂受力问题最常用的数学工具。', importance: 'core' as const },
+            { text: '建立坐标系时，应使尽可能多的未知力落在坐标轴上，以简化方程。', importance: 'gaokao' as const },
+            { text: '分解的本质是等效替代：分力的共同作用效果与原合力完全相同。', importance: 'basic' as const },
+          ],
+        }
+      } else {
+        // 力的合成模式（平行四边形定则与三角形定则）
+        const angleRad = (angle * Math.PI) / 180
+        const fx1 = f1
+        const fy1 = 0
+        const fx2 = f2 * Math.cos(angleRad)
+        const fy2 = f2 * Math.sin(angleRad)
+        const fx = fx1 + fx2
+        const fy = fy1 + fy2
+        const fResultant = Math.sqrt(fx * fx + fy * fy)
+        const resultAngleDeg = (Math.atan2(fy, fx) * 180) / Math.PI
+
+        return {
+          quantities: [
+            ...base,
+            { label: '分力 F₁', value: f1.toFixed(1), unit: 'N' },
+            { label: '分力 F₂', value: f2.toFixed(1), unit: 'N' },
+            { label: '夹角 θ', value: angle.toFixed(1), unit: '°' },
+            { label: '合力 F', value: fResultant.toFixed(2), unit: 'N', highlight: 'extreme' as const },
+            { label: '合力方向角 α', value: resultAngleDeg.toFixed(1), unit: '°' },
+            { label: '最大可能合力', value: (f1 + f2).toFixed(1), unit: 'N' },
+            { label: '最小可能合力', value: Math.abs(f1 - f2).toFixed(1), unit: 'N' },
+          ],
+          formulas: [
+            { name: '平行四边形定则', latex: 'F = \\sqrt{F_1^2 + F_2^2 + 2F_1F_2\\cos\\theta}' },
+            { name: '合力偏角正切', latex: '\\tan\\alpha = \\frac{F_2\\sin\\theta}{F_1 + F_2\\cos\\theta}' },
+          ],
+          gaokaoPoints: [
+            { text: '合力大小范围：|F₁ - F₂| ≤ F ≤ F₁ + F₂。', importance: 'core' as const },
+            { text: '分力大小固定时，合力大小随两力夹角的增大而减小。', importance: 'gaokao' as const },
+            { text: '三角形定则是平行四边形定则的平移等效变形，适合多力连续合成。', importance: 'hard' as const },
+          ],
         }
       }
     }
@@ -1231,5 +1242,10 @@ export function buildPhysicsQuantities(
           ...Object.entries(params).map(([key, value]) => ({ label: key, value, unit: '' })),
         ],
       }
+  }
+
+  // 兜底返回，消除 TS2366
+  return {
+    quantities: base,
   }
 }

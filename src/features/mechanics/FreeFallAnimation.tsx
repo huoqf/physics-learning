@@ -10,7 +10,8 @@ import {
   DASH,
   FONT,
 } from '@/theme/physics'
-import { useFreeFallPhysics, getPhysicsAtTime } from './useFreeFallPhysics'
+import { useFreeFallPhysics } from './useFreeFallPhysics'
+import { getPhysicsAtTime } from '@/physics'
 
 // ─── 物体材质参数 ──────────────────────────────────────────────────────────────
 const MATERIAL = {
@@ -526,9 +527,9 @@ export default function FreeFallAnimation() {
             <g>
               {/* 精美 SVG 羽毛 */}
               {/* 左羽片 */}
-              <path d="M 0,-16 C -6,-8 -8,4 -3,14 L 0,11 C -3,2 -3,-8 0,-16" fill="#FBBF24" opacity={0.4} />
+              <path d="M 0,-16 C -6,-8 -8,4 -3,14 L 0,11 C -3,2 -3,-8 0,-16" fill={CHART_COLORS.highlight} opacity={0.4} />
               {/* 右羽片 */}
-              <path d="M 0,-16 C 6,-8 8,4 3,14 L 0,11 C 3,2 3,-8 0,-16" fill="#FBBF24" opacity={0.4} />
+              <path d="M 0,-16 C 6,-8 8,4 3,14 L 0,11 C 3,2 3,-8 0,-16" fill={CHART_COLORS.highlight} opacity={0.4} />
               {/* 羽轴 */}
               <line x1={0} y1={-16} x2={0} y2={16} stroke={CHART_COLORS.compareB} strokeWidth={1.5} strokeLinecap="round" />
             </g>

@@ -272,7 +272,7 @@ function StroboscopicAnimation({
         {alignmentGeometry && (
           <g>
             {/* 对齐对比背景框 */}
-            <rect x={originX - 10} y={groundY + 32} width={canvasSize.width - originX - 10} height="42" rx="4" fill="#F8FAFC" stroke="#E2E8F0" strokeWidth={1} />
+            <rect x={originX - 10} y={groundY + 32} width={canvasSize.width - originX - 10} height="42" rx="4" fill={PHYSICS_COLORS.objectFillNeutral} stroke={CHART_COLORS.gridLine} strokeWidth={1} />
             
             {/* 第一段线段 (Δx_k) */}
             <g>
@@ -287,11 +287,11 @@ function StroboscopicAnimation({
             {/* 第二段线段 (Δx_k+1) */}
             <g>
               {/* 重叠部分 (与第一段等长) 用灰色线 */}
-              <line x1={originX} y1={groundY + 60} x2={originX + alignmentGeometry.w1} y2={groundY + 60} stroke="#94A3B8" strokeWidth={1.5} strokeDasharray="3 2" />
+              <line x1={originX} y1={groundY + 60} x2={originX + alignmentGeometry.w1} y2={groundY + 60} stroke={CHART_COLORS.asymptote} strokeWidth={1.5} strokeDasharray="3 2" />
               {/* 增量部分 (aT^2 长度) 用高亮红线 */}
               <line x1={originX + alignmentGeometry.w1} y1={groundY + 60} x2={originX + alignmentGeometry.w2} y2={groundY + 60} stroke={PHYSICS_COLORS.acceleration} strokeWidth={2.5} />
               
-              <line x1={originX} y1={groundY + 57} x2={originX} y2={groundY + 63} stroke="#94A3B8" strokeWidth={1.5} />
+              <line x1={originX} y1={groundY + 57} x2={originX} y2={groundY + 63} stroke={CHART_COLORS.asymptote} strokeWidth={1.5} />
               <line x1={originX + alignmentGeometry.w2} y1={groundY + 57} x2={originX + alignmentGeometry.w2} y2={groundY + 63} stroke={PHYSICS_COLORS.acceleration} strokeWidth={1.5} />
               
               {/* 差值大括号或高亮标示 */}
@@ -311,7 +311,7 @@ function StroboscopicAnimation({
             </g>
 
             {/* 对准垂直投影线 */}
-            <line x1={originX + alignmentGeometry.w1} y1={groundY + 16} x2={originX + alignmentGeometry.w1} y2={groundY + 64} stroke="#94A3B8" strokeWidth={0.5} strokeDasharray="3 3" />
+            <line x1={originX + alignmentGeometry.w1} y1={groundY + 16} x2={originX + alignmentGeometry.w1} y2={groundY + 64} stroke={CHART_COLORS.asymptote} strokeWidth={0.5} strokeDasharray="3 3" />
           </g>
         )}
 
@@ -599,7 +599,7 @@ function VtChartWithArea({
             </text>
 
             {/* Y 轴气泡 */}
-            <rect x={chartLeft - 32} y={toY(physics.v) - 5} width="28" height="11" rx="2.5" fill="#EFF6FF" stroke={PHYSICS_COLORS.objectStroke} strokeWidth={0.5} />
+            <rect x={chartLeft - 32} y={toY(physics.v) - 5} width="28" height="11" rx="2.5" fill={PHYSICS_COLORS.objectFill} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={0.5} />
             <text x={chartLeft - 18} y={toY(physics.v) + 3} fontSize={8} fill={PHYSICS_COLORS.velocity} textAnchor="middle" fontWeight="bold">
               {physics.v.toFixed(1)}
             </text>

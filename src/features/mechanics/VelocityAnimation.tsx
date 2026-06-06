@@ -1,7 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, STROKE, DASH, OBJECT } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OBJECT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { calculateAverageVelocity } from '@/physics'
 
@@ -166,24 +166,24 @@ export default function VelocityAnimation() {
             {/* 车身 */}
             <rect width={objW} height={objH - 4} rx={4} fill="url(#bus-body-grad)" stroke="#1D4ED8" strokeWidth={1.5} />
             {/* 车窗带折射高光线 */}
-            <rect x={objW * 0.1} y={objH * 0.15} width={objW * 0.25} height={objH * 0.3} rx={1} fill="#EFF6FF" opacity={0.85} />
-            <rect x={objW * 0.4} y={objH * 0.15} width={objW * 0.25} height={objH * 0.3} rx={1} fill="#EFF6FF" opacity={0.85} />
-            <rect x={objW * 0.7} y={objH * 0.15} width={objW * 0.2} height={objH * 0.3} rx={1} fill="#EFF6FF" opacity={0.85} />
+            <rect x={objW * 0.1} y={objH * 0.15} width={objW * 0.25} height={objH * 0.3} rx={1} fill={PHYSICS_COLORS.objectFill} opacity={0.85} />
+            <rect x={objW * 0.4} y={objH * 0.15} width={objW * 0.25} height={objH * 0.3} rx={1} fill={PHYSICS_COLORS.objectFill} opacity={0.85} />
+            <rect x={objW * 0.7} y={objH * 0.15} width={objW * 0.2} height={objH * 0.3} rx={1} fill={PHYSICS_COLORS.objectFill} opacity={0.85} />
             <line x1={objW * 0.15} y1={objH * 0.15} x2={objW * 0.22} y2={objH * 0.45} stroke="#FFFFFF" strokeWidth={1} opacity={0.6} />
             <line x1={objW * 0.45} y1={objH * 0.15} x2={objW * 0.52} y2={objH * 0.45} stroke="#FFFFFF" strokeWidth={1} opacity={0.6} />
             {/* 刹车尾灯 */}
-            <rect x={-2} y={objH * 0.35} width={3} height={6} rx={1} fill="#EF4444" opacity={0.9} />
+            <rect x={-2} y={objH * 0.35} width={3} height={6} rx={1} fill={PHYSICS_COLORS.accelerationX} opacity={0.9} />
             {/* 装饰条 */}
-            <line x1={objW * 0.05} y1={objH * 0.55} x2={objW * 0.95} y2={objH * 0.55} stroke="#60A5FA" strokeWidth={1} opacity={0.5} />
+            <line x1={objW * 0.05} y1={objH * 0.55} x2={objW * 0.95} y2={objH * 0.55} stroke={PHYSICS_COLORS.velocityY} strokeWidth={1} opacity={0.5} />
             {/* 车轮（带钢圈） */}
             <g transform={`translate(${objW * 0.22}, ${objH - 3})`}>
               <circle r={objH * 0.18} fill="url(#wheel-grad)" />
-              <circle r={objH * 0.09} fill="#9CA3AF" stroke="#4B5563" strokeWidth={0.5} />
+              <circle r={objH * 0.09} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke="#4B5563" strokeWidth={0.5} />
               <circle r={objH * 0.04} fill="#F3F4F6" />
             </g>
             <g transform={`translate(${objW * 0.78}, ${objH - 3})`}>
               <circle r={objH * 0.18} fill="url(#wheel-grad)" />
-              <circle r={objH * 0.09} fill="#9CA3AF" stroke="#4B5563" strokeWidth={0.5} />
+              <circle r={objH * 0.09} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke="#4B5563" strokeWidth={0.5} />
               <circle r={objH * 0.04} fill="#F3F4F6" />
             </g>
           </g>

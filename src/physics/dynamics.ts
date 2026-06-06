@@ -167,3 +167,64 @@ export function calculateFrictionInclineModel(
     isSliding
   };
 }
+
+/**
+ * 计算两个共点力的合成（以 F1 方向为 x 轴正方向）
+ * @param f1 力 F1 的大小 (N)
+ * @param f2 力 F2 的大小 (N)
+ * @param angleDeg 两力夹角 θ (度)
+ */
+export function calculateVectorAddition(
+  f1: number,
+  f2: number,
+  angleDeg: number
+): {
+  fResultant: number;
+  resultAngleDeg: number;
+  fx1: number;
+  fy1: number;
+  fx2: number;
+  fy2: number;
+  fx: number;
+  fy: number;
+} {
+  const angleRad = (angleDeg * Math.PI) / 180;
+  const fx1 = f1;
+  const fy1 = 0;
+  const fx2 = f2 * Math.cos(angleRad);
+  const fy2 = f2 * Math.sin(angleRad);
+  const fx = fx1 + fx2;
+  const fy = fy1 + fy2;
+  const fResultant = Math.sqrt(fx * fx + fy * fy);
+  // atan2 返回范围 [-PI, PI]，转换为度 [-180, 180]
+  const resultAngleDeg = (Math.atan2(fy, fx) * 180) / Math.PI;
+
+  return {
+    fResultant,
+    resultAngleDeg,
+    fx1,
+    fy1,
+    fx2,
+    fy2,
+    fx,
+    fy,
+  };
+}
+
+/**
+ * 计算一个力的正交分解
+ * @param f 力的大小 (N)
+ * @param angleDeg 与 x 轴正方向的夹角 (度)
+ */
+export function calculateOrthogonalDecomposition(
+  f: number,
+  angleDeg: number
+): {
+  fx: number;
+  fy: number;
+} {
+  const angleRad = (angleDeg * Math.PI) / 180;
+  const fx = f * Math.cos(angleRad);
+  const fy = f * Math.sin(angleRad);
+  return { fx, fy };
+}

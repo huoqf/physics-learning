@@ -1,7 +1,8 @@
 import { FC, useMemo } from 'react'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import type { VariableMotionModel, VariableMotionParams } from '@/physics'
-import { useVelocityPhysics, getVariablePhysicsAtTime } from './useVelocityPhysics'
+import { useVelocityPhysics } from './useVelocityPhysics'
+import { getVariablePhysicsAtTime } from '@/physics'
 
 interface VelocityXTChartProps {
   model: VariableMotionModel

@@ -147,9 +147,10 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     title: '力的合成与分解',
     knowledgeId: 'mechanics-3-4',
     Component: lazy(() => import('@/features/mechanics/VectorAdditionAnimation')),
-    defaultParams: { f1: 10, f2: 8, angle: 60 },
+    defaultParams: { f1: 10, f2: 8, angle: 60, mode: 0 },
     paramMeta: [
-      { key: 'f1', label: '力 F₁', min: 1, max: 20, step: 0.5, unit: 'N' },
+      { key: 'mode', label: '演示模式', min: 0, max: 2, step: 1, unit: '0=平行四边形 1=三角形 2=正交分解' },
+      { key: 'f1', label: '力 F₁ / 待分解力', min: 1, max: 20, step: 0.5, unit: 'N' },
       { key: 'f2', label: '力 F₂', min: 1, max: 20, step: 0.5, unit: 'N' },
       { key: 'angle', label: '夹角 θ', min: 0, max: 180, step: 5, unit: '°' },
     ],

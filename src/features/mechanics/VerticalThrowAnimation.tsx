@@ -460,13 +460,13 @@ export default function VerticalThrowAnimation() {
             <line
               key={`tick-${i}`}
               x1={x - 4} y1={yPos} x2={x + 4} y2={yPos}
-              stroke={isVacuum ? "#60A5FA" : "#94A3B8"}
+              stroke={isVacuum ? PHYSICS_COLORS.velocityY : CHART_COLORS.axisLine}
               strokeWidth={0.8}
             />
           )
         })}
         {/* 轨道科学文字标签 */}
-        <text x={x} y={groundY + 28} fontSize={9} fill={isVacuum ? "#3B82F6" : PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
+        <text x={x} y={groundY + 28} fontSize={9} fill={isVacuum ? PHYSICS_COLORS.velocityX : PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
           {label}
         </text>
       </g>
@@ -483,7 +483,7 @@ export default function VerticalThrowAnimation() {
         strokeWidth={1}
       />
       {/* 激光状态指示灯 */}
-      <circle cx={x} cy={groundY + 3.5} r={1.5} fill="#60A5FA" filter="drop-shadow(0 0 1px #3B82F6)" />
+      <circle cx={x} cy={groundY + 3.5} r={1.5} fill={PHYSICS_COLORS.velocityY} filter={`drop-shadow(0 0 1px ${PHYSICS_COLORS.velocityX})`} />
     </g>
   ), [groundY])
 
@@ -654,13 +654,13 @@ export default function VerticalThrowAnimation() {
         {/* 高级模式：频闪点（微元切片） */}
         {ghostBalls.map((ball, idx) => (
           <circle key={`ghost-${idx}`} cx={leftBallX} cy={ball.cy} r={5}
-            fill="#3B82F6" opacity={0.25} />
+            fill={PHYSICS_COLORS.velocityX} opacity={0.25} />
         ))}
 
         {/* 真空虚影球 (仅在双轨模式下渲染) */}
         {showDoubleTrack && !isLanded && (
           <circle cx={rightBallX} cy={currentVacuumBallY} r={13}
-            fill="url(#vacuum-sphere-grad)" stroke="#93C5FD" strokeWidth={1} />
+            fill="url(#vacuum-sphere-grad)" stroke={PHYSICS_COLORS.deltaHighlight} strokeWidth={1} />
         )}
 
         {/* 实体钢珠小球 */}
@@ -673,11 +673,11 @@ export default function VerticalThrowAnimation() {
           <line
             x1={leftBallX} y1={currentBallY}
             x2={dataX + vtToX(effectiveTime)} y2={vtChartTop + vtToY(effectiveV)}
-            stroke={effectiveV >= 0 ? "#60A5FA" : "#F87171"}
+            stroke={effectiveV >= 0 ? PHYSICS_COLORS.velocityY : CHART_COLORS.reference}
             strokeWidth={1.5}
             strokeDasharray="2,1"
             opacity={0.6}
-            filter="drop-shadow(0 0 2px #3B82F6)"
+            filter={`drop-shadow(0 0 2px ${PHYSICS_COLORS.velocityX})`}
           />
         )}
 
@@ -734,8 +734,8 @@ export default function VerticalThrowAnimation() {
         {/* 最高点物理看板浮动框 (教学设计：直观解释 v=0 时 a 不为 0) */}
         {isAtPeak && (
           <g transform={`translate(${leftBallX + (showDoubleTrack ? -122 : 24)}, ${currentBallY - 45})`}>
-            <rect width={116} height={42} fill="#1E293B" opacity={0.92} rx={4} stroke="#EF4444" strokeWidth={1} filter="drop-shadow(0 2px 4px rgba(0,0,0,0.25))" />
-            <polygon points={showDoubleTrack ? "116 21, 122 21, 116 26" : "0 21, -6 21, 0 26"} fill="#1E293B" stroke="#EF4444" strokeWidth={0.5} />
+            <rect width={116} height={42} fill={CHART_COLORS.titleText} opacity={0.92} rx={4} stroke={CHART_COLORS.criticalPt} strokeWidth={1} filter="drop-shadow(0 2px 4px rgba(0,0,0,0.25))" />
+            <polygon points={showDoubleTrack ? "116 21, 122 21, 116 26" : "0 21, -6 21, 0 26"} fill={CHART_COLORS.titleText} stroke={CHART_COLORS.criticalPt} strokeWidth={0.5} />
             <text x={58} y={13} fontSize={9} fill="#FFFFFF" textAnchor="middle" fontWeight="bold">瞬时状态 v = 0</text>
             <text x={58} y={25} fontSize={8} fill="#FCA5A5" textAnchor="middle">但 a = -g = -{g} m/s²</text>
             <text x={58} y={35} fontSize={8} fill="#FCA5A5" textAnchor="middle">合力 F_合 = mg 向下</text>
@@ -749,7 +749,7 @@ export default function VerticalThrowAnimation() {
               <g transform={`translate(${leftBallX + 24}, ${currentBallY - 15})`}>
                 <rect width={95} height={26} fill="#0F172A" opacity={0.88} rx={3} stroke={CHART_COLORS.highlight} strokeWidth={0.8} />
                 <text x={47} y={11} fontSize={8} fill="#FFFFFF" textAnchor="middle" fontWeight="bold">① 上升阶段经过</text>
-                <text x={47} y={20} fontSize={8} fill="#93C5FD" textAnchor="middle">v = +{effectiveV.toFixed(1)} m/s</text>
+                <text x={47} y={20} fontSize={8} fill={PHYSICS_COLORS.deltaHighlight} textAnchor="middle">v = +{effectiveV.toFixed(1)} m/s</text>
               </g>
             )}
             {Math.abs(effectiveTime - targetHeightIntersections.t2) < 0.15 && (
@@ -853,7 +853,7 @@ export default function VerticalThrowAnimation() {
 
           {/* 真空对照曲线（全段背景虚线，提示无阻力轨迹） */}
           {airResistance > 0 && vtData.vacFull && (
-            <path d={vtData.vacFull} fill="none" stroke="#94A3B8" strokeWidth={1} strokeDasharray="3,3" opacity={0.6} />
+            <path d={vtData.vacFull} fill="none" stroke={CHART_COLORS.asymptote} strokeWidth={1} strokeDasharray="3,3" opacity={0.6} />
           )}
 
           {/* 实际有阻力曲线 (全段虚影背景) */}
@@ -863,7 +863,7 @@ export default function VerticalThrowAnimation() {
 
           {/* 真空对照当前时段段 (当双轨对比开启时) */}
           {showDoubleTrack && vtData.vacActive && (
-            <path d={vtData.vacActive} fill="none" stroke="#0284C7" strokeWidth={1.5} opacity={0.7} />
+            <path d={vtData.vacActive} fill="none" stroke={PHYSICS_COLORS.position} strokeWidth={1.5} opacity={0.7} />
           )}
 
           {/* 实际有阻力当前段曲线（发光霓虹） */}
@@ -878,9 +878,9 @@ export default function VerticalThrowAnimation() {
               <line
                 x1={vtToX(Math.max(maxHeightTime - 0.5, 0))} y1={vtToY(g * 0.5)}
                 x2={vtToX(Math.min(maxHeightTime + 0.5, xMax))} y2={vtToY(-g * 0.5)}
-                stroke="#EF4444" strokeWidth={1} strokeDasharray="2,2"
+                stroke={CHART_COLORS.criticalPt} strokeWidth={1} strokeDasharray="2,2"
               />
-              <text x={vtToX(maxHeightTime) + 8} y={vtToY(0) - 8} fontSize={8} fill="#EF4444">切线斜率 k = -g</text>
+              <text x={vtToX(maxHeightTime) + 8} y={vtToY(0) - 8} fontSize={8} fill={CHART_COLORS.criticalPt}>切线斜率 k = -g</text>
 
               <circle cx={vtToX(maxHeightTime)} cy={vtToY(0)} r={6}
                 fill={VT_CHART_COLORS.zeroCrossing} opacity={0.6}>
@@ -923,7 +923,7 @@ export default function VerticalThrowAnimation() {
 
           {/* 当前状态点 (真空轨道，当双轨对比开启时) */}
           {showDoubleTrack && !isLanded && (
-            <circle cx={vtToX(effectiveTime)} cy={vtToY(vacuumV)} r={3.5} fill="#0284C7" opacity={0.8} />
+            <circle cx={vtToX(effectiveTime)} cy={vtToY(vacuumV)} r={3.5} fill={PHYSICS_COLORS.position} opacity={0.8} />
           )}
 
           {/* 点击区域（透明覆盖） */}
@@ -946,7 +946,7 @@ export default function VerticalThrowAnimation() {
           {/* 高级模式：面积数值显示 */}
           {advancedMode === 1 && areaValues && (
             <g>
-              <rect x={vtInnerPad.left + vtInnerW - 105} y={vtInnerPad.top + 6} width={100} height={42} fill="#F8FAFC" opacity={0.85} rx={3} stroke="#E2E8F0" strokeWidth={0.8} />
+              <rect x={vtInnerPad.left + vtInnerW - 105} y={vtInnerPad.top + 6} width={100} height={42} fill={PHYSICS_COLORS.objectFillNeutral} opacity={0.85} rx={3} stroke={CHART_COLORS.gridLine} strokeWidth={0.8} />
               <text x={vtInnerPad.left + vtInnerW - 10} y={vtInnerPad.top + 16}
                 fontSize={8} fill={VT_CHART_COLORS.areaShade} textAnchor="end" fontWeight="bold">
                 上升位移 S⁺ = {areaValues.positive.toFixed(2)} m
@@ -956,7 +956,7 @@ export default function VerticalThrowAnimation() {
                 下落位移 S⁻ = {areaValues.negative.toFixed(2)} m
               </text>
               <text x={vtInnerPad.left + vtInnerW - 10} y={vtInnerPad.top + 36}
-                fontSize={8} fill="#334155" textAnchor="end" fontWeight="bold">
+                fontSize={8} fill={CHART_COLORS.labelText} textAnchor="end" fontWeight="bold">
                 当前高度 y = {areaValues.net.toFixed(2)} m
               </text>
             </g>
@@ -1072,7 +1072,7 @@ export default function VerticalThrowAnimation() {
 
           {/* 真空对照曲线（全段，虚线） */}
           {airResistance > 0 && ytData.vacFull && (
-            <path d={ytData.vacFull} fill="none" stroke="#94A3B8" strokeWidth={1} strokeDasharray="3,3" opacity={0.6} />
+            <path d={ytData.vacFull} fill="none" stroke={CHART_COLORS.asymptote} strokeWidth={1} strokeDasharray="3,3" opacity={0.6} />
           )}
 
           {/* 实际有阻力位置曲线 (全段背景) */}
@@ -1082,7 +1082,7 @@ export default function VerticalThrowAnimation() {
 
           {/* 真空对照当前时段段 (当双轨对比开启时) */}
           {showDoubleTrack && ytData.vacActive && (
-            <path d={ytData.vacActive} fill="none" stroke="#0284C7" strokeWidth={1.5} opacity={0.7} />
+            <path d={ytData.vacActive} fill="none" stroke={PHYSICS_COLORS.position} strokeWidth={1.5} opacity={0.7} />
           )}
 
           {/* 实际有阻力当前时段曲线 (发光霓虹) */}
@@ -1108,7 +1108,7 @@ export default function VerticalThrowAnimation() {
 
           {/* 当前状态点 (真空轨道，当双轨对比开启时) */}
           {showDoubleTrack && !isLanded && (
-            <circle cx={ytToX(effectiveTime)} cy={ytToY(clampedVacuumY)} r={3.5} fill="#0284C7" opacity={0.8} />
+            <circle cx={ytToX(effectiveTime)} cy={ytToY(clampedVacuumY)} r={3.5} fill={PHYSICS_COLORS.position} opacity={0.8} />
           )}
 
           {/* 点击区域 */}
