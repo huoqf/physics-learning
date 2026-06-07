@@ -121,6 +121,5 @@ export {
   duration,
   easing,
   transition,
-  motionConfig,
   canvasAnimation,
 }                                               from './motion'

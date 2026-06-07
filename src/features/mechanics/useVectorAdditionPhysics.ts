@@ -94,7 +94,7 @@ export function useVectorAdditionPhysics({
     if (mode === 2) {
       // ===== 正交分解模式 =====
       // 此时 f1 充当合力，angle 充当合力方向角
-      fResultantEnd = physicsToCanvas(addition.fx1, addition.fy1, canvasWidth, canvasHeight, scale) // 重用 f1 坐标作为合力
+      fResultantEnd = physicsToCanvas(decomp.fx, decomp.fy, canvasWidth, canvasHeight, scale)
       
       // 分量端点
       fxEnd = physicsToCanvas(decomp.fx, 0, canvasWidth, canvasHeight, scale)

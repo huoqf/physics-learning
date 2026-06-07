@@ -35,7 +35,6 @@ import {
   calculatePowerTransmission,
   calculateAverageVelocity,
   calculateVariableAcceleration,
-  calculateSecantSlope,
   calculateInstantaneousVelocity,
   calculateDualObjectComparison,
   determineMotionState,
@@ -71,16 +70,13 @@ export interface PhysicsPanelData {
   gaokaoPoints?: GaokaoPoint[]
 }
 
-function sign(v: number): 'positive' | 'negative' | 'zero' {
-  return v > 0 ? 'positive' : v < 0 ? 'negative' : 'zero'
-}
 
 export function buildPhysicsQuantities(
   animId: string,
   params: Record<string, number>,
   time: number
 ): PhysicsPanelData {
-  const base: PhysicsQuantity[] = [{ label: '时间 t', value: time, unit: 's' }]
+  const base: PhysicsQuantity[] = []
 
   switch (animId) {
     case 'anim-velocity': {
@@ -95,7 +91,7 @@ export function buildPhysicsQuantities(
         const t2 = t0 + deltaT
         const x1 = v * t1
         const x2 = v * t2
-        const { vBar, deltaX } = calculateAverageVelocity(x1, x2, t1, t2)
+        const { vBar } = calculateAverageVelocity(x1, x2, t1, t2)
         const isDeltaTSmall = deltaT <= 0.05
         const conceptStatus = isDeltaTSmall
           ? 'Δt 极小，平均速度≈瞬时速度'
@@ -106,11 +102,7 @@ export function buildPhysicsQuantities(
         return {
           quantities: [
             ...base,
-            { label: '当前时刻 t', value: t0, unit: 's' },
-            { label: '选定间隔 Δt', value: deltaT, unit: 's' },
-            { label: '通过位移 Δx', value: deltaX, unit: 'm' },
             { label: '平均速度 v̄', value: vBar, unit: 'm/s', highlight: 'positive' as const },
-            { label: '仪表盘 v', value: v, unit: 'm/s' },
             { label: '概念状态', value: conceptStatus, unit: '' },
           ],
           gaokaoPoints: [
@@ -138,8 +130,6 @@ export function buildPhysicsQuantities(
         const t0 = params.t0 ?? 2
         const deltaT = params.deltaT ?? 0.5
         const { vBar, vInst, residual } = calculateInstantaneousVelocity(model, modelParams, t0, deltaT)
-        const { deltaX } = calculateSecantSlope(model, modelParams, t0, deltaT)
-        const { a } = calculateVariableAcceleration(model, modelParams, t0)
 
         if (model === 'multi-stage') {
           // ── 多阶段专属看板 ──
@@ -176,9 +166,6 @@ export function buildPhysicsQuantities(
             quantities: [
               ...base,
               { label: '当前阶段', value: stageName, unit: '' },
-              { label: '加速度 a', value: currentState.a, unit: 'm/s²' },
-              { label: '瞬时速度 v', value: currentState.v, unit: 'm/s' },
-              { label: '位移 x', value: currentState.x, unit: 'm' },
               { label: '路程 s', value: totalDist, unit: 'm' },
               { label: '平均速度 v̄', value: avgSpeed, unit: 'm/s' },
               { label: '平均速率 v_率', value: avgRate, unit: 'm/s' },
@@ -195,12 +182,8 @@ export function buildPhysicsQuantities(
         return {
           quantities: [
             ...base,
-            { label: '目标时刻 t₀', value: t0, unit: 's' },
-            { label: '微元窗口 Δt', value: deltaT, unit: 's' },
-            { label: '坐标增量 Δx', value: deltaX, unit: 'm' },
             { label: '割线斜率 v̄', value: vBar, unit: 'm/s' },
             { label: '切线斜率 v', value: vInst, unit: 'm/s', highlight: 'positive' as const },
-            { label: '加速度 a', value: a, unit: 'm/s²' },
             { label: '绝对残差 |v̄-v|', value: residual, unit: 'm/s', highlight: residual < 0.1 ? 'zero' as const : 'negative' as const },
             { label: '微积分映射', value: 'v = dx/dt = x\'(t)', unit: '' },
           ],
@@ -224,12 +207,8 @@ export function buildPhysicsQuantities(
         return {
           quantities: [
             ...base,
-            { label: '飞机速度 v_A', value: result.vA, unit: 'm/s', highlight: 'positive' as const },
-            { label: '跑车速度 v_B', value: result.vB, unit: 'm/s', highlight: sign(result.vB) },
             { label: '飞机 Δv_A', value: result.deltaVA, unit: 'm/s', highlight: 'zero' as const },
             { label: '跑车 Δv_B', value: result.deltaVB, unit: 'm/s', highlight: 'positive' as const },
-            { label: '飞机加速度 a_A', value: result.aA, unit: 'm/s²', highlight: 'zero' as const },
-            { label: '跑车加速度 a_B', value: result.aB, unit: 'm/s²', highlight: 'positive' as const },
             { label: '核心结论', value: result.conclusion, unit: '', highlight: 'extreme' as const },
           ],
           gaokaoPoints: [
@@ -262,11 +241,8 @@ export function buildPhysicsQuantities(
         return {
           quantities: [
             ...base,
-            { label: '速度 v', value: v, unit: 'm/s', highlight: sign(v) },
-            { label: '加速度 a', value: currentA, unit: 'm/s²', highlight: sign(currentA) },
             { label: '矢量方向关系', value: `v⃗ 与 a⃗ ${direction}`, unit: '' },
             { label: '运动状态', value: motion, unit: '', highlight: isAccelerating ? 'positive' as const : motion === '减速' ? 'negative' as const : undefined },
-            { label: '图象斜率 k', value: currentA, unit: 'm/s²' },
             { label: '微积分映射', value: 'a = dv/dt = v\'(t)', unit: '' },
             { label: '核心结论', value: 'a 为负值，物体不一定做减速运动', unit: '', highlight: 'extreme' as const },
           ],
@@ -371,8 +347,6 @@ export function buildPhysicsQuantities(
             ...base,
             { label: 'A 动力学方程', value: pressure < 0.01 ? 'a = g' : 'mg - f = ma', unit: '' },
             { label: 'B 动力学方程', value: pressure < 0.01 ? 'a = g' : 'mg - f = ma', unit: '' },
-            { label: 'A 速度 v_A', value: vA, unit: 'm/s', highlight: 'positive' as const },
-            { label: 'B 速度 v_B', value: vB, unit: 'm/s', highlight: sign(vB) },
             { label: 'A 阻力 f_A', value: fAirA, unit: 'N', highlight: fAirA > 0.01 ? 'negative' as const : 'zero' as const },
             { label: 'B 阻力 f_B', value: fAirB, unit: 'N', highlight: fAirB > 0.01 ? 'negative' as const : 'zero' as const },
             { label: '环境状态', value: envStatus, unit: '', highlight: pressure < 0.01 ? 'positive' as const : undefined },
@@ -405,9 +379,6 @@ export function buildPhysicsQuantities(
         return {
           quantities: [
             ...base,
-            { label: '滴水周期 T', value: dripPeriod, unit: 's' },
-            { label: '纬度 φ', value: latitude, unit: '°' },
-            { label: '海拔 H', value: altitude, unit: 'km' },
             { label: '纬度修正 g', value: gLat, unit: 'm/s²' },
             { label: '海拔修正 g\'', value: gAlt, unit: 'm/s²' },
             { label: '2T内下落 h', value: h2T, unit: 'm' },
@@ -434,7 +405,7 @@ export function buildPhysicsQuantities(
       const targetHeight = params.targetHeight ?? 0
       const totalTime = (2 * v0) / g
       // 竖直上抛：取向上为正，等价于自由落体公式中 g 取负
-      const { v, y } = calculateFreeFall(v0, -g, time)
+      const { v } = calculateFreeFall(v0, -g, time)
       const isLanded = time >= totalTime && totalTime > 0
       const isAtPeak = !isLanded && Math.abs(v) < 0.3 && time > 0.05
       const phase = isLanded ? '落地' : isAtPeak ? '最高点' : v > 0 ? '上升' : v < 0 ? '下落' : '起抛'
@@ -483,8 +454,6 @@ export function buildPhysicsQuantities(
       return {
         quantities: [
           ...base,
-          { label: '速度 v', value: v, unit: 'm/s', highlight: v > 0 ? 'positive' : v < 0 ? 'negative' : 'zero' },
-          { label: '位移 y', value: y, unit: 'm', highlight: y > 0 ? 'positive' : y < 0 ? 'negative' : 'zero' },
           { label: '运动阶段', value: phase, unit: '', highlight: isAtPeak ? 'extreme' : undefined },
         ],
         formulas: advancedFormulas,
@@ -498,14 +467,11 @@ export function buildPhysicsQuantities(
     case 'anim-projectile': {
       const v0x = params.v0x ?? 10
       const g = params.g ?? GRAVITY
-      const { x, y, vy } = calculateProjectileMotion(v0x, g, time)
+      const { x, y } = calculateProjectileMotion(v0x, g, time)
       return {
         quantities: [
           ...base,
-          { label: '水平速度 v₀', value: v0x, unit: 'm/s' },
-          { label: '重力加速度 g', value: g, unit: 'm/s²' },
           { label: '水平位移 x', value: x, unit: 'm' },
-          { label: '竖直速度 vy', value: vy, unit: 'm/s' },
           { label: '竖直位移 y', value: y, unit: 'm' },
         ],
       }
@@ -514,14 +480,10 @@ export function buildPhysicsQuantities(
       const v0 = params.v0 ?? 15
       const angle = params.angle ?? 45
       const g = params.g ?? GRAVITY
-      const { x, y, vx, vy } = calculateObliqueThrow(v0, angle, g, time)
+      const { x, y } = calculateObliqueThrow(v0, angle, g, time)
       return {
         quantities: [
           ...base,
-          { label: '初速度 v₀', value: v0, unit: 'm/s' },
-          { label: '抛射角 θ', value: angle, unit: '°' },
-          { label: '水平速度 vx', value: vx, unit: 'm/s' },
-          { label: '竖直速度 vy', value: vy, unit: 'm/s' },
           { label: '水平位移 x', value: x, unit: 'm' },
           { label: '竖直位移 y', value: y, unit: 'm' },
         ],
@@ -530,13 +492,10 @@ export function buildPhysicsQuantities(
     case 'anim-circular-motion': {
       const r = params.r ?? 2
       const omega = params.omega ?? 1
-      const { v, period } = calculateCircularMotion(r, omega, time)
+      const { period } = calculateCircularMotion(r, omega, time)
       return {
         quantities: [
           ...base,
-          { label: '半径 r', value: r, unit: 'm' },
-          { label: '角速度 ω', value: omega, unit: 'rad/s' },
-          { label: '线速度 v', value: v, unit: 'm/s' },
           { label: '周期 T', value: period, unit: 's' },
         ],
       }
@@ -544,12 +503,10 @@ export function buildPhysicsQuantities(
     case 'anim-satellite': {
       const r = params.r ?? 7
       const rMeters = r * 1e6
-      const { v, T } = calculateOrbitalSpeed(EARTH_MASS, rMeters, GRAVITATIONAL_CONSTANT)
+      const { T } = calculateOrbitalSpeed(EARTH_MASS, rMeters, GRAVITATIONAL_CONSTANT)
       return {
         quantities: [
           ...base,
-          { label: '轨道半径 r', value: r, unit: '×10⁶ m' },
-          { label: '线速度 v', value: v, unit: 'm/s' },
           { label: '周期 T', value: T / 60, unit: 'min' },
         ],
       }
@@ -560,19 +517,12 @@ export function buildPhysicsQuantities(
       const v1 = params.v1 ?? 5
       const v2 = params.v2 ?? 0
       const e = params.e ?? 0.8
-      const { v1f, v2f, pBefore, pAfter } = calculateRestitutionCollision(m1, v1, m2, v2, e)
+      const { pBefore, pAfter } = calculateRestitutionCollision(m1, v1, m2, v2, e)
       return {
         quantities: [
           ...base,
-          { label: '质量 m₁', value: m1, unit: 'kg' },
-          { label: '质量 m₂', value: m2, unit: 'kg' },
-          { label: '初速度 v₁', value: v1, unit: 'm/s' },
-          { label: '初速度 v₂', value: v2, unit: 'm/s' },
-          { label: '恢复系数 e', value: e, unit: '' },
           { label: '碰前总动量', value: pBefore, unit: 'kg·m/s' },
           { label: '碰后总动量', value: pAfter, unit: 'kg·m/s' },
-          { label: 'v₁末', value: v1f, unit: 'm/s' },
-          { label: 'v₂末', value: v2f, unit: 'm/s' },
         ],
       }
     }
@@ -584,9 +534,6 @@ export function buildPhysicsQuantities(
       return {
         quantities: [
           ...base,
-          { label: '电量 q₁', value: q1, unit: 'μC' },
-          { label: '电量 q₂', value: q2, unit: 'μC' },
-          { label: '间距 r', value: r, unit: 'cm' },
           { label: '库仑力 F', value: F, unit: 'N' },
           { label: '作用', value: q1 * q2 < 0 ? '相互吸引' : '相互排斥', unit: '' },
         ],
@@ -599,10 +546,7 @@ export function buildPhysicsQuantities(
       return {
         quantities: [
           ...base,
-          { label: '源电量 q', value: q, unit: 'μC' },
-          { label: 'P 点距离 r', value: rTest, unit: 'cm' },
           { label: '场强 E', value: E, unit: 'N/C' },
-          { label: '方向', value: q >= 0 ? '背离正电荷' : '指向负电荷', unit: '' },
         ],
       }
     }
@@ -610,7 +554,6 @@ export function buildPhysicsQuantities(
       // 偏转电场（示波管）模型：板长 L、板间距 D，单位 E ×10³N/C、q μC、m mg
       const PLATE_LENGTH = 0.4
       const HALF_GAP = 0.1
-      const TIME_SCALE = 0.02
       const E = (params.E ?? 10) * 1e3
       const q = (params.q ?? 5) * 1e-6
       const m = (params.m ?? 200) * 1e-6
@@ -618,19 +561,9 @@ export function buildPhysicsQuantities(
       const a = m > 0 ? (q * E) / m : 0
       const tExit = v0 > 0 ? PLATE_LENGTH / v0 : 0
       const tHit = a > 0 ? Math.sqrt((2 * HALF_GAP) / a) : Infinity
-      const tEnd = Math.min(tExit, tHit)
-      const tSim = Math.min(time * TIME_SCALE, tEnd)
-      const x = v0 * tSim
-      const y = 0.5 * a * tSim * tSim
-      const vy = a * tSim
       return {
         quantities: [
           ...base,
-          { label: '加速度 a', value: a, unit: 'm/s²' },
-          { label: '初速度 v₀', value: v0, unit: 'm/s' },
-          { label: '水平位移 x', value: x, unit: 'm' },
-          { label: '竖直速度 vy', value: vy, unit: 'm/s' },
-          { label: '竖直位移 y', value: y, unit: 'm' },
           { label: '结局', value: tHit < tExit ? '打在极板上' : '射出电场', unit: '' },
         ],
       }
@@ -645,18 +578,11 @@ export function buildPhysicsQuantities(
       const Q_FIXED = VACUUM_PERMITTIVITY * (100 * 1e-4) / (5 * 1e-3) * 12
       const { C } = calculateCapacitor(VACUUM_PERMITTIVITY * epsilon_r, S * 1e-4, d * 1e-3)
       const voltage = isConnected ? U : Q_FIXED / C
-      const charge = isConnected ? C * voltage : Q_FIXED
       const field = voltage / (d * 1e-3)
       return {
         quantities: [
           ...base,
-          { label: '电源状态', value: isConnected ? '接电源(U不变)' : '断开(Q不变)', unit: '' },
-          { label: '正对面积 S', value: S, unit: 'cm²' },
-          { label: '板间距 d', value: d, unit: 'mm' },
-          { label: '相对介电常数 εᵣ', value: epsilon_r, unit: '' },
           { label: '电容 C', value: C * 1e12, unit: 'pF' },
-          { label: '电压 U', value: voltage, unit: 'V' },
-          { label: '电荷量 Q', value: charge * 1e9, unit: 'nC' },
           { label: '场强 E', value: field, unit: 'V/m' },
         ],
       }
@@ -664,18 +590,12 @@ export function buildPhysicsQuantities(
     case 'anim-field-lines': {
       const q1 = params.q1 ?? 5
       const q2 = params.q2 ?? -5
-      const distance = params.distance ?? 8
       const positive1 = q1 > 0
       const positive2 = q2 > 0
       const negative1 = q1 < 0
       const negative2 = q2 < 0
       const isOpposite = (positive1 && negative2) || (negative1 && positive2)
       const isSame = (positive1 && positive2) || (negative1 && negative2)
-      const k = 9e9
-      const q1SI = Math.abs(q1) * 1e-6
-      const q2SI = Math.abs(q2) * 1e-6
-      const rSI = distance * 0.01
-      const F_coulomb = calculateCoulombForce(k, q1SI, q2SI, rSI).F
       let chargeType = ''
       if (q1 === 0 && q2 === 0) chargeType = '无电场'
       else if (q1 === 0 || q2 === 0) chargeType = '单电荷'
@@ -689,10 +609,6 @@ export function buildPhysicsQuantities(
         quantities: [
           ...base,
           { label: '电荷类型', value: chargeType, unit: '' },
-          { label: '电荷量 q₁', value: q1, unit: 'μC' },
-          { label: '电荷量 q₂', value: q2, unit: 'μC' },
-          { label: '间距 d', value: distance, unit: 'cm' },
-          { label: '库仑力 F', value: F_coulomb, unit: 'N' },
           { label: '电场线方向', value: fieldLineDir, unit: '' },
         ],
       }
@@ -708,11 +624,8 @@ export function buildPhysicsQuantities(
       return {
         quantities: [
           ...base,
-          { label: '电荷量 q', value: q, unit: 'μC' },
-          { label: '试探点距离 r', value: rTest, unit: 'cm' },
           { label: '电势 V', value: V, unit: 'V' },
           { label: '场强 E', value: E, unit: 'N/C' },
-          { label: '电势符号', value: q >= 0 ? '正（电势为正）' : '负（电势为负）', unit: '' },
         ],
       }
     }
@@ -723,8 +636,6 @@ export function buildPhysicsQuantities(
       return {
         quantities: [
           ...base,
-          { label: '电压 U', value: U, unit: 'V' },
-          { label: '电阻 R', value: R, unit: 'Ω' },
           { label: '电流 I', value: I, unit: 'A' },
         ],
       }
@@ -741,10 +652,6 @@ export function buildPhysicsQuantities(
       return {
         quantities: [
           ...base,
-          { label: '连接方式', value: series ? '串联' : '并联', unit: '' },
-          { label: '电阻 R₁', value: R1, unit: 'Ω' },
-          { label: '电阻 R₂', value: R2, unit: 'Ω' },
-          { label: '总电阻 R总', value: Rtotal, unit: 'Ω' },
           { label: '总电流 I总', value: Itotal, unit: 'A' },
         ],
       }
@@ -753,15 +660,10 @@ export function buildPhysicsQuantities(
       const EMF = params.EMF ?? 6
       const r = params.r ?? 1
       const R = params.R ?? 5
-      const { I, U_terminal, P_output, eta } = calculateClosedCircuit(EMF, r, R)
+      const { P_output, eta } = calculateClosedCircuit(EMF, r, R)
       return {
         quantities: [
           ...base,
-          { label: '电动势 EMF', value: EMF, unit: 'V' },
-          { label: '内阻 r', value: r, unit: 'Ω' },
-          { label: '外电阻 R', value: R, unit: 'Ω' },
-          { label: '电流 I', value: I, unit: 'A' },
-          { label: '路端电压 U', value: U_terminal, unit: 'V' },
           { label: '输出功率 P出', value: P_output, unit: 'W' },
           { label: '效率 η', value: eta * 100, unit: '%' },
         ],
@@ -776,10 +678,6 @@ export function buildPhysicsQuantities(
       return {
         quantities: [
           ...base,
-          { label: '磁感应强度 B', value: B, unit: 'T' },
-          { label: '电流 I', value: I, unit: 'A' },
-          { label: '导线长度 L', value: L, unit: 'm' },
-          { label: '夹角 θ', value: angle, unit: '°' },
           { label: '安培力 F', value: F, unit: 'N' },
         ],
       }
@@ -793,10 +691,6 @@ export function buildPhysicsQuantities(
       return {
         quantities: [
           ...base,
-          { label: '电荷量 q', value: q, unit: 'C' },
-          { label: '速度 v', value: v, unit: 'm/s' },
-          { label: '磁感应强度 B', value: B, unit: 'T' },
-          { label: '夹角 θ', value: angle, unit: '°' },
           { label: '洛伦兹力 F', value: F, unit: 'N' },
         ],
       }
@@ -810,10 +704,6 @@ export function buildPhysicsQuantities(
       return {
         quantities: [
           ...base,
-          { label: '电荷量 q', value: q, unit: 'C' },
-          { label: '质量 m', value: m, unit: 'kg' },
-          { label: '速度 v', value: v, unit: 'm/s' },
-          { label: '磁感应强度 B', value: B, unit: 'T' },
           { label: '轨道半径 r', value: r, unit: 'm' },
           { label: '周期 T', value: T, unit: 's' },
           { label: '角速度 ω', value: omega, unit: 'rad/s' },
@@ -851,23 +741,17 @@ export function buildPhysicsQuantities(
       const dPhi_dx = (phi2 - phi) / dx
       const dPhi_dt = dPhi_dx * v_m
       const { EMF } = calculateFaradayEMF(N, dPhi_dt)
-      const current = EMF / 10
       return {
         quantities: [
           ...base,
-          { label: '匝数 N', value: N, unit: '匝' },
-          { label: '磁铁强度 B', value: B, unit: 'T' },
-          { label: '磁通量 Φ', value: phi, unit: 'Wb' },
           { label: 'dΦ/dt', value: dPhi_dt, unit: 'Wb/s' },
           { label: '感应电动势 E', value: Math.abs(EMF), unit: 'V' },
-          { label: '感应电流 I', value: Math.abs(current), unit: 'A' },
         ],
       }
     }
     case 'anim-lenzs-law': {
       const {
         currentAction,
-        originalFieldDirection,
         fluxChange,
         inducedFieldDirection,
         equivalentPole,
@@ -878,7 +762,6 @@ export function buildPhysicsQuantities(
         quantities: [
           ...base,
           { label: '当前动作', value: currentAction, unit: '' },
-          { label: '原磁场方向', value: originalFieldDirection === 'down' ? '向下' : '向上', unit: '' },
           {
             label: '磁通量变化',
             value: fluxChange === 'increasing' ? '增加' : fluxChange === 'decreasing' ? '减少' : '稳定',
@@ -892,8 +775,6 @@ export function buildPhysicsQuantities(
             value: forceType === 'repulsion' ? '排斥(阻碍靠近)' : forceType === 'attraction' ? '吸引(阻碍远离)' : '无',
             unit: '',
           },
-          { label: '线圈匝数 N', value: params.coilN ?? 10, unit: '匝' },
-          { label: '时间 t', value: time.toFixed(2), unit: 's' },
         ],
       }
     }
@@ -910,12 +791,6 @@ export function buildPhysicsQuantities(
       return {
         quantities: [
           ...base,
-          { label: '磁感应强度 B', value: B, unit: 'T' },
-          { label: '导轨宽度 L', value: L, unit: 'm' },
-          { label: '速度 v', value: v, unit: 'm/s' },
-          { label: '外电阻 R', value: R, unit: 'Ω' },
-          { label: '夹角 θ', value: theta, unit: '°' },
-          { label: '内阻 r', value: r, unit: 'Ω' },
           { label: '感应电动势 EMF', value: Math.abs(EMF), unit: 'V' },
           { label: '感应电流 I', value: Math.abs(I), unit: 'A' },
           { label: '安培力 F安', value: F_ampere, unit: 'N' },
@@ -929,7 +804,6 @@ export function buildPhysicsQuantities(
       const S = params.S ?? 0.04
       const omega = params.omega ?? 2
       const N = params.N ?? 100
-      const initialPhase = params.initialPhase ?? 0
       // 峰值电动势 Em = NBSω
       const Em = N * B * S * omega
       const { V_rms } = calculateACRMS(Em)
@@ -937,14 +811,9 @@ export function buildPhysicsQuantities(
       return {
         quantities: [
           ...base,
-          { label: '磁感应强度 B', value: B, unit: 'T' },
-          { label: '线圈面积 S', value: S, unit: 'm²' },
-          { label: '角速度 ω', value: omega, unit: 'rad/s' },
-          { label: '匝数 N', value: N, unit: '匝' },
           { label: '峰值电动势 Em', value: Em, unit: 'V' },
           { label: '有效值 Erms', value: V_rms, unit: 'V' },
           { label: '频率 f', value: freq, unit: 'Hz' },
-          { label: '初始位置', value: initialPhase < 0.5 ? '中性面' : '最大值面', unit: '' },
         ],
       }
     }
@@ -952,7 +821,6 @@ export function buildPhysicsQuantities(
     case 'anim-ac-values': {
       const V_peak = params.V_peak ?? 311
       const R = params.R ?? 100
-      const f = params.f ?? 2
       const U_dc = params.U_dc ?? 220
       const I_peak = V_peak / R
       const { V_rms, I_rms } = calculateACRMS(V_peak, I_peak)
@@ -961,10 +829,6 @@ export function buildPhysicsQuantities(
       return {
         quantities: [
           ...base,
-          { label: '峰值电压 Vm', value: V_peak, unit: 'V' },
-          { label: '频率 f', value: f, unit: 'Hz' },
-          { label: '负载电阻 R', value: R, unit: 'Ω' },
-          { label: '直流电压 Udc', value: U_dc, unit: 'V', highlight: errorPercent <= 5 ? 'positive' : undefined },
           { label: '有效电压 Vrms', value: V_rms, unit: 'V' },
           { label: '有效电流 Irms', value: I_rms, unit: 'A' },
           { label: '平均功率 P', value: P_avg, unit: 'W' },
@@ -983,10 +847,7 @@ export function buildPhysicsQuantities(
       return {
         quantities: [
           ...base,
-          { label: '原线圈匝数 n₁', value: n1, unit: '匝' },
-          { label: '副线圈匝数 n₂', value: n2, unit: '匝' },
           { label: '匝数比 n₂/n₁', value: turnsRatio, unit: '' },
-          { label: '输入电压 U₁', value: U1, unit: 'V' },
           { label: '输出电压 U₂', value: U2, unit: 'V' },
           { label: '原线圈电流 I₁', value: I1, unit: 'A' },
           { label: '副线圈电流 I₂', value: I2, unit: 'A' },
@@ -1004,19 +865,15 @@ export function buildPhysicsQuantities(
       const n2_step_up = 1000
       const n1_step_down = 1000
       const n2_step_down = 100
-      const { I_line, U_loss, P_loss, U_user, P_user, eta } = calculatePowerTransmission(
+      const { I_line, P_loss, U_user, eta } = calculatePowerTransmission(
         P_send, U_trans, R_line, n1_step_up, n2_step_up, n1_step_down, n2_step_down
       )
       return {
         quantities: [
           ...base,
-          { label: '输送功率 P', value: P_send / 1000, unit: 'kW' },
-          { label: '输电电压 U', value: U_trans / 1000, unit: 'kV' },
           { label: '输电线电流 I', value: I_line, unit: 'A' },
-          { label: '损耗电压 ΔU', value: U_loss, unit: 'V' },
           { label: '损耗功率 ΔP', value: P_loss / 1000, unit: 'kW' },
           { label: '用户电压 U', value: U_user, unit: 'V' },
-          { label: '用户功率 P', value: P_user / 1000, unit: 'kW' },
           { label: '输电效率 η', value: eta * 100, unit: '%' },
         ],
       }
@@ -1037,8 +894,6 @@ export function buildPhysicsQuantities(
         return {
           quantities: [
             ...base,
-            { label: '研究物体质量 m', value: m, unit: 'kg' },
-            { label: '地理纬度 φ', value: latitude, unit: '°' },
             { label: '引力 F_引 (相对)', value: F_grav.toFixed(1), unit: 'N' },
             { label: '向心力 F_向 (相对)', value: F_centripetal.toFixed(1), unit: 'N', highlight: F_centripetal > 1.5 ? 'positive' : undefined },
             { label: '实际重力 G (相对)', value: G_force.toFixed(1), unit: 'N', highlight: 'positive' as const },
@@ -1066,9 +921,6 @@ export function buildPhysicsQuantities(
       return {
         quantities: [
           ...base,
-          { label: '引力质量 m₁', value: m1, unit: '相对值' },
-          { label: '引力质量 m₂', value: m2, unit: '相对值' },
-          { label: '天体间距 r', value: r, unit: '相对值' },
           { label: '万有引力 F', value: F.toExponential(2), unit: '相对值', highlight: 'positive' as const },
           { label: '引力常数 G', value: '6.67×10⁻¹¹', unit: 'N·m²/kg²' }
         ],
@@ -1088,15 +940,10 @@ export function buildPhysicsQuantities(
       const omega = Math.sqrt(k / m)
       const amplitude = 0.5
       const displacement = amplitude * Math.sin(omega * time)
-      const springForce = -k * displacement
       const potentialEnergy = 0.5 * k * displacement * displacement
       return {
         quantities: [
           ...base,
-          { label: '劲度系数 k', value: k, unit: 'N/m' },
-          { label: '振子质量 m', value: m, unit: 'kg' },
-          { label: '实时位移 x', value: displacement.toFixed(2), unit: 'm', highlight: displacement > 0 ? 'positive' : displacement < 0 ? 'negative' : 'zero' },
-          { label: '实时弹力 F_弹', value: springForce.toFixed(1), unit: 'N', highlight: springForce > 0 ? 'positive' : springForce < 0 ? 'negative' : 'zero' },
           { label: '弹性势能 E_p', value: potentialEnergy.toFixed(2), unit: 'J', highlight: potentialEnergy > 0.05 ? 'extreme' : undefined },
           { label: '固有角频率 ω', value: omega.toFixed(2), unit: 'rad/s' }
         ],
@@ -1120,13 +967,12 @@ export function buildPhysicsQuantities(
       if (mode === 0) {
         // 水平外力模型 (f-F)
         const F_applied = params.F_applied ?? 15
-        const { f_actual, a, F_net, isSliding } = calculateFrictionPullModel(m, mu, F_applied, g)
+        const { a, F_net, isSliding } = calculateFrictionPullModel(m, mu, F_applied, g)
 
         return {
           quantities: [
             ...base,
             { label: '运动状态', value: isSliding ? '匀加速滑动' : '静止', unit: '', highlight: isSliding ? 'positive' as const : 'zero' as const },
-            { label: '实际摩擦力 f', value: f_actual.toFixed(2), unit: 'N', highlight: isSliding ? 'negative' as const : undefined },
             { label: '合外力 F_合', value: F_net.toFixed(2), unit: 'N', highlight: F_net > 0.05 ? 'positive' as const : 'zero' as const },
             { label: '加速度 a', value: a.toFixed(2), unit: 'm/s²', highlight: a > 0.05 ? 'positive' as const : 'zero' as const },
           ],
@@ -1145,13 +991,12 @@ export function buildPhysicsQuantities(
       } else {
         // 斜面倾角模型 (f-θ)
         const angle = params.angle ?? 15
-        const { f_actual, a, criticalAngle, isSliding } = calculateFrictionInclineModel(m, mu, angle, g)
+        const { a, criticalAngle, isSliding } = calculateFrictionInclineModel(m, mu, angle, g)
 
         return {
           quantities: [
             ...base,
             { label: '运动状态', value: isSliding ? '匀加速下滑' : '静止平衡', unit: '', highlight: isSliding ? 'positive' as const : 'zero' as const },
-            { label: '实际摩擦力 f', value: f_actual.toFixed(2), unit: 'N', highlight: isSliding ? 'negative' as const : undefined },
             { label: '临界下滑角 θ_c', value: criticalAngle.toFixed(1), unit: '°', highlight: 'extreme' as const },
             { label: '加速度 a', value: a.toFixed(2), unit: 'm/s²', highlight: a > 0.05 ? 'positive' as const : 'zero' as const },
           ],
@@ -1169,39 +1014,133 @@ export function buildPhysicsQuantities(
         }
       }
     }
+    case 'anim-equilibrium': {
+      const m = params.m ?? 2.0
+      const theta1 = params.theta1 ?? 45
+      const theta2 = params.theta2 ?? 45
+      const mode = params.mode ?? 0 // 0 = 基础悬挂, 1 = 平行四边形, 2 = 正交分解, 3 = 封闭三角形
+      const g = 9.8
+      const gravity = m * g
+
+      const theta1Rad = (theta1 * Math.PI) / 180
+      const theta2Rad = (theta2 * Math.PI) / 180
+      const sinSum = Math.sin(theta1Rad + theta2Rad)
+      
+      let t1 = 999
+      let t2 = 999
+      if (Math.abs(sinSum) >= 0.05) {
+        t1 = (gravity * Math.cos(theta2Rad)) / sinSum
+        t2 = (gravity * Math.cos(theta1Rad)) / sinSum
+      }
+      
+      const isOverloaded = t1 > 35 || t2 > 35
+      const isBroken = t1 > 50 || t2 > 50
+
+      const quantities: PhysicsQuantity[] = [
+        ...base,
+      ]
+
+      if (isBroken) {
+        quantities.push(
+          { label: '绳 1 状态', value: t1 > 50 ? '已拉断' : '受力中', unit: '' },
+          { label: '绳 2 状态', value: t2 > 50 ? '已拉断' : '受力中', unit: '' },
+          { label: '拉力 T₁', value: t1 > 50 ? 0 : t1.toFixed(1), unit: 'N' },
+          { label: '拉力 T₂', value: t2 > 50 ? 0 : t2.toFixed(1), unit: 'N' }
+        )
+      } else {
+        if (mode === 2) {
+          const t1x = t1 * Math.cos(theta1Rad)
+          const t1y = t1 * Math.sin(theta1Rad)
+          const t2x = t2 * Math.cos(theta2Rad)
+          const t2y = t2 * Math.sin(theta2Rad)
+          quantities.push(
+            { label: 'T₁ 水平分力 T1x', value: t1x.toFixed(1), unit: 'N' },
+            { label: 'T₂ 水平分量 T2x', value: t2x.toFixed(1), unit: 'N' },
+            { label: 'T₁ 竖直分量 T1y', value: t1y.toFixed(1), unit: 'N' },
+            { label: 'T₂ 竖直分量 T2y', value: t2y.toFixed(1), unit: 'N' },
+            { label: 'x轴合力 ΣFx', value: (t2x - t1x).toFixed(2), unit: 'N', highlight: 'zero' as const },
+            { label: 'y轴合力 ΣFy', value: (t1y + t2y - gravity).toFixed(2), unit: 'N', highlight: 'zero' as const }
+          )
+        } else if (mode === 1) {
+          quantities.push(
+            { label: '拉力 T₁', value: t1.toFixed(1), unit: 'N', highlight: isOverloaded ? 'extreme' as const : undefined },
+            { label: '拉力 T₂', value: t2.toFixed(1), unit: 'N', highlight: isOverloaded ? 'extreme' as const : undefined },
+            { label: '等效合力 F合', value: gravity.toFixed(1), unit: 'N', highlight: 'positive' as const }
+          )
+        } else {
+          quantities.push(
+            { label: '拉力 T₁', value: t1.toFixed(1), unit: 'N', highlight: isOverloaded ? 'extreme' as const : undefined },
+            { label: '拉力 T₂', value: t2.toFixed(1), unit: 'N', highlight: isOverloaded ? 'extreme' as const : undefined }
+          )
+        }
+      }
+
+      let formulas: Formula[] = [
+        { name: '水平方向平衡', latex: 'T_1 \\cos\\theta_1 = T_2 \\cos\\theta_2' },
+        { name: '竖直方向平衡', latex: 'T_1 \\sin\\theta_1 + T_2 \\sin\\theta_2 = mg' }
+      ]
+      let gaokaoPoints: GaokaoPoint[] = [
+        { text: '共点力平衡条件为物体所受合外力为零，即 ΣFx = 0, ΣFy = 0。', importance: 'core' as const },
+        { text: '两挂绳夹角趋近于 180° 时，张力趋于无穷大，极易拉断。', importance: 'hard' as const }
+      ]
+
+      if (isBroken) {
+        formulas = [
+          { name: '单摆阻尼方程', latex: '\\theta\'\' + \\gamma \\theta\' + \\frac{g}{L}\\sin\\theta = 0' }
+        ]
+        gaokaoPoints = [
+          { text: '轻绳的最大耐受拉力即为高考受力分析中的临界平衡条件。', importance: 'hard' as const },
+          { text: '一绳断裂后，重物做单摆阻尼运动，最终平衡点移至挂点正下方。', importance: 'core' as const }
+        ]
+      } else if (mode === 1) {
+        formulas = [
+          { name: '力的平行四边形定则', latex: 'F_{\\text{合}} = \\sqrt{T_1^2 + T_2^2 + 2T_1T_2\\cos(\\theta_1+\\theta_2)}' }
+        ]
+        gaokaoPoints = [
+          { text: '平行四边形定则是矢量运算规律，合力随两力夹角增大而减小。', importance: 'gaokao' as const },
+          { text: '合力与分力为“等效替代”关系，大小范围为 |T₁-T₂| ≤ F ≤ T₁+T₂。', importance: 'core' as const }
+        ]
+      } else if (mode === 2) {
+        formulas = [
+          { name: '正交分解水平分量', latex: 'T_x = T \\cos\\theta' },
+          { name: '正交分解竖直分量', latex: 'T_y = T \\sin\\theta' }
+        ]
+        gaokaoPoints = [
+          { text: '正交分解法常用于复杂受力，可将矢量运算化为代数运算。', importance: 'gaokao' as const },
+          { text: '建系原则：应使尽可能多的力落在轴上，以简化正交方程。', importance: 'core' as const }
+        ]
+      } else if (mode === 3) {
+        formulas = [
+          { name: '正弦定理形式', latex: '\\frac{T_1}{\\sin(90^\\circ-\\theta_2)} = \\frac{T_2}{\\sin(90^\\circ-\\theta_1)} = \\frac{mg}{\\sin(\\theta_1+\\theta_2)}' }
+        ]
+        gaokaoPoints = [
+          { text: '三力平衡首尾相接必构成封闭三角形，常用于力的定性分析。', importance: 'hard' as const },
+          { text: '高考动态平衡压轴题中，力的封闭三角形图解法是突破核心。', importance: 'gaokao' as const }
+        ]
+      }
+
+      return {
+        quantities,
+        formulas,
+        gaokaoPoints
+      }
+    }
     case 'anim-vector-addition': {
-      const mode = params.mode ?? 0 // 0 = 平行四边形, 1 = 三角形, 2 = 正交分解
+      const quantities: PhysicsQuantity[] = [...base]
       const f1 = params.f1 ?? 10
       const f2 = params.f2 ?? 8
       const angle = params.angle ?? 60
+      const mode = params.mode ?? 0 // 0=平行四边形, 1=三角形, 2=正交分解
 
       if (mode === 2) {
-        // 正交分解模式：f1 充当合力，angle 充当方向角
         const angleRad = (angle * Math.PI) / 180
         const fx = f1 * Math.cos(angleRad)
         const fy = f1 * Math.sin(angleRad)
-        return {
-          quantities: [
-            ...base,
-            { label: '待分解力 F', value: f1.toFixed(1), unit: 'N', highlight: 'positive' as const },
-            { label: '方向角 θ', value: angle.toFixed(1), unit: '°' },
-            { label: '水平分力 Fx', value: fx.toFixed(2), unit: 'N', highlight: sign(fx) },
-            { label: '竖直分力 Fy', value: fy.toFixed(2), unit: 'N', highlight: sign(fy) },
-            { label: '分量平方和', value: (fx * fx + fy * fy).toFixed(2), unit: 'N²' },
-          ],
-          formulas: [
-            { name: '水平投影分量', latex: 'F_x = F \\cos\\theta' },
-            { name: '竖直投影分量', latex: 'F_y = F \\sin\\theta' },
-            { name: '合力量值关系', latex: 'F = \\sqrt{F_x^2 + F_y^2}' },
-          ],
-          gaokaoPoints: [
-            { text: '正交分解法是处理复杂受力问题最常用的数学工具。', importance: 'core' as const },
-            { text: '建立坐标系时，应使尽可能多的未知力落在坐标轴上，以简化方程。', importance: 'gaokao' as const },
-            { text: '分解的本质是等效替代：分力的共同作用效果与原合力完全相同。', importance: 'basic' as const },
-          ],
-        }
+        quantities.push(
+          { label: '水平分量 Fx', value: fx.toFixed(2), unit: 'N' },
+          { label: '竖直分量 Fy', value: fy.toFixed(2), unit: 'N' }
+        )
       } else {
-        // 力的合成模式（平行四边形定则与三角形定则）
         const angleRad = (angle * Math.PI) / 180
         const fx1 = f1
         const fy1 = 0
@@ -1212,27 +1151,39 @@ export function buildPhysicsQuantities(
         const fResultant = Math.sqrt(fx * fx + fy * fy)
         const resultAngleDeg = (Math.atan2(fy, fx) * 180) / Math.PI
 
-        return {
-          quantities: [
-            ...base,
-            { label: '分力 F₁', value: f1.toFixed(1), unit: 'N' },
-            { label: '分力 F₂', value: f2.toFixed(1), unit: 'N' },
-            { label: '夹角 θ', value: angle.toFixed(1), unit: '°' },
-            { label: '合力 F', value: fResultant.toFixed(2), unit: 'N', highlight: 'extreme' as const },
-            { label: '合力方向角 α', value: resultAngleDeg.toFixed(1), unit: '°' },
-            { label: '最大可能合力', value: (f1 + f2).toFixed(1), unit: 'N' },
-            { label: '最小可能合力', value: Math.abs(f1 - f2).toFixed(1), unit: 'N' },
-          ],
-          formulas: [
-            { name: '平行四边形定则', latex: 'F = \\sqrt{F_1^2 + F_2^2 + 2F_1F_2\\cos\\theta}' },
-            { name: '合力偏角正切', latex: '\\tan\\alpha = \\frac{F_2\\sin\\theta}{F_1 + F_2\\cos\\theta}' },
-          ],
-          gaokaoPoints: [
-            { text: '合力大小范围：|F₁ - F₂| ≤ F ≤ F₁ + F₂。', importance: 'core' as const },
-            { text: '分力大小固定时，合力大小随两力夹角的增大而减小。', importance: 'gaokao' as const },
-            { text: '三角形定则是平行四边形定则的平移等效变形，适合多力连续合成。', importance: 'hard' as const },
-          ],
-        }
+        quantities.push(
+          { label: '合力 F', value: fResultant.toFixed(2), unit: 'N', highlight: 'positive' as const },
+          { label: '合力偏角 α', value: resultAngleDeg.toFixed(1), unit: '°' }
+        )
+      }
+
+      let formulas: Formula[] = []
+      let gaokaoPoints: GaokaoPoint[] = []
+
+      if (mode === 2) {
+        formulas = [
+          { name: '水平分量', latex: 'F_x = F \\cos\\theta' },
+          { name: '竖直分量', latex: 'F_y = F \\sin\\theta' }
+        ]
+        gaokaoPoints = [
+          { text: '正交分解法是力学最核心的分析工具。', importance: 'gaokao' as const },
+          { text: '建系时通常使尽可能多的力落在轴上。', importance: 'core' as const }
+        ]
+      } else {
+        formulas = [
+          { name: '合力大小', latex: 'F = \\sqrt{F_1^2 + F_2^2 + 2F_1F_2\\cos\\theta}' },
+          { name: '偏角正切', latex: '\\tan\\alpha = \\frac{F_2\\sin\\theta}{F_1 + F_2\\cos\\theta}' }
+        ]
+        gaokaoPoints = [
+          { text: '力的合成遵循平行四边形与三角形定则。', importance: 'core' as const },
+          { text: '合力随两力夹角增大而单调减小。', importance: 'gaokao' as const }
+        ]
+      }
+
+      return {
+        quantities,
+        formulas,
+        gaokaoPoints
       }
     }
     default:

@@ -5,7 +5,8 @@ import {
   calculateFrictionPullModel,
   calculateFrictionInclineModel,
   calculateVectorAddition,
-  calculateOrthogonalDecomposition
+  calculateOrthogonalDecomposition,
+  calculateEquilibriumTension
 } from '../../src/physics/dynamics'
 
 describe('Dynamics physics calculations', () => {
@@ -148,6 +149,33 @@ describe('Dynamics physics calculations', () => {
       const { fx, fy } = calculateOrthogonalDecomposition(10, 90)
       expect(fx).toBeCloseTo(0, 5)
       expect(fy).toBeCloseTo(10, 5)
+    })
+  })
+
+  describe('calculateEquilibriumTension', () => {
+    const g = 9.8
+
+    it('should calculate tension correctly under symmetric hanging (30 degrees)', () => {
+      // 质量 2kg，重力 19.6N，两角均 30度
+      const { t1, t2, gravity } = calculateEquilibriumTension(2, 30, 30, g)
+      expect(gravity).toBeCloseTo(19.6, 5)
+      // T1 = T2 = G = 19.6 N
+      expect(t1).toBeCloseTo(19.6, 2)
+      expect(t2).toBeCloseTo(19.6, 2)
+    })
+
+    it('should handle vertical limit single hang correctly', () => {
+      // 左绳 90度（竖直），右绳 0度（水平但拉力为 0）
+      const { t1, t2 } = calculateEquilibriumTension(2, 90, 0, g)
+      expect(t1).toBeCloseTo(19.6, 5) // 承受全部重力
+      expect(t2).toBeCloseTo(0, 5)    // 水平绳无拉力
+    })
+
+    it('should return safety overload values if angles are too small', () => {
+      // 两角夹角之和趋近于 0（极端拉平）
+      const { t1, t2 } = calculateEquilibriumTension(2, 0.5, 0.5, g)
+      expect(t1).toBe(999)
+      expect(t2).toBe(999)
     })
   })
 })

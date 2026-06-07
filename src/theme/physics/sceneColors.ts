@@ -270,8 +270,63 @@ export const THERMAL_COLORS = {
   heatFlowCold:  '#38BDF8', // 热流（冷端）  — sky-400
 } as const
 
+// ─── 通用实验材料 (Common Materials) ──────────────────────────────────────────
+export const COMMON_MATERIALS = {
+  // 钢球/小球立体径向渐变色阶 (中心 -> 边缘)
+  steelSphereGrad:  ['#FFFFFF', '#D1D5DB', '#4B5563', '#1F2937'] as const,
+  // 真空对照虚影小球立体径向渐变色阶
+  vacuumSphereGrad: ['#E0F2FE', '#38BDF8', '#0284C7', '#0369A1'] as const,
+  // 滑轨拉丝金属渐变色阶
+  trackMetalGrad:   ['#1E293B', '#475569', '#94A3B8', '#475569', '#1E293B'] as const,
+  // 不锈钢滑块/底座材质渐变色阶
+  sliderMetalGrad:  ['#F1F5F9', '#CBD5E1', '#64748B', '#334155'] as const,
+  // 通用玻璃器皿材质渐变色阶 (如牛顿管、烧杯、棱镜等)
+  glassGrad:        ['#93C5FD', '#DBEAFE', '#FFFFFF'] as const,
+} as const
+
+// ─── 实验环境与腔体 (Environment & Chambers) ──────────────────────────────────
+export const ENVIRONMENT_COLORS = {
+  // 真空环境（真空对照轨道外观）
+  vacuumStroke:     '#38BDF8', // sky-400
+  vacuumBorder:     '#0284C7', // sky-600
+  vacuumGlow:       'rgba(56, 189, 248, 0.45)', // 虚影高光
+  // 介质/空气环境（普通阻力轨道外观）
+  mediaStroke:      '#475569', // neutral-600
+  mediaBorder:      '#0F172A', // neutral-900
+} as const
+
+// ─── 物理特效与微积分切片 (Special Effects & Math Slices) ─────────────────────
+export const SPECIAL_EFFECTS = {
+  // 微元面积积分极光渐变（正功/正位移，亮蓝系）
+  auroraBlueGrad:   ['#3B82F6', '#93C5FD'] as const,
+  // 微元面积积分极光渐变（负功/负位移，亮红系）
+  auroraRedGrad:    ['#EF4444', '#FCA5A5'] as const,
+  // 积分微元交叉图案前景色
+  patternGrid:      '#3B82F6', // 蓝
+  patternStripe:    '#EF4444', // 红
+} as const
+
+// ─── 安全与警示 (Safety & Warnings) ──────────────────────────────────────────
+export const SAFETY_PRESETS = {
+  // 阻尼回收防撞架的安全警示黄色条纹
+  safetyYellow:     '#EAB308', // yellow-500
+} as const
+
+// ─── 科学浮动面板与看板 (Lab Floating Panels) ──────────────────────────────────
+export const LAB_LABELS = {
+  // 浮动教学框/定格看板
+  panelBg:          '#0F172A', // neutral-900 (通常带 0.88-0.92 的 opacity)
+  panelText:        '#FFFFFF', // 白色主字
+  panelTextMuted:   '#FCA5A5', // 辅助/负值红字
+} as const
+
 // ─── 聚合导出：SCENE_COLORS ───────────────────────────────────────────────────
 export const SCENE_COLORS = {
+  materials: COMMON_MATERIALS,
+  environment: ENVIRONMENT_COLORS,
+  effects: SPECIAL_EFFECTS,
+  safety: SAFETY_PRESETS,
+  labels: LAB_LABELS,
   magnet:   MAGNET_COLORS,
   coil:     COIL_COLORS,
   spring:   SPRING_COLORS,
@@ -285,6 +340,11 @@ export const SCENE_COLORS = {
 } as const
 
 export type SceneColorGroup   = keyof typeof SCENE_COLORS
+export type MaterialsColorKey = keyof typeof COMMON_MATERIALS
+export type EnvironmentColorKey = keyof typeof ENVIRONMENT_COLORS
+export type EffectsColorKey   = keyof typeof SPECIAL_EFFECTS
+export type SafetyColorKey    = keyof typeof SAFETY_PRESETS
+export type LabLabelsColorKey = keyof typeof LAB_LABELS
 export type MagnetColorKey    = keyof typeof MAGNET_COLORS
 export type CoilColorKey      = keyof typeof COIL_COLORS
 export type SpringColorKey    = keyof typeof SPRING_COLORS

@@ -1,12 +1,10 @@
 import { Problem } from '../types'
-import {
-  kinematicsProblems,
-  dynamicsProblems,
-  energyProblems,
-  momentumProblems,
-  projectileProblems,
-  celestialProblems
-} from './mechanics'
+import { kinematicsProblems } from './mechanics/kinematics-sample'
+import { dynamicsProblems } from './mechanics/dynamics-sample'
+import { energyProblems } from './mechanics/energy-sample'
+import { momentumProblems } from './mechanics/momentum-sample'
+import { projectileProblems } from './mechanics/projectile-sample'
+import { celestialProblems } from './mechanics/celestial-sample'
 
 export const allProblems: Problem[] = [
   ...kinematicsProblems,

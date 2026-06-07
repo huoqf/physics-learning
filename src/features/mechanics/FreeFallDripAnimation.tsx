@@ -248,30 +248,30 @@ export default function FreeFallDripAnimation() {
           </marker>
           {/* 水滴写实径向渐变 */}
           <radialGradient id="drop-gradient" cx="35%" cy="30%" r="65%">
-            <stop offset="0%" stopColor="#E0F2FE" />
-            <stop offset="30%" stopColor="#7DD3FC" />
-            <stop offset="75%" stopColor="#0284C7" />
-            <stop offset="100%" stopColor="#0369A1" />
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[0]} />
+            <stop offset="30%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[1]} />
+            <stop offset="75%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[3]} />
           </radialGradient>
           {/* 龙头渐变 */}
           <linearGradient id="faucet-gradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#9CA3AF" />
-            <stop offset="40%" stopColor="#D1D5DB" />
-            <stop offset="80%" stopColor="#4B5563" />
-            <stop offset="100%" stopColor="#1F2937" />
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
+            <stop offset="40%" stopColor={SCENE_COLORS.materials.steelSphereGrad[1]} />
+            <stop offset="80%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
           </linearGradient>
           {/* 玻璃管背景渐变 */}
           <linearGradient id="glass-tube-grad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#93C5FD" stopOpacity="0.22" />
-            <stop offset="8%" stopColor="#DBEAFE" stopOpacity="0.08" />
-            <stop offset="50%" stopColor="#FFFFFF" stopOpacity="0.0" />
-            <stop offset="92%" stopColor="#DBEAFE" stopOpacity="0.08" />
-            <stop offset="100%" stopColor="#93C5FD" stopOpacity="0.22" />
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.glassGrad[0]} stopOpacity="0.22" />
+            <stop offset="8%" stopColor={SCENE_COLORS.materials.glassGrad[1]} stopOpacity="0.08" />
+            <stop offset="50%" stopColor={SCENE_COLORS.materials.glassGrad[2]} stopOpacity="0.0" />
+            <stop offset="92%" stopColor={SCENE_COLORS.materials.glassGrad[1]} stopOpacity="0.08" />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.glassGrad[0]} stopOpacity="0.22" />
           </linearGradient>
           {/* 面积阴影渐变 */}
           <linearGradient id="area-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#0284C7" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#0284C7" stopOpacity="0.01" />
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[2]} stopOpacity="0.2" />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[2]} stopOpacity="0.01" />
           </linearGradient>
         </defs>
 

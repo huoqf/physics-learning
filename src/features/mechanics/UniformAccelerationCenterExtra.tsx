@@ -5,6 +5,7 @@ import { calculateAcceleratedMotion } from '@/physics'
 import {
   PHYSICS_COLORS,
   CHART_COLORS,
+  SCENE_COLORS,
   VT_CHART_COLORS,
   STROKE,
   DASH,
@@ -593,7 +594,7 @@ function VtChartWithArea({
             <circle cx={toX(time)} cy={toY(physics.v)} r={4} fill={PHYSICS_COLORS.velocity} stroke="white" strokeWidth={1} />
 
             {/* X 轴气泡 */}
-            <rect x={toX(time) - 15} y={toY(0) + 14} width="30" height="11" rx="2.5" fill="#F1F5F9" stroke={PHYSICS_COLORS.axis} strokeWidth={0.5} />
+            <rect x={toX(time) - 15} y={toY(0) + 14} width="30" height="11" rx="2.5" fill={SCENE_COLORS.materials.sliderMetalGrad[0]} stroke={PHYSICS_COLORS.axis} strokeWidth={0.5} />
             <text x={toX(time)} y={toY(0) + 22} fontSize={8} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
               {time.toFixed(1)}s
             </text>

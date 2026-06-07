@@ -55,6 +55,11 @@ export type {
 // ─── 场景结构性颜色 ───────────────────────────────────────────────────────────
 export {
   SCENE_COLORS,
+  COMMON_MATERIALS,
+  ENVIRONMENT_COLORS,
+  SPECIAL_EFFECTS,
+  SAFETY_PRESETS,
+  LAB_LABELS,
   MAGNET_COLORS,
   COIL_COLORS,
   SPRING_COLORS,
@@ -69,6 +74,11 @@ export {
 
 export type {
   SceneColorGroup,
+  MaterialsColorKey,
+  EnvironmentColorKey,
+  EffectsColorKey,
+  SafetyColorKey,
+  LabLabelsColorKey,
   MagnetColorKey,
   CoilColorKey,
   SpringColorKey,

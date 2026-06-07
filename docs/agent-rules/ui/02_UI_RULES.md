@@ -44,18 +44,21 @@ Tailwind 配置从 `src/theme/colors.ts` 导入，不在 `tailwind.config.*` 中
 Canvas/SVG 中每类物理量有固定颜色，详见 `src/theme/physics/colors.ts`。
 核心摘要：
 
-| 物理量 | 颜色语义 | 用途 |
-|--------|---------|------|
-| 速度 v | Velocity Blue `#2563EB` | 速度箭头、v-t曲线 |
-| 加速度 a | Acceleration Red `#DC2626` | 加速度箭头 |
-| 合力 F | Force Orange `#EA580C` | 合力箭头（粗3px） |
-| 重力 mg | Gravity Slate `#475569` | 重力箭头（弱化） |
-| 动能 Ek | Kinetic Cyan `#0891B2` | 能量柱状图 |
-| 势能 Ep | Potential Purple `#7C3AED` | 势能柱状图 |
-| 电场 E | Electric Yellow `#CA8A04` | 电场矢量 |
-| 磁场 B | Magnetic Purple `#7E22CE` | 磁感线 |
+| 物理量 | 颜色语义 | 十六进制值 | 用途与设计规范 |
+|--------|---------|------|------|
+| 速度 v | 经典蓝 `velocity` | `#2563EB` | 速度矢量箭头、v-t/y-t曲线等 |
+| 加速度 a | 警示红 `acceleration` | `#DC2626` | 加速度矢量箭头、a-t曲线 |
+| 合力 F | 动力亮橙 `forceNet` | `#EA580C` | 合力分析主箭头（线宽 3px，粗于分力） |
+| 重力 mg | 经典重力绿 `gravity` | `#15803D` | 课本经典的重力绘制颜色（亦可使用 Slate 灰色弱化） |
+| 动能 Ek | 动能青 `kineticEnergy` | `#06B6D4` | 动能柱体、电光青色与势能明确区分 |
+| 势能 Ep | 势能紫 `potentialEnergy` | `#7C3AED` | 势能柱体、重力/弹性势能，高位储存紫色 |
+| 电场 E | 电场黄 `electricField` | `#D97706` | 电场线、电场强度矢量箭头 |
+| 磁场 B | 磁场绿 `magneticField` | `#10B981` | 磁场线、磁感应强度，符合人教版教材绿色磁感线习惯 |
 
-规则：同一画面最多5种物理量颜色；合力箭头比分力粗1.5倍；历史轨迹固定用 `#94A3B8`（Track Gray）。
+**铁律规则**：
+1. 同一画面最多同时展示 5 种物理量颜色。
+2. 历史轨迹固定使用 `#94A3B8`（Track Gray）。
+3. 场景器材材质（如钢珠、滑轨、底座渐变）必须引用 `SCENE_COLORS.materials.*` 的色标数组进行渐变渲染，**禁止任何 HEX 颜色值的硬编码**。
 
 ---
 

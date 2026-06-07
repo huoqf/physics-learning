@@ -102,16 +102,16 @@ export default function VelocityAnimation() {
         {/* 定义科学美化渐变 */}
         <defs>
           <linearGradient id="bus-body-grad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#3B82F6" />
-            <stop offset="100%" stopColor="#1D4ED8" />
+            <stop offset="0%" stopColor={SCENE_COLORS.magnet.southLight} />
+            <stop offset="100%" stopColor={SCENE_COLORS.magnet.southMid} />
           </linearGradient>
           <linearGradient id="wheel-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#4B5563" />
-            <stop offset="100%" stopColor="#111827" />
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
           </linearGradient>
           <radialGradient id="runner-grad" cx="40%" cy="30%" r="70%">
-            <stop offset="0%" stopColor="#60A5FA" />
-            <stop offset="100%" stopColor="#2563EB" />
+            <stop offset="0%" stopColor={SCENE_COLORS.magnet.southLight} />
+            <stop offset="100%" stopColor={SCENE_COLORS.magnet.southBase} />
           </radialGradient>
         </defs>
 
@@ -164,7 +164,7 @@ export default function VelocityAnimation() {
           // 公交车精化美化
           <g transform={`translate(${currentX}, ${groundY - objH})`}>
             {/* 车身 */}
-            <rect width={objW} height={objH - 4} rx={4} fill="url(#bus-body-grad)" stroke="#1D4ED8" strokeWidth={1.5} />
+            <rect width={objW} height={objH - 4} rx={4} fill="url(#bus-body-grad)" stroke={SCENE_COLORS.magnet.southMid} strokeWidth={1.5} />
             {/* 车窗带折射高光线 */}
             <rect x={objW * 0.1} y={objH * 0.15} width={objW * 0.25} height={objH * 0.3} rx={1} fill={PHYSICS_COLORS.objectFill} opacity={0.85} />
             <rect x={objW * 0.4} y={objH * 0.15} width={objW * 0.25} height={objH * 0.3} rx={1} fill={PHYSICS_COLORS.objectFill} opacity={0.85} />
@@ -178,13 +178,13 @@ export default function VelocityAnimation() {
             {/* 车轮（带钢圈） */}
             <g transform={`translate(${objW * 0.22}, ${objH - 3})`}>
               <circle r={objH * 0.18} fill="url(#wheel-grad)" />
-              <circle r={objH * 0.09} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke="#4B5563" strokeWidth={0.5} />
-              <circle r={objH * 0.04} fill="#F3F4F6" />
+              <circle r={objH * 0.09} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.materials.steelSphereGrad[2]} strokeWidth={0.5} />
+              <circle r={objH * 0.04} fill={SCENE_COLORS.materials.sliderMetalGrad[0]} />
             </g>
             <g transform={`translate(${objW * 0.78}, ${objH - 3})`}>
               <circle r={objH * 0.18} fill="url(#wheel-grad)" />
-              <circle r={objH * 0.09} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke="#4B5563" strokeWidth={0.5} />
-              <circle r={objH * 0.04} fill="#F3F4F6" />
+              <circle r={objH * 0.09} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.materials.steelSphereGrad[2]} strokeWidth={0.5} />
+              <circle r={objH * 0.04} fill={SCENE_COLORS.materials.sliderMetalGrad[0]} />
             </g>
           </g>
         ) : (

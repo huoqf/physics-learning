@@ -4,6 +4,7 @@ import { useAnimationStore } from '@/stores'
 import {
   PHYSICS_COLORS,
   CHART_COLORS,
+  SCENE_COLORS,
   VT_CHART_COLORS,
   STROKE,
   OPACITY,
@@ -360,36 +361,36 @@ export default function FreeFallAnimation() {
         <defs>
           {/* 玻璃壁效果渐变 */}
           <linearGradient id="glass-tube-grad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#93C5FD" stopOpacity="0.25" />
-            <stop offset="5%" stopColor="#DBEAFE" stopOpacity="0.1" />
-            <stop offset="15%" stopColor="#FFFFFF" stopOpacity="0.05" />
-            <stop offset="50%" stopColor="#FFFFFF" stopOpacity="0.0" />
-            <stop offset="85%" stopColor="#FFFFFF" stopOpacity="0.05" />
-            <stop offset="95%" stopColor="#DBEAFE" stopOpacity="0.1" />
-            <stop offset="100%" stopColor="#93C5FD" stopOpacity="0.25" />
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.glassGrad[0]} stopOpacity="0.25" />
+            <stop offset="5%" stopColor={SCENE_COLORS.materials.glassGrad[1]} stopOpacity="0.1" />
+            <stop offset="15%" stopColor={SCENE_COLORS.materials.glassGrad[2]} stopOpacity="0.05" />
+            <stop offset="50%" stopColor={SCENE_COLORS.materials.glassGrad[2]} stopOpacity="0.0" />
+            <stop offset="85%" stopColor={SCENE_COLORS.materials.glassGrad[2]} stopOpacity="0.05" />
+            <stop offset="95%" stopColor={SCENE_COLORS.materials.glassGrad[1]} stopOpacity="0.1" />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.glassGrad[0]} stopOpacity="0.25" />
           </linearGradient>
           {/* 铁球金属高光渐变 */}
           <radialGradient id="metal-ball-grad" cx="35%" cy="30%" r="65%">
-            <stop offset="0%" stopColor="#F9FAFB" />
-            <stop offset="15%" stopColor="#E5E7EB" />
-            <stop offset="55%" stopColor="#6B7280" />
-            <stop offset="100%" stopColor="#1F2937" />
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.steelSphereGrad[0]} />
+            <stop offset="15%" stopColor={SCENE_COLORS.materials.steelSphereGrad[1]} />
+            <stop offset="55%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
           </radialGradient>
           {/* 硬币金红质感渐变 */}
           <radialGradient id="coin-grad" cx="35%" cy="30%" r="65%">
-            <stop offset="0%" stopColor="#FFE4E6" />
-            <stop offset="25%" stopColor="#FDA4AF" />
-            <stop offset="70%" stopColor="#E11D48" />
-            <stop offset="100%" stopColor="#9F1239" />
+            <stop offset="0%" stopColor={SCENE_COLORS.magnet.northLight} />
+            <stop offset="25%" stopColor={SCENE_COLORS.magnet.northBase} />
+            <stop offset="70%" stopColor={SCENE_COLORS.magnet.northMid} />
+            <stop offset="100%" stopColor={SCENE_COLORS.magnet.northShadow} />
           </radialGradient>
           {/* v-t 位移积分面积渐变 */}
           <linearGradient id="area-grad-a" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.18" />
-            <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.01" />
+            <stop offset="0%" stopColor={CHART_COLORS.primary} stopOpacity="0.18" />
+            <stop offset="100%" stopColor={CHART_COLORS.primary} stopOpacity="0.01" />
           </linearGradient>
           <linearGradient id="area-grad-b" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.15" />
-            <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.01" />
+            <stop offset="0%" stopColor={CHART_COLORS.compareB} stopOpacity="0.15" />
+            <stop offset="100%" stopColor={CHART_COLORS.compareB} stopOpacity="0.01" />
           </linearGradient>
 
           {/* 箭头定义 */}
@@ -514,10 +515,10 @@ export default function FreeFallAnimation() {
         ) : (
           <g transform={`translate(${ballX}, ${renderYA})`}>
             {/* 硬币立体层 */}
-            <circle cx={0} cy={1.5} r={13.5} fill="#9F1239" />
-            <circle cx={0} cy={0} r={13.5} fill="url(#coin-grad)" stroke="#BE123C" strokeWidth={STROKE.objectThin} />
+            <circle cx={0} cy={1.5} r={13.5} fill={SCENE_COLORS.magnet.northShadow} />
+            <circle cx={0} cy={0} r={13.5} fill="url(#coin-grad)" stroke={SCENE_COLORS.magnet.northMid} strokeWidth={STROKE.objectThin} />
             {/* 内圈装饰线 */}
-            <circle cx={0} cy={0} r={10} fill="none" stroke="#FDA4AF" strokeWidth={0.5} strokeDasharray="3 2" opacity={0.6} />
+            <circle cx={0} cy={0} r={10} fill="none" stroke={SCENE_COLORS.magnet.northLight} strokeWidth={0.5} strokeDasharray="3 2" opacity={0.6} />
           </g>
         )}
 

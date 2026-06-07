@@ -1,5 +1,6 @@
 import { FC, useMemo } from 'react'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 import type { VariableMotionModel, VariableMotionParams } from '@/physics'
 import { useVelocityPhysics } from './useVelocityPhysics'
 import { getVariablePhysicsAtTime } from '@/physics'
@@ -93,14 +94,14 @@ export const VelocityXTChart: FC<VelocityXTChartProps> = ({
         </marker>
         {/* 放大镜金属边框渐变 */}
         <linearGradient id="mag-border-grad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#9CA3AF" />
-          <stop offset="50%" stopColor="#F3F4F6" />
-          <stop offset="100%" stopColor="#4B5563" />
+          <stop offset="0%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[1]} />
+          <stop offset="50%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[0]} />
+          <stop offset="100%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[2]} />
         </linearGradient>
         {/* 放大镜偏光蓝色滤镜 */}
         <radialGradient id="lens-shading" cx="50%" cy="50%" r="50%">
-          <stop offset="70%" stopColor="#E0F2FE" stopOpacity="0.0" />
-          <stop offset="100%" stopColor="#0284C7" stopOpacity="0.12" />
+          <stop offset="70%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[0]} stopOpacity="0.0" />
+          <stop offset="100%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[2]} stopOpacity="0.12" />
         </radialGradient>
       </defs>
 
@@ -208,7 +209,7 @@ export const VelocityXTChart: FC<VelocityXTChartProps> = ({
       {/* 6. 当前观测点 P (多重曝光光晕) */}
       <g>
         <circle cx={px} cy={py} r={3} fill={PHYSICS_COLORS.displacement} opacity={0.2} />
-        <circle cx={px} cy={py} r={1.6} fill={PHYSICS_COLORS.displacement} stroke="#FFFFFF" strokeWidth={0.5} />
+        <circle cx={px} cy={py} r={1.6} fill={PHYSICS_COLORS.displacement} stroke={colors.neutral[0]} strokeWidth={0.5} />
       </g>
 
       {/* 7. 精密显微放大镜 */}
@@ -230,7 +231,7 @@ export const VelocityXTChart: FC<VelocityXTChartProps> = ({
             <line x1={tanX1} y1={tanY1} x2={tanX2} y2={tanY2} stroke={PHYSICS_COLORS.tangentLine} strokeWidth={1} />
             {/* 切割高光反射 */}
             <path d={`M ${magCx - magR + 2},${magCy - magR + 4} A ${magR} ${magR} 0 0 1 ${magCx + magR - 2},${magCy - magR + 4}`} 
-                  fill="none" stroke="#FFFFFF" strokeWidth={0.8} opacity={0.25} />
+                  fill="none" stroke={colors.neutral[0]} strokeWidth={0.8} opacity={0.25} />
           </g>
         </g>
       )}

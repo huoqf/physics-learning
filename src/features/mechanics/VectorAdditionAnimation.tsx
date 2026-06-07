@@ -74,14 +74,10 @@ export default function VectorAdditionAnimation() {
       // ===== 拖拽 F2 (分力 2) =====
       // 力的合成模式下，F2 可以自由旋转并拉伸
       let rawF2 = Math.sqrt(px * px + py * py)
-      let rawAngle = (Math.atan2(py, px) * 180) / Math.PI
+      let rawAngle = Math.abs((Math.atan2(py, px) * 180) / Math.PI)
 
       // 夹角 θ 限制在 [0, 180] 之间
-      if (rawAngle < 0) {
-        rawAngle = 0
-      } else if (rawAngle > 180) {
-        rawAngle = 180
-      }
+      rawAngle = Math.max(0, Math.min(180, rawAngle))
 
       // 磁性角度吸附
       for (const snapA of SNAP_ANGLES) {
@@ -107,13 +103,10 @@ export default function VectorAdditionAnimation() {
       // ===== 拖拽 F (正交分解中的合力) =====
       // 此时 f1 作为待分解力的模，angle 作为它的方向角
       let rawF = Math.sqrt(px * px + py * py)
-      let rawAngle = (Math.atan2(py, px) * 180) / Math.PI
+      let rawAngle = Math.abs((Math.atan2(py, px) * 180) / Math.PI)
 
-      if (rawAngle < 0) {
-        rawAngle = 0
-      } else if (rawAngle > 180) {
-        rawAngle = 180
-      }
+      // 夹角 θ 限制在 [0, 180] 之间
+      rawAngle = Math.max(0, Math.min(180, rawAngle))
 
       // 角度吸附
       for (const snapA of SNAP_ANGLES) {
@@ -346,38 +339,38 @@ export default function VectorAdditionAnimation() {
               <>
                 {/* 水平分力 Fx */}
                 <line
-                  x1={origin.cx}
-                  y1={origin.cy}
-                  x2={fxEnd.cx}
-                  y2={fxEnd.cy}
-                  stroke={PHYSICS_COLORS.forceComponent}
-                  strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  opacity={CANVAS_STYLE.opacity.vectorSub}
-                  markerEnd="url(#arrowhead-sub)"
-                />
-                <text
-                  x={fxEnd.cx > origin.cx ? fxEnd.cx - 8 : fxEnd.cx + 8}
-                  y={origin.cy + 18}
-                  fontSize={CANVAS_STYLE.font.label}
-                  fontFamily={CANVAS_STYLE.font.family}
-                  fill={PHYSICS_COLORS.forceComponent}
-                  fontWeight="bold"
-                  textAnchor={fxEnd.cx > origin.cx ? "end" : "start"}
-                >
-                  F_x
-                </text>
-
-                {/* 竖直分力 Fy */}
-                <line
-                  x1={origin.cx}
-                  y1={origin.cy}
-                  x2={fyEnd.cx}
-                  y2={fyEnd.cy}
-                  stroke={PHYSICS_COLORS.forceComponent}
-                  strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  opacity={CANVAS_STYLE.opacity.vectorSub}
-                  markerEnd="url(#arrowhead-sub)"
-                />
+                   x1={origin.cx}
+                   y1={origin.cy}
+                   x2={fxEnd.cx}
+                   y2={fxEnd.cy}
+                   stroke={PHYSICS_COLORS.forceComponent}
+                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+                   opacity={CANVAS_STYLE.opacity.vectorSub}
+                   markerEnd="url(#arrowhead-fcomp)"
+                 />
+                 <text
+                   x={fxEnd.cx > origin.cx ? fxEnd.cx - 8 : fxEnd.cx + 8}
+                   y={origin.cy + 18}
+                   fontSize={CANVAS_STYLE.font.label}
+                   fontFamily={CANVAS_STYLE.font.family}
+                   fill={PHYSICS_COLORS.forceComponent}
+                   fontWeight="bold"
+                   textAnchor={fxEnd.cx > origin.cx ? "end" : "start"}
+                 >
+                   F_x
+                 </text>
+ 
+                 {/* 竖直分力 Fy */}
+                 <line
+                   x1={origin.cx}
+                   y1={origin.cy}
+                   x2={fyEnd.cx}
+                   y2={fyEnd.cy}
+                   stroke={PHYSICS_COLORS.forceComponent}
+                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+                   opacity={CANVAS_STYLE.opacity.vectorSub}
+                   markerEnd="url(#arrowhead-fcomp)"
+                 />
                 <text
                   x={origin.cx - 12}
                   y={fyEnd.cy > origin.cy ? fyEnd.cy - 6 : fyEnd.cy + 14}
@@ -474,16 +467,16 @@ export default function VectorAdditionAnimation() {
                   y1={origin.cy}
                   x2={f1End.cx}
                   y2={f1End.cy}
-                  stroke={PHYSICS_COLORS.velocity}
+                  stroke={PHYSICS_COLORS.appliedForce}
                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  markerEnd="url(#arrowhead-sub)"
+                  markerEnd="url(#arrowhead-f1)"
                 />
                 <text
                   x={f1End.cx}
                   y={f1End.cy + 18}
                   fontSize={CANVAS_STYLE.font.label}
                   fontFamily={CANVAS_STYLE.font.family}
-                  fill={PHYSICS_COLORS.velocity}
+                  fill={PHYSICS_COLORS.appliedForce}
                   fontWeight="bold"
                   textAnchor="middle"
                 >
@@ -503,7 +496,7 @@ export default function VectorAdditionAnimation() {
                     cx={f1End.cx}
                     cy={f1End.cy}
                     r={6}
-                    fill={PHYSICS_COLORS.velocity}
+                    fill={PHYSICS_COLORS.appliedForce}
                     stroke="white"
                     strokeWidth={1.5}
                     className="group-hover:scale-125 transition-transform"
@@ -516,16 +509,16 @@ export default function VectorAdditionAnimation() {
                   y1={origin.cy}
                   x2={f2End.cx}
                   y2={f2End.cy}
-                  stroke={PHYSICS_COLORS.acceleration}
+                  stroke={PHYSICS_COLORS.tension}
                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  markerEnd="url(#arrowhead-sub)"
+                  markerEnd="url(#arrowhead-f2)"
                 />
                 <text
                   x={f2End.cx + (f2End.cx > origin.cx ? 8 : -16)}
                   y={f2End.cy - 8}
                   fontSize={CANVAS_STYLE.font.label}
                   fontFamily={CANVAS_STYLE.font.family}
-                  fill={PHYSICS_COLORS.acceleration}
+                  fill={PHYSICS_COLORS.tension}
                   fontWeight="bold"
                   textAnchor={f2End.cx > origin.cx ? "start" : "end"}
                 >
@@ -545,7 +538,7 @@ export default function VectorAdditionAnimation() {
                     cx={f2End.cx}
                     cy={f2End.cy}
                     r={6}
-                    fill={PHYSICS_COLORS.acceleration}
+                    fill={PHYSICS_COLORS.tension}
                     stroke="white"
                     strokeWidth={1.5}
                     className="group-hover:scale-125 transition-transform"
@@ -558,7 +551,7 @@ export default function VectorAdditionAnimation() {
                   y1={f1ToResultant.y1}
                   x2={f1ToResultant.x2}
                   y2={f1ToResultant.y2}
-                  stroke={PHYSICS_COLORS.acceleration}
+                  stroke={PHYSICS_COLORS.tension}
                   strokeWidth={CANVAS_STYLE.stroke.reference}
                   opacity={CANVAS_STYLE.opacity.reference}
                   strokeDasharray={CANVAS_STYLE.dash.reference.join(',')}
@@ -568,7 +561,7 @@ export default function VectorAdditionAnimation() {
                   y1={f2ToResultant.y1}
                   x2={f2ToResultant.x2}
                   y2={f2ToResultant.y2}
-                  stroke={PHYSICS_COLORS.velocity}
+                  stroke={PHYSICS_COLORS.appliedForce}
                   strokeWidth={CANVAS_STYLE.stroke.reference}
                   opacity={CANVAS_STYLE.opacity.reference}
                   strokeDasharray={CANVAS_STYLE.dash.reference.join(',')}
@@ -606,16 +599,16 @@ export default function VectorAdditionAnimation() {
                   y1={origin.cy}
                   x2={f1End.cx}
                   y2={f1End.cy}
-                  stroke={PHYSICS_COLORS.velocity}
+                  stroke={PHYSICS_COLORS.appliedForce}
                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  markerEnd="url(#arrowhead-sub)"
+                  markerEnd="url(#arrowhead-f1)"
                 />
                 <text
                   x={f1End.cx}
                   y={f1End.cy + 18}
                   fontSize={CANVAS_STYLE.font.label}
                   fontFamily={CANVAS_STYLE.font.family}
-                  fill={PHYSICS_COLORS.velocity}
+                  fill={PHYSICS_COLORS.appliedForce}
                   fontWeight="bold"
                   textAnchor="middle"
                 >
@@ -635,7 +628,7 @@ export default function VectorAdditionAnimation() {
                     cx={f1End.cx}
                     cy={f1End.cy}
                     r={6}
-                    fill={PHYSICS_COLORS.velocity}
+                    fill={PHYSICS_COLORS.appliedForce}
                     stroke="white"
                     strokeWidth={1.5}
                     className="group-hover:scale-125 transition-transform"
@@ -656,7 +649,7 @@ export default function VectorAdditionAnimation() {
                     cy={f2End.cy}
                     r={5}
                     fill="none"
-                    stroke={PHYSICS_COLORS.acceleration}
+                    stroke={PHYSICS_COLORS.tension}
                     strokeWidth={1}
                     strokeDasharray="2,2"
                     opacity={0.5}
@@ -669,16 +662,16 @@ export default function VectorAdditionAnimation() {
                   y1={f2ShiftedStart.cy}
                   x2={f2ShiftedEnd.cx}
                   y2={f2ShiftedEnd.cy}
-                  stroke={PHYSICS_COLORS.acceleration}
+                  stroke={PHYSICS_COLORS.tension}
                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  markerEnd="url(#arrowhead-sub)"
+                  markerEnd="url(#arrowhead-f2)"
                 />
                 <text
                   x={f2ShiftedEnd.cx + (f2ShiftedEnd.cx > f2ShiftedStart.cx ? 8 : -16)}
                   y={f2ShiftedEnd.cy - 8}
                   fontSize={CANVAS_STYLE.font.label}
                   fontFamily={CANVAS_STYLE.font.family}
-                  fill={PHYSICS_COLORS.acceleration}
+                  fill={PHYSICS_COLORS.tension}
                   fontWeight="bold"
                   textAnchor={f2ShiftedEnd.cx > f2ShiftedStart.cx ? "start" : "end"}
                 >
@@ -803,20 +796,14 @@ export default function VectorAdditionAnimation() {
             </text>
             
             <g transform="translate(0, 15)">
-              <text x={0} y={15} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.labelTextLight} fontFamily={CANVAS_STYLE.font.family}>
-                {mode === 2 ? `原合力 F = ${f1.toFixed(1)} N` : `分力 F₁ = ${f1.toFixed(1)} N`}
-              </text>
-              {mode !== 2 && (
-                <text x={0} y={35} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.labelTextLight} fontFamily={CANVAS_STYLE.font.family}>
-                  分力 F₂ = {f2.toFixed(1)} N
-                </text>
-              )}
-              <text x={0} y={mode === 2 ? 35 : 55} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.labelTextLight} fontFamily={CANVAS_STYLE.font.family}>
-                {mode === 2 ? `分解偏角 θ = ${angle.toFixed(0)}°` : `夹角 θ = ${angle.toFixed(0)}°`}
-              </text>
-              
               {mode === 2 ? (
                 <>
+                  <text x={0} y={15} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.forceNet} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family}>
+                    原合力 F = {f1.toFixed(1)} N
+                  </text>
+                  <text x={0} y={35} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.labelTextLight} fontFamily={CANVAS_STYLE.font.family}>
+                    分解偏角 θ = {angle.toFixed(0)}°
+                  </text>
                   <text x={0} y={65} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family}>
                     水平分量 F_x = {physicsData.f1Val * Math.cos((angle * Math.PI) / 180) >= 0 ? "" : "-"}{(physicsData.f1Val * Math.abs(Math.cos((angle * Math.PI) / 180))).toFixed(2)} N
                   </text>
@@ -826,6 +813,15 @@ export default function VectorAdditionAnimation() {
                 </>
               ) : (
                 <>
+                  <text x={0} y={15} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.appliedForce} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family}>
+                    分力 F₁ = {f1.toFixed(1)} N
+                  </text>
+                  <text x={0} y={35} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.tension} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family}>
+                    分力 F₂ = {f2.toFixed(1)} N
+                  </text>
+                  <text x={0} y={55} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.labelTextLight} fontFamily={CANVAS_STYLE.font.family}>
+                    夹角 θ = {angle.toFixed(0)}°
+                  </text>
                   <text x={0} y={85} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.forceNet} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family}>
                     合力 F = {physicsData.fResultant.toFixed(2)} N
                   </text>
@@ -843,15 +839,12 @@ export default function VectorAdditionAnimation() {
           <marker id="arrowhead-main" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
             <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.forceNet} />
           </marker>
-          <marker id="arrowhead-sub" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={activeDrag === 'f' ? PHYSICS_COLORS.forceComponent : (activeDrag === 'f2' ? PHYSICS_COLORS.acceleration : PHYSICS_COLORS.velocity)} />
-          </marker>
           {/* 特异分力箭头颜色 */}
           <marker id="arrowhead-f1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.velocity} />
+            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.appliedForce} />
           </marker>
           <marker id="arrowhead-f2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.acceleration} />
+            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.tension} />
           </marker>
           <marker id="arrowhead-fcomp" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
             <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.forceComponent} />

@@ -2,8 +2,10 @@ import { useCanvasSize } from '@/utils'
 import React, { useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { precomputeVerticalThrowTrajectory } from '@/physics/kinematics'
+import { colors } from '@/theme/colors'
 import {
   PHYSICS_COLORS,
+  SCENE_COLORS,
   CHART_COLORS,
   VT_CHART_COLORS,
   XT_CHART_COLORS,
@@ -445,13 +447,13 @@ export default function VerticalThrowAnimation() {
           x={x - trackW / 2} y={originY - 15}
           width={trackW} height={stageHeight + 30}
           fill="url(#track-metal-grad)"
-          stroke={isVacuum ? "#38BDF8" : "#475569"}
+          stroke={isVacuum ? SCENE_COLORS.environment.vacuumStroke : SCENE_COLORS.environment.mediaStroke}
           strokeWidth={1}
           rx={3}
         />
         {/* 侧边高亮反光边框 */}
-        <line x1={x - trackW / 2 + 1} y1={originY - 10} x2={x - trackW / 2 + 1} y2={groundY + 10} stroke={isVacuum ? "#0284C7" : "#0F172A"} strokeWidth={0.8} opacity={0.3} />
-        <line x1={x + trackW / 2 - 1} y1={originY - 10} x2={x + trackW / 2 - 1} y2={groundY + 10} stroke={isVacuum ? "#0284C7" : "#0F172A"} strokeWidth={0.8} opacity={0.3} />
+        <line x1={x - trackW / 2 + 1} y1={originY - 10} x2={x - trackW / 2 + 1} y2={groundY + 10} stroke={isVacuum ? SCENE_COLORS.environment.vacuumBorder : SCENE_COLORS.environment.mediaBorder} strokeWidth={0.8} opacity={0.3} />
+        <line x1={x + trackW / 2 - 1} y1={originY - 10} x2={x + trackW / 2 - 1} y2={groundY + 10} stroke={isVacuum ? SCENE_COLORS.environment.vacuumBorder : SCENE_COLORS.environment.mediaBorder} strokeWidth={0.8} opacity={0.3} />
         
         {/* 精密实验室标尺刻度线 */}
         {Array.from({ length: 11 }).map((_, i) => {
@@ -479,7 +481,7 @@ export default function VerticalThrowAnimation() {
       <path
         d={`M ${x - 16} ${groundY + 8} L ${x + 16} ${groundY + 8} L ${x + 10} ${groundY - 1} L ${x - 10} ${groundY - 1} Z`}
         fill="url(#slider-metal-grad)"
-        stroke="#0F172A"
+        stroke={PHYSICS_COLORS.labelText}
         strokeWidth={1}
       />
       {/* 激光状态指示灯 */}
@@ -494,14 +496,14 @@ export default function VerticalThrowAnimation() {
         x={x - 12} y={originY - 22}
         width={24} height={9}
         fill="url(#slider-metal-grad)"
-        stroke="#0F172A"
+        stroke={PHYSICS_COLORS.labelText}
         strokeWidth={1}
         rx={2}
       />
       {/* 警示安全条纹 */}
       <path
         d={`M ${x - 9} ${originY - 20} L ${x - 5} ${originY - 15} M ${x - 2} ${originY - 20} L ${x + 2} ${originY - 15} M ${x + 5} ${originY - 20} L ${x + 9} ${originY - 15}`}
-        stroke="#EAB308"
+        stroke={SCENE_COLORS.safety.safetyYellow}
         strokeWidth={1.2}
       />
     </g>
@@ -523,35 +525,35 @@ export default function VerticalThrowAnimation() {
         <defs>
           {/* 金属滑轨渐变 */}
           <linearGradient id="track-metal-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#1E293B" />
-            <stop offset="25%" stopColor="#475569" />
-            <stop offset="50%" stopColor="#94A3B8" />
-            <stop offset="75%" stopColor="#475569" />
-            <stop offset="100%" stopColor="#1E293B" />
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.trackMetalGrad[0]} />
+            <stop offset="25%" stopColor={SCENE_COLORS.materials.trackMetalGrad[1]} />
+            <stop offset="50%" stopColor={SCENE_COLORS.materials.trackMetalGrad[2]} />
+            <stop offset="75%" stopColor={SCENE_COLORS.materials.trackMetalGrad[3]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.trackMetalGrad[4]} />
           </linearGradient>
 
           {/* 不锈钢材质渐变 */}
           <linearGradient id="slider-metal-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#F1F5F9" />
-            <stop offset="30%" stopColor="#CBD5E1" />
-            <stop offset="70%" stopColor="#64748B" />
-            <stop offset="100%" stopColor="#334155" />
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[0]} />
+            <stop offset="30%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[1]} />
+            <stop offset="70%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[3]} />
           </linearGradient>
 
           {/* 钢珠立体径向渐变 */}
           <radialGradient id="steel-sphere-grad" cx="30%" cy="30%" r="70%">
-            <stop offset="0%" stopColor="#FFFFFF" />
-            <stop offset="40%" stopColor="#D1D5DB" />
-            <stop offset="80%" stopColor="#4B5563" />
-            <stop offset="100%" stopColor="#1F2937" />
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.steelSphereGrad[0]} />
+            <stop offset="40%" stopColor={SCENE_COLORS.materials.steelSphereGrad[1]} />
+            <stop offset="80%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
           </radialGradient>
 
           {/* 真空对照球立体渐变 */}
           <radialGradient id="vacuum-sphere-grad" cx="30%" cy="30%" r="70%">
-            <stop offset="0%" stopColor="#E0F2FE" stopOpacity="0.95" />
-            <stop offset="50%" stopColor="#38BDF8" stopOpacity="0.60" />
-            <stop offset="90%" stopColor="#0284C7" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#0369A1" stopOpacity="0.05" />
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[0]} stopOpacity={0.95} />
+            <stop offset="50%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[1]} stopOpacity={0.60} />
+            <stop offset="90%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[2]} stopOpacity={0.25} />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[3]} stopOpacity={0.05} />
           </radialGradient>
 
           {/* 霓虹发光滤镜 */}
@@ -566,12 +568,12 @@ export default function VerticalThrowAnimation() {
 
           {/* 积分面积极光渐变 */}
           <linearGradient id="aurora-blue-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.45" />
-            <stop offset="100%" stopColor="#93C5FD" stopOpacity="0.05" />
+            <stop offset="0%" stopColor={SCENE_COLORS.effects.auroraBlueGrad[0]} stopOpacity={0.45} />
+            <stop offset="100%" stopColor={SCENE_COLORS.effects.auroraBlueGrad[1]} stopOpacity={0.05} />
           </linearGradient>
           <linearGradient id="aurora-red-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#EF4444" stopOpacity="0.4" />
-            <stop offset="100%" stopColor="#FCA5A5" stopOpacity="0.05" />
+            <stop offset="0%" stopColor={SCENE_COLORS.effects.auroraRedGrad[0]} stopOpacity={0.4} />
+            <stop offset="100%" stopColor={SCENE_COLORS.effects.auroraRedGrad[1]} stopOpacity={0.05} />
           </linearGradient>
 
           <marker id="arrow-vt-velocity" markerWidth={10} markerHeight={7} refX={9} refY={3.5} orient="auto">
@@ -583,11 +585,11 @@ export default function VerticalThrowAnimation() {
           
           {/* 高级模式：正区域交叉线图案 */}
           <pattern id="gridPattern" width="8" height="8" patternUnits="userSpaceOnUse">
-            <path d="M0 0L8 8M8 0L0 8" stroke="#3B82F6" strokeWidth="0.5" opacity="0.35" />
+            <path d="M0 0L8 8M8 0L0 8" stroke={SCENE_COLORS.effects.patternGrid} strokeWidth="0.5" opacity={0.35} />
           </pattern>
           {/* 高级模式：负区域斜线图案 */}
           <pattern id="stripePattern" width="6" height="6" patternUnits="userSpaceOnUse">
-            <path d="M0 6L6 0" stroke="#EF4444" strokeWidth="1" opacity="0.35" />
+            <path d="M0 6L6 0" stroke={SCENE_COLORS.effects.patternStripe} strokeWidth="1" opacity={0.35} />
           </pattern>
         </defs>
 
@@ -665,7 +667,7 @@ export default function VerticalThrowAnimation() {
 
         {/* 实体钢珠小球 */}
         <circle cx={leftBallX} cy={currentBallY} r={14}
-          fill="url(#steel-sphere-grad)" stroke="#4B5563"
+          fill="url(#steel-sphere-grad)" stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
           strokeWidth={CANVAS_STYLE.stroke.objectLine} />
 
         {/* 微元法累积激光连线（时间轴移动时，实时连结速度切片与物理区高度变化量） */}
@@ -734,11 +736,11 @@ export default function VerticalThrowAnimation() {
         {/* 最高点物理看板浮动框 (教学设计：直观解释 v=0 时 a 不为 0) */}
         {isAtPeak && (
           <g transform={`translate(${leftBallX + (showDoubleTrack ? -122 : 24)}, ${currentBallY - 45})`}>
-            <rect width={116} height={42} fill={CHART_COLORS.titleText} opacity={0.92} rx={4} stroke={CHART_COLORS.criticalPt} strokeWidth={1} filter="drop-shadow(0 2px 4px rgba(0,0,0,0.25))" />
-            <polygon points={showDoubleTrack ? "116 21, 122 21, 116 26" : "0 21, -6 21, 0 26"} fill={CHART_COLORS.titleText} stroke={CHART_COLORS.criticalPt} strokeWidth={0.5} />
-            <text x={58} y={13} fontSize={9} fill="#FFFFFF" textAnchor="middle" fontWeight="bold">瞬时状态 v = 0</text>
-            <text x={58} y={25} fontSize={8} fill="#FCA5A5" textAnchor="middle">但 a = -g = -{g} m/s²</text>
-            <text x={58} y={35} fontSize={8} fill="#FCA5A5" textAnchor="middle">合力 F_合 = mg 向下</text>
+            <rect width={116} height={42} fill={SCENE_COLORS.labels.panelBg} opacity={0.92} rx={4} stroke={CHART_COLORS.criticalPt} strokeWidth={1} filter="drop-shadow(0 2px 4px rgba(0,0,0,0.25))" />
+            <polygon points={showDoubleTrack ? "116 21, 122 21, 116 26" : "0 21, -6 21, 0 26"} fill={SCENE_COLORS.labels.panelBg} stroke={CHART_COLORS.criticalPt} strokeWidth={0.5} />
+            <text x={58} y={13} fontSize={9} fill={SCENE_COLORS.labels.panelText} textAnchor="middle" fontWeight="bold">瞬时状态 v = 0</text>
+            <text x={58} y={25} fontSize={8} fill={SCENE_COLORS.labels.panelTextMuted} textAnchor="middle">但 a = -g = -{g} m/s²</text>
+            <text x={58} y={35} fontSize={8} fill={SCENE_COLORS.labels.panelTextMuted} textAnchor="middle">合力 F_合 = mg 向下</text>
           </g>
         )}
 
@@ -747,16 +749,16 @@ export default function VerticalThrowAnimation() {
           <>
             {Math.abs(effectiveTime - targetHeightIntersections.t1) < 0.15 && (
               <g transform={`translate(${leftBallX + 24}, ${currentBallY - 15})`}>
-                <rect width={95} height={26} fill="#0F172A" opacity={0.88} rx={3} stroke={CHART_COLORS.highlight} strokeWidth={0.8} />
-                <text x={47} y={11} fontSize={8} fill="#FFFFFF" textAnchor="middle" fontWeight="bold">① 上升阶段经过</text>
+                <rect width={95} height={26} fill={SCENE_COLORS.labels.panelBg} opacity={0.88} rx={3} stroke={CHART_COLORS.highlight} strokeWidth={0.8} />
+                <text x={47} y={11} fontSize={8} fill={SCENE_COLORS.labels.panelText} textAnchor="middle" fontWeight="bold">① 上升阶段经过</text>
                 <text x={47} y={20} fontSize={8} fill={PHYSICS_COLORS.deltaHighlight} textAnchor="middle">v = +{effectiveV.toFixed(1)} m/s</text>
               </g>
             )}
             {Math.abs(effectiveTime - targetHeightIntersections.t2) < 0.15 && (
               <g transform={`translate(${leftBallX + 24}, ${currentBallY - 15})`}>
-                <rect width={95} height={26} fill="#0F172A" opacity={0.88} rx={3} stroke={CHART_COLORS.highlight} strokeWidth={0.8} />
-                <text x={47} y={11} fontSize={8} fill="#FFFFFF" textAnchor="middle" fontWeight="bold">② 下落阶段经过</text>
-                <text x={47} y={20} fontSize={8} fill="#FCA5A5" textAnchor="middle">v = {effectiveV.toFixed(1)} m/s</text>
+                <rect width={95} height={26} fill={SCENE_COLORS.labels.panelBg} opacity={0.88} rx={3} stroke={CHART_COLORS.highlight} strokeWidth={0.8} />
+                <text x={47} y={11} fontSize={8} fill={SCENE_COLORS.labels.panelText} textAnchor="middle" fontWeight="bold">② 下落阶段经过</text>
+                <text x={47} y={20} fontSize={8} fill={SCENE_COLORS.labels.panelTextMuted} textAnchor="middle">v = {effectiveV.toFixed(1)} m/s</text>
               </g>
             )}
           </>
@@ -781,7 +783,7 @@ export default function VerticalThrowAnimation() {
               <line key={`vt-grid-v-${t}`}
                 x1={vtToX(t)} y1={vtInnerPad.top}
                 x2={vtToX(t)} y2={vtInnerPad.top + vtInnerH}
-                stroke="#F1F5F9" strokeWidth={0.5}
+                stroke={colors.neutral[100]} strokeWidth={0.5}
               />
             )
           ))}
@@ -791,7 +793,7 @@ export default function VerticalThrowAnimation() {
               <line key={`vt-grid-h-${v}`}
                 x1={vtInnerPad.left} y1={vtToY(v)}
                 x2={vtInnerPad.left + vtInnerW} y2={vtToY(v)}
-                stroke="#F1F5F9" strokeWidth={0.5}
+                stroke={colors.neutral[100]} strokeWidth={0.5}
               />
             )
           ))}
@@ -976,7 +978,7 @@ export default function VerticalThrowAnimation() {
               <line key={`yt-grid-v-${t}`}
                 x1={ytToX(t)} y1={ytInnerPad.top}
                 x2={ytToX(t)} y2={ytInnerPad.top + ytInnerH}
-                stroke="#F1F5F9" strokeWidth={0.5}
+                stroke={colors.neutral[100]} strokeWidth={0.5}
               />
             )
           ))}
@@ -986,7 +988,7 @@ export default function VerticalThrowAnimation() {
               <line key={`yt-grid-h-${y}`}
                 x1={ytInnerPad.left} y1={ytToY(y)}
                 x2={ytInnerPad.left + ytInnerW} y2={ytToY(y)}
-                stroke="#F1F5F9" strokeWidth={0.5}
+                stroke={colors.neutral[100]} strokeWidth={0.5}
               />
             )
           ))}

@@ -90,14 +90,14 @@ export default function FrictionAnimation() {
         <defs>
           {/* 木箱拉丝纹理 */}
           <linearGradient id="box-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#FFF7ED" />
-            <stop offset="100%" stopColor="#FED7AA" />
+            <stop offset="0%" stopColor={SCENE_COLORS.circuit.ammeterFace} />
+            <stop offset="100%" stopColor={SCENE_COLORS.circuit.resistorFill} />
           </linearGradient>
           {/* 钢体滑轨渐变 */}
           <linearGradient id="steel-rail" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#CBD5E1" />
-            <stop offset="50%" stopColor="#94A3B8" />
-            <stop offset="100%" stopColor="#475569" />
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[1]} />
+            <stop offset="50%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[3]} />
           </linearGradient>
           {/* 力的矢量箭头 */}
           <marker id="arr-applied" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
@@ -250,7 +250,7 @@ export default function FrictionAnimation() {
             {/* 地面线 */}
             <line
               x1={0} y1={groundLineY} x2={canvasSize.width} y2={groundLineY}
-              stroke="#64748B" strokeWidth={2}
+              stroke={SCENE_COLORS.materials.sliderMetalGrad[2]} strokeWidth={2}
             />
             {/* 地面阴影纹理 */}
             <g opacity={0.12}>

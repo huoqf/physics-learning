@@ -1,5 +1,6 @@
 import { FC, useMemo } from 'react'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 import type { VariableMotionModel, VariableMotionParams } from '@/physics'
 import { useVelocityPhysics } from './useVelocityPhysics'
 import { getVariablePhysicsAtTime } from '@/physics'
@@ -93,8 +94,8 @@ export const VelocityVTChart: FC<VelocityVTChartProps> = ({
       {/* 定义面积着色渐变 */}
       <defs>
         <linearGradient id="area-grad-vt" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#0284C7" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="#0284C7" stopOpacity="0.01" />
+          <stop offset="0%" stopColor={SCENE_COLORS.effects.auroraBlueGrad[0]} stopOpacity="0.22" />
+          <stop offset="100%" stopColor={SCENE_COLORS.effects.auroraBlueGrad[1]} stopOpacity="0.01" />
         </linearGradient>
       </defs>
 
@@ -206,7 +207,7 @@ export const VelocityVTChart: FC<VelocityVTChartProps> = ({
       {/* 6. 当前时刻点 P (多重曝光光晕) */}
       <g>
         <circle cx={px} cy={py} r={3} fill={PHYSICS_COLORS.velocity} opacity={0.2} />
-        <circle cx={px} cy={py} r={1.6} fill={PHYSICS_COLORS.velocity} stroke="#FFFFFF" strokeWidth={0.5} />
+        <circle cx={px} cy={py} r={1.6} fill={PHYSICS_COLORS.velocity} stroke={colors.neutral[0]} strokeWidth={0.5} />
       </g>
 
       {/* 7. 垂直时间轴游标虚线 */}

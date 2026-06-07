@@ -284,8 +284,19 @@ export function calculateLenzsLaw(
 }
 
 /**
- * 理想变压器。
+ * 理想变压器（基础变比模型）。
  * U2 = U1·(n2/n1)，I2 = I1·(n1/n2)（功率守恒）
+ *
+ * 适用于已知原线圈电流 I1 的场景。
+ * 若已知负载电阻 R，请使用 calculateTransformerWithLoad。
+ *
+ * @param n1 原线圈匝数，必须 > 0
+ * @param n2 副线圈匝数，必须 > 0
+ * @param U1 原线圈输入电压 (V)
+ * @param I1 原线圈电流 (A)
+ * @returns U2 副线圈输出电压 (V)、I2 副线圈电流 (A)
+ *
+ * @category M4
  */
 export function calculateTransformer(
   n1: number,

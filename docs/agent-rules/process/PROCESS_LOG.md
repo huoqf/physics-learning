@@ -1,5 +1,145 @@
 # 物理演示项目工程日志 (PROCESS_LOG)
 
+## 2026-06-07 (3)
+
+### 死代码清理与预留函数规范化（归属 [M2] 架构完善与全局规范）
+
+**核心改动：**
+
+1. **删除零引用文件**
+   - `src/utils/screenshot.ts`：零 import、零测试引用、无桶 re-export
+   - `src/theme/physicsColors.ts`：向后兼容层，所有消费方已迁移至 `@/theme/physics`
+   - `src/utils/format.ts`：`formatPhysics` 标识符全项目零引用
+
+2. **更新活跃桶文件**
+   - `src/utils/index.ts`：移除 `export * from './format'`
+
+3. **删除零消费桶文件**
+   - `src/features/index.ts`、`src/features/mechanics/index.ts`、`src/features/electromagnetism/index.ts`：animationRegistry 通过 `lazy(() => import('@/features/.../XXX'))` 直接定位文件，不经过桶
+   - `src/components/index.ts`：Layout 和 UI 各有独立入口
+   - `src/data/problems/mechanics/index.ts`：problems/index.ts 直接 import 子文件
+
+4. **更新架构文档**
+   - `ARCHITECTURE_RULES.md`：移除 `physicsColors.ts` 行
+
+5. **预留物理/数学函数规范化**（补 JSDoc + 参数单位 + 边界条件 + `@category M4`）
+   - `src/physics/celestial.ts`：`calculateKeplerThird`、`calculateCentralMass`、`calculatePlanetDensity`、`calculateEscapeSpeed`
+   - `src/physics/energy.ts`：`calculateWork`、`calculateGravityPotential`、`calculateImpulse`
+   - `src/physics/dynamics.ts`：`calculateGravitation`
+   - `src/physics/electromagnetism.ts`：`calculateTransformer`（补充参数单位 + 与 `calculateTransformerWithLoad` 的教学分层说明）
+   - `src/math/vector.ts`：补 `@category M4` 模块标注（已有完整 JSDoc 和测试）
+   - `src/math/trigonometry.ts`：补 `@category M4` 模块标注 + 新建 `tests/math/trigonometry.test.ts`（26 个测试用例，含恒等式验证）
+
+## 2026-06-07 (2)
+
+### 规范偏离修复：未批准依赖卸载、裸调 rAF 消除、纯计算下沉（归属 [M2] 架构完善与全局规范）
+
+**问题背景：** 项目规范审查发现三项严重违规——`framer-motion` 和 `zod` 未走申报流程即安装且零引用；`useEquilibriumPhysics.ts` 裸调 `requestAnimationFrame` 违反铁律。
+
+**核心改动：**
+
+1. **卸载未批准依赖**
+   - 从 `package.json` 移除 `framer-motion`（^12.0.5）和 `zod`（^3.24.1），两个包均零 import。
+   - 需手动执行 `npm install` 同步 lock 文件。
+
+2. **清理 `motion.ts` Framer Motion 专属预设**
+   - 移除 `easing.spring`（Framer Motion 数组格式）、`transition.spring`（`type: 'spring'` 配置）、`motionConfig`（`<MotionConfig>` 专用）。
+   - 同步移除 `theme/index.ts` 中 `motionConfig` 的 re-export。
+   - 保留所有 CSS transition 兼容的 token（`duration`、`easing.standard/decelerate/accelerate/bounce`、`transition.fade/slide/reveal`、`canvasAnimation`）。
+
+3. **新增 `useSimulationFrame` Hook**（`src/utils/animation.ts`）
+   - 物理仿真专用帧驱动，始终运行 rAF 循环，不受全局 `isPlaying` 控制。
+   - 支持 `active` 参数暂停/恢复仿真推进（rAF 不中断）。
+   - 内置 `maxDeltaMs` 截断保护，防止大步长导致数值积分发散。
+   - 遵循「禁止组件自行调用 rAF」铁律，统一动画入口。
+
+4. **重构 `useEquilibriumPhysics.ts`**
+   - 用 `useSimulationFrame` 替换裸调 `requestAnimationFrame` + `useEffect` 组合。
+   - 删除本地 `getTheoreticalEquilibriumPos` 函数，改用 `@/physics/dynamics` 导出的 `calculateTheoreticalEquilibriumPos`。
+
+5. **Euler-Cromer 积分纯计算下沉到 `src/physics/dynamics.ts`**
+   - 新增 `EquilibriumSimState`、`EquilibriumSimInput`、`EquilibriumSimStepResult` 接口。
+   - 新增 `calculateTheoreticalEquilibriumPos` 纯函数（含 JSDoc + 单位注释）。
+   - 新增 `simulateEquilibriumStep` 纯函数，封装单步积分（受力计算→加速度→积分→断绳判定→边界→收敛 snap）。
+   - 物理常量统一为 `UPPER_SNAKE_CASE`：`EQUIL_L`、`EQUIL_KS`、`EQUIL_KMOUSE`、`EQUIL_C_DAMPING` 等。
+   - Hook 层仅做状态桥接：调用纯函数 → 写入 ref → 触发 React 渲染。
+
+## 2026-06-07
+
+### 全局色彩规划规范优化与硬编码颜色治理（归属 [M2] 架构完善与全局规范）
+
+按照高中物理教材行业习惯（磁感线绿色、电场线黄色、重力深绿色、正负电荷红蓝等）及认知美学，对整个项目进行全局色彩规范的重构与优化，清除了已完成组件中的全部硬编码颜色。
+
+**核心改动：**
+- **colors.ts**：
+  - 规范并统一了运动学、动力学、能量、电磁学、热力学、光学和波动学等全学科的物理量颜色映射。
+  - 磁场 B 统一映射为绿色（`#10B981`），符合物理教科书磁感线用色习惯，避免与紫色（电势能、绳子张力）混淆。
+  - 电流 I 统一映射为红色（`#DC2626`），电场强度 E 映射为黄色（`#D97706`），重力 mg 映射为深绿色（`#15803D`）。
+- **sceneColors.ts**：
+  - 新增 `COMMON_MATERIALS` 导出：钢球、真空对照球、滑轨拉丝金属、不锈钢底座等通用 3D 立体渐变色标数组，彻底解耦物理量矢量色与器材材质色。
+  - 新增 `ENVIRONMENT_COLORS` 导出：用于定义真空、空气介质等实验轨道的环境及反光描边。
+  - 新增 `SPECIAL_EFFECTS`、`SAFETY_PRESETS`、`LAB_LABELS` 导出：包含微积分正负面积的极光渐变、警告安全黄、科学看板背景与文字色。
+- **index.ts**（theme/physics/index.ts）：
+  - 聚合导出所有新增的场景属性和对应的 TypeScript 类型。
+- **VerticalThrowAnimation.tsx**：
+  - 彻底清除所有硬编码颜色。滑轨、小球、对照球、阻尼架条纹、看板背景和积分渐变等均通过 `SCENE_COLORS` 和 `PHYSICS_COLORS` 引用。
+- **VelocityXTChart.tsx** & **VelocityVTChart.tsx**：
+  - 彻底清除残留的硬编码颜色。放大镜渐变框及折射滤镜统一引用场景材质，纯白描边改用 `colors.neutral[0]` 规范。
+- **project_rules.md** & **02_UI_RULES.md**：
+  - 同步更新物理色彩规划蓝图及铁律，添加关于“禁止在组件中硬编码渐变色阶、填充和面板”的约束条款。
+
+### 力的合成与分解教学改进与重构拖拽交互（归属 [M1] 力学动画 与 [M2] 架构完善 · 知识点 mechanics-3-4）
+
+按照最新项目规范（新增计算型 Hook 规则、三屏联动密度上限等），对“力的合成与分解”（`anim-vector-addition`）动画进行了全面的架构重构与交互、视觉优化美化。
+
+**核心改动：**
+- **dynamics.ts**：
+  - 新增并导出了 `calculateVectorAddition`（共点力合成）和 `calculateOrthogonalDecomposition`（力的正交分解）两个物理纯函数，支持模长、投影、偏角和分量的纯代数计算。
+- **useVectorAdditionPhysics.ts**（新建）：
+  - 严格遵循最新 **4.3 节计算型 Hook 规则**。这是一个无 JSX 的 `.ts` 状态计算 Hook，利用 `useMemo` 将 store 中的 params 参数与物理计算对接，换算并缓存包括平行四边形四个端点、三角形定则平移位置、正交分解投影轴交点以及扇形夹角弧线在内的一系列 SVG 坐标，将渲染与复杂物理三角函数彻底解耦。
+  - **时间轴控制平移**：在三角形定则模式下，使用 store 中的 `time` 进度驱动平移动画（在 1.5s 播放周期内平滑平移至 $F_1$ 终点），在暂停时则直接显示完全平移状态。
+- **VectorAdditionAnimation.tsx**（完全升级）：
+  - **精密刻度坐标系**：绘制了带有刻度 Tick 线与力值文字标注（$-15\text{ N} \sim 15\text{ N}$）的精密坐标轴。受力中心绘制了质点圆形靶心和指示辅助虚圈。
+  - **强交互手势拖动**：实现了在 Canvas 区域**直接鼠标和触控拖拽**矢量端点尖端来实时刷新力参数的交互，实现了与左侧滑块、右侧数据看板的完美双向受控绑定。
+  - **精密吸附算法**：模长大小接近 $0.5\text{ N}$ 的整数倍时进行吸附（吸附阈值 $\pm 0.15\text{ N}$）；旋转角度接近 $0^\circ, 30^\circ, 45^\circ, 60^\circ, 90^\circ, 120^\circ, 150^\circ, 180^\circ$ 时进行磁性吸附（角度门槛 $\pm 2.5^\circ$）。
+  - **正交分解旋转支持**：正交分解模式下，已支持拖动合力 $F$ 的尖端来手动旋转并改变其大小与方向，分力 $F_x, F_y$ 随之动态进行正交投影虚线展示。
+- **physicsQuantities.ts**：
+  - 补全 `anim-vector-addition` 的 case 分支。引入 KaTeX 渲染标准公式（平行四边形公式、正交分解方程组），添加“合力大小范围”及“分力大小固定时合力随夹角增大而减小”等高考星级考点标签。
+- **animationRegistry.ts**：
+  - 升级该动画配置，引入 `mode`（0=平行四边形, 1=三角形, 2=正交分解）参数元数据并暴露给左侧参数面板。
+- **TypeScript 编译修复**：
+  - 移除了 `physicsQuantities.ts` 中多余未使用的 `BASE_CENTER`、`F_normal`、`f_max`、`f_slip` 等 unused locales，并在函数末尾增加了兜底 return，消除 `TS2366` 编译隐患。
+
+**测试验证：**
+- **dynamics.test.ts**：
+  - 追加了 5 项针对力的合成与分解底层计算函数的单元测试（涵盖 3-4-5 经典直角三角形合成、同向/反向力合成及特殊角度正交分解），测试一次性通过。目前全套动力学测试用例已增至 14 项且全部通过。
+*   **生产环境构建**：运行 `npm run build` 打包构建 100% 成功，所有产物生成正常。
+
+### 共点力平衡教学改进与重构拖拽交互（归属 [M1] 力学动画 与 [M2] 架构完善 · 知识点 mechanics-3-5）
+
+按照最新项目规范，对“共点力平衡”（`anim-equilibrium`）动画进行了全面物理和交互重构，重塑为“双绳悬挂重物受力平衡实验仪”。
+
+**核心改动：**
+- **dynamics.ts**：
+  - 新增并导出了 `calculateEquilibriumTension` 物理纯函数，支持双绳受拉力大小、重物重力的纯代数平衡推演，并设计了防除零的安全保护。
+- **useEquilibriumPhysics.ts**（新建）：
+  - 严格遵循计算型 Hook 规范（不含 JSX，使用 `.ts` 后缀）。订阅 store 参数并通过 `useMemo` 缓存包括挂点坐标、砝码球心 Canvas 坐标、绳子路径、张力/重力/等效合力起止点，以及模式二“封闭三力三角形”首尾接应矢量点的全部几何数据，将复杂物理三角关系与 React 渲染解耦。
+- **EquilibriumAnimation.tsx**（完全升级）：
+  - **精密实验仪视觉**：绘制了带有网网梁的天花板、不锈钢细绳、以及右上光源车削不锈钢高光渐变的金属砝码，带有精细十字靶线。
+  - **直接拖动交互**：用鼠标或触摸直接拖拽重物砝码即可任意改变其空间位置。拖拽中，系统实时反向解出当前的两个挂角 $\theta_1, \theta_2$ 并限制在安全范围 $[10^\circ, 85^\circ]$，同步更新 Zustand store 参数，实现无延迟双向绑定。
+  - **断裂过载指示**：当绳子承受的张力超过安全阈值 $35\text{ N}$ 时，过载的挂绳和拉力箭头会触发霓虹亮红色高亮闪烁警示，帮助学生直观建立张力极限思维。
+  - **三力封闭三角形**：提供模式二“三力封闭多边形”展示。在右下方框内实时渲染平移后的 G、T1、T2 矢量，展现受力平衡时三力矢量完全闭合的几何状态。
+- **physicsQuantities.ts**：
+  - 补全 `anim-equilibrium` case 分支。引入平衡方程组和张力解析解的 KaTeX 标准公式，添加“共点力平衡条件”及“大夹角趋近180度拉力趋向无穷大”的高考考点。
+  - 移除了未使用的 `mode` 变量，消除 TS6133 警告。
+- **animationRegistry.ts**：
+  - 更新该动画项配置，注入 `mode` 及质量 `m` 控制参数元数据。
+
+**测试验证：**
+- **dynamics.test.ts**：
+  - 追加了 3 项针对共点力平衡计算函数的单元测试（涵盖对称悬挂、单绳竖直极限悬挂以及角度极小时的断裂保护），测试全数通过。动力学单元测试用例目前增至 17 项。
+*   **生产环境构建**：运行 `npm run build` 打包构建成功，修复了组件中未定义 `forceScale` 的 Bug，生成产物完全正常。
+
 ## 2026-06-06
 
 ### 新增“重力与重心”教学演示动画（归属 [M1] 力学动画 与 [M2] 架构完善 · 知识点 mechanics-3-1）

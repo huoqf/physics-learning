@@ -1,6 +1,8 @@
 /**
  * 向量运算工具函数
  * 提供2D向量的基本运算功能，用于物理计算
+ *
+ * @category M4 — 数学工具（预留，当前无消费方；未来电磁/力学代码应迁移至此）
  */
 
 export type Vector2 = { x: number; y: number };

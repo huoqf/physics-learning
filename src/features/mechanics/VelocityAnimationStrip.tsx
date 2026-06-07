@@ -170,23 +170,23 @@ export default function VelocityAnimationStrip({
         <defs>
           {/* 科学气垫导轨拉丝金属渐变 */}
           <linearGradient id="rail-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#9CA3AF" />
-            <stop offset="35%" stopColor="#E5E7EB" />
-            <stop offset="70%" stopColor="#D1D5DB" />
-            <stop offset="100%" stopColor="#4B5563" />
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.trackMetalGrad[1]} />
+            <stop offset="35%" stopColor={SCENE_COLORS.materials.trackMetalGrad[2]} />
+            <stop offset="70%" stopColor={SCENE_COLORS.materials.trackMetalGrad[1]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.trackMetalGrad[0]} />
           </linearGradient>
           {/* 滑块不锈钢拉丝渐变 */}
           <linearGradient id="slider-metal-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#F9FAFB" />
-            <stop offset="35%" stopColor="#D1D5DB" />
-            <stop offset="70%" stopColor="#6B7280" />
-            <stop offset="100%" stopColor="#374151" />
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[0]} />
+            <stop offset="35%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[1]} />
+            <stop offset="70%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[3]} />
           </linearGradient>
           {/* 钢弹簧前半圈高光渐变 */}
           <linearGradient id="spring-front-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#E0F2FE" />
-            <stop offset="50%" stopColor="#3B82F6" />
-            <stop offset="100%" stopColor="#1D4ED8" />
+            <stop offset="0%" stopColor={SCENE_COLORS.magnet.southLight} />
+            <stop offset="50%" stopColor={SCENE_COLORS.magnet.southBase} />
+            <stop offset="100%" stopColor={SCENE_COLORS.magnet.southMid} />
           </linearGradient>
 
           {/* 箭头标记 */}
@@ -266,7 +266,7 @@ export default function VelocityAnimationStrip({
 
         {/* ══════════ 简谐振动：弹簧后半圈 (渲染在球体后方) ══════════ */}
         {model === 'shm' && springPathD.back && (
-          <path d={springPathD.back} fill="none" stroke="#4B5563" strokeWidth={1.5} opacity={0.65} strokeLinecap="round" />
+          <path d={springPathD.back} fill="none" stroke={SCENE_COLORS.materials.steelSphereGrad[2]} strokeWidth={1.5} opacity={0.65} strokeLinecap="round" />
         )}
 
         {/* ══════════ 简谐振动：平衡位置及固定端 ══════════ */}
