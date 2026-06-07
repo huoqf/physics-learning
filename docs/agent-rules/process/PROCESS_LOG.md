@@ -1,5 +1,234 @@
 # 物理演示项目工程日志 (PROCESS_LOG)
 
+## 2026-06-07 (9)
+
+### 向心力与向心加速度美化、防越界矢量映射及 F-a 图像动力学联动开发（归属 [M1] 力学动画 与 [M2] 架构完善 · 知识点 mechanics-5-5）
+
+**核心改动：**
+
+1. **新建向心力 sidebar 控制组件**（`src/features/mechanics/CentripetalSidebar.tsx`）
+   - 实现包含“进阶模式”开关和“显示 F-a 联动图表”显隐开关。
+
+2. **升级动画注册表**（`src/data/animationRegistry.ts`）
+   - 升级 `anim-centripetal` 参数配置，注册默认项（`advancedMode: 0`, `showWaveform: 1`），并加载 `CentripetalSidebar` 组件。
+
+3. **重构画布并规范矢量安全长度（彻底修复越界 Bug）**（`src/features/mechanics/CentripetalAnimation.tsx`）
+   - **自适应比例尺**：由 `scale = (minCanvasDim - 80) / (2 * rMax)` 动态计算比例尺，保证轨道永不越界。
+   - **矢量安全映射**：对加速度和向心力引入全局最大安全像素长度限制（75px），杜绝了当加速度 $a_c$ 高达 100、向心力 $F_c$ 高达 500 时，箭头飞出画布数千像素的恶性 Bug。
+   - **拟物材质与规范色彩**：小球应用 3D 渐变钢珠材质 `steelSphereGrad`。速度 $v$（经典蓝）、加速度 $a$（绿色）、向心合外力 $F$（深红）、半径 $r$（橙黄）均严格绑定主题 Token。
+   - **右上角 F-a 图表卡片（画中画）**：新增毛玻璃图卡，同屏绘制斜率为质量 $m$ 的 $F = m \cdot a$ 动力学射线。当前状态游标十字在射线上实时滑动。支持通过改变 $m$ 滑块直观展示斜率变化。
+   - **卡片反向交互**：支持在 $F-a$ 图表区域按压并左右拖动鼠标来反向调节线速度 $v$ 的大小。
+
+4. **补全物理看板 quantities 插入 case**（`src/data/physicsQuantities.ts`）
+   - 补齐了原缺失的 `anim-centripetal` 动画数据看板分支。
+   - **基础模式**：面向初学者展示 $r, v, m, \omega, a_n$，讲解方向在变的变速运动特征。
+   - **进阶模式**：面向高考展示合外力 $F_n$，补充向心力公式，并在高考考点中加入**“向心力是效果力，受力分析绝对不能额外画向心力”**的经典高频避坑要点。
+
+5. **补全单元测试**（`tests/data/physicsQuantities.test.ts`）
+   - 针对 `anim-centripetal` 的基础和进阶模式 quantities 计算精度及显隐判定补齐测试用例。
+
+**涉及文件：**
+- `src/features/mechanics/CentripetalSidebar.tsx`
+- `src/features/mechanics/CentripetalAnimation.tsx`
+- `src/data/animationRegistry.ts`
+- `src/data/physicsQuantities.ts`
+- `tests/data/physicsQuantities.test.ts`
+
+## 2026-06-07 (8)
+
+### 匀速圆周运动梯度教学设计、自适应等比例缩放及简谐投影波形联动开发（归属 [M1] 力学动画 与 [M2] 架构完善 · 知识点 mechanics-5-4）
+
+**核心改动：**
+
+1. **新建圆周运动 sidebar 控制组件**（`src/features/mechanics/CircularMotionSidebar.tsx`）
+   - 实现包含“进阶模式”开关，以及仅在进阶模式下可见的“简谐运动投影对比”和“显示联动波形图”开关。
+
+2. **升级动画注册表**（`src/data/animationRegistry.ts`）
+   - 升级 `anim-circular-motion` 的参数配置，注册默认项（`advancedMode: 0`, `showProjection: 1`, `showWaveform: 1`），并加载对应的 `CircularMotionSidebar` 组件。
+
+3. **重构物理演练画布实现自适应比例尺**（`src/features/mechanics/CircularMotionAnimation.tsx`）
+   - **自适应比例尺**：彻底去除硬编码 `scale = 50`。通过 `scale = (minCanvasDim - 80) / (2 * rMax)` 自适应容器长宽，确保最大半径 $r=10$ 时轨迹也绝不飞出画布。
+   - **拟物材质与规范色彩**：小球应用 3D 渐变钢珠材质 `steelSphereGrad`。速度矢量（经典蓝）、加速度矢量（绿色）、位移与轨道均采用物理主题色彩，完全消灭一切硬编码 Hex 颜色。
+   - **角速度几何化**：用半透明弧形展示扫过角度 $\theta = \omega t$，让角速度概念更加形象具体。
+   - **正交投影联动**：在进阶模式下，支持沿 $x$ 轴与 $y$ 轴方向渲染投影球，并画出主球与投影球之间的辅助虚线，清晰呈现圆周运动与简谐运动的正交映射。
+   - **右上角波形卡片（画中画）**：移除了原左上角文本。新建毛玻璃卡片，同屏联动绘制简谐运动 $x-t$ 和 $y-t$ 的正弦/余弦曲线。支持在图表卡片区域按压拖动进行时间联动调速。
+
+4. **物理看板 quantities 精细化分档**（`src/data/physicsQuantities.ts`）
+   - **基础模式**：面向初学者展示 $r$, $\omega$, $v$, $T$ 及最简公式（$v = \omega r$），讲解速度方向变化的变速运动事实。
+   - **进阶模式**：面向高考展示 $x, y$ 坐标和向心加速度 $a_n$，引入位置方程和向心加速度多公式，深刻剖析向心力不做功与简谐运动正交投影的高考考向。
+
+5. **补全单元测试**（`tests/physics/kinematics.test.ts` & `tests/data/physicsQuantities.test.ts`）
+   - 补充针对 `calculateCircularMotion` 旋转坐标周期性及 physics quantities 分档特性的单元测试。
+
+**涉及文件：**
+- `src/features/mechanics/CircularMotionSidebar.tsx`
+- `src/features/mechanics/CircularMotionAnimation.tsx`
+- `src/data/animationRegistry.ts`
+- `src/data/physicsQuantities.ts`
+- `tests/physics/kinematics.test.ts`
+- `tests/data/physicsQuantities.test.ts`
+
+## 2026-06-07 (7)
+
+### 斜抛运动美化、双轴自适应比例尺及空气阻力进阶开发（归属 [M1] 力学动画 与 [M2] 架构完善 · 知识点 mechanics-5-3）
+
+**核心改动：**
+
+1. **下沉带空气阻力斜抛物理计算**（`src/physics/kinematics.ts`）
+   - 新增 `precomputeObliqueThrowWithDrag` 纯函数。输入 $v_0$、角度 $\theta$、重力 $g$、阻力系数 $k$ 等，使用欧拉法对斜抛在阻力环境下的时空坐标及速度分量进行高精度采样积分，并支持真空对照组导出。
+
+2. **新建斜抛 sidebar 控制扩展**（`src/features/mechanics/ObliqueThrowSidebar.tsx`）
+   - 实现包含“进阶模式”Toggle、空气阻力 $k$ 滑块（$0 \sim 0.2$）、以及“对比真空参考轨道”开关组件。
+
+3. **升级动画注册表**（`src/data/animationRegistry.ts`）
+   - 升级 `anim-oblique-throw` 注册信息，补充进阶参数并加载 `ObliqueThrowSidebar`，以及绑定 `ObliqueThrowAnimation` 为渲染组件。
+
+4. **重构物理演练画布**（`src/features/mechanics/ObliqueThrowAnimation.tsx`）
+   - **全宽铺满式物理演练**：取消传统的左右子分区，物理区域展宽铺满中屏，使抛球拥有足够大的左右轨迹展示空间，防止飞出边界。
+   - **双轴自适应比例尺**：水平与竖直方向动态计算最大物理位移比例尺，并取其最小值作为全局等比例比例尺 `scale = Math.min(scaleX, scaleY)`，确保钢球在任何参数和视口下绝不越界且保持 1:1 物理比例。
+   - **双轴投影小球**：在竖直导轨和地表分别绘制实时投影球，形象解构斜抛的水平分运动与竖直分运动（竖直上抛）。
+   - **拟物金属美化**：发射炮筒自适应抛射角旋转，钢珠使用 `steelSphereGrad` 3D 渐变材质。
+   - **零硬编码色彩**：速度矢量采用主题预设颜色，彻底清除一切硬编码 Hex 颜色。
+
+5. **右上角悬浮 v-t 图像联动（画中画）**（`src/features/mechanics/ObliqueThrowAnimation.tsx`）
+   - 设计精致的右上角悬浮毛玻璃图表卡片，绘制水平分速度 $v_x(t)$ 与穿过零刻度线的竖直分速度 $v_y(t)$ 实际与真空对照四条曲线。支持在卡片热区直接拖拽鼠标进行三屏时间轴联动。
+
+6. **对接 quantities 物理量面板**（`src/data/physicsQuantities.ts`）
+   - 精简 quantities 物理看板数据。移除与滑块重复的参数，仅展示水平位移 $x$、竖直高度 $y$ 及实时速度 $v$（含偏角 $\theta$），补全 KaTeX 斜抛公式及高考核心要点。
+
+7. **新增测试用例**（`tests/physics/kinematics.test.ts` & `tests/data/physicsQuantities.test.ts`）
+   - 补齐针对 `precomputeObliqueThrowWithDrag` 物理规律校验及 `buildPhysicsQuantities` 的多项单元测试。
+
+**涉及文件：**
+- `src/physics/kinematics.ts`
+- `src/features/mechanics/ObliqueThrowSidebar.tsx`
+- `src/features/mechanics/ObliqueThrowAnimation.tsx`
+- `src/data/animationRegistry.ts`
+- `src/data/physicsQuantities.ts`
+- `tests/physics/kinematics.test.ts`
+- `tests/data/physicsQuantities.test.ts`
+
+## 2026-06-07 (6)
+
+### 平抛运动重构与带空气阻力进阶模式开发（归属 [M1] 力学动画 与 [M2] 架构完善 · 知识点 mechanics-5-2）
+
+**核心改动：**
+
+1. **下沉带空气阻力平抛物理计算**（`src/physics/kinematics.ts`）
+   - 新增 `precomputeProjectileWithDrag` 纯函数。输入 $v_{0x}$、重力 $g$、阻力系数 $k$、下落高度 $H$。以 0.001s 步长使用欧拉法对平抛在阻力环境下的时空坐标及速度分量进行积分计算，并支持真空参考对照组导出。
+
+2. **新建平抛 sidebar 扩展**（`src/features/mechanics/ProjectileSidebar.tsx`）
+   - 实现包含“进阶模式”Toggle、空气阻力 $k$ 滑块（$0 \sim 0.2$）、以及“对比真空参考轨道”开关组件。
+
+3. **升级动画注册表**（`src/data/animationRegistry.ts`）
+   - 升级 `anim-projectile` 注册信息，补充进阶参数并加载 `ProjectileSidebar`。
+
+4. **重构物理演练画布**（`src/features/mechanics/ProjectileAnimation.tsx`）
+   - **全宽铺满式物理演练**：取消传统的左右子分区，物理区域展宽铺满中屏，让平抛小球拥有宽阔、舒展的降落演示轨迹。
+   - **自适应比例尺（解决越界 Bug）**：水平与竖直方向动态计算最大物理位移比例尺，并取其最小值作为全局等比例比例尺 `scale = Math.min(scaleX, scaleY)`，既能保证小球在任何参数和视口下绝不越界，又保证了物理保真度（钢珠不变形）。
+   - **双轴投影小球**：在地面和竖直导轨上分别引入水平匀速和竖直自由落体分运动投影小球，以半透明 3D 拟物材质直观呈现平抛分解。
+   - **拟物金属美化**：平抛钢珠采用不锈钢 `steelSphereGrad` 3D 渐变，原点添加拉丝发射台底座。
+   - **规范化色彩**：合速度 $v$（经典蓝 `#2563EB`）、水平速度 $v_x$（蓝色 `#3B82F6`）、竖直速度 $v_y$（浅蓝 `#60A5FA`），剔除全部硬编码 Hex 颜色。
+
+5. **右上角悬浮 v-t 图像联动**（`src/features/mechanics/ProjectileAnimation.tsx`）
+   - **画中画悬浮窗设计**：移除与物理区小球轨迹完全重复的 $y-x$ 图像。将 $v-t$ 图像设计为悬浮在右上角空白区的精致科学卡片，具有毛玻璃半透明底色和精细阴影。
+   - **速度-时间图 (v-t 图)**：分水平与竖直方向联动。同屏绘制 $v_x(t)$ 与 $|v_y(t)|$ 实际与真空对照四条曲线，展示水平匀速到减速、竖直匀加速到饱和终端速度的非线性变化。支持在悬浮卡片上直接拖拽鼠标进行三屏时间轴联动。
+
+6. **对接 quantities 物理量面板**（`src/data/physicsQuantities.ts`）
+   - 在右侧物理量面板中仅保留 $x$、$y$ 位移及合速度 $v$ 核心数据（不与左滑块重复），留足公式和高考要点卡片空间。
+
+7. **新增测试用例**（`tests/physics/kinematics.test.ts`）
+   - 补齐了针对 `precomputeProjectileWithDrag` 函数真空解析一致性以及空气阻力下能量与位移偏折的 2 大项测试用例。
+
+**涉及文件：**
+- `src/physics/kinematics.ts`
+- `src/features/mechanics/ProjectileSidebar.tsx`
+- `src/features/mechanics/ProjectileAnimation.tsx`
+- `src/data/animationRegistry.ts`
+- `src/data/physicsQuantities.ts`
+- `tests/physics/kinematics.test.ts`
+
+## 2026-06-07 (5)
+
+### 超重与失重 N-a 图同步修复与规范合规（归属 [M1] 力学动画）
+
+**核心改动：**
+
+1. **修复 N-a 图表同步 bug**
+   - 暂停时 `currentA` 被硬编码为 0，导致 N-a 图游标不跟随参数滑块 → 改为始终跟随参数 `a`
+   - 播放结束后调节滑块，N-a 图游标不响应 → 同上修复
+   - 引入 `actualA`（电梯实际加速度，驱动矢量箭头和漂浮判定）与 `currentA`（N-a 图参数预览值）分离
+
+2. **扩展 `calculateElevatorMotion` 支持恒定加速度模式**
+   - 新增 `modelIdx = 2`（恒定加速度），接受 `a_ext` 参数
+   - 普通模式播放中改用 `calculateElevatorMotion(2, m, g, t, a)` 统一计算
+   - 函数签名从 `modelIdx: 0 | 1` 扩展为 `0 | 1 | 2`
+
+3. **移除 `physicsQuantities.ts` 中超重失重的 Canvas 布局依赖**
+   - 删除 `elevatorHeight=200`、`shaftTop=40`、`shaftBottom=500-60` 等硬编码
+   - 改用 `calculateElevatorMotion(2, ...)` 统一计算
+
+4. **提取布局常量**
+   - `WeightlessnessAnimation.tsx`：新增 `LAYOUT` 对象，替换 `30`、`150`、`40`、`180`、`0.45`、`10`、`15`、`0.55`、`22`、`0.12`、`9`、`0.45`、`32`、`0.16`、`20`、`90`、`11`、`9` 等硬编码
+
+5. **MiniChart 类型安全**
+   - `WeightlessnessCenterExtra.tsx`：`points: any[]` → `points: Record<string, number>[]`
+
+**涉及文件：**
+- `src/physics/dynamics.ts`（扩展 calculateElevatorMotion）
+- `src/features/mechanics/WeightlessnessAnimation.tsx`
+- `src/features/mechanics/WeightlessnessCenterExtra.tsx`
+- `src/data/physicsQuantities.ts`
+
+## 2026-06-07 (4)
+
+### 连接体问题物理模型修正与规范合规（归属 [M1] 力学动画）
+
+**核心改动：**
+
+1. **重写 `calculateConnectedBody`**（`src/physics/dynamics.ts`）
+   - 修正原函数只算 m₂ 摩擦力的物理错误，改为正确计算两物体总摩擦力
+   - 新增 `ConnectedBodyResult` 接口：区分运动态/静止态，返回 `isMoving`、`displayTension`、`f1Max`/`f2Max`、`staticTensionRange`
+   - 静止时张力返回 0（教学展示值），但 `staticTensionRange` 提供完整范围 `max(0, F-f₂Max) ≤ T ≤ min(f₁Max, F)`
+   - 完整 JSDoc + 参数单位注释 + `@category M1`
+
+2. **新增 `calculateConnectedBodyTimeline`**（`src/physics/dynamics.ts`）
+   - 纯物理函数：给定时间 t，返回 a/v/s/T 运动状态
+   - 消除组件内位移计算的内联重复
+
+3. **三处消费方统一调用 `calculateConnectedBody`**
+   - `ConnectedBodiesAnimation.tsx`：删除内联物理计算，改用 `calculateConnectedBody` + `calculateConnectedBodyTimeline`
+   - `ConnectedBodiesCenterExtra.tsx`：同上，删除 `g=9.8` 硬编码改用 `GRAVITY`
+   - `physicsQuantities.ts`：同上，移除 Canvas 布局参数依赖（`animWidth`/`startX`/`endX` 等）
+
+4. **修正 T-μ 和 T-F 曲线**
+   - 每个采样点独立调用 `calculateConnectedBody`，加入启动阈值判定
+   - T-μ 曲线标题改为"运动状态下的绳张力 T 与 μ 的关系"
+   - 新增临界 μc 竖线（`staticLines`），标注启动阈值
+   - T-F 曲线同理，新增临界 Fc 竖线
+
+5. **统一坐标换算与布局常量**
+   - `src/utils/coordinate.ts`：新增 `PX_PER_METER`、`metersToPx()`、`pxToMeters()`
+   - `ConnectedBodiesAnimation.tsx`：提取 `LAYOUT` 布局常量对象和 `SPRING_VISUAL` 视觉参数对象
+   - 替换所有硬编码数字（`80`、`65`、`0.11`、`50`、`0.13`、`6`、`0.7`、`40`、`0.12`、`0.15`、`0.85`、`11.5`、`1.6`、`11`、`15`）
+
+6. **事件监听器 cleanup**
+   - 拖拽交互从 `window.addEventListener('mousemove/mouseup')` 改为 `useEffect` + `pointermove/pointerup`，组件卸载时自动清理
+
+7. **MiniChart 类型安全**
+   - `points: any[]` → `points: Record<string, number>[]`
+
+8. **补充纯函数测试**
+   - `tests/physics/dynamics.test.ts`：新增 `calculateConnectedBody`（4 用例）和 `calculateConnectedBodyTimeline`（4 用例）
+
+**涉及文件：**
+- `src/physics/dynamics.ts`（重写 + 新增）
+- `src/features/mechanics/ConnectedBodiesAnimation.tsx`
+- `src/features/mechanics/ConnectedBodiesCenterExtra.tsx`
+- `src/data/physicsQuantities.ts`
+- `src/utils/coordinate.ts`
+- `tests/physics/dynamics.test.ts`
+
 ## 2026-06-07 (3)
 
 ### 死代码清理与预留函数规范化（归属 [M2] 架构完善与全局规范）
@@ -501,3 +730,31 @@
 - [PR 2] 交互模式三态 ✅
 - [PR 3] PiP 放大镜+真实右手 SVG（手性与掌心掌背逻辑彻底纠偏）✅
 - [PR 4] 探索任务卡 ⏳ 待开始
+
+## 2026-06-07
+
+### 牛顿第二定律物理教学优化与重构（归属 [M2] 完善任务）
+
+针对 `anim-newton-second` 模块进行全面优化与合规化重构，实现多物理受力分析及变力进阶工作台模式：
+
+- **dynamics.ts**：新增 `calculateNewtonSecondVariableMotion` 纯函数，支持计算线性递增力 $F(t) = k\cdot t$ 及光滑正弦力 $F(t) = F_0\sin(\omega t)$ 的解析物理模型状态，提供精确的加速度、速度和位移，新增 3 项对应的单元测试并通过。
+- **physicsQuantities.ts**：新增 `case 'anim-newton-second'` 物理看板数据，包含拉力、阻力、合力、加速度及速度的显示，挂载牛二定律核心公式与高考三大要点（瞬时性、矢量性、同体性），并将原本硬编码在 Canvas 的公式完全分离至右屏展示。
+- **animationRegistry.ts**：扩展默认参数支持 `advancedMode` 与变力控制，并注册 `NewtonSecondSidebar` 及 `NewtonSecondCenterExtra`。
+- **NewtonSecondAnimation.tsx**：重构并美化 Canvas（SVG）界面，使用精致的不锈钢金属渐变材质滑块，完善了受力分析图（增添重力 $G$ 和支持力 $F_N$ 箭头，各力的颜色均遵循全局 token 规划），并在车顶上方动态呈现速度 $v$ 与加速度 $a$ 的矢量箭头。
+- **NewtonSecondSidebar.tsx**（新建）：支持普通与进阶模式切换，在进阶模式下提供线性与正弦变力切换及对应参数（力增加斜率 $k$、幅值 $F_0$、频率 $\omega$）的滑动调节。
+- **NewtonSecondCenterExtra.tsx**（新建）：实现进阶变力工作台，上端展示图表，下端展示滑块动画，中间包含 $F-t$（拉力、摩擦力及合外力）、$a-t$（加速度）及 $v-t$ (速度) 三条动态曲线，且图表网格与游标已完全消除硬编码颜色并使用规范的物理量色彩。
+- **布局微调**：按反馈将 `NewtonSecondCenterExtra` 的内部布局调整为“图表在上，动画在下”，提升了曲线读取的直观性。
+
+### 超重与失重物理教学重构与合规化治理（归属 [M2] 完善任务）
+
+针对 `anim-weightlessness` 模块进行重构与美化，消除 Canvas 公式，升级为变速升降与坠落漂浮的进阶多联动图表工作台模式：
+
+- **dynamics.ts**：新增 `calculateElevatorMotion` 纯函数，支持电梯变速升降模型与钢索坠落缓冲模型，提供精确的加速度、速度、位移和视重变化物理计算，新增 2 项对应的单元测试并通过。
+- **physicsQuantities.ts**：新增 `case 'anim-weightlessness'` 物理看板分支，挂载质量、重力、视重、速度、状态等数据展示，绑定核心 LaTeX 公式与高考超失重两大核心考点，将公式与数据完全剥离至右屏展示。
+- **animationRegistry.ts**：为 `anim-weightlessness` 注册 `SidebarExtra`、`CenterExtra` 组件以及进阶参数。
+- **WeightlessnessAnimation.tsx**：重构并美化 Canvas：① 绘制精美体重秤并配置表盘指针旋转偏角（偏角与视重大小动态对齐，超重向右，失重向左，失重为零时偏左 90 度）② 在完全失重段增加砝码由于失重导致的悬浮在半空中的漂浮简谐动效 ③ 补充重力、支持力的作用点至重心，优化加速度与速度的指示箭头 ④ 彻底消除原硬编码的 rgba 色值，使用 `PHYSICS_COLORS`/`SCENE_COLORS` token。
+- **WeightlessnessSidebar.tsx**（新建）：支持普通与进阶模式切换，在进阶模式下提供“变速升降”和“钢索坠落”两个真实力学环境的切选。
+- **WeightlessnessCenterExtra.tsx**（新建）：实现图表在上、动画在下的进阶工作台模式，绘制 $a-t$、$N-t$（内含 $mg$ 重力对比水平线）以及 $v-t$ 同步联动曲线，完美展示“失重、超重状态下，重力大小不变仅支持力（视重）在变化”的物理本质。
+
+
+

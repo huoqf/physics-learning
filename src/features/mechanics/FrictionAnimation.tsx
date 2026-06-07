@@ -2,6 +2,16 @@ import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE, FONT, SCENE_COLORS, CHART_COLORS } from '@/theme/physics'
 import { calculateFrictionPullModel, calculateFrictionInclineModel } from '@/physics'
+import { GRAVITY } from '@/physics/constants'
+
+/** 力矢量视觉缩放比 (1 N = 1.6 px) */
+const FORCE_VECTOR_SCALE = 1.6
+
+/** 水平模型位移像素缩放比 (1 m/s²·s² = 35 px) */
+const PULL_PX_PER_METER = 35
+
+/** 斜面模型位移像素缩放比 (1 m/s²·s² = 25 px) */
+const INCLINE_PX_PER_METER = 25
 
 export default function FrictionAnimation() {
   const { params, time, showVectors, showGrid } = useAnimationStore()
@@ -10,7 +20,7 @@ export default function FrictionAnimation() {
   const mode = params.mode ?? 0 // 0=水平外力, 1=斜面倾角
   const m = params.m ?? 5
   const mu = params.mu ?? 0.3
-  const g = params.g ?? 9.8
+  const g = params.g ?? GRAVITY
   const F_applied = params.F_applied ?? 15
   const angle = params.angle ?? 15
 
@@ -54,7 +64,7 @@ export default function FrictionAnimation() {
 
   // 运动距离计算 (4秒循环一次)
   const loopTime_m1 = time % 4.0
-  const displacement_m1 = 0.5 * acceleration_m1 * loopTime_m1 * loopTime_m1 * 35 // 35为像素缩放比
+  const displacement_m1 = 0.5 * acceleration_m1 * loopTime_m1 * loopTime_m1 * PULL_PX_PER_METER
 
   // 水平运动坐标
   const groundY_m1 = canvasSize.height - 110
@@ -74,7 +84,7 @@ export default function FrictionAnimation() {
 
   // 下滑距离计算 (4秒循环一次)
   const loopTime_m2 = time % 4.0
-  const displacement_m2 = isSliding_m2 ? 0.5 * acceleration_m2 * loopTime_m2 * loopTime_m2 * 25 : 0
+  const displacement_m2 = isSliding_m2 ? 0.5 * acceleration_m2 * loopTime_m2 * loopTime_m2 * INCLINE_PX_PER_METER : 0
 
   // 斜面局部几何参数 —— 全部基于 canvasSize 动态计算
   const pivotX = canvasSize.width * 0.18 // 支点水平位置：画布宽度的18%
@@ -172,12 +182,12 @@ export default function FrictionAnimation() {
                 {/* 1. 外拉力 F_applied (向右，作用在箱子右侧中心) */}
                 <line
                   x1={boxX_m1 + boxSize / 2} y1={groundY_m1 - boxSize / 2}
-                  x2={boxX_m1 + boxSize / 2 + F_applied * 1.6} y2={groundY_m1 - boxSize / 2}
+                  x2={boxX_m1 + boxSize / 2 + F_applied * FORCE_VECTOR_SCALE} y2={groundY_m1 - boxSize / 2}
                   stroke={PHYSICS_COLORS.appliedForce} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
                   markerEnd="url(#arr-applied)"
                 />
                 <text
-                  x={boxX_m1 + boxSize / 2 + F_applied * 1.6 + 6} y={groundY_m1 - boxSize / 2 + 4}
+                  x={boxX_m1 + boxSize / 2 + F_applied * FORCE_VECTOR_SCALE + 6} y={groundY_m1 - boxSize / 2 + 4}
                   fontSize={FONT.axisSize} fill={PHYSICS_COLORS.appliedForce} fontWeight="bold"
                 >
                   F
@@ -187,14 +197,14 @@ export default function FrictionAnimation() {
                 {f_actual_m1 > 0.5 && (
                   <line
                     x1={boxX_m1} y1={groundY_m1}
-                    x2={boxX_m1 - f_actual_m1 * 1.6} y2={groundY_m1}
+                    x2={boxX_m1 - f_actual_m1 * FORCE_VECTOR_SCALE} y2={groundY_m1}
                     stroke={PHYSICS_COLORS.friction} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
                     markerEnd="url(#arr-friction)"
                   />
                 )}
                 {f_actual_m1 > 3 && (
                   <text
-                    x={boxX_m1 - f_actual_m1 * 1.6 - 15} y={groundY_m1 - 4}
+                    x={boxX_m1 - f_actual_m1 * FORCE_VECTOR_SCALE - 15} y={groundY_m1 - 4}
                     fontSize={FONT.axisSize} fill={PHYSICS_COLORS.friction} fontWeight="bold"
                   >
                     f
@@ -204,12 +214,12 @@ export default function FrictionAnimation() {
                 {/* 3. 支持力 F_N (向上) */}
                 <line
                   x1={boxX_m1} y1={groundY_m1 - boxSize / 2}
-                  x2={boxX_m1} y2={groundY_m1 - boxSize / 2 - F_normal_m1 * 1.6}
+                  x2={boxX_m1} y2={groundY_m1 - boxSize / 2 - F_normal_m1 * FORCE_VECTOR_SCALE}
                   stroke={PHYSICS_COLORS.normalForce} strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                   markerEnd="url(#arr-normal)"
                 />
                 <text
-                  x={boxX_m1 - 16} y={groundY_m1 - boxSize / 2 - F_normal_m1 * 1.6 + 4}
+                  x={boxX_m1 - 16} y={groundY_m1 - boxSize / 2 - F_normal_m1 * FORCE_VECTOR_SCALE + 4}
                   fontSize={FONT.axisSize} fill={PHYSICS_COLORS.normalForce} fontWeight="bold"
                 >
                   F_N
@@ -218,12 +228,12 @@ export default function FrictionAnimation() {
                 {/* 4. 重力 G (向下) */}
                 <line
                   x1={boxX_m1} y1={groundY_m1 - boxSize / 2}
-                  x2={boxX_m1} y2={groundY_m1 - boxSize / 2 + weight * 1.6}
+                  x2={boxX_m1} y2={groundY_m1 - boxSize / 2 + weight * FORCE_VECTOR_SCALE}
                   stroke={PHYSICS_COLORS.gravity} strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                   markerEnd="url(#arr-gravity)"
                 />
                 <text
-                  x={boxX_m1 + 8} y={groundY_m1 - boxSize / 2 + weight * 1.6}
+                  x={boxX_m1 + 8} y={groundY_m1 - boxSize / 2 + weight * FORCE_VECTOR_SCALE}
                   fontSize={FONT.axisSize} fill={PHYSICS_COLORS.gravity} fontWeight="bold"
                 >
                   G
@@ -303,12 +313,12 @@ export default function FrictionAnimation() {
                   {/* 1. 支持力 F_N (垂直斜面向上) */}
                   <line
                     x1={boxLocalX} y1={-boxSize / 2 - 8}
-                    x2={boxLocalX} y2={-boxSize / 2 - 8 - F_normal_m2 * 1.6}
+                    x2={boxLocalX} y2={-boxSize / 2 - 8 - F_normal_m2 * FORCE_VECTOR_SCALE}
                     stroke={PHYSICS_COLORS.normalForce} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
                     markerEnd="url(#arr-normal)"
                   />
                   <text
-                    x={boxLocalX - 16} y={-boxSize / 2 - 8 - F_normal_m2 * 1.6 + 4}
+                    x={boxLocalX - 16} y={-boxSize / 2 - 8 - F_normal_m2 * FORCE_VECTOR_SCALE + 4}
                     fontSize={FONT.axisSize} fill={PHYSICS_COLORS.normalForce} fontWeight="bold"
                   >
                     F_N
@@ -318,14 +328,14 @@ export default function FrictionAnimation() {
                   {f_actual_m2 > 0.5 && (
                     <line
                       x1={boxLocalX - boxSize / 2} y1={-8}
-                      x2={boxLocalX - boxSize / 2 - f_actual_m2 * 1.6} y2={-8}
+                      x2={boxLocalX - boxSize / 2 - f_actual_m2 * FORCE_VECTOR_SCALE} y2={-8}
                       stroke={PHYSICS_COLORS.friction} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
                       markerEnd="url(#arr-friction)"
                     />
                   )}
                   {f_actual_m2 > 3 && (
                     <text
-                      x={boxLocalX - boxSize / 2 - f_actual_m2 * 1.6 - 12} y={-12}
+                      x={boxLocalX - boxSize / 2 - f_actual_m2 * FORCE_VECTOR_SCALE - 12} y={-12}
                       fontSize={FONT.axisSize} fill={PHYSICS_COLORS.friction} fontWeight="bold"
                     >
                       f
@@ -342,7 +352,7 @@ export default function FrictionAnimation() {
                   // 木箱几何重心在世界坐标系中的位置
                   const boxCenterWorldX = pivotX + boxLocalX * Math.cos(angleRad)
                   const boxCenterWorldY = pivotY - boxLocalX * Math.sin(angleRad) - boxSize / 2 - 8
-                  const gLen = weight * 1.6
+                  const gLen = weight * FORCE_VECTOR_SCALE
                   return (
                     <g>
                       <line

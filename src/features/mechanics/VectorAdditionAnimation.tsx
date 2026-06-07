@@ -805,10 +805,10 @@ export default function VectorAdditionAnimation() {
                     分解偏角 θ = {angle.toFixed(0)}°
                   </text>
                   <text x={0} y={65} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family}>
-                    水平分量 F_x = {physicsData.f1Val * Math.cos((angle * Math.PI) / 180) >= 0 ? "" : "-"}{(physicsData.f1Val * Math.abs(Math.cos((angle * Math.PI) / 180))).toFixed(2)} N
+                    水平分量 F_x = {physicsData.fxVal.toFixed(2)} N
                   </text>
                   <text x={0} y={85} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family}>
-                    竖直分量 F_y = {(physicsData.f1Val * Math.sin((angle * Math.PI) / 180)).toFixed(2)} N
+                    竖直分量 F_y = {physicsData.fyVal.toFixed(2)} N
                   </text>
                 </>
               ) : (

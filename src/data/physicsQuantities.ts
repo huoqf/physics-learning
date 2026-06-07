@@ -11,8 +11,8 @@ import {
   calculateAcceleratedMotion,
   calculateFreeFall,
   calculateEarthGravity,
-  calculateProjectileMotion,
-  calculateObliqueThrow,
+  precomputeProjectileWithDrag,
+  precomputeObliqueThrowWithDrag,
   calculateCircularMotion,
   calculateOrbitalSpeed,
   calculateRestitutionCollision,
@@ -41,6 +41,12 @@ import {
   calculateVariableAccelerationMotion,
   calculateFrictionPullModel,
   calculateFrictionInclineModel,
+  calculateNewtonSecondVariableMotion,
+  calculateElevatorMotion,
+  calculateConnectedBody,
+  calculateVectorAddition,
+  calculateOrthogonalDecomposition,
+  calculateEquilibriumTension,
 } from '../physics'
 import type { VariableMotionModel, VariableMotionParams } from '../physics'
 
@@ -464,40 +470,314 @@ export function buildPhysicsQuantities(
         ],
       }
     }
+    case 'anim-connected-bodies': {
+      const m1 = params.m1 ?? 2
+      const m2 = params.m2 ?? 3
+      const F = params.F ?? 15
+      const mu = params.mu ?? 0.1
+      const advancedMode = params.advancedMode ?? 0
+      const analysisView = params.analysisView ?? 0 // 0=普通, 1=整体, 2=隔离m1, 3=隔离m2
+
+      // 1. 物理计算（单一来源：calculateConnectedBody）
+      const physicsResult = calculateConnectedBody(m1, m2, F, mu, GRAVITY)
+      const { isMoving: isMovingPhysically, a: acceleration, T: tension } = physicsResult
+
+      // 2. 运动时间状态推算
+      const tMax = 4.0
+      const isStarted = time > 0
+      const isEnded = advancedMode === 0
+        ? false // 基础模式由组件层控制边界
+        : time >= tMax
+
+      const isMoving = isStarted && !isEnded && isMovingPhysically
+
+      // 实时物理量
+      const currentA = isMoving ? acceleration : 0
+      const currentT = isMoving
+        ? tension
+        : physicsResult.displayTension
+
+      const currentFf1 = physicsResult.f1Max
+      const currentFf2 = physicsResult.f2Max
+
+      // 实时物理量看板
+      const quantities = [
+        ...base,
+        { label: '系统加速度 a', value: currentA.toFixed(2), unit: 'm/s²', highlight: currentA > 0 ? 'positive' as const : undefined },
+        { label: '连接内力 T', value: currentT.toFixed(1), unit: 'N', highlight: currentT > 0 ? 'positive' as const : undefined },
+        { label: 'm₁ 摩擦力 f₁', value: currentFf1.toFixed(1), unit: 'N' },
+        { label: 'm₂ 摩擦力 f₂', value: currentFf2.toFixed(1), unit: 'N' },
+      ]
+
+      // 3. 动态公式高亮联动
+      const formulas: Formula[] = []
+      if (analysisView === 0) {
+        formulas.push({ name: '① 整体方程', latex: 'F - f_1 - f_2 = (m_1 + m_2)a' })
+        formulas.push({ name: '② 隔离 m₁', latex: 'T - f_1 = m_1 a' })
+      } else if (analysisView === 1) {
+        formulas.push({ name: '整体方程 (高亮)', latex: 'F - (f_1 + f_2) = (m_1 + m_2)a' })
+      } else if (analysisView === 2) {
+        formulas.push({ name: '隔离 m₁ (高亮)', latex: 'T - f_1 = m_1 a' })
+        formulas.push({ name: '内力结论', latex: 'T = \\frac{m_1}{m_1 + m_2}F' })
+      } else if (analysisView === 3) {
+        formulas.push({ name: '隔离 m₂ (高亮)', latex: 'F - T - f_2 = m_2 a' })
+      }
+
+      // 4. 高考要点
+      const gaokaoPoints: GaokaoPoint[] = [
+        { text: '整体法与隔离法：求解系统加速度优先用整体法，求解内力必须隔离。', importance: 'core' as const },
+        { text: '秒杀结论：在同材质粗糙面上滑动时，绳/弹簧拉力 T = m₁F/(m₁+m₂)，与摩擦系数 μ 无关。', importance: 'gaokao' as const },
+        { text: '临界起动条件：外拉力 F 必须大于最大静摩擦力之和 μ(m₁+m₂)g 才能使系统起动。', importance: 'hard' as const },
+      ]
+
+      return {
+        quantities,
+        formulas,
+        gaokaoPoints,
+      }
+    }
     case 'anim-projectile': {
       const v0x = params.v0x ?? 10
       const g = params.g ?? GRAVITY
-      const { x, y } = calculateProjectileMotion(v0x, g, time)
+      const airResistance = params.airResistance ?? 0
+      const PHYSICS_HEIGHT = 10.0
+
+      // 预计算完整轨迹
+      const result = precomputeProjectileWithDrag(v0x, g, airResistance, PHYSICS_HEIGHT)
+      const isLanded = time >= result.groundTime && result.groundTime > 0
+      const effectiveTime = isLanded ? result.groundTime : Math.max(time, 0)
+
+      // 插值获取当前状态
+      const pts = result.points
+      const lastPt = pts[pts.length - 1]
+      let currentPt = pts[0]
+      if (effectiveTime > 0 && pts.length > 1) {
+        if (effectiveTime >= lastPt.t) {
+          currentPt = lastPt
+        } else {
+          const dt = pts[1]?.t - pts[0]?.t || 0.01
+          const idx = Math.floor(effectiveTime / dt)
+          const p1 = pts[Math.min(idx, pts.length - 1)]
+          const p2 = pts[Math.min(idx + 1, pts.length - 1)]
+          if (p1 && p2 && p1.t !== p2.t) {
+            const frac = (effectiveTime - p1.t) / (p2.t - p1.t)
+            currentPt = {
+              t: effectiveTime,
+              x: p1.x + (p2.x - p1.x) * frac,
+              y: p1.y + (p2.y - p1.y) * frac,
+              vx: p1.vx + (p2.vx - p1.vx) * frac,
+              vy: p1.vy + (p2.vy - p1.vy) * frac,
+              v: p1.v + (p2.v - p1.v) * frac,
+              ax: p1.ax + (p2.ax - p1.ax) * frac,
+              ay: p1.ay + (p2.ay - p1.ay) * frac,
+            }
+          }
+        }
+      }
+
+      const angleDeg = (Math.atan2(Math.abs(currentPt.vy), currentPt.vx) * 180) / Math.PI
+
+      const quantities = [
+        ...base,
+        { label: '水平位移 x', value: currentPt.x.toFixed(2), unit: 'm' },
+        { label: '下落高度 y', value: Math.abs(currentPt.y).toFixed(2), unit: 'm' },
+        { label: '实时速度 v', value: `${currentPt.v.toFixed(2)} m/s (偏角 ${angleDeg.toFixed(1)}°)`, unit: '' },
+      ]
+
+      const formulas: Formula[] = airResistance > 0 ? [
+        { name: '水平方向阻力运动', latex: 'a_x = -\\frac{k}{m} v v_x' },
+        { name: '竖直方向阻力运动', latex: 'a_y = -g - \\frac{k}{m} v v_y' },
+      ] : [
+        { name: '水平匀速运动', latex: 'x = v_{0x} t' },
+        { name: '竖直自由落体', latex: 'y = \\frac{1}{2}gt^2' },
+        { name: '速度合成关系', latex: 'v = \\sqrt{v_x^2 + v_y^2}' },
+      ]
+
+      const gaokaoPoints: GaokaoPoint[] = [
+        { text: '运动的等时性：水平分运动与竖直分运动具有完全相同的运动时间。', importance: 'core' as const },
+        { text: '速度偏角与位移偏角关系：在真空平抛中，\\tan\\theta = 2\\tan\\alpha（\\theta为速度与水平夹角，\\alpha为位移与水平夹角）。', importance: 'gaokao' as const },
+        { text: '速度变化量：在真空平抛中，任意相等时间间隔内速度变化量 \\Delta\\vec{v} 恒等于 g\\Delta t，方向始终竖直向下。', importance: 'hard' as const },
+      ]
+
       return {
-        quantities: [
-          ...base,
-          { label: '水平位移 x', value: x, unit: 'm' },
-          { label: '竖直位移 y', value: y, unit: 'm' },
-        ],
+        quantities,
+        formulas,
+        gaokaoPoints,
       }
     }
     case 'anim-oblique-throw': {
       const v0 = params.v0 ?? 15
       const angle = params.angle ?? 45
       const g = params.g ?? GRAVITY
-      const { x, y } = calculateObliqueThrow(v0, angle, g, time)
+      const airResistance = params.airResistance ?? 0
+
+      // 预计算完整轨迹
+      const result = precomputeObliqueThrowWithDrag(v0, angle, g, airResistance)
+      const isLanded = time >= result.groundTime && result.groundTime > 0
+      const effectiveTime = isLanded ? result.groundTime : Math.max(time, 0)
+
+      // 插值获取当前状态
+      const pts = result.points
+      const lastPt = pts[pts.length - 1]
+      let currentPt = pts[0]
+      if (effectiveTime > 0 && pts.length > 1) {
+        if (effectiveTime >= lastPt.t) {
+          currentPt = lastPt
+        } else {
+          const dt = pts[1]?.t - pts[0]?.t || 0.01
+          const idx = Math.floor(effectiveTime / dt)
+          const p1 = pts[Math.min(idx, pts.length - 1)]
+          const p2 = pts[Math.min(idx + 1, pts.length - 1)]
+          if (p1 && p2 && p1.t !== p2.t) {
+            const frac = (effectiveTime - p1.t) / (p2.t - p1.t)
+            currentPt = {
+              t: effectiveTime,
+              x: p1.x + (p2.x - p1.x) * frac,
+              y: p1.y + (p2.y - p1.y) * frac,
+              vx: p1.vx + (p2.vx - p1.vx) * frac,
+              vy: p1.vy + (p2.vy - p1.vy) * frac,
+              v: p1.v + (p2.v - p1.v) * frac,
+              ax: p1.ax + (p2.ax - p1.ax) * frac,
+              ay: p1.ay + (p2.ay - p1.ay) * frac,
+            }
+          }
+        }
+      }
+
+      const angleDeg = (Math.atan2(currentPt.vy, currentPt.vx) * 180) / Math.PI
+
+      const quantities = [
+        ...base,
+        { label: '水平位移 x', value: currentPt.x.toFixed(2), unit: 'm' },
+        { label: '竖直高度 y', value: currentPt.y.toFixed(2), unit: 'm' },
+        { label: '实时速度 v', value: `${currentPt.v.toFixed(2)} m/s (偏角 ${angleDeg.toFixed(1)}°)`, unit: '' },
+      ]
+
+      const formulas: Formula[] = airResistance > 0 ? [
+        { name: '水平方向阻力运动', latex: 'a_x = -\\frac{k}{m} v v_x' },
+        { name: '竖直方向阻力运动', latex: 'a_y = -g - \\frac{k}{m} v v_y' },
+      ] : [
+        { name: '水平匀速运动', latex: 'x = v_0 \\cos\\theta \\cdot t' },
+        { name: '竖直竖直上抛', latex: 'y = v_0 \\sin\\theta \\cdot t - \\frac{1}{2}gt^2' },
+        { name: '速度合成关系', latex: 'v = \\sqrt{v_x^2 + v_y^2}' },
+      ]
+
+      const gaokaoPoints: GaokaoPoint[] = [
+        { text: '最高点速度不为零：竖直分速度为零，合速度等于水平分速度，在真空斜抛中为 v₀ cosθ。', importance: 'core' as const },
+        { text: '最大射程与射高：在真空斜抛中，当抛射角 θ = 45° 时水平射程最大；射高最大时需要 θ = 90°（即竖直上抛）。', importance: 'gaokao' as const },
+        { text: '对称性：真空斜抛运动轨迹是抛物线，关于过最高点的竖直线对称；上升阶段和下落阶段通过同一高度处的速度大小相等。', importance: 'hard' as const },
+      ]
+
       return {
-        quantities: [
-          ...base,
-          { label: '水平位移 x', value: x, unit: 'm' },
-          { label: '竖直位移 y', value: y, unit: 'm' },
-        ],
+        quantities,
+        formulas,
+        gaokaoPoints,
       }
     }
     case 'anim-circular-motion': {
       const r = params.r ?? 2
       const omega = params.omega ?? 1
-      const { period } = calculateCircularMotion(r, omega, time)
+      const advancedMode = params.advancedMode ?? 0
+      const { x, y, v, a_c, period } = calculateCircularMotion(r, omega, time)
+
+      const isAdvanced = advancedMode === 1
+
+      const quantities = [
+        ...base,
+        { label: '半径 r', value: r.toFixed(1), unit: 'm' },
+        { label: '角速度 ω', value: omega.toFixed(2), unit: 'rad/s' },
+        { label: '线速度 v', value: v.toFixed(2), unit: 'm/s' },
+        ...(isAdvanced
+          ? [
+              { label: '水平坐标 x', value: x.toFixed(2), unit: 'm' },
+              { label: '竖直坐标 y', value: y.toFixed(2), unit: 'm' },
+              { label: '向心加速度 a_n', value: a_c.toFixed(2), unit: 'm/s²' },
+            ]
+          : []),
+        { label: '周期 T', value: period.toFixed(2), unit: 's' },
+      ]
+
+      const formulas: Formula[] = isAdvanced
+        ? [
+            { name: '位置方程 x', latex: 'x = r \\cos(\\omega t)' },
+            { name: '位置方程 y', latex: 'y = r \\sin(\\omega t)' },
+            { name: '向心加速度', latex: 'a_n = \\omega^2 r = \\frac{v^2}{r}' },
+          ]
+        : [
+            { name: '线速度与角速度', latex: 'v = \\omega r' },
+            { name: '周期公式', latex: 'T = \\frac{2\\pi}{\\omega}' },
+          ]
+
+      const gaokaoPoints: GaokaoPoint[] = isAdvanced
+        ? [
+            { text: '简谐运动投影：匀速圆周运动在直径方向上的投影是标准的简谐运动。', importance: 'gaokao' as const },
+            { text: '向心力做功：向心力与速度时刻垂直，因此向心力对旋转物体做功恒为零。', importance: 'hard' as const },
+            { text: '速度与加速度的方向：线速度沿切线，向心加速度指向圆心，二者大小不变、方向改变。', importance: 'core' as const },
+          ]
+        : [
+            { text: '非匀变速运动：匀速圆周运动的速度大小不变但方向时刻在变，因而它是变速运动。', importance: 'core' as const },
+            { text: '向心力的作用：匀速圆周运动的合外力（向心力）只改变速度的方向，不改变速度的大小。', importance: 'basic' as const },
+          ]
+
       return {
-        quantities: [
-          ...base,
-          { label: '周期 T', value: period, unit: 's' },
-        ],
+        quantities,
+        formulas,
+        gaokaoPoints,
+      }
+    }
+    case 'anim-centripetal': {
+      const r = params.r ?? 2
+      const v = params.v ?? 3
+      const m = params.m ?? 1
+      const advancedMode = params.advancedMode ?? 0
+
+      const omega = v / r
+      const a_c = (v * v) / r
+      const F_c = m * a_c
+      const T = (2 * Math.PI * r) / v
+
+      const isAdvanced = advancedMode === 1
+
+      const quantities = [
+        ...base,
+        { label: '半径 r', value: r.toFixed(1), unit: 'm' },
+        { label: '线速度 v', value: v.toFixed(1), unit: 'm/s' },
+        { label: '质量 m', value: m.toFixed(1), unit: 'kg' },
+        { label: '角速度 ω', value: omega.toFixed(2), unit: 'rad/s' },
+        { label: '向心加速度 a_n', value: a_c.toFixed(2), unit: 'm/s²' },
+        ...(isAdvanced
+          ? [
+              { label: '向心力 F_n', value: F_c.toFixed(2), unit: 'N' },
+            ]
+          : []),
+        { label: '周期 T', value: T.toFixed(2), unit: 's' },
+      ]
+
+      const formulas: Formula[] = isAdvanced
+        ? [
+            { name: '向心力大小', latex: 'F_n = m a_n = m \\frac{v^2}{r} = m \\omega^2 r' },
+            { name: '向心力矢量', latex: '\\vec{F}_n = -m \\omega^2 \\vec{r}' },
+          ]
+        : [
+            { name: '向心加速度', latex: 'a_n = \\frac{v^2}{r} = \\omega^2 r' },
+            { name: '线速度与周期', latex: 'v = \\frac{2\\pi r}{T}' },
+          ]
+
+      const gaokaoPoints: GaokaoPoint[] = isAdvanced
+        ? [
+            { text: '向心力来源：向心力是效果力，受力分析中绝对不能额外画出向心力，它只能由重力、弹力、摩擦力等其他力或它们的合力提供。', importance: 'gaokao' as const },
+            { text: '做功特性：向心力由于方向与速度时刻垂直，因此对做圆周运动的物体做功恒为零（不做功）。', importance: 'hard' as const },
+            { text: '动力学核心：向心加速度与向心力满足牛顿第二定律，即 F_n = m · a_n。', importance: 'core' as const },
+          ]
+        : [
+            { text: '速度与加速度的方向：线速度沿轨迹切线，向心加速度指向圆心，二者大小不变、方向在时刻改变。', importance: 'core' as const },
+            { text: '向心力的作用：向心力不改变速度的大小（不改变物体的动能），仅仅改变速度的方向。', importance: 'basic' as const },
+          ]
+
+      return {
+        quantities,
+        formulas,
+        gaokaoPoints,
       }
     }
     case 'anim-satellite': {
@@ -1019,19 +1299,10 @@ export function buildPhysicsQuantities(
       const theta1 = params.theta1 ?? 45
       const theta2 = params.theta2 ?? 45
       const mode = params.mode ?? 0 // 0 = 基础悬挂, 1 = 平行四边形, 2 = 正交分解, 3 = 封闭三角形
-      const g = 9.8
+      const g = GRAVITY
       const gravity = m * g
 
-      const theta1Rad = (theta1 * Math.PI) / 180
-      const theta2Rad = (theta2 * Math.PI) / 180
-      const sinSum = Math.sin(theta1Rad + theta2Rad)
-      
-      let t1 = 999
-      let t2 = 999
-      if (Math.abs(sinSum) >= 0.05) {
-        t1 = (gravity * Math.cos(theta2Rad)) / sinSum
-        t2 = (gravity * Math.cos(theta1Rad)) / sinSum
-      }
+      const { t1, t2 } = calculateEquilibriumTension(m, theta1, theta2, g)
       
       const isOverloaded = t1 > 35 || t2 > 35
       const isBroken = t1 > 50 || t2 > 50
@@ -1049,10 +1320,8 @@ export function buildPhysicsQuantities(
         )
       } else {
         if (mode === 2) {
-          const t1x = t1 * Math.cos(theta1Rad)
-          const t1y = t1 * Math.sin(theta1Rad)
-          const t2x = t2 * Math.cos(theta2Rad)
-          const t2y = t2 * Math.sin(theta2Rad)
+          const { fx: t1x, fy: t1y } = calculateOrthogonalDecomposition(t1, theta1)
+          const { fx: t2x, fy: t2y } = calculateOrthogonalDecomposition(t2, theta2)
           quantities.push(
             { label: 'T₁ 水平分力 T1x', value: t1x.toFixed(1), unit: 'N' },
             { label: 'T₂ 水平分量 T2x', value: t2x.toFixed(1), unit: 'N' },
@@ -1133,23 +1402,13 @@ export function buildPhysicsQuantities(
       const mode = params.mode ?? 0 // 0=平行四边形, 1=三角形, 2=正交分解
 
       if (mode === 2) {
-        const angleRad = (angle * Math.PI) / 180
-        const fx = f1 * Math.cos(angleRad)
-        const fy = f1 * Math.sin(angleRad)
+        const { fx, fy } = calculateOrthogonalDecomposition(f1, angle)
         quantities.push(
           { label: '水平分量 Fx', value: fx.toFixed(2), unit: 'N' },
           { label: '竖直分量 Fy', value: fy.toFixed(2), unit: 'N' }
         )
       } else {
-        const angleRad = (angle * Math.PI) / 180
-        const fx1 = f1
-        const fy1 = 0
-        const fx2 = f2 * Math.cos(angleRad)
-        const fy2 = f2 * Math.sin(angleRad)
-        const fx = fx1 + fx2
-        const fy = fy1 + fy2
-        const fResultant = Math.sqrt(fx * fx + fy * fy)
-        const resultAngleDeg = (Math.atan2(fy, fx) * 180) / Math.PI
+        const { fResultant, resultAngleDeg } = calculateVectorAddition(f1, f2, angle)
 
         quantities.push(
           { label: '合力 F', value: fResultant.toFixed(2), unit: 'N', highlight: 'positive' as const },
@@ -1184,6 +1443,120 @@ export function buildPhysicsQuantities(
         quantities,
         formulas,
         gaokaoPoints
+      }
+    }
+    case 'anim-newton-second': {
+      const F = params.F ?? 10
+      const m = params.m ?? 2
+      const mu = params.mu ?? 0
+      const advancedMode = params.advancedMode ?? 0
+      
+      let F_applied = F
+      let f = 0
+      let F_net = 0
+      let a = 0
+      let v = 0
+      let s = 0
+
+      if (advancedMode === 1) {
+        // 进阶模式：变力运动
+        const modelIdx = (params.modelIdx ?? 0) as 0 | 1
+        const k = params.k ?? 2
+        const F0 = params.F0 ?? 15
+        const omega = params.omega ?? 1.5
+        const motion = calculateNewtonSecondVariableMotion(modelIdx, { m, mu, k, F0, omega }, time)
+        F_applied = motion.F_applied
+        f = motion.f
+        F_net = motion.F_net
+        a = motion.a
+        v = motion.v
+        s = motion.s
+      } else {
+        // 普通模式：匀加速直线运动
+        const g = 9.8
+        const N = m * g
+        f = mu * N
+        F_applied = F
+        F_net = Math.max(0, F_applied - f)
+        a = F_net / m
+        v = a * time
+        s = 0.5 * a * time * time
+      }
+
+      return {
+        quantities: [
+          ...base,
+          { label: '合外力 F_合', value: F_net, unit: 'N', highlight: F_net > 0.05 ? 'positive' as const : 'zero' as const },
+          { label: '加速度 a', value: a, unit: 'm/s²', highlight: a > 0.05 ? 'positive' as const : 'zero' as const },
+          { label: '瞬时速度 v', value: v, unit: 'm/s', highlight: v > 0.05 ? 'positive' as const : 'zero' as const },
+          { label: '当前位移 s', value: s, unit: 'm' },
+        ],
+        formulas: [
+          { name: '牛顿第二定律', latex: 'F_{\\text{合}} = ma' },
+          { name: '合外力计算', latex: 'F_{\\text{合}} = F - f' },
+          { name: '滑动摩擦力', latex: 'f = \\mu N = \\mu mg' }
+        ],
+        gaokaoPoints: [
+          { text: '加速度 a 与合外力 F_合 瞬时对应，力变则 a 变。', importance: 'gaokao' as const },
+          { text: 'a 的方向始终与合外力 F_合 的方向相同。', importance: 'core' as const },
+          { text: '合外力、质量与加速度必须对应同一个研究对象（小车）。', importance: 'core' as const }
+        ]
+      }
+    }
+    case 'anim-weightlessness': {
+      const m = params.m ?? 50
+      const g = params.g ?? 9.8
+      const a_param = params.a ?? 2
+      const advancedMode = params.advancedMode ?? 0
+      
+      let a = a_param
+      let v = 0
+      let N = m * (g + a)
+      let stateName = '正常平衡'
+
+      if (advancedMode === 1) {
+        const modelIdx = (params.modelIdx ?? 0) as 0 | 1
+        const motion = calculateElevatorMotion(modelIdx, m, g, time)
+        a = motion.a
+        v = motion.v
+        N = motion.N
+        
+        if (motion.state === 'overweight') stateName = '超重'
+        else if (motion.state === 'underweight') stateName = '失重'
+        else if (motion.state === 'weightless') stateName = '完全失重'
+        else stateName = '正常平衡'
+      } else {
+        // 普通模式，恒定加速度：使用 calculateElevatorMotion 统一计算
+        const motion = calculateElevatorMotion(2, m, g, time, a_param)
+        a = a_param
+        v = motion.v
+        N = m * (g + a)
+        if (N < 0) N = 0
+        
+        if (Math.abs(a) < 0.01) stateName = '正常平衡'
+        else if (Math.abs(a + g) < 0.1) stateName = '完全失重'
+        else if (a > 0) stateName = '超重'
+        else stateName = '失重'
+      }
+
+      return {
+        quantities: [
+          ...base,
+          { label: '电梯加速度 a', value: a.toFixed(2), unit: 'm/s²', highlight: a > 0.05 ? 'positive' as const : a < -0.05 ? 'negative' as const : 'zero' as const },
+          { label: '支持力/视重 N', value: N.toFixed(1), unit: 'N', highlight: N > m * g + 0.1 ? 'positive' as const : N < 0.1 ? 'zero' as const : N < m * g - 0.1 ? 'negative' as const : undefined },
+          { label: '真实重力 G', value: (m * g).toFixed(1), unit: 'N' },
+          { label: '电梯速度 v', value: v.toFixed(2), unit: 'm/s' },
+          { label: '超失重状态', value: stateName, unit: '', highlight: stateName === '超重' ? 'positive' as const : stateName === '完全失重' ? 'extreme' as const : stateName === '失重' ? 'negative' as const : undefined }
+        ],
+        formulas: [
+          { name: '视重计算公式', latex: 'N = m(g + a)' },
+          { name: '牛顿第二定律', latex: 'N - mg = ma' }
+        ],
+        gaokaoPoints: [
+          { text: '【实重与视重】物体的真实重力 mg 保持不变，改变的仅是支持力（视重）。', importance: 'core' as const },
+          { text: '【加速度决定态】状态仅由 a 的方向决定：a 向上则超重，a 向下则失重，与速度方向无关。', importance: 'gaokao' as const },
+          { text: '【完全失重】当 a = -g 时，支持力 N = 0，物体在空中处于漂浮态。', importance: 'core' as const }
+        ]
       }
     }
     default:

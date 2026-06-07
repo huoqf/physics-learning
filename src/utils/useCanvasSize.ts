@@ -23,16 +23,27 @@ export function useCanvasSize(
   const [size, setSize] = useState<CanvasSize>(initial)
 
   useEffect(() => {
-    const updateSize = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        setSize({ width: rect.width, height: rect.height })
-      }
+    const element = containerRef.current
+    if (!element) return
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      if (!entries || entries.length === 0) return
+      const rect = element.getBoundingClientRect()
+      setSize({ width: rect.width, height: rect.height })
+    })
+
+    resizeObserver.observe(element)
+
+    // 初始执行一次测量
+    const rect = element.getBoundingClientRect()
+    setSize({ width: rect.width, height: rect.height })
+
+    return () => {
+      resizeObserver.unobserve(element)
+      resizeObserver.disconnect()
     }
-    updateSize()
-    window.addEventListener('resize', updateSize)
-    return () => window.removeEventListener('resize', updateSize)
   }, [])
 
   return [containerRef, size]
 }
+

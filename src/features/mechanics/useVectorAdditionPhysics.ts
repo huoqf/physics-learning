@@ -44,6 +44,10 @@ export interface VectorAdditionPhysicsData {
   fxProj: { x1: number; y1: number; x2: number; y2: number }
   fyProj: { x1: number; y1: number; x2: number; y2: number }
 
+  // 正交分解分量数值（合成模式下为 0）
+  fxVal: number
+  fyVal: number
+
   // 弧线与标注
   thetaArcPath: string
   thetaTextPos: { cx: number; cy: number }
@@ -224,11 +228,13 @@ export function useVectorAdditionPhysics({
     }
 
     return {
-      f1Val: mode === 2 ? f1 : f1,
+      f1Val: f1,
       f2Val: f2,
       angleVal: angle,
       fResultant: addition.fResultant,
       resultAngleDeg: addition.resultAngleDeg,
+      fxVal: mode === 2 ? decomp.fx : 0,
+      fyVal: mode === 2 ? decomp.fy : 0,
       origin,
       f1End,
       f2End,

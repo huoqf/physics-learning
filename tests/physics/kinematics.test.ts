@@ -10,6 +10,9 @@ import {
   precomputeFreeFallWithDrag,
   precomputeVariableMotion,
   precomputeVerticalThrowTrajectory,
+  precomputeProjectileWithDrag,
+  precomputeObliqueThrowWithDrag,
+  calculateCircularMotion,
 } from '@/physics'
 import type { VariableMotionModel, VariableMotionParams } from '@/physics'
 
@@ -347,4 +350,118 @@ describe('precomputeVerticalThrowTrajectory', () => {
     expect(lastPoint.y).toBeCloseTo(0, 5)
   })
 })
+
+describe('precomputeProjectileWithDrag', () => {
+  it('在无阻力模式下应符合真空抛体运动公式规律', () => {
+    const v0x = 10
+    const g = 9.8
+    const k = 0
+    const h = 10.0 // 10米抛出高度
+    
+    const res = precomputeProjectileWithDrag(v0x, g, k, h)
+    
+    // 落地时间：t = sqrt(2*h/g) = sqrt(20/9.8) ≈ 1.42857s
+    expect(res.groundTimeVac).toBeCloseTo(1.42857, 4)
+    expect(res.groundTime).toBeCloseTo(1.42857, 4)
+    
+    // 真空和实际轨道应完全一致
+    expect(res.points.length).toBe(res.vacuumPoints.length)
+    
+    const lastPoint = res.points[res.points.length - 1]
+    expect(lastPoint.y).toBeCloseTo(-10.0, 4) // 落地截止于 -h
+    expect(lastPoint.x).toBeCloseTo(14.2857, 3) // x = v0x * t = 10 * 1.42857 = 14.2857
+  })
+
+  it('在有空气阻力模式下实际水平位移和竖直高度下落应比真空对照更慢', () => {
+    const v0x = 10
+    const g = 9.8
+    const k = 0.1
+    const h = 10.0
+    
+    const res = precomputeProjectileWithDrag(v0x, g, k, h)
+    
+    // 有阻力时的落地时间应该比真空更长，因为竖直向上的空气阻力延缓了下落
+    expect(res.groundTime).toBeGreaterThan(res.groundTimeVac)
+    
+    // 在某一中间时刻（例如 0.8s），实际水平位移应显著小于真空位移，实际下落高度也更低
+    const checkT = 0.8
+    const ptActive = res.points.find(p => Math.abs(p.t - checkT) < 0.01)
+    const ptVac = res.vacuumPoints.find(p => Math.abs(p.t - checkT) < 0.01)
+    
+    if (ptActive && ptVac) {
+      expect(ptActive.x).toBeLessThan(ptVac.x) // 水平阻力使 vx 变小
+      expect(Math.abs(ptActive.y)).toBeLessThan(Math.abs(ptVac.y)) // 竖直阻力减缓了下落
+    }
+    
+    // 最终落地时的实际水平位移应小于真空
+    const lastActive = res.points[res.points.length - 1]
+    const lastVac = res.vacuumPoints[res.vacuumPoints.length - 1]
+    expect(lastActive.x).toBeLessThan(lastVac.x)
+  })
+})
+
+describe('precomputeObliqueThrowWithDrag', () => {
+  it('在无阻力模式下应符合真空斜抛运动规律', () => {
+    const v0 = 15
+    const angle = 45
+    const g = 9.8
+    const k = 0
+
+    const res = precomputeObliqueThrowWithDrag(v0, angle, g, k)
+
+    // 真空斜抛理论值计算
+    // v0y = 15 * sin(45) = 15 * 0.70710678 ≈ 10.6066 m/s
+    // groundTime = 2 * v0y / g = 21.2132 / 9.8 ≈ 2.1646s
+    // range = v0x * groundTime = 10.6066 * 2.1646 ≈ 22.959m
+    // maxHeight = v0y^2 / 2g = 112.5 / 19.6 ≈ 5.7397m
+    expect(res.groundTimeVac).toBeCloseTo(2.1646, 3)
+    expect(res.groundTime).toBeCloseTo(2.1646, 3)
+    expect(res.rangeVac).toBeCloseTo(22.959, 2)
+    expect(res.range).toBeCloseTo(22.959, 2)
+    expect(res.maxHeightVac).toBeCloseTo(5.7397, 3)
+    expect(res.maxHeight).toBeCloseTo(5.7397, 3)
+
+    // 落地终点高度应归零
+    const lastPoint = res.points[res.points.length - 1]
+    expect(lastPoint.y).toBeCloseTo(0, 3)
+  })
+
+  it('在有阻力模式下，斜抛上升高度、水平射程和落地速度均应小于真空对照组', () => {
+    const v0 = 15
+    const angle = 45
+    const g = 9.8
+    const k = 0.1
+
+    const res = precomputeObliqueThrowWithDrag(v0, angle, g, k)
+
+    expect(res.maxHeight).toBeLessThan(res.maxHeightVac)
+    expect(res.range).toBeLessThan(res.rangeVac)
+
+    // 落地瞬间的速度大小应由于空气阻力做负功而小于初速度 v0
+    const lastActive = res.points[res.points.length - 1]
+    expect(lastActive.v).toBeLessThan(v0)
+  })
+})
+
+describe('calculateCircularMotion', () => {
+  it('应该正确计算旋转坐标、线速度和向心加速度', () => {
+    const r = 2
+    const omega = 1.5
+    
+    // t = 0 时，x = r, y = 0, v = r*omega = 3, a_c = r*omega^2 = 4.5
+    const res0 = calculateCircularMotion(r, omega, 0)
+    expect(res0.x).toBeCloseTo(2, 5)
+    expect(res0.y).toBeCloseTo(0, 5)
+    expect(res0.v).toBeCloseTo(3, 5)
+    expect(res0.a_c).toBeCloseTo(4.5, 5)
+    expect(res0.period).toBeCloseTo((2 * Math.PI) / 1.5, 5)
+
+    // t = pi / (2 * omega) 时（旋转 90 度），x = 0, y = r = 2
+    const res90 = calculateCircularMotion(r, omega, Math.PI / 3)
+    expect(res90.x).toBeCloseTo(0, 5)
+    expect(res90.y).toBeCloseTo(2, 5)
+  })
+})
+
+
 

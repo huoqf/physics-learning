@@ -1,235 +1,622 @@
-import { useCanvasSize } from '@/utils'
+import { useEffect, useRef, useState } from 'react'
+import { useCanvasSize, PX_PER_METER } from '@/utils'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, CANVAS_STYLE, STROKE } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
+import { colors } from '@/theme/colors'
+import { calculateConnectedBody, calculateConnectedBodyTimeline, GRAVITY } from '@/physics'
+
+/** 连接体场景布局常量 */
+const LAYOUT = {
+  groundOffset: 80,         // 地面距画布底部 (px)
+  blockMaxWidth: 65,        // 质量块最大宽度 (px)
+  blockWidthRatio: 0.11,    // 质量块宽度占画布比
+  blockMaxHeight: 50,       // 质量块最大高度 (px)
+  blockHeightRatio: 0.13,   // 质量块高度占画布比
+  wheelRadius: 6,           // 车轮半径 (px)
+  springMaxStretchRatio: 0.7, // 弹簧最大拉伸占绳长比
+  ropeMinLength: 40,        // 绳最小长度 (px)
+  ropeLengthRatio: 0.12,    // 绳长占画布比
+  startXRatio: 0.15,        // 起始位置占画布比
+  endXRatio: 0.85,          // 终止位置占画布比
+}
+
+/** 弹簧视觉动效参数（非严格物理量，仅用于动画表现） */
+const SPRING_VISUAL = {
+  /** 视觉振荡角频率 (rad/s)，调参值非物理推导 */
+  visualOmega: 11.5,
+  /** 视觉阻尼系数，调参值非物理推导 */
+  visualDamping: 1.6,
+  /** 张力到像素拉伸的换算系数 */
+  tensionToStretchScale: 11,
+  /** 弹簧像素拉伸视觉放大系数 */
+  stretchVisualScale: 15,
+}
 
 export default function ConnectedBodiesAnimation() {
-  const { params, time, showVectors, showFormulas, showGrid } = useAnimationStore()
-  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 400 })
+  const { params, time, showVectors, showGrid, isPlaying, setIsPlaying, updateParam } = useAnimationStore()
+  const [containerRef, canvasSize] = useCanvasSize({ width: 600, height: 400 })
 
-  const { m1 = 2, m2 = 3, F = 15, mu = 0.1 } = params
-  const g = 9.8
+  const {
+    m1 = 2,
+    m2 = 3,
+    F = 15,
+    mu = 0.1,
+    advancedMode = 0,
+    analysisView = 0, // 0=普通, 1=整体, 2=隔离m1, 3=隔离m2
+    connectionType = 0, // 0=细绳, 1=弹簧
+  } = params
+
+  // 1. 物理计算（单一来源：calculateConnectedBody）
+  const physicsResult = calculateConnectedBody(m1, m2, F, mu, GRAVITY)
+  const { isMoving: isMovingPhysically, a: acceleration, T: tension } = physicsResult
   const totalMass = m1 + m2
-  const frictionForce1 = mu * m1 * g
-  const frictionForce2 = mu * m2 * g
-  const netForce = F - frictionForce1 - frictionForce2
-  const acceleration = netForce / totalMass
-  const tension = m2 * acceleration + frictionForce2
 
-  const v0 = 0
-  const displacement = v0 * time + 0.5 * acceleration * time * time
-  const startX = 100
-  const currentX = startX + Math.min(displacement * 5, canvasSize.width - 300)
+  // 2. 屏幕自适应布局与行程参数计算
+  const animWidth = canvasSize.width
+  const animHeight = canvasSize.height
+  const groundY = animHeight - LAYOUT.groundOffset
 
+  const startX = animWidth * LAYOUT.startXRatio
+  const endX = animWidth * LAYOUT.endXRatio
+
+  // 质量块的宽度自适应
+  const w1 = Math.min(LAYOUT.blockMaxWidth, animWidth * LAYOUT.blockWidthRatio)
+  const h1 = Math.min(LAYOUT.blockMaxHeight, animHeight * LAYOUT.blockHeightRatio)
+  const w2 = Math.min(LAYOUT.blockMaxWidth, animWidth * LAYOUT.blockWidthRatio)
+  const h2 = Math.min(LAYOUT.blockMaxHeight, animHeight * LAYOUT.blockHeightRatio)
+
+  const defaultRopeL = Math.max(LAYOUT.ropeMinLength, animWidth * LAYOUT.ropeLengthRatio)
+
+  // 3. 弹簧弹性拉紧与简谐震荡计算（视觉动效，非严格物理模型）
+  let springDx = 0
+  let effectiveTime = time
+  
+  if (connectionType === 1) {
+    // 简谐震荡公式模拟启动时的收缩拉伸：dx = dx_static * (1 - e^-beta*t * cos(omega*t))
+    if (isPlaying && time > 0 && isMovingPhysically) {
+      const dxStatic = tension / SPRING_VISUAL.tensionToStretchScale
+      springDx = dxStatic * (1 - Math.exp(-SPRING_VISUAL.visualDamping * time) * Math.cos(SPRING_VISUAL.visualOmega * time))
+    } else {
+      springDx = tension / SPRING_VISUAL.tensionToStretchScale
+    }
+  }
+
+  // 加上限幅保护，防止弹簧过度拉伸拉爆
+  const maxSpringDx = defaultRopeL * LAYOUT.springMaxStretchRatio
+  const finalSpringDx = Math.min(maxSpringDx, springDx)
+
+  const currentRopeL = connectionType === 0 ? defaultRopeL : defaultRopeL + finalSpringDx * SPRING_VISUAL.stretchVisualScale
+
+  const totalGroupW = w1 + w2 + currentRopeL
+  const maxTravel = Math.max(10, endX - startX - totalGroupW)
+
+  // 恒加速度模式下，动态推算时间终点以刚好触及边界
+  const maxDisplacementTime = acceleration > 0.01
+    ? Math.sqrt((2 * (maxTravel / PX_PER_METER)) / acceleration)
+    : Infinity
+
+  if (advancedMode === 0) {
+    effectiveTime = maxDisplacementTime !== Infinity && time >= maxDisplacementTime ? maxDisplacementTime : time
+  } else {
+    // 进阶模式下，时间到 4s 强制停止
+    effectiveTime = Math.min(time, 4.0)
+  }
+
+  const isMoving = isPlaying && time > 0 && (advancedMode === 0 ? time < maxDisplacementTime : time < 4.0) && isMovingPhysically
+
+  // 使用 React 副作用安全关闭播放
+  useEffect(() => {
+    if (!isPlaying) return
+    if (advancedMode === 0) {
+      if (maxDisplacementTime !== Infinity && time >= maxDisplacementTime) {
+        setIsPlaying(false)
+      }
+    } else {
+      if (time >= 4.0) {
+        setIsPlaying(false)
+      }
+    }
+  }, [time, maxDisplacementTime, isPlaying, advancedMode, setIsPlaying])
+
+  // 4. 物理位移（纯物理量，单位 m）→ 像素映射
+  const timeline = calculateConnectedBodyTimeline(m1, m2, F, mu, GRAVITY, effectiveTime)
+  const maxTimeline = calculateConnectedBodyTimeline(m1, m2, F, mu, GRAVITY, advancedMode === 0 ? maxDisplacementTime : 4.0)
+  const dispX = maxTimeline.s > 0.001 ? (timeline.s / maxTimeline.s) * maxTravel : 0
+
+  const m1X = startX + dispX
+  const m1Y = groundY - h1
+  const m2X = m1X + w1 + currentRopeL
+  const m2Y = groundY - h2
+
+  // 5. 传动连接部件绘制数据生成
+  const ropeLeftX = m1X + w1
+  const ropeRightX = m2X
+  const ropeY = groundY - h1 / 2
+
+  let connectionSvgElement = null
+  if (connectionType === 0) {
+    // 细绳：钢丝绳
+    connectionSvgElement = (
+      <g>
+        <line
+          x1={ropeLeftX}
+          y1={ropeY}
+          x2={ropeRightX}
+          y2={ropeY}
+          stroke={SCENE_COLORS.surface.ropeColor}
+          strokeWidth={3}
+        />
+        {/* 细绳高亮光流束（滑动时流动） */}
+        {isMoving && (
+          <line
+            x1={ropeLeftX}
+            y1={ropeY}
+            x2={ropeRightX}
+            y2={ropeY}
+            stroke={SCENE_COLORS.surface.ropeActive}
+            strokeWidth={3}
+            strokeDasharray="6,4"
+            className="animate-pulse"
+          />
+        )}
+      </g>
+    )
+  } else {
+    // 弹簧：根据实际线段螺旋绘制
+    const springW = ropeRightX - ropeLeftX
+    const steps = 36
+    const spiralPoints = [`M ${ropeLeftX} ${ropeY}`]
+    spiralPoints.push(`L ${ropeLeftX + 4} ${ropeY}`)
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps
+      const cx = ropeLeftX + 4 + t * (springW - 8)
+      // 使用正弦波控制线圈凸起
+      const cy = ropeY + Math.min(h1 * 0.35, 12) * Math.sin(t * 8 * 2 * Math.PI)
+      spiralPoints.push(`L ${cx} ${cy}`)
+    }
+    spiralPoints.push(`L ${ropeRightX - 4} ${ropeY}`)
+    spiralPoints.push(`L ${ropeRightX} ${ropeY}`)
+
+    connectionSvgElement = (
+      <path
+        d={spiralPoints.join(' ')}
+        fill="none"
+        stroke={isMoving ? SCENE_COLORS.spring.stretched : SCENE_COLORS.spring.coilStroke}
+        strokeWidth={2.2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    )
+  }
+
+  // 6. 车轮滚动旋转角度计算
+  const wheelRadius = LAYOUT.wheelRadius
+  // 滚动弧度 = 位移 / 半径
+  const wheelRotation = wheelRadius > 0 ? (dispX / wheelRadius) * (180 / Math.PI) : 0
+
+  // 绘制带十字辐条的滚动轮子
+  const renderWheels = (boxX: number, boxW: number) => {
+    const wY = groundY - wheelRadius
+    const cx1 = boxX + boxW * 0.22
+    const cx2 = boxX + boxW * 0.78
+    return (
+      <g>
+        {/* 轮子一 */}
+        <circle cx={cx1} cy={wY} r={wheelRadius} fill={colors.neutral[800]} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
+        <circle cx={cx1} cy={wY} r={1.5} fill={colors.neutral[0]} />
+        <line x1={cx1 - wheelRadius} y1={wY} x2={cx1 + wheelRadius} y2={wY} stroke={colors.neutral[0]} strokeWidth={0.8} transform={`rotate(${wheelRotation}, ${cx1}, ${wY})`} />
+        <line x1={cx1} y1={wY - wheelRadius} x2={cx1} y2={wY + wheelRadius} stroke={colors.neutral[0]} strokeWidth={0.8} transform={`rotate(${wheelRotation}, ${cx1}, ${wY})`} />
+
+        {/* 轮子二 */}
+        <circle cx={cx2} cy={wY} r={wheelRadius} fill={colors.neutral[800]} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
+        <circle cx={cx2} cy={wY} r={1.5} fill={colors.neutral[0]} />
+        <line x1={cx2 - wheelRadius} y1={wY} x2={cx2 + wheelRadius} y2={wY} stroke={colors.neutral[0]} strokeWidth={0.8} transform={`rotate(${wheelRotation}, ${cx2}, ${wY})`} />
+        <line x1={cx2} y1={wY - wheelRadius} x2={cx2} y2={wY + wheelRadius} stroke={colors.neutral[0]} strokeWidth={0.8} transform={`rotate(${wheelRotation}, ${cx2}, ${wY})`} />
+      </g>
+    )
+  }
+
+  // 7. 外拉力 F 的鼠标拖拽直接操控手势
+  const arrowLength = Math.max(15, (F / 30) * 60)
+  const dragTargetX = m2X + w2 + arrowLength
+
+  const [isDragging, setIsDragging] = useState(false)
+  const dragStartRef = useRef({ clientX: 0, startF: 0 })
+
+  const handleDragStart = (e: React.MouseEvent) => {
+    e.preventDefault()
+    dragStartRef.current = { clientX: e.clientX, startF: F }
+    setIsDragging(true)
+  }
+
+  useEffect(() => {
+    if (!isDragging) return
+
+    const handlePointerMove = (e: PointerEvent) => {
+      const deltaX = e.clientX - dragStartRef.current.clientX
+      const deltaF = deltaX / 5.5
+      const newF = Math.min(30, Math.max(0, Math.round(dragStartRef.current.startF + deltaF)))
+      updateParam('F', newF)
+    }
+
+    const handlePointerUp = () => {
+      setIsDragging(false)
+    }
+
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerup', handlePointerUp)
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', handlePointerUp)
+    }
+  }, [isDragging, updateParam])
+
+  // 8. 四种受力分析模式高亮蒙版与包裹框渲染
+  const isNormalView = analysisView === 0
+  const isSystemView = analysisView === 1
+  const isM1View = analysisView === 2
+  const isM2View = analysisView === 3
+
+  // 网格线绘制
   const gridLines = []
   if (showGrid) {
-    for (let i = 0; i <= 10; i++) {
-      const xPos = startX + (i * (canvasSize.width - 200)) / 10
+    const gridCount = 12
+    for (let i = 0; i <= gridCount; i++) {
+      const xPos = startX + (i * (animWidth - startX - 50)) / gridCount
       gridLines.push(
         <line
-          key={`gridline-${i}`}
+          key={`cb-grid-${i}`}
           x1={xPos}
-          y1={100}
+          y1={30}
           x2={xPos}
-          y2={canvasSize.height - 50}
+          y2={groundY}
           stroke={PHYSICS_COLORS.grid}
-          strokeWidth={1}
-          strokeDasharray="4,4"
+          strokeWidth={0.5}
+          strokeDasharray="3,3"
+          opacity={0.3}
         />
       )
     }
   }
 
-  const groundY = canvasSize.height - 80
+  // 力大小文本定义
+  const f1_val = (physicsResult.f1 ?? physicsResult.f1Max).toFixed(1)
+  const f2_val = (physicsResult.f2 ?? physicsResult.f2Max).toFixed(1)
+  const T_val = tension.toFixed(1)
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
+    <div ref={containerRef} className="w-full h-full relative select-none">
+      <svg width={animWidth} height={animHeight} className="bg-white rounded-lg shadow-inner">
         {gridLines}
 
+        {/* 粗糙地平线 */}
         <line
-          x1={50}
+          x1={20}
           y1={groundY}
-          x2={canvasSize.width - 50}
+          x2={animWidth - 20}
           y2={groundY}
           stroke={PHYSICS_COLORS.labelText}
           strokeWidth={STROKE.groundLine}
         />
-
         <rect
-          x={currentX}
-          y={groundY - 50}
-          width={60}
-          height={50}
-          fill={PHYSICS_COLORS.objectFill}
-          stroke={PHYSICS_COLORS.objectStroke}
-          strokeWidth={CANVAS_STYLE.stroke.objectLine}
-          rx={4}
+          x={20}
+          y={groundY}
+          width={animWidth - 40}
+          height={6}
+          fill="url(#ground-pattern)"
+          opacity={0.35}
         />
 
-        <text
-          x={currentX + 30}
-          y={groundY - 20}
-          fontSize="14"
-          fill="white"
-          textAnchor="middle"
-          fontWeight="bold"
-        >
-          m₁={m1}
-        </text>
-
-        <rect
-          x={currentX + 90}
-          y={groundY - 50}
-          width={60}
-          height={50}
-          fill={PHYSICS_COLORS.objectFill}
-          stroke={PHYSICS_COLORS.normalForce}
-          strokeWidth={CANVAS_STYLE.stroke.objectLine}
-          rx={4}
-        />
-
-        <text
-          x={currentX + 120}
-          y={groundY - 20}
-          fontSize="14"
-          fill="white"
-          textAnchor="middle"
-          fontWeight="bold"
-        >
-          m₂={m2}
-        </text>
-
-        <line
-          x1={currentX + 60}
-          y1={groundY - 25}
-          x2={currentX + 90}
-          y2={groundY - 25}
-          stroke={PHYSICS_COLORS.axis}
-          strokeWidth={STROKE.groundLine}
-        />
-
-        {showVectors && (
+        {/* ==================== 视图一：整体法分析包裹系统框 ==================== */}
+        {isSystemView && (
           <g>
-            <line
-              x1={currentX}
-              y1={groundY - 35}
-              x2={currentX - 40}
-              y2={groundY - 35}
-              stroke={PHYSICS_COLORS.friction}
-              strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-              markerEnd="url(#arrowhead-cb-f1)"
+            <rect
+              x={m1X - 12}
+              y={m1Y - 18}
+              width={totalGroupW + 24}
+              height={h1 + 32}
+              fill={colors.primary[50]}
+              fillOpacity={0.15}
+              stroke={colors.primary[500]}
+              strokeWidth={1.8}
+              strokeDasharray="4,3"
+              rx={6}
+            />
+            {/* 系统信息小标签 */}
+            <rect
+              x={m1X + totalGroupW / 2 - 40}
+              y={m1Y - 32}
+              width={80}
+              height={18}
+              fill={colors.primary[600]}
+              rx={3}
             />
             <text
-              x={currentX - 20}
-              y={groundY - 45}
-              fontSize="12"
-              fill={PHYSICS_COLORS.friction}
+              x={m1X + totalGroupW / 2}
+              y={m1Y - 19}
+              fontSize={FONT.annotation}
+              fill="white"
+              textAnchor="middle"
               fontWeight="bold"
             >
-              f₁
-            </text>
-
-            <line
-              x1={currentX + 90}
-              y1={groundY - 35}
-              x2={currentX + 50}
-              y2={groundY - 35}
-              stroke={PHYSICS_COLORS.friction}
-              strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-              markerEnd="url(#arrowhead-cb-f2)"
-            />
-            <text
-              x={currentX + 70}
-              y={groundY - 45}
-              fontSize="12"
-              fill={PHYSICS_COLORS.friction}
-              fontWeight="bold"
-            >
-              f₂
-            </text>
-
-            <line
-              x1={currentX + 150}
-              y1={groundY - 25}
-              x2={currentX + 150 + F * 3}
-              y2={groundY - 25}
-              stroke={PHYSICS_COLORS.forceNet}
-              strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-              markerEnd="url(#arrowhead-cb-f)"
-            />
-            <text
-              x={currentX + 150 + F * 3 + 10}
-              y={groundY - 20}
-              fontSize="12"
-              fill={PHYSICS_COLORS.forceNet}
-              fontWeight="bold"
-            >
-              F
-            </text>
-
-            <line
-              x1={currentX + 60}
-              y1={groundY - 25}
-              x2={currentX + 60 + tension * 2}
-              y2={groundY - 25}
-              stroke={PHYSICS_COLORS.tension}
-              strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-              markerEnd="url(#arrowhead-cb-t)"
-            />
-            <text
-              x={currentX + 60 + tension * 2 + 5}
-              y={groundY - 35}
-              fontSize="12"
-              fill={PHYSICS_COLORS.tension}
-              fontWeight="bold"
-            >
-              T
+              整体 M = {totalMass}kg
             </text>
           </g>
         )}
 
-        {showFormulas && (
-          <g transform="translate(20, 20)">
-            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">连接体问题</text>
-            <text x={0} y={25} fontSize="12" fill={PHYSICS_COLORS.axis}>
-              m₁ = {m1} kg, m₂ = {m2} kg
-            </text>
-            <text x={0} y={45} fontSize="12" fill={PHYSICS_COLORS.axis}>
-              F = {F} N, μ = {mu}
-            </text>
-            <text x={0} y={70} fontSize="12" fill={PHYSICS_COLORS.friction} fontWeight="bold">
-              f₁ = {frictionForce1.toFixed(1)} N, f₂ = {frictionForce2.toFixed(1)} N
-            </text>
-            <text x={0} y={95} fontSize="12" fill={PHYSICS_COLORS.tension} fontWeight="bold">
-              加速度 a = {acceleration.toFixed(2)} m/s²
-            </text>
-            <text x={0} y={115} fontSize="12" fill={PHYSICS_COLORS.tension} fontWeight="bold">
-              张力 T = {tension.toFixed(1)} N
-            </text>
-            <text x={0} y={140} fontSize="11" fill={PHYSICS_COLORS.axis}>
-              F - f₁ - f₂ = (m₁ + m₂)a
-            </text>
-            <text x={0} y={160} fontSize="11" fill={PHYSICS_COLORS.axis}>
-              T - f₂ = m₂a
-            </text>
+        {/* ==================== 物体 m1 渲染分组 ==================== */}
+        <g opacity={isM2View ? 0.2 : 1} className="transition-opacity duration-200">
+          {/* 物体 m1 (太空灰拉丝金属渐变) */}
+          <rect
+            x={m1X}
+            y={m1Y}
+            width={w1}
+            height={h1 - 6}
+            fill="url(#m1-metal-grad)"
+            stroke={PHYSICS_COLORS.objectStroke}
+            strokeWidth={CANVAS_STYLE.stroke.objectLine}
+            rx={4}
+          />
+          {/* 车轮 */}
+          {renderWheels(m1X, w1)}
+          {/* 质量文本 */}
+          <text
+            x={m1X + w1 / 2}
+            y={m1Y + h1 / 2}
+            fontSize={FONT.bodySize}
+            fill="white"
+            textAnchor="middle"
+            fontWeight="bold"
+          >
+            {m1} kg
+          </text>
+          {/* 顶部物标 m1 */}
+          <text
+            x={m1X + w1 / 2}
+            y={m1Y - 6}
+            fontSize={FONT.axisSize}
+            fill={PHYSICS_COLORS.labelText}
+            textAnchor="middle"
+            fontWeight="bold"
+          >
+            m₁
+          </text>
+        </g>
+
+        {/* ==================== 传动连接部件 (绳/弹簧) ==================== */}
+        {/* 在整体法中，内力 T 淡化不渲染其高亮箭，只显示淡色的细绳 */}
+        <g opacity={isSystemView ? 0.22 : (isM1View || isM2View ? 0.9 : 1)} className="transition-opacity duration-200">
+          {connectionSvgElement}
+        </g>
+
+        {/* ==================== 物体 m2 渲染分组 ==================== */}
+        <g opacity={isM1View ? 0.2 : 1} className="transition-opacity duration-200">
+          {/* 物体 m2 (琥珀红铜渐变) */}
+          <rect
+            x={m2X}
+            y={m2Y}
+            width={w2}
+            height={h2 - 6}
+            fill="url(#m2-metal-grad)"
+            stroke={PHYSICS_COLORS.objectStroke}
+            strokeWidth={CANVAS_STYLE.stroke.objectLine}
+            rx={4}
+          />
+          {/* 车轮 */}
+          {renderWheels(m2X, w2)}
+          {/* 质量文本 */}
+          <text
+            x={m2X + w2 / 2}
+            y={m2Y + h2 / 2}
+            fontSize={FONT.bodySize}
+            fill="white"
+            textAnchor="middle"
+            fontWeight="bold"
+          >
+            {m2} kg
+          </text>
+          {/* 顶部物标 m2 */}
+          <text
+            x={m2X + w2 / 2}
+            y={m2Y - 6}
+            fontSize={FONT.axisSize}
+            fill={PHYSICS_COLORS.labelText}
+            textAnchor="middle"
+            fontWeight="bold"
+          >
+            m₂
+          </text>
+        </g>
+
+        {/* ==================== 力学分析矢量箭头组 ==================== */}
+        {showVectors && (
+          <g className="transition-all duration-200">
+            {/* --- 外力拉力 F (高亮橙红，作用在 m2 的右侧) --- */}
+            {/* 在隔离 m1 视图中，外力 F 作用于 m2，故淡化表现 */}
+            <g opacity={isM1View ? 0.15 : 1} className="transition-opacity duration-200">
+              <line
+                x1={m2X + w2}
+                y1={ropeY}
+                x2={dragTargetX}
+                y2={ropeY}
+                stroke={PHYSICS_COLORS.forceNet}
+                strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+                markerEnd="url(#cb-arrow-f)"
+              />
+              <text
+                x={dragTargetX + 8}
+                y={ropeY + 4}
+                fontSize={FONT.bodySize}
+                fill={PHYSICS_COLORS.forceNet}
+                fontWeight="bold"
+              >
+                F = {F}N
+              </text>
+              {/* 拖拽热区圆圈 */}
+              <circle
+                cx={dragTargetX}
+                cy={ropeY}
+                r={12}
+                fill={PHYSICS_COLORS.forceNet}
+                opacity={0.0}
+                className="cursor-ew-resize hover:opacity-15 active:opacity-30 transition-opacity duration-150"
+                onMouseDown={handleDragStart}
+              />
+            </g>
+
+            {/* --- m1 的左侧摩擦力 f1 (作用在 m1 底板偏左) --- */}
+            <g opacity={isM2View ? 0.15 : 1} className="transition-opacity duration-200">
+              <line
+                x1={m1X}
+                y1={groundY - 10}
+                x2={m1X - 28}
+                y2={groundY - 10}
+                stroke={PHYSICS_COLORS.friction}
+                strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+                markerEnd="url(#cb-arrow-friction)"
+              />
+              <text
+                x={m1X - 32}
+                y={groundY - 14}
+                fontSize={FONT.annotation}
+                fill={PHYSICS_COLORS.friction}
+                fontWeight="bold"
+                textAnchor="end"
+              >
+                f₁ = {f1_val}N
+              </text>
+            </g>
+
+            {/* --- m2 的左侧摩擦力 f2 (作用在 m2 底板偏左) --- */}
+            <g opacity={isM1View ? 0.15 : 1} className="transition-opacity duration-200">
+              <line
+                x1={m2X}
+                y1={groundY - 10}
+                x2={m2X - 28}
+                y2={groundY - 10}
+                stroke={PHYSICS_COLORS.friction}
+                strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+                markerEnd="url(#cb-arrow-friction)"
+              />
+              <text
+                x={m2X - 32}
+                y={groundY - 14}
+                fontSize={FONT.annotation}
+                fill={PHYSICS_COLORS.friction}
+                fontWeight="bold"
+                textAnchor="end"
+              >
+                f₂ = {f2_val}N
+              </text>
+            </g>
+
+            {/* --- 绳/弹簧内力张力 T (在不同视图中呈现不同作用位置) --- */}
+            {/* 整体法不考虑内力，隔离法高亮各侧受力 */}
+            {!isSystemView && (
+              <g>
+                {/* m1 右侧的拉力 T （在隔离m1或普通视图时显示） */}
+                {(isNormalView || isM1View) && (
+                  <g>
+                    <line
+                      x1={ropeLeftX}
+                      y1={ropeY}
+                      x2={ropeLeftX + 28}
+                      y2={ropeY}
+                      stroke={PHYSICS_COLORS.tension}
+                      strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+                      markerEnd="url(#cb-arrow-tension)"
+                    />
+                    <text
+                      x={ropeLeftX + 10}
+                      y={ropeY - 6}
+                      fontSize={FONT.annotation}
+                      fill={PHYSICS_COLORS.tension}
+                      fontWeight="bold"
+                    >
+                      T = {T_val}N
+                    </text>
+                  </g>
+                )}
+
+                {/* m2 左侧的拉力 T （在隔离m2或普通视图时显示，方向向左） */}
+                {(isNormalView || isM2View) && (
+                  <g>
+                    <line
+                      x1={ropeRightX}
+                      y1={ropeY}
+                      x2={ropeRightX - 28}
+                      y2={ropeY}
+                      stroke={PHYSICS_COLORS.tension}
+                      strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+                      markerEnd="url(#cb-arrow-tension-left)"
+                    />
+                    <text
+                      x={ropeRightX - 38}
+                      y={ropeY - 6}
+                      fontSize={FONT.annotation}
+                      fill={PHYSICS_COLORS.tension}
+                      fontWeight="bold"
+                      textAnchor="end"
+                    >
+                      T = {T_val}N
+                    </text>
+                  </g>
+                )}
+              </g>
+            )}
           </g>
         )}
+
+
 
         <defs>
-          <marker id="arrowhead-cb-f1" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.friction} />
+          {/* 地面草坪阻力纹路 */}
+          <pattern id="ground-pattern" width="10" height="6" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="6" x2="6" y2="0" stroke={colors.neutral[300]} strokeWidth="0.8" />
+            <line x1="5" y1="6" x2="10" y2="1" stroke={colors.neutral[300]} strokeWidth="0.8" />
+          </pattern>
+
+          {/* m1 金属渐变 */}
+          <linearGradient id="m1-metal-grad" x1="0" y1="0" x2="1" y2="0">
+            {SCENE_COLORS.materials.sliderMetalGrad.map((color, idx) => (
+              <stop
+                key={`m1m-${idx}`}
+                offset={`${(idx / (SCENE_COLORS.materials.sliderMetalGrad.length - 1)) * 100}%`}
+                stopColor={color}
+              />
+            ))}
+          </linearGradient>
+
+          {/* m2 铜材质渐变 */}
+          <linearGradient id="m2-metal-grad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor={SCENE_COLORS.coil.copperLight} />
+            <stop offset="30%" stopColor={SCENE_COLORS.coil.copperBase} />
+            <stop offset="70%" stopColor={SCENE_COLORS.coil.copperMid} />
+            <stop offset="100%" stopColor={SCENE_COLORS.coil.copperDark} />
+          </linearGradient>
+
+          {/* 矢量箭头端点定义 */}
+          <marker id="cb-arrow-f" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.forceNet} />
           </marker>
-          <marker id="arrowhead-cb-f2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.friction} />
+          <marker id="cb-arrow-friction" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.friction} />
           </marker>
-          <marker id="arrowhead-cb-f" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.forceNet} />
+          <marker id="cb-arrow-tension" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.tension} />
           </marker>
-          <marker id="arrowhead-cb-t" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.tension} />
+          <marker id="cb-arrow-tension-left" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.tension} />
           </marker>
         </defs>
       </svg>
+      {/* 水平拉力直接拖拽控制小标提示 */}
+      {showVectors && (
+        <div className="absolute right-4 bottom-14 bg-white/80 border border-neutral-100 px-2 py-0.5 rounded text-[9px] text-neutral-400 font-medium pointer-events-none select-none">
+          💡 可用鼠标按住并左右拖拽拉力 F 箭头端点调节大小
+        </div>
+      )}
     </div>
   )
 }

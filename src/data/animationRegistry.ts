@@ -1,5 +1,6 @@
 import { lazy } from 'react'
 import { AnimationConfig } from './types'
+import { GRAVITY } from '@/physics/constants'
 
 export const animationRegistry: Record<string, AnimationConfig> = {
   'anim-velocity': {
@@ -59,7 +60,7 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     title: '自由落体运动',
     knowledgeId: 'mechanics-2-2',
     Component: lazy(() => import('@/features/mechanics/FreeFallWrapper')),
-    defaultParams: { v0: 0, g: 9.8, pressure: 0, objectA: 0, objectB: 0, advancedMode: 0, dripPeriod: 0.5, latitude: 45, altitude: 0, t: 0 },
+    defaultParams: { v0: 0, g: GRAVITY, pressure: 0, objectA: 0, objectB: 0, advancedMode: 0, dripPeriod: 0.5, latitude: 45, altitude: 0, t: 0 },
     paramMeta: [
       { key: 'pressure', label: '管内气压', min: 0, max: 1, step: 0.01, unit: 'atm', showIf: 'advancedMode', showIfValue: 0 },
       { key: 'dripPeriod', label: '滴水周期 T', min: 0.2, max: 2, step: 0.1, unit: 's', showIf: 'advancedMode', showIfValue: 1 },
@@ -74,7 +75,7 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     title: '竖直上抛运动',
     knowledgeId: 'mechanics-2-3',
     Component: lazy(() => import('@/features/mechanics/VerticalThrowAnimation')),
-    defaultParams: { v0: 15, g: 9.8, t: 0, advancedMode: 0, sliceDensity: 0, airResistance: 0, targetHeight: 0 },
+    defaultParams: { v0: 15, g: GRAVITY, t: 0, advancedMode: 0, sliceDensity: 0, airResistance: 0, targetHeight: 0 },
     paramMeta: [
       { key: 'v0', label: '初速度 v₀', min: 0, max: 30, step: 0.1, unit: 'm/s' },
       { key: 'g', label: '重力加速度 g', min: 5, max: 15, step: 0.1, unit: 'm/s²' },
@@ -129,7 +130,7 @@ export const animationRegistry: Record<string, AnimationConfig> = {
       m: 5,
       mu: 0.3,
       angle: 15,
-      g: 9.8,
+      g: GRAVITY,
       F_applied: 15,
     },
     paramMeta: [
@@ -173,81 +174,95 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     title: '牛顿第二定律',
     knowledgeId: 'mechanics-4-2',
     Component: lazy(() => import('@/features/mechanics/NewtonSecondAnimation')),
-    defaultParams: { F: 10, m: 2, mu: 0 },
+    defaultParams: { F: 10, m: 2, mu: 0, advancedMode: 0, modelIdx: 0, k: 2, F0: 15, omega: 1.5 },
     paramMeta: [
-      { key: 'F', label: '拉力 F', min: 0, max: 50, step: 1, unit: 'N' },
+      { key: 'F', label: '拉力 F', min: 0, max: 50, step: 1, unit: 'N', showIf: 'advancedMode', showIfValue: 0 },
       { key: 'm', label: '质量 m', min: 0.5, max: 10, step: 0.5, unit: 'kg' },
-      { key: 'mu', label: '动摩擦系数 μ', min: 0, max: 0.5, step: 0.05, unit: '' },
+      { key: 'mu', label: '动摩擦系数 μ', min: 0, max: 0.5, step: 0.05, unit: '', showIf: 'modelIdx', showIfValue: 0 },
     ],
+    SidebarExtra: lazy(() => import('@/features/mechanics/NewtonSecondSidebar')),
+    CenterExtra: lazy(() => import('@/features/mechanics/NewtonSecondCenterExtra')),
+    centerExtraMode: 'advancedMode',
   },
   'anim-weightlessness': {
     id: 'anim-weightlessness',
     title: '超重与失重',
     knowledgeId: 'mechanics-4-4',
     Component: lazy(() => import('@/features/mechanics/WeightlessnessAnimation')),
-    defaultParams: { a: 2, g: 9.8, m: 50 },
+    defaultParams: { a: 2, g: GRAVITY, m: 50, advancedMode: 0, modelIdx: 0 },
     paramMeta: [
-      { key: 'a', label: '电梯加速度 a', min: -10, max: 10, step: 0.5, unit: 'm/s²' },
+      { key: 'a', label: '电梯加速度 a', min: -10, max: 10, step: 0.5, unit: 'm/s²', showIf: 'advancedMode', showIfValue: 0 },
       { key: 'm', label: '质量 m', min: 20, max: 100, step: 5, unit: 'kg' },
     ],
+    SidebarExtra: lazy(() => import('@/features/mechanics/WeightlessnessSidebar')),
+    CenterExtra: lazy(() => import('@/features/mechanics/WeightlessnessCenterExtra')),
+    centerExtraMode: 'advancedMode',
   },
   'anim-connected-bodies': {
     id: 'anim-connected-bodies',
     title: '连接体问题',
     knowledgeId: 'mechanics-4-5',
     Component: lazy(() => import('@/features/mechanics/ConnectedBodiesAnimation')),
-    defaultParams: { m1: 2, m2: 3, F: 15, mu: 0.1 },
+    defaultParams: { m1: 2, m2: 3, F: 15, mu: 0.1, advancedMode: 0, analysisView: 0, connectionType: 0 },
     paramMeta: [
       { key: 'm1', label: '质量 m₁', min: 1, max: 10, step: 0.5, unit: 'kg' },
       { key: 'm2', label: '质量 m₂', min: 1, max: 10, step: 0.5, unit: 'kg' },
-      { key: 'F', label: '拉力 F', min: 5, max: 50, step: 1, unit: 'N' },
+      { key: 'F', label: '拉力 F', min: 0, max: 30, step: 1, unit: 'N' },
+      { key: 'mu', label: '动摩擦系数 μ', min: 0, max: 0.6, step: 0.05, unit: '' },
     ],
+    SidebarExtra: lazy(() => import('@/features/mechanics/ConnectedBodiesSidebar')),
+    CenterExtra: lazy(() => import('@/features/mechanics/ConnectedBodiesCenterExtra')),
+    centerExtraMode: 'advancedMode',
   },
   'anim-projectile': {
     id: 'anim-projectile',
     title: '平抛运动',
     knowledgeId: 'mechanics-5-2',
     Component: lazy(() => import('@/features/mechanics/ProjectileAnimation')),
-    defaultParams: { v0x: 10, g: 9.8, t: 0 },
+    defaultParams: { v0x: 10, g: GRAVITY, t: 0, advancedMode: 0, airResistance: 0, showVacuumCompare: 1 },
     paramMeta: [
-      { key: 'v0x', label: '初速度 v₀', min: 0, max: 20, step: 0.1, unit: 'm/s' },
+      { key: 'v0x', label: '初速度 v₀', min: 2, max: 20, step: 0.1, unit: 'm/s' },
       { key: 'g', label: '重力加速度 g', min: 5, max: 15, step: 0.1, unit: 'm/s²' },
     ],
+    SidebarExtra: lazy(() => import('@/features/mechanics/ProjectileSidebar')),
   },
   'anim-oblique-throw': {
     id: 'anim-oblique-throw',
     title: '斜抛运动',
     knowledgeId: 'mechanics-5-3',
     Component: lazy(() => import('@/features/mechanics/ObliqueThrowAnimation')),
-    defaultParams: { v0: 15, angle: 45, g: 9.8, t: 0 },
+    defaultParams: { v0: 15, angle: 45, g: GRAVITY, t: 0, advancedMode: 0, airResistance: 0, showVacuumCompare: 1 },
     paramMeta: [
       { key: 'v0', label: '初速度 v₀', min: 5, max: 30, step: 0.1, unit: 'm/s' },
       { key: 'angle', label: '抛射角 θ', min: 10, max: 80, step: 1, unit: '°' },
       { key: 'g', label: '重力加速度 g', min: 5, max: 15, step: 0.1, unit: 'm/s²' },
     ],
+    SidebarExtra: lazy(() => import('@/features/mechanics/ObliqueThrowSidebar')),
   },
   'anim-circular-motion': {
     id: 'anim-circular-motion',
     title: '匀速圆周运动',
     knowledgeId: 'mechanics-5-4',
     Component: lazy(() => import('@/features/mechanics/CircularMotionAnimation')),
-    defaultParams: { r: 2, omega: 1, t: 0 },
+    defaultParams: { r: 2, omega: 1, t: 0, advancedMode: 0, showProjection: 1, showWaveform: 1 },
     paramMeta: [
       { key: 'r', label: '半径 r', min: 1, max: 10, step: 0.1, unit: 'm' },
       { key: 'omega', label: '角速度 ω', min: 0.1, max: 5, step: 0.1, unit: 'rad/s' },
     ],
+    SidebarExtra: lazy(() => import('@/features/mechanics/CircularMotionSidebar')),
   },
   'anim-centripetal': {
     id: 'anim-centripetal',
     title: '向心加速度与向心力',
     knowledgeId: 'mechanics-5-5',
     Component: lazy(() => import('@/features/mechanics/CentripetalAnimation')),
-    defaultParams: { r: 2, v: 3, m: 1 },
+    defaultParams: { r: 2, v: 3, m: 1, advancedMode: 0, showWaveform: 1 },
     paramMeta: [
       { key: 'r', label: '半径 r', min: 1, max: 5, step: 0.1, unit: 'm' },
       { key: 'v', label: '线速度 v', min: 1, max: 10, step: 0.5, unit: 'm/s' },
       { key: 'm', label: '质量 m', min: 0.5, max: 5, step: 0.1, unit: 'kg' },
     ],
+    SidebarExtra: lazy(() => import('@/features/mechanics/CentripetalSidebar')),
   },
   'anim-kepler': {
     id: 'anim-kepler',
@@ -300,7 +315,7 @@ export const animationRegistry: Record<string, AnimationConfig> = {
     title: '机械能守恒定律',
     knowledgeId: 'mechanics-7-5',
     Component: lazy(() => import('@/features/mechanics/EnergyConservationAnimation')),
-    defaultParams: { m: 2, h: 10, v0: 0, g: 9.8 },
+    defaultParams: { m: 2, h: 10, v0: 0, g: GRAVITY },
     paramMeta: [
       { key: 'm', label: '质量 m', min: 0.5, max: 10, step: 0.5, unit: 'kg' },
       { key: 'h', label: '高度 h', min: 1, max: 20, step: 0.5, unit: 'm' },

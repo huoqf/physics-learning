@@ -1,30 +1,204 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, physicsToCanvasWithOrigin } from '@/utils'
+import React, { useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { calculateCircularMotion } from '@/physics'
-import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
+import {
+  PHYSICS_COLORS,
+  SCENE_COLORS,
+  CHART_COLORS,
+  CANVAS_STYLE,
+  STROKE,
+  FONT,
+  DASH,
+} from '@/theme/physics'
+
+/** 匀速圆周运动参数范围（滑块边界） */
+const CIRCULAR_MOTION_PARAM_BOUNDS = {
+  rMin: 1, rMax: 10,
+  omegaMin: 0.1, omegaMax: 5,
+} as const
+
+/** 从参数范围推导的物理量范围 */
+const CIRCULAR_MOTION_CHART_RANGE = {
+  /** 线速度最大值 v_max = r_max * omega_max (m/s) */
+  vMax: CIRCULAR_MOTION_PARAM_BOUNDS.rMax * CIRCULAR_MOTION_PARAM_BOUNDS.omegaMax,
+  /** 向心加速度最大值 a_max = r_max * omega_max² (m/s²) */
+  aMax: CIRCULAR_MOTION_PARAM_BOUNDS.rMax * CIRCULAR_MOTION_PARAM_BOUNDS.omegaMax ** 2,
+} as const
+
+/** 匀速圆周运动布局常量 */
+const CIRCULAR_MOTION_LAYOUT = {
+  /** 半径滑块最大物理上限 (m) */
+  rMax: CIRCULAR_MOTION_PARAM_BOUNDS.rMax,
+  /** Canvas 安全余量 (px) */
+  canvasPadding: 80,
+  /** 投影球半径 (px) */
+  projectionBallRadius: 9,
+  /** 钢珠半径 (px) */
+  steelBallRadius: 12,
+  /** 矢量最大绘制长度 (px) */
+  vectorMaxLength: 75,
+  /** 加速度矢量垂直偏移 (px)，沿切向偏移避免与半径线重叠 */
+  accelerationOffset: 10,
+  /** 波形卡片最小宽度 (px) */
+  waveCardMinWidth: 220,
+  /** 波形卡片最小高度 (px) */
+  waveCardMinHeight: 150,
+  /** 波形卡片右侧偏移 (px) */
+  waveCardRightOffset: 20,
+  /** 波形卡片内边距 */
+  waveCardPadding: { left: 40, right: 15, top: 25, bottom: 25 },
+  /** 波形采样步数 */
+  waveSteps: 100,
+  /** 同心参考环层数 */
+  gridLayers: 4,
+  /** 辐射角线间隔 (°) */
+  gridAngleStep: 30,
+  /** 坐标轴延伸长度 (px) */
+  axisExtension: 30,
+} as const
 
 export default function CircularMotionAnimation() {
-  const { params, time, showVectors, showFormulas, showGrid } = useAnimationStore()
+  const { params, time, showVectors, showGrid, setIsPlaying, setTime } = useAnimationStore()
   const [containerRef, canvasSize] = useCanvasSize({ width: 600, height: 600 })
 
-  const { r = 2, omega = 1 } = params
+  const {
+    r = 2,
+    omega = 1,
+    advancedMode = 0,
+    showProjection = 1,
+    showWaveform = 1,
+  } = params
+
   const { x, y, v, a_c, period } = calculateCircularMotion(r, omega, time)
 
+  // ── 1. 自适应等比例尺（防止出界） ──────────────────────────
   const centerX = canvasSize.width / 2
   const centerY = canvasSize.height / 2
-  const scale = 50
-  const canvasX = centerX + x * scale
-  const canvasY = centerY - y * scale
+  const rMax = CIRCULAR_MOTION_LAYOUT.rMax
+  const minCanvasDim = Math.min(canvasSize.width, canvasSize.height)
+  // 根据视口较短边和最大半径动态映射，四周留出安全余量
+  const scale = (minCanvasDim - CIRCULAR_MOTION_LAYOUT.canvasPadding) / (2 * rMax)
 
-  const gridCircles = []
-  if (showGrid) {
-    for (let i = 1; i <= 5; i++) {
-      gridCircles.push(
+  const canvasPos = physicsToCanvasWithOrigin(x, y, centerX, centerY, scale)
+
+  // ── 矢量安全映射：归一化方向 + 按比例缩放长度 ─────────────
+  const R_ball = CIRCULAR_MOTION_LAYOUT.steelBallRadius
+  const vArrowLen = R_ball + (v / CIRCULAR_MOTION_CHART_RANGE.vMax) * (CIRCULAR_MOTION_LAYOUT.vectorMaxLength - R_ball)
+  const aArrowLen = R_ball + (a_c / CIRCULAR_MOTION_CHART_RANGE.aMax) * (CIRCULAR_MOTION_LAYOUT.vectorMaxLength - R_ball)
+
+  // 动态自适应线宽（线宽及关联的箭头尺寸随物理量强度线性变化，最小限制为 1.5px）
+  const vStrokeWidth = Math.max(1.5, CANVAS_STYLE.stroke.vectorMain * (v / CIRCULAR_MOTION_CHART_RANGE.vMax))
+  const aStrokeWidth = Math.max(1.5, CANVAS_STYLE.stroke.vectorMain * (a_c / CIRCULAR_MOTION_CHART_RANGE.aMax))
+
+  const isAdvanced = advancedMode === 1
+  const showProjBalls = isAdvanced && showProjection === 1
+  const showWaveCard = isAdvanced && showWaveform === 1
+
+  // ── 2. 右上角悬浮正余弦画中画定位 ─────────────────────────
+  const cardWidth = Math.max(CIRCULAR_MOTION_LAYOUT.waveCardMinWidth, canvasSize.width * 0.35)
+  const cardHeight = Math.max(CIRCULAR_MOTION_LAYOUT.waveCardMinHeight, canvasSize.height * 0.3)
+  const cardX = canvasSize.width - cardWidth - CIRCULAR_MOTION_LAYOUT.waveCardRightOffset
+  const cardY = 20
+
+  const cardInnerPad = CIRCULAR_MOTION_LAYOUT.waveCardPadding
+  const cardInnerW = cardWidth - cardInnerPad.left - cardInnerPad.right
+  const cardInnerH = cardHeight - cardInnerPad.top - cardInnerPad.bottom
+
+  // 波形图展示时间窗口：2 个完整周期
+  const tMax = period * 2
+
+  const toCardX = useCallback(
+    (currT: number) => cardInnerPad.left + (currT / tMax) * cardInnerW,
+    [tMax, cardInnerW, cardInnerPad.left]
+  )
+
+  const toCardY = useCallback(
+    (val: number) => {
+      // 物理值范围为 [-r, r] 映射到 [cardInnerPad.top, cardInnerPad.top + cardInnerH]
+      const halfH = cardInnerH / 2
+      const centerYCard = cardInnerPad.top + halfH
+      return centerYCard - (val / r) * halfH
+    },
+    [r, cardInnerH, cardInnerPad.top]
+  )
+
+  // ── 3. 产生简谐波形路径 ──────────────────────────────────
+  const waveData = useMemo(() => {
+    const steps = CIRCULAR_MOTION_LAYOUT.waveSteps
+    const ptsX: string[] = []
+    const ptsY: string[] = []
+
+    for (let i = 0; i <= steps; i++) {
+      const currT = (i / steps) * tMax
+      const px = r * Math.cos(omega * currT)
+      const py = r * Math.sin(omega * currT)
+
+      ptsX.push(`${toCardX(currT)},${toCardY(px)}`)
+      ptsY.push(`${toCardX(currT)},${toCardY(py)}`)
+    }
+
+    return {
+      xPath: `M ${ptsX.join(' L ')}`,
+      yPath: `M ${ptsY.join(' L ')}`,
+    }
+  }, [omega, r, tMax, toCardX, toCardY])
+
+  // ── 4. 时间游标手势拖拽 ──────────────────────────────────
+  const isDraggingRef = useRef(false)
+
+  const handleDragTime = useCallback(
+    (clientX: number, svgRect: DOMRect) => {
+      const clickX = clientX - svgRect.left - cardX - cardInnerPad.left
+      const tClick = (clickX / cardInnerW) * tMax
+      const currentPeriodCount = Math.floor(time / tMax)
+      if (tClick >= 0 && tClick <= tMax) {
+        setTime(currentPeriodCount * tMax + tClick)
+        setIsPlaying(false)
+      }
+    },
+    [cardX, cardInnerPad, cardInnerW, tMax, time, setTime, setIsPlaying]
+  )
+
+  const handleSvgMouseMove = useCallback(
+    (e: React.MouseEvent<SVGElement>) => {
+      if (!isDraggingRef.current) return
+      const svg = e.currentTarget
+      const rect = svg.getBoundingClientRect()
+      handleDragTime(e.clientX, rect)
+    },
+    [handleDragTime]
+  )
+
+  const handleSvgMouseUp = useCallback(() => {
+    isDraggingRef.current = false
+  }, [])
+
+  const handleChartMouseDown = useCallback(
+    (e: React.MouseEvent<SVGElement>) => {
+      isDraggingRef.current = true
+      const svg = e.currentTarget.closest('svg')
+      if (!svg) return
+      const rect = svg.getBoundingClientRect()
+      handleDragTime(e.clientX, rect)
+    },
+    [handleDragTime]
+  )
+
+  // ── 5. 同心环与辐射网格背景 ──────────────────────────────
+  const gridBackground = useMemo(() => {
+    if (!showGrid) return null
+    const elements: React.ReactElement[] = []
+    // 绘制 4 层同心参考环
+    const gridLayers = CIRCULAR_MOTION_LAYOUT.gridLayers
+    for (let i = 1; i <= gridLayers; i++) {
+      const radiusPhys = (rMax / gridLayers) * i
+      elements.push(
         <circle
-          key={`grid-${i}`}
+          key={`grid-circle-${i}`}
           cx={centerX}
           cy={centerY}
-          r={i * scale}
+          r={radiusPhys * scale}
           fill="none"
           stroke={PHYSICS_COLORS.grid}
           strokeWidth={STROKE.grid}
@@ -32,95 +206,218 @@ export default function CircularMotionAnimation() {
         />
       )
     }
-    for (let angle = 0; angle < 360; angle += 30) {
-      const rad = (angle * Math.PI) / 180
-      const x1 = centerX
-      const y1 = centerY
-      const x2 = centerX + Math.cos(rad) * scale * 5
-      const y2 = centerY - Math.sin(rad) * scale * 5
-      gridCircles.push(
+    // 绘制每 30 度的辐射角轴线
+    for (let deg = 0; deg < 360; deg += CIRCULAR_MOTION_LAYOUT.gridAngleStep) {
+      const rad = (deg * Math.PI) / 180
+      const rayEnd = physicsToCanvasWithOrigin(rMax * Math.cos(rad), rMax * Math.sin(rad), centerX, centerY, scale)
+      elements.push(
         <line
-          key={`angle-${angle}`}
-          x1={x1}
-          y1={y1}
-          x2={x2}
-          y2={y2}
+          key={`grid-ray-${deg}`}
+          x1={centerX}
+          y1={centerY}
+          x2={rayEnd.cx}
+          y2={rayEnd.cy}
           stroke={PHYSICS_COLORS.grid}
           strokeWidth={STROKE.grid}
           strokeDasharray={DASH.axis.join(' ')}
         />
       )
     }
-  }
+    return elements
+  }, [showGrid, centerX, centerY, scale])
+
+  // ── 6. 扫过扇形角度弧 path ──────────────────────────────
+  const angleSectorPath = useMemo(() => {
+    // 限制在单圈 [0, 2pi) 用于扇形角度渲染
+    const currentAngleRad = (omega * time) % (2 * Math.PI)
+    if (currentAngleRad <= 0.02) return ''
+
+    const startX = centerX + r * scale
+    const startY = centerY
+    const endPos = physicsToCanvasWithOrigin(r * Math.cos(currentAngleRad), r * Math.sin(currentAngleRad), centerX, centerY, scale)
+    const endX = endPos.cx
+    const endY = endPos.cy
+
+    const largeArcFlag = currentAngleRad > Math.PI ? 1 : 0
+    return `M ${centerX} ${centerY} L ${startX} ${startY} A ${r * scale} ${r * scale} 0 ${largeArcFlag} 0 ${endX} ${endY} Z`
+  }, [omega, time, r, scale, centerX, centerY])
 
   return (
     <div ref={containerRef} className="w-full h-full">
-      <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
-        {gridCircles}
+      <svg
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className="bg-white rounded-lg shadow-inner"
+        onMouseMove={handleSvgMouseMove}
+        onMouseUp={handleSvgMouseUp}
+        onMouseLeave={handleSvgMouseUp}
+      >
+        {/* ========== defs 渐变与材质 ========== */}
+        <defs>
+          {/* 3D 拟物不锈钢钢珠材质 */}
+          <radialGradient id="steel-sphere-grad" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.steelSphereGrad[0]} />
+            <stop offset="40%" stopColor={SCENE_COLORS.materials.steelSphereGrad[1]} />
+            <stop offset="80%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
+          </radialGradient>
 
+          {/* 投影虚影材质 */}
+          <radialGradient id="vacuum-sphere-grad" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[0]} stopOpacity={0.95} />
+            <stop offset="50%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[1]} stopOpacity={0.60} />
+            <stop offset="90%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[2]} stopOpacity={0.25} />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[3]} stopOpacity={0.05} />
+          </radialGradient>
+
+          <marker id="arrowhead-circular" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
+          </marker>
+          <marker id="arrowhead-ac" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.acceleration} />
+          </marker>
+        </defs>
+
+        {/* 辐射网格背景 */}
+        {gridBackground}
+
+        {/* ========== 主物理圆形演练区 ========== */}
+
+        {/* 角度扫过扇形弧度 (微黄透明) */}
+        {angleSectorPath && (
+          <path d={angleSectorPath} fill={SCENE_COLORS.effects.sectorFill} stroke="none" />
+        )}
+
+        {/* 圆周运动轨道环 (轻量、清爽的高级质感) */}
         <circle
           cx={centerX}
           cy={centerY}
           r={r * scale}
           fill="none"
-          stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={STROKE.trackLine}
+          stroke={PHYSICS_COLORS.trackHistory}
+          strokeWidth={STROKE.trackHistory}
+        />
+        <circle
+          cx={centerX}
+          cy={centerY}
+          r={r * scale}
+          fill="none"
+          stroke={PHYSICS_COLORS.trackHistory}
+          strokeWidth={STROKE.trackHistory + 1.5}
+          opacity={0.08}
         />
 
+        {/* 水平与垂直正交坐标轴 */}
         <line
-          x1={centerX - r * scale - 20}
+          x1={centerX - r * scale - CIRCULAR_MOTION_LAYOUT.axisExtension}
           y1={centerY}
-          x2={centerX + r * scale + 20}
+          x2={centerX + r * scale + CIRCULAR_MOTION_LAYOUT.axisExtension}
           y2={centerY}
-          stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={STROKE.axisBold}
+          stroke={PHYSICS_COLORS.axis}
+          strokeWidth={STROKE.axis}
         />
         <line
           x1={centerX}
-          y1={centerY - r * scale - 20}
+          y1={centerY - r * scale - CIRCULAR_MOTION_LAYOUT.axisExtension}
           x2={centerX}
-          y2={centerY + r * scale + 20}
-          stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={STROKE.axisBold}
+          y2={centerY + r * scale + CIRCULAR_MOTION_LAYOUT.axisExtension}
+          stroke={PHYSICS_COLORS.axis}
+          strokeWidth={STROKE.axis}
         />
 
-        <text x={centerX + r * scale + 10} y={centerY + 5} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>x</text>
-        <text x={centerX + 5} y={centerY - r * scale - 10} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>y</text>
+        <text x={centerX + r * scale + 20} y={centerY + 14} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">x</text>
+        <text x={centerX + 12} y={centerY - r * scale - 20} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">y</text>
 
+        {/* 半径参考射线 */}
         <line
           x1={centerX}
           y1={centerY}
-          x2={canvasX}
-          y2={canvasY}
+          x2={canvasPos.cx}
+          y2={canvasPos.cy}
           stroke={PHYSICS_COLORS.axis}
           strokeWidth={STROKE.reference}
           strokeDasharray={DASH.axis.join(' ')}
         />
+        {/* 半径参数文本标注 */}
+        <text
+          x={(canvasPos.cx + centerX) / 2}
+          y={(canvasPos.cy + centerY) / 2 - 6}
+          fontSize={FONT.bodySize}
+          fill={PHYSICS_COLORS.labelTextLight}
+          fontWeight="bold"
+          textAnchor="middle"
+        >
+          r
+        </text>
 
+        {/* 简谐运动正交投影辅助虚线 */}
+        {showProjBalls && (
+          <>
+            <line
+              x1={canvasPos.cx}
+              y1={canvasPos.cy}
+              x2={canvasPos.cx}
+              y2={centerY}
+              stroke={PHYSICS_COLORS.grid}
+              strokeWidth={0.8}
+              strokeDasharray="3,3"
+            />
+            <line
+              x1={canvasPos.cx}
+              y1={canvasPos.cy}
+              x2={centerX}
+              y2={canvasPos.cy}
+              stroke={PHYSICS_COLORS.grid}
+              strokeWidth={0.8}
+              strokeDasharray="3,3"
+            />
+            {/* 水平 SHM 投影球 */}
+            <circle
+              cx={canvasPos.cx}
+              cy={centerY}
+              r={CIRCULAR_MOTION_LAYOUT.projectionBallRadius}
+              fill="url(#vacuum-sphere-grad)"
+              stroke={PHYSICS_COLORS.velocityX}
+              strokeWidth={0.8}
+            />
+            {/* 竖直 SHM 投影球 */}
+            <circle
+              cx={centerX}
+              cy={canvasPos.cy}
+              r={CIRCULAR_MOTION_LAYOUT.projectionBallRadius}
+              fill="url(#vacuum-sphere-grad)"
+              stroke={PHYSICS_COLORS.velocityY}
+              strokeWidth={0.8}
+            />
+          </>
+        )}
+
+        {/* 旋转的主钢珠小球 */}
         <circle
-          cx={canvasX}
-          cy={canvasY}
-          r={15}
-          fill={PHYSICS_COLORS.objectFill}
-          stroke={PHYSICS_COLORS.objectStroke}
+          cx={canvasPos.cx}
+          cy={canvasPos.cy}
+          r={CIRCULAR_MOTION_LAYOUT.steelBallRadius}
+          fill="url(#steel-sphere-grad)"
+          stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
           strokeWidth={CANVAS_STYLE.stroke.objectLine}
-          className="transition-all duration-75"
         />
 
+        {/* 矢量箭头标注 (经典配色，剔除硬编码) */}
         {showVectors && v > 0 && (
           <g>
+            {/* 线速度矢量 v (经典蓝，动态线宽与自适应缩放) */}
             <line
-              x1={canvasX}
-              y1={canvasY}
-              x2={canvasX - y * omega * 80}
-              y2={canvasY - x * omega * 80}
+              x1={canvasPos.cx}
+              y1={canvasPos.cy}
+              x2={canvasPos.cx + (-y / r) * vArrowLen}
+              y2={canvasPos.cy + (-x / r) * vArrowLen}
               stroke={PHYSICS_COLORS.velocity}
-              strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+              strokeWidth={vStrokeWidth}
               markerEnd="url(#arrowhead-circular)"
             />
             <text
-              x={canvasX - y * omega * 80 - 30}
-              y={canvasY - x * omega * 80}
+              x={canvasPos.cx + (-y / r) * vArrowLen - 12}
+              y={canvasPos.cy + (-x / r) * vArrowLen - 5}
               fontSize={FONT.bodySize}
               fill={PHYSICS_COLORS.velocity}
               fontWeight="bold"
@@ -128,37 +425,19 @@ export default function CircularMotionAnimation() {
               v
             </text>
 
+            {/* 向心加速度 a (绿色，从球心指向圆心，动态线宽) */}
             <line
-              x1={canvasX}
-              y1={canvasY}
-              x2={centerX}
-              y2={centerY}
-              stroke={PHYSICS_COLORS.displacement}
-              strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-              markerEnd="url(#arrowhead-radial)"
-            />
-            <text
-              x={(canvasX + centerX) / 2 - 15}
-              y={(canvasY + centerY) / 2}
-              fontSize={FONT.bodySize}
-              fill={PHYSICS_COLORS.displacement}
-              fontWeight="bold"
-            >
-              r
-            </text>
-
-            <line
-              x1={canvasX}
-              y1={canvasY}
-              x2={canvasX - x * a_c * 20}
-              y2={canvasY + y * a_c * 20}
+              x1={canvasPos.cx}
+              y1={canvasPos.cy}
+              x2={canvasPos.cx - (x / r) * aArrowLen}
+              y2={canvasPos.cy + (y / r) * aArrowLen}
               stroke={PHYSICS_COLORS.acceleration}
-              strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+              strokeWidth={aStrokeWidth}
               markerEnd="url(#arrowhead-ac)"
             />
             <text
-              x={canvasX - x * a_c * 20 - 20}
-              y={canvasY + y * a_c * 20 - 10}
+              x={canvasPos.cx - (x / r) * aArrowLen + 8}
+              y={canvasPos.cy + (y / r) * aArrowLen + 12}
               fontSize={FONT.bodySize}
               fill={PHYSICS_COLORS.acceleration}
               fontWeight="bold"
@@ -168,38 +447,162 @@ export default function CircularMotionAnimation() {
           </g>
         )}
 
-        {showFormulas && (
-          <g transform="translate(20, 20)">
-            <text fontSize={FONT.bodySize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">匀速圆周运动公式</text>
-            <text x={0} y={25} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>ω = v / r</text>
-            <text x={0} y={45} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>a = ω²r = v²/r</text>
-            <text x={0} y={65} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>T = 2π/ω</text>
-            <text x={0} y={90} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
-              当前: ω={omega.toFixed(2)} rad/s
+        {/* ========== 右上角：画中画悬浮波形卡片 ========== */}
+        {showWaveCard && (
+          <g transform={`translate(${cardX}, ${cardY})`}>
+            {/* 毛玻璃浮动卡片背景 */}
+            <rect
+              width={cardWidth}
+              height={cardHeight}
+              fill={SCENE_COLORS.labels.glassPanelBg}
+              rx={8}
+              stroke={CHART_COLORS.axisLine}
+              strokeWidth={0.8}
+              filter="drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12))"
+            />
+            <text
+              x={cardWidth / 2}
+              y={16}
+              fontSize={8}
+              fill={CHART_COLORS.titleText}
+              textAnchor="middle"
+              fontWeight="bold"
+            >
+              简谐投影波形 (x-t / y-t)
             </text>
-            <text x={0} y={110} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
-              v={v.toFixed(2)} m/s
-            </text>
-            <text x={0} y={130} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
-              a={a_c.toFixed(2)} m/s²
-            </text>
-            <text x={0} y={150} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
-              T={period.toFixed(2)} s
-            </text>
+
+            {/* 坐标轴 */}
+            <line
+              x1={cardInnerPad.left}
+              y1={cardInnerPad.top + cardInnerH}
+              x2={cardInnerPad.left + cardInnerW}
+              y2={cardInnerPad.top + cardInnerH}
+              stroke={CHART_COLORS.axisLine}
+              strokeWidth={0.8}
+            />
+            <line
+              x1={cardInnerPad.left}
+              y1={cardInnerPad.top}
+              x2={cardInnerPad.left}
+              y2={cardInnerPad.top + cardInnerH}
+              stroke={CHART_COLORS.axisLine}
+              strokeWidth={0.8}
+            />
+
+            {/* Y轴零线 */}
+            <line
+              x1={cardInnerPad.left}
+              y1={toCardY(0)}
+              x2={cardInnerPad.left + cardInnerW}
+              y2={toCardY(0)}
+              stroke={CHART_COLORS.zeroline}
+              strokeWidth={0.6}
+              strokeDasharray="2,2"
+            />
+
+            {/* Y轴刻度 */}
+            {[-1, 0, 1].map((multiplier) => {
+              const val = multiplier * r
+              const yPos = toCardY(val)
+              return (
+                <g key={`y-axis-${multiplier}`}>
+                  <line
+                    x1={cardInnerPad.left - 3}
+                    y1={yPos}
+                    x2={cardInnerPad.left}
+                    y2={yPos}
+                    stroke={CHART_COLORS.axisLine}
+                    strokeWidth={0.8}
+                  />
+                  <text
+                    x={cardInnerPad.left - 6}
+                    y={yPos + 2.5}
+                    fontSize={7}
+                    fill={CHART_COLORS.labelText}
+                    textAnchor="end"
+                  >
+                    {val.toFixed(1)}
+                  </text>
+                </g>
+              )
+            })}
+            <text x={cardInnerPad.left - 5} y={cardInnerPad.top - 6} fontSize={7} fill={CHART_COLORS.labelText} textAnchor="middle">位移(m)</text>
+
+            {/* X轴刻度：周期 T 标注 */}
+            {[0, 0.5, 1].map((ratio) => {
+              const currT = tMax * ratio
+              const xPos = toCardX(currT)
+              const label = ratio === 0 ? '0' : ratio === 0.5 ? 'T' : '2T'
+              return (
+                <g key={`x-axis-${ratio}`}>
+                  <line
+                    x1={xPos}
+                    y1={cardInnerPad.top + cardInnerH}
+                    x2={xPos}
+                    y2={cardInnerPad.top + cardInnerH + 3}
+                    stroke={CHART_COLORS.axisLine}
+                    strokeWidth={0.8}
+                  />
+                  <text
+                    x={xPos}
+                    y={cardInnerPad.top + cardInnerH + 9}
+                    fontSize={7}
+                    fill={CHART_COLORS.labelText}
+                    textAnchor="middle"
+                  >
+                    {label}
+                  </text>
+                </g>
+              )
+            })}
+
+            {/* 绘制 x-t & y-t 简谐曲线 */}
+            <path
+              d={waveData.xPath}
+              fill="none"
+              stroke={PHYSICS_COLORS.velocityX}
+              strokeWidth={1.2}
+              opacity={0.8}
+            />
+            <path
+              d={waveData.yPath}
+              fill="none"
+              stroke={PHYSICS_COLORS.velocityY}
+              strokeWidth={1.2}
+              opacity={0.8}
+            />
+
+            {/* 曲线文本标签 */}
+            <text x={cardInnerPad.left + 5} y={toCardY(r) + 8} fontSize={7} fill={PHYSICS_COLORS.velocityX} fontWeight="bold">x(t) 投影</text>
+            <text x={cardInnerPad.left + 5} y={toCardY(-r) - 4} fontSize={7} fill={PHYSICS_COLORS.velocityY} fontWeight="bold">y(t) 投影</text>
+
+            {/* 拖动图表热区 */}
+            <rect
+              x={cardInnerPad.left}
+              y={cardInnerPad.top}
+              width={cardInnerW}
+              height={cardInnerH}
+              fill="transparent"
+              className="cursor-ew-resize"
+              onMouseDown={handleChartMouseDown}
+            />
+
+            {/* 时间游标指示线 */}
+            <g>
+              <line
+                x1={toCardX(time % tMax)}
+                y1={cardInnerPad.top}
+                x2={toCardX(time % tMax)}
+                y2={cardInnerPad.top + cardInnerH}
+                stroke={CHART_COLORS.reference}
+                strokeWidth={0.8}
+                strokeDasharray="2,1"
+              />
+              <circle cx={toCardX(time % tMax)} cy={toCardY(x)} r={2.5} fill={PHYSICS_COLORS.velocityX} />
+              <circle cx={toCardX(time % tMax)} cy={toCardY(y)} r={2.5} fill={PHYSICS_COLORS.velocityY} />
+            </g>
           </g>
         )}
-
-        <defs>
-          <marker id="arrowhead-circular" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          <marker id="arrowhead-radial" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.displacement} />
-          </marker>
-          <marker id="arrowhead-ac" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.acceleration} />
-          </marker>
-        </defs>
       </svg>
     </div>
   )

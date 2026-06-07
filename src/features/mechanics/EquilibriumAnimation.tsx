@@ -3,6 +3,7 @@ import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE, SCENE_COLORS } from '@/theme/physics'
 import { useEquilibriumPhysics } from './useEquilibriumPhysics'
+import { GRAVITY } from '@/physics/constants'
 
 export default function EquilibriumAnimation() {
   const { params, showVectors, showFormulas, showGrid, isPlaying, time } = useAnimationStore()
@@ -151,7 +152,7 @@ export default function EquilibriumAnimation() {
     const points: string[] = []
     for (let deg = 10; deg <= 90; deg += 2) {
       const rad = (deg * Math.PI) / 180
-      const tVal = (m * 9.8) / (2 * Math.sin(rad))
+      const tVal = (m * GRAVITY) / (2 * Math.sin(rad))
       if (tVal <= 65) {
         points.push(`${thetaToX(deg)},${tToY(tVal)}`)
       }

@@ -123,4 +123,41 @@ describe('buildPhysicsQuantities', () => {
     expect(find(qs, '路端电压') as number).toBeCloseTo(5, 10)
     expect(find(qs, '效率') as number).toBeCloseTo((5 / 6) * 100, 6)
   })
+
+  it('斜抛运动物理量计算：包含水平位移、竖直高度及实时速度', () => {
+    const qs = buildPhysicsQuantities('anim-oblique-throw', { v0: 15, angle: 45, g: 9.8, airResistance: 0 }, 1)
+    expect(find(qs, '水平位移')).toBeDefined()
+    expect(find(qs, '竖直高度')).toBeDefined()
+    expect(find(qs, '实时速度')).toBeDefined()
+  })
+
+  it('匀速圆周运动物理量：基础模式只包含半径、角速度、速度与周期', () => {
+    const qs = buildPhysicsQuantities('anim-circular-motion', { r: 2, omega: 1.5, advancedMode: 0 }, 1)
+    expect(find(qs, '半径')).toBeDefined()
+    expect(find(qs, '角速度')).toBeDefined()
+    expect(find(qs, '线速度')).toBeDefined()
+    expect(find(qs, '水平坐标')).toBeUndefined()
+  })
+
+  it('匀速圆周运动物理量：进阶模式额外包含水平/竖直坐标及向心加速度', () => {
+    const qs = buildPhysicsQuantities('anim-circular-motion', { r: 2, omega: 1.5, advancedMode: 1 }, 1)
+    expect(find(qs, '半径')).toBeDefined()
+    expect(find(qs, '水平坐标')).toBeDefined()
+    expect(find(qs, '竖直坐标')).toBeDefined()
+    expect(find(qs, '向心加速度')).toBeDefined()
+  })
+
+  it('向心力物理量：基础模式包含向心加速度但不包含向心力', () => {
+    const qs = buildPhysicsQuantities('anim-centripetal', { r: 2, v: 3, m: 1, advancedMode: 0 }, 1)
+    expect(find(qs, '半径')).toBeDefined()
+    expect(find(qs, '向心加速度')).toBeDefined()
+    expect(find(qs, '向心力')).toBeUndefined()
+  })
+
+  it('向心力物理量：进阶模式包含向心力且数值计算正确', () => {
+    const qs = buildPhysicsQuantities('anim-centripetal', { r: 2, v: 4, m: 3, advancedMode: 1 }, 1)
+    expect(find(qs, '向心加速度') as number).toBeCloseTo(8, 5)
+    expect(find(qs, '向心力') as number).toBeCloseTo(24, 5)
+  })
 })
+

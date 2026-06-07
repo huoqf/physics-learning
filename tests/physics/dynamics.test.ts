@@ -6,7 +6,11 @@ import {
   calculateFrictionInclineModel,
   calculateVectorAddition,
   calculateOrthogonalDecomposition,
-  calculateEquilibriumTension
+  calculateEquilibriumTension,
+  calculateNewtonSecondVariableMotion,
+  calculateElevatorMotion,
+  calculateConnectedBody,
+  calculateConnectedBodyTimeline,
 } from '../../src/physics/dynamics'
 
 describe('Dynamics physics calculations', () => {
@@ -91,6 +95,28 @@ describe('Dynamics physics calculations', () => {
       // 加速度 a = (25 - 14.7) / 5 = 2.06 m/s²
       expect(res.a).toBeCloseTo(2.06, 2)
     })
+
+    it('should treat critical point (F = f_max) as static', () => {
+      // f_max = mu_static * m * g = 0.3 * 1.12 * 5 * 9.8 = 16.464 N
+      const F_applied = 0.3 * 1.12 * 5 * 9.8
+      const res = calculateFrictionPullModel(m, mu, F_applied, g)
+      expect(res.isSliding).toBe(false)
+      expect(res.f_actual).toBeCloseTo(F_applied, 2)
+      expect(res.a).toBe(0)
+    })
+
+    it('should return zero friction when mu = 0', () => {
+      const F_applied = 10
+      const res = calculateFrictionPullModel(m, 0, F_applied, g)
+      expect(res.isSliding).toBe(true)
+      expect(res.f_actual).toBe(0)
+      expect(res.a).toBeCloseTo(F_applied / m, 2)
+    })
+
+    it('should return muStatic using DEFAULT_STATIC_FRICTION_RATIO', () => {
+      const res = calculateFrictionPullModel(m, mu, 10, g)
+      expect(res.muStatic).toBeCloseTo(mu * 1.12, 5)
+    })
   })
 
   describe('calculateFrictionInclineModel', () => {
@@ -115,6 +141,34 @@ describe('Dynamics physics calculations', () => {
       expect(res.f_actual).toBeCloseTo(12.73, 2)
       // 加速度 a = g * sin(30°) - mu * g * cos(30°) = 9.8 * 0.5 - 0.3 * 9.8 * 0.866 = 4.9 - 2.546 = 2.354 m/s²
       expect(res.a).toBeCloseTo(2.35, 2)
+    })
+
+    it('should treat critical angle as static', () => {
+      // criticalAngle = arctan(mu_static) = arctan(0.336) ≈ 18.57°
+      const res = calculateFrictionInclineModel(m, mu, 18.57, g)
+      expect(res.isSliding).toBe(false)
+    })
+
+    it('should return zero friction and acceleration on a flat surface (angle = 0)', () => {
+      const res = calculateFrictionInclineModel(m, mu, 0, g)
+      expect(res.isSliding).toBe(false)
+      expect(res.f_actual).toBe(0)
+      expect(res.a).toBe(0)
+    })
+
+    it('should handle near-vertical angle (89°) with numerical stability', () => {
+      const res = calculateFrictionInclineModel(m, mu, 89, g)
+      expect(res.isSliding).toBe(true)
+      expect(isFinite(res.f_actual)).toBe(true)
+      expect(isFinite(res.a)).toBe(true)
+      // 法向力趋近 0，摩擦力趋近 0
+      expect(res.f_actual).toBeLessThan(1)
+    })
+
+    it('should return muStatic and f_slip fields', () => {
+      const res = calculateFrictionInclineModel(m, mu, 30, g)
+      expect(res.muStatic).toBeCloseTo(mu * 1.12, 5)
+      expect(res.f_slip).toBeCloseTo(mu * m * g * Math.cos(30 * Math.PI / 180), 2)
     })
   })
 
@@ -178,5 +232,189 @@ describe('Dynamics physics calculations', () => {
       expect(t2).toBe(999)
     })
   })
+
+  describe('calculateNewtonSecondVariableMotion', () => {
+    const m = 2
+    const mu = 0.2
+    const g = 9.8
+    const N = m * g // 19.6
+    const f_max = mu * N // 3.92
+
+    it('should stay static under linear force when F_applied <= f_max', () => {
+      const k = 2
+      // t = 1, F_applied = 2 <= 3.92, 应该静止
+      const res = calculateNewtonSecondVariableMotion(0, { m, mu, k, g }, 1)
+      expect(res.F_applied).toBe(2)
+      expect(res.f).toBe(2)
+      expect(res.F_net).toBe(0)
+      expect(res.a).toBe(0)
+      expect(res.v).toBe(0)
+      expect(res.s).toBe(0)
+    })
+
+    it('should slide under linear force when F_applied > f_max', () => {
+      const k = 2
+      // t = 3, F_applied = 6 > 3.92, 应该开始运动
+      const res = calculateNewtonSecondVariableMotion(0, { m, mu, k, g }, 3)
+      expect(res.F_applied).toBe(6)
+      expect(res.f).toBeCloseTo(3.92, 5)
+      expect(res.F_net).toBeCloseTo(6 - 3.92, 5)
+      expect(res.a).toBeCloseTo((6 - 3.92) / m, 5)
+    })
+
+    it('should calculate sine variable force motion correctly', () => {
+      const F0 = 10
+      const omega = 1.5
+      // t = 2
+      const res = calculateNewtonSecondVariableMotion(1, { m, mu: 0, F0, omega }, 2)
+      const expectedF = F0 * Math.sin(omega * 2)
+      expect(res.F_applied).toBeCloseTo(expectedF, 5)
+      expect(res.f).toBe(0)
+      expect(res.F_net).toBeCloseTo(expectedF, 5)
+      expect(res.a).toBeCloseTo(expectedF / m, 5)
+    })
+  })
+
+  describe('calculateElevatorMotion', () => {
+    const m = 50
+    const g = 9.8
+
+    it('should calculate elevator state correctly for mode 0 (variable lift) at different phases', () => {
+      // t = 1.0 (加速上升)
+      const res1 = calculateElevatorMotion(0, m, g, 1.0)
+      expect(res1.a).toBe(2.0)
+      expect(res1.v).toBe(2.0)
+      expect(res1.y).toBe(1.0)
+      expect(res1.N).toBe(50 * (9.8 + 2.0))
+      expect(res1.state).toBe('overweight')
+
+      // t = 3.0 (匀速上升)
+      const res2 = calculateElevatorMotion(0, m, g, 3.0)
+      expect(res2.a).toBe(0)
+      expect(res2.v).toBe(4.0)
+      expect(res2.N).toBe(50 * 9.8)
+      expect(res2.state).toBe('normal')
+
+      // t = 6.0 (减速上升)
+      const res3 = calculateElevatorMotion(0, m, g, 6.0)
+      expect(res3.a).toBe(-2.0)
+      expect(res3.v).toBe(2.0)
+      expect(res3.N).toBe(50 * (9.8 - 2.0))
+      expect(res3.state).toBe('underweight')
+    })
+
+    it('should calculate elevator state correctly for mode 1 (cable break and free fall)', () => {
+      // t = 1.0 (静止在空中)
+      const res1 = calculateElevatorMotion(1, m, g, 1.0)
+      expect(res1.a).toBe(0)
+      expect(res1.N).toBe(50 * 9.8)
+      expect(res1.state).toBe('normal')
+
+      // t = 2.0 (完全失重下落)
+      const res2 = calculateElevatorMotion(1, m, g, 2.0)
+      expect(res2.a).toBe(-g)
+      expect(res2.N).toBe(0)
+      expect(res2.state).toBe('weightless')
+
+      // t = 4.5 (阻尼减速缓冲)
+      const res3 = calculateElevatorMotion(1, m, g, 4.5)
+      expect(res3.a).toBe(2.5 * g)
+      expect(res3.N).toBeGreaterThan(50 * g)
+      expect(res3.state).toBe('overweight')
+    })
+  })
+
+  describe('calculateConnectedBody', () => {
+    const g = 9.8
+
+    it('should return moving state when F exceeds total friction', () => {
+      // m1=2, m2=3, F=15, mu=0.1
+      // totalFrictionMax = 0.1 * (2+3) * 9.8 = 4.9
+      // F=15 > 4.9, isMoving=true
+      const res = calculateConnectedBody(2, 3, 15, 0.1, g)
+      expect(res.isMoving).toBe(true)
+      // a = (15 - 4.9) / 5 = 2.02
+      expect(res.a).toBeCloseTo(2.02, 2)
+      // T = m1*F/(m1+m2) = 2*15/5 = 6
+      expect(res.T).toBeCloseTo(6, 5)
+      expect(res.displayTension).toBeCloseTo(6, 5)
+      expect(res.f1).toBeCloseTo(0.1 * 2 * 9.8, 5)
+      expect(res.f2).toBeCloseTo(0.1 * 3 * 9.8, 5)
+      expect(res.staticTensionRange).toBeNull()
+    })
+
+    it('should return static state when F does not exceed total friction', () => {
+      // m1=2, m2=3, F=3, mu=0.1
+      // totalFrictionMax = 4.9, F=3 < 4.9
+      const res = calculateConnectedBody(2, 3, 3, 0.1, g)
+      expect(res.isMoving).toBe(false)
+      expect(res.a).toBe(0)
+      expect(res.T).toBe(0)
+      expect(res.displayTension).toBe(0)
+      expect(res.f1).toBeNull()
+      expect(res.f2).toBeNull()
+      expect(res.f1Max).toBeCloseTo(0.1 * 2 * 9.8, 5)
+      expect(res.f2Max).toBeCloseTo(0.1 * 3 * 9.8, 5)
+      expect(res.staticTensionRange).not.toBeNull()
+      // T_min = max(0, F - f2Max) = max(0, 3 - 2.94) = 0.06
+      expect(res.staticTensionRange!.min).toBeCloseTo(0.06, 2)
+      // T_max = min(f1Max, F) = min(1.96, 3) = 1.96
+      expect(res.staticTensionRange!.max).toBeCloseTo(1.96, 2)
+    })
+
+    it('should return zero tension range when F=0', () => {
+      const res = calculateConnectedBody(2, 3, 0, 0.1, g)
+      expect(res.isMoving).toBe(false)
+      expect(res.staticTensionRange!.min).toBe(0)
+      expect(res.staticTensionRange!.max).toBe(0)
+    })
+
+    it('should handle zero friction (smooth surface)', () => {
+      // mu=0, any F > 0 should cause motion
+      const res = calculateConnectedBody(2, 3, 10, 0, g)
+      expect(res.isMoving).toBe(true)
+      expect(res.a).toBeCloseTo(10 / 5, 5)
+      expect(res.T).toBeCloseTo(2 * 10 / 5, 5)
+    })
+  })
+
+  describe('calculateConnectedBodyTimeline', () => {
+    const g = 9.8
+
+    it('should return zero state when system is not moving', () => {
+      const res = calculateConnectedBodyTimeline(2, 3, 3, 0.1, g, 2.0)
+      expect(res.a).toBe(0)
+      expect(res.v).toBe(0)
+      expect(res.s).toBe(0)
+      expect(res.T).toBe(0)
+      expect(res.isMoving).toBe(false)
+    })
+
+    it('should return zero state at t=0 even if system can move', () => {
+      const res = calculateConnectedBodyTimeline(2, 3, 15, 0.1, g, 0)
+      expect(res.a).toBe(0)
+      expect(res.v).toBe(0)
+      expect(res.s).toBe(0)
+      expect(res.isMoving).toBe(false)
+    })
+
+    it('should calculate correct kinematics for moving system', () => {
+      // a = (15 - 4.9) / 5 = 2.02 m/s²
+      const res = calculateConnectedBodyTimeline(2, 3, 15, 0.1, g, 2.0)
+      expect(res.isMoving).toBe(true)
+      expect(res.a).toBeCloseTo(2.02, 2)
+      expect(res.v).toBeCloseTo(2.02 * 2, 2)
+      expect(res.s).toBeCloseTo(0.5 * 2.02 * 4, 2)
+      expect(res.T).toBeCloseTo(6, 5)
+    })
+
+    it('should handle negative time as zero', () => {
+      const res = calculateConnectedBodyTimeline(2, 3, 15, 0.1, g, -1)
+      expect(res.a).toBe(0)
+      expect(res.v).toBe(0)
+      expect(res.s).toBe(0)
+    })
+  })
 })
+
 

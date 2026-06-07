@@ -304,6 +304,8 @@ export const SPECIAL_EFFECTS = {
   // 积分微元交叉图案前景色
   patternGrid:      '#3B82F6', // 蓝
   patternStripe:    '#EF4444', // 红
+  // 扇形扫过面积/光束填充半透明特效
+  sectorFill:       'rgba(251, 191, 36, 0.15)',
 } as const
 
 // ─── 安全与警示 (Safety & Warnings) ──────────────────────────────────────────
@@ -318,6 +320,8 @@ export const LAB_LABELS = {
   panelBg:          '#0F172A', // neutral-900 (通常带 0.88-0.92 的 opacity)
   panelText:        '#FFFFFF', // 白色主字
   panelTextMuted:   '#FCA5A5', // 辅助/负值红字
+  // 浅色科学浮动面板毛玻璃背景
+  glassPanelBg:      'rgba(255, 255, 255, 0.90)',
 } as const
 
 // ─── 聚合导出：SCENE_COLORS ───────────────────────────────────────────────────

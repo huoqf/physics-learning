@@ -2,6 +2,7 @@ import { FC, useMemo } from 'react'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { useAnimationStore } from '@/stores'
 import { calculateFrictionPullModel, calculateFrictionInclineModel } from '@/physics'
+import { GRAVITY } from '@/physics/constants'
 
 export const FrictionCenterExtra: FC = () => {
   const { params } = useAnimationStore()
@@ -9,12 +10,9 @@ export const FrictionCenterExtra: FC = () => {
   const mode = params.mode ?? 0
   const m = params.m ?? 5
   const mu = params.mu ?? 0.3
-  const g = params.g ?? 9.8
+  const g = params.g ?? GRAVITY
   const F_applied = params.F_applied ?? 15
   const angle = params.angle ?? 15
-
-  const weight = m * g
-  const mu_static = mu * 1.12
 
   const pullResult = calculateFrictionPullModel(m, mu, F_applied, g)
   const inclineResult = calculateFrictionInclineModel(m, mu, angle, g)
@@ -45,21 +43,19 @@ export const FrictionCenterExtra: FC = () => {
     const toSvgY = (f: number) => originY - (f / 40) * plotH
     const points: string[] = []
     const step = 1.5
-    const criticalAngleRad = (criticalAngle * Math.PI) / 180
     for (let deg = 0; deg <= 90; deg += step) {
-      const { f_actual: fVal } = calculateFrictionInclineModel(m, mu, deg, g)
+      const { f_actual: fVal, f_max, f_slip } = calculateFrictionInclineModel(m, mu, deg, g)
       if (Math.abs(deg - criticalAngle) < step) {
-        const fMaxCritical = mu_static * weight * Math.cos(criticalAngleRad)
-        points.push(`${toSvgX(criticalAngle - 0.1)},${toSvgY(fMaxCritical)}`)
-        const fSlipCritical = mu * weight * Math.cos(criticalAngleRad)
-        points.push(`${toSvgX(criticalAngle + 0.1)},${toSvgY(fSlipCritical)}`)
+        // 临界角处绘制突跳：从最大静摩擦力降到滑动摩擦力
+        points.push(`${toSvgX(criticalAngle - 0.1)},${toSvgY(f_max)}`)
+        points.push(`${toSvgX(criticalAngle + 0.1)},${toSvgY(f_slip)}`)
       } else {
         points.push(`${toSvgX(deg)},${toSvgY(fVal)}`)
       }
     }
     const linePath = `M ` + points.join(' L ')
     return { criticalAngle, f_actual, isSliding, toSvgX, toSvgY, linePath }
-  }, [mode, m, mu, g, weight, angle, mu_static])
+  }, [mode, m, mu, g, angle])
 
   const fs = 3.6
   const sfs = 2.8

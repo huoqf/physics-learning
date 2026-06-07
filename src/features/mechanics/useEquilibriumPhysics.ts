@@ -4,7 +4,9 @@ import { useSimulationFrame } from '@/utils/animation'
 import {
   simulateEquilibriumStep,
   calculateTheoreticalEquilibriumPos,
+  EQUIL_L,
 } from '@/physics/dynamics'
+import { GRAVITY } from '@/physics/constants'
 
 interface UseEquilibriumPhysicsProps {
   m: number
@@ -71,7 +73,7 @@ export function useEquilibriumPhysics({
 }: UseEquilibriumPhysicsProps): EquilibriumPhysicsData {
   const { updateParam } = useAnimationStore()
 
-  // 1. 定义物理状态 (实际位置、速度、断线状态)
+  // 1. 定义物理状态 (实际位置、速度、断线状态、张力)
   const [physState, setPhysState] = useState({
     x: 0,
     y: 0,
@@ -79,6 +81,8 @@ export function useEquilibriumPhysics({
     vy: 0,
     brokenLine: 'none' as 'none' | 'left' | 'right' | 'both',
     isDragging: false,
+    t1: 0,
+    t2: 0,
   })
 
   // 2. 使用 ref 记录最新状态，确保 requestAnimationFrame 帧内计算无过期闭包
@@ -91,15 +95,16 @@ export function useEquilibriumPhysics({
     isDragging: false,
     mouseX: 0,
     mouseY: 0,
+    t1: 0,
+    t2: 0,
   })
 
   // 3. 计算固定悬挂梁和悬挂点
   const forceScale = 4.5 // 1 N = 4.5 px
-  const L = 360 // 两侧固定点水平像素距离 (px)，与 physics/dynamics.ts 中 EQUIL_L 保持一致
   const centerX = canvasWidth / 2
   const centerY = canvasHeight / 2 - 45
-  const leftAnchor = useMemo(() => ({ cx: centerX - L / 2, cy: centerY - 90 }), [centerX, centerY])
-  const rightAnchor = useMemo(() => ({ cx: centerX + L / 2, cy: centerY - 90 }), [centerX, centerY])
+  const leftAnchor = useMemo(() => ({ cx: centerX - EQUIL_L / 2, cy: centerY - 90 }), [centerX, centerY])
+  const rightAnchor = useMemo(() => ({ cx: centerX + EQUIL_L / 2, cy: centerY - 90 }), [centerX, centerY])
 
   // 4. 监听外部滑块改变。在非拖拽且未断绳时，让小球位置立刻同步到理论平衡点，确保滑块调节的顺畅感。
   useEffect(() => {
@@ -153,7 +158,7 @@ export function useEquilibriumPhysics({
         dt
       )
 
-      const { state: next } = result
+      const { state: next, t1, t2 } = result
       let nextX = next.x
       let nextY = next.y
       let vx = next.vx
@@ -187,6 +192,8 @@ export function useEquilibriumPhysics({
         vx,
         vy,
         brokenLine: nextBroken,
+        t1,
+        t2,
       }
 
       setPhysState({
@@ -196,6 +203,8 @@ export function useEquilibriumPhysics({
         vy,
         brokenLine: nextBroken,
         isDragging: state.isDragging,
+        t1,
+        t2,
       })
     },
     { maxDeltaMs: 30 }
@@ -233,10 +242,12 @@ export function useEquilibriumPhysics({
     stateRef.current.brokenLine = 'none'
     stateRef.current.vx = 0
     stateRef.current.vy = 0
+    stateRef.current.t1 = 0
+    stateRef.current.t2 = 0
     const eq = calculateTheoreticalEquilibriumPos(theta1, theta2, centerX, leftAnchor.cy)
     stateRef.current.x = eq.cx
     stateRef.current.y = eq.cy
- 
+
     setPhysState({
       x: eq.cx,
       y: eq.cy,
@@ -244,6 +255,8 @@ export function useEquilibriumPhysics({
       vy: 0,
       brokenLine: 'none',
       isDragging: false,
+      t1: 0,
+      t2: 0,
     })
   }, [theta1, theta2, centerX, leftAnchor.cy])
 
@@ -269,22 +282,11 @@ export function useEquilibriumPhysics({
     const len2 = Math.sqrt(dx2 * dx2 + dy2 * dy2) || 1
     const u2 = { x: dx2 / len2, y: dy2 / len2 }
 
-    // 重算力的大小，用于箭头长度映射 (100px = 1m 刚度 Ks=250)
-    const Ks = 250
-    const eqPos = calculateTheoreticalEquilibriumPos(theta1, theta2, centerX, leftAnchor.cy)
-    const L10 = Math.sqrt((eqPos.cx - leftAnchor.cx) ** 2 + (eqPos.cy - leftAnchor.cy) ** 2)
-    const L20 = Math.sqrt((eqPos.cx - rightAnchor.cx) ** 2 + (eqPos.cy - rightAnchor.cy) ** 2)
+    // 张力直接使用 simulateEquilibriumStep 返回值
+    const t1 = physState.t1
+    const t2 = physState.t2
 
-    let t1 = 0
-    let t2 = 0
-    if (physState.brokenLine !== 'left' && physState.brokenLine !== 'both') {
-      if (len1 > L10) t1 = Ks * (len1 - L10) / 100
-    }
-    if (physState.brokenLine !== 'right' && physState.brokenLine !== 'both') {
-      if (len2 > L20) t2 = Ks * (len2 - L20) / 100
-    }
-
-    const gravity = m * 9.8
+    const gravity = m * GRAVITY
     const isOverloaded = t1 > 35 || t2 > 35
 
     // 矢量 Canvas 起止点
@@ -370,6 +372,8 @@ export function useEquilibriumPhysics({
     physState.x,
     physState.y,
     physState.brokenLine,
+    physState.t1,
+    physState.t2,
     leftAnchor,
     rightAnchor,
     m,

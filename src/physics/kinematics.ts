@@ -245,16 +245,39 @@ export function calculateFreeFall(v0: number, g: number, t: number): { v: number
   };
 }
 
+/**
+ * 计算平抛运动状态（无空气阻力）
+ *
+ * 物理坐标系：抛出点为原点，x 轴向右为正，y 轴向上为正。
+ * 水平方向匀速，竖直方向自由落体（加速度向下）。
+ *
+ * @param v0x 水平初速度 (m/s)，正值
+ * @param g 重力加速度 (m/s²)，正值
+ * @param t 运动时间 (s)
+ * @returns x 水平位移 (m)、y 竖直位移 (m，下落为负)、vx 水平速度 (m/s)、vy 竖直速度 (m/s，向下为负)、v 合速度大小 (m/s)、angle 合速度与水平方向夹角 (rad)
+ */
 export function calculateProjectileMotion(v0x: number, g: number, t: number): { x: number; y: number; vx: number; vy: number; v: number; angle: number } {
   const x = v0x * t;
-  const y = 0.5 * g * t * t;
+  const y = -0.5 * g * t * t;
   const vx = v0x;
-  const vy = g * t;
+  const vy = -g * t;
   const v = Math.sqrt(vx * vx + vy * vy);
   const angle = Math.atan2(vy, vx);
   return { x, y, vx, vy, v, angle };
 }
 
+/**
+ * 计算斜抛运动状态（无空气阻力）
+ *
+ * 物理坐标系：抛出点为原点，x 轴向右为正，y 轴向上为正。
+ * 水平方向匀速，竖直方向初速度向上、加速度向下。
+ *
+ * @param v0 初速度大小 (m/s)
+ * @param angleDeg 抛射角 (°)，相对水平方向，向上为正
+ * @param g 重力加速度 (m/s²)，正值
+ * @param t 运动时间 (s)
+ * @returns x 水平位移 (m)、y 竖直位移 (m，向上为正)、vx 水平速度 (m/s)、vy 竖直速度 (m/s，向上为正)
+ */
 export function calculateObliqueThrow(v0: number, angleDeg: number, g: number, t: number): { x: number; y: number; vx: number; vy: number } {
   const angleRad = (angleDeg * Math.PI) / 180;
   const v0x = v0 * Math.cos(angleRad);
@@ -267,6 +290,17 @@ export function calculateObliqueThrow(v0: number, angleDeg: number, g: number, t
   };
 }
 
+/**
+ * 计算斜抛运动的射程、最大高度和总飞行时间（无空气阻力）
+ *
+ * 物理坐标系：抛出点为原点，y 轴向上为正，落回抛出高度时飞行结束。
+ * 公式：R = v₀²sin2θ/g，H = v₀²sin²θ/(2g)，T = 2v₀sinθ/g
+ *
+ * @param v0 初速度大小 (m/s)
+ * @param angleDeg 抛射角 (°)，相对水平方向，向上为正
+ * @param g 重力加速度 (m/s²)，正值
+ * @returns range 水平射程 (m)、maxHeight 最大高度 (m)、totalTime 总飞行时间 (s)
+ */
 export function calculateObliqueThrowRange(v0: number, angleDeg: number, g: number): { range: number; maxHeight: number; totalTime: number } {
   const angleRad = (angleDeg * Math.PI) / 180;
   const totalTime = (2 * v0 * Math.sin(angleRad)) / g;
@@ -275,6 +309,17 @@ export function calculateObliqueThrowRange(v0: number, angleDeg: number, g: numb
   return { range, maxHeight, totalTime };
 }
 
+/**
+ * 计算匀速圆周运动状态
+ *
+ * 物理坐标系：圆心为原点，x 轴向右为正，y 轴向上为正。
+ * 角度从 x 正方向逆时针旋转，θ = ωt。
+ *
+ * @param r 圆周运动半径 (m)，正值
+ * @param omega 角速度 (rad/s)，正值表示逆时针
+ * @param t 运动时间 (s)
+ * @returns x 水平坐标 (m)、y 竖直坐标 (m，向上为正)、v 线速度大小 (m/s)、a_c 向心加速度大小 (m/s²)、period 周期 (s)
+ */
 export function calculateCircularMotion(r: number, omega: number, t: number): { x: number; y: number; v: number; a_c: number; period: number } {
   const angle = omega * t;
   return {
@@ -286,6 +331,13 @@ export function calculateCircularMotion(r: number, omega: number, t: number): { 
   };
 }
 
+/**
+ * 由周期推算匀速圆周运动参数
+ *
+ * @param r 圆周运动半径 (m)，正值
+ * @param T 周期 (s)，正值
+ * @returns omega 角速度 (rad/s)、v 线速度大小 (m/s)、a_c 向心加速度大小 (m/s²)
+ */
 export function calculateCircularFromPeriod(r: number, T: number): { omega: number; v: number; a_c: number } {
   const omega = (2 * Math.PI) / T;
   return {
@@ -789,7 +841,284 @@ export function precomputeVariableMotion(
   return points
 }
 
-// ─── 轨迹插值器（从 features/ Hook 中提取的纯计算逻辑）────────────────────────
+export interface ProjectileTrajectoryPoint {
+  t: number
+  x: number
+  y: number
+  vx: number
+  vy: number
+  v: number
+  ax: number
+  ay: number
+}
+
+export interface ProjectileResult {
+  points: ProjectileTrajectoryPoint[]
+  vacuumPoints: ProjectileTrajectoryPoint[]
+  groundTime: number
+  groundTimeVac: number
+}
+
+/**
+ * 预计算平抛运动轨迹（含空气阻力与真空对照）
+ * 物理坐标系：抛出点为 (0, 0)，Y 轴向上为正，落地判定为 y <= -h
+ * @param v0x 水平初速度 (m/s)
+ * @param g 重力加速度 (m/s²)，正值
+ * @param k 空气阻力系数 (kg/m)，0=无阻力
+ * @param h 抛出点物理高度 (m)，正值
+ * @param m 质量 (kg)，默认 1.0
+ * @param dt 积分步长 (s)，默认 0.001
+ * @param samplingInterval 采样间隔 (s)，默认 0.01
+ */
+export function precomputeProjectileWithDrag(
+  v0x: number,
+  g: number,
+  k: number,
+  h: number,
+  m: number = 1.0,
+  dt: number = 0.001,
+  samplingInterval: number = 0.01
+): ProjectileResult {
+  // 1. 计算无阻力真空对照组
+  const groundTimeVac = g > 0 ? Math.sqrt((2 * h) / g) : 0
+  const vacuumPoints: ProjectileTrajectoryPoint[] = []
+  
+  const vacSteps = Math.ceil(groundTimeVac / samplingInterval)
+  for (let i = 0; i <= vacSteps; i++) {
+    const t = Math.min(i * samplingInterval, groundTimeVac)
+    const x = v0x * t
+    const y = -0.5 * g * t * t
+    const vx = v0x
+    const vy = -g * t
+    const v = Math.sqrt(vx * vx + vy * vy)
+    vacuumPoints.push({
+      t,
+      x,
+      y: Math.max(y, -h),
+      vx,
+      vy,
+      v,
+      ax: 0,
+      ay: -g
+    })
+  }
+
+  // 2. 如果无空气阻力，直接复用真空组数据
+  if (k === 0) {
+    return {
+      points: [...vacuumPoints],
+      vacuumPoints,
+      groundTime: groundTimeVac,
+      groundTimeVac
+    }
+  }
+
+  // 3. 计算带空气阻力的实际轨迹 (欧拉积分)
+  const points: ProjectileTrajectoryPoint[] = []
+  let t = 0
+  let x = 0
+  let y = 0
+  let vx = v0x
+  let vy = 0
+  let lastSampleTime = -samplingInterval
+  
+  const addPoint = (time: number, px: number, py: number, velX: number, velY: number, accX: number, accY: number) => {
+    const vel = Math.sqrt(velX * velX + velY * velY)
+    points.push({
+      t: time,
+      x: px,
+      y: py,
+      vx: velX,
+      vy: velY,
+      v: vel,
+      ax: accX,
+      ay: accY
+    })
+  }
+
+  addPoint(0, 0, 0, v0x, 0, 0, -g)
+  lastSampleTime = 0
+
+  const maxSteps = 100000
+  let step = 0
+  
+  while (y > -h && step < maxSteps) {
+    const v = Math.sqrt(vx * vx + vy * vy)
+    const ax = -(k * v * vx) / m
+    const ay = -g - (k * v * vy) / m
+    
+    vx += ax * dt
+    vy += ay * dt
+    x += vx * dt
+    y += vy * dt
+    t += dt
+    step++
+    
+    if (y <= -h) {
+      y = -h
+      addPoint(t, x, -h, vx, vy, ax, ay)
+      break
+    }
+    
+    if (t - lastSampleTime >= samplingInterval - 1e-9) {
+      addPoint(t, x, y, vx, vy, ax, ay)
+      lastSampleTime = t
+    }
+  }
+
+  return {
+    points,
+    vacuumPoints,
+    groundTime: t,
+    groundTimeVac
+  }
+}
+
+export interface ObliqueThrowTrajectoryPoint {
+  t: number
+  x: number
+  y: number
+  vx: number
+  vy: number
+  v: number
+  ax: number
+  ay: number
+}
+
+export interface ObliqueThrowResult {
+  points: ObliqueThrowTrajectoryPoint[]
+  vacuumPoints: ObliqueThrowTrajectoryPoint[]
+  groundTime: number
+  groundTimeVac: number
+  maxHeight: number
+  maxHeightVac: number
+  range: number
+  rangeVac: number
+}
+
+/**
+ * 预计算斜抛运动轨迹（含空气阻力与真空对照）
+ * 物理坐标系：起抛点为 (0, 0)，Y 轴向上为正，落地判定为 y < 0
+ * @param v0 初速度模长 (m/s)
+ * @param angleDeg 抛射角 (°)
+ * @param g 重力加速度 (m/s²)，正值
+ * @param k 空气阻力系数 (kg/m)，0=无阻力
+ * @param m 质量 (kg)，默认 1.0
+ * @param dt 积分步长 (s)，默认 0.001
+ * @param samplingInterval 采样间隔 (s)，默认 0.01
+ */
+export function precomputeObliqueThrowWithDrag(
+  v0: number,
+  angleDeg: number,
+  g: number,
+  k: number,
+  m: number = 1.0,
+  dt: number = 0.001,
+  samplingInterval: number = 0.01
+): ObliqueThrowResult {
+  const angleRad = (angleDeg * Math.PI) / 180
+  const v0x = v0 * Math.cos(angleRad)
+  const v0y = v0 * Math.sin(angleRad)
+
+  // 1. 计算真空对照组
+  const groundTimeVac = g > 0 ? (2 * v0y) / g : 0
+  const rangeVac = v0x * groundTimeVac
+  const maxHeightVac = g > 0 ? (v0y * v0y) / (2 * g) : 0
+  const vacuumPoints: ObliqueThrowTrajectoryPoint[] = []
+
+  const vacSteps = Math.ceil(groundTimeVac / samplingInterval)
+  for (let i = 0; i <= vacSteps; i++) {
+    const t = Math.min(i * samplingInterval, groundTimeVac)
+    const x = v0x * t
+    const y = v0y * t - 0.5 * g * t * t
+    const vx = v0x
+    const vy = v0y - g * t
+    const v = Math.sqrt(vx * vx + vy * vy)
+    vacuumPoints.push({
+      t,
+      x,
+      y: Math.max(y, 0),
+      vx,
+      vy,
+      v,
+      ax: 0,
+      ay: -g,
+    })
+  }
+
+  // 2. 计算带空气阻力的实际轨迹 (欧拉积分)
+  const points: ObliqueThrowTrajectoryPoint[] = []
+  let t = 0
+  let x = 0
+  let y = 0
+  let vx = v0x
+  let vy = v0y
+  let lastSampleTime = -samplingInterval
+  let maxHeight = 0
+
+  const addPoint = (time: number, px: number, py: number, velX: number, velY: number, accX: number, accY: number) => {
+    const vel = Math.sqrt(velX * velX + velY * velY)
+    points.push({
+      t: time,
+      x: px,
+      y: py,
+      vx: velX,
+      vy: velY,
+      v: vel,
+      ax: accX,
+      ay: accY,
+    })
+  }
+
+  addPoint(0, 0, 0, v0x, v0y, 0, -g)
+  lastSampleTime = 0
+
+  const maxSteps = 100000
+  let step = 0
+
+  while (step < maxSteps) {
+    const v = Math.sqrt(vx * vx + vy * vy)
+    const ax = -(k * v * vx) / m
+    const ay = -g - (k * v * vy) / m
+
+    vx += ax * dt
+    vy += ay * dt
+    x += vx * dt
+    y += vy * dt
+    t += dt
+    step++
+
+    if (y > maxHeight) {
+      maxHeight = y
+    }
+
+    if (y <= 0 && t > 0.05) {
+      y = 0
+      addPoint(t, x, 0, vx, vy, ax, ay)
+      break
+    }
+
+    if (t - lastSampleTime >= samplingInterval - 1e-9) {
+      addPoint(t, x, y, vx, vy, ax, ay)
+      lastSampleTime = t
+    }
+  }
+
+  const range = points[points.length - 1]?.x ?? 0
+
+  return {
+    points: k === 0 ? [...vacuumPoints] : points,
+    vacuumPoints,
+    groundTime: k === 0 ? groundTimeVac : t,
+    groundTimeVac,
+    maxHeight: k === 0 ? maxHeightVac : maxHeight,
+    maxHeightVac,
+    range: k === 0 ? rangeVac : range,
+    rangeVac,
+  }
+}
+
+// ─── 轨迹插值器（从 features/ Hook 中提取 of 纯计算逻辑）────────────────────────
 
 /**
  * 自由落体轨迹插值状态

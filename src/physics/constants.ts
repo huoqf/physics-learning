@@ -6,6 +6,9 @@
 /** 重力加速度近似值（高中物理常用 9.8 m/s²） */
 export const GRAVITY = 9.8
 
+/** 默认静摩擦系数与动摩擦系数之比（教学近似值，非物理定律） */
+export const DEFAULT_STATIC_FRICTION_RATIO = 1.12
+
 /** 万有引力常量 G (N·m²/kg²) */
 export const GRAVITATIONAL_CONSTANT = 6.67e-11
 

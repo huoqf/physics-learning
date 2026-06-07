@@ -1,3 +1,5 @@
+import { GRAVITY, DEFAULT_STATIC_FRICTION_RATIO } from './constants'
+
 export function calculateNewtonSecond(F_net: number, m: number): { a: number } {
   return { a: F_net / m };
 }
@@ -40,12 +42,170 @@ export function calculateInclinedPlane(m: number, angleDeg: number, mu: number, 
   return { N, f, a, F_parallel, F_vertical };
 }
 
-export function calculateConnectedBody(m1: number, m2: number, F: number, mu: number, g: number): { a: number; T: number } {
-  const totalMass = m1 + m2;
-  const f = mu * m2 * g;
-  const a = (F - f) / totalMass;
-  const T = m2 * (a + mu * g);
-  return { a, T };
+/**
+ * 连接体问题静态张力范围（仅静止态有意义）
+ *
+ * 静止时张力由静摩擦分配决定，不唯一。取值范围受两物体最大静摩擦力约束：
+ *   T_min = max(0, F - f₂_max)   —— m₂ 即将滑动时绳的最小拉力
+ *   T_max = min(f₁_max, F)       —— m₁ 即将滑动时绳的最大拉力
+ */
+export interface StaticTensionRange {
+  /** 张力下界 (N) */
+  min: number
+  /** 张力上界 (N) */
+  max: number
+}
+
+/**
+ * 连接体问题计算结果
+ */
+export interface ConnectedBodyResult {
+  /** 系统是否发生共同运动 */
+  isMoving: boolean
+  /** 系统加速度 (m/s²)，静止时为 0 */
+  a: number
+  /** 绳/弹簧内力张力 (N)，运动时为精确值，静止时为 0（展示值） */
+  T: number
+  /** UI 展示用张力 (N)，与 T 相同，语义上强调"展示值" */
+  displayTension: number
+  /** m₁ 实际摩擦力 (N)，仅运动时有意义，静止时为 null */
+  f1: number | null
+  /** m₂ 实际摩擦力 (N)，仅运动时有意义，静止时为 null */
+  f2: number | null
+  /** m₁ 最大静摩擦力 (N) */
+  f1Max: number
+  /** m₂ 最大静摩擦力 (N) */
+  f2Max: number
+  /** 系统总最大静摩擦力 (N) */
+  totalFrictionMax: number
+  /** 静止态张力取值范围，运动时为 null */
+  staticTensionRange: StaticTensionRange | null
+}
+
+/**
+ * 计算水平面上连接体问题的运动状态与内力
+ *
+ * 物理模型：两个物体 m₁、m₂ 通过轻绳/弹簧连接，置于同一粗糙水平面上，
+ * 水平外力 F 作用于 m₂ 右侧，两物体摩擦系数相同（均为 μ）。
+ *
+ * 运动时（F > μ(m₁+m₂)g）：
+ *   加速度 a = [F - μ(m₁+m₂)g] / (m₁+m₂)
+ *   张力 T = m₁F / (m₁+m₂)（与 μ 无关，高中秒杀结论）
+ *
+ * 静止时（F ≤ μ(m₁+m₂)g）：
+ *   张力不唯一，取值范围由两物体最大静摩擦力约束。
+ *   为教学展示简洁，displayTension 返回 0，但 staticTensionRange 提供完整范围。
+ *
+ * @param m1 物体1质量 (kg)，必须 > 0
+ * @param m2 物体2质量 (kg)，必须 > 0
+ * @param F  水平外拉力 (N)，作用于 m₂ 右侧，必须 ≥ 0
+ * @param mu 动摩擦因数（两物体相同），必须 ≥ 0
+ * @param g  重力加速度 (m/s²)，通常取 9.8
+ * @returns 连接体运动状态与内力
+ *
+ * @category M1
+ */
+export function calculateConnectedBody(
+  m1: number,
+  m2: number,
+  F: number,
+  mu: number,
+  g: number
+): ConnectedBodyResult {
+  const f1Max = mu * m1 * g
+  const f2Max = mu * m2 * g
+  const totalFrictionMax = f1Max + f2Max
+  const isMoving = F > totalFrictionMax
+
+  if (!isMoving) {
+    const staticTensionMin = Math.max(0, F - f2Max)
+    const staticTensionMax = Math.min(f1Max, F)
+
+    return {
+      isMoving: false,
+      a: 0,
+      T: 0,
+      displayTension: 0,
+      f1: null,
+      f2: null,
+      f1Max,
+      f2Max,
+      totalFrictionMax,
+      staticTensionRange: { min: staticTensionMin, max: staticTensionMax },
+    }
+  }
+
+  const totalMass = m1 + m2
+  const a = (F - totalFrictionMax) / totalMass
+  const T = (m1 * F) / totalMass
+
+  return {
+    isMoving: true,
+    a,
+    T,
+    displayTension: T,
+    f1: f1Max,
+    f2: f2Max,
+    f1Max,
+    f2Max,
+    totalFrictionMax,
+    staticTensionRange: null,
+  }
+}
+
+/**
+ * 连接体问题时间线状态
+ */
+export interface ConnectedBodyTimelineResult {
+  /** 当前时刻加速度 (m/s²) */
+  a: number
+  /** 当前时刻速度 (m/s) */
+  v: number
+  /** 当前时刻位移 (m) */
+  s: number
+  /** 当前时刻张力 (N) */
+  T: number
+  /** 系统是否在运动 */
+  isMoving: boolean
+}
+
+/**
+ * 计算连接体问题在给定时刻的运动状态
+ *
+ * 基于匀变速直线运动公式：
+ *   v = a·t
+ *   s = ½·a·t²
+ *
+ * 若系统未启动（F ≤ μ(m₁+m₂)g），则 a = v = s = 0。
+ *
+ * @param m1 物体1质量 (kg)
+ * @param m2 物体2质量 (kg)
+ * @param F  水平外拉力 (N)
+ * @param mu 动摩擦因数
+ * @param g  重力加速度 (m/s²)
+ * @param t  时间 (s)，必须 ≥ 0
+ * @returns 给定时刻的运动状态
+ *
+ * @category M1
+ */
+export function calculateConnectedBodyTimeline(
+  m1: number,
+  m2: number,
+  F: number,
+  mu: number,
+  g: number,
+  t: number
+): ConnectedBodyTimelineResult {
+  const { isMoving, a, T } = calculateConnectedBody(m1, m2, F, mu, g)
+
+  if (!isMoving || t <= 0) {
+    return { a: 0, v: 0, s: 0, T: 0, isMoving: false }
+  }
+
+  const v = a * t
+  const s = 0.5 * a * t * t
+
+  return { a, v, s, T, isMoving: true }
 }
 
 /**
@@ -122,6 +282,7 @@ export function calculateFrictionPullModel(
   g: number
 ): {
   F_normal: number;
+  muStatic: number;
   f_max: number;
   f_slip: number;
   f_actual: number;
@@ -131,15 +292,15 @@ export function calculateFrictionPullModel(
 } {
   const weight = m * g;
   const F_normal = weight;
-  const mu_static = mu * 1.12; // 最大静摩擦系数
-  const f_max = mu_static * F_normal;
+  const muStatic = mu * DEFAULT_STATIC_FRICTION_RATIO;
+  const f_max = muStatic * F_normal;
   const f_slip = mu * F_normal;
   const isSliding = F_applied > f_max;
   const f_actual = isSliding ? f_slip : F_applied;
   const a = isSliding ? (F_applied - f_slip) / m : 0;
   const F_net = F_applied - f_actual;
 
-  return { F_normal, f_max, f_slip, f_actual, a, F_net, isSliding };
+  return { F_normal, muStatic, f_max, f_slip, f_actual, a, F_net, isSliding };
 }
 
 export function calculateFrictionInclineModel(
@@ -150,7 +311,9 @@ export function calculateFrictionInclineModel(
 ): {
   F_normal: number;
   F_gravity_parallel: number;
+  muStatic: number;
   f_max: number;
+  f_slip: number;
   f_actual: number;
   a: number;
   criticalAngle: number;
@@ -158,21 +321,24 @@ export function calculateFrictionInclineModel(
 } {
   const weight = m * g;
   const angleRad = (angleDeg * Math.PI) / 180;
-  const mu_static = mu * 1.12; // 最大静摩擦系数
-  const criticalAngleRad = Math.atan(mu_static);
+  const muStatic = mu * DEFAULT_STATIC_FRICTION_RATIO;
+  const criticalAngleRad = Math.atan(muStatic);
   const criticalAngle = (criticalAngleRad * 180) / Math.PI;
   const isSliding = angleDeg > criticalAngle;
 
   const F_normal = weight * Math.cos(angleRad);
   const F_gravity_parallel = weight * Math.sin(angleRad);
-  const f_max = mu_static * F_normal;
-  const f_actual = isSliding ? mu * F_normal : F_gravity_parallel;
+  const f_max = muStatic * F_normal;
+  const f_slip = mu * F_normal;
+  const f_actual = isSliding ? f_slip : F_gravity_parallel;
   const a = isSliding ? g * Math.sin(angleRad) - mu * g * Math.cos(angleRad) : 0;
 
   return {
     F_normal,
     F_gravity_parallel,
+    muStatic,
     f_max,
+    f_slip,
     f_actual,
     a,
     criticalAngle,
@@ -182,9 +348,9 @@ export function calculateFrictionInclineModel(
 
 /**
  * 计算两个共点力的合成（以 F1 方向为 x 轴正方向）
- * @param f1 力 F1 的大小 (N)
- * @param f2 力 F2 的大小 (N)
- * @param angleDeg 两力夹角 θ (度)
+ * @param f1 力 F1 的大小 (N)，必须 ≥ 0
+ * @param f2 力 F2 的大小 (N)，必须 ≥ 0
+ * @param angleDeg 两力夹角 θ (度)，范围 [0, 180]
  */
 export function calculateVectorAddition(
   f1: number,
@@ -225,8 +391,8 @@ export function calculateVectorAddition(
 
 /**
  * 计算一个力的正交分解
- * @param f 力的大小 (N)
- * @param angleDeg 与 x 轴正方向的夹角 (度)
+ * @param f 力的大小 (N)，必须 ≥ 0
+ * @param angleDeg 与 x 轴正方向的夹角 (度)，范围 [0, 360]
  */
 export function calculateOrthogonalDecomposition(
   f: number,
@@ -333,7 +499,7 @@ export interface EquilibriumSimStepResult {
   t2: number
 }
 /** 两侧固定点水平像素距离 (px) */
-const EQUIL_L = 360
+export const EQUIL_L = 360
 
 /** 绳刚度系数 (N/m) */
 const EQUIL_KS = 250
@@ -425,8 +591,7 @@ export function simulateEquilibriumStep(
   }
 
   // 重力及鼠标拖拽拉力
-  const g = 9.8
-  const gravityVal = m * g
+  const gravityVal = m * GRAVITY
   let fMouseX = 0
   let fMouseY = 0
 
@@ -506,4 +671,180 @@ export function simulateEquilibriumStep(
     t1,
     t2,
   }
+}
+
+/**
+ * 计算牛顿第二定律变力模型状态
+ * 
+ * 模式 0: 线性递增力 F(t) = k * t，含摩擦力。
+ * 模式 1: 正弦力 F(t) = F0 * sin(omega * t)，无摩擦力。
+ *
+ * @param modelType 变力模型类型 (0=线性, 1=正弦)
+ * @param params 输入参数 (m: 质量, mu: 动摩擦因数, k?: 斜率, F0?: 正弦幅值, omega?: 角速度, g?: 重力加速度)
+ * @param t 当前时间 (s)
+ * @returns 包含当前施加力、摩擦力、合力、加速度、速度和位移的对象
+ */
+export function calculateNewtonSecondVariableMotion(
+  modelType: 0 | 1,
+  params: {
+    m: number;
+    mu: number;
+    k?: number;
+    F0?: number;
+    omega?: number;
+    g?: number;
+  },
+  t: number
+): {
+  F_applied: number;
+  f: number;
+  F_net: number;
+  a: number;
+  v: number;
+  s: number;
+} {
+  const m = params.m;
+  const mu = params.mu;
+  const g = params.g ?? 9.8;
+  const N = m * g;
+
+  if (modelType === 0) {
+    // 线性变力 F = k * t
+    const k = params.k ?? 2;
+    const F_applied = k * t;
+    const f_max = mu * N;
+
+    if (F_applied <= f_max) {
+      return { F_applied, f: F_applied, F_net: 0, a: 0, v: 0, s: 0 };
+    } else {
+      const t_start = f_max / k;
+      const tau = t - t_start;
+      const a = (F_applied - f_max) / m;
+      const v = (k * tau * tau) / (2 * m);
+      const s = (k * tau * tau * tau) / (6 * m);
+      return { F_applied, f: f_max, F_net: F_applied - f_max, a, v, s };
+    }
+  } else {
+    // 正弦变力 F = F0 * sin(omega * t)，在光滑平面上 (mu = 0)
+    const F0 = params.F0 ?? 15;
+    const omega = params.omega ?? 1.5;
+    const F_applied = F0 * Math.sin(omega * t);
+
+    // a = F / m = F0 / m * sin(omega * t)
+    const a = F_applied / m;
+    // v = F0 / (m * omega) * (1 - cos(omega * t))
+    const v = (F0 / (m * omega)) * (1 - Math.cos(omega * t));
+    // s = F0 / (m * omega) * t - F0 / (m * omega * omega) * sin(omega * t)
+    const s = (F0 / (m * omega)) * t - (F0 / (m * omega * omega)) * Math.sin(omega * t);
+
+    return { F_applied, f: 0, F_net: F_applied, a, v, s };
+  }
+}
+
+/**
+ * 计算超重与失重电梯变运动模型下的物理状态
+ * 
+ * 模式 0: 变速升降电梯 (启动加速 -> 匀速 -> 制动减速 -> 停靠)
+ * 模式 1: 钢索断裂自由落体 (静止 -> 自由落体 -> 底部阻尼刹车 -> 停靠)
+ * 模式 2: 恒定加速度电梯 (匀变速直线运动)
+ * 
+ * @param modelIdx 运动模型类型 (0=变速升降, 1=自由落体, 2=恒定加速度)
+ * @param m 物体质量 (kg)
+ * @param g 重力加速度 (m/s²)
+ * @param t 当前时间 (s)
+ * @param a_ext 外部加速度 (m/s²)，仅模式 2 使用，向上为正
+ * @returns 包含加速度、速度、位移、支持力、重力和当前状态名称的对象
+ */
+export function calculateElevatorMotion(
+  modelIdx: 0 | 1 | 2,
+  m: number,
+  g: number,
+  t: number,
+  a_ext?: number
+): {
+  a: number;         // 电梯加速度 (m/s²，向上为正)
+  v: number;         // 电梯速度 (m/s，向上为正)
+  y: number;         // 电梯位移 (m，向上为正)
+  N: number;         // 体重计支持力 (N)
+  weight: number;    // 重力 (N)
+  state: 'overweight' | 'underweight' | 'weightless' | 'normal'; // 超失重状态
+} {
+  const weight = m * g;
+  let a = 0;
+  let v = 0;
+  let y = 0;
+  let N = weight;
+  let state: 'overweight' | 'underweight' | 'weightless' | 'normal' = 'normal';
+
+  if (modelIdx === 0) {
+    // 变速升降电梯 (0~10s)
+    if (t < 2.0) {
+      a = 2.0;
+      v = a * t;
+      y = 0.5 * a * t * t;
+    } else if (t < 5.0) {
+      const v1 = 4.0;
+      const y1 = 4.0;
+      a = 0;
+      v = v1;
+      y = y1 + v1 * (t - 2.0);
+    } else if (t < 7.0) {
+      const v1 = 4.0;
+      const y2 = 16.0;
+      a = -2.0;
+      v = v1 + a * (t - 5.0);
+      y = y2 + v1 * (t - 5.0) + 0.5 * a * (t - 5.0) * (t - 5.0);
+    } else {
+      a = 0;
+      v = 0;
+      y = 20.0;
+    }
+  } else if (modelIdx === 1) {
+    // 钢索断裂自由落体 (0~6s)
+    if (t < 1.5) {
+      a = 0;
+      v = 0;
+      y = 0;
+    } else if (t < 4.0) {
+      // 自由落体，电梯加速度为 -g，支持力为 0
+      a = -g;
+      v = -g * (t - 1.5);
+      y = -0.5 * g * (t - 1.5) * (t - 1.5);
+    } else if (t < 5.0) {
+      // 刹车，电梯向上加速度为 2.5g
+      const v_fall = -g * 2.5;
+      const y_fall = -0.5 * g * 2.5 * 2.5;
+      a = 2.5 * g;
+      v = v_fall + a * (t - 4.0);
+      y = y_fall + v_fall * (t - 4.0) + 0.5 * a * (t - 4.0) * (t - 4.0);
+    } else {
+      // 停在最底部
+      const y_bottom = -0.5 * g * 2.5 * 2.5 - 1.25 * g;
+      a = 0;
+      v = 0;
+      y = y_bottom;
+    }
+  } else {
+    // 模式 2: 恒定加速度电梯
+    a = a_ext ?? 0;
+    v = a * t;
+    y = 0.5 * a * t * t;
+  }
+
+  // 计算支持力 N = m(g + a)
+  N = m * (g + a);
+  if (N < 0) N = 0;
+
+  // 状态判定
+  if (Math.abs(a) < 0.01) {
+    state = 'normal';
+  } else if (Math.abs(a + g) < 0.1) {
+    state = 'weightless';
+  } else if (a > 0) {
+    state = 'overweight';
+  } else {
+    state = 'underweight';
+  }
+
+  return { a, v, y, N, weight, state };
 }

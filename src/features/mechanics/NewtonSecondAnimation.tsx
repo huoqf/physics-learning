@@ -1,24 +1,77 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
-import { calculateNewtonSecond, calculateFriction, calculateAcceleratedMotion } from '@/physics'
-import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
+import {
+  calculateNewtonSecond,
+  calculateFriction,
+  calculateAcceleratedMotion,
+  calculateNewtonSecondVariableMotion,
+} from '@/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
 
 export default function NewtonSecondAnimation() {
-  const { params, time, showVectors, showFormulas, showGrid } = useAnimationStore()
+  const { params, time, showVectors, showGrid } = useAnimationStore()
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 400 })
 
-  const { F = 10, m = 2, mu = 0 } = params
-  const g = 9.8
-  const N = m * g
-  const { f } = calculateFriction(mu, N, true)
-  const F_net = F - f
-  const { a } = calculateNewtonSecond(F_net, m)
-  const { v, s } = calculateAcceleratedMotion(0, a, time)
+  const {
+    F = 10,
+    m = 2,
+    mu = 0,
+    advancedMode = 0,
+    modelIdx = 0,
+    k = 2,
+    F0 = 15,
+    omega = 1.5,
+  } = params
+
+  let F_applied = F
+  let f = 0
+  let F_net = 0
+  let a = 0
+  let v = 0
+  let s = 0
+
+  if (advancedMode === 1) {
+    const motion = calculateNewtonSecondVariableMotion(
+      modelIdx as 0 | 1,
+      { m, mu, k, F0, omega },
+      time
+    )
+    F_applied = motion.F_applied
+    f = motion.f
+    F_net = motion.F_net
+    a = motion.a
+    v = motion.v
+    s = motion.s
+  } else {
+    const g = 9.8
+    const N = m * g
+    const frictionRes = calculateFriction(mu, N, true)
+    f = frictionRes.f
+    F_applied = F
+    F_net = Math.max(0, F_applied - f)
+    const newtonRes = calculateNewtonSecond(F_net, m)
+    a = newtonRes.a
+    const motionRes = calculateAcceleratedMotion(0, a, time)
+    v = motionRes.v
+    s = motionRes.s
+  }
 
   const scale = 15
   const groundY = canvasSize.height - 80
   const originX = 80
+
+  // 限制小车不跑出 Canvas 屏幕
+  const maxCanvasS = canvasSize.width - 200
   const canvasS = s * scale
+  const displayCanvasS = Math.min(canvasS, maxCanvasS)
+
+  // 小车尺寸
+  const carWidth = 80
+  const carHeight = 35 + m * 5
+  const carX = originX + displayCanvasS
+  const carY = groundY - carHeight
+  const cx = carX + carWidth / 2
+  const cy = carY + carHeight / 2
 
   const gridLines = []
   if (showGrid) {
@@ -41,130 +94,304 @@ export default function NewtonSecondAnimation() {
 
   return (
     <div ref={containerRef} className="w-full h-full">
-      <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
+      <svg
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className="bg-white rounded-lg shadow-inner"
+      >
+        {/* 精密实验室格线 */}
         {gridLines}
 
+        {/* 轨道 */}
         <line
-          x1={originX}
+          x1={originX - 20}
           y1={groundY}
-          x2={canvasSize.width - 50}
+          x2={canvasSize.width - 30}
           y2={groundY}
-          stroke={PHYSICS_COLORS.labelText}
+          stroke={SCENE_COLORS.surface.groundStroke}
+          strokeWidth={STROKE.groundLine}
+        />
+        {/* 轨道左侧挡板 */}
+        <line
+          x1={originX - 20}
+          y1={groundY - 30}
+          x2={originX - 20}
+          y2={groundY}
+          stroke={SCENE_COLORS.surface.groundStroke}
           strokeWidth={STROKE.groundLine}
         />
 
-        <polygon
-          points={`${originX - 10},${groundY} ${originX - 5},${groundY - 10} ${originX - 5},${groundY + 10}`}
-          fill={PHYSICS_COLORS.labelText}
-        />
-
+        {/* 滑块小车：使用不锈钢金属渐变材质填充 */}
         <rect
-          x={originX + canvasS}
-          y={groundY - 40 - m * 10}
-          width={60}
-          height={40 + m * 10}
-          fill={PHYSICS_COLORS.objectFill}
+          x={carX}
+          y={carY}
+          width={carWidth}
+          height={carHeight}
+          fill="url(#slider-metal-grad)"
           stroke={PHYSICS_COLORS.objectStroke}
           strokeWidth={CANVAS_STYLE.stroke.objectLine}
           rx={4}
           className="transition-all duration-75"
         />
 
+        {/* 质量文本标注在小车中心 */}
         <text
-          x={originX + canvasS + 30}
-          y={groundY - 50 - m * 10}
+          x={cx}
+          y={cy + 5}
           fontSize={FONT.bodySize}
-          fill={PHYSICS_COLORS.forceComponent}
+          fill={PHYSICS_COLORS.labelText}
           textAnchor="middle"
           fontWeight="bold"
+          className="select-none pointer-events-none"
         >
-          m={m}kg
+          {m} kg
         </text>
 
         {showVectors && (
           <g>
+            {/* 1. 拉力 F (外力) */}
             <line
-              x1={originX + canvasS + 60}
-              y1={groundY - 20 - m * 5}
-              x2={originX + canvasS + 60 + F * 3}
-              y2={groundY - 20 - m * 5}
-              stroke={PHYSICS_COLORS.elasticForce}
+              x1={cx}
+              y1={cy}
+              x2={cx + Math.max(15, F_applied * 2.5)}
+              y2={cy}
+              stroke={PHYSICS_COLORS.appliedForce}
               strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-              markerEnd="url(#arrowhead-newton)"
+              markerEnd="url(#arrowhead-applied)"
             />
             <text
-              x={originX + canvasS + 60 + F * 3 + 15}
-              y={groundY - 15 - m * 5}
+              x={cx + Math.max(15, F_applied * 2.5) + 8}
+              y={cy + 4}
               fontSize={FONT.bodySize}
-              fill={PHYSICS_COLORS.elasticForce}
+              fill={PHYSICS_COLORS.appliedForce}
               fontWeight="bold"
             >
-              F={F}N
+              F={F_applied.toFixed(1)}N
             </text>
 
-            {mu > 0 && (
+            {/* 2. 摩擦力 f (当存在摩擦力时) */}
+            {f > 0.01 && (
               <>
                 <line
-                  x1={originX + canvasS}
-                  y1={groundY - 10 - m * 5}
-                  x2={originX + canvasS - f * 3}
-                  y2={groundY - 10 - m * 5}
+                  x1={cx}
+                  y1={cy}
+                  x2={cx - Math.max(15, f * 2.5)}
+                  y2={cy}
                   stroke={PHYSICS_COLORS.friction}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain}
                   markerEnd="url(#arrowhead-friction)"
                 />
                 <text
-                  x={originX + canvasS - f * 3 - 15}
-                  y={groundY - 5 - m * 5}
+                  x={cx - Math.max(15, f * 2.5) - 8}
+                  y={cy + 4}
                   fontSize={FONT.axisSize}
                   fill={PHYSICS_COLORS.friction}
                   fontWeight="bold"
+                  textAnchor="end"
                 >
                   f={f.toFixed(1)}N
                 </text>
               </>
             )}
-          </g>
-        )}
 
-        {showFormulas && (
-          <g transform="translate(20, 30)">
-            <text fontSize={FONT.bodySize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">牛顿第二定律 F=ma</text>
-            <text x={0} y={25} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>F = {F}N</text>
-            <text x={0} y={45} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>m = {m}kg</text>
-            <text x={0} y={65} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>μ = {mu}</text>
-            <text x={0} y={90} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
-              N = mg = {N.toFixed(1)}N
+            {/* 3. 重力 G = mg (向下，深绿) */}
+            <line
+              x1={cx}
+              y1={cy}
+              x2={cx}
+              y2={cy + 45}
+              stroke={PHYSICS_COLORS.gravity}
+              strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+              markerEnd="url(#arrowhead-gravity)"
+            />
+            <text
+              x={cx}
+              y={cy + 60}
+              fontSize={FONT.axisSize}
+              fill={PHYSICS_COLORS.gravity}
+              fontWeight="bold"
+              textAnchor="middle"
+            >
+              G={(m * 9.8).toFixed(1)}N
             </text>
-            {mu > 0 && (
-              <text x={0} y={110} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
-                f = μN = {f.toFixed(1)}N
-              </text>
+
+            {/* 4. 支持力 F_N (向上，青绿) */}
+            <line
+              x1={cx}
+              y1={cy}
+              x2={cx}
+              y2={cy - 45}
+              stroke={PHYSICS_COLORS.normalForce}
+              strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+              markerEnd="url(#arrowhead-normal)"
+            />
+            <text
+              x={cx}
+              y={cy - 52}
+              fontSize={FONT.axisSize}
+              fill={PHYSICS_COLORS.normalForce}
+              fontWeight="bold"
+              textAnchor="middle"
+            >
+              F_N={(m * 9.8).toFixed(1)}N
+            </text>
+
+            {/* 5. 合力 F_合 (亮橙，加粗，画在地面下方) */}
+            {F_net > 0.01 && (
+              <g transform={`translate(${cx - 30}, ${groundY + 20})`}>
+                <line
+                  x1={0}
+                  y1={0}
+                  x2={Math.max(25, F_net * 2.5)}
+                  y2={0}
+                  stroke={PHYSICS_COLORS.forceNet}
+                  strokeWidth={CANVAS_STYLE.stroke.vectorMain * 1.5}
+                  markerEnd="url(#arrowhead-netforce)"
+                />
+                <text
+                  x={Math.max(25, F_net * 2.5) + 8}
+                  y={4}
+                  fontSize={FONT.bodySize}
+                  fill={PHYSICS_COLORS.forceNet}
+                  fontWeight="bold"
+                >
+                  F合={F_net.toFixed(1)}N
+                </text>
+              </g>
             )}
-            <text x={0} y={135} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.forceNet} fontWeight="bold">
-              F合 = F - f = {F_net.toFixed(1)}N
-            </text>
-            <text x={0} y={160} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">
-              a = F合/m = {a.toFixed(2)} m/s²
-            </text>
-            <text x={0} y={185} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
-              t = {time.toFixed(2)}s
-            </text>
-            <text x={0} y={205} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
-              v = at = {v.toFixed(2)} m/s
-            </text>
-            <text x={0} y={225} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.axis}>
-              s = ½at² = {s.toFixed(2)} m
-            </text>
+
+            {/* 6. 速度 v 矢量 (经典蓝，画在车顶上方) */}
+            <g transform={`translate(${carX}, ${carY - 15})`}>
+              <line
+                x1={0}
+                y1={0}
+                x2={Math.max(15, v * 5)}
+                y2={0}
+                stroke={PHYSICS_COLORS.velocity}
+                strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+                markerEnd="url(#arrowhead-velocity)"
+              />
+              <text
+                x={Math.max(15, v * 5) + 8}
+                y={4}
+                fontSize={FONT.axisSize}
+                fill={PHYSICS_COLORS.velocity}
+                fontWeight="bold"
+              >
+                v={v.toFixed(2)} m/s
+              </text>
+            </g>
+
+            {/* 7. 加速度 a 矢量 (警示红，画在速度上方) */}
+            {a > 0.01 && (
+              <g transform={`translate(${carX}, ${carY - 32})`}>
+                <line
+                  x1={0}
+                  y1={0}
+                  x2={Math.max(15, a * 8)}
+                  y2={0}
+                  stroke={PHYSICS_COLORS.acceleration}
+                  strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+                  markerEnd="url(#arrowhead-acceleration)"
+                />
+                <text
+                  x={Math.max(15, a * 8) + 8}
+                  y={4}
+                  fontSize={FONT.axisSize}
+                  fill={PHYSICS_COLORS.acceleration}
+                  fontWeight="bold"
+                >
+                  a={a.toFixed(2)} m/s²
+                </text>
+              </g>
+            )}
           </g>
         )}
 
         <defs>
-          <marker id="arrowhead-newton" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.elasticForce} />
+          {/* 金属渐变色定义 */}
+          <linearGradient id="slider-metal-grad" x1="0" y1="0" x2="0" y2="1">
+            {SCENE_COLORS.materials.sliderMetalGrad.map((color, idx) => (
+              <stop
+                key={`smg-${idx}`}
+                offset={`${
+                  (idx / (SCENE_COLORS.materials.sliderMetalGrad.length - 1)) * 100
+                }%`}
+                stopColor={color}
+              />
+            ))}
+          </linearGradient>
+
+          {/* 各矢量箭头定义 */}
+          <marker
+            id="arrowhead-applied"
+            markerWidth="8"
+            markerHeight="6"
+            refX="7"
+            refY="3"
+            orient="auto"
+          >
+            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.appliedForce} />
           </marker>
-          <marker id="arrowhead-friction" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.friction} />
+          <marker
+            id="arrowhead-friction"
+            markerWidth="8"
+            markerHeight="6"
+            refX="7"
+            refY="3"
+            orient="auto"
+          >
+            <polygon points="8 0, 0 3, 8 6" fill={PHYSICS_COLORS.friction} />
+          </marker>
+          <marker
+            id="arrowhead-gravity"
+            markerWidth="8"
+            markerHeight="6"
+            refX="7"
+            refY="3"
+            orient="auto"
+          >
+            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.gravity} />
+          </marker>
+          <marker
+            id="arrowhead-normal"
+            markerWidth="8"
+            markerHeight="6"
+            refX="7"
+            refY="3"
+            orient="auto"
+          >
+            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.normalForce} />
+          </marker>
+          <marker
+            id="arrowhead-netforce"
+            markerWidth="8"
+            markerHeight="6"
+            refX="7"
+            refY="3"
+            orient="auto"
+          >
+            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.forceNet} />
+          </marker>
+          <marker
+            id="arrowhead-velocity"
+            markerWidth="8"
+            markerHeight="6"
+            refX="7"
+            refY="3"
+            orient="auto"
+          >
+            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.velocity} />
+          </marker>
+          <marker
+            id="arrowhead-acceleration"
+            markerWidth="8"
+            markerHeight="6"
+            refX="7"
+            refY="3"
+            orient="auto"
+          >
+            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.acceleration} />
           </marker>
         </defs>
       </svg>
