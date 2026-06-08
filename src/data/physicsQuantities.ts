@@ -15,6 +15,7 @@ import {
   precomputeObliqueThrowWithDrag,
   calculateCircularMotion,
   calculateOrbitalSpeed,
+  calculateKeplerOrbit,
   calculateRestitutionCollision,
   calculateCoulombForce,
   calculateElectricField,
@@ -47,6 +48,24 @@ import {
   calculateVectorAddition,
   calculateOrthogonalDecomposition,
   calculateEquilibriumTension,
+  calculateLaunchTrajectory,
+  calculateWorkBasic,
+  calculateWorkAdvanced,
+  classifyWorkType,
+  calculateConstantPowerParams,
+  calculateConstantAccelParams,
+  getPowerStateAtTime,
+  precomputeConstantPowerTrajectory,
+  precomputeConstantAccelTrajectory,
+  precomputeConstantKETrajectory,
+  precomputeCurvedTrackTrajectory,
+  getKEStateAtTime,
+  precomputeGravityTrajectory,
+  precomputeSpringTrajectory,
+  getPEStateAtTime,
+  precomputePendulumTrajectory,
+  precomputeValleyTrajectory,
+  getECStateAtTime,
 } from '../physics'
 import type { VariableMotionModel, VariableMotionParams } from '../physics'
 
@@ -68,6 +87,12 @@ export interface GaokaoPoint {
 export interface Formula {
   name: string
   latex: string
+  /** 公式适用条件（如"仅斜向上拉时"） */
+  condition?: string
+  /** 补充说明（如"脱地时 FN=0"） */
+  note?: string
+  /** 重要性/高考频率 */
+  level?: 'core' | 'important' | 'derived' | 'supplementary'
 }
 
 export interface PhysicsPanelData {
@@ -284,7 +309,7 @@ export function buildPhysicsQuantities(
             { label: 'v̄=v(t/2)?', value: Math.abs(avgV - vAtHalfT) < 0.01 ? '✓ 成立' : '✗', unit: '' },
           ],
           formulas: [
-            { name: '速度位移关系', latex: `v^2 - v_0^2 = 2ax` },
+            { name: '速度位移关系', latex: `v^2 - v_0^2 = 2ax`, level: 'important', condition: '仅适用于匀变速直线运动' },
           ],
           gaokaoPoints: [
             { text: 'v-t 图象面积代表位移，图象斜率代表加速度大小', importance: 'core' as const },
@@ -315,9 +340,9 @@ export function buildPhysicsQuantities(
             { label: '隔项逐差 a', value: skipDiffA, unit: 'm/s²' },
           ],
           formulas: [
-            { name: '逐差法', latex: `\\Delta x = aT^2 = ${a} \\times ${T}^2 = ${deltaX.toFixed(3)}\\;\\text{m}` },
-            { name: '隔项逐差', latex: `a = \\frac{x_3 - x_1}{2T^2}` },
-            { name: '中间位置速度', latex: `v_{s/2} = \\sqrt{\\frac{v_0^2+v^2}{2}}` },
+            { name: '逐差法', latex: `\\Delta x = aT^2 = ${a} \\times ${T}^2 = ${deltaX.toFixed(3)}\\;\\text{m}`, level: 'important', condition: '连续相等时间间隔' },
+            { name: '隔项逐差', latex: `a = \\frac{x_3 - x_1}{2T^2}`, level: 'derived', note: '减小实验误差的优化方法' },
+            { name: '中间位置速度', latex: `v_{s/2} = \\sqrt{\\frac{v_0^2+v^2}{2}}`, level: 'derived', condition: '匀变速直线运动' },
           ],
           gaokaoPoints: [
             { text: '连续相等时间位移差恒定（Δx=aT²）是判断匀变速的依据', importance: 'core' as const },
@@ -358,9 +383,9 @@ export function buildPhysicsQuantities(
             { label: '环境状态', value: envStatus, unit: '', highlight: pressure < 0.01 ? 'positive' as const : undefined },
           ],
           formulas: [
-            { name: '自由落体速度', latex: 'v = gt' },
-            { name: '自由落体位移', latex: 'h = \\frac{1}{2}gt^2' },
-            { name: '速度位移关系', latex: 'v^2 = 2gh' },
+            { name: '自由落体速度', latex: 'v = gt', level: 'core', condition: '初速度为零、仅受重力' },
+            { name: '自由落体位移', latex: 'h = \\frac{1}{2}gt^2', level: 'core', condition: '初速度为零、仅受重力' },
+            { name: '速度位移关系', latex: 'v^2 = 2gh', level: 'important', condition: '初速度为零、仅受重力' },
           ],
           gaokaoPoints: [
             { text: '自由落体是初速度为零、仅受重力、加速度为g的匀加速运动', importance: 'core' as const },
@@ -391,10 +416,10 @@ export function buildPhysicsQuantities(
             { label: '测得 g', value: gMeasured, unit: 'm/s²', highlight: 'positive' as const },
           ],
           formulas: [
-            { name: '滴水法核心', latex: 'h = \\frac{1}{2}g(2T)^2' },
-            { name: '纬度影响', latex: 'g = 9.780(1 + 0.005302\\sin^2\\phi)' },
-            { name: '海拔影响', latex: "g' = g_0 \\left(\\frac{R}{R+H}\\right)^2" },
-            { name: '重力与万有引力', latex: 'mg = G\\frac{Mm}{R^2}' },
+            { name: '滴水法核心', latex: 'h = \\frac{1}{2}g(2T)^2', level: 'important', condition: '第n滴与第n+2滴时间间隔为2T' },
+            { name: '纬度影响', latex: 'g = 9.780(1 + 0.005302\\sin^2\\phi)', level: 'supplementary' },
+            { name: '海拔影响', latex: "g' = g_0 \\left(\\frac{R}{R+H}\\right)^2", level: 'supplementary' },
+            { name: '重力与万有引力', latex: 'mg = G\\frac{Mm}{R^2}', level: 'core', condition: '忽略自转时' },
           ],
           gaokaoPoints: [
             { text: '重力加速度g随纬度升高而增大，随高度增加而减小', importance: 'core' as const },
@@ -418,16 +443,16 @@ export function buildPhysicsQuantities(
 
       // 基础公式
       const baseFormulas: Formula[] = [
-        { name: '速度公式', latex: `v = v_0 - gt = ${v.toFixed(2)}\\;\\text{m/s}` },
-        { name: '速度-位移关系', latex: `v^2 - v_0^2 = -2gy` },
+        { name: '速度公式', latex: `v = v_0 - gt = ${v.toFixed(2)}\\;\\text{m/s}`, level: 'core', condition: '取向上为正方向' },
+        { name: '速度-位移关系', latex: `v^2 - v_0^2 = -2gy`, level: 'important', condition: '取向上为正方向' },
       ]
 
       // 进阶公式
       const advancedFormulas: Formula[] = advancedMode ? [
         ...baseFormulas,
-        { name: '位移方程', latex: `y = v_0 t - \\frac{1}{2}gt^2` },
-        { name: '求根公式', latex: `t = \\frac{v_0 \\pm \\sqrt{v_0^2 - 2gy}}{g}` },
-        { name: '相邻等时差', latex: `\\Delta y = gT^2` },
+        { name: '位移方程', latex: `y = v_0 t - \\frac{1}{2}gt^2`, level: 'core', condition: '取向上为正方向' },
+        { name: '求根公式', latex: `t = \\frac{v_0 \\pm \\sqrt{v_0^2 - 2gy}}{g}`, level: 'derived', note: '双解对应上升和下落两次经过同一高度' },
+        { name: '相邻等时差', latex: `\\Delta y = gT^2`, level: 'important', condition: '匀变速直线运动' },
       ] : baseFormulas
 
       // 双解拦截索
@@ -512,15 +537,15 @@ export function buildPhysicsQuantities(
       // 3. 动态公式高亮联动
       const formulas: Formula[] = []
       if (analysisView === 0) {
-        formulas.push({ name: '① 整体方程', latex: 'F - f_1 - f_2 = (m_1 + m_2)a' })
-        formulas.push({ name: '② 隔离 m₁', latex: 'T - f_1 = m_1 a' })
+        formulas.push({ name: '① 整体方程', latex: 'F - f_1 - f_2 = (m_1 + m_2)a', level: 'core' })
+        formulas.push({ name: '② 隔离 m₁', latex: 'T - f_1 = m_1 a', level: 'core' })
       } else if (analysisView === 1) {
-        formulas.push({ name: '整体方程 (高亮)', latex: 'F - (f_1 + f_2) = (m_1 + m_2)a' })
+        formulas.push({ name: '整体方程 (高亮)', latex: 'F - (f_1 + f_2) = (m_1 + m_2)a', level: 'core' })
       } else if (analysisView === 2) {
-        formulas.push({ name: '隔离 m₁ (高亮)', latex: 'T - f_1 = m_1 a' })
-        formulas.push({ name: '内力结论', latex: 'T = \\frac{m_1}{m_1 + m_2}F' })
+        formulas.push({ name: '隔离 m₁ (高亮)', latex: 'T - f_1 = m_1 a', level: 'core' })
+        formulas.push({ name: '内力结论', latex: 'T = \\frac{m_1}{m_1 + m_2}F', level: 'important', condition: '同材质粗糙面上滑动时', note: '与摩擦系数μ无关' })
       } else if (analysisView === 3) {
-        formulas.push({ name: '隔离 m₂ (高亮)', latex: 'F - T - f_2 = m_2 a' })
+        formulas.push({ name: '隔离 m₂ (高亮)', latex: 'F - T - f_2 = m_2 a', level: 'core' })
       }
 
       // 4. 高考要点
@@ -585,12 +610,12 @@ export function buildPhysicsQuantities(
       ]
 
       const formulas: Formula[] = airResistance > 0 ? [
-        { name: '水平方向阻力运动', latex: 'a_x = -\\frac{k}{m} v v_x' },
-        { name: '竖直方向阻力运动', latex: 'a_y = -g - \\frac{k}{m} v v_y' },
+        { name: '水平方向阻力运动', latex: 'a_x = -\\frac{k}{m} v v_x', level: 'supplementary', condition: '二次阻力模型' },
+        { name: '竖直方向阻力运动', latex: 'a_y = -g - \\frac{k}{m} v v_y', level: 'supplementary', condition: '二次阻力模型' },
       ] : [
-        { name: '水平匀速运动', latex: 'x = v_{0x} t' },
-        { name: '竖直自由落体', latex: 'y = \\frac{1}{2}gt^2' },
-        { name: '速度合成关系', latex: 'v = \\sqrt{v_x^2 + v_y^2}' },
+        { name: '水平匀速运动', latex: 'x = v_{0x} t', level: 'core' },
+        { name: '竖直自由落体', latex: 'y = \\frac{1}{2}gt^2', level: 'core', condition: '忽略空气阻力' },
+        { name: '速度合成关系', latex: 'v = \\sqrt{v_x^2 + v_y^2}', level: 'important' },
       ]
 
       const gaokaoPoints: GaokaoPoint[] = [
@@ -654,12 +679,12 @@ export function buildPhysicsQuantities(
       ]
 
       const formulas: Formula[] = airResistance > 0 ? [
-        { name: '水平方向阻力运动', latex: 'a_x = -\\frac{k}{m} v v_x' },
-        { name: '竖直方向阻力运动', latex: 'a_y = -g - \\frac{k}{m} v v_y' },
+        { name: '水平方向阻力运动', latex: 'a_x = -\\frac{k}{m} v v_x', level: 'supplementary', condition: '二次阻力模型' },
+        { name: '竖直方向阻力运动', latex: 'a_y = -g - \\frac{k}{m} v v_y', level: 'supplementary', condition: '二次阻力模型' },
       ] : [
-        { name: '水平匀速运动', latex: 'x = v_0 \\cos\\theta \\cdot t' },
-        { name: '竖直竖直上抛', latex: 'y = v_0 \\sin\\theta \\cdot t - \\frac{1}{2}gt^2' },
-        { name: '速度合成关系', latex: 'v = \\sqrt{v_x^2 + v_y^2}' },
+        { name: '水平匀速运动', latex: 'x = v_0 \\cos\\theta \\cdot t', level: 'core' },
+        { name: '竖直竖直上抛', latex: 'y = v_0 \\sin\\theta \\cdot t - \\frac{1}{2}gt^2', level: 'core', condition: '忽略空气阻力' },
+        { name: '速度合成关系', latex: 'v = \\sqrt{v_x^2 + v_y^2}', level: 'important' },
       ]
 
       const gaokaoPoints: GaokaoPoint[] = [
@@ -699,13 +724,13 @@ export function buildPhysicsQuantities(
 
       const formulas: Formula[] = isAdvanced
         ? [
-            { name: '位置方程 x', latex: 'x = r \\cos(\\omega t)' },
-            { name: '位置方程 y', latex: 'y = r \\sin(\\omega t)' },
-            { name: '向心加速度', latex: 'a_n = \\omega^2 r = \\frac{v^2}{r}' },
+            { name: '位置方程 x', latex: 'x = r \\cos(\\omega t)', level: 'important' },
+            { name: '位置方程 y', latex: 'y = r \\sin(\\omega t)', level: 'important' },
+            { name: '向心加速度', latex: 'a_n = \\omega^2 r = \\frac{v^2}{r}', level: 'core' },
           ]
         : [
-            { name: '线速度与角速度', latex: 'v = \\omega r' },
-            { name: '周期公式', latex: 'T = \\frac{2\\pi}{\\omega}' },
+            { name: '线速度与角速度', latex: 'v = \\omega r', level: 'core' },
+            { name: '周期公式', latex: 'T = \\frac{2\\pi}{\\omega}', level: 'core' },
           ]
 
       const gaokaoPoints: GaokaoPoint[] = isAdvanced
@@ -755,12 +780,12 @@ export function buildPhysicsQuantities(
 
       const formulas: Formula[] = isAdvanced
         ? [
-            { name: '向心力大小', latex: 'F_n = m a_n = m \\frac{v^2}{r} = m \\omega^2 r' },
-            { name: '向心力矢量', latex: '\\vec{F}_n = -m \\omega^2 \\vec{r}' },
+            { name: '向心力大小', latex: 'F_n = m a_n = m \\frac{v^2}{r} = m \\omega^2 r', level: 'core' },
+            { name: '向心力矢量', latex: '\\vec{F}_n = -m \\omega^2 \\vec{r}', level: 'derived' },
           ]
         : [
-            { name: '向心加速度', latex: 'a_n = \\frac{v^2}{r} = \\omega^2 r' },
-            { name: '线速度与周期', latex: 'v = \\frac{2\\pi r}{T}' },
+            { name: '向心加速度', latex: 'a_n = \\frac{v^2}{r} = \\omega^2 r', level: 'core' },
+            { name: '线速度与周期', latex: 'v = \\frac{2\\pi r}{T}', level: 'core' },
           ]
 
       const gaokaoPoints: GaokaoPoint[] = isAdvanced
@@ -780,15 +805,214 @@ export function buildPhysicsQuantities(
         gaokaoPoints,
       }
     }
-    case 'anim-satellite': {
-      const r = params.r ?? 7
-      const rMeters = r * 1e6
-      const { T } = calculateOrbitalSpeed(EARTH_MASS, rMeters, GRAVITATIONAL_CONSTANT)
+    case 'anim-kepler': {
+      const mode = params.mode ?? 0 // 0=第一定律, 1=第二定律, 2=第三定律
+      const a1 = params.a ?? 4.5
+      const b1 = params.b ?? 3.0
+      const T1 = params.period ?? 10
+
+      const c1 = Math.sqrt(Math.max(0, a1 * a1 - b1 * b1))
+      const e1 = a1 > 0 ? c1 / a1 : 0
+      const rMin = a1 - c1
+      const rMax = a1 + c1
+
+      const orbitA = calculateKeplerOrbit(a1, b1, time, T1)
+
+      const a2 = params.a2 ?? 7.5
+      const T2 = T1 * Math.sqrt(Math.pow(a2 / a1, 3))
+
+      const quantities: PhysicsQuantity[] = []
+      const formulas: Formula[] = []
+      const gaokaoPoints: GaokaoPoint[] = []
+
+      if (mode !== 2) {
+        // 第一和第二定律
+        quantities.push(
+          { label: '轨道几何 (a,b,e)', value: `a=${a1.toFixed(1)}, b=${b1.toFixed(1)}, e=${e1.toFixed(2)}`, unit: '' },
+          { label: '极值距离 (近/远)', value: `r_min=${rMin.toFixed(2)}, r_max=${rMax.toFixed(2)}`, unit: '' },
+          { label: '近日/远日速度比', value: (rMax / rMin).toFixed(2), unit: '' },
+          { label: '当前距日距离 r', value: orbitA.r.toFixed(2), unit: '' },
+          { label: '当前瞬时速度 v', value: orbitA.v.toFixed(2), unit: '(相对值)', highlight: 'positive' as const }
+        )
+      } else {
+        // 第三定律
+        quantities.push(
+          { label: '内轨半径 & 周期 (A)', value: `a₁=${a1.toFixed(1)}, T₁=${T1.toFixed(1)}s`, unit: '' },
+          { label: '外轨半径 & 周期 (B)', value: `a₂=${a2.toFixed(1)}, T₂=${T2.toFixed(1)}s`, unit: '' },
+          { label: '内轨比值 a₁³/T₁²', value: (Math.pow(a1, 3) / Math.pow(T1, 2)).toFixed(4), unit: '', highlight: 'positive' as const },
+          { label: '外轨比值 a₂³/T₂²', value: (Math.pow(a2, 3) / Math.pow(T2, 2)).toFixed(4), unit: '', highlight: 'positive' as const }
+        )
+      }
+
+      if (mode === 0) {
+        formulas.push(
+          { name: '第一定律轨道方程', latex: '\\frac{x^2}{a^2} + \\frac{y^2}{b^2} = 1 \\quad (c = \\sqrt{a^2-b^2})', level: 'important' },
+          { name: '焦半径定义关系', latex: 'r_1 + r_2 = 2a \\quad (\\text{双焦点距离和恒定})', level: 'core' }
+        )
+        gaokaoPoints.push(
+          { text: '恒星（如太阳）必然处于行星椭圆轨道的其中一个焦点上。', importance: 'core' as const },
+          { text: '离心率 e=c/a 刻画椭圆轨道的扁平程度，0 <= e < 1，越接近 0 越圆。', importance: 'basic' as const },
+          { text: '近日点距离为 a-c，远日点距离为 a+c。', importance: 'gaokao' as const }
+        )
+      } else if (mode === 1) {
+        formulas.push(
+          { name: '第二定律面积微分', latex: '\\Delta S = \\frac{1}{2} \\int r^2 d\\theta = \\text{常数}', level: 'important', condition: '同一轨道同一天体' },
+          { name: '近日点远日点守恒', latex: 'r_{\\text{近日}} \\cdot v_{\\text{近日}} = r_{\\text{远日}} \\cdot v_{\\text{远日}} \\quad (\\text{角动量守恒})', level: 'core', condition: '椭圆轨道' }
+        )
+        gaokaoPoints.push(
+          { text: '近日点（距恒星最近）速度最大，远日点（距恒星最远）速度最小。', importance: 'gaokao' as const },
+          { text: '行星做椭圆轨道运动不是匀速运动，其线速度和角速度均在时刻变化。', importance: 'core' as const },
+          { text: '近日速度与远日速度之比与近日距离和远日距离成反比。', importance: 'hard' as const }
+        )
+      } else {
+        formulas.push(
+          { name: '第三定律周期比值', latex: '\\frac{a_1^3}{T_1^2} = \\frac{a_2^3}{T_2^2} = k', level: 'core', condition: '同一中心天体' },
+          { name: '常数决定式', latex: 'k = \\frac{G M_{\\text{中心天体}}}{4\\pi^2}', level: 'derived' }
+        )
+        gaokaoPoints.push(
+          { text: '比值常数 k 的大小仅与中心天体的质量有关，与环绕的行星质量无关。', importance: 'gaokao' as const },
+          { text: '第三定律适用于同一中心天体下的所有环绕星体（如八大行星绕日、所有卫星绕地）。', importance: 'core' as const },
+          { text: '半长轴 a 是长轴的一半，对圆形轨道而言简化为轨道半径 R。', importance: 'basic' as const }
+        )
+      }
+
       return {
-        quantities: [
-          ...base,
-          { label: '周期 T', value: T / 60, unit: 'min' },
-        ],
+        quantities,
+        formulas,
+        gaokaoPoints,
+      }
+    }
+    case 'anim-satellite': {
+      const mode = params.mode ?? 0 // 0=多轨道对比, 1=宇宙速度发射
+      const G = GRAVITATIONAL_CONSTANT
+      const M_earth = EARTH_MASS
+      const R_earth = 6.37e6
+
+      const quantities: PhysicsQuantity[] = []
+      const formulas: Formula[] = []
+      const gaokaoPoints: GaokaoPoint[] = []
+
+      if (mode === 0) {
+        // ── 模式 0：多轨道圆周对比 ──
+        const r = params.r ?? 7
+        const rMeters = r * 1e6
+        const { v, T, a_c } = calculateOrbitalSpeed(M_earth, rMeters, G)
+        const THours = T / 3600
+
+        quantities.push(
+          { label: '轨道半径 r', value: rMeters.toExponential(2), unit: 'm' },
+          { label: '线速度 v', value: (v / 1000).toFixed(2), unit: 'km/s', highlight: 'positive' as const },
+          { label: '运行周期 T', value: THours.toFixed(2), unit: 'h' },
+          { label: '向心加速度 a_n', value: a_c.toFixed(2), unit: 'm/s²' }
+        )
+
+        formulas.push(
+          { name: '线速度公式', latex: 'v = \\sqrt{\\frac{GM}{r}}', level: 'core', condition: '圆形轨道' },
+          { name: '周期公式', latex: 'T = 2\\pi \\sqrt{\\frac{r^3}{GM}}', level: 'core', condition: '圆形轨道' },
+          { name: '向心加速度', latex: 'a_n = \\frac{GM}{r^2}', level: 'important', condition: '万有引力提供向心力' }
+        )
+
+        gaokaoPoints.push(
+          { text: '高轨低速：轨道半径越大，线速度和向心加速度越小，周期越长。', importance: 'core' as const },
+          { text: '同步轨道：轨道半径固定约 4.24万公里，周期固定为24小时。', importance: 'gaokao' as const },
+          { text: '第一宇宙速度 7.9km/s 是近地圆轨道的最大环绕速度。', importance: 'hard' as const }
+        )
+      } else {
+        // ── 模式 1：宇宙速度发射 ──
+        const v0_km_s = params.v0 ?? 7.9
+        const v0 = v0_km_s * 1000
+        const isLaunched = params.isLaunched ?? 0
+        const { orbitType, e } = calculateLaunchTrajectory(v0, M_earth, R_earth, G)
+
+        let typeName = '椭圆轨道'
+        if (orbitType === 'crash') typeName = '坠毁轨道 (未能环绕)'
+        else if (orbitType === 'circular') typeName = '近地圆轨道'
+        else if (orbitType === 'escape') typeName = '逃逸轨道 (脱离地球)'
+
+        let phaseName = '待发射'
+        let currentH = 0 // 米
+        let currentV = 0 // m/s
+        let crashed = false
+
+        if (isLaunched === 1) {
+          const t_animation = time
+          if (t_animation < 3) {
+            phaseName = '垂直起飞'
+            const p = t_animation / 3
+            currentH = R_earth * 0.15 * p
+            currentV = v0 * (t_animation / 8)
+          } else if (t_animation < 8) {
+            phaseName = '重力转弯'
+            const p = (t_animation - 3) / 5
+            const eased = 1 - Math.pow(1 - p, 2)
+            currentH = R_earth * (0.15 + 0.20 * eased)
+            currentV = v0 * (t_animation / 8)
+          } else {
+            // 在轨阶段：重现极坐标积分
+            const r0 = 1.35 * R_earth
+            const v_c = Math.sqrt(G * M_earth / r0)
+            const alpha = (r0 * v0 * v0) / (G * M_earth)
+            const e_ecc = Math.abs(alpha - 1)
+            const isFarOrigin = v0 < v_c
+            const p_param = isFarOrigin ? r0 * (1 - e_ecc) : r0 * (1 + e_ecc)
+            const h = r0 * v0
+
+            let theta = 0.6
+            const dt = 0.05
+            const timeScale = 450 // mode1 的时间加速
+            const targetT = (t_animation - 8) * timeScale
+            const maxSteps = Math.min(10000, targetT / dt)
+
+            for (let i = 0; i < maxSteps; i++) {
+              const curR = isFarOrigin ? p_param / (1 - e_ecc * Math.cos(theta - 0.6)) : p_param / (1 + e_ecc * Math.cos(theta - 0.6))
+              if (curR < R_earth * 0.99) {
+                crashed = true
+                break
+              }
+              const dTheta = (h / (curR * curR)) * dt
+              theta += dTheta
+            }
+
+            if (crashed) {
+              phaseName = '撞击坠毁'
+              currentH = 0
+              currentV = 0
+            } else {
+              phaseName = '在轨环绕'
+              const currentR = isFarOrigin ? p_param / (1 - e_ecc * Math.cos(theta - 0.6)) : p_param / (1 + e_ecc * Math.cos(theta - 0.6))
+              currentH = currentR - R_earth
+              
+              const v_sq = v0 * v0 + 2 * G * M_earth * (1 / currentR - 1 / r0)
+              currentV = v_sq > 0 ? Math.sqrt(v_sq) : 0
+            }
+          }
+        }
+
+        quantities.push(
+          { label: '发射速度 v₀', value: v0_km_s.toFixed(2), unit: 'km/s', highlight: 'extreme' as const },
+          { label: '当前阶段', value: phaseName, unit: '', highlight: crashed ? 'negative' as const : isLaunched === 1 ? 'positive' as const : undefined },
+          { label: '实时高度', value: (currentH / 1000).toFixed(2), unit: 'km' },
+          { label: '实时线速度', value: (currentV / 1000).toFixed(2), unit: 'km/s', highlight: isLaunched === 1 && !crashed ? 'positive' as const : undefined },
+          { label: '预定轨道类型', value: typeName, unit: '', highlight: orbitType === 'crash' ? 'negative' as const : 'positive' as const },
+          { label: '预定偏心率 e', value: e.toFixed(3), unit: '' }
+        )
+
+        formulas.push(
+          { name: '二体轨道方程', latex: 'r(\\theta) = \\frac{p}{1 + e \\cos \\theta}', level: 'important', condition: '二体问题' },
+          { name: '总机械能守恒', latex: 'E = \\frac{1}{2}m v^2 - G\\frac{Mm}{r} = \\text{常数}', level: 'core', condition: '仅受万有引力' }
+        )
+
+        gaokaoPoints.push(
+          { text: '第一宇宙速度 7.9km/s 是地球卫星的最小发射速度。', importance: 'core' as const },
+          { text: '第二宇宙速度 11.2km/s 是卫星脱离地球引力束缚的最小速度。', importance: 'gaokao' as const },
+          { text: '发射速度小于第一宇宙速度时，卫星必将落回地表坠毁。', importance: 'hard' as const }
+        )
+      }
+
+      return {
+        quantities,
+        formulas,
+        gaokaoPoints,
       }
     }
     case 'anim-momentum-conservation': {
@@ -1180,9 +1404,9 @@ export function buildPhysicsQuantities(
             { label: '重力偏角 θ', value: angleDeviation.toFixed(2), unit: '°', highlight: angleDeviation > 0.5 ? 'extreme' : undefined }
           ],
           formulas: [
-            { name: '引力分解关系', latex: '\\vec{F}_{\\text{引}} = \\vec{G} + \\vec{F}_{\\text{向}}' },
-            { name: '极点状态(向心力=0)', latex: 'G = F_{\\text{引}}' },
-            { name: '赤道状态(向心力最大)', latex: 'G = F_{\\text{引}} - F_{\\text{向}}' }
+            { name: '引力分解关系', latex: '\\vec{F}_{\\text{引}} = \\vec{G} + \\vec{F}_{\\text{向}}', level: 'core' },
+            { name: '极点状态(向心力=0)', latex: 'G = F_{\\text{引}}', level: 'important', condition: '两极处' },
+            { name: '赤道状态(向心力最大)', latex: 'G = F_{\\text{引}} - F_{\\text{向}}', level: 'important', condition: '赤道处' }
           ],
           gaokaoPoints: [
             { text: '重力是万有引力的一个分力，方向竖直向下不指向地心。', importance: 'core' as const },
@@ -1193,25 +1417,103 @@ export function buildPhysicsQuantities(
       break
     }
     case 'anim-gravity': {
-      const m1 = params.m1 ?? 1000
-      const m2 = params.m2 ?? 10
-      const r = params.r ?? 5
-      const G = 6.67e-11
-      const F = G * m1 * m2 / (r * r)
-      return {
-        quantities: [
-          ...base,
-          { label: '万有引力 F', value: F.toExponential(2), unit: '相对值', highlight: 'positive' as const },
-          { label: '引力常数 G', value: '6.67×10⁻¹¹', unit: 'N·m²/kg²' }
-        ],
-        formulas: [
-          { name: '万有引力定律', latex: 'F = G \\frac{m_1 m_2}{r^2}' }
-        ],
-        gaokaoPoints: [
-          { text: '万有引力是重力的本源，重力通常是万有引力的一个分力。', importance: 'core' as const },
-          { text: '天体间距远大于自身半径时，天体才能简化为质点模型。', importance: 'basic' as const },
-          { text: '引力常数 G 由英国物理学家卡文迪什通过扭秤实验测得。', importance: 'gaokao' as const }
-        ]
+      const mode = params.mode ?? 0 // 0=相对单位, 1=真实尺度
+      const preset = params.preset ?? 0 // 0=自定义, 1=地月, 2=日地, 3=同步卫星, 4=宇航员
+      const G = 6.674e-11
+
+      let m1 = params.m1 ?? 1000
+      let m2 = params.m2 ?? 10
+      let r = params.r ?? 5
+      let F_val = 0
+
+      if (mode === 1) {
+        // 真实尺度模式
+        let realM1 = 5.97e24
+        let realM2 = 7.35e22
+        let realR = 3.84e8
+        let name1 = '地球'
+        let name2 = '月球'
+
+        switch (preset) {
+          case 1:
+            realM1 = 5.97e24
+            realM2 = 7.35e22
+            realR = 3.84e8
+            name1 = '地球'
+            name2 = '月球'
+            break
+          case 2:
+            realM1 = 1.99e30
+            realM2 = 5.97e24
+            realR = 1.50e11
+            name1 = '太阳'
+            name2 = '地球'
+            break
+          case 3:
+            realM1 = 5.97e24
+            realM2 = 1.00e3
+            realR = 4.22e7
+            name1 = '地球'
+            name2 = '同步卫星'
+            break
+          case 4:
+            realM1 = 5.97e24
+            realM2 = 80
+            realR = 6.77e6
+            name1 = '地球'
+            name2 = '宇航员'
+            break
+          default:
+            // 自定义：用 params 的滑块相对放大作为真实尺度
+            realM1 = (params.m1 ?? 1000) * 1e21
+            realM2 = (params.m2 ?? 10) * 1e20
+            realR = (params.r ?? 5) * 1e7
+            name1 = '天体 1'
+            name2 = '天体 2'
+            break
+        }
+
+        F_val = (G * realM1 * realM2) / (realR * realR)
+
+        return {
+          quantities: [
+            ...base,
+            { label: `${name1}质量 m₁`, value: realM1.toExponential(2), unit: 'kg' },
+            { label: `${name2}质量 m₂`, value: realM2.toExponential(2), unit: 'kg' },
+            { label: '天体间距 r', value: realR.toExponential(2), unit: 'm' },
+            { label: '万有引力 F', value: F_val.toExponential(2), unit: 'N', highlight: 'positive' as const },
+            { label: '引力常数 G', value: '6.674×10⁻¹¹', unit: 'N·m²/kg²' }
+          ],
+          formulas: [
+            { name: '万有引力定律', latex: 'F = G \\frac{m_1 m_2}{r^2}', level: 'core', condition: '质点或均匀球体' }
+          ],
+          gaokaoPoints: [
+            { text: '万有引力是重力的本源，重力通常是引力的分力。', importance: 'core' as const },
+            { text: '天体间距远大于自身半径时，天体才能简化为质点。', importance: 'basic' as const },
+            { text: '引力常数 G 由卡文迪什通过扭秤实验测得，被誉为“称量地球第一人”。', importance: 'gaokao' as const }
+          ]
+        }
+      } else {
+        // 相对单位模式
+        F_val = (m1 * m2) / (r * r)
+        return {
+          quantities: [
+            ...base,
+            { label: '天体 1 质量 m₁', value: m1, unit: '相对单位' },
+            { label: '天体 2 质量 m₂', value: m2, unit: '相对单位' },
+            { label: '天体间距 r', value: r.toFixed(1), unit: '相对单位' },
+            { label: '万有引力 F_引', value: F_val.toFixed(2), unit: '相对单位', highlight: 'positive' as const },
+            { label: '比例关系占比', value: 'F ∝ m₁m₂/r²', unit: '' }
+          ],
+          formulas: [
+            { name: '比例变化关系', latex: 'F \\propto \\frac{m_1 m_2}{r^2}', level: 'core' }
+          ],
+          gaokaoPoints: [
+            { text: '引力大小与物体质量乘积成正比，与距离平方成反比。', importance: 'core' as const },
+            { text: '万有引力具有相互性，天体1对2的引力等于天体2对1的引力。', importance: 'core' as const },
+            { text: '在轨道运动中，万有引力提供环绕天体所需的向心力。', importance: 'gaokao' as const }
+          ]
+        }
       }
     }
     case 'anim-spring-force': {
@@ -1228,8 +1530,8 @@ export function buildPhysicsQuantities(
           { label: '固有角频率 ω', value: omega.toFixed(2), unit: 'rad/s' }
         ],
         formulas: [
-          { name: '胡克定律', latex: 'F = -kx' },
-          { name: '弹性势能', latex: 'E_p = \\frac{1}{2}kx^2' }
+          { name: '胡克定律', latex: 'F = -kx', level: 'core', condition: '弹性限度内' },
+          { name: '弹性势能', latex: 'E_p = \\frac{1}{2}kx^2', level: 'important', condition: '弹簧处于自然长度时Ep=0' }
         ],
         gaokaoPoints: [
           { text: '胡克定律中的 x 是形变量（拉伸或压缩量），非弹簧长度。', importance: 'core' as const },
@@ -1257,9 +1559,9 @@ export function buildPhysicsQuantities(
             { label: '加速度 a', value: a.toFixed(2), unit: 'm/s²', highlight: a > 0.05 ? 'positive' as const : 'zero' as const },
           ],
           formulas: [
-            { name: '最大静摩擦力', latex: 'f_{\\text{max}} = \\mu_s F_N = 1.12\\mu mg' },
-            { name: '滑动摩擦力', latex: 'f_{\\text{slip}} = \\mu F_N = \\mu mg' },
-            { name: '滑动状态', latex: 'f = f_{\\text{slip}},\\quad a = \\frac{F - f_{\\text{slip}}}{m}' }
+            { name: '最大静摩擦力', latex: 'f_{\\text{max}} = \\mu_s F_N = 1.12\\mu mg', level: 'important', note: '1.12为静动摩擦系数比' },
+            { name: '滑动摩擦力', latex: 'f_{\\text{slip}} = \\mu F_N = \\mu mg', level: 'core', condition: '水平面上' },
+            { name: '滑动状态', latex: 'f = f_{\\text{slip}},\\quad a = \\frac{F - f_{\\text{slip}}}{m}', level: 'core' }
           ],
           gaokaoPoints: [
             { text: '静摩擦力是被动力，范围为 0 至最大静摩擦力。', importance: 'core' as const },
@@ -1281,10 +1583,10 @@ export function buildPhysicsQuantities(
             { label: '加速度 a', value: a.toFixed(2), unit: 'm/s²', highlight: a > 0.05 ? 'positive' as const : 'zero' as const },
           ],
           formulas: [
-            { name: '斜面支持力', latex: 'F_N = mg\\cos\\theta' },
-            { name: '下滑重力分力', latex: 'G_x = mg\\sin\\theta' },
-            { name: '静止平衡', latex: 'f = G_x = mg\\sin\\theta' },
-            { name: '下滑滑动', latex: 'f = \\mu F_N = \\mu mg\\cos\\theta' }
+            { name: '斜面支持力', latex: 'F_N = mg\\cos\\theta', level: 'core' },
+            { name: '下滑重力分力', latex: 'G_x = mg\\sin\\theta', level: 'core' },
+            { name: '静止平衡', latex: 'f = G_x = mg\\sin\\theta', level: 'important', condition: '静止时' },
+            { name: '下滑滑动', latex: 'f = \\mu F_N = \\mu mg\\cos\\theta', level: 'important', condition: '滑动时' }
           ],
           gaokaoPoints: [
             { text: '临界条件 tan θ_c = μ_s，超过后摩擦力突跳减小。', importance: 'gaokao' as const },
@@ -1345,8 +1647,8 @@ export function buildPhysicsQuantities(
       }
 
       let formulas: Formula[] = [
-        { name: '水平方向平衡', latex: 'T_1 \\cos\\theta_1 = T_2 \\cos\\theta_2' },
-        { name: '竖直方向平衡', latex: 'T_1 \\sin\\theta_1 + T_2 \\sin\\theta_2 = mg' }
+        { name: '水平方向平衡', latex: 'T_1 \\cos\\theta_1 = T_2 \\cos\\theta_2', level: 'core', condition: '共点力平衡' },
+        { name: '竖直方向平衡', latex: 'T_1 \\sin\\theta_1 + T_2 \\sin\\theta_2 = mg', level: 'core', condition: '共点力平衡' }
       ]
       let gaokaoPoints: GaokaoPoint[] = [
         { text: '共点力平衡条件为物体所受合外力为零，即 ΣFx = 0, ΣFy = 0。', importance: 'core' as const },
@@ -1355,7 +1657,7 @@ export function buildPhysicsQuantities(
 
       if (isBroken) {
         formulas = [
-          { name: '单摆阻尼方程', latex: '\\theta\'\' + \\gamma \\theta\' + \\frac{g}{L}\\sin\\theta = 0' }
+          { name: '单摆阻尼方程', latex: '\\theta\'\' + \\gamma \\theta\' + \\frac{g}{L}\\sin\\theta = 0', level: 'supplementary' }
         ]
         gaokaoPoints = [
           { text: '轻绳的最大耐受拉力即为高考受力分析中的临界平衡条件。', importance: 'hard' as const },
@@ -1363,7 +1665,7 @@ export function buildPhysicsQuantities(
         ]
       } else if (mode === 1) {
         formulas = [
-          { name: '力的平行四边形定则', latex: 'F_{\\text{合}} = \\sqrt{T_1^2 + T_2^2 + 2T_1T_2\\cos(\\theta_1+\\theta_2)}' }
+          { name: '力的平行四边形定则', latex: 'F_{\\text{合}} = \\sqrt{T_1^2 + T_2^2 + 2T_1T_2\\cos(\\theta_1+\\theta_2)}', level: 'core' }
         ]
         gaokaoPoints = [
           { text: '平行四边形定则是矢量运算规律，合力随两力夹角增大而减小。', importance: 'gaokao' as const },
@@ -1371,8 +1673,8 @@ export function buildPhysicsQuantities(
         ]
       } else if (mode === 2) {
         formulas = [
-          { name: '正交分解水平分量', latex: 'T_x = T \\cos\\theta' },
-          { name: '正交分解竖直分量', latex: 'T_y = T \\sin\\theta' }
+          { name: '正交分解水平分量', latex: 'T_x = T \\cos\\theta', level: 'core' },
+          { name: '正交分解竖直分量', latex: 'T_y = T \\sin\\theta', level: 'core' }
         ]
         gaokaoPoints = [
           { text: '正交分解法常用于复杂受力，可将矢量运算化为代数运算。', importance: 'gaokao' as const },
@@ -1380,7 +1682,7 @@ export function buildPhysicsQuantities(
         ]
       } else if (mode === 3) {
         formulas = [
-          { name: '正弦定理形式', latex: '\\frac{T_1}{\\sin(90^\\circ-\\theta_2)} = \\frac{T_2}{\\sin(90^\\circ-\\theta_1)} = \\frac{mg}{\\sin(\\theta_1+\\theta_2)}' }
+          { name: '正弦定理形式', latex: '\\frac{T_1}{\\sin(90^\\circ-\\theta_2)} = \\frac{T_2}{\\sin(90^\\circ-\\theta_1)} = \\frac{mg}{\\sin(\\theta_1+\\theta_2)}', level: 'important', condition: '三力平衡' }
         ]
         gaokaoPoints = [
           { text: '三力平衡首尾相接必构成封闭三角形，常用于力的定性分析。', importance: 'hard' as const },
@@ -1421,8 +1723,8 @@ export function buildPhysicsQuantities(
 
       if (mode === 2) {
         formulas = [
-          { name: '水平分量', latex: 'F_x = F \\cos\\theta' },
-          { name: '竖直分量', latex: 'F_y = F \\sin\\theta' }
+          { name: '水平分量', latex: 'F_x = F \\cos\\theta', level: 'core' },
+          { name: '竖直分量', latex: 'F_y = F \\sin\\theta', level: 'core' }
         ]
         gaokaoPoints = [
           { text: '正交分解法是力学最核心的分析工具。', importance: 'gaokao' as const },
@@ -1430,8 +1732,8 @@ export function buildPhysicsQuantities(
         ]
       } else {
         formulas = [
-          { name: '合力大小', latex: 'F = \\sqrt{F_1^2 + F_2^2 + 2F_1F_2\\cos\\theta}' },
-          { name: '偏角正切', latex: '\\tan\\alpha = \\frac{F_2\\sin\\theta}{F_1 + F_2\\cos\\theta}' }
+          { name: '合力大小', latex: 'F = \\sqrt{F_1^2 + F_2^2 + 2F_1F_2\\cos\\theta}', level: 'core' },
+          { name: '偏角正切', latex: '\\tan\\alpha = \\frac{F_2\\sin\\theta}{F_1 + F_2\\cos\\theta}', level: 'derived' }
         ]
         gaokaoPoints = [
           { text: '力的合成遵循平行四边形与三角形定则。', importance: 'core' as const },
@@ -1492,9 +1794,9 @@ export function buildPhysicsQuantities(
           { label: '当前位移 s', value: s, unit: 'm' },
         ],
         formulas: [
-          { name: '牛顿第二定律', latex: 'F_{\\text{合}} = ma' },
-          { name: '合外力计算', latex: 'F_{\\text{合}} = F - f' },
-          { name: '滑动摩擦力', latex: 'f = \\mu N = \\mu mg' }
+          { name: '牛顿第二定律', latex: 'F_{\\text{合}} = ma', level: 'core' },
+          { name: '合外力计算', latex: 'F_{\\text{合}} = F - f', level: 'core', condition: '水平面上，拉力与摩擦力方向相反' },
+          { name: '滑动摩擦力', latex: 'f = \\mu N = \\mu mg', level: 'core', condition: '水平面上滑动时' }
         ],
         gaokaoPoints: [
           { text: '加速度 a 与合外力 F_合 瞬时对应，力变则 a 变。', importance: 'gaokao' as const },
@@ -1549,14 +1851,344 @@ export function buildPhysicsQuantities(
           { label: '超失重状态', value: stateName, unit: '', highlight: stateName === '超重' ? 'positive' as const : stateName === '完全失重' ? 'extreme' as const : stateName === '失重' ? 'negative' as const : undefined }
         ],
         formulas: [
-          { name: '视重计算公式', latex: 'N = m(g + a)' },
-          { name: '牛顿第二定律', latex: 'N - mg = ma' }
+          { name: '视重计算公式', latex: 'N = m(g + a)', level: 'core', condition: '取向上为正方向' },
+          { name: '牛顿第二定律', latex: 'N - mg = ma', level: 'core', condition: '取向上为正方向' }
         ],
         gaokaoPoints: [
           { text: '【实重与视重】物体的真实重力 mg 保持不变，改变的仅是支持力（视重）。', importance: 'core' as const },
           { text: '【加速度决定态】状态仅由 a 的方向决定：a 向上则超重，a 向下则失重，与速度方向无关。', importance: 'gaokao' as const },
           { text: '【完全失重】当 a = -g 时，支持力 N = 0，物体在空中处于漂浮态。', importance: 'core' as const }
         ]
+      }
+    }
+    case 'anim-power': {
+      const mode = params.mode ?? 0
+      const P_rated = params.P ?? 60000
+      const m = params.m ?? 2000
+      const f = params.f ?? 2000
+      const a_target = params.a ?? 1.5
+
+      if (mode === 0) {
+        // ── 基础模式：恒定功率起动 ──
+        const cpParams = calculateConstantPowerParams(P_rated, m, f)
+        const trajectory = precomputeConstantPowerTrajectory(P_rated, m, f, 30)
+        const state = getPowerStateAtTime(trajectory, time)
+
+        return {
+          quantities: [
+            ...base,
+            { label: '速度 v', value: state.v.toFixed(1), unit: 'm/s' },
+            { label: '牵引力 F', value: state.F.toFixed(0), unit: 'N' },
+            { label: '加速度 a', value: state.a.toFixed(2), unit: 'm/s²' },
+            { label: '实际功率 P', value: (state.P / 1000).toFixed(1), unit: 'kW' },
+            { label: '最大速度 vmax', value: cpParams.v_max.toFixed(1), unit: 'm/s', highlight: 'extreme' as const },
+          ],
+          formulas: [
+            { name: '牵引力', latex: 'F = \\frac{P}{v}', note: '低速时限流 F_max = 3f' },
+            { name: '加速度', latex: 'a = \\frac{F - f}{m}' },
+            { name: '最大速度', latex: 'v_{\\max} = \\frac{P}{f}' },
+          ],
+          gaokaoPoints: [
+            { text: '恒定功率起动：F=P/v，随速度增大牵引力减小，加速度减小，最终匀速。', importance: 'core' as const },
+            { text: 'v=0 时 F 理论上无穷大，实际存在最大牵引力限制（低速限流）。', importance: 'gaokao' as const },
+            { text: 'v-t 图为一条先陡后缓的曲线，渐近线为 vmax=P/f。', importance: 'hard' as const },
+          ],
+        }
+      } else {
+        // ── 进阶模式：恒定加速度起动 ──
+        const caParams = calculateConstantAccelParams(P_rated, m, f, a_target)
+        const { points: trajectory } = precomputeConstantAccelTrajectory(P_rated, m, f, a_target, 30)
+        const state = getPowerStateAtTime(trajectory, time)
+
+        return {
+          quantities: [
+            ...base,
+            { label: '当前阶段', value: state.phase === 0 ? '匀加速' : state.phase === 1 ? '变加速' : '匀速', unit: '', highlight: state.phase === 0 ? 'positive' as const : state.phase === 1 ? 'negative' as const : 'zero' as const },
+            { label: '速度 v', value: state.v.toFixed(1), unit: 'm/s' },
+            { label: '牵引力 F', value: state.F.toFixed(0), unit: 'N' },
+            { label: '加速度 a', value: state.a.toFixed(2), unit: 'm/s²' },
+            { label: '实际功率 P', value: (state.P / 1000).toFixed(1), unit: 'kW' },
+            { label: '临界速度 vc', value: caParams.v_c.toFixed(1), unit: 'm/s', highlight: 'extreme' as const },
+            { label: '最大速度 vmax', value: caParams.v_max.toFixed(1), unit: 'm/s', highlight: 'extreme' as const },
+          ],
+          formulas: [
+            { name: '匀加速牵引力', latex: 'F = ma + f', condition: '第一阶段（匀加速），F 恒定' },
+            { name: '临界速度', latex: 'v_c = \\frac{P_{\\text{rated}}}{ma + f}', note: '匀加速阶段结束时的速度' },
+            { name: '变加速牵引力', latex: 'F = \\frac{P_{\\text{rated}}}{v}', condition: '第二阶段（恒功率），F 随 v 增大而减小' },
+            { name: '最大速度', latex: 'v_{\\max} = \\frac{P_{\\text{rated}}}{f}' },
+          ],
+          gaokaoPoints: [
+            { text: '恒定加速度起动分两阶段：先匀加速（F 恒定，P 递增），达到额定功率后变加速（P 恒定，F 递减）。', importance: 'core' as const },
+            { text: '拐点 vc=Prated/(ma+f) 是高考高频考点，v-t 图在此处由直线变为曲线。', importance: 'gaokao' as const },
+            { text: '两种起动模型最终都达到 vmax=Prated/f，区别在于到达的方式不同。', importance: 'hard' as const },
+          ],
+        }
+      }
+    }
+    case 'anim-kinetic-energy': {
+      const mode = params.mode ?? 0
+      const m = params.m ?? 2
+      const v0 = params.v0 ?? 0
+      const F_pull = params.F ?? 15
+      const s_target = params.s ?? 6
+      const R = params.R ?? 5
+      const mu = params.mu ?? 0.15
+      if (mode === 0) {
+        // ── 基础普通模式：恒力拉物块（撤去拉力） ──
+        const x_end = s_target * 1.6
+        const { points: trajectory } = precomputeConstantKETrajectory(m, v0, F_pull, s_target, x_end)
+        const state = getKEStateAtTime(trajectory, time)
+        const initialEk = 0.5 * m * v0 * v0
+        const deltaEk = state.Ek - initialEk
+
+        return {
+          quantities: [
+            ...base,
+            { label: '运动状态', value: state.phase === 0 ? '受力加速中' : '拉力已撤去(匀速)', unit: '', highlight: state.phase === 0 ? 'positive' as const : undefined },
+            { label: '实时速度 v', value: state.v.toFixed(2), unit: 'm/s' },
+            { label: '拉力功 W_拉', value: state.W.toFixed(1), unit: 'J', highlight: 'positive' as const },
+            { label: '动能变化量 ΔEk', value: deltaEk.toFixed(1), unit: 'J', highlight: 'positive' as const },
+            { label: '实时动能 Ek', value: state.Ek.toFixed(1), unit: 'J' },
+          ],
+          formulas: [
+            { name: '拉力功', latex: 'W = F \\cdot s', level: 'core', condition: '拉力作用阶段' },
+            { name: '动能定义', latex: 'E_k = \\frac{1}{2}mv^2', level: 'core' },
+            { name: '动能定理', latex: 'W = \\Delta E_k = E_{k\\text{末}} - E_{k\\text{初}}', level: 'core' },
+          ],
+          gaokaoPoints: [
+            { text: '动能是状态量，功是过程量。动能定理是状态变化与过程做功的纽带。', importance: 'core' as const },
+            { text: '动能定理 W = ΔEk 适用于任何外力（包括恒力与变力）。', importance: 'gaokao' as const },
+            { text: '合外力做的总功等于物体动能的变化量，注意正负号相加。', importance: 'basic' as const },
+          ],
+        }
+      } else {
+        // ── 进阶模式：物块圆弧曲面轨道下滑（变力做功） ──
+        const x_end = (519 / 102) * R
+        const { points: trajectory } = precomputeCurvedTrackTrajectory(m, v0, R, mu, x_end)
+        const state = getKEStateAtTime(trajectory, time)
+        const initialEk = 0.5 * m * v0 * v0
+        const deltaEk = state.Ek - initialEk
+
+        // 重力做功 W_G 存放在 state.Ep 中，合力功存放在 state.W 中
+        const WG = state.Ep
+        const Wf = state.W - WG // 摩擦力负功
+
+        return {
+          quantities: [
+            ...base,
+            { label: '运动状态', value: state.phase === 0 ? '曲面下滑中' : '已至水平面(匀速)', unit: '', highlight: state.phase === 0 ? 'positive' as const : undefined },
+            { label: '下滑高度 y', value: state.y.toFixed(2), unit: 'm' },
+            { label: '重力正功 W_重', value: `+${WG.toFixed(1)}`, unit: 'J', highlight: 'positive' as const },
+            { label: '摩擦力功 W_摩', value: Wf.toFixed(1), unit: 'J', highlight: 'negative' as const },
+            { label: '合外力总功 W_总', value: state.W.toFixed(1), unit: 'J', highlight: state.W >= 0 ? 'positive' as const : 'negative' as const },
+            { label: '动能变化量 ΔEk', value: (deltaEk >= 0 ? '+' : '') + deltaEk.toFixed(1), unit: 'J', highlight: deltaEk >= 0 ? 'positive' as const : 'negative' as const },
+            { label: '实时速度 v', value: state.v.toFixed(2), unit: 'm/s' },
+          ],
+          formulas: [
+            { name: '重力做正功', latex: 'W_{\\text{重}} = mgh', level: 'core', condition: '与曲面路径无关' },
+            { name: '摩擦变力做功', latex: 'W_{\\text{摩}} = \\int -f \\, ds', level: 'important', note: '切向摩擦力 f = \\mu N 随速度与角度变化' },
+            { name: '动能定理', latex: 'W_{\\text{总}} = W_{\\text{重}} + W_{\\text{摩}} = \\Delta E_k', level: 'core' },
+          ],
+          gaokaoPoints: [
+            { text: '重力是恒力，在曲面下滑时位移方向时刻改变，但功只与垂直高度差相关：W_重 = mgh。', importance: 'core' as const },
+            { text: '摩擦力是典型的变力，大小随支持力 N = mg·cosθ + mv²/R 实时变大。求变摩擦力功通常优先使用动能定理：W_摩 = ΔEk - W_重。', importance: 'gaokao' as const },
+            { text: '在变加速度曲线运动中，应用动能定理直接跳过了向心力公式与牛二定律复杂的非线性积分，是高考解答题的首选法则。', importance: 'hard' as const },
+          ],
+        }
+      }
+    }
+    case 'anim-potential-energy': {
+      const mode = params.mode ?? 0
+      const m = params.m ?? 2
+      const g = params.g ?? 9.8
+      const y0 = params.y0 ?? 8
+      const y_ref = params.y_ref ?? 3
+      const k = params.k ?? 100
+      const x0 = params.x0 ?? 2.0
+
+      if (mode === 0) {
+        // ── 重力势能模式 ──
+        const trajectory = precomputeGravityTrajectory(m, g, y0, y_ref, 0.7, 15)
+        const state = getPEStateAtTime(trajectory, time)
+        
+        return {
+          quantities: [
+            ...base,
+            { label: '相对零势能高度 h', value: (state.pos - y_ref).toFixed(2), unit: 'm' },
+            { label: '实时高度 y', value: state.pos.toFixed(2), unit: 'm' },
+            { label: '重力做功 W_重', value: state.W.toFixed(1), unit: 'J', highlight: state.W >= 0 ? 'positive' as const : 'negative' as const },
+            { label: '重力势能 Ep', value: state.Ep.toFixed(1), unit: 'J', highlight: state.Ep >= 0 ? 'positive' as const : 'negative' as const },
+            { label: '势能变化量 ΔEp', value: (state.deltaEp >= 0 ? '+' : '') + state.deltaEp.toFixed(1), unit: 'J', highlight: state.deltaEp >= 0 ? 'positive' as const : 'negative' as const },
+            { label: '实时速度 v', value: state.v.toFixed(2), unit: 'm/s' },
+          ],
+          formulas: [
+            { name: '重力势能', latex: 'E_p = mg(y - y_{\\text{ref}})', note: '零势能面下方为负值', level: 'core' },
+            { name: '重力做功与能变', latex: 'W_G = -\\Delta E_p = E_{p1} - E_{p2}', note: '重力做功只与初末高度差有关', level: 'core' },
+          ],
+          gaokaoPoints: [
+            { text: '重力势能 Ep = mgh 中的 h 是相对于零势能面的高度。势能的正负仅代表比参考面高还是低。', importance: 'core' as const },
+            { text: '重力势能是物体和地球系统共有的，不能脱离地球谈物体的重力势能。', importance: 'basic' as const },
+            { text: '重力做正功势能减少，克服重力做功势能增加，且 WG = -ΔEp 严格成立。', importance: 'gaokao' as const },
+            { text: '零势能面的选择是任意的，不同参考面下物体的势能值不同，但下落时的功与势能变化量 ΔEp 恒定。', importance: 'hard' as const },
+          ],
+        }
+      } else {
+        // ── 弹性势能模式 ──
+        const trajectory = precomputeSpringTrajectory(m, k, x0, 15)
+        const state = getPEStateAtTime(trajectory, time)
+
+        return {
+          quantities: [
+            ...base,
+            { label: '弹簧形变量 x', value: state.pos.toFixed(2), unit: 'm' },
+            { label: '实时弹力 F_弹', value: state.F.toFixed(1), unit: 'N', highlight: Math.abs(state.F) > 0.05 ? 'positive' as const : undefined },
+            { label: '弹性势能 E_p弹', value: state.Ep.toFixed(1), unit: 'J', highlight: 'positive' as const },
+            { label: '弹力做功 W_弹', value: state.W.toFixed(1), unit: 'J', highlight: state.W >= 0 ? 'positive' as const : 'negative' as const },
+            { label: '动能 E_k', value: state.Ek.toFixed(1), unit: 'J', highlight: 'positive' as const },
+            { label: '实时速度 v', value: state.v.toFixed(2), unit: 'm/s' },
+          ],
+          formulas: [
+            { name: '胡克定律', latex: 'F_s = -kx', note: '恢复力方向与形变方向相反', level: 'core' },
+            { name: '弹性势能', latex: 'E_{pe} = \\frac{1}{2}kx^2', note: '拉伸或压缩相同位移弹性势能相等', level: 'core' },
+            { name: '弹力功与能变', latex: 'W_s = -\\Delta E_{pe} = \\frac{1}{2}kx_1^2 - \\frac{1}{2}kx_2^2', level: 'important' },
+          ],
+          gaokaoPoints: [
+            { text: '弹性势能的零点通常规定在弹簧处于自然原长处，拉伸和压缩时势能均非负（Epe ∝ x²）。', importance: 'core' as const },
+            { text: '弹力是典型的随位移线性改变的变力。求弹力功可使用 F-x 面积积分或弹性势能公式。', importance: 'gaokao' as const },
+            { text: '弹力做正功弹性势能减少，弹力做负功（克服弹力）弹性势能增加：Ws = -ΔEpe。', importance: 'core' as const },
+          ],
+        }
+      }
+    }
+    case 'anim-energy-conservation': {
+      const mode = params.mode ?? 0
+      const m = params.m ?? 2
+      const g = params.g ?? 9.8
+      const theta0 = params.theta0 ?? 45
+      const L = params.L ?? 5
+      const R = params.R ?? 5
+      const mu = params.mu ?? 0.1
+
+      if (mode === 0) {
+        // ── 单摆模式 ──
+        const trajectory = precomputePendulumTrajectory(m, L, theta0, g, 15)
+        const state = getECStateAtTime(trajectory, time)
+        const thetaDeg = (state.theta * 180) / Math.PI
+
+        return {
+          quantities: [
+            ...base,
+            { label: '摆角 θ', value: `${thetaDeg.toFixed(1)}°`, unit: '' },
+            { label: '重力势能 Ep', value: state.Ep.toFixed(1), unit: 'J', highlight: 'positive' as const },
+            { label: '实时动能 Ek', value: state.Ek.toFixed(1), unit: 'J', highlight: 'positive' as const },
+            { label: '总机械能 E', value: state.Etot.toFixed(1), unit: 'J', highlight: 'extreme' as const },
+            { label: '实时速度 v', value: state.v.toFixed(2), unit: 'm/s' },
+          ],
+          formulas: [
+            { name: '摆球高度', latex: 'h = L(1 - \\cos\\theta)', note: '以最低点为零参考面', level: 'important' },
+            { name: '重力势能', latex: 'E_p = mgh', level: 'core' },
+            { name: '机械能守恒', latex: 'E_k + E_p = \\text{常量}', level: 'core', condition: '无空气阻力下' },
+          ],
+          gaokaoPoints: [
+            { text: '单摆振动过程中重力与拉力的合力提供回复力，仅有重力做功，系统机械能严格守恒。', importance: 'core' as const },
+            { text: '在最高点小球速度为0，动能为0，重力势能达到最大值；在最低点高度为0，势能为0，速度达到最大值。', importance: 'basic' as const },
+            { text: '动能和重力势能随着往复摆动进行此消彼长的正弦转化，总和恒定不变。', importance: 'gaokao' as const },
+          ],
+        }
+      } else {
+        // ── 山谷过山车阻尼模式 ──
+        const trajectory = precomputeValleyTrajectory(m, R, mu, theta0, g, 15)
+        const state = getECStateAtTime(trajectory, time)
+        const thetaDeg = (state.theta * 180) / Math.PI
+
+        return {
+          quantities: [
+            ...base,
+            { label: '当前位置 θ', value: `${thetaDeg.toFixed(1)}°`, unit: '' },
+            { label: '重力势能 Ep', value: state.Ep.toFixed(1), unit: 'J', highlight: 'positive' as const },
+            { label: '实时动能 Ek', value: state.Ek.toFixed(1), unit: 'J', highlight: 'positive' as const },
+            { label: '机械能 E_机', value: (state.Ep + state.Ek).toFixed(1), unit: 'J' },
+            { label: '内能(生热) Q', value: state.Q.toFixed(1), unit: 'J', highlight: 'negative' as const },
+            { label: '总能量 E_总', value: state.Etot.toFixed(1), unit: 'J', highlight: 'extreme' as const },
+          ],
+          formulas: [
+            { name: '支持力', latex: 'F_N = mg\\cos\\theta + \\frac{mv^2}{R}', note: '凹轨道底部滑块压力最大', level: 'important' },
+            { name: '摩擦力', latex: 'f = \\mu F_N', level: 'core' },
+            { name: '摩擦产热', latex: 'Q = \\int f \\, ds', note: '摩擦生热内能，属于过程量', level: 'core' },
+            { name: '能量守恒', latex: 'E_k + E_p + Q = E_0', level: 'core', condition: '机械能不守恒，但总能量守恒' },
+          ],
+          gaokaoPoints: [
+            { text: '在有摩擦阻力的情况下，滑块受阻力做负功，系统机械能不断耗散减少。', importance: 'core' as const },
+            { text: '摩擦力做负功，使机械能转化为等量的内能（摩擦生热 Q），系统总能量严格守恒。', importance: 'gaokao' as const },
+            { text: '滑块在往复摆动幅度逐渐变小后，若滑到最高点时重力切向分力小于最大静摩擦力（|tanθ| ≤ μ），将卡死停在坡上。', importance: 'hard' as const },
+          ],
+        }
+      }
+    }
+    case 'anim-work': {
+      const mode = params.mode ?? 0
+      const F = params.F ?? 10
+      const angleDeg = params.angleDeg ?? 30
+      const s = params.s ?? 5
+      const m = params.m ?? 2
+      const mu = params.mu ?? 0.3
+      const g = params.g ?? GRAVITY
+
+      const workType = classifyWorkType(angleDeg)
+
+      if (mode === 0) {
+        // ── 基础模式：理想恒力与方向投影 ──
+        const { W, Fx, Fy } = calculateWorkBasic(F, s, angleDeg)
+        const workLabel = workType === 'positive' ? '正功' : workType === 'negative' ? '负功' : '不做功'
+
+        return {
+          quantities: [
+            ...base,
+            { label: '做功类型', value: workLabel, unit: '', highlight: workType === 'positive' ? 'positive' as const : workType === 'negative' ? 'negative' as const : 'zero' as const },
+            { label: '拉力做功 W', value: W.toFixed(1), unit: 'J', highlight: workType === 'positive' ? 'positive' as const : workType === 'negative' ? 'negative' as const : 'zero' as const },
+            { label: '水平分力 Fx', value: Fx.toFixed(1), unit: 'N' },
+            { label: '竖直分力 Fy', value: Fy.toFixed(1), unit: 'N' },
+          ],
+          formulas: [
+            { name: '恒力做功', latex: 'W = Fs\\cos\\theta', note: 'θ 为力与位移方向的夹角', level: 'core' },
+            { name: '水平分力', latex: 'F_x = F\\cos\\theta', level: 'important' },
+            { name: '竖直分力', latex: 'F_y = F\\sin\\theta', level: 'important' },
+          ],
+          gaokaoPoints: [
+            { text: 'W = Fscosθ，θ 为力与位移方向的夹角，cosθ 本质是力在位移方向上的投影系数。', importance: 'core' as const },
+            { text: 'θ<90° 做正功，θ>90° 做负功，θ=90° 不做功——做功正负由力与位移的夹角决定。', importance: 'gaokao' as const },
+            { text: '功是标量，正负不代表方向，代表力对物体运动是促进还是阻碍。', importance: 'hard' as const },
+          ],
+        }
+      } else {
+        // ── 进阶模式：摩擦力做功与脱地临界 ──
+        const result = calculateWorkAdvanced(F, s, angleDeg, m, mu, g)
+
+        return {
+          quantities: [
+            ...base,
+            { label: '支持力 FN', value: result.F_N.toFixed(1), unit: 'N', highlight: result.isLiftedOff ? 'zero' as const : undefined },
+            { label: '摩擦力 f', value: result.f.toFixed(1), unit: 'N' },
+            { label: '拉力功 WF', value: result.W_F.toFixed(1), unit: 'J', highlight: result.W_F > 0.05 ? 'positive' as const : result.W_F < -0.05 ? 'negative' as const : 'zero' as const },
+            { label: '摩擦力功 Wf', value: result.W_f.toFixed(1), unit: 'J', highlight: 'negative' as const },
+            { label: '合力功 Wnet', value: result.W_net.toFixed(1), unit: 'J', highlight: result.W_net > 0.05 ? 'positive' as const : result.W_net < -0.05 ? 'negative' as const : 'zero' as const },
+            ...(result.isLiftedOff
+              ? [{ label: '脱地警告', value: 'FN=0, f=0', unit: '', highlight: 'extreme' as const }]
+              : []),
+          ],
+          formulas: [
+            { name: '支持力', latex: 'F_N = mg - F\\sin\\theta', condition: '斜向上拉时；斜向下推时 FN=mg+Fsinθ', level: 'important' },
+            { name: '滑动摩擦力', latex: 'f = \\mu F_N', note: '脱地时 FN=0，摩擦力消失', level: 'core' },
+            { name: '拉力做功', latex: 'W_F = Fs\\cos\\theta', level: 'core' },
+            { name: '摩擦力做功', latex: 'W_f = -fs', level: 'important', note: '负号表示摩擦力做负功' },
+            { name: '合力做功', latex: 'W_{\\text{net}} = W_F + W_f', note: '合力功即动能定理的左边', level: 'core' },
+          ],
+          gaokaoPoints: [
+            { text: '斜向上拉时 FN=mg−Fsinθ，摩擦力减小；斜向下推时 FN=mg+Fsinθ，摩擦力增大。', importance: 'core' as const },
+            { text: '脱地临界条件：Fsinθ≥mg 时，FN=0，滑动摩擦力消失——这是高考受力分析的高频陷阱。', importance: 'gaokao' as const },
+            { text: '合力功等于各力做功的代数和，Wnet = WF + Wf，正负号直接代入计算。', importance: 'hard' as const },
+          ],
+        }
       }
     }
     default:

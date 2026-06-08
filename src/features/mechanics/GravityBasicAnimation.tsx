@@ -207,7 +207,7 @@ export const GravityBasicAnimation: FC = () => {
             <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.gravity} />
           </marker>
           <marker id="arrow-centripetal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.centripetal} />
+            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.forceNet} />
           </marker>
           <marker id="arrow-grav-force" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
             <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.forceNet} />
@@ -318,7 +318,7 @@ export const GravityBasicAnimation: FC = () => {
                   <line
                     x1={earthData.objX} y1={earthData.objY}
                     x2={earthData.objX + earthData.Fx_cent} y2={earthData.objY - earthData.Fy_cent}
-                    stroke={PHYSICS_COLORS.centripetal}
+                    stroke={PHYSICS_COLORS.forceNet}
                     strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                     markerEnd="url(#arrow-centripetal)"
                   />
@@ -327,7 +327,7 @@ export const GravityBasicAnimation: FC = () => {
                   <text
                     x={earthData.objX + earthData.Fx_cent - 2}
                     y={earthData.objY - 6}
-                    fontSize={FONT.axisSize} fill={PHYSICS_COLORS.centripetal} fontWeight="bold" textAnchor="end"
+                    fontSize={FONT.axisSize} fill={PHYSICS_COLORS.forceNet} fontWeight="bold" textAnchor="end"
                   >
                     F向
                   </text>

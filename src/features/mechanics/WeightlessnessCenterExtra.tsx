@@ -1,252 +1,9 @@
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS } from '@/theme/physics'
-import { colors } from '@/theme/colors'
 import { calculateElevatorMotion } from '@/physics'
-import { AnimationControls } from '@/components/UI'
-import { useCanvasSize } from '@/utils'
+import { AnimationControls, MiniChart } from '@/components/UI'
 import WeightlessnessAnimation from './WeightlessnessAnimation'
-
-interface MiniChartProps {
-  title: string
-  t0: number
-  tMax: number
-  yMin: number
-  yMax: number
-  points: Record<string, number>[]
-  lines: {
-    key: string
-    color: string
-    strokeWidth?: number
-    strokeDasharray?: string
-    name: string
-  }[]
-  yLabel: string
-  currentVals: Record<string, number>
-  staticLines?: {
-    value: number
-    color: string
-    strokeDasharray?: string
-    name: string
-  }[]
-}
-
-function MiniChart({
-  title,
-  t0,
-  tMax,
-  yMin,
-  yMax,
-  points,
-  lines,
-  yLabel,
-  currentVals,
-  staticLines = [],
-}: MiniChartProps) {
-  // 采用动态计算尺寸，不写死像素
-  const [containerRef, size] = useCanvasSize({ width: 300, height: 110 })
-  const { width, height } = size
-
-  // 统一的绝对像素 margin 确保三个垂直排列图表在水平 t 轴上精确像素级对齐
-  const margin = { left: 48, right: 15, top: 22, bottom: 22 }
-  const plotW = Math.max(10, width - margin.left - margin.right)
-  const plotH = Math.max(10, height - margin.top - margin.bottom)
-
-  const toSvgX = (t: number) => margin.left + (t / tMax) * plotW
-  const toSvgY = (val: number) => {
-    const range = yMax - yMin || 1
-    return margin.top + plotH - ((val - yMin) / range) * plotH
-  }
-
-  const visiblePoints = useMemo(() => {
-    return points.filter((p) => p.t <= t0 + 1e-9)
-  }, [points, t0])
-
-  const px = toSvgX(Math.min(t0, tMax))
-
-  // 字体大小采用像素单位，防止因为 viewBox 缩放而导致文本变形或过小
-  const fs = 11 // 标题字号
-  const sfs = 9 // 轴标签/数据字号
-
-  return (
-    <div ref={containerRef} className="w-full h-full min-h-0">
-      <svg width={width} height={height} className="w-full h-full select-none">
-        {/* 标题 */}
-        <text x={margin.left} y={margin.top - 7} fontSize={fs} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
-          {title}
-        </text>
-
-        {/* 坐标轴网格线 */}
-        {Array.from({ length: 5 }).map((_, idx) => {
-          const gridY = margin.top + (plotH * idx) / 4
-          return (
-            <line
-              key={`grid-y-${idx}`}
-              x1={margin.left} y1={gridY} x2={margin.left + plotW} y2={gridY}
-              stroke={PHYSICS_COLORS.grid}
-              strokeWidth={0.5}
-              opacity={0.3}
-            />
-          )
-        })}
-        {Array.from({ length: 6 }).map((_, idx) => {
-          const gridX = margin.left + (plotW * idx) / 5
-          return (
-            <line
-              key={`grid-x-${idx}`}
-              x1={gridX} y1={margin.top} x2={gridX} y2={margin.top + plotH}
-              stroke={PHYSICS_COLORS.grid}
-              strokeWidth={0.5}
-              opacity={0.3}
-            />
-          )
-        })}
-
-        {/* 坐标轴线 */}
-        <line x1={margin.left} y1={margin.top + plotH} x2={margin.left + plotW} y2={margin.top + plotH} stroke={PHYSICS_COLORS.labelText} strokeWidth={1} />
-        <line x1={margin.left} y1={margin.top} x2={margin.left} y2={margin.top + plotH} stroke={PHYSICS_COLORS.labelText} strokeWidth={1} />
-
-        {/* 零刻度虚线 */}
-        {yMin < 0 && yMax > 0 && (
-          <line
-            x1={margin.left}
-            y1={toSvgY(0)}
-            x2={margin.left + plotW}
-            y2={toSvgY(0)}
-            stroke={PHYSICS_COLORS.labelText}
-            strokeWidth={0.8}
-            strokeDasharray="2,2"
-            opacity={0.4}
-          />
-        )}
-
-        {/* 静态参考水平线 */}
-        {staticLines.map((sLine, idx) => (
-          <g key={`sline-${idx}`}>
-            <line
-              x1={margin.left}
-              y1={toSvgY(sLine.value)}
-              x2={margin.left + plotW}
-              y2={toSvgY(sLine.value)}
-              stroke={sLine.color}
-              strokeWidth={1}
-              strokeDasharray={sLine.strokeDasharray}
-            />
-          </g>
-        ))}
-
-        {/* X 轴刻度 (t) */}
-        {Array.from({ length: 6 }, (_, i) => {
-          const t = (tMax * i) / 5
-          const x = toSvgX(t)
-          return (
-            <g key={`xt-${i}`}>
-              <line x1={x} y1={margin.top + plotH} x2={x} y2={margin.top + plotH + 3} stroke={PHYSICS_COLORS.labelText} strokeWidth={0.8} />
-              <text x={x} y={margin.top + plotH + sfs + 3} fontSize={sfs} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontFamily="monospace">
-                {t.toFixed(0)}
-              </text>
-            </g>
-          )
-        })}
-
-        {/* Y 轴刻度 */}
-        {[yMin, (yMin + yMax) / 2, yMax].map((val, idx) => {
-          const y = toSvgY(val)
-          return (
-            <g key={`yt-${idx}`}>
-              <line x1={margin.left - 3} y1={y} x2={margin.left} y2={y} stroke={PHYSICS_COLORS.labelText} strokeWidth={0.8} />
-              <text x={margin.left - 5} y={y + sfs * 0.35} fontSize={sfs} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end" fontFamily="monospace">
-                {val.toFixed(1)}
-              </text>
-            </g>
-          )
-        })}
-
-        {/* 绘制轨迹曲线 */}
-        {visiblePoints.length >= 2 &&
-          lines.map((line) => {
-            const pathD = visiblePoints
-              .map((p, idx) => {
-                const x = toSvgX(p.t)
-                const y = toSvgY(p[line.key])
-                return `${idx === 0 ? 'M' : 'L'} ${x},${y}`
-              })
-              .join(' ')
-
-            return (
-              <path
-                key={line.key}
-                d={pathD}
-                fill="none"
-                stroke={line.color}
-                strokeWidth={line.strokeWidth ?? 1.5}
-                strokeDasharray={line.strokeDasharray}
-              />
-            )
-          })}
-
-        {/* 时间游标与曲线焦点 */}
-        {t0 <= tMax && (
-          <g>
-            <line
-              x1={px}
-              y1={margin.top}
-              x2={px}
-              y2={margin.top + plotH}
-              stroke={PHYSICS_COLORS.labelTextLight}
-              strokeWidth={0.8}
-              strokeDasharray="3,3"
-              opacity={0.5}
-            />
-            {lines.map((line) => {
-              const currentVal = currentVals[line.key] ?? 0
-              const py = toSvgY(currentVal)
-              return (
-                <g key={`point-${line.key}`}>
-                  <circle cx={px} cy={py} r={3.5} fill={line.color} opacity={0.3} />
-                  <circle cx={px} cy={py} r={2} fill={line.color} stroke={colors.neutral[0]} strokeWidth={0.8} />
-                </g>
-              )
-            })}
-          </g>
-        )}
-
-        {/* X轴/Y轴标签标注 */}
-        <text x={margin.left + plotW - 10} y={margin.top + plotH + sfs + 3} fontSize={sfs} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
-          t(s)
-        </text>
-        <text x={margin.left - 4} y={margin.top - 6} fontSize={sfs} fill={PHYSICS_COLORS.labelText} textAnchor="end" fontWeight="bold">
-          {yLabel}
-        </text>
-
-        {/* 图例绘制 */}
-        <g transform={`translate(${margin.left + 15}, ${margin.top + 5})`}>
-          {lines.map((line, idx) => {
-            const currentVal = currentVals[line.key] ?? 0
-            return (
-              <g key={`legend-${line.key}`} transform={`translate(0, ${idx * 13})`}>
-                <line x1={0} y1={-3} x2={10} y2={-3} stroke={line.color} strokeWidth={1.5} strokeDasharray={line.strokeDasharray} />
-                <text x={14} y={1} fontSize={sfs} fill={PHYSICS_COLORS.labelTextLight} className="font-semibold select-none">
-                  {line.name}: {currentVal.toFixed(1)}
-                </text>
-              </g>
-            )
-          })}
-          {staticLines.map((sLine, idx) => {
-            return (
-              <g key={`legend-s-${idx}`} transform={`translate(0, ${(lines.length + idx) * 13})`}>
-                <line x1={0} y1={-3} x2={10} y2={-3} stroke={sLine.color} strokeWidth={1.2} strokeDasharray={sLine.strokeDasharray} />
-                <text x={14} y={1} fontSize={sfs} fill={PHYSICS_COLORS.labelTextLight} className="font-semibold select-none">
-                  {sLine.name}: {sLine.value.toFixed(1)}
-                </text>
-              </g>
-            )
-          })}
-        </g>
-      </svg>
-    </div>
-  )
-}
 
 export default function WeightlessnessCenterExtra() {
   const { params, time, isPlaying, speed, setIsPlaying, setTime, setSpeed } = useAnimationStore()
@@ -329,16 +86,18 @@ export default function WeightlessnessCenterExtra() {
           <div className="flex-1 bg-white rounded-xl shadow-md overflow-hidden p-2 border border-neutral-100 min-h-0">
             <MiniChart
               title="加速度 - 时间 (a-t)"
-              t0={time}
-              tMax={tMax}
+              xMin={0}
+              xMax={tMax}
               yMin={limits.a.min}
               yMax={limits.a.max}
               points={points}
               lines={[
                 { key: 'a', color: PHYSICS_COLORS.acceleration, strokeWidth: 1.5, name: '加速度 a' },
               ]}
+              xLabel="t(s)"
               yLabel="a(m/s²)"
               currentVals={currentVals}
+              currentXVal={time}
             />
           </div>
 
@@ -346,8 +105,8 @@ export default function WeightlessnessCenterExtra() {
           <div className="flex-1 bg-white rounded-xl shadow-md overflow-hidden p-2 border border-neutral-100 min-h-0">
             <MiniChart
               title="支持力/视重 - 时间 (N-t)"
-              t0={time}
-              tMax={tMax}
+              xMin={0}
+              xMax={tMax}
               yMin={limits.N.min}
               yMax={limits.N.max}
               points={points}
@@ -357,8 +116,10 @@ export default function WeightlessnessCenterExtra() {
               staticLines={[
                 { value: m * g, color: PHYSICS_COLORS.gravity, strokeDasharray: '3,2', name: '真实重力 G' },
               ]}
+              xLabel="t(s)"
               yLabel="N(N)"
               currentVals={currentVals}
+              currentXVal={time}
             />
           </div>
 
@@ -366,16 +127,18 @@ export default function WeightlessnessCenterExtra() {
           <div className="flex-1 bg-white rounded-xl shadow-md overflow-hidden p-2 border border-neutral-100 min-h-0">
             <MiniChart
               title="速度 - 时间 (v-t)"
-              t0={time}
-              tMax={tMax}
+              xMin={0}
+              xMax={tMax}
               yMin={limits.v.min}
               yMax={limits.v.max}
               points={points}
               lines={[
                 { key: 'v', color: PHYSICS_COLORS.velocity, strokeWidth: 1.5, name: '速度 v' },
               ]}
+              xLabel="t(s)"
               yLabel="v(m/s)"
               currentVals={currentVals}
+              currentXVal={time}
             />
           </div>
         </div>

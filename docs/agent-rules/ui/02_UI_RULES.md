@@ -95,6 +95,20 @@ Canvas/SVG 中每类物理量有固定颜色，详见 `src/theme/physics/colors.
 - 顶部栏：高度 56px，bg-primary-800，白色文字
 - 底部控制栏：高度 48px，播放/暂停/重置/速度/进度条
 
+### 5.1 三屏职责边界（不可违反）
+
+| 区域 | 核心职责 | 可包含 | 不应承载 |
+|------|----------|--------|----------|
+| 左侧屏 | 交互控制 | ParamControl、SegmentedControl、ToggleSwitch、OptionButton、TipCard | 公式体系、知识讲解、高考考点 |
+| 中间屏 | 现象展示 | 动画、图表、数据表、实时标注、AnimationControls、InfoBar | 完整知识清单、系统性公式推导、高考总结 |
+| 右侧屏 | 知识展示 | 物理量、公式（含适用条件）、高考要点、易错点 | 参数调节、模式切换、播放状态控制 |
+
+**职责分离铁律**：
+- 左侧屏只承载参数、模式、状态等交互控制
+- 中间屏不承载完整公式体系和知识讲解；允许出现与当前图像、动画、实时计算直接相关的短公式标注
+- 右侧屏不承载任何可交互参数控件或动画状态控制
+- 详细规范见 `docs/agent-rules/ui/08_THREE_PANEL_RULES.md`
+
 ---
 
 ## 6. 学习状态视觉体系
@@ -192,3 +206,4 @@ Primary（primary-600）/ Secondary（white + primary边框）/ Ghost（transpar
 | AnalysisPage 版式 | `ui/04_ANALYSIS_PAGE_RULES.md` |
 | 错题本卡片 | `ui/05_WRONGBOOK_RULES.md` |
 | Canvas 元素尺寸 | `src/theme/physics/canvasStyle.ts` |
+| 三屏职责与侧屏组件规范 | `ui/08_THREE_PANEL_RULES.md` |

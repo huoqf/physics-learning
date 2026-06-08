@@ -14,6 +14,9 @@ interface PhysicsQuantity {
 interface Formula {
   name: string
   latex: string
+  condition?: string
+  note?: string
+  level?: 'core' | 'important' | 'derived' | 'supplementary'
 }
 
 interface GaokaoPoint {
@@ -81,10 +84,35 @@ export const PhysicsPanel: React.FC<PhysicsPanelProps> = ({
           <div className="space-y-1.5">
             {formulas.map((formula, index) => (
               <div key={index} className="text-xs">
-                <span className="text-neutral-500 inline">{formula.name}：</span>
-                <span className="ml-1 inline-block">
-                  <KatexFormula formula={formula.latex} mode="inline" />
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-neutral-500 inline">{formula.name}：</span>
+                  <span className="ml-1 inline-block">
+                    <KatexFormula formula={formula.latex} mode="inline" />
+                  </span>
+                  {formula.level && (
+                    <span
+                      className={[
+                        'text-[9px] px-1 py-0.5 rounded font-medium',
+                        formula.level === 'core' ? 'bg-primary-100 text-primary-700' : '',
+                        formula.level === 'important' ? 'bg-amber-100 text-amber-700' : '',
+                        formula.level === 'derived' ? 'bg-neutral-100 text-neutral-500' : '',
+                        formula.level === 'supplementary' ? 'bg-neutral-50 text-neutral-400' : '',
+                      ].join(' ')}
+                    >
+                      {formula.level === 'core' ? '核心' : formula.level === 'important' ? '重要' : formula.level === 'derived' ? '推导' : '补充'}
+                    </span>
+                  )}
+                </div>
+                {formula.condition && (
+                  <div className="mt-0.5 text-[10px] text-amber-600 italic pl-1">
+                    适用条件：{formula.condition}
+                  </div>
+                )}
+                {formula.note && (
+                  <div className="mt-0.5 text-[10px] text-neutral-400 pl-1">
+                    {formula.note}
+                  </div>
+                )}
               </div>
             ))}
           </div>

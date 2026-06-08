@@ -59,7 +59,6 @@ export const DYNAMICS_COLORS = {
   forceComponent:     '#475569', // 力的分量（辅助色）  — 辅助灰 (Slate-600)
   forceArrowRed:      '#B91C1C', // 力箭头深红（牛二定律专用）
   airResistance:      '#64748B', // 空气阻力 f_air      — 耗散灰 (neutral-500)
-  centripetal:        '#D946EF', // 向心力 F_c         — 向心品红
   torque:             '#B45309', // 力矩 M / τ         — 力矩黄褐
 } as const
 

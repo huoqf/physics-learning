@@ -683,7 +683,7 @@ export default function VerticalThrowAnimation() {
           />
         )}
 
-        {/* 速度矢量（绿色，方向随正负变化） */}
+        {/* 速度矢量（蓝色，方向随正负变化） */}
         {showVectors && effectiveV !== 0 && !isLanded && (
           <g>
             <line

@@ -125,6 +125,10 @@ export {
   SVG_MARKER,
   SVG_FILTER,
   SVG_ANIM,
+  KEPLER_CONFIG,
+  VECTOR_DISPLAY,
+  INSET_CHART,
+  GRID_DISPLAY,
 } from './canvasStyle'
 
 export type {

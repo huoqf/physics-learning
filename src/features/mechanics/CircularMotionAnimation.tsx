@@ -425,7 +425,7 @@ export default function CircularMotionAnimation() {
               v
             </text>
 
-            {/* 向心加速度 a (绿色，从球心指向圆心，动态线宽) */}
+            {/* 向心加速度 a (红色，从球心指向圆心，动态线宽) */}
             <line
               x1={canvasPos.cx}
               y1={canvasPos.cy}

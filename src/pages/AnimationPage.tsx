@@ -138,6 +138,12 @@ export default function AnimationPage() {
   const sidebarExtraProps = {
     params,
     updateParam,
+    setParams,
+    animationActions: {
+      resetAnimation: () => { setTime(0); setIsPlaying(false) },
+      pauseAnimation: () => { setIsPlaying(false) },
+      restartAnimation: () => { setTime(0); setIsPlaying(true) },
+    },
     showTimeSlices,
     toggleTimeSlices,
     showDualObjects,

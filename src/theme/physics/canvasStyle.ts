@@ -256,6 +256,51 @@ export const SVG_ANIM = {
   linear:           'linear',
 };
 
+// ─── 开普勒动画专用配置 ─────────────────────────────────────────────────
+export const KEPLER_CONFIG = {
+  // 轨道缩放：基准值 + 自适应因子范围
+  scaleBase: 32,
+  scaleMinFactor: 0.8,
+  scaleMaxFactor: 1.2,
+  // 参考画布尺寸（用于计算自适应因子）
+  referenceWidth: 650,
+  referenceHeight: 450,
+  // 面积扫过时间比例（教学演示参数）
+  sweepTimeRatio: 0.12,
+} as const;
+
+// ─── 矢量显示配置（按物理量类型）──────────────────────────────────────
+export const VECTOR_DISPLAY = {
+  velocity: {
+    scaleBase: 18,
+    minLength: 12,
+    maxLengthRatio: 0.18, // 相对于画布短边的最大比例
+  },
+  force: {
+    scaleBase: 140,
+    minLength: 12,
+    maxLengthRatio: 0.2,
+  },
+} as const;
+
+// ─── 画中画图表配置（全比例驱动）────────────────────────────────────────
+export const INSET_CHART = {
+  widthRatio: 0.28,      // 宽度占画布宽度的比例
+  heightRatio: 0.27,     // 高度占画布高度的比例
+  minWidth: 120,         // 最小宽度
+  minHeight: 80,         // 最小高度
+  maxWidthRatio: 0.36,   // 最大宽度比例
+  maxHeightRatio: 0.34,  // 最大高度比例
+  paddingRatio: 0.03,    // 边距占画布宽度的比例
+} as const;
+
+// ─── 网格配置（自适应）────────────────────────────────────────────────
+export const GRID_DISPLAY = {
+  spacingBase: 50,
+  minSpacing: 30,
+  maxSpacing: 80,
+} as const;
+
 // ─── 统一导出（兼容原 CANVAS_STYLE 结构）────────────────────────────────────
 export const CANVAS_STYLE = {
   STROKE,
@@ -270,6 +315,10 @@ export const CANVAS_STYLE = {
   SVG_MARKER,
   SVG_FILTER,
   SVG_ANIM,
+  KEPLER_CONFIG,
+  VECTOR_DISPLAY,
+  INSET_CHART,
+  GRID_DISPLAY,
   // 小写别名（兼容旧代码）
   stroke: STROKE,
   opacity: OPACITY,

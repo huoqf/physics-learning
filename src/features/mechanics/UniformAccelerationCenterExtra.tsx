@@ -34,7 +34,7 @@ export default function UniformAccelerationCenterExtra() {
   return (
     <div className="w-full h-full flex flex-col gap-2">
       {/* ── 信息条 ── */}
-      <div className="w-full shrink-0 bg-white rounded-xl shadow-md px-4 py-2.5 flex items-center gap-4 text-xs font-semibold">
+      <div className="w-full shrink-0 bg-white rounded-xl shadow-sm border border-neutral-100 px-4 py-2.5 flex items-center gap-4 text-xs font-semibold">
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PHYSICS_COLORS.displacement }} />
           <span className="text-neutral-700">相邻位移差 Δx = aT² = <span className="font-mono font-bold text-red-600">{deltaX.toFixed(3)}</span> m</span>
@@ -49,7 +49,7 @@ export default function UniformAccelerationCenterExtra() {
       {/* ── 上半部分：数据表 + v-t图(含公式推导) 并列 ── */}
       <div className="w-full flex-[3] flex flex-row gap-2">
         {/* 左侧：频闪数据表 */}
-        <div className="w-[35%] bg-white rounded-xl shadow-md overflow-hidden">
+        <div className="w-[35%] bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
           <FlashDataTable
             flashPoints={physics.flashPoints}
             a={a}
@@ -59,7 +59,7 @@ export default function UniformAccelerationCenterExtra() {
           />
         </div>
         {/* 右侧：v-t 图 + 公式推导 */}
-        <div className="flex-1 bg-white rounded-xl shadow-md overflow-hidden flex flex-col">
+        <div className="flex-1 bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden flex flex-col">
           <div className="flex-[3]">
             <VtChartWithArea
               v0={v0}
@@ -77,7 +77,7 @@ export default function UniformAccelerationCenterExtra() {
       </div>
 
       {/* ── 下半部分：频闪虚影动画（精密对比槽） ── */}
-      <div className="w-full flex-[2] bg-white rounded-xl shadow-md overflow-hidden">
+      <div className="w-full flex-[2] bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
         <StroboscopicAnimation
           v0={v0}
           a={a}
@@ -89,7 +89,7 @@ export default function UniformAccelerationCenterExtra() {
       </div>
 
       {/* ── 动画控制栏 ── */}
-      <div className="w-full shrink-0 bg-white rounded-xl shadow-md p-2">
+      <div className="w-full shrink-0 bg-white rounded-xl shadow-sm border border-neutral-100 p-2">
         <AnimationControls
           isPlaying={isPlaying}
           speed={speed}
@@ -625,19 +625,19 @@ function DerivationPanel({
 
   return (
     <div className="flex flex-row gap-4 text-xs font-semibold">
-      <div className="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-1.5 shadow-sm">
+      <div className="flex-1 bg-neutral-50 border border-neutral-200 rounded-lg p-1.5 shadow-sm">
         <p className="text-[9px] text-neutral-400 mb-0.5">相邻位移差 (逐差法)</p>
         <p className="font-mono text-neutral-700">
-          Δx = aT² = {a}×{T}² = <span className="font-bold text-red-600">{deltaX.toFixed(3)} m</span>
+          Δx = aT² = {a}×{T}² = <span className="font-bold text-primary-600">{deltaX.toFixed(3)} m</span>
         </p>
       </div>
-      <div className="flex-1 bg-blue-50/55 border border-blue-100 rounded-lg p-1.5 shadow-sm">
-        <p className="text-[9px] text-blue-400 mb-0.5">末速度公式</p>
+      <div className="flex-1 bg-primary-50/50 border border-primary-100 rounded-lg p-1.5 shadow-sm">
+        <p className="text-[9px] text-primary-400 mb-0.5">末速度公式</p>
         <p className="font-mono text-neutral-700">
-          v_t = v₀+at = {v0}+{a}×{time.toFixed(1)} = <span className="font-bold text-blue-600">{v.toFixed(2)} m/s</span>
+          v_t = v₀+at = {v0}+{a}×{time.toFixed(1)} = <span className="font-bold text-primary-600">{v.toFixed(2)} m/s</span>
         </p>
       </div>
-      <div className="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-1.5 shadow-sm">
+      <div className="flex-1 bg-neutral-50 border border-neutral-200 rounded-lg p-1.5 shadow-sm">
         <p className="text-[9px] text-neutral-400 mb-0.5">位移公式</p>
         <p className="font-mono text-neutral-700">
           x = v₀t+½at² = <span className="font-bold text-neutral-800">{s.toFixed(2)} m</span>

@@ -1,5 +1,5 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { useAnimationStore } from '@/stores'
+import { SegmentedControl, OptionButton, ToggleSwitch, TipCard } from '@/components/UI'
 
 /** 重力场预设 */
 const GRAVITY_PRESETS = [
@@ -28,32 +28,23 @@ function pressureLabel(p: number): string {
   return `${p.toFixed(2)} atm`
 }
 
-/** 按钮选中/未选中 className */
-function btnCls(selected: boolean): string {
-  return `px-3 py-1.5 text-xs rounded-md transition-all active:scale-95 ${
-    selected
-      ? 'bg-primary-100 text-primary-700 border border-primary-300'
-      : 'bg-neutral-50 text-neutral-700 border border-neutral-200 hover:bg-neutral-100'
-  }`
-}
-
 export default function FreeFallSidebar({
   params,
   updateParam,
+  animationActions,
   showTimeSlices,
   toggleTimeSlices,
   showDualObjects: _showDualObjects,
   toggleDualObjects: _toggleDualObjects,
   disabled,
 }: SidebarExtraProps) {
-  const { setTime, setIsPlaying } = useAnimationStore()
   const advancedMode = params.advancedMode ?? 0
   const isAdvanced = advancedMode === 1
 
-  const toggleAdvanced = () => {
-    updateParam('advancedMode', isAdvanced ? 0 : 1)
-    setTime(0)
-    setIsPlaying(false)
+  // ── 模式切换 ──
+  const handleModeChange = (value: number | string) => {
+    updateParam('advancedMode', value as number)
+    animationActions.resetAnimation()
   }
 
   return (
@@ -90,14 +81,13 @@ export default function FreeFallSidebar({
             <p className="text-xs font-semibold text-neutral-600 mb-2">物体A</p>
             <div className="flex gap-2 flex-wrap">
               {OBJECT_A_OPTIONS.map((opt) => (
-                <button
+                <OptionButton
                   key={opt.value}
-                  onClick={() => updateParam('objectA', opt.value)}
+                  label={opt.label}
+                  selected={(params.objectA ?? 0) === opt.value}
                   disabled={disabled}
-                  className={btnCls((params.objectA ?? 0) === opt.value)}
-                >
-                  {opt.label}
-                </button>
+                  onClick={() => updateParam('objectA', opt.value)}
+                />
               ))}
             </div>
           </div>
@@ -107,14 +97,13 @@ export default function FreeFallSidebar({
             <p className="text-xs font-semibold text-neutral-600 mb-2">物体B</p>
             <div className="flex gap-2 flex-wrap">
               {OBJECT_B_OPTIONS.map((opt) => (
-                <button
+                <OptionButton
                   key={opt.value}
-                  onClick={() => updateParam('objectB', opt.value)}
+                  label={opt.label}
+                  selected={(params.objectB ?? 0) === opt.value}
                   disabled={disabled}
-                  className={btnCls((params.objectB ?? 0) === opt.value)}
-                >
-                  {opt.label}
-                </button>
+                  onClick={() => updateParam('objectB', opt.value)}
+                />
               ))}
             </div>
           </div>
@@ -124,31 +113,25 @@ export default function FreeFallSidebar({
             <p className="text-xs font-semibold text-neutral-600 mb-2">环境重力场</p>
             <div className="flex gap-2 flex-wrap">
               {GRAVITY_PRESETS.map((preset) => (
-                <button
+                <OptionButton
                   key={preset.g}
-                  onClick={() => updateParam('g', preset.g)}
+                  label={preset.label}
+                  selected={params.g === preset.g}
                   disabled={disabled}
-                  className={btnCls(params.g === preset.g)}
-                >
-                  {preset.label}
-                </button>
+                  onClick={() => updateParam('g', preset.g)}
+                />
               ))}
             </div>
           </div>
 
           {/* 5. 时间切片 */}
           <div className="mt-4 pt-3 border-t border-neutral-200">
-            <button
-              onClick={toggleTimeSlices}
+            <ToggleSwitch
+              checked={showTimeSlices}
+              onChange={toggleTimeSlices}
               disabled={disabled}
-              className={`w-full py-2 rounded-md text-sm font-medium transition-all ${
-                showTimeSlices
-                  ? 'bg-primary-100 text-primary-700 border border-primary-300'
-                  : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50'
-              }`}
-            >
-              {showTimeSlices ? '隐藏' : '显示'} 1:3:5:7 时间切片
-            </button>
+              label="显示 1:3:5:7 时间切片"
+            />
           </div>
         </>
       )}
@@ -216,41 +199,35 @@ export default function FreeFallSidebar({
               <span className="text-neutral-600">重力加速度 g</span>
               <span className="font-mono text-primary-700 font-semibold">{(params.g ?? 9.8).toFixed(3)} m/s²</span>
             </div>
-            <p className="text-[10px] text-neutral-400 mt-1">由纬度和海拔自动计算</p>
+            <TipCard variant="info" className="mt-1">
+              由纬度和海拔自动计算
+            </TipCard>
           </div>
 
           {/* 5. 时间切片 */}
           <div className="mt-4 pt-3 border-t border-neutral-200">
-            <button
-              onClick={toggleTimeSlices}
+            <ToggleSwitch
+              checked={showTimeSlices}
+              onChange={toggleTimeSlices}
               disabled={disabled}
-              className={`w-full py-2 rounded-md text-sm font-medium transition-all ${
-                showTimeSlices
-                  ? 'bg-primary-100 text-primary-700 border border-primary-300'
-                  : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50'
-              }`}
-            >
-              {showTimeSlices ? '隐藏' : '显示'} 1:3:5:7 时间切片
-            </button>
+              label="显示 1:3:5:7 时间切片"
+            />
           </div>
         </>
       )}
 
-      {/* ═══════ 模式切换按钮 ═══════ */}
+      {/* ═══════ 模式切换 ═══════ */}
       <div className="mt-4 pt-4 border-t border-neutral-200">
-        <button
-          onClick={toggleAdvanced}
+        <SegmentedControl
+          label="观察模式"
+          options={[
+            { label: '牛顿管实验', value: 0 },
+            { label: '滴水法测g', value: 1 },
+          ]}
+          value={advancedMode}
+          onChange={handleModeChange}
           disabled={disabled}
-          className={[
-            'w-full px-3 py-2 rounded-lg text-sm font-medium transition-all',
-            isAdvanced
-              ? 'bg-primary-600 text-white shadow-sm'
-              : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200',
-            disabled && 'opacity-40 pointer-events-none',
-          ].join(' ')}
-        >
-          {isAdvanced ? '✓ 滴水法测g' : '滴水法测g'}
-        </button>
+        />
       </div>
     </>
   )

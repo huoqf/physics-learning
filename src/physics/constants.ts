@@ -14,3 +14,7 @@ export const GRAVITATIONAL_CONSTANT = 6.67e-11
 
 /** 地球质量 (kg) */
 export const EARTH_MASS = 5.97e24
+
+/** 地球半径 (m) */
+export const EARTH_RADIUS = 6.37e6
+

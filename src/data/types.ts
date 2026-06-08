@@ -26,10 +26,24 @@ export interface ParamMeta {
   showIfValue?: number
 }
 
+/** 动画控制动作（语义化封装，SidebarExtra 不直接访问 store） */
+export interface AnimationActions {
+  /** 重置时间 + 暂停播放 */
+  resetAnimation: () => void
+  /** 暂停播放 */
+  pauseAnimation: () => void
+  /** 重置时间 + 开始播放 */
+  restartAnimation: () => void
+}
+
 /** 侧边栏扩展组件 props */
 export interface SidebarExtraProps {
   params: Record<string, number>
   updateParam: (key: string, value: number) => void
+  /** 批量更新参数 */
+  setParams: (params: Record<string, number>) => void
+  /** 动画控制动作（语义化封装） */
+  animationActions: AnimationActions
   showTimeSlices: boolean
   toggleTimeSlices: () => void
   showDualObjects: boolean

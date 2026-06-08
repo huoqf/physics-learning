@@ -1,214 +1,9 @@
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS } from '@/theme/physics'
-import { colors } from '@/theme/colors'
 import { calculateNewtonSecondVariableMotion } from '@/physics'
-import { AnimationControls } from '@/components/UI'
+import { AnimationControls, MiniChart } from '@/components/UI'
 import NewtonSecondAnimation from './NewtonSecondAnimation'
-
-interface MiniChartProps {
-  title: string
-  t0: number
-  tMax: number
-  yMin: number
-  yMax: number
-  points: any[]
-  lines: {
-    key: string
-    color: string
-    strokeWidth?: number
-    strokeDasharray?: string
-    name: string
-  }[]
-  yLabel: string
-  currentVals: Record<string, number>
-}
-
-function MiniChart({
-  title,
-  t0,
-  tMax,
-  yMin,
-  yMax,
-  points,
-  lines,
-  yLabel,
-  currentVals,
-}: MiniChartProps) {
-  const margin = { left: 18, right: 6, top: 15, bottom: 15 }
-  const plotW = 100 - margin.left - margin.right
-  const plotH = 100 - margin.top - margin.bottom
-
-  const toSvgX = (t: number) => margin.left + (t / tMax) * plotW
-  const toSvgY = (val: number) => {
-    const range = yMax - yMin || 1
-    return margin.top + plotH - ((val - yMin) / range) * plotH
-  }
-
-  // 过滤出到当前时刻的轨迹点
-  const visiblePoints = useMemo(() => {
-    return points.filter((p) => p.t <= t0 + 1e-9)
-  }, [points, t0])
-
-  const px = toSvgX(Math.min(t0, tMax))
-
-  const fs = 5.2
-  const sfs = 4.2
-
-  return (
-    <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
-      {/* 标题与图例 */}
-      <text x={margin.left} y={margin.top - 6} fontSize={fs} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
-        {title}
-      </text>
-
-      {/* 坐标轴网格线 */}
-      {Array.from({ length: 5 }).map((_, idx) => {
-        const gridY = margin.top + (plotH * idx) / 4
-        return (
-          <line
-            key={`grid-y-${idx}`}
-            x1={margin.left} y1={gridY} x2={margin.left + plotW} y2={gridY}
-            stroke={PHYSICS_COLORS.grid}
-            strokeWidth={0.3}
-            opacity={0.5}
-          />
-        )
-      })}
-      {Array.from({ length: 6 }).map((_, idx) => {
-        const gridX = margin.left + (plotW * idx) / 5
-        return (
-          <line
-            key={`grid-x-${idx}`}
-            x1={gridX} y1={margin.top} x2={gridX} y2={margin.top + plotH}
-            stroke={PHYSICS_COLORS.grid}
-            strokeWidth={0.3}
-            opacity={0.5}
-          />
-        )
-      })}
-
-      {/* 坐标轴线 */}
-      <line x1={margin.left} y1={margin.top + plotH} x2={margin.left + plotW} y2={margin.top + plotH} stroke={PHYSICS_COLORS.labelText} strokeWidth={0.5} />
-      <line x1={margin.left} y1={margin.top} x2={margin.left} y2={margin.top + plotH} stroke={PHYSICS_COLORS.labelText} strokeWidth={0.5} />
-
-      {/* 零刻度虚线 */}
-      {yMin < 0 && yMax > 0 && (
-        <line
-          x1={margin.left}
-          y1={toSvgY(0)}
-          x2={margin.left + plotW}
-          y2={toSvgY(0)}
-          stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={0.35}
-          strokeDasharray="1,1"
-          opacity={0.5}
-        />
-      )}
-
-      {/* x轴刻度 (0到10s) */}
-      {Array.from({ length: 6 }, (_, i) => {
-        const t = (tMax * i) / 5
-        const x = toSvgX(t)
-        return (
-          <g key={`xt-${i}`}>
-            <line x1={x} y1={margin.top + plotH} x2={x} y2={margin.top + plotH + 1.5} stroke={PHYSICS_COLORS.labelText} strokeWidth={0.4} />
-            <text x={x} y={margin.top + plotH + sfs + 1.5} fontSize={sfs} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontFamily="monospace">
-              {t.toFixed(0)}
-            </text>
-          </g>
-        )
-      })}
-
-      {/* y轴最大/最小刻度 */}
-      {[yMin, (yMin + yMax) / 2, yMax].map((val, idx) => {
-        const y = toSvgY(val)
-        return (
-          <g key={`yt-${idx}`}>
-            <line x1={margin.left - 1.5} y1={y} x2={margin.left} y2={y} stroke={PHYSICS_COLORS.labelText} strokeWidth={0.4} />
-            <text x={margin.left - 2.5} y={y + sfs * 0.35} fontSize={sfs} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end" fontFamily="monospace">
-              {val.toFixed(1)}
-            </text>
-          </g>
-        )
-      })}
-
-      {/* 绘制数据曲线 */}
-      {visiblePoints.length >= 2 &&
-        lines.map((line) => {
-          const pathD = visiblePoints
-            .map((p, idx) => {
-              const x = toSvgX(p.t)
-              const y = toSvgY(p[line.key])
-              return `${idx === 0 ? 'M' : 'L'} ${x},${y}`
-            })
-            .join(' ')
-
-          return (
-            <path
-              key={line.key}
-              d={pathD}
-              fill="none"
-              stroke={line.color}
-              strokeWidth={line.strokeWidth ?? 0.8}
-              strokeDasharray={line.strokeDasharray}
-            />
-          )
-        })}
-
-      {/* 游标和当前数值点 */}
-      {t0 <= tMax && (
-        <g>
-          {/* 时间垂直指示线 */}
-          <line
-            x1={px}
-            y1={margin.top}
-            x2={px}
-            y2={margin.top + plotH}
-            stroke={PHYSICS_COLORS.labelTextLight}
-            strokeWidth={0.4}
-            strokeDasharray="1.5,1.5"
-            opacity={0.4}
-          />
-          {/* 曲线上的焦点 */}
-          {lines.map((line) => {
-            const currentVal = currentVals[line.key] ?? 0
-            const py = toSvgY(currentVal)
-            return (
-              <g key={`point-${line.key}`}>
-                <circle cx={px} cy={py} r={2} fill={line.color} opacity={0.3} />
-                <circle cx={px} cy={py} r={1.2} fill={line.color} stroke={colors.neutral[0]} strokeWidth={0.4} />
-              </g>
-            )
-          })}
-        </g>
-      )}
-
-      {/* 标注与图例 */}
-      <text x={margin.left + plotW - 4} y={margin.top + plotH + sfs + 1.5} fontSize={sfs} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
-        t(s)
-      </text>
-      <text x={margin.left - 2} y={margin.top - 6} fontSize={sfs} fill={PHYSICS_COLORS.labelText} textAnchor="end" fontWeight="bold">
-        {yLabel}
-      </text>
-
-      {/* 曲线图例 */}
-      <g transform={`translate(${margin.left + 2}, ${margin.top + 3})`}>
-        {lines.map((line, idx) => {
-          const currentVal = currentVals[line.key] ?? 0
-          return (
-            <g key={`legend-${line.key}`} transform={`translate(0, ${idx * 6})`}>
-              <line x1={0} y1={-2} x2={6} y2={-2} stroke={line.color} strokeWidth={1} strokeDasharray={line.strokeDasharray} />
-              <text x={8} y={1} fontSize={sfs - 0.5} fill={PHYSICS_COLORS.labelTextLight}>
-                {line.name}: {currentVal.toFixed(2)}
-              </text>
-            </g>
-          )
-        })}
-      </g>
-    </svg>
-  )
-}
 
 export default function NewtonSecondCenterExtra() {
   const { params, time, isPlaying, speed, setIsPlaying, setTime, setSpeed } = useAnimationStore()
@@ -296,8 +91,8 @@ export default function NewtonSecondCenterExtra() {
         <div className="flex-1 bg-white rounded-xl shadow-md overflow-hidden p-2 border border-neutral-100">
           <MiniChart
             title="力 - 时间 (F-t)"
-            t0={time}
-            tMax={tMax}
+            xMin={0}
+            xMax={tMax}
             yMin={limits.F.min}
             yMax={limits.F.max}
             points={points}
@@ -306,8 +101,10 @@ export default function NewtonSecondCenterExtra() {
               { key: 'f', color: PHYSICS_COLORS.friction, strokeDasharray: '2,1', name: '阻力 f' },
               { key: 'F_net', color: PHYSICS_COLORS.forceNet, strokeWidth: 1.2, name: '合外力 F合' },
             ]}
+            xLabel="t(s)"
             yLabel="力(N)"
             currentVals={currentVals}
+            currentXVal={time}
           />
         </div>
 
@@ -315,16 +112,18 @@ export default function NewtonSecondCenterExtra() {
         <div className="flex-1 bg-white rounded-xl shadow-md overflow-hidden p-2 border border-neutral-100">
           <MiniChart
             title="加速度 - 时间 (a-t)"
-            t0={time}
-            tMax={tMax}
+            xMin={0}
+            xMax={tMax}
             yMin={limits.a.min}
             yMax={limits.a.max}
             points={points}
             lines={[
               { key: 'a', color: PHYSICS_COLORS.acceleration, strokeWidth: 1.2, name: '加速度 a' },
             ]}
+            xLabel="t(s)"
             yLabel="a(m/s²)"
             currentVals={currentVals}
+            currentXVal={time}
           />
         </div>
 
@@ -332,16 +131,18 @@ export default function NewtonSecondCenterExtra() {
         <div className="flex-1 bg-white rounded-xl shadow-md overflow-hidden p-2 border border-neutral-100">
           <MiniChart
             title="速度 - 时间 (v-t)"
-            t0={time}
-            tMax={tMax}
+            xMin={0}
+            xMax={tMax}
             yMin={limits.v.min}
             yMax={limits.v.max}
             points={points}
             lines={[
               { key: 'v', color: PHYSICS_COLORS.velocity, strokeWidth: 1.2, name: '速度 v' },
             ]}
+            xLabel="t(s)"
             yLabel="v(m/s)"
             currentVals={currentVals}
+            currentXVal={time}
           />
         </div>
       </div>

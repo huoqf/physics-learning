@@ -11,9 +11,21 @@ import {
   calculateElevatorMotion,
   calculateConnectedBody,
   calculateConnectedBodyTimeline,
+  calculateGravitation,
 } from '../../src/physics/dynamics'
 
 describe('Dynamics physics calculations', () => {
+  describe('calculateGravitation', () => {
+    it('should calculate gravitational force correctly', () => {
+      const G = 6.674e-11
+      const m1 = 5.97e24
+      const m2 = 7.35e22
+      const r = 3.84e8
+      const { F } = calculateGravitation(G, m1, m2, r)
+      expect(F / 1e20).toBeCloseTo(1.982, 1)
+    })
+  })
+
   describe('calculateElasticForce', () => {
     it('should calculate spring force correctly according to Hooke\'s law', () => {
       const { F } = calculateElasticForce(100, 0.2)

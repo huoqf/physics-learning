@@ -1,4 +1,4 @@
-import { useAnimationStore } from '@/stores'
+import { SegmentedControl, OptionButton, TipCard } from '@/components/UI'
 import type { SidebarExtraProps } from '@/data/types'
 
 /**
@@ -10,17 +10,11 @@ import type { SidebarExtraProps } from '@/data/types'
 export default function AccelerationSidebar({
   params,
   updateParam,
+  animationActions,
   disabled,
 }: SidebarExtraProps) {
-  const { setTime, setIsPlaying } = useAnimationStore()
   const advancedMode = params.advancedMode ?? 0
   const isAdvanced = advancedMode === 1
-
-  const toggleAdvanced = () => {
-    updateParam('advancedMode', isAdvanced ? 0 : 1)
-    setTime(0)
-    setIsPlaying(false)
-  }
 
   // ── 基础版：Δt 三档选项 ──
   const deltaTSteps = [
@@ -33,8 +27,7 @@ export default function AccelerationSidebar({
   const handleClassicCompare = () => {
     updateParam('vA', 300)
     updateParam('aB', 10)
-    setTime(0)
-    setIsPlaying(false)
+    animationActions.resetAnimation()
   }
 
   // ── 进阶版：转向点验证快捷 ──
@@ -42,8 +35,7 @@ export default function AccelerationSidebar({
     updateParam('v0', 12)
     updateParam('a', -3)
     updateParam('motionMode', 0)
-    setTime(0)
-    setIsPlaying(false)
+    animationActions.resetAnimation()
   }
 
   // ── 进阶版：变加速探究快捷 ──
@@ -51,8 +43,13 @@ export default function AccelerationSidebar({
     updateParam('v0', 0)
     updateParam('a', 4)
     updateParam('motionMode', 1)
-    setTime(0)
-    setIsPlaying(false)
+    animationActions.resetAnimation()
+  }
+
+  // ── 模式切换 ──
+  const handleModeChange = (value: number | string) => {
+    updateParam('advancedMode', value as number)
+    animationActions.resetAnimation()
   }
 
   return (
@@ -63,23 +60,18 @@ export default function AccelerationSidebar({
           <p className="text-xs font-semibold text-neutral-600 mb-2">观测时间微元 Δt</p>
           <div className="grid grid-cols-3 gap-2">
             {deltaTSteps.map((opt) => (
-              <button
+              <OptionButton
                 key={opt.value}
-                onClick={() => updateParam('deltaT', opt.value)}
+                label={opt.label}
+                selected={Math.abs((params.deltaT ?? 1) - opt.value) < 0.001}
                 disabled={disabled}
-                className={`py-2 text-xs rounded-md font-medium transition-all active:scale-95 ${
-                  Math.abs((params.deltaT ?? 1) - opt.value) < 0.001
-                    ? 'bg-blue-100 text-blue-700 border border-blue-300'
-                    : 'bg-neutral-50 text-neutral-700 border border-neutral-200 hover:bg-neutral-100'
-                }`}
-              >
-                {opt.label}
-              </button>
+                onClick={() => updateParam('deltaT', opt.value)}
+              />
             ))}
           </div>
-          <p className="mt-2 text-[10px] text-neutral-400 leading-tight">
+          <TipCard variant="info" className="mt-2">
             调小 Δt 观察速度变化的精细程度
-          </p>
+          </TipCard>
         </div>
       )}
 
@@ -87,66 +79,60 @@ export default function AccelerationSidebar({
       {!isAdvanced && (
         <div className="mt-4 pt-3 border-t border-neutral-200">
           <p className="text-xs font-semibold text-neutral-600 mb-2">教学快捷操作</p>
-          <button
-            onClick={handleClassicCompare}
+          <OptionButton
+            label="经典对比：v_A=300, a_B=10"
+            variant="preset"
             disabled={disabled}
-            className="w-full py-2 text-xs rounded-md font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-all active:scale-95"
-          >
-            经典对比：v_A=300, a_B=10
-          </button>
-          <p className="mt-2 text-[10px] text-neutral-400 leading-tight">
+            onClick={handleClassicCompare}
+          />
+          <TipCard variant="info" className="mt-2">
             飞机速度极大但 Δv=0，跑车从静止但 Δv 不断增长
-          </p>
+          </TipCard>
         </div>
       )}
 
-      {/* ── 进阶模式切换按钮 ── */}
+      {/* ── 观察模式切换 ── */}
       <div className="mt-4 pt-4 border-t border-neutral-200">
-        <button
-          onClick={toggleAdvanced}
+        <SegmentedControl
+          label="观察模式"
+          options={[
+            { label: '基础', value: 0 },
+            { label: '进阶', value: 1 },
+          ]}
+          value={advancedMode}
+          onChange={handleModeChange}
           disabled={disabled}
-          className={[
-            'w-full px-3 py-2 rounded-lg text-sm font-medium transition-all',
-            isAdvanced
-              ? 'bg-primary-600 text-white shadow-sm'
-              : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200',
-            disabled && 'opacity-40 pointer-events-none',
-          ].join(' ')}
-        >
-          {isAdvanced ? '✓ 进阶模式' : '进阶模式'}
-        </button>
-
-        {/* ── 进阶版：轻量提示 ── */}
-        {isAdvanced && (
-          <p className="mt-3 text-[10px] text-neutral-400 leading-tight">
-            试试把初速度或加速度设为负值，观察运动状态的变化
-          </p>
-        )}
+        />
       </div>
+
+      {/* ── 进阶版：轻量提示 ── */}
+      {isAdvanced && (
+        <TipCard variant="info" className="mt-3">
+          试试把初速度或加速度设为负值，观察运动状态的变化
+        </TipCard>
+      )}
 
       {/* ── 进阶版：教学快捷操作 ── */}
       {isAdvanced && (
         <div className="mt-4 pt-3 border-t border-neutral-200">
           <p className="text-xs font-semibold text-neutral-600 mb-2">教学快捷操作</p>
           <div className="flex flex-col gap-2">
-            <button
+            <OptionButton
+              label="转向点验证：v₀=12, a=-3"
+              variant="danger"
+              disabled={disabled}
               onClick={handleTurnPointVerify}
+            />
+            <OptionButton
+              label="变加速探究：v₀=0, a₀=4, 变加速"
+              variant="preset"
               disabled={disabled}
-              className="w-full py-2 text-xs rounded-md font-medium bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-all active:scale-95"
-            >
-              转向点验证：v₀=12, a=-3
-            </button>
-            <button
               onClick={handleVariableAccel}
-              disabled={disabled}
-              className="w-full py-2 text-xs rounded-md font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-all active:scale-95"
-            >
-              变加速探究：v₀=0, a₀=4, 变加速
-            </button>
+            />
           </div>
-          <p className="mt-2 text-[10px] text-neutral-400 leading-tight">
+          <TipCard variant="info" className="mt-2">
             验证 v=0 时 a≠0 转向点特征，或观察变加速运动斜率直角三角形的连续变扁过程。
-          </p>
+          </TipCard>
         </div>
       )}
     </>

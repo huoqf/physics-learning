@@ -282,6 +282,10 @@ export const COMMON_MATERIALS = {
   sliderMetalGrad:  ['#F1F5F9', '#CBD5E1', '#64748B', '#334155'] as const,
   // 通用玻璃器皿材质渐变色阶 (如牛顿管、烧杯、棱镜等)
   glassGrad:        ['#93C5FD', '#DBEAFE', '#FFFFFF'] as const,
+  // 地球海洋径向渐变色阶（中心 -> 边缘，用于天体力学地球渲染）
+  earthOceanGrad:   ['#DBEAFE', '#93C5FD', '#1E3A8A'] as const,
+  // 木质小球/木块材质渐变色阶 (如动能定理中的木块)
+  woodSphereGrad:   ['#FCD34D', '#B45309'] as const,
 } as const
 
 // ─── 实验环境与腔体 (Environment & Chambers) ──────────────────────────────────

@@ -364,7 +364,7 @@ export default function CentripetalAnimation() {
               v
             </text>
 
-            {/* 向心加速度 a (绿色，从球心指向圆心，动态线宽) */}
+            {/* 向心加速度 a (红色，从球心指向圆心，动态线宽) */}
             <line
               x1={ballPos.cx}
               y1={ballPos.cy}
@@ -384,7 +384,7 @@ export default function CentripetalAnimation() {
               a
             </text>
 
-            {/* 向心合外力 F (深红，从球心指向圆心，共线叠合，动态线宽，仅进阶模式) */}
+            {/* 向心合外力 F (橙色，仅进阶模式) */}
             {isAdvanced && (
               <>
                 <line
