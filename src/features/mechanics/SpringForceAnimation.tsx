@@ -1,6 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
+import { Spring } from '@/components/UI'
 
 export default function SpringForceAnimation() {
   const { params, time, showVectors, showGrid } = useAnimationStore()
@@ -44,34 +45,6 @@ export default function SpringForceAnimation() {
     }
   }
 
-  // ── 3D 精密螺旋弹簧 (Helix) 路径生成 ──
-  const springPath = (startX: number, endX: number) => {
-    const points = []
-    const coils = 12 // 弹簧螺旋圈数
-    const rHelix = 13 // 螺旋管外径半径
-    const steps = 200 // 采样精细度
-    const totalLength = endX - startX
-    const centerY = groundY - boxSize / 2 // 弹簧轴线高度居中于箱子
-
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps
-      
-      // 两端平滑收口包络函数，使其平滑连接到固定端和箱子
-      let factor = 1
-      if (t < 0.06) {
-        factor = t / 0.06
-      } else if (t > 0.94) {
-        factor = (1 - t) / 0.06
-      }
-      
-      const angle = 2 * Math.PI * coils * t
-      // 三维螺旋投影：x 方向叠加正弦环绕项，y 方向叠加余弦项
-      const x = startX + t * totalLength + rHelix * Math.sin(angle) * 0.4 * factor
-      const y = centerY + rHelix * Math.cos(angle) * factor
-      points.push(`${x},${y}`)
-    }
-    return points.join(' ')
-  }
 
   return (
     <div ref={containerRef} className="w-full h-full">
@@ -122,13 +95,13 @@ export default function SpringForceAnimation() {
         />
         
         {/* 4. 动态螺旋弹簧 */}
-        <polyline
-          points={springPath(wallRightX, centerX - boxSize / 2)}
-          fill="none"
-          stroke={PHYSICS_COLORS.elasticForce}
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
+        <Spring
+          x1={wallRightX}
+          y1={groundY - boxSize / 2}
+          x2={centerX - boxSize / 2}
+          y2={groundY - boxSize / 2}
+          coils={12}
+          radius={13}
         />
 
         {/* 5. 振子滑块 (质量块) */}

@@ -83,6 +83,14 @@ export const SPRING_COLORS = {
   stretched:     '#3B82F6', // 拉伸状态高亮  — primary-500
   natural:       '#6B7280', // 原长状态      — gray-500
 
+  // 💡 扩展项目规范颜色：轻质弹簧与拟物阴影金属渐变
+  lightCoilBase:   '#9CA3AF', // 轻质弹簧主体    — gray-400
+  lightCoilStroke: '#4B5563', // 轻质弹簧描边    — gray-600
+  lightCoilGlow:   'rgba(156, 163, 175, 0.15)', // 轻质弹簧半透明发光底色
+
+  springMetalGrad:      ['#F3F4F6', '#D1D5DB', '#9CA3AF', '#4B5563'] as const,
+  lightSpringMetalGrad: ['#F9FAFB', '#F3F4F6', '#D1D5DB', '#9CA3AF'] as const,
+
   // 固定端/墙
   wallFill:      '#E5E7EB', // 固定壁填充    — gray-200
   wallStroke:    '#6B7280', // 固定壁描边    — gray-500

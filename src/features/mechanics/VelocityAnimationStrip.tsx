@@ -2,6 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OBJECT } from '@/theme/physics'
+import { Spring } from '@/components/UI'
 import { calculateInstantaneousVelocity } from '@/physics'
 import type { VariableMotionModel, VariableMotionParams } from '@/physics'
 import { useVelocityPhysics } from './useVelocityPhysics'
@@ -119,33 +120,6 @@ export default function VelocityAnimationStrip({
     'multi-stage': '往返多阶段',
   }
 
-  // ── 三维立体环绕弹簧路径（前半圈和后半圈咬合深度） ──
-  const springPathD = useMemo(() => {
-    if (model !== 'shm') return { front: '', back: '' }
-    const springAnchorX = padding
-    const ballCenterX = currentX
-    const springEndX = ballCenterX - objW * 0.4
-    const loops = 16
-    const width = springEndX - springAnchorX
-    
-    let backD = ''
-    let frontD = ''
-    
-    const springY = groundY - objH / 2 - 2
-    const rY = 9 // 螺圈垂直半径
-
-    for (let i = 0; i < loops; i++) {
-      const cx = springAnchorX + i * (width / loops)
-      const nx = springAnchorX + (i + 1) * (width / loops)
-      const mx = (cx + nx) / 2
-      
-      // 后半圈 (由下朝上，位于球/小轴后面，细线暗色)
-      backD += ` M ${cx},${springY + rY} C ${cx - 2},${springY - rY * 0.6} ${mx - 2},${springY - rY} ${mx},${springY - rY}`
-      // 前半圈 (由上朝下，绕过前面，粗线高光)
-      frontD += ` M ${mx},${springY - rY} C ${mx + 2},${springY + rY} ${nx + 2},${springY + rY} ${nx},${springY + rY}`
-    }
-    return { front: frontD, back: backD }
-  }, [model, padding, currentX, objW, objH, groundY])
 
   // ── 多阶段：A/B 标志位置 ──
   const { pointA, pointB } = useMemo(() => {
@@ -183,11 +157,6 @@ export default function VelocityAnimationStrip({
             <stop offset="100%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[3]} />
           </linearGradient>
           {/* 钢弹簧前半圈高光渐变 */}
-          <linearGradient id="spring-front-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={SCENE_COLORS.magnet.southLight} />
-            <stop offset="50%" stopColor={SCENE_COLORS.magnet.southBase} />
-            <stop offset="100%" stopColor={SCENE_COLORS.magnet.southMid} />
-          </linearGradient>
 
           {/* 箭头标记 */}
           <marker id="arrowhead-strip-v" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
@@ -264,9 +233,16 @@ export default function VelocityAnimationStrip({
           strokeDasharray={DASH.guide.join(',')} opacity={0.3}
         />
 
-        {/* ══════════ 简谐振动：弹簧后半圈 (渲染在球体后方) ══════════ */}
-        {model === 'shm' && springPathD.back && (
-          <path d={springPathD.back} fill="none" stroke={SCENE_COLORS.materials.steelSphereGrad[2]} strokeWidth={1.5} opacity={0.65} strokeLinecap="round" />
+        {/* ══════════ 简谐振动：统一 3D 螺旋弹簧 ══════════ */}
+        {model === 'shm' && (
+          <Spring
+            x1={padding}
+            y1={groundY - objH / 2 - 2}
+            x2={currentX - objW * 0.4}
+            y2={groundY - objH / 2 - 2}
+            coils={16}
+            radius={9}
+          />
         )}
 
         {/* ══════════ 简谐振动：平衡位置及固定端 ══════════ */}
@@ -319,10 +295,6 @@ export default function VelocityAnimationStrip({
           </g>
         )}
 
-        {/* ══════════ 简谐振动：弹簧前半圈 (环绕渲染在球体前方) ══════════ */}
-        {model === 'shm' && springPathD.front && (
-          <path d={springPathD.front} fill="none" stroke="url(#spring-front-grad)" strokeWidth={2.8} strokeLinecap="round" />
-        )}
 
         {/* ══════════ 简谐振动：位移标注 ══════════ */}
         {model === 'shm' && Math.abs(state.x) > 0.4 && (

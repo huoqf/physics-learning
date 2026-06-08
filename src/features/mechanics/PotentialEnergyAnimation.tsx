@@ -3,7 +3,7 @@ import { useState, useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CHART_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { KatexFormula } from '@/components/UI'
+import { KatexFormula, Spring } from '@/components/UI'
 import {
   precomputeGravityTrajectory,
   precomputeSpringTrajectory,
@@ -273,33 +273,6 @@ export default function PotentialEnergyAnimation() {
     [trajectory, time]
   )
 
-  // ── 螺旋弹簧 SVG 波纹生成器 ──
-  const getSpringPath = (startX: number, endX: number, centerY: number) => {
-    const turns = 16
-    const width = endX - startX
-    const points: string[] = []
-    
-    // 起始引线
-    points.push(`M ${startX} ${centerY}`)
-    points.push(`L ${startX + 12} ${centerY}`)
-    
-    // 螺旋波圈
-    const activeWidth = width - 24
-    const step = activeWidth / turns
-    for (let i = 0; i < turns; i++) {
-      const x1 = startX + 12 + (i + 0.25) * step
-      const x2 = startX + 12 + (i + 0.75) * step
-      const x3 = startX + 12 + (i + 1.0) * step
-      // 上弦贝塞尔
-      points.push(`Q ${x1} ${centerY - 13}, ${startX + 12 + (i + 0.5) * step} ${centerY}`)
-      // 下弦贝塞尔
-      points.push(`Q ${x2} ${centerY + 13}, ${x3} ${centerY}`)
-    }
-    
-    // 结尾引线
-    points.push(`L ${endX} ${centerY}`)
-    return points.join(' ')
-  }
 
   // ── 随动公式 ──
   const getLiveFormula = () => {
@@ -680,13 +653,14 @@ export default function PotentialEnergyAnimation() {
             </text>
 
             {/* 螺旋弹簧绘制 (拉伸或压缩状态) */}
-            <path
-              d={getSpringPath(animLeftBoundary, toPixelX(state.pos), groundY - objH * 0.5)}
-              fill="none"
-              stroke={PHYSICS_COLORS.potentialElastic}
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
+            <Spring
+              x1={animLeftBoundary}
+              y1={groundY - objH * 0.5}
+              x2={toPixelX(state.pos)}
+              y2={groundY - objH * 0.5}
+              coils={16}
+              radius={12}
+              color={PHYSICS_COLORS.potentialElastic}
             />
 
             {/* 振动滑块 (木物块) */}

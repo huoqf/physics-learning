@@ -20,3 +20,5 @@ export { OptionButton } from './OptionButton'
 export { TipCard } from './TipCard'
 export { MiniChart } from './MiniChart'
 export type { MiniChartLine, MiniChartStaticLine, MiniChartProps } from './MiniChart'
+export { Spring } from './Spring'
+

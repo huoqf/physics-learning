@@ -3,6 +3,7 @@ import { useCanvasSize, PX_PER_METER } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
+import { Spring } from '@/components/UI'
 import { calculateConnectedBody, calculateConnectedBodyTimeline, GRAVITY } from '@/physics'
 
 /** 连接体场景布局常量 */
@@ -162,30 +163,42 @@ export default function ConnectedBodiesAnimation() {
       </g>
     )
   } else {
-    // 弹簧：根据实际线段螺旋绘制
-    const springW = ropeRightX - ropeLeftX
-    const steps = 36
-    const spiralPoints = [`M ${ropeLeftX} ${ropeY}`]
-    spiralPoints.push(`L ${ropeLeftX + 4} ${ropeY}`)
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps
-      const cx = ropeLeftX + 4 + t * (springW - 8)
-      // 使用正弦波控制线圈凸起
-      const cy = ropeY + Math.min(h1 * 0.35, 12) * Math.sin(t * 8 * 2 * Math.PI)
-      spiralPoints.push(`L ${cx} ${cy}`)
-    }
-    spiralPoints.push(`L ${ropeRightX - 4} ${ropeY}`)
-    spiralPoints.push(`L ${ropeRightX} ${ropeY}`)
-
+    // 弹簧：统一的 3D 螺旋轻质弹簧组件
     connectionSvgElement = (
-      <path
-        d={spiralPoints.join(' ')}
-        fill="none"
-        stroke={isMoving ? SCENE_COLORS.spring.stretched : SCENE_COLORS.spring.coilStroke}
-        strokeWidth={2.2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <g>
+        <Spring
+          x1={ropeLeftX}
+          y1={ropeY}
+          x2={ropeRightX}
+          y2={ropeY}
+          coils={12}
+          radius={11}
+          isLightWeight={true}
+        />
+        {/* 轻质弹簧文字标注 */}
+        <g transform={`translate(${(ropeLeftX + ropeRightX) / 2}, ${ropeY - 16})`}>
+          <rect
+            x={-38}
+            y={-10}
+            width={76}
+            height={15}
+            rx={3}
+            fill="white"
+            fillOpacity={0.85}
+            stroke={SCENE_COLORS.spring.lightCoilStroke}
+            strokeWidth={0.5}
+          />
+          <text
+            fontSize={9}
+            fill={SCENE_COLORS.spring.lightCoilStroke}
+            textAnchor="middle"
+            fontWeight="bold"
+            y={1}
+          >
+            轻质弹簧 (m ≈ 0)
+          </text>
+        </g>
+      </g>
     )
   }
 
