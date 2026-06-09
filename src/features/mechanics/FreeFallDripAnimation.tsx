@@ -248,17 +248,17 @@ export default function FreeFallDripAnimation() {
           </marker>
           {/* 水滴写实径向渐变 */}
           <radialGradient id="drop-gradient" cx="35%" cy="30%" r="65%">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[0]} />
-            <stop offset="30%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[1]} />
-            <stop offset="75%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[3]} />
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[0]} />
+            <stop offset="30%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[1]} />
+            <stop offset="75%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[3]} />
           </radialGradient>
           {/* 龙头渐变 */}
           <linearGradient id="faucet-gradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
-            <stop offset="40%" stopColor={SCENE_COLORS.materials.steelSphereGrad[1]} />
-            <stop offset="80%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.steel.gradient[2]} />
+            <stop offset="40%" stopColor={SCENE_COLORS.sphere.steel.gradient[1]} />
+            <stop offset="80%" stopColor={SCENE_COLORS.sphere.steel.gradient[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.steel.gradient[3]} />
           </linearGradient>
           {/* 玻璃管背景渐变 */}
           <linearGradient id="glass-tube-grad" x1="0" y1="0" x2="1" y2="0">
@@ -270,8 +270,8 @@ export default function FreeFallDripAnimation() {
           </linearGradient>
           {/* 面积阴影渐变 */}
           <linearGradient id="area-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[2]} stopOpacity="0.2" />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[2]} stopOpacity="0.01" />
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[2]} stopOpacity="0.2" />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[2]} stopOpacity="0.01" />
           </linearGradient>
         </defs>
 
@@ -296,7 +296,7 @@ export default function FreeFallDripAnimation() {
           <rect
             x={tubeCenterX - faucetWidth / 2} y={faucetY - faucetHeight}
             width={faucetWidth} height={faucetHeight} rx={3}
-            fill="url(#faucet-gradient)" stroke="#4B5563"
+            fill="url(#faucet-gradient)" stroke={SCENE_COLORS.sphere.steel.stroke}
             strokeWidth={STROKE.objectThin}
           />
           {/* 喷嘴 */}

@@ -302,15 +302,15 @@ export default function KeplerAnimation() {
           </radialGradient>
           {/* 行星 A (蓝色) 3D球体渐变 */}
           <radialGradient id="planet-a-grad" cx="30%" cy="30%" r="70%">
-            <stop offset="0%" stopColor={SCENE_COLORS.magnet.southLight} />
-            <stop offset="40%" stopColor={SCENE_COLORS.magnet.southBase} />
-            <stop offset="100%" stopColor={SCENE_COLORS.magnet.southShadow} />
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.planetCool.gradient[0]} />
+            <stop offset="40%" stopColor={SCENE_COLORS.sphere.planetCool.gradient[1]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.planetCool.gradient[3]} />
           </radialGradient>
           {/* 行星 B (红色) 3D球体渐变 */}
           <radialGradient id="planet-b-grad" cx="30%" cy="30%" r="70%">
-            <stop offset="0%" stopColor={SCENE_COLORS.magnet.northLight} />
-            <stop offset="40%" stopColor={SCENE_COLORS.magnet.northBase} />
-            <stop offset="100%" stopColor={SCENE_COLORS.magnet.northShadow} />
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.planetWarm.gradient[0]} />
+            <stop offset="40%" stopColor={SCENE_COLORS.sphere.planetWarm.gradient[1]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.planetWarm.gradient[3]} />
           </radialGradient>
           {/* 虚焦点 3D 渐变 */}
           <radialGradient id="foci-grad" cx="50%" cy="50%" r="50%">

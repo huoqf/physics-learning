@@ -156,6 +156,19 @@ export default function VelocityAnimationStrip({
             <stop offset="70%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[2]} />
             <stop offset="100%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[3]} />
           </linearGradient>
+          {/* 高级振动金属球径向渐变 */}
+          <radialGradient id="oscillator-metal-grad" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.oscillatorMetal.gradient[0]} />
+            <stop offset="40%" stopColor={SCENE_COLORS.sphere.oscillatorMetal.gradient[1]} />
+            <stop offset="80%" stopColor={SCENE_COLORS.sphere.oscillatorMetal.gradient[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.oscillatorMetal.gradient[3]} />
+          </radialGradient>
+          {/* 车轮金属渐变 */}
+          <radialGradient id="wheel-grad" cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[0]} />
+            <stop offset="45%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[1]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[3]} />
+          </radialGradient>
           {/* 钢弹簧前半圈高光渐变 */}
 
           {/* 箭头标记 */}
@@ -181,13 +194,13 @@ export default function VelocityAnimationStrip({
           <rect
             x={padding * 0.4} y={groundY - 5}
             width={canvasSize.width - padding * 0.8} height={12}
-            fill="url(#rail-grad)" stroke="#4B5563" strokeWidth={1} rx={1}
+            fill="url(#rail-grad)" stroke={SCENE_COLORS.materials.sliderMetalGrad[3]} strokeWidth={1} rx={1}
           />
           {/* 导轨顶层高光亮条 */}
           <line
             x1={padding * 0.4 + 2} y1={groundY - 3}
             x2={canvasSize.width - padding * 0.8 - 2} y2={groundY - 3}
-            stroke="#FFFFFF" strokeWidth={1.5} opacity={0.4}
+            stroke={SCENE_COLORS.sphere.oscillatorMetal.specular} strokeWidth={1.5} opacity={0.4}
           />
           {/* 轨道小分度精密标尺刻度 */}
           {Array.from({ length: 161 }).map((_, idx) => {
@@ -273,7 +286,7 @@ export default function VelocityAnimationStrip({
           <circle
             cx={currentX} cy={groundY - objH / 2 - 2}
             r={objW * 0.4}
-            fill="url(#slider-metal-grad)" stroke={SCENE_COLORS.spring.coilDark} strokeWidth={STROKE.objectThin}
+            fill="url(#oscillator-metal-grad)" stroke={SCENE_COLORS.sphere.oscillatorMetal.stroke} strokeWidth={STROKE.objectThin}
           />
         ) : (
           // 变加速 / 多阶段：不锈钢滑块小车

@@ -80,7 +80,7 @@ export const FrictionCenterExtra: FC = () => {
   return (
     <div className="w-full h-full flex gap-3 px-1.5 py-1.5 border-b border-neutral-200/60 bg-neutral-50/50">
       {/* 全宽图表区域 */}
-      <div className="flex-1 bg-white rounded-xl shadow-sm p-3 border border-neutral-200/80 flex items-center justify-center min-w-0 relative">
+      <div className="flex-1 bg-white rounded-xl shadow-sm p-3 border border-neutral-100 flex items-center justify-center min-w-0 relative">
         <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
           <defs>
             <marker id="chart-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
@@ -224,7 +224,7 @@ export const FrictionCenterExtra: FC = () => {
         </svg>
 
         {/* 浮动状态卡片 */}
-        <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-lg border border-neutral-200/80 shadow-sm px-3 py-2">
+        <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-lg border border-neutral-100 shadow-sm px-3 py-2">
           <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1">
             {statusCard.title}
           </div>

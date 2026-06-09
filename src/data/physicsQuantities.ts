@@ -1015,6 +1015,120 @@ export function buildPhysicsQuantities(
         gaokaoPoints,
       }
     }
+    case 'anim-momentum': {
+      const advancedMode = params.advancedMode ?? 0
+      const isAdvanced = advancedMode === 1
+
+      if (!isAdvanced) {
+        // ── 基础模式：单球 ──
+        const m = params.m ?? 3
+        const v = params.v ?? 4
+        const p = m * v
+
+        return {
+          quantities: [
+            ...base,
+            { label: '质量 m', value: m.toFixed(1), unit: 'kg' },
+            { label: '速度 v', value: v.toFixed(1), unit: 'm/s' },
+            { label: '动量 p', value: p.toFixed(1), unit: 'kg·m/s', highlight: 'positive' as const },
+          ],
+          formulas: [
+            { name: '动量定义', latex: 'p = mv', level: 'core' as const },
+            { name: '动量与动能关系', latex: 'E_k = \\frac{p^2}{2m}', level: 'important' as const, condition: '仅适用于动能与动量的数值关系' },
+          ],
+          gaokaoPoints: [
+            { text: '动量是状态量，求某时刻动量须用该时刻的瞬时速度', importance: 'core' as const },
+          ],
+        }
+      } else {
+        // ── 进阶模式：双球一维 ──
+        const mA = params.mA ?? 3
+        const vA = params.vA ?? 5
+        const mB = params.mB ?? 2
+        const vB = params.vB ?? -3
+
+        const pA = mA * vA
+        const pB = mB * vB
+        const pTotal = pA + pB
+        const EkA = (pA * pA) / (2 * mA)
+        const EkB = (pB * pB) / (2 * mB)
+
+        return {
+          quantities: [
+            ...base,
+            { label: 'A球动量 p_A', value: pA.toFixed(1), unit: 'kg·m/s', highlight: pA >= 0 ? 'positive' as const : 'negative' as const },
+            { label: 'B球动量 p_B', value: pB.toFixed(1), unit: 'kg·m/s', highlight: pB >= 0 ? 'positive' as const : 'negative' as const },
+            { label: '系统总动量 p_总', value: pTotal.toFixed(1), unit: 'kg·m/s', highlight: pTotal === 0 ? 'zero' as const : 'extreme' as const },
+            { label: 'A球动能 E_kA', value: EkA.toFixed(1), unit: 'J' },
+            { label: 'B球动能 E_kB', value: EkB.toFixed(1), unit: 'J' },
+          ],
+          formulas: [
+            { name: '动量定义（一维）', latex: 'p = mv', level: 'core' as const, condition: '一维计算必须先规定正方向，用正负号表示方向' },
+            { name: '系统总动量', latex: 'p_{\\text{总}} = p_A + p_B', level: 'core' as const },
+            { name: '动量与动能转化', latex: 'E_k = \\frac{p^2}{2m}', level: 'important' as const, note: 'p 不变时，m↑ 则 E_k↓，动量大不代表动能一定大' },
+          ],
+          gaokaoPoints: [
+            { text: '动量是矢量，一维计算必须先规定正方向，用正负号表示', importance: 'gaokao' as const },
+            { text: '熟记 E_k = p²/(2m)，高考高频使用', importance: 'gaokao' as const },
+            { text: '动量大则动能一定大？错！p 相同时 m 越大 E_k 越小', importance: 'hard' as const },
+          ],
+        }
+      }
+    }
+    case 'anim-impulse-concept': {
+      const advancedMode = params.advancedMode ?? 0
+      const isAdvanced = advancedMode === 1
+
+      if (!isAdvanced) {
+        // ── 基础模式：恒力 ──
+        const F = params.F ?? 10
+        const t_duration = params.t_duration ?? 3
+        const I = F * t_duration
+
+        return {
+          quantities: [
+            ...base,
+            { label: '恒力大小', value: F.toFixed(1), unit: 'N' },
+            { label: '作用时间', value: t_duration.toFixed(1), unit: 's' },
+            { label: '冲量大小', value: I.toFixed(1), unit: 'N·s', highlight: 'positive' as const },
+          ],
+          formulas: [
+            { name: '冲量定义', latex: 'I = Ft', level: 'core' as const },
+          ],
+          gaokaoPoints: [
+            { text: '冲量是过程量，描述力在时间上的累积效应', importance: 'core' as const },
+          ],
+        }
+      } else {
+        // ── 进阶模式：变力 ──
+        const FMax = params.FMax ?? 10
+        const t_total = params.t_total ?? 3
+        const forceType = params.forceType === 1 ? 'sine' : 'linear'
+        // 解析积分
+        const totalI = forceType === 'sine'
+          ? (FMax * t_total) / Math.PI * 2
+          : FMax * t_total / 2
+        const avgF = totalI / t_total
+
+        return {
+          quantities: [
+            ...base,
+            { label: '瞬时外力 F(t)', value: '—', unit: 'N' },
+            { label: '平均外力 F̄', value: avgF.toFixed(1), unit: 'N' },
+            { label: '微元面积积聚', value: '∑FΔt', unit: 'N·s' },
+            { label: '总积分冲量', value: totalI.toFixed(1), unit: 'N·s', highlight: 'extreme' as const },
+          ],
+          formulas: [
+            { name: '微元法', latex: '\\Delta I = F\\Delta t', level: 'important' as const },
+            { name: '积分冲量', latex: 'I = \\int F\\,dt', level: 'core' as const },
+          ],
+          gaokaoPoints: [
+            { text: 'F-t 图像与时间轴所围面积等于该力在这段时间内的冲量', importance: 'gaokao' as const },
+            { text: '变力冲量无法直接用 Ft 计算，高考常通过微元面积或动量定理求解', importance: 'gaokao' as const },
+          ],
+        }
+      }
+    }
     case 'anim-momentum-conservation': {
       const m1 = params.m1 ?? 2
       const m2 = params.m2 ?? 3

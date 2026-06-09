@@ -256,18 +256,18 @@ export default function CircularMotionAnimation() {
         <defs>
           {/* 3D 拟物不锈钢钢珠材质 */}
           <radialGradient id="steel-sphere-grad" cx="30%" cy="30%" r="70%">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.steelSphereGrad[0]} />
-            <stop offset="40%" stopColor={SCENE_COLORS.materials.steelSphereGrad[1]} />
-            <stop offset="80%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.steel.gradient[0]} />
+            <stop offset="40%" stopColor={SCENE_COLORS.sphere.steel.gradient[1]} />
+            <stop offset="80%" stopColor={SCENE_COLORS.sphere.steel.gradient[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.steel.gradient[3]} />
           </radialGradient>
 
           {/* 投影虚影材质 */}
           <radialGradient id="vacuum-sphere-grad" cx="30%" cy="30%" r="70%">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[0]} stopOpacity={0.95} />
-            <stop offset="50%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[1]} stopOpacity={0.60} />
-            <stop offset="90%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[2]} stopOpacity={0.25} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[3]} stopOpacity={0.05} />
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[0]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[0]} />
+            <stop offset="50%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[1]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[1]} />
+            <stop offset="90%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[2]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[3]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[3]} />
           </radialGradient>
 
           <marker id="arrowhead-circular" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
@@ -398,7 +398,7 @@ export default function CircularMotionAnimation() {
           cy={canvasPos.cy}
           r={CIRCULAR_MOTION_LAYOUT.steelBallRadius}
           fill="url(#steel-sphere-grad)"
-          stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
+          stroke={SCENE_COLORS.sphere.steel.stroke}
           strokeWidth={CANVAS_STYLE.stroke.objectLine}
         />
 

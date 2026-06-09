@@ -836,10 +836,10 @@ export default function WeightlessnessAnimation() {
 
           {/* 砝码不锈钢渐变 */}
           <radialGradient id="weight-metal-grad" cx="35%" cy="35%" r="65%">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.steelSphereGrad[0]} />
-            <stop offset="40%" stopColor={SCENE_COLORS.materials.steelSphereGrad[1]} />
-            <stop offset="85%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.steel.gradient[0]} />
+            <stop offset="40%" stopColor={SCENE_COLORS.sphere.steel.gradient[1]} />
+            <stop offset="85%" stopColor={SCENE_COLORS.sphere.steel.gradient[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.steel.gradient[3]} />
           </radialGradient>
 
           {/* 矢量箭头 */}

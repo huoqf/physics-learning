@@ -132,8 +132,8 @@ export default function WorkAnimation() {
             <stop offset="100%" stopColor={SCENE_COLORS.magnet.southMid} />
           </linearGradient>
           <linearGradient id="block-wheel-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.steel.gradient[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.steel.gradient[3]} />
           </linearGradient>
           {/* 力箭头标记 */}
           <marker id="arrowhead-force-work" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
@@ -215,12 +215,12 @@ export default function WorkAnimation() {
           {/* 车轮（带钢圈） */}
           <g transform={`translate(${objW * 0.22}, ${objH - 3})`}>
             <circle r={objH * 0.18} fill="url(#block-wheel-grad)" />
-            <circle r={objH * 0.09} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.materials.steelSphereGrad[2]} strokeWidth={0.5} />
+            <circle r={objH * 0.09} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.sphere.steel.gradient[2]} strokeWidth={0.5} />
             <circle r={objH * 0.04} fill={SCENE_COLORS.materials.sliderMetalGrad[0]} />
           </g>
           <g transform={`translate(${objW * 0.78}, ${objH - 3})`}>
             <circle r={objH * 0.18} fill="url(#block-wheel-grad)" />
-            <circle r={objH * 0.09} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.materials.steelSphereGrad[2]} strokeWidth={0.5} />
+            <circle r={objH * 0.09} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.sphere.steel.gradient[2]} strokeWidth={0.5} />
             <circle r={objH * 0.04} fill={SCENE_COLORS.materials.sliderMetalGrad[0]} />
           </g>
         </g>

@@ -542,18 +542,18 @@ export default function VerticalThrowAnimation() {
 
           {/* 钢珠立体径向渐变 */}
           <radialGradient id="steel-sphere-grad" cx="30%" cy="30%" r="70%">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.steelSphereGrad[0]} />
-            <stop offset="40%" stopColor={SCENE_COLORS.materials.steelSphereGrad[1]} />
-            <stop offset="80%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.steel.gradient[0]} />
+            <stop offset="40%" stopColor={SCENE_COLORS.sphere.steel.gradient[1]} />
+            <stop offset="80%" stopColor={SCENE_COLORS.sphere.steel.gradient[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.steel.gradient[3]} />
           </radialGradient>
 
           {/* 真空对照球立体渐变 */}
           <radialGradient id="vacuum-sphere-grad" cx="30%" cy="30%" r="70%">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[0]} stopOpacity={0.95} />
-            <stop offset="50%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[1]} stopOpacity={0.60} />
-            <stop offset="90%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[2]} stopOpacity={0.25} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[3]} stopOpacity={0.05} />
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[0]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[0]} />
+            <stop offset="50%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[1]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[1]} />
+            <stop offset="90%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[2]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[3]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[3]} />
           </radialGradient>
 
           {/* 霓虹发光滤镜 */}
@@ -667,7 +667,7 @@ export default function VerticalThrowAnimation() {
 
         {/* 实体钢珠小球 */}
         <circle cx={leftBallX} cy={currentBallY} r={14}
-          fill="url(#steel-sphere-grad)" stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
+          fill="url(#steel-sphere-grad)" stroke={SCENE_COLORS.sphere.steel.stroke}
           strokeWidth={CANVAS_STYLE.stroke.objectLine} />
 
         {/* 微元法累积激光连线（时间轴移动时，实时连结速度切片与物理区高度变化量） */}

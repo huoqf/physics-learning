@@ -296,6 +296,95 @@ export const COMMON_MATERIALS = {
   woodSphereGrad:   ['#FCD34D', '#B45309'] as const,
 } as const
 
+
+// ─── 球体 / 球形器材材质规范 (Sphere & Orb Bodies) ───────────────────────────
+// 说明：
+// 1. 统一所有“小球/钢珠/摆球/行星/地球”外观 token
+// 2. 渐变顺序统一为：中心高光 → 受光面 → 过渡面 → 暗部
+// 3. 球体本体属于“器材外观色”，不得与 PHYSICS_COLORS 的物理量语义色混用
+// 4. 旧代码仍可继续使用 COMMON_MATERIALS.*Grad；本组用于后续统一迁移
+export const SPHERE_COLORS = {
+  // ── 通用钢珠 / 铁球 / 钢球（自由落体、抛体、圆周、向心力等主球）──
+  steel: {
+    gradient: COMMON_MATERIALS.steelSphereGrad,
+    stroke: '#334155', // neutral-700
+    shadow: 'rgba(15, 23, 42, 0.18)',
+    glow: 'rgba(148, 163, 184, 0.16)',
+    specular: 'rgba(255, 255, 255, 0.55)',
+  },
+
+  // ── 真空对照球 / 投影球 / 辅助虚影球 ──
+  steelGhost: {
+    gradient: COMMON_MATERIALS.vacuumSphereGrad,
+    opacity: [0.95, 0.60, 0.25, 0.05] as const,
+    stroke: '#38BDF8', // sky-400
+    shadow: 'rgba(14, 165, 233, 0.10)',
+    glow: 'rgba(56, 189, 248, 0.18)',
+    specular: 'rgba(224, 242, 254, 0.80)',
+  },
+
+  // ── 高频振动金属球 / 高级模式实验球 ──
+  oscillatorMetal: {
+    gradient: ['#FFFFFF', '#E2E8F0', '#94A3B8', '#334155'] as const,
+    stroke: '#1E293B', // neutral-800
+    shadow: 'rgba(15, 23, 42, 0.20)',
+    glow: 'rgba(203, 213, 225, 0.18)',
+    specular: 'rgba(255, 255, 255, 0.65)',
+  },
+
+  // ── 标准砝码球 / 黄铜配重球（平衡、重心实验）──
+  brassWeight: {
+    gradient: ['#FEF08A', '#EAB308', '#A16207', '#78350F'] as const,
+    stroke: '#713F12',
+    shadow: 'rgba(120, 53, 15, 0.18)',
+    glow: 'rgba(234, 179, 8, 0.14)',
+    specular: 'rgba(255, 248, 196, 0.55)',
+  },
+
+  // ── 单摆摆球 / 机械能守恒摆球 ──
+  pendulumBob: {
+    gradient: ['#DBEAFE', '#60A5FA', '#2563EB', '#1E3A8A'] as const,
+    stroke: '#1E40AF',
+    shadow: 'rgba(30, 64, 175, 0.18)',
+    glow: 'rgba(59, 130, 246, 0.18)',
+    specular: 'rgba(219, 234, 254, 0.72)',
+  },
+
+  // ── 冷色行星（开普勒 / 万有引力 / 天体对照组主行星）──
+  planetCool: {
+    gradient: ['#DBEAFE', '#93C5FD', '#3B82F6', '#1E3A8A'] as const,
+    stroke: '#172554',
+    shadow: 'rgba(30, 58, 138, 0.20)',
+    glow: 'rgba(96, 165, 250, 0.16)',
+    atmosphere: 'rgba(147, 197, 253, 0.16)',
+    specular: 'rgba(255, 255, 255, 0.42)',
+  },
+
+  // ── 暖色行星（开普勒对照行星 / 次行星）──
+  // 保持低饱和、克制，不做卡通红球
+  planetWarm: {
+    gradient: ['#FECACA', '#F87171', '#DC2626', '#7F1D1D'] as const,
+    stroke: '#7F1D1D',
+    shadow: 'rgba(127, 29, 29, 0.22)',
+    glow: 'rgba(248, 113, 113, 0.14)',
+    atmosphere: 'rgba(252, 165, 165, 0.12)',
+    specular: 'rgba(255, 255, 255, 0.35)',
+  },
+
+  // ── 地球科技风球体（重力、卫星、万有引力模块）──
+  earthTech: {
+    oceanGradient: COMMON_MATERIALS.earthOceanGrad,
+    landGradient: ['#E2E8F0', '#94A3B8', '#475569'] as const,
+    stroke: '#1E3A8A',
+    shadow: 'rgba(30, 58, 138, 0.18)',
+    glow: 'rgba(59, 130, 246, 0.16)',
+    atmosphereInner: 'rgba(191, 219, 254, 0.55)',
+    atmosphereOuter: 'rgba(147, 197, 253, 0.28)',
+    cloud: 'rgba(255, 255, 255, 0.28)',
+    specular: 'rgba(255, 255, 255, 0.40)',
+  },
+} as const
+
 // ─── 实验环境与腔体 (Environment & Chambers) ──────────────────────────────────
 export const ENVIRONMENT_COLORS = {
   // 真空环境（真空对照轨道外观）
@@ -339,6 +428,7 @@ export const LAB_LABELS = {
 // ─── 聚合导出：SCENE_COLORS ───────────────────────────────────────────────────
 export const SCENE_COLORS = {
   materials: COMMON_MATERIALS,
+  sphere: SPHERE_COLORS,
   environment: ENVIRONMENT_COLORS,
   effects: SPECIAL_EFFECTS,
   safety: SAFETY_PRESETS,
@@ -357,6 +447,7 @@ export const SCENE_COLORS = {
 
 export type SceneColorGroup   = keyof typeof SCENE_COLORS
 export type MaterialsColorKey = keyof typeof COMMON_MATERIALS
+export type SpherePresetKey   = keyof typeof SPHERE_COLORS
 export type EnvironmentColorKey = keyof typeof ENVIRONMENT_COLORS
 export type EffectsColorKey   = keyof typeof SPECIAL_EFFECTS
 export type SafetyColorKey    = keyof typeof SAFETY_PRESETS

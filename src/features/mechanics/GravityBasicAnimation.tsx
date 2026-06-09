@@ -186,21 +186,21 @@ export const GravityBasicAnimation: FC = () => {
         <defs>
           {/* 地球剖面径向高光渐变 */}
           <radialGradient id="earth-grad" cx="50%" cy="50%" r="50%" fx="30%" fy="30%">
-            <stop offset="0%" stopColor="#93C5FD" />
-            <stop offset="65%" stopColor="#2563EB" />
-            <stop offset="100%" stopColor="#1E3A8A" />
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.earthTech.oceanGradient[0]} />
+            <stop offset="65%" stopColor={SCENE_COLORS.sphere.earthTech.oceanGradient[1]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.earthTech.oceanGradient[2]} />
           </radialGradient>
           {/* 不锈钢薄板金属质感渐变 */}
           <linearGradient id="plate-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#F8FAFC" />
-            <stop offset="50%" stopColor="#E2E8F0" />
-            <stop offset="100%" stopColor="#94A3B8" />
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.earthTech.landGradient[0]} />
+            <stop offset="50%" stopColor={SCENE_COLORS.sphere.earthTech.landGradient[1]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.earthTech.landGradient[2]} />
           </linearGradient>
           {/* 黄铜配重渐变 */}
           <radialGradient id="brass-grad" cx="35%" cy="35%" r="65%">
-            <stop offset="0%" stopColor="#FEF08A" />
-            <stop offset="50%" stopColor="#EAB308" />
-            <stop offset="100%" stopColor="#A16207" />
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.brassWeight.gradient[0]} />
+            <stop offset="50%" stopColor={SCENE_COLORS.sphere.brassWeight.gradient[1]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.brassWeight.gradient[2]} />
           </radialGradient>
           {/* 力的箭头定义 */}
           <marker id="arrow-gravity" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
@@ -232,7 +232,7 @@ export const GravityBasicAnimation: FC = () => {
             <circle
               cx={cx} cy={cy} r={earthData.R_earth}
               fill="url(#earth-grad)"
-              stroke={SCENE_COLORS.magnet.southStroke}
+              stroke={SCENE_COLORS.sphere.earthTech.stroke}
               strokeWidth={2}
             />
 
@@ -433,7 +433,7 @@ export const GravityBasicAnimation: FC = () => {
                 <circle
                   key={`hole-${idx}`}
                   cx={hole.cx} cy={hole.cy} r={isActive ? 2.5 : 4}
-                  fill={isActive ? PHYSICS_COLORS.gravity : "#FFFFFF"} // 正在悬挂的孔内缩为钉子轴
+                  fill={isActive ? PHYSICS_COLORS.gravity : SCENE_COLORS.sphere.steel.specular} // 正在悬挂的孔内缩为钉子轴
                   stroke={PHYSICS_COLORS.labelText}
                   strokeWidth={1.2}
                 />
@@ -463,21 +463,21 @@ export const GravityBasicAnimation: FC = () => {
                   cy={plateData.canvasWeight.cy}
                   r={8 + weightMass * 2.5}
                   fill="url(#brass-grad)"
-                  stroke="#78350F"
+                  stroke={SCENE_COLORS.sphere.brassWeight.stroke}
                   strokeWidth={1.5}
                 />
                 <circle
                   cx={plateData.canvasWeight.cx}
                   cy={plateData.canvasWeight.cy}
                   r={2.5}
-                  fill="#78350F"
+                  fill={SCENE_COLORS.sphere.brassWeight.stroke}
                 />
                 {/* 配重块的质量文字 (可见标注 2/5) */}
                 <text
                   x={plateData.canvasWeight.cx}
                   y={plateData.canvasWeight.cy - 12 - weightMass * 2}
                   fontSize="9"
-                  fill="#78350F"
+                  fill={SCENE_COLORS.sphere.brassWeight.stroke}
                   fontWeight="bold"
                   textAnchor="middle"
                 >

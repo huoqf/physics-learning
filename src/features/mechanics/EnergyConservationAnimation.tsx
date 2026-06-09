@@ -267,6 +267,13 @@ export default function EnergyConservationAnimation() {
             <stop offset="0%" stopColor={SCENE_COLORS.materials.woodSphereGrad[0]} />
             <stop offset="100%" stopColor={SCENE_COLORS.materials.woodSphereGrad[1]} />
           </linearGradient>
+          {/* 单摆摆球径向渐变 */}
+          <radialGradient id="pendulum-bob-grad" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.pendulumBob.gradient[0]} />
+            <stop offset="40%" stopColor={SCENE_COLORS.sphere.pendulumBob.gradient[1]} />
+            <stop offset="80%" stopColor={SCENE_COLORS.sphere.pendulumBob.gradient[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.pendulumBob.gradient[3]} />
+          </radialGradient>
 
           {/* 物理矢量箭头 */}
           <marker id="arrow-velocity" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
@@ -425,8 +432,8 @@ export default function EnergyConservationAnimation() {
               cx={objPos.x}
               cy={objPos.y}
               r={12}
-              fill="url(#block-grad)"
-              stroke={SCENE_COLORS.materials.woodSphereGrad[1]}
+              fill="url(#pendulum-bob-grad)"
+              stroke={SCENE_COLORS.sphere.pendulumBob.stroke}
               strokeWidth={1.5}
             />
             

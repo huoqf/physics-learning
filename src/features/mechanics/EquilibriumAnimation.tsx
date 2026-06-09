@@ -439,7 +439,7 @@ export default function EquilibriumAnimation() {
             cy={ballCenter.cy}
             r={CANVAS_STYLE.object.ball}
             fill="url(#steelSphereGradient)"
-            stroke={PHYSICS_COLORS.objectStroke}
+            stroke={SCENE_COLORS.sphere.brassWeight.stroke}
             strokeWidth={CANVAS_STYLE.stroke.objectLine}
             className="group-hover:scale-105 transition-transform"
           />
@@ -610,12 +610,12 @@ export default function EquilibriumAnimation() {
             <stop offset="100%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[3]} />
           </linearGradient>
 
-          {/* 立体砝码小球径向渐变 (从 SCENE_COLORS.materials.steelSphereGrad 获取) */}
+          {/* 立体砝码小球径向渐变 (从 SCENE_COLORS.sphere.brassWeight 获取) */}
           <radialGradient id="steelSphereGradient" cx="30%" cy="30%" r="70%">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.steelSphereGrad[0]} />
-            <stop offset="40%" stopColor={SCENE_COLORS.materials.steelSphereGrad[1]} />
-            <stop offset="85%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.brassWeight.gradient[0]} />
+            <stop offset="40%" stopColor={SCENE_COLORS.sphere.brassWeight.gradient[1]} />
+            <stop offset="85%" stopColor={SCENE_COLORS.sphere.brassWeight.gradient[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.brassWeight.gradient[3]} />
           </radialGradient>
           
           {/* 受力矢量箭头定义 */}

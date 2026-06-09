@@ -112,6 +112,9 @@ export default function KineticEnergyAnimation() {
   // 物理坐标映射到 Canvas 像素坐标
   const carX = padding + state.x * scale
   const carY = mode === 0 ? groundY : groundY - (R - state.y) * scale
+  const ballR = objW * 0.45
+  const ballCX = carX
+  const ballCY = carY - ballR
 
   // ── 能量对比柱数值 ──
   const initialEk = 0.5 * m * v0 * v0
@@ -287,6 +290,14 @@ export default function KineticEnergyAnimation() {
             <stop offset="0%" stopColor={SCENE_COLORS.materials.woodSphereGrad[0]} />
             <stop offset="100%" stopColor={SCENE_COLORS.materials.woodSphereGrad[1]} />
           </linearGradient>
+
+          {/* 不锈钢实体钢珠 3D 材质（进阶模式） */}
+          <radialGradient id="steel-sphere-grad" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.steelSphereGrad[0]} />
+            <stop offset="40%" stopColor={SCENE_COLORS.materials.steelSphereGrad[1]} />
+            <stop offset="80%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
+          </radialGradient>
 
           {/* 规范的物理矢量箭头定义 */}
           <marker id="arrow-appliedForce" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
@@ -692,10 +703,10 @@ export default function KineticEnergyAnimation() {
         {mode === 1 && state.phase === 0 && mu > 0.01 && state.v > 0.05 && (
           <g stroke={colors.danger[500]} strokeWidth={1.5} fill="none">
             <line
-              x1={carX - (objW * 0.4) * Math.cos(state.theta)}
-              y1={carY - (objW * 0.4) * Math.sin(state.theta)}
-              x2={carX - (objW * 0.9) * Math.cos(state.theta)}
-              y2={carY - (objW * 0.9) * Math.sin(state.theta)}
+              x1={carX + (objW * 0.45 + 3) * Math.cos(state.theta)}
+              y1={carY - objW * 0.45 + (objW * 0.45 + 3) * Math.sin(state.theta)}
+              x2={carX + (objW * 0.45 + 12) * Math.cos(state.theta)}
+              y2={carY - objW * 0.45 + (objW * 0.45 + 12) * Math.sin(state.theta)}
               stroke={colors.danger[500]}
               strokeDasharray="2,2"
               opacity={0.8 * (state.v / v_c)}
@@ -753,71 +764,88 @@ export default function KineticEnergyAnimation() {
           </g>
         </g>
 
-        {/* ── 木块模型（带旋转与高度自适应定位） ── */}
-        <g transform={mode === 0 
-          ? `translate(${carX}, ${groundY - objH})` 
-          : `translate(${carX}, ${carY}) rotate(${90 - (state.theta * 180) / Math.PI}) translate(${-objW / 2}, ${-objH})`
-        }>
-          {/* 木物块身 */}
-          <rect width={objW} height={objH - 1} rx={2} fill="url(#block-grad)" stroke={SCENE_COLORS.materials.woodSphereGrad[1]} strokeWidth={1.5} />
-          {/* 质地木纹装饰线 */}
-          <line x1={objW * 0.15} y1={2} x2={objW * 0.15} y2={objH - 3} stroke={colors.neutral[700]} strokeWidth={0.5} opacity={0.25} />
-          <line x1={objW * 0.5} y1={2} x2={objW * 0.5} y2={objH - 3} stroke={colors.neutral[700]} strokeWidth={0.5} opacity={0.25} />
-          <line x1={objW * 0.8} y1={2} x2={objW * 0.8} y2={objH - 3} stroke={colors.neutral[700]} strokeWidth={0.5} opacity={0.25} />
+        {/* ── 物体模型 ── */}
+        {mode === 0 ? (
+          // 普通模式：木块（水平运动）
+          <g transform={`translate(${carX}, ${groundY - objH})`}>
+            <rect width={objW} height={objH - 1} rx={2} fill="url(#block-grad)" stroke={SCENE_COLORS.materials.woodSphereGrad[1]} strokeWidth={1.5} />
+            <line x1={objW * 0.15} y1={2} x2={objW * 0.15} y2={objH - 3} stroke={colors.neutral[700]} strokeWidth={0.5} opacity={0.25} />
+            <line x1={objW * 0.5} y1={2} x2={objW * 0.5} y2={objH - 3} stroke={colors.neutral[700]} strokeWidth={0.5} opacity={0.25} />
+            <line x1={objW * 0.8} y1={2} x2={objW * 0.8} y2={objH - 3} stroke={colors.neutral[700]} strokeWidth={0.5} opacity={0.25} />
+            <text x={objW * 0.5} y={objH * 0.55} fontSize={smallFont} fill={colors.neutral[800]} fontWeight="bold" textAnchor="middle">
+              {m.toFixed(1)}kg
+            </text>
+            <circle cx={objW * 0.22} cy={objH - 0.5} r={2.5} fill={colors.neutral[800]} />
+            <circle cx={objW * 0.78} cy={objH - 0.5} r={2.5} fill={colors.neutral[800]} />
 
-          {/* 木块质量标志 */}
-          <text x={objW * 0.5} y={objH * 0.55} fontSize={smallFont} fill={colors.neutral[800]} fontWeight="bold" textAnchor="middle">
-            {m.toFixed(1)}kg
-          </text>
+            {/* 拉力 F 矢量 */}
+            {showVectors && state.F > 0.1 && (
+              <line
+                x1={-Math.min(state.F * 1.5, 45)}
+                y1={objH * 0.5}
+                x2={-2}
+                y2={objH * 0.5}
+                stroke={PHYSICS_COLORS.forceNet}
+                strokeWidth={STROKE.vectorMain}
+                markerEnd="url(#arrow-appliedForce)"
+              />
+            )}
 
-          {/* 底盘小滑轮 */}
-          <circle cx={objW * 0.22} cy={objH - 0.5} r={2.5} fill={colors.neutral[800]} />
-          <circle cx={objW * 0.78} cy={objH - 0.5} r={2.5} fill={colors.neutral[800]} />
-
-          {/* ── 作用外力/合外力 F 矢量（在小车局部坐标系内绘制，自动跟随旋转） ── */}
-          {showVectors && (
-            mode === 0 ? (
-              // 普通模式：拉力 F 作用在木块左侧，向右
-              state.F > 0.1 && (
-                <line
-                  x1={-Math.min(state.F * 1.5, 45)}
-                  y1={objH * 0.5}
-                  x2={-2}
-                  y2={objH * 0.5}
-                  stroke={PHYSICS_COLORS.forceNet}
-                  strokeWidth={STROKE.vectorMain}
-                  markerEnd="url(#arrow-appliedForce)"
-                />
-              )
-            ) : (
-              // 进阶模式：切向合力（重力分力减去摩擦力）向下滑动，在滑块右侧顺着切向指下
-              state.F > 0.1 && (
-                <line
-                  x1={objW + 2}
-                  y1={objH * 0.5}
-                  x2={objW + 2 + Math.min(state.F * 1.5, 45)}
-                  y2={objH * 0.5}
-                  stroke={PHYSICS_COLORS.forceNet}
-                  strokeWidth={STROKE.vectorMain}
-                  markerEnd="url(#arrow-appliedForce)"
-                />
-              )
-            )
-          )}
-
-          {/* ── 速度 v 矢量（在小车局部坐标系内绘制，自动跟随旋转） ── */}
-          {showVectors && state.v > 0.05 && (
-            <line
-              x1={objW * 0.5}
-              y1={objH + 3.5}
-              x2={objW * 0.5 + Math.min(state.v * 4.5, 60)}
-              y2={objH + 3.5}
-              stroke={PHYSICS_COLORS.velocity}
-              strokeWidth={STROKE.vectorMain}
-              markerEnd="url(#arrow-velocity)"
+            {/* 速度 v 矢量 */}
+            {showVectors && state.v > 0.05 && (
+              <line
+                x1={objW * 0.5}
+                y1={objH + 3.5}
+                x2={objW * 0.5 + Math.min(state.v * 4.5, 60)}
+                y2={objH + 3.5}
+                stroke={PHYSICS_COLORS.velocity}
+                strokeWidth={STROKE.vectorMain}
+                markerEnd="url(#arrow-velocity)"
+              />
+            )}
+          </g>
+        ) : (
+          // 进阶模式：钢珠（沿圆弧下滑，无需旋转）
+          <g>
+            <circle
+              cx={ballCX}
+              cy={ballCY}
+              r={ballR}
+              fill="url(#steel-sphere-grad)"
+              stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
+              strokeWidth={STROKE.objectLine}
             />
-          )}
-        </g>
+            <text x={ballCX} y={ballCY + 3} fontSize={smallFont} fill={colors.neutral[100]} fontWeight="bold" textAnchor="middle">
+              {m.toFixed(1)}kg
+            </text>
+
+            {/* 切向合力 F 矢量 — 沿切线方向（从球心出发） */}
+            {showVectors && state.F > 0.1 && (
+              <line
+                x1={ballCX}
+                y1={ballCY}
+                x2={ballCX + Math.cos(state.theta) * Math.min(state.F * 1.5, 45)}
+                y2={ballCY + Math.sin(state.theta) * Math.min(state.F * 1.5, 45)}
+                stroke={PHYSICS_COLORS.forceNet}
+                strokeWidth={STROKE.vectorMain}
+                markerEnd="url(#arrow-appliedForce)"
+              />
+            )}
+
+            {/* 速度 v 矢量 — 沿切线方向（从球心出发） */}
+            {showVectors && state.v > 0.05 && (
+              <line
+                x1={ballCX}
+                y1={ballCY}
+                x2={ballCX + Math.cos(state.theta) * Math.min(state.v * 4.5, 60)}
+                y2={ballCY + Math.sin(state.theta) * Math.min(state.v * 4.5, 60)}
+                stroke={PHYSICS_COLORS.velocity}
+                strokeWidth={STROKE.vectorMain}
+                markerEnd="url(#arrow-velocity)"
+              />
+            )}
+          </g>
+        )}
 
         {/* ── 进阶模式阶段指示 ── */}
         {mode === 1 && (

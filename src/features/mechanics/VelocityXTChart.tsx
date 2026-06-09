@@ -100,8 +100,8 @@ export const VelocityXTChart: FC<VelocityXTChartProps> = ({
         </linearGradient>
         {/* 放大镜偏光蓝色滤镜 */}
         <radialGradient id="lens-shading" cx="50%" cy="50%" r="50%">
-          <stop offset="70%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[0]} stopOpacity="0.0" />
-          <stop offset="100%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[2]} stopOpacity="0.12" />
+          <stop offset="70%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[0]} stopOpacity="0.0" />
+          <stop offset="100%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[2]} stopOpacity="0.12" />
         </radialGradient>
       </defs>
 

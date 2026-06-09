@@ -164,7 +164,7 @@ export default function ConnectedBodiesCenterExtra() {
         {/* 上方：60% 或 50% 高度双图表并列 */}
         <div className="w-full h-1/2 flex flex-row gap-3 min-h-0">
           {/* 图表一：速度-时间图 (v-t) */}
-          <div className="flex-1 bg-white rounded-xl shadow-md overflow-hidden p-2 border border-neutral-100 min-h-0">
+          <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden p-2 border border-neutral-100 min-h-0">
             <MiniChart
               title="速度 - 时间 (v-t)"
               xMin={0}
@@ -181,13 +181,13 @@ export default function ConnectedBodiesCenterExtra() {
           </div>
 
           {/* 图表二：根据分析视图动态切换的探究曲线 */}
-          <div className="flex-1 bg-white rounded-xl shadow-md overflow-hidden p-2 border border-neutral-100 min-h-0">
+          <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden p-2 border border-neutral-100 min-h-0">
             <MiniChart {...chartTwoProps} />
           </div>
         </div>
 
         {/* 下方：50% 高度自适应满宽动画 */}
-        <div className="w-full h-1/2 bg-white rounded-xl shadow-md overflow-hidden relative border border-neutral-100 flex flex-col min-h-0">
+        <div className="w-full h-1/2 bg-white rounded-xl shadow-sm overflow-hidden relative border border-neutral-100 flex flex-col min-h-0">
           <div className="flex-1 min-h-0 relative">
             <ConnectedBodiesAnimation />
           </div>
@@ -195,7 +195,7 @@ export default function ConnectedBodiesCenterExtra() {
       </div>
 
       {/* 底部动画控制栏 */}
-      <div className="w-full shrink-0 bg-white rounded-xl shadow-md p-2 border border-neutral-100">
+      <div className="w-full shrink-0 bg-white rounded-xl shadow-sm p-2 border border-neutral-100">
         <AnimationControls
           isPlaying={isPlaying}
           speed={speed}

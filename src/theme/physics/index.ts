@@ -56,6 +56,7 @@ export type {
 export {
   SCENE_COLORS,
   COMMON_MATERIALS,
+  SPHERE_COLORS,
   ENVIRONMENT_COLORS,
   SPECIAL_EFFECTS,
   SAFETY_PRESETS,
@@ -75,6 +76,7 @@ export {
 export type {
   SceneColorGroup,
   MaterialsColorKey,
+  SpherePresetKey,
   EnvironmentColorKey,
   EffectsColorKey,
   SafetyColorKey,

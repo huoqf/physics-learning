@@ -52,7 +52,7 @@ export const SpringForceCenterExtra: FC = () => {
 
   return (
     <div className="w-full flex justify-center bg-neutral-50 py-1 border-b border-neutral-100 shrink-0">
-      <div className="w-full max-w-[420px] aspect-[4/3] bg-white rounded-lg shadow-sm p-3 border border-neutral-200/60">
+      <div className="w-full max-w-[420px] aspect-[4/3] bg-white rounded-xl shadow-sm p-3 border border-neutral-100">
         <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
           <defs>
             {/* 弹性势能面积填充渐变 */}

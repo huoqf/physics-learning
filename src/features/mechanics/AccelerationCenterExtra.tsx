@@ -187,7 +187,7 @@ export default function AccelerationCenterExtra() {
   return (
     <div className="w-full h-full flex flex-col gap-3">
       {/* ── 信息条与状态徽章 ── */}
-      <div className="w-full shrink-0 bg-white rounded-xl shadow-md px-4 py-2.5 flex items-center gap-4 text-xs font-medium">
+      <div className="w-full shrink-0 bg-white rounded-xl shadow-sm px-4 py-2.5 flex items-center gap-4 text-xs font-medium">
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PHYSICS_COLORS.velocity }} />
           <span className="text-neutral-700">瞬时速度 v = <span className="font-bold font-mono">{currentV.toFixed(2)}</span> m/s</span>
@@ -231,7 +231,7 @@ export default function AccelerationCenterExtra() {
       {/* ── 上部：v-t 图 + 一维滑轨 ── */}
       <div className="w-full flex-[3] flex flex-row gap-3">
         {/* 左：v-t 坐标系 */}
-        <div className="flex-1 bg-white rounded-xl shadow-md overflow-hidden p-2 relative">
+        <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden p-2 relative">
           <svg width="100%" height="100%" viewBox="0 0 500 300" preserveAspectRatio="xMidYMid meet">
             {/* 实验室网格纸底纹 */}
             <defs>
@@ -403,7 +403,7 @@ export default function AccelerationCenterExtra() {
         </div>
 
         {/* 右：一维数轴运动演示 */}
-        <div className="flex-1 bg-white rounded-xl shadow-md overflow-hidden p-2">
+        <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden p-2">
           <svg width="100%" height="100%" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid meet">
             {/* 实验网格底纹 */}
             <rect width="100%" height="100%" fill="url(#vt-grid)" />
@@ -552,7 +552,7 @@ export default function AccelerationCenterExtra() {
       </div>
 
       {/* ── 下部：动画控制栏 ── */}
-      <div className="w-full shrink-0 bg-white rounded-xl shadow-md p-2">
+      <div className="w-full shrink-0 bg-white rounded-xl shadow-sm p-2">
         <AnimationControls
           isPlaying={isPlaying}
           speed={speed}

@@ -71,7 +71,7 @@ export default function WeightlessnessCenterExtra() {
       {/* 核心左右布局区域 */}
       <div className="w-full flex-1 min-h-0 flex flex-row gap-3">
         {/* 左侧：35% 宽度，电梯动画（高瘦型自适应） */}
-        <div className="w-[35%] min-w-[200px] h-full bg-white rounded-xl shadow-md overflow-hidden relative border border-neutral-100 flex flex-col">
+        <div className="w-[35%] min-w-[200px] h-full bg-white rounded-xl shadow-sm overflow-hidden relative border border-neutral-100 flex flex-col">
           <div className="flex-1 min-h-0 relative">
             <WeightlessnessAnimation />
           </div>
@@ -83,7 +83,7 @@ export default function WeightlessnessCenterExtra() {
         {/* 右侧：65% 宽度，三图表垂直同轴叠放 */}
         <div className="flex-1 h-full flex flex-col gap-2 min-h-0">
           {/* a-t 图 */}
-          <div className="flex-1 bg-white rounded-xl shadow-md overflow-hidden p-2 border border-neutral-100 min-h-0">
+          <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden p-2 border border-neutral-100 min-h-0">
             <MiniChart
               title="加速度 - 时间 (a-t)"
               xMin={0}
@@ -102,7 +102,7 @@ export default function WeightlessnessCenterExtra() {
           </div>
 
           {/* N-t 图 (支持力) */}
-          <div className="flex-1 bg-white rounded-xl shadow-md overflow-hidden p-2 border border-neutral-100 min-h-0">
+          <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden p-2 border border-neutral-100 min-h-0">
             <MiniChart
               title="支持力/视重 - 时间 (N-t)"
               xMin={0}
@@ -124,7 +124,7 @@ export default function WeightlessnessCenterExtra() {
           </div>
 
           {/* v-t 图 */}
-          <div className="flex-1 bg-white rounded-xl shadow-md overflow-hidden p-2 border border-neutral-100 min-h-0">
+          <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden p-2 border border-neutral-100 min-h-0">
             <MiniChart
               title="速度 - 时间 (v-t)"
               xMin={0}
@@ -145,7 +145,7 @@ export default function WeightlessnessCenterExtra() {
       </div>
 
       {/* 底部动画控制栏 */}
-      <div className="w-full shrink-0 bg-white rounded-xl shadow-md p-2 border border-neutral-100">
+      <div className="w-full shrink-0 bg-white rounded-xl shadow-sm p-2 border border-neutral-100">
         <AnimationControls
           isPlaying={isPlaying}
           speed={speed}

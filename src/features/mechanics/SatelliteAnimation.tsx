@@ -557,7 +557,7 @@ export default function SatelliteAnimation() {
           cy={centerY}
           r={earthRadiusPx + 6}
           fill="none"
-          stroke={SCENE_COLORS.materials.glassGrad[0]}
+          stroke={SCENE_COLORS.sphere.earthTech.atmosphereOuter}
           strokeWidth={2}
           opacity={0.3}
         />
@@ -566,7 +566,7 @@ export default function SatelliteAnimation() {
           cy={centerY}
           r={earthRadiusPx + 3}
           fill="none"
-          stroke={SCENE_COLORS.materials.glassGrad[1]}
+          stroke={SCENE_COLORS.sphere.earthTech.atmosphereInner}
           strokeWidth={2}
           opacity={0.5}
         />
@@ -577,7 +577,7 @@ export default function SatelliteAnimation() {
           cy={centerY}
           r={earthRadiusPx}
           fill="url(#earth-ocean-grad)"
-          stroke={PHYSICS_COLORS.objectStroke}
+          stroke={SCENE_COLORS.sphere.earthTech.stroke}
           strokeWidth={1}
         />
 
@@ -588,14 +588,14 @@ export default function SatelliteAnimation() {
               Q ${centerX + 18} ${centerY - 5} ${centerX + 10} ${centerY + 8} 
               Q ${centerX - 2} ${centerY + 18} ${centerX - 10} ${centerY + 10} 
               Q ${centerX - 18} ${centerY - 2} ${centerX - 12} ${centerY - 18} Z`}
-          fill={SCENE_COLORS.materials.steelSphereGrad[1]}
+          fill={SCENE_COLORS.sphere.earthTech.landGradient[1]}
           opacity={0.3}
         />
         <path
           d={`M ${centerX - 24} ${centerY + 5} 
               Q ${centerX - 15} ${centerY + 2} ${centerX - 10} ${centerY + 12} 
               Q ${centerX - 14} ${centerY + 22} ${centerX - 22} ${centerY + 18} Z`}
-          fill={SCENE_COLORS.materials.steelSphereGrad[1]}
+          fill={SCENE_COLORS.sphere.earthTech.landGradient[2]}
           opacity={0.3}
         />
       </g>
@@ -616,9 +616,9 @@ export default function SatelliteAnimation() {
         <defs>
           {/* 地球蔚蓝海洋渐变 */}
           <radialGradient id="earth-ocean-grad" cx="30%" cy="30%" r="70%">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.earthOceanGrad[0]} />
-            <stop offset="60%" stopColor={SCENE_COLORS.materials.earthOceanGrad[1]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.earthOceanGrad[2]} />
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.earthTech.oceanGradient[0]} />
+            <stop offset="60%" stopColor={SCENE_COLORS.sphere.earthTech.oceanGradient[1]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.earthTech.oceanGradient[2]} />
           </radialGradient>
 
           {/* 矢量箭头端部 */}

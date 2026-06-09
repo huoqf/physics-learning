@@ -27,7 +27,7 @@
 |------|------|------------|
 | `src/theme/colors.ts` | 5套色阶（primary/secondary/accent/neutral/状态色） | `@/theme/colors` |
 | `src/theme/physics/colors.ts` | 物理量颜色（~110 token，8 分组） | `@/theme/physics` |
-| `src/theme/physics/sceneColors.ts` | 场景器材外观色（磁铁/线圈/灯泡/手势等） | `@/theme/physics` |
+| `src/theme/physics/sceneColors.ts` | 场景器材外观色（磁铁/线圈/灯泡/手势/球体材质等） | `@/theme/physics` |
 | `src/theme/physics/chartColors.ts` | 物理图像配色（v-t/P-V/U-I 等 9 组） | `@/theme/physics` |
 | `src/theme/physics/canvasStyle.ts` | SVG/Canvas 绘制规范（线宽/箭头/SVG_ATTR/Marker） | `@/theme/physics` |
 | `src/theme/spacing.ts` | 间距比例尺（4px基准） | `@/theme/spacing` |
@@ -59,6 +59,13 @@ Canvas/SVG 中每类物理量有固定颜色，详见 `src/theme/physics/colors.
 1. 同一画面最多同时展示 5 种物理量颜色。
 2. 历史轨迹固定使用 `#94A3B8`（Track Gray）。
 3. 场景器材材质（如钢珠、滑轨、底座渐变）必须引用 `SCENE_COLORS.materials.*` 的色标数组进行渐变渲染，**禁止任何 HEX 颜色值的硬编码**。
+
+### 3.1 球体材质附加规范
+
+1. 球体本体、行星、摆球、砝码球统一归入 `SCENE_COLORS.sphere.*`，不得借用 `PHYSICS_COLORS` 充当材质色。
+2. 主钢珠统一使用 `SCENE_COLORS.sphere.steel`，投影/真空对照球统一使用 `SCENE_COLORS.sphere.steelGhost`。
+3. 摆球、砝码球、行星、地球应分别使用对应 preset（`pendulumBob` / `brassWeight` / `planetCool` / `earthTech`），避免同一项目内球体材质风格漂移。
+4. 禁止在组件内重复定义独立球体配色体系；新增球体外观必须先扩展 `sceneColors.ts`。
 
 ---
 

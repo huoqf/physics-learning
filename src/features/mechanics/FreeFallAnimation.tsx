@@ -371,10 +371,10 @@ export default function FreeFallAnimation() {
           </linearGradient>
           {/* 不锈钢实体钢珠 3D 材质 */}
           <radialGradient id="steel-sphere-grad" cx="30%" cy="30%" r="70%">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.steelSphereGrad[0]} />
-            <stop offset="40%" stopColor={SCENE_COLORS.materials.steelSphereGrad[1]} />
-            <stop offset="80%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.steel.gradient[0]} />
+            <stop offset="40%" stopColor={SCENE_COLORS.sphere.steel.gradient[1]} />
+            <stop offset="80%" stopColor={SCENE_COLORS.sphere.steel.gradient[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.steel.gradient[3]} />
           </radialGradient>
           {/* 硬币金红质感渐变 */}
           <radialGradient id="coin-grad" cx="35%" cy="30%" r="65%">
@@ -510,7 +510,7 @@ export default function FreeFallAnimation() {
         {/* 2. 物体A（铁球/硬币 - 带高级反射渐变） */}
         {objectA === 'ironBall' ? (
           <circle cx={ballX} cy={renderYA} r={14}
-            fill="url(#steel-sphere-grad)" stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
+            fill="url(#steel-sphere-grad)" stroke={SCENE_COLORS.sphere.steel.stroke}
             strokeWidth={STROKE.objectLine} />
         ) : (
           <g transform={`translate(${ballX}, ${renderYA})`}>

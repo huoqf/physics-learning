@@ -280,8 +280,8 @@ export default function PowerAnimation() {
             <stop offset="100%" stopColor={SCENE_COLORS.magnet.southMid} />
           </linearGradient>
           <linearGradient id="car-wheel-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.steel.gradient[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.steel.gradient[3]} />
           </linearGradient>
 
           {/* 超跑跑车红渐变 — 引用 magnet.north 极的红色系 */}
@@ -659,12 +659,12 @@ export default function PowerAnimation() {
               {/* 跑车轮子（二轴） */}
               <g transform={`translate(${objW * 0.22}, ${objH - 3})`}>
                 <circle r={objH * 0.18} fill="url(#car-wheel-grad)" />
-                <circle r={objH * 0.08} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.materials.steelSphereGrad[2]} strokeWidth={0.5} />
+                <circle r={objH * 0.08} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.sphere.steel.gradient[2]} strokeWidth={0.5} />
                 <circle r={objH * 0.03} fill={SCENE_COLORS.materials.sliderMetalGrad[0]} />
               </g>
               <g transform={`translate(${objW * 0.78}, ${objH - 3})`}>
                 <circle r={objH * 0.18} fill="url(#car-wheel-grad)" />
-                <circle r={objH * 0.08} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.materials.steelSphereGrad[2]} strokeWidth={0.5} />
+                <circle r={objH * 0.08} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.sphere.steel.gradient[2]} strokeWidth={0.5} />
                 <circle r={objH * 0.03} fill={SCENE_COLORS.materials.sliderMetalGrad[0]} />
               </g>
             </g>
@@ -707,15 +707,15 @@ export default function PowerAnimation() {
               {/* 卡车三个轮子（三轴重型） */}
               <g transform={`translate(${objW * 0.16}, ${objH - 2.5})`}>
                 <circle r={objH * 0.16} fill="url(#car-wheel-grad)" />
-                <circle r={objH * 0.07} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.materials.steelSphereGrad[2]} strokeWidth={0.5} />
+                <circle r={objH * 0.07} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.sphere.steel.gradient[2]} strokeWidth={0.5} />
               </g>
               <g transform={`translate(${objW * 0.46}, ${objH - 2.5})`}>
                 <circle r={objH * 0.16} fill="url(#car-wheel-grad)" />
-                <circle r={objH * 0.07} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.materials.steelSphereGrad[2]} strokeWidth={0.5} />
+                <circle r={objH * 0.07} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.sphere.steel.gradient[2]} strokeWidth={0.5} />
               </g>
               <g transform={`translate(${objW * 0.82}, ${objH - 2.5})`}>
                 <circle r={objH * 0.16} fill="url(#car-wheel-grad)" />
-                <circle r={objH * 0.07} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.materials.steelSphereGrad[2]} strokeWidth={0.5} />
+                <circle r={objH * 0.07} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.sphere.steel.gradient[2]} strokeWidth={0.5} />
               </g>
             </g>
           ) : (
@@ -740,12 +740,12 @@ export default function PowerAnimation() {
               {/* 默认车轮（二轴） */}
               <g transform={`translate(${objW * 0.22}, ${objH - 3})`}>
                 <circle r={objH * 0.18} fill="url(#car-wheel-grad)" />
-                <circle r={objH * 0.08} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.materials.steelSphereGrad[2]} strokeWidth={0.5} />
+                <circle r={objH * 0.08} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.sphere.steel.gradient[2]} strokeWidth={0.5} />
                 <circle r={objH * 0.03} fill={SCENE_COLORS.materials.sliderMetalGrad[0]} />
               </g>
               <g transform={`translate(${objW * 0.78}, ${objH - 3})`}>
                 <circle r={objH * 0.18} fill="url(#car-wheel-grad)" />
-                <circle r={objH * 0.08} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.materials.steelSphereGrad[2]} strokeWidth={0.5} />
+                <circle r={objH * 0.08} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.sphere.steel.gradient[2]} strokeWidth={0.5} />
                 <circle r={objH * 0.03} fill={SCENE_COLORS.materials.sliderMetalGrad[0]} />
               </g>
             </g>

@@ -282,17 +282,17 @@ export default function GravityAnimation() {
       >
         <defs>
           <radialGradient id="planet1-grad" cx="35%" cy="35%" r="65%">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.steelSphereGrad[0]} />
-            <stop offset="45%" stopColor={SCENE_COLORS.materials.steelSphereGrad[1]} />
-            <stop offset="85%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.earthTech.oceanGradient[0]} />
+            <stop offset="45%" stopColor={SCENE_COLORS.sphere.earthTech.oceanGradient[1]} />
+            <stop offset="85%" stopColor={SCENE_COLORS.sphere.earthTech.oceanGradient[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.earthTech.stroke} />
           </radialGradient>
           
           <radialGradient id="planet2-grad" cx="35%" cy="35%" r="65%">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[0]} />
-            <stop offset="45%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[1]} />
-            <stop offset="85%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[3]} />
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.planetCool.gradient[0]} />
+            <stop offset="45%" stopColor={SCENE_COLORS.sphere.planetCool.gradient[1]} />
+            <stop offset="85%" stopColor={SCENE_COLORS.sphere.planetCool.gradient[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.planetCool.gradient[3]} />
           </radialGradient>
 
           <marker id="arrowhead-gravity-right" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
@@ -356,7 +356,7 @@ export default function GravityAnimation() {
             cy={obj1Y}
             r={radius1}
             fill="url(#planet1-grad)"
-            stroke={PHYSICS_COLORS.objectStroke}
+            stroke={SCENE_COLORS.sphere.earthTech.stroke}
             strokeWidth={CANVAS_STYLE.stroke.objectLine}
             onMouseDown={() => handleMouseDown('obj1')}
             style={{ cursor: dragTarget === 'obj1' ? 'grabbing' : 'grab' }}
@@ -390,7 +390,7 @@ export default function GravityAnimation() {
             cy={obj2Y}
             r={radius2}
             fill="url(#planet2-grad)"
-            stroke={PHYSICS_COLORS.objectStroke}
+            stroke={SCENE_COLORS.sphere.planetCool.stroke}
             strokeWidth={CANVAS_STYLE.stroke.objectLine}
             onMouseDown={() => handleMouseDown('obj2')}
             style={{ cursor: dragTarget === 'obj2' ? 'grabbing' : 'grab' }}

@@ -88,7 +88,7 @@ export default function NewtonSecondCenterExtra() {
       {/* 顶部图表展示区 */}
       <div className="w-full flex-1 min-h-0 flex flex-row gap-3">
         {/* F-t 图像 */}
-        <div className="flex-1 bg-white rounded-xl shadow-md overflow-hidden p-2 border border-neutral-100">
+        <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden p-2 border border-neutral-100">
           <MiniChart
             title="力 - 时间 (F-t)"
             xMin={0}
@@ -109,7 +109,7 @@ export default function NewtonSecondCenterExtra() {
         </div>
 
         {/* a-t 图像 */}
-        <div className="flex-1 bg-white rounded-xl shadow-md overflow-hidden p-2 border border-neutral-100">
+        <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden p-2 border border-neutral-100">
           <MiniChart
             title="加速度 - 时间 (a-t)"
             xMin={0}
@@ -128,7 +128,7 @@ export default function NewtonSecondCenterExtra() {
         </div>
 
         {/* v-t 图像 */}
-        <div className="flex-1 bg-white rounded-xl shadow-md overflow-hidden p-2 border border-neutral-100">
+        <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden p-2 border border-neutral-100">
           <MiniChart
             title="速度 - 时间 (v-t)"
             xMin={0}
@@ -148,7 +148,7 @@ export default function NewtonSecondCenterExtra() {
       </div>
 
       {/* 中部小车动画区 */}
-      <div className="w-full h-[180px] shrink-0 bg-white rounded-xl shadow-md overflow-hidden relative border border-neutral-100">
+      <div className="w-full h-[180px] shrink-0 bg-white rounded-xl shadow-sm overflow-hidden relative border border-neutral-100">
         <NewtonSecondAnimation />
         <div className="absolute top-2 right-3 text-[10px] text-neutral-400 font-semibold bg-white/80 px-2 py-0.5 rounded-full shadow-sm">
           {modelNames[modelIdx]}
@@ -156,7 +156,7 @@ export default function NewtonSecondCenterExtra() {
       </div>
 
       {/* 底部动画控制栏 */}
-      <div className="w-full shrink-0 bg-white rounded-xl shadow-md p-2 border border-neutral-100">
+      <div className="w-full shrink-0 bg-white rounded-xl shadow-sm p-2 border border-neutral-100">
         <AnimationControls
           isPlaying={isPlaying}
           speed={speed}

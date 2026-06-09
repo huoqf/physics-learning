@@ -190,14 +190,16 @@ export default function AnimationPage() {
       </div>
 
       <ThreePanel
-        left={paramControlParams.length > 0 ? (
+        left={(paramControlParams.length > 0 || config.SidebarExtra) ? (
           <div className="p-4">
-            <ParamControl
-              params={paramControlParams}
-              onParamChange={updateParam}
-              onReset={handleReset}
-              disabled={isDiscoveryMode}
-            />
+            {paramControlParams.length > 0 && (
+              <ParamControl
+                params={paramControlParams}
+                onParamChange={updateParam}
+                onReset={handleReset}
+                disabled={isDiscoveryMode}
+              />
+            )}
             {/* 侧边栏扩展：通过 registry 挂载的特异 UI */}
             {config.SidebarExtra && !isDiscoveryMode && (
               <Suspense fallback={null}>

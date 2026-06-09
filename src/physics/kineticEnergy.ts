@@ -173,10 +173,15 @@ export function precomputeCurvedTrackTrajectory(
 
     if (!reachedBottom) {
       // 1. 曲面下滑阶段 (数值微分积分)
-      const fn = mu * (m * g * Math.sin(theta) + (m * v * v) / R) // 实时摩擦力
-      const f_gravity_tangent = m * g * Math.cos(theta)          // 重力切向分力
-      F_net = f_gravity_tangent - fn                             // 切向合力
-      a = F_net / m                                              // 切向速度变化率
+      // 凹型圆弧轨道内侧，法向力指向圆心方向：
+      //   N = m*g*cosθ + m*v²/R（重力法向分量 + 向心力需求）
+      //   f = μ*N（摩擦力）
+      //   F_切向 = m*g*sinθ - f（重力切向分量 - 摩擦力）
+      const normalForce = m * g * Math.cos(theta) + (m * v * v) / R // 法向力 (N)
+      const frictionForce = mu * normalForce                         // 摩擦力 (N)
+      const fGravityTangent = m * g * Math.sin(theta)                // 重力切向分力 (N)
+      F_net = fGravityTangent - frictionForce                        // 切向合力 (N)
+      a = F_net / m                                                   // 切向加速度 (m/s²)
 
       // 欧拉步长更新速度
       const nextV = v + a * dt
@@ -189,7 +194,7 @@ export function precomputeCurvedTrackTrajectory(
 
       // 切向弧位移增量
       const ds = v * dt
-      W_f -= fn * ds // 累计摩擦力功 (负值)
+      W_f -= frictionForce * ds // 累计摩擦力功 (负值)
 
       // 更新角度
       const dTheta = (v / R) * dt
@@ -203,8 +208,8 @@ export function precomputeCurvedTrackTrajectory(
         v_c = v
       }
 
-      x = R * (1 - Math.cos(theta))
-      y = R * Math.sin(theta) // 下降高度
+      x = R * Math.sin(theta)              // 水平位移 (m)
+      y = R * (1 - Math.cos(theta))        // 垂直下降高度 (m)
       Ek = 0.5 * m * v * v
       Ep = m * g * y               // 重力功 W_G = mgy
       W = Ep + W_f                 // 总功 W_net = W_G + W_f
