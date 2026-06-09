@@ -114,12 +114,6 @@ export default function VelocityAnimationStrip({
   const objW = canvasSize.width * 0.06
   const objH = objW * 0.7
 
-  const modelNames: Record<string, string> = {
-    'force-increasing': '变加速（F递增）',
-    'shm': '简谐振动',
-    'multi-stage': '往返多阶段',
-  }
-
 
   // ── 多阶段：A/B 标志位置 ──
   const { pointA, pointB } = useMemo(() => {
@@ -185,7 +179,7 @@ export default function VelocityAnimationStrip({
 
         {/* ── 场景大标题 ── */}
         <text x={padding} y={fontSize + 4} fontSize={fontSize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
-          {modelNames[model] ?? model}{model === 'multi-stage' && stageName ? ` · ${stageName}` : ''} — v = {vInst.toFixed(2)} m/s
+          {model === 'multi-stage' && stageName ? `${stageName} · ` : ''}v = {vInst.toFixed(2)} m/s
         </text>
 
         {/* ── 1. 科学精密气垫导轨底座 ── */}

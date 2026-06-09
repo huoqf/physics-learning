@@ -3,7 +3,7 @@ import { useCanvasSize, useAnimationFrame } from '@/utils'
 import { useAnimationStore, type MotionMode } from '@/stores'
 import { calculateCuttingEMF, simulateForceMotion } from '@/physics'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
-import { CuttingEMFHandRule } from './HandRule'
+import { CuttingEMFHandRule } from '../shared/HandRule'
 
 const GRID_MARGIN = 40
 const FONT = {

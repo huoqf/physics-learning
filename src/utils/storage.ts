@@ -1,4 +1,5 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
+import type { StateStorage } from 'zustand/middleware';
 
 const DB_NAME = 'physics-learning-db';
 const STORE_NAME = 'physics-store';
@@ -96,3 +97,43 @@ export const storage = {
     }
   },
 };
+
+/**
+ * Zustand persist 兼容的 IndexedDB StateStorage
+ * 用于替换 createJSONStorage(() => localStorage)
+ */
+export const idbStorage: StateStorage = {
+  getItem: async (name: string): Promise<string | null> => {
+    const value = await storage.getDB<string>(name)
+    return value ?? null
+  },
+  setItem: async (name: string, value: string): Promise<void> => {
+    await storage.setDB(name, value)
+  },
+  removeItem: async (name: string): Promise<void> => {
+    await storage.removeDB(name)
+  },
+};
+
+/**
+ * 将 localStorage 中的数据迁移到 IndexedDB（一次性）
+ * 迁移成功后删除 localStorage 中的旧数据
+ */
+export async function migrateFromLocalStorage(key: string): Promise<void> {
+  try {
+    const localData = localStorage.getItem(key)
+    if (localData === null) return
+    // 检查 IndexedDB 中是否已有数据
+    const idbData = await storage.getDB<string>(key)
+    if (idbData !== null) {
+      // IndexedDB 已有数据，仅删除 localStorage 旧数据
+      localStorage.removeItem(key)
+      return
+    }
+    // 迁移到 IndexedDB
+    await storage.setDB(key, localData)
+    localStorage.removeItem(key)
+  } catch {
+    // 迁移失败静默处理，不阻塞应用启动
+  }
+}

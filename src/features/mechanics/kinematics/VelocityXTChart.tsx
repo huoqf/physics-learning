@@ -1,5 +1,5 @@
 import { FC, useMemo } from 'react'
-import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import type { VariableMotionModel, VariableMotionParams } from '@/physics'
 import { useVelocityPhysics } from './useVelocityPhysics'
@@ -58,13 +58,17 @@ export const VelocityXTChart: FC<VelocityXTChartProps> = ({
   const px = toSvgX(t0)
   const py = toSvgY(stateP.x)
 
+  // 割线端点：仅当 t0+deltaT 在预计算范围内时才有效
+  const isSecantValid = t0 + deltaT <= tMax
   const secantState = getVariablePhysicsAtTime(points, t0 + deltaT, tMax)
   const sx = toSvgX(t0 + deltaT)
   const sy = toSvgY(secantState.x)
 
   // 切线斜率即为当前瞬时速度
   const tangentSlope = stateP.v
-  const tanLen = windowSize * 0.3
+  // 切线时间延伸长度自适应：限制 y 方向偏移不超过值域的 25%，避免高速时切线爆炸
+  const maxDy = (vMax - vMin) * 0.25
+  const tanLen = Math.min(windowSize * 0.3, maxDy / (Math.abs(tangentSlope) + 1e-9))
   const tanX1 = toSvgX(Math.max(tWindowStart, t0 - tanLen))
   const tanY1 = toSvgY(stateP.x - tangentSlope * tanLen)
   const tanX2 = toSvgX(Math.min(tWindowEnd, t0 + tanLen))
@@ -72,12 +76,6 @@ export const VelocityXTChart: FC<VelocityXTChartProps> = ({
 
   // ── 直角三角形 ──
   const triBaseX = toSvgX(t0 + deltaT)
-
-  // ── 放大镜 ──
-  const showMagnifier = deltaT < 0.2
-  const magR = 14
-  const magCx = (px + sx) / 2
-  const magCy = (py + sy) / 2
 
   // ── 刻度与排版 ──
   const fs = 4.2
@@ -92,17 +90,6 @@ export const VelocityXTChart: FC<VelocityXTChartProps> = ({
         <marker id="arrow-secant-xt" markerWidth="3" markerHeight="2.5" refX="2.5" refY="1.25" orient="auto">
           <polygon points="0 0, 3 1.25, 0 2.5" fill={PHYSICS_COLORS.secantLine} />
         </marker>
-        {/* 放大镜金属边框渐变 */}
-        <linearGradient id="mag-border-grad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[1]} />
-          <stop offset="50%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[0]} />
-          <stop offset="100%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[2]} />
-        </linearGradient>
-        {/* 放大镜偏光蓝色滤镜 */}
-        <radialGradient id="lens-shading" cx="50%" cy="50%" r="50%">
-          <stop offset="70%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[0]} stopOpacity="0.0" />
-          <stop offset="100%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[2]} stopOpacity="0.12" />
-        </radialGradient>
       </defs>
 
       {/* 标题 */}
@@ -175,7 +162,7 @@ export const VelocityXTChart: FC<VelocityXTChartProps> = ({
       )}
 
       {/* 3. 割线直角三角形指示器 */}
-      {deltaT > 0.005 && (
+      {deltaT > 0.005 && isSecantValid && (
         <g>
           <line x1={px} y1={py} x2={triBaseX} y2={py} stroke={PHYSICS_COLORS.deltaHighlight} strokeWidth={0.5} opacity={0.6} />
           <line x1={triBaseX} y1={py} x2={triBaseX} y2={sy} stroke={PHYSICS_COLORS.deltaHighlight} strokeWidth={0.5} opacity={0.6} />
@@ -188,7 +175,7 @@ export const VelocityXTChart: FC<VelocityXTChartProps> = ({
       )}
 
       {/* 4. 动态割线 */}
-      {deltaT > 0.001 && (
+      {deltaT > 0.001 && isSecantValid && (
         <line
           x1={px} y1={py} x2={sx} y2={sy}
           stroke={PHYSICS_COLORS.secantLine}
@@ -211,30 +198,6 @@ export const VelocityXTChart: FC<VelocityXTChartProps> = ({
         <circle cx={px} cy={py} r={3} fill={PHYSICS_COLORS.displacement} opacity={0.2} />
         <circle cx={px} cy={py} r={1.6} fill={PHYSICS_COLORS.displacement} stroke={colors.neutral[0]} strokeWidth={0.5} />
       </g>
-
-      {/* 7. 精密显微放大镜 */}
-      {showMagnifier && deltaT > 0.001 && (
-        <g>
-          {/* 金属镜框阴影 */}
-          <circle cx={magCx} cy={magCy} r={magR + 0.8} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth={1.5} />
-          {/* 金属滑框 */}
-          <circle cx={magCx} cy={magCy} r={magR} fill="none" stroke="url(#mag-border-grad)" strokeWidth={1} />
-          <clipPath id="mag-clip-xt">
-            <circle cx={magCx} cy={magCy} r={magR - 0.5} />
-          </clipPath>
-          {/* 镜面剪切放大内容 */}
-          <g clipPath="url(#mag-clip-xt)">
-            {/* 蓝色滤光片 */}
-            <circle cx={magCx} cy={magCy} r={magR} fill="url(#lens-shading)" />
-            {/* 放大线条 */}
-            <line x1={px} y1={py} x2={sx} y2={sy} stroke={PHYSICS_COLORS.secantLine} strokeWidth={1.2} />
-            <line x1={tanX1} y1={tanY1} x2={tanX2} y2={tanY2} stroke={PHYSICS_COLORS.tangentLine} strokeWidth={1} />
-            {/* 切割高光反射 */}
-            <path d={`M ${magCx - magR + 2},${magCy - magR + 4} A ${magR} ${magR} 0 0 1 ${magCx + magR - 2},${magCy - magR + 4}`} 
-                  fill="none" stroke={colors.neutral[0]} strokeWidth={0.8} opacity={0.25} />
-          </g>
-        </g>
-      )}
 
       {/* 标注 */}
       <text x={margin.left + plotW + 1} y={margin.top + plotH + fs + 1} fontSize={fs} fill={PHYSICS_COLORS.labelText}>t</text>

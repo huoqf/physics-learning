@@ -24,7 +24,7 @@ export default function UniformAccelerationAnimation() {
   const { params, time, showVectors, showGrid, setIsPlaying } = useAnimationStore()
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 400 })
 
-  const { v0 = 0, a = 1.5, showSplit = 1, scale: scaleParam = 1, splitN = 0, showEquivRect = 0 } = params
+  const { v0 = 0, a = 1.5, showSplit = 1, splitN = 0, showEquivRect = 0 } = params
 
   // ── 动态布局 ──
   const padding = canvasSize.width * 0.07
@@ -49,7 +49,7 @@ export default function UniformAccelerationAnimation() {
 
   // 物理位移坐标缩放
   const baseScale = canvasSize.width * 0.03
-  const scale = baseScale * scaleParam
+  const scale = baseScale
   const startX = padding
   const maxVisibleX = canvasSize.width - padding
 
@@ -194,14 +194,14 @@ export default function UniformAccelerationAnimation() {
     const count = 5
     const labels: { x: number; text: string }[] = []
     for (let i = 0; i <= count; i++) {
-      const dist = (i * 20) / scaleParam
+      const dist = i * 20
       const px = startX + dist * scale
       if (px <= maxVisibleX) {
         labels.push({ x: px, text: `${dist.toFixed(0)}m` })
       }
     }
     return labels
-  }, [scale, scaleParam, startX, maxVisibleX])
+  }, [scale, startX, maxVisibleX])
 
   // v-t 图刻度
   const xticks = [0, 2, 4, 6, 8]

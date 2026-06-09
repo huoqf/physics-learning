@@ -44,10 +44,14 @@ export interface SidebarExtraProps {
   setParams: (params: Record<string, number>) => void
   /** 动画控制动作（语义化封装） */
   animationActions: AnimationActions
-  showTimeSlices: boolean
-  toggleTimeSlices: () => void
-  showDualObjects: boolean
-  toggleDualObjects: () => void
+  /** 是否显示时间切片（仅特定动画使用） */
+  showTimeSlices?: boolean
+  /** 切换时间切片显示（仅特定动画使用） */
+  toggleTimeSlices?: () => void
+  /** 是否显示双物体对比（仅特定动画使用） */
+  showDualObjects?: boolean
+  /** 切换双物体对比（仅特定动画使用） */
+  toggleDualObjects?: () => void
   disabled?: boolean
 }
 

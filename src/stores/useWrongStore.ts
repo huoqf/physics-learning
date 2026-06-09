@@ -61,6 +61,29 @@ function persist(records: WrongRecord[]): void {
   void storage.setDB(STORAGE_KEY, records)
 }
 
+/** 防抖持久化：500ms 内多次 mutation 合并为一次写入 */
+let persistTimer: ReturnType<typeof setTimeout> | null = null
+function persistDebounced(records: WrongRecord[]): void {
+  if (persistTimer !== null) clearTimeout(persistTimer)
+  persistTimer = setTimeout(() => {
+    persistTimer = null
+    persist(records)
+  }, 500)
+}
+
+/** 页面关闭前刷出待写入的防抖队列 */
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    if (persistTimer !== null) {
+      clearTimeout(persistTimer)
+      persistTimer = null
+      // 用当前 store 中的最新 records 同步写入
+      const latest = useWrongStore.getState().records
+      persist(latest)
+    }
+  })
+}
+
 export const useWrongStore = create<WrongState>((set, get) => ({
   records: [],
   hydrated: false,
@@ -103,7 +126,7 @@ export const useWrongStore = create<WrongState>((set, get) => ({
           },
         ]
       }
-      persist(records)
+      persistDebounced(records)
       return { records }
     }),
 
@@ -114,7 +137,7 @@ export const useWrongStore = create<WrongState>((set, get) => ({
           ? { ...r, status: 'viewed' as WrongStatus }
           : r
       )
-      persist(records)
+      persistDebounced(records)
       return { records }
     }),
 
@@ -134,7 +157,7 @@ export const useWrongStore = create<WrongState>((set, get) => ({
           lastAttemptTime: now,
         }
       })
-      persist(records)
+      persistDebounced(records)
       return { records }
     }),
 
@@ -151,7 +174,7 @@ export const useWrongStore = create<WrongState>((set, get) => ({
             }
           : r
       )
-      persist(records)
+      persistDebounced(records)
       return { records }
     }),
 
@@ -161,14 +184,14 @@ export const useWrongStore = create<WrongState>((set, get) => ({
       const records = state.records.map((r) =>
         r.problemId === problemId ? { ...r, note: trimmed } : r
       )
-      persist(records)
+      persistDebounced(records)
       return { records }
     }),
 
   removeWrong: (problemId) =>
     set((state) => {
       const records = state.records.filter((r) => r.problemId !== problemId)
-      persist(records)
+      persistDebounced(records)
       return { records }
     }),
 

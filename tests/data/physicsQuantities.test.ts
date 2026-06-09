@@ -1,11 +1,33 @@
-import { describe, it, expect } from 'vitest'
-import { buildPhysicsQuantities } from '@/data/physicsQuantities'
+import { describe, it, expect, beforeAll } from 'vitest'
+import { buildPhysicsQuantities, preloadQuantityBuilder } from '@/data/physicsQuantities'
 
 function find(qs: ReturnType<typeof buildPhysicsQuantities>, label: string) {
   return qs.quantities.find((q) => q.label.startsWith(label))?.value
 }
 
+// 预加载所有测试涉及的构建器
+const TEST_ANIM_IDS = [
+  'anim-velocity',
+  'anim-free-fall',
+  'anim-vertical-throw',
+  'anim-momentum-conservation',
+  'anim-coulomb-law',
+  'anim-electric-field',
+  'anim-charge-in-efield',
+  'anim-capacitor',
+  'anim-ohm-law',
+  'anim-circuit-analysis',
+  'anim-closed-circuit',
+  'anim-oblique-throw',
+  'anim-circular-motion',
+  'anim-centripetal',
+]
+
 describe('buildPhysicsQuantities', () => {
+  beforeAll(async () => {
+    await Promise.all(TEST_ANIM_IDS.map((id) => preloadQuantityBuilder(id)))
+  })
+
   it('始终包含时间 t', () => {
     const qs = buildPhysicsQuantities('anim-velocity', { v: 5 }, 2)
     expect(find(qs, '时间')).toBe(2)
@@ -160,4 +182,3 @@ describe('buildPhysicsQuantities', () => {
     expect(find(qs, '向心力') as number).toBeCloseTo(24, 5)
   })
 })
-

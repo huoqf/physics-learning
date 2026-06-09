@@ -19,7 +19,7 @@
 
 | 日期 | 模块 | 类型 | 摘要 |
 |------|------|------|------|
-| 2026-06-08 | docs | docs | 规范体系优化：PROCESS_LOG 按周归档 + 新增 CHECKLIST + 07_CANVAS_SVG_CHART_RULES.md + 精简 project_rules.md |
+| 2026-06-09 | architecture | refactor | 按子主题重构目录结构：力学/电磁学动画按 kinematics/dynamics/circular/gravitation/momentum/energy/electrostatics/dc-circuits/magnetism/induction 分子目录；animationRegistry/physicsQuantities 按子模块拆分注册表；新增 defineAnimations/quantities 构建器工具链 |
 | 2026-06-08 | anim-satellite | feature | 人造卫星双模式与轨道发射模拟 |
 | 2026-06-08 | anim-gravity | feature | 万有引力双模式与 F-r 图表联动 |
 | 2026-06-08 | anim-kepler | feature | 开普勒定律三模式与 T²-a³ 图表 |

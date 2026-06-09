@@ -40,8 +40,19 @@ src/
 │   └── UI/                 # UI 基础组件
 ├── pages/                  # 页面级容器
 ├── features/               # 按学科/能力拆分的业务模块
-│   ├── mechanics/
-│   ├── electricity/
+│   ├── mechanics/          # 力学（按物理主题分子目录）
+│   │   ├── kinematics/     #   运动学
+│   │   ├── dynamics/       #   动力学
+│   │   ├── circular/       #   圆周运动
+│   │   ├── gravitation/    #   万有引力
+│   │   ├── momentum/       #   动量与冲量
+│   │   └── energy/         #   功与能量
+│   ├── electromagnetism/   # 电磁学（按物理主题分子目录）
+│   │   ├── electrostatics/ #   静电场（库仑、电场、电容器…）
+│   │   ├── dc-circuits/    #   恒定电流（欧姆、串并联…）
+│   │   ├── magnetism/      #   磁场（安培力、洛伦兹力…）
+│   │   ├── induction/      #   电磁感应与交变电流
+│   │   └── shared/         #   跨子模块复用组件（HandRule…）
 │   ├── thermodynamics/
 │   ├── optics/
 │   ├── atomic/
@@ -49,17 +60,42 @@ src/
 │   └── knowledge/          # 知识树浏览模块
 ├── physics/                # 纯物理计算（无副作用）
 ├── math/                   # 数学工具（矢量、三角、矩阵、数值求解）
-├── utils/                  # 坐标、动画、存储等共享工具
+├── utils/                  # 坐标、动画、存储、轨迹插值等共享工具
 ├── data/
 │   ├── knowledge/          # 分模块知识库 JSON
 │   ├── problems/           # 题目与解析数据
+│   ├── quantities/         # 物理量构建器（按物理主题拆分，懒加载）
+│   │   ├── types.ts        #   PhysicsPanelData 等类型定义
+│   │   ├── kinematics.ts   #   运动学
+│   │   ├── dynamics.ts     #   动力学
+│   │   ├── circular.ts     #   圆周运动
+│   │   ├── gravitation.ts  #   万有引力
+│   │   ├── momentum.ts     #   动量
+│   │   ├── electromagnetism.ts # 电磁学
+│   │   └── energy.ts       #   功与能量
 │   ├── knowledgeTree.ts
-│   ├── animationRegistry.ts
-│   └── analysisRegistry.ts
+│   ├── defineAnimations.ts # defineAnimations 工具函数
+│   ├── registries/         # 按模块拆分的动画子注册表
+│   │   ├── mechanics-kinematics.ts
+│   │   ├── mechanics-dynamics.ts
+│   │   ├── mechanics-circular-gravitation.ts
+│   │   ├── mechanics-energy.ts
+│   │   ├── mechanics-momentum.ts
+│   │   ├── electromagnetism-electrostatics.ts
+│   │   ├── electromagnetism-dc-circuits.ts
+│   │   ├── electromagnetism-magnetism.ts
+│   │   ├── electromagnetism-induction.ts
+│   │   └── electromagnetism-ac.ts
+│   ├── animationRegistry.ts # 薄合并入口（合并所有子注册表）
+│   ├── analysisRegistry.ts
+│   └── physicsQuantities.ts # 物理量懒注册入口
 └── stores/
     ├── useAnimationStore.ts
+    ├── useAppStore.ts
     ├── useKnowledgeStore.ts
     ├── useProblemStore.ts
+    ├── useProgressStore.ts
+    ├── usePracticeStore.ts
     └── useWrongStore.ts
 
 theme/                      # 设计 token（颜色/间距/圆角/阴影/动效）
@@ -154,6 +190,14 @@ tests/
 | `useProblemStore` | 题目进度、当前步骤、答题状态 |
 | `useWrongStore` | 错题记录、复练状态、统计信息 |
 | `useAppStore`（可选） | 全局 UI 状态，不得与业务状态混写 |
+| `useProgressStore` | 学习进度（已浏览动画、已掌握知识点），持久化至 IndexedDB |
+| `usePracticeStore` | 练习会话状态 |
+
+### 5.1 性能指南
+
+- **精确订阅**：消费 Zustand store 时使用 selector 精确订阅所需字段（`useStore(s => s.field)`），避免全量解构导致不必要重渲染；高频更新字段（如 `time`）必须单独隔离订阅
+- **防抖持久化**：IndexedDB 写入操作应使用防抖（推荐 500ms），避免高频 mutation 产生大量 I/O；`beforeunload` 时刷出待写入队列防止数据丢失
+- **可序列化优先**：Store 状态优先使用原生可序列化类型（`string[]` 而非 `Set<string>`），避免自定义 `partialize`/`merge` workaround
 
 ---
 
@@ -191,10 +235,23 @@ tests/
 | 分模块知识库 | `src/data/knowledge/` |
 | 题目与解析 | `src/data/problems/` |
 | 知识树索引 | `src/data/knowledgeTree.ts` |
-| 动画注册表 | `src/data/animationRegistry.ts` |
+| 动画注册表合并入口 | `src/data/animationRegistry.ts` |
+| 动画注册表子模块 | `src/data/registries/*.ts` |
+| defineAnimations 工具 | `src/data/defineAnimations.ts` |
 | 题目解析注册表 | `src/data/analysisRegistry.ts` |
+| 物理量构建器 | `src/data/quantities/`（按物理主题拆分） |
+| 物理量懒注册入口 | `src/data/physicsQuantities.ts` |
 
 所有数据结构须满足：可序列化、可检索、可按章节拆分、可被知识树/动画页/题目解析页共同消费。
+
+### 8.1.1 物理量构建器扩展指南
+
+新增动画的物理量构建逻辑必须：
+1. 在 `src/data/quantities/` 对应子模块中添加 case 分支
+2. 在 `src/data/physicsQuantities.ts` 的 `lazyBuilders` 和 `builderNames` 中注册
+3. 在 `AnimationPage` 进入时通过 `preloadQuantityBuilder()` 预加载
+
+禁止直接在 `physicsQuantities.ts` 中添加 switch-case 构建逻辑。
 
 ### 8.2 错题数据流
 
@@ -215,6 +272,12 @@ export const storage = {
   removeDB(key: string): Promise<void>,
   clearDB(): Promise<void>,
 }
+
+// Zustand persist 兼容的 IndexedDB StateStorage
+export const idbStorage: StateStorage
+
+// localStorage → IndexedDB 一次性迁移
+export function migrateFromLocalStorage(key: string): Promise<void>
 ```
 
 IndexedDB 体积上限：**200MB**，超限时提示用户清理。
@@ -289,6 +352,12 @@ export default { theme: { extend: { colors: tailwindColors } } }
 - 纯组件使用 `React.memo()`，计算密集逻辑使用 `useMemo()`，回调使用 `useCallback()`
 - 所有纯函数必须有测试，核心组件必须有基础交互测试
 - 测试文件放 `tests/`，结构与 `src/` 对齐，`tests/setup.ts` 必须导入 `@testing-library/jest-dom`
+
+### 12.1 代码组织指南
+
+- **Feature 子目录分组**：`features/mechanics/` 和 `features/electromagnetism/` 下按物理主题分子目录（mechanics: kinematics/dynamics/circular/gravitation/momentum/energy；electromagnetism: electrostatics/dc-circuits/magnetism/induction/shared），新增动画文件放入对应子目录，禁止平铺
+- **大文件拆分**：单文件超过 500 行时应考虑按职责拆分为独立模块，通过懒加载或 barrel 文件组织
+- **重复逻辑提取**：多处出现的相同计算模式（如轨迹插值）应提取为 `src/utils/` 下的通用工具函数
 
 ```ts
 // vitest.config.ts

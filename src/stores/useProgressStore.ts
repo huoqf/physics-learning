@@ -1,13 +1,14 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { idbStorage, migrateFromLocalStorage } from '@/utils/storage'
 
 interface ProgressState {
-  viewedAnimations: Set<string>
-  masteredKnowledge: Set<string>
+  viewedAnimations: string[]
+  masteredKnowledge: string[]
   lastVisited: string
   totalAnimations: number
   totalKnowledge: number
-  
+
   markAnimationViewed: (animationId: string) => void
   markKnowledgeMastered: (knowledgeId: string) => void
   unmarkKnowledgeMastered: (knowledgeId: string) => void
@@ -18,12 +19,18 @@ interface ProgressState {
 }
 
 const initialState = {
-  viewedAnimations: new Set<string>(),
-  masteredKnowledge: new Set<string>(),
+  viewedAnimations: [] as string[],
+  masteredKnowledge: [] as string[],
   lastVisited: '/',
   totalAnimations: 0,
   totalKnowledge: 0,
 }
+
+/** localStorage 持久化键名（用于迁移检测） */
+const STORAGE_KEY = 'physics-progress-storage'
+
+// ── 启动时执行一次性 localStorage → IndexedDB 迁移 ──
+migrateFromLocalStorage(STORAGE_KEY)
 
 export const useProgressStore = create<ProgressState>()(
   persist(
@@ -31,21 +38,21 @@ export const useProgressStore = create<ProgressState>()(
       ...initialState,
 
       markAnimationViewed: (animationId: string) =>
-        set((state) => ({
-          viewedAnimations: new Set([...state.viewedAnimations, animationId]),
-        })),
+        set((state) => {
+          if (state.viewedAnimations.includes(animationId)) return state
+          return { viewedAnimations: [...state.viewedAnimations, animationId] }
+        }),
 
       markKnowledgeMastered: (knowledgeId: string) =>
-        set((state) => ({
-          masteredKnowledge: new Set([...state.masteredKnowledge, knowledgeId]),
-        })),
+        set((state) => {
+          if (state.masteredKnowledge.includes(knowledgeId)) return state
+          return { masteredKnowledge: [...state.masteredKnowledge, knowledgeId] }
+        }),
 
       unmarkKnowledgeMastered: (knowledgeId: string) =>
-        set((state) => {
-          const newSet = new Set(state.masteredKnowledge)
-          newSet.delete(knowledgeId)
-          return { masteredKnowledge: newSet }
-        }),
+        set((state) => ({
+          masteredKnowledge: state.masteredKnowledge.filter((id) => id !== knowledgeId),
+        })),
 
       setLastVisited: (route: string) => set({ lastVisited: route }),
 
@@ -56,11 +63,11 @@ export const useProgressStore = create<ProgressState>()(
         const state = get()
         const animationProgress =
           state.totalAnimations > 0
-            ? (state.viewedAnimations.size / state.totalAnimations) * 100
+            ? (state.viewedAnimations.length / state.totalAnimations) * 100
             : 0
         const knowledgeProgress =
           state.totalKnowledge > 0
-            ? (state.masteredKnowledge.size / state.totalKnowledge) * 100
+            ? (state.masteredKnowledge.length / state.totalKnowledge) * 100
             : 0
         return { animationProgress, knowledgeProgress }
       },
@@ -68,38 +75,13 @@ export const useProgressStore = create<ProgressState>()(
       reset: () =>
         set({
           ...initialState,
-          viewedAnimations: new Set(),
-          masteredKnowledge: new Set(),
+          viewedAnimations: [],
+          masteredKnowledge: [],
         }),
     }),
     {
-      name: 'physics-progress-storage',
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        viewedAnimations: Array.from(state.viewedAnimations),
-        masteredKnowledge: Array.from(state.masteredKnowledge),
-        lastVisited: state.lastVisited,
-        totalAnimations: state.totalAnimations,
-        totalKnowledge: state.totalKnowledge,
-      }),
-      merge: (persistedState: unknown, currentState: ProgressState) => {
-        const persisted = persistedState as Record<string, unknown> | undefined
-        const merged = { ...currentState } as ProgressState
-        if (persisted) {
-          Object.assign(merged, persisted)
-          if (Array.isArray(persisted.viewedAnimations)) {
-            merged.viewedAnimations = new Set(persisted.viewedAnimations as string[])
-          } else if (!(persisted.viewedAnimations instanceof Set)) {
-            merged.viewedAnimations = new Set()
-          }
-          if (Array.isArray(persisted.masteredKnowledge)) {
-            merged.masteredKnowledge = new Set(persisted.masteredKnowledge as string[])
-          } else if (!(persisted.masteredKnowledge instanceof Set)) {
-            merged.masteredKnowledge = new Set()
-          }
-        }
-        return merged
-      },
+      name: STORAGE_KEY,
+      storage: createJSONStorage(() => idbStorage),
     }
   )
 )

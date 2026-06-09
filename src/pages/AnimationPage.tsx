@@ -1,8 +1,8 @@
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, FlaskConical, Play } from 'lucide-react'
 import { getAnimationConfig } from '@/data/animationRegistry'
-import { buildPhysicsQuantities } from '@/data/physicsQuantities'
+import { buildPhysicsQuantities, preloadQuantityBuilder } from '@/data/physicsQuantities'
 import { useAnimationStore, useProgressStore } from '@/stores'
 import { useAppStore } from '@/stores/useAppStore'
 import {
@@ -17,24 +17,190 @@ import { duration, easing } from '@/theme/motion'
 import { ThreePanel } from '@/components/Layout'
 import { useAnimationFrame } from '@/utils/animation'
 
+/**
+ * 中心动画区域 — 订阅 time（每帧更新），与左侧/右侧面板隔离。
+ */
+function AnimationCenter({
+  config,
+  isDiscoveryMode,
+  canvasDimmed,
+  handleReset,
+}: {
+  config: NonNullable<ReturnType<typeof getAnimationConfig>>
+  isDiscoveryMode: boolean
+  canvasDimmed: boolean
+  handleReset: () => void
+}) {
+  const time = useAnimationStore((s) => s.time)
+  const isPlaying = useAnimationStore((s) => s.isPlaying)
+  const speed = useAnimationStore((s) => s.speed)
+  const setTime = useAnimationStore((s) => s.setTime)
+  const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
+  const setSpeed = useAnimationStore((s) => s.setSpeed)
+  const params = useAnimationStore((s) => s.params)
+
+  const AnimationComponent = config.Component
+  const CenterExtraComponent = config.CenterExtra
+  const centerExtraModeKey = config.centerExtraMode
+  const isCenterExtraFull = centerExtraModeKey != null && params[centerExtraModeKey] === 1
+  const showCenterExtraInBasic = CenterExtraComponent && !centerExtraModeKey
+  const maxTime = 30
+
+  if (isDiscoveryMode && config.DiscoveryComponent) {
+    return (
+      <div className="w-full h-full bg-white rounded-xl shadow-md overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-auto">
+          <ErrorBoundary resetKey={config.id}>
+            <Suspense
+              fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
+            >
+              <config.DiscoveryComponent />
+            </Suspense>
+          </ErrorBoundary>
+        </div>
+        <div className="px-4 pb-4 shrink-0 border-t border-neutral-100">
+          <AnimationControls
+            isPlaying={isPlaying}
+            speed={speed}
+            time={time}
+            maxTime={maxTime}
+            onPlayPause={() => setIsPlaying(!isPlaying)}
+            onReset={handleReset}
+            onSpeedChange={setSpeed}
+            onTimeChange={setTime}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  // 进阶模式：CenterExtra 接管全部布局
+  if (isCenterExtraFull && CenterExtraComponent) {
+    return (
+      <ErrorBoundary resetKey={config.id}>
+        <Suspense fallback={null}>
+          <CenterExtraComponent />
+        </Suspense>
+      </ErrorBoundary>
+    )
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      {showCenterExtraInBasic && CenterExtraComponent ? (
+        <>
+          <div className="h-1/2 min-h-0">
+            <ErrorBoundary resetKey={config.id}>
+              <Suspense fallback={null}>
+                <CenterExtraComponent />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+          <div className="h-1/2 min-h-0 flex flex-col gap-2">
+            <div
+              className="flex-1 min-h-0 w-full bg-white rounded-xl shadow-md overflow-hidden"
+              style={{
+                transition: `opacity ${duration.normal}ms ${easing.standard}`,
+                opacity: canvasDimmed ? 0.9 : 1,
+              }}
+            >
+              <ErrorBoundary resetKey={config.id}>
+                <Suspense
+                  fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
+                >
+                  <AnimationComponent />
+                </Suspense>
+              </ErrorBoundary>
+            </div>
+            <div className="px-2 pb-2 pt-1 shrink-0">
+              <AnimationControls
+                isPlaying={isPlaying}
+                speed={speed}
+                time={time}
+                maxTime={maxTime}
+                onPlayPause={() => setIsPlaying(!isPlaying)}
+                onReset={handleReset}
+                onSpeedChange={setSpeed}
+                onTimeChange={setTime}
+              />
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <div
+            className="w-full flex-1 min-h-0 bg-white rounded-xl shadow-md overflow-hidden"
+            style={{
+              transition: `opacity ${duration.normal}ms ${easing.standard}`,
+              opacity: canvasDimmed ? 0.9 : 1,
+            }}
+          >
+            <ErrorBoundary resetKey={config.id}>
+              <Suspense
+                fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
+              >
+                <AnimationComponent />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+          <div className="px-2 pb-2 pt-1 shrink-0">
+            <AnimationControls
+              isPlaying={isPlaying}
+              speed={speed}
+              time={time}
+              maxTime={maxTime}
+              onPlayPause={() => setIsPlaying(!isPlaying)}
+              onReset={handleReset}
+              onSpeedChange={setSpeed}
+              onTimeChange={setTime}
+            />
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+/**
+ * 右侧物理量面板 — 订阅 time（每帧更新），与左侧参数面板隔离。
+ */
+function RightPhysicsPanel({
+  animId,
+}: {
+  animId: string
+}) {
+  const params = useAnimationStore((s) => s.params)
+  const time = useAnimationStore((s) => s.time)
+  const physicsQuantities = useMemo(
+    () => buildPhysicsQuantities(animId, params, time),
+    [animId, params, time]
+  )
+
+  return (
+    <div className="p-4 h-full flex flex-col">
+      <div className="flex-1 min-h-0">
+        <PhysicsPanel quantities={physicsQuantities.quantities} formulas={physicsQuantities.formulas} gaokaoPoints={physicsQuantities.gaokaoPoints} />
+      </div>
+    </div>
+  )
+}
+
 export default function AnimationPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const {
-    params,
-    time,
-    isPlaying,
-    speed,
-    showTimeSlices,
-    showDualObjects,
-    setParams,
-    setTime,
-    setIsPlaying,
-    setSpeed,
-    updateParam,
-    toggleTimeSlices,
-    toggleDualObjects,
-  } = useAnimationStore()
+
+  // 低频状态：selector 订阅，避免 time 变化触发重渲染
+  const params = useAnimationStore((s) => s.params)
+  const isPlaying = useAnimationStore((s) => s.isPlaying)
+  const showTimeSlices = useAnimationStore((s) => s.showTimeSlices)
+  const showDualObjects = useAnimationStore((s) => s.showDualObjects)
+  const setParams = useAnimationStore((s) => s.setParams)
+  const setTime = useAnimationStore((s) => s.setTime)
+  const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
+  const updateParam = useAnimationStore((s) => s.updateParam)
+  const toggleTimeSlices = useAnimationStore((s) => s.toggleTimeSlices)
+  const toggleDualObjects = useAnimationStore((s) => s.toggleDualObjects)
+
   const { mode, setMode, discoveryStep, setDiscoveryStep, setDiscoveryMaxStep, nextDiscoveryStep, prevDiscoveryStep } = useAppStore()
   const { markAnimationViewed } = useProgressStore()
   const currentTimeRef = useRef(0)
@@ -68,6 +234,8 @@ export default function AnimationPage() {
       setIsPlaying(false)
       setMode('animation')
       markAnimationViewed(config.id)
+      // 预加载物理量构建器，确保首帧渲染前就绪
+      preloadQuantityBuilder(config.id)
     }
   }, [config, setParams, setTime, setIsPlaying, setMode, markAnimationViewed])
 
@@ -81,6 +249,7 @@ export default function AnimationPage() {
   }, [isPlaying])
 
   // 外部修改 store time 时（如重置、拖动进度条），同步到 currentTimeRef
+  const time = useAnimationStore((s) => s.time)
   useEffect(() => {
     // 只在非动画驱动时同步（动画驱动时 time ≈ currentTimeRef）
     if (!isPlaying) {
@@ -88,9 +257,17 @@ export default function AnimationPage() {
     }
   }, [time, isPlaying])
 
+  const speed = useAnimationStore((s) => s.speed)
+  const maxTime = 30
   useAnimationFrame(
     (deltaTime) => {
       currentTimeRef.current += deltaTime / 1000
+      if (currentTimeRef.current >= maxTime) {
+        currentTimeRef.current = maxTime
+        setTime(maxTime)
+        setIsPlaying(false)
+        return
+      }
       setTime(currentTimeRef.current)
     },
     { playing: isPlaying, speed }
@@ -116,7 +293,6 @@ export default function AnimationPage() {
     )
   }
 
-  const AnimationComponent = config.Component
   const paramMeta = config.paramMeta || []
 
   // 构建 ParamControl 需要的参数格式（过滤 showIf 条件）
@@ -147,9 +323,6 @@ export default function AnimationPage() {
     toggleDualObjects,
     disabled: isDiscoveryMode,
   }
-
-  // 构建物理量看板
-  const physicsQuantities = buildPhysicsQuantities(config.id, params, time)
 
   return (
     <div className="h-[calc(100vh-56px)] flex flex-col bg-neutral-50">
@@ -207,134 +380,12 @@ export default function AnimationPage() {
         ) : undefined}
         center={
           <div className="flex flex-col h-full p-1.5 gap-2">
-            {isDiscoveryMode && config.DiscoveryComponent ? (
-              // 发现模式
-              <div className="w-full h-full bg-white rounded-xl shadow-md overflow-hidden flex flex-col">
-                <div className="flex-1 overflow-auto">
-                  <ErrorBoundary resetKey={config.id}>
-                    <Suspense
-                      fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
-                    >
-                      <config.DiscoveryComponent />
-                    </Suspense>
-                  </ErrorBoundary>
-                </div>
-                <div className="px-4 pb-4 shrink-0 border-t border-neutral-100">
-                  <AnimationControls
-                    isPlaying={isPlaying}
-                    speed={speed}
-                    time={time}
-                    maxTime={30}
-                    onPlayPause={() => setIsPlaying(!isPlaying)}
-                    onReset={handleReset}
-                    onSpeedChange={setSpeed}
-                    onTimeChange={setTime}
-                  />
-                </div>
-              </div>
-            ) : (
-              // 动画模式
-              <>
-                {/* 中心区域扩展：VT图+公式面板等特异布局 */}
-                {(() => {
-                  const CenterExtraComponent = config.CenterExtra
-                  const centerExtraModeKey = config.centerExtraMode
-                  const isCenterExtraFull = centerExtraModeKey != null && params[centerExtraModeKey] === 1
-
-                  // 进阶模式：CenterExtra 接管全部布局（不显示原有 Canvas 和 Controls）
-                  if (isCenterExtraFull && CenterExtraComponent) {
-                    return (
-                      <ErrorBoundary resetKey={config.id}>
-                        <Suspense fallback={null}>
-                          <CenterExtraComponent />
-                        </Suspense>
-                      </ErrorBoundary>
-                    )
-                  }
-
-                  // 基础模式：有 centerExtraMode 的动画在基础模式下不显示 CenterExtra；
-                  // 无 centerExtraMode 的动画（如 Discovery）照常在动画上方展示
-                  const showCenterExtraInBasic = CenterExtraComponent && !centerExtraModeKey
-
-                  return (
-                    <div className="flex flex-col h-full">
-                      {showCenterExtraInBasic && CenterExtraComponent ? (
-                        // 有 CenterExtra 的动画（如摩擦力）：上下各占 50%
-                        <>
-                          <div className="h-1/2 min-h-0">
-                            <ErrorBoundary resetKey={config.id}>
-                              <Suspense fallback={null}>
-                                <CenterExtraComponent />
-                              </Suspense>
-                            </ErrorBoundary>
-                          </div>
-                          <div className="h-1/2 min-h-0 flex flex-col gap-2">
-                            <div
-                              className="flex-1 min-h-0 w-full bg-white rounded-xl shadow-md overflow-hidden"
-                              style={{
-                                transition: `opacity ${duration.normal}ms ${easing.standard}`,
-                                opacity: canvasDimmed ? 0.9 : 1,
-                              }}
-                            >
-                              <ErrorBoundary resetKey={config.id}>
-                                <Suspense
-                                  fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
-                                >
-                                  <AnimationComponent />
-                                </Suspense>
-                              </ErrorBoundary>
-                            </div>
-                            <div className="px-2 pb-2 pt-1 shrink-0">
-                              <AnimationControls
-                                isPlaying={isPlaying}
-                                speed={speed}
-                                time={time}
-                                maxTime={30}
-                                onPlayPause={() => setIsPlaying(!isPlaying)}
-                                onReset={handleReset}
-                                onSpeedChange={setSpeed}
-                                onTimeChange={setTime}
-                              />
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        // 没有 CenterExtra 的动画：Canvas 占满可用空间
-                        <>
-                          <div
-                            className="w-full flex-1 min-h-0 bg-white rounded-xl shadow-md overflow-hidden"
-                            style={{
-                              transition: `opacity ${duration.normal}ms ${easing.standard}`,
-                              opacity: canvasDimmed ? 0.9 : 1,
-                            }}
-                          >
-                            <ErrorBoundary resetKey={config.id}>
-                              <Suspense
-                                fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
-                              >
-                                <AnimationComponent />
-                              </Suspense>
-                            </ErrorBoundary>
-                          </div>
-                          <div className="px-2 pb-2 pt-1 shrink-0">
-                            <AnimationControls
-                              isPlaying={isPlaying}
-                              speed={speed}
-                              time={time}
-                              maxTime={30}
-                              onPlayPause={() => setIsPlaying(!isPlaying)}
-                              onReset={handleReset}
-                              onSpeedChange={setSpeed}
-                              onTimeChange={setTime}
-                            />
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )
-                })()}
-              </>
-            )}
+            <AnimationCenter
+              config={config}
+              isDiscoveryMode={isDiscoveryMode}
+              canvasDimmed={canvasDimmed}
+              handleReset={handleReset}
+            />
           </div>
         }
         right={
@@ -349,11 +400,7 @@ export default function AnimationPage() {
               />
             </div>
           ) : (
-            <div className="p-4 h-full flex flex-col">
-              <div className="flex-1 min-h-0">
-                <PhysicsPanel quantities={physicsQuantities.quantities} formulas={physicsQuantities.formulas} gaokaoPoints={physicsQuantities.gaokaoPoints} />
-              </div>
-            </div>
+            <RightPhysicsPanel animId={config.id} />
           )
         }
       />

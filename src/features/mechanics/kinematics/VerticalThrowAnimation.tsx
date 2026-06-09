@@ -1,7 +1,6 @@
 import { useCanvasSize } from '@/utils'
 import React, { useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
-import { precomputeVerticalThrowTrajectory } from '@/physics/kinematics'
 import { colors } from '@/theme/colors'
 import {
   PHYSICS_COLORS,
@@ -14,9 +13,8 @@ import {
   FONT,
   CANVAS_STYLE,
 } from '@/theme/physics'
-
-/** 最高点定格检测阈值 (m/s) */
-const PEAK_THRESHOLD = 0.3
+import { useVerticalThrowPhysics } from './useVerticalThrowPhysics'
+import { useVerticalThrowChartLayout } from './useVerticalThrowChartLayout'
 
 /** 脉冲动画周期 (ms) */
 const PULSE_PERIOD = 800
@@ -27,89 +25,106 @@ export default function VerticalThrowAnimation() {
 
   const { v0 = 15, g = 9.8, advancedMode = 0, sliceDensity = 0, airResistance = 0, targetHeight = 0, showVacuumCompare = 1 } = params
 
-  // ── 预计算完整轨迹（一次性）──────────────────────────────
-  const trajectory = useMemo(
-    () => precomputeVerticalThrowTrajectory(v0, g, airResistance),
-    [v0, g, airResistance]
-  )
+  // ── 物理计算（Hook 提取） ──
+  const physics = useVerticalThrowPhysics(v0, g, airResistance, time, advancedMode, targetHeight)
+  const {
+    trajectory,
+    totalTime,
+    maxHeight,
+    maxHeightTime,
+    landTimeVac,
+    maxHeightVac,
+    effectiveTime,
+    effectiveV,
+    effectiveY,
+    vacuumV,
+    vacuumY,
+    isLanded,
+    isAtPeak,
+    interpolatePoints,
+    areaValues,
+    targetHeightIntersections,
+    vT1,
+    vT2,
+  } = physics
 
-  const { peakTime: maxHeightTime, landTime: totalTime, maxHeight, landTimeVac, maxHeightVac } = trajectory
-
-  // ── 从预计算轨迹插值 ─────────────────────────────────────
-  const interpolatePoints = useCallback(
-    (t: number, pts: typeof trajectory.points): { v: number; y: number } => {
-      if (t <= 0) return { v: pts[0]?.v ?? v0, y: 0 }
-      const lastPt = pts[pts.length - 1]
-      if (t >= lastPt.t) return { v: 0, y: 0 }
-      const dt = pts[1]?.t - pts[0]?.t || 0.02
-      const idx = Math.floor(t / dt)
-      const p1 = pts[Math.min(idx, pts.length - 1)]
-      const p2 = pts[Math.min(idx + 1, pts.length - 1)]
-      if (!p1 || !p2 || p1.t === p2.t) return { v: p1?.v ?? 0, y: p1?.y ?? 0 }
-      const frac = (t - p1.t) / (p2.t - p1.t)
-      return {
-        v: p1.v + (p2.v - p1.v) * frac,
-        y: p1.y + (p2.y - p1.y) * frac,
-      }
-    },
-    [v0]
-  )
-
-  // ── 布局分区 ──────────────────────────────────────────────
-  const stageRatio = 0.42
-  const gapWidth = canvasSize.width * 0.02
-  const stageWidth = canvasSize.width * stageRatio
-  const dataX = stageWidth + gapWidth
-  const dataWidth = canvasSize.width - dataX
-
-  // ── 物理舞台（左侧）──────────────────────────────────────
-  const originY = canvasSize.height * 0.08
-  const groundY = canvasSize.height * 0.88
-  const stageHeight = groundY - originY
-  const ballX = stageWidth * 0.5
-
-  // ── 动态 scale (取两轨最大高度的最大值，避免跳动) ───────────
-  const displayMaxHeight = Math.max(maxHeight, maxHeightVac, 1)
-  const scale = stageHeight / displayMaxHeight
-
-  // ── 物理计算 ──────────────────────────────────────────────
-  const isLanded = time >= totalTime && totalTime > 0
-  const effectiveTime = isLanded ? totalTime : Math.max(time, 0)
-
-  // 从预计算轨迹获取当前状态（阻力轨道）
-  const { effectiveV, effectiveY } = useMemo(() => {
-    const { v, y } = interpolatePoints(effectiveTime, trajectory.points)
-    return { effectiveV: v, effectiveY: Math.max(y, 0) }
-  }, [effectiveTime, trajectory.points, interpolatePoints])
-
-  // 获取真空轨道状态
-  const { vacuumV, vacuumY } = useMemo(() => {
-    const { v, y } = interpolatePoints(effectiveTime, trajectory.vacuumPoints)
-    return { vacuumV: v, vacuumY: Math.max(y, 0) }
-  }, [effectiveTime, trajectory.vacuumPoints, interpolatePoints])
+  // ── 双轨模式判定 ──
+  const showDoubleTrack = advancedMode === 1 && airResistance > 0 && showVacuumCompare === 1
 
   const clampedY = Math.max(effectiveY, 0)
-  const currentBallY = originY + (displayMaxHeight - clampedY) * scale
-
   const clampedVacuumY = Math.max(vacuumY, 0)
-  const currentVacuumBallY = originY + (displayMaxHeight - clampedVacuumY) * scale
 
-  // 是否开启双轨对比模式
-  const showDoubleTrack = advancedMode === 1 && airResistance > 0 && showVacuumCompare === 1
-  const leftBallX = showDoubleTrack ? ballX - 40 : ballX
+  // ── 图表布局（Hook 提取） ──
+  const layout = useVerticalThrowChartLayout(
+    canvasSize.width,
+    canvasSize.height,
+    totalTime,
+    maxHeight,
+    maxHeightTime,
+    landTimeVac,
+    maxHeightVac,
+    effectiveTime,
+    v0,
+    advancedMode,
+    sliceDensity,
+    trajectory.points,
+    trajectory.vacuumPoints,
+    interpolatePoints,
+  )
+
+  const {
+    stageWidth,
+    dataX,
+    dataWidth,
+    originY,
+    groundY,
+    stageHeight,
+    ballX,
+    displayMaxHeight,
+    scale,
+    vtChartTop,
+    vtChartHeight,
+    vtInnerPad,
+    vtInnerW,
+    vtInnerH,
+    vtVMax,
+    xMax,
+    vtToX,
+    vtToY,
+    ytChartTop,
+    ytChartHeight,
+    ytInnerPad,
+    ytInnerW,
+    ytInnerH,
+    ytYMax,
+    ytToX,
+    ytToY,
+    vtYTicks,
+    xticks,
+    ytYTicks,
+    vtData,
+    ytData,
+    vtPositiveAreaD,
+    vtNegativeAreaD,
+    ytAreaD,
+    sliceRects,
+    ghostBalls,
+  } = layout
+
+  const leftBallX = ballX
   const rightBallX = showDoubleTrack ? ballX + 40 : ballX
 
-  // ── 最高点定格检测 ────────────────────────────────────────
-  const isAtPeak = !isLanded && Math.abs(effectiveV) < PEAK_THRESHOLD && effectiveTime > 0.05
+  const currentBallY = originY + (displayMaxHeight - clampedY) * scale
+  const currentVacuumBallY = originY + (displayMaxHeight - clampedVacuumY) * scale
 
-  // ── 落地自动暂停 ─────────────────────────────────────────
+  // ── 落地自动暂停 ──
   useEffect(() => {
     if (isLanded && time > 0) {
       setIsPlaying(false)
     }
   }, [isLanded, time, setIsPlaying])
 
-  // ── 最高点自动暂停（仅首次经过时触发）────────────────────
+  // ── 最高点自动暂停（仅首次经过时触发） ──
   const hasPausedAtPeakRef = useRef(false)
   useEffect(() => {
     if (isAtPeak && isPlaying && !hasPausedAtPeakRef.current) {
@@ -121,248 +136,7 @@ export default function VerticalThrowAnimation() {
     }
   }, [isAtPeak, isPlaying, setIsPlaying])
 
-  // ── v-t 图布局 ────────────────────────────────────────────
-  const vtChartTop = canvasSize.height * 0.02
-  const vtChartHeight = canvasSize.height * 0.52
-  const vtInnerPad = { left: 45, right: 30, top: 30, bottom: 35 }
-  const vtInnerW = dataWidth - vtInnerPad.left - vtInnerPad.right
-  const vtInnerH = vtChartHeight - vtInnerPad.top - vtInnerPad.bottom
-
-  // v-t 图轴范围
-  const { vtVMax, vtTickStep, xMax } = useMemo(() => {
-    const vMax = Math.max(v0 * 1.15, 5)
-    const clampedXMax = Math.max(Math.min(totalTime * 1.15, 10), 2)
-    let tickStep: number
-    if (vMax <= 5) tickStep = 1
-    else if (vMax <= 10) tickStep = 2
-    else if (vMax <= 20) tickStep = 5
-    else tickStep = 10
-    return { vtVMax: vMax, vtTickStep: tickStep, xMax: clampedXMax }
-  }, [v0, totalTime, vtInnerH])
-
-  const vtToX = (t: number) => vtInnerPad.left + (t / xMax) * vtInnerW
-  const vtToY = (v: number) => {
-    const clampedV = Math.max(-vtVMax, Math.min(v, vtVMax))
-    return vtInnerPad.top + ((vtVMax - clampedV) / (2 * vtVMax)) * vtInnerH
-  }
-
-  // ── y-t 图布局 ────────────────────────────────────────────
-  const ytChartTop = vtChartTop + vtChartHeight + canvasSize.height * 0.04
-  const ytChartHeight = canvasSize.height - ytChartTop - canvasSize.height * 0.04
-  const ytInnerPad = { left: 45, right: 30, top: 25, bottom: 35 }
-  const ytInnerW = dataWidth - ytInnerPad.left - ytInnerPad.right
-  const ytInnerH = ytChartHeight - ytInnerPad.top - ytInnerPad.bottom
-
-  const { ytYMax, ytTickStep } = useMemo(() => {
-    const yMax = Math.max(maxHeight * 1.15, 5)
-    let tickStep: number
-    if (yMax <= 5) tickStep = 1
-    else if (yMax <= 10) tickStep = 2
-    else if (yMax <= 20) tickStep = 5
-    else tickStep = 10
-    return { ytYMax: yMax, ytTickStep: tickStep }
-  }, [maxHeight])
-
-  const ytToX = (t: number) => ytInnerPad.left + (t / xMax) * ytInnerW
-  const ytToY = (y: number) => {
-    const clampedY = Math.max(0, Math.min(y, ytYMax))
-    return ytInnerPad.top + ytInnerH - (clampedY / ytYMax) * ytInnerH
-  }
-
-  // ── 刻度 ──────────────────────────────────────────────────
-  const vtYTicks = useMemo(() => {
-    const ticks: number[] = []
-    for (let v = -vtVMax; v <= vtVMax + 0.01; v += vtTickStep) {
-      ticks.push(parseFloat(v.toFixed(1)))
-    }
-    return ticks
-  }, [vtVMax, vtTickStep])
-
-  const xticks = useMemo(() => {
-    const ticks: number[] = []
-    const step = xMax <= 3 ? 0.5 : xMax <= 6 ? 1 : 2
-    for (let t = 0; t <= xMax + 0.01; t += step) {
-      ticks.push(parseFloat(t.toFixed(1)))
-    }
-    return ticks
-  }, [xMax])
-
-  const ytYTicks = useMemo(() => {
-    const ticks: number[] = []
-    for (let y = 0; y <= ytYMax + 0.01; y += ytTickStep) {
-      ticks.push(parseFloat(y.toFixed(1)))
-    }
-    return ticks
-  }, [ytYMax, ytTickStep])
-
-  const activeTime = Math.min(effectiveTime, xMax)
-
-  // ── v-t 曲线与 y-t 曲线 SVG 路径生成 (包含阻力/真空的完整与当前时段路径) ──
-  const vtData = useMemo(() => {
-    const activeT = Math.min(effectiveTime, totalTime)
-    const activeTVac = Math.min(effectiveTime, landTimeVac)
-
-    const getPointsStr = (pts: typeof trajectory.points, maxT: number) => {
-      const result: string[] = []
-      for (const pt of pts) {
-        if (pt.t > maxT + 1e-5) break
-        result.push(`${vtToX(pt.t)},${vtToY(pt.v)}`)
-      }
-      if (maxT > 0 && maxT < pts[pts.length - 1].t) {
-        const { v } = interpolatePoints(maxT, pts)
-        result.push(`${vtToX(maxT)},${vtToY(v)}`)
-      }
-      return result.join(' L ')
-    }
-
-    return {
-      airFull: `M ${trajectory.points.map(p => `${vtToX(p.t)},${vtToY(p.v)}`).join(' L ')}`,
-      airActive: getPointsStr(trajectory.points, activeT) ? `M ${getPointsStr(trajectory.points, activeT)}` : '',
-      vacFull: `M ${trajectory.vacuumPoints.map(p => `${vtToX(p.t)},${vtToY(p.v)}`).join(' L ')}`,
-      vacActive: getPointsStr(trajectory.vacuumPoints, activeTVac) ? `M ${getPointsStr(trajectory.vacuumPoints, activeTVac)}` : '',
-    }
-  }, [trajectory, totalTime, landTimeVac, effectiveTime, vtToX, vtToY, interpolatePoints])
-
-  const ytData = useMemo(() => {
-    const activeT = Math.min(effectiveTime, totalTime)
-    const activeTVac = Math.min(effectiveTime, landTimeVac)
-
-    const getPointsStr = (pts: typeof trajectory.points, maxT: number) => {
-      const result: string[] = []
-      for (const pt of pts) {
-        if (pt.t > maxT + 1e-5) break
-        result.push(`${ytToX(pt.t)},${ytToY(pt.y)}`)
-      }
-      if (maxT > 0 && maxT < pts[pts.length - 1].t) {
-        const { y } = interpolatePoints(maxT, pts)
-        result.push(`${ytToX(maxT)},${ytToY(y)}`)
-      }
-      return result.join(' L ')
-    }
-
-    return {
-      airFull: `M ${trajectory.points.map(p => `${ytToX(p.t)},${ytToY(p.y)}`).join(' L ')}`,
-      airActive: getPointsStr(trajectory.points, activeT) ? `M ${getPointsStr(trajectory.points, activeT)}` : '',
-      vacFull: `M ${trajectory.vacuumPoints.map(p => `${ytToX(p.t)},${ytToY(p.y)}`).join(' L ')}`,
-      vacActive: getPointsStr(trajectory.vacuumPoints, activeTVac) ? `M ${getPointsStr(trajectory.vacuumPoints, activeTVac)}` : '',
-    }
-  }, [trajectory, totalTime, landTimeVac, effectiveTime, ytToX, ytToY, interpolatePoints])
-
-  // v-t 正区域面积填充（v>0 部分）—— 普通模式
-  const vtPositiveAreaD = useMemo(() => {
-    const peakT = Math.min(maxHeightTime, effectiveTime)
-    if (peakT <= 0) return ''
-    const pts: string[] = []
-    for (const pt of trajectory.points) {
-      if (pt.t > peakT + 1e-5) break
-      pts.push(`${vtToX(pt.t)},${vtToY(Math.max(pt.v, 0))}`)
-    }
-    pts.push(`${vtToX(peakT)},${vtToY(0)}`)
-    pts.push(`${vtToX(0)},${vtToY(0)}`)
-    return `M ${pts.join(' L ')} Z`
-  }, [trajectory.points, maxHeightTime, effectiveTime, vtToX, vtToY])
-
-  // v-t 负区域面积填充（v<0 部分）—— 普通模式
-  const vtNegativeAreaD = useMemo(() => {
-    if (effectiveTime <= maxHeightTime) return ''
-    const pts: string[] = []
-    pts.push(`${vtToX(maxHeightTime)},${vtToY(0)}`)
-    const activeT = Math.min(effectiveTime, totalTime)
-    for (const pt of trajectory.points) {
-      if (pt.t < maxHeightTime) continue
-      if (pt.t > activeT + 1e-5) break
-      pts.push(`${vtToX(pt.t)},${vtToY(Math.min(pt.v, 0))}`)
-    }
-    pts.push(`${vtToX(activeT)},${vtToY(0)}`)
-    return `M ${pts.join(' L ')} Z`
-  }, [trajectory.points, maxHeightTime, effectiveTime, totalTime, vtToX, vtToY])
-
-  // ── 高级模式：微元切片矩形 ────────────────────────────────
-  const sliceRects = useMemo(() => {
-    if (advancedMode !== 1 || sliceDensity <= 0) return []
-    const rects: { x: number; y: number; w: number; h: number; positive: boolean }[] = []
-    const dt = sliceDensity
-    for (let t = 0; t < activeTime; t += dt) {
-      const sliceEnd = Math.min(t + dt, activeTime)
-      const { v } = interpolatePoints(t, trajectory.points)
-      const x1 = vtToX(t)
-      const x2 = vtToX(sliceEnd)
-      const y0 = vtToY(0)
-      const yV = vtToY(v)
-      rects.push({
-        x: x1,
-        y: v >= 0 ? yV : y0,
-        w: x2 - x1,
-        h: Math.abs(y0 - yV),
-        positive: v >= 0,
-      })
-    }
-    return rects
-  }, [advancedMode, sliceDensity, activeTime, trajectory.points, interpolatePoints, vtToX, vtToY])
-
-  // ── 高级模式：频闪点（微元切片对应的小球位置）─────────────
-  const ghostBalls = useMemo(() => {
-    if (advancedMode !== 1 || sliceDensity <= 0) return []
-    const balls: { cy: number }[] = []
-    const dt = sliceDensity
-    for (let t = 0; t <= activeTime + 0.001; t += dt) {
-      const actualT = Math.min(t, activeTime)
-      const { y } = interpolatePoints(actualT, trajectory.points)
-      const clampedGhostY = Math.max(y, 0)
-      const ghostBallY = originY + (displayMaxHeight - clampedGhostY) * scale
-      balls.push({ cy: ghostBallY })
-    }
-    return balls
-  }, [advancedMode, sliceDensity, activeTime, trajectory.points, interpolatePoints, originY, displayMaxHeight, scale])
-
-  // ── 高级模式：面积数值 ────────────────────────────────────
-  const areaValues = useMemo(() => {
-    if (advancedMode !== 1) return null
-    let positiveArea = 0
-    let negativeArea = 0
-    for (let i = 0; i < trajectory.points.length; i++) {
-      const pt = trajectory.points[i]
-      if (pt.t > effectiveTime) break
-      const nextPt = trajectory.points[i + 1] || pt
-      const dt = nextPt.t - pt.t
-      if (dt <= 0) continue
-      const area = pt.v * dt
-      if (area > 0) positiveArea += area
-      else negativeArea += Math.abs(area)
-    }
-    return {
-      positive: positiveArea,
-      negative: negativeArea,
-      net: positiveArea - negativeArea,
-    }
-  }, [advancedMode, effectiveTime, trajectory.points])
-
-  // ── 高级模式：目标高度双解 ────────────────────────────────
-  const targetHeightIntersections = useMemo(() => {
-    if (advancedMode !== 1 || targetHeight <= 0 || targetHeight >= maxHeight) return null
-    let t1 = 0
-    let t2 = 0
-    let foundFirst = false
-    for (const pt of trajectory.points) {
-      if (pt.y >= targetHeight && !foundFirst) {
-        t1 = pt.t
-        foundFirst = true
-      }
-      if (pt.y < targetHeight && foundFirst && pt.t > maxHeightTime) {
-        t2 = pt.t
-        break
-      }
-    }
-    return foundFirst && t2 > 0 ? { t1, t2 } : null
-  }, [advancedMode, targetHeight, maxHeight, trajectory.points, maxHeightTime])
-
-  // ── y-t 面积填充 ──
-  const ytAreaD = useMemo(() => {
-    if (!ytData.airActive) return ''
-    return `${ytData.airActive} L ${ytToX(activeTime)},${ytToY(0)} L ${ytToX(0)},${ytToY(0)} Z`
-  }, [ytData.airActive, activeTime, ytToX, ytToY])
-
-  // ── 网格线 ────────────────────────────────────────────────
+  // ── 网格线 ──
   const gridLines = useMemo(() => {
     if (!showGrid) return []
     const lines: React.ReactElement[] = []
@@ -377,7 +151,7 @@ export default function VerticalThrowAnimation() {
     return lines
   }, [showGrid, originY, stageHeight, stageWidth])
 
-  // ── 时间轴拖拽 ────────────────────────────────────────────
+  // ── 时间轴拖拽 ──
   const isDraggingRef = useRef(false)
 
   const handleChartMouseDown = useCallback((e: React.MouseEvent<SVGElement>, chartType: 'vt' | 'yt') => {
@@ -401,7 +175,6 @@ export default function VerticalThrowAnimation() {
     const svg = e.currentTarget
     const rect = svg.getBoundingClientRect()
     const clickX = e.clientX - rect.left
-    // 使用 v-t 图的坐标系来计算时间
     const chartDataX = dataX + vtInnerPad.left
     const tClick = ((clickX - chartDataX) / vtInnerW) * xMax
     if (tClick >= 0 && tClick <= totalTime) {
@@ -414,7 +187,6 @@ export default function VerticalThrowAnimation() {
     isDraggingRef.current = false
   }, [])
 
-  // 兼容旧版点击
   const handleChartClick = useCallback((e: React.MouseEvent<SVGGElement>, chartType: 'vt' | 'yt') => {
     const svg = e.currentTarget.closest('svg')
     if (!svg) return
@@ -429,87 +201,7 @@ export default function VerticalThrowAnimation() {
       setIsPlaying(false)
     }
   }, [dataX, vtInnerPad, ytInnerPad, vtInnerW, ytInnerW, xMax, totalTime, setTime, setIsPlaying])
-  // ── 双解高度对应的两轨瞬时速度计算 ──
-  const { vT1, vT2 } = useMemo(() => {
-    if (!targetHeightIntersections) return { vT1: 0, vT2: 0 }
-    const vt1 = interpolatePoints(targetHeightIntersections.t1, trajectory.points).v
-    const vt2 = interpolatePoints(targetHeightIntersections.t2, trajectory.points).v
-    return { vT1: vt1, vT2: vt2 }
-  }, [targetHeightIntersections, trajectory.points, interpolatePoints])
-
-  // ── 局部精密物理滑轨渲染 ──
-  const renderTrack = useCallback((x: number, label: string, isVacuum: boolean = false) => {
-    const trackW = 14
-    return (
-      <g key={`track-${x}`} opacity={isVacuum ? 0.45 : 1}>
-        {/* 导轨槽体（拉丝金属材质） */}
-        <rect
-          x={x - trackW / 2} y={originY - 15}
-          width={trackW} height={stageHeight + 30}
-          fill="url(#track-metal-grad)"
-          stroke={isVacuum ? SCENE_COLORS.environment.vacuumStroke : SCENE_COLORS.environment.mediaStroke}
-          strokeWidth={1}
-          rx={3}
-        />
-        {/* 侧边高亮反光边框 */}
-        <line x1={x - trackW / 2 + 1} y1={originY - 10} x2={x - trackW / 2 + 1} y2={groundY + 10} stroke={isVacuum ? SCENE_COLORS.environment.vacuumBorder : SCENE_COLORS.environment.mediaBorder} strokeWidth={0.8} opacity={0.3} />
-        <line x1={x + trackW / 2 - 1} y1={originY - 10} x2={x + trackW / 2 - 1} y2={groundY + 10} stroke={isVacuum ? SCENE_COLORS.environment.vacuumBorder : SCENE_COLORS.environment.mediaBorder} strokeWidth={0.8} opacity={0.3} />
-        
-        {/* 精密实验室标尺刻度线 */}
-        {Array.from({ length: 11 }).map((_, i) => {
-          const yPos = originY + (i * stageHeight) / 10
-          return (
-            <line
-              key={`tick-${i}`}
-              x1={x - 4} y1={yPos} x2={x + 4} y2={yPos}
-              stroke={isVacuum ? PHYSICS_COLORS.velocityY : CHART_COLORS.axisLine}
-              strokeWidth={0.8}
-            />
-          )
-        })}
-        {/* 轨道科学文字标签 */}
-        <text x={x} y={groundY + 28} fontSize={9} fill={isVacuum ? PHYSICS_COLORS.velocityX : PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
-          {label}
-        </text>
-      </g>
-    )
-  }, [originY, groundY, stageHeight])
-
-  const renderLaunchBase = useCallback((x: number) => (
-    <g key={`base-${x}`}>
-      {/* 弹射架底座 */}
-      <path
-        d={`M ${x - 16} ${groundY + 8} L ${x + 16} ${groundY + 8} L ${x + 10} ${groundY - 1} L ${x - 10} ${groundY - 1} Z`}
-        fill="url(#slider-metal-grad)"
-        stroke={PHYSICS_COLORS.labelText}
-        strokeWidth={1}
-      />
-      {/* 激光状态指示灯 */}
-      <circle cx={x} cy={groundY + 3.5} r={1.5} fill={PHYSICS_COLORS.velocityY} filter={`drop-shadow(0 0 1px ${PHYSICS_COLORS.velocityX})`} />
-    </g>
-  ), [groundY])
-
-  const renderTopStopper = useCallback((x: number) => (
-    <g key={`stopper-${x}`}>
-      {/* 顶部回收防撞阻尼架 */}
-      <rect
-        x={x - 12} y={originY - 22}
-        width={24} height={9}
-        fill="url(#slider-metal-grad)"
-        stroke={PHYSICS_COLORS.labelText}
-        strokeWidth={1}
-        rx={2}
-      />
-      {/* 警示安全条纹 */}
-      <path
-        d={`M ${x - 9} ${originY - 20} L ${x - 5} ${originY - 15} M ${x - 2} ${originY - 20} L ${x + 2} ${originY - 15} M ${x + 5} ${originY - 20} L ${x + 9} ${originY - 15}`}
-        stroke={SCENE_COLORS.safety.safetyYellow}
-        strokeWidth={1.2}
-      />
-    </g>
-  ), [originY])
-
-  // ── 渲染 ──────────────────────────────────────────────────
+  // ── 渲染 ──
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg
@@ -523,24 +215,6 @@ export default function VerticalThrowAnimation() {
 
         {/* ========== defs ========== */}
         <defs>
-          {/* 金属滑轨渐变 */}
-          <linearGradient id="track-metal-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.trackMetalGrad[0]} />
-            <stop offset="25%" stopColor={SCENE_COLORS.materials.trackMetalGrad[1]} />
-            <stop offset="50%" stopColor={SCENE_COLORS.materials.trackMetalGrad[2]} />
-            <stop offset="75%" stopColor={SCENE_COLORS.materials.trackMetalGrad[3]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.trackMetalGrad[4]} />
-          </linearGradient>
-
-          {/* 不锈钢材质渐变 */}
-          <linearGradient id="slider-metal-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[0]} />
-            <stop offset="30%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[1]} />
-            <stop offset="70%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[3]} />
-          </linearGradient>
-
-          {/* 钢珠立体径向渐变 */}
           <radialGradient id="steel-sphere-grad" cx="30%" cy="30%" r="70%">
             <stop offset="0%" stopColor={SCENE_COLORS.sphere.steel.gradient[0]} />
             <stop offset="40%" stopColor={SCENE_COLORS.sphere.steel.gradient[1]} />
@@ -548,7 +222,6 @@ export default function VerticalThrowAnimation() {
             <stop offset="100%" stopColor={SCENE_COLORS.sphere.steel.gradient[3]} />
           </radialGradient>
 
-          {/* 真空对照球立体渐变 */}
           <radialGradient id="vacuum-sphere-grad" cx="30%" cy="30%" r="70%">
             <stop offset="0%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[0]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[0]} />
             <stop offset="50%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[1]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[1]} />
@@ -556,7 +229,6 @@ export default function VerticalThrowAnimation() {
             <stop offset="100%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[3]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[3]} />
           </radialGradient>
 
-          {/* 霓虹发光滤镜 */}
           <filter id="glow-filter-blue" x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur stdDeviation="1.2" result="blur" />
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
@@ -566,7 +238,6 @@ export default function VerticalThrowAnimation() {
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>
 
-          {/* 积分面积极光渐变 */}
           <linearGradient id="aurora-blue-grad" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor={SCENE_COLORS.effects.auroraBlueGrad[0]} stopOpacity={0.45} />
             <stop offset="100%" stopColor={SCENE_COLORS.effects.auroraBlueGrad[1]} stopOpacity={0.05} />
@@ -582,12 +253,10 @@ export default function VerticalThrowAnimation() {
           <marker id="arrow-vt-accel" markerWidth={10} markerHeight={7} refX={9} refY={3.5} orient="auto">
             <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.acceleration} />
           </marker>
-          
-          {/* 高级模式：正区域交叉线图案 */}
+
           <pattern id="gridPattern" width="8" height="8" patternUnits="userSpaceOnUse">
             <path d="M0 0L8 8M8 0L0 8" stroke={SCENE_COLORS.effects.patternGrid} strokeWidth="0.5" opacity={0.35} />
           </pattern>
-          {/* 高级模式：负区域斜线图案 */}
           <pattern id="stripePattern" width="6" height="6" patternUnits="userSpaceOnUse">
             <path d="M0 6L6 0" stroke={SCENE_COLORS.effects.patternStripe} strokeWidth="1" opacity={0.35} />
           </pattern>
@@ -596,36 +265,15 @@ export default function VerticalThrowAnimation() {
         {/* ========== 左侧：物理演练区 ========== */}
         {gridLines}
 
-        {/* 渲染滑轨 (双轨/单轨分流) */}
-        {showDoubleTrack ? (
-          <>
-            {renderTrack(leftBallX, `阻力轨道 (k = ${airResistance.toFixed(1)})`)}
-            {renderTrack(rightBallX, '真空对照轨道', true)}
-            {renderLaunchBase(leftBallX)}
-            {renderLaunchBase(rightBallX)}
-            {renderTopStopper(leftBallX)}
-            {renderTopStopper(rightBallX)}
-          </>
-        ) : (
-          <>
-            {renderTrack(ballX, '垂直物理轨道')}
-            {renderLaunchBase(ballX)}
-            {renderTopStopper(ballX)}
-          </>
-        )}
-
-        {/* 地面线 */}
         <line x1={30} y1={groundY} x2={stageWidth - 20} y2={groundY}
           stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.groundLine} />
 
-        {/* 高度刻度标注 */}
         <text x={25} y={originY + 4} fontSize={FONT.small} fill={PHYSICS_COLORS.axis} textAnchor="end">
           {displayMaxHeight.toFixed(1)}m
         </text>
         <text x={25} y={groundY + 4} fontSize={FONT.small} fill={PHYSICS_COLORS.axis} textAnchor="end">0</text>
         <text x={leftBallX + (showDoubleTrack ? -20 : 18)} y={groundY + 14} fontSize={FONT.small} fill={PHYSICS_COLORS.axis}>y=0</text>
 
-        {/* 最高点虚线标注 */}
         <line x1={30} y1={originY + (displayMaxHeight - maxHeight) * scale} x2={stageWidth - 20} y2={originY + (displayMaxHeight - maxHeight) * scale}
           stroke={PHYSICS_COLORS.potentialEnergy} strokeWidth={STROKE.reference}
           strokeDasharray={DASH.reference.join(' ')} opacity={0.5} />
@@ -634,7 +282,6 @@ export default function VerticalThrowAnimation() {
           最高点 H = {maxHeight.toFixed(2)}m
         </text>
 
-        {/* 高级模式：目标高度虚线 */}
         {advancedMode === 1 && targetHeight > 0 && targetHeight < maxHeight && (
           <>
             <line
@@ -653,24 +300,20 @@ export default function VerticalThrowAnimation() {
           </>
         )}
 
-        {/* 高级模式：频闪点（微元切片） */}
         {ghostBalls.map((ball, idx) => (
           <circle key={`ghost-${idx}`} cx={leftBallX} cy={ball.cy} r={5}
             fill={PHYSICS_COLORS.velocityX} opacity={0.25} />
         ))}
 
-        {/* 真空虚影球 (仅在双轨模式下渲染) */}
         {showDoubleTrack && !isLanded && (
           <circle cx={rightBallX} cy={currentVacuumBallY} r={13}
             fill="url(#vacuum-sphere-grad)" stroke={PHYSICS_COLORS.deltaHighlight} strokeWidth={1} />
         )}
 
-        {/* 实体钢珠小球 */}
         <circle cx={leftBallX} cy={currentBallY} r={14}
           fill="url(#steel-sphere-grad)" stroke={SCENE_COLORS.sphere.steel.stroke}
           strokeWidth={CANVAS_STYLE.stroke.objectLine} />
 
-        {/* 微元法累积激光连线（时间轴移动时，实时连结速度切片与物理区高度变化量） */}
         {advancedMode === 1 && sliceDensity > 0 && effectiveTime > 0 && !isLanded && (
           <line
             x1={leftBallX} y1={currentBallY}
@@ -683,7 +326,6 @@ export default function VerticalThrowAnimation() {
           />
         )}
 
-        {/* 速度矢量（蓝色，方向随正负变化） */}
         {showVectors && effectiveV !== 0 && !isLanded && (
           <g>
             <line
@@ -699,7 +341,6 @@ export default function VerticalThrowAnimation() {
           </g>
         )}
 
-        {/* 加速度/合力矢量（红色，恒向下，有阻力时：a = -g - kv|v|） */}
         {showVectors && !isLanded && (
           <g>
             <line
@@ -715,7 +356,6 @@ export default function VerticalThrowAnimation() {
           </g>
         )}
 
-        {/* 最高点定格特效：加速度合力箭头脉冲 */}
         {isAtPeak && (
           <g>
             <line
@@ -733,7 +373,6 @@ export default function VerticalThrowAnimation() {
           </g>
         )}
 
-        {/* 最高点物理看板浮动框 (教学设计：直观解释 v=0 时 a 不为 0) */}
         {isAtPeak && (
           <g transform={`translate(${leftBallX + (showDoubleTrack ? -122 : 24)}, ${currentBallY - 45})`}>
             <rect width={116} height={42} fill={SCENE_COLORS.labels.panelBg} opacity={0.92} rx={4} stroke={CHART_COLORS.criticalPt} strokeWidth={1} filter="drop-shadow(0 2px 4px rgba(0,0,0,0.25))" />
@@ -744,7 +383,6 @@ export default function VerticalThrowAnimation() {
           </g>
         )}
 
-        {/* 双解交点物理浮动框 */}
         {advancedMode === 1 && targetHeightIntersections && !isLanded && (
           <>
             {Math.abs(effectiveTime - targetHeightIntersections.t1) < 0.15 && (
@@ -764,7 +402,6 @@ export default function VerticalThrowAnimation() {
           </>
         )}
 
-        {/* 落地标注 */}
         {isLanded && (
           <text x={leftBallX} y={groundY - 30} fontSize={FONT.small} fill={PHYSICS_COLORS.forceNet}
             textAnchor="middle" fontWeight="bold">落地</text>
@@ -777,7 +414,6 @@ export default function VerticalThrowAnimation() {
             速度-时间图像 (v-t 图)
           </text>
 
-          {/* X 轴科学网格垂直线 */}
           {xticks.map(t => (
             t > 0 && t < xMax && (
               <line key={`vt-grid-v-${t}`}
@@ -787,7 +423,6 @@ export default function VerticalThrowAnimation() {
               />
             )
           ))}
-          {/* Y 轴科学网格水平线 */}
           {vtYTicks.map(v => (
             v !== 0 && v > -vtVMax && v < vtVMax && (
               <line key={`vt-grid-h-${v}`}
@@ -798,14 +433,11 @@ export default function VerticalThrowAnimation() {
             )
           ))}
 
-          {/* 坐标轴 */}
           <line x1={vtInnerPad.left} y1={vtInnerPad.top} x2={vtInnerPad.left} y2={vtInnerPad.top + vtInnerH}
             stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-          {/* v=0 零线（加粗高亮） */}
           <line x1={vtInnerPad.left} y1={vtToY(0)} x2={vtInnerPad.left + vtInnerW} y2={vtToY(0)}
             stroke={CHART_COLORS.zeroline} strokeWidth={STROKE.axisBold} />
 
-          {/* X 刻度 */}
           {xticks.map(t => (
             <g key={`vt-xt-${t}`}>
               <line x1={vtToX(t)} y1={vtToY(0) - 4} x2={vtToX(t)} y2={vtToY(0) + 4}
@@ -814,7 +446,6 @@ export default function VerticalThrowAnimation() {
             </g>
           ))}
 
-          {/* Y 刻度 */}
           {vtYTicks.map(v => (
             <g key={`vt-yt-${v}`}>
               <line x1={vtInnerPad.left - 4} y1={vtToY(v)} x2={vtInnerPad.left} y2={vtToY(v)}
@@ -823,16 +454,13 @@ export default function VerticalThrowAnimation() {
             </g>
           ))}
 
-          {/* 轴标签 */}
           <text x={vtInnerPad.left + vtInnerW / 2} y={vtInnerPad.top + vtInnerH + 28}
             fontSize={10} textAnchor="middle" fill={CHART_COLORS.labelText}>t/s</text>
           <text x={vtInnerPad.left - 30} y={vtInnerPad.top + vtInnerH / 2}
             fontSize={10} textAnchor="middle" fill={CHART_COLORS.labelText}
             transform={`rotate(-90, ${vtInnerPad.left - 30}, ${vtInnerPad.top + vtInnerH / 2})`}>v/(m·s⁻¹)</text>
 
-          {/* 面积填充：根据模式选择切片或平滑 */}
           {advancedMode === 1 && sliceDensity > 0 ? (
-            /* 高级模式：微元切片矩形 */
             sliceRects.map((rect, idx) => (
               <rect key={`slice-${idx}`}
                 x={rect.x} y={rect.y} width={rect.w} height={rect.h}
@@ -842,41 +470,33 @@ export default function VerticalThrowAnimation() {
             ))
           ) : (
             <>
-              {/* 普通模式：正区域面积填充（极光蓝渐变） */}
               {vtPositiveAreaD && (
                 <path d={vtPositiveAreaD} fill="url(#aurora-blue-grad)" />
               )}
-              {/* 普通模式：负区域面积填充（极光红渐变） */}
               {vtNegativeAreaD && (
                 <path d={vtNegativeAreaD} fill="url(#aurora-red-grad)" />
               )}
             </>
           )}
 
-          {/* 真空对照曲线（全段背景虚线，提示无阻力轨迹） */}
           {airResistance > 0 && vtData.vacFull && (
             <path d={vtData.vacFull} fill="none" stroke={CHART_COLORS.asymptote} strokeWidth={1} strokeDasharray="3,3" opacity={0.6} />
           )}
 
-          {/* 实际有阻力曲线 (全段虚影背景) */}
           {vtData.airFull && (
             <path d={vtData.airFull} fill="none" stroke={VT_CHART_COLORS.velocityCurve} strokeWidth={1} opacity={0.15} />
           )}
 
-          {/* 真空对照当前时段段 (当双轨对比开启时) */}
           {showDoubleTrack && vtData.vacActive && (
             <path d={vtData.vacActive} fill="none" stroke={PHYSICS_COLORS.position} strokeWidth={1.5} opacity={0.7} />
           )}
 
-          {/* 实际有阻力当前段曲线（发光霓虹） */}
           {vtData.airActive && (
             <path d={vtData.airActive} fill="none" stroke={VT_CHART_COLORS.velocityCurve} strokeWidth={2} filter="url(#glow-filter-blue)" />
           )}
 
-          {/* 最高点穿轴交点闪烁 & 过零点切线 */}
           {isAtPeak && (
             <g>
-              {/* 图像切线示意斜率 (a = -g) */}
               <line
                 x1={vtToX(Math.max(maxHeightTime - 0.5, 0))} y1={vtToY(g * 0.5)}
                 x2={vtToX(Math.min(maxHeightTime + 0.5, xMax))} y2={vtToY(-g * 0.5)}
@@ -894,18 +514,15 @@ export default function VerticalThrowAnimation() {
             </g>
           )}
 
-          {/* 双解高度速度对应水平虚线投影 */}
           {advancedMode === 1 && targetHeightIntersections && (
             <g opacity={Math.abs(effectiveTime - targetHeightIntersections.t1) < 0.2 || Math.abs(effectiveTime - targetHeightIntersections.t2) < 0.2 ? 0.95 : 0.25}>
-              {/* t1 对应速度投影 */}
               <line
                 x1={vtInnerPad.left} y1={vtToY(vT1)}
                 x2={vtToX(targetHeightIntersections.t1)} y2={vtToY(vT1)}
                 stroke={CHART_COLORS.highlight} strokeWidth={0.8} strokeDasharray="2,2"
               />
               <circle cx={vtToX(targetHeightIntersections.t1)} cy={vtToY(vT1)} r={3.5} fill={CHART_COLORS.highlight} />
-              
-              {/* t2 对应速度投影 */}
+
               <line
                 x1={vtInnerPad.left} y1={vtToY(vT2)}
                 x2={vtToX(targetHeightIntersections.t2)} y2={vtToY(vT2)}
@@ -915,7 +532,6 @@ export default function VerticalThrowAnimation() {
             </g>
           )}
 
-          {/* 当前状态点 (实际轨道) */}
           {!isAtPeak && effectiveTime > 0 && (
             <g>
               <circle cx={vtToX(effectiveTime)} cy={vtToY(effectiveV)} r={4.5} fill={VT_CHART_COLORS.velocityCurve} />
@@ -923,18 +539,15 @@ export default function VerticalThrowAnimation() {
             </g>
           )}
 
-          {/* 当前状态点 (真空轨道，当双轨对比开启时) */}
           {showDoubleTrack && !isLanded && (
             <circle cx={vtToX(effectiveTime)} cy={vtToY(vacuumV)} r={3.5} fill={PHYSICS_COLORS.position} opacity={0.8} />
           )}
 
-          {/* 点击区域（透明覆盖） */}
           <rect x={vtInnerPad.left} y={vtInnerPad.top} width={vtInnerW} height={vtInnerH}
             fill="transparent" cursor="crosshair"
             onClick={(e) => handleChartClick(e, 'vt')}
             onMouseDown={(e) => handleChartMouseDown(e, 'vt')} />
 
-          {/* 时间精密游标发光针 */}
           {effectiveTime > 0 && (
             <g>
               <line x1={vtToX(effectiveTime)} y1={vtInnerPad.top}
@@ -945,7 +558,6 @@ export default function VerticalThrowAnimation() {
             </g>
           )}
 
-          {/* 高级模式：面积数值显示 */}
           {advancedMode === 1 && areaValues && (
             <g>
               <rect x={vtInnerPad.left + vtInnerW - 105} y={vtInnerPad.top + 6} width={100} height={42} fill={PHYSICS_COLORS.objectFillNeutral} opacity={0.85} rx={3} stroke={CHART_COLORS.gridLine} strokeWidth={0.8} />
@@ -972,7 +584,6 @@ export default function VerticalThrowAnimation() {
             位移-时间图像 (y-t 图)
           </text>
 
-          {/* X 轴科学网格垂直线 */}
           {xticks.map(t => (
             t > 0 && t < xMax && (
               <line key={`yt-grid-v-${t}`}
@@ -982,7 +593,6 @@ export default function VerticalThrowAnimation() {
               />
             )
           ))}
-          {/* Y 轴科学网格水平线 */}
           {ytYTicks.map(y => (
             y > 0 && y < ytYMax && (
               <line key={`yt-grid-h-${y}`}
@@ -993,13 +603,11 @@ export default function VerticalThrowAnimation() {
             )
           ))}
 
-          {/* 坐标轴 */}
           <line x1={ytInnerPad.left} y1={ytInnerPad.top} x2={ytInnerPad.left} y2={ytInnerPad.top + ytInnerH}
             stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
           <line x1={ytInnerPad.left} y1={ytInnerPad.top + ytInnerH} x2={ytInnerPad.left + ytInnerW} y2={ytInnerPad.top + ytInnerH}
             stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
 
-          {/* X 刻度 */}
           {xticks.map(t => (
             <g key={`yt-xt-${t}`}>
               <line x1={ytToX(t)} y1={ytInnerPad.top + ytInnerH - 4} x2={ytToX(t)} y2={ytInnerPad.top + ytInnerH + 4}
@@ -1008,7 +616,6 @@ export default function VerticalThrowAnimation() {
             </g>
           ))}
 
-          {/* Y 刻度 */}
           {ytYTicks.map(y => (
             <g key={`yt-ytick-${y}`}>
               <line x1={ytInnerPad.left - 4} y1={ytToY(y)} x2={ytInnerPad.left} y2={ytToY(y)}
@@ -1017,22 +624,18 @@ export default function VerticalThrowAnimation() {
             </g>
           ))}
 
-          {/* 轴标签 */}
           <text x={ytInnerPad.left + ytInnerW / 2} y={ytInnerPad.top + ytInnerH + 28}
             fontSize={10} textAnchor="middle" fill={CHART_COLORS.labelText}>t/s</text>
           <text x={ytInnerPad.left - 30} y={ytInnerPad.top + ytInnerH / 2}
             fontSize={10} textAnchor="middle" fill={CHART_COLORS.labelText}
             transform={`rotate(-90, ${ytInnerPad.left - 30}, ${ytInnerPad.top + ytInnerH / 2})`}>y/m</text>
 
-          {/* 最高点水平参考线 */}
           <line x1={ytInnerPad.left} y1={ytToY(maxHeight)} x2={ytInnerPad.left + ytInnerW} y2={ytToY(maxHeight)}
             stroke={CHART_COLORS.zeroline} strokeWidth={0.8}
             strokeDasharray={DASH.reference.join(' ')} opacity={0.6} />
 
-          {/* 高级模式：目标高度虚线与交点标注 */}
           {advancedMode === 1 && targetHeight > 0 && targetHeight < maxHeight && (
             <>
-              {/* 目标高度水平虚线 */}
               <line x1={ytInnerPad.left} y1={ytToY(targetHeight)}
                 x2={ytInnerPad.left + ytInnerW} y2={ytToY(targetHeight)}
                 stroke={CHART_COLORS.highlight} strokeWidth={STROKE.reference}
@@ -1041,10 +644,8 @@ export default function VerticalThrowAnimation() {
                 fontSize={FONT.small} fill={CHART_COLORS.highlight} textAnchor="end" opacity={0.8}>
                 高度 y = {targetHeight}m
               </text>
-              {/* 交点竖虚线与标注 */}
               {targetHeightIntersections && (
                 <>
-                  {/* t₁ 竖虚线 */}
                   <line x1={ytToX(targetHeightIntersections.t1)} y1={ytInnerPad.top}
                     x2={ytToX(targetHeightIntersections.t1)} y2={ytInnerPad.top + ytInnerH}
                     stroke={CHART_COLORS.highlight} strokeWidth={0.8}
@@ -1053,7 +654,6 @@ export default function VerticalThrowAnimation() {
                     fontSize={8} fill={CHART_COLORS.highlight} textAnchor="middle">
                     t₁={targetHeightIntersections.t1.toFixed(2)}s
                   </text>
-                  {/* t₂ 竖虚线 */}
                   <line x1={ytToX(targetHeightIntersections.t2)} y1={ytInnerPad.top}
                     x2={ytToX(targetHeightIntersections.t2)} y2={ytInnerPad.top + ytInnerH}
                     stroke={CHART_COLORS.highlight} strokeWidth={0.8}
@@ -1067,32 +667,26 @@ export default function VerticalThrowAnimation() {
             </>
           )}
 
-          {/* 面积填充 */}
           {ytAreaD && (
             <path d={ytAreaD} fill={XT_CHART_COLORS.positionCurve} opacity={0.08} />
           )}
 
-          {/* 真空对照曲线（全段，虚线） */}
           {airResistance > 0 && ytData.vacFull && (
             <path d={ytData.vacFull} fill="none" stroke={CHART_COLORS.asymptote} strokeWidth={1} strokeDasharray="3,3" opacity={0.6} />
           )}
 
-          {/* 实际有阻力位置曲线 (全段背景) */}
           {ytData.airFull && (
             <path d={ytData.airFull} fill="none" stroke={XT_CHART_COLORS.positionCurve} strokeWidth={1} opacity={0.15} />
           )}
 
-          {/* 真空对照当前时段段 (当双轨对比开启时) */}
           {showDoubleTrack && ytData.vacActive && (
             <path d={ytData.vacActive} fill="none" stroke={PHYSICS_COLORS.position} strokeWidth={1.5} opacity={0.7} />
           )}
 
-          {/* 实际有阻力当前时段曲线 (发光霓虹) */}
           {ytData.airActive && (
             <path d={ytData.airActive} fill="none" stroke={XT_CHART_COLORS.positionCurve} strokeWidth={2} filter="url(#glow-filter-blue)" />
           )}
 
-          {/* 最高点标注 */}
           {isAtPeak && (
             <g>
               <circle cx={ytToX(maxHeightTime)} cy={ytToY(maxHeight)} r={5}
@@ -1103,23 +697,19 @@ export default function VerticalThrowAnimation() {
             </g>
           )}
 
-          {/* 当前状态点 (实际轨道) */}
           {!isAtPeak && effectiveTime > 0 && (
             <circle cx={ytToX(effectiveTime)} cy={ytToY(clampedY)} r={4.5} fill={XT_CHART_COLORS.positionCurve} />
           )}
 
-          {/* 当前状态点 (真空轨道，当双轨对比开启时) */}
           {showDoubleTrack && !isLanded && (
             <circle cx={ytToX(effectiveTime)} cy={ytToY(clampedVacuumY)} r={3.5} fill={PHYSICS_COLORS.position} opacity={0.8} />
           )}
 
-          {/* 点击区域 */}
           <rect x={ytInnerPad.left} y={ytInnerPad.top} width={ytInnerW} height={ytInnerH}
             fill="transparent" cursor="crosshair"
             onClick={(e) => handleChartClick(e, 'yt')}
             onMouseDown={(e) => handleChartMouseDown(e, 'yt')} />
 
-          {/* 时间游标精密游标针 */}
           {effectiveTime > 0 && (
             <g>
               <line x1={ytToX(effectiveTime)} y1={ytInnerPad.top}

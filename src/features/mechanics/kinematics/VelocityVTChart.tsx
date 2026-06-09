@@ -59,6 +59,9 @@ export const VelocityVTChart: FC<VelocityVTChartProps> = ({
   const px = toSvgX(t0)
   const py = toSvgY(stateT0.v)
 
+  // 割线端点：仅当 t0+deltaT 在预计算范围内时才有效
+  const isSecantValid = t0 + deltaT <= tMax
+
   // ── 平均速度 v̄ ──
   const x0 = stateT0.x
   const x1 = stateT1.x
@@ -164,7 +167,7 @@ export const VelocityVTChart: FC<VelocityVTChartProps> = ({
       })}
 
       {/* 2. Δt 位移积分面积填充 (平均速度展示) */}
-      {deltaT > 0.001 && areaPathD && (
+      {deltaT > 0.001 && areaPathD && isSecantValid && (
         <path
           d={areaPathD}
           fill="url(#area-grad-vt)"
@@ -185,7 +188,7 @@ export const VelocityVTChart: FC<VelocityVTChartProps> = ({
       )}
 
       {/* 4. 平均速度 v̄ 水平虚线段 */}
-      {deltaT > 0.001 && (
+      {deltaT > 0.001 && isSecantValid && (
         <line
           x1={toSvgX(t0)} y1={vBarY}
           x2={toSvgX(t0 + deltaT)} y2={vBarY}

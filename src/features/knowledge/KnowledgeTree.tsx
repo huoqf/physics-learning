@@ -211,7 +211,7 @@ export const KnowledgeTree: React.FC = () => {
           const isExpanded = expandedChapters.has(chapter)
           const totalNodes = nodes.length
           const masteredNodes = nodes.filter(node =>
-            masteredKnowledge.has(node.id)
+            masteredKnowledge.includes(node.id)
           ).length
 
           return (
@@ -229,7 +229,7 @@ export const KnowledgeTree: React.FC = () => {
                     <KnowledgeNodeItem
                       key={node.id}
                       node={node}
-                      isMastered={masteredKnowledge.has(node.id)}
+                      isMastered={masteredKnowledge.includes(node.id)}
                       level={0}
                     />
                   ))}

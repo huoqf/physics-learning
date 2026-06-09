@@ -1,5 +1,5 @@
 import { useCanvasSize } from '@/utils'
-import { useMemo } from 'react'
+import { useMemo, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OBJECT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
@@ -12,7 +12,7 @@ import { calculateAverageVelocity } from '@/physics'
  * Canvas 7 元素 / 5 标注（严格上限）
  */
 export default function VelocityAnimation() {
-  const { params, time, showVectors, showGrid } = useAnimationStore()
+  const { params, time, showVectors, showGrid, setIsPlaying } = useAnimationStore()
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 350 })
 
   const scene = params.scene ?? 0      // 0=公交, 1=短跑
@@ -32,6 +32,15 @@ export default function VelocityAnimation() {
   const currentX = Math.min(rawX, maxVisibleX)
   const displayTime = isAtBoundary ? (maxVisibleX - startX) / (v * scale) : time
 
+  // 物体到达边界时暂停动画，使所有依赖 time 的元素（箭头、右屏物理量等）同步冻结
+  const prevAtBoundaryRef = useRef(false)
+  useEffect(() => {
+    if (isAtBoundary && !prevAtBoundaryRef.current) {
+      setIsPlaying(false)
+    }
+    prevAtBoundaryRef.current = isAtBoundary
+  }, [isAtBoundary, setIsPlaying])
+
   // 奔跑小人步伐交替状态
   const runnerState = isAtBoundary ? 0 : Math.floor(time * 9) % 2
 
@@ -48,8 +57,8 @@ export default function VelocityAnimation() {
 
   // ── 平均速度区间（跟随物体移动）──
   // t1 = 当前时刻，t2 = 当前时刻 + Δt
-  const t1 = time
-  const t2 = time + deltaT
+  const t1 = displayTime
+  const t2 = displayTime + deltaT
   const t1Pos = startX + v * t1 * scale
   const t2Pos = startX + v * t2 * scale
   const { deltaX } = calculateAverageVelocity(

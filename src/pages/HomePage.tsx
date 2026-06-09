@@ -80,7 +80,7 @@ export default function HomePage() {
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-neutral-600">知识点掌握</span>
                   <span className="font-medium text-neutral-800">
-                    {masteredKnowledge.size} / {knowledgeTree.length}
+                    {masteredKnowledge.length} / {knowledgeTree.length}
                   </span>
                 </div>
                 <div className="h-2 bg-neutral-200 rounded-full overflow-hidden">
@@ -100,7 +100,7 @@ export default function HomePage() {
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-neutral-600">动画学习</span>
                   <span className="font-medium text-neutral-800">
-                    {viewedAnimations.size} / {Object.keys(animationRegistry).length}
+                    {viewedAnimations.length} / {Object.keys(animationRegistry).length}
                   </span>
                 </div>
                 <div className="h-2 bg-neutral-200 rounded-full overflow-hidden">

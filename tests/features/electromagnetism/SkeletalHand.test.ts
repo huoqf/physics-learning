@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getFingersForPose, type HandPose, type Finger } from '@/features/electromagnetism/SkeletalHand'
+import { getFingersForPose, type HandPose, type Finger } from '@/features/electromagnetism/shared/SkeletalHand'
 
 /** 复现 SkeletalHand.tsx 内部的 computeFingerTip（不导出，但需要测试其行为）。
  *  这里用相同的算法计算指尖坐标，验证"标签位置 = 指尖位置"。 */
