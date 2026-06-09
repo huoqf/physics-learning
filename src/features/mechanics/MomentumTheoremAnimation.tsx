@@ -1,170 +1,502 @@
 import { useCanvasSize } from '@/utils'
+import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, CANVAS_STYLE, STROKE } from '@/theme/physics'
+import {
+  calculateFallVelocity,
+  calculateAverageImpactForce,
+  calculateCollisionTime,
+  calculateFluidImpactForce,
+} from '@/physics/momentumTheorem'
+import {
+  PHYSICS_COLORS,
+  SCENE_COLORS,
+  CANVAS_STYLE,
+  STROKE,
+  FONT,
+} from '@/theme/physics'
+
+/** 动量定理动画布局常量 */
+const MT_LAYOUT = {
+  /** Canvas 安全余量 (px) */
+  canvasPadding: 50,
+  /** 地面线 Y 偏移 (px) */
+  groundOffset: 80,
+  /** 球基础半径 (px) */
+  ballBaseRadius: 16,
+  /** 质量缩放半径系数 (px/kg) */
+  massRadiusScale: 2,
+  /** 缓冲垫高度 (px) */
+  cushionHeight: 20,
+  /** 缓冲垫最大压缩量 (px) */
+  cushionMaxCompression: 30,
+  /** 下落缩放因子 (px per m) */
+  fallScale: 40,
+  /** 速度箭头最大长度 (px) */
+  vectorMaxLength: 80,
+  /** 力条最大长度 (px) */
+  forceBarMaxLength: 100,
+  /** 进阶模式：挡板宽度 (px) */
+  plateWidth: 16,
+  /** 进阶模式：挡板高度 (px) */
+  plateHeight: 80,
+  /** 进阶模式：管口宽度 (px) */
+  nozzleWidth: 30,
+  /** 进阶模式：粒子半径 (px) */
+  particleRadius: 3,
+  /** 进阶模式：弹簧线段长度 (px) */
+  springSegmentLen: 8,
+  /** 进阶模式：弹簧圈数 */
+  springCoils: 6,
+  /** 重力加速度 (m/s²) */
+  g: 9.8,
+} as const
+
+/** 粒子数据结构 */
+interface Particle {
+  x: number
+  y: number
+  vx: number
+  vy: number
+  age: number
+  hit: boolean
+}
 
 export default function MomentumTheoremAnimation() {
-  const { params, time, showVectors, showFormulas, showGrid } = useAnimationStore()
-  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 400 })
+  const { params, time, showVectors } = useAnimationStore()
+  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 450 })
 
-  const { m = 2, F = 5, t_duration = 3, v0 = 0 } = params
-  const a = F / m
-  const impulse = F * t_duration
-  const v_final = v0 + a * t_duration
-  const p0 = m * v0
-  const p_final = m * v_final
-  const delta_p = p_final - p0
+  const {
+    m = 2,
+    h = 2,
+    k = 5,
+    rho = 1000,
+    S = 0.01,
+    v_fluid = 5,
+    alpha = 0,
+    advancedMode = 0,
+  } = params
 
-  const scale = 25
-  const groundY = canvasSize.height - 80
-  const startX = 100
-  const currentTime = Math.min(time, t_duration)
-  const currentV = v0 + a * currentTime
-  const currentP = m * currentV
-  const displacement = v0 * currentTime + 0.5 * a * currentTime * currentTime
-  const currentX = startX + displacement * scale
+  const isAdvanced = advancedMode === 1
+  const groundY = canvasSize.height - MT_LAYOUT.groundOffset
 
-  const gridLines = []
-  if (showGrid) {
-    for (let i = 0; i <= 10; i++) {
-      const xPos = startX + (i * (canvasSize.width - 200)) / 10
-      gridLines.push(
-        <line
-          key={`gridline-${i}`}
-          x1={xPos}
-          y1={groundY - 80}
-          x2={xPos}
-          y2={groundY + 20}
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={1}
-          strokeDasharray="4,4"
-        />
-      )
-    }
+  // ── 基础模式：缓冲垫碰撞 ──────────────────────────────────
+  const fallV = calculateFallVelocity(h, MT_LAYOUT.g)
+  const collisionDt = calculateCollisionTime(m, k)
+  const F_avg = calculateAverageImpactForce(m, fallV, collisionDt, MT_LAYOUT.g)
+
+  // 动画阶段：0→1 下落，1→2 碰撞压缩，2→3 回弹
+  const fallTime = Math.sqrt(2 * h / MT_LAYOUT.g)
+  const totalTime = fallTime + collisionDt * 2
+
+  const currentT = time % (totalTime + 1)
+  let ballY: number
+  let phase: 'falling' | 'compressing' | 'recovering' | 'done'
+  let cushionCompression = 0
+
+  const R_ball = MT_LAYOUT.ballBaseRadius + m * MT_LAYOUT.massRadiusScale
+  const cushionTopY = groundY - MT_LAYOUT.cushionHeight
+  const ballRestY = cushionTopY - R_ball
+
+  if (currentT < fallTime) {
+    phase = 'falling'
+    const dy = 0.5 * MT_LAYOUT.g * currentT * currentT
+    ballY = ballRestY - (h * MT_LAYOUT.fallScale) + dy * MT_LAYOUT.fallScale
+  } else if (currentT < fallTime + collisionDt) {
+    phase = 'compressing'
+    const dt = currentT - fallTime
+    const ratio = dt / collisionDt
+    cushionCompression = ratio * MT_LAYOUT.cushionMaxCompression
+    ballY = ballRestY + cushionCompression
+  } else if (currentT < fallTime + collisionDt * 2) {
+    phase = 'recovering'
+    const dt = currentT - fallTime - collisionDt
+    const ratio = 1 - dt / collisionDt
+    cushionCompression = ratio * MT_LAYOUT.cushionMaxCompression
+    ballY = ballRestY + cushionCompression
+  } else {
+    phase = 'done'
+    ballY = ballRestY
+    cushionCompression = 0
   }
+
+  const ballCenterX = canvasSize.width * 0.35
+
+  // ── 进阶模式：流体冲击 ──────────────────────────────────────
+  const impactForce = calculateFluidImpactForce(rho, S, v_fluid, alpha)
+
+  // 挡板位置
+  const plateX = canvasSize.width * 0.65
+  const plateTopY = groundY - MT_LAYOUT.plateHeight - 20
+  const plateBottomY = groundY - 20
+
+  // 弹簧形变量（与冲击力成正比）
+  const maxSpringCompression = 25
+  const maxForceRef = rho * 0.05 * 10 * 10 * 2 // 最大可能力
+  const springCompression = Math.min(
+    (impactForce / maxForceRef) * maxSpringCompression,
+    maxSpringCompression
+  )
+
+  // 粒子系统
+  const particles = useMemo(() => {
+    const result: Particle[] = []
+    const nParticles = 12
+    const nozzleX = canvasSize.width * 0.25
+    const nozzleY = (plateTopY + plateBottomY) / 2
+
+    for (let i = 0; i < nParticles; i++) {
+      const phase = (time * 2 + i * 0.3) % 3
+      const pxPerUnit = (plateX - nozzleX) / 3
+
+      if (phase < 2) {
+        // 飞行中
+        const x = nozzleX + phase * pxPerUnit
+        const y = nozzleY + (i % 3 - 1) * 8
+        result.push({ x, y, vx: v_fluid * 10, vy: 0, age: phase, hit: false })
+      } else {
+        // 碰后
+        const hitX = plateX - 5
+        const dt = phase - 2
+        const reboundVx = alpha * v_fluid * 10
+        const x = hitX - reboundVx * dt
+        const y = nozzleY + (i % 3 - 1) * 8 + dt * 15 * (i % 2 === 0 ? 1 : -1)
+        result.push({ x, y, vx: -reboundVx, vy: dt * 15, age: phase, hit: true })
+      }
+    }
+    return result
+  }, [time, v_fluid, alpha, plateX, plateTopY, plateBottomY])
+
+  // 弹簧路径
+  const springPath = useMemo(() => {
+    const springStartX = plateX + MT_LAYOUT.plateWidth + 5
+    const springEndX = springStartX + 60 - springCompression
+    const springY = (plateTopY + plateBottomY) / 2
+    const points: string[] = [`M ${springStartX},${springY}`]
+    const segLen = (springEndX - springStartX) / (MT_LAYOUT.springCoils * 2)
+    for (let i = 0; i < MT_LAYOUT.springCoils * 2; i++) {
+      const x = springStartX + (i + 1) * segLen
+      const y = springY + (i % 2 === 0 ? -8 : 8)
+      points.push(`L ${x},${y}`)
+    }
+    points.push(`L ${springEndX},${springY}`)
+    return points.join(' ')
+  }, [springCompression, plateX, plateTopY, plateBottomY])
+
+  // 矢量映射
+  const vMaxRef = 15
+  const mapArrowLen = (val: number) => (Math.abs(val) / vMaxRef) * MT_LAYOUT.vectorMaxLength
+  const fMaxRef = 200
+  const mapForceBar = (val: number) => (Math.abs(val) / fMaxRef) * MT_LAYOUT.forceBarMaxLength
 
   return (
     <div ref={containerRef} className="w-full h-full">
-      <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
-        {gridLines}
+      <svg
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className="bg-white rounded-lg shadow-inner"
+      >
+        {/* ========== defs ========== */}
+        <defs>
+          <radialGradient id="steel-sphere-grad-mt" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.steelSphereGrad[0]} />
+            <stop offset="40%" stopColor={SCENE_COLORS.materials.steelSphereGrad[1]} />
+            <stop offset="80%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
+          </radialGradient>
+          <marker id="arrowhead-mt-v" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
+          </marker>
+          <marker id="arrowhead-mt-f" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.forceNet} />
+          </marker>
+          <marker id="arrowhead-mt-p" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.momentum} />
+          </marker>
+          {/* 流体渐变 */}
+          <linearGradient id="fluid-grad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor={PHYSICS_COLORS.velocity} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={PHYSICS_COLORS.velocity} stopOpacity="0.8" />
+          </linearGradient>
+        </defs>
 
+        {/* ========== 地面线 ========== */}
         <line
-          x1={50}
+          x1={MT_LAYOUT.canvasPadding}
           y1={groundY}
-          x2={canvasSize.width - 50}
+          x2={canvasSize.width - MT_LAYOUT.canvasPadding}
           y2={groundY}
           stroke={PHYSICS_COLORS.labelText}
           strokeWidth={STROKE.groundLine}
         />
 
-        <line
-          x1={startX}
-          y1={groundY - 100}
-          x2={startX}
-          y2={groundY + 20}
-          stroke={PHYSICS_COLORS.axis}
-          strokeWidth={2}
-          strokeDasharray="8,4"
-        />
-
-        <text x={startX - 10} y={groundY + 35} fontSize="12" fill={PHYSICS_COLORS.axis} textAnchor="middle">t=0</text>
-
-        <rect
-          x={currentX}
-          y={groundY - 60}
-          width={50}
-          height={50}
-          fill={PHYSICS_COLORS.objectFill}
-          stroke={PHYSICS_COLORS.objectStroke}
-          strokeWidth={CANVAS_STYLE.stroke.objectLine}
-          rx={6}
-        />
-
-        <text x={currentX + 25} y={groundY - 30} fontSize="12" fill="white" textAnchor="middle" fontWeight="bold">m={m}</text>
-
-        {showVectors && (
+        {/* ========== 基础模式：缓冲垫碰撞 ========== */}
+        {!isAdvanced && (
           <g>
-            <line
-              x1={currentX + 50}
-              y1={groundY - 35}
-              x2={currentX + 50 + F * 6}
-              y2={groundY - 35}
-              stroke={PHYSICS_COLORS.forceNet}
-              strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-              markerEnd="url(#arrowhead-mt-F)"
+            {/* 缓冲垫 */}
+            <rect
+              x={ballCenterX - 40}
+              y={cushionTopY + cushionCompression}
+              width={80}
+              height={MT_LAYOUT.cushionHeight - cushionCompression}
+              rx={4}
+              fill={PHYSICS_COLORS.elasticForce}
+              opacity={0.4}
+              stroke={PHYSICS_COLORS.elasticForce}
+              strokeWidth={1}
+            />
+
+            {/* 下落球 */}
+            <circle
+              cx={ballCenterX}
+              cy={ballY}
+              r={R_ball}
+              fill="url(#steel-sphere-grad-mt)"
+              stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine}
             />
             <text
-              x={currentX + 50 + F * 6 + 10}
-              y={groundY - 30}
-              fontSize="12"
-              fill={PHYSICS_COLORS.forceNet}
+              x={ballCenterX}
+              y={ballY + 4}
+              fontSize={FONT.smallSize}
+              fill="white"
+              textAnchor="middle"
               fontWeight="bold"
             >
-              F
+              m
             </text>
 
-            {currentV > 0 && (
-              <line
-                x1={currentX + 25}
-                y1={groundY - 80}
-                x2={currentX + 25 + currentV * 5}
-                y2={groundY - 80}
-                stroke={PHYSICS_COLORS.velocity}
-                strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                markerEnd="url(#arrowhead-mt-v)"
-              />
+            {/* 速度箭头 */}
+            {showVectors && phase === 'falling' && fallV > 0 && (
+              <g>
+                <line
+                  x1={ballCenterX}
+                  y1={ballY + R_ball + 4}
+                  x2={ballCenterX}
+                  y2={ballY + R_ball + 4 + mapArrowLen(fallV)}
+                  stroke={PHYSICS_COLORS.velocity}
+                  strokeWidth={STROKE.vectorMain}
+                  markerEnd="url(#arrowhead-mt-v)"
+                />
+                <text
+                  x={ballCenterX + 14}
+                  y={ballY + R_ball + 4 + mapArrowLen(fallV) / 2}
+                  fontSize={FONT.smallSize}
+                  fill={PHYSICS_COLORS.velocity}
+                  fontWeight="bold"
+                >
+                  v
+                </text>
+              </g>
             )}
-            {currentV > 0 && (
+
+            {/* 碰撞力条 */}
+            {showVectors && (phase === 'compressing' || phase === 'recovering') && (
+              <g>
+                <line
+                  x1={ballCenterX}
+                  y1={ballY - R_ball - 4}
+                  x2={ballCenterX}
+                  y2={ballY - R_ball - 4 - mapForceBar(F_avg)}
+                  stroke={PHYSICS_COLORS.forceNet}
+                  strokeWidth={STROKE.vectorMain * 1.5}
+                  markerEnd="url(#arrowhead-mt-f)"
+                />
+                <text
+                  x={ballCenterX + 18}
+                  y={ballY - R_ball - 4 - mapForceBar(F_avg) / 2}
+                  fontSize={FONT.smallSize}
+                  fill={PHYSICS_COLORS.forceNet}
+                  fontWeight="bold"
+                >
+                  F_avg
+                </text>
+              </g>
+            )}
+
+            {/* 高度标注线 */}
+            <line
+              x1={ballCenterX - R_ball - 20}
+              y1={ballRestY - h * MT_LAYOUT.fallScale}
+              x2={ballCenterX - R_ball - 20}
+              y2={ballRestY}
+              stroke={PHYSICS_COLORS.axis}
+              strokeWidth={1}
+              strokeDasharray="4,3"
+            />
+            <text
+              x={ballCenterX - R_ball - 25}
+              y={(ballRestY - h * MT_LAYOUT.fallScale / 2)}
+              fontSize={FONT.smallSize}
+              fill={PHYSICS_COLORS.axis}
+              textAnchor="end"
+            >
+              h
+            </text>
+
+            {/* Δt 标注 */}
+            {(phase === 'compressing' || phase === 'recovering') && (
               <text
-                x={currentX + 25 + currentV * 5 + 10}
-                y={groundY - 75}
-                fontSize="12"
-                fill={PHYSICS_COLORS.velocity}
+                x={ballCenterX + R_ball + 15}
+                y={cushionTopY + 10}
+                fontSize={FONT.smallSize}
+                fill={PHYSICS_COLORS.impulse}
                 fontWeight="bold"
               >
-                v
+                Δt = {collisionDt.toFixed(2)} s
               </text>
             )}
           </g>
         )}
 
-        {showFormulas && (
-          <g transform="translate(20, 20)">
-            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">动量定理</text>
-            <text x={0} y={25} fontSize="12" fill={PHYSICS_COLORS.axis}>
-              质量 m = {m} kg
+        {/* ========== 进阶模式：流体冲击 ========== */}
+        {isAdvanced && (
+          <g>
+            {/* 管口 */}
+            <rect
+              x={canvasSize.width * 0.2}
+              y={(plateTopY + plateBottomY) / 2 - MT_LAYOUT.nozzleWidth / 2}
+              width={30}
+              height={MT_LAYOUT.nozzleWidth}
+              rx={3}
+              fill={SCENE_COLORS.materials.steelSphereGrad[1]}
+              stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine}
+            />
+            <text
+              x={canvasSize.width * 0.2 + 15}
+              y={(plateTopY + plateBottomY) / 2 - MT_LAYOUT.nozzleWidth / 2 - 6}
+              fontSize={FONT.smallSize}
+              fill={PHYSICS_COLORS.labelTextLight}
+              textAnchor="middle"
+            >
+              管口
             </text>
-            <text x={0} y={45} fontSize="12" fill={PHYSICS_COLORS.axis}>
-              力 F = {F} N
-            </text>
-            <text x={0} y={65} fontSize="12" fill={PHYSICS_COLORS.axis}>
-              作用时间 Δt = {t_duration} s
-            </text>
-            <text x={0} y={90} fontSize="12" fill={PHYSICS_COLORS.momentum} fontWeight="bold">
-              冲量 I = FΔt = {impulse.toFixed(1)} N·s
-            </text>
-            <text x={0} y={115} fontSize="12" fill={PHYSICS_COLORS.momentum} fontWeight="bold">
-              Δp = p末 - p初 = {delta_p.toFixed(1)} kg·m/s
-            </text>
-            <text x={0} y={140} fontSize="12" fill={PHYSICS_COLORS.kineticEnergy} fontWeight="bold">
-              I = Δp
-            </text>
-            <text x={0} y={165} fontSize="12" fill={PHYSICS_COLORS.axis}>
-              当前 t = {currentTime.toFixed(2)} s
-            </text>
-            <text x={0} y={185} fontSize="12" fill={PHYSICS_COLORS.momentum}>
-              当前 p = {currentP.toFixed(2)} kg·m/s
-            </text>
+
+            {/* 流体柱（从管口到挡板） */}
+            <rect
+              x={canvasSize.width * 0.2 + 30}
+              y={(plateTopY + plateBottomY) / 2 - MT_LAYOUT.nozzleWidth / 2 + 2}
+              width={plateX - canvasSize.width * 0.2 - 35}
+              height={MT_LAYOUT.nozzleWidth - 4}
+              fill="url(#fluid-grad)"
+              rx={2}
+            />
+
+            {/* 粒子 */}
+            {particles.map((p, i) => (
+              <circle
+                key={`particle-${i}`}
+                cx={p.x}
+                cy={p.y}
+                r={MT_LAYOUT.particleRadius}
+                fill={p.hit ? PHYSICS_COLORS.impulse : PHYSICS_COLORS.velocity}
+                opacity={p.hit ? 0.5 : 0.8}
+              />
+            ))}
+
+            {/* 挡板 */}
+            <rect
+              x={plateX - springCompression}
+              y={plateTopY}
+              width={MT_LAYOUT.plateWidth}
+              height={MT_LAYOUT.plateHeight}
+              rx={3}
+              fill={SCENE_COLORS.materials.steelSphereGrad[1]}
+              stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine}
+            />
+
+            {/* 固定支架 */}
+            <rect
+              x={plateX + MT_LAYOUT.plateWidth + 55}
+              y={plateTopY - 10}
+              width={12}
+              height={MT_LAYOUT.plateHeight + 20}
+              fill={PHYSICS_COLORS.labelTextLight}
+              stroke={PHYSICS_COLORS.labelText}
+              strokeWidth={1}
+            />
+            {/* 支架斜线纹理 */}
+            {Array.from({ length: 5 }).map((_, i) => (
+              <line
+                key={`hatch-${i}`}
+                x1={plateX + MT_LAYOUT.plateWidth + 55}
+                y1={plateTopY - 10 + i * (MT_LAYOUT.plateHeight + 20) / 5}
+                x2={plateX + MT_LAYOUT.plateWidth + 55 + 12}
+                y2={plateTopY - 10 + (i + 1) * (MT_LAYOUT.plateHeight + 20) / 5}
+                stroke={PHYSICS_COLORS.labelText}
+                strokeWidth={0.8}
+              />
+            ))}
+
+            {/* 弹簧 */}
+            <path
+              d={springPath}
+              fill="none"
+              stroke={PHYSICS_COLORS.elasticForce}
+              strokeWidth={2}
+            />
+
+            {/* 冲击力箭头 */}
+            {showVectors && (
+              <g>
+                <line
+                  x1={plateX - springCompression - 5}
+                  y1={(plateTopY + plateBottomY) / 2}
+                  x2={plateX - springCompression - 5 - mapForceBar(impactForce)}
+                  y2={(plateTopY + plateBottomY) / 2}
+                  stroke={PHYSICS_COLORS.forceNet}
+                  strokeWidth={STROKE.vectorMain * 1.5}
+                  markerEnd="url(#arrowhead-mt-f)"
+                />
+                <text
+                  x={plateX - springCompression - 10 - mapForceBar(impactForce) / 2}
+                  y={(plateTopY + plateBottomY) / 2 - 10}
+                  fontSize={FONT.smallSize}
+                  fill={PHYSICS_COLORS.forceNet}
+                  fontWeight="bold"
+                  textAnchor="middle"
+                >
+                  F = {impactForce.toFixed(1)} N
+                </text>
+
+                {/* 流速标注 */}
+                <text
+                  x={(canvasSize.width * 0.2 + 30 + plateX) / 2}
+                  y={(plateTopY + plateBottomY) / 2 - MT_LAYOUT.nozzleWidth / 2 - 8}
+                  fontSize={FONT.smallSize}
+                  fill={PHYSICS_COLORS.velocity}
+                  fontWeight="bold"
+                  textAnchor="middle"
+                >
+                  v = {v_fluid.toFixed(1)} m/s
+                </text>
+
+                {/* Δm 标注框 */}
+                <rect
+                  x={(canvasSize.width * 0.2 + 30 + plateX) / 2 - 15}
+                  y={(plateTopY + plateBottomY) / 2 - MT_LAYOUT.nozzleWidth / 2 + 2}
+                  width={30}
+                  height={MT_LAYOUT.nozzleWidth - 4}
+                  fill="none"
+                  stroke={PHYSICS_COLORS.momentum}
+                  strokeWidth={1.5}
+                  strokeDasharray="3,2"
+                />
+                <text
+                  x={(canvasSize.width * 0.2 + 30 + plateX) / 2}
+                  y={(plateTopY + plateBottomY) / 2 + MT_LAYOUT.nozzleWidth / 2 + 14}
+                  fontSize={FONT.smallSize}
+                  fill={PHYSICS_COLORS.momentum}
+                  fontWeight="bold"
+                  textAnchor="middle"
+                >
+                  Δm
+                </text>
+              </g>
+            )}
           </g>
         )}
-
-        <defs>
-          <marker id="arrowhead-mt-F" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.forceNet} />
-          </marker>
-          <marker id="arrowhead-mt-v" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-        </defs>
       </svg>
     </div>
   )

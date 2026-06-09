@@ -100,9 +100,6 @@ export default function AnimationPage() {
     setTime(0)
     currentTimeRef.current = 0
     setIsPlaying(false)
-    if (config) {
-      setParams({ ...config.defaultParams, advancedMode: params.advancedMode ?? 0 })
-    }
   }
 
   if (!config || !config.Component) {

@@ -113,8 +113,30 @@ export default function KineticEnergyAnimation() {
   const carX = padding + state.x * scale
   const carY = mode === 0 ? groundY : groundY - (R - state.y) * scale
   const ballR = objW * 0.45
-  const ballCX = carX
-  const ballCY = carY - ballR
+
+  // 球心位置：普通模式水平运动；进阶模式圆弧沿法向偏移（轨道外侧）
+  let ballCX: number
+  let ballCY: number
+  if (mode === 0) {
+    ballCX = carX
+    ballCY = carY - ballR
+  } else {
+    const trackRadius = R * scale
+    if (state.phase === 0) {
+      // 圆弧阶段：沿法向偏移（轨道外侧），底端附近混合到垂直上方保证过渡平滑
+      const nx = padding + (trackRadius + ballR) * Math.sin(state.theta)
+      const ny = groundY - (trackRadius + ballR) * Math.cos(state.theta)
+      const tx = padding + trackRadius
+      const ty = groundY - ballR
+      const blend = Math.max(0, Math.min(1, (state.theta - (Math.PI / 2 - 0.1)) / 0.1))
+      ballCX = nx + (tx - nx) * blend
+      ballCY = ny + (ty - ny) * blend
+    } else {
+      // 水平阶段：球在水平地面上方
+      ballCX = padding + state.x * scale
+      ballCY = groundY - ballR
+    }
+  }
 
   // ── 能量对比柱数值 ──
   const initialEk = 0.5 * m * v0 * v0

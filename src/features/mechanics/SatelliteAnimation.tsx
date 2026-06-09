@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useCallback } from 'react'
+import { useState, useRef, useMemo, useCallback, useEffect } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateOrbitalSpeed } from '@/physics'
@@ -23,12 +23,16 @@ const LAYOUT = {
     rSync: 21.0e6,   // 同步轨道实际半径 (m)
     timeScale: 500,  // 物理时间加速比例
   },
-  // 模式 1 (发射模式) 参数
+  // 模式 1 (发射模式) 参数 — 方案A：低轨快速轨道演示
   mode1: {
-    rLaunchRatio: 1.35, // 起抛高度比例 (1.35 * EARTH_RADIUS)
-    timeScale: 75,     // 物理时间加速（降低以延长动画，约6.7秒可见轨道）
-    maxSteps: 10000,    // 极坐标时间步长上限
+    rLaunchRatio: 1.05, // 起抛高度比例 (1.05 * EARTH_RADIUS ≈ 320km 低轨)
+    timeScale: 400,     // 入轨后物理时间加速（400×，约10秒可见1~2圈）
+    maxPhysicsTime: 7200, // 最大物理时间（秒），低轨可跑约2圈
     dt: 0.05,
+    launchDuration: 3,   // 垂直起飞持续时间（秒）
+    turnDuration: 5,     // 重力转弯持续时间（秒）
+    orbitEntryTime: 8,   // 入轨总时刻（秒）
+    orbitEndAngle: Math.PI / 2, // 重力转弯终点：水平切向（90°）
   },
   // 画中画卡片参数（统一比例系数驱动）
   card: {
@@ -98,21 +102,29 @@ const VTCARD = {
 }
 
 export default function SatelliteAnimation() {
-  const { params, updateParam, showVectors, showGrid, time, setIsPlaying } = useAnimationStore()
+  const { params, updateParam, showVectors, showGrid, time, isPlaying, setIsPlaying } = useAnimationStore()
   const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
 
   const {
     r = 7.0,
     mode = 0,
-    v0 = 7.9,
+    v0 = 7.7,
     isLaunched = 0,
     showChart = 1,
     showCompare = 1
   } = params
 
-  const centerX = mode === 1 ? canvasSize.width * 0.38 : canvasSize.width / 2
+  // 全局播放按钮联动：发射模式下未发射时，点播放自动触发发射
+  useEffect(() => {
+    if (mode === 1 && isPlaying && isLaunched === 0) {
+      updateParam('isLaunched', 1)
+    }
+  }, [mode, isPlaying, isLaunched, updateParam])
+
+  // 模式1入轨后居中，让完整轨道对称显示
+  const centerX = mode === 1 ? canvasSize.width * 0.5 : canvasSize.width / 2
   const centerY = canvasSize.height / 2
-  
+
   // ── 模式 1：发射轨道三阶段物理计算与状态机 ──
   const launchData = useMemo(() => {
     if (mode !== 1) return null
@@ -120,6 +132,12 @@ export default function SatelliteAnimation() {
     const r0 = LAYOUT.mode1.rLaunchRatio * EARTH_RADIUS // 目标在轨半径
     const v0_m = v0 * 1000
     const v_c = Math.sqrt(GRAVITATIONAL_CONSTANT * EARTH_MASS / r0)
+    const alpha = (r0 * v0_m * v0_m) / (GRAVITATIONAL_CONSTANT * EARTH_MASS)
+    const e = Math.abs(alpha - 1)
+    const isFarOrigin = v0_m < v_c
+    const p = isFarOrigin ? r0 * (1 - e) : r0 * (1 + e)
+    const h = r0 * v0_m
+    const orbitEntryAngle = LAYOUT.mode1.orbitEndAngle // π/2
 
     // 如果未发射，固定在文昌发射场 (theta = 0, r = EARTH_RADIUS)
     if (isLaunched === 0) {
@@ -129,9 +147,8 @@ export default function SatelliteAnimation() {
         theta: 0,
         r_phys: EARTH_RADIUS,
         satAngle: 0,
-        orbitPoints: [],
-        r0,
-        v_c
+        orbitPoints: [] as [number, number][],
+        r0, v_c, e, p, h, isFarOrigin, alpha
       }
     }
 
@@ -143,63 +160,60 @@ export default function SatelliteAnimation() {
     let crashTheta = 0
 
     const t_animation = time
+    const entryT = LAYOUT.mode1.orbitEntryTime
 
-    if (t_animation < 3) {
+    if (t_animation < LAYOUT.mode1.launchDuration) {
       // 1. 垂直起飞阶段 (0 <= t < 3)
       phase = 'liftoff'
-      const progress = t_animation / 3
-      r_phys = EARTH_RADIUS + progress * 0.15 * EARTH_RADIUS
+      const progress = t_animation / LAYOUT.mode1.launchDuration
+      // smoothstep 缓动，更自然
+      const eased = progress * progress * (3 - 2 * progress)
+      r_phys = EARTH_RADIUS + eased * (r0 - EARTH_RADIUS)
       theta = 0
-      satAngle = 0 // 径向向外发射方向（火箭默认头部朝右，旋转0）
-    } else if (t_animation < 8) {
+      satAngle = 0 // 径向向外，火箭头部默认朝右（0°）
+    } else if (t_animation < entryT) {
       // 2. 重力转弯阶段 (3 <= t < 8)
       phase = 'gravityTurn'
-      const progress = (t_animation - 3) / 5
-      const eased = 1 - Math.pow(1 - progress, 2)
+      const progress = (t_animation - LAYOUT.mode1.launchDuration) / LAYOUT.mode1.turnDuration
+      const eased = 1 - Math.pow(1 - progress, 2) // ease-out
 
-      r_phys = EARTH_RADIUS * (1.15 + 0.20 * eased)
-      theta = 0.6 * eased
-      // 姿态偏转插值：从径向朝外(0)偏转至切向(-theta - PI/2)。
-      // 对应旋转角：-theta - (Math.PI / 2) * eased
-      satAngle = -theta - (Math.PI / 2) * eased
+      // 极角从 0 匀速转到 π/2（水平切向）
+      theta = orbitEntryAngle * eased
+      // 半径保持入轨半径（低轨，简化教学模型）
+      r_phys = r0
+      // 姿态偏转：火箭从垂直向上（0）偏转至水平向左（-π/2）
+      // 因为火箭头部默认朝右（0°），垂直向上需要旋转 -π/2；水平切向（逆时针轨道）需要旋转 -π
+      satAngle = -Math.PI / 2 - (Math.PI / 2) * eased
     } else {
       // 3. 在轨环绕阶段 (t >= 8)
       phase = 'orbit'
-      const alpha = (r0 * v0_m * v0_m) / (GRAVITATIONAL_CONSTANT * EARTH_MASS)
-      const e = Math.abs(alpha - 1)
-      const isFarOrigin = v0_m < v_c
+      const orbitTime = (t_animation - entryT) * LAYOUT.mode1.timeScale
 
-      const p = isFarOrigin ? r0 * (1 - e) : r0 * (1 + e)
-      const h = r0 * v0_m
-
-      theta = 0.6
+      theta = orbitEntryAngle
       let simT = 0
-      const timeScale = LAYOUT.mode1.timeScale
-      const targetT = (t_animation - 8) * timeScale
-      
-      // 改进的积分策略：自适应步长 + 物理时间上限
-      const maxPhysicsTime = 500 // 最大物理时间（秒），确保动画约6.7秒
-      const minDt = 0.001 // 最小步长（近地点附近更精细）
-      const maxDt = 0.05   // 最大步长（远地点附近）
-      let dt = 0.005       // 初始步长
+      const maxPhysicsTime = LAYOUT.mode1.maxPhysicsTime
+      const minDt = 0.001
+      const maxDt = 0.05
+      let dt = 0.005
 
-      while (simT < targetT && simT < maxPhysicsTime) {
-        const curR = isFarOrigin ? p / (1 - e * Math.cos(theta - 0.6)) : p / (1 + e * Math.cos(theta - 0.6))
+      while (simT < orbitTime && simT < maxPhysicsTime) {
+        const curR = isFarOrigin
+          ? p / (1 - e * Math.cos(theta - orbitEntryAngle))
+          : p / (1 + e * Math.cos(theta - orbitEntryAngle))
         if (curR < EARTH_RADIUS * 0.99) {
           crashed = true
           crashTheta = theta
           break
         }
-        
-        // 自适应步长：根据轨道位置动态调整
-        // 近地点附近（r小，速度大）用小步长，远地点附近用大步长
+
+        // 自适应步长
         const rRatio = curR / r0
         if (rRatio < 0.5) {
-          dt = Math.max(minDt, dt * 0.5) // 近地点：减小步长
+          dt = Math.max(minDt, dt * 0.5)
         } else if (rRatio > 1.5) {
-          dt = Math.min(maxDt, dt * 1.05) // 远地点：适当增大步长
+          dt = Math.min(maxDt, dt * 1.05)
         }
-        
+
         const dTheta = (h / (curR * curR)) * dt
         theta += dTheta
         simT += dt
@@ -208,28 +222,27 @@ export default function SatelliteAnimation() {
       r_phys = crashed
         ? EARTH_RADIUS
         : isFarOrigin
-          ? p / (1 - e * Math.cos(theta - 0.6))
-          : p / (1 + e * Math.cos(theta - 0.6))
-      
-      // 在轨阶段，卫星旋转角是 theta。
-      // 因为在模式0里渲染角度也是使用 orbital angle 传入，所以直接传入 theta
+          ? p / (1 - e * Math.cos(theta - orbitEntryAngle))
+          : p / (1 + e * Math.cos(theta - orbitEntryAngle))
+
+      // 卫星在轨阶段，旋转角 = theta（沿切向）
       satAngle = crashed ? crashTheta : theta
     }
 
-    // 轨道预测线点 (以 0.6 弧度为中心对称展开)
+    // ── 预渲染完整轨道（2圈，供主画面和 CAM-01 共用）──
     const orbitPoints: [number, number][] = []
-    const steps = 120
-    const alpha = (r0 * v0_m * v0_m) / (GRAVITATIONAL_CONSTANT * EARTH_MASS)
-    const e = Math.abs(alpha - 1)
-    const isFarOrigin = v0_m < v_c
-    const p = isFarOrigin ? r0 * (1 - e) : r0 * (1 + e)
-    const maxTheta = v0_m >= Math.sqrt(2 * GRAVITATIONAL_CONSTANT * EARTH_MASS / r0) ? Math.PI * 0.85 : Math.PI * 2.0
+    const orbitSteps = 240
+    const maxTheta = v0_m >= Math.sqrt(2 * GRAVITATIONAL_CONSTANT * EARTH_MASS / r0)
+      ? Math.PI * 0.85  // 逃逸：只画一段双曲线
+      : Math.PI * 4.0    // 环绕：画2圈完整椭圆
 
-    for (let i = 0; i <= steps; i++) {
-      const thetaOffset = -maxTheta + (i / steps) * (2 * maxTheta)
-      const curR = isFarOrigin ? p / (1 - e * Math.cos(thetaOffset)) : p / (1 + e * Math.cos(thetaOffset))
+    for (let i = 0; i <= orbitSteps; i++) {
+      const thetaOffset = -maxTheta + (i / orbitSteps) * (2 * maxTheta)
+      const curR = isFarOrigin
+        ? p / (1 - e * Math.cos(thetaOffset))
+        : p / (1 + e * Math.cos(thetaOffset))
       if (curR >= EARTH_RADIUS * 0.98) {
-        orbitPoints.push([0.6 + thetaOffset, curR])
+        orbitPoints.push([orbitEntryAngle + thetaOffset, curR])
       }
     }
 
@@ -240,8 +253,7 @@ export default function SatelliteAnimation() {
       r_phys,
       satAngle,
       orbitPoints,
-      r0,
-      v_c
+      r0, v_c, e, p, h, isFarOrigin, alpha
     }
   }, [mode, v0, isLaunched, time])
 
@@ -263,45 +275,50 @@ export default function SatelliteAnimation() {
     const isFarOrigin = v0_m < v_c
     const p = isFarOrigin ? r0 * (1 - e) : r0 * (1 + e)
     const h = r0 * v0_m
+    const orbitEntryAngle = LAYOUT.mode1.orbitEndAngle
+    const entryT = LAYOUT.mode1.orbitEntryTime
 
     for (let i = 0; i <= steps; i++) {
       const t_sim = (i / steps) * 15
       let v_val = 0
-      if (t_sim < 8) {
-        v_val = v0 * (t_sim / 8)
+      if (t_sim < entryT) {
+        // 发射阶段：速度从 0 线性增加到 v0
+        v_val = v0 * (t_sim / entryT)
       } else {
-        let theta = 0.6
+        // 轨道阶段：按开普勒力学积分求瞬时速度
+        let theta = orbitEntryAngle
         let simT = 0
         const timeScale = LAYOUT.mode1.timeScale
-        const targetT = (t_sim - 8) * timeScale
-        const maxPhysicsTime = 500
+        const targetT = (t_sim - entryT) * timeScale
+        const maxPhysicsTime = LAYOUT.mode1.maxPhysicsTime
         const minDt = 0.001
         const maxDt = 0.05
         let dt = 0.005
         let crashed = false
 
         while (simT < targetT && simT < maxPhysicsTime) {
-          const curR = isFarOrigin ? p / (1 - e * Math.cos(theta - 0.6)) : p / (1 + e * Math.cos(theta - 0.6))
+          const curR = isFarOrigin
+            ? p / (1 - e * Math.cos(theta - orbitEntryAngle))
+            : p / (1 + e * Math.cos(theta - orbitEntryAngle))
           if (curR < EARTH_RADIUS * 0.99) {
             crashed = true
             break
           }
-          
-          // 自适应步长
           const rRatio = curR / r0
           if (rRatio < 0.5) {
             dt = Math.max(minDt, dt * 0.5)
           } else if (rRatio > 1.5) {
             dt = Math.min(maxDt, dt * 1.05)
           }
-          
           const dTheta = (h / (curR * curR)) * dt
           theta += dTheta
           simT += dt
         }
 
         if (!crashed) {
-          const curR = isFarOrigin ? p / (1 - e * Math.cos(theta - 0.6)) : p / (1 + e * Math.cos(theta - 0.6))
+          const curR = isFarOrigin
+            ? p / (1 - e * Math.cos(theta - orbitEntryAngle))
+            : p / (1 + e * Math.cos(theta - orbitEntryAngle))
           const v_sq = v0_m * v0_m + 2 * GRAVITATIONAL_CONSTANT * EARTH_MASS * (1 / curR - 1 / r0)
           v_val = v_sq > 0 ? Math.sqrt(v_sq) / 1000 : 0
         } else {
@@ -316,7 +333,7 @@ export default function SatelliteAnimation() {
   // ── 像素映射比例尺 ──
   const scale = LAYOUT.earth.radiusPx / EARTH_RADIUS // 像素/米 比例尺
   const earthRadiusPx = EARTH_RADIUS * scale
-  
+
   // ── 模式 0 轨道及坐标 ──
   const r_meters = r * 1e6
   const orbitRadiusPx = r_meters * scale
@@ -357,7 +374,7 @@ export default function SatelliteAnimation() {
   let satLaunchY = centerY
   let satAngle = 0
   let isRocket = false
-  
+
   if (mode === 1 && launchData) {
     const { theta, r_phys, phase } = launchData
     satLaunchX = centerX + r_phys * scale * Math.cos(theta)
@@ -365,7 +382,6 @@ export default function SatelliteAnimation() {
     satAngle = launchData.satAngle
     isRocket = phase === 'liftoff' || phase === 'gravityTurn'
   }
-
 
   // ── 鼠标与图表拖拽交互 ──
   const [dragTarget, setDragTarget] = useState<'none' | 'sat'>('none')
@@ -503,45 +519,45 @@ export default function SatelliteAnimation() {
     const angleDeg = (angleRad * 180) / Math.PI
     // 动态尾焰高度
     const flameHeight = 6 + Math.sin(time * 40) * 3
-    
+
     return (
       <g transform={`rotate(${angleDeg}) scale(${drawScale})`}>
         {/* 火箭尾焰（喷火） */}
-        <path 
-          d={`M -8 -2 L -${8 + flameHeight} 0 L -8 2 Z`} 
-          fill="url(#rocket-fire-grad)" 
-          opacity={0.95} 
+        <path
+          d={`M -8 -2 L -${8 + flameHeight} 0 L -8 2 Z`}
+          fill="url(#rocket-fire-grad)"
+          opacity={0.95}
         />
         {/* 火箭主体 */}
-        <rect 
-          x={-8} 
-          y={-2.5} 
-          width={16} 
-          height={5} 
-          rx={1} 
-          fill="#e2e8f0" 
-          stroke="#475569" 
-          strokeWidth={0.6} 
+        <rect
+          x={-8}
+          y={-2.5}
+          width={16}
+          height={5}
+          rx={1}
+          fill="#e2e8f0"
+          stroke="#475569"
+          strokeWidth={0.6}
         />
         {/* 火箭头部整流罩 */}
-        <path 
-          d="M 8 -2.5 L 13 0 L 8 2.5 Z" 
-          fill="#ef4444" 
-          stroke="#475569" 
-          strokeWidth={0.6} 
+        <path
+          d="M 8 -2.5 L 13 0 L 8 2.5 Z"
+          fill="#ef4444"
+          stroke="#475569"
+          strokeWidth={0.6}
         />
         {/* 尾翼 */}
-        <path 
-          d="M -8 -2.5 L -11 -5 L -6 -2.5 Z" 
-          fill="#475569" 
-          stroke="#475569" 
-          strokeWidth={0.5} 
+        <path
+          d="M -8 -2.5 L -11 -5 L -6 -2.5 Z"
+          fill="#475569"
+          stroke="#475569"
+          strokeWidth={0.5}
         />
-        <path 
-          d="M -8 2.5 L -11 5 L -6 2.5 Z" 
-          fill="#475569" 
-          stroke="#475569" 
-          strokeWidth={0.5} 
+        <path
+          d="M -8 2.5 L -11 5 L -6 2.5 Z"
+          fill="#475569"
+          stroke="#475569"
+          strokeWidth={0.5}
         />
       </g>
     )
@@ -583,17 +599,17 @@ export default function SatelliteAnimation() {
 
         {/* 3. 大陆剪影 (科技灰拼贴，零颜色硬编码) */}
         <path
-          d={`M ${centerX - 12} ${centerY - 18} 
-              Q ${centerX - 5} ${centerY - 22} ${centerX + 8} ${centerY - 14} 
-              Q ${centerX + 18} ${centerY - 5} ${centerX + 10} ${centerY + 8} 
-              Q ${centerX - 2} ${centerY + 18} ${centerX - 10} ${centerY + 10} 
+          d={`M ${centerX - 12} ${centerY - 18}
+              Q ${centerX - 5} ${centerY - 22} ${centerX + 8} ${centerY - 14}
+              Q ${centerX + 18} ${centerY - 5} ${centerX + 10} ${centerY + 8}
+              Q ${centerX - 2} ${centerY + 18} ${centerX - 10} ${centerY + 10}
               Q ${centerX - 18} ${centerY - 2} ${centerX - 12} ${centerY - 18} Z`}
           fill={SCENE_COLORS.sphere.earthTech.landGradient[1]}
           opacity={0.3}
         />
         <path
-          d={`M ${centerX - 24} ${centerY + 5} 
-              Q ${centerX - 15} ${centerY + 2} ${centerX - 10} ${centerY + 12} 
+          d={`M ${centerX - 24} ${centerY + 5}
+              Q ${centerX - 15} ${centerY + 2} ${centerX - 10} ${centerY + 12}
               Q ${centerX - 14} ${centerY + 22} ${centerX - 22} ${centerY + 18} Z`}
           fill={SCENE_COLORS.sphere.earthTech.landGradient[2]}
           opacity={0.3}
@@ -789,23 +805,24 @@ export default function SatelliteAnimation() {
             </g>
             <text x={centerX + earthRadiusPx + 10} y={centerY + 12} fontSize="9" fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">文昌发射场</text>
 
-            {/* 预定入轨点标记 (绿色) */}
+            {/* 预定入轨点标记 (绿色) — 改为 π/2 正上方 */}
             {(() => {
               const targetOrbitRadiusPx = launchData.r0 * scale
-              const targetX = centerX + targetOrbitRadiusPx * Math.cos(0.6)
-              const targetY = centerY - targetOrbitRadiusPx * Math.sin(0.6)
+              const targetAngle = LAYOUT.mode1.orbitEndAngle
+              const targetX = centerX + targetOrbitRadiusPx * Math.cos(targetAngle)
+              const targetY = centerY - targetOrbitRadiusPx * Math.sin(targetAngle)
               return (
                 <g>
                   {/* 连接线 */}
-                  <line 
-                    x1={centerX} 
-                    y1={centerY} 
-                    x2={targetX} 
-                    y2={targetY} 
-                    stroke={PHYSICS_COLORS.trackHistory} 
-                    strokeWidth={0.8} 
-                    strokeDasharray="2,2" 
-                    opacity={0.3} 
+                  <line
+                    x1={centerX}
+                    y1={centerY}
+                    x2={targetX}
+                    y2={targetY}
+                    stroke={PHYSICS_COLORS.trackHistory}
+                    strokeWidth={0.8}
+                    strokeDasharray="2,2"
+                    opacity={0.3}
                   />
                   <circle cx={targetX} cy={targetY} r={3.5} fill="#10b981" />
                   <text x={targetX + 8} y={targetY - 5} fontSize="9" fill="#10b981" fontWeight="bold" textAnchor="start">预定入轨点</text>
@@ -813,7 +830,7 @@ export default function SatelliteAnimation() {
               )
             })()}
 
-            {/* 预测轨道线 */}
+            {/* 预测轨道线（2圈完整预渲染） */}
             {launchData.orbitPoints.length > 1 && (
               <path
                 d={`M ${launchData.orbitPoints.map(([thetaVal, rPhys]) => {
@@ -831,8 +848,8 @@ export default function SatelliteAnimation() {
 
             {/* 发射小卫星或火箭 */}
             <g transform={`translate(${satLaunchX}, ${satLaunchY})`}>
-              {isRocket 
-                ? renderRocketSvg(satAngle, 0.65) 
+              {isRocket
+                ? renderRocketSvg(satAngle, 0.65)
                 : renderSatelliteSvg(satAngle, 0.65)}
             </g>
 
@@ -886,7 +903,7 @@ export default function SatelliteAnimation() {
               strokeWidth={0.8}
               filter="url(#card-shadow)"
             />
-            
+
             {/* 标题 */}
             <text
               x={cardWidth / 2}
@@ -1016,11 +1033,12 @@ export default function SatelliteAnimation() {
                           <line x1={0} y1={0} x2={0} y2={-15} stroke="#cbd5e1" strokeWidth={1.0} opacity={0.6} />
                         </g>
 
-                        {/* 3. 预定入轨点 */}
+                        {/* 3. 预定入轨点 — 与主画同步：π/2 正上方 */}
                         {(() => {
                           const targetOrbitRadiusPx = launchData.r0 * scale
-                          const targetX = centerX + targetOrbitRadiusPx * Math.cos(0.6)
-                          const targetY = centerY - targetOrbitRadiusPx * Math.sin(0.6)
+                          const targetAngle = LAYOUT.mode1.orbitEndAngle
+                          const targetX = centerX + targetOrbitRadiusPx * Math.cos(targetAngle)
+                          const targetY = centerY - targetOrbitRadiusPx * Math.sin(targetAngle)
                           return (
                             <g>
                               <circle cx={targetX} cy={targetY} r={3.5} fill="#10b981" />
@@ -1028,7 +1046,7 @@ export default function SatelliteAnimation() {
                           )
                         })()}
 
-                        {/* 4. 预测轨道线 */}
+                        {/* 4. 预测轨道线 — 与主画共用 orbitPoints */}
                         {launchData.orbitPoints.length > 1 && (
                           <path
                             d={`M ${launchData.orbitPoints.map(([thetaVal, rPhys]) => {
@@ -1044,10 +1062,10 @@ export default function SatelliteAnimation() {
                           />
                         )}
 
-                        {/* 5. 渲染火箭或卫星 */}
+                        {/* 5. 渲染火箭或卫星 — 与主画同步 */}
                         <g transform={`translate(${satLaunchX}, ${satLaunchY})`}>
-                          {isRocket 
-                            ? renderRocketSvg(satAngle, 0.6) 
+                          {isRocket
+                            ? renderRocketSvg(satAngle, 0.6)
                             : renderSatelliteSvg(satAngle, 0.6)}
                         </g>
 
@@ -1097,11 +1115,11 @@ export default function SatelliteAnimation() {
               // 当前游标位置
               const curT = Math.min(15, time)
               let curVVal = 0
-              if (curT < 8) {
-                curVVal = v0 * (curT / 8)
+              if (curT < LAYOUT.mode1.orbitEntryTime) {
+                curVVal = v0 * (curT / LAYOUT.mode1.orbitEntryTime)
               } else if (launchData) {
                 curVVal = launchData.crashed ? 0 : (() => {
-                  const r0 = 1.35 * EARTH_RADIUS
+                  const r0 = LAYOUT.mode1.rLaunchRatio * EARTH_RADIUS
                   const v0_m = v0 * 1000
                   const v_sq = v0_m * v0_m + 2 * GRAVITATIONAL_CONSTANT * EARTH_MASS * (1 / launchData.r_phys - 1 / r0)
                   return v_sq > 0 ? Math.sqrt(v_sq) / 1000 : 0
@@ -1111,8 +1129,8 @@ export default function SatelliteAnimation() {
               const dotX = mapX(curT)
               const dotY = mapY(curVVal)
               const x0 = mapX(0)
-              const x3 = mapX(3)
-              const x8 = mapX(8)
+              const x3 = mapX(LAYOUT.mode1.launchDuration)
+              const x8 = mapX(LAYOUT.mode1.orbitEntryTime)
               const x15 = mapX(15)
 
               // 曲线路径

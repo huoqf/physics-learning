@@ -23,7 +23,7 @@ const HANGER_HOLES = [
 const BASE_CENTER = { x: 5, y: 5 }
 
 export const GravityBasicAnimation: FC = () => {
-  const { params, time, showVectors } = useAnimationStore()
+  const { params, time, showVectors, isPlaying } = useAnimationStore()
   const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
 
   // 参数解析
@@ -45,44 +45,52 @@ export const GravityBasicAnimation: FC = () => {
   // 1. 模式一：地球自转重力分解数据
   const earthData = useMemo(() => {
     if (mode !== 0) return null
-    const latRad = (latitude * Math.PI) / 180
+
+    // ── 动画驱动：播放时纬度在 0°~85° 之间正弦变化 ──
+    const effectiveLat = isPlaying
+      ? ((Math.sin(time * 0.3) + 1) / 2) * 85
+      : latitude
+    const latRad = (effectiveLat * Math.PI) / 180
+
     const R_earth = 135 // 地球绘制半径
-    
-    // 物体在地球表面上的 Canvas 坐标 (以地球中心为原点，Y轴向上)
+
+    // 物体在地球表面上的坐标 (物理坐标系：原点地心，Y轴向上)
     const objX = cx + R_earth * Math.cos(latRad)
-    const objY = cy - R_earth * Math.sin(latRad)
+    const objY = cy - R_earth * Math.sin(latRad) // Canvas 坐标，Y向下
 
     // 计算三力大小 (基准万有引力设为 110 像素长度)
     const F_gravitation = 110
-    const ratioAtEquator = 0.00346 * omegaScale // 赤道向心力比例
-    const F_centripetal = F_gravitation * ratioAtEquator * Math.cos(latRad)
+    const ratioAtEquator = 0.00346 * omegaScale // 赤道离心力比例（真实值约 0.00346）
+    const F_centrifugal = F_gravitation * ratioAtEquator * Math.cos(latRad)
 
-    // 矢量分量 (Canvas 坐标系，Y 轴向下)
+    // 矢量分量 (物理坐标系，Y 轴向上；渲染时通过 objY - Fy 转换为 Canvas Y 向下)
+    // 万有引力：指向地心
     const Fx_grav = -F_gravitation * Math.cos(latRad)
-    const Fy_grav = F_gravitation * Math.sin(latRad)
+    const Fy_grav = -F_gravitation * Math.sin(latRad)
 
-    const Fx_cent = -F_centripetal
-    const Fy_cent = 0
+    // 离心力（非惯性系）：背离自转轴，水平向外
+    const Fx_centrifugal = +F_centrifugal
+    const Fy_centrifugal = 0
 
-    // 重力矢量 G = F_grav - F_cent
-    const Gx = Fx_grav - Fx_cent
-    const Gy = Fy_grav - Fy_cent
+    // 重力 G = F_grav + F_离心（非惯性系中矢量合成）
+    const Gx = Fx_grav + Fx_centrifugal
+    const Gy = Fy_grav + Fy_centrifugal
     const G_force = Math.sqrt(Gx * Gx + Gy * Gy)
 
-    // 夹角偏角
+    // 夹角偏角：重力与万有引力的夹角
     const dotProduct = Gx * Fx_grav + Gy * Fy_grav
     const cosTheta = Math.max(-1, Math.min(1, dotProduct / (G_force * F_gravitation)))
     const angleDeviation = (Math.acos(cosTheta) * 180) / Math.PI
 
     return {
-      objX, objY, R_earth,
+      objX, objY, R_earth, effectiveLat,
       Fx_grav, Fy_grav,
-      Fx_cent, Fy_cent,
+      Fx_centrifugal, Fy_centrifugal,
       Gx, Gy, G_force,
-      F_centripetal, F_gravitation,
+      F_centrifugal, F_gravitation,
       angleDeviation
     }
-  }, [mode, latitude, omegaScale, cx, cy])
+  }, [mode, latitude, omegaScale, cx, cy, isPlaying, time])
 
   // 2. 模式二：薄板重心与悬挂平衡数据
   const plateData = useMemo(() => {
@@ -247,11 +255,11 @@ export const GravityBasicAnimation: FC = () => {
             <text x={cx - earthData.R_earth + 16} y={cy - 4} fontSize="9" fill="rgba(255, 255, 255, 0.7)" fontWeight="bold">赤道面</text>
 
             {/* 绘制纬度虚线圈 (物体所在纬度) */}
-            {latitude > 0 && latitude < 90 && (
+            {earthData.effectiveLat > 0 && earthData.effectiveLat < 90 && (
               <line
-                x1={cx - earthData.R_earth * Math.cos((latitude * Math.PI) / 180)}
+                x1={cx - earthData.R_earth * Math.cos((earthData.effectiveLat * Math.PI) / 180)}
                 y1={earthData.objY}
-                x2={cx + earthData.R_earth * Math.cos((latitude * Math.PI) / 180)}
+                x2={cx + earthData.R_earth * Math.cos((earthData.effectiveLat * Math.PI) / 180)}
                 y2={earthData.objY}
                 stroke="rgba(255, 255, 255, 0.25)"
                 strokeWidth={0.8}
@@ -281,10 +289,10 @@ export const GravityBasicAnimation: FC = () => {
                   strokeWidth={0.8}
                   strokeDasharray="2,2"
                 />
-                {/* 从向心力端点连向重力端点 */}
+                {/* 从离心力端点连向重力端点 */}
                 <line
-                  x1={earthData.objX + earthData.Fx_cent}
-                  y1={earthData.objY - earthData.Fy_cent}
+                  x1={earthData.objX + earthData.Fx_centrifugal}
+                  y1={earthData.objY - earthData.Fy_centrifugal}
                   x2={earthData.objX + earthData.Gx}
                   y2={earthData.objY - earthData.Gy}
                   stroke={PHYSICS_COLORS.labelTextLight}
@@ -313,23 +321,23 @@ export const GravityBasicAnimation: FC = () => {
                   F引
                 </text>
 
-                {/* 2. 向心力 (水平指向自转轴) */}
-                {earthData.F_centripetal > 1.5 && (
+                {/* 2. 离心力 (非惯性系，水平背离自转轴) */}
+                {earthData.F_centrifugal > 1.5 && (
                   <line
                     x1={earthData.objX} y1={earthData.objY}
-                    x2={earthData.objX + earthData.Fx_cent} y2={earthData.objY - earthData.Fy_cent}
+                    x2={earthData.objX + earthData.Fx_centrifugal} y2={earthData.objY - earthData.Fy_centrifugal}
                     stroke={PHYSICS_COLORS.forceNet}
                     strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                     markerEnd="url(#arrow-centripetal)"
                   />
                 )}
-                {earthData.F_centripetal > 5 && (
+                {earthData.F_centrifugal > 5 && (
                   <text
-                    x={earthData.objX + earthData.Fx_cent - 2}
+                    x={earthData.objX + earthData.Fx_centrifugal + 6}
                     y={earthData.objY - 6}
-                    fontSize={FONT.axisSize} fill={PHYSICS_COLORS.forceNet} fontWeight="bold" textAnchor="end"
+                    fontSize={FONT.axisSize} fill={PHYSICS_COLORS.forceNet} fontWeight="bold" textAnchor="start"
                   >
-                    F向
+                    F离
                   </text>
                 )}
 
@@ -346,11 +354,11 @@ export const GravityBasicAnimation: FC = () => {
                   y={earthData.objY - earthData.Gy + (earthData.Gy > 0 ? 12 : -4)}
                   fontSize={FONT.axisSize} fill={PHYSICS_COLORS.forceNet} fontWeight="bold"
                 >
-                  G (mg)
+                  G (重力)
                 </text>
 
                 {/* 偏角文字标注 (仅当有可见偏角且在 15~75 度之间时显示) */}
-                {earthData.angleDeviation > 0.5 && latitude > 10 && latitude < 80 && (
+                {earthData.angleDeviation > 0.5 && earthData.effectiveLat > 10 && earthData.effectiveLat < 80 && (
                   <text
                     x={earthData.objX + 18} y={earthData.objY - 22}
                     fontSize="10" fill={PHYSICS_COLORS.forceNet} fontWeight="bold"
@@ -374,7 +382,7 @@ export const GravityBasicAnimation: FC = () => {
             </text>
             {/* 纬度数值标注 (可见标注 2/5) */}
             <text x={cx + 10} y={cy - 10} fontSize="11" fill="white" fontWeight="bold">
-              φ = {latitude}°
+              φ = {earthData.effectiveLat.toFixed(1)}°
             </text>
           </g>
         )}

@@ -16,8 +16,8 @@ import {
   calculateCircularMotion,
   calculateOrbitalSpeed,
   calculateKeplerOrbit,
-  calculateRestitutionCollision,
   calculateCoulombForce,
+  calculateCoulombPendulum,
   calculateElectricField,
   calculateElectricPotential,
   calculateCapacitor,
@@ -1075,6 +1075,69 @@ export function buildPhysicsQuantities(
         }
       }
     }
+    case 'anim-impulse': {
+      const advancedMode = params.advancedMode ?? 0
+      const isAdvanced = advancedMode === 1
+
+      if (!isAdvanced) {
+        // ── 基础模式：缓冲垫碰撞 ──
+        const m = params.m ?? 2
+        const h = params.h ?? 2
+        const k = params.k ?? 5
+        const g = 9.8
+        const v = Math.sqrt(2 * g * h)
+        const dt = m / k
+        const deltaP = m * v
+        const F_avg = deltaP / dt + m * g
+
+        return {
+          quantities: [
+            ...base,
+            { label: '碰前速度', value: v.toFixed(2), unit: 'm/s' },
+            { label: '动量变化', value: deltaP.toFixed(1), unit: 'kg·m/s' },
+            { label: '碰撞时间', value: dt.toFixed(2), unit: 's' },
+            { label: '平均冲力', value: F_avg.toFixed(1), unit: 'N', highlight: 'extreme' as const },
+          ],
+          formulas: [
+            { name: '碰前速度', latex: 'v = \\sqrt{2gh}', level: 'important' as const },
+            { name: '动量定理', latex: 'F_{\\text{合}}\\Delta t = \\Delta p', level: 'core' as const },
+            { name: '平均冲力', latex: 'F = \\frac{\\Delta p}{\\Delta t} + mg', level: 'important' as const },
+          ],
+          gaokaoPoints: [
+            { text: '动量定理公式为 F_合Δt = Δp，注意必须是合外力', importance: 'core' as const },
+          ],
+        }
+      } else {
+        // ── 进阶模式：流体冲击 ──
+        const rho = params.rho ?? 1000
+        const S = params.S ?? 0.01
+        const v_fluid = params.v_fluid ?? 5
+        const alpha = params.alpha ?? 0
+        const dm = rho * S * v_fluid * 0.001
+        const p_initial = dm * v_fluid
+        const p_final = -alpha * dm * v_fluid
+        const F_impact = rho * S * v_fluid * v_fluid * (1 + alpha)
+
+        return {
+          quantities: [
+            ...base,
+            { label: '微元质量 Δm', value: dm.toFixed(4), unit: 'kg' },
+            { label: '碰前总动量', value: p_initial.toFixed(2), unit: 'kg·m/s' },
+            { label: '碰后总动量', value: p_final.toFixed(2), unit: 'kg·m/s' },
+            { label: '动量变化率', value: (rho * S * v_fluid * v_fluid * (1 + alpha)).toFixed(1), unit: 'N' },
+            { label: '挡板冲击力', value: F_impact.toFixed(1), unit: 'N', highlight: 'extreme' as const },
+          ],
+          formulas: [
+            { name: '微元质量', latex: '\\Delta m = \\rho S v \\Delta t', level: 'core' as const },
+            { name: '冲击力', latex: 'F = \\rho S v^2 (1+\\alpha)', level: 'core' as const },
+          ],
+          gaokaoPoints: [
+            { text: '流体冲击问题，核心是构建 Δm = ρSvΔt 微元模型', importance: 'gaokao' as const },
+            { text: '区分流体碰后是"贴墙流下"还是"原速反弹"', importance: 'gaokao' as const },
+          ],
+        }
+      }
+    }
     case 'anim-impulse-concept': {
       const advancedMode = params.advancedMode ?? 0
       const isAdvanced = advancedMode === 1
@@ -1130,31 +1193,207 @@ export function buildPhysicsQuantities(
       }
     }
     case 'anim-momentum-conservation': {
-      const m1 = params.m1 ?? 2
-      const m2 = params.m2 ?? 3
-      const v1 = params.v1 ?? 5
-      const v2 = params.v2 ?? 0
-      const e = params.e ?? 0.8
-      const { pBefore, pAfter } = calculateRestitutionCollision(m1, v1, m2, v2, e)
-      return {
-        quantities: [
-          ...base,
-          { label: '碰前总动量', value: pBefore, unit: 'kg·m/s' },
-          { label: '碰后总动量', value: pAfter, unit: 'kg·m/s' },
-        ],
+      const advancedMode = params.advancedMode ?? 0
+      const isAdvanced = advancedMode === 1
+
+      if (!isAdvanced) {
+        // ── 基础模式：两球碰撞 ──
+        const m1 = params.m1 ?? 3
+        const v1 = params.v1 ?? 5
+        const m2 = params.m2 ?? 2
+        const v2 = params.v2 ?? 0
+        const pInitial = m1 * v1 + m2 * v2
+        const totalM = m1 + m2
+        const vAfter = pInitial / totalM
+        const p1After = m1 * vAfter
+        const p2After = m2 * vAfter
+
+        return {
+          quantities: [
+            ...base,
+            { label: '碰前总动量', value: pInitial.toFixed(1), unit: 'kg·m/s' },
+            { label: '碰后A动量', value: p1After.toFixed(1), unit: 'kg·m/s' },
+            { label: '碰后B动量', value: p2After.toFixed(1), unit: 'kg·m/s' },
+            { label: '碰后总动量', value: (p1After + p2After).toFixed(1), unit: 'kg·m/s', highlight: 'positive' as const },
+          ],
+          formulas: [
+            { name: '动量守恒', latex: 'm_1v_1 + m_2v_2 = m_1v_1\' + m_2v_2\'', level: 'core' as const },
+          ],
+          gaokaoPoints: [
+            { text: '守恒条件是系统合外力为零，内力交换不影响总动量', importance: 'core' as const },
+          ],
+        }
+      } else {
+        // ── 进阶模式：滑块-木板 ──
+        const m_slider = params.m_slider ?? 1
+        const M_board = params.M_board ?? 3
+        const v0 = params.v0 ?? 6
+        const mu = params.mu ?? 0.3
+        const g = 9.8
+        const pTotal = m_slider * v0
+        const vCommon = (m_slider * v0) / (m_slider + M_board)
+        const tCommon = (M_board * vCommon) / (mu * m_slider * g)
+        const x1 = v0 * tCommon - 0.5 * mu * g * tCommon * tCommon
+        const x2 = 0.5 * (mu * m_slider * g / M_board) * tCommon * tCommon
+        const deltaX = x1 - x2
+        const Q = mu * m_slider * g * deltaX
+
+        return {
+          quantities: [
+            ...base,
+            { label: '系统总动量', value: pTotal.toFixed(1), unit: 'kg·m/s' },
+            { label: '共同速度', value: vCommon.toFixed(2), unit: 'm/s' },
+            { label: '达共速时间', value: tCommon.toFixed(2), unit: 's' },
+            { label: '滑块位移 x₁', value: x1.toFixed(2), unit: 'm' },
+            { label: '木板位移 x₂', value: x2.toFixed(2), unit: 'm' },
+            { label: '相对位移 Δx', value: deltaX.toFixed(2), unit: 'm' },
+            { label: '摩擦生热 Q', value: Q.toFixed(1), unit: 'J', highlight: 'extreme' as const },
+          ],
+          formulas: [
+            { name: '共同速度', latex: 'v_{\\text{共}} = \\frac{mv_0}{m+M}', level: 'core' as const },
+            { name: '摩擦生热', latex: 'Q = \\mu mg \\Delta x_{\\text{相对}}', level: 'important' as const },
+          ],
+          gaokaoPoints: [
+            { text: '滑块木板模型中，摩擦力为内力，系统总动量守恒', importance: 'gaokao' as const },
+            { text: '达到共同速度是相对运动结束、内能损失最大的临界点', importance: 'gaokao' as const },
+            { text: '系统内摩擦生热公式为 Q = f·Δx_相对', importance: 'gaokao' as const },
+          ],
+        }
+      }
+    }
+    case 'anim-collision': {
+      const advancedMode = params.advancedMode ?? 0
+      const isAdvanced = advancedMode === 1
+
+      if (!isAdvanced) {
+        // ── 基础模式 ──
+        const m1 = params.m1 ?? 3
+        const v1 = params.v1 ?? 5
+        const m2 = params.m2 ?? 2
+        const v2 = params.v2 ?? 0
+        const isElastic = params.isElastic ?? 1
+        const EkInitial = 0.5 * m1 * v1 * v1 + 0.5 * m2 * v2 * v2
+        let EkFinal: number
+        if (isElastic === 1) {
+          const totalM = m1 + m2
+          const v1f = ((m1 - m2) * v1 + 2 * m2 * v2) / totalM
+          const v2f = ((m2 - m1) * v2 + 2 * m1 * v1) / totalM
+          EkFinal = 0.5 * m1 * v1f * v1f + 0.5 * m2 * v2f * v2f
+        } else {
+          const vCommon = (m1 * v1 + m2 * v2) / (m1 + m2)
+          EkFinal = 0.5 * (m1 + m2) * vCommon * vCommon
+        }
+
+        return {
+          quantities: [
+            ...base,
+            { label: '初始动能', value: EkInitial.toFixed(1), unit: 'J' },
+            { label: '末了动能', value: EkFinal.toFixed(1), unit: 'J' },
+            { label: '机械能守恒', value: Math.abs(EkInitial - EkFinal) < 0.1 ? '✓ 守恒' : `损失 ${(EkInitial - EkFinal).toFixed(1)} J`, unit: '' },
+          ],
+          formulas: [
+            { name: '动量守恒', latex: 'm_1v_1 + m_2v_2 = m_1v_1\' + m_2v_2\'', level: 'core' as const },
+          ],
+          gaokaoPoints: [
+            { text: '完全弹性碰撞没有能量损失；完全非弹性碰撞损失机械能最多', importance: 'core' as const },
+          ],
+        }
+      } else {
+        // ── 进阶模式 ──
+        const mA = params.mA ?? 3
+        const vA = params.vA ?? 5
+        const mB = params.mB ?? 2
+        const kLoss = params.kLoss ?? 0
+        const e = 1 - kLoss
+        const totalM = mA + mB
+        const vAf = (mA - e * mB) / totalM * vA
+        const vBf = (1 + e) * mA / totalM * vA
+        const deltaEkMax = (mA * mB) / (2 * totalM) * vA * vA
+
+        return {
+          quantities: [
+            ...base,
+            { label: "碰后 v_A'", value: vAf.toFixed(2), unit: 'm/s' },
+            { label: "碰后 v_B'", value: vBf.toFixed(2), unit: 'm/s' },
+            { label: '极大机械能损失', value: deltaEkMax.toFixed(1), unit: 'J', highlight: 'extreme' as const },
+          ],
+          formulas: [
+            { name: '碰后A速度', latex: 'v_A\' = \\frac{m_A - m_B}{m_A + m_B}v_A', level: 'core' as const },
+            { name: '碰后B速度', latex: 'v_B\' = \\frac{2m_A}{m_A + m_B}v_A', level: 'core' as const },
+            { name: '极大能量损失', latex: '\\Delta E_{k\\max} = \\frac{m_A m_B}{2(m_A+m_B)}v_A^2', level: 'important' as const },
+          ],
+          gaokaoPoints: [
+            { text: '等质量完全弹性碰撞：两球速度直接交换', importance: 'gaokao' as const },
+            { text: 'm_A≪m_B撞静止大球，小球原速反弹，大球近似静止', importance: 'gaokao' as const },
+            { text: '碰撞必须满足：后球速度不大于前球，总机械能不增加', importance: 'gaokao' as const },
+          ],
+        }
       }
     }
     case 'anim-coulomb-law': {
       const q1 = params.q1 ?? 2
       const q2 = params.q2 ?? -3
       const r = params.r ?? 4
-      const { F } = calculateCoulombForce(COULOMB_K, Math.abs(q1 * 1e-6), Math.abs(q2 * 1e-6), (r || 0.01) * 0.01)
-      return {
-        quantities: [
-          ...base,
-          { label: '库仑力 F', value: F, unit: 'N' },
-          { label: '作用', value: q1 * q2 < 0 ? '相互吸引' : '相互排斥', unit: '' },
-        ],
+      const mode = params.mode ?? 0
+      const attractive = q1 * q2 < 0
+      const k = 9e9
+      const q1SI = Math.abs(q1 * 1e-6)
+      const q2SI = Math.abs(q2 * 1e-6)
+
+      if (mode === 0) {
+        // ── 基础模式：两点电荷 ──
+        const rSI = (r || 0.01) * 0.01
+        const { F } = calculateCoulombForce(k, q1SI, q2SI, rSI)
+        return {
+          quantities: [
+            ...base,
+            { label: 'q₁', value: `${q1 > 0 ? '+' : ''}${q1.toFixed(1)}`, unit: 'μC', highlight: q1 > 0 ? 'positive' as const : 'negative' as const },
+            { label: 'q₂', value: `${q2 > 0 ? '+' : ''}${q2.toFixed(1)}`, unit: 'μC', highlight: q2 > 0 ? 'positive' as const : 'negative' as const },
+            { label: '间距 r', value: r.toFixed(1), unit: 'cm' },
+            { label: '库仑力 F', value: F.toExponential(2), unit: 'N', highlight: 'extreme' as const },
+            { label: '作用类型', value: attractive ? '相互吸引' : '相互排斥', unit: '', highlight: attractive ? 'negative' as const : 'positive' as const },
+          ],
+          formulas: [
+            { name: '库仑定律', latex: 'F = k \\frac{q_1 q_2}{r^2}', level: 'core', condition: '仅适用于点电荷与真空' },
+            { name: '静电力常量', latex: 'k = 9 \\times 10^9 \\;\\text{N·m}^2\\text{/C}^2', level: 'core' },
+          ],
+          gaokaoPoints: [
+            { text: '库仑定律仅适用于点电荷与真空（或空气近似）。', importance: 'gaokao' as const },
+            { text: '库仑力与万有引力具有相似形式（都与距离平方成反比），但本质不同。', importance: 'core' as const },
+            { text: '同号电荷相斥，异号电荷相吸——方向由符号决定。', importance: 'basic' as const },
+          ],
+        }
+      } else {
+        // ── 进阶模式：双丝线悬挂小球 ──
+        const L = (params.L ?? 20) * 0.01 // cm → m
+        const m = params.m ?? 0.05
+        const g = GRAVITY
+        const { theta, r: rPend, F, T } = calculateCoulombPendulum(k, q1 * 1e-6, q2 * 1e-6, m, L, g)
+        const thetaDeg = (theta * 180) / Math.PI
+
+        return {
+          quantities: [
+            ...base,
+            { label: 'q₁', value: `${q1 > 0 ? '+' : ''}${q1.toFixed(1)}`, unit: 'μC', highlight: q1 > 0 ? 'positive' as const : 'negative' as const },
+            { label: 'q₂', value: `${q2 > 0 ? '+' : ''}${q2.toFixed(1)}`, unit: 'μC', highlight: q2 > 0 ? 'positive' as const : 'negative' as const },
+            { label: '丝线长 L', value: (L * 100).toFixed(0), unit: 'cm' },
+            { label: '小球质量 m', value: (m * 1000).toFixed(0), unit: 'g' },
+            { label: '平衡角 θ', value: thetaDeg.toFixed(1), unit: '°', highlight: 'extreme' as const },
+            { label: '两球间距 r', value: (rPend * 100).toFixed(2), unit: 'cm' },
+            { label: '库仑力 F', value: F.toExponential(2), unit: 'N' },
+            { label: '绳中拉力 T', value: T.toFixed(4), unit: 'N' },
+          ],
+          formulas: [
+            { name: '库仑定律', latex: 'F = k \\frac{q_1 q_2}{r^2}', level: 'core', condition: '仅适用于点电荷与真空' },
+            { name: '平衡方程', latex: '\\tan\\theta = \\frac{F}{mg}', level: 'core', condition: '双丝线悬挂动态平衡' },
+            { name: '两球间距', latex: 'r = 2L\\sin\\theta', level: 'important' },
+          ],
+          gaokaoPoints: [
+            { text: '库仑定律仅适用于点电荷与真空。', importance: 'gaokao' as const },
+            { text: '库仑力与万有引力具有相似形式。', importance: 'core' as const },
+            { text: '动态平衡问题常结合正弦定理分析。', importance: 'hard' as const },
+          ],
+        }
       }
     }
     case 'anim-electric-field': {

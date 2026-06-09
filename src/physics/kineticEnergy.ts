@@ -147,7 +147,9 @@ export function precomputeCurvedTrackTrajectory(
   const g = 9.8
 
   // 数值积分实时变量
-  let theta = 0 // 圆弧角度弧度，0 to PI/2
+  // 初始角度：光滑轨道从 0.02 rad 开始；粗糙轨道从 arctan(mu)+0.01 开始
+  // 物理原因：theta=0 时重力切向分量为 0，静摩擦会阻止球启动
+  let theta = mu > 0 ? Math.atan(mu) + 0.01 : 0.02
   let v = v0
   let t = 0
   let W_f = 0 // 摩擦力做功 (负值)

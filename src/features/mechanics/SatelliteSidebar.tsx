@@ -100,15 +100,15 @@ export default function SatelliteSidebar({ params, updateParam, setParams, anima
 
           <TipCard>
             <div>
-              🚀 <strong>发射三阶段演示：</strong>
-              <br />• <strong>垂直起飞 (0~3s)</strong>：火箭从文昌发射场径向垂直升空。
-              <br />• <strong>重力转弯 (3~8s)</strong>：姿态逐渐偏转，并入预定高度切向。
-              <br />• <strong>理想入轨 (≥8s)</strong>：火箭关机分离，卫星切入在轨运行。
+              🚀 <strong>发射三阶段演示（低轨 1.05R 水平入轨）：</strong>
+              <br />• <strong>垂直起飞 (0~3s)</strong>：火箭从文昌发射场径向垂直升空至 320km 高度。
+              <br />• <strong>重力转弯 (3~8s)</strong>：姿态从垂直逐步偏转至水平切向，完成入轨准备。
+              <br />• <strong>在轨运行 (≥8s)</strong>：火箭关机分离，卫星沿预渲染轨道快速环绕，10s 内可见 1~2 圈。
             </div>
             <div className="pt-1.5 border-t border-primary-100/50">
-              💡 <strong>理想初速度模型 (入轨点切向速度)：</strong>
-              <br />• <strong>7.9 km/s</strong>：第一宇宙速度，刚好环绕地球做圆周运动
-              <br />• <strong>10.0 km/s</strong>：介于一、二宇宙速度之间，运行于椭圆轨道
+              💡 <strong>理想初速度模型 (入轨点切向速度，低轨 1.05R)：</strong>
+              <br />• <strong>7.9 km/s</strong>：第一宇宙速度（近圆轨道，e≈0.05）
+              <br />• <strong>10.0 km/s</strong>：椭圆轨道，远地点显著抬升
               <br />• <strong>11.2 km/s</strong>：第二宇宙速度，脱离地球引力束缚（逃逸轨道）
             </div>
           </TipCard>

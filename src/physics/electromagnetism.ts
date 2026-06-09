@@ -6,6 +6,88 @@
  *    此处不重复定义，使用方直接从 '@/physics' 引入即可。
  */
 
+/**
+ * 双丝线悬挂小球库仑平衡计算。
+ *
+ * 物理模型：两个相同质量 m 的小球，各用长 L 的丝线悬挂于同一点，
+ * 带电量 q₁、q₂ 后因库仑力排斥/吸引而张开角度 θ。
+ *
+ * 平衡条件（隔离法）：
+ *   水平：F_库 = T·sinθ
+ *   竖直：mg = T·cosθ
+ *   联立：tanθ = F_库 / (mg)
+ *
+ * 两球间距 r = 2L·sinθ
+ * 库仑力 F = k·|q₁·q₂| / r²
+ *
+ * @param k     静电力常量 (N·m²/C²)，通常取 9×10⁹
+ * @param q1    电荷1电量 (C)，含符号
+ * @param q2    电荷2电量 (C)，含符号
+ * @param m     小球质量 (kg)
+ * @param L     丝线长度 (m)
+ * @param g     重力加速度 (m/s²)
+ * @returns theta 平衡角度 (rad), r 两球间距 (m), F 库仑力大小 (N), T 绳中拉力 (N),
+ *          attractive 是否吸引, x1 球1水平偏移 (m), x2 球2水平偏移 (m)
+ */
+export function calculateCoulombPendulum(
+  k: number,
+  q1: number,
+  q2: number,
+  m: number,
+  L: number,
+  g: number
+): {
+  theta: number
+  r: number
+  F: number
+  T: number
+  attractive: boolean
+  x1: number
+  x2: number
+} {
+  const attractive = q1 * q2 < 0
+
+  // 迭代求解平衡角 θ
+  // tanθ = k|q₁q₂| / (4L²sin²θ · mg)
+  // 令 A = k|q₁q₂| / (4L²·mg)，则 f(θ) = sin²θ·tanθ - A = 0
+  const q1Abs = Math.abs(q1)
+  const q2Abs = Math.abs(q2)
+  const A = (k * q1Abs * q2Abs) / (4 * L * L * m * g)
+
+  // 二分法求 θ（保证收敛，牛顿迭代在大 A 时会过冲）
+  // f(θ) = sin²θ·tanθ - A，f(0)=−A<0，f(π/2−ε)→+∞
+  const f = (t: number) => {
+    const s = Math.sin(t)
+    const c = Math.cos(t)
+    return c > 1e-12 ? s * s * (s / c) - A : 1e12
+  }
+  let lo = 0.001
+  let hi = Math.PI / 2 - 0.01
+  let theta = lo
+  if (f(lo) >= 0) {
+    // A 极小，角度几乎为 0
+    theta = lo
+  } else {
+    for (let i = 0; i < 80; i++) {
+      const mid = (lo + hi) / 2
+      if (f(mid) < 0) lo = mid; else hi = mid
+      if (hi - lo < 1e-10) break
+    }
+    theta = (lo + hi) / 2
+  }
+
+  const r = 2 * L * Math.sin(theta)
+  const F = r > 0 ? (k * q1Abs * q2Abs) / (r * r) : 0
+  const T = m * g / Math.cos(theta)
+
+  // 异号电荷时两球靠近，x 方向为负
+  const sign = attractive ? -1 : 1
+  const x1 = sign * L * Math.sin(theta)
+  const x2 = -sign * L * Math.sin(theta)
+
+  return { theta, r, F, T, attractive, x1, x2 }
+}
+
 /** 点电荷电场强度 E = kq/r²（N/C） */
 export function calculateElectricField(k: number, q: number, r: number): { E: number } {
   return { E: (k * q) / (r * r) }
