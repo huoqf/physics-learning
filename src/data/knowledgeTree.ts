@@ -13,7 +13,7 @@ export const knowledgeTree: KnowledgeNode[] = [
   },
   {
     id: 'mechanics-1-2',
-    title: '位移与速度',
+    title: '位移',
     chapter: '第1章 运动的描述',
     module: 'mechanics',
     importance: 'core',
@@ -75,7 +75,7 @@ export const knowledgeTree: KnowledgeNode[] = [
 
   {
     id: 'mechanics-3-1',
-    title: '重力与弹力',
+    title: '重力',
     chapter: '第3章 相互作用——力',
     module: 'mechanics',
     importance: 'core',

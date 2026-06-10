@@ -1,563 +1,684 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
-import { calculateAcceleratedMotion, calculateVariableAccelerationMotion, determineMotionState } from '@/physics'
-import { PHYSICS_COLORS, CHART_COLORS, VT_CHART_COLORS, STROKE, DASH, FONT, OPACITY } from '@/theme/physics'
+import { calculatePoliceChase } from '@/physics'
+import { PHYSICS_COLORS, CHART_COLORS, STROKE, DASH, FONT, OPACITY } from '@/theme/physics'
+import { SVG_MARKER, SVG_FILTER } from '@/theme/physics/canvasStyle'
 import { AnimationControls } from '@/components/UI'
 
-/** 布局常量 */
+/** 布局常量（语义化命名，比例驱动） */
 const LAYOUT = {
-  VT_CHART_RATIO: 0.55,
-  AXIS_RATIO: 0.45,
-  CHART_PADDING: 50,
-  AXIS_MARGIN: 60,
-  POINT_RADIUS: 5,
-  TANGENT_LENGTH: 80,
-  VECTOR_V_SCALE: 4,
-  VECTOR_A_SCALE: 8,
-  DOT_RADIUS: 10,
-  VT_X_MAX: 8,
+  CHART_HEIGHT_RATIO: 0.5,
+  ANIMATION_HEIGHT_RATIO: 0.5,
+  CHART_PADDING_RATIO: 0.06,
+  ROAD_Y_RATIO: 0.72,
+  VEHICLE_WIDTH_RATIO: 0.07,
+  VEHICLE_HEIGHT_RATIO: 0.04,
+  ARROW_SCALE_V: 2.5,
+  MAX_TIME: 20,
+  XT_X_MAX: 20,
+  VT_X_MAX: 20,
 } as const
 
 /**
- * 加速度进阶版 CenterExtra — v-t 图象 + 矢量联动
+ * 加速度进阶版 CenterExtra —— 警车追击问题
  *
- * 遵循 project_rules.md 规范：冷白背景、实验室图纸、精密科学仪器制图。
+ * 上层：并列双图表（左 x-t 图 | 右 v-t 图）
+ * 下层：真实公路追击动画
+ *
+ * 遵循 project_rules.md 设计规范：比例驱动布局、主题 token 引用、无硬编码像素。
  */
 export default function AccelerationCenterExtra() {
   const { params, time, isPlaying, speed, setIsPlaying, setTime, setSpeed } = useAnimationStore()
-  const [showTurnWarning, setShowTurnWarning] = useState(false)
+  const [showMaxGapWarning, setShowMaxGapWarning] = useState(false)
+  const [containerSize, setContainerSize] = useState({ width: 800, height: 600 })
+  const containerRef = useRef<HTMLDivElement>(null)
 
-  const v0 = params.v0 ?? 0
-  const a = params.a ?? 2
-  const deltaT = params.deltaT ?? 1 // 从 store 获取 deltaT
-  const motionMode = params.motionMode ?? 0
+  const vA = params.vA ?? 30
+  const deltaX0 = params.deltaX0 ?? 50
+  const t0 = params.t0 ?? 1
+  const aB = params.aB ?? 3
+  const vMax = params.vMax ?? 40
+
+  // ── 容器尺寸监听 ──
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect
+        setContainerSize({ width, height })
+      }
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
   // ── 物理计算 ──
-  const { v: currentV, a: currentA } = useMemo(() => {
-    if (motionMode === 0) {
-      const result = calculateAcceleratedMotion(v0, a, time)
-      return { v: result.v, a }
-    } else {
-      const k = Math.abs(a) / 10
-      return calculateVariableAccelerationMotion(v0, a, k, time)
-    }
-  }, [v0, a, motionMode, time])
+  const state = useMemo(
+    () => calculatePoliceChase(vA, deltaX0, t0, aB, vMax, time),
+    [vA, deltaX0, t0, aB, vMax, time]
+  )
 
-  const { direction, motion } = determineMotionState(currentV, currentA)
-
-  // ── 检测并实现转向点（v=0, a!=0）挂起 0.8 秒 ──
+  // ── 检测共速时刻（最大间距）单次触发 ──
   const prevTimeRef = useRef(0)
+  const hasShownMaxGapRef = useRef(false)
+  const warningTimerRef = useRef<ReturnType<typeof setTimeout>>()
+
   useEffect(() => {
+    // 重置时清除标记
+    if (time === 0) {
+      hasShownMaxGapRef.current = false
+      prevTimeRef.current = 0
+      return
+    }
     if (!isPlaying) {
       prevTimeRef.current = time
       return
     }
-
-    // 寻找 v(t) = 0 的正根
-    let tZero = -1
-    if (motionMode === 0 && a !== 0) {
-      const t = -v0 / a
-      if (t > 0 && t <= LAYOUT.VT_X_MAX) {
-        tZero = t
-      }
-    } else if (motionMode === 1) {
-      const k = Math.abs(a) / 10
-      if (k > 0) {
-        // v(t) = v0 + a*t - 0.5*k*t^2 = 0
-        const delta = a * a - 4 * (-0.5 * k) * v0
-        if (delta >= 0) {
-          const r1 = (-a + Math.sqrt(delta)) / (-k)
-          const r2 = (-a - Math.sqrt(delta)) / (-k)
-          const roots = [r1, r2].filter(r => r > 0 && r <= LAYOUT.VT_X_MAX)
-          if (roots.length > 0) {
-            tZero = Math.min(...roots)
-          }
-        }
-      } else if (a !== 0) {
-        const t = -v0 / a
-        if (t > 0 && t <= LAYOUT.VT_X_MAX) {
-          tZero = t
-        }
-      }
+    const { tEqual } = state
+    if (
+      !hasShownMaxGapRef.current &&
+      tEqual > 0 &&
+      tEqual <= LAYOUT.MAX_TIME &&
+      prevTimeRef.current < tEqual &&
+      time >= tEqual
+    ) {
+      hasShownMaxGapRef.current = true
+      setIsPlaying(false)
+      setShowMaxGapWarning(true)
+      setTime(tEqual)
+      // 用 ref 持有 timer，不受 effect cleanup 影响
+      warningTimerRef.current = setTimeout(() => {
+        setShowMaxGapWarning(false)
+      }, 1500)
     }
-
-    if (tZero > 0) {
-      const prevT = prevTimeRef.current
-      // 如果上一帧时间小于 tZero 且当前帧时间跨过了 tZero
-      if (prevT < tZero && time >= tZero) {
-        setIsPlaying(false)
-        setShowTurnWarning(true)
-        setTime(tZero) // 完美对准转向时刻，使 v 刚好为 0
-        const timer = setTimeout(() => {
-          setShowTurnWarning(false)
-        }, 800)
-        return () => clearTimeout(timer)
-      }
-    }
-
     prevTimeRef.current = time
-  }, [time, isPlaying, v0, a, motionMode, setIsPlaying, setTime])
+  }, [time, isPlaying, state, setIsPlaying, setTime])
 
-  // ── v-t 图 Y 轴范围 ──
-  const { vtYMin, vtYMax, vtTickStep } = useMemo(() => {
-    const maxV = Math.max(Math.abs(v0 + a * LAYOUT.VT_X_MAX), Math.abs(v0), 10)
-    const minV = Math.min(v0 + a * LAYOUT.VT_X_MAX, v0, 0)
-    const yMin = minV < 0 ? Math.floor(minV / 5) * 5 - 5 : -5
-    const yMax = Math.ceil(maxV / 5) * 5 + 5
-    return { vtYMin: yMin, vtYMax: yMax, vtTickStep: 5 }
-  }, [v0, a])
+  // 组件卸载时清理 timer
+  useEffect(() => {
+    return () => {
+      if (warningTimerRef.current) clearTimeout(warningTimerRef.current)
+    }
+  }, [])
 
-  // ── v-t 图数据点 ──
-  const vtChartData = useMemo(() => {
-    const points: { x: number; y: number }[] = []
+  // ── 布局计算 ──
+  const padding = containerSize.width * LAYOUT.CHART_PADDING_RATIO
+  const chartHeight = containerSize.height * LAYOUT.CHART_HEIGHT_RATIO
+  const animHeight = containerSize.height * LAYOUT.ANIMATION_HEIGHT_RATIO
+  const chartWidth = (containerSize.width - padding * 3) / 2
+  const vehicleW = containerSize.width * LAYOUT.VEHICLE_WIDTH_RATIO
+  const vehicleH = containerSize.width * LAYOUT.VEHICLE_HEIGHT_RATIO
+
+  // ── x-t 图坐标转换 ──
+  const xtYMax = Math.max(deltaX0 + vA * LAYOUT.XT_X_MAX, deltaX0 + 50)
+  const xtYMin = -10
+  const toXtX = (t: number) => padding + (t / LAYOUT.XT_X_MAX) * chartWidth
+  const toXtY = (x: number) => chartHeight * 0.85 - ((x - xtYMin) / (xtYMax - xtYMin)) * chartHeight * 0.7
+
+  // ── v-t 图坐标转换 ──
+  const vtYMax = Math.max(vA, vMax) * 1.2
+  const vtYMin = -2
+  const toVtX = (t: number) => padding * 2 + chartWidth + (t / LAYOUT.VT_X_MAX) * chartWidth
+  const toVtY = (v: number) => chartHeight * 0.85 - ((v - vtYMin) / (vtYMax - vtYMin)) * chartHeight * 0.7
+
+  // ── x-t 图数据 ──
+  const xtCarData = useMemo(() => {
+    const pts: { t: number; x: number }[] = []
+    for (let t = 0; t <= LAYOUT.XT_X_MAX; t += 0.1) {
+      pts.push({ t, x: deltaX0 + vA * t })
+    }
+    return pts
+  }, [vA, deltaX0])
+
+  const xtPoliceData = useMemo(() => {
+    const pts: { t: number; x: number }[] = []
+    const t1 = t0 + vMax / aB
+    for (let t = 0; t <= LAYOUT.XT_X_MAX; t += 0.1) {
+      let x: number
+      if (t < t0) {
+        x = 0
+      } else if (t < t1) {
+        x = 0.5 * aB * (t - t0) * (t - t0)
+      } else {
+        const xB_t1 = 0.5 * aB * (t1 - t0) * (t1 - t0)
+        x = xB_t1 + vMax * (t - t1)
+      }
+      pts.push({ t, x })
+    }
+    return pts
+  }, [vA, deltaX0, t0, aB, vMax])
+
+  // ── v-t 图数据 ──
+  const vtCarData = useMemo(() => {
+    const pts: { t: number; v: number }[] = []
+    for (let t = 0; t <= LAYOUT.VT_X_MAX; t += 0.1) {
+      pts.push({ t, v: vA })
+    }
+    return pts
+  }, [vA])
+
+  const vtPoliceData = useMemo(() => {
+    const pts: { t: number; v: number }[] = []
+    const t1 = t0 + vMax / aB
     for (let t = 0; t <= LAYOUT.VT_X_MAX; t += 0.1) {
       let v: number
-      if (motionMode === 0) {
-        v = v0 + a * t
+      if (t < t0) {
+        v = 0
+      } else if (t < t1) {
+        v = aB * (t - t0)
       } else {
-        const k = Math.abs(a) / 10
-        const result = calculateVariableAccelerationMotion(v0, a, k, t)
-        v = result.v
+        v = vMax
       }
-      points.push({ x: t, y: v })
+      pts.push({ t, v })
     }
-    return points
-  }, [v0, a, motionMode])
+    return pts
+  }, [t0, aB, vMax])
 
-  // ── Y 轴刻度 ──
-  const yticks = useMemo(() => {
-    const ticks: number[] = []
-    for (let v = vtYMin; v <= vtYMax; v += vtTickStep) {
-      ticks.push(v)
+  // ── 公路动画布局 ──
+  const roadY = animHeight * LAYOUT.ROAD_Y_RATIO
+  const roadPadding = padding * 0.5
+  const roadLeft = roadPadding
+  const roadRight = containerSize.width - roadPadding
+  const roadWidth = roadRight - roadLeft
+
+  // 位移缩放：以 20s 内轿车的最大位移为参考
+  const maxDist = deltaX0 + vA * LAYOUT.MAX_TIME
+  const scale = (roadWidth * 0.85) / maxDist
+  const startX = roadLeft + roadWidth * 0.05
+
+  const carX = startX + state.xA * scale
+  const policeX = startX + state.xB * scale
+
+  // ── 阶段状态徽章颜色 ──
+  const phaseBadge = (() => {
+    switch (state.phase) {
+      case 'reaction':
+        return 'bg-primary-50 text-primary-700 border-primary-300'
+      case 'accelerating':
+        return 'bg-accent-50 text-accent-700 border-accent-300'
+      case 'cruising':
+        return 'bg-secondary-50 text-secondary-700 border-secondary-300'
     }
-    return ticks
-  }, [vtYMin, vtYMax, vtTickStep])
+  })()
 
-  // ── 数轴质点位置（基于位移 s）──
-  const axisCenter = 0.5
-  const axisRange = 0.35
-  const maxDisplacement = 50 // 数轴最大位移量 (m)
-  const getDisplacement = (t: number) => {
-    if (motionMode === 0) {
-      return calculateAcceleratedMotion(v0, a, t).s
-    } else {
-      const k = Math.abs(a) / 10
-      return calculateVariableAccelerationMotion(v0, a, k, t).s
+  const phaseText = (() => {
+    switch (state.phase) {
+      case 'reaction':
+        return '反应期'
+      case 'accelerating':
+        return '加速中'
+      case 'cruising':
+        return '巡航中'
     }
-  }
-
-  const currentS = useMemo(() => getDisplacement(time), [v0, a, motionMode, time])
-  const normalizedS = currentS !== 0 ? Math.sign(currentS) * Math.min(Math.abs(currentS) / maxDisplacement, 1) : 0
-  const dotX = axisCenter + normalizedS * axisRange
-
-  // ── 历史运动拖尾（低透明度历史质点投影） ──
-  const trailPoints = useMemo(() => {
-    if (time <= 0) return []
-    const points: { x: number; opacity: number; key: string }[] = []
-    const offsets = [0.15, 0.3, 0.45] // 时间回溯偏移
-    offsets.forEach((dtOffset, idx) => {
-      const tPrev = Math.max(0, time - dtOffset)
-      if (tPrev > 0) {
-        const sPrev = getDisplacement(tPrev)
-        const normS = sPrev !== 0 ? Math.sign(sPrev) * Math.min(Math.abs(sPrev) / maxDisplacement, 1) : 0
-        points.push({
-          x: axisCenter + normS * axisRange,
-          opacity: 0.35 - idx * 0.1,
-          key: `trail-${idx}`,
-        })
-      }
-    })
-    return points
-  }, [time, v0, a, motionMode])
-
-  // 计算斜率三角形前一个点的时间和速度
-  const slopeTriangleData = useMemo(() => {
-    if (time <= 0) return null
-    const tPrev = Math.max(0, time - deltaT)
-    let vPrev = v0
-    if (motionMode === 0) {
-      vPrev = v0 + a * tPrev
-    } else {
-      const k = Math.abs(a) / 10
-      vPrev = calculateVariableAccelerationMotion(v0, a, k, tPrev).v
-    }
-    return { tPrev, vPrev }
-  }, [time, deltaT, v0, a, motionMode])
+  })()
 
   return (
-    <div className="w-full h-full flex flex-col gap-3">
-      {/* ── 信息条与状态徽章 ── */}
-      <div className="w-full shrink-0 bg-white rounded-xl shadow-sm px-4 py-2.5 flex items-center gap-4 text-xs font-medium">
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PHYSICS_COLORS.velocity }} />
-          <span className="text-neutral-700">瞬时速度 v = <span className="font-bold font-mono">{currentV.toFixed(2)}</span> m/s</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PHYSICS_COLORS.acceleration }} />
-          <span className="text-neutral-700">加速度 a = <span className="font-bold font-mono">{currentA.toFixed(2)}</span> m/s²</span>
-        </div>
-        
-        {/* 运动状态科技感 Badge */}
-        <div className="flex items-center gap-1.5 ml-2">
+    <div ref={containerRef} className="w-full h-full flex flex-col">
+      {/* ══════════ 上层：并列双图表 ══════════ */}
+      <div className="flex-1 flex flex-row relative">
+        <svg width={containerSize.width} height={chartHeight} className="absolute inset-0">
+          {/* 网格纸底纹 */}
+          <defs>
+            <pattern id="chase-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke={PHYSICS_COLORS.grid} strokeWidth={STROKE.grid} opacity={OPACITY.grid} />
+            </pattern>
+            {/* 发光滤镜 */}
+            <filter id="glow-blue" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation={SVG_FILTER.glow.stdDeviation} result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <filter id="glow-red" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation={SVG_FILTER.glow.stdDeviation} result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            {/* 箭头标记 */}
+            <marker id="arrow-chase-v" markerWidth={SVG_MARKER.main.markerWidth} markerHeight={SVG_MARKER.main.markerHeight} refX={SVG_MARKER.main.refX} refY={SVG_MARKER.main.refY} orient="auto">
+              <polygon points={SVG_MARKER.main.content} fill={PHYSICS_COLORS.velocity} />
+            </marker>
+          </defs>
+
+          {/* 背景 */}
+          <rect width={containerSize.width} height={chartHeight} fill="url(#chase-grid)" />
+
+          {/* ── 左：x-t 图象 ── */}
           {(() => {
-            let badgeColor = 'bg-neutral-100 text-neutral-700 border-neutral-300'
-            let statusText = '匀速'
-            if (direction === '速度为零') {
-              badgeColor = 'bg-amber-50 text-amber-700 border-amber-300 animate-pulse shadow-sm'
-              statusText = '瞬时静止'
-            } else if (motion === '加速') {
-              badgeColor = 'bg-blue-50 text-blue-700 border-blue-300 shadow-sm'
-              statusText = `${direction}加速`
-            } else if (motion === '减速') {
-              badgeColor = 'bg-red-50 text-red-700 border-red-300 shadow-sm'
-              statusText = `${direction}减速`
-            } else {
-              badgeColor = 'bg-red-50 text-red-700 border-red-300 shadow-sm'
-              statusText = `${direction}${motion}` // 兜底
-            }
+            const chartLeft = padding
+            const chartTop = chartHeight * 0.12
+            const chartBottom = chartHeight * 0.85
+            const chartH = chartBottom - chartTop
+
             return (
-              <span className={`px-2.5 py-0.5 rounded-full border text-[10px] font-bold ${badgeColor}`}>
-                {statusText}
-              </span>
+              <g>
+                {/* 标题 */}
+                <text x={chartLeft + chartWidth / 2} y={chartHeight * 0.08} fontSize={FONT.labelBold} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
+                  位移 - 时间图象 (x-t)
+                </text>
+
+                {/* 坐标轴 */}
+                <line x1={chartLeft} y1={chartTop} x2={chartLeft} y2={chartBottom} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axis} />
+                <line x1={chartLeft} y1={toXtY(0)} x2={chartLeft + chartWidth} y2={toXtY(0)} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axisBold} />
+
+                {/* X 轴刻度 */}
+                {[0, 5, 10, 15, 20].map(t => (
+                  <g key={`xt-xt-${t}`}>
+                    <line x1={toXtX(t)} y1={toXtY(0) - 3} x2={toXtX(t)} y2={toXtY(0) + 3} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
+                    <text x={toXtX(t)} y={toXtY(0) + 14} fontSize={FONT.small} textAnchor="middle" fill={CHART_COLORS.tickLabel} fontWeight="600">{t}</text>
+                  </g>
+                ))}
+
+                {/* Y 轴刻度 */}
+                {[0, 100, 200, 300, 400, 500].map(x => {
+                  if (x > xtYMax) return null
+                  return (
+                    <g key={`xt-yt-${x}`}>
+                      <line x1={chartLeft - 3} y1={toXtY(x)} x2={chartLeft} y2={toXtY(x)} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
+                      <text x={chartLeft - 7} y={toXtY(x) + 3} fontSize={FONT.small} textAnchor="end" fill={CHART_COLORS.tickLabel} fontWeight="600">{x}</text>
+                    </g>
+                  )
+                })}
+
+                {/* 轴标签 */}
+                <text x={chartLeft + chartWidth - 5} y={toXtY(0) - 8} fontSize={FONT.annotation} fill={CHART_COLORS.labelText} fontWeight="bold">t / s</text>
+                <text x={chartLeft - 10} y={chartTop - 5} fontSize={FONT.annotation} fill={CHART_COLORS.labelText} textAnchor="end" fontWeight="bold">x / m</text>
+
+                {/* 轿车 x-t 曲线 */}
+                <path
+                  d={'M ' + xtCarData.filter(p => p.t <= time).map(p => `${toXtX(p.t)},${toXtY(p.x)}`).join(' L ')}
+                  fill="none"
+                  stroke={PHYSICS_COLORS.displacement}
+                  strokeWidth={STROKE.chartMain}
+                />
+
+                {/* 警车 x-t 曲线 */}
+                <path
+                  d={'M ' + xtPoliceData.filter(p => p.t <= time).map(p => `${toXtX(p.t)},${toXtY(p.x)}`).join(' L ')}
+                  fill="none"
+                  stroke={PHYSICS_COLORS.velocity}
+                  strokeWidth={STROKE.chartMain}
+                />
+
+                {/* 时间扫描线 */}
+                {time > 0 && (
+                  <line
+                    x1={toXtX(time)}
+                    y1={chartTop}
+                    x2={toXtX(time)}
+                    y2={chartBottom}
+                    stroke={PHYSICS_COLORS.velocity}
+                    strokeWidth={STROKE.reference}
+                    strokeDasharray={DASH.guide.join(' ')}
+                    opacity={0.5}
+                  />
+                )}
+
+                {/* 当前状态点 */}
+                {time > 0 && (
+                  <g>
+                    <circle cx={toXtX(time)} cy={toXtY(state.xA + deltaX0)} r={4} fill={PHYSICS_COLORS.displacement} stroke="white" strokeWidth={2} />
+                    <circle cx={toXtX(time)} cy={toXtY(state.xB)} r={4} fill={PHYSICS_COLORS.velocity} stroke="white" strokeWidth={2} />
+                  </g>
+                )}
+
+                {/* 相遇点蓝色光圈 */}
+                {state.tMeet !== null && state.tMeet <= time && (
+                  <g>
+                    <circle cx={toXtX(state.tMeet)} cy={toXtY(state.xA + deltaX0)} r={8} fill="none" stroke="#3B82F6" strokeWidth={2} filter="url(#glow-blue)">
+                      <animate attributeName="r" values="6;10;6" dur="1.5s" repeatCount="indefinite" />
+                      <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite" />
+                    </circle>
+                  </g>
+                )}
+              </g>
             )
           })()}
-        </div>
 
-        <div className="ml-auto text-neutral-400 font-semibold shrink-0">
-          {motionMode === 0 ? '匀变速运动模型' : '变加速运动模型'}
-        </div>
-      </div>
+          {/* ── 右：v-t 图象 ── */}
+          {(() => {
+            const chartLeft = padding * 2 + chartWidth
+            const chartTop = chartHeight * 0.12
+            const chartBottom = chartHeight * 0.85
 
-      {/* ── 上部：v-t 图 + 一维滑轨 ── */}
-      <div className="w-full flex-[3] flex flex-row gap-3">
-        {/* 左：v-t 坐标系 */}
-        <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden p-2 relative">
-          <svg width="100%" height="100%" viewBox="0 0 500 300" preserveAspectRatio="xMidYMid meet">
-            {/* 实验室网格纸底纹 */}
-            <defs>
-              <pattern id="vt-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                <path d="M 20 0 L 0 0 0 20" fill="none" stroke={PHYSICS_COLORS.grid} strokeWidth={0.5} opacity={OPACITY.grid} />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#vt-grid)" />
+            // 阴影面积路径
+            const shadePath = (() => {
+              if (time <= 0) return ''
+              const pts: string[] = []
+              const dt = 0.1
+              for (let t = 0; t <= time + 0.001; t += dt) {
+                const tt = Math.min(t, time)
+                const vCar = vA
+                let vPol: number
+                const t1 = t0 + vMax / aB
+                if (tt < t0) {
+                  vPol = 0
+                } else if (tt < t1) {
+                  vPol = aB * (tt - t0)
+                } else {
+                  vPol = vMax
+                }
+                const yTop = toVtY(Math.max(vCar, vPol))
+                const yBot = toVtY(Math.min(vCar, vPol))
+                if (pts.length === 0) {
+                  pts.push(`M ${toVtX(tt)},${yTop}`)
+                } else {
+                  pts.push(`L ${toVtX(tt)},${yTop}`)
+                }
+              }
+              // 闭合到底部
+              for (let t = time; t >= -0.001; t -= 0.1) {
+                const tt = Math.max(t, 0)
+                const vCar = vA
+                let vPol: number
+                const t1 = t0 + vMax / aB
+                if (tt < t0) {
+                  vPol = 0
+                } else if (tt < t1) {
+                  vPol = aB * (tt - t0)
+                } else {
+                  vPol = vMax
+                }
+                const yBot = toVtY(Math.min(vCar, vPol))
+                pts.push(`L ${toVtX(tt)},${yBot}`)
+              }
+              pts.push('Z')
+              return pts.join(' ')
+            })()
 
-            {(() => {
-              const chartLeft = LAYOUT.AXIS_MARGIN
-              const chartTop = 30
-              const chartW = 500 - LAYOUT.AXIS_MARGIN - 30
-              const chartH = 300 - 65
+            return (
+              <g>
+                {/* 标题 */}
+                <text x={chartLeft + chartWidth / 2} y={chartHeight * 0.08} fontSize={FONT.labelBold} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
+                  速度 - 时间图象 (v-t)
+                </text>
 
-              const toX = (t: number) => chartLeft + (t / LAYOUT.VT_X_MAX) * chartW
-              const toY = (v: number) => chartTop + chartH - ((v - vtYMin) / (vtYMax - vtYMin)) * chartH
+                {/* 坐标轴 */}
+                <line x1={chartLeft} y1={chartTop} x2={chartLeft} y2={chartBottom} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axis} />
+                <line x1={chartLeft} y1={toVtY(0)} x2={chartLeft + chartWidth} y2={toVtY(0)} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axisBold} />
 
-              // 渐进式绘制
-              const activeData = vtChartData.filter(p => p.x <= time)
-              const vtPathD = activeData.length >= 2
-                ? 'M ' + activeData.map(p => `${toX(p.x)},${toY(p.y)}`).join(' L ')
-                : ''
-
-              // 面积路径（位移几何直观）
-              const vtAreaPathD = vtPathD
-                ? `${vtPathD} L ${toX(time)},${toY(0)} L ${toX(0)},${toY(0)} Z`
-                : ''
-
-              // 状态点 P
-              const pX = toX(time)
-              const pY = toY(currentV)
-
-              // 切线：斜率 = currentA，过 P 点
-              const tangentDx = LAYOUT.TANGENT_LENGTH
-              const tangentDy = currentA * (tangentDx / chartW) * LAYOUT.VT_X_MAX * (chartH / (vtYMax - vtYMin))
-
-              return (
-                <>
-                  <text x={chartLeft + chartW / 2} y={16} fontSize={FONT.labelBold} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
-                    速度 - 时间图象 (v-t)
-                  </text>
-
-                  {/* 坐标轴 */}
-                  <line x1={chartLeft} y1={chartTop} x2={chartLeft} y2={chartTop + chartH} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axis} />
-                  <line x1={chartLeft} y1={toY(0)} x2={chartLeft + chartW} y2={toY(0)} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axisBold} />
-
-                  {/* X 轴刻度 */}
-                  {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(t => (
-                    <g key={`xt-${t}`}>
-                      <line x1={toX(t)} y1={toY(0) - 3} x2={toX(t)} y2={toY(0) + 3} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-                      <text x={toX(t)} y={toY(0) + 14} fontSize={FONT.small} textAnchor="middle" fill={CHART_COLORS.tickLabel} fontWeight="600">{t}</text>
-                    </g>
-                  ))}
-
-                  {/* Y 轴刻度 */}
-                  {yticks.map(v => (
-                    <g key={`yt-${v}`}>
-                      <line x1={chartLeft - 3} y1={toY(v)} x2={chartLeft} y2={toY(v)} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-                      <text x={chartLeft - 7} y={toY(v) + 3} fontSize={FONT.small} textAnchor="end" fill={CHART_COLORS.tickLabel} fontWeight="600">{v}</text>
-                    </g>
-                  ))}
-
-                  {/* 轴标签 */}
-                  <text x={chartLeft + chartW - 5} y={toY(0) - 8} fontSize={FONT.annotation} fill={CHART_COLORS.labelText} fontWeight="bold">t / s</text>
-                  <text x={chartLeft - 10} y={chartTop - 10} fontSize={FONT.annotation} fill={CHART_COLORS.labelText} textAnchor="end" fontWeight="bold">v / (m/s)</text>
-
-                  {/* 位移积分面积填充 */}
-                  {vtAreaPathD && (
-                    <path d={vtAreaPathD} fill={VT_CHART_COLORS.areaShade} opacity={0.25} />
-                  )}
-
-                  {/* v-t 曲线 */}
-                  {vtPathD && (
-                    <path d={vtPathD} fill="none" stroke={VT_CHART_COLORS.velocityCurve} strokeWidth={STROKE.chartMain} />
-                  )}
-
-                  {/* 十字投影对齐虚线与读数坐标气泡 */}
-                  {time > 0 && (
-                    <g opacity={0.85}>
-                      {/* 横向投影线 */}
-                      <line x1={chartLeft} y1={pY} x2={pX} y2={pY} stroke={PHYSICS_COLORS.grid} strokeWidth={STROKE.reference} strokeDasharray={DASH.projection.join(' ')} />
-                      {/* 纵向投影线 */}
-                      <line x1={pX} y1={toY(0)} x2={pX} y2={pY} stroke={PHYSICS_COLORS.grid} strokeWidth={STROKE.reference} strokeDasharray={DASH.projection.join(' ')} />
-
-                      {/* X 轴读数标签背景与文字 */}
-                      <rect x={pX - 16} y={toY(0) + 16} width="32" height="12" rx="3" fill="#F1F5F9" stroke={PHYSICS_COLORS.axis} strokeWidth={0.5} />
-                      <text x={pX} y={toY(0) + 25} fontSize={8} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
-                        {time.toFixed(1)}s
-                      </text>
-
-                      {/* Y 轴读数标签背景与文字 */}
-                      <rect x={chartLeft - 38} y={pY - 6} width="34" height="12" rx="3" fill={PHYSICS_COLORS.objectFill} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={0.5} />
-                      <text x={chartLeft - 21} y={pY + 3} fontSize={8} fill={PHYSICS_COLORS.velocity} textAnchor="middle" fontWeight="bold">
-                        {currentV.toFixed(1)}
-                      </text>
-                    </g>
-                  )}
-
-                  {/* ── 动态直角定义三角形 (a = Δv/Δt) ── */}
-                  {slopeTriangleData && (
-                    <g>
-                      {(() => {
-                        const { tPrev, vPrev } = slopeTriangleData
-                        const xPrev = toX(tPrev)
-                        const yPrev = toY(vPrev)
-                        const xCorner = pX
-                        const yCorner = yPrev
-                        const deltaV = currentV - vPrev
-                        const dTSpan = time - tPrev
-
-                        return (
-                          <g opacity={0.9}>
-                            {/* 水平边 Δt */}
-                            <line x1={xPrev} y1={yPrev} x2={xCorner} y2={yCorner} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={STROKE.chartSub} strokeDasharray={DASH.tangent.join(' ')} />
-                            {/* 垂直边 Δv (高亮红色，对应加速度) */}
-                            <line x1={xCorner} y1={yCorner} x2={pX} y2={pY} stroke={PHYSICS_COLORS.acceleration} strokeWidth={STROKE.chartMain} />
-                            
-                            {/* 标注时间差 Δt */}
-                            <text x={(xPrev + xCorner) / 2} y={yCorner + (yCorner > pY ? 12 : -6)} fontSize={8} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
-                              Δt={dTSpan.toFixed(1)}s
-                            </text>
-                            {/* 标注速度差 Δv */}
-                            <text x={xCorner + 6} y={(yCorner + pY) / 2 + 3} fontSize={8} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">
-                              Δv={deltaV > 0 ? '+' : ''}{deltaV.toFixed(1)}m/s
-                            </text>
-
-                            {/* 斜边弦线 (连接两点) */}
-                            <line x1={xPrev} y1={yPrev} x2={pX} y2={pY} stroke={PHYSICS_COLORS.velocity} strokeWidth={STROKE.chartSub} />
-                          </g>
-                        )
-                      })()}
-                    </g>
-                  )}
-
-                  {/* 状态点 P */}
-                  <circle cx={pX} cy={pY} r={LAYOUT.POINT_RADIUS} fill={PHYSICS_COLORS.velocity} stroke="white" strokeWidth={2} />
-
-                  {/* 切线（斜率指示器） */}
-                  {time > 0 && (
-                    <line
-                      x1={pX - tangentDx}
-                      y1={pY + tangentDy}
-                      x2={pX + tangentDx}
-                      y2={pY - tangentDy}
-                      stroke={PHYSICS_COLORS.acceleration}
-                      strokeWidth={STROKE.chartRef}
-                      strokeDasharray={DASH.reference.join(' ')}
-                      opacity={0.7}
-                    />
-                  )}
-
-                  {/* 标注：当前斜率 (即瞬时加速度) */}
-                  {time > 0 && (
-                    <text x={pX + 8} y={pY - tangentDy * 0.5 - 6} fontSize={FONT.small} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">
-                      斜率 k = {currentA.toFixed(2)}
-                    </text>
-                  )}
-                </>
-              )
-            })()}
-          </svg>
-          {/* 转向点高亮提示气泡 */}
-          {showTurnWarning && (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-500 text-white font-bold text-xs py-2 px-3 rounded-lg shadow-lg border border-amber-600 animate-bounce">
-              ⚠️ 转向点：此时速度 v = 0，但加速度 a = {currentA.toFixed(1)} m/s²！
-            </div>
-          )}
-        </div>
-
-        {/* 右：一维数轴运动演示 */}
-        <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden p-2">
-          <svg width="100%" height="100%" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid meet">
-            {/* 实验网格底纹 */}
-            <rect width="100%" height="100%" fill="url(#vt-grid)" />
-
-            {(() => {
-              const axisY = 150
-              const axisLeft = 40
-              const axisRight = 360
-              const axisLen = axisRight - axisLeft
-              const dotPixelX = axisLeft + (dotX * axisLen)
-
-              // 速度矢量长度
-              const vArrowLen = currentV * LAYOUT.VECTOR_V_SCALE
-              const clampedVLen = Math.sign(vArrowLen) * Math.min(Math.abs(vArrowLen), axisLen * 0.4)
-
-              // 加速度矢量长度
-              const aArrowLen = currentA * LAYOUT.VECTOR_A_SCALE
-              const clampedALen = Math.sign(aArrowLen) * Math.min(Math.abs(aArrowLen), axisLen * 0.3)
-
-              return (
-                <>
-                  <text x={200} y={20} fontSize={FONT.labelBold} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
-                    一维滑轨实验
-                  </text>
-
-                  {/* 精密滑轨槽（代替单线数轴，工程制图风格） */}
-                  <rect x={axisLeft - 10} y={axisY - 6} width={axisLen + 20} height="12" rx="4" fill={CHART_COLORS.gridLine} stroke={CHART_COLORS.zeroline} strokeWidth={1} />
-                  <line x1={axisLeft} y1={axisY} x2={axisRight} y2={axisY} stroke={CHART_COLORS.asymptote} strokeWidth={1} strokeDasharray="5 3" />
-
-                  {/* 原点标记 */}
-                  <line x1={axisLeft + axisLen * axisCenter} y1={axisY - 12} x2={axisLeft + axisLen * axisCenter} y2={axisY + 12} stroke={CHART_COLORS.axisLine} strokeWidth={2} />
-                  <text x={axisLeft + axisLen * axisCenter} y={axisY + 24} fontSize={FONT.small} fill={CHART_COLORS.labelText} textAnchor="middle" fontWeight="bold">0m</text>
-
-                  {/* 正方向标记（固定：向右为正） */}
-                  <text x={axisRight + 12} y={axisY + 4} fontSize={FONT.small} fill={CHART_COLORS.labelText} fontWeight="bold">
-                    → 正
-                  </text>
-
-                  {/* 滑轨测距刻度尺 */}
-                  {[-40, -20, 20, 40].map(s => {
-                    const nx = axisCenter + (s / maxDisplacement) * axisRange
-                    if (nx < 0 || nx > 1) return null
-                    const px = axisLeft + nx * axisLen
-                    return (
-                      <g key={`tick-${s}`}>
-                        <line x1={px} y1={axisY - 10} x2={px} y2={axisY + 10} stroke={CHART_COLORS.tickLabel} strokeWidth={1.5} />
-                        <text x={px} y={axisY + 22} fontSize={8} textAnchor="middle" fill={CHART_COLORS.tickLabel} fontWeight="bold">{s}m</text>
-                      </g>
-                    )
-                  })}
-
-                  {/* 历史轨迹拖尾投影 (科学频闪痕迹) */}
-                  {trailPoints.map((tp) => (
-                    <g key={tp.key} opacity={tp.opacity}>
-                      <circle cx={tp.x * axisLen + axisLeft} cy={axisY} r={LAYOUT.DOT_RADIUS - 2} fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-                      <line x1={tp.x * axisLen + axisLeft - 4} y1={axisY} x2={tp.x * axisLen + axisLeft + 4} y2={axisY} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={0.5} />
-                      <line x1={tp.x * axisLen + axisLeft} y1={axisY - 4} x2={tp.x * axisLen + axisLeft} y2={axisY + 4} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={0.5} />
-                    </g>
-                  ))}
-
-                  {/* 十字准星精密刻度盘质点 */}
-                  <g transform={`translate(${dotPixelX}, ${axisY})`}>
-                    {/* 双层轮毂圆环 */}
-                    <circle cx="0" cy="0" r={LAYOUT.DOT_RADIUS} fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={STROKE.objectLine} />
-                    <circle cx="0" cy="0" r={4} fill="none" stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-                    {/* 十字准星 */}
-                    <line x1="-10" y1="0" x2="10" y2="0" stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-                    <line x1="0" y1="-10" x2="0" y2="10" stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
+                {/* X 轴刻度 */}
+                {[0, 5, 10, 15, 20].map(t => (
+                  <g key={`vt-xt-${t}`}>
+                    <line x1={toVtX(t)} y1={toVtY(0) - 3} x2={toVtX(t)} y2={toVtY(0) + 3} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
+                    <text x={toVtX(t)} y={toVtY(0) + 14} fontSize={FONT.small} textAnchor="middle" fill={CHART_COLORS.tickLabel} fontWeight="600">{t}</text>
                   </g>
-                  {/* 滑块当前位置数值泡 */}
-                  <text x={dotPixelX} y={axisY - 16} fontSize={9} fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
-                    s = {currentS.toFixed(1)}m
-                  </text>
+                ))}
 
-                  {/* 速度矢量 v (蓝色，主矢量) */}
-                  {Math.abs(currentV) > 0.05 && (
-                    <g>
-                      <line
-                        x1={dotPixelX}
-                        y1={axisY - 32}
-                        x2={dotPixelX + clampedVLen}
-                        y2={axisY - 32}
-                        stroke={PHYSICS_COLORS.velocity}
-                        strokeWidth={STROKE.vectorMain}
-                        markerEnd="url(#arrowhead-adv-v)"
-                      />
-                      {/* 标注：v⃗ */}
-                      <text
-                        x={dotPixelX + clampedVLen + (currentV > 0 ? 8 : -14)}
-                        y={axisY - 28}
-                        fontSize={FONT.bodySize}
-                        fill={PHYSICS_COLORS.velocity}
-                        fontWeight="bold"
-                      >
-                        v⃗
-                      </text>
+                {/* Y 轴刻度 */}
+                {[0, 10, 20, 30, 40, 50, 60].map(v => {
+                  if (v > vtYMax) return null
+                  return (
+                    <g key={`vt-yt-${v}`}>
+                      <line x1={chartLeft - 3} y1={toVtY(v)} x2={chartLeft} y2={toVtY(v)} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
+                      <text x={chartLeft - 7} y={toVtY(v) + 3} fontSize={FONT.small} textAnchor="end" fill={CHART_COLORS.tickLabel} fontWeight="600">{v}</text>
                     </g>
-                  )}
+                  )
+                })}
 
-                  {/* 加速度矢量 a (红色，代表受力/改变量) */}
-                  {Math.abs(currentA) > 0.05 && (
-                    <g>
-                      <line
-                        x1={dotPixelX}
-                        y1={axisY + 32}
-                        x2={dotPixelX + clampedALen}
-                        y2={axisY + 32}
-                        stroke={PHYSICS_COLORS.acceleration}
-                        strokeWidth={STROKE.vectorMain}
-                        markerEnd="url(#arrowhead-adv-a)"
-                      />
-                      {/* 标注：a⃗ */}
-                      <text
-                        x={dotPixelX + clampedALen + (currentA > 0 ? 8 : -14)}
-                        y={axisY + 36}
-                        fontSize={FONT.bodySize}
-                        fill={PHYSICS_COLORS.acceleration}
-                        fontWeight="bold"
-                      >
-                        a⃗
-                      </text>
-                    </g>
-                  )}
+                {/* 轴标签 */}
+                <text x={chartLeft + chartWidth - 5} y={toVtY(0) - 8} fontSize={FONT.annotation} fill={CHART_COLORS.labelText} fontWeight="bold">t / s</text>
+                <text x={chartLeft - 10} y={chartTop - 5} fontSize={FONT.annotation} fill={CHART_COLORS.labelText} textAnchor="end" fontWeight="bold">v / (m/s)</text>
 
-                  {/* 运动状态文字标签 */}
-                  <text x={200} y={270} fontSize={FONT.labelBold} fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
-                    物理状态：
-                    <tspan fill={direction === '速度为零' ? PHYSICS_COLORS.friction : (motion === '加速' ? PHYSICS_COLORS.velocity : PHYSICS_COLORS.acceleration)}>
-                      {direction === '速度为零' ? '瞬时静止' : `${direction} — ${motion}`}
-                    </tspan>
-                  </text>
+                {/* 阴影面积（位移差） */}
+                {shadePath && (
+                  <path d={shadePath} fill={PHYSICS_COLORS.accelerationY} opacity={0.2} />
+                )}
 
-                  <defs>
-                    <marker id="arrowhead-adv-v" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                      <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
-                    </marker>
-                    <marker id="arrowhead-adv-a" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                      <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.acceleration} />
-                    </marker>
-                  </defs>
-                </>
-              )
-            })()}
-          </svg>
-        </div>
+                {/* 轿车 v-t 曲线 */}
+                <path
+                  d={'M ' + vtCarData.filter(p => p.t <= time).map(p => `${toVtX(p.t)},${toVtY(p.v)}`).join(' L ')}
+                  fill="none"
+                  stroke={PHYSICS_COLORS.velocity}
+                  strokeWidth={STROKE.chartMain}
+                />
+
+                {/* 警车 v-t 曲线 */}
+                <path
+                  d={'M ' + vtPoliceData.filter(p => p.t <= time).map(p => `${toVtX(p.t)},${toVtY(p.v)}`).join(' L ')}
+                  fill="none"
+                  stroke={PHYSICS_COLORS.acceleration}
+                  strokeWidth={STROKE.chartMain}
+                />
+
+                {/* 时间扫描线 */}
+                {time > 0 && (
+                  <line
+                    x1={toVtX(time)}
+                    y1={chartTop}
+                    x2={toVtX(time)}
+                    y2={chartBottom}
+                    stroke={PHYSICS_COLORS.velocity}
+                    strokeWidth={STROKE.reference}
+                    strokeDasharray={DASH.guide.join(' ')}
+                    opacity={0.5}
+                  />
+                )}
+
+                {/* 共速点红色光圈 */}
+                {state.tEqual > 0 && state.tEqual <= time && (
+                  <g>
+                    <circle cx={toVtX(state.tEqual)} cy={toVtY(vA)} r={8} fill="none" stroke="#EF4444" strokeWidth={2} filter="url(#glow-red)">
+                      <animate attributeName="r" values="6;10;6" dur="1.5s" repeatCount="indefinite" />
+                      <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite" />
+                    </circle>
+                    {/* 向下引垂直虚线 */}
+                    <line
+                      x1={toVtX(state.tEqual)}
+                      y1={toVtY(vA)}
+                      x2={toVtX(state.tEqual)}
+                      y2={toVtY(0)}
+                      stroke="#EF4444"
+                      strokeWidth={STROKE.reference}
+                      strokeDasharray={DASH.reference.join(' ')}
+                      opacity={0.6}
+                    />
+                    <text x={toVtX(state.tEqual)} y={toVtY(0) + 18} fontSize={FONT.small} fill="#EF4444" textAnchor="middle" fontWeight="bold">
+                      t={state.tEqual.toFixed(1)}s
+                    </text>
+                  </g>
+                )}
+              </g>
+            )
+          })()}
+        </svg>
       </div>
 
-      {/* ── 下部：动画控制栏 ── */}
+      {/* ══════════ 下层：真实公路追击动画 ══════════ */}
+      <div className="flex-1 relative">
+        <svg width={containerSize.width} height={animHeight} className="absolute inset-0">
+          {/* 背景 */}
+          <rect width={containerSize.width} height={animHeight} fill="url(#chase-grid)" />
+
+          {/* 公路 */}
+          <line x1={roadLeft} y1={roadY} x2={roadRight} y2={roadY} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.groundLine} />
+          {/* 公路刻度 */}
+          {Array.from({ length: Math.floor(roadWidth / 30) + 1 }).map((_, idx) => {
+            const tickX = roadLeft + idx * 30
+            const isMajor = idx % 5 === 0
+            const tickHeight = isMajor ? 8 : 4
+            return (
+              <line
+                key={`road-tick-${idx}`}
+                x1={tickX}
+                y1={roadY}
+                x2={tickX}
+                y2={roadY + tickHeight}
+                stroke={PHYSICS_COLORS.axis}
+                strokeWidth={STROKE.tick}
+              />
+            )
+          })}
+          {/* 地标 */}
+          {[0, 100, 200, 300, 400, 500].map(d => {
+            const px = startX + d * scale
+            if (px > roadRight) return null
+            return (
+              <g key={`landmark-${d}`}>
+                <line x1={px} y1={roadY} x2={px} y2={roadY + 10} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.tickBold} />
+                <text x={px} y={roadY + 22} fontSize={FONT.small} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">{d}m</text>
+              </g>
+            )
+          })}
+
+          {/* 起始参考线 */}
+          <line x1={startX} y1={roadY - 40} x2={startX} y2={roadY + 15} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axisBold} strokeDasharray={DASH.boundary.join(' ')} />
+          <text x={startX} y={roadY + 28} fontSize={FONT.axis} fill={PHYSICS_COLORS.axis} textAnchor="middle" fontWeight="bold">0</text>
+
+          {/* 动态间距线 */}
+          {time > 0 && (
+            <g>
+              <line
+                x1={policeX + vehicleW}
+                y1={roadY - vehicleH * 0.5}
+                x2={carX}
+                y2={roadY - vehicleH * 0.5}
+                stroke={state.deltaX > deltaX0 ? PHYSICS_COLORS.acceleration : PHYSICS_COLORS.velocity}
+                strokeWidth={STROKE.reference}
+                strokeDasharray={DASH.reference.join(' ')}
+              />
+              <text
+                x={(policeX + vehicleW + carX) / 2}
+                y={roadY - vehicleH * 0.5 - 6}
+                fontSize={FONT.small}
+                fill={state.deltaX > deltaX0 ? PHYSICS_COLORS.acceleration : PHYSICS_COLORS.velocity}
+                textAnchor="middle"
+                fontWeight="bold"
+              >
+                Δx = {state.deltaX.toFixed(1)}m
+              </text>
+            </g>
+          )}
+
+          {/* 轿车 A */}
+          <g transform={`translate(${carX}, ${roadY - vehicleH})`}>
+            {/* 轿车车身 */}
+            <path
+              d={`M 2,${vehicleH - 4} Q 4,2 12,2 L ${vehicleW * 0.6},2 Q ${vehicleW * 0.75},2 ${vehicleW * 0.85},6 L ${vehicleW - 2},${vehicleH - 4} Z`}
+              fill={PHYSICS_COLORS.objectFillNeutral}
+              stroke={PHYSICS_COLORS.objectStroke}
+              strokeWidth={STROKE.objectLine}
+            />
+            {/* 车窗 */}
+            <rect x={vehicleW * 0.35} y={4} width={vehicleW * 0.25} height={vehicleH * 0.3} rx={1} fill={PHYSICS_COLORS.grid} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
+            {/* 车轮 */}
+            <g transform={`translate(${vehicleW * 0.25}, ${vehicleH - 3})`}>
+              <circle cx="0" cy="0" r={vehicleH * 0.15} fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1.5} />
+            </g>
+            <g transform={`translate(${vehicleW * 0.75}, ${vehicleH - 3})`}>
+              <circle cx="0" cy="0" r={vehicleH * 0.15} fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1.5} />
+            </g>
+            {/* 标注 */}
+            <text x={vehicleW / 2} y={-6} fontSize={FONT.small} fill={PHYSICS_COLORS.displacement} textAnchor="middle" fontWeight="bold">轿车</text>
+          </g>
+
+          {/* 警车 B */}
+          <g transform={`translate(${policeX}, ${roadY - vehicleH})`}>
+            {/* 反应期光晕 */}
+            {state.phase === 'reaction' && (
+              <circle cx={vehicleW / 2} cy={vehicleH / 2} r={vehicleW * 0.8} fill="none" stroke={PHYSICS_COLORS.referencePoint} strokeWidth={1} opacity={0.4}>
+                <animate attributeName="r" values={`${vehicleW * 0.6};${vehicleW * 0.9};${vehicleW * 0.6}`} dur="1.5s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.6;0.2;0.6" dur="1.5s" repeatCount="indefinite" />
+              </circle>
+            )}
+            {/* 警车身 */}
+            <path
+              d={`M 2,${vehicleH - 4} Q 4,2 12,2 L ${vehicleW * 0.6},2 Q ${vehicleW * 0.75},2 ${vehicleW * 0.85},6 L ${vehicleW - 2},${vehicleH - 4} Z`}
+              fill={PHYSICS_COLORS.objectFill}
+              stroke={PHYSICS_COLORS.objectStroke}
+              strokeWidth={STROKE.objectLine}
+            />
+            {/* 警灯 */}
+            <rect x={vehicleW * 0.3} y={-3} width={vehicleW * 0.15} height={4} rx={1} fill="#EF4444" />
+            <rect x={vehicleW * 0.5} y={-3} width={vehicleW * 0.15} height={4} rx={1} fill="#3B82F6" />
+            {/* 车轮 */}
+            <g transform={`translate(${vehicleW * 0.25}, ${vehicleH - 3})`}>
+              <circle cx="0" cy="0" r={vehicleH * 0.15} fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1.5} />
+            </g>
+            <g transform={`translate(${vehicleW * 0.75}, ${vehicleH - 3})`}>
+              <circle cx="0" cy="0" r={vehicleH * 0.15} fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1.5} />
+            </g>
+            {/* 标注 */}
+            <text x={vehicleW / 2} y={-6} fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} textAnchor="middle" fontWeight="bold">警车</text>
+          </g>
+
+          {/* 速度矢量 */}
+          {time > 0 && (
+            <g>
+              {/* 轿车速度矢量 */}
+              <line
+                x1={carX + vehicleW + 4}
+                y1={roadY - vehicleH * 0.5}
+                x2={carX + vehicleW + 4 + vA * LAYOUT.ARROW_SCALE_V}
+                y2={roadY - vehicleH * 0.5}
+                stroke={PHYSICS_COLORS.velocity}
+                strokeWidth={STROKE.vectorMain}
+                markerEnd="url(#arrow-chase-v)"
+              />
+              <text x={carX + vehicleW + 8 + vA * LAYOUT.ARROW_SCALE_V} y={roadY - vehicleH * 0.5 + 4} fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v_A</text>
+
+              {/* 警车速度矢量 */}
+              {state.vB > 0.1 && (
+                <g>
+                  <line
+                    x1={policeX + vehicleW + 4}
+                    y1={roadY - vehicleH * 0.5}
+                    x2={policeX + vehicleW + 4 + state.vB * LAYOUT.ARROW_SCALE_V}
+                    y2={roadY - vehicleH * 0.5}
+                    stroke={PHYSICS_COLORS.velocity}
+                    strokeWidth={STROKE.vectorMain}
+                    markerEnd="url(#arrow-chase-v)"
+                  />
+                  <text x={policeX + vehicleW + 8 + state.vB * LAYOUT.ARROW_SCALE_V} y={roadY - vehicleH * 0.5 + 4} fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v_B</text>
+                </g>
+              )}
+            </g>
+          )}
+
+          {/* 信息标注 */}
+          <g>
+            <text x={roadLeft + 10} y={30} fontSize={FONT.bodySize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
+              t = {time.toFixed(1)} s
+            </text>
+            <text x={roadLeft + 120} y={30} fontSize={FONT.bodySize} fill={PHYSICS_COLORS.displacement} fontWeight="bold">
+              x_A = {state.xA.toFixed(1)} m
+            </text>
+            <text x={roadLeft + 260} y={30} fontSize={FONT.bodySize} fill={PHYSICS_COLORS.velocity} fontWeight="bold">
+              x_B = {state.xB.toFixed(1)} m
+            </text>
+            <text x={roadLeft + 400} y={30} fontSize={FONT.bodySize} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">
+              Δx = {state.deltaX.toFixed(1)} m
+            </text>
+          </g>
+
+          {/* 状态徽章 */}
+          <g transform={`translate(${policeX + vehicleW / 2 - 30}, ${roadY - vehicleH - 22})`}>
+            <rect x="0" y="0" width="60" height="16" rx="8" fill="white" stroke={state.phase === 'reaction' ? '#CBD5E1' : state.phase === 'accelerating' ? '#FDBA74' : '#86EFAC'} strokeWidth={1} />
+            <text x="30" y="12" fontSize={9} fill={state.phase === 'reaction' ? '#475569' : state.phase === 'accelerating' ? '#C2410C' : '#15803D'} textAnchor="middle" fontWeight="bold">
+              {phaseText}
+            </text>
+          </g>
+        </svg>
+
+        {/* 最大间距警告气泡 */}
+        {showMaxGapWarning && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-500 text-white font-bold text-xs py-2 px-3 rounded-lg shadow-lg border border-amber-600 animate-bounce">
+            ⚠️ 共速时刻：此时两车距离最大！Δx = {state.deltaX.toFixed(1)} m
+          </div>
+        )}
+      </div>
+
+      {/* ── 动画控制栏 ── */}
       <div className="w-full shrink-0 bg-white rounded-xl shadow-sm p-2">
         <AnimationControls
           isPlaying={isPlaying}
           speed={speed}
           time={time}
-          maxTime={30}
+          maxTime={LAYOUT.MAX_TIME}
           onPlayPause={() => setIsPlaying(!isPlaying)}
           onReset={() => { setTime(0); setIsPlaying(false) }}
           onSpeedChange={setSpeed}

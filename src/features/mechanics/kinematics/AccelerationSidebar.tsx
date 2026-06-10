@@ -5,7 +5,7 @@ import type { SidebarExtraProps } from '@/data/types'
  * 加速度动画侧边栏扩展
  *
  * 基础版：Δt 三档切换 + 经典对比快捷按钮
- * 进阶版：负加速度实验快捷按钮
+ * 进阶版：警车追击问题参数控制
  */
 export default function AccelerationSidebar({
   params,
@@ -27,26 +27,40 @@ export default function AccelerationSidebar({
   const handleClassicCompare = () => {
     updateParam('vA', 300)
     updateParam('aB', 10)
-    animationActions.resetAnimation()
+    animationActions.restartAnimation()
   }
 
-  // ── 进阶版：转向点验证快捷 ──
-  const handleTurnPointVerify = () => {
-    updateParam('v0', 12)
-    updateParam('a', -3)
-    updateParam('motionMode', 0)
-    animationActions.resetAnimation()
+  // ── 进阶版：高速追击快捷 ──
+  const handleHighSpeedChase = () => {
+    updateParam('vA', 40)
+    updateParam('deltaX0', 100)
+    updateParam('t0', 1.5)
+    updateParam('aB', 4)
+    updateParam('vMax', 50)
+    animationActions.restartAnimation()
   }
 
-  // ── 进阶版：变加速探究快捷 ──
-  const handleVariableAccel = () => {
-    updateParam('v0', 0)
-    updateParam('a', 4)
-    updateParam('motionMode', 1)
-    animationActions.resetAnimation()
+  // ── 进阶版：近距离反应快捷 ──
+  const handleCloseReaction = () => {
+    updateParam('vA', 20)
+    updateParam('deltaX0', 30)
+    updateParam('t0', 0.5)
+    updateParam('aB', 5)
+    updateParam('vMax', 40)
+    animationActions.restartAnimation()
   }
 
-  // ── 模式切换 ──
+  // ── 进阶版：极限加速快捷 ──
+  const handleMaxAccel = () => {
+    updateParam('vA', 35)
+    updateParam('deltaX0', 80)
+    updateParam('t0', 2)
+    updateParam('aB', 7)
+    updateParam('vMax', 55)
+    animationActions.restartAnimation()
+  }
+
+  // ── 观察模式切换 ──
   const handleModeChange = (value: number | string) => {
     updateParam('advancedMode', value as number)
     animationActions.resetAnimation()
@@ -80,7 +94,7 @@ export default function AccelerationSidebar({
         <div className="mt-4 pt-3 border-t border-neutral-200">
           <p className="text-xs font-semibold text-neutral-600 mb-2">教学快捷操作</p>
           <OptionButton
-            label="经典对比：v_A=300, a_B=10"
+            label="经典对比：vₐ=300, aᵦ=10"
             variant="preset"
             disabled={disabled}
             onClick={handleClassicCompare}
@@ -108,7 +122,7 @@ export default function AccelerationSidebar({
       {/* ── 进阶版：轻量提示 ── */}
       {isAdvanced && (
         <TipCard variant="info" className="mt-3">
-          试试把初速度或加速度设为负值，观察运动状态的变化
+          调整反应时间和加速度，观察共速时刻与最大间距的关系
         </TipCard>
       )}
 
@@ -118,20 +132,26 @@ export default function AccelerationSidebar({
           <p className="text-xs font-semibold text-neutral-600 mb-2">教学快捷操作</p>
           <div className="flex flex-col gap-2">
             <OptionButton
-              label="转向点验证：v₀=12, a=-3"
-              variant="danger"
-              disabled={disabled}
-              onClick={handleTurnPointVerify}
-            />
-            <OptionButton
-              label="变加速探究：v₀=0, a₀=4, 变加速"
+              label="高速追击：vₐ=40, Δx₀=100"
               variant="preset"
               disabled={disabled}
-              onClick={handleVariableAccel}
+              onClick={handleHighSpeedChase}
+            />
+            <OptionButton
+              label="近距离反应：vₐ=20, Δx₀=30"
+              variant="danger"
+              disabled={disabled}
+              onClick={handleCloseReaction}
+            />
+            <OptionButton
+              label="极限加速：aᵦ=7, vₘₐₓ=55"
+              variant="preset"
+              disabled={disabled}
+              onClick={handleMaxAccel}
             />
           </div>
           <TipCard variant="info" className="mt-2">
-            验证 v=0 时 a≠0 转向点特征，或观察变加速运动斜率直角三角形的连续变扁过程。
+            观察 v-t 图阴影面积与 x-t 图线间距的几何对应关系
           </TipCard>
         </div>
       )}

@@ -15,8 +15,7 @@ import {
   calculateVariableAcceleration,
   calculateInstantaneousVelocity,
   calculateDualObjectComparison,
-  determineMotionState,
-  calculateVariableAccelerationMotion,
+  calculatePoliceChase,
 } from '../../physics'
 import { interpolateTrajectoryPoint } from '../../utils/trajectory'
 
@@ -166,38 +165,37 @@ export function buildKinematicsQuantities(
           ],
         }
       } else {
-        // ── 进阶版：矢量方向与 v-t 图象联动 ──
-        const v0 = params.v0 ?? 0
-        const a = params.a ?? 2
-        const motionMode = params.motionMode ?? 0
-        let v: number
-        let currentA: number
-        if (motionMode === 0) {
-          // 匀变速
-          const result = calculateAcceleratedMotion(v0, a, time)
-          v = result.v
-          currentA = a
-        } else {
-          // 变加速：a(t) = a₀ - k·t，k 取 |a|/10 保证衰减可见
-          const k = Math.abs(a) / 10
-          const result = calculateVariableAccelerationMotion(v0, a, k, time)
-          v = result.v
-          currentA = result.a
-        }
-        const { direction, motion } = determineMotionState(v, currentA)
-        const isAccelerating = motion === '加速'
+        // ── 进阶版：警车追击问题 ──
+        const vA = params.vA ?? 30
+        const deltaX0 = params.deltaX0 ?? 50
+        const t0 = params.t0 ?? 1
+        const aB = params.aB ?? 3
+        const vMax = params.vMax ?? 40
+        const state = calculatePoliceChase(vA, deltaX0, t0, aB, vMax, time)
+
+        // 共速时刻
+        const tEqual = t0 + vA / aB
+
+        // 相遇时刻
+        const tMeetText = state.tMeet !== null ? `${state.tMeet.toFixed(2)}` : '尚未相遇'
+
         return {
           quantities: [
             ...base,
-            { label: '矢量方向关系', value: `v⃗ 与 a⃗ ${direction}`, unit: '' },
-            { label: '运动状态', value: motion, unit: '', highlight: isAccelerating ? 'positive' as const : motion === '减速' ? 'negative' as const : undefined },
-            { label: '微积分映射', value: 'a = dv/dt = v\'(t)', unit: '' },
-            { label: '核心结论', value: 'a 为负值，物体不一定做减速运动', unit: '', highlight: 'extreme' as const },
+            { label: '轿车位置 xₐ', value: state.xA.toFixed(2), unit: 'm' },
+            { label: '警车位置 xᵦ', value: state.xB.toFixed(2), unit: 'm' },
+            { label: '当前车距 Δx', value: state.deltaX.toFixed(2), unit: 'm' },
+            { label: '共速时刻 t', value: tEqual.toFixed(2), unit: 's' },
+            { label: '相遇时刻 t', value: tMeetText, unit: 's' },
+          ],
+          formulas: [
+            { name: '轿车位移', latex: `x_A = v_A \\cdot t`, level: 'core' },
+            { name: '共速时刻', latex: `t = t_0 + \\frac{v_A}{a_B}`, level: 'core', condition: '警车加速期内' },
           ],
           gaokaoPoints: [
-            { text: '加速度与速度同向则加速，反向则减速，不看正负号', importance: 'core' as const },
-            { text: 'v-t 图象斜率绝对值表加速度大小，正负表方向', importance: 'gaokao' as const },
-            { text: '加速度减小时若与速度同向，速度依然在增大', importance: 'hard' as const },
+            { text: 'x-t 图交点看相遇，斜率看速度；不可与 v-t 图混淆', importance: 'core' as const },
+            { text: '速度相等是距离具有极值的临界点，此时两车间距最大', importance: 'gaokao' as const },
+            { text: '警车做匀加速运动时，其 x-t 对应二次函数抛物线', importance: 'hard' as const },
           ],
         }
       }

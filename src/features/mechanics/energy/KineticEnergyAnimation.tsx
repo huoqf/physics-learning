@@ -1,7 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CHART_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OPACITY, CHART_COLORS, CANVAS_STYLE, VECTOR_DISPLAY } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { KatexFormula } from '@/components/UI'
 import {
@@ -9,6 +9,26 @@ import {
   precomputeCurvedTrackTrajectory,
   getKEStateAtTime,
 } from '@/physics/kineticEnergy'
+
+/** 动能定理动画布局常量（语义化比例，禁止裸数字） */
+const KE_LAYOUT = {
+  /** 左侧留白占画布宽度比例 */
+  leftPaddingRatio: 0.06,
+  /** 右侧留白占画布宽度比例 */
+  rightPaddingRatio: 0.048,
+  /** 地面线 Y 位置占画布高度比例 */
+  groundYRatio: 0.85,
+  /** 图表区顶部比例 */
+  chartTopRatio: 0.06,
+  /** 图表区底部比例 */
+  chartBottomRatio: 0.52,
+  /** 图表与动画区分隔线比例 */
+  dividerRatio: 0.55,
+  /** 进阶模式球半径占轨道半径比例 */
+  ballToTrackRatio: 0.10,
+  /** 进阶模式球半径占画布宽度上限比例 */
+  ballMaxWidthRatio: 0.025,
+} as const
 
 /**
  * 动能定理交互动画（重构美化规范版）
@@ -18,6 +38,11 @@ import {
  * - 进阶模式（mode=1）：进阶模式，滑块沿圆弧粗糙轨道下滑，受重力正功与变摩擦力负功，触底匀速。
  *
  * 布局倒置：图表在上，动画在下，高度自适应动态分配
+ *
+ * 坐标系约定：
+ * - 进阶模式圆弧轨道圆心在 (padding + R*scale, groundY - R*scale)
+ * - 小球位置由 state.x/state.y 推导，不依赖 state.theta（线性插值破坏几何关系）
+ * - 切向方向由内法线（指向圆心）旋转 90° 推导
  */
 export default function KineticEnergyAnimation() {
   const { params, time, isPlaying, setIsPlaying, showVectors } = useAnimationStore()
@@ -37,22 +62,22 @@ export default function KineticEnergyAnimation() {
 
   // ── 预计算物理轨迹 ──
   const { points: trajectory, t_c, v_c, x_max, scale } = useMemo(() => {
-    const paddingVal = canvasSize.width * 0.06
-    const wallXVal = canvasSize.width - paddingVal * 0.8
-    const max_pixel_dist = (wallXVal - 90 - 15) - paddingVal
-    const max_pixel_height = (canvasSize.height * 0.85) - (canvasSize.height * 0.55 + 24)
+    const paddingVal = canvasSize.width * KE_LAYOUT.leftPaddingRatio
+    const rightPadding = canvasSize.width * KE_LAYOUT.rightPaddingRatio
+    const gY = canvasSize.height * KE_LAYOUT.groundYRatio
+    const max_pixel_dist = canvasSize.width - paddingVal - rightPadding
+    const max_pixel_height = gY - canvasSize.height * KE_LAYOUT.dividerRatio - 24
 
     if (mode === 0) {
-      // 普通模式：总路程 x_end 设为拉力位移 s_target * 1.6
+      // 普通模式：总路程 x_end = s_target * 1.6（物理量固定，不随 canvas 变）
       const x_end = s_target * 1.6
       const scaleVal = max_pixel_dist / x_end
       const res = precomputeConstantKETrajectory(m, v0, F_pull, s_target, x_end)
       return { points: res.points, t_c: res.t_c, v_c: res.v_c, x_max: x_end, scale: scaleVal }
     } else {
-      // 进阶模式：缩放比例由纵向高度限额锁定以保证画面纵横比和防畸变
+      // 进阶模式：纵向高度确定像素→物理缩放；x_end 用物理量 R * 2.0 固定
       const scaleVal = max_pixel_height / R
-      // 刚好行驶到右端（面板左侧）对应的最大物理滑行位移：
-      const x_end = max_pixel_dist / scaleVal
+      const x_end = R * 2.0
       const res = precomputeCurvedTrackTrajectory(m, v0, R, mu, x_end)
       return { points: res.points, t_c: res.t_c, v_c: res.v_c, x_max: x_end, scale: scaleVal }
     }
@@ -87,21 +112,21 @@ export default function KineticEnergyAnimation() {
     }
   }, [time, t_c, isPlaying, setIsPlaying])
 
-  // ── 布局参数 ──
-  const padding = canvasSize.width * 0.06
-  const fontSize = Math.max(10, canvasSize.width * 0.016)
-  const smallFont = Math.max(9, fontSize * 0.8)
+  // ── 布局参数（全部由 KE_LAYOUT 常量驱动） ──
+  const padding = canvasSize.width * KE_LAYOUT.leftPaddingRatio
+  const fontSize = Math.max(CANVAS_STYLE.FONT.small, canvasSize.width * 0.016)
+  const smallFont = Math.max(CANVAS_STYLE.FONT.small - 1, fontSize * 0.8)
 
   // 上部 52% 为图表，下部 48% 为动画
-  const chartTop = canvasSize.height * 0.06
-  const chartBottom = canvasSize.height * 0.52
+  const chartTop = canvasSize.height * KE_LAYOUT.chartTopRatio
+  const chartBottom = canvasSize.height * KE_LAYOUT.chartBottomRatio
   const chartMidY = (chartTop + chartBottom) / 2
   const chartLeft = padding * 1.5
   const chartRight = canvasSize.width - padding
   const chartWidth = chartRight - chartLeft
 
-  // 地平线沉底至 85% 位置
-  const groundY = canvasSize.height * 0.85
+  // 地平线
+  const groundY = canvasSize.height * KE_LAYOUT.groundYRatio
   const objW = canvasSize.width * 0.08
   const objH = objW
 
@@ -109,34 +134,77 @@ export default function KineticEnergyAnimation() {
   const wallX = canvasSize.width - padding * 0.8
   const xMaxPhysic = x_max
 
-  // 物理坐标映射到 Canvas 像素坐标
-  const carX = padding + state.x * scale
-  const carY = mode === 0 ? groundY : groundY - (R - state.y) * scale
-  const ballR = objW * 0.45
+  // ── 小球半径（规范化：从 CANVAS_STYLE.OBJECT 取值 + 动态比例） ──
+  const ballR = mode === 0
+    ? CANVAS_STYLE.OBJECT.ball
+    : Math.max(
+        CANVAS_STYLE.OBJECT.minRadius,
+        Math.min(R * scale * KE_LAYOUT.ballToTrackRatio, canvasSize.width * KE_LAYOUT.ballMaxWidthRatio)
+      )
 
-  // 球心位置：普通模式水平运动；进阶模式圆弧沿法向偏移（轨道外侧）
+  // ── 小球位置（唯一真相源：state.x / state.y，不依赖 state.theta） ──
   let ballCX: number
   let ballCY: number
+  // 切向方向单位向量（用于速度/力矢量箭头和摩擦虚线）
+  let tangentDirX: number
+  let tangentDirY: number
+  // 内法线方向单位向量（用于力箭头偏移、力的分解箭头）
+  let inwardDirX: number
+  let inwardDirY: number
+
   if (mode === 0) {
-    ballCX = carX
-    ballCY = carY - ballR
+    // 普通模式：水平运动
+    ballCX = padding + state.x * scale
+    ballCY = groundY - objH
+    tangentDirX = 1
+    tangentDirY = 0
+    inwardDirX = 0
+    inwardDirY = -1  // 向上（屏幕坐标系 y 向下，-1 = 向上）
+  } else if (state.phase === 0) {
+    // 进阶模式 · 圆弧阶段
+    // 轨道圆心在 (padding + R*scale, groundY - R*scale)
+    // 球在轨道上的接触点 = (padding + state.x*scale, groundY - R*scale + state.y*scale)
+    const trackCX = padding + state.x * scale
+    const trackCY = (groundY - R * scale) + state.y * scale
+
+    // 内法线方向（从接触点指向圆心）
+    const centerCX = padding + R * scale
+    const centerCY = groundY - R * scale
+    const dxToCenter = centerCX - trackCX
+    const dyToCenter = centerCY - trackCY
+    const distToCenter = Math.sqrt(dxToCenter * dxToCenter + dyToCenter * dyToCenter)
+    inwardDirX = distToCenter > 0 ? dxToCenter / distToCenter : 0
+    inwardDirY = distToCenter > 0 ? dyToCenter / distToCenter : 0
+
+    // 球心 = 接触点 + ballR * 内法线方向（球在轨道内侧）
+    ballCX = trackCX + ballR * inwardDirX
+    ballCY = trackCY + ballR * inwardDirY
+
+    // 切向方向 = 内法线逆时针旋转 90°（屏幕坐标系下 = 运动方向）
+    tangentDirX = -inwardDirY
+    tangentDirY = inwardDirX
   } else {
-    const trackRadius = R * scale
-    if (state.phase === 0) {
-      // 圆弧阶段：沿法向偏移（轨道外侧），底端附近混合到垂直上方保证过渡平滑
-      const nx = padding + (trackRadius + ballR) * Math.sin(state.theta)
-      const ny = groundY - (trackRadius + ballR) * Math.cos(state.theta)
-      const tx = padding + trackRadius
-      const ty = groundY - ballR
-      const blend = Math.max(0, Math.min(1, (state.theta - (Math.PI / 2 - 0.1)) / 0.1))
-      ballCX = nx + (tx - nx) * blend
-      ballCY = ny + (ty - ny) * blend
-    } else {
-      // 水平阶段：球在水平地面上方
-      ballCX = padding + state.x * scale
-      ballCY = groundY - ballR
-    }
+    // 进阶模式 · 水平阶段
+    ballCX = padding + state.x * scale
+    ballCY = groundY - ballR
+    tangentDirX = 1
+    tangentDirY = 0
+    inwardDirX = 0
+    inwardDirY = -1  // 向上
   }
+
+  // ── 矢量归一化映射（参考 CircularMotionAnimation） ──
+  // 物理量最大值（用于归一化）
+  const vMax = mode === 0 ? Math.sqrt(v0 * v0 + 2 * (F_pull / m) * s_target) : Math.sqrt(v0 * v0 + 2 * 9.8 * R)
+  const fMax = mode === 0 ? F_pull : m * 9.8  // 合力最大值
+  const vectorMaxLen = Math.min(canvasSize.width, canvasSize.height) * VECTOR_DISPLAY.force.maxLengthRatio
+  // 矢量长度 = ballR + (物理量/最大值) × (maxLen - ballR)，保证最短也有 ballR
+  const vArrowLen = ballR + (state.v / Math.max(vMax, 0.1)) * (vectorMaxLen - ballR)
+  const fArrowLen = ballR + (Math.abs(state.F) / Math.max(fMax, 0.1)) * (vectorMaxLen - ballR)
+
+  // 物块水平位置（普通模式用）
+  const carX = padding + state.x * scale
+  const carY = groundY
 
   // ── 能量对比柱数值 ──
   const initialEk = 0.5 * m * v0 * v0
@@ -286,24 +354,6 @@ export default function KineticEnergyAnimation() {
         </div>
       )}
 
-      {/* 随物块移动的实时物理公式 */}
-      {state.v > 0.05 && (
-        <div
-          className="absolute bg-white/95 px-2 py-0.5 rounded shadow-sm border border-neutral-200 pointer-events-none z-10 transition-all duration-100 ease-out"
-          style={{
-            left: `${carX + objW * 0.5}px`,
-            bottom: `${canvasSize.height - carY + objH + 12}px`,
-            transform: 'translateX(-50%)',
-          }}
-        >
-          <KatexFormula
-            formula={getLiveFormula()}
-            mode="inline"
-            className="text-[10px] text-primary-700 font-semibold"
-          />
-        </div>
-      )}
-
       {/* 主 SVG 画面 */}
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-transparent">
         <defs>
@@ -321,12 +371,18 @@ export default function KineticEnergyAnimation() {
             <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
           </radialGradient>
 
-          {/* 规范的物理矢量箭头定义 */}
-          <marker id="arrow-appliedForce" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          {/* 规范的物理矢量箭头定义（颜色与 PHYSICS_COLORS 对齐） */}
+          <marker id="arrow-main" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
             <path d="M0,0 L10,3.5 L0,7 Z" fill={PHYSICS_COLORS.forceNet} />
           </marker>
           <marker id="arrow-velocity" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
             <path d="M0,0 L10,3.5 L0,7 Z" fill={PHYSICS_COLORS.velocity} />
+          </marker>
+          <marker id="arrow-gravity" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6 Z" fill={PHYSICS_COLORS.gravity} />
+          </marker>
+          <marker id="arrow-friction" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6 Z" fill={PHYSICS_COLORS.friction} />
           </marker>
         </defs>
 
@@ -387,19 +443,25 @@ export default function KineticEnergyAnimation() {
             )}
             <circle cx={toFvChartX(state.x)} cy={toEnergyY(state.Ek)} r={3} fill={PHYSICS_COLORS.kineticEnergy} stroke={colors.neutral[0]} strokeWidth={1} />
 
-            {/* 临界拐点 (恒力撤力点或撞击停滞点) 虚线引导与波纹 */}
-            <g>
-              <line
-                x1={toFvChartX(x_max)} y1={vtTop}
-                x2={toFvChartX(x_max)} y2={vtBottom}
-                stroke={colors.accent[600]}
-                strokeWidth={0.8}
-                strokeDasharray={DASH.guide.join(',')}
-                opacity={0.5}
-              />
-              <circle cx={toFvChartX(x_max)} cy={toEnergyY(mode === 0 ? v_c * v_c * 0.5 * m : 0)} r={2} fill={colors.accent[600]} />
-              {renderRipple(toFvChartX(x_max), toEnergyY(mode === 0 ? v_c * v_c * 0.5 * m : 0))}
-            </g>
+            {/* 临界拐点 (恒力撤力点或圆弧触底点) 虚线引导与波纹 */}
+            {(() => {
+              const criticalX = mode === 0 ? s_target : R
+              const criticalEk = mode === 0 ? 0.5 * m * v_c * v_c : 0
+              return (
+                <g>
+                  <line
+                    x1={toFvChartX(criticalX)} y1={vtTop}
+                    x2={toFvChartX(criticalX)} y2={vtBottom}
+                    stroke={colors.accent[600]}
+                    strokeWidth={0.8}
+                    strokeDasharray={DASH.guide.join(',')}
+                    opacity={0.5}
+                  />
+                  <circle cx={toFvChartX(criticalX)} cy={toEnergyY(criticalEk)} r={2} fill={colors.accent[600]} />
+                  {renderRipple(toFvChartX(criticalX), toEnergyY(criticalEk))}
+                </g>
+              )
+            })()}
 
 
             {/* 下半部：W-x (功-位移) */}
@@ -531,10 +593,10 @@ export default function KineticEnergyAnimation() {
               </g>
             )}
 
-            {/* 临界地点/触底 x=R 引导线 */}
+            {/* 临界地点/触底 x=R 引导线（与动画区临界点对齐） */}
             <line
-              x1={toFvChartX(mode === 0 ? x_max : R)} y1={ptTop}
-              x2={toFvChartX(mode === 0 ? x_max : R)} y2={ptBottom}
+              x1={toFvChartX(mode === 0 ? s_target : R)} y1={ptTop}
+              x2={toFvChartX(mode === 0 ? s_target : R)} y2={ptBottom}
               stroke={colors.accent[600]}
               strokeWidth={0.8}
               strokeDasharray={DASH.guide.join(',')}
@@ -667,7 +729,7 @@ export default function KineticEnergyAnimation() {
         )}
 
         {/* 隔离图表与动画区水平分隔线 */}
-        <line x1={padding * 0.5} y1={canvasSize.height * 0.55} x2={canvasSize.width - padding * 0.5} y2={canvasSize.height * 0.55} stroke={colors.neutral[200]} strokeWidth={1} />
+        <line x1={padding * 0.5} y1={canvasSize.height * KE_LAYOUT.dividerRatio} x2={canvasSize.width - padding * 0.5} y2={canvasSize.height * KE_LAYOUT.dividerRatio} stroke={colors.neutral[200]} strokeWidth={1} />
 
         {/* ══════════════════════════════════════════════ */}
         {/* 下半部分：物块物理仿真场景 */}
@@ -678,19 +740,20 @@ export default function KineticEnergyAnimation() {
         <line x1={padding * 0.5} y1={groundY + 3} x2={canvasSize.width - padding * 0.5} y2={groundY + 3} stroke={colors.neutral[200]} strokeWidth={0.5} />
 
         {/* ── 进阶模式下的 1/4 圆弧曲面轨道 ── */}
+        {/* 圆弧圆心在 (padding + R*scale, groundY - R*scale)，球沿内侧下滑 */}
         {mode === 1 && (
           <g>
             <path
-              d={`M ${padding} ${groundY - R * scale} A ${R * scale} ${R * scale} 0 0 0 ${padding + R * scale} ${groundY}`}
+              d={`M ${padding} ${groundY - R * scale} A ${R * scale} ${R * scale} 0 0 1 ${padding + R * scale} ${groundY}`}
               fill="none"
               stroke={PHYSICS_COLORS.labelText}
-              strokeWidth={STROKE.groundLine}
+              strokeWidth={STROKE.trackLine}
             />
             <path
-              d={`M ${padding} ${groundY - R * scale} A ${R * scale} ${R * scale} 0 0 0 ${padding + R * scale} ${groundY}`}
+              d={`M ${padding} ${groundY - R * scale} A ${R * scale} ${R * scale} 0 0 1 ${padding + R * scale} ${groundY}`}
               fill="none"
               stroke={colors.neutral[100]}
-              strokeWidth={0.5}
+              strokeWidth={STROKE.objectThin}
               opacity={0.7}
             />
             {/* 轨道顶部起点处的支撑边架 */}
@@ -721,20 +784,36 @@ export default function KineticEnergyAnimation() {
           </g>
         )}
 
-        {/* ── 进阶模式下的曲面切向摩擦做负功阻碍虚线效果 ── */}
+        {/* ── 进阶模式下的切向摩擦阻碍虚线效果（与运动方向相反） ── */}
         {mode === 1 && state.phase === 0 && mu > 0.01 && state.v > 0.05 && (
-          <g stroke={colors.danger[500]} strokeWidth={1.5} fill="none">
-            <line
-              x1={carX + (objW * 0.45 + 3) * Math.cos(state.theta)}
-              y1={carY - objW * 0.45 + (objW * 0.45 + 3) * Math.sin(state.theta)}
-              x2={carX + (objW * 0.45 + 12) * Math.cos(state.theta)}
-              y2={carY - objW * 0.45 + (objW * 0.45 + 12) * Math.sin(state.theta)}
-              stroke={colors.danger[500]}
-              strokeDasharray="2,2"
-              opacity={0.8 * (state.v / v_c)}
-            />
-          </g>
+          <line
+            x1={ballCX - tangentDirX * (ballR + 2)}
+            y1={ballCY - tangentDirY * (ballR + 2)}
+            x2={ballCX - tangentDirX * (ballR + 18)}
+            y2={ballCY - tangentDirY * (ballR + 18)}
+            stroke={colors.danger[500]}
+            strokeWidth={STROKE.vectorThin}
+            strokeDasharray={DASH.reference.join(',')}
+            opacity={0.8 * (state.v / (v_c > 0 ? v_c : 1))}
+          />
         )}
+
+        {/* ── 矢量显示开关（能量柱左侧） ── */}
+        <g transform={`translate(${wallX - 90 - 22}, ${canvasSize.height * 0.58 + 4})`} 
+           className="cursor-pointer" 
+           onClick={() => useAnimationStore.getState().toggleVectors()}>
+          <rect width={18} height={18} rx={3} 
+            fill={showVectors ? colors.primary[100] : colors.neutral[100]} 
+            stroke={showVectors ? colors.primary[600] : colors.neutral[300]} 
+            strokeWidth={0.8} />
+          {/* 速度箭头图标 */}
+          <line x1={4} y1={13} x2={14} y2={5} 
+            stroke={showVectors ? PHYSICS_COLORS.velocity : colors.neutral[400]} 
+            strokeWidth={1.5} />
+          <polygon points="14,5 10,5 14,9" 
+            fill={showVectors ? PHYSICS_COLORS.velocity : colors.neutral[400]} />
+          <title>{showVectors ? '隐藏速度矢量' : '显示速度矢量'}</title>
+        </g>
 
         {/* ── 定理等价验证面板卡片 ── */}
         <g transform={`translate(${wallX - 90}, ${canvasSize.height * 0.58})`}>
@@ -800,7 +879,7 @@ export default function KineticEnergyAnimation() {
             <circle cx={objW * 0.22} cy={objH - 0.5} r={2.5} fill={colors.neutral[800]} />
             <circle cx={objW * 0.78} cy={objH - 0.5} r={2.5} fill={colors.neutral[800]} />
 
-            {/* 拉力 F 矢量 */}
+            {/* 拉力 F 矢量（合力，使用 arrow-main） */}
             {showVectors && state.F > 0.1 && (
               <line
                 x1={-Math.min(state.F * 1.5, 45)}
@@ -809,7 +888,7 @@ export default function KineticEnergyAnimation() {
                 y2={objH * 0.5}
                 stroke={PHYSICS_COLORS.forceNet}
                 strokeWidth={STROKE.vectorMain}
-                markerEnd="url(#arrow-appliedForce)"
+                markerEnd="url(#arrow-main)"
               />
             )}
 
@@ -827,7 +906,7 @@ export default function KineticEnergyAnimation() {
             )}
           </g>
         ) : (
-          // 进阶模式：钢珠（沿圆弧下滑，无需旋转）
+          // 进阶模式：钢珠（沿圆弧内侧下滑，水平阶段贴地运行）
           <g>
             <circle
               cx={ballCX}
@@ -837,30 +916,71 @@ export default function KineticEnergyAnimation() {
               stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
               strokeWidth={STROKE.objectLine}
             />
-            <text x={ballCX} y={ballCY + 3} fontSize={smallFont} fill={colors.neutral[100]} fontWeight="bold" textAnchor="middle">
-              {m.toFixed(1)}kg
-            </text>
 
-            {/* 切向合力 F 矢量 — 沿切线方向（从球心出发） */}
-            {showVectors && state.F > 0.1 && (
-              <line
-                x1={ballCX}
-                y1={ballCY}
-                x2={ballCX + Math.cos(state.theta) * Math.min(state.F * 1.5, 45)}
-                y2={ballCY + Math.sin(state.theta) * Math.min(state.F * 1.5, 45)}
-                stroke={PHYSICS_COLORS.forceNet}
-                strokeWidth={STROKE.vectorMain}
-                markerEnd="url(#arrow-appliedForce)"
-              />
-            )}
+            {/* ── 力箭头（始终显示） ── */}
+            <g>
+              {/* 切向合力 F_合 矢量（从球心出发，沿切向；F<0 时反向） */}
+              {Math.abs(state.F) > 0.1 && (
+                <line
+                  x1={ballCX}
+                  y1={ballCY}
+                  x2={ballCX + (state.F >= 0 ? tangentDirX : -tangentDirX) * fArrowLen}
+                  y2={ballCY + (state.F >= 0 ? tangentDirY : -tangentDirY) * fArrowLen}
+                  stroke={PHYSICS_COLORS.forceNet}
+                  strokeWidth={STROKE.vectorMain}
+                  markerEnd="url(#arrow-main)"
+                />
+              )}
 
-            {/* 速度 v 矢量 — 沿切线方向（从球心出发） */}
+              {/* 受力分析（仅圆弧阶段，从球心出发） */}
+              {state.phase === 0 && (() => {
+                const g = 9.8
+                const mg = m * g
+                const normalForce = mg * Math.cos(state.theta) + m * state.v * state.v / R
+                const fFriction = mu * normalForce
+                // 重力 mg：竖直向下（屏幕坐标系 y 正方向 = 向下）
+                const gravityLen = ballR + (mg / Math.max(fMax, 0.1)) * (vectorMaxLen - ballR)
+                const frictionLen = ballR + (fFriction / Math.max(fMax, 0.1)) * (vectorMaxLen - ballR)
+                return (
+                  <g>
+                    {/* 重力 mg（竖直向下） */}
+                    {mg > 0.1 && (
+                      <line
+                        x1={ballCX}
+                        y1={ballCY}
+                        x2={ballCX}
+                        y2={ballCY + gravityLen}
+                        stroke={PHYSICS_COLORS.gravity}
+                        strokeWidth={STROKE.vectorSub}
+                        opacity={OPACITY.vectorSub}
+                        markerEnd="url(#arrow-gravity)"
+                      />
+                    )}
+                    {/* 摩擦力（负功，沿切向反方向） */}
+                    {fFriction > 0.1 && (
+                      <line
+                        x1={ballCX}
+                        y1={ballCY}
+                        x2={ballCX - tangentDirX * frictionLen}
+                        y2={ballCY - tangentDirY * frictionLen}
+                        stroke={PHYSICS_COLORS.friction}
+                        strokeWidth={STROKE.vectorSub}
+                        opacity={OPACITY.vectorSub}
+                        markerEnd="url(#arrow-friction)"
+                      />
+                    )}
+                  </g>
+                )
+              })()}
+            </g>
+
+            {/* ── 速度 v 矢量（由 showVectors 开关控制） ── */}
             {showVectors && state.v > 0.05 && (
               <line
                 x1={ballCX}
                 y1={ballCY}
-                x2={ballCX + Math.cos(state.theta) * Math.min(state.v * 4.5, 60)}
-                y2={ballCY + Math.sin(state.theta) * Math.min(state.v * 4.5, 60)}
+                x2={ballCX + tangentDirX * vArrowLen}
+                y2={ballCY + tangentDirY * vArrowLen}
                 stroke={PHYSICS_COLORS.velocity}
                 strokeWidth={STROKE.vectorMain}
                 markerEnd="url(#arrow-velocity)"
