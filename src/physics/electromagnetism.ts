@@ -571,7 +571,7 @@ export function computeHandPose(v: Vec2, I: Vec2): HandPoseResult {
 
   // 计算中指（手掌中轴）应当指向的角度
   const iAngle = Math.atan2(I.y, I.x)
-  
+
   // 修正旋转角：使中指（掌心轴）指向 I 方向。
   // 在静止姿态 (0°) 下，SkeletonHand 组件中的四指是朝上（-90°）定义的。
   // 所以当 I 方向为 iAngle 时，需要旋转 `iAngle - (-90°)`.

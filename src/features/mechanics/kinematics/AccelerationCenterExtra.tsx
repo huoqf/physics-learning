@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { calculatePoliceChase } from '@/physics'
-import { PHYSICS_COLORS, CHART_COLORS, STROKE, DASH, FONT, OPACITY } from '@/theme/physics'
+import { PHYSICS_COLORS, CHART_COLORS, STROKE, DASH, FONT } from '@/theme/physics'
 import { SVG_MARKER, SVG_FILTER } from '@/theme/physics/canvasStyle'
 import { AnimationControls } from '@/components/UI'
 
@@ -208,11 +208,7 @@ export default function AccelerationCenterExtra() {
       {/* ══════════ 上层：并列双图表 ══════════ */}
       <div className="flex-1 flex flex-row relative">
         <svg width={containerSize.width} height={chartHeight} className="absolute inset-0">
-          {/* 网格纸底纹 */}
           <defs>
-            <pattern id="chase-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-              <path d="M 20 0 L 0 0 0 20" fill="none" stroke={PHYSICS_COLORS.grid} strokeWidth={STROKE.grid} opacity={OPACITY.grid} />
-            </pattern>
             {/* 发光滤镜 */}
             <filter id="glow-blue" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation={SVG_FILTER.glow.stdDeviation} result="blur" />
@@ -233,9 +229,6 @@ export default function AccelerationCenterExtra() {
               <polygon points={SVG_MARKER.main.content} fill={PHYSICS_COLORS.velocity} />
             </marker>
           </defs>
-
-          {/* 背景 */}
-          <rect width={containerSize.width} height={chartHeight} fill="url(#chase-grid)" />
 
           {/* ── 左：x-t 图象 ── */}
           {(() => {
@@ -479,9 +472,6 @@ export default function AccelerationCenterExtra() {
       {/* ══════════ 下层：真实公路追击动画 ══════════ */}
       <div className="flex-1 relative">
         <svg width={containerSize.width} height={animHeight} className="absolute inset-0">
-          {/* 背景 */}
-          <rect width={containerSize.width} height={animHeight} fill="url(#chase-grid)" />
-
           {/* 公路 */}
           <line x1={roadLeft} y1={roadY} x2={roadRight} y2={roadY} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.groundLine} />
           {/* 公路刻度 */}

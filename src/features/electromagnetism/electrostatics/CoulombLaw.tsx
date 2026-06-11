@@ -185,10 +185,11 @@ function PendulumMode({
   const Lpx = L_cm * pxPerCm
 
   // 球位置（SVG 坐标：y 向下为正）
+  // 异号电荷(attractive)时两球向中心靠近（x偏移反向），同号电荷时两球向外张开
   const sign = attractive ? -1 : 1
-  const ball1X = cx + sign * Lpx * Math.sin(theta)
+  const ball1X = cx - sign * Lpx * Math.sin(theta)
   const ball1Y = hangY + Lpx * Math.cos(theta)
-  const ball2X = cx - sign * Lpx * Math.sin(theta)
+  const ball2X = cx + sign * Lpx * Math.sin(theta)
   const ball2Y = hangY + Lpx * Math.cos(theta)
   const ballR = 16
 
@@ -198,8 +199,10 @@ function PendulumMode({
 
   // 夹角弧线
   const arcR = 35
-  const arcPath1 = describeArc(cx, hangY, arcR, 90, 90 + thetaDeg * (sign > 0 ? -1 : 1))
-  const arcPath2 = describeArc(cx, hangY, arcR, 90, 90 - thetaDeg * (sign > 0 ? -1 : 1))
+  // 同号电荷(sign=1)：球1在左、球2在右，弧线分别向左/右张开
+  // 异号电荷(sign=-1)：球1在右、球2在左，弧线分别向右/左张开
+  const arcPath1 = describeArc(cx, hangY, arcR, 90, 90 + thetaDeg * (attractive ? 1 : -1))
+  const arcPath2 = describeArc(cx, hangY, arcR, 90, 90 - thetaDeg * (attractive ? 1 : -1))
 
   // 距离标注
   const distY = Math.max(ball1Y, ball2Y) + 40
@@ -238,7 +241,7 @@ function PendulumMode({
         <g>
           {arcPath1 && <path d={arcPath1} fill="none" stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={1} />}
           {arcPath2 && <path d={arcPath2} fill="none" stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={1} />}
-          <text x={cx + sign * (arcR + 14) * Math.sin(theta / 2)} y={hangY + (arcR + 14) * Math.cos(theta / 2) + 4}
+          <text x={cx + (attractive ? -1 : 1) * (arcR + 14) * Math.sin(theta / 2)} y={hangY + (arcR + 14) * Math.cos(theta / 2) + 4}
             fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
             θ={thetaDeg.toFixed(1)}°
           </text>
@@ -256,18 +259,18 @@ function PendulumMode({
       {/* 库仑力矢量 */}
       {showVectors && (
         <g>
-          {/* 球1库仑力 */}
-          <line x1={ball1X} y1={ball1Y} x2={ball1X + sign * forceScale} y2={ball1Y}
+          {/* 球1库仑力：异号电荷时受吸引力指向球2（右侧），同号电荷时受排斥力向左 */}
+          <line x1={ball1X} y1={ball1Y} x2={ball1X + (attractive ? 1 : -1) * forceScale} y2={ball1Y}
             stroke={PHYSICS_COLORS.forceNet} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
             markerEnd="url(#arrow-coulomb-pend)" />
-          <text x={ball1X + sign * forceScale / 2} y={ball1Y - 10}
+          <text x={ball1X + (attractive ? 1 : -1) * forceScale / 2} y={ball1Y - 10}
             fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.forceNet} textAnchor="middle" fontWeight="bold">F</text>
 
-          {/* 球2库仑力 */}
-          <line x1={ball2X} y1={ball2Y} x2={ball2X - sign * forceScale} y2={ball2Y}
+          {/* 球2库仑力：异号电荷时受吸引力指向球1（左侧），同号电荷时受排斥力向右 */}
+          <line x1={ball2X} y1={ball2Y} x2={ball2X + (attractive ? -1 : 1) * forceScale} y2={ball2Y}
             stroke={PHYSICS_COLORS.forceNet} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
             markerEnd="url(#arrow-coulomb-pend)" />
-          <text x={ball2X - sign * forceScale / 2} y={ball2Y - 10}
+          <text x={ball2X + (attractive ? -1 : 1) * forceScale / 2} y={ball2Y - 10}
             fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.forceNet} textAnchor="middle" fontWeight="bold">F</text>
         </g>
       )}

@@ -9,7 +9,6 @@ import {
   STROKE,
   DASH,
   FONT,
-  OPACITY,
 } from '@/theme/physics'
 
 /**
@@ -238,14 +237,6 @@ export default function UniformAccelerationAnimation() {
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
-        {/* ── 0. 网格纸底纹（科学实验室手稿底感） ── */}
-        <defs>
-          <pattern id="physics-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-            <path d="M 20 0 L 0 0 0 20" fill="none" stroke={PHYSICS_COLORS.grid} strokeWidth={STROKE.grid} opacity={OPACITY.grid} />
-          </pattern>
-        </defs>
-        <rect width={canvasSize.width} height={canvasSize.height} fill="url(#physics-grid)" />
-
         {/* ══════════ 上半部分：v-t 图面积可视化 ══════════ */}
 
         {/* 坐标网格辅助虚线 */}

@@ -13,7 +13,7 @@ export function calculateElasticForce(k: number, x: number): { F: number } {
 }
 
 export function calculateCoulombForce(k: number, q1: number, q2: number, r: number): { F: number } {
-  return { F: k * q1 * q2 / (r * r) };
+  return { F: k * Math.abs(q1 * q2) / (r * r) };
 }
 
 /**

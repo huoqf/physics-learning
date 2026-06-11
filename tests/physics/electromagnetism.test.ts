@@ -31,6 +31,16 @@ describe('electromagnetism', () => {
     expect(calculateCoulombForce(k, 1e-6, 1e-6, 1).F).toBeCloseTo(9e9 * 1e-12, 10)
   })
 
+  it('库仑力：异号电荷应返回正的大小（物理修正）', () => {
+    // 修复前：calculateCoulombForce(k, 1e-6, -1e-6, 1) 返回负数（错误）
+    // 修复后：应始终返回力的大小（正数）
+    const sameSign = calculateCoulombForce(k, 1e-6, 1e-6, 1)
+    const oppositeSign = calculateCoulombForce(k, 1e-6, -1e-6, 1)
+    expect(sameSign.F).toBeGreaterThan(0)
+    expect(oppositeSign.F).toBeGreaterThan(0)
+    expect(sameSign.F).toBeCloseTo(oppositeSign.F, 10)
+  })
+
   it('电场强度 E = kq/r²', () => {
     expect(calculateElectricField(k, 2e-6, 3).E).toBeCloseTo((k * 2e-6) / 9, 6)
   })
@@ -317,13 +327,13 @@ describe('electromagnetism', () => {
     expect(lerpAngleDeg(0, 90, 1)).toBeCloseTo(90, 10)
   })
 
-  it('computeHandPose：v 右 (1,0) + I 下 (0,1) → 右手定则 (B_out=true, rotation=+130°)', () => {
+  it('computeHandPose：v 右 (1,0) + I 下 (0,1) → 右手定则 (B_out=true, rotation=+180°)', () => {
     // v = (1,0) → atan2 = 0°；I = (0,1) 顺时针 90° → cross = +1 → 右手
-    // 旋转 = 0° - THUMB_BASE_ANGLE(-130°) = +130°（把静止在 -130° 的拇指旋转到 +x）
+    // 中指指向 I=(0,1) 即 90°，rotation = 90° + 90° = +180°
     const r = computeHandPose({ x: 1, y: 0 }, { x: 0, y: 1 })
     expect(r.chirality).toBe('right')
     expect(r.B_out).toBe(true)
-    expect(r.rotationDeg).toBeCloseTo(130, 10)
+    expect(r.rotationDeg).toBeCloseTo(180, 10)
   })
 
   it('computeHandPose：v 右 + I 上 → 左手定则 (chirality=left)', () => {
@@ -342,10 +352,10 @@ describe('electromagnetism', () => {
     expect(wrapped).toBeCloseTo(180, 10)
   })
 
-  it('computeHandPose：v 向上 (0,-1) + I 向右 (1,0) → rotation = -90° - (-130°) = +40°', () => {
-    // atan2(-1, 0) = -π/2 → -90°；rotation = -90° - (-130°) = +40°
+  it('computeHandPose：v 向上 (0,-1) + I 向右 (1,0) → rotation = +90°', () => {
+    // atan2(0, 1) = 0°；rotation = 0° + 90° = +90°
     const r = computeHandPose({ x: 0, y: -1 }, { x: 1, y: 0 })
-    expect(r.rotationDeg).toBeCloseTo(40, 10)
+    expect(r.rotationDeg).toBeCloseTo(90, 10)
     // 拇指在 v=(0,-1) 方向（向上），中指在 I=(1,0) 方向（向右）：cross = 0*0 - (-1)*1 = +1 → 右手
     expect(r.chirality).toBe('right')
   })
@@ -358,23 +368,23 @@ describe('electromagnetism', () => {
     expect(r2.rotationDeg).toBe(0)
   })
 
-  it('computeCuttingEMFHandPose：v=+1, B_out=1 → I_canvas=(0,1) down, 右手, rotation=+130°', () => {
+  it('computeCuttingEMFHandPose：v=+1, B_out=1 → I_canvas=(0,1) down, 右手, rotation=+180°', () => {
     // v=+1 向右, B_out=1 (出⊙), I_canvas.y = vDir * sign = 1*1 = 1 (down)
-    // rotation = 0° - (-130°) = +130°
+    // I=(0,1) → atan2=90°，rotation = 90° + 90° = +180°
     const r = computeCuttingEMFHandPose(1, 1)
     expect(r.chirality).toBe('right')
     expect(r.B_out).toBe(true)
-    expect(r.rotationDeg).toBeCloseTo(130, 10)
+    expect(r.rotationDeg).toBeCloseTo(180, 10)
   })
 
   it('computeCuttingEMFHandPose：v=+1, B_out=0 → I_canvas=(0,-1) up, 左手 (I 相对 v 逆时针)', () => {
     // v=+1 向右, B_out=0 (入⊗), I_canvas.y = vDir * sign = 1*(-1) = -1 (up)
     // cross = 1*(-1) - 0*0 = -1 < 0 → 左手（用左手手性以匹配 B 入纸面）
+    // I=(0,-1) → atan2=-90°，rotation = -90° + 90° = 0°
     const r = computeCuttingEMFHandPose(1, 0)
     expect(r.chirality).toBe('left')
     expect(r.B_out).toBe(false)
-    // rotation 仍为 +130°（与右手情况相同，因为 v 相同）
-    expect(r.rotationDeg).toBeCloseTo(130, 10)
+    expect(r.rotationDeg).toBeCloseTo(0, 10)
   })
 
   it('computeCuttingEMFHandPose：v=-1, B_out=1 → 整只手相对 v=+1 翻转 180°', () => {

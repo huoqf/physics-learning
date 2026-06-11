@@ -194,9 +194,6 @@ function StroboscopicAnimation({
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg">
-        {/* 实验室网格纸底纹 */}
-        <rect width="100%" height="100%" fill="url(#vt-grid)" />
-
         {/* 测距厘米轨道尺 */}
         <line x1={padding * 0.5} y1={groundY} x2={canvasSize.width - padding * 0.5} y2={groundY} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.groundLine} />
         {Array.from({ length: Math.floor((canvasSize.width - padding) / 10) + 1 }).map((_, idx) => {
@@ -526,9 +523,6 @@ function VtChartWithArea({
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg">
-        {/* 实验室网格纸底纹 */}
-        <rect width="100%" height="100%" fill="url(#vt-grid)" />
-
         <text x={canvasSize.width / 2} y={15} fontSize={11} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">匀变速直线运动 v-t 图象</text>
 
         {/* 坐标轴 */}

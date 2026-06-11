@@ -2,7 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { calculateDualObjectComparison } from '@/physics'
-import { PHYSICS_COLORS, STROKE, DASH, FONT, OPACITY } from '@/theme/physics'
+import { PHYSICS_COLORS, STROKE, DASH, FONT } from '@/theme/physics'
 
 /** 布局常量（语义化命名，替代魔法数字） */
 const LAYOUT = {
@@ -111,14 +111,6 @@ export default function AccelerationAnimation() {
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
-        {/* ── 0. 网格纸底纹（科学实验室底稿感） ── */}
-        <defs>
-          <pattern id="physics-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-            <path d="M 20 0 L 0 0 0 20" fill="none" stroke={PHYSICS_COLORS.grid} strokeWidth={STROKE.grid} opacity={OPACITY.grid} />
-          </pattern>
-        </defs>
-        <rect width={canvasSize.width} height={canvasSize.height} fill="url(#physics-grid)" />
-
         {/* ── 1. 网格线 ── */}
         {gridLines.map((g) => (
           <line
