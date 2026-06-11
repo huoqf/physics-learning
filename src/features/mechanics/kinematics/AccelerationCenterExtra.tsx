@@ -62,7 +62,7 @@ export default function AccelerationCenterExtra() {
   // ── 检测共速时刻（最大间距）单次触发 ──
   const prevTimeRef = useRef(0)
   const hasShownMaxGapRef = useRef(false)
-  const warningTimerRef = useRef<ReturnType<typeof setTimeout>>()
+  const warningTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
     // 重置时清除标记
@@ -190,17 +190,7 @@ export default function AccelerationCenterExtra() {
   const carX = startX + state.xA * scale
   const policeX = startX + state.xB * scale
 
-  // ── 阶段状态徽章颜色 ──
-  const phaseBadge = (() => {
-    switch (state.phase) {
-      case 'reaction':
-        return 'bg-primary-50 text-primary-700 border-primary-300'
-      case 'accelerating':
-        return 'bg-accent-50 text-accent-700 border-accent-300'
-      case 'cruising':
-        return 'bg-secondary-50 text-secondary-700 border-secondary-300'
-    }
-  })()
+
 
   const phaseText = (() => {
     switch (state.phase) {
@@ -252,7 +242,6 @@ export default function AccelerationCenterExtra() {
             const chartLeft = padding
             const chartTop = chartHeight * 0.12
             const chartBottom = chartHeight * 0.85
-            const chartH = chartBottom - chartTop
 
             return (
               <g>
@@ -363,7 +352,6 @@ export default function AccelerationCenterExtra() {
                   vPol = vMax
                 }
                 const yTop = toVtY(Math.max(vCar, vPol))
-                const yBot = toVtY(Math.min(vCar, vPol))
                 if (pts.length === 0) {
                   pts.push(`M ${toVtX(tt)},${yTop}`)
                 } else {

@@ -20,6 +20,9 @@ const lazyBuilders: Record<string, () => Promise<{ [key: string]: QuantityBuilde
   'anim-projectile': () => import('./quantities/kinematics'),
   'anim-oblique-throw': () => import('./quantities/kinematics'),
 
+  // 力与运动专题
+  'anim-force-motion-topic': () => import('./quantities/forceMotion'),
+
   // 动力学
   'anim-connected-bodies': () => import('./quantities/dynamics'),
   'anim-spring-force': () => import('./quantities/dynamics'),
@@ -85,6 +88,9 @@ const builderNames: Record<string, string> = {
   'anim-vertical-throw': 'buildKinematicsQuantities',
   'anim-projectile': 'buildKinematicsQuantities',
   'anim-oblique-throw': 'buildKinematicsQuantities',
+
+  // 力与运动专题
+  'anim-force-motion-topic': 'buildForceMotionQuantities',
 
   // 动力学
   'anim-connected-bodies': 'buildDynamicsQuantities',

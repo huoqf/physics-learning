@@ -2,6 +2,7 @@ import { AnimationConfig } from './types'
 import { mechanicsKinematicsAnimations } from './registries/mechanics-kinematics'
 import { mechanicsDynamicsAnimations } from './registries/mechanics-dynamics'
 import { mechanicsCircularGravitationAnimations } from './registries/mechanics-circular-gravitation'
+import { mechanicsForceMotionAnimations } from './registries/mechanics-force-motion'
 import { mechanicsEnergyAnimations } from './registries/mechanics-energy'
 import { mechanicsMomentumAnimations } from './registries/mechanics-momentum'
 import { electromagnetismElectrostaticsAnimations } from './registries/electromagnetism-electrostatics'
@@ -14,6 +15,7 @@ export const animationRegistry: Record<string, AnimationConfig> = {
   ...mechanicsKinematicsAnimations,
   ...mechanicsDynamicsAnimations,
   ...mechanicsCircularGravitationAnimations,
+  ...mechanicsForceMotionAnimations,
   ...mechanicsEnergyAnimations,
   ...mechanicsMomentumAnimations,
   ...electromagnetismElectrostaticsAnimations,

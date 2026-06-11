@@ -183,8 +183,8 @@ export const KnowledgeTree: React.FC = () => {
       return idx === -1 ? 999 : idx
     }
     const getChapterNumber = (chapter: string): number => {
-      const match = chapter.match(/第(\d+)章/)
-      return match ? parseInt(match[1]) : 999
+      const match = chapter.match(/第(\d+(?:\.\d+)?)章/)
+      return match ? parseFloat(match[1]) : 999
     }
 
     return groups.sort((a, b) => {

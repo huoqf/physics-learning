@@ -4,8 +4,10 @@
 
 export interface PhysicsQuantity {
   label: string
+  symbol?: string
   value: number | string
   unit: string
+  color?: string
   highlight?: 'positive' | 'negative' | 'zero' | 'extreme'
 }
 
@@ -25,10 +27,19 @@ export interface Formula {
   level?: 'core' | 'important' | 'derived' | 'supplementary'
 }
 
+export interface WarningItem {
+  text: string
+  level: 'info' | 'warning' | 'danger'
+}
+
 export interface PhysicsPanelData {
   quantities: PhysicsQuantity[]
   formulas?: Formula[]
   gaokaoPoints?: GaokaoPoint[]
+  warnings?: WarningItem[]
+  mnemonic?: string
+  isTerminal?: boolean
+  pauseReason?: 'boundary' | 'terminal' | 'brake' | 'none'
 }
 
 /** 物理量构建器函数签名 */

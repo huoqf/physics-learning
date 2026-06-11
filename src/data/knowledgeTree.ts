@@ -227,6 +227,17 @@ export const knowledgeTree: KnowledgeNode[] = [
   },
 
   {
+    id: 'mechanics-5x-1',
+    title: '力与运动综合',
+    chapter: '第5.5章 力与运动专题',
+    module: 'mechanics',
+    importance: 'gaokao',
+    animationIds: ['anim-force-motion-topic'],
+    problemIds: [],
+    prerequisites: ['mechanics-4-2', 'mechanics-5-5'],
+  },
+
+  {
     id: 'mechanics-6-1',
     title: '开普勒定律',
     chapter: '第6章 天体物理',
@@ -234,7 +245,7 @@ export const knowledgeTree: KnowledgeNode[] = [
     importance: 'gaokao',
     animationIds: ['anim-kepler'],
     problemIds: [],
-    prerequisites: ['mechanics-5-5'],
+    prerequisites: ['mechanics-5x-1'],
   },
   {
     id: 'mechanics-6-2',

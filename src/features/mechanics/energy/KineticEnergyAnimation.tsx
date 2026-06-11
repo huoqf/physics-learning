@@ -3,7 +3,6 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OPACITY, CHART_COLORS, CANVAS_STYLE, VECTOR_DISPLAY } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { KatexFormula } from '@/components/UI'
 import {
   precomputeConstantKETrajectory,
   precomputeCurvedTrackTrajectory,
@@ -204,7 +203,6 @@ export default function KineticEnergyAnimation() {
 
   // 物块水平位置（普通模式用）
   const carX = padding + state.x * scale
-  const carY = groundY
 
   // ── 能量对比柱数值 ──
   const initialEk = 0.5 * m * v0 * v0
@@ -263,22 +261,7 @@ export default function KineticEnergyAnimation() {
     [trajectory, time]
   )
 
-  // ── 随动公式 ──
-  const getLiveFormula = () => {
-    if (mode === 0) {
-      if (state.phase === 0) {
-        return `W_{\\text{拉}} = F \\cdot x = ${state.W.toFixed(1)}\\text{J}`;
-      } else {
-        return `W_{\\text{拉}} = \\Delta E_k = ${state.W.toFixed(1)}\\text{J}`;
-      }
-    } else {
-      if (state.phase === 0) {
-        return `W_{\\text{总}} = W_{\\text{重}} + W_{\\text{摩}} = ${state.W.toFixed(1)}\\text{J}`;
-      } else {
-        return `W_{\\text{总}} = \\Delta E_k = ${state.W.toFixed(1)}\\text{J}`;
-      }
-    }
-  }
+
 
   // ── 临界点 tc 扩散波纹 ──
   const renderRipple = (centerX: number, centerY: number) => {

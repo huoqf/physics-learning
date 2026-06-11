@@ -179,7 +179,15 @@ function RightPhysicsPanel({
   return (
     <div className="p-4 h-full flex flex-col">
       <div className="flex-1 min-h-0">
-        <PhysicsPanel quantities={physicsQuantities.quantities} formulas={physicsQuantities.formulas} gaokaoPoints={physicsQuantities.gaokaoPoints} />
+        <PhysicsPanel
+          quantities={physicsQuantities.quantities}
+          formulas={physicsQuantities.formulas}
+          gaokaoPoints={physicsQuantities.gaokaoPoints}
+          warnings={physicsQuantities.warnings}
+          mnemonic={physicsQuantities.mnemonic}
+          isTerminal={physicsQuantities.isTerminal}
+          pauseReason={physicsQuantities.pauseReason}
+        />
       </div>
     </div>
   )
