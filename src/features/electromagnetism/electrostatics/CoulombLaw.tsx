@@ -1,29 +1,48 @@
+import { useState, useEffect } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
-import { calculateCoulombForce, calculateCoulombPendulum, GRAVITY } from '@/physics'
-import { PHYSICS_COLORS, CANVAS_STYLE, SCENE_COLORS } from '@/theme/physics'
+import { calculateCoulombForce, calculateThreeChargeForces } from '@/physics'
+import {
+  PHYSICS_COLORS,
+  CANVAS_STYLE,
+  CHART_COLORS,
+} from '@/theme/physics'
+import { SVG_MARKER } from '@/theme/physics/canvasStyle'
 import { colors } from '@/theme/colors'
 
-/** 库仑定律 F = kq₁q₂/r²：基础模式-两点电荷；进阶模式-双丝线悬挂小球 */
+const COULOMB_K = 9e9
+
+const LAYOUT = {
+  chargeRadiusRatio: 0.03,
+  forceArrowMaxRatio: 0.12,
+  forceArrowMinRatio: 0.03,
+  distanceLabelOffsetRatio: 0.12,
+  chargeLabelOffsetRatio: 1.8,
+  chartAreaRatio: { width: 0.35, height: 0.5 },
+  chartPaddingRatio: 0.08,
+  frDataRange: { rMin: 0.5, rMax: 10, rStep: 0.1 },
+  forceScale: { min: 0.03, max: 0.12, base: 0.04, logFactor: 0.015 },
+  equilibriumThreshold: 1e-6,
+} as const
+
 export default function CoulombLaw() {
   const { params, showVectors, showFormulas, showGrid } = useAnimationStore()
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 450 })
 
-  const mode = params.mode ?? 0 // 0=基础, 1=双球悬挂
-  const showForceAnalysis = (params.showForceAnalysis ?? 0) === 1
+  const mode = params.mode ?? 0
 
   return (
     <div ref={containerRef} className="w-full h-full">
       {mode === 0
         ? <BasicMode params={params} showVectors={showVectors} showFormulas={showFormulas} showGrid={showGrid} canvasSize={canvasSize} />
-        : <PendulumMode params={params} showVectors={showVectors} showFormulas={showFormulas} showGrid={showGrid} showForceAnalysis={showForceAnalysis} canvasSize={canvasSize} />
+        : <ThreeChargeMode params={params} showVectors={showVectors} showFormulas={showFormulas} showGrid={showGrid} canvasSize={canvasSize} />
       }
     </div>
   )
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// 基础模式：两点电荷水平排列
+// 基础模式：两点电荷 + F-r 图表 + 拖拽改变距离
 // ═══════════════════════════════════════════════════════════════════════
 function BasicMode({
   params,
@@ -38,112 +57,208 @@ function BasicMode({
   showGrid: boolean
   canvasSize: { width: number; height: number }
 }) {
-  const { q1 = 2, q2 = -3, r = 4 } = params
-  const k = 9e9
-  const q1SI = q1 * 1e-6
-  const q2SI = q2 * 1e-6
-  const rSI = r * 0.01
-  const { F } = calculateCoulombForce(k, Math.abs(q1SI), Math.abs(q2SI), rSI || 1e-9)
+  const { q1 = 2, q2 = -3, r: rParam = 4 } = params
+  const updateParam = useAnimationStore((s) => s.updateParam)
+  const [dragging, setDragging] = useState(false)
+  const [dragR, setDragR] = useState(rParam)
+
+  useEffect(() => {
+    setDragR(rParam)
+  }, [rParam])
+
+  const r = dragR
+  const q1SI = Math.abs(q1 * 1e-6)
+  const q2SI = Math.abs(q2 * 1e-6)
+  const rSI = (r || 0.01) * 0.01
+  const { F } = calculateCoulombForce(COULOMB_K, q1SI, q2SI, rSI)
 
   const attractive = q1 * q2 < 0
-  const centerY = canvasSize.height / 2
-  const pxPerCm = 28
-  const gap = r * pxPerCm
-  const cx = canvasSize.width / 2
-  const x1 = cx - gap / 2
-  const x2 = cx + gap / 2
-  const chargeR = 22
+  const w = canvasSize.width
+  const h = canvasSize.height
 
-  // 力箭头长度（对数压缩）
-  const arrowLen = Math.max(20, Math.min(90, 30 * Math.log10(F * 1e3 + 10)))
+  const stageWidth = w * 0.6
+  const stageHeight = h
+  const centerX = stageWidth / 2
+  const centerY = stageHeight / 2
 
-  const colorOf = (q: number) => (q >= 0 ? PHYSICS_COLORS.forceNet : PHYSICS_COLORS.electricField)
+  const chargeR = Math.min(w, h) * LAYOUT.chargeRadiusRatio
+  const gap = r * (stageWidth * 0.08)
+
+  const x1 = centerX - gap / 2
+  const x2 = centerX + gap / 2
+
+  const forceArrowLen = (() => {
+    if (F < 1e-15) return 0
+    const baseLen = stageWidth * LAYOUT.forceArrowMinRatio
+    const maxLen = stageWidth * LAYOUT.forceArrowMaxRatio
+    const logScale = Math.log10(F * 1e3 + 1)
+    const len = baseLen + (maxLen - baseLen) * Math.min(1, logScale / 8)
+    return Math.max(baseLen, Math.min(maxLen, len))
+  })()
+
   const leftArrowDir = attractive ? 1 : -1
   const rightArrowDir = attractive ? -1 : 1
 
+  const chartLeft = stageWidth + w * 0.03
+  const chartTop = h * LAYOUT.chartPaddingRatio
+  const chartWidth = w - chartLeft - w * LAYOUT.chartPaddingRatio
+  const chartHeight = h * 0.4
+  const chartBottom = chartTop + chartHeight
+
+  const frData = (() => {
+    const points: Array<{ r: number; F: number }> = []
+    const { rMin, rMax, rStep } = LAYOUT.frDataRange
+    for (let ri = rMin; ri <= rMax; ri += rStep) {
+      const riSI = ri * 0.01
+      const { F: Fi } = calculateCoulombForce(COULOMB_K, q1SI, q2SI, riSI)
+      points.push({ r: ri, F: Fi })
+    }
+    return points
+  })()
+
+  const fMax = Math.max(...frData.map(p => p.F), 1) * 1.1
+  const toChartX = (ri: number) => chartLeft + ((ri - LAYOUT.frDataRange.rMin) / (LAYOUT.frDataRange.rMax - LAYOUT.frDataRange.rMin)) * chartWidth
+  const toChartY = (Fi: number) => chartBottom - (Fi / fMax) * chartHeight
+
   const gridLines = []
   if (showGrid) {
-    for (let i = 0; i <= 10; i++) {
-      const xPos = (i * canvasSize.width) / 10
+    const gridCount = 10
+    for (let i = 0; i <= gridCount; i++) {
+      const xPos = (i * stageWidth) / gridCount
       gridLines.push(
-        <line key={`g-${i}`} x1={xPos} y1={40} x2={xPos} y2={canvasSize.height - 40}
+        <line key={`g-${i}`} x1={xPos} y1={40} x2={xPos} y2={h - 40}
           stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} strokeDasharray={CANVAS_STYLE.dash.axis.join(' ')} />
       )
     }
   }
 
+  const frPath = frData.map((p, i) =>
+    `${i === 0 ? 'M' : 'L'} ${toChartX(p.r).toFixed(1)},${toChartY(p.F).toFixed(1)}`
+  ).join(' ')
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setDragging(true)
+  }
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (!dragging) return
+    const svg = e.currentTarget
+    const pt = svg.createSVGPoint()
+    pt.x = e.clientX
+    pt.y = e.clientY
+    const svgP = pt.matrixTransform(svg.getScreenCTM()!.inverse())
+    const newR = ((svgP.x - x1) / (stageWidth * 0.08))
+    const clampedR = Math.max(1, Math.min(8, newR))
+    setDragR(clampedR)
+    updateParam('r', clampedR)
+  }
+
+  const handleMouseUp = () => setDragging(false)
+
   return (
-    <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
+    <svg width={w} height={h} className="bg-white rounded-lg shadow-inner"
+      onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
       {gridLines}
 
-      {/* 水平基准线 */}
-      <line x1={40} y1={centerY} x2={canvasSize.width - 40} y2={centerY}
+      <line x1={40} y1={centerY} x2={stageWidth - 40} y2={centerY}
         stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} strokeDasharray="4,4" opacity={0.3} />
 
-      {/* 距离标注线 */}
-      <line x1={x1} y1={centerY + 50} x2={x2} y2={centerY + 50} stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} />
-      <line x1={x1} y1={centerY + 44} x2={x1} y2={centerY + 56} stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} />
-      <line x1={x2} y1={centerY + 44} x2={x2} y2={centerY + 56} stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} />
-      <text x={cx} y={centerY + 70} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.axis} textAnchor="middle">
+      <line x1={x1} y1={centerY + h * LAYOUT.distanceLabelOffsetRatio} x2={x2} y2={centerY + h * LAYOUT.distanceLabelOffsetRatio}
+        stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} />
+      <line x1={x1} y1={centerY + h * LAYOUT.distanceLabelOffsetRatio - 6} x2={x1} y2={centerY + h * LAYOUT.distanceLabelOffsetRatio + 6}
+        stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} />
+      <line x1={x2} y1={centerY + h * LAYOUT.distanceLabelOffsetRatio - 6} x2={x2} y2={centerY + h * LAYOUT.distanceLabelOffsetRatio + 6}
+        stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} />
+      <text x={centerX} y={centerY + h * LAYOUT.distanceLabelOffsetRatio + 18}
+        fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.axis} textAnchor="middle">
         r = {r.toFixed(1)} cm
       </text>
 
-      {/* 力矢量箭头 */}
       {showVectors && (
         <g>
-          <line x1={x1} y1={centerY} x2={x1 + leftArrowDir * arrowLen} y2={centerY}
-            stroke={PHYSICS_COLORS.forceNet} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+          <line x1={x1} y1={centerY} x2={x1 + leftArrowDir * forceArrowLen} y2={centerY}
+            stroke={PHYSICS_COLORS.electricForce} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
             markerEnd="url(#arrow-coulomb)" />
-          <line x1={x2} y1={centerY} x2={x2 + rightArrowDir * arrowLen} y2={centerY}
-            stroke={PHYSICS_COLORS.forceNet} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+          <line x1={x2} y1={centerY} x2={x2 + rightArrowDir * forceArrowLen} y2={centerY}
+            stroke={PHYSICS_COLORS.electricForce} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
             markerEnd="url(#arrow-coulomb)" />
-          {/* 力标签 */}
-          <text x={x1 + leftArrowDir * arrowLen / 2} y={centerY - 12}
-            fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.forceNet} textAnchor="middle" fontWeight="bold">
-            F
-          </text>
-          <text x={x2 + rightArrowDir * arrowLen / 2} y={centerY - 12}
-            fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.forceNet} textAnchor="middle" fontWeight="bold">
-            F
-          </text>
+          <text x={x1 + leftArrowDir * forceArrowLen / 2} y={centerY - 12}
+            fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.electricForce} textAnchor="middle" fontWeight="bold">F</text>
+          <text x={x2 + rightArrowDir * forceArrowLen / 2} y={centerY - 12}
+            fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.electricForce} textAnchor="middle" fontWeight="bold">F</text>
         </g>
       )}
 
-      {/* 电荷 A */}
-      <circle cx={x1} cy={centerY} r={chargeR} fill={colorOf(q1)} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-      <text x={x1} y={centerY + 6} fontSize="20" fill={colors.neutral[0]} textAnchor="middle" fontWeight="bold">
+      <circle cx={x1} cy={centerY} r={chargeR}
+        fill={q1 >= 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
+        stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
+      <text x={x1} y={centerY + 6} fontSize={chargeR * 0.9} fill={colors.neutral[0]} textAnchor="middle" fontWeight="bold">
         {q1 >= 0 ? '+' : '−'}
       </text>
       <text x={x1} y={centerY - chargeR - 8} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
         q₁ = {q1} μC
       </text>
 
-      {/* 电荷 B */}
-      <circle cx={x2} cy={centerY} r={chargeR} fill={colorOf(q2)} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-      <text x={x2} y={centerY + 6} fontSize="20" fill={colors.neutral[0]} textAnchor="middle" fontWeight="bold">
+      <circle cx={x2} cy={centerY} r={chargeR}
+        fill={q2 >= 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
+        stroke={dragging ? PHYSICS_COLORS.electricForce : PHYSICS_COLORS.objectStroke}
+        strokeWidth={dragging ? CANVAS_STYLE.stroke.vectorMain : CANVAS_STYLE.stroke.objectLine}
+        style={{ cursor: 'grab' }}
+        onMouseDown={handleMouseDown} />
+      <text x={x2} y={centerY + 6} fontSize={chargeR * 0.9} fill={colors.neutral[0]} textAnchor="middle" fontWeight="bold">
         {q2 >= 0 ? '+' : '−'}
       </text>
       <text x={x2} y={centerY - chargeR - 8} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
         q₂ = {q2} μC
       </text>
+      <text x={x2} y={centerY + chargeR + 16} fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
+        (拖拽改变距离)
+      </text>
 
       {showFormulas && (
-        <g transform="translate(20, 20)">
+        <g transform={`translate(${w * 0.02}, ${h * 0.04})`}>
           <text fontSize={CANVAS_STYLE.font.title} fill={PHYSICS_COLORS.labelText} fontWeight="bold">库仑定律</text>
           <text x={0} y={24} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.axis}>F = k·q₁q₂/r²</text>
           <text x={0} y={44} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.axis}>k = 9×10⁹ N·m²/C²</text>
-          <text x={0} y={68} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.forceNet} fontWeight="bold">
+          <text x={0} y={68} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.electricForce} fontWeight="bold">
             F = {F.toExponential(2)} N
           </text>
-          <text x={0} y={88} fontSize={CANVAS_STYLE.font.axisSize} fill={attractive ? PHYSICS_COLORS.electricField : PHYSICS_COLORS.forceNet}>
+          <text x={0} y={88} fontSize={CANVAS_STYLE.font.axisSize} fill={attractive ? PHYSICS_COLORS.negativeCharge : PHYSICS_COLORS.positiveCharge}>
             {attractive ? '异号电荷 → 相互吸引' : '同号电荷 → 相互排斥'}
           </text>
         </g>
       )}
 
+      <g>
+        <rect x={chartLeft - 10} y={chartTop - 20} width={chartWidth + 20} height={chartHeight + 40}
+          fill="white" stroke={CHART_COLORS.axisLine} rx={4} />
+        <text x={chartLeft + chartWidth / 2} y={chartTop - 8} fontSize={CANVAS_STYLE.font.labelSize}
+          fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">F-r 图像</text>
+
+        <line x1={chartLeft} y1={chartTop} x2={chartLeft} y2={chartBottom}
+          stroke={CHART_COLORS.axisLine} strokeWidth={CANVAS_STYLE.stroke.chartMain} />
+        <line x1={chartLeft} y1={chartBottom} x2={chartLeft + chartWidth} y2={chartBottom}
+          stroke={CHART_COLORS.axisLine} strokeWidth={CANVAS_STYLE.stroke.chartMain} />
+
+        <text x={chartLeft + chartWidth / 2} y={chartBottom + 20} fontSize={9} textAnchor="middle" fill={CHART_COLORS.labelText}>r / cm</text>
+        <text x={chartLeft - 8} y={chartTop + chartHeight / 2} fontSize={9} textAnchor="middle" fill={CHART_COLORS.labelText}
+          transform={`rotate(-90, ${chartLeft - 8}, ${chartTop + chartHeight / 2})`}>F / N</text>
+
+        {frPath && <path d={frPath} fill="none" stroke={PHYSICS_COLORS.electricForce} strokeWidth={CANVAS_STYLE.stroke.chartMain} />}
+
+        <circle cx={toChartX(r)} cy={toChartY(F)} r={5}
+          fill={PHYSICS_COLORS.electricForce} stroke="white" strokeWidth={2} />
+        <line x1={toChartX(r)} y1={chartBottom} x2={toChartX(r)} y2={toChartY(F)}
+          stroke={PHYSICS_COLORS.electricForce} strokeWidth={1} strokeDasharray="3,3" opacity={0.5} />
+        <line x1={chartLeft} y1={toChartY(F)} x2={toChartX(r)} y2={toChartY(F)}
+          stroke={PHYSICS_COLORS.electricForce} strokeWidth={1} strokeDasharray="3,3" opacity={0.5} />
+      </g>
+
       <defs>
-        <marker id="arrow-coulomb" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-          <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.forceNet} />
+        <marker id="arrow-coulomb" markerWidth={SVG_MARKER.main.markerWidth} markerHeight={SVG_MARKER.main.markerHeight}
+          refX={SVG_MARKER.main.refX} refY={SVG_MARKER.main.refY} orient="auto">
+          <polygon points={SVG_MARKER.main.content} fill={PHYSICS_COLORS.electricForce} />
         </marker>
       </defs>
     </svg>
@@ -151,237 +266,276 @@ function BasicMode({
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// 进阶模式：双丝线悬挂小球动态平衡
+// 进阶模式：固定Q1、Q2，拖拽Q3 + 自动平衡
 // ═══════════════════════════════════════════════════════════════════════
-function PendulumMode({
+
+/** 计算Q3的平衡位置（固定Q1、Q2在x轴上） */
+function findEquilibriumX3(
+  q1: number, x1: number,
+  q2: number, x2: number,
+  q3: number,
+  minX: number, maxX: number
+): { x: number; possible: boolean } {
+  const Q1 = q1 * 1e-6
+  const Q2 = q2 * 1e-6
+  const Q3 = q3 * 1e-6
+
+  if (Q3 === 0) return { x: (x1 + x2) / 2, possible: false }
+
+  const f = (x3: number) => {
+    const r13 = x3 - x1
+    const r23 = x3 - x2
+    if (Math.abs(r13) < 1e-9 || Math.abs(r23) < 1e-9) return Infinity
+    const F13 = (Q1 * Q3) / (r13 * Math.abs(r13))
+    const F23 = (Q2 * Q3) / (r23 * Math.abs(r23))
+    return F13 + F23
+  }
+
+  const lo = minX
+  const hi = maxX
+
+  const fLo = f(lo)
+  const fHi = f(hi)
+
+  if (Math.abs(fLo) < 1e-12) return { x: lo, possible: true }
+  if (Math.abs(fHi) < 1e-12) return { x: hi, possible: true }
+  if (fLo * fHi > 0) return { x: (x1 + x2) / 2, possible: false }
+
+  let a = lo
+  let b = hi
+  for (let i = 0; i < 100; i++) {
+    const mid = (a + b) / 2
+    const fm = f(mid)
+    if (Math.abs(fm) < 1e-12) return { x: mid, possible: true }
+    if (f(a) * fm < 0) {
+      b = mid
+    } else {
+      a = mid
+    }
+  }
+  const result = (a + b) / 2
+  if (result < minX || result > maxX) return { x: (x1 + x2) / 2, possible: false }
+  return { x: result, possible: true }
+}
+
+function ThreeChargeMode({
   params,
   showVectors,
   showFormulas,
   showGrid,
-  showForceAnalysis,
   canvasSize,
 }: {
   params: Record<string, number>
   showVectors: boolean
   showFormulas: boolean
   showGrid: boolean
-  showForceAnalysis: boolean
   canvasSize: { width: number; height: number }
 }) {
-  const { q1 = 2, q2 = -3 } = params
-  const L_cm = params.L ?? 20
-  const m = params.m ?? 0.05
-  const k = 9e9
-  const g = GRAVITY
-  const L = L_cm * 0.01 // cm → m
+  const { q1 = 2, q2 = -3, q3 = 1 } = params
+  const w = canvasSize.width
+  const h = canvasSize.height
+  const centerY = h * 0.5
 
-  const { theta, r: rPend, F, attractive } = calculateCoulombPendulum(k, q1 * 1e-6, q2 * 1e-6, m, L, g)
-  const thetaDeg = (theta * 180) / Math.PI
+  const pos1X = w * 0.2
+  const pos2X = w * 0.8
 
-  // SVG 坐标系
-  const cx = canvasSize.width / 2
-  const hangY = 60 // 悬挂点 y
-  const pxPerCm = Math.min(12, (canvasSize.height - 120) / (L_cm * 1.2)) // 自适应缩放
-  const Lpx = L_cm * pxPerCm
+  const [q3X, setQ3X] = useState(w * 0.5)
+  const [dragging, setDragging] = useState(false)
+  const [noEquilibrium, setNoEquilibrium] = useState(false)
 
-  // 球位置（SVG 坐标：y 向下为正）
-  // 异号电荷(attractive)时两球向中心靠近（x偏移反向），同号电荷时两球向外张开
-  const sign = attractive ? -1 : 1
-  const ball1X = cx - sign * Lpx * Math.sin(theta)
-  const ball1Y = hangY + Lpx * Math.cos(theta)
-  const ball2X = cx + sign * Lpx * Math.sin(theta)
-  const ball2Y = hangY + Lpx * Math.cos(theta)
-  const ballR = 16
+  useEffect(() => {
+    setQ3X(w * 0.5)
+    setNoEquilibrium(false)
+  }, [w, h, q1, q2, q3])
 
-  // 力箭头缩放
-  const forceScale = Math.min(80, Math.max(25, 40 * Math.log10(F * 1e6 + 10)))
-  const gravScale = Math.min(60, Math.max(20, 30 * Math.log10(m * g * 1e3 + 10)))
+  const charges = [
+    { x: pos1X * 0.01, y: centerY * 0.01, q: q1 * 1e-6 },
+    { x: pos2X * 0.01, y: centerY * 0.01, q: q2 * 1e-6 },
+    { x: q3X * 0.01, y: centerY * 0.01, q: q3 * 1e-6 },
+  ]
 
-  // 夹角弧线
-  const arcR = 35
-  // 同号电荷(sign=1)：球1在左、球2在右，弧线分别向左/右张开
-  // 异号电荷(sign=-1)：球1在右、球2在左，弧线分别向右/左张开
-  const arcPath1 = describeArc(cx, hangY, arcR, 90, 90 + thetaDeg * (attractive ? 1 : -1))
-  const arcPath2 = describeArc(cx, hangY, arcR, 90, 90 - thetaDeg * (attractive ? 1 : -1))
+  const forces = calculateThreeChargeForces(COULOMB_K, charges)
+  const isBalanced = forces[2].magnitude < LAYOUT.equilibriumThreshold
 
-  // 距离标注
-  const distY = Math.max(ball1Y, ball2Y) + 40
+  const chargeR = Math.min(w, h) * LAYOUT.chargeRadiusRatio
+  const forceArrowLen = (magnitude: number) => {
+    if (magnitude < 1e-15) return 0
+    const baseLen = w * LAYOUT.forceArrowMinRatio
+    const maxLen = w * LAYOUT.forceArrowMaxRatio
+    const logScale = Math.log10(magnitude * 1e6 + 1)
+    const len = baseLen + (maxLen - baseLen) * Math.min(1, logScale / 8)
+    return Math.max(baseLen, Math.min(maxLen, len))
+  }
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setDragging(true)
+  }
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (!dragging) return
+    const svg = e.currentTarget
+    const pt = svg.createSVGPoint()
+    pt.x = e.clientX
+    pt.y = e.clientY
+    const svgP = pt.matrixTransform(svg.getScreenCTM()!.inverse())
+    setQ3X(Math.max(chargeR, Math.min(w - chargeR, svgP.x)))
+  }
+
+  const handleMouseUp = () => setDragging(false)
+
+  const handleAutoBalance = () => {
+    const x1 = pos1X * 0.01
+    const x2 = pos2X * 0.01
+    const minX = chargeR * 0.01
+    const maxX = (w - chargeR) * 0.01
+    const { x: eqX, possible } = findEquilibriumX3(q1, x1, q2, x2, q3, minX, maxX)
+    if (possible) {
+      setQ3X(eqX * 100)
+      setNoEquilibrium(false)
+    } else {
+      setNoEquilibrium(true)
+    }
+  }
 
   const gridLines = []
   if (showGrid) {
-    for (let i = 0; i <= 10; i++) {
-      const xPos = (i * canvasSize.width) / 10
+    const gridCount = 10
+    for (let i = 0; i <= gridCount; i++) {
+      const xPos = (i * w) / gridCount
       gridLines.push(
-        <line key={`g-${i}`} x1={xPos} y1={40} x2={xPos} y2={canvasSize.height - 40}
+        <line key={`gv-${i}`} x1={xPos} y1={0} x2={xPos} y2={h}
           stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} strokeDasharray={CANVAS_STYLE.dash.axis.join(' ')} />
       )
     }
   }
 
+  const chargeLabels = ['Q₁', 'Q₂', 'Q₃']
+  const chargeValues = [q1, q2, q3]
+  const chargePositions = [
+    { x: pos1X, y: centerY },
+    { x: pos2X, y: centerY },
+    { x: q3X, y: centerY },
+  ]
+
   return (
-    <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
-      {gridLines}
+    <div className="flex flex-col h-full">
+      <svg width={w} height={h - 60} className="bg-white rounded-lg shadow-inner cursor-crosshair flex-1"
+        onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+        {gridLines}
 
-      {/* 天花板 */}
-      <rect x={cx - 120} y={hangY - 10} width={240} height={10} fill="url(#ceilingMetalGrad)" stroke={PHYSICS_COLORS.axis} strokeWidth={1.5} />
-      <circle cx={cx} cy={hangY} r={4} fill={PHYSICS_COLORS.labelText} />
+        <line x1={40} y1={centerY} x2={w - 40} y2={centerY}
+          stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} strokeDasharray="4,4" opacity={0.3} />
 
-      {/* 竖直参考线（虚线） */}
-      <line x1={cx} y1={hangY} x2={cx} y2={hangY + Lpx + 20}
-        stroke={PHYSICS_COLORS.axis} strokeWidth={1} strokeDasharray="4,4" opacity={0.3} />
+        {chargePositions.map((pos, idx) => {
+          const force = forces[idx]
+          const qVal = chargeValues[idx]
+          const isQ3 = idx === 2
 
-      {/* 丝线 */}
-      <line x1={cx} y1={hangY} x2={ball1X} y2={ball1Y}
-        stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
-      <line x1={cx} y1={hangY} x2={ball2X} y2={ball2Y}
-        stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
+          return (
+            <g key={`charge-${idx}`}>
+              {showVectors && force.magnitude > 1e-12 && (
+                <g>
+                  <line x1={pos.x} y1={pos.y}
+                    x2={pos.x + Math.cos(Math.atan2(force.fy, force.fx)) * forceArrowLen(force.magnitude)}
+                    y2={pos.y + Math.sin(Math.atan2(force.fy, force.fx)) * forceArrowLen(force.magnitude)}
+                    stroke={PHYSICS_COLORS.electricForce} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+                    markerEnd="url(#arrow-force)" />
+                  <text
+                    x={pos.x + Math.cos(Math.atan2(force.fy, force.fx)) * (forceArrowLen(force.magnitude) + 14)}
+                    y={pos.y + Math.sin(Math.atan2(force.fy, force.fx)) * (forceArrowLen(force.magnitude) + 14)}
+                    fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.electricForce} textAnchor="middle" fontWeight="bold">
+                    F
+                  </text>
+                </g>
+              )}
 
-      {/* 夹角弧线与标注 */}
-      {thetaDeg > 1 && (
-        <g>
-          {arcPath1 && <path d={arcPath1} fill="none" stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={1} />}
-          {arcPath2 && <path d={arcPath2} fill="none" stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={1} />}
-          <text x={cx + (attractive ? -1 : 1) * (arcR + 14) * Math.sin(theta / 2)} y={hangY + (arcR + 14) * Math.cos(theta / 2) + 4}
-            fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
-            θ={thetaDeg.toFixed(1)}°
-          </text>
-        </g>
-      )}
+              <circle cx={pos.x} cy={pos.y} r={chargeR}
+                fill={qVal >= 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
+                stroke={isQ3 && !isBalanced ? PHYSICS_COLORS.electricCurrent : PHYSICS_COLORS.objectStroke}
+                strokeWidth={isQ3 && !isBalanced ? CANVAS_STYLE.stroke.vectorMain : CANVAS_STYLE.stroke.objectLine}
+                style={{ cursor: isQ3 ? 'grab' : 'default' }}
+                onMouseDown={isQ3 ? handleMouseDown : undefined} />
 
-      {/* 距离标注线 */}
-      <line x1={ball1X} y1={distY} x2={ball2X} y2={distY} stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} />
-      <line x1={ball1X} y1={distY - 5} x2={ball1X} y2={distY + 5} stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} />
-      <line x1={ball2X} y1={distY - 5} x2={ball2X} y2={distY + 5} stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} />
-      <text x={cx} y={distY + 18} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.axis} textAnchor="middle">
-        r = {(rPend * 100).toFixed(2)} cm
-      </text>
+              {isQ3 && !isBalanced && (
+                <circle cx={pos.x} cy={pos.y} r={chargeR + 4}
+                  fill="none" stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={1.5} opacity={0.6}>
+                  <animate attributeName="r" values={`${chargeR + 2};${chargeR + 6};${chargeR + 2}`} dur="1s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0.6;0.2;0.6" dur="1s" repeatCount="indefinite" />
+                </circle>
+              )}
 
-      {/* 库仑力矢量 */}
-      {showVectors && (
-        <g>
-          {/* 球1库仑力：异号电荷时受吸引力指向球2（右侧），同号电荷时受排斥力向左 */}
-          <line x1={ball1X} y1={ball1Y} x2={ball1X + (attractive ? 1 : -1) * forceScale} y2={ball1Y}
-            stroke={PHYSICS_COLORS.forceNet} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-            markerEnd="url(#arrow-coulomb-pend)" />
-          <text x={ball1X + (attractive ? 1 : -1) * forceScale / 2} y={ball1Y - 10}
-            fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.forceNet} textAnchor="middle" fontWeight="bold">F</text>
+              <text x={pos.x} y={pos.y + 6} fontSize={chargeR * 0.9} fill={colors.neutral[0]} textAnchor="middle" fontWeight="bold">
+                {qVal >= 0 ? '+' : '−'}
+              </text>
+              <text x={pos.x} y={pos.y - chargeR - 10} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
+                {chargeLabels[idx]} = {qVal} μC
+              </text>
+              {isQ3 && (
+                <text x={pos.x} y={pos.y + chargeR + 18} fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
+                  (拖拽移动)
+                </text>
+              )}
+            </g>
+          )
+        })}
 
-          {/* 球2库仑力：异号电荷时受吸引力指向球1（左侧），同号电荷时受排斥力向右 */}
-          <line x1={ball2X} y1={ball2Y} x2={ball2X + (attractive ? -1 : 1) * forceScale} y2={ball2Y}
-            stroke={PHYSICS_COLORS.forceNet} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-            markerEnd="url(#arrow-coulomb-pend)" />
-          <text x={ball2X + (attractive ? -1 : 1) * forceScale / 2} y={ball2Y - 10}
-            fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.forceNet} textAnchor="middle" fontWeight="bold">F</text>
-        </g>
-      )}
+        {isBalanced && (
+          <g>
+            <circle cx={w / 2} cy={h * 0.75} r={16} fill={PHYSICS_COLORS.normalForce} opacity={0.9} />
+            <text x={w / 2} y={h * 0.75 + 5} fontSize={14} fill={colors.neutral[0]} textAnchor="middle" fontWeight="bold">✓</text>
+            <text x={w / 2} y={h * 0.75 + 28} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.normalForce} textAnchor="middle" fontWeight="bold">
+              三电荷平衡
+            </text>
+          </g>
+        )}
 
-      {/* 受力分析（隔离法） */}
-      {showForceAnalysis && showVectors && (
-        <g>
-          {/* 球1 受力分解 */}
-          {/* 重力 G */}
-          <line x1={ball1X} y1={ball1Y} x2={ball1X} y2={ball1Y + gravScale}
-            stroke={PHYSICS_COLORS.gravity} strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-            markerEnd="url(#arrow-coulomb-grav)" />
-          <text x={ball1X + 10} y={ball1Y + gravScale} fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.gravity} fontWeight="bold">mg</text>
+        {noEquilibrium && !isBalanced && (
+          <g>
+            <rect x={w / 2 - 80} y={h * 0.75 - 12} width={160} height={36} rx={8}
+              fill={PHYSICS_COLORS.electricCurrent} opacity={0.9} />
+            <text x={w / 2} y={h * 0.75 + 10} fontSize={CANVAS_STYLE.font.labelSize} fill={colors.neutral[0]} textAnchor="middle" fontWeight="bold">
+              该电荷配置无法平衡
+            </text>
+          </g>
+        )}
 
-          {/* 绳拉力 T */}
-          <line x1={ball1X} y1={ball1Y} x2={cx + (ball1X - cx) * 0.6} y2={hangY + (ball1Y - hangY) * 0.6}
-            stroke={PHYSICS_COLORS.tension} strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-            markerEnd="url(#arrow-coulomb-tension)" />
-          <text x={(ball1X + cx) / 2 - 14} y={(ball1Y + hangY) / 2}
-            fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.tension} fontWeight="bold">T</text>
+        {showFormulas && (
+          <g transform={`translate(${w * 0.02}, ${h * 0.04})`}>
+            <text fontSize={CANVAS_STYLE.font.title} fill={PHYSICS_COLORS.labelText} fontWeight="bold">三电荷平衡</text>
+            <text x={0} y={24} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.axis}>F = k·q₁q₂/r²</text>
+            <text x={0} y={44} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.axis}>平衡条件：ΣF = 0</text>
+            <text x={0} y={68} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.electricForce} fontWeight="bold">
+              {isBalanced ? '✓ 已平衡' : noEquilibrium ? '× 无法平衡' : '未平衡'}
+            </text>
+          </g>
+        )}
 
-          {/* 球2 受力分解 */}
-          {/* 重力 G */}
-          <line x1={ball2X} y1={ball2Y} x2={ball2X} y2={ball2Y + gravScale}
-            stroke={PHYSICS_COLORS.gravity} strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-            markerEnd="url(#arrow-coulomb-grav)" />
-          <text x={ball2X + 10} y={ball2Y + gravScale} fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.gravity} fontWeight="bold">mg</text>
+        <defs>
+          <marker id="arrow-force" markerWidth={SVG_MARKER.main.markerWidth} markerHeight={SVG_MARKER.main.markerHeight}
+            refX={SVG_MARKER.main.refX} refY={SVG_MARKER.main.refY} orient="auto">
+            <polygon points={SVG_MARKER.main.content} fill={PHYSICS_COLORS.electricForce} />
+          </marker>
+        </defs>
+      </svg>
 
-          {/* 绳拉力 T */}
-          <line x1={ball2X} y1={ball2Y} x2={cx + (ball2X - cx) * 0.6} y2={hangY + (ball2Y - hangY) * 0.6}
-            stroke={PHYSICS_COLORS.tension} strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-            markerEnd="url(#arrow-coulomb-tension)" />
-          <text x={(ball2X + cx) / 2 + 14} y={(ball2Y + hangY) / 2}
-            fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.tension} fontWeight="bold">T</text>
-        </g>
-      )}
-
-      {/* 小球 A */}
-      <circle cx={ball1X} cy={ball1Y} r={ballR}
-        fill={q1 >= 0 ? PHYSICS_COLORS.forceNet : PHYSICS_COLORS.electricField}
-        stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-      <text x={ball1X} y={ball1Y + 5} fontSize="16" fill={colors.neutral[0]} textAnchor="middle" fontWeight="bold">
-        {q1 >= 0 ? '+' : '−'}
-      </text>
-      <text x={ball1X} y={ball1Y - ballR - 6} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
-        q₁={q1}μC
-      </text>
-
-      {/* 小球 B */}
-      <circle cx={ball2X} cy={ball2Y} r={ballR}
-        fill={q2 >= 0 ? PHYSICS_COLORS.forceNet : PHYSICS_COLORS.electricField}
-        stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-      <text x={ball2X} y={ball2Y + 5} fontSize="16" fill={colors.neutral[0]} textAnchor="middle" fontWeight="bold">
-        {q2 >= 0 ? '+' : '−'}
-      </text>
-      <text x={ball2X} y={ball2Y - ballR - 6} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
-        q₂={q2}μC
-      </text>
-
-      {showFormulas && (
-        <g transform="translate(20, 20)">
-          <text fontSize={CANVAS_STYLE.font.title} fill={PHYSICS_COLORS.labelText} fontWeight="bold">双丝线悬挂平衡</text>
-          <text x={0} y={24} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.axis}>F = k·q₁q₂/r²</text>
-          <text x={0} y={44} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.axis}>tanθ = F/(mg)</text>
-          <text x={0} y={68} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.forceNet} fontWeight="bold">
-            θ = {thetaDeg.toFixed(1)}°
-          </text>
-          <text x={0} y={88} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.forceNet}>
-            F = {F.toExponential(2)} N
-          </text>
-        </g>
-      )}
-
-      <defs>
-        <marker id="arrow-coulomb-pend" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-          <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.forceNet} />
-        </marker>
-        <marker id="arrow-coulomb-grav" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-          <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.gravity} />
-        </marker>
-        <marker id="arrow-coulomb-tension" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-          <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.tension} />
-        </marker>
-        <linearGradient id="ceilingMetalGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[0]} />
-          <stop offset="30%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[1]} />
-          <stop offset="70%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[2]} />
-          <stop offset="100%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[3]} />
-        </linearGradient>
-      </defs>
-    </svg>
+      <div className="shrink-0 p-3 bg-neutral-50 border-t border-neutral-200 flex items-center gap-4">
+        <button
+          onClick={handleAutoBalance}
+          className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium text-sm hover:bg-primary-700 active:scale-[0.97] transition-all"
+        >
+          自动平衡
+        </button>
+        <div className="flex items-center gap-2 text-xs text-neutral-600">
+          <span>Q₁、Q₂固定</span>
+          <span className="text-neutral-400">|</span>
+          <span>拖拽Q₃寻找平衡位置</span>
+          <span className="text-neutral-400">|</span>
+          <span className={isBalanced ? 'text-green-600 font-semibold' : noEquilibrium ? 'text-red-600 font-semibold' : 'text-amber-600'}>
+            {isBalanced ? '✓ 已平衡' : noEquilibrium ? '× 无法平衡' : '未平衡'}
+          </span>
+        </div>
+      </div>
+    </div>
   )
-}
-
-/**
- * SVG 弧线路径描述（用于夹角标注）
- * @param cx 圆心 x
- * @param cy 圆心 y
- * @param r 半径
- * @param startAngle 起始角（度，0=右，90=下）
- * @param endAngle 终止角
- */
-function describeArc(cx: number, cy: number, r: number, startAngle: number, endAngle: number): string {
-  const start = polarToCartesian(cx, cy, r, startAngle)
-  const end = polarToCartesian(cx, cy, r, endAngle)
-  const largeArcFlag = Math.abs(endAngle - startAngle) > 180 ? 1 : 0
-  const sweepFlag = endAngle > startAngle ? 1 : 0
-  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} ${sweepFlag} ${end.x} ${end.y}`
-}
-
-function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
-  const rad = (angleDeg * Math.PI) / 180
-  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }
 }

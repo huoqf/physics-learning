@@ -88,6 +88,51 @@ export function calculateCoulombPendulum(
   return { theta, r, F, T, attractive, x1, x2 }
 }
 
+/**
+ * 计算三点电荷各自的合力。
+ *
+ * 物理模型：三个点电荷在二维平面上，每对电荷之间存在库仑力。
+ * 对每个电荷，合力 = 其余两个电荷对它的库仑力矢量和。
+ *
+ * 库仑力公式：F = k·|q₁·q₂| / r²
+ * 方向：同号电荷排斥，异号电荷吸引（沿连线方向）。
+ *
+ * @param k      静电力常量 (N·m²/C²)，通常取 9×10⁹
+ * @param charges 三个电荷的位置和电量 [{x, y, q}]，x/y 单位 m，q 单位 C
+ * @returns 每个电荷的合力 {fx, fy, magnitude}，单位 N
+ *
+ * @category M4
+ */
+export function calculateThreeChargeForces(
+  k: number,
+  charges: Array<{ x: number; y: number; q: number }>
+): Array<{ fx: number; fy: number; magnitude: number }> {
+  const n = charges.length
+  const results: Array<{ fx: number; fy: number; magnitude: number }> = []
+
+  for (let i = 0; i < n; i++) {
+    let fx = 0
+    let fy = 0
+    for (let j = 0; j < n; j++) {
+      if (i === j) continue
+      const dx = charges[j].x - charges[i].x
+      const dy = charges[j].y - charges[i].y
+      const rSq = dx * dx + dy * dy
+      if (rSq < 1e-18) continue // 避免除零
+      const r = Math.sqrt(rSq)
+      const Fmag = (k * Math.abs(charges[i].q * charges[j].q)) / rSq
+      // 同号排斥（力方向远离 j），异号吸引（力方向指向 j）
+      const sign = charges[i].q * charges[j].q > 0 ? -1 : 1
+      fx += sign * Fmag * (dx / r)
+      fy += sign * Fmag * (dy / r)
+    }
+    const magnitude = Math.sqrt(fx * fx + fy * fy)
+    results.push({ fx, fy, magnitude })
+  }
+
+  return results
+}
+
 /** 点电荷电场强度 E = kq/r²（N/C） */
 export function calculateElectricField(k: number, q: number, r: number): { E: number } {
   return { E: (k * q) / (r * r) }

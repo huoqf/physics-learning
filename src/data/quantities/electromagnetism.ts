@@ -2,9 +2,7 @@
  * 电磁学动画物理量看板数据构建。
  */
 import {
-  GRAVITY,
   calculateCoulombForce,
-  calculateCoulombPendulum,
   calculateElectricField,
   calculateElectricPotential,
   calculateCapacitor,
@@ -69,34 +67,25 @@ export function buildElectromagnetismQuantities(
           ],
         }
       } else {
-        // ── 进阶模式：双丝线悬挂小球 ──
-        const L = (params.L ?? 20) * 0.01 // cm → m
-        const m = params.m ?? 0.05
-        const g = GRAVITY
-        const { theta, r: rPend, F, T } = calculateCoulombPendulum(k, q1 * 1e-6, q2 * 1e-6, m, L, g)
-        const thetaDeg = (theta * 180) / Math.PI
-
+        // ── 进阶模式：三个点电荷平衡 ──
+        const q3 = params.q3 ?? 1
+        // 注：实际位置由动画组件管理，此处仅显示电荷量信息
         return {
           quantities: [
             ...base,
-            { label: 'q₁', value: `${q1 > 0 ? '+' : ''}${q1.toFixed(1)}`, unit: 'μC', highlight: q1 > 0 ? 'positive' as const : 'negative' as const },
-            { label: 'q₂', value: `${q2 > 0 ? '+' : ''}${q2.toFixed(1)}`, unit: 'μC', highlight: q2 > 0 ? 'positive' as const : 'negative' as const },
-            { label: '丝线长 L', value: (L * 100).toFixed(0), unit: 'cm' },
-            { label: '小球质量 m', value: (m * 1000).toFixed(0), unit: 'g' },
-            { label: '平衡角 θ', value: thetaDeg.toFixed(1), unit: '°', highlight: 'extreme' as const },
-            { label: '两球间距 r', value: (rPend * 100).toFixed(2), unit: 'cm' },
-            { label: '库仑力 F', value: F.toExponential(2), unit: 'N' },
-            { label: '绳中拉力 T', value: T.toFixed(4), unit: 'N' },
+            { label: 'Q₁', value: `${q1 > 0 ? '+' : ''}${q1.toFixed(1)}`, unit: 'μC', highlight: q1 > 0 ? 'positive' as const : 'negative' as const },
+            { label: 'Q₂', value: `${q2 > 0 ? '+' : ''}${q2.toFixed(1)}`, unit: 'μC', highlight: q2 > 0 ? 'positive' as const : 'negative' as const },
+            { label: 'Q₃', value: `${q3 > 0 ? '+' : ''}${q3.toFixed(1)}`, unit: 'μC', highlight: q3 > 0 ? 'positive' as const : 'negative' as const },
           ],
           formulas: [
             { name: '库仑定律', latex: 'F = k \\frac{q_1 q_2}{r^2}', level: 'core', condition: '仅适用于点电荷与真空' },
-            { name: '平衡方程', latex: '\\tan\\theta = \\frac{F}{mg}', level: 'core', condition: '双丝线悬挂动态平衡' },
-            { name: '两球间距', latex: 'r = 2L\\sin\\theta', level: 'important' },
+            { name: '平衡条件', latex: '\\sum \\vec{F} = 0', level: 'core', condition: '三电荷平衡时各电荷合力为零' },
           ],
           gaokaoPoints: [
             { text: '库仑定律仅适用于点电荷与真空。', importance: 'gaokao' as const },
-            { text: '库仑力与万有引力具有相似形式。', importance: 'core' as const },
-            { text: '动态平衡问题常结合正弦定理分析。', importance: 'hard' as const },
+            { text: '三个点电荷平衡条件：两大夹小、两同夹异、远小近大。', importance: 'gaokao' as const },
+            { text: '中间电荷一定与两侧电荷电性相反。', importance: 'core' as const },
+            { text: '中间电荷的电荷量一定小于两侧电荷。', importance: 'core' as const },
           ],
         }
       }
