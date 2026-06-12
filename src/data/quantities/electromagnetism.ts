@@ -91,14 +91,86 @@ export function buildElectromagnetismQuantities(
       }
     }
     case 'anim-electric-field': {
-      const q = params.q ?? 5
-      const rTest = params.rTest ?? 3
-      const { E } = calculateElectricField(COULOMB_K, Math.abs(q * 1e-6), (rTest || 0.01) * 0.01)
-      return {
-        quantities: [
-          ...base,
-          { label: '场强 E', value: E, unit: 'N/C' },
-        ],
+      const mode = params.mode ?? 0
+      const qTest = params.qTest ?? 1.0 // μC
+      const rTest = params.rTest ?? 3.0 // cm
+      const rSI = (rTest || 0.01) * 0.01
+
+      if (mode === 0) {
+        // ── 基础模式：单电荷 ──
+        const q = params.q ?? 5.0 // μC
+        const qSI = q * 1e-6
+        const qTestSI = qTest * 1e-6
+
+        const { E } = calculateElectricField(COULOMB_K, Math.abs(qSI), rSI)
+        const F = Math.abs(qTestSI * E) // 力的大小
+
+        return {
+          quantities: [
+            ...base,
+            { label: '场强 E', value: E.toExponential(2), unit: 'N/C', highlight: 'extreme' as const },
+            { label: '静电力 F', value: F.toExponential(2), unit: 'N', highlight: 'extreme' as const },
+            { label: '力与场强方向', value: qTest === 0 ? '无作用力' : (qTest > 0 ? '两者同向' : '两者反向'), unit: '', highlight: qTest >= 0 ? 'positive' as const : 'negative' as const },
+          ],
+          formulas: [
+            { name: '电场强度定义式', latex: 'E = \\frac{F}{|q|}', level: 'core', condition: '适用于一切电场，比值定义法' },
+            { name: '点电荷场强决定式', latex: 'E = k \\frac{|Q|}{r^2}', level: 'core', condition: '真空中点电荷场强' },
+          ],
+          gaokaoPoints: [
+            { text: '电场强度 E 是描述电场自身力性质的物理量，与试探电荷 q 的电性及大小无关。', importance: 'gaokao' as const },
+            { text: '正试探电荷受到的电场力方向与 E 同向；负试探电荷受到的电场力方向与 E 反向。', importance: 'gaokao' as const },
+            { text: '场强大小由场源电荷及位置决定，与距离的平方成反比。', importance: 'core' as const },
+          ],
+        }
+      } else {
+        // ── 进阶模式：等量双电荷场强叠加 ──
+        const chargeConfig = params.chargeConfig ?? 0
+        let q1 = 5.0
+        let q2 = -5.0
+        let configName = '等量异种电荷'
+
+        if (chargeConfig === 1) {
+          q1 = 5.0
+          q2 = 5.0
+          configName = '等量同种正电荷'
+        } else if (chargeConfig === 2) {
+          q1 = -5.0
+          q2 = -5.0
+          configName = '等量同种负电荷'
+        }
+
+        // 计算水平连线上（以中点为原点，位置为 rTest cm）的合场强与力
+        // 设两电荷间距为 10.5 cm (由 cx1=22%, cx2=52% 得出真实比例约为 10.5cm)
+        const d_half = 5.25 * 0.01 // 5.25 cm to m
+        const xp = rTest * 0.01 // P 点 x 坐标 m
+        
+        const r1 = Math.abs(xp + d_half) // 到左电荷的距离
+        const r2 = Math.abs(xp - d_half) // 到右电荷的距离
+
+        const E1 = calculateElectricField(COULOMB_K, Math.abs(q1 * 1e-6), Math.max(0.005, r1)).E * (q1 >= 0 ? 1 : -1) * (xp >= -d_half ? 1 : -1)
+        const E2 = calculateElectricField(COULOMB_K, Math.abs(q2 * 1e-6), Math.max(0.005, r2)).E * (q2 >= 0 ? 1 : -1) * (xp >= d_half ? 1 : -1)
+        
+        const Enet = Math.abs(E1 + E2)
+        const Fnet = Enet * Math.abs(qTest * 1e-6)
+
+        return {
+          quantities: [
+            ...base,
+            { label: '电荷配置', value: configName, unit: '' },
+            { label: '合场强 E', value: Enet.toExponential(2), unit: 'N/C', highlight: 'extreme' as const },
+            { label: '合力 F', value: Fnet.toExponential(2), unit: 'N', highlight: 'extreme' as const },
+            { label: '力与场强方向', value: qTest === 0 ? '无作用力' : (qTest > 0 ? '两者同向' : '两者反向'), unit: '', highlight: qTest >= 0 ? 'positive' as const : 'negative' as const },
+          ],
+          formulas: [
+            { name: '电场叠加原理', latex: '\\vec{E} = \\vec{E}_1 + \\vec{E}_2', level: 'core', condition: '多个点电荷电场强度的矢量合成' },
+            { name: '平行四边形定则', latex: 'E = \\sqrt{E_1^2 + E_2^2 + 2E_1E_2\\cos\\theta}', level: 'core' },
+          ],
+          gaokaoPoints: [
+            { text: '空间中某点的合场强等于各场源电荷在该点产生分场强的矢量和（遵循平行四边形定则）。', importance: 'gaokao' as const },
+            { text: '等量异种电荷中垂线上场强方向处处相同（均与连线平行且指向负电荷一侧），中点场强最大，向两侧递减。', importance: 'gaokao' as const },
+            { text: '等量同种正电荷中垂线上，中点合场强为零，从中心向外侧中垂线场强先增大后减小。', importance: 'gaokao' as const },
+          ],
+        }
       }
     }
     case 'anim-charge-in-efield': {

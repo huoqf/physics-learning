@@ -2,6 +2,9 @@ import { useCanvasSize, physicsToCanvasWithOrigin } from '@/utils'
 import React, { useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { calculateCircularMotion } from '@/physics'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,
@@ -81,6 +84,25 @@ export default function CircularMotionAnimation() {
   const scale = (minCanvasDim - CIRCULAR_MOTION_LAYOUT.canvasPadding) / (2 * rMax)
 
   const canvasPos = physicsToCanvasWithOrigin(x, y, centerX, centerY, scale)
+
+  const sceneConfig = useMemo((): SceneConfig => ({
+    vectorBounds: {
+      x: 0,
+      y: 0,
+      width: canvasSize.width - CIRCULAR_MOTION_LAYOUT.canvasPadding,
+      height: canvasSize.height - CIRCULAR_MOTION_LAYOUT.canvasPadding,
+    },
+    originX: centerX,
+    originY: centerY,
+    worldWidth: 2 * rMax,
+    worldHeight: 2 * rMax,
+    refMagnitudes: {
+      velocity: CIRCULAR_MOTION_CHART_RANGE.vMax,
+      acceleration: CIRCULAR_MOTION_CHART_RANGE.aMax,
+    },
+  }), [canvasSize.width, canvasSize.height, centerX, centerY, rMax]);
+
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
 
   // ── 矢量安全映射：归一化方向 + 按比例缩放长度 ─────────────
   const R_ball = CIRCULAR_MOTION_LAYOUT.steelBallRadius
@@ -269,13 +291,6 @@ export default function CircularMotionAnimation() {
             <stop offset="90%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[2]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[2]} />
             <stop offset="100%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[3]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[3]} />
           </radialGradient>
-
-          <marker id="arrowhead-circular" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          <marker id="arrowhead-ac" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.acceleration} />
-          </marker>
         </defs>
 
         {/* 辐射网格背景 */}
@@ -405,45 +420,18 @@ export default function CircularMotionAnimation() {
         {/* 矢量箭头标注 (经典配色，剔除硬编码) */}
         {showVectors && v > 0 && (
           <g>
-            {/* 线速度矢量 v (经典蓝，动态线宽与自适应缩放) */}
-            <line
-              x1={canvasPos.cx}
-              y1={canvasPos.cy}
-              x2={canvasPos.cx + (-y / r) * vArrowLen}
-              y2={canvasPos.cy + (-x / r) * vArrowLen}
-              stroke={PHYSICS_COLORS.velocity}
-              strokeWidth={vStrokeWidth}
-              markerEnd="url(#arrowhead-circular)"
+            <VectorArrow
+              origin={{ x, y }}
+              vector={{ x: -y * (v / r), y: -x * (v / r) }}
+              type="velocity"
+              sceneScale={sceneScale}
             />
-            <text
-              x={canvasPos.cx + (-y / r) * vArrowLen - 12}
-              y={canvasPos.cy + (-x / r) * vArrowLen - 5}
-              fontSize={FONT.bodySize}
-              fill={PHYSICS_COLORS.velocity}
-              fontWeight="bold"
-            >
-              v
-            </text>
-
-            {/* 向心加速度 a (红色，从球心指向圆心，动态线宽) */}
-            <line
-              x1={canvasPos.cx}
-              y1={canvasPos.cy}
-              x2={canvasPos.cx - (x / r) * aArrowLen}
-              y2={canvasPos.cy + (y / r) * aArrowLen}
-              stroke={PHYSICS_COLORS.acceleration}
-              strokeWidth={aStrokeWidth}
-              markerEnd="url(#arrowhead-ac)"
+            <VectorArrow
+              origin={{ x, y }}
+              vector={{ x: -x * (a_c / r), y: -y * (a_c / r) }}
+              type="acceleration"
+              sceneScale={sceneScale}
             />
-            <text
-              x={canvasPos.cx - (x / r) * aArrowLen + 8}
-              y={canvasPos.cy + (y / r) * aArrowLen + 12}
-              fontSize={FONT.bodySize}
-              fill={PHYSICS_COLORS.acceleration}
-              fontWeight="bold"
-            >
-              a
-            </text>
           </g>
         )}
 

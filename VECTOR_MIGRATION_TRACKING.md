@@ -38,7 +38,7 @@
 
 | 文件 | 标记数 | 状态 |
 |------|--------|------|
-| CircularMotionAnimation.tsx | 2 | ❌ 待迁移 |
+| CircularMotionAnimation.tsx | 2 | ✅ 已迁移 |
 | CentripetalAnimation.tsx | 3 | ❌ 待迁移 |
 
 ## 第4章 动量 (momentum) ❌ 待迁移

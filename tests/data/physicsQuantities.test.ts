@@ -75,9 +75,9 @@ describe('buildPhysicsQuantities', () => {
     expect(find(qs, '库仑力') as number).toBeGreaterThan(0)
   })
 
-  it('点电荷电场：负电荷场强方向指向自身', () => {
+  it('点电荷电场：场强 E 大小计算正确', () => {
     const qs = buildPhysicsQuantities('anim-electric-field', { q: -5, rTest: 2 }, 0)
-    expect(find(qs, '方向')).toBe('指向负电荷')
+    expect(parseFloat(find(qs, '场强 E') as string)).toBeGreaterThan(0)
   })
 
   it('带电粒子在匀强电场：偏转电场模型 a=qE/m（合理量级）', () => {

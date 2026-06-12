@@ -17,14 +17,16 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
     SidebarExtra: lazy(() => import('@/features/electromagnetism/electrostatics/CoulombLawSidebar')),
   },
   'anim-electric-field': {
-    title: '点电荷电场强度',
+    title: '电场强度与比值定义法',
     knowledgeId: 'electricity-1-2',
     Component: lazy(() => import('@/features/electromagnetism/electrostatics/ElectricField')),
-    defaultParams: { q: 5, rTest: 3 },
+    defaultParams: { mode: 0, q: 5, chargeConfig: 0, qTest: 1.0, rTest: 3, showFieldLines: 1 },
     paramMeta: [
-      { key: 'q', label: '源电量 q', min: -10, max: 10, step: 0.5, unit: 'μC' },
-      { key: 'rTest', label: 'P 点距离', min: 1, max: 6, step: 0.5, unit: 'cm' },
+      { key: 'q', label: '源电电量 Q', min: -10, max: 10, step: 0.5, unit: 'μC', showIf: 'mode', showIfValue: 0 },
+      { key: 'qTest', label: '试探电量 q', min: -2, max: 2, step: 0.2, unit: 'μC' },
+      { key: 'rTest', label: '试探距离 r', min: 1, max: 6, step: 0.1, unit: 'cm' },
     ],
+    SidebarExtra: lazy(() => import('@/features/electromagnetism/electrostatics/ElectricFieldSidebar')),
   },
   'anim-charge-in-efield': {
     title: '带电粒子在匀强电场中运动',
