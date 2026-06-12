@@ -3,6 +3,10 @@ import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE, FONT, SCENE_COLORS, CHART_COLORS } from '@/theme/physics'
 import { calculateFrictionPullModel, calculateFrictionInclineModel } from '@/physics'
 import { GRAVITY } from '@/physics/constants'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 /** 力矢量视觉缩放比 (1 N = 1.6 px) */
 const FORCE_VECTOR_SCALE = 1.6
@@ -16,6 +20,14 @@ const INCLINE_PX_PER_METER = 25
 export default function FrictionAnimation() {
   const { params, time, showVectors, showGrid } = useAnimationStore()
   const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 420 })
+
+  const frictionScene: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    originX: 0,
+    originY: 0,
+    refMagnitudes: { force: 30, friction: 30, normalForce: 30, gravity: 30 },
+  }
+  const frictionSceneScale = createSceneScale(frictionScene)
 
   const mode = params.mode ?? 0 // 0=水平外力, 1=斜面倾角
   const m = params.m ?? 5
@@ -110,18 +122,7 @@ export default function FrictionAnimation() {
             <stop offset="100%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[3]} />
           </linearGradient>
           {/* 力的矢量箭头 */}
-          <marker id="arr-applied" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.appliedForce} />
-          </marker>
-          <marker id="arr-friction" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.friction} />
-          </marker>
-          <marker id="arr-normal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.normalForce} />
-          </marker>
-          <marker id="arr-gravity" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.gravity} />
-          </marker>
+          <VectorDefs colors={[PHYSICS_COLORS.appliedForce, PHYSICS_COLORS.friction, PHYSICS_COLORS.normalForce, PHYSICS_COLORS.gravity]} />
         </defs>
 
         {/* 网格 */}
@@ -180,11 +181,14 @@ export default function FrictionAnimation() {
             {showVectors && (
               <g>
                 {/* 1. 外拉力 F_applied (向右，作用在箱子右侧中心) */}
-                <line
-                  x1={boxX_m1 + boxSize / 2} y1={groundY_m1 - boxSize / 2}
-                  x2={boxX_m1 + boxSize / 2 + F_applied * FORCE_VECTOR_SCALE} y2={groundY_m1 - boxSize / 2}
-                  stroke={PHYSICS_COLORS.appliedForce} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                  markerEnd="url(#arr-applied)"
+                <VectorArrow
+                  origin={{ x: boxX_m1 + boxSize / 2, y: -(groundY_m1 - boxSize / 2) }}
+                  vector={{ x: F_applied, y: 0 }}
+                  type="force"
+                  sceneScale={frictionSceneScale}
+                  color={PHYSICS_COLORS.appliedForce}
+                  strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+                  pixelLength={F_applied * FORCE_VECTOR_SCALE}
                 />
                 <text
                   x={boxX_m1 + boxSize / 2 + F_applied * FORCE_VECTOR_SCALE + 6} y={groundY_m1 - boxSize / 2 + 4}
@@ -195,11 +199,13 @@ export default function FrictionAnimation() {
 
                 {/* 2. 摩擦力 f (向左，作用在接触面) */}
                 {f_actual_m1 > 0.5 && (
-                  <line
-                    x1={boxX_m1} y1={groundY_m1}
-                    x2={boxX_m1 - f_actual_m1 * FORCE_VECTOR_SCALE} y2={groundY_m1}
-                    stroke={PHYSICS_COLORS.friction} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                    markerEnd="url(#arr-friction)"
+                  <VectorArrow
+                    origin={{ x: boxX_m1, y: -groundY_m1 }}
+                    vector={{ x: -f_actual_m1, y: 0 }}
+                    type="friction"
+                    sceneScale={frictionSceneScale}
+                    strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+                    pixelLength={f_actual_m1 * FORCE_VECTOR_SCALE}
                   />
                 )}
                 {f_actual_m1 > 3 && (
@@ -212,11 +218,13 @@ export default function FrictionAnimation() {
                 )}
 
                 {/* 3. 支持力 F_N (向上) */}
-                <line
-                  x1={boxX_m1} y1={groundY_m1 - boxSize / 2}
-                  x2={boxX_m1} y2={groundY_m1 - boxSize / 2 - F_normal_m1 * FORCE_VECTOR_SCALE}
-                  stroke={PHYSICS_COLORS.normalForce} strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  markerEnd="url(#arr-normal)"
+                <VectorArrow
+                  origin={{ x: boxX_m1, y: -(groundY_m1 - boxSize / 2) }}
+                  vector={{ x: 0, y: F_normal_m1 }}
+                  type="normalForce"
+                  sceneScale={frictionSceneScale}
+                  strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+                  pixelLength={F_normal_m1 * FORCE_VECTOR_SCALE}
                 />
                 <text
                   x={boxX_m1 - 16} y={groundY_m1 - boxSize / 2 - F_normal_m1 * FORCE_VECTOR_SCALE + 4}
@@ -226,11 +234,13 @@ export default function FrictionAnimation() {
                 </text>
 
                 {/* 4. 重力 G (向下) */}
-                <line
-                  x1={boxX_m1} y1={groundY_m1 - boxSize / 2}
-                  x2={boxX_m1} y2={groundY_m1 - boxSize / 2 + weight * FORCE_VECTOR_SCALE}
-                  stroke={PHYSICS_COLORS.gravity} strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  markerEnd="url(#arr-gravity)"
+                <VectorArrow
+                  origin={{ x: boxX_m1, y: -(groundY_m1 - boxSize / 2) }}
+                  vector={{ x: 0, y: -weight }}
+                  type="gravity"
+                  sceneScale={frictionSceneScale}
+                  strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+                  pixelLength={weight * FORCE_VECTOR_SCALE}
                 />
                 <text
                   x={boxX_m1 + 8} y={groundY_m1 - boxSize / 2 + weight * FORCE_VECTOR_SCALE}
@@ -311,11 +321,13 @@ export default function FrictionAnimation() {
               {showVectors && (
                 <g>
                   {/* 1. 支持力 F_N (垂直斜面向上) */}
-                  <line
-                    x1={boxLocalX} y1={-boxSize / 2 - 8}
-                    x2={boxLocalX} y2={-boxSize / 2 - 8 - F_normal_m2 * FORCE_VECTOR_SCALE}
-                    stroke={PHYSICS_COLORS.normalForce} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                    markerEnd="url(#arr-normal)"
+                  <VectorArrow
+                    origin={{ x: boxLocalX, y: -(-boxSize / 2 - 8) }}
+                    vector={{ x: 0, y: F_normal_m2 }}
+                    type="normalForce"
+                    sceneScale={frictionSceneScale}
+                    strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+                    pixelLength={F_normal_m2 * FORCE_VECTOR_SCALE}
                   />
                   <text
                     x={boxLocalX - 16} y={-boxSize / 2 - 8 - F_normal_m2 * FORCE_VECTOR_SCALE + 4}
@@ -326,11 +338,13 @@ export default function FrictionAnimation() {
 
                   {/* 2. 摩擦力 f (平行斜面向上，即向左) */}
                   {f_actual_m2 > 0.5 && (
-                    <line
-                      x1={boxLocalX - boxSize / 2} y1={-8}
-                      x2={boxLocalX - boxSize / 2 - f_actual_m2 * FORCE_VECTOR_SCALE} y2={-8}
-                      stroke={PHYSICS_COLORS.friction} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                      markerEnd="url(#arr-friction)"
+                    <VectorArrow
+                      origin={{ x: boxLocalX - boxSize / 2, y: -(-8) }}
+                      vector={{ x: -f_actual_m2, y: 0 }}
+                      type="friction"
+                      sceneScale={frictionSceneScale}
+                      strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+                      pixelLength={f_actual_m2 * FORCE_VECTOR_SCALE}
                     />
                   )}
                   {f_actual_m2 > 3 && (
@@ -355,11 +369,13 @@ export default function FrictionAnimation() {
                   const gLen = weight * FORCE_VECTOR_SCALE
                   return (
                     <g>
-                      <line
-                        x1={boxCenterWorldX} y1={boxCenterWorldY}
-                        x2={boxCenterWorldX} y2={boxCenterWorldY + gLen}
-                        stroke={PHYSICS_COLORS.gravity} strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                        markerEnd="url(#arr-gravity)"
+                      <VectorArrow
+                        origin={{ x: boxCenterWorldX, y: -boxCenterWorldY }}
+                        vector={{ x: 0, y: -weight }}
+                        type="gravity"
+                        sceneScale={frictionSceneScale}
+                        strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+                        pixelLength={gLen}
                       />
                       <text
                         x={boxCenterWorldX + 8} y={boxCenterWorldY + gLen + 4}

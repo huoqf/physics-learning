@@ -9,6 +9,7 @@ const AnalysisPage = lazy(() => import('./pages/AnalysisPage'));
 const PracticePage = lazy(() => import('./pages/PracticePage'));
 const WrongPage = lazy(() => import('./pages/WrongPage'));
 const KnowledgePage = lazy(() => import('./pages/KnowledgePage'));
+const VectorPlayground = lazy(() => import('./features/dev/VectorPlayground'));
 
 function RouteFallback() {
   return (
@@ -72,6 +73,14 @@ export default function App() {
             }
           />
         </Route>
+        <Route
+          path="/dev/playground"
+          element={
+            <Suspense fallback={<RouteFallback />}>
+              <VectorPlayground />
+            </Suspense>
+          }
+        />
       </Routes>
     </HashRouter>
   );

@@ -11,9 +11,13 @@ import {
   DASH,
   FONT,
 } from '@/theme/physics'
-import { calcGByLatitude, calcGByAltitude } from '@/physics'
+import { calcGByLatitude, calcGByAltitude, GRAVITY } from '@/physics'
 import { useFreeFallPhysics } from './useFreeFallPhysics'
 import { getPhysicsAtTime } from '@/physics'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 // ─── 物理常量 ────────────────────────────────────────────────────────────────
 /** 管高度 (m) */
@@ -80,6 +84,17 @@ export default function FreeFallDripAnimation() {
 
   // 物理坐标到像素的缩放
   const scale = tubePixelHeight / TUBE_HEIGHT
+
+  const dripScene: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: stageWidth, height: canvasSize.height },
+    originX: 0,
+    originY: 0,
+    refMagnitudes: {
+      velocity: Math.sqrt(2 * g * TUBE_HEIGHT),
+      acceleration: GRAVITY,
+    },
+  }
+  const dripSceneScale = createSceneScale(dripScene)
 
   // 龙头位置
   const faucetY = tubeTopY - 20
@@ -243,9 +258,6 @@ export default function FreeFallDripAnimation() {
 
         {/* ========== defs ========== */}
         <defs>
-          <marker id="arrow-drip-v" markerWidth={10} markerHeight={7} refX={9} refY={3.5} orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
-          </marker>
           {/* 水滴写实径向渐变 */}
           <radialGradient id="drop-gradient" cx="35%" cy="30%" r="65%">
             <stop offset="0%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[0]} />
@@ -274,6 +286,7 @@ export default function FreeFallDripAnimation() {
             <stop offset="100%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[2]} stopOpacity="0.01" />
           </linearGradient>
         </defs>
+        <VectorDefs colors={[PHYSICS_COLORS.velocity, PHYSICS_COLORS.acceleration]} />
 
         {/* ========== 左侧动画舞台 ========== */}
 
@@ -410,14 +423,40 @@ export default function FreeFallDripAnimation() {
           if (arrowLen < 5) return null
           return (
             <g>
-              <line
-                x1={tubeCenterX + DROP_RADIUS + 8} y1={pixelY}
-                x2={tubeCenterX + DROP_RADIUS + 8} y2={pixelY + arrowLen}
-                stroke={PHYSICS_COLORS.velocity} strokeWidth={STROKE.vectorMain}
-                markerEnd="url(#arrow-drip-v)"
+              <VectorArrow
+                origin={{ x: tubeCenterX + DROP_RADIUS + 8, y: -pixelY }}
+                vector={{ x: 0, y: -state.v }}
+                type="velocity"
+                sceneScale={dripSceneScale}
+                strokeWidth={STROKE.vectorMain}
               />
               <text x={tubeCenterX + DROP_RADIUS + 18} y={pixelY + arrowLen / 2 + 3}
                 fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
+            </g>
+          )
+        })()}
+
+        {/* 5b. 最近水滴重力矢量箭头 */}
+        {showVectors && nearestDrop && (() => {
+          const age = time - nearestDrop.birthTime
+          const state = getPhysicsAtTime(points, age, groundTime)
+          const pixelY = tubeTopY + state.y * scale
+          if (pixelY > tubeBottomY || pixelY < tubeTopY) return null
+          return (
+            <g>
+              <VectorArrow
+                origin={{ x: tubeCenterX - DROP_RADIUS - 8, y: -pixelY }}
+                vector={{ x: 0, y: -g }}
+                type="acceleration"
+                sceneScale={dripSceneScale}
+                strokeWidth={STROKE.vectorSub}
+              />
+              <text x={tubeCenterX - DROP_RADIUS - 18} y={pixelY + 14}
+                fontSize={FONT.small} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">g</text>
+              {g > GRAVITY && (
+                <text x={tubeCenterX - DROP_RADIUS - 18} y={pixelY + 24}
+                  fontSize={7} fill={PHYSICS_COLORS.acceleration} fontWeight="bold" opacity={0.7}>▲max</text>
+              )}
             </g>
           )
         })()}

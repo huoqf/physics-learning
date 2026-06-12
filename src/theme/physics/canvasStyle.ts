@@ -270,6 +270,7 @@ export const KEPLER_CONFIG = {
 } as const;
 
 // ─── 矢量显示配置（按物理量类型）──────────────────────────────────────
+/** @deprecated 旧方案遗留，新 lesson 请使用 vectorStyle.ts + VectorArrow 组件。仅保留用于未迁移的 lesson 文件。 */
 export const VECTOR_DISPLAY = {
   velocity: {
     scaleBase: 18,

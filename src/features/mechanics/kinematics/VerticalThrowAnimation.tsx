@@ -15,6 +15,10 @@ import {
 } from '@/theme/physics'
 import { useVerticalThrowPhysics } from './useVerticalThrowPhysics'
 import { useVerticalThrowChartLayout } from './useVerticalThrowChartLayout'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 /** 脉冲动画周期 (ms) */
 const PULSE_PERIOD = 800
@@ -114,6 +118,14 @@ export default function VerticalThrowAnimation() {
   const leftBallX = ballX
   const rightBallX = showDoubleTrack ? ballX + 40 : ballX
 
+  const vtScene: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: stageWidth, height: stageHeight },
+    originX: 0,
+    originY: 0,
+    refMagnitudes: { velocity: v0, acceleration: g },
+  }
+  const vtSceneScale = createSceneScale(vtScene)
+
   const currentBallY = originY + (displayMaxHeight - clampedY) * scale
   const currentVacuumBallY = originY + (displayMaxHeight - clampedVacuumY) * scale
 
@@ -124,17 +136,27 @@ export default function VerticalThrowAnimation() {
     }
   }, [isLanded, time, setIsPlaying])
 
-  // ── 最高点自动暂停（仅首次经过时触发） ──
+  // ── 最高点自动暂停 1 秒后继续 ──
   const hasPausedAtPeakRef = useRef(false)
+  const peakTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => {
     if (isAtPeak && isPlaying && !hasPausedAtPeakRef.current) {
       setIsPlaying(false)
       hasPausedAtPeakRef.current = true
+      peakTimerRef.current = setTimeout(() => {
+        setIsPlaying(true)
+      }, 1000)
     }
     if (!isAtPeak) {
       hasPausedAtPeakRef.current = false
     }
   }, [isAtPeak, isPlaying, setIsPlaying])
+
+  useEffect(() => {
+    return () => {
+      if (peakTimerRef.current) clearTimeout(peakTimerRef.current)
+    }
+  }, [])
 
   // ── 网格线 ──
   const gridLines = useMemo(() => {
@@ -247,12 +269,7 @@ export default function VerticalThrowAnimation() {
             <stop offset="100%" stopColor={SCENE_COLORS.effects.auroraRedGrad[1]} stopOpacity={0.05} />
           </linearGradient>
 
-          <marker id="arrow-vt-velocity" markerWidth={10} markerHeight={7} refX={9} refY={3.5} orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          <marker id="arrow-vt-accel" markerWidth={10} markerHeight={7} refX={9} refY={3.5} orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.acceleration} />
-          </marker>
+          <VectorDefs colors={[PHYSICS_COLORS.velocity, PHYSICS_COLORS.acceleration]} />
 
           <pattern id="gridPattern" width="8" height="8" patternUnits="userSpaceOnUse">
             <path d="M0 0L8 8M8 0L0 8" stroke={SCENE_COLORS.effects.patternGrid} strokeWidth="0.5" opacity={0.35} />
@@ -328,13 +345,15 @@ export default function VerticalThrowAnimation() {
 
         {showVectors && effectiveV !== 0 && !isLanded && (
           <g>
-            <line
-              x1={leftBallX + 18} y1={currentBallY}
-              x2={leftBallX + 18} y2={currentBallY - effectiveV * 4}
-              stroke={PHYSICS_COLORS.velocity} strokeWidth={STROKE.vectorMain}
-              markerEnd="url(#arrow-vt-velocity)" />
+            <VectorArrow
+              origin={{ x: leftBallX + 18, y: -currentBallY }}
+              vector={{ x: 0, y: effectiveV }}
+              type="velocity"
+              sceneScale={vtSceneScale}
+              strokeWidth={STROKE.vectorMain}
+            />
             <text
-              x={leftBallX + 30} y={currentBallY - effectiveV * 2 + 3}
+              x={leftBallX + 30} y={currentBallY - vtSceneScale.maxVectorLength * 0.3 + 3}
               fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontWeight="bold">
               v
             </text>
@@ -343,13 +362,15 @@ export default function VerticalThrowAnimation() {
 
         {showVectors && !isLanded && (
           <g>
-            <line
-              x1={leftBallX - 18} y1={currentBallY}
-              x2={leftBallX - 18} y2={currentBallY + 35}
-              stroke={PHYSICS_COLORS.acceleration} strokeWidth={STROKE.vectorMain}
-              markerEnd="url(#arrow-vt-accel)" />
+            <VectorArrow
+              origin={{ x: leftBallX - 18, y: -currentBallY }}
+              vector={{ x: 0, y: -g }}
+              type="acceleration"
+              sceneScale={vtSceneScale}
+              strokeWidth={STROKE.vectorMain}
+            />
             <text
-              x={leftBallX - 30} y={currentBallY + 20}
+              x={leftBallX - 30} y={currentBallY + vtSceneScale.maxVectorLength * 0.5}
               fontSize={FONT.small} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">
               a
             </text>
@@ -358,14 +379,17 @@ export default function VerticalThrowAnimation() {
 
         {isAtPeak && (
           <g>
-            <line
-              x1={leftBallX - 18} y1={currentBallY}
-              x2={leftBallX - 18} y2={currentBallY + 35}
-              stroke={PHYSICS_COLORS.acceleration} strokeWidth={STROKE.vectorMain}
-              markerEnd="url(#arrow-vt-accel)">
+            <g>
+              <VectorArrow
+                origin={{ x: leftBallX - 18, y: -currentBallY }}
+                vector={{ x: 0, y: -g }}
+                type="acceleration"
+                sceneScale={vtSceneScale}
+                strokeWidth={STROKE.vectorMain}
+              />
               <animate attributeName="opacity" values="1;0.3;1" dur={`${PULSE_PERIOD}ms`} repeatCount="indefinite" />
-            </line>
-            <text x={leftBallX - 30} y={currentBallY + 20}
+            </g>
+            <text x={leftBallX - 30} y={currentBallY + vtSceneScale.maxVectorLength * 0.5}
               fontSize={FONT.small} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">
               a
               <animate attributeName="opacity" values="1;0.3;1" dur={`${PULSE_PERIOD}ms`} repeatCount="indefinite" />

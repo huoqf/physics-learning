@@ -2,8 +2,12 @@ import { useMemo, useState, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { calculatePoliceChase } from '@/physics'
 import { PHYSICS_COLORS, CHART_COLORS, STROKE, DASH, FONT } from '@/theme/physics'
-import { SVG_MARKER, SVG_FILTER } from '@/theme/physics/canvasStyle'
+import { SVG_FILTER } from '@/theme/physics/canvasStyle'
 import { AnimationControls } from '@/components/UI'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 /** 布局常量（语义化命名，比例驱动） */
 const LAYOUT = {
@@ -13,7 +17,6 @@ const LAYOUT = {
   ROAD_Y_RATIO: 0.72,
   VEHICLE_WIDTH_RATIO: 0.07,
   VEHICLE_HEIGHT_RATIO: 0.04,
-  ARROW_SCALE_V: 2.5,
   MAX_TIME: 20,
   XT_X_MAX: 20,
   VT_X_MAX: 20,
@@ -30,6 +33,7 @@ const LAYOUT = {
 export default function AccelerationCenterExtra() {
   const { params, time, isPlaying, speed, setIsPlaying, setTime, setSpeed } = useAnimationStore()
   const [showMaxGapWarning, setShowMaxGapWarning] = useState(false)
+  const [showMeetWarning, setShowMeetWarning] = useState(false)
   const [containerSize, setContainerSize] = useState({ width: 800, height: 600 })
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -59,15 +63,31 @@ export default function AccelerationCenterExtra() {
     [vA, deltaX0, t0, aB, vMax, time]
   )
 
+  // ── 动态计算最大时间（确保追击可完成） ──
+  const maxTimeNeeded = useMemo(() => {
+    if (vMax <= vA) return LAYOUT.MAX_TIME
+    const t1 = t0 + vMax / aB
+    const xB_t1 = 0.5 * aB * (vMax / aB) ** 2
+    const gapAtT1 = deltaX0 + vA * t1 - xB_t1
+    if (gapAtT1 <= 0) return t1
+    const tCatchUp = t1 + gapAtT1 / (vMax - vA)
+    return Math.min(Math.ceil(tCatchUp) + 2, 120)
+  }, [vA, deltaX0, t0, aB, vMax])
+
+  const effectiveMaxTime = Math.max(LAYOUT.MAX_TIME, maxTimeNeeded)
+
   // ── 检测共速时刻（最大间距）单次触发 ──
   const prevTimeRef = useRef(0)
   const hasShownMaxGapRef = useRef(false)
+  const hasShownMeetRef = useRef(false)
   const warningTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const meetTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
     // 重置时清除标记
     if (time === 0) {
       hasShownMaxGapRef.current = false
+      hasShownMeetRef.current = false
       prevTimeRef.current = 0
       return
     }
@@ -75,23 +95,43 @@ export default function AccelerationCenterExtra() {
       prevTimeRef.current = time
       return
     }
-    const { tEqual } = state
+    const { tEqual, tMeet } = state
+
+    // 共速时刻（最大间距）暂停 1 秒 — 不重置时间线
     if (
       !hasShownMaxGapRef.current &&
       tEqual > 0 &&
-      tEqual <= LAYOUT.MAX_TIME &&
+      tEqual <= effectiveMaxTime &&
       prevTimeRef.current < tEqual &&
       time >= tEqual
     ) {
       hasShownMaxGapRef.current = true
       setIsPlaying(false)
       setShowMaxGapWarning(true)
-      setTime(tEqual)
-      // 用 ref 持有 timer，不受 effect cleanup 影响
       warningTimerRef.current = setTimeout(() => {
         setShowMaxGapWarning(false)
-      }, 1500)
+        setIsPlaying(true)
+      }, 1000)
     }
+
+    // 相遇时刻（追上前车）暂停 2 秒
+    if (
+      !hasShownMeetRef.current &&
+      tMeet !== null &&
+      tMeet > 0 &&
+      tMeet <= effectiveMaxTime &&
+      prevTimeRef.current < tMeet &&
+      time >= tMeet
+    ) {
+      hasShownMeetRef.current = true
+      setIsPlaying(false)
+      setShowMeetWarning(true)
+      meetTimerRef.current = setTimeout(() => {
+        setShowMeetWarning(false)
+        setIsPlaying(true)
+      }, 2000)
+    }
+
     prevTimeRef.current = time
   }, [time, isPlaying, state, setIsPlaying, setTime])
 
@@ -99,6 +139,7 @@ export default function AccelerationCenterExtra() {
   useEffect(() => {
     return () => {
       if (warningTimerRef.current) clearTimeout(warningTimerRef.current)
+      if (meetTimerRef.current) clearTimeout(meetTimerRef.current)
     }
   }, [])
 
@@ -111,30 +152,30 @@ export default function AccelerationCenterExtra() {
   const vehicleH = containerSize.width * LAYOUT.VEHICLE_HEIGHT_RATIO
 
   // ── x-t 图坐标转换 ──
-  const xtYMax = Math.max(deltaX0 + vA * LAYOUT.XT_X_MAX, deltaX0 + 50)
+  const xtYMax = Math.max(deltaX0 + vA * effectiveMaxTime, deltaX0 + 50)
   const xtYMin = -10
-  const toXtX = (t: number) => padding + (t / LAYOUT.XT_X_MAX) * chartWidth
+  const toXtX = (t: number) => padding + (t / effectiveMaxTime) * chartWidth
   const toXtY = (x: number) => chartHeight * 0.85 - ((x - xtYMin) / (xtYMax - xtYMin)) * chartHeight * 0.7
 
   // ── v-t 图坐标转换 ──
   const vtYMax = Math.max(vA, vMax) * 1.2
   const vtYMin = -2
-  const toVtX = (t: number) => padding * 2 + chartWidth + (t / LAYOUT.VT_X_MAX) * chartWidth
+  const toVtX = (t: number) => padding * 2 + chartWidth + (t / effectiveMaxTime) * chartWidth
   const toVtY = (v: number) => chartHeight * 0.85 - ((v - vtYMin) / (vtYMax - vtYMin)) * chartHeight * 0.7
 
   // ── x-t 图数据 ──
   const xtCarData = useMemo(() => {
     const pts: { t: number; x: number }[] = []
-    for (let t = 0; t <= LAYOUT.XT_X_MAX; t += 0.1) {
+    for (let t = 0; t <= effectiveMaxTime; t += 0.1) {
       pts.push({ t, x: deltaX0 + vA * t })
     }
     return pts
-  }, [vA, deltaX0])
+  }, [vA, deltaX0, effectiveMaxTime])
 
   const xtPoliceData = useMemo(() => {
     const pts: { t: number; x: number }[] = []
     const t1 = t0 + vMax / aB
-    for (let t = 0; t <= LAYOUT.XT_X_MAX; t += 0.1) {
+    for (let t = 0; t <= effectiveMaxTime; t += 0.1) {
       let x: number
       if (t < t0) {
         x = 0
@@ -147,21 +188,21 @@ export default function AccelerationCenterExtra() {
       pts.push({ t, x })
     }
     return pts
-  }, [vA, deltaX0, t0, aB, vMax])
+  }, [vA, deltaX0, t0, aB, vMax, effectiveMaxTime])
 
   // ── v-t 图数据 ──
   const vtCarData = useMemo(() => {
     const pts: { t: number; v: number }[] = []
-    for (let t = 0; t <= LAYOUT.VT_X_MAX; t += 0.1) {
+    for (let t = 0; t <= effectiveMaxTime; t += 0.1) {
       pts.push({ t, v: vA })
     }
     return pts
-  }, [vA])
+  }, [vA, effectiveMaxTime])
 
   const vtPoliceData = useMemo(() => {
     const pts: { t: number; v: number }[] = []
     const t1 = t0 + vMax / aB
-    for (let t = 0; t <= LAYOUT.VT_X_MAX; t += 0.1) {
+    for (let t = 0; t <= effectiveMaxTime; t += 0.1) {
       let v: number
       if (t < t0) {
         v = 0
@@ -173,7 +214,7 @@ export default function AccelerationCenterExtra() {
       pts.push({ t, v })
     }
     return pts
-  }, [t0, aB, vMax])
+  }, [t0, aB, vMax, effectiveMaxTime])
 
   // ── 公路动画布局 ──
   const roadY = animHeight * LAYOUT.ROAD_Y_RATIO
@@ -182,26 +223,23 @@ export default function AccelerationCenterExtra() {
   const roadRight = containerSize.width - roadPadding
   const roadWidth = roadRight - roadLeft
 
-  // 位移缩放：以 20s 内轿车的最大位移为参考
-  const maxDist = deltaX0 + vA * LAYOUT.MAX_TIME
+  // 位移缩放：以有效时间内轿车的最大位移为参考
+  const maxDist = deltaX0 + vA * effectiveMaxTime
   const scale = (roadWidth * 0.85) / maxDist
   const startX = roadLeft + roadWidth * 0.05
 
-  const carX = startX + state.xA * scale
+  const carX = startX + (deltaX0 + state.xA) * scale
   const policeX = startX + state.xB * scale
 
+  // ── 矢量场景配置 ──
+  const chaseScene: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: containerSize.width, height: animHeight },
+    originX: 0,
+    originY: 0,
+    refMagnitudes: { velocity: Math.max(vA, vMax) * 1.3, acceleration: aB * 2 },
+  }
+  const sceneScale = createSceneScale(chaseScene)
 
-
-  const phaseText = (() => {
-    switch (state.phase) {
-      case 'reaction':
-        return '反应期'
-      case 'accelerating':
-        return '加速中'
-      case 'cruising':
-        return '巡航中'
-    }
-  })()
 
   return (
     <div ref={containerRef} className="w-full h-full flex flex-col">
@@ -225,9 +263,7 @@ export default function AccelerationCenterExtra() {
               </feMerge>
             </filter>
             {/* 箭头标记 */}
-            <marker id="arrow-chase-v" markerWidth={SVG_MARKER.main.markerWidth} markerHeight={SVG_MARKER.main.markerHeight} refX={SVG_MARKER.main.refX} refY={SVG_MARKER.main.refY} orient="auto">
-              <polygon points={SVG_MARKER.main.content} fill={PHYSICS_COLORS.velocity} />
-            </marker>
+            <VectorDefs colors={[PHYSICS_COLORS.velocity]} />
           </defs>
 
           {/* ── 左：x-t 图象 ── */}
@@ -248,12 +284,15 @@ export default function AccelerationCenterExtra() {
                 <line x1={chartLeft} y1={toXtY(0)} x2={chartLeft + chartWidth} y2={toXtY(0)} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axisBold} />
 
                 {/* X 轴刻度 */}
-                {[0, 5, 10, 15, 20].map(t => (
-                  <g key={`xt-xt-${t}`}>
-                    <line x1={toXtX(t)} y1={toXtY(0) - 3} x2={toXtX(t)} y2={toXtY(0) + 3} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-                    <text x={toXtX(t)} y={toXtY(0) + 14} fontSize={FONT.small} textAnchor="middle" fill={CHART_COLORS.tickLabel} fontWeight="600">{t}</text>
-                  </g>
-                ))}
+                {Array.from({ length: 5 }).map((_, i) => {
+                  const t = Math.round((effectiveMaxTime * i) / 4)
+                  return (
+                    <g key={`xt-xt-${t}`}>
+                      <line x1={toXtX(t)} y1={toXtY(0) - 3} x2={toXtX(t)} y2={toXtY(0) + 3} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
+                      <text x={toXtX(t)} y={toXtY(0) + 14} fontSize={FONT.small} textAnchor="middle" fill={CHART_COLORS.tickLabel} fontWeight="600">{t}</text>
+                    </g>
+                  )
+                })}
 
                 {/* Y 轴刻度 */}
                 {[0, 100, 200, 300, 400, 500].map(x => {
@@ -383,12 +422,15 @@ export default function AccelerationCenterExtra() {
                 <line x1={chartLeft} y1={toVtY(0)} x2={chartLeft + chartWidth} y2={toVtY(0)} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axisBold} />
 
                 {/* X 轴刻度 */}
-                {[0, 5, 10, 15, 20].map(t => (
-                  <g key={`vt-xt-${t}`}>
-                    <line x1={toVtX(t)} y1={toVtY(0) - 3} x2={toVtX(t)} y2={toVtY(0) + 3} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-                    <text x={toVtX(t)} y={toVtY(0) + 14} fontSize={FONT.small} textAnchor="middle" fill={CHART_COLORS.tickLabel} fontWeight="600">{t}</text>
-                  </g>
-                ))}
+                {Array.from({ length: 5 }).map((_, i) => {
+                  const t = Math.round((effectiveMaxTime * i) / 4)
+                  return (
+                    <g key={`vt-xt-${t}`}>
+                      <line x1={toVtX(t)} y1={toVtY(0) - 3} x2={toVtX(t)} y2={toVtY(0) + 3} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
+                      <text x={toVtX(t)} y={toVtY(0) + 14} fontSize={FONT.small} textAnchor="middle" fill={CHART_COLORS.tickLabel} fontWeight="600">{t}</text>
+                    </g>
+                  )
+                })}
 
                 {/* Y 轴刻度 */}
                 {[0, 10, 20, 30, 40, 50, 60].map(v => {
@@ -588,30 +630,26 @@ export default function AccelerationCenterExtra() {
           {time > 0 && (
             <g>
               {/* 轿车速度矢量 */}
-              <line
-                x1={carX + vehicleW + 4}
-                y1={roadY - vehicleH * 0.5}
-                x2={carX + vehicleW + 4 + vA * LAYOUT.ARROW_SCALE_V}
-                y2={roadY - vehicleH * 0.5}
-                stroke={PHYSICS_COLORS.velocity}
+              <VectorArrow
+                origin={{ x: carX + vehicleW + 4, y: -(roadY - vehicleH * 0.5) }}
+                vector={{ x: vA, y: 0 }}
+                type="velocity"
+                sceneScale={sceneScale}
                 strokeWidth={STROKE.vectorMain}
-                markerEnd="url(#arrow-chase-v)"
               />
-              <text x={carX + vehicleW + 8 + vA * LAYOUT.ARROW_SCALE_V} y={roadY - vehicleH * 0.5 + 4} fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v_A</text>
+              <text x={carX + vehicleW + 8 + sceneScale.maxVectorLength * 0.4} y={roadY - vehicleH * 0.5 + 4} fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v_A</text>
 
               {/* 警车速度矢量 */}
               {state.vB > 0.1 && (
                 <g>
-                  <line
-                    x1={policeX + vehicleW + 4}
-                    y1={roadY - vehicleH * 0.5}
-                    x2={policeX + vehicleW + 4 + state.vB * LAYOUT.ARROW_SCALE_V}
-                    y2={roadY - vehicleH * 0.5}
-                    stroke={PHYSICS_COLORS.velocity}
+                  <VectorArrow
+                    origin={{ x: policeX + vehicleW + 4, y: -(roadY - vehicleH * 0.5) }}
+                    vector={{ x: state.vB, y: 0 }}
+                    type="velocity"
+                    sceneScale={sceneScale}
                     strokeWidth={STROKE.vectorMain}
-                    markerEnd="url(#arrow-chase-v)"
                   />
-                  <text x={policeX + vehicleW + 8 + state.vB * LAYOUT.ARROW_SCALE_V} y={roadY - vehicleH * 0.5 + 4} fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v_B</text>
+                  <text x={policeX + vehicleW + 8 + sceneScale.maxVectorLength * 0.4} y={roadY - vehicleH * 0.5 + 4} fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v_B</text>
                 </g>
               )}
             </g>
@@ -633,19 +671,29 @@ export default function AccelerationCenterExtra() {
             </text>
           </g>
 
-          {/* 状态徽章 */}
-          <g transform={`translate(${policeX + vehicleW / 2 - 30}, ${roadY - vehicleH - 22})`}>
-            <rect x="0" y="0" width="60" height="16" rx="8" fill="white" stroke={state.phase === 'reaction' ? '#CBD5E1' : state.phase === 'accelerating' ? '#FDBA74' : '#86EFAC'} strokeWidth={1} />
-            <text x="30" y="12" fontSize={9} fill={state.phase === 'reaction' ? '#475569' : state.phase === 'accelerating' ? '#C2410C' : '#15803D'} textAnchor="middle" fontWeight="bold">
-              {phaseText}
-            </text>
-          </g>
+          {/* 警车加速度矢量（加速阶段显示，最高速后同步消失） */}
+          {state.phase === 'accelerating' && state.aB_current > 0.01 && (
+            <VectorArrow
+              origin={{ x: policeX + vehicleW * 0.5, y: -(roadY - vehicleH - 8) }}
+              vector={{ x: state.aB_current, y: 0 }}
+              type="acceleration"
+              sceneScale={sceneScale}
+              strokeWidth={STROKE.vectorSub}
+            />
+          )}
         </svg>
 
         {/* 最大间距警告气泡 */}
         {showMaxGapWarning && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-500 text-white font-bold text-xs py-2 px-3 rounded-lg shadow-lg border border-amber-600 animate-bounce">
             ⚠️ 共速时刻：此时两车距离最大！Δx = {state.deltaX.toFixed(1)} m
+          </div>
+        )}
+
+        {/* 相遇警告气泡 */}
+        {showMeetWarning && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-green-600 text-white font-bold text-xs py-2 px-3 rounded-lg shadow-lg border border-green-700 animate-bounce">
+            🚔 警车追上轿车！t = {state.tMeet?.toFixed(1)} s
           </div>
         )}
       </div>
@@ -656,7 +704,7 @@ export default function AccelerationCenterExtra() {
           isPlaying={isPlaying}
           speed={speed}
           time={time}
-          maxTime={LAYOUT.MAX_TIME}
+          maxTime={effectiveMaxTime}
           onPlayPause={() => setIsPlaying(!isPlaying)}
           onReset={() => { setTime(0); setIsPlaying(false) }}
           onSpeedChange={setSpeed}

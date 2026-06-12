@@ -3,6 +3,7 @@ import { PHYSICS_COLORS } from '@/theme/physics'
 import { useAnimationStore } from '@/stores'
 import { calculateFrictionPullModel, calculateFrictionInclineModel } from '@/physics'
 import { GRAVITY } from '@/physics/constants'
+import { VectorDefs } from '@/components/Physics/VectorDefs'
 
 export const FrictionCenterExtra: FC = () => {
   const { params } = useAnimationStore()
@@ -83,9 +84,7 @@ export const FrictionCenterExtra: FC = () => {
       <div className="flex-1 bg-white rounded-xl shadow-sm p-3 border border-neutral-100 flex items-center justify-center min-w-0 relative">
         <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
           <defs>
-            <marker id="chart-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-              <path d="M1,1 L5,3 L1,5 Z" fill={PHYSICS_COLORS.labelText} />
-            </marker>
+            <VectorDefs colors={[PHYSICS_COLORS.labelText]} />
           </defs>
 
           {/* 标题 */}

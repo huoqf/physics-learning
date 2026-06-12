@@ -5,6 +5,10 @@ import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/them
 import { colors } from '@/theme/colors'
 import { Spring } from '@/components/UI'
 import { calculateConnectedBody, calculateConnectedBodyTimeline, GRAVITY } from '@/physics'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 /** 连接体场景布局常量 */
 const LAYOUT = {
@@ -233,6 +237,14 @@ export default function ConnectedBodiesAnimation() {
   const arrowLength = Math.max(15, (F / 30) * 60)
   const dragTargetX = m2X + w2 + arrowLength
 
+  const cbScene: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    originX: 0,
+    originY: 0,
+    refMagnitudes: { force: Math.max(F, 30), friction: Math.max(F, 30), tension: Math.max(F, 30) },
+  }
+  const cbSceneScale = createSceneScale(cbScene)
+
   const [isDragging, setIsDragging] = useState(false)
   const dragStartRef = useRef({ clientX: 0, startF: 0 })
 
@@ -294,9 +306,9 @@ export default function ConnectedBodiesAnimation() {
   }
 
   // 力大小文本定义
-  const f1_val = (physicsResult.f1 ?? physicsResult.f1Max).toFixed(1)
-  const f2_val = (physicsResult.f2 ?? physicsResult.f2Max).toFixed(1)
-  const T_val = tension.toFixed(1)
+  const f1_val = parseFloat((physicsResult.f1 ?? physicsResult.f1Max).toFixed(1))
+  const f2_val = parseFloat((physicsResult.f2 ?? physicsResult.f2Max).toFixed(1))
+  const T_val = parseFloat(tension.toFixed(1))
 
   return (
     <div ref={containerRef} className="w-full h-full relative select-none">
@@ -448,14 +460,13 @@ export default function ConnectedBodiesAnimation() {
             {/* --- 外力拉力 F (高亮橙红，作用在 m2 的右侧) --- */}
             {/* 在隔离 m1 视图中，外力 F 作用于 m2，故淡化表现 */}
             <g opacity={isM1View ? 0.15 : 1} className="transition-opacity duration-200">
-              <line
-                x1={m2X + w2}
-                y1={ropeY}
-                x2={dragTargetX}
-                y2={ropeY}
-                stroke={PHYSICS_COLORS.forceNet}
+              <VectorArrow
+                origin={{ x: m2X + w2, y: -ropeY }}
+                vector={{ x: F, y: 0 }}
+                type="force"
+                sceneScale={cbSceneScale}
                 strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                markerEnd="url(#cb-arrow-f)"
+                pixelLength={arrowLength}
               />
               <text
                 x={dragTargetX + 8}
@@ -480,14 +491,13 @@ export default function ConnectedBodiesAnimation() {
 
             {/* --- m1 的左侧摩擦力 f1 (作用在 m1 底板偏左) --- */}
             <g opacity={isM2View ? 0.15 : 1} className="transition-opacity duration-200">
-              <line
-                x1={m1X}
-                y1={groundY - 10}
-                x2={m1X - 28}
-                y2={groundY - 10}
-                stroke={PHYSICS_COLORS.friction}
+              <VectorArrow
+                origin={{ x: m1X, y: -(groundY - 10) }}
+                vector={{ x: -f1_val, y: 0 }}
+                type="friction"
+                sceneScale={cbSceneScale}
                 strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                markerEnd="url(#cb-arrow-friction)"
+                pixelLength={28}
               />
               <text
                 x={m1X - 32}
@@ -497,20 +507,19 @@ export default function ConnectedBodiesAnimation() {
                 fontWeight="bold"
                 textAnchor="end"
               >
-                f₁ = {f1_val}N
+                f₁ = {f1_val.toFixed(1)}N
               </text>
             </g>
 
             {/* --- m2 的左侧摩擦力 f2 (作用在 m2 底板偏左) --- */}
             <g opacity={isM1View ? 0.15 : 1} className="transition-opacity duration-200">
-              <line
-                x1={m2X}
-                y1={groundY - 10}
-                x2={m2X - 28}
-                y2={groundY - 10}
-                stroke={PHYSICS_COLORS.friction}
+              <VectorArrow
+                origin={{ x: m2X, y: -(groundY - 10) }}
+                vector={{ x: -f2_val, y: 0 }}
+                type="friction"
+                sceneScale={cbSceneScale}
                 strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                markerEnd="url(#cb-arrow-friction)"
+                pixelLength={28}
               />
               <text
                 x={m2X - 32}
@@ -520,7 +529,7 @@ export default function ConnectedBodiesAnimation() {
                 fontWeight="bold"
                 textAnchor="end"
               >
-                f₂ = {f2_val}N
+                f₂ = {f2_val.toFixed(1)}N
               </text>
             </g>
 
@@ -531,14 +540,13 @@ export default function ConnectedBodiesAnimation() {
                 {/* m1 右侧的拉力 T （在隔离m1或普通视图时显示） */}
                 {(isNormalView || isM1View) && (
                   <g>
-                    <line
-                      x1={ropeLeftX}
-                      y1={ropeY}
-                      x2={ropeLeftX + 28}
-                      y2={ropeY}
-                      stroke={PHYSICS_COLORS.tension}
+                    <VectorArrow
+                      origin={{ x: ropeLeftX, y: -ropeY }}
+                      vector={{ x: T_val, y: 0 }}
+                      type="tension"
+                      sceneScale={cbSceneScale}
                       strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                      markerEnd="url(#cb-arrow-tension)"
+                      pixelLength={28}
                     />
                     <text
                       x={ropeLeftX + 10}
@@ -547,7 +555,7 @@ export default function ConnectedBodiesAnimation() {
                       fill={PHYSICS_COLORS.tension}
                       fontWeight="bold"
                     >
-                      T = {T_val}N
+                      T = {T_val.toFixed(1)}N
                     </text>
                   </g>
                 )}
@@ -555,14 +563,13 @@ export default function ConnectedBodiesAnimation() {
                 {/* m2 左侧的拉力 T （在隔离m2或普通视图时显示，方向向左） */}
                 {(isNormalView || isM2View) && (
                   <g>
-                    <line
-                      x1={ropeRightX}
-                      y1={ropeY}
-                      x2={ropeRightX - 28}
-                      y2={ropeY}
-                      stroke={PHYSICS_COLORS.tension}
+                    <VectorArrow
+                      origin={{ x: ropeRightX, y: -ropeY }}
+                      vector={{ x: -T_val, y: 0 }}
+                      type="tension"
+                      sceneScale={cbSceneScale}
                       strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                      markerEnd="url(#cb-arrow-tension-left)"
+                      pixelLength={28}
                     />
                     <text
                       x={ropeRightX - 38}
@@ -572,7 +579,7 @@ export default function ConnectedBodiesAnimation() {
                       fontWeight="bold"
                       textAnchor="end"
                     >
-                      T = {T_val}N
+                      T = {T_val.toFixed(1)}N
                     </text>
                   </g>
                 )}
@@ -610,18 +617,7 @@ export default function ConnectedBodiesAnimation() {
           </linearGradient>
 
           {/* 矢量箭头端点定义 */}
-          <marker id="cb-arrow-f" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.forceNet} />
-          </marker>
-          <marker id="cb-arrow-friction" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.friction} />
-          </marker>
-          <marker id="cb-arrow-tension" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.tension} />
-          </marker>
-          <marker id="cb-arrow-tension-left" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.tension} />
-          </marker>
+          <VectorDefs colors={[PHYSICS_COLORS.forceNet, PHYSICS_COLORS.friction, PHYSICS_COLORS.tension]} />
         </defs>
       </svg>
       {/* 水平拉力直接拖拽控制小标提示 */}

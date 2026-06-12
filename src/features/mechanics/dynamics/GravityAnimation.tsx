@@ -3,6 +3,10 @@ import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE, SCENE_COLORS, CHART_COLORS } from '@/theme/physics'
 import { physicsToCanvas } from '@/utils/coordinate'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 export default function GravityAnimation() {
   const { params, setParams, updateParam, showVectors, showGrid, time } = useAnimationStore()
@@ -53,6 +57,14 @@ export default function GravityAnimation() {
     radius1 = Math.min(Math.log(m1 + 1) * 4.8, 38)
     radius2 = Math.min(Math.log(m2 + 1) * 4.8, 28)
   }
+
+  const gravScene: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    originX: 0,
+    originY: 0,
+    refMagnitudes: { gravity: 1 },
+  }
+  const gravSceneScale = createSceneScale(gravScene)
 
   // ── 拖拽交互状态 ──
   const [dragTarget, setDragTarget] = useState<'none' | 'obj1' | 'obj2'>('none')
@@ -295,12 +307,7 @@ export default function GravityAnimation() {
             <stop offset="100%" stopColor={SCENE_COLORS.sphere.planetCool.gradient[3]} />
           </radialGradient>
 
-          <marker id="arrowhead-gravity-right" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.gravity} />
-          </marker>
-          <marker id="arrowhead-gravity-left" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.gravity} />
-          </marker>
+          <VectorDefs colors={[PHYSICS_COLORS.gravity]} />
           <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="120%">
             <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000000" floodOpacity="0.12" />
           </filter>
@@ -420,14 +427,13 @@ export default function GravityAnimation() {
         {/* 6. 引力矢量 */}
         {showVectors && (
           <g>
-            <line
-              x1={obj1X + radius1}
-              y1={obj1Y}
-              x2={obj1X + radius1 + arrowLen}
-              y2={obj1Y}
-              stroke={PHYSICS_COLORS.gravity}
+            <VectorArrow
+              origin={{ x: obj1X + radius1, y: -obj1Y }}
+              vector={{ x: 1, y: 0 }}
+              type="gravity"
+              sceneScale={gravSceneScale}
               strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-              markerEnd="url(#arrowhead-gravity-right)"
+              pixelLength={arrowLen}
             />
             <text
               x={obj1X + radius1 + arrowLen / 2}
@@ -440,14 +446,13 @@ export default function GravityAnimation() {
               F_引
             </text>
 
-            <line
-              x1={obj2X - radius2}
-              y1={obj2Y}
-              x2={obj2X - radius2 - arrowLen}
-              y2={obj2Y}
-              stroke={PHYSICS_COLORS.gravity}
+            <VectorArrow
+              origin={{ x: obj2X - radius2, y: -obj2Y }}
+              vector={{ x: -1, y: 0 }}
+              type="gravity"
+              sceneScale={gravSceneScale}
               strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-              markerEnd="url(#arrowhead-gravity-left)"
+              pixelLength={arrowLen}
             />
             <text
               x={obj2X - radius2 - arrowLen / 2}

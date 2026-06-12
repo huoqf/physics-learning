@@ -4,6 +4,10 @@ import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OBJECT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { calculateAverageVelocity } from '@/physics'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 /**
  * 速度基础版动画 —— "破除直觉迷思"
@@ -90,6 +94,15 @@ export default function VelocityAnimation() {
   // ── 物体尺寸 ──
   const objW = canvasSize.width * 0.06
   const objH = scene === 0 ? objW * 0.7 : objW * 0.9
+
+  // ── 矢量场景配置 ──
+  const velocityScene: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    originX: 0,
+    originY: 0,
+    refMagnitudes: { velocity: v * 1.5 || 15 },
+  }
+  const sceneScale = createSceneScale(velocityScene)
 
   // ── 地标标签 ──
   const landmarkLabels = useMemo(() => {
@@ -237,14 +250,13 @@ export default function VelocityAnimation() {
         {/* ── 4. 平均速度粗箭头 ── */}
         {showVectors && deltaT > 0 && (
           <g>
-            <line
-              x1={t1Pos}
-              y1={groundY - objH * 1.6}
-              x2={t2Pos}
-              y2={groundY - objH * 1.6}
-              stroke={PHYSICS_COLORS.averageVelocity}
+            <VectorArrow
+              origin={{ x: t1Pos, y: -(groundY - objH * 1.6) }}
+              vector={{ x: deltaX, y: 0 }}
+              type="velocity"
+              sceneScale={sceneScale}
+              color={PHYSICS_COLORS.averageVelocity}
               strokeWidth={STROKE.vectorMain}
-              markerEnd="url(#arrowhead-avg-v)"
             />
             <text
               x={(t1Pos + t2Pos) / 2}
@@ -262,17 +274,15 @@ export default function VelocityAnimation() {
         {/* ── 5. 瞬时速度细箭头 ── */}
         {showVectors && (
           <g>
-            <line
-              x1={currentX + objW}
-              y1={groundY - objH * 0.5}
-              x2={currentX + objW + v * scale * 0.3}
-              y2={groundY - objH * 0.5}
-              stroke={PHYSICS_COLORS.velocity}
+            <VectorArrow
+              origin={{ x: currentX + objW, y: -(groundY - objH * 0.5) }}
+              vector={{ x: v, y: 0 }}
+              type="velocity"
+              sceneScale={sceneScale}
               strokeWidth={STROKE.vectorSub}
-              markerEnd="url(#arrowhead-inst-v)"
             />
             <text
-              x={currentX + objW + v * scale * 0.3 + fontSize}
+              x={currentX + objW + sceneScale.maxVectorLength * 0.4 + fontSize}
               y={groundY - objH * 0.5 + fontSize * 0.35}
               fontSize={fontSize}
               fill={PHYSICS_COLORS.velocity}
@@ -326,15 +336,8 @@ export default function VelocityAnimation() {
           {scene === 0 ? '公交车进站' : '百米短跑冲线'}
         </text>
 
-        {/* ── 箭头标记定义 ── */}
-        <defs>
-          <marker id="arrowhead-avg-v" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.averageVelocity} />
-          </marker>
-          <marker id="arrowhead-inst-v" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-        </defs>
+        {/* ── 矢量标记定义 ── */}
+        <VectorDefs colors={[PHYSICS_COLORS.averageVelocity, PHYSICS_COLORS.velocity]} />
       </svg>
     </div>
   )

@@ -12,7 +12,11 @@ import {
   FONT,
 } from '@/theme/physics'
 import { useFreeFallPhysics } from './useFreeFallPhysics'
-import { getPhysicsAtTime } from '@/physics'
+import { getPhysicsAtTime, GRAVITY } from '@/physics'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 // ─── 物体材质参数 ──────────────────────────────────────────────────────────────
 const MATERIAL = {
@@ -25,18 +29,14 @@ const MATERIAL = {
 type MaterialA = keyof Pick<typeof MATERIAL, 'ironBall' | 'coin'>
 type MaterialB = keyof Pick<typeof MATERIAL, 'feather' | 'paper'>
 
-/** 固定参考时长（秒），用于决定"填满舞台"的落地时间 */
-const TARGET_FALL_TIME = 2.0
+/** 牛顿管物理高度 (m) */
+const TUBE_PHYSICAL_HEIGHT = 2.0
 
 /** 撞击波纹持续时间（秒） */
 const RIPPLE_DURATION = 0.5
 
 /** 撞击波纹最大半径 */
 const RIPPLE_MAX_RADIUS = 30
-
-/** 矢量缩放比例 */
-const GRAVITY_ARROW_LEN = 40
-const AIR_RESIST_SCALE = 8
 
 // ─── 撞击波纹组件 ─────────────────────────────────────────────────────────────
 interface RippleProps {
@@ -108,14 +108,23 @@ export default function FreeFallAnimation() {
   const featherX = tubeLeft + tubeWidth * 0.65
 
   // ── 动态 scale ───────────────────────────────────────────────────────────
-  const maxFallHeight = useMemo(
-    () => 0.5 * g * TARGET_FALL_TIME * TARGET_FALL_TIME,
-    [g]
-  )
+  const maxFallHeight = TUBE_PHYSICAL_HEIGHT
   const scale = useMemo(
     () => (maxFallHeight > 0 ? stageHeight / maxFallHeight : 25),
     [maxFallHeight, stageHeight]
   )
+
+  const ffScene: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: stageWidth, height: stageHeight },
+    originX: 0,
+    originY: 0,
+    refMagnitudes: {
+      velocity: Math.sqrt(2 * g * TUBE_PHYSICAL_HEIGHT),
+      acceleration: GRAVITY,
+      force: 0.5,
+    },
+  }
+  const ffSceneScale = createSceneScale(ffScene)
 
   // ── 物理引擎应用 (离线预计算与插值) ───────────────────────────────────────
   const { points: pointsA, groundTime: groundTimeA, currentState: stateA } = useFreeFallPhysics(
@@ -394,15 +403,7 @@ export default function FreeFallAnimation() {
           </linearGradient>
 
           {/* 箭头定义 */}
-          <marker id="arrow-ff-g" markerWidth={10} markerHeight={7} refX={9} refY={3.5} orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.acceleration} />
-          </marker>
-          <marker id="arrow-ff-air" markerWidth={8} markerHeight={6} refX={7} refY={3} orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.forceNet} />
-          </marker>
-          <marker id="arrow-ff-air-b" markerWidth={8} markerHeight={6} refX={7} refY={3} orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={CHART_COLORS.compareB} />
-          </marker>
+          <VectorDefs colors={[PHYSICS_COLORS.acceleration, PHYSICS_COLORS.forceNet, CHART_COLORS.compareB]} />
         </defs>
 
         {/* ========== 左侧动画舞台 ========== */}
@@ -548,42 +549,93 @@ export default function FreeFallAnimation() {
         {/* 4. 重力矢量箭头 */}
         {showVectors && !isLandedA && (
           <g>
-            <line x1={ballX - 28} y1={renderYA} x2={ballX - 28} y2={Math.min(renderYA + GRAVITY_ARROW_LEN, groundY - 5)}
-              stroke={PHYSICS_COLORS.acceleration} strokeWidth={STROKE.vectorMain}
-              markerEnd="url(#arrow-ff-g)" />
-            <text x={ballX - 40} y={Math.min(renderYA + GRAVITY_ARROW_LEN / 2, groundY - 10)}
+            <VectorArrow
+              origin={{ x: ballX - 28, y: -renderYA }}
+              vector={{ x: 0, y: -g }}
+              type="acceleration"
+              sceneScale={ffSceneScale}
+              strokeWidth={STROKE.vectorMain}
+            />
+            <text x={ballX - 40} y={Math.min(renderYA + ffSceneScale.maxVectorLength * 0.5, groundY - 10)}
               fontSize={FONT.small} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">g</text>
+            {g > GRAVITY && (
+              <text x={ballX - 40} y={Math.min(renderYA + ffSceneScale.maxVectorLength * 0.5, groundY - 10) + 10}
+                fontSize={7} fill={PHYSICS_COLORS.acceleration} fontWeight="bold" opacity={0.7}>▲max</text>
+            )}
           </g>
         )}
         {showVectors && !isLandedB && (
           <g transform={`translate(${swayDxB}, 0)`}>
-            <line x1={featherX - 28} y1={renderYB} x2={featherX - 28} y2={Math.min(renderYB + GRAVITY_ARROW_LEN, groundY - 5)}
-              stroke={PHYSICS_COLORS.acceleration} strokeWidth={STROKE.vectorMain}
-              markerEnd="url(#arrow-ff-g)" />
-            <text x={featherX - 40} y={Math.min(renderYB + GRAVITY_ARROW_LEN / 2, groundY - 10)}
+            <VectorArrow
+              origin={{ x: featherX - 28, y: -renderYB }}
+              vector={{ x: 0, y: -g }}
+              type="acceleration"
+              sceneScale={ffSceneScale}
+              strokeWidth={STROKE.vectorMain}
+            />
+            <text x={featherX - 40} y={Math.min(renderYB + ffSceneScale.maxVectorLength * 0.5, groundY - 10)}
               fontSize={FONT.small} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">g</text>
+            {g > GRAVITY && (
+              <text x={featherX - 40} y={Math.min(renderYB + ffSceneScale.maxVectorLength * 0.5, groundY - 10) + 10}
+                fontSize={7} fill={PHYSICS_COLORS.acceleration} fontWeight="bold" opacity={0.7}>▲max</text>
+            )}
           </g>
         )}
 
         {/* 5. 空气阻力矢量箭头 */}
         {showVectors && !isLandedA && stateA.fDrag > 0.001 && (
           <g>
-            <line x1={ballX + 18} y1={renderYA}
-              x2={ballX + 18} y2={Math.max(renderYA - stateA.fDrag * AIR_RESIST_SCALE, originY)}
-              stroke={PHYSICS_COLORS.forceNet} strokeWidth={STROKE.vectorSub}
-              markerEnd="url(#arrow-ff-air)" />
-            <text x={ballX + 28} y={Math.max(renderYA - stateA.fDrag * AIR_RESIST_SCALE / 2, originY + 5)}
+            <VectorArrow
+              origin={{ x: ballX + 18, y: -renderYA }}
+              vector={{ x: 0, y: stateA.fDrag }}
+              type="force"
+              sceneScale={ffSceneScale}
+              strokeWidth={STROKE.vectorSub}
+            />
+            <text x={ballX + 28} y={Math.max(renderYA - ffSceneScale.maxVectorLength * 0.2, originY + 5)}
               fontSize={FONT.small} fill={PHYSICS_COLORS.forceNet} fontWeight="bold">f</text>
           </g>
         )}
         {showVectors && !isLandedB && stateB.fDrag > 0.001 && (
           <g transform={`translate(${swayDxB}, 0)`}>
-            <line x1={featherX + 16} y1={renderYB}
-              x2={featherX + 16} y2={Math.max(renderYB - stateB.fDrag * AIR_RESIST_SCALE, originY)}
-              stroke={CHART_COLORS.compareB} strokeWidth={STROKE.vectorSub}
-              markerEnd="url(#arrow-ff-air-b)" />
-            <text x={featherX + 26} y={Math.max(renderYB - stateB.fDrag * AIR_RESIST_SCALE / 2, originY + 5)}
+            <VectorArrow
+              origin={{ x: featherX + 16, y: -renderYB }}
+              vector={{ x: 0, y: stateB.fDrag }}
+              type="force"
+              sceneScale={ffSceneScale}
+              color={CHART_COLORS.compareB}
+              strokeWidth={STROKE.vectorSub}
+            />
+            <text x={featherX + 26} y={Math.max(renderYB - ffSceneScale.maxVectorLength * 0.2, originY + 5)}
               fontSize={FONT.small} fill={CHART_COLORS.compareB} fontWeight="bold">f'</text>
+          </g>
+        )}
+
+        {/* 6. 速度矢量箭头 */}
+        {showVectors && !isLandedA && Math.abs(effectiveVA) > 0.1 && (
+          <g>
+            <VectorArrow
+              origin={{ x: ballX + 28, y: -renderYA }}
+              vector={{ x: 0, y: -effectiveVA }}
+              type="velocity"
+              sceneScale={ffSceneScale}
+              strokeWidth={STROKE.vectorMain}
+            />
+            <text x={ballX + 38} y={renderYA + 16}
+              fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
+          </g>
+        )}
+        {showVectors && !isLandedB && Math.abs(effectiveVB) > 0.1 && (
+          <g transform={`translate(${swayDxB}, 0)`}>
+            <VectorArrow
+              origin={{ x: featherX + 28, y: -renderYB }}
+              vector={{ x: 0, y: -effectiveVB }}
+              type="velocity"
+              sceneScale={ffSceneScale}
+              strokeWidth={STROKE.vectorMain}
+            />
+            <text x={featherX + 38} y={renderYB + 16}
+              fontSize={FONT.small} fill={CHART_COLORS.compareB} fontWeight="bold">v'</text>
           </g>
         )}
 

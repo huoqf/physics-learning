@@ -2,6 +2,10 @@ import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
 import { Spring } from '@/components/UI'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 export default function SpringForceAnimation() {
   const { params, time, showVectors, showGrid } = useAnimationStore()
@@ -23,6 +27,14 @@ export default function SpringForceAnimation() {
   const currentX = displacement * scale // 当前偏离平衡位置的像素位移
   const centerX = eqX + currentX         // 振子当前的中心 X 坐标
   const wallRightX = 80                  // 墙体右侧边缘，即弹簧固定端位置
+
+  const springScene: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    originX: 0,
+    originY: 0,
+    refMagnitudes: { force: k * amplitude },
+  }
+  const springSceneScale = createSceneScale(springScene)
 
   // ── 网格线绘制 ──
   const gridLines = []
@@ -199,15 +211,14 @@ export default function SpringForceAnimation() {
         {/* 8. 弹力矢量 F_弹 */}
         {showVectors && Math.abs(springForce) > 0.1 && (
           <g>
-            {/* 弹力矢量箭头线 (力的大小和长度成正比，系数为 2.2) */}
-            <line
-              x1={centerX}
-              y1={groundY - boxSize - 12}
-              x2={centerX + springForce * 2.2}
-              y2={groundY - boxSize - 12}
-              stroke={PHYSICS_COLORS.elasticForce}
+            <VectorArrow
+              origin={{ x: centerX, y: -(groundY - boxSize - 12) }}
+              vector={{ x: springForce, y: 0 }}
+              type="force"
+              sceneScale={springSceneScale}
+              color={PHYSICS_COLORS.elasticForce}
               strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-              markerEnd="url(#arrowhead-spring-force)"
+              pixelLength={Math.abs(springForce) * 2.2}
             />
             <text
               x={centerX + springForce * 2.2 + (springForce > 0 ? 8 : -20)}
@@ -222,11 +233,8 @@ export default function SpringForceAnimation() {
         )}
 
         <defs>
-          {/* 弹力矢量箭头 */}
-          <marker id="arrowhead-spring-force" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.elasticForce} />
-          </marker>
-          {/* 尺寸线端点装饰箭头 */}
+          <VectorDefs colors={[PHYSICS_COLORS.elasticForce]} />
+          {/* 尺寸线端点装饰箭头 (双向标注专用) */}
           <marker id="arrow-displacement-start" markerWidth="6" markerHeight="6" refX="1" refY="3" orient="auto">
             <polygon points="6 1, 0 3, 6 5" fill={PHYSICS_COLORS.displacement} />
           </marker>

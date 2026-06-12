@@ -11,6 +11,10 @@ import {
   FONT,
   CANVAS_STYLE,
 } from '@/theme/physics'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 /** 斜抛动画布局常量 */
 const OBLIQUE_THROW_LAYOUT = {
@@ -96,6 +100,14 @@ export default function ObliqueThrowAnimation() {
   const scaleX = (canvasSize.width - originX - OBLIQUE_THROW_LAYOUT.rightPadding) / maxX
   const scaleY = stageHeight / maxY
   const scale = Math.min(scaleX, scaleY)
+
+  const obliqueScene: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: stageHeight },
+    originX: 0,
+    originY: 0,
+    refMagnitudes: { velocity: Math.max(v0, 10) },
+  }
+  const obliqueSceneScale = createSceneScale(obliqueScene)
 
   // 当前播放时刻限制
   const isLanded = time >= groundTime && groundTime > 0
@@ -323,15 +335,7 @@ export default function ObliqueThrowAnimation() {
             <stop offset="100%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[3]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[3]} />
           </radialGradient>
 
-          <marker id="arrow-vx" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
-            <polygon points="0 0, 9 3, 0 6" fill={PHYSICS_COLORS.velocityX} />
-          </marker>
-          <marker id="arrow-vy" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
-            <polygon points="0 0, 9 3, 0 6" fill={PHYSICS_COLORS.velocityY} />
-          </marker>
-          <marker id="arrow-v" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
-            <polygon points="0 0, 9 3, 0 6" fill={PHYSICS_COLORS.velocity} />
-          </marker>
+          <VectorDefs colors={[PHYSICS_COLORS.velocityX, PHYSICS_COLORS.velocityY, PHYSICS_COLORS.velocity]} />
         </defs>
 
         {/* ========== 全宽物理演练画布 ========== */}
@@ -427,42 +431,38 @@ export default function ObliqueThrowAnimation() {
         {showVectors && !isLanded && (
           <g>
             {/* 水平分速度 vx (Blue-500) */}
-            <line
-              x1={ballCanvas.cx}
-              y1={ballCanvas.cy}
-              x2={ballCanvas.cx + currentState.vx * OBLIQUE_THROW_LAYOUT.velocityVectorScale}
-              y2={ballCanvas.cy}
-              stroke={PHYSICS_COLORS.velocityX}
+            <VectorArrow
+              origin={{ x: ballCanvas.cx, y: -ballCanvas.cy }}
+              vector={{ x: currentState.vx, y: 0 }}
+              type="velocity"
+              sceneScale={obliqueSceneScale}
+              color={PHYSICS_COLORS.velocityX}
               strokeWidth={STROKE.vectorSub}
-              markerEnd="url(#arrow-vx)"
             />
-            <text x={ballCanvas.cx + currentState.vx * OBLIQUE_THROW_LAYOUT.velocityVectorScale + 10} y={ballCanvas.cy + 3} fontSize={9} fill={PHYSICS_COLORS.velocityX} fontWeight="bold">vₓ</text>
+            <text x={ballCanvas.cx + obliqueSceneScale.maxVectorLength * 0.3 + 10} y={ballCanvas.cy + 3} fontSize={9} fill={PHYSICS_COLORS.velocityX} fontWeight="bold">vₓ</text>
 
             {/* 竖直分速度 vy (Blue-400，向上为正) */}
             {Math.abs(currentState.vy) > 0.05 && (
-              <line
-                x1={ballCanvas.cx}
-                y1={ballCanvas.cy}
-                x2={ballCanvas.cx}
-                y2={ballCanvas.cy - currentState.vy * OBLIQUE_THROW_LAYOUT.velocityVectorScale}
-                stroke={PHYSICS_COLORS.velocityY}
+              <VectorArrow
+                origin={{ x: ballCanvas.cx, y: -ballCanvas.cy }}
+                vector={{ x: 0, y: currentState.vy }}
+                type="velocity"
+                sceneScale={obliqueSceneScale}
+                color={PHYSICS_COLORS.velocityY}
                 strokeWidth={STROKE.vectorSub}
-                markerEnd="url(#arrow-vy)"
               />
             )}
-            <text x={ballCanvas.cx - 3} y={ballCanvas.cy - currentState.vy * OBLIQUE_THROW_LAYOUT.velocityVectorScale + (currentState.vy >= 0 ? -6 : 12)} fontSize={9} fill={PHYSICS_COLORS.velocityY} fontWeight="bold" textAnchor="middle">vᵧ</text>
+            <text x={ballCanvas.cx - 3} y={ballCanvas.cy - obliqueSceneScale.maxVectorLength * 0.3 + (currentState.vy >= 0 ? -6 : 12)} fontSize={9} fill={PHYSICS_COLORS.velocityY} fontWeight="bold" textAnchor="middle">vᵧ</text>
 
             {/* 合速度 v (Blue-600) */}
-            <line
-              x1={ballCanvas.cx}
-              y1={ballCanvas.cy}
-              x2={ballCanvas.cx + currentState.vx * OBLIQUE_THROW_LAYOUT.velocityVectorScale}
-              y2={ballCanvas.cy - currentState.vy * OBLIQUE_THROW_LAYOUT.velocityVectorScale}
-              stroke={PHYSICS_COLORS.velocity}
+            <VectorArrow
+              origin={{ x: ballCanvas.cx, y: -ballCanvas.cy }}
+              vector={{ x: currentState.vx, y: currentState.vy }}
+              type="velocity"
+              sceneScale={obliqueSceneScale}
               strokeWidth={STROKE.vectorMain}
-              markerEnd="url(#arrow-v)"
             />
-            <text x={ballCanvas.cx + currentState.vx * OBLIQUE_THROW_LAYOUT.velocityVectorScale + 8} y={ballCanvas.cy - currentState.vy * OBLIQUE_THROW_LAYOUT.velocityVectorScale - 4} fontSize={9} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
+            <text x={ballCanvas.cx + obliqueSceneScale.maxVectorLength * 0.3 + 8} y={ballCanvas.cy - obliqueSceneScale.maxVectorLength * 0.3 - 4} fontSize={9} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
           </g>
         )}
 

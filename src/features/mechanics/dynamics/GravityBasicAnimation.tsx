@@ -2,6 +2,10 @@ import { FC, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 // 定义悬挂薄板的本地顶点
 const PLATE_VERTICES = [
@@ -39,6 +43,13 @@ export const GravityBasicAnimation: FC = () => {
 
   const cx = canvasSize.width / 2
   const cy = canvasSize.height / 2
+
+  const gravBasicScene: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    originX: 0,
+    originY: 0,
+  }
+  const gravBasicSceneScale = createSceneScale(gravBasicScene)
 
   // ─── 物理引擎计算 ───
 
@@ -211,15 +222,7 @@ export const GravityBasicAnimation: FC = () => {
             <stop offset="100%" stopColor={SCENE_COLORS.sphere.brassWeight.gradient[2]} />
           </radialGradient>
           {/* 力的箭头定义 */}
-          <marker id="arrow-gravity" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.gravity} />
-          </marker>
-          <marker id="arrow-centripetal" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.forceNet} />
-          </marker>
-          <marker id="arrow-grav-force" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.forceNet} />
-          </marker>
+          <VectorDefs colors={[PHYSICS_COLORS.gravity, PHYSICS_COLORS.forceNet]} />
         </defs>
 
         {/* ─── 模式一：地球自转重力分解渲染 ─── */}
@@ -306,12 +309,14 @@ export const GravityBasicAnimation: FC = () => {
             {showVectors && (
               <g>
                 {/* 1. 万有引力 (指向地心) */}
-                <line
-                  x1={earthData.objX} y1={earthData.objY}
-                  x2={earthData.objX + earthData.Fx_grav} y2={earthData.objY - earthData.Fy_grav}
-                  stroke={PHYSICS_COLORS.gravity}
+                <VectorArrow
+                  origin={{ x: earthData.objX, y: -earthData.objY }}
+                  vector={{ x: earthData.Fx_grav, y: earthData.Fy_grav }}
+                  type="gravity"
+                  sceneScale={gravBasicSceneScale}
+                  color={PHYSICS_COLORS.gravity}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                  markerEnd="url(#arrow-gravity)"
+                  pixelLength={Math.hypot(earthData.Fx_grav, earthData.Fy_grav)}
                 />
                 <text
                   x={earthData.objX + earthData.Fx_grav * 0.65 - 12}
@@ -323,12 +328,14 @@ export const GravityBasicAnimation: FC = () => {
 
                 {/* 2. 离心力 (非惯性系，水平背离自转轴) */}
                 {earthData.F_centrifugal > 1.5 && (
-                  <line
-                    x1={earthData.objX} y1={earthData.objY}
-                    x2={earthData.objX + earthData.Fx_centrifugal} y2={earthData.objY - earthData.Fy_centrifugal}
-                    stroke={PHYSICS_COLORS.forceNet}
+                  <VectorArrow
+                    origin={{ x: earthData.objX, y: -earthData.objY }}
+                    vector={{ x: earthData.Fx_centrifugal, y: earthData.Fy_centrifugal }}
+                    type="force"
+                    sceneScale={gravBasicSceneScale}
+                    color={PHYSICS_COLORS.forceNet}
                     strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                    markerEnd="url(#arrow-centripetal)"
+                    pixelLength={Math.hypot(earthData.Fx_centrifugal, earthData.Fy_centrifugal)}
                   />
                 )}
                 {earthData.F_centrifugal > 5 && (
@@ -342,12 +349,14 @@ export const GravityBasicAnimation: FC = () => {
                 )}
 
                 {/* 3. 重力 (万有引力和自转向心力的矢量差) */}
-                <line
-                  x1={earthData.objX} y1={earthData.objY}
-                  x2={earthData.objX + earthData.Gx} y2={earthData.objY - earthData.Gy}
-                  stroke={PHYSICS_COLORS.forceNet}
+                <VectorArrow
+                  origin={{ x: earthData.objX, y: -earthData.objY }}
+                  vector={{ x: earthData.Gx, y: earthData.Gy }}
+                  type="force"
+                  sceneScale={gravBasicSceneScale}
+                  color={PHYSICS_COLORS.forceNet}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                  markerEnd="url(#arrow-grav-force)"
+                  pixelLength={Math.hypot(earthData.Gx, earthData.Gy)}
                 />
                 <text
                   x={earthData.objX + earthData.Gx + (earthData.Gx > 0 ? 6 : -18)}

@@ -3,6 +3,10 @@ import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { calculateDualObjectComparison } from '@/physics'
 import { PHYSICS_COLORS, STROKE, DASH, FONT } from '@/theme/physics'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 /** 布局常量（语义化命名，替代魔法数字） */
 const LAYOUT = {
@@ -12,8 +16,6 @@ const LAYOUT = {
   VEHICLE_WIDTH: 56,
   VEHICLE_HEIGHT: 26,
   VEHICLE_PLANE_HEIGHT: 20,
-  ARROW_SCALE_V: 0.15,
-  ARROW_SCALE_DELTA_V: 6,
   START_X_RATIO: 0.12,
   MAX_X_MARGIN: 60,
 } as const
@@ -50,6 +52,15 @@ export default function AccelerationAnimation() {
     () => (maxVisibleX - startX) / (vA * 10 || 1),
     [maxVisibleX, startX, vA]
   )
+
+  // ── 矢量场景配置 ──
+  const accScene: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    originX: 0,
+    originY: 0,
+    refMagnitudes: { velocity: Math.max(vA, 10) * 1.5, acceleration: aB * 2 },
+  }
+  const sceneScale = createSceneScale(accScene)
 
   const planeX = startX + result.sA * scale
   const carX = startX + result.sB * scale
@@ -285,18 +296,15 @@ export default function AccelerationAnimation() {
         {/* ── 5. 飞机速度矢量 ── */}
         {showVectors && (
           <g>
-            <line
-              x1={clampedPlaneX + LAYOUT.VEHICLE_WIDTH}
-              y1={topTrackY - LAYOUT.VEHICLE_PLANE_HEIGHT / 2}
-              x2={clampedPlaneX + LAYOUT.VEHICLE_WIDTH + vA * LAYOUT.ARROW_SCALE_V}
-              y2={topTrackY - LAYOUT.VEHICLE_PLANE_HEIGHT / 2}
-              stroke={PHYSICS_COLORS.velocity}
+            <VectorArrow
+              origin={{ x: clampedPlaneX + LAYOUT.VEHICLE_WIDTH, y: -(topTrackY - LAYOUT.VEHICLE_PLANE_HEIGHT / 2) }}
+              vector={{ x: vA, y: 0 }}
+              type="velocity"
+              sceneScale={sceneScale}
               strokeWidth={STROKE.vectorMain}
-              markerEnd="url(#arrowhead-acc-plane-v)"
             />
-            {/* 标注1: v_A */}
             <text
-              x={clampedPlaneX + LAYOUT.VEHICLE_WIDTH + vA * LAYOUT.ARROW_SCALE_V + 8}
+              x={clampedPlaneX + LAYOUT.VEHICLE_WIDTH + sceneScale.maxVectorLength * 0.4 + 8}
               y={topTrackY - LAYOUT.VEHICLE_PLANE_HEIGHT / 2 + 4}
               fontSize={FONT.bodySize}
               fill={PHYSICS_COLORS.velocity}
@@ -346,18 +354,15 @@ export default function AccelerationAnimation() {
         {/* ── 7. 跑车速度矢量 ── */}
         {showVectors && result.vB > 0 && (
           <g>
-            <line
-              x1={clampedCarX + LAYOUT.VEHICLE_WIDTH}
-              y1={bottomTrackY - LAYOUT.VEHICLE_HEIGHT / 2}
-              x2={clampedCarX + LAYOUT.VEHICLE_WIDTH + result.vB * LAYOUT.ARROW_SCALE_V}
-              y2={bottomTrackY - LAYOUT.VEHICLE_HEIGHT / 2}
-              stroke={PHYSICS_COLORS.velocity}
+            <VectorArrow
+              origin={{ x: clampedCarX + LAYOUT.VEHICLE_WIDTH, y: -(bottomTrackY - LAYOUT.VEHICLE_HEIGHT / 2) }}
+              vector={{ x: result.vB, y: 0 }}
+              type="velocity"
+              sceneScale={sceneScale}
               strokeWidth={STROKE.vectorMain}
-              markerEnd="url(#arrowhead-acc-car-v)"
             />
-            {/* 标注2: v_B */}
             <text
-              x={clampedCarX + LAYOUT.VEHICLE_WIDTH + result.vB * LAYOUT.ARROW_SCALE_V + 8}
+              x={clampedCarX + LAYOUT.VEHICLE_WIDTH + sceneScale.maxVectorLength * 0.4 + 8}
               y={bottomTrackY - LAYOUT.VEHICLE_HEIGHT / 2 + 4}
               fontSize={FONT.bodySize}
               fill={PHYSICS_COLORS.velocity}
@@ -371,19 +376,18 @@ export default function AccelerationAnimation() {
         {/* ── 8. Δv 虚线箭头（跑车在 deltaT 内的速度增量）── */}
         {showDeltaVArrow && (
           <g>
-            <line
-              x1={clampedCarX + LAYOUT.VEHICLE_WIDTH + result.vB * LAYOUT.ARROW_SCALE_V}
-              y1={bottomTrackY - LAYOUT.VEHICLE_HEIGHT / 2 - 14}
-              x2={clampedCarX + LAYOUT.VEHICLE_WIDTH + result.vB * LAYOUT.ARROW_SCALE_V + result.deltaVB * LAYOUT.ARROW_SCALE_DELTA_V}
-              y2={bottomTrackY - LAYOUT.VEHICLE_HEIGHT / 2 - 14}
-              stroke={PHYSICS_COLORS.acceleration}
+            <VectorArrow
+              origin={{
+                x: clampedCarX + LAYOUT.VEHICLE_WIDTH + result.vB * 0.15,
+                y: -(bottomTrackY - LAYOUT.VEHICLE_HEIGHT / 2 - 14),
+              }}
+              vector={{ x: result.deltaVB, y: 0 }}
+              type="acceleration"
+              sceneScale={sceneScale}
               strokeWidth={STROKE.vectorSub}
-              strokeDasharray={DASH.reference.join(' ')}
-              markerEnd="url(#arrowhead-acc-delta-v)"
             />
-            {/* 标注4: Δv_B */}
             <text
-              x={clampedCarX + LAYOUT.VEHICLE_WIDTH + result.vB * LAYOUT.ARROW_SCALE_V + result.deltaVB * LAYOUT.ARROW_SCALE_DELTA_V + 8}
+              x={clampedCarX + LAYOUT.VEHICLE_WIDTH + result.vB * 0.15 + sceneScale.maxVectorLength * 0.35 + 8}
               y={bottomTrackY - LAYOUT.VEHICLE_HEIGHT / 2 - 10}
               fontSize={FONT.small}
               fill={PHYSICS_COLORS.acceleration}
@@ -391,9 +395,8 @@ export default function AccelerationAnimation() {
             >
               Δv_B
             </text>
-            {/* 标注3: Δt */}
             <text
-              x={clampedCarX + LAYOUT.VEHICLE_WIDTH + result.vB * LAYOUT.ARROW_SCALE_V + result.deltaVB * LAYOUT.ARROW_SCALE_DELTA_V / 2}
+              x={clampedCarX + LAYOUT.VEHICLE_WIDTH + result.vB * 0.15 + sceneScale.maxVectorLength * 0.18}
               y={bottomTrackY - LAYOUT.VEHICLE_HEIGHT / 2 - 20}
               fontSize={FONT.small}
               fill={PHYSICS_COLORS.labelText}
@@ -432,18 +435,8 @@ export default function AccelerationAnimation() {
           />
         )}
 
-        {/* ── 箭头标记定义 ── */}
-        <defs>
-          <marker id="arrowhead-acc-plane-v" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          <marker id="arrowhead-acc-car-v" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          <marker id="arrowhead-acc-delta-v" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.acceleration} />
-          </marker>
-        </defs>
+        {/* ── 矢量标记定义 ── */}
+        <VectorDefs colors={[PHYSICS_COLORS.velocity, PHYSICS_COLORS.acceleration]} />
       </svg>
     </div>
   )

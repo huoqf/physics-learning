@@ -10,6 +10,11 @@ import {
   DASH,
   FONT,
 } from '@/theme/physics'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { VectorDefs, markerId } from '@/components/Physics/VectorDefs'
+import { selectMarkerTier } from '@/theme/physics/vectorStyle'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 /**
  * 匀变速直线运动 · 基础模式动画
@@ -51,6 +56,17 @@ export default function UniformAccelerationAnimation() {
   const scale = baseScale
   const startX = padding
   const maxVisibleX = canvasSize.width - padding
+
+  // ── 矢量场景配置 ──
+  const maxVel = Math.max(Math.abs(v0) + Math.abs(a) * 8, 10)
+  const maxAcc = Math.max(Math.abs(a) * 2, 5)
+  const uaScene: SceneConfig = {
+    vectorBounds: { x: 0, y: stageTop, width: canvasSize.width, height: stageHeight },
+    originX: 0,
+    originY: 0,
+    refMagnitudes: { velocity: maxVel, acceleration: maxAcc },
+  }
+  const sceneScale = createSceneScale(uaScene)
 
   // ── 物理计算 ──
   const { v, s } = calculateAcceleratedMotion(v0, a, time)
@@ -347,7 +363,7 @@ export default function UniformAccelerationAnimation() {
               stroke={PHYSICS_COLORS.referencePoint}
               strokeWidth={1.5}
               strokeDasharray="3 3"
-              markerEnd="url(#arrowhead-ua-equiv)"
+              markerEnd={`url(#${markerId(selectMarkerTier(60), PHYSICS_COLORS.referencePoint)})`}
             />
 
             {/* 平均速度标注 */}
@@ -552,32 +568,28 @@ export default function UniformAccelerationAnimation() {
         {/* 速度及加速度矢量箭头 */}
         {showVectors && !isOffscreen && Math.abs(v) > 0.1 && (
           <g>
-            <line
-              x1={currentX + (v > 0 ? objW + 4 : -4)}
-              y1={groundY - objH * 0.5}
-              x2={currentX + (v > 0 ? objW + 4 : -4) + v * scale * 0.15}
-              y2={groundY - objH * 0.5}
-              stroke={PHYSICS_COLORS.velocity}
+            <VectorArrow
+              origin={{ x: currentX + (v > 0 ? objW + 4 : -4), y: -(groundY - objH * 0.5) }}
+              vector={{ x: v, y: 0 }}
+              type="velocity"
+              sceneScale={sceneScale}
               strokeWidth={STROKE.vectorMain}
-              markerEnd="url(#arrowhead-ua-v)"
             />
-            <text x={currentX + (v > 0 ? objW + 8 : -8) + v * scale * 0.15} y={groundY - objH * 0.5 + fontSize * 0.35} fontSize={fontSize} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
+            <text x={currentX + (v > 0 ? objW + 8 : -8) + sceneScale.maxVectorLength * 0.35} y={groundY - objH * 0.5 + fontSize * 0.35} fontSize={fontSize} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
           </g>
         )}
 
         {/* 加速度恒定标识 */}
         {showVectors && !isOffscreen && Math.abs(a) > 0.05 && (
           <g>
-            <line
-              x1={currentX + objW * 0.5}
-              y1={groundY - objH - 6}
-              x2={currentX + objW * 0.5 + a * scale * 0.12}
-              y2={groundY - objH - 6}
-              stroke={PHYSICS_COLORS.acceleration}
+            <VectorArrow
+              origin={{ x: currentX + objW * 0.5, y: -(groundY - objH - 6) }}
+              vector={{ x: a, y: 0 }}
+              type="acceleration"
+              sceneScale={sceneScale}
               strokeWidth={STROKE.vectorSub}
-              markerEnd="url(#arrowhead-ua-a)"
             />
-            <text x={currentX + objW * 0.5 + a * scale * 0.12 + 6} y={groundY - objH - 6 + fontSize * 0.35} fontSize={fontSize} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">a</text>
+            <text x={currentX + objW * 0.5 + sceneScale.maxVectorLength * 0.35 + 6} y={groundY - objH - 6 + fontSize * 0.35} fontSize={fontSize} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">a</text>
           </g>
         )}
 
@@ -595,17 +607,7 @@ export default function UniformAccelerationAnimation() {
         )}
 
         {/* 箭头标记定义 */}
-        <defs>
-          <marker id="arrowhead-ua-v" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          <marker id="arrowhead-ua-a" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.acceleration} />
-          </marker>
-          <marker id="arrowhead-ua-equiv" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.referencePoint} />
-          </marker>
-        </defs>
+        <VectorDefs colors={[PHYSICS_COLORS.velocity, PHYSICS_COLORS.acceleration, PHYSICS_COLORS.referencePoint]} />
       </svg>
     </div>
   )

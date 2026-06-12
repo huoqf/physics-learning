@@ -4,6 +4,7 @@ import { colors } from '@/theme/colors'
 import type { VariableMotionModel, VariableMotionParams } from '@/physics'
 import { useVelocityPhysics } from './useVelocityPhysics'
 import { getVariablePhysicsAtTime } from '@/physics'
+import { VectorDefs } from '@/components/Physics/VectorDefs'
 
 interface VelocityXTChartProps {
   model: VariableMotionModel
@@ -86,10 +87,7 @@ export const VelocityXTChart: FC<VelocityXTChartProps> = ({
     <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
       {/* 定义渐变与滤光片 */}
       <defs>
-        {/* 割线虚线箭头 */}
-        <marker id="arrow-secant-xt" markerWidth="3" markerHeight="2.5" refX="2.5" refY="1.25" orient="auto">
-          <polygon points="0 0, 3 1.25, 0 2.5" fill={PHYSICS_COLORS.secantLine} />
-        </marker>
+        <VectorDefs colors={[PHYSICS_COLORS.secantLine]} />
       </defs>
 
       {/* 标题 */}

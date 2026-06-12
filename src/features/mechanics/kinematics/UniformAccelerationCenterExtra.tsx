@@ -12,6 +12,10 @@ import {
 } from '@/theme/physics'
 import { useUniformAccelerationPhysics } from './useUniformAccelerationPhysics'
 import { AnimationControls } from '@/components/UI'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 /**
  * 匀变速直线运动 · 进阶模式 CenterExtra
@@ -123,6 +127,16 @@ function StroboscopicAnimation({
   const objW = canvasSize.width * 0.05
   const objH = objW * 0.7
   const fontSize = Math.max(10, canvasSize.width * 0.018)
+
+  const maxVel = Math.max(Math.abs(v0) + Math.abs(a) * 8, 10)
+  const maxAcc = Math.max(Math.abs(a) * 2, 5)
+  const scene: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    originX: 0,
+    originY: 0,
+    refMagnitudes: { velocity: maxVel, acceleration: maxAcc },
+  }
+  const sceneScale = createSceneScale(scene)
 
   const maxS = useMemo(() => {
     const endS = Math.abs(calculateAcceleratedMotion(v0, a, 8).s)
@@ -350,43 +364,32 @@ function StroboscopicAnimation({
         {/* 速度及加速度矢量 */}
         {showVectors && Math.abs(physics.v) > 0.1 && (
           <g>
-            <line
-              x1={currentX + (physics.v > 0 ? objW + 4 : -4)}
-              y1={groundY - objH * 0.5}
-              x2={currentX + (physics.v > 0 ? objW + 4 : -4) + physics.v * scale * 0.15}
-              y2={groundY - objH * 0.5}
-              stroke={PHYSICS_COLORS.velocity}
+            <VectorArrow
+              origin={{ x: currentX + (physics.v > 0 ? objW + 4 : -4), y: -(groundY - objH * 0.5) }}
+              vector={{ x: physics.v, y: 0 }}
+              type="velocity"
+              sceneScale={sceneScale}
               strokeWidth={STROKE.vectorMain}
-              markerEnd="url(#arrowhead-adv-v)"
             />
-            <text x={currentX + (physics.v > 0 ? objW + 8 : -8) + physics.v * scale * 0.15} y={groundY - objH * 0.5 + fontSize * 0.35} fontSize={fontSize} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
+            <text x={currentX + (physics.v > 0 ? objW + 8 : -8) + sceneScale.maxVectorLength * 0.35} y={groundY - objH * 0.5 + fontSize * 0.35} fontSize={fontSize} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
           </g>
         )}
 
         {/* 加速度矢量 */}
         {showVectors && Math.abs(a) > 0.05 && (
           <g>
-            <line
-              x1={currentX + objW * 0.5}
-              y1={groundY - objH - 6}
-              x2={currentX + objW * 0.5 + a * scale * 0.12}
-              y2={groundY - objH - 6}
-              stroke={PHYSICS_COLORS.acceleration}
+            <VectorArrow
+              origin={{ x: currentX + objW * 0.5, y: -(groundY - objH - 6) }}
+              vector={{ x: a, y: 0 }}
+              type="acceleration"
+              sceneScale={sceneScale}
               strokeWidth={STROKE.vectorSub}
-              markerEnd="url(#arrowhead-adv-a)"
             />
-            <text x={currentX + objW * 0.5 + a * scale * 0.12 + 6} y={groundY - objH - 6 + fontSize * 0.35} fontSize={fontSize} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">a</text>
+            <text x={currentX + objW * 0.5 + sceneScale.maxVectorLength * 0.35 + 6} y={groundY - objH - 6 + fontSize * 0.35} fontSize={fontSize} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">a</text>
           </g>
         )}
 
-        <defs>
-          <marker id="arrowhead-adv-v" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          <marker id="arrowhead-adv-a" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.acceleration} />
-          </marker>
-        </defs>
+        <VectorDefs colors={[PHYSICS_COLORS.velocity, PHYSICS_COLORS.acceleration]} />
       </svg>
     </div>
   )

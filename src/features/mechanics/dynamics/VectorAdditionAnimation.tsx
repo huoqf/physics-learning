@@ -4,6 +4,10 @@ import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { canvasToPhysics } from '@/utils/coordinate'
 import { useVectorAdditionPhysics } from './useVectorAdditionPhysics'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 // 特殊磁力吸附角度定义
 const SNAP_ANGLES = [0, 30, 45, 60, 90, 120, 150, 180]
@@ -22,6 +26,13 @@ export default function VectorAdditionAnimation() {
   const mode = params.mode ?? 0 // 0 = 平行四边形, 1 = 三角形, 2 = 正交分解
   
   const scale = 15 // 1 N = 15 px
+
+  const vaScene: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    originX: 0,
+    originY: 0,
+  }
+  const vaSceneScale = createSceneScale(vaScene)
 
   // 2. 调用计算型 Hook 包装物理及坐标换算逻辑（新规范）
   const physicsData = useVectorAdditionPhysics({
@@ -338,15 +349,14 @@ export default function VectorAdditionAnimation() {
             {mode === 2 && (
               <>
                 {/* 水平分力 Fx */}
-                <line
-                   x1={origin.cx}
-                   y1={origin.cy}
-                   x2={fxEnd.cx}
-                   y2={fxEnd.cy}
-                   stroke={PHYSICS_COLORS.forceComponent}
+                <VectorArrow
+                   origin={{ x: origin.cx, y: -origin.cy }}
+                   vector={{ x: fxEnd.cx - origin.cx, y: -(fxEnd.cy - origin.cy) }}
+                   type="force"
+                   sceneScale={vaSceneScale}
+                   color={PHYSICS_COLORS.forceComponent}
                    strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                   opacity={CANVAS_STYLE.opacity.vectorSub}
-                   markerEnd="url(#arrowhead-fcomp)"
+                   pixelLength={Math.hypot(fxEnd.cx - origin.cx, fxEnd.cy - origin.cy)}
                  />
                  <text
                    x={fxEnd.cx > origin.cx ? fxEnd.cx - 8 : fxEnd.cx + 8}
@@ -361,15 +371,14 @@ export default function VectorAdditionAnimation() {
                  </text>
  
                  {/* 竖直分力 Fy */}
-                 <line
-                   x1={origin.cx}
-                   y1={origin.cy}
-                   x2={fyEnd.cx}
-                   y2={fyEnd.cy}
-                   stroke={PHYSICS_COLORS.forceComponent}
+                 <VectorArrow
+                   origin={{ x: origin.cx, y: -origin.cy }}
+                   vector={{ x: fyEnd.cx - origin.cx, y: -(fyEnd.cy - origin.cy) }}
+                   type="force"
+                   sceneScale={vaSceneScale}
+                   color={PHYSICS_COLORS.forceComponent}
                    strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                   opacity={CANVAS_STYLE.opacity.vectorSub}
-                   markerEnd="url(#arrowhead-fcomp)"
+                   pixelLength={Math.hypot(fyEnd.cx - origin.cx, fyEnd.cy - origin.cy)}
                  />
                 <text
                   x={origin.cx - 12}
@@ -404,14 +413,14 @@ export default function VectorAdditionAnimation() {
                 />
 
                 {/* 待分解合力 F */}
-                <line
-                  x1={origin.cx}
-                  y1={origin.cy}
-                  x2={fResultantEnd.cx}
-                  y2={fResultantEnd.cy}
-                  stroke={PHYSICS_COLORS.forceNet}
+                <VectorArrow
+                  origin={{ x: origin.cx, y: -origin.cy }}
+                  vector={{ x: fResultantEnd.cx - origin.cx, y: -(fResultantEnd.cy - origin.cy) }}
+                  type="force"
+                  sceneScale={vaSceneScale}
+                  color={PHYSICS_COLORS.forceNet}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                  markerEnd="url(#arrowhead-main)"
+                  pixelLength={Math.hypot(fResultantEnd.cx - origin.cx, fResultantEnd.cy - origin.cy)}
                 />
                 <text
                   x={fResultantEnd.cx + (fResultantEnd.cx > origin.cx ? 8 : -14)}
@@ -462,14 +471,14 @@ export default function VectorAdditionAnimation() {
             {mode === 0 && (
               <>
                 {/* 分力 F1 */}
-                <line
-                  x1={origin.cx}
-                  y1={origin.cy}
-                  x2={f1End.cx}
-                  y2={f1End.cy}
-                  stroke={PHYSICS_COLORS.appliedForce}
+                <VectorArrow
+                  origin={{ x: origin.cx, y: -origin.cy }}
+                  vector={{ x: f1End.cx - origin.cx, y: -(f1End.cy - origin.cy) }}
+                  type="force"
+                  sceneScale={vaSceneScale}
+                  color={PHYSICS_COLORS.appliedForce}
                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  markerEnd="url(#arrowhead-f1)"
+                  pixelLength={Math.hypot(f1End.cx - origin.cx, f1End.cy - origin.cy)}
                 />
                 <text
                   x={f1End.cx}
@@ -504,14 +513,14 @@ export default function VectorAdditionAnimation() {
                 </g>
 
                 {/* 分力 F2 */}
-                <line
-                  x1={origin.cx}
-                  y1={origin.cy}
-                  x2={f2End.cx}
-                  y2={f2End.cy}
-                  stroke={PHYSICS_COLORS.tension}
+                <VectorArrow
+                  origin={{ x: origin.cx, y: -origin.cy }}
+                  vector={{ x: f2End.cx - origin.cx, y: -(f2End.cy - origin.cy) }}
+                  type="force"
+                  sceneScale={vaSceneScale}
+                  color={PHYSICS_COLORS.tension}
                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  markerEnd="url(#arrowhead-f2)"
+                  pixelLength={Math.hypot(f2End.cx - origin.cx, f2End.cy - origin.cy)}
                 />
                 <text
                   x={f2End.cx + (f2End.cx > origin.cx ? 8 : -16)}
@@ -568,14 +577,14 @@ export default function VectorAdditionAnimation() {
                 />
 
                 {/* 合力 F */}
-                <line
-                  x1={origin.cx}
-                  y1={origin.cy}
-                  x2={fResultantEnd.cx}
-                  y2={fResultantEnd.cy}
-                  stroke={PHYSICS_COLORS.forceNet}
+                <VectorArrow
+                  origin={{ x: origin.cx, y: -origin.cy }}
+                  vector={{ x: fResultantEnd.cx - origin.cx, y: -(fResultantEnd.cy - origin.cy) }}
+                  type="force"
+                  sceneScale={vaSceneScale}
+                  color={PHYSICS_COLORS.forceNet}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                  markerEnd="url(#arrowhead-main)"
+                  pixelLength={Math.hypot(fResultantEnd.cx - origin.cx, fResultantEnd.cy - origin.cy)}
                 />
                 <text
                   x={fResultantEnd.cx + 8}
@@ -594,14 +603,14 @@ export default function VectorAdditionAnimation() {
             {mode === 1 && (
               <>
                 {/* 分力 F1 */}
-                <line
-                  x1={origin.cx}
-                  y1={origin.cy}
-                  x2={f1End.cx}
-                  y2={f1End.cy}
-                  stroke={PHYSICS_COLORS.appliedForce}
+                <VectorArrow
+                  origin={{ x: origin.cx, y: -origin.cy }}
+                  vector={{ x: f1End.cx - origin.cx, y: -(f1End.cy - origin.cy) }}
+                  type="force"
+                  sceneScale={vaSceneScale}
+                  color={PHYSICS_COLORS.appliedForce}
                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  markerEnd="url(#arrowhead-f1)"
+                  pixelLength={Math.hypot(f1End.cx - origin.cx, f1End.cy - origin.cy)}
                 />
                 <text
                   x={f1End.cx}
@@ -657,14 +666,14 @@ export default function VectorAdditionAnimation() {
                 </g>
 
                 {/* 平移后首尾相接的 F2 矢量 */}
-                <line
-                  x1={f2ShiftedStart.cx}
-                  y1={f2ShiftedStart.cy}
-                  x2={f2ShiftedEnd.cx}
-                  y2={f2ShiftedEnd.cy}
-                  stroke={PHYSICS_COLORS.tension}
+                <VectorArrow
+                  origin={{ x: f2ShiftedStart.cx, y: -f2ShiftedStart.cy }}
+                  vector={{ x: f2ShiftedEnd.cx - f2ShiftedStart.cx, y: -(f2ShiftedEnd.cy - f2ShiftedStart.cy) }}
+                  type="force"
+                  sceneScale={vaSceneScale}
+                  color={PHYSICS_COLORS.tension}
                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  markerEnd="url(#arrowhead-f2)"
+                  pixelLength={Math.hypot(f2ShiftedEnd.cx - f2ShiftedStart.cx, f2ShiftedEnd.cy - f2ShiftedStart.cy)}
                 />
                 <text
                   x={f2ShiftedEnd.cx + (f2ShiftedEnd.cx > f2ShiftedStart.cx ? 8 : -16)}
@@ -693,14 +702,14 @@ export default function VectorAdditionAnimation() {
                 )}
 
                 {/* 闭合合力 F */}
-                <line
-                  x1={origin.cx}
-                  y1={origin.cy}
-                  x2={fResultantEnd.cx}
-                  y2={fResultantEnd.cy}
-                  stroke={PHYSICS_COLORS.forceNet}
+                <VectorArrow
+                  origin={{ x: origin.cx, y: -origin.cy }}
+                  vector={{ x: fResultantEnd.cx - origin.cx, y: -(fResultantEnd.cy - origin.cy) }}
+                  type="force"
+                  sceneScale={vaSceneScale}
+                  color={PHYSICS_COLORS.forceNet}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                  markerEnd="url(#arrowhead-main)"
+                  pixelLength={Math.hypot(fResultantEnd.cx - origin.cx, fResultantEnd.cy - origin.cy)}
                 />
                 <text
                   x={fResultantEnd.cx + 8}
@@ -836,19 +845,7 @@ export default function VectorAdditionAnimation() {
 
         {/* SVG Marker 箭头统一定义 */}
         <defs>
-          <marker id="arrowhead-main" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.forceNet} />
-          </marker>
-          {/* 特异分力箭头颜色 */}
-          <marker id="arrowhead-f1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.appliedForce} />
-          </marker>
-          <marker id="arrowhead-f2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.tension} />
-          </marker>
-          <marker id="arrowhead-fcomp" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.forceComponent} />
-          </marker>
+          <VectorDefs colors={[PHYSICS_COLORS.forceNet, PHYSICS_COLORS.appliedForce, PHYSICS_COLORS.tension, PHYSICS_COLORS.forceComponent]} />
         </defs>
       </svg>
     </div>

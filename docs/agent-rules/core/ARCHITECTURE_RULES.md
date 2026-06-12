@@ -37,8 +37,10 @@ src/
 ├── app/                    # 应用壳、路由、全局布局
 ├── components/
 │   ├── Layout/             # 布局组件
+│   ├── Physics/            # 物理渲染组件（VectorArrow、VectorDefs…）
 │   └── UI/                 # UI 基础组件
 ├── pages/                  # 页面级容器
+├── scene/                  # 场景配置与坐标缩放（SceneConfig、SceneScale）
 ├── features/               # 按学科/能力拆分的业务模块
 │   ├── mechanics/          # 力学（按物理主题分子目录）
 │   │   ├── kinematics/     #   运动学

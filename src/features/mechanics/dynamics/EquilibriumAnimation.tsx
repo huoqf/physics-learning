@@ -4,11 +4,22 @@ import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE, SCENE_COLORS } from '@/theme/physics'
 import { useEquilibriumPhysics } from './useEquilibriumPhysics'
 import { GRAVITY } from '@/physics/constants'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 export default function EquilibriumAnimation() {
   const { params, showVectors, showFormulas, showGrid, isPlaying, time } = useAnimationStore()
   const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
   const svgRef = useRef<SVGSVGElement>(null)
+
+  const eqScene: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    originX: 0,
+    originY: 0,
+  }
+  const eqSceneScale = createSceneScale(eqScene)
 
   // 1. 读取力学参数
   const m = params.m ?? 2.0
@@ -259,14 +270,13 @@ export default function EquilibriumAnimation() {
         {showVectors && (
           <g>
             {/* 1. 重力 G */}
-            <line
-              x1={gStart.cx}
-              y1={gStart.cy}
-              x2={gEnd.cx}
-              y2={gEnd.cy}
-              stroke={PHYSICS_COLORS.gravity}
+            <VectorArrow
+              origin={{ x: gStart.cx, y: -gStart.cy }}
+              vector={{ x: gEnd.cx - gStart.cx, y: -(gEnd.cy - gStart.cy) }}
+              type="gravity"
+              sceneScale={eqSceneScale}
               strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-              markerEnd="url(#arrowhead-eq-g)"
+              pixelLength={Math.hypot(gEnd.cx - gStart.cx, gEnd.cy - gStart.cy)}
             />
             <text
               x={gEnd.cx - 14}
@@ -282,14 +292,14 @@ export default function EquilibriumAnimation() {
             {/* 2. 左绳拉力 T1 */}
             {(brokenLine === 'none' || brokenLine === 'right') && (
               <g>
-                <line
-                  x1={t1Start.cx}
-                  y1={t1Start.cy}
-                  x2={t1End.cx}
-                  y2={t1End.cy}
-                  stroke={isOverloaded && t1 > 35 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.tension}
+                <VectorArrow
+                  origin={{ x: t1Start.cx, y: -t1Start.cy }}
+                  vector={{ x: t1End.cx - t1Start.cx, y: -(t1End.cy - t1Start.cy) }}
+                  type="tension"
+                  sceneScale={eqSceneScale}
+                  color={isOverloaded && t1 > 35 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.tension}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                  markerEnd={isOverloaded && t1 > 35 ? "url(#arrowhead-eq-overload)" : "url(#arrowhead-eq-t1)"}
+                  pixelLength={Math.hypot(t1End.cx - t1Start.cx, t1End.cy - t1Start.cy)}
                 />
                 <text
                   x={t1End.cx - 16}
@@ -307,14 +317,14 @@ export default function EquilibriumAnimation() {
             {/* 3. 右绳拉力 T2 */}
             {(brokenLine === 'none' || brokenLine === 'left') && (
               <g>
-                <line
-                  x1={t2Start.cx}
-                  y1={t2Start.cy}
-                  x2={t2End.cx}
-                  y2={t2End.cy}
-                  stroke={isOverloaded && t2 > 35 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.tension}
+                <VectorArrow
+                  origin={{ x: t2Start.cx, y: -t2Start.cy }}
+                  vector={{ x: t2End.cx - t2Start.cx, y: -(t2End.cy - t2Start.cy) }}
+                  type="tension"
+                  sceneScale={eqSceneScale}
+                  color={isOverloaded && t2 > 35 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.tension}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                  markerEnd={isOverloaded && t2 > 35 ? "url(#arrowhead-eq-overload)" : "url(#arrowhead-eq-t2)"}
+                  pixelLength={Math.hypot(t2End.cx - t2Start.cx, t2End.cy - t2Start.cy)}
                 />
                 <text
                   x={t2End.cx + 8}
@@ -350,14 +360,14 @@ export default function EquilibriumAnimation() {
                   strokeWidth={1}
                   strokeDasharray="3,3"
                 />
-                <line
-                  x1={ballCenter.cx}
-                  y1={ballCenter.cy}
-                  x2={fNetEnd.cx}
-                  y2={fNetEnd.cy}
-                  stroke={PHYSICS_COLORS.forceNet}
+                <VectorArrow
+                  origin={{ x: ballCenter.cx, y: -ballCenter.cy }}
+                  vector={{ x: fNetEnd.cx - ballCenter.cx, y: -(fNetEnd.cy - ballCenter.cy) }}
+                  type="force"
+                  sceneScale={eqSceneScale}
+                  color={PHYSICS_COLORS.forceNet}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain + 0.5}
-                  markerEnd="url(#arrowhead-eq-fnet)"
+                  pixelLength={Math.hypot(fNetEnd.cx - ballCenter.cx, fNetEnd.cy - ballCenter.cy)}
                 />
                 <text
                   x={fNetEnd.cx + 8}
@@ -384,16 +394,48 @@ export default function EquilibriumAnimation() {
                 {/* T1 投影虚垂线与分力 */}
                 <line x1={t1End.cx} y1={t1End.cy} x2={t1xEnd.cx} y2={t1xEnd.cy} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={0.75} strokeDasharray="2,2" opacity={0.5} />
                 <line x1={t1End.cx} y1={t1End.cy} x2={t1yEnd.cx} y2={t1yEnd.cy} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={0.75} strokeDasharray="2,2" opacity={0.5} />
-                <line x1={ballCenter.cx} y1={ballCenter.cy} x2={t1xEnd.cx} y2={t1xEnd.cy} stroke={PHYSICS_COLORS.forceComponent} strokeWidth={1.5} markerEnd="url(#arrowhead-eq-comp)" />
-                <line x1={ballCenter.cx} y1={ballCenter.cy} x2={t1yEnd.cx} y2={t1yEnd.cy} stroke={PHYSICS_COLORS.forceComponent} strokeWidth={1.5} markerEnd="url(#arrowhead-eq-comp)" />
+                <VectorArrow
+                  origin={{ x: ballCenter.cx, y: -ballCenter.cy }}
+                  vector={{ x: t1xEnd.cx - ballCenter.cx, y: -(t1xEnd.cy - ballCenter.cy) }}
+                  type="force"
+                  sceneScale={eqSceneScale}
+                  color={PHYSICS_COLORS.forceComponent}
+                  strokeWidth={1.5}
+                  pixelLength={Math.hypot(t1xEnd.cx - ballCenter.cx, t1xEnd.cy - ballCenter.cy)}
+                />
+                <VectorArrow
+                  origin={{ x: ballCenter.cx, y: -ballCenter.cy }}
+                  vector={{ x: t1yEnd.cx - ballCenter.cx, y: -(t1yEnd.cy - ballCenter.cy) }}
+                  type="force"
+                  sceneScale={eqSceneScale}
+                  color={PHYSICS_COLORS.forceComponent}
+                  strokeWidth={1.5}
+                  pixelLength={Math.hypot(t1yEnd.cx - ballCenter.cx, t1yEnd.cy - ballCenter.cy)}
+                />
                 <text x={t1xEnd.cx - 18} y={t1xEnd.cy + 12} fontSize={10} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold">T1x</text>
                 <text x={t1yEnd.cx - 20} y={t1yEnd.cy - 6} fontSize={10} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold">T1y</text>
 
                 {/* T2 投影虚垂线与分力 */}
                 <line x1={t2End.cx} y1={t2End.cy} x2={t2xEnd.cx} y2={t2xEnd.cy} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={0.75} strokeDasharray="2,2" opacity={0.5} />
                 <line x1={t2End.cx} y1={t2End.cy} x2={t2yEnd.cx} y2={t2yEnd.cy} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={0.75} strokeDasharray="2,2" opacity={0.5} />
-                <line x1={ballCenter.cx} y1={ballCenter.cy} x2={t2xEnd.cx} y2={t2xEnd.cy} stroke={PHYSICS_COLORS.forceComponent} strokeWidth={1.5} markerEnd="url(#arrowhead-eq-comp)" />
-                <line x1={ballCenter.cx} y1={ballCenter.cy} x2={t2yEnd.cx} y2={t2yEnd.cy} stroke={PHYSICS_COLORS.forceComponent} strokeWidth={1.5} markerEnd="url(#arrowhead-eq-comp)" />
+                <VectorArrow
+                  origin={{ x: ballCenter.cx, y: -ballCenter.cy }}
+                  vector={{ x: t2xEnd.cx - ballCenter.cx, y: -(t2xEnd.cy - ballCenter.cy) }}
+                  type="force"
+                  sceneScale={eqSceneScale}
+                  color={PHYSICS_COLORS.forceComponent}
+                  strokeWidth={1.5}
+                  pixelLength={Math.hypot(t2xEnd.cx - ballCenter.cx, t2xEnd.cy - ballCenter.cy)}
+                />
+                <VectorArrow
+                  origin={{ x: ballCenter.cx, y: -ballCenter.cy }}
+                  vector={{ x: t2yEnd.cx - ballCenter.cx, y: -(t2yEnd.cy - ballCenter.cy) }}
+                  type="force"
+                  sceneScale={eqSceneScale}
+                  color={PHYSICS_COLORS.forceComponent}
+                  strokeWidth={1.5}
+                  pixelLength={Math.hypot(t2yEnd.cx - ballCenter.cx, t2yEnd.cy - ballCenter.cy)}
+                />
                 <text x={t2xEnd.cx + 2} y={t2xEnd.cy + 12} fontSize={10} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold">T2x</text>
                 <text x={t2yEnd.cx + 6} y={t2yEnd.cy - 6} fontSize={10} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold">T2y</text>
               </g>
@@ -458,7 +500,14 @@ export default function EquilibriumAnimation() {
             </text>
 
             {/* 1. 重力 G (向下) */}
-            <line x1={triOrigin.cx} y1={triOrigin.cy} x2={triGEnd.cx} y2={triGEnd.cy} stroke={PHYSICS_COLORS.gravity} strokeWidth={CANVAS_STYLE.stroke.vectorSub} markerEnd="url(#arrowhead-eq-g)" />
+            <VectorArrow
+              origin={{ x: triOrigin.cx, y: -triOrigin.cy }}
+              vector={{ x: triGEnd.cx - triOrigin.cx, y: -(triGEnd.cy - triOrigin.cy) }}
+              type="gravity"
+              sceneScale={eqSceneScale}
+              strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+              pixelLength={Math.hypot(triGEnd.cx - triOrigin.cx, triGEnd.cy - triOrigin.cy)}
+            />
             <text x={triOrigin.cx - 14} y={(triOrigin.cy + triGEnd.cy) / 2 + 4} fontSize={CANVAS_STYLE.font.annotation} fontFamily={CANVAS_STYLE.font.family} fill={PHYSICS_COLORS.gravity} fontWeight="bold">
               G
             </text>
@@ -466,7 +515,15 @@ export default function EquilibriumAnimation() {
             {/* 2. 张力 T1 */}
             {(brokenLine === 'none' || brokenLine === 'right') && (
               <g>
-                <line x1={triGEnd.cx} y1={triGEnd.cy} x2={triT1End.cx} y2={triT1End.cy} stroke={isOverloaded && t1 > 35 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.tension} strokeWidth={CANVAS_STYLE.stroke.vectorSub} markerEnd={isOverloaded && t1 > 35 ? "url(#arrowhead-eq-overload)" : "url(#arrowhead-eq-t1)"} />
+                <VectorArrow
+                  origin={{ x: triGEnd.cx, y: -triGEnd.cy }}
+                  vector={{ x: triT1End.cx - triGEnd.cx, y: -(triT1End.cy - triGEnd.cy) }}
+                  type="tension"
+                  sceneScale={eqSceneScale}
+                  color={isOverloaded && t1 > 35 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.tension}
+                  strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+                  pixelLength={Math.hypot(triT1End.cx - triGEnd.cx, triT1End.cy - triGEnd.cy)}
+                />
                 <text x={(triGEnd.cx + triT1End.cx) / 2 - 16} y={(triGEnd.cy + triT1End.cy) / 2 - 6} fontSize={CANVAS_STYLE.font.annotation} fontFamily={CANVAS_STYLE.font.family} fill={isOverloaded && t1 > 35 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.tension} fontWeight="bold">
                   T₁
                 </text>
@@ -476,7 +533,15 @@ export default function EquilibriumAnimation() {
             {/* 3. 张力 T2 */}
             {(brokenLine === 'none' || brokenLine === 'left') && (
               <g>
-                <line x1={triT1End.cx} y1={triT1End.cy} x2={triT2End.cx} y2={triT2End.cy} stroke={isOverloaded && t2 > 35 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.tension} strokeWidth={CANVAS_STYLE.stroke.vectorSub} markerEnd={isOverloaded && t2 > 35 ? "url(#arrowhead-eq-overload)" : "url(#arrowhead-eq-t2)"} />
+                <VectorArrow
+                  origin={{ x: triT1End.cx, y: -triT1End.cy }}
+                  vector={{ x: triT2End.cx - triT1End.cx, y: -(triT2End.cy - triT1End.cy) }}
+                  type="tension"
+                  sceneScale={eqSceneScale}
+                  color={isOverloaded && t2 > 35 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.tension}
+                  strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+                  pixelLength={Math.hypot(triT2End.cx - triT1End.cx, triT2End.cy - triT1End.cy)}
+                />
                 <text x={(triT1End.cx + triT2End.cx) / 2 + 10} y={(triT1End.cy + triT2End.cy) / 2 + 10} fontSize={CANVAS_STYLE.font.annotation} fontFamily={CANVAS_STYLE.font.family} fill={isOverloaded && t2 > 35 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.tension} fontWeight="bold">
                   T₂
                 </text>
@@ -619,24 +684,7 @@ export default function EquilibriumAnimation() {
           </radialGradient>
           
           {/* 受力矢量箭头定义 */}
-          <marker id="arrowhead-eq-g" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.gravity} />
-          </marker>
-          <marker id="arrowhead-eq-t1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.tension} />
-          </marker>
-          <marker id="arrowhead-eq-t2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.tension} />
-          </marker>
-          <marker id="arrowhead-eq-overload" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.forceArrowRed} />
-          </marker>
-          <marker id="arrowhead-eq-fnet" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.forceNet} />
-          </marker>
-          <marker id="arrowhead-eq-comp" markerWidth="6" markerHeight="4.5" refX="5" refY="2.25" orient="auto">
-            <polygon points="0 0, 6 2.25, 0 4.5" fill={PHYSICS_COLORS.forceComponent} />
-          </marker>
+          <VectorDefs colors={[PHYSICS_COLORS.gravity, PHYSICS_COLORS.tension, PHYSICS_COLORS.forceArrowRed, PHYSICS_COLORS.forceNet, PHYSICS_COLORS.forceComponent]} />
         </defs>
       </svg>
     </div>

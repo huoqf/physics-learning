@@ -1,6 +1,7 @@
 import { FC, useMemo } from 'react'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { useAnimationStore } from '@/stores'
+import { VectorDefs } from '@/components/Physics/VectorDefs'
 
 export const SpringForceCenterExtra: FC = () => {
   const { params, time } = useAnimationStore()
@@ -61,9 +62,7 @@ export const SpringForceCenterExtra: FC = () => {
               <stop offset="100%" stopColor={PHYSICS_COLORS.potentialElastic} stopOpacity="0.05" />
             </linearGradient>
             {/* 坐标轴箭头定义 */}
-            <marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-              <path d="M1,1 L5,3 L1,5 Z" fill={PHYSICS_COLORS.labelText} />
-            </marker>
+            <VectorDefs colors={[PHYSICS_COLORS.labelText]} />
           </defs>
 
           {/* 图表标题 */}

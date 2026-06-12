@@ -32,10 +32,10 @@ export default function AccelerationSidebar({
 
   // ── 进阶版：高速追击快捷 ──
   const handleHighSpeedChase = () => {
-    updateParam('vA', 40)
-    updateParam('deltaX0', 100)
-    updateParam('t0', 1.5)
-    updateParam('aB', 4)
+    updateParam('vA', 35)
+    updateParam('deltaX0', 80)
+    updateParam('t0', 1)
+    updateParam('aB', 6)
     updateParam('vMax', 50)
     animationActions.restartAnimation()
   }
@@ -132,7 +132,7 @@ export default function AccelerationSidebar({
           <p className="text-xs font-semibold text-neutral-600 mb-2">教学快捷操作</p>
           <div className="flex flex-col gap-2">
             <OptionButton
-              label="高速追击：vₐ=40, Δx₀=100"
+              label="高速追击：vₐ=35, Δx₀=80"
               variant="preset"
               disabled={disabled}
               onClick={handleHighSpeedChase}

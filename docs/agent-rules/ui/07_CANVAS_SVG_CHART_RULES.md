@@ -197,7 +197,72 @@ const [canvasX, canvasY] = physicsToCanvas(physicsX, physicsY, canvasSize, scale
 
 ---
 
-## 9. 相关文档与 Checklist
+## 9. 统一矢量渲染
+
+### 9.1 组件体系
+
+| 组件/模块 | 路径 | 职责 |
+|-----------|------|------|
+| `VectorArrow` | `src/components/Physics/VectorArrow.tsx` | 统一矢量箭头渲染（line + polygon 箭头头部） |
+| `VectorDefs` | `src/components/Physics/VectorDefs.tsx` | SVG `<marker>` 定义（按颜色+档位自动生成） |
+| `vectorStyle` | `src/theme/physics/vectorStyle.ts` | VectorType 枚举、视觉权重、颜色、marker 档位 |
+| `vectorLength` | `src/utils/vectorLength.ts` | 归一化箭头长度计算 |
+| `SceneConfig` | `src/scene/SceneConfig.ts` | 场景配置（含 `refMagnitudes`） |
+| `SceneScale` | `src/scene/SceneScale.ts` | 场景坐标缩放（透传 `refMagnitudes`） |
+
+### 9.2 使用规范
+
+**必须使用 `VectorArrow` 的场景**：所有需要绘制物理矢量箭头（力、速度、加速度、电场等）的 lesson 文件。
+
+**禁止的做法**：
+- 各 lesson 自行定义 `<marker id="arrowhead-xxx">` — 已由 `VectorDefs` 统一管理
+- 各 lesson 硬编码箭头像素长度（如 `len = F * 2`）— 已由 `vectorLength.ts` 归一化替代
+- 各 lesson 手写 `<line>` + `markerEnd` 组合画箭头
+
+### 9.3 `refMagnitudes` 配置规则
+
+每个使用 `VectorArrow` 的场景**必须**在 `SceneConfig` 中声明 `refMagnitudes`：
+
+```typescript
+const scene: SceneConfig = {
+  vectorBounds: { x: 0, y: 0, width: 700, height: 450 },
+  originX: 0,
+  originY: 0,
+  refMagnitudes: {
+    force: 100,           // 该场景预期最大力（N）
+    velocity: 20,         // 该场景预期最大速度（m/s）
+    electricForce: 50,    // 该场景预期最大电场力（N）
+  },
+};
+```
+
+`refMagnitudes` 的值应为该场景中对应类型的**参考最大值**（同量纲），使最大箭头约占 `maxVectorLength` 的 80%。
+
+**动态场景**（力值范围随参数变化）：可动态计算 `refMagnitude`，如 `refMagnitudes: { electricForce: maxForce * 1.2 }`。
+
+### 9.4 归一化算法
+
+```
+arrowPixelLength = (mag / refMagnitude) × maxVectorLength × visualWeight
+```
+
+- `mag`：矢量模长（物理单位）
+- `refMagnitude`：场景参考最大值（同量纲）
+- `maxVectorLength`：`min(bounds.width, bounds.height) × 0.3`
+- `visualWeight`：`VECTOR_VISUAL_WEIGHT[type]`（velocity=1.0, force=0.7, magneticField=0.4…）
+
+结果 clamp 到 `[minLength=14, maxVectorLength]`。
+
+### 9.5 `VECTOR_DISPLAY` 与 `vectorStyle.ts` 的边界
+
+| 模块 | 职责 | 状态 |
+|------|------|------|
+| `canvasStyle.ts VECTOR_DISPLAY` | 旧方案遗留 token（scaleBase、maxLengthRatio） | `@deprecated`，未迁移 lesson 仍可使用 |
+| `vectorStyle.ts` | VectorType 枚举、视觉权重、颜色、marker 档位 | **权威来源**，新 lesson 必须使用 |
+
+---
+
+## 10. 相关文档与 Checklist
 
 - [02_UI_RULES.md](./02_UI_RULES.md)：UI 视觉铁律
 - [PROCESS_LOG.md](../process/PROCESS_LOG.md)：工程日志

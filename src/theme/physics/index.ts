@@ -141,3 +141,24 @@ export type {
   FontKey,
   DashKey,
 } from './canvasStyle'
+
+// ─── 矢量显示系统 ─────────────────────────────────────────────────────────
+export {
+  VECTOR_VISUAL_WEIGHT,
+  VECTOR_COLORS,
+  MARKER_TIERS,
+  selectMarkerTier,
+} from './vectorStyle'
+
+export type {
+  VectorType,
+  MarkerTier,
+} from './vectorStyle'
+
+export {
+  getArrowGeometry,
+} from './arrowStyle'
+
+export type {
+  ArrowGeometry,
+} from './arrowStyle'

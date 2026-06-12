@@ -7,21 +7,20 @@ import {
   CANVAS_STYLE,
   CHART_COLORS,
 } from '@/theme/physics'
-import { SVG_MARKER } from '@/theme/physics/canvasStyle'
 import { colors } from '@/theme/colors'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 const COULOMB_K = 9e9
 
 const LAYOUT = {
   chargeRadiusRatio: 0.03,
-  forceArrowMaxRatio: 0.12,
-  forceArrowMinRatio: 0.03,
   distanceLabelOffsetRatio: 0.12,
   chargeLabelOffsetRatio: 1.8,
   chartAreaRatio: { width: 0.35, height: 0.5 },
   chartPaddingRatio: 0.08,
   frDataRange: { rMin: 0.5, rMax: 10, rStep: 0.1 },
-  forceScale: { min: 0.03, max: 0.12, base: 0.04, logFactor: 0.015 },
   equilibriumThreshold: 1e-6,
 } as const
 
@@ -87,17 +86,16 @@ function BasicMode({
   const x1 = centerX - gap / 2
   const x2 = centerX + gap / 2
 
-  const forceArrowLen = (() => {
-    if (F < 1e-15) return 0
-    const baseLen = stageWidth * LAYOUT.forceArrowMinRatio
-    const maxLen = stageWidth * LAYOUT.forceArrowMaxRatio
-    const logScale = Math.log10(F * 1e3 + 1)
-    const len = baseLen + (maxLen - baseLen) * Math.min(1, logScale / 8)
-    return Math.max(baseLen, Math.min(maxLen, len))
-  })()
-
   const leftArrowDir = attractive ? 1 : -1
   const rightArrowDir = attractive ? -1 : 1
+
+  const basicScene: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: stageWidth, height: stageHeight },
+    originX: 0,
+    originY: 0,
+    refMagnitudes: { electricForce: 50 },
+  }
+  const sceneScale = createSceneScale(basicScene)
 
   const chartLeft = stageWidth + w * 0.03
   const chartTop = h * LAYOUT.chartPaddingRatio
@@ -177,15 +175,23 @@ function BasicMode({
 
       {showVectors && (
         <g>
-          <line x1={x1} y1={centerY} x2={x1 + leftArrowDir * forceArrowLen} y2={centerY}
-            stroke={PHYSICS_COLORS.electricForce} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-            markerEnd="url(#arrow-coulomb)" />
-          <line x1={x2} y1={centerY} x2={x2 + rightArrowDir * forceArrowLen} y2={centerY}
-            stroke={PHYSICS_COLORS.electricForce} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-            markerEnd="url(#arrow-coulomb)" />
-          <text x={x1 + leftArrowDir * forceArrowLen / 2} y={centerY - 12}
+          <VectorArrow
+            origin={{ x: x1, y: -centerY }}
+            vector={{ x: leftArrowDir * F, y: 0 }}
+            type="electricForce"
+            sceneScale={sceneScale}
+            strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+          />
+          <VectorArrow
+            origin={{ x: x2, y: -centerY }}
+            vector={{ x: rightArrowDir * F, y: 0 }}
+            type="electricForce"
+            sceneScale={sceneScale}
+            strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+          />
+          <text x={x1 + leftArrowDir * 30} y={centerY - 12}
             fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.electricForce} textAnchor="middle" fontWeight="bold">F</text>
-          <text x={x2 + rightArrowDir * forceArrowLen / 2} y={centerY - 12}
+          <text x={x2 + rightArrowDir * 30} y={centerY - 12}
             fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.electricForce} textAnchor="middle" fontWeight="bold">F</text>
         </g>
       )}
@@ -255,12 +261,6 @@ function BasicMode({
           stroke={PHYSICS_COLORS.electricForce} strokeWidth={1} strokeDasharray="3,3" opacity={0.5} />
       </g>
 
-      <defs>
-        <marker id="arrow-coulomb" markerWidth={SVG_MARKER.main.markerWidth} markerHeight={SVG_MARKER.main.markerHeight}
-          refX={SVG_MARKER.main.refX} refY={SVG_MARKER.main.refY} orient="auto">
-          <polygon points={SVG_MARKER.main.content} fill={PHYSICS_COLORS.electricForce} />
-        </marker>
-      </defs>
     </svg>
   )
 }
@@ -358,14 +358,15 @@ function ThreeChargeMode({
   const isBalanced = forces[2].magnitude < LAYOUT.equilibriumThreshold
 
   const chargeR = Math.min(w, h) * LAYOUT.chargeRadiusRatio
-  const forceArrowLen = (magnitude: number) => {
-    if (magnitude < 1e-15) return 0
-    const baseLen = w * LAYOUT.forceArrowMinRatio
-    const maxLen = w * LAYOUT.forceArrowMaxRatio
-    const logScale = Math.log10(magnitude * 1e6 + 1)
-    const len = baseLen + (maxLen - baseLen) * Math.min(1, logScale / 8)
-    return Math.max(baseLen, Math.min(maxLen, len))
+  const maxForce = Math.max(...forces.map((f) => f.magnitude), 1e-10)
+
+  const threeScene: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: w, height: h - 60 },
+    originX: 0,
+    originY: 0,
+    refMagnitudes: { electricForce: maxForce * 1.2 },
   }
+  const sceneScale = createSceneScale(threeScene)
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -436,14 +437,16 @@ function ThreeChargeMode({
             <g key={`charge-${idx}`}>
               {showVectors && force.magnitude > 1e-12 && (
                 <g>
-                  <line x1={pos.x} y1={pos.y}
-                    x2={pos.x + Math.cos(Math.atan2(force.fy, force.fx)) * forceArrowLen(force.magnitude)}
-                    y2={pos.y + Math.sin(Math.atan2(force.fy, force.fx)) * forceArrowLen(force.magnitude)}
-                    stroke={PHYSICS_COLORS.electricForce} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                    markerEnd="url(#arrow-force)" />
+                  <VectorArrow
+                    origin={{ x: pos.x, y: -pos.y }}
+                    vector={{ x: force.fx, y: -force.fy }}
+                    type="electricForce"
+                    sceneScale={sceneScale}
+                    strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+                  />
                   <text
-                    x={pos.x + Math.cos(Math.atan2(force.fy, force.fx)) * (forceArrowLen(force.magnitude) + 14)}
-                    y={pos.y + Math.sin(Math.atan2(force.fy, force.fx)) * (forceArrowLen(force.magnitude) + 14)}
+                    x={pos.x + Math.cos(Math.atan2(force.fy, force.fx)) * 50}
+                    y={pos.y + Math.sin(Math.atan2(force.fy, force.fx)) * 50}
                     fontSize={CANVAS_STYLE.font.label} fill={PHYSICS_COLORS.electricForce} textAnchor="middle" fontWeight="bold">
                     F
                   </text>
@@ -511,12 +514,6 @@ function ThreeChargeMode({
           </g>
         )}
 
-        <defs>
-          <marker id="arrow-force" markerWidth={SVG_MARKER.main.markerWidth} markerHeight={SVG_MARKER.main.markerHeight}
-            refX={SVG_MARKER.main.refX} refY={SVG_MARKER.main.refY} orient="auto">
-            <polygon points={SVG_MARKER.main.content} fill={PHYSICS_COLORS.electricForce} />
-          </marker>
-        </defs>
       </svg>
 
       <div className="shrink-0 p-3 bg-neutral-50 border-t border-neutral-200 flex items-center gap-4">

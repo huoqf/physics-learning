@@ -6,6 +6,10 @@ import { Spring } from '@/components/UI'
 import { calculateInstantaneousVelocity } from '@/physics'
 import type { VariableMotionModel, VariableMotionParams } from '@/physics'
 import { useVelocityPhysics } from './useVelocityPhysics'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 interface VelocityAnimationStripProps {
   model: VariableMotionModel
@@ -59,10 +63,10 @@ export default function VelocityAnimationStrip({
     return { min: -5, max: 5 }
   }, [model, modelParams, points])
 
-  const { scale, toPixelX } = useMemo(() => {
+  const { toPixelX } = useMemo(() => {
     const s = (endX - startX) / (xRange.max - xRange.min)
     const fn = (val: number) => startX + (val - xRange.min) * s
-    return { scale: s, toPixelX: fn }
+    return { toPixelX: fn }
   }, [xRange, startX, endX])
 
   const currentX = toPixelX(state.x)
@@ -113,6 +117,25 @@ export default function VelocityAnimationStrip({
   const smallFont = Math.max(9, fontSize * 0.85)
   const objW = canvasSize.width * 0.06
   const objH = objW * 0.7
+
+  // ── 矢量场景配置 ──
+  const maxVel = useMemo(() => {
+    if (model === 'shm') return (modelParams.A ?? 5) * (modelParams.omega ?? 2)
+    if (model === 'force-increasing') return Math.abs(points[points.length - 1]?.v ?? 5) * 1.2 || 10
+    return modelParams.vMax ?? 6
+  }, [model, modelParams, points])
+  const maxAcc = useMemo(() => {
+    if (model === 'shm') return (modelParams.A ?? 5) * (modelParams.omega ?? 2) ** 2
+    return Math.abs(modelParams.a1 ?? 2) * 1.5
+  }, [model, modelParams])
+
+  const stripScene: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    originX: 0,
+    originY: 0,
+    refMagnitudes: { velocity: maxVel, acceleration: maxAcc },
+  }
+  const sceneScale = createSceneScale(stripScene)
 
 
   // ── 多阶段：A/B 标志位置 ──
@@ -166,15 +189,7 @@ export default function VelocityAnimationStrip({
           {/* 钢弹簧前半圈高光渐变 */}
 
           {/* 箭头标记 */}
-          <marker id="arrowhead-strip-v" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          <marker id="arrowhead-strip-a" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.acceleration} />
-          </marker>
-          <marker id="arrowhead-disp-strip" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.displacement} />
-          </marker>
+          <VectorDefs colors={[PHYSICS_COLORS.velocity, PHYSICS_COLORS.acceleration, PHYSICS_COLORS.displacement]} />
         </defs>
 
         {/* ── 场景大标题 ── */}
@@ -353,12 +368,12 @@ export default function VelocityAnimationStrip({
             </text>
 
             {/* 位移指示线与箭头 */}
-            <line
-              x1={pointA} y1={groundY - objH - 12}
-              x2={currentX} y2={groundY - objH - 12}
-              stroke={PHYSICS_COLORS.displacement}
+            <VectorArrow
+              origin={{ x: pointA, y: -(groundY - objH - 12) }}
+              vector={{ x: state.x, y: 0 }}
+              type="displacement"
+              sceneScale={sceneScale}
               strokeWidth={STROKE.objectLine}
-              markerEnd="url(#arrowhead-disp-strip)"
             />
             <text
               x={(pointA + currentX) / 2}
@@ -373,17 +388,18 @@ export default function VelocityAnimationStrip({
         {/* ── 速度矢量箭头 ── */}
         {Math.abs(vInst) > 0.1 && (
           <g>
-            <line
-              x1={currentX + (vInst > 0 ? objW / 2 + 4 : -objW / 2 - 4)}
-              y1={groundY - objH / 2 - (model === 'shm' ? 2 : 5)}
-              x2={currentX + (vInst > 0 ? objW / 2 + 4 + vInst * scale * 0.15 : -objW / 2 - 4 + vInst * scale * 0.15)}
-              y2={groundY - objH / 2 - (model === 'shm' ? 2 : 5)}
-              stroke={PHYSICS_COLORS.velocity}
+            <VectorArrow
+              origin={{
+                x: currentX + (vInst > 0 ? objW / 2 + 4 : -objW / 2 - 4),
+                y: -(groundY - objH / 2 - (model === 'shm' ? 2 : 5)),
+              }}
+              vector={{ x: vInst, y: 0 }}
+              type="velocity"
+              sceneScale={sceneScale}
               strokeWidth={STROKE.vectorSub}
-              markerEnd="url(#arrowhead-strip-v)"
             />
             <text
-              x={currentX + (vInst > 0 ? objW / 2 + 8 + vInst * scale * 0.15 : -objW / 2 - 8 + vInst * scale * 0.15)}
+              x={currentX + (vInst > 0 ? objW / 2 + 8 : -objW / 2 - 8) + sceneScale.maxVectorLength * 0.35}
               y={groundY - objH / 2 + fontSize * 0.35 - (model === 'shm' ? 2 : 5)}
               fontSize={fontSize} fill={PHYSICS_COLORS.velocity} fontWeight="bold"
             >
@@ -395,17 +411,15 @@ export default function VelocityAnimationStrip({
         {/* ── 变加速：加速度矢量箭头 ── */}
         {model === 'force-increasing' && Math.abs(state.a) > 0.05 && (
           <g>
-            <line
-              x1={currentX}
-              y1={groundY - objH - 11}
-              x2={currentX + state.a * scale * 0.12}
-              y2={groundY - objH - 11}
-              stroke={PHYSICS_COLORS.acceleration}
+            <VectorArrow
+              origin={{ x: currentX, y: -(groundY - objH - 11) }}
+              vector={{ x: state.a, y: 0 }}
+              type="acceleration"
+              sceneScale={sceneScale}
               strokeWidth={STROKE.vectorSub}
-              markerEnd="url(#arrowhead-strip-a)"
             />
             <text
-              x={currentX + state.a * scale * 0.12 + 6}
+              x={currentX + sceneScale.maxVectorLength * 0.35 + 6}
               y={groundY - objH - 11 + fontSize * 0.35}
               fontSize={fontSize} fill={PHYSICS_COLORS.acceleration} fontWeight="bold"
             >
