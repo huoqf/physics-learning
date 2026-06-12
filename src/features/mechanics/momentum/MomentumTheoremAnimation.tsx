@@ -7,6 +7,9 @@ import {
   calculateCollisionTime,
   calculateFluidImpactForce,
 } from '@/physics/momentumTheorem'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,
@@ -31,8 +34,6 @@ const MT_LAYOUT = {
   cushionMaxCompression: 30,
   /** 下落缩放因子 (px per m) */
   fallScale: 40,
-  /** 速度箭头最大长度 (px) */
-  vectorMaxLength: 80,
   /** 力条最大长度 (px) */
   forceBarMaxLength: 100,
   /** 进阶模式：挡板宽度 (px) */
@@ -78,6 +79,25 @@ export default function MomentumTheoremAnimation() {
 
   const isAdvanced = advancedMode === 1
   const groundY = canvasSize.height - MT_LAYOUT.groundOffset
+
+  const sceneConfig = useMemo((): SceneConfig => ({
+    vectorBounds: {
+      x: 0,
+      y: 0,
+      width: canvasSize.width - MT_LAYOUT.canvasPadding * 2,
+      height: canvasSize.height - MT_LAYOUT.canvasPadding,
+    },
+    originX: 0,
+    originY: groundY,
+    worldWidth: canvasSize.width,
+    worldHeight: canvasSize.height,
+    refMagnitudes: {
+      velocity: 15,
+      force: 200,
+    },
+  }), [canvasSize.width, canvasSize.height, groundY]);
+
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
 
   // ── 基础模式：缓冲垫碰撞 ──────────────────────────────────
   const fallV = calculateFallVelocity(h, MT_LAYOUT.g)
@@ -183,8 +203,6 @@ export default function MomentumTheoremAnimation() {
   }, [springCompression, plateX, plateTopY, plateBottomY])
 
   // 矢量映射
-  const vMaxRef = 15
-  const mapArrowLen = (val: number) => (Math.abs(val) / vMaxRef) * MT_LAYOUT.vectorMaxLength
   const fMaxRef = 200
   const mapForceBar = (val: number) => (Math.abs(val) / fMaxRef) * MT_LAYOUT.forceBarMaxLength
 
@@ -203,20 +221,6 @@ export default function MomentumTheoremAnimation() {
             <stop offset="80%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
             <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
           </radialGradient>
-          <marker id="arrowhead-mt-v" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          <marker id="arrowhead-mt-f" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.forceNet} />
-          </marker>
-          <marker id="arrowhead-mt-p" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.momentum} />
-          </marker>
-          {/* 流体渐变 */}
-          <linearGradient id="fluid-grad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor={PHYSICS_COLORS.velocity} stopOpacity="0.3" />
-            <stop offset="100%" stopColor={PHYSICS_COLORS.velocity} stopOpacity="0.8" />
-          </linearGradient>
         </defs>
 
         {/* ========== 地面线 ========== */}
@@ -267,50 +271,22 @@ export default function MomentumTheoremAnimation() {
 
             {/* 速度箭头 */}
             {showVectors && phase === 'falling' && fallV > 0 && (
-              <g>
-                <line
-                  x1={ballCenterX}
-                  y1={ballY + R_ball + 4}
-                  x2={ballCenterX}
-                  y2={ballY + R_ball + 4 + mapArrowLen(fallV)}
-                  stroke={PHYSICS_COLORS.velocity}
-                  strokeWidth={STROKE.vectorMain}
-                  markerEnd="url(#arrowhead-mt-v)"
-                />
-                <text
-                  x={ballCenterX + 14}
-                  y={ballY + R_ball + 4 + mapArrowLen(fallV) / 2}
-                  fontSize={FONT.smallSize}
-                  fill={PHYSICS_COLORS.velocity}
-                  fontWeight="bold"
-                >
-                  v
-                </text>
-              </g>
+              <VectorArrow
+                origin={{ x: ballCenterX, y: groundY - ballY - R_ball - 4 }}
+                vector={{ x: 0, y: -fallV }}
+                type="velocity"
+                sceneScale={sceneScale}
+              />
             )}
 
             {/* 碰撞力条 */}
             {showVectors && (phase === 'compressing' || phase === 'recovering') && (
-              <g>
-                <line
-                  x1={ballCenterX}
-                  y1={ballY - R_ball - 4}
-                  x2={ballCenterX}
-                  y2={ballY - R_ball - 4 - mapForceBar(F_avg)}
-                  stroke={PHYSICS_COLORS.forceNet}
-                  strokeWidth={STROKE.vectorMain * 1.5}
-                  markerEnd="url(#arrowhead-mt-f)"
-                />
-                <text
-                  x={ballCenterX + 18}
-                  y={ballY - R_ball - 4 - mapForceBar(F_avg) / 2}
-                  fontSize={FONT.smallSize}
-                  fill={PHYSICS_COLORS.forceNet}
-                  fontWeight="bold"
-                >
-                  F_avg
-                </text>
-              </g>
+              <VectorArrow
+                origin={{ x: ballCenterX, y: groundY - ballY + R_ball + 4 }}
+                vector={{ x: 0, y: F_avg }}
+                type="force"
+                sceneScale={sceneScale}
+              />
             )}
 
             {/* 高度标注线 */}
@@ -440,14 +416,11 @@ export default function MomentumTheoremAnimation() {
             {/* 冲击力箭头 */}
             {showVectors && (
               <g>
-                <line
-                  x1={plateX - springCompression - 5}
-                  y1={(plateTopY + plateBottomY) / 2}
-                  x2={plateX - springCompression - 5 - mapForceBar(impactForce)}
-                  y2={(plateTopY + plateBottomY) / 2}
-                  stroke={PHYSICS_COLORS.forceNet}
-                  strokeWidth={STROKE.vectorMain * 1.5}
-                  markerEnd="url(#arrowhead-mt-f)"
+                <VectorArrow
+                  origin={{ x: plateX - springCompression - 5, y: (plateTopY + plateBottomY) / 2 - groundY }}
+                  vector={{ x: -impactForce, y: 0 }}
+                  type="force"
+                  sceneScale={sceneScale}
                 />
                 <text
                   x={plateX - springCompression - 10 - mapForceBar(impactForce) / 2}

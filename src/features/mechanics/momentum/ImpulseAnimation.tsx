@@ -8,6 +8,9 @@ import {
   calculateImpulseSlices,
   type ForceTimeType,
 } from '@/physics/impulse'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,
@@ -55,6 +58,26 @@ export default function ImpulseAnimation() {
 
   const isAdvanced = advancedMode === 1
   const forceTypeStr: ForceTimeType = forceType === 1 ? 'sine' : 'linear'
+
+  const groundY = canvasSize.height - IMPULSE_LAYOUT.groundOffset
+
+  const sceneConfig = useMemo((): SceneConfig => ({
+    vectorBounds: {
+      x: 0,
+      y: 0,
+      width: canvasSize.width - IMPULSE_LAYOUT.canvasPadding * 2,
+      height: canvasSize.height - IMPULSE_LAYOUT.canvasPadding,
+    },
+    originX: 0,
+    originY: groundY,
+    worldWidth: canvasSize.width,
+    worldHeight: canvasSize.height,
+    refMagnitudes: {
+      force: 200,
+    },
+  }), [canvasSize.width, canvasSize.height, groundY]);
+
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
 
   // ── 基础模式：恒力 ──────────────────────────────────────────
   const currentT_basic = Math.min(time, t_duration)
@@ -142,7 +165,6 @@ export default function ImpulseAnimation() {
   }, [FMax, t_total, forceTypeStr, currentT_advanced, chartArea])
 
   // ── 滑块动画位置 ────────────────────────────────────────────
-  const groundY = canvasSize.height - IMPULSE_LAYOUT.groundOffset
   const sliderTrackY = groundY - IMPULSE_LAYOUT.sliderHeight / 2
 
   // 基础模式滑块位移
@@ -162,12 +184,6 @@ export default function ImpulseAnimation() {
       >
         {/* ========== defs ========== */}
         <defs>
-          <marker id="arrowhead-impulse-v" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          <marker id="arrowhead-impulse-f" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.forceNet} />
-          </marker>
         </defs>
 
         {/* ========== 地面线 ========== */}
@@ -197,27 +213,12 @@ export default function ImpulseAnimation() {
 
             {/* 推力手（箭头） */}
             {showVectors && (
-              <g>
-                <line
-                  x1={sliderX_basic - 5}
-                  y1={sliderTrackY}
-                  x2={sliderX_basic - 35}
-                  y2={sliderTrackY}
-                  stroke={PHYSICS_COLORS.forceNet}
-                  strokeWidth={STROKE.vectorMain * 1.5}
-                  markerEnd="url(#arrowhead-impulse-f)"
-                />
-                <text
-                  x={sliderX_basic - 20}
-                  y={sliderTrackY - 10}
-                  fontSize={FONT.bodySize}
-                  fill={PHYSICS_COLORS.forceNet}
-                  fontWeight="bold"
-                  textAnchor="middle"
-                >
-                  F = {F.toFixed(1)} N
-                </text>
-              </g>
+              <VectorArrow
+                origin={{ x: sliderX_basic - 5, y: groundY - sliderTrackY }}
+                vector={{ x: -F, y: 0 }}
+                type="force"
+                sceneScale={sceneScale}
+              />
             )}
 
             {/* F-t 图表区域 */}
@@ -319,27 +320,12 @@ export default function ImpulseAnimation() {
 
             {/* 渐变推力臂 */}
             {showVectors && currentFt > 0 && (
-              <g>
-                <line
-                  x1={sliderX_advanced - 5}
-                  y1={sliderTrackY}
-                  x2={sliderX_advanced - 5 - currentFt * 2}
-                  y2={sliderTrackY}
-                  stroke={PHYSICS_COLORS.forceNet}
-                  strokeWidth={STROKE.vectorMain * 1.5}
-                  markerEnd="url(#arrowhead-impulse-f)"
-                />
-                <text
-                  x={sliderX_advanced - 10 - currentFt}
-                  y={sliderTrackY - 10}
-                  fontSize={FONT.smallSize}
-                  fill={PHYSICS_COLORS.forceNet}
-                  fontWeight="bold"
-                  textAnchor="middle"
-                >
-                  F(t) = {currentFt.toFixed(1)} N
-                </text>
-              </g>
+              <VectorArrow
+                origin={{ x: sliderX_advanced - 5, y: groundY - sliderTrackY }}
+                vector={{ x: -currentFt * 2, y: 0 }}
+                type="force"
+                sceneScale={sceneScale}
+              />
             )}
 
             {/* F-t 图表区域 */}

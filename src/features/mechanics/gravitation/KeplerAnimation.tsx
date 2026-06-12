@@ -4,6 +4,9 @@ import { PHYSICS_COLORS, SCENE_COLORS, STROKE, CANVAS_STYLE, KEPLER_CONFIG, VECT
 import { colors } from '@/theme/colors'
 import { calculateKeplerOrbit, solveKeplerEquation } from '@/physics/celestial'
 import { useMemo } from 'react'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 // ─── 工具函数 ─────────────────────────────────────────────────────
 function clamp(value: number, min: number, max: number): number {
@@ -50,6 +53,21 @@ export default function KeplerAnimation() {
   const sunY = centerY
   const foci2X = centerX - c1 * scale // 左焦点(虚焦点)
   const foci2Y = centerY
+
+  const sceneConfig = useMemo((): SceneConfig => ({
+    vectorBounds: {
+      x: 0,
+      y: 0,
+      width: canvasSize.width,
+      height: canvasSize.height,
+    },
+    originX: centerX,
+    originY: centerY,
+    worldWidth: canvasSize.width,
+    worldHeight: canvasSize.height,
+  }), [canvasSize.width, canvasSize.height, centerX, centerY]);
+
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
 
   // ─── 计算行星A实时物理状态 ───
   const orbitA = useMemo(() => {
@@ -317,13 +335,6 @@ export default function KeplerAnimation() {
             <stop offset="0%" stopColor={PHYSICS_COLORS.axis} />
             <stop offset="100%" stopColor={PHYSICS_COLORS.axis} stopOpacity={0} />
           </radialGradient>
-          {/* 速度与引力箭头 */}
-          <marker id="arrow-v" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          <marker id="arrow-f" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.gravity} />
-          </marker>
         </defs>
 
         {/* ── 背景网格 ── */}
@@ -551,14 +562,11 @@ export default function KeplerAnimation() {
         {showVectors && (
           <g>
             {/* 行星 A 速度 (经典蓝) */}
-            <line
-              x1={planetXA}
-              y1={planetYA}
-              x2={planetXA + vxA}
-              y2={planetYA + vyA}
-              stroke={PHYSICS_COLORS.velocity}
-              strokeWidth={1.8}
-              markerEnd="url(#arrow-v)"
+            <VectorArrow
+              origin={{ x: planetXA - centerX, y: centerY - planetYA }}
+              vector={{ x: vxA, y: -vyA }}
+              type="velocity"
+              sceneScale={sceneScale}
             />
             <text
               x={planetXA + vxA + (vxA >= 0 ? 8 : -14)}
@@ -572,14 +580,11 @@ export default function KeplerAnimation() {
             </text>
 
             {/* 行星 A 万有引力 (重力深绿) */}
-            <line
-              x1={planetXA}
-              y1={planetYA}
-              x2={planetXA + fxA}
-              y2={planetYA + fyA}
-              stroke={PHYSICS_COLORS.gravity}
-              strokeWidth={1.8}
-              markerEnd="url(#arrow-f)"
+            <VectorArrow
+              origin={{ x: planetXA - centerX, y: centerY - planetYA }}
+              vector={{ x: fxA, y: -fyA }}
+              type="gravity"
+              sceneScale={sceneScale}
             />
             <text
               x={planetXA + fxA + (fxA >= 0 ? 8 : -14)}

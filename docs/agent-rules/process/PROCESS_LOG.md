@@ -19,6 +19,7 @@
 
 | 日期 | 模块 | 类型 | 摘要 |
 |------|------|------|------|
+| 2026-06-12 | anim-charge-in-efield | refactor | 带电粒子在匀强电场中运动三屏职责分离重构：实现恒定直流/交变方形波/重力复合场物理仿真，中屏接入 MiniChart 绘制 vy-t 折线图并绘制速度分解辅助框与极性动态反转，左屏 SidebarExtra 控制电场及重力，右屏 PhysicsPanel 定量计算与高考要点推送 |
 | 2026-06-12 | architecture | refactor | 矢量箭头统一架构：vectorLength 归一化重构 + VectorArrow refMagnitude 三层优先级 + SceneConfig refMagnitudes + CoulombLaw 迁移 + 项目规范同步更新 + 第 1 章运动学 5 文件迁移（Velocity/Acceleration/UniformAcceleration） |
 | 2026-06-11 | architecture | refactor | 移除全部网格纸底纹（5文件），清理无用OPACITY import（3文件），确认无死代码；详见 [TODO_deferred.md](./TODO_deferred.md) |
 | 2026-06-09 | architecture | refactor | 按子主题重构目录结构：力学/电磁学动画按 kinematics/dynamics/circular/gravitation/momentum/energy/electrostatics/dc-circuits/magnetism/induction 分子目录；animationRegistry/physicsQuantities 按子模块拆分注册表；新增 defineAnimations/quantities 构建器工具链 |

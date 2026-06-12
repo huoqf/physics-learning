@@ -19,8 +19,6 @@ export function buildCircularQuantities(
 
       const quantities = [
         ...base,
-        { label: '半径 r', value: r.toFixed(1), unit: 'm' },
-        { label: '角速度 ω', value: omega.toFixed(2), unit: 'rad/s' },
         { label: '线速度 v', value: v.toFixed(2), unit: 'm/s' },
         ...(isAdvanced
           ? [
@@ -75,9 +73,6 @@ export function buildCircularQuantities(
 
       const quantities = [
         ...base,
-        { label: '半径 r', value: r.toFixed(1), unit: 'm' },
-        { label: '线速度 v', value: v.toFixed(1), unit: 'm/s' },
-        { label: '质量 m', value: m.toFixed(1), unit: 'kg' },
         { label: '角速度 ω', value: omega.toFixed(2), unit: 'rad/s' },
         { label: '向心加速度 a_n', value: a_c.toFixed(2), unit: 'm/s²' },
         ...(isAdvanced

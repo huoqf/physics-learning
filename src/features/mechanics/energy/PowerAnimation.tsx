@@ -4,6 +4,9 @@ import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CHART_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { KatexFormula } from '@/components/UI'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 import {
   precomputeConstantPowerTrajectory,
   precomputeConstantAccelTrajectory,
@@ -213,6 +216,15 @@ export default function PowerAnimation() {
     return null
   }
 
+  const sceneConfig = useMemo((): SceneConfig => ({
+    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    originX: 0,
+    originY: 0,
+    worldWidth: canvasSize.width,
+    worldHeight: canvasSize.height,
+  }), [canvasSize.width, canvasSize.height]);
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
+
   return (
     <div ref={containerRef} className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">
       {/* 进阶模式下的 Tab 切换 */}
@@ -300,16 +312,7 @@ export default function PowerAnimation() {
             <stop offset="100%" stopColor={colors.neutral[300]} />
           </linearGradient>
 
-          {/* 规范的物理矢量箭头定义 */}
-          <marker id="arrow-appliedForce" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <path d="M0,0 L10,3.5 L0,7 Z" fill={PHYSICS_COLORS.appliedForce} />
-          </marker>
-          <marker id="arrow-friction" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <path d="M0,0 L8,3 L0,6 Z" fill={PHYSICS_COLORS.friction} />
-          </marker>
-          <marker id="arrow-velocity" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <path d="M0,0 L10,3.5 L0,7 Z" fill={PHYSICS_COLORS.velocity} />
-          </marker>
+
         </defs>
 
         {/* ══════════════════════════════════════════════ */}
@@ -754,40 +757,34 @@ export default function PowerAnimation() {
 
         {/* ── 牵引力 F 矢量（动力深蓝） ── */}
         {showVectors && state.F > 0 && (
-          <line
-            x1={carX + objW + 2}
-            y1={groundY - objH * 0.5}
-            x2={carX + objW + 2 + Math.min(state.F * 0.008, 60)}
-            y2={groundY - objH * 0.5}
-            stroke={PHYSICS_COLORS.appliedForce}
-            strokeWidth={STROKE.vectorMain}
-            markerEnd="url(#arrow-appliedForce)"
+          <VectorArrow
+            origin={{ x: carX + objW + 2, y: -(groundY - objH * 0.5) }}
+            vector={{ x: Math.min(state.F * 0.008, 60), y: 0 }}
+            type="force"
+            sceneScale={sceneScale}
+            pixelLength={Math.min(state.F * 0.008, 60)}
           />
         )}
 
         {/* ── 阻力 f 矢量（耗散黄置） ── */}
         {showVectors && f > 0 && (
-          <line
-            x1={carX - 2}
-            y1={groundY - objH * 0.4}
-            x2={carX - 2 - Math.min(f * 0.008, 30)}
-            y2={groundY - objH * 0.4}
-            stroke={PHYSICS_COLORS.friction}
-            strokeWidth={STROKE.vectorSub}
-            markerEnd="url(#arrow-friction)"
+          <VectorArrow
+            origin={{ x: carX - 2, y: -(groundY - objH * 0.4) }}
+            vector={{ x: -Math.min(f * 0.008, 30), y: 0 }}
+            type="friction"
+            sceneScale={sceneScale}
+            pixelLength={Math.min(f * 0.008, 30)}
           />
         )}
 
         {/* ── 速度 v 矢量（经典蓝，从车底向右绘制） ── */}
         {showVectors && state.v > 0.05 && (
-          <line
-            x1={carX + objW * 0.5}
-            y1={groundY + 3.5}
-            x2={carX + objW * 0.5 + Math.min(state.v * 3.5, 70)}
-            y2={groundY + 3.5}
-            stroke={PHYSICS_COLORS.velocity}
-            strokeWidth={STROKE.vectorMain}
-            markerEnd="url(#arrow-velocity)"
+          <VectorArrow
+            origin={{ x: carX + objW * 0.5, y: -(groundY + 3.5) }}
+            vector={{ x: Math.min(state.v * 3.5, 70), y: 0 }}
+            type="velocity"
+            sceneScale={sceneScale}
+            pixelLength={Math.min(state.v * 3.5, 70)}
           />
         )}
 

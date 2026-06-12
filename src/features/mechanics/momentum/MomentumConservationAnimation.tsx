@@ -1,4 +1,5 @@
 import { useCanvasSize } from '@/utils'
+import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { elasticCollision1D } from '@/physics/momentum'
 import {
@@ -11,6 +12,9 @@ import {
   calculateRelativeDisplacement,
   willSliderFallOff,
 } from '@/physics/momentumConservation'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,
@@ -55,6 +59,24 @@ export default function MomentumConservationAnimation() {
 
   const isAdvanced = advancedMode === 1
   const groundY = canvasSize.height - MC_LAYOUT.groundOffset
+
+  const sceneConfig = useMemo((): SceneConfig => ({
+    vectorBounds: {
+      x: 0,
+      y: 0,
+      width: canvasSize.width - MC_LAYOUT.canvasPadding * 2,
+      height: canvasSize.height - MC_LAYOUT.canvasPadding,
+    },
+    originX: 0,
+    originY: groundY,
+    worldWidth: canvasSize.width,
+    worldHeight: canvasSize.height,
+    refMagnitudes: {
+      velocity: 10,
+    },
+  }), [canvasSize.width, canvasSize.height, groundY]);
+
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
 
   // ── 基础模式：两球碰撞 ──────────────────────────────────
   const R_A = MC_LAYOUT.ballBaseRadius + m1 * MC_LAYOUT.massRadiusScale
@@ -175,12 +197,6 @@ export default function MomentumConservationAnimation() {
             <stop offset="80%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[2]} />
             <stop offset="100%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[3]} />
           </radialGradient>
-          <marker id="arrowhead-mc-v" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          <marker id="arrowhead-mc-p" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.momentum} />
-          </marker>
         </defs>
 
         {/* ========== 地面线 ========== */}
@@ -237,14 +253,11 @@ export default function MomentumConservationAnimation() {
             {showVectors && (
               <g>
                 {currentV1 !== 0 && (
-                  <line
-                    x1={posAx}
-                    y1={groundY - R_A * 2 - 10}
-                    x2={posAx + mapArrowLen(currentV1) * Math.sign(currentV1)}
-                    y2={groundY - R_A * 2 - 10}
-                    stroke={PHYSICS_COLORS.velocity}
-                    strokeWidth={STROKE.vectorMain}
-                    markerEnd="url(#arrowhead-mc-v)"
+                  <VectorArrow
+                    origin={{ x: posAx, y: R_A * 2 + 10 }}
+                    vector={{ x: currentV1, y: 0 }}
+                    type="velocity"
+                    sceneScale={sceneScale}
                   />
                 )}
                 <text x={posAx} y={groundY - R_A * 2 - 16} fontSize={FONT.smallSize} fill={PHYSICS_COLORS.velocity} textAnchor="middle" fontWeight="bold">
@@ -252,14 +265,12 @@ export default function MomentumConservationAnimation() {
                 </text>
 
                 {currentV2 !== 0 && (
-                  <line
-                    x1={posBx}
-                    y1={groundY - R_B * 2 - 10}
-                    x2={posBx + mapArrowLen(currentV2) * Math.sign(currentV2)}
-                    y2={groundY - R_B * 2 - 10}
-                    stroke={PHYSICS_COLORS.elasticForce}
-                    strokeWidth={STROKE.vectorMain}
-                    markerEnd="url(#arrowhead-mc-v)"
+                  <VectorArrow
+                    origin={{ x: posBx, y: R_B * 2 + 10 }}
+                    vector={{ x: currentV2, y: 0 }}
+                    type="velocity"
+                    sceneScale={sceneScale}
+                    color={PHYSICS_COLORS.elasticForce}
                   />
                 )}
                 <text x={posBx} y={groundY - R_B * 2 - 16} fontSize={FONT.smallSize} fill={PHYSICS_COLORS.elasticForce} textAnchor="middle" fontWeight="bold">
@@ -418,14 +429,11 @@ export default function MomentumConservationAnimation() {
               <g>
                 {/* 滑块速度 */}
                 {currentVSlider > 0 && (
-                  <line
-                    x1={sliderOffBoard ? boardPixelX + boardPixelW + 5 + MC_LAYOUT.sliderWidth / 2 : sliderPixelX}
-                    y1={sliderTopY - 10}
-                    x2={(sliderOffBoard ? boardPixelX + boardPixelW + 5 + MC_LAYOUT.sliderWidth / 2 : sliderPixelX) + mapArrowLen(currentVSlider)}
-                    y2={sliderTopY - 10}
-                    stroke={PHYSICS_COLORS.velocity}
-                    strokeWidth={STROKE.vectorMain}
-                    markerEnd="url(#arrowhead-mc-v)"
+                  <VectorArrow
+                    origin={{ x: sliderOffBoard ? boardPixelX + boardPixelW + 5 + MC_LAYOUT.sliderWidth / 2 : sliderPixelX, y: sliderTopY - 10 - groundY }}
+                    vector={{ x: currentVSlider, y: 0 }}
+                    type="velocity"
+                    sceneScale={sceneScale}
                   />
                 )}
                 <text
@@ -441,14 +449,12 @@ export default function MomentumConservationAnimation() {
 
                 {/* 木板速度 */}
                 {currentVBoard > 0 && (
-                  <line
-                    x1={boardPixelX + boardPixelW / 2}
-                    y1={boardTopY + MC_LAYOUT.boardHeight + 15}
-                    x2={boardPixelX + boardPixelW / 2 + mapArrowLen(currentVBoard)}
-                    y2={boardTopY + MC_LAYOUT.boardHeight + 15}
-                    stroke={PHYSICS_COLORS.elasticForce}
-                    strokeWidth={STROKE.vectorMain}
-                    markerEnd="url(#arrowhead-mc-v)"
+                  <VectorArrow
+                    origin={{ x: boardPixelX + boardPixelW / 2, y: -(boardTopY + MC_LAYOUT.boardHeight + 15 - groundY) }}
+                    vector={{ x: currentVBoard, y: 0 }}
+                    type="velocity"
+                    sceneScale={sceneScale}
+                    color={PHYSICS_COLORS.elasticForce}
                   />
                 )}
                 <text

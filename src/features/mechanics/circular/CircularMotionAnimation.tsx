@@ -39,10 +39,6 @@ const CIRCULAR_MOTION_LAYOUT = {
   projectionBallRadius: 9,
   /** 钢珠半径 (px) */
   steelBallRadius: 12,
-  /** 矢量最大绘制长度 (px) */
-  vectorMaxLength: 75,
-  /** 加速度矢量垂直偏移 (px)，沿切向偏移避免与半径线重叠 */
-  accelerationOffset: 10,
   /** 波形卡片最小宽度 (px) */
   waveCardMinWidth: 220,
   /** 波形卡片最小高度 (px) */
@@ -94,24 +90,17 @@ export default function CircularMotionAnimation() {
     },
     originX: centerX,
     originY: centerY,
-    worldWidth: 2 * rMax,
-    worldHeight: 2 * rMax,
+    worldWidth: (canvasSize.width - CIRCULAR_MOTION_LAYOUT.canvasPadding) / scale,
+    worldHeight: (canvasSize.height - CIRCULAR_MOTION_LAYOUT.canvasPadding) / scale,
     refMagnitudes: {
       velocity: CIRCULAR_MOTION_CHART_RANGE.vMax,
       acceleration: CIRCULAR_MOTION_CHART_RANGE.aMax,
     },
-  }), [canvasSize.width, canvasSize.height, centerX, centerY, rMax]);
+  }), [canvasSize.width, canvasSize.height, centerX, centerY, rMax, scale]);
 
   const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
 
-  // ── 矢量安全映射：归一化方向 + 按比例缩放长度 ─────────────
-  const R_ball = CIRCULAR_MOTION_LAYOUT.steelBallRadius
-  const vArrowLen = R_ball + (v / CIRCULAR_MOTION_CHART_RANGE.vMax) * (CIRCULAR_MOTION_LAYOUT.vectorMaxLength - R_ball)
-  const aArrowLen = R_ball + (a_c / CIRCULAR_MOTION_CHART_RANGE.aMax) * (CIRCULAR_MOTION_LAYOUT.vectorMaxLength - R_ball)
-
-  // 动态自适应线宽（线宽及关联的箭头尺寸随物理量强度线性变化，最小限制为 1.5px）
-  const vStrokeWidth = Math.max(1.5, CANVAS_STYLE.stroke.vectorMain * (v / CIRCULAR_MOTION_CHART_RANGE.vMax))
-  const aStrokeWidth = Math.max(1.5, CANVAS_STYLE.stroke.vectorMain * (a_c / CIRCULAR_MOTION_CHART_RANGE.aMax))
+  // ── 矢量安全映射 ─────────────
 
   const isAdvanced = advancedMode === 1
   const showProjBalls = isAdvanced && showProjection === 1
@@ -422,7 +411,7 @@ export default function CircularMotionAnimation() {
           <g>
             <VectorArrow
               origin={{ x, y }}
-              vector={{ x: -y * (v / r), y: -x * (v / r) }}
+              vector={{ x: -y * (v / r), y: x * (v / r) }}
               type="velocity"
               sceneScale={sceneScale}
             />

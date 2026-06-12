@@ -19,6 +19,8 @@ import {
   calculateACRMS,
   calculateTransformerWithLoad,
   calculatePowerTransmission,
+  calculateChargeInEFieldTrajectory,
+  getChargeInEFieldTimeScale,
 } from '../../physics'
 import type { PhysicsPanelData, PhysicsQuantity } from './types'
 
@@ -28,7 +30,7 @@ const VACUUM_PERMITTIVITY = 8.85e-12
 export function buildElectromagnetismQuantities(
   animId: string,
   params: Record<string, number>,
-  _time: number,
+  time: number,
 ): PhysicsPanelData | null {
   const base: PhysicsQuantity[] = []
 
@@ -174,21 +176,106 @@ export function buildElectromagnetismQuantities(
       }
     }
     case 'anim-charge-in-efield': {
-      // 偏转电场（示波管）模型：板长 L、板间距 D，单位 E ×10³N/C、q μC、m mg
-      const PLATE_LENGTH = 0.4
-      const HALF_GAP = 0.1
-      const E = (params.E ?? 10) * 1e3
-      const q = (params.q ?? 5) * 1e-6
-      const m = (params.m ?? 200) * 1e-6
+      const U = params.U ?? 200
       const v0 = params.v0 ?? 20
-      const a = m > 0 ? (q * E) / m : 0
-      const tExit = v0 > 0 ? PLATE_LENGTH / v0 : 0
-      const tHit = a > 0 ? Math.sqrt((2 * HALF_GAP) / a) : Infinity
+      const q = params.q ?? 5
+      const freq = params.freq ?? 50
+      const isAC = params.isAC ?? 0
+      const useGravity = params.useGravity ?? 0
+
+      // 仿真参数常量
+      const PLATE_LENGTH = 0.4
+      const PLATE_GAP = 0.2
+
+      // 进行轨迹仿真
+      const simResult = calculateChargeInEFieldTrajectory({
+        U,
+        d: PLATE_GAP,
+        L: PLATE_LENGTH,
+        q: q * 1e-6,
+        m: 50 * 1e-6, // 50 mg
+        v0,
+        g: useGravity === 1 ? 9.8 : 0,
+        isAC: isAC === 1,
+        freq,
+      })
+
+      // 插值获取当前时刻的值：根据模式动态计算时间慢放比例
+      const TIME_SCALE = getChargeInEFieldTimeScale(simResult.tEnd, isAC === 1)
+      const tSim = Math.min(time * TIME_SCALE, simResult.tEnd)
+      
+      // 线性插值
+      const pts = simResult.points
+      let curState = { t: tSim, x: 0, y: 0, vx: v0, vy: 0, ax: 0, ay: 0 }
+      if (pts.length > 0) {
+        const lastPt = pts[pts.length - 1]
+        if (tSim <= 0) {
+          curState = pts[0]
+        } else if (tSim >= lastPt.t) {
+          curState = lastPt
+        } else {
+          const dt = pts[1].t - pts[0].t || 0.0001
+          const idx = Math.floor(tSim / dt)
+          const p1 = pts[Math.min(idx, pts.length - 1)]
+          const p2 = pts[Math.min(idx + 1, pts.length - 1)]
+          if (p1 && p2 && p1.t !== p2.t) {
+            const frac = (tSim - p1.t) / (p2.t - p1.t)
+            curState = {
+              t: tSim,
+              x: p1.x + (p2.x - p1.x) * frac,
+              y: p1.y + (p2.y - p1.y) * frac,
+              vx: p1.vx + (p2.vx - p1.vx) * frac,
+              vy: p1.vy + (p2.vy - p1.vy) * frac,
+              ax: p1.ax + (p2.ax - p1.ax) * frac,
+              ay: p1.ay + (p2.ay - p1.ay) * frac,
+            }
+          }
+        }
+      }
+
+      const vTotal = Math.sqrt(curState.vx * curState.vx + curState.vy * curState.vy)
+
       return {
         quantities: [
           ...base,
-          { label: '结局', value: tHit < tExit ? '打在极板上' : '射出电场', unit: '' },
+          { label: '加速度 ay', value: curState.ay.toFixed(2), unit: 'm/s²', color: '#DC2626', highlight: 'extreme' },
+          { label: '偏转距离 y', value: Math.abs(curState.y * 100).toFixed(2), unit: 'cm' },
+          { label: '竖直速度 vy', value: curState.vy.toFixed(2), unit: 'm/s', color: '#60A5FA' },
+          { label: '末速度 v', value: vTotal.toFixed(2), unit: 'm/s', color: '#2563EB', highlight: 'extreme' },
         ],
+        formulas: [
+          {
+            name: '类平抛偏转位移',
+            latex: 'y = \\frac{1}{2}at^2 = \\frac{q U l^2}{2 m d v_0^2}',
+            level: 'core',
+            condition: '仅适用于恒定匀强偏转电场（忽略重力）'
+          },
+          {
+            name: '速度偏转角',
+            latex: '\\tan\\theta = \\frac{v_y}{v_0}',
+            level: 'core'
+          }
+        ],
+        gaokaoPoints: [
+          {
+            text: '运动的合成与分解：平抛/类平抛运动是将复杂的曲线运动分解为水平方向的匀速直线运动和竖直方向的变速运动。',
+            importance: 'gaokao'
+          },
+          {
+            text: '交变电场分析：交变电场中粒子在竖直方向所受电场力周期性改变方向，速度-时间图像为“折线图”。其轨迹呈锯齿状复杂周期运动。',
+            importance: 'hard'
+          },
+          {
+            text: '临界逃逸大题：若飞出电场所需时间 t_exit = L/v₀ 大于撞板临界时间，则粒子无法逃逸直接撞击极板。',
+            importance: 'core'
+          }
+        ],
+        warnings: [
+          {
+            text: '易错点：粒子飞出极板后进入无场区，将以飞出瞬间的末速度做匀速直线运动，误认为其继续做曲线运动。',
+            level: 'warning'
+          }
+        ]
       }
     }
     case 'anim-capacitor': {

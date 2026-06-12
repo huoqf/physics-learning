@@ -3,7 +3,10 @@ import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateOrbitalSpeed } from '@/physics'
 import { GRAVITATIONAL_CONSTANT, EARTH_MASS, EARTH_RADIUS } from '@/physics/constants'
-import { PHYSICS_COLORS, CANVAS_STYLE, SCENE_COLORS, CHART_COLORS } from '@/theme/physics'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
+import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS } from '@/theme/physics'
 
 const LAYOUT = {
   // 地球与比例尺
@@ -124,6 +127,21 @@ export default function SatelliteAnimation() {
   // 模式1入轨后居中，让完整轨道对称显示
   const centerX = mode === 1 ? canvasSize.width * 0.5 : canvasSize.width / 2
   const centerY = canvasSize.height / 2
+
+  const sceneConfig = useMemo((): SceneConfig => ({
+    vectorBounds: {
+      x: 0,
+      y: 0,
+      width: canvasSize.width,
+      height: canvasSize.height,
+    },
+    originX: centerX,
+    originY: centerY,
+    worldWidth: canvasSize.width,
+    worldHeight: canvasSize.height,
+  }), [canvasSize.width, canvasSize.height, centerX, centerY]);
+
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
 
   // ── 模式 1：发射轨道三阶段物理计算与状态机 ──
   const launchData = useMemo(() => {
@@ -637,23 +655,6 @@ export default function SatelliteAnimation() {
             <stop offset="100%" stopColor={SCENE_COLORS.sphere.earthTech.oceanGradient[2]} />
           </radialGradient>
 
-          {/* 矢量箭头端部 */}
-          <marker id="arrowhead-s-f" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.gravity} />
-          </marker>
-          <marker id="arrowhead-s-v" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="120%">
-            <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000000" floodOpacity="0.12" />
-          </filter>
-
-          {/* 火箭火焰渐变 */}
-          <linearGradient id="rocket-fire-grad" x1="100%" y1="0%" x2="0%" y2="0%">
-            <stop offset="0%" stopColor="#ffea00" />
-            <stop offset="40%" stopColor="#ff5500" stopOpacity="0.95" />
-            <stop offset="100%" stopColor="#ff0000" stopOpacity="0" />
-          </linearGradient>
         </defs>
 
         {/* 1. 辅助网格 */}
@@ -750,14 +751,12 @@ export default function SatelliteAnimation() {
             {showVectors && (
               <g>
                 {/* 万有引力 (指向地心) */}
-                <line
-                  x1={sat0X}
-                  y1={sat0Y}
-                  x2={sat0X - (sat0X - centerX) * 0.45}
-                  y2={sat0Y - (sat0Y - centerY) * 0.45}
-                  stroke={PHYSICS_COLORS.gravity}
-                  strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                  markerEnd="url(#arrowhead-s-f)"
+                <VectorArrow
+                  origin={{ x: sat0X - centerX, y: centerY - sat0Y }}
+                  vector={{ x: centerX - sat0X, y: sat0Y - centerY }}
+                  type="gravity"
+                  sceneScale={sceneScale}
+                  pixelLength={0.45 * Math.sqrt((sat0X - centerX) ** 2 + (sat0Y - centerY) ** 2)}
                 />
                 <text
                   x={sat0X - (sat0X - centerX) * 0.25 - 12}
@@ -770,14 +769,12 @@ export default function SatelliteAnimation() {
                 </text>
 
                 {/* 线速度 v (沿切线方向) */}
-                <line
-                  x1={sat0X}
-                  y1={sat0Y}
-                  x2={sat0X + (sat0Y - centerY) * 0.45}
-                  y2={sat0Y - (sat0X - centerX) * 0.45}
-                  stroke={PHYSICS_COLORS.velocity}
-                  strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                  markerEnd="url(#arrowhead-s-v)"
+                <VectorArrow
+                  origin={{ x: sat0X - centerX, y: centerY - sat0Y }}
+                  vector={{ x: sat0Y - centerY, y: sat0X - centerX }}
+                  type="velocity"
+                  sceneScale={sceneScale}
+                  pixelLength={0.45 * Math.sqrt((sat0X - centerX) ** 2 + (sat0Y - centerY) ** 2)}
                 />
                 <text
                   x={sat0X + (sat0Y - centerY) * 0.45 + 5}
@@ -866,24 +863,20 @@ export default function SatelliteAnimation() {
             {showVectors && !launchData.crashed && isLaunched === 1 && !isRocket && (
               <g>
                 {/* 引力 */}
-                <line
-                  x1={satLaunchX}
-                  y1={satLaunchY}
-                  x2={satLaunchX - (satLaunchX - centerX) * 0.45}
-                  y2={satLaunchY - (satLaunchY - centerY) * 0.45}
-                  stroke={PHYSICS_COLORS.gravity}
-                  strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                  markerEnd="url(#arrowhead-s-f)"
+                <VectorArrow
+                  origin={{ x: satLaunchX - centerX, y: centerY - satLaunchY }}
+                  vector={{ x: centerX - satLaunchX, y: satLaunchY - centerY }}
+                  type="gravity"
+                  sceneScale={sceneScale}
+                  pixelLength={0.45 * Math.sqrt((satLaunchX - centerX) ** 2 + (satLaunchY - centerY) ** 2)}
                 />
                 {/* 速度 */}
-                <line
-                  x1={satLaunchX}
-                  y1={satLaunchY}
-                  x2={satLaunchX + (satLaunchY - centerY) * 0.45}
-                  y2={satLaunchY - (satLaunchX - centerX) * 0.45}
-                  stroke={PHYSICS_COLORS.velocity}
-                  strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                  markerEnd="url(#arrowhead-s-v)"
+                <VectorArrow
+                  origin={{ x: satLaunchX - centerX, y: centerY - satLaunchY }}
+                  vector={{ x: satLaunchY - centerY, y: satLaunchX - centerX }}
+                  type="velocity"
+                  sceneScale={sceneScale}
+                  pixelLength={0.45 * Math.sqrt((satLaunchX - centerX) ** 2 + (satLaunchY - centerY) ** 2)}
                 />
               </g>
             )}

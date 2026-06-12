@@ -1,13 +1,16 @@
 import { useCanvasSize } from '@/utils'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OPACITY, CHART_COLORS, CANVAS_STYLE, VECTOR_DISPLAY } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CHART_COLORS, CANVAS_STYLE, VECTOR_DISPLAY } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import {
   precomputeConstantKETrajectory,
   precomputeCurvedTrackTrajectory,
   getKEStateAtTime,
 } from '@/physics/kineticEnergy'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 /** 动能定理动画布局常量（语义化比例，禁止裸数字） */
 const KE_LAYOUT = {
@@ -285,6 +288,15 @@ export default function KineticEnergyAnimation() {
     return null
   }
 
+  const sceneConfig = useMemo((): SceneConfig => ({
+    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    originX: 0,
+    originY: 0,
+    worldWidth: canvasSize.width,
+    worldHeight: canvasSize.height,
+  }), [canvasSize.width, canvasSize.height]);
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
+
   return (
     <div ref={containerRef} className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">
       {/* 进阶模式下的 Tab 切换 */}
@@ -353,20 +365,6 @@ export default function KineticEnergyAnimation() {
             <stop offset="80%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
             <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
           </radialGradient>
-
-          {/* 规范的物理矢量箭头定义（颜色与 PHYSICS_COLORS 对齐） */}
-          <marker id="arrow-main" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <path d="M0,0 L10,3.5 L0,7 Z" fill={PHYSICS_COLORS.forceNet} />
-          </marker>
-          <marker id="arrow-velocity" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <path d="M0,0 L10,3.5 L0,7 Z" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          <marker id="arrow-gravity" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <path d="M0,0 L8,3 L0,6 Z" fill={PHYSICS_COLORS.gravity} />
-          </marker>
-          <marker id="arrow-friction" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <path d="M0,0 L8,3 L0,6 Z" fill={PHYSICS_COLORS.friction} />
-          </marker>
         </defs>
 
         {/* ══════════════════════════════════════════════ */}
@@ -862,29 +860,25 @@ export default function KineticEnergyAnimation() {
             <circle cx={objW * 0.22} cy={objH - 0.5} r={2.5} fill={colors.neutral[800]} />
             <circle cx={objW * 0.78} cy={objH - 0.5} r={2.5} fill={colors.neutral[800]} />
 
-            {/* 拉力 F 矢量（合力，使用 arrow-main） */}
+            {/* 拉力 F 矢量（合力） */}
             {showVectors && state.F > 0.1 && (
-              <line
-                x1={-Math.min(state.F * 1.5, 45)}
-                y1={objH * 0.5}
-                x2={-2}
-                y2={objH * 0.5}
-                stroke={PHYSICS_COLORS.forceNet}
-                strokeWidth={STROKE.vectorMain}
-                markerEnd="url(#arrow-main)"
+              <VectorArrow
+                origin={{ x: -Math.min(state.F * 1.5, 45), y: objH * 0.5 }}
+                vector={{ x: -1, y: 0 }}
+                type="force"
+                sceneScale={sceneScale}
+                pixelLength={Math.min(state.F * 1.5, 45) - 2}
               />
             )}
 
             {/* 速度 v 矢量 */}
             {showVectors && state.v > 0.05 && (
-              <line
-                x1={objW * 0.5}
-                y1={objH + 3.5}
-                x2={objW * 0.5 + Math.min(state.v * 4.5, 60)}
-                y2={objH + 3.5}
-                stroke={PHYSICS_COLORS.velocity}
-                strokeWidth={STROKE.vectorMain}
-                markerEnd="url(#arrow-velocity)"
+              <VectorArrow
+                origin={{ x: objW * 0.5, y: -3.5 }}
+                vector={{ x: 1, y: 0 }}
+                type="velocity"
+                sceneScale={sceneScale}
+                pixelLength={Math.min(state.v * 4.5, 60)}
               />
             )}
           </g>
@@ -904,14 +898,14 @@ export default function KineticEnergyAnimation() {
             <g>
               {/* 切向合力 F_合 矢量（从球心出发，沿切向；F<0 时反向） */}
               {Math.abs(state.F) > 0.1 && (
-                <line
-                  x1={ballCX}
-                  y1={ballCY}
-                  x2={ballCX + (state.F >= 0 ? tangentDirX : -tangentDirX) * fArrowLen}
-                  y2={ballCY + (state.F >= 0 ? tangentDirY : -tangentDirY) * fArrowLen}
-                  stroke={PHYSICS_COLORS.forceNet}
-                  strokeWidth={STROKE.vectorMain}
-                  markerEnd="url(#arrow-main)"
+                <VectorArrow
+                  origin={{ x: ballCX, y: canvasSize.height - ballCY }}
+                  vector={state.F >= 0
+                    ? { x: tangentDirX, y: -tangentDirY }
+                    : { x: -tangentDirX, y: tangentDirY }}
+                  type="force"
+                  sceneScale={sceneScale}
+                  pixelLength={fArrowLen}
                 />
               )}
 
@@ -928,28 +922,24 @@ export default function KineticEnergyAnimation() {
                   <g>
                     {/* 重力 mg（竖直向下） */}
                     {mg > 0.1 && (
-                      <line
-                        x1={ballCX}
-                        y1={ballCY}
-                        x2={ballCX}
-                        y2={ballCY + gravityLen}
-                        stroke={PHYSICS_COLORS.gravity}
+                      <VectorArrow
+                        origin={{ x: ballCX, y: canvasSize.height - ballCY }}
+                        vector={{ x: 0, y: -1 }}
+                        type="gravity"
+                        sceneScale={sceneScale}
+                        pixelLength={gravityLen}
                         strokeWidth={STROKE.vectorSub}
-                        opacity={OPACITY.vectorSub}
-                        markerEnd="url(#arrow-gravity)"
                       />
                     )}
                     {/* 摩擦力（负功，沿切向反方向） */}
                     {fFriction > 0.1 && (
-                      <line
-                        x1={ballCX}
-                        y1={ballCY}
-                        x2={ballCX - tangentDirX * frictionLen}
-                        y2={ballCY - tangentDirY * frictionLen}
-                        stroke={PHYSICS_COLORS.friction}
+                      <VectorArrow
+                        origin={{ x: ballCX, y: canvasSize.height - ballCY }}
+                        vector={{ x: tangentDirX, y: -tangentDirY }}
+                        type="friction"
+                        sceneScale={sceneScale}
+                        pixelLength={frictionLen}
                         strokeWidth={STROKE.vectorSub}
-                        opacity={OPACITY.vectorSub}
-                        markerEnd="url(#arrow-friction)"
                       />
                     )}
                   </g>
@@ -959,14 +949,12 @@ export default function KineticEnergyAnimation() {
 
             {/* ── 速度 v 矢量（由 showVectors 开关控制） ── */}
             {showVectors && state.v > 0.05 && (
-              <line
-                x1={ballCX}
-                y1={ballCY}
-                x2={ballCX + tangentDirX * vArrowLen}
-                y2={ballCY + tangentDirY * vArrowLen}
-                stroke={PHYSICS_COLORS.velocity}
-                strokeWidth={STROKE.vectorMain}
-                markerEnd="url(#arrow-velocity)"
+              <VectorArrow
+                origin={{ x: ballCX, y: canvasSize.height - ballCY }}
+                vector={{ x: tangentDirX, y: -tangentDirY }}
+                type="velocity"
+                sceneScale={sceneScale}
+                pixelLength={vArrowLen}
               />
             )}
           </g>

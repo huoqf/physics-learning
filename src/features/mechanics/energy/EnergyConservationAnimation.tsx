@@ -9,6 +9,9 @@ import {
   precomputeValleyTrajectory,
   getECStateAtTime,
 } from '@/physics/energyConservation'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 /**
  * 机械能守恒定律实验室（全新重构美化规范版）
@@ -224,6 +227,15 @@ export default function EnergyConservationAnimation() {
   const arcEndX = animCenterX + R_pix * Math.sin(arcLimitDeg * Math.PI / 180)
   const arcEndY = valleyCenterY + R_pix * Math.cos(arcLimitDeg * Math.PI / 180)
 
+  const sceneConfig = useMemo((): SceneConfig => ({
+    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    originX: 0,
+    originY: 0,
+    worldWidth: canvasSize.width,
+    worldHeight: canvasSize.height,
+  }), [canvasSize.width, canvasSize.height]);
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
+
   return (
     <div ref={containerRef} className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">
       {/* 拖拽交互提示气泡 */}
@@ -274,11 +286,6 @@ export default function EnergyConservationAnimation() {
             <stop offset="80%" stopColor={SCENE_COLORS.sphere.pendulumBob.gradient[2]} />
             <stop offset="100%" stopColor={SCENE_COLORS.sphere.pendulumBob.gradient[3]} />
           </radialGradient>
-
-          {/* 物理矢量箭头 */}
-          <marker id="arrow-velocity" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <path d="M0,0 L10,3.5 L0,7 Z" fill={PHYSICS_COLORS.velocity} />
-          </marker>
         </defs>
 
         {/* ══════════════════════════════════════════════ */}
@@ -439,15 +446,12 @@ export default function EnergyConservationAnimation() {
             
             {/* 切向速度矢量 v */}
             {showVectors && Math.abs(state.v) > 0.15 && (
-              <line
-                x1={objPos.x}
-                y1={objPos.y}
-                // 速度方向垂直于摆线（即指向切向），方向由 v 正负决定
-                x2={objPos.x + Math.cos(state.theta) * state.v * 7}
-                y2={objPos.y - Math.sin(state.theta) * state.v * 7}
-                stroke={PHYSICS_COLORS.velocity}
-                strokeWidth={STROKE.vectorMain}
-                markerEnd="url(#arrow-velocity)"
+              <VectorArrow
+                origin={{ x: objPos.x, y: -objPos.y }}
+                vector={{ x: Math.cos(state.theta) * state.v * 7, y: Math.sin(state.theta) * state.v * 7 }}
+                type="velocity"
+                sceneScale={sceneScale}
+                pixelLength={Math.sqrt((Math.cos(state.theta) * state.v * 7) ** 2 + (-Math.sin(state.theta) * state.v * 7) ** 2)}
               />
             )}
           </g>
@@ -498,14 +502,12 @@ export default function EnergyConservationAnimation() {
 
               {/* 切向速度矢量 v */}
               {showVectors && Math.abs(state.v) > 0.1 && (
-                <line
-                  x1={objW * 0.5}
-                  y1={objH + 3}
-                  x2={objW * 0.5 + state.v * 7}
-                  y2={objH + 3}
-                  stroke={PHYSICS_COLORS.velocity}
-                  strokeWidth={STROKE.vectorMain}
-                  markerEnd="url(#arrow-velocity)"
+                <VectorArrow
+                  origin={{ x: objW * 0.5, y: -(objH + 3) }}
+                  vector={{ x: state.v * 7, y: 0 }}
+                  type="velocity"
+                  sceneScale={sceneScale}
+                  pixelLength={Math.sqrt((state.v * 7) ** 2 + 0)}
                 />
               )}
             </g>

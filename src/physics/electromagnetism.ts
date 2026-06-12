@@ -653,3 +653,184 @@ export function computeCuttingEMFHandPose(vDir: number, B_out: 0 | 1): HandPoseR
   const result = computeHandPose(v, I)
   return { ...result, B_out: B_out === 1 }
 }
+
+export interface EFieldSimulationPoint {
+  t: number
+  x: number  // 物理坐标 x (m)
+  y: number  // 物理坐标 y (m)
+  vx: number // 速度 x (m/s)
+  vy: number // 速度 y (m/s)
+  ax: number // 加速度 x (m/s²)
+  ay: number // 加速度 y (m/s²)
+}
+
+/**
+ * 带电粒子在匀强电场及重力复合场中的运动轨迹模拟（数值积分）。
+ *
+ * @param U           极板间电压 (V)
+ * @param d           极板间距 (m)
+ * @param L           极板长度 (m)
+ * @param q           电荷量 (C)
+ * @param m           粒子质量 (kg)
+ * @param v0          初速度 (m/s)
+ * @param g           重力加速度 (m/s²)，0表示忽略重力
+ * @param isAC        是否为周期交变方形波
+ * @param freq        交变方形波的频率 (Hz)
+ * @param maxTime     最大模拟时间 (s)，默认 1.0s
+ * @param dt          积分步长 (s)，默认 0.0001s
+ */
+export function calculateChargeInEFieldTrajectory(options: {
+  U: number
+  d: number
+  L: number
+  q: number
+  m: number
+  v0: number
+  g: number
+  isAC: boolean
+  freq: number
+  maxTime?: number
+  dt?: number
+}): {
+  points: EFieldSimulationPoint[]
+  tEnd: number
+  hitType: 'none' | 'top' | 'bottom'
+  hitsPlate: boolean
+  xEnd: number
+  yEnd: number
+} {
+  const {
+    U,
+    d,
+    L,
+    q,
+    m,
+    v0,
+    g,
+    isAC,
+    freq,
+    maxTime = 1.0,
+    dt = 0.0001
+  } = options
+
+  const points: EFieldSimulationPoint[] = []
+  
+  let t = 0
+  let x = 0
+  let y = 0
+  let vx = v0
+  let vy = 0
+  
+  const halfGap = d / 2
+  let hitType: 'none' | 'top' | 'bottom' = 'none'
+  let hitsPlate = false
+
+  // 初始点
+  points.push({ t: 0, x: 0, y: 0, vx, vy, ax: 0, ay: 0 })
+
+  const maxSteps = Math.min(10000, Math.ceil(maxTime / dt))
+  for (let step = 0; step < maxSteps; step++) {
+    // 判断电场极性系数
+    let fieldSign = 1
+    if (isAC && freq > 0) {
+      const T = 1 / freq
+      const phase = (t % T) / T
+      fieldSign = phase < 0.5 ? 1 : -1
+    }
+
+    // 电场强度 (V/m)
+    const E = U / d
+    // 电场力 (N)
+    const FE = q * E * fieldSign
+    // 竖直加速度 (m/s²). y 轴向下为正方向
+    const ay = (m > 0) ? (FE / m + g) : 0
+    const ax = 0
+
+    // 更新最后一点的加速度
+    if (points.length > 0) {
+      points[points.length - 1].ax = ax
+      points[points.length - 1].ay = ay
+    }
+
+    // 辛欧拉积分
+    t += dt
+    vx += ax * dt
+    vy += ay * dt
+    x += vx * dt
+    y += vy * dt
+
+    points.push({ t, x, y, vx, vy, ax: 0, ay: 0 })
+
+    // 边界碰撞检测（注意：y 轴向上偏是负值，向下偏是正值）
+    // 上极板坐标为 -halfGap，下极板为 +halfGap
+    if (y <= -halfGap) {
+      hitType = 'top'
+      hitsPlate = true
+      points[points.length - 1].y = -halfGap
+      break
+    }
+    if (y >= halfGap) {
+      hitType = 'bottom'
+      hitsPlate = true
+      points[points.length - 1].y = halfGap
+      break
+    }
+    // 飞出边界检测
+    if (x >= L) {
+      break
+    }
+  }
+
+  // 确保最后一点有正确的加速度
+  if (points.length > 0) {
+    const lastPt = points[points.length - 1]
+    let fieldSign = 1
+    if (isAC && freq > 0) {
+      const T = 1 / freq
+      const phase = (lastPt.t % T) / T
+      fieldSign = phase < 0.5 ? 1 : -1
+    }
+    const E = U / d
+    const FE = q * E * fieldSign
+    lastPt.ax = 0
+    lastPt.ay = (m > 0) ? (FE / m + g) : 0
+  }
+
+  const lastPoint = points[points.length - 1]
+
+  return {
+    points,
+    tEnd: lastPoint.t,
+    hitType,
+    hitsPlate,
+    xEnd: lastPoint.x,
+    yEnd: lastPoint.y
+  }
+}
+
+export const CHARGE_EFIELD_PLAY_TIME = {
+  dc: 2.5,
+  ac: 8.0,
+} as const
+
+/**
+ * 根据极板电场模式获取目标播放时间。
+ *
+ * @param isAC 是否交变方形波
+ */
+export function getChargeInEFieldTargetPlayTime(isAC: boolean): number {
+  return isAC ? CHARGE_EFIELD_PLAY_TIME.ac : CHARGE_EFIELD_PLAY_TIME.dc
+}
+
+/**
+ * 计算动态时间慢放系数 TIME_SCALE，实现“物理参数不变、动画时间动态映射”。
+ *
+ * @param tEnd 仿真实际终止时间 (s)
+ * @param isAC 是否交变方形波
+ */
+export function getChargeInEFieldTimeScale(tEnd: number, isAC: boolean): number {
+  const targetPlayTime = getChargeInEFieldTargetPlayTime(isAC)
+  const rawScale = tEnd > 0 ? tEnd / targetPlayTime : 0.001
+  return Math.max(1e-6, rawScale)
+}
+

@@ -2,6 +2,9 @@ import { useCanvasSize, physicsToCanvasWithOrigin } from '@/utils'
 import React, { useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { calculateCircularMotion } from '@/physics'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,
@@ -35,12 +38,6 @@ const CENTRIPETAL_LAYOUT = {
   rMax: CENTRIPETAL_PARAM_BOUNDS.rMax,
   /** Canvas 安全余量 (px) */
   canvasPadding: 80,
-  /** 矢量最大绘制长度 (px) */
-  vectorMaxLength: 75,
-  /** 加速度矢量垂直偏移 (px)，沿切向偏移避免与半径线重叠 */
-  accelerationOffset: 10,
-  /** 力矢量垂直偏移 (px)，反向偏移避免与加速度矢量重叠 */
-  forceOffset: 10,
   /** 钢珠基础半径 (px) */
   steelBallBaseRadius: 12,
   /** 质量缩放半径系数 (px/kg) */
@@ -88,19 +85,28 @@ export default function CentripetalAnimation() {
 
   const ballPos = physicsToCanvasWithOrigin(x, y, centerX, centerY, scale)
 
+  const sceneConfig = useMemo((): SceneConfig => ({
+    vectorBounds: {
+      x: 0,
+      y: 0,
+      width: canvasSize.width - CENTRIPETAL_LAYOUT.canvasPadding,
+      height: canvasSize.height - CENTRIPETAL_LAYOUT.canvasPadding,
+    },
+    originX: centerX,
+    originY: centerY,
+    worldWidth: (canvasSize.width - CENTRIPETAL_LAYOUT.canvasPadding) / scale,
+    worldHeight: (canvasSize.height - CENTRIPETAL_LAYOUT.canvasPadding) / scale,
+    refMagnitudes: {
+      velocity: CENTRIPETAL_CHART_RANGE.vMax,
+      acceleration: CENTRIPETAL_CHART_RANGE.aMax,
+      force: CENTRIPETAL_CHART_RANGE.fMax,
+    },
+  }), [canvasSize.width, canvasSize.height, centerX, centerY, rMax, scale]);
+
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
+
   const isAdvanced = advancedMode === 1
   const showFaCard = isAdvanced && showWaveform === 1
-
-  // ── 2. 矢量安全映射长度（杜绝飞出屏幕 Bug） ─────────────────
-  const R_ball = CENTRIPETAL_LAYOUT.steelBallBaseRadius + m * CENTRIPETAL_LAYOUT.massRadiusScale
-  const vArrowLen = R_ball + (v / CENTRIPETAL_CHART_RANGE.vMax) * (CENTRIPETAL_LAYOUT.vectorMaxLength - R_ball)
-  const aArrowLen = R_ball + (a_c / CENTRIPETAL_CHART_RANGE.aMax) * (CENTRIPETAL_LAYOUT.vectorMaxLength - R_ball)
-  const fArrowLen = R_ball + (F_c / CENTRIPETAL_CHART_RANGE.fMax) * (CENTRIPETAL_LAYOUT.vectorMaxLength - R_ball)
-
-  // 动态自适应线宽与箭头尺寸自适应缩放（最小为 1.5px）
-  const vStrokeWidth = Math.max(1.5, CANVAS_STYLE.stroke.vectorMain * (v / CENTRIPETAL_CHART_RANGE.vMax))
-  const aStrokeWidth = Math.max(1.5, CANVAS_STYLE.stroke.vectorMain * (a_c / CENTRIPETAL_CHART_RANGE.aMax))
-  const fStrokeWidth = Math.max(1.5, CANVAS_STYLE.stroke.vectorMain * (F_c / CENTRIPETAL_CHART_RANGE.fMax))
 
   // ── 3. 右上角悬浮 F-a 画中画卡片定位 ─────────────────────
   const cardWidth = Math.max(CENTRIPETAL_LAYOUT.waveCardMinWidth, canvasSize.width * 0.35)
@@ -243,15 +249,6 @@ export default function CentripetalAnimation() {
             <stop offset="100%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[3]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[3]} />
           </radialGradient>
 
-          <marker id="arrowhead-cp-v" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          <marker id="arrowhead-cp-a" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.acceleration} />
-          </marker>
-          <marker id="arrowhead-cp-f" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.forceNet} />
-          </marker>
         </defs>
 
         {/* 辐射网格背景 */}
@@ -307,17 +304,6 @@ export default function CentripetalAnimation() {
           strokeWidth={STROKE.reference}
           strokeDasharray={DASH.axis.join(' ')}
         />
-        {/* 半径参数文本标注 */}
-        <text
-          x={(ballPos.cx + centerX) / 2}
-          y={(ballPos.cy + centerY) / 2 - 6}
-          fontSize={FONT.bodySize}
-          fill={PHYSICS_COLORS.labelTextLight}
-          fontWeight="bold"
-          textAnchor="middle"
-        >
-          r
-        </text>
 
         {/* 旋转的拟物钢球 */}
         <circle
@@ -329,83 +315,31 @@ export default function CentripetalAnimation() {
           strokeWidth={CANVAS_STYLE.stroke.objectLine}
         />
 
-        {/* 动态漂浮的质量标签 */}
-        <text
-          x={ballPos.cx}
-          y={ballPos.cy - (16 + m * CENTRIPETAL_LAYOUT.massRadiusScale)}
-          fontSize={FONT.axisSize}
-          fill={PHYSICS_COLORS.labelTextLight}
-          textAnchor="middle"
-          fontWeight="bold"
-        >
-          m = {m.toFixed(1)} kg
-        </text>
-
-        {/* 矢量箭头标注 (防出界安全映射) */}
+        {/* 矢量箭头标注 */}
         {showVectors && (
           <g>
-            {/* 线速度矢量 v (经典蓝，动态线宽与自适应缩放) */}
-            <line
-              x1={ballPos.cx}
-              y1={ballPos.cy}
-              x2={ballPos.cx + (-y / r) * vArrowLen}
-              y2={ballPos.cy + (-x / r) * vArrowLen}
-              stroke={PHYSICS_COLORS.velocity}
-              strokeWidth={vStrokeWidth}
-              markerEnd="url(#arrowhead-cp-v)"
+            {/* 线速度矢量 v */}
+            <VectorArrow
+              origin={{ x, y }}
+              vector={{ x: -y * (v / r), y: x * (v / r) }}
+              type="velocity"
+              sceneScale={sceneScale}
             />
-            <text
-              x={ballPos.cx + (-y / r) * vArrowLen - 12}
-              y={ballPos.cy + (-x / r) * vArrowLen - 5}
-              fontSize={FONT.bodySize}
-              fill={PHYSICS_COLORS.velocity}
-              fontWeight="bold"
-            >
-              v
-            </text>
-
-            {/* 向心加速度 a (红色，从球心指向圆心，动态线宽) */}
-            <line
-              x1={ballPos.cx}
-              y1={ballPos.cy}
-              x2={ballPos.cx - (x / r) * aArrowLen}
-              y2={ballPos.cy + (y / r) * aArrowLen}
-              stroke={PHYSICS_COLORS.acceleration}
-              strokeWidth={aStrokeWidth}
-              markerEnd="url(#arrowhead-cp-a)"
+            {/* 向心加速度 a */}
+            <VectorArrow
+              origin={{ x, y }}
+              vector={{ x: -x * (a_c / r), y: -y * (a_c / r) }}
+              type="acceleration"
+              sceneScale={sceneScale}
             />
-            <text
-              x={ballPos.cx - (x / r) * aArrowLen + 8}
-              y={ballPos.cy + (y / r) * aArrowLen + 12}
-              fontSize={FONT.bodySize}
-              fill={PHYSICS_COLORS.acceleration}
-              fontWeight="bold"
-            >
-              a
-            </text>
-
-            {/* 向心合外力 F (橙色，仅进阶模式) */}
+            {/* 向心合外力 F (仅进阶模式) */}
             {isAdvanced && (
-              <>
-                <line
-                  x1={ballPos.cx}
-                  y1={ballPos.cy}
-                  x2={ballPos.cx - (x / r) * fArrowLen}
-                  y2={ballPos.cy + (y / r) * fArrowLen}
-                  stroke={PHYSICS_COLORS.forceNet}
-                  strokeWidth={fStrokeWidth}
-                  markerEnd="url(#arrowhead-cp-f)"
-                />
-                <text
-                  x={ballPos.cx - (x / r) * fArrowLen + 8}
-                  y={ballPos.cy + (y / r) * fArrowLen - 4}
-                  fontSize={FONT.bodySize}
-                  fill={PHYSICS_COLORS.forceNet}
-                  fontWeight="bold"
-                >
-                  F
-                </text>
-              </>
+              <VectorArrow
+                origin={{ x, y }}
+                vector={{ x: -x * (F_c / r), y: -y * (F_c / r) }}
+                type="force"
+                sceneScale={sceneScale}
+              />
             )}
           </g>
         )}

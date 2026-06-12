@@ -1,4 +1,5 @@
 import { useCanvasSize } from '@/utils'
+import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import {
   elasticCollision,
@@ -10,6 +11,9 @@ import {
   isVelocitySwapCase,
   isHeavyLightCase,
 } from '@/physics/collision'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,
@@ -24,7 +28,6 @@ const COL_LAYOUT = {
   groundOffset: 80,
   ballBaseRadius: 16,
   massRadiusScale: 2,
-  vectorMaxLength: 80,
   velocityScale: 25,
   /** 动能柱状图最大高度 (px) */
   ekBarMaxHeight: 60,
@@ -48,6 +51,24 @@ export default function CollisionAnimation() {
 
   const isAdvanced = advancedMode === 1
   const groundY = canvasSize.height - COL_LAYOUT.groundOffset
+
+  const sceneConfig = useMemo((): SceneConfig => ({
+    vectorBounds: {
+      x: 0,
+      y: 0,
+      width: canvasSize.width - COL_LAYOUT.canvasPadding * 2,
+      height: canvasSize.height - COL_LAYOUT.canvasPadding,
+    },
+    originX: 0,
+    originY: groundY,
+    worldWidth: canvasSize.width,
+    worldHeight: canvasSize.height,
+    refMagnitudes: {
+      velocity: 12,
+    },
+  }), [canvasSize.width, canvasSize.height, groundY]);
+
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
 
   // ── 基础模式：弹性/非弹性碰撞 ──────────────────────────────
   const R_A = COL_LAYOUT.ballBaseRadius + m1 * COL_LAYOUT.massRadiusScale
@@ -157,8 +178,6 @@ export default function CollisionAnimation() {
   const mapEkBar = (ek: number) => (ek / ekMaxRef) * COL_LAYOUT.ekBarMaxHeight
 
   // 矢量映射
-  const vMaxRef = 12
-  const mapArrowLen = (val: number) => (Math.abs(val) / vMaxRef) * COL_LAYOUT.vectorMaxLength
 
   return (
     <div ref={containerRef} className="w-full h-full">
@@ -181,9 +200,6 @@ export default function CollisionAnimation() {
             <stop offset="80%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[2]} />
             <stop offset="100%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[3]} />
           </radialGradient>
-          <marker id="arrowhead-col-v" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
-          </marker>
         </defs>
 
         {/* ========== 地面线 ========== */}
@@ -239,11 +255,12 @@ export default function CollisionAnimation() {
             {showVectors && (
               <g>
                 {currentV1 !== 0 && (
-                  <line x1={posAx} y1={groundY - R_A * 2 - 10}
-                    x2={posAx + mapArrowLen(currentV1) * Math.sign(currentV1)}
-                    y2={groundY - R_A * 2 - 10}
-                    stroke={PHYSICS_COLORS.velocity} strokeWidth={STROKE.vectorMain}
-                    markerEnd="url(#arrowhead-col-v)" />
+                  <VectorArrow
+                    origin={{ x: posAx, y: R_A * 2 + 10 }}
+                    vector={{ x: currentV1, y: 0 }}
+                    type="velocity"
+                    sceneScale={sceneScale}
+                  />
                 )}
                 <text x={posAx} y={groundY - R_A * 2 - 16} fontSize={FONT.smallSize}
                   fill={PHYSICS_COLORS.velocity} textAnchor="middle" fontWeight="bold">
@@ -251,11 +268,13 @@ export default function CollisionAnimation() {
                 </text>
 
                 {currentV2 !== 0 && (
-                  <line x1={posBx} y1={groundY - R_B * 2 - 10}
-                    x2={posBx + mapArrowLen(currentV2) * Math.sign(currentV2)}
-                    y2={groundY - R_B * 2 - 10}
-                    stroke={PHYSICS_COLORS.elasticForce} strokeWidth={STROKE.vectorMain}
-                    markerEnd="url(#arrowhead-col-v)" />
+                  <VectorArrow
+                    origin={{ x: posBx, y: R_B * 2 + 10 }}
+                    vector={{ x: currentV2, y: 0 }}
+                    type="velocity"
+                    sceneScale={sceneScale}
+                    color={PHYSICS_COLORS.elasticForce}
+                  />
                 )}
                 <text x={posBx} y={groundY - R_B * 2 - 16} fontSize={FONT.smallSize}
                   fill={PHYSICS_COLORS.elasticForce} textAnchor="middle" fontWeight="bold">
@@ -324,11 +343,12 @@ export default function CollisionAnimation() {
             {showVectors && (
               <g>
                 {curVA !== 0 && (
-                  <line x1={posAAdv} y1={groundY - R_Adv * 2 - 10}
-                    x2={posAAdv + mapArrowLen(curVA) * Math.sign(curVA)}
-                    y2={groundY - R_Adv * 2 - 10}
-                    stroke={PHYSICS_COLORS.velocity} strokeWidth={STROKE.vectorMain}
-                    markerEnd="url(#arrowhead-col-v)" />
+                  <VectorArrow
+                    origin={{ x: posAAdv, y: R_Adv * 2 + 10 }}
+                    vector={{ x: curVA, y: 0 }}
+                    type="velocity"
+                    sceneScale={sceneScale}
+                  />
                 )}
                 <text x={posAAdv} y={groundY - R_Adv * 2 - 16} fontSize={FONT.smallSize}
                   fill={PHYSICS_COLORS.velocity} fontWeight="bold" textAnchor="middle">
@@ -336,11 +356,13 @@ export default function CollisionAnimation() {
                 </text>
 
                 {curVB !== 0 && (
-                  <line x1={posBAdv} y1={groundY - R_Bdv * 2 - 10}
-                    x2={posBAdv + mapArrowLen(curVB) * Math.sign(curVB)}
-                    y2={groundY - R_Bdv * 2 - 10}
-                    stroke={PHYSICS_COLORS.elasticForce} strokeWidth={STROKE.vectorMain}
-                    markerEnd="url(#arrowhead-col-v)" />
+                  <VectorArrow
+                    origin={{ x: posBAdv, y: R_Bdv * 2 + 10 }}
+                    vector={{ x: curVB, y: 0 }}
+                    type="velocity"
+                    sceneScale={sceneScale}
+                    color={PHYSICS_COLORS.elasticForce}
+                  />
                 )}
                 <text x={posBAdv} y={groundY - R_Bdv * 2 - 16} fontSize={FONT.smallSize}
                   fill={PHYSICS_COLORS.elasticForce} fontWeight="bold" textAnchor="middle">

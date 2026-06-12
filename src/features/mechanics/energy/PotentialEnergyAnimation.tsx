@@ -1,6 +1,9 @@
 import { useCanvasSize } from '@/utils'
 import { useState, useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CHART_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { KatexFormula, Spring } from '@/components/UI'
@@ -320,6 +323,15 @@ export default function PotentialEnergyAnimation() {
         { label: 'W弹', value: `${state.W.toFixed(1)} J`, color: PHYSICS_COLORS.work },
       ]
 
+  const sceneConfig = useMemo((): SceneConfig => ({
+    vectorBounds: { x: 0, y: 0, width: 600, height: 450 },
+    originX: 0,
+    originY: 0,
+    worldWidth: 600,
+    worldHeight: 450,
+  }), []);
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
+
   return (
     <div ref={containerRef} className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">
       {/* 拖拽交互提示气泡 */}
@@ -382,12 +394,6 @@ export default function PotentialEnergyAnimation() {
             <stop offset="100%" stopColor={PHYSICS_COLORS.potentialEnergy} stopOpacity="0" />
           </linearGradient>
 
-          <marker id="arrow-vector" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <path d="M0,0 L10,3.5 L0,7 Z" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          <marker id="arrow-springForce" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <path d="M0,0 L10,3.5 L0,7 Z" fill={PHYSICS_COLORS.elasticForce} />
-          </marker>
         </defs>
 
         {/* ══════════════════════════════════════════════ */}
@@ -461,14 +467,12 @@ export default function PotentialEnergyAnimation() {
 
               {/* 速度矢量箭头 */}
               {showVectors && Math.abs(state.v) > 0.15 && (
-                <line
-                  x1={animCenterX + ballR + 4}
-                  y1={toPixelY(state.pos) - ballR}
-                  x2={animCenterX + ballR + 4}
-                  y2={toPixelY(state.pos) - ballR + (state.v < 0 ? Math.min(Math.abs(state.v) * 3.5, 45) + 4 : -Math.min(state.v * 3.5, 45) - 4)}
-                  stroke={PHYSICS_COLORS.velocity}
-                  strokeWidth={STROKE.vectorMain}
-                  markerEnd="url(#arrow-vector)"
+                <VectorArrow
+                  origin={{ x: animCenterX + ballR + 4, y: -(toPixelY(state.pos) - ballR) }}
+                  vector={{ x: 0, y: state.v < 0 ? 1 : -1 }}
+                  type="velocity"
+                  sceneScale={sceneScale}
+                  pixelLength={Math.min(Math.abs(state.v) * 3.5, 45) + 4}
                 />
               )}
             </g>
@@ -558,27 +562,23 @@ export default function PotentialEnergyAnimation() {
 
               {/* 弹簧恢复力矢量 F_弹 */}
               {showVectors && Math.abs(state.pos) > 0.05 && (
-                <line
-                  x1={toPixelX(state.pos) + objW * 0.5}
-                  y1={groundY - objW * 0.45 - objW * 0.45 - 6}
-                  x2={toPixelX(state.pos) + objW * 0.5 + (state.pos > 0 ? -1 : 1) * Math.min(Math.abs(state.pos) * 15 + 10, 45)}
-                  y2={groundY - objW * 0.45 - objW * 0.45 - 6}
-                  stroke={PHYSICS_COLORS.elasticForce}
-                  strokeWidth={STROKE.vectorMain}
-                  markerEnd="url(#arrow-springForce)"
+                <VectorArrow
+                  origin={{ x: toPixelX(state.pos) + objW * 0.5, y: -(groundY - objW * 0.45 - objW * 0.45 - 6) }}
+                  vector={{ x: state.pos > 0 ? -1 : 1, y: 0 }}
+                  type="force"
+                  sceneScale={sceneScale}
+                  pixelLength={Math.min(Math.abs(state.pos) * 15 + 10, 45)}
                 />
               )}
 
               {/* 速度矢量 v */}
               {showVectors && Math.abs(state.v) > 0.1 && (
-                <line
-                  x1={toPixelX(state.pos) + objW * 0.5}
-                  y1={groundY - objW * 0.45 - objW * 0.45 - 6}
-                  x2={toPixelX(state.pos) + objW * 0.5 + (state.v > 0 ? 1 : -1) * Math.min(Math.abs(state.v) * 5 + 10, 45)}
-                  y2={groundY - objW * 0.45 - objW * 0.45 - 6}
-                  stroke={PHYSICS_COLORS.velocity}
-                  strokeWidth={STROKE.vectorMain}
-                  markerEnd="url(#arrow-vector)"
+                <VectorArrow
+                  origin={{ x: toPixelX(state.pos) + objW * 0.5, y: -(groundY - objW * 0.45 - objW * 0.45 - 6) }}
+                  vector={{ x: state.v > 0 ? 1 : -1, y: 0 }}
+                  type="velocity"
+                  sceneScale={sceneScale}
+                  pixelLength={Math.min(Math.abs(state.v) * 5 + 10, 45)}
                 />
               )}
             </g>

@@ -4,6 +4,9 @@ import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OPACITY } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { calculateWorkBasic, calculateWorkAdvanced, classifyWorkType } from '@/physics/work'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 
 /**
  * 恒力做功动画 —— "力与位移的夹角投影"
@@ -122,6 +125,15 @@ export default function WorkAnimation() {
   // ── 起始位置标记 ──
   const originX = startX
 
+  const sceneConfig = useMemo((): SceneConfig => ({
+    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    originX: 0,
+    originY: 0,
+    worldWidth: canvasSize.width,
+    worldHeight: canvasSize.height,
+  }), [canvasSize.width, canvasSize.height]);
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
+
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
@@ -135,25 +147,7 @@ export default function WorkAnimation() {
             <stop offset="0%" stopColor={SCENE_COLORS.sphere.steel.gradient[2]} />
             <stop offset="100%" stopColor={SCENE_COLORS.sphere.steel.gradient[3]} />
           </linearGradient>
-          {/* 力箭头标记 */}
-          <marker id="arrowhead-force-work" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.appliedForce} />
-          </marker>
-          <marker id="arrowhead-proj-pos" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.work} />
-          </marker>
-          <marker id="arrowhead-proj-neg" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.friction} />
-          </marker>
-          <marker id="arrowhead-fn-work" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.normalForce} />
-          </marker>
-          <marker id="arrowhead-f-friction" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.friction} />
-          </marker>
-          <marker id="arrowhead-mg-work" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.gravity} />
-          </marker>
+          {/* 力箭头标记（使用 VectorArrow 组件） */}
         </defs>
 
         {/* ── 1. 地面坐标轴 + 地标 ── */}
@@ -229,14 +223,14 @@ export default function WorkAnimation() {
         {showVectors && F > 0 && (
           <g>
             {/* 拉力 F 主箭头 */}
-            <line
-              x1={blockX + objW * 0.5}
-              y1={groundY - objH * 0.5 + floatOffset}
-              x2={blockX + objW * 0.5 + forceDx}
-              y2={groundY - objH * 0.5 + forceDy + floatOffset}
-              stroke={PHYSICS_COLORS.appliedForce}
+            <VectorArrow
+              origin={{ x: blockX + objW * 0.5, y: -(groundY - objH * 0.5 + floatOffset) }}
+              vector={{ x: forceDx, y: -forceDy }}
+              type="force"
+              sceneScale={sceneScale}
+              color={PHYSICS_COLORS.appliedForce}
               strokeWidth={STROKE.vectorMain}
-              markerEnd="url(#arrowhead-force-work)"
+              pixelLength={Math.sqrt(forceDx ** 2 + forceDy ** 2)}
             />
             {/* F 标签 */}
             <text
@@ -264,19 +258,27 @@ export default function WorkAnimation() {
                   opacity={OPACITY.guide}
                 />
                 {/* 投影矢量 Fx */}
-                <line
-                  x1={blockX + objW * 0.5}
-                  y1={groundY - objH * 0.5 + floatOffset}
-                  x2={blockX + objW * 0.5 + projEndX}
-                  y2={groundY - objH * 0.5 + floatOffset}
-                  stroke={projectionColor}
-                  strokeWidth={STROKE.vectorSub}
-                  markerEnd={
-                    workType === 'positive'
-                      ? 'url(#arrowhead-proj-pos)'
-                      : 'url(#arrowhead-proj-neg)'
-                  }
-                />
+                {workType === 'positive' ? (
+                  <VectorArrow
+                    origin={{ x: blockX + objW * 0.5, y: -(groundY - objH * 0.5 + floatOffset) }}
+                    vector={{ x: projEndX, y: 0 }}
+                    type="velocity"
+                    sceneScale={sceneScale}
+                    color={projectionColor}
+                    strokeWidth={STROKE.vectorSub}
+                    pixelLength={Math.abs(projEndX)}
+                  />
+                ) : (
+                  <VectorArrow
+                    origin={{ x: blockX + objW * 0.5, y: -(groundY - objH * 0.5 + floatOffset) }}
+                    vector={{ x: projEndX, y: 0 }}
+                    type="velocity"
+                    sceneScale={sceneScale}
+                    color={projectionColor}
+                    strokeWidth={STROKE.vectorSub}
+                    pixelLength={Math.abs(projEndX)}
+                  />
+                )}
                 {/* Fx 标签 */}
                 <text
                   x={blockX + objW * 0.5 + projEndX / 2}
@@ -339,14 +341,14 @@ export default function WorkAnimation() {
         {mode === 1 && showVectors && (
           <g>
             {/* 重力 mg 向下 */}
-            <line
-              x1={blockX + objW * 0.5}
-              y1={groundY - objH * 0.5 + floatOffset}
-              x2={blockX + objW * 0.5}
-              y2={groundY - objH * 0.5 + Math.min(advancedResult.weight * 1.5, 50) + floatOffset}
-              stroke={PHYSICS_COLORS.gravity}
+            <VectorArrow
+              origin={{ x: blockX + objW * 0.5, y: -(groundY - objH * 0.5 + floatOffset) }}
+              vector={{ x: 0, y: -Math.min(advancedResult.weight * 1.5, 50) }}
+              type="gravity"
+              sceneScale={sceneScale}
+              color={PHYSICS_COLORS.gravity}
               strokeWidth={STROKE.vectorSub}
-              markerEnd="url(#arrowhead-mg-work)"
+              pixelLength={Math.min(advancedResult.weight * 1.5, 50)}
             />
             <text
               x={blockX + objW * 0.5 - fontSize}
@@ -361,14 +363,14 @@ export default function WorkAnimation() {
             {/* 支持力 F_N 向上（未脱地时显示） */}
             {!isLiftedOff && advancedResult.F_N > 0 && (
               <g>
-                <line
-                  x1={blockX + objW * 0.5 + 8}
-                  y1={groundY + floatOffset}
-                  x2={blockX + objW * 0.5 + 8}
-                  y2={groundY - Math.min(advancedResult.F_N * 1.5, 40) + floatOffset}
-                  stroke={PHYSICS_COLORS.normalForce}
+                <VectorArrow
+                  origin={{ x: blockX + objW * 0.5 + 8, y: -(groundY + floatOffset) }}
+                  vector={{ x: 0, y: Math.min(advancedResult.F_N * 1.5, 40) }}
+                  type="normalForce"
+                  sceneScale={sceneScale}
+                  color={PHYSICS_COLORS.normalForce}
                   strokeWidth={STROKE.vectorSub}
-                  markerEnd="url(#arrowhead-fn-work)"
+                  pixelLength={Math.min(advancedResult.F_N * 1.5, 40)}
                 />
                 <text
                   x={blockX + objW * 0.5 + 8 + fontSize * 0.5}
@@ -385,14 +387,14 @@ export default function WorkAnimation() {
             {/* 摩擦力 f 向左（未脱地且有摩擦力时显示） */}
             {!isLiftedOff && advancedResult.f > 0 && (
               <g>
-                <line
-                  x1={blockX + objW * 0.3}
-                  y1={groundY - objH * 0.15 + floatOffset}
-                  x2={blockX + objW * 0.3 - Math.min(advancedResult.f * 3, 40)}
-                  y2={groundY - objH * 0.15 + floatOffset}
-                  stroke={PHYSICS_COLORS.friction}
+                <VectorArrow
+                  origin={{ x: blockX + objW * 0.3, y: -(groundY - objH * 0.15 + floatOffset) }}
+                  vector={{ x: -Math.min(advancedResult.f * 3, 40), y: 0 }}
+                  type="friction"
+                  sceneScale={sceneScale}
+                  color={PHYSICS_COLORS.friction}
                   strokeWidth={STROKE.vectorSub}
-                  markerEnd="url(#arrowhead-f-friction)"
+                  pixelLength={Math.min(advancedResult.f * 3, 40)}
                 />
                 <text
                   x={blockX + objW * 0.3 - Math.min(advancedResult.f * 3, 40) - fontSize * 0.5}

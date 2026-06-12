@@ -10,6 +10,9 @@ import {
   generateMomentumEnergyCurve,
   elasticCollision1D,
 } from '@/physics/momentum'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,
@@ -81,6 +84,25 @@ export default function MomentumAnimation() {
   const isAdvanced = advancedMode === 1
   const groundY = canvasSize.height - MOMENTUM_LAYOUT.groundOffset
   const ballCenterY = groundY - MOMENTUM_LAYOUT.ballAboveGround
+
+  const sceneConfig = useMemo((): SceneConfig => ({
+    vectorBounds: {
+      x: 0,
+      y: 0,
+      width: canvasSize.width - MOMENTUM_LAYOUT.canvasPadding * 2,
+      height: canvasSize.height - MOMENTUM_LAYOUT.canvasPadding,
+    },
+    originX: 0,
+    originY: groundY,
+    worldWidth: canvasSize.width,
+    worldHeight: canvasSize.height,
+    refMagnitudes: {
+      velocity: MOMENTUM_PARAM_BOUNDS.vMax,
+      momentum: MOMENTUM_PARAM_BOUNDS.mMax * MOMENTUM_PARAM_BOUNDS.vMax,
+    },
+  }), [canvasSize.width, canvasSize.height, groundY]);
+
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
 
   // ── 基础模式：单球 ──────────────────────────────────────────
   const p_basic = calculateMomentumScalar(m, v)
@@ -258,30 +280,6 @@ export default function MomentumAnimation() {
             <stop offset="100%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[3]} />
           </radialGradient>
 
-          {/* 速度箭头 marker */}
-          <marker id="arrowhead-mom-v" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          {/* A球速度箭头 */}
-          <marker id="arrowhead-mom-va" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          {/* B球速度箭头 */}
-          <marker id="arrowhead-mom-vb" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.elasticForce} />
-          </marker>
-          {/* A球动量箭头 */}
-          <marker id="arrowhead-mom-pa" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.momentum} />
-          </marker>
-          {/* B球动量箭头 */}
-          <marker id="arrowhead-mom-pb" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.impulse} />
-          </marker>
-          {/* 总动量箭头 */}
-          <marker id="arrowhead-mom-pt" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.forceNet} />
-          </marker>
         </defs>
 
         {/* ========== 地面线 ========== */}
@@ -298,11 +296,14 @@ export default function MomentumAnimation() {
         <line
           x1={canvasSize.width - MOMENTUM_LAYOUT.canvasPadding - MOMENTUM_LAYOUT.directionScaleLen}
           y1={groundY + 20}
-          x2={canvasSize.width - MOMENTUM_LAYOUT.canvasPadding}
+          x2={canvasSize.width - MOMENTUM_LAYOUT.canvasPadding - 8}
           y2={groundY + 20}
           stroke={PHYSICS_COLORS.axis}
           strokeWidth={STROKE.axis}
-          markerEnd="url(#arrowhead-mom-v)"
+        />
+        <polygon
+          points={`${canvasSize.width - MOMENTUM_LAYOUT.canvasPadding},${groundY + 20} ${canvasSize.width - MOMENTUM_LAYOUT.canvasPadding - 8},${groundY + 16} ${canvasSize.width - MOMENTUM_LAYOUT.canvasPadding - 8},${groundY + 24}`}
+          fill={PHYSICS_COLORS.axis}
         />
         <text
           x={canvasSize.width - MOMENTUM_LAYOUT.canvasPadding + 5}
@@ -340,27 +341,12 @@ export default function MomentumAnimation() {
 
             {/* 速度箭头 */}
             {showVectors && v > 0 && (
-              <g>
-                <line
-                  x1={basicBallX + R_basic + 4}
-                  y1={ballCenterY}
-                  x2={basicBallX + R_basic + 4 + mapArrowLen(v)}
-                  y2={ballCenterY}
-                  stroke={PHYSICS_COLORS.velocity}
-                  strokeWidth={STROKE.vectorMain}
-                  markerEnd="url(#arrowhead-mom-v)"
-                />
-                <text
-                  x={basicBallX + R_basic + 4 + mapArrowLen(v) / 2}
-                  y={ballCenterY - 8}
-                  fontSize={FONT.bodySize}
-                  fill={PHYSICS_COLORS.velocity}
-                  fontWeight="bold"
-                  textAnchor="middle"
-                >
-                  v
-                </text>
-              </g>
+              <VectorArrow
+                origin={{ x: basicBallX + R_basic + 4, y: groundY - ballCenterY }}
+                vector={{ x: v, y: 0 }}
+                type="velocity"
+                sceneScale={sceneScale}
+              />
             )}
 
             {/* 动量矩形图 */}
@@ -486,14 +472,11 @@ export default function MomentumAnimation() {
               <g>
                 {/* A球速度箭头 */}
                 {currentVA !== 0 && (
-                  <line
-                    x1={clampedPosAx}
-                    y1={ballCenterY - R_A - 20}
-                    x2={clampedPosAx + mapArrowLen(currentVA) * Math.sign(currentVA)}
-                    y2={ballCenterY - R_A - 20}
-                    stroke={PHYSICS_COLORS.velocity}
-                    strokeWidth={STROKE.vectorMain}
-                    markerEnd="url(#arrowhead-mom-va)"
+                  <VectorArrow
+                    origin={{ x: clampedPosAx, y: groundY - ballCenterY + R_A + 20 }}
+                    vector={{ x: currentVA, y: 0 }}
+                    type="velocity"
+                    sceneScale={sceneScale}
                   />
                 )}
                 <text
@@ -509,14 +492,12 @@ export default function MomentumAnimation() {
 
                 {/* B球速度箭头 */}
                 {currentVB !== 0 && (
-                  <line
-                    x1={clampedPosBx}
-                    y1={ballCenterY - R_B - 20}
-                    x2={clampedPosBx + mapArrowLen(currentVB) * Math.sign(currentVB)}
-                    y2={ballCenterY - R_B - 20}
-                    stroke={PHYSICS_COLORS.elasticForce}
-                    strokeWidth={STROKE.vectorMain}
-                    markerEnd="url(#arrowhead-mom-vb)"
+                  <VectorArrow
+                    origin={{ x: clampedPosBx, y: groundY - ballCenterY + R_B + 20 }}
+                    vector={{ x: currentVB, y: 0 }}
+                    type="velocity"
+                    sceneScale={sceneScale}
+                    color={PHYSICS_COLORS.elasticForce}
                   />
                 )}
                 <text
@@ -533,14 +514,11 @@ export default function MomentumAnimation() {
                 {/* 动量矢量轴 — 在地面下方 */}
                 {/* A球动量 */}
                 {pA !== 0 && (
-                  <line
-                    x1={clampedPosAx}
-                    y1={groundY + MOMENTUM_LAYOUT.momentumAxisY}
-                    x2={clampedPosAx + mapArrowLen(pA) * Math.sign(pA)}
-                    y2={groundY + MOMENTUM_LAYOUT.momentumAxisY}
-                    stroke={PHYSICS_COLORS.momentum}
-                    strokeWidth={STROKE.vectorMain}
-                    markerEnd="url(#arrowhead-mom-pa)"
+                  <VectorArrow
+                    origin={{ x: clampedPosAx, y: -(groundY + MOMENTUM_LAYOUT.momentumAxisY - groundY) }}
+                    vector={{ x: pA, y: 0 }}
+                    type="momentum"
+                    sceneScale={sceneScale}
                   />
                 )}
                 <text x={clampedPosAx} y={groundY + MOMENTUM_LAYOUT.momentumAxisY - 6} fontSize={FONT.smallSize} fill={PHYSICS_COLORS.momentum} textAnchor="middle">
@@ -549,14 +527,12 @@ export default function MomentumAnimation() {
 
                 {/* B球动量 */}
                 {pB !== 0 && (
-                  <line
-                    x1={clampedPosBx}
-                    y1={groundY + MOMENTUM_LAYOUT.momentumAxisY}
-                    x2={clampedPosBx + mapArrowLen(pB) * Math.sign(pB)}
-                    y2={groundY + MOMENTUM_LAYOUT.momentumAxisY}
-                    stroke={PHYSICS_COLORS.impulse}
-                    strokeWidth={STROKE.vectorMain}
-                    markerEnd="url(#arrowhead-mom-pb)"
+                  <VectorArrow
+                    origin={{ x: clampedPosBx, y: -(groundY + MOMENTUM_LAYOUT.momentumAxisY - groundY) }}
+                    vector={{ x: pB, y: 0 }}
+                    type="momentum"
+                    sceneScale={sceneScale}
+                    color={PHYSICS_COLORS.impulse}
                   />
                 )}
                 <text x={clampedPosBx} y={groundY + MOMENTUM_LAYOUT.momentumAxisY - 6} fontSize={FONT.smallSize} fill={PHYSICS_COLORS.impulse} textAnchor="middle">
@@ -565,14 +541,12 @@ export default function MomentumAnimation() {
 
                 {/* 总动量 — 在质心位置下方 */}
                 {pTotal !== 0 && (
-                  <line
-                    x1={xCm}
-                    y1={groundY + MOMENTUM_LAYOUT.totalMomentumAxisY}
-                    x2={xCm + mapArrowLen(pTotal) * Math.sign(pTotal)}
-                    y2={groundY + MOMENTUM_LAYOUT.totalMomentumAxisY}
-                    stroke={PHYSICS_COLORS.forceNet}
-                    strokeWidth={STROKE.vectorMain * 1.2}
-                    markerEnd="url(#arrowhead-mom-pt)"
+                  <VectorArrow
+                    origin={{ x: xCm, y: -(groundY + MOMENTUM_LAYOUT.totalMomentumAxisY - groundY) }}
+                    vector={{ x: pTotal, y: 0 }}
+                    type="momentum"
+                    sceneScale={sceneScale}
+                    color={PHYSICS_COLORS.forceNet}
                   />
                 )}
                 <text x={xCm} y={groundY + MOMENTUM_LAYOUT.totalMomentumAxisY - 6} fontSize={FONT.smallSize} fill={PHYSICS_COLORS.forceNet} textAnchor="middle" fontWeight="bold">

@@ -2,6 +2,9 @@ import { useMemo } from 'react'
 import { DASH, FONT, OPACITY, PHYSICS_COLORS, STROKE } from '@/theme/physics'
 import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
 import { useCanvasSize } from '@/utils/useCanvasSize'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { createSceneScale } from '@/scene/SceneScale'
+import type { SceneConfig } from '@/scene/SceneConfig'
 import type { ForceMotionState } from '@/physics'
 import {
   FORCE_MOTION_OBJECT_SIZE_RATIO,
@@ -87,24 +90,21 @@ export default function ForceMotionSandbox({ state, trajectory }: ForceMotionSan
     }
   }, [height, state, trajectory, width])
 
+  const sceneConfig = useMemo((): SceneConfig => ({
+    vectorBounds: { x: 0, y: 0, width, height },
+    originX: 0,
+    originY: 0,
+    worldWidth: width,
+    worldHeight: height,
+  }), [width, height]);
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
+
   const trackPath = pathFrom(view.track)
 
   return (
     <div ref={containerRef} className="w-full h-full bg-white rounded-xl border border-neutral-100 overflow-hidden">
       <svg width={width} height={height} className="w-full h-full select-none" role="img" aria-label="力与运动探究沙箱">
         <defs>
-          {/* 合外力箭头 — 橙色 */}
-          <marker id="fm-arrow-force" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <path d="M0,0 L10,3.5 L0,7 Z" fill={PHYSICS_COLORS.forceNet} />
-          </marker>
-          {/* 速度箭头 — 蓝色 */}
-          <marker id="fm-arrow-velocity" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <path d="M0,0 L8,3 L0,6 Z" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          {/* 加速度箭头 — 红色 */}
-          <marker id="fm-arrow-accel" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <path d="M0,0 L8,3 L0,6 Z" fill={PHYSICS_COLORS.acceleration} />
-          </marker>
         </defs>
 
         {/* 坐标网格 */}
@@ -148,14 +148,12 @@ export default function ForceMotionSandbox({ state, trajectory }: ForceMotionSan
         </g>
 
         {/* 合外力矢量 F — 橙色 */}
-        <line
-          x1={view.body.cx}
-          y1={view.body.cy}
-          x2={view.body.cx + view.forceVector.x}
-          y2={view.body.cy + view.forceVector.y}
-          stroke={PHYSICS_COLORS.forceNet}
-          strokeWidth={STROKE.vectorMain}
-          markerEnd="url(#fm-arrow-force)"
+        <VectorArrow
+          origin={{ x: view.body.cx, y: -view.body.cy }}
+          vector={{ x: view.forceVector.x, y: -view.forceVector.y }}
+          type="force"
+          sceneScale={sceneScale}
+          pixelLength={Math.sqrt(view.forceVector.x ** 2 + view.forceVector.y ** 2)}
         />
         <text
           x={view.body.cx + view.forceVector.x + FONT.small}
@@ -165,14 +163,12 @@ export default function ForceMotionSandbox({ state, trajectory }: ForceMotionSan
         >F</text>
 
         {/* 速度矢量 v — 蓝色 */}
-        <line
-          x1={view.body.cx}
-          y1={view.body.cy}
-          x2={view.body.cx + view.speedVector.x}
-          y2={view.body.cy + view.speedVector.y}
-          stroke={PHYSICS_COLORS.velocity}
-          strokeWidth={STROKE.vectorSub}
-          markerEnd="url(#fm-arrow-velocity)"
+        <VectorArrow
+          origin={{ x: view.body.cx, y: -view.body.cy }}
+          vector={{ x: view.speedVector.x, y: -view.speedVector.y }}
+          type="velocity"
+          sceneScale={sceneScale}
+          pixelLength={Math.sqrt(view.speedVector.x ** 2 + view.speedVector.y ** 2)}
         />
         <text
           x={view.body.cx + view.speedVector.x + FONT.small}
@@ -182,14 +178,12 @@ export default function ForceMotionSandbox({ state, trajectory }: ForceMotionSan
         >v</text>
 
         {/* 加速度矢量 a — 红色 */}
-        <line
-          x1={view.body.cx}
-          y1={view.body.cy}
-          x2={view.body.cx + view.accelVector.x}
-          y2={view.body.cy + view.accelVector.y}
-          stroke={PHYSICS_COLORS.acceleration}
-          strokeWidth={STROKE.vectorSub}
-          markerEnd="url(#fm-arrow-accel)"
+        <VectorArrow
+          origin={{ x: view.body.cx, y: -view.body.cy }}
+          vector={{ x: view.accelVector.x, y: -view.accelVector.y }}
+          type="acceleration"
+          sceneScale={sceneScale}
+          pixelLength={Math.sqrt(view.accelVector.x ** 2 + view.accelVector.y ** 2)}
         />
         <text
           x={view.body.cx + view.accelVector.x + FONT.small}
