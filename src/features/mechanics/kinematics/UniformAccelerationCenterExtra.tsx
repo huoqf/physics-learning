@@ -12,10 +12,34 @@ import {
 } from '@/theme/physics'
 import { useUniformAccelerationPhysics } from './useUniformAccelerationPhysics'
 import { AnimationControls } from '@/components/UI'
+import { SportsCar } from '@/components/Physics/SportsCar'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
+
+/**
+ * 频闪虚影 (GhostCar)
+ * 遵循 project_rules.md 视觉规范，仅本地复用。
+ */
+function GhostCar({ x, y, width = 56, height = 26, isHighlighted }: { x: number, y: number, width?: number, height?: number, isHighlighted?: boolean }) {
+  const scaleX = width / 56;
+  const scaleY = height / 26;
+  return (
+    <g transform={`translate(${x}, ${y}) scale(${scaleX}, ${scaleY})`}>
+      <path
+        d="M 2,22 Q 4,11 14,9 L 22,5 Q 32,3 40,9 L 50,13 Q 54,17 54,22 Z"
+        fill="none"
+        stroke={isHighlighted ? PHYSICS_COLORS.referencePoint : PHYSICS_COLORS.objectStroke}
+        strokeWidth={isHighlighted ? 2 : 1}
+        strokeDasharray="3 3"
+      />
+      {/* 轮子 */}
+      <circle cx={12.32} cy={22} r={5} fill="none" stroke={PHYSICS_COLORS.objectStroke} strokeWidth={0.5} strokeDasharray="1 1" />
+      <circle cx={43.68} cy={22} r={5} fill="none" stroke={PHYSICS_COLORS.objectStroke} strokeWidth={0.5} strokeDasharray="1 1" />
+    </g>
+  );
+}
 
 /**
  * 匀变速直线运动 · 进阶模式 CenterExtra
@@ -246,22 +270,14 @@ function StroboscopicAnimation({
 
         {/* 频闪虚影 (精密虚线线框车) */}
         {flashGhosts.map((ghost) => (
-          <g key={`ghost-${ghost.index}`} opacity={ghost.opacity}>
-            <rect
-              x={ghost.px}
-              y={groundY - objH}
-              width={objW}
-              height={objH}
-              rx={3}
-              fill="none"
-              stroke={ghost.isHighlighted ? PHYSICS_COLORS.referencePoint : PHYSICS_COLORS.objectStroke}
-              strokeWidth={ghost.isHighlighted ? 2 : 1}
-              strokeDasharray="3 3"
-            />
-            {/* 车轮虚圈 */}
-            <circle cx={ghost.px + objW * 0.25} cy={groundY - 2} r={objH * 0.18} fill="none" stroke={PHYSICS_COLORS.objectStroke} strokeWidth={0.5} strokeDasharray="1 1" />
-            <circle cx={ghost.px + objW * 0.75} cy={groundY - 2} r={objH * 0.18} fill="none" stroke={PHYSICS_COLORS.objectStroke} strokeWidth={0.5} strokeDasharray="1 1" />
-          </g>
+          <GhostCar
+            key={`ghost-${ghost.index}`}
+            x={ghost.px}
+            y={groundY - objH}
+            width={objW}
+            height={objH}
+            isHighlighted={ghost.isHighlighted}
+          />
         ))}
 
         {/* 逐差段位移标注线 */}
@@ -328,38 +344,16 @@ function StroboscopicAnimation({
         )}
 
         {/* 当前流线工程小车 */}
-        <g transform={`translate(${currentX}, ${groundY - objH})`}>
-          {/* 空气层流线 */}
-          {time > 0 && (
-            <g opacity={0.5} transform={`translate(-10, 0)`}>
-              <line x1={-15 - physics.v * 0.1} y1="3" x2="-2" y2="3" stroke={PHYSICS_COLORS.velocityY} strokeWidth={1} strokeDasharray="3 2" />
-              <line x1="-22" y1="9" x2="-4" y2="9" stroke={PHYSICS_COLORS.velocityY} strokeWidth={1.5} />
-              <line x1={-10 - physics.v * 0.08} y1="15" x2="-2" y2="15" stroke={PHYSICS_COLORS.velocityY} strokeWidth={1} strokeDasharray="3 2" />
-            </g>
-          )}
-          {/* 小车车身 */}
-          <path
-            d={`M 2,${objH - 4} Q 4,2 12,2 L 24,2 Q 32,2 38,6 L 40,${objH - 4} Z`}
-            fill={PHYSICS_COLORS.objectFillNeutral}
-            stroke={PHYSICS_COLORS.objectStroke}
-            strokeWidth={STROKE.objectLine}
+        {!isOffscreen && (
+          <SportsCar
+            x={currentX}
+            y={groundY - objH}
+            width={objW}
+            height={objH}
+            velocity={physics.v}
+            time={time}
           />
-          {/* 车轮旋转 */}
-          <g transform={`translate(${objW * 0.25}, ${objH - 2})`}>
-            <circle cx="0" cy="0" r={objH * 0.18} fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1.5} />
-            <g transform={`rotate(${(physics.v * time * 45) % 360})`}>
-              <line x1={-objH * 0.18} y1="0" x2={objH * 0.18} y2="0" stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-              <line x1="0" y1={-objH * 0.18} x2="0" y2={objH * 0.18} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-            </g>
-          </g>
-          <g transform={`translate(${objW * 0.75}, ${objH - 2})`}>
-            <circle cx="0" cy="0" r={objH * 0.18} fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1.5} />
-            <g transform={`rotate(${(physics.v * time * 45) % 360})`}>
-              <line x1={-objH * 0.18} y1="0" x2={objH * 0.18} y2="0" stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-              <line x1="0" y1={-objH * 0.18} x2="0" y2={objH * 0.18} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-            </g>
-          </g>
-        </g>
+        )}
 
         {/* 速度及加速度矢量 */}
         {showVectors && Math.abs(physics.v) > 0.1 && (

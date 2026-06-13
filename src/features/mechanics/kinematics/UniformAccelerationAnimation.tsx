@@ -11,6 +11,7 @@ import {
   FONT,
 } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { SportsCar } from '@/components/Physics/SportsCar'
 import { VectorDefs, markerId } from '@/components/Physics/VectorDefs'
 import { selectMarkerTier } from '@/theme/physics/vectorStyle'
 import { createSceneScale } from '@/scene/SceneScale'
@@ -526,43 +527,14 @@ export default function UniformAccelerationAnimation() {
 
         {/* 7. 工程线框风格小车 */}
         {!isOffscreen && (
-          <g transform={`translate(${currentX}, ${groundY - objH})`}>
-            {/* 空气流动速度层流线 (流流气流，无游戏粒子) */}
-            {time > 0 && (
-              <g opacity={0.5} transform={`translate(-10, 0)`}>
-                <line x1={-15 - v * 0.1} y1="4" x2="-2" y2="4" stroke={PHYSICS_COLORS.velocityY} strokeWidth={1} strokeDasharray="3 2" />
-                <line x1={-25 - v * 0.15} y1="10" x2="-4" y2="10" stroke={PHYSICS_COLORS.velocityY} strokeWidth={1.5} />
-                <line x1={-12 - v * 0.08} y1="16" x2="-2" y2="16" stroke={PHYSICS_COLORS.velocityY} strokeWidth={1} strokeDasharray="3 2" />
-              </g>
-            )}
-            {/* 小车流线机身 */}
-            <path
-              d={`M 2,${objH - 4} Q 4,2 12,2 L 24,2 Q 32,2 38,6 L 40,${objH - 4} Z`}
-              fill={PHYSICS_COLORS.objectFillNeutral}
-              stroke={PHYSICS_COLORS.objectStroke}
-              strokeWidth={STROKE.objectLine}
-            />
-            {/* 车窗 */}
-            <rect x={objW * 0.45} y={4} width={objW * 0.25} height={objH * 0.35} rx={1} fill={PHYSICS_COLORS.grid} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-            
-            {/* 十字辐条滚转车轮 */}
-            {/* 前轮 */}
-            <g transform={`translate(${objW * 0.25}, ${objH - 2})`}>
-              <circle cx="0" cy="0" r={objH * 0.18} fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1.5} />
-              <g transform={`rotate(${(v * time * 45) % 360})`}>
-                <line x1={-objH * 0.18} y1="0" x2={objH * 0.18} y2="0" stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-                <line x1="0" y1={-objH * 0.18} x2="0" y2={objH * 0.18} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-              </g>
-            </g>
-            {/* 后轮 */}
-            <g transform={`translate(${objW * 0.75}, ${objH - 2})`}>
-              <circle cx="0" cy="0" r={objH * 0.18} fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1.5} />
-              <g transform={`rotate(${(v * time * 45) % 360})`}>
-                <line x1={-objH * 0.18} y1="0" x2={objH * 0.18} y2="0" stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-                <line x1="0" y1={-objH * 0.18} x2="0" y2={objH * 0.18} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-              </g>
-            </g>
-          </g>
+          <SportsCar
+            x={currentX}
+            y={groundY - objH}
+            width={objW}
+            height={objH}
+            velocity={v}
+            time={time}
+          />
         )}
 
         {/* 速度及加速度矢量箭头 */}
