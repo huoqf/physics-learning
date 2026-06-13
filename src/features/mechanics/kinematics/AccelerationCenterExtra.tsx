@@ -6,6 +6,7 @@ import { SVG_FILTER } from '@/theme/physics/canvasStyle'
 import { AnimationControls } from '@/components/UI'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { SportsCar } from '@/components/Physics/SportsCar'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
@@ -15,8 +16,8 @@ const LAYOUT = {
   ANIMATION_HEIGHT_RATIO: 0.5,
   CHART_PADDING_RATIO: 0.06,
   ROAD_Y_RATIO: 0.72,
-  VEHICLE_WIDTH_RATIO: 0.07,
-  VEHICLE_HEIGHT_RATIO: 0.04,
+  VEHICLE_WIDTH: 56,
+  VEHICLE_HEIGHT: 26,
   MAX_TIME: 20,
   XT_X_MAX: 20,
   VT_X_MAX: 20,
@@ -148,8 +149,6 @@ export default function AccelerationCenterExtra() {
   const chartHeight = containerSize.height * LAYOUT.CHART_HEIGHT_RATIO
   const animHeight = containerSize.height * LAYOUT.ANIMATION_HEIGHT_RATIO
   const chartWidth = (containerSize.width - padding * 3) / 2
-  const vehicleW = containerSize.width * LAYOUT.VEHICLE_WIDTH_RATIO
-  const vehicleH = containerSize.width * LAYOUT.VEHICLE_HEIGHT_RATIO
 
   // ── x-t 图坐标转换 ──
   const xtYMax = Math.max(deltaX0 + vA * effectiveMaxTime, deltaX0 + 50)
@@ -553,17 +552,17 @@ export default function AccelerationCenterExtra() {
           {time > 0 && (
             <g>
               <line
-                x1={policeX + vehicleW}
-                y1={roadY - vehicleH * 0.5}
+                x1={policeX + LAYOUT.VEHICLE_WIDTH}
+                y1={roadY - LAYOUT.VEHICLE_HEIGHT * 0.5}
                 x2={carX}
-                y2={roadY - vehicleH * 0.5}
+                y2={roadY - LAYOUT.VEHICLE_HEIGHT * 0.5}
                 stroke={state.deltaX > deltaX0 ? PHYSICS_COLORS.acceleration : PHYSICS_COLORS.velocity}
                 strokeWidth={STROKE.reference}
                 strokeDasharray={DASH.reference.join(' ')}
               />
               <text
-                x={(policeX + vehicleW + carX) / 2}
-                y={roadY - vehicleH * 0.5 - 6}
+                x={(policeX + LAYOUT.VEHICLE_WIDTH + carX) / 2}
+                y={roadY - LAYOUT.VEHICLE_HEIGHT * 0.5 - 6}
                 fontSize={FONT.small}
                 fill={state.deltaX > deltaX0 ? PHYSICS_COLORS.acceleration : PHYSICS_COLORS.velocity}
                 textAnchor="middle"
@@ -575,81 +574,67 @@ export default function AccelerationCenterExtra() {
           )}
 
           {/* 轿车 A */}
-          <g transform={`translate(${carX}, ${roadY - vehicleH})`}>
-            {/* 轿车车身 */}
-            <path
-              d={`M 2,${vehicleH - 4} Q 4,2 12,2 L ${vehicleW * 0.6},2 Q ${vehicleW * 0.75},2 ${vehicleW * 0.85},6 L ${vehicleW - 2},${vehicleH - 4} Z`}
-              fill={PHYSICS_COLORS.objectFillNeutral}
-              stroke={PHYSICS_COLORS.objectStroke}
-              strokeWidth={STROKE.objectLine}
-            />
-            {/* 车窗 */}
-            <rect x={vehicleW * 0.35} y={4} width={vehicleW * 0.25} height={vehicleH * 0.3} rx={1} fill={PHYSICS_COLORS.grid} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-            {/* 车轮 */}
-            <g transform={`translate(${vehicleW * 0.25}, ${vehicleH - 3})`}>
-              <circle cx="0" cy="0" r={vehicleH * 0.15} fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1.5} />
-            </g>
-            <g transform={`translate(${vehicleW * 0.75}, ${vehicleH - 3})`}>
-              <circle cx="0" cy="0" r={vehicleH * 0.15} fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1.5} />
-            </g>
-            {/* 标注 */}
-            <text x={vehicleW / 2} y={-6} fontSize={FONT.small} fill={PHYSICS_COLORS.displacement} textAnchor="middle" fontWeight="bold">轿车</text>
-          </g>
+          <SportsCar
+            x={carX}
+            y={roadY - LAYOUT.VEHICLE_HEIGHT}
+            velocity={vA}
+            time={time}
+            width={LAYOUT.VEHICLE_WIDTH}
+            height={LAYOUT.VEHICLE_HEIGHT}
+          />
 
           {/* 警车 B */}
-          <g transform={`translate(${policeX}, ${roadY - vehicleH})`}>
-            {/* 反应期光晕 */}
-            {state.phase === 'reaction' && (
-              <circle cx={vehicleW / 2} cy={vehicleH / 2} r={vehicleW * 0.8} fill="none" stroke={PHYSICS_COLORS.referencePoint} strokeWidth={1} opacity={0.4}>
-                <animate attributeName="r" values={`${vehicleW * 0.6};${vehicleW * 0.9};${vehicleW * 0.6}`} dur="1.5s" repeatCount="indefinite" />
-                <animate attributeName="opacity" values="0.6;0.2;0.6" dur="1.5s" repeatCount="indefinite" />
-              </circle>
-            )}
-            {/* 警车身 */}
-            <path
-              d={`M 2,${vehicleH - 4} Q 4,2 12,2 L ${vehicleW * 0.6},2 Q ${vehicleW * 0.75},2 ${vehicleW * 0.85},6 L ${vehicleW - 2},${vehicleH - 4} Z`}
-              fill={PHYSICS_COLORS.objectFill}
-              stroke={PHYSICS_COLORS.objectStroke}
-              strokeWidth={STROKE.objectLine}
-            />
-            {/* 警灯 */}
-            <rect x={vehicleW * 0.3} y={-3} width={vehicleW * 0.15} height={4} rx={1} fill="#EF4444" />
-            <rect x={vehicleW * 0.5} y={-3} width={vehicleW * 0.15} height={4} rx={1} fill="#3B82F6" />
-            {/* 车轮 */}
-            <g transform={`translate(${vehicleW * 0.25}, ${vehicleH - 3})`}>
-              <circle cx="0" cy="0" r={vehicleH * 0.15} fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1.5} />
-            </g>
-            <g transform={`translate(${vehicleW * 0.75}, ${vehicleH - 3})`}>
-              <circle cx="0" cy="0" r={vehicleH * 0.15} fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1.5} />
-            </g>
-            {/* 标注 */}
-            <text x={vehicleW / 2} y={-6} fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} textAnchor="middle" fontWeight="bold">警车</text>
-          </g>
+          <SportsCar
+            x={policeX}
+            y={roadY - LAYOUT.VEHICLE_HEIGHT}
+            police={true}
+            velocity={state.vB}
+            time={time}
+            width={LAYOUT.VEHICLE_WIDTH}
+            height={LAYOUT.VEHICLE_HEIGHT}
+            fill={PHYSICS_COLORS.objectFill}
+          />
+          
+          {/* 反应期光晕 (特定逻辑) */}
+          {time > 0 && state.phase === 'reaction' && (
+            <circle 
+              cx={policeX + LAYOUT.VEHICLE_WIDTH/2} 
+              cy={roadY - LAYOUT.VEHICLE_HEIGHT/2} 
+              r={LAYOUT.VEHICLE_WIDTH * 0.8} 
+              fill="none" 
+              stroke={PHYSICS_COLORS.referencePoint} 
+              strokeWidth={1} 
+              opacity={0.4}
+            >
+              <animate attributeName="r" values={`${LAYOUT.VEHICLE_WIDTH * 0.6};${LAYOUT.VEHICLE_WIDTH * 0.9};${LAYOUT.VEHICLE_WIDTH * 0.6}`} dur="1.5s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.6;0.2;0.6" dur="1.5s" repeatCount="indefinite" />
+            </circle>
+          )}
 
           {/* 速度矢量 */}
           {time > 0 && (
             <g>
               {/* 轿车速度矢量 */}
               <VectorArrow
-                origin={{ x: carX + vehicleW + 4, y: -(roadY - vehicleH * 0.5) }}
+                origin={{ x: carX + LAYOUT.VEHICLE_WIDTH + 4, y: -(roadY - LAYOUT.VEHICLE_HEIGHT * 0.5) }}
                 vector={{ x: vA, y: 0 }}
                 type="velocity"
                 sceneScale={sceneScale}
                 strokeWidth={STROKE.vectorMain}
               />
-              <text x={carX + vehicleW + 8 + sceneScale.maxVectorLength * 0.4} y={roadY - vehicleH * 0.5 + 4} fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v_A</text>
+              <text x={carX + LAYOUT.VEHICLE_WIDTH + 8 + sceneScale.maxVectorLength * 0.4} y={roadY - LAYOUT.VEHICLE_HEIGHT * 0.5 + 4} fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v_A</text>
 
               {/* 警车速度矢量 */}
               {state.vB > 0.1 && (
                 <g>
                   <VectorArrow
-                    origin={{ x: policeX + vehicleW + 4, y: -(roadY - vehicleH * 0.5) }}
+                    origin={{ x: policeX + LAYOUT.VEHICLE_WIDTH + 4, y: -(roadY - LAYOUT.VEHICLE_HEIGHT * 0.5) }}
                     vector={{ x: state.vB, y: 0 }}
                     type="velocity"
                     sceneScale={sceneScale}
                     strokeWidth={STROKE.vectorMain}
                   />
-                  <text x={policeX + vehicleW + 8 + sceneScale.maxVectorLength * 0.4} y={roadY - vehicleH * 0.5 + 4} fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v_B</text>
+                  <text x={policeX + LAYOUT.VEHICLE_WIDTH + 8 + sceneScale.maxVectorLength * 0.4} y={roadY - LAYOUT.VEHICLE_HEIGHT * 0.5 + 4} fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v_B</text>
                 </g>
               )}
             </g>
@@ -674,7 +659,7 @@ export default function AccelerationCenterExtra() {
           {/* 警车加速度矢量（加速阶段显示，最高速后同步消失） */}
           {state.phase === 'accelerating' && state.aB_current > 0.01 && (
             <VectorArrow
-              origin={{ x: policeX + vehicleW * 0.5, y: -(roadY - vehicleH - 8) }}
+              origin={{ x: policeX + LAYOUT.VEHICLE_WIDTH * 0.5, y: -(roadY - LAYOUT.VEHICLE_HEIGHT - 8) }}
               vector={{ x: state.aB_current, y: 0 }}
               type="acceleration"
               sceneScale={sceneScale}

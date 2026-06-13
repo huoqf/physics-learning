@@ -18,6 +18,11 @@ export interface SportsCarProps extends Omit<SVGProps<SVGGElement>, 'width' | 'h
    */
   y: number;
   /**
+   * 是否渲染为警车。
+   * @default false
+   */
+  police?: boolean;
+  /**
    * 跑车的速度值，用于计算空气尾流长度和车轮转动角度。
    * 单位：m/s。
    * @default 0
@@ -80,6 +85,7 @@ export interface SportsCarProps extends Omit<SVGProps<SVGGElement>, 'width' | 'h
 export function SportsCar({
   x,
   y,
+  police = false,
   velocity = 0,
   time = 0,
   width = 56,
@@ -150,6 +156,13 @@ export function SportsCar({
           stroke={bodyStroke}
           strokeWidth={bodyStrokeWidth}
         />
+        {/* 警灯 (仅警车可见) */}
+        {police && (
+          <g>
+            <rect x="20" y="5" width="6" height="4" rx="1" fill="#EF4444" />
+            <rect x="28" y="5" width="6" height="4" rx="1" fill="#3B82F6" />
+          </g>
+        )}
         {/* 精密十字辐条车轮，随速度转动 */}
         {/* 车轮 1 */}
         <g transform="translate(12.32, 22)">

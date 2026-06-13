@@ -18,26 +18,8 @@ import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { Ball } from '@/components/Physics/Ball'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
-
-// ─── 物体材质参数 ──────────────────────────────────────────────────────────────
-const MATERIAL = {
-  ironBall:  { mass: 0.5,   baseDragK: 0.001, label: '铁球' },
-  coin:      { mass: 0.01,  baseDragK: 0.01,  label: '硬币' },
-  feather:   { mass: 0.003, baseDragK: 0.02,  label: '羽毛' },
-  paper:     { mass: 0.005, baseDragK: 0.015, label: '纸片' },
-} as const
-
-type MaterialA = keyof Pick<typeof MATERIAL, 'ironBall' | 'coin'>
-type MaterialB = keyof Pick<typeof MATERIAL, 'feather' | 'paper'>
-
-/** 牛顿管物理高度 (m) */
-const TUBE_PHYSICAL_HEIGHT = 2.0
-
-/** 撞击波纹持续时间（秒） */
-const RIPPLE_DURATION = 0.5
-
-/** 撞击波纹最大半径 */
-const RIPPLE_MAX_RADIUS = 30
+import { MATERIAL, TUBE_PHYSICAL_HEIGHT, RIPPLE_DURATION, RIPPLE_MAX_RADIUS, MaterialA, MaterialB } from './freeFallConfig'
+import { useFreeFallLayout } from './useFreeFallLayout'
 
 // ─── 撞击波纹组件 ─────────────────────────────────────────────────────────────
 interface RippleProps {
@@ -84,29 +66,17 @@ export default function FreeFallAnimation() {
   const [rippleA, setRippleA] = useState<{ x: number; y: number; time: number } | null>(null)
   const [rippleB, setRippleB] = useState<{ x: number; y: number; time: number } | null>(null)
 
-  // ── 布局分区（左动画 + 右数据）────────────────────────────────────────
-  const stageRatio = 0.5
-  const stageWidth = canvasSize.width * stageRatio
-  const gapWidth = canvasSize.width * 0.02
-  const dataX = stageWidth + gapWidth
-  const dataWidth = canvasSize.width - dataX
-
-  // ── 动画舞台（左侧）───────────────────────────────────────────────────────
-  const tubePadX = stageWidth * 0.15
-  const tubeLeft = tubePadX
-  const tubeRight = stageWidth - tubePadX
-  const tubeWidth = tubeRight - tubeLeft
-  const tubeTop = canvasSize.height * 0.1
-  const tubeBottom = canvasSize.height * 0.88
-  const tubeHeight = tubeBottom - tubeTop
-
-  const originY = tubeTop + 20
-  const groundY = tubeBottom - 10
-  const stageHeight = groundY - originY
-
-  // 物体 X 位置（管内并排）
-  const ballX = tubeLeft + tubeWidth * 0.35
-  const featherX = tubeLeft + tubeWidth * 0.65
+  // ── 布局计算 ──────────────────────────────────────────────────────────
+  const {
+    stageWidth, dataX, dataWidth,
+    tubeLeft, tubeRight, tubeWidth,
+    tubeTop, tubeBottom, tubeHeight,
+    originY, groundY, stageHeight,
+    ballX, featherX,
+    vtChartTop, vtChartHeight,
+    vtInnerPad, vtInnerW, vtInnerH,
+    vtToX, vtToY,
+  } = useFreeFallLayout(canvasSize)
 
   // ── 动态 scale ───────────────────────────────────────────────────────────
   const maxFallHeight = TUBE_PHYSICAL_HEIGHT
@@ -279,19 +249,7 @@ export default function FreeFallAnimation() {
     return { vtVMax: vMax, vtTickStep: tickStep, xMax: clampedXMax }
   }, [v0, g, groundTimeA])
 
-  // ── v-t 图布局 ────────────────────────────────────────────────────────
-  const vtChartTop = canvasSize.height * 0.03
-  const vtChartHeight = canvasSize.height * 0.62
-  const vtInnerPad = { left: 50, right: 40, top: 35, bottom: 40 }
-  const vtInnerW = dataWidth - vtInnerPad.left - vtInnerPad.right
-  const vtInnerH = vtChartHeight - vtInnerPad.top - vtInnerPad.bottom
-
-  const vtToX = (t: number) => vtInnerPad.left + (t / xMax) * vtInnerW
-  const vtToY = (v: number) => {
-    const clampedV = Math.max(0, Math.min(v, vtVMax))
-    return vtInnerPad.top + vtInnerH - (clampedV / vtVMax) * vtInnerH
-  }
-
+  // ── v-t 图逻辑 ────────────────────────────────────────────────────────
   const yticks = useMemo(() => {
     const ticks = []
     for (let v = 0; v <= vtVMax; v += vtTickStep) ticks.push(v)
@@ -311,57 +269,57 @@ export default function FreeFallAnimation() {
   const areaPointsA = useMemo(() => {
     if (activeTime <= 0) return ''
     const pts: string[] = []
-    pts.push(`${vtToX(0)},${vtToY(0)}`)
+    pts.push(`${vtInnerPad.left + (0 / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (0 / vtVMax) * vtInnerH}`)
     const step = 0.05
     for (let t = 0; t < activeTime; t += step) {
       const state = getPhysicsAtTime(pointsA, t, groundTimeA)
-      pts.push(`${vtToX(t)},${vtToY(state.v)}`)
+      pts.push(`${vtInnerPad.left + (t / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (Math.max(0, Math.min(state.v, vtVMax)) / vtVMax) * vtInnerH}`)
     }
     const curr = getPhysicsAtTime(pointsA, activeTime, groundTimeA)
-    pts.push(`${vtToX(activeTime)},${vtToY(curr.v)}`)
-    pts.push(`${vtToX(activeTime)},${vtToY(0)}`)
+    pts.push(`${vtInnerPad.left + (activeTime / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (Math.max(0, Math.min(curr.v, vtVMax)) / vtVMax) * vtInnerH}`)
+    pts.push(`${vtInnerPad.left + (activeTime / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (0 / vtVMax) * vtInnerH}`)
     return pts.join(' ')
-  }, [pointsA, groundTimeA, activeTime])
+  }, [pointsA, groundTimeA, activeTime, xMax, vtInnerW, vtInnerPad.left, vtInnerPad.top, vtInnerH, vtVMax])
 
   const areaPointsB = useMemo(() => {
     if (activeTime <= 0) return ''
     const pts: string[] = []
-    pts.push(`${vtToX(0)},${vtToY(0)}`)
+    pts.push(`${vtInnerPad.left + (0 / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (0 / vtVMax) * vtInnerH}`)
     const step = 0.05
     const limitT = Math.min(activeTime, groundTimeB)
     for (let t = 0; t < limitT; t += step) {
       const state = getPhysicsAtTime(pointsB, t, groundTimeB)
-      pts.push(`${vtToX(t)},${vtToY(state.v)}`)
+      pts.push(`${vtInnerPad.left + (t / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (Math.max(0, Math.min(state.v, vtVMax)) / vtVMax) * vtInnerH}`)
     }
     const curr = getPhysicsAtTime(pointsB, limitT, groundTimeB)
-    pts.push(`${vtToX(limitT)},${vtToY(curr.v)}`)
-    pts.push(`${vtToX(limitT)},${vtToY(0)}`)
+    pts.push(`${vtInnerPad.left + (limitT / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (Math.max(0, Math.min(curr.v, vtVMax)) / vtVMax) * vtInnerH}`)
+    pts.push(`${vtInnerPad.left + (limitT / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (0 / vtVMax) * vtInnerH}`)
     return pts.join(' ')
-  }, [pointsB, groundTimeB, activeTime])
+  }, [pointsB, groundTimeB, activeTime, xMax, vtInnerW, vtInnerPad.left, vtInnerPad.top, vtInnerH, vtVMax])
 
   // ── v-t 曲线 ──────────────────────────────────────────────────────────
   const vtPathDA = useMemo(() => {
     const pts: string[] = []
     for (let t = 0; t <= activeTime + 0.01; t += 0.05) {
       const state = getPhysicsAtTime(pointsA, t, groundTimeA)
-      pts.push(`${vtToX(t)},${vtToY(state.v)}`)
+      pts.push(`${vtInnerPad.left + (t / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (Math.max(0, Math.min(state.v, vtVMax)) / vtVMax) * vtInnerH}`)
     }
     return pts.length >= 2 ? `M ${pts.join(' L ')}` : ''
-  }, [pointsA, groundTimeA, activeTime])
+  }, [pointsA, groundTimeA, activeTime, xMax, vtInnerW, vtInnerPad.left, vtInnerPad.top, vtInnerH, vtVMax])
 
   const vtPathDB = useMemo(() => {
     const pts: string[] = []
     const limitT = Math.min(activeTime, groundTimeB)
     for (let t = 0; t <= limitT + 0.01; t += 0.05) {
       const state = getPhysicsAtTime(pointsB, t, groundTimeB)
-      pts.push(`${vtToX(t)},${vtToY(state.v)}`)
+      pts.push(`${vtInnerPad.left + (t / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (Math.max(0, Math.min(state.v, vtVMax)) / vtVMax) * vtInnerH}`)
     }
     if (activeTime > groundTimeB) {
-      pts.push(`${vtToX(groundTimeB)},${vtToY(0)}`)
-      pts.push(`${vtToX(activeTime)},${vtToY(0)}`)
+      pts.push(`${vtInnerPad.left + (groundTimeB / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (0 / vtVMax) * vtInnerH}`)
+      pts.push(`${vtInnerPad.left + (activeTime / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (0 / vtVMax) * vtInnerH}`)
     }
     return pts.length >= 2 ? `M ${pts.join(' L ')}` : ''
-  }, [pointsB, groundTimeB, activeTime])
+  }, [pointsB, groundTimeB, activeTime, xMax, vtInnerW, vtInnerPad.left, vtInnerPad.top, vtInnerH, vtVMax])
 
   // ── 渲染 ─────────────────────────────────────────────────────────────────
   return (
@@ -724,26 +682,26 @@ export default function FreeFallAnimation() {
           )}
 
           {/* 坐标轴 */}
-          <line x1={vtInnerPad.left} y1={vtInnerPad.top} x2={vtInnerPad.left} y2={vtInnerPad.top + vtInnerH}
+          <line x1={vtInnerPad.left} y1={vtToY(0, vtVMax, vtInnerH)} x2={vtInnerPad.left + vtInnerW} y2={vtToY(0, vtVMax, vtInnerH)}
             stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-          <line x1={vtInnerPad.left} y1={vtToY(0)} x2={vtInnerPad.left + vtInnerW} y2={vtToY(0)}
+          <line x1={vtInnerPad.left} y1={vtToY(0, vtVMax, vtInnerH)} x2={vtInnerPad.left + vtInnerW} y2={vtToY(0, vtVMax, vtInnerH)}
             stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
 
           {/* X 刻度 */}
           {xticks.map(t => (
             <g key={`xt-${t}`}>
-              <line x1={vtToX(t)} y1={vtToY(0) - 4} x2={vtToX(t)} y2={vtToY(0) + 4}
+              <line x1={vtToX(t, xMax, vtInnerW)} y1={vtToY(0, vtVMax, vtInnerH) - 4} x2={vtToX(t, xMax, vtInnerW)} y2={vtToY(0, vtVMax, vtInnerH) + 4}
                 stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={vtToX(t)} y={vtToY(0) + 16} fontSize={9} textAnchor="middle" fill={CHART_COLORS.tickLabel}>{t}</text>
+              <text x={vtToX(t, xMax, vtInnerW)} y={vtToY(0, vtVMax, vtInnerH) + 16} fontSize={9} textAnchor="middle" fill={CHART_COLORS.tickLabel}>{t}</text>
             </g>
           ))}
 
           {/* Y 刻度 */}
           {yticks.map(v => (
             <g key={`yt-${v}`}>
-              <line x1={vtInnerPad.left - 4} y1={vtToY(v)} x2={vtInnerPad.left} y2={vtToY(v)}
+              <line x1={vtInnerPad.left - 4} y1={vtToY(v, vtVMax, vtInnerH)} x2={vtInnerPad.left} y2={vtToY(v, vtVMax, vtInnerH)}
                 stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={vtInnerPad.left - 8} y={vtToY(v) + 3} fontSize={9} textAnchor="end" fill={CHART_COLORS.tickLabel}>{v}</text>
+              <text x={vtInnerPad.left - 8} y={vtToY(v, vtVMax, vtInnerH) + 3} fontSize={9} textAnchor="end" fill={CHART_COLORS.tickLabel}>{v}</text>
             </g>
           ))}
 
@@ -768,15 +726,15 @@ export default function FreeFallAnimation() {
           {activeTime > 0 && (
             <g>
               <line
-                x1={vtToX(activeTime)} y1={vtInnerPad.top}
-                x2={vtToX(activeTime)} y2={vtInnerPad.top + vtInnerH}
+                x1={vtToX(activeTime, xMax, vtInnerW)} y1={vtInnerPad.top}
+                x2={vtToX(activeTime, xMax, vtInnerW)} y2={vtInnerPad.top + vtInnerH}
                 stroke="rgba(75, 85, 99, 0.35)"
                 strokeWidth={1}
                 strokeDasharray="2 2"
               />
               <circle
-                cx={vtToX(activeTime)}
-                cy={vtToY(stateA.v)}
+                cx={vtToX(activeTime, xMax, vtInnerW)}
+                cy={vtToY(stateA.v, vtVMax, vtInnerH)}
                 r={4}
                 fill={PHYSICS_COLORS.velocity}
                 stroke="#FFFFFF"
@@ -784,8 +742,8 @@ export default function FreeFallAnimation() {
               />
               {!isLandedB && (
                 <circle
-                  cx={vtToX(activeTime)}
-                  cy={vtToY(stateB.v)}
+                  cx={vtToX(activeTime, xMax, vtInnerW)}
+                  cy={vtToY(stateB.v, vtVMax, vtInnerH)}
                   r={4}
                   fill={CHART_COLORS.compareB}
                   stroke="#FFFFFF"
