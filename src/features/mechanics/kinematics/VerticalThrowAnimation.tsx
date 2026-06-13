@@ -17,6 +17,7 @@ import { useVerticalThrowPhysics } from './useVerticalThrowPhysics'
 import { useVerticalThrowChartLayout } from './useVerticalThrowChartLayout'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { Ball } from '@/components/Physics/Ball'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
@@ -237,19 +238,7 @@ export default function VerticalThrowAnimation() {
 
         {/* ========== defs ========== */}
         <defs>
-          <radialGradient id="steel-sphere-grad" cx="30%" cy="30%" r="70%">
-            <stop offset="0%" stopColor={SCENE_COLORS.sphere.steel.gradient[0]} />
-            <stop offset="40%" stopColor={SCENE_COLORS.sphere.steel.gradient[1]} />
-            <stop offset="80%" stopColor={SCENE_COLORS.sphere.steel.gradient[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.sphere.steel.gradient[3]} />
-          </radialGradient>
 
-          <radialGradient id="vacuum-sphere-grad" cx="30%" cy="30%" r="70%">
-            <stop offset="0%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[0]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[0]} />
-            <stop offset="50%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[1]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[1]} />
-            <stop offset="90%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[2]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[3]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[3]} />
-          </radialGradient>
 
           <filter id="glow-filter-blue" x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur stdDeviation="1.2" result="blur" />
@@ -318,13 +307,23 @@ export default function VerticalThrowAnimation() {
         ))}
 
         {showDoubleTrack && !isLanded && (
-          <circle cx={rightBallX} cy={currentVacuumBallY} r={13}
-            fill="url(#vacuum-sphere-grad)" stroke={PHYSICS_COLORS.deltaHighlight} strokeWidth={1} />
+          <Ball
+            cx={rightBallX}
+            cy={currentVacuumBallY}
+            r={13}
+            type="steelGhost"
+            stroke={PHYSICS_COLORS.deltaHighlight}
+            strokeWidth={1}
+          />
         )}
 
-        <circle cx={leftBallX} cy={currentBallY} r={14}
-          fill="url(#steel-sphere-grad)" stroke={SCENE_COLORS.sphere.steel.stroke}
-          strokeWidth={CANVAS_STYLE.stroke.objectLine} />
+        <Ball
+          cx={leftBallX}
+          cy={currentBallY}
+          r={14}
+          type="steel"
+          strokeWidth={CANVAS_STYLE.stroke.objectLine}
+        />
 
         {advancedMode === 1 && sliceDensity > 0 && effectiveTime > 0 && !isLanded && (
           <line

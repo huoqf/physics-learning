@@ -9,6 +9,7 @@ import {
   getKEStateAtTime,
 } from '@/physics/kineticEnergy'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { Block } from '@/components/Physics/Block'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
@@ -352,11 +353,7 @@ export default function KineticEnergyAnimation() {
       {/* 主 SVG 画面 */}
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-transparent">
         <defs>
-          {/* 物块材质渐变 */}
-          <linearGradient id="block-grad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.woodSphereGrad[0]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.woodSphereGrad[1]} />
-          </linearGradient>
+
 
           {/* 不锈钢实体钢珠 3D 材质（进阶模式） */}
           <radialGradient id="steel-sphere-grad" cx="30%" cy="30%" r="70%">
@@ -850,15 +847,15 @@ export default function KineticEnergyAnimation() {
         {mode === 0 ? (
           // 普通模式：木块（水平运动）
           <g transform={`translate(${carX}, ${groundY - objH})`}>
-            <rect width={objW} height={objH - 1} rx={2} fill="url(#block-grad)" stroke={SCENE_COLORS.materials.woodSphereGrad[1]} strokeWidth={1.5} />
-            <line x1={objW * 0.15} y1={2} x2={objW * 0.15} y2={objH - 3} stroke={colors.neutral[700]} strokeWidth={0.5} opacity={0.25} />
-            <line x1={objW * 0.5} y1={2} x2={objW * 0.5} y2={objH - 3} stroke={colors.neutral[700]} strokeWidth={0.5} opacity={0.25} />
-            <line x1={objW * 0.8} y1={2} x2={objW * 0.8} y2={objH - 3} stroke={colors.neutral[700]} strokeWidth={0.5} opacity={0.25} />
-            <text x={objW * 0.5} y={objH * 0.55} fontSize={smallFont} fill={colors.neutral[800]} fontWeight="bold" textAnchor="middle">
-              {m.toFixed(1)}kg
-            </text>
-            <circle cx={objW * 0.22} cy={objH - 0.5} r={2.5} fill={colors.neutral[800]} />
-            <circle cx={objW * 0.78} cy={objH - 0.5} r={2.5} fill={colors.neutral[800]} />
+            <Block
+              x={0}
+              y={0}
+              width={objW}
+              height={objH}
+              type="woodCart"
+              label={`${m.toFixed(1)}kg`}
+              strokeWidth={1.5}
+            />
 
             {/* 拉力 F 矢量（合力） */}
             {showVectors && state.F > 0.1 && (

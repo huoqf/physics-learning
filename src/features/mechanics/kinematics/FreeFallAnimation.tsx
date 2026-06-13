@@ -15,6 +15,7 @@ import { useFreeFallPhysics } from './useFreeFallPhysics'
 import { getPhysicsAtTime, GRAVITY } from '@/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { Ball } from '@/components/Physics/Ball'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
@@ -378,13 +379,7 @@ export default function FreeFallAnimation() {
             <stop offset="95%" stopColor={SCENE_COLORS.materials.glassGrad[1]} stopOpacity="0.1" />
             <stop offset="100%" stopColor={SCENE_COLORS.materials.glassGrad[0]} stopOpacity="0.25" />
           </linearGradient>
-          {/* 不锈钢实体钢珠 3D 材质 */}
-          <radialGradient id="steel-sphere-grad" cx="30%" cy="30%" r="70%">
-            <stop offset="0%" stopColor={SCENE_COLORS.sphere.steel.gradient[0]} />
-            <stop offset="40%" stopColor={SCENE_COLORS.sphere.steel.gradient[1]} />
-            <stop offset="80%" stopColor={SCENE_COLORS.sphere.steel.gradient[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.sphere.steel.gradient[3]} />
-          </radialGradient>
+
           {/* 硬币金红质感渐变 */}
           <radialGradient id="coin-grad" cx="35%" cy="30%" r="65%">
             <stop offset="0%" stopColor={SCENE_COLORS.magnet.northLight} />
@@ -510,9 +505,13 @@ export default function FreeFallAnimation() {
 
         {/* 2. 物体A（铁球/硬币 - 带高级反射渐变） */}
         {objectA === 'ironBall' ? (
-          <circle cx={ballX} cy={renderYA} r={14}
-            fill="url(#steel-sphere-grad)" stroke={SCENE_COLORS.sphere.steel.stroke}
-            strokeWidth={STROKE.objectLine} />
+          <Ball
+            cx={ballX}
+            cy={renderYA}
+            r={14}
+            type="steel"
+            strokeWidth={STROKE.objectLine}
+          />
         ) : (
           <g transform={`translate(${ballX}, ${renderYA})`}>
             {/* 硬币立体层 */}

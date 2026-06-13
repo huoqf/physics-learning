@@ -5,6 +5,7 @@ import { calculateFrictionPullModel, calculateFrictionInclineModel } from '@/phy
 import { GRAVITY } from '@/physics/constants'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { Block } from '@/components/Physics/Block'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
@@ -110,11 +111,7 @@ export default function FrictionAnimation() {
     <div ref={containerRef} className="w-full h-full">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
         <defs>
-          {/* 木箱拉丝纹理 */}
-          <linearGradient id="box-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={SCENE_COLORS.circuit.ammeterFace} />
-            <stop offset="100%" stopColor={SCENE_COLORS.circuit.resistorFill} />
-          </linearGradient>
+
           {/* 钢体滑轨渐变 */}
           <linearGradient id="steel-rail" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[1]} />
@@ -159,16 +156,16 @@ export default function FrictionAnimation() {
             )}
 
             {/* 木箱 (滑块) */}
-            <rect
-              x={boxX_m1 - boxSize / 2} y={boxY_m1} width={boxSize} height={boxSize}
-              fill="url(#box-grad)" stroke={PHYSICS_COLORS.forceNetArrow} strokeWidth={1.8} rx={4}
+            <Block
+              x={boxX_m1 - boxSize / 2}
+              y={boxY_m1}
+              width={boxSize}
+              height={boxSize}
+              type="wood"
+              label={`m = ${m}kg`}
+              stroke={PHYSICS_COLORS.forceNetArrow}
+              strokeWidth={1.8}
             />
-            <text
-              x={boxX_m1} y={boxY_m1 + boxSize / 2 + 5}
-              fontSize={FONT.axisSize} fill={PHYSICS_COLORS.forceNetArrow} textAnchor="middle" fontWeight="bold"
-            >
-              m = {m}kg
-            </text>
 
             {/* 拉力拉绳 (连向右端) */}
             <line
@@ -296,16 +293,16 @@ export default function FrictionAnimation() {
               />
 
               {/* 木箱 (沿斜面板下滑) */}
-              <rect
-                x={boxLocalX - boxSize / 2} y={-boxSize - 8} width={boxSize} height={boxSize}
-                fill="url(#box-grad)" stroke={PHYSICS_COLORS.forceNetArrow} strokeWidth={1.8} rx={4}
+              <Block
+                x={boxLocalX - boxSize / 2}
+                y={-boxSize - 8}
+                width={boxSize}
+                height={boxSize}
+                type="wood"
+                label="m"
+                stroke={PHYSICS_COLORS.forceNetArrow}
+                strokeWidth={1.8}
               />
-              <text
-                x={boxLocalX} y={-boxSize / 2 - 5}
-                fontSize={FONT.axisSize} fill={PHYSICS_COLORS.forceNetArrow} textAnchor="middle" fontWeight="bold"
-              >
-                m
-              </text>
 
               {/* 局部坐标系下的力矢量绘制：F_N 和 f 相对于斜面，在旋转坐标系中绘制 */}
               {showVectors && (

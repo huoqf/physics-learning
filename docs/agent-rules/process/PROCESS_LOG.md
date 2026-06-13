@@ -19,6 +19,10 @@
 
 | 日期 | 模块 | 类型 | 摘要 |
 |------|------|------|------|
+| 2026-06-13 | architecture | refactor | 跑车模型组件提取与规范重构：在 `src/components/Physics` 下新建通用跑车模型组件 `SportsCar.tsx`，支持结合速度与时间动态旋转车轮及在车尾渲染空气流线；同步更新 `02_UI_RULES.md` 新增“3.3 跑车与车辆模型规范”；在加速度演示页（AccelerationAnimation.tsx）中应用该组件替换原有手绘 SVG 代码，精简逻辑。通过 Node 24 严格类型检查 |
+| 2026-06-13 | architecture | refactor | 物理滑车扩展与速度演示页重构：扩展通用滑块组件 `Block.tsx` 支持 `metalCart`（不锈钢车轮小车）材质；同步更新 `02_UI_RULES.md` 补充小车规范；在速度演示条组件（VelocityAnimationStrip）中，简谐运动改用 `Ball`（`type="oscillatorMetal"`）渲染，多阶段/变加速运动改用 `Block`（`type="metalCart"`）渲染并保留原有激光闪烁指示灯，彻底清理原有重复渐变与车轮定义。通过 Node 24 严格类型检查 |
+| 2026-06-13 | architecture | refactor | 物理滑块通用组件（Block）提取与规范重构：在 `src/components/Physics` 下新建自文档化且防 ID 冲突的通用物理滑块组件 `Block.tsx`（采用 React 19 `useId`），支持 `wood`（木纹）、`metal`（拉丝不锈钢）和 `woodCart`（不锈钢车轮木车）三种材质预设并实现 3D 抛光与木板拼合缝拟物美化；同步更新 `02_UI_RULES.md` 新增“3.2 滑块与滑车材质规范”；在摩擦力（FrictionAnimation）、牛顿第二定律（NewtonSecondAnimation）和动能定理（KineticEnergyAnimation）中应用该组件，彻底清理原有重复渐变定义与手绘元素。通过 Node 24 严格类型检查 |
+| 2026-06-13 | architecture | refactor | 物理小球通用组件（Ball）提取与规范重构：在 `src/components/Physics` 下新建自文档化且防 ID 冲突的通用物理小球组件 `Ball.tsx`（采用 React 19 `useId`），支持 `steel`、`steelGhost` 等多种材质预设并实现 3D 偏置高光美化；同步更新 `02_UI_RULES.md` 强制使用条款以废除手写渐变兜底；在自由落体（FreeFallAnimation）、竖直上抛（VerticalThrowAnimation）及平抛运动（ProjectileAnimation）中应用该组件并清理原有重复渐变定义，彻底消除 SVG ID 跨文件命名冲突。通过 Node 24 严格类型检查 |
 | 2026-06-13 | anim-closed-circuit | feature | 闭合电路欧姆定律三屏职责分离重构：实现真实的闭合回路 SVG 电路（含真实电源虚线框、内阻焦耳热暗红高亮渐变、滑动变阻器滑片物理位移联动、理想电流电压表及与电流成正比的电荷粒子流动）；设计双模式下 SVG 实时图表交互，支持 U-I 伏安特性（标注 E 和 I_短 截距）与 P_出-R 单峰曲线（标注最大功率点并随内电阻 r 调节实时左右平移波峰及高度变化）；在右面板扩展了丰富细致的物理量因变量、核心公式、高考考点和易错警示 |
 | 2026-06-13 | anim-electric-potential | feature | 电势与电势差三屏职责分离重构：实现匀强电场+固定正电荷复合非匀强电场模拟，支持零势能参考（无穷远/大地0V）切换，支持手写轨迹生成与自适应弧长匀速滑行动画，下半屏显示合力矢量与能量守恒柱状图（Ek青、Ep紫），上半屏绘制一维 phi-x 图线，支持 Hover 实时切线斜率求导交互联动。优化图表及动画的鼠标指针样式以体现交互操作，在 A 锚点引入涟漪波纹引导，并增加了醒目的求导与画线文字提示卡 |
 | 2026-06-13 | anim-field-lines | feature | 电场线与等势面三屏分离重构：实现 4 种拓扑电场切换，黄色电场线平滑追踪及中部流向箭头，紫色等势面网格 Marching Squares 渲染与深浅渐变，支持手持试探电荷探针及受力矢量拖拽同步，右看板定量计算绝对电势与电场力做功，悬浮青/紫双柱图表呈现能量守恒此消彼长 |

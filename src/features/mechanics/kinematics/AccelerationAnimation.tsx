@@ -5,6 +5,7 @@ import { calculateDualObjectComparison } from '@/physics'
 import { PHYSICS_COLORS, STROKE, DASH, FONT } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { SportsCar } from '@/components/Physics/SportsCar'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
@@ -316,40 +317,14 @@ export default function AccelerationAnimation() {
         )}
 
         {/* ── 6. 跑车 B ── */}
-        <g transform={`translate(${clampedCarX}, ${bottomTrackY - LAYOUT.VEHICLE_HEIGHT})`}>
-          {/* 跑车后空气尾流线 (随速度和加速度变长，层流线体现动感) */}
-          {result.vB > 0 && (
-            <g opacity={0.5} transform={`translate(-10, 0)`}>
-              <line x1={-8 - result.vB * 0.15} y1="6" x2="-2" y2="6" stroke={PHYSICS_COLORS.velocityY} strokeWidth={1} strokeDasharray="3 2" />
-              <line x1={-14 - result.vB * 0.2} y1="13" x2="-4" y2="13" stroke={PHYSICS_COLORS.velocityY} strokeWidth={1.5} />
-              <line x1={-6 - result.vB * 0.1} y1="20" x2="-2" y2="20" stroke={PHYSICS_COLORS.velocityY} strokeWidth={1} strokeDasharray="3 2" />
-            </g>
-          )}
-          {/* 科学流线跑车车身 */}
-          <path
-            d="M 2,22 Q 4,11 14,9 L 22,5 Q 32,3 40,9 L 50,13 Q 54,17 54,22 Z"
-            fill={PHYSICS_COLORS.objectFillNeutral}
-            stroke={PHYSICS_COLORS.objectStroke}
-            strokeWidth={STROKE.objectLine}
-          />
-          {/* 精密十字辐条车轮，随速度转动 */}
-          {/* 车轮 1 */}
-          <g transform={`translate(${LAYOUT.VEHICLE_WIDTH * 0.22}, ${LAYOUT.VEHICLE_HEIGHT - 4})`}>
-            <circle cx="0" cy="0" r="5" fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1.5} />
-            <g transform={`rotate(${(result.vB * time * 35) % 360})`}>
-              <line x1="-5" y1="0" x2="5" y2="0" stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-              <line x1="0" y1="-5" x2="0" y2="5" stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-            </g>
-          </g>
-          {/* 车轮 2 */}
-          <g transform={`translate(${LAYOUT.VEHICLE_WIDTH * 0.78}, ${LAYOUT.VEHICLE_HEIGHT - 4})`}>
-            <circle cx="0" cy="0" r="5" fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1.5} />
-            <g transform={`rotate(${(result.vB * time * 35) % 360})`}>
-              <line x1="-5" y1="0" x2="5" y2="0" stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-              <line x1="0" y1="-5" x2="0" y2="5" stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-            </g>
-          </g>
-        </g>
+        <SportsCar
+          x={clampedCarX}
+          y={bottomTrackY - LAYOUT.VEHICLE_HEIGHT}
+          velocity={result.vB}
+          time={time}
+          width={LAYOUT.VEHICLE_WIDTH}
+          height={LAYOUT.VEHICLE_HEIGHT}
+        />
 
         {/* ── 7. 跑车速度矢量 ── */}
         {showVectors && result.vB > 0 && (

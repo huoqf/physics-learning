@@ -13,6 +13,7 @@ import {
 } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { Ball } from '@/components/Physics/Ball'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
@@ -315,21 +316,7 @@ export default function ProjectileAnimation() {
             <stop offset="100%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[3]} />
           </linearGradient>
 
-          {/* 不锈钢实体钢珠 3D 材质 */}
-          <radialGradient id="steel-sphere-grad" cx="30%" cy="30%" r="70%">
-            <stop offset="0%" stopColor={SCENE_COLORS.sphere.steel.gradient[0]} />
-            <stop offset="40%" stopColor={SCENE_COLORS.sphere.steel.gradient[1]} />
-            <stop offset="80%" stopColor={SCENE_COLORS.sphere.steel.gradient[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.sphere.steel.gradient[3]} />
-          </radialGradient>
 
-          {/* 真空对照球半透明虚影 */}
-          <radialGradient id="vacuum-sphere-grad" cx="30%" cy="30%" r="70%">
-            <stop offset="0%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[0]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[0]} />
-            <stop offset="50%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[1]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[1]} />
-            <stop offset="90%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[2]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[3]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[3]} />
-          </radialGradient>
 
           <VectorDefs colors={[PHYSICS_COLORS.velocityX, PHYSICS_COLORS.velocityY, PHYSICS_COLORS.velocity]} />
         </defs>
@@ -395,16 +382,22 @@ export default function ProjectileAnimation() {
 
         {/* 真空对照钢球 (进阶模式) */}
         {showDoubleTrack && !isLanded && (
-          <circle cx={vacBallCanvas.cx} cy={vacBallCanvas.cy} r={PROJECTILE_LAYOUT.steelBallRadius} fill="url(#vacuum-sphere-grad)" stroke={PHYSICS_COLORS.displacement} strokeWidth={0.8} />
+          <Ball
+            cx={vacBallCanvas.cx}
+            cy={vacBallCanvas.cy}
+            r={PROJECTILE_LAYOUT.steelBallRadius}
+            type="steelGhost"
+            stroke={PHYSICS_COLORS.displacement}
+            strokeWidth={0.8}
+          />
         )}
 
         {/* 实际钢珠小球 (水平飞跃) */}
-        <circle
+        <Ball
           cx={Math.min(canvasSize.width - PROJECTILE_LAYOUT.steelBallRadius, ballCanvas.cx)}
           cy={Math.min(groundY, ballCanvas.cy)}
           r={PROJECTILE_LAYOUT.steelBallRadius}
-          fill="url(#steel-sphere-grad)"
-          stroke={SCENE_COLORS.sphere.steel.stroke}
+          type="steel"
           strokeWidth={CANVAS_STYLE.stroke.objectLine}
         />
 

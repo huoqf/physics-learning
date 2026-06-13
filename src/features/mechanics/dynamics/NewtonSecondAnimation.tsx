@@ -7,6 +7,7 @@ import {
   calculateNewtonSecondVariableMotion,
 } from '@/physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
+import { Block } from '@/components/Physics/Block'
 
 export default function NewtonSecondAnimation() {
   const { params, time, showVectors, showGrid } = useAnimationStore()
@@ -122,30 +123,17 @@ export default function NewtonSecondAnimation() {
         />
 
         {/* 滑块小车：使用不锈钢金属渐变材质填充 */}
-        <rect
+        <Block
           x={carX}
           y={carY}
           width={carWidth}
           height={carHeight}
-          fill="url(#slider-metal-grad)"
+          type="metal"
+          label={`${m} kg`}
           stroke={PHYSICS_COLORS.objectStroke}
           strokeWidth={CANVAS_STYLE.stroke.objectLine}
-          rx={4}
           className="transition-all duration-75"
         />
-
-        {/* 质量文本标注在小车中心 */}
-        <text
-          x={cx}
-          y={cy + 5}
-          fontSize={FONT.bodySize}
-          fill={PHYSICS_COLORS.labelText}
-          textAnchor="middle"
-          fontWeight="bold"
-          className="select-none pointer-events-none"
-        >
-          {m} kg
-        </text>
 
         {showVectors && (
           <g>
@@ -309,18 +297,7 @@ export default function NewtonSecondAnimation() {
         )}
 
         <defs>
-          {/* 金属渐变色定义 */}
-          <linearGradient id="slider-metal-grad" x1="0" y1="0" x2="0" y2="1">
-            {SCENE_COLORS.materials.sliderMetalGrad.map((color, idx) => (
-              <stop
-                key={`smg-${idx}`}
-                offset={`${
-                  (idx / (SCENE_COLORS.materials.sliderMetalGrad.length - 1)) * 100
-                }%`}
-                stopColor={color}
-              />
-            ))}
-          </linearGradient>
+
 
           {/* 各矢量箭头定义 */}
           <marker

@@ -8,6 +8,8 @@ import type { VariableMotionModel, VariableMotionParams } from '@/physics'
 import { useVelocityPhysics } from './useVelocityPhysics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { Ball } from '@/components/Physics/Ball'
+import { Block } from '@/components/Physics/Block'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
@@ -166,26 +168,7 @@ export default function VelocityAnimationStrip({
             <stop offset="70%" stopColor={SCENE_COLORS.materials.trackMetalGrad[1]} />
             <stop offset="100%" stopColor={SCENE_COLORS.materials.trackMetalGrad[0]} />
           </linearGradient>
-          {/* 滑块不锈钢拉丝渐变 */}
-          <linearGradient id="slider-metal-grad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[0]} />
-            <stop offset="35%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[1]} />
-            <stop offset="70%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[3]} />
-          </linearGradient>
-          {/* 高级振动金属球径向渐变 */}
-          <radialGradient id="oscillator-metal-grad" cx="30%" cy="30%" r="70%">
-            <stop offset="0%" stopColor={SCENE_COLORS.sphere.oscillatorMetal.gradient[0]} />
-            <stop offset="40%" stopColor={SCENE_COLORS.sphere.oscillatorMetal.gradient[1]} />
-            <stop offset="80%" stopColor={SCENE_COLORS.sphere.oscillatorMetal.gradient[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.sphere.oscillatorMetal.gradient[3]} />
-          </radialGradient>
-          {/* 车轮金属渐变 */}
-          <radialGradient id="wheel-grad" cx="35%" cy="35%" r="65%">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[0]} />
-            <stop offset="45%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[1]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[3]} />
-          </radialGradient>
+
           {/* 钢弹簧前半圈高光渐变 */}
 
           {/* 箭头标记 */}
@@ -292,16 +275,26 @@ export default function VelocityAnimationStrip({
         {/* ══════════ 运动物主体（滑块小车/振动小球） ══════════ */}
         {model === 'shm' ? (
           // 振动金属球 (立体高光径向渐变)
-          <circle
-            cx={currentX} cy={groundY - objH / 2 - 2}
+          <Ball
+            cx={currentX}
+            cy={groundY - objH / 2 - 2}
             r={objW * 0.4}
-            fill="url(#oscillator-metal-grad)" stroke={SCENE_COLORS.sphere.oscillatorMetal.stroke} strokeWidth={STROKE.objectThin}
+            type="oscillatorMetal"
+            strokeWidth={STROKE.objectThin}
           />
         ) : (
           // 变加速 / 多阶段：不锈钢滑块小车
           <g transform={`translate(${currentX - objW / 2}, ${groundY - objH - 5})`}>
-            {/* 滑块车身 */}
-            <rect width={objW} height={objH} rx={3} fill="url(#slider-metal-grad)" stroke={SCENE_COLORS.circuit.wire} strokeWidth={STROKE.objectThin} />
+            {/* 滑动小车 */}
+            <Block
+              x={0}
+              y={0}
+              width={objW}
+              height={objH}
+              type="metalCart"
+              stroke={SCENE_COLORS.circuit.wire}
+              strokeWidth={STROKE.objectThin}
+            />
             {/* 传感器激光红色指示灯 (播放时高频闪烁) */}
             <circle
               cx={objW - 4} cy={objH * 0.3} r={2}
@@ -309,11 +302,6 @@ export default function VelocityAnimationStrip({
               opacity={isPlaying && Math.floor(time * 10) % 2 === 0 ? 1 : 0.3}
               filter={`drop-shadow(0 0 1.5px ${SCENE_COLORS.spring.compressed})`}
             />
-            {/* 车轮（带辐条） */}
-            <circle cx={objW * 0.22} cy={objH} r={objH * 0.16} fill="url(#wheel-grad)" />
-            <circle cx={objW * 0.22} cy={objH} r={objH * 0.08} fill={SCENE_COLORS.circuit.bulbGlassStroke} />
-            <circle cx={objW * 0.78} cy={objH} r={objH * 0.16} fill="url(#wheel-grad)" />
-            <circle cx={objW * 0.78} cy={objH} r={objH * 0.08} fill={SCENE_COLORS.circuit.bulbGlassStroke} />
           </g>
         )}
 

@@ -62,10 +62,26 @@ Canvas/SVG 中每类物理量有固定颜色，详见 `src/theme/physics/colors.
 
 ### 3.1 球体材质附加规范
 
-1. 球体本体、行星、摆球、砝码球统一归入 `SCENE_COLORS.sphere.*`，不得借用 `PHYSICS_COLORS` 充当材质色。
-2. 主钢珠统一使用 `SCENE_COLORS.sphere.steel`，投影/真空对照球统一使用 `SCENE_COLORS.sphere.steelGhost`。
-3. 摆球、砝码球、行星、地球应分别使用对应 preset（`pendulumBob` / `brassWeight` / `planetCool` / `earthTech`），避免同一项目内球体材质风格漂移。
-4. 禁止在组件内重复定义独立球体配色体系；新增球体外观必须先扩展 `sceneColors.ts`。
+1. **统一渲染组件**：所有小球、钢珠、摆球、砝码球、行星等圆球物理实体的渲染，**必须**使用统一公共组件 `<Ball>`（位于 `src/components/Physics/Ball.tsx`）。**禁止**在单个动画页面中手绘圆球图层、SVG `<circle>` 或自造渐变 `<radialGradient>`。
+2. **渐变 ID 防冲突**：组件内部通过 React 19 的 `useId()` 自动生成独立唯一的局部 SVG 渐变 ID，用以彻底杜绝原有的 `steel-sphere-grad` 和 `vacuum-sphere-grad` 等重复定义导致的跨文件 SVG ID 命名冲突。
+3. **不得滥用语义色**：球体本体材质外观完全从 `SCENE_COLORS.sphere.*` 预设中读取，**禁止**借用物理量语义色 `PHYSICS_COLORS`（如速度、加速度颜色）充当物理实体本身的颜色。
+4. **材质精准对照**：主钢珠统一使用 `SCENE_COLORS.sphere.steel`，投影/真空对照球统一使用 `SCENE_COLORS.sphere.steelGhost`。摆球、砝码球、行星应分别使用对应 preset（`pendulumBob` / `brassWeight` / `planetCool`），避免同一项目内材质风格漂移。新增球体材质必须先扩展 `sceneColors.ts`，禁止在组件内私自定义配色体系。
+
+### 3.2 滑块与滑车材质规范
+
+1. **统一渲染组件**：所有矩形物块、滑动木箱、不锈钢滑块、实验小车等非球体常规位移实体的渲染，**必须**使用统一公共组件 `<Block>`（位于 `src/components/Physics/Block.tsx`）。**禁止**在单个动画页面中手绘滑块 `<rect>`、板纹、滑轮或自造渐变。
+2. **材质类型选择**：
+   - 使用 `wood` 材质渲染普通木箱（适用于摩擦力模型一/二中的滑块）。
+   - 使用 `metal` 材质渲染精密不锈钢滑块（适用于牛顿第二定律等滑轨滑块）。
+   - 使用 `woodCart` 材质渲染带滑轮的木质小车（适用于动能定理、动量守恒等小车实验）。
+   - 使用 `metalCart` 材质渲染带滑轮的不锈钢滑车（适用于速度、变加速等滑轨小车实验）。
+3. **ID 冲突防范**：组件内部通过 React 19 的 `useId()` 自动生成独立的渐变 ID 后缀，彻底杜绝原有的 `box-grad`、`slider-metal` 和 `slider-metal-grad` 等重复定义导致的跨文件 SVG 渐变 ID 命名冲突。
+
+### 3.3 跑车与车辆模型规范
+
+1. **统一渲染组件**：所有流线型跑车、飞奔车辆等赛道位移实体的渲染，**必须**使用统一公共组件 `<SportsCar>`（位于 `src/components/Physics/SportsCar.tsx`）。**禁止**在单个动画页面中手绘跑车车身 `<path>`、十字辐条车轮或空气尾流线。
+2. **动感视觉表达**：车辆在运动中，其车轮必须结合速度与时间动态旋转；在车尾应绘制层流空气尾流线表现动感，禁止使用静态图形充当运动状态。
+3. **尺寸与缩放规范**：该组件设计基准尺寸为 `56x26`，支持通过 `width` 和 `height` 进行外层矢量等比/非等比无损缩放。
 
 ---
 
