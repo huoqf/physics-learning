@@ -130,9 +130,9 @@ export const FrictionCenterExtra: FC = () => {
 
           {/* 坐标轴 */}
           <line x1={originX - 2} y1={originY} x2={originX + plotW + 3} y2={originY}
-            stroke={PHYSICS_COLORS.labelText} strokeWidth={0.4} markerEnd="url(#chart-arrow)" />
+            stroke={PHYSICS_COLORS.labelText} strokeWidth={0.4} markerEnd="url(#arrow-medium-1E293B)" />
           <line x1={originX} y1={originY + 2} x2={originX} y2={margin.top - 3}
-            stroke={PHYSICS_COLORS.labelText} strokeWidth={0.4} markerEnd="url(#chart-arrow)" />
+            stroke={PHYSICS_COLORS.labelText} strokeWidth={0.4} markerEnd="url(#arrow-medium-1E293B)" />
 
           <text x={originX + plotW + 4} y={originY + 1.2} fontSize={fs} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
             {mode === 0 ? 'F (N)' : 'θ (°)'}
@@ -195,7 +195,7 @@ export const FrictionCenterExtra: FC = () => {
                 f_max
               </text>
               <circle cx={model1Data.toSvgX(F_applied)} cy={model1Data.toSvgY(model1Data.f_actual)} r={2.2} fill={PHYSICS_COLORS.friction} opacity={0.25} />
-              <circle cx={model1Data.toSvgX(F_applied)} cy={model1Data.toSvgY(model1Data.f_actual)} r={1.2} fill={PHYSICS_COLORS.friction} stroke="#FFFFFF" strokeWidth={0.35} />
+              <circle cx={model1Data.toSvgX(F_applied)} cy={model1Data.toSvgY(model1Data.f_actual)} r={1.2} fill={PHYSICS_COLORS.friction} />
               <text x={model1Data.toSvgX(F_applied) + 3} y={model1Data.toSvgY(model1Data.f_actual) - 2} fontSize={3.2} fill={PHYSICS_COLORS.friction} fontWeight="bold">
                 {model1Data.isSliding ? '滑动' : '静摩擦'} f = {model1Data.f_actual.toFixed(1)} N
               </text>
@@ -214,7 +214,7 @@ export const FrictionCenterExtra: FC = () => {
                 θ_c ≈ {model2Data.criticalAngle.toFixed(1)}°
               </text>
               <circle cx={model2Data.toSvgX(angle)} cy={model2Data.toSvgY(model2Data.f_actual)} r={2.2} fill={PHYSICS_COLORS.friction} opacity={0.25} />
-              <circle cx={model2Data.toSvgX(angle)} cy={model2Data.toSvgY(model2Data.f_actual)} r={1.2} fill={PHYSICS_COLORS.friction} stroke="#FFFFFF" strokeWidth={0.35} />
+              <circle cx={model2Data.toSvgX(angle)} cy={model2Data.toSvgY(model2Data.f_actual)} r={1.2} fill={PHYSICS_COLORS.friction} />
               <text x={model2Data.toSvgX(angle) + (angle > 50 ? -28 : 3)} y={model2Data.toSvgY(model2Data.f_actual) - 2} fontSize={3.2} fill={PHYSICS_COLORS.friction} fontWeight="bold">
                 {model2Data.isSliding ? '滑动' : '静摩擦'} f = {model2Data.f_actual.toFixed(1)} N
               </text>

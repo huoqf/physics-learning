@@ -105,14 +105,14 @@ export const SpringForceCenterExtra: FC = () => {
             x1={margin.left - 2} y1={cy} x2={margin.left + plotW + 3} y2={cy}
             stroke={PHYSICS_COLORS.labelText}
             strokeWidth={0.4}
-            markerEnd="url(#arrow)"
+            markerEnd="url(#arrow-medium-1E293B)"
           />
           {/* 纵轴 F */}
           <line
             x1={cx} y1={margin.top + plotH + 2} x2={cx} y2={margin.top - 3}
             stroke={PHYSICS_COLORS.labelText}
             strokeWidth={0.4}
-            markerEnd="url(#arrow)"
+            markerEnd="url(#arrow-medium-1E293B)"
           />
 
           {/* 坐标轴标签 */}

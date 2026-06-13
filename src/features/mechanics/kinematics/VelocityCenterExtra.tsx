@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import {
@@ -51,13 +51,12 @@ export default function VelocityCenterExtra() {
   // ── 当前物理状态 ──
   const { vBar, vInst, residual } = calculateInstantaneousVelocity(model, modelParams, t0, deltaT)
 
-  // ── 宽高比判断 ──
-  const isLandscape = useMemo(() => {
-    // 变加速: 水平运动 2:1
-    // 简谐振动: 水平往复 2.5:1
-    // 多阶段: 水平三段 2.5:1
-    return true
-  }, [model])
+  // SHM 模式下到达 chartTMax 自动暂停，展示完整波形
+  useEffect(() => {
+    if (model === 'shm' && isPlaying && time >= chartTMax) {
+      setIsPlaying(false)
+    }
+  }, [model, isPlaying, time, chartTMax, setIsPlaying])
 
   const modelNames = ['变加速（F递增）', '简谐振动', '往返多阶段']
 
@@ -79,76 +78,36 @@ export default function VelocityCenterExtra() {
         </div>
       </div>
 
-      {/* ── 布局容器 ── */}
-      {isLandscape ? (
-        <>
-          {/* Row 1: x-t 图 + v-t 图 左右并列 */}
-          <div className="w-full flex-[2] flex flex-row gap-3">
-            <div className="flex-1 bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
-              <VelocityXTChart
-                model={model}
-                modelParams={modelParams}
-                t0={t0}
-                deltaT={deltaT}
-                tMax={chartTMax}
-              />
-            </div>
-            <div className="flex-1 bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
-              <VelocityVTChart
-                model={model}
-                modelParams={modelParams}
-                t0={t0}
-                deltaT={deltaT}
-                tMax={chartTMax}
-              />
-            </div>
-          </div>
-          {/* Row 2: 运动动画带 */}
-          <div className="w-full flex-1 bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
-            <VelocityAnimationStrip
-              model={model}
-              modelParams={modelParams}
-              tMax={chartTMax}
-            />
-          </div>
-        </>
-
-      ) : (
-        /* 纵向布局: 动画左 / 图表右上下 */
-        <>
-          <div className="w-full flex-1 flex flex-row gap-3">
-            {/* Col 1: 运动动画带 */}
-            <div className="flex-1 bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
-              <VelocityAnimationStrip
-                model={model}
-                modelParams={modelParams}
-                tMax={chartTMax}
-              />
-            </div>
-            {/* Col 2: x-t 图 + v-t 图 上下并列 */}
-            <div className="flex-none flex flex-col gap-3" style={{ flex: '0 0 45%' }}>
-              <div className="flex-1 bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
-                <VelocityXTChart
-                  model={model}
-                  modelParams={modelParams}
-                  t0={t0}
-                  deltaT={deltaT}
-                  tMax={chartTMax}
-                />
-              </div>
-              <div className="flex-1 bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
-                <VelocityVTChart
-                  model={model}
-                  modelParams={modelParams}
-                  t0={t0}
-                  deltaT={deltaT}
-                  tMax={chartTMax}
-                />
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      {/* ── 横向布局：图表左右并列在上，动画在下 ── */}
+      {/* Row 1: x-t 图 + v-t 图 左右并列 */}
+      <div className="w-full flex-[2] flex flex-row gap-3">
+        <div className="flex-1 bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
+          <VelocityXTChart
+            model={model}
+            modelParams={modelParams}
+            t0={t0}
+            deltaT={deltaT}
+            tMax={chartTMax}
+          />
+        </div>
+        <div className="flex-1 bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
+          <VelocityVTChart
+            model={model}
+            modelParams={modelParams}
+            t0={t0}
+            deltaT={deltaT}
+            tMax={chartTMax}
+          />
+        </div>
+      </div>
+      {/* Row 2: 运动动画带 */}
+      <div className="w-full flex-1 bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
+        <VelocityAnimationStrip
+          model={model}
+          modelParams={modelParams}
+          tMax={chartTMax}
+        />
+      </div>
 
       {/* ── 动画控制栏 ── */}
       <div className="w-full shrink-0 bg-white rounded-xl shadow-sm border border-neutral-100 p-2">

@@ -1,3 +1,4 @@
+export * from './types'
 export * from './Vector2'
 export * from './constants'
 export * from './kinematics'

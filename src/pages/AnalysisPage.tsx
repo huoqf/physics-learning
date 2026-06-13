@@ -10,7 +10,7 @@ import { Button } from '@/components/UI/Button'
 import { glowRing } from '@/theme/shadow'
 import type { ProblemStep, KnowledgeNode } from '@/data/types'
 
-function ContentWithKatex({ content }: { content: string }) {
+const ContentWithKatex = React.memo(function ContentWithKatex({ content }: { content: string }) {
   const segments = content.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/g)
   return (
     <>
@@ -29,7 +29,7 @@ function ContentWithKatex({ content }: { content: string }) {
       })}
     </>
   )
-}
+})
 
 interface StepCardProps {
   step: ProblemStep

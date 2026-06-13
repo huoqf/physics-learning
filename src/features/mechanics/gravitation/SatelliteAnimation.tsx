@@ -654,7 +654,16 @@ export default function SatelliteAnimation() {
             <stop offset="60%" stopColor={SCENE_COLORS.sphere.earthTech.oceanGradient[1]} />
             <stop offset="100%" stopColor={SCENE_COLORS.sphere.earthTech.oceanGradient[2]} />
           </radialGradient>
-
+          {/* 火箭尾焰渐变 */}
+          <linearGradient id="rocket-fire-grad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#f97316" />
+            <stop offset="50%" stopColor="#ef4444" />
+            <stop offset="100%" stopColor="#dc2626" stopOpacity="0.6" />
+          </linearGradient>
+          {/* 卡片阴影滤镜 */}
+          <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000000" floodOpacity="0.12" />
+          </filter>
         </defs>
 
         {/* 1. 辅助网格 */}

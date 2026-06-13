@@ -71,7 +71,7 @@ export default function HomePage() {
               </div>
               <div>
                 <h3 className="font-semibold text-neutral-800">学习进度</h3>
-                <p className="text-sm text-neutral-500">力学模块</p>
+                <p className="text-sm text-neutral-500">全部模块</p>
               </div>
             </div>
 

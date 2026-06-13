@@ -20,9 +20,10 @@ export const VelocityXTChart: FC<VelocityXTChartProps> = ({
   // ── 物理引擎 Hook 应用 (数据源唯一化) ──
   const { points } = useVelocityPhysics(model, modelParams, tMax, t0)
 
-  // ── 滑动窗口：当 t0 超出可见范围时自动平移 ──
+  // ── 滑动窗口：当 t0 超出可见范围时自动平移，数据结束时锁定 ──
   const windowSize = tMax
-  const tWindowEnd = Math.max(tMax, t0 + deltaT + tMax * 0.1)
+  const dataEnded = t0 >= tMax
+  const tWindowEnd = dataEnded ? tMax : Math.max(tMax, t0 + deltaT + tMax * 0.1)
   const tWindowStart = tWindowEnd - windowSize
 
   // ── 值范围（直接从预计算离散轨迹中截取，消除每帧循环物理公式） ──

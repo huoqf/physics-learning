@@ -295,16 +295,6 @@ export default function FrictionAnimation() {
                 fill="url(#steel-rail)" stroke={SCENE_COLORS.pendulum.pivotStroke} strokeWidth={1.2} rx={1}
               />
 
-              {/* 轨道刻度线 */}
-              {Array.from({ length: Math.floor(boardLength / 45) }).map((_, i) => (
-                <line
-                  key={`scale-${i}`}
-                  x1={boardLength * 0.1 + i * (boardLength * 0.1)} y1={-8}
-                  x2={boardLength * 0.1 + i * (boardLength * 0.1)} y2={-5}
-                  stroke="#FFFFFF" strokeWidth={0.5}
-                />
-              ))}
-
               {/* 木箱 (沿斜面板下滑) */}
               <rect
                 x={boxLocalX - boxSize / 2} y={-boxSize - 8} width={boxSize} height={boxSize}
@@ -336,11 +326,11 @@ export default function FrictionAnimation() {
                     F_N
                   </text>
 
-                  {/* 2. 摩擦力 f (平行斜面向上，即向左) */}
+                  {/* 2. 摩擦力 f (平行斜面向上，作用于接触面中心) */}
                   {f_actual_m2 > 0.5 && (
                     <VectorArrow
-                      origin={{ x: boxLocalX - boxSize / 2, y: -(-8) }}
-                      vector={{ x: -f_actual_m2, y: 0 }}
+                      origin={{ x: boxLocalX, y: 8 }}
+                      vector={{ x: f_actual_m2, y: 0 }}
                       type="friction"
                       sceneScale={frictionSceneScale}
                       strokeWidth={CANVAS_STYLE.stroke.vectorMain}
@@ -349,7 +339,7 @@ export default function FrictionAnimation() {
                   )}
                   {f_actual_m2 > 3 && (
                     <text
-                      x={boxLocalX - boxSize / 2 - f_actual_m2 * FORCE_VECTOR_SCALE - 12} y={-12}
+                      x={boxLocalX + f_actual_m2 * FORCE_VECTOR_SCALE + 6} y={-12}
                       fontSize={FONT.axisSize} fill={PHYSICS_COLORS.friction} fontWeight="bold"
                     >
                       f
@@ -364,8 +354,10 @@ export default function FrictionAnimation() {
               <g>
                 {(() => {
                   // 木箱几何重心在世界坐标系中的位置
-                  const boxCenterWorldX = pivotX + boxLocalX * Math.cos(angleRad)
-                  const boxCenterWorldY = pivotY - boxLocalX * Math.sin(angleRad) - boxSize / 2 - 8
+                  // 局部坐标: (boxLocalX, -boxSize/2 - 8)，旋转 -angle 后投影到世界坐标
+                  const localY = -boxSize / 2 - 8
+                  const boxCenterWorldX = pivotX + boxLocalX * Math.cos(angleRad) + localY * Math.sin(angleRad)
+                  const boxCenterWorldY = pivotY - boxLocalX * Math.sin(angleRad) + localY * Math.cos(angleRad)
                   const gLen = weight * FORCE_VECTOR_SCALE
                   return (
                     <g>

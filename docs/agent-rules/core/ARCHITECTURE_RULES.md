@@ -220,11 +220,15 @@ tests/
 
 ## 7. 动画系统规则
 
-- 所有动画必须使用 `src/utils/animation.ts`
+- 所有动画必须使用 `src/utils/animation.ts` 提供的两个 Hook
 - **禁止**在组件中直接调用 `requestAnimationFrame`
 - **禁止**各组件自行实现 easing 曲线或时间控制器
-- 优先使用 `globalAnimationController`，特殊场景可创建独立 `AnimationController`
 - 动画回调必须处理 `deltaTime`，动画更新频率与物理计算频率解耦
+
+| Hook | 适用场景 |
+|------|---------|
+| `useAnimationFrame` | 受播放状态控制的动画帧；`playing=false` 时 rAF 停止 |
+| `useSimulationFrame` | 持续运行的物理仿真帧（如拖拽、弹簧）；rAF 始终运行，`active` 控制仿真推进 |
 
 ---
 
@@ -249,9 +253,16 @@ tests/
 ### 8.1.1 物理量构建器扩展指南
 
 新增动画的物理量构建逻辑必须：
-1. 在 `src/data/quantities/` 对应子模块中添加 case 分支
-2. 在 `src/data/physicsQuantities.ts` 的 `lazyBuilders` 和 `builderNames` 中注册
-3. 在 `AnimationPage` 进入时通过 `preloadQuantityBuilder()` 预加载
+1. 在 `src/data/quantities/` 对应子模块中实现构建函数（或添加 case 分支）
+2. 在 `src/data/physicsQuantities.ts` 的 `quantityRegistry` 中添加一条记录：
+   ```ts
+   'anim-xxx': {
+     loader: () => import('./quantities/<模块名>'),
+     builderName: '<BuilderName>',  // 必须是 BuilderName 联合类型中的合法值，拼错编译期报错
+   },
+   ```
+3. 若新增了新的构建器函数名，同步将其加入文件顶部的 `BuilderName` 联合类型
+4. 动画页进入时通过 `preloadQuantityBuilder()` 预加载（AnimationPage 已统一调用，无需手动触发）
 
 禁止直接在 `physicsQuantities.ts` 中添加 switch-case 构建逻辑。
 

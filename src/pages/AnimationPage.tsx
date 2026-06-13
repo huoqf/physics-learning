@@ -1,9 +1,9 @@
-import { Suspense, useEffect, useRef, useState, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { Suspense, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, FlaskConical, Play } from 'lucide-react'
 import { getAnimationConfig } from '@/data/animationRegistry'
-import { buildPhysicsQuantities, preloadQuantityBuilder } from '@/data/physicsQuantities'
-import { useAnimationStore, useProgressStore } from '@/stores'
+import { buildPhysicsQuantities } from '@/data/physicsQuantities'
+import { useAnimationStore } from '@/stores'
 import { useAppStore } from '@/stores/useAppStore'
 import {
   AnimationControls,
@@ -12,10 +12,9 @@ import {
   ErrorBoundary,
   DiscoveryGuide,
 } from '@/components/UI'
-import type { DiscoveryStepData } from '@/components/UI/DiscoveryGuide'
 import { duration, easing } from '@/theme/motion'
 import { ThreePanel } from '@/components/Layout'
-import { useAnimationFrame } from '@/utils/animation'
+import { useAnimationLifecycle } from '@/hooks/useAnimationLifecycle'
 
 /**
  * 中心动画区域 — 订阅 time（每帧更新），与左侧/右侧面板隔离。
@@ -171,9 +170,12 @@ function RightPhysicsPanel({
 }) {
   const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
+  const isPlaying = useAnimationStore((s) => s.isPlaying)
+  // 播放时用 0.1s 精度减少重算，拖动时用精确时间保持响应
+  const effectiveTime = isPlaying ? Math.round(time * 10) / 10 : time
   const physicsQuantities = useMemo(
-    () => buildPhysicsQuantities(animId, params, time),
-    [animId, params, time]
+    () => buildPhysicsQuantities(animId, params, effectiveTime),
+    [animId, params, effectiveTime]
   )
 
   return (
@@ -194,12 +196,22 @@ function RightPhysicsPanel({
 }
 
 export default function AnimationPage() {
-  const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+
+  const {
+    config,
+    isDiscoveryMode,
+    canvasDimmed,
+    handleReset,
+    discoverySteps,
+    discoveryStep,
+    setDiscoveryStep,
+    nextDiscoveryStep,
+    prevDiscoveryStep,
+  } = useAnimationLifecycle()
 
   // 低频状态：selector 订阅，避免 time 变化触发重渲染
   const params = useAnimationStore((s) => s.params)
-  const isPlaying = useAnimationStore((s) => s.isPlaying)
   const showTimeSlices = useAnimationStore((s) => s.showTimeSlices)
   const showDualObjects = useAnimationStore((s) => s.showDualObjects)
   const setParams = useAnimationStore((s) => s.setParams)
@@ -209,83 +221,7 @@ export default function AnimationPage() {
   const toggleTimeSlices = useAnimationStore((s) => s.toggleTimeSlices)
   const toggleDualObjects = useAnimationStore((s) => s.toggleDualObjects)
 
-  const { mode, setMode, discoveryStep, setDiscoveryStep, setDiscoveryMaxStep, nextDiscoveryStep, prevDiscoveryStep } = useAppStore()
-  const { markAnimationViewed } = useProgressStore()
-  const currentTimeRef = useRef(0)
-  const [canvasDimmed, setCanvasDimmed] = useState(false)
-  const [discoverySteps, setDiscoverySteps] = useState<DiscoveryStepData[]>([])
-
-  const config = id ? getAnimationConfig(id) : undefined
-
-  const isDiscoveryMode = mode === 'discovery' && !!config?.supportsDiscovery
-
-  // 异步加载发现模式步骤
-  useEffect(() => {
-    if (config?.discoverySteps) {
-      config.discoverySteps().then(m => {
-        setDiscoverySteps(m.default)
-        setDiscoveryMaxStep(m.default.length - 1)
-      })
-    } else {
-      setDiscoverySteps([])
-    }
-  }, [config, setDiscoveryMaxStep])
-
-  const prevConfigIdRef = useRef<string | undefined>(undefined)
-
-  useEffect(() => {
-    if (config && config.id !== prevConfigIdRef.current) {
-      prevConfigIdRef.current = config.id
-      setParams(config.defaultParams)
-      setTime(0)
-      currentTimeRef.current = 0
-      setIsPlaying(false)
-      setMode('animation')
-      markAnimationViewed(config.id)
-      // 预加载物理量构建器，确保首帧渲染前就绪
-      preloadQuantityBuilder(config.id)
-    }
-  }, [config, setParams, setTime, setIsPlaying, setMode, markAnimationViewed])
-
-  useEffect(() => {
-    if (!isPlaying) {
-      const timer = setTimeout(() => setCanvasDimmed(true), duration.fast)
-      return () => clearTimeout(timer)
-    } else {
-      setCanvasDimmed(false)
-    }
-  }, [isPlaying])
-
-  // 外部修改 store time 时（如重置、拖动进度条），同步到 currentTimeRef
-  const time = useAnimationStore((s) => s.time)
-  useEffect(() => {
-    // 只在非动画驱动时同步（动画驱动时 time ≈ currentTimeRef）
-    if (!isPlaying) {
-      currentTimeRef.current = time
-    }
-  }, [time, isPlaying])
-
-  const speed = useAnimationStore((s) => s.speed)
-  const maxTime = 30
-  useAnimationFrame(
-    (deltaTime) => {
-      currentTimeRef.current += deltaTime / 1000
-      if (currentTimeRef.current >= maxTime) {
-        currentTimeRef.current = maxTime
-        setTime(maxTime)
-        setIsPlaying(false)
-        return
-      }
-      setTime(currentTimeRef.current)
-    },
-    { playing: isPlaying, speed }
-  )
-
-  const handleReset = () => {
-    setTime(0)
-    currentTimeRef.current = 0
-    setIsPlaying(false)
-  }
+  const { setMode } = useAppStore()
 
   if (!config || !config.Component) {
     return (
@@ -321,7 +257,7 @@ export default function AnimationPage() {
     updateParam,
     setParams,
     animationActions: {
-      resetAnimation: () => { setTime(0); setIsPlaying(false) },
+      resetAnimation: handleReset,
       pauseAnimation: () => { setIsPlaying(false) },
       restartAnimation: () => { setTime(0); setIsPlaying(true) },
     },

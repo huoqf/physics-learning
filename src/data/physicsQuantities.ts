@@ -9,142 +9,90 @@ import type { PhysicsPanelData, QuantityBuilder } from './quantities/types'
 // 重导出类型，保持对外接口不变
 export type { PhysicsQuantity, GaokaoPoint, Formula, PhysicsPanelData } from './quantities/types'
 
-/** 懒加载构建器映射表 */
-const lazyBuilders: Record<string, () => Promise<{ [key: string]: QuantityBuilder }>> = {
-  // 运动学
-  'anim-velocity': () => import('./quantities/kinematics'),
-  'anim-acceleration': () => import('./quantities/kinematics'),
-  'anim-uniform-acceleration': () => import('./quantities/kinematics'),
-  'anim-free-fall': () => import('./quantities/kinematics'),
-  'anim-vertical-throw': () => import('./quantities/kinematics'),
-  'anim-projectile': () => import('./quantities/kinematics'),
-  'anim-oblique-throw': () => import('./quantities/kinematics'),
+/** 构建器函数名联合类型 — 新增条目时拼错名字会在编译期报错 */
+type BuilderName =
+  | 'buildKinematicsQuantities'
+  | 'buildForceMotionQuantities'
+  | 'buildDynamicsQuantities'
+  | 'buildCircularQuantities'
+  | 'buildGravitationQuantities'
+  | 'buildMomentumQuantities'
+  | 'buildElectromagnetismQuantities'
+  | 'buildEnergyQuantities'
 
-  // 力与运动专题
-  'anim-force-motion-topic': () => import('./quantities/forceMotion'),
-
-  // 动力学
-  'anim-connected-bodies': () => import('./quantities/dynamics'),
-  'anim-spring-force': () => import('./quantities/dynamics'),
-  'anim-friction': () => import('./quantities/dynamics'),
-  'anim-equilibrium': () => import('./quantities/dynamics'),
-  'anim-vector-addition': () => import('./quantities/dynamics'),
-  'anim-newton-second': () => import('./quantities/dynamics'),
-  'anim-weightlessness': () => import('./quantities/dynamics'),
-  'anim-gravity-basic': () => import('./quantities/dynamics'),
-  'anim-gravity': () => import('./quantities/dynamics'),
-
-  // 圆周运动
-  'anim-circular-motion': () => import('./quantities/circular'),
-  'anim-centripetal': () => import('./quantities/circular'),
-
-  // 万有引力
-  'anim-kepler': () => import('./quantities/gravitation'),
-  'anim-satellite': () => import('./quantities/gravitation'),
-
-  // 动量
-  'anim-momentum': () => import('./quantities/momentum'),
-  'anim-impulse': () => import('./quantities/momentum'),
-  'anim-impulse-concept': () => import('./quantities/momentum'),
-  'anim-momentum-conservation': () => import('./quantities/momentum'),
-  'anim-collision': () => import('./quantities/momentum'),
-
-  // 电磁学
-  'anim-coulomb-law': () => import('./quantities/electromagnetism'),
-  'anim-electric-field': () => import('./quantities/electromagnetism'),
-  'anim-charge-in-efield': () => import('./quantities/electromagnetism'),
-  'anim-capacitor': () => import('./quantities/electromagnetism'),
-  'anim-field-lines': () => import('./quantities/electromagnetism'),
-  'anim-electric-potential': () => import('./quantities/electromagnetism'),
-  'anim-ohm-law': () => import('./quantities/electromagnetism'),
-  'anim-circuit-analysis': () => import('./quantities/electromagnetism'),
-  'anim-closed-circuit': () => import('./quantities/electromagnetism'),
-  'anim-ampere-force': () => import('./quantities/electromagnetism'),
-  'anim-lorentz-force': () => import('./quantities/electromagnetism'),
-  'anim-charge-in-bfield': () => import('./quantities/electromagnetism'),
-  'anim-faraday-law': () => import('./quantities/electromagnetism'),
-  'anim-lenzs-law': () => import('./quantities/electromagnetism'),
-  'anim-cutting-emf': () => import('./quantities/electromagnetism'),
-  'anim-ac-generation': () => import('./quantities/electromagnetism'),
-  'anim-ac-values': () => import('./quantities/electromagnetism'),
-  'anim-transformer': () => import('./quantities/electromagnetism'),
-  'anim-power-transmission': () => import('./quantities/electromagnetism'),
-
-  // 能量与功
-  'anim-power': () => import('./quantities/energy'),
-  'anim-kinetic-energy': () => import('./quantities/energy'),
-  'anim-potential-energy': () => import('./quantities/energy'),
-  'anim-energy-conservation': () => import('./quantities/energy'),
-  'anim-work': () => import('./quantities/energy'),
+/** 单条注册记录：懒加载器 + 构建器函数名 */
+interface QuantityRegistration {
+  loader: () => Promise<Record<string, QuantityBuilder>>
+  builderName: BuilderName
 }
 
-/** 各模块的构建器函数名映射 */
-const builderNames: Record<string, string> = {
+/** 动画 ID → 物理量构建器 注册表（单一数据源，不可能漏同步） */
+const quantityRegistry: Record<string, QuantityRegistration> = {
   // 运动学
-  'anim-velocity': 'buildKinematicsQuantities',
-  'anim-acceleration': 'buildKinematicsQuantities',
-  'anim-uniform-acceleration': 'buildKinematicsQuantities',
-  'anim-free-fall': 'buildKinematicsQuantities',
-  'anim-vertical-throw': 'buildKinematicsQuantities',
-  'anim-projectile': 'buildKinematicsQuantities',
-  'anim-oblique-throw': 'buildKinematicsQuantities',
+  'anim-velocity':              { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
+  'anim-acceleration':          { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
+  'anim-uniform-acceleration':  { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
+  'anim-free-fall':             { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
+  'anim-vertical-throw':        { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
+  'anim-projectile':            { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
+  'anim-oblique-throw':         { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
 
   // 力与运动专题
-  'anim-force-motion-topic': 'buildForceMotionQuantities',
+  'anim-force-motion-topic':    { loader: () => import('./quantities/forceMotion'),    builderName: 'buildForceMotionQuantities' },
 
   // 动力学
-  'anim-connected-bodies': 'buildDynamicsQuantities',
-  'anim-spring-force': 'buildDynamicsQuantities',
-  'anim-friction': 'buildDynamicsQuantities',
-  'anim-equilibrium': 'buildDynamicsQuantities',
-  'anim-vector-addition': 'buildDynamicsQuantities',
-  'anim-newton-second': 'buildDynamicsQuantities',
-  'anim-weightlessness': 'buildDynamicsQuantities',
-  'anim-gravity-basic': 'buildDynamicsQuantities',
-  'anim-gravity': 'buildDynamicsQuantities',
+  'anim-connected-bodies':      { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
+  'anim-spring-force':          { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
+  'anim-friction':              { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
+  'anim-equilibrium':           { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
+  'anim-vector-addition':       { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
+  'anim-newton-second':         { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
+  'anim-weightlessness':        { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
+  'anim-gravity-basic':         { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
+  'anim-gravity':               { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
 
   // 圆周运动
-  'anim-circular-motion': 'buildCircularQuantities',
-  'anim-centripetal': 'buildCircularQuantities',
+  'anim-circular-motion':       { loader: () => import('./quantities/circular'),       builderName: 'buildCircularQuantities' },
+  'anim-centripetal':           { loader: () => import('./quantities/circular'),       builderName: 'buildCircularQuantities' },
 
   // 万有引力
-  'anim-kepler': 'buildGravitationQuantities',
-  'anim-satellite': 'buildGravitationQuantities',
+  'anim-kepler':                { loader: () => import('./quantities/gravitation'),    builderName: 'buildGravitationQuantities' },
+  'anim-satellite':             { loader: () => import('./quantities/gravitation'),    builderName: 'buildGravitationQuantities' },
 
   // 动量
-  'anim-momentum': 'buildMomentumQuantities',
-  'anim-impulse': 'buildMomentumQuantities',
-  'anim-impulse-concept': 'buildMomentumQuantities',
-  'anim-momentum-conservation': 'buildMomentumQuantities',
-  'anim-collision': 'buildMomentumQuantities',
+  'anim-momentum':              { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
+  'anim-impulse':               { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
+  'anim-impulse-concept':       { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
+  'anim-momentum-conservation': { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
+  'anim-collision':             { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
 
   // 电磁学
-  'anim-coulomb-law': 'buildElectromagnetismQuantities',
-  'anim-electric-field': 'buildElectromagnetismQuantities',
-  'anim-charge-in-efield': 'buildElectromagnetismQuantities',
-  'anim-capacitor': 'buildElectromagnetismQuantities',
-  'anim-field-lines': 'buildElectromagnetismQuantities',
-  'anim-electric-potential': 'buildElectromagnetismQuantities',
-  'anim-ohm-law': 'buildElectromagnetismQuantities',
-  'anim-circuit-analysis': 'buildElectromagnetismQuantities',
-  'anim-closed-circuit': 'buildElectromagnetismQuantities',
-  'anim-ampere-force': 'buildElectromagnetismQuantities',
-  'anim-lorentz-force': 'buildElectromagnetismQuantities',
-  'anim-charge-in-bfield': 'buildElectromagnetismQuantities',
-  'anim-faraday-law': 'buildElectromagnetismQuantities',
-  'anim-lenzs-law': 'buildElectromagnetismQuantities',
-  'anim-cutting-emf': 'buildElectromagnetismQuantities',
-  'anim-ac-generation': 'buildElectromagnetismQuantities',
-  'anim-ac-values': 'buildElectromagnetismQuantities',
-  'anim-transformer': 'buildElectromagnetismQuantities',
-  'anim-power-transmission': 'buildElectromagnetismQuantities',
+  'anim-coulomb-law':           { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-electric-field':        { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-charge-in-efield':      { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-capacitor':             { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-field-lines':           { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-electric-potential':    { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-ohm-law':               { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-circuit-analysis':      { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-closed-circuit':        { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-ampere-force':          { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-lorentz-force':         { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-charge-in-bfield':      { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-faraday-law':           { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-lenzs-law':             { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-cutting-emf':           { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-ac-generation':         { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-ac-values':             { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-transformer':           { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-power-transmission':    { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
 
   // 能量与功
-  'anim-power': 'buildEnergyQuantities',
-  'anim-kinetic-energy': 'buildEnergyQuantities',
-  'anim-potential-energy': 'buildEnergyQuantities',
-  'anim-energy-conservation': 'buildEnergyQuantities',
-  'anim-work': 'buildEnergyQuantities',
+  'anim-power':                 { loader: () => import('./quantities/energy'),         builderName: 'buildEnergyQuantities' },
+  'anim-kinetic-energy':        { loader: () => import('./quantities/energy'),         builderName: 'buildEnergyQuantities' },
+  'anim-potential-energy':      { loader: () => import('./quantities/energy'),         builderName: 'buildEnergyQuantities' },
+  'anim-energy-conservation':   { loader: () => import('./quantities/energy'),         builderName: 'buildEnergyQuantities' },
+  'anim-work':                  { loader: () => import('./quantities/energy'),         builderName: 'buildEnergyQuantities' },
 }
 
 /** 已加载的构建器缓存（模块级单例） */
@@ -157,12 +105,11 @@ const builderCache = new Map<string, QuantityBuilder>()
 export async function preloadQuantityBuilder(animId: string): Promise<void> {
   if (builderCache.has(animId)) return
 
-  const lazyLoader = lazyBuilders[animId]
-  if (!lazyLoader) return
+  const reg = quantityRegistry[animId]
+  if (!reg) return
 
-  const module = await lazyLoader()
-  const builderName = builderNames[animId]
-  const builder = module[builderName]
+  const module = await reg.loader()
+  const builder = module[reg.builderName]
   if (builder) {
     builderCache.set(animId, builder)
   }

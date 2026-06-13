@@ -221,6 +221,10 @@ export default function MomentumTheoremAnimation() {
             <stop offset="80%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
             <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
           </radialGradient>
+          <linearGradient id="fluid-grad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor={PHYSICS_COLORS.velocity} stopOpacity="0.6" />
+            <stop offset="100%" stopColor={PHYSICS_COLORS.velocity} stopOpacity="0.3" />
+          </linearGradient>
         </defs>
 
         {/* ========== 地面线 ========== */}

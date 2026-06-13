@@ -1,13 +1,16 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import { AppInitializer } from './app/AppInitializer';
 import { ErrorBoundary } from './components/UI';
 import './index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <App />
+      <AppInitializer>
+        <App />
+      </AppInitializer>
     </ErrorBoundary>
   </StrictMode>,
 );
