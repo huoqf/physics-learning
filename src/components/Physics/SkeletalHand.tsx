@@ -314,7 +314,7 @@ const PALM_W = 64
 const PALM_H = 72
 
 function Palm({ isBack }: { chirality: HandChirality, isBack: boolean }) {
-  // 掌心朝向观察者时标注“掌心”，背向时标注“手背”
+  // 掌心朝向观察者时标注"掌心"，背向时标注"手背"
   const label = isBack ? "手背" : "掌心"
   
   return (

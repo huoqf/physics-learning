@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getFingersForPose, type HandPose, type Finger } from '@/features/electromagnetism/shared/SkeletalHand'
+import { getFingersForPose, type HandPose, type Finger } from '@/components/Physics/SkeletalHand'
 
 /** 复现 SkeletalHand.tsx 内部的 computeFingerTip（不导出，但需要测试其行为）。
  *  这里用相同的算法计算指尖坐标，验证"标签位置 = 指尖位置"。 */
@@ -32,10 +32,10 @@ describe('SkeletalHand · 手指姿态预设', () => {
     }
   })
 
-  it('解剖学约定：右手拇指基部在左下侧、四指基部在上方', () => {
+  it('解剖学约定：右手拇指基部在右下侧（baseX>0）、四指基部在上方', () => {
     const right = getFingersForPose('open', 'right')
     const thumb = right.find((f) => f.name === 'thumb')!
-    expect(thumb.baseX).toBeLessThan(0)
+    expect(thumb.baseX).toBeGreaterThan(0)
     expect(thumb.baseY).toBeGreaterThanOrEqual(0)
     for (const name of ['index', 'middle', 'ring', 'little'] as const) {
       const f = right.find((x) => x.name === name)!
@@ -43,10 +43,10 @@ describe('SkeletalHand · 手指姿态预设', () => {
     }
   })
 
-  it('右手静止姿态：拇指第一段指向左上方（-130°），四指第一段指向上方（-90°）', () => {
+  it('右手静止姿态：拇指第一段指向右上方（-50°），四指第一段指向上方（-90°）', () => {
     const right = getFingersForPose('open', 'right')
     const thumb = right.find((f) => f.name === 'thumb')!
-    expect(thumb.bones[0].angle).toBe(-130)
+    expect(thumb.bones[0].angle).toBe(-50)
     for (const name of ['index', 'middle', 'ring', 'little'] as const) {
       const f = right.find((x) => x.name === name)!
       expect(f.bones[0].angle).toBe(-90)
@@ -67,21 +67,19 @@ describe('SkeletalHand · 手指姿态预设', () => {
     for (let i = 0; i < right.length; i++) {
       expect(left[i].baseX).toBeCloseTo(-right[i].baseX, 10)
       expect(left[i].baseY).toBeCloseTo(right[i].baseY, 10)
-      // 第一段骨（绝对角度）取 (180 - angle)
       expect(left[i].bones[0].angle).toBeCloseTo(180 - right[i].bones[0].angle, 10)
-      // 第二段及之后（相对父骨骼）保持不变
       for (let b = 1; b < right[i].bones.length; b++) {
         expect(left[i].bones[b].angle).toBeCloseTo(right[i].bones[b].angle, 10)
       }
     }
   })
 
-  it('左手静止姿态：拇指基部在右下侧、第一段指向右上方（310° ≡ -50°）', () => {
+  it('左手静止姿态：拇指基部在左下侧（baseX<0）、第一段指向左上方（230°）', () => {
     const left = getFingersForPose('open', 'left')
     const thumb = left.find((f) => f.name === 'thumb')!
-    expect(thumb.baseX).toBeGreaterThan(0)
-    // 180 - (-130) = 310°（未规范化），等价于 -50°（指向右下方 ≈ 西偏南 50°）
-    expect(thumb.bones[0].angle).toBeCloseTo(310, 10)
+    expect(thumb.baseX).toBeLessThan(0)
+    // 180 - (-50) = 230°
+    expect(thumb.bones[0].angle).toBeCloseTo(230, 10)
   })
 
   it('半握姿态：拇/食/中 保持伸直（与张开姿态完全相同），无名/小指 卷起', () => {
@@ -94,7 +92,6 @@ describe('SkeletalHand · 手指姿态预设', () => {
         expect(h.bones[b].angle).toBeCloseTo(o.bones[b].angle, 10)
       }
     }
-    // 无名/小指 在半握中应有明显折弯
     for (const name of ['ring', 'little'] as const) {
       const h = half.find((f) => f.name === name)!
       expect(Math.abs(h.bones[1].angle)).toBeGreaterThanOrEqual(40)
@@ -113,12 +110,11 @@ describe('SkeletalHand · 手指姿态预设', () => {
 })
 
 describe('SkeletalHand · 指尖位置（标签锚点）', () => {
-  it('拇指静止姿态：指尖在左上区域（y < 0, x < baseX）', () => {
-    // 拇指静止方向 ≈ -130° + (-25°) → 应指向左上方
+  it('拇指静止姿态：指尖在右上区域（y < 0, x > baseX）', () => {
     const [thumb] = getFingersForPose('open').filter((f) => f.name === 'thumb')
     const tip = computeFingerTip(thumb)
-    expect(tip.x).toBeLessThan(thumb.baseX) // 向左
-    expect(tip.y).toBeLessThan(0) // 向上（canvas 中 y<0 为上）
+    expect(tip.x).toBeGreaterThan(thumb.baseX)
+    expect(tip.y).toBeLessThan(thumb.baseY)
   })
 
   it('四指静止姿态：指尖都在手掌上方（y < 0）', () => {
@@ -139,9 +135,9 @@ describe('SkeletalHand · 指尖位置（标签锚点）', () => {
     expect(tipM.y).toBeLessThan(tipI.y)
   })
 
-  it('四指指尖按 index→middle→ring→little 顺序 x 递增', () => {
+  it('四指指尖按 little→ring→middle→index 顺序 x 递增（真人手：小指在最左）', () => {
     const fingers = getFingersForPose('open')
-    const tips = ['index', 'middle', 'ring', 'little'].map((name) => {
+    const tips = ['little', 'ring', 'middle', 'index'].map((name) => {
       const f = fingers.find((x) => x.name === name)!
       return { name, x: computeFingerTip(f).x }
     })
@@ -158,7 +154,6 @@ describe('SkeletalHand · 指尖位置（标签锚点）', () => {
       const f = fistFingers.find((x) => x.name === name)!
       const tipO = computeFingerTip(o)
       const tipF = computeFingerTip(f)
-      // 握拳后指尖应该比张开时**更低**（canvas y 更大），即 y 增加
       expect(tipF.y).toBeGreaterThan(tipO.y)
     }
   })

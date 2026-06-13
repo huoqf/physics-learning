@@ -66,7 +66,6 @@ describe('Kepler Physics Calculations', () => {
       const period = 10.0
       
       const c = Math.sqrt(a * a - b * b)
-      const e = c / a
       const r_near = a - c // 近日点
       const r_far = a + c  // 远日点
       

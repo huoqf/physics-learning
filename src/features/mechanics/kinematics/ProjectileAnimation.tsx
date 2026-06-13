@@ -308,16 +308,12 @@ export default function ProjectileAnimation() {
       >
         {/* ========== defs 渐变与材质 ========== */}
         <defs>
-          {/* 金属导轨材质 */}
-          <linearGradient id="slider-metal" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[0]} />
-            <stop offset="30%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[1]} />
-            <stop offset="70%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[3]} />
-          </linearGradient>
-
-
-
+          <radialGradient id="vacuum-sphere-grad" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[0]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[0]} />
+            <stop offset="33%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[1]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[1]} />
+            <stop offset="66%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[2]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[3]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[3]} />
+          </radialGradient>
           <VectorDefs colors={[PHYSICS_COLORS.velocityX, PHYSICS_COLORS.velocityY, PHYSICS_COLORS.velocity]} />
         </defs>
 
@@ -331,17 +327,6 @@ export default function ProjectileAnimation() {
         <text x={originX - 10} y={originY + 4} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="end">y = 10m</text>
         <text x={originX - 10} y={groundY + 4} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="end">y = 0</text>
         <text x={canvasSize.width - 25} y={groundY + 16} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">x</text>
-
-        {/* 抛出滑轨底座 */}
-        <g>
-          <path
-            d={`M ${originX - 18} ${originY} L ${originX} ${originY} L ${originX} ${originY + 12} L ${originX - 18} ${originY + 12} Z`}
-            fill="url(#slider-metal)"
-            stroke={PHYSICS_COLORS.labelText}
-            strokeWidth={1}
-          />
-          <circle cx={originX - 9} cy={originY + 6} r={2} fill={PHYSICS_COLORS.velocityY} />
-        </g>
 
         {/* 运动历史轨迹线 */}
         {physicalVacPathD && (

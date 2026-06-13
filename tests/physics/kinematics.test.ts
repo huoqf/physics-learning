@@ -14,7 +14,7 @@ import {
   precomputeObliqueThrowWithDrag,
   calculateCircularMotion,
 } from '@/physics'
-import type { VariableMotionModel, VariableMotionParams } from '@/physics'
+import type { VariableMotionParams } from '@/physics'
 
 describe('calculateAverageVelocity', () => {
   it('应正确计算匀速运动的平均速度', () => {
@@ -144,7 +144,6 @@ describe('calculateVariableAcceleration', () => {
     })
 
     it('位移先增后减，路程单调递增', () => {
-      const r5 = calculateVariableAcceleration('multi-stage', params, 5)
       const r9 = calculateVariableAcceleration('multi-stage', params, 9)
       const r11 = calculateVariableAcceleration('multi-stage', params, 11)
       // 位移：阶段2 > 阶段4（停留时位移最大）> 阶段5（位移减小）

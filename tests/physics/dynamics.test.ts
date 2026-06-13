@@ -249,8 +249,6 @@ describe('Dynamics physics calculations', () => {
     const m = 2
     const mu = 0.2
     const g = 9.8
-    const N = m * g // 19.6
-    const f_max = mu * N // 3.92
 
     it('should stay static under linear force when F_applied <= f_max', () => {
       const k = 2

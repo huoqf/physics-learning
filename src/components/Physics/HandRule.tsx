@@ -10,7 +10,7 @@ import {
 import { SkeletonHand, type HandPose } from './SkeletalHand'
 
 /**
- * 手指定则交互组件（[M4-1.x] 增强）
+ * 手指定则交互组件
  * ----------------------------------------------------------------------------
  * 在"导体切割磁感线"等场景中，**自动**用右手 / 左手骨骼手演示 B/v/I 三指关系：
  *   右手定则：拇·v   食·B   中·I   （v×B = I）
@@ -72,9 +72,9 @@ export function HandRule({
   mode,
   thumbDir,
   // indexDir: 保留在 HandRuleProps 接口（语义上是"食指方向 / B 方向"），
-  //          但内部不再使用 —— 之前用 BLabel 渲染 ⊙/⊗，现已交给上层 CuttingEMF
+  //          但内部不再使用 —— 之前用 BLabel 渲染 ⊙/⊗，现已交给上层组件
   //          在 B 标题里渲染（避免和标题里的 ⊗ 重复）。
-  //          保留接口字段是为了 API 稳定性，上层 CuttingEMFHandRule 仍然会传这个值。
+  //          保留接口字段是为了 API 稳定性。
   middleDir,
   cx,
   cy,
@@ -173,8 +173,6 @@ export function HandRule({
   }
 
   // ── 双击复位：把 userOffset 归零，让手回到自动计算的标准姿态 ───────
-  // 之所以用"双击"而不是"单击"：单击可能跟 drag-rotate 的"按下"产生歧义。
-  // 双击天然是一个明确的"动作结束 → 动作结束"信号，不影响正常拖拽。
   const handleDoubleClick = (e: React.MouseEvent<SVGGElement>) => {
     if (!draggable) return
     e.stopPropagation()
@@ -189,10 +187,6 @@ export function HandRule({
   const showTipMarker = { thumb: true, index: true, middle: true, ring: false, little: false }
   const tipLabels = DEFAULT_TIP_LABELS
   const tipColors = DEFAULT_TIP_COLORS
-
-  // B 出/入纸面方向的视觉提示：交给上层 CuttingEMF 在 B 标题里渲染 ⊙/⊗，
-  // 这里不再画冗余的 BLabel（避免和标题里的 "B = 1.0 T（垂直纸面向里 ⊗）" 重复）。
-  // 同时也避免在手指尖上叠加额外文字让手部显得杂乱。
 
   return (
     <g opacity={active ? opacity : 0.45}>
@@ -245,51 +239,6 @@ export function HandRule({
         </text>
       )}
     </g>
-  )
-}
-
-/**
- * 便捷工厂：直接根据"切割磁感线"参数 (vDir, B_out) 生成 HandRule 所需 props。
- */
-export interface CuttingEMFHandRuleProps extends Omit<HandRuleProps, 'mode' | 'thumbDir' | 'middleDir' | 'indexDir'> {
-  /** 速度方向：+1 向右、-1 向左（v=0 时显示半透明提示态） */
-  vDir: number
-  /** 0 = B 入纸面 ⊗、1 = B 出纸面 ⊙ */
-  B_out: 0 | 1
-  /** 切换手性：'right' 右手定则 / 'left' 左手定则 */
-  rule?: 'right' | 'left'
-  /** 是否使用握拳姿态 */
-  fist?: boolean
-}
-
-export function CuttingEMFHandRule({
-  vDir,
-  B_out,
-  rule = 'right',
-  fist = false,
-  ...rest
-}: CuttingEMFHandRuleProps) {
-  const mode: HandRuleMode = fist ? 'fist' : rule
-  const hasMotion = Math.abs(vDir) > 1e-6
-  // 关键：v=0 时 thumbDir/middleDir 设为零向量。
-  // 零向量会让 computeHandPose 走"降级分支"返回 rotation=0、chirality=mode，
-  // 手就保持在**静止姿态**（拇指在左下侧、指向左上方），不会被任意旋转 130° 翻成"左手"。
-  // 之前用 (1,0)+(0,-1) 作默认会让 cross=-1 → 左手，但 mode='right' 时手应该保持右手。
-  const thumbDir: Vec2 = hasMotion ? { x: vDir, y: 0 } : { x: 0, y: 0 }
-  // 食指方向：B 出/入纸面在 2D 中为零向量（用 BLabel 渲染 ⊙/⊗）
-  const indexDir: Vec2 = { x: 0, y: 0 }
-  // 中指方向：I = v × B → I_canvas = (0, vDir * (B_out==0 ? -1 : 1), 0)
-  const sign = B_out === 0 ? -1 : 1
-  const middleDir: Vec2 = hasMotion ? { x: 0, y: vDir * sign } : { x: 0, y: 0 }
-  return (
-    <HandRule
-      mode={mode}
-      thumbDir={thumbDir}
-      indexDir={indexDir}
-      middleDir={middleDir}
-      active={hasMotion}
-      {...rest}
-    />
   )
 }
 

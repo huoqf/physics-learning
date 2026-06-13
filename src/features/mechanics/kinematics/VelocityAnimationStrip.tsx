@@ -161,16 +161,6 @@ export default function VelocityAnimationStrip({
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
         {/* 定义高级金属和发光渐变 */}
         <defs>
-          {/* 科学气垫导轨拉丝金属渐变 */}
-          <linearGradient id="rail-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.trackMetalGrad[1]} />
-            <stop offset="35%" stopColor={SCENE_COLORS.materials.trackMetalGrad[2]} />
-            <stop offset="70%" stopColor={SCENE_COLORS.materials.trackMetalGrad[1]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.trackMetalGrad[0]} />
-          </linearGradient>
-
-          {/* 钢弹簧前半圈高光渐变 */}
-
           {/* 箭头标记 */}
           <VectorDefs colors={[PHYSICS_COLORS.velocity, PHYSICS_COLORS.acceleration, PHYSICS_COLORS.displacement]} />
         </defs>
@@ -179,36 +169,6 @@ export default function VelocityAnimationStrip({
         <text x={padding} y={fontSize + 4} fontSize={fontSize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
           {model === 'multi-stage' && stageName ? `${stageName} · ` : ''}v = {vInst.toFixed(2)} m/s
         </text>
-
-        {/* ── 1. 科学精密气垫导轨底座 ── */}
-        <g>
-          {/* 导轨本体 */}
-          <rect
-            x={padding * 0.4} y={groundY - 5}
-            width={canvasSize.width - padding * 0.8} height={12}
-            fill="url(#rail-grad)" stroke={SCENE_COLORS.materials.sliderMetalGrad[3]} strokeWidth={1} rx={1}
-          />
-          {/* 导轨顶层高光亮条 */}
-          <line
-            x1={padding * 0.4 + 2} y1={groundY - 3}
-            x2={canvasSize.width - padding * 0.8 - 2} y2={groundY - 3}
-            stroke={SCENE_COLORS.sphere.oscillatorMetal.specular} strokeWidth={1.5} opacity={0.4}
-          />
-          {/* 轨道小分度精密标尺刻度 */}
-          {Array.from({ length: 161 }).map((_, idx) => {
-            const rx = padding * 0.5 + ((canvasSize.width - padding) * idx) / 160
-            const isLong = idx % 10 === 0
-            const tickH = isLong ? 5 : 2
-            return (
-              <line
-                key={`tick-${idx}`}
-                x1={rx} y1={groundY - 5}
-                x2={rx} y2={groundY - 5 + tickH}
-                stroke={SCENE_COLORS.spring.coilDark} strokeWidth={0.5} opacity={0.6}
-              />
-            )
-          })}
-        </g>
 
         {/* 地面标尺文字标注 */}
         {groundTicks.map((gt, i) => (
@@ -262,13 +222,6 @@ export default function VelocityAnimationStrip({
             />
             {/* 平衡原点标注 */}
             <text x={toPixelX(0)} y={groundY + fontSize + 12} fontSize={smallFont} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">0</text>
-
-            {/* 实验台固定架端 */}
-            <rect
-              x={padding - 4} y={groundY - objH * 1.3}
-              width={6} height={objH * 1.3}
-              fill="url(#slider-metal-grad)" stroke={SCENE_COLORS.circuit.wire} strokeWidth={0.5} rx={1}
-            />
           </>
         )}
 

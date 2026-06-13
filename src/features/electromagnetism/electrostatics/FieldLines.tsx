@@ -470,7 +470,7 @@ export default function FieldLines() {
           <g>
             {equipotentialPaths.type === 'circle' ? (
               // 圆圈渲染模式
-              (equipotentialPaths.data as any[]).map((p, idx) => (
+              (equipotentialPaths.data as { cx: number; cy: number; r: number; opacity: number }[]).map((p, idx) => (
                 <circle
                   key={`eq-circle-${idx}`}
                   cx={p.cx}
@@ -485,7 +485,7 @@ export default function FieldLines() {
               ))
             ) : (
               // Marching Squares 路径模式
-              (equipotentialPaths.data as any[]).map((p, idx) => (
+              (equipotentialPaths.data as { d: string; opacity: number }[]).map((p, idx) => (
                 <path
                   key={`eq-path-${idx}`}
                   d={p.d}

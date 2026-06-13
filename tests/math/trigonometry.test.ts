@@ -8,8 +8,6 @@ import {
 } from '@/math/trigonometry';
 
 describe('三角函数工具', () => {
-  const EPS = 1e-12;
-
   describe('degToRad', () => {
     it('应该将 0° 转换为 0 rad', () => {
       expect(degToRad(0)).toBe(0);

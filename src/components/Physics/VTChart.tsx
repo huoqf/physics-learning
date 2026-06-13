@@ -5,13 +5,18 @@ import {
   STROKE,
 } from '@/theme/physics'
 
+interface VTChartDataPoint {
+  x: number
+  y: number
+}
+
 interface VTChartProps {
-  physics: any
+  physics: { vtChartData: VTChartDataPoint[] }
   params: {
     v0: number
     a: number
   }
-  time: number // 新增属性
+  time: number
 }
 
 const VT_X_MAX = 8
@@ -25,7 +30,7 @@ export const VTChart: FC<VTChartProps> = ({ physics, params: _params, time }) =>
   
   // 计算动态 Y 轴范围，确保包含负速度
   const { yMin, yMax } = useMemo(() => {
-    const vValues = physics.vtChartData.map((p: any) => p.y)
+    const vValues = physics.vtChartData.map((p: VTChartDataPoint) => p.y)
     const min = Math.min(...vValues, 0)
     const max = Math.max(...vValues, 0)
     const padding = (max - min) * 0.1 || 1
@@ -46,9 +51,9 @@ export const VTChart: FC<VTChartProps> = ({ physics, params: _params, time }) =>
 
   // 根据当前 time 过滤路径数据
   const vtVtPathD = useMemo(() => {
-    const activeData = physics.vtChartData.filter((p: any) => p.x <= time)
+    const activeData = physics.vtChartData.filter((p: VTChartDataPoint) => p.x <= time)
     return activeData.length >= 2
-      ? 'M ' + activeData.map((p: any) => `${vtToChartX(p.x)},${vtToChartY(p.y)}`).join(' L ')
+      ? 'M ' + activeData.map((p: VTChartDataPoint) => `${vtToChartX(p.x)},${vtToChartY(p.y)}`).join(' L ')
       : ''
   }, [physics.vtChartData, time])
 

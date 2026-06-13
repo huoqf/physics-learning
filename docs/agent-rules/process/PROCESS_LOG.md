@@ -19,6 +19,9 @@
 
 | 日期 | 模块 | 类型 | 摘要 |
 |------|------|------|------|
+| 2026-06-14 | components/Physics | refactor | 提取手指定则为通用组件：SkeletalHand + HandRule 移至 src/components/Physics/，CuttingEMFHandRule 移至 induction/ 目录；删除 features/electromagnetism/shared/ 目录；移动测试文件；全部 255 测试通过 |
+| 2026-06-14 | tests | test | 修复 3 个测试文件 28 个失败（forceMotion/SkeletalHand/physicsQuantities），全部 242/242 通过 |
+| 2026-06-14 | lint | fix | 修复 11 个 lint errors→0（测试 unused vars + VTChart/FieldLines any 类型），删除历史 FIX_PLAN 文档 |
 | 2026-06-13 | anim-free-fall | refactor | P1/P2 重构：常量提取至 freeFallConfig.ts，布局逻辑迁移至 useFreeFallLayout.ts；移除组件内硬编码布局比例；保持扁平结构。通过 Node 24 严格类型检查 |
 | 2026-06-13 | architecture | refactor | 跑车模型组件提取与规范重构：在 `src/components/Physics` 下新建通用跑车模型组件 `SportsCar.tsx`，支持结合速度与时间动态旋转车轮及在车尾渲染空气流线；同步更新 `02_UI_RULES.md` 新增“3.3 跑车与车辆模型规范”；在加速度演示页（AccelerationAnimation.tsx）中应用该组件替换原有手绘 SVG 代码，精简逻辑。通过 Node 24 严格类型检查 |
 | 2026-06-13 | architecture | refactor | 物理滑车扩展与速度演示页重构：扩展通用滑块组件 `Block.tsx` 支持 `metalCart`（不锈钢车轮小车）材质；同步更新 `02_UI_RULES.md` 补充小车规范；在速度演示条组件（VelocityAnimationStrip）中，简谐运动改用 `Ball`（`type="oscillatorMetal"`）渲染，多阶段/变加速运动改用 `Block`（`type="metalCart"`）渲染并保留原有激光闪烁指示灯，彻底清理原有重复渐变与车轮定义。通过 Node 24 严格类型检查 |
