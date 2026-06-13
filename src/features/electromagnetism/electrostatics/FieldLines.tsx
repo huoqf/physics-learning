@@ -1,102 +1,90 @@
-import { useRef, useEffect, useCallback } from 'react'
+import React, { useRef, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { radius } from '@/theme/radius'
+import { shadow } from '@/theme/shadow'
 
-const FONT = {
-  title: CANVAS_STYLE.font.bodySize,
-  label: CANVAS_STYLE.font.labelSize,
-  axis: CANVAS_STYLE.font.axisSize,
-  family: CANVAS_STYLE.font.family,
-}
-
-const CHARGE_RADIUS = CANVAS_STYLE.object.pointMassRadius + 4
+// 物理与绘图常量
+const COULOMB_K = 9e9
+const CHARGE_RADIUS = 22
+const M_PER_PX = 0.005 // 1像素 = 0.005米 (0.5厘米)
+const PROBE_CHARGE = 1e-6 // 探针试探电荷 +1.0 μC
 
 interface Charge {
   x: number
   y: number
-  q: number
+  q: number // 电量 μC
 }
 
+// 计算某点处的合电场强度 (V/m = N/C)
 function electricField(charges: Charge[], px: number, py: number) {
-  let ex = 0, ey = 0
+  let ex = 0
+  let ey = 0
   for (const c of charges) {
     const dx = px - c.x
     const dy = py - c.y
-    const r2 = dx * dx + dy * dy
-    if (r2 < 1) continue
-    const r = Math.sqrt(r2)
-    const mag = c.q / r2
-    ex += mag * (dx / r)
-    ey += mag * (dy / r)
+    const rPx = Math.sqrt(dx * dx + dy * dy)
+    const rM = Math.max(0.02, rPx * M_PER_PX) // 防止除零，限制最小物理距离 2cm
+    const qSI = c.q * 1e-6
+    const mag = (COULOMB_K * qSI) / (rM * rM)
+    ex += mag * (dx / rPx)
+    ey += mag * (dy / rPx)
   }
   return { ex, ey }
 }
 
+// 计算某点处的合电势 (V)
 function potential(charges: Charge[], px: number, py: number) {
   let v = 0
   for (const c of charges) {
     const dx = px - c.x
     const dy = py - c.y
-    const r = Math.sqrt(dx * dx + dy * dy)
-    if (r < 1) continue
-    v += c.q / r
+    const rPx = Math.sqrt(dx * dx + dy * dy)
+    const rM = Math.max(0.04, rPx * M_PER_PX) // 限制最小距离 4cm
+    v += (COULOMB_K * c.q * 1e-6) / rM
   }
   return v
 }
 
-const FIELD_LINE_STEP = 3
-const MAX_FIELD_STEPS = 3000
-const ARROW_INTERVAL = 60
-const FIELD_LINE_INNER_OFFSET = CHARGE_RADIUS + 2
-const EQUIPOTENTIAL_LINE_COUNT = 10
-const CANVAS_BG = colors.neutral[0]
-const PANEL_BG = `${colors.neutral[50]}EE`
-const PANEL_BORDER = PHYSICS_COLORS.grid
-const GLOW_POS = `${PHYSICS_COLORS.positiveCharge}59`
-const GLOW_NEG = `${PHYSICS_COLORS.negativeCharge}59`
-
+// 追踪一条电场线路径
 function traceFieldLine(
   charges: Charge[],
   sx: number,
   sy: number,
-  direction: 1 | -1,
-  width: number,
-  height: number
-): { points: [number, number][]; arrowAt: [number, number, number][] } {
+  direction: 1 | -1, // 1=顺场强, -1=逆场强
+  w: number,
+  h: number
+): { points: [number, number][]; arrowPos: [number, number, number] | null } {
   const points: [number, number][] = [[sx, sy]]
-  const arrowAt: [number, number, number][] = []
-  let x = sx, y = sy
-  let distSinceArrow = 0
+  let x = sx
+  let y = sy
+  const stepSize = 8 // 追踪步长（像素）
+  const maxSteps = 150
 
-  const step = (px: number, py: number) => {
-    const { ex, ey } = electricField(charges, px, py)
+  for (let i = 0; i < maxSteps; i++) {
+    const { ex, ey } = electricField(charges, x, y)
     const mag = Math.sqrt(ex * ex + ey * ey)
-    if (mag === 0) return { dx: 0, dy: 0 }
-    return { dx: (direction * ex) / mag, dy: (direction * ey) / mag }
-  }
+    if (mag < 1e-3) break
 
-  for (let i = 0; i < MAX_FIELD_STEPS; i++) {
-    const k1 = step(x, y)
-    const k2 = step(x + 0.5 * FIELD_LINE_STEP * k1.dx, y + 0.5 * FIELD_LINE_STEP * k1.dy)
-    const k3 = step(x + 0.5 * FIELD_LINE_STEP * k2.dx, y + 0.5 * FIELD_LINE_STEP * k2.dy)
-    const k4 = step(x + FIELD_LINE_STEP * k3.dx, y + FIELD_LINE_STEP * k3.dy)
+    // 沿场强方向步进
+    const dx = (direction * ex) / mag
+    const dy = (direction * ey) / mag
+    x += dx * stepSize
+    y += dy * stepSize
 
-    const dx = (FIELD_LINE_STEP / 6) * (k1.dx + 2 * k2.dx + 2 * k3.dx + k4.dx)
-    const dy = (FIELD_LINE_STEP / 6) * (k1.dy + 2 * k2.dy + 2 * k3.dy + k4.dy)
+    // 越界退出
+    if (x < -50 || x > w + 50 || y < -50 || y > h + 50) {
+      points.push([x, y])
+      break
+    }
 
-    x += dx
-    y += dy
-
-    if (x < -20 || x > width + 20 || y < -20 || y > height + 20) break
-
+    // 靠近电荷退出
     let nearCharge = false
     for (const c of charges) {
-      if (c.q === 0) continue
       const d = Math.sqrt((x - c.x) ** 2 + (y - c.y) ** 2)
-      if (d < CHARGE_RADIUS * 0.85) {
+      if (d < CHARGE_RADIUS * 0.9) {
         nearCharge = true
         break
       }
@@ -104,414 +92,609 @@ function traceFieldLine(
     if (nearCharge) break
 
     points.push([x, y])
-    distSinceArrow += FIELD_LINE_STEP
-    if (distSinceArrow >= ARROW_INTERVAL) {
-      arrowAt.push([x, y, Math.atan2(direction * dy, direction * dx)])
-      distSinceArrow = 0
+  }
+
+  // 计算中间箭头的绘制位置（大约在路径的 45% 处）
+  let arrowPos: [number, number, number] | null = null
+  if (points.length > 5) {
+    const midIdx = Math.floor(points.length * 0.45)
+    const p1 = points[midIdx]
+    const p2 = points[midIdx + 1]
+    if (p1 && p2) {
+      const angle = Math.atan2(p2[1] - p1[1], p2[0] - p1[0])
+      arrowPos = [p1[0], p1[1], angle]
     }
   }
-  return { points, arrowAt }
-}
 
-function drawArrowHead(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  angle: number,
-  size = 7
-) {
-  ctx.save()
-  ctx.translate(x, y)
-  ctx.rotate(angle)
-  ctx.beginPath()
-  ctx.moveTo(0, 0)
-  ctx.lineTo(-size, -size * 0.45)
-  ctx.lineTo(-size, size * 0.45)
-  ctx.closePath()
-  ctx.fill()
-  ctx.restore()
+  return { points, arrowPos }
 }
 
 export default function FieldLines() {
-  const { params, showVectors, showFormulas, showGrid } = useAnimationStore()
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 500 })
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const { params } = useAnimationStore()
+  const updateParam = useAnimationStore((s) => s.updateParam)
+  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 480 })
+  const svgRef = useRef<SVGSVGElement>(null)
 
-  const { q1 = 5, q2 = -5, distance = 8 } = params
+  const w = canvasSize.width || 700
+  const h = canvasSize.height || 480
+  const cx = w / 2
+  const cy = h / 2
+  const separation = 160 // 两个电荷的间距像素
 
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
+  // 从 params 获取控制参数
+  const topology = params.topology ?? 2 // 0=单正, 1=单负, 2=等量异种, 3=等量同种
+  const qSource = params.qSource ?? 5   // μC
+  const showFieldLines = (params.showFieldLines ?? 1) === 1
+  const showEquipotentials = (params.showEquipotentials ?? 1) === 1
 
-    const W = canvasSize.width || 700
-    const H = canvasSize.height || 500
-    ctx.clearRect(0, 0, W, H)
+  const probeX = params.probeX ?? cx
+  const probeY = params.probeY ?? 150
+  const isDragging = params.isDragging === 1
 
-    // Background: clean white (project spec)
-    ctx.fillStyle = CANVAS_BG
-    ctx.fillRect(0, 0, W, H)
-
-    // Grid (faint, project spec)
-    if (showGrid) {
-      ctx.strokeStyle = PHYSICS_COLORS.grid
-      ctx.lineWidth = CANVAS_STYLE.stroke.reference
-      ctx.setLineDash([...CANVAS_STYLE.dash.reference])
-      for (let gx = 0; gx < W; gx += 40) {
-        ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke()
-      }
-      for (let gy = 0; gy < H; gy += 40) {
-        ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke()
-      }
-      ctx.setLineDash([])
+  // 1. 根据拓扑确定场源电荷配置
+  const charges = useMemo<Charge[]>(() => {
+    if (topology === 0) {
+      return [{ x: cx, y: cy, q: qSource }]
+    } else if (topology === 1) {
+      return [{ x: cx, y: cy, q: -qSource }]
+    } else if (topology === 2) {
+      return [
+        { x: cx - separation / 2, y: cy, q: qSource },
+        { x: cx + separation / 2, y: cy, q: -qSource },
+      ]
+    } else {
+      return [
+        { x: cx - separation / 2, y: cy, q: qSource },
+        { x: cx + separation / 2, y: cy, q: qSource },
+      ]
     }
+  }, [topology, qSource, cx, cy, separation])
 
-    const cx = W / 2
-    const cy = H / 2
-    const pxPerCm = 22
-    const separation = distance * pxPerCm
+  // 2. 交互逻辑：试探粒子探针的拖拽
+  const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+    const svg = svgRef.current
+    if (!svg) return
+    const rect = svg.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
 
-    const charges: Charge[] = [
-      { x: cx - separation / 2, y: cy, q: q1 },
-      { x: cx + separation / 2, y: cy, q: q2 },
-    ]
-
-    const isPositive1 = q1 > 0
-    const isNegative1 = q1 < 0
-    const isPositive2 = q2 > 0
-    const isNegative2 = q2 < 0
-    const q1Zero = Math.abs(q1) < 0.01
-    const q2Zero = Math.abs(q2) < 0.01
-    const bothZero = q1Zero && q2Zero
-    const anyZero = q1Zero || q2Zero
-    const isOpposite = (isPositive1 && isNegative2) || (isNegative1 && isPositive2)
-
-    // ── Equipotential lines ───────────────────────────────────────────────
-    if (showVectors && !bothZero) {
-      const samplePots: number[] = []
-      const sampleStep = 20
-      for (let sx = 0; sx < W; sx += sampleStep) {
-        for (let sy = 0; sy < H; sy += sampleStep) {
-          let skip = false
-          for (const c of charges) {
-            if (Math.sqrt((sx - c.x) ** 2 + (sy - c.y) ** 2) < CHARGE_RADIUS * 1.5) {
-              skip = true; break
-            }
-          }
-          if (!skip) samplePots.push(potential(charges, sx, sy))
-        }
-      }
-      samplePots.sort((a, b) => a - b)
-      const pMin = samplePots[Math.floor(samplePots.length * 0.05)] ?? samplePots[0]
-      const pMax = samplePots[Math.floor(samplePots.length * 0.95)] ?? samplePots[samplePots.length - 1]
-
-      const numContours = EQUIPOTENTIAL_LINE_COUNT
-
-      const gridStep = 6
-      const cols = Math.floor(W / gridStep)
-      const rows = Math.floor(H / gridStep)
-
-      const potGrid: number[][] = []
-      for (let r = 0; r <= rows; r++) {
-        potGrid[r] = []
-        for (let c2 = 0; c2 <= cols; c2++) {
-          potGrid[r][c2] = potential(charges, c2 * gridStep, r * gridStep)
-        }
-      }
-
-      for (let ci = 0; ci < numContours; ci++) {
-        const t = (ci + 0.5) / numContours
-        const targetV = pMin + t * (pMax - pMin)
-
-        const alpha = 0.25 + 0.35 * t
-        ctx.strokeStyle = PHYSICS_COLORS.electricPotential
-        ctx.lineWidth = CANVAS_STYLE.stroke.reference
-        ctx.globalAlpha = alpha
-        ctx.setLineDash([6, 5])
-
-        for (let r = 0; r < rows; r++) {
-          for (let c2 = 0; c2 < cols; c2++) {
-            const v00 = potGrid[r][c2]
-            const v10 = potGrid[r][c2 + 1]
-            const v01 = potGrid[r + 1][c2]
-            const v11 = potGrid[r + 1][c2 + 1]
-
-            const cellCx = (c2 + 0.5) * gridStep
-            const cellCy = (r + 0.5) * gridStep
-            let nearAny = false
-            for (const ch of charges) {
-              if (ch.q === 0) continue
-              if (Math.sqrt((cellCx - ch.x) ** 2 + (cellCy - ch.y) ** 2) < CHARGE_RADIUS * 2) {
-                nearAny = true; break
-              }
-            }
-            if (nearAny) continue
-
-            const interp = (a: number, b: number) =>
-              gridStep * ((targetV - a) / (b - a))
-
-            const x0 = c2 * gridStep
-            const y0 = r * gridStep
-
-            const pts: [number, number][] = []
-            if ((v00 < targetV) !== (v10 < targetV)) pts.push([x0 + interp(v00, v10), y0])
-            if ((v10 < targetV) !== (v11 < targetV)) pts.push([x0 + gridStep, y0 + interp(v10, v11)])
-            if ((v01 < targetV) !== (v11 < targetV)) pts.push([x0 + interp(v01, v11), y0 + gridStep])
-            if ((v00 < targetV) !== (v01 < targetV)) pts.push([x0, y0 + interp(v00, v01)])
-
-            if (pts.length === 2) {
-              ctx.beginPath()
-              ctx.moveTo(pts[0][0], pts[0][1])
-              ctx.lineTo(pts[1][0], pts[1][1])
-              ctx.stroke()
-            }
-          }
-        }
-      }
-
-      ctx.setLineDash([])
-      ctx.globalAlpha = 1
+    // 检查是否点中探针 (半径 15px，扩大到 30px 热区)
+    const dist = Math.sqrt((x - probeX) ** 2 + (y - probeY) ** 2)
+    if (dist < 30) {
+      svg.setPointerCapture(e.pointerId)
+      updateParam('isDragging', 1)
+      // 将当前坐标设为拖动起始参考坐标，重置做功
+      updateParam('probeStartX', x)
+      updateParam('probeStartY', y)
+      updateParam('probeX', x)
+      updateParam('probeY', y)
     }
+  }
 
-    // ── Field lines ───────────────────────────────────────────────────────
-    if (showVectors && !bothZero) {
-      const allLines: {
-        points: [number, number][]
-        arrowAt: [number, number, number][]
-        color: string
-      }[] = []
+  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (!isDragging) return
+    const svg = svgRef.current
+    if (!svg) return
+    const rect = svg.getBoundingClientRect()
+    let x = e.clientX - rect.left
+    let y = e.clientY - rect.top
 
-      const posColor = PHYSICS_COLORS.positiveCharge
-      const negColor = PHYSICS_COLORS.negativeCharge
+    // 画面边界保护
+    x = Math.max(15, Math.min(w - 15, x))
+    y = Math.max(15, Math.min(h - 15, y))
 
-      const emitFromCharge = (
-        charge: Charge,
-        dir: 1 | -1,
-        lineCount: number,
-        color: string
-      ) => {
-        for (let i = 0; i < lineCount; i++) {
-          const angle = (2 * Math.PI * i) / lineCount
-          const sx = charge.x + FIELD_LINE_INNER_OFFSET * Math.cos(angle)
-          const sy = charge.y + FIELD_LINE_INNER_OFFSET * Math.sin(angle)
-          const result = traceFieldLine(charges, sx, sy, dir, W, H)
-          if (result.points.length > 2) {
-            allLines.push({ ...result, color })
-          }
-        }
-      }
-
-      const maxQ = Math.max(...charges.map(c => Math.abs(c.q)))
-      const baseLineCount = 16
-
-      charges.forEach((ch) => {
-        // 跳过电荷量为0的电荷，0电荷不发射也不吸收电场线
-        if (ch.q === 0) return
-
-        const lineCount = Math.round((Math.abs(ch.q) / maxQ) * baseLineCount)
-        const lc = Math.max(4, lineCount)
-        if (ch.q > 0) {
-          emitFromCharge(ch, 1, lc, posColor)
-        } else {
-          emitFromCharge(ch, -1, lc, negColor)
-        }
-      })
-
-      for (const line of allLines) {
-        if (line.points.length < 2) continue
-        ctx.beginPath()
-        ctx.moveTo(line.points[0][0], line.points[0][1])
-        for (let i = 1; i < line.points.length; i++) {
-          ctx.lineTo(line.points[i][0], line.points[i][1])
-        }
-        ctx.strokeStyle = line.color
-        ctx.lineWidth = CANVAS_STYLE.stroke.vectorSub
-        ctx.globalAlpha = 0.75
-        ctx.stroke()
-        ctx.globalAlpha = 1
-
-        ctx.fillStyle = line.color
-        for (const [ax, ay, angle] of line.arrowAt) {
-          drawArrowHead(ctx, ax, ay, angle, 6)
-        }
+    // 避碰保护：防止试探电荷与源电荷完全重合（重合时场强和电势趋于无穷大）
+    for (const c of charges) {
+      const d = Math.sqrt((x - c.x) ** 2 + (y - c.y) ** 2)
+      if (d < CHARGE_RADIUS * 1.0) {
+        return // 拒绝进入极近范围
       }
     }
 
-    // ── Draw charges ──────────────────────────────────────────────────────
-    charges.forEach((ch, idx) => {
+    updateParam('probeX', x)
+    updateParam('probeY', y)
+  }
+
+  const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (isDragging) {
+      updateParam('isDragging', 0)
+      svgRef.current?.releasePointerCapture(e.pointerId)
+    }
+  }
+
+  // 3. 计算电场线路径 (SVG Path)
+  const fieldLinesPaths = useMemo(() => {
+    if (!showFieldLines) return []
+
+    const paths: { d: string; arrow: [number, number, number] | null; color: string }[] = []
+
+    charges.forEach((ch) => {
       const isPos = ch.q > 0
+      const emitAngleCount = 16
+      const startRadius = CHARGE_RADIUS + 3
       const color = isPos ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge
-      const glowColor = isPos ? GLOW_POS : GLOW_NEG
 
-      // Glow
-      const grd = ctx.createRadialGradient(ch.x, ch.y, 2, ch.x, ch.y, CHARGE_RADIUS * 2.5)
-      grd.addColorStop(0, glowColor)
-      grd.addColorStop(1, 'rgba(0,0,0,0)')
-      ctx.fillStyle = grd
-      ctx.beginPath()
-      ctx.arc(ch.x, ch.y, CHARGE_RADIUS * 2.5, 0, Math.PI * 2)
-      ctx.fill()
+      for (let i = 0; i < emitAngleCount; i++) {
+        const angle = (i * Math.PI * 2) / emitAngleCount
+        const sx = ch.x + Math.cos(angle) * startRadius
+        const sy = ch.y + Math.sin(angle) * startRadius
 
-      // Circle
-      ctx.beginPath()
-      ctx.arc(ch.x, ch.y, CHARGE_RADIUS, 0, Math.PI * 2)
-      ctx.fillStyle = color
-      ctx.fill()
-      ctx.strokeStyle = PHYSICS_COLORS.objectStroke
-      ctx.lineWidth = CANVAS_STYLE.stroke.objectLine
-      ctx.stroke()
+        // 正电荷顺着场强追踪，负电荷逆着场强追踪
+        const direction = isPos ? 1 : -1
+        let { points, arrowPos } = traceFieldLine(charges, sx, sy, direction, w, h)
+        if (points.length < 2) continue
 
-      // Symbol
-      ctx.fillStyle = CANVAS_BG
-      ctx.font = `bold ${FONT.title}px ${FONT.family}`
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      if (ch.q === 0) {
-        ctx.fillText('0', ch.x, ch.y)
-      } else {
-        ctx.fillText(ch.q > 0 ? '+' : '−', ch.x, ch.y)
+        if (!isPos) {
+          // 反转点数组，使电场线方向从外流向负电荷表面
+          points = [...points].reverse()
+          // 重新计算反转后的箭头方向
+          if (points.length > 5) {
+            const midIdx = Math.floor(points.length * 0.45)
+            const p1 = points[midIdx]
+            const p2 = points[midIdx + 1]
+            if (p1 && p2) {
+              const angle = Math.atan2(p2[1] - p1[1], p2[0] - p1[0])
+              arrowPos = [p1[0], p1[1], angle]
+            }
+          }
+        }
+
+        // 拼接成 path 的 d 属性字符串
+        const dStr = points
+          .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${p[0].toFixed(1)},${p[1].toFixed(1)}`)
+          .join(' ')
+
+        paths.push({ d: dStr, arrow: arrowPos, color })
       }
-
-      // Label
-      ctx.font = `${FONT.axis}px ${FONT.family}`
-      ctx.fillStyle = PHYSICS_COLORS.labelText
-      ctx.fillText(`q${idx + 1} = ${ch.q > 0 ? '+' : ''}${ch.q} μC`, ch.x, ch.y + CHARGE_RADIUS + 16)
     })
 
-    // ── Distance annotation ───────────────────────────────────────────────
-    if (!bothZero) {
-      const leftX = charges[0].x
-      const rightX = charges[1].x
-      ctx.strokeStyle = PHYSICS_COLORS.axis
-      ctx.lineWidth = CANVAS_STYLE.stroke.reference
-      ctx.beginPath()
-      ctx.moveTo(leftX, cy + 50)
-      ctx.lineTo(rightX, cy + 50)
-      ctx.stroke()
+    return paths
+  }, [charges, showFieldLines, w, h])
 
-      ctx.beginPath()
-      ctx.moveTo(leftX, cy + 45)
-      ctx.lineTo(leftX, cy + 55)
-      ctx.stroke()
+  // 4. 计算等势线网络 (Marching Squares 生成平滑线段)
+  const equipotentialPaths = useMemo(() => {
+    if (!showEquipotentials) return { type: 'none', data: [] }
 
-      ctx.beginPath()
-      ctx.moveTo(rightX, cy + 45)
-      ctx.lineTo(rightX, cy + 55)
-      ctx.stroke()
-
-      ctx.font = `${FONT.axis}px ${FONT.family}`
-      ctx.fillStyle = PHYSICS_COLORS.labelText
-      ctx.textAlign = 'center'
-      ctx.fillText(`d = ${distance} cm`, cx, cy + 68)
+    // 对于单电荷，直接采用精准的圆圈渲染，完美平滑且效率极高
+    if (topology === 0 || topology === 1) {
+      const paths: { cx: number; cy: number; r: number; opacity: number }[] = []
+      const ch = charges[0]
+      const count = 10
+      // 间距按 1/r 映射以形成密度的渐变
+      for (let i = 1; i <= count; i++) {
+        const rPx = 30 + i * 28
+        // 势能的绝对值决定透明度由深至浅
+        const opacity = Math.max(0.1, Math.min(0.65, 0.7 - (i / count) * 0.55))
+        paths.push({ cx: ch.x, cy: ch.y, r: rPx, opacity })
+      }
+      return { type: 'circle', data: paths }
     }
 
-    // ── Legend / Formulas ─────────────────────────────────────────────────
-    if (showFormulas) {
-      let title = ''
-      let fieldLineDesc = ''
-      if (bothZero) {
-        title = '无电场（两电荷均为零）'
-        fieldLineDesc = '无电场线'
-      } else if (anyZero) {
-        title = '单电荷电场'
-        fieldLineDesc = (q1Zero ? q2 : q1) > 0
-          ? '从正电荷向外辐射'
-          : '从无限远指向负电荷'
-      } else if (isOpposite) {
-        title = '异种电荷电场'
-        fieldLineDesc = '从正电荷出发，终止于负电荷'
-      } else {
-        title = '同种电荷电场'
-        fieldLineDesc = isPositive1
-          ? '从两正电荷向外辐射，中间相互排斥'
-          : '从无限远指向两负电荷，中间相互排斥'
-      }
+    // 对于双电荷，采用 Marching Squares 算法
+    const gridStep = 8
+    const cols = Math.floor(w / gridStep)
+    const rows = Math.floor(h / gridStep)
 
-      const lx = 16
-      const ly = 16
-      const legendH = showVectors ? 110 : 60
-
-      const panelRadius = parseInt(radius.base, 10)
-
-      ctx.fillStyle = PANEL_BG
-      ctx.beginPath()
-      ctx.roundRect(lx, ly, 260, legendH, panelRadius)
-      ctx.fill()
-      ctx.strokeStyle = PANEL_BORDER
-      ctx.lineWidth = CANVAS_STYLE.stroke.reference
-      ctx.stroke()
-
-      ctx.font = `bold ${FONT.title}px ${FONT.family}`
-      ctx.fillStyle = PHYSICS_COLORS.labelText
-      ctx.textAlign = 'left'
-      ctx.textBaseline = 'top'
-      ctx.fillText(title, lx + 10, ly + 8)
-
-      if (showVectors && !bothZero) {
-        ctx.font = `${FONT.axis}px ${FONT.family}`
-        ctx.fillStyle = PHYSICS_COLORS.electricField
-        ctx.fillText(`电场线：${fieldLineDesc}`, lx + 10, ly + 30)
-
-        ctx.fillStyle = PHYSICS_COLORS.electricPotential
-        ctx.fillText('等势面（虚线）：与电场线处处垂直', lx + 10, ly + 48)
-
-        ctx.fillStyle = PHYSICS_COLORS.axis
-        ctx.fillText('高考要点：沿电场线方向电势降低', lx + 10, ly + 68)
-        ctx.fillText('高考要点：等势面上移动电荷，电场力不做功', lx + 10, ly + 86)
-      }
-
-      // Legend items
-      if (showVectors) {
-        const ly2 = ly + legendH + 8
-        ctx.fillStyle = PANEL_BG
-        ctx.beginPath()
-        ctx.roundRect(lx, ly2, 200, 36, panelRadius)
-        ctx.fill()
-        ctx.strokeStyle = PANEL_BORDER
-        ctx.lineWidth = CANVAS_STYLE.stroke.reference
-        ctx.stroke()
-
-        ctx.strokeStyle = PHYSICS_COLORS.positiveCharge
-        ctx.lineWidth = CANVAS_STYLE.stroke.vectorSub
-        ctx.beginPath()
-        ctx.moveTo(lx + 10, ly2 + 12)
-        ctx.lineTo(lx + 32, ly2 + 12)
-        ctx.stroke()
-        drawArrowHead(ctx, lx + 32, ly2 + 12, 0, 5)
-
-        ctx.font = `${FONT.axis}px ${FONT.family}`
-        ctx.fillStyle = PHYSICS_COLORS.labelText
-        ctx.textBaseline = 'middle'
-        ctx.fillText('电场线', lx + 40, ly2 + 12)
-
-        ctx.strokeStyle = PHYSICS_COLORS.electricPotential
-        ctx.lineWidth = CANVAS_STYLE.stroke.reference
-        ctx.setLineDash([5, 4])
-        ctx.beginPath()
-        ctx.moveTo(lx + 10, ly2 + 26)
-        ctx.lineTo(lx + 32, ly2 + 26)
-        ctx.stroke()
-        ctx.setLineDash([])
-        ctx.fillText('等势面', lx + 40, ly2 + 26)
+    // 预计算整个网格的电势数据
+    const gridPotential: number[][] = []
+    for (let r = 0; r <= rows; r++) {
+      gridPotential[r] = []
+      for (let c = 0; c <= cols; c++) {
+        gridPotential[r][c] = potential(charges, c * gridStep, r * gridStep)
       }
     }
-  }, [canvasSize, q1, q2, distance, showVectors, showFormulas, showGrid])
 
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    canvas.width = canvasSize.width
-    canvas.height = canvasSize.height
-    draw()
-  }, [draw, canvasSize])
+    // 估算当前场中具有代表性的电势极值
+    // 取在电荷表面的电势作为峰值参考
+    const pPeak = (9000 * qSource) / 0.05
+    const contourPotentials: number[] = []
+    const contourCount = 14
+
+    // 生成一系列等势线的目标电压
+    // 对于等量异种电荷，电势分布在 -pPeak 到 +pPeak
+    if (topology === 2) {
+      for (let i = 0; i < contourCount; i++) {
+        // 电势差从负到正，避开0V突变
+        const t = -1.0 + (2.0 * (i + 0.5)) / contourCount
+        contourPotentials.push(pPeak * t * 0.8)
+      }
+    } else {
+      // 等量同种，电势在 0 到 1.5 * pPeak
+      for (let i = 0; i < contourCount; i++) {
+        const t = (i + 0.5) / contourCount
+        contourPotentials.push(pPeak * 1.5 * t * 0.7)
+      }
+    }
+
+    const paths: { d: string; opacity: number }[] = []
+
+    contourPotentials.forEach((targetV) => {
+      let dStr = ''
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const v00 = gridPotential[r][c]
+          const v10 = gridPotential[r][c + 1]
+          const v01 = gridPotential[r + 1][c]
+          const v11 = gridPotential[r + 1][c + 1]
+
+          // 避开电荷内部的格点
+          const cxCell = (c + 0.5) * gridStep
+          const cyCell = (r + 0.5) * gridStep
+          let tooClose = false
+          for (const ch of charges) {
+            if (Math.sqrt((cxCell - ch.x) ** 2 + (cyCell - ch.y) ** 2) < CHARGE_RADIUS * 1.1) {
+              tooClose = true
+              break
+            }
+          }
+          if (tooClose) continue
+
+          const interp = (a: number, b: number) => gridStep * ((targetV - a) / (b - a))
+          const x0 = c * gridStep
+          const y0 = r * gridStep
+
+          const pts: [number, number][] = []
+          if ((v00 < targetV) !== (v10 < targetV)) pts.push([x0 + interp(v00, v10), y0])
+          if ((v10 < targetV) !== (v11 < targetV)) pts.push([x0 + gridStep, y0 + interp(v10, v11)])
+          if ((v01 < targetV) !== (v11 < targetV)) pts.push([x0 + interp(v01, v11), y0 + gridStep])
+          if ((v00 < targetV) !== (v01 < targetV)) pts.push([x0, y0 + interp(v00, v01)])
+
+          if (pts.length === 2) {
+            dStr += ` M ${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)} L ${pts[1][0].toFixed(1)},${pts[1][1].toFixed(1)}`
+          }
+        }
+      }
+
+      if (dStr) {
+        // 电势的绝对值越大，等势线画得越深
+        const relativePot = Math.min(1.0, Math.abs(targetV) / pPeak)
+        const opacity = Math.max(0.12, Math.min(0.7, 0.15 + relativePot * 0.55))
+        paths.push({ d: dStr, opacity })
+      }
+    })
+
+    return { type: 'path', data: paths }
+  }, [topology, charges, showEquipotentials, qSource, w, h])
+
+  // 5. 探针受力与能量分析
+  const probePhysics = useMemo(() => {
+    // 探针处的场强
+    const { ex, ey } = electricField(charges, probeX, probeY)
+    const eMag = Math.sqrt(ex * ex + ey * ey)
+
+    // 电场力 F = qE
+    const fMag = eMag * PROBE_CHARGE // 单位 N
+    let forceArrow: [number, number] | null = null
+
+    if (eMag > 1e-1) {
+      // 归一化方向
+      const dx = ex / eMag
+      const dy = ey / eMag
+      // 力的屏幕显示长度 (35px 到 90px 之间自适应)
+      const arrowLen = Math.max(35, Math.min(90, (fMag / 5) * 45 + 35))
+      forceArrow = [dx * arrowLen, dy * arrowLen]
+    }
+
+    // 计算当前的电势
+    const phiCurrent = potential(charges, probeX, probeY)
+
+    // 百分比映射参数
+    const pPeak = (9000 * qSource) / 0.05
+    const maxPot = (topology === 0 || topology === 3)
+      ? pPeak * (topology === 3 ? 1.4 : 1.0)
+      : (topology === 2 ? pPeak : 0)
+    const minPot = (topology === 1)
+      ? -pPeak
+      : (topology === 2 ? -pPeak : 0)
+
+    const potRange = maxPot - minPot
+    const pctEp = potRange > 0
+      ? Math.max(3, Math.min(97, ((phiCurrent - minPot) / potRange) * 100))
+      : 50
+    const pctEk = 100 - pctEp
+
+    return {
+      forceArrow,
+      phiCurrent,
+      pctEp,
+      pctEk,
+    }
+  }, [charges, probeX, probeY, topology, qSource])
+
+
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <canvas
-        ref={canvasRef}
-        className="w-full h-full block bg-white rounded-lg shadow-inner"
-      />
+    <div ref={containerRef} className="w-full h-full relative">
+      {/* 实时能量堆栈对比图表卡片 (毛玻璃质感) */}
+      <div
+        className="absolute right-4 bottom-4 z-10 bg-white/80 backdrop-blur-md border border-neutral-200/50 rounded-xl p-3 flex flex-col items-center select-none"
+        style={{
+          boxShadow: shadow.md,
+          borderRadius: radius.lg,
+          width: '150px',
+        }}
+      >
+        <span className="text-[10px] font-bold text-neutral-500 mb-2.5">实时能量分配 (守恒)</span>
+        
+        {/* 双柱图区域 */}
+        <div className="h-28 flex justify-around items-end w-full relative px-2">
+          {/* 中间百分比虚线 */}
+          <div className="absolute inset-x-0 top-0 border-t border-dashed border-neutral-200 flex justify-between text-[7.5px] text-neutral-300 font-mono pointer-events-none">
+            <span>100%</span>
+          </div>
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t border-dashed border-neutral-200 flex justify-between text-[7.5px] text-neutral-300 font-mono pointer-events-none">
+            <span>50%</span>
+          </div>
+
+          {/* 动能柱 (青色) */}
+          <div className="flex flex-col items-center h-full justify-end w-10">
+            <div className="w-4 h-full bg-neutral-100/50 border border-neutral-200/30 rounded-full flex items-end overflow-hidden">
+              <div
+                className="w-full rounded-full transition-all duration-150 ease-out"
+                style={{ height: `${probePhysics.pctEk}%`, backgroundColor: PHYSICS_COLORS.kineticEnergy }}
+              />
+            </div>
+            <span className="text-[10px] font-bold mt-1 font-mono" style={{ color: PHYSICS_COLORS.kineticEnergy }}>Ek</span>
+            <span className="text-[8px] font-medium" style={{ color: PHYSICS_COLORS.kineticEnergy }}>动能</span>
+          </div>
+
+          {/* 势能柱 (紫色) */}
+          <div className="flex flex-col items-center h-full justify-end w-10">
+            <div className="w-4 h-full bg-neutral-100/50 border border-neutral-200/30 rounded-full flex items-end overflow-hidden">
+              <div
+                className="w-full rounded-full transition-all duration-150 ease-out"
+                style={{ height: `${probePhysics.pctEp}%`, backgroundColor: PHYSICS_COLORS.potentialEnergy }}
+              />
+            </div>
+            <span className="text-[10px] font-bold mt-1 font-mono" style={{ color: PHYSICS_COLORS.potentialEnergy }}>Ep</span>
+            <span className="text-[8px] font-medium" style={{ color: PHYSICS_COLORS.potentialEnergy }}>势能</span>
+          </div>
+        </div>
+      </div>
+
+      {/* SVG 动画视口 */}
+      <svg
+        ref={svgRef}
+        width={w}
+        height={h}
+        className="w-full h-full bg-white block rounded-xl border border-neutral-100 select-none cursor-crosshair"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+      >
+
+
+        {/* 2. 紫色等势面网络层 */}
+        {showEquipotentials && (
+          <g>
+            {equipotentialPaths.type === 'circle' ? (
+              // 圆圈渲染模式
+              (equipotentialPaths.data as any[]).map((p, idx) => (
+                <circle
+                  key={`eq-circle-${idx}`}
+                  cx={p.cx}
+                  cy={p.cy}
+                  r={p.r}
+                  fill="none"
+                  stroke={PHYSICS_COLORS.potentialEnergy}
+                  strokeWidth={1.2}
+                  strokeDasharray="4,4"
+                  opacity={p.opacity}
+                />
+              ))
+            ) : (
+              // Marching Squares 路径模式
+              (equipotentialPaths.data as any[]).map((p, idx) => (
+                <path
+                  key={`eq-path-${idx}`}
+                  d={p.d}
+                  fill="none"
+                  stroke={PHYSICS_COLORS.potentialEnergy}
+                  strokeWidth={1.2}
+                  strokeDasharray="4,4"
+                  opacity={p.opacity}
+                />
+              ))
+            )}
+          </g>
+        )}
+
+        {/* 3. 黄色电场线层 */}
+        {showFieldLines && (
+          <g>
+            {fieldLinesPaths.map((line, idx) => (
+              <g key={`ef-line-group-${idx}`}>
+                {/* 电场线路径 */}
+                <path
+                  d={line.d}
+                  fill="none"
+                  stroke={PHYSICS_COLORS.electricFieldLine}
+                  strokeWidth={1.3}
+                  opacity={0.75}
+                />
+                {/* 沿线中部的指示箭头 */}
+                {line.arrow && (
+                  <polygon
+                    points="-5.5,-4 6.5,0 -5.5,4"
+                    fill={PHYSICS_COLORS.electricFieldLine}
+                    opacity={0.8}
+                    transform={`translate(${line.arrow[0]}, ${line.arrow[1]}) rotate(${(line.arrow[2] * 180) / Math.PI})`}
+                  />
+                )}
+              </g>
+            ))}
+          </g>
+        )}
+
+        {/* 4. 场源电荷 */}
+        {charges.map((ch, idx) => {
+          const isPos = ch.q > 0
+          const color = isPos ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge
+          return (
+            <g key={`source-charge-${idx}`}>
+              {/* 电荷外圈立体光晕效果 */}
+              <circle
+                cx={ch.x}
+                cy={ch.y}
+                r={CHARGE_RADIUS * 2.2}
+                fill={isPos ? 'url(#glow-positive)' : 'url(#glow-negative)'}
+                opacity={0.8}
+              />
+              <circle
+                cx={ch.x}
+                cy={ch.y}
+                r={CHARGE_RADIUS * 1.6}
+                fill={color}
+                opacity={0.12}
+              />
+              {/* 实体核心圆球 */}
+              <circle
+                cx={ch.x}
+                cy={ch.y}
+                r={CHARGE_RADIUS}
+                fill={color}
+                stroke="#FFFFFF"
+                strokeWidth={1.5}
+                className="drop-shadow-sm"
+              />
+              {/* 符号标注 */}
+              <text
+                x={ch.x}
+                y={ch.y + 0.5}
+                fontSize={17}
+                fontWeight="bold"
+                fill="#FFFFFF"
+                textAnchor="middle"
+                dominantBaseline="middle"
+              >
+                {isPos ? '+' : '−'}
+              </text>
+              {/* 电荷电量标签 */}
+              <text
+                x={ch.x}
+                y={ch.y + CHARGE_RADIUS + 15}
+                fontSize={10.5}
+                fontWeight="bold"
+                fill={colors.neutral[600]}
+                textAnchor="middle"
+              >
+                {isPos ? '+' : ''}
+                {ch.q.toFixed(1)} μC
+              </text>
+            </g>
+          )
+        })}
+
+        {/* 5. 手持式粒子探针 (带虚线交互外圈) */}
+        <g>
+          {/* 探针拖动把手环 (在拖拽时显示动态放大效果) */}
+          <circle
+            cx={probeX}
+            cy={probeY}
+            r={24}
+            fill="none"
+            stroke={PHYSICS_COLORS.electricForce}
+            strokeWidth={1.5}
+            strokeDasharray="4,3"
+            opacity={isDragging ? 0.9 : 0.4}
+            className={isDragging ? 'animate-[spin_12s_linear_infinite]' : ''}
+          />
+          <circle
+            cx={probeX}
+            cy={probeY}
+            r={15}
+            fill="#FFFFFF"
+            opacity={0.8}
+          />
+          {/* 探针核心粒子 (试探正电荷) */}
+          <circle
+            cx={probeX}
+            cy={probeY}
+            r={11}
+            fill={PHYSICS_COLORS.positiveCharge}
+            stroke="#FFFFFF"
+            strokeWidth={1.2}
+            className="drop-shadow-md"
+            style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+          />
+          <text
+            x={probeX}
+            y={probeY}
+            fontSize={12}
+            fontWeight="black"
+            fill="#FFFFFF"
+            textAnchor="middle"
+            dominantBaseline="middle"
+            style={{ pointerEvents: 'none' }}
+          >
+            +
+          </text>
+          <text
+            x={probeX}
+            y={probeY - 20}
+            fontSize={9.5}
+            fontWeight="bold"
+            fill={PHYSICS_COLORS.labelText}
+            textAnchor="middle"
+          >
+            探针 (1μC)
+          </text>
+
+          {/* 6. 探针受到的橙色电场力箭头 */}
+          {probePhysics.forceArrow && (
+            <g>
+              <line
+                x1={probeX}
+                y1={probeY}
+                x2={probeX + probePhysics.forceArrow[0]}
+                y2={probeY + probePhysics.forceArrow[1]}
+                stroke={PHYSICS_COLORS.electricForce}
+                strokeWidth={3}
+                strokeLinecap="round"
+                markerEnd="url(#arrow-force)"
+              />
+              <text
+                x={probeX + probePhysics.forceArrow[0] + (probePhysics.forceArrow[0] >= 0 ? 12 : -12)}
+                y={probeY + probePhysics.forceArrow[1] + (probePhysics.forceArrow[1] >= 0 ? 4 : -4)}
+                fontSize={12}
+                fontWeight="black"
+                fill={PHYSICS_COLORS.electricForce}
+                textAnchor="middle"
+                dominantBaseline="middle"
+              >
+                F
+              </text>
+            </g>
+          )}
+        </g>
+
+        {/* 定义箭头和样式 Defs */}
+        <defs>
+          {/* 电场力橙色箭头 Marker */}
+          <marker
+            id="arrow-force"
+            viewBox="0 0 10 10"
+            refX="6"
+            refY="5"
+            markerWidth="6"
+            markerHeight="6"
+            orient="auto-start-reverse"
+          >
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill={PHYSICS_COLORS.electricForce} />
+          </marker>
+          {/* 正电荷光晕渐变 */}
+          <radialGradient id="glow-positive" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor={PHYSICS_COLORS.positiveCharge} stopOpacity="0.25" />
+            <stop offset="100%" stopColor={PHYSICS_COLORS.positiveCharge} stopOpacity="0" />
+          </radialGradient>
+          {/* 负电荷光晕渐变 */}
+          <radialGradient id="glow-negative" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor={PHYSICS_COLORS.negativeCharge} stopOpacity="0.25" />
+            <stop offset="100%" stopColor={PHYSICS_COLORS.negativeCharge} stopOpacity="0" />
+          </radialGradient>
+        </defs>
+      </svg>
     </div>
   )
 }

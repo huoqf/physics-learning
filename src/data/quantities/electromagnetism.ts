@@ -4,7 +4,6 @@
 import {
   calculateCoulombForce,
   calculateElectricField,
-  calculateElectricPotential,
   calculateCapacitor,
   calculateOhmLaw,
   calculateSeriesResistance,
@@ -284,59 +283,208 @@ export function buildElectromagnetismQuantities(
       const epsilon_r = params.epsilon_r ?? 1
       const U = params.U ?? 12
       const isConnected = (params.connected ?? 1) >= 0.5
-      // 断开电源时保持的电荷基准（默认状态充电后断开）
+
+      // 断开电源时保持的电荷基准（取默认状态 S=100cm² d=5mm εᵣ=1 U=12V 充电后的电荷量）
       const Q_FIXED = VACUUM_PERMITTIVITY * (100 * 1e-4) / (5 * 1e-3) * 12
       const { C } = calculateCapacitor(VACUUM_PERMITTIVITY * epsilon_r, S * 1e-4, d * 1e-3)
+      
       const voltage = isConnected ? U : Q_FIXED / C
+      const charge = isConnected ? C * voltage : Q_FIXED
       const field = voltage / (d * 1e-3)
+
       return {
         quantities: [
           ...base,
-          { label: '电容 C', value: C * 1e12, unit: 'pF' },
-          { label: '场强 E', value: field, unit: 'V/m' },
+          {
+            label: '电容',
+            symbol: 'C',
+            value: C * 1e12,
+            unit: 'pF',
+            color: '#0284C7', // sky-600 (PHYSICS_COLORS.capacitor)
+          },
+          {
+            label: '电荷量',
+            symbol: 'Q',
+            value: charge * 1e12,
+            unit: 'pC',
+            color: '#EF4444', // red-500 (PHYSICS_COLORS.positiveCharge)
+            highlight: !isConnected ? 'extreme' : undefined,
+          },
+          {
+            label: '电势差',
+            symbol: 'U',
+            value: voltage,
+            unit: 'V',
+            color: '#A16207', // 棕黄 (PHYSICS_COLORS.electricPotential)
+            highlight: isConnected ? 'extreme' : undefined,
+          },
+          {
+            label: '板间场强',
+            symbol: 'E',
+            value: field,
+            unit: 'V/m',
+            color: '#D97706', // amber-600 (PHYSICS_COLORS.electricField)
+          },
+        ],
+        formulas: [
+          {
+            name: '电容定义式',
+            latex: 'C = \\frac{Q}{U}',
+            level: 'core',
+            condition: '适用于一切电容器',
+          },
+          {
+            name: '平行板电容决定式',
+            latex: 'C = \\frac{\\varepsilon_r S}{4\\pi kd}',
+            level: 'core',
+            condition: '真空或介质中的平行金属板',
+            note: 'ε₀ = 8.85×10⁻¹² F/m，k = 9×10⁹ N·m²/C²',
+          },
+          {
+            name: '板间匀强电场强度',
+            latex: 'E = \\frac{U}{d}',
+            level: 'core',
+            condition: '仅限板间匀强电场',
+          },
+        ],
+        gaokaoPoints: [
+          {
+            text: '【电容器动态分析两大边界】连接电源时电压 U 保持恒定；断开电源时极板电量 Q 保持恒定。',
+            importance: 'gaokao',
+          },
+          {
+            text: '【断开电源拉大板距 d】由于 Q 恒定，电场强度 E = Q/(εS) 与 d 无关，板间场强 E 保持绝对恒定，但板间电压 U 随 d 增加而变大（静电计指针张开）。',
+            importance: 'gaokao',
+          },
+          {
+            text: '【插入电介质】相对介电常数 εᵣ 变大，电容 C 变大。若断开电源，则板间电压 U 下降（静电计指针张角收拢）。',
+            importance: 'core',
+          },
+        ],
+        warnings: [
+          {
+            text: '误区：误认为只要板间距 d 拉大，场强 E 就必定减小。注意在断开电源时，E 是恒定不变的。',
+            level: 'danger',
+          },
+          {
+            text: '提醒：公式中的 S 为两极板正对的有效面积。若极板发生错位，正对面积 S 减小，会导致电容 C 减小。',
+            level: 'info',
+          },
         ],
       }
     }
     case 'anim-field-lines': {
-      const q1 = params.q1 ?? 5
-      const q2 = params.q2 ?? -5
-      const positive1 = q1 > 0
-      const positive2 = q2 > 0
-      const negative1 = q1 < 0
-      const negative2 = q2 < 0
-      const isOpposite = (positive1 && negative2) || (negative1 && positive2)
-      const isSame = (positive1 && positive2) || (negative1 && negative2)
-      let chargeType = ''
-      if (q1 === 0 && q2 === 0) chargeType = '无电场'
-      else if (q1 === 0 || q2 === 0) chargeType = '单电荷'
-      else if (isOpposite) chargeType = '异种电荷'
-      else chargeType = '同种电荷'
-      let fieldLineDir = ''
-      if (isOpposite) fieldLineDir = '从正电荷→负电荷'
-      else if (isSame) fieldLineDir = '从两电荷向外辐射（或指向两电荷）'
-      else fieldLineDir = '从非零电荷向外辐射（或指向非零电荷）'
+      const topology = params.topology ?? 2 // 0=单正, 1=单负, 2=等量异种, 3=等量同种
+      const qSource = params.qSource ?? 5   // μC
+      const probeX = params.probeX ?? 350
+      const probeY = params.probeY ?? 150
+      const probeStartX = params.probeStartX ?? 350
+      const probeStartY = params.probeStartY ?? 150
+
+      const cx = 350
+      const cy = 240
+      const separation = 160 // 像素
+
+      interface ChargeConfig {
+        x: number
+        y: number
+        q: number
+      }
+      let charges: ChargeConfig[] = []
+      let topologyName = ''
+      if (topology === 0) {
+        charges = [{ x: cx, y: cy, q: qSource }]
+        topologyName = '单正电荷'
+      } else if (topology === 1) {
+        charges = [{ x: cx, y: cy, q: -qSource }]
+        topologyName = '单负电荷'
+      } else if (topology === 2) {
+        charges = [
+          { x: cx - separation / 2, y: cy, q: qSource },
+          { x: cx + separation / 2, y: cy, q: -qSource },
+        ]
+        topologyName = '等量异种电荷'
+      } else {
+        charges = [
+          { x: cx - separation / 2, y: cy, q: qSource },
+          { x: cx + separation / 2, y: cy, q: qSource },
+        ]
+        topologyName = '等量同种正电荷'
+      }
+
+      const getPotentialAt = (px: number, py: number) => {
+        let v = 0
+        const k = 9e9
+        const mPerPx = 0.005
+        for (const c of charges) {
+          const dx = px - c.x
+          const dy = py - c.y
+          const rPx = Math.sqrt(dx * dx + dy * dy)
+          const rM = Math.max(0.05, rPx * mPerPx) // 限幅 0.05m
+          v += (k * c.q * 1e-6) / rM
+        }
+        return v
+      }
+
+      const phiCurrent = getPotentialAt(probeX, probeY)
+      const phiStart = getPotentialAt(probeStartX, probeStartY)
+
+      const qProbe = 1.0 * 1e-6 // 1 μC
+      const W_electric = qProbe * (phiStart - phiCurrent)
+
       return {
         quantities: [
           ...base,
-          { label: '电荷类型', value: chargeType, unit: '' },
-          { label: '电场线方向', value: fieldLineDir, unit: '' },
+          { label: '拓扑场景', value: topologyName, unit: '' },
+          { label: '源电电量 Q', value: `${qSource.toFixed(1)}`, unit: 'μC', highlight: 'extreme' as const },
+          { label: '当前点电势 φ', value: (phiCurrent / 1000).toFixed(2), unit: 'kV', highlight: 'positive' as const },
+          { label: '电场力做功 W', value: W_electric.toFixed(4), unit: 'J', highlight: 'extreme' as const },
+        ],
+        formulas: [
+          { name: '电势叠加原理', latex: '\\varphi = \\sum k \\frac{Q_i}{r_i}', level: 'core', condition: '点电荷电场的代数叠加' },
+          { name: '电场力做功', latex: 'W_e = q(\\varphi_{start} - \\varphi_{current})', level: 'core' },
+        ],
+        gaokaoPoints: [
+          { text: '电场线与等势面在空间任意位置绝对垂直；顺着电场线方向，电势降低最快。', importance: 'gaokao' as const },
+          { text: '根据电场线与等势面的拓扑网格，定性分析粒子做曲线运动时的动能与电势能转化。', importance: 'gaokao' as const },
+          { text: '等势面上各点的电势相等，但电场强度 E 的大小不一定相等（其大小取决于等势面的疏密）。', importance: 'core' as const },
+        ],
+        warnings: [
+          { text: '易错点：误认为等势面上各点的场强 E 也一定相等。', level: 'warning' as const },
         ],
       }
     }
     case 'anim-electric-potential': {
-      const q = params.q ?? 5
-      const rTest = params.rTest ?? 5
-      const k = 9e9
-      const qSI = Math.abs(q) * 1e-6
-      const rTestSI = rTest * 0.01
-      const { V } = calculateElectricPotential(k, qSI, rTestSI)
-      const { E } = calculateElectricField(k, qSI, rTestSI)
+      const phiA = params.phiA ?? 0
+      const phiB = params.phiB ?? 0
+      const qProbe = params.qProbe ?? 1.0 // μC
+      const slopeK = params.slopeK ?? 0 // V/m
+      
+      const U_AB = phiA - phiB
+      const delta_Ep = (qProbe * 1e-6) * (phiB - phiA) // J
+      
       return {
         quantities: [
           ...base,
-          { label: '电势 V', value: V, unit: 'V' },
-          { label: '场强 E', value: E, unit: 'N/C' },
+          { label: 'A点电势 φ_A', value: phiA.toFixed(1), unit: 'V', color: '#8B5CF6' },
+          { label: 'B点电势 φ_B', value: phiB.toFixed(1), unit: 'V', color: '#8B5CF6' },
+          { label: '两点电势差 U_AB', value: U_AB.toFixed(1), unit: 'V', highlight: 'extreme' as const },
+          { label: '电势能变化 ΔEp', value: delta_Ep.toExponential(4), unit: 'J', color: '#8B5CF6', highlight: 'extreme' as const },
+          { label: '图像切线斜率 |k|', value: slopeK.toFixed(1), unit: 'V/m', color: '#EAB308', highlight: 'extreme' as const },
         ],
+        formulas: [
+          { name: '两点电势差', latex: 'U_{AB} = \\varphi_A - \\varphi_B', level: 'core' },
+          { name: '电场力做功与电势能', latex: 'W_{AB} = q U_{AB} = E_{pA} - E_{pB} = -\\Delta E_p', level: 'core' },
+          { name: '图像斜率与场强', latex: 'E = \\left|\\frac{d\\varphi}{dx}\\right|', level: 'core', condition: '沿位移方向' }
+        ],
+        gaokaoPoints: [
+          { text: '【功与路径无关】电荷在非匀强电场中沿任意手绘扭曲路径从 A 移动到 B，电场力所做的功及电势能的变化量仅由起点和终点的位置决定，与路径的几何形态或长度完全无关。', importance: 'gaokao' as const },
+          { text: '【φ-x 图像破题神技】φ-x 图像切线斜率的绝对值在物理上等于该处的电场强度大小 E = |dφ/dx|。斜率为零处场强为零；斜率越陡峭，表示该处场强越大。', importance: 'gaokao' as const },
+          { text: '【电势高低判定】顺着电场线方向，电势逐步降低；逆着电场线方向，电势逐步升高。', importance: 'core' as const }
+        ],
+        warnings: [
+          { text: '易错点：在计算负电荷做功与电势能变化时，极易忽略电量 q 的负号，导致做功的正负符号判定错误。请注意带入 q 符号进行代数计算。', level: 'danger' as const }
+        ]
       }
     }
     case 'anim-ohm-law': {

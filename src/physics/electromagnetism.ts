@@ -834,3 +834,74 @@ export function getChargeInEFieldTimeScale(tEnd: number, isAC: boolean): number 
   return Math.max(1e-6, rawScale)
 }
 
+/**
+ * 计算非匀强电场（由水平匀强背景电场与一个点电荷叠加而成）中的电势与场强。
+ * 
+ * 物理模型：
+ * 空间存在一水平向右的匀强电场 E_base，以及一个固定位置 (xq, yq) 的点电荷 Q。
+ * 任意点 (x, y) 的电势为两者之和。
+ * 
+ * @param x            当前点物理 x 坐标 (m)
+ * @param y            当前点物理 y 坐标 (m)
+ * @param E_base       匀强电场强度 (V/m)，水平向右
+ * @param xq           点电荷物理 x 坐标 (m)
+ * @param yq           点电荷物理 y 坐标 (m)
+ * @param Q            点电荷电量 (C)
+ * @param zeroRef      零势点参考：'infinity' | 'ground'
+ * @param x_ref        匀强电场参考 x 坐标 (m)，在此处匀强电场电势为 0
+ * @param x_ground     大地参考 x 坐标 (m)
+ * @param y_ground     大地参考 y 坐标 (m)
+ * @returns phi 电势 (V), Ex 电场 x 分量 (V/m), Ey 电场 y 分量 (V/m), E 场强大小 (V/m)
+ */
+export function calculateNonUniformEField(
+  x: number,
+  y: number,
+  E_base: number,
+  xq: number,
+  yq: number,
+  Q: number,
+  zeroRef: 'infinity' | 'ground',
+  x_ref: number,
+  x_ground: number,
+  y_ground: number
+): { phi: number; Ex: number; Ey: number; E: number } {
+  const k = 9e9
+  const dx = x - xq
+  const dy = y - yq
+  const r = Math.sqrt(dx * dx + dy * dy)
+  const rClamped = Math.max(0.1, r) // 限制最小距离 10cm，防止除零与发散
+
+  // 1. 点电荷产生的电势与场强
+  const phiPoint = (k * Q) / rClamped
+  const EPointX = (k * Q * dx) / (rClamped * rClamped * rClamped)
+  const EPointY = (k * Q * dy) / (rClamped * rClamped * rClamped)
+
+  // 2. 匀强电场产生的电势（以 x_ref 为参考点）
+  const phiBase = -E_base * (x - x_ref)
+  const EBaseX = E_base
+  const EBaseY = 0
+
+  // 3. 计算未校正的总电势
+  const phiRaw = phiBase + phiPoint
+
+  // 4. 计算合场强（场强为电势梯度的负值，是矢量叠加，不受零势点选择影响）
+  const Ex = EBaseX + EPointX
+  const Ey = EBaseY + EPointY
+  const E = Math.sqrt(Ex * Ex + Ey * Ey)
+
+  // 5. 零势点校正
+  let phi = phiRaw
+  if (zeroRef === 'ground') {
+    const dxGround = x_ground - xq
+    const dyGround = y_ground - yq
+    const rGround = Math.max(0.1, Math.sqrt(dxGround * dxGround + dyGround * dyGround))
+    const phiPointGround = (k * Q) / rGround
+    const phiBaseGround = -E_base * (x_ground - x_ref)
+    const phiGroundRef = phiBaseGround + phiPointGround
+    phi = phiRaw - phiGroundRef
+  }
+
+  return { phi, Ex, Ey, E }
+}
+
+
