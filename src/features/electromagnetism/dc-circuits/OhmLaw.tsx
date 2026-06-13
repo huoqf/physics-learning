@@ -1,86 +1,291 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateOhmLaw } from '@/physics'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { PHYSICS_COLORS } from '@/theme/physics'
+import { LightBulb } from '@/components/Physics/LightBulb'
+import { DialMeter } from '@/components/Physics/DialMeter'
 
-/** 欧姆定律 I = U/R：U-I 图像（过原点直线，斜率 1/R），工作点标注 */
 export default function OhmLaw() {
-  const { params, showFormulas, showGrid } = useAnimationStore()
-  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
+  const { params } = useAnimationStore()
+  const time = useAnimationStore((s) => s.time)
+  const [containerRef] = useCanvasSize({ width: 650, height: 400 })
 
-  const { U = 6, R = 3 } = params
-  const { I } = calculateOhmLaw(U, R)
+  const mode = params.mode ?? 0 // 0=定值电阻, 1=小灯泡
+  const U = params.U ?? 2
+  const R = params.R ?? 10
+  const isBulb = mode === 1
 
-  // 坐标系：左下原点，x=U(0~12V)，y=I(0~ Umax/Rmin)
-  const padL = 60
-  const padB = 50
-  const padT = 30
-  const padR = 30
-  const ox = padL
-  const oy = canvasSize.height - padB
-  const plotW = canvasSize.width - padL - padR
-  const plotH = canvasSize.height - padT - padB
+  // 物理计算
+  let I = 0
+  let P = 0
+  let R_eff = R
 
-  const Umax = 12
-  const Imax = 6 // 量程上限，A
-  const xOf = (u: number) => ox + (u / Umax) * plotW
-  const yOf = (i: number) => oy - (Math.min(i, Imax) / Imax) * plotH
-
-  // U-I 直线：I = U/R，取 U=0..Umax
-  const lineX2 = xOf(Umax)
-  const lineY2 = yOf(Umax / R)
-
-  const gridLines = []
-  if (showGrid) {
-    for (let u = 0; u <= Umax; u += 2) {
-      gridLines.push(<line key={`gx-${u}`} x1={xOf(u)} y1={padT} x2={xOf(u)} y2={oy} stroke={PHYSICS_COLORS.grid} strokeWidth={1} strokeDasharray="4,4" />)
-    }
-    for (let i = 0; i <= Imax; i += 1) {
-      gridLines.push(<line key={`gy-${i}`} x1={ox} y1={yOf(i)} x2={ox + plotW} y2={yOf(i)} stroke={PHYSICS_COLORS.grid} strokeWidth={1} strokeDasharray="4,4" />)
-    }
+  if (!isBulb) {
+    const res = calculateOhmLaw(U, R)
+    I = res.I
+    P = U * I
+    R_eff = R
+  } else {
+    R_eff = 5 + 2 * U
+    I = U / R_eff
+    P = U * I
   }
 
+  // 拓扑电路导线回路参数 (矩形: x从180到480, y从160到320)
+  // 周长 = 300 + 160 + 300 + 160 = 920
+  function getLoopPosition(pos: number): { x: number; y: number } {
+    let p = pos % 920
+    if (p < 0) p += 920
+
+    // 段 1: 从正极连接线开始 (370, 320) -> (480, 320) [长度 110]
+    if (p < 110) {
+      return { x: 370 + p, y: 320 }
+    }
+    p -= 110
+
+    // 段 2: 右侧竖直导线向上 (480, 320) -> (480, 160)，通过电流表 [长度 160]
+    if (p < 160) {
+      return { x: 480, y: 320 - p }
+    }
+    p -= 160
+
+    // 段 3: 上方水平导线向左 (480, 160) -> (180, 160)，通过待测元件 [长度 300]
+    if (p < 300) {
+      return { x: 480 - p, y: 160 }
+    }
+    p -= 300
+
+    // 段 4: 左侧竖直导线向下 (180, 160) -> (180, 320) [长度 160]
+    if (p < 160) {
+      return { x: 180, y: 160 + p }
+    }
+    p -= 160
+
+    // 段 5: 下方水平导线向右回到负极 (180, 320) -> (290, 320) [长度 110]
+    if (p < 110) {
+      return { x: 180 + p, y: 320 }
+    }
+    p -= 110
+
+    // 段 6: 电源内部泵送 (290, 320) -> (370, 320) [长度 80]
+    return { x: 290 + p, y: 320 }
+  }
+
+  // 渲染微观电荷粒子 (流速与电流 I 呈正比)
+  const numCharges = 22
+  const chargeParticles = Array.from({ length: numCharges }, (_, idx) => {
+    // 电流越大，移动速度越快。若 I = 0，则静止。
+    const speedFactor = 150
+    const pos = (idx * (920 / numCharges) + time * speedFactor * I) % 920
+    return getLoopPosition(pos)
+  })
+
+  // 电阻色环定义
+  const digitColors = [
+    '#1C1917', // 0: 黑色
+    '#78350F', // 1: 棕色
+    PHYSICS_COLORS.positiveCharge, // 2: 红色 (Red-500)
+    PHYSICS_COLORS.emf, // 3: 橙色 (Amber-600)
+    PHYSICS_COLORS.equipotential, // 4: 黄色 (Amber-600)
+    PHYSICS_COLORS.magneticField, // 5: 绿色 (Emerald-500)
+    PHYSICS_COLORS.magnetSouth, // 6: 蓝色 (Blue-600)
+    PHYSICS_COLORS.tension, // 7: 紫色 (Purple-500)
+    '#4B5563', // 8: 灰色
+    '#F3F4F6', // 9: 白色
+  ]
+  const firstDigit = Math.floor(R_eff / 10)
+  const secondDigit = Math.round(R_eff) % 10
+  const band1Color = digitColors[Math.min(9, Math.max(0, firstDigit))]
+  const band2Color = digitColors[Math.min(9, Math.max(0, secondDigit))]
+  const band3Color = '#1C1917' // 乘数 10^0 = 1 (黑色)
+  const band4Color = '#D4AF37' // 误差 5% (金色)
+
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
-        {gridLines}
+    <div ref={containerRef} className="w-full h-full flex items-center justify-center p-2">
+      <svg
+        viewBox="0 0 650 400"
+        className="w-full h-full bg-white rounded-xl shadow-inner border border-neutral-100"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        <defs>
 
-        {/* 坐标轴 */}
-        <line x1={ox} y1={oy} x2={ox + plotW} y2={oy} stroke={PHYSICS_COLORS.axis} strokeWidth={2} markerEnd="url(#arrow-ohm-axis)" />
-        <line x1={ox} y1={oy} x2={ox} y2={padT} stroke={PHYSICS_COLORS.axis} strokeWidth={2} markerEnd="url(#arrow-ohm-axis)" />
-        <text x={ox + plotW - 6} y={oy + 24} fontSize="13" fill={PHYSICS_COLORS.axis} textAnchor="end">U / V</text>
-        <text x={ox - 36} y={padT + 6} fontSize="13" fill={PHYSICS_COLORS.axis}>I / A</text>
+          {/* 电源金属质感 */}
+          <linearGradient id="power-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#475569" />
+            <stop offset="100%" stopColor="#1E293B" />
+          </linearGradient>
 
-        {/* 刻度 */}
-        {[0, 2, 4, 6, 8, 10, 12].map((u) => (
-          <text key={`tx-${u}`} x={xOf(u)} y={oy + 16} fontSize="10" fill={PHYSICS_COLORS.axis} textAnchor="middle">{u}</text>
+          {/* 表盘金属圈渐变 */}
+          <linearGradient id="dial-ring" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#94A3B8" />
+            <stop offset="100%" stopColor="#475569" />
+          </linearGradient>
+        </defs>
+
+        {/* ==================== 1. 导线与并联节点 ==================== */}
+        {/* 闭合回路导线底色线 */}
+        <rect
+          x={180}
+          y={160}
+          width={300}
+          height={160}
+          fill="none"
+          stroke={PHYSICS_COLORS.grid}
+          strokeWidth={8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        {/* 内部铜芯线 */}
+        <rect
+          x={180}
+          y={160}
+          width={300}
+          height={160}
+          fill="none"
+          stroke={PHYSICS_COLORS.trackHistory}
+          strokeWidth={3}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {/* 电压表并联支路导线 */}
+        <path
+          d="M 240 160 L 240 70 L 330 70"
+          fill="none"
+          stroke={PHYSICS_COLORS.trackHistory}
+          strokeWidth={3}
+        />
+        <path
+          d="M 420 160 L 420 70 L 330 70"
+          fill="none"
+          stroke={PHYSICS_COLORS.trackHistory}
+          strokeWidth={3}
+        />
+        
+        {/* 并联分流节点 */}
+        <circle cx={240} cy={160} r={4.5} fill={PHYSICS_COLORS.labelText} />
+        <circle cx={420} cy={160} r={4.5} fill={PHYSICS_COLORS.labelText} />
+
+        {/* ==================== 2. 微观电荷流动动画 ==================== */}
+        {/* 只在主回路上流动，电压表支路电阻无穷大，没有流动电荷（极佳教学隐喻） */}
+        {chargeParticles.map((pt, idx) => (
+          <circle
+            key={`charge-${idx}`}
+            cx={pt.x}
+            cy={pt.y}
+            r={3.5}
+            fill={PHYSICS_COLORS.electricCurrent}
+            className="transition-transform duration-100"
+            style={{
+              filter: `drop-shadow(0px 0px 1.5px ${PHYSICS_COLORS.electricCurrent})`
+            }}
+          />
         ))}
-        {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-          <text key={`ty-${i}`} x={ox - 10} y={yOf(i) + 4} fontSize="10" fill={PHYSICS_COLORS.axis} textAnchor="end">{i}</text>
-        ))}
 
-        {/* U-I 直线 */}
-        <line x1={ox} y1={oy} x2={lineX2} y2={lineY2} stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={CANVAS_STYLE.stroke.vectorMain} />
+        {/* ==================== 3. 直流稳压电源 ==================== */}
+        <g transform="translate(290, 280)">
+          {/* 电源主体外壳 */}
+          <rect
+            x={0}
+            y={0}
+            width={80}
+            height={80}
+            rx={8}
+            fill="url(#power-grad)"
+            stroke="#0f172a"
+            strokeWidth={1.5}
+          />
+          {/* LED 电压显示屏 */}
+          <rect
+            x={12}
+            y={12}
+            width={56}
+            height={24}
+            rx={4}
+            fill="#090d16"
+            stroke="#334155"
+            strokeWidth={1}
+          />
+          {/* LED 数字 */}
+          <text
+            x={40}
+            y={29}
+            fill="#22C55E"
+            fontSize={15}
+            fontWeight="bold"
+            fontFamily="monospace"
+            textAnchor="middle"
+            style={{ filter: 'drop-shadow(0px 0px 2px rgba(34, 197, 94, 0.8))' }}
+          >
+            {U.toFixed(1)} V
+          </text>
+          {/* 电源品牌/型号小字 */}
+          <text x={40} y={48} fill="#94a3b8" fontSize={7} textAnchor="middle" letterSpacing={1}>
+            DC SOURCE
+          </text>
 
-        {/* 工作点 + 投影 */}
-        <line x1={xOf(U)} y1={oy} x2={xOf(U)} y2={yOf(I)} stroke={PHYSICS_COLORS.electricPotential} strokeWidth={1} strokeDasharray="5,4" />
-        <line x1={ox} y1={yOf(I)} x2={xOf(U)} y2={yOf(I)} stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={1} strokeDasharray="5,4" />
-        <circle cx={xOf(U)} cy={yOf(I)} r={6} fill={PHYSICS_COLORS.forceNet} />
+          {/* 正极接线柱 (红) */}
+          <circle cx={65} cy={65} r={7} fill="#EF4444" stroke="#7f1d1d" strokeWidth={1} />
+          <circle cx={65} cy={65} r={3} fill="#b91c1c" />
+          <text x={65} y={54} fill="#EF4444" fontSize={9} fontWeight="bold" textAnchor="middle">
+            +
+          </text>
 
-        {showFormulas && (
-          <g transform="translate(80, 20)">
-            <text fontSize="14" fill={PHYSICS_COLORS.labelText} fontWeight="bold">欧姆定律 I = U/R</text>
-            <text x={0} y={22} fontSize="12" fill={PHYSICS_COLORS.axis}>电压 U = {U} V，电阻 R = {R} Ω</text>
-            <text x={0} y={42} fontSize="13" fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold">电流 I = {I.toFixed(2)} A</text>
-            <text x={0} y={62} fontSize="11" fill={PHYSICS_COLORS.axis}>图线斜率 = 1/R = {(1 / R).toFixed(3)} S（越陡电阻越小）</text>
+          {/* 负极接线柱 (黑) */}
+          <circle cx={15} cy={65} r={7} fill="#1E293B" stroke="#0f172a" strokeWidth={1} />
+          <circle cx={15} cy={65} r={3} fill="#020617" />
+          <text x={15} y={54} fill="#94A3B8" fontSize={9} fontWeight="bold" textAnchor="middle">
+            -
+          </text>
+        </g>
+
+        {/* ==================== 4. 待测元件区域 ==================== */}
+        {!isBulb ? (
+          /* ----- A. 定值电阻元件 ----- */
+          <g transform="translate(330, 160)">
+            {/* 色环电阻陶瓷本体 */}
+            <rect
+              x={-24}
+              y={-10}
+              width={48}
+              height={20}
+              rx={6}
+              fill="#E2E8F0"
+              stroke="#64748B"
+              strokeWidth={1.5}
+            />
+            {/* 电阻两端金属帽 */}
+            <path
+              d="M -24 -10 L -18 -10 L -18 10 L -24 10 Z"
+              fill="#94A3B8"
+            />
+            <path
+              d="M 24 -10 L 18 -10 L 18 10 L 24 10 Z"
+              fill="#94A3B8"
+            />
+            
+            {/* 动态色环 1 */}
+            <rect x={-14} y={-10} width={4} height={20} fill={band1Color} />
+            {/* 动态色环 2 */}
+            <rect x={-6} y={-10} width={4} height={20} fill={band2Color} />
+            {/* 动态色环 3 (倍率) */}
+            <rect x={2} y={-10} width={4} height={20} fill={band3Color} />
+            {/* 动态色环 4 (误差环-金色) */}
+            <rect x={11} y={-10} width={4} height={20} fill={band4Color} />
+
+            {/* 文字标签 */}
+            <text x={0} y={24} fill="#475569" fontSize={11} fontWeight="bold" textAnchor="middle">
+              定值电阻 R
+            </text>
           </g>
+        ) : (
+          /* ----- B. 小灯泡元件 ----- */
+          <LightBulb x={330} y={160} power={P} time={time} />
         )}
 
-        <defs>
-          <marker id="arrow-ohm-axis" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
-            <polygon points="0 0, 9 3.5, 0 7" fill={PHYSICS_COLORS.axis} />
-          </marker>
-        </defs>
+        {/* ==================== 5. 理想表盘组件 ==================== */}
+        <DialMeter type="V" value={U} max={10} x={330} y={70} />
+        <DialMeter type="A" value={I} max={2} x={480} y={240} />
       </svg>
     </div>
   )

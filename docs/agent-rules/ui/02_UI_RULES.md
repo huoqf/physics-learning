@@ -190,6 +190,14 @@ Primary（primary-600）/ Secondary（white + primary边框）/ Ghost（transpar
 
 默认 / Hover / Focus（primary-500 outline 2px）/ Active（scale 0.97）/ Disabled（opacity-40）/ Loading（spinner）/ 空态 / 错误态
 
+### 7.1 物理公共器材与实验实体（公共组件规范）
+
+物理实验实体组件（如电学的灯泡，力学的滑块、小车、小球等）统一存放在 `src/components/Physics/` 下。
+
+* **接口文档化**：组件的 API Props、动效和设计意图**必须**在组件代码内通过 TypeScript 接口与 JSDoc 详细注释（自文档化），禁止在 UI 规范文档中列出具体 Props 细节。
+* **复用铁律**：开发新场景前必须先检查该目录。**禁止**在单个页面中重复手绘或重写已有的器材/实体（如小灯泡、小车等）。
+* **新增规范**：若需新增通用物理器材（如滑块等），应将其抽离为 `src/components/Physics/` 下的独立组件，并严格保证所有颜色来自 `SCENE_COLORS`。
+
 ---
 
 ## 8. UI 专属禁止项
