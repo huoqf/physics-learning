@@ -17,8 +17,7 @@
 
 ## 最近变更摘要
 
-| 日期 | 模块 | 类型 | 摘要 |
-|------|------|------|------|
+| 2026-06-14 | anim-lorentz-force | feature | 重构洛伦兹力页面为“洛伦兹力 F=qvB”双模式模型并替换原有页面（删除多余知识树节点，将速度选择器功能作为进阶模式并入）：实现动静分离渲染架构，采用解析解驱动粒子在复合正交场运动并用二分法精确计算碰撞/穿出，绘制 y-v 非线性位移速度图像。提取 CapacitorPlates 与 ParticleEmitter 通用组件，修复 ConductingRod 与 RotatingCoil 的遗留 TS 警告，清理未使用的 `calculateLorentzForce` 导入，打包编译构建通过 |
 | 2026-06-14 | components/Physics | refactor | 提取手指定则为通用组件：SkeletalHand + HandRule 移至 src/components/Physics/，CuttingEMFHandRule 移至 induction/ 目录；删除 features/electromagnetism/shared/ 目录；移动测试文件；全部 255 测试通过 |
 | 2026-06-14 | tests | test | 修复 3 个测试文件 28 个失败（forceMotion/SkeletalHand/physicsQuantities），全部 242/242 通过 |
 | 2026-06-14 | lint | fix | 修复 11 个 lint errors→0（测试 unused vars + VTChart/FieldLines any 类型），删除历史 FIX_PLAN 文档 |

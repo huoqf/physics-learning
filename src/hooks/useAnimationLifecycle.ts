@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { getAnimationConfig } from '@/data/animationRegistry'
 import { preloadQuantityBuilder } from '@/data/physicsQuantities'
-import { useAnimationStore, useProgressStore } from '@/stores'
+import { useAnimationStore, useProgressStore, type PhysicsState } from '@/stores'
 import { useAppStore } from '@/stores/useAppStore'
 import type { DiscoveryStepData } from '@/components/UI/DiscoveryGuide'
 import { useAnimationFrame } from '@/utils/animation'
 import { duration } from '@/theme/motion'
+import { calculateLorentzTrajectory } from '@/physics'
 
 export interface AnimationLifecycleResult {
   config: ReturnType<typeof getAnimationConfig>
@@ -24,9 +25,11 @@ export function useAnimationLifecycle(): AnimationLifecycleResult {
   const { id } = useParams<{ id: string }>()
 
   const isPlaying = useAnimationStore((s) => s.isPlaying)
+  const params = useAnimationStore((s) => s.params)
   const setParams = useAnimationStore((s) => s.setParams)
   const setTime = useAnimationStore((s) => s.setTime)
   const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
+  const setPhysicsState = useAnimationStore((s) => s.setPhysicsState)
 
   const { mode, setMode, discoveryStep, setDiscoveryStep, setDiscoveryMaxStep, nextDiscoveryStep, prevDiscoveryStep } = useAppStore()
   const { markAnimationViewed } = useProgressStore()
@@ -60,11 +63,12 @@ export function useAnimationLifecycle(): AnimationLifecycleResult {
       setTime(0)
       currentTimeRef.current = 0
       setIsPlaying(false)
+      setPhysicsState({ position: { x: 0, y: 0 }, velocity: { vx: 0, vy: 0 }, trajectory: [] })
       setMode('animation')
       markAnimationViewed(config.id)
       preloadQuantityBuilder(config.id)
     }
-  }, [config, setParams, setTime, setIsPlaying, setMode, markAnimationViewed])
+  }, [config, setParams, setTime, setIsPlaying, setPhysicsState, setMode, markAnimationViewed])
 
   // 暂停时延迟 dimmed
   useEffect(() => {
@@ -87,16 +91,32 @@ export function useAnimationLifecycle(): AnimationLifecycleResult {
   // rAF 时间循环
   const speed = useAnimationStore((s) => s.speed)
   const maxTime = 30
+  
+  // 物理参数订阅用于触发轨迹重算
+  const { q = 1, v = 10, B = 1, m = 1 } = params
+
   useAnimationFrame(
     (deltaTime) => {
-      currentTimeRef.current += deltaTime / 1000
+      currentTimeRef.current += (deltaTime / 1000) * speed
       if (currentTimeRef.current >= maxTime) {
         currentTimeRef.current = maxTime
         setTime(maxTime)
         setIsPlaying(false)
         return
       }
-      setTime(currentTimeRef.current)
+      
+      const t = currentTimeRef.current
+      setTime(t)
+      
+      // 计算当前位置与更新轨迹
+      const res = calculateLorentzTrajectory(q, m, B, v, t)
+      
+      // 更新轨迹点（简单处理，实际应考虑采样频率）
+      setPhysicsState((state: PhysicsState) => ({
+        position: { x: res.x, y: res.y },
+        velocity: { vx: res.vx, vy: res.vy },
+        trajectory: [...state.trajectory, { x: res.x, y: res.y }].slice(-200) // 保留最近 200 点
+      }))
     },
     { playing: isPlaying, speed }
   )
@@ -105,6 +125,7 @@ export function useAnimationLifecycle(): AnimationLifecycleResult {
     setTime(0)
     currentTimeRef.current = 0
     setIsPlaying(false)
+    setPhysicsState({ position: { x: 0, y: 0 }, velocity: { vx: 0, vy: 0 }, trajectory: [] })
   }
 
   return {

@@ -8,7 +8,6 @@ import {
   calculateOhmLaw,
   calculateClosedCircuit,
   calculateAmpereForce,
-  calculateLorentzForce,
   calculateChargeInMagField,
   calculateFaradayEMF,
   calculateLenzsLaw,
@@ -842,16 +841,103 @@ export function buildElectromagnetismQuantities(
       }
     }
     case 'anim-lorentz-force': {
-      const q = params.q ?? 1
-      const v = params.v ?? 10
-      const B = params.B ?? 1
-      const angle = params.angle ?? 90
-      const { F } = calculateLorentzForce(Math.abs(q), Math.abs(v), B, angle)
-      return {
-        quantities: [
-          ...base,
-          { label: '洛伦兹力 F', value: F, unit: 'N' },
-        ],
+      const mode = params.mode ?? 0
+      const v0 = params.v0 ?? 10.0
+      const B = params.B ?? 1.0
+      const E = params.E ?? 10.0
+      const qOverM = params.qOverM ?? 1.0
+      const q = params.q ?? 1.0
+
+      if (mode === 0) {
+        // 基础模式
+        const R = Math.abs(v0 / (q * B))
+        const F_lorentz = q * v0 * B
+
+        return {
+          quantities: [
+            ...base,
+            { label: '电荷极性', value: q > 0 ? '正电荷 (+q)' : '负电荷 (-q)', unit: '', highlight: q > 0 ? 'positive' : 'negative' },
+            { label: '入射速度 v', value: v0.toFixed(1), unit: 'm/s', color: '#2563EB' },
+            { label: '磁场强度 B', value: B.toFixed(1), unit: 'T', color: '#10B981' },
+            { label: '洛伦兹力 F_洛', value: Math.abs(F_lorentz).toFixed(2), unit: 'N', color: '#8B5CF6', highlight: F_lorentz === 0 ? 'zero' : 'extreme' },
+            { label: '轨道半径 R', value: R.toFixed(2), unit: 'm', color: '#64748B' },
+          ],
+          formulas: [
+            {
+              name: '洛伦兹力大小',
+              latex: 'F_{\\text{洛}} = qvB \\quad (\\vec{v} \\perp \\vec{B})',
+              level: 'core',
+              condition: '当速度与磁场垂直时',
+            },
+            {
+              name: '向心力与半径公式',
+              latex: 'qvB = m\\frac{v^2}{R} \\implies R = \\frac{mv}{qB}',
+              level: 'core',
+            }
+          ],
+          gaokaoPoints: [
+            {
+              text: '【洛伦兹力永远不做功】洛伦兹力的方向始终与带电粒子的瞬时速度方向垂直，因此它只改变速度的方向，而不改变速度的大小。',
+              importance: 'gaokao',
+            },
+          ],
+          warnings: [
+            {
+              text: '易错点：应用左手定则判断洛伦兹力方向时，四指指向正电荷的运动方向，对于负电荷，四指应指向运动的反方向（即电流的相反方向）。',
+              level: 'danger',
+            }
+          ]
+        }
+      } else {
+        // 进阶模式
+        const v_filter = B > 0.01 ? E / B : 0
+        const F_electric = qOverM * E
+        const F_lorentz = qOverM * v0 * B
+        const isBalanced = Math.abs(v0 - v_filter) < 1e-4
+
+        return {
+          quantities: [
+            ...base,
+            { label: '磁场强度 B', value: B.toFixed(1), unit: 'T', color: '#10B981' },
+            { label: '电场强度 E', value: E.toFixed(1), unit: 'V/m', color: '#D97706' },
+            { label: '粒子荷质比 q/m', value: qOverM.toFixed(1), unit: 'C/kg' },
+            { label: '过滤速度 v_滤', value: v_filter.toFixed(2), unit: 'm/s', color: '#2563EB', highlight: 'extreme' },
+            { label: '入射速度 v', value: v0.toFixed(1), unit: 'm/s', color: '#2563EB' },
+            { label: '电场力/质量 FE/m', value: F_electric.toFixed(2), unit: 'N/kg', color: '#F97316' },
+            { label: '洛伦兹力/质量 FL/m', value: F_lorentz.toFixed(2), unit: 'N/kg', color: '#8B5CF6' },
+            { label: '偏转状态', value: isBalanced ? '匀速直线穿出' : (v0 > v_filter ? '洛力主导，向上偏转' : '电场力主导，向下偏转'), unit: '', highlight: isBalanced ? 'positive' : 'negative' }
+          ],
+          formulas: [
+            {
+              name: '复合场受力平衡',
+              latex: 'F_{\\text{洛}} = F_{\\text{电}} \\implies qvB = qE',
+              level: 'core',
+              condition: '沿中轴直线穿出时',
+            },
+            {
+              name: '过滤速度公式',
+              latex: 'v = \\frac{E}{B}',
+              level: 'core',
+            }
+          ],
+          gaokaoPoints: [
+            {
+              text: '【速度选择器的物理本质】“只选速度，不选电性和质量”。从受力平衡方程 qvB = qE 可知，能够笔直穿出复合场的速度满足 v = E/B。无论是正电荷还是负电荷，无论是重离子还是轻电子，只要初速度等于 E/B，都在复合场中保持匀速直线运动穿出。',
+              importance: 'gaokao',
+            },
+            {
+              text: '【速度选择器的单向性】粒子必须从左侧水平向右入射才能发生选择。如果粒子从右侧入射，电场力与洛伦兹力将同向，粒子必然发生偏转而无法穿出。',
+              importance: 'gaokao',
+            }
+          ],
+          warnings: [
+            {
+              text: '易错点：误认为改变带电粒子的电量 q 会打破选择器的平衡。实际上 q 因子同时出现在两边并被消去，平衡状态不受影响。',
+              level: 'danger',
+            }
+          ],
+          mnemonic: '只选速度，不选质量，不选电性，单向选择。'
+        }
       }
     }
     case 'anim-charge-in-bfield': {

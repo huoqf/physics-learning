@@ -66,25 +66,43 @@ export const colors = {
 
   // ─── 语义状态色 ─────────────────────────────────────────────────────────
   success: {
+    50:  '#ECFDF5',
     100: '#D1FAE5',
+    200: '#A7F3D0',
+    300: '#6EE7B7',
+    400: '#34D399',
     500: '#10B981', // 已掌握状态
     600: '#059669', // 已掌握文字（数值正向激励）
     700: '#047857',
+    800: '#065F46',
+    900: '#064E3B',
+    950: '#022C22',
   },
   danger: {
     50:  '#FEF2F2',
     100: '#FEE2E2',
+    200: '#FECACA',
+    300: '#FCA5A5',
+    400: '#F87171',
     500: '#EF4444', // 错题未复习、答错
     600: '#DC2626', // 负值数字、加速度矢量
     700: '#B91C1C', // 多次错误
+    800: '#991B1B',
+    900: '#7F1D1D',
+    950: '#450A0A',
   },
   warning: {
-    100: '#FEF3C7',
-    // ⚠️ warning.500 与 accent.500 同值 (#F59E0B) 系有意为之：
-    //   accent 用于高考要点标注（装饰语义），warning 用于错题已查看（状态语义），
-    //   两者不应同屏共存；若日后需要区分可将 warning.500 改为 #F97316（orange-500）
-    500: '#F59E0B', // 错题已查看（状态语义，勿与 accent 混用）
-    700: '#B45309',
+    50:  '#FFF7ED',
+    100: '#FFEDD5',
+    200: '#FED7AA',
+    300: '#FDBA74',
+    400: '#FB923C',
+    500: '#F97316', // 错题已查看（状态语义）
+    600: '#EA580C',
+    700: '#C2410C',
+    800: '#9A3412',
+    900: '#7C2D12',
+    950: '#431407',
   },
 } as const
 
@@ -101,3 +119,39 @@ export const tailwindColors = {
   danger:    colors.danger,
   warning:   colors.warning,
 }
+
+// ─── 领域语义别名层 (PHYSICS_COLORS) ──────────────────────────────────
+export const PHYSICS_COLORS = {
+  current: {
+    positive: colors.danger[400], // 浅红（电流正向动画）
+    negative: colors.primary[400], // 浅蓝（电流反向动画）
+  },
+  magnet: {
+    north: colors.danger[600],    // N极（标准红）
+    south: colors.primary[600],   // S极（标准蓝）
+  },
+  force: {
+    gravity: colors.warning[500],  // 重力
+    friction: colors.success[500], // 摩擦力
+    tension: colors.accent[500],   // 拉力/张力
+  }
+} as const;
+
+// ─── 场景材质层 (SCENE_COLORS) ────────────────────────────────────────
+export const SCENE_COLORS = {
+  copper: { // 铜质导杆/线圈
+    base: '#B87333',
+    highlight: '#D49A6A', // 受光面
+    shadow: '#8C5226',    // 背光面
+  },
+  rail: { // 导轨金属
+    base: '#64748B',
+    highlight: '#94A3B8',
+    shadow: '#475569',
+  },
+  skin: { // 交互手势/人体
+    base: '#FDBA74',
+    highlight: '#FED7AA',
+    shadow: '#F97316',
+  }
+} as const;

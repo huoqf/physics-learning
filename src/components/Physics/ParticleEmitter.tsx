@@ -1,0 +1,130 @@
+import React, { useId } from 'react'
+import { PHYSICS_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
+
+interface ParticleEmitterProps {
+  /** 发射口中心 X 像素坐标 */
+  x: number
+  /** 发射口中心 Y 像素坐标 */
+  y: number
+  /** 是否正在工作（工作时指示灯会亮起） */
+  active?: boolean
+  /** 当前粒子电性，决定发射指示灯和前端线圈的指示色 */
+  chargeSign?: number
+}
+
+/**
+ * 通用粒子发射源组件。
+ * 
+ * 绘制高质感的粒子物理发射筒，包含指示灯和带电极性指示环。
+ */
+export const ParticleEmitter: React.FC<ParticleEmitterProps> = ({
+  x,
+  y,
+  active = false,
+  chargeSign = 1,
+}) => {
+  const gradId = useId()
+  const indicatorColor = chargeSign > 0 
+    ? PHYSICS_COLORS.positiveCharge 
+    : (chargeSign < 0 ? PHYSICS_COLORS.negativeCharge : colors.neutral[400])
+
+  return (
+    <g className="select-none">
+      <defs>
+        {/* 发射筒金属渐变 */}
+        <linearGradient id={`emitter-body-${gradId}`} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor={colors.neutral[600]} />
+          <stop offset="20%" stopColor={colors.neutral[400]} />
+          <stop offset="40%" stopColor={colors.neutral[200]} />
+          <stop offset="60%" stopColor={colors.neutral[300]} />
+          <stop offset="80%" stopColor={colors.neutral[500]} />
+          <stop offset="100%" stopColor={colors.neutral[700]} />
+        </linearGradient>
+
+        {/* 呼吸发光滤镜 */}
+        <filter id={`glow-${gradId}`} x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+      </defs>
+
+      {/* 后端固定支架 */}
+      <rect
+        x={x - 65}
+        y={y - 8}
+        width={15}
+        height={16}
+        rx={1}
+        fill={colors.neutral[700]}
+        stroke={colors.neutral[800]}
+        strokeWidth={1}
+      />
+      <line
+        x1={x - 65}
+        y1={y}
+        x2={0}
+        y2={y}
+        stroke={colors.neutral[500]}
+        strokeWidth={4}
+        strokeDasharray="4,4"
+        opacity="0.3"
+      />
+
+      {/* 发射主体外壳 */}
+      <rect
+        x={x - 55}
+        y={y - 18}
+        width={35}
+        height={36}
+        rx={4}
+        fill={`url(#emitter-body-${gradId})`}
+        stroke={colors.neutral[700]}
+        strokeWidth={1.5}
+      />
+
+      {/* 喷嘴部分 */}
+      <path
+        d={`M ${x - 20} ${y - 10} 
+           L ${x - 5} ${y - 7} 
+           A 3 3 0 0 1 ${x} ${y - 4}
+           L ${x} ${y + 4}
+           A 3 3 0 0 1 ${x - 5} ${y + 7}
+           L ${x - 20} ${y + 10} Z`}
+        fill={`url(#emitter-body-${gradId})`}
+        stroke={colors.neutral[700]}
+        strokeWidth={1.2}
+      />
+
+      {/* 前端电极指示圈（指示发射粒子的性质） */}
+      <rect
+        x={x - 4}
+        y={y - 6}
+        width={4}
+        height={12}
+        rx={1}
+        fill={indicatorColor}
+        opacity={active ? 1 : 0.65}
+        filter={active ? `url(#glow-${gradId})` : undefined}
+      />
+
+      {/* 机身工作状态指示灯 */}
+      <circle
+        cx={x - 38}
+        cy={y}
+        r={active ? 3.5 : 2.5}
+        fill={active ? colors.success[500] : colors.danger[500]}
+        filter={active ? `url(#glow-${gradId})` : undefined}
+      />
+
+      {/* 发射口阴影内部 */}
+      <ellipse
+        cx={x}
+        cy={y}
+        rx={1}
+        ry={5}
+        fill={colors.neutral[900]}
+      />
+    </g>
+  )
+}

@@ -2,6 +2,12 @@ import { create } from 'zustand'
 
 export type MotionMode = 'auto-v' | 'auto-F' | 'manual'
 
+export interface PhysicsState {
+  position: { x: number; y: number }
+  velocity: { vx: number; vy: number }
+  trajectory: { x: number; y: number }[]
+}
+
 interface AnimationState {
   animationType: string | null
   params: Record<string, number>
@@ -14,6 +20,7 @@ interface AnimationState {
   showTimeSlices: boolean
   showDualObjects: boolean
   motionMode: MotionMode
+  physicsState: PhysicsState
   setAnimationType: (type: string | null) => void
   setParams: (params: Record<string, number>) => void
   updateParam: (key: string, value: number) => void
@@ -26,6 +33,7 @@ interface AnimationState {
   toggleTimeSlices: () => void
   toggleDualObjects: () => void
   setMotionMode: (mode: MotionMode) => void
+  setPhysicsState: (state: PhysicsState | ((prev: PhysicsState) => PhysicsState)) => void
   reset: () => void
 }
 
@@ -41,6 +49,11 @@ export const useAnimationStore = create<AnimationState>((set) => ({
   showTimeSlices: false,
   showDualObjects: false,
   motionMode: 'auto-v',
+  physicsState: {
+    position: { x: 0, y: 0 },
+    velocity: { vx: 0, vy: 0 },
+    trajectory: [],
+  },
   setAnimationType: (type) => set({ animationType: type }),
   setParams: (params) => set({ params }),
   updateParam: (key, value) => set((state) => ({
@@ -55,6 +68,9 @@ export const useAnimationStore = create<AnimationState>((set) => ({
   toggleTimeSlices: () => set((state) => ({ showTimeSlices: !state.showTimeSlices })),
   toggleDualObjects: () => set((state) => ({ showDualObjects: !state.showDualObjects })),
   setMotionMode: (mode) => set({ motionMode: mode }),
+  setPhysicsState: (physicsState) => set((state) => ({
+    physicsState: typeof physicsState === 'function' ? physicsState(state.physicsState) : physicsState
+  })),
   reset: () => set({
     animationType: null,
     params: {},
@@ -67,5 +83,10 @@ export const useAnimationStore = create<AnimationState>((set) => ({
     showTimeSlices: false,
     showDualObjects: false,
     motionMode: 'auto-v',
+    physicsState: {
+      position: { x: 0, y: 0 },
+      velocity: { vx: 0, vy: 0 },
+      trajectory: [],
+    },
   })
 }))
