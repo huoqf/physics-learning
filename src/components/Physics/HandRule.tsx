@@ -112,8 +112,8 @@ export function HandRule({
     targetRotationRef.current = auto.rotationDeg + userOffset
   }, [auto.rotationDeg, userOffset])
 
-  // 模式 / pose 切换
-  const chirality: HandChirality = mode === 'left' ? 'left' : 'right'
+  // 手性由 computeHandPose 从 thumb × middle 叉积自动推导
+  const chirality: HandChirality = auto.chirality
   // fist 模式在 v 有效时使用半握姿态
   const inferredPose: HandPose = useMemo(() => {
     if (poseOverride) return poseOverride
