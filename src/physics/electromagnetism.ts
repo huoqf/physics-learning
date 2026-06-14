@@ -649,13 +649,8 @@ export interface HandPoseResult {
  * 重构后的手部姿态计算：
  * 以四指平面（中指指向）为旋转基准，确保手部角度自然垂直。
  * 在右手右手定则中，四指指代 B 方向（或者更准确地，令掌心平面指向 I 方向）。
- *
- * @param v 拇指方向（2D 向量）
- * @param I 中指方向（2D 向量）
- * @param preferThumb 是否优先从拇指方向计算旋转（默认从中指方向）
- *                    当 true 时，旋转使拇指指向 v 方向（适用于左手定则中拇指=F 的场景）
  */
-export function computeHandPose(v: Vec2, I: Vec2, preferThumb = false): HandPoseResult {
+export function computeHandPose(v: Vec2, I: Vec2): HandPoseResult {
   const vMag = Math.hypot(v.x, v.y)
   const iMag = Math.hypot(I.x, I.y)
 
@@ -663,19 +658,13 @@ export function computeHandPose(v: Vec2, I: Vec2, preferThumb = false): HandPose
     return { rotationDeg: 0, chirality: 'right', pose: 'open', B_out: true }
   }
 
-  let rotationDeg: number
+  // 计算中指（手掌中轴）应当指向的角度
+  const iAngle = Math.atan2(I.y, I.x)
 
-  if (preferThumb) {
-    // 从拇指方向计算旋转：自然姿态下拇指指向左 (180°)，旋转后指向 vAngle
-    const vAngle = Math.atan2(v.y, v.x)
-    rotationDeg = (vAngle * 180) / Math.PI - 180
-  } else {
-    // 从中指方向计算旋转（默认行为，适用于右手定则中拇指=v 的场景）
-    const iAngle = Math.atan2(I.y, I.x)
-    // 在静止姿态 (0°) 下，SkeletonHand 组件中的四指是朝上（-90°）定义的。
-    // 所以当 I 方向为 iAngle 时，需要旋转 `iAngle - (-90°)`.
-    rotationDeg = (iAngle * 180) / Math.PI + 90
-  }
+  // 修正旋转角：使中指（掌心轴）指向 I 方向。
+  // 在静止姿态 (0°) 下，SkeletonHand 组件中的四指是朝上（-90°）定义的。
+  // 所以当 I 方向为 iAngle 时，需要旋转 `iAngle - (-90°)`.
+  const rotationDeg = (iAngle * 180) / Math.PI + 90
 
   const cross = v.x * I.y - v.y * I.x
   const chirality: HandChirality = cross > 0 ? 'right' : 'left'

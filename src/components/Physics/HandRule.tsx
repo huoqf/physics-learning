@@ -89,14 +89,9 @@ export function HandRule({
 }: HandRuleProps) {
   // ── 自动推算目标姿态（rotationDeg / chirality / pose）─────────────────
   // 故意只追踪 .x/.y，传入新对象但坐标未变时不会重新计算
-  // 左手定则 mode='left'：拇指=F，优先从拇指方向计算旋转
-  // 右手定则 mode='right'：拇指=v，从中指方向计算旋转
   const { x: tx, y: ty } = thumbDir
   const { x: mx, y: my } = middleDir
-  const auto = useMemo(
-    () => computeHandPose(thumbDir, middleDir, mode === 'left'),
-    [tx, ty, mx, my, mode],
-  )
+  const auto = useMemo(() => computeHandPose(thumbDir, middleDir), [tx, ty, mx, my])
 
   // ── 用户拖拽偏移量（叠加在自动旋转上）───────────────────────────────
   const [userOffset, setUserOffset] = useState(0)
@@ -117,8 +112,8 @@ export function HandRule({
     targetRotationRef.current = auto.rotationDeg + userOffset
   }, [auto.rotationDeg, userOffset])
 
-  // 手性由 mode 决定（左手定则始终为 'left'，右手定则始终为 'right'）
-  const chirality: HandChirality = mode === 'left' ? 'left' : 'right'
+  // 手性由 computeHandPose 从 thumb × middle 叉积自动推导
+  const chirality: HandChirality = auto.chirality
   // fist 模式在 v 有效时使用半握姿态
   const inferredPose: HandPose = useMemo(() => {
     if (poseOverride) return poseOverride
