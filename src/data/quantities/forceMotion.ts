@@ -3,7 +3,7 @@ import {
   getForceMotionDefaultEnv,
   type ForceMotionMode,
 } from '../../physics'
-import { PHYSICS_COLORS } from '../../theme/physics/colors'
+import { PHYSICS_COLORS } from '@/theme/physics'
 import type { Formula, GaokaoPoint, PhysicsPanelData, PhysicsQuantity, WarningItem } from './types'
 
 // ═══════════════════════════════════════════════════════════════════════════════

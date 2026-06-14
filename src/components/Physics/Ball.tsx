@@ -1,5 +1,5 @@
 import { useId, SVGProps } from 'react';
-import { SCENE_COLORS } from '@/theme/physics/sceneColors';
+import { SCENE_COLORS } from '@/theme/physics';
 
 /**
  * 物理小球预设类型。
