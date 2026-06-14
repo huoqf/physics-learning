@@ -12,9 +12,8 @@ import { useAnimationStore } from '@/stores'
 import { useAnimationFrame } from '@/utils/animation'
 import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_STYLE, FONT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
+import { MagneticPoles, RotatingCoil } from '@/components/Physics'
 
-// 3D 点类型
-type Point3D = { x: number; y: number; z: number }
 type Point2D = { x: number; y: number }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -61,86 +60,27 @@ export default function ACGeneration() {
     return { x: OX + sx * SCALE, y: OY + sy * SCALE }
   }
 
-  /** 生成圆弧点 */
-  function getXYArc(xBase: number, yTop: number, yBottom: number, z: number, dipStrength: number, steps: number = 20): Point3D[] {
-    const pts: Point3D[] = []
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps
-      const curY = yTop + (yBottom - yTop) * t
-      const curX = xBase + dipStrength * 4 * t * (1 - t)
-      pts.push({ x: curX, y: curY, z })
-    }
-    return pts
-  }
-
-  /** 3D 点数组 → SVG path 字符串 */
-  function getPathString(points3D: Point3D[], close = true): string {
-    let d = ''
-    points3D.forEach((p, i) => {
-      const p2d = project3D(p.x, p.y, p.z)
-      d += (i === 0 ? `M ${p2d.x.toFixed(1)} ${p2d.y.toFixed(1)} ` : `L ${p2d.x.toFixed(1)} ${p2d.y.toFixed(1)} `)
-    })
-    if (close) d += 'Z'
-    return d
-  }
-
   // ═══════════════════════════════════════════════════════════════════════════
-  // 磁极参数
-  // ═══════════════════════════════════════════════════════════════════════════
-  const zF = -1.6, zB = 1.6, yT = 1.7, yB = -1.7
-  const nXLeft = -3.8, nXEdge = -1.3, nDip = -0.9
-  const sXRight = 3.8, sXEdge = 1.3, sDip = 0.9
-
-  const nFrontArc = getXYArc(nXEdge, yT, yB, zF, nDip)
-  const nBackArc = getXYArc(nXEdge, yT, yB, zB, nDip)
-  const sFrontArc = getXYArc(sXEdge, yT, yB, zF, sDip)
-  const sBackArc = getXYArc(sXEdge, yT, yB, zB, sDip)
-
-  // 磁极面
-  const nFrontPoly: Point3D[] = [
-    { x: nXLeft, y: yT, z: zF },
-    ...nFrontArc,
-    { x: nXLeft, y: yB, z: zF }
-  ]
-  const sFrontPoly: Point3D[] = [
-    { x: sXRight, y: yT, z: zF },
-    { x: sXRight, y: yB, z: zF },
-    ...sFrontArc.slice().reverse()
-  ]
-  const nBackSurfacePath = getPathString([...nFrontArc, ...nBackArc.slice().reverse()])
-  const sBackSurfacePath = getPathString([...sFrontArc, ...sBackArc.slice().reverse()])
-  const nRightSidePath = getPathString([
-    { x: sXRight, y: yT, z: zF },
-    { x: sXRight, y: yB, z: zF },
-    { x: sXRight, y: yB, z: zB },
-    { x: sXRight, y: yT, z: zB }
-  ])
-  const nTopSurfacePath = getPathString([
-    { x: nXLeft, y: yT, z: zF },
-    { x: nXEdge, y: yT, z: zF },
-    { x: nXEdge, y: yT, z: zB },
-    { x: nXLeft, y: yT, z: zB }
-  ])
-  const sTopSurfacePath = getPathString([
-    { x: sXEdge, y: yT, z: zF },
-    { x: sXRight, y: yT, z: zF },
-    { x: sXRight, y: yT, z: zB },
-    { x: sXEdge, y: yT, z: zB }
-  ])
-
-  // 磁极文字位置
-  const nTextPos = project3D(-2.9, -0.3, zF)
-  const sTextPos = project3D(2.3, -0.3, zF)
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // 磁感线
+  // 磁感线（立体多排分布）
   // ═══════════════════════════════════════════════════════════════════════════
   const fieldLines: { p1: Point2D; p2: Point2D }[] = []
-  const lineYs = [1.1, 0.4, -0.3, -1.0]
-  lineYs.forEach(y => {
+  const lineConfigs = [
+    { y: 1.1, z: 0.8 },
+    { y: 0.3, z: 0.8 },
+    { y: -0.5, z: 0.8 },
+
+    { y: 0.7, z: 0.0 },
+    { y: -0.1, z: 0.0 },
+    { y: -0.9, z: 0.0 },
+
+    { y: 1.0, z: -0.8 },
+    { y: 0.2, z: -0.8 },
+    { y: -0.6, z: -0.8 },
+  ]
+  lineConfigs.forEach(cfg => {
     fieldLines.push({
-      p1: project3D(-1.6, y, 0.5),
-      p2: project3D(1.4, y, -0.5)
+      p1: project3D(-1.55, cfg.y, cfg.z),
+      p2: project3D(1.55, cfg.y, cfg.z)
     })
   })
 
@@ -148,7 +88,7 @@ export default function ACGeneration() {
   // 转轴和旋转箭头
   // ═══════════════════════════════════════════════════════════════════════════
   const axisStart = project3D(0, 0, 3.2)
-  const axisEnd = project3D(0, 0, -3.0)
+  const axisEnd = project3D(0, 0, -2.6)
   const omegaPos = project3D(0.8, -0.5, -2.5)
 
   // 计算旋转箭头路径
@@ -160,57 +100,10 @@ export default function ACGeneration() {
   const rotationArrowPath = `M ${arrowX1} ${arrowY1} A ${rx} ${ry} ${-Z_ANGLE * 180 / Math.PI} 0 1 ${arrowX2} ${arrowY2}`
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 线圈（深度排序）
-  // ═══════════════════════════════════════════════════════════════════════════
-  const coilWidth = 1.05
-  const coilLength = 1.4
-  const cosT = Math.cos(theta)
-  const sinT = Math.sin(theta)
-
-  const p1 = { x: coilWidth * cosT, y: coilWidth * sinT, z: coilLength }
-  const p2 = { x: -coilWidth * cosT, y: -coilWidth * sinT, z: coilLength }
-  const p3 = { x: -coilWidth * cosT, y: -coilWidth * sinT, z: -coilLength }
-  const p4 = { x: coilWidth * cosT, y: coilWidth * sinT, z: -coilLength }
-
-  const pMidBack = { x: 0, y: 0, z: coilLength }
-  const pMidFront = { x: 0, y: 0, z: -coilLength }
-  const bOut1 = { x: -0.2 * cosT, y: -0.2 * sinT, z: -coilLength }
-  const bOut2 = { x: -0.2 * cosT, y: -0.2 * sinT, z: -coilLength - 0.7 }
-  const rOut1 = { x: 0.2 * cosT, y: 0.2 * sinT, z: -coilLength }
-  const rOut2 = { x: 0.2 * cosT, y: 0.2 * sinT, z: -coilLength - 0.7 }
-
-  // 线圈线段数据
-  const coilSegments: { pA: Point3D; pB: Point3D; color: string; zAvg?: number }[] = [
-    { pA: pMidBack, pB: p2, color: SCENE_COLORS.magnet.southDark },
-    { pA: p2, pB: p3, color: SCENE_COLORS.magnet.southDark },
-    { pA: p3, pB: pMidFront, color: SCENE_COLORS.magnet.southDark },
-    { pA: pMidFront, pB: bOut1, color: SCENE_COLORS.magnet.southDark },
-    { pA: bOut1, pB: bOut2, color: SCENE_COLORS.magnet.southDark },
-    { pA: pMidBack, pB: p1, color: SCENE_COLORS.magnet.northMid },
-    { pA: p1, pB: p4, color: SCENE_COLORS.magnet.northMid },
-    { pA: p4, pB: pMidFront, color: SCENE_COLORS.magnet.northMid },
-    { pA: pMidFront, pB: rOut1, color: SCENE_COLORS.magnet.northMid },
-    { pA: rOut1, pB: rOut2, color: SCENE_COLORS.magnet.northMid }
-  ]
-
-  // 深度排序
-  coilSegments.forEach(seg => {
-    seg['zAvg'] = (seg.pA.z + seg.pB.z) / 2
-    seg['zAvg'] += (Math.abs(seg.pA.x) + Math.abs(seg.pB.x)) * 0.0001
-  })
-  coilSegments.sort((a, b) => (b.zAvg ?? 0) - (a.zAvg ?? 0))
-
-  // 预计算线圈线段的 SVG path
-  const coilPathElements = coilSegments.map((seg, i) => {
-    const pStart = project3D(seg.pA.x, seg.pA.y, seg.pA.z)
-    const pEnd = project3D(seg.pB.x, seg.pB.y, seg.pB.z)
-    const d = `M ${pStart.x.toFixed(1)} ${pStart.y.toFixed(1)} L ${pEnd.x.toFixed(1)} ${pEnd.y.toFixed(1)}`
-    return { d, color: seg.color, key: i }
-  })
-
-  // ═══════════════════════════════════════════════════════════════════════════
   // 状态判定
   // ═══════════════════════════════════════════════════════════════════════════
+  const cosT = Math.cos(theta)
+  const sinT = Math.sin(theta)
   const isNeutral = Math.abs(sinT) < 0.09
   const isMaxEmf = Math.abs(cosT) < 0.09
 
@@ -286,60 +179,77 @@ export default function ACGeneration() {
             {'匀强磁场 B = ' + B.toFixed(1) + ' T'}
           </text>
 
-          {/* ── 后层磁铁 ── */}
-          <g id="layer-back-magnets">
-            <path d={nRightSidePath} fill={SCENE_COLORS.magnet.southShadow} stroke={SCENE_COLORS.magnet.southStroke} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
-            <path d={nBackSurfacePath} fill={SCENE_COLORS.magnet.northDark} stroke={SCENE_COLORS.magnet.northStroke} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
-            <path d={sBackSurfacePath} fill={SCENE_COLORS.magnet.southShadow} stroke={SCENE_COLORS.magnet.southStroke} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
-            <path d={nTopSurfacePath} fill={SCENE_COLORS.magnet.northMid} stroke={SCENE_COLORS.magnet.northStroke} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
-            <path d={sTopSurfacePath} fill={SCENE_COLORS.magnet.southMid} stroke={SCENE_COLORS.magnet.southStroke} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
+          {/* 1. 转轴（置于最底层，因为它是轴心穿过线圈，线圈在它外面旋转） */}
+          <g id="layer-shaft">
+            {/* 转轴底层粗实线阴影/描边 */}
+            <line x1={axisStart.x} y1={axisStart.y} x2={axisEnd.x} y2={axisEnd.y}
+              stroke={SCENE_COLORS.pendulum.rodStroke} strokeWidth={6} strokeLinecap="round" />
+            {/* 转轴亮色金属骨架线 */}
+            <line x1={axisStart.x} y1={axisStart.y} x2={axisEnd.x} y2={axisEnd.y}
+              stroke={SCENE_COLORS.pendulum.rodFill} strokeWidth={3.5} strokeLinecap="round" />
+            {/* 轴心分段虚线点缀以表现 3D 立体旋转感 */}
+            <line x1={axisStart.x} y1={axisStart.y} x2={axisEnd.x} y2={axisEnd.y}
+              stroke={SCENE_COLORS.pendulum.pivotFill} strokeWidth={1.5} strokeDasharray="8,12" strokeLinecap="round" />
           </g>
 
-          {/* ── 磁感线层 ── */}
+          {/* 2. 后层磁铁 */}
+          <MagneticPoles project3D={project3D} layer="back" />
+
+          {/* 3. 磁感线层 */}
           <g id="layer-field-lines">
             {fieldLines.map((line, i) => (
               <g key={i}>
+                {/* 磁感线发光底色线 */}
                 <line x1={line.p1.x} y1={line.p1.y} x2={line.p2.x} y2={line.p2.y}
-                  stroke={SCENE_COLORS.coil.enamelBase} strokeWidth={CANVAS_STYLE.stroke.vectorMain} />
+                  stroke="rgba(96, 165, 250, 0.18)" strokeWidth={7} strokeLinecap="round" />
+                {/* 磁感线背景线 */}
+                <line x1={line.p1.x} y1={line.p1.y} x2={line.p2.x} y2={line.p2.y}
+                  stroke="rgba(96, 165, 250, 0.45)" strokeWidth={3} strokeLinecap="round" />
+                {/* 动态流动光斑 */}
+                <line x1={line.p1.x} y1={line.p1.y} x2={line.p2.x} y2={line.p2.y}
+                  stroke="rgba(255, 255, 255, 0.85)" strokeWidth={1.5} strokeLinecap="round"
+                  strokeDasharray="12, 36" strokeDashoffset={-t * 50} style={{ filter: 'blur(0.5px)' }} />
+                {/* 精致的箭头 */}
                 <polygon
-                  points={`${line.p2.x},${line.p2.y} ${line.p2.x - 14},${line.p2.y - 8} ${line.p2.x - 14},${line.p2.y + 8}`}
-                  fill={SCENE_COLORS.coil.enamelBase} />
+                  points={`${line.p2.x},${line.p2.y} ${line.p2.x - 12},${line.p2.y - 6} ${line.p2.x - 12},${line.p2.y + 6}`}
+                  fill="rgba(96, 165, 250, 0.9)" />
               </g>
             ))}
+          </g>
 
-            {/* 转轴 */}
-            <line x1={axisStart.x} y1={axisStart.y} x2={axisEnd.x} y2={axisEnd.y}
-              stroke={SCENE_COLORS.pendulum.axisDecor} strokeWidth={CANVAS_STYLE.stroke.chartMain} strokeDasharray="12,10" />
+          {/* 4. 旋转线圈组件 (包含滑环、碳刷与电流流动箭头) */}
+          <RotatingCoil
+            project3D={project3D}
+            theta={theta}
+            t={t}
+            emf={emf}
+            maxEmf={Em}
+            colorMode="split"
+            showSlipRings={true}
+            showBrushes={true}
+          />
 
+          {/* 5. 前层磁铁 (包含 N/S 标签面，遮挡后面的线圈) */}
+          <MagneticPoles project3D={project3D} layer="front" />
+
+          {/* 6. ω 旋转指示层 (置于最前层) */}
+          <g id="layer-rotation-indicator">
             {/* ω 符号 */}
             <text x={omegaPos.x - 35} y={omegaPos.y + 10}
               className="omega-text" fontWeight="bold" fontStyle="italic"
               fontSize={28} fill={SCENE_COLORS.pendulum.axisDecor} fontFamily="Times New Roman">ω</text>
 
-            {/* 旋转箭头 */}
-            <path d={rotationArrowPath} fill="none" stroke={SCENE_COLORS.pendulum.axisDecor} strokeWidth={CANVAS_STYLE.stroke.vectorMain} />
+            {/* 旋转箭头残影底色 */}
+            <path d={rotationArrowPath} fill="none" stroke={SCENE_COLORS.pendulum.axisDecor} strokeWidth={8} strokeLinecap="round" opacity={0.08} />
+            <path d={rotationArrowPath} fill="none" stroke={SCENE_COLORS.pendulum.axisDecor} strokeWidth={5} strokeLinecap="round" opacity={0.15} />
+            
+            {/* 旋转箭头主线 */}
+            <path d={rotationArrowPath} fill="none" stroke={SCENE_COLORS.pendulum.axisDecor} strokeWidth={2.5} strokeLinecap="round" />
+            
+            {/* 旋转箭头尖端 */}
             <polygon
               points={`${omegaPos.x - 22},${omegaPos.y - 25} ${omegaPos.x - 10},${omegaPos.y - 24} ${omegaPos.x - 25},${omegaPos.y - 13}`}
               fill={SCENE_COLORS.pendulum.axisDecor} />
-          </g>
-
-          {/* ── 前层磁铁 ── */}
-          <g id="layer-front-magnets">
-            <path d={getPathString(nFrontPoly)} fill={SCENE_COLORS.magnet.northBase} stroke={SCENE_COLORS.magnet.northStroke} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
-            <path d={getPathString(sFrontPoly)} fill={SCENE_COLORS.magnet.southDark} stroke={SCENE_COLORS.magnet.southStroke} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
-            <text x={nTextPos.x} y={nTextPos.y}
-              fontWeight="bold" fontSize={36} fill={colors.neutral[0]} fontFamily="Times New Roman">N</text>
-            <text x={sTextPos.x} y={sTextPos.y}
-              fontWeight="bold" fontSize={36} fill={colors.neutral[0]} fontFamily="Times New Roman">S</text>
-          </g>
-
-          {/* ── 动态线圈层 ── */}
-          <g id="layer-coil">
-            {coilPathElements.map(seg => (
-              <path key={seg.key} d={seg.d} fill="none"
-                stroke={seg.color} strokeWidth={4.5}
-                strokeLinecap="round" strokeLinejoin="round" />
-            ))}
           </g>
 
           {/* ── 状态标注 ── */}
