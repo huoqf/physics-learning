@@ -120,38 +120,3 @@ export const tailwindColors = {
   warning:   colors.warning,
 }
 
-// ─── 领域语义别名层 (PHYSICS_COLORS) ──────────────────────────────────
-export const PHYSICS_COLORS = {
-  current: {
-    positive: colors.danger[400], // 浅红（电流正向动画）
-    negative: colors.primary[400], // 浅蓝（电流反向动画）
-  },
-  magnet: {
-    north: colors.danger[600],    // N极（标准红）
-    south: colors.primary[600],   // S极（标准蓝）
-  },
-  force: {
-    gravity: colors.warning[500],  // 重力
-    friction: colors.success[500], // 摩擦力
-    tension: colors.accent[500],   // 拉力/张力
-  }
-} as const;
-
-// ─── 场景材质层 (SCENE_COLORS) ────────────────────────────────────────
-export const SCENE_COLORS = {
-  copper: { // 铜质导杆/线圈
-    base: '#B87333',
-    highlight: '#D49A6A', // 受光面
-    shadow: '#8C5226',    // 背光面
-  },
-  rail: { // 导轨金属
-    base: '#64748B',
-    highlight: '#94A3B8',
-    shadow: '#475569',
-  },
-  skin: { // 交互手势/人体
-    base: '#FDBA74',
-    highlight: '#FED7AA',
-    shadow: '#F97316',
-  }
-} as const;
