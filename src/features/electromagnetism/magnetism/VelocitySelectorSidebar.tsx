@@ -12,6 +12,7 @@ export default function VelocitySelectorSidebar({
   const q = params.q ?? 1.0
   const keepTrack = params.keepTrack === 1
   const showElectricField = params.showElectricField === 1
+  const showHandRule = params.showHandRule !== 0
 
   const handleModeChange = (value: number | string) => {
     updateParam('mode', value as number)
@@ -33,6 +34,13 @@ export default function VelocitySelectorSidebar({
         ]}
         value={mode}
         onChange={handleModeChange}
+        disabled={disabled}
+      />
+
+      <ToggleSwitch
+        label="显示左手定则"
+        checked={showHandRule}
+        onChange={(checked) => updateParam('showHandRule', checked ? 1 : 0)}
         disabled={disabled}
       />
 

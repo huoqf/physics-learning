@@ -1,143 +1,227 @@
-import { useCanvasSize } from '@/utils'
+import { useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
-import { calculateAmpereForce } from '@/physics'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { colors } from '@/theme/colors'
+import { HandRule } from '@/components/Physics/HandRule'
+import { solveBasicAmpere, solveAdvancedAmpere } from '@/physics'
 
-const GRID_MARGIN = 40
-const FONT = {
-  title: 14,
-  label: CANVAS_STYLE.font.labelSize,
-  axis: CANVAS_STYLE.font.axisSize,
-  magnetic: 16,
-}
+// 子组件导入
+import BasicAmpereScene from './components/BasicAmpereScene'
+import AmpereFIChart from './components/AmpereFIChart'
+import InclinedAmpereScene from './components/InclinedAmpereScene'
+import InclineForceDiagram from './components/InclineForceDiagram'
+import ForcePolygon from './components/ForcePolygon'
 
-/** 安培力 F = BIL·sinθ：通电导线在磁场中受力，B/I/L/θ 可调，左手定则演示 */
+// 虚拟画布固定比例 (供 viewBox 相对布局使用)
+const VIEW_WIDTH = 800
+const VIEW_HEIGHT = 500
+
 export default function AmpereForce() {
-  const { params, showVectors, showFormulas, showGrid } = useAnimationStore()
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 400 })
+  const { params, time, showVectors } = useAnimationStore()
+  const svgRef = useRef<SVGSVGElement | null>(null)
 
-  const { B = 1, I = 2, L = 5, angle = 90 } = params
-  const { F } = calculateAmpereForce(B, I, L, angle)
+  // 读取控制参数
+  const mode = params.mode ?? 0
+  const I = params.I ?? 2.0
+  const B = params.B ?? 1.0
+  const L = params.L ?? 4.0
+  const theta = params.theta ?? 30
+  const mu = params.mu ?? 0.2
+  const showLeftHand = params.showLeftHand !== 0
+  const showForceComponents = params.showForceComponents !== 0
 
-  const cx = canvasSize.width / 2
-  const cy = canvasSize.height / 2
-  const pxPerUnit = 20
-  const wireLen = L * pxPerUnit
-  const wireAngleRad = ((angle >= 0 && angle <= 180 ? angle : 90) * Math.PI) / 180
+  // 1. 物理层计算
+  const basicResult = useMemo(() => {
+    return solveBasicAmpere(I, B, L, 0.5, time)
+  }, [I, B, L, time])
 
-  const wireX1 = cx - (wireLen / 2) * Math.cos(wireAngleRad)
-  const wireY1 = cy + (wireLen / 2) * Math.sin(wireAngleRad)
-  const wireX2 = cx + (wireLen / 2) * Math.cos(wireAngleRad)
-  const wireY2 = cy - (wireLen / 2) * Math.sin(wireAngleRad)
+  const advancedResult = useMemo(() => {
+    return solveAdvancedAmpere(I, B, theta, mu, 4.0, 0.5, time)
+  }, [I, B, theta, mu, time])
 
-  const arrowLen = F < 0.01 ? 0 : Math.min(100, Math.max(20, F * 8))
-  const forceDir = I >= 0 ? 1 : -1
+  // 2. 左手定则手势姿态向量计算 (仅基础模式)
+  const handPoseParams = useMemo(() => {
+    const hasCurrent = Math.abs(I) > 1e-4
+    const hasField = Math.abs(B) > 1e-4
 
-  const gridCols = 6
-  const gridRows = 4
-  const gridSpacingX = (canvasSize.width - 160) / (gridCols - 1)
-  const gridSpacingY = (canvasSize.height - 140) / (gridRows - 1)
+    let thumbDir = { x: 0, y: 0 }
+    let middleDir = { x: 0, y: 0 }
+    let handActive = false
 
-  const gridLines = []
-  if (showGrid) {
-    for (let i = 0; i <= 10; i++) {
-      const xPos = (i * canvasSize.width) / 10
-      const yPos = (i * canvasSize.height) / 10
-      gridLines.push(
-        <line key={`gv-${i}`} x1={xPos} y1={GRID_MARGIN} x2={xPos} y2={canvasSize.height - GRID_MARGIN}
-          stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.reference} strokeDasharray="4,4" />,
-        <line key={`gh-${i}`} x1={GRID_MARGIN} y1={yPos} x2={canvasSize.width - GRID_MARGIN} y2={yPos}
-          stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.reference} strokeDasharray="4,4" />
-      )
+    if (hasCurrent && hasField) {
+      handActive = true
+      // 电流方向 (中指)：+y 向上为正(I > 0)，但 Canvas 坐标中向上是 -y 轴。所以：
+      // I > 0 -> middleDir 为 { x: 0, y: -1 } (向上)
+      // I < 0 -> middleDir 为 { x: 0, y: 1 } (向下)
+      middleDir = { x: 0, y: I > 0 ? -1 : 1 }
+
+      // 受力方向 (大拇指)：基础模式安培力方向
+      // basicResult.F > 0 -> 向右，thumbDir 为 { x: 1, y: 0 }
+      // basicResult.F < 0 -> 向左，thumbDir 为 { x: -1, y: 0 }
+      thumbDir = { x: basicResult.F > 0 ? 1 : -1, y: 0 }
     }
-  }
+
+    return { thumbDir, middleDir, handActive }
+  }, [I, B, basicResult.F])
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
-        <defs>
-          <marker id="arrow-ampere-force" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.forceNet} />
-          </marker>
-          <marker id="arrow-ampere-current" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.electricCurrent} />
-          </marker>
-        </defs>
-
-        {gridLines}
-
-        {/* 磁场 B 方向（垂直纸面向里/向外用符号表示） */}
-        <g>
-          <text x={cx} y={GRID_MARGIN} fontSize={FONT.title} fill={PHYSICS_COLORS.magneticField} textAnchor="middle" fontWeight="bold">
-            B = {B.toFixed(1)} T（垂直纸面向里 ⊗）
-          </text>
-          {Array.from({ length: gridCols }).map((_, i) =>
-            Array.from({ length: gridRows }).map((_, j) => (
-              <text
-                key={`b-${i}-${j}`}
-                x={80 + i * gridSpacingX}
-                y={80 + j * gridSpacingY}
-                fontSize={FONT.magnetic}
-                fill={PHYSICS_COLORS.magneticField}
-                opacity={0.3}
-                textAnchor="middle"
-              >
-                ⊗
-              </text>
-            ))
-          )}
-        </g>
-
-        {/* 导线 */}
-        <line x1={wireX1} y1={wireY1} x2={wireX2} y2={wireY2}
-          stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-        <circle cx={wireX1} cy={wireY1} r={CANVAS_STYLE.object.minRadius} fill={PHYSICS_COLORS.electricCurrent} />
-        <circle cx={wireX2} cy={wireY2} r={CANVAS_STYLE.object.minRadius} fill={PHYSICS_COLORS.electricCurrent} />
-
-        {/* 电流方向箭头 */}
-        <line x1={wireX1} y1={wireY1} x2={wireX2} y2={wireY2}
-          stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-          markerEnd="url(#arrow-ampere-current)" opacity={0.8} />
-        <text x={cx} y={cy - 12} fontSize={FONT.axis} fill={PHYSICS_COLORS.electricCurrent} textAnchor="middle">
-          I = {Math.abs(I).toFixed(1)} A
-        </text>
-
-        {/* 安培力矢量 */}
-        {showVectors && arrowLen > 0 && (
+    <div className="w-full h-full p-2 flex items-center justify-center bg-neutral-100/40">
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
+        className="w-full h-full max-h-[90vh] bg-white rounded-2xl shadow-lg select-none"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        {mode === 0 ? (
+          // ─── 基础模式视图 (直交规律) ───
           <g>
-            <line x1={cx} y1={cy} x2={cx} y2={cy + forceDir * arrowLen}
-              stroke={PHYSICS_COLORS.forceNet} strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-              markerEnd="url(#arrow-ampere-force)" />
-            <text x={cx + 14} y={cy + forceDir * arrowLen / 2} fontSize={FONT.label} fill={PHYSICS_COLORS.forceNet} fontWeight="bold">
-              F
-            </text>
-          </g>
-        )}
+            {/* 1. 二维水平导轨主场景 */}
+            <BasicAmpereScene
+              x={20}
+              y={40}
+              w={480}
+              h={400}
+              physicsResult={basicResult}
+              I={I}
+              B={B}
+              L={L}
+              time={time}
+              showVectors={showVectors}
+              isLimited={basicResult.isLimited}
+            />
 
-        {/* 角度标注 */}
-        {angle !== 90 && (
+            {/* 2. F-I 线性图表 */}
+            <AmpereFIChart
+              x={520}
+              y={40}
+              w={260}
+              h={210}
+              I={I}
+              B={B}
+              L={L}
+            />
+
+            {/* 3. 左手定则可视化面板 */}
+            {showLeftHand ? (
+              <g transform="translate(520, 270)">
+                <rect
+                  x="0"
+                  y="0"
+                  width="260"
+                  height="170"
+                  fill={colors.neutral[50]}
+                  stroke={colors.neutral[200]}
+                  strokeWidth="1.2"
+                  rx="6"
+                />
+                <text
+                  x="130"
+                  y="20"
+                  fontSize="7.5"
+                  fill={colors.neutral[700]}
+                  fontWeight="bold"
+                  textAnchor="middle"
+                  style={{ userSelect: 'none' }}
+                >
+                  左手定则空间图景
+                </text>
+
+                {handPoseParams.handActive ? (
+                  <svg
+                    x="40"
+                    y="30"
+                    width="180"
+                    height="130"
+                    viewBox="0 0 120 130"
+                    className="overflow-visible"
+                  >
+                    <HandRule
+                      mode="left"
+                      thumbDir={handPoseParams.thumbDir}
+                      indexDir={{ x: 0, y: 0 }}
+                      middleDir={handPoseParams.middleDir}
+                      cx={60}
+                      cy={62}
+                      scale={0.72}
+                      active={handPoseParams.handActive}
+                      draggable={false}
+                    />
+                  </svg>
+                ) : (
+                  <text
+                    x="130"
+                    y="90"
+                    fontSize="6"
+                    fill={colors.neutral[400]}
+                    textAnchor="middle"
+                    style={{ userSelect: 'none' }}
+                  >
+                    请调节电流 I 或磁场 B 开启演示
+                  </text>
+                )}
+              </g>
+            ) : (
+              <g transform="translate(520, 270)">
+                <rect
+                  x="0"
+                  y="0"
+                  width="260"
+                  height="170"
+                  fill={colors.neutral[50]}
+                  stroke={colors.neutral[200]}
+                  strokeWidth="1.2"
+                  strokeDasharray="4,4"
+                  rx="6"
+                />
+                <text
+                  x="130"
+                  y="88"
+                  fontSize="6.5"
+                  fill={colors.neutral[400]}
+                  textAnchor="middle"
+                  style={{ userSelect: 'none' }}
+                >
+                  左手定则已隐藏，可在左侧侧栏开启
+                </text>
+              </g>
+            )}
+          </g>
+        ) : (
+          // ─── 进阶模式视图 (斜面平衡与运动) ───
           <g>
-            <path d={`M ${cx + 30} ${cy} A 30 30 0 0 ${angle > 90 ? 1 : 0} ${cx + 30 * Math.cos(wireAngleRad)} ${cy - 30 * Math.sin(wireAngleRad)}`}
-              fill="none" stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.reference} />
-            <text x={cx + 45} y={cy - 10} fontSize={FONT.axis} fill={PHYSICS_COLORS.labelText}>
-              θ = {angle.toFixed(0)}°
-            </text>
-          </g>
-        )}
+            {/* 1. 3D 倾斜场景展示 */}
+            <InclinedAmpereScene
+              x={20}
+              y={40}
+              w={480}
+              h={400}
+              physicsResult={advancedResult}
+              I={I}
+              B={B}
+              theta={theta}
+            />
 
-        {/* 导线长度标注 */}
-        <text x={cx} y={Math.max(wireY1, wireY2) + 24} fontSize={FONT.axis} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
-          L = {L.toFixed(1)} m
-        </text>
+            {/* 2. 2D 侧视受力图 */}
+            <InclineForceDiagram
+              x={520}
+              y={40}
+              w={260}
+              h={235}
+              physicsResult={advancedResult}
+              I={I}
+              B={B}
+              theta={theta}
+              showForceComponents={showForceComponents}
+            />
 
-        {showFormulas && (
-          <g transform={`translate(20, ${canvasSize.height - 120})`}>
-            <text fontSize={FONT.title} fill={PHYSICS_COLORS.labelText} fontWeight="bold">安培力</text>
-            <text x={0} y={24} fontSize={FONT.axis} fill={PHYSICS_COLORS.axis}>F = BIL·sinθ</text>
-            <text x={0} y={44} fontSize={FONT.axis} fill={PHYSICS_COLORS.axis}>方向：左手定则</text>
-            <text x={0} y={68} fontSize={FONT.label} fill={PHYSICS_COLORS.forceNet} fontWeight="bold">
-              F = {F.toFixed(3)} N
-            </text>
+            {/* 3. 力矢量闭合/开口多边形 */}
+            <ForcePolygon
+              x={520}
+              y={290}
+              w={260}
+              h={150}
+              physicsResult={advancedResult}
+              theta={theta}
+            />
           </g>
         )}
       </svg>

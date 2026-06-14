@@ -10,6 +10,7 @@ import { CapacitorPlates } from '@/components/Physics/CapacitorPlates'
 import { ParticleEmitter } from '@/components/Physics/ParticleEmitter'
 import { createSceneScale, worldToPixel } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
+import { HandRule } from '@/components/Physics/HandRule'
 
 interface ParticleState {
   id: number
@@ -33,6 +34,9 @@ export default function VelocitySelector() {
   const q_param = params.q ?? 1.0 // 基础模式下的电荷符号 (1.0 或 -1.0)
   const keepTrack = params.keepTrack === 1
   const showElectricField = params.showElectricField === 1
+  const showHandRule = params.showHandRule !== 0
+
+  const svgRef = useRef<SVGSVGElement | null>(null)
 
   // 1. 物理模型与缩放参数设定
   const L_phys = 5.0 // 极板长度 (m)
@@ -112,7 +116,7 @@ export default function VelocitySelector() {
       m_phys,
       v0_param,
       0, // E = 0
-      B_param,
+      -B_param, // 物理磁场向里，为负
       L_phys * 3, // 基础模式下不需要撞板或穿出，平铺磁场，让其跑得足够远
       d_phys * 3,
       time
@@ -150,7 +154,7 @@ export default function VelocitySelector() {
             m_phys,
             v0_param,
             0,
-            B_param,
+            -B_param, // 物理磁场向里，为负
             L_phys * 3,
             d_phys * 3,
             t_sample
@@ -185,8 +189,8 @@ export default function VelocitySelector() {
           p.q,
           m_phys,
           p.v0,
-          E_param,
-          B_param,
+          showElectricField ? -E_param : 0, // 上正下负，电场向下
+          -B_param, // 磁场向里
           L_phys,
           d_phys,
           t
@@ -229,8 +233,8 @@ export default function VelocitySelector() {
             p.q,
             m_phys,
             p.v0,
-            E_param,
-            B_param,
+            showElectricField ? -E_param : 0, // 上正下负，电场向下
+            -B_param, // 磁场向里
             L_phys,
             d_phys,
             t_sample
@@ -266,7 +270,7 @@ export default function VelocitySelector() {
   const chartData = useMemo(() => {
     if (mode !== 1) return null
 
-    const points: { v: number; y: number }[] = []
+    const points: { v: number; y: number | null }[] = []
     const vMin = 1.0
     const vMax = 25.0
     const stepCount = 80
@@ -274,33 +278,62 @@ export default function VelocitySelector() {
 
     for (let i = 0; i <= stepCount; i++) {
       const v = vMin + ((vMax - vMin) * i) / stepCount
-      const res = calculateVelocitySelectorTrajectory(
+      // 首先获取撞板 (tHit) 和穿出场区 (tOut) 时刻
+      const temp = calculateVelocitySelectorTrajectory(
         qOverM_param,
         m_phys,
         v,
-        E_param,
-        B_param,
+        showElectricField ? -E_param : 0,
+        -B_param,
         L_phys,
         d_phys,
-        L_phys / Math.max(0.1, v) * 2 // 足够长时间
+        0 // 仅用于提取解析解的时间参数
       )
-      points.push({ v, y: res.point.y })
+
+      let yVal: number | null = null
+      if (!temp.hitsPlate) {
+        // 未撞板粒子：用出口时刻 tOut 重新计算偏转 y 坐标
+        const res = calculateVelocitySelectorTrajectory(
+          qOverM_param,
+          m_phys,
+          v,
+          showElectricField ? -E_param : 0,
+          -B_param,
+          L_phys,
+          d_phys,
+          temp.tOut
+        )
+        yVal = res.point.y
+      }
+      points.push({ v, y: yVal })
     }
 
-    // 求当前滑块初速度对应的偏转位移
+    // 求当前滑块初速度对应的偏转位移（同样限制在离开系统的最终时刻，防止红点溢出图表）
+    const tempCurrent = calculateVelocitySelectorTrajectory(
+      qOverM_param,
+      m_phys,
+      v0_param,
+      showElectricField ? -E_param : 0,
+      -B_param,
+      L_phys,
+      d_phys,
+      0
+    )
+    const tCurrentTarget = tempCurrent.tHit !== null ? tempCurrent.tHit : tempCurrent.tOut
+
     const currentRes = calculateVelocitySelectorTrajectory(
       qOverM_param,
       m_phys,
       v0_param,
-      E_param,
-      B_param,
+      showElectricField ? -E_param : 0, // 上正下负，电场向下
+      -B_param, // 磁场向里
       L_phys,
       d_phys,
-      L_phys / Math.max(0.1, v0_param) * 2
+      tCurrentTarget
     )
 
     return { points, currentY: currentRes.point.y, vFilter }
-  }, [mode, E_param, B_param, qOverM_param, v0_param])
+  }, [mode, E_param, B_param, qOverM_param, v0_param, showElectricField])
 
   // 6. 图表像素坐标映射，自适应画布大小
   const chartWidth = w_plate_px // 与极板同宽
@@ -323,13 +356,27 @@ export default function VelocitySelector() {
 
   const chartCurvePath = useMemo(() => {
     if (!chartData) return ''
-    return chartData.points
-      .map((p, idx) => {
-        const sx = toChartX(p.v)
-        const sy = toChartY(p.y)
-        return `${idx === 0 ? 'M' : 'L'} ${sx.toFixed(1)} ${sy.toFixed(1)}`
-      })
-      .join(' ')
+
+    let path = ''
+    let isDrawing = false
+
+    chartData.points.forEach((p) => {
+      if (p.y === null) {
+        isDrawing = false
+        return
+      }
+
+      const sx = toChartX(p.v)
+      const sy = toChartY(p.y)
+
+      if (!isDrawing) {
+        path += ` M ${sx.toFixed(1)} ${sy.toFixed(1)}`
+        isDrawing = true
+      } else {
+        path += ` L ${sx.toFixed(1)} ${sy.toFixed(1)}`
+      }
+    })
+    return path.trim()
   }, [chartData])
 
   // 7. 网格辅助线（已删除）
@@ -360,6 +407,49 @@ export default function VelocitySelector() {
     }
     return arr
   }, [mode, B_param, cy, gap_plate_px, w_plate_px])
+
+  // 9. 计算左手定则手部姿态参数
+  const handPoseParams = useMemo(() => {
+    // 默认值：大拇指受力向上 (Canvas Y为负值)，中指正电荷速度向右 (Canvas X为正值)
+    let thumbDir = { x: 0, y: -1 }
+    let middleDir = { x: 1, y: 0 }
+    let handActive = false
+
+    if (mode === 0 && singleParticle) {
+      const { vx, vy, fx, fy } = singleParticle.point
+      const q_sign = q_param >= 0 ? 1 : -1
+      
+      // 粒子正在运动中，手势激活
+      handActive = time > 0
+
+      // 中指方向（等效电流方向 = q_sign * 速度方向）
+      // Canvas中 Y 轴翻转，所以 Canvas 速度是 { x: vx, y: -vy }
+      const magV = Math.hypot(vx, vy)
+      if (magV > 1e-6) {
+        middleDir = { x: q_sign * vx, y: -q_sign * vy }
+      } else {
+        middleDir = { x: q_sign, y: 0 }
+      }
+
+      // 拇指方向（洛伦兹力方向）
+      // Canvas中 Y 轴翻转，所以 Canvas 力是 { x: fx, y: -fy }
+      const magF = Math.hypot(fx, fy)
+      if (magF > 1e-6) {
+        thumbDir = { x: fx, y: -fy }
+      } else {
+        // 初始受力方向：q_sign 为正时受力向上 (0, -1)，为负时受力向下 (0, 1)
+        thumbDir = { x: 0, y: -q_sign }
+      }
+    } else if (mode === 1) {
+      // 进阶模式：默认为正电荷，速度向右，洛伦兹力向上
+      // 进阶模式下是稳定的速度选择器演示，我们让它处于静态的原理解释状态，手势为 active
+      handActive = true
+      thumbDir = { x: 0, y: -1 }
+      middleDir = { x: 1, y: 0 }
+    }
+
+    return { thumbDir, middleDir, handActive }
+  }, [mode, singleParticle, q_param, time])
 
   return (
     <div ref={sizeRef} className="w-full h-full relative">
@@ -678,6 +768,46 @@ export default function VelocitySelector() {
         height={canvasSize.height}
         className="absolute top-0 left-0 w-full h-full pointer-events-none"
       />
+
+      {/* 左手定则指示浮窗卡片 */}
+      {showHandRule && (
+        <div
+          className="absolute top-4 left-4 p-2.5 bg-white/85 backdrop-blur-[6px] rounded-2xl border border-neutral-200/60 shadow-lg select-none pointer-events-auto transition-all"
+          style={{ width: 142, zIndex: 10 }}
+        >
+          <div className="text-center text-[11px] font-extrabold text-neutral-700 tracking-wide mb-1.5">
+            左手定则 (洛伦兹力)
+          </div>
+          <div className="relative flex justify-center items-center bg-neutral-50/50 rounded-xl py-1">
+            <svg
+              ref={svgRef}
+              width={120}
+              height={130}
+              className="overflow-visible"
+            >
+              <HandRule
+                mode="left"
+                thumbDir={handPoseParams.thumbDir}
+                indexDir={{ x: 0, y: 0 }}
+                middleDir={handPoseParams.middleDir}
+                cx={60}
+                cy={68}
+                scale={0.62}
+                active={handPoseParams.handActive}
+                svgRef={svgRef}
+                draggable={true}
+              />
+            </svg>
+          </div>
+          <div className="text-center text-[9px] font-semibold text-neutral-500 mt-1.5 tracking-tight">
+            {mode === 0 ? (
+              <span>F_洛 = qv × B (q {q_param > 0 ? '> 0' : '< 0'})</span>
+            ) : (
+              <span>F_洛 = qv × B (匀速直线)</span>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -215,17 +215,6 @@ export const Rails: React.FC<RailsProps> = ({
       <line x1={x1 + 1} y1={y2 - 2} x2={x2 - 1} y2={y2 - 2} stroke={colors.neutral[0]} strokeWidth="0.8" opacity="0.75" />
       <circle cx={x1} cy={y2} r="4" fill={colors.neutral[500]} stroke={colors.neutral[800]} strokeWidth="1" />
       <circle cx={x2} cy={y2} r="4" fill={colors.neutral[600]} stroke={colors.neutral[800]} strokeWidth="1" />
-      
-      {/* 刻度或枕木 - 改为双色浮雕质感 */}
-      {Array.from({ length: 9 }).map((_, i) => {
-        const x = x1 + (length / 8) * i
-        return (
-          <g key={i}>
-            <line x1={x} y1={y1 - 5} x2={x} y2={y2 + 5} stroke={colors.neutral[300]} strokeWidth="1.2" />
-            <line x1={x + 1} y1={y1 - 5} x2={x + 1} y2={y2 + 5} stroke={colors.neutral[0]} strokeWidth="0.8" opacity="0.9" />
-          </g>
-        )
-      })}
     </g>
   )
 }

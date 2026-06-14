@@ -17,6 +17,7 @@
 
 ## 最近变更摘要
 
+| 2026-06-14 | anim-ampere-force | feature | 重构安培力页面为“安培力 F=BIL”双模式物理仿真：基础模式实现完全二维水平轨道加导体棒和电流虚线流动，修复了导体棒与滑轨垂直定位偏离错位，绑定有效长度 L 驱动轨道间距和棒长同步缩放，移除了导轨多余刻度细线，中屏右上角挂载左手定则手势判定、中屏右下角绘制 F-I 线性关系图表并加入了大字匀强磁场大小方向文字标注；进阶模式实现 3D 斜坡模型及竖直匀强磁场方腔、右侧展示 2D 侧视正交受力投影分解（追加磁场文字标注）及四力首尾相接的闭合/不闭合矢量多边形动效；同步扩充右侧屏物理看板公式、考点与易错点。通过全部严格编译构建 |
 | 2026-06-14 | anim-lorentz-force | feature | 重构洛伦兹力页面为“洛伦兹力 F=qvB”双模式模型并替换原有页面（删除多余知识树节点，将速度选择器功能作为进阶模式并入）：实现动静分离渲染架构，采用解析解驱动粒子在复合正交场运动并用二分法精确计算碰撞/穿出，绘制 y-v 非线性位移速度图像。提取 CapacitorPlates 与 ParticleEmitter 通用组件，修复 ConductingRod 与 RotatingCoil 的遗留 TS 警告，清理未使用的 `calculateLorentzForce` 导入，打包编译构建通过 |
 | 2026-06-14 | components/Physics | refactor | 提取手指定则为通用组件：SkeletalHand + HandRule 移至 src/components/Physics/，CuttingEMFHandRule 移至 induction/ 目录；删除 features/electromagnetism/shared/ 目录；移动测试文件；全部 255 测试通过 |
 | 2026-06-14 | tests | test | 修复 3 个测试文件 28 个失败（forceMotion/SkeletalHand/physicsQuantities），全部 242/242 通过 |

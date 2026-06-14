@@ -52,10 +52,10 @@ const TIP_RING_LABEL = 'white'
 // THUMB_BASE_ANGLE 从 '@/physics' 导入，文档说明见那里。
 
 const OPEN_FINGERS: Finger[] = [
-  // 拇指：右下侧，指向右上方（基部原为 -26, 6 -> 26, 6）
+  // 拇指：与四指平面（-90度）垂直
   { name: 'thumb',  baseX: 26, baseY: 6, bones: [
-    { length: 30, angle: -50 }, // 调整角度以符合右手拇指位置
-    { length: 24, angle: 25 },
+    { length: 30, angle: 0 }, 
+    { length: 24, angle: 0 },
   ]},
   // 食指：上方略偏右（原 -22 -> 22）
   { name: 'index',  baseX: 22, baseY: -30, bones: [
@@ -313,9 +313,10 @@ function FingerView({ finger, highlight, showTipMarker, tipLabel, tipColor }: Fi
 const PALM_W = 64
 const PALM_H = 72
 
-function Palm({ isBack }: { chirality: HandChirality, isBack: boolean }) {
+function Palm({ chirality, isBack }: { chirality: HandChirality, isBack: boolean }) {
   // 掌心朝向观察者时标注"掌心"，背向时标注"手背"
   const label = isBack ? "手背" : "掌心"
+  const handLabel = chirality === 'left' ? "左手" : "右手"
   
   return (
     <>
@@ -333,14 +334,25 @@ function Palm({ isBack }: { chirality: HandChirality, isBack: boolean }) {
       {/* 明确标注文字，确保清晰 */}
       <text
         x={0}
-        y={8}
+        y={-5}
+        textAnchor="middle"
+        fontSize={14}
+        fontWeight="bold"
+        fill={SKIN_STROKE}
+        style={{ userSelect: 'none', pointerEvents: 'none' }}
+      >
+        {label}
+      </text>
+      <text
+        x={0}
+        y={22}
         textAnchor="middle"
         fontSize={16}
         fontWeight="bold"
         fill={SKIN_STROKE}
         style={{ userSelect: 'none', pointerEvents: 'none' }}
       >
-        {label}
+        {handLabel}
       </text>
       {/* 手腕 */}
       <rect x={-18} y={PALM_H / 2 - 2} width={36} height={12} rx={6} fill={SKIN_FILL} stroke={SKIN_STROKE} strokeWidth={1.2} />

@@ -8,8 +8,8 @@ export default function AmpereForceSidebar({
   disabled,
 }: SidebarExtraProps) {
   const mode = params.mode ?? 0
-  const showLeftHand = params.showLeftHand === 1
-  const showForceComponents = params.showForceComponents === 1
+  const showLeftHand = params.showLeftHand !== 0
+  const showForceComponents = params.showForceComponents !== 0
 
   const handleModeChange = (value: number | string) => {
     updateParam('mode', value as number)
@@ -18,6 +18,7 @@ export default function AmpereForceSidebar({
 
   return (
     <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-neutral-200">
+      {/* 演示模式 */}
       <SegmentedControl
         label="演示模式"
         options={[
@@ -30,27 +31,29 @@ export default function AmpereForceSidebar({
       />
 
       {mode === 0 ? (
+        // ─── 基础模式控制 ───
         <div className="flex flex-col gap-3">
           <ToggleSwitch
-            label="显示左手定则坐标系"
+            label="显示左手定则"
             checked={showLeftHand}
             onChange={(checked) => updateParam('showLeftHand', checked ? 1 : 0)}
             disabled={disabled}
           />
           <TipCard>
-            💡 调节电流 I 或磁感应强度 B，可以改变安培力的大小与方向。开启左手定则坐标轴，能更直观地建立空间直交图景。
+            💡 调节 <strong>电流 I</strong> 或 <strong>磁感应强度 B</strong>，改变安培力的大小与方向。利用左手定则（大拇指指受力，四指指电流，磁感线穿手心）判定直交受力。
           </TipCard>
         </div>
       ) : (
+        // ─── 进阶模式控制 ───
         <div className="flex flex-col gap-3">
           <ToggleSwitch
-            label="受力正交分解辅助线"
+            label="显示受力正交分解"
             checked={showForceComponents}
             onChange={(checked) => updateParam('showForceComponents', checked ? 1 : 0)}
             disabled={disabled}
           />
           <TipCard>
-            💡 进阶模式下，调节倾角 θ 或摩擦因数 μ，观察导体棒在斜坡上的平衡状态。右侧的受力矢量多边形会实时展现合力是否为零。
+            💡 调节 <strong>倾角 θ</strong> 或 <strong>摩擦因数 μ</strong>，分析斜面上通电导体棒的动态平衡。安培力为水平方向，摩擦力会根据导体棒下滑/上滑趋势自适应改变。
           </TipCard>
         </div>
       )}
