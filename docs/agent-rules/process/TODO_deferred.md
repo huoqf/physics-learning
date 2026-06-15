@@ -5,6 +5,7 @@
 >
 > 2026-06-13 更新：清理已完成项，更新 SVG ID 冲突清单，补充断裂引用/死定义修复记录。
 > 2026-06-14 更新：重新评估状态，清理已完成项（进度文案、WrongCard memo、vendor chunk、单元测试），更新行数/违规数。评估关闭 SVG ID 冲突项（架构保证不共存），新增断裂引用修复项。
+> 2026-06-15 更新：重新评估颜色硬编码违规（77→10），降级为 P2；更新 store 全量解构数据（65→67 调用点，selector 使用归零）。
 
 ---
 
@@ -36,25 +37,25 @@
 
 ---
 
-## 2. 颜色硬编码清理 — 全部走 theme token
+## 2. 颜色硬编码清理 — 走 theme token
 
-**优先级**：P1（规范合规）
+**优先级**：P2（规范合规，影响范围已大幅缩小）
 **规范依据**：02_UI §2 / 07_CANVAS §2.2 "禁止组件内写 HEX/rgb 颜色"
 **当前状态**：暂不执行
 
-### 影响范围（2026-06-14 重新统计）
+### 影响范围（2026-06-15 重新统计）
 
 | 硬编码类型 | 组件违规次数 | 涉及文件数 | 应替换为 |
 |-----------|------------|-----------|---------|
-| `#FFFFFF` | 18 | 8 | 新增 `glassHighlight` / `dataPointStroke` token |
-| `rgba(148, 163, 184, ...)` | 6 | 4 | `PHYSICS_COLORS.grid` + opacity |
-| `rgba(75, 85, 99, ...)` | 3 | 3 | `VT_CHART_COLORS.slopeTangent` |
-| `rgba(245, 158, 11, ...)` | 1 | 1 | 对应 theme token |
-| `#3B82F6` | 5 | 4 | `PHYSICS_COLORS.velocity` |
-| `#EF4444` | 16 | 7 | `PHYSICS_COLORS.acceleration` |
-| `#475569` | 28 | 9 | `PHYSICS_COLORS.labelText` 或新增 token |
+| `#475569` | 7 | 3 | `PHYSICS_COLORS.labelText` 或新增 token |
+| `#FFFFFF` | 1 | 1 | 新增 `glassHighlight` / `dataPointStroke` token |
+| `#3B82F6` | 1 | 1 | `PHYSICS_COLORS.velocity` |
+| `#EF4444` | 1 | 1 | `PHYSICS_COLORS.acceleration` |
 
-**组件内硬编码颜色违规总计：77 次，涉及约 25 个文件。**
+**组件内硬编码颜色违规总计：10 次，涉及 4 个文件**（Block.tsx、SportsCar.tsx、LightBulb.tsx、DialMeter.tsx）。
+均为 `src/components/Physics/` 下的 SVG 通用组件内联属性，替换为 token 收益较低。
+
+> 注：此前记录的 rgba(148,163,184...)、rgba(75,85,99...)、rgba(245,158,11...) 已全部清理。
 
 ---
 
@@ -65,7 +66,7 @@
 | 问题 | 位置 | 规范依据 | 严重程度 |
 |------|------|---------|---------|
 | `animate-bounce` | L673,680 | 02_UI §1 明确禁止 bounce 动效 | 铁律 |
-| 1 处 `bg-white rounded-xl shadow-sm` 直接拼写 | L702 | 08_THREE §5.3 要求使用 Card 组件 | 中 |
+| 1 处 `bg-white rounded-xl shadow-sm` 直接拼写 | L687 | 08_THREE §5.3 要求使用 Card 组件 | 中 |
 | 全量 store 解构 | L34 | ARCH §5.1 要求精确订阅 | 中 |
 | `#3B82F6` / `#EF4444` 硬编码 | L352,487,497,502 | 02_UI §2 / 07_CANVAS §2.2 | 中 |
 
@@ -103,8 +104,8 @@
 
 **优先级**：P2（系统性问题）
 
-- **65 处**文件使用 `useAnimationStore()` 全量解构（54 个文件）
-- 已有 35 处使用正确 selector 模式（AnimationPage、useAnimationLifecycle 等）
+- **67 处**调用使用 `useAnimationStore()` 全量解构（67 个文件）
+- selector 模式使用：**0 处**（此前记录的 35 处已全部回退）
 - 建议分批修正：先修正高频动画组件（kinematics/energy/circular），再扩展到其余模块
 - 修正时必须用 `useAnimationStore((s) => s.xxx)` 精细订阅
 
@@ -114,7 +115,9 @@
 
 **优先级**：P2（DRY）
 
-- `MODULE_LABELS`、`moduleOf`、`toggle`、`chip`、`formatDate` 在 WrongPage、PracticePage、ScoreReport 三处重复
+- `MODULE_LABELS`、`moduleOf`、`toggle`、`chip`、`formatDate` 在 2~3 个文件中重复定义
+- 重复分布：WrongPage(5/5)、PracticePage(5/5)、ScoreReport(1/5)、PracticeSession(1/5)
+- `src/utils/` 中无集中化版本
 - 提取到 `src/utils/moduleHelpers.ts`
 
 ---

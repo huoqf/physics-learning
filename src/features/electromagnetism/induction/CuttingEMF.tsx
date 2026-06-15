@@ -151,20 +151,6 @@ export default function CuttingEMF() {
   const gridSpacingX = railW / (gridCols - 1)
   const gridSpacingY = railH / (gridRows - 1)
 
-  const gridLines = []
-  if (useAnimationStore.getState().showGrid) {
-    for (let i = 0; i <= 10; i++) {
-      const xPos = (i * canvasSize.width) / 10
-      const yPos = (i * canvasSize.height) / 10
-      gridLines.push(
-        <line key={`gv-${i}`} x1={xPos} y1={GRID_MARGIN} x2={xPos} y2={canvasSize.height - GRID_MARGIN}
-          stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} strokeDasharray={CANVAS_STYLE.dash.axis.join(' ')} />,
-        <line key={`gh-${i}`} x1={GRID_MARGIN} y1={yPos} x2={canvasSize.width - GRID_MARGIN} y2={yPos}
-          stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} strokeDasharray={CANVAS_STYLE.dash.axis.join(' ')} />
-      )
-    }
-  }
-
   const bSymbols = []
   for (let i = 0; i < gridCols; i++) {
     for (let j = 0; j < gridRows; j++) {
@@ -276,8 +262,6 @@ export default function CuttingEMF() {
               <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.velocity} />
             </marker>
           </defs>
-
-          {gridLines}
 
           <text x={cx} y={GRID_MARGIN} fontSize={FONT.title} fill={PHYSICS_COLORS.magneticField} textAnchor="middle" fontWeight="bold">
             B = {B.toFixed(1)} T（垂直纸面{fieldDirectionText} {fieldSymbol}）

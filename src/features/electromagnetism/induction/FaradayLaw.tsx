@@ -458,7 +458,7 @@ export default function FaradayLaw() {
         {/* ═══════════════════ 左侧分界线 ═══════════════════ */}
         <line
           x1={sandboxW} y1={0} x2={sandboxW} y2={H}
-          stroke={PHYSICS_COLORS.grid}
+          stroke={PHYSICS_COLORS.axis}
           strokeWidth={CANVAS_STYLE.stroke.reference}
         />
 
@@ -811,7 +811,7 @@ export default function FaradayLaw() {
 
           {/* ── 悬浮自动控制面板 ── */}
           <g transform="translate(8, 8)">
-            <rect width="158" height="116" rx="8" fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} opacity="0.97" />
+            <rect width="158" height="116" rx="8" fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} opacity="0.97" />
             <text x="79" y="17" fontSize="11" fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
               自动实验控制
             </text>
@@ -920,9 +920,9 @@ export default function FaradayLaw() {
               stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.axis} />
             {/* 虚线上下限 */}
             <line x1={dashLeft} y1={yPhiMid - chartHalfH} x2={dashRight} y2={yPhiMid - chartHalfH}
-              stroke={PHYSICS_COLORS.grid} strokeWidth="0.5" strokeDasharray="3,3" />
+              stroke={PHYSICS_COLORS.axis} strokeWidth="0.5" strokeDasharray="3,3" />
             <line x1={dashLeft} y1={yPhiMid + chartHalfH} x2={dashRight} y2={yPhiMid + chartHalfH}
-              stroke={PHYSICS_COLORS.grid} strokeWidth="0.5" strokeDasharray="3,3" />
+              stroke={PHYSICS_COLORS.axis} strokeWidth="0.5" strokeDasharray="3,3" />
             {/* 标签 */}
             <text x={dashLeft} y={yPhiMid - chartHalfH - 8} fontSize={CANVAS_STYLE.font.axisSize}
               fill={PHYSICS_COLORS.magneticField} fontWeight="bold">Φ − t 图 (磁通量)</text>
@@ -977,9 +977,9 @@ export default function FaradayLaw() {
               stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.axis} />
             {/* 虚线上下限 */}
             <line x1={dashLeft} y1={yEmfMid - chartHalfH} x2={dashRight} y2={yEmfMid - chartHalfH}
-              stroke={PHYSICS_COLORS.grid} strokeWidth="0.5" strokeDasharray="3,3" />
+              stroke={PHYSICS_COLORS.axis} strokeWidth="0.5" strokeDasharray="3,3" />
             <line x1={dashLeft} y1={yEmfMid + chartHalfH} x2={dashRight} y2={yEmfMid + chartHalfH}
-              stroke={PHYSICS_COLORS.grid} strokeWidth="0.5" strokeDasharray="3,3" />
+              stroke={PHYSICS_COLORS.axis} strokeWidth="0.5" strokeDasharray="3,3" />
             {/* 标签 */}
             <text x={dashLeft} y={yEmfMid - chartHalfH - 8} fontSize={CANVAS_STYLE.font.axisSize}
               fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold">E − t 图 (感应电动势)</text>
