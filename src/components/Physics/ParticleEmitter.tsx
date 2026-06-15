@@ -11,6 +11,10 @@ interface ParticleEmitterProps {
   active?: boolean
   /** 当前粒子电性，决定发射指示灯和前端线圈的指示色 */
   chargeSign?: number
+  /** 发射器宽度，默认 65 */
+  width?: number
+  /** 发射器高度，默认 36 */
+  height?: number
 }
 
 /**
@@ -23,14 +27,23 @@ export const ParticleEmitter: React.FC<ParticleEmitterProps> = ({
   y,
   active = false,
   chargeSign = 1,
+  width = 65,
+  height = 36,
 }) => {
   const gradId = useId()
   const indicatorColor = chargeSign > 0 
     ? PHYSICS_COLORS.positiveCharge 
     : (chargeSign < 0 ? PHYSICS_COLORS.negativeCharge : colors.neutral[400])
 
+  // 计算缩放比例（基于默认尺寸）
+  const defaultWidth = 65
+  const defaultHeight = 36
+  const scaleX = width / defaultWidth
+  const scaleY = height / defaultHeight
+  const scale = Math.min(scaleX, scaleY)
+
   return (
-    <g className="select-none">
+    <g className="select-none" transform={`translate(${x}, ${y}) scale(${scale})`}>
       <defs>
         {/* 发射筒金属渐变 */}
         <linearGradient id={`emitter-body-${gradId}`} x1="0%" y1="0%" x2="0%" y2="100%">
@@ -51,8 +64,8 @@ export const ParticleEmitter: React.FC<ParticleEmitterProps> = ({
 
       {/* 后端固定支架 */}
       <rect
-        x={x - 65}
-        y={y - 8}
+        x={-65}
+        y={-8}
         width={15}
         height={16}
         rx={1}
@@ -61,10 +74,10 @@ export const ParticleEmitter: React.FC<ParticleEmitterProps> = ({
         strokeWidth={1}
       />
       <line
-        x1={x - 65}
-        y1={y}
+        x1={-65}
+        y1={0}
         x2={0}
-        y2={y}
+        y2={0}
         stroke={colors.neutral[500]}
         strokeWidth={4}
         strokeDasharray="4,4"
@@ -73,8 +86,8 @@ export const ParticleEmitter: React.FC<ParticleEmitterProps> = ({
 
       {/* 发射主体外壳 */}
       <rect
-        x={x - 55}
-        y={y - 18}
+        x={-55}
+        y={-18}
         width={35}
         height={36}
         rx={4}
@@ -85,12 +98,12 @@ export const ParticleEmitter: React.FC<ParticleEmitterProps> = ({
 
       {/* 喷嘴部分 */}
       <path
-        d={`M ${x - 20} ${y - 10} 
-           L ${x - 5} ${y - 7} 
-           A 3 3 0 0 1 ${x} ${y - 4}
-           L ${x} ${y + 4}
-           A 3 3 0 0 1 ${x - 5} ${y + 7}
-           L ${x - 20} ${y + 10} Z`}
+        d={`M -20 -10 
+           L -5 -7 
+           A 3 3 0 0 1 0 -4
+           L 0 4
+           A 3 3 0 0 1 -5 7
+           L -20 10 Z`}
         fill={`url(#emitter-body-${gradId})`}
         stroke={colors.neutral[700]}
         strokeWidth={1.2}
@@ -98,8 +111,8 @@ export const ParticleEmitter: React.FC<ParticleEmitterProps> = ({
 
       {/* 前端电极指示圈（指示发射粒子的性质） */}
       <rect
-        x={x - 4}
-        y={y - 6}
+        x={-4}
+        y={-6}
         width={4}
         height={12}
         rx={1}
@@ -110,8 +123,8 @@ export const ParticleEmitter: React.FC<ParticleEmitterProps> = ({
 
       {/* 机身工作状态指示灯 */}
       <circle
-        cx={x - 38}
-        cy={y}
+        cx={-38}
+        cy={0}
         r={active ? 3.5 : 2.5}
         fill={active ? colors.success[500] : colors.danger[500]}
         filter={active ? `url(#glow-${gradId})` : undefined}
@@ -119,8 +132,8 @@ export const ParticleEmitter: React.FC<ParticleEmitterProps> = ({
 
       {/* 发射口阴影内部 */}
       <ellipse
-        cx={x}
-        cy={y}
+        cx={0}
+        cy={0}
         rx={1}
         ry={5}
         fill={colors.neutral[900]}

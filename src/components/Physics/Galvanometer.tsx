@@ -5,6 +5,8 @@ export interface GalvanometerProps {
   x?: number // 中心 x
   y?: number // 中心 y
   value?: number // 指针偏转状态，在 [-1, 1] 之间，0 为居中，正向右偏，负向左偏
+  width?: number // 表盘宽度，默认 120
+  height?: number // 表盘高度，默认 110
   className?: string
 }
 
@@ -12,9 +14,16 @@ export const Galvanometer: React.FC<GalvanometerProps> = ({
   x = 0,
   y = 0,
   value = 0,
+  width = 120,
+  height = 110,
   className = '',
 }) => {
   const c = SCENE_COLORS.circuit
+
+  // 缩放比例（基于默认尺寸 120×110）
+  const scaleX = width / 120
+  const scaleY = height / 110
+  const scale = Math.min(scaleX, scaleY)
 
   // 限制指针取值范围 [-1, 1]
   const clampedVal = Math.max(-1, Math.min(1, value))
@@ -22,12 +31,7 @@ export const Galvanometer: React.FC<GalvanometerProps> = ({
   const maxAngle = 45
   const angle = clampedVal * maxAngle
 
-  // 定义尺寸
-  const width = 120
-  const height = 110
-  const halfW = width / 2
-
-  // 刻度盘圆心设在 (0, 75)
+  // 刻度盘圆心设在 (0, 70) - 基准坐标系
   const pivotX = 0
   const pivotY = 70
 
@@ -35,13 +39,13 @@ export const Galvanometer: React.FC<GalvanometerProps> = ({
   const ticks = [-40, -30, -20, -10, 0, 10, 20, 30, 40]
 
   return (
-    <g transform={`translate(${x}, ${y})`} className={className}>
+    <g transform={`translate(${x}, ${y}) scale(${scale})`} className={className}>
       {/* 3D 投影阴影 */}
       <rect
-        x={-halfW + 3}
+        x={-60 + 3}
         y={4}
-        width={width}
-        height={height}
+        width={120}
+        height={110}
         rx="8"
         fill="rgba(0, 0, 0, 0.15)"
         filter="blur(3px)"
@@ -49,10 +53,10 @@ export const Galvanometer: React.FC<GalvanometerProps> = ({
 
       {/* 外壳 (meterFrame) */}
       <rect
-        x={-halfW}
+        x={-60}
         y="0"
-        width={width}
-        height={height}
+        width={120}
+        height={110}
         rx="8"
         fill={c.meterFrame}
         stroke="#1E293B"
@@ -61,13 +65,13 @@ export const Galvanometer: React.FC<GalvanometerProps> = ({
 
       {/* 内表盘 (ammeterFace) */}
       <path
-        d={`M ${-halfW + 8} 8 
-            L ${halfW - 8} 8 
-            A 8 8 0 0 1 ${halfW - 8} 16
-            L ${halfW - 8} 85 
-            Q 0 100 ${-halfW + 8} 85 
-            L ${-halfW + 8} 16
-            A 8 8 0 0 1 ${-halfW + 8} 8`}
+        d={`M ${-60 + 8} 8 
+            L ${60 - 8} 8 
+            A 8 8 0 0 1 ${60 - 8} 16
+            L ${60 - 8} 85 
+            Q 0 100 ${-60 + 8} 85 
+            L ${-60 + 8} 16
+            A 8 8 0 0 1 ${-60 + 8} 8`}
         fill={c.ammeterFace}
         stroke="#1E293B"
         strokeWidth="1.5"

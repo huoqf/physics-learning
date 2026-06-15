@@ -213,6 +213,8 @@ export const InclinedAmpereScene: React.FC<InclinedAmpereSceneProps> = ({
         x={rodRatio}
         currentDir={I > 0 ? 'in' : I < 0 ? 'out' : 'none'}
         L={4.0}
+        width={w}
+        height={h}
       />
 
       {/* 平衡/滑动提示标语 */}

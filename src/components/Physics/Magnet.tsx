@@ -7,6 +7,8 @@ interface MagnetProps {
   B?: number // 磁感应强度，根据正负翻转 N/S 极
   x?: number // 磁铁的 x 坐标（仅 horizontal 中使用）
   y?: number // 磁铁的 y 坐标（仅 horizontal 中使用）
+  width?: number // 磁铁宽度，默认 190（horizontal 模式）
+  height?: number // 磁铁高度，默认 144（horizontal 模式）
 }
 
 export const Magnet: React.FC<MagnetProps> = ({
@@ -14,10 +16,19 @@ export const Magnet: React.FC<MagnetProps> = ({
   B = 1,
   x = 350,
   y = 200,
+  width = 190,
+  height = 144,
 }) => {
   const isBPositive = B >= 0
   const nColor = PHYSICS_COLORS.magnetNorth // 红色
   const sColor = PHYSICS_COLORS.magnetSouth // 蓝色
+
+  // 计算缩放比例（基于默认尺寸）
+  const defaultWidth = 190
+  const defaultHeight = 144
+  const scaleX = width / defaultWidth
+  const scaleY = height / defaultHeight
+  const scale = Math.min(scaleX, scaleY)
 
   if (type === 'side-view') {
     // 侧视切面模式下的磁极放置
@@ -82,7 +93,7 @@ export const Magnet: React.FC<MagnetProps> = ({
   const bottomLabel = isBPositive ? 'N' : 'S'
 
   return (
-    <g transform={`translate(${x}, ${y})`}>
+    <g transform={`translate(${x}, ${y}) scale(${scale})`}>
       {/* 磁体弯臂 */}
       <path d="M -30,-60 L -60,-60 Q -95,-60 -95,0 Q -95,60 -60,60 L -30,60" fill="none" stroke={colors.neutral[600]} strokeWidth="26" strokeLinecap="round" />
       <path d="M -30,-60 L -60,-60 Q -95,-60 -95,0 Q -95,60 -60,60 L -30,60" fill="none" stroke={colors.neutral[800]} strokeWidth="20" strokeLinecap="round" />

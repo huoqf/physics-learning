@@ -14,6 +14,40 @@ interface RailsProps {
   L?: number // 物理有效长度 L
 }
 
+/**
+ * 3D 倾斜导轨的基准布局（默认 500×300 画布）
+ * 所有坐标基于此布局，通过 scale 变换缩放
+ */
+const getInclinedLayout = (L: number) => {
+  const scaleL = 0.5 + L * 0.125
+  const dx = 60 * scaleL
+  const dy = 40 * scaleL
+  return {
+    // 导轨1 后侧：低处 → 高处
+    rail1StartX: 120,
+    rail1StartY: 230,
+    rail1EndX: 420,
+    rail1EndY: 130,
+    // 导轨2 前侧偏移
+    dx,
+    dy,
+    // 地面线
+    groundY: 280,
+    groundX1: 80,
+    groundX2: 520,
+    // 支撑架位置
+    supportX: 420,
+    // 导轨粗细（3层叠加实现圆柱质感）
+    outerStroke: 8,
+    midStroke: 6,
+    highlightStroke: 1.5,
+    // 端盖
+    capRx: 3.5,
+    capRy: 2,
+    capRotation: -18,
+  }
+}
+
 export const Rails: React.FC<RailsProps> = ({
   type,
   theta = 30,
@@ -99,13 +133,26 @@ export const Rails: React.FC<RailsProps> = ({
 
   if (type === 'inclined') {
     // 3D 倾斜视图
-    const scaleL = 0.5 + L * 0.125
-    const dx = 60 * scaleL
-    const dy = 40 * scaleL
+    const layout = getInclinedLayout(L)
     const shadowGradId = `rails-shadow-grad-${uniqueId}`
 
+    // 计算缩放比例（基于默认 500×300 画布）
+    const scaleX = width / 500
+    const scaleY = height / 300
+    const scale = Math.min(scaleX, scaleY)
+
+    const {
+      rail1StartX: r1sx, rail1StartY: r1sy,
+      rail1EndX: r1ex, rail1EndY: r1ey,
+      dx, dy,
+      groundY, groundX1, groundX2,
+      supportX,
+      outerStroke, midStroke, highlightStroke,
+      capRx, capRy, capRotation,
+    } = layout
+
     return (
-      <g>
+      <g transform={`scale(${scale})`}>
         <defs>
           {/* 斜面半透明渐变阴影 */}
           <linearGradient id={shadowGradId} x1="0" y1="0" x2="0" y2="1">
@@ -114,39 +161,39 @@ export const Rails: React.FC<RailsProps> = ({
           </linearGradient>
         </defs>
         {/* 支撑架和地面 */}
-        <line x1="80" y1="280" x2="520" y2="280" stroke={colors.neutral[300]} strokeWidth="2" strokeDasharray="4,4" />
+        <line x1={groundX1} y1={groundY} x2={groundX2} y2={groundY} stroke={colors.neutral[300]} strokeWidth="2" strokeDasharray="4,4" />
         
         {/* 斜面阴影/填充（半透明，增加立体感） */}
         <polygon
-          points={`120,230 420,130 ${420 + dx},${130 + dy} ${120 + dx},${230 + dy}`}
+          points={`${r1sx},${r1sy} ${r1ex},${r1ey} ${r1ex + dx},${r1ey + dy} ${r1sx + dx},${r1sy + dy}`}
           fill={`url(#${shadowGradId})`}
         />
 
         {/* 导轨1（后侧）- 3层线宽叠加实现圆柱质感 */}
-        <line x1="120" y1="230" x2="420" y2="130" stroke={colors.neutral[800]} strokeWidth="8" strokeLinecap="round" />
-        <line x1="120" y1="230" x2="420" y2="130" stroke={colors.neutral[600]} strokeWidth="6" strokeLinecap="round" />
-        <line x1="120" y1="229.2" x2="420" y2="129.2" stroke={colors.neutral[0]} strokeWidth="1.5" strokeLinecap="round" opacity="0.65" />
+        <line x1={r1sx} y1={r1sy} x2={r1ex} y2={r1ey} stroke={colors.neutral[800]} strokeWidth={outerStroke} strokeLinecap="round" />
+        <line x1={r1sx} y1={r1sy} x2={r1ex} y2={r1ey} stroke={colors.neutral[600]} strokeWidth={midStroke} strokeLinecap="round" />
+        <line x1={r1sx} y1={r1sy - 0.8} x2={r1ex} y2={r1ey - 0.8} stroke={colors.neutral[0]} strokeWidth={highlightStroke} strokeLinecap="round" opacity="0.65" />
         {/* 导轨1透视切面端盖 */}
-        <ellipse cx="120" cy="230" rx="3.5" ry="2" transform="rotate(-18, 120, 230)" fill={colors.neutral[400]} stroke={colors.neutral[800]} strokeWidth="1" />
-        <ellipse cx="420" cy="130" rx="3.5" ry="2" transform="rotate(-18, 420, 130)" fill={colors.neutral[600]} stroke={colors.neutral[800]} strokeWidth="1" />
+        <ellipse cx={r1sx} cy={r1sy} rx={capRx} ry={capRy} transform={`rotate(${capRotation}, ${r1sx}, ${r1sy})`} fill={colors.neutral[400]} stroke={colors.neutral[800]} strokeWidth="1" />
+        <ellipse cx={r1ex} cy={r1ey} rx={capRx} ry={capRy} transform={`rotate(${capRotation}, ${r1ex}, ${r1ey})`} fill={colors.neutral[600]} stroke={colors.neutral[800]} strokeWidth="1" />
         
         {/* 导轨1支撑架 */}
-        <rect x="417" y="278" width="6" height="3" fill={colors.neutral[600]} rx="0.5" />
-        <line x1="420" y1="130" x2="420" y2="280" stroke={colors.neutral[600]} strokeWidth="4" />
-        <line x1="421.2" y1="130" x2="421.2" y2="280" stroke={colors.neutral[400]} strokeWidth="1.5" opacity="0.6" />
+        <rect x={supportX - 3} y={groundY - 2} width="6" height="3" fill={colors.neutral[600]} rx="0.5" />
+        <line x1={supportX} y1={r1ey} x2={supportX} y2={groundY} stroke={colors.neutral[600]} strokeWidth="4" />
+        <line x1={supportX + 1.2} y1={r1ey} x2={supportX + 1.2} y2={groundY} stroke={colors.neutral[400]} strokeWidth="1.5" opacity="0.6" />
 
         {/* 导轨2（前侧）- 3层线宽叠加实现圆柱质感 */}
-        <line x1={120 + dx} y1={230 + dy} x2={420 + dx} y2={130 + dy} stroke={colors.neutral[800]} strokeWidth="8" strokeLinecap="round" />
-        <line x1={120 + dx} y1={230 + dy} x2={420 + dx} y2={130 + dy} stroke={colors.neutral[600]} strokeWidth="6" strokeLinecap="round" />
-        <line x1={120 + dx} y1={229.2 + dy} x2={420 + dx} y2={129.2 + dy} stroke={colors.neutral[0]} strokeWidth="1.5" strokeLinecap="round" opacity="0.65" />
+        <line x1={r1sx + dx} y1={r1sy + dy} x2={r1ex + dx} y2={r1ey + dy} stroke={colors.neutral[800]} strokeWidth={outerStroke} strokeLinecap="round" />
+        <line x1={r1sx + dx} y1={r1sy + dy} x2={r1ex + dx} y2={r1ey + dy} stroke={colors.neutral[600]} strokeWidth={midStroke} strokeLinecap="round" />
+        <line x1={r1sx + dx} y1={r1sy + dy - 0.8} x2={r1ex + dx} y2={r1ey + dy - 0.8} stroke={colors.neutral[0]} strokeWidth={highlightStroke} strokeLinecap="round" opacity="0.65" />
         {/* 导轨2透视切面端盖 */}
-        <ellipse cx={120 + dx} cy={230 + dy} rx="3.5" ry="2" transform={`rotate(-18, ${120 + dx}, ${230 + dy})`} fill={colors.neutral[400]} stroke={colors.neutral[800]} strokeWidth="1" />
-        <ellipse cx={420 + dx} cy={130 + dy} rx="3.5" ry="2" transform={`rotate(-18, ${420 + dx}, ${130 + dy})`} fill={colors.neutral[600]} stroke={colors.neutral[800]} strokeWidth="1" />
+        <ellipse cx={r1sx + dx} cy={r1sy + dy} rx={capRx} ry={capRy} transform={`rotate(${capRotation}, ${r1sx + dx}, ${r1sy + dy})`} fill={colors.neutral[400]} stroke={colors.neutral[800]} strokeWidth="1" />
+        <ellipse cx={r1ex + dx} cy={r1ey + dy} rx={capRx} ry={capRy} transform={`rotate(${capRotation}, ${r1ex + dx}, ${r1ey + dy})`} fill={colors.neutral[600]} stroke={colors.neutral[800]} strokeWidth="1" />
         
         {/* 导轨2支撑架 */}
-        <rect x={420 + dx - 3} y="278" width="6" height="3" fill={colors.neutral[600]} rx="0.5" />
-        <line x1={420 + dx} y1={130 + dy} x2={420 + dx} y2={280} stroke={colors.neutral[600]} strokeWidth="4" />
-        <line x1={420 + dx + 1.2} y1={130 + dy} x2={420 + dx + 1.2} y2={280} stroke={colors.neutral[400]} strokeWidth="1.5" opacity="0.6" />
+        <rect x={supportX + dx - 3} y={groundY - 2} width="6" height="3" fill={colors.neutral[600]} rx="0.5" />
+        <line x1={supportX + dx} y1={r1ey + dy} x2={supportX + dx} y2={groundY} stroke={colors.neutral[600]} strokeWidth="4" />
+        <line x1={supportX + dx + 1.2} y1={r1ey + dy} x2={supportX + dx + 1.2} y2={groundY} stroke={colors.neutral[400]} strokeWidth="1.5" opacity="0.6" />
       </g>
     )
   }
@@ -161,6 +208,19 @@ export const Rails: React.FC<RailsProps> = ({
 
   const railGradId = `horizontal-rail-grad-${uniqueId}`
   const bgGradId = `horizontal-bg-grad-${uniqueId}`
+
+  // 参数化布局常量（基于默认尺寸比例）
+  const bgPadX = 20       // 背景框水平内边距
+  const bgPadY = 30       // 背景框垂直内边距
+  const bgRx = 10         // 背景框圆角
+  const bgInnerOffset = 1 // 内边框偏移
+  const bgInnerRx = 9     // 内边框圆角
+  const railH = 8         // 导轨矩形高度
+  const railRx = 4        // 导轨圆角
+  const railShadowOffset = 0.5 // 导轨阴影矩形偏移
+  const railHighlightY = 2     // 高光线上移量
+  const endCapR = 4       // 端点圆半径
+  const endCapHighlightOffset = 1 // 端点高光偏移
 
   return (
     <g>
@@ -182,39 +242,39 @@ export const Rails: React.FC<RailsProps> = ({
       
       {/* 导轨架背景 */}
       <rect
-        x={x1 - 20}
-        y={y1 - 30}
-        width={length + 40}
-        height={spacing + 60}
+        x={x1 - bgPadX}
+        y={y1 - bgPadY}
+        width={length + bgPadX * 2}
+        height={spacing + bgPadY * 2}
         fill={`url(#${bgGradId})`}
-        rx="10"
+        rx={bgRx}
         stroke={colors.neutral[200]}
         strokeWidth="1.5"
       />
       <rect
-        x={x1 - 19}
-        y={y1 - 29}
-        width={length + 38}
-        height={spacing + 58}
+        x={x1 - bgPadX + bgInnerOffset}
+        y={y1 - bgPadY + bgInnerOffset}
+        width={length + (bgPadX - bgInnerOffset) * 2}
+        height={spacing + (bgPadY - bgInnerOffset) * 2}
         fill="none"
         stroke={colors.neutral[0]}
         strokeWidth="1.5"
-        rx="9"
+        rx={bgInnerRx}
       />
 
       {/* 导轨 1 */}
-      <rect x={x1} y={y1 - 3.5} width={length} height={8} fill="none" stroke={colors.neutral[900]} strokeWidth="0.8" opacity="0.1" rx="4" />
-      <rect x={x1} y={y1 - 4} width={length} height={8} fill={`url(#${railGradId})`} rx="4" />
-      <line x1={x1 + 1} y1={y1 - 2} x2={x2 - 1} y2={y1 - 2} stroke={colors.neutral[0]} strokeWidth="0.8" opacity="0.75" />
-      <circle cx={x1} cy={y1} r="4" fill={colors.neutral[500]} stroke={colors.neutral[800]} strokeWidth="1" />
-      <circle cx={x2} cy={y1} r="4" fill={colors.neutral[600]} stroke={colors.neutral[800]} strokeWidth="1" />
+      <rect x={x1} y={y1 - railH / 2 + railShadowOffset} width={length} height={railH} fill="none" stroke={colors.neutral[900]} strokeWidth="0.8" opacity="0.1" rx={railRx} />
+      <rect x={x1} y={y1 - railH / 2} width={length} height={railH} fill={`url(#${railGradId})`} rx={railRx} />
+      <line x1={x1 + endCapHighlightOffset} y1={y1 - railHighlightY} x2={x2 - endCapHighlightOffset} y2={y1 - railHighlightY} stroke={colors.neutral[0]} strokeWidth="0.8" opacity="0.75" />
+      <circle cx={x1} cy={y1} r={endCapR} fill={colors.neutral[500]} stroke={colors.neutral[800]} strokeWidth="1" />
+      <circle cx={x2} cy={y1} r={endCapR} fill={colors.neutral[600]} stroke={colors.neutral[800]} strokeWidth="1" />
 
       {/* 导轨 2 */}
-      <rect x={x1} y={y2 - 3.5} width={length} height={8} fill="none" stroke={colors.neutral[900]} strokeWidth="0.8" opacity="0.1" rx="4" />
-      <rect x={x1} y={y2 - 4} width={length} height={8} fill={`url(#${railGradId})`} rx="4" />
-      <line x1={x1 + 1} y1={y2 - 2} x2={x2 - 1} y2={y2 - 2} stroke={colors.neutral[0]} strokeWidth="0.8" opacity="0.75" />
-      <circle cx={x1} cy={y2} r="4" fill={colors.neutral[500]} stroke={colors.neutral[800]} strokeWidth="1" />
-      <circle cx={x2} cy={y2} r="4" fill={colors.neutral[600]} stroke={colors.neutral[800]} strokeWidth="1" />
+      <rect x={x1} y={y2 - railH / 2 + railShadowOffset} width={length} height={railH} fill="none" stroke={colors.neutral[900]} strokeWidth="0.8" opacity="0.1" rx={railRx} />
+      <rect x={x1} y={y2 - railH / 2} width={length} height={railH} fill={`url(#${railGradId})`} rx={railRx} />
+      <line x1={x1 + endCapHighlightOffset} y1={y2 - railHighlightY} x2={x2 - endCapHighlightOffset} y2={y2 - railHighlightY} stroke={colors.neutral[0]} strokeWidth="0.8" opacity="0.75" />
+      <circle cx={x1} cy={y2} r={endCapR} fill={colors.neutral[500]} stroke={colors.neutral[800]} strokeWidth="1" />
+      <circle cx={x2} cy={y2} r={endCapR} fill={colors.neutral[600]} stroke={colors.neutral[800]} strokeWidth="1" />
     </g>
   )
 }

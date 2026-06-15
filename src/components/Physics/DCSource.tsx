@@ -24,13 +24,46 @@ export interface DCSourceProps {
   className?: string
 }
 
+const SCENE_COLORS_CIRCUIT = SCENE_COLORS.circuit
+
+// 渲染计算函数
+const getInstrumentLayout = (width: number, height: number) => {
+  const baseW = 80
+  const baseH = 80
+  const scaleX = width / baseW
+  const scaleY = height / baseH
+  
+  return {
+    baseW: width,
+    baseH: height,
+    ledW: 56 * scaleX,
+    ledH: 24 * scaleY,
+    terminalR: 6.5 * Math.min(scaleX, scaleY),
+    axisR: 2.5 * Math.min(scaleX, scaleY),
+    cornerRadius: 8 * Math.min(scaleX, scaleY),
+  }
+}
+
+const getBatteryLayout = (width: number, height: number) => {
+  const baseW = 60
+  const baseH = 30
+  const scaleX = width / baseW
+  const scaleY = height / baseH
+  
+  return {
+    baseW: width,
+    baseH: height,
+    cornerRadius: 4 * Math.min(scaleX, scaleY),
+  }
+}
+
 export const DCSource: React.FC<DCSourceProps> = ({
   x = 0,
   y = 0,
   voltage = 0,
   type = 'instrument',
-  width,
-  height,
+  width = type === 'instrument' ? 80 : 60,
+  height = type === 'instrument' ? 80 : 30,
   label,
   polarity = 'left-positive',
   disabled = false,
@@ -40,19 +73,16 @@ export const DCSource: React.FC<DCSourceProps> = ({
 
   // 1. 渲染：数显直流稳压电源
   if (type === 'instrument') {
-    const baseW = 80
-    const baseH = 80
-    const w = width ?? baseW
-    const h = height ?? baseH
-    const scale = Math.min(w / baseW, h / baseH)
-
+    const layout = getInstrumentLayout(width, height)
     const isLeftPositive = polarity === 'left-positive'
-    const posTerminalX = isLeftPositive ? -22 : 22
-    const negTerminalX = isLeftPositive ? 22 : -22
+    // 保持接线柱相对位置与原布局比例一致
+    const posTerminalX = (isLeftPositive ? -22 : 22) * (width / 80)
+    const negTerminalX = (isLeftPositive ? 22 : -22) * (width / 80)
+    const terminalY = 22 * (height / 80)
 
     return (
       <g
-        transform={`translate(${x}, ${y}) scale(${scale})`}
+        transform={`translate(${x}, ${y})`}
         className={`${className} ${disabled ? 'opacity-40 pointer-events-none' : ''}`}
       >
         <defs>
@@ -65,22 +95,22 @@ export const DCSource: React.FC<DCSourceProps> = ({
 
         {/* 3D 阴影 */}
         <rect
-          x={-40 + 2}
-          y={-40 + 3}
-          width={80}
-          height={80}
-          rx={8}
+          x={-layout.baseW / 2 + 2}
+          y={-layout.baseH / 2 + 3}
+          width={layout.baseW}
+          height={layout.baseH}
+          rx={layout.cornerRadius}
           fill="rgba(15, 23, 42, 0.15)"
           filter="blur(2px)"
         />
 
         {/* 外壳 */}
         <rect
-          x={-40}
-          y={-40}
-          width={80}
-          height={80}
-          rx={8}
+          x={-layout.baseW / 2}
+          y={-layout.baseH / 2}
+          width={layout.baseW}
+          height={layout.baseH}
+          rx={layout.cornerRadius}
           fill="url(#dc-source-metallic)"
           stroke="#0f172a"
           strokeWidth={1.5}
@@ -88,11 +118,11 @@ export const DCSource: React.FC<DCSourceProps> = ({
 
         {/* LED 数显屏 */}
         <rect
-          x={-28}
-          y={-28}
-          width={56}
-          height={24}
-          rx={4}
+          x={-layout.ledW / 2}
+          y={-28 * (height / 80)}
+          width={layout.ledW}
+          height={layout.ledH}
+          rx={4 * (height / 80)}
           fill="#090d16"
           stroke="#334155"
           strokeWidth={1}
@@ -101,9 +131,9 @@ export const DCSource: React.FC<DCSourceProps> = ({
         {/* 电压示数 */}
         <text
           x={0}
-          y={-11}
+          y={-11 * (height / 80)}
           fill="#22C55E"
-          fontSize={14}
+          fontSize={14 * (Math.min(width, height) / 80)}
           fontWeight="bold"
           fontFamily="monospace"
           textAnchor="middle"
@@ -115,9 +145,9 @@ export const DCSource: React.FC<DCSourceProps> = ({
         {/* 器材品牌小字 */}
         <text
           x={0}
-          y={8}
+          y={8 * (height / 80)}
           fill="#94a3b8"
-          fontSize={7}
+          fontSize={7 * (Math.min(width, height) / 80)}
           fontWeight="bold"
           textAnchor="middle"
           letterSpacing={0.5}
@@ -127,16 +157,16 @@ export const DCSource: React.FC<DCSourceProps> = ({
         </text>
 
         {/* 正极接线柱 (+) */}
-        <circle cx={posTerminalX} cy={22} r={6.5} fill={c.batteryPos} stroke="#7f1d1d" strokeWidth={1} />
-        <circle cx={posTerminalX} cy={22} r={2.5} fill="#b91c1c" />
-        <text x={posTerminalX} y={11} fill={c.batteryPos} fontSize={9} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
+        <circle cx={posTerminalX} cy={terminalY} r={layout.terminalR} fill={SCENE_COLORS_CIRCUIT.batteryPos} stroke="#7f1d1d" strokeWidth={1} />
+        <circle cx={posTerminalX} cy={terminalY} r={layout.axisR} fill="#b91c1c" />
+        <text x={posTerminalX} y={terminalY - 11 * (height / 80)} fill={SCENE_COLORS_CIRCUIT.batteryPos} fontSize={9 * (Math.min(width, height) / 80)} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
           +
         </text>
 
         {/* 负极接线柱 (-) */}
-        <circle cx={negTerminalX} cy={22} r={6.5} fill={c.batteryNeg} stroke="#0f172a" strokeWidth={1} />
-        <circle cx={negTerminalX} cy={22} r={2.5} fill="#020617" />
-        <text x={negTerminalX} y={11} fill="#94A3B8" fontSize={9} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
+        <circle cx={negTerminalX} cy={terminalY} r={layout.terminalR} fill={SCENE_COLORS_CIRCUIT.batteryNeg} stroke="#0f172a" strokeWidth={1} />
+        <circle cx={negTerminalX} cy={terminalY} r={layout.axisR} fill="#020617" />
+        <text x={negTerminalX} y={terminalY - 11 * (height / 80)} fill="#94A3B8" fontSize={9 * (Math.min(width, height) / 80)} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
           -
         </text>
       </g>
@@ -145,39 +175,34 @@ export const DCSource: React.FC<DCSourceProps> = ({
 
   // 2. 渲染：拟物经典干电池
   if (type === 'battery') {
-    const baseW = 60
-    const baseH = 30
-    const w = width ?? baseW
-    const h = height ?? baseH
-    const scale = Math.min(w / baseW, h / baseH)
-
+    const layout = getBatteryLayout(width, height)
     const isLeftPositive = polarity === 'left-positive'
     
     // 正负极分界坐标：正极占前部分，负极占后部分
     return (
       <g
-        transform={`translate(${x}, ${y}) scale(${scale})`}
+        transform={`translate(${x}, ${y})`}
         className={`${className} ${disabled ? 'opacity-40 pointer-events-none' : ''}`}
       >
         {/* 电池阴影 */}
         <rect
-          x={-30 + 1.5}
-          y={-15 + 2}
-          width={60}
-          height={30}
-          rx={4}
+          x={-layout.baseW / 2 + 1.5}
+          y={-layout.baseH / 2 + 2}
+          width={layout.baseW}
+          height={layout.baseH}
+          rx={layout.cornerRadius}
           fill="rgba(15, 23, 42, 0.12)"
           filter="blur(1.5px)"
         />
 
         {/* 电池主体 */}
         <rect
-          x={-30}
-          y={-15}
-          width={60}
-          height={30}
-          rx={4}
-          fill={c.batteryBody}
+          x={-layout.baseW / 2}
+          y={-layout.baseH / 2}
+          width={layout.baseW}
+          height={layout.baseH}
+          rx={layout.cornerRadius}
+          fill={SCENE_COLORS_CIRCUIT.batteryBody}
           stroke="#1F2937"
           strokeWidth={1.5}
         />
@@ -185,33 +210,33 @@ export const DCSource: React.FC<DCSourceProps> = ({
         {/* 极性涂装：正极 */}
         {isLeftPositive ? (
           <path
-            d="M -30 -15 L -12 -15 A 4 4 0 0 1 -12 15 L -30 15 Z"
-            fill={c.batteryPos}
+            d={`M ${-layout.baseW / 2} ${-layout.baseH / 2} L -12 L -12 ${layout.baseH / 2} L ${-layout.baseW / 2} ${layout.baseH / 2} Z`}
+            fill={SCENE_COLORS_CIRCUIT.batteryPos}
           />
         ) : (
           <path
-            d="M 30 -15 L 12 -15 A 4 4 0 0 0 12 15 L 30 15 Z"
-            fill={c.batteryPos}
+            d={`M ${layout.baseW / 2} ${-layout.baseH / 2} L 12 L 12 ${layout.baseH / 2} L ${layout.baseW / 2} ${layout.baseH / 2} Z`}
+            fill={SCENE_COLORS_CIRCUIT.batteryPos}
           />
         )}
 
         {/* 极性涂装：负极 */}
         {isLeftPositive ? (
           <path
-            d="M 30 -15 L 12 -15 A 4 4 0 0 0 12 15 L 30 15 Z"
-            fill={c.batteryNeg}
+            d={`M ${layout.baseW / 2} ${-layout.baseH / 2} L 12 L 12 ${layout.baseH / 2} L ${layout.baseW / 2} ${layout.baseH / 2} Z`}
+            fill={SCENE_COLORS_CIRCUIT.batteryNeg}
           />
         ) : (
           <path
-            d="M -30 -15 L -12 -15 A 4 4 0 0 1 -12 15 L -30 15 Z"
-            fill={c.batteryNeg}
+            d={`M ${-layout.baseW / 2} ${-layout.baseH / 2} L -12 L -12 ${layout.baseH / 2} L ${-layout.baseW / 2} ${layout.baseH / 2} Z`}
+            fill={SCENE_COLORS_CIRCUIT.batteryNeg}
           />
         )}
 
         {/* 突出电极头部 */}
         {isLeftPositive ? (
           <rect
-            x={-34}
+            x={-layout.baseW / 2 - 4}
             y={-6}
             width={4}
             height={12}
@@ -222,7 +247,7 @@ export const DCSource: React.FC<DCSourceProps> = ({
           />
         ) : (
           <rect
-            x={30}
+            x={layout.baseW / 2}
             y={-6}
             width={4}
             height={12}
@@ -235,10 +260,10 @@ export const DCSource: React.FC<DCSourceProps> = ({
 
         {/* 极性文字 */}
         <text
-          x={isLeftPositive ? -21 : 21}
+          x={isLeftPositive ? -21 * (width / 60) : 21 * (width / 60)}
           y={4}
           fill="#FFFFFF"
-          fontSize={11}
+          fontSize={11 * (Math.min(width, height) / 30)}
           fontWeight="bold"
           textAnchor="middle"
           style={{ userSelect: 'none' }}
@@ -246,10 +271,10 @@ export const DCSource: React.FC<DCSourceProps> = ({
           +
         </text>
         <text
-          x={isLeftPositive ? 21 : -21}
+          x={isLeftPositive ? 21 * (width / 60) : -21 * (width / 60)}
           y={3}
           fill="#FFFFFF"
-          fontSize={11}
+          fontSize={11 * (Math.min(width, height) / 30)}
           fontWeight="bold"
           textAnchor="middle"
           style={{ userSelect: 'none' }}
@@ -262,7 +287,7 @@ export const DCSource: React.FC<DCSourceProps> = ({
           x={0}
           y={4}
           fill="#4B5563"
-          fontSize={7}
+          fontSize={7 * (Math.min(width, height) / 30)}
           fontWeight="bold"
           textAnchor="middle"
           style={{ userSelect: 'none' }}

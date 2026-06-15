@@ -6,6 +6,7 @@ export interface PrimaryCoilProps {
   y?: number // 中心 y
   width?: number // 总宽度
   height?: number // 总高度
+  rx?: number // 椭圆 x 半径，默认按 height 比例计算
   turns?: number // 匝数
   current?: number // 原线圈中的电流 (决定光点流速和方向，一般为 E/R，总是正的或者跟随电源极性)
   time?: number // 时间，用于粒子运动
@@ -17,13 +18,15 @@ export const PrimaryCoil: React.FC<PrimaryCoilProps> = ({
   y = 0,
   width = 120,
   height = 66,
+  rx: rxProp,
   turns = 4,
   current = 0,
   time = 0,
   className = '',
 }) => {
   const c = SCENE_COLORS.coil
-  const rx = 14 // 椭圆 x 半径
+  // rx 参数化：默认按 height 的 21% 计算，保持管径比例
+  const rx = rxProp ?? height * 0.21
   const ry = height / 2 // 椭圆 y 半径
 
   // 计算每一匝的中心位置

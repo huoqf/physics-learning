@@ -6,6 +6,7 @@ export interface SolenoidProps {
   y?: number // 中心 y 坐标
   width?: number // 总宽度
   height?: number // 总高度
+  rx?: number // 椭圆 x 半径 (管径方向)，默认按 height 比例计算
   turns?: number // 匝数
   current?: number // 感应电流大小 (含符号，决定光点流速和方向)
   time?: number // 动画时间，用于流光点移动
@@ -17,13 +18,15 @@ export const Solenoid: React.FC<SolenoidProps> = ({
   y = 0,
   width = 160,
   height = 80,
+  rx: rxProp,
   turns = 5,
   current = 0,
   time = 0,
   className = '',
 }) => {
   const c = SCENE_COLORS.coil
-  const rx = 16 // 椭圆 x 半径 (管径方向)
+  // rx 参数化：默认按 height 的 20% 计算，保持管径比例
+  const rx = rxProp ?? height * 0.2
   const ry = height / 2 // 椭圆 y 半径
 
   // 计算每一匝的间距
