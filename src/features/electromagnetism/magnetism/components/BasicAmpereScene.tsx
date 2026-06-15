@@ -170,11 +170,11 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
         </text>
 
         {/* 接线柱标红与蓝 */}
-        <circle cx={powerW} cy="12" r="2.5" fill="#EF4444" />
-        <text x={powerW - 6} y="14" fontSize="6" fill="#EF4444" fontWeight="bold">+</text>
+        <circle cx={powerW} cy="12" r="2.5" fill={colors.danger[500]} />
+        <text x={powerW - 6} y="14" fontSize="6" fill={colors.danger[500]} fontWeight="bold">+</text>
 
-        <circle cx={powerW} cy="38" r="2.5" fill="#3B82F6" />
-        <text x={powerW - 6} y="40" fontSize="6" fill="#3B82F6" fontWeight="bold">-</text>
+        <circle cx={powerW} cy="38" r="2.5" fill={colors.primary[500]} />
+        <text x={powerW - 6} y="40" fontSize="6" fill={colors.primary[500]} fontWeight="bold">-</text>
       </g>
 
       {/* 运动的通电导体棒 */}

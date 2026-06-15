@@ -18,6 +18,8 @@ import {
   solveBasicAmpere,
   solveAdvancedAmpere,
 } from '../../physics'
+import { PHYSICS_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 import type { PhysicsPanelData, PhysicsQuantity } from './types'
 
 const COULOMB_K = 9e9
@@ -842,10 +844,10 @@ export function buildElectromagnetismQuantities(
         return {
           quantities: [
             ...base,
-            { label: '磁感应强度 B', value: `${Math.abs(B).toFixed(1)}`, unit: `T (${B > 0 ? '垂直纸面向里' : B < 0 ? '垂直纸面向外' : '无磁场'})`, color: '#10B981' },
-            { label: '电流 I', value: `${Math.abs(I).toFixed(1)}`, unit: `A (${I > 0 ? '向上' : I < 0 ? '向下' : '无电流'})`, color: '#DC2626' },
-            { label: '有效长度 L', value: L.toFixed(1), unit: 'm', color: '#64748B' },
-            { label: '安培力 F', value: `${Math.abs(res.F).toFixed(2)}`, unit: `N${fDirText}`, color: '#F97316', highlight: res.FAbs > 1e-4 ? 'extreme' : 'zero' },
+            { label: '磁感应强度 B', value: `${Math.abs(B).toFixed(1)}`, unit: `T (${B > 0 ? '垂直纸面向里' : B < 0 ? '垂直纸面向外' : '无磁场'})`, color: PHYSICS_COLORS.magneticField },
+            { label: '电流 I', value: `${Math.abs(I).toFixed(1)}`, unit: `A (${I > 0 ? '向上' : I < 0 ? '向下' : '无电流'})`, color: PHYSICS_COLORS.electricCurrent },
+            { label: '有效长度 L', value: L.toFixed(1), unit: 'm', color: colors.neutral[500] },
+            { label: '安培力 F', value: `${Math.abs(res.F).toFixed(2)}`, unit: `N${fDirText}`, color: PHYSICS_COLORS.forceNet, highlight: res.FAbs > 1e-4 ? 'extreme' : 'zero' },
           ],
           formulas: [
             { name: '安培力大小公式', latex: 'F = BIL \\quad (\\vec{B} \\perp \\vec{I})', level: 'core', condition: '当磁场与电流垂直时' },
@@ -880,10 +882,10 @@ export function buildElectromagnetismQuantities(
         return {
           quantities: [
             ...base,
-            { label: '安培力 F_安', value: Math.abs(res.F_ampere).toFixed(2), unit: `N (${res.F_ampere > 1e-4 ? '水平向右' : res.F_ampere < -1e-4 ? '水平向左' : '为零'})`, color: '#F97316' },
-            { label: '支持力 N', value: res.N.toFixed(2), unit: 'N', color: '#3B82F6' },
-            { label: '摩擦力 f', value: fText, unit: fUnit, color: '#8B5CF6', highlight: res.state === 'equilibrium' ? undefined : 'extreme' },
-            { label: '瞬时加速度 a', value: res.a.toFixed(2), unit: 'm/s²', color: '#EF4444', highlight: Math.abs(res.a) > 0.01 ? 'extreme' : 'zero' },
+            { label: '安培力 F_安', value: Math.abs(res.F_ampere).toFixed(2), unit: `N (${res.F_ampere > 1e-4 ? '水平向右' : res.F_ampere < -1e-4 ? '水平向左' : '为零'})`, color: PHYSICS_COLORS.forceNet },
+            { label: '支持力 N', value: res.N.toFixed(2), unit: 'N', color: PHYSICS_COLORS.normalForce },
+            { label: '摩擦力 f', value: fText, unit: fUnit, color: PHYSICS_COLORS.friction, highlight: res.state === 'equilibrium' ? undefined : 'extreme' },
+            { label: '瞬时加速度 a', value: res.a.toFixed(2), unit: 'm/s²', color: PHYSICS_COLORS.acceleration, highlight: Math.abs(res.a) > 0.01 ? 'extreme' : 'zero' },
             { label: '导体棒状态', value: stateText, unit: '', highlight: res.state === 'equilibrium' ? 'positive' : 'negative' },
           ],
           formulas: [

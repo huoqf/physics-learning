@@ -144,6 +144,7 @@ export default function AmpereForce() {
                       scale={0.72}
                       active={handPoseParams.handActive}
                       draggable={false}
+                      isBack={B < 0}
                     />
                   </svg>
                 ) : (

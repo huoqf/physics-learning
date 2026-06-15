@@ -428,7 +428,10 @@ export function SkeletonHand({
   style,
   className,
 }: SkeletonHandProps) {
-  const fingers = getFingersForPose(pose, chirality)
+  const displayChirality = isBack
+    ? (chirality === 'left' ? 'right' : 'left')
+    : chirality
+  const fingers = getFingersForPose(pose, displayChirality)
   const mergedLabels: Record<Finger['name'], string> = { ...DEFAULT_TIP_LABELS, ...tipLabels }
   const mergedColors: Record<Finger['name'], string> = { ...DEFAULT_TIP_COLORS, ...tipColors }
   return (

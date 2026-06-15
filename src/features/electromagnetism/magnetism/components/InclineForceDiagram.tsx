@@ -416,14 +416,14 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
         </g>
       )}
 
-      {/* 摩擦力 f (紫色) */}
+      {/* 摩擦力 f */}
       {Math.abs(physicsResult.f) > 1e-4 && (
         <g>
           <VectorArrow
             origin={{ x: 0, y: 0 }}
             vector={f_phys}
             type="friction"
-            color={colors.secondary[500] ?? '#8B5CF6'}
+            color={PHYSICS_COLORS.friction}
             sceneScale={localScale}
             strokeWidth={1.8}
             pixelLength={Math.abs(physicsResult.f * forceScale)}
@@ -432,7 +432,7 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
             x={px + f_phys.x * forceScale + (physicsResult.f > 0 ? 3 : -14)}
             y={py - f_phys.y * forceScale - 3}
             fontSize="6.5"
-            fill={colors.secondary[600] ?? '#8B5CF6'}
+            fill={PHYSICS_COLORS.friction}
             fontWeight="bold"
             style={{ userSelect: 'none' }}
           >
