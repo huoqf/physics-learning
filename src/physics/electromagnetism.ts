@@ -1144,6 +1144,24 @@ export function calculateVelocitySelectorTrajectory(
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// 安培力场景参数
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/** 基础模式（直交规律）场景参数 */
+export const AMPERE_BASIC_SCENE = {
+  xMin: -1.6,    // 左边界 (m)
+  xMax: 1.6,     // 右边界 (m)
+  mass: 0.5,     // 导体棒质量 (kg)
+} as const
+
+/** 进阶模式（斜面平衡）场景参数 */
+export const AMPERE_ADVANCED_SCENE = {
+  xMin: -1.1,    // 左边界 (m)
+  xMax: 1.1,     // 右边界 (m)
+  mass: 0.5,     // 导体棒质量 (kg)
+} as const
+
 export interface BasicAmperePhysicsResult {
   /** 安培力大小 F (N)，有正负号，表示沿导轨水平方向的受力（+x 为右，-x 为左） */
   F: number
@@ -1151,7 +1169,7 @@ export interface BasicAmperePhysicsResult {
   FAbs: number
   /** 加速度 a (m/s²) */
   a: number
-  /** 导体棒的瞬时物理位移 x (m) (初始为 -1.2m，范围 [-1.6, 1.6]) */
+  /** 导体棒的瞬时物理位移 x (m) */
   x: number
   /** 是否达到了轨道边缘限位 */
   isLimited: boolean
@@ -1167,16 +1185,18 @@ export interface BasicAmperePhysicsResult {
  * 基础模式物理状态求解器
  * @param I 电流 (A)
  * @param B 磁感应强度 (T)
- * @param L 有效长度 (m)，默认为 4.0m
- * @param m 导体棒质量 (kg)，默认为 0.5kg
+ * @param L 有效长度 (m)
+ * @param m 导体棒质量 (kg)
  * @param t 当前时间 (s)
+ * @param scene 场景参数（初始位置、边界）
  */
 export function solveBasicAmpere(
   I: number,
   B: number,
   L: number = 4.0,
-  m: number = 0.5,
-  t: number = 0
+  m: number = AMPERE_BASIC_SCENE.mass,
+  t: number = 0,
+  scene: { xMin: number; xMax: number } = AMPERE_BASIC_SCENE
 ): BasicAmperePhysicsResult {
   // 物理符号约定：
   // 磁场向里为负（B > 0，⊗），磁场向外为正（B < 0，⊙）
@@ -1189,10 +1209,9 @@ export function solveBasicAmpere(
 
   const a = m > 0 ? F / m : 0
 
-  // 导体棒初始物理位置
-  const x0 = -1.2 
-  const xMin = -1.6
-  const xMax = 1.6
+  // 从场景参数读取位置边界，初始位置为轨道中点
+  const { xMin, xMax } = scene
+  const x0 = (xMin + xMax) / 2
 
   let x = x0
   let isLimited = false
@@ -1207,7 +1226,7 @@ export function solveBasicAmpere(
         x = x0 + 0.5 * a * t * t
       }
     } else {
-      const tLimit = Math.sqrt((2 * (xMin - x0)) / Math.abs(a))
+      const tLimit = Math.sqrt((2 * (x0 - xMin)) / Math.abs(a))
       if (t >= tLimit) {
         x = xMin
         isLimited = true
@@ -1258,9 +1277,10 @@ export interface AdvancedAmperePhysicsResult {
  * @param B 磁感应强度 (T)，磁场竖直向上 (B > 0) 或竖直向下 (B < 0)
  * @param theta 倾角 (度)
  * @param mu 摩擦因数
- * @param L 有效长度 (m)，固定 4.0m
- * @param m 质量 (kg)，固定 0.5kg
+ * @param L 有效长度 (m)
+ * @param m 质量 (kg)
  * @param t 当前时间 (s)
+ * @param scene 场景参数（初始位置、边界）
  */
 export function solveAdvancedAmpere(
   I: number,
@@ -1268,8 +1288,9 @@ export function solveAdvancedAmpere(
   theta: number,
   mu: number,
   L: number = 4.0,
-  m: number = 0.5,
-  t: number = 0
+  m: number = AMPERE_ADVANCED_SCENE.mass,
+  t: number = 0,
+  scene: { xMin: number; xMax: number } = AMPERE_ADVANCED_SCENE
 ): AdvancedAmperePhysicsResult {
   const g = 9.8
 
@@ -1302,9 +1323,9 @@ export function solveAdvancedAmpere(
     }
   }
 
-  const x0 = 0.0
-  const xMin = -1.1
-  const xMax = 1.1
+  // 从场景参数读取位置边界，初始位置为轨道中点
+  const { xMin, xMax } = scene
+  const x0 = (xMin + xMax) / 2
 
   let x = x0
   let isLimited = false
@@ -1319,7 +1340,7 @@ export function solveAdvancedAmpere(
         x = x0 + 0.5 * a * t * t
       }
     } else {
-      const tLimit = Math.sqrt((2 * (xMin - x0)) / Math.abs(a))
+      const tLimit = Math.sqrt((2 * (x0 - xMin)) / Math.abs(a))
       if (t >= tLimit) {
         x = xMin
         isLimited = true

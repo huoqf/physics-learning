@@ -1,7 +1,7 @@
 # Canvas/SVG/图表动态布局与渲染规范
 
 > 优先级：低于 02_UI_RULES.md，高于动画实现细节
-> 最后更新：2026-06-08
+> 最后更新：2026-06-15
 
 ---
 
@@ -17,6 +17,94 @@
 | 数据图表 | SVG 或 Canvas | 取决于数据量和交互复杂度 |
 
 **SVG 规范补充**：SVG 中的颜色、线宽、箭头、文字样式必须引用 `@/theme/physics` 和 `canvasStyle.ts`，不得绕过主题 token。
+
+---
+
+## 2. 主屏页面布局规范（铁律）
+
+### 2.1 禁止硬编码像素布局
+
+主屏动画页面（AnimationPage 中间区域）的 SVG 布局**禁止**使用硬编码像素值：
+
+```ts
+// ❌ 禁止：硬编码像素布局
+<svg width={900} height={520}>
+<BasicAmpereScene x={20} y={40} w={480} h={400} />
+```
+
+### 2.2 推荐方案：viewBox + 比例常量
+
+```ts
+// ✅ 推荐：使用 viewBox + 比例常量
+const VIEW_WIDTH = 800
+const VIEW_HEIGHT = 500
+
+const LAYOUT = {
+  sceneX: 0.025,         // 20/800
+  sceneY: 0.08,          // 40/500
+  sceneWidthRatio: 0.6,  // 480/800
+  sceneHeightRatio: 0.8, // 400/500
+  panelX: 0.65,          // 520/800
+  panelWidthRatio: 0.325,
+  // ...
+} as const
+
+// 组件内动态计算
+const layout = {
+  scene: {
+    x: VIEW_WIDTH * LAYOUT.sceneX,
+    y: VIEW_HEIGHT * LAYOUT.sceneY,
+    w: VIEW_WIDTH * LAYOUT.sceneWidthRatio,
+    h: VIEW_HEIGHT * LAYOUT.sceneHeightRatio,
+  },
+  // ...
+}
+
+// SVG 使用 viewBox
+<svg
+  viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
+  preserveAspectRatio="xMidYMid meet"
+  className="w-full h-full"
+>
+  <BasicAmpereScene x={layout.scene.x} y={layout.scene.y} w={layout.scene.w} h={layout.scene.h} />
+</svg>
+```
+
+### 2.3 进阶方案：归一化坐标系（可选）
+
+对于需要更高灵活性的场景，可使用归一化坐标系 (100 x 60)：
+
+```ts
+const scene = {
+  width: 100,
+  height: 60,
+  paddingX: 8,
+  paddingY: 6,
+  centerY: 30,
+}
+
+const regions = {
+  scene: {
+    x: scene.paddingX,
+    y: scene.paddingY,
+    w: (scene.width - scene.paddingX * 2) * 0.6,
+    h: scene.height - scene.paddingY * 2,
+  },
+  // ...
+}
+
+<svg viewBox={`0 0 ${scene.width} ${scene.height}`} preserveAspectRatio="xMidYMid meet">
+```
+
+> **注意**：归一化坐标需要同步更新所有子组件内部坐标，改动范围较大，非必要不采用。
+
+### 2.4 验收标准
+
+| 检查项 | 标准 |
+|--------|------|
+| SVG 标签 | 使用 `viewBox` + `preserveAspectRatio`，禁止 `width/height` 硬编码像素 |
+| 布局坐标 | 使用比例常量计算，禁止散落的无语义像素值 |
+| 响应式 | 调整浏览器窗口大小时，布局比例保持不变 |
 
 ---
 
