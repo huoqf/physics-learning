@@ -94,29 +94,8 @@ export const VelocityXTChart: FC<VelocityXTChartProps> = ({
       {/* 标题 */}
       <text x={margin.left} y={margin.top - 6} fontSize={fs} fill={PHYSICS_COLORS.labelText} fontWeight="bold">x-t 图像</text>
 
-      {/* 精密细坐标轴网格底图 */}
-      {Array.from({ length: 6 }).map((_, idx) => {
-        const gridY = margin.top + (plotH * idx) / 5
-        return (
-          <line
-            key={`grid-y-${idx}`}
-            x1={margin.left} y1={gridY} x2={margin.left + plotW} y2={gridY}
-            stroke="rgba(148, 163, 184, 0.05)"
-            strokeWidth={0.3}
-          />
-        )
-      })}
-      {Array.from({ length: 6 }).map((_, idx) => {
-        const gridX = margin.left + (plotW * idx) / 5
-        return (
-          <line
-            key={`grid-x-${idx}`}
-            x1={gridX} y1={margin.top} x2={gridX} y2={margin.top + plotH}
-            stroke="rgba(148, 163, 184, 0.05)"
-            strokeWidth={0.3}
-          />
-        )
-      })}
+
+
 
       {/* 1. 坐标轴 */}
       <line x1={margin.left} y1={margin.top + plotH} x2={margin.left + plotW} y2={margin.top + plotH} stroke={PHYSICS_COLORS.labelText} strokeWidth={0.5} />

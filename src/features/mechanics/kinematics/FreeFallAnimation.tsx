@@ -1,6 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useEffect, useMemo, useState } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import {
   PHYSICS_COLORS,
   CHART_COLORS,
@@ -47,7 +48,16 @@ function ImpactRipple({ x, y, color, startTime, currentTime }: RippleProps) {
 
 // ─── 主组件 ───────────────────────────────────────────────────────────────────
 export default function FreeFallAnimation() {
-  const { params, time, showVectors, showGrid, showTimeSlices, setIsPlaying } = useAnimationStore()
+    const {params, time, showVectors, showGrid, showTimeSlices, setIsPlaying} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    showGrid: s.showGrid,
+    showTimeSlices: s.showTimeSlices,
+    setIsPlaying: s.setIsPlaying,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 100, height: 100 })
 
   // ── 参数提取 ──────────────────────────────────────────────────────────────
@@ -360,19 +370,6 @@ export default function FreeFallAnimation() {
         </defs>
 
         {/* ========== 左侧动画舞台 ========== */}
-
-        {/* 精密实验室标尺网格背景 */}
-        {Array.from({ length: 21 }).map((_, idx) => {
-          const gridY = originY + (stageHeight * idx) / 20
-          return (
-            <line
-              key={`grid-${idx}`}
-              x1={tubeLeft} y1={gridY} x2={tubeRight} y2={gridY}
-              stroke="rgba(148, 163, 184, 0.06)"
-              strokeWidth={1}
-            />
-          )
-        })}
 
         {/* 1. 牛顿管玻璃管 */}
         <rect

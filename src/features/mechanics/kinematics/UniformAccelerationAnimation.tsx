@@ -1,6 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { calculateAcceleratedMotion } from '@/physics'
 import {
   PHYSICS_COLORS,
@@ -26,7 +27,14 @@ import type { SceneConfig } from '@/scene/SceneConfig'
  * 严格符合 project_rules.md 视觉与信息密度要求。
  */
 export default function UniformAccelerationAnimation() {
-  const { params, time, showVectors, showGrid, setIsPlaying } = useAnimationStore()
+    const {params, time, showVectors, setIsPlaying} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    setIsPlaying: s.setIsPlaying,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 400 })
 
   const { v0 = 0, a = 1.5, showSplit = 1, splitN = 0, showEquivRect = 0 } = params
@@ -191,20 +199,6 @@ export default function UniformAccelerationAnimation() {
     return { positive: positivePath, negative: negativePath, rect: rectPath, triangle: triPath }
   }, [v0, a, v, time, toChartX, toChartY])
 
-  // ── 网格线 ──
-  const gridLines = useMemo(() => {
-    if (!showGrid) return []
-    const lines: { x: number; key: string }[] = []
-    const gridCount = Math.max(8, Math.floor(canvasSize.width / 60))
-    for (let i = 0; i <= gridCount; i++) {
-      lines.push({
-        x: startX + (i * (maxVisibleX - startX)) / gridCount,
-        key: `grid-${i}`,
-      })
-    }
-    return lines
-  }, [showGrid, canvasSize.width, startX, maxVisibleX])
-
   // ── 地面刻度直尺 ──
   const landmarks = useMemo(() => {
     const count = 5
@@ -255,20 +249,6 @@ export default function UniformAccelerationAnimation() {
     <div ref={containerRef} className="w-full h-full">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
         {/* ══════════ 上半部分：v-t 图面积可视化 ══════════ */}
-
-        {/* 坐标网格辅助虚线 */}
-        {xticks.map(t => (
-          <line
-            key={`x-grid-${t}`}
-            x1={toChartX(t)}
-            y1={chartInnerTop}
-            x2={toChartX(t)}
-            y2={chartInnerBottom}
-            stroke={PHYSICS_COLORS.grid}
-            strokeWidth={0.5}
-            strokeDasharray="4 4"
-          />
-        ))}
 
         {/* 坐标轴 */}
         <line x1={chartLeft} y1={chartInnerTop} x2={chartLeft} y2={chartInnerBottom} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axis} />
@@ -475,11 +455,6 @@ export default function UniformAccelerationAnimation() {
             <line x1={lm.x} y1={groundY} x2={lm.x} y2={groundY + 8} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.tickBold} />
             <text x={lm.x} y={groundY + fontSize + 8} fontSize={smallFont} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">{lm.text}</text>
           </g>
-        ))}
-
-        {/* 坐标网格垂直辅助虚线 */}
-        {gridLines.map((g) => (
-          <line key={g.key} x1={g.x} y1={groundY - objH * 2.2} x2={g.x} y2={groundY + 4} stroke={PHYSICS_COLORS.grid} strokeWidth={STROKE.grid} strokeDasharray={DASH.guide.join(',')} />
         ))}
 
         {/* 起始参考线 */}

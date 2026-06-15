@@ -1,6 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import React, { useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { colors } from '@/theme/colors'
 import {
   PHYSICS_COLORS,
@@ -25,7 +26,16 @@ import type { SceneConfig } from '@/scene/SceneConfig'
 const PULSE_PERIOD = 800
 
 export default function VerticalThrowAnimation() {
-  const { params, time, isPlaying, showVectors, showGrid, setIsPlaying, setTime } = useAnimationStore()
+    const {params, time, isPlaying, showVectors, setIsPlaying, setTime} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    isPlaying: s.isPlaying,
+    showVectors: s.showVectors,
+    setIsPlaying: s.setIsPlaying,
+    setTime: s.setTime,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 100, height: 100 })
 
   const { v0 = 15, g = 9.8, advancedMode = 0, sliceDensity = 0, airResistance = 0, targetHeight = 0, showVacuumCompare = 1 } = params
@@ -159,21 +169,6 @@ export default function VerticalThrowAnimation() {
     }
   }, [])
 
-  // ── 网格线 ──
-  const gridLines = useMemo(() => {
-    if (!showGrid) return []
-    const lines: React.ReactElement[] = []
-    for (let i = 1; i <= 10; i++) {
-      const yPos = originY + (i * stageHeight) / 10
-      lines.push(
-        <line key={`grid-h-${i}`} x1={30} y1={yPos} x2={stageWidth - 20} y2={yPos}
-          stroke={PHYSICS_COLORS.grid} strokeWidth={STROKE.grid}
-          strokeDasharray={DASH.reference.join(' ')} />
-      )
-    }
-    return lines
-  }, [showGrid, originY, stageHeight, stageWidth])
-
   // ── 时间轴拖拽 ──
   const isDraggingRef = useRef(false)
 
@@ -264,8 +259,6 @@ export default function VerticalThrowAnimation() {
         </defs>
 
         {/* ========== 左侧：物理演练区 ========== */}
-        {gridLines}
-
         <line x1={30} y1={groundY} x2={stageWidth - 20} y2={groundY}
           stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.groundLine} />
 
@@ -432,25 +425,6 @@ export default function VerticalThrowAnimation() {
             速度-时间图像 (v-t 图)
           </text>
 
-          {xticks.map(t => (
-            t > 0 && t < xMax && (
-              <line key={`vt-grid-v-${t}`}
-                x1={vtToX(t)} y1={vtInnerPad.top}
-                x2={vtToX(t)} y2={vtInnerPad.top + vtInnerH}
-                stroke={colors.neutral[100]} strokeWidth={0.5}
-              />
-            )
-          ))}
-          {vtYTicks.map(v => (
-            v !== 0 && v > -vtVMax && v < vtVMax && (
-              <line key={`vt-grid-h-${v}`}
-                x1={vtInnerPad.left} y1={vtToY(v)}
-                x2={vtInnerPad.left + vtInnerW} y2={vtToY(v)}
-                stroke={colors.neutral[100]} strokeWidth={0.5}
-              />
-            )
-          ))}
-
           <line x1={vtInnerPad.left} y1={vtInnerPad.top} x2={vtInnerPad.left} y2={vtInnerPad.top + vtInnerH}
             stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
           <line x1={vtInnerPad.left} y1={vtToY(0)} x2={vtInnerPad.left + vtInnerW} y2={vtToY(0)}
@@ -601,25 +575,6 @@ export default function VerticalThrowAnimation() {
           <text x={dataWidth / 2} y={16} fontSize={FONT.axis} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
             位移-时间图像 (y-t 图)
           </text>
-
-          {xticks.map(t => (
-            t > 0 && t < xMax && (
-              <line key={`yt-grid-v-${t}`}
-                x1={ytToX(t)} y1={ytInnerPad.top}
-                x2={ytToX(t)} y2={ytInnerPad.top + ytInnerH}
-                stroke={colors.neutral[100]} strokeWidth={0.5}
-              />
-            )
-          ))}
-          {ytYTicks.map(y => (
-            y > 0 && y < ytYMax && (
-              <line key={`yt-grid-h-${y}`}
-                x1={ytInnerPad.left} y1={ytToY(y)}
-                x2={ytInnerPad.left + ytInnerW} y2={ytToY(y)}
-                stroke={colors.neutral[100]} strokeWidth={0.5}
-              />
-            )
-          ))}
 
           <line x1={ytInnerPad.left} y1={ytInnerPad.top} x2={ytInnerPad.left} y2={ytInnerPad.top + ytInnerH}
             stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />

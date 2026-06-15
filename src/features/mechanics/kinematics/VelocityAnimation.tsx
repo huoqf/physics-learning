@@ -1,6 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useMemo, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OBJECT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { calculateAverageVelocity } from '@/physics'
@@ -16,7 +17,14 @@ import type { SceneConfig } from '@/scene/SceneConfig'
  * Canvas 7 元素 / 5 标注（严格上限）
  */
 export default function VelocityAnimation() {
-  const { params, time, showVectors, showGrid, setIsPlaying } = useAnimationStore()
+    const {params, time, showVectors, setIsPlaying} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    setIsPlaying: s.setIsPlaying,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 350 })
 
   const scene = params.scene ?? 0      // 0=公交, 1=短跑
@@ -77,19 +85,7 @@ export default function VelocityAnimation() {
   const fontSize = Math.max(10, canvasSize.width * 0.017)
   const smallFont = Math.max(9, fontSize * 0.85)
 
-  // ── 网格线 ──
-  const gridLines = useMemo(() => {
-    if (!showGrid) return []
-    const lines: { x: number; key: string }[] = []
-    const gridCount = Math.max(8, Math.floor(canvasSize.width / 60))
-    for (let i = 0; i <= gridCount; i++) {
-      lines.push({
-        x: startX + (i * (maxVisibleX - startX)) / gridCount,
-        key: `grid-${i}`,
-      })
-    }
-    return lines
-  }, [showGrid, canvasSize.width, startX, maxVisibleX])
+
 
   // ── 物体尺寸 ──
   const objW = canvasSize.width * 0.06
@@ -155,19 +151,7 @@ export default function VelocityAnimation() {
           </g>
         ))}
 
-        {/* ── 网格线 ── */}
-        {gridLines.map((g) => (
-          <line
-            key={g.key}
-            x1={g.x}
-            y1={groundY - objH * 2}
-            x2={g.x}
-            y2={groundY + 4}
-            stroke={PHYSICS_COLORS.grid}
-            strokeWidth={STROKE.grid}
-            strokeDasharray={DASH.guide.join(',')}
-          />
-        ))}
+
 
         {/* ── 起始线 ── */}
         <line

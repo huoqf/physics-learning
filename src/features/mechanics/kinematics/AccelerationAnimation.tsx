@@ -1,6 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { calculateDualObjectComparison } from '@/physics'
 import { PHYSICS_COLORS, STROKE, DASH, FONT } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
@@ -28,7 +29,15 @@ const LAYOUT = {
  * 遵循 project_rules.md 设计规范：精密科学仪器风、干净轴线、精准标注，严禁粒子爆炸。
  */
 export default function AccelerationAnimation() {
-  const { params, time, showVectors, showGrid, setIsPlaying } = useAnimationStore()
+    const {params, time, showVectors, showGrid, setIsPlaying} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    showGrid: s.showGrid,
+    setIsPlaying: s.setIsPlaying,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 350 })
 
   const vA = params.vA ?? 200
@@ -83,20 +92,6 @@ export default function AccelerationAnimation() {
   // ── 垂直对齐辅助线（toggle 控制）──
   const showAlignLine = showGrid && time > 0
 
-  // ── 网格线 ──
-  const gridLines = useMemo(() => {
-    if (!showGrid) return []
-    const lines: { x: number; key: string }[] = []
-    const gridCount = Math.max(8, Math.floor(canvasSize.width / 80))
-    for (let i = 0; i <= gridCount; i++) {
-      lines.push({
-        x: startX + (i * (maxVisibleX - startX)) / gridCount,
-        key: `grid-${i}`,
-      })
-    }
-    return lines
-  }, [showGrid, canvasSize.width, startX, maxVisibleX])
-
   // ── 频闪打点计时器点集生成 ──
   const strobePoints = useMemo(() => {
     const points: { time: number; planeX: number; carX: number; key: string }[] = []
@@ -123,21 +118,7 @@ export default function AccelerationAnimation() {
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
-        {/* ── 1. 网格线 ── */}
-        {gridLines.map((g) => (
-          <line
-            key={g.key}
-            x1={g.x}
-            y1={topTrackY - 20}
-            x2={g.x}
-            y2={bottomTrackY + 20}
-            stroke={PHYSICS_COLORS.grid}
-            strokeWidth={STROKE.grid}
-            strokeDasharray={DASH.reference.join(' ')}
-          />
-        ))}
-
-        {/* ── 2. 双轨精密测距尺赛道 ── */}
+        {/* ── 1. 双轨精密测距尺赛道 ── */}
         {/* 飞机轨道主线 */}
         <line
           x1={padding}

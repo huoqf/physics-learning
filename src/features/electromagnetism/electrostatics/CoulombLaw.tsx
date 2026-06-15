@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { calculateCoulombForce, calculateThreeChargeForces } from '@/physics'
 import {
   PHYSICS_COLORS,
@@ -25,7 +26,13 @@ const LAYOUT = {
 } as const
 
 export default function CoulombLaw() {
-  const { params, showVectors, showFormulas, showGrid } = useAnimationStore()
+    const {params, showVectors, showFormulas} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    showVectors: s.showVectors,
+    showFormulas: s.showFormulas,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 450 })
 
   const mode = params.mode ?? 0
@@ -33,8 +40,8 @@ export default function CoulombLaw() {
   return (
     <div ref={containerRef} className="w-full h-full">
       {mode === 0
-        ? <BasicMode params={params} showVectors={showVectors} showFormulas={showFormulas} showGrid={showGrid} canvasSize={canvasSize} />
-        : <ThreeChargeMode params={params} showVectors={showVectors} showFormulas={showFormulas} showGrid={showGrid} canvasSize={canvasSize} />
+        ? <BasicMode params={params} showVectors={showVectors} showFormulas={showFormulas} canvasSize={canvasSize} />
+        : <ThreeChargeMode params={params} showVectors={showVectors} showFormulas={showFormulas} canvasSize={canvasSize} />
       }
     </div>
   )
@@ -47,13 +54,11 @@ function BasicMode({
   params,
   showVectors,
   showFormulas,
-  showGrid,
   canvasSize,
 }: {
   params: Record<string, number>
   showVectors: boolean
   showFormulas: boolean
-  showGrid: boolean
   canvasSize: { width: number; height: number }
 }) {
   const { q1 = 2, q2 = -3, r: rParam = 4 } = params
@@ -118,18 +123,6 @@ function BasicMode({
   const toChartX = (ri: number) => chartLeft + ((ri - LAYOUT.frDataRange.rMin) / (LAYOUT.frDataRange.rMax - LAYOUT.frDataRange.rMin)) * chartWidth
   const toChartY = (Fi: number) => chartBottom - (Fi / fMax) * chartHeight
 
-  const gridLines = []
-  if (showGrid) {
-    const gridCount = 10
-    for (let i = 0; i <= gridCount; i++) {
-      const xPos = (i * stageWidth) / gridCount
-      gridLines.push(
-        <line key={`g-${i}`} x1={xPos} y1={40} x2={xPos} y2={h - 40}
-          stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} strokeDasharray={CANVAS_STYLE.dash.axis.join(' ')} />
-      )
-    }
-  }
-
   const frPath = frData.map((p, i) =>
     `${i === 0 ? 'M' : 'L'} ${toChartX(p.r).toFixed(1)},${toChartY(p.F).toFixed(1)}`
   ).join(' ')
@@ -157,7 +150,6 @@ function BasicMode({
   return (
     <svg width={w} height={h} className="bg-white rounded-lg shadow-inner"
       onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
-      {gridLines}
 
       <line x1={40} y1={centerY} x2={stageWidth - 40} y2={centerY}
         stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} strokeDasharray="4,4" opacity={0.3} />
@@ -322,13 +314,11 @@ function ThreeChargeMode({
   params,
   showVectors,
   showFormulas,
-  showGrid,
   canvasSize,
 }: {
   params: Record<string, number>
   showVectors: boolean
   showFormulas: boolean
-  showGrid: boolean
   canvasSize: { width: number; height: number }
 }) {
   const { q1 = 2, q2 = -3, q3 = 1 } = params
@@ -399,18 +389,6 @@ function ThreeChargeMode({
     }
   }
 
-  const gridLines = []
-  if (showGrid) {
-    const gridCount = 10
-    for (let i = 0; i <= gridCount; i++) {
-      const xPos = (i * w) / gridCount
-      gridLines.push(
-        <line key={`gv-${i}`} x1={xPos} y1={0} x2={xPos} y2={h}
-          stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} strokeDasharray={CANVAS_STYLE.dash.axis.join(' ')} />
-      )
-    }
-  }
-
   const chargeLabels = ['Q₁', 'Q₂', 'Q₃']
   const chargeValues = [q1, q2, q3]
   const chargePositions = [
@@ -423,7 +401,6 @@ function ThreeChargeMode({
     <div className="flex flex-col h-full">
       <svg width={w} height={h - 60} className="bg-white rounded-lg shadow-inner cursor-crosshair flex-1"
         onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
-        {gridLines}
 
         <line x1={40} y1={centerY} x2={w - 40} y2={centerY}
           stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} strokeDasharray="4,4" opacity={0.3} />
