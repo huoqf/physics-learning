@@ -1,5 +1,6 @@
 import { useMemo, useEffect } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import {
   calculateInstantaneousVelocity,
@@ -18,7 +19,17 @@ import { AnimationControls } from '@/components/UI'
  * - portrait (宽高比 <= 1): 动画在左，图表上下并列在右
  */
 export default function VelocityCenterExtra() {
-  const { params, time, isPlaying, speed, setIsPlaying, setTime, setSpeed } = useAnimationStore()
+    const {params, time, isPlaying, speed, setIsPlaying, setTime, setSpeed} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    isPlaying: s.isPlaying,
+    speed: s.speed,
+    setIsPlaying: s.setIsPlaying,
+    setTime: s.setTime,
+    setSpeed: s.setSpeed,
+    }))
+  )
 
   // ── 参数 ──
   const modelIdx = params.modelIdx ?? 0

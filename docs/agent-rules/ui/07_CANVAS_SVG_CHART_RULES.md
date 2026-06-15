@@ -1,7 +1,7 @@
 # Canvas/SVG/图表动态布局与渲染规范
 
 > 优先级：低于 02_UI_RULES.md，高于动画实现细节
-> 最后更新：2026-06-15
+> 最后更新：2026-06-16
 
 ---
 
@@ -32,7 +32,36 @@
 <BasicAmpereScene x={20} y={40} w={480} h={400} />
 ```
 
-### 2.2 推荐方案：viewBox + 比例常量
+### 2.2 推荐方案：useCanvasSize + computeScale（首选）
+
+所有动画组件**必须**使用 `useCanvasSize()` 获取画布尺寸，通过返回的 `scale` / `px()` / `font()` 函数进行响应式缩放：
+
+```tsx
+const [containerRef, { width, height, scale, px, font }] = useCanvasSize(CANVAS_PRESETS.wide)
+```
+
+物理比例尺**必须**通过 `computeScale()` 基于物理世界范围计算：
+
+```ts
+import { computeScale } from '@/utils/coordinate'
+
+const WORLD = { xMin: -2, xMax: 6, yMin: -1, yMax: 5 }
+const physicsScale = computeScale(width, height, WORLD, padding)
+```
+
+字体大小**必须**通过 `font()` 函数缩放（内置 clamp(7, 16) 保证可读性）：
+
+```tsx
+// ✅ 正确
+<text fontSize={font(11)} />
+
+// ❌ 禁止
+<text fontSize={11} />
+```
+
+画布预设尺寸从 `CANVAS_PRESETS`（`@/theme/spacing`）引用，动画 UI token 从 `@/theme/animationTokens` 引用。
+
+### 2.3 备选方案：viewBox + 比例常量
 
 ```ts
 // ✅ 推荐：使用 viewBox + 比例常量
@@ -70,7 +99,7 @@ const layout = {
 </svg>
 ```
 
-### 2.3 进阶方案：归一化坐标系（可选）
+### 2.5 进阶方案：归一化坐标系（可选）
 
 对于需要更高灵活性的场景，可使用归一化坐标系 (100 x 60)：
 
@@ -98,12 +127,14 @@ const regions = {
 
 > **注意**：归一化坐标需要同步更新所有子组件内部坐标，改动范围较大，非必要不采用。
 
-### 2.4 验收标准
+### 2.6 验收标准
 
 | 检查项 | 标准 |
 |--------|------|
 | SVG 标签 | 使用 `viewBox` + `preserveAspectRatio`，禁止 `width/height` 硬编码像素 |
 | 布局坐标 | 使用比例常量计算，禁止散落的无语义像素值 |
+| 物理比例尺 | 使用 `computeScale()` 计算，禁止 `scale = N` 硬编码 |
+| 字体大小 | SVG 内使用 `fontSize={font(N)}`，画布内 HTML 使用 `style={{ fontSize: font(N) }}`，禁止裸值 |
 | 响应式 | 调整浏览器窗口大小时，布局比例保持不变 |
 
 ---
@@ -131,6 +162,12 @@ const pointRadius = 6;
 
 // ❌ 禁止：硬编码图表尺寸
 const chart = { width: 200, height: 150 };
+
+// ❌ 禁止：硬编码物理比例尺
+const scale = 160;
+
+// ❌ 禁止：字体大小裸值
+<text fontSize={11} />
 ```
 
 ### 2.3 推荐做法
@@ -159,6 +196,9 @@ const pointRadius = Math.min(
 | 物理常量 | ✅ 允许 | 来自 `physics/constants.ts`，带 JSDoc |
 | 数学常量（Math.PI, 0.5） | ✅ 允许 | 直接使用，复杂语义需命名 |
 | 视觉尺寸（16px, 180px） | ❌ 禁止 | 从 `@/theme` 或 `canvasStyle.ts` 导入 |
+| 物理比例尺（scale = 160） | ❌ 禁止 | 使用 `computeScale(canvasW, canvasH, WORLD)` |
+| SVG fontSize 裸值（fontSize={7}） | ❌ 禁止 | 使用 `fontSize={font(7)}` |
+| Tailwind text-[Npx]（画布内） | ❌ 禁止 | 使用 `style={{ fontSize: font(N) }}` |
 | 颜色值（#2563EB, rgb()） | ❌ 禁止 | 从 `@/theme/physics` 导入 |
 | 动效时长（150ms, 250ms） | ❌ 禁止 | 从 `@/theme/motion` 导入 |
 | 响应式比例（0.28） | ⚠️ 不建议裸写 | 放入 `canvasStyle.ts`，命名为 `chartWidthRatio` |

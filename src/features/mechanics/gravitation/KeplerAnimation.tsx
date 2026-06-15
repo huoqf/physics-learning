@@ -1,5 +1,6 @@
 import { useCanvasSize, physicsToCanvas } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, CANVAS_STYLE, KEPLER_CONFIG, VECTOR_DISPLAY, INSET_CHART, GRID_DISPLAY } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { calculateKeplerOrbit, solveKeplerEquation } from '@/physics/celestial'
@@ -16,8 +17,17 @@ function clamp(value: number, min: number, max: number): number {
 // ─── 阶段二：动态计算配置（语义化命名，主题驱动）────────────────────
 
 export default function KeplerAnimation() {
-  const { params, time, showVectors, showFormulas, showGrid } = useAnimationStore()
+    const {params, time, showVectors, showFormulas, showGrid} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    showFormulas: s.showFormulas,
+    showGrid: s.showGrid,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
+  const { font } = canvasSize
 
   const mode = params.mode ?? 0 // 0=第一定律, 1=第二定律, 2=第三定律
 
@@ -377,7 +387,7 @@ export default function KeplerAnimation() {
               x={centerX + a1 * scale - 25}
               y={centerY + b1 * scale * 0.32}
               fill={PHYSICS_COLORS.friction}
-              fontSize={10}
+              fontSize={font(10)}
               fontWeight="bold"
               className="select-none"
             >
@@ -398,7 +408,7 @@ export default function KeplerAnimation() {
               x={centerX - a1 * scale + 5}
               y={centerY + b1 * scale * 0.32}
               fill={PHYSICS_COLORS.friction}
-              fontSize={10}
+              fontSize={font(10)}
               fontWeight="bold"
               className="select-none"
             >
@@ -464,7 +474,7 @@ export default function KeplerAnimation() {
               x={(planetXA + sunX) / 2 + 10}
               y={(planetYA + sunY) / 2 - 8}
               fill={PHYSICS_COLORS.displacement}
-              fontSize={11}
+              fontSize={font(11)}
               fontWeight="bold"
               className="font-mono bg-white"
             >
@@ -475,7 +485,7 @@ export default function KeplerAnimation() {
               x={(planetXA + foci2X) / 2 - 25}
               y={(planetYA + foci2Y) / 2 - 8}
               fill={PHYSICS_COLORS.potentialEnergy}
-              fontSize={11}
+              fontSize={font(11)}
               fontWeight="bold"
               className="font-mono bg-white"
             >
@@ -487,14 +497,14 @@ export default function KeplerAnimation() {
               <circle r={10} fill="url(#foci-grad)" opacity={0.7} />
               <line x1={-8} y1={0} x2={8} y2={0} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={1} />
               <line x1={0} y1={-8} x2={0} y2={8} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={1} />
-              <text x={10} y={15} fill={PHYSICS_COLORS.labelTextLight} fontSize={9} className="select-none font-semibold">
+              <text x={10} y={15} fill={PHYSICS_COLORS.labelTextLight} fontSize={font(9)} className="select-none font-semibold">
                 副焦点 F₂
               </text>
             </g>
 
             {/* 几何定义底部验证条 */}
             <g transform={`translate(20, ${canvasSize.height - 20})`}>
-              <text fill={PHYSICS_COLORS.labelText} fontSize={11} className="font-semibold select-none">
+              <text fill={PHYSICS_COLORS.labelText} fontSize={font(11)} className="font-semibold select-none">
                 第一定律验证 (椭圆定义)：r₁ + r₂ = 2a = {(orbitA.r + (2 * a1 - orbitA.r)).toFixed(1)}（恒定值）
               </text>
             </g>
@@ -520,7 +530,7 @@ export default function KeplerAnimation() {
           x={planetXA + 12}
           y={planetYA - 12}
           fill={PHYSICS_COLORS.labelText}
-          fontSize={11}
+          fontSize={font(11)}
           fontWeight="bold"
           className="select-none"
         >
@@ -535,7 +545,7 @@ export default function KeplerAnimation() {
               x={planetXB + 12}
               y={planetYB - 12}
               fill={PHYSICS_COLORS.labelText}
-              fontSize={11}
+              fontSize={font(11)}
               fontWeight="bold"
               className="select-none"
             >
@@ -551,7 +561,7 @@ export default function KeplerAnimation() {
           x={sunX - 11}
           y={sunY + 32}
           fill={PHYSICS_COLORS.electricField}
-          fontSize={11}
+          fontSize={font(11)}
           fontWeight="bold"
           className="select-none"
         >
@@ -572,7 +582,7 @@ export default function KeplerAnimation() {
               x={planetXA + vxA + (vxA >= 0 ? 8 : -14)}
               y={planetYA + vyA + (vyA >= 0 ? 8 : -8)}
               fill={PHYSICS_COLORS.velocity}
-              fontSize={12}
+              fontSize={font(12)}
               fontWeight="bold"
               className="italic select-none"
             >
@@ -590,7 +600,7 @@ export default function KeplerAnimation() {
               x={planetXA + fxA + (fxA >= 0 ? 8 : -14)}
               y={planetYA + fyA + (fyA >= 0 ? 8 : -8)}
               fill={PHYSICS_COLORS.gravity}
-              fontSize={12}
+              fontSize={font(12)}
               fontWeight="bold"
               className="italic select-none"
             >
@@ -611,14 +621,14 @@ export default function KeplerAnimation() {
               stroke={PHYSICS_COLORS.grid}
               strokeWidth={1}
             />
-            <text x={70} y={18} fill={PHYSICS_COLORS.labelTextLight} fontSize={9} textAnchor="middle" className="select-none font-semibold">
+            <text x={70} y={18} fill={PHYSICS_COLORS.labelTextLight} fontSize={font(9)} textAnchor="middle" className="select-none font-semibold">
               扫过时间占周期百分比
             </text>
             <text
               x={70}
               y={40}
               fill={(isInPerihelion || isInAphelion) ? PHYSICS_COLORS.forceNet : PHYSICS_COLORS.gravity}
-              fontSize={15}
+              fontSize={font(15)}
               fontWeight="bold"
               textAnchor="middle"
               className="font-mono"
@@ -646,7 +656,7 @@ export default function KeplerAnimation() {
             <text
               x={chartX0 + chartW / 2}
               y={chartY0 - chartH - 2}
-              fontSize={9}
+              fontSize={font(9)}
               fill={PHYSICS_COLORS.labelTextLight}
               fontWeight="bold"
               textAnchor="middle"
@@ -657,15 +667,15 @@ export default function KeplerAnimation() {
             {/* 图像坐标轴 */}
             <line x1={chartX0} y1={chartY0} x2={chartX0 + chartW + 5} y2={chartY0} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={1} />
             <line x1={chartX0} y1={chartY0} x2={chartX0} y2={chartY0 - chartH - 5} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={1} />
-            <text x={chartX0 + chartW + 2} y={chartY0 + 9} fontSize={8} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">a³</text>
-            <text x={chartX0 - 4} y={chartY0 - chartH} fontSize={8} fill={PHYSICS_COLORS.labelTextLight}>T²</text>
+            <text x={chartX0 + chartW + 2} y={chartY0 + 9} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">a³</text>
+            <text x={chartX0 - 4} y={chartY0 - chartH} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight}>T²</text>
 
             {/* 坐标刻度 */}
-            <text x={chartX0} y={chartY0 + 9} fontSize={7} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">0</text>
-            <text x={chartX0 + chartW} y={chartY0 + 9} fontSize={7} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
+            <text x={chartX0} y={chartY0 + 9} fontSize={font(7)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">0</text>
+            <text x={chartX0 + chartW} y={chartY0 + 9} fontSize={font(7)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
               {maxA3.toFixed(0)}
             </text>
-            <text x={chartX0 - 4} y={chartY0 - chartH + 3} fontSize={7} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">
+            <text x={chartX0 - 4} y={chartY0 - chartH + 3} fontSize={font(7)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">
               {maxT2.toFixed(0)}
             </text>
 
@@ -682,7 +692,7 @@ export default function KeplerAnimation() {
             <text
               x={chartX0 + chartW - 10}
               y={chartY0 - chartH + 12}
-              fontSize={8}
+              fontSize={font(8)}
               fill={PHYSICS_COLORS.friction}
               fontWeight="semibold"
             >
@@ -692,12 +702,12 @@ export default function KeplerAnimation() {
             {/* 行星 A 在图表中的当前状态游标点 (经典蓝) */}
             <circle cx={a3ToX(a3_1)} cy={t2ToY(t2_1)} r={4} fill={PHYSICS_COLORS.velocity} />
             <circle cx={a3ToX(a3_1)} cy={t2ToY(t2_1)} r={8} fill="none" stroke={PHYSICS_COLORS.velocity} strokeWidth={0.5} opacity={0.5} className="animate-ping" />
-            <text x={a3ToX(a3_1) - 6} y={t2ToY(t2_1) - 5} fontSize={7} fill={PHYSICS_COLORS.velocity} fontWeight="bold">A</text>
+            <text x={a3ToX(a3_1) - 6} y={t2ToY(t2_1) - 5} fontSize={font(7)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">A</text>
 
             {/* 行星 B 在图表中的当前状态游标点 (天空蓝/次要速度) */}
             <circle cx={a3ToX(a3_2)} cy={t2ToY(t2_2)} r={4} fill={PHYSICS_COLORS.averageVelocity} />
             <circle cx={a3ToX(a3_2)} cy={t2ToY(t2_2)} r={8} fill="none" stroke={PHYSICS_COLORS.averageVelocity} strokeWidth={0.5} opacity={0.5} className="animate-ping" />
-            <text x={a3ToX(a3_2) + 6} y={t2ToY(t2_2) - 5} fontSize={7} fill={PHYSICS_COLORS.averageVelocity} fontWeight="bold">B</text>
+            <text x={a3ToX(a3_2) + 6} y={t2ToY(t2_2) - 5} fontSize={font(7)} fill={PHYSICS_COLORS.averageVelocity} fontWeight="bold">B</text>
           </g>
         )}
 

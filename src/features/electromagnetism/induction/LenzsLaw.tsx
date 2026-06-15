@@ -1,12 +1,20 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { calculateLenzsLaw } from '@/physics'
 import { useAnimationFrame } from '@/utils/animation'
 
 export default function LenzsLaw() {
-  const { params, time, isPlaying, setIsPlaying } = useAnimationStore()
+    const {params, time, isPlaying, setIsPlaying} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    isPlaying: s.isPlaying,
+    setIsPlaying: s.setIsPlaying,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 400 })
 
   const { magnetPole = 1, coilN = 10, magnetSpeed = 2, motionMode = 1 } = params

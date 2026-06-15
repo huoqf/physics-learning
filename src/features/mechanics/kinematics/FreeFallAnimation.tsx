@@ -59,6 +59,7 @@ export default function FreeFallAnimation() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize({ width: 100, height: 100 })
+  const { font } = canvasSize
 
   // ── 参数提取 ──────────────────────────────────────────────────────────────
   const pressure = params.pressure ?? 0
@@ -404,8 +405,8 @@ export default function FreeFallAnimation() {
         >
           {tubeLabel}
         </text>
-        <text x={ballX} y={originY - 18} fontSize={9} fill={PHYSICS_COLORS.velocity} textAnchor="middle" fontWeight="bold">{matA.label}</text>
-        <text x={featherX} y={originY - 18} fontSize={9} fill={CHART_COLORS.compareB} textAnchor="middle" fontWeight="bold">{matB.label}</text>
+        <text x={ballX} y={originY - 18} fontSize={font(9)} fill={PHYSICS_COLORS.velocity} textAnchor="middle" fontWeight="bold">{matA.label}</text>
+        <text x={featherX} y={originY - 18} fontSize={font(9)} fill={CHART_COLORS.compareB} textAnchor="middle" fontWeight="bold">{matB.label}</text>
 
         {/* 地面线 */}
         <line x1={tubeLeft + 10} y1={groundY} x2={tubeRight - 10} y2={groundY}
@@ -432,7 +433,7 @@ export default function FreeFallAnimation() {
                 fontSize={FONT.small} fill={block.color} fontWeight="bold" textAnchor="middle">{block.ratio}</text>
             )}
             <text x={ballX + 32} y={block.y + block.height / 2 + (block.ratio !== null ? 16 : 4)}
-              fontSize={9} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">{block.displacement.toFixed(2)}m</text>
+              fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">{block.displacement.toFixed(2)}m</text>
           </g>
         ))}
 
@@ -514,7 +515,7 @@ export default function FreeFallAnimation() {
               fontSize={FONT.small} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">g</text>
             {g > GRAVITY && (
               <text x={ballX - 40} y={Math.min(renderYA + ffSceneScale.maxVectorLength * 0.5, groundY - 10) + 10}
-                fontSize={7} fill={PHYSICS_COLORS.acceleration} fontWeight="bold" opacity={0.7}>▲max</text>
+                fontSize={font(7)} fill={PHYSICS_COLORS.acceleration} fontWeight="bold" opacity={0.7}>▲max</text>
             )}
           </g>
         )}
@@ -531,7 +532,7 @@ export default function FreeFallAnimation() {
               fontSize={FONT.small} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">g</text>
             {g > GRAVITY && (
               <text x={featherX - 40} y={Math.min(renderYB + ffSceneScale.maxVectorLength * 0.5, groundY - 10) + 10}
-                fontSize={7} fill={PHYSICS_COLORS.acceleration} fontWeight="bold" opacity={0.7}>▲max</text>
+                fontSize={font(7)} fill={PHYSICS_COLORS.acceleration} fontWeight="bold" opacity={0.7}>▲max</text>
             )}
           </g>
         )}
@@ -639,13 +640,13 @@ export default function FreeFallAnimation() {
             return (
               <g key={`row-${i}`}>
                 {isCurrent && <rect x={0} y={rowY - 12} width={dataWidth} height={18} fill={VT_CHART_COLORS.areaShade} opacity={0.25} />}
-                <text x={dataWidth * 0.12} y={rowY} fontSize={9} fontFamily="monospace" textAnchor="middle"
+                <text x={dataWidth * 0.12} y={rowY} fontSize={font(9)} fontFamily="monospace" textAnchor="middle"
                   fill={isCurrent ? PHYSICS_COLORS.velocity : CHART_COLORS.labelText} fontWeight={isCurrent ? 'bold' : 'normal'}>{pt.t.toFixed(1)}</text>
-                <text x={dataWidth * 0.38} y={rowY} fontSize={9} fontFamily="monospace" textAnchor="middle"
+                <text x={dataWidth * 0.38} y={rowY} fontSize={font(9)} fontFamily="monospace" textAnchor="middle"
                   fill={isCurrent ? PHYSICS_COLORS.velocity : CHART_COLORS.labelText} fontWeight={isCurrent ? 'bold' : 'normal'}>{pt.v.toFixed(2)}</text>
-                <text x={dataWidth * 0.62} y={rowY} fontSize={9} fontFamily="monospace" textAnchor="middle"
+                <text x={dataWidth * 0.62} y={rowY} fontSize={font(9)} fontFamily="monospace" textAnchor="middle"
                   fill={isCurrent ? CHART_COLORS.compareB : CHART_COLORS.labelText} fontWeight={isCurrent ? 'bold' : 'normal'}>{ptB ? ptB.v.toFixed(2) : '-'}</text>
-                <text x={dataWidth * 0.85} y={rowY} fontSize={9} fontFamily="monospace" textAnchor="middle"
+                <text x={dataWidth * 0.85} y={rowY} fontSize={font(9)} fontFamily="monospace" textAnchor="middle"
                   fill={isCurrent ? PHYSICS_COLORS.velocity : CHART_COLORS.labelText} fontWeight={isCurrent ? 'bold' : 'normal'}>{pt.y.toFixed(3)}</text>
                 <line x1={0} y1={rowY + 4} x2={dataWidth} y2={rowY + 4} stroke={CHART_COLORS.gridLine} strokeWidth={STROKE.chartRef} />
               </g>
@@ -664,10 +665,10 @@ export default function FreeFallAnimation() {
           <g>
             <line x1={dataWidth - 130} y1={14} x2={dataWidth - 115} y2={14}
               stroke={VT_CHART_COLORS.velocityCurve} strokeWidth={STROKE.chartMain} />
-            <text x={dataWidth - 110} y={17} fontSize={9} fill={CHART_COLORS.labelText}>{matA.label}</text>
+            <text x={dataWidth - 110} y={17} fontSize={font(9)} fill={CHART_COLORS.labelText}>{matA.label}</text>
             <line x1={dataWidth - 60} y1={14} x2={dataWidth - 45} y2={14}
               stroke={CHART_COLORS.compareB} strokeWidth={STROKE.chartMain} />
-            <text x={dataWidth - 40} y={17} fontSize={9} fill={CHART_COLORS.labelText}>{matB.label}</text>
+            <text x={dataWidth - 40} y={17} fontSize={font(9)} fill={CHART_COLORS.labelText}>{matB.label}</text>
           </g>
 
           {/* 积分面积半透明填充 */}
@@ -689,7 +690,7 @@ export default function FreeFallAnimation() {
             <g key={`xt-${t}`}>
               <line x1={vtToX(t, xMax, vtInnerW)} y1={vtToY(0, vtVMax, vtInnerH) - 4} x2={vtToX(t, xMax, vtInnerW)} y2={vtToY(0, vtVMax, vtInnerH) + 4}
                 stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={vtToX(t, xMax, vtInnerW)} y={vtToY(0, vtVMax, vtInnerH) + 16} fontSize={9} textAnchor="middle" fill={CHART_COLORS.tickLabel}>{t}</text>
+              <text x={vtToX(t, xMax, vtInnerW)} y={vtToY(0, vtVMax, vtInnerH) + 16} fontSize={font(9)} textAnchor="middle" fill={CHART_COLORS.tickLabel}>{t}</text>
             </g>
           ))}
 
@@ -698,15 +699,15 @@ export default function FreeFallAnimation() {
             <g key={`yt-${v}`}>
               <line x1={vtInnerPad.left - 4} y1={vtToY(v, vtVMax, vtInnerH)} x2={vtInnerPad.left} y2={vtToY(v, vtVMax, vtInnerH)}
                 stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={vtInnerPad.left - 8} y={vtToY(v, vtVMax, vtInnerH) + 3} fontSize={9} textAnchor="end" fill={CHART_COLORS.tickLabel}>{v}</text>
+              <text x={vtInnerPad.left - 8} y={vtToY(v, vtVMax, vtInnerH) + 3} fontSize={font(9)} textAnchor="end" fill={CHART_COLORS.tickLabel}>{v}</text>
             </g>
           ))}
 
           {/* 轴标签 */}
           <text x={vtInnerPad.left + vtInnerW / 2} y={vtInnerPad.top + vtInnerH + 28}
-            fontSize={10} textAnchor="middle" fill={CHART_COLORS.labelText}>t/s</text>
+            fontSize={font(10)} textAnchor="middle" fill={CHART_COLORS.labelText}>t/s</text>
           <text x={vtInnerPad.left - 28} y={vtInnerPad.top + vtInnerH / 2}
-            fontSize={10} textAnchor="middle" fill={CHART_COLORS.labelText}
+            fontSize={font(10)} textAnchor="middle" fill={CHART_COLORS.labelText}
             transform={`rotate(-90, ${vtInnerPad.left - 28}, ${vtInnerPad.top + vtInnerH / 2})`}>v/(m·s⁻¹)</text>
 
           {/* v-t 曲线 - 物体A */}

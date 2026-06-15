@@ -1,6 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import {
   PHYSICS_COLORS,
   CHART_COLORS,
@@ -53,8 +54,16 @@ interface SplashEffect {
 
 // ─── 主组件 ───────────────────────────────────────────────────────────────────
 export default function FreeFallDripAnimation() {
-  const { params, time, showVectors, setIsPlaying } = useAnimationStore()
+    const {params, time, showVectors, setIsPlaying} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    setIsPlaying: s.setIsPlaying,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 100, height: 100 })
+  const { font } = canvasSize
 
   // ── 参数 ──────────────────────────────────────────────────────────────────
   const dripPeriod = params.dripPeriod ?? 0.5
@@ -455,7 +464,7 @@ export default function FreeFallDripAnimation() {
                 fontSize={FONT.small} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">g</text>
               {g > GRAVITY && (
                 <text x={tubeCenterX - DROP_RADIUS - 18} y={pixelY + 24}
-                  fontSize={7} fill={PHYSICS_COLORS.acceleration} fontWeight="bold" opacity={0.7}>▲max</text>
+                  fontSize={font(7)} fill={PHYSICS_COLORS.acceleration} fontWeight="bold" opacity={0.7}>▲max</text>
               )}
             </g>
           )
@@ -530,22 +539,22 @@ export default function FreeFallDripAnimation() {
                   <rect x={0} y={rowY - 12} width={dataWidth} height={18}
                     fill={VT_CHART_COLORS.areaShade} opacity={0.25} />
                 )}
-                <text x={dataWidth * 0.15} y={rowY} fontSize={9} fontFamily="monospace"
+                <text x={dataWidth * 0.15} y={rowY} fontSize={font(9)} fontFamily="monospace"
                   textAnchor="middle" fill={isCurrent ? PHYSICS_COLORS.velocity : CHART_COLORS.labelText}
                   fontWeight={isCurrent ? 'bold' : 'normal'}>
                   {row.t.toFixed(1)}
                 </text>
-                <text x={dataWidth * 0.4} y={rowY} fontSize={9} fontFamily="monospace"
+                <text x={dataWidth * 0.4} y={rowY} fontSize={font(9)} fontFamily="monospace"
                   textAnchor="middle" fill={isCurrent ? PHYSICS_COLORS.velocity : CHART_COLORS.labelText}
                   fontWeight={isCurrent ? 'bold' : 'normal'}>
                   {row.v.toFixed(2)}
                 </text>
-                <text x={dataWidth * 0.65} y={rowY} fontSize={9} fontFamily="monospace"
+                <text x={dataWidth * 0.65} y={rowY} fontSize={font(9)} fontFamily="monospace"
                   textAnchor="middle" fill={isCurrent ? PHYSICS_COLORS.displacement : CHART_COLORS.labelText}
                   fontWeight={isCurrent ? 'bold' : 'normal'}>
                   {row.y.toFixed(3)}
                 </text>
-                <text x={dataWidth * 0.88} y={rowY} fontSize={9} fontFamily="monospace"
+                <text x={dataWidth * 0.88} y={rowY} fontSize={font(9)} fontFamily="monospace"
                   textAnchor="middle" fill={i > 0 ? CHART_COLORS.compareB : CHART_COLORS.labelText}
                   fontWeight={isCurrent ? 'bold' : 'normal'}>
                   {i > 0 ? deltaY.toFixed(3) : '-'}
@@ -584,7 +593,7 @@ export default function FreeFallDripAnimation() {
             <g key={`xt-${t}`}>
               <line x1={vtToX(t)} y1={vtToY(0) - 4} x2={vtToX(t)} y2={vtToY(0) + 4}
                 stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={vtToX(t)} y={vtToY(0) + 16} fontSize={9}
+              <text x={vtToX(t)} y={vtToY(0) + 16} fontSize={font(9)}
                 textAnchor="middle" fill={CHART_COLORS.tickLabel}>{t}</text>
             </g>
           ))}
@@ -595,16 +604,16 @@ export default function FreeFallDripAnimation() {
               <line x1={vtInnerPad.left - 4} y1={vtToY(v)}
                 x2={vtInnerPad.left} y2={vtToY(v)}
                 stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={vtInnerPad.left - 8} y={vtToY(v) + 3} fontSize={9}
+              <text x={vtInnerPad.left - 8} y={vtToY(v) + 3} fontSize={font(9)}
                 textAnchor="end" fill={CHART_COLORS.tickLabel}>{v}</text>
             </g>
           ))}
 
           {/* 轴标签 */}
           <text x={vtInnerPad.left + vtInnerW / 2} y={vtInnerPad.top + vtInnerH + 28}
-            fontSize={10} textAnchor="middle" fill={CHART_COLORS.labelText}>t/s</text>
+            fontSize={font(10)} textAnchor="middle" fill={CHART_COLORS.labelText}>t/s</text>
           <text x={vtInnerPad.left - 28} y={vtInnerPad.top + vtInnerH / 2}
-            fontSize={10} textAnchor="middle" fill={CHART_COLORS.labelText}
+            fontSize={font(10)} textAnchor="middle" fill={CHART_COLORS.labelText}
             transform={`rotate(-90, ${vtInnerPad.left - 28}, ${vtInnerPad.top + vtInnerH / 2})`}>
             v/(m·s⁻¹)
           </text>

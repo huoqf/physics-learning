@@ -1,6 +1,7 @@
 import { useState, useRef, useMemo, useCallback, useEffect } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { calculateOrbitalSpeed } from '@/physics'
 import { GRAVITATIONAL_CONSTANT, EARTH_MASS, EARTH_RADIUS } from '@/physics/constants'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
@@ -105,8 +106,19 @@ const VTCARD = {
 }
 
 export default function SatelliteAnimation() {
-  const { params, updateParam, showVectors, showGrid, time, isPlaying, setIsPlaying } = useAnimationStore()
+    const {params, updateParam, showVectors, showGrid, time, isPlaying, setIsPlaying} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    updateParam: s.updateParam,
+    showVectors: s.showVectors,
+    showGrid: s.showGrid,
+    time: s.time,
+    isPlaying: s.isPlaying,
+    setIsPlaying: s.setIsPlaying,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
+  const { font } = canvasSize
 
   const {
     r = 7.0,
@@ -910,7 +922,7 @@ export default function SatelliteAnimation() {
             <text
               x={cardWidth / 2}
               y={16}
-              fontSize={8}
+              fontSize={font(8)}
               fill={CHART_COLORS.titleText}
               textAnchor="middle"
               fontWeight="bold"
@@ -930,15 +942,15 @@ export default function SatelliteAnimation() {
             <polygon points={`${padLeft - 2.5} ${padTop - 8}, ${padLeft} ${padTop - 12}, ${padLeft + 2.5} ${padTop - 8}`} fill={CHART_COLORS.axisArrow} />
 
             {/* 轴标签 */}
-            <text x={padLeft + innerW + 10} y={padTop + innerH + 11} fontSize={7} fill={CHART_COLORS.labelText} textAnchor="end">半径 r</text>
-            <text x={padLeft - 6} y={padTop - 8} fontSize={7} fill={CHART_COLORS.labelText} textAnchor="middle">v / T</text>
+            <text x={padLeft + innerW + 10} y={padTop + innerH + 11} fontSize={font(7)} fill={CHART_COLORS.labelText} textAnchor="end">半径 r</text>
+            <text x={padLeft - 6} y={padTop - 8} fontSize={font(7)} fill={CHART_COLORS.labelText} textAnchor="middle">v / T</text>
 
             {/* X 轴起止刻度线与标注 */}
             <line x1={toCardX(LAYOUT.mode0.rMin)} y1={padTop + innerH} x2={toCardX(LAYOUT.mode0.rMin)} y2={padTop + innerH + 3} stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
-            <text x={toCardX(LAYOUT.mode0.rMin)} y={padTop + innerH + 10} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="middle">{LAYOUT.mode0.rMin.toFixed(2)}</text>
+            <text x={toCardX(LAYOUT.mode0.rMin)} y={padTop + innerH + 10} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="middle">{LAYOUT.mode0.rMin.toFixed(2)}</text>
 
             <line x1={toCardX(LAYOUT.mode0.rMax)} y1={padTop + innerH} x2={toCardX(LAYOUT.mode0.rMax)} y2={padTop + innerH + 3} stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
-            <text x={toCardX(LAYOUT.mode0.rMax)} y={padTop + innerH + 10} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="middle">{LAYOUT.mode0.rMax.toFixed(1)}</text>
+            <text x={toCardX(LAYOUT.mode0.rMax)} y={padTop + innerH + 10} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="middle">{LAYOUT.mode0.rMax.toFixed(1)}</text>
 
             {/* v 曲线 (速度随 r 递减，用经典蓝表示) */}
             <path
@@ -959,8 +971,8 @@ export default function SatelliteAnimation() {
             />
 
             {/* 曲线文本标签 */}
-            <text x={toCardX(8.5)} y={toCardY(0.85)} fontSize={7} fill={PHYSICS_COLORS.velocity} fontWeight="bold">速度 v(r)</text>
-            <text x={toCardX(15.0)} y={toCardY(0.70)} fontSize={7} fill={CHART_COLORS.compareD} fontWeight="bold">周期 T(r)</text>
+            <text x={toCardX(8.5)} y={toCardY(0.85)} fontSize={font(7)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">速度 v(r)</text>
+            <text x={toCardX(15.0)} y={toCardY(0.70)} fontSize={font(7)} fill={CHART_COLORS.compareD} fontWeight="bold">周期 T(r)</text>
 
             {/* 拖动图表横轴热区 */}
             <rect
@@ -1003,7 +1015,7 @@ export default function SatelliteAnimation() {
               <text
                 x={120}
                 y={18}
-                fontSize={9}
+                fontSize={font(9)}
                 fill="#059669"
                 textAnchor="middle"
                 fontWeight="bold"
@@ -1082,10 +1094,10 @@ export default function SatelliteAnimation() {
                   })()}
                 </g>
                 <rect width={220} height={120} fill="none" stroke="#334155" strokeWidth={1} rx={4} pointerEvents="none" />
-                <text x={8} y={14} fontSize={6} fill="#10b981" fontFamily="monospace" opacity={0.85}>
+                <text x={8} y={14} fontSize={font(6)} fill="#10b981" fontFamily="monospace" opacity={0.85}>
                   ZOOM: 4.0X
                 </text>
-                <text x={212} y={14} fontSize={6} fill="#10b981" fontFamily="monospace" textAnchor="end" opacity={0.85}>
+                <text x={212} y={14} fontSize={font(6)} fill="#10b981" fontFamily="monospace" textAnchor="end" opacity={0.85}>
                   {launchData.phase === 'liftoff' ? 'LIFTOFF' : launchData.phase === 'gravityTurn' ? 'G-TURN' : 'IN_ORBIT'}
                 </text>
               </g>

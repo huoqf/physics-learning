@@ -1,10 +1,14 @@
 import { FC, useMemo } from 'react'
+import { useCanvasSize } from '@/utils'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { useAnimationStore } from '@/stores'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 
 export const SpringForceCenterExtra: FC = () => {
-  const { params, time } = useAnimationStore()
+    const params = useAnimationStore((s) => s.params)
+  const time = useAnimationStore((s) => s.time)
+  const [containerRef, canvasSize] = useCanvasSize({ width: 420, height: 315 })
+  const { font } = canvasSize
 
   const k = params.k ?? 100
   const m = params.m ?? 1
@@ -52,7 +56,7 @@ export const SpringForceCenterExtra: FC = () => {
   const sfs = 2.8
 
   return (
-    <div className="w-full flex justify-center bg-neutral-50 py-1 border-b border-neutral-100 shrink-0">
+    <div ref={containerRef} className="w-full flex justify-center bg-neutral-50 py-1 border-b border-neutral-100 shrink-0">
       <div className="w-full max-w-[420px] aspect-[4/3] bg-white rounded-xl shadow-sm p-3 border border-neutral-100">
         <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
           <defs>
@@ -213,7 +217,7 @@ export const SpringForceCenterExtra: FC = () => {
             <text
               x={toSvgX(displacement / 2) + (displacement > 0 ? -12 : 2)}
               y={cy - (springForce / 2) - 1}
-              fontSize={2.5}
+              fontSize={font(2.5)}
               fill={PHYSICS_COLORS.potentialElastic}
               fontWeight="bold"
             >

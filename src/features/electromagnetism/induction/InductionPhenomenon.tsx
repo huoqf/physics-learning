@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { calculateMagnetInduction, calculateCoilInduction } from '@/physics'
 import { useAnimationFrame } from '@/utils/animation'
@@ -15,8 +16,17 @@ import {
 import { VectorArrow } from '@/components/UI'
 
 export default function InductionPhenomenon() {
-  const { params, isPlaying, setIsPlaying, updateParam, setParams } = useAnimationStore()
+    const {params, isPlaying, setIsPlaying, updateParam, setParams} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    isPlaying: s.isPlaying,
+    setIsPlaying: s.setIsPlaying,
+    updateParam: s.updateParam,
+    setParams: s.setParams,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 400 })
+  const { font } = canvasSize
 
   // 自变量提取
   const mode = params.mode ?? 0 // 0=基础, 1=进阶
@@ -359,8 +369,8 @@ export default function InductionPhenomenon() {
         {/* 科学仪表看板：磁通量大小 */}
         <g transform="translate(560, 30)" opacity="0.85">
           <rect x="0" y="0" width="110" height="42" rx="6" fill={SCENE_COLORS.labels.panelBg} stroke="#334155" strokeWidth="1" />
-          <text x="10" y="16" fill="#94A3B8" fontSize="9" fontWeight="bold">磁通量 Φ</text>
-          <text x="10" y="32" fill="#10B981" fontSize="12" fontWeight="bold" style={{ fontFamily: 'monospace' }}>
+          <text x="10" y="16" fill="#94A3B8" fontSize={font(9)} fontWeight="bold">磁通量 Φ</text>
+          <text x="10" y="32" fill="#10B981" fontSize={font(12)} fontWeight="bold" style={{ fontFamily: 'monospace' }}>
             {phi.toFixed(3)} Wb
           </text>
         </g>
@@ -468,7 +478,7 @@ export default function InductionPhenomenon() {
           x={galvanometerX}
           y={galvanometerY + 124}
           fill={SCENE_COLORS.labels.panelTextMuted}
-          fontSize="11"
+          fontSize={font(11)}
           fontWeight="bold"
           textAnchor="middle"
           style={{ userSelect: 'none' }}
@@ -481,7 +491,7 @@ export default function InductionPhenomenon() {
             x="220"
             y="374"
             fill={SCENE_COLORS.labels.panelTextMuted}
-            fontSize="11"
+            fontSize={font(11)}
             fontWeight="bold"
             textAnchor="middle"
             style={{ userSelect: 'none' }}

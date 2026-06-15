@@ -10,7 +10,8 @@ import { VectorArrow } from '@/components/Physics/VectorArrow'
 export function SimulationView() {
   const [sizeRef, canvasSize] = useCanvasSize({ width: 600, height: 600 })
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const { params, time } = useAnimationStore()
+    const params = useAnimationStore((s) => s.params)
+  const time = useAnimationStore((s) => s.time)
 
   const mode = params.mode ?? 0
   const q = params.q ?? 1

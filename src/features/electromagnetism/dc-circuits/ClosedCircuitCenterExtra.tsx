@@ -1,10 +1,13 @@
 import { FC, useMemo } from 'react'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { useAnimationStore } from '@/stores'
+import { useCanvasSize } from '@/utils'
 import { calculateClosedCircuit } from '@/physics'
 
 export const ClosedCircuitCenterExtra: FC = () => {
-  const { params } = useAnimationStore()
+    const params = useAnimationStore((s) => s.params)
+  const [_containerRef, canvasSize] = useCanvasSize({ width: 400, height: 200 })
+  const { font } = canvasSize
 
   const mode = params.mode ?? 1 // 0=基础(U-I), 1=进阶(P出-R)
   const EMF = params.EMF ?? 6
@@ -127,13 +130,13 @@ export const ClosedCircuitCenterExtra: FC = () => {
               {/* 截距标注与物理意义 */}
               {/* 纵轴截距: E */}
               <circle cx={toUiX(0)} cy={toUiY(EMF)} r={0.7} fill={PHYSICS_COLORS.emf} />
-              <text x={toUiX(0) + 2} y={toUiY(EMF) + 1} fontSize={2.5} fill={PHYSICS_COLORS.emf} fontWeight="bold">E = {EMF}V (断路电压)</text>
+              <text x={toUiX(0) + 2} y={toUiY(EMF) + 1} fontSize={font(2.5)} fill={PHYSICS_COLORS.emf} fontWeight="bold">E = {EMF}V (断路电压)</text>
 
               {/* 横轴截距: I短 = E/r */}
               {EMF / r <= 8 && (
                 <g>
                   <circle cx={toUiX(EMF / r)} cy={toUiY(0)} r={0.7} fill={PHYSICS_COLORS.electricCurrent} />
-                  <text x={toUiX(EMF / r)} y={toUiY(0) - 2.5} fontSize={2.5} fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold" textAnchor="middle">
+                  <text x={toUiX(EMF / r)} y={toUiY(0) - 2.5} fontSize={font(2.5)} fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold" textAnchor="middle">
                     I_短 = { (EMF/r).toFixed(2) }A
                   </text>
                 </g>
@@ -149,7 +152,7 @@ export const ClosedCircuitCenterExtra: FC = () => {
                   <circle cx={toUiX(I)} cy={toUiY(U_terminal)} r={1.5} fill={PHYSICS_COLORS.electricCurrent} opacity={0.25} />
                   <circle cx={toUiX(I)} cy={toUiY(U_terminal)} r={0.7} fill={PHYSICS_COLORS.electricCurrent} />
                   {/* 数据气泡 */}
-                  <text x={toUiX(I) + (I > 5.5 ? -3 : 3)} y={toUiY(U_terminal) - 3} fontSize={2.8} fill={PHYSICS_COLORS.labelText} fontWeight="bold" textAnchor={I > 5.5 ? 'end' : 'start'}>
+                  <text x={toUiX(I) + (I > 5.5 ? -3 : 3)} y={toUiY(U_terminal) - 3} fontSize={font(2.8)} fill={PHYSICS_COLORS.labelText} fontWeight="bold" textAnchor={I > 5.5 ? 'end' : 'start'}>
                     ({I.toFixed(2)}A, {U_terminal.toFixed(2)}V)
                   </text>
                 </g>
@@ -197,7 +200,7 @@ export const ClosedCircuitCenterExtra: FC = () => {
                   <line x1={originX} y1={toPrY(P_max)} x2={toPrX(r)} y2={toPrY(P_max)} stroke={PHYSICS_COLORS.power} strokeWidth={0.15} strokeDasharray="1.5,1.5" />
                   {/* 顶点标记 */}
                   <circle cx={toPrX(r)} cy={toPrY(P_max)} r={1.0} fill="#EF4444" />
-                  <text x={toPrX(r)} y={toPrY(P_max) - 2.5} fontSize={2.4} fill="#EF4444" fontWeight="bold" textAnchor="middle">
+                  <text x={toPrX(r)} y={toPrY(P_max) - 2.5} fontSize={font(2.4)} fill="#EF4444" fontWeight="bold" textAnchor="middle">
                     P_max = {P_max.toFixed(2)}W (R = r = {r.toFixed(1)}Ω)
                   </text>
                 </g>
@@ -212,7 +215,7 @@ export const ClosedCircuitCenterExtra: FC = () => {
                 <circle cx={toPrX(R)} cy={toPrY(P_output)} r={1.6} fill={PHYSICS_COLORS.power} opacity={0.25} />
                 <circle cx={toPrX(R)} cy={toPrY(P_output)} r={0.7} fill={PHYSICS_COLORS.power} />
                 {/* 气泡标签 */}
-                <text x={toPrX(R) + (R > 14 ? -3 : 3)} y={toPrY(P_output) - 2.5} fontSize={2.8} fill={PHYSICS_COLORS.labelText} fontWeight="bold" textAnchor={R > 14 ? 'end' : 'start'}>
+                <text x={toPrX(R) + (R > 14 ? -3 : 3)} y={toPrY(P_output) - 2.5} fontSize={font(2.8)} fill={PHYSICS_COLORS.labelText} fontWeight="bold" textAnchor={R > 14 ? 'end' : 'start'}>
                   ({R.toFixed(1)}Ω, {P_output.toFixed(2)}W)
                 </text>
               </g>
@@ -239,26 +242,26 @@ export const ClosedCircuitCenterExtra: FC = () => {
 
         {/* 浮动实时状态卡片 */}
         <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-lg border border-neutral-100 shadow-sm px-3 py-1.5 flex flex-col gap-0.5 min-w-[105px]">
-          <div className="text-[8px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">
+          <div style={{ fontSize: font(8) }} className="font-bold text-neutral-400 uppercase tracking-wider mb-0.5">
             电路即时状态
           </div>
-          <div className="flex items-center justify-between text-[10px]">
+          <div style={{ fontSize: font(10) }} className="flex items-center justify-between">
             <span className="text-neutral-500">电流 I</span>
             <span className="font-mono font-bold text-red-600">{I.toFixed(3)} A</span>
           </div>
-          <div className="flex items-center justify-between text-[10px]">
+          <div style={{ fontSize: font(10) }} className="flex items-center justify-between">
             <span className="text-neutral-500">路端电压 U</span>
             <span className="font-mono font-bold text-amber-700">{U_terminal.toFixed(2)} V</span>
           </div>
-          <div className="flex items-center justify-between text-[10px]">
+          <div style={{ fontSize: font(10) }} className="flex items-center justify-between">
             <span className="text-neutral-500">内电压 U内</span>
             <span className="font-mono font-bold text-neutral-600">{U_internal.toFixed(2)} V</span>
           </div>
-          <div className="flex items-center justify-between text-[10px]">
+          <div style={{ fontSize: font(10) }} className="flex items-center justify-between">
             <span className="text-neutral-500">输出功率</span>
             <span className="font-mono font-bold text-amber-600">{P_output.toFixed(2)} W</span>
           </div>
-          <div className="flex items-center justify-between text-[10px]">
+          <div style={{ fontSize: font(10) }} className="flex items-center justify-between">
             <span className="text-neutral-500">电源效率</span>
             <span className="font-mono font-bold text-emerald-600">{ (eta * 100).toFixed(1) }%</span>
           </div>

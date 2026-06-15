@@ -4,7 +4,7 @@ import { useCanvasSize } from '@/utils'
 
 
 export default function ChargeInBField() {
-  const { params } = useAnimationStore()
+    const params = useAnimationStore((s) => s.params)
   const mode = params.mode ?? 0 // 0: 基础, 1: 进阶
   const [sizeRef, size] = useCanvasSize({ width: 800, height: 600 })
 
@@ -39,7 +39,8 @@ export default function ChargeInBField() {
 }
 
 function VelocityChart() {
-  const { params, time } = useAnimationStore()
+    const params = useAnimationStore((s) => s.params)
+  const time = useAnimationStore((s) => s.time)
   const q = params.q ?? 1
   const m = params.m ?? 1
   const v = params.v ?? 10

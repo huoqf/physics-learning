@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { colors } from '@/theme/colors'
 import { HandRule } from '@/components/Physics/HandRule'
 import { solveBasicAmpere, solveAdvancedAmpere } from '@/physics'
@@ -16,7 +17,13 @@ const VIEW_WIDTH = 800
 const VIEW_HEIGHT = 500
 
 export default function AmpereForce() {
-  const { params, time, showVectors } = useAnimationStore()
+    const {params, time, showVectors} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    }))
+  )
   const svgRef = useRef<SVGSVGElement | null>(null)
 
   // 读取控制参数

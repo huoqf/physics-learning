@@ -7,6 +7,7 @@ import {
   EQUIL_L,
 } from '@/physics/dynamics'
 import { GRAVITY } from '@/physics/constants'
+import { computeScale } from '@/utils/coordinate'
 
 interface UseEquilibriumPhysicsProps {
   m: number
@@ -100,7 +101,7 @@ export function useEquilibriumPhysics({
   })
 
   // 3. 计算固定悬挂梁和悬挂点
-  const forceScale = 4.5 // 1 N = 4.5 px
+  const forceScale = computeScale(canvasWidth, canvasHeight, { xMin: -3, xMax: 3, yMin: -3, yMax: 3 }) * 0.4
   const centerX = canvasWidth / 2
   const centerY = canvasHeight / 2 - 45
   const leftAnchor = useMemo(() => ({ cx: centerX - EQUIL_L / 2, cy: centerY - 90 }), [centerX, centerY])
@@ -318,8 +319,8 @@ export function useEquilibriumPhysics({
     const triT2End = { cx: triT1End.cx + u2.x * t2 * forceScale, cy: triT1End.cy + u2.y * t2 * forceScale }
 
     // 角度弧线计算
-    const arcR = 30
-    const textR = 46
+    const arcR = canvasWidth * 0.04
+    const textR = canvasWidth * 0.06
     const t1Rad = Math.atan2(dy1, dx1)
     const t2Rad = Math.atan2(dy2, -dx2)
 
@@ -385,5 +386,7 @@ export function useEquilibriumPhysics({
     updateDragMouse,
     endDrag,
     resetPhysics,
+    canvasWidth,
+    canvasHeight,
   ])
 }

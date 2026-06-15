@@ -3,7 +3,7 @@
 ## 通用检查
 
 - [ ] TypeScript 严格编译检查通过 (`npx tsc --noEmit`)
-- [ ] 无硬编码颜色值（全部来自 `@/theme/colors` 或 `@/theme/physics`）
+- [ ] 无硬编码颜色值（全部来自 `@/theme/colors` 或 `@/theme/physics`，含 `CANVAS_COLORS`/`SCENE_COLORS`）
 - [ ] 无硬编码视觉尺寸、间距、圆角、阴影（全部来自主题 token）
 - [ ] 无重复代码，可复用部分已抽取
 - [ ] 更新了 `PROCESS_LOG.md`（当前周期摘要）

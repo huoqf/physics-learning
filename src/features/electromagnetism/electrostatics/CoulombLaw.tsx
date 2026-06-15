@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, type CanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateCoulombForce, calculateThreeChargeForces } from '@/physics'
@@ -59,12 +59,13 @@ function BasicMode({
   params: Record<string, number>
   showVectors: boolean
   showFormulas: boolean
-  canvasSize: { width: number; height: number }
+  canvasSize: CanvasSize
 }) {
   const { q1 = 2, q2 = -3, r: rParam = 4 } = params
   const updateParam = useAnimationStore((s) => s.updateParam)
   const [dragging, setDragging] = useState(false)
   const [dragR, setDragR] = useState(rParam)
+  const { font } = canvasSize
 
   useEffect(() => {
     setDragR(rParam)
@@ -239,8 +240,8 @@ function BasicMode({
         <line x1={chartLeft} y1={chartBottom} x2={chartLeft + chartWidth} y2={chartBottom}
           stroke={CHART_COLORS.axisLine} strokeWidth={CANVAS_STYLE.stroke.chartMain} />
 
-        <text x={chartLeft + chartWidth / 2} y={chartBottom + 20} fontSize={9} textAnchor="middle" fill={CHART_COLORS.labelText}>r / cm</text>
-        <text x={chartLeft - 8} y={chartTop + chartHeight / 2} fontSize={9} textAnchor="middle" fill={CHART_COLORS.labelText}
+        <text x={chartLeft + chartWidth / 2} y={chartBottom + 20} fontSize={font(9)} textAnchor="middle" fill={CHART_COLORS.labelText}>r / cm</text>
+        <text x={chartLeft - 8} y={chartTop + chartHeight / 2} fontSize={font(9)} textAnchor="middle" fill={CHART_COLORS.labelText}
           transform={`rotate(-90, ${chartLeft - 8}, ${chartTop + chartHeight / 2})`}>F / N</text>
 
         {frPath && <path d={frPath} fill="none" stroke={PHYSICS_COLORS.electricForce} strokeWidth={CANVAS_STYLE.stroke.chartMain} />}
@@ -319,11 +320,12 @@ function ThreeChargeMode({
   params: Record<string, number>
   showVectors: boolean
   showFormulas: boolean
-  canvasSize: { width: number; height: number }
+  canvasSize: CanvasSize
 }) {
   const { q1 = 2, q2 = -3, q3 = 1 } = params
   const w = canvasSize.width
   const h = canvasSize.height
+  const { font } = canvasSize
   const centerY = h * 0.5
 
   const pos1X = w * 0.2
@@ -463,7 +465,7 @@ function ThreeChargeMode({
         {isBalanced && (
           <g>
             <circle cx={w / 2} cy={h * 0.75} r={16} fill={PHYSICS_COLORS.normalForce} opacity={0.9} />
-            <text x={w / 2} y={h * 0.75 + 5} fontSize={14} fill={colors.neutral.white} textAnchor="middle" fontWeight="bold">✓</text>
+            <text x={w / 2} y={h * 0.75 + 5} fontSize={font(14)} fill={colors.neutral.white} textAnchor="middle" fontWeight="bold">✓</text>
             <text x={w / 2} y={h * 0.75 + 28} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.normalForce} textAnchor="middle" fontWeight="bold">
               三电荷平衡
             </text>

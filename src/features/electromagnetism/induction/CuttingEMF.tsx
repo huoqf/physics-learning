@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useCanvasSize, useAnimationFrame } from '@/utils'
 import { useAnimationStore, type MotionMode } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { calculateCuttingEMF, simulateForceMotion } from '@/physics'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { CuttingEMFHandRule } from './CuttingEMFHandRule'
@@ -60,9 +61,18 @@ function ModeButton({ mode, current, label, onClick }: ModeButtonProps) {
 }
 
 export default function CuttingEMF() {
-  const { params, time, isPlaying, motionMode, setMotionMode } = useAnimationStore()
+    const {params, time, isPlaying, motionMode, setMotionMode} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    isPlaying: s.isPlaying,
+    motionMode: s.motionMode,
+    setMotionMode: s.setMotionMode,
+    }))
+  )
   const { B = 1, L = 0.5, v = 2, R = 2, theta = 90, r = 0, B_out = 0, handRule = 0 } = params
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 400 - TOOLBAR_HEIGHT })
+  const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement | null>(null)
   const [, forceUpdate] = useState(0)
 
@@ -452,7 +462,7 @@ export default function CuttingEMF() {
                   <g key={`pip-e-${idx}`}>
                     <circle cx={ex} cy={electronYs[idx]} r={3.2}
                       fill={PHYSICS_COLORS.negativeCharge} stroke="white" strokeWidth={0.5} />
-                    <text x={ex + 5} y={electronYs[idx] + 3} fontSize={8}
+                    <text x={ex + 5} y={electronYs[idx] + 3} fontSize={font(8)}
                       fill={PHYSICS_COLORS.negativeCharge} fontWeight="bold">e⁻</text>
                     {showFLor && (
                       <line
@@ -465,7 +475,7 @@ export default function CuttingEMF() {
                     )}
                   </g>
                 ))}
-                <text x={pipX + 8} y={pipY + pipH - 6} fontSize={9.5} fill={PHYSICS_COLORS.axis}>
+                <text x={pipX + 8} y={pipY + pipH - 6} fontSize={font(9.5)} fill={PHYSICS_COLORS.axis}>
                   F洛 = qv×B（q = −e）
                 </text>
               </g>
@@ -516,12 +526,12 @@ export default function CuttingEMF() {
                   fist={fist}
                   cx={handX + handW / 2}
                   cy={handY + 95}
-                  scale={0.78}
+                  scale={canvasSize.width / 900}
                 />
                 <text
                   x={handX + handW / 2}
                   y={handY + handH - 8}
-                  fontSize={9.5}
+                  fontSize={font(9.5)}
                   fill={PHYSICS_COLORS.axis}
                   textAnchor="middle"
                 >

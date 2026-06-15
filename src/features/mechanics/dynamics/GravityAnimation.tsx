@@ -1,21 +1,33 @@
 import { useState, useRef, useCallback } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE, SCENE_COLORS, CHART_COLORS } from '@/theme/physics'
-import { physicsToCanvas } from '@/utils/coordinate'
+import { physicsToCanvas, computeScale } from '@/utils/coordinate'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
 export default function GravityAnimation() {
-  const { params, setParams, updateParam, showVectors, showGrid, time } = useAnimationStore()
+    const {params, setParams, updateParam, showVectors, showGrid, time} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    setParams: s.setParams,
+    updateParam: s.updateParam,
+    showVectors: s.showVectors,
+    showGrid: s.showGrid,
+    time: s.time,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
+  const { font } = canvasSize
 
   const { m1 = 1000, m2 = 10, r = 5, mode = 0, preset = 0, showChart = 1 } = params
 
   // ── 科学坐标转换 ──
-  const scale = 26 // 物理坐标到 Canvas 像素的比例尺
+  const WORLD = { xMin: -6, xMax: 6, yMin: -4, yMax: 4 } as const
+  const scale = computeScale(canvasSize.width * 0.65, canvasSize.height, WORLD)
   
   // 天体 1 放置在左侧 -r/2，天体 2 放置在右侧 r/2
   const pos1 = physicsToCanvas(-r / 2, 0, canvasSize.width, canvasSize.height, scale)
@@ -485,7 +497,7 @@ export default function GravityAnimation() {
             <text
               x={cardWidth / 2}
               y={16}
-              fontSize={8}
+              fontSize={font(8)}
               fill={CHART_COLORS.titleText}
               textAnchor="middle"
               fontWeight="bold"
@@ -519,8 +531,8 @@ export default function GravityAnimation() {
             <polygon points={`${padLeft - 2.5} ${padTop - 8}, ${padLeft} ${padTop - 12}, ${padLeft + 2.5} ${padTop - 8}`} fill={CHART_COLORS.axisArrow} />
 
             {/* 轴物理量标签 */}
-            <text x={padLeft + innerW + 10} y={padTop + innerH + 11} fontSize={7} fill={CHART_COLORS.labelText} textAnchor="end">间距 r</text>
-            <text x={padLeft - 6} y={padTop - 8} fontSize={7} fill={CHART_COLORS.labelText} textAnchor="middle">力 F</text>
+            <text x={padLeft + innerW + 10} y={padTop + innerH + 11} fontSize={font(7)} fill={CHART_COLORS.labelText} textAnchor="end">间距 r</text>
+            <text x={padLeft - 6} y={padTop - 8} fontSize={font(7)} fill={CHART_COLORS.labelText} textAnchor="middle">力 F</text>
 
             {/* 零水平虚线参考 */}
             <line
@@ -546,7 +558,7 @@ export default function GravityAnimation() {
             <text
               x={toCardX(1.5)}
               y={padTop + innerH + 10}
-              fontSize={7}
+              fontSize={font(7)}
               fill={CHART_COLORS.tickLabel}
               textAnchor="middle"
             >
@@ -565,7 +577,7 @@ export default function GravityAnimation() {
             <text
               x={toCardX(18.0)}
               y={padTop + innerH + 10}
-              fontSize={7}
+              fontSize={font(7)}
               fill={CHART_COLORS.tickLabel}
               textAnchor="middle"
             >
@@ -584,7 +596,7 @@ export default function GravityAnimation() {
             <text
               x={padLeft - 5}
               y={toCardY(1.0) + 2.5}
-              fontSize={7}
+              fontSize={font(7)}
               fill={CHART_COLORS.tickLabel}
               textAnchor="end"
             >
@@ -602,7 +614,7 @@ export default function GravityAnimation() {
             <text
               x={padLeft - 5}
               y={toCardY(0.1) + 2.5}
-              fontSize={7}
+              fontSize={font(7)}
               fill={CHART_COLORS.tickLabel}
               textAnchor="end"
             >
@@ -622,7 +634,7 @@ export default function GravityAnimation() {
             <text
               x={toCardX(8.0)}
               y={toCardY(0.2) - 6}
-              fontSize={7}
+              fontSize={font(7)}
               fill={PHYSICS_COLORS.gravity}
               fontWeight="bold"
               opacity={0.7}

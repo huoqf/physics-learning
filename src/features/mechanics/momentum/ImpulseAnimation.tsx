@@ -1,6 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import {
   calculateConstantImpulse,
   calculateInstantaneousForce,
@@ -44,7 +45,13 @@ const IMPULSE_LAYOUT = {
 } as const
 
 export default function ImpulseAnimation() {
-  const { params, time, showVectors } = useAnimationStore()
+    const {params, time, showVectors} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 450 })
 
   const {

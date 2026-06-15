@@ -13,6 +13,7 @@
 import { useMemo, useRef } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE, FONT } from '@/theme/physics'
 import { useAnimationFrame } from '@/utils/animation'
 import { calculateTransformerWithLoad } from '@/physics'
@@ -90,8 +91,16 @@ function generateElectronPath(
 
 // ─── 主组件 ──────────────────────────────────────────────────────────────
 export default function Transformer() {
-  const { params, isPlaying, speed, showVectors } = useAnimationStore()
+    const {params, isPlaying, speed, showVectors} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    isPlaying: s.isPlaying,
+    speed: s.speed,
+    showVectors: s.showVectors,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 800, height: 440 })
+  const { font } = canvasSize
 
   const n1 = params.n1 ?? 100
   const n2 = params.n2 ?? 200
@@ -479,7 +488,7 @@ export default function Transformer() {
               strokeDasharray={CANVAS_STYLE.dash.reference.join(' ')}
             />
             <text x={waveX + 4} y={waveY + 12}
-              fontSize={9} fill={PHYSICS_COLORS.magneticField} fontWeight="bold">
+              fontSize={font(9)} fill={PHYSICS_COLORS.magneticField} fontWeight="bold">
               Φ(t) 磁通量
             </text>
 
@@ -491,7 +500,7 @@ export default function Transformer() {
               strokeWidth={CANVAS_STYLE.stroke.objectThin}
             />
             <text x={waveX + 4} y={waveY + 24}
-              fontSize={9} fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold">
+              fontSize={font(9)} fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold">
               e₂(t) 感应电动势
             </text>
 
@@ -503,7 +512,7 @@ export default function Transformer() {
 
             {/* 相位差标注 */}
             <text x={waveX + waveW - 160} y={waveY + 12}
-              fontSize={9} fill={PHYSICS_COLORS.labelText}>
+              fontSize={font(9)} fill={PHYSICS_COLORS.labelText}>
               Φ=0 时 ΔΦ/Δt 最大 → e₂ 峰值（90° 相位差）
             </text>
           </g>

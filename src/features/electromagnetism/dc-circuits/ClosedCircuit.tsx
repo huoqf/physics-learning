@@ -9,9 +9,10 @@ import { DialMeter, Rheostat } from '@/components/Physics'
  * 元素：1. 真实电源（虚线框、电池、内阻）、2. 滑动变阻器（游标联动）、3. 电流表、4. 电压表（路端并联）
  */
 export default function ClosedCircuit() {
-  const { params } = useAnimationStore()
+    const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
-  const [containerRef] = useCanvasSize({ width: 700, height: 420 })
+  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 420 })
+  const { font } = canvasSize
 
   const EMF = params.EMF ?? 6
   const r = params.r ?? 2
@@ -187,7 +188,7 @@ export default function ClosedCircuit() {
           x={350}
           y={273}
           fill={PHYSICS_COLORS.labelText}
-          fontSize={11}
+          fontSize={font(11)}
           fontWeight="bold"
           textAnchor="middle"
         >
@@ -219,7 +220,7 @@ export default function ClosedCircuit() {
           <line x1={30} y1={-18} x2={30} y2={18} stroke="#DC2626" strokeWidth={2.2} />
 
           {/* 理想电源标签 */}
-          <text x={25} y={-23} fill={PHYSICS_COLORS.labelText} fontSize={11} fontWeight="bold" textAnchor="middle">
+          <text x={25} y={-23} fill={PHYSICS_COLORS.labelText} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
             E = {EMF} V
           </text>
         </g>
@@ -252,7 +253,7 @@ export default function ClosedCircuit() {
           <line x1={36} y1={0} x2={80} y2={0} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
 
           {/* 内阻标签 */}
-          <text x={18} y={-14} fill={PHYSICS_COLORS.labelText} fontSize={11} fontWeight="bold" textAnchor="middle">
+          <text x={18} y={-14} fill={PHYSICS_COLORS.labelText} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
             r = {r.toFixed(1)} Ω
           </text>
         </g>

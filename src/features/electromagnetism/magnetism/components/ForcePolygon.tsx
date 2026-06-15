@@ -1,6 +1,7 @@
 import React from 'react'
 import { colors } from '@/theme/colors'
 import { PHYSICS_COLORS } from '@/theme/physics'
+import { computeScale } from '@/utils/coordinate'
 
 interface ForcePolygonProps {
   x: number
@@ -28,7 +29,7 @@ export const ForcePolygon: React.FC<ForcePolygonProps> = ({
   const cy = h * 0.65
 
   // 物理量到像素缩放
-  const scale = 5.5
+  const scale = computeScale(w, h, { xMin: -5, xMax: 5, yMin: -5, yMax: 5 })
 
   const m = 0.5
   const g = 9.8

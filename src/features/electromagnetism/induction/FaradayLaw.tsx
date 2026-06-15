@@ -15,6 +15,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE, CHART_COLORS, SCENE_COLORS, DASH } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
@@ -68,8 +69,17 @@ interface HistoryPoint { t: number; phi: number; emf: number }
 
 // ─── 主组件 ──────────────────────────────────────────────────────────────
 export default function FaradayLaw() {
-  const { params, time, isPlaying, setIsPlaying, updateParam } = useAnimationStore()
+    const {params, time, isPlaying, setIsPlaying, updateParam} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    isPlaying: s.isPlaying,
+    setIsPlaying: s.setIsPlaying,
+    updateParam: s.updateParam,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 800, height: 440 })
+  const { font } = canvasSize
 
   const N = params.N ?? 5
   const B = params.B ?? 1.2
@@ -717,7 +727,7 @@ export default function FaradayLaw() {
           <text
             x={meterX}
             y={meterY + 34}
-            fontSize={9}
+            fontSize={font(9)}
             fill={PHYSICS_COLORS.electricCurrent}
             textAnchor="middle"
             fontWeight="bold"
@@ -812,7 +822,7 @@ export default function FaradayLaw() {
           {/* ── 悬浮自动控制面板 ── */}
           <g transform="translate(8, 8)">
             <rect width="158" height="116" rx="8" fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} opacity="0.97" />
-            <text x="79" y="17" fontSize="11" fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
+            <text x="79" y="17" fontSize={font(11)} fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
               自动实验控制
             </text>
             {/* 实验动作按钮 */}
@@ -832,7 +842,7 @@ export default function FaradayLaw() {
                   <text
                     x={27 + i * 50}
                     y={38}
-                    fontSize={9}
+                    fontSize={font(9)}
                     fill={active ? 'white' : PHYSICS_COLORS.labelText}
                     textAnchor="middle"
                     fontWeight={active ? 'bold' : 'normal'}
@@ -861,7 +871,7 @@ export default function FaradayLaw() {
                   <text
                     x={27 + i * 50}
                     y={78}
-                    fontSize={9}
+                    fontSize={font(9)}
                     fill={active ? 'white' : PHYSICS_COLORS.labelText}
                     textAnchor="middle"
                     fontWeight={active ? 'bold' : 'normal'}
@@ -926,11 +936,11 @@ export default function FaradayLaw() {
             {/* 标签 */}
             <text x={dashLeft} y={yPhiMid - chartHalfH - 8} fontSize={CANVAS_STYLE.font.axisSize}
               fill={PHYSICS_COLORS.magneticField} fontWeight="bold">Φ − t 图 (磁通量)</text>
-            <text x={dashLeft - 6} y={yPhiMid - chartHalfH + 4} fontSize={9}
+            <text x={dashLeft - 6} y={yPhiMid - chartHalfH + 4} fontSize={font(9)}
               fill={PHYSICS_COLORS.trackHistory} textAnchor="end">+Φmax</text>
-            <text x={dashLeft - 6} y={yPhiMid + 4} fontSize={9}
+            <text x={dashLeft - 6} y={yPhiMid + 4} fontSize={font(9)}
               fill={PHYSICS_COLORS.trackHistory} textAnchor="end">0</text>
-            <text x={dashLeft - 6} y={yPhiMid + chartHalfH + 4} fontSize={9}
+            <text x={dashLeft - 6} y={yPhiMid + chartHalfH + 4} fontSize={font(9)}
               fill={PHYSICS_COLORS.trackHistory} textAnchor="end">−Φmax</text>
             {/* 波形 */}
             {history.length > 1 && (
@@ -983,14 +993,14 @@ export default function FaradayLaw() {
             {/* 标签 */}
             <text x={dashLeft} y={yEmfMid - chartHalfH - 8} fontSize={CANVAS_STYLE.font.axisSize}
               fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold">E − t 图 (感应电动势)</text>
-            <text x={dashLeft - 6} y={yEmfMid - chartHalfH + 4} fontSize={9}
+            <text x={dashLeft - 6} y={yEmfMid - chartHalfH + 4} fontSize={font(9)}
               fill={PHYSICS_COLORS.trackHistory} textAnchor="end">+Emax</text>
-            <text x={dashLeft - 6} y={yEmfMid + 4} fontSize={9}
+            <text x={dashLeft - 6} y={yEmfMid + 4} fontSize={font(9)}
               fill={PHYSICS_COLORS.trackHistory} textAnchor="end">0</text>
-            <text x={dashLeft - 6} y={yEmfMid + chartHalfH + 4} fontSize={9}
+            <text x={dashLeft - 6} y={yEmfMid + chartHalfH + 4} fontSize={font(9)}
               fill={PHYSICS_COLORS.trackHistory} textAnchor="end">−Emax</text>
             {/* 时间轴刻度 */}
-            <g fontSize="9" fill={PHYSICS_COLORS.trackHistory}>
+            <g fontSize={font(9)} fill={PHYSICS_COLORS.trackHistory}>
               {[0, 0.25, 0.5, 0.75, 1].map(frac => (
                 <text
                   key={frac}
@@ -1002,7 +1012,7 @@ export default function FaradayLaw() {
                 </text>
               ))}
             </g>
-            <text x={dashRight + 4} y={yEmfMid + 4} fontSize="9" fill={PHYSICS_COLORS.trackHistory}>t/s</text>
+            <text x={dashRight + 4} y={yEmfMid + 4} fontSize={font(9)} fill={PHYSICS_COLORS.trackHistory}>t/s</text>
             {/* 波形 */}
             {history.length > 1 && (
               <path

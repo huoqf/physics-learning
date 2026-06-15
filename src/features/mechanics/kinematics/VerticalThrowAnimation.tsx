@@ -37,6 +37,7 @@ export default function VerticalThrowAnimation() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize({ width: 100, height: 100 })
+  const { font } = canvasSize
 
   const { v0 = 15, g = 9.8, advancedMode = 0, sliceDensity = 0, airResistance = 0, targetHeight = 0, showVacuumCompare = 1 } = params
 
@@ -388,9 +389,9 @@ export default function VerticalThrowAnimation() {
           <g transform={`translate(${leftBallX + (showDoubleTrack ? -122 : 24)}, ${currentBallY - 45})`}>
             <rect width={116} height={42} fill={SCENE_COLORS.labels.panelBg} opacity={0.92} rx={4} stroke={CHART_COLORS.criticalPt} strokeWidth={1} filter="drop-shadow(0 2px 4px rgba(0,0,0,0.25))" />
             <polygon points={showDoubleTrack ? "116 21, 122 21, 116 26" : "0 21, -6 21, 0 26"} fill={SCENE_COLORS.labels.panelBg} stroke={CHART_COLORS.criticalPt} strokeWidth={0.5} />
-            <text x={58} y={13} fontSize={9} fill={SCENE_COLORS.labels.panelText} textAnchor="middle" fontWeight="bold">瞬时状态 v = 0</text>
-            <text x={58} y={25} fontSize={8} fill={SCENE_COLORS.labels.panelTextMuted} textAnchor="middle">但 a = -g = -{g} m/s²</text>
-            <text x={58} y={35} fontSize={8} fill={SCENE_COLORS.labels.panelTextMuted} textAnchor="middle">合力 F_合 = mg 向下</text>
+            <text x={58} y={13} fontSize={font(9)} fill={SCENE_COLORS.labels.panelText} textAnchor="middle" fontWeight="bold">瞬时状态 v = 0</text>
+            <text x={58} y={25} fontSize={font(8)} fill={SCENE_COLORS.labels.panelTextMuted} textAnchor="middle">但 a = -g = -{g} m/s²</text>
+            <text x={58} y={35} fontSize={font(8)} fill={SCENE_COLORS.labels.panelTextMuted} textAnchor="middle">合力 F_合 = mg 向下</text>
           </g>
         )}
 
@@ -399,15 +400,15 @@ export default function VerticalThrowAnimation() {
             {Math.abs(effectiveTime - targetHeightIntersections.t1) < 0.15 && (
               <g transform={`translate(${leftBallX + 24}, ${currentBallY - 15})`}>
                 <rect width={95} height={26} fill={SCENE_COLORS.labels.panelBg} opacity={0.88} rx={3} stroke={CHART_COLORS.highlight} strokeWidth={0.8} />
-                <text x={47} y={11} fontSize={8} fill={SCENE_COLORS.labels.panelText} textAnchor="middle" fontWeight="bold">① 上升阶段经过</text>
-                <text x={47} y={20} fontSize={8} fill={PHYSICS_COLORS.deltaHighlight} textAnchor="middle">v = +{effectiveV.toFixed(1)} m/s</text>
+                <text x={47} y={11} fontSize={font(8)} fill={SCENE_COLORS.labels.panelText} textAnchor="middle" fontWeight="bold">① 上升阶段经过</text>
+                <text x={47} y={20} fontSize={font(8)} fill={PHYSICS_COLORS.deltaHighlight} textAnchor="middle">v = +{effectiveV.toFixed(1)} m/s</text>
               </g>
             )}
             {Math.abs(effectiveTime - targetHeightIntersections.t2) < 0.15 && (
               <g transform={`translate(${leftBallX + 24}, ${currentBallY - 15})`}>
                 <rect width={95} height={26} fill={SCENE_COLORS.labels.panelBg} opacity={0.88} rx={3} stroke={CHART_COLORS.highlight} strokeWidth={0.8} />
-                <text x={47} y={11} fontSize={8} fill={SCENE_COLORS.labels.panelText} textAnchor="middle" fontWeight="bold">② 下落阶段经过</text>
-                <text x={47} y={20} fontSize={8} fill={SCENE_COLORS.labels.panelTextMuted} textAnchor="middle">v = {effectiveV.toFixed(1)} m/s</text>
+                <text x={47} y={11} fontSize={font(8)} fill={SCENE_COLORS.labels.panelText} textAnchor="middle" fontWeight="bold">② 下落阶段经过</text>
+                <text x={47} y={20} fontSize={font(8)} fill={SCENE_COLORS.labels.panelTextMuted} textAnchor="middle">v = {effectiveV.toFixed(1)} m/s</text>
               </g>
             )}
           </>
@@ -434,7 +435,7 @@ export default function VerticalThrowAnimation() {
             <g key={`vt-xt-${t}`}>
               <line x1={vtToX(t)} y1={vtToY(0) - 4} x2={vtToX(t)} y2={vtToY(0) + 4}
                 stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={vtToX(t)} y={vtToY(0) + 16} fontSize={9} textAnchor="middle" fill={CHART_COLORS.tickLabel}>{t}</text>
+              <text x={vtToX(t)} y={vtToY(0) + 16} fontSize={font(9)} textAnchor="middle" fill={CHART_COLORS.tickLabel}>{t}</text>
             </g>
           ))}
 
@@ -442,14 +443,14 @@ export default function VerticalThrowAnimation() {
             <g key={`vt-yt-${v}`}>
               <line x1={vtInnerPad.left - 4} y1={vtToY(v)} x2={vtInnerPad.left} y2={vtToY(v)}
                 stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={vtInnerPad.left - 8} y={vtToY(v) + 3} fontSize={9} textAnchor="end" fill={CHART_COLORS.tickLabel}>{v}</text>
+              <text x={vtInnerPad.left - 8} y={vtToY(v) + 3} fontSize={font(9)} textAnchor="end" fill={CHART_COLORS.tickLabel}>{v}</text>
             </g>
           ))}
 
           <text x={vtInnerPad.left + vtInnerW / 2} y={vtInnerPad.top + vtInnerH + 28}
-            fontSize={10} textAnchor="middle" fill={CHART_COLORS.labelText}>t/s</text>
+            fontSize={font(10)} textAnchor="middle" fill={CHART_COLORS.labelText}>t/s</text>
           <text x={vtInnerPad.left - 30} y={vtInnerPad.top + vtInnerH / 2}
-            fontSize={10} textAnchor="middle" fill={CHART_COLORS.labelText}
+            fontSize={font(10)} textAnchor="middle" fill={CHART_COLORS.labelText}
             transform={`rotate(-90, ${vtInnerPad.left - 30}, ${vtInnerPad.top + vtInnerH / 2})`}>v/(m·s⁻¹)</text>
 
           {advancedMode === 1 && sliceDensity > 0 ? (
@@ -494,7 +495,7 @@ export default function VerticalThrowAnimation() {
                 x2={vtToX(Math.min(maxHeightTime + 0.5, xMax))} y2={vtToY(-g * 0.5)}
                 stroke={CHART_COLORS.criticalPt} strokeWidth={1} strokeDasharray="2,2"
               />
-              <text x={vtToX(maxHeightTime) + 8} y={vtToY(0) - 8} fontSize={8} fill={CHART_COLORS.criticalPt}>切线斜率 k = -g</text>
+              <text x={vtToX(maxHeightTime) + 8} y={vtToY(0) - 8} fontSize={font(8)} fill={CHART_COLORS.criticalPt}>切线斜率 k = -g</text>
 
               <circle cx={vtToX(maxHeightTime)} cy={vtToY(0)} r={6}
                 fill={VT_CHART_COLORS.zeroCrossing} opacity={0.6}>
@@ -554,15 +555,15 @@ export default function VerticalThrowAnimation() {
             <g>
               <rect x={vtInnerPad.left + vtInnerW - 105} y={vtInnerPad.top + 6} width={100} height={42} fill={PHYSICS_COLORS.objectFillNeutral} opacity={0.85} rx={3} stroke={CHART_COLORS.gridLine} strokeWidth={0.8} />
               <text x={vtInnerPad.left + vtInnerW - 10} y={vtInnerPad.top + 16}
-                fontSize={8} fill={VT_CHART_COLORS.areaShade} textAnchor="end" fontWeight="bold">
+                fontSize={font(8)} fill={VT_CHART_COLORS.areaShade} textAnchor="end" fontWeight="bold">
                 上升位移 S⁺ = {areaValues.positive.toFixed(2)} m
               </text>
               <text x={vtInnerPad.left + vtInnerW - 10} y={vtInnerPad.top + 26}
-                fontSize={8} fill={VT_CHART_COLORS.zeroCrossing} textAnchor="end" fontWeight="bold">
+                fontSize={font(8)} fill={VT_CHART_COLORS.zeroCrossing} textAnchor="end" fontWeight="bold">
                 下落位移 S⁻ = {areaValues.negative.toFixed(2)} m
               </text>
               <text x={vtInnerPad.left + vtInnerW - 10} y={vtInnerPad.top + 36}
-                fontSize={8} fill={CHART_COLORS.labelText} textAnchor="end" fontWeight="bold">
+                fontSize={font(8)} fill={CHART_COLORS.labelText} textAnchor="end" fontWeight="bold">
                 当前高度 y = {areaValues.net.toFixed(2)} m
               </text>
             </g>
@@ -585,7 +586,7 @@ export default function VerticalThrowAnimation() {
             <g key={`yt-xt-${t}`}>
               <line x1={ytToX(t)} y1={ytInnerPad.top + ytInnerH - 4} x2={ytToX(t)} y2={ytInnerPad.top + ytInnerH + 4}
                 stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={ytToX(t)} y={ytInnerPad.top + ytInnerH + 16} fontSize={9} textAnchor="middle" fill={CHART_COLORS.tickLabel}>{t}</text>
+              <text x={ytToX(t)} y={ytInnerPad.top + ytInnerH + 16} fontSize={font(9)} textAnchor="middle" fill={CHART_COLORS.tickLabel}>{t}</text>
             </g>
           ))}
 
@@ -593,14 +594,14 @@ export default function VerticalThrowAnimation() {
             <g key={`yt-ytick-${y}`}>
               <line x1={ytInnerPad.left - 4} y1={ytToY(y)} x2={ytInnerPad.left} y2={ytToY(y)}
                 stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={ytInnerPad.left - 8} y={ytToY(y) + 3} fontSize={9} textAnchor="end" fill={CHART_COLORS.tickLabel}>{y}</text>
+              <text x={ytInnerPad.left - 8} y={ytToY(y) + 3} fontSize={font(9)} textAnchor="end" fill={CHART_COLORS.tickLabel}>{y}</text>
             </g>
           ))}
 
           <text x={ytInnerPad.left + ytInnerW / 2} y={ytInnerPad.top + ytInnerH + 28}
-            fontSize={10} textAnchor="middle" fill={CHART_COLORS.labelText}>t/s</text>
+            fontSize={font(10)} textAnchor="middle" fill={CHART_COLORS.labelText}>t/s</text>
           <text x={ytInnerPad.left - 30} y={ytInnerPad.top + ytInnerH / 2}
-            fontSize={10} textAnchor="middle" fill={CHART_COLORS.labelText}
+            fontSize={font(10)} textAnchor="middle" fill={CHART_COLORS.labelText}
             transform={`rotate(-90, ${ytInnerPad.left - 30}, ${ytInnerPad.top + ytInnerH / 2})`}>y/m</text>
 
           <line x1={ytInnerPad.left} y1={ytToY(maxHeight)} x2={ytInnerPad.left + ytInnerW} y2={ytToY(maxHeight)}
@@ -624,7 +625,7 @@ export default function VerticalThrowAnimation() {
                     stroke={CHART_COLORS.highlight} strokeWidth={0.8}
                     strokeDasharray={DASH.tangent.join(' ')} opacity={0.5} />
                   <text x={ytToX(targetHeightIntersections.t1)} y={ytInnerPad.top + ytInnerH + 26}
-                    fontSize={8} fill={CHART_COLORS.highlight} textAnchor="middle">
+                    fontSize={font(8)} fill={CHART_COLORS.highlight} textAnchor="middle">
                     t₁={targetHeightIntersections.t1.toFixed(2)}s
                   </text>
                   <line x1={ytToX(targetHeightIntersections.t2)} y1={ytInnerPad.top}
@@ -632,7 +633,7 @@ export default function VerticalThrowAnimation() {
                     stroke={CHART_COLORS.highlight} strokeWidth={0.8}
                     strokeDasharray={DASH.tangent.join(' ')} opacity={0.5} />
                   <text x={ytToX(targetHeightIntersections.t2)} y={ytInnerPad.top + ytInnerH + 26}
-                    fontSize={8} fill={CHART_COLORS.highlight} textAnchor="middle">
+                    fontSize={font(8)} fill={CHART_COLORS.highlight} textAnchor="middle">
                     t₂={targetHeightIntersections.t2.toFixed(2)}s
                   </text>
                 </>

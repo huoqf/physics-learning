@@ -1,6 +1,7 @@
 import { useEffect, useRef, useMemo, useId } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { calculateVelocitySelectorTrajectory } from '@/physics'
 import { PHYSICS_COLORS, CANVAS_STYLE, FONT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
@@ -22,9 +23,17 @@ interface ParticleState {
 export default function VelocitySelector() {
   const gradId = useId()
   const [sizeRef, canvasSize] = useCanvasSize({ width: 700, height: 420 })
+  const { font } = canvasSize
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
-  const { params, time, isPlaying, showVectors } = useAnimationStore()
+    const {params, time, isPlaying, showVectors} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    isPlaying: s.isPlaying,
+    showVectors: s.showVectors,
+    }))
+  )
 
   const mode = params.mode ?? 0 // 0: 基础, 1: 进阶
   const v0_param = params.v0 ?? 10.0
@@ -775,7 +784,7 @@ export default function VelocitySelector() {
           className="absolute top-4 left-4 p-2.5 bg-white/85 backdrop-blur-[6px] rounded-2xl border border-neutral-200/60 shadow-lg select-none pointer-events-auto transition-all"
           style={{ width: 142, zIndex: 10 }}
         >
-          <div className="text-center text-[11px] font-extrabold text-neutral-700 tracking-wide mb-1.5">
+          <div className="text-center font-extrabold text-neutral-700 tracking-wide mb-1.5" style={{ fontSize: font(11) }}>
             左手定则 (洛伦兹力)
           </div>
           <div className="relative flex justify-center items-center bg-neutral-50/50 rounded-xl py-1">
@@ -799,7 +808,7 @@ export default function VelocitySelector() {
               />
             </svg>
           </div>
-          <div className="text-center text-[9px] font-semibold text-neutral-500 mt-1.5 tracking-tight">
+          <div className="text-center font-semibold text-neutral-500 mt-1.5 tracking-tight" style={{ fontSize: font(9) }}>
             {mode === 0 ? (
               <span>F_洛 = qv × B (q {q_param > 0 ? '> 0' : '< 0'})</span>
             ) : (

@@ -36,6 +36,7 @@ export default function UniformAccelerationAnimation() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 400 })
+  const { font } = canvasSize
 
   const { v0 = 0, a = 1.5, showSplit = 1, splitN = 0, showEquivRect = 0 } = params
 
@@ -258,7 +259,7 @@ export default function UniformAccelerationAnimation() {
         {xticks.map(t => (
           <g key={`xt-${t}`}>
             <line x1={toChartX(t)} y1={toChartY(0) - 3} x2={toChartX(t)} y2={toChartY(0) + 3} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-            <text x={toChartX(t)} y={toChartY(0) + 14} fontSize={8} textAnchor="middle" fill={CHART_COLORS.tickLabel} fontWeight="600">{t}</text>
+            <text x={toChartX(t)} y={toChartY(0) + 14} fontSize={font(8)} textAnchor="middle" fill={CHART_COLORS.tickLabel} fontWeight="600">{t}</text>
           </g>
         ))}
 
@@ -266,13 +267,13 @@ export default function UniformAccelerationAnimation() {
         {yticks.map(vel => (
           <g key={`yt-${vel}`}>
             <line x1={chartLeft - 3} y1={toChartY(vel)} x2={chartLeft} y2={toChartY(vel)} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-            <text x={chartLeft - 7} y={toChartY(vel) + 3} fontSize={8} textAnchor="end" fill={CHART_COLORS.tickLabel} fontWeight="600">{vel}</text>
+            <text x={chartLeft - 7} y={toChartY(vel) + 3} fontSize={font(8)} textAnchor="end" fill={CHART_COLORS.tickLabel} fontWeight="600">{vel}</text>
           </g>
         ))}
 
         {/* 轴标签 */}
-        <text x={chartRight - 10} y={toChartY(0) - 8} fontSize={9} fill={CHART_COLORS.labelText} fontWeight="bold">t / s</text>
-        <text x={chartLeft - 10} y={chartInnerTop - 10} fontSize={9} fill={CHART_COLORS.labelText} textAnchor="end" fontWeight="bold">v / (m/s)</text>
+        <text x={chartRight - 10} y={toChartY(0) - 8} fontSize={font(9)} fill={CHART_COLORS.labelText} fontWeight="bold">t / s</text>
+        <text x={chartLeft - 10} y={chartInnerTop - 10} fontSize={font(9)} fill={CHART_COLORS.labelText} textAnchor="end" fontWeight="bold">v / (m/s)</text>
         <text x={chartLeft + chartWidth / 2} y={16} fontSize={FONT.labelBold} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">匀变速直线运动 v-t 图象</text>
 
         {/* 1. 面积填充逻辑 */}
@@ -297,7 +298,7 @@ export default function UniformAccelerationAnimation() {
               <text
                 x={toChartX(time / 2)}
                 y={toChartY(v0 * 0.5) + (v0 >= 0 ? -6 : 12)}
-                fontSize={9}
+                fontSize={font(9)}
                 textAnchor="middle"
                 fill={PHYSICS_COLORS.displacement}
                 fontWeight="bold"
@@ -327,7 +328,7 @@ export default function UniformAccelerationAnimation() {
               fill={CHART_COLORS.areaFillWarm}
               opacity={0.3}
             />
-            <text x={equivRectGeometry.x0 + 8} y={equivRectGeometry.yHalf + (v0 >= v ? 10 : -6)} fontSize={8} fill={CHART_COLORS.labelText} opacity={0.8}>缺失</text>
+            <text x={equivRectGeometry.x0 + 8} y={equivRectGeometry.yHalf + (v0 >= v ? 10 : -6)} fontSize={font(8)} fill={CHART_COLORS.labelText} opacity={0.8}>缺失</text>
 
             {/* 右上三角形：超出部分 */}
             <path
@@ -335,7 +336,7 @@ export default function UniformAccelerationAnimation() {
               fill={CHART_COLORS.areaFillWarm}
               opacity={0.3}
             />
-            <text x={equivRectGeometry.xEnd - 24} y={equivRectGeometry.yHalf + (v0 >= v ? -6 : 10)} fontSize={8} fill={CHART_COLORS.labelText} opacity={0.8}>超出</text>
+            <text x={equivRectGeometry.xEnd - 24} y={equivRectGeometry.yHalf + (v0 >= v ? -6 : 10)} fontSize={font(8)} fill={CHART_COLORS.labelText} opacity={0.8}>超出</text>
 
             {/* 割补平移指示线 (画一条曲线箭头从超出到缺失) */}
             <path
@@ -351,7 +352,7 @@ export default function UniformAccelerationAnimation() {
             <text
               x={equivRectGeometry.xEnd - 4}
               y={equivRectGeometry.yHalf - 4}
-              fontSize={8}
+              fontSize={font(8)}
               textAnchor="end"
               fill={PHYSICS_COLORS.averageVelocity}
               fontWeight="bold"
@@ -384,7 +385,7 @@ export default function UniformAccelerationAnimation() {
               <text
                 x={toChartX(time / 2)}
                 y={toChartY(v0 / 2) + 3}
-                fontSize={9}
+                fontSize={font(9)}
                 textAnchor="middle"
                 fill={VT_CHART_COLORS.velocityCurve}
                 fontWeight="bold"
@@ -397,7 +398,7 @@ export default function UniformAccelerationAnimation() {
               <text
                 x={toChartX(time * 0.65)}
                 y={toChartY(v0 + (v - v0) * 0.35) + 3}
-                fontSize={9}
+                fontSize={font(9)}
                 textAnchor="middle"
                 fill={VT_CHART_COLORS.velocityCurve}
                 fontWeight="bold"

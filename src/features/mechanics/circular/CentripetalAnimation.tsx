@@ -1,6 +1,7 @@
 import { useCanvasSize, physicsToCanvasWithOrigin } from '@/utils'
 import React, { useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { calculateCircularMotion } from '@/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { createSceneScale } from '@/scene/SceneScale'
@@ -59,8 +60,18 @@ const CENTRIPETAL_LAYOUT = {
 } as const
 
 export default function CentripetalAnimation() {
-  const { params, time, showVectors, showGrid, setIsPlaying, updateParam } = useAnimationStore()
+    const {params, time, showVectors, showGrid, setIsPlaying, updateParam} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    showGrid: s.showGrid,
+    setIsPlaying: s.setIsPlaying,
+    updateParam: s.updateParam,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 600, height: 600 })
+  const { font } = canvasSize
 
   const {
     r = 2,
@@ -352,7 +363,7 @@ export default function CentripetalAnimation() {
             <text
               x={cardWidth / 2}
               y={16}
-              fontSize={8}
+              fontSize={font(8)}
               fill={CHART_COLORS.titleText}
               textAnchor="middle"
               fontWeight="bold"
@@ -394,7 +405,7 @@ export default function CentripetalAnimation() {
                   <text
                     x={xPos}
                     y={cardInnerPad.top + cardInnerH + 9}
-                    fontSize={7}
+                    fontSize={font(7)}
                     fill={CHART_COLORS.labelText}
                     textAnchor="middle"
                   >
@@ -403,7 +414,7 @@ export default function CentripetalAnimation() {
                 </g>
               )
             })}
-            <text x={cardInnerPad.left + cardInnerW} y={cardInnerPad.top + cardInnerH + 8} fontSize={7} fill={CHART_COLORS.labelText} textAnchor="start"> a (m/s²)</text>
+            <text x={cardInnerPad.left + cardInnerW} y={cardInnerPad.top + cardInnerH + 8} fontSize={font(7)} fill={CHART_COLORS.labelText} textAnchor="start"> a (m/s²)</text>
 
             {/* Y轴刻度：力 F_c */}
             {[0, 250, 500].map((val) => {
@@ -421,7 +432,7 @@ export default function CentripetalAnimation() {
                   <text
                     x={cardInnerPad.left - 6}
                     y={yPos + 2.5}
-                    fontSize={7}
+                    fontSize={font(7)}
                     fill={CHART_COLORS.labelText}
                     textAnchor="end"
                   >
@@ -430,7 +441,7 @@ export default function CentripetalAnimation() {
                 </g>
               )
             })}
-            <text x={cardInnerPad.left - 5} y={cardInnerPad.top - 6} fontSize={7} fill={CHART_COLORS.labelText} textAnchor="middle">F (N)</text>
+            <text x={cardInnerPad.left - 5} y={cardInnerPad.top - 6} fontSize={font(7)} fill={CHART_COLORS.labelText} textAnchor="middle">F (N)</text>
 
             {/* 绘制 F = ma 斜率射线 */}
             {lineFmaD && (
@@ -444,7 +455,7 @@ export default function CentripetalAnimation() {
             <text
               x={toCardX(85)}
               y={toCardY(85 * m) - 5}
-              fontSize={7}
+              fontSize={font(7)}
               fill={PHYSICS_COLORS.forceNet}
               fontWeight="bold"
             >

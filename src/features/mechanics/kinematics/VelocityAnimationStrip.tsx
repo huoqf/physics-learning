@@ -1,6 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OBJECT } from '@/theme/physics'
 import { Spring } from '@/components/UI'
 import { calculateInstantaneousVelocity } from '@/physics'
@@ -22,7 +23,13 @@ interface VelocityAnimationStripProps {
 export default function VelocityAnimationStrip({
   model, modelParams, tMax = 6,
 }: VelocityAnimationStripProps) {
-  const { params, time, isPlaying } = useAnimationStore()
+    const {params, time, isPlaying} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    isPlaying: s.isPlaying,
+    }))
+  )
   const deltaT = params.deltaT ?? 0.5
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 200 })
 

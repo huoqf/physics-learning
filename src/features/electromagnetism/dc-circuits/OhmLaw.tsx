@@ -5,9 +5,10 @@ import { PHYSICS_COLORS } from '@/theme/physics'
 import { LightBulb, DialMeter, DCSource } from '@/components/Physics'
 
 export default function OhmLaw() {
-  const { params } = useAnimationStore()
+    const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
-  const [containerRef] = useCanvasSize({ width: 650, height: 400 })
+  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 400 })
+  const { font } = canvasSize
 
   const mode = params.mode ?? 0 // 0=定值电阻, 1=小灯泡
   const U = params.U ?? 2
@@ -213,7 +214,7 @@ export default function OhmLaw() {
             <rect x={11} y={-10} width={4} height={20} fill={band4Color} />
 
             {/* 文字标签 */}
-            <text x={0} y={24} fill="#475569" fontSize={11} fontWeight="bold" textAnchor="middle">
+            <text x={0} y={24} fill="#475569" fontSize={font(11)} fontWeight="bold" textAnchor="middle">
               定值电阻 R
             </text>
           </g>

@@ -34,6 +34,32 @@ export function pxToMeters(px: number): number {
   return px / PX_PER_METER
 }
 
+/** 物理世界边界（物理单位，如米） */
+export interface WorldBounds {
+  xMin: number; xMax: number
+  yMin: number; yMax: number
+}
+
+/**
+ * 根据画布尺寸和物理世界范围计算缩放比 (px/unit)。
+ *
+ * @param canvasW 画布宽度 (px)
+ * @param canvasH 画布高度 (px)
+ * @param world   物理世界边界（物理单位）
+ * @param padding 画布两侧预留边距 (px)，默认 0
+ * @returns 缩放比 (px/unit)，取 x/y 中较小值以保证完整显示
+ */
+export function computeScale(
+  canvasW: number,
+  canvasH: number,
+  world: WorldBounds,
+  padding = 0
+): number {
+  const sx = (canvasW - 2 * padding) / (world.xMax - world.xMin)
+  const sy = (canvasH - 2 * padding) / (world.yMax - world.yMin)
+  return Math.min(sx, sy)
+}
+
 export function physicsToCanvas(
   x: number,
   y: number,

@@ -52,9 +52,10 @@ function getPointOnPath(points: Point[], progress: number): Point {
  * 支持：基础串联、基础并联、进阶混联
  */
 export default function CircuitAnalysis() {
-  const { params } = useAnimationStore()
+    const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
-  const [containerRef] = useCanvasSize({ width: 650, height: 360 })
+  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 360 })
+  const { font } = canvasSize
 
   // 参数配置
   const mode = params.mode ?? 0 // 0=基础, 1=进阶
@@ -342,7 +343,7 @@ export default function CircuitAnalysis() {
         <rect x={1} y={-9} width={3} height={18} fill={ring3Color} />
         <rect x={9} y={-9} width={3} height={18} fill={ring4Color} />
         {/* 文字标注 */}
-        <text x={0} y={22} fill={PHYSICS_COLORS.labelText} fontSize={10} fontWeight="bold" textAnchor="middle">
+        <text x={0} y={22} fill={PHYSICS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="middle">
           {label} = {resistance}Ω
         </text>
       </g>
@@ -527,19 +528,19 @@ export default function CircuitAnalysis() {
       
       {/* 浮动简易标注 (展示当前总阻值和总电流，营造精密测量感) */}
       <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg border border-neutral-150 shadow-sm px-3 py-1.5 pointer-events-none">
-        <div className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">
+        <div style={{ fontSize: font(9) }} className="font-bold text-neutral-400 uppercase tracking-wider mb-0.5">
           电路状态参量
         </div>
         <div className="flex flex-col gap-0.5 min-w-[100px]">
-          <div className="flex items-center justify-between text-[10px]">
+          <div style={{ fontSize: font(10) }} className="flex items-center justify-between">
             <span className="text-neutral-500">等效总电阻</span>
             <span className="font-bold text-neutral-700 font-mono">{Rtotal.toFixed(2)} Ω</span>
           </div>
-          <div className="flex items-center justify-between text-[10px]">
+          <div style={{ fontSize: font(10) }} className="flex items-center justify-between">
             <span className="text-neutral-500">干路总电流</span>
             <span className="font-bold text-red-600 font-mono">{Itotal.toFixed(3)} A</span>
           </div>
-          <div className="flex items-center justify-between text-[10px]">
+          <div style={{ fontSize: font(10) }} className="flex items-center justify-between">
             <span className="text-neutral-500">电压表读数</span>
             <span className="font-bold text-amber-600 font-mono">{U2.toFixed(2)} V</span>
           </div>

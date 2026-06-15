@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 import { colors } from '@/theme/colors'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { computeScale } from '@/utils/coordinate'
 import type { AdvancedAmperePhysicsResult } from '../ampereForceModel'
 
 interface InclineForceDiagramProps {
@@ -54,7 +55,7 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
 
   // 3. 矢量箭头绘制的坐标转换
   // 物理力到像素长度的映射比例：把最大重力 mg (~5N) 映射为 32 像素
-  const forceScale = 6.5
+  const forceScale = computeScale(w, h, { xMin: -5, xMax: 5, yMin: -5, yMax: 5 })
 
   const localScale = useMemo(() => {
     return {

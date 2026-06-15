@@ -1,6 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useEffect, useMemo, useState } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { calculateAcceleratedMotion } from '@/physics'
 import {
   PHYSICS_COLORS,
@@ -47,7 +48,18 @@ function GhostCar({ x, y, width = 56, height = 26, isHighlighted }: { x: number,
  * 遵循 project_rules.md 规范：冷白背景、工程线框风格、可见元素 ≤ 7、精密三屏联动。
  */
 export default function UniformAccelerationCenterExtra() {
-  const { params, time, isPlaying, speed, showVectors, setIsPlaying, setTime, setSpeed } = useAnimationStore()
+    const {params, time, isPlaying, speed, showVectors, setIsPlaying, setTime, setSpeed} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    isPlaying: s.isPlaying,
+    speed: s.speed,
+    showVectors: s.showVectors,
+    setIsPlaying: s.setIsPlaying,
+    setTime: s.setTime,
+    setSpeed: s.setSpeed,
+    }))
+  )
 
   const { v0 = 0, a = 1.5, flashPeriod = 1 } = params
   const physics = useUniformAccelerationPhysics(v0, a, time, flashPeriod)
@@ -145,6 +157,7 @@ function StroboscopicAnimation({
   hoveredFlashIdx: number | null
 }) {
   const [containerRef, canvasSize] = useCanvasSize({ width: 400, height: 180 })
+  const { font } = canvasSize
 
   const padding = canvasSize.width * 0.08
   const groundY = canvasSize.height * 0.52
@@ -172,7 +185,7 @@ function StroboscopicAnimation({
   const currentX = originX + physics.s * scale
 
   // 小车跑出画布后自动暂停
-  const { setIsPlaying } = useAnimationStore()
+    const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
   const isOffscreen = currentX > canvasSize.width - padding + objW || currentX < padding - objW
   useEffect(() => {
     if (isOffscreen && physics.s !== 0) {
@@ -289,7 +302,7 @@ function StroboscopicAnimation({
               <line x1={ann.x1} y1={y} x2={ann.x2} y2={y} stroke={isHighlighted ? PHYSICS_COLORS.referencePoint : PHYSICS_COLORS.displacement} strokeWidth={isHighlighted ? 2 : STROKE.vectorThin} />
               <line x1={ann.x1} y1={y - 3} x2={ann.x1} y2={y + 3} stroke={isHighlighted ? PHYSICS_COLORS.referencePoint : PHYSICS_COLORS.displacement} strokeWidth={1.5} />
               <line x1={ann.x2} y1={y - 3} x2={ann.x2} y2={y + 3} stroke={isHighlighted ? PHYSICS_COLORS.referencePoint : PHYSICS_COLORS.displacement} strokeWidth={1.5} />
-              <text x={(ann.x1 + ann.x2) / 2} y={y - 3} fontSize={8} fill={isHighlighted ? PHYSICS_COLORS.referencePoint : PHYSICS_COLORS.displacement} textAnchor="middle" fontWeight="bold">
+              <text x={(ann.x1 + ann.x2) / 2} y={y - 3} fontSize={font(8)} fill={isHighlighted ? PHYSICS_COLORS.referencePoint : PHYSICS_COLORS.displacement} textAnchor="middle" fontWeight="bold">
                 {ann.label}={ann.deltaX.toFixed(2)}m
               </text>
             </g>
@@ -307,7 +320,7 @@ function StroboscopicAnimation({
               <line x1={originX} y1={groundY + 44} x2={originX + alignmentGeometry.w1} y2={groundY + 44} stroke={PHYSICS_COLORS.displacement} strokeWidth={2} />
               <line x1={originX} y1={groundY + 41} x2={originX} y2={groundY + 47} stroke={PHYSICS_COLORS.displacement} strokeWidth={1.5} />
               <line x1={originX + alignmentGeometry.w1} y1={groundY + 41} x2={originX + alignmentGeometry.w1} y2={groundY + 47} stroke={PHYSICS_COLORS.displacement} strokeWidth={1.5} />
-              <text x={originX + alignmentGeometry.w1 + 6} y={groundY + 47} fontSize={8} fill={PHYSICS_COLORS.displacement} fontWeight="bold">
+              <text x={originX + alignmentGeometry.w1 + 6} y={groundY + 47} fontSize={font(8)} fill={PHYSICS_COLORS.displacement} fontWeight="bold">
                 {alignmentGeometry.label1} = {alignmentGeometry.val1.toFixed(2)}m
               </text>
             </g>
@@ -329,11 +342,11 @@ function StroboscopicAnimation({
                 strokeWidth={1}
                 fill="none"
               />
-              <text x={(originX + alignmentGeometry.w1 + originX + alignmentGeometry.w2) / 2} y={groundY + 73} fontSize={8} fill={PHYSICS_COLORS.acceleration} textAnchor="middle" fontWeight="bold">
+              <text x={(originX + alignmentGeometry.w1 + originX + alignmentGeometry.w2) / 2} y={groundY + 73} fontSize={font(8)} fill={PHYSICS_COLORS.acceleration} textAnchor="middle" fontWeight="bold">
                 增量 aT² = {alignmentGeometry.diff.toFixed(2)}m
               </text>
               
-              <text x={originX + alignmentGeometry.w2 + 6} y={groundY + 63} fontSize={8} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
+              <text x={originX + alignmentGeometry.w2 + 6} y={groundY + 63} fontSize={font(8)} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
                 {alignmentGeometry.label2} = {alignmentGeometry.val2.toFixed(2)}m
               </text>
             </g>
@@ -401,6 +414,7 @@ function VtChartWithArea({
   hoveredFlashIdx: number | null
 }) {
   const [containerRef, canvasSize] = useCanvasSize({ width: 400, height: 230 })
+  const { font } = canvasSize
 
   const padding = canvasSize.width * 0.12
   const chartLeft = padding
@@ -520,7 +534,7 @@ function VtChartWithArea({
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg">
-        <text x={canvasSize.width / 2} y={15} fontSize={11} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">匀变速直线运动 v-t 图象</text>
+        <text x={canvasSize.width / 2} y={15} fontSize={font(11)} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">匀变速直线运动 v-t 图象</text>
 
         {/* 坐标轴 */}
         <line x1={chartLeft} y1={chartTop} x2={chartLeft} y2={chartBottom} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
@@ -530,13 +544,13 @@ function VtChartWithArea({
         {xticks.map(t => (
           <g key={`xt-${t}`}>
             <line x1={toX(t)} y1={toY(0) - 3} x2={toX(t)} y2={toY(0) + 3} stroke={CHART_COLORS.tickMark} />
-            <text x={toX(t)} y={toY(0) + 12} fontSize={8} textAnchor="middle" fill={CHART_COLORS.tickLabel} fontWeight="600">{t}</text>
+            <text x={toX(t)} y={toY(0) + 12} fontSize={font(8)} textAnchor="middle" fill={CHART_COLORS.tickLabel} fontWeight="600">{t}</text>
           </g>
         ))}
         {yticks.map(vel => (
           <g key={`yt-${vel}`}>
             <line x1={chartLeft - 3} y1={toY(vel)} x2={chartLeft} y2={toY(vel)} stroke={CHART_COLORS.tickMark} />
-            <text x={chartLeft - 6} y={toY(vel) + 3} fontSize={8} textAnchor="end" fill={CHART_COLORS.tickLabel} fontWeight="600">{vel}</text>
+            <text x={chartLeft - 6} y={toY(vel) + 3} fontSize={font(8)} textAnchor="end" fill={CHART_COLORS.tickLabel} fontWeight="600">{vel}</text>
           </g>
         ))}
 
@@ -554,7 +568,7 @@ function VtChartWithArea({
             <text
               x={toX((areaDifferenceGeometry.midT + areaDifferenceGeometry.nextT) / 2)}
               y={(toY(areaDifferenceGeometry.v_curr) + toY(areaDifferenceGeometry.v_prev)) / 2 + 3}
-              fontSize={8}
+              fontSize={font(8)}
               fill={PHYSICS_COLORS.acceleration}
               textAnchor="middle"
               fontWeight="bold"
@@ -586,13 +600,13 @@ function VtChartWithArea({
 
             {/* X 轴气泡 */}
             <rect x={toX(time) - 15} y={toY(0) + 14} width="30" height="11" rx="2.5" fill={SCENE_COLORS.materials.sliderMetalGrad[0]} stroke={PHYSICS_COLORS.axis} strokeWidth={0.5} />
-            <text x={toX(time)} y={toY(0) + 22} fontSize={8} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
+            <text x={toX(time)} y={toY(0) + 22} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
               {time.toFixed(1)}s
             </text>
 
             {/* Y 轴气泡 */}
             <rect x={chartLeft - 32} y={toY(physics.v) - 5} width="28" height="11" rx="2.5" fill={PHYSICS_COLORS.objectFill} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={0.5} />
-            <text x={chartLeft - 18} y={toY(physics.v) + 3} fontSize={8} fill={PHYSICS_COLORS.velocity} textAnchor="middle" fontWeight="bold">
+            <text x={chartLeft - 18} y={toY(physics.v) + 3} fontSize={font(8)} fill={PHYSICS_COLORS.velocity} textAnchor="middle" fontWeight="bold">
               {physics.v.toFixed(1)}
             </text>
           </g>
@@ -611,25 +625,27 @@ function DerivationPanel({
   v0: number; a: number; time: number
   T: number
 }) {
+  const [containerRef, canvasSize] = useCanvasSize({ width: 400, height: 80 })
+  const { font } = canvasSize
   const { v, s } = calculateAcceleratedMotion(v0, a, time)
   const deltaX = a * T * T
 
   return (
-    <div className="flex flex-row gap-4 text-xs font-semibold">
+    <div ref={containerRef} className="flex flex-row gap-4 text-xs font-semibold">
       <div className="flex-1 bg-neutral-50 border border-neutral-200 rounded-lg p-1.5 shadow-sm">
-        <p className="text-[9px] text-neutral-400 mb-0.5">相邻位移差 (逐差法)</p>
+        <p style={{ fontSize: font(9) }} className="text-neutral-400 mb-0.5">相邻位移差 (逐差法)</p>
         <p className="font-mono text-neutral-700">
           Δx = aT² = {a}×{T}² = <span className="font-bold text-primary-600">{deltaX.toFixed(3)} m</span>
         </p>
       </div>
       <div className="flex-1 bg-primary-50/50 border border-primary-100 rounded-lg p-1.5 shadow-sm">
-        <p className="text-[9px] text-primary-400 mb-0.5">末速度公式</p>
+        <p style={{ fontSize: font(9) }} className="text-primary-400 mb-0.5">末速度公式</p>
         <p className="font-mono text-neutral-700">
           v_t = v₀+at = {v0}+{a}×{time.toFixed(1)} = <span className="font-bold text-primary-600">{v.toFixed(2)} m/s</span>
         </p>
       </div>
       <div className="flex-1 bg-neutral-50 border border-neutral-200 rounded-lg p-1.5 shadow-sm">
-        <p className="text-[9px] text-neutral-400 mb-0.5">位移公式</p>
+        <p style={{ fontSize: font(9) }} className="text-neutral-400 mb-0.5">位移公式</p>
         <p className="font-mono text-neutral-700">
           x = v₀t+½at² = <span className="font-bold text-neutral-800">{s.toFixed(2)} m</span>
         </p>
@@ -649,6 +665,8 @@ function FlashDataTable({
   hoveredFlashIdx: number | null
   setHoveredFlashIdx: (idx: number | null) => void
 }) {
+  const [containerRef, canvasSize] = useCanvasSize({ width: 400, height: 300 })
+  const { font } = canvasSize
   const rows = flashPoints.slice(-8)
   const lastIndex = flashPoints.length - 1
 
@@ -661,7 +679,7 @@ function FlashDataTable({
   }, [flashPoints])
 
   return (
-    <div className="w-full h-full flex flex-col p-3 overflow-auto">
+    <div ref={containerRef} className="w-full h-full flex flex-col p-3 overflow-auto">
       <p className="text-xs font-bold text-neutral-700 mb-2">频闪数据记录表</p>
       <table className="w-full text-xs border-collapse">
         <thead>
@@ -702,7 +720,7 @@ function FlashDataTable({
       {/* 逐差法验证 */}
       {deltaValues.length >= 2 && (
         <div className="mt-auto pt-2 border-t border-neutral-100 font-semibold">
-          <p className="text-[9px] text-neutral-400 mb-0.5">理论计算验证</p>
+          <p style={{ fontSize: font(9) }} className="text-neutral-400 mb-0.5">理论计算验证</p>
           <p className="text-xs font-mono text-neutral-700">
             相邻位移差 aT² = <span className="font-bold text-red-600">{(a * T * T).toFixed(3)}</span> m
           </p>

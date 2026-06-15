@@ -1,6 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import {
   elasticCollision,
   inelasticCollisionSpeed,
@@ -37,8 +38,15 @@ const COL_LAYOUT = {
 } as const
 
 export default function CollisionAnimation() {
-  const { params, time, showVectors } = useAnimationStore()
+    const {params, time, showVectors} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 450 })
+  const { font } = canvasSize
 
   const {
     m1 = 3, v1 = 5,
@@ -380,21 +388,21 @@ export default function CollisionAnimation() {
               {/* A球碰前 */}
               <rect x={0} y={0} width={COL_LAYOUT.ekBarWidth} height={mapEkBar(EkA_before)}
                 fill={PHYSICS_COLORS.velocity} opacity={0.6} rx={2} />
-              <text x={COL_LAYOUT.ekBarWidth / 2} y={-4} fontSize={6} fill={PHYSICS_COLORS.velocity} textAnchor="middle">
+              <text x={COL_LAYOUT.ekBarWidth / 2} y={-4} fontSize={font(6)} fill={PHYSICS_COLORS.velocity} textAnchor="middle">
                 A碰前
               </text>
 
               {/* A球碰后 */}
               <rect x={COL_LAYOUT.ekBarWidth + 5} y={0} width={COL_LAYOUT.ekBarWidth} height={mapEkBar(EkA_after)}
                 fill={PHYSICS_COLORS.velocity} opacity={0.3} rx={2} />
-              <text x={COL_LAYOUT.ekBarWidth + 5 + COL_LAYOUT.ekBarWidth / 2} y={-4} fontSize={6} fill={PHYSICS_COLORS.velocity} textAnchor="middle">
+              <text x={COL_LAYOUT.ekBarWidth + 5 + COL_LAYOUT.ekBarWidth / 2} y={-4} fontSize={font(6)} fill={PHYSICS_COLORS.velocity} textAnchor="middle">
                 A碰后
               </text>
 
               {/* B球碰后 */}
               <rect x={(COL_LAYOUT.ekBarWidth + 5) * 2} y={0} width={COL_LAYOUT.ekBarWidth} height={mapEkBar(EkB_after)}
                 fill={PHYSICS_COLORS.elasticForce} opacity={0.6} rx={2} />
-              <text x={(COL_LAYOUT.ekBarWidth + 5) * 2 + COL_LAYOUT.ekBarWidth / 2} y={-4} fontSize={6} fill={PHYSICS_COLORS.elasticForce} textAnchor="middle">
+              <text x={(COL_LAYOUT.ekBarWidth + 5) * 2 + COL_LAYOUT.ekBarWidth / 2} y={-4} fontSize={font(6)} fill={PHYSICS_COLORS.elasticForce} textAnchor="middle">
                 B碰后
               </text>
 

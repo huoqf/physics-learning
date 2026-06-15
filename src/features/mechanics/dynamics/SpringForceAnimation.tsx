@@ -1,5 +1,7 @@
 import { useCanvasSize } from '@/utils'
+import { computeScale } from '@/utils/coordinate'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
 import { Spring } from '@/components/UI'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
@@ -8,8 +10,16 @@ import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
 export default function SpringForceAnimation() {
-  const { params, time, showVectors, showGrid } = useAnimationStore()
+    const {params, time, showVectors, showGrid} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    showGrid: s.showGrid,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 400 })
+  const { font } = canvasSize
 
   const { k = 100, m = 1 } = params
   
@@ -22,7 +32,8 @@ export default function SpringForceAnimation() {
   const eqX = canvasSize.width / 2 // 平衡位置在 Canvas 中心 (325px)
   const groundY = canvasSize.height / 2 + 30 // 地面 Y 坐标
   const boxSize = 44 // 振子方块大小
-  const scale = 160  // 物理位移到 Canvas 像素的比例尺 (0.5m = 80px)
+  const WORLD = { xMin: -0.6, xMax: 0.6, yMin: -0.3, yMax: 0.3 } as const
+  const scale = computeScale(canvasSize.width, canvasSize.height, WORLD, 80)
   
   const currentX = displacement * scale // 当前偏离平衡位置的像素位移
   const centerX = eqX + currentX         // 振子当前的中心 X 坐标
@@ -41,7 +52,7 @@ export default function SpringForceAnimation() {
   if (showGrid) {
     // 围绕平衡位置 eqX 绘制
     for (let i = -4; i <= 4; i++) {
-      const xPos = eqX + i * 50
+      const xPos = eqX + i * (scale * 0.5)
       gridLines.push(
         <line
           key={`gridline-${i}`}
@@ -198,7 +209,7 @@ export default function SpringForceAnimation() {
             <text
               x={(eqX + centerX) / 2}
               y={groundY + 36}
-              fontSize={11}
+              fontSize={font(11)}
               fill={PHYSICS_COLORS.displacement}
               textAnchor="middle"
               fontWeight="bold"

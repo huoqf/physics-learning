@@ -1,6 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OPACITY } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { calculateWorkBasic, calculateWorkAdvanced, classifyWorkType } from '@/physics/work'
@@ -18,7 +19,14 @@ import type { SceneConfig } from '@/scene/SceneConfig'
  * Canvas 7 元素 / 5 标注（严格上限）
  */
 export default function WorkAnimation() {
-  const { params, time, showVectors, showGrid } = useAnimationStore()
+    const {params, time, showVectors, showGrid} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    showGrid: s.showGrid,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 350 })
 
   const mode = params.mode ?? 0           // 0=基础, 1=进阶

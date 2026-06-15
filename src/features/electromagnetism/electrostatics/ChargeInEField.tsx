@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
@@ -12,7 +13,15 @@ import {
 } from '@/physics/electromagnetism'
 
 export default function ChargeInEField() {
-  const { params, time, showVectors, showGrid, setIsPlaying } = useAnimationStore()
+    const {params, time, showVectors, showGrid, setIsPlaying} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    showGrid: s.showGrid,
+    setIsPlaying: s.setIsPlaying,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 460 })
 
   const U = params.U ?? 200

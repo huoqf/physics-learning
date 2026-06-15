@@ -30,7 +30,8 @@
 | `src/theme/physics/sceneColors.ts` | 场景器材外观色（磁铁/线圈/灯泡/手势/球体材质等） | `@/theme/physics` |
 | `src/theme/physics/chartColors.ts` | 物理图像配色（v-t/P-V/U-I 等 9 组） | `@/theme/physics` |
 | `src/theme/physics/canvasStyle.ts` | SVG/Canvas 绘制规范（线宽/箭头/SVG_ATTR/Marker） | `@/theme/physics` |
-| `src/theme/spacing.ts` | 间距比例尺（4px基准） | `@/theme/spacing` |
+| `src/theme/spacing.ts` | 间距比例尺（4px基准）+ CANVAS_PRESETS | `@/theme/spacing` |
+| `src/theme/animationTokens.ts` | 动画 UI token（ANIM_FONT / ANIM_SHADOW / ANIM_PANEL / CHART_PAD） | `@/theme/animationTokens` |
 | `src/theme/radius.ts` | 圆角规范 | `@/theme/radius` |
 | `src/theme/shadow.ts` | 阴影规范 | `@/theme/shadow` |
 | `src/theme/motion.ts` | 动效时长与 easing | `@/theme/motion` |
@@ -191,6 +192,8 @@ Primary（primary-600）/ Secondary（white + primary边框）/ Ghost（transpar
 | mono（数值）| 14px/400 | neutral-700 |
 
 字体栈：`'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif`
+
+**Canvas/SVG 内字体**：动画组件中的 SVG 文字标注必须使用 `useCanvasSize()` 返回的 `font()` 函数缩放（如 `fontSize={font(11)}`），禁止裸值 `fontSize={11}`。`font()` 内置 clamp(7, 16) 保证可读性。设计基准值参考 `ANIM_FONT`（`@/theme/animationTokens`）。
 
 ### 数值显示规则
 

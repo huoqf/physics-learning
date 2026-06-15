@@ -16,6 +16,7 @@
 import { useRef, useMemo, useCallback, useState } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { calculatePowerTransmission } from '@/physics'
@@ -41,8 +42,15 @@ interface Particle {
 }
 
 export default function PowerTransmission() {
-  const { params, isPlaying, speed } = useAnimationStore()
+    const {params, isPlaying, speed} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    isPlaying: s.isPlaying,
+    speed: s.speed,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 800, height: 440 })
+  const { font } = canvasSize
   const [, setFrameTick] = useState(0)
 
   const P_send = params.P_send ?? 100000
@@ -309,7 +317,7 @@ export default function PowerTransmission() {
             fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
             发电厂
           </text>
-          <text x={0} y={54} fontSize={9} fill={PHYSICS_COLORS.axis}
+          <text x={0} y={54} fontSize={font(9)} fill={PHYSICS_COLORS.axis}
             textAnchor="middle">
             P₁={(P_send / 1000).toFixed(0)}kW
           </text>
@@ -328,7 +336,7 @@ export default function PowerTransmission() {
             fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
             升压
           </text>
-          <text x={0} y={48} fontSize={9} fill={PHYSICS_COLORS.axis}
+          <text x={0} y={48} fontSize={font(9)} fill={PHYSICS_COLORS.axis}
             textAnchor="middle">
             1:{n2_step_up / n1_step_up}
           </text>
@@ -372,7 +380,7 @@ export default function PowerTransmission() {
             fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
             降压
           </text>
-          <text x={0} y={48} fontSize={9} fill={PHYSICS_COLORS.axis}
+          <text x={0} y={48} fontSize={font(9)} fill={PHYSICS_COLORS.axis}
             textAnchor="middle">
             {n1_step_down / n2_step_down}:1
           </text>
@@ -411,14 +419,14 @@ export default function PowerTransmission() {
                     fill={colors.danger[100]}
                     stroke={colors.danger[500]}
                     strokeWidth={0.8} />
-                  <text x={0} y={8} fontSize={6}
+                  <text x={0} y={8} fontSize={font(6)}
                     fill={colors.danger[600]}
                     textAnchor="middle" fontWeight="bold">
                     ⚠
                   </text>
                 </g>
               )}
-              <text x={0} y={16} fontSize={8}
+              <text x={0} y={16} fontSize={font(8)}
                 fill={PHYSICS_COLORS.axis}
                 textAnchor="middle">
                 {brightness > 0.7 ? '正常' : brightness > 0.4 ? '偏暗' : '停电'}
@@ -431,7 +439,7 @@ export default function PowerTransmission() {
           fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
           用户端
         </text>
-        <text x={userX} y={nodeY + 54} fontSize={9} fill={PHYSICS_COLORS.axis}
+        <text x={userX} y={nodeY + 54} fontSize={font(9)} fill={PHYSICS_COLORS.axis}
           textAnchor="middle">
           P₃={(P_user / 1000).toFixed(1)}kW
         </text>
@@ -453,7 +461,7 @@ export default function PowerTransmission() {
             &nbsp;|&nbsp;
             U_user = {U_user.toFixed(0)} V
           </text>
-          <text x="10" y="48" fontSize={9} fill={PHYSICS_COLORS.temperature}>
+          <text x="10" y="48" fontSize={font(9)} fill={PHYSICS_COLORS.temperature}>
             {eta > 0.95
               ? '✓ 高压输电，损耗极低'
               : eta > 0.8

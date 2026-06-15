@@ -1,5 +1,6 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import {
   calculateNewtonSecond,
   calculateFriction,
@@ -8,9 +9,17 @@ import {
 } from '@/physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
 import { Block } from '@/components/Physics/Block'
+import { computeScale } from '@/utils/coordinate'
 
 export default function NewtonSecondAnimation() {
-  const { params, time, showVectors, showGrid } = useAnimationStore()
+    const {params, time, showVectors, showGrid} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    showGrid: s.showGrid,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 400 })
 
   const {
@@ -57,7 +66,8 @@ export default function NewtonSecondAnimation() {
     s = motionRes.s
   }
 
-  const scale = 15
+  const WORLD = { xMin: 0, xMax: 15, yMin: 0, yMax: 5 } as const
+  const scale = computeScale(canvasSize.width - 280, canvasSize.height, WORLD)
   const groundY = canvasSize.height - 80
   const originX = 80
 

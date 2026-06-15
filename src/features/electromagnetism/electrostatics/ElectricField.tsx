@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { calculateElectricField } from '@/physics'
 import { PHYSICS_COLORS, CANVAS_STYLE, CHART_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
@@ -9,7 +10,6 @@ import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
 const COULOMB_K = 9e9
-const PX_PER_CM = 35 // 1cm = 35像素
 
 interface Point {
   x: number
@@ -87,7 +87,13 @@ function traceSingleFieldLine(
 }
 
 export default function ElectricField() {
-  const { params, showFormulas, showGrid } = useAnimationStore()
+    const {params, showFormulas, showGrid} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    showFormulas: s.showFormulas,
+    showGrid: s.showGrid,
+    }))
+  )
   const updateParam = useAnimationStore((s) => s.updateParam)
   
   // 教学模式：0 = 基础单电荷，1 = 进阶双电荷
@@ -102,6 +108,7 @@ export default function ElectricField() {
   const w = canvasSize.width
   const h = canvasSize.height
   const centerY = h / 2
+  const pxPerCm = w / 20 // 20cm 跨满画布，700px 时恰好 35 px/cm
 
   // 基础模式下的物理区域源电荷中心 (位于偏左)
   const cx = w * 0.3
@@ -114,7 +121,7 @@ export default function ElectricField() {
   const cy2 = centerY
 
   // 试探电荷的实际像素坐标
-  const [testX, setTestX] = useState(cx + rTest * PX_PER_CM)
+  const [testX, setTestX] = useState(cx + rTest * pxPerCm)
   const [testY, setTestY] = useState(cy)
   const [isDragging, setIsDragging] = useState(false)
 
@@ -135,13 +142,13 @@ export default function ElectricField() {
   useEffect(() => {
     if (!isDragging) {
       if (mode === 0) {
-        setTestX(cx + rTest * PX_PER_CM)
+        setTestX(cx + rTest * pxPerCm)
         setTestY(cy)
       } else {
         const midX = (cx1 + cx2) / 2
         const midY = (cy1 + cy2) / 2
         // 在进阶模式下，rTest 代表试探点到连线中点的水平距离
-        setTestX(midX + rTest * PX_PER_CM)
+        setTestX(midX + rTest * pxPerCm)
         setTestY(midY)
       }
     }
@@ -155,7 +162,7 @@ export default function ElectricField() {
     const dx = testX - cx
     const dy = cy - testY // 物理 y 轴向上为正
     const distPx = Math.sqrt(dx * dx + dy * dy)
-    const distCm = distPx / PX_PER_CM
+    const distCm = distPx / pxPerCm
     const distM = distCm * 0.01
 
     const qSI = qSource * 1e-6
@@ -176,7 +183,7 @@ export default function ElectricField() {
     const F = Math.sqrt(Fx * Fx + Fy * Fy)
 
     return { distCm, distM, E, Ex, Ey, F, Fx, Fy }
-  }, [testX, testY, cx, cy, qSource, qTest])
+  }, [testX, testY, cx, cy, qSource, qTest, pxPerCm])
 
   // 2. 进阶模式下
   const advancedPhysics = useMemo(() => {
@@ -184,7 +191,7 @@ export default function ElectricField() {
     const dx1 = testX - cx1
     const dy1 = cy1 - testY
     const r1Px = Math.sqrt(dx1 * dx1 + dy1 * dy1)
-    const r1M = Math.max(0.2, r1Px / PX_PER_CM) * 0.01 // 防止过于靠近除零
+    const r1M = Math.max(0.2, r1Px / pxPerCm) * 0.01 // 防止过于靠近除零
     const E1_val = calculateElectricField(COULOMB_K, Math.abs(q1 * 1e-6), r1M).E
     const angle1 = Math.atan2(dy1, dx1)
     const dir1 = q1 >= 0 ? 1 : -1
@@ -195,7 +202,7 @@ export default function ElectricField() {
     const dx2 = testX - cx2
     const dy2 = cy2 - testY
     const r2Px = Math.sqrt(dx2 * dx2 + dy2 * dy2)
-    const r2M = Math.max(0.2, r2Px / PX_PER_CM) * 0.01
+    const r2M = Math.max(0.2, r2Px / pxPerCm) * 0.01
     const E2_val = calculateElectricField(COULOMB_K, Math.abs(q2 * 1e-6), r2M).E
     const angle2 = Math.atan2(dy2, dx2)
     const dir2 = q2 >= 0 ? 1 : -1
@@ -215,10 +222,10 @@ export default function ElectricField() {
 
     const midX = (cx1 + cx2) / 2
     const midY = (cy1 + cy2) / 2
-    const distCm = Math.sqrt((testX - midX) ** 2 + (testY - midY) ** 2) / PX_PER_CM
+    const distCm = Math.sqrt((testX - midX) ** 2 + (testY - midY) ** 2) / pxPerCm
 
     return { E1x, E1y, E2x, E2y, Ex, Ey, E, F, Fx, Fy, distCm }
-  }, [testX, testY, cx1, cy1, cx2, cy2, q1, q2, qTest])
+  }, [testX, testY, cx1, cy1, cx2, cy2, q1, q2, qTest, pxPerCm])
 
   // ---------------------------------------------------------------------
   // 鼠标拖拽事件处理
@@ -260,7 +267,7 @@ export default function ElectricField() {
       setTestX(x)
       setTestY(y)
 
-      const distCm = d / PX_PER_CM
+      const distCm = d / pxPerCm
       const clampedCm = Math.max(1.0, Math.min(6.0, distCm))
       updateParam('rTest', clampedCm)
     } else {
@@ -274,7 +281,7 @@ export default function ElectricField() {
 
       const midX = (cx1 + cx2) / 2
       const midY = (cy1 + cy2) / 2
-      const distCm = Math.sqrt((x - midX) ** 2 + (y - midY) ** 2) / PX_PER_CM
+      const distCm = Math.sqrt((x - midX) ** 2 + (y - midY) ** 2) / pxPerCm
       const clampedCm = Math.max(0.1, Math.min(8.0, distCm))
       updateParam('rTest', clampedCm)
     }
@@ -527,7 +534,7 @@ export default function ElectricField() {
             key={`ring-${i}`}
             cx={cx}
             cy={cy}
-            r={i * PX_PER_CM}
+            r={i * pxPerCm}
             fill="none"
             stroke={PHYSICS_COLORS.grid}
             strokeWidth={CANVAS_STYLE.stroke.grid}
@@ -568,7 +575,7 @@ export default function ElectricField() {
       }
     }
     return lines
-  }, [showGrid, mode, cx, cy, w, h])
+  }, [showGrid, mode, cx, cy, w, h, pxPerCm])
 
   return (
     <div ref={containerRef} className="w-full h-full">

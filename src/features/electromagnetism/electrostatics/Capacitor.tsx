@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useCanvasSize, useAnimationFrame } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { calculateCapacitor } from '@/physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
 
@@ -17,10 +18,18 @@ const U_MAX = 48.0                                         // 约 48 V (断开�
 const E_MAX = 12.0 / (2 * 1e-3)                             // 6000 V/m
 
 export default function Capacitor() {
-  const { params, showVectors, showFormulas, showGrid } = useAnimationStore()
+    const {params, showVectors, showFormulas, showGrid} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    showVectors: s.showVectors,
+    showFormulas: s.showFormulas,
+    showGrid: s.showGrid,
+    }))
+  )
   
   // 底部动画 SVG 容器的自适应尺寸 Hook
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 300 })
+  const { font } = canvasSize
 
   const { S = 100, d = 5, epsilon_r = 1, U = 12, connected = 1 } = params
   const isConnected = connected >= 0.5
@@ -191,8 +200,8 @@ export default function Capacitor() {
     return (
       <div className="flex flex-col items-center justify-end h-full z-10 w-20">
         {/* 实时值与单位 */}
-        <span className={`text-[10.5px] font-mono font-bold ${textClass} mb-1 transition-all duration-150`}>
-          {valueStr} <span className="text-[8.5px] text-neutral-400 font-normal">{unit}</span>
+        <span className={`font-mono font-bold ${textClass} mb-1 transition-all duration-150`} style={{ fontSize: font(10.5) }}>
+          {valueStr} <span className="text-neutral-400 font-normal" style={{ fontSize: font(8.5) }}>{unit}</span>
         </span>
         {/* 柱状条背景槽与渐变填充 */}
         <div className="w-6 h-[56px] bg-neutral-100 rounded-md overflow-hidden flex items-end shadow-inner border border-neutral-200/40">
@@ -203,7 +212,7 @@ export default function Capacitor() {
         </div>
         {/* 物理量符号与物理名称 */}
         <span className={`text-xs font-bold font-mono mt-1 leading-none ${textClass}`}>{symbol}</span>
-        <span className="text-[9.5px] text-neutral-400 mt-0.5 leading-none">{label}</span>
+        <span className="text-neutral-400 mt-0.5 leading-none" style={{ fontSize: font(9.5) }}>{label}</span>
       </div>
     )
   }
@@ -215,7 +224,7 @@ export default function Capacitor() {
         {/* 柱状图头部信息 */}
         <div className="flex justify-between items-center z-10">
           <span className="text-xs font-semibold text-neutral-600">物理量相对百分比联动柱状图 (0% - 100%)</span>
-          <span className="text-[10px] text-neutral-400 font-medium font-mono">
+          <span className="text-neutral-400 font-medium font-mono" style={{ fontSize: font(10) }}>
             S = {S} cm² | d = {d.toFixed(1)} mm | {epsilon_r > 1.5 ? '电介质 (εᵣ=5.0)' : '真空环境 (εᵣ=1.0)'}
           </span>
         </div>
@@ -223,13 +232,13 @@ export default function Capacitor() {
         {/* 柱状图主体刻度及渲染 */}
         <div className="flex-1 flex justify-around items-end pt-3 pb-0.5 relative">
           {/* 背景纵向百分比虚线 */}
-          <div className="absolute inset-x-0 top-3 border-t border-dashed border-neutral-100 flex justify-between px-2 text-[8.5px] text-neutral-300 pointer-events-none">
+          <div className="absolute inset-x-0 top-3 border-t border-dashed border-neutral-100 flex justify-between px-2 text-neutral-300 pointer-events-none" style={{ fontSize: font(8.5) }}>
             <span>100%</span>
           </div>
-          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t border-dashed border-neutral-100 flex justify-between px-2 text-[8.5px] text-neutral-300 pointer-events-none">
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t border-dashed border-neutral-100 flex justify-between px-2 text-neutral-300 pointer-events-none" style={{ fontSize: font(8.5) }}>
             <span>50%</span>
           </div>
-          <div className="absolute inset-x-0 bottom-1 border-b border-dashed border-neutral-100 flex justify-between px-2 text-[8.5px] text-neutral-300 pointer-events-none">
+          <div className="absolute inset-x-0 bottom-1 border-b border-dashed border-neutral-100 flex justify-between px-2 text-neutral-300 pointer-events-none" style={{ fontSize: font(8.5) }}>
             <span>0%</span>
           </div>
 
@@ -305,7 +314,7 @@ export default function Capacitor() {
             <text
               x={plateLeft - (plateW + 40) / 2}
               y={cy + 4}
-              fontSize={10}
+              fontSize={font(10)}
               fontWeight="semibold"
               fill="#0891B2"
               textAnchor="middle"
@@ -335,11 +344,11 @@ export default function Capacitor() {
             <g key={`p-particles-${i}`}>
               {/* 正电荷 (+) */}
               <circle cx={px} cy={topPlateY + plateThick + 6} r={4.5} fill={PHYSICS_COLORS.positiveCharge} />
-              <text x={px} y={topPlateY + plateThick + 9} fontSize={8} textAnchor="middle" fill="white" fontWeight="bold">+</text>
+              <text x={px} y={topPlateY + plateThick + 9} fontSize={font(8)} textAnchor="middle" fill="white" fontWeight="bold">+</text>
 
               {/* 负电荷 (-) */}
               <circle cx={px} cy={botPlateY - 6} r={4.5} fill={PHYSICS_COLORS.negativeCharge} />
-              <text x={px} y={botPlateY - 3} fontSize={8} textAnchor="middle" fill="white" fontWeight="bold">-</text>
+              <text x={px} y={botPlateY - 3} fontSize={font(8)} textAnchor="middle" fill="white" fontWeight="bold">-</text>
             </g>
           ))}
 

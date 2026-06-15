@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE, SCENE_COLORS } from '@/theme/physics'
 import { useEquilibriumPhysics } from './useEquilibriumPhysics'
 import { GRAVITY } from '@/physics/constants'
@@ -10,8 +11,18 @@ import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
 export default function EquilibriumAnimation() {
-  const { params, showVectors, showFormulas, showGrid, isPlaying, time } = useAnimationStore()
+    const {params, showVectors, showFormulas, showGrid, isPlaying, time} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    showVectors: s.showVectors,
+    showFormulas: s.showFormulas,
+    showGrid: s.showGrid,
+    isPlaying: s.isPlaying,
+    time: s.time,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
+  const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 
   const eqScene: SceneConfig = {
@@ -388,8 +399,8 @@ export default function EquilibriumAnimation() {
                 {/* 坐标轴 */}
                 <line x1={ballCenter.cx - 100} y1={ballCenter.cy} x2={ballCenter.cx + 100} y2={ballCenter.cy} stroke={PHYSICS_COLORS.axis} strokeWidth={1} strokeDasharray="4,4" />
                 <line x1={ballCenter.cx} y1={ballCenter.cy - 100} x2={ballCenter.cx} y2={ballCenter.cy + 100} stroke={PHYSICS_COLORS.axis} strokeWidth={1} strokeDasharray="4,4" />
-                <text x={ballCenter.cx + 104} y={ballCenter.cy + 4} fontSize={10} fill={PHYSICS_COLORS.labelTextLight}>+x</text>
-                <text x={ballCenter.cx - 4} y={ballCenter.cy - 104} fontSize={10} fill={PHYSICS_COLORS.labelTextLight}>+y</text>
+                <text x={ballCenter.cx + 104} y={ballCenter.cy + 4} fontSize={font(10)} fill={PHYSICS_COLORS.labelTextLight}>+x</text>
+                <text x={ballCenter.cx - 4} y={ballCenter.cy - 104} fontSize={font(10)} fill={PHYSICS_COLORS.labelTextLight}>+y</text>
 
                 {/* T1 投影虚垂线与分力 */}
                 <line x1={t1End.cx} y1={t1End.cy} x2={t1xEnd.cx} y2={t1xEnd.cy} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={0.75} strokeDasharray="2,2" opacity={0.5} />
@@ -412,8 +423,8 @@ export default function EquilibriumAnimation() {
                   strokeWidth={1.5}
                   pixelLength={Math.hypot(t1yEnd.cx - ballCenter.cx, t1yEnd.cy - ballCenter.cy)}
                 />
-                <text x={t1xEnd.cx - 18} y={t1xEnd.cy + 12} fontSize={10} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold">T1x</text>
-                <text x={t1yEnd.cx - 20} y={t1yEnd.cy - 6} fontSize={10} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold">T1y</text>
+                <text x={t1xEnd.cx - 18} y={t1xEnd.cy + 12} fontSize={font(10)} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold">T1x</text>
+                <text x={t1yEnd.cx - 20} y={t1yEnd.cy - 6} fontSize={font(10)} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold">T1y</text>
 
                 {/* T2 投影虚垂线与分力 */}
                 <line x1={t2End.cx} y1={t2End.cy} x2={t2xEnd.cx} y2={t2xEnd.cy} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={0.75} strokeDasharray="2,2" opacity={0.5} />
@@ -436,8 +447,8 @@ export default function EquilibriumAnimation() {
                   strokeWidth={1.5}
                   pixelLength={Math.hypot(t2yEnd.cx - ballCenter.cx, t2yEnd.cy - ballCenter.cy)}
                 />
-                <text x={t2xEnd.cx + 2} y={t2xEnd.cy + 12} fontSize={10} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold">T2x</text>
-                <text x={t2yEnd.cx + 6} y={t2yEnd.cy - 6} fontSize={10} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold">T2y</text>
+                <text x={t2xEnd.cx + 2} y={t2xEnd.cy + 12} fontSize={font(10)} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold">T2x</text>
+                <text x={t2yEnd.cx + 6} y={t2yEnd.cy - 6} fontSize={font(10)} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold">T2y</text>
               </g>
             )}
           </g>
@@ -447,7 +458,7 @@ export default function EquilibriumAnimation() {
         {(brokenLine === 'none' || brokenLine === 'right') && (
           <g>
             <rect x={t1Mid.cx - 28} y={t1Mid.cy - 22} width={56} height={18} fill="white" fillOpacity={0.88} stroke={PHYSICS_COLORS.grid} strokeWidth={1} rx={4} />
-            <text x={t1Mid.cx} y={t1Mid.cy - 9} fontSize={10} fontFamily={CANVAS_STYLE.font.family} fill={PHYSICS_COLORS.tension} fontWeight="bold" textAnchor="middle">
+            <text x={t1Mid.cx} y={t1Mid.cy - 9} fontSize={font(10)} fontFamily={CANVAS_STYLE.font.family} fill={PHYSICS_COLORS.tension} fontWeight="bold" textAnchor="middle">
               {t1.toFixed(1)} N
             </text>
           </g>
@@ -455,7 +466,7 @@ export default function EquilibriumAnimation() {
         {(brokenLine === 'none' || brokenLine === 'left') && (
           <g>
             <rect x={t2Mid.cx - 28} y={t2Mid.cy - 22} width={56} height={18} fill="white" fillOpacity={0.88} stroke={PHYSICS_COLORS.grid} strokeWidth={1} rx={4} />
-            <text x={t2Mid.cx} y={t2Mid.cy - 9} fontSize={10} fontFamily={CANVAS_STYLE.font.family} fill={PHYSICS_COLORS.tension} fontWeight="bold" textAnchor="middle">
+            <text x={t2Mid.cx} y={t2Mid.cy - 9} fontSize={font(10)} fontFamily={CANVAS_STYLE.font.family} fill={PHYSICS_COLORS.tension} fontWeight="bold" textAnchor="middle">
               {t2.toFixed(1)} N
             </text>
           </g>
@@ -558,7 +569,7 @@ export default function EquilibriumAnimation() {
           <g>
             <path d={leftArcPath} fill="none" stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={1} strokeDasharray="1,1" />
             <rect x={leftTextPos.cx - 15} y={leftTextPos.cy - 8} width={30} height={14} fill="white" fillOpacity={0.8} rx={2} />
-            <text x={leftTextPos.cx} y={leftTextPos.cy + 3} fontSize={11} fontFamily={CANVAS_STYLE.font.family} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
+            <text x={leftTextPos.cx} y={leftTextPos.cy + 3} fontSize={font(11)} fontFamily={CANVAS_STYLE.font.family} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
               {theta1.toFixed(0)}°
             </text>
           </g>
@@ -568,7 +579,7 @@ export default function EquilibriumAnimation() {
           <g>
             <path d={rightArcPath} fill="none" stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={1} strokeDasharray="1,1" />
             <rect x={rightTextPos.cx - 15} y={rightTextPos.cy - 8} width={30} height={14} fill="white" fillOpacity={0.8} rx={2} />
-            <text x={rightTextPos.cx} y={rightTextPos.cy + 3} fontSize={11} fontFamily={CANVAS_STYLE.font.family} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
+            <text x={rightTextPos.cx} y={rightTextPos.cy + 3} fontSize={font(11)} fontFamily={CANVAS_STYLE.font.family} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
               {theta2.toFixed(0)}°
             </text>
           </g>
@@ -607,7 +618,7 @@ export default function EquilibriumAnimation() {
               )}
               
               {isOverloaded && brokenLine === 'none' && (
-                <text x={0} y={105} fontSize={12} fill={PHYSICS_COLORS.forceArrowRed} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family} className="animate-pulse">
+                <text x={0} y={105} fontSize={font(12)} fill={PHYSICS_COLORS.forceArrowRed} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family} className="animate-pulse">
                   ⚠ 过载警示：拉力超过安全阈值！
                 </text>
               )}
@@ -620,27 +631,27 @@ export default function EquilibriumAnimation() {
           <g>
             {/* 图表底色和边框 */}
             <rect x={chartX0 - 10} y={chartY0 - chartH - 10} width={chartW + 20} height={chartH + 20} fill="white" fillOpacity={0.9} stroke={PHYSICS_COLORS.grid} strokeWidth={1} rx={4} />
-            <text x={chartX0 + chartW / 2} y={chartY0 - chartH - 2} fontSize={9} fill={PHYSICS_COLORS.labelTextLight} fontWeight="bold" textAnchor="middle">
+            <text x={chartX0 + chartW / 2} y={chartY0 - chartH - 2} fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight} fontWeight="bold" textAnchor="middle">
               T - θ 关系图像 (G={gravity.toFixed(1)}N)
             </text>
 
             {/* 极限 50 N 红线 */}
             <line x1={chartX0} y1={tToY(50)} x2={chartX0 + chartW} y2={tToY(50)} stroke={PHYSICS_COLORS.forceArrowRed} strokeWidth={1} strokeDasharray="2,2" />
-            <text x={chartX0 + chartW - 2} y={tToY(50) - 3} fontSize={8} fill={PHYSICS_COLORS.forceArrowRed} fontWeight="bold" textAnchor="end">
+            <text x={chartX0 + chartW - 2} y={tToY(50) - 3} fontSize={font(8)} fill={PHYSICS_COLORS.forceArrowRed} fontWeight="bold" textAnchor="end">
               极限 50N
             </text>
 
             {/* 图像坐标轴 */}
             <line x1={chartX0} y1={chartY0} x2={chartX0 + chartW + 5} y2={chartY0} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={1} />
             <line x1={chartX0} y1={chartY0} x2={chartX0} y2={chartY0 - chartH - 5} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={1} />
-            <text x={chartX0 + chartW + 2} y={chartY0 + 9} fontSize={8} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">θ(°)</text>
-            <text x={chartX0 - 4} y={chartY0 - chartH} fontSize={8} fill={PHYSICS_COLORS.labelTextLight}>T(N)</text>
+            <text x={chartX0 + chartW + 2} y={chartY0 + 9} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">θ(°)</text>
+            <text x={chartX0 - 4} y={chartY0 - chartH} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight}>T(N)</text>
             
             {/* 坐标刻度 */}
-            <text x={thetaToX(10)} y={chartY0 + 9} fontSize={8} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">10°</text>
-            <text x={thetaToX(90)} y={chartY0 + 9} fontSize={8} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">90°</text>
-            <text x={chartX0 - 4} y={tToY(60) + 3} fontSize={8} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">60</text>
-            <text x={chartX0 - 4} y={tToY(30) + 3} fontSize={8} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">30</text>
+            <text x={thetaToX(10)} y={chartY0 + 9} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">10°</text>
+            <text x={thetaToX(90)} y={chartY0 + 9} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">90°</text>
+            <text x={chartX0 - 4} y={tToY(60) + 3} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">60</text>
+            <text x={chartX0 - 4} y={tToY(30) + 3} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">30</text>
 
             {/* 正割理论曲线 */}
             {secantPathD && (
@@ -652,14 +663,14 @@ export default function EquilibriumAnimation() {
               <g>
                 <circle cx={thetaToX(theta1)} cy={tToY(t1)} r={3.5} fill={PHYSICS_COLORS.tension} />
                 <circle cx={thetaToX(theta1)} cy={tToY(t1)} r={7} fill="none" stroke={PHYSICS_COLORS.tension} strokeWidth={0.5} opacity={0.5} className="animate-ping" />
-                <text x={thetaToX(theta1) + 5} y={tToY(t1) - 2} fontSize={7} fill={PHYSICS_COLORS.tension} fontWeight="bold">T₁</text>
+                <text x={thetaToX(theta1) + 5} y={tToY(t1) - 2} fontSize={font(7)} fill={PHYSICS_COLORS.tension} fontWeight="bold">T₁</text>
               </g>
             )}
             {(brokenLine === 'none' || brokenLine === 'left') && (
               <g>
                 <circle cx={thetaToX(theta2)} cy={tToY(t2)} r={3.5} fill={PHYSICS_COLORS.tension} />
                 <circle cx={thetaToX(theta2)} cy={tToY(t2)} r={7} fill="none" stroke={PHYSICS_COLORS.tension} strokeWidth={0.5} opacity={0.5} className="animate-ping" />
-                <text x={thetaToX(theta2) - 5} y={tToY(t2) - 2} fontSize={7} fill={PHYSICS_COLORS.tension} fontWeight="bold" textAnchor="end">T₂</text>
+                <text x={thetaToX(theta2) - 5} y={tToY(t2) - 2} fontSize={font(7)} fill={PHYSICS_COLORS.tension} fontWeight="bold" textAnchor="end">T₂</text>
               </g>
             )}
           </g>

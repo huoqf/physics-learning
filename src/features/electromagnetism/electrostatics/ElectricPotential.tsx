@@ -1,6 +1,7 @@
 import React, { useRef, useState, useMemo, useEffect } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { radius } from '@/theme/radius'
@@ -28,11 +29,18 @@ interface PathPoint {
 }
 
 export default function ElectricPotential() {
-  const { params, time, isPlaying } = useAnimationStore()
+    const {params, time, isPlaying} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    isPlaying: s.isPlaying,
+    }))
+  )
   const updateParam = useAnimationStore((s) => s.updateParam)
   const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
 
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 500 })
+  const { font } = canvasSize
   const animSvgRef = useRef<SVGSVGElement>(null)
   const chartSvgRef = useRef<SVGSVGElement>(null)
 
@@ -578,10 +586,10 @@ export default function ElectricPotential() {
                   strokeWidth={1.5}
                   strokeDasharray="4,4"
                 />
-                <text x={pA.cx} y={chartPadding.top - 8} fontSize={10} fontWeight="bold" fill={colors.neutral[500]} textAnchor="middle">
+                <text x={pA.cx} y={chartPadding.top - 8} fontSize={font(10)} fontWeight="bold" fill={colors.neutral[500]} textAnchor="middle">
                   A点 (x=1.5m)
                 </text>
-                <text x={pB.cx} y={chartPadding.top - 8} fontSize={10} fontWeight="bold" fill={colors.neutral[500]} textAnchor="middle">
+                <text x={pB.cx} y={chartPadding.top - 8} fontSize={font(10)} fontWeight="bold" fill={colors.neutral[500]} textAnchor="middle">
                   B点 (x=5.5m)
                 </text>
               </g>
@@ -610,7 +618,7 @@ export default function ElectricPotential() {
           <text
             x={chartPadding.left + chartWidth}
             y={chartPadding.top + chartHeight + 22}
-            fontSize={10}
+            fontSize={font(10)}
             fill={colors.neutral[600]}
             textAnchor="end"
             fontWeight="bold"
@@ -620,7 +628,7 @@ export default function ElectricPotential() {
           <text
             x={chartPadding.left - 12}
             y={chartPadding.top - 8}
-            fontSize={10}
+            fontSize={font(10)}
             fill={colors.neutral[600]}
             textAnchor="middle"
             fontWeight="bold"
@@ -635,7 +643,7 @@ export default function ElectricPotential() {
             return (
               <g key={`lbl-x-${i}`}>
                 <line x1={p.cx} y1={p.cy} x2={p.cx} y2={p.cy + 4} stroke={colors.neutral[400]} strokeWidth={1.5} />
-                <text x={p.cx} y={p.cy + 16} fontSize={9.5} fill={colors.neutral[600]} textAnchor="middle" className="font-mono">
+                <text x={p.cx} y={p.cy + 16} fontSize={font(9.5)} fill={colors.neutral[600]} textAnchor="middle" className="font-mono">
                   {xp.toFixed(1)}
                 </text>
               </g>
@@ -647,7 +655,7 @@ export default function ElectricPotential() {
             return (
               <g key={`lbl-y-${i}`}>
                 <line x1={p.cx} y1={p.cy} x2={p.cx - 4} y2={p.cy} stroke={colors.neutral[400]} strokeWidth={1.5} />
-                <text x={p.cx - 8} y={p.cy + 3.5} fontSize={9.5} fill={colors.neutral[600]} textAnchor="end" className="font-mono">
+                <text x={p.cx - 8} y={p.cy + 3.5} fontSize={font(9.5)} fill={colors.neutral[600]} textAnchor="end" className="font-mono">
                   {Math.round(phi)}
                 </text>
               </g>
@@ -690,10 +698,10 @@ export default function ElectricPotential() {
                     fillOpacity={0.9}
                     className="shadow-sm"
                   />
-                  <text x={8} y={15} fontSize={9} fill={colors.neutral[800]} fontWeight="bold">
+                  <text x={8} y={15} fontSize={font(9)} fill={colors.neutral[800]} fontWeight="bold">
                     k = -Eₓ = {hoverPhysics.slope.toFixed(1)} V/m
                   </text>
-                  <text x={8} y={28} fontSize={9} fill={PHYSICS_COLORS.electricPotential} fontWeight="bold">
+                  <text x={8} y={28} fontSize={font(9)} fill={PHYSICS_COLORS.electricPotential} fontWeight="bold">
                     φ = {hoverPhysics.phi.toFixed(1)} V
                   </text>
                 </g>
@@ -727,7 +735,7 @@ export default function ElectricPotential() {
         {/* 标题与操作提示 */}
         <div className="absolute left-4 top-2 pointer-events-none bg-white/80 backdrop-blur-sm px-2 py-1 rounded text-xs flex items-center gap-2 border border-neutral-200/50 shadow-sm">
           <span className="font-bold text-neutral-600">φ - x 关系图线 (一维水平路径)</span>
-          <span className="text-[10px] text-amber-600 font-semibold bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200/40 animate-pulse">
+          <span className="text-amber-600 font-semibold bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200/40 animate-pulse" style={{ fontSize: font(10) }}>
             ↔ 左右移动鼠标滑动求导
           </span>
         </div>
@@ -835,7 +843,7 @@ export default function ElectricPotential() {
           <text
             x={posA.cx}
             y={posA.cy + 24}
-            fontSize={10.5}
+            fontSize={font(10.5)}
             fontWeight="black"
             fill={drawMode === 1 && !isPlaying ? colors.primary[700] : colors.neutral[600]}
             textAnchor="middle"
@@ -846,17 +854,17 @@ export default function ElectricPotential() {
           {/* B 锚点 */}
           <circle cx={posB.cx} cy={posB.cy} r={12} fill="white" stroke={colors.neutral[400]} strokeWidth={1.5} />
           <circle cx={posB.cx} cy={posB.cy} r={4} fill={colors.neutral[500]} />
-          <text x={posB.cx} y={posB.cy + 24} fontSize={10.5} fontWeight="black" fill={colors.neutral[600]} textAnchor="middle">
+          <text x={posB.cx} y={posB.cy + 24} fontSize={font(10.5)} fontWeight="black" fill={colors.neutral[600]} textAnchor="middle">
             B (终点)
           </text>
 
           {/* 4. 场源正电荷 */}
           <circle cx={posQ.cx} cy={posQ.cy} r={45} fill="url(#source-glow)" />
           <circle cx={posQ.cx} cy={posQ.cy} r={18} fill={PHYSICS_COLORS.positiveCharge} stroke="white" strokeWidth={1.8} className="drop-shadow-md" />
-          <text x={posQ.cx} y={posQ.cy} fontSize={16} fontWeight="bold" fill="white" textAnchor="middle" dominantBaseline="middle">
+          <text x={posQ.cx} y={posQ.cy} fontSize={font(16)} fontWeight="bold" fill="white" textAnchor="middle" dominantBaseline="middle">
             +Q
           </text>
-          <text x={posQ.cx} y={posQ.cy - 24} fontSize={9.5} fontWeight="bold" fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
+          <text x={posQ.cx} y={posQ.cy - 24} fontSize={font(9.5)} fontWeight="bold" fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
             固电荷场源 (+2μC)
           </text>
 
@@ -898,7 +906,7 @@ export default function ElectricPotential() {
                 strokeWidth={2}
                 strokeDasharray="4,4"
               />
-              <text x={(posA.cx + posB.cx)/2} y={posA.cy - 70} fontSize={11} fill={colors.neutral[500]} textAnchor="middle" fontWeight="bold">
+              <text x={(posA.cx + posB.cx)/2} y={posA.cy - 70} fontSize={font(11)} fill={colors.neutral[500]} textAnchor="middle" fontWeight="bold">
                 ✍️ 按住 A 拖动鼠标绘制自定义轨迹至 B
               </text>
             </g>
@@ -932,7 +940,7 @@ export default function ElectricPotential() {
               <text
                 x={hoverIndicator.cx + hoverIndicator.dx + (hoverIndicator.dx >= 0 ? 12 : -12)}
                 y={hoverIndicator.cy + hoverIndicator.dy - 6}
-                fontSize={11.5}
+                fontSize={font(11.5)}
                 fontWeight="black"
                 fill={PHYSICS_COLORS.electricField}
                 textAnchor="middle"
@@ -962,7 +970,7 @@ export default function ElectricPotential() {
                   <text
                     x={particleCanvasPos.cx + particleForceArrow.dx + (particleForceArrow.dx >= 0 ? 12 : -12)}
                     y={particleCanvasPos.cy + particleForceArrow.dy + 4}
-                    fontSize={11}
+                    fontSize={font(11)}
                     fontWeight="black"
                     fill={PHYSICS_COLORS.electricForce}
                     textAnchor="middle"
@@ -1001,7 +1009,7 @@ export default function ElectricPotential() {
               <text
                 x={particleCanvasPos.cx}
                 y={particleCanvasPos.cy + 0.2}
-                fontSize={12}
+                fontSize={font(12)}
                 fontWeight="black"
                 fill="white"
                 textAnchor="middle"
@@ -1013,7 +1021,7 @@ export default function ElectricPotential() {
               <text
                 x={particleCanvasPos.cx}
                 y={particleCanvasPos.cy - 18}
-                fontSize={9.5}
+                fontSize={font(9.5)}
                 fontWeight="bold"
                 fill={PHYSICS_COLORS.labelText}
                 textAnchor="middle"
@@ -1033,14 +1041,14 @@ export default function ElectricPotential() {
             width: '150px',
           }}
         >
-          <span className="text-[10px] font-bold text-neutral-500 mb-2.5">实时能量变化 (守恒)</span>
+          <span className="font-bold text-neutral-500 mb-2.5" style={{ fontSize: font(10) }}>实时能量变化 (守恒)</span>
           
           <div className="h-28 flex justify-around items-end w-full relative px-2">
             {/* 中间百分比虚线 */}
-            <div className="absolute inset-x-0 top-0 border-t border-dashed border-neutral-200 flex justify-between text-[7.5px] text-neutral-300 font-mono pointer-events-none">
+            <div className="absolute inset-x-0 top-0 border-t border-dashed border-neutral-200 flex justify-between text-neutral-300 font-mono pointer-events-none" style={{ fontSize: font(7.5) }}>
               <span>总能 E</span>
             </div>
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t border-dashed border-neutral-200 flex justify-between text-[7.5px] text-neutral-300 font-mono pointer-events-none">
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t border-dashed border-neutral-200 flex justify-between text-neutral-300 font-mono pointer-events-none" style={{ fontSize: font(7.5) }}>
               <span>50%</span>
             </div>
 
@@ -1052,8 +1060,8 @@ export default function ElectricPotential() {
                   style={{ height: `${isPlaying || runProgress > 0 ? particlePhysics.pctEk : 50}%`, backgroundColor: PHYSICS_COLORS.kineticEnergy }}
                 />
               </div>
-              <span className="text-[10px] font-bold mt-1 font-mono" style={{ color: PHYSICS_COLORS.kineticEnergy }}>Ek</span>
-              <span className="text-[8px] font-medium" style={{ color: PHYSICS_COLORS.kineticEnergy }}>动能</span>
+              <span className="font-bold mt-1 font-mono" style={{ fontSize: font(10), color: PHYSICS_COLORS.kineticEnergy }}>Ek</span>
+              <span className="font-medium" style={{ fontSize: font(8), color: PHYSICS_COLORS.kineticEnergy }}>动能</span>
             </div>
 
             {/* 势能柱 (紫色) */}
@@ -1064,8 +1072,8 @@ export default function ElectricPotential() {
                   style={{ height: `${isPlaying || runProgress > 0 ? particlePhysics.pctEp : 50}%`, backgroundColor: PHYSICS_COLORS.potentialEnergy }}
                 />
               </div>
-              <span className="text-[10px] font-bold mt-1 font-mono" style={{ color: PHYSICS_COLORS.potentialEnergy }}>Ep</span>
-              <span className="text-[8px] font-medium" style={{ color: PHYSICS_COLORS.potentialEnergy }}>电势能</span>
+              <span className="font-bold mt-1 font-mono" style={{ fontSize: font(10), color: PHYSICS_COLORS.potentialEnergy }}>Ep</span>
+              <span className="font-medium" style={{ fontSize: font(8), color: PHYSICS_COLORS.potentialEnergy }}>电势能</span>
             </div>
           </div>
         </div>
@@ -1074,7 +1082,7 @@ export default function ElectricPotential() {
         <div className="absolute left-4 top-2 pointer-events-none bg-white/80 backdrop-blur-sm px-2 py-1 rounded text-xs flex items-center gap-2 border border-neutral-200/50 shadow-sm">
           <span className="font-bold text-neutral-600">非匀强电场物理动画 (匀强场 + 点电荷)</span>
           {drawMode === 1 && !isPlaying && handPath.length === 0 && (
-            <span className="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200/40 animate-pulse">
+            <span className="text-indigo-600 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200/40 animate-pulse" style={{ fontSize: font(10) }}>
               ✍️ 请按住 A 点拖拽画线至 B
             </span>
           )}

@@ -1,8 +1,9 @@
 import { useRef, useState, useEffect } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
-import { canvasToPhysics } from '@/utils/coordinate'
+import { canvasToPhysics, computeScale } from '@/utils/coordinate'
 import { useVectorAdditionPhysics } from './useVectorAdditionPhysics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
@@ -15,8 +16,19 @@ const SNAP_ANGLE_THRESHOLD = 2.5 // 角度吸附门槛（度）
 const SNAP_FORCE_THRESHOLD = 0.15 // 大小吸附门槛（N）
 
 export default function VectorAdditionAnimation() {
-  const { params, showVectors, showFormulas, showGrid, isPlaying, time, updateParam } = useAnimationStore()
+    const {params, showVectors, showFormulas, showGrid, isPlaying, time, updateParam} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    showVectors: s.showVectors,
+    showFormulas: s.showFormulas,
+    showGrid: s.showGrid,
+    isPlaying: s.isPlaying,
+    time: s.time,
+    updateParam: s.updateParam,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
+  const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 
   // 1. 获取当前力学参数（未设定时使用 Registry 默认值）
@@ -25,7 +37,8 @@ export default function VectorAdditionAnimation() {
   const angle = params.angle ?? 60
   const mode = params.mode ?? 0 // 0 = 平行四边形, 1 = 三角形, 2 = 正交分解
   
-  const scale = 15 // 1 N = 15 px
+  const WORLD = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 } as const
+  const scale = computeScale(canvasSize.width, canvasSize.height, WORLD) * 0.6
 
   const vaScene: SceneConfig = {
     vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
@@ -781,7 +794,7 @@ export default function VectorAdditionAnimation() {
             <text
               x={alphaTextPos.cx}
               y={alphaTextPos.cy + 3}
-              fontSize={11}
+              fontSize={font(11)}
               fontFamily={CANVAS_STYLE.font.family}
               fill={PHYSICS_COLORS.forceNet}
               fontWeight="bold"

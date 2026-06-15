@@ -1,6 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CHART_COLORS, CANVAS_STYLE, VECTOR_DISPLAY } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import {
@@ -48,8 +49,17 @@ const KE_LAYOUT = {
  * - 切向方向由内法线（指向圆心）旋转 90° 推导
  */
 export default function KineticEnergyAnimation() {
-  const { params, time, isPlaying, setIsPlaying, showVectors } = useAnimationStore()
+    const {params, time, isPlaying, setIsPlaying, showVectors} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    isPlaying: s.isPlaying,
+    setIsPlaying: s.setIsPlaying,
+    showVectors: s.showVectors,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 420 })
+  const { font } = canvasSize
   const [chartTab, setChartTab] = useState<'ek-ep' | 'fx-at'>('ek-ep')
   const [showCriticalTip, setShowCriticalTip] = useState(false)
   const hasPausedRef = useRef(false)
@@ -305,21 +315,23 @@ export default function KineticEnergyAnimation() {
         <div className="absolute top-3 right-4 flex gap-1 z-10">
           <button
             onClick={() => setChartTab('ek-ep')}
-            className={`px-2 py-0.5 text-[10px] font-semibold rounded border transition-all duration-200 ${
+            className={`px-2 py-0.5 font-semibold rounded border transition-all duration-200 ${
               chartTab === 'ek-ep'
                 ? 'bg-primary-600 border-primary-600 text-white shadow-sm'
                 : 'bg-white border-neutral-300 text-neutral-600 hover:bg-neutral-50 active:scale-[0.97]'
             }`}
+            style={{ fontSize: font(10) }}
           >
             能量-位移 图像
           </button>
           <button
             onClick={() => setChartTab('fx-at')}
-            className={`px-2 py-0.5 text-[10px] font-semibold rounded border transition-all duration-200 ${
+            className={`px-2 py-0.5 font-semibold rounded border transition-all duration-200 ${
               chartTab === 'fx-at'
                 ? 'bg-primary-600 border-primary-600 text-white shadow-sm'
                 : 'bg-white border-neutral-300 text-neutral-600 hover:bg-neutral-50 active:scale-[0.97]'
             }`}
+            style={{ fontSize: font(10) }}
           >
             力-位移 / a-t 图像
           </button>
@@ -341,7 +353,7 @@ export default function KineticEnergyAnimation() {
             <span className="text-xs font-bold text-accent-800">
               {mode === 0 ? '🚀 恒力加速作用结束' : '🎢 物块已滑至水平面'}
             </span>
-            <span className="text-[9px] text-accent-700 leading-snug">
+            <span className="text-accent-700 leading-snug" style={{ fontSize: font(9) }}>
               {mode === 0
                 ? '拉力已撤去！累计做的拉力功刚好完全等于物块增加的动能（W = ΔEk）。此后物块做匀速运动。'
                 : '物块已到达圆弧底端！重力做的正功与摩擦力做的负功之和（合力总功）刚好完全等于物块动能的变化量（W总 = ΔEk）。此后做匀速运动。'}
@@ -385,7 +397,7 @@ export default function KineticEnergyAnimation() {
               return (
                 <g key={`ek-y-${i}`}>
                   <line x1={chartLeft - 3} y1={y} x2={chartLeft} y2={y} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={chartLeft - 5} y={y + 3} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="end">{eVal.toFixed(0)}J</text>
+                  <text x={chartLeft - 5} y={y + 3} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">{eVal.toFixed(0)}J</text>
                 </g>
               )
             })}
@@ -395,7 +407,7 @@ export default function KineticEnergyAnimation() {
               return (
                 <g key={`ek-x-${i}`}>
                   <line x1={xPos} y1={vtBottom} x2={xPos} y2={vtBottom + 3} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={xPos} y={vtBottom + 9} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="middle">{xVal.toFixed(1)}m</text>
+                  <text x={xPos} y={vtBottom + 9} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="middle">{xVal.toFixed(1)}m</text>
                 </g>
               )
             })}
@@ -471,7 +483,7 @@ export default function KineticEnergyAnimation() {
               return (
                 <g key={`ep-y-${i}`}>
                   <line x1={chartLeft - 3} y1={y} x2={chartLeft} y2={y} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={chartLeft - 5} y={y + 3} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="end">{eVal.toFixed(0)}J</text>
+                  <text x={chartLeft - 5} y={y + 3} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">{eVal.toFixed(0)}J</text>
                 </g>
               )
             })}
@@ -480,13 +492,13 @@ export default function KineticEnergyAnimation() {
             {mode === 1 && (
               <g transform={`translate(${chartRight - 150}, ${ptTop - 10})`}>
                 <line x1={0} y1={3} x2={8} y2={3} stroke={colors.success[600]} strokeWidth={1.5} />
-                <text x={12} y={5} fontSize={7} fill={CHART_COLORS.tickLabel}>W重 (重力功)</text>
+                <text x={12} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>W重 (重力功)</text>
 
                 <line x1={52} y1={3} x2={60} y2={3} stroke={colors.danger[600]} strokeWidth={1.5} />
-                <text x={64} y={5} fontSize={7} fill={CHART_COLORS.tickLabel}>W摩 (摩擦功)</text>
+                <text x={64} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>W摩 (摩擦功)</text>
 
                 <line x1={104} y1={3} x2={112} y2={3} stroke={colors.primary[600]} strokeWidth={1.5} strokeDasharray="2,2" />
-                <text x={116} y={5} fontSize={7} fill={CHART_COLORS.tickLabel}>W总 (合力功)</text>
+                <text x={116} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>W总 (合力功)</text>
               </g>
             )}
 
@@ -596,7 +608,7 @@ export default function KineticEnergyAnimation() {
               return (
                 <g key={`fv-y-${i}`}>
                   <line x1={chartLeft - 3} y1={y} x2={chartLeft} y2={y} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={chartLeft - 5} y={y + 3} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="end">{fVal.toFixed(0)}N</text>
+                  <text x={chartLeft - 5} y={y + 3} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">{fVal.toFixed(0)}N</text>
                 </g>
               )
             })}
@@ -606,7 +618,7 @@ export default function KineticEnergyAnimation() {
               return (
                 <g key={`fv-x-${i}`}>
                   <line x1={xPos} y1={vtBottom} x2={xPos} y2={vtBottom + 3} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={xPos} y={vtBottom + 9} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="middle">{xVal.toFixed(1)}m</text>
+                  <text x={xPos} y={vtBottom + 9} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="middle">{xVal.toFixed(1)}m</text>
                 </g>
               )
             })}
@@ -640,7 +652,7 @@ export default function KineticEnergyAnimation() {
               />
             )}
             <circle cx={toFvChartX(state.x)} cy={toFvY(state.F)} r={3} fill={PHYSICS_COLORS.forceNet} stroke={colors.neutral.white} strokeWidth={1} />
-            <text x={toFvChartX(state.x) + 5} y={toFvY(state.F) - 4} fontSize={7} fill={PHYSICS_COLORS.forceNet} fontWeight="bold">F_合={state.F.toFixed(1)}N</text>
+            <text x={toFvChartX(state.x) + 5} y={toFvY(state.F) - 4} fontSize={font(7)} fill={PHYSICS_COLORS.forceNet} fontWeight="bold">F_合={state.F.toFixed(1)}N</text>
 
             {/* 临界触底 x=R 引导虚线与波纹 */}
             <g>
@@ -668,7 +680,7 @@ export default function KineticEnergyAnimation() {
               return (
                 <g key={`at-y-${i}`}>
                   <line x1={chartLeft - 3} y1={y} x2={chartLeft} y2={y} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={chartLeft - 5} y={y + 3} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="end">{aVal.toFixed(1)}</text>
+                  <text x={chartLeft - 5} y={y + 3} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">{aVal.toFixed(1)}</text>
                 </g>
               )
             })}
@@ -678,7 +690,7 @@ export default function KineticEnergyAnimation() {
               return (
                 <g key={`at-x-${i}`}>
                   <line x1={xPos} y1={ptBottom} x2={xPos} y2={ptBottom + 3} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={xPos} y={ptBottom + 9} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="middle">{tVal.toFixed(0)}s</text>
+                  <text x={xPos} y={ptBottom + 9} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="middle">{tVal.toFixed(0)}s</text>
                 </g>
               )
             })}
@@ -812,10 +824,10 @@ export default function KineticEnergyAnimation() {
               opacity={0.85}
               rx={0.5}
             />
-            <text x={22} y={-barW_H - 4} fontSize={8.5} fill={PHYSICS_COLORS.work} textAnchor="middle" fontWeight="bold">
+            <text x={22} y={-barW_H - 4} fontSize={font(8.5)} fill={PHYSICS_COLORS.work} textAnchor="middle" fontWeight="bold">
               {state.W >= 0 ? '+' : ''}{state.W.toFixed(1)}J
             </text>
-            <text x={22} y={12} fontSize={8.5} fill={PHYSICS_COLORS.work} textAnchor="middle" fontWeight="semibold">
+            <text x={22} y={12} fontSize={font(8.5)} fill={PHYSICS_COLORS.work} textAnchor="middle" fontWeight="semibold">
               功 W
             </text>
 
@@ -829,15 +841,15 @@ export default function KineticEnergyAnimation() {
               opacity={0.85}
               rx={0.5}
             />
-            <text x={68} y={-barEk_H - 4} fontSize={8.5} fill={PHYSICS_COLORS.kineticEnergy} textAnchor="middle" fontWeight="bold">
+            <text x={68} y={-barEk_H - 4} fontSize={font(8.5)} fill={PHYSICS_COLORS.kineticEnergy} textAnchor="middle" fontWeight="bold">
               {deltaEk >= 0 ? '+' : ''}{deltaEk.toFixed(1)}J
             </text>
-            <text x={68} y={12} fontSize={8.5} fill={PHYSICS_COLORS.kineticEnergy} textAnchor="middle" fontWeight="semibold">
+            <text x={68} y={12} fontSize={font(8.5)} fill={PHYSICS_COLORS.kineticEnergy} textAnchor="middle" fontWeight="semibold">
               ΔEk
             </text>
             
             {/* 定理等价符号 '=' */}
-            <text x={45} y={-18} fontSize={12} fill={colors.neutral[600]} textAnchor="middle" fontWeight="bold">
+            <text x={45} y={-18} fontSize={font(12)} fill={colors.neutral[600]} textAnchor="middle" fontWeight="bold">
               =
             </text>
           </g>

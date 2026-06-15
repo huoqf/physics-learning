@@ -1,6 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CHART_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { KatexFormula } from '@/components/UI'
@@ -25,8 +26,17 @@ import {
  * 布局倒置：图表在上，动画在下，高度自适应动态分配
  */
 export default function PowerAnimation() {
-  const { params, time, isPlaying, setIsPlaying, showVectors } = useAnimationStore()
+    const {params, time, isPlaying, setIsPlaying, showVectors} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    isPlaying: s.isPlaying,
+    setIsPlaying: s.setIsPlaying,
+    showVectors: s.showVectors,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 420 })
+  const { font } = canvasSize
   const [chartTab, setChartTab] = useState<'vt-pt' | 'fv-at'>('vt-pt')
   const [showCriticalTip, setShowCriticalTip] = useState(false)
   const hasPausedRef = useRef(false)
@@ -232,21 +242,23 @@ export default function PowerAnimation() {
         <div className="absolute top-3 right-4 flex gap-1 z-10">
           <button
             onClick={() => setChartTab('vt-pt')}
-            className={`px-2 py-0.5 text-[10px] font-semibold rounded border transition-all duration-200 ${
+            className={`px-2 py-0.5 font-semibold rounded border transition-all duration-200 ${
               chartTab === 'vt-pt'
                 ? 'bg-primary-600 border-primary-600 text-white shadow-sm'
                 : 'bg-white border-neutral-300 text-neutral-600 hover:bg-neutral-50 active:scale-[0.97]'
             }`}
+            style={{ fontSize: font(10) }}
           >
             v-t / P-t 图像
           </button>
           <button
             onClick={() => setChartTab('fv-at')}
-            className={`px-2 py-0.5 text-[10px] font-semibold rounded border transition-all duration-200 ${
+            className={`px-2 py-0.5 font-semibold rounded border transition-all duration-200 ${
               chartTab === 'fv-at'
                 ? 'bg-primary-600 border-primary-600 text-white shadow-sm'
                 : 'bg-white border-neutral-300 text-neutral-600 hover:bg-neutral-50 active:scale-[0.97]'
             }`}
+            style={{ fontSize: font(10) }}
           >
             F-v / a-t 图像
           </button>
@@ -258,7 +270,7 @@ export default function PowerAnimation() {
         <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 pointer-events-none transition-all duration-300">
           <div className="bg-accent-50 border-l-4 border-accent-500 text-accent-800 p-2.5 rounded-r shadow-md flex flex-col gap-0.5 max-w-[280px]">
             <span className="font-bold text-xs">🚀 匀加速阶段结束</span>
-            <span className="text-[9px] text-accent-700 leading-snug">
+            <span className="text-accent-700 leading-snug" style={{ fontSize: font(9) }}>
               功率已达额定最大值！汽车开始进入恒功率变加速阶段，牵引力 F 随速度增大而变小。
             </span>
           </div>
@@ -275,11 +287,13 @@ export default function PowerAnimation() {
             transform: 'translateX(-50%)',
           }}
         >
-          <KatexFormula
-            formula={getLiveFormula()}
-            mode="inline"
-            className="text-[10px] text-primary-700 font-semibold"
-          />
+          <span style={{ fontSize: font(10) }}>
+            <KatexFormula
+              formula={getLiveFormula()}
+              mode="inline"
+              className="text-primary-700 font-semibold"
+            />
+          </span>
         </div>
       )}
 
@@ -334,7 +348,7 @@ export default function PowerAnimation() {
               return (
                 <g key={`vt-y-${i}`}>
                   <line x1={chartLeft - 3} y1={y} x2={chartLeft} y2={y} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={chartLeft - 5} y={y + 3} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="end">{vVal.toFixed(0)}</text>
+                  <text x={chartLeft - 5} y={y + 3} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">{vVal.toFixed(0)}</text>
                 </g>
               )
             })}
@@ -344,7 +358,7 @@ export default function PowerAnimation() {
               return (
                 <g key={`vt-x-${i}`}>
                   <line x1={x} y1={vtBottom} x2={x} y2={vtBottom + 3} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={x} y={vtBottom + 9} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="middle">{tVal.toFixed(0)}s</text>
+                  <text x={x} y={vtBottom + 9} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="middle">{tVal.toFixed(0)}s</text>
                 </g>
               )
             })}
@@ -382,7 +396,7 @@ export default function PowerAnimation() {
                   opacity={0.6}
                 />
                 <circle cx={toChartX(criticalInfo.t_c)} cy={toVtY(criticalInfo.v_c)} r={2} fill={colors.accent[600]} />
-                <text x={toChartX(criticalInfo.t_c) + 3} y={vtTop + 9} fontSize={7} fill={colors.accent[600]} fontWeight="bold">tc 拐点</text>
+                <text x={toChartX(criticalInfo.t_c) + 3} y={vtTop + 9} fontSize={font(7)} fill={colors.accent[600]} fontWeight="bold">tc 拐点</text>
                 {renderRipple(toChartX(criticalInfo.t_c), toVtY(criticalInfo.v_c))}
               </g>
             )}
@@ -401,7 +415,7 @@ export default function PowerAnimation() {
               strokeDasharray={DASH.guide.join(',')}
               opacity={0.5}
             />
-            <text x={chartRight + 2} y={toPtY(P_rated) + 3} fontSize={7} fill={PHYSICS_COLORS.power}>P额</text>
+            <text x={chartRight + 2} y={toPtY(P_rated) + 3} fontSize={font(7)} fill={PHYSICS_COLORS.power}>P额</text>
 
             {/* P-t 轴刻度 */}
             {[0, 0.5, 1].map((frac, i) => {
@@ -410,7 +424,7 @@ export default function PowerAnimation() {
               return (
                 <g key={`pt-y-${i}`}>
                   <line x1={chartLeft - 3} y1={y} x2={chartLeft} y2={y} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={chartLeft - 5} y={y + 3} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="end">{(pVal / 1000).toFixed(0)}kW</text>
+                  <text x={chartLeft - 5} y={y + 3} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">{(pVal / 1000).toFixed(0)}kW</text>
                 </g>
               )
             })}
@@ -453,7 +467,7 @@ export default function PowerAnimation() {
               return (
                 <g key={`fv-y-${i}`}>
                   <line x1={chartLeft - 3} y1={y} x2={chartLeft} y2={y} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={chartLeft - 5} y={y + 3} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="end">{fVal.toFixed(0)}N</text>
+                  <text x={chartLeft - 5} y={y + 3} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">{fVal.toFixed(0)}N</text>
                 </g>
               )
             })}
@@ -463,7 +477,7 @@ export default function PowerAnimation() {
               return (
                 <g key={`fv-x-${i}`}>
                   <line x1={x} y1={vtBottom} x2={x} y2={vtBottom + 3} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={x} y={vtBottom + 9} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="middle">{vVal.toFixed(0)}m/s</text>
+                  <text x={x} y={vtBottom + 9} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="middle">{vVal.toFixed(0)}m/s</text>
                 </g>
               )
             })}
@@ -477,7 +491,7 @@ export default function PowerAnimation() {
               strokeDasharray={DASH.guide.join(',')}
               opacity={0.5}
             />
-            <text x={chartRight + 2} y={toFvY(f) + 3} fontSize={7} fill={PHYSICS_COLORS.friction}>阻力 f</text>
+            <text x={chartRight + 2} y={toFvY(f) + 3} fontSize={font(7)} fill={PHYSICS_COLORS.friction}>阻力 f</text>
 
             {/* 理论完整的 F-v 背景引导双曲线与直线 */}
             <polyline
@@ -512,7 +526,7 @@ export default function PowerAnimation() {
                   opacity={0.6}
                 />
                 <circle cx={toFvChartX(criticalInfo.v_c)} cy={toFvY(criticalInfo.F_const)} r={2} fill={colors.accent[600]} />
-                <text x={toFvChartX(criticalInfo.v_c) + 3} y={vtTop + 9} fontSize={7} fill={colors.accent[600]} fontWeight="bold">vc 临界速</text>
+                <text x={toFvChartX(criticalInfo.v_c) + 3} y={vtTop + 9} fontSize={font(7)} fill={colors.accent[600]} fontWeight="bold">vc 临界速</text>
                 {renderRipple(toFvChartX(criticalInfo.v_c), toFvY(criticalInfo.F_const))}
               </g>
             )}
@@ -529,7 +543,7 @@ export default function PowerAnimation() {
               return (
                 <g key={`at-y-${i}`}>
                   <line x1={chartLeft - 3} y1={y} x2={chartLeft} y2={y} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={chartLeft - 5} y={y + 3} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="end">{aVal.toFixed(1)}</text>
+                  <text x={chartLeft - 5} y={y + 3} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">{aVal.toFixed(1)}</text>
                 </g>
               )
             })}
@@ -655,7 +669,7 @@ export default function PowerAnimation() {
               <g transform={`translate(${objW * 0.15}, ${objH * 0.70})`}>
                 <rect width={objW * 0.7} height={4} rx={1} fill="none" stroke={colors.neutral[300]} strokeWidth={0.5} />
                 <rect width={objW * 0.7 * ekRatio} height={4} rx={1} fill={PHYSICS_COLORS.kineticEnergy} />
-                <text x={objW * 0.35} y={3.5} fontSize={5} textAnchor="middle" fill={colors.neutral.white} fontWeight="bold" opacity={0.9}>
+                <text x={objW * 0.35} y={3.5} fontSize={font(5)} textAnchor="middle" fill={colors.neutral.white} fontWeight="bold" opacity={0.9}>
                   Ek
                 </text>
               </g>
@@ -702,7 +716,7 @@ export default function PowerAnimation() {
               <g transform={`translate(${objW * 0.08}, ${objH * 0.42})`}>
                 <rect width={objW * 0.48} height={4} rx={1} fill="none" stroke={colors.neutral[400]} strokeWidth={0.5} />
                 <rect width={objW * 0.48 * ekRatio} height={4} rx={1} fill={PHYSICS_COLORS.kineticEnergy} />
-                <text x={objW * 0.24} y={3.5} fontSize={5} textAnchor="middle" fill={colors.neutral[800]} fontWeight="bold" opacity={0.8}>
+                <text x={objW * 0.24} y={3.5} fontSize={font(5)} textAnchor="middle" fill={colors.neutral[800]} fontWeight="bold" opacity={0.8}>
                   Ek
                 </text>
               </g>
@@ -736,7 +750,7 @@ export default function PowerAnimation() {
               <g transform={`translate(${objW * 0.15}, ${objH * 0.65})`}>
                 <rect width={objW * 0.7} height={4} rx={1} fill="none" stroke={colors.neutral[300]} strokeWidth={0.5} />
                 <rect width={objW * 0.7 * ekRatio} height={4} rx={1} fill={PHYSICS_COLORS.kineticEnergy} />
-                <text x={objW * 0.35} y={3.5} fontSize={5} textAnchor="middle" fill={colors.neutral.white} fontWeight="bold" opacity={0.9}>
+                <text x={objW * 0.35} y={3.5} fontSize={font(5)} textAnchor="middle" fill={colors.neutral.white} fontWeight="bold" opacity={0.9}>
                   Ek
                 </text>
               </g>

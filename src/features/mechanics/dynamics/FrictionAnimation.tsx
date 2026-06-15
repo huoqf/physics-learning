@@ -1,5 +1,7 @@
 import { useCanvasSize } from '@/utils'
+import { computeScale } from '@/utils/coordinate'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE, FONT, SCENE_COLORS, CHART_COLORS } from '@/theme/physics'
 import { calculateFrictionPullModel, calculateFrictionInclineModel } from '@/physics'
 import { GRAVITY } from '@/physics/constants'
@@ -12,15 +14,19 @@ import type { SceneConfig } from '@/scene/SceneConfig'
 /** 力矢量视觉缩放比 (1 N = 1.6 px) */
 const FORCE_VECTOR_SCALE = 1.6
 
-/** 水平模型位移像素缩放比 (1 m/s²·s² = 35 px) */
-const PULL_PX_PER_METER = 35
-
-/** 斜面模型位移像素缩放比 (1 m/s²·s² = 25 px) */
-const INCLINE_PX_PER_METER = 25
-
 export default function FrictionAnimation() {
-  const { params, time, showVectors, showGrid } = useAnimationStore()
+    const {params, time, showVectors, showGrid} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    showGrid: s.showGrid,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 420 })
+
+  const pullScale = computeScale(canvasSize.width - 200, 1, { xMin: 0, xMax: 5, yMin: 0, yMax: 1 })
+  const inclineScale = computeScale(canvasSize.height * 0.6, 1, { xMin: 0, xMax: 3, yMin: 0, yMax: 1 })
 
   const frictionScene: SceneConfig = {
     vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
@@ -77,7 +83,7 @@ export default function FrictionAnimation() {
 
   // 运动距离计算 (4秒循环一次)
   const loopTime_m1 = time % 4.0
-  const displacement_m1 = 0.5 * acceleration_m1 * loopTime_m1 * loopTime_m1 * PULL_PX_PER_METER
+  const displacement_m1 = 0.5 * acceleration_m1 * loopTime_m1 * loopTime_m1 * pullScale
 
   // 水平运动坐标
   const groundY_m1 = canvasSize.height - 110
@@ -97,7 +103,7 @@ export default function FrictionAnimation() {
 
   // 下滑距离计算 (4秒循环一次)
   const loopTime_m2 = time % 4.0
-  const displacement_m2 = isSliding_m2 ? 0.5 * acceleration_m2 * loopTime_m2 * loopTime_m2 * INCLINE_PX_PER_METER : 0
+  const displacement_m2 = isSliding_m2 ? 0.5 * acceleration_m2 * loopTime_m2 * loopTime_m2 * inclineScale : 0
 
   // 斜面局部几何参数 —— 全部基于 canvasSize 动态计算
   const pivotX = canvasSize.width * 0.18 // 支点水平位置：画布宽度的18%

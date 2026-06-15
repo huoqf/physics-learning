@@ -1,5 +1,6 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { calculateChargeInMagField } from '@/physics'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 
@@ -15,7 +16,15 @@ const VECTOR_LEN_V = 40
 
 /** 带电粒子在匀强磁场中圆周运动：r = mv/(qB)，T = 2πm/(qB)，轨迹实时绘制 */
 export default function ChargeInBField() {
-  const { params, time, showVectors, showFormulas, showGrid } = useAnimationStore()
+    const {params, time, showVectors, showFormulas, showGrid} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    showFormulas: s.showFormulas,
+    showGrid: s.showGrid,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 400 })
 
   const { q = 1, m = 1, v = 10, B = 1 } = params

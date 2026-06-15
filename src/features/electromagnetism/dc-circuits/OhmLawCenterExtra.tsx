@@ -1,10 +1,13 @@
 import { FC, useState, useEffect, useMemo } from 'react'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { useAnimationStore } from '@/stores'
+import { useCanvasSize } from '@/utils'
 import { LineChart } from 'lucide-react'
 
 export const OhmLawCenterExtra: FC = () => {
-  const { params } = useAnimationStore()
+    const params = useAnimationStore((s) => s.params)
+  const [_containerRef, canvasSize] = useCanvasSize({ width: 400, height: 200 })
+  const { font } = canvasSize
 
   const mode = params.mode ?? 0 // 0=定值电阻, 1=小灯泡
   const U = params.U ?? 2
@@ -331,7 +334,7 @@ export const OhmLawCenterExtra: FC = () => {
             <text
               x={toSvgX(U) + (U > 7.5 ? -3 : 3)}
               y={toSvgY(currentI) - 3}
-              fontSize={3.0}
+              fontSize={font(3.0)}
               fill={PHYSICS_COLORS.labelText}
               fontWeight="bold"
               textAnchor={U > 7.5 ? 'end' : 'start'}
@@ -343,19 +346,19 @@ export const OhmLawCenterExtra: FC = () => {
 
         {/* 浮动状态卡片 */}
         <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-lg border border-neutral-100 shadow-sm px-3 py-1.5">
-          <div className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">
+          <div style={{ fontSize: font(9) }} className="font-bold text-neutral-400 uppercase tracking-wider mb-0.5">
             实验实时数据
           </div>
           <div className="flex flex-col gap-0.5 min-w-[90px]">
-            <div className="flex items-center justify-between gap-3 text-[10px]">
+            <div style={{ fontSize: font(10) }} className="flex items-center justify-between gap-3">
               <span className="text-neutral-500">电压 U</span>
               <span className="font-bold text-primary-700">{U.toFixed(1)} V</span>
             </div>
-            <div className="flex items-center justify-between gap-3 text-[10px]">
+            <div style={{ fontSize: font(10) }} className="flex items-center justify-between gap-3">
               <span className="text-neutral-500">电流 I</span>
               <span className="font-bold text-red-600">{currentI.toFixed(3)} A</span>
             </div>
-            <div className="flex items-center justify-between gap-3 text-[10px]">
+            <div style={{ fontSize: font(10) }} className="flex items-center justify-between gap-3">
               <span className="text-neutral-500">等效电阻</span>
               <span className="font-bold text-neutral-700">
                 {mode === 0 ? `${R} Ω` : `${(5 + 2 * U).toFixed(1)} Ω`}

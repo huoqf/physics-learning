@@ -1,6 +1,7 @@
 import { useCanvasSize, physicsToCanvasWithOrigin } from '@/utils'
 import React, { useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { precomputeObliqueThrowWithDrag } from '@/physics/kinematics'
 import {
   PHYSICS_COLORS,
@@ -41,8 +42,18 @@ const OBLIQUE_THROW_LAYOUT = {
 } as const
 
 export default function ObliqueThrowAnimation() {
-  const { params, time, showVectors, showGrid, setIsPlaying, setTime } = useAnimationStore()
+    const {params, time, showVectors, showGrid, setIsPlaying, setTime} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    showGrid: s.showGrid,
+    setIsPlaying: s.setIsPlaying,
+    setTime: s.setTime,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 100, height: 100 })
+  const { font } = canvasSize
 
   const {
     v0 = 15,
@@ -439,7 +450,7 @@ export default function ObliqueThrowAnimation() {
               color={PHYSICS_COLORS.velocityX}
               strokeWidth={STROKE.vectorSub}
             />
-            <text x={ballCanvas.cx + obliqueSceneScale.maxVectorLength * 0.3 + 10} y={ballCanvas.cy + 3} fontSize={9} fill={PHYSICS_COLORS.velocityX} fontWeight="bold">vₓ</text>
+            <text x={ballCanvas.cx + obliqueSceneScale.maxVectorLength * 0.3 + 10} y={ballCanvas.cy + 3} fontSize={font(9)} fill={PHYSICS_COLORS.velocityX} fontWeight="bold">vₓ</text>
 
             {/* 竖直分速度 vy (Blue-400，向上为正) */}
             {Math.abs(currentState.vy) > 0.05 && (
@@ -452,7 +463,7 @@ export default function ObliqueThrowAnimation() {
                 strokeWidth={STROKE.vectorSub}
               />
             )}
-            <text x={ballCanvas.cx - 3} y={ballCanvas.cy - obliqueSceneScale.maxVectorLength * 0.3 + (currentState.vy >= 0 ? -6 : 12)} fontSize={9} fill={PHYSICS_COLORS.velocityY} fontWeight="bold" textAnchor="middle">vᵧ</text>
+            <text x={ballCanvas.cx - 3} y={ballCanvas.cy - obliqueSceneScale.maxVectorLength * 0.3 + (currentState.vy >= 0 ? -6 : 12)} fontSize={font(9)} fill={PHYSICS_COLORS.velocityY} fontWeight="bold" textAnchor="middle">vᵧ</text>
 
             {/* 合速度 v (Blue-600) */}
             <VectorArrow
@@ -462,7 +473,7 @@ export default function ObliqueThrowAnimation() {
               sceneScale={obliqueSceneScale}
               strokeWidth={STROKE.vectorMain}
             />
-            <text x={ballCanvas.cx + obliqueSceneScale.maxVectorLength * 0.3 + 8} y={ballCanvas.cy - obliqueSceneScale.maxVectorLength * 0.3 - 4} fontSize={9} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
+            <text x={ballCanvas.cx + obliqueSceneScale.maxVectorLength * 0.3 + 8} y={ballCanvas.cy - obliqueSceneScale.maxVectorLength * 0.3 - 4} fontSize={font(9)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
           </g>
         )}
 
@@ -471,8 +482,8 @@ export default function ObliqueThrowAnimation() {
           <g transform={`translate(${ballCanvas.cx - 60}, ${ballCanvas.cy - 45})`}>
             <rect width={120} height={38} fill={SCENE_COLORS.labels.panelBg} opacity={0.92} rx={4} stroke={CHART_COLORS.criticalPt} strokeWidth={1} />
             <polygon points="60 38, 55 43, 65 38" fill={SCENE_COLORS.labels.panelBg} stroke={CHART_COLORS.criticalPt} strokeWidth={0.5} />
-            <text x={60} y={13} fontSize={8} fill={SCENE_COLORS.labels.panelText} textAnchor="middle" fontWeight="bold">最高点 H = {maxHeight.toFixed(2)}m</text>
-            <text x={60} y={25} fontSize={7} fill={SCENE_COLORS.labels.panelTextMuted} textAnchor="middle">vᵧ = 0, 合速度 v = vₓ</text>
+            <text x={60} y={13} fontSize={font(8)} fill={SCENE_COLORS.labels.panelText} textAnchor="middle" fontWeight="bold">最高点 H = {maxHeight.toFixed(2)}m</text>
+            <text x={60} y={25} fontSize={font(7)} fill={SCENE_COLORS.labels.panelTextMuted} textAnchor="middle">vᵧ = 0, 合速度 v = vₓ</text>
           </g>
         )}
 
@@ -493,7 +504,7 @@ export default function ObliqueThrowAnimation() {
             strokeWidth={0.8}
             filter="drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12))"
           />
-          <text x={vtWidth / 2} y={15} fontSize={8} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
+          <text x={vtWidth / 2} y={15} fontSize={font(8)} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
             速度分量-时间 (v-t 图)
           </text>
 
@@ -519,11 +530,11 @@ export default function ObliqueThrowAnimation() {
             return (
               <g key={`vt-y-${ratio}`}>
                 <line x1={vtInnerPad.left - 3} y1={yPos} x2={vtInnerPad.left} y2={yPos} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} />
-                <text x={vtInnerPad.left - 6} y={yPos + 2.5} fontSize={7} fill={CHART_COLORS.labelText} textAnchor="end">{val.toFixed(1)}</text>
+                <text x={vtInnerPad.left - 6} y={yPos + 2.5} fontSize={font(7)} fill={CHART_COLORS.labelText} textAnchor="end">{val.toFixed(1)}</text>
               </g>
             )
           })}
-          <text x={vtInnerPad.left - 5} y={vtInnerPad.top - 6} fontSize={7} fill={CHART_COLORS.labelText} textAnchor="middle">v (m/s)</text>
+          <text x={vtInnerPad.left - 5} y={vtInnerPad.top - 6} fontSize={font(7)} fill={CHART_COLORS.labelText} textAnchor="middle">v (m/s)</text>
 
           {/* X 轴刻度 */}
           {[0, 0.5, 1.0].map((ratio) => {
@@ -532,7 +543,7 @@ export default function ObliqueThrowAnimation() {
             return (
               <g key={`vt-x-${ratio}`}>
                 <line x1={xPos} y1={vtInnerPad.top + vtInnerH} x2={xPos} y2={vtInnerPad.top + vtInnerH + 3} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} />
-                <text x={xPos} y={vtInnerPad.top + vtInnerH + 9} fontSize={7} fill={CHART_COLORS.labelText} textAnchor="middle">{val.toFixed(2)}s</text>
+                <text x={xPos} y={vtInnerPad.top + vtInnerH + 9} fontSize={font(7)} fill={CHART_COLORS.labelText} textAnchor="middle">{val.toFixed(2)}s</text>
               </g>
             )
           })}
@@ -562,8 +573,8 @@ export default function ObliqueThrowAnimation() {
           )}
 
           {/* 曲线文本标签 */}
-          <text x={vtInnerPad.left + vtInnerW - 3} y={vtToY(currentState.vx) - 5} fontSize={8} fill={PHYSICS_COLORS.velocityX} textAnchor="end" fontWeight="bold">vₓ</text>
-          <text x={vtInnerPad.left + vtInnerW - 3} y={vtToY(currentState.vy) + (currentState.vy >= 0 ? 9 : -4)} fontSize={8} fill={PHYSICS_COLORS.velocityY} textAnchor="end" fontWeight="bold">vᵧ</text>
+          <text x={vtInnerPad.left + vtInnerW - 3} y={vtToY(currentState.vx) - 5} fontSize={font(8)} fill={PHYSICS_COLORS.velocityX} textAnchor="end" fontWeight="bold">vₓ</text>
+          <text x={vtInnerPad.left + vtInnerW - 3} y={vtToY(currentState.vy) + (currentState.vy >= 0 ? 9 : -4)} fontSize={font(8)} fill={PHYSICS_COLORS.velocityY} textAnchor="end" fontWeight="bold">vᵧ</text>
 
           {/* 指针拖动热区 */}
           <rect

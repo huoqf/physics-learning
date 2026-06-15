@@ -54,6 +54,23 @@ export const LAYOUT = {
   responsiveBreak:  BREAKPOINT.mobile,     // 向后兼容，折叠侧边栏的断点
 } as const
 
+// ─── 动画画布预设尺寸（useCanvasSize 回退值）────────────────────────────────
+// 覆盖高频使用的 { width, height } 组合，减少组件内硬编码
+export const CANVAS_PRESETS = {
+  /** 700×450 — 动量、库仑、天体等 6 个动画 */
+  tall:       { width: 700, height: 450 },
+  /** 700×420 — 能量、速度选择器、闭合电路等 6 个动画 */
+  standard:   { width: 700, height: 420 },
+  /** 650×450 — 万有引力、矢量合成、开普勒等 6 个动画 */
+  mediumTall: { width: 650, height: 450 },
+  /** 700×400 — 匀加速、感应、洛伦兹等 5 个动画 */
+  wide:       { width: 700, height: 400 },
+  /** 600×600 — 圆周运动、向心力、边界磁场 3 个动画 */
+  square:     { width: 600, height: 600 },
+  /** 800×440 — 变压器、法拉第、输电 3 个动画 */
+  extraWide:  { width: 800, height: 440 },
+} as const
+
 // ─── 内容密度上限 ────────────────────────────────────────────────────────
 export const DENSITY = {
   canvasMaxElements: 7,  // Canvas 同时可见元素上限

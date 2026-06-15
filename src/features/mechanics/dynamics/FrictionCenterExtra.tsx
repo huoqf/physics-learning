@@ -1,4 +1,5 @@
 import { FC, useMemo } from 'react'
+import { useCanvasSize } from '@/utils'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { useAnimationStore } from '@/stores'
 import { calculateFrictionPullModel, calculateFrictionInclineModel } from '@/physics'
@@ -6,7 +7,9 @@ import { GRAVITY } from '@/physics/constants'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 
 export const FrictionCenterExtra: FC = () => {
-  const { params } = useAnimationStore()
+    const [containerRef, canvasSize] = useCanvasSize({ width: 400, height: 200 })
+    const { font } = canvasSize
+    const params = useAnimationStore((s) => s.params)
 
   const mode = params.mode ?? 0
   const m = params.m ?? 5
@@ -79,7 +82,7 @@ export const FrictionCenterExtra: FC = () => {
   }
 
   return (
-    <div className="w-full h-full flex gap-3 px-1.5 py-1.5 border-b border-neutral-200/60 bg-neutral-50/50">
+    <div ref={containerRef} className="w-full h-full flex gap-3 px-1.5 py-1.5 border-b border-neutral-200/60 bg-neutral-50/50">
       {/* 全宽图表区域 */}
       <div className="flex-1 bg-white rounded-xl shadow-sm p-3 border border-neutral-100 flex items-center justify-center min-w-0 relative">
         <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
@@ -191,12 +194,12 @@ export const FrictionCenterExtra: FC = () => {
                 stroke={PHYSICS_COLORS.friction} strokeWidth={0.25} strokeDasharray="1,1" />
               <line x1={model1Data.toSvgX(model1Data.f_max)} y1={margin.top} x2={model1Data.toSvgX(model1Data.f_max)} y2={originY}
                 stroke={PHYSICS_COLORS.frictionStatic} strokeWidth={0.3} strokeDasharray="2,2" opacity={0.5} />
-              <text x={model1Data.toSvgX(model1Data.f_max) + 1.5} y={margin.top + 5} fontSize={2.5} fill={PHYSICS_COLORS.frictionStatic} fontWeight="bold">
+              <text x={model1Data.toSvgX(model1Data.f_max) + 1.5} y={margin.top + 5} fontSize={font(2.5)} fill={PHYSICS_COLORS.frictionStatic} fontWeight="bold">
                 f_max
               </text>
               <circle cx={model1Data.toSvgX(F_applied)} cy={model1Data.toSvgY(model1Data.f_actual)} r={2.2} fill={PHYSICS_COLORS.friction} opacity={0.25} />
               <circle cx={model1Data.toSvgX(F_applied)} cy={model1Data.toSvgY(model1Data.f_actual)} r={1.2} fill={PHYSICS_COLORS.friction} />
-              <text x={model1Data.toSvgX(F_applied) + 3} y={model1Data.toSvgY(model1Data.f_actual) - 2} fontSize={3.2} fill={PHYSICS_COLORS.friction} fontWeight="bold">
+              <text x={model1Data.toSvgX(F_applied) + 3} y={model1Data.toSvgY(model1Data.f_actual) - 2} fontSize={font(3.2)} fill={PHYSICS_COLORS.friction} fontWeight="bold">
                 {model1Data.isSliding ? '滑动' : '静摩擦'} f = {model1Data.f_actual.toFixed(1)} N
               </text>
             </g>
@@ -210,12 +213,12 @@ export const FrictionCenterExtra: FC = () => {
                 stroke={PHYSICS_COLORS.friction} strokeWidth={0.25} strokeDasharray="1,1" />
               <line x1={model2Data.toSvgX(model2Data.criticalAngle)} y1={margin.top} x2={model2Data.toSvgX(model2Data.criticalAngle)} y2={originY}
                 stroke={PHYSICS_COLORS.frictionStatic} strokeWidth={0.3} strokeDasharray="2,2" opacity={0.5} />
-              <text x={model2Data.toSvgX(model2Data.criticalAngle) + 1.5} y={margin.top + 5} fontSize={2.5} fill={PHYSICS_COLORS.frictionStatic} fontWeight="bold">
+              <text x={model2Data.toSvgX(model2Data.criticalAngle) + 1.5} y={margin.top + 5} fontSize={font(2.5)} fill={PHYSICS_COLORS.frictionStatic} fontWeight="bold">
                 θ_c ≈ {model2Data.criticalAngle.toFixed(1)}°
               </text>
               <circle cx={model2Data.toSvgX(angle)} cy={model2Data.toSvgY(model2Data.f_actual)} r={2.2} fill={PHYSICS_COLORS.friction} opacity={0.25} />
               <circle cx={model2Data.toSvgX(angle)} cy={model2Data.toSvgY(model2Data.f_actual)} r={1.2} fill={PHYSICS_COLORS.friction} />
-              <text x={model2Data.toSvgX(angle) + (angle > 50 ? -28 : 3)} y={model2Data.toSvgY(model2Data.f_actual) - 2} fontSize={3.2} fill={PHYSICS_COLORS.friction} fontWeight="bold">
+              <text x={model2Data.toSvgX(angle) + (angle > 50 ? -28 : 3)} y={model2Data.toSvgY(model2Data.f_actual) - 2} fontSize={font(3.2)} fill={PHYSICS_COLORS.friction} fontWeight="bold">
                 {model2Data.isSliding ? '滑动' : '静摩擦'} f = {model2Data.f_actual.toFixed(1)} N
               </text>
             </g>
@@ -224,12 +227,12 @@ export const FrictionCenterExtra: FC = () => {
 
         {/* 浮动状态卡片 */}
         <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-lg border border-neutral-100 shadow-sm px-3 py-2">
-          <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1">
+          <div style={{ fontSize: font(10) }} className="font-bold text-neutral-400 uppercase tracking-wider mb-1">
             {statusCard.title}
           </div>
           <div className="flex flex-col gap-0.5">
             {statusCard.items.map((item, i) => (
-              <div key={i} className="flex items-center justify-between gap-3 text-[11px]">
+              <div key={i} style={{ fontSize: font(11) }} className="flex items-center justify-between gap-3">
                 <span className="text-neutral-500">{item.label}</span>
                 <span className={`font-bold ${item.color || 'text-neutral-800'}`}>{item.value}</span>
               </div>

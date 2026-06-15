@@ -1,6 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import {
   calculateMomentumScalar,
   calculateMomentum1D,
@@ -67,8 +68,15 @@ const MOMENTUM_LAYOUT = {
 } as const
 
 export default function MomentumAnimation() {
-  const { params, time, showVectors } = useAnimationStore()
+    const {params, time, showVectors} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 450 })
+  const { font } = canvasSize
 
   const {
     m = 3,
@@ -573,7 +581,7 @@ export default function MomentumAnimation() {
             <text
               x={cardWidth / 2}
               y={16}
-              fontSize={8}
+              fontSize={font(8)}
               fill={CHART_COLORS.titleText}
               textAnchor="middle"
               fontWeight="bold"
@@ -583,9 +591,9 @@ export default function MomentumAnimation() {
 
             {/* 图例 */}
             <line x1={cardInnerPad.left} y1={cardInnerPad.top - 8} x2={cardInnerPad.left + 14} y2={cardInnerPad.top - 8} stroke={PHYSICS_COLORS.momentum} strokeWidth={1.5} />
-            <text x={cardInnerPad.left + 17} y={cardInnerPad.top - 5} fontSize={6} fill={PHYSICS_COLORS.momentum}>A球</text>
+            <text x={cardInnerPad.left + 17} y={cardInnerPad.top - 5} fontSize={font(6)} fill={PHYSICS_COLORS.momentum}>A球</text>
             <line x1={cardInnerPad.left + 42} y1={cardInnerPad.top - 8} x2={cardInnerPad.left + 56} y2={cardInnerPad.top - 8} stroke={PHYSICS_COLORS.impulse} strokeWidth={1.5} strokeDasharray="3,2" />
-            <text x={cardInnerPad.left + 59} y={cardInnerPad.top - 5} fontSize={6} fill={PHYSICS_COLORS.impulse}>B球</text>
+            <text x={cardInnerPad.left + 59} y={cardInnerPad.top - 5} fontSize={font(6)} fill={PHYSICS_COLORS.impulse}>B球</text>
 
             {/* 坐标轴 */}
             <line
@@ -609,7 +617,7 @@ export default function MomentumAnimation() {
             <text
               x={cardInnerPad.left + cardInnerW}
               y={cardInnerPad.top + cardInnerH + 12}
-              fontSize={7}
+              fontSize={font(7)}
               fill={CHART_COLORS.labelText}
               textAnchor="end"
             >
@@ -620,7 +628,7 @@ export default function MomentumAnimation() {
             <text
               x={cardInnerPad.left - 5}
               y={cardInnerPad.top - 6}
-              fontSize={7}
+              fontSize={font(7)}
               fill={CHART_COLORS.labelText}
               textAnchor="middle"
             >
@@ -641,7 +649,7 @@ export default function MomentumAnimation() {
                 <text
                   x={toCardX(val)}
                   y={cardInnerPad.top + cardInnerH + 9}
-                  fontSize={7}
+                  fontSize={font(7)}
                   fill={CHART_COLORS.labelText}
                   textAnchor="middle"
                 >
@@ -681,7 +689,7 @@ export default function MomentumAnimation() {
             <text
               x={toCardX(mA) + 6}
               y={toCardY(EkA) - 2}
-              fontSize={7}
+              fontSize={font(7)}
               fill={PHYSICS_COLORS.momentum}
               fontWeight="bold"
             >
@@ -697,7 +705,7 @@ export default function MomentumAnimation() {
             <text
               x={toCardX(mB) + 6}
               y={toCardY(EkB) - 2}
-              fontSize={7}
+              fontSize={font(7)}
               fill={PHYSICS_COLORS.impulse}
               fontWeight="bold"
             >
@@ -708,7 +716,7 @@ export default function MomentumAnimation() {
             <text
               x={cardWidth / 2}
               y={cardHeight - 6}
-              fontSize={7}
+              fontSize={font(7)}
               fill={PHYSICS_COLORS.kineticEnergy}
               textAnchor="middle"
               fontWeight="bold"

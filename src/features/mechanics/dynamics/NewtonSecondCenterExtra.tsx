@@ -1,12 +1,26 @@
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { calculateNewtonSecondVariableMotion } from '@/physics'
 import { AnimationControls, MiniChart } from '@/components/UI'
 import NewtonSecondAnimation from './NewtonSecondAnimation'
+import { useCanvasSize } from '@/utils'
 
 export default function NewtonSecondCenterExtra() {
-  const { params, time, isPlaying, speed, setIsPlaying, setTime, setSpeed } = useAnimationStore()
+    const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 400 })
+    const { font } = canvasSize
+    const {params, time, isPlaying, speed, setIsPlaying, setTime, setSpeed} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    isPlaying: s.isPlaying,
+    speed: s.speed,
+    setIsPlaying: s.setIsPlaying,
+    setTime: s.setTime,
+    setSpeed: s.setSpeed,
+    }))
+  )
 
   const {
     m = 2,
@@ -84,7 +98,7 @@ export default function NewtonSecondCenterExtra() {
   const modelNames = ['线性递增力模型 F=k·t', '正弦周期力模型 F=F₀sin(ωt)']
 
   return (
-    <div className="w-full h-full flex flex-col gap-2.5 p-1">
+    <div ref={containerRef} className="w-full h-full flex flex-col gap-2.5 p-1">
       {/* 顶部图表展示区 */}
       <div className="w-full flex-1 min-h-0 flex flex-row gap-3">
         {/* F-t 图像 */}
@@ -150,7 +164,7 @@ export default function NewtonSecondCenterExtra() {
       {/* 中部小车动画区 */}
       <div className="w-full h-[180px] shrink-0 bg-white rounded-xl shadow-sm overflow-hidden relative border border-neutral-100">
         <NewtonSecondAnimation />
-        <div className="absolute top-2 right-3 text-[10px] text-neutral-400 font-semibold bg-white/80 px-2 py-0.5 rounded-full shadow-sm">
+        <div style={{ fontSize: font(10) }} className="absolute top-2 right-3 text-neutral-400 font-semibold bg-white/80 px-2 py-0.5 rounded-full shadow-sm">
           {modelNames[modelIdx]}
         </div>
       </div>

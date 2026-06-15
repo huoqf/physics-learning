@@ -1,6 +1,7 @@
 import { useCanvasSize, physicsToCanvasWithOrigin } from '@/utils'
 import React, { useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { calculateCircularMotion } from '@/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { createSceneScale } from '@/scene/SceneScale'
@@ -58,8 +59,18 @@ const CIRCULAR_MOTION_LAYOUT = {
 } as const
 
 export default function CircularMotionAnimation() {
-  const { params, time, showVectors, showGrid, setIsPlaying, setTime } = useAnimationStore()
+    const {params, time, showVectors, showGrid, setIsPlaying, setTime} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    showGrid: s.showGrid,
+    setIsPlaying: s.setIsPlaying,
+    setTime: s.setTime,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 600, height: 600 })
+  const { font } = canvasSize
 
   const {
     r = 2,
@@ -440,7 +451,7 @@ export default function CircularMotionAnimation() {
             <text
               x={cardWidth / 2}
               y={16}
-              fontSize={8}
+              fontSize={font(8)}
               fill={CHART_COLORS.titleText}
               textAnchor="middle"
               fontWeight="bold"
@@ -494,7 +505,7 @@ export default function CircularMotionAnimation() {
                   <text
                     x={cardInnerPad.left - 6}
                     y={yPos + 2.5}
-                    fontSize={7}
+                    fontSize={font(7)}
                     fill={CHART_COLORS.labelText}
                     textAnchor="end"
                   >
@@ -503,7 +514,7 @@ export default function CircularMotionAnimation() {
                 </g>
               )
             })}
-            <text x={cardInnerPad.left - 5} y={cardInnerPad.top - 6} fontSize={7} fill={CHART_COLORS.labelText} textAnchor="middle">位移(m)</text>
+            <text x={cardInnerPad.left - 5} y={cardInnerPad.top - 6} fontSize={font(7)} fill={CHART_COLORS.labelText} textAnchor="middle">位移(m)</text>
 
             {/* X轴刻度：周期 T 标注 */}
             {[0, 0.5, 1].map((ratio) => {
@@ -523,7 +534,7 @@ export default function CircularMotionAnimation() {
                   <text
                     x={xPos}
                     y={cardInnerPad.top + cardInnerH + 9}
-                    fontSize={7}
+                    fontSize={font(7)}
                     fill={CHART_COLORS.labelText}
                     textAnchor="middle"
                   >
@@ -550,8 +561,8 @@ export default function CircularMotionAnimation() {
             />
 
             {/* 曲线文本标签 */}
-            <text x={cardInnerPad.left + 5} y={toCardY(r) + 8} fontSize={7} fill={PHYSICS_COLORS.velocityX} fontWeight="bold">x(t) 投影</text>
-            <text x={cardInnerPad.left + 5} y={toCardY(-r) - 4} fontSize={7} fill={PHYSICS_COLORS.velocityY} fontWeight="bold">y(t) 投影</text>
+            <text x={cardInnerPad.left + 5} y={toCardY(r) + 8} fontSize={font(7)} fill={PHYSICS_COLORS.velocityX} fontWeight="bold">x(t) 投影</text>
+            <text x={cardInnerPad.left + 5} y={toCardY(-r) - 4} fontSize={font(7)} fill={PHYSICS_COLORS.velocityY} fontWeight="bold">y(t) 投影</text>
 
             {/* 拖动图表热区 */}
             <rect

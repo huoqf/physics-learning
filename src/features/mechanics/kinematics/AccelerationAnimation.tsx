@@ -39,6 +39,7 @@ export default function AccelerationAnimation() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 350 })
+  const { font } = canvasSize
 
   const vA = params.vA ?? 200
   const aB = params.aB ?? 5
@@ -196,14 +197,14 @@ export default function AccelerationAnimation() {
             {strobePoints.map((pt, idx) => (
               <g key={`pt-plane-${idx}`}>
                 <circle cx={pt.planeX} cy={topTrackY + 6} r={3} fill={PHYSICS_COLORS.displacement} opacity={0.6} />
-                <text x={pt.planeX} y={topTrackY + 16} fontSize={8} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">t={pt.time.toFixed(1)}s</text>
+                <text x={pt.planeX} y={topTrackY + 16} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">t={pt.time.toFixed(1)}s</text>
               </g>
             ))}
             {/* 跑车打点记录 */}
             {strobePoints.map((pt, idx) => (
               <g key={`pt-car-${idx}`}>
                 <circle cx={pt.carX} cy={bottomTrackY + 6} r={3} fill={PHYSICS_COLORS.displacement} opacity={0.6} />
-                <text x={pt.carX} y={bottomTrackY + 16} fontSize={8} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">t={pt.time.toFixed(1)}s</text>
+                <text x={pt.carX} y={bottomTrackY + 16} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">t={pt.time.toFixed(1)}s</text>
               </g>
             ))}
             {/* 纸带区段间距括号标注 (仅在已打出至少两个点时绘制，且至多展示最近的两个区间，防止元素过载) */}
@@ -224,7 +225,7 @@ export default function AccelerationAnimation() {
                         strokeWidth={1}
                         fill="none"
                       />
-                      <text x={midX} y={bottomTrackY + 36} fontSize={9} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
+                      <text x={midX} y={bottomTrackY + 36} fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
                         s_{i+1}={dist.toFixed(1)}m
                       </text>
                     </g>

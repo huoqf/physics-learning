@@ -1,6 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useState, useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, CHART_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { KatexFormula } from '@/components/UI'
@@ -21,8 +22,19 @@ import type { SceneConfig } from '@/scene/SceneConfig'
  * 2. 模式 1：山谷滑行实验室（阻尼过山车与摩擦内能生热能量守恒）
  */
 export default function EnergyConservationAnimation() {
-  const { params, time, isPlaying, setIsPlaying, showVectors, updateParam, setTime } = useAnimationStore()
+    const {params, time, isPlaying, setIsPlaying, showVectors, updateParam, setTime} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    isPlaying: s.isPlaying,
+    setIsPlaying: s.setIsPlaying,
+    showVectors: s.showVectors,
+    updateParam: s.updateParam,
+    setTime: s.setTime,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 420 })
+  const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 
   const mode = params.mode ?? 0
@@ -70,8 +82,8 @@ export default function EnergyConservationAnimation() {
   const objW = canvasSize.width * 0.07
   const objH = objW * 0.7 // 小车扁一点
 
-  // 画面像素几何比例锁定 (不管参数如何变化，渲染尺寸恒定，比例锁死为 101px)
-  const R_pix = 101 // 摆线长度或圆弧半径像素值
+  const animAreaHeight = groundY - chartBottom
+  const R_pix = animAreaHeight * 0.7 // 摆线长度占动画区高度的 70%
 
   // 模式 0 悬挂点与摆线
   const hangY = canvasSize.height * 0.55 + 15
@@ -240,7 +252,7 @@ export default function EnergyConservationAnimation() {
     <div ref={containerRef} className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">
       {/* 拖拽交互提示气泡 */}
       {!isPlaying && (
-        <div className="absolute top-3 right-4 px-2 py-0.5 bg-neutral-50 text-[9px] text-neutral-400 font-semibold rounded border pointer-events-none z-10 animate-pulse">
+        <div className="absolute top-3 right-4 px-2 py-0.5 bg-neutral-50 text-neutral-400 font-semibold rounded border pointer-events-none z-10 animate-pulse" style={{ fontSize: font(9) }}>
           💡 鼠标按住并左右摆动 {mode === 0 ? '摆球' : '滑块'} 可自由调节起摆初始角度
         </div>
       )}
@@ -254,11 +266,13 @@ export default function EnergyConservationAnimation() {
           transform: 'translateX(-50%)',
         }}
       >
-        <KatexFormula
-          formula={getLiveFormula()}
-          mode="inline"
-          className="text-[10px] text-violet-700 font-semibold"
-        />
+        <span style={{ fontSize: font(10) }}>
+          <KatexFormula
+            formula={getLiveFormula()}
+            mode="inline"
+            className="text-violet-700 font-semibold"
+          />
+        </span>
       </div>
 
       {/* 主 SVG 画面 */}
@@ -306,7 +320,7 @@ export default function EnergyConservationAnimation() {
             return (
               <g key={`ep-y-${i}`}>
                 <line x1={chartLeft - 3} y1={y} x2={chartLeft} y2={y} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                <text x={chartLeft - 5} y={y + 3} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="end">
+                <text x={chartLeft - 5} y={y + 3} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">
                   {energyVal.toFixed(0)}J
                 </text>
               </g>
@@ -318,7 +332,7 @@ export default function EnergyConservationAnimation() {
             return (
               <g key={`ep-x-${i}`}>
                 <line x1={xPos} y1={chartBottom} x2={xPos} y2={chartBottom + 3} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                <text x={xPos} y={chartBottom + 9} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="middle">{tVal.toFixed(0)}s</text>
+                <text x={xPos} y={chartBottom + 9} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="middle">{tVal.toFixed(0)}s</text>
               </g>
             )
           })}
@@ -326,20 +340,20 @@ export default function EnergyConservationAnimation() {
           {/* 图例 */}
           <g transform={`translate(${chartRight - (mode === 0 ? 180 : 235)}, ${chartTop - 12})`}>
             <line x1={0} y1={3} x2={8} y2={3} stroke={PHYSICS_COLORS.potentialEnergy} strokeWidth={1.5} />
-            <text x={12} y={5} fontSize={7} fill={CHART_COLORS.tickLabel}>Ep (重力势能)</text>
+            <text x={12} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>Ep (重力势能)</text>
 
             <line x1={65} y1={3} x2={73} y2={3} stroke={PHYSICS_COLORS.kineticEnergy} strokeWidth={1.5} />
-            <text x={77} y={5} fontSize={7} fill={CHART_COLORS.tickLabel}>Ek (动能)</text>
+            <text x={77} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>Ek (动能)</text>
 
             {mode === 1 && (
               <>
                 <line x1={115} y1={3} x2={123} y2={3} stroke={colors.danger[600]} strokeWidth={1.5} />
-                <text x={127} y={5} fontSize={7} fill={CHART_COLORS.tickLabel}>Q (内能/摩擦热)</text>
+                <text x={127} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>Q (内能/摩擦热)</text>
               </>
             )}
 
             <line x1={mode === 0 ? 115 : 180} y1={3} x2={mode === 0 ? 123 : 188} y2={3} stroke={colors.neutral[500]} strokeWidth={1.5} strokeDasharray="3,1" />
-            <text x={mode === 0 ? 127 : 192} y={5} fontSize={7} fill={CHART_COLORS.tickLabel}>
+            <text x={mode === 0 ? 127 : 192} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>
               {mode === 0 ? 'E (总机械能)' : 'E总 (总能量)'}
             </text>
           </g>
@@ -418,7 +432,7 @@ export default function EnergyConservationAnimation() {
               strokeDasharray="3,2"
               opacity={0.7}
             />
-            <text x={animCenterX} y={hangY + R_pix + 10} fontSize={7.5} fill={colors.success[700]} textAnchor="middle">
+            <text x={animCenterX} y={hangY + R_pix + 10} fontSize={font(7.5)} fill={colors.success[700]} textAnchor="middle">
               参考零势能面 (y=0)
             </text>
 
@@ -484,7 +498,7 @@ export default function EnergyConservationAnimation() {
               strokeDasharray="3,2"
               opacity={0.7}
             />
-            <text x={animCenterX} y={groundY + 10} fontSize={7.5} fill={colors.success[700]} textAnchor="middle">
+            <text x={animCenterX} y={groundY + 10} fontSize={font(7.5)} fill={colors.success[700]} textAnchor="middle">
               谷底零势能面 (y=0)
             </text>
 
@@ -516,7 +530,7 @@ export default function EnergyConservationAnimation() {
             {state.phase === 1 && (
               <g transform={`translate(${animCenterX - 45}, ${groundY - 110})`}>
                 <rect width={90} height={18} rx={3} fill="rgba(239, 68, 68, 0.08)" stroke="rgba(239, 68, 68, 0.4)" strokeWidth={0.8} />
-                <text x={45} y={12} fontSize={7.5} fontWeight="bold" textAnchor="middle" fill={colors.danger[700]}>
+                <text x={45} y={12} fontSize={font(7.5)} fontWeight="bold" textAnchor="middle" fill={colors.danger[700]}>
                   ⚠️ 摩擦受力平衡已静止
                 </text>
               </g>
@@ -542,10 +556,10 @@ export default function EnergyConservationAnimation() {
               opacity={0.85}
               rx={0.5}
             />
-            <text x={19} y={-barEk_H - 4} fontSize={7.5} fill={PHYSICS_COLORS.kineticEnergy} textAnchor="middle" fontWeight="bold">
+            <text x={19} y={-barEk_H - 4} fontSize={font(7.5)} fill={PHYSICS_COLORS.kineticEnergy} textAnchor="middle" fontWeight="bold">
               {state.Ek.toFixed(0)}
             </text>
-            <text x={19} y={12} fontSize={7.5} fill={PHYSICS_COLORS.kineticEnergy} textAnchor="middle" fontWeight="semibold">
+            <text x={19} y={12} fontSize={font(7.5)} fill={PHYSICS_COLORS.kineticEnergy} textAnchor="middle" fontWeight="semibold">
               Ek
             </text>
 
@@ -559,10 +573,10 @@ export default function EnergyConservationAnimation() {
               opacity={0.85}
               rx={0.5}
             />
-            <text x={45} y={-barEp_H - 4} fontSize={7.5} fill={PHYSICS_COLORS.potentialEnergy} textAnchor="middle" fontWeight="bold">
+            <text x={45} y={-barEp_H - 4} fontSize={font(7.5)} fill={PHYSICS_COLORS.potentialEnergy} textAnchor="middle" fontWeight="bold">
               {state.Ep.toFixed(0)}
             </text>
-            <text x={45} y={12} fontSize={7.5} fill={PHYSICS_COLORS.potentialEnergy} textAnchor="middle" fontWeight="semibold">
+            <text x={45} y={12} fontSize={font(7.5)} fill={PHYSICS_COLORS.potentialEnergy} textAnchor="middle" fontWeight="semibold">
               Ep
             </text>
 
@@ -576,10 +590,10 @@ export default function EnergyConservationAnimation() {
               opacity={0.85}
               rx={0.5}
             />
-            <text x={71} y={-barTot_H - 4} fontSize={7.5} fill={colors.neutral[600]} textAnchor="middle" fontWeight="bold">
+            <text x={71} y={-barTot_H - 4} fontSize={font(7.5)} fill={colors.neutral[600]} textAnchor="middle" fontWeight="bold">
               {state.Etot.toFixed(0)}
             </text>
-            <text x={71} y={12} fontSize={7.5} fill={colors.neutral[600]} textAnchor="middle" fontWeight="semibold">
+            <text x={71} y={12} fontSize={font(7.5)} fill={colors.neutral[600]} textAnchor="middle" fontWeight="semibold">
               {mode === 0 ? 'E机' : 'E总'}
             </text>
           </g>

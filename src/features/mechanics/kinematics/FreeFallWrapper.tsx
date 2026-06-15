@@ -7,7 +7,7 @@ import FreeFallDripAnimation from './FreeFallDripAnimation'
  * 根据 advancedMode 参数切换渲染基础模式（牛顿管）或进阶模式（滴水法测g）
  */
 export default function FreeFallWrapper() {
-  const { params } = useAnimationStore()
+    const params = useAnimationStore((s) => s.params)
   const advancedMode = params.advancedMode ?? 0
 
   if (advancedMode === 1) {

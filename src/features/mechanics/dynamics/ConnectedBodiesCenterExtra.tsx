@@ -1,12 +1,23 @@
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { AnimationControls, MiniChart } from '@/components/UI'
 import { calculateConnectedBody, GRAVITY } from '@/physics'
 import ConnectedBodiesAnimation from './ConnectedBodiesAnimation'
 
 export default function ConnectedBodiesCenterExtra() {
-  const { params, time, isPlaying, speed, setIsPlaying, setTime, setSpeed } = useAnimationStore()
+    const {params, time, isPlaying, speed, setIsPlaying, setTime, setSpeed} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    isPlaying: s.isPlaying,
+    speed: s.speed,
+    setIsPlaying: s.setIsPlaying,
+    setTime: s.setTime,
+    setSpeed: s.setSpeed,
+    }))
+  )
 
   const {
     m1 = 2,

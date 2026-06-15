@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useCanvasSize, PX_PER_METER } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { Spring } from '@/components/UI'
@@ -38,8 +39,19 @@ const SPRING_VISUAL = {
 }
 
 export default function ConnectedBodiesAnimation() {
-  const { params, time, showVectors, showGrid, isPlaying, setIsPlaying, updateParam } = useAnimationStore()
+    const {params, time, showVectors, showGrid, isPlaying, setIsPlaying, updateParam} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    showGrid: s.showGrid,
+    isPlaying: s.isPlaying,
+    setIsPlaying: s.setIsPlaying,
+    updateParam: s.updateParam,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 600, height: 400 })
+  const { font } = canvasSize
 
   const {
     m1 = 2,
@@ -193,7 +205,7 @@ export default function ConnectedBodiesAnimation() {
             strokeWidth={0.5}
           />
           <text
-            fontSize={9}
+            fontSize={font(9)}
             fill={SCENE_COLORS.spring.lightCoilStroke}
             textAnchor="middle"
             fontWeight="bold"
@@ -622,7 +634,7 @@ export default function ConnectedBodiesAnimation() {
       </svg>
       {/* 水平拉力直接拖拽控制小标提示 */}
       {showVectors && (
-        <div className="absolute right-4 bottom-14 bg-white/80 border border-neutral-100 px-2 py-0.5 rounded text-[9px] text-neutral-400 font-medium pointer-events-none select-none">
+        <div style={{ fontSize: font(9) }} className="absolute right-4 bottom-14 bg-white/80 border border-neutral-100 px-2 py-0.5 rounded text-neutral-400 font-medium pointer-events-none select-none">
           💡 可用鼠标按住并左右拖拽拉力 F 箭头端点调节大小
         </div>
       )}

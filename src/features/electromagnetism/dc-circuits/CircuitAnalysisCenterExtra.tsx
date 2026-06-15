@@ -1,10 +1,13 @@
 import { FC, useMemo } from 'react'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { useAnimationStore } from '@/stores'
+import { useCanvasSize } from '@/utils'
 import { BarChart3 } from 'lucide-react'
 
 export const CircuitAnalysisCenterExtra: FC = () => {
-  const { params } = useAnimationStore()
+    const params = useAnimationStore((s) => s.params)
+  const [_containerRef, canvasSize] = useCanvasSize({ width: 400, height: 200 })
+  const { font } = canvasSize
 
   const mode = params.mode ?? 0 // 0=基础, 1=进阶
   const subMode = params.subMode ?? 0 // 0=串联, 1=并联
@@ -113,7 +116,7 @@ export const CircuitAnalysisCenterExtra: FC = () => {
       <div className="flex-1 bg-white rounded-xl shadow-sm p-3 border border-neutral-100 flex items-center justify-center min-w-0 relative">
         <svg viewBox="0 0 240 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
           {/* ================= 左半部分：电压分配 U (V) ================= */}
-          <text x={22} y={11} fontSize={4.5} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
+          <text x={22} y={11} fontSize={font(4.5)} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
             电压分配 U (V) — 串联分压
           </text>
           
@@ -129,7 +132,7 @@ export const CircuitAnalysisCenterExtra: FC = () => {
                 strokeWidth={0.25}
                 strokeDasharray="1,1"
               />
-              <text x={18} y={toSvgY_U(v) + 1.2} fontSize={3} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end" fontFamily="monospace">
+              <text x={18} y={toSvgY_U(v) + 1.2} fontSize={font(3)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end" fontFamily="monospace">
                 {v}
               </text>
             </g>
@@ -161,7 +164,7 @@ export const CircuitAnalysisCenterExtra: FC = () => {
                 <text
                   x={x + colWidth / 2}
                   y={y - 2}
-                  fontSize={3.2}
+                  fontSize={font(3.2)}
                   fill={PHYSICS_COLORS.labelText}
                   fontWeight="bold"
                   textAnchor="middle"
@@ -170,7 +173,7 @@ export const CircuitAnalysisCenterExtra: FC = () => {
                 >
                   {item.u.toFixed(1)}V
                 </text>
-                <text x={x + colWidth / 2} y={originY + 4.5} fontSize={3.2} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
+                <text x={x + colWidth / 2} y={originY + 4.5} fontSize={font(3.2)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
                   {item.label}
                 </text>
               </g>
@@ -178,7 +181,7 @@ export const CircuitAnalysisCenterExtra: FC = () => {
           })}
 
           {/* ================= 右半部分：电流分配 I (A) ================= */}
-          <text x={142} y={11} fontSize={4.5} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
+          <text x={142} y={11} fontSize={font(4.5)} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
             电流分配 I (A) — 并联分流
           </text>
           
@@ -194,7 +197,7 @@ export const CircuitAnalysisCenterExtra: FC = () => {
                 strokeWidth={0.25}
                 strokeDasharray="1,1"
               />
-              <text x={138} y={toSvgY_I(i) + 1.2} fontSize={3} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end" fontFamily="monospace">
+              <text x={138} y={toSvgY_I(i) + 1.2} fontSize={font(3)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end" fontFamily="monospace">
                 {i.toFixed(1)}
               </text>
             </g>
@@ -236,7 +239,7 @@ export const CircuitAnalysisCenterExtra: FC = () => {
                 <text
                   x={x + colWidth / 2}
                   y={y - 2}
-                  fontSize={3.2}
+                  fontSize={font(3.2)}
                   fill={isOver ? PHYSICS_COLORS.electricCurrent : PHYSICS_COLORS.labelText}
                   fontWeight="bold"
                   textAnchor="middle"
@@ -245,7 +248,7 @@ export const CircuitAnalysisCenterExtra: FC = () => {
                 >
                   {item.i.toFixed(2)}A
                 </text>
-                <text x={x + colWidth / 2} y={originY + 4.5} fontSize={3.2} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
+                <text x={x + colWidth / 2} y={originY + 4.5} fontSize={font(3.2)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
                   {item.label}
                 </text>
               </g>

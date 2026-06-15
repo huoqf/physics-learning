@@ -9,7 +9,7 @@ import { shadow } from '@/theme/shadow'
 // 物理与绘图常量
 const COULOMB_K = 9e9
 const CHARGE_RADIUS = 22
-const M_PER_PX = 0.005 // 1像素 = 0.005米 (0.5厘米)
+const DESIGN_M_PER_PX = 0.005 // 设计稿基准: 1px = 0.005m
 const PROBE_CHARGE = 1e-6 // 探针试探电荷 +1.0 μC
 
 interface Charge {
@@ -19,14 +19,14 @@ interface Charge {
 }
 
 // 计算某点处的合电场强度 (V/m = N/C)
-function electricField(charges: Charge[], px: number, py: number) {
+function electricField(charges: Charge[], px: number, py: number, mPerPx: number) {
   let ex = 0
   let ey = 0
   for (const c of charges) {
     const dx = px - c.x
     const dy = py - c.y
     const rPx = Math.sqrt(dx * dx + dy * dy)
-    const rM = Math.max(0.02, rPx * M_PER_PX) // 防止除零，限制最小物理距离 2cm
+    const rM = Math.max(0.02, rPx * mPerPx) // 防止除零，限制最小物理距离 2cm
     const qSI = c.q * 1e-6
     const mag = (COULOMB_K * qSI) / (rM * rM)
     ex += mag * (dx / rPx)
@@ -36,13 +36,13 @@ function electricField(charges: Charge[], px: number, py: number) {
 }
 
 // 计算某点处的合电势 (V)
-function potential(charges: Charge[], px: number, py: number) {
+function potential(charges: Charge[], px: number, py: number, mPerPx: number) {
   let v = 0
   for (const c of charges) {
     const dx = px - c.x
     const dy = py - c.y
     const rPx = Math.sqrt(dx * dx + dy * dy)
-    const rM = Math.max(0.04, rPx * M_PER_PX) // 限制最小距离 4cm
+    const rM = Math.max(0.04, rPx * mPerPx) // 限制最小距离 4cm
     v += (COULOMB_K * c.q * 1e-6) / rM
   }
   return v
@@ -55,7 +55,8 @@ function traceFieldLine(
   sy: number,
   direction: 1 | -1, // 1=顺场强, -1=逆场强
   w: number,
-  h: number
+  h: number,
+  mPerPx: number
 ): { points: [number, number][]; arrowPos: [number, number, number] | null } {
   const points: [number, number][] = [[sx, sy]]
   let x = sx
@@ -64,7 +65,7 @@ function traceFieldLine(
   const maxSteps = 150
 
   for (let i = 0; i < maxSteps; i++) {
-    const { ex, ey } = electricField(charges, x, y)
+    const { ex, ey } = electricField(charges, x, y, mPerPx)
     const mag = Math.sqrt(ex * ex + ey * ey)
     if (mag < 1e-3) break
 
@@ -110,16 +111,18 @@ function traceFieldLine(
 }
 
 export default function FieldLines() {
-  const { params } = useAnimationStore()
+    const params = useAnimationStore((s) => s.params)
   const updateParam = useAnimationStore((s) => s.updateParam)
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 480 })
+  const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 
   const w = canvasSize.width || 700
   const h = canvasSize.height || 480
   const cx = w / 2
   const cy = h / 2
-  const separation = 160 // 两个电荷的间距像素
+  const separation = w * (160 / 700) // 响应式间距: 设计稿 700px 宽时为 160px
+  const mPerPx = separation > 0 ? 0.8 / separation : DESIGN_M_PER_PX // 保持物理间距 0.8m
 
   // 从 params 获取控制参数
   const topology = params.topology ?? 2 // 0=单正, 1=单负, 2=等量异种, 3=等量同种
@@ -221,7 +224,7 @@ export default function FieldLines() {
 
         // 正电荷顺着场强追踪，负电荷逆着场强追踪
         const direction = isPos ? 1 : -1
-        let { points, arrowPos } = traceFieldLine(charges, sx, sy, direction, w, h)
+        let { points, arrowPos } = traceFieldLine(charges, sx, sy, direction, w, h, mPerPx)
         if (points.length < 2) continue
 
         if (!isPos) {
@@ -249,7 +252,7 @@ export default function FieldLines() {
     })
 
     return paths
-  }, [charges, showFieldLines, w, h])
+  }, [charges, showFieldLines, w, h, mPerPx])
 
   // 4. 计算等势线网络 (Marching Squares 生成平滑线段)
   const equipotentialPaths = useMemo(() => {
@@ -280,7 +283,7 @@ export default function FieldLines() {
     for (let r = 0; r <= rows; r++) {
       gridPotential[r] = []
       for (let c = 0; c <= cols; c++) {
-        gridPotential[r][c] = potential(charges, c * gridStep, r * gridStep)
+        gridPotential[r][c] = potential(charges, c * gridStep, r * gridStep, mPerPx)
       }
     }
 
@@ -355,12 +358,12 @@ export default function FieldLines() {
     })
 
     return { type: 'path', data: paths }
-  }, [topology, charges, showEquipotentials, qSource, w, h])
+  }, [topology, charges, showEquipotentials, qSource, w, h, mPerPx])
 
   // 5. 探针受力与能量分析
   const probePhysics = useMemo(() => {
     // 探针处的场强
-    const { ex, ey } = electricField(charges, probeX, probeY)
+    const { ex, ey } = electricField(charges, probeX, probeY, mPerPx)
     const eMag = Math.sqrt(ex * ex + ey * ey)
 
     // 电场力 F = qE
@@ -377,7 +380,7 @@ export default function FieldLines() {
     }
 
     // 计算当前的电势
-    const phiCurrent = potential(charges, probeX, probeY)
+    const phiCurrent = potential(charges, probeX, probeY, mPerPx)
 
     // 百分比映射参数
     const pPeak = (9000 * qSource) / 0.05
@@ -400,7 +403,7 @@ export default function FieldLines() {
       pctEp,
       pctEk,
     }
-  }, [charges, probeX, probeY, topology, qSource])
+  }, [charges, probeX, probeY, topology, qSource, mPerPx])
 
 
 
@@ -415,15 +418,15 @@ export default function FieldLines() {
           width: '150px',
         }}
       >
-        <span className="text-[10px] font-bold text-neutral-500 mb-2.5">实时能量分配 (守恒)</span>
+        <span className="font-bold text-neutral-500 mb-2.5" style={{ fontSize: font(10) }}>实时能量分配 (守恒)</span>
         
         {/* 双柱图区域 */}
         <div className="h-28 flex justify-around items-end w-full relative px-2">
           {/* 中间百分比虚线 */}
-          <div className="absolute inset-x-0 top-0 border-t border-dashed border-neutral-200 flex justify-between text-[7.5px] text-neutral-300 font-mono pointer-events-none">
+          <div className="absolute inset-x-0 top-0 border-t border-dashed border-neutral-200 flex justify-between text-neutral-300 font-mono pointer-events-none" style={{ fontSize: font(7.5) }}>
             <span>100%</span>
           </div>
-          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t border-dashed border-neutral-200 flex justify-between text-[7.5px] text-neutral-300 font-mono pointer-events-none">
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t border-dashed border-neutral-200 flex justify-between text-neutral-300 font-mono pointer-events-none" style={{ fontSize: font(7.5) }}>
             <span>50%</span>
           </div>
 
@@ -435,8 +438,8 @@ export default function FieldLines() {
                 style={{ height: `${probePhysics.pctEk}%`, backgroundColor: PHYSICS_COLORS.kineticEnergy }}
               />
             </div>
-            <span className="text-[10px] font-bold mt-1 font-mono" style={{ color: PHYSICS_COLORS.kineticEnergy }}>Ek</span>
-            <span className="text-[8px] font-medium" style={{ color: PHYSICS_COLORS.kineticEnergy }}>动能</span>
+            <span className="font-bold mt-1 font-mono" style={{ fontSize: font(10), color: PHYSICS_COLORS.kineticEnergy }}>Ek</span>
+            <span className="font-medium" style={{ fontSize: font(8), color: PHYSICS_COLORS.kineticEnergy }}>动能</span>
           </div>
 
           {/* 势能柱 (紫色) */}
@@ -447,8 +450,8 @@ export default function FieldLines() {
                 style={{ height: `${probePhysics.pctEp}%`, backgroundColor: PHYSICS_COLORS.potentialEnergy }}
               />
             </div>
-            <span className="text-[10px] font-bold mt-1 font-mono" style={{ color: PHYSICS_COLORS.potentialEnergy }}>Ep</span>
-            <span className="text-[8px] font-medium" style={{ color: PHYSICS_COLORS.potentialEnergy }}>势能</span>
+            <span className="font-bold mt-1 font-mono" style={{ fontSize: font(10), color: PHYSICS_COLORS.potentialEnergy }}>Ep</span>
+            <span className="font-medium" style={{ fontSize: font(8), color: PHYSICS_COLORS.potentialEnergy }}>势能</span>
           </div>
         </div>
       </div>
@@ -562,7 +565,7 @@ export default function FieldLines() {
               <text
                 x={ch.x}
                 y={ch.y + 0.5}
-                fontSize={17}
+                fontSize={font(17)}
                 fontWeight="bold"
                 fill="#FFFFFF"
                 textAnchor="middle"
@@ -574,7 +577,7 @@ export default function FieldLines() {
               <text
                 x={ch.x}
                 y={ch.y + CHARGE_RADIUS + 15}
-                fontSize={10.5}
+                fontSize={font(10.5)}
                 fontWeight="bold"
                 fill={colors.neutral[600]}
                 textAnchor="middle"
@@ -621,7 +624,7 @@ export default function FieldLines() {
           <text
             x={probeX}
             y={probeY}
-            fontSize={12}
+            fontSize={font(12)}
             fontWeight="black"
             fill="#FFFFFF"
             textAnchor="middle"
@@ -633,7 +636,7 @@ export default function FieldLines() {
           <text
             x={probeX}
             y={probeY - 20}
-            fontSize={9.5}
+            fontSize={font(9.5)}
             fontWeight="bold"
             fill={PHYSICS_COLORS.labelText}
             textAnchor="middle"
@@ -657,7 +660,7 @@ export default function FieldLines() {
               <text
                 x={probeX + probePhysics.forceArrow[0] + (probePhysics.forceArrow[0] >= 0 ? 12 : -12)}
                 y={probeY + probePhysics.forceArrow[1] + (probePhysics.forceArrow[1] >= 0 ? 4 : -4)}
-                fontSize={12}
+                fontSize={font(12)}
                 fontWeight="black"
                 fill={PHYSICS_COLORS.electricForce}
                 textAnchor="middle"

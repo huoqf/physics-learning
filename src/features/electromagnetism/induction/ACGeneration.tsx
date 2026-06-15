@@ -9,6 +9,7 @@
 import { useRef } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
 import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_STYLE, FONT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
@@ -18,8 +19,15 @@ type Point2D = { x: number; y: number }
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function ACGeneration() {
-  const { params, isPlaying, speed } = useAnimationStore()
+    const {params, isPlaying, speed} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    isPlaying: s.isPlaying,
+    speed: s.speed,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 820, height: 480 })
+  const { font } = canvasSize
 
   const B     = params.B     ?? 0.5
   const S     = params.S     ?? 0.04
@@ -237,7 +245,7 @@ export default function ACGeneration() {
             {/* ω 符号 */}
             <text x={omegaPos.x - 35} y={omegaPos.y + 10}
               className="omega-text" fontWeight="bold" fontStyle="italic"
-              fontSize={28} fill={SCENE_COLORS.pendulum.axisDecor} fontFamily="Times New Roman">ω</text>
+              fontSize={font(28)} fill={SCENE_COLORS.pendulum.axisDecor} fontFamily="Times New Roman">ω</text>
 
             {/* 旋转箭头残影底色 */}
             <path d={rotationArrowPath} fill="none" stroke={SCENE_COLORS.pendulum.axisDecor} strokeWidth={8} strokeLinecap="round" opacity={0.08} />
@@ -279,7 +287,7 @@ export default function ACGeneration() {
             <text x={8} y={14} fontSize={CANVAS_STYLE.font.smallSize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
               e = NBSω · sin(ωt)（中性面 θ=0 时线圈⊥B，e=0）
             </text>
-            <text x={8} y={28} fontSize={9.5} fill={colors.neutral[500]}>
+            <text x={8} y={28} fontSize={font(9.5)} fill={colors.neutral[500]}>
               {'Em = ' + EmTxt + ' V   f = ' + fHz + ' Hz   θ = ' + degTxt + '°   e = ' + emfTxt + ' V'}
             </text>
           </g>

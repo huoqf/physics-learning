@@ -106,7 +106,18 @@ export type {
 } from './physics/canvasStyle'
 
 // ─── 间距 / 布局 ──────────────────────────────────────────────────────────────
-export { spacing, LAYOUT, DENSITY }             from './spacing'
+export { spacing, LAYOUT, DENSITY, CANVAS_PRESETS } from './spacing'
+
+// ─── 动画 UI token ───────────────────────────────────────────────────────
+export {
+  ANIM_FONT,
+  ANIM_SHADOW,
+  ANIM_PANEL,
+  CHART_PAD,
+  CHART_PAD_FREEFALL,
+  CHART_PAD_VERT,
+}                                   from './animationTokens'
+export type { ChartPadding }        from './animationTokens'
 
 // ─── 圆角 ─────────────────────────────────────────────────────────────────────
 export { radius }                               from './radius'

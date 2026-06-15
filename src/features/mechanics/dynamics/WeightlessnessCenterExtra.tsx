@@ -1,12 +1,26 @@
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { calculateElevatorMotion } from '@/physics'
 import { AnimationControls, MiniChart } from '@/components/UI'
 import WeightlessnessAnimation from './WeightlessnessAnimation'
+import { useCanvasSize } from '@/utils'
 
 export default function WeightlessnessCenterExtra() {
-  const { params, time, isPlaying, speed, setIsPlaying, setTime, setSpeed } = useAnimationStore()
+    const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 400 })
+    const { font } = canvasSize
+    const {params, time, isPlaying, speed, setIsPlaying, setTime, setSpeed} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    isPlaying: s.isPlaying,
+    speed: s.speed,
+    setIsPlaying: s.setIsPlaying,
+    setTime: s.setTime,
+    setSpeed: s.setSpeed,
+    }))
+  )
 
   const {
     m = 50,
@@ -67,7 +81,7 @@ export default function WeightlessnessCenterExtra() {
   const modelNames = ['升降变速电梯模型', '钢索断裂自由落体模型']
 
   return (
-    <div className="w-full h-full flex flex-col gap-2.5 p-1">
+    <div ref={containerRef} className="w-full h-full flex flex-col gap-2.5 p-1">
       {/* 核心左右布局区域 */}
       <div className="w-full flex-1 min-h-0 flex flex-row gap-3">
         {/* 左侧：35% 宽度，电梯动画（高瘦型自适应） */}
@@ -75,7 +89,7 @@ export default function WeightlessnessCenterExtra() {
           <div className="flex-1 min-h-0 relative">
             <WeightlessnessAnimation />
           </div>
-          <div className="absolute top-2 right-3 text-[10px] text-neutral-400 font-semibold bg-white/80 px-2 py-0.5 rounded-full shadow-sm select-none">
+          <div style={{ fontSize: font(10) }} className="absolute top-2 right-3 text-neutral-400 font-semibold bg-white/80 px-2 py-0.5 rounded-full shadow-sm select-none">
             {modelNames[modelIdx]}
           </div>
         </div>

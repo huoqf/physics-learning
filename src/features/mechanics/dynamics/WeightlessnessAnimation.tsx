@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { calculateElevatorMotion } from '@/physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
 import { colors } from '@/theme/colors'
@@ -32,7 +33,16 @@ const LAYOUT = {
 }
 
 export default function WeightlessnessAnimation() {
-  const { params, time, showVectors, showGrid, isPlaying, setIsPlaying } = useAnimationStore()
+    const {params, time, showVectors, showGrid, isPlaying, setIsPlaying} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    showGrid: s.showGrid,
+    isPlaying: s.isPlaying,
+    setIsPlaying: s.setIsPlaying,
+    }))
+  )
   // 备用尺寸设为高瘦型电梯井尺寸
   const [containerRef, canvasSize] = useCanvasSize({ width: 230, height: 440 })
 

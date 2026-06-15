@@ -14,6 +14,7 @@
  */
 import { useRef, useState, useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { colors } from '@/theme/colors'
 import {
   PHYSICS_COLORS,
@@ -40,7 +41,14 @@ const LAYOUT_RATIOS = {
 } as const
 
 export default function ACValues() {
-  const { params, speed, time, isPlaying } = useAnimationStore()
+    const {params, speed, time, isPlaying} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    speed: s.speed,
+    time: s.time,
+    isPlaying: s.isPlaying,
+    }))
+  )
   const containerRef = useRef<HTMLDivElement>(null)
   const [containerSize, setContainerSize] = useState({ width: 600, height: 500 })
 

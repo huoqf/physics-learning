@@ -1,6 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useState, useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
@@ -29,8 +30,19 @@ import {
  * 2. 模式 1：弹性势能（弹簧左右拉伸压缩做简谐运动）
  */
 export default function PotentialEnergyAnimation() {
-  const { params, time, isPlaying, setIsPlaying, showVectors, updateParam, setTime } = useAnimationStore()
+    const {params, time, isPlaying, setIsPlaying, showVectors, updateParam, setTime} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    isPlaying: s.isPlaying,
+    setIsPlaying: s.setIsPlaying,
+    showVectors: s.showVectors,
+    updateParam: s.updateParam,
+    setTime: s.setTime,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 420 })
+  const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 
   const mode = params.mode ?? 0
@@ -336,7 +348,7 @@ export default function PotentialEnergyAnimation() {
     <div ref={containerRef} className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">
       {/* 拖拽交互提示气泡 */}
       {!isPlaying && (
-        <div className="absolute top-2 left-2 px-2 py-0.5 bg-neutral-50 text-[9px] text-neutral-400 font-semibold rounded border pointer-events-none z-10 animate-pulse">
+        <div className="absolute top-2 left-2 px-2 py-0.5 bg-neutral-50 text-neutral-400 font-semibold rounded border pointer-events-none z-10 animate-pulse" style={{ fontSize: font(9) }}>
           {mode === 0
             ? '拖动物块改变释放高度，拖动虚线改变零势能面'
             : '拖动滑块可调节初始形变大小'}
@@ -352,13 +364,15 @@ export default function PotentialEnergyAnimation() {
           transform: 'translateX(-50%)',
         }}
       >
-        <KatexFormula
-          formula={getLiveFormula()}
-          mode="inline"
-          className={`text-[10px] font-semibold ${
-            mode === 0 ? 'text-violet-700' : 'text-violet-900'
-          }`}
-        />
+        <span style={{ fontSize: font(10) }}>
+          <KatexFormula
+            formula={getLiveFormula()}
+            mode="inline"
+            className={`font-semibold ${
+              mode === 0 ? 'text-violet-700' : 'text-violet-900'
+            }`}
+          />
+        </span>
       </div>
 
       {/* 主 SVG 画面 */}
@@ -428,7 +442,7 @@ export default function PotentialEnergyAnimation() {
               <text
                 x={animRight - 4}
                 y={toPixelY(y_ref) - 5}
-                fontSize={8}
+                fontSize={font(8)}
                 fill={PHYSICS_COLORS.potentialEnergy}
                 textAnchor="end"
                 fontWeight="bold"
@@ -476,7 +490,7 @@ export default function PotentialEnergyAnimation() {
             {[0, 2, 4, 6, 8, 10].map(h => (
               <g key={`ruler-${h}`}>
                 <line x1={animLeft} y1={toPixelY(h)} x2={animLeft + 8} y2={toPixelY(h)} stroke={colors.neutral[400]} strokeWidth={0.5} />
-                <text x={animLeft + 10} y={toPixelY(h) + 3} fontSize={7} fill={colors.neutral[400]}>{h}m</text>
+                <text x={animLeft + 10} y={toPixelY(h) + 3} fontSize={font(7)} fill={colors.neutral[400]}>{h}m</text>
               </g>
             ))}
           </g>
@@ -522,7 +536,7 @@ export default function PotentialEnergyAnimation() {
             <text
               x={toPixelX(0) + objW * 0.5}
               y={groundY + 10}
-              fontSize={7}
+              fontSize={font(7)}
               fill={colors.success[700]}
               textAnchor="middle"
               fontWeight="semibold"
@@ -605,15 +619,15 @@ export default function PotentialEnergyAnimation() {
             opacity={0.85}
             rx={1}
           />
-          <text x={chartLeft + chartWidth * 0.20} y={barBaseY - barW_H - 4} fontSize={8} fill={PHYSICS_COLORS.work} textAnchor="middle" fontWeight="bold">
+          <text x={chartLeft + chartWidth * 0.20} y={barBaseY - barW_H - 4} fontSize={font(8)} fill={PHYSICS_COLORS.work} textAnchor="middle" fontWeight="bold">
             {state.W >= 0 ? '+' : ''}{state.W.toFixed(1)}J
           </text>
-          <text x={chartLeft + chartWidth * 0.20} y={barBaseY + 12} fontSize={8} fill={PHYSICS_COLORS.work} textAnchor="middle" fontWeight="semibold">
+          <text x={chartLeft + chartWidth * 0.20} y={barBaseY + 12} fontSize={font(8)} fill={PHYSICS_COLORS.work} textAnchor="middle" fontWeight="semibold">
             {mode === 0 ? 'W重' : 'W弹'}
           </text>
 
           {/* 等号 '=' */}
-          <text x={chartLeft + chartWidth * 0.35} y={barBaseY - maxBarH * 0.4} fontSize={14} fill={colors.neutral[600]} textAnchor="middle" fontWeight="bold">
+          <text x={chartLeft + chartWidth * 0.35} y={barBaseY - maxBarH * 0.4} fontSize={font(14)} fill={colors.neutral[600]} textAnchor="middle" fontWeight="bold">
             =
           </text>
 
@@ -627,10 +641,10 @@ export default function PotentialEnergyAnimation() {
             opacity={0.85}
             rx={1}
           />
-          <text x={chartLeft + chartWidth * 0.50} y={barBaseY - barDeltaEp_H - 4} fontSize={8} fill={PHYSICS_COLORS.potentialEnergy} textAnchor="middle" fontWeight="bold">
+          <text x={chartLeft + chartWidth * 0.50} y={barBaseY - barDeltaEp_H - 4} fontSize={font(8)} fill={PHYSICS_COLORS.potentialEnergy} textAnchor="middle" fontWeight="bold">
             {-deltaEp >= 0 ? '+' : ''}{(-deltaEp).toFixed(1)}J
           </text>
-          <text x={chartLeft + chartWidth * 0.50} y={barBaseY + 12} fontSize={8} fill={PHYSICS_COLORS.potentialEnergy} textAnchor="middle" fontWeight="semibold">
+          <text x={chartLeft + chartWidth * 0.50} y={barBaseY + 12} fontSize={font(8)} fill={PHYSICS_COLORS.potentialEnergy} textAnchor="middle" fontWeight="semibold">
             -ΔEp
           </text>
         </g>
@@ -658,7 +672,7 @@ export default function PotentialEnergyAnimation() {
               return (
                 <g key={`ep-y-${i}`}>
                   <line x1={chartLeft - 3} y1={y} x2={chartLeft} y2={y} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={chartLeft - 5} y={y + 3} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="end">
+                  <text x={chartLeft - 5} y={y + 3} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">
                     {energyVal.toFixed(0)}J
                   </text>
                 </g>
@@ -670,7 +684,7 @@ export default function PotentialEnergyAnimation() {
               return (
                 <g key={`ep-x-${i}`}>
                   <line x1={xPos} y1={etAreaBottom} x2={xPos} y2={etAreaBottom + 3} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={xPos} y={etAreaBottom + 9} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="middle">{tVal.toFixed(0)}s</text>
+                  <text x={xPos} y={etAreaBottom + 9} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="middle">{tVal.toFixed(0)}s</text>
                 </g>
               )
             })}
@@ -678,13 +692,13 @@ export default function PotentialEnergyAnimation() {
             {/* 图例 */}
             <g transform={`translate(${chartRight - 160}, ${etAreaTop - 12})`}>
               <line x1={0} y1={3} x2={8} y2={3} stroke={PHYSICS_COLORS.potentialEnergy} strokeWidth={1.5} />
-              <text x={12} y={5} fontSize={7} fill={CHART_COLORS.tickLabel}>Ep</text>
+              <text x={12} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>Ep</text>
 
               <line x1={35} y1={3} x2={43} y2={3} stroke={PHYSICS_COLORS.kineticEnergy} strokeWidth={1.5} />
-              <text x={47} y={5} fontSize={7} fill={CHART_COLORS.tickLabel}>Ek</text>
+              <text x={47} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>Ek</text>
 
               <line x1={70} y1={3} x2={78} y2={3} stroke={colors.neutral[500]} strokeWidth={1.5} strokeDasharray="3,1" />
-              <text x={82} y={5} fontSize={7} fill={CHART_COLORS.tickLabel}>E总</text>
+              <text x={82} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>E总</text>
             </g>
 
             {/* 曲线绘制 */}
@@ -732,7 +746,7 @@ export default function PotentialEnergyAnimation() {
               return (
                 <g key={`sp-x-${i}`}>
                   <line x1={xPos} y1={etAreaBottom} x2={xPos} y2={etAreaBottom + 3} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={xPos} y={etAreaBottom + 9} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="middle">
+                  <text x={xPos} y={etAreaBottom + 9} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="middle">
                     {xVal > 0 ? '+' : ''}{xVal}m
                   </text>
                 </g>
@@ -747,7 +761,7 @@ export default function PotentialEnergyAnimation() {
               return (
                 <g key={`sp-y-${i}`}>
                   <line x1={chartLeft - 3} y1={y} x2={chartLeft} y2={y} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={chartLeft - 5} y={y + 3} fontSize={7} fill={CHART_COLORS.tickLabel} textAnchor="end">
+                  <text x={chartLeft - 5} y={y + 3} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">
                     {eVal.toFixed(0)}J
                   </text>
                 </g>
@@ -802,10 +816,10 @@ export default function PotentialEnergyAnimation() {
           const cx = spacing * idx + spacing * 0.5
           return (
             <g key={`bottom-${idx}`}>
-              <text x={cx} y={bottomY + 4} fontSize={8} fill={colors.neutral[500]} textAnchor="middle" fontWeight="semibold">
+              <text x={cx} y={bottomY + 4} fontSize={font(8)} fill={colors.neutral[500]} textAnchor="middle" fontWeight="semibold">
                 {item.label}
               </text>
-              <text x={cx} y={bottomY + 16} fontSize={9} fill={item.color} textAnchor="middle" fontWeight="bold">
+              <text x={cx} y={bottomY + 16} fontSize={font(9)} fill={item.color} textAnchor="middle" fontWeight="bold">
                 {item.value}
               </text>
             </g>

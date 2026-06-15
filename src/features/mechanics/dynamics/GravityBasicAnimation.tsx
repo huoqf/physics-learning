@@ -1,6 +1,7 @@
 import { FC, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
@@ -27,7 +28,14 @@ const HANGER_HOLES = [
 const BASE_CENTER = { x: 5, y: 5 }
 
 export const GravityBasicAnimation: FC = () => {
-  const { params, time, showVectors, isPlaying } = useAnimationStore()
+    const {params, time, showVectors, isPlaying} = useAnimationStore(
+    useShallow((s) => ({
+    params: s.params,
+    time: s.time,
+    showVectors: s.showVectors,
+    isPlaying: s.isPlaying,
+    }))
+  )
   const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
 
   // 参数解析
