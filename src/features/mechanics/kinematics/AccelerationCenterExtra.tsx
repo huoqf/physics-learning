@@ -3,7 +3,7 @@ import { useAnimationStore } from '@/stores'
 import { calculatePoliceChase } from '@/physics'
 import { PHYSICS_COLORS, CHART_COLORS, STROKE, DASH, FONT } from '@/theme/physics'
 import { SVG_FILTER } from '@/theme/physics/canvasStyle'
-import { AnimationControls } from '@/components/UI'
+import { AnimationControls, Card } from '@/components/UI'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { SportsCar } from '@/components/Physics/SportsCar'
@@ -32,7 +32,13 @@ const LAYOUT = {
  * 遵循 project_rules.md 设计规范：比例驱动布局、主题 token 引用、无硬编码像素。
  */
 export default function AccelerationCenterExtra() {
-  const { params, time, isPlaying, speed, setIsPlaying, setTime, setSpeed } = useAnimationStore()
+  const params = useAnimationStore((s) => s.params)
+  const time = useAnimationStore((s) => s.time)
+  const isPlaying = useAnimationStore((s) => s.isPlaying)
+  const speed = useAnimationStore((s) => s.speed)
+  const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
+  const setTime = useAnimationStore((s) => s.setTime)
+  const setSpeed = useAnimationStore((s) => s.setSpeed)
   const [showMaxGapWarning, setShowMaxGapWarning] = useState(false)
   const [showMeetWarning, setShowMeetWarning] = useState(false)
   const [containerSize, setContainerSize] = useState({ width: 800, height: 600 })
@@ -349,7 +355,7 @@ export default function AccelerationCenterExtra() {
                 {/* 相遇点蓝色光圈 */}
                 {state.tMeet !== null && state.tMeet <= time && (
                   <g>
-                    <circle cx={toXtX(state.tMeet)} cy={toXtY(state.xA + deltaX0)} r={8} fill="none" stroke="#3B82F6" strokeWidth={2} filter="url(#glow-blue)">
+                    <circle cx={toXtX(state.tMeet)} cy={toXtY(state.xA + deltaX0)} r={8} fill="none" stroke={PHYSICS_COLORS.velocity} strokeWidth={2} filter="url(#glow-blue)">
                       <animate attributeName="r" values="6;10;6" dur="1.5s" repeatCount="indefinite" />
                       <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite" />
                     </circle>
@@ -484,7 +490,7 @@ export default function AccelerationCenterExtra() {
                 {/* 共速点红色光圈 */}
                 {state.tEqual > 0 && state.tEqual <= time && (
                   <g>
-                    <circle cx={toVtX(state.tEqual)} cy={toVtY(vA)} r={8} fill="none" stroke="#EF4444" strokeWidth={2} filter="url(#glow-red)">
+                    <circle cx={toVtX(state.tEqual)} cy={toVtY(vA)} r={8} fill="none" stroke={PHYSICS_COLORS.acceleration} strokeWidth={2} filter="url(#glow-red)">
                       <animate attributeName="r" values="6;10;6" dur="1.5s" repeatCount="indefinite" />
                       <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite" />
                     </circle>
@@ -494,12 +500,12 @@ export default function AccelerationCenterExtra() {
                       y1={toVtY(vA)}
                       x2={toVtX(state.tEqual)}
                       y2={toVtY(0)}
-                      stroke="#EF4444"
+                      stroke={PHYSICS_COLORS.acceleration}
                       strokeWidth={STROKE.reference}
                       strokeDasharray={DASH.reference.join(' ')}
                       opacity={0.6}
                     />
-                    <text x={toVtX(state.tEqual)} y={toVtY(0) + 18} fontSize={FONT.small} fill="#EF4444" textAnchor="middle" fontWeight="bold">
+                    <text x={toVtX(state.tEqual)} y={toVtY(0) + 18} fontSize={FONT.small} fill={PHYSICS_COLORS.acceleration} textAnchor="middle" fontWeight="bold">
                       t={state.tEqual.toFixed(1)}s
                     </text>
                   </g>
@@ -670,21 +676,21 @@ export default function AccelerationCenterExtra() {
 
         {/* 最大间距警告气泡 */}
         {showMaxGapWarning && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-500 text-white font-bold text-xs py-2 px-3 rounded-lg shadow-lg border border-amber-600 animate-bounce">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-500 text-white font-bold text-xs py-2 px-3 rounded-lg shadow-lg border border-amber-600 animate-pulse">
             ⚠️ 共速时刻：此时两车距离最大！Δx = {state.deltaX.toFixed(1)} m
           </div>
         )}
 
         {/* 相遇警告气泡 */}
         {showMeetWarning && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-green-600 text-white font-bold text-xs py-2 px-3 rounded-lg shadow-lg border border-green-700 animate-bounce">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-green-600 text-white font-bold text-xs py-2 px-3 rounded-lg shadow-lg border border-green-700 animate-pulse">
             🚔 警车追上轿车！t = {state.tMeet?.toFixed(1)} s
           </div>
         )}
       </div>
 
       {/* ── 动画控制栏 ── */}
-      <div className="w-full shrink-0 bg-white rounded-xl shadow-sm p-2">
+      <Card className="p-2">
         <AnimationControls
           isPlaying={isPlaying}
           speed={speed}
@@ -695,7 +701,7 @@ export default function AccelerationCenterExtra() {
           onSpeedChange={setSpeed}
           onTimeChange={setTime}
         />
-      </div>
+      </Card>
     </div>
   )
 }

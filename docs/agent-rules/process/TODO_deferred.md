@@ -54,16 +54,14 @@
 
 ---
 
-## 3. `AccelerationCenterExtra.tsx` 规范违反
+## ~~3. `AccelerationCenterExtra.tsx` 规范违反~~ — 已完成（2026-06-15）
 
-**优先级**：P1（含铁律级违反）
-
-| 问题 | 位置 | 规范依据 | 严重程度 |
-|------|------|---------|---------|
-| `animate-bounce` | L673,680 | 02_UI §1 明确禁止 bounce 动效 | 铁律 |
-| 1 处 `bg-white rounded-xl shadow-sm` 直接拼写 | L687 | 08_THREE §5.3 要求使用 Card 组件 | 中 |
-| 全量 store 解构 | L34 | ARCH §5.1 要求精确订阅 | 中 |
-| `#3B82F6` / `#EF4444` 硬编码 | L352,487,497,502 | 02_UI §2 / 07_CANVAS §2.2 | 中 |
+| 问题 | 修复方式 |
+|------|---------|
+| `animate-bounce` L673,L680 | → `animate-pulse`（铁律级违反） |
+| `bg-white rounded-xl shadow-sm` L687 | → `<Card className="p-2">` |
+| 全量 store 解构 L35 | → 7 个 `useAnimationStore((s) => s.xxx)` 精细订阅 |
+| `#3B82F6` / `#EF4444` L352,L487,L497,L502 | → `PHYSICS_COLORS.velocity` / `PHYSICS_COLORS.acceleration` |
 
 ---
 
@@ -352,3 +350,4 @@ magnet: {
 | neutral[0] → neutral.white | 17 个文件 64 处引用更新 |
 | CANVAS_COLORS 引用 colors.* | 8 个 neutral 映射色从硬编码 hex 改为 `colors.neutral[*]` |
 | 颜色硬编码清理 | 4 个 Physics 通用组件 10 处违规全部修复（§2 完成） |
+| AccelerationCenterExtra 规范违反 | animate-bounce→pulse、Card 组件、selector 订阅、颜色 token（§3 完成） |
