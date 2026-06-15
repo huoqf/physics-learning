@@ -3,6 +3,22 @@ import { defineAnimations } from '../defineAnimations'
 
 // ===== 电磁学 · 电磁感应（[M4-1]）=====
 export const electromagnetismInductionAnimations = defineAnimations({
+  'anim-electromagnetic-induction': {
+    title: '第一节：电磁感应现象',
+    knowledgeId: 'electricity-4-1',
+    Component: lazy(() => import('@/features/electromagnetism/induction/InductionPhenomenon')),
+    SidebarExtra: lazy(() => import('@/features/electromagnetism/induction/InductionSidebarExtra')),
+    defaultParams: {
+      mode: 0,
+      showLines: 1,
+      magnetX: 200,
+      magnetSpeed: 0,
+      magnetPole: 1,
+      resistance: 50,
+      dR_dt: 0,
+    },
+    paramMeta: [],
+  },
   'anim-faraday-law': {
     title: '法拉第电磁感应定律',
     knowledgeId: 'electricity-4-2',

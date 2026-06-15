@@ -82,6 +82,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-faraday-law':           { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-lenzs-law':             { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-cutting-emf':           { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-electromagnetic-induction': { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-ac-generation':         { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-ac-values':             { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-transformer':           { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },

@@ -22,6 +22,8 @@ import {
   computeCuttingEMFHandPose,
   lerpAngleDeg,
   normalizeAngleDeg,
+  calculateMagnetInduction,
+  calculateCoilInduction,
 } from '@/physics'
 
 const k = 9e9
@@ -398,4 +400,48 @@ describe('electromagnetism', () => {
     expect(r2.chirality).toBe('right')
     expect(r2.B_out).toBe(true)
   })
+
+  // ===== 新增电磁感应现象纯计算测试 =====
+  describe('电磁感应定性计算', () => {
+    it('calculateMagnetInduction: 靠近或远离线圈会改变感应电流/偏转角度的方向', () => {
+      // 磁铁靠近（v > 0，x < coilX）
+      const resClose = calculateMagnetInduction(200, 2, 400, 10, 1)
+      expect(resClose.phi).toBeGreaterThan(0)
+      expect(resClose.dPhi).toBeGreaterThan(0)
+      expect(resClose.theta).toBeLessThan(0) // 阻碍变化
+
+      // 磁铁远离（v < 0，x < coilX）
+      const resAway = calculateMagnetInduction(200, -2, 400, 10, 1)
+      expect(resAway.dPhi).toBeLessThan(0)
+      expect(resAway.theta).toBeGreaterThan(0)
+    })
+
+    it('calculateMagnetInduction: 磁铁在中心静止时无感应电流', () => {
+      const res = calculateMagnetInduction(400, 0, 400, 10, 1)
+      expect(res.phi).toBe(1.0) // 最大磁通量
+      expect(res.dPhi).toBe(0)
+      expect(res.theta).toBe(0)
+    })
+
+    it('calculateMagnetInduction: 翻转极性会导致感应电流反向', () => {
+      const resPolePositive = calculateMagnetInduction(200, 2, 400, 10, 1)
+      const resPoleNegative = calculateMagnetInduction(200, 2, 400, 10, -1)
+      expect(resPolePositive.theta).toBe(-resPoleNegative.theta)
+    })
+
+    it('calculateCoilInduction: 电阻变小时（电流变大），穿过副线圈磁通量增加，感应电流为正', () => {
+      // 变阻器滑动变小 dR/dt < 0
+      const res = calculateCoilInduction(50, -5, 10, 10)
+      expect(res.phi).toBe(10 * 0.1 / 50)
+      expect(res.dPhi).toBeGreaterThan(0)
+      expect(res.theta).toBeLessThan(0)
+    })
+
+    it('calculateCoilInduction: 变阻器静止不动时无感应电流', () => {
+      const res = calculateCoilInduction(50, 0, 10, 10)
+      expect(res.dPhi).toBe(0)
+      expect(res.theta).toBe(0)
+    })
+  })
 })
+

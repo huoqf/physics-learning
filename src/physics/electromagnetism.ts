@@ -1414,3 +1414,109 @@ export const calcParticleArcAngle = (entryAngle: number, _q: number, _B: number)
   // 如果向左偏转（qB>0），圆心在入射速度左侧。
   return 2 * entryAngle // 简化模型，具体取决于几何关系，通常从直线边界射入再射出时，轨迹圆弧对应的圆心角为 2 * (pi - 夹角) 或者 2 * 夹角
 }
+
+/**
+ * 磁铁插入线圈定性物理计算。
+ * 
+ * 物理原理：
+ * 设线圈中心在 coilX。磁铁在 x 处，以速度 v 移动。
+ * 穿过线圈的磁通量为距离的函数：Phi(x) = Phi0 / (1 + alpha * (x - coilX)^2)。
+ * 磁通量变化率为：dPhi/dt = (dPhi/dx) * v = -2 * alpha * (x - coilX) * Phi0 * v / (1 + alpha * (x - coilX)^2)^2。
+ * 感应电流（定性）正比于磁通量变化率：I = -N * dPhi_dt / R_total。
+ * 电流计偏转角度正比于感应电流：theta = k * I。
+ *
+ * @param x 磁铁当前位置，单位 px
+ * @param v 磁铁当前移动速度，单位 px/s
+ * @param coilX 线圈中心位置，单位 px
+ * @param N 线圈匝数
+ * @param pole 磁铁极性，1 = 左S右N，-1 = 左N右S
+ * @returns phi 磁通量 (Wb), dPhi 磁通量变化率 (Wb/s), theta 电流计指针偏转比例 (无量纲，范围 -1 到 1)
+ */
+export function calculateMagnetInduction(
+  x: number,
+  v: number,
+  coilX: number,
+  N: number,
+  pole: number
+): {
+  phi: number
+  dPhi: number
+  theta: number
+} {
+  const Phi0 = 1.0 // 最大磁通量 (Wb)
+  const alpha = 0.00015 // 空间衰减系数 (px^-2)
+  const dx = x - coilX // 磁铁距离线圈中心的相对位置
+
+  // 磁通量
+  const phi = Phi0 / (1 + alpha * dx * dx)
+
+  // 磁通量随位移的变化率 dPhi/dx
+  const denom = 1 + alpha * dx * dx
+  const dPhi_dx = (-2 * alpha * dx * Phi0) / (denom * denom)
+
+  // 磁通量随时间的变化率 dPhi/dt = dPhi/dx * v (v为 px/s)
+  // 注意，磁极 pole 翻转会使穿过线圈的磁通量极性变反
+  let dPhi = dPhi_dx * v * pole
+  if (dPhi === 0) dPhi = 0
+
+  // 根据法拉第电磁感应定律，感应电动势 E = -N * dPhi/dt
+  // 我们定性表示偏转比例，当向右移动靠近时（v>0，dx<0，dPhi_dx>0，如pole=1，则dPhi>0，E < 0）
+  // 指针偏转与感应电动势成正比，即与 -dPhi 挂钩。
+  const k = 0.12 // 比例系数
+  let theta = -k * N * dPhi
+  if (theta === 0) theta = 0
+
+  // 限幅在 [-1, 1]
+  theta = Math.max(-1, Math.min(1, theta))
+
+  return { phi, dPhi, theta }
+}
+
+/**
+ * 原副线圈回路（互感）定性物理计算。
+ * 
+ * 物理原理：
+ * 原线圈回路电流 I1 = E / R。
+ * 产生的磁场 B 正比于 I1。
+ * 穿过副线圈的磁通量 Phi = M * I1 = M * E / R。
+ * 磁通量变化率 dPhi/dt = -M * E / R^2 * dR_dt。
+ * 感应电动势 E_induced = -N * dPhi/dt = N * M * E / R^2 * dR_dt。
+ * 电流计指针偏转角度 theta 正比于感应电动势。
+ *
+ * @param R 当前滑动变阻器阻值，单位 Ω，为防止除以0应不为0
+ * @param dR_dt 变阻器阻值变化率，单位 Ω/s
+ * @param E 原线圈回路电源电压，单位 V
+ * @param N 副线圈匝数
+ * @returns phi 磁通量 (Wb), dPhi 磁通量变化率 (Wb/s), theta 电流计指针偏转比例 (无量纲，范围 -1 到 1)
+ */
+export function calculateCoilInduction(
+  R: number,
+  dR_dt: number,
+  E: number,
+  N: number
+): {
+  phi: number
+  dPhi: number
+  theta: number
+} {
+  const safeR = Math.max(5, R) // 边界保护：变阻器最小阻值限制为 5 Ω
+  const M = 0.1 // 互感系数 (H)
+
+  // 磁通量
+  const phi = (M * E) / safeR
+
+  // 磁通量变化率 dPhi/dt = -M * E / R^2 * dR_dt
+  let dPhi = -((M * E) / (safeR * safeR)) * dR_dt
+  if (dPhi === 0) dPhi = 0
+
+  // 感应电动势 E_induced = -N * dPhi/dt
+  // 指针偏转与感应电动势正比
+  const k = 0.8 // 偏转系数
+  let theta = -k * N * dPhi
+  if (theta === 0) theta = 0
+
+  // 限幅
+  theta = Math.max(-1, Math.min(1, theta))
+
+  return { phi, dPhi, theta }
+}

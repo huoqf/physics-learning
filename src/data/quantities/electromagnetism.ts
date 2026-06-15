@@ -17,6 +17,8 @@ import {
   getChargeInEFieldTimeScale,
   solveBasicAmpere,
   solveAdvancedAmpere,
+  calculateMagnetInduction,
+  calculateCoilInduction,
 } from '../../physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
@@ -1236,6 +1238,84 @@ export function buildElectromagnetismQuantities(
           ],
           warnings: [
             { text: '易错防坑：找不到动态圆圆心的运动轨迹（通常是以入射点为圆心、半径为R的圆弧），在画临界条件时切点找错导致漏解。', level: 'danger' }
+          ],
+        }
+      }
+    }
+
+    case 'anim-electromagnetic-induction': {
+      const mode = params.mode ?? 0 // 0=基础: 磁铁运动, 1=进阶: 双线圈回路
+      const N = 10 // 固定线圈匝数
+
+      if (mode === 0) {
+        // ── 基础模式：磁铁插入线圈 ──
+        const magnetX = params.magnetX ?? 200
+        const magnetSpeed = params.magnetSpeed ?? 0
+        const magnetPole = params.magnetPole ?? 1 // 1=左S右N, -1=左N右S
+        const coilX = 400
+
+        const { phi, dPhi, theta } = calculateMagnetInduction(magnetX, magnetSpeed, coilX, N, magnetPole)
+
+        // 判断电流计偏转方向文字
+        let currentDirectionText = '无感应电流'
+        if (Math.abs(theta) > 0.05) {
+          currentDirectionText = theta > 0 ? '向右偏转 (+)' : '向左偏转 (-)'
+        }
+
+        return {
+          quantities: [
+            ...base,
+            { label: '磁铁位置 x', value: magnetX.toFixed(0), unit: 'px' },
+            { label: '磁铁速度 v', value: magnetSpeed.toFixed(1), unit: 'px/s', color: PHYSICS_COLORS.velocity },
+            { label: '穿过线圈磁通量 Φ', value: phi.toFixed(3), unit: 'Wb', color: PHYSICS_COLORS.magneticField },
+            { label: '磁通量变化率 dΦ/dt', value: dPhi.toFixed(3), unit: 'Wb/s', color: PHYSICS_COLORS.magneticField, highlight: Math.abs(dPhi) > 0.01 ? 'extreme' : undefined },
+            { label: '电流计指针偏转', value: currentDirectionText, unit: '', color: PHYSICS_COLORS.kineticEnergy, highlight: Math.abs(theta) > 0.05 ? 'extreme' : 'zero' },
+          ],
+          formulas: [
+            { name: '磁通量变化量定义', latex: '\\Delta\\Phi = \\Phi_{末} - \\Phi_{初}', level: 'core' },
+            { name: '法拉第电磁感应定律', latex: 'E = N \\frac{\\Delta\\Phi}{\\Delta t}', level: 'core', condition: '计算平均感应电动势' },
+          ],
+          gaokaoPoints: [
+            { text: '闭合回路内磁通量发生变化（ΔΦ ≠ 0）是产生感应电流的充要条件。', importance: 'gaokao' },
+            { text: '高考常在大题的第一问中以各种隐蔽几何变化（如线圈旋转、滑条移动、磁铁位移）考查对“变化”的判断。', importance: 'gaokao' },
+            { text: '磁通量变化率 dΦ/dt 决定了感应电动势的大小，即决定了电流计指针偏转的幅度。', importance: 'core' },
+          ],
+          warnings: [
+            { text: '易错防坑：误认为有磁通量 Φ 就有感应电流。记住，磁铁静止在线圈中时，虽然 Φ 达到最大，但 ΔΦ = 0，此时感应电流为零，指针不偏转！', level: 'danger' }
+          ],
+        }
+      } else {
+        // ── 进阶模式：双线圈回路 ──
+        const R = params.resistance ?? 50
+        const dR_dt = params.dR_dt ?? 0
+        const E_source = 10 // 原回路电源电压
+
+        const { phi, dPhi, theta } = calculateCoilInduction(R, dR_dt, E_source, N)
+        const I1 = E_source / R
+
+        let currentDirectionText = '无感应电流'
+        if (Math.abs(theta) > 0.05) {
+          currentDirectionText = theta > 0 ? '向右偏转 (+)' : '向左偏转 (-)'
+        }
+
+        return {
+          quantities: [
+            ...base,
+            { label: '原线圈电流 I₁', value: I1.toFixed(2), unit: 'A', color: PHYSICS_COLORS.electricCurrent },
+            { label: '穿过副线圈磁通量 Φ', value: phi.toFixed(3), unit: 'Wb', color: PHYSICS_COLORS.magneticField },
+            { label: '磁通量变化率 dΦ/dt', value: dPhi.toFixed(3), unit: 'Wb/s', color: PHYSICS_COLORS.magneticField, highlight: Math.abs(dPhi) > 0.01 ? 'extreme' : undefined },
+            { label: '电流计指针偏转', value: currentDirectionText, unit: '', color: PHYSICS_COLORS.kineticEnergy, highlight: Math.abs(theta) > 0.05 ? 'extreme' : 'zero' },
+          ],
+          formulas: [
+            { name: '互感磁通量关系', latex: '\\Phi = M I_1', level: 'core', condition: 'M为互感系数' },
+            { name: '法拉第电磁感应定律', latex: 'E = -N \\frac{d\\Phi}{dt}', level: 'core' },
+          ],
+          gaokaoPoints: [
+            { text: '双线圈互感：原回路中电阻变化导致原电流变化，从而改变原线圈磁场，使得副线圈中磁通量发生变化。', importance: 'gaokao' },
+            { text: '只要变阻器停止拖动，即使电阻很小（电流很大），由于电流恒定，磁通量变化率为零，副线圈就没有感应电流。', importance: 'gaokao' },
+          ],
+          warnings: [
+            { text: '易错防坑：在变阻器滑动过程中，电阻变小导致电流增大，磁场增强，穿过副线圈的磁通量增大；电阻变大则相反。变阻器滑动的快慢（dR/dt）直接决定感应电流的强弱。', level: 'warning' }
           ],
         }
       }
