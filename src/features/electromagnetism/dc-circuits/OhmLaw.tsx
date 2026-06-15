@@ -2,8 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateOhmLaw } from '@/physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
-import { LightBulb } from '@/components/Physics/LightBulb'
-import { DialMeter } from '@/components/Physics/DialMeter'
+import { LightBulb, DialMeter, DCSource } from '@/components/Physics'
 
 export default function OhmLaw() {
   const { params } = useAnimationStore()
@@ -109,12 +108,6 @@ export default function OhmLaw() {
       >
         <defs>
 
-          {/* 电源金属质感 */}
-          <linearGradient id="power-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#475569" />
-            <stop offset="100%" stopColor="#1E293B" />
-          </linearGradient>
-
           {/* 表盘金属圈渐变 */}
           <linearGradient id="dial-ring" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#94A3B8" />
@@ -183,61 +176,7 @@ export default function OhmLaw() {
         ))}
 
         {/* ==================== 3. 直流稳压电源 ==================== */}
-        <g transform="translate(290, 280)">
-          {/* 电源主体外壳 */}
-          <rect
-            x={0}
-            y={0}
-            width={80}
-            height={80}
-            rx={8}
-            fill="url(#power-grad)"
-            stroke="#0f172a"
-            strokeWidth={1.5}
-          />
-          {/* LED 电压显示屏 */}
-          <rect
-            x={12}
-            y={12}
-            width={56}
-            height={24}
-            rx={4}
-            fill="#090d16"
-            stroke="#334155"
-            strokeWidth={1}
-          />
-          {/* LED 数字 */}
-          <text
-            x={40}
-            y={29}
-            fill="#22C55E"
-            fontSize={15}
-            fontWeight="bold"
-            fontFamily="monospace"
-            textAnchor="middle"
-            style={{ filter: 'drop-shadow(0px 0px 2px rgba(34, 197, 94, 0.8))' }}
-          >
-            {U.toFixed(1)} V
-          </text>
-          {/* 电源品牌/型号小字 */}
-          <text x={40} y={48} fill="#94a3b8" fontSize={7} textAnchor="middle" letterSpacing={1}>
-            DC SOURCE
-          </text>
-
-          {/* 正极接线柱 (红) */}
-          <circle cx={65} cy={65} r={7} fill="#EF4444" stroke="#7f1d1d" strokeWidth={1} />
-          <circle cx={65} cy={65} r={3} fill="#b91c1c" />
-          <text x={65} y={54} fill="#EF4444" fontSize={9} fontWeight="bold" textAnchor="middle">
-            +
-          </text>
-
-          {/* 负极接线柱 (黑) */}
-          <circle cx={15} cy={65} r={7} fill="#1E293B" stroke="#0f172a" strokeWidth={1} />
-          <circle cx={15} cy={65} r={3} fill="#020617" />
-          <text x={15} y={54} fill="#94A3B8" fontSize={9} fontWeight="bold" textAnchor="middle">
-            -
-          </text>
-        </g>
+        <DCSource type="instrument" x={330} y={320} voltage={U} polarity="right-positive" />
 
         {/* ==================== 4. 待测元件区域 ==================== */}
         {!isBulb ? (

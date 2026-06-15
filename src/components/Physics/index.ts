@@ -19,6 +19,9 @@ export { BarMagnet } from './BarMagnet'
 export { Solenoid } from './Solenoid'
 export { Galvanometer } from './Galvanometer'
 export { PrimaryCoil } from './PrimaryCoil'
+export { Rheostat } from './Rheostat'
+export type { RheostatProps } from './Rheostat'
+export { DCSource } from './DCSource'
 
 export type { MagneticPolesProps } from './MagneticPoles'
 export type { RotatingCoilProps } from './RotatingCoil'
@@ -26,4 +29,7 @@ export type { BarMagnetProps } from './BarMagnet'
 export type { SolenoidProps } from './Solenoid'
 export type { GalvanometerProps } from './Galvanometer'
 export type { PrimaryCoilProps } from './PrimaryCoil'
+export type { DCSourceProps } from './DCSource'
+export type { RheostatProps as RheostatPropsType } from './Rheostat'
+
 

@@ -4,6 +4,7 @@ import { colors } from '@/theme/colors'
 import { Rails } from '@/components/Physics/Rails'
 import { ConductingRod } from '@/components/Physics/ConductingRod'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { DCSource } from '@/components/Physics/DCSource'
 import { UniformMagneticField } from './UniformMagneticField'
 import type { BasicAmperePhysicsResult } from '../ampereForceModel'
 
@@ -146,36 +147,16 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
       )}
 
       {/* 电源盒子 */}
-      <g transform={`translate(${powerX}, ${powerY})`}>
-        <rect
-          x="0"
-          y="0"
-          width={powerW}
-          height={powerH}
-          fill={colors.neutral[800]}
-          rx="4"
-          stroke={colors.neutral[900]}
-          strokeWidth="1.5"
-        />
-        <text
-          x={powerW / 2}
-          y="18"
-          fontSize="5"
-          fill={colors.neutral[0]}
-          textAnchor="middle"
-          fontWeight="bold"
-          style={{ userSelect: 'none' }}
-        >
-          电源
-        </text>
-
-        {/* 接线柱标红与蓝 */}
-        <circle cx={powerW} cy="12" r="2.5" fill={colors.danger[500]} />
-        <text x={powerW - 6} y="14" fontSize="6" fill={colors.danger[500]} fontWeight="bold">+</text>
-
-        <circle cx={powerW} cy="38" r="2.5" fill={colors.primary[500]} />
-        <text x={powerW - 6} y="40" fontSize="6" fill={colors.primary[500]} fontWeight="bold">-</text>
-      </g>
+      <DCSource 
+        x={powerX + powerW / 2} 
+        y={powerY + powerH / 2} 
+        type="instrument" 
+        width={powerW} 
+        height={powerH} 
+        polarity={I > 0 ? 'left-positive' : 'right-positive'}
+        label="电源"
+        voltage={Math.abs(I) * 5}
+      />
 
       {/* 运动的通电导体棒 */}
       <ConductingRod

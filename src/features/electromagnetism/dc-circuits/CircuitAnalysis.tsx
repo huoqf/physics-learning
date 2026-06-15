@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS } from '@/theme/physics'
-import { DialMeter } from '@/components/Physics/DialMeter'
+import { DialMeter, DCSource, Rheostat } from '@/components/Physics'
 
 interface Point {
   x: number
@@ -316,41 +316,7 @@ export default function CircuitAnalysis() {
   // 1. 直流稳压电源
   const renderBattery = (x: number, y: number) => {
     return (
-      <g transform={`translate(${x - 40}, ${y - 40})`}>
-        <rect
-          x={0}
-          y={0}
-          width={80}
-          height={80}
-          rx={8}
-          fill="url(#battery-grad)"
-          stroke="#0f172a"
-          strokeWidth={1.5}
-        />
-        {/* LED 数显 */}
-        <rect x={12} y={12} width={56} height={24} rx={4} fill="#090d16" stroke="#334155" strokeWidth={1} />
-        <text
-          x={40}
-          y={29}
-          fill="#22C55E"
-          fontSize={14}
-          fontWeight="bold"
-          fontFamily="monospace"
-          textAnchor="middle"
-          style={{ filter: 'drop-shadow(0 0 2px rgba(34, 197, 94, 0.8))' }}
-        >
-          {U.toFixed(1)} V
-        </text>
-        <text x={40} y={48} fill="#94a3b8" fontSize={7} textAnchor="middle" letterSpacing={0.5}>
-          CONSTANT DC
-        </text>
-        {/* 接线柱 (+) */}
-        <circle cx={65} cy={65} r={6} fill="#EF4444" stroke="#7f1d1d" strokeWidth={1} />
-        <text x={65} y={55} fill="#EF4444" fontSize={9} fontWeight="bold" textAnchor="middle">+</text>
-        {/* 接线柱 (-) */}
-        <circle cx={15} cy={65} r={6} fill="#1E293B" stroke="#0f172a" strokeWidth={1} />
-        <text x={15} y={55} fill="#94A3B8" fontSize={9} fontWeight="bold" textAnchor="middle">-</text>
-      </g>
+      <DCSource type="instrument" x={x} y={y} voltage={U} label="CONSTANT DC" polarity="right-positive" />
     )
   }
 
@@ -383,49 +349,7 @@ export default function CircuitAnalysis() {
     )
   }
 
-  // 3. 滑动变阻器 R2
-  const renderSlideResistor = (x: number, y: number, R2Value: number) => {
-    // 变阻器尺寸：120 x 30
-    // 滑动距离从最左侧 -46 到最右侧 46 (对应 R2 = 0 到 100)
-    const wiperX = -46 + (R2Value / 100) * 92
 
-    return (
-      <g transform={`translate(${x}, ${y})`}>
-        {/* 陶瓷绕线本体 */}
-        <rect x={-50} y={-10} width={100} height={20} rx={2} fill="#E2E8F0" stroke="#64748B" strokeWidth={1.2} />
-        {/* 细密绕线圈装饰 */}
-        {Array.from({ length: 26 }, (_, i) => {
-          const sx = -48 + i * 3.84
-          return (
-            <line key={`wire-${i}`} x1={sx} y1={-10} x2={sx} y2={10} stroke="#475569" strokeWidth={0.5} opacity={0.6} />
-          )
-        })}
-
-        {/* 接入端标识 (左侧接入线圈) */}
-        <circle cx={-50} cy={10} r={3.5} fill="#EF4444" stroke="#7f1d1d" strokeWidth={0.5} />
-        
-        {/* 上方金属导电滑杆 */}
-        <rect x={-52} y={-18} width={104} height={3} fill="#94A3B8" stroke="#475569" strokeWidth={0.5} />
-        
-        {/* 输出端标识 (右侧接滑杆) */}
-        <circle cx={52} cy={-16.5} r={3.5} fill="#3B82F6" stroke="#1e3a8a" strokeWidth={0.5} />
-
-        {/* 可滑动滑片 */}
-        <g transform={`translate(${wiperX}, 0)`}>
-          {/* 金属触片 */}
-          <rect x={-5} y={-21} width={10} height={13} fill="#475569" stroke="#1E293B" strokeWidth={0.8} rx={1} />
-          <polygon points="-3,-8 3,-8 0,3" fill="#1E293B" />
-          {/* 滑动把手 */}
-          <rect x={-6} y={-28} width={12} height={7} fill="#EF4444" stroke="#7f1d1d" strokeWidth={0.5} rx={1} />
-        </g>
-
-        {/* 阻值文本标注 */}
-        <text x={0} y={22} fill={PHYSICS_COLORS.labelText} fontSize={10} fontWeight="bold" textAnchor="middle">
-          R₂ (变) = {R2Value.toFixed(0)}Ω
-        </text>
-      </g>
-    )
-  }
 
   // ==================== 渲染函数入口 ====================
 
@@ -476,7 +400,7 @@ export default function CircuitAnalysis() {
             {/* 电学元件 */}
             {renderBattery(l.batteryCenter.x, l.batteryCenter.y)}
             {renderResistor(l.r1Center.x, l.r1Center.y, 'R₁', R1)}
-            {renderSlideResistor(l.r2Center.x, l.r2Center.y, R2)}
+            <Rheostat x={l.r2Center.x} y={l.r2Center.y} value={R2} min={0} max={100} label="R₂ (变)" width={120} />
 
             {/* 表盘仪表 */}
             <DialMeter type="V" value={U2} max={12} x={l.voltmeterCenter.x} y={l.voltmeterCenter.y} />
@@ -513,7 +437,7 @@ export default function CircuitAnalysis() {
             {/* 电学元件 */}
             {renderBattery(l.batteryCenter.x, l.batteryCenter.y)}
             {renderResistor(l.r1Center.x, l.r1Center.y, 'R₁', R1)}
-            {renderSlideResistor(l.r2Center.x, l.r2Center.y, R2)}
+            <Rheostat x={l.r2Center.x} y={l.r2Center.y} value={R2} min={0} max={100} label="R₂ (变)" width={120} />
 
             {/* 表盘仪表 */}
             <DialMeter type="V" value={U2} max={12} x={l.voltmeterCenter.x} y={l.voltmeterCenter.y} />
@@ -551,7 +475,7 @@ export default function CircuitAnalysis() {
           {/* 电学元件 */}
           {renderBattery(l.batteryCenter.x, l.batteryCenter.y)}
           {renderResistor(l.r1Center.x, l.r1Center.y, 'R₁', R1)}
-          {renderSlideResistor(l.r2Center.x, l.r2Center.y, R2)}
+          <Rheostat x={l.r2Center.x} y={l.r2Center.y} value={R2} min={0} max={100} label="R₂ (变)" width={120} />
           {renderResistor(l.r3Center.x, l.r3Center.y, 'R₃', R3)}
 
           {/* 表盘仪表 */}
@@ -569,13 +493,7 @@ export default function CircuitAnalysis() {
         className="w-full h-full bg-white rounded-xl shadow-inner border border-neutral-100"
         preserveAspectRatio="xMidYMid meet"
       >
-        <defs>
-          {/* 电源金属质感渐变 */}
-          <linearGradient id="battery-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#475569" />
-            <stop offset="100%" stopColor="#1E293B" />
-          </linearGradient>
-        </defs>
+
 
         {/* 绘制背景网格（轻量） */}
         {Array.from({ length: 13 }, (_, i) => (

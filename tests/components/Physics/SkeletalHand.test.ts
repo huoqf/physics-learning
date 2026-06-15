@@ -43,10 +43,10 @@ describe('SkeletalHand · 手指姿态预设', () => {
     }
   })
 
-  it('右手静止姿态：拇指第一段指向右上方（-50°），四指第一段指向上方（-90°）', () => {
+  it('右手静止姿态：拇指第一段指向右侧（0°），四指第一段指向上方（-90°）', () => {
     const right = getFingersForPose('open', 'right')
     const thumb = right.find((f) => f.name === 'thumb')!
-    expect(thumb.bones[0].angle).toBe(-50)
+    expect(thumb.bones[0].angle).toBe(0)
     for (const name of ['index', 'middle', 'ring', 'little'] as const) {
       const f = right.find((x) => x.name === name)!
       expect(f.bones[0].angle).toBe(-90)
@@ -74,24 +74,32 @@ describe('SkeletalHand · 手指姿态预设', () => {
     }
   })
 
-  it('左手静止姿态：拇指基部在左下侧（baseX<0）、第一段指向左上方（230°）', () => {
+  it('左手静止姿态：拇指基部在左下侧（baseX<0）、第一段指向左上方（180°）', () => {
     const left = getFingersForPose('open', 'left')
     const thumb = left.find((f) => f.name === 'thumb')!
     expect(thumb.baseX).toBeLessThan(0)
-    // 180 - (-50) = 230°
-    expect(thumb.bones[0].angle).toBeCloseTo(230, 10)
+    // 180 - 0 = 180°
+    expect(thumb.bones[0].angle).toBeCloseTo(180, 10)
   })
 
-  it('半握姿态：拇/食/中 保持伸直（与张开姿态完全相同），无名/小指 卷起', () => {
+  it('半握姿态：食/中 保持伸直（与张开姿态完全相同），拇指为半握偏转，无名/小指 卷起', () => {
     const open = getFingersForPose('open')
     const half = getFingersForPose('half-fist')
-    for (const name of ['thumb', 'index', 'middle'] as const) {
+    
+    // 食指与中指保持伸直（与张开姿态完全相同）
+    for (const name of ['index', 'middle'] as const) {
       const o = open.find((f) => f.name === name)!
       const h = half.find((f) => f.name === name)!
       for (let b = 0; b < o.bones.length; b++) {
         expect(h.bones[b].angle).toBeCloseTo(o.bones[b].angle, 10)
       }
     }
+
+    // 拇指单独断言
+    const halfThumb = half.find((f) => f.name === 'thumb')!
+    expect(halfThumb.bones[0].angle).toBe(-50)
+    expect(halfThumb.bones[1].angle).toBe(25)
+
     for (const name of ['ring', 'little'] as const) {
       const h = half.find((f) => f.name === name)!
       expect(Math.abs(h.bones[1].angle)).toBeGreaterThanOrEqual(40)
@@ -110,11 +118,11 @@ describe('SkeletalHand · 手指姿态预设', () => {
 })
 
 describe('SkeletalHand · 指尖位置（标签锚点）', () => {
-  it('拇指静止姿态：指尖在右上区域（y < 0, x > baseX）', () => {
+  it('拇指静止姿态：指尖在右侧区域（y 接近 baseY, x > baseX）', () => {
     const [thumb] = getFingersForPose('open').filter((f) => f.name === 'thumb')
     const tip = computeFingerTip(thumb)
     expect(tip.x).toBeGreaterThan(thumb.baseX)
-    expect(tip.y).toBeLessThan(thumb.baseY)
+    expect(tip.y).toBeCloseTo(thumb.baseY, 10)
   })
 
   it('四指静止姿态：指尖都在手掌上方（y < 0）', () => {

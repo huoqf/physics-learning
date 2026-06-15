@@ -9,6 +9,8 @@ import {
   Solenoid,
   Galvanometer,
   PrimaryCoil,
+  DCSource,
+  Rheostat,
 } from '@/components/Physics'
 import { VectorArrow } from '@/components/UI'
 
@@ -454,52 +456,10 @@ export default function InductionPhenomenon() {
             )}
 
             {/* 直流电池电源 (battery) */}
-            <g transform="translate(230, 320)">
-              {/* 电池主体 */}
-              <rect x="0" y="10" width="40" height="20" fill={SCENE_COLORS.circuit.batteryBody} stroke="#1F2937" strokeWidth="1.5" />
-              {/* 正极 (红) */}
-              <rect x="0" y="10" width="12" height="20" fill={SCENE_COLORS.circuit.batteryPos} />
-              {/* 负极 (黑/深灰) */}
-              <rect x="28" y="10" width="12" height="20" fill={SCENE_COLORS.circuit.batteryNeg} />
-              {/* 电极突起 */}
-              <rect x="-3" y="16" width="3" height="8" fill="#D1D5DB" stroke="#1F2937" strokeWidth="1" />
-              {/* 正负号 */}
-              <text x="6" y="24" fill="#FFFFFF" fontSize="10" fontWeight="bold" textAnchor="middle">+</text>
-              <text x="34" y="23" fill="#FFFFFF" fontSize="10" fontWeight="bold" textAnchor="middle">-</text>
-              <text x="20" y="5" fill="#4B5563" fontSize="8" fontWeight="bold" textAnchor="middle">E = 10V</text>
-            </g>
+            <DCSource type="battery" x={250} y={330} width={40} height={20} voltage={10} label="E = 10V" polarity="left-positive" />
 
-            {/* 滑动变阻器示意图 */}
-            <g transform="translate(130, 320)">
-              {/* 变阻器底座瓷筒 */}
-              <rect x="20" y="16" width="140" height="12" fill="#E5E7EB" stroke="#9CA3AF" rx="2" />
-              {/* 绕线圈层示意 */}
-              <line x1="25" y1="22" x2="155" y2="22" stroke="#B8860B" strokeWidth="6" strokeDasharray="2, 2" />
-              {/* 滑动滑杆 */}
-              <rect x="15" y="4" width="150" height="4" fill="#9CA3AF" />
-              {/* 变阻器滑片 (其水平位置随阻值 R 从小到大从左滑到右) */}
-              {/* R: 5 -> 100 对应 x: 30 -> 150 */}
-              {(() => {
-                const slideX = 30 + ((resistance - 5) / (100 - 5)) * 120
-                return (
-                  <g transform={`translate(${slideX}, 0)`}>
-                    {/* 金属滑块 */}
-                    <rect x="-8" y="0" width="16" height="28" fill="#4B5563" rx="1.5" stroke="#1F2937" strokeWidth="1" opacity="0.9" />
-                    {/* 滑块指示小箭头 */}
-                    <polygon points="0,28 -3,32 3,32" fill="#B91C1C" />
-                    {/* 滑块触点 */}
-                    <circle cx="0" cy="16" r="3" fill="#FBBF24" />
-                  </g>
-                )
-              })()}
-              {/* 两端接线端子 */}
-              <circle cx="20" cy="20" r="3.5" fill="#4B5563" />
-              <line x1="20" y1="20" x2="20" y2="28" stroke="#4B5563" strokeWidth="1.5" />
-              <circle cx="160" cy="20" r="3.5" fill="#4B5563" />
-              <line x1="160" y1="20" x2="160" y2="28" stroke="#4B5563" strokeWidth="1.5" />
-              
-              <text x="90" y="-1" fill="#4B5563" fontSize="8" fontWeight="bold" textAnchor="middle">滑动变阻器 R</text>
-            </g>
+            {/* 滑动变阻器 R */}
+            <Rheostat x={220} y={330} value={resistance} min={5} max={100} label="滑动变阻器 R" />
           </g>
         )}
 

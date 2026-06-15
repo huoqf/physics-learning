@@ -2,7 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateClosedCircuit } from '@/physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
-import { DialMeter } from '@/components/Physics/DialMeter'
+import { DialMeter, Rheostat } from '@/components/Physics'
 
 /**
  * 闭合电路欧姆定律核心电路动画
@@ -69,10 +69,7 @@ export default function ClosedCircuit() {
     return getLoopPosition(pos)
   })
 
-  // 3. 滑动变阻器游标 x 联动坐标计算 (变阻器线圈 x 从 280 到 420)
-  const sliderMinX = 280
-  const sliderMaxX = 420
-  const sliderX = sliderMinX + ((R - 0.1) / (20 - 0.1)) * (sliderMaxX - sliderMinX)
+
 
   // 4. 内阻发热红光高亮的实时透明度 (随电流 I 的大小变强)
   // 当 I = 6A (最大可能) 时，透明度可接近 0.75
@@ -99,10 +96,7 @@ export default function ClosedCircuit() {
             <stop offset="100%" stopColor="#7F1D1D" stopOpacity="0" />
           </radialGradient>
 
-          {/* 电阻线圈填充图案 */}
-          <pattern id="coil-pattern" width="3" height="20" patternUnits="userSpaceOnUse">
-            <line x1="1.5" y1="0" x2="1.5" y2="20" stroke="#78716C" strokeWidth="0.8" />
-          </pattern>
+
         </defs>
 
         {/* ==================== 1. 主回路导线与并联引线 ==================== */}
@@ -174,66 +168,7 @@ export default function ClosedCircuit() {
         <DialMeter type="A" value={I} max={8} x={550} y={220} r={32} />
 
         {/* ==================== 4. 滑动变阻器元件 R ==================== */}
-        <g transform="translate(0, 0)">
-          {/* 电阻线圈瓷管 */}
-          <rect
-            x={280}
-            y={110}
-            width={140}
-            height={20}
-            rx={3}
-            fill="#F5F5F4"
-            stroke={PHYSICS_COLORS.resistance}
-            strokeWidth={1.5}
-          />
-          {/* 绕线螺线细部 */}
-          <rect
-            x={280}
-            y={110}
-            width={140}
-            height={20}
-            rx={3}
-            fill="url(#coil-pattern)"
-            pointerEvents="none"
-          />
-
-          {/* 变阻器金属支撑架 & 滑杆 */}
-          <path
-            d="M 276 122 L 276 100 L 424 100 L 424 122"
-            fill="none"
-            stroke="#57534E"
-            strokeWidth={2}
-          />
-          <line x1={276} y1={100} x2={424} y2={100} stroke="#A8A29E" strokeWidth={3} />
-
-          {/* 接入导线指示 */}
-          {/* 左侧接线柱接入滑杆，右侧接线柱接入电阻丝右端 */}
-          <circle cx={276} cy={120} r={3.5} fill="#44403C" />
-          <circle cx={424} cy={120} r={3.5} fill="#44403C" />
-
-          {/* 动态滑片游标 */}
-          <g transform={`translate(${sliderX}, 100)`}>
-            {/* 上部金属套环 */}
-            <rect x={-5} y={-4} width={10} height={8} fill="#D6D3D1" stroke="#44403C" strokeWidth={1} />
-            {/* 下垂弹簧触头 */}
-            <path d="M -2 4 L -2 16 L 2 16 L 2 4 Z" fill="#D97706" />
-            <line x1={-3} y1={16} x2={3} y2={16} stroke="#B45309" strokeWidth={1.5} />
-            {/* 手柄按钮 */}
-            <circle cx={0} cy={-8} r={4.5} fill="#EF4444" stroke="#B91C1C" strokeWidth={1} />
-          </g>
-
-          {/* 标签文字 */}
-          <text
-            x={350}
-            y={82}
-            fill={PHYSICS_COLORS.labelText}
-            fontSize={12}
-            fontWeight="bold"
-            textAnchor="middle"
-          >
-            滑动变阻器 R = {R.toFixed(1)} Ω
-          </text>
-        </g>
+        <Rheostat x={350} y={120} value={R} min={0.1} max={20} label="滑动变阻器 R" />
 
         {/* ==================== 5. 真实电源区域 (虚线框内) ==================== */}
         {/* 真实电源外部虚线外框 */}

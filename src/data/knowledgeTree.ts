@@ -498,7 +498,7 @@ export const knowledgeTree: KnowledgeNode[] = [
     chapter: '电磁学 第4章 电磁感应',
     module: 'electricity',
     importance: 'gaokao',
-    animationIds: ['anim-lenzs-law'],
+    animationIds: ['anim-electromagnetic-induction', 'anim-lenzs-law'],
     problemIds: [],
     prerequisites: ['electricity-3-1'],
   },
