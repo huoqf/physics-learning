@@ -220,15 +220,15 @@ export default function ConnectedBodiesAnimation() {
       <g>
         {/* 轮子一 */}
         <circle cx={cx1} cy={wY} r={wheelRadius} fill={colors.neutral[800]} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-        <circle cx={cx1} cy={wY} r={1.5} fill={colors.neutral[0]} />
-        <line x1={cx1 - wheelRadius} y1={wY} x2={cx1 + wheelRadius} y2={wY} stroke={colors.neutral[0]} strokeWidth={0.8} transform={`rotate(${wheelRotation}, ${cx1}, ${wY})`} />
-        <line x1={cx1} y1={wY - wheelRadius} x2={cx1} y2={wY + wheelRadius} stroke={colors.neutral[0]} strokeWidth={0.8} transform={`rotate(${wheelRotation}, ${cx1}, ${wY})`} />
+        <circle cx={cx1} cy={wY} r={1.5} fill={colors.neutral.white} />
+        <line x1={cx1 - wheelRadius} y1={wY} x2={cx1 + wheelRadius} y2={wY} stroke={colors.neutral.white} strokeWidth={0.8} transform={`rotate(${wheelRotation}, ${cx1}, ${wY})`} />
+        <line x1={cx1} y1={wY - wheelRadius} x2={cx1} y2={wY + wheelRadius} stroke={colors.neutral.white} strokeWidth={0.8} transform={`rotate(${wheelRotation}, ${cx1}, ${wY})`} />
 
         {/* 轮子二 */}
         <circle cx={cx2} cy={wY} r={wheelRadius} fill={colors.neutral[800]} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-        <circle cx={cx2} cy={wY} r={1.5} fill={colors.neutral[0]} />
-        <line x1={cx2 - wheelRadius} y1={wY} x2={cx2 + wheelRadius} y2={wY} stroke={colors.neutral[0]} strokeWidth={0.8} transform={`rotate(${wheelRotation}, ${cx2}, ${wY})`} />
-        <line x1={cx2} y1={wY - wheelRadius} x2={cx2} y2={wY + wheelRadius} stroke={colors.neutral[0]} strokeWidth={0.8} transform={`rotate(${wheelRotation}, ${cx2}, ${wY})`} />
+        <circle cx={cx2} cy={wY} r={1.5} fill={colors.neutral.white} />
+        <line x1={cx2 - wheelRadius} y1={wY} x2={cx2 + wheelRadius} y2={wY} stroke={colors.neutral.white} strokeWidth={0.8} transform={`rotate(${wheelRotation}, ${cx2}, ${wY})`} />
+        <line x1={cx2} y1={wY - wheelRadius} x2={cx2} y2={wY + wheelRadius} stroke={colors.neutral.white} strokeWidth={0.8} transform={`rotate(${wheelRotation}, ${cx2}, ${wY})`} />
       </g>
     )
   }

@@ -419,7 +419,7 @@ export default function KineticEnergyAnimation() {
                 strokeWidth={STROKE.chartMain}
               />
             )}
-            <circle cx={toFvChartX(state.x)} cy={toEnergyY(state.Ek)} r={3} fill={PHYSICS_COLORS.kineticEnergy} stroke={colors.neutral[0]} strokeWidth={1} />
+            <circle cx={toFvChartX(state.x)} cy={toEnergyY(state.Ek)} r={3} fill={PHYSICS_COLORS.kineticEnergy} stroke={colors.neutral.white} strokeWidth={1} />
 
             {/* 临界拐点 (恒力撤力点或圆弧触底点) 虚线引导与波纹 */}
             {(() => {
@@ -509,7 +509,7 @@ export default function KineticEnergyAnimation() {
                     strokeWidth={STROKE.chartMain}
                   />
                 )}
-                <circle cx={toFvChartX(state.x)} cy={ptBottom - (state.W / E_max_limit) * ptHeight} r={3} fill={PHYSICS_COLORS.work} stroke={colors.neutral[0]} strokeWidth={1} />
+                <circle cx={toFvChartX(state.x)} cy={ptBottom - (state.W / E_max_limit) * ptHeight} r={3} fill={PHYSICS_COLORS.work} stroke={colors.neutral.white} strokeWidth={1} />
               </g>
             ) : (
               // ── 进阶模式：同时绘制重力正功、摩擦力负功和合外力总功三条线 ──
@@ -530,7 +530,7 @@ export default function KineticEnergyAnimation() {
                     strokeWidth={STROKE.chartMain}
                   />
                 )}
-                <circle cx={toFvChartX(state.x)} cy={(ptTop + ptBottom) / 2 - (state.Ep / E_max_limit) * (ptHeight / 2)} r={2.5} fill={colors.success[600]} stroke={colors.neutral[0]} strokeWidth={0.8} />
+                <circle cx={toFvChartX(state.x)} cy={(ptTop + ptBottom) / 2 - (state.Ep / E_max_limit) * (ptHeight / 2)} r={2.5} fill={colors.success[600]} stroke={colors.neutral.white} strokeWidth={0.8} />
 
                 {/* 2. 摩擦力做功 W_f (负值，W_f = W - Ep) */}
                 <polyline
@@ -548,7 +548,7 @@ export default function KineticEnergyAnimation() {
                     strokeWidth={STROKE.chartMain}
                   />
                 )}
-                <circle cx={toFvChartX(state.x)} cy={(ptTop + ptBottom) / 2 - ((state.W - state.Ep) / E_max_limit) * (ptHeight / 2)} r={2.5} fill={colors.danger[600]} stroke={colors.neutral[0]} strokeWidth={0.8} />
+                <circle cx={toFvChartX(state.x)} cy={(ptTop + ptBottom) / 2 - ((state.W - state.Ep) / E_max_limit) * (ptHeight / 2)} r={2.5} fill={colors.danger[600]} stroke={colors.neutral.white} strokeWidth={0.8} />
 
                 {/* 3. 合外力总功 W_net = W_G + W_f */}
                 <polyline
@@ -567,7 +567,7 @@ export default function KineticEnergyAnimation() {
                     strokeDasharray="4,2"
                   />
                 )}
-                <circle cx={toFvChartX(state.x)} cy={(ptTop + ptBottom) / 2 - (state.W / E_max_limit) * (ptHeight / 2)} r={3} fill={colors.primary[600]} stroke={colors.neutral[0]} strokeWidth={1} />
+                <circle cx={toFvChartX(state.x)} cy={(ptTop + ptBottom) / 2 - (state.W / E_max_limit) * (ptHeight / 2)} r={3} fill={colors.primary[600]} stroke={colors.neutral.white} strokeWidth={1} />
               </g>
             )}
 
@@ -639,7 +639,7 @@ export default function KineticEnergyAnimation() {
                 strokeWidth={STROKE.chartMain}
               />
             )}
-            <circle cx={toFvChartX(state.x)} cy={toFvY(state.F)} r={3} fill={PHYSICS_COLORS.forceNet} stroke={colors.neutral[0]} strokeWidth={1} />
+            <circle cx={toFvChartX(state.x)} cy={toFvY(state.F)} r={3} fill={PHYSICS_COLORS.forceNet} stroke={colors.neutral.white} strokeWidth={1} />
             <text x={toFvChartX(state.x) + 5} y={toFvY(state.F) - 4} fontSize={7} fill={PHYSICS_COLORS.forceNet} fontWeight="bold">F_合={state.F.toFixed(1)}N</text>
 
             {/* 临界触底 x=R 引导虚线与波纹 */}
@@ -692,7 +692,7 @@ export default function KineticEnergyAnimation() {
                 strokeWidth={STROKE.chartMain}
               />
             )}
-            <circle cx={toChartX(state.t)} cy={toAtY(Math.abs(state.a))} r={3} fill={PHYSICS_COLORS.acceleration} stroke={colors.neutral[0]} strokeWidth={1} />
+            <circle cx={toChartX(state.t)} cy={toAtY(Math.abs(state.a))} r={3} fill={PHYSICS_COLORS.acceleration} stroke={colors.neutral.white} strokeWidth={1} />
 
             {/* a-t 临界 tc 引导线 */}
             <line

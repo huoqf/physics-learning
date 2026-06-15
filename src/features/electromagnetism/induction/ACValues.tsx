@@ -135,7 +135,7 @@ export default function ACValues() {
 
     return (
       <g>
-        <rect x={chartX - 4} y={chartY - 4} width={chartW + 8} height={chartH + 8} fill={colors.neutral[0]} stroke={colors.neutral[200]} strokeWidth={CANVAS_STYLE.stroke.grid} rx={Math.min(chartW, chartH) * 0.03} />
+        <rect x={chartX - 4} y={chartY - 4} width={chartW + 8} height={chartH + 8} fill={colors.neutral.white} stroke={colors.neutral[200]} strokeWidth={CANVAS_STYLE.stroke.grid} rx={Math.min(chartW, chartH) * 0.03} />
         <line x1={chartX} y1={toY(0)} x2={chartX + chartW} y2={toY(0)} stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} strokeDasharray={CANVAS_STYLE.dash.guide.join(' ')} />
         <line x1={chartX} y1={chartY + chartH} x2={chartX + chartW} y2={chartY + chartH} stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.axis} />
         <line x1={chartX} y1={chartY} x2={chartX} y2={chartY + chartH} stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.axis} />
@@ -156,14 +156,14 @@ export default function ACValues() {
               })()}
               fill="none" stroke={PHYSICS_COLORS.electricField} strokeWidth={Math.max(1.5, chartH * 0.02)} strokeLinecap="round"
             />
-            <circle cx={chartX + chartW} cy={toY(V_peak * Math.sin(omega * t))} r={Math.max(4, chartH * 0.05)} fill={colors.neutral[0]} stroke={PHYSICS_COLORS.electricField} strokeWidth={Math.max(2, chartH * 0.025)} />
+            <circle cx={chartX + chartW} cy={toY(V_peak * Math.sin(omega * t))} r={Math.max(4, chartH * 0.05)} fill={colors.neutral.white} stroke={PHYSICS_COLORS.electricField} strokeWidth={Math.max(2, chartH * 0.025)} />
             <line x1={chartX} y1={toY(V_rms)} x2={chartX + chartW} y2={toY(V_rms)} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={CANVAS_STYLE.stroke.reference} strokeDasharray={CANVAS_STYLE.dash.reference.join(' ')} />
             <text x={chartX + chartW + chartW * 0.02} y={toY(V_rms) + chartH * 0.04} fontSize={Math.max(10, chartH * 0.1)} fill={PHYSICS_COLORS.trackHistory}>U_rms</text>
           </>
         ) : (
           <>
             <line x1={chartX} y1={toY(U_dc)} x2={chartX + chartW} y2={toY(U_dc)} stroke={PHYSICS_COLORS.velocity} strokeWidth={Math.max(1.5, chartH * 0.02)} strokeDasharray={CANVAS_STYLE.dash.reference.join(' ')} />
-            <circle cx={chartX + chartW / 2} cy={toY(U_dc)} r={Math.max(4, chartH * 0.05)} fill={colors.neutral[0]} stroke={PHYSICS_COLORS.velocity} strokeWidth={Math.max(2, chartH * 0.025)} />
+            <circle cx={chartX + chartW / 2} cy={toY(U_dc)} r={Math.max(4, chartH * 0.05)} fill={colors.neutral.white} stroke={PHYSICS_COLORS.velocity} strokeWidth={Math.max(2, chartH * 0.025)} />
             <text x={chartX + chartW + chartW * 0.02} y={toY(U_dc) + chartH * 0.04} fontSize={Math.max(10, chartH * 0.1)} fill={PHYSICS_COLORS.velocity}>U_dc</text>
             {Math.abs(U_dc - V_rms) > 5 && (
               <line x1={chartX} y1={toY(V_rms)} x2={chartX + chartW} y2={toY(V_rms)} stroke={colors.success[500]} strokeWidth={CANVAS_STYLE.stroke.reference} strokeDasharray={CANVAS_STYLE.dash.guide.join(' ')} opacity={0.5} />
@@ -191,7 +191,7 @@ export default function ACValues() {
         <rect x={circLeft} y={circTop} width={circuitW} height={circuitH} fill="none" stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} rx={Math.min(circuitW, circuitH) * 0.05} />
         {type === 'ac' ? (
           <g transform={`translate(${circLeft}, ${centerY})`}>
-            <circle r={circuitH * 0.18} fill={colors.neutral[0]} stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={Math.max(1.5, circuitH * 0.03)} />
+            <circle r={circuitH * 0.18} fill={colors.neutral.white} stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={Math.max(1.5, circuitH * 0.03)} />
             <path d={`M ${-circuitH * 0.1} 0 Q ${-circuitH * 0.05} ${-circuitH * 0.06} 0 0 Q ${circuitH * 0.05} ${circuitH * 0.06} ${circuitH * 0.1} 0`} fill="none" stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={Math.max(1.5, circuitH * 0.03)} />
           </g>
         ) : (

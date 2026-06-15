@@ -243,7 +243,7 @@ export function MiniChart({
             return (
               <g key={`point-${line.key}`}>
                 <circle cx={px} cy={py} r={3.5} fill={line.color} opacity={0.3} />
-                <circle cx={px} cy={py} r={2} fill={line.color} stroke={colors.neutral[0]} strokeWidth={0.8} />
+                <circle cx={px} cy={py} r={2} fill={line.color} stroke={colors.neutral.white} strokeWidth={0.8} />
               </g>
             )
           })}

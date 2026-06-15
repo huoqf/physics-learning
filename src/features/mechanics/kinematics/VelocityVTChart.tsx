@@ -211,7 +211,7 @@ export const VelocityVTChart: FC<VelocityVTChartProps> = ({
       {/* 6. 当前时刻点 P (多重曝光光晕) */}
       <g>
         <circle cx={px} cy={py} r={3} fill={PHYSICS_COLORS.velocity} opacity={0.2} />
-        <circle cx={px} cy={py} r={1.6} fill={PHYSICS_COLORS.velocity} stroke={colors.neutral[0]} strokeWidth={0.5} />
+        <circle cx={px} cy={py} r={1.6} fill={PHYSICS_COLORS.velocity} stroke={colors.neutral.white} strokeWidth={0.5} />
       </g>
 
       {/* 7. 垂直时间轴游标虚线 */}

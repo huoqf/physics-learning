@@ -382,9 +382,9 @@ export default function EnergyConservationAnimation() {
           )}
 
           {/* 同步亮点 */}
-          <circle cx={toChartX(state.t)} cy={toChartY(state.Ep)} r={3} fill={PHYSICS_COLORS.potentialEnergy} stroke={colors.neutral[0]} strokeWidth={1} />
-          <circle cx={toChartX(state.t)} cy={toChartY(state.Ek)} r={3} fill={PHYSICS_COLORS.kineticEnergy} stroke={colors.neutral[0]} strokeWidth={1} />
-          {mode === 1 && <circle cx={toChartX(state.t)} cy={toChartY(state.Q)} r={3} fill={colors.danger[600]} stroke={colors.neutral[0]} strokeWidth={1} />}
+          <circle cx={toChartX(state.t)} cy={toChartY(state.Ep)} r={3} fill={PHYSICS_COLORS.potentialEnergy} stroke={colors.neutral.white} strokeWidth={1} />
+          <circle cx={toChartX(state.t)} cy={toChartY(state.Ek)} r={3} fill={PHYSICS_COLORS.kineticEnergy} stroke={colors.neutral.white} strokeWidth={1} />
+          {mode === 1 && <circle cx={toChartX(state.t)} cy={toChartY(state.Q)} r={3} fill={colors.danger[600]} stroke={colors.neutral.white} strokeWidth={1} />}
         </g>
 
         {/* ══════════════════════════════════════════════ */}

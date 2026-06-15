@@ -1,5 +1,5 @@
 import React from 'react'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 
 export interface DialMeterProps {
   /** 仪表类型：'V' (电压表) 或 'A' (电流表) */
@@ -51,7 +51,7 @@ export const DialMeter: React.FC<DialMeterProps> = ({
         {/* 表盘金属圈渐变 (使用特定 type 后缀以防冲突) */}
         <linearGradient id={`dial-ring-${type}`} x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#94A3B8" />
-          <stop offset="100%" stopColor="#475569" />
+          <stop offset="100%" stopColor={CANVAS_COLORS.labelTextLight} />
         </linearGradient>
       </defs>
 
@@ -64,7 +64,7 @@ export const DialMeter: React.FC<DialMeterProps> = ({
       <path
         d="M -16 6 A 18 18 0 0 1 16 6"
         fill="none"
-        stroke="#475569"
+        stroke={CANVAS_COLORS.labelTextLight}
         strokeWidth={1}
         strokeDasharray="1,1.5"
       />

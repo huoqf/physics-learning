@@ -87,7 +87,7 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
         {/* 导体棒截面圆 */}
         <circle cx={0} cy={0} r={r} fill={`url(#${radialGradId})`} stroke={SCENE_COLORS.coil.copperStroke} strokeWidth="2" />
         {/* 偏置受光高光点 */}
-        <circle cx={-highlightOffset} cy={-highlightOffset} r={highlightR} fill={colors.neutral[0]} opacity="0.65" pointerEvents="none" />
+        <circle cx={-highlightOffset} cy={-highlightOffset} r={highlightR} fill={colors.neutral.white} opacity="0.65" pointerEvents="none" />
         
         {/* 电流方向符号 */}
         {currentDir === 'in' && (
@@ -142,7 +142,7 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
         <line x1={px1} y1={py1} x2={px2} y2={py2} stroke={SCENE_COLORS.coil.copperStroke} strokeWidth={outerStroke} strokeLinecap="round" />
         <line x1={px1} y1={py1} x2={px2} y2={py2} stroke={SCENE_COLORS.coil.copperBase} strokeWidth={midStroke} strokeLinecap="round" />
         <line x1={px1} y1={py1} x2={px2} y2={py2} stroke={SCENE_COLORS.coil.copperLight} strokeWidth={innerStroke} strokeLinecap="round" />
-        <line x1={px1} y1={py1 - 1.2} x2={px2} y2={py2 - 1.2} stroke={colors.neutral[0]} strokeWidth={highlightStroke} strokeLinecap="round" opacity="0.65" />
+        <line x1={px1} y1={py1 - 1.2} x2={px2} y2={py2 - 1.2} stroke={colors.neutral.white} strokeWidth={highlightStroke} strokeLinecap="round" opacity="0.65" />
         
         {/* 3D 椭圆端面 */}
         <ellipse cx={px1} cy={py1} rx={capRx} ry={capRy} transform={`rotate(${angle}, ${px1}, ${py1})`} fill={SCENE_COLORS.coil.copperLight} stroke={SCENE_COLORS.coil.copperStroke} strokeWidth="1" />
@@ -216,7 +216,7 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
       <ellipse cx={x} cy={y2} rx={capRx} ry={capRy} fill={SCENE_COLORS.coil.copperBase} stroke={SCENE_COLORS.coil.copperStroke} strokeWidth="1" />
 
       {/* 金属反光条 */}
-      <rect x={x - highlightOffsetX} y={y1 + 4} width={highlightW} height={y2 - y1 - 8} fill={colors.neutral[0]} opacity="0.5" rx="1" pointerEvents="none" />
+      <rect x={x - highlightOffsetX} y={y1 + 4} width={highlightW} height={y2 - y1 - 8} fill={colors.neutral.white} opacity="0.5" rx="1" pointerEvents="none" />
       
       {/* 导体棒内部电流流光指示动画 */}
       {showCurrentFlow && (

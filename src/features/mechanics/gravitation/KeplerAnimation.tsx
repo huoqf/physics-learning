@@ -606,7 +606,7 @@ export default function KeplerAnimation() {
               width={140}
               height={50}
               rx={6}
-              fill={colors.neutral[0]}
+              fill={colors.neutral.white}
               fillOpacity={0.9}
               stroke={PHYSICS_COLORS.grid}
               strokeWidth={1}
@@ -637,7 +637,7 @@ export default function KeplerAnimation() {
               y={chartY0 - chartH - 10}
               width={chartW + 20}
               height={chartH + 20}
-              fill={colors.neutral[0]}
+              fill={colors.neutral.white}
               fillOpacity={0.9}
               stroke={PHYSICS_COLORS.grid}
               strokeWidth={1}

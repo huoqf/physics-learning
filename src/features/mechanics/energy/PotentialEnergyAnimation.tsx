@@ -440,7 +440,7 @@ export default function PotentialEnergyAnimation() {
                 cy={toPixelY(y_ref)}
                 r={hoveredTarget === 'y_ref' ? 6 : 4}
                 fill={PHYSICS_COLORS.potentialEnergy}
-                stroke={colors.neutral[0]}
+                stroke={colors.neutral.white}
                 strokeWidth={1}
                 opacity={0.9}
               />
@@ -713,8 +713,8 @@ export default function PotentialEnergyAnimation() {
             )}
 
             {/* 动点同步亮点 */}
-            <circle cx={toChartX(state.t)} cy={toGravityChartY(state.Ep)} r={3} fill={PHYSICS_COLORS.potentialEnergy} stroke={colors.neutral[0]} strokeWidth={1} />
-            <circle cx={toChartX(state.t)} cy={toGravityChartY(state.Ek)} r={3} fill={PHYSICS_COLORS.kineticEnergy} stroke={colors.neutral[0]} strokeWidth={1} />
+            <circle cx={toChartX(state.t)} cy={toGravityChartY(state.Ep)} r={3} fill={PHYSICS_COLORS.potentialEnergy} stroke={colors.neutral.white} strokeWidth={1} />
+            <circle cx={toChartX(state.t)} cy={toGravityChartY(state.Ek)} r={3} fill={PHYSICS_COLORS.kineticEnergy} stroke={colors.neutral.white} strokeWidth={1} />
           </g>
         ) : (
           // ─── 弹性势能 Ep-x 抛物线图 ───
@@ -774,7 +774,7 @@ export default function PotentialEnergyAnimation() {
               cy={toSpringChartY(state.Ep)}
               r={4.5}
               fill={PHYSICS_COLORS.potentialElastic}
-              stroke={colors.neutral[0]}
+              stroke={colors.neutral.white}
               strokeWidth={1.2}
               className="transition-all duration-75 ease-out"
             />

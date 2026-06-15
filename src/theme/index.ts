@@ -22,7 +22,7 @@
  */
 
 // ─── UI 语义色 ────────────────────────────────────────────────────────────────
-export { colors, tailwindColors }              from './colors'
+export { colors }                              from './colors'
 export type { ColorScale, PrimaryColor }        from './colors'
 
 // ─── 物理量颜色（完整扩展版）─────────────────────────────────────────────────

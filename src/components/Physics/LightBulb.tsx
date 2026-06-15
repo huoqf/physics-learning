@@ -1,5 +1,5 @@
 import { FC, useId } from 'react'
-import { SCENE_COLORS } from '@/theme/physics'
+import { SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 
 /**
  * 物理电学实验公共器材组件：小灯泡
@@ -104,8 +104,8 @@ export const LightBulb: FC<LightBulbProps> = ({
       />
 
       {/* D. 内部导线支架 */}
-      <line x1={-6} y1={6} x2={-4} y2={-6} stroke="#475569" strokeWidth={1} />
-      <line x1={6} y1={6} x2={4} y2={-6} stroke="#475569" strokeWidth={1} />
+      <line x1={-6} y1={6} x2={-4} y2={-6} stroke={CANVAS_COLORS.labelTextLight} strokeWidth={1} />
+      <line x1={6} y1={6} x2={4} y2={-6} stroke={CANVAS_COLORS.labelTextLight} strokeWidth={1} />
 
       {/* E. 发热钨丝 */}
       <path
@@ -123,7 +123,7 @@ export const LightBulb: FC<LightBulbProps> = ({
         <text
           x={0}
           y={32}
-          fill="#475569"
+          fill={CANVAS_COLORS.labelTextLight}
           fontSize={11}
           fontWeight="bold"
           textAnchor="middle"

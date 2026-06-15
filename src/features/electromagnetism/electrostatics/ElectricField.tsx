@@ -625,7 +625,7 @@ export default function ElectricField() {
               x={cx}
               y={cy + 7}
               fontSize="22"
-              fill={colors.neutral[0]}
+              fill={colors.neutral.white}
               textAnchor="middle"
               fontWeight="bold"
             >
@@ -656,7 +656,7 @@ export default function ElectricField() {
               x={testX}
               y={testY + 4}
               fontSize="12"
-              fill={qTest === 0 ? colors.neutral[800] : colors.neutral[0]}
+              fill={qTest === 0 ? colors.neutral[800] : colors.neutral.white}
               textAnchor="middle"
               fontWeight="bold"
             >
@@ -892,7 +892,7 @@ export default function ElectricField() {
               x={cx1}
               y={cy1 + 6}
               fontSize="18"
-              fill={colors.neutral[0]}
+              fill={colors.neutral.white}
               textAnchor="middle"
               fontWeight="bold"
             >
@@ -921,7 +921,7 @@ export default function ElectricField() {
               x={cx2}
               y={cy2 + 6}
               fontSize="18"
-              fill={colors.neutral[0]}
+              fill={colors.neutral.white}
               textAnchor="middle"
               fontWeight="bold"
             >
@@ -951,7 +951,7 @@ export default function ElectricField() {
               x={testX}
               y={testY + 4}
               fontSize="12"
-              fill={qTest === 0 ? colors.neutral[800] : colors.neutral[0]}
+              fill={qTest === 0 ? colors.neutral[800] : colors.neutral.white}
               textAnchor="middle"
               fontWeight="bold"
             >
@@ -1096,7 +1096,7 @@ export default function ElectricField() {
               y={0}
               width={210}
               height={mode === 0 ? 130 : 110}
-              fill={colors.neutral[0]}
+              fill={colors.neutral.white}
               opacity={0.92}
               stroke={PHYSICS_COLORS.grid}
               strokeWidth={1.5}

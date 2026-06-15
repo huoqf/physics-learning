@@ -360,7 +360,7 @@ export default function PowerAnimation() {
             )}
             
             {/* v-t 当前滑动点 */}
-            <circle cx={toChartX(state.t)} cy={toVtY(state.v)} r={3} fill={PHYSICS_COLORS.velocity} stroke={colors.neutral[0]} strokeWidth={1} />
+            <circle cx={toChartX(state.t)} cy={toVtY(state.v)} r={3} fill={PHYSICS_COLORS.velocity} stroke={colors.neutral.white} strokeWidth={1} />
 
             {/* 临界 vc 引导虚线与波纹 */}
             {mode === 1 && criticalInfo && criticalInfo.t_c < tMax && (
@@ -424,7 +424,7 @@ export default function PowerAnimation() {
                 strokeWidth={STROKE.chartMain}
               />
             )}
-            <circle cx={toChartX(state.t)} cy={toPtY(state.P)} r={3} fill={PHYSICS_COLORS.power} stroke={colors.neutral[0]} strokeWidth={1} />
+            <circle cx={toChartX(state.t)} cy={toPtY(state.P)} r={3} fill={PHYSICS_COLORS.power} stroke={colors.neutral.white} strokeWidth={1} />
 
             {/* P-t 临界 tc 引导线 */}
             {mode === 1 && criticalInfo && criticalInfo.t_c < tMax && (
@@ -498,7 +498,7 @@ export default function PowerAnimation() {
                 strokeWidth={STROKE.chartMain}
               />
             )}
-            <circle cx={toFvChartX(state.v)} cy={toFvY(state.F)} r={3} fill={PHYSICS_COLORS.appliedForce} stroke={colors.neutral[0]} strokeWidth={1} />
+            <circle cx={toFvChartX(state.v)} cy={toFvY(state.F)} r={3} fill={PHYSICS_COLORS.appliedForce} stroke={colors.neutral.white} strokeWidth={1} />
 
             {/* F-v 临界点 vc/F_const 的波纹与线 */}
             {criticalInfo && (
@@ -543,7 +543,7 @@ export default function PowerAnimation() {
                 strokeWidth={STROKE.chartMain}
               />
             )}
-            <circle cx={toChartX(state.t)} cy={toAtY(state.a)} r={3} fill={PHYSICS_COLORS.acceleration} stroke={colors.neutral[0]} strokeWidth={1} />
+            <circle cx={toChartX(state.t)} cy={toAtY(state.a)} r={3} fill={PHYSICS_COLORS.acceleration} stroke={colors.neutral.white} strokeWidth={1} />
 
             {/* a-t 临界 tc 引导线 */}
             {criticalInfo && (
@@ -655,7 +655,7 @@ export default function PowerAnimation() {
               <g transform={`translate(${objW * 0.15}, ${objH * 0.70})`}>
                 <rect width={objW * 0.7} height={4} rx={1} fill="none" stroke={colors.neutral[300]} strokeWidth={0.5} />
                 <rect width={objW * 0.7 * ekRatio} height={4} rx={1} fill={PHYSICS_COLORS.kineticEnergy} />
-                <text x={objW * 0.35} y={3.5} fontSize={5} textAnchor="middle" fill={colors.neutral[0]} fontWeight="bold" opacity={0.9}>
+                <text x={objW * 0.35} y={3.5} fontSize={5} textAnchor="middle" fill={colors.neutral.white} fontWeight="bold" opacity={0.9}>
                   Ek
                 </text>
               </g>
@@ -736,7 +736,7 @@ export default function PowerAnimation() {
               <g transform={`translate(${objW * 0.15}, ${objH * 0.65})`}>
                 <rect width={objW * 0.7} height={4} rx={1} fill="none" stroke={colors.neutral[300]} strokeWidth={0.5} />
                 <rect width={objW * 0.7 * ekRatio} height={4} rx={1} fill={PHYSICS_COLORS.kineticEnergy} />
-                <text x={objW * 0.35} y={3.5} fontSize={5} textAnchor="middle" fill={colors.neutral[0]} fontWeight="bold" opacity={0.9}>
+                <text x={objW * 0.35} y={3.5} fontSize={5} textAnchor="middle" fill={colors.neutral.white} fontWeight="bold" opacity={0.9}>
                   Ek
                 </text>
               </g>

@@ -159,8 +159,8 @@ export function SportsCar({
         {/* 警灯 (仅警车可见) */}
         {police && (
           <g>
-            <rect x="20" y="5" width="6" height="4" rx="1" fill="#EF4444" />
-            <rect x="28" y="5" width="6" height="4" rx="1" fill="#3B82F6" />
+            <rect x="20" y="5" width="6" height="4" rx="1" fill={PHYSICS_COLORS.acceleration} />
+            <rect x="28" y="5" width="6" height="4" rx="1" fill={PHYSICS_COLORS.velocity} />
           </g>
         )}
         {/* 精密十字辐条车轮，随速度转动 */}

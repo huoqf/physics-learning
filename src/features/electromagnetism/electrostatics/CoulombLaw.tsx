@@ -199,7 +199,7 @@ function BasicMode({
       <circle cx={x1} cy={centerY} r={chargeR}
         fill={q1 >= 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
         stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-      <text x={x1} y={centerY + 6} fontSize={chargeR * 0.9} fill={colors.neutral[0]} textAnchor="middle" fontWeight="bold">
+      <text x={x1} y={centerY + 6} fontSize={chargeR * 0.9} fill={colors.neutral.white} textAnchor="middle" fontWeight="bold">
         {q1 >= 0 ? '+' : '−'}
       </text>
       <text x={x1} y={centerY - chargeR - 8} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
@@ -212,7 +212,7 @@ function BasicMode({
         strokeWidth={dragging ? CANVAS_STYLE.stroke.vectorMain : CANVAS_STYLE.stroke.objectLine}
         style={{ cursor: 'grab' }}
         onMouseDown={handleMouseDown} />
-      <text x={x2} y={centerY + 6} fontSize={chargeR * 0.9} fill={colors.neutral[0]} textAnchor="middle" fontWeight="bold">
+      <text x={x2} y={centerY + 6} fontSize={chargeR * 0.9} fill={colors.neutral.white} textAnchor="middle" fontWeight="bold">
         {q2 >= 0 ? '+' : '−'}
       </text>
       <text x={x2} y={centerY - chargeR - 8} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
@@ -468,7 +468,7 @@ function ThreeChargeMode({
                 </circle>
               )}
 
-              <text x={pos.x} y={pos.y + 6} fontSize={chargeR * 0.9} fill={colors.neutral[0]} textAnchor="middle" fontWeight="bold">
+              <text x={pos.x} y={pos.y + 6} fontSize={chargeR * 0.9} fill={colors.neutral.white} textAnchor="middle" fontWeight="bold">
                 {qVal >= 0 ? '+' : '−'}
               </text>
               <text x={pos.x} y={pos.y - chargeR - 10} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
@@ -486,7 +486,7 @@ function ThreeChargeMode({
         {isBalanced && (
           <g>
             <circle cx={w / 2} cy={h * 0.75} r={16} fill={PHYSICS_COLORS.normalForce} opacity={0.9} />
-            <text x={w / 2} y={h * 0.75 + 5} fontSize={14} fill={colors.neutral[0]} textAnchor="middle" fontWeight="bold">✓</text>
+            <text x={w / 2} y={h * 0.75 + 5} fontSize={14} fill={colors.neutral.white} textAnchor="middle" fontWeight="bold">✓</text>
             <text x={w / 2} y={h * 0.75 + 28} fontSize={CANVAS_STYLE.font.labelSize} fill={PHYSICS_COLORS.normalForce} textAnchor="middle" fontWeight="bold">
               三电荷平衡
             </text>
@@ -497,7 +497,7 @@ function ThreeChargeMode({
           <g>
             <rect x={w / 2 - 80} y={h * 0.75 - 12} width={160} height={36} rx={8}
               fill={PHYSICS_COLORS.electricCurrent} opacity={0.9} />
-            <text x={w / 2} y={h * 0.75 + 10} fontSize={CANVAS_STYLE.font.labelSize} fill={colors.neutral[0]} textAnchor="middle" fontWeight="bold">
+            <text x={w / 2} y={h * 0.75 + 10} fontSize={CANVAS_STYLE.font.labelSize} fill={colors.neutral.white} textAnchor="middle" fontWeight="bold">
               该电荷配置无法平衡
             </text>
           </g>

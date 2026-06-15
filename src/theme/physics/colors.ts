@@ -151,21 +151,23 @@ export const WAVE_COLORS = {
 } as const
 
 // ─── 通用 Canvas 元素 (Canvas Commons) ───────────────────────────────────────
+import { colors } from '../colors'
+
 export const CANVAS_COLORS = {
-  trackHistory:       '#94A3B8', // 历史轨迹            — neutral-400
-  trackHistoryAlt:    '#C4B5FD', // 对照轨迹/投影        — violet-300
-  axis:               '#CBD5E1', // 坐标轴、参考线      — neutral-300
-  grid:               '#E2E8F0', // 网格线             — neutral-200
-  labelText:          '#1E293B', // Canvas 内文字标注   — neutral-800
-  labelTextLight:     '#475569', // Canvas 次要文字     — neutral-600
-  objectFill:         '#EFF6FF', // 物体填充（浅蓝）    — primary-50
-  objectStroke:       '#1E40AF', // 物体轮廓            — primary-800
-  objectFillNeutral:  '#F8FAFC', // 中性物体填充        — neutral-50
-  objectFillWarm:     '#FFF7ED', // 暖色物体填充        — orange-50
-  referencePoint:     '#F59E0B', // 参考点标注          — amber-500
-  annotation:         '#8B5CF6', // 标注文字框          — violet-500
-  originMark:         '#1E293B', // 坐标原点标记        — neutral-800
-  vectorTip:          '#1E293B', // 箭头尖端描边        — neutral-800
+  trackHistory:       colors.neutral[400], // 历史轨迹
+  trackHistoryAlt:    '#C4B5FD',           // 对照轨迹/投影 — violet-300
+  axis:               colors.neutral[300], // 坐标轴、参考线
+  grid:               colors.neutral[200], // 网格线
+  labelText:          colors.neutral[800], // Canvas 内文字标注
+  labelTextLight:     colors.neutral[600], // Canvas 次要文字
+  objectFill:         '#EFF6FF',           // 物体填充（浅蓝）— primary-50
+  objectStroke:       '#1E40AF',           // 物体轮廓 — primary-800
+  objectFillNeutral:  colors.neutral[50],  // 中性物体填充
+  objectFillWarm:     '#FFF7ED',           // 暖色物体填充 — orange-50
+  referencePoint:     '#F59E0B',           // 参考点标注 — amber-500
+  annotation:         '#8B5CF6',           // 标注文字框 — violet-500
+  originMark:         colors.neutral[800], // 坐标原点标记
+  vectorTip:          colors.neutral[800], // 箭头尖端描边
 } as const
 
 // ─── 聚合导出：PHYSICS_COLORS ─────────────────────────────────────────

@@ -1,5 +1,6 @@
 import { useId, SVGProps } from 'react';
-import { SCENE_COLORS } from '@/theme/physics';
+import { SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics';
+import { colors } from '@/theme/colors';
 
 /**
  * 物理物块/滑块预设类型。
@@ -168,7 +169,7 @@ export function Block({
             strokeWidth={0.8}
           />
           {/* 左轮辐/金属轴心点 */}
-          <circle cx={wheelX1} cy={wheelY} r={wheelR * 0.3} fill="#475569" />
+          <circle cx={wheelX1} cy={wheelY} r={wheelR * 0.3} fill={CANVAS_COLORS.labelTextLight} />
 
           {/* 右侧车轮 */}
           <circle
@@ -180,7 +181,7 @@ export function Block({
             strokeWidth={0.8}
           />
           {/* 右轮辐/金属轴心点 */}
-          <circle cx={wheelX2} cy={wheelY} r={wheelR * 0.3} fill="#475569" />
+          <circle cx={wheelX2} cy={wheelY} r={wheelR * 0.3} fill={CANVAS_COLORS.labelTextLight} />
         </g>
       )}
 
@@ -221,7 +222,7 @@ export function Block({
           y1={y + 1}
           x2={x + width - 1.5}
           y2={y + 1}
-          stroke="#FFFFFF"
+          stroke={colors.neutral.white}
           strokeWidth={0.8}
           opacity={0.5}
           pointerEvents="none"

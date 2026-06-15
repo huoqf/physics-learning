@@ -5,7 +5,7 @@
 >
 > 2026-06-13 更新：清理已完成项，更新 SVG ID 冲突清单，补充断裂引用/死定义修复记录。
 > 2026-06-14 更新：重新评估状态，清理已完成项（进度文案、WrongCard memo、vendor chunk、单元测试），更新行数/违规数。评估关闭 SVG ID 冲突项（架构保证不共存），新增断裂引用修复项。
-> 2026-06-15 更新：重新评估颜色硬编码违规（77→10），降级为 P2；更新 store 全量解构数据（65→67 调用点，selector 使用归零）。
+> 2026-06-15 更新：重新评估颜色硬编码违规（77→10），降级为 P2；更新 store 全量解构数据（65→67 调用点，selector 使用归零）。完成 Phase 1-2 颜色治理（删除 tailwindColors、neutral[0]→neutral.white、CANVAS_COLORS 引用 colors.*）。
 
 ---
 
@@ -37,23 +37,18 @@
 
 ---
 
-## 2. 颜色硬编码清理 — 走 theme token
+## ~~2. 颜色硬编码清理~~ — 已完成（2026-06-15）
 
-**优先级**：P2（规范合规，影响范围已大幅缩小）
-**规范依据**：02_UI §2 / 07_CANVAS §2.2 "禁止组件内写 HEX/rgb 颜色"
-**当前状态**：暂不执行
+~~**优先级**：P2~~
 
-### 影响范围（2026-06-15 重新统计）
+| 文件 | 修复内容 |
+|------|---------|
+| `Block.tsx` | `#475569`×2 → `CANVAS_COLORS.labelTextLight`，`#FFFFFF` → `colors.neutral.white` |
+| `SportsCar.tsx` | `#EF4444` → `PHYSICS_COLORS.acceleration`，`#3B82F6` → `PHYSICS_COLORS.velocity` |
+| `LightBulb.tsx` | `#475569`×3 → `CANVAS_COLORS.labelTextLight` |
+| `DialMeter.tsx` | `#475569`×2 → `CANVAS_COLORS.labelTextLight` |
 
-| 硬编码类型 | 组件违规次数 | 涉及文件数 | 应替换为 |
-|-----------|------------|-----------|---------|
-| `#475569` | 7 | 3 | `PHYSICS_COLORS.labelText` 或新增 token |
-| `#FFFFFF` | 1 | 1 | 新增 `glassHighlight` / `dataPointStroke` token |
-| `#3B82F6` | 1 | 1 | `PHYSICS_COLORS.velocity` |
-| `#EF4444` | 1 | 1 | `PHYSICS_COLORS.acceleration` |
-
-**组件内硬编码颜色违规总计：10 次，涉及 4 个文件**（Block.tsx、SportsCar.tsx、LightBulb.tsx、DialMeter.tsx）。
-均为 `src/components/Physics/` 下的 SVG 通用组件内联属性，替换为 token 收益较低。
+组件内硬编码颜色违规：**0 次**。
 
 > 注：此前记录的 rgba(148,163,184...)、rgba(75,85,99...)、rgba(245,158,11...) 已全部清理。
 
@@ -122,6 +117,199 @@
 
 ---
 
+## 8. 渐变数组对象化 — 统一 gradient 结构
+
+**优先级**：P2（开发体验）
+**当前状态**：暂不执行
+
+### 问题
+
+`SCENE_COLORS` 中渐变使用 `string[]`，调用方依赖数组索引取色，语义不清：
+
+```ts
+// 当前：调用方必须知道 grad[0] = highlight, grad[1] = base, ...
+steel.gradient[2]  // 这是 mid 还是 dark？
+
+// 目标：语义化对象
+steel.gradient.highlight  // 一目了然
+```
+
+### 影响范围
+
+| 文件 | 渐变数组数 | 调用方数 |
+|------|-----------|---------|
+| `COMMON_MATERIALS` | 7 组 | ~15 处 |
+| `SPHERE_COLORS` | 8 组（gradient 字段） | ~30 处 |
+| `SPRING_COLORS` | 2 组（springMetalGrad/lightSpringMetalGrad） | ~5 处 |
+
+### 迁移策略
+
+分两步走，保留兼容层：
+
+```ts
+// Step 1: 新增结构化对象
+const steelGradient = {
+  highlight: '#FFFFFF',
+  base: '#D1D5DB',
+  mid: '#4B5563',
+  dark: '#1F2937',
+} as const
+
+// Step 2: 保留数组兼容导出（供旧调用方渐进迁移）
+const steelGradientStops = [
+  steelGradient.highlight,
+  steelGradient.base,
+  steelGradient.mid,
+  steelGradient.dark,
+] as const
+```
+
+### 风险
+
+- Canvas/SVG 渲染代码若依赖数组顺序 `gradient.forEach(...)`，改对象后需同步修改
+- TypeScript `as const` 类型推导变化可能影响下游类型
+
+### 前置条件
+
+无。
+
+---
+
+## 9. SCENE_COLORS 拆分 — 降低文件复杂度
+
+**优先级**：P3（可读性）
+**当前状态**：暂不执行
+
+### 问题
+
+`sceneColors.ts` 464 行，承载材质、器材、球体、发光效果、状态色等多重职责。
+
+### 拆分方案
+
+```
+sceneColors.ts（聚合导出）
+├── materialColors.ts    — COMMON_MATERIALS + SPHERE_COLORS（合并见 §10）
+├── sceneEquipment.ts    — MAGNET/COIL/SPRING/SURFACE/PENDULUM/CIRCUIT
+├── glowEffects.ts       — BULB_GLOW_COLORS（从器材外观分离为渲染特效）
+└── sceneColors.ts       — ENVIRONMENT/SPECIAL_EFFECTS/SAFETY/LAB_LABELS + 聚合导出
+```
+
+### `BULB_GLOW_COLORS` 归属调整
+
+当前放在 `SCENE_COLORS.bulb` 下，但它是"发光渐变效果"（radialGradient 色阶），不是器材固有外观。移到 `SPECIAL_EFFECTS` 或独立 `glowEffects.ts` 更准确。
+
+保留兼容别名：
+
+```ts
+export const SCENE_COLORS = {
+  ...
+  bulb: BULB_GLOW_COLORS, // deprecated → 迁移到 glowEffects
+}
+```
+
+### 风险
+
+- 引用路径变更需同步修改调用方
+- 拆分后 barrel 导出需保持 `import { SCENE_COLORS } from '@/theme/physics'` 不变
+
+### 前置条件
+
+§8 渐变对象化完成后再拆分，避免两次大规模改动。
+
+---
+
+## 10. COMMON_MATERIALS / SPHERE_COLORS 合并 — 统一材质体系
+
+**优先级**：P3（架构清晰度）
+**当前状态**：暂不执行
+
+### 问题
+
+两套体系职责重叠：
+
+- `COMMON_MATERIALS`：通用材质渐变（steelSphereGrad、vacuumSphereGrad…）
+- `SPHERE_COLORS`：球体预设（gradient + stroke + shadow + glow + specular）
+
+很多球体渐变直接引用材质渐变，导致调用方不知从哪里取色。
+
+### 合并方案
+
+```ts
+export const MATERIAL_PRESETS = {
+  steel: {
+    gradient: { highlight: '#FFFFFF', base: '#D1D5DB', mid: '#4B5563', dark: '#1F2937' },
+    stroke: '#334155',
+    shadow: 'rgba(15, 23, 42, 0.18)',
+    glow: 'rgba(148, 163, 184, 0.16)',
+    specular: 'rgba(255, 255, 255, 0.55)',
+  },
+  // ...
+} as const
+```
+
+职责分离：
+- `MATERIAL_PRESETS.xxx.gradient` → 表面颜色（材质属性）
+- `MATERIAL_PRESETS.xxx.stroke/shadow/glow` → 渲染参数（几何属性）
+
+### 风险
+
+- 命名迁移成本高，现有 `SCENE_COLORS.materials.steelSphereGrad` 和 `SCENE_COLORS.sphere.steel.gradient` 都要改
+- 建议先引入新结构，旧结构标记 deprecated，分批迁移
+
+### 前置条件
+
+§8 渐变对象化 + §9 SCENE_COLORS 拆分完成后再合并。
+
+---
+
+## 11. 命名规范统一 — 3D 拟物层命名一致性
+
+**优先级**：P3（一致性）
+**当前状态**：暂不执行
+
+### 问题
+
+各分组的 3D 拟物明暗层命名不统一：
+
+| 分组 | 命名模式 | 层级数 |
+|------|---------|--------|
+| MAGNET_COLORS | `Light/Base/Mid/Dark/Shadow/Stroke` | 6 |
+| SPRING_COLORS | `Light/Base/Dark/Stroke` + 状态色 | 4+状态 |
+| CIRCUIT_COLORS | `wire/wireActive/wireBroken`（状态前缀） | 状态式 |
+| SPHERE_COLORS | 对象 `{ gradient, stroke, shadow, glow, specular }` | 5 |
+| HAND_COLORS | `Light/Base/Mid/Dark/Shadow` + 骨骼 | 5 |
+
+大小写也不统一：`Stroke` vs `stroke`、`Light` vs `light`。
+
+### 目标规范
+
+```ts
+// 统一为：{Part}{Layer}
+magnet: {
+  north: {
+    light: '',
+    base: '',
+    mid: '',
+    dark: '',
+    shadow: '',
+    stroke: '',
+  }
+}
+```
+
+如果当前已大量使用 `{Part}Base` 扁平命名，可先统一大小写，不强行改嵌套结构。
+
+### 风险
+
+- 大量 breaking changes，涉及组件、测试、快照
+- 建议新旧并存迁移，旧 key 标记 deprecated
+
+### 前置条件
+
+§9 SCENE_COLORS 拆分完成后再统一命名。
+
+---
+
 ## 已完成项（2026-06-11）
 
 | 项目 | 完成内容 |
@@ -155,3 +343,12 @@
 | WrongCard memo | WrongPage.tsx:52 已提取 `React.memo(WrongCard)` 组件 |
 | vendor chunk 拆分 | vite.config.ts 已配置 `vendor-react` / `vendor-katex` |
 | 单元测试 | kinematics.test.ts (467行) + dynamics.test.ts (432行) |
+
+## 已完成项（2026-06-15）
+
+| 项目 | 完成内容 |
+|------|---------|
+| 删除 tailwindColors | colors.ts + theme/index.ts 移除死代码（Tailwind v4 用 CSS 变量） |
+| neutral[0] → neutral.white | 17 个文件 64 处引用更新 |
+| CANVAS_COLORS 引用 colors.* | 8 个 neutral 映射色从硬编码 hex 改为 `colors.neutral[*]` |
+| 颜色硬编码清理 | 4 个 Physics 通用组件 10 处违规全部修复（§2 完成） |

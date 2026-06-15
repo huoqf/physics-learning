@@ -43,13 +43,13 @@ export const Magnet: React.FC<MagnetProps> = ({
       <g>
         {/* 上方磁极 */}
         <rect x="-24" y="-130" width="48" height="30" fill={topColor} rx="4" stroke={colors.neutral[600]} strokeWidth="2" />
-        <text x="0" y="-110" fill={colors.neutral[0]} fontSize="14" fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
+        <text x="0" y="-110" fill={colors.neutral.white} fontSize="14" fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
           {topLabel}
         </text>
         
         {/* 下方磁极 */}
         <rect x="-24" y="80" width="48" height="30" fill={bottomColor} rx="4" stroke={colors.neutral[600]} strokeWidth="2" />
-        <text x="0" y="100" fill={colors.neutral[0]} fontSize="14" fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
+        <text x="0" y="100" fill={colors.neutral.white} fontSize="14" fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
           {bottomLabel}
         </text>
       </g>
@@ -72,14 +72,14 @@ export const Magnet: React.FC<MagnetProps> = ({
         {/* 上方磁极 */}
         <path d="M 320,95 Q 320,70 345,70" fill="none" stroke={topColor} strokeWidth="20" />
         <rect x="306" y="95" width="28" height="24" fill={topColor} rx="2" />
-        <text x="320" y="111" fill={colors.neutral[0]} fontSize="11" fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
+        <text x="320" y="111" fill={colors.neutral.white} fontSize="11" fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
           {topLabel}
         </text>
 
         {/* 下方磁极 */}
         <path d="M 380,95 Q 380,70 355,70" fill="none" stroke={bottomColor} strokeWidth="20" />
         <rect x="366" y="95" width="28" height="24" fill={bottomColor} rx="2" />
-        <text x="380" y="111" fill={colors.neutral[0]} fontSize="11" fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
+        <text x="380" y="111" fill={colors.neutral.white} fontSize="11" fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
           {bottomLabel}
         </text>
       </g>
@@ -100,13 +100,13 @@ export const Magnet: React.FC<MagnetProps> = ({
       
       {/* 上极 */}
       <rect x="-30" y="-72" width="55" height="24" fill={topColor} rx="4" stroke={colors.neutral[900]} strokeWidth="1" />
-      <text x="-2.5" y="-55" fill={colors.neutral[0]} fontSize="13" fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
+      <text x="-2.5" y="-55" fill={colors.neutral.white} fontSize="13" fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
         {topLabel}
       </text>
 
       {/* 下极 */}
       <rect x="-30" y="48" width="55" height="24" fill={bottomColor} rx="4" stroke={colors.neutral[900]} strokeWidth="1" />
-      <text x="-2.5" y="65" fill={colors.neutral[0]} fontSize="13" fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
+      <text x="-2.5" y="65" fill={colors.neutral.white} fontSize="13" fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
         {bottomLabel}
       </text>
     </g>

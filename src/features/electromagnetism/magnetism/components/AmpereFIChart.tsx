@@ -214,7 +214,7 @@ export const AmpereFIChart: React.FC<AmpereFIChartProps> = ({
         cy={dotY}
         r="3"
         fill={colors.danger[500]}
-        stroke={colors.neutral[0]}
+        stroke={colors.neutral.white}
         strokeWidth="1"
       />
 

@@ -51,7 +51,7 @@ export const colors = {
 
   // ─── Cool Neutral 冷灰中性色（带蓝调，与主色调和谐）────────────────────
   neutral: {
-    0:   '#FFFFFF', // 纯白（仅卡片内部）
+    white: '#FFFFFF', // 纯白（仅卡片内部）
     50:  '#F8FAFC', // 页面背景（非纯白，减少视疲劳）
     100: '#F1F5F9', // 次级背景、hover 背景
     200: '#E2E8F0', // 边框、分隔线
@@ -108,15 +108,4 @@ export const colors = {
 
 export type ColorScale = typeof colors
 export type PrimaryColor = keyof typeof colors.primary
-
-// ─── Tailwind 兼容格式（在 tailwind.config.ts 中展开使用）────────────────
-export const tailwindColors = {
-  primary:   colors.primary,
-  secondary: colors.secondary,
-  accent:    colors.accent,
-  neutral:   colors.neutral,
-  success:   colors.success,
-  danger:    colors.danger,
-  warning:   colors.warning,
-}
 

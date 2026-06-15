@@ -195,7 +195,7 @@ export const VelocityXTChart: FC<VelocityXTChartProps> = ({
       {/* 6. 当前观测点 P (多重曝光光晕) */}
       <g>
         <circle cx={px} cy={py} r={3} fill={PHYSICS_COLORS.displacement} opacity={0.2} />
-        <circle cx={px} cy={py} r={1.6} fill={PHYSICS_COLORS.displacement} stroke={colors.neutral[0]} strokeWidth={0.5} />
+        <circle cx={px} cy={py} r={1.6} fill={PHYSICS_COLORS.displacement} stroke={colors.neutral.white} strokeWidth={0.5} />
       </g>
 
       {/* 标注 */}
