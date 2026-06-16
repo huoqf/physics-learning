@@ -7,7 +7,6 @@ import {
   calculateCapacitor,
   calculateOhmLaw,
   calculateClosedCircuit,
-  calculateFaradayEMF,
   calculateLenzsLaw,
   calculateCuttingEMF,
   calculateACRMS,
@@ -19,6 +18,7 @@ import {
   solveAdvancedAmpere,
   calculateMagnetInduction,
   calculateCoilInduction,
+  computeFaradayMagnetFlux,
 } from '../../physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
@@ -1011,42 +1011,111 @@ export function buildElectromagnetismQuantities(
     }
 
     case 'anim-faraday-law': {
-      const N = params.N ?? 5
-      const B = params.B ?? 1.2
-      const PHI0 = 0.45
-      const COIL_X_PX = 380
-      const MAGNET_LEN_PX = 110
-      const SCALE = 500
-      const COIL_RADIUS_M = 72 / SCALE
-      const MAGNET_MIN = 60
-      const magnetLeftPx = params.magnetX ?? MAGNET_MIN
-      const magnetVPx = params.magnetV ?? 0
-      const magnetCenterPx = magnetLeftPx + MAGNET_LEN_PX / 2
-      const dist = (COIL_X_PX - magnetCenterPx) / SCALE
-      const R = COIL_RADIUS_M
-      const halfLen = MAGNET_LEN_PX / 2 / SCALE
-      const uN = dist + halfLen
-      const uS = dist - halfLen
-      const termN = uN / Math.sqrt(uN * uN + R * R)
-      const termS = uS / Math.sqrt(uS * uS + R * R)
-      const phi = PHI0 * B * (termN - termS)
-      const v_m = magnetVPx / SCALE
-      const dx = 1 / SCALE
-      const dist2 = dist - dx
-      const uN2 = dist2 + halfLen
-      const uS2 = dist2 - halfLen
-      const termN2 = uN2 / Math.sqrt(uN2 * uN2 + R * R)
-      const termS2 = uS2 / Math.sqrt(uS2 * uS2 + R * R)
-      const phi2 = PHI0 * B * (termN2 - termS2)
-      const dPhi_dx = (phi2 - phi) / dx
-      const dPhi_dt = dPhi_dx * v_m
-      const { EMF } = calculateFaradayEMF(N, dPhi_dt)
+      const mode = params.mode ?? 0
+      const N = params.N ?? 50
+      const B_magnet = params.B ?? 1.2
+      const magnetV = params.magnetV ?? 140
+      const dBdt = params.dBdt ?? 0.5
+      const B0 = -dBdt * 5
+      const tNow = time % 10
+      const COIL_AREA_M2 = 0.02
+
+      let phi = 0
+      let emf = 0
+      let directionText = '无'
+
+      if (mode === 0) {
+        // 基础模式下的往返插值
+        const range = 300 // MAGNET_MAX_X - MAGNET_MIN_X
+        const cycle = 2 * range
+        const dist = (magnetV * tNow) % cycle
+        const goingForward = dist < range
+        const x = goingForward ? 60 + dist : 360 - (dist - range)
+        phi = computeFaradayMagnetFlux(x, B_magnet)
+
+        // 数值微元导数
+        const dt = 0.001
+        const nextDist = (magnetV * (tNow + dt)) % cycle
+        const nextGoingForward = nextDist < range
+        const nextX = nextGoingForward ? 60 + nextDist : 360 - (nextDist - range)
+        const nextPhi = computeFaradayMagnetFlux(nextX, B_magnet)
+        const dPhi_dt = (nextPhi - phi) / dt
+        emf = -N * dPhi_dt
+      } else {
+        // 进阶模式下的解析值
+        phi = (B0 + dBdt * tNow) * COIL_AREA_M2
+        emf = -N * dBdt * COIL_AREA_M2
+      }
+
+      if (emf > 0.001) {
+        directionText = '正向 (顺时针)'
+      } else if (emf < -0.001) {
+        directionText = '反向 (逆时针)'
+      } else {
+        directionText = '无'
+      }
+
+      const dPhi_dt_val = -emf / N
+
       return {
         quantities: [
           ...base,
-          { label: 'dΦ/dt', value: dPhi_dt, unit: 'Wb/s' },
-          { label: '感应电动势 E', value: Math.abs(EMF), unit: 'V' },
+          { 
+            label: '磁通量变化率 dΦ/dt', 
+            symbol: '\\frac{\\Delta\\Phi}{\\Delta t}', 
+            value: dPhi_dt_val, 
+            unit: 'Wb/s',
+            highlight: Math.abs(dPhi_dt_val) > 1e-5 ? 'extreme' as const : 'zero' as const
+          },
+          { 
+            label: '感应电动势 E', 
+            symbol: 'E', 
+            value: Math.abs(emf), 
+            unit: 'V',
+            highlight: Math.abs(emf) > 1e-4 ? 'extreme' as const : 'zero' as const
+          },
+          { 
+            label: '感应电动势方向', 
+            value: directionText, 
+            unit: '',
+            highlight: emf > 0.001 ? 'positive' as const : (emf < -0.001 ? 'negative' as const : undefined)
+          },
         ],
+        formulas: [
+          {
+            name: '法拉第电磁感应定律',
+            latex: 'E = n \\frac{\\Delta\\Phi}{\\Delta t}',
+            level: 'core',
+            condition: '电路中产生感应电动势的普适定律',
+          },
+          {
+            name: '匀变磁场电动势式',
+            latex: 'E = n S \\frac{\\Delta B}{\\Delta t}',
+            level: 'core',
+            condition: '适用于回路面积恒定且磁场匀速变化的场景',
+          },
+        ],
+        gaokaoPoints: [
+          {
+            text: '【法拉第定律定量计算】感应电动势的大小由磁通量变化率 dΦ/dt 和线圈匝数 n 共同决定。高考常与闭合电路欧姆定律联立考查通过电荷量 q = n·ΔΦ / R_总。',
+            importance: 'gaokao',
+          },
+          {
+            text: '【易错点：混淆值与变化率】磁通量最大时，其变化率可能为 0（如条形磁铁到达线圈中心瞬间，Φ 最大，但 ΔΦ/Δt = 0，感应电动势 E = 0）。',
+            importance: 'gaokao',
+          },
+          {
+            text: '【方向与斜率关系】感应电动势的方向由磁通量的变化趋势决定。在 Φ-t 图像中，斜率为正和斜率为负代表的变化趋势相反，其感应电动势方向相反。',
+            importance: 'core',
+          },
+        ],
+        warnings: [
+          {
+            text: '方向易错防坑：感应电动势的方向并不是由磁通量的正负值决定，而是由磁通量随时间的导数（即变化率）的符号与楞次定律决定的！',
+            level: 'warning',
+          },
+        ],
+        mnemonic: '大不一定快，快不一定大；斜率定电动势，阻碍定方向',
       }
     }
     case 'anim-lenzs-law': {

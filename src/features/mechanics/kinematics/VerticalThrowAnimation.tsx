@@ -1,8 +1,7 @@
 import { useCanvasSize } from '@/utils'
-import React, { useEffect, useMemo, useCallback, useRef } from 'react'
+import React, { useEffect, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { colors } from '@/theme/colors'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,
@@ -103,7 +102,6 @@ export default function VerticalThrowAnimation() {
     vtInnerPad,
     vtInnerW,
     vtInnerH,
-    vtVMax,
     xMax,
     vtToX,
     vtToY,
@@ -112,7 +110,6 @@ export default function VerticalThrowAnimation() {
     ytInnerPad,
     ytInnerW,
     ytInnerH,
-    ytYMax,
     ytToX,
     ytToY,
     vtYTicks,

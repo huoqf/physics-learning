@@ -23,11 +23,15 @@ export const electromagnetismInductionAnimations = defineAnimations({
     title: '法拉第电磁感应定律',
     knowledgeId: 'electricity-4-2',
     Component: lazy(() => import('@/features/electromagnetism/induction/FaradayLaw')),
-    defaultParams: { N: 5, B: 1.2 },
-    paramMeta: [
-      { key: 'N', label: '线圈匝数 N', min: 1, max: 10, step: 1, unit: '匝' },
-      { key: 'B', label: '磁铁强度 B', min: 0.2, max: 2.0, step: 0.1, unit: 'T' },
-    ],
+    SidebarExtra: lazy(() => import('@/features/electromagnetism/induction/FaradaySidebarExtra')),
+    defaultParams: {
+      mode: 0,
+      N: 50,
+      B: 1.2,
+      magnetV: 140,
+      dBdt: 0.5,
+    },
+    paramMeta: [],
   },
   'anim-lenzs-law': {
     title: '楞次定律',

@@ -1,1165 +1,846 @@
 /**
  * FaradayLaw.tsx — 法拉第电磁感应定律交互动画（[M4-1]）
  *
- * 布局：左侧物理仿真沙盒（条形磁铁 + 线圈 + 闭合回路 + 磁感线）
+ * 布局：左侧物理仿真沙盒（左右分区，左为动画，右为图表）
  *       右侧数据与图像看板（Φ-t / E-t 实时滚动双图表）
  *
- * 物理模型：条形磁铁沿水平轴插入/拔出圆形线圈，
- *   轴线磁通量近似：Φ ≈ Φ₀ · B · ( u_N/√(u_N²+R²) - u_S/√(u_S²+R²) )
- *   其中 u_N = coilX - magnetCenterX + halfLen，u_S = u_N - magnetLen
- *   dΦ/dt 由位置差分得出，EMF = -N · dΦ/dt
+ * 物理模型：
+ *   1. 基础模式 (mode = 0)：磁铁匀速往返穿过线圈，产生非线性磁通量与脉冲式感应电动势。
+ *   2. 进阶模式 (mode = 1)：匀变磁场 ΔB/Δt，产生线性变化的磁通量与恒定的感应电动势。
  *
- * @agent-rule 遵循 useCanvasSize + theme token（CANVAS_STYLE / PHYSICS_COLORS）
- * @agent-rule 禁止组件内裸调 requestAnimationFrame（已通过 useAnimationStore time 驱动）
+ * @agent-rule 遵循 useCanvasSize + theme token（CANVAS_STYLE / PHYSICS_COLORS / SCENE_COLORS / CHART_COLORS）
+ * @agent-rule 禁止组件内裸调 requestAnimationFrame（使用 store 中的 time 驱动）
  */
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, CANVAS_STYLE, CHART_COLORS, SCENE_COLORS, DASH } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_STYLE, SCENE_COLORS } from '@/theme/physics'
+import { CHART_COLORS } from '@/theme/physics/chartColors'
 import { colors } from '@/theme/colors'
+import { computeFaradayMagnetFlux, FaradayChartPoint } from '@/physics/electromagnetism'
 
-// ─── 物理常数 ─────────────────────────────────────────────────────────────
-const COIL_X = 280          // 线圈在 SVG 中的水平中心 px（左移以容纳右侧电路）
-const COIL_RX = 42          // 线圈水平半径
-const COIL_RY = 65          // 线圈垂直半径
-const MAGNET_LEN = 100      // 条形磁铁水平长度 px
-const MAGNET_H = 34         // 条形磁铁高度 px
-const SCALE_PX_PER_M = 500  // 1 m = 500 px（用于归一化磁通量公式中的几何参数）
-const COIL_RADIUS_M = COIL_RY / SCALE_PX_PER_M // 线圈等效半径（米）
-const PHI0 = 0.45           // 磁通量归一化系数（使 B=1 时满幅≈0.45 Wb）
+// ─── 引入物理通用组件 ───────────────────────────────────────────────────────
+import { BarMagnet } from '@/components/Physics/BarMagnet'
+import { LightBulb } from '@/components/Physics/LightBulb'
+import { Galvanometer } from '@/components/Physics/Galvanometer'
+import { Solenoid } from '@/components/Physics/Solenoid'
+import { ParametricMagneticField } from '@/components/Physics/ParametricMagneticField'
 
-// 自动运动速度 px/s
-const AUTO_SPEEDS = { slow: 70, medium: 140, fast: 350 }
-
-// 磁铁 x 轴可移动范围（磁铁左端 px 坐标）
-// 推入：磁铁右端(S极)到达线圈中心 → magnetX = COIL_X - MAGNET_LEN
-// 拉出：磁铁左端(N极)远离线圈 → magnetX = MAGNET_MIN_X
-// 穿过：磁铁从左侧完全穿过到右侧 → magnetX = COIL_X + COIL_RX
+// ─── 物理与几何常量 ─────────────────────────────────────────────────────────
 const MAGNET_MIN_X = 60
-const MAGNET_PUSH_TARGET = COIL_X - MAGNET_LEN + 15  // 推入目标：S极接近线圈中心
-const MAGNET_PULL_START = COIL_X - MAGNET_LEN + 15   // 拉出起始位置
-const MAGNET_MAX_X = COIL_X + COIL_RX - 10           // 完全穿过线圈右侧
+const COIL_X = 220              // 线圈在沙盒中的水平中心 px
+const COIL_RX = 35              // 线圈水平半径 px
+const COIL_RY = 60              // 线圈垂直半径 px
+const MAGNET_LEN = 100          // 条形磁铁水平长度 px
+const MAGNET_H = 30             // 条形磁铁高度 px
+const MAGNET_MAX_X = 360        // 磁铁移动右边界 px
+const RANGE_X = MAGNET_MAX_X - MAGNET_MIN_X
 
-// ─── 工具函数 ─────────────────────────────────────────────────────────────
+const COIL_AREA_M2 = 0.02       // 线圈等效面积 S = 0.02 m^2
+const CHART_DURATION = 10       // 图表采样总时长 10 秒
+const CHART_STEPS = 120         // 采样步数
+
+// ─── 辅助计算函数（往返运动与磁通量计算） ──────────────────────────────────────
 /**
- * 计算条形磁铁在线圈平面产生的近似轴线磁通量。
- * 参数：
- *   magnetLeftPx — 磁铁左端 x 坐标（px）
- *   B            — 磁铁磁感应强度（T）
- * 返回：Φ（Wb，有符号）
+ * 获取磁铁在给定时间 t 时的物理状态。
+ * @param t 当前播放时间 (s)
+ * @param N 线圈匝数 n
+ * @param B 磁铁磁感感应强度 (T)
+ * @param v 磁铁移动物理速度 (px/s)
  */
-function calcFlux(magnetLeftPx: number, B: number): number {
-  const magnetCenterPx = magnetLeftPx + MAGNET_LEN / 2
-  // 线圈中心到磁铁中心的距离（米，向右为正）
-  const dist = (COIL_X - magnetCenterPx) / SCALE_PX_PER_M
-  const R = COIL_RADIUS_M
-  const halfLen = MAGNET_LEN / 2 / SCALE_PX_PER_M
+function getMagnetStateAt(t: number, N: number, B: number, v: number) {
+  if (v <= 0) {
+    // 磁铁静止在初始位置
+    const x = MAGNET_MIN_X
+    const phi = computeFaradayMagnetFlux(x, B)
+    return { x, phi, emf: 0, B }
+  }
 
-  // 两极轴向分量之差（类安培圆环积分近似）
-  const uN = dist + halfLen  // N极到线圈的有效距离
-  const uS = dist - halfLen  // S极到线圈的有效距离
-  const termN = uN / Math.sqrt(uN * uN + R * R)
-  const termS = uS / Math.sqrt(uS * uS + R * R)
-  return PHI0 * B * (termN - termS)
+  const cycle = 2 * RANGE_X
+  const dist = (v * t) % cycle
+  const goingForward = dist < RANGE_X
+  const x = goingForward ? MAGNET_MIN_X + dist : MAGNET_MAX_X - (dist - RANGE_X)
+
+  // 瞬时磁通量
+  const phi = computeFaradayMagnetFlux(x, B)
+
+  // 通过微元数值求导获取瞬时感应电动势 E = -N * dPhi/dt
+  const dt = 0.001
+  const nextDist = (v * (t + dt)) % cycle
+  const nextGoingForward = nextDist < RANGE_X
+  const nextX = nextGoingForward ? MAGNET_MIN_X + nextDist : MAGNET_MAX_X - (nextDist - RANGE_X)
+  const nextPhi = computeFaradayMagnetFlux(nextX, B)
+  const dPhi_dt = (nextPhi - phi) / dt
+  const emf = -N * dPhi_dt
+
+  return { x, phi, emf, B }
 }
 
-// ─── 历史数据缓冲 ─────────────────────────────────────────────────────────
-interface HistoryPoint { t: number; phi: number; emf: number }
+/**
+ * 获取匀变磁场模式下给定时间 t 的物理状态。
+ * @param t 当前播放时间 (s)
+ * @param N 线圈匝数 n
+ * @param dBdt 磁感应强度变化率 k (T/s)
+ * @param B0 初始磁场强度 (T)
+ */
+function getUniformStateAt(t: number, N: number, dBdt: number, B0: number) {
+  const B = B0 + dBdt * t
+  const phi = B * COIL_AREA_M2
+  const emf = -N * dBdt * COIL_AREA_M2 // E = -N * dPhi/dt
+  return { B, phi, emf }
+}
 
-// ─── 主组件 ──────────────────────────────────────────────────────────────
 export default function FaradayLaw() {
-    const {params, time, isPlaying, setIsPlaying, updateParam} = useAnimationStore(
+  const { params, time, isPlaying } = useAnimationStore(
     useShallow((s) => ({
-    params: s.params,
-    time: s.time,
-    isPlaying: s.isPlaying,
-    setIsPlaying: s.setIsPlaying,
-    updateParam: s.updateParam,
+      params: s.params,
+      time: s.time,
+      isPlaying: s.isPlaying,
     }))
   )
+
   const [containerRef, canvasSize] = useCanvasSize({ width: 800, height: 440 })
   const { font } = canvasSize
 
-  const N = params.N ?? 5
-  const B = params.B ?? 1.2
+  // ── 物理参数提取 ──────────────────────────────────────────────────────
+  const mode = params.mode ?? 0 // 0: 磁铁变速, 1: 匀变磁场
+  const N = params.N ?? 50
+  const B_magnet = params.B ?? 1.2
+  const magnetV = params.magnetV ?? 140
+  const dBdt = params.dBdt ?? 0.5
+  const B0 = -dBdt * 5 // 初始磁强设为 -k*5，使得第 5 秒时磁通量恰好为 0
 
-  // ── 磁铁位置状态 ──────────────────────────────────────────────────────
-  const [magnetX, setMagnetX] = useState(MAGNET_MIN_X)  // 磁铁左端 x px
+  const tNow = time % CHART_DURATION // 图像指示线时间限制在 0~10s 循环
 
-  // ── 拖拽交互 refs ─────────────────────────────────────────────────────
-  const isDragging = useRef(false)
-  const dragStartMouseX = useRef(0)
-  const dragStartMagnetX = useRef(0)
-  const svgRef = useRef<SVGSVGElement>(null)
-
-  // ── 自动运动 ──────────────────────────────────────────────────────────
-  const [autoMode, setAutoMode] = useState<'none' | 'push' | 'pull' | 'through'>('none')
-  const [autoSpeed, setAutoSpeed] = useState<'slow' | 'medium' | 'fast'>('medium')
-  const autoStartTime = useRef(0)
-  const autoStartX = useRef(0)
-  const autoTargetX = useRef(0)
-
-  // ── 物理量历史缓冲区 ──────────────────────────────────────────────────
-  const historyRef = useRef<HistoryPoint[]>([])
-  const prevPhiRef = useRef(calcFlux(MAGNET_MIN_X, B))
-  const prevTimeRef = useRef(0)
-  const particleOffsetRef = useRef(0)
-
-  // ── 拖拽专用物理量追踪（与自动模式完全隔离）─────────────────────────────
-  const dragPrevPhiRef = useRef(calcFlux(MAGNET_MIN_X, B))
-  const dragPrevTimeRef = useRef(0)
-  const dragEmfRef = useRef(0)
-  const dragHistoryRef = useRef<HistoryPoint[]>([])
-
-  // ── 当前物理量计算 ─────────────────────────────────────────────────────
-  const phi = calcFlux(magnetX, B)
-
-  // 根据当前模式选择正确的 EMF 来源
-  const effectiveEmf = isDragging.current
-    ? dragEmfRef.current
-    : isPlaying && autoMode !== 'none'
-      ? (() => {
-          const dt = time - prevTimeRef.current
-          return dt > 0.001 ? -N * (phi - prevPhiRef.current) / dt : 0
-        })()
-      : 0
-
-  const emf = effectiveEmf
-  const resistance = 10  // 回路等效电阻 Ω（固定，用于灯泡亮度计算）
-  const current = emf / resistance
-
-  // ── 自动运动逻辑 ──────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!isPlaying || autoMode === 'none') return
-
-    const speedPx = AUTO_SPEEDS[autoSpeed]
-    const direction = autoMode === 'pull' ? -1 : 1
-
-    const elapsed = (time - autoStartTime.current)
-    const newX = autoStartX.current + elapsed * speedPx * direction
-    const clamped = Math.max(MAGNET_MIN_X, Math.min(MAGNET_MAX_X, newX))
-    setMagnetX(clamped)
-
-    // 到达目标位置时停止
-    if (
-      (autoMode !== 'pull' && clamped >= autoTargetX.current) ||
-      (autoMode === 'pull' && clamped <= autoTargetX.current)
-    ) {
-      setIsPlaying(false)
-      setAutoMode('none')
+  // ── 解析生成图表背景曲线数据 ──────────────────────────────────────────
+  const chartPoints = useMemo<FaradayChartPoint[]>(() => {
+    const pts: FaradayChartPoint[] = []
+    for (let i = 0; i <= CHART_STEPS; i++) {
+      const t = (i / CHART_STEPS) * CHART_DURATION
+      if (mode === 0) {
+        const state = getMagnetStateAt(t, N, B_magnet, magnetV)
+        pts.push({ t, phi: state.phi, emf: state.emf })
+      } else {
+        const state = getUniformStateAt(t, N, dBdt, B0)
+        pts.push({ t, phi: state.phi, emf: state.emf })
+      }
     }
+    return pts
+  }, [mode, N, B_magnet, magnetV, dBdt, B0])
 
-    // 穿过模式：先推入再拉出（简化为推入到最右）
-  }, [time, isPlaying, autoMode, autoSpeed, setIsPlaying])
-
-  // ── 同步 magnetX 到 store（供 physicsQuantities 读取）─────────────────
-  useEffect(() => {
-    if (params.magnetX !== magnetX) {
-      updateParam('magnetX', magnetX)
-    }
-  }, [magnetX, params.magnetX, updateParam])
-
-  // ── 自动模式：更新历史缓冲区 ──────────────────────────────────────────
-  useEffect(() => {
-    if (!isPlaying || autoMode === 'none') return
-
-    const dt = time - prevTimeRef.current
-    if (dt > 0.016) {  // 约 60fps 节流
-      const newPhi = calcFlux(magnetX, B)
-      const newDPhi_dt = dt > 0.001 ? (newPhi - prevPhiRef.current) / dt : 0
-      const newEMF = -N * newDPhi_dt
-
-      historyRef.current.push({ t: time, phi: newPhi, emf: newEMF })
-      // 保留最近 15 秒数据
-      const cutoff = time - 15
-      historyRef.current = historyRef.current.filter(p => p.t >= cutoff)
-
-      // 粒子偏移累加
-      particleOffsetRef.current += Math.abs(newEMF) * dt * 0.12
-
-      prevPhiRef.current = newPhi
-      prevTimeRef.current = time
-    }
-  }, [time, isPlaying, autoMode, magnetX, B, N])
-
-  // ── 重置时清理历史 ─────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!isPlaying && time < 0.1 && !isDragging.current) {
-      historyRef.current = []
-      dragHistoryRef.current = []
-      prevPhiRef.current = calcFlux(magnetX, B)
-      prevTimeRef.current = 0
-      dragPrevPhiRef.current = calcFlux(magnetX, B)
-      dragPrevTimeRef.current = 0
-      dragEmfRef.current = 0
-      particleOffsetRef.current = 0
-    }
-  }, [isPlaying, time, magnetX, B])
-
-  // ── SVG 拖拽事件处理 ──────────────────────────────────────────────────
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    if (isPlaying) return
-    isDragging.current = true
-    dragStartMouseX.current = e.clientX
-    dragStartMagnetX.current = magnetX
-    // 初始化拖拽追踪
-    dragPrevPhiRef.current = calcFlux(magnetX, B)
-    dragPrevTimeRef.current = performance.now()
-    dragEmfRef.current = 0
-    dragHistoryRef.current = []
-    ;(e.currentTarget as Element).setPointerCapture(e.pointerId)
-  }, [isPlaying, magnetX, B])
-
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isDragging.current) return
-    const dx = e.clientX - dragStartMouseX.current
-    const svgWidth = svgRef.current?.clientWidth || canvasSize.width
-    const scale = canvasSize.width / svgWidth
-    const newX = Math.max(MAGNET_MIN_X, Math.min(MAGNET_MAX_X, dragStartMagnetX.current + dx * scale))
-    setMagnetX(newX)
-
-    // 计算瞬时 EMF（基于实际帧间隔）
-    const now = performance.now()
-    const dtSec = Math.max(0.001, (now - dragPrevTimeRef.current) / 1000)
-    const newPhi = calcFlux(newX, B)
-    const dPhi = newPhi - dragPrevPhiRef.current
-    const newEMF = -N * dPhi / dtSec
-
-    dragEmfRef.current = newEMF
-    dragPrevPhiRef.current = newPhi
-    dragPrevTimeRef.current = now
-
-    // 拖拽时更新历史（使用 performance.now() 作为时间基准）
-    const dragTime = now / 1000
-    dragHistoryRef.current.push({ t: dragTime, phi: newPhi, emf: newEMF })
-    // 保留最近 12 秒数据
-    const cutoff = dragTime - 12
-    dragHistoryRef.current = dragHistoryRef.current.filter(p => p.t >= cutoff)
-
-    // 粒子偏移累加
-    particleOffsetRef.current += Math.abs(newEMF) * dtSec * 0.12
-  }, [N, B, canvasSize.width])
-
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    isDragging.current = false
-    dragEmfRef.current = 0
-    ;(e.currentTarget as Element).releasePointerCapture(e.pointerId)
-  }, [])
-
-  // ── 自动运动启动函数 ──────────────────────────────────────────────────
-  const startAuto = (mode: 'push' | 'pull' | 'through') => {
-    let startX: number
-    let targetX: number
-    if (mode === 'push') {
-      startX = MAGNET_MIN_X
-      targetX = MAGNET_PUSH_TARGET
-    } else if (mode === 'pull') {
-      startX = MAGNET_PULL_START
-      targetX = MAGNET_MIN_X
+  // 获取当前指示时刻的精确插值状态
+  const currentState = useMemo(() => {
+    if (mode === 0) {
+      return getMagnetStateAt(tNow, N, B_magnet, magnetV)
     } else {
-      startX = MAGNET_MIN_X
-      targetX = MAGNET_MAX_X
+      const uState = getUniformStateAt(tNow, N, dBdt, B0)
+      return { x: 0, phi: uState.phi, emf: uState.emf, B: uState.B }
     }
-    setMagnetX(startX)
-    autoStartX.current = startX
-    autoTargetX.current = targetX
-    autoStartTime.current = time
-    historyRef.current = []
-    prevPhiRef.current = calcFlux(startX, B)
-    prevTimeRef.current = time
-    particleOffsetRef.current = 0
-    setAutoMode(mode)
-    setIsPlaying(true)
-  }
+  }, [mode, tNow, N, B_magnet, magnetV, dBdt, B0])
 
-  // ── 布局参数 ──────────────────────────────────────────────────────────
+  // ── 布局与绘制参数 ──────────────────────────────────────────────────
   const W = canvasSize.width
   const H = canvasSize.height
-  const sandboxW = W * 0.53   // 左侧沙盒宽度
-  const dashLeft = sandboxW + 10  // 右侧图表区起点
-  const dashRight = W - 8
+  const sandboxW = W * 0.53         // 左侧沙盒宽度约 424 px
+  const dashLeft = sandboxW + 16    // 右侧图表起点 px
+  const dashRight = W - 12          // 右侧图表终点 px
   const dashW = dashRight - dashLeft
 
-  const sandboxCy = H / 2   // 沙盒垂直中心
-  const coilY = sandboxCy - 55  // 线圈中心上移，给下方电路留空间
+  const sandboxCy = H / 2
+  const coilY = sandboxCy - 50      // 线圈中心上移，下方留出电路图
 
-  // ── 磁感线绘制参数 ─────────────────────────────────────────────────────
-  const magnetCenterX = magnetX + MAGNET_LEN / 2
-  const magnetCenterY = coilY
-  const distToCoil = Math.abs(COIL_X - magnetCenterX)
-  // 判断磁铁与线圈的重叠程度（0=完全分离，1=完全重合）
-  const overlapRatio = Math.max(0, 1 - distToCoil / (COIL_RX + MAGNET_LEN / 2))
-  const overlapRatioClamped = Math.min(1, overlapRatio * 2)
+  // ── 图表映射比例 ────────────────────────────────────────────────────
+  // 磁通量最大范围，纵向对称
+  const maxPhiVal = useMemo(() => {
+    const maxVal = Math.max(...chartPoints.map(p => Math.abs(p.phi)))
+    return maxVal > 1e-5 ? maxVal : 0.05
+  }, [chartPoints])
 
-  // ── 选择正确的历史数据源 ───────────────────────────────────────────────
-  const activeHistory = isDragging.current ? dragHistoryRef.current : historyRef.current
-  const activeTimeBase = isDragging.current
-    ? (dragHistoryRef.current.length > 0 ? dragHistoryRef.current[dragHistoryRef.current.length - 1].t : 0)
-    : (historyRef.current.length > 0 ? historyRef.current[historyRef.current.length - 1].t : 0)
+  // 电动势最大范围，纵向对称
+  const maxEmfVal = useMemo(() => {
+    const maxVal = Math.max(...chartPoints.map(p => Math.abs(p.emf)))
+    return maxVal > 1e-5 ? maxVal : 1.0
+  }, [chartPoints])
 
-  // ── 示波器图表数据 ─────────────────────────────────────────────────────
-  const history = activeHistory
-  const tNow = activeTimeBase
-  const tMin = Math.max(0, tNow - 12)
-  const tMax = tNow > 12 ? tNow : 12
-
-  // 磁通量最大范围（用于纵轴归一化）
-  const maxPhi = Math.max(PHI0 * B * 0.9, 0.01)
-  const maxEMF = Math.max(N * maxPhi * 0.6, 0.1)
-
-  // 图表上图（Φ-t）和下图（E-t）的垂直中心
-  const chartPadTop = 18
+  const chartPadTop = 26
   const chartH = (H - chartPadTop * 3) / 2
   const yPhiMid = chartPadTop + chartH / 2
   const yEmfMid = chartPadTop * 2 + chartH + chartH / 2
-  const chartHalfH = chartH * 0.4
+  const chartHalfH = chartH * 0.42
 
-  function toChartX(t: number) {
-    return dashLeft + ((t - tMin) / (tMax - tMin)) * dashW
+  const toChartX = (t: number) => {
+    return dashLeft + (t / CHART_DURATION) * dashW
   }
-  function toPhiY(phi: number) {
-    return yPhiMid - (phi / maxPhi) * chartHalfH * 0.85
+  const toPhiY = (phi: number) => {
+    return yPhiMid - (phi / maxPhiVal) * chartHalfH
   }
-  function toEmfY(emf: number) {
-    return yEmfMid - (emf / maxEMF) * chartHalfH * 0.85
+  const toEmfY = (emf: number) => {
+    return yEmfMid - (emf / maxEmfVal) * chartHalfH
   }
 
-  // 构建 Φ-t 波形路径（y 轴钳位到图表上图范围）
-  function buildPhiPath(points: HistoryPoint[]) {
-    if (points.length < 2) return ''
-    return points.map((p, i) => {
+  // ── 生成图像的 SVG 路径 ────────────────────────────────────────────────
+  const phiPathD = useMemo(() => {
+    if (chartPoints.length < 2) return ''
+    return chartPoints.map((p, i) => {
       const x = toChartX(p.t).toFixed(1)
-      const raw = toPhiY(p.phi)
-      const y = Math.max(chartPadTop + 2, Math.min(yPhiMid + chartHalfH + 2, raw)).toFixed(1)
+      const y = toPhiY(p.phi).toFixed(1)
       return `${i === 0 ? 'M' : 'L'} ${x} ${y}`
     }).join(' ')
-  }
-  function buildEmfPath(points: HistoryPoint[]) {
-    if (points.length < 2) return ''
-    return points.map((p, i) => {
+  }, [chartPoints, maxPhiVal])
+
+  const emfPathD = useMemo(() => {
+    if (chartPoints.length < 2) return ''
+    return chartPoints.map((p, i) => {
       const x = toChartX(p.t).toFixed(1)
-      const raw = toEmfY(p.emf)
-      const y = Math.max(yPhiMid + chartHalfH + chartPadTop + 2, Math.min(yEmfMid + chartHalfH + 2, raw)).toFixed(1)
+      const y = toEmfY(p.emf).toFixed(1)
       return `${i === 0 ? 'M' : 'L'} ${x} ${y}`
     }).join(' ')
-  }
+  }, [chartPoints, maxEmfVal])
 
-  // 当前焦点竖线 x
-  const nowX = history.length > 0 ? toChartX(tNow) : dashLeft
+  // 当前播放点的指示线 x
+  const indicatorX = toChartX(tNow)
 
-  // ── 电路布局参数（确保全部在 sandboxW 内，整体下移避免与线圈/磁铁重叠）───
-  const circuitRightX = Math.min(COIL_X + COIL_RX + 40, sandboxW - 20)  // 右侧导线边界
-  const circuitBottomY = coilY + COIL_RY + 75   // 底边导线 y（下移）
-  const circuitLeftX = Math.max(COIL_X - COIL_RX - 40, 20)  // 左侧导线边界
+  // ── 基础模式电路结构及电子流动（参数化计算，消灭死像素） ────────────────
+  const circuitRightX = Math.min(COIL_X + COIL_RX + 50, sandboxW - 24)
+  const circuitLeftX = Math.max(COIL_X - COIL_RX - 50, 24)
+  const bulbY = coilY + COIL_RY + 35
+  const meterY = coilY + COIL_RY + 35
 
-  // 灯泡和电流表位置（下移，放在线圈下方两侧）
-  const bulbX = circuitRightX - 15
-  const bulbY = coilY + COIL_RY + 45
-  const meterX = circuitLeftX + 15
-  const meterY = coilY + COIL_RY + 45
+  const solenoidW = 60
+  const solenoidH = COIL_RY * 2
+  const solenoidLeftX = COIL_X - solenoidW / 2
+  const solenoidRightX = COIL_X + solenoidW / 2
+  const solenoidWireY = coilY + 120
 
-  // ── 粒子位置计算 ─────────────────────────────────────────────────────
-  // 回路路径：沿矩形导线（与 polyline 绘制完全对齐）
-  // 线圈上端 → 上侧 → 右侧 → 灯泡 → 底边 → 电流表 → 左侧 → 回到线圈上端
+  const bulbScale = 0.85
+  const bulbPinY = bulbY + 18 * bulbScale
+
+  const meterScale = 50 / 120
+  const meterTopY = meterY - 22
+  const meterPinY = meterTopY + 100 * meterScale
+  const meterPinLeftX = circuitLeftX - 30 * meterScale
+  const meterPinRightX = circuitLeftX + 30 * meterScale
+
+  const bottomWireY = Math.max(meterPinY, bulbPinY) + 10
+
+  // 闭合回路导线 A、B、C 节点串
+  const wirePointsA = `${solenoidLeftX},${solenoidWireY} ${meterPinLeftX},${solenoidWireY} ${meterPinLeftX},${meterPinY}`
+  const wirePointsB = `${meterPinRightX},${meterPinY} ${meterPinRightX},${bottomWireY} ${circuitRightX},${bottomWireY} ${circuitRightX},${bulbPinY}`
+  const wirePointsC = `${circuitRightX},${bulbPinY} ${circuitRightX},${solenoidWireY} ${solenoidRightX},${solenoidWireY}`
+
+  // 导线段定义，用于自由电子动画（完全参数化折线回路，对接通用组件引脚）
   const circuitPath = [
-    { x: COIL_X + COIL_RX, y: coilY - 25 },      // 0: 线圈上端引出
-    { x: circuitRightX, y: coilY - 25 },          // 1: 右上拐角
-    { x: circuitRightX, y: bulbY - 18 },          // 2: 灯泡上方
-    { x: bulbX, y: bulbY - 18 },                  // 3: 灯泡上端
-    { x: bulbX, y: bulbY + 18 },                  // 4: 灯泡下端
-    { x: circuitRightX, y: bulbY + 18 },          // 5: 灯泡下方回拐角
-    { x: circuitRightX, y: circuitBottomY },      // 6: 右下拐角
-    { x: circuitLeftX, y: circuitBottomY },       // 7: 底边到左侧
-    { x: circuitLeftX, y: meterY + 22 },          // 8: 电流表下方
-    { x: meterX, y: meterY + 22 },                // 9: 电流表下端
-    { x: meterX, y: meterY - 22 },                // 10: 电流表上端
-    { x: circuitLeftX, y: meterY - 22 },          // 11: 电流表上方回拐角
-    { x: circuitLeftX, y: coilY - 25 },           // 12: 左上拐角
-    { x: COIL_X - COIL_RX, y: coilY - 25 },       // 13: 回到线圈上端
+    { x: solenoidLeftX, y: solenoidWireY },
+    { x: meterPinLeftX, y: solenoidWireY },
+    { x: meterPinLeftX, y: meterPinY },
+    { x: meterPinRightX, y: meterPinY },
+    { x: meterPinRightX, y: bottomWireY },
+    { x: circuitRightX, y: bottomWireY },
+    { x: circuitRightX, y: bulbPinY },
+    { x: circuitRightX, y: solenoidWireY },
+    { x: solenoidRightX, y: solenoidWireY },
   ]
 
-  const totalPathLen = (() => {
+  // 计算回路总长度与电子插值
+  const totalPathLen = useMemo(() => {
     let len = 0
     for (let i = 1; i < circuitPath.length; i++) {
       const dx = circuitPath[i].x - circuitPath[i - 1].x
       const dy = circuitPath[i].y - circuitPath[i - 1].y
-      len += Math.sqrt(dx * dx + dy * dy)
+      len += Math.hypot(dx, dy)
     }
     return len
-  })()
+  }, [])
 
-  function getParticlePos(frac: number) {
-    const target = ((frac % 1) + 1) % 1 * totalPathLen
+  const getElectronicPos = (fraction: number) => {
+    const target = ((fraction % 1) + 1) % 1 * totalPathLen
     let acc = 0
     for (let i = 1; i < circuitPath.length; i++) {
       const dx = circuitPath[i].x - circuitPath[i - 1].x
       const dy = circuitPath[i].y - circuitPath[i - 1].y
-      const segLen = Math.sqrt(dx * dx + dy * dy)
+      const segLen = Math.hypot(dx, dy)
       if (acc + segLen >= target) {
-        const t = (target - acc) / segLen
-        return { x: circuitPath[i - 1].x + dx * t, y: circuitPath[i - 1].y + dy * t }
+        const ratio = (target - acc) / segLen
+        return {
+          x: circuitPath[i - 1].x + dx * ratio,
+          y: circuitPath[i - 1].y + dy * ratio,
+        }
       }
       acc += segLen
     }
     return circuitPath[0]
   }
 
-  const particleCount = 12
-  const particleDir = emf > 0 ? 1 : (emf < 0 ? -1 : 0)
-  const particles = Math.abs(emf) > 0.05 ? Array.from({ length: particleCount }, (_, i) => {
-    const frac = (particleOffsetRef.current * particleDir + i / particleCount) % 1
-    return getParticlePos(frac)
-  }) : []
+  // 电子漂移：由 EMF 的正负驱动方向与速度
+  const electronFlowSpeed = currentState.emf * 25
+  const electronCount = 10
+  const electronParticles = useMemo(() => {
+    if (mode !== 0 || Math.abs(currentState.emf) < 0.005) return []
+    return Array.from({ length: electronCount }, (_, i) => {
+      // 漂移量随时间累加
+      const drift = (i / electronCount + time * electronFlowSpeed / 100) % 1
+      return getElectronicPos(drift)
+    })
+  }, [mode, currentState.emf, time])
 
-  // ── 灯泡亮度 ─────────────────────────────────────────────────────────
-  const bulbBrightness = Math.min(1, Math.abs(current) * 2.5)
-  const bulbGlowRadius = 12 + bulbBrightness * 18
+  // ── 电力参数和仪表偏转等均由通用组件内部自适应计算 ─────────────────────
 
-  // ── 电流表指针偏转 ────────────────────────────────────────────────────
-  const meterAngleDeg = Math.max(-60, Math.min(60, current * 18))
-  const meterRad = (meterAngleDeg * Math.PI) / 180
+  // ── 进阶模式背景 6x5 磁感线阵列 ───────────────────────────────────────
+  const fieldDots = useMemo(() => {
+    const rows = 5
+    const cols = 6
+    const grid: { x: number; y: number }[] = []
+    const xSpacing = sandboxW / (cols + 1)
+    const ySpacing = H / (rows + 1)
+    for (let r = 1; r <= rows; r++) {
+      for (let c = 1; c <= cols; c++) {
+        grid.push({ x: c * xSpacing, y: r * ySpacing })
+      }
+    }
+    return grid
+  }, [sandboxW, H])
+
+  // 瞬时磁感应强度 B，以及它的正负极性
+  const currentB = mode === 1 ? (currentState.B ?? 0) : 0
+  const B_is_in = currentB >= 0 // B >= 0 代表穿过向里 ⊗，B < 0 代表向外 ⊙
+  const magneticFieldOpacity = Math.min(0.85, Math.abs(currentB) * 0.7)
+
+  // 线圈边缘高亮圈的亮度与线宽
+  const glowOpacity = Math.min(0.95, Math.abs(currentState.emf) * 0.8)
+  const glowWidth = 3 + Math.min(6, Math.abs(currentState.emf) * 4)
+
+  // 进阶模式电流方向：E 的符号决定。当 E > 0 (磁场向里减小或向外增加)，电流为顺时针 (方向1)；E < 0 时为逆时针。
+  const inducedCurrentDir = currentState.emf > 0.001 ? 1 : currentState.emf < -0.001 ? -1 : 0
 
   return (
-    <div ref={containerRef} className="w-full h-full">
+    <div ref={containerRef} className="w-full h-full select-none">
       <svg
-        ref={svgRef}
         width={W}
         height={H}
-        className="bg-white rounded-lg shadow-inner select-none"
+        className="bg-white rounded-xl shadow-md overflow-hidden"
         style={{ fontFamily: CANVAS_STYLE.font.family }}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp}
       >
         <defs>
-          {/* 磁铁渐变 */}
-          <linearGradient id="magnetGradN" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={SCENE_COLORS.magnet.northBase} />
-            <stop offset="100%" stopColor={SCENE_COLORS.magnet.northMid} />
-          </linearGradient>
-          <linearGradient id="magnetGradS" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={SCENE_COLORS.magnet.southLight} />
-            <stop offset="100%" stopColor={SCENE_COLORS.magnet.southDark} />
-          </linearGradient>
-          {/* 灯泡光晕 */}
-          <radialGradient id="bulbGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor={SCENE_COLORS.bulb.glassNormal} stopOpacity={bulbBrightness * 0.95} />
-            <stop offset="60%" stopColor={SCENE_COLORS.bulb.glowMid} stopOpacity={bulbBrightness * 0.5} />
-            <stop offset="100%" stopColor={SCENE_COLORS.bulb.glowOuter} stopOpacity="0" />
-          </radialGradient>
-          {/* 磁感线 clipPath（限制在左侧沙盒区域） */}
+          {/* 仿真区与图表区分割用 clipPath */}
           <clipPath id="sandboxClip">
             <rect x="0" y="0" width={sandboxW} height={H} />
           </clipPath>
-          {/* 图表区 clipPath（限制在右侧看板区域） */}
-          <clipPath id="dashClip">
+          <clipPath id="chartClip">
             <rect x={dashLeft} y="0" width={dashW} height={H} />
           </clipPath>
-          {/* 箭头 marker */}
-          <marker id="arrFlux" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.magneticField} opacity="0.5" />
-          </marker>
-          <marker id="arrFluxGold" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill={SCENE_COLORS.coil.copperBase} />
-          </marker>
-          {/* 磁感线自适应红-紫-蓝渐变 */}
-          <linearGradient id="magneticLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor={PHYSICS_COLORS.magnetNorth} stopOpacity="0.05" />
-            <stop offset="30%" stopColor={PHYSICS_COLORS.magnetNorth} stopOpacity="0.65" />
-            <stop offset="50%" stopColor="#9333EA" stopOpacity="0.8" />
-            <stop offset="70%" stopColor={PHYSICS_COLORS.magnetSouth} stopOpacity="0.65" />
-            <stop offset="100%" stopColor={PHYSICS_COLORS.magnetSouth} stopOpacity="0.05" />
-          </linearGradient>
         </defs>
 
-        {/* ═══════════════════ 左侧分界线 ═══════════════════ */}
+        {/* ═══════════════════ 中间分界隔离线 ═══════════════════ */}
         <line
-          x1={sandboxW} y1={0} x2={sandboxW} y2={H}
+          x1={sandboxW}
+          y1={0}
+          x2={sandboxW}
+          y2={H}
           stroke={PHYSICS_COLORS.axis}
           strokeWidth={CANVAS_STYLE.stroke.reference}
         />
 
-        {/* ═══════════════════ 左侧：物理仿真沙盒 ═══════════════════ */}
+        {/* ═══════════════════ 左屏：物理仿真沙盒 ═══════════════════ */}
         <g clipPath="url(#sandboxClip)">
+          {mode === 0 ? (
+            // ───────────────── 基础模式：磁铁变速 ─────────────────
+            <g>
+              {/* 1. 磁铁的磁场分布（使用通用参数化磁场组件） */}
+              {(() => {
+                const curMagnetX = currentState.x ?? MAGNET_MIN_X
+                const mCenterX = curMagnetX + MAGNET_LEN / 2
+                const mCenterY = coilY
+                const overlapRatio = Math.max(0, 1 - Math.abs(COIL_X - mCenterX) / (COIL_RX + MAGNET_LEN / 2))
+                const extOpacity = 0.12 + Math.min(1, overlapRatio * 2) * 0.48
 
-          {/* ── 磁感线（对称贝塞尔曲线磁感线，穿透线圈部分变金色）── */}
-          {(() => {
-            const w = MAGNET_LEN // 100
-            const h = MAGNET_H   // 34
-            const halfW = w / 2
-            const halfH = h / 2
-            const pole = -1 // 固定的左N右S
-            
-            // 外部磁感线的不透明度，随着磁铁靠近线圈而变亮，增强视觉对比
-            const extOpacity = 0.12 + overlapRatioClamped * 0.48
-            // 轴向线当靠近线圈时高亮
-            const isHighlighted = overlapRatioClamped > 0.15
-            const axisColor = isHighlighted ? SCENE_COLORS.coil.copperBase : PHYSICS_COLORS.magneticField
-            const axisOpacity = isHighlighted 
-              ? 0.45 + overlapRatioClamped * 0.45 
-              : 0.15 + overlapRatioClamped * 0.15
-            
-            // 外部闭合线（上方 3 条，下方 3 条对称）- 双段贝塞尔曲线拼接，确保两端垂直端面出射与引入，并形成优美包络
-            const topClosedLines = [
-              // L1: 紧包裹角部的小耳朵
-              `M ${halfW * pole} ${-0.7 * halfH} C ${(halfW + 0.15 * w) * pole} ${-0.7 * halfH}, ${0.1 * w * pole} ${-1.25 * halfH}, 0 ${-1.25 * halfH} C ${-0.1 * w * pole} ${-1.25 * halfH}, ${(-halfW - 0.15 * w) * pole} ${-0.7 * halfH}, ${-halfW * pole} ${-0.7 * halfH}`,
-              // L2: 中圈
-              `M ${halfW * pole} ${-0.45 * halfH} C ${(halfW + 0.45 * w) * pole} ${-0.45 * halfH}, ${0.35 * w * pole} ${-2.8 * halfH}, 0 ${-2.8 * halfH} C ${-0.35 * w * pole} ${-2.8 * halfH}, ${(-halfW - 0.45 * w) * pole} ${-0.45 * halfH}, ${-halfW * pole} ${-0.45 * halfH}`,
-              // L3: 外圈巨大膨胀包络
-              `M ${halfW * pole} ${-0.15 * halfH} C ${(halfW + 0.95 * w) * pole} ${-0.15 * halfH}, ${0.75 * w * pole} ${-5.0 * halfH}, 0 ${-5.0 * halfH} C ${-0.75 * w * pole} ${-5.0 * halfH}, ${(-halfW - 0.95 * w) * pole} ${-0.15 * halfH}, ${-halfW * pole} ${-0.15 * halfH}`
-            ];
-
-            const bottomClosedLines = [
-              // L1: 紧包裹角部的小耳朵
-              `M ${halfW * pole} ${0.7 * halfH} C ${(halfW + 0.15 * w) * pole} ${0.7 * halfH}, ${0.1 * w * pole} ${1.25 * halfH}, 0 ${1.25 * halfH} C ${-0.1 * w * pole} ${1.25 * halfH}, ${(-halfW - 0.15 * w) * pole} ${0.7 * halfH}, ${-halfW * pole} ${0.7 * halfH}`,
-              // L2: 中圈
-              `M ${halfW * pole} ${0.45 * halfH} C ${(halfW + 0.45 * w) * pole} ${0.45 * halfH}, ${0.35 * w * pole} ${2.8 * halfH}, 0 ${2.8 * halfH} C ${-0.35 * w * pole} ${2.8 * halfH}, ${(-halfW - 0.45 * w) * pole} ${0.45 * halfH}, ${-halfW * pole} ${0.45 * halfH}`,
-              // L3: 外圈巨大膨胀包络
-              `M ${halfW * pole} ${0.15 * halfH} C ${(halfW + 0.95 * w) * pole} ${0.15 * halfH}, ${0.75 * w * pole} ${5.0 * halfH}, 0 ${5.0 * halfH} C ${-0.75 * w * pole} ${5.0 * halfH}, ${(-halfW - 0.95 * w) * pole} ${0.15 * halfH}, ${-halfW * pole} ${0.15 * halfH}`
-            ];
-
-            // 两端发散线 (两端各 3 条) - 与大包络圈自然过渡
-            const divergentLines = [
-              // N 极发散侧 (发射，顺流向：从内向外)
-              `M ${halfW * pole} 0 L ${(halfW + w) * pole} 0`, // 水平
-              `M ${halfW * pole} ${-0.2 * halfH} C ${(halfW + 0.5 * w) * pole} ${-0.2 * halfH}, ${(halfW + 0.8 * w) * pole} ${-0.3 * w}, ${(halfW + w) * pole} ${-0.6 * w}`, // 斜上
-              `M ${halfW * pole} ${0.2 * halfH} C ${(halfW + 0.5 * w) * pole} ${0.2 * halfH}, ${(halfW + 0.8 * w) * pole} ${0.3 * w}, ${(halfW + w) * pole} ${0.6 * w}`, // 斜下
-
-              // S 极汇聚侧 (汇聚，顺流向：从外向内)
-              `M ${-(halfW + w) * pole} 0 L ${-halfW * pole} 0`, // 水平
-              `M ${-(halfW + w) * pole} ${-0.6 * w} C ${-(halfW + 0.8 * w) * pole} ${-0.3 * w}, ${-(halfW + 0.5 * w) * pole} ${-0.2 * halfH}, ${-halfW * pole} ${-0.2 * halfH}`, // 斜上
-              `M ${-(halfW + w) * pole} ${0.6 * w} C ${-(halfW + 0.8 * w) * pole} ${0.3 * w}, ${-(halfW + 0.5 * w) * pole} ${0.2 * halfH}, ${-halfW * pole} ${0.2 * halfH}` // 斜下
-            ];
-
-            const allPaths = [...bottomClosedLines, ...topClosedLines, ...divergentLines]
-
-            // 5点式降噪独立指示箭头配置
-            const yTopMiddle = -2.8 * halfH;
-            const yBottomMiddle = 2.8 * halfH;
-
-            const xArrowRight = halfW + 0.3 * w;
-            const xArrowLeft = -halfW - 0.3 * w;
-
-            const arrowsConfig = [
-              { role: 'N极外侧轴线', x: xArrowRight * pole, y: 0, dir: pole },
-              { role: 'S极外侧轴线', x: xArrowLeft * pole, y: 0, dir: pole },
-              { role: '上方中圈顶点', x: 0, y: yTopMiddle, dir: -pole },
-              { role: '下方中圈底点', x: 0, y: yBottomMiddle, dir: -pole },
-              { role: '磁铁内部中心', x: 0, y: 0, dir: pole },
-            ];
-
-            return (
-              <g transform={`translate(${magnetCenterX}, ${magnetCenterY})`}>
-                {/* 外部磁感线网络 */}
-                {allPaths.map((dStr, idx) => (
-                  <path
-                    key={`dipole-line-${idx}`}
-                    d={dStr}
-                    fill="none"
-                    stroke="url(#magneticLineGrad)"
-                    strokeWidth={CANVAS_STYLE.stroke.reference}
-                    strokeDasharray="6, 4"
-                    opacity={extOpacity}
-                  />
-                ))}
-
-                {/* 5点式降噪独立方向指示箭头 */}
-                <g opacity={extOpacity} className="magnetic-arrows">
-                  {arrowsConfig.map((arrow, idx) => {
-                    const angle = arrow.dir === 1 ? 0 : 180;
-                    // 在 FaradayLaw 里，轴线上的箭头在重叠时会变成金色（与 axisColor 保持一致）
-                    const isAxisArrow = arrow.role.includes('轴线') || arrow.role.includes('中心');
-                    let arrowColor = '#9333EA';
-                    if (isAxisArrow && isHighlighted) {
-                      arrowColor = axisColor;
-                    } else {
-                      arrowColor = arrow.role.includes('N极')
-                        ? PHYSICS_COLORS.magnetNorth
-                        : arrow.role.includes('S极')
-                        ? PHYSICS_COLORS.magnetSouth
-                        : '#9333EA';
-                    }
-                    
-                    return (
-                      <g key={`arrow-${idx}`} className={`arrow-group-${arrow.role}`} transform={`translate(${arrow.x}, ${arrow.y}) rotate(${angle})`}>
-                        <polygon
-                          points="-5,-3.5 5,0 -5,3.5"
-                          fill={arrowColor}
-                          opacity={0.85}
-                        />
-                      </g>
-                    );
-                  })}
-                </g>
-
-                {/* 中心轴向穿透磁感线（三条，高亮时变成金色，非高亮时为渐变） */}
-                {[-6, 0, 6].map((dy, idx) => {
-                  const x1 = halfW + 30
-                  const x2 = -halfW - 30
-                  return (
-                    <line
-                      key={`mag-axis-${idx}`}
-                      x1={x1}
-                      y1={dy}
-                      x2={x2}
-                      y2={dy}
-                      stroke={isHighlighted ? axisColor : 'url(#magneticLineGrad)'}
-                      strokeWidth={isHighlighted ? CANVAS_STYLE.stroke.vectorSub : CANVAS_STYLE.stroke.reference}
-                      opacity={axisOpacity}
+                return (
+                  <g transform={`translate(${mCenterX}, ${mCenterY})`} opacity={extOpacity}>
+                    <ParametricMagneticField
+                      w={MAGNET_LEN}
+                      h={MAGNET_H}
+                      pole={-1} // 左N右S
+                      canvasHeight={H}
+                      lineColor={PHYSICS_COLORS.magneticField}
                     />
-                  )
-                })}
-              </g>
-            )
-          })()}
+                  </g>
+                )
+              })()}
 
-          {/* ── 闭合回路导线（与 circuitPath 完全对齐）── */}
-          {/* 上侧导线：线圈右端 → 右上拐角 */}
-          <polyline
-            points={`${COIL_X + COIL_RX},${coilY - 25} ${circuitRightX},${coilY - 25}`}
-            fill="none"
-            stroke={PHYSICS_COLORS.objectStroke}
-            strokeWidth={CANVAS_STYLE.stroke.objectLine}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          {/* 右侧导线：右上拐角 → 灯泡上方 */}
-          <polyline
-            points={`${circuitRightX},${coilY - 25} ${circuitRightX},${bulbY - 18} ${bulbX},${bulbY - 18}`}
-            fill="none"
-            stroke={PHYSICS_COLORS.objectStroke}
-            strokeWidth={CANVAS_STYLE.stroke.objectLine}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          {/* 灯泡竖直连线 */}
-          <line
-            x1={bulbX} y1={bulbY - 18}
-            x2={bulbX} y2={bulbY + 18}
-            stroke={PHYSICS_COLORS.objectStroke}
-            strokeWidth={CANVAS_STYLE.stroke.objectLine}
-          />
-          {/* 右侧导线：灯泡下方 → 右下拐角 */}
-          <polyline
-            points={`${bulbX},${bulbY + 18} ${circuitRightX},${bulbY + 18} ${circuitRightX},${circuitBottomY}`}
-            fill="none"
-            stroke={PHYSICS_COLORS.objectStroke}
-            strokeWidth={CANVAS_STYLE.stroke.objectLine}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          {/* 底边导线：右下 → 左下 */}
-          <line
-            x1={circuitRightX} y1={circuitBottomY}
-            x2={circuitLeftX} y2={circuitBottomY}
-            stroke={PHYSICS_COLORS.objectStroke}
-            strokeWidth={CANVAS_STYLE.stroke.objectLine}
-          />
-          {/* 左侧导线：左下 → 电流表下方 */}
-          <polyline
-            points={`${circuitLeftX},${circuitBottomY} ${circuitLeftX},${meterY + 22} ${meterX},${meterY + 22}`}
-            fill="none"
-            stroke={PHYSICS_COLORS.objectStroke}
-            strokeWidth={CANVAS_STYLE.stroke.objectLine}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          {/* 电流表竖直连线 */}
-          <line
-            x1={meterX} y1={meterY + 22}
-            x2={meterX} y2={meterY - 22}
-            stroke={PHYSICS_COLORS.objectStroke}
-            strokeWidth={CANVAS_STYLE.stroke.objectLine}
-          />
-          {/* 左上侧导线：电流表上方 → 左上拐角 → 线圈左端 */}
-          <polyline
-            points={`${meterX},${meterY - 22} ${circuitLeftX},${meterY - 22} ${circuitLeftX},${coilY - 25} ${COIL_X - COIL_RX},${coilY - 25}`}
-            fill="none"
-            stroke={PHYSICS_COLORS.objectStroke}
-            strokeWidth={CANVAS_STYLE.stroke.objectLine}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-
-          {/* ── 线圈（椭圆形，多匝） ── */}
-          {Array.from({ length: Math.min(N, 6) }, (_, i) => {
-            const offsetX = (i - Math.min(N, 6) / 2 + 0.5) * 5
-            return (
-              <ellipse
-                key={`coil-${i}`}
-                cx={COIL_X + offsetX}
-                cy={coilY}
-                rx={COIL_RX}
-                ry={COIL_RY}
+              {/* 2. 参数化闭合电路连线 */}
+              <polyline
+                points={wirePointsA}
                 fill="none"
-                stroke={PHYSICS_COLORS.electricCurrent}
+                stroke={PHYSICS_COLORS.objectStroke}
                 strokeWidth={CANVAS_STYLE.stroke.objectLine}
-                opacity={0.6 + i * 0.05}
+                strokeLinecap="round"
+                strokeLinejoin="round"
               />
-            )
-          })}
+              <polyline
+                points={wirePointsB}
+                fill="none"
+                stroke={PHYSICS_COLORS.objectStroke}
+                strokeWidth={CANVAS_STYLE.stroke.objectLine}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <polyline
+                points={wirePointsC}
+                fill="none"
+                stroke={PHYSICS_COLORS.objectStroke}
+                strokeWidth={CANVAS_STYLE.stroke.objectLine}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
 
-          {/* 线圈匝数标注 */}
-          <text
-            x={COIL_X}
-            y={coilY + COIL_RY + 20}
-            fontSize={CANVAS_STYLE.font.axisSize}
-            fill={PHYSICS_COLORS.labelText}
-            textAnchor="middle"
-            fontWeight="bold"
-          >
-            N = {N} 匝
-          </text>
-
-          {/* ── 磁通量柱状图（线圈中心） ── */}
-          {(() => {
-            const barMaxH = 50
-            const barH = Math.min(barMaxH, Math.abs(phi) / maxPhi * barMaxH)
-            const barColor = phi >= 0 ? SCENE_COLORS.coil.copperBase : PHYSICS_COLORS.magneticField
-            return (
-              <g>
-                <rect
-                  x={COIL_X - 18}
-                  y={coilY - barH}
-                  width={36}
-                  height={barH}
-                  fill={barColor}
-                  opacity={0.7}
-                  rx="3"
-                />
-                <text
-                  x={COIL_X}
-                  y={coilY + 10}
-                  fontSize={CANVAS_STYLE.font.smallSize}
-                  fill={SCENE_COLORS.coil.copperBase}
-                  textAnchor="middle"
-                  fontWeight="bold"
-                >
-                  Φ={phi.toFixed(3)}Wb
-                </text>
-              </g>
-            )
-          })()}
-
-          {/* ── 灯泡 ── */}
-          {/* 光晕 */}
-          {bulbBrightness > 0.05 && (
-            <circle
-              cx={bulbX}
-              cy={bulbY}
-              r={bulbGlowRadius}
-              fill="url(#bulbGlow)"
-            />
-          )}
-          {/* 灯泡外壳 */}
-          <circle
-            cx={bulbX}
-            cy={bulbY}
-            r={12}
-            fill={bulbBrightness > 0.05 ? `rgba(255,${Math.round(200 + bulbBrightness * 55)},${Math.round(50 + bulbBrightness * 50)},${0.6 + bulbBrightness * 0.4})` : SCENE_COLORS.circuit.bulbGlassOff}
-            stroke={PHYSICS_COLORS.objectStroke}
-            strokeWidth={CANVAS_STYLE.stroke.objectThin}
-          />
-          {/* 灯丝 */}
-          <path
-            d={`M ${bulbX - 5} ${bulbY + 3} Q ${bulbX} ${bulbY - 5} ${bulbX + 5} ${bulbY + 3}`}
-            fill="none"
-            stroke={bulbBrightness > 0.05 ? SCENE_COLORS.bulb.glassBright : SCENE_COLORS.circuit.bulbGlassStroke}
-            strokeWidth={CANVAS_STYLE.stroke.objectThin}
-          />
-          <text
-            x={bulbX + 18}
-            y={bulbY + 4}
-            fontSize={CANVAS_STYLE.font.smallSize}
-            fill={PHYSICS_COLORS.labelText}
-          >
-            灯泡
-          </text>
-
-          {/* ── 电流表 ── */}
-          {/* 外圆盘 */}
-          <circle
-            cx={meterX}
-            cy={meterY}
-            r={26}
-            fill={PHYSICS_COLORS.objectFillNeutral}
-            stroke={PHYSICS_COLORS.objectStroke}
-            strokeWidth={CANVAS_STYLE.stroke.objectLine}
-          />
-          {/* 刻度弧线 */}
-          <path
-            d={`M ${meterX - 22} ${meterY + 5} A 22 22 0 0 1 ${meterX + 22} ${meterY + 5}`}
-            fill="none"
-            stroke={PHYSICS_COLORS.trackHistory}
-            strokeWidth={CANVAS_STYLE.stroke.grid}
-          />
-          {/* 零刻度线（中心竖线） */}
-          <line
-            x1={meterX} y1={meterY - 20}
-            x2={meterX} y2={meterY - 14}
-            stroke={PHYSICS_COLORS.trackHistory}
-            strokeWidth={CANVAS_STYLE.stroke.grid}
-          />
-          {/* 指针 */}
-          <line
-            x1={meterX}
-            y1={meterY + 2}
-            x2={meterX + Math.sin(meterRad) * 20}
-            y2={meterY - Math.cos(meterRad) * 20 + 2}
-            stroke={PHYSICS_COLORS.forceNet}
-            strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-            strokeLinecap="round"
-          />
-          {/* 中心轴 */}
-          <circle cx={meterX} cy={meterY + 2} r="3" fill={PHYSICS_COLORS.forceNet} />
-          <text
-            x={meterX}
-            y={meterY + 22}
-            fontSize={CANVAS_STYLE.font.smallSize}
-            fill={PHYSICS_COLORS.labelText}
-            textAnchor="middle"
-          >
-            电流表
-          </text>
-          <text
-            x={meterX}
-            y={meterY + 34}
-            fontSize={font(9)}
-            fill={PHYSICS_COLORS.electricCurrent}
-            textAnchor="middle"
-            fontWeight="bold"
-          >
-            I={current.toFixed(3)}A
-          </text>
-
-          {/* ── 自由电子粒子 ── */}
-          {particles.map((p, i) => (
-            <circle
-              key={`ep-${i}`}
-              cx={p.x}
-              cy={p.y}
-              r={3}
-              fill={PHYSICS_COLORS.negativeCharge}
-              opacity={0.75}
-            />
-          ))}
-
-          {/* ── 条形磁铁 ── */}
-          <g
-            onPointerDown={handlePointerDown}
-            style={{ cursor: isPlaying ? 'default' : (isDragging.current ? 'grabbing' : 'grab') }}
-          >
-            {/* N 极（左半） */}
-            <rect
-              x={magnetX}
-              y={coilY - MAGNET_H / 2}
-              width={MAGNET_LEN / 2}
-              height={MAGNET_H}
-              fill={PHYSICS_COLORS.magnetNorth}
-              rx="4"
-            />
-            <text
-              x={magnetX + MAGNET_LEN / 4}
-              y={coilY + 5}
-              fontSize={CANVAS_STYLE.font.bodySize}
-              fill="white"
-              textAnchor="middle"
-              fontWeight="bold"
-              style={{ pointerEvents: 'none' }}
-            >
-              N
-            </text>
-            {/* S 极（右半） */}
-            <rect
-              x={magnetX + MAGNET_LEN / 2}
-              y={coilY - MAGNET_H / 2}
-              width={MAGNET_LEN / 2}
-              height={MAGNET_H}
-              fill={PHYSICS_COLORS.magnetSouth}
-              rx="4"
-            />
-            <text
-              x={magnetX + MAGNET_LEN * 3 / 4}
-              y={coilY + 5}
-              fontSize={CANVAS_STYLE.font.bodySize}
-              fill="white"
-              textAnchor="middle"
-              fontWeight="bold"
-              style={{ pointerEvents: 'none' }}
-            >
-              S
-            </text>
-            {/* 拖拽提示（静止状态下显示） */}
-            {!isPlaying && (
+              {/* 3. 多匝铜线圈（使用通用螺线管组件，隐藏铁芯以供磁铁穿过） */}
+              <Solenoid
+                x={COIL_X}
+                y={coilY}
+                width={solenoidW}
+                height={solenoidH}
+                rx={COIL_RX}
+                turns={N}
+                current={currentState.emf * 1.5}
+                time={time}
+                showIronCore={false}
+              />
               <text
-                x={magnetX + MAGNET_LEN / 2}
-                y={coilY - MAGNET_H / 2 - 8}
-                fontSize={CANVAS_STYLE.font.smallSize}
-                fill={PHYSICS_COLORS.trackHistory}
+                x={COIL_X}
+                y={coilY + COIL_RY + 18}
+                fontSize={CANVAS_STYLE.font.axisSize}
+                fill={PHYSICS_COLORS.labelText}
                 textAnchor="middle"
-                style={{ pointerEvents: 'none' }}
+                fontWeight="bold"
               >
-                ← 拖拽 →
+                N = {N} 匝
               </text>
-            )}
-          </g>
 
-          {/* ── 磁铁强度标注 ── */}
-          <text
-            x={magnetX + MAGNET_LEN / 2}
-            y={coilY + MAGNET_H / 2 + 16}
-            fontSize={CANVAS_STYLE.font.axisSize}
-            fill={PHYSICS_COLORS.magneticField}
-            textAnchor="middle"
-            fontWeight="bold"
-          >
-            B = {B.toFixed(1)} T
-          </text>
+              {/* 4. 灯泡与发光效果（使用通用灯泡组件） */}
+              <LightBulb
+                x={circuitRightX}
+                y={bulbY}
+                power={currentState.emf * currentState.emf * 2.5}
+                time={time}
+                scale={bulbScale}
+                showLabel={true}
+                label="灯泡"
+              />
 
-          {/* ── 悬浮自动控制面板 ── */}
-          <g transform="translate(8, 8)">
-            <rect width="158" height="116" rx="8" fill={PHYSICS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} opacity="0.97" />
-            <text x="79" y="17" fontSize={font(11)} fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
-              自动实验控制
-            </text>
-            {/* 实验动作按钮 */}
-            {(['push', 'pull', 'through'] as const).map((mode, i) => {
-              const labels = { push: '→ 推入', pull: '← 拉出', through: '↔ 穿过' }
-              const active = autoMode === mode
-              return (
-                <g key={mode} onClick={() => startAuto(mode)} style={{ cursor: 'pointer' }}>
-                  <rect
-                    x={4 + i * 50}
-                    y={24}
-                    width={46}
-                    height={20}
-                    rx="4"
-                    fill={active ? PHYSICS_COLORS.magneticField : PHYSICS_COLORS.grid}
+              {/* 5. 电流表仪表盘（使用通用电流计组件） */}
+              <Galvanometer
+                x={circuitLeftX}
+                y={meterTopY}
+                value={currentState.emf * 10 / 45}
+                width={50}
+                height={46}
+              />
+              <text
+                x={circuitLeftX}
+                y={meterY + 32}
+                fontSize={font(9)}
+                fill={PHYSICS_COLORS.labelText}
+                textAnchor="middle"
+                fontWeight="bold"
+              >
+                G 电流计
+              </text>
+
+              {/* 6. 自由电子漂移颗粒 */}
+              {electronParticles.map((p, i) => (
+                <circle
+                  key={`electron-${i}`}
+                  cx={p.x}
+                  cy={p.y}
+                  r="2.8"
+                  fill={PHYSICS_COLORS.negativeCharge}
+                  opacity={0.8}
+                />
+              ))}
+
+              {/* 7. 条形磁铁（使用通用磁铁组件） */}
+              {(() => {
+                const curMagnetX = currentState.x ?? MAGNET_MIN_X
+                return (
+                  <g>
+                    <BarMagnet
+                      x={curMagnetX + MAGNET_LEN / 2}
+                      y={coilY}
+                      width={MAGNET_LEN}
+                      height={MAGNET_H}
+                      pole={-1} // 左N右S
+                    />
+                    {/* 速度指示矢量 */}
+                    {isPlaying && Math.abs(magnetV) > 0 && (
+                      <path
+                        d={`M ${curMagnetX + MAGNET_LEN / 2} ${coilY - 22} L ${curMagnetX + MAGNET_LEN / 2 + (magnetV > 0 ? 30 : -30)} ${coilY - 22}`}
+                        stroke={PHYSICS_COLORS.velocity}
+                        strokeWidth="2.5"
+                        markerEnd="url(#arrFluxGold)"
+                      />
+                    )}
+                  </g>
+                )
+              })()}
+            </g>
+          ) : (
+            // ───────────────── 进阶模式：匀变磁场 ─────────────────
+            <g>
+              {/* 1. 动态磁场 6x5 阵列 */}
+              {fieldDots.map((pt, i) => (
+                <g
+                  key={`fdot-${i}`}
+                  transform={`translate(${pt.x}, ${pt.y})`}
+                  opacity={magneticFieldOpacity}
+                >
+                  {B_is_in ? (
+                    // ⊗ 磁感线垂直纸面向里
+                    <g>
+                      <circle
+                        cx="0"
+                        cy="0"
+                        r="6"
+                        fill="none"
+                        stroke={PHYSICS_COLORS.magneticFieldCross}
+                        strokeWidth="1.2"
+                      />
+                      <line x1="-3.5" y1="-3.5" x2="3.5" y2="3.5" stroke={PHYSICS_COLORS.magneticFieldCross} strokeWidth="1.2" />
+                      <line x1="3.5" y1="-3.5" x2="-3.5" y2="3.5" stroke={PHYSICS_COLORS.magneticFieldCross} strokeWidth="1.2" />
+                    </g>
+                  ) : (
+                    // ⊙ 磁感线垂直纸面向外
+                    <g>
+                      <circle
+                        cx="0"
+                        cy="0"
+                        r="6"
+                        fill="none"
+                        stroke={PHYSICS_COLORS.magneticFieldDot}
+                        strokeWidth="1.2"
+                      />
+                      <circle cx="0" cy="0" r="1.8" fill={PHYSICS_COLORS.magneticFieldDot} />
+                    </g>
+                  )}
+                </g>
+              ))}
+
+              {/* 2. 磁感应强度状态条 */}
+              <text
+                x="16"
+                y="30"
+                fontSize={CANVAS_STYLE.font.axisSize}
+                fill={PHYSICS_COLORS.magneticFieldCross}
+                fontWeight="bold"
+              >
+                B(t) = B₀ + k·t
+              </text>
+              <text
+                x="16"
+                y="46"
+                fontSize={font(10)}
+                fill={PHYSICS_COLORS.labelText}
+              >
+                当前 B = {currentB.toFixed(2)} T ({B_is_in ? '向里 ⊗' : '向外 ⊙'})
+              </text>
+              <text
+                x="16"
+                y="62"
+                fontSize={font(10)}
+                fill={PHYSICS_COLORS.trackHistory}
+              >
+                变化率 k = {dBdt.toFixed(1)} T/s
+              </text>
+
+              {/* 3. 线圈圆环 (处于正中心) */}
+              <ellipse
+                cx={sandboxW / 2}
+                cy={coilY + 10}
+                rx={COIL_RX * 1.5}
+                ry={COIL_RY * 1.5}
+                fill="none"
+                stroke={SCENE_COLORS.coil.copperBase}
+                strokeWidth={CANVAS_STYLE.stroke.objectLine * 1.8}
+              />
+
+              {/* 4. 黄色高亮环 (电流激活发光) */}
+              {glowOpacity > 0.02 && (
+                <ellipse
+                  cx={sandboxW / 2}
+                  cy={coilY + 10}
+                  rx={COIL_RX * 1.5}
+                  ry={COIL_RY * 1.5}
+                  fill="none"
+                  stroke={colors.accent[400]}
+                  strokeWidth={glowWidth}
+                  strokeLinecap="round"
+                  strokeDasharray="14, 18"
+                  // 随时间改变虚线偏移，模拟电流流向
+                  strokeDashoffset={inducedCurrentDir !== 0 ? time * 140 * inducedCurrentDir : 0}
+                  opacity={glowOpacity}
+                  style={{
+                    filter: `drop-shadow(0px 0px 4px ${colors.accent[300]})`,
+                  }}
+                />
+              )}
+
+              {/* 电流方向辅助指示箭头 */}
+              {inducedCurrentDir !== 0 && (
+                <g transform={`translate(${sandboxW / 2}, ${coilY - COIL_RY * 1.5 + 10})`}>
+                  <path
+                    d={inducedCurrentDir > 0 ? "M -15 -10 L 15 -10" : "M 15 -10 L -15 -10"}
+                    stroke={colors.accent[600]}
+                    strokeWidth="2"
+                    markerEnd="url(#arrFluxGold)"
                   />
                   <text
-                    x={27 + i * 50}
-                    y={38}
+                    x="0"
+                    y="-15"
                     fontSize={font(9)}
-                    fill={active ? 'white' : PHYSICS_COLORS.labelText}
+                    fill={colors.accent[700]}
                     textAnchor="middle"
-                    fontWeight={active ? 'bold' : 'normal'}
-                    style={{ pointerEvents: 'none' }}
+                    fontWeight="bold"
                   >
-                    {labels[mode]}
+                    感应电流 {inducedCurrentDir > 0 ? '顺时针' : '逆时针'}
                   </text>
                 </g>
-              )
-            })}
-            {/* 速度选择 */}
-            <text x="6" y="60" fontSize={CANVAS_STYLE.font.smallSize} fill={PHYSICS_COLORS.trackHistory}>速度：</text>
-            {(['slow', 'medium', 'fast'] as const).map((sp, i) => {
-              const labels = { slow: '慢速', medium: '中速', fast: '快速' }
-              const active = autoSpeed === sp
-              return (
-                <g key={sp} onClick={() => setAutoSpeed(sp)} style={{ cursor: 'pointer' }}>
-                  <rect
-                    x={4 + i * 50}
-                    y={64}
-                    width={46}
-                    height={20}
-                    rx="4"
-                    fill={active ? PHYSICS_COLORS.electricCurrent : PHYSICS_COLORS.grid}
-                  />
-                  <text
-                    x={27 + i * 50}
-                    y={78}
-                    fontSize={font(9)}
-                    fill={active ? 'white' : PHYSICS_COLORS.labelText}
-                    textAnchor="middle"
-                    fontWeight={active ? 'bold' : 'normal'}
-                    style={{ pointerEvents: 'none' }}
-                  >
-                    {labels[sp]}
-                  </text>
-                </g>
-              )
-            })}
-            {/* 重置按钮 */}
-            <g
-              onClick={() => {
-                setMagnetX(MAGNET_MIN_X)
-                setAutoMode('none')
-                setIsPlaying(false)
-                historyRef.current = []
-                dragHistoryRef.current = []
-                prevPhiRef.current = calcFlux(MAGNET_MIN_X, B)
-                prevTimeRef.current = 0
-                dragPrevPhiRef.current = calcFlux(MAGNET_MIN_X, B)
-                dragPrevTimeRef.current = 0
-                dragEmfRef.current = 0
-                particleOffsetRef.current = 0
-              }}
-              style={{ cursor: 'pointer' }}
-            >
-              <rect x="4" y="90" width="150" height="20" rx="4" fill={colors.accent[100]} />
-              <text x="79" y="104" fontSize={CANVAS_STYLE.font.smallSize} fill={colors.accent[800]} textAnchor="middle" fontWeight="bold" style={{ pointerEvents: 'none' }}>
-                ↺ 重置磁铁位置
+              )}
+
+              {/* 线圈匝数回显 */}
+              <text
+                x={sandboxW / 2}
+                y={coilY + COIL_RY * 1.5 + 32}
+                fontSize={CANVAS_STYLE.font.axisSize}
+                fill={PHYSICS_COLORS.labelText}
+                textAnchor="middle"
+                fontWeight="bold"
+              >
+                线圈: {N} 匝
               </text>
             </g>
-          </g>
+          )}
 
-          {/* ── 底部物理定律说明 ── */}
-          <g transform={`translate(8, ${H - 38})`}>
-            <rect width={sandboxW - 16} height="32" rx="5" fill={PHYSICS_COLORS.objectFill} opacity="0.85" stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} />
-            <text x="10" y="13" fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
-              法拉第定律：EMF = −N · ΔΦ/Δt
+          {/* 底部定理说明板 (统一) */}
+          <g transform={`translate(12, ${H - 46})`}>
+            <rect
+              width={sandboxW - 24}
+              height="36"
+              rx="6"
+              fill={PHYSICS_COLORS.objectFill}
+              stroke={PHYSICS_COLORS.grid}
+              strokeWidth={CANVAS_STYLE.stroke.grid}
+              opacity="0.9"
+            />
+            <text x="12" y="15" fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
+              法拉第电磁感应定律：E = n · (ΔΦ/Δt)
             </text>
-            <text x="10" y="27" fontSize={CANVAS_STYLE.font.smallSize} fill={PHYSICS_COLORS.axis}>
-              磁通量变化越快(|ΔΦ/Δt|↑) 或 匝数 N 越大 → 感应电动势 |EMF| 越大
+            <text x="12" y="29" fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight}>
+              电动势大小取决于磁通量变化率，而不是磁通量大小的值。
             </text>
           </g>
-
         </g>
 
-        {/* ═══════════════════ 右侧：数据与图像看板 ═══════════════════ */}
-        <g clipPath="url(#dashClip)">
-          {/* ── Φ-t 图像 ── */}
-          <g>
-            {/* 坐标轴 */}
-            <line x1={dashLeft} y1={yPhiMid} x2={dashRight} y2={yPhiMid}
-              stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.axis} />
-            <line x1={dashLeft} y1={yPhiMid - chartHalfH - 4} x2={dashLeft} y2={yPhiMid + chartHalfH + 4}
-              stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.axis} />
-            {/* 虚线上下限 */}
-            <line x1={dashLeft} y1={yPhiMid - chartHalfH} x2={dashRight} y2={yPhiMid - chartHalfH}
-              stroke={PHYSICS_COLORS.axis} strokeWidth="0.5" strokeDasharray="3,3" />
-            <line x1={dashLeft} y1={yPhiMid + chartHalfH} x2={dashRight} y2={yPhiMid + chartHalfH}
-              stroke={PHYSICS_COLORS.axis} strokeWidth="0.5" strokeDasharray="3,3" />
-            {/* 标签 */}
-            <text x={dashLeft} y={yPhiMid - chartHalfH - 8} fontSize={CANVAS_STYLE.font.axisSize}
-              fill={PHYSICS_COLORS.magneticField} fontWeight="bold">Φ − t 图 (磁通量)</text>
-            <text x={dashLeft - 6} y={yPhiMid - chartHalfH + 4} fontSize={font(9)}
-              fill={PHYSICS_COLORS.trackHistory} textAnchor="end">+Φmax</text>
-            <text x={dashLeft - 6} y={yPhiMid + 4} fontSize={font(9)}
-              fill={PHYSICS_COLORS.trackHistory} textAnchor="end">0</text>
-            <text x={dashLeft - 6} y={yPhiMid + chartHalfH + 4} fontSize={font(9)}
-              fill={PHYSICS_COLORS.trackHistory} textAnchor="end">−Φmax</text>
-            {/* 波形 */}
-            {history.length > 1 && (
-              <path
-                d={buildPhiPath(history)}
-                fill="none"
-                stroke={PHYSICS_COLORS.magneticField}
-                strokeWidth={CANVAS_STYLE.stroke.objectLine}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-            )}
-            {/* 当前焦点球 */}
-            {history.length > 0 && (
-              <>
-                <line x1={nowX} y1={yPhiMid - chartHalfH} x2={nowX} y2={yPhiMid + chartHalfH}
-                  stroke={CHART_COLORS.reference} strokeWidth={CANVAS_STYLE.stroke.chartRef} strokeDasharray={DASH.trackHistory.join(' ')} />
-                <circle
-                  cx={nowX}
-                  cy={Math.max(yPhiMid - chartHalfH, Math.min(yPhiMid + chartHalfH, toPhiY(phi)))}
-                  r="4.5"
-                  fill={PHYSICS_COLORS.magneticField}
-                  stroke="white" strokeWidth={CANVAS_STYLE.stroke.objectThin}
-                />
-                <text
-                  x={nowX + 6}
-                  y={Math.max(yPhiMid - chartHalfH + 14, Math.min(yPhiMid + chartHalfH - 2, toPhiY(phi) - 6))}
-                  fontSize={CANVAS_STYLE.font.formulaSize}
-                  fill={PHYSICS_COLORS.magneticField}
-                  fontWeight="bold"
-                >
-                  {phi.toExponential(2)} Wb
-                </text>
-              </>
-            )}
-          </g>
-
-          {/* ── E-t 图像 ── */}
-          <g>
-            {/* 坐标轴 */}
-            <line x1={dashLeft} y1={yEmfMid} x2={dashRight} y2={yEmfMid}
-              stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.axis} />
-            <line x1={dashLeft} y1={yEmfMid - chartHalfH - 4} x2={dashLeft} y2={yEmfMid + chartHalfH + 4}
-              stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.axis} />
-            {/* 虚线上下限 */}
-            <line x1={dashLeft} y1={yEmfMid - chartHalfH} x2={dashRight} y2={yEmfMid - chartHalfH}
-              stroke={PHYSICS_COLORS.axis} strokeWidth="0.5" strokeDasharray="3,3" />
-            <line x1={dashLeft} y1={yEmfMid + chartHalfH} x2={dashRight} y2={yEmfMid + chartHalfH}
-              stroke={PHYSICS_COLORS.axis} strokeWidth="0.5" strokeDasharray="3,3" />
-            {/* 标签 */}
-            <text x={dashLeft} y={yEmfMid - chartHalfH - 8} fontSize={CANVAS_STYLE.font.axisSize}
-              fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold">E − t 图 (感应电动势)</text>
-            <text x={dashLeft - 6} y={yEmfMid - chartHalfH + 4} fontSize={font(9)}
-              fill={PHYSICS_COLORS.trackHistory} textAnchor="end">+Emax</text>
-            <text x={dashLeft - 6} y={yEmfMid + 4} fontSize={font(9)}
-              fill={PHYSICS_COLORS.trackHistory} textAnchor="end">0</text>
-            <text x={dashLeft - 6} y={yEmfMid + chartHalfH + 4} fontSize={font(9)}
-              fill={PHYSICS_COLORS.trackHistory} textAnchor="end">−Emax</text>
-            {/* 时间轴刻度 */}
-            <g fontSize={font(9)} fill={PHYSICS_COLORS.trackHistory}>
-              {[0, 0.25, 0.5, 0.75, 1].map(frac => (
-                <text
-                  key={frac}
-                  x={dashLeft + dashW * frac}
-                  y={yEmfMid + chartHalfH + 14}
-                  textAnchor="middle"
-                >
-                  {(tMin + (tMax - tMin) * frac).toFixed(1)}
-                </text>
-              ))}
-            </g>
-            <text x={dashRight + 4} y={yEmfMid + 4} fontSize={font(9)} fill={PHYSICS_COLORS.trackHistory}>t/s</text>
-            {/* 波形 */}
-            {history.length > 1 && (
-              <path
-                d={buildEmfPath(history)}
-                fill="none"
-                stroke={PHYSICS_COLORS.electricCurrent}
-                strokeWidth={CANVAS_STYLE.stroke.objectLine}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-            )}
-            {/* 当前焦点球 */}
-            {history.length > 0 && (
-              <>
-                <line x1={nowX} y1={yEmfMid - chartHalfH} x2={nowX} y2={yEmfMid + chartHalfH}
-                  stroke={CHART_COLORS.reference} strokeWidth={CANVAS_STYLE.stroke.chartRef} strokeDasharray={DASH.trackHistory.join(' ')} />
-                <circle
-                  cx={nowX}
-                  cy={Math.max(yEmfMid - chartHalfH, Math.min(yEmfMid + chartHalfH, toEmfY(emf)))}
-                  r="4.5"
-                  fill={PHYSICS_COLORS.electricCurrent}
-                  stroke="white" strokeWidth={CANVAS_STYLE.stroke.objectThin}
-                />
-                <text
-                  x={nowX + 6}
-                  y={Math.max(yEmfMid - chartHalfH + 14, Math.min(yEmfMid + chartHalfH - 2, toEmfY(emf) - 6))}
-                  fontSize={CANVAS_STYLE.font.formulaSize}
-                  fill={PHYSICS_COLORS.electricCurrent}
-                  fontWeight="bold"
-                >
-                  {emf.toFixed(3)} V
-                </text>
-              </>
-            )}
-          </g>
-
-          {/* ── 右侧图表区标题 ── */}
+        {/* ═══════════════════ 右侧：图像与数据看板 ═══════════════════ */}
+        <g clipPath="url(#chartClip)">
+          {/* 标题 */}
           <text
             x={dashLeft + dashW / 2}
-            y={chartPadTop - 4}
+            y={chartPadTop - 8}
             fontSize={CANVAS_STYLE.font.labelSize}
             fill={PHYSICS_COLORS.labelText}
             textAnchor="middle"
             fontWeight="bold"
           >
-            实时数据看板
+            实时数据看板 (t = 0 ~ 10s)
           </text>
-        </g>
 
+          {/* ── Φ-t 图 (磁通量) ── */}
+          <g>
+            {/* 网格网格背景 */}
+            {[-1, -0.5, 0, 0.5, 1].map((ratio) => {
+              const y = yPhiMid + ratio * chartHalfH
+              return (
+                <line
+                  key={`phigrid-${ratio}`}
+                  x1={dashLeft}
+                  y1={y}
+                  x2={dashRight}
+                  y2={y}
+                  stroke={CHART_COLORS.gridLine}
+                  strokeWidth="0.5"
+                  strokeDasharray={ratio === 0 ? undefined : '2,3'}
+                />
+              )
+            })}
+            {/* 坐标轴 */}
+            <line
+              x1={dashLeft}
+              y1={yPhiMid}
+              x2={dashRight}
+              y2={yPhiMid}
+              stroke={CHART_COLORS.axisLine}
+              strokeWidth={CANVAS_STYLE.stroke.axis}
+            />
+            <line
+              x1={dashLeft}
+              y1={yPhiMid - chartHalfH - 4}
+              x2={dashLeft}
+              y2={yPhiMid + chartHalfH + 4}
+              stroke={CHART_COLORS.axisLine}
+              strokeWidth={CANVAS_STYLE.stroke.axis}
+            />
+            {/* 坐标轴标签 */}
+            <text
+              x={dashLeft}
+              y={yPhiMid - chartHalfH - 6}
+              fontSize={CANVAS_STYLE.font.axisSize}
+              fill={PHYSICS_COLORS.magneticField}
+              fontWeight="bold"
+            >
+              Φ − t 图 (Wb)
+            </text>
+            {/* 曲线 */}
+            <path
+              d={phiPathD}
+              fill="none"
+              stroke={CHART_COLORS.primary}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+            {/* 焦点球与垂直红指示线 */}
+            <line
+              x1={indicatorX}
+              y1={yPhiMid - chartHalfH}
+              x2={indicatorX}
+              y2={yPhiMid + chartHalfH}
+              stroke={CHART_COLORS.reference}
+              strokeWidth={CANVAS_STYLE.stroke.chartRef}
+              strokeDasharray="4,3"
+            />
+            <circle
+              cx={indicatorX}
+              cy={toPhiY(currentState.phi)}
+              r="4"
+              fill={CHART_COLORS.primary}
+              stroke="white"
+              strokeWidth="1.5"
+            />
+            <text
+              x={indicatorX + 6}
+              y={Math.max(yPhiMid - chartHalfH + 10, Math.min(yPhiMid + chartHalfH - 4, toPhiY(currentState.phi) - 6))}
+              fontSize={font(10)}
+              fill={CHART_COLORS.primary}
+              fontWeight="bold"
+            >
+              Φ={currentState.phi.toFixed(3)} Wb
+            </text>
+          </g>
+
+          {/* ── E-t 图 (感应电动势) ── */}
+          <g>
+            {/* 网格背景 */}
+            {[-1, -0.5, 0, 0.5, 1].map((ratio) => {
+              const y = yEmfMid + ratio * chartHalfH
+              return (
+                <line
+                  key={`emfgrid-${ratio}`}
+                  x1={dashLeft}
+                  y1={y}
+                  x2={dashRight}
+                  y2={y}
+                  stroke={CHART_COLORS.gridLine}
+                  strokeWidth="0.5"
+                  strokeDasharray={ratio === 0 ? undefined : '2,3'}
+                />
+              )
+            })}
+            {/* 坐标轴 */}
+            <line
+              x1={dashLeft}
+              y1={yEmfMid}
+              x2={dashRight}
+              y2={yEmfMid}
+              stroke={CHART_COLORS.axisLine}
+              strokeWidth={CANVAS_STYLE.stroke.axis}
+            />
+            <line
+              x1={dashLeft}
+              y1={yEmfMid - chartHalfH - 4}
+              x2={dashLeft}
+              y2={yEmfMid + chartHalfH + 4}
+              stroke={CHART_COLORS.axisLine}
+              strokeWidth={CANVAS_STYLE.stroke.axis}
+            />
+            {/* 坐标轴标签 */}
+            <text
+              x={dashLeft}
+              y={yEmfMid - chartHalfH - 6}
+              fontSize={CANVAS_STYLE.font.axisSize}
+              fill={PHYSICS_COLORS.electricCurrent}
+              fontWeight="bold"
+            >
+              E − t 图 (V)
+            </text>
+            <text
+              x={dashRight + 2}
+              y={yEmfMid + 4}
+              fontSize={font(9)}
+              fill={CHART_COLORS.tickLabel}
+            >
+              t/s
+            </text>
+            {/* 曲线 */}
+            <path
+              d={emfPathD}
+              fill="none"
+              stroke={CHART_COLORS.compareC}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+            {/* 焦点球与垂直指示线 */}
+            <line
+              x1={indicatorX}
+              y1={yEmfMid - chartHalfH}
+              x2={indicatorX}
+              y2={yEmfMid + chartHalfH}
+              stroke={CHART_COLORS.reference}
+              strokeWidth={CANVAS_STYLE.stroke.chartRef}
+              strokeDasharray="4,3"
+            />
+            <circle
+              cx={indicatorX}
+              cy={toEmfY(currentState.emf)}
+              r="4"
+              fill={CHART_COLORS.compareC}
+              stroke="white"
+              strokeWidth="1.5"
+            />
+            <text
+              x={indicatorX + 6}
+              y={Math.max(yEmfMid - chartHalfH + 10, Math.min(yEmfMid + chartHalfH - 4, toEmfY(currentState.emf) - 6))}
+              fontSize={font(10)}
+              fill={CHART_COLORS.compareC}
+              fontWeight="bold"
+            >
+              E={currentState.emf.toFixed(2)} V
+            </text>
+
+            {/* 时间轴刻度数字 */}
+            <g fontSize={font(9)} fill={CHART_COLORS.tickLabel}>
+              {[0, 2.5, 5.0, 7.5, 10.0].map((tVal) => (
+                <text
+                  key={`tick-${tVal}`}
+                  x={toChartX(tVal)}
+                  y={yEmfMid + chartHalfH + 12}
+                  textAnchor="middle"
+                >
+                  {tVal.toFixed(1)}
+                </text>
+              ))}
+            </g>
+          </g>
+        </g>
       </svg>
     </div>
   )

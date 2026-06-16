@@ -2,15 +2,34 @@ import React from 'react'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
+/**
+ * 蹄形磁铁组件 Props
+ */
 interface MagnetProps {
+  /** 渲染模式：'horizontal' = 平面水平视图，'inclined' = 3D 倾斜视图，'side-view' = 侧视切面视图 */
   type: 'horizontal' | 'inclined' | 'side-view'
-  B?: number // 磁感应强度，根据正负翻转 N/S 极
-  x?: number // 磁铁的 x 坐标（仅 horizontal 中使用）
-  y?: number // 磁铁的 y 坐标（仅 horizontal 中使用）
-  width?: number // 磁铁宽度，默认 190（horizontal 模式）
-  height?: number // 磁铁高度，默认 144（horizontal 模式）
+  /** 磁感应强度 B (T)，正负决定 N/S 极朝向 */
+  B?: number
+  /** 磁铁 x 坐标 (px)，仅 horizontal 模式使用 */
+  x?: number
+  /** 磁铁 y 坐标 (px)，仅 horizontal 模式使用 */
+  y?: number
+  /** 磁铁宽度 (px)，默认 190（horizontal 模式） */
+  width?: number
+  /** 磁铁高度 (px)，默认 144（horizontal 模式） */
+  height?: number
 }
 
+/**
+ * 蹄形磁铁组件
+ *
+ * 绘制蹄形（U 形）磁铁，支持三种视角模式：
+ * - horizontal：平面水平视图，开口朝右
+ * - inclined：3D 倾斜视图，跨在导轨上方
+ * - side-view：侧视切面视图，显示上下两磁极
+ *
+ * 根据 B 的正负自动翻转 N/S 极位置（红=N，蓝=S）
+ */
 export const Magnet: React.FC<MagnetProps> = ({
   type,
   B = 1,

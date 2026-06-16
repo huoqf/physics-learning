@@ -1520,3 +1520,117 @@ export function calculateCoilInduction(
 
   return { phi, dPhi, theta }
 }
+
+/**
+ * 计算匀变磁场下的感应电动势。
+ * @param turns 线圈匝数 n，单位：匝
+ * @param area 线圈面积 S，单位：m^2
+ * @param dBdt 磁感应强度变化率，单位：T/s
+ * @returns 感应电动势 E，单位：V
+ */
+export function computeFaradayEmf(turns: number, area: number, dBdt: number): number {
+  return turns * area * dBdt
+}
+
+/**
+ * 计算条形磁铁在线圈轴线产生的近似轴线磁通量。
+ * @param magnetLeftPx 磁铁左端 x 坐标（px）
+ * @param B            磁铁磁感应强度（T）
+ * @returns Φ（Wb，有符号）
+ */
+export function computeFaradayMagnetFlux(magnetLeftPx: number, B: number): number {
+  const COIL_X = 280          // 线圈中心 px
+  const MAGNET_LEN = 100      // 磁铁长度 px
+  const SCALE_PX_PER_M = 500  // 1 m = 500 px
+  const COIL_RADIUS_M = 65 / SCALE_PX_PER_M // 线圈等效半径（米）
+  const PHI0 = 0.45           // 磁通量归一化系数
+
+  const magnetCenterPx = magnetLeftPx + MAGNET_LEN / 2
+  const dist = (COIL_X - magnetCenterPx) / SCALE_PX_PER_M
+  const R = COIL_RADIUS_M
+  const halfLen = MAGNET_LEN / 2 / SCALE_PX_PER_M
+
+  const uN = dist + halfLen
+  const uS = dist - halfLen
+  const termN = uN / Math.sqrt(uN * uN + R * R)
+  const termS = uS / Math.sqrt(uS * uS + R * R)
+  return PHI0 * B * (termN - termS)
+}
+
+export interface FaradayChartPoint {
+  t: number
+  phi: number
+  emf: number
+}
+
+/**
+ * 生成法拉第电磁感应定律图像点（匀变磁场模式）。
+ * @param turns 线圈匝数 n，单位：匝
+ * @param area 线圈面积 S，单位：m^2
+ * @param dBdt 磁感应强度变化率，单位：T/s
+ * @param B0 初始磁场强度，单位：T
+ * @param duration 总时长，单位：s
+ * @param steps 采样步数
+ */
+export function generateUniformFaradayPoints(
+  turns: number,
+  area: number,
+  dBdt: number,
+  B0: number = 0.5,
+  duration: number = 10,
+  steps: number = 100
+): FaradayChartPoint[] {
+  const points: FaradayChartPoint[] = []
+  for (let i = 0; i <= steps; i++) {
+    const t = (i / steps) * duration
+    const B = B0 + dBdt * t
+    const phi = B * area
+    const emf = -turns * dBdt * area // E = -n * dPhi/dt
+    points.push({ t, phi, emf })
+  }
+  return points
+}
+
+/**
+ * 生成磁铁变速运动模式下的法拉第定律图表点。
+ * @param turns 匝数 n
+ * @param B 磁铁强度
+ * @param velocity 磁铁运动速度 px/s (支持正负号，正值向右插入，负值向左拔出)
+ * @param duration 采样时长 (s)
+ * @param steps 采样点数
+ */
+export function generateMagnetFaradayPoints(
+  turns: number,
+  B: number,
+  velocity: number,
+  duration: number = 10,
+  steps: number = 100
+): FaradayChartPoint[] {
+  const MAGNET_MIN_X = 60
+  const COIL_X = 280
+  const COIL_RX = 42
+  const MAGNET_MAX_X = COIL_X + COIL_RX - 10 // 完全穿过线圈右侧 px
+
+  const points: FaradayChartPoint[] = []
+  const dt = 0.001
+
+  for (let i = 0; i <= steps; i++) {
+    const t = (i / steps) * duration
+    
+    // 磁铁初始在左侧 MAGNET_MIN_X
+    let currentX = MAGNET_MIN_X + velocity * t
+    currentX = Math.max(MAGNET_MIN_X, Math.min(MAGNET_MAX_X, currentX))
+    const phi = computeFaradayMagnetFlux(currentX, B)
+
+    // 计算瞬时 dPhi/dt
+    let nextX = MAGNET_MIN_X + velocity * (t + dt)
+    nextX = Math.max(MAGNET_MIN_X, Math.min(MAGNET_MAX_X, nextX))
+    const nextPhi = computeFaradayMagnetFlux(nextX, B)
+    const dPhi_dt = (nextPhi - phi) / dt
+    const emf = -turns * dPhi_dt
+
+    points.push({ t, phi, emf })
+  }
+  return points
+}
+

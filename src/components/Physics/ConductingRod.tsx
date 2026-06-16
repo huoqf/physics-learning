@@ -3,18 +3,40 @@ import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { useAnimationStore } from '@/stores'
 
+/**
+ * 导电棒组件 Props
+ */
 interface ConductingRodProps {
+  /** 渲染模式：'horizontal' = 水平平面，'inclined' = 3D 倾斜，'side-view' = 侧视截面 */
   type: 'horizontal' | 'inclined' | 'side-view'
-  x?: number // 水平模式下的 x 坐标，或 3D 模式下的相对滑动比例 (0-1)
-  theta?: number // 倾角，度
-  currentDir?: 'in' | 'out' | 'none' // 电流方向
-  spacing?: number // 水平导轨间距
-  width?: number // 画布宽度（inclined 模式使用）
-  height?: number // 画布高度
-  L?: number // 导体有效物理长度
-  /** 侧视截面半径，默认 16 */
+  /** 水平模式下 x 坐标 (px)；3D 模式下滑动比例 (0-1) */
+  x?: number
+  /** 倾角 (°)，inclined 模式使用 */
+  theta?: number
+  /** 电流方向：'in' = 流入（⊗），'out' = 流出（⊙），'none' = 无电流 */
+  currentDir?: 'in' | 'out' | 'none'
+  /** 水平导轨间距 (px) */
+  spacing?: number
+  /** 画布宽度 (px)，inclined 模式使用 */
+  width?: number
+  /** 画布高度 (px) */
+  height?: number
+  /** 导体有效物理长度 L */
+  L?: number
+  /** 侧视截面半径 (px)，默认 16 */
   rodRadius?: number
 }
+
+/**
+ * 导电棒组件
+ *
+ * 绘制在导轨上滑动的导体棒，支持三种视角模式：
+ * - horizontal：水平平面模式，铜棒竖直放置于两导轨之间，含流光动画
+ * - inclined：3D 倾斜模式，铜棒跨在倾斜导轨上，4 层描边实现圆柱质感
+ * - side-view：侧视截面模式，圆形截面 + ⊗/⊙ 电流方向符号
+ *
+ * 电流流光动画：根据 currentDir 方向，沿棒体绘制流动虚线
+ */
 
 /**
  * 3D 倾斜导轨的基准布局（与 Rails 组件共享同一坐标系）

@@ -1,18 +1,39 @@
 import React from 'react'
 import { SCENE_COLORS, PHYSICS_COLORS } from '@/theme/physics'
 
+/**
+ * 原线圈组件 Props（互感实验中原边线圈）
+ */
 export interface PrimaryCoilProps {
-  x?: number // 中心 x
-  y?: number // 中心 y
-  width?: number // 总宽度
-  height?: number // 总高度
-  rx?: number // 椭圆 x 半径，默认按 height 比例计算
-  turns?: number // 匝数
-  current?: number // 原线圈中的电流 (决定光点流速和方向，一般为 E/R，总是正的或者跟随电源极性)
-  time?: number // 时间，用于粒子运动
+  /** 中心 x 坐标 (px) */
+  x?: number
+  /** 中心 y 坐标 (px) */
+  y?: number
+  /** 总宽度 (px)，默认 120 */
+  width?: number
+  /** 总高度 (px)，默认 66 */
+  height?: number
+  /** 椭圆 x 半径（管径方向），默认按 height 的 21% 计算 */
+  rx?: number
+  /** 线圈匝数，默认 4 */
+  turns?: number
+  /** 原线圈电流（决定流光点流速和方向） */
+  current?: number
+  /** 动画时间，用于流光粒子移动 */
+  time?: number
+  /** 自定义 CSS 类名 */
   className?: string
 }
 
+/**
+ * 原线圈组件（互感实验原边）
+ *
+ * 绘制带铁芯的原线圈，用于互感/变压器等场景：
+ * - 铁芯：拟物金属渐变
+ * - 漆包绿线绕线，前后两层绘制 + 高光
+ * - 左右引出绿色皮导线
+ * - 电流流光粒子（红色光点），表示回路中有稳恒电流
+ */
 export const PrimaryCoil: React.FC<PrimaryCoilProps> = ({
   x = 0,
   y = 0,

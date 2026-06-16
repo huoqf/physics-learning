@@ -1,14 +1,31 @@
 import React from 'react'
 import { SCENE_COLORS } from '@/theme/physics'
 
+/**
+ * 条形磁铁组件 Props
+ */
 export interface BarMagnetProps extends React.SVGAttributes<SVGGElement> {
-  x?: number // 中心 x 坐标
-  y?: number // 中心 y 坐标
-  width?: number // 总宽度
-  height?: number // 总高度
-  pole?: 1 | -1 // 1: 左S右N; -1: 左N右S
+  /** 磁铁中心 x 坐标 (px) */
+  x?: number
+  /** 磁铁中心 y 坐标 (px) */
+  y?: number
+  /** 磁铁总宽度 (px)，默认 120 */
+  width?: number
+  /** 磁铁总高度 (px)，默认 36 */
+  height?: number
+  /** 极性方向：1 = 左S右N（默认），-1 = 左N右S */
+  pole?: 1 | -1
 }
 
+/**
+ * 条形磁铁组件
+ *
+ * 绘制具有 N/S 两极的条形磁铁，支持极性切换。
+ * - 左半部分与右半部分分别渲染不同颜色（红=N极，蓝=S极）
+ * - 包含 3D 阴影底衬、受光面高光效果
+ * - 中间分界缝隙线增强立体感
+ * - 极性文字标注（N/S）
+ */
 export const BarMagnet: React.FC<BarMagnetProps> = ({
   x = 0,
   y = 0,

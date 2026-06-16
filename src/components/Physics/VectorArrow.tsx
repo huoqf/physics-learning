@@ -5,21 +5,41 @@ import type { VectorType } from '../../theme/physics/vectorStyle';
 import { VECTOR_COLORS } from '../../theme/physics/vectorStyle';
 import { calculateVectorPixelLength } from '../../utils/vectorLength';
 
+/**
+ * 矢量箭头组件 Props
+ */
 interface VectorArrowProps {
-  origin: Vector2;
-  vector: Vector2;
-  type: VectorType;
-  sceneScale: SceneScale;
-  color?: string;
-  strokeWidth?: number;
-  pixelLength?: number;
-  refMagnitude?: number;
+  /** 矢量起点（物理坐标） */
+  origin: Vector2
+  /** 矢量值（物理坐标，y↑正方向） */
+  vector: Vector2
+  /** 矢量类型（决定默认颜色和参考量级） */
+  type: VectorType
+  /** 场景缩放参数（含 originX/Y、scaleX/Y、refMagnitudes） */
+  sceneScale: SceneScale
+  /** 自定义颜色（覆盖 VECTOR_COLORS[type]） */
+  color?: string
+  /** 自定义线宽 */
+  strokeWidth?: number
+  /** 自定义像素长度（覆盖自动计算） */
+  pixelLength?: number
+  /** 自定义参考量级（覆盖 sceneScale.refMagnitudes[type]） */
+  refMagnitude?: number
 }
 
 function perpendicular(v: Vector2): Vector2 {
   return { x: -v.y, y: v.x };
 }
 
+/**
+ * 矢量箭头渲染组件
+ *
+ * 将物理矢量（物理坐标 y↑正方向）渲染为 SVG 箭头：
+ * - 通过 SceneScale 将物理坐标转换为像素坐标
+ * - 箭头长度通过 calculateVectorPixelLength 基于 refMagnitudes 归一化
+ * - 箭头头部为三角形，线宽按箭头长度比例自适应
+ * - 零矢量返回 null，不渲染
+ */
 export function VectorArrow({
   origin,
   vector,

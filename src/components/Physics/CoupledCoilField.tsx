@@ -1,18 +1,41 @@
 import React from 'react';
 
+/**
+ * 耦合线圈磁感线组件 Props
+ */
 interface CoupledCoilFieldProps {
-  primaryX: number;
-  primaryW: number;
-  primaryH: number;
-  secondaryX: number;
-  secondaryW: number;
-  secondaryH: number;
-  y: number;
-  current: number;
-  canvasHeight: number;
-  lineColor?: string;
+  /** 原线圈中心 x (px) */
+  primaryX: number
+  /** 原线圈宽度 (px) */
+  primaryW: number
+  /** 原线圈高度 (px) */
+  primaryH: number
+  /** 副线圈中心 x (px) */
+  secondaryX: number
+  /** 副线圈宽度 (px) */
+  secondaryW: number
+  /** 副线圈高度 (px) */
+  secondaryH: number
+  /** 线圈垂直中心 y (px) */
+  y: number
+  /** 感应电流大小（决定磁感线透明度和箭头可见性） */
+  current: number
+  /** 画布总高度 (px)，用于边界安全裁剪 */
+  canvasHeight: number
+  /** 磁感线颜色，默认 '#10B981' */
+  lineColor?: string
 }
 
+/**
+ * 耦合线圈磁感线组件
+ *
+ * 为互感实验中的原/副线圈绘制耦合磁感线分布：
+ * - 外部回道线（虚线）：从副线圈 N 面出发绕回原线圈 S 面，分三圈
+ * - 内部穿透线（实线）：从原线圈 S 面穿透到副线圈 N 面
+ * - 5 点方向箭头：标注原线圈内、中间间隙、副线圈内、上下外圈的场向
+ * - 磁感线透明度随电流大小动态变化
+ * - 线宽、箭头大小均基于线圈尺寸自适应缩放
+ */
 export const CoupledCoilField: React.FC<CoupledCoilFieldProps> = ({
   primaryX,
   primaryW,
@@ -76,24 +99,72 @@ export const CoupledCoilField: React.FC<CoupledCoilFieldProps> = ({
     internalPaths.push(`M ${primaryLeft} ${y + yVal} L ${secondaryRight} ${y + yVal}`);
   });
 
+  // 贝塞尔曲线精确计算：在 t=0.5 处计算曲线点和切线方向
+  const bezierAt = (t: number, p0: number, p1: number, p2: number, p3: number) => {
+    const mt = 1 - t;
+    return mt * mt * mt * p0 + 3 * mt * mt * t * p1 + 3 * mt * t * t * p2 + t * t * t * p3;
+  };
+
+  const bezierTangent = (t: number, p0: number, p1: number, p2: number, p3: number) => {
+    const mt = 1 - t;
+    return 3 * mt * mt * (p1 - p0) + 6 * mt * t * (p2 - p1) + 3 * t * t * (p3 - p2);
+  };
+
+  // 使用中间圈（middle）计算上下回路箭头位置
+  const midConfig = configs[1]; // middle: yRat=0.50, dxRat=0.55, dyRat=0.45
+  const midYVal = midConfig.yRat * halfH;
+  const midDx = midConfig.dxRat * totalSpan;
+  const midDy = clampY(midConfig.dyRat * totalSpan * 0.35);
+
   // 5 点方向箭头
   const midGapX = (primaryX + secondaryX) / 2;
-  const midY = 0.45 * halfH + clampY(0.55 * totalSpan);
+
+  // 上方回路箭头：在 t=0.5 处计算精确位置和切线角度
+  const topP0x = secondaryRight;
+  const topP0y = y - midYVal;
+  const topP1x = secondaryX + secondaryW * 0.3 + midDx;
+  const topP1y = y - halfH - midDy;
+  const topP2x = primaryX - primaryW * 0.3 - midDx;
+  const topP2y = y - halfH - midDy;
+  const topP3x = primaryLeft;
+  const topP3y = y - midYVal;
+
+  const topArrowX = bezierAt(0.5, topP0x, topP1x, topP2x, topP3x);
+  const topArrowY = bezierAt(0.5, topP0y, topP1y, topP2y, topP3y);
+  const topDx = bezierTangent(0.5, topP0x, topP1x, topP2x, topP3x);
+  const topDy = bezierTangent(0.5, topP0y, topP1y, topP2y, topP3y);
+  const topAngle = Math.atan2(topDy, topDx) * 180 / Math.PI;
+
+  // 下方回路箭头：在 t=0.5 处计算精确位置和切线角度
+  const botP0x = secondaryRight;
+  const botP0y = y + midYVal;
+  const botP1x = secondaryX + secondaryW * 0.3 + midDx;
+  const botP1y = y + halfH + midDy;
+  const botP2x = primaryX - primaryW * 0.3 - midDx;
+  const botP2y = y + halfH + midDy;
+  const botP3x = primaryLeft;
+  const botP3y = y + midYVal;
+
+  const botArrowX = bezierAt(0.5, botP0x, botP1x, botP2x, botP3x);
+  const botArrowY = bezierAt(0.5, botP0y, botP1y, botP2y, botP3y);
+  const botDx = bezierTangent(0.5, botP0x, botP1x, botP2x, botP3x);
+  const botDy = bezierTangent(0.5, botP0y, botP1y, botP2y, botP3y);
+  const botAngle = Math.atan2(botDy, botDx) * 180 / Math.PI;
 
   const arrows = [
-    { x: primaryX, y: y, dir: 1 },
-    { x: midGapX, y: y, dir: 1 },
-    { x: secondaryX, y: y, dir: 1 },
-    { x: midGapX, y: y - midY, dir: -1 },
-    { x: midGapX, y: y + midY, dir: -1 },
+    { x: primaryX, y: y, angle: 0 },      // 原线圈内部，向右
+    { x: midGapX, y: y, angle: 0 },       // 中间间隙，向右
+    { x: secondaryX, y: y, angle: 0 },    // 副线圈内部，向右
+    { x: topArrowX, y: topArrowY, angle: topAngle },  // 上方回路，贴线
+    { x: botArrowX, y: botArrowY, angle: botAngle },  // 下方回路，贴线
   ];
 
-  const renderArrow = (cx: number, cy: number, dir: number) => (
+  const renderArrow = (cx: number, cy: number, angle: number) => (
     <polygon
       points={`${-arrowSize},${-arrowSize * 0.7} ${arrowSize},0 ${-arrowSize},${arrowSize * 0.7}`}
       fill={lineColor}
       opacity={0.85}
-      transform={`translate(${cx}, ${cy}) rotate(${dir === 1 ? 0 : 180})`}
+      transform={`translate(${cx}, ${cy}) rotate(${angle})`}
     />
   );
 
@@ -107,7 +178,7 @@ export const CoupledCoilField: React.FC<CoupledCoilFieldProps> = ({
       ))}
       {arrows.map((arrow, idx) => (
         <g key={`arrow-${idx}`} opacity={opacity}>
-          {renderArrow(arrow.x, arrow.y, arrow.dir)}
+          {renderArrow(arrow.x, arrow.y, arrow.angle)}
         </g>
       ))}
     </g>

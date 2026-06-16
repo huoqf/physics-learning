@@ -1,15 +1,33 @@
 import React from 'react'
 import { SCENE_COLORS } from '@/theme/physics'
 
+/**
+ * 灵敏电流计组件 Props
+ */
 export interface GalvanometerProps {
-  x?: number // 中心 x
-  y?: number // 中心 y
-  value?: number // 指针偏转状态，在 [-1, 1] 之间，0 为居中，正向右偏，负向左偏
-  width?: number // 表盘宽度，默认 120
-  height?: number // 表盘高度，默认 110
+  /** 中心 x 坐标 (px) */
+  x?: number
+  /** 中心 y 坐标 (px) */
+  y?: number
+  /** 指针偏转状态，取值范围 [-1, 1]：0 居中，正值向右偏，负值向左偏 */
+  value?: number
+  /** 表盘宽度 (px)，默认 120 */
+  width?: number
+  /** 表盘高度 (px)，默认 110 */
+  height?: number
+  /** 自定义 CSS 类名 */
   className?: string
 }
 
+/**
+ * 灵敏电流计组件
+ *
+ * 用于电磁感应等场景，显示感应电流的方向与大小。
+ * - 指针偏转角度与 value 成正比（最大 ±45°）
+ * - 包含弧形刻度盘、正负标识、"G" 标识
+ * - 红黑接线柱接口
+ * - 支持自定义尺寸缩放
+ */
 export const Galvanometer: React.FC<GalvanometerProps> = ({
   x = 0,
   y = 0,

@@ -24,6 +24,10 @@ import {
   normalizeAngleDeg,
   calculateMagnetInduction,
   calculateCoilInduction,
+  computeFaradayEmf,
+  computeFaradayMagnetFlux,
+  generateUniformFaradayPoints,
+  generateMagnetFaradayPoints,
 } from '@/physics'
 
 const k = 9e9
@@ -441,6 +445,41 @@ describe('electromagnetism', () => {
       const res = calculateCoilInduction(50, 0, 10, 10)
       expect(res.dPhi).toBe(0)
       expect(res.theta).toBe(0)
+    })
+  })
+
+  // ===== 法拉第定律重构纯函数测试 =====
+  describe('法拉第定律重构纯函数', () => {
+    it('computeFaradayEmf: E = n * S * dB/dt 计算准确', () => {
+      const E = computeFaradayEmf(50, 0.02, 0.5)
+      expect(E).toBeCloseTo(50 * 0.02 * 0.5, 10) // 0.5V
+    })
+
+    it('computeFaradayMagnetFlux: 磁铁在不同位置的磁通量计算正确', () => {
+      const phi1 = computeFaradayMagnetFlux(60, 1.2)
+      const phi2 = computeFaradayMagnetFlux(200, 1.2) // 磁铁更接近线圈
+      expect(phi2).toBeGreaterThan(phi1)
+    })
+
+    it('generateUniformFaradayPoints: 生成正确数目的数据点，且数据线性变化', () => {
+      const pts = generateUniformFaradayPoints(50, 0.02, 0.5, -0.5 * 5, 10, 100)
+      expect(pts.length).toBe(101)
+      expect(pts[0].t).toBe(0)
+      expect(pts[100].t).toBe(10)
+      
+      // t = 5 时，B = B0 + k * t = -2.5 + 0.5 * 5 = 0
+      // 磁通量 phi 应该等于 0
+      expect(pts[50].phi).toBeCloseTo(0, 10)
+      // emf 应始终为常数：-50 * 0.5 * 0.02 = -0.5
+      expect(pts[0].emf).toBeCloseTo(-0.5, 10)
+      expect(pts[100].emf).toBeCloseTo(-0.5, 10)
+    })
+
+    it('generateMagnetFaradayPoints: 基础模式下磁铁移动的图表生成点数目正确', () => {
+      const pts = generateMagnetFaradayPoints(50, 1.2, 140, 10, 100)
+      expect(pts.length).toBe(101)
+      expect(pts[0].t).toBe(0)
+      expect(pts[100].t).toBe(10)
     })
   })
 })

@@ -17,6 +17,7 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 06-16 | electromagnetism | feature | 法拉第电磁感应定律三屏联动与双模式重构，支持 O(1) 解析式实时图表绘制 |
 | 06-15 | theme | refactor | 删除 tailwindColors 死代码；neutral[0]→neutral.white（17文件64处）；CANVAS_COLORS 8个 neutral 映射改为引用 colors.* |
 | 06-15 | theme | fix | 4 个 Physics 通用组件 10 处硬编码颜色违规修复（Block/SportsCar/LightBulb/DialMeter） |
 | 06-15 | kinematics | fix | AccelerationCenterExtra：animate-bounce→pulse、Card 组件、selector 订阅、颜色 token |

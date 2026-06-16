@@ -1,5 +1,10 @@
 import { MARKER_TIERS, type MarkerTier } from '../../theme/physics/vectorStyle';
 
+/**
+ * 生成箭头标记的唯一 ID。
+ * @param tier - 标记尺寸等级（small/medium/large）
+ * @param color - 标记颜色（十六进制）
+ */
 export function markerId(tier: MarkerTier, color: string): string {
   return `arrow-${tier}-${color.replace('#', '')}`;
 }
@@ -8,6 +13,14 @@ function markerPath(w: number, h: number): string {
   return `M0,0 L${w},${h / 2} L0,${h} Z`;
 }
 
+/**
+ * SVG 箭头标记定义组件
+ *
+ * 在 SVG <defs> 中批量生成不同尺寸等级（small/medium/large）× 多种颜色的箭头标记。
+ * 配合 VectorArrow 组件使用，通过 marker-end/marker-start 引用。
+ * - markerUnits="userSpaceOnUse"：标记尺寸不随 stroke-width 缩放
+ * - orient="auto"：箭头自动跟随路径方向
+ */
 export function VectorDefs({ colors }: { colors: string[] }) {
   return (
     <defs>

@@ -6,18 +6,35 @@ import {
 } from '@/theme/physics'
 
 interface VTChartDataPoint {
+  /** 时间坐标 (s) */
   x: number
+  /** 速度坐标 (m/s) */
   y: number
 }
 
+/**
+ * v-t 速度-时间图像组件 Props
+ */
 interface VTChartProps {
+  /** 物理数据：包含 v-t 曲线数据点数组 */
   physics: { vtChartData: VTChartDataPoint[] }
+  /** 物理参数：初速度 v0 与加速度 a（预留，当前未使用） */
   params: {
     v0: number
     a: number
   }
+  /** 当前动画时间 (s)，用于控制曲线绘制进度 */
   time: number
 }
+
+/**
+ * 速度-时间图像 (v-t 图) 组件
+ *
+ * 用于运动学场景，实时绘制速度随时间变化的曲线。
+ * - 自动计算 Y 轴范围（支持负速度）
+ * - 根据动画时间轴动态绘制曲线路径
+ * - 包含坐标轴、刻度、标签等完整图表元素
+ */
 
 const VT_X_MAX = 8
 const chartAreaW = 300 

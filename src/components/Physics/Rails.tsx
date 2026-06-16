@@ -2,17 +2,40 @@ import React, { useId } from 'react'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
+/**
+ * 导轨组件 Props
+ */
 interface RailsProps {
+  /** 渲染模式：'horizontal' = 水平平面，'inclined' = 3D 倾斜，'side-view' = 侧视斜劈 */
   type: 'horizontal' | 'inclined' | 'side-view'
-  theta?: number // 倾角，度（进阶模式使用）
-  length?: number // 导轨长度
-  spacing?: number // 导轨间距
-  width?: number // 画布宽
-  height?: number // 画布高
+  /** 倾角 (°)，side-view 模式使用，默认 30 */
+  theta?: number
+  /** 导轨长度 (px)，默认 400 */
+  length?: number
+  /** 导轨间距 (px)，默认 100 */
+  spacing?: number
+  /** 画布宽度 (px)，默认 500 */
+  width?: number
+  /** 画布高度 (px)，默认 300 */
+  height?: number
+  /** 中心 x 坐标 (px) */
   cx?: number
+  /** 中心 y 坐标 (px) */
   cy?: number
-  L?: number // 物理有效长度 L
+  /** 导体有效物理长度 L，默认 4.0 */
+  L?: number
 }
+
+/**
+ * 导轨组件
+ *
+ * 绘制导体棒滑动的金属导轨，支持三种视角模式：
+ * - horizontal：水平平面模式，双平行导轨 + 3D 圆柱渐变 + 端点圆帽
+ * - inclined：3D 倾斜模式，跨在支撑架上的倾斜双轨，含地面线与支撑架
+ * - side-view：侧视斜劈模式，三角形斜劈 + 倾角 θ 弧线标注
+ *
+ * 导轨采用 3 层描边叠加实现圆柱金属质感
+ */
 
 /**
  * 3D 倾斜导轨的基准布局（默认 500×300 画布）
