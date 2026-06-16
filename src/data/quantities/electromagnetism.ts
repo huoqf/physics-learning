@@ -9,6 +9,7 @@ import {
   calculateClosedCircuit,
   calculateLenzsLaw,
   calculateCuttingEMF,
+  computeRodStateAtTime,
   calculateACRMS,
   calculateTransformerWithLoad,
   calculatePowerTransmission,
@@ -1148,22 +1149,78 @@ export function buildElectromagnetismQuantities(
       }
     }
     case 'anim-cutting-emf': {
-      // 导体切割磁感线：EMF=BLv·sinθ，I=EMF/(R+r)，F_安=BIL·sinθ
-      const B = params.B ?? 1
-      const L = params.L ?? 0.5
-      const v = params.v ?? 2
-      const R = params.R ?? 2
-      const theta = params.theta ?? 90
-      const r = params.r ?? 0
+      // 导体切割磁感线：仅展示因变量，彻底禁绝自变量 B, L, R, m, F_ext
+      const B = params.B ?? 1.5
+      const L = params.L ?? 1.0
+      const R = params.R ?? 2.0
+      const m = params.m ?? 0.2
+      const F_ext = params.F_ext ?? 2.0
+      const mode = params.mode ?? 0 // 0=基础: 恒速, 1=进阶: 自由释放
+      const showForceAnalysis = params.showForceAnalysis ?? 1
       const B_out = params.B_out ?? 0
-      const { EMF, I, F_ampere } = calculateCuttingEMF(B, L, v, R, theta, r, B_out)
+
+      let v = 0
+      let a = 0
+      let F_amp = 0
+      let P_heat = 0
+      let EMF = 0
+      let I = 0
+
+      if (mode === 0) {
+        // 基础模式：恒速切割，速度 v 是参数，加速度 a 为 0
+        v = params.v ?? 2.0
+        a = 0
+        const res = calculateCuttingEMF(B, L, v, R, 90, 0, B_out)
+        EMF = res.EMF
+        I = res.I
+        F_amp = res.F_ampere
+        P_heat = F_amp * Math.abs(v)
+      } else {
+        // 进阶模式：自由释放，采用解析解计算
+        const res = computeRodStateAtTime(time, B, L, R, m, F_ext)
+        v = res.v
+        a = res.a
+        F_amp = res.F_amp
+        P_heat = res.P_heat
+        EMF = B * L * v
+        I = R > 0 ? EMF / R : 0
+      }
+
+      const quantities = [
+        ...base,
+        { label: '感应电动势 E', value: Math.abs(EMF).toFixed(3), unit: 'V', color: '#10B981' },
+        { label: '感应电流 I', value: Math.abs(I).toFixed(3), unit: 'A', color: '#DC2626' },
+        { label: '瞬时安培力 F_安', symbol: 'F_{安}', value: F_amp.toFixed(3), unit: 'N', color: '#EA580C', highlight: 'extreme' as const },
+        { label: '回路发热功率 P_热', symbol: 'P_{热}', value: P_heat.toFixed(3), unit: 'W', color: '#EF4444' },
+      ]
+
+      if (mode === 1 || showForceAnalysis === 1) {
+        quantities.push({
+          label: '瞬时加速度 a',
+          symbol: 'a',
+          value: a.toFixed(3),
+          unit: 'm/s²',
+          color: '#DC2626',
+          highlight: 'extreme' as const,
+        })
+      }
+
       return {
-        quantities: [
-          ...base,
-          { label: '感应电动势 EMF', value: Math.abs(EMF), unit: 'V' },
-          { label: '感应电流 I', value: Math.abs(I), unit: 'A' },
-          { label: '安培力 F安', value: F_ampere, unit: 'N' },
+        quantities,
+        formulas: [
+          { name: '法拉第电磁感应', latex: 'E = BLv', level: 'core' },
+          { name: '瞬时安培力', latex: 'F_{安} = \\frac{B^2 L^2 v}{R}', level: 'core' },
+          { name: '单棒动力学加速度', latex: 'a = \\frac{F_{外} - F_{安}}{m}', level: 'core', condition: '自由释放模式下' },
         ],
+        gaokaoPoints: [
+          { text: '电磁感应中的单棒动力学平衡与能量转化：随着速度增加，电动势与安培力增大，合力和加速度逐渐减小。', importance: 'gaokao' },
+          { text: '动态分析链条：v↑ ⇒ E↑ ⇒ F_安↑ ⇒ a↓。当 a=0 时，达到收尾速度 v_m。此时外力做功功率等于电路电热功率（P_外 = P_热）。', importance: 'gaokao' },
+        ],
+        warnings: [
+          { text: '易错点：不知道安培力随速度动态变化，错误地将此过程当成匀变速运动去套公式。', level: 'danger' },
+          { text: '模型说明：本节默认导轨光滑、磁场匀强、回路总电阻恒定，并忽略自感效应。', level: 'info' },
+        ],
+        mnemonic: '安培力阻碍相对运动，速度大则阻力大，最终合力为零达收尾',
       }
     }
 

@@ -124,7 +124,7 @@ export const FaradaySidebarExtra: React.FC<FaradaySidebarExtraProps> = ({
                 onChange={handleDBdtChange}
               />
               <span className="text-[10px] text-neutral-400 block mt-1 leading-relaxed">
-                k &gt; 0 代表磁场逐渐增强，k &lt; 0 代表磁场逐渐减弱，k = 0 代表磁场恒定。变化率大小决定了感应电动势的恒定大小。
+                k &gt; 0：B 从 0 线性增强（产生逆时针感应电流）；k &lt; 0：B 从 0 线性减弱（产生顺时针感应电流）；k = 0：无感应电动势。
               </span>
             </div>
           </div>

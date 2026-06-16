@@ -1634,3 +1634,63 @@ export function generateMagnetFaradayPoints(
   return points
 }
 
+/**
+ * 计算单棒动力学特征常数。
+ * @param B 磁感应强度，单位：T
+ * @param L 导轨间距，单位：m
+ * @param R 回路总电阻，单位：ohm
+ * @param m 金属棒质量，单位：kg
+ * @param F 外力，单位：N
+ */
+export function computeRodConstants(B: number, L: number, R: number, m: number, F: number) {
+  const factor = B * B * L * L;
+
+  return {
+    terminalVelocity: (F * R) / factor,
+    timeConstant: (m * R) / factor,
+    initialAcceleration: F / m,
+  };
+}
+
+/**
+ * 根据解析解，计算金属棒在特定时刻 t 的动力学状态。
+ * @param t 当前时间，单位：s
+ * @param B 磁感应强度，单位：T
+ * @param L 导轨间距，单位：m
+ * @param R 回路总电阻，单位：ohm
+ * @param m 金属棒质量，单位：kg
+ * @param F 外力，单位：N
+ * @returns 包含速度 v (m/s)、位移 x (m)、加速度 a (m/s²)、安培力 F_amp (N)、电热功率 P_heat (W) 的状态对象
+ */
+export function computeRodStateAtTime(
+  t: number,
+  B: number,
+  L: number,
+  R: number,
+  m: number,
+  F: number
+): {
+  v: number
+  x: number
+  a: number
+  F_amp: number
+  P_heat: number
+} {
+  const factor = B * B * L * L;
+  const EPS = 1e-6;
+  if (B < EPS || L < EPS || R < EPS || m < EPS) {
+    return { v: 0, x: 0, a: 0, F_amp: 0, P_heat: 0 };
+  }
+
+  const { terminalVelocity: v_m, timeConstant: tau, initialAcceleration: a_0 } = computeRodConstants(B, L, R, m, F);
+
+  const expTerm = Math.exp(-t / tau);
+  const v = v_m * (1 - expTerm);
+  const x = v_m * t - v_m * tau * (1 - expTerm);
+  const a = a_0 * expTerm;
+  const F_amp = (factor * v) / R;
+  const P_heat = F_amp * v;
+
+  return { v, x, a, F_amp, P_heat };
+}
+

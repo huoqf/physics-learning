@@ -79,15 +79,27 @@ function getMagnetStateAt(t: number, N: number, B: number, v: number) {
 
 /**
  * 获取匀变磁场模式下给定时间 t 的物理状态。
- * @param t 当前播放时间 (s)
- * @param N 线圈匝数 n
+ *
+ * 物理约定：
+ *   B(t) = B0 + k·t，B0 = 0（从零开始线性增加）
+ *   Φ(t) = B(t) · S（线性变化）
+ *   E = -N · dΦ/dt = -N · k · S（常数）
+ *
+ * 楞次定律方向判断：
+ *   k > 0（B 增加）→ E < 0 → inducedCurrentDir = -1 → 逆时针（正确：产生向外抵抗磁场）
+ *   k < 0（B 减弱）→ E > 0 → inducedCurrentDir = +1 → 顺时针（正确：产生向里补偿磁场）
+ *   k = 0（B 恒定）→ E = 0 → 无感应电流（正确）
+ *
+ * @param t  当前播放时间 (s)，应传入已循环限制的 tNow（0 ~ CHART_DURATION）
+ * @param N  线圈匝数
  * @param dBdt 磁感应强度变化率 k (T/s)
- * @param B0 初始磁场强度 (T)
+ * @param B0 初始磁场强度 (T)，固定为 0
  */
 function getUniformStateAt(t: number, N: number, dBdt: number, B0: number) {
   const B = B0 + dBdt * t
   const phi = B * COIL_AREA_M2
-  const emf = -N * dBdt * COIL_AREA_M2 // E = -N * dPhi/dt
+  // E = -N · dΦ/dt = -N · k · S（与当前 B 绝对值无关，只取决于变化率）
+  const emf = -N * dBdt * COIL_AREA_M2
   return { B, phi, emf }
 }
 
@@ -109,7 +121,9 @@ export default function FaradayLaw() {
   const B_magnet = params.B ?? 1.2
   const magnetV = params.magnetV ?? 140
   const dBdt = params.dBdt ?? 0.5
-  const B0 = -dBdt * 5 // 初始磁强设为 -k*5，使得第 5 秒时磁通量恰好为 0
+  // B0 固定为 0：磁场从零线性变化，楞次定律方向直觉清晰。
+  // tNow 已循环在 0~CHART_DURATION，B(t) = k·t 有界，不会无限增大。
+  const B0 = 0
 
   const tNow = time % CHART_DURATION // 图像指示线时间限制在 0~10s 循环
 
@@ -151,52 +165,89 @@ export default function FaradayLaw() {
   const coilY = sandboxCy - 50      // 线圈中心上移，下方留出电路图
 
   // ── 图表映射比例 ────────────────────────────────────────────────────
-  // 磁通量最大范围，纵向对称
-  const maxPhiVal = useMemo(() => {
-    const maxVal = Math.max(...chartPoints.map(p => Math.abs(p.phi)))
-    return maxVal > 1e-5 ? maxVal : 0.05
-  }, [chartPoints])
-
-  // 电动势最大范围，纵向对称
-  const maxEmfVal = useMemo(() => {
-    const maxVal = Math.max(...chartPoints.map(p => Math.abs(p.emf)))
-    return maxVal > 1e-5 ? maxVal : 1.0
-  }, [chartPoints])
-
   const chartPadTop = 26
   const chartH = (H - chartPadTop * 3) / 2
   const yPhiMid = chartPadTop + chartH / 2
   const yEmfMid = chartPadTop * 2 + chartH + chartH / 2
   const chartHalfH = chartH * 0.42
 
-  const toChartX = (t: number) => {
-    return dashLeft + (t / CHART_DURATION) * dashW
-  }
-  const toPhiY = (phi: number) => {
-    return yPhiMid - (phi / maxPhiVal) * chartHalfH
-  }
-  const toEmfY = (emf: number) => {
-    return yEmfMid - (emf / maxEmfVal) * chartHalfH
+  // 磁通量值域：
+  //   进阶模式：B0=0，Φ(t) = k·t，值域必须包含 0 和所有采样值
+  //     k > 0：Φ ∈ [0, maxPhi]  → 零点在底部
+  //     k < 0：Φ ∈ [minPhi, 0] → 零点在顶部
+  //     k = 0：Φ = 0           → 降级为对称处理
+  //   基础模式：Φ 有正有负（磁铁穿过线圈）→ y轴对称 [-max, +max]
+  const phiMinVal = useMemo(() => {
+    if (mode === 1) {
+      // 始终将 0 包含在范围内（Φ 从 0 出发）
+      const minPhi = Math.min(...chartPoints.map(p => p.phi))
+      return Math.min(0, minPhi)
+    }
+    return Math.min(...chartPoints.map(p => p.phi))
+  }, [mode, chartPoints])
+  const phiMaxVal = useMemo(() => {
+    if (mode === 1) {
+      // 始终将 0 包含在范围内（Φ 从 0 出发）
+      const maxPhi = Math.max(...chartPoints.map(p => p.phi))
+      const hi = Math.max(0, maxPhi)
+      const lo = Math.min(0, Math.min(...chartPoints.map(p => p.phi)))
+      // 若 k=0 全为 0，则给一个最小显示范围
+      return hi - lo > 1e-5 ? hi : 0.05
+    }
+    const absMax = Math.max(...chartPoints.map(p => Math.abs(p.phi)))
+    return absMax > 1e-5 ? absMax : 0.05
+  }, [mode, chartPoints])
+
+  // Φ 坐标映射：进阶模式下零点在图表底部，基础模式零点在图表中间
+  const toPhiY = (phi: number): number => {
+    if (mode === 1) {
+      // 非对称：[phiMinVal, phiMaxVal] → [bottom, top]
+      const range = phiMaxVal - phiMinVal
+      const safeRange = range > 1e-9 ? range : 1
+      return (yPhiMid + chartHalfH) - ((phi - phiMinVal) / safeRange) * (chartHalfH * 2)
+    }
+    // 对称：[-phiMaxVal, +phiMaxVal] → [bottom, top]
+    return yPhiMid - (phi / phiMaxVal) * chartHalfH
   }
 
-  // ── 生成图像的 SVG 路径 ────────────────────────────────────────────────
+  // Φ 零轴 y 坐标（用于绘制 x 轴）
+  const yPhiZero = toPhiY(0)
+
+  // 电动势值域：始终对称于 0（EMF 有正有负）
+  const maxEmfVal = useMemo(() => {
+    const absMax = Math.max(...chartPoints.map(p => Math.abs(p.emf)))
+    return absMax > 1e-5 ? absMax : 1.0
+  }, [chartPoints])
+  const emfIsZero = maxEmfVal < 1e-5 // k=0 时 E 恒为 0
+
+  const toChartX = (t: number): number => dashLeft + (t / CHART_DURATION) * dashW
+  const toEmfY   = (emf: number): number => yEmfMid - (emf / maxEmfVal) * chartHalfH
+
+  // ── 生成图像的 SVG 路径（内联坐标计算，依赖完整，消除不稳定闭包） ──────
   const phiPathD = useMemo(() => {
     if (chartPoints.length < 2) return ''
+    // 进阶模式的 range 在此处重新计算，确保依赖完整
+    const range = phiMaxVal - phiMinVal
+    const safeRange = range > 1e-9 ? range : 1
+    const bottom = yPhiMid + chartHalfH
+    const span   = chartHalfH * 2
     return chartPoints.map((p, i) => {
-      const x = toChartX(p.t).toFixed(1)
-      const y = toPhiY(p.phi).toFixed(1)
-      return `${i === 0 ? 'M' : 'L'} ${x} ${y}`
+      const cx = (dashLeft + (p.t / CHART_DURATION) * dashW).toFixed(1)
+      const cy = mode === 1
+        ? (bottom - ((p.phi - phiMinVal) / safeRange) * span).toFixed(1)
+        : (yPhiMid - (p.phi / phiMaxVal) * chartHalfH).toFixed(1)
+      return `${i === 0 ? 'M' : 'L'} ${cx} ${cy}`
     }).join(' ')
-  }, [chartPoints, maxPhiVal])
+  }, [chartPoints, mode, phiMinVal, phiMaxVal, dashLeft, dashW, yPhiMid, chartHalfH])
 
   const emfPathD = useMemo(() => {
     if (chartPoints.length < 2) return ''
     return chartPoints.map((p, i) => {
-      const x = toChartX(p.t).toFixed(1)
-      const y = toEmfY(p.emf).toFixed(1)
-      return `${i === 0 ? 'M' : 'L'} ${x} ${y}`
+      const cx = (dashLeft + (p.t / CHART_DURATION) * dashW).toFixed(1)
+      const cy = (yEmfMid - (p.emf / maxEmfVal) * chartHalfH).toFixed(1)
+      return `${i === 0 ? 'M' : 'L'} ${cx} ${cy}`
     }).join(' ')
-  }, [chartPoints, maxEmfVal])
+  }, [chartPoints, maxEmfVal, dashLeft, dashW, yEmfMid, chartHalfH])
 
   // 当前播放点的指示线 x
   const indicatorX = toChartX(tNow)
@@ -532,7 +583,7 @@ export default function FaradayLaw() {
                 fill={PHYSICS_COLORS.magneticFieldCross}
                 fontWeight="bold"
               >
-                B(t) = B₀ + k·t
+                B(t) = k·t　(B₀ = 0)
               </text>
               <text
                 x="16"
@@ -548,7 +599,7 @@ export default function FaradayLaw() {
                 fontSize={font(10)}
                 fill={PHYSICS_COLORS.trackHistory}
               >
-                变化率 k = {dBdt.toFixed(1)} T/s
+                变化率 k = {dBdt.toFixed(1)} T/s（图表 0–10s 循环）
               </text>
 
               {/* 3. 线圈圆环 (处于正中心) */}
@@ -655,9 +706,12 @@ export default function FaradayLaw() {
 
           {/* ── Φ-t 图 (磁通量) ── */}
           <g>
-            {/* 网格网格背景 */}
+            {/* 网格背景（基于真实值域边界） */}
             {[-1, -0.5, 0, 0.5, 1].map((ratio) => {
-              const y = yPhiMid + ratio * chartHalfH
+              // 进阶模式：网格基于 [phiMinVal, phiMaxVal] 范围；基础模式：基于 ±phiMaxVal
+              const y = mode === 1
+                ? toPhiY(phiMinVal + (phiMaxVal - phiMinVal) * (1 - (ratio + 1) / 2))
+                : yPhiMid + ratio * chartHalfH
               return (
                 <line
                   key={`phigrid-${ratio}`}
@@ -671,15 +725,16 @@ export default function FaradayLaw() {
                 />
               )
             })}
-            {/* 坐标轴 */}
+            {/* x 轴（磁通量 = 0 的水平线） */}
             <line
               x1={dashLeft}
-              y1={yPhiMid}
+              y1={yPhiZero}
               x2={dashRight}
-              y2={yPhiMid}
+              y2={yPhiZero}
               stroke={CHART_COLORS.axisLine}
               strokeWidth={CANVAS_STYLE.stroke.axis}
             />
+            {/* y 轴 */}
             <line
               x1={dashLeft}
               y1={yPhiMid - chartHalfH - 4}
@@ -734,6 +789,19 @@ export default function FaradayLaw() {
             >
               Φ={currentState.phi.toFixed(3)} Wb
             </text>
+            {/* Φ-t 图的 t 轴刻度数字 */}
+            <g fontSize={font(9)} fill={CHART_COLORS.tickLabel}>
+              {[0, 2.5, 5.0, 7.5, 10.0].map((tVal) => (
+                <text
+                  key={`phitick-${tVal}`}
+                  x={toChartX(tVal)}
+                  y={yPhiMid + chartHalfH + 12}
+                  textAnchor="middle"
+                >
+                  {tVal.toFixed(1)}
+                </text>
+              ))}
+            </g>
           </g>
 
           {/* ── E-t 图 (感应电动势) ── */}
@@ -789,15 +857,40 @@ export default function FaradayLaw() {
             >
               t/s
             </text>
-            {/* 曲线 */}
-            <path
-              d={emfPathD}
-              fill="none"
-              stroke={CHART_COLORS.compareC}
-              strokeWidth={CANVAS_STYLE.stroke.objectLine}
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
+            {/* 曲线：k=0 时显示虚线+标注，避免与坐标轴重叠 */}
+            {emfIsZero ? (
+              <g>
+                <line
+                  x1={dashLeft}
+                  y1={yEmfMid}
+                  x2={dashRight}
+                  y2={yEmfMid}
+                  stroke={CHART_COLORS.compareC}
+                  strokeWidth={CANVAS_STYLE.stroke.objectLine}
+                  strokeDasharray="6,4"
+                  opacity={0.7}
+                />
+                <text
+                  x={dashLeft + dashW / 2}
+                  y={yEmfMid - 8}
+                  fontSize={font(10)}
+                  fill={CHART_COLORS.compareC}
+                  textAnchor="middle"
+                  opacity={0.9}
+                >
+                  E = 0（k = 0，磁场恒定，无感应电动势）
+                </text>
+              </g>
+            ) : (
+              <path
+                d={emfPathD}
+                fill="none"
+                stroke={CHART_COLORS.compareC}
+                strokeWidth={CANVAS_STYLE.stroke.objectLine}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            )}
             {/* 焦点球与垂直指示线 */}
             <line
               x1={indicatorX}

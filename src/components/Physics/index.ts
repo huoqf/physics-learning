@@ -33,7 +33,7 @@ export { Solenoid } from './Solenoid'
 // ============================================================================
 // 电磁学 - 电磁感应 (Electromagnetic Induction)
 // ============================================================================
-export { ConductingRod } from './ConductingRod'
+export { ConductingRod, ConductingRod as ConductorRod } from './ConductingRod'
 export { CoupledCoilField } from './CoupledCoilField'
 export { PrimaryCoil } from './PrimaryCoil'
 export { Rails } from './Rails'

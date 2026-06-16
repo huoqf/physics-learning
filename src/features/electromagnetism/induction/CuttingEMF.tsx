@@ -1,564 +1,779 @@
-import { useEffect, useRef, useState } from 'react'
-import { useCanvasSize, useAnimationFrame } from '@/utils'
-import { useAnimationStore, type MotionMode } from '@/stores'
+import { useEffect, useRef, useMemo } from 'react'
+import { useCanvasSize } from '@/utils'
+import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { calculateCuttingEMF, simulateForceMotion } from '@/physics'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { computeRodConstants, computeRodStateAtTime, calculateCuttingEMF } from '@/physics'
+import { PHYSICS_COLORS, CHART_COLORS, STROKE, VT_CHART_COLORS, AT_CHART_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
+import { physicsToCanvasWithOrigin, computeScale } from '@/utils/coordinate'
+import { Rails, ConductorRod, VectorArrow, VectorDefs } from '@/components/Physics'
 import { CuttingEMFHandRule } from './CuttingEMFHandRule'
 
-const GRID_MARGIN = 40
-const FONT = {
-  title: 14,
-  label: CANVAS_STYLE.font.labelSize,
-  axis: CANVAS_STYLE.font.axisSize,
-  magnetic: 16,
-}
-
-const TOOLBAR_HEIGHT = 44
-
-type ForceMotionState = {
-  v: number
-  x: number
-  F_ampere: number
-  F_net: number
-  a: number
-  v_terminal: number
-}
-
-type DragState = {
-  isDragging: boolean
-  rodX: number
-  v: number
-  lastT: number
-  lastRodX: number
-}
-
-const F_DRIVE_DEFAULT = 2
-const MASS_DEFAULT = 0.1
-
-interface ModeButtonProps {
-  mode: MotionMode
-  current: MotionMode
-  label: string
-  onClick: () => void
-}
-
-function ModeButton({ mode, current, label, onClick }: ModeButtonProps) {
-  const active = mode === current
-  return (
-    <button
-      onClick={onClick}
-      className={
-        'px-3 py-1.5 text-sm rounded-md font-medium transition-all duration-150 ' +
-        (active
-          ? 'bg-primary-600 text-white shadow-sm'
-          : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 active:scale-[0.97]')
-      }
-    >
-      {label}
-    </button>
-  )
-}
+// 物理世界坐标边界 (物理单位：米)
+// x: 从 -1.0 到 11.0m (有效轨道 0 ~ 10.0m，两侧预留边距)
+// y: 从 -1.5 到 1.5m (轨道间距 L 为 0.5 ~ 2.0m，关于 0 对称)
+const WORLD = { xMin: -1.0, xMax: 11.0, yMin: -1.5, yMax: 1.5 } as const
+const X_LIMIT = 10.0 // 轨道最右端限位
 
 export default function CuttingEMF() {
-    const {params, time, isPlaying, motionMode, setMotionMode} = useAnimationStore(
+  const { params, time, isPlaying, setIsPlaying } = useAnimationStore(
     useShallow((s) => ({
-    params: s.params,
-    time: s.time,
-    isPlaying: s.isPlaying,
-    motionMode: s.motionMode,
-    setMotionMode: s.setMotionMode,
+      params: s.params,
+      time: s.time,
+      isPlaying: s.isPlaying,
+      setIsPlaying: s.setIsPlaying,
     }))
   )
-  const { B = 1, L = 0.5, v = 2, R = 2, theta = 90, r = 0, B_out = 0, handRule = 0 } = params
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 400 - TOOLBAR_HEIGHT })
-  const { font } = canvasSize
-  const svgRef = useRef<SVGSVGElement | null>(null)
-  const [, forceUpdate] = useState(0)
 
-  const forceMotionRef = useRef<ForceMotionState>({
-    v: 0, x: 0, F_ampere: 0, F_net: 0, a: 0, v_terminal: 0,
-  })
-  const dragRef = useRef<DragState>({
-    isDragging: false, rodX: 0, v: 0, lastT: 0, lastRodX: 0,
-  })
+  const {
+    mode = 0, // 0=基础: 恒速, 1=进阶: 自由释放
+    B = 1.5,
+    L = 1.0,
+    v = 2.0,
+    R = 2.0,
+    F_ext = 2.0,
+    m = 0.2,
+    showForceAnalysis = 1,
+    B_out = 0,
+  } = params
 
-  const cx = canvasSize.width / 2
-  const cy = canvasSize.height / 2 + 20
-  const railW = 300
-  const railH = 120
-  const railLeft = cx - railW / 2
-  const railRight = cx + railW / 2
-  const railTop = cy - railH / 2
-  const railBottom = cy + railH / 2
+  // 1. 动态画布测量与响应式
+  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 440 })
+  const { px, font } = canvasSize
 
-  const pxPerUnit = 30
-  const maxTravel = railW / pxPerUnit
+  const chartHeight = px(190)
+  const sceneHeight = px(234)
 
-  const isAutoF = motionMode === 'auto-F'
-  const isManual = motionMode === 'manual'
+  // 2. 动态比例尺计算 (基于下方运动区域的尺寸)
+  const scale = computeScale(canvasSize.width, sceneHeight, WORLD)
 
-  useEffect(() => {
-    if (motionMode === 'auto-F') {
-      forceMotionRef.current = { v: 0, x: 0, F_ampere: 0, F_net: 0, a: 0, v_terminal: 0 }
-      forceUpdate(n => n + 1)
-    } else if (motionMode === 'manual') {
-      dragRef.current = { isDragging: false, rodX: 0, v: 0, lastT: 0, lastRodX: 0 }
-      forceUpdate(n => n + 1)
+  // 3. 计算导体棒当前帧的物理状态
+  let x_current = 0
+  let v_current = 0
+  let a_current = 0
+  let F_amp_current = 0
+  let I_current = 0
+  let EMF_current = 0
+
+  // 特征常数
+  const { terminalVelocity: v_m, timeConstant: tau, initialAcceleration: a_0 } = useMemo(
+    () => computeRodConstants(B, L, R, m, F_ext),
+    [B, L, R, m, F_ext]
+  )
+
+  if (mode === 0) {
+    // 基础模式：恒速切割
+    v_current = v
+    a_current = 0
+    // 如果速度为负，初始在右端(10.0)，向左移动；如果速度为正，初始在左端(0)，向右移动
+    if (v >= 0) {
+      x_current = v * time
+    } else {
+      x_current = X_LIMIT + v * time
     }
-  }, [motionMode])
-
-  useAnimationFrame((deltaMs) => {
-    if (!isAutoF || !isPlaying) return
-    const dt = Math.min(deltaMs / 1000, 0.05)
-    const prev = forceMotionRef.current
-    const next = simulateForceMotion(B, L, prev.v, prev.x, R, theta, r, F_DRIVE_DEFAULT, MASS_DEFAULT, dt)
-    if (next.x_new < 0) {
-      next.x_new = 0
-      next.v_new = Math.max(0, next.v_new)
-    } else if (next.x_new > maxTravel) {
-      next.x_new = maxTravel
-      next.v_new = Math.min(0, next.v_new)
-    }
-    forceMotionRef.current = {
-      v: next.v_new,
-      x: next.x_new,
-      F_ampere: next.F_ampere,
-      F_net: next.F_net,
-      a: next.a,
-      v_terminal: next.v_terminal,
-    }
-    forceUpdate(n => n + 1)
-  }, { playing: isPlaying && isAutoF })
-
-  const effectiveV = isAutoF
-    ? forceMotionRef.current.v
-    : isManual
-      ? dragRef.current.v
-      : v
-
-  const { EMF, I, F_ampere } = calculateCuttingEMF(B, L, effectiveV, R, theta, r, B_out)
-
-  let rodX: number
-  if (isAutoF) {
-    const x = forceMotionRef.current.x
-    rodX = railLeft + x * pxPerUnit
-  } else if (isManual) {
-    rodX = dragRef.current.rodX
-    if (rodX === 0) rodX = railLeft
+    const res = calculateCuttingEMF(B, L, v_current, R, 90, 0, B_out)
+    EMF_current = res.EMF
+    I_current = res.I
+    F_amp_current = res.F_ampere
   } else {
-    const rawDist = v * time * 0.3
-    const travelDist = Math.max(0, Math.min(maxTravel, rawDist))
-    rodX = railLeft + travelDist * pxPerUnit
+    // 进阶模式：自由释放(变加速)
+    const res = computeRodStateAtTime(time, B, L, R, m, F_ext)
+    x_current = res.x
+    v_current = res.v
+    a_current = res.a
+    F_amp_current = res.F_amp
+    const dirFactor = B_out === 0 ? 1 : -1
+    EMF_current = B * L * v_current * dirFactor
+    I_current = R > 0 ? EMF_current / R : 0
   }
 
-  const rodDirection = effectiveV > 0 ? 1 : effectiveV < 0 ? -1 : 0
-  const fieldSymbol = B_out === 1 ? '⊙' : '⊗'
-  const fieldDirectionText = B_out === 1 ? '向外' : '向里'
+  // 限位切断
+  const hasHitLimit = v_current >= 0 ? x_current >= X_LIMIT : x_current <= 0
+  const finalX = Math.max(0, Math.min(X_LIMIT, x_current))
+  const finalV = hasHitLimit ? 0 : v_current
+  const finalA = hasHitLimit ? 0 : a_current
+  const finalFamp = hasHitLimit ? 0 : Math.abs(F_amp_current)
+  const finalI = hasHitLimit ? 0 : I_current
 
-  const gridCols = 10
-  const gridRows = 4
-  const gridSpacingX = railW / (gridCols - 1)
-  const gridSpacingY = railH / (gridRows - 1)
+  // 计算外力和安培力大小及方向分量 (根据速度方向确定阻碍/驱动受力)
+  const ampForceX = finalV > 0 ? -finalFamp : (finalV < 0 ? finalFamp : 0)
+  const extForceX = mode === 1 ? F_ext : (finalV > 0 ? finalFamp : (finalV < 0 ? -finalFamp : 0))
 
-  const bSymbols = []
-  for (let i = 0; i < gridCols; i++) {
-    for (let j = 0; j < gridRows; j++) {
-      bSymbols.push(
-        <text key={`b-${i}-${j}`} x={railLeft + 10 + i * gridSpacingX} y={railTop + 20 + j * gridSpacingY}
-          fontSize={FONT.magnetic} fill={PHYSICS_COLORS.magneticField} opacity={0.25} textAnchor="middle">
-          {fieldSymbol}
-        </text>
+  // 监听限位并自动暂停
+  useEffect(() => {
+    if (isPlaying && hasHitLimit) {
+      setIsPlaying(false)
+    }
+  }, [hasHitLimit, isPlaying, setIsPlaying])
+
+  // 4. 像素定位与坐标系映射
+  const originX = 1.0 * scale
+  const originY = sceneHeight / 2
+  const toCanvas = (wx: number, wy: number) => {
+    return physicsToCanvasWithOrigin(wx, wy, originX, originY, scale)
+  }
+
+  const railLeftPos = toCanvas(0, 0)
+  const railRightPos = toCanvas(X_LIMIT, 0)
+  const rodPos = toCanvas(finalX, 0)
+  
+  const railSpacing = L * scale
+  const railLength = railRightPos.cx - railLeftPos.cx
+  const railCx = (railLeftPos.cx + railRightPos.cx) / 2
+  const railCy = railLeftPos.cy
+
+  // 5. Canvas 粒子与发光残影高频更新
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const prevParamsKey = `${B}-${L}-${R}-${mode}-${canvasSize.width}-${canvasSize.height}`
+    const isReset = time === 0 || !isPlaying
+
+    // 重置或参数改变时清空尾迹
+    if (isReset || canvas.dataset.prevParams !== prevParamsKey) {
+      ctx.clearRect(0, 0, canvasSize.width, sceneHeight)
+      canvas.dataset.prevParams = prevParamsKey
+    }
+
+    // 绘制残影
+    if (isPlaying && time > 0) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.18)'
+      ctx.fillRect(0, 0, canvasSize.width, sceneHeight)
+
+      // 在当前位置绘制半透明淡蓝色棒影
+      const rodW = px(6)
+      const topY = railCy - railSpacing / 2 - px(6)
+      const bottomY = railCy + railSpacing / 2 + px(6)
+      ctx.fillStyle = 'rgba(37, 99, 235, 0.35)' // 速度蓝发光
+      ctx.fillRect(rodPos.cx - rodW / 2, topY, rodW, bottomY - topY)
+    }
+  }, [time, isPlaying, B, L, R, mode, finalX, railSpacing, railCy, rodPos.cx, canvasSize.width, canvasSize.height, px])
+
+  // 6. 辅助网格
+  const gridLines = useMemo(() => {
+    if (!useAnimationStore.getState().showGrid) return null
+    const lines = []
+    const spacing = px(40)
+    const cols = Math.floor(canvasSize.width / spacing)
+    const rows = Math.floor(sceneHeight / spacing)
+
+    for (let i = 0; i <= cols; i++) {
+      lines.push(
+        <line key={`gx-${i}`} x1={i * spacing} y1={0} x2={i * spacing} y2={sceneHeight}
+          stroke={PHYSICS_COLORS.grid} strokeWidth={0.5} strokeDasharray="2,3" />
       )
     }
-  }
-
-  const rodW = 6
-  const rodH = railH + 10
-  const showVArrow = Math.abs(effectiveV) > 0.01 || isManual
-  const emfArrowUp = EMF > 0
-
-  const rodRotation = 90 - theta
-  const thetaRad = (theta * Math.PI) / 180
-  const arcRadius = 22
-  const arcStartX = rodX + arcRadius
-  const arcStartY = cy
-  const arcEndX = rodX + arcRadius * Math.cos(thetaRad)
-  const arcEndY = cy - arcRadius * Math.sin(thetaRad)
-  const labelRadius = arcRadius + 10
-  const labelArcX = rodX + labelRadius * Math.cos(thetaRad / 2)
-  const labelArcY = cy - labelRadius * Math.sin(thetaRad / 2)
-
-  const fAmpereVis = isAutoF ? forceMotionRef.current.F_ampere : F_ampere
-  const showFAmpereArrow = Math.abs(fAmpereVis) > 0.001
-
-  const handlePointerDown = (e: React.PointerEvent<SVGRectElement>) => {
-    if (!isManual) return
-    if (!svgRef.current) return
-    const rect = svgRef.current.getBoundingClientRect()
-    const svgX = e.clientX - rect.left
-    dragRef.current.isDragging = true
-    dragRef.current.lastT = performance.now()
-    dragRef.current.lastRodX = rodX
-    dragRef.current.rodX = Math.max(railLeft, Math.min(railRight, svgX))
-    dragRef.current.v = 0
-    e.currentTarget.setPointerCapture(e.pointerId)
-    forceUpdate(n => n + 1)
-  }
-
-  const handlePointerMove = (e: React.PointerEvent<SVGRectElement>) => {
-    if (!isManual || !dragRef.current.isDragging) return
-    if (!svgRef.current) return
-    const rect = svgRef.current.getBoundingClientRect()
-    const svgX = e.clientX - rect.left
-    const newRodX = Math.max(railLeft, Math.min(railRight, svgX))
-    const now = performance.now()
-    const dt = (now - dragRef.current.lastT) / 1000
-    if (dt > 0.001) {
-      const dx = newRodX - dragRef.current.lastRodX
-      dragRef.current.v = dx / dt / pxPerUnit
+    for (let j = 0; j <= rows; j++) {
+      lines.push(
+        <line key={`gy-${j}`} x1={0} y1={j * spacing} x2={canvasSize.width} y2={j * spacing}
+          stroke={PHYSICS_COLORS.grid} strokeWidth={0.5} strokeDasharray="2,3" />
+      )
     }
-    dragRef.current.rodX = newRodX
-    dragRef.current.lastT = now
-    dragRef.current.lastRodX = newRodX
-    forceUpdate(n => n + 1)
+    return lines
+  }, [canvasSize.width, px])
+
+  // 7. 匀强磁场点阵格
+  const fieldSymbols = useMemo(() => {
+    const symbols = []
+    const symbol = B_out === 1 ? '⊙' : '⊗'
+    const stepX = px(30)
+    const stepY = px(25)
+
+    const xStart = railLeftPos.cx + px(10)
+    const xEnd = railRightPos.cx - px(10)
+    const yStart = railCy - railSpacing / 2 + px(10)
+    const yEnd = railCy + railSpacing / 2 - px(10)
+
+    let idx = 0
+    for (let sx = xStart; sx <= xEnd; sx += stepX) {
+      for (let sy = yStart; sy <= yEnd; sy += stepY) {
+        symbols.push(
+          <text
+            key={`b-sym-${idx++}`}
+            x={sx}
+            y={sy}
+            fontSize={font(14)}
+            fill={PHYSICS_COLORS.magneticField}
+            opacity={Math.min(0.45, 0.2 + (B / 3.0) * 0.25)}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            style={{ userSelect: 'none' }}
+          >
+            {symbol}
+          </text>
+        )
+      }
+    }
+    return symbols
+  }, [B, B_out, railLeftPos.cx, railRightPos.cx, railSpacing, railCy, px, font])
+
+  // 8. 物理量矢量归一化比例尺
+  const localSceneScale = useMemo(() => {
+    return {
+      originX: originX,
+      originY: originY,
+      scaleX: scale,
+      scaleY: scale,
+      maxVectorLength: px(60),
+      refMagnitudes: {
+        velocity: 3.0,
+        acceleration: 10.0,
+        force: 5.0,
+      },
+    } as any
+  }, [rodPos.cx, railCy, scale, px])
+
+  // 9. 图表解析解采样与自适应轴
+  // 时间轴上限
+  const T_max = mode === 0 ? 5.0 : Math.max(5.0, Math.min(20.0, 4 * tau))
+  // 采样点
+  const samplePoints = useMemo(() => {
+    const pts = []
+    const count = 60
+    for (let i = 0; i <= count; i++) {
+      const tVal = (i / count) * T_max
+      let vVal = 0
+      let aVal = 0
+      if (mode === 0) {
+        vVal = v
+        aVal = 0
+      } else {
+        const exp = Math.exp(-tVal / tau)
+        vVal = v_m * (1 - exp)
+        aVal = a_0 * exp
+      }
+      pts.push({ t: tVal, v: vVal, a: aVal })
+    }
+    return pts
+  }, [mode, T_max, v, v_m, a_0, tau])
+
+  // v-t 图 Y 轴上限
+  const vYMax = mode === 0 ? Math.max(1.0, Math.abs(v)) * 1.2 : v_m * 1.2
+  // a-t 图 Y 轴上限
+  const aYMax = mode === 0 ? 1.0 : a_0 * 1.2
+
+  const chartW = (canvasSize.width - px(24)) / 2
+  const chartH = chartHeight - px(12)
+
+  // 刻度转换
+  const toChartX = (t: number, innerLeft: number, innerW: number) => innerLeft + (t / T_max) * innerW
+  const toChartY = (val: number, maxVal: number, innerTop: number, innerH: number, isVelocity = false) => {
+    if (isVelocity) {
+      const zeroY = innerTop + innerH / 2
+      return zeroY - (val / (maxVal || 1.0)) * (innerH / 2)
+    }
+    return innerTop + innerH - (val / (maxVal || 1.0)) * innerH
   }
 
-  const handlePointerUp = (e: React.PointerEvent<SVGRectElement>) => {
-    if (!isManual) return
-    if (!dragRef.current.isDragging) return
-    dragRef.current.isDragging = false
-    e.currentTarget.releasePointerCapture(e.pointerId)
+  const renderChart = (
+    title: string,
+    yLabel: string,
+    curveColor: string,
+    getVal: (p: typeof samplePoints[0]) => number,
+    yMax: number,
+    curVal: number,
+    isVelocity: boolean
+  ) => {
+    const padL = px(40)
+    const padR = px(15)
+    const padT = px(24)
+    const padB = px(22)
+
+    const innerW = chartW - padL - padR
+    const innerH = chartH - padT - padB
+
+    const ptsStr = samplePoints
+      .map((p) => `${toChartX(p.t, padL, innerW).toFixed(1)},${toChartY(getVal(p), yMax, padT, innerH, isVelocity).toFixed(1)}`)
+      .join(' L ')
+
+    const activePts = samplePoints.filter((p) => p.t <= time)
+    const activePtsStr = activePts.length >= 2
+      ? 'M ' + activePts.map((p) => `${toChartX(p.t, padL, innerW).toFixed(1)},${toChartY(getVal(p), yMax, padT, innerH, isVelocity).toFixed(1)}`).join(' L ')
+      : ''
+
+    const curPtX = toChartX(time, padL, innerW)
+    const curPtY = toChartY(curVal, yMax, padT, innerH, isVelocity)
+
+    return (
+      <svg width={chartW} height={chartH} className="bg-white rounded-lg border border-neutral-200 shadow-sm overflow-visible">
+        <rect width={chartW} height={chartH} fill="none" />
+        {/* 标题 */}
+        <text x={chartW / 2} y={px(18)} fontSize={font(10)} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
+          {title}
+        </text>
+
+        {/* 坐标轴 */}
+        <line x1={padL} y1={padT} x2={padL} y2={padT + innerH} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
+        <line x1={padL} y1={padT + innerH} x2={padL + innerW} y2={padT + innerH} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
+
+        {/* 坐标轴箭头 */}
+        <polygon points={`${padL + innerW} ${padT + innerH - 3}, ${padL + innerW + 4} ${padT + innerH}, ${padL + innerW} ${padT + innerH + 3}`} fill={CHART_COLORS.axisArrow} />
+        <polygon points={`${padL - 3} ${padT}, ${padL} ${padT - 4}, ${padL + 3} ${padT}`} fill={CHART_COLORS.axisArrow} />
+
+        {/* 坐标轴标签 */}
+        <text x={padL + innerW - 5} y={padT + innerH + 12} fontSize={font(8)} fill={CHART_COLORS.labelText} textAnchor="end">t / s</text>
+        <text x={padL - 10} y={padT - 6} fontSize={font(8)} fill={CHART_COLORS.labelText} textAnchor="start">{yLabel}</text>
+
+        {/* 收尾速度渐近线 */}
+        {isVelocity && mode === 1 && (
+          <g>
+            <line
+              x1={padL}
+              y1={toChartY(v_m, yMax, padT, innerH, isVelocity)}
+              x2={padL + innerW}
+              y2={toChartY(v_m, yMax, padT, innerH, isVelocity)}
+              stroke={CHART_COLORS.asymptote}
+              strokeWidth={1}
+              strokeDasharray="4,4"
+            />
+            <text x={padL + innerW - 10} y={toChartY(v_m, yMax, padT, innerH, isVelocity) - 4} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">
+              收尾速度 v_m = {v_m.toFixed(2)} m/s
+            </text>
+          </g>
+        )}
+
+        {/* X 轴刻度 (时间) */}
+        {[0, 0.25, 0.5, 0.75, 1.0].map((ratio, idx) => {
+          const tVal = ratio * T_max
+          const tx = toChartX(tVal, padL, innerW)
+          return (
+            <g key={`tx-${idx}`}>
+              <line x1={tx} y1={padT + innerH} x2={tx} y2={padT + innerH + 4} stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
+              <text x={tx} y={padT + innerH + 12} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="middle">
+                {tVal.toFixed(1)}
+              </text>
+            </g>
+          )
+        })}
+
+        {/* v=0 中间参考线 */}
+        {isVelocity && (
+          <line
+            x1={padL}
+            y1={padT + innerH / 2}
+            x2={padL + innerW}
+            y2={padT + innerH / 2}
+            stroke={CHART_COLORS.tickMark}
+            strokeWidth={0.6}
+            strokeDasharray="2,2"
+            opacity={0.65}
+          />
+        )}
+
+        {/* Y 轴刻度 */}
+        {(isVelocity ? [-1.0, -0.5, 0, 0.5, 1.0] : [0, 0.33, 0.66, 1.0]).map((ratio, idx) => {
+          const val = ratio * yMax
+          const ty = toChartY(val, yMax, padT, innerH, isVelocity)
+          return (
+            <g key={`ty-${idx}`}>
+              <line x1={padL - 4} y1={ty} x2={padL} y2={ty} stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
+              <text x={padL - 6} y={ty + 2.5} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">
+                {val.toFixed(1)}
+              </text>
+            </g>
+          )
+        })}
+
+        {/* 预测虚线 */}
+        <path d={`M ${ptsStr}`} fill="none" stroke={curveColor} strokeWidth={1} strokeDasharray="3,3" opacity={0.4} />
+
+        {/* 动态实线 */}
+        {activePtsStr && (
+          <path d={activePtsStr} fill="none" stroke={curveColor} strokeWidth={1.8} />
+        )}
+
+        {/* 动态游标点 */}
+        {time <= T_max && (
+          <g>
+            <circle cx={curPtX} cy={curPtY} r={3} fill={curveColor} />
+            <circle cx={curPtX} cy={curPtY} r={6} fill="none" stroke={curveColor} strokeWidth={0.8} opacity={0.6}>
+              <animate attributeName="r" values="3;8;3" dur="2s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.8;0;0.8" dur="2s" repeatCount="indefinite" />
+            </circle>
+          </g>
+        )}
+      </svg>
+    )
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-white rounded-lg">
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-neutral-200 shrink-0" style={{ height: TOOLBAR_HEIGHT }}>
-        <span className="text-xs text-neutral-500 mr-1">运动模式：</span>
-        <ModeButton mode="auto-v" current={motionMode} label="匀速运动" onClick={() => setMotionMode('auto-v')} />
-        <ModeButton mode="auto-F" current={motionMode} label="受力运动" onClick={() => setMotionMode('auto-F')} />
-        <ModeButton mode="manual" current={motionMode} label="手动拖拽" onClick={() => setMotionMode('manual')} />
-        {isAutoF && (
-          <span className="text-xs text-neutral-500 ml-2">
-            F驱 = {F_DRIVE_DEFAULT} N，m = {MASS_DEFAULT} kg（隐藏常量）
-          </span>
+    <div ref={containerRef} className="w-full h-full flex flex-col bg-neutral-50 p-2 gap-2 relative">
+      {/* 上方：v-t 和 a-t 自适应采样图表 */}
+      <div className="w-full shrink-0 flex items-center justify-between gap-4" style={{ height: chartHeight }}>
+        {renderChart(
+          '速度－时间图像 (v-t 图)',
+          'v / (m·s⁻¹)',
+          VT_CHART_COLORS.velocityCurve,
+          (p) => p.v,
+          vYMax,
+          finalV,
+          true
         )}
-        {isManual && (
-          <span className="text-xs text-neutral-500 ml-2">
-            在导体棒上按下并左右拖动
-          </span>
+        {renderChart(
+          '加速度－时间图像 (a-t 图)',
+          'a / (m·s⁻²)',
+          AT_CHART_COLORS.accelCurve,
+          (p) => p.a,
+          aYMax,
+          finalA,
+          false
         )}
       </div>
 
-      <div ref={containerRef} className="flex-1 min-h-0">
-        <svg ref={svgRef} width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-b-lg">
+      {/* 下方：Canvas 高频运动轨迹 + SVG 静态与矢量叠加区域 */}
+      <div className="w-full relative bg-white rounded-lg border border-neutral-200 overflow-hidden shadow-sm flex-1 min-h-0" style={{ height: sceneHeight }}>
+        {/* 1. 底层高频残影 Canvas */}
+        <canvas
+          ref={canvasRef}
+          width={canvasSize.width}
+          height={sceneHeight}
+          className="absolute inset-0 z-0 pointer-events-none"
+        />
+
+        {/* 2. 上层 SVG 静态、矢量及辅助线层 */}
+        <svg
+          width={canvasSize.width}
+          height={sceneHeight}
+          className="absolute inset-0 z-10 w-full h-full bg-transparent"
+        >
           <defs>
-            <marker id="arrow-cut-v" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-              <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
-            </marker>
-            <marker id="arrow-cut-f" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-              <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.forceNet} />
-            </marker>
-            <marker id="arrow-cut-fd" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-              <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.forceNet} />
-            </marker>
-            <marker id="arrow-cut-emf" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-              <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.electricCurrent} />
-            </marker>
-            <marker id="arrow-cut-flor" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-              <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.magneticField} />
-            </marker>
-            <marker id="arrow-cut-pipv" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-              <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.velocity} />
-            </marker>
+            <VectorDefs colors={[PHYSICS_COLORS.velocity, PHYSICS_COLORS.acceleration, PHYSICS_COLORS.forceNet]} />
           </defs>
 
-          <text x={cx} y={GRID_MARGIN} fontSize={FONT.title} fill={PHYSICS_COLORS.magneticField} textAnchor="middle" fontWeight="bold">
-            B = {B.toFixed(1)} T（垂直纸面{fieldDirectionText} {fieldSymbol}）
+          {/* 网格参考背景 */}
+          {gridLines}
+
+          {/* 双导轨 */}
+          <Rails
+            type="horizontal"
+            width={canvasSize.width}
+            height={sceneHeight}
+            cx={railCx}
+            cy={railCy}
+            length={railLength}
+            spacing={railSpacing}
+          />
+
+          {/* 磁场背景格 */}
+          {fieldSymbols}
+
+          {/* 匀强磁场上方标注 */}
+          <text
+            x={px(20)}
+            y={px(20)}
+            fontSize={font(11)}
+            fill={PHYSICS_COLORS.magneticField}
+            fontWeight="extrabold"
+            alignmentBaseline="middle"
+          >
+            匀强磁场 B = {B.toFixed(1)} T {B_out === 1 ? '(⊙ 垂直纸面向外)' : '(⊗ 垂直纸面向里)'}
           </text>
 
-          {bSymbols}
-
-          <line x1={railLeft} y1={railTop} x2={railRight} y2={railTop}
-            stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.axis} />
-          <line x1={railLeft} y1={railBottom} x2={railRight} y2={railBottom}
-            stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.axis} />
-
-          <rect x={railRight + 4} y={railTop - 4} width={12} height={railH + 8}
-            fill="none" stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={CANVAS_STYLE.stroke.objectLine} rx={2} />
-          <text x={railRight + 24} y={cy} fontSize={FONT.axis} fill={PHYSICS_COLORS.labelText} textAnchor="start">
-            R = {R.toFixed(1)} Ω
-          </text>
-
-          {theta < 90 && (
-            <g>
-              <path d={`M ${arcStartX} ${arcStartY} A ${arcRadius} ${arcRadius} 0 0 0 ${arcEndX} ${arcEndY}`}
-                stroke={PHYSICS_COLORS.labelText} strokeWidth={CANVAS_STYLE.stroke.objectThin} fill="none" strokeDasharray="3,2" opacity={0.7} />
-              <text x={labelArcX} y={labelArcY + 4} fontSize={FONT.axis}
-                fill={PHYSICS_COLORS.labelText} fontWeight="bold" textAnchor="middle">θ</text>
-            </g>
-          )}
-
-          <g transform={`rotate(${rodRotation} ${rodX} ${cy})`}>
-            <rect
-              x={rodX - rodW / 2}
-              y={cy - rodH / 2}
-              width={rodW}
-              height={rodH}
-              fill={isManual ? PHYSICS_COLORS.electricCurrent : PHYSICS_COLORS.electricCurrent}
-              rx={2}
-              opacity={isManual ? 0.95 : 0.9}
-              style={{ cursor: isManual ? 'grab' : 'default', touchAction: 'none' }}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerCancel={handlePointerUp}
+          {/* 电阻符号与阻值标注 (在轨道左侧端点) */}
+          <g>
+            {/* 上轨左端和下轨左端到电阻的连线 */}
+            <path
+              d={`M ${railLeftPos.cx} ${railCy - railSpacing / 2} L ${railLeftPos.cx - px(16)} ${railCy - railSpacing / 2} L ${railLeftPos.cx - px(16)} ${railCy - px(20)} M ${railLeftPos.cx - px(16)} ${railCy + px(20)} L ${railLeftPos.cx - px(16)} ${railCy + railSpacing / 2} L ${railLeftPos.cx} ${railCy + railSpacing / 2}`}
+              fill="none"
+              stroke={colors.neutral[800]}
+              strokeWidth="2.5"
             />
-            <text x={rodX} y={cy + 4} fontSize={FONT.axis} fill="white" textAnchor="middle" fontWeight="bold"
-              transform={`rotate(${-rodRotation} ${rodX} ${cy + 4})`}>
-              ab
+            {/* 电阻框 */}
+            <rect
+              x={railLeftPos.cx - px(26)}
+              y={railCy - px(20)}
+              width={px(20)}
+              height={px(40)}
+              fill="white"
+              stroke={colors.neutral[800]}
+              strokeWidth="2.5"
+              rx={px(2)}
+            />
+            <text
+              x={railLeftPos.cx - px(16)}
+              y={railCy}
+              fontSize={font(11)}
+              fill={colors.neutral[800]}
+              fontWeight="bold"
+              textAnchor="middle"
+              dominantBaseline="middle"
+              style={{ userSelect: 'none' }}
+            >
+              R
             </text>
-
-            {Math.abs(EMF) > 0.001 && (
-              <g>
-                <line
-                  x1={rodX + 15}
-                  y1={emfArrowUp ? railBottom - 10 : railTop + 10}
-                  x2={rodX + 15}
-                  y2={emfArrowUp ? railTop + 10 : railBottom - 10}
-                  stroke={PHYSICS_COLORS.electricCurrent}
-                  strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  markerEnd="url(#arrow-cut-emf)"
-                  opacity={0.7}
-                />
-                <text x={rodX + 28} y={cy} fontSize={FONT.axis}
-                  fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold"
-                  transform={`rotate(${-rodRotation} ${rodX + 28} ${cy})`}>
-                  EMF
-                </text>
-              </g>
-            )}
+            <text
+              x={railLeftPos.cx - px(38)}
+              y={railCy}
+              fontSize={font(9.5)}
+              fill={PHYSICS_COLORS.labelText}
+              textAnchor="end"
+              dominantBaseline="middle"
+              style={{ userSelect: 'none' }}
+            >
+              电阻 R = {R.toFixed(1)} Ω
+            </text>
           </g>
 
-          {isAutoF && (
+          {/* 导体棒 */}
+          <ConductorRod
+            type="horizontal"
+            x={rodPos.cx}
+            currentDir={finalI > 1e-4 ? 'in' : finalI < -1e-4 ? 'out' : 'none'}
+            spacing={railSpacing}
+            height={sceneHeight}
+          />
+
+          {/* 导体棒电动势标注 */}
+          {Math.abs(EMF_current) > 0.01 && (
+            <text
+              x={rodPos.cx - px(15)}
+              y={railCy - px(10)}
+              fontSize={font(9.5)}
+              fill={PHYSICS_COLORS.electricCurrent}
+              fontWeight="bold"
+              textAnchor="end"
+              dominantBaseline="middle"
+              style={{ userSelect: 'none' }}
+            >
+              E_感 = {Math.abs(EMF_current).toFixed(2)} V
+            </text>
+          )}
+
+          {/* 导体棒电势极性标注 (+ / −) */}
+          {Math.abs(EMF_current) > 0.01 && (
             <g>
-              <line
-                x1={rodX - 25}
-                y1={railTop - 60}
-                x2={rodX - 25 + 50}
-                y2={railTop - 60}
-                stroke={PHYSICS_COLORS.forceNet}
-                strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                strokeDasharray="6,3"
-                markerEnd="url(#arrow-cut-fd)"
-                opacity={0.85}
-              />
-              <text x={rodX - 25 + 25} y={railTop - 66} fontSize={FONT.label}
-                fill={PHYSICS_COLORS.forceNet} fontWeight="bold" textAnchor="middle">
-                F驱 = {F_DRIVE_DEFAULT} N
+              {/* 顶端电势极性 (高电势为红正，低电势为蓝负) */}
+              <text
+                x={rodPos.cx + px(10)}
+                y={railCy - railSpacing / 2 - px(8)}
+                fontSize={font(12)}
+                fill={EMF_current > 0 ? colors.danger[500] : colors.primary[500]}
+                fontWeight="extrabold"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                style={{ userSelect: 'none' }}
+              >
+                {EMF_current > 0 ? '+' : '−'}
+              </text>
+              {/* 底端电势极性 */}
+              <text
+                x={rodPos.cx + px(10)}
+                y={railCy + railSpacing / 2 + px(8)}
+                fontSize={font(12)}
+                fill={EMF_current > 0 ? colors.primary[500] : colors.danger[500]}
+                fontWeight="extrabold"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                style={{ userSelect: 'none' }}
+              >
+                {EMF_current > 0 ? '−' : '+'}
               </text>
             </g>
           )}
 
-          {showVArrow && (
+          {/* 闭合回路电流流光特效 (顺/逆时针根据电流方向流动) */}
+          {Math.abs(finalI) > 1e-4 && (
+            <path
+              d={`M ${railLeftPos.cx - px(16)} ${railCy - railSpacing / 2} 
+                  L ${rodPos.cx} ${railCy - railSpacing / 2} 
+                  L ${rodPos.cx} ${railCy + railSpacing / 2} 
+                  L ${railLeftPos.cx - px(16)} ${railCy + railSpacing / 2} 
+                  Z`}
+              fill="none"
+              stroke={colors.warning[400]} // 亮黄色电荷流光
+              strokeWidth={px(3)}
+              strokeDasharray={`${px(1)}, ${px(15)}`}
+              strokeLinecap="round"
+              strokeDashoffset={finalI >= 0 ? time * px(35) : -time * px(35)}
+              opacity={0.85}
+              style={{ pointerEvents: 'none' }}
+            />
+          )}
+
+          {/* 左右手骨骼手联动 (叠放在通电导体棒下方并随之移动) */}
+          {showForceAnalysis === 1 && (
+            <g opacity={0.85}>
+              <CuttingEMFHandRule
+                svgRef={undefined}
+                vDir={finalV > 0 ? 1 : finalV < 0 ? -1 : 0}
+                B_out={(B_out === 1 ? 1 : 0) as 0 | 1}
+                isBack={B_out === 1}
+                rule={mode === 1 ? 'left' : 'right'} // 变加速用左手，匀速用右手
+                fist={false}
+                cx={rodPos.cx}
+                cy={railCy + railSpacing / 2 + px(45)}
+                scale={canvasSize.scale * 0.42}
+                draggable={false}
+              />
+            </g>
+          )}
+
+          {/* 矢量箭头 (只在 showForceAnalysis 开启时渲染) */}
+          {showForceAnalysis === 1 && (
             <g>
-              <line
-                x1={rodX}
-                y1={railTop - 30}
-                x2={rodX + rodDirection * 40}
-                y2={railTop - 30}
-                stroke={PHYSICS_COLORS.velocity}
-                strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                markerEnd="url(#arrow-cut-v)"
+              {/* 1. 速度 v 箭头 (蓝色，朝右/朝左，垂直向上偏置 0.6) */}
+              <VectorArrow
+                origin={{ x: finalX, y: L / 2 + 0.3 }}
+                vector={{ x: finalV, y: 0 }}
+                type="velocity"
+                sceneScale={localSceneScale}
+                strokeWidth={2.5}
               />
-              <text x={rodX + rodDirection * 20} y={railTop - 36} fontSize={FONT.label}
-                fill={PHYSICS_COLORS.velocity} fontWeight="bold" textAnchor="middle">
-                v = {effectiveV.toFixed(2)} m/s
-              </text>
-            </g>
-          )}
-
-          {showFAmpereArrow && (
-            <g>
-              <line
-                x1={rodX}
-                y1={railBottom + 30}
-                x2={rodX - rodDirection * Math.min(60, fAmpereVis * 20)}
-                y2={railBottom + 30}
-                stroke={PHYSICS_COLORS.forceNet}
-                strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                markerEnd="url(#arrow-cut-f)"
-              />
-              <text x={rodX - rodDirection * 20} y={railBottom + 48} fontSize={FONT.label}
-                fill={PHYSICS_COLORS.forceNet} fontWeight="bold" textAnchor="middle">
-                F安 = {Math.abs(fAmpereVis).toFixed(3)} N
-              </text>
-            </g>
-          )}
-
-          <text x={railLeft} y={railBottom + 20} fontSize={FONT.axis} fill={PHYSICS_COLORS.labelText}>
-            L = {L.toFixed(2)} m
-          </text>
-
-          <text x={rodX} y={railBottom + 36} fontSize={FONT.axis} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
-            {isAutoF ? `x = ${forceMotionRef.current.x.toFixed(2)} m` : `x = ${((rodX - railLeft) / pxPerUnit).toFixed(2)} m`}
-          </text>
-
-          {isAutoF && (
-            <g transform={`translate(${canvasSize.width - 200}, ${GRID_MARGIN + 10})`}>
-              <rect x={-4} y={-14} width={196} height={62} fill="white" stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} rx={4} opacity={0.9} />
-              <text fontSize={FONT.label} fill={PHYSICS_COLORS.labelText} fontWeight="bold">受力分析（受力模式）</text>
-              <text x={0} y={14} fontSize={FONT.axis} fill={PHYSICS_COLORS.forceNet}>
-                F驱 = {F_DRIVE_DEFAULT.toFixed(2)} N
-              </text>
-              <text x={0} y={28} fontSize={FONT.axis} fill={PHYSICS_COLORS.forceNet}>
-                F安 = {forceMotionRef.current.F_ampere.toFixed(3)} N
-              </text>
-              <text x={0} y={42} fontSize={FONT.axis} fill={PHYSICS_COLORS.labelText}>
-                F合 = {forceMotionRef.current.F_net.toFixed(3)} N，a = {forceMotionRef.current.a.toFixed(2)} m/s²
-              </text>
-            </g>
-          )}
-
-          {(() => {
-            const pipX = canvasSize.width - 184
-            const pipY = isAutoF ? GRID_MARGIN + 90 : GRID_MARGIN + 8
-            const pipW = 172
-            const pipH = 120
-            const rodCx = pipX + pipW / 2
-            const rodCy = pipY + 70
-            const rodHalfH = 38
-            const electronXs = [rodCx - 4, rodCx + 4, rodCx - 4, rodCx + 4]
-            const electronYs = [rodCy - 22, rodCy - 8, rodCy + 8, rodCy + 22]
-            const fLorDir = effectiveV * (B_out === 0 ? 1 : -1)
-            const showFLor = Math.abs(fLorDir) > 0.001
-            return (
-              <g>
-                <rect x={pipX} y={pipY} width={pipW} height={pipH}
-                  fill="white" stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} rx={6} opacity={0.95} />
-                <text x={pipX + 8} y={pipY + 14} fontSize={CANVAS_STYLE.font.subtickSize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
-                  放大镜：自由电子
-                </text>
-                <text x={pipX + pipW - 6} y={pipY + 14} fontSize={CANVAS_STYLE.font.smallSize} fill={PHYSICS_COLORS.axis} textAnchor="end">
-                  v = {effectiveV.toFixed(2)} m/s
-                </text>
-                <line
-                  x1={rodCx} y1={pipY + 24}
-                  x2={rodCx + Math.sign(effectiveV || 1) * 12} y2={pipY + 24}
-                  stroke={PHYSICS_COLORS.velocity} strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  markerEnd="url(#arrow-cut-pipv)" opacity={0.8}
-                />
-                <text x={rodCx + Math.sign(effectiveV || 1) * 18} y={pipY + 28} fontSize={CANVAS_STYLE.font.smallSize}
-                  fill={PHYSICS_COLORS.velocity} fontWeight="bold" textAnchor="middle">
-                  v
-                </text>
-                <text x={rodCx - 18} y={pipY + 28} fontSize={CANVAS_STYLE.font.smallSize}
-                  fill={PHYSICS_COLORS.magneticField} fontWeight="bold" textAnchor="middle">
-                  {fieldSymbol}
-                </text>
-                <rect x={rodCx - 6} y={rodCy - rodHalfH} width={12} height={rodHalfH * 2}
-                  fill={PHYSICS_COLORS.electricCurrent} opacity={0.85} rx={1} />
-                {electronXs.map((ex, idx) => (
-                  <g key={`pip-e-${idx}`}>
-                    <circle cx={ex} cy={electronYs[idx]} r={3.2}
-                      fill={PHYSICS_COLORS.negativeCharge} stroke="white" strokeWidth={0.5} />
-                    <text x={ex + 5} y={electronYs[idx] + 3} fontSize={font(8)}
-                      fill={PHYSICS_COLORS.negativeCharge} fontWeight="bold">e⁻</text>
-                    {showFLor && (
-                      <line
-                        x1={ex} y1={electronYs[idx]}
-                        x2={ex} y2={electronYs[idx] + fLorDir * 12}
-                        stroke={PHYSICS_COLORS.magneticField} strokeWidth={1.2}
-                        markerEnd={fLorDir > 0 ? 'url(#arrow-cut-flor)' : 'url(#arrow-cut-flor)'}
-                        opacity={0.85}
-                      />
-                    )}
-                  </g>
-                ))}
-                <text x={pipX + 8} y={pipY + pipH - 6} fontSize={font(9.5)} fill={PHYSICS_COLORS.axis}>
-                  F洛 = qv×B（q = −e）
-                </text>
-              </g>
-            )
-          })()}
-
-          {(() => {
-            const handX = 12
-            const handY = 50
-            const handW = 168
-            const handH = 188
-            
-            // 自动联动逻辑：匀速运动/手动用右手定则(发电机)，受力分析用左手定则(电动机)
-            let rule: 'right' | 'left' = motionMode === 'auto-F' ? 'left' : 'right'
-            if (handRule === 1) rule = 'left'
-            else if (handRule === 0) rule = 'right'
-            
-            const fist = handRule === 2
-            return (
-              <g>
-                <rect
-                  x={handX}
-                  y={handY}
-                  width={handW}
-                  height={handH}
-                  rx={8}
-                  fill="white"
-                  stroke={PHYSICS_COLORS.grid}
-                  strokeWidth={CANVAS_STYLE.stroke.grid}
-                  opacity={0.95}
-                />
+              {Math.abs(finalV) > 0.05 && (
                 <text
-                  x={handX + handW / 2}
-                  y={handY + 14}
-                  fontSize={CANVAS_STYLE.font.subtickSize}
+                  x={rodPos.cx + (finalV > 0 ? px(30) : -px(35))}
+                  y={railCy - railSpacing / 2 - px(25)}
+                  fontSize={font(10)}
+                  fill={PHYSICS_COLORS.velocity}
                   fontWeight="bold"
-                  fill={PHYSICS_COLORS.labelText}
                   textAnchor="middle"
+                  style={{ userSelect: 'none' }}
                 >
-                  {fist ? '握拳定则' : rule === 'right' ? '右手定则（拇·v 食·B 中·I）' : '左手定则（拇·F 食·B 中·I）'}
+                  v = {finalV.toFixed(2)} m/s
                 </text>
-                <CuttingEMFHandRule
-                  svgRef={svgRef}
-                  vDir={effectiveV > 0 ? 1 : effectiveV < 0 ? -1 : 0}
-                  B_out={(B_out === 1 ? 1 : 0) as 0 | 1}
-                  isBack={B_out === 1}
-                  rule={rule}
-                  fist={fist}
-                  cx={handX + handW / 2}
-                  cy={handY + 95}
-                  scale={canvasSize.width / 900}
-                />
-                <text
-                  x={handX + handW / 2}
-                  y={handY + handH - 8}
-                  fontSize={font(9.5)}
-                  fill={PHYSICS_COLORS.axis}
-                  textAnchor="middle"
-                >
-                  v×B = I（右手）/ F = BIL（左手）
-                </text>
-              </g>
-            )
-          })()}
+              )}
 
-          {useAnimationStore.getState().showFormulas && (
-            <g transform={`translate(20, ${canvasSize.height - 180})`}>
-              <text fontSize={FONT.title} fill={PHYSICS_COLORS.labelText} fontWeight="bold">导体切割磁感线</text>
-              <text x={0} y={24} fontSize={FONT.axis} fill={PHYSICS_COLORS.axis}>EMF = BLv·sinθ</text>
-              <text x={0} y={42} fontSize={FONT.axis} fill={PHYSICS_COLORS.axis}>I = EMF/(R+r) = BLv·sinθ/(R+r)</text>
-              <text x={0} y={60} fontSize={FONT.axis} fill={PHYSICS_COLORS.axis}>F安 = BIL = B²L²v·sinθ/(R+r)</text>
-              <text x={0} y={84} fontSize={FONT.label} fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold">
-                EMF = {Math.abs(EMF).toFixed(3)} V
-              </text>
-              <text x={0} y={102} fontSize={FONT.label} fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold">
-                I = {Math.abs(I).toFixed(3)} A
-              </text>
-              <text x={0} y={120} fontSize={FONT.label} fill={PHYSICS_COLORS.forceNet} fontWeight="bold">
-                F安 = {Math.abs(fAmpereVis).toFixed(3)} N
-              </text>
-              <text x={0} y={138} fontSize={FONT.label} fill={PHYSICS_COLORS.labelText}>
-                θ = {theta.toFixed(0)}°，r = {r.toFixed(2)} Ω
-                {isAutoF && `，v_terminal = ${forceMotionRef.current.v_terminal.toFixed(2)} m/s`}
+              {/* 2. 加速度 a 箭头 (红色，朝右/朝左，移至上轨道上方以腾出下方手势空间) */}
+              <VectorArrow
+                origin={{ x: finalX, y: L / 2 + 0.7 }}
+                vector={{ x: finalA, y: 0 }}
+                type="acceleration"
+                sceneScale={localSceneScale}
+                strokeWidth={2.5}
+              />
+              {Math.abs(finalA) > 0.05 && (
+                <text
+                  x={rodPos.cx + (finalA > 0 ? px(30) : -px(35))}
+                  y={railCy - railSpacing / 2 - px(55)}
+                  fontSize={font(10)}
+                  fill={PHYSICS_COLORS.acceleration}
+                  fontWeight="bold"
+                  textAnchor="middle"
+                  style={{ userSelect: 'none' }}
+                >
+                  a = {finalA.toFixed(2)} m/s²
+                </text>
+              )}
+
+              {/* 3. 外力 F_外 (橙色，垂直向上偏置 0.15) */}
+              {((mode === 1 && F_ext > 0) || (mode === 0 && Math.abs(extForceX) > 0.01)) && (
+                <g>
+                  <VectorArrow
+                    origin={{ x: finalX, y: 0.15 }}
+                    vector={{ x: extForceX, y: 0 }}
+                    type="force"
+                    color={PHYSICS_COLORS.forceNet}
+                    sceneScale={localSceneScale}
+                    strokeWidth={2.5}
+                  />
+                  <text
+                    x={rodPos.cx + (extForceX > 0 ? px(35) : -px(35))}
+                    y={railCy - px(20)}
+                    fontSize={font(9.5)}
+                    fill={PHYSICS_COLORS.forceNet}
+                    fontWeight="bold"
+                    textAnchor={extForceX > 0 ? 'start' : 'end'}
+                    style={{ userSelect: 'none' }}
+                  >
+                    F_外 = {Math.abs(extForceX).toFixed(2)} N
+                  </text>
+                </g>
+              )}
+
+              {/* 4. 安培力 F_安 (橙色，垂直向上偏置 0.15) */}
+              {Math.abs(ampForceX) > 0.01 && (
+                <g>
+                  <VectorArrow
+                    origin={{ x: finalX, y: 0.15 }}
+                    vector={{ x: ampForceX, y: 0 }}
+                    type="force"
+                    color={PHYSICS_COLORS.forceNet}
+                    sceneScale={localSceneScale}
+                    strokeWidth={2.5}
+                  />
+                  <text
+                    x={rodPos.cx + (ampForceX > 0 ? px(35) : -px(35))}
+                    y={railCy - px(20)}
+                    fontSize={font(9.5)}
+                    fill={PHYSICS_COLORS.forceNet}
+                    fontWeight="bold"
+                    textAnchor={ampForceX > 0 ? 'start' : 'end'}
+                    style={{ userSelect: 'none' }}
+                  >
+                    F_安 = {Math.abs(ampForceX).toFixed(2)} N
+                  </text>
+                </g>
+              )}
+
+              {/* 5. 合力 F_合 (橙色，仅在变加速 mode === 1 时渲染，垂直向下偏置 0.15) */}
+              {mode === 1 && (
+                <g>
+                  <VectorArrow
+                    origin={{ x: finalX, y: -0.15 }}
+                    vector={{ x: F_ext + ampForceX, y: 0 }}
+                    type="force"
+                    color={PHYSICS_COLORS.forceNet}
+                    sceneScale={localSceneScale}
+                    strokeWidth={2.5}
+                  />
+                  <text
+                    x={rodPos.cx + (F_ext + ampForceX > 0 ? px(25) : -px(25))}
+                    y={railCy + px(20)}
+                    fontSize={font(9.5)}
+                    fill={PHYSICS_COLORS.forceNet}
+                    fontWeight="bold"
+                    textAnchor={F_ext + ampForceX > 0 ? 'start' : 'end'}
+                    style={{ userSelect: 'none' }}
+                  >
+                    F_合 = {Math.abs(F_ext + ampForceX).toFixed(2)} N
+                  </text>
+                </g>
+              )}
+
+              {/* 匀速运动受力平衡状态说明文字 (置于上轨道左侧，避开下方手势空间) */}
+              {mode === 0 && Math.abs(finalV) > 0.05 && (
+                <text
+                  x={rodPos.cx - px(25)}
+                  y={railCy - railSpacing / 2 - px(8)}
+                  fontSize={font(9.5)}
+                  fill={PHYSICS_COLORS.labelText}
+                  fontWeight="bold"
+                  textAnchor="end"
+                  style={{ userSelect: 'none' }}
+                >
+                  外力驱动匀速运动 (F_外 = F_安，受力平衡)
+                </text>
+              )}
+            </g>
+          )}
+
+          {/* 边缘限位警示图层 */}
+          {hasHitLimit && (
+            <g>
+              <rect
+                x={canvasSize.width / 2 - px(100)}
+                y={px(15)}
+                width={px(200)}
+                height={px(25)}
+                fill={colors.danger[50]}
+                stroke={colors.danger[300]}
+                strokeWidth={1.5}
+                rx={px(4)}
+              />
+              <text
+                x={canvasSize.width / 2}
+                y={px(27.5)}
+                fontSize={font(10)}
+                fill={colors.danger[600]}
+                fontWeight="bold"
+                textAnchor="middle"
+                dominantBaseline="middle"
+              >
+                ⚠️ 已到达导轨边缘限位
               </text>
             </g>
           )}

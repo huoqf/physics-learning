@@ -1,5 +1,5 @@
 import React, { useId } from 'react'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
 /**
@@ -27,17 +27,6 @@ interface RailsProps {
 }
 
 /**
- * 导轨组件
- *
- * 绘制导体棒滑动的金属导轨，支持三种视角模式：
- * - horizontal：水平平面模式，双平行导轨 + 3D 圆柱渐变 + 端点圆帽
- * - inclined：3D 倾斜模式，跨在支撑架上的倾斜双轨，含地面线与支撑架
- * - side-view：侧视斜劈模式，三角形斜劈 + 倾角 θ 弧线标注
- *
- * 导轨采用 3 层描边叠加实现圆柱金属质感
- */
-
-/**
  * 3D 倾斜导轨的基准布局（默认 500×300 画布）
  * 所有坐标基于此布局，通过 scale 变换缩放
  */
@@ -60,7 +49,7 @@ const getInclinedLayout = (L: number) => {
     groundX2: 520,
     // 支撑架位置
     supportX: 420,
-    // 导轨粗细（3层叠加实现圆柱质感）
+    // 导轨粗细
     outerStroke: 8,
     midStroke: 6,
     highlightStroke: 1.5,
@@ -106,18 +95,32 @@ export const Rails: React.FC<RailsProps> = ({
     return (
       <g>
         <defs>
-          {/* 侧视斜劈金属/塑料质感渐变 */}
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={colors.neutral[50]} />
-            <stop offset="100%" stopColor={colors.neutral[300]} />
+          {/* 侧视斜劈：美化为科技感半透明磨砂玻璃渐变 */}
+          <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={colors.primary[50]} stopOpacity="0.85" />
+            <stop offset="50%" stopColor={colors.primary[100]} stopOpacity="0.60" />
+            <stop offset="100%" stopColor={colors.primary[200]} stopOpacity="0.40" />
           </linearGradient>
+          {/* 角度指示箭头 */}
+          <marker
+            id={`arc-arrow-${uniqueId}`}
+            viewBox="0 0 8 6"
+            refX="7"
+            refY="3"
+            markerWidth="6"
+            markerHeight="6"
+            orient="auto-start-reverse"
+          >
+            <path d="M0,0 L8,3 L0,6 Z" fill={PHYSICS_COLORS.axis} />
+          </marker>
         </defs>
-        {/* 斜劈填充 */}
+        
+        {/* 斜劈填充（半透明磨砂玻璃感） */}
         <polygon
           points={`${x0},${y0} ${rightX},${y0} ${rightX},${topY}`}
           fill={`url(#${gradientId})`}
-          stroke={colors.neutral[400]} // slate-400
-          strokeWidth="2"
+          stroke={SCENE_COLORS.surface.inclineStroke}
+          strokeWidth={CANVAS_STYLE.stroke.objectLine}
         />
         {/* 斜面顶部高光边 */}
         <line
@@ -126,28 +129,47 @@ export const Rails: React.FC<RailsProps> = ({
           x2={rightX}
           y2={topY}
           stroke={colors.neutral.white}
-          strokeWidth="1.5"
-          opacity="0.8"
+          strokeWidth={CANVAS_STYLE.stroke.objectThin}
+          opacity="0.9"
           pointerEvents="none"
         />
         {/* 倾角弧线与标注 */}
         {theta > 0 && (
           <g transform={`translate(${x0}, ${y0})`}>
+            {/* 角度刻度弧线，加上了精致的箭头 */}
             <path
               d={`M 50 0 A 50 50 0 0 0 ${50 * Math.cos(thetaRad)} ${-50 * Math.sin(thetaRad)}`}
               fill="none"
               stroke={PHYSICS_COLORS.axis}
-              strokeWidth="2"
+              strokeWidth={CANVAS_STYLE.stroke.annotation}
+              opacity={CANVAS_STYLE.opacity.annotation}
+              markerEnd={`url(#arc-arrow-${uniqueId})`}
             />
-            <text
-              x={60}
-              y={-12}
-              fontSize="12"
-              fill={PHYSICS_COLORS.labelTextLight}
-              fontWeight="bold"
-            >
-              θ = {theta.toFixed(0)}°
-            </text>
+            {/* 悬浮文字胶囊底座标注 */}
+            <g transform={`translate(${42 * Math.cos(thetaRad / 2)}, ${-42 * Math.sin(thetaRad / 2)})`}>
+              <rect
+                x="-32"
+                y="-10"
+                width="64"
+                height="20"
+                rx="10"
+                fill={colors.neutral.white}
+                stroke={colors.neutral[200]}
+                strokeWidth={CANVAS_STYLE.stroke.grid}
+                style={{ filter: `drop-shadow(${CANVAS_STYLE.svgFilter.shadow.dx}px ${CANVAS_STYLE.svgFilter.shadow.dy}px rgba(15,23,42,0.06))` }}
+              />
+              <text
+                x="0"
+                y="4"
+                textAnchor="middle"
+                fontFamily={CANVAS_STYLE.font.family}
+                fontSize={CANVAS_STYLE.font.axis}
+                fill={PHYSICS_COLORS.labelText}
+                fontWeight={CANVAS_STYLE.font.labelWeight}
+              >
+                θ = {theta.toFixed(0)}°
+              </text>
+            </g>
           </g>
         )}
       </g>
@@ -158,6 +180,7 @@ export const Rails: React.FC<RailsProps> = ({
     // 3D 倾斜视图
     const layout = getInclinedLayout(L)
     const shadowGradId = `rails-shadow-grad-${uniqueId}`
+    const railMetalGradId = `rail-metal-grad-${uniqueId}`
 
     // 计算缩放比例（基于默认 500×300 画布）
     const scaleX = width / 500
@@ -182,9 +205,25 @@ export const Rails: React.FC<RailsProps> = ({
             <stop offset="0%" stopColor={colors.primary[500]} stopOpacity="0.08" />
             <stop offset="100%" stopColor={colors.primary[500]} stopOpacity="0.01" />
           </linearGradient>
+          {/* 导轨不锈钢材质拉丝金属渐变 */}
+          <linearGradient id={railMetalGradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.trackMetalGrad[0]} />
+            <stop offset="25%" stopColor={SCENE_COLORS.materials.trackMetalGrad[1]} />
+            <stop offset="50%" stopColor={SCENE_COLORS.materials.trackMetalGrad[2]} />
+            <stop offset="75%" stopColor={SCENE_COLORS.materials.trackMetalGrad[3]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.trackMetalGrad[4]} />
+          </linearGradient>
         </defs>
         {/* 支撑架和地面 */}
-        <line x1={groundX1} y1={groundY} x2={groundX2} y2={groundY} stroke={colors.neutral[300]} strokeWidth="2" strokeDasharray="4,4" />
+        <line
+          x1={groundX1}
+          y1={groundY}
+          x2={groundX2}
+          y2={groundY}
+          stroke={PHYSICS_COLORS.axis}
+          strokeWidth={CANVAS_STYLE.stroke.axis}
+          strokeDasharray={CANVAS_STYLE.dash.guide.join(',')}
+        />
         
         {/* 斜面阴影/填充（半透明，增加立体感） */}
         <polygon
@@ -192,31 +231,33 @@ export const Rails: React.FC<RailsProps> = ({
           fill={`url(#${shadowGradId})`}
         />
 
-        {/* 导轨1（后侧）- 3层线宽叠加实现圆柱质感 */}
+        {/* 导轨1（后侧）- 拉丝金属渐变 3D 效果 */}
         <line x1={r1sx} y1={r1sy} x2={r1ex} y2={r1ey} stroke={colors.neutral[800]} strokeWidth={outerStroke} strokeLinecap="round" />
-        <line x1={r1sx} y1={r1sy} x2={r1ex} y2={r1ey} stroke={colors.neutral[600]} strokeWidth={midStroke} strokeLinecap="round" />
-        <line x1={r1sx} y1={r1sy - 0.8} x2={r1ex} y2={r1ey - 0.8} stroke={colors.neutral.white} strokeWidth={highlightStroke} strokeLinecap="round" opacity="0.65" />
+        <line x1={r1sx} y1={r1sy} x2={r1ex} y2={r1ey} stroke={`url(#${railMetalGradId})`} strokeWidth={midStroke} strokeLinecap="round" />
+        <line x1={r1sx} y1={r1sy - 0.8} x2={r1ex} y2={r1ey - 0.8} stroke={colors.neutral.white} strokeWidth={highlightStroke} strokeLinecap="round" opacity="0.75" />
         {/* 导轨1透视切面端盖 */}
-        <ellipse cx={r1sx} cy={r1sy} rx={capRx} ry={capRy} transform={`rotate(${capRotation}, ${r1sx}, ${r1sy})`} fill={colors.neutral[400]} stroke={colors.neutral[800]} strokeWidth="1" />
-        <ellipse cx={r1ex} cy={r1ey} rx={capRx} ry={capRy} transform={`rotate(${capRotation}, ${r1ex}, ${r1ey})`} fill={colors.neutral[600]} stroke={colors.neutral[800]} strokeWidth="1" />
+        <ellipse cx={r1sx} cy={r1sy} rx={capRx} ry={capRy} transform={`rotate(${capRotation}, ${r1sx}, ${r1sy})`} fill={colors.neutral[400]} stroke={colors.neutral[800]} strokeWidth={CANVAS_STYLE.stroke.grid} />
+        <ellipse cx={r1ex} cy={r1ey} rx={capRx} ry={capRy} transform={`rotate(${capRotation}, ${r1ex}, ${r1ey})`} fill={colors.neutral[600]} stroke={colors.neutral[800]} strokeWidth={CANVAS_STYLE.stroke.grid} />
         
-        {/* 导轨1支撑架 */}
-        <rect x={supportX - 3} y={groundY - 2} width="6" height="3" fill={colors.neutral[600]} rx="0.5" />
-        <line x1={supportX} y1={r1ey} x2={supportX} y2={groundY} stroke={colors.neutral[600]} strokeWidth="4" />
-        <line x1={supportX + 1.2} y1={r1ey} x2={supportX + 1.2} y2={groundY} stroke={colors.neutral[400]} strokeWidth="1.5" opacity="0.6" />
+        {/* 导轨1支撑架（精细金属工艺） */}
+        <rect x={supportX - 5} y={groundY - 3} width="10" height="4" fill={colors.neutral[800]} rx="1.5" />
+        <line x1={supportX} y1={r1ey} x2={supportX} y2={groundY} stroke={colors.neutral[800]} strokeWidth="5.5" />
+        <line x1={supportX} y1={r1ey} x2={supportX} y2={groundY} stroke={colors.neutral[400]} strokeWidth="3" />
+        <line x1={supportX + 1.2} y1={r1ey} x2={supportX + 1.2} y2={groundY} stroke={colors.neutral.white} strokeWidth="1" opacity="0.7" />
 
-        {/* 导轨2（前侧）- 3层线宽叠加实现圆柱质感 */}
+        {/* 导轨2（前侧）- 拉丝金属渐变 3D 效果 */}
         <line x1={r1sx + dx} y1={r1sy + dy} x2={r1ex + dx} y2={r1ey + dy} stroke={colors.neutral[800]} strokeWidth={outerStroke} strokeLinecap="round" />
-        <line x1={r1sx + dx} y1={r1sy + dy} x2={r1ex + dx} y2={r1ey + dy} stroke={colors.neutral[600]} strokeWidth={midStroke} strokeLinecap="round" />
-        <line x1={r1sx + dx} y1={r1sy + dy - 0.8} x2={r1ex + dx} y2={r1ey + dy - 0.8} stroke={colors.neutral.white} strokeWidth={highlightStroke} strokeLinecap="round" opacity="0.65" />
+        <line x1={r1sx + dx} y1={r1sy + dy} x2={r1ex + dx} y2={r1ey + dy} stroke={`url(#${railMetalGradId})`} strokeWidth={midStroke} strokeLinecap="round" />
+        <line x1={r1sx + dx} y1={r1sy + dy - 0.8} x2={r1ex + dx} y2={r1ey + dy - 0.8} stroke={colors.neutral.white} strokeWidth={highlightStroke} strokeLinecap="round" opacity="0.75" />
         {/* 导轨2透视切面端盖 */}
-        <ellipse cx={r1sx + dx} cy={r1sy + dy} rx={capRx} ry={capRy} transform={`rotate(${capRotation}, ${r1sx + dx}, ${r1sy + dy})`} fill={colors.neutral[400]} stroke={colors.neutral[800]} strokeWidth="1" />
-        <ellipse cx={r1ex + dx} cy={r1ey + dy} rx={capRx} ry={capRy} transform={`rotate(${capRotation}, ${r1ex + dx}, ${r1ey + dy})`} fill={colors.neutral[600]} stroke={colors.neutral[800]} strokeWidth="1" />
+        <ellipse cx={r1sx + dx} cy={r1sy + dy} rx={capRx} ry={capRy} transform={`rotate(${capRotation}, ${r1sx + dx}, ${r1sy + dy})`} fill={colors.neutral[400]} stroke={colors.neutral[800]} strokeWidth={CANVAS_STYLE.stroke.grid} />
+        <ellipse cx={r1ex + dx} cy={r1ey + dy} rx={capRx} ry={capRy} transform={`rotate(${capRotation}, ${r1ex + dx}, ${r1ey + dy})`} fill={colors.neutral[600]} stroke={colors.neutral[800]} strokeWidth={CANVAS_STYLE.stroke.grid} />
         
-        {/* 导轨2支撑架 */}
-        <rect x={supportX + dx - 3} y={groundY - 2} width="6" height="3" fill={colors.neutral[600]} rx="0.5" />
-        <line x1={supportX + dx} y1={r1ey + dy} x2={supportX + dx} y2={groundY} stroke={colors.neutral[600]} strokeWidth="4" />
-        <line x1={supportX + dx + 1.2} y1={r1ey + dy} x2={supportX + dx + 1.2} y2={groundY} stroke={colors.neutral[400]} strokeWidth="1.5" opacity="0.6" />
+        {/* 导轨2支撑架（精细金属工艺） */}
+        <rect x={supportX + dx - 5} y={groundY - 3} width="10" height="4" fill={colors.neutral[800]} rx="1.5" />
+        <line x1={supportX + dx} y1={r1ey + dy} x2={supportX + dx} y2={groundY} stroke={colors.neutral[800]} strokeWidth="5.5" />
+        <line x1={supportX + dx} y1={r1ey + dy} x2={supportX + dx} y2={groundY} stroke={colors.neutral[400]} strokeWidth="3" />
+        <line x1={supportX + dx + 1.2} y1={r1ey + dy} x2={supportX + dx + 1.2} y2={groundY} stroke={colors.neutral.white} strokeWidth="1" opacity="0.7" />
       </g>
     )
   }
@@ -253,17 +294,17 @@ export const Rails: React.FC<RailsProps> = ({
           <stop offset="0%" stopColor={colors.neutral[50]} />
           <stop offset="100%" stopColor={colors.neutral[100]} />
         </linearGradient>
-        {/* 轨道圆柱体 3D 渐变 */}
+        {/* 轨道圆柱体 3D 不锈钢拉丝金属渐变 */}
         <linearGradient id={railGradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={colors.neutral[700]} />
-          <stop offset="25%" stopColor={colors.neutral[500]} />
-          <stop offset="50%" stopColor={colors.neutral[200]} />
-          <stop offset="75%" stopColor={colors.neutral[600]} />
-          <stop offset="100%" stopColor={colors.neutral[800]} />
+          <stop offset="0%" stopColor={SCENE_COLORS.materials.trackMetalGrad[0]} />
+          <stop offset="25%" stopColor={SCENE_COLORS.materials.trackMetalGrad[1]} />
+          <stop offset="50%" stopColor={SCENE_COLORS.materials.trackMetalGrad[2]} />
+          <stop offset="75%" stopColor={SCENE_COLORS.materials.trackMetalGrad[3]} />
+          <stop offset="100%" stopColor={SCENE_COLORS.materials.trackMetalGrad[4]} />
         </linearGradient>
       </defs>
       
-      {/* 导轨架背景 */}
+      {/* 导轨架底座背景（增加了精致的阴影和内发光层，体现悬浮立体感） */}
       <rect
         x={x1 - bgPadX}
         y={y1 - bgPadY}
@@ -272,7 +313,8 @@ export const Rails: React.FC<RailsProps> = ({
         fill={`url(#${bgGradId})`}
         rx={bgRx}
         stroke={colors.neutral[200]}
-        strokeWidth="1.5"
+        strokeWidth={CANVAS_STYLE.stroke.objectThin}
+        style={{ filter: `drop-shadow(${CANVAS_STYLE.svgFilter.shadow.dx}px ${CANVAS_STYLE.svgFilter.shadow.dy}px rgba(15,23,42,0.06))` }}
       />
       <rect
         x={x1 - bgPadX + bgInnerOffset}
@@ -281,23 +323,31 @@ export const Rails: React.FC<RailsProps> = ({
         height={spacing + (bgPadY - bgInnerOffset) * 2}
         fill="none"
         stroke={colors.neutral.white}
-        strokeWidth="1.5"
+        strokeWidth={CANVAS_STYLE.stroke.objectThin}
         rx={bgInnerRx}
       />
 
       {/* 导轨 1 */}
-      <rect x={x1} y={y1 - railH / 2 + railShadowOffset} width={length} height={railH} fill="none" stroke={colors.neutral[900]} strokeWidth="0.8" opacity="0.1" rx={railRx} />
+      {/* 轨道软阴影 */}
+      <rect x={x1} y={y1 - railH / 2 + railShadowOffset} width={length} height={railH} fill="none" stroke={colors.neutral[900]} strokeWidth="0.8" opacity={CANVAS_STYLE.opacity.shadow} rx={railRx} />
+      {/* 轨道金属本体 */}
       <rect x={x1} y={y1 - railH / 2} width={length} height={railH} fill={`url(#${railGradId})`} rx={railRx} />
-      <line x1={x1 + endCapHighlightOffset} y1={y1 - railHighlightY} x2={x2 - endCapHighlightOffset} y2={y1 - railHighlightY} stroke={colors.neutral.white} strokeWidth="0.8" opacity="0.75" />
-      <circle cx={x1} cy={y1} r={endCapR} fill={colors.neutral[500]} stroke={colors.neutral[800]} strokeWidth="1" />
-      <circle cx={x2} cy={y1} r={endCapR} fill={colors.neutral[600]} stroke={colors.neutral[800]} strokeWidth="1" />
+      {/* 轨道顶部高光线 */}
+      <line x1={x1 + endCapHighlightOffset} y1={y1 - railHighlightY} x2={x2 - endCapHighlightOffset} y2={y1 - railHighlightY} stroke={colors.neutral.white} strokeWidth="0.8" opacity="0.8" />
+      {/* 轨道切面端盖，金属抛光色 */}
+      <circle cx={x1} cy={y1} r={endCapR} fill={SCENE_COLORS.materials.trackMetalGrad[1]} stroke={colors.neutral[800]} strokeWidth={CANVAS_STYLE.stroke.grid} />
+      <circle cx={x2} cy={y1} r={endCapR} fill={SCENE_COLORS.materials.trackMetalGrad[3]} stroke={colors.neutral[800]} strokeWidth={CANVAS_STYLE.stroke.grid} />
 
       {/* 导轨 2 */}
-      <rect x={x1} y={y2 - railH / 2 + railShadowOffset} width={length} height={railH} fill="none" stroke={colors.neutral[900]} strokeWidth="0.8" opacity="0.1" rx={railRx} />
+      {/* 轨道软阴影 */}
+      <rect x={x1} y={y2 - railH / 2 + railShadowOffset} width={length} height={railH} fill="none" stroke={colors.neutral[900]} strokeWidth="0.8" opacity={CANVAS_STYLE.opacity.shadow} rx={railRx} />
+      {/* 轨道金属本体 */}
       <rect x={x1} y={y2 - railH / 2} width={length} height={railH} fill={`url(#${railGradId})`} rx={railRx} />
-      <line x1={x1 + endCapHighlightOffset} y1={y2 - railHighlightY} x2={x2 - endCapHighlightOffset} y2={y2 - railHighlightY} stroke={colors.neutral.white} strokeWidth="0.8" opacity="0.75" />
-      <circle cx={x1} cy={y2} r={endCapR} fill={colors.neutral[500]} stroke={colors.neutral[800]} strokeWidth="1" />
-      <circle cx={x2} cy={y2} r={endCapR} fill={colors.neutral[600]} stroke={colors.neutral[800]} strokeWidth="1" />
+      {/* 轨道顶部高光线 */}
+      <line x1={x1 + endCapHighlightOffset} y1={y2 - railHighlightY} x2={x2 - endCapHighlightOffset} y2={y2 - railHighlightY} stroke={colors.neutral.white} strokeWidth="0.8" opacity="0.8" />
+      {/* 轨道切面端盖，金属抛光色 */}
+      <circle cx={x1} cy={y2} r={endCapR} fill={SCENE_COLORS.materials.trackMetalGrad[1]} stroke={colors.neutral[800]} strokeWidth={CANVAS_STYLE.stroke.grid} />
+      <circle cx={x2} cy={y2} r={endCapR} fill={SCENE_COLORS.materials.trackMetalGrad[3]} stroke={colors.neutral[800]} strokeWidth={CANVAS_STYLE.stroke.grid} />
     </g>
   )
 }

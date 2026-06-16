@@ -1,5 +1,5 @@
 import React, { useId } from 'react'
-import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { useAnimationStore } from '@/stores'
 
@@ -26,17 +26,6 @@ interface ConductingRodProps {
   /** 侧视截面半径 (px)，默认 16 */
   rodRadius?: number
 }
-
-/**
- * 导电棒组件
- *
- * 绘制在导轨上滑动的导体棒，支持三种视角模式：
- * - horizontal：水平平面模式，铜棒竖直放置于两导轨之间，含流光动画
- * - inclined：3D 倾斜模式，铜棒跨在倾斜导轨上，4 层描边实现圆柱质感
- * - side-view：侧视截面模式，圆形截面 + ⊗/⊙ 电流方向符号
- *
- * 电流流光动画：根据 currentDir 方向，沿棒体绘制流动虚线
- */
 
 /**
  * 3D 倾斜导轨的基准布局（与 Rails 组件共享同一坐标系）
@@ -99,31 +88,39 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
     return (
       <g>
         <defs>
-          {/* 3D 铜棒截面径向渐变 */}
+          {/* 3D 铜棒截面极富立体感的径向渐变 */}
           <radialGradient id={radialGradId} cx="30%" cy="30%" r="70%">
             <stop offset="0%" stopColor={SCENE_COLORS.coil.copperLight} />
             <stop offset="60%" stopColor={SCENE_COLORS.coil.copperBase} />
             <stop offset="100%" stopColor={SCENE_COLORS.coil.copperDark} />
           </radialGradient>
         </defs>
+        
+        {/* 导体棒截面底投影 */}
+        <circle cx={1} cy={2} r={r} fill={colors.neutral[900]} opacity={CANVAS_STYLE.opacity.shadow} />
+        
         {/* 导体棒截面圆 */}
-        <circle cx={0} cy={0} r={r} fill={`url(#${radialGradId})`} stroke={SCENE_COLORS.coil.copperStroke} strokeWidth="2" />
+        <circle cx={0} cy={0} r={r} fill={`url(#${radialGradId})`} stroke={SCENE_COLORS.coil.copperStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
         {/* 偏置受光高光点 */}
-        <circle cx={-highlightOffset} cy={-highlightOffset} r={highlightR} fill={colors.neutral.white} opacity="0.65" pointerEvents="none" />
+        <circle cx={-highlightOffset} cy={-highlightOffset} r={highlightR} fill={colors.neutral.white} opacity="0.75" pointerEvents="none" />
         
         {/* 电流方向符号 */}
         {currentDir === 'in' && (
           <g>
-            <circle cx={0} cy={0} r={symbolR} fill="none" stroke={colors.neutral[800]} strokeWidth="3" opacity="0.25" />
-            <circle cx={0} cy={0} r={symbolR} fill="none" stroke={PHYSICS_COLORS.electricCurrent} strokeWidth="2.5" />
-            <line x1={-crossHalf} y1={-crossHalf} x2={crossHalf} y2={crossHalf} stroke={PHYSICS_COLORS.electricCurrent} strokeWidth="3" />
-            <line x1={crossHalf} y1={-crossHalf} x2={-crossHalf} y2={crossHalf} stroke={PHYSICS_COLORS.electricCurrent} strokeWidth="3" />
+            {/* 荧光发光底圈 */}
+            <circle cx={0} cy={0} r={symbolR} fill="none" stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={CANVAS_STYLE.stroke.vectorMain * 2.2} opacity="0.22" style={{ filter: `drop-shadow(0 0 2px ${PHYSICS_COLORS.electricCurrent})` }} />
+            <circle cx={0} cy={0} r={symbolR} fill="none" stroke={colors.neutral[800]} strokeWidth={CANVAS_STYLE.stroke.vectorMain} opacity="0.25" />
+            <circle cx={0} cy={0} r={symbolR} fill="none" stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={CANVAS_STYLE.stroke.chartMain} />
+            <line x1={-crossHalf} y1={-crossHalf} x2={crossHalf} y2={crossHalf} stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={CANVAS_STYLE.stroke.vectorMain} />
+            <line x1={crossHalf} y1={-crossHalf} x2={-crossHalf} y2={crossHalf} stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={CANVAS_STYLE.stroke.vectorMain} />
           </g>
         )}
         {currentDir === 'out' && (
           <g>
-            <circle cx={0} cy={0} r={symbolR} fill="none" stroke={colors.neutral[800]} strokeWidth="3" opacity="0.25" />
-            <circle cx={0} cy={0} r={symbolR} fill="none" stroke={PHYSICS_COLORS.electricCurrent} strokeWidth="2.5" />
+            {/* 荧光发光底圈 */}
+            <circle cx={0} cy={0} r={symbolR} fill="none" stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={CANVAS_STYLE.stroke.vectorMain * 2.2} opacity="0.22" style={{ filter: `drop-shadow(0 0 2px ${PHYSICS_COLORS.electricCurrent})` }} />
+            <circle cx={0} cy={0} r={symbolR} fill="none" stroke={colors.neutral[800]} strokeWidth={CANVAS_STYLE.stroke.vectorMain} opacity="0.25" />
+            <circle cx={0} cy={0} r={symbolR} fill="none" stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={CANVAS_STYLE.stroke.chartMain} />
             <circle cx={0} cy={0} r={dotR} fill={PHYSICS_COLORS.electricCurrent} />
           </g>
         )}
@@ -160,19 +157,22 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
 
     return (
       <g transform={`scale(${scale})`}>
+        {/* 3D 投影层，使导体棒具有立体悬浮感 */}
+        <line x1={px1 + 1} y1={py1 + 4} x2={px2 + 1} y2={py2 + 4} stroke={colors.neutral[900]} strokeWidth={outerStroke} strokeLinecap="round" opacity={CANVAS_STYLE.opacity.shadow} />
+        
         {/* 导体棒 - 4层描边实现 3D 圆柱铜棒效果 */}
         <line x1={px1} y1={py1} x2={px2} y2={py2} stroke={SCENE_COLORS.coil.copperStroke} strokeWidth={outerStroke} strokeLinecap="round" />
         <line x1={px1} y1={py1} x2={px2} y2={py2} stroke={SCENE_COLORS.coil.copperBase} strokeWidth={midStroke} strokeLinecap="round" />
         <line x1={px1} y1={py1} x2={px2} y2={py2} stroke={SCENE_COLORS.coil.copperLight} strokeWidth={innerStroke} strokeLinecap="round" />
-        <line x1={px1} y1={py1 - 1.2} x2={px2} y2={py2 - 1.2} stroke={colors.neutral.white} strokeWidth={highlightStroke} strokeLinecap="round" opacity="0.65" />
+        <line x1={px1} y1={py1 - 1.2} x2={px2} y2={py2 - 1.2} stroke={colors.neutral.white} strokeWidth={highlightStroke} strokeLinecap="round" opacity="0.75" />
         
         {/* 3D 椭圆端面 */}
-        <ellipse cx={px1} cy={py1} rx={capRx} ry={capRy} transform={`rotate(${angle}, ${px1}, ${py1})`} fill={SCENE_COLORS.coil.copperLight} stroke={SCENE_COLORS.coil.copperStroke} strokeWidth="1" />
-        <ellipse cx={px2} cy={py2} rx={capRx} ry={capRy} transform={`rotate(${angle}, ${px2}, ${py2})`} fill={SCENE_COLORS.coil.copperBase} stroke={SCENE_COLORS.coil.copperStroke} strokeWidth="1" />
+        <ellipse cx={px1} cy={py1} rx={capRx} ry={capRy} transform={`rotate(${angle}, ${px1}, ${py1})`} fill={SCENE_COLORS.coil.copperLight} stroke={SCENE_COLORS.coil.copperStroke} strokeWidth={CANVAS_STYLE.stroke.tick} />
+        <ellipse cx={px2} cy={py2} rx={capRx} ry={capRy} transform={`rotate(${angle}, ${px2}, ${py2})`} fill={SCENE_COLORS.coil.copperBase} stroke={SCENE_COLORS.coil.copperStroke} strokeWidth={CANVAS_STYLE.stroke.tick} />
 
-        {/* 如果有电流，在棒中段加虚线指示电流流向 */}
+        {/* 如果有电流，在棒中段加带有荧光发光特效的流向指示线 */}
         {currentDir !== 'none' && (
-          <g>
+          <g style={{ filter: `drop-shadow(0 0 3px ${PHYSICS_COLORS.electricCurrent})` }}>
             {/* 电流发光底条 */}
             <line
               x1={currentDir === 'in' ? px2 : px1}
@@ -181,7 +181,7 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
               y2={currentDir === 'in' ? py1 : py2}
               stroke={PHYSICS_COLORS.electricCurrent}
               strokeWidth={currentGlowStroke}
-              opacity="0.3"
+              opacity={CANVAS_STYLE.opacity.glow}
               strokeLinecap="round"
             />
             {/* 动画流光虚线 */}
@@ -190,11 +190,12 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
               y1={currentDir === 'in' ? py2 : py1}
               x2={currentDir === 'in' ? px1 : px2}
               y2={currentDir === 'in' ? py1 : py2}
-              stroke={PHYSICS_COLORS.electricCurrent}
+              stroke={colors.neutral.white} // 在红色荧光背景下使用白色流体更醒目
               strokeWidth={currentDashStroke}
-              strokeDasharray="6,5"
+              strokeDasharray="6,6"
               strokeDashoffset={-time * 35}
               strokeLinecap="round"
+              opacity="0.9"
             />
           </g>
         )}
@@ -222,27 +223,28 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
         {/* 水平模式下的 3D 铜棒线性渐变 (横向) */}
         <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor={SCENE_COLORS.coil.copperDark} />
-          <stop offset="30%" stopColor={SCENE_COLORS.coil.copperLight} />
+          <stop offset="20%" stopColor={SCENE_COLORS.coil.copperMid} />
+          <stop offset="45%" stopColor={SCENE_COLORS.coil.copperLight} />
           <stop offset="70%" stopColor={SCENE_COLORS.coil.copperBase} />
           <stop offset="100%" stopColor={SCENE_COLORS.coil.copperStroke} />
         </linearGradient>
       </defs>
 
-      {/* 导体棒阴影 */}
-      <rect x={x - shadowHalfW} y={y1} width={shadowHalfW * 2} height={y2 - y1} fill={SCENE_COLORS.coil.copperDark} rx={shadowHalfW * 0.75} opacity="0.4" />
+      {/* 导体棒软阴影 */}
+      <rect x={x - shadowHalfW} y={y1} width={shadowHalfW * 2} height={y2 - y1} fill={colors.neutral[900]} rx={shadowHalfW * 0.75} opacity={CANVAS_STYLE.opacity.shadow} />
       {/* 导体棒主体 */}
-      <rect x={x - rodHalfW} y={y1} width={rodHalfW * 2} height={y2 - y1} fill={`url(#${gradientId})`} rx={rodHalfW * 0.5} stroke={SCENE_COLORS.coil.copperStroke} strokeWidth="1.5" />
+      <rect x={x - rodHalfW} y={y1} width={rodHalfW * 2} height={y2 - y1} fill={`url(#${gradientId})`} rx={rodHalfW * 0.5} stroke={SCENE_COLORS.coil.copperStroke} strokeWidth={CANVAS_STYLE.stroke.objectThin} />
       
       {/* 3D 顶端和底端圆柱端盖 */}
-      <ellipse cx={x} cy={y1} rx={capRx} ry={capRy} fill={SCENE_COLORS.coil.copperLight} stroke={SCENE_COLORS.coil.copperStroke} strokeWidth="1" />
-      <ellipse cx={x} cy={y2} rx={capRx} ry={capRy} fill={SCENE_COLORS.coil.copperBase} stroke={SCENE_COLORS.coil.copperStroke} strokeWidth="1" />
+      <ellipse cx={x} cy={y1} rx={capRx} ry={capRy} fill={SCENE_COLORS.coil.copperLight} stroke={SCENE_COLORS.coil.copperStroke} strokeWidth={CANVAS_STYLE.stroke.tick} />
+      <ellipse cx={x} cy={y2} rx={capRx} ry={capRy} fill={SCENE_COLORS.coil.copperBase} stroke={SCENE_COLORS.coil.copperStroke} strokeWidth={CANVAS_STYLE.stroke.tick} />
 
       {/* 金属反光条 */}
-      <rect x={x - highlightOffsetX} y={y1 + 4} width={highlightW} height={y2 - y1 - 8} fill={colors.neutral.white} opacity="0.5" rx="1" pointerEvents="none" />
+      <rect x={x - highlightOffsetX} y={y1 + 4} width={highlightW} height={y2 - y1 - 8} fill={colors.neutral.white} opacity="0.6" rx="1" pointerEvents="none" />
       
       {/* 导体棒内部电流流光指示动画 */}
       {showCurrentFlow && (
-        <g>
+        <g style={{ filter: `drop-shadow(0 0 3px ${PHYSICS_COLORS.electricCurrent})` }}>
           {/* 流光发光背景层 */}
           <line
             x1={x}
@@ -251,7 +253,7 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
             y2={currentDir === 'in' ? y1 + currentFlowInset : y2 - currentFlowInset}
             stroke={PHYSICS_COLORS.electricCurrent}
             strokeWidth="5"
-            opacity="0.3"
+            opacity={CANVAS_STYLE.opacity.glow}
             strokeLinecap="round"
           />
           {/* 流光动画线 */}
@@ -260,8 +262,8 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
             y1={currentDir === 'in' ? y2 - currentFlowInset : y1 + currentFlowInset}
             x2={x}
             y2={currentDir === 'in' ? y1 + currentFlowInset : y2 - currentFlowInset}
-            stroke={PHYSICS_COLORS.electricCurrent}
-            strokeWidth="3.5"
+            stroke={colors.neutral.white} // 使用白色线流体，搭配底部的红色发光背景极其清晰且高亮
+            strokeWidth="3"
             strokeDasharray="6,6"
             strokeDashoffset={-time * 30}
             strokeLinecap="round"
