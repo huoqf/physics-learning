@@ -13,6 +13,7 @@ import {
   DCSource,
   Rheostat,
   ParametricMagneticField,
+  CoupledCoilField,
 } from '@/components/Physics'
 import { VectorArrow } from '@/components/UI'
 
@@ -385,16 +386,19 @@ export default function InductionPhenomenon() {
                 />
               </g>
             ) : (
-              // 2. 进阶模式磁感线：由原线圈产生（等效偶极场）
-              <g transform={`translate(220, ${coilY})`}>
-                <ParametricMagneticField
-                  w={110}
-                  h={62}
-                  pole={1}
-                  canvasHeight={400}
-                  lineColor="#10B981"
-                />
-              </g>
+              // 2. 进阶模式磁感线：双线圈耦合场
+              <CoupledCoilField
+                primaryX={220}
+                primaryW={110}
+                primaryH={62}
+                secondaryX={coilX}
+                secondaryW={160}
+                secondaryH={76}
+                y={coilY}
+                current={10 / resistance}
+                canvasHeight={400}
+                lineColor="#10B981"
+              />
             )}
           </g>
         )}

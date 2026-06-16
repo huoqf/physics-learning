@@ -463,6 +463,14 @@ export default function FaradayLaw() {
           <marker id="arrFluxGold" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
             <polygon points="0 0, 8 3, 0 6" fill={SCENE_COLORS.coil.copperBase} />
           </marker>
+          {/* 磁感线自适应红-紫-蓝渐变 */}
+          <linearGradient id="magneticLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor={PHYSICS_COLORS.magnetNorth} stopOpacity="0.05" />
+            <stop offset="30%" stopColor={PHYSICS_COLORS.magnetNorth} stopOpacity="0.65" />
+            <stop offset="50%" stopColor="#9333EA" stopOpacity="0.8" />
+            <stop offset="70%" stopColor={PHYSICS_COLORS.magnetSouth} stopOpacity="0.65" />
+            <stop offset="100%" stopColor={PHYSICS_COLORS.magnetSouth} stopOpacity="0.05" />
+          </linearGradient>
         </defs>
 
         {/* ═══════════════════ 左侧分界线 ═══════════════════ */}
@@ -475,46 +483,136 @@ export default function FaradayLaw() {
         {/* ═══════════════════ 左侧：物理仿真沙盒 ═══════════════════ */}
         <g clipPath="url(#sandboxClip)">
 
-          {/* ── 磁感线（背景淡紫色，穿透线圈部分变金色）── */}
-          {Array.from({ length: 7 }, (_, i) => {
-            const offset = (i - 3) * 22
-            const isThrough = Math.abs(offset) < COIL_RY * 0.85
-            const isHighlighted = isThrough && overlapRatioClamped > 0.15
-            const lineColor = isHighlighted ? SCENE_COLORS.coil.copperBase : PHYSICS_COLORS.magneticField
-            const lineOpacity = isHighlighted
-              ? 0.35 + overlapRatioClamped * 0.55
-              : 0.08 + overlapRatioClamped * 0.12
+          {/* ── 磁感线（对称贝塞尔曲线磁感线，穿透线圈部分变金色）── */}
+          {(() => {
+            const w = MAGNET_LEN // 100
+            const h = MAGNET_H   // 34
+            const halfW = w / 2
+            const halfH = h / 2
+            const pole = -1 // 固定的左N右S
+            
+            // 外部磁感线的不透明度，随着磁铁靠近线圈而变亮，增强视觉对比
+            const extOpacity = 0.12 + overlapRatioClamped * 0.48
+            // 轴向线当靠近线圈时高亮
+            const isHighlighted = overlapRatioClamped > 0.15
+            const axisColor = isHighlighted ? SCENE_COLORS.coil.copperBase : PHYSICS_COLORS.magneticField
+            const axisOpacity = isHighlighted 
+              ? 0.45 + overlapRatioClamped * 0.45 
+              : 0.15 + overlapRatioClamped * 0.15
+            
+            // 外部闭合线（上方 3 条，下方 3 条对称）- 双段贝塞尔曲线拼接，确保两端垂直端面出射与引入，并形成优美包络
+            const topClosedLines = [
+              // L1: 紧包裹角部的小耳朵
+              `M ${halfW * pole} ${-0.7 * halfH} C ${(halfW + 0.15 * w) * pole} ${-0.7 * halfH}, ${0.1 * w * pole} ${-1.25 * halfH}, 0 ${-1.25 * halfH} C ${-0.1 * w * pole} ${-1.25 * halfH}, ${(-halfW - 0.15 * w) * pole} ${-0.7 * halfH}, ${-halfW * pole} ${-0.7 * halfH}`,
+              // L2: 中圈
+              `M ${halfW * pole} ${-0.45 * halfH} C ${(halfW + 0.45 * w) * pole} ${-0.45 * halfH}, ${0.35 * w * pole} ${-2.8 * halfH}, 0 ${-2.8 * halfH} C ${-0.35 * w * pole} ${-2.8 * halfH}, ${(-halfW - 0.45 * w) * pole} ${-0.45 * halfH}, ${-halfW * pole} ${-0.45 * halfH}`,
+              // L3: 外圈巨大膨胀包络
+              `M ${halfW * pole} ${-0.15 * halfH} C ${(halfW + 0.95 * w) * pole} ${-0.15 * halfH}, ${0.75 * w * pole} ${-5.0 * halfH}, 0 ${-5.0 * halfH} C ${-0.75 * w * pole} ${-5.0 * halfH}, ${(-halfW - 0.95 * w) * pole} ${-0.15 * halfH}, ${-halfW * pole} ${-0.15 * halfH}`
+            ];
 
-            // 从磁铁 S 极延伸到磁铁 N 极的曲线（外部磁感线）
-            const mx = magnetCenterX
-            const my = magnetCenterY
+            const bottomClosedLines = [
+              // L1: 紧包裹角部的小耳朵
+              `M ${halfW * pole} ${0.7 * halfH} C ${(halfW + 0.15 * w) * pole} ${0.7 * halfH}, ${0.1 * w * pole} ${1.25 * halfH}, 0 ${1.25 * halfH} C ${-0.1 * w * pole} ${1.25 * halfH}, ${(-halfW - 0.15 * w) * pole} ${0.7 * halfH}, ${-halfW * pole} ${0.7 * halfH}`,
+              // L2: 中圈
+              `M ${halfW * pole} ${0.45 * halfH} C ${(halfW + 0.45 * w) * pole} ${0.45 * halfH}, ${0.35 * w * pole} ${2.8 * halfH}, 0 ${2.8 * halfH} C ${-0.35 * w * pole} ${2.8 * halfH}, ${(-halfW - 0.45 * w) * pole} ${0.45 * halfH}, ${-halfW * pole} ${0.45 * halfH}`,
+              // L3: 外圈巨大膨胀包络
+              `M ${halfW * pole} ${0.15 * halfH} C ${(halfW + 0.95 * w) * pole} ${0.15 * halfH}, ${0.75 * w * pole} ${5.0 * halfH}, 0 ${5.0 * halfH} C ${-0.75 * w * pole} ${5.0 * halfH}, ${(-halfW - 0.95 * w) * pole} ${0.15 * halfH}, ${-halfW * pole} ${0.15 * halfH}`
+            ];
+
+            // 两端发散线 (两端各 3 条) - 与大包络圈自然过渡
+            const divergentLines = [
+              // N 极发散侧 (发射，顺流向：从内向外)
+              `M ${halfW * pole} 0 L ${(halfW + w) * pole} 0`, // 水平
+              `M ${halfW * pole} ${-0.2 * halfH} C ${(halfW + 0.5 * w) * pole} ${-0.2 * halfH}, ${(halfW + 0.8 * w) * pole} ${-0.3 * w}, ${(halfW + w) * pole} ${-0.6 * w}`, // 斜上
+              `M ${halfW * pole} ${0.2 * halfH} C ${(halfW + 0.5 * w) * pole} ${0.2 * halfH}, ${(halfW + 0.8 * w) * pole} ${0.3 * w}, ${(halfW + w) * pole} ${0.6 * w}`, // 斜下
+
+              // S 极汇聚侧 (汇聚，顺流向：从外向内)
+              `M ${-(halfW + w) * pole} 0 L ${-halfW * pole} 0`, // 水平
+              `M ${-(halfW + w) * pole} ${-0.6 * w} C ${-(halfW + 0.8 * w) * pole} ${-0.3 * w}, ${-(halfW + 0.5 * w) * pole} ${-0.2 * halfH}, ${-halfW * pole} ${-0.2 * halfH}`, // 斜上
+              `M ${-(halfW + w) * pole} ${0.6 * w} C ${-(halfW + 0.8 * w) * pole} ${0.3 * w}, ${-(halfW + 0.5 * w) * pole} ${0.2 * halfH}, ${-halfW * pole} ${0.2 * halfH}` // 斜下
+            ];
+
+            const allPaths = [...bottomClosedLines, ...topClosedLines, ...divergentLines]
+
+            // 5点式降噪独立指示箭头配置
+            const yTopMiddle = -2.8 * halfH;
+            const yBottomMiddle = 2.8 * halfH;
+
+            const xArrowRight = halfW + 0.3 * w;
+            const xArrowLeft = -halfW - 0.3 * w;
+
+            const arrowsConfig = [
+              { role: 'N极外侧轴线', x: xArrowRight * pole, y: 0, dir: pole },
+              { role: 'S极外侧轴线', x: xArrowLeft * pole, y: 0, dir: pole },
+              { role: '上方中圈顶点', x: 0, y: yTopMiddle, dir: -pole },
+              { role: '下方中圈底点', x: 0, y: yBottomMiddle, dir: -pole },
+              { role: '磁铁内部中心', x: 0, y: 0, dir: pole },
+            ];
 
             return (
-              <g key={i} opacity={lineOpacity}>
-                {/* 穿过线圈的直线段（从磁铁右端穿越到线圈） */}
-                {isHighlighted && (
-                  <line
-                    x1={magnetX + MAGNET_LEN}
-                    y1={my + offset}
-                    x2={Math.min(sandboxW - 5, COIL_X + COIL_RX + 10)}
-                    y2={my + offset}
-                    stroke={lineColor}
-                    strokeWidth={isHighlighted ? CANVAS_STYLE.stroke.vectorSub : CANVAS_STYLE.stroke.reference}
-                    markerEnd={isHighlighted ? "url(#arrFluxGold)" : "url(#arrFlux)"}
-                  />
-                )}
-                {/* 磁铁左侧的外部磁感线（半椭圆弧） */}
-                {!isHighlighted && (
+              <g transform={`translate(${magnetCenterX}, ${magnetCenterY})`}>
+                {/* 外部磁感线网络 */}
+                {allPaths.map((dStr, idx) => (
                   <path
-                    d={`M ${mx - MAGNET_LEN / 2} ${my + offset} C ${mx - MAGNET_LEN - Math.abs(offset) * 1.2} ${my + offset * 2}, ${mx - MAGNET_LEN - Math.abs(offset) * 1.2} ${my - offset * 2}, ${mx - MAGNET_LEN / 2} ${my - offset}`}
+                    key={`dipole-line-${idx}`}
+                    d={dStr}
                     fill="none"
-                    stroke={lineColor}
+                    stroke="url(#magneticLineGrad)"
                     strokeWidth={CANVAS_STYLE.stroke.reference}
+                    strokeDasharray="6, 4"
+                    opacity={extOpacity}
                   />
-                )}
+                ))}
+
+                {/* 5点式降噪独立方向指示箭头 */}
+                <g opacity={extOpacity} className="magnetic-arrows">
+                  {arrowsConfig.map((arrow, idx) => {
+                    const angle = arrow.dir === 1 ? 0 : 180;
+                    // 在 FaradayLaw 里，轴线上的箭头在重叠时会变成金色（与 axisColor 保持一致）
+                    const isAxisArrow = arrow.role.includes('轴线') || arrow.role.includes('中心');
+                    let arrowColor = '#9333EA';
+                    if (isAxisArrow && isHighlighted) {
+                      arrowColor = axisColor;
+                    } else {
+                      arrowColor = arrow.role.includes('N极')
+                        ? PHYSICS_COLORS.magnetNorth
+                        : arrow.role.includes('S极')
+                        ? PHYSICS_COLORS.magnetSouth
+                        : '#9333EA';
+                    }
+                    
+                    return (
+                      <g key={`arrow-${idx}`} className={`arrow-group-${arrow.role}`} transform={`translate(${arrow.x}, ${arrow.y}) rotate(${angle})`}>
+                        <polygon
+                          points="-5,-3.5 5,0 -5,3.5"
+                          fill={arrowColor}
+                          opacity={0.85}
+                        />
+                      </g>
+                    );
+                  })}
+                </g>
+
+                {/* 中心轴向穿透磁感线（三条，高亮时变成金色，非高亮时为渐变） */}
+                {[-6, 0, 6].map((dy, idx) => {
+                  const x1 = halfW + 30
+                  const x2 = -halfW - 30
+                  return (
+                    <line
+                      key={`mag-axis-${idx}`}
+                      x1={x1}
+                      y1={dy}
+                      x2={x2}
+                      y2={dy}
+                      stroke={isHighlighted ? axisColor : 'url(#magneticLineGrad)'}
+                      strokeWidth={isHighlighted ? CANVAS_STYLE.stroke.vectorSub : CANVAS_STYLE.stroke.reference}
+                      opacity={axisOpacity}
+                    />
+                  )
+                })}
               </g>
             )
-          })}
+          })()}
 
           {/* ── 闭合回路导线（与 circuitPath 完全对齐）── */}
           {/* 上侧导线：线圈右端 → 右上拐角 */}

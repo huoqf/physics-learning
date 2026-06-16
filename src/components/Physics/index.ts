@@ -23,6 +23,7 @@ export { Rheostat } from './Rheostat'
 export type { RheostatProps } from './Rheostat'
 export { DCSource } from './DCSource'
 export { ParametricMagneticField } from './ParametricMagneticField'
+export { CoupledCoilField } from './CoupledCoilField'
 
 export type { MagneticPolesProps } from './MagneticPoles'
 export type { RotatingCoilProps } from './RotatingCoil'
