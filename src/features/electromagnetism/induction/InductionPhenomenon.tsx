@@ -12,6 +12,7 @@ import {
   PrimaryCoil,
   DCSource,
   Rheostat,
+  ParametricMagneticField,
 } from '@/components/Physics'
 import { VectorArrow } from '@/components/UI'
 
@@ -178,20 +179,20 @@ export default function InductionPhenomenon() {
   const wireRightP2 = { x: 450, y: 370 }
 
   // 5. 进阶模式下的原线圈回路导线贝塞尔曲线配置
-  // 原线圈左端 x=170, y=280 连到 变阻器左端 x=150, y=340
-  // 原线圈右端 x=270, y=280 连到 电池正极 x=230, y=340
-  // 变阻器右端 x=290, y=340 连到 电池负极 x=250, y=340
+  // 原线圈左端 x=170, y=280 连到 电源正极 x=58, y=352
+  // 电源负极 x=102, y=352 连到 变阻器左端 x=150, y=340
+  // 变阻器右端 x=290, y=340 连到 原线圈右端 x=270, y=280
   const primaryWireLeftP0 = { x: 170, y: 280 }
-  const primaryWireLeftP1 = { x: 130, y: 310 }
-  const primaryWireLeftP2 = { x: 150, y: 340 }
+  const primaryWireLeftP1 = { x: 100, y: 310 }
+  const primaryWireLeftP2 = { x: 58, y: 352 }
 
-  const primaryWireRightP0 = { x: 270, y: 280 }
+  const primaryWireRightP0 = { x: 290, y: 340 }
   const primaryWireRightP1 = { x: 310, y: 310 }
-  const primaryWireRightP2 = { x: 230, y: 340 }
+  const primaryWireRightP2 = { x: 270, y: 280 }
 
-  const batteryWireP0 = { x: 290, y: 340 }
-  const batteryWireP1 = { x: 270, y: 360 }
-  const batteryWireP2 = { x: 250, y: 340 }
+  const batteryToRheostatP0 = { x: 102, y: 352 }
+  const batteryToRheostatP1 = { x: 125, y: 348 }
+  const batteryToRheostatP2 = { x: 150, y: 340 }
 
   return (
     <div ref={containerRef} className="w-full h-full flex items-center justify-center p-2">
@@ -203,111 +204,7 @@ export default function InductionPhenomenon() {
         style={{ contentVisibility: 'auto' }}
       >
         <defs>
-          {/* 磁感线渐变（绿色系） */}
-          <linearGradient id="magneticLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#10B981" stopOpacity="0.05" />
-            <stop offset="30%" stopColor="#10B981" stopOpacity="0.65" />
-            <stop offset="50%" stopColor="#34D399" stopOpacity="0.8" />
-            <stop offset="70%" stopColor="#10B981" stopOpacity="0.65" />
-            <stop offset="100%" stopColor="#10B981" stopOpacity="0.05" />
-          </linearGradient>
         </defs>
-
-        {/* ================= BACKGROUND DECORATIONS ================= */}
-        {/* 实验室背景网格 */}
-        <g opacity="0.05">
-          {Array.from({ length: 14 }).map((_, i) => (
-            <line key={`x-${i}`} x1={i * 50} y1="0" x2={i * 50} y2="400" stroke="#475569" strokeWidth="1" />
-          ))}
-          {Array.from({ length: 8 }).map((_, i) => (
-            <line key={`y-${i}`} x1="0" y1={i * 50} x2="700" y2={i * 50} stroke="#475569" strokeWidth="1" />
-          ))}
-        </g>
-
-        {/* ================= 磁感线 (GREEN FIELD LINES) ================= */}
-        {showLines === 1 && (
-          <g>
-            {mode === 0 ? (
-              // 1. 基础模式磁感线：由磁铁发出，随磁铁位置移动，靠近线圈时穿过线圈变密
-              <g transform={`translate(${magnetX}, ${coilY})`}>
-                {/* 环形磁场 */}
-                {[-1.2, -0.6, 0.6, 1.2].map((factor, i) => {
-                  const ry_line = Math.abs(factor) * 32
-                  const rx_line = 120 + Math.abs(factor) * 40
-                  return (
-                    <ellipse
-                      key={`mag-ring-${i}`}
-                      cx="0"
-                      cy="0"
-                      rx={rx_line}
-                      ry={ry_line}
-                      fill="none"
-                      stroke="url(#magneticLineGrad)"
-                      strokeWidth={1.5}
-                      strokeDasharray="6, 4"
-                      opacity={0.35 + (1 - Math.min(250, Math.abs(magnetX - coilX)) / 250) * 0.45}
-                    />
-                  )
-                })}
-                {/* 中心轴向磁场线 */}
-                {[-10, 0, 10].map((dy, i) => {
-                  const directionSign = magnetPole // 1代表向右, -1向左
-                  return (
-                    <line
-                      key={`mag-axis-${i}`}
-                      x1={-180}
-                      y1={dy}
-                      x2={180}
-                      y2={dy}
-                      stroke="url(#magneticLineGrad)"
-                      strokeWidth="2"
-                      opacity={0.4 + (1 - Math.min(250, Math.abs(magnetX - coilX)) / 250) * 0.5}
-                      markerEnd={directionSign > 0 ? 'url(#arrowBField)' : undefined}
-                      markerStart={directionSign < 0 ? 'url(#arrowBField)' : undefined}
-                    />
-                  )
-                })}
-              </g>
-            ) : (
-              // 2. 进阶模式磁感线：由原线圈产生，穿过副线圈，强弱正比于原回路电流 10 / R
-              <g transform={`translate(0, ${coilY})`}>
-                {/* 环形磁场穿过两线圈 */}
-                {[-1.2, -0.6, 0.6, 1.2].map((factor, i) => {
-                  const ry_line = Math.abs(factor) * 36
-                  const rx_line = 140 + Math.abs(factor) * 30
-                  const cx_line = 320 // 处于原副线圈中间
-                  return (
-                    <ellipse
-                      key={`co-ring-${i}`}
-                      cx={cx_line}
-                      cy="0"
-                      rx={rx_line}
-                      ry={ry_line}
-                      fill="none"
-                      stroke="url(#magneticLineGrad)"
-                      strokeWidth={1.5}
-                      strokeDasharray="6, 4"
-                      opacity={(10 / resistance) * 0.9} // 亮度随电流变强而变大
-                    />
-                  )
-                })}
-                {/* 中心轴向穿过磁感线 */}
-                {[-10, 0, 10].map((dy, i) => (
-                  <line
-                    key={`co-axis-${i}`}
-                    x1={140}
-                    y1={dy}
-                    x2={520}
-                    y2={dy}
-                    stroke="url(#magneticLineGrad)"
-                    strokeWidth={(10 / resistance) * 2.5} // 粗细随电流变强而变粗
-                    opacity={(10 / resistance) * 0.9}
-                  />
-                ))}
-              </g>
-            )}
-          </g>
-        )}
 
         {/* ================= 物理元件与回路绘制 ================= */}
 
@@ -429,13 +326,13 @@ export default function InductionPhenomenon() {
               strokeWidth="3"
             />
             <path
-              d={`M ${primaryWireRightP0.x} ${primaryWireRightP0.y} C ${primaryWireRightP1.x} ${primaryWireRightP1.y}, ${primaryWireRightP2.x} ${primaryWireRightP2.y}, ${primaryWireRightP2.x} ${primaryWireRightP2.y}`}
+              d={`M ${batteryToRheostatP0.x} ${batteryToRheostatP0.y} C ${batteryToRheostatP1.x} ${batteryToRheostatP1.y}, ${batteryToRheostatP2.x} ${batteryToRheostatP2.y}, ${batteryToRheostatP2.x} ${batteryToRheostatP2.y}`}
               fill="none"
               stroke={SCENE_COLORS.circuit.wire}
               strokeWidth="3"
             />
             <path
-              d={`M ${batteryWireP0.x} ${batteryWireP0.y} C ${batteryWireP1.x} ${batteryWireP1.y}, ${batteryWireP2.x} ${batteryWireP2.y}, ${batteryWireP2.x} ${batteryWireP2.y}`}
+              d={`M ${primaryWireRightP0.x} ${primaryWireRightP0.y} C ${primaryWireRightP1.x} ${primaryWireRightP1.y}, ${primaryWireRightP2.x} ${primaryWireRightP2.y}, ${primaryWireRightP2.x} ${primaryWireRightP2.y}`}
               fill="none"
               stroke={SCENE_COLORS.circuit.wire}
               strokeWidth="3"
@@ -447,29 +344,58 @@ export default function InductionPhenomenon() {
                 {[0, 0.5].map((offset, i) => {
                   const flowSpeed = (10 / resistance) * 3
                   const tLeft = (((localTime.current * flowSpeed + offset) % 1 + 1) % 1)
+                  const tBatToR = (((localTime.current * flowSpeed + offset) % 1 + 1) % 1)
                   const tRight = (((localTime.current * -flowSpeed + offset) % 1 + 1) % 1)
-                  const tBat = (((localTime.current * flowSpeed + offset) % 1 + 1) % 1)
 
                   const pLeft = getBezierPoint(tLeft, primaryWireLeftP0, primaryWireLeftP1, primaryWireLeftP2)
+                  const pBatToR = getBezierPoint(tBatToR, batteryToRheostatP0, batteryToRheostatP1, batteryToRheostatP2)
                   const pRight = getBezierPoint(tRight, primaryWireRightP0, primaryWireRightP1, primaryWireRightP2)
-                  const pBat = getBezierPoint(tBat, batteryWireP0, batteryWireP1, batteryWireP2)
 
                   return (
                     <g key={`pri-wire-glow-${i}`}>
                       <circle cx={pLeft.x} cy={pLeft.y} r="3.5" fill={PHYSICS_COLORS.electricCurrent} filter="drop-shadow(0 0 2px #EF4444)" />
+                      <circle cx={pBatToR.x} cy={pBatToR.y} r="3.5" fill={PHYSICS_COLORS.electricCurrent} filter="drop-shadow(0 0 2px #EF4444)" />
                       <circle cx={pRight.x} cy={pRight.y} r="3.5" fill={PHYSICS_COLORS.electricCurrent} filter="drop-shadow(0 0 2px #EF4444)" />
-                      <circle cx={pBat.x} cy={pBat.y} r="3.5" fill={PHYSICS_COLORS.electricCurrent} filter="drop-shadow(0 0 2px #EF4444)" />
                     </g>
                   )
                 })}
               </g>
             )}
 
-            {/* 直流电池电源 (battery) */}
-            <DCSource type="battery" x={250} y={330} width={40} height={20} voltage={10} label="E = 10V" polarity="left-positive" />
+            {/* 直流稳压电源 (instrument) */}
+            <DCSource type="instrument" x={80} y={330} width={80} height={80} voltage={10} label="E = 10V" polarity="left-positive" />
 
             {/* 滑动变阻器 R */}
             <Rheostat x={220} y={330} value={resistance} min={5} max={100} label="滑动变阻器 R" />
+          </g>
+        )}
+
+        {/* ================= 磁感线 (GREEN FIELD LINES) ================= */}
+        {showLines === 1 && (
+          <g>
+            {mode === 0 ? (
+              // 1. 基础模式磁感线：条形磁铁的偶极场
+              <g transform={`translate(${magnetX}, ${coilY})`}>
+                <ParametricMagneticField
+                  w={120}
+                  h={36}
+                  pole={magnetPole as 1 | -1}
+                  canvasHeight={400}
+                  lineColor="#10B981"
+                />
+              </g>
+            ) : (
+              // 2. 进阶模式磁感线：由原线圈产生（等效偶极场）
+              <g transform={`translate(220, ${coilY})`}>
+                <ParametricMagneticField
+                  w={110}
+                  h={62}
+                  pole={1}
+                  canvasHeight={400}
+                  lineColor="#10B981"
+                />
+              </g>
+            )}
           </g>
         )}
 
