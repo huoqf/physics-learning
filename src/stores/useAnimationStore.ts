@@ -1,7 +1,5 @@
 import { create } from 'zustand'
 
-export type MotionMode = 'auto-v' | 'auto-F' | 'manual'
-
 export interface PhysicsState {
   position: { x: number; y: number }
   velocity: { vx: number; vy: number }
@@ -19,7 +17,6 @@ interface AnimationState {
   showGrid: boolean
   showTimeSlices: boolean
   showDualObjects: boolean
-  motionMode: MotionMode
   physicsState: PhysicsState
   setAnimationType: (type: string | null) => void
   setParams: (params: Record<string, number>) => void
@@ -32,7 +29,6 @@ interface AnimationState {
   toggleGrid: () => void
   toggleTimeSlices: () => void
   toggleDualObjects: () => void
-  setMotionMode: (mode: MotionMode) => void
   setPhysicsState: (state: PhysicsState | ((prev: PhysicsState) => PhysicsState)) => void
   reset: () => void
 }
@@ -48,7 +44,6 @@ export const useAnimationStore = create<AnimationState>((set) => ({
   showGrid: true,
   showTimeSlices: false,
   showDualObjects: false,
-  motionMode: 'auto-v',
   physicsState: {
     position: { x: 0, y: 0 },
     velocity: { vx: 0, vy: 0 },
@@ -67,7 +62,6 @@ export const useAnimationStore = create<AnimationState>((set) => ({
   toggleGrid: () => set((state) => ({ showGrid: !state.showGrid })),
   toggleTimeSlices: () => set((state) => ({ showTimeSlices: !state.showTimeSlices })),
   toggleDualObjects: () => set((state) => ({ showDualObjects: !state.showDualObjects })),
-  setMotionMode: (mode) => set({ motionMode: mode }),
   setPhysicsState: (physicsState) => set((state) => ({
     physicsState: typeof physicsState === 'function' ? physicsState(state.physicsState) : physicsState
   })),
@@ -82,7 +76,6 @@ export const useAnimationStore = create<AnimationState>((set) => ({
     showGrid: true,
     showTimeSlices: false,
     showDualObjects: false,
-    motionMode: 'auto-v',
     physicsState: {
       position: { x: 0, y: 0 },
       velocity: { vx: 0, vy: 0 },

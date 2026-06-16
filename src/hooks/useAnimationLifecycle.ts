@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import { useParams } from 'react-router-dom'
 import { getAnimationConfig } from '@/data/animationRegistry'
 import { preloadQuantityBuilder } from '@/data/physicsQuantities'
@@ -7,7 +7,6 @@ import { useAppStore } from '@/stores/useAppStore'
 import type { DiscoveryStepData } from '@/components/UI/DiscoveryGuide'
 import { useAnimationFrame } from '@/utils/animation'
 import { duration } from '@/theme/motion'
-import { calculateLorentzTrajectory } from '@/physics'
 
 export interface AnimationLifecycleResult {
   config: ReturnType<typeof getAnimationConfig>
@@ -21,38 +20,19 @@ export interface AnimationLifecycleResult {
   prevDiscoveryStep: () => void
 }
 
-export function useAnimationLifecycle(): AnimationLifecycleResult {
-  const { id } = useParams<{ id: string }>()
+/* ─── 子 hook: config 加载 + store 初始化 ─── */
 
-  const isPlaying = useAnimationStore((s) => s.isPlaying)
-  const params = useAnimationStore((s) => s.params)
+function useAnimationConfig() {
+  const { id } = useParams<{ id: string }>()
   const setParams = useAnimationStore((s) => s.setParams)
   const setTime = useAnimationStore((s) => s.setTime)
   const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
   const setPhysicsState = useAnimationStore((s) => s.setPhysicsState)
-
-  const { mode, setMode, discoveryStep, setDiscoveryStep, setDiscoveryMaxStep, nextDiscoveryStep, prevDiscoveryStep } = useAppStore()
+  const { setMode } = useAppStore()
   const { markAnimationViewed } = useProgressStore()
 
   const currentTimeRef = useRef(0)
-  const [canvasDimmed, setCanvasDimmed] = useState(false)
-  const [discoverySteps, setDiscoverySteps] = useState<DiscoveryStepData[]>([])
-
   const config = id ? getAnimationConfig(id) : undefined
-  const isDiscoveryMode = mode === 'discovery' && !!config?.supportsDiscovery
-
-  // 异步加载发现模式步骤
-  useEffect(() => {
-    if (config?.discoverySteps) {
-      config.discoverySteps().then(m => {
-        setDiscoverySteps(m.default)
-        setDiscoveryMaxStep(m.default.length - 1)
-      })
-    } else {
-      setDiscoverySteps([])
-    }
-  }, [config, setDiscoveryMaxStep])
-
   const prevConfigIdRef = useRef<string | undefined>(undefined)
 
   // config 变更时初始化 store
@@ -70,6 +50,54 @@ export function useAnimationLifecycle(): AnimationLifecycleResult {
     }
   }, [config, setParams, setTime, setIsPlaying, setPhysicsState, setMode, markAnimationViewed])
 
+  return { config, currentTimeRef }
+}
+
+/* ─── 子 hook: 发现模式步骤管理 ─── */
+
+function useDiscoveryMode(config: ReturnType<typeof getAnimationConfig>) {
+  const { mode, discoveryStep, setDiscoveryStep, setDiscoveryMaxStep, nextDiscoveryStep, prevDiscoveryStep } = useAppStore()
+  const [discoverySteps, setDiscoverySteps] = useState<DiscoveryStepData[]>([])
+
+  const isDiscoveryMode = mode === 'discovery' && !!config?.supportsDiscovery
+
+  // 异步加载发现模式步骤
+  useEffect(() => {
+    if (config?.discoverySteps) {
+      config.discoverySteps().then(m => {
+        setDiscoverySteps(m.default)
+        setDiscoveryMaxStep(m.default.length - 1)
+      })
+    } else {
+      setDiscoverySteps([])
+    }
+  }, [config, setDiscoveryMaxStep])
+
+  return {
+    isDiscoveryMode,
+    discoverySteps,
+    discoveryStep,
+    setDiscoveryStep,
+    nextDiscoveryStep,
+    prevDiscoveryStep,
+  }
+}
+
+/* ─── 子 hook: 播放循环 (rAF + updatePhysics) ─── */
+
+function usePlaybackLoop(
+  config: ReturnType<typeof getAnimationConfig>,
+  currentTimeRef: RefObject<number>,
+) {
+  const isPlaying = useAnimationStore((s) => s.isPlaying)
+  const params = useAnimationStore((s) => s.params)
+  const setTime = useAnimationStore((s) => s.setTime)
+  const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
+  const setPhysicsState = useAnimationStore((s) => s.setPhysicsState)
+  const speed = useAnimationStore((s) => s.speed)
+  const [canvasDimmed, setCanvasDimmed] = useState(false)
+  const maxTime = 30
+
   // 暂停时延迟 dimmed
   useEffect(() => {
     if (!isPlaying) {
@@ -86,15 +114,9 @@ export function useAnimationLifecycle(): AnimationLifecycleResult {
     if (!isPlaying) {
       currentTimeRef.current = time
     }
-  }, [time, isPlaying])
+  }, [time, isPlaying, currentTimeRef])
 
   // rAF 时间循环
-  const speed = useAnimationStore((s) => s.speed)
-  const maxTime = 30
-  
-  // 物理参数订阅用于触发轨迹重算
-  const { q = 1, v = 10, B = 1, m = 1 } = params
-
   useAnimationFrame(
     (deltaTime) => {
       currentTimeRef.current += (deltaTime / 1000) * speed
@@ -104,19 +126,18 @@ export function useAnimationLifecycle(): AnimationLifecycleResult {
         setIsPlaying(false)
         return
       }
-      
+
       const t = currentTimeRef.current
       setTime(t)
-      
-      // 计算当前位置与更新轨迹
-      const res = calculateLorentzTrajectory(q, m, B, v, t)
-      
-      // 更新轨迹点（简单处理，实际应考虑采样频率）
-      setPhysicsState((state: PhysicsState) => ({
-        position: { x: res.x, y: res.y },
-        velocity: { vx: res.vx, vy: res.vy },
-        trajectory: [...state.trajectory, { x: res.x, y: res.y }].slice(-200) // 保留最近 200 点
-      }))
+
+      // 只在 config 声明了 updatePhysics 时才计算物理状态
+      if (config?.updatePhysics) {
+        const dt = (deltaTime / 1000) * speed
+        const result = config.updatePhysics(params, t, dt)
+        if (result) {
+          setPhysicsState((state: PhysicsState) => ({ ...state, ...result }))
+        }
+      }
     },
     { playing: isPlaying, speed }
   )
@@ -128,15 +149,19 @@ export function useAnimationLifecycle(): AnimationLifecycleResult {
     setPhysicsState({ position: { x: 0, y: 0 }, velocity: { vx: 0, vy: 0 }, trajectory: [] })
   }
 
+  return { canvasDimmed, handleReset }
+}
+
+/* ─── 主 hook: 组合三个子 hook ─── */
+
+export function useAnimationLifecycle(): AnimationLifecycleResult {
+  const { config, currentTimeRef } = useAnimationConfig()
+  const discovery = useDiscoveryMode(config)
+  const playback = usePlaybackLoop(config, currentTimeRef)
+
   return {
     config,
-    isDiscoveryMode,
-    canvasDimmed,
-    handleReset,
-    discoverySteps,
-    discoveryStep,
-    setDiscoveryStep,
-    nextDiscoveryStep,
-    prevDiscoveryStep,
+    ...discovery,
+    ...playback,
   }
 }

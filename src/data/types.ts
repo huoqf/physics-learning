@@ -75,6 +75,12 @@ export interface AnimationConfig {
   CenterExtra?: LazyExoticComponent<ComponentType>
   /** 当 params[centerExtraMode] === 1 时，CenterExtra 接管全屏布局（替代页面层 id===硬编码） */
   centerExtraMode?: string
+  /** 可选：有物理状态需要每帧计算的动画才声明（如粒子轨迹） */
+  updatePhysics?: (
+    params: Record<string, number>,
+    t: number,
+    dt: number,
+  ) => Partial<import('@/stores').PhysicsState> | null
 }
 
 export interface Problem {

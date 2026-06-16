@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAnimationFrame } from '@/utils/animation'
 import { PHYSICS_COLORS } from '@/theme/physics'
-import {
-  computeHandPose,
-  lerpAngleDeg,
-  type HandChirality,
-  type Vec2,
-} from '@/physics'
+import { computeHandPose, type HandChirality } from '@/utils/handPose'
+import { lerpAngleDeg } from '@/math/angle'
+import type { Vec2 } from '@/physics'
 import { SkeletonHand, type HandPose } from './SkeletalHand'
 
 /**
