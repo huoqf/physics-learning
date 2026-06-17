@@ -171,11 +171,11 @@ export default function ACValues() {
 
   const { pad } = LAYOUT
 
-  // Q-t 图表 Y 轴范围
+  // Q-t 图表 Y 轴范围（动态适应当前最高热量，预留 30% 增长空间）
   const maxQ = useMemo(() => {
-    const maxPossible = Im * Im * R * VISUAL_PERIOD * 3
-    return Math.max(maxPossible, 100)
-  }, [Im, R])
+    const currentMax = Math.max(state.Q_ac, state.Q_dc, 10)
+    return currentMax * 1.3
+  }, [state.Q_ac, state.Q_dc])
 
   // 图表 SVG 坐标转换
   const chartMargin = { left: 50, right: 50, top: 25, bottom: 25 }
