@@ -1230,17 +1230,52 @@ export function buildElectromagnetismQuantities(
       const S = params.S ?? 0.04
       const omega = params.omega ?? 2
       const N = params.N ?? 100
+      const initialPhase = params.initialPhase ?? 0
+      const mode = params.mode ?? 0
       // 峰值电动势 Em = NBSω
       const Em = N * B * S * omega
       const { V_rms } = calculateACRMS(Em)
       const freq = omega / (2 * Math.PI)
+      // 瞬时值（纯函数计算，与 ACGeneration.tsx 中的 state 一致）
+      const theta = omega * time + initialPhase
+      const phi = B * S * Math.cos(theta)
+      const e = Em * Math.sin(theta)
+      const isNeutral = Math.abs(Math.sin(theta)) < 0.09
+      const isMaxEmf = Math.abs(Math.cos(theta)) < 0.09
+
+      const formulas = [
+        { name: '磁通量公式', latex: '\\Phi = BS\\cos(\\omega t + \\theta_0)', level: 'core' as const },
+        { name: '感应电动势', latex: 'e = E_m\\sin(\\omega t + \\theta_0)', level: 'core' as const },
+        { name: '峰值电动势', latex: 'E_m = NBS\\omega', level: 'core' as const },
+      ]
+
+      const gaokaoPoints = [
+        { text: '中性面（Φ最大，dΦ/dt=0，e=0）与垂直中性面（Φ=0，|dΦ/dt|最大，|e|=Em）的交替辨析。', importance: 'gaokao' as const },
+        { text: '转速 n 翻倍时，周期 T 减半，同时波峰高度 Em 同步翻倍。', importance: 'gaokao' as const },
+      ]
+
+      const warnings = [
+        { text: '易错提醒：转速 n 翻倍时，图象周期 T 减半的同时，波峰高度 Em 同步翻倍。', level: 'danger' as const },
+      ]
+
+      if (mode === 1) {
+        formulas.push(
+          { name: '一般表达式', latex: '\\Phi = BS\\cos(\\omega t + \\theta_0)', level: 'core' as const },
+        )
+      }
+
       return {
         quantities: [
           ...base,
-          { label: '峰值电动势 Em', value: Em, unit: 'V' },
-          { label: '有效值 Erms', value: V_rms, unit: 'V' },
-          { label: '频率 f', value: freq, unit: 'Hz' },
+          { label: '瞬时磁通量 Φ', value: phi.toFixed(4), unit: 'Wb', color: PHYSICS_COLORS.magneticField, highlight: isNeutral ? 'extreme' : undefined },
+          { label: '瞬时电动势 e', value: e.toFixed(2), unit: 'V', color: PHYSICS_COLORS.emf, highlight: isMaxEmf ? 'extreme' : undefined },
+          { label: '峰值电动势 Em', value: Em.toFixed(2), unit: 'V' },
+          { label: '有效值 Erms', value: V_rms.toFixed(2), unit: 'V' },
+          { label: '频率 f', value: freq.toFixed(2), unit: 'Hz' },
         ],
+        formulas,
+        gaokaoPoints,
+        warnings,
       }
     }
 

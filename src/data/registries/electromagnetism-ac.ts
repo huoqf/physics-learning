@@ -7,14 +7,13 @@ export const electromagnetismAcAnimations = defineAnimations({
     title: '交变电流产生与图像',
     knowledgeId: 'electricity-5-1',
     Component: lazy(() => import('@/features/electromagnetism/induction/ACGeneration')),
-    defaultParams: { B: 0.5, S: 0.04, omega: 2, N: 100, initialPhase: 0 },
-    paramMeta: [
-      { key: 'B', label: '磁感应强度 B', min: 0.1, max: 2, step: 0.1, unit: 'T' },
-      { key: 'S', label: '线圈面积 S', min: 0.01, max: 0.1, step: 0.01, unit: 'm²' },
-      { key: 'omega', label: '角速度 ω', min: 0.5, max: 10, step: 0.5, unit: 'rad/s' },
-      { key: 'N', label: '匝数 N', min: 1, max: 500, step: 10, unit: '匝' },
-      { key: 'initialPhase', label: '初始位置', min: 0, max: 1, step: 1, unit: '0=中性面 1=最大值面' },
-    ],
+    SidebarExtra: lazy(() => import('@/features/electromagnetism/induction/ACGenerationSidebarExtra')),
+    defaultParams: {
+      mode: 0,
+      B: 0.5, S: 0.04, omega: 2, N: 100, initialPhase: 0,
+      showVelocityDecomp: 0, showCoilNormal: 0,
+    },
+    paramMeta: [],
   },
   'anim-ac-values': {
     title: '有效值与峰值关系',
