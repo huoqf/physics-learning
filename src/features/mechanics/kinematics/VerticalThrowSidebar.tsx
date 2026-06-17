@@ -1,4 +1,4 @@
-import { SegmentedControl, ToggleSwitch } from '@/components/UI'
+import { SegmentedControl, ToggleSwitch, Slider } from '@/components/UI'
 import type { SidebarExtraProps } from '@/data/types'
 
 export default function VerticalThrowSidebar({
@@ -29,34 +29,28 @@ export default function VerticalThrowSidebar({
       {isAdvanced && (
         <div className="mt-3 space-y-3">
           {/* Slice Density */}
-          <div>
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-neutral-600">微元切片密度</span>
-              <span className="font-mono text-neutral-700">{(params.sliceDensity ?? 0).toFixed(2)} s</span>
-            </div>
-            <input
-              type="range" min={0} max={0.5} step={0.05}
-              value={params.sliceDensity ?? 0}
-              onChange={(e) => updateParam('sliceDensity', parseFloat(e.target.value))}
-              disabled={disabled}
-              className="w-full h-1.5 bg-neutral-200 rounded-full appearance-none cursor-pointer accent-primary-600"
-            />
-          </div>
+          <Slider
+            label="微元切片密度"
+            value={params.sliceDensity ?? 0}
+            min={0}
+            max={0.5}
+            step={0.05}
+            unit="s"
+            onChange={(v) => updateParam('sliceDensity', v)}
+            disabled={disabled}
+          />
 
           {/* Air Resistance */}
-          <div>
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-neutral-600">空气阻力 k</span>
-              <span className="font-mono text-neutral-700">{(params.airResistance ?? 0).toFixed(1)} kg/s</span>
-            </div>
-            <input
-              type="range" min={0} max={2} step={0.1}
-              value={params.airResistance ?? 0}
-              onChange={(e) => updateParam('airResistance', parseFloat(e.target.value))}
-              disabled={disabled}
-              className="w-full h-1.5 bg-neutral-200 rounded-full appearance-none cursor-pointer accent-primary-600"
-            />
-          </div>
+          <Slider
+            label="空气阻力 k"
+            value={params.airResistance ?? 0}
+            min={0}
+            max={2}
+            step={0.1}
+            unit="kg/s"
+            onChange={(v) => updateParam('airResistance', v)}
+            disabled={disabled}
+          />
 
           {/* Vacuum Compare Switch */}
           {(params.airResistance ?? 0) > 0 && (
@@ -69,19 +63,16 @@ export default function VerticalThrowSidebar({
           )}
 
           {/* Target Height */}
-          <div>
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-neutral-600">目标高度线</span>
-              <span className="font-mono text-neutral-700">{(params.targetHeight ?? 0).toFixed(1)} m</span>
-            </div>
-            <input
-              type="range" min={0} max={50} step={0.5}
-              value={params.targetHeight ?? 0}
-              onChange={(e) => updateParam('targetHeight', parseFloat(e.target.value))}
-              disabled={disabled}
-              className="w-full h-1.5 bg-neutral-200 rounded-full appearance-none cursor-pointer accent-primary-600"
-            />
-          </div>
+          <Slider
+            label="目标高度线"
+            value={params.targetHeight ?? 0}
+            min={0}
+            max={50}
+            step={0.5}
+            unit="m"
+            onChange={(v) => updateParam('targetHeight', v)}
+            disabled={disabled}
+          />
         </div>
       )}
     </div>

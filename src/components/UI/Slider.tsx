@@ -9,6 +9,11 @@ interface SliderProps {
   label?: string
   onChange: (value: number) => void
   disabled?: boolean
+  minLabel?: string
+  maxLabel?: string
+  midLabel?: string
+  formatValue?: (v: number) => string
+  description?: string
 }
 
 export const Slider: React.FC<SliderProps> = ({
@@ -20,8 +25,15 @@ export const Slider: React.FC<SliderProps> = ({
   label,
   onChange,
   disabled = false,
+  minLabel,
+  maxLabel,
+  midLabel,
+  formatValue,
+  description,
 }) => {
   const percentage = ((value - min) / (max - min)) * 100
+
+  const displayValue = formatValue ? formatValue(value) : value.toFixed(step < 1 ? 1 : 0)
 
   return (
     <div className={['w-full', disabled && 'opacity-40 pointer-events-none'].join(' ')}>
@@ -29,10 +41,13 @@ export const Slider: React.FC<SliderProps> = ({
         <div className="flex items-center justify-between mb-2">
           {label && <span className="text-sm font-medium text-neutral-700">{label}</span>}
           <span className="text-sm font-mono text-neutral-600">
-            {value.toFixed(step < 1 ? 1 : 0)}
+            {displayValue}
             {unit && <span className="ml-1 text-neutral-500">{unit}</span>}
           </span>
         </div>
+      )}
+      {description && (
+        <div className="text-right text-[10px] text-neutral-400 -mt-1 mb-2">{description}</div>
       )}
       <div className="relative h-2 bg-neutral-200 rounded-full">
         <div
@@ -54,6 +69,15 @@ export const Slider: React.FC<SliderProps> = ({
           style={{ left: `calc(${percentage}% - 8px)` }}
         />
       </div>
+      {(minLabel || maxLabel) && (
+        <div className="relative flex justify-between text-[10px] text-neutral-400 mt-0.5">
+          <span>{minLabel}</span>
+          {midLabel && (
+            <span className="absolute left-1/2 -translate-x-1/2">{midLabel}</span>
+          )}
+          <span>{maxLabel}</span>
+        </div>
+      )}
     </div>
   )
 }

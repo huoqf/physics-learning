@@ -1,6 +1,6 @@
 import { Suspense, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, FlaskConical, Play } from 'lucide-react'
+import { ArrowLeft, FlaskConical, Play, RotateCcw } from 'lucide-react'
 import { getAnimationConfig } from '@/data/animationRegistry'
 import { buildPhysicsQuantities } from '@/data/physicsQuantities'
 import { useAnimationStore } from '@/stores'
@@ -305,7 +305,20 @@ export default function AnimationPage() {
 
       <ThreePanel
         left={(paramControlParams.length > 0 || config.SidebarExtra) ? (
-          <div className="p-4">
+          <div className="p-4 relative">
+            {/* 批量重置（右上角，仅无 ParamControl 时显示） */}
+            {paramControlParams.length === 0 && config.SidebarExtra && !isDiscoveryMode && (
+              <button
+                onClick={() => { setParams(config.defaultParams); handleReset() }}
+                className="absolute top-3 right-3 flex items-center gap-1 text-xs text-neutral-400 hover:text-primary-600 active:scale-[0.97] transition-all z-10"
+                style={{ transitionDuration: '200ms' }}
+                aria-label="重置参数"
+              >
+                <RotateCcw className="w-3 h-3" />
+                重置
+              </button>
+            )}
+
             {paramControlParams.length > 0 && (
               <ParamControl
                 params={paramControlParams}

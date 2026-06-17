@@ -1,5 +1,5 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { SegmentedControl, ToggleSwitch } from '@/components/UI'
+import { SegmentedControl, ToggleSwitch, Slider } from '@/components/UI'
 
 export default function ProjectileSidebar({
   params,
@@ -25,19 +25,16 @@ export default function ProjectileSidebar({
       {isAdvanced && (
         <div className="mt-3 space-y-3">
           {/* Air Resistance */}
-          <div>
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-neutral-600">空气阻力 k</span>
-              <span className="font-mono text-neutral-700">{(params.airResistance ?? 0).toFixed(2)} kg/m</span>
-            </div>
-            <input
-              type="range" min={0} max={0.2} step={0.01}
-              value={params.airResistance ?? 0}
-              onChange={(e) => updateParam('airResistance', parseFloat(e.target.value))}
-              disabled={disabled}
-              className="w-full h-1.5 bg-neutral-200 rounded-full appearance-none cursor-pointer accent-primary-600"
-            />
-          </div>
+          <Slider
+            label="空气阻力 k"
+            value={params.airResistance ?? 0}
+            min={0}
+            max={0.2}
+            step={0.01}
+            unit="kg/m"
+            onChange={(v) => updateParam('airResistance', v)}
+            disabled={disabled}
+          />
 
           {/* Vacuum Compare Switch */}
           {(params.airResistance ?? 0) > 0 && (

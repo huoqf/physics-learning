@@ -1,5 +1,5 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { SegmentedControl, OptionButton, ToggleSwitch, TipCard } from '@/components/UI'
+import { SegmentedControl, OptionButton, ToggleSwitch, TipCard, Slider } from '@/components/UI'
 
 /** 重力场预设 */
 const GRAVITY_PRESETS = [
@@ -54,26 +54,17 @@ export default function FreeFallSidebar({
         <>
           {/* 1. 管内气压 */}
           <div className="mt-4 pt-3 border-t border-neutral-200">
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-neutral-600">管内气压</span>
-              <span className="font-mono text-neutral-700">
-                {(params.pressure ?? 1).toFixed(2)} atm（{pressureLabel(params.pressure ?? 1)}）
-              </span>
-            </div>
-            <input
-              type="range"
+            <Slider
+              label="管内气压"
+              value={params.pressure ?? 1}
               min={0}
               max={1}
               step={0.01}
-              value={params.pressure ?? 1}
-              onChange={(e) => updateParam('pressure', parseFloat(e.target.value))}
+              unit="atm"
+              description={pressureLabel(params.pressure ?? 1)}
+              onChange={(v) => updateParam('pressure', v)}
               disabled={disabled}
-              className="w-full h-1.5 bg-neutral-200 rounded-full appearance-none cursor-pointer accent-primary-600"
             />
-            <div className="flex justify-between text-[10px] text-neutral-400 mt-0.5">
-              <span>真空</span>
-              <span>标准大气压</span>
-            </div>
           </div>
 
           {/* 2. 物体A材质 */}
@@ -141,55 +132,43 @@ export default function FreeFallSidebar({
         <>
           {/* 1. 滴水周期 T */}
           <div className="mt-4 pt-3 border-t border-neutral-200">
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-neutral-600">滴水周期 T</span>
-              <span className="font-mono text-neutral-700">{(params.dripPeriod ?? 0.5).toFixed(1)} s</span>
-            </div>
-            <input
-              type="range"
+            <Slider
+              label="滴水周期 T"
+              value={params.dripPeriod ?? 0.5}
               min={0.2}
               max={2}
               step={0.1}
-              value={params.dripPeriod ?? 0.5}
-              onChange={(e) => updateParam('dripPeriod', parseFloat(e.target.value))}
+              unit="s"
+              onChange={(v) => updateParam('dripPeriod', v)}
               disabled={disabled}
-              className="w-full h-1.5 bg-neutral-200 rounded-full appearance-none cursor-pointer accent-primary-600"
             />
           </div>
 
           {/* 2. 纬度 */}
           <div className="mt-4 pt-3 border-t border-neutral-200">
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-neutral-600">纬度</span>
-              <span className="font-mono text-neutral-700">{params.latitude ?? 45}°</span>
-            </div>
-            <input
-              type="range"
+            <Slider
+              label="纬度"
+              value={params.latitude ?? 45}
               min={0}
               max={90}
               step={1}
-              value={params.latitude ?? 45}
-              onChange={(e) => updateParam('latitude', parseFloat(e.target.value))}
+              unit="°"
+              onChange={(v) => updateParam('latitude', v)}
               disabled={disabled}
-              className="w-full h-1.5 bg-neutral-200 rounded-full appearance-none cursor-pointer accent-primary-600"
             />
           </div>
 
           {/* 3. 海拔 */}
           <div className="mt-4 pt-3 border-t border-neutral-200">
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-neutral-600">海拔</span>
-              <span className="font-mono text-neutral-700">{(params.altitude ?? 0).toFixed(1)} km</span>
-            </div>
-            <input
-              type="range"
+            <Slider
+              label="海拔"
+              value={params.altitude ?? 0}
               min={0}
               max={10}
               step={0.1}
-              value={params.altitude ?? 0}
-              onChange={(e) => updateParam('altitude', parseFloat(e.target.value))}
+              unit="km"
+              onChange={(v) => updateParam('altitude', v)}
               disabled={disabled}
-              className="w-full h-1.5 bg-neutral-200 rounded-full appearance-none cursor-pointer accent-primary-600"
             />
           </div>
 
@@ -197,7 +176,7 @@ export default function FreeFallSidebar({
           <div className="mt-4 pt-3 border-t border-neutral-200">
             <div className="flex justify-between text-xs">
               <span className="text-neutral-600">重力加速度 g</span>
-              <span className="font-mono text-primary-700 font-semibold">{(params.g ?? 9.8).toFixed(3)} m/s²</span>
+              <span className="font-mono text-neutral-500 italic">{(params.g ?? 9.8).toFixed(3)} m/s²</span>
             </div>
             <TipCard variant="info" className="mt-1">
               由纬度和海拔自动计算

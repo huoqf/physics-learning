@@ -1,5 +1,5 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { SegmentedControl, OptionButton, TipCard } from '@/components/UI'
+import { SegmentedControl, OptionButton, TipCard, Slider } from '@/components/UI'
 
 /**
  * 速度动画侧边栏扩展
@@ -105,19 +105,16 @@ export default function VelocitySidebar({
 
             {/* Δt 连续滑条 */}
             <div>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-neutral-600">时间微元 Δt</span>
-                <span className="font-mono text-neutral-700">{(params.deltaT ?? 0.5).toFixed(3)} s</span>
-              </div>
-              <input
-                type="range"
+              <Slider
+                label="时间微元 Δt"
+                value={params.deltaT ?? 0.5}
                 min={0.001}
                 max={1}
                 step={0.001}
-                value={params.deltaT ?? 0.5}
-                onChange={(e) => updateParam('deltaT', parseFloat(e.target.value))}
+                unit="s"
+                formatValue={(v) => v.toFixed(3)}
+                onChange={(v) => updateParam('deltaT', v)}
                 disabled={disabled}
-                className="w-full h-1.5 bg-neutral-200 rounded-full appearance-none cursor-pointer accent-primary-600"
               />
               <TipCard>拖拽 Δt→0 观察割线与切线重合</TipCard>
             </div>

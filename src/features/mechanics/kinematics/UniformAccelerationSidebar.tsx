@@ -1,5 +1,5 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { SegmentedControl, OptionButton, TipCard } from '@/components/UI'
+import { SegmentedControl, OptionButton, TipCard, Slider } from '@/components/UI'
 
 /**
  * 匀变速直线运动侧边栏扩展
@@ -126,21 +126,15 @@ export default function UniformAccelerationSidebar({
           <div className="mt-4 space-y-4 border-t border-neutral-100 pt-3">
             {/* A. 频闪周期控制 */}
             <div>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-neutral-600 font-semibold">频闪周期 T</span>
-                <span className="font-mono text-neutral-700 font-bold">
-                  {(params.flashPeriod ?? 1).toFixed(1)} s
-                </span>
-              </div>
-              <input
-                type="range"
+              <Slider
+                label="频闪周期 T"
+                value={params.flashPeriod ?? 1}
                 min={0.5}
                 max={2}
                 step={0.1}
-                value={params.flashPeriod ?? 1}
-                onChange={(e) => updateParam('flashPeriod', parseFloat(e.target.value))}
+                unit="s"
+                onChange={(v) => updateParam('flashPeriod', v)}
                 disabled={disabled}
-                className="w-full h-1.5 bg-neutral-200 rounded-full appearance-none cursor-pointer accent-primary-600"
               />
               <TipCard>调整频闪相机的快门间隔时间，可实时计算并推导逐差法。</TipCard>
             </div>
