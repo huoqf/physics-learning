@@ -38,6 +38,8 @@ export default function InductionPhenomenon() {
   const magnetPole = params.magnetPole ?? 1
   const resistance = params.resistance ?? 50
   const dR_dt = params.dR_dt ?? 0
+  const circuitSwitch = params.circuitSwitch ?? 1 // 0=断开, 1=闭合
+  const hasIronCore = params.hasIronCore ?? 1 // 0=无铁芯, 1=有铁芯
 
   // 局部动画与交互状态
   const [isDragging, setIsDragging] = useState(false)
@@ -64,13 +66,16 @@ export default function InductionPhenomenon() {
   let phi = 0
   let currentI = 0 // 流光粒子流动速度/方向对应的大小
 
+  const ironCoreFactor = hasIronCore ? 1.0 : 0.05
+  const effectiveR = circuitSwitch ? resistance : 99999 // 断路等效极大阻值
+
   if (mode === 0) {
     const res = calculateMagnetInduction(magnetX, magnetSpeed, coilX, N_turns, magnetPole)
     currentTheta = res.theta
     phi = res.phi
     currentI = res.theta // 基础模式下，感应电流大小和偏转成正比
   } else {
-    const res = calculateCoilInduction(resistance, dR_dt, 10, N_turns)
+    const res = calculateCoilInduction(effectiveR, dR_dt, 10, N_turns, ironCoreFactor)
     currentTheta = res.theta
     phi = res.phi
     currentI = res.theta
@@ -108,20 +113,20 @@ export default function InductionPhenomenon() {
     if (mode === 1) {
       const dt_R = (now - prevTime.current) / 1000
       if (dt_R > 0.005) {
-        const dR = resistance - prevR.current
+        const dR = effectiveR - prevR.current
         const raw_dR_dt = dR / dt_R
 
         // 使用低通滤波平滑 dR_dt 变化率，避免滑块数据瞬时抖动
         const next_dR_dt = dR_dt * 0.6 + raw_dR_dt * 0.4
         updateParam('dR_dt', Math.abs(next_dR_dt) < 0.1 ? 0 : next_dR_dt)
 
-        prevR.current = resistance
+        prevR.current = effectiveR
         prevTime.current = now
       }
     }
 
     setForceUpdate((x) => x + 1)
-  }, [mode, isPlaying, isDragging, magnetX, magnetSpeed, resistance, dR_dt, currentTheta, params, setParams, setIsPlaying, updateParam])
+  }, [mode, isPlaying, isDragging, magnetX, magnetSpeed, effectiveR, dR_dt, currentTheta, params, setParams, setIsPlaying, updateParam])
 
   useAnimationFrame(handleAnimationFrame, { playing: true }) // 始终激活 rAF 以便手指拖动、回弹和微分计算时刻生效
 
@@ -315,8 +320,9 @@ export default function InductionPhenomenon() {
               width={110}
               height={62}
               turns={5}
-              current={10 / resistance} // 电流大小
+              current={10 / effectiveR} // 电流大小
               time={localTime.current}
+              showIronCore={!!hasIronCore}
             />
 
             {/* 原回路导线连接 (电源、变阻器与原线圈) */}
@@ -340,10 +346,10 @@ export default function InductionPhenomenon() {
             />
 
             {/* 原回路导线流光点 (红色，代表回路中有稳恒电流，流速正比于 10/R) */}
-            {10 / resistance > 0.05 && (
+            {effectiveR < 99999 && 10 / effectiveR > 0.05 && (
               <g>
                 {[0, 0.5].map((offset, i) => {
-                  const flowSpeed = (10 / resistance) * 3
+                  const flowSpeed = (10 / effectiveR) * 3
                   const tLeft = (((localTime.current * flowSpeed + offset) % 1 + 1) % 1)
                   const tBatToR = (((localTime.current * flowSpeed + offset) % 1 + 1) % 1)
                   const tRight = (((localTime.current * -flowSpeed + offset) % 1 + 1) % 1)
@@ -366,8 +372,52 @@ export default function InductionPhenomenon() {
             {/* 直流稳压电源 (instrument) */}
             <DCSource type="instrument" x={80} y={330} width={80} height={80} voltage={10} label="E = 10V" polarity="left-positive" />
 
+            {/* 电路开关 (刀闸开关样式，可点击切换) */}
+            <g
+              transform="translate(125, 345)"
+              className="cursor-pointer"
+              onClick={() => updateParam('circuitSwitch', circuitSwitch ? 0 : 1)}
+              style={{ userSelect: 'none' }}
+            >
+              {/* 底座 */}
+              <rect x={-12} y={-5} width={24} height={10} rx={2} fill="#F5F5F4" stroke="#78716C" strokeWidth={1} />
+              {/* 左触点 */}
+              <circle cx={-10} cy={0} r={3} fill={circuitSwitch ? '#16A34A' : '#9CA3AF'} stroke="#1E293B" strokeWidth={1} />
+              {/* 右触点 */}
+              <circle cx={10} cy={0} r={3} fill={circuitSwitch ? '#16A34A' : '#9CA3AF'} stroke="#1E293B" strokeWidth={1} />
+              {/* 刀闸横杆 */}
+              <line
+                x1={-10} y1={0}
+                x2={circuitSwitch ? 10 : 6}
+                y2={circuitSwitch ? 0 : -12}
+                stroke={circuitSwitch ? '#16A34A' : '#DC2626'}
+                strokeWidth={2.5}
+                strokeLinecap="round"
+              />
+              {/* 手柄 */}
+              <circle
+                cx={circuitSwitch ? 10 : 6}
+                cy={circuitSwitch ? 0 : -12}
+                r={3}
+                fill={circuitSwitch ? '#16A34A' : '#DC2626'}
+                stroke="#1E293B"
+                strokeWidth={0.8}
+              />
+              {/* 开关标签 */}
+              <text
+                x={0}
+                y={18}
+                fill="#6B7280"
+                fontSize={8}
+                fontWeight="bold"
+                textAnchor="middle"
+              >
+                {circuitSwitch ? '闭合' : '断开'}
+              </text>
+            </g>
+
             {/* 滑动变阻器 R */}
-            <Rheostat x={220} y={330} value={resistance} min={5} max={100} label="滑动变阻器 R" />
+            <Rheostat x={220} y={330} value={resistance} min={5} max={100} label="滑动变阻器 R" disabled={!circuitSwitch} />
           </g>
         )}
 
@@ -395,7 +445,7 @@ export default function InductionPhenomenon() {
                 secondaryW={160}
                 secondaryH={76}
                 y={coilY}
-                current={10 / resistance}
+                current={(10 / effectiveR) * ironCoreFactor}
                 canvasHeight={400}
                 lineColor="#10B981"
               />

@@ -19,6 +19,8 @@ export const InductionSidebarExtra: React.FC<InductionSidebarExtraProps> = ({
   const magnetSpeed = params.magnetSpeed ?? 0
   const magnetPole = params.magnetPole ?? 1
   const resistance = params.resistance ?? 50
+  const circuitSwitch = params.circuitSwitch ?? 1
+  const hasIronCore = params.hasIronCore ?? 1
 
   const handleModeChange = (val: number | string) => {
     const nextMode = Number(val)
@@ -30,6 +32,8 @@ export const InductionSidebarExtra: React.FC<InductionSidebarExtraProps> = ({
       magnetSpeed: 0,
       dR_dt: 0,
       resistance: 50,
+      circuitSwitch: 1,
+      hasIronCore: 1,
     })
   }
 
@@ -112,7 +116,29 @@ export const InductionSidebarExtra: React.FC<InductionSidebarExtraProps> = ({
         ) : (
           // 进阶模式下的自变量控制
           <div className="space-y-4">
-            <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <ToggleSwitch
+                label="电路开关"
+                checked={!!circuitSwitch}
+                onChange={(checked) => updateParam('circuitSwitch', checked ? 1 : 0)}
+              />
+            </div>
+            <span className="text-[10px] text-neutral-400 block leading-relaxed">
+              点击画布上的开关或此处切换。断开瞬间和闭合瞬间都会在副线圈中产生感应电流。
+            </span>
+
+            <div className="flex items-center justify-between pt-1">
+              <ToggleSwitch
+                label="插入铁芯"
+                checked={!!hasIronCore}
+                onChange={(checked) => updateParam('hasIronCore', checked ? 1 : 0)}
+              />
+            </div>
+            <span className="text-[10px] text-neutral-400 block leading-relaxed">
+              铁芯能大幅增强磁场聚集能力。关闭后感应电流显著减弱，演示真实实验中为何必须插入铁棒。
+            </span>
+
+            <div className="space-y-2 pt-1">
               <Slider
                 label="滑动变阻器阻值 R"
                 value={resistance}
@@ -121,9 +147,11 @@ export const InductionSidebarExtra: React.FC<InductionSidebarExtraProps> = ({
                 step={1}
                 unit="Ω"
                 onChange={handleResistanceChange}
+                disabled={!circuitSwitch}
               />
               <span className="text-[10px] text-neutral-400 block mt-1 leading-relaxed">
                 拖动滑块改变阻值。改变阻值的速度越快，感应电流越大；静止时无感应电流。
+                {!circuitSwitch && '（电路断开时不可调）'}
               </span>
             </div>
           </div>

@@ -21,6 +21,8 @@ export interface PrimaryCoilProps {
   current?: number
   /** 动画时间，用于流光粒子移动 */
   time?: number
+  /** 是否显示铁芯，默认 true */
+  showIronCore?: boolean
   /** 自定义 CSS 类名 */
   className?: string
 }
@@ -43,6 +45,7 @@ export const PrimaryCoil: React.FC<PrimaryCoilProps> = ({
   turns = 4,
   current = 0,
   time = 0,
+  showIronCore = true,
   className = '',
 }) => {
   const c = SCENE_COLORS.coil
@@ -62,25 +65,29 @@ export const PrimaryCoil: React.FC<PrimaryCoilProps> = ({
   return (
     <g transform={`translate(${x}, ${y})`} className={className}>
       {/* 1. 铁芯 (拟物金属渐变) */}
-      <defs>
-        <linearGradient id="primaryIronCoreGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#334155" />
-          <stop offset="30%" stopColor="#64748B" />
-          <stop offset="50%" stopColor="#CBD5E1" />
-          <stop offset="70%" stopColor="#64748B" />
-          <stop offset="100%" stopColor="#1E293B" />
-        </linearGradient>
-      </defs>
-      <rect
-        x={-width / 2 - 12}
-        y={-ry + 6}
-        width={width + 24}
-        height={height - 12}
-        rx="3"
-        fill="url(#primaryIronCoreGrad)"
-        stroke="#0F172A"
-        strokeWidth="1.5"
-      />
+      {showIronCore && (
+        <>
+          <defs>
+            <linearGradient id="primaryIronCoreGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#334155" />
+              <stop offset="30%" stopColor="#64748B" />
+              <stop offset="50%" stopColor="#CBD5E1" />
+              <stop offset="70%" stopColor="#64748B" />
+              <stop offset="100%" stopColor="#1E293B" />
+            </linearGradient>
+          </defs>
+          <rect
+            x={-width / 2 - 12}
+            y={-ry + 6}
+            width={width + 24}
+            height={height - 12}
+            rx="3"
+            fill="url(#primaryIronCoreGrad)"
+            stroke="#0F172A"
+            strokeWidth="1.5"
+          />
+        </>
+      )}
 
       {/* 2. 后半部分绕线 */}
       {turnCenters.map((cx, idx) => (

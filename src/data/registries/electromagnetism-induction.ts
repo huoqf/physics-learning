@@ -16,6 +16,8 @@ export const electromagnetismInductionAnimations = defineAnimations({
       magnetPole: 1,
       resistance: 50,
       dR_dt: 0,
+      circuitSwitch: 1,
+      hasIronCore: 1,
     },
     paramMeta: [],
   },

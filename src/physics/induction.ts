@@ -269,14 +269,15 @@ export function calculateCoilInduction(
   R: number,
   dR_dt: number,
   E: number,
-  N: number
+  N: number,
+  ironCoreFactor: number = 1
 ): {
   phi: number
   dPhi: number
   theta: number
 } {
   const safeR = Math.max(5, R) // 边界保护：变阻器最小阻值限制为 5 Ω
-  const M = 0.1 // 互感系数 (H)
+  const M = 0.1 * ironCoreFactor // 互感系数 (H)，铁芯影响聚磁能力
 
   // 磁通量
   const phi = (M * E) / safeR
