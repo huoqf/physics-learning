@@ -19,13 +19,16 @@ export const electromagnetismAcAnimations = defineAnimations({
     title: '有效值与峰值关系',
     knowledgeId: 'electricity-5-2',
     Component: lazy(() => import('@/features/electromagnetism/induction/ACValues')),
-    defaultParams: { V_peak: 311, R: 100, f: 2, U_dc: 220, isTesting: 0 },
-    paramMeta: [
-      { key: 'V_peak', label: '峰值电压 Vm', min: 50, max: 500, step: 10, unit: 'V' },
-      { key: 'f', label: '频率 f', min: 0.5, max: 20, step: 0.5, unit: 'Hz' },
-      { key: 'U_dc', label: '直流电压 Udc', min: 0, max: 350, step: 1, unit: 'V' },
-      { key: 'R', label: '负载电阻 R', min: 10, max: 500, step: 10, unit: 'Ω' },
-    ],
+    SidebarExtra: lazy(() => import('@/features/electromagnetism/induction/ACValuesSidebarExtra')),
+    defaultParams: {
+      mode: 0,
+      waveform: 0,
+      Im: 5,
+      R: 10,
+      Idc: 3,
+      duty: 0.5,
+    },
+    paramMeta: [],
   },
   'anim-transformer': {
     title: '变压器原理',

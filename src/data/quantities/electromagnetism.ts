@@ -21,6 +21,8 @@ import {
   calculateCoilInduction,
   computeFaradayMagnetFlux,
 } from '../../physics'
+import { getEffectiveCurrent, getTheoreticalThermalState } from '../../physics/rmsCalculator'
+import type { WaveformType } from '../../physics/rmsCalculator'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import type { PhysicsPanelData, PhysicsQuantity } from './types'
@@ -1280,20 +1282,49 @@ export function buildElectromagnetismQuantities(
     }
 
     case 'anim-ac-values': {
-      const V_peak = params.V_peak ?? 311
-      const R = params.R ?? 100
-      const U_dc = params.U_dc ?? 220
-      const I_peak = V_peak / R
-      const { V_rms, I_rms } = calculateACRMS(V_peak, I_peak)
-      const P_avg = V_rms * I_rms
-      const errorPercent = Math.abs((U_dc - V_rms) / V_rms) * 100
+      const Im = params.Im ?? 5
+      const R = params.R ?? 10
+      const Idc = params.Idc ?? 3
+      const waveform = params.waveform ?? 0
+      const duty = params.duty ?? 0.5
+
+      const waveformType: WaveformType = (['sine', 'square', 'pulse', 'half_sine'] as const)[waveform] ?? 'sine'
+      const I_eff = getEffectiveCurrent({ type: waveformType, Im, R, period: 2, dcCurrent: Idc, duty })
+      const thermalState = getTheoreticalThermalState(time, { type: waveformType, Im, R, period: 2, dcCurrent: Idc, duty })
+      const Q_ac = thermalState.Q_ac
+      const Q_dc = Idc * Idc * R * time
+      const deltaQ = Q_dc - Q_ac
+
       return {
         quantities: [
           ...base,
-          { label: '有效电压 Vrms', value: V_rms, unit: 'V' },
-          { label: '有效电流 Irms', value: I_rms, unit: 'A' },
-          { label: '平均功率 P', value: P_avg, unit: 'W' },
-          { label: '误差', value: errorPercent.toFixed(1), unit: '%', highlight: errorPercent <= 5 ? 'positive' : 'negative' },
+          { label: '交流热量 Q_ac', value: Q_ac, unit: 'J', color: '#7C3AED' },
+          { label: '直流热量 Q_dc', value: Q_dc, unit: 'J', color: '#7C3AED' },
+          { label: '热量差 ΔQ', value: deltaQ, unit: 'J', highlight: Math.abs(deltaQ) < 1 ? 'positive' : 'negative' },
+          { label: '理论有效值 I_eff', value: I_eff, unit: 'A', highlight: 'extreme' },
+        ],
+        formulas: [
+          {
+            name: '有效值通用定义',
+            latex: 'I_{eff} = \\sqrt{\\frac{1}{T}\\int_0^T i^2(t)dt}',
+            level: 'core' as const,
+            condition: '适用于任意周期性交变电流',
+          },
+          {
+            name: '正弦波特例',
+            latex: 'I_{eff} = \\frac{I_m}{\\sqrt{2}}',
+            condition: '仅适用于标准正弦（余弦）交变电流',
+            note: '严禁套用于方波、脉冲波、半波整流等非正弦波形！',
+            level: 'important' as const,
+          },
+        ],
+        gaokaoPoints: [
+          { text: '非正弦交变电流必须回归热效应定义求解，不可套用 Im/√2', importance: 'gaokao' as const },
+          { text: '半波整流: I_eff = Im/2；对称方波: I_eff = Im；脉冲波: I_eff = Im√D', importance: 'gaokao' as const },
+          { text: '电容器耐压值看峰值，电表读数/保险丝看有效值', importance: 'hard' as const },
+        ],
+        warnings: [
+          { text: '本结论仅适用于标准正弦（或余弦）交变电流', level: 'info' as const },
         ],
       }
     }
