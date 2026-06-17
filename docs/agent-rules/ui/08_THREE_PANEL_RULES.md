@@ -29,11 +29,12 @@
 ```text
 LeftPanel
   ├─ ParameterSection     ← ParamControl（由 animationRegistry.paramMeta 生成）
-  ├─ ModeSection          ← SegmentedControl（互斥模式切换）
-  ├─ StateSection         ← ToggleSwitch 列表（布尔状态开关）
-  ├─ PresetSection        ← OptionButton variant="preset"（参数预设）
-  └─ TipSection           ← TipCard（简短操作提示）
+  │   └─ Slider           ← 连续参数滑块（min/max/step/unit，可选 minLabel/maxLabel/midLabel/formatValue/description）
+  ├─ SidebarExtra          ← 各动画特异控件（SegmentedControl / ToggleSwitch / OptionButton / Slider / TipCard）
+  └─ ResetButton           ← 右上角重置按钮（仅无 ParamControl 时显示）
 ```
+
+**布局顺序**：参数控件在上，模式切换（SegmentedControl）在底部。
 
 不是每章都必须全部出现，但出现时必须使用统一组件和统一样式。
 
@@ -41,11 +42,12 @@ LeftPanel
 
 | 组件 | 语义 | 使用场景 | 判断标准 |
 |------|------|----------|----------|
+| `Slider` | 连续参数调节 | 速度、力、电阻、角度等连续物理量 | 值在 min-max 范围内连续变化 |
 | `SegmentedControl` | 同一维度互斥视图切换 | 基础/进阶、轨道/能量、电场线/等势面 | 切换后整体布局或观察方式改变 |
 | `OptionButton` | 参数值/预设/步进选择 | Δt步长、速度预设、教学预设 | 选择后只改变数值或局部显示 |
 | `ToggleSwitch` | 布尔状态开关 | 显示轨迹、显示辅助线、显示矢量 | 开/关，无第三态 |
 
-**禁止**：在 SidebarExtra 中手写按钮组、自定义 toggle、内联开关实现。
+**禁止**：在 SidebarExtra 中手写按钮组、自定义 toggle、内联开关实现、原生 `<input type="range">`。连续参数必须使用 `Slider` 组件。
 
 ### 2.3 进阶模式统一规范
 
@@ -81,6 +83,12 @@ LeftPanel
 #### 卡片容器
 
 侧屏卡片优先使用 `Card` 组件，禁止在章节组件中直接拼接完整卡片样式类名。`Card` 组件标准样式：`bg-white rounded-xl shadow-sm border border-neutral-100`。
+
+**SidebarExtra 容器风格**：SidebarExtra 内部使用线分隔（`border-t border-neutral-200`），不使用卡片包裹（`bg-white rounded-lg shadow-sm border p-4`）。卡片包裹仅用于 ParamControl。
+
+#### 重置按钮
+
+当页面有 SidebarExtra 但无 ParamControl（`paramMeta` 为空）时，AnimationPage 在左侧面板右上角显示"重置"按钮（`RotateCcw` 图标 + "重置"文字），功能为重置参数到默认值 + 重置时间 + 暂停播放。有 ParamControl 的页面由 ParamControl 自带重置按钮。
 
 #### 按钮交互
 
@@ -147,6 +155,13 @@ SidebarExtraProps
       └─ restartAnimation: () => void          重置时间 + 播放
 ```
 
+### 4.2 SidebarExtra 布局规范
+
+- **参数控件在上**：Slider、ToggleSwitch 等参数控制组件放在顶部
+- **模式切换在下**：SegmentedControl（基础/进阶切换）放在底部
+- **容器风格**：使用 `border-t border-neutral-200` 线分隔，不使用卡片包裹
+- **禁用状态**：通过 `disabled` prop 传递给各子组件，不在容器级设置 `opacity-40 pointer-events-none`
+
 ### 4.2 禁止事项
 
 - SidebarExtra **不得**直接访问 animation store 中的 `params`、`time`、`isPlaying` 及其更新方法
@@ -205,9 +220,12 @@ SidebarExtraProps
 |--------|------|
 | 左侧屏是否只包含控制类内容 | 是 |
 | 参数是否通过 ParamControl 或统一控件生成 | 是 |
+| 连续参数是否使用 Slider 组件（非原生 input[type=range]） | 是 |
 | 模式切换是否使用 SegmentedControl | 是 |
 | 状态切换是否使用 ToggleSwitch | 是 |
 | 预设选择是否使用 OptionButton | 是 |
+| SidebarExtra 布局是否参数在上、模式切换在下 | 是 |
+| SidebarExtra 是否使用线分隔而非卡片包裹 | 是 |
 | 是否存在硬编码控件状态色（bg-blue-*、bg-amber-* 等） | 否 |
 | SidebarExtra 是否直接访问 animation store 的 params/time/isPlaying | 否 |
 | 右侧屏是否包含物理量、公式、高考要点三段 | 是 |
