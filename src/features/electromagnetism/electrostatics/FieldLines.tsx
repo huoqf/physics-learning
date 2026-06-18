@@ -5,6 +5,7 @@ import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { radius } from '@/theme/radius'
 import { shadow } from '@/theme/shadow'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
 
 // 物理与绘图常量
 const COULOMB_K = 9e9
@@ -647,15 +648,13 @@ export default function FieldLines() {
           {/* 6. 探针受到的橙色电场力箭头 */}
           {probePhysics.forceArrow && (
             <g>
-              <line
-                x1={probeX}
-                y1={probeY}
-                x2={probeX + probePhysics.forceArrow[0]}
-                y2={probeY + probePhysics.forceArrow[1]}
-                stroke={PHYSICS_COLORS.electricForce}
+              <VectorArrow
+                origin={{ x: 0, y: 0 }}
+                vector={{ x: probePhysics.forceArrow[0], y: -probePhysics.forceArrow[1] }}
+                type="electricForce"
+                sceneScale={{ originX: probeX, originY: probeY, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                pixelLength={Math.sqrt(probePhysics.forceArrow[0] ** 2 + probePhysics.forceArrow[1] ** 2)}
                 strokeWidth={3}
-                strokeLinecap="round"
-                markerEnd="url(#arrow-force)"
               />
               <text
                 x={probeX + probePhysics.forceArrow[0] + (probePhysics.forceArrow[0] >= 0 ? 12 : -12)}
@@ -674,18 +673,6 @@ export default function FieldLines() {
 
         {/* 定义箭头和样式 Defs */}
         <defs>
-          {/* 电场力橙色箭头 Marker */}
-          <marker
-            id="arrow-force"
-            viewBox="0 0 10 10"
-            refX="6"
-            refY="5"
-            markerWidth="6"
-            markerHeight="6"
-            orient="auto-start-reverse"
-          >
-            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill={PHYSICS_COLORS.electricForce} />
-          </marker>
           {/* 正电荷光晕渐变 */}
           <radialGradient id="glow-positive" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor={PHYSICS_COLORS.positiveCharge} stopOpacity="0.25" />

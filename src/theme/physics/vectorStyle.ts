@@ -1,8 +1,13 @@
+import { PHYSICS_COLORS } from './colors'
+
 export type VectorType =
-  | 'velocity' | 'acceleration' | 'force' | 'gravity'
-  | 'friction' | 'normalForce' | 'tension'
+  | 'velocity' | 'velocityX' | 'velocityY' | 'averageVelocity'
+  | 'acceleration' | 'displacement'
+  | 'force' | 'appliedForce' | 'elasticForce' | 'forceComponent'
+  | 'gravity' | 'friction' | 'normalForce' | 'tension'
   | 'momentum' | 'impulse'
-  | 'electricField' | 'magneticField' | 'electricForce' | 'displacement';
+  | 'electricField' | 'magneticField' | 'electricForce'
+  | 'currentDirection' | 'lorentzForce';
 
 export const VECTOR_VISUAL_WEIGHT: Record<VectorType, number> = {
   velocity: 1.0,
@@ -18,22 +23,38 @@ export const VECTOR_VISUAL_WEIGHT: Record<VectorType, number> = {
   electricForce: 0.6,
   electricField: 0.5,
   magneticField: 0.4,
+  velocityX: 0.8,
+  velocityY: 0.8,
+  averageVelocity: 0.85,
+  appliedForce: 0.7,
+  elasticForce: 0.6,
+  forceComponent: 0.5,
+  currentDirection: 0.5,
+  lorentzForce: 0.6,
 };
 
 export const VECTOR_COLORS: Record<VectorType, string> = {
-  velocity: '#2563EB',
-  displacement: '#4F46E5',
-  acceleration: '#DC2626',
-  momentum: '#DB2777',
-  force: '#EA580C',
-  gravity: '#15803D',
-  tension: '#8B5CF6',
-  friction: '#B45309',
-  normalForce: '#0D9488',
-  impulse: '#EC4899',
-  electricForce: '#F97316',
-  electricField: '#D97706',
-  magneticField: '#10B981',
+  velocity:        PHYSICS_COLORS.velocity,
+  velocityX:       PHYSICS_COLORS.velocityX,
+  velocityY:       PHYSICS_COLORS.velocityY,
+  averageVelocity: PHYSICS_COLORS.averageVelocity,
+  displacement:    PHYSICS_COLORS.displacement,
+  acceleration:    PHYSICS_COLORS.acceleration,
+  momentum:        PHYSICS_COLORS.momentum,
+  force:           PHYSICS_COLORS.forceNet,
+  appliedForce:    PHYSICS_COLORS.appliedForce,
+  elasticForce:    PHYSICS_COLORS.elasticForce,
+  forceComponent:  PHYSICS_COLORS.forceComponent,
+  gravity:         PHYSICS_COLORS.gravity,
+  tension:         PHYSICS_COLORS.tension,
+  friction:        PHYSICS_COLORS.friction,
+  normalForce:     PHYSICS_COLORS.normalForce,
+  impulse:         PHYSICS_COLORS.impulse,
+  electricForce:   PHYSICS_COLORS.electricForce,
+  electricField:   PHYSICS_COLORS.electricField,
+  magneticField:   PHYSICS_COLORS.magneticField,
+  currentDirection: PHYSICS_COLORS.currentDirection,
+  lorentzForce:    PHYSICS_COLORS.lorentzForce,
 };
 
 export const MARKER_TIERS = {

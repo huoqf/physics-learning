@@ -234,9 +234,8 @@ export default function WorkAnimation() {
             <VectorArrow
               origin={{ x: blockX + objW * 0.5, y: -(groundY - objH * 0.5 + floatOffset) }}
               vector={{ x: forceDx, y: -forceDy }}
-              type="force"
+              type="appliedForce"
               sceneScale={sceneScale}
-              color={PHYSICS_COLORS.appliedForce}
               strokeWidth={STROKE.vectorMain}
               pixelLength={Math.sqrt(forceDx ** 2 + forceDy ** 2)}
             />
@@ -354,7 +353,6 @@ export default function WorkAnimation() {
               vector={{ x: 0, y: -Math.min(advancedResult.weight * 1.5, 50) }}
               type="gravity"
               sceneScale={sceneScale}
-              color={PHYSICS_COLORS.gravity}
               strokeWidth={STROKE.vectorSub}
               pixelLength={Math.min(advancedResult.weight * 1.5, 50)}
             />
@@ -376,7 +374,6 @@ export default function WorkAnimation() {
                   vector={{ x: 0, y: Math.min(advancedResult.F_N * 1.5, 40) }}
                   type="normalForce"
                   sceneScale={sceneScale}
-                  color={PHYSICS_COLORS.normalForce}
                   strokeWidth={STROKE.vectorSub}
                   pixelLength={Math.min(advancedResult.F_N * 1.5, 40)}
                 />
@@ -400,7 +397,6 @@ export default function WorkAnimation() {
                   vector={{ x: -Math.min(advancedResult.f * 3, 40), y: 0 }}
                   type="friction"
                   sceneScale={sceneScale}
-                  color={PHYSICS_COLORS.friction}
                   strokeWidth={STROKE.vectorSub}
                   pixelLength={Math.min(advancedResult.f * 3, 40)}
                 />

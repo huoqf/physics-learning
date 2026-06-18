@@ -181,7 +181,6 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
             origin={{ x: 0, y: 0 }}
             vector={{ x: physicsResult.F, y: 0 }}
             type="force"
-            color={PHYSICS_COLORS.forceNet}
             sceneScale={localScale}
             strokeWidth={3}
           />
@@ -204,8 +203,7 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
               <VectorArrow
                 origin={{ x: 0, y: I > 0 ? -1.5 : 1.5 }}
                 vector={{ x: 0, y: I > 0 ? 2.5 : -2.5 }}
-                type="force"
-                color={PHYSICS_COLORS.electricCurrent}
+                type="currentDirection"
                 sceneScale={localScale}
                 strokeWidth={2}
               />

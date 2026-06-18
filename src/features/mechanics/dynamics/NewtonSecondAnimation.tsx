@@ -9,6 +9,7 @@ import {
 } from '@/physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
 import { Block } from '@/components/Physics/Block'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { computeScale } from '@/utils/coordinate'
 
 export default function NewtonSecondAnimation() {
@@ -148,14 +149,12 @@ export default function NewtonSecondAnimation() {
         {showVectors && (
           <g>
             {/* 1. 拉力 F (外力) */}
-            <line
-              x1={cx}
-              y1={cy}
-              x2={cx + Math.max(15, F_applied * 2.5)}
-              y2={cy}
-              stroke={PHYSICS_COLORS.appliedForce}
-              strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-              markerEnd="url(#arrowhead-applied)"
+            <VectorArrow
+              origin={{ x: 0, y: 0 }}
+              vector={{ x: 1, y: 0 }}
+              type="force"
+              sceneScale={{ originX: cx, originY: cy, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+              pixelLength={Math.max(15, F_applied * 2.5)}
             />
             <text
               x={cx + Math.max(15, F_applied * 2.5) + 8}
@@ -170,14 +169,12 @@ export default function NewtonSecondAnimation() {
             {/* 2. 摩擦力 f (当存在摩擦力时) */}
             {f > 0.01 && (
               <>
-                <line
-                  x1={cx}
-                  y1={cy}
-                  x2={cx - Math.max(15, f * 2.5)}
-                  y2={cy}
-                  stroke={PHYSICS_COLORS.friction}
-                  strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                  markerEnd="url(#arrowhead-friction)"
+                <VectorArrow
+                  origin={{ x: 0, y: 0 }}
+                  vector={{ x: -1, y: 0 }}
+                  type="friction"
+sceneScale={{ originX: cx, originY: cy, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                  pixelLength={Math.max(15, f * 2.5)}
                 />
                 <text
                   x={cx - Math.max(15, f * 2.5) - 8}
@@ -193,14 +190,12 @@ export default function NewtonSecondAnimation() {
             )}
 
             {/* 3. 重力 G = mg (向下，深绿) */}
-            <line
-              x1={cx}
-              y1={cy}
-              x2={cx}
-              y2={cy + 45}
-              stroke={PHYSICS_COLORS.gravity}
-              strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-              markerEnd="url(#arrowhead-gravity)"
+            <VectorArrow
+              origin={{ x: 0, y: 0 }}
+              vector={{ x: 0, y: -1 }}
+              type="gravity"
+              sceneScale={{ originX: cx, originY: cy, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+              pixelLength={45}
             />
             <text
               x={cx}
@@ -214,14 +209,12 @@ export default function NewtonSecondAnimation() {
             </text>
 
             {/* 4. 支持力 F_N (向上，青绿) */}
-            <line
-              x1={cx}
-              y1={cy}
-              x2={cx}
-              y2={cy - 45}
-              stroke={PHYSICS_COLORS.normalForce}
-              strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-              markerEnd="url(#arrowhead-normal)"
+            <VectorArrow
+              origin={{ x: 0, y: 0 }}
+              vector={{ x: 0, y: 1 }}
+              type="normalForce"
+              sceneScale={{ originX: cx, originY: cy, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+              pixelLength={45}
             />
             <text
               x={cx}
@@ -237,14 +230,13 @@ export default function NewtonSecondAnimation() {
             {/* 5. 合力 F_合 (亮橙，加粗，画在地面下方) */}
             {F_net > 0.01 && (
               <g transform={`translate(${cx - 30}, ${groundY + 20})`}>
-                <line
-                  x1={0}
-                  y1={0}
-                  x2={Math.max(25, F_net * 2.5)}
-                  y2={0}
-                  stroke={PHYSICS_COLORS.forceNet}
+                <VectorArrow
+                  origin={{ x: 0, y: 0 }}
+                  vector={{ x: 1, y: 0 }}
+                  type="force"
+                  sceneScale={{ originX: 0, originY: 0, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                  pixelLength={Math.max(25, F_net * 2.5)}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain * 1.5}
-                  markerEnd="url(#arrowhead-netforce)"
                 />
                 <text
                   x={Math.max(25, F_net * 2.5) + 8}
@@ -260,14 +252,12 @@ export default function NewtonSecondAnimation() {
 
             {/* 6. 速度 v 矢量 (经典蓝，画在车顶上方) */}
             <g transform={`translate(${carX}, ${carY - 15})`}>
-              <line
-                x1={0}
-                y1={0}
-                x2={Math.max(15, v * 5)}
-                y2={0}
-                stroke={PHYSICS_COLORS.velocity}
-                strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                markerEnd="url(#arrowhead-velocity)"
+              <VectorArrow
+                origin={{ x: 0, y: 0 }}
+                vector={{ x: 1, y: 0 }}
+                type="velocity"
+                sceneScale={{ originX: 0, originY: 0, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                pixelLength={Math.max(15, v * 5)}
               />
               <text
                 x={Math.max(15, v * 5) + 8}
@@ -283,14 +273,12 @@ export default function NewtonSecondAnimation() {
             {/* 7. 加速度 a 矢量 (警示红，画在速度上方) */}
             {a > 0.01 && (
               <g transform={`translate(${carX}, ${carY - 32})`}>
-                <line
-                  x1={0}
-                  y1={0}
-                  x2={Math.max(15, a * 8)}
-                  y2={0}
-                  stroke={PHYSICS_COLORS.acceleration}
-                  strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                  markerEnd="url(#arrowhead-acceleration)"
+                <VectorArrow
+                  origin={{ x: 0, y: 0 }}
+                  vector={{ x: 1, y: 0 }}
+                  type="acceleration"
+                  sceneScale={{ originX: 0, originY: 0, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                  pixelLength={Math.max(15, a * 8)}
                 />
                 <text
                   x={Math.max(15, a * 8) + 8}
@@ -305,82 +293,6 @@ export default function NewtonSecondAnimation() {
             )}
           </g>
         )}
-
-        <defs>
-
-
-          {/* 各矢量箭头定义 */}
-          <marker
-            id="arrowhead-applied"
-            markerWidth="8"
-            markerHeight="6"
-            refX="7"
-            refY="3"
-            orient="auto"
-          >
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.appliedForce} />
-          </marker>
-          <marker
-            id="arrowhead-friction"
-            markerWidth="8"
-            markerHeight="6"
-            refX="7"
-            refY="3"
-            orient="auto"
-          >
-            <polygon points="8 0, 0 3, 8 6" fill={PHYSICS_COLORS.friction} />
-          </marker>
-          <marker
-            id="arrowhead-gravity"
-            markerWidth="8"
-            markerHeight="6"
-            refX="7"
-            refY="3"
-            orient="auto"
-          >
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.gravity} />
-          </marker>
-          <marker
-            id="arrowhead-normal"
-            markerWidth="8"
-            markerHeight="6"
-            refX="7"
-            refY="3"
-            orient="auto"
-          >
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.normalForce} />
-          </marker>
-          <marker
-            id="arrowhead-netforce"
-            markerWidth="8"
-            markerHeight="6"
-            refX="7"
-            refY="3"
-            orient="auto"
-          >
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.forceNet} />
-          </marker>
-          <marker
-            id="arrowhead-velocity"
-            markerWidth="8"
-            markerHeight="6"
-            refX="7"
-            refY="3"
-            orient="auto"
-          >
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          <marker
-            id="arrowhead-acceleration"
-            markerWidth="8"
-            markerHeight="6"
-            refX="7"
-            refY="3"
-            orient="auto"
-          >
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.acceleration} />
-          </marker>
-        </defs>
       </svg>
     </div>
   )

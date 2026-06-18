@@ -5,6 +5,7 @@
  */
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { colors } from '@/theme/colors'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { COIL_RX, COIL_RY } from './hooks/useFaradayPhysics'
 
 interface Props {
@@ -84,8 +85,14 @@ export function FaradayFieldSandbox({
       {/* 电流方向辅助指示箭头 */}
       {inducedCurrentDir !== 0 && (
         <g transform={`translate(${sandboxW / 2}, ${coilY - COIL_RY * 1.5 + 10})`}>
-          <path d={inducedCurrentDir > 0 ? "M -15 -10 L 15 -10" : "M 15 -10 L -15 -10"}
-            stroke={colors.accent[600]} strokeWidth="2" markerEnd="url(#arrFluxGold)" />
+          <VectorArrow
+            origin={{ x: 0, y: -10 }}
+            vector={{ x: inducedCurrentDir > 0 ? 1 : -1, y: 0 }}
+            type="currentDirection"
+            sceneScale={{ originX: 0, originY: 0, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+            pixelLength={30}
+            strokeWidth={2}
+          />
           <text x="0" y="-15" fontSize={font(9)} fill={colors.accent[700]}
             textAnchor="middle" fontWeight="bold">
             感应电流 {inducedCurrentDir > 0 ? '顺时针' : '逆时针'}

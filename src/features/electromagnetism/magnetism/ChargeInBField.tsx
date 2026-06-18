@@ -3,6 +3,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateChargeInMagField } from '@/physics'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
 
 const GRID_MARGIN = 40
 const FONT = {
@@ -66,12 +67,6 @@ export default function ChargeInBField() {
     <div ref={containerRef} className="w-full h-full">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
         <defs>
-          <marker id="arrow-bfield-v" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.velocity} />
-          </marker>
-          <marker id="arrow-bfield-f" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill={PHYSICS_COLORS.forceNet} />
-          </marker>
         </defs>
 
         {gridLines}
@@ -121,14 +116,12 @@ export default function ChargeInBField() {
         {/* 速度矢量（沿切线） */}
         {showVectors && (
           <g>
-            <line
-              x1={px}
-              y1={py}
-              x2={px - Math.sin(theta) * VECTOR_LEN_V}
-              y2={py - Math.cos(theta) * VECTOR_LEN_V}
-              stroke={PHYSICS_COLORS.velocity}
-              strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-              markerEnd="url(#arrow-bfield-v)"
+            <VectorArrow
+              origin={{ x: 0, y: 0 }}
+              vector={{ x: -Math.sin(theta), y: Math.cos(theta) }}
+              type="velocity"
+              sceneScale={{ originX: px, originY: py, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+              pixelLength={VECTOR_LEN_V}
             />
             <text x={px - Math.sin(theta) * 25 - 8} y={py - Math.cos(theta) * 25 - 6}
               fontSize={FONT.axis} fill={PHYSICS_COLORS.velocity} fontWeight="bold">
@@ -140,14 +133,12 @@ export default function ChargeInBField() {
         {/* 洛伦兹力矢量（指向圆心） */}
         {showVectors && fLen > 0 && (
           <g>
-            <line
-              x1={px}
-              y1={py}
-              x2={px - Math.cos(theta) * fLen}
-              y2={py + Math.sin(theta) * fLen}
-              stroke={PHYSICS_COLORS.forceNet}
-              strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-              markerEnd="url(#arrow-bfield-f)"
+            <VectorArrow
+              origin={{ x: 0, y: 0 }}
+              vector={{ x: -Math.cos(theta), y: -Math.sin(theta) }}
+              type="force"
+              sceneScale={{ originX: px, originY: py, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+              pixelLength={fLen}
             />
             <text x={px - Math.cos(theta) * fLen / 2 + 8} y={py + Math.sin(theta) * fLen / 2}
               fontSize={FONT.axis} fill={PHYSICS_COLORS.forceNet} fontWeight="bold">

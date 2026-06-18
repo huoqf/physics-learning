@@ -187,9 +187,8 @@ export default function FrictionAnimation() {
                 <VectorArrow
                   origin={{ x: boxX_m1 + boxSize / 2, y: -(groundY_m1 - boxSize / 2) }}
                   vector={{ x: F_applied, y: 0 }}
-                  type="force"
+                  type="appliedForce"
                   sceneScale={frictionSceneScale}
-                  color={PHYSICS_COLORS.appliedForce}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain}
                   pixelLength={F_applied * FORCE_VECTOR_SCALE}
                 />

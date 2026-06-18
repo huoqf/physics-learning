@@ -322,7 +322,6 @@ export const GravityBasicAnimation: FC = () => {
                   vector={{ x: earthData.Fx_grav, y: earthData.Fy_grav }}
                   type="gravity"
                   sceneScale={gravBasicSceneScale}
-                  color={PHYSICS_COLORS.gravity}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain}
                   pixelLength={Math.hypot(earthData.Fx_grav, earthData.Fy_grav)}
                 />
@@ -341,7 +340,6 @@ export const GravityBasicAnimation: FC = () => {
                     vector={{ x: earthData.Fx_centrifugal, y: earthData.Fy_centrifugal }}
                     type="force"
                     sceneScale={gravBasicSceneScale}
-                    color={PHYSICS_COLORS.forceNet}
                     strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                     pixelLength={Math.hypot(earthData.Fx_centrifugal, earthData.Fy_centrifugal)}
                   />
@@ -362,7 +360,6 @@ export const GravityBasicAnimation: FC = () => {
                   vector={{ x: earthData.Gx, y: earthData.Gy }}
                   type="force"
                   sceneScale={gravBasicSceneScale}
-                  color={PHYSICS_COLORS.forceNet}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain}
                   pixelLength={Math.hypot(earthData.Gx, earthData.Gy)}
                 />

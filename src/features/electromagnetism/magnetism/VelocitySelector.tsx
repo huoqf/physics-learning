@@ -525,8 +525,7 @@ export default function VelocitySelector() {
                       <VectorArrow
                         origin={{ x: point.x, y: point.y }}
                         vector={forceVec}
-                        type="force"
-                        color={PHYSICS_COLORS.lorentzForce}
+                        type="lorentzForce"
                         sceneScale={sceneScale}
                         strokeWidth={CANVAS_STYLE.stroke.vectorMain}
                       />

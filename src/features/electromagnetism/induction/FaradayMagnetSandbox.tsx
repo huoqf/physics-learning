@@ -9,6 +9,7 @@ import { LightBulb } from '@/components/Physics/LightBulb'
 import { Galvanometer } from '@/components/Physics/Galvanometer'
 import { Solenoid } from '@/components/Physics/Solenoid'
 import { ParametricMagneticField } from '@/components/Physics/ParametricMagneticField'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
 import {
   MAGNET_MIN_X, COIL_X, COIL_RX, COIL_RY, MAGNET_LEN, MAGNET_H,
 } from './hooks/useFaradayPhysics'
@@ -109,9 +110,13 @@ export function FaradayMagnetSandbox({
       <g>
         <BarMagnet x={curMagnetX + MAGNET_LEN / 2} y={coilY} width={MAGNET_LEN} height={MAGNET_H} pole={-1} />
         {isPlaying && Math.abs(magnetV) > 0 && (
-          <path
-            d={`M ${curMagnetX + MAGNET_LEN / 2} ${coilY - 22} L ${curMagnetX + MAGNET_LEN / 2 + (magnetV > 0 ? 30 : -30)} ${coilY - 22}`}
-            stroke={PHYSICS_COLORS.velocity} strokeWidth="2.5" markerEnd="url(#arrFluxGold)"
+          <VectorArrow
+            origin={{ x: curMagnetX + MAGNET_LEN / 2, y: coilY - 22 }}
+            vector={{ x: magnetV > 0 ? 1 : -1, y: 0 }}
+            type="velocity"
+            sceneScale={{ originX: 0, originY: 0, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+            pixelLength={30}
+            strokeWidth={2.5}
           />
         )}
       </g>

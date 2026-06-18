@@ -3,6 +3,7 @@ import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { radius } from '@/theme/radius'
 import { shadow } from '@/theme/shadow'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
 import type { ElectricPotentialPhysicsResult, PathPoint } from './hooks/useElectricPotentialPhysics'
 
 interface Props {
@@ -62,14 +63,6 @@ export function ElectricPotentialAnimScene({
       >
         {/* 定义箭头和渐变 */}
         <defs>
-          {/* 场强黄色箭头 Marker */}
-          <marker id="arrow-efield" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-            <path d="M 0 2.5 L 7 5 L 0 7.5 z" fill={PHYSICS_COLORS.electricField} />
-          </marker>
-          {/* 粒子受力橙色箭头 Marker */}
-          <marker id="arrow-force" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill={PHYSICS_COLORS.electricForce} />
-          </marker>
           {/* 接地符号 Marker */}
           <marker id="ground-symbol" viewBox="0 0 10 10" refX="5" refY="0" markerWidth="10" markerHeight="10" orient="auto">
             <line x1={5} y1={0} x2={5} y2={6} stroke={colors.neutral[400]} strokeWidth={1.5} />
@@ -98,19 +91,20 @@ export function ElectricPotentialAnimScene({
 
         {/* 2. 背景非匀强矢量电场箭头网格 */}
         <g opacity={0.85}>
-          {eFieldVectors.map((v, i) => (
-            <line
-              key={`ev-${i}`}
-              x1={v.cx}
-              y1={v.cy}
-              x2={v.cx + v.dx}
-              y2={v.cy + v.dy}
-              stroke={PHYSICS_COLORS.electricField}
-              strokeWidth={1.0}
-              markerEnd="url(#arrow-efield)"
-              opacity={v.opacity}
-            />
-          ))}
+          {eFieldVectors.map((v, i) => {
+            const len = Math.sqrt(v.dx * v.dx + v.dy * v.dy)
+            return len > 0.1 ? (
+              <VectorArrow
+                key={`ev-${i}`}
+                origin={{ x: 0, y: 0 }}
+                vector={{ x: v.dx, y: -v.dy }}
+                type="electricField"
+                sceneScale={{ originX: v.cx, originY: v.cy, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                pixelLength={len}
+                strokeWidth={1.0}
+              />
+            ) : null
+          })}
         </g>
 
         {/* 3. A、B 端点与水平辅助虚线 */}
@@ -235,15 +229,13 @@ export function ElectricPotentialAnimScene({
               opacity={0.5}
             />
             {/* 场强指示矢量箭头 */}
-            <line
-              x1={hoverIndicator.cx}
-              y1={hoverIndicator.cy}
-              x2={hoverIndicator.cx + hoverIndicator.dx}
-              y2={hoverIndicator.cy + hoverIndicator.dy}
-              stroke={PHYSICS_COLORS.electricField}
+            <VectorArrow
+              origin={{ x: 0, y: 0 }}
+              vector={{ x: hoverIndicator.dx, y: -hoverIndicator.dy }}
+              type="electricField"
+              sceneScale={{ originX: hoverIndicator.cx, originY: hoverIndicator.cy, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+              pixelLength={Math.sqrt(hoverIndicator.dx * hoverIndicator.dx + hoverIndicator.dy * hoverIndicator.dy)}
               strokeWidth={hoverIndicator.thickness}
-              strokeLinecap="round"
-              markerEnd="url(#arrow-efield)"
             />
             <text
               x={hoverIndicator.cx + hoverIndicator.dx + (hoverIndicator.dx >= 0 ? 12 : -12)}
@@ -265,15 +257,13 @@ export function ElectricPotentialAnimScene({
             {/* 受力橙色箭头 */}
             {particleForceArrow && (
               <g>
-                <line
-                  x1={particleCanvasPos.cx}
-                  y1={particleCanvasPos.cy}
-                  x2={particleCanvasPos.cx + particleForceArrow.dx}
-                  y2={particleCanvasPos.cy + particleForceArrow.dy}
-                  stroke={PHYSICS_COLORS.electricForce}
+                <VectorArrow
+                  origin={{ x: 0, y: 0 }}
+                  vector={{ x: particleForceArrow.dx, y: -particleForceArrow.dy }}
+                  type="electricForce"
+                  sceneScale={{ originX: particleCanvasPos.cx, originY: particleCanvasPos.cy, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                  pixelLength={Math.sqrt(particleForceArrow.dx * particleForceArrow.dx + particleForceArrow.dy * particleForceArrow.dy)}
                   strokeWidth={2.8}
-                  strokeLinecap="round"
-                  markerEnd="url(#arrow-force)"
                 />
                 <text
                   x={particleCanvasPos.cx + particleForceArrow.dx + (particleForceArrow.dx >= 0 ? 12 : -12)}

@@ -666,7 +666,6 @@ export default function CuttingEMF() {
                     origin={{ x: finalX, y: 0.15 }}
                     vector={{ x: extForceX, y: 0 }}
                     type="force"
-                    color={PHYSICS_COLORS.forceNet}
                     sceneScale={localSceneScale}
                     strokeWidth={2.5}
                   />
@@ -691,7 +690,6 @@ export default function CuttingEMF() {
                     origin={{ x: finalX, y: 0.15 }}
                     vector={{ x: ampForceX, y: 0 }}
                     type="force"
-                    color={PHYSICS_COLORS.forceNet}
                     sceneScale={localSceneScale}
                     strokeWidth={2.5}
                   />
@@ -716,7 +714,6 @@ export default function CuttingEMF() {
                     origin={{ x: finalX, y: -0.15 }}
                     vector={{ x: F_ext + ampForceX, y: 0 }}
                     type="force"
-                    color={PHYSICS_COLORS.forceNet}
                     sceneScale={localSceneScale}
                     strokeWidth={2.5}
                   />

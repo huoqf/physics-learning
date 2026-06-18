@@ -225,9 +225,8 @@ export default function SpringForceAnimation() {
             <VectorArrow
               origin={{ x: centerX, y: -(groundY - boxSize - 12) }}
               vector={{ x: springForce, y: 0 }}
-              type="force"
+              type="elasticForce"
               sceneScale={springSceneScale}
-              color={PHYSICS_COLORS.elasticForce}
               strokeWidth={CANVAS_STYLE.stroke.vectorMain}
               pixelLength={Math.abs(springForce) * 2.2}
             />

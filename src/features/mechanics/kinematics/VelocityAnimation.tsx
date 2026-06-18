@@ -237,9 +237,8 @@ export default function VelocityAnimation() {
             <VectorArrow
               origin={{ x: t1Pos, y: -(groundY - objH * 1.6) }}
               vector={{ x: deltaX, y: 0 }}
-              type="velocity"
+              type="averageVelocity"
               sceneScale={sceneScale}
-              color={PHYSICS_COLORS.averageVelocity}
               strokeWidth={STROKE.vectorMain}
             />
             <text

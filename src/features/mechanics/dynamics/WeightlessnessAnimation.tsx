@@ -4,6 +4,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateElevatorMotion } from '@/physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { colors } from '@/theme/colors'
 
 /** 超重与失重场景布局常量 */
@@ -385,14 +386,12 @@ export default function WeightlessnessAnimation() {
         {showVectors && (
           <g>
             {/* 重力 G (深绿) */}
-            <line
-              x1={objCx}
-              y1={objCy}
-              x2={objCx}
-              y2={objCy + 45}
-              stroke={PHYSICS_COLORS.gravity}
-              strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-              markerEnd="url(#arrowhead-gravity)"
+            <VectorArrow
+              origin={{ x: 0, y: 0 }}
+              vector={{ x: 0, y: -1 }}
+              type="gravity"
+              sceneScale={{ originX: objCx, originY: objCy, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+              pixelLength={45}
             />
             <text
               x={objCx + 10}
@@ -407,14 +406,12 @@ export default function WeightlessnessAnimation() {
             {/* 支持力 N (青绿，完全失重时不绘制) */}
             {currentN > 0.01 && (
               <>
-                <line
-                  x1={objCx}
-                  y1={objCy}
-                  x2={objCx}
-                  y2={objCy - 45 * (currentN / weight)}
-                  stroke={PHYSICS_COLORS.normalForce}
-                  strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  markerEnd="url(#arrowhead-normal)"
+                <VectorArrow
+                  origin={{ x: 0, y: 0 }}
+                  vector={{ x: 0, y: 1 }}
+                  type="normalForce"
+sceneScale={{ originX: objCx, originY: objCy, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                  pixelLength={45 * (currentN / weight)}
                 />
                 <text
                   x={objCx + 10}
@@ -431,14 +428,12 @@ export default function WeightlessnessAnimation() {
             {/* 电梯加速度 a (警示红，画在左侧导轨旁，省出右侧空间) */}
             {Math.abs(actualA) > 0.01 && (
               <g transform={`translate(${centerX - elevatorWidth / 2 - 28}, ${elevatorY + elevatorHeight / 2})`}>
-                <line
-                  x1={0}
-                  y1={0}
-                  x2={0}
-                  y2={-actualA * 10}
-                  stroke={PHYSICS_COLORS.acceleration}
-                  strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  markerEnd="url(#arrowhead-acceleration)"
+                <VectorArrow
+                  origin={{ x: 0, y: 0 }}
+                  vector={{ x: 0, y: actualA > 0 ? 1 : -1 }}
+                  type="acceleration"
+                  sceneScale={{ originX: 0, originY: 0, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                  pixelLength={Math.abs(actualA) * 10}
                 />
                 <text
                   x={-15}
@@ -456,14 +451,12 @@ export default function WeightlessnessAnimation() {
             {/* 电梯速度 v (经典蓝，画在左侧导轨旁) */}
             {Math.abs(currentV) > 0.01 && (
               <g transform={`translate(${centerX - elevatorWidth / 2 - 42}, ${elevatorY + elevatorHeight / 2})`}>
-                <line
-                  x1={0}
-                  y1={0}
-                  x2={0}
-                  y2={-currentV * 6}
-                  stroke={PHYSICS_COLORS.velocity}
-                  strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  markerEnd="url(#arrowhead-velocity)"
+                <VectorArrow
+                  origin={{ x: 0, y: 0 }}
+                  vector={{ x: 0, y: currentV > 0 ? 1 : -1 }}
+                  type="velocity"
+                  sceneScale={{ originX: 0, originY: 0, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                  pixelLength={Math.abs(currentV) * 6}
                 />
                 <text
                   x={-15}
@@ -851,48 +844,6 @@ export default function WeightlessnessAnimation() {
             <stop offset="85%" stopColor={SCENE_COLORS.sphere.steel.gradient[2]} />
             <stop offset="100%" stopColor={SCENE_COLORS.sphere.steel.gradient[3]} />
           </radialGradient>
-
-          {/* 矢量箭头 */}
-          <marker
-            id="arrowhead-gravity"
-            markerWidth="8"
-            markerHeight="6"
-            refX="7"
-            refY="3"
-            orient="auto"
-          >
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.gravity} />
-          </marker>
-          <marker
-            id="arrowhead-normal"
-            markerWidth="8"
-            markerHeight="6"
-            refX="7"
-            refY="3"
-            orient="auto"
-          >
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.normalForce} />
-          </marker>
-          <marker
-            id="arrowhead-acceleration"
-            markerWidth="8"
-            markerHeight="6"
-            refX="7"
-            refY="3"
-            orient="auto"
-          >
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.acceleration} />
-          </marker>
-          <marker
-            id="arrowhead-velocity"
-            markerWidth="8"
-            markerHeight="6"
-            refX="7"
-            refY="3"
-            orient="auto"
-          >
-            <polygon points="0 0, 8 3, 0 6" fill={PHYSICS_COLORS.velocity} />
-          </marker>
         </defs>
       </svg>
     </div>

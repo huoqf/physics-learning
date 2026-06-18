@@ -294,9 +294,8 @@ export default function ChargeInEField() {
               <VectorArrow
                 origin={{ x: cx, y: -cy }}
                 vector={{ x: currentState.vx, y: 0 }}
-                type="velocity"
+                type="velocityX"
                 sceneScale={sceneScale}
-                color={PHYSICS_COLORS.velocityX}
                 strokeWidth={CANVAS_STYLE.stroke.vectorSub}
               />
               <text x={cx + vx_px + 8} y={cy + 3} fontSize="10" fill={PHYSICS_COLORS.velocityX} fontWeight="bold">v₀</text>
@@ -306,9 +305,8 @@ export default function ChargeInEField() {
                 <VectorArrow
                   origin={{ x: cx, y: -cy }}
                   vector={{ x: 0, y: -currentState.vy }}
-                  type="velocity"
+                  type="velocityY"
                   sceneScale={sceneScale}
-                  color={PHYSICS_COLORS.velocityY}
                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                 />
               )}
@@ -320,7 +318,6 @@ export default function ChargeInEField() {
                 vector={{ x: currentState.vx, y: -currentState.vy }}
                 type="velocity"
                 sceneScale={sceneScale}
-                color={PHYSICS_COLORS.velocity}
                 strokeWidth={CANVAS_STYLE.stroke.vectorMain}
               />
               <text x={cx + vx_px + 8} y={cy + vy_px + (vy_px > 0 ? 8 : -4)} fontSize="10" fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
@@ -331,7 +328,6 @@ export default function ChargeInEField() {
                 vector={{ x: 0, y: -currentState.ay + (useGravity ? 9.8 : 0) }}
                 type="electricForce"
                 sceneScale={sceneScale}
-                color={PHYSICS_COLORS.electricForce}
                 strokeWidth={CANVAS_STYLE.stroke.vectorSub}
               />
 
@@ -342,7 +338,6 @@ export default function ChargeInEField() {
                   vector={{ x: 0, y: -9.8 }}
                   type="gravity"
                   sceneScale={sceneScale}
-                  color={PHYSICS_COLORS.gravity}
                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                 />
               )}

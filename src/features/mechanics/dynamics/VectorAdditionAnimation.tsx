@@ -365,9 +365,8 @@ export default function VectorAdditionAnimation() {
                 <VectorArrow
                    origin={{ x: origin.cx, y: -origin.cy }}
                    vector={{ x: fxEnd.cx - origin.cx, y: -(fxEnd.cy - origin.cy) }}
-                   type="force"
+                   type="forceComponent"
                    sceneScale={vaSceneScale}
-                   color={PHYSICS_COLORS.forceComponent}
                    strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                    pixelLength={Math.hypot(fxEnd.cx - origin.cx, fxEnd.cy - origin.cy)}
                  />
@@ -386,10 +385,9 @@ export default function VectorAdditionAnimation() {
                  {/* 竖直分力 Fy */}
                  <VectorArrow
                    origin={{ x: origin.cx, y: -origin.cy }}
-                   vector={{ x: fyEnd.cx - origin.cx, y: -(fyEnd.cy - origin.cy) }}
-                   type="force"
-                   sceneScale={vaSceneScale}
-                   color={PHYSICS_COLORS.forceComponent}
+                    vector={{ x: fyEnd.cx - origin.cx, y: -(fyEnd.cy - origin.cy) }}
+                    type="forceComponent"
+                    sceneScale={vaSceneScale}
                    strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                    pixelLength={Math.hypot(fyEnd.cx - origin.cx, fyEnd.cy - origin.cy)}
                  />
@@ -431,7 +429,6 @@ export default function VectorAdditionAnimation() {
                   vector={{ x: fResultantEnd.cx - origin.cx, y: -(fResultantEnd.cy - origin.cy) }}
                   type="force"
                   sceneScale={vaSceneScale}
-                  color={PHYSICS_COLORS.forceNet}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain}
                   pixelLength={Math.hypot(fResultantEnd.cx - origin.cx, fResultantEnd.cy - origin.cy)}
                 />
@@ -487,9 +484,8 @@ export default function VectorAdditionAnimation() {
                 <VectorArrow
                   origin={{ x: origin.cx, y: -origin.cy }}
                   vector={{ x: f1End.cx - origin.cx, y: -(f1End.cy - origin.cy) }}
-                  type="force"
+                  type="appliedForce"
                   sceneScale={vaSceneScale}
-                  color={PHYSICS_COLORS.appliedForce}
                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                   pixelLength={Math.hypot(f1End.cx - origin.cx, f1End.cy - origin.cy)}
                 />
@@ -529,9 +525,8 @@ export default function VectorAdditionAnimation() {
                 <VectorArrow
                   origin={{ x: origin.cx, y: -origin.cy }}
                   vector={{ x: f2End.cx - origin.cx, y: -(f2End.cy - origin.cy) }}
-                  type="force"
+                  type="tension"
                   sceneScale={vaSceneScale}
-                  color={PHYSICS_COLORS.tension}
                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                   pixelLength={Math.hypot(f2End.cx - origin.cx, f2End.cy - origin.cy)}
                 />
@@ -595,7 +590,6 @@ export default function VectorAdditionAnimation() {
                   vector={{ x: fResultantEnd.cx - origin.cx, y: -(fResultantEnd.cy - origin.cy) }}
                   type="force"
                   sceneScale={vaSceneScale}
-                  color={PHYSICS_COLORS.forceNet}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain}
                   pixelLength={Math.hypot(fResultantEnd.cx - origin.cx, fResultantEnd.cy - origin.cy)}
                 />
@@ -619,9 +613,8 @@ export default function VectorAdditionAnimation() {
                 <VectorArrow
                   origin={{ x: origin.cx, y: -origin.cy }}
                   vector={{ x: f1End.cx - origin.cx, y: -(f1End.cy - origin.cy) }}
-                  type="force"
+                  type="appliedForce"
                   sceneScale={vaSceneScale}
-                  color={PHYSICS_COLORS.appliedForce}
                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                   pixelLength={Math.hypot(f1End.cx - origin.cx, f1End.cy - origin.cy)}
                 />
@@ -682,9 +675,8 @@ export default function VectorAdditionAnimation() {
                 <VectorArrow
                   origin={{ x: f2ShiftedStart.cx, y: -f2ShiftedStart.cy }}
                   vector={{ x: f2ShiftedEnd.cx - f2ShiftedStart.cx, y: -(f2ShiftedEnd.cy - f2ShiftedStart.cy) }}
-                  type="force"
+                  type="tension"
                   sceneScale={vaSceneScale}
-                  color={PHYSICS_COLORS.tension}
                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                   pixelLength={Math.hypot(f2ShiftedEnd.cx - f2ShiftedStart.cx, f2ShiftedEnd.cy - f2ShiftedStart.cy)}
                 />
@@ -720,7 +712,6 @@ export default function VectorAdditionAnimation() {
                   vector={{ x: fResultantEnd.cx - origin.cx, y: -(fResultantEnd.cy - origin.cy) }}
                   type="force"
                   sceneScale={vaSceneScale}
-                  color={PHYSICS_COLORS.forceNet}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain}
                   pixelLength={Math.hypot(fResultantEnd.cx - origin.cx, fResultantEnd.cy - origin.cy)}
                 />

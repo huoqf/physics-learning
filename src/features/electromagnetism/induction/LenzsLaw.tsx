@@ -3,6 +3,7 @@ import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { calculateLenzsLaw } from '@/physics'
 import { useAnimationFrame } from '@/utils/animation'
 
@@ -168,15 +169,6 @@ export default function LenzsLaw() {
     <div ref={containerRef} className="w-full h-full">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
         <defs>
-          <marker id="arrowForce" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
-            <path d="M0,0 L8,4 L0,8" fill={PHYSICS_COLORS.forceNet} />
-          </marker>
-          <marker id="arrowBField" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto">
-            <path d="M0,0 L6,3 L0,6" fill={PHYSICS_COLORS.magneticField} />
-          </marker>
-          <marker id="arrowInduced" markerWidth="6" markerHeight="6" refX="4" refY="3" orient="auto">
-            <path d="M0,0 L6,3 L0,6" fill={PHYSICS_COLORS.electricCurrent} />
-          </marker>
         </defs>
 
         {/* --- 1. 线圈 --- */}
@@ -206,17 +198,14 @@ export default function LenzsLaw() {
 
         {/* --- 3. 中间直射的主磁场线 --- */}
         {[-20, 0, 20].map((dx, i) => (
-          <line 
-            key={`pri-${i}`} 
-            x1={cx + dx} 
-            y1={priY1} 
-            x2={cx + dx} 
-            y2={priY2} 
-            stroke={PHYSICS_COLORS.magneticField} 
-            strokeWidth={CANVAS_STYLE.stroke.reference} 
-            strokeDasharray={CANVAS_STYLE.dash.reference.join(',')} 
-            opacity={0.15 + fluxIntensity * 0.65} 
-            markerEnd="url(#arrowBField)" 
+          <VectorArrow
+            key={`pri-${i}`}
+            origin={{ x: cx + dx, y: isDown ? magnetY + 35 : coilY }}
+            vector={{ x: 0, y: isDown ? -1 : 1 }}
+            type="magneticField"
+            sceneScale={{ originX: 0, originY: 0, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+            pixelLength={Math.abs(priY2 - priY1)}
+            strokeWidth={CANVAS_STYLE.stroke.reference}
           />
         ))}
 
@@ -226,16 +215,14 @@ export default function LenzsLaw() {
           const indY1 = isUp ? coilY + 45 : coilY - 45
           const indY2 = isUp ? coilY - 45 : coilY + 45
           return (
-            <line 
-              key={`ind-${i}`} 
-              x1={cx + dx} 
-              y1={indY1} 
-              x2={cx + dx} 
-              y2={indY2} 
-              stroke={PHYSICS_COLORS.electricCurrent} 
-              strokeWidth={CANVAS_STYLE.stroke.vectorSub} 
-              markerEnd="url(#arrowInduced)" 
-              opacity={0.3 + fluxIntensity * 0.7} 
+            <VectorArrow
+              key={`ind-${i}`}
+              origin={{ x: cx + dx, y: indY1 }}
+              vector={{ x: 0, y: isUp ? 1 : -1 }}
+              type="currentDirection"
+              sceneScale={{ originX: 0, originY: 0, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+              pixelLength={Math.abs(indY2 - indY1)}
+              strokeWidth={CANVAS_STYLE.stroke.vectorSub}
             />
           )
         })}
@@ -285,14 +272,12 @@ export default function LenzsLaw() {
 
           {forceDirection !== 0 && (
             <g>
-              <line 
-                x1="65" 
-                y1="35" 
-                x2="65" 
-                y2={35 + forceDirection * forceArrowLength} 
-                stroke={PHYSICS_COLORS.forceNet} 
-                strokeWidth={CANVAS_STYLE.stroke.vectorMain} 
-                markerEnd="url(#arrowForce)" 
+              <VectorArrow
+                origin={{ x: 0, y: 0 }}
+                vector={{ x: 0, y: forceDirection > 0 ? 1 : -1 }}
+                type="force"
+                sceneScale={{ originX: 65, originY: 35, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                pixelLength={forceArrowLength}
               />
               <text 
                 x="78" 

@@ -404,9 +404,8 @@ export default function ProjectileAnimation() {
             <VectorArrow
               origin={{ x: ballCanvas.cx, y: -ballCanvas.cy }}
               vector={{ x: currentState.vx, y: 0 }}
-              type="velocity"
+              type="velocityX"
               sceneScale={projSceneScale}
-              color={PHYSICS_COLORS.velocityX}
               strokeWidth={STROKE.vectorSub}
             />
             <text x={ballCanvas.cx + projSceneScale.maxVectorLength * 0.3 + 10} y={ballCanvas.cy + 3} fontSize={font(9)} fill={PHYSICS_COLORS.velocityX} fontWeight="bold">vₓ</text>
@@ -416,9 +415,8 @@ export default function ProjectileAnimation() {
               <VectorArrow
                 origin={{ x: ballCanvas.cx, y: -ballCanvas.cy }}
                 vector={{ x: 0, y: currentState.vy }}
-                type="velocity"
+                type="velocityY"
                 sceneScale={projSceneScale}
-                color={PHYSICS_COLORS.velocityY}
                 strokeWidth={STROKE.vectorSub}
               />
             )}

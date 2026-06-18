@@ -376,7 +376,6 @@ export default function EquilibriumAnimation() {
                   vector={{ x: fNetEnd.cx - ballCenter.cx, y: -(fNetEnd.cy - ballCenter.cy) }}
                   type="force"
                   sceneScale={eqSceneScale}
-                  color={PHYSICS_COLORS.forceNet}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain + 0.5}
                   pixelLength={Math.hypot(fNetEnd.cx - ballCenter.cx, fNetEnd.cy - ballCenter.cy)}
                 />
@@ -408,18 +407,16 @@ export default function EquilibriumAnimation() {
                 <VectorArrow
                   origin={{ x: ballCenter.cx, y: -ballCenter.cy }}
                   vector={{ x: t1xEnd.cx - ballCenter.cx, y: -(t1xEnd.cy - ballCenter.cy) }}
-                  type="force"
+                  type="forceComponent"
                   sceneScale={eqSceneScale}
-                  color={PHYSICS_COLORS.forceComponent}
                   strokeWidth={1.5}
                   pixelLength={Math.hypot(t1xEnd.cx - ballCenter.cx, t1xEnd.cy - ballCenter.cy)}
                 />
                 <VectorArrow
                   origin={{ x: ballCenter.cx, y: -ballCenter.cy }}
                   vector={{ x: t1yEnd.cx - ballCenter.cx, y: -(t1yEnd.cy - ballCenter.cy) }}
-                  type="force"
+                  type="forceComponent"
                   sceneScale={eqSceneScale}
-                  color={PHYSICS_COLORS.forceComponent}
                   strokeWidth={1.5}
                   pixelLength={Math.hypot(t1yEnd.cx - ballCenter.cx, t1yEnd.cy - ballCenter.cy)}
                 />
@@ -432,18 +429,16 @@ export default function EquilibriumAnimation() {
                 <VectorArrow
                   origin={{ x: ballCenter.cx, y: -ballCenter.cy }}
                   vector={{ x: t2xEnd.cx - ballCenter.cx, y: -(t2xEnd.cy - ballCenter.cy) }}
-                  type="force"
+                  type="forceComponent"
                   sceneScale={eqSceneScale}
-                  color={PHYSICS_COLORS.forceComponent}
                   strokeWidth={1.5}
                   pixelLength={Math.hypot(t2xEnd.cx - ballCenter.cx, t2xEnd.cy - ballCenter.cy)}
                 />
                 <VectorArrow
                   origin={{ x: ballCenter.cx, y: -ballCenter.cy }}
                   vector={{ x: t2yEnd.cx - ballCenter.cx, y: -(t2yEnd.cy - ballCenter.cy) }}
-                  type="force"
+                  type="forceComponent"
                   sceneScale={eqSceneScale}
-                  color={PHYSICS_COLORS.forceComponent}
                   strokeWidth={1.5}
                   pixelLength={Math.hypot(t2yEnd.cx - ballCenter.cx, t2yEnd.cy - ballCenter.cy)}
                 />
