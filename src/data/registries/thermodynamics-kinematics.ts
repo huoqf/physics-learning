@@ -20,6 +20,5 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
     ],
     SidebarExtra: lazy(() => import('@/features/thermodynamics/kinematics/BrownianMotionSidebar')),
     CenterExtra: lazy(() => import('@/features/thermodynamics/kinematics/BrownianMotionCenterExtra')),
-    centerExtraMode: 'mode',
   },
 })
