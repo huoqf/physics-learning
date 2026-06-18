@@ -2,22 +2,24 @@
 
 ## 当前周期
 
-- 当前日期：2026-W24（06-17）
+- 当前日期：2026-W25（06-18）
 - 当前里程碑：M4 电磁/热/光/原子模块
-- 本周详细日志：[2026-W24.md](./logs/2026-W24.md)
-- 进行中：[左侧面板统一风格](./logs/2026-W24-sidebar-unify.md)（13 文件，Step 1/4）
+- 本周详细日志：[2026-W25.md](./logs/2026-W25.md)
 - 提交流程：[CHECKLIST.md](./CHECKLIST.md)
 
 ## 历史归档（按 ISO 周）
 
 - [2026-W23.md](./logs/2026-W23.md)（06-02 ~ 06-04）
 - [2026-W24.md](./logs/2026-W24.md)（06-05 ~ 06-15）
+- [2026-W24-sidebar-unify.md](./logs/2026-W24-sidebar-unify.md)（侧屏统一风格）
 - 完整历史：[2026-06.md](./logs/2026-06.md)
 
 ## 最近变更摘要
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 06-18 | physics | feature | 光学纯函数库 optics.ts：calculateRefraction（斯涅尔定律）、calculateCriticalAngle（全反射临界角）、calculateThinLens（薄透镜成像）；注册 index.ts，tsc 零错误 |
+| 06-18 | physics | feature | 热学纯函数库 thermodynamics.ts：calculateIdealGas（理想气体三大定律）、calculateInternalEnergy（热力学第一定律）、calculateThermoProcess（等温/等容/等压过程功热量计算）；注册 index.ts，tsc 零错误 |
 | 06-17 | data/quantities | fix | electromagnetism.ts 颜色硬编码修复：41 处十六进制颜色值 → PHYSICS_COLORS token（electricCurrent/magnetSouth/magneticField/velocity/acceleration/lorentzForce 等）；剩余 2 处（#EAB308/#64748B）无直接 token 映射，待后续评估 |
 | 06-17 | electromagnetism | fix | 变压器规范合规修复：回退 colors.ts 新增 token（primaryCircuit/secondaryCircuit/magneticFlux → electricCurrent/magnetSouth/magneticField）；InfoBar 硬编码字号 → font(FONT.xxx)；w-52 → px(208)；CSS 动画 -24px → CSS 变量 + px()；fluxStrokeW 魔法数字 → 整体 px()；透明度魔法数字 → HIGHLIGHT_ALPHA 常量 |
 | 06-17 | electromagnetism | feature | 变压器原理三屏联动重构：新增 TransformerSidebarExtra（基础/进阶模式切换）、4 只 DialMeter 电表 + Rheostat 负载、原副边红蓝配色、InfoBar 功率配平 + 动态因果链多米诺高亮；quantities builder 补充公式/高考要点/易错警示；全部布局值 px() 缩放 |

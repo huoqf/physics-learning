@@ -194,8 +194,11 @@
 
 ### 纯函数库 src/physics/thermodynamics.ts
 
-- [ ] calculateIdealGas(p1, V1, T1, p2?, V2?) → { result }  // 盖-吕萨克/查理/玻意耳
-- [ ] calculateInternalEnergy(deltaQ, deltaW) → { deltaU }  // 热力学第一定律
+- [x] calculateIdealGas(p1, V1, T1, p2?, V2?) → { result }  // 盖-吕萨克/查理/玻意耳
+- [x] calculateInternalEnergy(deltaQ, deltaW) → { deltaU }  // 热力学第一定律
+- [x] calculateThermoProcess(process, n, T, T2, V1, V2, p, Cv, Cp) → { W, Q, deltaU }  // 等温/等容/等压过程（附赠）
+
+> ✅ 2026-06-18：热学纯函数库 `src/physics/thermodynamics.ts` 完成（3 个函数），已注册 `src/physics/index.ts`，TypeScript 零错误。
 
 ### 知识点 + 组件
 
@@ -226,9 +229,11 @@
 
 ### 纯函数库 src/physics/optics.ts
 
-- [ ] calculateRefraction(theta1_deg, n1, n2) → { theta2_deg }
-- [ ] calculateCriticalAngle(n1, n2) → { theta_c_deg }
-- [ ] calculateThinLens(f, u) → { v, magnification, type }   // 实像/虚像
+- [x] calculateRefraction(theta1_deg, n1, n2) → { theta2_deg }
+- [x] calculateCriticalAngle(n1, n2) → { theta_c_deg }
+- [x] calculateThinLens(f, u) → { v, magnification, type }   // 实像/虚像
+
+> ✅ 2026-06-18：光学纯函数库 `src/physics/optics.ts` 完成（3 个函数），已注册 `src/physics/index.ts`，TypeScript 零错误。
 
 ### 知识点 + 组件
 
