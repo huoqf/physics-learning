@@ -15,7 +15,7 @@ import {
   ParametricMagneticField,
   CoupledCoilField,
 } from '@/components/Physics'
-import { VectorArrow } from '@/components/UI'
+import { VectorArrow } from '@/components/Physics'
 
 export default function InductionPhenomenon() {
     const {params, isPlaying, setIsPlaying, updateParam, setParams} = useAnimationStore(
@@ -285,15 +285,26 @@ export default function InductionPhenomenon() {
           <g>
             {/* 磁铁速度蓝色矢量箭头 */}
             {Math.abs(magnetSpeed) > 0.1 && (
-              <VectorArrow
-                x1={magnetX}
-                y1={coilY - 30}
-                x2={magnetX + magnetSpeed * 15}
-                y2={coilY - 30}
-                color={PHYSICS_COLORS.velocity}
-                label={`v = ${magnetSpeed.toFixed(1)} px/s`}
-                strokeWidth={3}
-              />
+              <>
+                <VectorArrow
+                  origin={{ x: magnetX, y: -(coilY - 30) }}
+                  vector={{ x: magnetSpeed * 15, y: 0 }}
+                  type="velocity"
+                  sceneScale={{ originX: 0, originY: 0, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                  color={PHYSICS_COLORS.velocity}
+                  pixelLength={Math.abs(magnetSpeed * 15)}
+                />
+                <text
+                  x={magnetX + magnetSpeed * 15 + 10}
+                  y={coilY - 40}
+                  fontSize="14"
+                  fill={PHYSICS_COLORS.velocity}
+                  fontWeight="bold"
+                  style={{ userSelect: 'none' }}
+                >
+                  {`v = ${magnetSpeed.toFixed(1)} px/s`}
+                </text>
+              </>
             )}
 
             {/* 条形磁铁 BarMagnet (支持鼠标拖拽) */}

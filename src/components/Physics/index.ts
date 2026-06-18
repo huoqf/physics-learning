@@ -4,7 +4,6 @@
 export { Ball } from './Ball'
 export { Block } from './Block'
 export { SportsCar } from './SportsCar'
-export { VTChart } from './VTChart'
 
 // ============================================================================
 // 电磁学 - 静电场 (Electrostatics)
@@ -25,7 +24,6 @@ export { Rheostat } from './Rheostat'
 // 电磁学 - 磁场 (Magnetism)
 // ============================================================================
 export { BarMagnet } from './BarMagnet'
-export { Magnet } from './Magnet'
 export { MagneticPoles } from './MagneticPoles'
 export { ParametricMagneticField } from './ParametricMagneticField'
 export { Solenoid } from './Solenoid'
