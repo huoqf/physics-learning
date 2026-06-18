@@ -90,9 +90,13 @@ export function computeHandPose(v: Vec2, I: Vec2): HandPoseResult {
   // 所以当 I 方向为 iAngle 时，需要旋转 `iAngle - (-90°)`.
   const rotationDeg = (iAngle * 180) / Math.PI + 90
 
+  // Canvas 坐标系中 +y 向下，导致叉积符号与物理右手坐标系相反。
+  // 物理：v向右(1,0)、I向上(0,1) → cross=+1 → 右手 ✓
+  // Canvas：v向右(1,0)、I向上 = Canvas(0,-1) → cross=-1 → 应判断为右手
+  // 因此：Canvas中 cross < 0 → 物理右手，cross > 0 → 物理左手
   const cross = v.x * I.y - v.y * I.x
-  const chirality: HandChirality = cross > 0 ? 'right' : 'left'
-  const B_out = cross > 0
+  const chirality: HandChirality = cross < 0 ? 'right' : 'left'
+  const B_out = cross < 0
 
   return {
     rotationDeg,

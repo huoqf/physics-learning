@@ -602,7 +602,7 @@ export default function CuttingEMF() {
                 vDir={finalV > 0 ? 1 : finalV < 0 ? -1 : 0}
                 B_out={(B_out === 1 ? 1 : 0) as 0 | 1}
                 isBack={B_out === 1}
-                rule={mode === 1 ? 'left' : 'right'} // 变加速用左手，匀速用右手
+                rule="right" // 切割磁感线判断感应电流方向，始终用右手定则 (拇→v, 食→B, 中→I)
                 fist={false}
                 cx={rodPos.cx}
                 cy={railCy + railSpacing / 2 + px(45)}
