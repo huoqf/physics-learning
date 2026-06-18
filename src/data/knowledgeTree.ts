@@ -563,6 +563,28 @@ export const knowledgeTree: KnowledgeNode[] = [
     problemIds: [],
     prerequisites: ['electricity-5-3'],
   },
+
+  // ── 热学 ──────────────────────────────────────────────────────────────────
+  {
+    id: 'thermodynamics-1-1',
+    title: '分子热运动与布朗运动',
+    chapter: '热学 第1章 分子动理论',
+    module: 'thermodynamics',
+    importance: 'gaokao',
+    animationIds: ['anim-brownian-motion'],
+    problemIds: [],
+    prerequisites: [],
+  },
+  {
+    id: 'thermodynamics-1-2',
+    title: '温度与分子平均动能',
+    chapter: '热学 第1章 分子动理论',
+    module: 'thermodynamics',
+    importance: 'core',
+    animationIds: ['anim-brownian-motion'],
+    problemIds: [],
+    prerequisites: ['thermodynamics-1-1'],
+  },
 ]
 
 export const knowledgeIndex: Record<string, KnowledgeNode> = {}

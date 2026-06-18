@@ -10,6 +10,7 @@ import { electromagnetismDcCircuitsAnimations } from './registries/electromagnet
 import { electromagnetismMagnetismAnimations } from './registries/electromagnetism-magnetism'
 import { electromagnetismInductionAnimations } from './registries/electromagnetism-induction'
 import { electromagnetismAcAnimations } from './registries/electromagnetism-ac'
+import { thermodynamicsKinematicsAnimations } from './registries/thermodynamics-kinematics'
 
 export const animationRegistry: Record<string, AnimationConfig> = {
   ...mechanicsKinematicsAnimations,
@@ -23,6 +24,7 @@ export const animationRegistry: Record<string, AnimationConfig> = {
   ...electromagnetismMagnetismAnimations,
   ...electromagnetismInductionAnimations,
   ...electromagnetismAcAnimations,
+  ...thermodynamicsKinematicsAnimations,
 }
 
 export function getAnimationConfig(id: string): AnimationConfig | undefined {

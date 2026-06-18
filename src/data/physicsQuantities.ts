@@ -19,6 +19,7 @@ type BuilderName =
   | 'buildMomentumQuantities'
   | 'buildElectromagnetismQuantities'
   | 'buildEnergyQuantities'
+  | 'buildThermodynamicsQuantities'
 
 /** 单条注册记录：懒加载器 + 构建器函数名 */
 interface QuantityRegistration {
@@ -94,6 +95,9 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-potential-energy':      { loader: () => import('./quantities/energy'),         builderName: 'buildEnergyQuantities' },
   'anim-energy-conservation':   { loader: () => import('./quantities/energy'),         builderName: 'buildEnergyQuantities' },
   'anim-work':                  { loader: () => import('./quantities/energy'),         builderName: 'buildEnergyQuantities' },
+
+  // 热学
+  'anim-brownian-motion':       { loader: () => import('./quantities/thermodynamics'), builderName: 'buildThermodynamicsQuantities' },
 }
 
 /** 已加载的构建器缓存（模块级单例） */
