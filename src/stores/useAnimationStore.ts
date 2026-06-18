@@ -9,6 +9,8 @@ export interface PhysicsState {
 interface AnimationState {
   animationType: string | null
   params: Record<string, number>
+  /** 最后修改的参数 key（用于右侧因果链高亮） */
+  lastChangedParam: string | null
   time: number
   isPlaying: boolean
   speed: number
@@ -36,6 +38,7 @@ interface AnimationState {
 export const useAnimationStore = create<AnimationState>((set) => ({
   animationType: null,
   params: {},
+  lastChangedParam: null,
   time: 0,
   isPlaying: false,
   speed: 1,
@@ -52,7 +55,8 @@ export const useAnimationStore = create<AnimationState>((set) => ({
   setAnimationType: (type) => set({ animationType: type }),
   setParams: (params) => set({ params }),
   updateParam: (key, value) => set((state) => ({
-    params: { ...state.params, [key]: value }
+    params: { ...state.params, [key]: value },
+    lastChangedParam: key,
   })),
   setTime: (time) => set({ time }),
   setIsPlaying: (isPlaying) => set({ isPlaying }),

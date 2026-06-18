@@ -1,4 +1,4 @@
-# 02_UI_RULES — UI 视觉铁律
+﻿# 02_UI_RULES — UI 视觉铁律
 
 &gt; 优先级：低于 core/ARCHITECTURE_RULES，高于 03/04/05
 &gt; AI任务入口：涉及任何 UI 实现前必须读本文件，细节查 src/theme/ 代码
@@ -35,6 +35,8 @@
 | `src/theme/radius.ts` | 圆角规范 | `@/theme/radius` |
 | `src/theme/shadow.ts` | 阴影规范 | `@/theme/shadow` |
 | `src/theme/motion.ts` | 动效时长与 easing | `@/theme/motion` |
+| `src/theme/physics/vectorStyle.ts` | VectorType 枚举、视觉权重、颜色映射（矢量系统权威来源） | `@/theme/physics` |
+| `src/theme/physics/arrowStyle.ts` | ArrowGeometry 箭头几何规格 | `@/theme/physics` |
 
 Tailwind 配置从 `src/theme/colors.ts` 导入，不在 `tailwind.config.*` 中重复定义颜色值。
 

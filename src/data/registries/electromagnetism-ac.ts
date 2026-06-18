@@ -50,23 +50,24 @@ export const electromagnetismAcAnimations = defineAnimations({
     SidebarExtra: lazy(() => import('@/features/electromagnetism/induction/PowerTransmissionSidebarExtra')),
     defaultParams: {
       mode: 0,              // 0=基础: 高压输电优越性, 1=进阶: 动态负载与稳压
+      scenario: 0,          // 0=跨省大电网, 1=近郊小供电
       P1: 100,              // kW 发电功率
-      U2: 10,               // kV 输电电压
+      U2: 11,               // kV 输电电压（配平：U4≈220V）
       r: 10,                // Ω 线路总电阻
-      n3: 1000,             // 降压变压器原线圈匝数
-      n4: 100,              // 降压变压器副线圈匝数
+      k: 0.02,              // 降压变压器变比 k = n4/n3（U4=220V 配平）
       N: 10,                // 用户并联户数（进阶模式）
       showIdeal: 0,         // 0/1 显示理想无损耗对比
       peakLoad: 0,          // 0/1 一键触发傍晚用电高峰
     },
     paramMeta: [
-      { key: 'P1', label: '发电功率 P₁', min: 100, max: 500, step: 50, unit: 'kW' },
-      { key: 'U2', label: '输电电压 U₂', min: 2, max: 50, step: 2, unit: 'kV' },
-      { key: 'r', label: '线路电阻 r', min: 2, max: 50, step: 2, unit: 'Ω' },
+      // 基础模式只显示 U2（核心变量）
+      { key: 'U2', label: '输电电压 U₂', min: 2, max: 50, step: 1, unit: 'kV' },
+      // 场景预设模式下显示 P1 和 r（近郊小供电）
+      { key: 'P1', label: '发电功率 P₁', min: 100, max: 500, step: 50, unit: 'kW', showIf: 'scenario', showIfValue: 1 },
+      { key: 'r', label: '线路电阻 r', min: 2, max: 50, step: 2, unit: 'Ω', showIf: 'scenario', showIfValue: 1 },
       // 进阶模式参数
       { key: 'N', label: '用户户数 N', min: 10, max: 1000, step: 10, unit: '户', showIf: 'mode', showIfValue: 1 },
-      { key: 'n3', label: '降压原线圈 n₃', min: 100, max: 2000, step: 100, unit: '匝', showIf: 'mode', showIfValue: 1 },
-      { key: 'n4', label: '降压副线圈 n₄', min: 100, max: 2000, step: 100, unit: '匝', showIf: 'mode', showIfValue: 1 },
+      { key: 'k', label: '降压变比 k=n₄/n₃', min: 0.01, max: 0.1, step: 0.005, unit: '', showIf: 'mode', showIfValue: 1 },
     ],
   },
 })

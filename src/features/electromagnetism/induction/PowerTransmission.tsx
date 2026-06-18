@@ -59,20 +59,43 @@ export default function PowerTransmission() {
   const P1 = (params.P1 ?? 100) * 1000   // kW → W
   const U2 = (params.U2 ?? 10) * 1000    // kV → V
   const r = params.r ?? 10               // Ω
-  const n3 = params.n3 ?? 1000           // 降压变压器原线圈匝数
-  const n4 = params.n4 ?? 100            // 降压变压器副线圈匝数
+  const k = params.k ?? 0.02             // 降压变压器变比 k = n4/n3
   const N = params.N ?? 10               // 用户并联户数
   const showIdeal = (params.showIdeal ?? 0) === 1
 
   // ─── 因变量（纯函数计算）─────────────────────────────────────────────────────
   const { I_line, deltaU, P_loss, U3, U4, P_user, eta } = calculatePowerTransmission(
-    P1, U2, r, n3, n4
+    P1, U2, r, k
   )
 
   // ─── 视觉强度计算 ────────────────────────────────────────────────────────────
   const lossRatio = P1 === 0 ? 0 : P_loss / P1
   const heatIntensity = Math.min(1, lossRatio * 5)
-  const userBrightness = Math.max(0.08, Math.min(1, eta))
+  // 灯泡亮度：基于 U4 相对 220V 额定电压的比例
+  const ratedVoltage = 220 // V 用户端额定电压
+  const voltageRatio = Math.max(0, Math.min(1, U4 / ratedVoltage))
+  const userBrightness = Math.max(0.08, voltageRatio)
+  // 灯泡颜色：220V 纯白 → 180V 橘黄 → 100V 暗红
+  const bulbColor = useMemo(() => {
+    if (voltageRatio > 0.9) {
+      // 正常：纯白
+      return `rgba(255, 255, 240, ${userBrightness})`
+    } else if (voltageRatio > 0.7) {
+      // 偏暗：白→黄过渡
+      const t = (voltageRatio - 0.7) / 0.2
+      const r = 255
+      const g = Math.round(200 + 55 * t)
+      const b = Math.round(100 + 140 * t)
+      return `rgba(${r}, ${g}, ${b}, ${userBrightness})`
+    } else {
+      // 昏暗：橘黄→暗红
+      const t = Math.max(0, (voltageRatio - 0.3) / 0.4)
+      const r = 255
+      const g = Math.round(80 + 120 * t)
+      const b = Math.round(20 + 80 * t)
+      return `rgba(${r}, ${g}, ${b}, ${userBrightness})`
+    }
+  }, [voltageRatio, userBrightness])
 
   // ─── 布局坐标（响应式）───────────────────────────────────────────────────────
   const W = canvasSize.width
@@ -152,18 +175,22 @@ export default function PowerTransmission() {
       }))
       .filter(b => b.progress <= 1)
 
-    if (heatIntensity > 0.05 && Math.random() < heatIntensity * dt * 8) {
+    // 熔岩粒子增强：损耗越大，粒子越粗、喷射越快、数量越多
+    const particleSpawnRate = heatIntensity * dt * 20 // 数量倍增
+    if (heatIntensity > 0.02 && Math.random() < particleSpawnRate) {
       const lineMidX = (lineStartX + lineEndX) / 2
-      const spread = (lineEndX - lineStartX) * 0.4
+      const spread = (lineEndX - lineStartX) * 0.5
       particlesRef.current.push({
         id: nextParticleId.current++,
         x: lineMidX + (Math.random() - 0.5) * spread,
         y: nodeY + (Math.random() - 0.5) * px(16),
-        vy: -(px(15) + Math.random() * px(25) * heatIntensity),
-        opacity: 0.6 + heatIntensity * 0.3,
+        // 喷射速度随损耗增强
+        vy: -(px(20) + Math.random() * px(40) * heatIntensity),
+        opacity: 0.7 + heatIntensity * 0.3,
         life: 0,
-        maxLife: 0.8 + Math.random() * 0.6,
-        size: px(2) + Math.random() * px(3) * heatIntensity,
+        maxLife: 0.6 + Math.random() * 0.5,
+        // 粒子尺寸随损耗变粗
+        size: px(2.5) + Math.random() * px(5) * heatIntensity,
       })
     }
 
@@ -228,14 +255,28 @@ export default function PowerTransmission() {
   // ─── 电压剖面图数据 ──────────────────────────────────────────────────────────
   // U1 是发电厂输出电压（升压前），假设固定为 10kV（实际由升压变压器决定）
   const U1_display = 10000 // V
+  // 视觉夸张：最小可见跌落像素，确保即使 ΔU 很小也能看出下台阶
+  const minVisibleDrop = px(30)
   // 限制 deltaU/U2 的比例在 0-1 范围内，避免 y 坐标超出画布
   const voltageDropRatio = Math.min(1, Math.max(0, deltaU / U2))
+  const actualDropPixels = (chartBottom - chartTop) * voltageDropRatio
+  const visibleDropPixels = Math.max(actualDropPixels, minVisibleDrop)
+  const u3Y = chartTop + visibleDropPixels
+  // U4 相对 U3 的跌落比例（用 k = U4/U3，且以 U2 为基准归一化）
+  const u4DropRatio = Math.min(1, Math.max(0, voltageDropRatio + (1 - voltageDropRatio) * (1 - k)))
+  const u4Y = chartTop + (chartBottom - chartTop) * u4DropRatio
   const voltagePoints = [
     { x: plantX, y: chartBottom, label: 'U₁', value: U1_display },
     { x: stepUpX, y: chartTop, label: 'U₂', value: U2 },
-    { x: lineEndX, y: chartTop + (chartBottom - chartTop) * voltageDropRatio, label: 'U₃', value: U3 },
-    { x: userX, y: chartTop + (chartBottom - chartTop) * voltageDropRatio * (n4 / n3), label: 'U₄', value: U4 },
+    { x: lineEndX, y: u3Y, label: 'U₃', value: U3 },
+    { x: userX, y: u4Y, label: 'U₄', value: U4 },
   ]
+
+  // 220V 标准电压基准线（在用户端位置绘制）
+  // ratedVoltage 已在视觉强度计算部分定义
+  // 220V 在图中的相对高度：以 U2 为顶部，0V 为底部
+  const ratedRatio = Math.min(1, Math.max(0, ratedVoltage / (U2 * k)))
+  const ratedY = chartTop + (chartBottom - chartTop) * (1 - ratedRatio)
 
   // 理想无损耗对比线（无 ΔU 跌落）
   const idealPoints = showIdeal ? [
@@ -324,6 +365,15 @@ export default function PowerTransmission() {
               </text>
             </g>
           ))}
+
+          {/* 220V 标准电压基准线 */}
+          <line
+            x1={stepDownX} y1={ratedY} x2={userX + px(20)} y2={ratedY}
+            stroke={PHYSICS_COLORS.axis} strokeWidth={px(1)} strokeDasharray="4 3" opacity={0.6} />
+          <text x={userX + px(22)} y={ratedY + px(3)} fontSize={font(9)}
+            fill={PHYSICS_COLORS.axis} textAnchor="start">
+            标准 220V
+          </text>
 
           {/* ΔU 标注 */}
           <line x1={stepUpX + px(10)} y1={chartTop} x2={stepUpX + px(10)} y2={voltagePoints[2].y}
@@ -451,14 +501,33 @@ export default function PowerTransmission() {
             )
           })}
 
-          {/* ─── 发热粒子 ────────────────────────────────────────────────────── */}
-          {particles.map(p => (
-            <circle key={p.id}
-              cx={p.x} cy={p.y}
-              r={p.size}
-              fill={TRANSMISSION_COLORS.thermalGlow}
-              opacity={Math.max(0, p.opacity)} />
-          ))}
+          {/* ─── 发热粒子（熔岩渐变：核心亮黄→边缘暗红）────────────────────── */}
+          {particles.map(p => {
+            // 粒子生命阶段：初期亮黄 → 中期橙红 → 末期暗红
+            const lifeRatio = p.life / p.maxLife
+            const particleColor = lifeRatio < 0.3
+              ? '#FBBF24' // 亮黄（amber-400）
+              : lifeRatio < 0.7
+                ? '#F97316' // 橙色（orange-500）
+                : TRANSMISSION_COLORS.thermalGlow // 暗红
+            return (
+              <g key={p.id}>
+                {/* 外层光晕 */}
+                <circle
+                  cx={p.x} cy={p.y}
+                  r={p.size * 2}
+                  fill={particleColor}
+                  opacity={Math.max(0, p.opacity * 0.3)}
+                  filter="url(#glowFilter)" />
+                {/* 核心 */}
+                <circle
+                  cx={p.x} cy={p.y}
+                  r={p.size}
+                  fill={particleColor}
+                  opacity={Math.max(0, p.opacity)} />
+              </g>
+            )
+          })}
 
           {/* ─── 降压变压器 ──────────────────────────────────────────────────── */}
           <g transform={`translate(${stepDownX}, ${nodeY})`}>
@@ -476,7 +545,7 @@ export default function PowerTransmission() {
             </text>
             <text x={0} y={px(48)} fontSize={font(9)} fill={PHYSICS_COLORS.axis}
               textAnchor="middle">
-              {n3}:{n4}
+              k={k.toFixed(3)}
             </text>
           </g>
 
@@ -484,10 +553,6 @@ export default function PowerTransmission() {
           {Array.from({ length: bulbCount }).map((_, i) => {
             const hx = bulbsStartX + i * bulbSpacing
             const hy = nodeY
-            const brightness = userBrightness
-            const lightColor = brightness > 0.7
-              ? `rgba(251, 191, 36, ${brightness})`
-              : `rgba(251, 191, 36, ${brightness * 0.5})`
 
             return (
               <g key={i} transform={`translate(${hx}, ${hy})`}>
@@ -505,12 +570,12 @@ export default function PowerTransmission() {
                   stroke={PHYSICS_COLORS.objectStroke}
                   strokeWidth={px(0.8)} />
                 <circle cx={0} cy={-px(8)} r={px(3)}
-                  fill={lightColor}
+                  fill={bulbColor}
                   filter="url(#houseGlow)" />
                 <text x={0} y={px(14)} fontSize={font(7)}
                   fill={PHYSICS_COLORS.axis}
                   textAnchor="middle">
-                  {brightness > 0.7 ? '正常' : brightness > 0.4 ? '偏暗' : '停电'}
+                  {voltageRatio > 0.9 ? '正常' : voltageRatio > 0.7 ? '偏暗' : voltageRatio > 0.3 ? '昏暗' : '停电'}
                 </text>
               </g>
             )
@@ -551,12 +616,22 @@ export default function PowerTransmission() {
             U₄ = {U4.toFixed(0)} V
           </text>
           <text x={px(10)} y={px(46)} fontSize={font(9)}
-            fill={eta > 0.95 ? TRANSMISSION_COLORS.efficiency : eta > 0.8 ? TRANSMISSION_COLORS.voltageHigh : TRANSMISSION_COLORS.powerLoss}>
-            {eta > 0.95
-              ? '✓ 高压输电，损耗极低'
-              : eta > 0.8
-                ? '△ 中等损耗，可考虑提高输电电压'
-                : '⚠ 损耗严重！必须提高输电电压或减小线路电阻'}
+            fill={voltageRatio >= 1
+              ? TRANSMISSION_COLORS.efficiency
+              : voltageRatio > 0.8
+                ? TRANSMISSION_COLORS.voltageHigh
+                : TRANSMISSION_COLORS.powerLoss}>
+            {mode === 1
+              ? (voltageRatio >= 1
+                ? '✓ U₄ 达到标准 220V，用电器正常工作'
+                : voltageRatio > 0.8
+                  ? `△ U₄ 低于标准 220V（差 ${(220 - U4).toFixed(0)}V），请调节变比 k 稳压`
+                  : `⚠ U₄ 严重偏低（${U4.toFixed(0)}V），用电器无法正常工作`)
+              : (eta > 0.95
+                ? '✓ 高压输电，损耗极低'
+                : eta > 0.8
+                  ? '△ 中等损耗，可考虑提高输电电压'
+                  : '⚠ 损耗严重！必须提高输电电压或减小线路电阻')}
           </text>
         </g>
       </svg>

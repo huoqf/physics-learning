@@ -24,6 +24,10 @@ export interface ParamMeta {
   showIf?: string
   /** 仅当 params[showIf] 等于此值时显示此参数 */
   showIfValue?: number
+  /** 当 params[hideIf] 等于此值时隐藏此参数（反向条件） */
+  hideIf?: string
+  /** 与 hideIf 配合：当 params[hideIf] 等于此值时隐藏 */
+  hideIfValue?: number
 }
 
 /** 动画控制动作（语义化封装，SidebarExtra 不直接访问 store） */

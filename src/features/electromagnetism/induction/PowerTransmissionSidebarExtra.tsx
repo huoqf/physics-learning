@@ -1,6 +1,6 @@
 /**
  * 远距离输电 - 左侧屏扩展组件
- * 职责：模式切换、辅助开关、一键触发
+ * 职责：场景预设、模式切换、辅助开关、一键触发
  *
  * @agent-rule 遵循 SidebarExtraProps 标准签名
  * @agent-rule 复用 SegmentedControl / ToggleSwitch / TipCard / Button
@@ -12,6 +12,19 @@ import { TipCard } from '@/components/UI/TipCard'
 import { Button } from '@/components/UI/Button'
 import type { SidebarExtraProps } from '@/data/types'
 
+// 场景预设配置
+interface ScenePreset {
+  label: string
+  P1: number
+  r: number
+  U2: number
+}
+
+const SCENE_PRESETS: Record<number, ScenePreset> = {
+  0: { label: '跨省大电网', P1: 500, r: 50, U2: 50 },  // 高压远距离
+  1: { label: '近郊小供电', P1: 100, r: 5, U2: 11 },   // 低压近距离
+}
+
 export const PowerTransmissionSidebarExtra: React.FC<SidebarExtraProps> = ({
   params,
   setParams,
@@ -19,6 +32,7 @@ export const PowerTransmissionSidebarExtra: React.FC<SidebarExtraProps> = ({
   disabled = false,
 }) => {
   const mode = params.mode ?? 0
+  const scenario = params.scenario ?? 0
   const showIdeal = params.showIdeal ?? 0
 
   const handleModeChange = (val: number | string) => {
@@ -30,6 +44,18 @@ export const PowerTransmissionSidebarExtra: React.FC<SidebarExtraProps> = ({
     })
   }
 
+  const handleScenarioChange = (val: number | string) => {
+    const nextScenario = Number(val)
+    const preset = SCENE_PRESETS[nextScenario]
+    setParams({
+      ...params,
+      scenario: nextScenario,
+      P1: preset.P1,
+      r: preset.r,
+      U2: preset.U2,
+    })
+  }
+
   const handlePeakLoad = () => {
     setParams({
       ...params,
@@ -38,10 +64,42 @@ export const PowerTransmissionSidebarExtra: React.FC<SidebarExtraProps> = ({
     })
   }
 
+  // 稳压补偿：步进调节变比 k
+  const handleVoltageDown = () => {
+    // 降电压：减小 k
+    const currentK = params.k ?? 0.02
+    setParams({ ...params, k: Math.max(0.01, currentK - 0.005) })
+  }
+
+  const handleVoltageUp = () => {
+    // 升电压：增大 k
+    const currentK = params.k ?? 0.02
+    setParams({ ...params, k: Math.min(0.1, currentK + 0.005) })
+  }
+
   return (
     <>
+      {/* 场景预设（顶端） */}
+      <div>
+        <SegmentedControl
+          label="场景预设"
+          options={[
+            { label: '跨省大电网', value: 0 },
+            { label: '近郊小供电', value: 1 },
+          ]}
+          value={scenario}
+          onChange={handleScenarioChange}
+          disabled={disabled}
+        />
+        <span className="text-[10px] text-neutral-400 block mt-1">
+          {scenario === 0
+            ? '高电压远距离：自动锁定 P₁=500kW, r=50Ω'
+            : '低电压近距离：自动锁定 P₁=100kW, r=5Ω'}
+        </span>
+      </div>
+
       {/* 开关控制 */}
-      <div className="space-y-3">
+      <div className="pt-3 border-t border-neutral-200 space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-neutral-600">理想无损耗对比</span>
           <ToggleSwitch
@@ -53,7 +111,7 @@ export const PowerTransmissionSidebarExtra: React.FC<SidebarExtraProps> = ({
         </div>
       </div>
 
-      {/* 进阶模式：一键触发 + 提示 */}
+      {/* 进阶模式：一键触发 + 稳压补偿 + 提示 */}
       {mode === 1 && (
         <div className="pt-3 border-t border-neutral-200 space-y-3">
           <Button
@@ -66,9 +124,32 @@ export const PowerTransmissionSidebarExtra: React.FC<SidebarExtraProps> = ({
             一键触发：傍晚用电高峰
           </Button>
 
+          {/* 稳压补偿步进按钮 */}
+          <div>
+            <div className="text-xs font-semibold text-neutral-600 mb-1">稳压补偿（调节变比 k）</div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleVoltageDown}
+                disabled={disabled}
+              >
+                ⬇️ 降电压
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleVoltageUp}
+                disabled={disabled}
+              >
+                ⬆️ 升电压
+              </Button>
+            </div>
+          </div>
+
           <TipCard variant="warning">
             <div className="font-medium mb-1">稳压补偿</div>
-            <div>用电高峰时 U₄ 下降，可通过增大 n₄ 或减小 n₃ 来补偿。</div>
+            <div>用电高峰时 U₄ 下降，点击「升电压」增大 k 补偿跌落。</div>
           </TipCard>
         </div>
       )}
@@ -79,7 +160,7 @@ export const PowerTransmissionSidebarExtra: React.FC<SidebarExtraProps> = ({
           label="学习模式"
           options={[
             { label: '基础：高压输电优越性', value: 0 },
-            { label: '进阶：动态负载与稳压', value: 1 },
+            { label: '进阶:动态负载与稳压', value: 1 },
           ]}
           value={mode}
           onChange={handleModeChange}

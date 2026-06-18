@@ -171,11 +171,12 @@ function RightPhysicsPanel({
   const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
   const isPlaying = useAnimationStore((s) => s.isPlaying)
+  const lastChangedParam = useAnimationStore((s) => s.lastChangedParam)
   // 播放时用 0.1s 精度减少重算，拖动时用精确时间保持响应
   const effectiveTime = isPlaying ? Math.round(time * 10) / 10 : time
   const physicsQuantities = useMemo(
-    () => buildPhysicsQuantities(animId, params, effectiveTime),
-    [animId, params, effectiveTime]
+    () => buildPhysicsQuantities(animId, params, effectiveTime, lastChangedParam),
+    [animId, params, effectiveTime, lastChangedParam]
   )
 
   return (
@@ -239,12 +240,22 @@ export default function AnimationPage() {
 
   const paramMeta = config.paramMeta || []
 
-  // 构建 ParamControl 需要的参数格式（过滤 showIf 条件）
+  // 构建 ParamControl 需要的参数格式（过滤 showIf / hideIf 条件）
   const paramControlParams = paramMeta
     .filter((p) => {
-      if (!p.showIf) return true
-      if (p.showIfValue != null) return params[p.showIf] === p.showIfValue
-      return !!params[p.showIf]
+      // showIf：正向条件
+      if (p.showIf) {
+        if (p.showIfValue != null) {
+          if (params[p.showIf] !== p.showIfValue) return false
+        } else if (!params[p.showIf]) {
+          return false
+        }
+      }
+      // hideIf：反向条件
+      if (p.hideIf && p.hideIfValue != null) {
+        if (params[p.hideIf] === p.hideIfValue) return false
+      }
+      return true
     })
     .map((p) => ({
       ...p,

@@ -126,10 +126,17 @@ export function buildPhysicsQuantities(
   animId: string,
   params: Record<string, number>,
   time: number,
+  lastChangedParam?: string | null,
 ): PhysicsPanelData {
   const builder = builderCache.get(animId)
   if (builder) {
-    const result = builder(animId, params, time)
+    // 传递 lastChangedParam（构建器可选使用）
+    const result = (builder as (
+      animId: string,
+      params: Record<string, number>,
+      time: number,
+      lastChangedParam?: string | null,
+    ) => PhysicsPanelData | null)(animId, params, time, lastChangedParam)
     if (result) return result
   }
 

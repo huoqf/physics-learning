@@ -1,4 +1,4 @@
-# 08_THREE_PANEL_RULES — 三屏职责与侧屏组件规范
+﻿# 08_THREE_PANEL_RULES — 三屏职责与侧屏组件规范
 
 > 优先级：低于 02_UI_RULES.md，高于章节实现细节
 > AI任务入口：实现或修改左侧屏、右侧屏、CenterExtra 时必须读本文件
@@ -162,13 +162,13 @@ SidebarExtraProps
 - **容器风格**：使用 `border-t border-neutral-200` 线分隔，不使用卡片包裹
 - **禁用状态**：通过 `disabled` prop 传递给各子组件，不在容器级设置 `opacity-40 pointer-events-none`
 
-### 4.2 禁止事项
+### 4.3 禁止事项
 
 - SidebarExtra **不得**直接访问 animation store 中的 `params`、`time`、`isPlaying` 及其更新方法
 - 所需动画数据和动作必须由 AnimationPage 通过 props 注入
 - 允许读取纯 UI 环境状态（如主题、布局）时必须有明确理由
 
-### 4.3 animationActions 封装
+### 4.4 animationActions 封装
 
 `animationActions` 由 AnimationPage 从 `useAnimationStore` 中派生：
 

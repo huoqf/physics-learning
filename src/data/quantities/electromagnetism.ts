@@ -34,6 +34,7 @@ export function buildElectromagnetismQuantities(
   animId: string,
   params: Record<string, number>,
   time: number,
+  lastChangedParam?: string | null,
 ): PhysicsPanelData | null {
   const base: PhysicsQuantity[] = []
 
@@ -1392,36 +1393,47 @@ export function buildElectromagnetismQuantities(
       const P1 = (params.P1 ?? 100) * 1000  // kW → W
       const U2 = (params.U2 ?? 10) * 1000   // kV → V
       const r = params.r ?? 10              // Ω
-      const n3 = params.n3 ?? 1000          // 降压变压器原线圈匝数
-      const n4 = params.n4 ?? 100           // 降压变压器副线圈匝数
+      const k = params.k ?? 0.02            // 降压变压器变比 k = n4/n3
 
       // 计算因变量（使用纯函数）
       const { I_line, deltaU, P_loss, U3, U4, eta } = calculatePowerTransmission(
-        P1, U2, r, n3, n4
+        P1, U2, r, k
       )
+
+      // 动态高亮链：根据 lastChangedParam 高亮因果链节点
+      // 因果链：N↑ → R_user↓ → I_line↑ → ΔU↑ → U3↓ → U4↓
+      const causalChain: Record<string, string[]> = {
+        N: ['I_line', 'deltaU', 'U3', 'U4'],
+        k: ['U4'],
+        U2: ['I_line', 'deltaU', 'P_loss', 'U3', 'U4'],
+        P1: ['I_line', 'deltaU', 'P_loss', 'U3', 'U4'],
+        r: ['deltaU', 'P_loss', 'U3', 'U4'],
+      }
+      const highlightKeys = lastChangedParam ? (causalChain[lastChangedParam] ?? []) : []
+      const isHighlight = (key: string) => highlightKeys.includes(key)
 
       return {
         quantities: [
           ...base,
-          { label: '线路电流 I', symbol: 'I_{line}', value: I_line.toFixed(2), unit: 'A', color: TRANSMISSION_COLORS.currentLine, highlight: 'extreme' },
-          { label: '电压损失 ΔU', symbol: '\\Delta U', value: deltaU.toFixed(1), unit: 'V', color: TRANSMISSION_COLORS.voltageHigh },
-          { label: '损耗功率 ΔP', symbol: 'P_{loss}', value: (P_loss / 1000).toFixed(2), unit: 'kW', color: TRANSMISSION_COLORS.powerLoss, highlight: 'extreme' },
-          { label: '降压端电压 U₃', symbol: 'U_3', value: U3.toFixed(1), unit: 'V', color: TRANSMISSION_COLORS.voltageHigh },
-          { label: '用户电压 U₄', symbol: 'U_4', value: U4.toFixed(1), unit: 'V', color: TRANSMISSION_COLORS.powerUser },
+          { label: '线路电流 I', symbol: 'I_{line}', value: I_line.toFixed(2), unit: 'A', color: TRANSMISSION_COLORS.currentLine, highlight: isHighlight('I_line') ? 'extreme' : undefined },
+          { label: '电压损失 ΔU', symbol: '\\Delta U', value: deltaU.toFixed(1), unit: 'V', color: TRANSMISSION_COLORS.voltageHigh, highlight: isHighlight('deltaU') ? 'extreme' : undefined },
+          { label: '损耗功率 ΔP', symbol: 'P_{loss}', value: (P_loss / 1000).toFixed(2), unit: 'kW', color: TRANSMISSION_COLORS.powerLoss, highlight: isHighlight('P_loss') ? 'extreme' : undefined },
+          { label: '降压端电压 U₃', symbol: 'U_3', value: U3.toFixed(1), unit: 'V', color: TRANSMISSION_COLORS.voltageHigh, highlight: isHighlight('U3') ? 'extreme' : undefined },
+          { label: '用户电压 U₄', symbol: 'U_4', value: U4.toFixed(1), unit: 'V', color: TRANSMISSION_COLORS.powerUser, highlight: isHighlight('U4') ? 'extreme' : undefined },
           { label: '输电效率 η', symbol: '\\eta', value: (eta * 100).toFixed(1), unit: '%', color: TRANSMISSION_COLORS.efficiency, highlight: 'extreme' },
         ],
         formulas: [
-          { name: '输电电流', latex: 'I_{line} = \\frac{P_1}{U_2}', level: 'core' },
-          { name: '电压损失', latex: '\\Delta U = I_{line} \\cdot r', level: 'core' },
-          { name: '功率损失', latex: 'P_{loss} = I_{line}^2 \\cdot r', level: 'core' },
-          { name: '降压端电压', latex: 'U_3 = U_2 - \\Delta U', level: 'core' },
-          { name: '用户电压', latex: 'U_4 = U_3 \\cdot \\frac{n_4}{n_3}', level: 'core' },
-          { name: '输电效率', latex: '\\eta = \\frac{P_{user}}{P_1} \\times 100\\%', level: 'core' },
+          { name: '输电电流 [对应左侧发电功率/输电电压滑块]', latex: 'I_{line} = \\frac{P_1}{U_2}', level: 'core' },
+          { name: '电压损失 [对应中央输电线]', latex: '\\Delta U = I_{line} \\cdot r', level: 'core' },
+          { name: '功率损失 [对应中央线缆红色发热粒子]', latex: 'P_{loss} = I_{line}^2 \\cdot r', level: 'core' },
+          { name: '降压端电压 [对应降压变压器]', latex: 'U_3 = U_2 - \\Delta U', level: 'core' },
+          { name: '用户电压 [对应右侧用户端小房子/灯泡]', latex: 'U_4 = U_3 \\cdot k, \\quad k = \\frac{n_4}{n_3}', level: 'core' },
+          { name: '输电效率 [整体输电性能]', latex: '\\eta = \\frac{P_{user}}{P_1} \\times 100\\%', level: 'core' },
         ],
         gaokaoPoints: [
           { text: '高压输电优越性：提高 U₂ → 降低 I_line → 大幅减少 P_loss = I²r', importance: 'gaokao' },
           { text: '动态链分析：N↑ ⇒ R_user↓ ⇒ I_line↑ ⇒ ΔU↑ ⇒ U₃↓ ⇒ U₄↓', importance: 'gaokao' },
-          { text: '稳压补偿：调节 n₃/n₄ 可维持 U₄ 恒定', importance: 'hard' },
+          { text: '稳压补偿：调节 k = n₄/n₃ 可维持 U₄ 恒定', importance: 'hard' },
         ],
         warnings: [
           { text: '严禁使用 P_loss = U₂²/r，真正施加在 r 两端的电压仅为 ΔU', level: 'danger' },

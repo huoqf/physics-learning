@@ -131,13 +131,12 @@ export function computeACGenerationState(
  *   【发电端】P1 = U1·I1
  *   【输电线】I_line = P1/U2 → ΔU = I_line·r → P_loss = I_line²·r
  *   【降压端】U3 = U2 - ΔU → P3 = P1 - P_loss
- *   【用户端】U4 = U3·(n4/n3) → P_user = P3（理想变压器）
+ *   【用户端】U4 = U3·k → P_user = P3（理想变压器，k = n4/n3）
  *
  * @param P1 发电功率 (W) — 自变量
  * @param U2 输电电压，升压变压器副线圈电压 (V) — 自变量
  * @param r  输电线总电阻 (Ω) — 自变量
- * @param n3 降压变压器原线圈匝数 — 自变量
- * @param n4 降压变压器副线圈匝数 — 自变量
+ * @param k  降压变压器变比 k = n4/n3 — 自变量
  * @returns 完整四电压四功率链路（所有中间变量）
  *
  * @category M4
@@ -146,8 +145,7 @@ export function calculatePowerTransmission(
   P1: number,
   U2: number,
   r: number,
-  n3: number,
-  n4: number,
+  k: number,
 ): {
   /** 发电功率 (W) */
   P1: number
@@ -177,8 +175,8 @@ export function calculatePowerTransmission(
   const U3 = U2 - deltaU
   const P3 = P1 - P_loss
 
-  // 【用户端】
-  const U4 = n3 === 0 ? 0 : U3 * (n4 / n3)
+  // 【用户端】U4 = U3 * k
+  const U4 = U3 * k
   const P_user = P3
 
   // 【效率】

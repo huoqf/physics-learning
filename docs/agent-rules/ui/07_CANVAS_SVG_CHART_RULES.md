@@ -1,4 +1,4 @@
-# Canvas/SVG/图表动态布局与渲染规范
+﻿# Canvas/SVG/图表动态布局与渲染规范
 
 > 优先级：低于 02_UI_RULES.md，高于动画实现细节
 > 最后更新：2026-06-16
@@ -139,9 +139,9 @@ const regions = {
 
 ---
 
-## 2. 动态布局原则
+## 3. 动态布局原则
 
-### 2.1 尺寸计算来源（允许的）
+### 3.1 尺寸计算来源（允许的）
 
 Canvas/SVG/图表布局必须优先基于以下方式计算：
 
@@ -153,7 +153,7 @@ Canvas/SVG/图表布局必须优先基于以下方式计算：
 | 容器尺寸测量 | 运行时容器测量 | `canvasRef.current.clientWidth` |
 | 物理坐标范围 | 物理计算值 + 坐标转换 | 缩放比例基于物理范围自动计算 |
 
-### 2.2 禁止的做法
+### 3.2 禁止的做法
 
 ```ts
 // ❌ 禁止：组件内硬编码最终像素尺寸
@@ -170,7 +170,7 @@ const scale = 160;
 <text fontSize={11} />
 ```
 
-### 2.3 推荐做法
+### 3.3 推荐做法
 
 ```ts
 // ✅ 推荐：使用 token + 比例 + 上下限
@@ -186,7 +186,7 @@ const pointRadius = Math.min(
 
 ---
 
-## 3. 魔法数字判定表
+## 4. 魔法数字判定表
 
 本规范禁止「无语义裸数字」，但不是禁止所有数字。以下是明确的判定规则：
 
@@ -203,7 +203,7 @@ const pointRadius = Math.min(
 | 动效时长（150ms, 250ms） | ❌ 禁止 | 从 `@/theme/motion` 导入 |
 | 响应式比例（0.28） | ⚠️ 不建议裸写 | 放入 `canvasStyle.ts`，命名为 `chartWidthRatio` |
 
-### 3.1 示例：正确 vs 错误
+### 4.1 示例：正确 vs 错误
 
 ```ts
 // ❌ 错误：无语义裸数字
@@ -216,9 +216,9 @@ const { minPointRadius, margin } = CANVAS_STYLE;
 
 ---
 
-## 4. 坐标系统分层
+## 5. 坐标系统分层
 
-### 4.1 三类坐标的职责分离
+### 5.1 三类坐标的职责分离
 
 | 坐标类型 | 来源 | 转换/计算 | 用途 |
 |----------|------|----------|------|
@@ -226,14 +226,14 @@ const { minPointRadius, margin } = CANVAS_STYLE;
 | Canvas 坐标 | `coordinate.ts` 转换 | 必须使用 `physicsToCanvas()` | 实际绘制位置 |
 | 布局坐标 | `canvasLayout.ts` 计算 | 图表 inset、图例位置、标注避让 | 非物理元素布局 |
 
-### 4.2 禁止的做法
+### 5.2 禁止的做法
 
 ```ts
 // ❌ 禁止：组件内手写坐标计算
 const canvasX = centerX + physicsX * scale;
 ```
 
-### 4.3 推荐的做法
+### 5.3 推荐的做法
 
 ```ts
 // ✅ 推荐：统一使用 coordinate.ts
@@ -244,9 +244,9 @@ const [canvasX, canvasY] = physicsToCanvas(physicsX, physicsY, canvasSize, scale
 
 ---
 
-## 5. canvasStyle.ts 职责边界
+## 6. canvasStyle.ts 职责边界
 
-### 5.1 canvasStyle.ts 应该包含
+### 6.1 canvasStyle.ts 应该包含
 
 - 线宽 token（矢量、标注、坐标轴、网格等）
 - 箭头样式（长度、角度、head 尺寸）
@@ -256,7 +256,7 @@ const [canvasX, canvasY] = physicsToCanvas(physicsX, physicsY, canvasSize, scale
 - 可读性下限（minPointRadius, minArrowLength 等）
 - Canvas/SVG 统一 marker 规则
 
-### 5.2 canvasStyle.ts 不应该包含
+### 6.2 canvasStyle.ts 不应该包含
 
 - 具体物理计算
 - 某个动画组件的专属业务参数
@@ -266,9 +266,9 @@ const [canvasX, canvasY] = physicsToCanvas(physicsX, physicsY, canvasSize, scale
 
 ---
 
-## 6. 物理图表规范
+## 7. 物理图表规范
 
-### 6.1 图表基本要求
+### 7.1 图表基本要求
 
 | 项目 | 规范 |
 |------|------|
@@ -280,7 +280,7 @@ const [canvasX, canvasY] = physicsToCanvas(physicsX, physicsY, canvasSize, scale
 | 动态尺寸 | 按容器比例计算，有 min/max |
 | 小图（AnalysisPage） | SVG，元素 ≤ 5 个 |
 
-### 6.2 常见物理图表类型
+### 7.2 常见物理图表类型
 
 | 图表类型 | 物理意义 | 推荐技术 |
 |----------|----------|----------|
@@ -294,9 +294,9 @@ const [canvasX, canvasY] = physicsToCanvas(physicsX, physicsY, canvasSize, scale
 
 ---
 
-## 7. 信息密度与降级策略
+## 8. 信息密度与降级策略
 
-### 7.1 信息优先级
+### 8.1 信息优先级
 
 | 层级 | 内容 | 降级策略 |
 |------|------|----------|
@@ -305,7 +305,7 @@ const [canvasX, canvasY] = physicsToCanvas(physicsX, physicsY, canvasSize, scale
 | 辅助层 | 网格、参考线 | 默认可选，空间不足自动隐藏 |
 | 分析层 | 历史轨迹、额外解释 | 默认隐藏，Toggle 开启 |
 
-### 7.2 降级触发条件
+### 8.2 降级触发条件
 
 - Canvas 可见元素 > 7 个
 - 容器尺寸 < 最小阈值
@@ -313,7 +313,7 @@ const [canvasX, canvasY] = physicsToCanvas(physicsX, physicsY, canvasSize, scale
 
 ---
 
-## 8. 禁止项与推荐替代
+## 9. 禁止项与推荐替代
 
 | 禁止做法 | 推荐替代 |
 |----------|----------|
@@ -325,9 +325,9 @@ const [canvasX, canvasY] = physicsToCanvas(physicsX, physicsY, canvasSize, scale
 
 ---
 
-## 9. 统一矢量渲染
+## 10. 统一矢量渲染
 
-### 9.1 组件体系
+### 10.1 组件体系
 
 | 组件/模块 | 路径 | 职责 |
 |-----------|------|------|
@@ -338,7 +338,7 @@ const [canvasX, canvasY] = physicsToCanvas(physicsX, physicsY, canvasSize, scale
 | `SceneConfig` | `src/scene/SceneConfig.ts` | 场景配置（含 `refMagnitudes`） |
 | `SceneScale` | `src/scene/SceneScale.ts` | 场景坐标缩放（透传 `refMagnitudes`） |
 
-### 9.2 使用规范
+### 10.2 使用规范
 
 **必须使用 `VectorArrow` 的场景**：所有需要绘制物理矢量箭头（力、速度、加速度、电场等）的 lesson 文件。
 
@@ -347,7 +347,7 @@ const [canvasX, canvasY] = physicsToCanvas(physicsX, physicsY, canvasSize, scale
 - 各 lesson 硬编码箭头像素长度（如 `len = F * 2`）— 已由 `vectorLength.ts` 归一化替代
 - 各 lesson 手写 `<line>` + `markerEnd` 组合画箭头
 
-### 9.3 `refMagnitudes` 配置规则
+### 10.3 `refMagnitudes` 配置规则
 
 每个使用 `VectorArrow` 的场景**必须**在 `SceneConfig` 中声明 `refMagnitudes`：
 
@@ -368,7 +368,7 @@ const scene: SceneConfig = {
 
 **动态场景**（力值范围随参数变化）：可动态计算 `refMagnitude`，如 `refMagnitudes: { electricForce: maxForce * 1.2 }`。
 
-### 9.4 归一化算法
+### 10.4 归一化算法
 
 ```
 arrowPixelLength = (mag / refMagnitude) × maxVectorLength × visualWeight
@@ -381,7 +381,7 @@ arrowPixelLength = (mag / refMagnitude) × maxVectorLength × visualWeight
 
 结果 clamp 到 `[minLength=14, maxVectorLength]`。
 
-### 9.5 `VECTOR_DISPLAY` 与 `vectorStyle.ts` 的边界
+### 10.5 `VECTOR_DISPLAY` 与 `vectorStyle.ts` 的边界
 
 | 模块 | 职责 | 状态 |
 |------|------|------|
@@ -390,7 +390,7 @@ arrowPixelLength = (mag / refMagnitude) × maxVectorLength × visualWeight
 
 ---
 
-## 10. 相关文档与 Checklist
+## 11. 相关文档与 Checklist
 
 - [02_UI_RULES.md](./02_UI_RULES.md)：UI 视觉铁律
 - [PROCESS_LOG.md](../process/PROCESS_LOG.md)：工程日志
