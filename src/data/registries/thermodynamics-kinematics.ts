@@ -12,7 +12,7 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
       temperature: 300,
       particleD: 5,
       showTrajectory: 1,
-      showMolecules: 1,
+      showMolecules: 0,
     },
     paramMeta: [
       { key: 'temperature', label: '温度 T', min: 273, max: 373, step: 1, unit: 'K' },

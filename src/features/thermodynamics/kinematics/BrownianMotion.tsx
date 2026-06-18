@@ -1,4 +1,4 @@
-import { useRef, useCallback, useMemo, useState, useEffect } from 'react'
+import { useRef, useCallback, useState, useEffect } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -80,12 +80,12 @@ export default function BrownianMotion() {
   // 触发重绘的 state (仅用于 force 更新)
   const [, setTick] = useState(0)
 
-  // 初始化分子
+  // 初始化分子（仅进阶模式）
   useEffect(() => {
-    if (moleculesRef.current.length === 0) {
+    if (mode === 1 && moleculesRef.current.length === 0) {
       moleculesRef.current = initMolecules(width, height)
     }
-  }, [width, height])
+  }, [width, height, mode])
 
   // 重置粒子位置
   useEffect(() => {
@@ -149,11 +149,10 @@ export default function BrownianMotion() {
   // 花粉视觉半径
   const pollenRadius = particleD * 3
 
-  // 轨迹 polyline 点字符串
-  const trajectoryPoints = useMemo(() => {
-    if (showTrajectory !== 1) return ''
-    return trajectoryRef.current.map((p) => `${p.x},${p.y}`).join(' ')
-  }, [showTrajectory])
+  // 轨迹 polyline 点字符串（直接计算，不缓存）
+  const trajectoryPoints = showTrajectory === 1
+    ? trajectoryRef.current.map((p) => `${p.x},${p.y}`).join(' ')
+    : ''
 
   // 合力箭头参数
   const force = forceRef.current
