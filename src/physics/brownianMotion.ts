@@ -1,11 +1,16 @@
 /**
  * 布朗运动纯函数库。
- * 无副作用，不依赖 React/DOM/window。单位采用 SI。
+ * 无副作用，不依赖 React/DOM/window。
+ * 物理引擎使用模拟单位，通过 computeScale 映射到画布像素。
  */
 
-const K_B = 1.38e-23      // 玻尔兹曼常数 J/K
-const RHO_POLLEN = 1000   // 花粉密度 kg/m³
-const ETA_WATER = 1e-3     // 水的动力粘度 Pa·s
+const K_B = 1.38e-23      // 玻尔兹曼常数 J/K（用于 MB 分布图表）
+const RHO_POLLEN = 1000   // 花粉密度 kg/m³（用于 MB 分布图表）
+
+// ─── 模拟参数（非 SI，纯模拟单位）──────────────────────────────────────────
+const DRAG_COEFF = 0.5          // 阻尼系数
+const NOISE_AMPLITUDE = 0.3    // 热噪声幅值基础值
+const MAX_VELOCITY = 5         // 最大速度（模拟单位/帧）
 
 interface BrownianState {
   x: number
@@ -16,28 +21,13 @@ interface BrownianState {
 
 interface BrownianParams {
   temperature: number       // K
-  particleDiameter: number  // μm
+  particleDiameter: number  // μm（影响视觉大小，不影响运动）
   dt: number                // s（帧间隔）
 }
 
 interface BrownianResult extends BrownianState {
   FnetX: number
   FnetY: number
-}
-
-/**
- * Stokes 阻力系数 γ = 3πηd
- */
-function stokesDrag(d: number, eta: number = ETA_WATER): number {
-  return 3 * Math.PI * eta * d
-}
-
-/**
- * 花粉微粒质量 m = (4/3)π(d/2)³ρ
- */
-function pollenMass(d: number): number {
-  const r = d / 2
-  return (4 / 3) * Math.PI * r * r * r * RHO_POLLEN
 }
 
 /**
@@ -52,54 +42,59 @@ function gaussianRandom(): number {
 }
 
 /**
+ * 花粉微粒质量（用于 MB 分布图表计算）
+ */
+function pollenMass(d: number): number {
+  const r = d / 2
+  return (4 / 3) * Math.PI * r * r * r * RHO_POLLEN
+}
+
+/**
  * 单步 Langevin 方程积分（Euler-Maruyama 方法）
  *
- * 物理模型：
+ * 物理模型（模拟单位）：
  *   F_net = F_thermal + F_drag
- *   F_thermal = sqrt(2γk_BT/dt) · ξ(t)   // ξ(t) ~ N(0,1)
- *   F_drag = -γv                           // Stokes 粘滞阻力
+ *   F_thermal = noiseAmplitude × √(T/300) × ξ(t)
+ *   F_drag = -dragCoeff × v
  *
  * @returns 更新后的状态 + 合力分量（用于矢量渲染）
  */
 export function stepBrownianMotion(
   state: BrownianState,
   params: BrownianParams,
-  bounds: { width: number; height: number },
+  _bounds: { width: number; height: number },
 ): BrownianResult {
-  const { temperature: T, particleDiameter: dMicron, dt } = params
-  const d = dMicron * 1e-6       // μm → m
-  const gamma = stokesDrag(d)
-  const mass = pollenMass(d)
+  const { temperature: T, dt } = params
 
-  // 热涨落噪声幅值 σ = sqrt(2γk_BT/dt)
-  const sigma = Math.sqrt((2 * gamma * K_B * T) / dt)
+  // 温度缩放因子
+  const tempFactor = Math.sqrt(T / 300)
 
   // 随机热力
-  const FthX = sigma * gaussianRandom()
-  const FthY = sigma * gaussianRandom()
+  const FthX = NOISE_AMPLITUDE * tempFactor * gaussianRandom()
+  const FthY = NOISE_AMPLITUDE * tempFactor * gaussianRandom()
 
   // 粘滞阻力
-  const FdX = -gamma * state.vx
-  const FdY = -gamma * state.vy
+  const FdX = -DRAG_COEFF * state.vx
+  const FdY = -DRAG_COEFF * state.vy
 
   // 合力
   const FnetX = FthX + FdX
   const FnetY = FthY + FdY
 
   // Euler-Maruyama 积分
-  const ax = FnetX / mass
-  const ay = FnetY / mass
-  let vx = state.vx + ax * dt
-  let vy = state.vy + ay * dt
-  let x = state.x + vx * dt
-  let y = state.y + vy * dt
+  let vx = state.vx + FnetX * dt
+  let vy = state.vy + FnetY * dt
 
-  // 边界反弹（粒子半径约 d/2，映射到画布像素）
-  const particleRadius = dMicron * 2  // 视觉半径（像素）
-  if (x < particleRadius) { x = particleRadius; vx = Math.abs(vx) * 0.8 }
-  if (x > bounds.width - particleRadius) { x = bounds.width - particleRadius; vx = -Math.abs(vx) * 0.8 }
-  if (y < particleRadius) { y = particleRadius; vy = Math.abs(vy) * 0.8 }
-  if (y > bounds.height - particleRadius) { y = bounds.height - particleRadius; vy = -Math.abs(vy) * 0.8 }
+  // 限速
+  const speed = Math.sqrt(vx * vx + vy * vy)
+  if (speed > MAX_VELOCITY) {
+    vx = (vx / speed) * MAX_VELOCITY
+    vy = (vy / speed) * MAX_VELOCITY
+  }
+
+  // 位移（模拟单位）
+  let x = state.x + vx * dt * 60
+  let y = state.y + vy * dt * 60
 
   return { x, y, vx, vy, FnetX, FnetY }
 }

@@ -1,5 +1,6 @@
 import { useRef, useCallback, useState, useEffect } from 'react'
 import { useCanvasSize } from '@/utils'
+import { computeScale, physicsToCanvasWithOrigin } from '@/utils/coordinate'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
@@ -25,6 +26,10 @@ interface MoleculeState {
 const MOLECULE_COUNT = 40
 const MAX_TRAJECTORY = 600
 
+// 物理世界边界（模拟单位）
+const WORLD = { xMin: 0, xMax: 100, yMin: 0, yMax: 60 }
+const PADDING = 20
+
 function generateHexagon(cx: number, cy: number, r: number): string {
   const points: string[] = []
   for (let i = 0; i < 6; i++) {
@@ -34,12 +39,12 @@ function generateHexagon(cx: number, cy: number, r: number): string {
   return points.join(' ')
 }
 
-function initMolecules(width: number, height: number): MoleculeState[] {
+function initMolecules(): MoleculeState[] {
   return Array.from({ length: MOLECULE_COUNT }, () => ({
-    x: Math.random() * width,
-    y: Math.random() * height,
-    vx: (Math.random() - 0.5) * 200,
-    vy: (Math.random() - 0.5) * 200,
+    x: Math.random() * WORLD.xMax,
+    y: Math.random() * WORLD.yMax,
+    vx: (Math.random() - 0.5) * 3,
+    vy: (Math.random() - 0.5) * 3,
   }))
 }
 
@@ -60,39 +65,45 @@ export default function BrownianMotion() {
   const showTrajectory = params.showTrajectory ?? 1
   const showMolecules = params.showMolecules ?? 1
 
-  // 粒子状态 (useRef 避免高频 re-render)
+  // 计算缩放比
+  const scale = computeScale(width, height, WORLD, PADDING)
+
+  // 花粉视觉半径（通过 scale 缩放）
+  const pollenRadius = Math.max(8, particleD * scale * 0.15)
+
+  // 粒子状态（模拟单位坐标）
   const particleRef = useRef<ParticleState>({
-    x: width / 2,
-    y: height / 2,
+    x: WORLD.xMax / 2,
+    y: WORLD.yMax / 2,
     vx: 0,
     vy: 0,
   })
 
-  // 轨迹点
+  // 轨迹点（模拟单位坐标）
   const trajectoryRef = useRef<{ x: number; y: number }[]>([])
 
-  // 分子状态
+  // 分子状态（模拟单位坐标）
   const moleculesRef = useRef<MoleculeState[]>([])
 
-  // 合力 (用于渲染箭头)
+  // 合力（用于渲染箭头）
   const forceRef = useRef<{ fx: number; fy: number }>({ fx: 0, fy: 0 })
 
-  // 触发重绘的 state (仅用于 force 更新)
+  // 触发重绘
   const [, setTick] = useState(0)
 
   // 初始化分子（仅进阶模式）
   useEffect(() => {
     if (mode === 1 && moleculesRef.current.length === 0) {
-      moleculesRef.current = initMolecules(width, height)
+      moleculesRef.current = initMolecules()
     }
-  }, [width, height, mode])
+  }, [mode])
 
   // 重置粒子位置
   useEffect(() => {
-    particleRef.current = { x: width / 2, y: height / 2, vx: 0, vy: 0 }
+    particleRef.current = { x: WORLD.xMax / 2, y: WORLD.yMax / 2, vx: 0, vy: 0 }
     trajectoryRef.current = []
     forceRef.current = { fx: 0, fy: 0 }
-  }, [width, height])
+  }, [])
 
   // 动画帧回调
   const handleFrame = useCallback(
@@ -100,68 +111,84 @@ export default function BrownianMotion() {
       const dt = deltaMs / 1000
       if (dt <= 0 || dt > 0.1) return
 
-      // 更新花粉粒子
+      // 更新花粉粒子（模拟单位）
       const result = stepBrownianMotion(particleRef.current, {
         temperature,
         particleDiameter: particleD,
         dt,
-      }, { width, height })
+      }, { width: WORLD.xMax, height: WORLD.yMax })
 
-      particleRef.current = { x: result.x, y: result.y, vx: result.vx, vy: result.vy }
+      // 边界反弹（模拟单位）
+      const r = pollenRadius / scale
+      let { x, y, vx, vy } = result
+      if (x < r) { x = r; vx = Math.abs(vx) * 0.8 }
+      if (x > WORLD.xMax - r) { x = WORLD.xMax - r; vx = -Math.abs(vx) * 0.8 }
+      if (y < r) { y = r; vy = Math.abs(vy) * 0.8 }
+      if (y > WORLD.yMax - r) { y = WORLD.yMax - r; vy = -Math.abs(vy) * 0.8 }
+
+      particleRef.current = { x, y, vx, vy }
       forceRef.current = { fx: result.FnetX, fy: result.FnetY }
 
       // 记录轨迹
-      trajectoryRef.current.push({ x: result.x, y: result.y })
+      trajectoryRef.current.push({ x, y })
       if (trajectoryRef.current.length > MAX_TRAJECTORY) {
         trajectoryRef.current.shift()
       }
 
-      // 更新分子（简单随机游走 + 边界反弹）
+      // 更新分子（模拟单位）
       if (mode === 1 && showMolecules) {
+        const maxMolSpeed = 2 + temperature * 0.005
         for (const mol of moleculesRef.current) {
-          mol.x += mol.vx * dt
-          mol.y += mol.vy * dt
-          mol.vx += (Math.random() - 0.5) * 100 * dt
-          mol.vy += (Math.random() - 0.5) * 100 * dt
-          // 限速
+          mol.x += mol.vx * dt * 60
+          mol.y += mol.vy * dt * 60
+          mol.vx += (Math.random() - 0.5) * 0.5 * dt * 60
+          mol.vy += (Math.random() - 0.5) * 0.5 * dt * 60
           const speed = Math.sqrt(mol.vx * mol.vx + mol.vy * mol.vy)
-          const maxSpeed = 150 + temperature * 0.3
-          if (speed > maxSpeed) {
-            mol.vx = (mol.vx / speed) * maxSpeed
-            mol.vy = (mol.vy / speed) * maxSpeed
+          if (speed > maxMolSpeed) {
+            mol.vx = (mol.vx / speed) * maxMolSpeed
+            mol.vy = (mol.vy / speed) * maxMolSpeed
           }
-          // 边界反弹
-          if (mol.x < 5) { mol.x = 5; mol.vx = Math.abs(mol.vx) }
-          if (mol.x > width - 5) { mol.x = width - 5; mol.vx = -Math.abs(mol.vx) }
-          if (mol.y < 5) { mol.y = 5; mol.vy = Math.abs(mol.vy) }
-          if (mol.y > height - 5) { mol.y = height - 5; mol.vy = -Math.abs(mol.vy) }
+          if (mol.x < 1) { mol.x = 1; mol.vx = Math.abs(mol.vx) }
+          if (mol.x > WORLD.xMax - 1) { mol.x = WORLD.xMax - 1; mol.vx = -Math.abs(mol.vx) }
+          if (mol.y < 1) { mol.y = 1; mol.vy = Math.abs(mol.vy) }
+          if (mol.y > WORLD.yMax - 1) { mol.y = WORLD.yMax - 1; mol.vy = -Math.abs(mol.vy) }
         }
       }
 
-      // 触发 SVG 重绘
       setTick((t) => t + 1)
     },
-    [temperature, particleD, width, height, mode, showMolecules],
+    [temperature, particleD, width, height, mode, showMolecules, scale, pollenRadius],
   )
 
   useAnimationFrame(handleFrame, { playing: isPlaying })
 
-  // 花粉视觉半径
-  const pollenRadius = particleD * 3
+  // 物理坐标 → 画布像素
+  const { cx: px, cy: py } = physicsToCanvasWithOrigin(
+    particleRef.current.x, particleRef.current.y,
+    width / 2, height / 2, scale,
+  )
 
-  // 轨迹 polyline 点字符串（直接计算，不缓存）
+  // 轨迹 polyline 点字符串
   const trajectoryPoints = showTrajectory === 1
-    ? trajectoryRef.current.map((p) => `${p.x},${p.y}`).join(' ')
+    ? trajectoryRef.current.map((p) => {
+        const { cx, cy } = physicsToCanvasWithOrigin(p.x, p.y, width / 2, height / 2, scale)
+        return `${cx},${cy}`
+      }).join(' ')
     : ''
 
-  // 合力箭头参数
+  // 合力箭头（转换到像素坐标）
   const force = forceRef.current
   const forceMagnitude = Math.sqrt(force.fx * force.fx + force.fy * force.fy)
-  const forceScale = 0.0001 // 缩放到可视范围
+  const forceScale = scale * 8
   const forceArrowLen = Math.min(forceMagnitude * forceScale, 60)
 
-  const px = particleRef.current.x
-  const py = particleRef.current.y
+  // 分子像素坐标
+  const moleculePixels = mode === 1 && showMolecules === 1
+    ? moleculesRef.current.map((mol) => {
+        const { cx, cy } = physicsToCanvasWithOrigin(mol.x, mol.y, width / 2, height / 2, scale)
+        return { cx, cy }
+      })
+    : []
 
   return (
     <div ref={containerRef} className="w-full h-full">
@@ -172,18 +199,15 @@ export default function BrownianMotion() {
         className="w-full h-full"
       >
         <defs>
-          {/* 液体背景渐变 */}
           <linearGradient id="liquid-bg" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor={THERMAL_COLORS.beakerFill} stopOpacity={0.3} />
             <stop offset="100%" stopColor={THERMAL_COLORS.beakerFill} stopOpacity={0.6} />
           </linearGradient>
-          {/* 花粉径向渐变 */}
           <radialGradient id="pollen-grad" cx="40%" cy="35%">
             <stop offset="0%" stopColor="#FDE68A" />
             <stop offset="60%" stopColor="#F59E0B" />
             <stop offset="100%" stopColor="#D97706" />
           </radialGradient>
-          {/* 发光滤镜 */}
           <filter id="glow">
             <feGaussianBlur stdDeviation="2" result="blur" />
             <feMerge>
@@ -214,12 +238,12 @@ export default function BrownianMotion() {
         )}
 
         {/* 分子粒子（进阶模式） */}
-        {mode === 1 && showMolecules === 1 && moleculesRef.current.map((mol, i) => (
+        {moleculePixels.map((mol, i) => (
           <circle
             key={i}
-            cx={mol.x}
-            cy={mol.y}
-            r={2.5}
+            cx={mol.cx}
+            cy={mol.cy}
+            r={Math.max(2, scale * 0.3)}
             fill="#3B82F6"
             opacity={0.7}
           />
