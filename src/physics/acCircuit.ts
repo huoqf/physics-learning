@@ -65,19 +65,6 @@ export function calculateTransformerWithLoad(
 }
 
 /**
- * 远距离输电全链路计算（理想变压器）。
- *
- * 模型：发电厂 → 升压变压器 → 输电线 → 降压变压器 → 用户
- *
- * @param P_send       输送功率 (W)
- * @param U_trans      输电电压（升压变压器副线圈电压）(V)
- * @param R_line       输电线总电阻 (Ω)
- * @param n1_step_up   升压变压器原线圈匝数
- * @param n2_step_up   升压变压器副线圈匝数
- * @param n1_step_down 降压变压器原线圈匝数
- * @param n2_step_down 降压变压器副线圈匝数
- */
-/**
  * 交变电流产生——计算任意时刻的完整物理状态。
  *
  * 物理模型：
@@ -135,30 +122,67 @@ export function computeACGenerationState(
   return { phi, e, Em, theta, vTangential, vPerp, vPara, isNeutral, isMaxEmf }
 }
 
+/**
+ * 远距离输电全链路计算（理想变压器）。
+ *
+ * 物理模型：发电厂 → 升压变压器 → 输电线 → 降压变压器 → 用户
+ *
+ * 因果链（四电压四功率）：
+ *   【发电端】P1 = U1·I1
+ *   【输电线】I_line = P1/U2 → ΔU = I_line·r → P_loss = I_line²·r
+ *   【降压端】U3 = U2 - ΔU → P3 = P1 - P_loss
+ *   【用户端】U4 = U3·(n4/n3) → P_user = P3（理想变压器）
+ *
+ * @param P1 发电功率 (W) — 自变量
+ * @param U2 输电电压，升压变压器副线圈电压 (V) — 自变量
+ * @param r  输电线总电阻 (Ω) — 自变量
+ * @param n3 降压变压器原线圈匝数 — 自变量
+ * @param n4 降压变压器副线圈匝数 — 自变量
+ * @returns 完整四电压四功率链路（所有中间变量）
+ *
+ * @category M4
+ */
 export function calculatePowerTransmission(
-  P_send: number,
-  U_trans: number,
-  R_line: number,
-  _n1_step_up: number,
-  _n2_step_up: number,
-  n1_step_down: number,
-  n2_step_down: number
+  P1: number,
+  U2: number,
+  r: number,
+  n3: number,
+  n4: number,
 ): {
+  /** 发电功率 (W) */
+  P1: number
+  /** 输电线电流 (A) */
   I_line: number
-  U_loss: number
+  /** 电压损失 (V) */
+  deltaU: number
+  /** 功率损失 (W) */
   P_loss: number
-  U_user: number
+  /** 降压变压器原线圈电压 (V) */
+  U3: number
+  /** 降压变压器原线圈功率 (W) */
+  P3: number
+  /** 用户端电压 (V) */
+  U4: number
+  /** 用户端功率 (W) */
   P_user: number
+  /** 输电效率 (0-1) */
   eta: number
 } {
-  const I_line = U_trans === 0 ? 0 : P_send / U_trans
-  const U_loss = I_line * R_line
-  const P_loss = I_line * I_line * R_line
+  // 【输电线】
+  const I_line = U2 === 0 ? 0 : P1 / U2
+  const deltaU = I_line * r
+  const P_loss = I_line * I_line * r
 
-  const U_before_step_down = U_trans - U_loss
-  const U_user = n1_step_down === 0 ? 0 : U_before_step_down * (n2_step_down / n1_step_down)
-  const P_user = P_send - P_loss
-  const eta = P_send === 0 ? 0 : P_user / P_send
+  // 【降压端】
+  const U3 = U2 - deltaU
+  const P3 = P1 - P_loss
 
-  return { I_line, U_loss, P_loss, U_user, P_user, eta }
+  // 【用户端】
+  const U4 = n3 === 0 ? 0 : U3 * (n4 / n3)
+  const P_user = P3
+
+  // 【效率】
+  const eta = P1 === 0 ? 0 : P_user / P1
+
+  return { P1, I_line, deltaU, P_loss, U3, P3, U4, P_user, eta }
 }

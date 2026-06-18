@@ -1,39 +1,44 @@
 /**
- * Transformer.tsx — 变压器原理（[M4-1]）
+ * Transformer.tsx — 变压器原理与动态分析（[M4-1] 优化版）
  *
- * 物理模型：理想变压器
- *   U2/U1 = n2/n1，I1/I2 = n2/n1，P1 = P2（功率守恒）
+ * 物理模型：理想变压器（交流有效值代数稳态求解，单帧同步刷新）
+ *   U₂/U₁ = n₂/n₁，I₁/I₂ = n₂/n₁（单副线圈），P_in = P_out
  *
- * 布局：左侧原线圈 + 铁芯 + 右侧副线圈，右侧灯泡亮度反馈
- *   默认显示磁通量虚线环，toggle 开启后显示相位差波形
+ * 三屏中间屏布局：左右分区
+ *   左：SVG 变压器实体（铁芯 + 原/副线圈 + 4 只 DialMeter + Rheostat 负载）
+ *   右（进阶模式）：InfoBar 功率配平 + 动态因果链多米诺高亮
  *
- * @agent-rule 遵循 useCanvasSize + theme token（CANVAS_STYLE / PHYSICS_COLORS）
- * @agent-rule 使用 useAnimationFrame 驱动动画，禁止裸调 requestAnimationFrame
+ * 颜色：原边回路红（electricCurrent）、副边回路蓝（magnetSouth）、磁通量绿（magneticField）
+ *
+ * @agent-rule 遵循 useCanvasSize + theme token（PHYSICS_COLORS / CANVAS_STYLE / FONT）
+ * @agent-rule 磁通/电子流动采用 CSS 动画，禁止裸调 requestAnimationFrame
+ * @agent-rule 电表显示有效值（稳态），参数变化即同步刷新
  */
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE, FONT } from '@/theme/physics'
-import { useAnimationFrame } from '@/utils/animation'
 import { calculateTransformerWithLoad } from '@/physics'
+import { DialMeter, Rheostat } from '@/components/Physics'
+import { Card } from '@/components/UI'
 
 // ─── 布局参数 ─────────────────────────────────────────────────────────────
-const CORE_W = 60       // 铁芯宽度
-const CORE_H = 140      // 铁芯高度
-const COIL_W = 28       // 线圈宽度
-const MAX_DISPLAY_TURNS = 20  // 线圈最大显示匝数
+const MAX_DISPLAY_TURNS = 20 // 线圈最大显示匝数
 
-// ─── 灯泡功率 → 光晕档位映射 ───────────────────────────────────────────────
-function getBulbGlowLevel(power: number): { stdDev: number; opacity: number } {
-  if (power < 50) return { stdDev: 3, opacity: 0.3 }
-  if (power < 200) return { stdDev: 8, opacity: 0.6 }
-  return { stdDev: 15, opacity: 0.9 }
+// ─── 电表量程自适应（自动选 1/2/5/10 × 10^n）──────────────────────────────
+function niceMeterMax(value: number): number {
+  if (value <= 0) return 10
+  const order = Math.pow(10, Math.floor(Math.log10(value)))
+  const n = value / order
+  if (n <= 1) return order
+  if (n <= 2) return 2 * order
+  if (n <= 5) return 5 * order
+  return 10 * order
 }
 
-// ─── 生成单条线圈路径（贝塞尔曲线连续绕线）─────────────────────────────────
+// ─── 生成线圈绕线 SVG path ─────────────────────────────────────────────────
 /**
- * 生成线圈绕线 SVG path 的 d 属性。
  * 每匝由两段二次贝塞尔曲线组成，模拟导线在铁芯前/后的缠绕效果。
  *
  * @param left     线圈左边界 x
@@ -42,6 +47,8 @@ function getBulbGlowLevel(power: number): { stdDev: number; opacity: number } {
  * @param bottom   铁芯下边界 y
  * @param n        实际匝数
  * @param isPrimary true=原线圈（弧线向右凸），false=副线圈（弧线向左凸）
+ * @param topInset 顶部留白（已缩放 px 值）
+ * @param bulge    线圈弧线凸出量（已缩放 px 值）
  */
 function generateCoilPath(
   left: number,
@@ -49,59 +56,55 @@ function generateCoilPath(
   top: number,
   bottom: number,
   n: number,
-  isPrimary: boolean
+  isPrimary: boolean,
+  topInset: number,
+  bulge: number,
 ): string {
-  const turns = Math.min(n, MAX_DISPLAY_TURNS)
-  const availableH = bottom - top - 10
+  const turns = Math.min(Math.max(1, n), MAX_DISPLAY_TURNS)
+  const availableH = bottom - top - topInset * 2
   const gap = availableH / (turns + 1)
 
   let d = ''
   for (let i = 0; i < turns; i++) {
-    const yStart = top + 10 + i * gap
+    const yStart = top + topInset + i * gap
     const yEnd = yStart + gap * 0.8
     const midY = (yStart + yEnd) / 2
-    const bulge = COIL_W / 2
 
     if (i === 0) {
       d += `M ${right} ${yStart}`
     }
 
     if (isPrimary) {
-      // 原线圈：弧线向右凸
       d += ` Q ${right + bulge} ${midY} ${right} ${yEnd}`
     } else {
-      // 副线圈：弧线向左凸
       d += ` Q ${left - bulge} ${midY} ${left} ${yEnd}`
     }
   }
   return d
 }
 
-// ─── 生成电子轨道路径（与线圈路径相同，用于 stroke-dasharray 动画）──────────
-function generateElectronPath(
-  left: number,
-  right: number,
-  top: number,
-  bottom: number,
-  n: number,
-  isPrimary: boolean
-): string {
-  return generateCoilPath(left, right, top, bottom, n, isPrimary)
+// ─── 动态因果链步骤定义 ────────────────────────────────────────────────────
+interface ChainStep {
+  key: string
+  label: string
+  value: number
+  unit: string
+  color: string
 }
+
+// ─── 透明度常量（避免魔法数字）─────────────────────────────────────────────
+const HIGHLIGHT_ALPHA = '15' // 十六进制 alpha，约 8% 透明度
 
 // ─── 主组件 ──────────────────────────────────────────────────────────────
 export default function Transformer() {
-    const {params, isPlaying, speed, showVectors} = useAnimationStore(
-    useShallow((s) => ({
-    params: s.params,
-    isPlaying: s.isPlaying,
-    speed: s.speed,
-    showVectors: s.showVectors,
-    }))
+  const { params } = useAnimationStore(
+    useShallow((s) => ({ params: s.params }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 800, height: 440 })
-  const { font } = canvasSize
 
+  const [containerRef, canvasSize] = useCanvasSize({ width: 760, height: 440 })
+  const { font, px } = canvasSize
+
+  const mode = params.mode ?? 0 // 0=基础, 1=进阶
   const n1 = params.n1 ?? 100
   const n2 = params.n2 ?? 200
   const U1 = params.U1 ?? 220
@@ -109,77 +112,73 @@ export default function Transformer() {
 
   const { U2, I2, I1, P_input, P_output } = calculateTransformerWithLoad(n1, n2, U1, R)
 
-  // ── 动画时间 ──────────────────────────────────────────────────────────
-  const simTimeRef = useRef(0)
+  // ── 电表量程（自适应）────────────────────────────────────────────────
+  const v1Max = useMemo(() => niceMeterMax(U1), [U1])
+  const v2Max = useMemo(() => niceMeterMax(U2), [U2])
+  const a1Max = useMemo(() => niceMeterMax(I1), [I1])
+  const a2Max = useMemo(() => niceMeterMax(I2), [I2])
 
-  useAnimationFrame(
-    (deltaTime) => {
-      simTimeRef.current += (deltaTime / 1000) * (speed ?? 1)
-    },
-    { playing: isPlaying, speed: speed ?? 1 }
-  )
+  // ── 视觉参数（参数变化时计算，非每帧）──────────────────────────────────
+  // 磁通量亮度随 U₁ 微调（Φ ∝ U₁/n₁·ω）
+  const fluxMaxOpacity = Math.min(0.85, 0.35 + (U1 / 500) * 0.5)
+  const fluxStrokeW = px(CANVAS_STYLE.stroke.grid + U1 / 1000)
+  // 电子流速随电流增大而加快（duration 缩短）
+  const primaryFlowDur = Math.max(0.35, Math.min(3, 1.8 / (I1 + 0.3)))
+  const secondaryFlowDur = Math.max(0.35, Math.min(3, 1.8 / (I2 + 0.3)))
 
-  const t = simTimeRef.current
-  const omega = 2 * Math.PI * 4 // 4 Hz
-
-  // ── 瞬时电压/电流 ─────────────────────────────────────────────────────
-  const u2_inst = U2 * Math.sin(omega * t)
-  const i1 = I1 * Math.sin(omega * t)
-  const i2 = I2 * Math.sin(omega * t)
-  const p2_inst = u2_inst * i2
-
-  // ── 磁通量动画参数 ────────────────────────────────────────────────────
-  const fluxIntensity = Math.abs(Math.sin(omega * t))
-
-  // ── 布局尺寸 ──────────────────────────────────────────────────────────
+  // ── 布局尺寸（所有像素值通过 px() 缩放）─────────────────────────────────
   const W = canvasSize.width
   const H = canvasSize.height
 
+  // 铁芯/线圈尺寸（设计基准值）
+  const coreW = px(56)
+  const coreH = px(130)
+  const coilW = px(22)
+
   const cx = W / 2
-  const cy = H / 2 - 20
+  const cy = H / 2 - px(6)
 
-  // 铁芯位置
-  const coreLeft = cx - CORE_W / 2
-  const coreRight = cx + CORE_W / 2
-  const coreTop = cy - CORE_H / 2
-  const coreBottom = cy + CORE_H / 2
+  const coreLeft = cx - coreW / 2
+  const coreRight = cx + coreW / 2
+  const coreTop = cy - coreH / 2
+  const coreBottom = cy + coreH / 2
 
-  // 原线圈位置（左侧）
-  const primaryLeft = coreLeft - COIL_W - 8
-  const primaryRight = coreLeft - 8
+  const primaryLeft = coreLeft - coilW - px(6)
+  const primaryRight = coreLeft - px(6)
+  const secondaryLeft = coreRight + px(6)
+  const secondaryRight = coreRight + coilW + px(6)
 
-  // 副线圈位置（右侧）
-  const secondaryLeft = coreRight + 8
-  const secondaryRight = coreRight + COIL_W + 8
+  // 电表位置（原副线圈正上方/正下方）
+  const meterR = px(22)
+  const v1X = (primaryLeft + primaryRight) / 2
+  const v2X = (secondaryLeft + secondaryRight) / 2
+  const meterTopY = coreTop - meterR - px(16)
+  const meterBotY = coreBottom + meterR + px(18)
+
+  // 电源 / 负载位置
+  const sourceX = primaryLeft - px(42)
+  const rheostatX = secondaryRight + px(52)
+  const rheostatW = px(86)
 
   // ── 线圈路径 ──────────────────────────────────────────────────────────
+  const coilTopInset = px(10)
+  const coilBulge = coilW / 2
+  
   const primaryCoilPath = useMemo(
-    () => generateCoilPath(primaryLeft, primaryRight, coreTop, coreBottom, n1, true),
-    [primaryLeft, primaryRight, coreTop, coreBottom, n1]
+    () => generateCoilPath(primaryLeft, primaryRight, coreTop, coreBottom, n1, true, coilTopInset, coilBulge),
+    [primaryLeft, primaryRight, coreTop, coreBottom, n1, coilTopInset, coilBulge]
   )
-
   const secondaryCoilPath = useMemo(
-    () => generateCoilPath(secondaryLeft, secondaryRight, coreTop, coreBottom, n2, false),
-    [secondaryLeft, secondaryRight, coreTop, coreBottom, n2]
+    () => generateCoilPath(secondaryLeft, secondaryRight, coreTop, coreBottom, n2, false, coilTopInset, coilBulge),
+    [secondaryLeft, secondaryRight, coreTop, coreBottom, n2, coilTopInset, coilBulge]
   )
 
-  // ── 电子轨道路径 ──────────────────────────────────────────────────────
-  const primaryElectronPath = useMemo(
-    () => generateElectronPath(primaryLeft, primaryRight, coreTop, coreBottom, n1, true),
-    [primaryLeft, primaryRight, coreTop, coreBottom, n1]
-  )
-
-  const secondaryElectronPath = useMemo(
-    () => generateElectronPath(secondaryLeft, secondaryRight, coreTop, coreBottom, n2, false),
-    [secondaryLeft, secondaryRight, coreTop, coreBottom, n2]
-  )
-
-  // ── 磁通量虚线环 ──────────────────────────────────────────────────────
+  // ── 磁通量虚线环（3 圈，CSS 脉动 + 错相）──────────────────────────────
   const fluxRings = useMemo(() => {
     const rings = []
     const ringCount = 3
     for (let i = 0; i < ringCount; i++) {
-      const inset = 6 + i * 10
+      const inset = px(6) + i * px(9)
       const path = `M ${coreLeft + inset} ${coreTop + inset} L ${coreRight - inset} ${coreTop + inset} L ${coreRight - inset} ${coreBottom - inset} L ${coreLeft + inset} ${coreBottom - inset} Z`
       rings.push(
         <path
@@ -187,337 +186,397 @@ export default function Transformer() {
           d={path}
           fill="none"
           stroke={PHYSICS_COLORS.magneticField}
-          strokeWidth={CANVAS_STYLE.stroke.grid}
-          strokeDasharray={CANVAS_STYLE.dash.reference.join(' ')}
-          strokeDashoffset={-t * 30 - i * 15}
-          opacity={fluxIntensity * (0.7 - i * 0.15)}
+          strokeWidth={fluxStrokeW}
+          strokeDasharray={`${px(5)} ${px(4)}`}
+          className="tf-flux"
+          style={{ animationDelay: `${i * 0.3}s`, '--flux-max': fluxMaxOpacity } as CSSProperties}
         />
       )
     }
     return rings
-  }, [coreLeft, coreRight, coreTop, coreBottom, t, fluxIntensity])
+  }, [coreLeft, coreRight, coreTop, coreBottom, fluxStrokeW, fluxMaxOpacity, px])
 
-  // ── 电子往复运动偏移量 ────────────────────────────────────────────────
-  const primaryDashOffset = (i1 / (I1 || 1)) * 12
-  const secondaryDashOffset = -(i2 / (I2 || 1)) * 12
+  // ── 动态因果链多米诺高亮（进阶模式，R 变化时触发）──────────────────────
+  const chainSteps: ChainStep[] = [
+    { key: 'U1', label: 'U₁', value: U1, unit: 'V', color: PHYSICS_COLORS.electricCurrent },
+    { key: 'U2', label: 'U₂', value: U2, unit: 'V', color: PHYSICS_COLORS.magnetSouth },
+    { key: 'I2', label: 'I₂', value: I2, unit: 'A', color: PHYSICS_COLORS.magnetSouth },
+    { key: 'Pout', label: 'P_out', value: P_output, unit: 'W', color: PHYSICS_COLORS.power },
+    { key: 'Pin', label: 'P_in', value: P_input, unit: 'W', color: PHYSICS_COLORS.power },
+    { key: 'I1', label: 'I₁', value: I1, unit: 'A', color: PHYSICS_COLORS.electricCurrent },
+  ]
 
-  // ── 灯泡亮度（瞬时功率，随 AC 周期脉动）─────────────────────────────────
-  const p2InstAbs = Math.abs(p2_inst)
-  const bulbGlow = getBulbGlowLevel(p2InstAbs)
+  const [dominoStep, setDominoStep] = useState(-1)
+  const firstRunRef = useRef(true)
 
-  // ── 灯泡位置 ──────────────────────────────────────────────────────────
-  const bulbX = secondaryRight + 50
-  const bulbY = cy
-
-  // ── 相位差波形（扫描点即曲线：用 ref 缓存历史轨迹）─────────────────────
-  const waveH = 80
-  const waveY = H - 42 - waveH - 8
-  const waveW = W - 16
-  const waveX = 8
-  const wavePeriod = 2 * Math.PI / omega
-
-  // 扫描线位置：基于实时时间 t，在 waveW 范围内循环
-  const phase = (t % wavePeriod) / wavePeriod
-  const scanX = waveX + phase * waveW
-
-  // 历史轨迹缓存（用 ref 避免触发重渲染，但渲染时读取）
-  const phiHistoryRef = useRef<{ x: number; y: number }[]>([])
-  const e2HistoryRef = useRef<{ x: number; y: number }[]>([])
-  const lastPhaseRef = useRef(0)
-
-  // 检测扫描线是否回到起点（phase 从接近 1 跳到接近 0）
-  if (lastPhaseRef.current > 0.9 && phase < 0.1) {
-    phiHistoryRef.current = []
-    e2HistoryRef.current = []
-  }
-
-  // 计算当前扫描点位置
-  const phiY = waveY + waveH / 2 - Math.sin(omega * t) * waveH * 0.3
-  const e2Y = waveY + waveH / 2 - (-Math.cos(omega * t)) * waveH * 0.3
-
-  // 添加到历史轨迹（每帧添加 3 个插值点，提高曲线密度）
-  const prevLen = phiHistoryRef.current.length
-  if (prevLen > 0) {
-    const lastPhi = phiHistoryRef.current[prevLen - 1]
-    const lastE2 = e2HistoryRef.current[prevLen - 1]
-    for (let i = 1; i <= 3; i++) {
-      const ratio = i / 4
-      const ix = lastPhi.x + (scanX - lastPhi.x) * ratio
-      const iPhiY = lastPhi.y + (phiY - lastPhi.y) * ratio
-      const iE2Y = lastE2.y + (e2Y - lastE2.y) * ratio
-      phiHistoryRef.current.push({ x: ix, y: iPhiY })
-      e2HistoryRef.current.push({ x: ix, y: iE2Y })
+  useEffect(() => {
+    if (mode !== 1) {
+      setDominoStep(-1)
+      return
     }
-  } else {
-    phiHistoryRef.current.push({ x: scanX, y: phiY })
-    e2HistoryRef.current.push({ x: scanX, y: e2Y })
-  }
+    // 首次进入进阶模式不触发（避免初始闪烁）
+    if (firstRunRef.current) {
+      firstRunRef.current = false
+      return
+    }
+    setDominoStep(0)
+    const timers: ReturnType<typeof setTimeout>[] = []
+    chainSteps.forEach((_, i) => {
+      timers.push(setTimeout(() => setDominoStep(i), i * 350))
+    })
+    timers.push(setTimeout(() => setDominoStep(-1), chainSteps.length * 350 + 1200))
+    return () => timers.forEach(clearTimeout)
+    // 仅 R 变化时触发多米诺（按 spec：改变 R 观察因果链）
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [R, mode])
 
-  // 限制历史长度：保留约 4 个周期的轨迹（每周期约 240 点，4 周期 ≈ 960 点）
-  if (phiHistoryRef.current.length > 1200) {
-    phiHistoryRef.current = phiHistoryRef.current.slice(-960)
-    e2HistoryRef.current = e2HistoryRef.current.slice(-960)
-  }
-
-  lastPhaseRef.current = phase
-
-  // 将历史点数组转为 SVG path
-  const historyToPath = (history: { x: number; y: number }[]): string => {
-    if (history.length === 0) return ''
-    return history.reduce((path, point, i) => {
-      return path + (i === 0 ? `M ${point.x} ${point.y}` : ` L ${point.x} ${point.y}`)
-    }, '')
-  }
-
-  const phiWavePath = historyToPath(phiHistoryRef.current)
-  const e2WavePath = historyToPath(e2HistoryRef.current)
+  // ── 功率配平参考（1kW 归一化）──────────────────────────────────────────
+  const pRef = 1000
+  const pBarW = Math.min(100, (P_input / pRef) * 100)
+  const powerBalanced = Math.abs(P_input - P_output) < 0.01
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg
-        width={W} height={H}
-        className="bg-white rounded-lg shadow-inner select-none"
-        style={{ fontFamily: CANVAS_STYLE.font.family }}
-      >
-        {/* ── SVG 滤镜定义 ──────────────────────────────────────────────── */}
-        <defs>
-          <filter id="bulb-glow">
-            <feGaussianBlur stdDeviation={bulbGlow.stdDev} />
-          </filter>
-        </defs>
+    <div className="w-full h-full flex gap-2">
+      {/* ═══════════ 左：SVG 变压器实体 ═══════════ */}
+      <div ref={containerRef} className="flex-1 min-w-0 h-full">
+        <svg
+          width={W}
+          height={H}
+          className="bg-white rounded-lg shadow-inner select-none"
+          style={{ fontFamily: CANVAS_STYLE.font.family }}
+        >
+          {/* ── CSS 动画定义（磁通脉动 + 电子流动）──────────────────────── */}
+          <defs>
+            <style>{`
+              @keyframes tf-flux-pulse {
+                0%, 100% { opacity: 0.2 }
+                50% { opacity: var(--flux-max, 0.7) }
+              }
+              .tf-flux { animation: tf-flux-pulse 2s ease-in-out infinite; }
+              @keyframes tf-electron-flow {
+                from { stroke-dashoffset: 0 }
+                to { stroke-dashoffset: var(--electron-offset, -24px) }
+              }
+            `}</style>
+          </defs>
 
-        {/* ═══════════════════ 铁芯（闭合矩形）═══════════════════ */}
-        <rect
-          x={coreLeft} y={coreTop}
-          width={CORE_W} height={CORE_H}
-          fill="none"
-          stroke={PHYSICS_COLORS.axis}
-          strokeWidth={CANVAS_STYLE.stroke.objectLine + 1}
-          rx="4"
-        />
-        <text x={cx} y={cy + 5} fontSize={FONT.subtickSize} fill={PHYSICS_COLORS.axis}
-          textAnchor="middle" fontWeight="bold">
-          铁芯
-        </text>
-
-        {/* ═══════════════════ 磁通量虚线环 ═══════════════════ */}
-        {fluxRings}
-
-        {/* ═══════════════════ 原线圈（左侧）═══════════════════ */}
-        <g>
-          {/* 线圈绕线 */}
-          <path
-            d={primaryCoilPath}
-            fill="none"
-            stroke={PHYSICS_COLORS.electricCurrent}
-            strokeWidth={CANVAS_STYLE.stroke.objectLine}
-            strokeLinecap="round"
-          />
-          {/* 原线圈标注 */}
-          <text x={(primaryLeft + primaryRight) / 2} y={coreTop - 8}
-            fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.labelText}
-            textAnchor="middle" fontWeight="bold">
-            原线圈 n₁={n1}
-          </text>
-          {/* 输入电压 */}
-          <text x={(primaryLeft + primaryRight) / 2} y={coreBottom + 18}
-            fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.electricCurrent}
-            textAnchor="middle" fontWeight="bold">
-            U₁ = {U1} V
-          </text>
-        </g>
-
-        {/* ═══════════════════ 副线圈（右侧）═══════════════════ */}
-        <g>
-          {/* 线圈绕线 */}
-          <path
-            d={secondaryCoilPath}
-            fill="none"
-            stroke={PHYSICS_COLORS.electricCurrent}
-            strokeWidth={CANVAS_STYLE.stroke.objectLine}
-            strokeLinecap="round"
-          />
-          {/* 副线圈标注 */}
-          <text x={(secondaryLeft + secondaryRight) / 2} y={coreTop - 8}
-            fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.labelText}
-            textAnchor="middle" fontWeight="bold">
-            副线圈 n₂={n2}
-          </text>
-          {/* 输出电压 */}
-          <text x={(secondaryLeft + secondaryRight) / 2} y={coreBottom + 18}
-            fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.electricCurrent}
-            textAnchor="middle" fontWeight="bold">
-            U₂ = {U2.toFixed(1)} V
-          </text>
-        </g>
-
-        {/* ═══════════════════ 电子往复运动 ═══════════════════ */}
-        <g>
-          {/* 原线圈电子 */}
-          <path
-            d={primaryElectronPath}
-            fill="none"
-            stroke={PHYSICS_COLORS.electricCurrent}
-            strokeWidth={CANVAS_STYLE.stroke.objectLine + 1}
-            strokeDasharray="4 20"
-            strokeDashoffset={primaryDashOffset}
-            opacity={0.6 + fluxIntensity * 0.4}
-            strokeLinecap="round"
-          />
-          {/* 副线圈电子 */}
-          <path
-            d={secondaryElectronPath}
-            fill="none"
-            stroke={PHYSICS_COLORS.electricCurrent}
-            strokeWidth={CANVAS_STYLE.stroke.objectLine + 1}
-            strokeDasharray="4 20"
-            strokeDashoffset={secondaryDashOffset}
-            opacity={0.6 + fluxIntensity * 0.4}
-            strokeLinecap="round"
-          />
-        </g>
-
-        {/* ═══════════════════ 输入电源 ═══════════════════ */}
-        <g>
-          <line x1={primaryLeft - 30} y1={cy - 15} x2={primaryLeft - 5} y2={cy - 15}
-            stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-          <line x1={primaryLeft - 30} y1={cy + 15} x2={primaryLeft - 5} y2={cy + 15}
-            stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-          {/* 交流符号 */}
-          <circle cx={primaryLeft - 30} cy={cy} r={14}
-            fill={PHYSICS_COLORS.objectFill}
-            stroke={PHYSICS_COLORS.objectStroke}
-            strokeWidth={CANVAS_STYLE.stroke.objectThin} />
-          <text x={primaryLeft - 30} y={cy + 5}
-            fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.electricCurrent}
-            textAnchor="middle" fontWeight="bold">
-            ~
-          </text>
-        </g>
-
-        {/* ═══════════════════ 负载灯泡 ═══════════════════ */}
-        <g>
-          {/* 连接线 */}
-          <line x1={secondaryRight + 5} y1={cy - 15} x2={bulbX} y2={cy - 15}
-            stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-          <line x1={secondaryRight + 5} y1={cy + 15} x2={bulbX} y2={cy + 15}
-            stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-          <line x1={bulbX} y1={cy - 15} x2={bulbX} y2={cy - 10}
-            stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-          <line x1={bulbX} y1={cy + 15} x2={bulbX} y2={cy + 10}
-            stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-
-          {/* 灯泡光晕 */}
-          <circle
-            cx={bulbX} cy={bulbY}
-            r={18 + bulbGlow.stdDev}
-            fill={PHYSICS_COLORS.lightRay}
-            opacity={bulbGlow.opacity}
-            filter="url(#bulb-glow)"
-          />
-
-          {/* 灯泡玻璃壳 */}
-          <circle
-            cx={bulbX} cy={bulbY}
-            r={14}
-            fill={PHYSICS_COLORS.objectFill}
-            stroke={PHYSICS_COLORS.objectStroke}
-            strokeWidth={CANVAS_STYLE.stroke.objectThin}
-            opacity={0.9}
-          />
-
-          {/* 钨丝 */}
-          <path
-            d={`M ${bulbX - 5} ${bulbY + 3} L ${bulbX - 2} ${bulbY - 4} L ${bulbX + 2} ${bulbY - 4} L ${bulbX + 5} ${bulbY + 3}`}
-            fill="none"
-            stroke={PHYSICS_COLORS.lightRay}
-            strokeWidth={CANVAS_STYLE.stroke.objectThin}
-            opacity={0.5 + bulbGlow.opacity * 0.5}
-          />
-
-          {/* 灯座 */}
+          {/* ═══════════ 铁芯（闭合矩形）═══════════ */}
           <rect
-            x={bulbX - 6} y={bulbY + 12}
-            width={12} height={6}
-            fill={PHYSICS_COLORS.axis}
+            x={coreLeft}
+            y={coreTop}
+            width={coreW}
+            height={coreH}
+            fill={PHYSICS_COLORS.objectFillNeutral}
             stroke={PHYSICS_COLORS.objectStroke}
-            strokeWidth={CANVAS_STYLE.stroke.grid}
-            rx="1"
+            strokeWidth={CANVAS_STYLE.stroke.objectLine}
+            rx={px(3)}
           />
-
-          {/* 负载标注 */}
-          <text x={bulbX} y={bulbY + 30}
-            fontSize={CANVAS_STYLE.font.smallSize} fill={PHYSICS_COLORS.labelText}
-            textAnchor="middle">
-            R = {R} Ω
-          </text>
-        </g>
-
-        {/* ═══════════════════ 底部公式 ═══════════════════ */}
-        <g transform={`translate(8, ${H - 42})`}>
-          <rect width={W - 16} height="36" rx="5" fill={PHYSICS_COLORS.objectFill}
-            opacity="0.85" stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} />
-          <text x="10" y="14" fontSize={CANVAS_STYLE.font.axisSize}
-            fill={PHYSICS_COLORS.labelText} fontWeight="bold">
-            理想变压器：U₂/U₁ = n₂/n₁，I₁/I₂ = n₂/n₁，P₁ = P₂
-          </text>
-          <text x="10" y="28" fontSize={CANVAS_STYLE.font.smallSize} fill={PHYSICS_COLORS.axis}>
-            输入功率 P₁ = {P_input.toFixed(0)} W，输出功率 P₂ = {P_output.toFixed(0)} W
-            {Math.abs(P_input - P_output) < 0.01 ? '（功率守恒 ✓）' : ''}
-          </text>
-        </g>
-
-        {/* ═══════════════════ 相位差波形（toggle 开启）═══════════════════ */}
-        {showVectors && (
-          <g>
-            {/* 波形背景 */}
-            <rect x={waveX} y={waveY} width={waveW} height={waveH}
-              rx="5" fill={PHYSICS_COLORS.objectFill}
-              opacity="0.9" stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} />
-
-            {/* 零线 */}
-            <line x1={waveX} y1={waveY + waveH / 2} x2={waveX + waveW} y2={waveY + waveH / 2}
-              stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.grid} strokeDasharray={CANVAS_STYLE.dash.axis.join(' ')} />
-
-            {/* Φ(t) 波形轨迹（扫描点走过的路径） */}
-            <path
-              d={phiWavePath}
-              fill="none"
-              stroke={PHYSICS_COLORS.magneticField}
-              strokeWidth={CANVAS_STYLE.stroke.objectThin}
-              strokeDasharray={CANVAS_STYLE.dash.reference.join(' ')}
+          {/* 铁芯叠片纹理 */}
+          {Array.from({ length: 5 }).map((_, i) => (
+            <line
+              key={`core-lam-${i}`}
+              x1={coreLeft + px(4)}
+              y1={coreTop + px(18) + i * px(22)}
+              x2={coreRight - px(4)}
+              y2={coreTop + px(18) + i * px(22)}
+              stroke={PHYSICS_COLORS.grid}
+              strokeWidth={CANVAS_STYLE.stroke.grid}
+              opacity={0.5}
             />
-            <text x={waveX + 4} y={waveY + 12}
-              fontSize={font(9)} fill={PHYSICS_COLORS.magneticField} fontWeight="bold">
-              Φ(t) 磁通量
-            </text>
+          ))}
 
-            {/* e₂(t) 波形轨迹（扫描点走过的路径） */}
+          {/* ═══════════ 磁通量虚线环 ═══════════ */}
+          {fluxRings}
+
+          {/* ═══════════ 原线圈（左侧，红）═══════════ */}
+          <g>
             <path
-              d={e2WavePath}
+              d={primaryCoilPath}
               fill="none"
+              stroke={PHYSICS_COLORS.electricCurrent}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine}
+              strokeLinecap="round"
+            />
+            {/* 电子流动（CSS 动画，速度随 I₁）*/}
+            <path
+              d={primaryCoilPath}
+              fill="none"
+              stroke={PHYSICS_COLORS.electricCurrent}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine + px(1)}
+              strokeDasharray={`${px(4)} ${px(20)}`}
+              strokeLinecap="round"
+              opacity={0.65}
+              style={{
+                animation: 'tf-electron-flow linear infinite',
+                animationDuration: `${primaryFlowDur}s`,
+                ['--electron-offset' as string]: `${px(-24)}`,
+              }}
+            />
+            <text
+              x={v1X}
+              y={coreTop - meterR * 2 - px(10)}
+              fontSize={font(FONT.axisSize)}
+              fill={PHYSICS_COLORS.electricCurrent}
+              textAnchor="middle"
+              fontWeight="bold"
+            >
+              原线圈 n₁={n1}
+            </text>
+          </g>
+
+          {/* ═══════════ 副线圈（右侧，蓝）═══════════ */}
+          <g>
+            <path
+              d={secondaryCoilPath}
+              fill="none"
+              stroke={PHYSICS_COLORS.magnetSouth}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine}
+              strokeLinecap="round"
+            />
+            <path
+              d={secondaryCoilPath}
+              fill="none"
+              stroke={PHYSICS_COLORS.magnetSouth}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine + px(1)}
+              strokeDasharray={`${px(4)} ${px(20)}`}
+              strokeLinecap="round"
+              opacity={0.65}
+              style={{
+                animation: 'tf-electron-flow linear infinite',
+                animationDuration: `${secondaryFlowDur}s`,
+                animationDirection: 'reverse',
+                ['--electron-offset' as string]: `${px(-24)}`,
+              }}
+            />
+            <text
+              x={v2X}
+              y={coreTop - meterR * 2 - px(10)}
+              fontSize={font(FONT.axisSize)}
+              fill={PHYSICS_COLORS.magnetSouth}
+              textAnchor="middle"
+              fontWeight="bold"
+            >
+              副线圈 n₂={n2}
+            </text>
+          </g>
+
+          {/* ═══════════ 原边回路接线 + 交流电源 ═══════════ */}
+          <g>
+            {/* 上线：电源 → 线圈顶 */}
+            <line
+              x1={sourceX} y1={cy - px(14)}
+              x2={sourceX} y2={coreTop + px(8)}
+              stroke={PHYSICS_COLORS.electricCurrent}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine}
+            />
+            <line
+              x1={sourceX} y1={coreTop + px(8)}
+              x2={primaryRight} y2={coreTop + px(8)}
+              stroke={PHYSICS_COLORS.electricCurrent}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine}
+            />
+            {/* 下线：线圈底 → 电源 */}
+            <line
+              x1={primaryRight} y1={coreBottom - px(8)}
+              x2={sourceX} y2={coreBottom - px(8)}
+              stroke={PHYSICS_COLORS.electricCurrent}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine}
+            />
+            <line
+              x1={sourceX} y1={coreBottom - px(8)}
+              x2={sourceX} y2={cy + px(14)}
+              stroke={PHYSICS_COLORS.electricCurrent}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine}
+            />
+            {/* 交流电源符号 */}
+            <circle
+              cx={sourceX} cy={cy} r={px(14)}
+              fill={PHYSICS_COLORS.objectFill}
               stroke={PHYSICS_COLORS.electricCurrent}
               strokeWidth={CANVAS_STYLE.stroke.objectThin}
             />
-            <text x={waveX + 4} y={waveY + 24}
-              fontSize={font(9)} fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold">
-              e₂(t) 感应电动势
+            <text
+              x={sourceX} y={cy + px(5)}
+              fontSize={font(FONT.bodySize)}
+              fill={PHYSICS_COLORS.electricCurrent}
+              textAnchor="middle"
+              fontWeight="bold"
+            >
+              ~
             </text>
-
-            {/* 扫描点（当前时刻的瞬时值，走在轨迹最前端） */}
-            <circle cx={scanX} cy={phiY} r={3}
-              fill={PHYSICS_COLORS.magneticField} />
-            <circle cx={scanX} cy={e2Y} r={3}
-              fill={PHYSICS_COLORS.electricCurrent} />
-
-            {/* 相位差标注 */}
-            <text x={waveX + waveW - 160} y={waveY + 12}
-              fontSize={font(9)} fill={PHYSICS_COLORS.labelText}>
-              Φ=0 时 ΔΦ/Δt 最大 → e₂ 峰值（90° 相位差）
+            <text
+              x={sourceX} y={cy + px(30)}
+              fontSize={font(FONT.smallSize)}
+              fill={PHYSICS_COLORS.labelText}
+              textAnchor="middle"
+            >
+              U₁={U1}V
             </text>
           </g>
-        )}
-      </svg>
+
+          {/* ═══════════ 副边回路接线 + 滑动变阻器负载 ═══════════ */}
+          <g>
+            {/* 上线：线圈顶 → 变阻器 */}
+            <line
+              x1={secondaryLeft} y1={coreTop + px(8)}
+              x2={rheostatX} y2={coreTop + px(8)}
+              stroke={PHYSICS_COLORS.magnetSouth}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine}
+            />
+            <line
+              x1={rheostatX} y1={coreTop + px(8)}
+              x2={rheostatX} y2={cy - px(12)}
+              stroke={PHYSICS_COLORS.magnetSouth}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine}
+            />
+            {/* 下线：变阻器 → 线圈底 */}
+            <line
+              x1={rheostatX} y1={cy + px(12)}
+              x2={rheostatX} y2={coreBottom - px(8)}
+              stroke={PHYSICS_COLORS.magnetSouth}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine}
+            />
+            <line
+              x1={rheostatX} y1={coreBottom - px(8)}
+              x2={secondaryLeft} y2={coreBottom - px(8)}
+              stroke={PHYSICS_COLORS.magnetSouth}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine}
+            />
+          </g>
+
+          {/* 滑动变阻器（负载 R）*/}
+          <Rheostat
+            x={rheostatX}
+            y={cy}
+            value={R}
+            min={5}
+            max={200}
+            width={rheostatW}
+            label="R"
+            unit="Ω"
+          />
+
+          {/* ═══════════ 四只指针电表 ═══════════ */}
+          {/* V1 原边电压表 */}
+          <DialMeter type="V" value={U1} max={v1Max} x={v1X} y={meterTopY} r={meterR} />
+          <text x={v1X} y={meterTopY - meterR - px(4)} fontSize={font(FONT.smallSize)}
+            fill={PHYSICS_COLORS.electricCurrent} textAnchor="middle" fontWeight="bold">
+            V₁
+          </text>
+          {/* A1 原边电流表 */}
+          <DialMeter type="A" value={I1} max={a1Max} x={v1X} y={meterBotY} r={meterR} />
+          <text x={v1X} y={meterBotY + meterR + px(10)} fontSize={font(FONT.smallSize)}
+            fill={PHYSICS_COLORS.electricCurrent} textAnchor="middle" fontWeight="bold">
+            A₁
+          </text>
+          {/* V2 副边电压表 */}
+          <DialMeter type="V" value={U2} max={v2Max} x={v2X} y={meterTopY} r={meterR} />
+          <text x={v2X} y={meterTopY - meterR - px(4)} fontSize={font(FONT.smallSize)}
+            fill={PHYSICS_COLORS.magnetSouth} textAnchor="middle" fontWeight="bold">
+            V₂
+          </text>
+          {/* A2 副边电流表 */}
+          <DialMeter type="A" value={I2} max={a2Max} x={v2X} y={meterBotY} r={meterR} />
+          <text x={v2X} y={meterBotY + meterR + px(10)} fontSize={font(FONT.smallSize)}
+            fill={PHYSICS_COLORS.magnetSouth} textAnchor="middle" fontWeight="bold">
+            A₂
+          </text>
+
+          {/* ═══════════ 底部公式标注（短公式，允许在中间屏）═══════════ */}
+          <g transform={`translate(${px(8)}, ${H - px(30)})`}>
+            <rect width={W - px(16)} height={px(24)} rx={px(5)} fill={PHYSICS_COLORS.objectFill}
+              opacity="0.85" stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} />
+            <text x={px(10)} y={px(16)} fontSize={font(FONT.axisSize)}
+              fill={PHYSICS_COLORS.labelText} fontWeight="bold">
+              U₂/U₁ = n₂/n₁ · P_in = P_out{powerBalanced ? ' ✓' : ''}
+            </text>
+          </g>
+        </svg>
+      </div>
+
+      {/* ═══════════ 右：InfoBar（仅进阶模式）═══════════ */}
+      {mode === 1 && (
+        <div className="shrink-0 h-full flex flex-col gap-2 overflow-y-auto" style={{ width: px(208) }}>
+          {/* 功率配平 */}
+          <Card className="p-3">
+            <div className="text-xs font-semibold text-neutral-600 mb-2">功率配平</div>
+            {/* P_in */}
+            <div className="mb-2">
+              <div className="flex justify-between mb-0.5" style={{ fontSize: font(FONT.smallSize) }}>
+                <span className="text-neutral-500">P_in（输入）</span>
+                <span className="font-mono font-bold" style={{ color: PHYSICS_COLORS.power }}>
+                  {P_input.toFixed(1)} W
+                </span>
+              </div>
+              <div className="h-2 rounded-full bg-neutral-100 overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-300"
+                  style={{ width: `${pBarW}%`, backgroundColor: PHYSICS_COLORS.power }} />
+              </div>
+            </div>
+            {/* P_out */}
+            <div className="mb-2">
+              <div className="flex justify-between mb-0.5" style={{ fontSize: font(FONT.smallSize) }}>
+                <span className="text-neutral-500">P_out（输出）</span>
+                <span className="font-mono font-bold" style={{ color: PHYSICS_COLORS.power }}>
+                  {P_output.toFixed(1)} W
+                </span>
+              </div>
+              <div className="h-2 rounded-full bg-neutral-100 overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-300"
+                  style={{ width: `${pBarW}%`, backgroundColor: PHYSICS_COLORS.power }} />
+              </div>
+            </div>
+            <div className="text-emerald-600 font-semibold" style={{ fontSize: font(FONT.smallSize) }}>
+              {powerBalanced ? '✓ P_in = P_out 严格守恒' : '计算中…'}
+            </div>
+          </Card>
+
+          {/* 动态因果链多米诺 */}
+          <Card className="p-3 flex-1 min-h-0">
+            <div className="text-xs font-semibold text-neutral-600 mb-2">动态因果链</div>
+            <div className="flex flex-col gap-1">
+              {chainSteps.map((step, i) => {
+                const isLit = dominoStep === -1 || i <= dominoStep
+                const isActive = dominoStep === i
+                return (
+                  <div key={step.key} className="flex items-center gap-1.5">
+                    <div
+                      className="flex-1 flex items-center justify-between rounded-md px-2 py-1 transition-all duration-200 border"
+                      style={{
+                        backgroundColor: isLit ? `${step.color}${HIGHLIGHT_ALPHA}` : 'transparent',
+                        borderColor: isActive ? step.color : 'transparent',
+                        transform: isActive ? 'scale(1.04)' : 'scale(1)',
+                        opacity: isLit ? 1 : 0.35,
+                      }}
+                    >
+                      <span
+                        className="font-bold"
+                        style={{ fontSize: font(FONT.smallSize + 1), color: isLit ? step.color : PHYSICS_COLORS.labelTextLight }}
+                      >
+                        {step.label}
+                      </span>
+                      <span
+                        className="font-mono"
+                        style={{ fontSize: font(FONT.smallSize), color: isLit ? step.color : PHYSICS_COLORS.labelTextLight }}
+                      >
+                        {step.value.toFixed(2)} {step.unit}
+                      </span>
+                    </div>
+                    {i < chainSteps.length - 1 && (
+                      <span className="text-neutral-300" style={{ fontSize: font(FONT.smallSize) }}>↓</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            <div className="mt-2 text-neutral-400 leading-relaxed" style={{ fontSize: font(FONT.smallSize) }}>
+              铁律：U₁→U₂→I₂→P_out→P_in→I₁
+              <br />
+              改变 R 触发多米诺高亮
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

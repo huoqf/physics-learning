@@ -18,6 +18,9 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 06-17 | data/quantities | fix | electromagnetism.ts 颜色硬编码修复：41 处十六进制颜色值 → PHYSICS_COLORS token（electricCurrent/magnetSouth/magneticField/velocity/acceleration/lorentzForce 等）；剩余 2 处（#EAB308/#64748B）无直接 token 映射，待后续评估 |
+| 06-17 | electromagnetism | fix | 变压器规范合规修复：回退 colors.ts 新增 token（primaryCircuit/secondaryCircuit/magneticFlux → electricCurrent/magnetSouth/magneticField）；InfoBar 硬编码字号 → font(FONT.xxx)；w-52 → px(208)；CSS 动画 -24px → CSS 变量 + px()；fluxStrokeW 魔法数字 → 整体 px()；透明度魔法数字 → HIGHLIGHT_ALPHA 常量 |
+| 06-17 | electromagnetism | feature | 变压器原理三屏联动重构：新增 TransformerSidebarExtra（基础/进阶模式切换）、4 只 DialMeter 电表 + Rheostat 负载、原副边红蓝配色、InfoBar 功率配平 + 动态因果链多米诺高亮；quantities builder 补充公式/高考要点/易错警示；全部布局值 px() 缩放 |
 | 06-16 | electromagnetism | feature | 法拉第电磁感应定律三屏联动与双模式重构，支持 O(1) 解析式实时图表绘制 |
 | 06-15 | theme | refactor | 删除 tailwindColors 死代码；neutral[0]→neutral.white（17文件64处）；CANVAS_COLORS 8个 neutral 映射改为引用 colors.* |
 | 06-15 | theme | fix | 4 个 Physics 通用组件 10 处硬编码颜色违规修复（Block/SportsCar/LightBulb/DialMeter） |

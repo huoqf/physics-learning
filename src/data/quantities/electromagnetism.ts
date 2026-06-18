@@ -23,7 +23,7 @@ import {
 } from '../../physics'
 import { getEffectiveCurrent, getTheoreticalThermalState } from '../../physics/rmsCalculator'
 import type { WaveformType } from '../../physics/rmsCalculator'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, TRANSMISSION_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import type { PhysicsPanelData, PhysicsQuantity } from './types'
 
@@ -241,10 +241,10 @@ export function buildElectromagnetismQuantities(
       return {
         quantities: [
           ...base,
-          { label: '加速度 ay', value: curState.ay.toFixed(2), unit: 'm/s²', color: '#DC2626', highlight: 'extreme' },
+          { label: '加速度 ay', value: curState.ay.toFixed(2), unit: 'm/s²', color: PHYSICS_COLORS.acceleration, highlight: 'extreme' },
           { label: '偏转距离 y', value: Math.abs(curState.y * 100).toFixed(2), unit: 'cm' },
-          { label: '竖直速度 vy', value: curState.vy.toFixed(2), unit: 'm/s', color: '#60A5FA' },
-          { label: '末速度 v', value: vTotal.toFixed(2), unit: 'm/s', color: '#2563EB', highlight: 'extreme' },
+          { label: '竖直速度 vy', value: curState.vy.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocityY },
+          { label: '末速度 v', value: vTotal.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity, highlight: 'extreme' },
         ],
         formulas: [
           {
@@ -304,14 +304,14 @@ export function buildElectromagnetismQuantities(
             symbol: 'C',
             value: C * 1e12,
             unit: 'pF',
-            color: '#0284C7', // sky-600 (PHYSICS_COLORS.capacitor)
+            color: PHYSICS_COLORS.capacitor,
           },
           {
             label: '电荷量',
             symbol: 'Q',
             value: charge * 1e12,
             unit: 'pC',
-            color: '#EF4444', // red-500 (PHYSICS_COLORS.positiveCharge)
+            color: PHYSICS_COLORS.positiveCharge,
             highlight: !isConnected ? 'extreme' : undefined,
           },
           {
@@ -319,7 +319,7 @@ export function buildElectromagnetismQuantities(
             symbol: 'U',
             value: voltage,
             unit: 'V',
-            color: '#A16207', // 棕黄 (PHYSICS_COLORS.electricPotential)
+            color: PHYSICS_COLORS.electricPotential,
             highlight: isConnected ? 'extreme' : undefined,
           },
           {
@@ -327,7 +327,7 @@ export function buildElectromagnetismQuantities(
             symbol: 'E',
             value: field,
             unit: 'V/m',
-            color: '#D97706', // amber-600 (PHYSICS_COLORS.electricField)
+            color: PHYSICS_COLORS.electricField,
           },
         ],
         formulas: [
@@ -470,10 +470,10 @@ export function buildElectromagnetismQuantities(
       return {
         quantities: [
           ...base,
-          { label: 'A点电势 φ_A', value: phiA.toFixed(1), unit: 'V', color: '#8B5CF6' },
-          { label: 'B点电势 φ_B', value: phiB.toFixed(1), unit: 'V', color: '#8B5CF6' },
+          { label: 'A点电势 φ_A', value: phiA.toFixed(1), unit: 'V', color: PHYSICS_COLORS.electricPotential },
+          { label: 'B点电势 φ_B', value: phiB.toFixed(1), unit: 'V', color: PHYSICS_COLORS.electricPotential },
           { label: '两点电势差 U_AB', value: U_AB.toFixed(1), unit: 'V', highlight: 'extreme' as const },
-          { label: '电势能变化 ΔEp', value: delta_Ep.toExponential(4), unit: 'J', color: '#8B5CF6', highlight: 'extreme' as const },
+          { label: '电势能变化 ΔEp', value: delta_Ep.toExponential(4), unit: 'J', color: PHYSICS_COLORS.potentialEnergy, highlight: 'extreme' as const },
           { label: '图像切线斜率 |k|', value: slopeK.toFixed(1), unit: 'V/m', color: '#EAB308', highlight: 'extreme' as const },
         ],
         formulas: [
@@ -521,7 +521,7 @@ export function buildElectromagnetismQuantities(
             symbol: 'I',
             value: I.toFixed(3),
             unit: 'A',
-            color: '#DC2626', // 电流红 (PHYSICS_COLORS.electricCurrent)
+            color: PHYSICS_COLORS.electricCurrent, // 电流红
             highlight: 'extreme',
           },
           {
@@ -529,7 +529,7 @@ export function buildElectromagnetismQuantities(
             symbol: 'P',
             value: P.toFixed(3),
             unit: 'W',
-            color: '#D97706', // 功率黄 (PHYSICS_COLORS.power)
+            color: PHYSICS_COLORS.power, // 功率黄
             highlight: 'extreme',
           },
         ],
@@ -639,7 +639,7 @@ export function buildElectromagnetismQuantities(
             symbol: 'I_总', 
             value: Itotal, 
             unit: 'A', 
-            color: '#DC2626',
+            color: PHYSICS_COLORS.electricCurrent,
             highlight: R2 === 0 ? 'extreme' : undefined
           },
           { 
@@ -647,7 +647,7 @@ export function buildElectromagnetismQuantities(
             symbol: 'U_V', 
             value: U2, 
             unit: 'V', 
-            color: '#A16207',
+            color: PHYSICS_COLORS.electricPotential,
             highlight: R2 === 0 ? 'zero' : (R2 === 100 ? 'extreme' : undefined)
           },
           { label: 'R₁ 两端电压', symbol: 'U₁', value: U1, unit: 'V' },
@@ -730,14 +730,14 @@ export function buildElectromagnetismQuantities(
             symbol: 'E',
             value: EMF.toFixed(1),
             unit: 'V',
-            color: '#D97706', // emf (PHYSICS_COLORS.emf)
+            color: PHYSICS_COLORS.emf,
           },
           {
             label: '干路电流',
             symbol: 'I',
             value: I.toFixed(3),
             unit: 'A',
-            color: '#DC2626', // electricCurrent
+            color: PHYSICS_COLORS.electricCurrent,
             highlight: 'extreme',
           },
           {
@@ -745,21 +745,21 @@ export function buildElectromagnetismQuantities(
             symbol: 'U外',
             value: U_terminal.toFixed(2),
             unit: 'V',
-            color: '#A16207', // electricPotential
+            color: PHYSICS_COLORS.electricPotential,
           },
           {
             label: '内电压',
             symbol: 'U内',
             value: U_internal.toFixed(2),
             unit: 'V',
-            color: '#EF4444', // positiveCharge
+            color: PHYSICS_COLORS.positiveCharge,
           },
           {
             label: '输出功率',
             symbol: 'P出',
             value: P_output.toFixed(2),
             unit: 'W',
-            color: '#D97706', // power
+            color: PHYSICS_COLORS.power,
             highlight: R === r ? 'extreme' : undefined,
           },
           {
@@ -767,21 +767,21 @@ export function buildElectromagnetismQuantities(
             symbol: 'P内',
             value: P_internal.toFixed(2),
             unit: 'W',
-            color: '#B91C1C', // internalEnergy / heatLoss
+            color: PHYSICS_COLORS.internalEnergy,
           },
           {
             label: '总功率',
             symbol: 'P总',
             value: P_total.toFixed(2),
             unit: 'W',
-            color: '#4F46E5', // mechanicalEnergy
+            color: PHYSICS_COLORS.mechanicalEnergy,
           },
           {
             label: '电源效率',
             symbol: 'η',
             value: (eta * 100).toFixed(1),
             unit: '%',
-            color: '#10B981', // work
+            color: PHYSICS_COLORS.work,
             highlight: R === r ? 'extreme' : undefined,
           },
         ],
@@ -929,9 +929,9 @@ export function buildElectromagnetismQuantities(
           quantities: [
             ...base,
             { label: '电荷极性', value: q > 0 ? '正电荷 (+q)' : '负电荷 (-q)', unit: '', highlight: q > 0 ? 'positive' : 'negative' },
-            { label: '入射速度 v', value: v0.toFixed(1), unit: 'm/s', color: '#2563EB' },
-            { label: '磁场强度 B', value: B.toFixed(1), unit: 'T', color: '#10B981' },
-            { label: '洛伦兹力 F_洛', value: Math.abs(F_lorentz).toFixed(2), unit: 'N', color: '#8B5CF6', highlight: F_lorentz === 0 ? 'zero' : 'extreme' },
+            { label: '入射速度 v', value: v0.toFixed(1), unit: 'm/s', color: PHYSICS_COLORS.velocity },
+            { label: '磁场强度 B', value: B.toFixed(1), unit: 'T', color: PHYSICS_COLORS.magneticField },
+            { label: '洛伦兹力 F_洛', value: Math.abs(F_lorentz).toFixed(2), unit: 'N', color: PHYSICS_COLORS.lorentzForce, highlight: F_lorentz === 0 ? 'zero' : 'extreme' },
             { label: '轨道半径 R', value: R.toFixed(2), unit: 'm', color: '#64748B' },
           ],
           formulas: [
@@ -970,13 +970,13 @@ export function buildElectromagnetismQuantities(
         return {
           quantities: [
             ...base,
-            { label: '磁场强度 B', value: B.toFixed(1), unit: 'T', color: '#10B981' },
-            { label: '电场强度 E', value: E.toFixed(1), unit: 'V/m', color: '#D97706' },
+            { label: '磁场强度 B', value: B.toFixed(1), unit: 'T', color: PHYSICS_COLORS.magneticField },
+            { label: '电场强度 E', value: E.toFixed(1), unit: 'V/m', color: PHYSICS_COLORS.electricField },
             { label: '粒子荷质比 q/m', value: qOverM.toFixed(1), unit: 'C/kg' },
-            { label: '过滤速度 v_滤', value: v_filter.toFixed(2), unit: 'm/s', color: '#2563EB', highlight: 'extreme' },
-            { label: '入射速度 v', value: v0.toFixed(1), unit: 'm/s', color: '#2563EB' },
-            { label: '电场力/质量 FE/m', value: F_electric.toFixed(2), unit: 'N/kg', color: '#F97316' },
-            { label: '洛伦兹力/质量 FL/m', value: F_lorentz.toFixed(2), unit: 'N/kg', color: '#8B5CF6' },
+            { label: '过滤速度 v_滤', value: v_filter.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity, highlight: 'extreme' },
+            { label: '入射速度 v', value: v0.toFixed(1), unit: 'm/s', color: PHYSICS_COLORS.velocity },
+            { label: '电场力/质量 FE/m', value: F_electric.toFixed(2), unit: 'N/kg', color: PHYSICS_COLORS.electricForce },
+            { label: '洛伦兹力/质量 FL/m', value: F_lorentz.toFixed(2), unit: 'N/kg', color: PHYSICS_COLORS.lorentzForce },
             { label: '偏转状态', value: isBalanced ? '匀速直线穿出' : (v0 > v_filter ? '洛力主导，向上偏转' : '电场力主导，向下偏转'), unit: '', highlight: isBalanced ? 'positive' : 'negative' }
           ],
           formulas: [
@@ -1190,10 +1190,10 @@ export function buildElectromagnetismQuantities(
 
       const quantities = [
         ...base,
-        { label: '感应电动势 E', value: Math.abs(EMF).toFixed(3), unit: 'V', color: '#10B981' },
-        { label: '感应电流 I', value: Math.abs(I).toFixed(3), unit: 'A', color: '#DC2626' },
-        { label: '瞬时安培力 F_安', symbol: 'F_{安}', value: F_amp.toFixed(3), unit: 'N', color: '#EA580C', highlight: 'extreme' as const },
-        { label: '回路发热功率 P_热', symbol: 'P_{热}', value: P_heat.toFixed(3), unit: 'W', color: '#EF4444' },
+        { label: '感应电动势 E', value: Math.abs(EMF).toFixed(3), unit: 'V', color: PHYSICS_COLORS.magneticField },
+        { label: '感应电流 I', value: Math.abs(I).toFixed(3), unit: 'A', color: PHYSICS_COLORS.electricCurrent },
+        { label: '瞬时安培力 F_安', symbol: 'F_{安}', value: F_amp.toFixed(3), unit: 'N', color: PHYSICS_COLORS.forceNet, highlight: 'extreme' as const },
+        { label: '回路发热功率 P_热', symbol: 'P_{热}', value: P_heat.toFixed(3), unit: 'W', color: PHYSICS_COLORS.heatLoss },
       ]
 
       if (mode === 1 || showForceAnalysis === 1) {
@@ -1202,7 +1202,7 @@ export function buildElectromagnetismQuantities(
           symbol: 'a',
           value: a.toFixed(3),
           unit: 'm/s²',
-          color: '#DC2626',
+          color: PHYSICS_COLORS.acceleration,
           highlight: 'extreme' as const,
         })
       }
@@ -1298,8 +1298,8 @@ export function buildElectromagnetismQuantities(
       return {
         quantities: [
           ...base,
-          { label: '交流热量 Q_ac', value: Q_ac, unit: 'J', color: '#7C3AED' },
-          { label: '直流热量 Q_dc', value: Q_dc, unit: 'J', color: '#7C3AED' },
+          { label: '交流热量 Q_ac', value: Q_ac, unit: 'J', color: PHYSICS_COLORS.potentialEnergy },
+          { label: '直流热量 Q_dc', value: Q_dc, unit: 'J', color: PHYSICS_COLORS.potentialEnergy },
           { label: '热量差 ΔQ', value: deltaQ, unit: 'J', highlight: Math.abs(deltaQ) < 1 ? 'positive' : 'negative' },
           { label: '理论有效值 I_eff', value: I_eff, unit: 'A', highlight: 'extreme' },
         ],
@@ -1334,39 +1334,98 @@ export function buildElectromagnetismQuantities(
       const n2 = params.n2 ?? 200
       const U1 = params.U1 ?? 220
       const R = params.R ?? 50
-      const { U2, I2, I1, P_output } = calculateTransformerWithLoad(n1, n2, U1, R)
+      const { U2, I2, I1, P_input, P_output } = calculateTransformerWithLoad(n1, n2, U1, R)
       const turnsRatio = n1 === 0 ? 0 : n2 / n1
+      const R_eq = n2 === 0 ? 0 : (n1 / n2) ** 2 * R
       return {
         quantities: [
           ...base,
           { label: '匝数比 n₂/n₁', value: turnsRatio, unit: '' },
-          { label: '输出电压 U₂', value: U2, unit: 'V' },
-          { label: '原线圈电流 I₁', value: I1, unit: 'A' },
-          { label: '副线圈电流 I₂', value: I2, unit: 'A' },
-          { label: '输出功率 P₂', value: P_output, unit: 'W' },
+          { label: '输出电压 U₂', value: U2, unit: 'V', color: PHYSICS_COLORS.magnetSouth, highlight: 'extreme' },
+          { label: '原线圈电流 I₁', value: I1, unit: 'A', color: PHYSICS_COLORS.electricCurrent },
+          { label: '副线圈电流 I₂', value: I2, unit: 'A', color: PHYSICS_COLORS.magnetSouth },
+          { label: '输入功率 P_in', value: P_input, unit: 'W', color: PHYSICS_COLORS.power },
+          { label: '输出功率 P_out', value: P_output, unit: 'W', color: PHYSICS_COLORS.power, highlight: Math.abs(P_input - P_output) < 0.01 ? 'positive' : 'negative' },
+          { label: '等效输入电阻 R_eq', value: R_eq, unit: 'Ω', color: PHYSICS_COLORS.resistance },
+        ],
+        formulas: [
+          {
+            name: '变压比',
+            latex: '\\frac{U_1}{U_2} = \\frac{n_1}{n_2}',
+            condition: '理想变压器（无漏磁、无铜损铁损）',
+            level: 'core' as const,
+          },
+          {
+            name: '功率守恒',
+            latex: 'P_{in} = P_{out} \\quad (U_1 I_1 = U_2 I_2)',
+            condition: '理想变压器任意负载',
+            level: 'core' as const,
+          },
+          {
+            name: '变流比（单副线圈）',
+            latex: '\\frac{I_1}{I_2} = \\frac{n_2}{n_1}',
+            condition: '仅适用于单一副线圈',
+            note: '多副线圈时此式彻底失效，必须用 U₁I₁ = U₂I₂ + U₃I₃ 功率守恒求解！',
+            level: 'important' as const,
+          },
+          {
+            name: '等效输入电阻',
+            latex: 'R_{eq} = \\left(\\frac{n_1}{n_2}\\right)^2 R',
+            condition: '副线圈接纯电阻负载 R',
+            level: 'derived' as const,
+          },
+        ],
+        gaokaoPoints: [
+          { text: '动态电路因果链（铁律）：U₁ 决定 U₂ → R 决定 I₂ → I₂ 决定 P_out → P_out 决定 P_in → P_in 决定 I₁', importance: 'gaokao' as const },
+          { text: '多副线圈：电压比 U₁/n₁ = U₂/n₂ = U₃/n₃ 仍成立，但电流比 I₁/I₂=n₂/n₁ 失效，须用功率守恒 U₁I₁=ΣU_i I_i', importance: 'gaokao' as const },
+          { text: '理想变压器原线圈电流 I₁ 由副线圈负载决定（I₁ 是被动的），而非由 U₁ 决定', importance: 'hard' as const },
+        ],
+        warnings: [
+          { text: '电流比 I₁/I₂ = n₂/n₁ 仅对单副线圈成立，多副线圈必须用功率守恒式', level: 'danger' as const },
+          { text: '原线圈电流 I₁ 随负载 R 减小而增大（R↓ → I₂↑ → P_out↑ → I₁↑）', level: 'info' as const },
         ],
       }
     }
 
     case 'anim-power-transmission': {
-      const P_send = params.P_send ?? 100000
-      const U_trans = params.U_trans ?? 10000
-      const R_line = params.R_line ?? 10
-      // 使用默认匝数比：升压 1:10，降压 10:1
-      const n1_step_up = 100
-      const n2_step_up = 1000
-      const n1_step_down = 1000
-      const n2_step_down = 100
-      const { I_line, P_loss, U_user, eta } = calculatePowerTransmission(
-        P_send, U_trans, R_line, n1_step_up, n2_step_up, n1_step_down, n2_step_down
+      // 自变量（从 params 读取，单位转换为 SI）
+      const P1 = (params.P1 ?? 100) * 1000  // kW → W
+      const U2 = (params.U2 ?? 10) * 1000   // kV → V
+      const r = params.r ?? 10              // Ω
+      const n3 = params.n3 ?? 1000          // 降压变压器原线圈匝数
+      const n4 = params.n4 ?? 100           // 降压变压器副线圈匝数
+
+      // 计算因变量（使用纯函数）
+      const { I_line, deltaU, P_loss, U3, U4, eta } = calculatePowerTransmission(
+        P1, U2, r, n3, n4
       )
+
       return {
         quantities: [
           ...base,
-          { label: '输电线电流 I', value: I_line, unit: 'A' },
-          { label: '损耗功率 ΔP', value: P_loss / 1000, unit: 'kW' },
-          { label: '用户电压 U', value: U_user, unit: 'V' },
-          { label: '输电效率 η', value: eta * 100, unit: '%' },
+          { label: '线路电流 I', symbol: 'I_{line}', value: I_line.toFixed(2), unit: 'A', color: TRANSMISSION_COLORS.currentLine, highlight: 'extreme' },
+          { label: '电压损失 ΔU', symbol: '\\Delta U', value: deltaU.toFixed(1), unit: 'V', color: TRANSMISSION_COLORS.voltageHigh },
+          { label: '损耗功率 ΔP', symbol: 'P_{loss}', value: (P_loss / 1000).toFixed(2), unit: 'kW', color: TRANSMISSION_COLORS.powerLoss, highlight: 'extreme' },
+          { label: '降压端电压 U₃', symbol: 'U_3', value: U3.toFixed(1), unit: 'V', color: TRANSMISSION_COLORS.voltageHigh },
+          { label: '用户电压 U₄', symbol: 'U_4', value: U4.toFixed(1), unit: 'V', color: TRANSMISSION_COLORS.powerUser },
+          { label: '输电效率 η', symbol: '\\eta', value: (eta * 100).toFixed(1), unit: '%', color: TRANSMISSION_COLORS.efficiency, highlight: 'extreme' },
+        ],
+        formulas: [
+          { name: '输电电流', latex: 'I_{line} = \\frac{P_1}{U_2}', level: 'core' },
+          { name: '电压损失', latex: '\\Delta U = I_{line} \\cdot r', level: 'core' },
+          { name: '功率损失', latex: 'P_{loss} = I_{line}^2 \\cdot r', level: 'core' },
+          { name: '降压端电压', latex: 'U_3 = U_2 - \\Delta U', level: 'core' },
+          { name: '用户电压', latex: 'U_4 = U_3 \\cdot \\frac{n_4}{n_3}', level: 'core' },
+          { name: '输电效率', latex: '\\eta = \\frac{P_{user}}{P_1} \\times 100\\%', level: 'core' },
+        ],
+        gaokaoPoints: [
+          { text: '高压输电优越性：提高 U₂ → 降低 I_line → 大幅减少 P_loss = I²r', importance: 'gaokao' },
+          { text: '动态链分析：N↑ ⇒ R_user↓ ⇒ I_line↑ ⇒ ΔU↑ ⇒ U₃↓ ⇒ U₄↓', importance: 'gaokao' },
+          { text: '稳压补偿：调节 n₃/n₄ 可维持 U₄ 恒定', importance: 'hard' },
+        ],
+        warnings: [
+          { text: '严禁使用 P_loss = U₂²/r，真正施加在 r 两端的电压仅为 ΔU', level: 'danger' },
+          { text: '误认为输电电压 U₂ 越高越好。实际上，电压过高会导致绝缘成本增加、电晕损耗等问题', level: 'warning' },
         ],
       }
     }
@@ -1393,9 +1452,9 @@ export function buildElectromagnetismQuantities(
         return {
           quantities: [
             ...base,
-            { label: '回旋半径 R', value: R.toFixed(2), unit: 'm', color: '#3B82F6' },
-            { label: '运动周期 T', value: T.toFixed(2), unit: 's', color: '#8B5CF6' },
-            { label: '停留时间 t', value: timeInB.toFixed(2), unit: 's', color: '#EF4444', highlight: 'extreme' as const },
+            { label: '回旋半径 R', value: R.toFixed(2), unit: 'm', color: PHYSICS_COLORS.negativeCharge },
+            { label: '运动周期 T', value: T.toFixed(2), unit: 's', color: PHYSICS_COLORS.lorentzForce },
+            { label: '停留时间 t', value: timeInB.toFixed(2), unit: 's', color: PHYSICS_COLORS.heatLoss, highlight: 'extreme' as const },
           ],
           formulas: [
             { name: '洛伦兹力提供向心力', latex: 'qvB = m\\frac{v^2}{R}', level: 'core' },
@@ -1415,9 +1474,9 @@ export function buildElectromagnetismQuantities(
         return {
           quantities: [
             ...base,
-            { label: '当前射入角 θ', value: theta.toFixed(0), unit: '°', color: '#10B981' },
-            { label: '回旋半径 R', value: R.toFixed(2), unit: 'm', color: '#3B82F6' },
-            { label: '最大射出距离 x_max', value: xMax.toFixed(2), unit: 'm', color: '#EF4444', highlight: 'extreme' as const },
+            { label: '当前射入角 θ', value: theta.toFixed(0), unit: '°', color: PHYSICS_COLORS.magneticField },
+            { label: '回旋半径 R', value: R.toFixed(2), unit: 'm', color: PHYSICS_COLORS.negativeCharge },
+            { label: '最大射出距离 x_max', value: xMax.toFixed(2), unit: 'm', color: PHYSICS_COLORS.heatLoss, highlight: 'extreme' as const },
           ],
           formulas: [
             { name: '弦长公式', latex: 'L = 2R\\sin\\frac{\\theta}{2}', level: 'core' },

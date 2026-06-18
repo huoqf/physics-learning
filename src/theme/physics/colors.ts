@@ -101,6 +101,17 @@ export const EM_COLORS = {
   magnetSouth:        '#2563EB', // 磁铁 S 极          — 经典蓝 (primary-600)
 } as const
 
+// ─── 远距离输电 (Power Transmission) ─────────────────────────────────────────
+export const TRANSMISSION_COLORS = {
+  voltageHigh:      '#D97706', // 输电电压 U₂        — amber-600（复用 emf 色系）
+  currentLine:      '#DC2626', // 线路电流 I_line     — red-600（复用 current 色系）
+  powerLoss:        '#EF4444', // 损耗功率 P_loss     — danger-500
+  powerUser:        '#0891B2', // 用户功率 P_user     — cyan-600
+  efficiency:       '#10B981', // 输电效率 η          — emerald-500
+  thermalGlow:      '#B91C1C', // 线路发热红光        — danger-700
+  idealOverlay:     '#94A3B8', // 理想无损耗对比线    — neutral-400
+} as const
+
 // ─── 热学 (Thermodynamics) ────────────────────────────────────────────────────
 export const THERMO_COLORS = {
   temperature:        '#B91C1C', // 温度 T             — 热端深红 (Red-700)

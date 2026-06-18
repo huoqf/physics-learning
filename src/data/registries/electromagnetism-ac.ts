@@ -34,7 +34,8 @@ export const electromagnetismAcAnimations = defineAnimations({
     title: '变压器原理',
     knowledgeId: 'electricity-5-3',
     Component: lazy(() => import('@/features/electromagnetism/induction/Transformer')),
-    defaultParams: { n1: 100, n2: 200, U1: 220, R: 50 },
+    SidebarExtra: lazy(() => import('@/features/electromagnetism/induction/TransformerSidebarExtra')),
+    defaultParams: { mode: 0, n1: 100, n2: 200, U1: 220, R: 50 },
     paramMeta: [
       { key: 'n1', label: '原线圈匝数 n₁', min: 10, max: 500, step: 10, unit: '匝' },
       { key: 'n2', label: '副线圈匝数 n₂', min: 10, max: 500, step: 10, unit: '匝' },
@@ -46,11 +47,26 @@ export const electromagnetismAcAnimations = defineAnimations({
     title: '远距离输电',
     knowledgeId: 'electricity-5-4',
     Component: lazy(() => import('@/features/electromagnetism/induction/PowerTransmission')),
-    defaultParams: { P_send: 100000, U_trans: 10000, R_line: 10 },
+    SidebarExtra: lazy(() => import('@/features/electromagnetism/induction/PowerTransmissionSidebarExtra')),
+    defaultParams: {
+      mode: 0,              // 0=基础: 高压输电优越性, 1=进阶: 动态负载与稳压
+      P1: 100,              // kW 发电功率
+      U2: 10,               // kV 输电电压
+      r: 10,                // Ω 线路总电阻
+      n3: 1000,             // 降压变压器原线圈匝数
+      n4: 100,              // 降压变压器副线圈匝数
+      N: 10,                // 用户并联户数（进阶模式）
+      showIdeal: 0,         // 0/1 显示理想无损耗对比
+      peakLoad: 0,          // 0/1 一键触发傍晚用电高峰
+    },
     paramMeta: [
-      { key: 'P_send', label: '输送功率 P', min: 10000, max: 500000, step: 10000, unit: 'W' },
-      { key: 'U_trans', label: '输电电压 U', min: 1000, max: 50000, step: 1000, unit: 'V' },
-      { key: 'R_line', label: '输电线电阻 R', min: 1, max: 50, step: 1, unit: 'Ω' },
+      { key: 'P1', label: '发电功率 P₁', min: 100, max: 500, step: 50, unit: 'kW' },
+      { key: 'U2', label: '输电电压 U₂', min: 2, max: 50, step: 2, unit: 'kV' },
+      { key: 'r', label: '线路电阻 r', min: 2, max: 50, step: 2, unit: 'Ω' },
+      // 进阶模式参数
+      { key: 'N', label: '用户户数 N', min: 10, max: 1000, step: 10, unit: '户', showIf: 'mode', showIfValue: 1 },
+      { key: 'n3', label: '降压原线圈 n₃', min: 100, max: 2000, step: 100, unit: '匝', showIf: 'mode', showIfValue: 1 },
+      { key: 'n4', label: '降压副线圈 n₄', min: 100, max: 2000, step: 100, unit: '匝', showIf: 'mode', showIfValue: 1 },
     ],
   },
 })

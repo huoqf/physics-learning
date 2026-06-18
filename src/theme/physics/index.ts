@@ -38,6 +38,7 @@ export {
   OPTICS_COLORS,
   WAVE_COLORS,
   CANVAS_COLORS,
+  TRANSMISSION_COLORS,
 } from './colors'
 
 export type {
