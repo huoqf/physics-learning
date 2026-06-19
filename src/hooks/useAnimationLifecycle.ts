@@ -127,7 +127,7 @@ function usePlaybackLoop(
         setIsPlaying(false)
         return
       }
-      if (currentTimeRef.current <= 0) {
+      if (direction === -1 && currentTimeRef.current <= 0) {
         currentTimeRef.current = 0
         setTime(0)
         setIsPlaying(false)
