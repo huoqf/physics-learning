@@ -18,12 +18,11 @@ const U_MAX = 48.0                                         // 约 48 V (断开�
 const E_MAX = 12.0 / (2 * 1e-3)                             // 6000 V/m
 
 export default function Capacitor() {
-    const {params, showVectors, showFormulas, showGrid} = useAnimationStore(
+    const {params, showVectors, showFormulas} = useAnimationStore(
     useShallow((s) => ({
     params: s.params,
     showVectors: s.showVectors,
     showFormulas: s.showFormulas,
-    showGrid: s.showGrid,
     }))
   )
   
@@ -97,40 +96,6 @@ export default function Capacitor() {
       : cx
     return px
   })
-
-  // ---- 绘制网格背景 (自适应宽高度) ----
-  const gridLines = []
-  if (showGrid) {
-    const gridSpacing = 40
-    for (let x = gridSpacing; x < canvasSize.width; x += gridSpacing) {
-      gridLines.push(
-        <line
-          key={`gx-${x}`}
-          x1={x}
-          y1={0}
-          x2={x}
-          y2={canvasSize.height}
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={1}
-          strokeDasharray="4,4"
-        />
-      )
-    }
-    for (let y = gridSpacing; y < canvasSize.height; y += gridSpacing) {
-      gridLines.push(
-        <line
-          key={`gy-${y}`}
-          x1={0}
-          y1={y}
-          x2={canvasSize.width}
-          y2={y}
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={1}
-          strokeDasharray="4,4"
-        />
-      )
-    }
-  }
 
   // ---- 静电计偏转角计算 ----
   const pointerAngle = Math.min(65, Math.pow(voltage / 28.0, 0.7) * 65)
@@ -272,9 +237,6 @@ export default function Capacitor() {
         )}
 
         <svg width={canvasSize.width} height={canvasSize.height} className="w-full h-full bg-white select-none">
-          {/* 网格背景 */}
-          {gridLines}
-
           {/* 匀强电场线 (密度和根数直接绑定电荷粒子) */}
           {showVectors && particles.map((px, i) => (
             <g key={`E-line-${i}`}>

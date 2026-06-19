@@ -3,7 +3,7 @@
  *
  * 职责：Store 订阅 + 参数提取 + 布局计算 + 组合子组件
  */
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -14,11 +14,10 @@ import { ElectricFieldBasicScene } from './ElectricFieldBasicScene'
 import { ElectricFieldAdvancedScene } from './ElectricFieldAdvancedScene'
 
 export default function ElectricField() {
-  const { params, showFormulas, showGrid } = useAnimationStore(
+  const { params, showFormulas } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
       showFormulas: s.showFormulas,
-      showGrid: s.showGrid,
     }))
   )
   const updateParam = useAnimationStore((s) => s.updateParam)
@@ -51,6 +50,7 @@ export default function ElectricField() {
   const [testX, setTestX] = useState(cx + rTest * pxPerCm)
   const [testY, setTestY] = useState(cy)
   const [isDragging, setIsDragging] = useState(false)
+  const wasDraggingRef = useRef(false)
 
   // 源电荷电量
   const qSource = params.q ?? 5.0
@@ -60,16 +60,22 @@ export default function ElectricField() {
 
   // 监听滑块参数更新
   useEffect(() => {
-    if (!isDragging) {
-      if (mode === 0) {
-        setTestX(cx + rTest * pxPerCm)
-        setTestY(cy)
-      } else {
-        const midX = (cx1 + cx2) / 2
-        const midY = (cy1 + cy2) / 2
-        setTestX(midX + rTest * pxPerCm)
-        setTestY(midY)
-      }
+    if (isDragging) {
+      wasDraggingRef.current = true
+      return
+    }
+    if (wasDraggingRef.current) {
+      wasDraggingRef.current = false
+      return
+    }
+    if (mode === 0) {
+      setTestX(cx + rTest * pxPerCm)
+      setTestY(cy)
+    } else {
+      const midX = (cx1 + cx2) / 2
+      const midY = (cy1 + cy2) / 2
+      setTestX(midX + rTest * pxPerCm)
+      setTestY(midY)
     }
   }, [rTest, mode, cx, cy, cx1, cx2, cy1, cy2, isDragging])
 
@@ -140,59 +146,8 @@ export default function ElectricField() {
     }
   }
 
-  // 辅助网格
-  const gridLines = useMemo(() => {
-    if (!showGrid) return null
-
-    const lines: React.ReactNode[] = []
-    if (mode === 0) {
-      for (let i = 1; i <= 5; i++) {
-        lines.push(
-          <circle
-            key={`ring-${i}`}
-            cx={cx}
-            cy={cy}
-            r={i * pxPerCm}
-            fill="none"
-            stroke={PHYSICS_COLORS.grid}
-            strokeWidth={CANVAS_STYLE.stroke.grid}
-            strokeDasharray={CANVAS_STYLE.dash.axis.join(' ')}
-          />
-        )
-      }
-    } else {
-      const gridSpacing = 40
-      for (let gx = 0; gx < w; gx += gridSpacing) {
-        lines.push(
-          <line
-            key={`gx-${gx}`}
-            x1={gx}
-            y1={0}
-            x2={gx}
-            y2={h}
-            stroke={PHYSICS_COLORS.grid}
-            strokeWidth={CANVAS_STYLE.stroke.grid}
-            strokeDasharray={CANVAS_STYLE.dash.axis.join(' ')}
-          />
-        )
-      }
-      for (let gy = 0; gy < h; gy += gridSpacing) {
-        lines.push(
-          <line
-            key={`gy-${gy}`}
-            x1={0}
-            y1={gy}
-            x2={w}
-            y2={gy}
-            stroke={PHYSICS_COLORS.grid}
-            strokeWidth={CANVAS_STYLE.stroke.grid}
-            strokeDasharray={CANVAS_STYLE.dash.axis.join(' ')}
-          />
-        )
-      }
-    }
-    return lines
-  }, [showGrid, mode, cx, cy, w, h, pxPerCm])
+  // 辅助网格（已移除）
+  const gridLines = null
 
   return (
     <div ref={containerRef} className="w-full h-full">

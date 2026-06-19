@@ -342,6 +342,20 @@ export function useElectricFieldPhysics(p: ElectricFieldPhysicsParams): Electric
 
       if (chargeConfig === 0) {
         emitFromCharge(charges[0], q1 > 0, 16)
+        // 等量异种：从画布边缘向负电荷追踪，补全远侧电场线
+        const negCh = charges[1]
+        const startDist = Math.max(w, h) * 0.6
+        for (let i = 0; i < 12; i++) {
+          const angle = (Math.PI * 2 * i) / 12
+          let sx = Math.max(10, Math.min(w - 10, negCh.x + startDist * Math.cos(angle)))
+          let sy = Math.max(10, Math.min(h - 10, negCh.y + startDist * Math.sin(angle)))
+          const pts = traceSingleFieldLine(charges, sx, sy, 1, w, h)
+          if (pts.length > 2) {
+            paths.push(pts.map((p, idx) =>
+              (idx === 0 ? 'M' : 'L') + ` ${p.x.toFixed(1)},${p.y.toFixed(1)}`
+            ).join(' '))
+          }
+        }
       } else {
         emitFromCharge(charges[0], q1 > 0, 12)
         emitFromCharge(charges[1], q2 > 0, 12)

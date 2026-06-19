@@ -576,16 +576,6 @@ export const knowledgeTree: KnowledgeNode[] = [
     prerequisites: [],
   },
   {
-    id: 'thermodynamics-1-2',
-    title: '温度与分子平均动能',
-    chapter: '热学 第1章 分子动理论',
-    module: 'thermodynamics',
-    importance: 'core',
-    animationIds: ['anim-brownian-motion'],
-    problemIds: [],
-    prerequisites: ['thermodynamics-1-1'],
-  },
-  {
     id: 'thermodynamics-1-3',
     title: '分子间作用力',
     chapter: '热学 第1章 分子动理论',
