@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -8,6 +8,12 @@ import { calculateWorkBasic, calculateWorkAdvanced, classifyWorkType } from '@/p
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
+
+/** 场景布局配置（试点阶段：组件内局部常量） */
+const SCENE_LAYOUT = {
+  designWidth: 700,
+  designHeight: 350,
+} as const
 
 /**
  * 恒力做功动画 —— "力与位移的夹角投影"
@@ -29,6 +35,12 @@ export default function WorkAnimation() {
   )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 350 })
 
+  // ── Viewport（试点：比例布局型使用 visibleX/Y/W/H）──
+  const vp = useViewport(canvasSize, {
+    designWidth: SCENE_LAYOUT.designWidth,
+    designHeight: SCENE_LAYOUT.designHeight,
+  })
+
   const mode = params.mode ?? 0           // 0=基础, 1=进阶
   const F = params.F ?? 10                // N
   const angleDeg = params.angleDeg ?? 30  // °
@@ -37,15 +49,15 @@ export default function WorkAnimation() {
   const mu = params.mu ?? 0.3             // 动摩擦因数
   const g = params.g ?? 9.8              // m/s²
 
-  // ── 动态布局 ──
-  const padding = canvasSize.width * 0.07
-  const groundY = canvasSize.height * 0.72
-  const scale = (canvasSize.width - 2 * padding) / 12  // 12m 可视范围
-  const startX = padding
-  const maxVisibleX = canvasSize.width - padding
+  // ── 动态布局（基于 viewport 可视区域）──
+  const padding = vp.visibleW * 0.07
+  const groundY = vp.visibleY + vp.visibleH * 0.72
+  const scale = (vp.visibleW - 2 * padding) / 12  // 12m 可视范围
+  const startX = vp.visibleX + padding
+  const maxVisibleX = vp.visibleX + vp.visibleW - padding
 
   // ── 物体尺寸 ──
-  const objW = canvasSize.width * 0.06
+  const objW = vp.visibleW * 0.06
   const objH = objW * 0.7
 
   // ── 位移动画：滑块从左向右移动 s 米 ──
@@ -90,14 +102,14 @@ export default function WorkAnimation() {
   }, [workType])
 
   // ── 字体 ──
-  const fontSize = Math.max(10, canvasSize.width * 0.017)
+  const fontSize = Math.max(10, vp.visibleW * 0.017)
   const smallFont = Math.max(9, fontSize * 0.85)
 
   // ── 网格线 ──
   const gridLines = useMemo(() => {
     if (!showGrid) return []
     const lines: { x: number; key: string }[] = []
-    const gridCount = Math.max(8, Math.floor(canvasSize.width / 60))
+    const gridCount = Math.max(8, Math.floor(vp.visibleW / 60))
     for (let i = 0; i <= gridCount; i++) {
       lines.push({
         x: startX + (i * (maxVisibleX - startX)) / gridCount,
@@ -105,7 +117,7 @@ export default function WorkAnimation() {
       })
     }
     return lines
-  }, [showGrid, canvasSize.width, startX, maxVisibleX])
+  }, [showGrid, vp.visibleW, startX, maxVisibleX])
 
   // ── 地标标签 ──
   const landmarkLabels = useMemo(() => {
@@ -160,9 +172,9 @@ export default function WorkAnimation() {
 
         {/* ── 1. 地面坐标轴 + 地标 ── */}
         <line
-          x1={padding * 0.5}
+          x1={startX}
           y1={groundY}
-          x2={canvasSize.width - padding * 0.5}
+          x2={maxVisibleX}
           y2={groundY}
           stroke={PHYSICS_COLORS.labelText}
           strokeWidth={STROKE.groundLine}
@@ -443,8 +455,8 @@ export default function WorkAnimation() {
         {isLiftedOff && (
           <g>
             <rect
-              x={canvasSize.width / 2 - 160}
-              y={padding * 0.5}
+              x={vp.centerX - 160}
+              y={vp.visibleY + padding * 0.5}
               width={320}
               height={36}
               rx={6}
@@ -453,8 +465,8 @@ export default function WorkAnimation() {
               strokeWidth={1.5}
             />
             <text
-              x={canvasSize.width / 2}
-              y={padding * 0.5 + 22}
+              x={vp.centerX}
+              y={vp.visibleY + padding * 0.5 + 22}
               fontSize={smallFont}
               fill={colors.accent[800]}
               fontWeight="bold"
@@ -466,13 +478,13 @@ export default function WorkAnimation() {
         )}
 
         {/* ── 场景标签 ── */}
-        <text x={padding} y={fontSize + 4} fontSize={fontSize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
+        <text x={startX} y={vp.visibleY + fontSize + 4} fontSize={fontSize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
           {mode === 0 ? '恒力做功 · 基础模式' : '恒力做功 · 进阶模式（含摩擦力）'}
         </text>
 
         {/* ── 做功类型指示 ── */}
         {showVectors && (
-          <g transform={`translate(${canvasSize.width - padding - 90}, ${groundY - objH * 2.5})`}>
+          <g transform={`translate(${maxVisibleX - 90}, ${groundY - objH * 2.5})`}>
             <rect width={90} height={28} rx={4} fill={
               workType === 'positive' ? colors.success[100] :
               workType === 'negative' ? colors.danger[100] : colors.neutral[50]
@@ -484,7 +496,7 @@ export default function WorkAnimation() {
         )}
 
         {/* ── 右下角物理量速览 ── */}
-        <g transform={`translate(${canvasSize.width - padding - 120}, ${groundY - objH * 1.5})`}>
+        <g transform={`translate(${maxVisibleX - 120}, ${groundY - objH * 1.5})`}>
           {mode === 0 ? (
             <g>
               <text x={0} y={0} fontSize={smallFont} fill={PHYSICS_COLORS.work} fontWeight="bold">

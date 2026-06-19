@@ -19,6 +19,15 @@
  *   designHeight: 440,
  *   overlayRight: mode === 1 ? Math.round(canvas.width * 0.3) : 0,
  * })
+ *
+ * // 方式 1：比例布局型 — 基于可视区域定位
+ * const x = vp.visibleX + vp.visibleW * 0.07
+ * const y = vp.visibleY + vp.visibleH * 0.72
+ *
+ * // 方式 2：设计坐标型 — 使用 transform 直接映射设计稿
+ * <g transform={vp.transform}>
+ *   <rect x={120} y={80} width={200} height={100} />
+ * </g>
  * ```
  */
 import { useMemo } from 'react'
@@ -40,6 +49,10 @@ export interface ViewportOptions {
 }
 
 export interface ViewportInfo {
+  /** 可视区域左边界 X（容器坐标系，= overlayLeft） */
+  visibleX: number
+  /** 可视区域上边界 Y（容器坐标系，= overlayTop） */
+  visibleY: number
   /** 可视区域宽（容器宽 ﹣左右遮挡） */
   visibleW: number
   /** 可视区域高（容器高 ﹣上下遮挡） */
@@ -53,14 +66,20 @@ export interface ViewportInfo {
   /** contain 缩放比：min(visibleW/designW, visibleH/designH) */
   scale: number
 
-  /** 平移 X（= centerX），供 <g transform> 或 ctx.translate 使用 */
+  /**
+   * 设计稿左上角映射到容器坐标系的 X。
+   * 适合 0..designWidth / 0..designHeight 的 SVG 设计坐标。
+   */
   tx: number
-  /** 平移 Y（= centerY），供 <g transform> 或 ctx.translate 使用 */
+  /**
+   * 设计稿左上角映射到容器坐标系的 Y。
+   * 适合 0..designWidth / 0..designHeight 的 SVG 设计坐标。
+   */
   ty: number
   /**
    * 完整 transform 字符串：
    *   translate(tx ty) scale(scale)
-   * 第二阶段 <g transform={vp.transform}> 架构预留
+   * 将 0..designWidth / 0..designHeight 的设计坐标居中放入可视区域。
    */
   transform: string
 }
@@ -79,6 +98,8 @@ export function useViewport(
   } = options
 
   return useMemo(() => {
+    const visibleX = overlayLeft
+    const visibleY = overlayTop
     const visibleW = Math.max(0, canvas.width - overlayLeft - overlayRight)
     const visibleH = Math.max(0, canvas.height - overlayTop - overlayBottom)
 
@@ -87,14 +108,18 @@ export function useViewport(
       visibleH / designHeight,
     )
 
-    const centerX = overlayLeft + visibleW / 2
-    const centerY = overlayTop + visibleH / 2
+    const centerX = visibleX + visibleW / 2
+    const centerY = visibleY + visibleH / 2
 
-    const tx = centerX
-    const ty = centerY
+    // 设计稿左上角在容器坐标系中的位置：
+    // 将 designWidth×scale 的设计稿水平居中于可视区域
+    const tx = visibleX + (visibleW - designWidth * scale) / 2
+    const ty = visibleY + (visibleH - designHeight * scale) / 2
     const transform = `translate(${tx} ${ty}) scale(${scale})`
 
     return {
+      visibleX,
+      visibleY,
       visibleW,
       visibleH,
       centerX,

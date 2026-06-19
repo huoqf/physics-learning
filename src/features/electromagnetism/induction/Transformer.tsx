@@ -147,8 +147,8 @@ export default function Transformer() {
   // ── Viewport（可视区域计算：右面板浮层遮挡由 viewport 统一处理） ────
   const rightPanelW = mode === 1 ? Math.round(W * 0.30) : 0
   const vp = useViewport(canvasSize, {
-    designWidth: 760,
-    designHeight: 440,
+    designWidth: 380,
+    designHeight: mode === 0 ? 355 : 320,
     overlayRight: rightPanelW,
   })
 
