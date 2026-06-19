@@ -95,6 +95,7 @@ function usePlaybackLoop(
   const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
   const setPhysicsState = useAnimationStore((s) => s.setPhysicsState)
   const speed = useAnimationStore((s) => s.speed)
+  const direction = useAnimationStore((s) => s.direction)
   const [canvasDimmed, setCanvasDimmed] = useState(false)
   const maxTime = 30
 
@@ -119,10 +120,16 @@ function usePlaybackLoop(
   // rAF 时间循环
   useAnimationFrame(
     (deltaTime) => {
-      currentTimeRef.current += (deltaTime / 1000) * speed
+      currentTimeRef.current += (deltaTime / 1000) * speed * direction
       if (currentTimeRef.current >= maxTime) {
         currentTimeRef.current = maxTime
         setTime(maxTime)
+        setIsPlaying(false)
+        return
+      }
+      if (currentTimeRef.current <= 0) {
+        currentTimeRef.current = 0
+        setTime(0)
         setIsPlaying(false)
         return
       }

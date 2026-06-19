@@ -146,6 +146,17 @@ export const OPTICS_COLORS = {
   lensStroke:         '#0284C7', // 透镜轮廓            — sky-600
   mirror:             '#E2E8F0', // 镜面                — neutral-200
   mirrorStroke:       '#475569', // 镜面轮廓            — neutral-600
+  glassFill:          'rgba(224, 242, 254, 0.35)', // 玻璃砖填充  — sky-100 半透明
+  glassStroke:        '#94A3B8',                      // 玻璃砖轮廓  — neutral-400
+  lateralOffset:      '#8B5CF6',                      // 侧移标注    — violet-500
+  airFill:            'rgba(239, 246, 255, 0.3)',    // 空气区域填充 — primary-50 半透明
+  waterFill:          'rgba(219, 234, 254, 0.5)',   // 水区域填充  — blue-100 半透明
+  waterFillLight:     'rgba(219, 234, 254, 0.3)',   // 水区域浅填充（俯视图）
+  candleBody:         '#F59E0B', // 蜡烛烛身            — amber-500
+  candleBodyStroke:   '#D97706', // 蜡烛烛身边框        — amber-600
+  candleFlame:        '#FDE68A', // 蜡烛火焰            — amber-200
+  candleFlameStroke:  '#F59E0B', // 蜡烛火焰边框        — amber-500
+  candleStick:        '#94A3B8', // 蜡烛底座            — neutral-400
 } as const
 
 // ─── 波动 (Waves) ─────────────────────────────────────────────────────────────

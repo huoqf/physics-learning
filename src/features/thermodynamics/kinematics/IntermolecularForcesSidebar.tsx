@@ -1,0 +1,61 @@
+import type { SidebarExtraProps } from '@/data/types'
+import { SegmentedControl, ToggleSwitch } from '@/components/UI'
+
+export default function IntermolecularForcesSidebar({
+  params,
+  updateParam,
+  animationActions,
+  disabled,
+}: SidebarExtraProps) {
+  const mode = params.mode ?? 0
+  const autoRelease = params.autoRelease ?? 0
+
+  const handleModeChange = (value: number | string) => {
+    updateParam('mode', value as number)
+    animationActions.resetAnimation()
+  }
+
+  return (
+    <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-neutral-200">
+      <SegmentedControl
+        label="演示模式"
+        options={[
+          { value: 0, label: '基础：力的合成分解' },
+          { value: 1, label: '进阶：力与势能关联' },
+        ]}
+        value={mode}
+        onChange={handleModeChange}
+        disabled={disabled}
+      />
+
+      <ToggleSwitch
+        label="自动释放动画"
+        checked={autoRelease === 1}
+        onChange={(v) => updateParam('autoRelease', v ? 1 : 0)}
+        disabled={disabled}
+      />
+
+      {autoRelease === 1 && (
+        <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <p className="text-xs text-amber-700 font-medium">
+            自动释放模式
+          </p>
+          <p className="text-xs text-amber-600 mt-1">
+            分子将根据当前合力自主加速运动
+          </p>
+        </div>
+      )}
+
+      {mode === 1 && (
+        <div className="mt-2 p-3 bg-violet-50 border border-violet-200 rounded-lg">
+          <p className="text-xs text-violet-700 font-medium">
+            进阶模式：力与势能关联
+          </p>
+          <p className="text-xs text-violet-600 mt-1">
+            右侧图表切换为 E_p-r 曲线，观察势阱
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}

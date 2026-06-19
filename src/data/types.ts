@@ -38,6 +38,8 @@ export interface AnimationActions {
   pauseAnimation: () => void
   /** 重置时间 + 开始播放 */
   restartAnimation: () => void
+  /** 设置播放方向：1=正向，-1=逆向 */
+  setDirection: (d: 1 | -1) => void
 }
 
 /** 侧边栏扩展组件 props */

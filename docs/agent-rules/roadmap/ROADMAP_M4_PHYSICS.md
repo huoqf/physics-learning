@@ -252,8 +252,8 @@
   - 折射定律n1sinθ1=n2sinθ2，折射率n=c/v
   - 光从密→疏偏离法线，从疏→密靠近法线
   - 高考要点：折射率越大光速越小；折射率=真空光速/介质光速
-- [ ] **TotalInternalReflection.tsx**
-  - 临界角sinC=n2/n1（n1&gt;n2时），光纤原理演示
+- [x] **TotalInternalReflection.tsx**
+  - 临界角sinC=n2/n1（n1>n2时），光纤原理演示
   - 入射角逐渐增大→折射光线偏折→消失→全反射
   - 高考要点：只有从密介质射向疏介质时才可能发生全反射
 - [ ] **ThinLens.tsx**

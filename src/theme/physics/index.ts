@@ -151,6 +151,24 @@ export {
   selectMarkerTier,
 } from './vectorStyle'
 
+// ─── 热力学第一定律专用颜色 ───────────────────────────────────────────────
+export {
+  FIRST_LAW_COLORS,
+} from './firstLawColors'
+
+export type {
+  FirstLawColorKey,
+} from './firstLawColors'
+
+// ─── 热力学第二定律专用颜色 ─────────────────────────────────────────
+export {
+  SECOND_LAW_COLORS,
+} from './secondLawColors'
+
+export type {
+  SecondLawColorKey,
+} from './secondLawColors'
+
 export type {
   VectorType,
   MarkerTier,

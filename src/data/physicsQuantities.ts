@@ -20,6 +20,15 @@ type BuilderName =
   | 'buildElectromagnetismQuantities'
   | 'buildEnergyQuantities'
   | 'buildThermodynamicsQuantities'
+  | 'buildIntermolecularForcesQuantities'
+  | 'buildGasLawsQuantities'
+  | 'buildClapeyronQuantities'
+  | 'buildFirstLawQuantities'
+  | 'buildSecondLawQuantities'
+  | 'buildReflectionQuantities'
+  | 'buildRefractionQuantities'
+  | 'buildTotalReflectionQuantities'
+  | 'buildThinLensQuantities'
 
 /** 单条注册记录：懒加载器 + 构建器函数名 */
 interface QuantityRegistration {
@@ -98,6 +107,17 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
 
   // 热学
   'anim-brownian-motion':       { loader: () => import('./quantities/thermodynamics'), builderName: 'buildThermodynamicsQuantities' },
+  'anim-intermolecular-forces': { loader: () => import('./quantities/intermolecularForces'), builderName: 'buildIntermolecularForcesQuantities' },
+  'anim-gas-laws':            { loader: () => import('./quantities/gasLaws'), builderName: 'buildGasLawsQuantities' },
+  'anim-clapeyron':           { loader: () => import('./quantities/clapeyron'), builderName: 'buildClapeyronQuantities' },
+  'anim-first-law':           { loader: () => import('./quantities/firstLaw'), builderName: 'buildFirstLawQuantities' },
+  'anim-second-law':          { loader: () => import('./quantities/secondLaw'), builderName: 'buildSecondLawQuantities' },
+
+  // 光学
+  'anim-reflection':          { loader: () => import('./quantities/reflection'), builderName: 'buildReflectionQuantities' },
+  'anim-refraction':          { loader: () => import('./quantities/refraction'), builderName: 'buildRefractionQuantities' },
+  'anim-total-reflection':    { loader: () => import('./quantities/totalReflection'), builderName: 'buildTotalReflectionQuantities' },
+  'anim-thin-lens':           { loader: () => import('./quantities/thinLens'), builderName: 'buildThinLensQuantities' },
 }
 
 /** 已加载的构建器缓存（模块级单例） */

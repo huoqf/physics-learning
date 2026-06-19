@@ -18,3 +18,6 @@ export const EARTH_MASS = 5.97e24
 /** 地球半径 (m) */
 export const EARTH_RADIUS = 6.37e6
 
+/** 理想气体常量 R (J/(mol·K)) */
+export const GAS_CONSTANT = 8.314
+

@@ -21,4 +21,21 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
     SidebarExtra: lazy(() => import('@/features/thermodynamics/kinematics/BrownianMotionSidebar')),
     CenterExtra: lazy(() => import('@/features/thermodynamics/kinematics/BrownianMotionCenterExtra')),
   },
+
+  'anim-intermolecular-forces': {
+    title: '分子间作用力',
+    knowledgeId: 'thermodynamics-1-3',
+    Component: lazy(() => import('@/features/thermodynamics/kinematics/IntermolecularForcesAnimation')),
+    defaultParams: {
+      mode: 0,
+      r: 2.0,
+      autoRelease: 0,
+    },
+    paramMeta: [
+      { key: 'r', label: '分子间距 r', min: 0.5, max: 10, step: 0.1, unit: 'r₀' },
+    ],
+    SidebarExtra: lazy(() => import('@/features/thermodynamics/kinematics/IntermolecularForcesSidebar')),
+    CenterExtra: lazy(() => import('@/features/thermodynamics/kinematics/IntermolecularForcesCenterExtra')),
+    centerExtraMode: 'mode',
+  },
 })

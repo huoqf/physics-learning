@@ -68,10 +68,10 @@ export function calculateCriticalAngle(
 }
 
 /**
- * 薄透镜成像公式：1/v - 1/u = 1/f（符号约定：实物/实像为正，虚为负）。
+ * 薄透镜成像公式：1/v + 1/u = 1/f（符号约定：实物/实像为正，虚为负）。
  *
  * 物理模型：
- *   透镜公式 1/v = 1/f + 1/u（实物 u > 0）。
+ *   透镜公式 1/v = 1/f - 1/u（实物 u > 0）。
  *   放大率 m = v/u。
  *
  *   凸透镜（f > 0）成像规律：
@@ -100,10 +100,10 @@ export function calculateThinLens(
     return { v: NaN, m: NaN, type: 'none', valid: false }
   }
 
-  // 1/v = 1/f + 1/u → v = fu / (u + f)
-  const denominator = u + f
+  // 1/v = 1/f - 1/u → v = fu / (u - f)
+  const denominator = u - f
 
-  // u + f = 0 → u = |f| 且 f < 0，或 u = -f，即物在焦点处，不成像
+  // u = f 时物在焦点处，不成像
   if (Math.abs(denominator) < 1e-12) {
     return { v: Infinity, m: Infinity, type: 'none', valid: false }
   }
@@ -122,4 +122,116 @@ export function calculateThinLens(
   }
 
   return { v, m, type, valid: true }
+}
+
+/**
+ * 平行玻璃砖侧移量计算。
+ *
+ * 物理模型：
+ *   光线以入射角 θ₁ 射入厚度为 d 的平行玻璃砖（折射率 n），
+ *   经两次折射后出射，出射光线与入射光线平行，侧移距离 Δx 由下式给出：
+ *     Δx = d × sin(θ₁ − θ₂) / cos(θ₂)
+ *   其中 θ₂ 由斯涅尔定律 1·sinθ₁ = n·sinθ₂ 确定。
+ *
+ * @param theta1_deg 入射角 (°)，范围 [0, 90]
+ * @param n 玻璃折射率，n > 0
+ * @param d 玻璃砖厚度 (mm)，d > 0
+ * @returns 侧移距离 Δx (mm)；全反射时 delta_x 为 NaN
+ */
+export function calculateLateralDisplacement(
+  theta1_deg: number,
+  n: number,
+  d: number,
+): { delta_x: number } {
+  if (n <= 0 || d <= 0) return { delta_x: NaN }
+
+  const { theta2_deg } = calculateRefraction(theta1_deg, 1, n)
+  if (isNaN(theta2_deg)) return { delta_x: NaN }
+
+  const theta1_rad = (theta1_deg * Math.PI) / 180
+  const theta2_rad = (theta2_deg * Math.PI) / 180
+
+  const delta_x = d * Math.sin(theta1_rad - theta2_rad) / Math.cos(theta2_rad)
+
+  return { delta_x }
+}
+
+/**
+ * 水下点光源透光圆半径。
+ *
+ * 物理模型：
+ *   光源在水下深度 h 处，水的折射率 n（>1）。
+ *   全反射临界角 C = arcsin(1/n)，透光圆半径 R = h·tan(C) = h / √(n²-1)。
+ *
+ * @param h 水下深度 (m)，h > 0
+ * @param n 水的折射率，n > 1
+ * @returns radius 透光圆半径 (m)，不满足条件时返回 NaN
+ */
+export function calculateIlluminatedRadius(
+  h: number,
+  n: number,
+): { radius: number } {
+  if (h <= 0 || n <= 1) return { radius: NaN }
+
+  const denom = n * n - 1
+  if (denom <= 0) return { radius: NaN }
+
+  const radius = h / Math.sqrt(denom)
+  return { radius }
+}
+
+/**
+ * 水下点光源透光圆面积。
+ *
+ * 物理模型：
+ *   光源在水下深度 h 处，水的折射率 n（>1）。
+ *   透光圆面积 S = π·R² = π·h² / (n²-1)。
+ *
+ * @param h 水下深度 (m)，h > 0
+ * @param n 水的折射率，n > 1
+ * @returns area 透光圆面积 (m²)，不满足条件时返回 NaN
+ */
+export function calculateIlluminatedArea(
+  h: number,
+  n: number,
+): { area: number } {
+  const { radius } = calculateIlluminatedRadius(h, n)
+  if (isNaN(radius)) return { area: NaN }
+
+  const area = Math.PI * radius * radius
+  return { area }
+}
+
+/**
+ * 共轭法（二次成像法）计算两组物距/像距。
+ *
+ * 物理模型：
+ *   物与光屏距离 L 固定，移动透镜可找到两个位置均能成清晰实像。
+ *   方程：u(L-u)/f = L → u² - Lu + Lf = 0
+ *   判别式 Δ = L² - 4Lf，要求 L ≥ 4f。
+ *
+ * @param L 物屏距离 (m)，L > 0
+ * @param f 焦距 (m)，f > 0（凸透镜）
+ * @returns 两组物距像距，不满足条件时 valid=false
+ */
+export function calculateConjugatePositions(
+  L: number,
+  f: number,
+): {
+  u1: number; v1: number
+  u2: number; v2: number
+  valid: boolean
+} {
+  if (L <= 0 || f <= 0 || L < 4 * f - 1e-12) {
+    return { u1: NaN, v1: NaN, u2: NaN, v2: NaN, valid: false }
+  }
+
+  const discriminant = L * L - 4 * L * f
+  const sqrtD = Math.sqrt(Math.max(0, discriminant))
+  const u1 = (L - sqrtD) / 2
+  const v1 = L - u1
+  const u2 = (L + sqrtD) / 2
+  const v2 = L - u2
+
+  return { u1, v1, u2, v2, valid: true }
 }

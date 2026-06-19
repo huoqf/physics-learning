@@ -11,6 +11,13 @@ import { electromagnetismMagnetismAnimations } from './registries/electromagneti
 import { electromagnetismInductionAnimations } from './registries/electromagnetism-induction'
 import { electromagnetismAcAnimations } from './registries/electromagnetism-ac'
 import { thermodynamicsKinematicsAnimations } from './registries/thermodynamics-kinematics'
+import { thermodynamicsGasLawsAnimations } from './registries/thermodynamics-gas-laws'
+import { thermodynamicsFirstLawAnimations } from './registries/thermodynamics-first-law'
+import { thermodynamicsSecondLawAnimations } from './registries/thermodynamics-second-law'
+import { opticsReflectionAnimations } from './registries/optics-reflection'
+import { opticsRefractionAnimations } from './registries/optics-refraction'
+import { opticsTotalInternalReflectionAnimations } from './registries/optics-total-internal-reflection'
+import { opticsThinLensAnimations } from './registries/optics-thin-lens'
 
 export const animationRegistry: Record<string, AnimationConfig> = {
   ...mechanicsKinematicsAnimations,
@@ -25,6 +32,13 @@ export const animationRegistry: Record<string, AnimationConfig> = {
   ...electromagnetismInductionAnimations,
   ...electromagnetismAcAnimations,
   ...thermodynamicsKinematicsAnimations,
+  ...thermodynamicsGasLawsAnimations,
+  ...thermodynamicsFirstLawAnimations,
+  ...thermodynamicsSecondLawAnimations,
+  ...opticsReflectionAnimations,
+  ...opticsRefractionAnimations,
+  ...opticsTotalInternalReflectionAnimations,
+  ...opticsThinLensAnimations,
 }
 
 export function getAnimationConfig(id: string): AnimationConfig | undefined {

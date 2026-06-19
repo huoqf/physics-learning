@@ -263,6 +263,7 @@ export default function AnimationPage() {
     }))
 
   // 构建侧边栏扩展 props
+  const setDirection = useAnimationStore((s) => s.setDirection)
   const sidebarExtraProps = {
     params,
     updateParam,
@@ -271,6 +272,7 @@ export default function AnimationPage() {
       resetAnimation: handleReset,
       pauseAnimation: () => { setIsPlaying(false) },
       restartAnimation: () => { setTime(0); setIsPlaying(true) },
+      setDirection: (d: 1 | -1) => { setDirection(d) },
     },
     showTimeSlices,
     toggleTimeSlices,

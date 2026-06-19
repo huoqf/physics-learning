@@ -14,6 +14,8 @@ interface AnimationState {
   time: number
   isPlaying: boolean
   speed: number
+  /** 播放方向：1=正向，-1=逆向（热力学第二定律逆向实验） */
+  direction: 1 | -1
   showVectors: boolean
   showFormulas: boolean
   showGrid: boolean
@@ -26,6 +28,7 @@ interface AnimationState {
   setTime: (time: number) => void
   setIsPlaying: (isPlaying: boolean) => void
   setSpeed: (speed: number) => void
+  setDirection: (direction: 1 | -1) => void
   toggleVectors: () => void
   toggleFormulas: () => void
   toggleGrid: () => void
@@ -42,6 +45,7 @@ export const useAnimationStore = create<AnimationState>((set) => ({
   time: 0,
   isPlaying: false,
   speed: 1,
+  direction: 1,
   showVectors: true,
   showFormulas: true,
   showGrid: true,
@@ -61,6 +65,7 @@ export const useAnimationStore = create<AnimationState>((set) => ({
   setTime: (time) => set({ time }),
   setIsPlaying: (isPlaying) => set({ isPlaying }),
   setSpeed: (speed) => set({ speed }),
+  setDirection: (direction) => set({ direction }),
   toggleVectors: () => set((state) => ({ showVectors: !state.showVectors })),
   toggleFormulas: () => set((state) => ({ showFormulas: !state.showFormulas })),
   toggleGrid: () => set((state) => ({ showGrid: !state.showGrid })),
@@ -75,6 +80,7 @@ export const useAnimationStore = create<AnimationState>((set) => ({
     time: 0,
     isPlaying: false,
     speed: 1,
+    direction: 1,
     showVectors: true,
     showFormulas: true,
     showGrid: true,
