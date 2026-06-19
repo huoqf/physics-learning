@@ -19,6 +19,7 @@
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
 | 06-19 | thermodynamics | feature | 热力学第二定律动画模块：secondLaw.ts（粒子碰撞热传导/气体扩散/Ω微观态数计算/温度→颜色映射）；SecondLawAnimation.tsx（Canvas粒子+SVG叠加+逆向警告框）；SecondLawSidebar.tsx（场景切换+正向/逆向按钮）；SecondLawCenterExtra.tsx（MiniChart无序度时序图）；useAnimationStore新增direction字段；types.ts AnimationActions新增setDirection；useAnimationLifecycle支持方向乘数；tsc零错误，build成功 |
+| 06-19 | hooks/animation | fix | useAnimationLifecycle rAF首帧零delta触发<=0守卫导致动画无法播放：首帧deltaTime=0使time保持0，新加<=0守卫立即禁止播放。修复：direction===-1条件限定，仅逆向时触发。useAnimationLifecycle.ts 1行改动 |
 | 06-18 | physics | feature | 光学纯函数库 optics.ts：calculateRefraction（斯涅尔定律）、calculateCriticalAngle（全反射临界角）、calculateThinLens（薄透镜成像）；注册 index.ts，tsc 零错误 |
 | 06-18 | physics | feature | 热学纯函数库 thermodynamics.ts：calculateIdealGas（理想气体三大定律）、calculateInternalEnergy（热力学第一定律）、calculateThermoProcess（等温/等容/等压过程功热量计算）；注册 index.ts，tsc 零错误 |
 | 06-17 | data/quantities | fix | electromagnetism.ts 颜色硬编码修复：41 处十六进制颜色值 → PHYSICS_COLORS token（electricCurrent/magnetSouth/magneticField/velocity/acceleration/lorentzForce 等）；剩余 2 处（#EAB308/#64748B）无直接 token 映射，待后续评估 |

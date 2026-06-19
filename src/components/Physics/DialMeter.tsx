@@ -1,5 +1,6 @@
 import React from 'react'
 import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
+import { duration, easing } from '@/theme/motion'
 
 export interface DialMeterProps {
   /** 仪表类型：'V' (电压表) 或 'A' (电流表) */
@@ -19,6 +20,7 @@ export interface DialMeterProps {
 /**
  * 理想电学表盘组件（电压表 V / 电流表 A）
  * 包含金属外壳渐变、弧形刻度、标志字母和动态偏转的指针。
+ * 已完成美化：增加立体阴影、玻璃拟态质感、指针阴影和阻尼转动动画。
  */
 export const DialMeter: React.FC<DialMeterProps> = ({
   type,
@@ -48,17 +50,22 @@ export const DialMeter: React.FC<DialMeterProps> = ({
   return (
     <g transform={`translate(${x}, ${y}) scale(${r / 28})`}>
       <defs>
-        {/* 表盘金属圈渐变 (使用特定 type 后缀以防冲突) */}
+        {/* 表盘金属外圈渐变 */}
         <linearGradient id={`dial-ring-${type}`} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#94A3B8" />
-          <stop offset="100%" stopColor={CANVAS_COLORS.labelTextLight} />
+          <stop offset="0%" stopColor="#CBD5E1" />
+          <stop offset="50%" stopColor="#94A3B8" />
+          <stop offset="100%" stopColor="#475569" />
         </linearGradient>
+        {/* 表盘外阴影，模拟立体悬浮 */}
+        <filter id={`dial-shadow-${type}`} x="-25%" y="-25%" width="150%" height="150%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#0F172A" floodOpacity="0.12" />
+        </filter>
       </defs>
 
-      {/* 外圈金属边框 */}
-      <circle cx={0} cy={0} r={28} fill={`url(#dial-ring-${type})`} />
-      {/* 表盘底色 */}
-      <circle cx={0} cy={0} r={25} fill="#F8FAFC" stroke="#334155" strokeWidth={1.2} />
+      {/* 外圈金属边框（带立体投影） */}
+      <circle cx={0} cy={0} r={28} fill={`url(#dial-ring-${type})`} filter={`url(#dial-shadow-${type})`} />
+      {/* 表盘底色 (毛玻璃透明质感) */}
+      <circle cx={0} cy={0} r={25} fill="rgba(248, 250, 252, 0.94)" stroke="#475569" strokeWidth={1.0} />
 
       {/* 弧形刻度线 */}
       <path
@@ -85,8 +92,26 @@ export const DialMeter: React.FC<DialMeterProps> = ({
         {type}
       </text>
 
-      {/* 刻度指针 */}
-      <g transform={`rotate(${pointerAngle})`}>
+      {/* 刻度指针与投影（采用带阻尼的过渡动画） */}
+      <g 
+        transform={`rotate(${pointerAngle})`}
+        style={{
+          transition: `transform ${duration.normal}ms ${easing.decelerate}`,
+          transformOrigin: '0px 0px',
+        }}
+      >
+        {/* 指针投影（稍作偏移，带低不透明度） */}
+        <line
+          x1={0}
+          y1={4}
+          x2={0.5}
+          y2={-20.5}
+          stroke="rgba(15, 23, 42, 0.25)"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          transform="translate(1, 1)"
+        />
+        {/* 指针实体 */}
         <line
           x1={0}
           y1={4}
@@ -97,6 +122,7 @@ export const DialMeter: React.FC<DialMeterProps> = ({
           strokeLinecap="round"
         />
       </g>
+      
       {/* 指针轴心 */}
       <circle cx={0} cy={0} r={3} fill="#1E293B" />
     </g>
