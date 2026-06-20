@@ -485,6 +485,17 @@ export const ELECTRICAL_APPARATUS_COLORS = {
   multimeterBody:  '#EA580C', // 电表深橙外壳 (orange-600，低饱和度防抢眼)
   probeRed:        '#DC2626', // 红表笔/正接线柱 (辅助“红进”电流)
   probeBlack:      '#1F2937', // 黑表笔/负接线柱 (辅助“黑出”电流)
+
+  // LED/数显发光屏特有色 (从 DCSource.tsx 提取收归)
+  ledScreenBg:     '#090D16', // LED 数显屏暗色底壳 (极深蓝黑)
+  ledDisplayGreen: '#22C55E', // 数码管发光绿 (数显绿)
+  ledDisplayRed:   '#EF4444', // 数码管发光红 (数显红，用于超载指示)
+
+  // 电学五金件部件 (从 Rheostat.tsx 等 Stone 色阶硬编码中收归)
+  terminalBody:    '#57534E', // 接线柱塑料外壳 (stone-600)
+  terminalCap:     '#292524', // 接线柱旋帽深色 (stone-800)
+  terminalCore:    '#CBD5E1', // 接线柱/滑轨金属柱芯 (slate-300 / stone-400)
+  rheostatBase:    '#44403C', // 变阻器铸铁支架 (stone-700)
 } as const;
 
 export const ELECTROSTATIC_APPARATUS_COLORS = {
