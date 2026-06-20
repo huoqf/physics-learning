@@ -43,9 +43,9 @@ export const UniformMagneticField: React.FC<UniformMagneticFieldProps> = ({
 
   // 背景层颜色与不透明度
   const bgFill = hasField
-    ? PHYSICS_COLORS.magneticField
+    ? PHYSICS_COLORS.magneticFieldLine
     : colors.neutral[100]
-  const bgOpacity = hasField ? 0.05 : 0.02
+  const bgOpacity = hasField ? 0.15 : 0.02
 
   return (
     <g>
@@ -57,9 +57,9 @@ export const UniformMagneticField: React.FC<UniformMagneticFieldProps> = ({
         height={h}
         fill={bgFill}
         fillOpacity={bgOpacity}
-        stroke={hasField ? PHYSICS_COLORS.magneticField : colors.neutral[300]}
+        stroke={hasField ? PHYSICS_COLORS.magneticFieldLine : colors.neutral[300]}
         strokeWidth="1"
-        strokeOpacity={hasField ? 0.25 : 0.15}
+        strokeOpacity={hasField ? 0.5 : 0.15}
         rx="6"
       />
 
@@ -72,8 +72,8 @@ export const UniformMagneticField: React.FC<UniformMagneticFieldProps> = ({
               x={pt.px}
               y={pt.py}
               fontSize="16"
-              fill={PHYSICS_COLORS.magneticField}
-              fillOpacity="0.65"
+              fill={PHYSICS_COLORS.magneticFieldLine}
+              fillOpacity="0.8"
               fontWeight="bold"
               textAnchor="middle"
               dominantBaseline="middle"

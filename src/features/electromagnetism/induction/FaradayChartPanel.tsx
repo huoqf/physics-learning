@@ -3,8 +3,7 @@
  *
  * 从 FaradayLaw.tsx 拆分：右侧图表区域渲染。
  */
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
-import { CHART_COLORS } from '@/theme/physics/chartColors'
+import { PHYSICS_COLORS, CANVAS_STYLE, CHART_COLORS } from '@/theme/physics'
 import type { FaradayChartPoint } from '@/physics/electromagnetism'
 
 interface Props {

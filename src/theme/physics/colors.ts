@@ -21,6 +21,23 @@
  *  ★修正  = 修正原组件中出现的硬编码，归入正确 token
  */
 
+export function withAlpha(hex: string, alpha: number): string {
+  const clean = hex.replace('#', '');
+  if (clean.length === 3) {
+    const r = parseInt(clean[0] + clean[0], 16);
+    const g = parseInt(clean[1] + clean[1], 16);
+    const b = parseInt(clean[2] + clean[2], 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+  if (clean.length === 6) {
+    const r = parseInt(clean.substring(0, 2), 16);
+    const g = parseInt(clean.substring(2, 4), 16);
+    const b = parseInt(clean.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+  return hex;
+}
+
 // ─── 运动学 (Kinematics) ──────────────────────────────────────────────────────
 export const KINEMATICS_COLORS = {
   velocity:           '#2563EB', // 速度 v            — 经典蓝 (Blue-600)
@@ -78,13 +95,17 @@ export const ENERGY_COLORS = {
   angularMomentum:    '#BE185D', // 角动量 L           — pink-700
 } as const
 
-// ─── 电磁学 (Electromagnetism) ────────────────────────────────────────────────
+// 声明内部基准色变量以避免重复 Hex 字符串并支持 withAlpha
+const electricFieldBase = '#D97706';
+const magneticFieldBase = '#10B981';
+
 export const EM_COLORS = {
-  electricField:      '#D97706', // 电场强度 E         — 电场黄 (Amber-600，符合教材习惯)
-  electricFieldLine:  'rgba(245, 158, 11, 0.42)', // 电场线（半透明弱化）
-  magneticField:      'rgba(16, 185, 129, 0.38)', // 磁感应强度 B（半透明弱化）
-  magneticFieldDot:   'rgba(52, 211, 153, 0.45)', // 磁场点（出纸面 ·）
-  magneticFieldCross: 'rgba(4, 120, 87, 0.45)',  // 磁场叉（入纸面 ×）
+  electricField:      electricFieldBase, // 电场强度 E         — 电场黄 (Amber-600，符合教材习惯)
+  electricFieldLine:  withAlpha(electricFieldBase, 0.42), // 电场线（半透明弱化）
+  magneticField:      magneticFieldBase, // 磁感应强度 B（物理量主色，保持向下兼容）
+  magneticFieldLine:  withAlpha(magneticFieldBase, 0.38), // 背景磁感线（半透明弱化）
+  magneticFieldDot:   withAlpha(magneticFieldBase, 0.45), // 磁场点（出纸面 ·）
+  magneticFieldCross: withAlpha(magneticFieldBase, 0.45), // 磁场叉（入纸面 ×）
   electricCurrent:    '#DC2626', // 电流 I             — 电流红 (Red-600，符合教材习惯)
   currentDirection:   '#EF4444', // 电流方向箭头        — red-500
   electricPotential:  '#A16207', // 电势 φ             — 棕黄
@@ -117,6 +138,7 @@ export const THERMO_COLORS = {
   temperature:        '#B91C1C', // 温度 T             — 热端深红 (Red-700)
   temperatureHigh:    '#EF4444', // 高温端             — 亮红 (Red-500)
   temperatureLow:     '#3B82F6', // 低温端             — 冷蓝 (Blue-500)
+  temperatureIsothermalGroup: ['#3B82F6', '#60A5FA', '#F59E0B', '#EF4444'] as const, // 等温线组（冷蓝向暖红渐变）
   pressure:           '#7C3AED', // 压强 p             — 压强紫 (Violet-600)
   volume:             '#059669', // 体积 V             — 体积绿 (Emerald-600)
   heatAbsorb:         '#F97316', // 吸热 Q+            — 暖橙 (Orange-500)

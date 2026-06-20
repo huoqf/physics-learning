@@ -77,8 +77,8 @@ export {
   ENERGY_CHART_COLORS,
   UI_CHART_COLORS,
   WAVE_CHART_COLORS,
-} from './physics/chartColors'
-export type { ChartColorKey, EnergyBarColorKey } from './physics/chartColors'
+} from './physics'
+export type { ChartColorKey, EnergyBarColorKey } from './physics'
 
 // ─── SVG / Canvas 绘制规范 ────────────────────────────────────────────────────
 export {

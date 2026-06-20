@@ -94,24 +94,127 @@ export type {
   ThermalColorKey,
 } from './sceneColors'
 
-// ─── 图表配色 ─────────────────────────────────────────────────────────────────
-export {
-  CHART_COLORS,
-  ENERGY_BAR_COLORS,
-  VT_CHART_COLORS,
-  XT_CHART_COLORS,
-  AT_CHART_COLORS,
-  FX_CHART_COLORS,
-  PV_CHART_COLORS,
-  ENERGY_CHART_COLORS,
-  UI_CHART_COLORS,
-  WAVE_CHART_COLORS,
-} from './chartColors'
+// ─── 图表配色大一统桥接层 (Chart Color Semantic Bridge) ────────────────────────
+import { PHYSICS_COLORS, withAlpha } from './colors'
+import { SCENE_COLORS } from './sceneColors'
 
-export type {
-  ChartColorKey,
-  EnergyBarColorKey,
-} from './chartColors'
+export const CHART_COLORS = {
+  // 网格和轴线直接映射至场景 UI 结构色
+  gridLine:     SCENE_COLORS.charts.gridLine,
+  axisLine:     SCENE_COLORS.charts.axisLine,
+  axisArrow:    SCENE_COLORS.charts.axisArrow,
+  labelText:    SCENE_COLORS.charts.labelText,
+  tickMark:     SCENE_COLORS.charts.tickMark,
+  tickLabel:    SCENE_COLORS.charts.tickLabel,
+  zeroline:     SCENE_COLORS.charts.zeroline,
+  reference:    SCENE_COLORS.charts.referenceLine,
+  tangent:      SCENE_COLORS.charts.tangentLine,
+  highlight:    SCENE_COLORS.charts.highlightPt,
+  criticalPt:   SCENE_COLORS.charts.criticalPt,
+  origin:       SCENE_COLORS.charts.axisLine,
+  asymptote:    SCENE_COLORS.charts.asymptoteLine, // 渐近线
+  titleText:    SCENE_COLORS.charts.labelText,     // 图表标题
+  equilibrium:  PHYSICS_COLORS.work,               // 平衡态标注线 (映射至功/黄绿色)
+
+  // 派生数据曲线
+  primary:      PHYSICS_COLORS.velocity,      // 统一映射至 PHYSICS_COLORS 速度蓝
+  compareA:     PHYSICS_COLORS.angularVelocity,
+  compareB:     PHYSICS_COLORS.magneticField, // 使用磁场主色
+  compareC:     PHYSICS_COLORS.electricField,  // 使用电场主色
+  compareD:     PHYSICS_COLORS.displacement,   // 使用升级后的紫色位移
+  compareE:     PHYSICS_COLORS.momentum,
+
+  // 面积填充
+  areaFill:     withAlpha(PHYSICS_COLORS.velocity, 0.18),
+  areaFillAlt:  withAlpha(PHYSICS_COLORS.magneticField, 0.15),
+  areaFillWarm: withAlpha(PHYSICS_COLORS.elasticForce, 0.15),
+} as const;
+
+export const VT_CHART_COLORS = {
+  velocityCurve:   PHYSICS_COLORS.velocity,
+  slopeTangent:    SCENE_COLORS.charts.tangentLine,
+  areaShade:       withAlpha(PHYSICS_COLORS.velocity, 0.18),
+  zeroCrossing:    SCENE_COLORS.charts.criticalPt,
+  avgVelocity:     PHYSICS_COLORS.averageVelocity,
+} as const;
+
+export const XT_CHART_COLORS = {
+  positionCurve:   PHYSICS_COLORS.displacement, // 使用升级后的紫色位移
+  slopeTangent:    PHYSICS_COLORS.velocity,     // 速度是斜率
+  avgSlope:        PHYSICS_COLORS.averageVelocity,
+  constantLine:    SCENE_COLORS.charts.referenceLine,
+} as const;
+
+export const AT_CHART_COLORS = {
+  accelCurve:      PHYSICS_COLORS.acceleration,
+  areaShade:       withAlpha(PHYSICS_COLORS.acceleration, 0.18),
+  zeroline:        SCENE_COLORS.charts.referenceLine,
+} as const;
+
+export const FX_CHART_COLORS = {
+  forceCurve:      PHYSICS_COLORS.forceNet,
+  hookeLine:       PHYSICS_COLORS.elasticForce,
+  areaShade:       withAlpha(PHYSICS_COLORS.elasticForce, 0.15),
+  hysteresis:      PHYSICS_COLORS.momentum,
+  naturalLength:   SCENE_COLORS.charts.referenceLine,
+} as const;
+
+export const PV_CHART_COLORS = {
+  isotherm:        PHYSICS_COLORS.temperature,
+  isothermsGroup:  PHYSICS_COLORS.temperatureIsothermalGroup, // 升级后的冷暖温度联觉渐变
+  isobar:          PHYSICS_COLORS.pressure,
+  isochor:         PHYSICS_COLORS.volume,
+  adiabatic:       PHYSICS_COLORS.displacement,
+  processArrow:    PHYSICS_COLORS.forceNet,
+  statePoint:      SCENE_COLORS.charts.labelText,
+  statePointFill:  SCENE_COLORS.charts.highlightPt,
+} as const;
+
+export const ENERGY_CHART_COLORS = {
+  kinetic:         PHYSICS_COLORS.kineticEnergy,
+  potential:       PHYSICS_COLORS.potentialEnergy,
+  mechanical:      PHYSICS_COLORS.mechanicalEnergy, // 升级后的石墨灰
+  thermal:         PHYSICS_COLORS.internalEnergy,
+  total:           PHYSICS_COLORS.mechanicalEnergy, // 总能量/机械能守恒线指向机械能主色
+  loss:            PHYSICS_COLORS.heatLoss,
+} as const;
+
+export const UI_CHART_COLORS = {
+  ohmic:           PHYSICS_COLORS.velocity,
+  nonOhmic:        PHYSICS_COLORS.electricField,
+  diode:           PHYSICS_COLORS.lorentzForce,
+  filament:        PHYSICS_COLORS.electricForce,
+  workingPoint:    SCENE_COLORS.charts.criticalPt,
+  slopeNote:       SCENE_COLORS.charts.referenceLine,
+} as const;
+
+export const WAVE_CHART_COLORS = {
+  waveMain:        PHYSICS_COLORS.velocity,
+  waveSource:      PHYSICS_COLORS.acceleration,
+  interference:    PHYSICS_COLORS.standingWave,
+  envelope:        SCENE_COLORS.charts.referenceLine,
+  nodeMarker:      SCENE_COLORS.charts.axisLine,
+  antinodeMarker:  SCENE_COLORS.charts.highlightPt,
+  phaseMarker:     PHYSICS_COLORS.work,
+} as const;
+
+export const ENERGY_BAR_COLORS = {
+  kinetic:           PHYSICS_COLORS.kineticEnergy,
+  potential:         PHYSICS_COLORS.potentialEnergy,
+  potentialElastic:  PHYSICS_COLORS.potentialElastic,
+  mechanical:        PHYSICS_COLORS.mechanicalEnergy,
+  internal:          PHYSICS_COLORS.internalEnergy,
+  heat:              PHYSICS_COLORS.heatLoss,
+  total:             PHYSICS_COLORS.mechanicalEnergy,
+
+  // 能量柱状图渐变
+  kineticGrad:       ['#22D3EE', '#0891B2'] as const,
+  potentialGrad:     ['#A78BFA', '#7C3AED'] as const,
+  mechanicalGrad:    ['#64748B', '#475569'] as const, // 升级为石墨灰渐变
+} as const;
+
+export type ChartColorKey       = keyof typeof CHART_COLORS;
+export type EnergyBarColorKey   = keyof typeof ENERGY_BAR_COLORS;
 
 // ─── Canvas / SVG 绘制规范 ────────────────────────────────────────────────────
 export {

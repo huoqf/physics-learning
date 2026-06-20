@@ -3,8 +3,7 @@
  *
  * 从 ElectricField.tsx 拆分：mode=0 的中间屏渲染。
  */
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
-import { CHART_COLORS } from '@/theme/physics/chartColors'
+import { PHYSICS_COLORS, CANVAS_STYLE, CHART_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { createSceneScale } from '@/scene/SceneScale'

@@ -283,19 +283,43 @@ export const THERMAL_COLORS = {
 // ─── 通用实验材料 (Common Materials) ──────────────────────────────────────────
 export const COMMON_MATERIALS = {
   // 钢球/小球立体径向渐变色阶 (中心 -> 边缘)
-  steelSphereGrad:  ['#FFFFFF', '#D1D5DB', '#4B5563', '#1F2937'] as const,
+  steelSphereGrad:    ['#FFFFFF', '#D1D5DB', '#4B5563', '#1F2937'] as const,
   // 真空对照虚影小球立体径向渐变色阶
-  vacuumSphereGrad: ['#E0F2FE', '#38BDF8', '#0284C7', '#0369A1'] as const,
+  vacuumSphereGrad:   ['#E0F2FE', '#38BDF8', '#0284C7', '#0369A1'] as const,
   // 滑轨拉丝金属渐变色阶
-  trackMetalGrad:   ['#1E293B', '#475569', '#94A3B8', '#475569', '#1E293B'] as const,
+  trackMetalGrad:     ['#1E293B', '#475569', '#94A3B8', '#475569', '#1E293B'] as const,
   // 不锈钢滑块/底座材质渐变色阶
-  sliderMetalGrad:  ['#F1F5F9', '#CBD5E1', '#64748B', '#334155'] as const,
+  sliderMetalGrad:    ['#F1F5F9', '#CBD5E1', '#64748B', '#334155'] as const,
   // 通用玻璃器皿材质渐变色阶 (如牛顿管、烧杯、棱镜等)
-  glassGrad:        ['#93C5FD', '#DBEAFE', '#FFFFFF'] as const,
+  glassGrad:          ['#93C5FD', '#DBEAFE', '#FFFFFF'] as const,
   // 地球海洋径向渐变色阶（中心 -> 边缘，用于天体力学地球渲染）
-  earthOceanGrad:   ['#DBEAFE', '#93C5FD', '#1E3A8A'] as const,
+  earthOceanGrad:     ['#DBEAFE', '#93C5FD', '#1E3A8A'] as const,
   // 木质小球/木块材质渐变色阶 (如动能定理中的木块)
-  woodSphereGrad:   ['#FCD34D', '#B45309'] as const,
+  woodSphereGrad:     ['#FCD34D', '#B45309'] as const,
+
+  // 拟物高阶材质扩展
+  anodizedCopperGrad: ['#FFEDD5', '#FDBA74', '#DD6B20', '#7B341E'] as const, // 亮橙铜 -> 铜红 -> 暗部深红褐
+  aluminumMetalGrad:  ['#F8FAFC', '#E2E8F0', '#94A3B8', '#475569'] as const, // 铝合金哑光（高漫反射）
+  castIronGrad:       ['#4B5563', '#374151', '#1F2937', '#111827'] as const, // 粗糙铸铁哑光重色
+  labWoodGrad:        ['#FEF3C7', '#F59E0B', '#D97706', '#78350F'] as const, // 粗糙木板渐变
+  insulationBakelite: ['#4B5563', '#1F2937', '#0F172A'] as const,            // 绝缘黑胶木渐变
+  specularGlass: {
+    gradient:         ['rgba(255, 255, 255, 0.45)', 'rgba(219, 234, 254, 0.15)', 'rgba(255, 255, 255, 0.05)'] as const, // 表层镜面反射渐变
+    edgeHighlight:    'rgba(255, 255, 255, 0.85)', // 1px 厚度边缘反射亮线
+    refractionShadow: 'rgba(15, 23, 42, 0.15)',    // 折射阴影
+  },
+  coherentLaser: {
+    redLaser: {
+      core:  '#FFFFFF',                 // 红色激光高能白芯
+      glow:  '#EF4444',                 // 相干边沿
+      beam:  'rgba(239, 68, 68, 0.18)', // 空气散射路径
+    },
+    greenLaser: {
+      core:  '#FFFFFF',
+      glow:  '#22C55E',
+      beam:  'rgba(34, 197, 94, 0.18)',
+    }
+  }
 } as const
 
 
@@ -427,6 +451,99 @@ export const LAB_LABELS = {
   glassPanelBg:      'rgba(255, 255, 255, 0.90)',
 } as const
 
+// ─── 新增高中物理实验器材色配置 ───────────────────────────────────────────────
+export const MECHANICS_APPARATUS_COLORS = {
+  // 打点计时器与纸带
+  tapeBg:          '#F8FAFC', // 纸带背景 (slate-50)
+  tapeBorder:      '#E2E8F0', // 纸带边缘 (slate-200)
+  tapeDotActive:   '#0F172A', // 刚打下的碳点 (neutral-900)
+  tapeDotHistory:  '#64748B', // 历史打点 (neutral-500)
+  timerBody:       '#475569', // 计时器外壳 (slate-600)
+  timerVibrator:   '#94A3B8', // 振针/电磁线圈铁芯
+
+  // 碰撞实验小车与配重（避开天蓝支持力以作视觉层级降噪）
+  cartActive:      '#334155', // 主动小车 (slate-700)
+  cartPassive:     '#CBD5E1', // 被动小车 (slate-300)
+  bumperRubber:    '#1E293B', // 防撞橡胶缓冲头 (neutral-800)
+  weightBlock:     '#475569', // 附加配重金属块 (slate-600)
+} as const;
+
+export const ELECTRICAL_APPARATUS_COLORS = {
+  // 滑动变阻器
+  rheostatCeramic: '#F1F5F9', // 绝缘瓷管 (slate-100)
+  rheostatWire:    '#B45309', // 电阻线圈 (amber-700)
+  rheostatRod:     '#CBD5E1', // 上方金属导电滑杆 (slate-300)
+  rheostatSlider:  '#64748B', // 滑片主体 (slate-500)
+  rheostatContact: '#F59E0B', // 接触点指示高亮 (amber-500)
+
+  // 变阻箱
+  dialPlate:       '#1E293B', // 旋钮面板
+  dialKnob:        '#0F172A', // 阻值旋钮
+  dialMarker:      '#EF4444', // 指示刻度线 (red-500)
+
+  // 多用电表与表笔
+  multimeterBody:  '#EA580C', // 电表深橙外壳 (orange-600，低饱和度防抢眼)
+  probeRed:        '#DC2626', // 红表笔/正接线柱 (辅助“红进”电流)
+  probeBlack:      '#1F2937', // 黑表笔/负接线柱 (辅助“黑出”电流)
+} as const;
+
+export const ELECTROSTATIC_APPARATUS_COLORS = {
+  // 验电器
+  ballFill:        '#D1D5DB', // 顶端感应金属球 (gray-300)
+  rodFill:         '#9CA3AF', // 金属传导杆 (gray-400)
+  foilGold:        '#FDE047', // 箔片黄金色 (yellow-300，反射金属光泽)
+  foilGlow:        'rgba(253, 224, 71, 0.3)', // 电荷聚集时箔片的微光
+  insulatorPlug:   '#D8B4FE', // 橡胶/橡皮绝缘塞 (purple-300)
+  glassDomeFill:   'rgba(241, 245, 249, 0.15)', // 玻璃外罩半透明填充
+  glassDomeStroke: '#94A3B8', // 玻璃罩轮廓 (slate-400)
+} as const;
+
+export const THERMO_CHAMBER_COLORS = {
+  // 气体活塞气缸
+  cylinderWall:    '#E2E8F0', // 气缸壁 (slate-200)
+  pistonBody:      '#94A3B8', // 活塞金属主体 (slate-400)
+  pistonSeal:      '#1F2937', // 橡胶密封圈 (gray-800)
+  gasVolumeBase:   '#F0FDFA', // 理想气体基色 (teal-50，极淡，确保矢量清晰)
+  gasVolumeHot:    '#FEF2F2', // 气体受热膨胀低饱和底色填充 (red-50)
+  gasVolumeDense:  '#CCFBF1', // 气体高压压缩低饱和底色填充 (teal-100)
+} as const;
+
+export const MODERN_PHYSICS_COLORS = {
+  // 光电管
+  cathodePlate:    '#CBD5E1', // 阴极金属板 (slate-300)
+  activeCoating:   '#A1A1AA', // 光电活性金属涂层 (zinc-400)
+  anodeWire:       '#475569', // 阳极金属针 (slate-600)
+  photoElectron:   '#38BDF8', // 逸出的光电子 (sky-400，发光微粒)
+  electronGlow:    'rgba(56, 189, 248, 0.4)', // 电子流路径淡蓝微光
+
+  // 原子能级跃迁
+  levelLine:       '#334155', // 能级轨道线 (slate-700)
+  levelGround:     '#0F172A', // 基态轨道线 (强调其最稳定)
+  transitionArrow: '#7C3AED', // 跃迁指示箭头 (violet-600，避开弹力玫红，契合高频紫光语义)
+  emittedPhoton:   '#F59E0B', // 辐射光子波浪线 (amber-500)
+} as const;
+
+export const CHART_COMPONENT_COLORS = {
+  // 坐标系基础 UI 组件外壳结构色 (弱化降噪)
+  gridLine:     '#E2E8F0', // 网格线
+  axisLine:     '#94A3B8', // 坐标轴
+  tickLabel:    '#64748B', // 轴刻度数字
+  axisArrow:    '#475569', // 坐标轴箭头
+  labelText:    '#334155', // 轴物理量符号标注文字
+  tickMark:     '#94A3B8', // 刻度点
+  zeroline:     '#CBD5E1', // 零基准线
+
+  // 数学辅助线
+  referenceLine:'#94A3B8', // 辅助线/对照线 (Dashed)
+  tangentLine:  '#F59E0B', // 切线斜率示意线 (Dashed，仅用于图表，不与场景电场线重叠)
+  asymptoteLine:'#CBD5E1', // 渐近线 (Dashed)
+
+  // 图表特殊标注点
+  highlightPt:  '#F59E0B', // 极值/高亮点 (仅限图表标注)
+  criticalPt:   '#EF4444', // 临界/突变标记点
+} as const;
+
+
 // ─── 聚合导出：SCENE_COLORS ───────────────────────────────────────────────────
 export const SCENE_COLORS = {
   materials: COMMON_MATERIALS,
@@ -445,6 +562,14 @@ export const SCENE_COLORS = {
   hand:     HAND_COLORS,
   optical:  OPTICAL_COLORS,
   thermal:  THERMAL_COLORS,
+
+  // 扩展高中物理器材与图表 UI 结构色
+  mechanicsApparatus: MECHANICS_APPARATUS_COLORS,
+  electricalApparatus: ELECTRICAL_APPARATUS_COLORS,
+  electrostaticApparatus: ELECTROSTATIC_APPARATUS_COLORS,
+  thermoChamber: THERMO_CHAMBER_COLORS,
+  modernPhysics: MODERN_PHYSICS_COLORS,
+  charts: CHART_COMPONENT_COLORS,
 } as const
 
 export type SceneColorGroup   = keyof typeof SCENE_COLORS
