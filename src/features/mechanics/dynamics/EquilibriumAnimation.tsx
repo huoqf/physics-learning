@@ -105,10 +105,10 @@ export default function EquilibriumAnimation() {
   const t2xDisplayEnd = useMemo(() => ({ cx: t2DisplayEnd.cx, cy: ballCenter.cy }), [t2DisplayEnd, ballCenter])
   const t2yDisplayEnd = useMemo(() => ({ cx: ballCenter.cx, cy: t2DisplayEnd.cy }), [t2DisplayEnd, ballCenter])
 
-  // 三角形区域独立 bounds（triOrigin 在右下角，可用空间较小）
+  // 三角形区域独立 bounds（triOrigin 在右下角，需留出向左/向上延伸空间）
   const triBounds: CanvasBounds = useMemo(() => ({
-    left: triOrigin.cx,
-    top: triOrigin.cy,
+    left: triOrigin.cx - 100,
+    top: triOrigin.cy - 20,
     right: Math.min(canvasSize.width - 10, triOrigin.cx + 185),
     bottom: Math.min(canvasSize.height - 10, triOrigin.cy + 140),
   }), [triOrigin, canvasSize.width, canvasSize.height])
