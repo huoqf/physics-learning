@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from 'react'
+import React, { useEffect, useRef, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -16,13 +16,173 @@ import { CuttingEMFHandRule } from './CuttingEMFHandRule'
 const WORLD = { xMin: -1.0, xMax: 11.0, yMin: -1.5, yMax: 1.5 } as const
 const X_LIMIT = 10.0 // 轨道最右端限位
 
+// 图表坐标转换（纯函数，模块级）
+const toChartX = (t: number, innerLeft: number, innerW: number, T_max: number) => innerLeft + (t / T_max) * innerW
+const toChartY = (val: number, maxVal: number, innerTop: number, innerH: number, isVelocity = false) => {
+  if (isVelocity) {
+    const zeroY = innerTop + innerH / 2
+    return zeroY - (val / (maxVal || 1.0)) * (innerH / 2)
+  }
+  return innerTop + innerH - (val / (maxVal || 1.0)) * innerH
+}
+
+interface ChartSVGProps {
+  title: string
+  yLabel: string
+  curveColor: string
+  samplePoints: { t: number; v: number; a: number }[]
+  getVal: (p: { t: number; v: number; a: number }) => number
+  yMax: number
+  curVal: number
+  isVelocity: boolean
+  time: number
+  T_max: number
+  chartW: number
+  chartH: number
+  px: (n: number) => number
+  font: (n: number) => number
+  mode: number
+  v_m: number
+}
+
+const ChartSVG = React.memo(function ChartSVG({
+  title, yLabel, curveColor, samplePoints, getVal, yMax, curVal,
+  isVelocity, time, T_max, chartW, chartH, px, font, mode, v_m,
+}: ChartSVGProps) {
+  const padL = px(40)
+  const padR = px(15)
+  const padT = px(24)
+  const padB = px(22)
+
+  const innerW = chartW - padL - padR
+  const innerH = chartH - padT - padB
+
+  // 预测虚线：仅在参数变化时重算
+  const ptsStr = useMemo(() => {
+    return samplePoints
+      .map((p) => `${toChartX(p.t, padL, innerW, T_max).toFixed(1)},${toChartY(getVal(p), yMax, padT, innerH, isVelocity).toFixed(1)}`)
+      .join(' L ')
+  }, [samplePoints, getVal, yMax, padL, innerW, padT, innerH, isVelocity, T_max])
+
+  // 动态实线 + 游标点：每帧重算（依赖 time）
+  const activePts = samplePoints.filter((p) => p.t <= time)
+  const activePtsStr = activePts.length >= 2
+    ? 'M ' + activePts.map((p) => `${toChartX(p.t, padL, innerW, T_max).toFixed(1)},${toChartY(getVal(p), yMax, padT, innerH, isVelocity).toFixed(1)}`).join(' L ')
+    : ''
+
+  const curPtX = toChartX(time, padL, innerW, T_max)
+  const curPtY = toChartY(curVal, yMax, padT, innerH, isVelocity)
+
+  return (
+    <svg width={chartW} height={chartH} className="bg-white rounded-lg border border-neutral-200 shadow-sm overflow-visible">
+      <rect width={chartW} height={chartH} fill="none" />
+      {/* 标题 */}
+      <text x={chartW / 2} y={px(18)} fontSize={font(10)} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
+        {title}
+      </text>
+
+      {/* 坐标轴 */}
+      <line x1={padL} y1={padT} x2={padL} y2={padT + innerH} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
+      <line x1={padL} y1={padT + innerH} x2={padL + innerW} y2={padT + innerH} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
+
+      {/* 坐标轴箭头 */}
+      <polygon points={`${padL + innerW} ${padT + innerH - 3}, ${padL + innerW + 4} ${padT + innerH}, ${padL + innerW} ${padT + innerH + 3}`} fill={CHART_COLORS.axisArrow} />
+      <polygon points={`${padL - 3} ${padT}, ${padL} ${padT - 4}, ${padL + 3} ${padT}`} fill={CHART_COLORS.axisArrow} />
+
+      {/* 坐标轴标签 */}
+      <text x={padL + innerW - 5} y={padT + innerH + 12} fontSize={font(8)} fill={CHART_COLORS.labelText} textAnchor="end">t / s</text>
+      <text x={padL - 10} y={padT - 6} fontSize={font(8)} fill={CHART_COLORS.labelText} textAnchor="start">{yLabel}</text>
+
+      {/* 收尾速度渐近线 */}
+      {isVelocity && mode === 1 && (
+        <g>
+          <line
+            x1={padL}
+            y1={toChartY(v_m, yMax, padT, innerH, isVelocity)}
+            x2={padL + innerW}
+            y2={toChartY(v_m, yMax, padT, innerH, isVelocity)}
+            stroke={CHART_COLORS.asymptote}
+            strokeWidth={1}
+            strokeDasharray="4,4"
+          />
+          <text x={padL + innerW - 10} y={toChartY(v_m, yMax, padT, innerH, isVelocity) - 4} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">
+            收尾速度 v_m = {v_m.toFixed(2)} m/s
+          </text>
+        </g>
+      )}
+
+      {/* X 轴刻度 (时间) */}
+      {[0, 0.25, 0.5, 0.75, 1.0].map((ratio, idx) => {
+        const tVal = ratio * T_max
+        const tx = toChartX(tVal, padL, innerW, T_max)
+        return (
+          <g key={`tx-${idx}`}>
+            <line x1={tx} y1={padT + innerH} x2={tx} y2={padT + innerH + 4} stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
+            <text x={tx} y={padT + innerH + 12} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="middle">
+              {tVal.toFixed(1)}
+            </text>
+          </g>
+        )
+      })}
+
+      {/* v=0 中间参考线 */}
+      {isVelocity && (
+        <line
+          x1={padL}
+          y1={padT + innerH / 2}
+          x2={padL + innerW}
+          y2={padT + innerH / 2}
+          stroke={CHART_COLORS.tickMark}
+          strokeWidth={0.6}
+          strokeDasharray="2,2"
+          opacity={0.65}
+        />
+      )}
+
+      {/* Y 轴刻度 */}
+      {(isVelocity ? [-1.0, -0.5, 0, 0.5, 1.0] : [0, 0.33, 0.66, 1.0]).map((ratio, idx) => {
+        const val = ratio * yMax
+        const ty = toChartY(val, yMax, padT, innerH, isVelocity)
+        return (
+          <g key={`ty-${idx}`}>
+            <line x1={padL - 4} y1={ty} x2={padL} y2={ty} stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
+            <text x={padL - 6} y={ty + 2.5} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">
+              {val.toFixed(1)}
+            </text>
+          </g>
+        )
+      })}
+
+      {/* 预测虚线 */}
+      <path d={`M ${ptsStr}`} fill="none" stroke={curveColor} strokeWidth={1} strokeDasharray="3,3" opacity={0.4} />
+
+      {/* 动态实线 */}
+      {activePtsStr && (
+        <path d={activePtsStr} fill="none" stroke={curveColor} strokeWidth={1.8} />
+      )}
+
+      {/* 动态游标点 */}
+      {time <= T_max && (
+        <g>
+          <circle cx={curPtX} cy={curPtY} r={3} fill={curveColor} />
+          <circle cx={curPtX} cy={curPtY} r={6} fill="none" stroke={curveColor} strokeWidth={0.8} opacity={0.6}>
+            <animate attributeName="r" values="3;8;3" dur="2s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0.8;0;0.8" dur="2s" repeatCount="indefinite" />
+          </circle>
+        </g>
+      )}
+    </svg>
+  )
+})
+
 export default function CuttingEMF() {
-  const { params, time, isPlaying, setIsPlaying } = useAnimationStore(
+  const { params, time, isPlaying, setIsPlaying, showGrid } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
       time: s.time,
       isPlaying: s.isPlaying,
       setIsPlaying: s.setIsPlaying,
+      showGrid: s.showGrid,
     }))
   )
 
@@ -156,7 +316,7 @@ export default function CuttingEMF() {
 
   // 6. 辅助网格
   const gridLines = useMemo(() => {
-    if (!useAnimationStore.getState().showGrid) return null
+    if (!showGrid) return null
     const lines = []
     const spacing = px(40)
     const cols = Math.floor(canvasSize.width / spacing)
@@ -175,7 +335,7 @@ export default function CuttingEMF() {
       )
     }
     return lines
-  }, [canvasSize.width, px])
+  }, [showGrid, canvasSize.width, px])
 
   // 7. 匀强磁场点阵格
   const fieldSymbols = useMemo(() => {
@@ -260,169 +420,46 @@ export default function CuttingEMF() {
   const chartW = (canvasSize.width - px(24)) / 2
   const chartH = chartHeight - px(12)
 
-  // 刻度转换
-  const toChartX = (t: number, innerLeft: number, innerW: number) => innerLeft + (t / T_max) * innerW
-  const toChartY = (val: number, maxVal: number, innerTop: number, innerH: number, isVelocity = false) => {
-    if (isVelocity) {
-      const zeroY = innerTop + innerH / 2
-      return zeroY - (val / (maxVal || 1.0)) * (innerH / 2)
-    }
-    return innerTop + innerH - (val / (maxVal || 1.0)) * innerH
-  }
-
-  const renderChart = (
-    title: string,
-    yLabel: string,
-    curveColor: string,
-    getVal: (p: typeof samplePoints[0]) => number,
-    yMax: number,
-    curVal: number,
-    isVelocity: boolean
-  ) => {
-    const padL = px(40)
-    const padR = px(15)
-    const padT = px(24)
-    const padB = px(22)
-
-    const innerW = chartW - padL - padR
-    const innerH = chartH - padT - padB
-
-    const ptsStr = samplePoints
-      .map((p) => `${toChartX(p.t, padL, innerW).toFixed(1)},${toChartY(getVal(p), yMax, padT, innerH, isVelocity).toFixed(1)}`)
-      .join(' L ')
-
-    const activePts = samplePoints.filter((p) => p.t <= time)
-    const activePtsStr = activePts.length >= 2
-      ? 'M ' + activePts.map((p) => `${toChartX(p.t, padL, innerW).toFixed(1)},${toChartY(getVal(p), yMax, padT, innerH, isVelocity).toFixed(1)}`).join(' L ')
-      : ''
-
-    const curPtX = toChartX(time, padL, innerW)
-    const curPtY = toChartY(curVal, yMax, padT, innerH, isVelocity)
-
-    return (
-      <svg width={chartW} height={chartH} className="bg-white rounded-lg border border-neutral-200 shadow-sm overflow-visible">
-        <rect width={chartW} height={chartH} fill="none" />
-        {/* 标题 */}
-        <text x={chartW / 2} y={px(18)} fontSize={font(10)} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
-          {title}
-        </text>
-
-        {/* 坐标轴 */}
-        <line x1={padL} y1={padT} x2={padL} y2={padT + innerH} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-        <line x1={padL} y1={padT + innerH} x2={padL + innerW} y2={padT + innerH} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-
-        {/* 坐标轴箭头 */}
-        <polygon points={`${padL + innerW} ${padT + innerH - 3}, ${padL + innerW + 4} ${padT + innerH}, ${padL + innerW} ${padT + innerH + 3}`} fill={CHART_COLORS.axisArrow} />
-        <polygon points={`${padL - 3} ${padT}, ${padL} ${padT - 4}, ${padL + 3} ${padT}`} fill={CHART_COLORS.axisArrow} />
-
-        {/* 坐标轴标签 */}
-        <text x={padL + innerW - 5} y={padT + innerH + 12} fontSize={font(8)} fill={CHART_COLORS.labelText} textAnchor="end">t / s</text>
-        <text x={padL - 10} y={padT - 6} fontSize={font(8)} fill={CHART_COLORS.labelText} textAnchor="start">{yLabel}</text>
-
-        {/* 收尾速度渐近线 */}
-        {isVelocity && mode === 1 && (
-          <g>
-            <line
-              x1={padL}
-              y1={toChartY(v_m, yMax, padT, innerH, isVelocity)}
-              x2={padL + innerW}
-              y2={toChartY(v_m, yMax, padT, innerH, isVelocity)}
-              stroke={CHART_COLORS.asymptote}
-              strokeWidth={1}
-              strokeDasharray="4,4"
-            />
-            <text x={padL + innerW - 10} y={toChartY(v_m, yMax, padT, innerH, isVelocity) - 4} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">
-              收尾速度 v_m = {v_m.toFixed(2)} m/s
-            </text>
-          </g>
-        )}
-
-        {/* X 轴刻度 (时间) */}
-        {[0, 0.25, 0.5, 0.75, 1.0].map((ratio, idx) => {
-          const tVal = ratio * T_max
-          const tx = toChartX(tVal, padL, innerW)
-          return (
-            <g key={`tx-${idx}`}>
-              <line x1={tx} y1={padT + innerH} x2={tx} y2={padT + innerH + 4} stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
-              <text x={tx} y={padT + innerH + 12} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="middle">
-                {tVal.toFixed(1)}
-              </text>
-            </g>
-          )
-        })}
-
-        {/* v=0 中间参考线 */}
-        {isVelocity && (
-          <line
-            x1={padL}
-            y1={padT + innerH / 2}
-            x2={padL + innerW}
-            y2={padT + innerH / 2}
-            stroke={CHART_COLORS.tickMark}
-            strokeWidth={0.6}
-            strokeDasharray="2,2"
-            opacity={0.65}
-          />
-        )}
-
-        {/* Y 轴刻度 */}
-        {(isVelocity ? [-1.0, -0.5, 0, 0.5, 1.0] : [0, 0.33, 0.66, 1.0]).map((ratio, idx) => {
-          const val = ratio * yMax
-          const ty = toChartY(val, yMax, padT, innerH, isVelocity)
-          return (
-            <g key={`ty-${idx}`}>
-              <line x1={padL - 4} y1={ty} x2={padL} y2={ty} stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
-              <text x={padL - 6} y={ty + 2.5} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">
-                {val.toFixed(1)}
-              </text>
-            </g>
-          )
-        })}
-
-        {/* 预测虚线 */}
-        <path d={`M ${ptsStr}`} fill="none" stroke={curveColor} strokeWidth={1} strokeDasharray="3,3" opacity={0.4} />
-
-        {/* 动态实线 */}
-        {activePtsStr && (
-          <path d={activePtsStr} fill="none" stroke={curveColor} strokeWidth={1.8} />
-        )}
-
-        {/* 动态游标点 */}
-        {time <= T_max && (
-          <g>
-            <circle cx={curPtX} cy={curPtY} r={3} fill={curveColor} />
-            <circle cx={curPtX} cy={curPtY} r={6} fill="none" stroke={curveColor} strokeWidth={0.8} opacity={0.6}>
-              <animate attributeName="r" values="3;8;3" dur="2s" repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.8;0;0.8" dur="2s" repeatCount="indefinite" />
-            </circle>
-          </g>
-        )}
-      </svg>
-    )
-  }
-
   return (
     <div ref={containerRef} className="w-full h-full flex flex-col bg-neutral-50 p-2 gap-2 relative">
       {/* 上方：v-t 和 a-t 自适应采样图表 */}
       <div className="w-full shrink-0 flex items-center justify-between gap-4" style={{ height: chartHeight }}>
-        {renderChart(
-          '速度－时间图像 (v-t 图)',
-          'v / (m·s⁻¹)',
-          VT_CHART_COLORS.velocityCurve,
-          (p) => p.v,
-          vYMax,
-          finalV,
-          true
-        )}
-        {renderChart(
-          '加速度－时间图像 (a-t 图)',
-          'a / (m·s⁻²)',
-          AT_CHART_COLORS.accelCurve,
-          (p) => p.a,
-          aYMax,
-          finalA,
-          false
-        )}
+        <ChartSVG
+          title="速度－时间图像 (v-t 图)"
+          yLabel="v / (m·s⁻¹)"
+          curveColor={VT_CHART_COLORS.velocityCurve}
+          samplePoints={samplePoints}
+          getVal={(p) => p.v}
+          yMax={vYMax}
+          curVal={finalV}
+          isVelocity={true}
+          time={time}
+          T_max={T_max}
+          chartW={chartW}
+          chartH={chartH}
+          px={px}
+          font={font}
+          mode={mode}
+          v_m={v_m}
+        />
+        <ChartSVG
+          title="加速度－时间图像 (a-t 图)"
+          yLabel="a / (m·s⁻²)"
+          curveColor={AT_CHART_COLORS.accelCurve}
+          samplePoints={samplePoints}
+          getVal={(p) => p.a}
+          yMax={aYMax}
+          curVal={finalA}
+          isVelocity={false}
+          time={time}
+          T_max={T_max}
+          chartW={chartW}
+          chartH={chartH}
+          px={px}
+          font={font}
+          mode={mode}
+          v_m={v_m}
+        />
       </div>
 
       {/* 下方：Canvas 高频运动轨迹 + SVG 静态与矢量叠加区域 */}

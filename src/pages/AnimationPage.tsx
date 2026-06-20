@@ -4,6 +4,7 @@ import { ArrowLeft, FlaskConical, Play, RotateCcw } from 'lucide-react'
 import { getAnimationConfig } from '@/data/animationRegistry'
 import { buildPhysicsQuantities } from '@/data/physicsQuantities'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { useAppStore } from '@/stores/useAppStore'
 import {
   AnimationControls,
@@ -212,15 +213,16 @@ export default function AnimationPage() {
   } = useAnimationLifecycle()
 
   // 低频状态：selector 订阅，避免 time 变化触发重渲染
-  const params = useAnimationStore((s) => s.params)
-  const showTimeSlices = useAnimationStore((s) => s.showTimeSlices)
-  const showDualObjects = useAnimationStore((s) => s.showDualObjects)
-  const setParams = useAnimationStore((s) => s.setParams)
-  const setTime = useAnimationStore((s) => s.setTime)
-  const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
-  const updateParam = useAnimationStore((s) => s.updateParam)
-  const toggleTimeSlices = useAnimationStore((s) => s.toggleTimeSlices)
-  const toggleDualObjects = useAnimationStore((s) => s.toggleDualObjects)
+  const { params, showTimeSlices, showDualObjects } = useAnimationStore(
+    useShallow((s) => ({
+      params: s.params,
+      showTimeSlices: s.showTimeSlices,
+      showDualObjects: s.showDualObjects,
+    }))
+  )
+
+  // actions — 稳定引用，不需订阅
+  const { setParams, setTime, setIsPlaying, updateParam, toggleTimeSlices, toggleDualObjects, setDirection } = useAnimationStore.getState()
 
   const { setMode } = useAppStore()
 
@@ -263,7 +265,6 @@ export default function AnimationPage() {
     }))
 
   // 构建侧边栏扩展 props
-  const setDirection = useAnimationStore((s) => s.setDirection)
   const sidebarExtraProps = {
     params,
     updateParam,

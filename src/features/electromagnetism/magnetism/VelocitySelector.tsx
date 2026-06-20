@@ -760,7 +760,7 @@ export default function VelocitySelector() {
                 cy={toChartY(chartData.currentY)}
                 r="4.5"
                 fill={CHART_COLORS.highlight}
-                stroke="#fff"
+                stroke={colors.neutral.white}
                 strokeWidth="1.5"
                 filter={`url(#glow-${gradId})`}
               />
