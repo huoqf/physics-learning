@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { colors } from '@/theme/colors'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
 import { Rails } from '@/components/Physics/Rails'
 import { ConductingRod } from '@/components/Physics/ConductingRod'
 import type { AdvancedAmperePhysicsResult } from '../ampereForceModel'
@@ -221,15 +221,15 @@ export const InclinedAmpereScene: React.FC<InclinedAmpereSceneProps> = ({
       <g transform="translate(20, 265)">
         {physicsResult.state === 'equilibrium' ? (
           <g>
-            <rect x="0" y="0" width="85" height="15" fill={colors.success[50]} stroke={colors.success[300]} strokeWidth="0.8" rx="4" />
-            <text x="42.5" y="10" fontSize="7" fill={colors.success[700]} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
+            <rect x="0" y="0" width="85" height="15" fill={withAlpha(PHYSICS_COLORS.forceNet, 0.12)} stroke={withAlpha(PHYSICS_COLORS.forceNet, 0.35)} strokeWidth="0.8" rx="4" />
+            <text x="42.5" y="10" fontSize="7" fill={PHYSICS_COLORS.forceNet} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
               ✓ 导体棒静止平衡
             </text>
           </g>
         ) : (
           <g>
-            <rect x="0" y="0" width="85" height="15" fill={colors.danger[50]} stroke={colors.danger[300]} strokeWidth="0.8" rx="4" />
-            <text x="42.5" y="10" fontSize="7" fill={colors.danger[700]} fontWeight="extrabold" textAnchor="middle" style={{ userSelect: 'none' }}>
+            <rect x="0" y="0" width="85" height="15" fill={withAlpha(PHYSICS_COLORS.forceArrowRed, 0.08)} stroke={withAlpha(PHYSICS_COLORS.forceArrowRed, 0.3)} strokeWidth="0.8" rx="4" />
+            <text x="42.5" y="10" fontSize="7" fill={PHYSICS_COLORS.forceArrowRed} fontWeight="extrabold" textAnchor="middle" style={{ userSelect: 'none' }}>
               ⚠ {physicsResult.state === 'sliding-up' ? '往斜面上滑中' : '往斜面下滑中'}
             </text>
           </g>

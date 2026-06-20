@@ -497,7 +497,7 @@ export default function MomentumConservationAnimation() {
                 x={canvasSize.width * 0.5}
                 y={30}
                 fontSize={FONT.bodySize}
-                fill={PHYSICS_COLORS.forceNet}
+                fill={PHYSICS_COLORS.forceArrowRed}
                 fontWeight="bold"
                 textAnchor="middle"
               >

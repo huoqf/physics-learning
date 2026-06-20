@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useCanvasSize, PX_PER_METER } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { Spring } from '@/components/UI'
 import { calculateConnectedBody, calculateConnectedBodyTimeline, GRAVITY } from '@/physics'
@@ -353,9 +353,9 @@ export default function ConnectedBodiesAnimation() {
               y={m1Y - 18}
               width={totalGroupW + 24}
               height={h1 + 32}
-              fill={colors.primary[50]}
+              fill={CANVAS_COLORS.objectFillNeutral}
               fillOpacity={0.15}
-              stroke={colors.primary[500]}
+              stroke={CANVAS_COLORS.annotation}
               strokeWidth={1.8}
               strokeDasharray="4,3"
               rx={6}
@@ -366,7 +366,7 @@ export default function ConnectedBodiesAnimation() {
               y={m1Y - 32}
               width={80}
               height={18}
-              fill={colors.primary[600]}
+              fill={CANVAS_COLORS.annotation}
               rx={3}
             />
             <text
@@ -484,7 +484,7 @@ export default function ConnectedBodiesAnimation() {
                 x={dragTargetX + 8}
                 y={ropeY + 4}
                 fontSize={FONT.bodySize}
-                fill={PHYSICS_COLORS.forceNet}
+                fill={PHYSICS_COLORS.appliedForce}
                 fontWeight="bold"
               >
                 F = {F}N
@@ -494,7 +494,7 @@ export default function ConnectedBodiesAnimation() {
                 cx={dragTargetX}
                 cy={ropeY}
                 r={12}
-                fill={PHYSICS_COLORS.forceNet}
+                fill={PHYSICS_COLORS.appliedForce}
                 opacity={0.0}
                 className="cursor-ew-resize hover:opacity-15 active:opacity-30 transition-opacity duration-150"
                 onMouseDown={handleDragStart}
@@ -629,7 +629,7 @@ export default function ConnectedBodiesAnimation() {
           </linearGradient>
 
           {/* 矢量箭头端点定义 */}
-          <VectorDefs colors={[PHYSICS_COLORS.forceNet, PHYSICS_COLORS.friction, PHYSICS_COLORS.tension]} />
+          <VectorDefs colors={[PHYSICS_COLORS.appliedForce, PHYSICS_COLORS.friction, PHYSICS_COLORS.tension]} />
         </defs>
       </svg>
       {/* 水平拉力直接拖拽控制小标提示 */}

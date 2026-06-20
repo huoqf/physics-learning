@@ -153,7 +153,7 @@ export default function ChargeInBField() {
             <text x={0} y={24} fontSize={FONT.axis} fill={PHYSICS_COLORS.axis}>r = mv/(qB)</text>
             <text x={0} y={42} fontSize={FONT.axis} fill={PHYSICS_COLORS.axis}>T = 2πm/(qB)</text>
             <text x={0} y={60} fontSize={FONT.axis} fill={PHYSICS_COLORS.axis}>ω = qB/m</text>
-            <text x={0} y={84} fontSize={FONT.label} fill={PHYSICS_COLORS.forceNet} fontWeight="bold">
+            <text x={0} y={84} fontSize={FONT.label} fill={PHYSICS_COLORS.velocity} fontWeight="bold">
               r = {r.toFixed(3)} m
             </text>
             <text x={0} y={102} fontSize={FONT.label} fill={PHYSICS_COLORS.velocity} fontWeight="bold">

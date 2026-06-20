@@ -822,8 +822,8 @@ sceneScale={{ originX: objCx, originY: objCy, scaleX: 1, scaleY: 1, scale: 1, ma
 
           {/* 观光电梯半透明玻璃 */}
           <linearGradient id="elevator-glass-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={colors.primary[50]} stopOpacity="0.22" />
-            <stop offset="100%" stopColor={colors.primary[200]} stopOpacity="0.06" />
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.glassGrad[0]} stopOpacity="0.22" />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.glassGrad[1]} stopOpacity="0.06" />
           </linearGradient>
 
           {/* 体重计金属底座 */}

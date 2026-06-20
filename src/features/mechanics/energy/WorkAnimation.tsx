@@ -2,7 +2,7 @@ import { useCanvasSize, useViewport } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OPACITY } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OPACITY, withAlpha } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { calculateWorkBasic, calculateWorkAdvanced, classifyWorkType } from '@/physics/work'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
@@ -486,8 +486,8 @@ export default function WorkAnimation() {
         {showVectors && (
           <g transform={`translate(${maxVisibleX - 90}, ${groundY - objH * 2.5})`}>
             <rect width={90} height={28} rx={4} fill={
-              workType === 'positive' ? colors.success[100] :
-              workType === 'negative' ? colors.danger[100] : colors.neutral[50]
+              workType === 'positive' ? withAlpha(PHYSICS_COLORS.work, 0.15) :
+              workType === 'negative' ? withAlpha(PHYSICS_COLORS.heatLoss, 0.15) : colors.neutral[50]
             } stroke={projectionColor} strokeWidth={1} />
             <text x={45} y={18} fontSize={smallFont} fill={projectionColor} fontWeight="bold" textAnchor="middle">
               {workType === 'positive' ? '正功 W>0' : workType === 'negative' ? '负功 W<0' : '不做功 W=0'}

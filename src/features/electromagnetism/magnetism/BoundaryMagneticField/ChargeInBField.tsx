@@ -241,13 +241,13 @@ function VelocityChart() {
               y1={paddingTop}
               x2={currentSvgX}
               y2={zeroY}
-              stroke={colors.danger[500]}
+              stroke={PHYSICS_COLORS.velocity}
               strokeWidth="1"
               strokeDasharray="2,2"
             />
 
             {/* 水平线上的当前红动点 */}
-            <circle cx={currentSvgX} cy={yV} r="5" fill={colors.danger[500]} stroke={colors.neutral.white} strokeWidth="1.5" />
+            <circle cx={currentSvgX} cy={yV} r="5" fill={PHYSICS_COLORS.velocity} stroke={colors.neutral.white} strokeWidth="1.5" />
           </svg>
         )}
       </div>

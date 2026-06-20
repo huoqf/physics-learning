@@ -69,6 +69,23 @@ Canvas/SVG 中每类物理量有固定颜色，详见 `src/theme/physics/colors.
 3. 场景器材材质（如钢珠、滑轨、底座渐变）必须引用 `SCENE_COLORS.materials.*` 的色标数组进行渐变渲染，**禁止任何 HEX 颜色值的硬编码**。
 4. 同屏多个同类物理量（如三种力）必须通过子 Token（`appliedForce`、`lorentzForce`、`forceNet`）实现色相分流，禁止全部指派同一颜色。
 
+### 3.0.1 Canvas 内颜色隔离规则（物理色 vs UI 色）
+
+Canvas/SVG 中的颜色按**语义层级**严格隔离，禁止混用：
+
+| 语义层级 | 颜色来源 | 适用场景 | 示例 |
+|----------|----------|----------|------|
+| **物理量** | `PHYSICS_COLORS.*` | 力、速度、加速度、能量等物理矢量与标注 | `PHYSICS_COLORS.velocity`、`PHYSICS_COLORS.forceNet` |
+| **场景器材** | `SCENE_COLORS.*` | 磁铁、线圈、灯泡、滑轨等器材外观材质 | `SCENE_COLORS.magnet.northFace` |
+| **Canvas 基础设施** | `CANVAS_COLORS.*` | 网格、坐标轴、标注框、物体描边 | `CANVAS_COLORS.grid`、`CANVAS_COLORS.annotation` |
+| **图表** | `CHART_COLORS.*` / `VT_CHART_COLORS.*` 等 | v-t/P-V/U-I 等图表曲线与填充 | `CHART_COLORS.primary` |
+| **UI 教学状态** | `colors.primary/danger/success/warning` | 阶段徽章、平衡/失稳指示、警告横幅等**非物理量**的教学反馈 | 阶段 1 蓝、阶段 2 橙、阶段 3 绿 |
+
+**隔离铁律**：
+1. **物理 Canvas 内禁止使用 UI 色表达物理量**：力、速度、加速度、电动势等物理量的颜色必须且只能来自 `PHYSICS_COLORS.*`，禁止挪用 `colors.primary`（UI 蓝）或 `colors.danger`（UI 红）充当物理量颜色。
+2. **UI 色仅限 Canvas 内的非物理教学元素**：阶段徽章、平衡状态指示、警告横幅、系统分析框等 UI 教学反馈可以使用 `colors.primary/danger/success/warning`，但同一画面中物理量颜色与 UI 教学色不得产生视觉冲突（如同屏的蓝色速度矢量与蓝色阶段徽章）。
+3. **`withAlpha` 半透明派生**：需要半透明变体时使用 `withAlpha(token, alpha)`（从 `@/theme/physics` 引入），禁止手动拼接 `rgba()`。
+
 ### 3.1 球体材质附加规范
 
 1. **统一渲染组件**：所有小球、钢珠、摆球、砝码球、行星等圆球物理实体的渲染，**必须**使用统一公共组件 `<Ball>`（位于 `src/components/Physics/Ball.tsx`）。**禁止**在单个动画页面中手绘圆球图层、SVG `<circle>` 或自造渐变 `<radialGradient>`。

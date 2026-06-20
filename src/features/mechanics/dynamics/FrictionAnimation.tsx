@@ -169,7 +169,7 @@ export default function FrictionAnimation() {
               height={boxSize}
               type="wood"
               label={`m = ${m}kg`}
-              stroke={PHYSICS_COLORS.forceNetArrow}
+              stroke={CANVAS_COLORS.objectStroke}
               strokeWidth={1.8}
             />
 
@@ -305,7 +305,7 @@ export default function FrictionAnimation() {
                 height={boxSize}
                 type="wood"
                 label="m"
-                stroke={PHYSICS_COLORS.forceNetArrow}
+                stroke={CANVAS_COLORS.objectStroke}
                 strokeWidth={1.8}
               />
 

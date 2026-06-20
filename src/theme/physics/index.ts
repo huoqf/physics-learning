@@ -284,3 +284,5 @@ export {
 export type {
   ArrowGeometry,
 } from './arrowStyle'
+
+export { withAlpha } from './colors'

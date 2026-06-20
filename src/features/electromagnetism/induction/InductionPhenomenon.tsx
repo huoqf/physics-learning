@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { calculateMagnetInduction, calculateCoilInduction } from '@/physics'
 import { useAnimationFrame } from '@/utils/animation'
@@ -394,15 +394,15 @@ export default function InductionPhenomenon() {
               {/* 底座 */}
               <rect x={-12} y={-5} width={24} height={10} rx={2} fill={colors.neutral[50]} stroke={colors.neutral[500]} strokeWidth={1} />
               {/* 左触点 */}
-              <circle cx={-10} cy={0} r={3} fill={circuitSwitch ? colors.success[600] : colors.neutral[400]} stroke={colors.neutral[800]} strokeWidth={1} />
+              <circle cx={-10} cy={0} r={3} fill={circuitSwitch ? PHYSICS_COLORS.electricCurrent : colors.neutral[400]} stroke={colors.neutral[800]} strokeWidth={1} />
               {/* 右触点 */}
-              <circle cx={10} cy={0} r={3} fill={circuitSwitch ? colors.success[600] : colors.neutral[400]} stroke={colors.neutral[800]} strokeWidth={1} />
+              <circle cx={10} cy={0} r={3} fill={circuitSwitch ? PHYSICS_COLORS.electricCurrent : colors.neutral[400]} stroke={colors.neutral[800]} strokeWidth={1} />
               {/* 刀闸横杆 */}
               <line
                 x1={-10} y1={0}
                 x2={circuitSwitch ? 10 : 6}
                 y2={circuitSwitch ? 0 : -12}
-                stroke={circuitSwitch ? colors.success[600] : colors.danger[600]}
+                stroke={circuitSwitch ? PHYSICS_COLORS.electricCurrent : CANVAS_COLORS.objectStroke}
                 strokeWidth={2.5}
                 strokeLinecap="round"
               />
@@ -411,7 +411,7 @@ export default function InductionPhenomenon() {
                 cx={circuitSwitch ? 10 : 6}
                 cy={circuitSwitch ? 0 : -12}
                 r={3}
-                fill={circuitSwitch ? colors.success[600] : colors.danger[600]}
+                fill={circuitSwitch ? PHYSICS_COLORS.electricCurrent : CANVAS_COLORS.objectStroke}
                 stroke={colors.neutral[800]}
                 strokeWidth={0.8}
               />

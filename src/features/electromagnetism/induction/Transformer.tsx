@@ -276,7 +276,7 @@ export default function Transformer() {
 
   // ── 动态因果链多米诺高亮（进阶模式，R 变化时触发）──────────────────────
   const chainSteps: ChainStep[] = [
-    { key: 'U1', label: 'U₁', value: U1, unit: 'V', color: PHYSICS_COLORS.electricCurrent },
+    { key: 'U1', label: 'U₁', value: U1, unit: 'V', color: PHYSICS_COLORS.emf },
     { key: 'U2', label: 'U₂', value: U2, unit: 'V', color: PHYSICS_COLORS.magnetSouth },
     { key: 'I2', label: 'I₂', value: I2, unit: 'A', color: PHYSICS_COLORS.magnetSouth },
     { key: 'Pout', label: 'P_out', value: P_output, unit: 'W', color: PHYSICS_COLORS.power },
@@ -612,7 +612,7 @@ export default function Transformer() {
             x={v1X}
             y={meterTopY - meterR - px(4)}
             fontSize={font(FONT.smallSize)}
-            fill={PHYSICS_COLORS.electricCurrent}
+            fill={PHYSICS_COLORS.emf}
             textAnchor="middle"
             fontWeight="bold"
           >

@@ -303,7 +303,7 @@ export default function CollisionAnimation() {
                 E_k末 = {EkAfter.toFixed(1)} J
               </text>
               <text x={0} y={56} fontSize={FONT.axisSize}
-                fill={Math.abs(EkBefore - EkAfter) < 0.1 ? PHYSICS_COLORS.kineticEnergy : PHYSICS_COLORS.forceNet}
+                fill={Math.abs(EkBefore - EkAfter) < 0.1 ? PHYSICS_COLORS.kineticEnergy : PHYSICS_COLORS.heatLoss}
                 fontWeight="bold">
                 {Math.abs(EkBefore - EkAfter) < 0.1 ? '✓ 机械能守恒' : `ΔE_k = ${(EkBefore - EkAfter).toFixed(1)} J（损失）`}
               </text>
@@ -409,7 +409,7 @@ export default function CollisionAnimation() {
               {/* ΔE_k */}
               {deltaEk > 0.01 && (
                 <text x={60} y={COL_LAYOUT.ekBarMaxHeight + 15} fontSize={FONT.smallSize}
-                  fill={PHYSICS_COLORS.forceNet} textAnchor="middle" fontWeight="bold">
+                  fill={PHYSICS_COLORS.heatLoss} textAnchor="middle" fontWeight="bold">
                   ΔE_k = {deltaEk.toFixed(1)} J
                 </text>
               )}
@@ -424,7 +424,7 @@ export default function CollisionAnimation() {
             )}
             {heavyLight && hasCollidedAdv && (
               <text x={canvasSize.width / 2} y={30} fontSize={FONT.bodySize}
-                fill={PHYSICS_COLORS.forceNet} fontWeight="bold" textAnchor="middle">
+                fill={PHYSICS_COLORS.velocity} fontWeight="bold" textAnchor="middle">
                 大撞小：v_B' ≈ 2v_A = {(2 * vA).toFixed(1)} m/s
               </text>
             )}

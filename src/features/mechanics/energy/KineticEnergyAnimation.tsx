@@ -2,7 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CHART_COLORS, CANVAS_STYLE, VECTOR_DISPLAY } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CHART_COLORS, CANVAS_STYLE, VECTOR_DISPLAY, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import {
   precomputeConstantKETrajectory,
@@ -491,13 +491,13 @@ export default function KineticEnergyAnimation() {
             {/* 进阶模式图例说明 */}
             {mode === 1 && (
               <g transform={`translate(${chartRight - 150}, ${ptTop - 10})`}>
-                <line x1={0} y1={3} x2={8} y2={3} stroke={colors.success[600]} strokeWidth={1.5} />
+                <line x1={0} y1={3} x2={8} y2={3} stroke={PHYSICS_COLORS.gravity} strokeWidth={1.5} />
                 <text x={12} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>W重 (重力功)</text>
 
-                <line x1={52} y1={3} x2={60} y2={3} stroke={colors.danger[600]} strokeWidth={1.5} />
+                <line x1={52} y1={3} x2={60} y2={3} stroke={PHYSICS_COLORS.friction} strokeWidth={1.5} />
                 <text x={64} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>W摩 (摩擦功)</text>
 
-                <line x1={104} y1={3} x2={112} y2={3} stroke={colors.primary[600]} strokeWidth={1.5} strokeDasharray="2,2" />
+                <line x1={104} y1={3} x2={112} y2={3} stroke={PHYSICS_COLORS.forceNet} strokeWidth={1.5} strokeDasharray="2,2" />
                 <text x={116} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>W总 (合力功)</text>
               </g>
             )}
@@ -781,7 +781,7 @@ export default function KineticEnergyAnimation() {
             y1={ballCY - tangentDirY * (ballR + 2)}
             x2={ballCX - tangentDirX * (ballR + 18)}
             y2={ballCY - tangentDirY * (ballR + 18)}
-            stroke={colors.danger[500]}
+            stroke={PHYSICS_COLORS.friction}
             strokeWidth={STROKE.vectorThin}
             strokeDasharray={DASH.reference.join(',')}
             opacity={0.8 * (state.v / (v_c > 0 ? v_c : 1))}
@@ -793,8 +793,8 @@ export default function KineticEnergyAnimation() {
            className="cursor-pointer" 
            onClick={() => useAnimationStore.getState().toggleVectors()}>
           <rect width={18} height={18} rx={3} 
-            fill={showVectors ? colors.primary[100] : colors.neutral[100]} 
-            stroke={showVectors ? colors.primary[600] : colors.neutral[300]} 
+            fill={showVectors ? CANVAS_COLORS.annotation : colors.neutral[100]} 
+            stroke={showVectors ? CANVAS_COLORS.annotation : colors.neutral[300]} 
             strokeWidth={0.8} />
           {/* 速度箭头图标 */}
           <line x1={4} y1={13} x2={14} y2={5} 
@@ -973,12 +973,12 @@ export default function KineticEnergyAnimation() {
         {mode === 1 && (
           <g transform={`translate(${padding}, ${canvasSize.height * 0.75})`}>
             <rect width={80} height={18} rx={3} fill={
-              state.phase === 0 ? colors.primary[100] : colors.success[100]
+              state.phase === 0 ? colors.primary[100] : colors.warning[100]
             } stroke={
-              state.phase === 0 ? colors.primary[600] : colors.success[600]
+              state.phase === 0 ? colors.primary[600] : colors.warning[600]
             } strokeWidth={0.8} />
             <text x={40} y={12} fontSize={smallFont} fontWeight="bold" textAnchor="middle" fill={
-              state.phase === 0 ? colors.primary[700] : colors.success[700]
+              state.phase === 0 ? colors.primary[700] : colors.warning[700]
             }>
               {state.phase === 0 ? '曲面下滑中' : '水平滑行中'}
             </text>

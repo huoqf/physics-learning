@@ -800,8 +800,8 @@ export default function CuttingEMF() {
                 y={px(15)}
                 width={px(200)}
                 height={px(25)}
-                fill={colors.danger[50]}
-                stroke={colors.danger[300]}
+                fill={withAlpha(PHYSICS_COLORS.forceArrowRed, 0.08)}
+                stroke={withAlpha(PHYSICS_COLORS.forceArrowRed, 0.3)}
                 strokeWidth={1.5}
                 rx={px(4)}
               />
@@ -809,7 +809,7 @@ export default function CuttingEMF() {
                 x={canvasSize.width / 2}
                 y={px(27.5)}
                 fontSize={font(10)}
-                fill={colors.danger[600]}
+                fill={PHYSICS_COLORS.forceArrowRed}
                 fontWeight="bold"
                 textAnchor="middle"
                 dominantBaseline="middle"

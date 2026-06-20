@@ -7,7 +7,7 @@ import { GRAVITATIONAL_CONSTANT, EARTH_MASS, EARTH_RADIUS } from '@/physics/cons
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
-import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
 const LAYOUT = {
@@ -828,8 +828,8 @@ export default function SatelliteAnimation() {
                     strokeDasharray="2,2"
                     opacity={0.3}
                   />
-                  <circle cx={targetX} cy={targetY} r={3.5} fill={colors.success[500]} />
-                  <text x={targetX + 8} y={targetY - 5} fontSize="9" fill={colors.success[500]} fontWeight="bold" textAnchor="start">预定入轨点</text>
+                  <circle cx={targetX} cy={targetY} r={3.5} fill={CANVAS_COLORS.referencePoint} />
+                  <text x={targetX + 8} y={targetY - 5} fontSize="9" fill={CANVAS_COLORS.referencePoint} fontWeight="bold" textAnchor="start">预定入轨点</text>
                 </g>
               )
             })()}
@@ -1002,7 +1002,7 @@ export default function SatelliteAnimation() {
                 x={120}
                 y={18}
                 fontSize={font(9)}
-                fill={colors.success[600]}
+                fill={CANVAS_COLORS.labelText}
                 textAnchor="middle"
                 fontWeight="bold"
                 fontFamily="PingFang SC, sans-serif"
@@ -1080,10 +1080,10 @@ export default function SatelliteAnimation() {
                   })()}
                 </g>
                 <rect width={220} height={120} fill="none" stroke={colors.neutral[700]} strokeWidth={1} rx={4} pointerEvents="none" />
-                <text x={8} y={14} fontSize={font(6)} fill={colors.success[500]} fontFamily="monospace" opacity={0.85}>
+                <text x={8} y={14} fontSize={font(6)} fill={CANVAS_COLORS.labelTextLight} fontFamily="monospace" opacity={0.85}>
                   ZOOM: 4.0X
                 </text>
-                <text x={212} y={14} fontSize={font(6)} fill={colors.success[500]} fontFamily="monospace" textAnchor="end" opacity={0.85}>
+                <text x={212} y={14} fontSize={font(6)} fill={CANVAS_COLORS.labelTextLight} fontFamily="monospace" textAnchor="end" opacity={0.85}>
                   {launchData.phase === 'liftoff' ? 'LIFTOFF' : launchData.phase === 'gravityTurn' ? 'G-TURN' : 'IN_ORBIT'}
                 </text>
               </g>
@@ -1163,8 +1163,8 @@ export default function SatelliteAnimation() {
 
                   {/* 三阶段背景填充 */}
                   <rect x={x0} y={vtPT} width={x3 - x0} height={vtIH} fill={colors.neutral[50]} opacity={0.5} />
-                  <rect x={x3} y={vtPT} width={x8 - x3} height={vtIH} fill={colors.primary[50]} opacity={0.5} />
-                  <rect x={x8} y={vtPT} width={x15 - x8} height={vtIH} fill={colors.success[50]} opacity={0.5} />
+                  <rect x={x3} y={vtPT} width={x8 - x3} height={vtIH} fill={CHART_COLORS.areaFill} opacity={0.5} />
+                  <rect x={x8} y={vtPT} width={x15 - x8} height={vtIH} fill={CHART_COLORS.areaFillAlt} opacity={0.5} />
 
                   {/* 阶段垂直线 */}
                   <line x1={x3} y1={vtPT} x2={x3} y2={vtPT + vtIH} stroke={colors.neutral[300]} strokeWidth={0.8} strokeDasharray="2,2" />
@@ -1172,8 +1172,8 @@ export default function SatelliteAnimation() {
 
                   {/* 区域文字 */}
                   <text x={x0 + (x3 - x0)/2} y={vtPT + 10 * fontScale} fontSize={6 * fontScale} fill={colors.neutral[500]} textAnchor="middle">发射示意</text>
-                  <text x={x3 + (x8 - x3)/2} y={vtPT + 10 * fontScale} fontSize={6 * fontScale} fill={colors.primary[500]} textAnchor="middle">转弯示意</text>
-                  <text x={x8 + (x15 - x8)/2} y={vtPT + 10 * fontScale} fontSize={6 * fontScale} fill={colors.success[500]} textAnchor="middle">轨道运动</text>
+                  <text x={x3 + (x8 - x3)/2} y={vtPT + 10 * fontScale} fontSize={6 * fontScale} fill={CHART_COLORS.primary} textAnchor="middle">转弯示意</text>
+                  <text x={x8 + (x15 - x8)/2} y={vtPT + 10 * fontScale} fontSize={6 * fontScale} fill={CHART_COLORS.compareA} textAnchor="middle">轨道运动</text>
 
                   {/* 坐标轴 */}
                   <line x1={vtPL - 4 * fontScale} y1={vtPT + vtIH} x2={vtPL + vtIW + 6 * fontScale} y2={vtPT + vtIH} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} />

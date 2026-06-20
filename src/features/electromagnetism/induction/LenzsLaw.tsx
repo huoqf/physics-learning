@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_STYLE, CANVAS_COLORS } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { calculateLenzsLaw } from '@/physics'
 import { useAnimationFrame } from '@/utils/animation'
@@ -250,7 +250,7 @@ export default function LenzsLaw() {
             height="35" 
             fill={magnetPole > 0 ? PHYSICS_COLORS.magnetNorth : PHYSICS_COLORS.magnetSouth} 
             rx="4" 
-            stroke={isDragging ? PHYSICS_COLORS.forceNet : undefined}
+            stroke={isDragging ? CANVAS_COLORS.referencePoint : undefined}
             strokeWidth={CANVAS_STYLE.stroke.objectThin}
           />
           <text x="25" y="22" textAnchor="middle" fill={PHYSICS_COLORS.objectFill} fontWeight={CANVAS_STYLE.font.labelWeight} fontSize={CANVAS_STYLE.font.bodySize}>
@@ -263,7 +263,7 @@ export default function LenzsLaw() {
             height="35"
             fill={magnetPole > 0 ? PHYSICS_COLORS.magnetSouth : PHYSICS_COLORS.magnetNorth}
             rx="4"
-            stroke={isDragging ? PHYSICS_COLORS.forceNet : undefined}
+            stroke={isDragging ? CANVAS_COLORS.referencePoint : undefined}
             strokeWidth={CANVAS_STYLE.stroke.objectThin}
           />
           <text x="25" y="57" textAnchor="middle" fill={PHYSICS_COLORS.objectFill} fontWeight={CANVAS_STYLE.font.labelWeight} fontSize={CANVAS_STYLE.font.bodySize}>
@@ -310,7 +310,7 @@ export default function LenzsLaw() {
         {/* --- 8. 能量转化提示 --- */}
         {lenzResult.forceType && (
           <g>
-            <text x={cx} y={cy + 130} textAnchor="middle" fill={PHYSICS_COLORS.forceNet} fontSize={CANVAS_STYLE.font.bodySize} fontWeight="bold">
+            <text x={cx} y={cy + 130} textAnchor="middle" fill={PHYSICS_COLORS.lorentzForce} fontSize={CANVAS_STYLE.font.bodySize} fontWeight="bold">
               来拒去留：阻碍相对运动
             </text>
             <text x={cx} y={cy + 155} textAnchor="middle" fill={PHYSICS_COLORS.kineticEnergy} fontSize={CANVAS_STYLE.font.labelSize} fontWeight="bold">

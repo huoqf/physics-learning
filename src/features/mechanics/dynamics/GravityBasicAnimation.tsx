@@ -368,7 +368,7 @@ export const GravityBasicAnimation: FC = () => {
                 <text
                   x={earthData.objX + earthData.Gx + (earthData.Gx > 0 ? 6 : -18)}
                   y={earthData.objY - earthData.Gy + (earthData.Gy > 0 ? 12 : -4)}
-                  fontSize={FONT.axisSize} fill={PHYSICS_COLORS.forceNet} fontWeight="bold"
+                  fontSize={FONT.axisSize} fill={PHYSICS_COLORS.gravity} fontWeight="bold"
                 >
                   G (重力)
                 </text>

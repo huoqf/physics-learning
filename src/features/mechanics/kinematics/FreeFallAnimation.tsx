@@ -550,7 +550,7 @@ export default function FreeFallAnimation() {
               strokeWidth={STROKE.vectorSub}
             />
             <text x={ballX + 28} y={Math.max(renderYA - ffSceneScale.maxVectorLength * 0.2, originY + 5)}
-              fontSize={FONT.small} fill={PHYSICS_COLORS.forceNet} fontWeight="bold">f</text>
+              fontSize={FONT.small} fill={PHYSICS_COLORS.airResistance} fontWeight="bold">f</text>
           </g>
         )}
         {showVectors && !isLandedB && stateB.fDrag > 0.001 && (

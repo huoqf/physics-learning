@@ -18,7 +18,7 @@ import { useRef, useMemo, useCallback, useState } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, CANVAS_STYLE, TRANSMISSION_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_STYLE, TRANSMISSION_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculatePowerTransmission } from '@/physics'
 import { useAnimationFrame } from '@/utils/animation'
@@ -445,13 +445,13 @@ export default function PowerTransmission() {
               strokeWidth={px(1.5)} />
             <g transform={`rotate(${bladeAngle}, 0, 0)`}>
               <line x1={0} y1={-px(16)} x2={0} y2={-px(4)}
-                stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={px(2)} strokeLinecap="round" />
+                stroke={CANVAS_COLORS.objectStroke} strokeWidth={px(2)} strokeLinecap="round" />
               <line x1={0} y1={px(4)} x2={px(14)} y2={px(12)}
-                stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={px(2)} strokeLinecap="round" />
+                stroke={CANVAS_COLORS.objectStroke} strokeWidth={px(2)} strokeLinecap="round" />
               <line x1={0} y1={px(4)} x2={-px(14)} y2={px(12)}
-                stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={px(2)} strokeLinecap="round" />
+                stroke={CANVAS_COLORS.objectStroke} strokeWidth={px(2)} strokeLinecap="round" />
               <circle cx={0} cy={0} r={px(4)}
-                fill={PHYSICS_COLORS.electricCurrent} />
+                fill={CANVAS_COLORS.objectStroke} />
             </g>
             <text x={0} y={px(40)} fontSize={font(12)}
               fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">

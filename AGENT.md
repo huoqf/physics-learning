@@ -45,7 +45,7 @@
 | 物理量颜色（速度/力/能量等） | `import { PHYSICS_COLORS } from '@/theme/physics'` |
 | 场景器材外观色（磁铁/线圈/灯泡/电学器材等） | `import { SCENE_COLORS } from '@/theme/physics'` |
 | 图表配色（v-t/P-V/U-I 等） | `import { CHART_COLORS, VT_CHART_COLORS, ... } from '@/theme/physics'` |
-| 半透明颜色工具 | `import { withAlpha } from '@/theme/physics/colors'` |
+| 半透明颜色工具 | `import { withAlpha } from '@/theme/physics'` |
 | Canvas/SVG 绘制规范 | `import { CANVAS_STYLE, SVG_ATTR } from '@/theme/physics'` |
 | 间距 / 布局 / 断点 | `import { LAYOUT, spacing, BREAKPOINT, PANEL } from '@/theme/spacing'` |
 | 动效 duration / easing | `import { duration, easing, transition } from '@/theme/motion'` |

@@ -434,14 +434,14 @@ function ThreeChargeMode({
 
               <circle cx={pos.x} cy={pos.y} r={chargeR}
                 fill={qVal >= 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
-                stroke={isQ3 && !isBalanced ? PHYSICS_COLORS.electricCurrent : PHYSICS_COLORS.objectStroke}
+                stroke={isQ3 && !isBalanced ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.objectStroke}
                 strokeWidth={isQ3 && !isBalanced ? CANVAS_STYLE.stroke.vectorMain : CANVAS_STYLE.stroke.objectLine}
                 style={{ cursor: isQ3 ? 'grab' : 'default' }}
                 onMouseDown={isQ3 ? handleMouseDown : undefined} />
 
               {isQ3 && !isBalanced && (
                 <circle cx={pos.x} cy={pos.y} r={chargeR + 4}
-                  fill="none" stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={1.5} opacity={0.6}>
+                  fill="none" stroke={PHYSICS_COLORS.forceArrowRed} strokeWidth={1.5} opacity={0.6}>
                   <animate attributeName="r" values={`${chargeR + 2};${chargeR + 6};${chargeR + 2}`} dur="1s" repeatCount="indefinite" />
                   <animate attributeName="opacity" values="0.6;0.2;0.6" dur="1s" repeatCount="indefinite" />
                 </circle>
@@ -475,7 +475,7 @@ function ThreeChargeMode({
         {noEquilibrium && !isBalanced && (
           <g>
             <rect x={w / 2 - 80} y={h * 0.75 - 12} width={160} height={36} rx={8}
-              fill={PHYSICS_COLORS.electricCurrent} opacity={0.9} />
+              fill={PHYSICS_COLORS.forceArrowRed} opacity={0.9} />
             <text x={w / 2} y={h * 0.75 + 10} fontSize={CANVAS_STYLE.font.labelSize} fill={colors.neutral.white} textAnchor="middle" fontWeight="bold">
               该电荷配置无法平衡
             </text>

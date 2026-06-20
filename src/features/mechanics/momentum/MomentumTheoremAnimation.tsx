@@ -437,7 +437,7 @@ export default function MomentumTheoremAnimation() {
                   x={plateX - springCompression - 10 - mapForceBar(impactForce) / 2}
                   y={(plateTopY + plateBottomY) / 2 - 10}
                   fontSize={FONT.smallSize}
-                  fill={PHYSICS_COLORS.forceNet}
+                  fill={PHYSICS_COLORS.appliedForce}
                   fontWeight="bold"
                   textAnchor="middle"
                 >

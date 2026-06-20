@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { Rails } from '@/components/Physics/Rails'
 import { ConductingRod } from '@/components/Physics/ConductingRod'
@@ -230,8 +230,8 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
             y={cy - railH / 2 - 27}
             width="100"
             height="11"
-            fill={colors.danger[50]}
-            stroke={colors.danger[300]}
+            fill={withAlpha(PHYSICS_COLORS.forceArrowRed, 0.08)}
+            stroke={withAlpha(PHYSICS_COLORS.forceArrowRed, 0.3)}
             strokeWidth="0.8"
             rx="3"
           />
@@ -239,7 +239,7 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
             x={cx}
             y={cy - railH / 2 - 20}
             fontSize="5.5"
-            fill={colors.danger[600]}
+            fill={PHYSICS_COLORS.forceArrowRed}
             fontWeight="bold"
             textAnchor="middle"
             dominantBaseline="middle"
