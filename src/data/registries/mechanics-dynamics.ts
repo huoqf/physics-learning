@@ -32,10 +32,9 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     paramMeta: [
       { key: 'latitude', label: '地理纬度 φ', min: 0, max: 90, step: 1, unit: '°', showIf: 'mode', showIfValue: 0 },
       { key: 'omegaScale', label: '自转向心力放大', min: 1, max: 150, step: 5, unit: '倍', showIf: 'mode', showIfValue: 0 },
-      { key: 'showWeight', label: '启用黄铜配重', min: 0, max: 1, step: 1, unit: '0=无配重 1=有配重', showIf: 'mode', showIfValue: 1 },
-      { key: 'weightMass', label: '配重相对质量 M', min: 0.2, max: 2.0, step: 0.1, unit: '倍', showIf: 'mode', showIfValue: 1 },
-      { key: 'weightX', label: '配重位置 X', min: -55, max: 55, step: 2, unit: '', showIf: 'mode', showIfValue: 1 },
-      { key: 'weightY', label: '配重位置 Y', min: -40, max: 40, step: 2, unit: '', showIf: 'mode', showIfValue: 1 },
+      { key: 'weightMass', label: '配重相对质量 M', min: 0.2, max: 2.0, step: 0.1, unit: '倍', showIf: 'showWeight', showIfValue: 1 },
+      { key: 'weightX', label: '配重位置 X', min: -55, max: 55, step: 2, unit: '', showIf: 'showWeight', showIfValue: 1 },
+      { key: 'weightY', label: '配重位置 Y', min: -40, max: 40, step: 2, unit: '', showIf: 'showWeight', showIfValue: 1 },
     ],
     SidebarExtra: lazy(() => import('@/features/mechanics/dynamics/GravityBasicSidebar')),
   },

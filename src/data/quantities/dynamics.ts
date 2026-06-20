@@ -475,7 +475,41 @@ export function buildDynamicsQuantities(
           ]
         }
       }
-      return null
+
+      // mode=1: 悬挂法重心实验
+      const suspendPoint = params.suspendPoint ?? 0
+      const showWeight = params.showWeight ?? 0
+      const weightMass = params.weightMass ?? 1.2
+
+      const baseCenterX = 5, baseCenterY = 5
+      let centerX = baseCenterX, centerY = baseCenterY
+      if (showWeight === 1) {
+        const totalMass = 1.0 + weightMass
+        centerX = (baseCenterX * 1.0 + (params.weightX ?? 25) * weightMass) / totalMass
+        centerY = (baseCenterY * 1.0 + (params.weightY ?? 25) * weightMass) / totalMass
+      }
+
+      return {
+        quantities: [
+          ...base,
+          { label: '当前悬挂孔', value: `A${suspendPoint + 1}`, unit: '' },
+          { label: '重心 C 坐标', value: `(${centerX.toFixed(1)}, ${centerY.toFixed(1)})`, unit: '本地单位' },
+          { label: '配重状态', value: showWeight === 1 ? '已启用' : '未启用', unit: '' },
+          ...(showWeight === 1 ? [
+            { label: '配重质量 M', value: weightMass.toFixed(1), unit: '倍板质量' },
+          ] : []),
+        ],
+        formulas: [
+          { name: '悬挂法原理', latex: '平衡时重心在悬挂点正下方', level: 'core', condition: '薄板自由悬挂静止后' },
+          { name: '重心定义', latex: '\\vec{r}_C = \\frac{\\sum m_i \\vec{r}_i}{\\sum m_i}', level: 'important', condition: '质量分布确定时重心唯一' },
+          { name: '确定重心', latex: '两条悬挂线交点 = 重心', level: 'core', condition: '不同悬挂点各画一条铅垂线' },
+        ],
+        gaokaoPoints: [
+          { text: '悬挂法找重心：从不同点悬挂薄板，静止后沿悬挂线画铅垂线，交点即重心。', importance: 'core' as const },
+          { text: '重心不一定在物体上（如空心环、不规则薄板）。', importance: 'gaokao' as const },
+          { text: '重心位置与悬挂点无关，由质量分布唯一确定。', importance: 'core' as const },
+        ],
+      }
     }
 
     case 'anim-gravity': {

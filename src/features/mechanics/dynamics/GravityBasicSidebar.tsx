@@ -6,6 +6,7 @@ export default function GravityBasicSidebar({ params, updateParam, animationActi
   const mode = params.mode ?? 0
   const suspendPoint = params.suspendPoint ?? 0
   const showLines = params.showLines ?? 1
+  const showWeight = params.showWeight ?? 0
   const latitude = params.latitude ?? 45
   const omegaScale = params.omegaScale ?? 80
 
@@ -87,6 +88,13 @@ export default function GravityBasicSidebar({ params, updateParam, animationActi
               ))}
             </div>
           </div>
+
+          <ToggleSwitch
+            checked={showWeight === 1}
+            onChange={(checked) => updateParam('showWeight', checked ? 1 : 0)}
+            label="启用黄铜配重"
+            disabled={disabled}
+          />
 
           <ToggleSwitch
             checked={showLines === 1}
