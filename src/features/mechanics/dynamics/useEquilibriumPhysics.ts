@@ -289,7 +289,7 @@ export function useEquilibriumPhysics({
     const isOverloaded = t1 > 35 || t2 > 35
 
     // 固定 forceScale：按最大质量和可用下方空间推导，不随当前力变化
-    const MAX_MASS = 10
+    const MAX_MASS = 5
     const maxGravity = MAX_MASS * GRAVITY
     const availableGLength = canvasHeight - 10 - ballCenter.cy - 24
     const forceScale = availableGLength / maxGravity
