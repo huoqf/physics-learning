@@ -8,6 +8,8 @@ import { stepBrownianMotion } from '@/physics/brownianMotion'
 import { THERMO_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { THERMAL_COLORS } from '@/theme/physics/sceneColors'
 import { colors } from '@/theme/colors'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import type { SceneScale } from '@/scene/SceneScale'
 
 interface ParticleState {
   x: number
@@ -57,7 +59,7 @@ export default function BrownianMotion() {
   )
 
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 400 })
-  const { width, height } = canvasSize
+  const { width, height, font } = canvasSize
 
   const mode = params.mode ?? 0
   const temperature = params.temperature ?? 300
@@ -182,6 +184,16 @@ export default function BrownianMotion() {
   const forceScale = scale * 8
   const forceArrowLen = Math.min(forceMagnitude * forceScale, 60)
 
+  const sceneScale: SceneScale = {
+    scaleX: scale,
+    scaleY: scale,
+    scale,
+    originX: width / 2,
+    originY: height / 2,
+    maxVectorLength: 60,
+    refMagnitudes: {},
+  }
+
   // 分子像素坐标
   const moleculePixels = mode === 1 && showMolecules === 1
     ? moleculesRef.current.map((mol) => {
@@ -204,12 +216,12 @@ export default function BrownianMotion() {
             <stop offset="100%" stopColor={THERMAL_COLORS.beakerFill} stopOpacity={0.6} />
           </linearGradient>
           <radialGradient id="pollen-grad" cx="40%" cy="35%">
-            <stop offset="0%" stopColor="#FDE68A" />
-            <stop offset="60%" stopColor="#F59E0B" />
-            <stop offset="100%" stopColor="#D97706" />
+            <stop offset="0%" stopColor={colors.accent[200]} />
+            <stop offset="60%" stopColor={colors.accent[500]} />
+            <stop offset="100%" stopColor={colors.accent[600]} />
           </radialGradient>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="2" result="blur" />
+          <filter id={CANVAS_STYLE.SVG_FILTER.glow.id}>
+            <feGaussianBlur stdDeviation={CANVAS_STYLE.SVG_FILTER.glow.stdDeviation} result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
@@ -260,31 +272,14 @@ export default function BrownianMotion() {
 
         {/* 合力矢量箭头（进阶模式） */}
         {mode === 1 && forceArrowLen > 2 && (
-          <g>
-            <line
-              x1={px}
-              y1={py}
-              x2={px + (force.fx / forceMagnitude) * forceArrowLen}
-              y2={py + (force.fy / forceMagnitude) * forceArrowLen}
-              stroke={THERMO_COLORS.heatAbsorb}
-              strokeWidth={2.5}
-              strokeLinecap="round"
-            />
-            <polygon
-              points={(() => {
-                const angle = Math.atan2(force.fy, force.fx)
-                const headLen = 8
-                const tx = px + (force.fx / forceMagnitude) * forceArrowLen
-                const ty = py + (force.fy / forceMagnitude) * forceArrowLen
-                const p1x = tx - headLen * Math.cos(angle - Math.PI / 6)
-                const p1y = ty - headLen * Math.sin(angle - Math.PI / 6)
-                const p2x = tx - headLen * Math.cos(angle + Math.PI / 6)
-                const p2y = ty - headLen * Math.sin(angle + Math.PI / 6)
-                return `${tx},${ty} ${p1x},${p1y} ${p2x},${p2y}`
-              })()}
-              fill={THERMO_COLORS.heatAbsorb}
-            />
-          </g>
+          <VectorArrow
+            origin={{ x: particleRef.current.x, y: particleRef.current.y }}
+            vector={{ x: force.fx, y: force.fy }}
+            type="force"
+            sceneScale={sceneScale}
+            color={THERMO_COLORS.heatAbsorb}
+            pixelLength={forceArrowLen}
+          />
         )}
 
         {/* 温度标签 */}
@@ -292,7 +287,7 @@ export default function BrownianMotion() {
           x={12}
           y={24}
           fill={colors.neutral[600]}
-          fontSize={CANVAS_STYLE.FONT.label}
+          fontSize={font(CANVAS_STYLE.FONT.label)}
           fontFamily={CANVAS_STYLE.FONT.family}
         >
           T = {temperature} K

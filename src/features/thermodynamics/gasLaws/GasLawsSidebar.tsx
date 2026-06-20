@@ -1,5 +1,5 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { SegmentedControl } from '@/components/UI'
+import { SegmentedControl, TipCard } from '@/components/UI'
 import { Slider } from '@/components/UI'
 
 export default function GasLawsSidebar({
@@ -67,13 +67,11 @@ export default function GasLawsSidebar({
       />
 
       {/* 提示信息 */}
-      <div className="mt-2 p-3 bg-primary-50 border border-primary-200 rounded-lg">
-        <p className="text-xs text-primary-700 font-medium">
-          {mode === 0 && '锁定温度 T，拖动体积 V，观察压强 P 变化'}
-          {mode === 1 && '锁定压强 P（恒定砝码），拖动温度 T，观察体积 V 变化'}
-          {mode === 2 && '锁定体积 V（固定活塞），拖动温度 T，观察压强 P 变化'}
-        </p>
-      </div>
+      <TipCard>
+        {mode === 0 && '锁定温度 T，拖动体积 V，观察压强 P 变化'}
+        {mode === 1 && '锁定压强 P（恒定砝码），拖动温度 T，观察体积 V 变化'}
+        {mode === 2 && '锁定体积 V（固定活塞），拖动温度 T，观察压强 P 变化'}
+      </TipCard>
     </div>
   )
 }

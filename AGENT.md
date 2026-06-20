@@ -2,6 +2,7 @@
 
 > **面向 AI Agent / Trae VIBE CODE 的执行入口。**
 > 核心规范已整合至 `.trae/rules/project_rules.md`（Trae IDE 自动加载），本文件保留按需加载索引与任务标记约定。
+> **开发环境**：便携版 Node.js 位于 `D:\node-v24`，编译/安装依赖时需加入 PATH。
 
 ---
 

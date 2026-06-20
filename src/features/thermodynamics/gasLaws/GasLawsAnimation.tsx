@@ -215,7 +215,7 @@ export default function GasLawsAnimation() {
           height={12}
           fill={THERMO_COLORS.volume}
           stroke={THERMO_COLORS.volume}
-          strokeWidth={1.5}
+          strokeWidth={STROKE.objectThin}
           rx={2}
           opacity={0.9}
         />
@@ -235,7 +235,7 @@ export default function GasLawsAnimation() {
                   x2={ax}
                   y2={ay - 12}
                   stroke={THERMO_COLORS.pressure}
-                  strokeWidth={2}
+                  strokeWidth={STROKE.objectLine}
                   strokeLinecap="round"
                 />
                 <polygon
@@ -437,7 +437,7 @@ export default function GasLawsAnimation() {
           x2={plotX + plotW}
           y2={plotY + plotH}
           stroke={CHART_COLORS.axisLine}
-          strokeWidth={1}
+          strokeWidth={STROKE.axis}
         />
         <line
           x1={plotX}
@@ -445,7 +445,7 @@ export default function GasLawsAnimation() {
           x2={plotX}
           y2={plotY + plotH}
           stroke={CHART_COLORS.axisLine}
-          strokeWidth={1}
+          strokeWidth={STROKE.axis}
         />
 
         {/* 曲线 */}
@@ -465,7 +465,7 @@ export default function GasLawsAnimation() {
           r={5}
           fill={PV_CHART_COLORS.statePointFill}
           stroke={PV_CHART_COLORS.statePoint}
-          strokeWidth={1.5}
+          strokeWidth={STROKE.chartSub}
         />
 
         {/* X 轴刻度 */}
@@ -474,7 +474,7 @@ export default function GasLawsAnimation() {
           const x = toPlotX(val)
           return (
             <g key={`xt-${i}`}>
-              <line x1={x} y1={plotY + plotH} x2={x} y2={plotY + plotH + 3}               stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
+              <line x1={x} y1={plotY + plotH} x2={x} y2={plotY + plotH + 3}               stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
               <text x={x} y={plotY + plotH + FONT.small + 4} fontSize={font(9)} fill={CHART_COLORS.tickLabel} textAnchor="middle" fontFamily={FONT.family}>
                 {mode === 0 ? val.toExponential(1) : val.toFixed(0)}
               </text>
@@ -487,7 +487,7 @@ export default function GasLawsAnimation() {
           const y = toPlotY(val)
           return (
             <g key={`yt-${i}`}>
-              <line x1={plotX - 3} y1={y} x2={plotX} y2={y}               stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
+              <line x1={plotX - 3} y1={y} x2={plotX} y2={y}               stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
               <text x={plotX - 5} y={y + 3} fontSize={font(9)} fill={CHART_COLORS.tickLabel} textAnchor="end" fontFamily={FONT.family}>
                 {val > 1000 ? (val / 1000).toFixed(0) + 'k' : val.toFixed(mode === 0 ? 1 : 3)}
               </text>

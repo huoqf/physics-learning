@@ -355,7 +355,7 @@ export default function SecondLawAnimation() {
               textAnchor="middle"
               fontFamily={FONT.family}
             >
-              ⚠️ 非自发过程：违反热力学第二定律
+              非自发过程：违反热力学第二定律
             </text>
             <text
               x={width / 2}

@@ -3,6 +3,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { Card, MiniChart } from '@/components/UI'
 import { SECOND_LAW_COLORS } from '@/theme/physics/secondLawColors'
+import { colors } from '@/theme/colors'
 
 const MAX_POINTS = 200
 
@@ -72,7 +73,7 @@ export default function SecondLawCenterExtra() {
         staticLines={[
           {
             value: 1,
-            color: '#94A3B8',
+            color: colors.neutral[400],
             strokeDasharray: '4 2',
             name: '完全无序',
           },

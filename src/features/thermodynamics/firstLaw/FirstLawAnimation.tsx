@@ -246,7 +246,7 @@ export default function FirstLawAnimation() {
           height={12}
           fill={THERMO_COLORS.volume}
           stroke={THERMO_COLORS.volume}
-          strokeWidth={1.5}
+          strokeWidth={STROKE.objectThin}
           rx={2}
           opacity={0.9}
         />
@@ -263,7 +263,7 @@ export default function FirstLawAnimation() {
                 <line
                   x1={ax} y1={ay} x2={ax} y2={ay - 14}
                   stroke={FIRST_LAW_COLORS.work}
-                  strokeWidth={2.5}
+                  strokeWidth={STROKE.objectLine}
                   strokeLinecap="round"
                 />
                 <polygon
@@ -384,7 +384,7 @@ export default function FirstLawAnimation() {
           x2={plotX + plotW}
           y2={zeroY}
           stroke={colors.neutral[400]}
-          strokeWidth={1}
+          strokeWidth={STROKE.reference}
           strokeDasharray="4 2"
         />
         <text

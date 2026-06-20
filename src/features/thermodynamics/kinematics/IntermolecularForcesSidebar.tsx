@@ -17,17 +17,6 @@ export default function IntermolecularForcesSidebar({
 
   return (
     <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-neutral-200">
-      <SegmentedControl
-        label="演示模式"
-        options={[
-          { value: 0, label: '基础：力的合成分解' },
-          { value: 1, label: '进阶：力与势能关联' },
-        ]}
-        value={mode}
-        onChange={handleModeChange}
-        disabled={disabled}
-      />
-
       <ToggleSwitch
         label="自动释放动画"
         checked={autoRelease === 1}
@@ -45,6 +34,17 @@ export default function IntermolecularForcesSidebar({
           </p>
         </div>
       )}
+
+      <SegmentedControl
+        label="演示模式"
+        options={[
+          { value: 0, label: '基础：力的合成分解' },
+          { value: 1, label: '进阶：力与势能关联' },
+        ]}
+        value={mode}
+        onChange={handleModeChange}
+        disabled={disabled}
+      />
 
       {mode === 1 && (
         <div className="mt-2 p-3 bg-violet-50 border border-violet-200 rounded-lg">

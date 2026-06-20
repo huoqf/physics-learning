@@ -129,9 +129,9 @@ export default function FirstLawCenterExtra() {
 
         {/* 坐标轴 */}
         <line x1={plotX} y1={plotY + plotH} x2={plotX + plotW} y2={plotY + plotH}
-          stroke={CHART_COLORS.axisLine} strokeWidth={1.2} />
+          stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axis} />
         <line x1={plotX} y1={plotY} x2={plotX} y2={plotY + plotH}
-          stroke={CHART_COLORS.axisLine} strokeWidth={1.2} />
+          stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axis} />
 
         {/* 循环路径 */}
         <path d={cyclePathD} fill="none" stroke={CHART_COLORS.primary}
@@ -147,7 +147,7 @@ export default function FirstLawCenterExtra() {
               x1={toPlotX(from.V)} y1={toPlotY(from.P)}
               x2={toPlotX(to.V)} y2={toPlotY(to.P)}
               stroke={STEP_COLORS[i]}
-              strokeWidth={i === stepIndex ? STROKE.chartMain + 2 : 1}
+              strokeWidth={i === stepIndex ? STROKE.chartMain + 2 : STROKE.chartRef}
               opacity={i === stepIndex ? 1 : 0.3}
             />
           )
@@ -161,7 +161,7 @@ export default function FirstLawCenterExtra() {
             <g key={`corner-${i}`}>
               <circle cx={cx} cy={cy} r={5}
                 fill={PV_CHART_COLORS.statePointFill}
-                stroke={PV_CHART_COLORS.statePoint} strokeWidth={1.5} />
+                stroke={PV_CHART_COLORS.statePoint} strokeWidth={STROKE.chartSub} />
               <text
                 x={cx + 8} y={cy - 8}
                 fontSize={font(11)}
@@ -182,7 +182,7 @@ export default function FirstLawCenterExtra() {
           r={7}
           fill={STEP_COLORS[stepIndex]}
           stroke="#fff"
-          strokeWidth={2}
+          strokeWidth={STROKE.chartSub}
         />
 
         {/* 过程箭头方向 */}
@@ -213,7 +213,7 @@ export default function FirstLawCenterExtra() {
           return (
             <g key={`xt-${i}`}>
               <line x1={x} y1={plotY + plotH} x2={x} y2={plotY + plotH + 4}
-                stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
+                stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
               <text x={x} y={plotY + plotH + FONT.small + 8} fontSize={font(9)}
                 fill={CHART_COLORS.tickLabel} textAnchor="middle" fontFamily={FONT.family}>
                 {val.toExponential(1)}
@@ -228,7 +228,7 @@ export default function FirstLawCenterExtra() {
           return (
             <g key={`yt-${i}`}>
               <line x1={plotX - 4} y1={y} x2={plotX} y2={y}
-                stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
+                stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
               <text x={plotX - 8} y={y + 3} fontSize={font(9)}
                 fill={CHART_COLORS.tickLabel} textAnchor="end" fontFamily={FONT.family}>
                 {val > 1000 ? (val / 1000).toFixed(0) + 'k' : val.toFixed(0)}

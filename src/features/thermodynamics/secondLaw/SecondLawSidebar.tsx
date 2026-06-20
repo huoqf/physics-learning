@@ -32,7 +32,7 @@ export default function SecondLawSidebar({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-neutral-200">
       {/* 操作控件（上方） */}
       <Button
         variant="primary"

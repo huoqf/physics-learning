@@ -212,7 +212,7 @@ export default function ClapeyronAnimation() {
           height={12}
           fill={THERMO_COLORS.volume}
           stroke={THERMO_COLORS.volume}
-          strokeWidth={1.5}
+          strokeWidth={STROKE.objectThin}
           rx={2}
           opacity={0.9}
         />
@@ -232,7 +232,7 @@ export default function ClapeyronAnimation() {
                   x2={ax}
                   y2={ay - 12}
                   stroke={THERMO_COLORS.pressure}
-                  strokeWidth={2}
+                  strokeWidth={STROKE.objectLine}
                   strokeLinecap="round"
                 />
                 <polygon
@@ -363,7 +363,7 @@ export default function ClapeyronAnimation() {
           x2={plotX + plotW}
           y2={plotY + plotH}
           stroke={CHART_COLORS.axisLine}
-          strokeWidth={1}
+          strokeWidth={STROKE.axis}
         />
         <line
           x1={plotX}
@@ -371,7 +371,7 @@ export default function ClapeyronAnimation() {
           x2={plotX}
           y2={plotY + plotH}
           stroke={CHART_COLORS.axisLine}
-          strokeWidth={1}
+          strokeWidth={STROKE.axis}
         />
 
         {/* 进阶模式：等温线族背景 */}
@@ -385,7 +385,7 @@ export default function ClapeyronAnimation() {
                 d={pathD}
                 fill="none"
                 stroke={PV_CHART_COLORS.isothermsGroup[idx % PV_CHART_COLORS.isothermsGroup.length]}
-                strokeWidth={1}
+                strokeWidth={STROKE.chartRef}
                 opacity={0.4}
               />
               <text
@@ -419,7 +419,7 @@ export default function ClapeyronAnimation() {
           r={5}
           fill={PV_CHART_COLORS.statePointFill}
           stroke={PV_CHART_COLORS.statePoint}
-          strokeWidth={1.5}
+          strokeWidth={STROKE.chartSub}
         />
 
         {/* PV/T 比值标注 */}
@@ -440,7 +440,7 @@ export default function ClapeyronAnimation() {
           const x = toPlotX(val)
           return (
             <g key={`xt-${i}`}>
-              <line x1={x} y1={plotY + plotH} x2={x} y2={plotY + plotH + 3} stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
+              <line x1={x} y1={plotY + plotH} x2={x} y2={plotY + plotH + 3} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
               <text x={x} y={plotY + plotH + FONT.small + 4} fontSize={font(9)} fill={CHART_COLORS.tickLabel} textAnchor="middle" fontFamily={FONT.family}>
                 {val.toExponential(1)}
               </text>
@@ -453,7 +453,7 @@ export default function ClapeyronAnimation() {
           const y = toPlotY(val)
           return (
             <g key={`yt-${i}`}>
-              <line x1={plotX - 3} y1={y} x2={plotX} y2={y} stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
+              <line x1={plotX - 3} y1={y} x2={plotX} y2={y} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
               <text x={plotX - 5} y={y + 3} fontSize={font(9)} fill={CHART_COLORS.tickLabel} textAnchor="end" fontFamily={FONT.family}>
                 {val > 1000 ? (val / 1000).toFixed(0) + 'k' : val.toFixed(1)}
               </text>
