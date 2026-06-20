@@ -1,8 +1,8 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { OPTICS_COLORS, STROKE, FONT, DASH } from '@/theme/physics'
-import { CANVAS_COLORS } from '@/theme/physics/colors'
+import { OPTICS_COLORS, STROKE, FONT, DASH, CANVAS_COLORS } from '@/theme/physics'
+import { deg2rad } from '@/math/angle'
 import { calculateRefraction } from '@/physics/optics'
 
 const VIEW_WIDTH = 800
@@ -11,10 +11,11 @@ const NORMAL_LENGTH = 180
 
 const SEMI_R = 140
 const RECT_W = 280
-const RECT_D = 120
 const RAY_LEN = 180
-
-function deg2rad(d: number) { return (d * Math.PI) / 180 }
+/** 玻璃砖厚度缩放系数：将 mm 参数映射到 SVG viewBox 单位 */
+const THICKNESS_SCALE = 5
+/** 玻璃砖圆角半径（viewBox 单位） */
+const GLASS_RX = 2
 
 function arrowHeadPoints(
   tipX: number, tipY: number,
@@ -43,6 +44,8 @@ export default function RefractionAnimation() {
   const n = params.n ?? 1.5
   const advancedMode = params.advancedMode ?? 0
   const isAdvanced = advancedMode === 1
+  const glassThickness = params.glassThickness ?? 20
+  const RECT_D = glassThickness * THICKNESS_SCALE
 
   const { theta2_deg } = calculateRefraction(theta1, 1, n)
   const theta1Rad = deg2rad(theta1)
@@ -65,6 +68,7 @@ export default function RefractionAnimation() {
             theta1={theta1} theta1Rad={theta1Rad}
             theta2_deg={theta2_deg} theta2Rad={theta2Rad}
             n={n} cx={cx} cy={cy} scale={scale} font={font}
+            rectD={RECT_D}
           />
         </svg>
       </div>
@@ -266,15 +270,16 @@ function BasicMode({
 /* ─── 进阶模式：平行玻璃砖 ────────────────────────────────────────── */
 
 function AdvancedMode({
-  theta1, theta1Rad, theta2_deg, theta2Rad, n, cx, cy, scale, font,
+  theta1, theta1Rad, theta2_deg, theta2Rad, n, cx, cy, scale, font, rectD,
 }: {
   theta1: number; theta1Rad: number
   theta2_deg: number; theta2Rad: number
   n: number; cx: number; cy: number; scale: number
   font: (v: number) => number
+  rectD: number
 }) {
   const W = RECT_W * scale
-  const D = RECT_D * scale
+  const D = rectD * scale
   const normalLen = NORMAL_LENGTH * scale * 0.6
   const rayLen = RAY_LEN * scale
   const arcR = 35 * scale
@@ -334,7 +339,7 @@ function AdvancedMode({
         fill={OPTICS_COLORS.glassFill}
         stroke={OPTICS_COLORS.glassStroke}
         strokeWidth={STROKE.objectLine}
-        rx={2}
+        rx={GLASS_RX}
       />
 
       {/* 法线（上表面入射点） */}

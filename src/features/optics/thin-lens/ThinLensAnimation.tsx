@@ -2,8 +2,7 @@ import { useCallback, useRef } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { OPTICS_COLORS, STROKE, FONT, DASH } from '@/theme/physics'
-import { CANVAS_COLORS } from '@/theme/physics/colors'
+import { OPTICS_COLORS, STROKE, FONT, DASH, CANVAS_COLORS, OPACITY } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { calculateThinLens } from '@/physics/optics'
 import { useThinLensPhysics } from './useThinLensPhysics'
@@ -26,6 +25,7 @@ function lensShape(cx: number, cy: number, halfH: number, isConcave: boolean): s
 function CandleShape({ x, y, h, sc, opacity = 1 }: {
   x: number; y: number; h: number; sc: number; opacity?: number
 }) {
+  const CANDLE_RX = 1
   const bodyW = 4 * sc
   const bodyH = h * 0.6
   const flameH = h * 0.4
@@ -33,7 +33,7 @@ function CandleShape({ x, y, h, sc, opacity = 1 }: {
     <g opacity={opacity}>
       <rect x={x - bodyW} y={y - bodyH} width={bodyW * 2} height={bodyH}
         fill={OPTICS_COLORS.candleBody} stroke={OPTICS_COLORS.candleBodyStroke}
-        strokeWidth={STROKE.annotation} rx={1} />
+        strokeWidth={STROKE.annotation} rx={CANDLE_RX} />
       <ellipse cx={x} cy={y - bodyH - flameH * 0.4} rx={flameH * 0.3} ry={flameH * 0.6}
         fill={OPTICS_COLORS.candleFlame} stroke={OPTICS_COLORS.candleFlameStroke}
         strokeWidth={STROKE.annotation} />
@@ -174,7 +174,7 @@ function LinearChart({ chartData, currentChartPoint, fCm, scale, font }: {
         <g>
           <circle cx={toX(currentChartPoint.x)} cy={toY(currentChartPoint.y)}
             r={4 * scale} fill={OPTICS_COLORS.criticalAngle}
-            stroke={colors.neutral.white} strokeWidth={1.5} />
+            stroke={colors.neutral.white} strokeWidth={STROKE.chartSub} />
           <text x={toX(currentChartPoint.x) + 8 * scale}
             y={toY(currentChartPoint.y) - 6 * scale} dominantBaseline="auto"
             fill={OPTICS_COLORS.criticalAngle} fontSize={font(9)} fontFamily={FONT.family}>
@@ -234,7 +234,7 @@ function HyperbolaChart({ chartData, currentChartPoint, conjugate, fCm, scale, f
         <g>
           <circle cx={toX(currentChartPoint.x)} cy={toY(currentChartPoint.y)}
             r={4 * scale} fill={OPTICS_COLORS.criticalAngle}
-            stroke={colors.neutral.white} strokeWidth={1.5} />
+            stroke={colors.neutral.white} strokeWidth={STROKE.chartSub} />
           <text x={toX(currentChartPoint.x) + 8 * scale}
             y={toY(currentChartPoint.y) - 6 * scale} dominantBaseline="auto"
             fill={OPTICS_COLORS.criticalAngle} fontSize={font(9)} fontFamily={FONT.family}>
@@ -458,7 +458,7 @@ export default function ThinLensAnimation() {
             const y = CHART_TOP + (CHART_H * i) / 4
             return (
               <line key={`grid-${i}`} x1={60} y1={y} x2={VIEW_WIDTH - 40} y2={y}
-                stroke={CANVAS_COLORS.grid} strokeWidth={0.5} opacity={0.3} />
+                stroke={CANVAS_COLORS.grid} strokeWidth={STROKE.grid} opacity={OPACITY.grid} />
             )
           })}
         </g>

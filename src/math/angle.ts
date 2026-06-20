@@ -3,6 +3,24 @@
  */
 
 /**
+ * 角度转弧度。
+ * @param deg 角度值 (°)
+ * @returns 弧度值 (rad)
+ */
+export function deg2rad(deg: number): number {
+  return (deg * Math.PI) / 180
+}
+
+/**
+ * 弧度转角度。
+ * @param rad 弧度值 (rad)
+ * @returns 角度值 (°)
+ */
+export function rad2deg(rad: number): number {
+  return (rad * 180) / Math.PI
+}
+
+/**
  * 把角度（度）归一化到 (-180, 180]。
  */
 export function normalizeAngleDeg(deg: number): number {

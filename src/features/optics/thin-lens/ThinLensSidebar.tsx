@@ -15,24 +15,8 @@ export default function ThinLensSidebar({
 
   return (
     <>
-      <div className="pt-3">
-        <SegmentedControl
-          label="观察模式"
-          options={[
-            { label: '凸透镜基础成像', value: 0 },
-            { label: '共轭法测焦距', value: 1 },
-          ]}
-          value={mode}
-          onChange={(v) => {
-            updateParam('mode', v as number)
-            animationActions.resetAnimation()
-          }}
-          disabled={disabled}
-        />
-      </div>
-
       {mode === 0 && (
-        <div className="mt-4 pt-3 border-t border-neutral-200">
+        <div className="pt-3">
           <ToggleSwitch
             label="凹透镜"
             checked={isConcave}
@@ -43,7 +27,7 @@ export default function ThinLensSidebar({
         </div>
       )}
 
-      <div className="mt-4 pt-3 border-t border-neutral-200">
+      <div className={mode === 0 ? 'mt-4 pt-3 border-t border-neutral-200' : 'pt-3'}>
         <Slider
           label="焦距 f"
           value={f}
@@ -93,6 +77,22 @@ export default function ThinLensSidebar({
           <TipCard>固定蜡烛与光屏，拖动透镜寻找两个成像位置</TipCard>
         </div>
       )}
+
+      <div className="mt-4 pt-3 border-t border-neutral-200">
+        <SegmentedControl
+          label="观察模式"
+          options={[
+            { label: '凸透镜基础成像', value: 0 },
+            { label: '共轭法测焦距', value: 1 },
+          ]}
+          value={mode}
+          onChange={(v) => {
+            updateParam('mode', v as number)
+            animationActions.resetAnimation()
+          }}
+          disabled={disabled}
+        />
+      </div>
     </>
   )
 }

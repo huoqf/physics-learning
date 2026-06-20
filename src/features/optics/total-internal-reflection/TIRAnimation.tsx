@@ -1,8 +1,8 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { OPTICS_COLORS, STROKE, FONT, DASH } from '@/theme/physics'
-import { CANVAS_COLORS } from '@/theme/physics/colors'
+import { OPTICS_COLORS, STROKE, FONT, DASH, CANVAS_COLORS } from '@/theme/physics'
+import { deg2rad } from '@/math/angle'
 import { calculateCriticalAngle, calculateRefraction, calculateIlluminatedRadius } from '@/physics/optics'
 
 const VIEW_WIDTH = 800
@@ -10,8 +10,8 @@ const VIEW_HEIGHT = 500
 const NORMAL_LENGTH = 160
 const RAY_LEN = 180
 const WATER_SURFACE_Y_RATIO = 0.4
-
-function deg2rad(d: number) { return (d * Math.PI) / 180 }
+/** 深度/半径 → SVG viewBox 单位缩放系数 */
+const DEPTH_SCALE = 30
 
 function arrowHeadPoints(
   tipX: number, tipY: number,
@@ -296,10 +296,10 @@ function PointSourceMode({
   const normalLen = NORMAL_LENGTH * scale * 0.7
   const thetaCRad = deg2rad(theta_c_deg)
 
-  const lightSourceY = cy + depth * 30 * scale
+  const lightSourceY = cy + depth * DEPTH_SCALE * scale
 
-  const boundaryLeftX = cx - validR * 30 * scale
-  const boundaryRightX = cx + validR * 30 * scale
+  const boundaryLeftX = cx - validR * DEPTH_SCALE * scale
+  const boundaryRightX = cx + validR * DEPTH_SCALE * scale
 
   const topViewCx = width * 0.75
   const topViewCy = height * 0.25
@@ -341,7 +341,7 @@ function PointSourceMode({
       <circle cx={cx} cy={lightSourceY} r={5 * scale}
         fill={OPTICS_COLORS.lightRay} opacity={0.9} />
       <circle cx={cx} cy={lightSourceY} r={10 * scale}
-        fill="none" stroke={OPTICS_COLORS.lightRay} strokeWidth={1}
+        fill="none" stroke={OPTICS_COLORS.lightRay} strokeWidth={STROKE.reference}
         opacity={0.3} />
 
       {/* 左侧临界边界光线 */}
@@ -565,7 +565,7 @@ function PointSourceMode({
             <g>
               <circle cx={px} cy={py} r={4 * scale}
                 fill={OPTICS_COLORS.criticalAngle}
-                stroke="white" strokeWidth={1.5} />
+                stroke="white" strokeWidth={STROKE.chartSub} />
               <text
                 x={px + 8 * scale} y={py - 6 * scale}
                 fill={OPTICS_COLORS.criticalAngle}

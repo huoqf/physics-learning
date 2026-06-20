@@ -1,8 +1,10 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { OPTICS_COLORS, STROKE, FONT, DASH } from '@/theme/physics'
-import { CANVAS_COLORS } from '@/theme/physics/colors'
+import { OPTICS_COLORS, STROKE, FONT, DASH, CANVAS_COLORS } from '@/theme/physics'
+import { deg2rad, rad2deg } from '@/math/angle'
+import { vectorSub, vectorDot, vectorScale, vectorNormalize } from '@/math/vector'
+import type { Vector2 } from '@/math/vector'
 
 const VIEW_WIDTH = 800
 const VIEW_HEIGHT = 500
@@ -11,33 +13,13 @@ const MIRROR_HALF = 160
 const NORMAL_LENGTH = 180
 const PROTRACTOR_R = 100
 
-function deg2rad(d: number) { return (d * Math.PI) / 180 }
-function rad2deg(r: number) { return (r * 180) / Math.PI }
-
-function vecSub(a: [number, number], b: [number, number]): [number, number] {
-  return [a[0] - b[0], a[1] - b[1]]
-}
-function vecDot(a: [number, number], b: [number, number]): number {
-  return a[0] * b[0] + a[1] * b[1]
-}
-function vecScale(v: [number, number], s: number): [number, number] {
-  return [v[0] * s, v[1] * s]
-}
-function vecLen(v: [number, number]): number {
-  return Math.sqrt(v[0] * v[0] + v[1] * v[1])
-}
-function vecNorm(v: [number, number]): [number, number] {
-  const l = vecLen(v)
-  return l > 0 ? [v[0] / l, v[1] / l] : [0, 0]
-}
-
 function arrowHeadPoints(
   tipX: number, tipY: number,
-  dir: [number, number],
+  dir: Vector2,
   len: number, halfW: number,
 ): string {
-  const px = -dir[1], py = dir[0]
-  const bx = tipX - len * dir[0], by = tipY - len * dir[1]
+  const px = -dir.y, py = dir.x
+  const bx = tipX - len * dir.x, by = tipY - len * dir.y
   return `${tipX},${tipY} ${bx + halfW * px},${by + halfW * py} ${bx - halfW * px},${by - halfW * py}`
 }
 
@@ -67,12 +49,12 @@ export default function ReflectionAnimation() {
   const srcX = cx - RAY_LENGTH * scale * Math.sin(theta1Rad)
   const srcY = cy - RAY_LENGTH * scale * Math.cos(theta1Rad)
 
-  const incDir = vecNorm([cx - srcX, cy - srcY])
-  const dot = vecDot(incDir, [nDx, nDy])
-  const refDir: [number, number] = vecSub(incDir, vecScale([nDx, nDy], 2 * dot))
+  const incDir = vectorNormalize({ x: cx - srcX, y: cy - srcY })
+  const dot = vectorDot(incDir, { x: nDx, y: nDy })
+  const refDir = vectorSub(incDir, vectorScale({ x: nDx, y: nDy }, 2 * dot))
 
-  const refEndX = cx + refDir[0] * RAY_LENGTH * scale
-  const refEndY = cy + refDir[1] * RAY_LENGTH * scale
+  const refEndX = cx + refDir.x * RAY_LENGTH * scale
+  const refEndY = cy + refDir.y * RAY_LENGTH * scale
 
   const mDx = Math.cos(mirrorRad)
   const mDy = Math.sin(mirrorRad)
@@ -171,32 +153,12 @@ export default function ReflectionAnimation() {
           fill={OPTICS_COLORS.lightRayReflected}
         />
 
-        {/* Scatter effect at intersection */}
-        {Array.from({ length: 6 }, (_, i) => {
-          const a = deg2rad(i * 60 + 15)
-          const r0 = 4 * scale
-          const r1 = 14 * scale
-          return (
-            <line
-              key={i}
-              x1={cx + r0 * Math.cos(a)}
-              y1={cy + r0 * Math.sin(a)}
-              x2={cx + r1 * Math.cos(a)}
-              y2={cy + r1 * Math.sin(a)}
-              stroke={OPTICS_COLORS.lightRay}
-              strokeWidth={STROKE.annotation}
-              opacity={0.3 + (i % 2) * 0.2}
-              strokeLinecap="round"
-            />
-          )
-        })}
-
         {/* Angle arcs */}
         {showNormal && theta1 > 0 && (() => {
           const arcR = 40 * scale
           const nAngle = rad2deg(normalAngle)
-          const incAngle = rad2deg(Math.atan2(incDir[1], incDir[0]))
-          const refAngle = rad2deg(Math.atan2(refDir[1], refDir[0]))
+          const incAngle = rad2deg(Math.atan2(incDir.y, incDir.x))
+          const refAngle = rad2deg(Math.atan2(refDir.y, refDir.x))
 
           const incStart = Math.min(nAngle, incAngle)
           const incEnd = Math.max(nAngle, incAngle)
