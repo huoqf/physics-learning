@@ -292,7 +292,7 @@ export function useEquilibriumPhysics({
     const MAX_MASS = 10
     const maxGravity = MAX_MASS * GRAVITY
     const availableGLength = canvasHeight - 10 - ballCenter.cy - 24
-    const forceScale = availableGLength * 0.8 / maxGravity
+    const forceScale = availableGLength / maxGravity
 
     // 矢量 Canvas 起止点
     const gStart = ballCenter
