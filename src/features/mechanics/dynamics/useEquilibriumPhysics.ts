@@ -7,7 +7,6 @@ import {
   EQUIL_L,
 } from '@/physics/dynamics'
 import { GRAVITY } from '@/physics/constants'
-import { computeScale } from '@/utils/coordinate'
 
 interface UseEquilibriumPhysicsProps {
   m: number
@@ -101,7 +100,6 @@ export function useEquilibriumPhysics({
   })
 
   // 3. 计算固定悬挂梁和悬挂点
-  const forceScale = computeScale(canvasWidth, canvasHeight, { xMin: -3, xMax: 3, yMin: -3, yMax: 3 }) * 0.4
   const centerX = canvasWidth / 2
   const centerY = canvasHeight / 2 - 45
   const leftAnchor = useMemo(() => ({ cx: centerX - EQUIL_L / 2, cy: centerY - 90 }), [centerX, centerY])
@@ -289,6 +287,12 @@ export function useEquilibriumPhysics({
 
     const gravity = m * GRAVITY
     const isOverloaded = t1 > 35 || t2 > 35
+
+    // 固定 forceScale：按最大质量和可用下方空间推导，不随当前力变化
+    const MAX_MASS = 10
+    const maxGravity = MAX_MASS * GRAVITY
+    const availableGLength = canvasHeight - 10 - ballCenter.cy - 24
+    const forceScale = availableGLength * 0.8 / maxGravity
 
     // 矢量 Canvas 起止点
     const gStart = ballCenter
