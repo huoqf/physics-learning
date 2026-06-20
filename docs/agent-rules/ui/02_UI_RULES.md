@@ -1,4 +1,4 @@
-﻿# 02_UI_RULES — UI 视觉铁律
+# 02_UI_RULES — UI 视觉铁律
 
 &gt; 优先级：低于 core/ARCHITECTURE_RULES，高于 03/04/05
 &gt; AI任务入口：涉及任何 UI 实现前必须读本文件，细节查 src/theme/ 代码
@@ -51,17 +51,23 @@ Canvas/SVG 中每类物理量有固定颜色，详见 `src/theme/physics/colors.
 |--------|---------|------|------|
 | 速度 v | 经典蓝 `velocity` | `#2563EB` | 速度矢量箭头、v-t/y-t曲线等 |
 | 加速度 a | 警示红 `acceleration` | `#DC2626` | 加速度矢量箭头、a-t曲线 |
-| 合力 F | 动力亮橙 `forceNet` | `#EA580C` | 合力分析主箭头（线宽 3px，粗于分力） |
+| 合力 F_合 | 动力亮橙 `forceNet` | `#EA580C` | 合力分析主箭头（线宽 3px，粗于分力） |
+| 外力 F_外 | 动力深蓝 `appliedForce` | `#1E3A8A` | 外加/施加力矢量（与合力区分） |
+| 洛伦兹力/安培力 F_L | 洛伦兹紫 `lorentzForce` | `#8B5CF6` | 洛伦兹力/安培力矢量（与合力区分） |
 | 重力 mg | 经典重力绿 `gravity` | `#15803D` | 课本经典的重力绘制颜色（亦可使用 Slate 灰色弱化） |
 | 动能 Ek | 动能青 `kineticEnergy` | `#06B6D4` | 动能柱体、电光青色与势能明确区分 |
 | 势能 Ep | 势能紫 `potentialEnergy` | `#7C3AED` | 势能柱体、重力/弹性势能，高位储存紫色 |
 | 电场 E | 电场黄 `electricField` | `#D97706` | 电场线、电场强度矢量箭头 |
 | 磁场 B | 磁场绿 `magneticField` | `#10B981` | 磁场线、磁感应强度，符合人教版教材绿色磁感线习惯 |
+| 电动势 ε | 电动势橙黄 `emf` | `#D97706` | 电动势标注（注意：与电场同色系但语义不同） |
+| 正电荷 +q | 经典红 `positiveCharge` | `#EF4444` | 正电荷标注 |
+| 负电荷 -q | 经典蓝 `negativeCharge` | `#3B82F6` | 负电荷标注 |
 
 **铁律规则**：
 1. 同一画面最多同时展示 5 种物理量颜色。
 2. 历史轨迹固定使用 `#94A3B8`（Track Gray）。
 3. 场景器材材质（如钢珠、滑轨、底座渐变）必须引用 `SCENE_COLORS.materials.*` 的色标数组进行渐变渲染，**禁止任何 HEX 颜色值的硬编码**。
+4. 同屏多个同类物理量（如三种力）必须通过子 Token（`appliedForce`、`lorentzForce`、`forceNet`）实现色相分流，禁止全部指派同一颜色。
 
 ### 3.1 球体材质附加规范
 
@@ -80,7 +86,26 @@ Canvas/SVG 中每类物理量有固定颜色，详见 `src/theme/physics/colors.
    - 使用 `metalCart` 材质渲染带滑轮的不锈钢滑车（适用于速度、变加速等滑轨小车实验）。
 3. **ID 冲突防范**：组件内部通过 React 19 的 `useId()` 自动生成独立的渐变 ID 后缀，彻底杜绝原有的 `box-grad`、`slider-metal` 和 `slider-metal-grad` 等重复定义导致的跨文件 SVG 渐变 ID 命名冲突。
 
-### 3.3 跑车与车辆模型规范
+### 3.3 电学器材与实验实体规范
+
+**LED/数显特有色**：LED 数显屏、数码管等电子发光元件的颜色必须引用 `SCENE_COLORS.electricalApparatus`：
+
+| Token | 用途 | 示例组件 |
+|-------|------|----------|
+| `ledScreenBg` | LED 数显屏暗色底壳 | DCSource |
+| `ledDisplayGreen` | 数码管发光绿（正常显示） | DCSource |
+| `ledDisplayRed` | 数码管发光红（超载指示） | DCSource |
+
+**电学五金件部件**：接线柱、滑杆、变阻器支架等金属/塑料部件的颜色必须引用 `SCENE_COLORS.electricalApparatus`：
+
+| Token | 用途 | 示例组件 |
+|-------|------|----------|
+| `terminalBody` | 接线柱塑料外壳 (stone-600) | Rheostat |
+| `terminalCap` | 接线柱旋帽深色 (stone-800) | Rheostat |
+| `terminalCore` | 接线柱/滑轨金属柱芯 (slate-300) | Rheostat |
+| `rheostatBase` | 变阻器铸铁支架 (stone-700) | Rheostat |
+
+### 3.4 跑车与车辆模型规范
 
 1. **统一渲染组件**：所有流线型跑车、飞奔车辆等赛道位移实体的渲染，**必须**使用统一公共组件 `<SportsCar>`（位于 `src/components/Physics/SportsCar.tsx`）。**禁止**在单个动画页面中手绘跑车车身 `<path>`、十字辐条车轮或空气尾流线。
 2. **动感视觉表达**：车辆在运动中，其车轮必须结合速度与时间动态旋转；在车尾应绘制层流空气尾流线表现动感，禁止使用静态图形充当运动状态。

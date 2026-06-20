@@ -1,6 +1,7 @@
 import { FC, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { PHYSICS_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 import { useAnimationStore } from '@/stores'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 
@@ -207,7 +208,7 @@ export const SpringForceCenterExtra: FC = () => {
               cy={toSvgY(springForce)}
               r={1.2}
               fill={PHYSICS_COLORS.elasticForce}
-              stroke="#FFFFFF"
+              stroke={colors.neutral.white}
               strokeWidth={0.35}
             />
           </g>

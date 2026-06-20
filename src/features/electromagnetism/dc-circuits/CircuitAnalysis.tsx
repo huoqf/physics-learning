@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 import { DialMeter, DCSource, Rheostat } from '@/components/Physics'
 
 interface Point {
@@ -333,10 +334,10 @@ export default function CircuitAnalysis() {
     return (
       <g transform={`translate(${x}, ${y})`}>
         {/* 电阻体 */}
-        <rect x={-20} y={-9} width={40} height={18} rx={4} fill="#F1F5F9" stroke="#64748B" strokeWidth={1.5} />
+        <rect x={-20} y={-9} width={40} height={18} rx={4} fill={colors.neutral[50]} stroke={colors.neutral[500]} strokeWidth={1.5} />
         {/* 两端金属端盖 */}
-        <path d="M -20 -9 L -16 -9 L -16 9 L -20 9 Z" fill="#94A3B8" />
-        <path d="M 20 -9 L 16 -9 L 16 9 L 20 9 Z" fill="#94A3B8" />
+        <path d="M -20 -9 L -16 -9 L -16 9 L -20 9 Z" fill={colors.neutral[400]} />
+        <path d="M 20 -9 L 16 -9 L 16 9 L 20 9 Z" fill={colors.neutral[400]} />
         {/* 色环 */}
         <rect x={-11} y={-9} width={3} height={18} fill={ring1Color} />
         <rect x={-5} y={-9} width={3} height={18} fill={ring2Color} />

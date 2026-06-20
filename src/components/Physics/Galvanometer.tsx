@@ -1,5 +1,6 @@
 import React from 'react'
 import { SCENE_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 
 /**
  * 灵敏电流计组件 Props
@@ -77,7 +78,7 @@ export const Galvanometer: React.FC<GalvanometerProps> = ({
         height={110}
         rx="8"
         fill={c.meterFrame}
-        stroke="#1E293B"
+        stroke={colors.neutral[800]}
         strokeWidth="2"
       />
 
@@ -91,7 +92,7 @@ export const Galvanometer: React.FC<GalvanometerProps> = ({
             L ${-60 + 8} 16
             A 8 8 0 0 1 ${-60 + 8} 8`}
         fill={c.ammeterFace}
-        stroke="#1E293B"
+        stroke={colors.neutral[800]}
         strokeWidth="1.5"
       />
 
@@ -167,11 +168,11 @@ export const Galvanometer: React.FC<GalvanometerProps> = ({
 
       {/* 指针轴心圆盖 */}
       <circle cx={pivotX} cy={pivotY} r="7" fill={c.meterScale} />
-      <circle cx={pivotX} cy={pivotY} r="3" fill="#9CA3AF" />
+      <circle cx={pivotX} cy={pivotY} r="3" fill={colors.neutral[400]} />
 
       {/* 接线柱接口 (红/黑) */}
-      <circle cx={-30} cy="100" r="5" fill="#EF4444" stroke="#7F1D1D" strokeWidth="1" />
-      <circle cx="30" cy="100" r="5" fill="#1F2937" stroke="#111827" strokeWidth="1" />
+      <circle cx={-30} cy="100" r="5" fill={colors.danger[500]} stroke={colors.danger[900]} strokeWidth="1" />
+      <circle cx="30" cy="100" r="5" fill={colors.neutral[800]} stroke={colors.neutral[900]} strokeWidth="1" />
     </g>
   )
 }

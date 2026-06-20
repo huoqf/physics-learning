@@ -244,7 +244,7 @@ export default function BrownianMotion() {
             cx={mol.cx}
             cy={mol.cy}
             r={Math.max(2, scale * 0.3)}
-            fill="#3B82F6"
+            fill={colors.primary[500]}
             opacity={0.7}
           />
         ))}
@@ -253,7 +253,7 @@ export default function BrownianMotion() {
         <polygon
           points={generateHexagon(px, py, pollenRadius)}
           fill="url(#pollen-grad)"
-          stroke="#B45309"
+          stroke={colors.accent[700]}
           strokeWidth={1.5}
           filter="url(#glow)"
         />

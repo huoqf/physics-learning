@@ -1,6 +1,7 @@
 import { useAnimationStore } from '@/stores'
 import { SimulationView } from './SimulationView'
 import { useCanvasSize } from '@/utils'
+import { colors } from '@/theme/colors'
 
 
 export default function ChargeInBField() {
@@ -136,11 +137,11 @@ function VelocityChart() {
               y1={yV}
               x2={inBFieldStart}
               y2={zeroY}
-              stroke="#E2E8F0"
+              stroke={colors.neutral[200]}
               strokeWidth="1.5"
               strokeDasharray="3,3"
             />
-            <text x={inBFieldStart} y={ch - paddingBottom + 12} fontSize="9" fill="#94A3B8" textAnchor="middle">
+            <text x={inBFieldStart} y={ch - paddingBottom + 12} fontSize="9" fill={colors.neutral[400]} textAnchor="middle">
               射入
             </text>
 
@@ -149,11 +150,11 @@ function VelocityChart() {
               y1={yV}
               x2={inBFieldEnd}
               y2={zeroY}
-              stroke="#E2E8F0"
+              stroke={colors.neutral[200]}
               strokeWidth="1.5"
               strokeDasharray="3,3"
             />
-            <text x={inBFieldEnd} y={ch - paddingBottom + 12} fontSize="9" fill="#94A3B8" textAnchor="middle">
+            <text x={inBFieldEnd} y={ch - paddingBottom + 12} fontSize="9" fill={colors.neutral[400]} textAnchor="middle">
               射出
             </text>
 
@@ -164,12 +165,12 @@ function VelocityChart() {
                 y1={ch - paddingBottom - 12}
                 x2={inBFieldEnd - 4}
                 y2={ch - paddingBottom - 12}
-                stroke="#64748B"
+                stroke={colors.neutral[500]}
                 strokeWidth="1"
               />
-              <polygon points={`${inBFieldStart + 5},${ch - paddingBottom - 14} ${inBFieldStart},${ch - paddingBottom - 12} ${inBFieldStart + 5},${ch - paddingBottom - 10}`} fill="#64748B" />
-              <polygon points={`${inBFieldEnd - 5},${ch - paddingBottom - 14} ${inBFieldEnd},${ch - paddingBottom - 12} ${inBFieldEnd - 5},${ch - paddingBottom - 10}`} fill="#64748B" />
-              <text x={(inBFieldStart + inBFieldEnd) / 2} y={ch - paddingBottom - 16} fontSize="8" fill="#64748B" textAnchor="middle" fontWeight="bold">
+              <polygon points={`${inBFieldStart + 5},${ch - paddingBottom - 14} ${inBFieldStart},${ch - paddingBottom - 12} ${inBFieldStart + 5},${ch - paddingBottom - 10}`} fill={colors.neutral[500]} />
+              <polygon points={`${inBFieldEnd - 5},${ch - paddingBottom - 14} ${inBFieldEnd},${ch - paddingBottom - 12} ${inBFieldEnd - 5},${ch - paddingBottom - 10}`} fill={colors.neutral[500]} />
+              <text x={(inBFieldStart + inBFieldEnd) / 2} y={ch - paddingBottom - 16} fontSize="8" fill={colors.neutral[500]} textAnchor="middle" fontWeight="bold">
                 时宽 Δt = {tOut.toFixed(2)}s
               </text>
             </g>
@@ -181,7 +182,7 @@ function VelocityChart() {
               y1={zeroY}
               x2={cw - 8}
               y2={zeroY}
-              stroke="#64748B"
+              stroke={colors.neutral[500]}
               strokeWidth="1.5"
             />
             {/* 速度 v 轴 */}
@@ -190,35 +191,35 @@ function VelocityChart() {
               y1={paddingTop - 5}
               x2={paddingLeft}
               y2={zeroY}
-              stroke="#64748B"
+              stroke={colors.neutral[500]}
               strokeWidth="1.5"
             />
 
             {/* 轴箭头 */}
             <polygon
               points={`${cw - 8},${zeroY - 3} ${cw},${zeroY} ${cw - 8},${zeroY + 3}`}
-              fill="#64748B"
+              fill={colors.neutral[500]}
             />
             <polygon
               points={`${paddingLeft - 3},${paddingTop - 3} ${paddingLeft},${paddingTop - 10} ${paddingLeft + 3},${paddingTop - 3}`}
-              fill="#64748B"
+              fill={colors.neutral[500]}
             />
 
             {/* 轴标签 */}
-            <text x={cw - 12} y={zeroY + 15} fontSize="9" fill="#64748B" textAnchor="middle" fontWeight="bold">
+            <text x={cw - 12} y={zeroY + 15} fontSize="9" fill={colors.neutral[500]} textAnchor="middle" fontWeight="bold">
               t
             </text>
-            <text x={paddingLeft - 12} y={paddingTop - 5} fontSize="9" fill="#64748B" textAnchor="middle" fontWeight="bold">
+            <text x={paddingLeft - 12} y={paddingTop - 5} fontSize="9" fill={colors.neutral[500]} textAnchor="middle" fontWeight="bold">
               v
             </text>
 
             {/* y 轴数值刻度 */}
-            <text x={paddingLeft - 8} y={yV + 3} fontSize="9" fill="#3B82F6" textAnchor="end" fontWeight="bold">
+            <text x={paddingLeft - 8} y={yV + 3} fontSize="9" fill={colors.primary[500]} textAnchor="end" fontWeight="bold">
               {v.toFixed(1)}
             </text>
-            <line x1={paddingLeft - 3} y1={yV} x2={paddingLeft} y2={yV} stroke="#3B82F6" strokeWidth="1.5" />
+            <line x1={paddingLeft - 3} y1={yV} x2={paddingLeft} y2={yV} stroke={colors.primary[500]} strokeWidth="1.5" />
 
-            <text x={paddingLeft - 8} y={zeroY + 3} fontSize="9" fill="#94A3B8" textAnchor="end">
+            <text x={paddingLeft - 8} y={zeroY + 3} fontSize="9" fill={colors.neutral[400]} textAnchor="end">
               0
             </text>
 
@@ -228,7 +229,7 @@ function VelocityChart() {
               y1={yV}
               x2={cw - paddingRight}
               y2={yV}
-              stroke="#3B82F6"
+              stroke={colors.primary[500]}
               strokeWidth="3.5"
               strokeLinecap="round"
             />
@@ -239,13 +240,13 @@ function VelocityChart() {
               y1={paddingTop}
               x2={currentSvgX}
               y2={zeroY}
-              stroke="#EF4444"
+              stroke={colors.danger[500]}
               strokeWidth="1"
               strokeDasharray="2,2"
             />
 
             {/* 水平线上的当前红动点 */}
-            <circle cx={currentSvgX} cy={yV} r="5" fill="#EF4444" stroke="#FFFFFF" strokeWidth="1.5" />
+            <circle cx={currentSvgX} cy={yV} r="5" fill={colors.danger[500]} stroke={colors.neutral.white} strokeWidth="1.5" />
           </svg>
         )}
       </div>

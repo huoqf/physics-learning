@@ -558,7 +558,7 @@ export default function FieldLines() {
                 cy={ch.y}
                 r={CHARGE_RADIUS}
                 fill={color}
-                stroke="#FFFFFF"
+                stroke={colors.neutral.white}
                 strokeWidth={1.5}
                 className="drop-shadow-sm"
               />
@@ -568,7 +568,7 @@ export default function FieldLines() {
                 y={ch.y + 0.5}
                 fontSize={font(17)}
                 fontWeight="bold"
-                fill="#FFFFFF"
+                fill={colors.neutral.white}
                 textAnchor="middle"
                 dominantBaseline="middle"
               >
@@ -608,7 +608,7 @@ export default function FieldLines() {
             cx={probeX}
             cy={probeY}
             r={15}
-            fill="#FFFFFF"
+            fill={colors.neutral.white}
             opacity={0.8}
           />
           {/* 探针核心粒子 (试探正电荷) */}
@@ -617,7 +617,7 @@ export default function FieldLines() {
             cy={probeY}
             r={11}
             fill={PHYSICS_COLORS.positiveCharge}
-            stroke="#FFFFFF"
+            stroke={colors.neutral.white}
             strokeWidth={1.2}
             className="drop-shadow-md"
             style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
@@ -627,7 +627,7 @@ export default function FieldLines() {
             y={probeY}
             fontSize={font(12)}
             fontWeight="black"
-            fill="#FFFFFF"
+            fill={colors.neutral.white}
             textAnchor="middle"
             dominantBaseline="middle"
             style={{ pointerEvents: 'none' }}

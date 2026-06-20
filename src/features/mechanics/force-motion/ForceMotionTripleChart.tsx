@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { CHART_COLORS, DASH, FONT, OPACITY, STROKE } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 import { useCanvasSize } from '@/utils/useCanvasSize'
 import { FORCE_MOTION_CHART_PADDING_RATIO } from './forceMotionLayout'
 
@@ -199,7 +200,7 @@ export default function ForceMotionTripleChart({
           points={fPoints}
           currentTime={currentTime}
           currentValue={currentValueF}
-          color="#EA580C"
+          color={colors.warning[600]}
           yLabel="F/N"
           areaText={areaTextF}
           zeroBased={false}
@@ -214,7 +215,7 @@ export default function ForceMotionTripleChart({
           points={vPoints}
           currentTime={currentTime}
           currentValue={currentValueV}
-          color="#2563EB"
+          color={colors.primary[600]}
           yLabel="v/(m·s⁻¹)"
           areaText={areaTextV}
           terminalValue={terminalVelocity}
@@ -230,7 +231,7 @@ export default function ForceMotionTripleChart({
           points={xPoints}
           currentTime={currentTime}
           currentValue={currentValueX}
-          color="#64748B"
+          color={colors.neutral[500]}
           yLabel="x/m"
           areaText={areaTextX}
           zeroBased={true}

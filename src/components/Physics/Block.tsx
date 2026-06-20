@@ -165,7 +165,7 @@ export function Block({
             cy={wheelY}
             r={wheelR}
             fill={`url(#${wheelGradId})`}
-            stroke="#1E293B"
+            stroke={colors.neutral[800]}
             strokeWidth={0.8}
           />
           {/* 左轮辐/金属轴心点 */}
@@ -177,7 +177,7 @@ export function Block({
             cy={wheelY}
             r={wheelR}
             fill={`url(#${wheelGradId})`}
-            stroke="#1E293B"
+            stroke={colors.neutral[800]}
             strokeWidth={0.8}
           />
           {/* 右轮辐/金属轴心点 */}
@@ -207,7 +207,7 @@ export function Block({
               y1={y + 1.5}
               x2={x + lx}
               y2={y + height - (hasWheels ? 2.5 : 1.5)}
-              stroke="#000000"
+              stroke={colors.neutral[900]}
               strokeWidth={0.8}
               strokeDasharray="4 3"
             />

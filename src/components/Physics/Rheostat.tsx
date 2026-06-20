@@ -1,5 +1,8 @@
 import React from 'react'
 import { SCENE_COLORS, PHYSICS_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
+
+const ELECTRICAL = SCENE_COLORS.electricalApparatus
 
 export interface RheostatProps {
   /** 中心 x 坐标 */
@@ -76,7 +79,7 @@ export const Rheostat: React.FC<RheostatProps> = ({
         width={layout.coilW}
         height={layout.coilH}
         rx={2 * layout.scale}
-        fill="#F5F5F4"
+        fill={SCENE_COLORS.electricalApparatus.rheostatCeramic}
         stroke={c.resistorStroke}
         strokeWidth={1.5 * layout.scale}
       />
@@ -104,14 +107,14 @@ export const Rheostat: React.FC<RheostatProps> = ({
       <path
         d={`M ${-73 * layout.scale} ${12 * layout.scale} L ${-73 * layout.scale} ${-20 * layout.scale} L ${-67 * layout.scale} ${-20 * layout.scale}`}
         fill="none"
-        stroke="#57534E"
+        stroke={ELECTRICAL.terminalBody}
         strokeWidth={2 * layout.scale}
         strokeLinecap="round"
       />
       <path
         d={`M ${73 * layout.scale} ${12 * layout.scale} L ${73 * layout.scale} ${-20 * layout.scale} L ${67 * layout.scale} ${-20 * layout.scale}`}
         fill="none"
-        stroke="#57534E"
+        stroke={ELECTRICAL.terminalBody}
         strokeWidth={2 * layout.scale}
         strokeLinecap="round"
       />
@@ -121,7 +124,7 @@ export const Rheostat: React.FC<RheostatProps> = ({
         y1={-20 * layout.scale} 
         x2={71 * layout.scale} 
         y2={-20 * layout.scale} 
-        stroke="#A8A29E" 
+        stroke={ELECTRICAL.terminalCore} 
         strokeWidth={3 * layout.scale} 
         strokeLinecap="round" 
       />
@@ -129,23 +132,23 @@ export const Rheostat: React.FC<RheostatProps> = ({
       {/* 4. 四个物理接线柱 */}
       {[-73, 73].map((cx) => [-20, 10].map((cy) => (
         <g key={`${cx}-${cy}`}>
-          <circle cx={cx * layout.scale} cy={cy * layout.scale} r={3.5 * layout.scale} fill="#44403C" stroke="#292524" strokeWidth={0.5 * layout.scale} />
-          <circle cx={cx * layout.scale} cy={cy * layout.scale} r={1.2 * layout.scale} fill="#D6D3D1" />
+          <circle cx={cx * layout.scale} cy={cy * layout.scale} r={3.5 * layout.scale} fill={ELECTRICAL.rheostatBase} stroke={ELECTRICAL.terminalCap} strokeWidth={0.5 * layout.scale} />
+          <circle cx={cx * layout.scale} cy={cy * layout.scale} r={1.2 * layout.scale} fill={ELECTRICAL.terminalCore} />
         </g>
       )))}
 
       {/* 5. 动态滑片游标 */}
       <g transform={`translate(${wiperX}, 0)`}>
         {/* 上部滑套 */}
-        <rect x={-6 * layout.scale} y={-24 * layout.scale} width={12 * layout.scale} height={8 * layout.scale} fill="#D6D3D1" stroke="#44403C" strokeWidth={1 * layout.scale} rx={1 * layout.scale} />
+        <rect x={-6 * layout.scale} y={-24 * layout.scale} width={12 * layout.scale} height={8 * layout.scale} fill={ELECTRICAL.terminalCore} stroke={ELECTRICAL.rheostatBase} strokeWidth={1 * layout.scale} rx={1 * layout.scale} />
         {/* 下垂弹簧片 */}
-        <path d={`M ${-3 * layout.scale} ${-16 * layout.scale} L ${-3 * layout.scale} ${10 * layout.scale} L ${3 * layout.scale} ${10 * layout.scale} L ${3 * layout.scale} ${-16 * layout.scale} Z`} fill="#D97706" opacity="0.95" />
-        <line x1={-4 * layout.scale} y1={10 * layout.scale} x2={4 * layout.scale} y2={10 * layout.scale} stroke="#B45309" strokeWidth={1.5 * layout.scale} />
+        <path d={`M ${-3 * layout.scale} ${-16 * layout.scale} L ${-3 * layout.scale} ${10 * layout.scale} L ${3 * layout.scale} ${10 * layout.scale} L ${3 * layout.scale} ${-16 * layout.scale} Z`} fill={colors.accent[600]} opacity="0.95" />
+        <line x1={-4 * layout.scale} y1={10 * layout.scale} x2={4 * layout.scale} y2={10 * layout.scale} stroke={colors.accent[700]} strokeWidth={1.5 * layout.scale} />
         {/* 指示金属小接点 */}
-        <circle cx={0} cy={10 * layout.scale} r={2 * layout.scale} fill="#FBBF24" />
+        <circle cx={0} cy={10 * layout.scale} r={2 * layout.scale} fill={colors.accent[400]} />
         {/* 顶部红热塑料手柄 */}
-        <circle cx={0} cy={-28 * layout.scale} r={5 * layout.scale} fill="#EF4444" stroke="#B91C1C" strokeWidth={1 * layout.scale} />
-        <circle cx={0} cy={-28 * layout.scale} r={1.5 * layout.scale} fill="#FCA5A5" />
+        <circle cx={0} cy={-28 * layout.scale} r={5 * layout.scale} fill={colors.danger[500]} stroke={colors.danger[700]} strokeWidth={1 * layout.scale} />
+        <circle cx={0} cy={-28 * layout.scale} r={1.5 * layout.scale} fill={colors.danger[300]} />
       </g>
 
       {/* 6. 可选阻值文本标签 */}

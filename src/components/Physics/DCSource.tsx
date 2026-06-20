@@ -1,5 +1,8 @@
 import React from 'react'
 import { SCENE_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
+
+const ELECTRICAL = SCENE_COLORS.electricalApparatus
 
 export interface DCSourceProps {
   /** 中心 x 坐标 */
@@ -88,8 +91,8 @@ export const DCSource: React.FC<DCSourceProps> = ({
         <defs>
           {/* 金属质感外壳渐变 */}
           <linearGradient id="dc-source-metallic" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#475569" />
-            <stop offset="100%" stopColor="#1E293B" />
+            <stop offset="0%" stopColor={colors.neutral[600]} />
+            <stop offset="100%" stopColor={colors.neutral[800]} />
           </linearGradient>
         </defs>
 
@@ -112,7 +115,7 @@ export const DCSource: React.FC<DCSourceProps> = ({
           height={layout.baseH}
           rx={layout.cornerRadius}
           fill="url(#dc-source-metallic)"
-          stroke="#0f172a"
+          stroke={colors.neutral[900]}
           strokeWidth={1.5}
         />
 
@@ -123,8 +126,8 @@ export const DCSource: React.FC<DCSourceProps> = ({
           width={layout.ledW}
           height={layout.ledH}
           rx={4 * (height / 80)}
-          fill="#090d16"
-          stroke="#334155"
+          fill={ELECTRICAL.ledScreenBg}
+          stroke={colors.neutral[700]}
           strokeWidth={1}
         />
 
@@ -132,7 +135,7 @@ export const DCSource: React.FC<DCSourceProps> = ({
         <text
           x={0}
           y={-11 * (height / 80)}
-          fill="#22C55E"
+          fill={ELECTRICAL.ledDisplayGreen}
           fontSize={14 * (Math.min(width, height) / 80)}
           fontWeight="bold"
           fontFamily="monospace"
@@ -146,7 +149,7 @@ export const DCSource: React.FC<DCSourceProps> = ({
         <text
           x={0}
           y={8 * (height / 80)}
-          fill="#94a3b8"
+          fill={colors.neutral[400]}
           fontSize={7 * (Math.min(width, height) / 80)}
           fontWeight="bold"
           textAnchor="middle"
@@ -157,16 +160,16 @@ export const DCSource: React.FC<DCSourceProps> = ({
         </text>
 
         {/* 正极接线柱 (+) */}
-        <circle cx={posTerminalX} cy={terminalY} r={layout.terminalR} fill={SCENE_COLORS_CIRCUIT.batteryPos} stroke="#7f1d1d" strokeWidth={1} />
-        <circle cx={posTerminalX} cy={terminalY} r={layout.axisR} fill="#b91c1c" />
+        <circle cx={posTerminalX} cy={terminalY} r={layout.terminalR} fill={SCENE_COLORS_CIRCUIT.batteryPos} stroke={colors.danger[900]} strokeWidth={1} />
+        <circle cx={posTerminalX} cy={terminalY} r={layout.axisR} fill={colors.danger[700]} />
         <text x={posTerminalX} y={terminalY - 11 * (height / 80)} fill={SCENE_COLORS_CIRCUIT.batteryPos} fontSize={9 * (Math.min(width, height) / 80)} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
           +
         </text>
 
         {/* 负极接线柱 (-) */}
-        <circle cx={negTerminalX} cy={terminalY} r={layout.terminalR} fill={SCENE_COLORS_CIRCUIT.batteryNeg} stroke="#0f172a" strokeWidth={1} />
-        <circle cx={negTerminalX} cy={terminalY} r={layout.axisR} fill="#020617" />
-        <text x={negTerminalX} y={terminalY - 11 * (height / 80)} fill="#94A3B8" fontSize={9 * (Math.min(width, height) / 80)} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
+        <circle cx={negTerminalX} cy={terminalY} r={layout.terminalR} fill={SCENE_COLORS_CIRCUIT.batteryNeg} stroke={colors.neutral[900]} strokeWidth={1} />
+        <circle cx={negTerminalX} cy={terminalY} r={layout.axisR} fill={colors.neutral[900]} />
+        <text x={negTerminalX} y={terminalY - 11 * (height / 80)} fill={colors.neutral[400]} fontSize={9 * (Math.min(width, height) / 80)} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
           -
         </text>
       </g>
@@ -203,7 +206,7 @@ export const DCSource: React.FC<DCSourceProps> = ({
           height={layout.baseH}
           rx={layout.cornerRadius}
           fill={SCENE_COLORS_CIRCUIT.batteryBody}
-          stroke="#1F2937"
+          stroke={colors.neutral[800]}
           strokeWidth={1.5}
         />
 
@@ -241,8 +244,8 @@ export const DCSource: React.FC<DCSourceProps> = ({
             width={4}
             height={12}
             rx={1}
-            fill="#D1D5DB"
-            stroke="#1F2937"
+            fill={colors.neutral[300]}
+            stroke={colors.neutral[800]}
             strokeWidth={1.2}
           />
         ) : (
@@ -252,8 +255,8 @@ export const DCSource: React.FC<DCSourceProps> = ({
             width={4}
             height={12}
             rx={1}
-            fill="#D1D5DB"
-            stroke="#1F2937"
+            fill={colors.neutral[300]}
+            stroke={colors.neutral[800]}
             strokeWidth={1.2}
           />
         )}
@@ -262,7 +265,7 @@ export const DCSource: React.FC<DCSourceProps> = ({
         <text
           x={isLeftPositive ? -21 * (width / 60) : 21 * (width / 60)}
           y={4}
-          fill="#FFFFFF"
+          fill={colors.neutral.white}
           fontSize={11 * (Math.min(width, height) / 30)}
           fontWeight="bold"
           textAnchor="middle"
@@ -273,7 +276,7 @@ export const DCSource: React.FC<DCSourceProps> = ({
         <text
           x={isLeftPositive ? 21 * (width / 60) : -21 * (width / 60)}
           y={3}
-          fill="#FFFFFF"
+          fill={colors.neutral.white}
           fontSize={11 * (Math.min(width, height) / 30)}
           fontWeight="bold"
           textAnchor="middle"
@@ -286,7 +289,7 @@ export const DCSource: React.FC<DCSourceProps> = ({
         <text
           x={0}
           y={4}
-          fill="#4B5563"
+          fill={colors.neutral[600]}
           fontSize={7 * (Math.min(width, height) / 30)}
           fontWeight="bold"
           textAnchor="middle"

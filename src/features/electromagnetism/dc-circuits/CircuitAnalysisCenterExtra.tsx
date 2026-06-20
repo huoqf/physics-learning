@@ -1,5 +1,6 @@
 import { FC, useMemo } from 'react'
 import { PHYSICS_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 import { useAnimationStore } from '@/stores'
 import { useCanvasSize } from '@/utils'
 import { BarChart3 } from 'lucide-react'
@@ -232,7 +233,7 @@ export const CircuitAnalysisCenterExtra: FC = () => {
                   <path
                     d={`M ${x + 2} ${y + 2} L ${x + colWidth / 2} ${y - 1} L ${x + colWidth - 2} ${y + 2}`}
                     fill="none"
-                    stroke="#FFFFFF"
+                    stroke={colors.neutral.white}
                     strokeWidth={0.6}
                   />
                 )}

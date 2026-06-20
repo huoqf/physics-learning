@@ -3,6 +3,7 @@ import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { createSceneScale } from '@/scene/SceneScale'
@@ -227,8 +228,8 @@ export default function ChargeInEField() {
           {gridLines}
 
           {/* 粒子发射枪 */}
-          <rect x={region.left - 24} y={midY - 8} width={24} height={16} fill="#475569" rx={2} stroke="#1E293B" strokeWidth={1.5} />
-          <circle cx={region.left - 24} cy={midY} r={4} fill="#64748B" />
+          <rect x={region.left - 24} y={midY - 8} width={24} height={16} fill={colors.neutral[600]} rx={2} stroke={colors.neutral[800]} strokeWidth={1.5} />
+          <circle cx={region.left - 24} cy={midY} r={4} fill={colors.neutral[500]} />
 
           {/* 上极板 */}
           <line x1={region.left} y1={topPlateY} x2={region.right} y2={topPlateY}
@@ -279,7 +280,7 @@ export default function ChargeInEField() {
 
           {/* 粒子 */}
           <circle cx={cx} cy={cy} r={10} fill={PHYSICS_COLORS.positiveCharge} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={2} />
-          <text x={cx} y={cy + 4.5} fontSize="13" fill="#FFFFFF" textAnchor="middle" fontWeight="bold">+</text>
+          <text x={cx} y={cy + 4.5} fontSize="13" fill={colors.neutral.white} textAnchor="middle" fontWeight="bold">+</text>
 
           {/* 速度分量与速度分解虚线框 */}
           {showVectors && !ended && (
@@ -348,7 +349,7 @@ export default function ChargeInEField() {
           {ended && (
             <g transform={`translate(${cx}, ${cy + (cy > midY ? -18 : 24)})`}>
               <rect x={-45} y={-14} width={90} height={20} fill="rgba(30, 41, 59, 0.85)" rx={4} />
-              <text fontSize="10" fill="#FFFFFF" textAnchor="middle" fontWeight="bold" y={0}>
+              <text fontSize="10" fill={colors.neutral.white} textAnchor="middle" fontWeight="bold" y={0}>
                 {hitType === 'top' ? '撞击上极板' : hitType === 'bottom' ? '撞击下极板' : '已射出电场'}
               </text>
             </g>

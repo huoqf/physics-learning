@@ -1,5 +1,6 @@
 import React from 'react'
 import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 import { duration, easing } from '@/theme/motion'
 
 export interface DialMeterProps {
@@ -52,9 +53,9 @@ export const DialMeter: React.FC<DialMeterProps> = ({
       <defs>
         {/* 表盘金属外圈渐变 */}
         <linearGradient id={`dial-ring-${type}`} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#CBD5E1" />
-          <stop offset="50%" stopColor="#94A3B8" />
-          <stop offset="100%" stopColor="#475569" />
+          <stop offset="0%" stopColor={colors.neutral[300]} />
+          <stop offset="50%" stopColor={colors.neutral[400]} />
+          <stop offset="100%" stopColor={colors.neutral[600]} />
         </linearGradient>
         {/* 表盘外阴影，模拟立体悬浮 */}
         <filter id={`dial-shadow-${type}`} x="-25%" y="-25%" width="150%" height="150%">
@@ -65,7 +66,7 @@ export const DialMeter: React.FC<DialMeterProps> = ({
       {/* 外圈金属边框（带立体投影） */}
       <circle cx={0} cy={0} r={28} fill={`url(#dial-ring-${type})`} filter={`url(#dial-shadow-${type})`} />
       {/* 表盘底色 (毛玻璃透明质感) */}
-      <circle cx={0} cy={0} r={25} fill="rgba(248, 250, 252, 0.94)" stroke="#475569" strokeWidth={1.0} />
+      <circle cx={0} cy={0} r={25} fill="rgba(248, 250, 252, 0.94)" stroke={colors.neutral[600]} strokeWidth={1.0} />
 
       {/* 弧形刻度线 */}
       <path
@@ -124,7 +125,7 @@ export const DialMeter: React.FC<DialMeterProps> = ({
       </g>
       
       {/* 指针轴心 */}
-      <circle cx={0} cy={0} r={3} fill="#1E293B" />
+      <circle cx={0} cy={0} r={3} fill={colors.neutral[800]} />
     </g>
   )
 }

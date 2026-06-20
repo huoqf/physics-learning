@@ -2,6 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
+import { colors } from '@/theme/colors'
 import {
   PHYSICS_COLORS,
   CHART_COLORS,
@@ -352,7 +353,7 @@ export default function FreeFallDripAnimation() {
           {/* 玻璃亮线 */}
           <line
             x1={tubeLeft + 3} y1={tubeTopY + 6} x2={tubeLeft + 3} y2={tubeBottomY - 6}
-            stroke="#FFFFFF" strokeWidth={1.5} opacity={0.3}
+            stroke={colors.neutral.white} strokeWidth={1.5} opacity={0.3}
           />
           <line x1={tubeLeft} y1={tubeBottomY} x2={tubeRight} y2={tubeBottomY}
             stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.groundLine} />
@@ -639,7 +640,7 @@ export default function FreeFallDripAnimation() {
                 cy={vtToY(nearestPhysics.v)}
                 r={4}
                 fill={PHYSICS_COLORS.velocity}
-                stroke="#FFFFFF"
+                stroke={colors.neutral.white}
                 strokeWidth={1}
               />
             </g>

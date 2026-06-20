@@ -6,6 +6,7 @@ import { useAnimationFrame } from '@/utils/animation'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { SECOND_LAW_COLORS } from '@/theme/physics/secondLawColors'
 import { STROKE, FONT } from '@/theme/physics/canvasStyle'
+import { colors } from '@/theme/colors'
 import {
   initHeatConductionParticles,
   initDiffusionParticles,
@@ -220,7 +221,7 @@ export default function SecondLawAnimation() {
           y={height * LAYOUT.labelTopRatio + 10}
           fontSize={font(13)}
           fontWeight="bold"
-          fill="#1E293B"
+          fill={colors.neutral[800]}
           textAnchor="middle"
           fontFamily={FONT.family}
         >
@@ -307,7 +308,7 @@ export default function SecondLawAnimation() {
               x={container.x + container.w * 0.75}
               y={container.y + container.h + 16}
               fontSize={font(10)}
-              fill="#94A3B8"
+              fill={colors.neutral[400]}
               textAnchor="middle"
               fontFamily={FONT.family}
             >

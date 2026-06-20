@@ -1,5 +1,6 @@
 import React, { useId } from 'react'
 import { SCENE_COLORS, PHYSICS_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 
 /**
  * 原线圈组件 Props（互感实验中原边线圈）
@@ -71,11 +72,11 @@ export const PrimaryCoil: React.FC<PrimaryCoilProps> = ({
         <>
           <defs>
             <linearGradient id={ironCoreGradId} x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#334155" />
-              <stop offset="30%" stopColor="#64748B" />
-              <stop offset="50%" stopColor="#CBD5E1" />
-              <stop offset="70%" stopColor="#64748B" />
-              <stop offset="100%" stopColor="#1E293B" />
+              <stop offset="0%" stopColor={colors.neutral[700]} />
+              <stop offset="30%" stopColor={colors.neutral[500]} />
+              <stop offset="50%" stopColor={colors.neutral[300]} />
+              <stop offset="70%" stopColor={colors.neutral[500]} />
+              <stop offset="100%" stopColor={colors.neutral[800]} />
             </linearGradient>
           </defs>
           <rect
@@ -85,7 +86,7 @@ export const PrimaryCoil: React.FC<PrimaryCoilProps> = ({
             height={height - 12}
             rx="3"
             fill={`url(#${ironCoreGradId})`}
-            stroke="#0F172A"
+            stroke={colors.neutral[900]}
             strokeWidth="1.5"
           />
         </>
@@ -167,8 +168,8 @@ export const PrimaryCoil: React.FC<PrimaryCoilProps> = ({
         })}
 
       {/* 导线端点 */}
-      <circle cx={-width / 2} cy="120" r="2.5" fill="#1E293B" />
-      <circle cx={width / 2} cy="120" r="2.5" fill="#1E293B" />
+      <circle cx={-width / 2} cy="120" r="2.5" fill={colors.neutral[800]} />
+      <circle cx={width / 2} cy="120" r="2.5" fill={colors.neutral[800]} />
     </g>
   )
 }

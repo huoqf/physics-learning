@@ -8,6 +8,7 @@ import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 
 const LAYOUT = {
   // 地球与比例尺
@@ -564,28 +565,28 @@ export default function SatelliteAnimation() {
           width={16}
           height={5}
           rx={1}
-          fill="#e2e8f0"
-          stroke="#475569"
+          fill={colors.neutral[200]}
+          stroke={colors.neutral[600]}
           strokeWidth={0.6}
         />
         {/* 火箭头部整流罩 */}
         <path
           d="M 8 -2.5 L 13 0 L 8 2.5 Z"
-          fill="#ef4444"
-          stroke="#475569"
+          fill={colors.danger[500]}
+          stroke={colors.neutral[600]}
           strokeWidth={0.6}
         />
         {/* 尾翼 */}
         <path
           d="M -8 -2.5 L -11 -5 L -6 -2.5 Z"
-          fill="#475569"
-          stroke="#475569"
+          fill={colors.neutral[600]}
+          stroke={colors.neutral[600]}
           strokeWidth={0.5}
         />
         <path
           d="M -8 2.5 L -11 5 L -6 2.5 Z"
-          fill="#475569"
-          stroke="#475569"
+          fill={colors.neutral[600]}
+          stroke={colors.neutral[600]}
           strokeWidth={0.5}
         />
       </g>
@@ -801,10 +802,10 @@ export default function SatelliteAnimation() {
           <g>
             {/* 地面发射场标记 (文昌发射场) */}
             <g transform={`translate(${centerX + earthRadiusPx}, ${centerY})`}>
-              <path d="M 0 0 L 6 -10 L 10 -10 L 4 0 Z" fill="none" stroke="#475569" strokeWidth={1} />
-              <path d="M 4 -10 L 1 -15 L 4 -15 L 7 -10 Z" fill="none" stroke="#475569" strokeWidth={1} />
-              <line x1={0} y1={0} x2={0} y2={-15} stroke="#475569" strokeWidth={1.2} />
-              <circle cx={0} cy={0} r={1.5} fill="#334155" />
+              <path d="M 0 0 L 6 -10 L 10 -10 L 4 0 Z" fill="none" stroke={colors.neutral[600]} strokeWidth={1} />
+              <path d="M 4 -10 L 1 -15 L 4 -15 L 7 -10 Z" fill="none" stroke={colors.neutral[600]} strokeWidth={1} />
+              <line x1={0} y1={0} x2={0} y2={-15} stroke={colors.neutral[600]} strokeWidth={1.2} />
+              <circle cx={0} cy={0} r={1.5} fill={colors.neutral[700]} />
             </g>
             <text x={centerX + earthRadiusPx + 10} y={centerY + 12} fontSize="9" fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">文昌发射场</text>
 
@@ -827,8 +828,8 @@ export default function SatelliteAnimation() {
                     strokeDasharray="2,2"
                     opacity={0.3}
                   />
-                  <circle cx={targetX} cy={targetY} r={3.5} fill="#10b981" />
-                  <text x={targetX + 8} y={targetY - 5} fontSize="9" fill="#10b981" fontWeight="bold" textAnchor="start">预定入轨点</text>
+                  <circle cx={targetX} cy={targetY} r={3.5} fill={colors.success[500]} />
+                  <text x={targetX + 8} y={targetY - 5} fontSize="9" fill={colors.success[500]} fontWeight="bold" textAnchor="start">预定入轨点</text>
                 </g>
               )
             })()}
@@ -1001,7 +1002,7 @@ export default function SatelliteAnimation() {
                 x={120}
                 y={18}
                 fontSize={font(9)}
-                fill="#059669"
+                fill={colors.success[600]}
                 textAnchor="middle"
                 fontWeight="bold"
                 fontFamily="PingFang SC, sans-serif"
@@ -1027,9 +1028,9 @@ export default function SatelliteAnimation() {
 
                         {/* 2. 地面发射架 */}
                         <g transform={`translate(${centerX + earthRadiusPx}, ${centerY})`}>
-                          <path d="M 0 0 L 6 -10 L 10 -10 L 4 0 Z" fill="none" stroke="#cbd5e1" strokeWidth={0.8} opacity={0.6} />
-                          <path d="M 4 -10 L 1 -15 L 4 -15 L 7 -10 Z" fill="none" stroke="#cbd5e1" strokeWidth={0.8} opacity={0.6} />
-                          <line x1={0} y1={0} x2={0} y2={-15} stroke="#cbd5e1" strokeWidth={1.0} opacity={0.6} />
+                          <path d="M 0 0 L 6 -10 L 10 -10 L 4 0 Z" fill="none" stroke={colors.neutral[300]} strokeWidth={0.8} opacity={0.6} />
+                          <path d="M 4 -10 L 1 -15 L 4 -15 L 7 -10 Z" fill="none" stroke={colors.neutral[300]} strokeWidth={0.8} opacity={0.6} />
+                          <line x1={0} y1={0} x2={0} y2={-15} stroke={colors.neutral[300]} strokeWidth={1.0} opacity={0.6} />
                         </g>
 
                         {/* 3. 预定入轨点 — 与主画同步：π/2 正上方 */}
@@ -1040,7 +1041,7 @@ export default function SatelliteAnimation() {
                           const targetY = centerY - targetOrbitRadiusPx * Math.sin(targetAngle)
                           return (
                             <g>
-                              <circle cx={targetX} cy={targetY} r={3.5} fill="#10b981" />
+                              <circle cx={targetX} cy={targetY} r={3.5} fill={colors.success[500]} />
                             </g>
                           )
                         })()}
@@ -1078,11 +1079,11 @@ export default function SatelliteAnimation() {
                     )
                   })()}
                 </g>
-                <rect width={220} height={120} fill="none" stroke="#334155" strokeWidth={1} rx={4} pointerEvents="none" />
-                <text x={8} y={14} fontSize={font(6)} fill="#10b981" fontFamily="monospace" opacity={0.85}>
+                <rect width={220} height={120} fill="none" stroke={colors.neutral[700]} strokeWidth={1} rx={4} pointerEvents="none" />
+                <text x={8} y={14} fontSize={font(6)} fill={colors.success[500]} fontFamily="monospace" opacity={0.85}>
                   ZOOM: 4.0X
                 </text>
-                <text x={212} y={14} fontSize={font(6)} fill="#10b981" fontFamily="monospace" textAnchor="end" opacity={0.85}>
+                <text x={212} y={14} fontSize={font(6)} fill={colors.success[500]} fontFamily="monospace" textAnchor="end" opacity={0.85}>
                   {launchData.phase === 'liftoff' ? 'LIFTOFF' : launchData.phase === 'gravityTurn' ? 'G-TURN' : 'IN_ORBIT'}
                 </text>
               </g>
@@ -1156,23 +1157,23 @@ export default function SatelliteAnimation() {
                     线速度-时间变化曲线 (v-t)
                   </text>
                   {/* 物理模型说明 */}
-                  <text x={vtCardWidth / 2} y={vtPT + 6} fontSize={5 * fontScale} fill="#94a3b8" textAnchor="middle" fontFamily="PingFang SC, sans-serif">
+                  <text x={vtCardWidth / 2} y={vtPT + 6} fontSize={5 * fontScale} fill={colors.neutral[400]} textAnchor="middle" fontFamily="PingFang SC, sans-serif">
                     (前8秒发射示意，后为开普勒轨道)
                   </text>
 
                   {/* 三阶段背景填充 */}
-                  <rect x={x0} y={vtPT} width={x3 - x0} height={vtIH} fill="#f1f5f9" opacity={0.5} />
-                  <rect x={x3} y={vtPT} width={x8 - x3} height={vtIH} fill="#eff6ff" opacity={0.5} />
-                  <rect x={x8} y={vtPT} width={x15 - x8} height={vtIH} fill="#ecfdf5" opacity={0.5} />
+                  <rect x={x0} y={vtPT} width={x3 - x0} height={vtIH} fill={colors.neutral[50]} opacity={0.5} />
+                  <rect x={x3} y={vtPT} width={x8 - x3} height={vtIH} fill={colors.primary[50]} opacity={0.5} />
+                  <rect x={x8} y={vtPT} width={x15 - x8} height={vtIH} fill={colors.success[50]} opacity={0.5} />
 
                   {/* 阶段垂直线 */}
-                  <line x1={x3} y1={vtPT} x2={x3} y2={vtPT + vtIH} stroke="#cbd5e1" strokeWidth={0.8} strokeDasharray="2,2" />
-                  <line x1={x8} y1={vtPT} x2={x8} y2={vtPT + vtIH} stroke="#cbd5e1" strokeWidth={0.8} strokeDasharray="2,2" />
+                  <line x1={x3} y1={vtPT} x2={x3} y2={vtPT + vtIH} stroke={colors.neutral[300]} strokeWidth={0.8} strokeDasharray="2,2" />
+                  <line x1={x8} y1={vtPT} x2={x8} y2={vtPT + vtIH} stroke={colors.neutral[300]} strokeWidth={0.8} strokeDasharray="2,2" />
 
                   {/* 区域文字 */}
-                  <text x={x0 + (x3 - x0)/2} y={vtPT + 10 * fontScale} fontSize={6 * fontScale} fill="#64748b" textAnchor="middle">发射示意</text>
-                  <text x={x3 + (x8 - x3)/2} y={vtPT + 10 * fontScale} fontSize={6 * fontScale} fill="#3b82f6" textAnchor="middle">转弯示意</text>
-                  <text x={x8 + (x15 - x8)/2} y={vtPT + 10 * fontScale} fontSize={6 * fontScale} fill="#10b981" textAnchor="middle">轨道运动</text>
+                  <text x={x0 + (x3 - x0)/2} y={vtPT + 10 * fontScale} fontSize={6 * fontScale} fill={colors.neutral[500]} textAnchor="middle">发射示意</text>
+                  <text x={x3 + (x8 - x3)/2} y={vtPT + 10 * fontScale} fontSize={6 * fontScale} fill={colors.primary[500]} textAnchor="middle">转弯示意</text>
+                  <text x={x8 + (x15 - x8)/2} y={vtPT + 10 * fontScale} fontSize={6 * fontScale} fill={colors.success[500]} textAnchor="middle">轨道运动</text>
 
                   {/* 坐标轴 */}
                   <line x1={vtPL - 4 * fontScale} y1={vtPT + vtIH} x2={vtPL + vtIW + 6 * fontScale} y2={vtPT + vtIH} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} />

@@ -4,6 +4,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateCapacitor } from '@/physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 
 // 物理常数定义 (SI)
 const EPS0 = 8.854e-12
@@ -261,9 +262,9 @@ export default function Capacitor() {
               y={topPlateY + plateThick}
               width={plateW}
               height={gapPx - plateThick}
-              fill="#06B6D4" // 介质青
+              fill={colors.secondary[500]} // 介质青
               fillOpacity={0.25}
-              stroke="#0891B2"
+              stroke={colors.secondary[600]}
               strokeWidth={1.5}
               strokeDasharray="4,2"
               rx={3}
@@ -278,7 +279,7 @@ export default function Capacitor() {
               y={cy + 4}
               fontSize={font(10)}
               fontWeight="semibold"
-              fill="#0891B2"
+              fill={colors.secondary[600]}
               textAnchor="middle"
               style={{
                 transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), y 0.1s ease-out',
@@ -382,25 +383,25 @@ export default function Capacitor() {
           {/* 静电计绘制 */}
           <g>
             {/* 圆环外壳 */}
-            <circle cx={ex} cy={ey} r={55} fill="none" stroke="#64748B" strokeWidth={3.5} className="shadow-sm" />
-            <circle cx={ex} cy={ey} r={52} fill="#F8FAFC" />
+            <circle cx={ex} cy={ey} r={55} fill="none" stroke={colors.neutral[500]} strokeWidth={3.5} className="shadow-sm" />
+            <circle cx={ex} cy={ey} r={52} fill={colors.neutral[50]} />
             
             {/* 底座地线 */}
-            <rect x={ex - 12} y={ey + 55} width={24} height={8} fill="#64748B" rx={1} />
-            <line x1={ex} y1={ey + 63} x2={ex} y2={ey + 82} stroke="#64748B" strokeWidth={2} />
-            <line x1={ex - 10} y1={ey + 82} x2={ex + 10} y2={ey + 82} stroke="#64748B" strokeWidth={2} />
-            <line x1={ex - 6} y1={ey + 86} x2={ex + 6} y2={ey + 86} stroke="#64748B" strokeWidth={2} />
-            <line x1={ex - 2} y1={ey + 90} x2={ex + 2} y2={ey + 90} stroke="#64748B" strokeWidth={2} />
+            <rect x={ex - 12} y={ey + 55} width={24} height={8} fill={colors.neutral[500]} rx={1} />
+            <line x1={ex} y1={ey + 63} x2={ex} y2={ey + 82} stroke={colors.neutral[500]} strokeWidth={2} />
+            <line x1={ex - 10} y1={ey + 82} x2={ex + 10} y2={ey + 82} stroke={colors.neutral[500]} strokeWidth={2} />
+            <line x1={ex - 6} y1={ey + 86} x2={ex + 6} y2={ey + 86} stroke={colors.neutral[500]} strokeWidth={2} />
+            <line x1={ex - 2} y1={ey + 90} x2={ex + 2} y2={ey + 90} stroke={colors.neutral[500]} strokeWidth={2} />
 
             {/* 内部直金属杆 */}
-            <line x1={ex} y1={ey - 75} x2={ex} y2={ey + 42} stroke="#475569" strokeWidth={3.5} strokeLinecap="round" />
-            <circle cx={ex} cy={ey - 75} r={8.5} fill="#334155" />
+            <line x1={ex} y1={ey - 75} x2={ex} y2={ey + 42} stroke={colors.neutral[600]} strokeWidth={3.5} strokeLinecap="round" />
+            <circle cx={ex} cy={ey - 75} r={8.5} fill={colors.neutral[700]} />
 
             {/* 刻度弧 */}
             <path
               d={`M ${ex + 44 * Math.sin(0)} ${ey + 44 * Math.cos(0)} A 44 44 0 0 1 ${ex + 44 * Math.sin(65 * Math.PI / 180)} ${ey + 44 * Math.cos(65 * Math.PI / 180)}`}
               fill="none"
-              stroke="#CBD5E1"
+              stroke={colors.neutral[300]}
               strokeWidth={1.5}
               strokeDasharray="2,2"
             />
@@ -412,7 +413,7 @@ export default function Capacitor() {
               const x2 = ex + 47 * Math.sin(rad)
               const y2 = ey + 47 * Math.cos(rad)
               return (
-                <line key={`tick-${i}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#94A3B8" strokeWidth={1.2} />
+                <line key={`tick-${i}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke={colors.neutral[400]} strokeWidth={1.2} />
               )
             })}
 
@@ -422,7 +423,7 @@ export default function Capacitor() {
               y1={ey}
               x2={ex}
               y2={ey + 46}
-              stroke="#DC2626"
+              stroke={colors.danger[600]}
               strokeWidth={2.5}
               strokeLinecap="round"
               style={{
@@ -431,17 +432,17 @@ export default function Capacitor() {
                 transform: `rotate(${pointerAngle}deg)`,
               }}
             />
-            <circle cx={ex} cy={ey} r={4.5} fill="#1E293B" />
+            <circle cx={ex} cy={ey} r={4.5} fill={colors.neutral[800]} />
 
-            <text x={ex} y={ey - 22} fontSize="9.5" fill="#475569" textAnchor="middle" fontWeight="bold">
+            <text x={ex} y={ey - 22} fontSize="9.5" fill={colors.neutral[600]} textAnchor="middle" fontWeight="bold">
               指针式静电计
             </text>
-            <text x={ex} y={ey - 8} fontSize="9" fill="#94A3B8" textAnchor="middle">
+            <text x={ex} y={ey - 8} fontSize="9" fill={colors.neutral[400]} textAnchor="middle">
               (测量板间电势差 U)
             </text>
 
             {/* 电势差数值 */}
-            <text x={ex} y={ey + 20} fontSize="11" fill="#DC2626" fontWeight="bold" textAnchor="middle" className="font-mono">
+            <text x={ex} y={ey + 20} fontSize="11" fill={colors.danger[600]} fontWeight="bold" textAnchor="middle" className="font-mono">
               U = {voltage.toFixed(1)} V
             </text>
 
@@ -449,13 +450,13 @@ export default function Capacitor() {
             <path
               d={`M ${plateRight} ${topPlateY + plateThick / 2} L ${ex - 40} ${topPlateY + plateThick / 2} L ${ex - 40} ${ey - 75} L ${ex - 8.5} ${ey - 75}`}
               fill="none"
-              stroke="#64748B"
+              stroke={colors.neutral[500]}
               strokeWidth={1.5}
             />
             <path
               d={`M ${plateRight} ${botPlateY + plateThick / 2} L ${ex - 55} ${botPlateY + plateThick / 2} L ${ex - 55} ${ey}`}
               fill="none"
-              stroke="#64748B"
+              stroke={colors.neutral[500]}
               strokeWidth={1.5}
               strokeDasharray="4,2"
               opacity={0.8}

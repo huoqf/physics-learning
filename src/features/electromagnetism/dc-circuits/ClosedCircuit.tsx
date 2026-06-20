@@ -2,6 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateClosedCircuit } from '@/physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 import { DialMeter, Rheostat } from '@/components/Physics'
 
 /**
@@ -86,8 +87,8 @@ export default function ClosedCircuit() {
         <defs>
           {/* 电源外壳金属质感渐变 */}
           <linearGradient id="battery-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#475569" />
-            <stop offset="100%" stopColor="#1E293B" />
+            <stop offset="0%" stopColor={colors.neutral[600]} />
+            <stop offset="100%" stopColor={colors.neutral[800]} />
           </linearGradient>
 
           {/* 内阻发热暗红色系渐变 */}
@@ -215,9 +216,9 @@ export default function ClosedCircuit() {
           <line x1={30} y1={0} x2={55} y2={0} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
 
           {/* 负极片 (短粗) */}
-          <line x1={20} y1={-10} x2={20} y2={10} stroke="#1E293B" strokeWidth={4} />
+          <line x1={20} y1={-10} x2={20} y2={10} stroke={colors.neutral[800]} strokeWidth={4} />
           {/* 正极片 (长细) */}
-          <line x1={30} y1={-18} x2={30} y2={18} stroke="#DC2626" strokeWidth={2.2} />
+          <line x1={30} y1={-18} x2={30} y2={18} stroke={colors.danger[600]} strokeWidth={2.2} />
 
           {/* 理想电源标签 */}
           <text x={25} y={-23} fill={PHYSICS_COLORS.labelText} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
@@ -237,13 +238,13 @@ export default function ClosedCircuit() {
             width={36}
             height={18}
             rx={2}
-            fill="#E2E8F0"
+            fill={colors.neutral[200]}
             stroke={PHYSICS_COLORS.resistance}
             strokeWidth={1.5}
           />
           {/* 电阻两端金属帽 */}
-          <rect x={0} y={-9} width={4} height={18} fill="#94A3B8" />
-          <rect x={32} y={-9} width={4} height={18} fill="#94A3B8" />
+          <rect x={0} y={-9} width={4} height={18} fill={colors.neutral[400]} />
+          <rect x={32} y={-9} width={4} height={18} fill={colors.neutral[400]} />
           {/* 动态色环 (使用棕、红、金表示其内阻) */}
           <rect x={8} y={-9} width={3} height={18} fill="#78350F" />
           <rect x={15} y={-9} width={3} height={18} fill="#DC2626" />

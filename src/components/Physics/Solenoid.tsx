@@ -1,5 +1,6 @@
 import React, { useId } from 'react'
 import { SCENE_COLORS, PHYSICS_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 
 /**
  * 螺线管组件 Props
@@ -87,11 +88,11 @@ export const Solenoid: React.FC<SolenoidProps> = ({
       {/* 1. 绘制管状骨架/铁芯 (拟物金属渐变) */}
       <defs>
         <linearGradient id={ironCoreGradId} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#475569" />
-          <stop offset="30%" stopColor="#94A3B8" />
-          <stop offset="50%" stopColor="#E2E8F0" />
-          <stop offset="70%" stopColor="#94A3B8" />
-          <stop offset="100%" stopColor="#334155" />
+          <stop offset="0%" stopColor={colors.neutral[600]} />
+          <stop offset="30%" stopColor={colors.neutral[400]} />
+          <stop offset="50%" stopColor={colors.neutral[200]} />
+          <stop offset="70%" stopColor={colors.neutral[400]} />
+          <stop offset="100%" stopColor={colors.neutral[700]} />
         </linearGradient>
       </defs>
       {/* 铁芯主体 */}
@@ -103,7 +104,7 @@ export const Solenoid: React.FC<SolenoidProps> = ({
           height={height - 12}
           rx="4"
           fill={`url(#${ironCoreGradId})`}
-          stroke="#1E293B"
+          stroke={colors.neutral[800]}
           strokeWidth="1.5"
         />
       )}
@@ -189,8 +190,8 @@ export const Solenoid: React.FC<SolenoidProps> = ({
         })}
 
       {/* 导线连接点阴影 */}
-      <circle cx={-width / 2} cy="120" r="3" fill="#1E293B" />
-      <circle cx={width / 2} cy="120" r="3" fill="#1E293B" />
+      <circle cx={-width / 2} cy="120" r="3" fill={colors.neutral[800]} />
+      <circle cx={width / 2} cy="120" r="3" fill={colors.neutral[800]} />
     </g>
   )
 }

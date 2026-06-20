@@ -3,6 +3,7 @@ import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 import { calculateMagnetInduction, calculateCoilInduction } from '@/physics'
 import { useAnimationFrame } from '@/utils/animation'
 import {
@@ -271,9 +272,9 @@ export default function InductionPhenomenon() {
 
         {/* 科学仪表看板：磁通量大小 */}
         <g transform="translate(560, 30)" opacity="0.85">
-          <rect x="0" y="0" width="110" height="42" rx="6" fill={SCENE_COLORS.labels.panelBg} stroke="#334155" strokeWidth="1" />
-          <text x="10" y="16" fill="#94A3B8" fontSize={font(9)} fontWeight="bold">磁通量 Φ</text>
-          <text x="10" y="32" fill="#10B981" fontSize={font(12)} fontWeight="bold" style={{ fontFamily: 'monospace' }}>
+          <rect x="0" y="0" width="110" height="42" rx="6" fill={SCENE_COLORS.labels.panelBg} stroke={colors.neutral[700]} strokeWidth="1" />
+          <text x="10" y="16" fill={colors.neutral[400]} fontSize={font(9)} fontWeight="bold">磁通量 Φ</text>
+          <text x="10" y="32" fill={colors.success[500]} fontSize={font(12)} fontWeight="bold" style={{ fontFamily: 'monospace' }}>
             {phi.toFixed(3)} Wb
           </text>
         </g>
@@ -391,17 +392,17 @@ export default function InductionPhenomenon() {
               style={{ userSelect: 'none' }}
             >
               {/* 底座 */}
-              <rect x={-12} y={-5} width={24} height={10} rx={2} fill="#F5F5F4" stroke="#78716C" strokeWidth={1} />
+              <rect x={-12} y={-5} width={24} height={10} rx={2} fill={colors.neutral[50]} stroke={colors.neutral[500]} strokeWidth={1} />
               {/* 左触点 */}
-              <circle cx={-10} cy={0} r={3} fill={circuitSwitch ? '#16A34A' : '#9CA3AF'} stroke="#1E293B" strokeWidth={1} />
+              <circle cx={-10} cy={0} r={3} fill={circuitSwitch ? colors.success[600] : colors.neutral[400]} stroke={colors.neutral[800]} strokeWidth={1} />
               {/* 右触点 */}
-              <circle cx={10} cy={0} r={3} fill={circuitSwitch ? '#16A34A' : '#9CA3AF'} stroke="#1E293B" strokeWidth={1} />
+              <circle cx={10} cy={0} r={3} fill={circuitSwitch ? colors.success[600] : colors.neutral[400]} stroke={colors.neutral[800]} strokeWidth={1} />
               {/* 刀闸横杆 */}
               <line
                 x1={-10} y1={0}
                 x2={circuitSwitch ? 10 : 6}
                 y2={circuitSwitch ? 0 : -12}
-                stroke={circuitSwitch ? '#16A34A' : '#DC2626'}
+                stroke={circuitSwitch ? colors.success[600] : colors.danger[600]}
                 strokeWidth={2.5}
                 strokeLinecap="round"
               />
@@ -410,15 +411,15 @@ export default function InductionPhenomenon() {
                 cx={circuitSwitch ? 10 : 6}
                 cy={circuitSwitch ? 0 : -12}
                 r={3}
-                fill={circuitSwitch ? '#16A34A' : '#DC2626'}
-                stroke="#1E293B"
+                fill={circuitSwitch ? colors.success[600] : colors.danger[600]}
+                stroke={colors.neutral[800]}
                 strokeWidth={0.8}
               />
               {/* 开关标签 */}
               <text
                 x={0}
                 y={18}
-                fill="#6B7280"
+                fill={colors.neutral[500]}
                 fontSize={8}
                 fontWeight="bold"
                 textAnchor="middle"
@@ -443,7 +444,7 @@ export default function InductionPhenomenon() {
                   h={36}
                   pole={magnetPole as 1 | -1}
                   canvasHeight={400}
-                  lineColor="#10B981"
+                  lineColor={colors.success[500]}
                 />
               </g>
             ) : (
@@ -458,7 +459,7 @@ export default function InductionPhenomenon() {
                 y={coilY}
                 current={(10 / effectiveR) * ironCoreFactor}
                 canvasHeight={400}
-                lineColor="#10B981"
+                lineColor={colors.success[500]}
               />
             )}
           </g>

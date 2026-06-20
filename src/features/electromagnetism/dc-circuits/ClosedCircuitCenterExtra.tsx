@@ -1,5 +1,6 @@
 import { FC, useMemo } from 'react'
 import { PHYSICS_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 import { useAnimationStore } from '@/stores'
 import { useCanvasSize } from '@/utils'
 import { calculateClosedCircuit } from '@/physics'
@@ -199,8 +200,8 @@ export const ClosedCircuitCenterExtra: FC = () => {
                   <line x1={toPrX(r)} y1={originY} x2={toPrX(r)} y2={toPrY(P_max)} stroke={PHYSICS_COLORS.resistance} strokeWidth={0.15} strokeDasharray="1.5,1.5" />
                   <line x1={originX} y1={toPrY(P_max)} x2={toPrX(r)} y2={toPrY(P_max)} stroke={PHYSICS_COLORS.power} strokeWidth={0.15} strokeDasharray="1.5,1.5" />
                   {/* 顶点标记 */}
-                  <circle cx={toPrX(r)} cy={toPrY(P_max)} r={1.0} fill="#EF4444" />
-                  <text x={toPrX(r)} y={toPrY(P_max) - 2.5} fontSize={font(2.4)} fill="#EF4444" fontWeight="bold" textAnchor="middle">
+                  <circle cx={toPrX(r)} cy={toPrY(P_max)} r={1.0} fill={colors.danger[500]} />
+                  <text x={toPrX(r)} y={toPrY(P_max) - 2.5} fontSize={font(2.4)} fill={colors.danger[500]} fontWeight="bold" textAnchor="middle">
                     P_max = {P_max.toFixed(2)}W (R = r = {r.toFixed(1)}Ω)
                   </text>
                 </g>

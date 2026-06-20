@@ -81,11 +81,11 @@ export const LightBulb: FC<LightBulbProps> = ({
         width={24}
         height={12}
         fill={SCENE_COLORS.circuit.bulbBase}
-        stroke="#1F2937"
+        stroke={SCENE_COLORS.circuit.wire}
         strokeWidth={1}
       />
-      <line x1={-12} y1={10} x2={12} y2={10} stroke="#1F2937" strokeWidth={1} />
-      <line x1={-12} y1={14} x2={12} y2={14} stroke="#1F2937" strokeWidth={1} />
+      <line x1={-12} y1={10} x2={12} y2={10} stroke={SCENE_COLORS.circuit.wire} strokeWidth={1} />
+      <line x1={-12} y1={14} x2={12} y2={14} stroke={SCENE_COLORS.circuit.wire} strokeWidth={1} />
 
       {/* C. 玻璃灯罩（通电时填充淡黄色） */}
       <circle

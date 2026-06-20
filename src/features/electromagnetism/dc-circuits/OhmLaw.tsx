@@ -2,6 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateOhmLaw } from '@/physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 import { LightBulb, DialMeter, DCSource } from '@/components/Physics'
 
 export default function OhmLaw() {
@@ -111,8 +112,8 @@ export default function OhmLaw() {
 
           {/* 表盘金属圈渐变 */}
           <linearGradient id="dial-ring" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#94A3B8" />
-            <stop offset="100%" stopColor="#475569" />
+            <stop offset="0%" stopColor={colors.neutral[400]} />
+            <stop offset="100%" stopColor={colors.neutral[600]} />
           </linearGradient>
         </defs>
 
@@ -190,18 +191,18 @@ export default function OhmLaw() {
               width={48}
               height={20}
               rx={6}
-              fill="#E2E8F0"
-              stroke="#64748B"
+              fill={colors.neutral[200]}
+              stroke={colors.neutral[500]}
               strokeWidth={1.5}
             />
             {/* 电阻两端金属帽 */}
             <path
               d="M -24 -10 L -18 -10 L -18 10 L -24 10 Z"
-              fill="#94A3B8"
+              fill={colors.neutral[400]}
             />
             <path
               d="M 24 -10 L 18 -10 L 18 10 L 24 10 Z"
-              fill="#94A3B8"
+              fill={colors.neutral[400]}
             />
             
             {/* 动态色环 1 */}
@@ -214,7 +215,7 @@ export default function OhmLaw() {
             <rect x={11} y={-10} width={4} height={20} fill={band4Color} />
 
             {/* 文字标签 */}
-            <text x={0} y={24} fill="#475569" fontSize={font(11)} fontWeight="bold" textAnchor="middle">
+            <text x={0} y={24} fill={colors.neutral[600]} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
               定值电阻 R
             </text>
           </g>

@@ -7,6 +7,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { THERMO_COLORS, THERMAL_COLORS } from '@/theme/physics'
 import { FIRST_LAW_COLORS } from '@/theme/physics/firstLawColors'
 import { STROKE, FONT } from '@/theme/physics/canvasStyle'
+import { colors } from '@/theme/colors'
 import { calculateInternalEnergy } from '@/physics/thermodynamics'
 import { deltaUtoDeltaT, temperatureToSpeedScale, internalEnergyToColor } from '@/physics/firstLaw'
 
@@ -370,7 +371,7 @@ export default function FirstLawAnimation() {
           y={chartY + 12}
           fontSize={font(11)}
           fontWeight="bold"
-          fill="#1E293B"
+          fill={colors.neutral[800]}
           fontFamily={FONT.family}
         >
           实时能量收支天平
@@ -382,7 +383,7 @@ export default function FirstLawAnimation() {
           y1={zeroY}
           x2={plotX + plotW}
           y2={zeroY}
-          stroke="#94A3B8"
+          stroke={colors.neutral[400]}
           strokeWidth={1}
           strokeDasharray="4 2"
         />
@@ -390,7 +391,7 @@ export default function FirstLawAnimation() {
           x={plotX - 6}
           y={zeroY + 3}
           fontSize={font(9)}
-          fill="#94A3B8"
+          fill={colors.neutral[400]}
           textAnchor="end"
           fontFamily={FONT.family}
         >
@@ -436,7 +437,7 @@ export default function FirstLawAnimation() {
                 x={cx}
                 y={plotY + plotH + 16}
                 fontSize={font(10)}
-                fill="#475569"
+                fill={colors.neutral[600]}
                 textAnchor="middle"
                 fontFamily={FONT.family}
                 fontWeight="bold"
@@ -452,7 +453,7 @@ export default function FirstLawAnimation() {
           x={plotX + plotW}
           y={chartY + 12}
           fontSize={font(9)}
-          fill="#64748B"
+          fill={colors.neutral[500]}
           textAnchor="end"
           fontFamily={FONT.family}
         >
