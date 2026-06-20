@@ -223,7 +223,7 @@ export default function ImpulseAnimation() {
               <VectorArrow
                 origin={{ x: sliderX_basic - 5, y: groundY - sliderTrackY }}
                 vector={{ x: -F, y: 0 }}
-                type="force"
+                type="appliedForce"
                 sceneScale={sceneScale}
               />
             )}
@@ -330,7 +330,7 @@ export default function ImpulseAnimation() {
               <VectorArrow
                 origin={{ x: sliderX_advanced - 5, y: groundY - sliderTrackY }}
                 vector={{ x: -currentFt * 2, y: 0 }}
-                type="force"
+                type="appliedForce"
                 sceneScale={sceneScale}
               />
             )}

@@ -202,7 +202,7 @@ export const AmpereFIChart: React.FC<AmpereFIChartProps> = ({
         y1={lineY1}
         x2={lineX2}
         y2={lineY2}
-        stroke={PHYSICS_COLORS.forceNet}
+        stroke={PHYSICS_COLORS.lorentzForce}
         strokeWidth="1.8"
         strokeLinecap="round"
         opacity="0.8"
@@ -234,7 +234,7 @@ export const AmpereFIChart: React.FC<AmpereFIChartProps> = ({
           x="0"
           y="6"
           fontSize="5.5"
-          fill={PHYSICS_COLORS.forceNet}
+          fill={PHYSICS_COLORS.lorentzForce}
           fontWeight="extrabold"
           style={{ userSelect: 'none' }}
         >

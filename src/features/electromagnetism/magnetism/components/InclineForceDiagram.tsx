@@ -397,7 +397,7 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
           <VectorArrow
             origin={{ x: 0, y: 0 }}
             vector={Fa_phys}
-            type="force"
+            type="lorentzForce"
             sceneScale={localScale}
             strokeWidth={1.8}
             pixelLength={Math.abs(Fa_phys.x * forceScale)}
@@ -406,7 +406,7 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
             x={px + Fa_phys.x * forceScale + (physicsResult.F_ampere > 0 ? 3 : -18)}
             y={py - 3}
             fontSize="6.5"
-            fill={PHYSICS_COLORS.forceNet}
+            fill={PHYSICS_COLORS.lorentzForce}
             fontWeight="bold"
             style={{ userSelect: 'none' }}
           >

@@ -2,6 +2,7 @@ import { useEffect, useRef, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 import { createSceneScale, worldToPixel } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 import { calcTrajectoryCenter } from '@/physics'
@@ -252,7 +253,7 @@ export function SimulationView() {
     ctx.beginPath()
     ctx.arc(px, py, CANVAS_STYLE.object.pointMassRadius, 0, 2 * Math.PI)
     ctx.fillStyle = PHYSICS_COLORS.positiveCharge
-    ctx.strokeStyle = '#FFFFFF'
+    ctx.strokeStyle = colors.neutral.white
     ctx.lineWidth = 1.5
     ctx.fill()
     ctx.stroke()
@@ -312,7 +313,7 @@ export function SimulationView() {
             <VectorArrow
               origin={{ x: particleState.px, y: particleState.py }}
               vector={forceVector}
-              type="force"
+              type="lorentzForce"
               sceneScale={sceneScale}
             />
           )}

@@ -295,7 +295,7 @@ export default function MomentumTheoremAnimation() {
               <VectorArrow
                 origin={{ x: ballCenterX, y: groundY - ballY + R_ball + 4 }}
                 vector={{ x: 0, y: F_avg }}
-                type="force"
+                type="appliedForce"
                 sceneScale={sceneScale}
               />
             )}
@@ -430,7 +430,7 @@ export default function MomentumTheoremAnimation() {
                 <VectorArrow
                   origin={{ x: plateX - springCompression - 5, y: (plateTopY + plateBottomY) / 2 - groundY }}
                   vector={{ x: -impactForce, y: 0 }}
-                  type="force"
+                  type="appliedForce"
                   sceneScale={sceneScale}
                 />
                 <text

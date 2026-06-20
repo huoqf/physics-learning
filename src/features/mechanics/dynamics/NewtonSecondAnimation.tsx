@@ -152,7 +152,7 @@ export default function NewtonSecondAnimation() {
             <VectorArrow
               origin={{ x: 0, y: 0 }}
               vector={{ x: 1, y: 0 }}
-              type="force"
+              type="appliedForce"
               sceneScale={{ originX: cx, originY: cy, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
               pixelLength={Math.max(15, F_applied * 2.5)}
             />

@@ -162,7 +162,7 @@ export const ForcePolygon: React.FC<ForcePolygonProps> = ({
       {renderVectorLine('g', p0.x, p0.y, p1.x, p1.y, PHYSICS_COLORS.gravity ?? colors.neutral[600], 'G', 'left')}
 
       {/* 矢量 2: 安培力 F_安 */}
-      {renderVectorLine('fa', p1.x, p1.y, p2.x, p2.y, PHYSICS_COLORS.forceNet, 'F_安', 'bottom')}
+      {renderVectorLine('fa', p1.x, p1.y, p2.x, p2.y, PHYSICS_COLORS.lorentzForce, 'F_安', 'bottom')}
 
       {/* 矢量 3: 摩擦力 f */}
       {renderVectorLine('f', p2.x, p2.y, p3.x, p3.y, PHYSICS_COLORS.friction, 'f', 'right')}

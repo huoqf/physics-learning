@@ -180,7 +180,7 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
           <VectorArrow
             origin={{ x: 0, y: 0 }}
             vector={{ x: physicsResult.F, y: 0 }}
-            type="force"
+            type="lorentzForce"
             sceneScale={localScale}
             strokeWidth={3}
           />
@@ -189,7 +189,7 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
               x={rodX + (physicsResult.F > 0 ? 30 : -45)}
               y={cy - 6}
               fontSize="11"
-              fill={PHYSICS_COLORS.forceNet}
+              fill={PHYSICS_COLORS.lorentzForce}
               fontWeight="bold"
               style={{ userSelect: 'none' }}
             >

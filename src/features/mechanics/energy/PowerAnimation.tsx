@@ -774,7 +774,7 @@ export default function PowerAnimation() {
           <VectorArrow
             origin={{ x: carX + objW + 2, y: -(groundY - objH * 0.5) }}
             vector={{ x: Math.min(state.F * 0.008, 60), y: 0 }}
-            type="force"
+            type="appliedForce"
             sceneScale={sceneScale}
             pixelLength={Math.min(state.F * 0.008, 60)}
           />

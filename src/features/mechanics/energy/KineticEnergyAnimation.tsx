@@ -874,7 +874,7 @@ export default function KineticEnergyAnimation() {
               <VectorArrow
                 origin={{ x: -Math.min(state.F * 1.5, 45), y: objH * 0.5 }}
                 vector={{ x: -1, y: 0 }}
-                type="force"
+                type="appliedForce"
                 sceneScale={sceneScale}
                 pixelLength={Math.min(state.F * 1.5, 45) - 2}
               />
@@ -912,7 +912,7 @@ export default function KineticEnergyAnimation() {
                   vector={state.F >= 0
                     ? { x: tangentDirX, y: -tangentDirY }
                     : { x: -tangentDirX, y: tangentDirY }}
-                  type="force"
+                  type="elasticForce"
                   sceneScale={sceneScale}
                   pixelLength={fArrowLen}
                 />

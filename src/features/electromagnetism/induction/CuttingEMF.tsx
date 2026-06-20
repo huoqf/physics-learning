@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { computeRodConstants, computeRodStateAtTime, calculateCuttingEMF } from '@/physics'
 import { PHYSICS_COLORS, CHART_COLORS, STROKE, VT_CHART_COLORS, AT_CHART_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
+import { withAlpha } from '@/theme/physics/colors'
 import { physicsToCanvasWithOrigin, computeScale } from '@/utils/coordinate'
 import { Rails, ConductorRod, VectorArrow, VectorDefs } from '@/components/Physics'
 import { CuttingEMFHandRule } from './CuttingEMFHandRule'
@@ -141,14 +142,14 @@ export default function CuttingEMF() {
 
     // 绘制残影
     if (isPlaying && time > 0) {
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.18)'
+      ctx.fillStyle = withAlpha(colors.neutral.white, 0.18)
       ctx.fillRect(0, 0, canvasSize.width, sceneHeight)
 
       // 在当前位置绘制半透明淡蓝色棒影
       const rodW = px(6)
       const topY = railCy - railSpacing / 2 - px(6)
       const bottomY = railCy + railSpacing / 2 + px(6)
-      ctx.fillStyle = 'rgba(37, 99, 235, 0.35)' // 速度蓝发光
+      ctx.fillStyle = withAlpha(PHYSICS_COLORS.velocity, 0.35) // 速度蓝发光
       ctx.fillRect(rodPos.cx - rodW / 2, topY, rodW, bottomY - topY)
     }
   }, [time, isPlaying, B, L, R, mode, finalX, railSpacing, railCy, rodPos.cx, canvasSize.width, canvasSize.height, px])
@@ -441,7 +442,13 @@ export default function CuttingEMF() {
           className="absolute inset-0 z-10 w-full h-full bg-transparent"
         >
           <defs>
-            <VectorDefs colors={[PHYSICS_COLORS.velocity, PHYSICS_COLORS.acceleration, PHYSICS_COLORS.forceNet]} />
+            <VectorDefs colors={[
+              PHYSICS_COLORS.velocity,
+              PHYSICS_COLORS.acceleration,
+              PHYSICS_COLORS.forceNet,
+              PHYSICS_COLORS.appliedForce,
+              PHYSICS_COLORS.lorentzForce
+            ]} />
           </defs>
 
           {/* 网格参考背景 */}
@@ -533,7 +540,7 @@ export default function CuttingEMF() {
               x={rodPos.cx - px(15)}
               y={railCy - px(10)}
               fontSize={font(9.5)}
-              fill={PHYSICS_COLORS.electricCurrent}
+              fill={PHYSICS_COLORS.emf}
               fontWeight="bold"
               textAnchor="end"
               dominantBaseline="middle"
@@ -551,7 +558,7 @@ export default function CuttingEMF() {
                 x={rodPos.cx + px(10)}
                 y={railCy - railSpacing / 2 - px(8)}
                 fontSize={font(12)}
-                fill={EMF_current > 0 ? colors.danger[500] : colors.primary[500]}
+                fill={EMF_current > 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
                 fontWeight="extrabold"
                 textAnchor="middle"
                 dominantBaseline="middle"
@@ -564,7 +571,7 @@ export default function CuttingEMF() {
                 x={rodPos.cx + px(10)}
                 y={railCy + railSpacing / 2 + px(8)}
                 fontSize={font(12)}
-                fill={EMF_current > 0 ? colors.primary[500] : colors.danger[500]}
+                fill={EMF_current > 0 ? PHYSICS_COLORS.negativeCharge : PHYSICS_COLORS.positiveCharge}
                 fontWeight="extrabold"
                 textAnchor="middle"
                 dominantBaseline="middle"
@@ -665,7 +672,7 @@ export default function CuttingEMF() {
                   <VectorArrow
                     origin={{ x: finalX, y: 0.15 }}
                     vector={{ x: extForceX, y: 0 }}
-                    type="force"
+                    type="appliedForce"
                     sceneScale={localSceneScale}
                     strokeWidth={2.5}
                   />
@@ -673,7 +680,7 @@ export default function CuttingEMF() {
                     x={rodPos.cx + (extForceX > 0 ? px(35) : -px(35))}
                     y={railCy - px(20)}
                     fontSize={font(9.5)}
-                    fill={PHYSICS_COLORS.forceNet}
+                    fill={PHYSICS_COLORS.appliedForce}
                     fontWeight="bold"
                     textAnchor={extForceX > 0 ? 'start' : 'end'}
                     style={{ userSelect: 'none' }}
@@ -689,7 +696,7 @@ export default function CuttingEMF() {
                   <VectorArrow
                     origin={{ x: finalX, y: 0.15 }}
                     vector={{ x: ampForceX, y: 0 }}
-                    type="force"
+                    type="lorentzForce"
                     sceneScale={localSceneScale}
                     strokeWidth={2.5}
                   />
@@ -697,7 +704,7 @@ export default function CuttingEMF() {
                     x={rodPos.cx + (ampForceX > 0 ? px(35) : -px(35))}
                     y={railCy - px(20)}
                     fontSize={font(9.5)}
-                    fill={PHYSICS_COLORS.forceNet}
+                    fill={PHYSICS_COLORS.lorentzForce}
                     fontWeight="bold"
                     textAnchor={ampForceX > 0 ? 'start' : 'end'}
                     style={{ userSelect: 'none' }}
@@ -713,7 +720,7 @@ export default function CuttingEMF() {
                   <VectorArrow
                     origin={{ x: finalX, y: -0.15 }}
                     vector={{ x: F_ext + ampForceX, y: 0 }}
-                    type="force"
+                    type="appliedForce"
                     sceneScale={localSceneScale}
                     strokeWidth={2.5}
                   />

@@ -574,7 +574,7 @@ export default function PotentialEnergyAnimation() {
                 <VectorArrow
                   origin={{ x: toPixelX(state.pos) + objW * 0.5, y: -(groundY - objW * 0.45 - objW * 0.45 - 6) }}
                   vector={{ x: state.pos > 0 ? -1 : 1, y: 0 }}
-                  type="force"
+                  type="elasticForce"
                   sceneScale={sceneScale}
                   pixelLength={Math.min(Math.abs(state.pos) * 15 + 10, 45)}
                 />

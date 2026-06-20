@@ -3,6 +3,8 @@ import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
+import { colors } from '@/theme/colors'
+import { withAlpha } from '@/theme/physics/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { createSceneScale } from '@/scene/SceneScale'
@@ -259,11 +261,11 @@ export const GravityBasicAnimation: FC = () => {
             <line
               x1={cx - earthData.R_earth} y1={cy}
               x2={cx + earthData.R_earth} y2={cy}
-              stroke="rgba(255, 255, 255, 0.4)"
+              stroke={withAlpha(colors.neutral.white, 0.4)}
               strokeWidth={1}
               strokeDasharray="2,2"
             />
-            <text x={cx - earthData.R_earth + 16} y={cy - 4} fontSize="9" fill="rgba(255, 255, 255, 0.7)" fontWeight="bold">赤道面</text>
+            <text x={cx - earthData.R_earth + 16} y={cy - 4} fontSize="9" fill={withAlpha(colors.neutral.white, 0.7)} fontWeight="bold">赤道面</text>
 
             {/* 绘制纬度虚线圈 (物体所在纬度) */}
             {earthData.effectiveLat > 0 && earthData.effectiveLat < 90 && (
@@ -272,7 +274,7 @@ export const GravityBasicAnimation: FC = () => {
                 y1={earthData.objY}
                 x2={cx + earthData.R_earth * Math.cos((earthData.effectiveLat * Math.PI) / 180)}
                 y2={earthData.objY}
-                stroke="rgba(255, 255, 255, 0.25)"
+                stroke={withAlpha(colors.neutral.white, 0.25)}
                 strokeWidth={0.8}
                 strokeDasharray="2,2"
               />
@@ -338,7 +340,7 @@ export const GravityBasicAnimation: FC = () => {
                   <VectorArrow
                     origin={{ x: earthData.objX, y: -earthData.objY }}
                     vector={{ x: earthData.Fx_centrifugal, y: earthData.Fy_centrifugal }}
-                    type="force"
+                    type="forceComponent"
                     sceneScale={gravBasicSceneScale}
                     strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                     pixelLength={Math.hypot(earthData.Fx_centrifugal, earthData.Fy_centrifugal)}
@@ -358,7 +360,7 @@ export const GravityBasicAnimation: FC = () => {
                 <VectorArrow
                   origin={{ x: earthData.objX, y: -earthData.objY }}
                   vector={{ x: earthData.Gx, y: earthData.Gy }}
-                  type="force"
+                  type="gravity"
                   sceneScale={gravBasicSceneScale}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain}
                   pixelLength={Math.hypot(earthData.Gx, earthData.Gy)}

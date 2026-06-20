@@ -475,7 +475,7 @@ export default function ConnectedBodiesAnimation() {
               <VectorArrow
                 origin={{ x: m2X + w2, y: -ropeY }}
                 vector={{ x: F, y: 0 }}
-                type="force"
+                type="appliedForce"
                 sceneScale={cbSceneScale}
                 strokeWidth={CANVAS_STYLE.stroke.vectorMain}
                 pixelLength={arrowLength}

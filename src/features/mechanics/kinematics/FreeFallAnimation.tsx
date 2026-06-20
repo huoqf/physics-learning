@@ -2,6 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { useEffect, useMemo, useState } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
+import { colors } from '@/theme/colors'
 import {
   PHYSICS_COLORS,
   CHART_COLORS,
@@ -387,7 +388,7 @@ export default function FreeFallAnimation() {
           x={tubeLeft + 1.5} y={tubeTop + 1.5}
           width={tubeWidth - 3} height={tubeHeight - 3}
           fill="none"
-          stroke="#FFFFFF"
+          stroke={colors.neutral.white}
           strokeWidth={1}
           rx={7}
           opacity={0.3}
@@ -395,7 +396,7 @@ export default function FreeFallAnimation() {
         {/* 玻璃管左侧折射白高光线 */}
         <line
           x1={tubeLeft + 4} y1={tubeTop + 8} x2={tubeLeft + 4} y2={tubeBottom - 8}
-          stroke="#FFFFFF" strokeWidth={2} strokeLinecap="round" opacity={0.25}
+          stroke={colors.neutral.white} strokeWidth={2} strokeLinecap="round" opacity={0.25}
         />
 
         <text
@@ -543,7 +544,7 @@ export default function FreeFallAnimation() {
             <VectorArrow
               origin={{ x: ballX + 18, y: -renderYA }}
               vector={{ x: 0, y: stateA.fDrag }}
-              type="force"
+              type="forceComponent"
               sceneScale={ffSceneScale}
               strokeWidth={STROKE.vectorSub}
             />
@@ -735,7 +736,7 @@ export default function FreeFallAnimation() {
                 cy={vtToY(stateA.v, vtVMax, vtInnerH)}
                 r={4}
                 fill={PHYSICS_COLORS.velocity}
-                stroke="#FFFFFF"
+                stroke={colors.neutral.white}
                 strokeWidth={1}
               />
               {!isLandedB && (
@@ -744,7 +745,7 @@ export default function FreeFallAnimation() {
                   cy={vtToY(stateB.v, vtVMax, vtInnerH)}
                   r={4}
                   fill={CHART_COLORS.compareB}
-                  stroke="#FFFFFF"
+                  stroke={colors.neutral.white}
                   strokeWidth={1}
                 />
               )}

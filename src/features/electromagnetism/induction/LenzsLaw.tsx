@@ -275,14 +275,14 @@ export default function LenzsLaw() {
               <VectorArrow
                 origin={{ x: 0, y: 0 }}
                 vector={{ x: 0, y: forceDirection > 0 ? 1 : -1 }}
-                type="force"
+                type="lorentzForce"
                 sceneScale={{ originX: 65, originY: 35, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
                 pixelLength={forceArrowLength}
               />
               <text 
                 x="78" 
                 y={35 + forceDirection * (forceArrowLength / 2) + 4} 
-                fill={PHYSICS_COLORS.forceNet} 
+                fill={PHYSICS_COLORS.lorentzForce} 
                 fontWeight={CANVAS_STYLE.font.labelWeight} 
                 fontSize={CANVAS_STYLE.font.labelSize}
               >

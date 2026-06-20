@@ -136,12 +136,12 @@ export default function ChargeInBField() {
             <VectorArrow
               origin={{ x: 0, y: 0 }}
               vector={{ x: -Math.cos(theta), y: -Math.sin(theta) }}
-              type="force"
+              type="lorentzForce"
               sceneScale={{ originX: px, originY: py, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
               pixelLength={fLen}
             />
             <text x={px - Math.cos(theta) * fLen / 2 + 8} y={py + Math.sin(theta) * fLen / 2}
-              fontSize={FONT.axis} fill={PHYSICS_COLORS.forceNet} fontWeight="bold">
+              fontSize={FONT.axis} fill={PHYSICS_COLORS.lorentzForce} fontWeight="bold">
               F
             </text>
           </g>
