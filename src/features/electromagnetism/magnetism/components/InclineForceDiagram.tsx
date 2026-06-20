@@ -375,7 +375,6 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
         origin={{ x: 0, y: 0 }}
         vector={N_phys}
         type="normalForce"
-        color={colors.primary[500]}
         sceneScale={localScale}
         strokeWidth={1.8}
         pixelLength={physicsResult.N * forceScale}
@@ -384,7 +383,7 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
         x={px + N_phys.x * forceScale - 9}
         y={py - N_phys.y * forceScale + 2}
         fontSize="6.5"
-        fill={colors.primary[600]}
+        fill={PHYSICS_COLORS.normalForce}
         fontWeight="bold"
         style={{ userSelect: 'none' }}
       >
@@ -449,7 +448,6 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
               y: physicsResult.a > 0 ? 2.5 * sinT : -2.5 * sinT,
             }}
             type="acceleration"
-            color={colors.danger[500]}
             sceneScale={localScale}
             strokeWidth={2.5}
             pixelLength={2.5 * forceScale}
@@ -458,7 +456,7 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
             x={px + (physicsResult.a > 0 ? 15 * cosT + 4 : -15 * cosT - 12)}
             y={py - (physicsResult.a > 0 ? 15 * sinT + 12 : -15 * sinT + 3)}
             fontSize="6.5"
-            fill={colors.danger[600]}
+            fill={PHYSICS_COLORS.acceleration}
             fontWeight="extrabold"
             style={{ userSelect: 'none' }}
           >

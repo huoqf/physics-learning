@@ -2,6 +2,7 @@ import { useAnimationStore } from '@/stores'
 import { SimulationView } from './SimulationView'
 import { useCanvasSize } from '@/utils'
 import { colors } from '@/theme/colors'
+import { PHYSICS_COLORS } from '@/theme/physics'
 
 
 export default function ChargeInBField() {
@@ -214,10 +215,10 @@ function VelocityChart() {
             </text>
 
             {/* y 轴数值刻度 */}
-            <text x={paddingLeft - 8} y={yV + 3} fontSize="9" fill={colors.primary[500]} textAnchor="end" fontWeight="bold">
+            <text x={paddingLeft - 8} y={yV + 3} fontSize="9" fill={PHYSICS_COLORS.velocity} textAnchor="end" fontWeight="bold">
               {v.toFixed(1)}
             </text>
-            <line x1={paddingLeft - 3} y1={yV} x2={paddingLeft} y2={yV} stroke={colors.primary[500]} strokeWidth="1.5" />
+            <line x1={paddingLeft - 3} y1={yV} x2={paddingLeft} y2={yV} stroke={PHYSICS_COLORS.velocity} strokeWidth="1.5" />
 
             <text x={paddingLeft - 8} y={zeroY + 3} fontSize="9" fill={colors.neutral[400]} textAnchor="end">
               0
@@ -229,7 +230,7 @@ function VelocityChart() {
               y1={yV}
               x2={cw - paddingRight}
               y2={yV}
-              stroke={colors.primary[500]}
+              stroke={PHYSICS_COLORS.velocity}
               strokeWidth="3.5"
               strokeLinecap="round"
             />

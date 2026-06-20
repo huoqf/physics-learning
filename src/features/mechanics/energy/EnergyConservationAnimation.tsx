@@ -2,7 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { useState, useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, SCENE_COLORS, STROKE, CHART_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, ENERGY_COLORS, SCENE_COLORS, STROKE, CHART_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { KatexFormula } from '@/components/UI'
 import {
@@ -347,7 +347,7 @@ export default function EnergyConservationAnimation() {
 
             {mode === 1 && (
               <>
-                <line x1={115} y1={3} x2={123} y2={3} stroke={colors.danger[600]} strokeWidth={1.5} />
+                <line x1={115} y1={3} x2={123} y2={3} stroke={ENERGY_COLORS.internalEnergy} strokeWidth={1.5} />
                 <text x={127} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>Q (内能/摩擦热)</text>
               </>
             )}
@@ -380,7 +380,7 @@ export default function EnergyConservationAnimation() {
                 <polyline
                   points={visiblePoints.map(p => `${toChartX(p.t)},${toChartY(p.Q)}`).join(' ')}
                   fill="none"
-                  stroke={colors.danger[600]}
+                  stroke={ENERGY_COLORS.internalEnergy}
                   strokeWidth={STROKE.chartMain}
                 />
               )}
@@ -398,7 +398,7 @@ export default function EnergyConservationAnimation() {
           {/* 同步亮点 */}
           <circle cx={toChartX(state.t)} cy={toChartY(state.Ep)} r={3} fill={PHYSICS_COLORS.potentialEnergy} stroke={colors.neutral.white} strokeWidth={1} />
           <circle cx={toChartX(state.t)} cy={toChartY(state.Ek)} r={3} fill={PHYSICS_COLORS.kineticEnergy} stroke={colors.neutral.white} strokeWidth={1} />
-          {mode === 1 && <circle cx={toChartX(state.t)} cy={toChartY(state.Q)} r={3} fill={colors.danger[600]} stroke={colors.neutral.white} strokeWidth={1} />}
+          {mode === 1 && <circle cx={toChartX(state.t)} cy={toChartY(state.Q)} r={3} fill={ENERGY_COLORS.internalEnergy} stroke={colors.neutral.white} strokeWidth={1} />}
         </g>
 
         {/* ══════════════════════════════════════════════ */}
@@ -427,12 +427,12 @@ export default function EnergyConservationAnimation() {
               y1={hangY + R_pix}
               x2={animCenterX + 110}
               y2={hangY + R_pix}
-              stroke={colors.success[500]}
+              stroke={CHART_COLORS.reference}
               strokeWidth={0.8}
               strokeDasharray="3,2"
               opacity={0.7}
             />
-            <text x={animCenterX} y={hangY + R_pix + 10} fontSize={font(7.5)} fill={colors.success[700]} textAnchor="middle">
+            <text x={animCenterX} y={hangY + R_pix + 10} fontSize={font(7.5)} fill={CHART_COLORS.reference} textAnchor="middle">
               参考零势能面 (y=0)
             </text>
 
@@ -493,12 +493,12 @@ export default function EnergyConservationAnimation() {
               y1={groundY}
               x2={animCenterX + 110}
               y2={groundY}
-              stroke={colors.success[500]}
+              stroke={CHART_COLORS.reference}
               strokeWidth={0.8}
               strokeDasharray="3,2"
               opacity={0.7}
             />
-            <text x={animCenterX} y={groundY + 10} fontSize={font(7.5)} fill={colors.success[700]} textAnchor="middle">
+            <text x={animCenterX} y={groundY + 10} fontSize={font(7.5)} fill={CHART_COLORS.reference} textAnchor="middle">
               谷底零势能面 (y=0)
             </text>
 
@@ -530,7 +530,7 @@ export default function EnergyConservationAnimation() {
             {state.phase === 1 && (
               <g transform={`translate(${animCenterX - 45}, ${groundY - 110})`}>
                 <rect width={90} height={18} rx={3} fill="rgba(239, 68, 68, 0.08)" stroke="rgba(239, 68, 68, 0.4)" strokeWidth={0.8} />
-                <text x={45} y={12} fontSize={font(7.5)} fontWeight="bold" textAnchor="middle" fill={colors.danger[700]}>
+                <text x={45} y={12} fontSize={font(7.5)} fontWeight="bold" textAnchor="middle" fill={ENERGY_COLORS.internalEnergy}>
                   ⚠️ 摩擦受力平衡已静止
                 </text>
               </g>

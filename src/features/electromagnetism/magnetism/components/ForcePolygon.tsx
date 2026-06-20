@@ -168,7 +168,7 @@ export const ForcePolygon: React.FC<ForcePolygonProps> = ({
       {renderVectorLine('f', p2.x, p2.y, p3.x, p3.y, PHYSICS_COLORS.friction, 'f', 'right')}
 
       {/* 矢量 4: 支持力 N */}
-      {renderVectorLine('n', p3.x, p3.y, p4.x, p4.y, colors.primary[600], 'N', 'top')}
+      {renderVectorLine('n', p3.x, p3.y, p4.x, p4.y, PHYSICS_COLORS.normalForce, 'N', 'top')}
 
       {/* 合力缺口 (如果不平衡，展示红色虚线闪烁矢量) */}
       {hasGap && (
@@ -179,12 +179,12 @@ export const ForcePolygon: React.FC<ForcePolygonProps> = ({
             y1={p4.y}
             x2={p0.x}
             y2={p0.y}
-            stroke={colors.danger[500]}
+            stroke={PHYSICS_COLORS.forceNet}
             strokeWidth="1.5"
             strokeDasharray="2,2"
             className="animate-pulse"
           />
-          {renderVectorLine('f_net', p4.x, p4.y, p0.x, p0.y, colors.danger[600], 'F_合', 'left')}
+          {renderVectorLine('f_net', p4.x, p4.y, p0.x, p0.y, PHYSICS_COLORS.forceNet, 'F_合', 'left')}
         </g>
       )}
 

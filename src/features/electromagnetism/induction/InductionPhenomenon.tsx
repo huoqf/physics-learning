@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { calculateMagnetInduction, calculateCoilInduction } from '@/physics'
 import { useAnimationFrame } from '@/utils/animation'
@@ -274,7 +274,7 @@ export default function InductionPhenomenon() {
         <g transform="translate(560, 30)" opacity="0.85">
           <rect x="0" y="0" width="110" height="42" rx="6" fill={SCENE_COLORS.labels.panelBg} stroke={colors.neutral[700]} strokeWidth="1" />
           <text x="10" y="16" fill={colors.neutral[400]} fontSize={font(9)} fontWeight="bold">磁通量 Φ</text>
-          <text x="10" y="32" fill={colors.success[500]} fontSize={font(12)} fontWeight="bold" style={{ fontFamily: 'monospace' }}>
+          <text x="10" y="32" fill={EM_COLORS.magneticField} fontSize={font(12)} fontWeight="bold" style={{ fontFamily: 'monospace' }}>
             {phi.toFixed(3)} Wb
           </text>
         </g>
@@ -444,7 +444,7 @@ export default function InductionPhenomenon() {
                   h={36}
                   pole={magnetPole as 1 | -1}
                   canvasHeight={400}
-                  lineColor={colors.success[500]}
+                  lineColor={EM_COLORS.magneticFieldLine}
                 />
               </g>
             ) : (
@@ -459,7 +459,7 @@ export default function InductionPhenomenon() {
                 y={coilY}
                 current={(10 / effectiveR) * ironCoreFactor}
                 canvasHeight={400}
-                lineColor={colors.success[500]}
+                lineColor={EM_COLORS.magneticFieldLine}
               />
             )}
           </g>

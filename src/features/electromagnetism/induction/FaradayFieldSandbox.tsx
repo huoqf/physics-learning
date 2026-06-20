@@ -3,8 +3,7 @@
  *
  * 从 FaradayLaw.tsx 拆分：进阶模式 (mode=1) 的中间屏渲染。
  */
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
-import { colors } from '@/theme/colors'
+import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { COIL_RX, COIL_RY } from './hooks/useFaradayPhysics'
 
@@ -75,11 +74,11 @@ export function FaradayFieldSandbox({
       {/* 4. 黄色高亮环 */}
       {glowOpacity > 0.02 && (
         <ellipse cx={sandboxW / 2} cy={coilY + 10} rx={COIL_RX * 1.5} ry={COIL_RY * 1.5}
-          fill="none" stroke={colors.accent[400]} strokeWidth={glowWidth}
+          fill="none" stroke={EM_COLORS.emf} strokeWidth={glowWidth}
           strokeLinecap="round" strokeDasharray="14, 18"
           strokeDashoffset={inducedCurrentDir !== 0 ? time * 140 * inducedCurrentDir : 0}
           opacity={glowOpacity}
-          style={{ filter: `drop-shadow(0px 0px 4px ${colors.accent[300]})` }} />
+          style={{ filter: `drop-shadow(0px 0px 4px ${EM_COLORS.emf})` }} />
       )}
 
       {/* 电流方向辅助指示箭头 */}
@@ -93,7 +92,7 @@ export function FaradayFieldSandbox({
             pixelLength={30}
             strokeWidth={2}
           />
-          <text x="0" y="-15" fontSize={font(9)} fill={colors.accent[700]}
+          <text x="0" y="-15" fontSize={font(9)} fill={EM_COLORS.electricCurrent}
             textAnchor="middle" fontWeight="bold">
             感应电流 {inducedCurrentDir > 0 ? '顺时针' : '逆时针'}
           </text>

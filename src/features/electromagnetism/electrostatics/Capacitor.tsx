@@ -3,7 +3,7 @@ import { useCanvasSize, useAnimationFrame } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateCapacitor } from '@/physics'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
 // 物理常数定义 (SI)
@@ -262,9 +262,9 @@ export default function Capacitor() {
               y={topPlateY + plateThick}
               width={plateW}
               height={gapPx - plateThick}
-              fill={colors.secondary[500]} // 介质青
+              fill={SCENE_COLORS.circuit.capacitorPlate} // 介质青
               fillOpacity={0.25}
-              stroke={colors.secondary[600]}
+              stroke={SCENE_COLORS.circuit.capacitorSt}
               strokeWidth={1.5}
               strokeDasharray="4,2"
               rx={3}
@@ -279,7 +279,7 @@ export default function Capacitor() {
               y={cy + 4}
               fontSize={font(10)}
               fontWeight="semibold"
-              fill={colors.secondary[600]}
+              fill={SCENE_COLORS.circuit.capacitorSt}
               textAnchor="middle"
               style={{
                 transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), y 0.1s ease-out',
@@ -423,7 +423,7 @@ export default function Capacitor() {
               y1={ey}
               x2={ex}
               y2={ey + 46}
-              stroke={colors.danger[600]}
+              stroke={SCENE_COLORS.circuit.meterNeedle}
               strokeWidth={2.5}
               strokeLinecap="round"
               style={{
@@ -442,7 +442,7 @@ export default function Capacitor() {
             </text>
 
             {/* 电势差数值 */}
-            <text x={ex} y={ey + 20} fontSize="11" fill={colors.danger[600]} fontWeight="bold" textAnchor="middle" className="font-mono">
+            <text x={ex} y={ey + 20} fontSize="11" fill={EM_COLORS.electricPotential} fontWeight="bold" textAnchor="middle" className="font-mono">
               U = {voltage.toFixed(1)} V
             </text>
 

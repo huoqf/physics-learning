@@ -3,7 +3,7 @@ import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateElevatorMotion } from '@/physics'
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { colors } from '@/theme/colors'
 
@@ -626,7 +626,7 @@ sceneScale={{ originX: objCx, originY: objCy, scaleX: 1, scaleY: 1, scale: 1, ma
               y1={margin.top}
               x2={toChartX(-g)}
               y2={toChartY(0)}
-              stroke={colors.primary[400]}
+              stroke={CHART_COLORS.reference}
               strokeWidth={0.8}
               strokeDasharray="3,3"
               opacity={0.6}
@@ -635,7 +635,7 @@ sceneScale={{ originX: objCx, originY: objCy, scaleX: 1, scaleY: 1, scale: 1, ma
               x={toChartX(-g)}
               y={margin.top + plotH - 6}
               fontSize={sfs - 1}
-              fill={colors.primary[500]}
+              fill={CHART_COLORS.reference}
               textAnchor="middle"
               fontWeight="bold"
             >

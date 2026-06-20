@@ -572,8 +572,8 @@ export default function SatelliteAnimation() {
         {/* 火箭头部整流罩 */}
         <path
           d="M 8 -2.5 L 13 0 L 8 2.5 Z"
-          fill={colors.danger[500]}
-          stroke={colors.neutral[600]}
+          fill={SCENE_COLORS.circuit.meterNeedle}
+          stroke={SCENE_COLORS.circuit.meterFrame}
           strokeWidth={0.6}
         />
         {/* 尾翼 */}

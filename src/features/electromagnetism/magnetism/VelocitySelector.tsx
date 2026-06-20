@@ -3,7 +3,7 @@ import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateVelocitySelectorTrajectory } from '@/physics'
-import { PHYSICS_COLORS, CANVAS_STYLE, FONT } from '@/theme/physics'
+import { PHYSICS_COLORS, CHART_COLORS, CANVAS_STYLE, FONT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
@@ -759,7 +759,7 @@ export default function VelocitySelector() {
                 cx={toChartX(v0_param)}
                 cy={toChartY(chartData.currentY)}
                 r="4.5"
-                fill={colors.danger[500]}
+                fill={CHART_COLORS.highlight}
                 stroke="#fff"
                 strokeWidth="1.5"
                 filter={`url(#glow-${gradId})`}

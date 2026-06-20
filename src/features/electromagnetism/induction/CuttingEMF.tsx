@@ -3,7 +3,7 @@ import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { computeRodConstants, computeRodStateAtTime, calculateCuttingEMF } from '@/physics'
-import { PHYSICS_COLORS, CHART_COLORS, STROKE, VT_CHART_COLORS, AT_CHART_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, EM_COLORS, CHART_COLORS, STROKE, VT_CHART_COLORS, AT_CHART_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { withAlpha } from '@/theme/physics/colors'
 import { physicsToCanvasWithOrigin, computeScale } from '@/utils/coordinate'
@@ -591,7 +591,7 @@ export default function CuttingEMF() {
                   L ${railLeftPos.cx - px(16)} ${railCy + railSpacing / 2} 
                   Z`}
               fill="none"
-              stroke={colors.warning[400]} // 亮黄色电荷流光
+              stroke={EM_COLORS.electricCurrent} // 亮黄色电荷流光
               strokeWidth={px(3)}
               strokeDasharray={`${px(1)}, ${px(15)}`}
               strokeLinecap="round"

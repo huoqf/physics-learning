@@ -1,5 +1,5 @@
 import React, { type RefObject } from 'react'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, EM_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { radius } from '@/theme/radius'
 import { shadow } from '@/theme/shadow'
@@ -125,7 +125,7 @@ export function ElectricPotentialAnimScene({
             cy={posA.cy}
             r={22}
             fill="none"
-            stroke={colors.primary[500]}
+            stroke={EM_COLORS.electricPotential}
             strokeWidth={2}
             className="animate-ping"
             opacity={0.65}
@@ -137,17 +137,17 @@ export function ElectricPotentialAnimScene({
           cy={posA.cy}
           r={12}
           fill="white"
-          stroke={drawMode === 1 && !isPlaying ? colors.primary[500] : colors.neutral[400]}
+          stroke={drawMode === 1 && !isPlaying ? EM_COLORS.electricPotential : colors.neutral[400]}
           strokeWidth={1.8}
           style={{ cursor: drawMode === 1 && !isPlaying ? 'crosshair' : 'default' }}
         />
-        <circle cx={posA.cx} cy={posA.cy} r={4} fill={drawMode === 1 && !isPlaying ? colors.primary[600] : colors.neutral[500]} />
+        <circle cx={posA.cx} cy={posA.cy} r={4} fill={drawMode === 1 && !isPlaying ? EM_COLORS.electricPotential : colors.neutral[500]} />
         <text
           x={posA.cx}
           y={posA.cy + 24}
           fontSize={font(10.5)}
           fontWeight="black"
-          fill={drawMode === 1 && !isPlaying ? colors.primary[700] : colors.neutral[600]}
+          fill={drawMode === 1 && !isPlaying ? EM_COLORS.electricPotential : colors.neutral[600]}
           textAnchor="middle"
         >
           A (起点)
@@ -178,7 +178,7 @@ export function ElectricPotentialAnimScene({
             y1={posA.cy}
             x2={posB.cx}
             y2={posB.cy}
-            stroke={colors.primary[400]}
+            stroke={EM_COLORS.electricPotential}
             strokeWidth={3}
             opacity={0.8}
             strokeLinecap="round"
@@ -190,7 +190,7 @@ export function ElectricPotentialAnimScene({
           <path
             d={handPathD}
             fill="none"
-            stroke={colors.primary[500]}
+            stroke={EM_COLORS.electricPotential}
             strokeWidth={3}
             strokeLinecap="round"
             strokeLinejoin="round"

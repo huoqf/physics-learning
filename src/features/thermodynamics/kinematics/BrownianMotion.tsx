@@ -5,7 +5,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
 import { stepBrownianMotion } from '@/physics/brownianMotion'
-import { THERMO_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { THERMO_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { THERMAL_COLORS } from '@/theme/physics/sceneColors'
 import { colors } from '@/theme/colors'
 
@@ -244,7 +244,7 @@ export default function BrownianMotion() {
             cx={mol.cx}
             cy={mol.cy}
             r={Math.max(2, scale * 0.3)}
-            fill={colors.primary[500]}
+            fill={SCENE_COLORS.materials.sliderMetalGrad[2]}
             opacity={0.7}
           />
         ))}
@@ -253,7 +253,7 @@ export default function BrownianMotion() {
         <polygon
           points={generateHexagon(px, py, pollenRadius)}
           fill="url(#pollen-grad)"
-          stroke={colors.accent[700]}
+          stroke={SCENE_COLORS.circuit.meterFrame}
           strokeWidth={1.5}
           filter="url(#glow)"
         />

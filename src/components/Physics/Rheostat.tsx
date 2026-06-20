@@ -1,6 +1,5 @@
 import React from 'react'
 import { SCENE_COLORS, PHYSICS_COLORS } from '@/theme/physics'
-import { colors } from '@/theme/colors'
 
 const ELECTRICAL = SCENE_COLORS.electricalApparatus
 
@@ -142,13 +141,13 @@ export const Rheostat: React.FC<RheostatProps> = ({
         {/* 上部滑套 */}
         <rect x={-6 * layout.scale} y={-24 * layout.scale} width={12 * layout.scale} height={8 * layout.scale} fill={ELECTRICAL.terminalCore} stroke={ELECTRICAL.rheostatBase} strokeWidth={1 * layout.scale} rx={1 * layout.scale} />
         {/* 下垂弹簧片 */}
-        <path d={`M ${-3 * layout.scale} ${-16 * layout.scale} L ${-3 * layout.scale} ${10 * layout.scale} L ${3 * layout.scale} ${10 * layout.scale} L ${3 * layout.scale} ${-16 * layout.scale} Z`} fill={colors.accent[600]} opacity="0.95" />
-        <line x1={-4 * layout.scale} y1={10 * layout.scale} x2={4 * layout.scale} y2={10 * layout.scale} stroke={colors.accent[700]} strokeWidth={1.5 * layout.scale} />
+        <path d={`M ${-3 * layout.scale} ${-16 * layout.scale} L ${-3 * layout.scale} ${10 * layout.scale} L ${3 * layout.scale} ${10 * layout.scale} L ${3 * layout.scale} ${-16 * layout.scale} Z`} fill={ELECTRICAL.rheostatSlider} opacity="0.95" />
+        <line x1={-4 * layout.scale} y1={10 * layout.scale} x2={4 * layout.scale} y2={10 * layout.scale} stroke={ELECTRICAL.rheostatWire} strokeWidth={1.5 * layout.scale} />
         {/* 指示金属小接点 */}
-        <circle cx={0} cy={10 * layout.scale} r={2 * layout.scale} fill={colors.accent[400]} />
+        <circle cx={0} cy={10 * layout.scale} r={2 * layout.scale} fill={ELECTRICAL.rheostatContact} />
         {/* 顶部红热塑料手柄 */}
-        <circle cx={0} cy={-28 * layout.scale} r={5 * layout.scale} fill={colors.danger[500]} stroke={colors.danger[700]} strokeWidth={1 * layout.scale} />
-        <circle cx={0} cy={-28 * layout.scale} r={1.5 * layout.scale} fill={colors.danger[300]} />
+        <circle cx={0} cy={-28 * layout.scale} r={5 * layout.scale} fill={SCENE_COLORS.circuit.meterNeedle} stroke={SCENE_COLORS.circuit.meterFrame} strokeWidth={1 * layout.scale} />
+        <circle cx={0} cy={-28 * layout.scale} r={1.5 * layout.scale} fill={SCENE_COLORS.circuit.meterScale} />
       </g>
 
       {/* 6. 可选阻值文本标签 */}

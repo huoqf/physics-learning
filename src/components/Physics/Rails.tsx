@@ -97,9 +97,9 @@ export const Rails: React.FC<RailsProps> = ({
         <defs>
           {/* 侧视斜劈：美化为科技感半透明磨砂玻璃渐变 */}
           <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor={colors.primary[50]} stopOpacity="0.85" />
-            <stop offset="50%" stopColor={colors.primary[100]} stopOpacity="0.60" />
-            <stop offset="100%" stopColor={colors.primary[200]} stopOpacity="0.40" />
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.trackMetalGrad[0]} stopOpacity="0.85" />
+            <stop offset="50%" stopColor={SCENE_COLORS.materials.trackMetalGrad[1]} stopOpacity="0.60" />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.trackMetalGrad[2]} stopOpacity="0.40" />
           </linearGradient>
           {/* 角度指示箭头 */}
           <marker
@@ -202,8 +202,8 @@ export const Rails: React.FC<RailsProps> = ({
         <defs>
           {/* 斜面半透明渐变阴影 */}
           <linearGradient id={shadowGradId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={colors.primary[500]} stopOpacity="0.08" />
-            <stop offset="100%" stopColor={colors.primary[500]} stopOpacity="0.01" />
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.trackMetalGrad[3]} stopOpacity="0.08" />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.trackMetalGrad[4]} stopOpacity="0.01" />
           </linearGradient>
           {/* 导轨不锈钢材质拉丝金属渐变 */}
           <linearGradient id={railMetalGradId} x1="0" y1="0" x2="0" y2="1">

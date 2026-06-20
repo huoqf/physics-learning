@@ -160,8 +160,8 @@ export const DCSource: React.FC<DCSourceProps> = ({
         </text>
 
         {/* 正极接线柱 (+) */}
-        <circle cx={posTerminalX} cy={terminalY} r={layout.terminalR} fill={SCENE_COLORS_CIRCUIT.batteryPos} stroke={colors.danger[900]} strokeWidth={1} />
-        <circle cx={posTerminalX} cy={terminalY} r={layout.axisR} fill={colors.danger[700]} />
+        <circle cx={posTerminalX} cy={terminalY} r={layout.terminalR} fill={SCENE_COLORS_CIRCUIT.batteryPos} stroke={SCENE_COLORS_CIRCUIT.batteryPos} strokeWidth={1} />
+        <circle cx={posTerminalX} cy={terminalY} r={layout.axisR} fill={SCENE_COLORS_CIRCUIT.batteryPos} />
         <text x={posTerminalX} y={terminalY - 11 * (height / 80)} fill={SCENE_COLORS_CIRCUIT.batteryPos} fontSize={9 * (Math.min(width, height) / 80)} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
           +
         </text>

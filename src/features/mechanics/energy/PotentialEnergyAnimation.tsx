@@ -528,7 +528,7 @@ export default function PotentialEnergyAnimation() {
               y1={groundY - 55}
               x2={toPixelX(0) + objW * 0.5}
               y2={groundY + 12}
-              stroke={colors.success[500]}
+              stroke={CHART_COLORS.reference}
               strokeWidth={1}
               strokeDasharray="3,2"
               opacity={0.8}
@@ -537,7 +537,7 @@ export default function PotentialEnergyAnimation() {
               x={toPixelX(0) + objW * 0.5}
               y={groundY + 10}
               fontSize={font(7)}
-              fill={colors.success[700]}
+              fill={CHART_COLORS.reference}
               textAnchor="middle"
               fontWeight="semibold"
             >

@@ -216,7 +216,7 @@ export default function PowerAnimation() {
           cy={centerY}
           r={r}
           fill="none"
-          stroke={colors.accent[500]}
+          stroke={CHART_COLORS.criticalPt}
           strokeWidth={1.5}
           strokeOpacity={opacity}
           pointerEvents="none"
@@ -382,7 +382,7 @@ export default function PowerAnimation() {
                 <line
                   x1={toChartX(criticalInfo.t_c)} y1={vtTop}
                   x2={toChartX(criticalInfo.t_c)} y2={vtBottom}
-                  stroke={colors.accent[600]}
+                  stroke={CHART_COLORS.criticalPt}
                   strokeWidth={0.8}
                   strokeDasharray={DASH.guide.join(',')}
                   opacity={0.6}
@@ -390,13 +390,13 @@ export default function PowerAnimation() {
                 <line
                   x1={chartLeft} y1={toVtY(criticalInfo.v_c)}
                   x2={toChartX(criticalInfo.t_c)} y2={toVtY(criticalInfo.v_c)}
-                  stroke={colors.accent[600]}
+                  stroke={CHART_COLORS.criticalPt}
                   strokeWidth={0.8}
                   strokeDasharray={DASH.guide.join(',')}
                   opacity={0.6}
                 />
-                <circle cx={toChartX(criticalInfo.t_c)} cy={toVtY(criticalInfo.v_c)} r={2} fill={colors.accent[600]} />
-                <text x={toChartX(criticalInfo.t_c) + 3} y={vtTop + 9} fontSize={font(7)} fill={colors.accent[600]} fontWeight="bold">tc 拐点</text>
+                <circle cx={toChartX(criticalInfo.t_c)} cy={toVtY(criticalInfo.v_c)} r={2} fill={CHART_COLORS.criticalPt} />
+                <text x={toChartX(criticalInfo.t_c) + 3} y={vtTop + 9} fontSize={font(7)} fill={CHART_COLORS.criticalPt} fontWeight="bold">tc 拐点</text>
                 {renderRipple(toChartX(criticalInfo.t_c), toVtY(criticalInfo.v_c))}
               </g>
             )}
@@ -445,7 +445,7 @@ export default function PowerAnimation() {
               <line
                 x1={toChartX(criticalInfo.t_c)} y1={ptTop}
                 x2={toChartX(criticalInfo.t_c)} y2={ptBottom}
-                stroke={colors.accent[600]}
+                stroke={CHART_COLORS.criticalPt}
                 strokeWidth={0.8}
                 strokeDasharray={DASH.guide.join(',')}
                 opacity={0.6}
@@ -520,13 +520,13 @@ export default function PowerAnimation() {
                 <line
                   x1={toFvChartX(criticalInfo.v_c)} y1={vtTop}
                   x2={toFvChartX(criticalInfo.v_c)} y2={vtBottom}
-                  stroke={colors.accent[600]}
+                  stroke={CHART_COLORS.criticalPt}
                   strokeWidth={0.8}
                   strokeDasharray={DASH.guide.join(',')}
                   opacity={0.6}
                 />
-                <circle cx={toFvChartX(criticalInfo.v_c)} cy={toFvY(criticalInfo.F_const)} r={2} fill={colors.accent[600]} />
-                <text x={toFvChartX(criticalInfo.v_c) + 3} y={vtTop + 9} fontSize={font(7)} fill={colors.accent[600]} fontWeight="bold">vc 临界速</text>
+                <circle cx={toFvChartX(criticalInfo.v_c)} cy={toFvY(criticalInfo.F_const)} r={2} fill={CHART_COLORS.criticalPt} />
+                <text x={toFvChartX(criticalInfo.v_c) + 3} y={vtTop + 9} fontSize={font(7)} fill={CHART_COLORS.criticalPt} fontWeight="bold">vc 临界速</text>
                 {renderRipple(toFvChartX(criticalInfo.v_c), toFvY(criticalInfo.F_const))}
               </g>
             )}
@@ -564,7 +564,7 @@ export default function PowerAnimation() {
               <line
                 x1={toChartX(criticalInfo.t_c)} y1={ptTop}
                 x2={toChartX(criticalInfo.t_c)} y2={ptBottom}
-                stroke={colors.accent[600]}
+                stroke={CHART_COLORS.criticalPt}
                 strokeWidth={0.8}
                 strokeDasharray={DASH.guide.join(',')}
                 opacity={0.6}

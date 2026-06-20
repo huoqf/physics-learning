@@ -1,7 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateClosedCircuit } from '@/physics'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { DialMeter, Rheostat } from '@/components/Physics'
 
@@ -218,7 +218,7 @@ export default function ClosedCircuit() {
           {/* 负极片 (短粗) */}
           <line x1={20} y1={-10} x2={20} y2={10} stroke={colors.neutral[800]} strokeWidth={4} />
           {/* 正极片 (长细) */}
-          <line x1={30} y1={-18} x2={30} y2={18} stroke={colors.danger[600]} strokeWidth={2.2} />
+          <line x1={30} y1={-18} x2={30} y2={18} stroke={SCENE_COLORS.circuit.batteryPos} strokeWidth={2.2} />
 
           {/* 理想电源标签 */}
           <text x={25} y={-23} fill={PHYSICS_COLORS.labelText} fontSize={font(11)} fontWeight="bold" textAnchor="middle">

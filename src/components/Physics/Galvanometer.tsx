@@ -171,7 +171,7 @@ export const Galvanometer: React.FC<GalvanometerProps> = ({
       <circle cx={pivotX} cy={pivotY} r="3" fill={colors.neutral[400]} />
 
       {/* 接线柱接口 (红/黑) */}
-      <circle cx={-30} cy="100" r="5" fill={colors.danger[500]} stroke={colors.danger[900]} strokeWidth="1" />
+      <circle cx={-30} cy="100" r="5" fill={SCENE_COLORS.circuit.batteryPos} stroke={SCENE_COLORS.circuit.meterFrame} strokeWidth="1" />
       <circle cx="30" cy="100" r="5" fill={colors.neutral[800]} stroke={colors.neutral[900]} strokeWidth="1" />
     </g>
   )
