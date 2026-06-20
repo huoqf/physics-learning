@@ -106,12 +106,11 @@ const VTCARD = {
 }
 
 export default function SatelliteAnimation() {
-    const {params, updateParam, showVectors, showGrid, time, isPlaying, setIsPlaying} = useAnimationStore(
+    const {params, updateParam, showVectors, time, isPlaying, setIsPlaying} = useAnimationStore(
     useShallow((s) => ({
     params: s.params,
     updateParam: s.updateParam,
     showVectors: s.showVectors,
-    showGrid: s.showGrid,
     time: s.time,
     isPlaying: s.isPlaying,
     setIsPlaying: s.setIsPlaying,
@@ -678,21 +677,7 @@ export default function SatelliteAnimation() {
           </filter>
         </defs>
 
-        {/* 1. 辅助网格 */}
-        {showGrid && (
-          <g>
-            {Array.from({ length: 9 }).map((_, idx) => {
-              const xPos = centerX + (idx - 4) * 50
-              const yPos = centerY + (idx - 4) * 50
-              return (
-                <g key={`grid-grp-${idx}`}>
-                  <line x1={xPos} y1={0} x2={xPos} y2={canvasSize.height} stroke={PHYSICS_COLORS.grid} strokeWidth={0.5} strokeDasharray="3,6" />
-                  <line x1={0} y1={yPos} x2={canvasSize.width} y2={yPos} stroke={PHYSICS_COLORS.grid} strokeWidth={0.5} strokeDasharray="3,6" />
-                </g>
-              )
-            })}
-          </g>
-        )}
+        {/* 1. 辅助网格（已移除） */}
 
         {/* 2. 地球绘制 */}
         {renderEarth()}

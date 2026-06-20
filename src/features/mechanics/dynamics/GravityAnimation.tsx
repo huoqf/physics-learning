@@ -10,13 +10,12 @@ import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
 export default function GravityAnimation() {
-    const {params, setParams, updateParam, showVectors, showGrid, time} = useAnimationStore(
+    const {params, setParams, updateParam, showVectors, time} = useAnimationStore(
     useShallow((s) => ({
     params: s.params,
     setParams: s.setParams,
     updateParam: s.updateParam,
     showVectors: s.showVectors,
-    showGrid: s.showGrid,
     time: s.time,
     }))
   )
@@ -168,44 +167,8 @@ export default function GravityAnimation() {
     isDraggingChartRef.current = false
   }
 
-  // ── 辅助网格 ──
-  const gridLines = []
-  if (showGrid) {
-    const gridSpacing = 40
-    const cols = Math.floor(canvasSize.width / gridSpacing)
-    const rows = Math.floor(canvasSize.height / gridSpacing)
-    
-    for (let i = 0; i <= cols; i++) {
-      const x = i * gridSpacing
-      gridLines.push(
-        <line
-          key={`grid-x-${i}`}
-          x1={x}
-          y1={0}
-          x2={x}
-          y2={canvasSize.height}
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={0.5}
-          strokeDasharray="2,3"
-        />
-      )
-    }
-    for (let j = 0; j <= rows; j++) {
-      const y = j * gridSpacing
-      gridLines.push(
-        <line
-          key={`grid-y-${j}`}
-          x1={0}
-          y1={y}
-          x2={canvasSize.width}
-          y2={y}
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={0.5}
-          strokeDasharray="2,3"
-        />
-      )
-    }
-  }
+  // ── 辅助网格（已移除）──
+  const gridLines = null
 
   // ── 动态引力场向心流动波纹 ──
   const numRipples = 3
