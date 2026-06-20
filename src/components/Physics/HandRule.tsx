@@ -88,7 +88,7 @@ export function HandRule({
   // 故意只追踪 .x/.y，传入新对象但坐标未变时不会重新计算
   const { x: tx, y: ty } = thumbDir
   const { x: mx, y: my } = middleDir
-  const auto = useMemo(() => computeHandPose(thumbDir, middleDir), [tx, ty, mx, my])
+  const auto = useMemo(() => computeHandPose(thumbDir, middleDir), [tx, ty, mx, my]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 用户拖拽偏移量（叠加在自动旋转上）───────────────────────────────
   const [userOffset, setUserOffset] = useState(0)

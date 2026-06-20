@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useId } from 'react'
 import { SCENE_COLORS, PHYSICS_COLORS } from '@/theme/physics'
 
 /**
@@ -49,6 +49,8 @@ export const PrimaryCoil: React.FC<PrimaryCoilProps> = ({
   className = '',
 }) => {
   const c = SCENE_COLORS.coil
+  const uniqueId = useId().replace(/:/g, '-')
+  const ironCoreGradId = `primaryIronCoreGrad-${uniqueId}`
   // rx 参数化：默认按 height 的 21% 计算，保持管径比例
   const rx = rxProp ?? height * 0.21
   const ry = height / 2 // 椭圆 y 半径
@@ -68,7 +70,7 @@ export const PrimaryCoil: React.FC<PrimaryCoilProps> = ({
       {showIronCore && (
         <>
           <defs>
-            <linearGradient id="primaryIronCoreGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <linearGradient id={ironCoreGradId} x1="0%" y1="0%" x2="0%" y2="100%">
               <stop offset="0%" stopColor="#334155" />
               <stop offset="30%" stopColor="#64748B" />
               <stop offset="50%" stopColor="#CBD5E1" />
@@ -82,7 +84,7 @@ export const PrimaryCoil: React.FC<PrimaryCoilProps> = ({
             width={width + 24}
             height={height - 12}
             rx="3"
-            fill="url(#primaryIronCoreGrad)"
+            fill={`url(#${ironCoreGradId})`}
             stroke="#0F172A"
             strokeWidth="1.5"
           />

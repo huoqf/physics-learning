@@ -27,22 +27,14 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
   const speedOptions = [0.25, 0.5, 1, 2]
   const percentage = maxTime > 0 ? (time / maxTime) * 100 : 0
 
-  // 根据播放速度确定进度条颜色
-  const getProgressBarColor = () => {
+  // 根据播放速度确定颜色
+  const getSpeedColor = () => {
     if (speed < 1) return colors.secondary[400]
     if (speed > 1) return colors.accent[500]
     return colors.primary[500]
   }
 
-  const progressBarColor = getProgressBarColor()
-
-  const getHandleColor = () => {
-    if (speed < 1) return colors.secondary[400]
-    if (speed > 1) return colors.accent[500]
-    return colors.primary[500]
-  }
-
-  const handleColor = getHandleColor()
+  const speedColor = getSpeedColor()
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onTimeChange(parseFloat(e.target.value))
@@ -110,8 +102,8 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
 
         <div className="flex-1 flex items-center gap-3">
           <span className="text-xs font-medium px-1.5 py-0.5 rounded" style={{
-            color: progressBarColor,
-            backgroundColor: `${progressBarColor}22`
+            color: speedColor,
+            backgroundColor: `${speedColor}22`
           }}>
             {speed}x
           </span>
@@ -123,7 +115,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
               className="absolute left-0 top-0 h-full rounded-full transition-all"
               style={{
                 width: `${percentage}%`,
-                backgroundColor: progressBarColor,
+                backgroundColor: speedColor,
                 transitionProperty: 'all',
                 transitionDuration: `${duration.fast}ms`,
                 transitionTimingFunction: 'ease-out',
@@ -142,7 +134,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
               className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-sm transition-all"
               style={{
                 left: `calc(${percentage}% - 8px)`,
-                borderColor: handleColor,
+                borderColor: speedColor,
                 borderWidth: '2px',
                 borderStyle: 'solid',
                 transitionProperty: 'all',

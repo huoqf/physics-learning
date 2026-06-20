@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useId } from 'react'
 import { SCENE_COLORS, PHYSICS_COLORS } from '@/theme/physics'
 
 /**
@@ -50,6 +50,8 @@ export const Solenoid: React.FC<SolenoidProps> = ({
   showIronCore = true,
 }) => {
   const c = SCENE_COLORS.coil
+  const uniqueId = useId().replace(/:/g, '-')
+  const ironCoreGradId = `ironCoreGrad-${uniqueId}`
   // rx 参数化：默认按 height 的 20% 计算，保持管径比例
   const rx = rxProp ?? height * 0.2
   const ry = height / 2 // 椭圆 y 半径
@@ -84,7 +86,7 @@ export const Solenoid: React.FC<SolenoidProps> = ({
     <g transform={`translate(${x}, ${y})`} className={className}>
       {/* 1. 绘制管状骨架/铁芯 (拟物金属渐变) */}
       <defs>
-        <linearGradient id="ironCoreGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <linearGradient id={ironCoreGradId} x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#475569" />
           <stop offset="30%" stopColor="#94A3B8" />
           <stop offset="50%" stopColor="#E2E8F0" />
@@ -100,7 +102,7 @@ export const Solenoid: React.FC<SolenoidProps> = ({
           width={width + 20}
           height={height - 12}
           rx="4"
-          fill="url(#ironCoreGrad)"
+          fill={`url(#${ironCoreGradId})`}
           stroke="#1E293B"
           strokeWidth="1.5"
         />

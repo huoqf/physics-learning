@@ -64,7 +64,7 @@ export const Spring: React.FC<SpringProps> = ({
     }
 
     return `M ${points.join(' L ')}`
-  }, [x1, y1, x2, y2, dx, dy, length, coils, radius])
+  }, [x1, y1, dx, dy, length, coils, radius])
 
   if (length <= 1) return null
 

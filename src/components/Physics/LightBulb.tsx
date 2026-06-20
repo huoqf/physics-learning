@@ -39,7 +39,7 @@ export const LightBulb: FC<LightBulbProps> = ({
   label = '小灯泡',
 }) => {
   // 动态生成唯一的渐变 ID，防止同屏渲染多个灯泡时渐变冲突
-  const uniqueId = useId().replace(/:/g, '')
+  const uniqueId = useId().replace(/:/g, '-')
   const glowGradientId = `bulb-glow-${uniqueId}`
 
   // 1. 发光外圈半径计算（加入正弦振荡形成呼吸效果）
