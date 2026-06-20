@@ -24,13 +24,13 @@ interface ValleyPreset {
 }
 
 const PENDULUM_PRESETS: PendulumPreset[] = [
-  { name: '地球经典摆', icon: '🍏', m: 2.0, g: 9.8, L: 5.0, theta0: 45, mode: 0 },
-  { name: '月球慢速摆', icon: '🌙', m: 2.0, g: 1.63, L: 5.0, theta0: 45, mode: 0 },
+  { name: '地球经典摆', icon: '', m: 2.0, g: 9.8, L: 5.0, theta0: 45, mode: 0 },
+  { name: '月球慢速摆', icon: '', m: 2.0, g: 1.63, L: 5.0, theta0: 45, mode: 0 },
 ]
 
 const VALLEY_PRESETS: ValleyPreset[] = [
-  { name: '理想光滑山谷', icon: '🎢', m: 2.0, g: 9.8, R: 5.0, mu: 0.00, theta0: 55, mode: 1 },
-  { name: '阻尼耗减山谷', icon: '🍂', m: 2.0, g: 9.8, R: 5.0, mu: 0.12, theta0: 55, mode: 1 },
+  { name: '理想光滑山谷', icon: '', m: 2.0, g: 9.8, R: 5.0, mu: 0.00, theta0: 55, mode: 1 },
+  { name: '阻尼耗减山谷', icon: '', m: 2.0, g: 9.8, R: 5.0, mu: 0.12, theta0: 55, mode: 1 },
 ]
 
 /**

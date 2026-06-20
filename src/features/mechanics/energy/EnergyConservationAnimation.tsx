@@ -10,6 +10,7 @@ import {
   precomputeValleyTrajectory,
   getECStateAtTime,
 } from '@/physics/energyConservation'
+import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
@@ -64,9 +65,6 @@ export default function EnergyConservationAnimation() {
   // ── 布局与映射参数 ──
   const padding = canvasSize.width * 0.06
   const wallX = canvasSize.width - padding * 0.8
-  const fontSize = Math.max(10, canvasSize.width * 0.016)
-  const smallFont = Math.max(9, fontSize * 0.8)
-
   // 上半部 52% 为图表，下半部 48% 为动画
   const chartTop = canvasSize.height * 0.06
   const chartBottom = canvasSize.height * 0.52
@@ -83,7 +81,14 @@ export default function EnergyConservationAnimation() {
   const objH = objW * 0.7 // 小车扁一点
 
   const animAreaHeight = groundY - chartBottom
-  const R_pix = animAreaHeight * 0.7 // 摆线长度占动画区高度的 70%
+  const R_pix_base = animAreaHeight * 0.7     // 基准像素长度（对应 5.0m）
+  const activeRadius = mode === 0 ? L : R     // 当前物理半径 (m)
+  const refRadius = 5.0                        // 参考半径 (m)
+  // R_pix 随物理半径比例缩放，使不同摆长/轨道半径在画布上呈现不同视觉长度
+  const R_pix = Math.min(
+    Math.max(R_pix_base * (activeRadius / refRadius), animAreaHeight * 0.25),
+    animAreaHeight * 0.9
+  )
 
   // 模式 0 悬挂点与摆线
   const hangY = canvasSize.height * 0.55 + 15
@@ -91,19 +96,18 @@ export default function EnergyConservationAnimation() {
   // 模式 1 山谷轨道圆心
   const valleyCenterY = groundY - R_pix
 
-  // 摆球或滑块坐标映射
+  // ── 物理坐标转换参数 ──
+  const R_model = mode === 0 ? L : R       // 当前模式下的轨道半径 (m)
+  const physScale = R_pix / R_model        // 物理→像素比例尺 (px/m)
+  const pivotX = animCenterX               // 物理原点 X (px)
+  const pivotY = mode === 0 ? hangY : valleyCenterY // 物理原点 Y (px)
+
+  // 摆球或滑块像素坐标（通过 physicsToCanvasWithOrigin 转换，符合铁律 1.2）
   const getObjectPixelPos = (thetaRad: number) => {
-    if (mode === 0) {
-      return {
-        x: animCenterX + R_pix * Math.sin(thetaRad),
-        y: hangY + R_pix * Math.cos(thetaRad),
-      }
-    } else {
-      return {
-        x: animCenterX + R_pix * Math.sin(thetaRad),
-        y: valleyCenterY + R_pix * Math.cos(thetaRad),
-      }
-    }
+    const physX = R_model * Math.sin(thetaRad)
+    const physY = -R_model * Math.cos(thetaRad)
+    const { cx, cy } = physicsToCanvasWithOrigin(physX, physY, pivotX, pivotY, physScale)
+    return { x: cx, y: cy }
   }
 
   // ── 预计算物理轨迹与插值 ──
@@ -202,8 +206,9 @@ export default function EnergyConservationAnimation() {
   }
 
   // ── 三柱能量对比柱参数 ──
-  const initialE = mode === 0 ? m * g * L * (1 - Math.cos((theta0 * Math.PI) / 180)) : m * g * R * (1 - Math.cos((theta0 * Math.PI) / 180))
-  const maxEnergy = Math.max(initialE * 1.15, 10)
+  // 从轨迹中获取初始总能量（避免重复物理公式，符合铁律 2）
+  const initialTotalEnergy = trajectory.length > 0 ? trajectory[0].Etot : 10
+  const maxEnergy = Math.max(initialTotalEnergy * 1.15, 10)
   const maxBarH = 55
 
   const barEk_H = (state.Ek / maxEnergy) * maxBarH
@@ -219,6 +224,12 @@ export default function EnergyConservationAnimation() {
     () => trajectory.filter(p => p.t <= time + 0.01),
     [trajectory, time]
   )
+
+  // ── 速度矢量缩放参考 ──
+  // 理论最大速度（由能量守恒导出）
+  const maxV = mode === 0
+    ? Math.sqrt(2 * g * L * (1 - Math.cos(theta0 * Math.PI / 180)))
+    : Math.sqrt(2 * g * R * (1 - Math.cos(theta0 * Math.PI / 180)))
 
   const objPos = getObjectPixelPos(state.theta)
   const thetaDeg = (state.theta * 180) / Math.PI
@@ -253,7 +264,7 @@ export default function EnergyConservationAnimation() {
       {/* 拖拽交互提示气泡 */}
       {!isPlaying && (
         <div className="absolute top-3 right-4 px-2 py-0.5 bg-neutral-50 text-neutral-400 font-semibold rounded border pointer-events-none z-10 animate-pulse" style={{ fontSize: font(9) }}>
-          💡 鼠标按住并左右摆动 {mode === 0 ? '摆球' : '滑块'} 可自由调节起摆初始角度
+          鼠标按住并左右摆动 {mode === 0 ? '摆球' : '滑块'} 可自由调节起摆初始角度
         </div>
       )}
 
@@ -306,7 +317,7 @@ export default function EnergyConservationAnimation() {
         {/* 上半部分：图表区 */}
         {/* ══════════════════════════════════════════════ */}
         <g>
-          <text x={chartLeft} y={chartTop - 4} fontSize={smallFont} fill={PHYSICS_COLORS.mechanicalEnergy} fontWeight="bold">
+          <text x={chartLeft} y={chartTop - 4} fontSize={font(10)} fill={PHYSICS_COLORS.mechanicalEnergy} fontWeight="bold">
             {mode === 0 ? 'E-t (单摆动能/重力势能及机械能消长守恒图)' : 'E-t (山谷阻尼动能/势能/内能及总能量守恒图)'}
           </text>
           
@@ -459,15 +470,19 @@ export default function EnergyConservationAnimation() {
             />
             
             {/* 切向速度矢量 v */}
-            {showVectors && Math.abs(state.v) > 0.15 && (
-              <VectorArrow
-                origin={{ x: objPos.x, y: -objPos.y }}
-                vector={{ x: Math.cos(state.theta) * state.v * 7, y: Math.sin(state.theta) * state.v * 7 }}
-                type="velocity"
-                sceneScale={sceneScale}
-                pixelLength={Math.sqrt((Math.cos(state.theta) * state.v * 7) ** 2 + (-Math.sin(state.theta) * state.v * 7) ** 2)}
-              />
-            )}
+            {showVectors && Math.abs(state.v) > 0.15 && (() => {
+              const velRatio = Math.min(Math.abs(state.v) / maxV, 1)
+              const arrowPx = Math.max(14, velRatio * sceneScale.maxVectorLength * 0.85)
+              return (
+                <VectorArrow
+                  origin={{ x: objPos.x, y: -objPos.y }}
+                  vector={{ x: Math.cos(state.theta) * arrowPx, y: Math.sin(state.theta) * arrowPx }}
+                  type="velocity"
+                  sceneScale={sceneScale}
+                  pixelLength={arrowPx}
+                />
+              )
+            })()}
           </g>
         ) : (
           // ─── 山谷滑行过山车场景 ───
@@ -507,7 +522,7 @@ export default function EnergyConservationAnimation() {
               {/* 木车身 */}
               <rect width={objW} height={objH - 1} rx={2} fill="url(#block-grad)" stroke={SCENE_COLORS.materials.woodSphereGrad[1]} strokeWidth={1.5} />
               
-              <text x={objW * 0.5} y={objH * 0.6} fontSize={smallFont - 0.5} fill={colors.neutral[800]} fontWeight="bold" textAnchor="middle">
+              <text x={objW * 0.5} y={objH * 0.6} fontSize={font(9)} fill={colors.neutral[800]} fontWeight="bold" textAnchor="middle">
                 {m.toFixed(1)}kg
               </text>
               {/* 轮子 */}
@@ -515,15 +530,19 @@ export default function EnergyConservationAnimation() {
               <circle cx={objW * 0.75} cy={objH - 0.5} r={2} fill={colors.neutral[800]} />
 
               {/* 切向速度矢量 v */}
-              {showVectors && Math.abs(state.v) > 0.1 && (
-                <VectorArrow
-                  origin={{ x: objW * 0.5, y: -(objH + 3) }}
-                  vector={{ x: state.v * 7, y: 0 }}
-                  type="velocity"
-                  sceneScale={sceneScale}
-                  pixelLength={Math.sqrt((state.v * 7) ** 2 + 0)}
-                />
-              )}
+              {showVectors && Math.abs(state.v) > 0.1 && (() => {
+                const velRatio = Math.min(Math.abs(state.v) / maxV, 1)
+                const arrowPx = Math.max(14, velRatio * sceneScale.maxVectorLength * 0.85)
+                return (
+                  <VectorArrow
+                    origin={{ x: objW * 0.5, y: -(objH + 3) }}
+                    vector={{ x: arrowPx, y: 0 }}
+                    type="velocity"
+                    sceneScale={sceneScale}
+                    pixelLength={arrowPx}
+                  />
+                )
+              })()}
             </g>
 
             {/* 阶段状态指示：卡死停在坡上时闪烁提示 */}
@@ -531,7 +550,7 @@ export default function EnergyConservationAnimation() {
               <g transform={`translate(${animCenterX - 45}, ${groundY - 110})`}>
                 <rect width={90} height={18} rx={3} fill="rgba(239, 68, 68, 0.08)" stroke="rgba(239, 68, 68, 0.4)" strokeWidth={0.8} />
                 <text x={45} y={12} fontSize={font(7.5)} fontWeight="bold" textAnchor="middle" fill={ENERGY_COLORS.internalEnergy}>
-                  ⚠️ 摩擦受力平衡已静止
+                  摩擦受力平衡已静止
                 </text>
               </g>
             )}
