@@ -101,6 +101,7 @@ export function useEquilibriumPhysics({
   })
 
   // 3. 计算固定悬挂梁和悬挂点
+  const forceScale = computeScale(canvasWidth, canvasHeight, { xMin: -3, xMax: 3, yMin: -3, yMax: 3 }) * 0.4
   const centerX = canvasWidth / 2
   const centerY = canvasHeight / 2 - 45
   const leftAnchor = useMemo(() => ({ cx: centerX - EQUIL_L / 2, cy: centerY - 90 }), [centerX, centerY])
@@ -288,15 +289,6 @@ export function useEquilibriumPhysics({
 
     const gravity = m * GRAVITY
     const isOverloaded = t1 > 35 || t2 > 35
-
-    // 动态 forceScale：以 T1/T2 定 scale，G 超出画布时由 clamp 兜底
-    const maxTension = Math.max(t1, t2, 1)
-    const maxDistDown = canvasHeight - 10 - ballCenter.cy   // 向下可用空间
-    const maxDistUp = ballCenter.cy - 10                     // 向上可用空间
-    const maxDistSide = Math.min(ballCenter.cx - 10, canvasWidth - 10 - ballCenter.cx) // 水平可用空间
-    const maxDist = Math.max(maxDistDown, maxDistUp, maxDistSide, 50)
-    const baseScale = computeScale(canvasWidth, canvasHeight, { xMin: -3, xMax: 3, yMin: -3, yMax: 3 }) * 0.4
-    const forceScale = Math.min(baseScale, maxDist / maxTension * 0.75)
 
     // 矢量 Canvas 起止点
     const gStart = ballCenter
