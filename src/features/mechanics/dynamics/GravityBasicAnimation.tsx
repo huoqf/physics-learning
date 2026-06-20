@@ -2,7 +2,7 @@ import { FC, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { withAlpha } from '@/theme/physics/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
@@ -350,7 +350,7 @@ export const GravityBasicAnimation: FC = () => {
                   <text
                     x={earthData.objX + earthData.Fx_centrifugal + 6}
                     y={earthData.objY - 6}
-                    fontSize={FONT.axisSize} fill={PHYSICS_COLORS.forceNet} fontWeight="bold" textAnchor="start"
+                    fontSize={FONT.axisSize} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold" textAnchor="start"
                   >
                     F离
                   </text>
@@ -377,7 +377,7 @@ export const GravityBasicAnimation: FC = () => {
                 {earthData.angleDeviation > 0.5 && earthData.effectiveLat > 10 && earthData.effectiveLat < 80 && (
                   <text
                     x={earthData.objX + 18} y={earthData.objY - 22}
-                    fontSize="10" fill={PHYSICS_COLORS.forceNet} fontWeight="bold"
+                    fontSize="10" fill={CANVAS_COLORS.annotation} fontWeight="bold"
                   >
                     偏角 θ ≈ {earthData.angleDeviation.toFixed(1)}°
                   </text>
@@ -516,25 +516,25 @@ export const GravityBasicAnimation: FC = () => {
               <line
                 x1={plateData.canvasCenter.cx - 6} y1={plateData.canvasCenter.cy}
                 x2={plateData.canvasCenter.cx + 6} y2={plateData.canvasCenter.cy}
-                stroke={PHYSICS_COLORS.forceNet}
+                stroke={CANVAS_COLORS.annotation}
                 strokeWidth={1.2}
               />
               <line
                 x1={plateData.canvasCenter.cx} y1={plateData.canvasCenter.cy - 6}
                 x2={plateData.canvasCenter.cx} y2={plateData.canvasCenter.cy + 6}
-                stroke={PHYSICS_COLORS.forceNet}
+                stroke={CANVAS_COLORS.annotation}
                 strokeWidth={1.2}
               />
               <circle
                 cx={plateData.canvasCenter.cx} cy={plateData.canvasCenter.cy} r={2.5}
-                fill={PHYSICS_COLORS.forceNet}
+                fill={CANVAS_COLORS.annotation}
               />
               {/* 重心标注 (可见标注 3/5) */}
               <text
                 x={plateData.canvasCenter.cx + 10}
                 y={plateData.canvasCenter.cy - 4}
                 fontSize="11"
-                fill={PHYSICS_COLORS.forceNet}
+                fill={CANVAS_COLORS.annotation}
                 fontWeight="bold"
               >
                 重心 C

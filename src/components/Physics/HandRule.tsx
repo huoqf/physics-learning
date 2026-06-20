@@ -60,9 +60,9 @@ const DEFAULT_TIP_LABELS: Record<'thumb' | 'index' | 'middle', string> = {
   middle: '中',
 }
 const DEFAULT_TIP_COLORS: Record<'thumb' | 'index' | 'middle', string> = {
-  thumb: PHYSICS_COLORS.electricCurrent,    // electricCurrent
-  index: PHYSICS_COLORS.magneticField,      // magneticField
-  middle: PHYSICS_COLORS.forceNet,          // forceNet
+  thumb: PHYSICS_COLORS.forceNet,           // 力 F
+  index: PHYSICS_COLORS.magneticField,      // 磁场 B
+  middle: PHYSICS_COLORS.electricCurrent,   // 电流 I
 }
 
 export function HandRule({

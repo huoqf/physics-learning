@@ -7,6 +7,7 @@ import {
   PHYSICS_COLORS,
   CHART_COLORS,
   SCENE_COLORS,
+  CANVAS_COLORS,
   VT_CHART_COLORS,
   STROKE,
   OPACITY,
@@ -401,7 +402,7 @@ export default function FreeFallAnimation() {
 
         <text
           x={tubeLeft + tubeWidth / 2} y={tubeTop - 25}
-          fontSize={FONT.axis} fill={pressure <= 0.01 ? PHYSICS_COLORS.forceNet : PHYSICS_COLORS.labelText}
+          fontSize={FONT.axis} fill={pressure <= 0.01 ? CANVAS_COLORS.annotation : PHYSICS_COLORS.labelText}
           textAnchor="middle" fontWeight="600" opacity={0.7}
         >
           {tubeLabel}
@@ -597,7 +598,7 @@ export default function FreeFallAnimation() {
 
         {/* 落地标注 */}
         {isLandedA && (
-          <text x={ballX} y={groundY - 40} fontSize={FONT.small} fill={PHYSICS_COLORS.forceNet} textAnchor="middle" fontWeight="bold">{matA.label}落地</text>
+          <text x={ballX} y={groundY - 40} fontSize={FONT.small} fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">{matA.label}落地</text>
         )}
         {isLandedB && (
           <text x={featherX + swayDxB} y={groundY - 40} fontSize={FONT.small} fill={CHART_COLORS.compareB} textAnchor="middle" fontWeight="bold">{matB.label}落地</text>
@@ -767,7 +768,7 @@ export default function FreeFallAnimation() {
           t = {time.toFixed(2)} s
         </text>
         <text x={dataX + dataWidth} y={canvasSize.height * 0.97} fontSize={FONT.small}
-          fill={pressure <= 0.01 ? PHYSICS_COLORS.forceNet : PHYSICS_COLORS.labelTextLight}
+          fill={pressure <= 0.01 ? CANVAS_COLORS.annotation : PHYSICS_COLORS.labelTextLight}
           textAnchor="end" fontWeight={pressure <= 0.01 ? 'bold' : 'normal'}>
           {envLabel}
         </text>

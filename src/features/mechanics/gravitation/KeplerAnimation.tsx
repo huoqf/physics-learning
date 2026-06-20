@@ -1,7 +1,7 @@
 import { useCanvasSize, physicsToCanvas } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, SCENE_COLORS, STROKE, CANVAS_STYLE, KEPLER_CONFIG, VECTOR_DISPLAY, INSET_CHART, GRID_DISPLAY } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, STROKE, CANVAS_STYLE, KEPLER_CONFIG, VECTOR_DISPLAY, INSET_CHART, GRID_DISPLAY } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { calculateKeplerOrbit, solveKeplerEquation } from '@/physics/celestial'
 import { useMemo } from 'react'
@@ -627,7 +627,7 @@ export default function KeplerAnimation() {
             <text
               x={70}
               y={40}
-              fill={(isInPerihelion || isInAphelion) ? PHYSICS_COLORS.forceNet : PHYSICS_COLORS.gravity}
+              fill={(isInPerihelion || isInAphelion) ? CANVAS_COLORS.annotation : PHYSICS_COLORS.gravity}
               fontSize={font(15)}
               fontWeight="bold"
               textAnchor="middle"

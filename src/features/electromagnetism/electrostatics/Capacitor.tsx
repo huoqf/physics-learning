@@ -291,14 +291,14 @@ export default function Capacitor() {
           </g>
 
           {/* 上极板 */}
-          <rect x={plateLeft} y={topPlateY} width={plateW} height={plateThick} fill={PHYSICS_COLORS.forceNet} rx={2} className="shadow-sm" />
-          <text x={plateLeft + 10} y={topPlateY - 6} fontSize="12" fill={PHYSICS_COLORS.forceNet} fontWeight="bold" textAnchor="start">
+          <rect x={plateLeft} y={topPlateY} width={plateW} height={plateThick} fill={PHYSICS_COLORS.positiveCharge} rx={2} className="shadow-sm" />
+          <text x={plateLeft + 10} y={topPlateY - 6} fontSize="12" fill={PHYSICS_COLORS.positiveCharge} fontWeight="bold" textAnchor="start">
             上极板 (+Q)
           </text>
 
           {/* 下极板 */}
-          <rect x={plateLeft} y={botPlateY} width={plateW} height={plateThick} fill={PHYSICS_COLORS.electricCurrent} rx={2} className="shadow-sm" />
-          <text x={plateLeft + 10} y={botPlateY + plateThick + 16} fontSize="12" fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold" textAnchor="start">
+          <rect x={plateLeft} y={botPlateY} width={plateW} height={plateThick} fill={PHYSICS_COLORS.negativeCharge} rx={2} className="shadow-sm" />
+          <text x={plateLeft + 10} y={botPlateY + plateThick + 16} fontSize="12" fill={PHYSICS_COLORS.negativeCharge} fontWeight="bold" textAnchor="start">
             下极板 (−Q)
           </text>
 

@@ -554,10 +554,9 @@ export default function MomentumAnimation() {
                     vector={{ x: pTotal, y: 0 }}
                     type="momentum"
                     sceneScale={sceneScale}
-                    color={PHYSICS_COLORS.forceNet}
                   />
                 )}
-                <text x={xCm} y={groundY + MOMENTUM_LAYOUT.totalMomentumAxisY - 6} fontSize={FONT.smallSize} fill={PHYSICS_COLORS.forceNet} textAnchor="middle" fontWeight="bold">
+                <text x={xCm} y={groundY + MOMENTUM_LAYOUT.totalMomentumAxisY - 6} fontSize={FONT.smallSize} fill={PHYSICS_COLORS.momentum} textAnchor="middle" fontWeight="bold">
                   p_总 = {pTotal > 0 ? '+' : ''}{pTotal.toFixed(1)}
                 </text>
               </g>

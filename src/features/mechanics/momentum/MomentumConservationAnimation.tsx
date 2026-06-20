@@ -317,7 +317,7 @@ export default function MomentumConservationAnimation() {
               </text>
 
               {/* 总动量标注 */}
-              <text x={mapMomentumBar(pTotal)} y={-4} fontSize={FONT.smallSize} fill={PHYSICS_COLORS.forceNet} fontWeight="bold">
+              <text x={mapMomentumBar(pTotal)} y={-4} fontSize={FONT.smallSize} fill={PHYSICS_COLORS.momentum} fontWeight="bold">
                 p_总 = {pTotal.toFixed(1)} kg·m/s
               </text>
             </g>

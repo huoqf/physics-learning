@@ -456,7 +456,7 @@ export default function CentripetalAnimation() {
               x={toCardX(85)}
               y={toCardY(85 * m) - 5}
               fontSize={font(7)}
-              fill={PHYSICS_COLORS.forceNet}
+              fill={PHYSICS_COLORS.labelText}
               fontWeight="bold"
             >
               m = {m.toFixed(1)}kg

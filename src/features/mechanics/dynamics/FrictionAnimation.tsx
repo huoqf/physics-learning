@@ -2,7 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { computeScale } from '@/utils/coordinate'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, CANVAS_STYLE, FONT, SCENE_COLORS, CHART_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_COLORS, CANVAS_STYLE, FONT, SCENE_COLORS, CHART_COLORS } from '@/theme/physics'
 import { calculateFrictionPullModel, calculateFrictionInclineModel } from '@/physics'
 import { GRAVITY } from '@/physics/constants'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
@@ -387,11 +387,11 @@ export default function FrictionAnimation() {
             <g>
               <path
                 d={`M ${pivotX + 40} ${pivotY} A 40 40 0 0 0 ${pivotX + 40 * Math.cos(angleRad)} ${pivotY - 40 * Math.sin(angleRad)}`}
-                fill="none" stroke={PHYSICS_COLORS.forceNet} strokeWidth={1.2}
+                fill="none" stroke={CANVAS_COLORS.annotation} strokeWidth={1.2}
               />
               <text
                 x={pivotX + 48} y={pivotY - 12}
-                fontSize="11" fill={PHYSICS_COLORS.forceNet} fontWeight="bold"
+                fontSize="11" fill={CANVAS_COLORS.annotation} fontWeight="bold"
               >
                 θ = {angle}°
               </text>

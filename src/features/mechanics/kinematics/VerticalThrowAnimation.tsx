@@ -412,7 +412,7 @@ export default function VerticalThrowAnimation() {
         )}
 
         {isLanded && (
-          <text x={leftBallX} y={groundY - 30} fontSize={FONT.small} fill={PHYSICS_COLORS.forceNet}
+          <text x={leftBallX} y={groundY - 30} fontSize={FONT.small} fill={PHYSICS_COLORS.labelText}
             textAnchor="middle" fontWeight="bold">落地</text>
         )}
 
