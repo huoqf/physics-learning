@@ -79,9 +79,11 @@ export const SPRING_COLORS = {
   coilBase:      '#6B7280', // 弹簧主体      — gray-500
   coilDark:      '#374151', // 弹簧暗部      — gray-700
   coilStroke:    '#1F2937', // 弹簧描边      — gray-900
-  compressed:    '#EF4444', // 压缩状态高亮  — danger-500
-  stretched:     '#3B82F6', // 拉伸状态高亮  — primary-500
-  natural:       '#6B7280', // 原长状态      — gray-500
+  compressed:     '#F97316', // 压缩状态：橙色（防撞车）
+  stretched:      '#8B5CF6', // 拉伸状态：紫色（防撞车）
+  natural:        '#6B7280', // 原长状态      — gray-500
+  compressedGlow: 'rgba(249, 115, 22, 0.2)', // 压缩光晕
+  stretchedGlow:  'rgba(139, 92, 246, 0.2)', // 拉伸光晕
 
   // 💡 扩展项目规范颜色：轻质弹簧与拟物阴影金属渐变
   lightCoilBase:   '#9CA3AF', // 轻质弹簧主体    — gray-400
@@ -341,13 +343,13 @@ export const SPHERE_COLORS = {
     specular: 'rgba(255, 248, 196, 0.55)',
   },
 
-  // ── 单摆摆球 / 机械能守恒摆球 ──
+  // ── 单摆摆球 / 机械能守恒摆球（黄铜配重化，避开速度经典蓝）──
   pendulumBob: {
-    gradient: ['#DBEAFE', '#60A5FA', '#2563EB', '#1E3A8A'] as const,
-    stroke: '#1E40AF',
-    shadow: 'rgba(30, 64, 175, 0.18)',
-    glow: 'rgba(59, 130, 246, 0.18)',
-    specular: 'rgba(219, 234, 254, 0.72)',
+    gradient: ['#FFFBEB', '#FEF3C7', '#D97706', '#92400E'] as const,
+    stroke: '#78350F',
+    shadow: 'rgba(120, 53, 15, 0.20)',
+    glow: 'rgba(217, 119, 6, 0.15)',
+    specular: 'rgba(255, 251, 235, 0.75)',
   },
 
   // ── 冷色行星（开普勒 / 万有引力 / 天体对照组主行星）──

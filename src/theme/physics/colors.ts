@@ -30,9 +30,9 @@ export const KINEMATICS_COLORS = {
   acceleration:       '#DC2626', // 加速度 a           — 警示红 (Red-600)
   accelerationX:      '#EF4444', // 加速度 x 分量      — 红 (Red-500)
   accelerationY:      '#F87171', // 加速度 y 分量      — 浅红 (Red-400)
-  displacement:       '#4F46E5', // 位移 s/x          — 空间靛蓝 (Indigo-600)
-  displacementX:      '#6366F1', // 位移 x 分量        — 靛蓝 (Indigo-500)
-  displacementY:      '#818CF8', // 位移 y 分量        — 浅靛蓝 (Indigo-400)
+  displacement:       '#8B5CF6', // 位移 s/x          — 紫色 (Purple-500)
+  displacementX:      '#A78BFA', // 位移 x 分量        — 浅紫 (Violet-400)
+  displacementY:      '#C4B5FD', // 位移 y 分量        — 极浅紫 (Violet-300)
   position:           '#0284C7', // 位置矢量 r         — sky-600
   angularVelocity:    '#0891B2', // 角速度 ω           — secondary-600
   angularAccel:       '#B45309', // 角加速度 α         — accent-700
@@ -48,11 +48,11 @@ export const KINEMATICS_COLORS = {
 export const DYNAMICS_COLORS = {
   forceNet:           '#EA580C', // 合力 F_net         — 动力亮橙 (Orange-600)
   forceNetArrow:      '#C2410C', // 合力箭头加深版      — orange-700
-  gravity:            '#15803D', // 重力 mg / G        — 经典重力绿 (Green-700，符合教材习惯)
-  normalForce:        '#0D9488', // 法向力/支持力 N     — 支持青绿 (Teal-600)
+  gravity:            '#166534', // 重力 mg / G        — 深重力绿 (Green-800)
+  normalForce:        '#0284C7', // 法向力/支持力 N     — 支持天蓝 (Sky-600)
   friction:           '#B45309', // 动摩擦力 f         — 耗散黄褐 (Amber-700)
   frictionStatic:     '#D97706', // 静摩擦力            — amber-600
-  elasticForce:       '#10B981', // 弹力（弹簧）       — 弹簧绿 (Emerald-500)
+  elasticForce:       '#DB2777', // 弹力（弹簧）       — 弹簧玫红 (Pink-600)
   tension:            '#8B5CF6', // 绳中张力 T         — 绳索紫 (Purple-500)
   buoyancy:           '#06B6D4', // 浮力 F_浮          — 浮力水蓝 (Cyan-500)
   appliedForce:       '#1E3A8A', // 外加/施加力         — 动力深蓝 (Blue-900)
@@ -68,10 +68,10 @@ export const ENERGY_COLORS = {
   potentialEnergy:    '#7C3AED', // 势能 E_p（重力）    — 势能紫 (Violet-600)
   potentialGravity:   '#7C3AED', // 重力势能            — 同 potentialEnergy
   potentialElastic:   '#5B21B6', // 弹性势能            — 弹性能深紫 (Violet-800)
-  mechanicalEnergy:   '#4F46E5', // 机械能 E           — 机械能蓝靛 (Indigo-600)
+  mechanicalEnergy:   '#475569', // 机械能 E           — 机械能石墨灰 (Slate-600)
   internalEnergy:     '#B91C1C', // 内能 U             — 内能深红 (Red-700)
   heatLoss:           '#EF4444', // 热损失 Q_散         — danger-500
-  work:               '#10B981', // 功 W               — 做功绿 (Emerald-500)
+  work:               '#84CC16', // 功 W               — 做功黄绿 (Lime-500)
   power:              '#D97706', // 功率 P             — 功率黄 (Amber-600)
   momentum:           '#DB2777', // 动量 p             — 动量洋红 (Pink-600)
   impulse:            '#EC4899', // 冲量 I             — 冲量粉 (Pink-400)
@@ -81,17 +81,17 @@ export const ENERGY_COLORS = {
 // ─── 电磁学 (Electromagnetism) ────────────────────────────────────────────────
 export const EM_COLORS = {
   electricField:      '#D97706', // 电场强度 E         — 电场黄 (Amber-600，符合教材习惯)
-  electricFieldLine:  '#F59E0B', // 电场线             — amber-500
-  magneticField:      '#10B981', // 磁感应强度 B       — 磁场绿 (Emerald-500，符合教材习惯)
-  magneticFieldDot:   '#34D399', // 磁场点（出纸面 ·）  — emerald-400
-  magneticFieldCross: '#047857', // 磁场叉（入纸面 ×）  — emerald-700
+  electricFieldLine:  'rgba(245, 158, 11, 0.42)', // 电场线（半透明弱化）
+  magneticField:      'rgba(16, 185, 129, 0.38)', // 磁感应强度 B（半透明弱化）
+  magneticFieldDot:   'rgba(52, 211, 153, 0.45)', // 磁场点（出纸面 ·）
+  magneticFieldCross: 'rgba(4, 120, 87, 0.45)',  // 磁场叉（入纸面 ×）
   electricCurrent:    '#DC2626', // 电流 I             — 电流红 (Red-600，符合教材习惯)
   currentDirection:   '#EF4444', // 电流方向箭头        — red-500
   electricPotential:  '#A16207', // 电势 φ             — 棕黄
   equipotential:      '#D97706', // 等势线             — amber-600
   positiveCharge:     '#EF4444', // 正电荷 +q          — 经典红 (Red-500)
   negativeCharge:     '#3B82F6', // 负电荷 −q          — 经典蓝 (Blue-500)
-  electricForce:      '#F97316', // 电场力 F_E         — 橙 (Orange-500)
+  electricForce:      '#A21CAF', // 电场力 F_E         — 深洋红 (Fuchsia-700)
   lorentzForce:       '#8B5CF6', // 洛伦兹力/安培力 F_L — 洛伦兹紫 (Purple-500)
   resistance:         '#78716C', // 电阻 R             — stone-500
   capacitor:          '#0284C7', // 电容 C             — sky-600
