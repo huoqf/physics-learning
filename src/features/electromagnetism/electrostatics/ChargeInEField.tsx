@@ -7,6 +7,7 @@ import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { createSceneScale } from '@/scene/SceneScale'
+import { calculateVectorPixelLength } from '@/utils/vectorLength'
 import { MiniChart } from '@/components/UI'
 import {
   calculateChargeInEFieldTrajectory,
@@ -163,9 +164,16 @@ export default function ChargeInEField() {
   }, [v0, currentState.ay, canvasSize.width, animHeight])
 
   // 8. 速度分解虚线框的终点坐标
-  const velocityScaleFactor = sceneScale.maxVectorLength / Math.max(v0, 10)
+  const refMag = Math.max(v0, 10)
+  const velocityScaleFactor = sceneScale.maxVectorLength / refMag
   const vx_px = currentState.vx * velocityScaleFactor
   const vy_px = currentState.vy * velocityScaleFactor
+
+  // 8a. 速度矢量统一缩放，确保平行四边形法则成立
+  const vMag = Math.hypot(currentState.vx, currentState.vy)
+  const totalPxLen = calculateVectorPixelLength(vMag, 'velocity', sceneScale.maxVectorLength, refMag)
+  const vxPxLen = vMag > 0 ? totalPxLen * (Math.abs(currentState.vx) / vMag) : 0
+  const vyPxLen = vMag > 0 ? totalPxLen * (Math.abs(currentState.vy) / vMag) : 0
 
   // 9. 图像自适应量程
   const chartYBounds = useMemo(() => {
@@ -298,6 +306,7 @@ export default function ChargeInEField() {
                 type="velocityX"
                 sceneScale={sceneScale}
                 strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+                pixelLength={vxPxLen}
               />
               <text x={cx + vx_px + 8} y={cy + 3} fontSize="10" fill={PHYSICS_COLORS.velocityX} fontWeight="bold">v₀</text>
 
@@ -309,6 +318,7 @@ export default function ChargeInEField() {
                   type="velocityY"
                   sceneScale={sceneScale}
                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+                  pixelLength={vyPxLen}
                 />
               )}
               <text x={cx - 3} y={cy + vy_px + (vy_px > 0 ? 12 : -4)} fontSize="10" fill={PHYSICS_COLORS.velocityY} fontWeight="bold" textAnchor="middle">vᵧ</text>
@@ -320,6 +330,7 @@ export default function ChargeInEField() {
                 type="velocity"
                 sceneScale={sceneScale}
                 strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+                pixelLength={totalPxLen}
               />
               <text x={cx + vx_px + 8} y={cy + vy_px + (vy_px > 0 ? 8 : -4)} fontSize="10" fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
 

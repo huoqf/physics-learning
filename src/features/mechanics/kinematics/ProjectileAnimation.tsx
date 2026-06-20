@@ -17,6 +17,7 @@ import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { Ball } from '@/components/Physics/Ball'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
+import { calculateVectorPixelLength } from '@/utils/vectorLength'
 
 /** 物理常数：最大抛出高度 (m) */
 const PHYSICS_HEIGHT = 10.0
@@ -136,6 +137,13 @@ export default function ProjectileAnimation() {
     () => interpolatePoints(effectiveTime, trajectory.points),
     [effectiveTime, trajectory.points, interpolatePoints]
   )
+
+  // ── 速度矢量统一缩放，确保平行四边形法则成立 ─────────────
+  const refMag = Math.max(v0x, 10)
+  const v = Math.hypot(currentState.vx, currentState.vy)
+  const totalPxLen = calculateVectorPixelLength(v, 'velocity', projSceneScale.maxVectorLength, refMag)
+  const vxPxLen = v > 0 ? totalPxLen * (Math.abs(currentState.vx) / v) : 0
+  const vyPxLen = v > 0 ? totalPxLen * (Math.abs(currentState.vy) / v) : 0
 
   const vacuumState = useMemo(
     () => interpolatePoints(effectiveTime, trajectory.vacuumPoints),
@@ -407,6 +415,7 @@ export default function ProjectileAnimation() {
               type="velocityX"
               sceneScale={projSceneScale}
               strokeWidth={STROKE.vectorSub}
+              pixelLength={vxPxLen}
             />
             <text x={ballCanvas.cx + projSceneScale.maxVectorLength * 0.3 + 10} y={ballCanvas.cy + 3} fontSize={font(9)} fill={PHYSICS_COLORS.velocityX} fontWeight="bold">vₓ</text>
 
@@ -418,6 +427,7 @@ export default function ProjectileAnimation() {
                 type="velocityY"
                 sceneScale={projSceneScale}
                 strokeWidth={STROKE.vectorSub}
+                pixelLength={vyPxLen}
               />
             )}
             <text x={ballCanvas.cx - 3} y={ballCanvas.cy - projSceneScale.maxVectorLength * 0.3 + 12} fontSize={font(9)} fill={PHYSICS_COLORS.velocityY} fontWeight="bold" textAnchor="middle">vᵧ</text>
@@ -429,6 +439,7 @@ export default function ProjectileAnimation() {
               type="velocity"
               sceneScale={projSceneScale}
               strokeWidth={STROKE.vectorMain}
+              pixelLength={totalPxLen}
             />
             <text x={ballCanvas.cx + projSceneScale.maxVectorLength * 0.3 + 8} y={ballCanvas.cy - projSceneScale.maxVectorLength * 0.3 + 8} fontSize={font(9)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
           </g>

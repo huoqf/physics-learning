@@ -16,6 +16,7 @@ import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
+import { calculateVectorPixelLength } from '@/utils/vectorLength'
 
 /** 斜抛动画布局常量 */
 const OBLIQUE_THROW_LAYOUT = {
@@ -136,6 +137,13 @@ export default function ObliqueThrowAnimation() {
     () => interpolatePoints(effectiveTime, trajectory.points),
     [effectiveTime, trajectory.points, interpolatePoints]
   )
+
+  // ── 速度矢量统一缩放，确保平行四边形法则成立 ─────────────
+  const refMag = Math.max(v0, 10)
+  const v = Math.hypot(currentState.vx, currentState.vy)
+  const totalPxLen = calculateVectorPixelLength(v, 'velocity', obliqueSceneScale.maxVectorLength, refMag)
+  const vxPxLen = v > 0 ? totalPxLen * (Math.abs(currentState.vx) / v) : 0
+  const vyPxLen = v > 0 ? totalPxLen * (Math.abs(currentState.vy) / v) : 0
 
   const vacuumState = useMemo(
     () => interpolatePoints(effectiveTime, trajectory.vacuumPoints),
@@ -448,6 +456,7 @@ export default function ObliqueThrowAnimation() {
               type="velocityX"
               sceneScale={obliqueSceneScale}
               strokeWidth={STROKE.vectorSub}
+              pixelLength={vxPxLen}
             />
             <text x={ballCanvas.cx + obliqueSceneScale.maxVectorLength * 0.3 + 10} y={ballCanvas.cy + 3} fontSize={font(9)} fill={PHYSICS_COLORS.velocityX} fontWeight="bold">vₓ</text>
 
@@ -459,6 +468,7 @@ export default function ObliqueThrowAnimation() {
                 type="velocityY"
                 sceneScale={obliqueSceneScale}
                 strokeWidth={STROKE.vectorSub}
+                pixelLength={vyPxLen}
               />
             )}
             <text x={ballCanvas.cx - 3} y={ballCanvas.cy - obliqueSceneScale.maxVectorLength * 0.3 + (currentState.vy >= 0 ? -6 : 12)} fontSize={font(9)} fill={PHYSICS_COLORS.velocityY} fontWeight="bold" textAnchor="middle">vᵧ</text>
@@ -470,6 +480,7 @@ export default function ObliqueThrowAnimation() {
               type="velocity"
               sceneScale={obliqueSceneScale}
               strokeWidth={STROKE.vectorMain}
+              pixelLength={totalPxLen}
             />
             <text x={ballCanvas.cx + obliqueSceneScale.maxVectorLength * 0.3 + 8} y={ballCanvas.cy - obliqueSceneScale.maxVectorLength * 0.3 - 4} fontSize={font(9)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
           </g>
