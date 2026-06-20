@@ -1,5 +1,7 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
+import { clampEndpoint } from '@/utils/coordinate'
+import type { CanvasBounds } from '@/utils/coordinate'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE, SCENE_COLORS } from '@/theme/physics'
@@ -66,10 +68,6 @@ export default function EquilibriumAnimation() {
     t2Start,
     t2End,
     fNetEnd,
-    t1xEnd,
-    t1yEnd,
-    t2xEnd,
-    t2yEnd,
     triOrigin,
     triGEnd,
     triT1End,
@@ -86,6 +84,38 @@ export default function EquilibriumAnimation() {
 
   const centerX = canvasSize.width / 2
   const centerY = canvasSize.height / 2 - 45
+
+  // 2a. 画布边界与 display 端点（沿向量方向等比裁剪，防止溢出）
+  const canvasBounds: CanvasBounds = useMemo(() => ({
+    left: 10,
+    top: 10,
+    right: canvasSize.width - 10,
+    bottom: canvasSize.height - 10,
+  }), [canvasSize.width, canvasSize.height])
+
+  // 主画布 display 端点
+  const gDisplayEnd = useMemo(() => clampEndpoint(gEnd, ballCenter, canvasBounds), [gEnd, ballCenter, canvasBounds])
+  const t1DisplayEnd = useMemo(() => clampEndpoint(t1End, ballCenter, canvasBounds), [t1End, ballCenter, canvasBounds])
+  const t2DisplayEnd = useMemo(() => clampEndpoint(t2End, ballCenter, canvasBounds), [t2End, ballCenter, canvasBounds])
+  const fNetDisplayEnd = useMemo(() => clampEndpoint(fNetEnd, ballCenter, canvasBounds), [fNetEnd, ballCenter, canvasBounds])
+
+  // 正交分力 display 端点（从 displayEnd 推导，保持几何一致）
+  const t1xDisplayEnd = useMemo(() => ({ cx: t1DisplayEnd.cx, cy: ballCenter.cy }), [t1DisplayEnd, ballCenter])
+  const t1yDisplayEnd = useMemo(() => ({ cx: ballCenter.cx, cy: t1DisplayEnd.cy }), [t1DisplayEnd, ballCenter])
+  const t2xDisplayEnd = useMemo(() => ({ cx: t2DisplayEnd.cx, cy: ballCenter.cy }), [t2DisplayEnd, ballCenter])
+  const t2yDisplayEnd = useMemo(() => ({ cx: ballCenter.cx, cy: t2DisplayEnd.cy }), [t2DisplayEnd, ballCenter])
+
+  // 三角形区域独立 bounds（triOrigin 在右下角，可用空间较小）
+  const triBounds: CanvasBounds = useMemo(() => ({
+    left: triOrigin.cx,
+    top: triOrigin.cy,
+    right: Math.min(canvasSize.width - 10, triOrigin.cx + 185),
+    bottom: Math.min(canvasSize.height - 10, triOrigin.cy + 140),
+  }), [triOrigin, canvasSize.width, canvasSize.height])
+
+  const triGDisplayEnd = useMemo(() => clampEndpoint(triGEnd, triOrigin, triBounds), [triGEnd, triOrigin, triBounds])
+  const triT1DisplayEnd = useMemo(() => clampEndpoint(triT1End, triGEnd, triBounds), [triT1End, triGEnd, triBounds])
+  const triT2DisplayEnd = useMemo(() => clampEndpoint(triT2End, triT1End, triBounds), [triT2End, triT1End, triBounds])
 
   // 3. 背景物理网格
   const gridLines = []
@@ -283,15 +313,15 @@ export default function EquilibriumAnimation() {
             {/* 1. 重力 G */}
             <VectorArrow
               origin={{ x: gStart.cx, y: -gStart.cy }}
-              vector={{ x: gEnd.cx - gStart.cx, y: -(gEnd.cy - gStart.cy) }}
+              vector={{ x: gDisplayEnd.cx - gStart.cx, y: -(gDisplayEnd.cy - gStart.cy) }}
               type="gravity"
               sceneScale={eqSceneScale}
               strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-              pixelLength={Math.hypot(gEnd.cx - gStart.cx, gEnd.cy - gStart.cy)}
+              pixelLength={Math.hypot(gDisplayEnd.cx - gStart.cx, gDisplayEnd.cy - gStart.cy)}
             />
             <text
-              x={gEnd.cx - 14}
-              y={gEnd.cy + 4}
+              x={gDisplayEnd.cx - 14}
+              y={gDisplayEnd.cy + 4}
               fontSize={CANVAS_STYLE.font.label}
               fontFamily={CANVAS_STYLE.font.family}
               fill={PHYSICS_COLORS.gravity}
@@ -305,16 +335,16 @@ export default function EquilibriumAnimation() {
               <g>
                 <VectorArrow
                   origin={{ x: t1Start.cx, y: -t1Start.cy }}
-                  vector={{ x: t1End.cx - t1Start.cx, y: -(t1End.cy - t1Start.cy) }}
+                  vector={{ x: t1DisplayEnd.cx - t1Start.cx, y: -(t1DisplayEnd.cy - t1Start.cy) }}
                   type="tension"
                   sceneScale={eqSceneScale}
                   color={isOverloaded && t1 > 35 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.tension}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                  pixelLength={Math.hypot(t1End.cx - t1Start.cx, t1End.cy - t1Start.cy)}
+                  pixelLength={Math.hypot(t1DisplayEnd.cx - t1Start.cx, t1DisplayEnd.cy - t1Start.cy)}
                 />
                 <text
-                  x={t1End.cx - 16}
-                  y={t1End.cy - 6}
+                  x={t1DisplayEnd.cx - 16}
+                  y={t1DisplayEnd.cy - 6}
                   fontSize={CANVAS_STYLE.font.label}
                   fontFamily={CANVAS_STYLE.font.family}
                   fill={isOverloaded && t1 > 35 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.tension}
@@ -330,16 +360,16 @@ export default function EquilibriumAnimation() {
               <g>
                 <VectorArrow
                   origin={{ x: t2Start.cx, y: -t2Start.cy }}
-                  vector={{ x: t2End.cx - t2Start.cx, y: -(t2End.cy - t2Start.cy) }}
+                  vector={{ x: t2DisplayEnd.cx - t2Start.cx, y: -(t2DisplayEnd.cy - t2Start.cy) }}
                   type="tension"
                   sceneScale={eqSceneScale}
                   color={isOverloaded && t2 > 35 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.tension}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                  pixelLength={Math.hypot(t2End.cx - t2Start.cx, t2End.cy - t2Start.cy)}
+                  pixelLength={Math.hypot(t2DisplayEnd.cx - t2Start.cx, t2DisplayEnd.cy - t2Start.cy)}
                 />
                 <text
-                  x={t2End.cx + 8}
-                  y={t2End.cy - 6}
+                  x={t2DisplayEnd.cx + 8}
+                  y={t2DisplayEnd.cy - 6}
                   fontSize={CANVAS_STYLE.font.label}
                   fontFamily={CANVAS_STYLE.font.family}
                   fill={isOverloaded && t2 > 35 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.tension}
@@ -354,34 +384,34 @@ export default function EquilibriumAnimation() {
             {mode === 1 && brokenLine === 'none' && (
               <g>
                 <line
-                  x1={t1End.cx}
-                  y1={t1End.cy}
-                  x2={fNetEnd.cx}
-                  y2={fNetEnd.cy}
+                  x1={t1DisplayEnd.cx}
+                  y1={t1DisplayEnd.cy}
+                  x2={fNetDisplayEnd.cx}
+                  y2={fNetDisplayEnd.cy}
                   stroke={PHYSICS_COLORS.forceComponent}
                   strokeWidth={1}
                   strokeDasharray="3,3"
                 />
                 <line
-                  x1={t2End.cx}
-                  y1={t2End.cy}
-                  x2={fNetEnd.cx}
-                  y2={fNetEnd.cy}
+                  x1={t2DisplayEnd.cx}
+                  y1={t2DisplayEnd.cy}
+                  x2={fNetDisplayEnd.cx}
+                  y2={fNetDisplayEnd.cy}
                   stroke={PHYSICS_COLORS.forceComponent}
                   strokeWidth={1}
                   strokeDasharray="3,3"
                 />
                 <VectorArrow
                   origin={{ x: ballCenter.cx, y: -ballCenter.cy }}
-                  vector={{ x: fNetEnd.cx - ballCenter.cx, y: -(fNetEnd.cy - ballCenter.cy) }}
+                  vector={{ x: fNetDisplayEnd.cx - ballCenter.cx, y: -(fNetDisplayEnd.cy - ballCenter.cy) }}
                   type="force"
                   sceneScale={eqSceneScale}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain + 0.5}
-                  pixelLength={Math.hypot(fNetEnd.cx - ballCenter.cx, fNetEnd.cy - ballCenter.cy)}
+                  pixelLength={Math.hypot(fNetDisplayEnd.cx - ballCenter.cx, fNetDisplayEnd.cy - ballCenter.cy)}
                 />
                 <text
-                  x={fNetEnd.cx + 8}
-                  y={fNetEnd.cy + 12}
+                  x={fNetDisplayEnd.cx + 8}
+                  y={fNetDisplayEnd.cy + 12}
                   fontSize={CANVAS_STYLE.font.annotation}
                   fontFamily={CANVAS_STYLE.font.family}
                   fill={PHYSICS_COLORS.forceNet}
@@ -402,48 +432,48 @@ export default function EquilibriumAnimation() {
                 <text x={ballCenter.cx - 4} y={ballCenter.cy - 104} fontSize={font(10)} fill={PHYSICS_COLORS.labelTextLight}>+y</text>
 
                 {/* T1 投影虚垂线与分力 */}
-                <line x1={t1End.cx} y1={t1End.cy} x2={t1xEnd.cx} y2={t1xEnd.cy} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={0.75} strokeDasharray="2,2" opacity={0.5} />
-                <line x1={t1End.cx} y1={t1End.cy} x2={t1yEnd.cx} y2={t1yEnd.cy} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={0.75} strokeDasharray="2,2" opacity={0.5} />
+                <line x1={t1DisplayEnd.cx} y1={t1DisplayEnd.cy} x2={t1xDisplayEnd.cx} y2={t1xDisplayEnd.cy} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={0.75} strokeDasharray="2,2" opacity={0.5} />
+                <line x1={t1DisplayEnd.cx} y1={t1DisplayEnd.cy} x2={t1yDisplayEnd.cx} y2={t1yDisplayEnd.cy} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={0.75} strokeDasharray="2,2" opacity={0.5} />
                 <VectorArrow
                   origin={{ x: ballCenter.cx, y: -ballCenter.cy }}
-                  vector={{ x: t1xEnd.cx - ballCenter.cx, y: -(t1xEnd.cy - ballCenter.cy) }}
+                  vector={{ x: t1xDisplayEnd.cx - ballCenter.cx, y: -(t1xDisplayEnd.cy - ballCenter.cy) }}
                   type="forceComponent"
                   sceneScale={eqSceneScale}
                   strokeWidth={1.5}
-                  pixelLength={Math.hypot(t1xEnd.cx - ballCenter.cx, t1xEnd.cy - ballCenter.cy)}
+                  pixelLength={Math.hypot(t1xDisplayEnd.cx - ballCenter.cx, t1xDisplayEnd.cy - ballCenter.cy)}
                 />
                 <VectorArrow
                   origin={{ x: ballCenter.cx, y: -ballCenter.cy }}
-                  vector={{ x: t1yEnd.cx - ballCenter.cx, y: -(t1yEnd.cy - ballCenter.cy) }}
+                  vector={{ x: t1yDisplayEnd.cx - ballCenter.cx, y: -(t1yDisplayEnd.cy - ballCenter.cy) }}
                   type="forceComponent"
                   sceneScale={eqSceneScale}
                   strokeWidth={1.5}
-                  pixelLength={Math.hypot(t1yEnd.cx - ballCenter.cx, t1yEnd.cy - ballCenter.cy)}
+                  pixelLength={Math.hypot(t1yDisplayEnd.cx - ballCenter.cx, t1yDisplayEnd.cy - ballCenter.cy)}
                 />
-                <text x={t1xEnd.cx - 18} y={t1xEnd.cy + 12} fontSize={font(10)} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold">T1x</text>
-                <text x={t1yEnd.cx - 20} y={t1yEnd.cy - 6} fontSize={font(10)} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold">T1y</text>
+                <text x={t1xDisplayEnd.cx - 18} y={t1xDisplayEnd.cy + 12} fontSize={font(10)} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold">T1x</text>
+                <text x={t1yDisplayEnd.cx - 20} y={t1yDisplayEnd.cy - 6} fontSize={font(10)} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold">T1y</text>
 
                 {/* T2 投影虚垂线与分力 */}
-                <line x1={t2End.cx} y1={t2End.cy} x2={t2xEnd.cx} y2={t2xEnd.cy} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={0.75} strokeDasharray="2,2" opacity={0.5} />
-                <line x1={t2End.cx} y1={t2End.cy} x2={t2yEnd.cx} y2={t2yEnd.cy} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={0.75} strokeDasharray="2,2" opacity={0.5} />
+                <line x1={t2DisplayEnd.cx} y1={t2DisplayEnd.cy} x2={t2xDisplayEnd.cx} y2={t2xDisplayEnd.cy} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={0.75} strokeDasharray="2,2" opacity={0.5} />
+                <line x1={t2DisplayEnd.cx} y1={t2DisplayEnd.cy} x2={t2yDisplayEnd.cx} y2={t2yDisplayEnd.cy} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={0.75} strokeDasharray="2,2" opacity={0.5} />
                 <VectorArrow
                   origin={{ x: ballCenter.cx, y: -ballCenter.cy }}
-                  vector={{ x: t2xEnd.cx - ballCenter.cx, y: -(t2xEnd.cy - ballCenter.cy) }}
+                  vector={{ x: t2xDisplayEnd.cx - ballCenter.cx, y: -(t2xDisplayEnd.cy - ballCenter.cy) }}
                   type="forceComponent"
                   sceneScale={eqSceneScale}
                   strokeWidth={1.5}
-                  pixelLength={Math.hypot(t2xEnd.cx - ballCenter.cx, t2xEnd.cy - ballCenter.cy)}
+                  pixelLength={Math.hypot(t2xDisplayEnd.cx - ballCenter.cx, t2xDisplayEnd.cy - ballCenter.cy)}
                 />
                 <VectorArrow
                   origin={{ x: ballCenter.cx, y: -ballCenter.cy }}
-                  vector={{ x: t2yEnd.cx - ballCenter.cx, y: -(t2yEnd.cy - ballCenter.cy) }}
+                  vector={{ x: t2yDisplayEnd.cx - ballCenter.cx, y: -(t2yDisplayEnd.cy - ballCenter.cy) }}
                   type="forceComponent"
                   sceneScale={eqSceneScale}
                   strokeWidth={1.5}
-                  pixelLength={Math.hypot(t2yEnd.cx - ballCenter.cx, t2yEnd.cy - ballCenter.cy)}
+                  pixelLength={Math.hypot(t2yDisplayEnd.cx - ballCenter.cx, t2yDisplayEnd.cy - ballCenter.cy)}
                 />
-                <text x={t2xEnd.cx + 2} y={t2xEnd.cy + 12} fontSize={font(10)} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold">T2x</text>
-                <text x={t2yEnd.cx + 6} y={t2yEnd.cy - 6} fontSize={font(10)} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold">T2y</text>
+                <text x={t2xDisplayEnd.cx + 2} y={t2xDisplayEnd.cy + 12} fontSize={font(10)} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold">T2x</text>
+                <text x={t2yDisplayEnd.cx + 6} y={t2yDisplayEnd.cy - 6} fontSize={font(10)} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold">T2y</text>
               </g>
             )}
           </g>
@@ -508,13 +538,13 @@ export default function EquilibriumAnimation() {
             {/* 1. 重力 G (向下) */}
             <VectorArrow
               origin={{ x: triOrigin.cx, y: -triOrigin.cy }}
-              vector={{ x: triGEnd.cx - triOrigin.cx, y: -(triGEnd.cy - triOrigin.cy) }}
+              vector={{ x: triGDisplayEnd.cx - triOrigin.cx, y: -(triGDisplayEnd.cy - triOrigin.cy) }}
               type="gravity"
               sceneScale={eqSceneScale}
               strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-              pixelLength={Math.hypot(triGEnd.cx - triOrigin.cx, triGEnd.cy - triOrigin.cy)}
+              pixelLength={Math.hypot(triGDisplayEnd.cx - triOrigin.cx, triGDisplayEnd.cy - triOrigin.cy)}
             />
-            <text x={triOrigin.cx - 14} y={(triOrigin.cy + triGEnd.cy) / 2 + 4} fontSize={CANVAS_STYLE.font.annotation} fontFamily={CANVAS_STYLE.font.family} fill={PHYSICS_COLORS.gravity} fontWeight="bold">
+            <text x={triOrigin.cx - 14} y={(triOrigin.cy + triGDisplayEnd.cy) / 2 + 4} fontSize={CANVAS_STYLE.font.annotation} fontFamily={CANVAS_STYLE.font.family} fill={PHYSICS_COLORS.gravity} fontWeight="bold">
               G
             </text>
 
@@ -522,15 +552,15 @@ export default function EquilibriumAnimation() {
             {(brokenLine === 'none' || brokenLine === 'right') && (
               <g>
                 <VectorArrow
-                  origin={{ x: triGEnd.cx, y: -triGEnd.cy }}
-                  vector={{ x: triT1End.cx - triGEnd.cx, y: -(triT1End.cy - triGEnd.cy) }}
+                  origin={{ x: triGDisplayEnd.cx, y: -triGDisplayEnd.cy }}
+                  vector={{ x: triT1DisplayEnd.cx - triGDisplayEnd.cx, y: -(triT1DisplayEnd.cy - triGDisplayEnd.cy) }}
                   type="tension"
                   sceneScale={eqSceneScale}
                   color={isOverloaded && t1 > 35 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.tension}
                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  pixelLength={Math.hypot(triT1End.cx - triGEnd.cx, triT1End.cy - triGEnd.cy)}
+                  pixelLength={Math.hypot(triT1DisplayEnd.cx - triGDisplayEnd.cx, triT1DisplayEnd.cy - triGDisplayEnd.cy)}
                 />
-                <text x={(triGEnd.cx + triT1End.cx) / 2 - 16} y={(triGEnd.cy + triT1End.cy) / 2 - 6} fontSize={CANVAS_STYLE.font.annotation} fontFamily={CANVAS_STYLE.font.family} fill={isOverloaded && t1 > 35 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.tension} fontWeight="bold">
+                <text x={(triGDisplayEnd.cx + triT1DisplayEnd.cx) / 2 - 16} y={(triGDisplayEnd.cy + triT1DisplayEnd.cy) / 2 - 6} fontSize={CANVAS_STYLE.font.annotation} fontFamily={CANVAS_STYLE.font.family} fill={isOverloaded && t1 > 35 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.tension} fontWeight="bold">
                   T₁
                 </text>
               </g>
@@ -540,15 +570,15 @@ export default function EquilibriumAnimation() {
             {(brokenLine === 'none' || brokenLine === 'left') && (
               <g>
                 <VectorArrow
-                  origin={{ x: triT1End.cx, y: -triT1End.cy }}
-                  vector={{ x: triT2End.cx - triT1End.cx, y: -(triT2End.cy - triT1End.cy) }}
+                  origin={{ x: triT1DisplayEnd.cx, y: -triT1DisplayEnd.cy }}
+                  vector={{ x: triT2DisplayEnd.cx - triT1DisplayEnd.cx, y: -(triT2DisplayEnd.cy - triT1DisplayEnd.cy) }}
                   type="tension"
                   sceneScale={eqSceneScale}
                   color={isOverloaded && t2 > 35 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.tension}
                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  pixelLength={Math.hypot(triT2End.cx - triT1End.cx, triT2End.cy - triT1End.cy)}
+                  pixelLength={Math.hypot(triT2DisplayEnd.cx - triT1DisplayEnd.cx, triT2DisplayEnd.cy - triT1DisplayEnd.cy)}
                 />
-                <text x={(triT1End.cx + triT2End.cx) / 2 + 10} y={(triT1End.cy + triT2End.cy) / 2 + 10} fontSize={CANVAS_STYLE.font.annotation} fontFamily={CANVAS_STYLE.font.family} fill={isOverloaded && t2 > 35 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.tension} fontWeight="bold">
+                <text x={(triT1DisplayEnd.cx + triT2DisplayEnd.cx) / 2 + 10} y={(triT1DisplayEnd.cy + triT2DisplayEnd.cy) / 2 + 10} fontSize={CANVAS_STYLE.font.annotation} fontFamily={CANVAS_STYLE.font.family} fill={isOverloaded && t2 > 35 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.tension} fontWeight="bold">
                   T₂
                 </text>
               </g>

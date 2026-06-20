@@ -137,3 +137,82 @@ export function canvasToPhysicsWithOrigin(
   const y = (originY - cy) / scale;
   return { x, y };
 }
+
+/** 画布矩形边界 */
+export interface CanvasBounds {
+  left: number
+  top: number
+  right: number
+  bottom: number
+}
+
+/**
+ * 沿向量方向等比例缩短端点，使其不超出画布边界。
+ *
+ * 保持向量方向不变，仅按比例缩放到边界内。
+ * 适用于力矢量箭头端点裁剪，防止溢出画布。
+ *
+ * @param raw 原始端点（未裁剪）
+ * @param origin 向量起点（不动点）
+ * @param bounds 画布边界
+ * @returns 裁剪后的端点，方向与原始端点一致
+ */
+export function clampEndpoint(
+  raw: CanvasPoint,
+  origin: CanvasPoint,
+  bounds: CanvasBounds,
+): CanvasPoint {
+  const dx = raw.cx - origin.cx
+  const dy = raw.cy - origin.cy
+  if (dx === 0 && dy === 0) return raw
+
+  // 计算各方向允许的最大延伸比例
+  let tMax = Infinity
+  if (dx > 0) tMax = Math.min(tMax, (bounds.right - origin.cx) / dx)
+  else if (dx < 0) tMax = Math.min(tMax, (bounds.left - origin.cx) / dx)
+  if (dy > 0) tMax = Math.min(tMax, (bounds.bottom - origin.cy) / dy)
+  else if (dy < 0) tMax = Math.min(tMax, (bounds.top - origin.cy) / dy)
+
+  // 原始长度对应的比例为 1，若 tMax >= 1 则无需裁剪
+  if (tMax >= 1) return raw
+
+  return {
+    cx: origin.cx + dx * tMax,
+    cy: origin.cy + dy * tMax,
+  }
+}
+
+/**
+ * 标签位置边界保护。
+ *
+ * 文字标签有宽度/高度和锚点偏移，clampEndpoint 保证端点在画布内，
+ * 但文字仍可能贴边被裁。本函数检查标签矩形是否超出边界，
+ * 若超出则翻转偏移方向。
+ *
+ * @param anchor 标签锚点坐标
+ * @param offset 原始偏移 { dx, dy }
+ * @param labelW 标签宽度 (px)
+ * @param labelH 标签高度 (px)
+ * @param bounds 画布边界
+ * @returns 修正后的锚点坐标
+ */
+export function clampLabelPosition(
+  anchor: CanvasPoint,
+  offset: { dx: number; dy: number },
+  labelW: number,
+  labelH: number,
+  bounds: CanvasBounds,
+): CanvasPoint {
+  let cx = anchor.cx + offset.dx
+  let cy = anchor.cy + offset.dy
+
+  // 水平翻转
+  if (cx - labelW / 2 < bounds.left) cx = anchor.cx - offset.dx
+  if (cx + labelW / 2 > bounds.right) cx = anchor.cx - offset.dx
+
+  // 垂直翻转
+  if (cy - labelH / 2 < bounds.top) cy = anchor.cy - offset.dy
+  if (cy + labelH / 2 > bounds.bottom) cy = anchor.cy - offset.dy
+
+  return { cx, cy }
+}
