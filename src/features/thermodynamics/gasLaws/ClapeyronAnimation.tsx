@@ -7,6 +7,8 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { THERMO_COLORS, THERMAL_COLORS, PV_CHART_COLORS, CHART_COLORS } from '@/theme/physics'
 import { STROKE, FONT } from '@/theme/physics/canvasStyle'
 import { solveClapeyron, generateIsothermFamily } from '@/physics/clapeyron'
+import { RelationChart } from '@/components/Chart'
+import type { RelationDataSeries, RelationMarker } from '@/components/Chart'
 
 // ─── 物理常量 ─────────────────────────────────────────────────────────────
 const N_DEFAULT = 1
@@ -282,211 +284,45 @@ export default function ClapeyronAnimation() {
   }
 
   // ─── 图表渲染 ──────────────────────────────────────────────────────────
-  const renderChart = () => {
-    const chartX = width * LAYOUT.chartLeftRatio
-    const chartY = height * LAYOUT.chartTopRatio
-    const chartW = width * LAYOUT.chartWidthRatio
-    const chartH = height * LAYOUT.chartHeightRatio
+  // ── P-V 图：迁移到 RelationChart ──
+  // 图表区位置（保留原 LAYOUT 比例，外层 <foreignObject> 定位）
+  const chartX = width * LAYOUT.chartLeftRatio
+  const chartY = height * LAYOUT.chartTopRatio
+  const chartW = width * LAYOUT.chartWidthRatio
+  const chartH = height * LAYOUT.chartHeightRatio
 
-    const margin = { left: 48, right: 16, top: 24, bottom: 28 }
-    const plotX = chartX + margin.left
-    const plotY = chartY + margin.top
-    const plotW = chartW - margin.left - margin.right
-    const plotH = chartH - margin.top - margin.bottom
+  // Y 轴上界：取 (V_MIN, T_MAX) 的极端 P 值，让所有等温线族都在视图内
+  const pMaxAll = useMemo(
+    () => solveClapeyron({ key: 'V', value: V_MIN }, { key: 'T', value: T_MAX }, 'P', N_DEFAULT),
+    [],
+  )
 
-    const xLabel = 'V (m³)'
-    const yLabel = 'P (Pa)'
-    const xMin = V_MIN
-    const xMax = V_MAX
-    const yMin = 0
-    const yMax = solveClapeyron({ key: 'V', value: V_MIN }, { key: 'T', value: T_MAX }, 'P', N_DEFAULT)
+  // 主曲线：当前温度等温线
+  const currentIsothermXY = useMemo(
+    () => currentIsothermPoints.map((p) => ({ x: p.v, y: p.p })),
+    [currentIsothermPoints],
+  )
 
-    const toPlotX = (v: number) => plotX + ((v - xMin) / (xMax - xMin || 1)) * plotW
-    const toPlotY = (v: number) => plotY + plotH - ((v - yMin) / (yMax - yMin || 1)) * plotH
+  // 附加曲线：等温线族（仅进阶模式 mode=1）
+  const isothermSeries: RelationDataSeries[] = useMemo(() => {
+    if (mode !== 1) return []
+    return isothermFamily.map((iso, idx) => ({
+      points: iso.points.map((p) => ({ x: p.v, y: p.p })),
+      label: `${iso.T}K`,
+      color: PV_CHART_COLORS.isothermsGroup[idx % PV_CHART_COLORS.isothermsGroup.length],
+      strokeWidth: 1,
+    }))
+  }, [mode, isothermFamily])
 
-    // 当前温度等温线路径
-    const currentPathD = currentIsothermPoints
-      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${toPlotX(p.v).toFixed(1)},${toPlotY(p.p).toFixed(1)}`)
-      .join(' ')
-
-    const cx = toPlotX(V)
-    const cy = toPlotY(P)
-
-    return (
-      <g>
-        {/* 图表标题 */}
-        <text
-          x={plotX}
-          y={chartY + 14}
-          fontSize={font(12)}
-          fontWeight="bold"
-          fill={CHART_COLORS.titleText}
-          fontFamily={FONT.family}
-        >
-          P-V 图（等温线）
-        </text>
-
-        {/* 网格线 */}
-        {Array.from({ length: 5 }).map((_, i) => {
-          const gy = plotY + (plotH * i) / 4
-          return (
-            <line
-              key={`gy-${i}`}
-              x1={plotX}
-              y1={gy}
-              x2={plotX + plotW}
-              y2={gy}
-              stroke={CHART_COLORS.gridLine}
-              strokeWidth={0.5}
-            />
-          )
-        })}
-        {Array.from({ length: 6 }).map((_, i) => {
-          const gx = plotX + (plotW * i) / 5
-          return (
-            <line
-              key={`gx-${i}`}
-              x1={gx}
-              y1={plotY}
-              x2={gx}
-              y2={plotY + plotH}
-              stroke={CHART_COLORS.gridLine}
-              strokeWidth={0.5}
-            />
-          )
-        })}
-
-        {/* 坐标轴 */}
-        <line
-          x1={plotX}
-          y1={plotY + plotH}
-          x2={plotX + plotW}
-          y2={plotY + plotH}
-          stroke={CHART_COLORS.axisLine}
-          strokeWidth={STROKE.axis}
-        />
-        <line
-          x1={plotX}
-          y1={plotY}
-          x2={plotX}
-          y2={plotY + plotH}
-          stroke={CHART_COLORS.axisLine}
-          strokeWidth={STROKE.axis}
-        />
-
-        {/* 进阶模式：等温线族背景 */}
-        {mode === 1 && isothermFamily.map((iso, idx) => {
-          const pathD = iso.points
-            .map((p, i) => `${i === 0 ? 'M' : 'L'} ${toPlotX(p.v).toFixed(1)},${toPlotY(p.p).toFixed(1)}`)
-            .join(' ')
-          return (
-            <g key={`iso-bg-${idx}`}>
-              <path
-                d={pathD}
-                fill="none"
-                stroke={PV_CHART_COLORS.isothermsGroup[idx % PV_CHART_COLORS.isothermsGroup.length]}
-                strokeWidth={STROKE.chartRef}
-                opacity={0.4}
-              />
-              <text
-                x={toPlotX(iso.points[iso.points.length - 1]?.v ?? V_MAX) + 4}
-                y={toPlotY(iso.points[iso.points.length - 1]?.p ?? 0) - 4}
-                fontSize={font(8)}
-                fill={CHART_COLORS.tickLabel}
-                fontFamily={FONT.family}
-                opacity={0.6}
-              >
-                {iso.T}K
-              </text>
-            </g>
-          )
-        })}
-
-        {/* 当前温度等温线 */}
-        {currentIsothermPoints.length >= 2 && (
-          <path
-            d={currentPathD}
-            fill="none"
-            stroke={PV_CHART_COLORS.isotherm}
-            strokeWidth={STROKE.chartMain}
-          />
-        )}
-
-        {/* 当前状态点 */}
-        <circle
-          cx={cx}
-          cy={cy}
-          r={5}
-          fill={PV_CHART_COLORS.statePointFill}
-          stroke={PV_CHART_COLORS.statePoint}
-          strokeWidth={STROKE.chartSub}
-        />
-
-        {/* PV/T 比值标注 */}
-        <text
-          x={plotX + plotW - 4}
-          y={plotY + 14}
-          fontSize={font(9)}
-          fill={CHART_COLORS.labelText}
-          textAnchor="end"
-          fontFamily={FONT.family}
-        >
-          PV/T = {(P * V / T).toFixed(2)} J/K
-        </text>
-
-        {/* X 轴刻度 */}
-        {Array.from({ length: 6 }, (_, i) => {
-          const val = xMin + ((xMax - xMin) * i) / 5
-          const x = toPlotX(val)
-          return (
-            <g key={`xt-${i}`}>
-              <line x1={x} y1={plotY + plotH} x2={x} y2={plotY + plotH + 3} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={x} y={plotY + plotH + FONT.small + 4} fontSize={font(9)} fill={CHART_COLORS.tickLabel} textAnchor="middle" fontFamily={FONT.family}>
-                {val.toExponential(1)}
-              </text>
-            </g>
-          )
-        })}
-
-        {/* Y 轴刻度 */}
-        {[yMin, (yMin + yMax) / 2, yMax].map((val, i) => {
-          const y = toPlotY(val)
-          return (
-            <g key={`yt-${i}`}>
-              <line x1={plotX - 3} y1={y} x2={plotX} y2={y} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={plotX - 5} y={y + 3} fontSize={font(9)} fill={CHART_COLORS.tickLabel} textAnchor="end" fontFamily={FONT.family}>
-                {val > 1000 ? (val / 1000).toFixed(0) + 'k' : val.toFixed(1)}
-              </text>
-            </g>
-          )
-        })}
-
-        {/* 轴标签 */}
-        <text
-          x={plotX + plotW - 4}
-          y={plotY + plotH + FONT.small + 4}
-          fontSize={font(10)}
-          fill={CHART_COLORS.labelText}
-          textAnchor="end"
-          fontWeight="bold"
-          fontFamily={FONT.family}
-        >
-          {xLabel}
-        </text>
-        <text
-          x={plotX - 4}
-          y={plotY - 6}
-          fontSize={font(10)}
-          fill={CHART_COLORS.labelText}
-          textAnchor="end"
-          fontWeight="bold"
-          fontFamily={FONT.family}
-        >
-          {yLabel}
-        </text>
-      </g>
-    )
-  }
+  // markers：当前状态点 + PV/T 比值标注（用 horizontal label 放右上角）
+  const markers: RelationMarker[] = useMemo(() => [
+    {
+      axis: 'point',
+      x: V,
+      y: P,
+      color: PV_CHART_COLORS.statePoint,
+    },
+  ], [V, P])
 
   return (
     <div ref={containerRef} className="w-full h-full">
@@ -496,7 +332,37 @@ export default function ClapeyronAnimation() {
         className="w-full h-full"
       >
         {renderCylinder()}
-        {renderChart()}
+
+        {/* P-V 图：通过 foreignObject 嵌入 RelationChart */}
+        <foreignObject x={chartX} y={chartY} width={chartW} height={chartH}>
+          <div style={{ width: '100%', height: '100%' }}>
+            <RelationChart
+              points={currentIsothermXY}
+              additionalSeries={isothermSeries}
+              xLabel="V (m³)"
+              yLabel="P (Pa)"
+              title="P-V 图（等温线）"
+              xDomain={[V_MIN, V_MAX]}
+              yDomain={[0, pMaxAll]}
+              markers={markers}
+              color={PV_CHART_COLORS.isotherm}
+              strokeWidth={2}
+              showGrid
+            />
+          </div>
+        </foreignObject>
+
+        {/* PV/T 比值标注（保留为外层 SVG 文字，避开 RelationChart 标题区） */}
+        <text
+          x={chartX + chartW - 8}
+          y={chartY + 16}
+          fontSize={font(9)}
+          fill={CHART_COLORS.labelText}
+          textAnchor="end"
+          fontFamily={FONT.family}
+        >
+          PV/T = {(P * V / T).toFixed(2)} J/K
+        </text>
       </svg>
     </div>
   )

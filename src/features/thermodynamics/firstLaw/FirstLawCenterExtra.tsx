@@ -1,10 +1,9 @@
 import { useMemo } from 'react'
-import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PV_CHART_COLORS, CHART_COLORS } from '@/theme/physics'
-import { STROKE, FONT } from '@/theme/physics/canvasStyle'
+import { RelationChart } from '@/components/Chart'
+import type { RelationDataSeries, RelationMarker } from '@/components/Chart'
 
 const N_DEFAULT = 1
 const R = 8.314
@@ -37,13 +36,16 @@ const STEP_COLORS = [
   PV_CHART_COLORS.isochor,
 ]
 
+// Y/X 域留 40% 内边距，让循环图整体居中
+const vMin = V_LOW * 0.6
+const vMax = V_HIGH * 1.4
+const pMin = P_LOW * 0.6
+const pMax = P_HIGH * 1.4
+
 export default function FirstLawCenterExtra() {
   const { time } = useAnimationStore(
     useShallow((s) => ({ time: s.time })),
   )
-
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
-  const { width, height, font } = canvasSize
 
   // 当前步骤（周期 30s，每步 7.5s）
   const cycleTime = time % 30
@@ -60,195 +62,73 @@ export default function FirstLawCenterExtra() {
     }
   }, [stepIndex, stepProgress])
 
-  const margin = { left: 60, right: 30, top: 50, bottom: 50 }
-  const plotX = margin.left
-  const plotY = margin.top
-  const plotW = width - margin.left - margin.right
-  const plotH = height - margin.top - margin.bottom
+  // 主曲线：闭合循环（A→B→C→D→A）
+  const cyclePoints = useMemo(
+    () => [
+      ...CORNERS.map((c) => ({ x: c.V, y: c.P })),
+      { x: CORNERS[0].V, y: CORNERS[0].P }, // 闭合回 A
+    ],
+    [],
+  )
 
-  const vMin = V_LOW * 0.6
-  const vMax = V_HIGH * 1.4
-  const pMin = P_LOW * 0.6
-  const pMax = P_HIGH * 1.4
+  // 四段分色高亮：每段作为独立 series，当前阶段加粗/不透明
+  const segmentSeries: RelationDataSeries[] = useMemo(() => {
+    return CORNERS.map((from, i) => {
+      const to = CORNERS[(i + 1) % 4]
+      const isActive = i === stepIndex
+      return {
+        points: [{ x: from.V, y: from.P }, { x: to.V, y: to.P }],
+        color: STEP_COLORS[i],
+        strokeWidth: isActive ? 4 : 1.5,
+      } satisfies RelationDataSeries
+    })
+  }, [stepIndex])
 
-  const toPlotX = (v: number) => plotX + ((v - vMin) / (vMax - vMin)) * plotW
-  const toPlotY = (p: number) => plotY + plotH - ((p - pMin) / (pMax - pMin)) * plotH
-
-  // 循环路径
-  const cyclePathD = CORNERS
-    .map((c, i) => `${i === 0 ? 'M' : 'L'} ${toPlotX(c.V).toFixed(1)},${toPlotY(c.P).toFixed(1)}`)
-    .join(' ') + ' Z'
+  // markers：四个角点（带 A/B/C/D 标签）+ 当前状态点
+  const markers: RelationMarker[] = useMemo(() => [
+    ...CORNERS.map((c) => ({
+      axis: 'point' as const,
+      x: c.V,
+      y: c.P,
+      label: c.label,
+      color: PV_CHART_COLORS.statePoint,
+    })),
+    {
+      axis: 'point' as const,
+      x: currentState.V,
+      y: currentState.P,
+      color: STEP_COLORS[stepIndex],
+    },
+  ], [currentState, stepIndex])
 
   return (
-    <div ref={containerRef} className="w-full h-full bg-white">
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full"
-      >
-        {/* 标题 */}
-        <text
-          x={plotX}
-          y={plotY - 28}
-          fontSize={font(14)}
-          fontWeight="bold"
-          fill={CHART_COLORS.titleText}
-          fontFamily={FONT.family}
-        >
-          热机循环 P-V 图（进阶模式）
-        </text>
-
-        {/* 当前步骤标注 */}
-        <text
-          x={plotX + plotW}
-          y={plotY - 28}
-          fontSize={font(12)}
-          fill={STEP_COLORS[stepIndex]}
-          textAnchor="end"
-          fontWeight="bold"
-          fontFamily={FONT.family}
+    <div className="w-full h-full bg-white p-2 flex flex-col">
+      {/* 当前步骤标注（在图表上方） */}
+      <div className="shrink-0 px-2 pb-1 flex justify-end">
+        <span
+          className="text-sm font-bold"
+          style={{ color: STEP_COLORS[stepIndex] }}
         >
           {STEP_LABELS[stepIndex]}
-        </text>
+        </span>
+      </div>
 
-        {/* 网格线 */}
-        {Array.from({ length: 7 }).map((_, i) => {
-          const gy = plotY + (plotH * i) / 6
-          return (
-            <line key={`gy-${i}`} x1={plotX} y1={gy} x2={plotX + plotW} y2={gy}
-              stroke={CHART_COLORS.gridLine} strokeWidth={0.5} />
-          )
-        })}
-        {Array.from({ length: 9 }).map((_, i) => {
-          const gx = plotX + (plotW * i) / 8
-          return (
-            <line key={`gx-${i}`} x1={gx} y1={plotY} x2={gx} y2={plotY + plotH}
-              stroke={CHART_COLORS.gridLine} strokeWidth={0.5} />
-          )
-        })}
-
-        {/* 坐标轴 */}
-        <line x1={plotX} y1={plotY + plotH} x2={plotX + plotW} y2={plotY + plotH}
-          stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axis} />
-        <line x1={plotX} y1={plotY} x2={plotX} y2={plotY + plotH}
-          stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axis} />
-
-        {/* 循环路径 */}
-        <path d={cyclePathD} fill="none" stroke={CHART_COLORS.primary}
-          strokeWidth={STROKE.chartMain + 0.5} />
-
-        {/* 四条过程线分色高亮 */}
-        {CORNERS.map((_, i) => {
-          const from = CORNERS[i]
-          const to = CORNERS[(i + 1) % 4]
-          return (
-            <line
-              key={`seg-${i}`}
-              x1={toPlotX(from.V)} y1={toPlotY(from.P)}
-              x2={toPlotX(to.V)} y2={toPlotY(to.P)}
-              stroke={STEP_COLORS[i]}
-              strokeWidth={i === stepIndex ? STROKE.chartMain + 2 : STROKE.chartRef}
-              opacity={i === stepIndex ? 1 : 0.3}
-            />
-          )
-        })}
-
-        {/* 角点标注 */}
-        {CORNERS.map((c, i) => {
-          const cx = toPlotX(c.V)
-          const cy = toPlotY(c.P)
-          return (
-            <g key={`corner-${i}`}>
-              <circle cx={cx} cy={cy} r={5}
-                fill={PV_CHART_COLORS.statePointFill}
-                stroke={PV_CHART_COLORS.statePoint} strokeWidth={STROKE.chartSub} />
-              <text
-                x={cx + 8} y={cy - 8}
-                fontSize={font(11)}
-                fill={CHART_COLORS.labelText}
-                fontFamily={FONT.family}
-                fontWeight="bold"
-              >
-                {c.label}
-              </text>
-            </g>
-          )
-        })}
-
-        {/* 当前状态点 */}
-        <circle
-          cx={toPlotX(currentState.V)}
-          cy={toPlotY(currentState.P)}
-          r={7}
-          fill={STEP_COLORS[stepIndex]}
-          stroke="#fff"
-          strokeWidth={STROKE.chartSub}
+      {/* P-V 循环图：迁移到 RelationChart */}
+      <div className="flex-1 min-h-0">
+        <RelationChart
+          points={cyclePoints}
+          additionalSeries={segmentSeries}
+          xLabel="V (m³)"
+          yLabel="P (Pa)"
+          title="热机循环 P-V 图（进阶模式）"
+          xDomain={[vMin, vMax]}
+          yDomain={[pMin, pMax]}
+          markers={markers}
+          color={CHART_COLORS.primary}
+          strokeWidth={1}
+          showGrid
         />
-
-        {/* 过程箭头方向 */}
-        {CORNERS.map((_, i) => {
-          const from = CORNERS[i]
-          const to = CORNERS[(i + 1) % 4]
-          const mx = (toPlotX(from.V) + toPlotX(to.V)) / 2
-          const my = (toPlotY(from.P) + toPlotY(to.P)) / 2
-          const angle = Math.atan2(
-            toPlotY(to.P) - toPlotY(from.P),
-            toPlotX(to.V) - toPlotX(from.V),
-          )
-          return (
-            <g key={`arrow-${i}`} transform={`translate(${mx},${my}) rotate(${angle * 180 / Math.PI})`}>
-              <polygon
-                points="0,-4 8,0 0,4"
-                fill={PV_CHART_COLORS.processArrow}
-                opacity={i === stepIndex ? 1 : 0.3}
-              />
-            </g>
-          )
-        })}
-
-        {/* X 轴刻度 */}
-        {Array.from({ length: 6 }, (_, i) => {
-          const val = vMin + ((vMax - vMin) * i) / 5
-          const x = toPlotX(val)
-          return (
-            <g key={`xt-${i}`}>
-              <line x1={x} y1={plotY + plotH} x2={x} y2={plotY + plotH + 4}
-                stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={x} y={plotY + plotH + FONT.small + 8} fontSize={font(9)}
-                fill={CHART_COLORS.tickLabel} textAnchor="middle" fontFamily={FONT.family}>
-                {val.toExponential(1)}
-              </text>
-            </g>
-          )
-        })}
-
-        {/* Y 轴刻度 */}
-        {[pMin, (pMin + pMax) / 2, pMax].map((val, i) => {
-          const y = toPlotY(val)
-          return (
-            <g key={`yt-${i}`}>
-              <line x1={plotX - 4} y1={y} x2={plotX} y2={y}
-                stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={plotX - 8} y={y + 3} fontSize={font(9)}
-                fill={CHART_COLORS.tickLabel} textAnchor="end" fontFamily={FONT.family}>
-                {val > 1000 ? (val / 1000).toFixed(0) + 'k' : val.toFixed(0)}
-              </text>
-            </g>
-          )
-        })}
-
-        {/* 轴标签 */}
-        <text x={plotX + plotW - 4} y={plotY + plotH + FONT.small + 8}
-          fontSize={font(12)} fill={CHART_COLORS.labelText} textAnchor="end"
-          fontWeight="bold" fontFamily={FONT.family}>
-          V (m³)
-        </text>
-        <text x={plotX - 8} y={plotY - 8}
-          fontSize={font(12)} fill={CHART_COLORS.labelText} textAnchor="end"
-          fontWeight="bold" fontFamily={FONT.family}>
-          P (Pa)
-        </text>
-      </svg>
+      </div>
     </div>
   )
 }

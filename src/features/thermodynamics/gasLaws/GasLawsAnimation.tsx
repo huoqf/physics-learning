@@ -1,10 +1,10 @@
-import { useRef, useCallback, useState } from 'react'
+import { useRef, useCallback, useState, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { THERMO_COLORS, THERMAL_COLORS, PV_CHART_COLORS, CHART_COLORS } from '@/theme/physics'
+import { THERMO_COLORS, THERMAL_COLORS, PV_CHART_COLORS } from '@/theme/physics'
 import { STROKE, FONT } from '@/theme/physics/canvasStyle'
 import {
   computeBoylePressure,
@@ -14,6 +14,8 @@ import {
   generateIsobarPoints,
   generateIsochorPoints,
 } from '@/physics/gasLaws'
+import { RelationChart } from '@/components/Chart'
+import type { RelationMarker } from '@/components/Chart'
 
 // ─── 物理常量 ─────────────────────────────────────────────────────────────
 const N_DEFAULT = 1
@@ -309,218 +311,67 @@ export default function GasLawsAnimation() {
     )
   }
 
-  // ─── 图表渲染 ──────────────────────────────────────────────────────────
-  const renderChart = () => {
-    const chartX = width * LAYOUT.chartLeftRatio
-    const chartY = height * LAYOUT.chartTopRatio
-    const chartW = width * LAYOUT.chartWidthRatio
-    const chartH = height * LAYOUT.chartHeightRatio
-
-    const margin = { left: 48, right: 16, top: 24, bottom: 28 }
-    const plotX = chartX + margin.left
-    const plotY = chartY + margin.top
-    const plotW = chartW - margin.left - margin.right
-    const plotH = chartH - margin.top - margin.bottom
-
-    let xLabel = ''
-    let yLabel = ''
-    let points: { x: number; y: number }[] = []
-    let currentX = 0
-    let currentY = 0
-    let xMin = 0
-    let xMax = 1
-    let yMin = 0
-    let yMax = 1
-    let curveColor: string = PV_CHART_COLORS.isotherm
-
+  // ─── 图表数据（按 mode 切换 P-V / V-T / P-T）─────────────────────────
+  const chartConfig = useMemo(() => {
     if (mode === 0) {
-      // 等温：P-V 图
-      xLabel = 'V (m³)'
-      yLabel = 'P (Pa)'
-      curveColor = PV_CHART_COLORS.isotherm
+      // 等温变化：P-V 图（反比例曲线）
       const data = generateIsothermPoints(T, N_DEFAULT, V_MIN, V_MAX, 50)
-      xMin = V_MIN
-      xMax = V_MAX
-      yMin = 0
-      yMax = data[0]?.p ?? 1e5
-      points = data.map((d) => ({ x: d.v, y: d.p }))
-      currentX = V
-      currentY = computeBoylePressure(V, T, N_DEFAULT)
+      return {
+        title: 'P-V 图（等温线）',
+        xLabel: 'V (m³)',
+        yLabel: 'P (Pa)',
+        xDomain: [V_MIN, V_MAX] as [number, number],
+        yDomain: [0, data[0]?.p ?? 1e5] as [number, number],
+        color: PV_CHART_COLORS.isotherm,
+        points: data.map((d) => ({ x: d.v, y: d.p })),
+        currentX: V,
+        currentY: computeBoylePressure(V, T, N_DEFAULT),
+      }
     } else if (mode === 1) {
-      // 等压：V-T 图
-      xLabel = 'T (K)'
-      yLabel = 'V (m³)'
-      curveColor = PV_CHART_COLORS.isobar
+      // 等压变化：V-T 图（正比例直线）
       const P_fixed = P
       const data = generateIsobarPoints(P_fixed, N_DEFAULT, T_MIN, T_MAX, 50)
-      xMin = T_MIN
-      xMax = T_MAX
-      yMin = 0
-      yMax = data[data.length - 1]?.v ?? 1e-2
-      points = data.map((d) => ({ x: d.t, y: d.v }))
-      currentX = T
-      currentY = computeGayLussacVolume(T, P_fixed, N_DEFAULT)
+      return {
+        title: 'V-T 图（等压线）',
+        xLabel: 'T (K)',
+        yLabel: 'V (m³)',
+        xDomain: [T_MIN, T_MAX] as [number, number],
+        yDomain: [0, data[data.length - 1]?.v ?? 1e-2] as [number, number],
+        color: PV_CHART_COLORS.isobar,
+        points: data.map((d) => ({ x: d.t, y: d.v })),
+        currentX: T,
+        currentY: computeGayLussacVolume(T, P_fixed, N_DEFAULT),
+      }
     } else {
-      // 等容：P-T 图
-      xLabel = 'T (K)'
-      yLabel = 'P (Pa)'
-      curveColor = PV_CHART_COLORS.isochor
+      // 等容变化：P-T 图（正比例直线）
       const data = generateIsochorPoints(V, N_DEFAULT, T_MIN, T_MAX, 50)
-      xMin = T_MIN
-      xMax = T_MAX
-      yMin = 0
-      yMax = data[data.length - 1]?.p ?? 1e5
-      points = data.map((d) => ({ x: d.t, y: d.p }))
-      currentX = T
-      currentY = computeCharlesPressure(T, V, N_DEFAULT)
+      return {
+        title: 'P-T 图（等容线）',
+        xLabel: 'T (K)',
+        yLabel: 'P (Pa)',
+        xDomain: [T_MIN, T_MAX] as [number, number],
+        yDomain: [0, data[data.length - 1]?.p ?? 1e5] as [number, number],
+        color: PV_CHART_COLORS.isochor,
+        points: data.map((d) => ({ x: d.t, y: d.p })),
+        currentX: T,
+        currentY: computeCharlesPressure(T, V, N_DEFAULT),
+      }
     }
+  }, [mode, T, V, P])
 
-    const toPlotX = (v: number) => plotX + ((v - xMin) / (xMax - xMin || 1)) * plotW
-    const toPlotY = (v: number) => plotY + plotH - ((v - yMin) / (yMax - yMin || 1)) * plotH
+  // 当前状态点
+  const markers: RelationMarker[] = useMemo(() => [{
+    axis: 'point',
+    x: chartConfig.currentX,
+    y: chartConfig.currentY,
+    color: PV_CHART_COLORS.statePoint,
+  }], [chartConfig.currentX, chartConfig.currentY])
 
-    // 曲线路径
-    const pathD = points
-      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${toPlotX(p.x).toFixed(1)},${toPlotY(p.y).toFixed(1)}`)
-      .join(' ')
-
-    const cx = toPlotX(currentX)
-    const cy = toPlotY(currentY)
-
-    return (
-      <g>
-        {/* 图表标题 */}
-        <text
-          x={plotX}
-          y={chartY + 14}
-          fontSize={font(12)}
-          fontWeight="bold"
-          fill={CHART_COLORS.titleText}
-          fontFamily={FONT.family}
-        >
-          {mode === 0 ? 'P-V 图（等温线）' : mode === 1 ? 'V-T 图（等压线）' : 'P-T 图（等容线）'}
-        </text>
-
-        {/* 网格线 */}
-        {Array.from({ length: 5 }).map((_, i) => {
-          const gy = plotY + (plotH * i) / 4
-          return (
-            <line
-              key={`gy-${i}`}
-              x1={plotX}
-              y1={gy}
-              x2={plotX + plotW}
-              y2={gy}
-              stroke={CHART_COLORS.gridLine}
-              strokeWidth={0.5}
-            />
-          )
-        })}
-        {Array.from({ length: 6 }).map((_, i) => {
-          const gx = plotX + (plotW * i) / 5
-          return (
-            <line
-              key={`gx-${i}`}
-              x1={gx}
-              y1={plotY}
-              x2={gx}
-              y2={plotY + plotH}
-              stroke={CHART_COLORS.gridLine}
-              strokeWidth={0.5}
-            />
-          )
-        })}
-
-        {/* 坐标轴 */}
-        <line
-          x1={plotX}
-          y1={plotY + plotH}
-          x2={plotX + plotW}
-          y2={plotY + plotH}
-          stroke={CHART_COLORS.axisLine}
-          strokeWidth={STROKE.axis}
-        />
-        <line
-          x1={plotX}
-          y1={plotY}
-          x2={plotX}
-          y2={plotY + plotH}
-          stroke={CHART_COLORS.axisLine}
-          strokeWidth={STROKE.axis}
-        />
-
-        {/* 曲线 */}
-        {points.length >= 2 && (
-          <path
-            d={pathD}
-            fill="none"
-            stroke={curveColor}
-            strokeWidth={STROKE.chartMain}
-          />
-        )}
-
-        {/* 当前状态点 */}
-        <circle
-          cx={cx}
-          cy={cy}
-          r={5}
-          fill={PV_CHART_COLORS.statePointFill}
-          stroke={PV_CHART_COLORS.statePoint}
-          strokeWidth={STROKE.chartSub}
-        />
-
-        {/* X 轴刻度 */}
-        {Array.from({ length: 6 }, (_, i) => {
-          const val = xMin + ((xMax - xMin) * i) / 5
-          const x = toPlotX(val)
-          return (
-            <g key={`xt-${i}`}>
-              <line x1={x} y1={plotY + plotH} x2={x} y2={plotY + plotH + 3}               stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={x} y={plotY + plotH + FONT.small + 4} fontSize={font(9)} fill={CHART_COLORS.tickLabel} textAnchor="middle" fontFamily={FONT.family}>
-                {mode === 0 ? val.toExponential(1) : val.toFixed(0)}
-              </text>
-            </g>
-          )
-        })}
-
-        {/* Y 轴刻度 */}
-        {[yMin, (yMin + yMax) / 2, yMax].map((val, i) => {
-          const y = toPlotY(val)
-          return (
-            <g key={`yt-${i}`}>
-              <line x1={plotX - 3} y1={y} x2={plotX} y2={y}               stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={plotX - 5} y={y + 3} fontSize={font(9)} fill={CHART_COLORS.tickLabel} textAnchor="end" fontFamily={FONT.family}>
-                {val > 1000 ? (val / 1000).toFixed(0) + 'k' : val.toFixed(mode === 0 ? 1 : 3)}
-              </text>
-            </g>
-          )
-        })}
-
-        {/* 轴标签 */}
-        <text
-          x={plotX + plotW - 4}
-          y={plotY + plotH + FONT.small + 4}
-          fontSize={font(10)}
-          fill={CHART_COLORS.labelText}
-          textAnchor="end"
-          fontWeight="bold"
-          fontFamily={FONT.family}
-        >
-          {xLabel}
-        </text>
-        <text
-          x={plotX - 4}
-          y={plotY - 6}
-          fontSize={font(10)}
-          fill={CHART_COLORS.labelText}
-          textAnchor="end"
-          fontWeight="bold"
-          fontFamily={FONT.family}
-        >
-          {yLabel}
-        </text>
-      </g>
-    )
-  }
+  // 图表布局（保留原 LAYOUT 比例）
+  const chartX = width * LAYOUT.chartLeftRatio
+  const chartY = height * LAYOUT.chartTopRatio
+  const chartW = width * LAYOUT.chartWidthRatio
+  const chartH = height * LAYOUT.chartHeightRatio
 
   return (
     <div ref={containerRef} className="w-full h-full">
@@ -530,7 +381,24 @@ export default function GasLawsAnimation() {
         className="w-full h-full"
       >
         {renderCylinder()}
-        {renderChart()}
+
+        {/* P-V / V-T / P-T 图：通过 foreignObject 嵌入 RelationChart */}
+        <foreignObject x={chartX} y={chartY} width={chartW} height={chartH}>
+          <div style={{ width: '100%', height: '100%' }}>
+            <RelationChart
+              points={chartConfig.points}
+              xLabel={chartConfig.xLabel}
+              yLabel={chartConfig.yLabel}
+              title={chartConfig.title}
+              xDomain={chartConfig.xDomain}
+              yDomain={chartConfig.yDomain}
+              markers={markers}
+              color={chartConfig.color}
+              strokeWidth={2}
+              showGrid
+            />
+          </div>
+        </foreignObject>
       </svg>
     </div>
   )

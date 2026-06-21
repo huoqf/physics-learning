@@ -1,6 +1,6 @@
 # 延后处理待办事项
 
-> 仅保留未完成项。最后更新：2026-06-21（V-T stages API + SatelliteAnimation Mode 1 收尾）
+> 仅保留未完成项。最后更新：2026-06-21（三个热力学页面迁移到 RelationChart，不新建 PVTChart）
 
 ---
 
@@ -41,10 +41,11 @@
 
 | 组件 | 用途 | 优先级 |
 |------|------|:------:|
-| PVTChart | P-V / V-T / P-T 热力学图 | 中（解锁 Clapeyron/GasLaws/FirstLawCenter 3 个页面） |
+| ~~PVTChart~~ | ~~P-V / V-T / P-T 热力学图~~ | ~~中~~ ❌ 决策放弃：RelationChart 已覆盖（commit cb7c88d）。若未来真有重复配置再抽薄封装 |
 | ~~RelationChart~~ | ~~通用 Y=f(X) 关系图~~ | ~~中~~ ✅ |
 | ChartAsymptote 插件 | 渐近线（如收尾速度） | 低 |
 | ChartSecant 插件 | 割线 + 斜率三角形（与 ChartTangent 平行） | 中（VelocityVTChart/VelocityXTChart/VerticalThrow 三个高难度页面都需要） |
+| ChartDirectionArrows 插件 | 段向箭头（FirstLawCenter 循环过程方向）| 低（FirstLawCenter 已降级；箭头当前可通过角点标签 + 阶段文字替代）|
 
 ### 待补充功能
 
@@ -66,22 +67,24 @@
 
 ### 页面迁移状态
 
-**已迁移：** ChargeInEField(vy-t)、CuttingEMF(v-t/a-t)、~~ForceMotionTripleChart(F-t/v-t/x-t 游标 + 面积)~~ ✅、MiniChart(7 个消费方)、MaxwellBoltzmannChart(f(v)-v)、ACGeneration(e-t)、~~FreeFallDripAnimation(v-t)~~ ✅、~~FreeFallAnimation(v-t 双曲线)~~ ✅、~~IntermolecularForceChart(F-r 三曲线 / Ep-r)~~ ✅、~~CoulombLaw BasicMode(F-r)~~ ✅、~~ElectricFieldBasicScene(E-r + F-r)~~ ✅、~~ThinLensAnimation(线性 + 双曲线 + 共轭法标记)~~ ✅、~~SatelliteAnimation Mode 0(v-r + T-r 画中画)~~ ✅、~~SatelliteAnimation Mode 1(v-t 三阶段)~~ ✅
+**已迁移：** ChargeInEField(vy-t)、CuttingEMF(v-t/a-t)、~~ForceMotionTripleChart(F-t/v-t/x-t 游标 + 面积)~~ ✅、MiniChart(7 个消费方)、MaxwellBoltzmannChart(f(v)-v)、ACGeneration(e-t)、~~FreeFallDripAnimation(v-t)~~ ✅、~~FreeFallAnimation(v-t 双曲线)~~ ✅、~~IntermolecularForceChart(F-r 三曲线 / Ep-r)~~ ✅、~~CoulombLaw BasicMode(F-r)~~ ✅、~~ElectricFieldBasicScene(E-r + F-r)~~ ✅、~~ThinLensAnimation(线性 + 双曲线 + 共轭法标记)~~ ✅、~~SatelliteAnimation Mode 0(v-r + T-r 画中画)~~ ✅、~~SatelliteAnimation Mode 1(v-t 三阶段)~~ ✅、~~ClapeyronAnimation(P-V 等温线 + 等温线族)~~ ✅、~~GasLawsAnimation(P-V/V-T/P-T mode 切换)~~ ✅、~~FirstLawCenterExtra(P-V 循环 + 分段高亮)~~ ✅
 
 **未迁移：**
 
 | 页面 | 图表类型 | 需要的预设 | 难度 |
 |------|---------|------|:----:|
 | ACValues | I-t + Q-t | VelocityTimeChart 变体 | 中 |
-| ClapeyronAnimation | P-V 等温线 | **PVTChart** | 中 |
-| GasLawsAnimation | P-V / V-T / P-T | **PVTChart** | 中 |
 | VelocityVTChart | v-t 滑动窗口+面积+割线+切线 | VelocityTimeChart + ChartTangent + **ChartSecant** | 高 |
 | VelocityXTChart | x-t 切线+割线三角形 | DisplacementTimeChart + ChartTangent + **ChartSecant** | 高 |
 | VerticalThrowAnimation | v-t + y-t 双图+切线+交互 | VelocityTimeChart + DisplacementTimeChart + ChartTangent | 高 |
 | KineticEnergyAnimation | 4 面板 Ek-x/W/Ep/F-x/F-x/a-t | RelationChart + AccelerationTimeChart | 高 |
 | PowerAnimation | 4 面板 v-t/P-t/F-v/a-t | 多个预设组合 | 高 |
 | FaradayChartPanel | Φ-t + E-t 双图 | 通用 t-* 预设 | 高 |
-| FirstLawCenterExtra | P-V 循环 | **PVTChart** | 高 |
+
+**教学体验后续优化（不阻塞主线）：**
+- **GasLawsAnimation 三图同屏**：当前迁移仅保留原 mode 切换。教学上 P-V/V-T/P-T 三图同屏更有价值（让学生同时看到「哪个量不变、哪两个量成什么关系」），适合作为未来教学重构项。
+- **VelocityTimeChart 加 markers（horizontal）**：用于 SatelliteAnimation Mode 1 的 7.9/11.2 km/s 第一/第二宇宙速度水平参考线
+- **VelocityTimeChart 加 subtitle**：用于副标题文案
 
 **迁移顺序：**
 1. ~~FreeFallDripAnimation~~ ✅
@@ -93,7 +96,7 @@
 7. ~~SatelliteAnimation Mode 0（验证画中画卡片 + foreignObject 拖拽热区分层）~~ ✅
 8. ~~ForceMotionTripleChart 面积补齐（ChartArea 在非 BasePhysicsChart 容器复用）~~ ✅
 9. ~~VelocityTimeChart 扩展「阶段背景着色」 + SatelliteAnimation Mode 1 迁移~~ ✅
-10. **创建 PVTChart 预设** → 批量解锁 ClapeyronAnimation / GasLawsAnimation / FirstLawCenterExtra
+10. ~~~~创建 PVTChart 预设~~~~ → 改为直接用 RelationChart，三个热力学页面一次性迁完 ✅
 11. **创建 ChartSecant 插件** → 启动高难度三件套（VelocityVT / VelocityXT / VerticalThrow）
 12. 其余按需
 
