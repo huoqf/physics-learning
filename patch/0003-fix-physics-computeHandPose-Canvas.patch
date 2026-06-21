@@ -1,0 +1,70 @@
+From d2f0b99ca01285ea44f780211bb71d0b1df26554 Mon Sep 17 00:00:00 2001
+From: Arena Agent <agent@arena.ai>
+Date: Sun, 21 Jun 2026 08:39:08 +0000
+Subject: [PATCH] =?UTF-8?q?fix(physics):=20=E4=BF=AE=E6=AD=A3=20computeHan?=
+ =?UTF-8?q?dPose=20=E7=9A=84=20Canvas=20=E5=8F=89=E7=A7=AF=E7=AC=A6?=
+ =?UTF-8?q?=E5=8F=B7=E5=88=A4=E5=AE=9A?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+handPose.ts 原实现把 cross<0 判为右手、cross>0 判为左手，附带的
+注释承认 Canvas +y 向下会导致符号翻转，但推导本身是错的。
+
+正确推导（Canvas v=(vx,vy)、I=(ix,iy)，物理坐标 y 翻转）：
+  设 B=(0,0,Bz)，右手定则 I_p = v_p × B 翻回 Canvas 得
+    I = (-vy·Bz, vx·Bz)
+  代入 Canvas 叉积：
+    cross = v.x·I.y - v.y·I.x = Bz·(vx² + vy²)
+  vx²+vy² > 0 ⇒ sign(cross) = sign(Bz)
+  ⇒ cross > 0 ⇔ B 出纸面 ⇔ 右手定则
+
+修复：cross < 0 → cross > 0（chirality 与 B_out 两处），并以严格推导
+替换原误导注释。
+
+视觉回归零风险（已通过影响面排查确认）：
+  - HandRule 只读取 computeHandPose 的 rotationDeg，chirality 由外部
+    mode prop 决定，B_out 字段无人读取。
+  - CuttingEMFHandRule → HandRule 链路同上。
+  - SkeletalHand 内部 isBack 镜像逻辑由 CuttingEMF.tsx (B_out===1)
+    和 AmpereForce.tsx (B<0) 直接驱动，与 computeHandPose 无关。
+  → chirality / B_out 这两个被修字段在生产代码中均未被读取，仅
+     测试用例校验其正确性。
+
+测试结果：
+  - 电磁学模块由 54 pass / 6 fail 改善为 60 pass / 0 fail
+  - 全量测试由 262 pass / 6 fail 改善为 268 pass / 0 fail
+  - 零回归
+---
+ src/utils/handPose.ts | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
+
+diff --git a/src/utils/handPose.ts b/src/utils/handPose.ts
+index 23accef..d714abe 100644
+--- a/src/utils/handPose.ts
++++ b/src/utils/handPose.ts
+@@ -90,13 +90,15 @@ export function computeHandPose(v: Vec2, I: Vec2): HandPoseResult {
+   // 所以当 I 方向为 iAngle 时，需要旋转 `iAngle - (-90°)`.
+   const rotationDeg = (iAngle * 180) / Math.PI + 90
+ 
+-  // Canvas 坐标系中 +y 向下，导致叉积符号与物理右手坐标系相反。
+-  // 物理：v向右(1,0)、I向上(0,1) → cross=+1 → 右手 ✓
+-  // Canvas：v向右(1,0)、I向上 = Canvas(0,-1) → cross=-1 → 应判断为右手
+-  // 因此：Canvas中 cross < 0 → 物理右手，cross > 0 → 物理左手
++  // 手性判定（B 出/入纸面）。推导：
++  //   设 Canvas 向量 v=(vx,vy)、I=(ix,iy)，对应物理向量 v_p=(vx,-vy)、I_p=(ix,-iy)。
++  //   右手定则 I = v × B，取 B=(0,0,Bz)，则 I_p = v_p × B = (-vy·Bz, -vx·Bz, 0)，
++  //   翻回 Canvas 得 I = (-vy·Bz, vx·Bz)。代入 Canvas 叉积：
++  //     cross = v.x·I.y - v.y·I.x = vx·(vx·Bz) - vy·(-vy·Bz) = Bz·(vx² + vy²)
++  //   故 sign(cross) = sign(Bz)：cross > 0 ⇔ B 出纸面（⊙）⇔ 右手定则成立。
+   const cross = v.x * I.y - v.y * I.x
+-  const chirality: HandChirality = cross < 0 ? 'right' : 'left'
+-  const B_out = cross < 0
++  const chirality: HandChirality = cross > 0 ? 'right' : 'left'
++  const B_out = cross > 0
+ 
+   return {
+     rotationDeg,
+-- 
+2.47.3
+
