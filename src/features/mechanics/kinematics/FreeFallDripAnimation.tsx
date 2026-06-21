@@ -18,6 +18,7 @@ import { useFreeFallPhysics } from './useFreeFallPhysics'
 import { getPhysicsAtTime } from '@/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { VelocityTimeChart } from '@/components/Chart'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
@@ -194,72 +195,17 @@ export default function FreeFallDripAnimation() {
       .map((p) => ({ x: tubeCenterX, y: tubeTopY + p.y * scale }))
   }, [nearestDrop, time, points, tubeCenterX, tubeTopY, scale])
 
-  // ── v-t 图布局 ────────────────────────────────────────────────────────
+  // ── v-t 图参数 ────────────────────────────────────────────────────────
   const vtChartTop = canvasSize.height * 0.03
   const vtChartHeight = canvasSize.height * 0.62
-  const vtInnerPad = { left: 50, right: 40, top: 35, bottom: 40 }
-  const vtInnerW = dataWidth - vtInnerPad.left - vtInnerPad.right
-  const vtInnerH = vtChartHeight - vtInnerPad.top - vtInnerPad.bottom
-
-  const { vtVMax, vtTickStep, xMax } = useMemo(() => {
+  const vtXMax = useMemo(() => {
     const effectiveXMax = Math.max(Math.min(groundTime * 1.2, 8), 2)
-    const clampedXMax = Math.round(effectiveXMax * 10) / 10
-    const maxV = Math.max(g * clampedXMax, 10) * 1.2
-    let vMax: number
-    let tickStep: number
-    if (maxV <= 10) { vMax = 10; tickStep = 2 }
-    else if (maxV <= 20) { vMax = 20; tickStep = 5 }
-    else if (maxV <= 50) { vMax = Math.ceil(maxV / 10) * 10; tickStep = 10 }
-    else { vMax = Math.ceil(maxV / 20) * 20; tickStep = 20 }
-    return { vtVMax: vMax, vtTickStep: tickStep, xMax: clampedXMax }
-  }, [g, groundTime])
+    return Math.round(effectiveXMax * 10) / 10
+  }, [groundTime])
 
-  const vtToX = (t: number) => vtInnerPad.left + (t / xMax) * vtInnerW
-  const vtToY = (v: number) => {
-    const clampedV = Math.max(0, Math.min(v, vtVMax))
-    return vtInnerPad.top + vtInnerH - (clampedV / vtVMax) * vtInnerH
-  }
-
-  const yticks = useMemo(() => {
-    const ticks: number[] = []
-    for (let v = 0; v <= vtVMax; v += vtTickStep) ticks.push(v)
-    return ticks
-  }, [vtVMax, vtTickStep])
-
-  const xticks = useMemo(() => {
-    const ticks: number[] = []
-    const step = xMax <= 4 ? 1 : xMax <= 8 ? 2 : 3
-    for (let t = 0; t <= xMax + 0.01; t += step) ticks.push(parseFloat(t.toFixed(1)))
-    return ticks
-  }, [xMax])
-
-  const activeTime = Math.min(time, xMax)
-
-  // ── v-t 积分位移面积着色多边形 ──────────────────────────────────────────
-  const areaPoints = useMemo(() => {
-    if (activeTime <= 0) return ''
-    const pts: string[] = []
-    pts.push(`${vtToX(0)},${vtToY(0)}`)
-    const step = 0.05
-    for (let t = 0; t < activeTime; t += step) {
-      const state = getPhysicsAtTime(points, t, groundTime)
-      pts.push(`${vtToX(t)},${vtToY(state.v)}`)
-    }
-    const curr = getPhysicsAtTime(points, activeTime, groundTime)
-    pts.push(`${vtToX(activeTime)},${vtToY(curr.v)}`)
-    pts.push(`${vtToX(activeTime)},${vtToY(0)}`)
-    return pts.join(' ')
-  }, [points, groundTime, activeTime])
-
-  // ── v-t 曲线 ──────────────────────────────────────────────────────────────
-  const vtPathD = useMemo(() => {
-    const pts: string[] = []
-    for (let t = 0; t <= activeTime + 0.01; t += 0.05) {
-      const state = getPhysicsAtTime(points, t, groundTime)
-      pts.push(`${vtToX(t)},${vtToY(state.v)}`)
-    }
-    return pts.length >= 2 ? `M ${pts.join(' L ')}` : ''
-  }, [points, groundTime, activeTime])
+  const vtPoints = useMemo(() => {
+    return points.filter((p) => p.t <= Math.min(time, vtXMax) + 1e-9)
+  }, [points, time, vtXMax])
 
   // ── 渲染 ──────────────────────────────────────────────────────────────────
   return (
@@ -289,11 +235,6 @@ export default function FreeFallDripAnimation() {
             <stop offset="50%" stopColor={SCENE_COLORS.materials.glassGrad[2]} stopOpacity="0.0" />
             <stop offset="92%" stopColor={SCENE_COLORS.materials.glassGrad[1]} stopOpacity="0.08" />
             <stop offset="100%" stopColor={SCENE_COLORS.materials.glassGrad[0]} stopOpacity="0.22" />
-          </linearGradient>
-          {/* 面积阴影渐变 */}
-          <linearGradient id="area-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[2]} stopOpacity="0.2" />
-            <stop offset="100%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[2]} stopOpacity="0.01" />
           </linearGradient>
         </defs>
         <VectorDefs colors={[PHYSICS_COLORS.velocity, PHYSICS_COLORS.acceleration]} />
@@ -568,84 +509,18 @@ export default function FreeFallDripAnimation() {
         </g>
 
         {/* v-t 图 */}
-        <g transform={`translate(${dataX}, ${vtChartTop + canvasSize.height * 0.32 + 12})`}>
-          <rect width={dataWidth} height={vtChartHeight}
-            fill="white" rx={4} stroke={CHART_COLORS.axisLine} />
-          <text x={dataWidth / 2} y={20} fontSize={FONT.axis}
-            fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
-            速度－时间图像 (v-t 图)
-          </text>
-
-          {/* 积分面积着色 */}
-          {areaPoints && (
-            <polygon points={areaPoints} fill="url(#area-grad)" />
-          )}
-
-          {/* 坐标轴 */}
-          <line x1={vtInnerPad.left} y1={vtInnerPad.top}
-            x2={vtInnerPad.left} y2={vtInnerPad.top + vtInnerH}
-            stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-          <line x1={vtInnerPad.left} y1={vtToY(0)}
-            x2={vtInnerPad.left + vtInnerW} y2={vtToY(0)}
-            stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-
-          {/* X 刻度 */}
-          {xticks.map((t) => (
-            <g key={`xt-${t}`}>
-              <line x1={vtToX(t)} y1={vtToY(0) - 4} x2={vtToX(t)} y2={vtToY(0) + 4}
-                stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={vtToX(t)} y={vtToY(0) + 16} fontSize={font(9)}
-                textAnchor="middle" fill={CHART_COLORS.tickLabel}>{t}</text>
-            </g>
-          ))}
-
-          {/* Y 刻度 */}
-          {yticks.map((v) => (
-            <g key={`yt-${v}`}>
-              <line x1={vtInnerPad.left - 4} y1={vtToY(v)}
-                x2={vtInnerPad.left} y2={vtToY(v)}
-                stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={vtInnerPad.left - 8} y={vtToY(v) + 3} fontSize={font(9)}
-                textAnchor="end" fill={CHART_COLORS.tickLabel}>{v}</text>
-            </g>
-          ))}
-
-          {/* 轴标签 */}
-          <text x={vtInnerPad.left + vtInnerW / 2} y={vtInnerPad.top + vtInnerH + 28}
-            fontSize={font(10)} textAnchor="middle" fill={CHART_COLORS.labelText}>t/s</text>
-          <text x={vtInnerPad.left - 28} y={vtInnerPad.top + vtInnerH / 2}
-            fontSize={font(10)} textAnchor="middle" fill={CHART_COLORS.labelText}
-            transform={`rotate(-90, ${vtInnerPad.left - 28}, ${vtInnerPad.top + vtInnerH / 2})`}>
-            v/(m·s⁻¹)
-          </text>
-
-          {/* v-t 曲线 */}
-          {vtPathD && (
-            <path d={vtPathD} fill="none" stroke={VT_CHART_COLORS.velocityCurve}
-              strokeWidth={STROKE.chartMain} />
-          )}
-
-          {/* 时间垂直游标指示器 */}
-          {activeTime > 0 && (
-            <g>
-              <line
-                x1={vtToX(activeTime)} y1={vtInnerPad.top}
-                x2={vtToX(activeTime)} y2={vtInnerPad.top + vtInnerH}
-                stroke="rgba(75, 85, 99, 0.3)"
-                strokeWidth={1}
-                strokeDasharray="2 2"
-              />
-              <circle
-                cx={vtToX(activeTime)}
-                cy={vtToY(nearestPhysics.v)}
-                r={4}
-                fill={PHYSICS_COLORS.velocity}
-                stroke={colors.neutral.white}
-                strokeWidth={1}
-              />
-            </g>
-          )}
-        </g>
+        <foreignObject x={dataX} y={vtChartTop + canvasSize.height * 0.32 + 12} width={dataWidth} height={vtChartHeight}>
+          <div style={{ width: '100%', height: '100%' }}>
+            <VelocityTimeChart
+              points={vtPoints}
+              currentTime={Math.min(time, vtXMax)}
+              tMax={vtXMax}
+              title="速度－时间图像 (v-t 图)"
+              showArea
+              showGrid
+            />
+          </div>
+        </foreignObject>
 
         {/* 底部文字标注（5个） */}
         <text x={dataX + 8} y={canvasSize.height * 0.97} fontSize={FONT.small}
