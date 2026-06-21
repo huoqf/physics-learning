@@ -27,6 +27,20 @@ import type { ChartSeriesVariant, ChartReferenceVariant } from '@/theme/physics'
  * - `markers`：特殊点 / 参考线（y 省略时画整条 vertical 虚线）
  * - `additionalSeries`：多曲线（同坐标系），与 VelocityTimeChart 的 API 完全对齐
  * - `showZeroLine`：当 Y 可正可负时显示零基准虚线
+ *
+ * ⚠️ **使用前提（重要）**：
+ * `RelationChart` 假设 `points` 表示**整条完整曲线**，与坐标轴定标用的是同一份数据。
+ * 这适用于：物理函数图像（一次性算出整段曲线静态展示）、对比图等场景。
+ *
+ * **不适用于「随时间逐步揭示」场景**。如果调用方按某个进度变量截断 `points`，
+ * 自动 `yDomain` 会随之扩张，重现 `VelocityTimeChart` 早期那种「曲线被时间拉斜」
+ * 的视觉错觉（见 commit bbd1108）。
+ *
+ * 此类需求的两种解法：
+ *   1. 推荐：调用方传完整 `points`，自己控制可见部分（如用 SVG `<clipPath>` 或
+ *      过滤渲染），坐标轴定标与可见性解耦。
+ *   2. 后续如需求强烈，可仿照 *-TimeChart 加 `domainPoints` 字段，
+ *      让定标使用完整轨迹、绘制使用截断轨迹。
  */
 
 export interface RelationDataSeries {
