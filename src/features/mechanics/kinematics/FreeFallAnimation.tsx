@@ -19,6 +19,8 @@ import { getPhysicsAtTime, GRAVITY } from '@/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { Ball } from '@/components/Physics/Ball'
+import { VelocityTimeChart } from '@/components/Chart'
+import type { ChartDataSeries } from '@/components/Chart'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 import { MATERIAL, TUBE_PHYSICAL_HEIGHT, RIPPLE_DURATION, RIPPLE_MAX_RADIUS, MaterialA, MaterialB } from './freeFallConfig'
@@ -86,9 +88,6 @@ export default function FreeFallAnimation() {
     tubeTop, tubeBottom, tubeHeight,
     originY, groundY, stageHeight,
     ballX, featherX,
-    vtChartTop, vtChartHeight,
-    vtInnerPad, vtInnerW, vtInnerH,
-    vtToX, vtToY,
   } = useFreeFallLayout(canvasSize)
 
   // ── 动态 scale ───────────────────────────────────────────────────────────
@@ -114,7 +113,7 @@ export default function FreeFallAnimation() {
   const { points: pointsA, groundTime: groundTimeA, currentState: stateA } = useFreeFallPhysics(
     v0, g, dragKA, matA.mass, maxFallHeight, time
   )
-  const { points: pointsB, groundTime: groundTimeB, currentState: stateB } = useFreeFallPhysics(
+  const { points: pointsB, currentState: stateB } = useFreeFallPhysics(
     v0, g, dragKB, matB.mass, maxFallHeight, time
   )
 
@@ -248,91 +247,30 @@ export default function FreeFallAnimation() {
   const renderYA = Math.min(currentYA, groundY - 14)
   const renderYB = Math.min(currentYB, groundY - 10)
 
-  // ── v-t 图动态轴范围 ──────────────────────────────────────────────────
-  const { vtVMax, vtTickStep, xMax } = useMemo(() => {
+  // ── v-t 图参数 ────────────────────────────────────────────────────────
+  const vtChartTop = canvasSize.height * 0.03
+  const vtChartHeight = canvasSize.height * 0.62
+  const vtXMax = useMemo(() => {
     const effectiveXMax = Math.max(Math.min(groundTimeA * 1.2, 8), 2)
-    const clampedXMax = Math.round(effectiveXMax * 10) / 10
-    const maxV = Math.max(v0 + g * clampedXMax, 10) * 1.2
-    let vMax: number
-    let tickStep: number
-    if (maxV <= 10) { vMax = 10; tickStep = 2 }
-    else if (maxV <= 20) { vMax = 20; tickStep = 5 }
-    else if (maxV <= 50) { vMax = Math.ceil(maxV / 10) * 10; tickStep = 10 }
-    else { vMax = Math.ceil(maxV / 20) * 20; tickStep = 20 }
-    return { vtVMax: vMax, vtTickStep: tickStep, xMax: clampedXMax }
-  }, [v0, g, groundTimeA])
+    return Math.round(effectiveXMax * 10) / 10
+  }, [groundTimeA])
 
-  // ── v-t 图逻辑 ────────────────────────────────────────────────────────
-  const yticks = useMemo(() => {
-    const ticks = []
-    for (let v = 0; v <= vtVMax; v += vtTickStep) ticks.push(v)
-    return ticks
-  }, [vtVMax, vtTickStep])
+  const vtPointsA = useMemo(() => {
+    return pointsA.filter((p) => p.t <= Math.min(time, vtXMax) + 1e-9).map((p) => ({ t: p.t, v: p.v }))
+  }, [pointsA, time, vtXMax])
 
-  const xticks = useMemo(() => {
-    const ticks = []
-    const step = xMax <= 4 ? 1 : (xMax <= 8 ? 2 : 3)
-    for (let t = 0; t <= xMax + 0.01; t += step) ticks.push(parseFloat(t.toFixed(1)))
-    return ticks
-  }, [xMax])
+  const vtPointsB = useMemo(() => {
+    return pointsB.filter((p) => p.t <= Math.min(time, vtXMax) + 1e-9).map((p) => ({ t: p.t, v: p.v }))
+  }, [pointsB, time, vtXMax])
 
-  const activeTime = Math.min(time, xMax)
-
-  // ── v-t 积分位移面积着色多边形 ──────────────────────────────────────────
-  const areaPointsA = useMemo(() => {
-    if (activeTime <= 0) return ''
-    const pts: string[] = []
-    pts.push(`${vtInnerPad.left + (0 / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (0 / vtVMax) * vtInnerH}`)
-    const step = 0.05
-    for (let t = 0; t < activeTime; t += step) {
-      const state = getPhysicsAtTime(pointsA, t, groundTimeA)
-      pts.push(`${vtInnerPad.left + (t / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (Math.max(0, Math.min(state.v, vtVMax)) / vtVMax) * vtInnerH}`)
-    }
-    const curr = getPhysicsAtTime(pointsA, activeTime, groundTimeA)
-    pts.push(`${vtInnerPad.left + (activeTime / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (Math.max(0, Math.min(curr.v, vtVMax)) / vtVMax) * vtInnerH}`)
-    pts.push(`${vtInnerPad.left + (activeTime / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (0 / vtVMax) * vtInnerH}`)
-    return pts.join(' ')
-  }, [pointsA, groundTimeA, activeTime, xMax, vtInnerW, vtInnerPad.left, vtInnerPad.top, vtInnerH, vtVMax])
-
-  const areaPointsB = useMemo(() => {
-    if (activeTime <= 0) return ''
-    const pts: string[] = []
-    pts.push(`${vtInnerPad.left + (0 / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (0 / vtVMax) * vtInnerH}`)
-    const step = 0.05
-    const limitT = Math.min(activeTime, groundTimeB)
-    for (let t = 0; t < limitT; t += step) {
-      const state = getPhysicsAtTime(pointsB, t, groundTimeB)
-      pts.push(`${vtInnerPad.left + (t / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (Math.max(0, Math.min(state.v, vtVMax)) / vtVMax) * vtInnerH}`)
-    }
-    const curr = getPhysicsAtTime(pointsB, limitT, groundTimeB)
-    pts.push(`${vtInnerPad.left + (limitT / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (Math.max(0, Math.min(curr.v, vtVMax)) / vtVMax) * vtInnerH}`)
-    pts.push(`${vtInnerPad.left + (limitT / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (0 / vtVMax) * vtInnerH}`)
-    return pts.join(' ')
-  }, [pointsB, groundTimeB, activeTime, xMax, vtInnerW, vtInnerPad.left, vtInnerPad.top, vtInnerH, vtVMax])
-
-  // ── v-t 曲线 ──────────────────────────────────────────────────────────
-  const vtPathDA = useMemo(() => {
-    const pts: string[] = []
-    for (let t = 0; t <= activeTime + 0.01; t += 0.05) {
-      const state = getPhysicsAtTime(pointsA, t, groundTimeA)
-      pts.push(`${vtInnerPad.left + (t / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (Math.max(0, Math.min(state.v, vtVMax)) / vtVMax) * vtInnerH}`)
-    }
-    return pts.length >= 2 ? `M ${pts.join(' L ')}` : ''
-  }, [pointsA, groundTimeA, activeTime, xMax, vtInnerW, vtInnerPad.left, vtInnerPad.top, vtInnerH, vtVMax])
-
-  const vtPathDB = useMemo(() => {
-    const pts: string[] = []
-    const limitT = Math.min(activeTime, groundTimeB)
-    for (let t = 0; t <= limitT + 0.01; t += 0.05) {
-      const state = getPhysicsAtTime(pointsB, t, groundTimeB)
-      pts.push(`${vtInnerPad.left + (t / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (Math.max(0, Math.min(state.v, vtVMax)) / vtVMax) * vtInnerH}`)
-    }
-    if (activeTime > groundTimeB) {
-      pts.push(`${vtInnerPad.left + (groundTimeB / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (0 / vtVMax) * vtInnerH}`)
-      pts.push(`${vtInnerPad.left + (activeTime / xMax) * vtInnerW},${vtInnerPad.top + vtInnerH - (0 / vtVMax) * vtInnerH}`)
-    }
-    return pts.length >= 2 ? `M ${pts.join(' L ')}` : ''
-  }, [pointsB, groundTimeB, activeTime, xMax, vtInnerW, vtInnerPad.left, vtInnerPad.top, vtInnerH, vtVMax])
+  const vtAdditionalSeries: ChartDataSeries[] = useMemo(() => [{
+    points: vtPointsB,
+    label: matB.label,
+    series: 'accent',
+    showArea: true,
+    areaVariant: 'alt',
+    areaIntensity: 'subtle',
+  }], [vtPointsB, matB.label])
 
   // ── 渲染 ─────────────────────────────────────────────────────────────────
   return (
@@ -358,15 +296,6 @@ export default function FreeFallAnimation() {
             <stop offset="70%" stopColor={SCENE_COLORS.magnet.northMid} />
             <stop offset="100%" stopColor={SCENE_COLORS.magnet.northShadow} />
           </radialGradient>
-          {/* v-t 位移积分面积渐变 */}
-          <linearGradient id="area-grad-a" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={CHART_COLORS.primary} stopOpacity="0.18" />
-            <stop offset="100%" stopColor={CHART_COLORS.primary} stopOpacity="0.01" />
-          </linearGradient>
-          <linearGradient id="area-grad-b" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={CHART_COLORS.compareB} stopOpacity="0.15" />
-            <stop offset="100%" stopColor={CHART_COLORS.compareB} stopOpacity="0.01" />
-          </linearGradient>
 
           {/* 箭头定义 */}
           <VectorDefs colors={[PHYSICS_COLORS.acceleration, PHYSICS_COLORS.forceNet, CHART_COLORS.compareB]} />
@@ -657,102 +586,20 @@ export default function FreeFallAnimation() {
         </g>
 
         {/* v-t 图 */}
-        <g transform={`translate(${dataX}, ${vtChartTop + canvasSize.height * 0.32 + 12})`}>
-          <rect width={dataWidth} height={vtChartHeight} fill="white" rx={4} stroke={CHART_COLORS.axisLine} />
-          <text x={dataWidth / 2} y={20} fontSize={FONT.axis} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
-            速度－时间图像 (v-t 图)
-          </text>
-
-          {/* 图例 */}
-          <g>
-            <line x1={dataWidth - 130} y1={14} x2={dataWidth - 115} y2={14}
-              stroke={VT_CHART_COLORS.velocityCurve} strokeWidth={STROKE.chartMain} />
-            <text x={dataWidth - 110} y={17} fontSize={font(9)} fill={CHART_COLORS.labelText}>{matA.label}</text>
-            <line x1={dataWidth - 60} y1={14} x2={dataWidth - 45} y2={14}
-              stroke={CHART_COLORS.compareB} strokeWidth={STROKE.chartMain} />
-            <text x={dataWidth - 40} y={17} fontSize={font(9)} fill={CHART_COLORS.labelText}>{matB.label}</text>
-          </g>
-
-          {/* 积分面积半透明填充 */}
-          {areaPointsA && (
-            <polygon points={areaPointsA} fill="url(#area-grad-a)" />
-          )}
-          {areaPointsB && (
-            <polygon points={areaPointsB} fill="url(#area-grad-b)" />
-          )}
-
-          {/* 坐标轴 */}
-          <line x1={vtInnerPad.left} y1={vtToY(0, vtVMax, vtInnerH)} x2={vtInnerPad.left + vtInnerW} y2={vtToY(0, vtVMax, vtInnerH)}
-            stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-          <line x1={vtInnerPad.left} y1={vtToY(0, vtVMax, vtInnerH)} x2={vtInnerPad.left + vtInnerW} y2={vtToY(0, vtVMax, vtInnerH)}
-            stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-
-          {/* X 刻度 */}
-          {xticks.map(t => (
-            <g key={`xt-${t}`}>
-              <line x1={vtToX(t, xMax, vtInnerW)} y1={vtToY(0, vtVMax, vtInnerH) - 4} x2={vtToX(t, xMax, vtInnerW)} y2={vtToY(0, vtVMax, vtInnerH) + 4}
-                stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={vtToX(t, xMax, vtInnerW)} y={vtToY(0, vtVMax, vtInnerH) + 16} fontSize={font(9)} textAnchor="middle" fill={CHART_COLORS.tickLabel}>{t}</text>
-            </g>
-          ))}
-
-          {/* Y 刻度 */}
-          {yticks.map(v => (
-            <g key={`yt-${v}`}>
-              <line x1={vtInnerPad.left - 4} y1={vtToY(v, vtVMax, vtInnerH)} x2={vtInnerPad.left} y2={vtToY(v, vtVMax, vtInnerH)}
-                stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={vtInnerPad.left - 8} y={vtToY(v, vtVMax, vtInnerH) + 3} fontSize={font(9)} textAnchor="end" fill={CHART_COLORS.tickLabel}>{v}</text>
-            </g>
-          ))}
-
-          {/* 轴标签 */}
-          <text x={vtInnerPad.left + vtInnerW / 2} y={vtInnerPad.top + vtInnerH + 28}
-            fontSize={font(10)} textAnchor="middle" fill={CHART_COLORS.labelText}>t/s</text>
-          <text x={vtInnerPad.left - 28} y={vtInnerPad.top + vtInnerH / 2}
-            fontSize={font(10)} textAnchor="middle" fill={CHART_COLORS.labelText}
-            transform={`rotate(-90, ${vtInnerPad.left - 28}, ${vtInnerPad.top + vtInnerH / 2})`}>v/(m·s⁻¹)</text>
-
-          {/* v-t 曲线 - 物体A */}
-          {vtPathDA && (
-            <path d={vtPathDA} fill="none" stroke={VT_CHART_COLORS.velocityCurve} strokeWidth={STROKE.chartMain} />
-          )}
-
-          {/* v-t 曲线 - 物体B */}
-          {vtPathDB && (
-            <path d={vtPathDB} fill="none" stroke={CHART_COLORS.compareB} strokeWidth={STROKE.chartMain} />
-          )}
-
-          {/* 动态时间垂直指示游标线 */}
-          {activeTime > 0 && (
-            <g>
-              <line
-                x1={vtToX(activeTime, xMax, vtInnerW)} y1={vtInnerPad.top}
-                x2={vtToX(activeTime, xMax, vtInnerW)} y2={vtInnerPad.top + vtInnerH}
-                stroke="rgba(75, 85, 99, 0.35)"
-                strokeWidth={1}
-                strokeDasharray="2 2"
-              />
-              <circle
-                cx={vtToX(activeTime, xMax, vtInnerW)}
-                cy={vtToY(stateA.v, vtVMax, vtInnerH)}
-                r={4}
-                fill={PHYSICS_COLORS.velocity}
-                stroke={colors.neutral.white}
-                strokeWidth={1}
-              />
-              {!isLandedB && (
-                <circle
-                  cx={vtToX(activeTime, xMax, vtInnerW)}
-                  cy={vtToY(stateB.v, vtVMax, vtInnerH)}
-                  r={4}
-                  fill={CHART_COLORS.compareB}
-                  stroke={colors.neutral.white}
-                  strokeWidth={1}
-                />
-              )}
-            </g>
-          )}
-        </g>
+        <foreignObject x={dataX} y={vtChartTop + canvasSize.height * 0.32 + 12} width={dataWidth} height={vtChartHeight}>
+          <div style={{ width: '100%', height: '100%' }}>
+            <VelocityTimeChart
+              points={vtPointsA}
+              currentTime={Math.min(time, vtXMax)}
+              tMax={vtXMax}
+              title="速度－时间图像 (v-t 图)"
+              showArea
+              series="primary"
+              additionalSeries={vtAdditionalSeries}
+              showGrid
+            />
+          </div>
+        </foreignObject>
 
         {/* 底部文字标注（5个） */}
         <text x={dataX + 8} y={canvasSize.height * 0.97} fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontFamily="monospace" fontWeight="bold">

@@ -31,8 +31,8 @@
 
 | 功能 | 说明 | 优先级 |
 |------|------|:------:|
+| ~~多曲线对比~~ | ~~单图表内多条曲线（如真空 vs 空气阻力）~~ | ~~中~~ ✅ |
 | 渐近线 | 收尾速度、极限值虚线标注 | 中 |
-| 多曲线对比 | 单图表内多条曲线（如真空 vs 空气阻力） | 中 |
 | 面积渐变填充 | linearGradient 生成面积着色 | 中 |
 | 交互悬浮 | Hover 显示数值卡片 | 低 |
 | 双 Y 轴 | 左右各一个 Y 轴 | 低 |
@@ -49,7 +49,7 @@
 | CoulombLaw | F-r | 低 |
 | ElectricFieldBasicScene | E-r + F-r | 低 |
 | ForceMotionTripleChart | 面积部分 | 低 |
-| FreeFallAnimation | v-t 双曲线+渐变面积 | 中 |
+| ~~FreeFallAnimation~~ | ~~v-t 双曲线+渐变面积~~ | ~~中~~ ✅ |
 | SatelliteAnimation | v-t + T-r | 中 |
 | ThinLensAnimation | 1/v-1/u | 中 |
 | ACValues | I-t + Q-t | 中 |
