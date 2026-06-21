@@ -31,6 +31,9 @@
 - [ ] SVG 路径与样式通过主题 token，无硬编码颜色或尺寸
 - [ ] 图表坐标轴、标注、图例符合规范
 - [ ] 可读性边界已设置（min/max 尺寸）
+- [ ] 新增图表使用 `BasePhysicsChart` + 插件体系，无手写 `toSvgX/toSvgY`
+- [ ] 图表颜色使用 `ChartReferenceVariant`/`ChartSeriesVariant`/`ChartAreaVariant` 枚举
+- [ ] 图表组件从 `@/components/Chart` barrel import
 
 ## 物理计算检查
 

@@ -216,6 +216,46 @@ export const ENERGY_BAR_COLORS = {
 export type ChartColorKey       = keyof typeof CHART_COLORS;
 export type EnergyBarColorKey   = keyof typeof ENERGY_BAR_COLORS;
 
+// ─── 图表插件颜色变体 ──────────────────────────────────────────────────────
+/** 参考线/游标/切线颜色变体 */
+export type ChartReferenceVariant = 'default' | 'highlight' | 'tangent'
+/** 数据曲线颜色变体 */
+export type ChartSeriesVariant = 'primary' | 'secondary' | 'accent' | 'warm' | 'success'
+/** 面积填充变体 */
+export type ChartAreaVariant = 'default' | 'alt' | 'warm'
+/** 面积填充强度 */
+export type ChartAreaIntensity = 'subtle' | 'normal' | 'strong'
+
+/** 参考线 token 映射 */
+export const REFERENCE_MAP: Record<ChartReferenceVariant, string> = {
+  default:   CHART_COLORS.reference,
+  highlight: CHART_COLORS.highlight,
+  tangent:   CHART_COLORS.tangent,
+}
+
+/** 数据曲线 token 映射 */
+export const SERIES_MAP: Record<ChartSeriesVariant, string> = {
+  primary:   CHART_COLORS.primary,
+  secondary: CHART_COLORS.compareA,
+  accent:    CHART_COLORS.compareB,
+  warm:      CHART_COLORS.compareC,
+  success:   CHART_COLORS.compareD,
+}
+
+/** 面积填充 token 映射 */
+export const AREA_FILL_MAP: Record<ChartAreaVariant, string> = {
+  default: CHART_COLORS.areaFill,
+  alt:     CHART_COLORS.areaFillAlt,
+  warm:    CHART_COLORS.areaFillWarm,
+}
+
+/** 面积填充强度映射 */
+export const AREA_INTENSITY_MAP: Record<ChartAreaIntensity, number> = {
+  subtle:  0.12,
+  normal:  0.18,
+  strong:  0.32,
+}
+
 // ─── Canvas / SVG 绘制规范 ────────────────────────────────────────────────────
 export {
   CANVAS_STYLE,
@@ -235,6 +275,7 @@ export {
   VECTOR_DISPLAY,
   INSET_CHART,
   GRID_DISPLAY,
+  CHART_LAYOUT,
 } from './canvasStyle'
 
 export type {

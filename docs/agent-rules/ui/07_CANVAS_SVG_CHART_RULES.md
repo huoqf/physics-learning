@@ -1,4 +1,4 @@
-﻿# Canvas/SVG/图表动态布局与渲染规范
+# Canvas/SVG/图表动态布局与渲染规范
 
 > 优先级：低于 02_UI_RULES.md，高于动画实现细节
 > 最后更新：2026-06-16
@@ -268,29 +268,60 @@ const [canvasX, canvasY] = physicsToCanvas(physicsX, physicsY, canvasSize, scale
 
 ## 7. 物理图表规范
 
-### 7.1 图表基本要求
+### 7.1 图表组件体系
+
+图表使用 `src/components/Chart/` 下的通用组件，从 `@/components/Chart` barrel import：
+
+| 组件 | 职责 | 使用场景 |
+|------|------|---------|
+| **BasePhysicsChart** | 原子层容器：双轴独立缩放、网格、刻度、轴标签、自适应降级 | 所有新图表 |
+| **ChartCursor** | 十字竖线 + 数据点 + 数值标签 | 需要游标的图表 |
+| **ChartArea** | 曲线下方面积填充 | 位移积分、功等面积语义 |
+| **ChartTangent** | 切线 + 切点 + 可选割线 | 速度/电场强度斜率展示 |
+| **useChartContext** | 获取 toSvgX/toSvgY/font/px | 插件内部坐标计算 |
+
+**铁律**：新增图表必须使用 `BasePhysicsChart`，禁止手写 `toSvgX/toSvgY` 坐标变换。
+
+### 7.2 图表基本要求
 
 | 项目 | 规范 |
 |------|------|
-| 坐标轴样式 | 来自 `canvasStyle.ts`，标注物理量和单位 |
-| 曲线颜色 | 从 `chartColors.ts` 或物理量颜色映射 |
-| 网格 | 默认弱化，可选 Toggle |
+| 坐标轴样式 | 来自 `CHART_LAYOUT` token + `CHART_COLORS`，标注物理量和单位 |
+| 曲线颜色 | 使用 `ChartSeriesVariant` 枚举（primary/secondary/accent/warm/success） |
+| 面积填充 | 使用 `ChartAreaVariant` + `ChartAreaIntensity` 枚举，禁止任意 HEX/rgba |
+| 网格 | BasePhysicsChart 自适应降级（standard/mini 模式 + width/height 双维度） |
 | 数据点 | 不超过必要数量，避免干扰理解 |
 | 图例 | 同屏 > 2 条曲线才显示 |
-| 动态尺寸 | 按容器比例计算，有 min/max |
-| 小图（AnalysisPage） | SVG，元素 ≤ 5 个 |
+| 动态尺寸 | 通过 `useCanvasSize()` + `CHART_LAYOUT` token 驱动，禁止硬编码像素 |
+| 小图（AnalysisPage） | 使用 `variant="mini"`，SVG，元素 ≤ 5 个 |
 
-### 7.2 常见物理图表类型
+### 7.3 常见物理图表类型
 
 | 图表类型 | 物理意义 | 推荐技术 |
 |----------|----------|----------|
-| v-t 图 | 速度-时间曲线 | SVG 或 Canvas |
-| a-t 图 | 加速度-时间曲线 | SVG 或 Canvas |
-| s-t 图 | 位移-时间曲线 | SVG 或 Canvas |
-| F-x 图 | 力-位移曲线（做功图） | SVG 或 Canvas |
-| T²-a³ 图 | 开普勒第三定律验证 | SVG 或 Canvas |
-| P-V 图 | 热力学过程图 | SVG 或 Canvas |
-| U-I 图 | 电压-电流特性 | SVG 或 Canvas |
+| v-t 图 | 速度-时间曲线 | BasePhysicsChart |
+| a-t 图 | 加速度-时间曲线 | BasePhysicsChart |
+| s-t 图 | 位移-时间曲线 | BasePhysicsChart |
+| F-x 图 | 力-位移曲线（做功图） | BasePhysicsChart + ChartArea |
+| T²-a³ 图 | 开普勒第三定律验证 | BasePhysicsChart |
+| P-V 图 | 热力学过程图 | BasePhysicsChart |
+| U-I 图 | 电压-电流特性 | BasePhysicsChart |
+
+### 7.4 颜色变体枚举
+
+```ts
+// 参考线/游标/切线
+type ChartReferenceVariant = 'default' | 'highlight' | 'tangent'
+
+// 数据曲线
+type ChartSeriesVariant = 'primary' | 'secondary' | 'accent' | 'warm' | 'success'
+
+// 面积填充
+type ChartAreaVariant = 'default' | 'alt' | 'warm'
+type ChartAreaIntensity = 'subtle' | 'normal' | 'strong'
+```
+
+所有变体通过 `REFERENCE_MAP` / `SERIES_MAP` / `AREA_FILL_MAP` / `AREA_INTENSITY_MAP` 映射到 token 颜色，从 `@/theme/physics` 引入。
 
 ---
 

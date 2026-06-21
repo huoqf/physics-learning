@@ -64,7 +64,8 @@ export const OPACITY = {
   vectorSub:        0.7,  // 分量矢量
   vectorThin:       0.5,  // 细矢量
   trackHistory:     0.4,  // 历史轨迹
-  grid:             0.3,  // 网格线
+  grid:             0.3,  // 场景网格线
+  gridChart:        0.15, // 图表网格线（比场景更轻，避免混淆主曲线）
   reference:        0.5,  // 参考线
   guide:            0.4,  // 导引线
   annotation:       0.8,  // 标注
@@ -302,6 +303,45 @@ export const GRID_DISPLAY = {
   maxSpacing: 80,
 } as const;
 
+// ─── 图表布局配置（BasePhysicsChart 使用）──────────────────────────────────
+export const CHART_LAYOUT = {
+  // 默认尺寸（useCanvasSize 初始值）
+  defaultWidth:   700,
+  defaultHeight:  400,
+  miniWidth:      300,
+  miniHeight:     130,
+
+  // 内边距（基准值，由 px() 缩放）
+  marginLeft:     48,
+  marginRight:    20,
+  marginTop:      22,
+  marginBottom:   22,
+
+  // mini 模式内边距（更紧凑）
+  miniMarginLeft:   36,
+  miniMarginRight:  12,
+  miniMarginTop:    16,
+  miniMarginBottom: 16,
+
+  // 网格密度
+  gridCountX:     5,
+  gridCountY:     4,
+  miniGridCountX: 4,
+  miniGridCountY: 3,
+
+  // 信息密度降级阈值
+  compactWidth:   250,
+  compactHeight:  140,
+  minWidth:       150,
+  minHeight:      80,
+
+  // 降级后最小网格数
+  minGridX:       2,
+  minGridY:       2,
+  compactGridX:   3,
+  compactGridY:   3,
+} as const;
+
 // ─── 统一导出（兼容原 CANVAS_STYLE 结构）────────────────────────────────────
 export const CANVAS_STYLE = {
   STROKE,
@@ -320,6 +360,7 @@ export const CANVAS_STYLE = {
   VECTOR_DISPLAY,
   INSET_CHART,
   GRID_DISPLAY,
+  CHART_LAYOUT,
   // 小写别名（兼容旧代码）
   stroke: STROKE,
   opacity: OPACITY,

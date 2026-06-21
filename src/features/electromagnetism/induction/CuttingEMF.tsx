@@ -3,28 +3,19 @@ import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { computeRodConstants, computeRodStateAtTime, calculateCuttingEMF } from '@/physics'
-import { PHYSICS_COLORS, EM_COLORS, CHART_COLORS, STROKE, VT_CHART_COLORS, AT_CHART_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, EM_COLORS, CHART_COLORS, VT_CHART_COLORS, AT_CHART_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { withAlpha } from '@/theme/physics/colors'
+import { withAlpha } from '@/theme/physics'
 import { physicsToCanvasWithOrigin, computeScale } from '@/utils/coordinate'
 import { Rails, ConductorRod, VectorArrow, VectorDefs } from '@/components/Physics'
 import { CuttingEMFHandRule } from './CuttingEMFHandRule'
+import { BasePhysicsChart, useChartContext } from '@/components/Chart'
 
 // 物理世界坐标边界 (物理单位：米)
 // x: 从 -1.0 到 11.0m (有效轨道 0 ~ 10.0m，两侧预留边距)
 // y: 从 -1.5 到 1.5m (轨道间距 L 为 0.5 ~ 2.0m，关于 0 对称)
 const WORLD = { xMin: -1.0, xMax: 11.0, yMin: -1.5, yMax: 1.5 } as const
 const X_LIMIT = 10.0 // 轨道最右端限位
-
-// 图表坐标转换（纯函数，模块级）
-const toChartX = (t: number, innerLeft: number, innerW: number, T_max: number) => innerLeft + (t / T_max) * innerW
-const toChartY = (val: number, maxVal: number, innerTop: number, innerH: number, isVelocity = false) => {
-  if (isVelocity) {
-    const zeroY = innerTop + innerH / 2
-    return zeroY - (val / (maxVal || 1.0)) * (innerH / 2)
-  }
-  return innerTop + innerH - (val / (maxVal || 1.0)) * innerH
-}
 
 interface ChartSVGProps {
   title: string
@@ -45,113 +36,60 @@ interface ChartSVGProps {
   v_m: number
 }
 
-const ChartSVG = React.memo(function ChartSVG({
-  title, yLabel, curveColor, samplePoints, getVal, yMax, curVal,
-  isVelocity, time, T_max, chartW, chartH, px, font, mode, v_m,
-}: ChartSVGProps) {
-  const padL = px(40)
-  const padR = px(15)
-  const padT = px(24)
-  const padB = px(22)
+function ChartSVGContent({
+  samplePoints, getVal, curVal, isVelocity, time, T_max, curveColor, mode, v_m,
+}: Omit<ChartSVGProps, 'chartW' | 'chartH' | 'px' | 'font' | 'title' | 'yLabel' | 'yMax'>) {
+  const ctx = useChartContext()
+  if (!ctx) return null
+  const { toSvgX, toSvgY, font } = ctx
 
-  const innerW = chartW - padL - padR
-  const innerH = chartH - padT - padB
-
-  // 预测虚线：仅在参数变化时重算
   const ptsStr = useMemo(() => {
     return samplePoints
-      .map((p) => `${toChartX(p.t, padL, innerW, T_max).toFixed(1)},${toChartY(getVal(p), yMax, padT, innerH, isVelocity).toFixed(1)}`)
+      .map((p) => `${toSvgX(p.t).toFixed(1)},${toSvgY(getVal(p)).toFixed(1)}`)
       .join(' L ')
-  }, [samplePoints, getVal, yMax, padL, innerW, padT, innerH, isVelocity, T_max])
+  }, [samplePoints, getVal, toSvgX, toSvgY])
 
-  // 动态实线 + 游标点：每帧重算（依赖 time）
   const activePts = samplePoints.filter((p) => p.t <= time)
   const activePtsStr = activePts.length >= 2
-    ? 'M ' + activePts.map((p) => `${toChartX(p.t, padL, innerW, T_max).toFixed(1)},${toChartY(getVal(p), yMax, padT, innerH, isVelocity).toFixed(1)}`).join(' L ')
+    ? 'M ' + activePts.map((p) => `${toSvgX(p.t).toFixed(1)},${toSvgY(getVal(p)).toFixed(1)}`).join(' L ')
     : ''
 
-  const curPtX = toChartX(time, padL, innerW, T_max)
-  const curPtY = toChartY(curVal, yMax, padT, innerH, isVelocity)
+  const curPtX = toSvgX(time)
+  const curPtY = toSvgY(curVal)
 
   return (
-    <svg width={chartW} height={chartH} className="bg-white rounded-lg border border-neutral-200 shadow-sm overflow-visible">
-      <rect width={chartW} height={chartH} fill="none" />
-      {/* 标题 */}
-      <text x={chartW / 2} y={px(18)} fontSize={font(10)} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
-        {title}
-      </text>
-
-      {/* 坐标轴 */}
-      <line x1={padL} y1={padT} x2={padL} y2={padT + innerH} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-      <line x1={padL} y1={padT + innerH} x2={padL + innerW} y2={padT + innerH} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-
-      {/* 坐标轴箭头 */}
-      <polygon points={`${padL + innerW} ${padT + innerH - 3}, ${padL + innerW + 4} ${padT + innerH}, ${padL + innerW} ${padT + innerH + 3}`} fill={CHART_COLORS.axisArrow} />
-      <polygon points={`${padL - 3} ${padT}, ${padL} ${padT - 4}, ${padL + 3} ${padT}`} fill={CHART_COLORS.axisArrow} />
-
-      {/* 坐标轴标签 */}
-      <text x={padL + innerW - 5} y={padT + innerH + 12} fontSize={font(8)} fill={CHART_COLORS.labelText} textAnchor="end">t / s</text>
-      <text x={padL - 10} y={padT - 6} fontSize={font(8)} fill={CHART_COLORS.labelText} textAnchor="start">{yLabel}</text>
-
+    <g>
       {/* 收尾速度渐近线 */}
       {isVelocity && mode === 1 && (
         <g>
           <line
-            x1={padL}
-            y1={toChartY(v_m, yMax, padT, innerH, isVelocity)}
-            x2={padL + innerW}
-            y2={toChartY(v_m, yMax, padT, innerH, isVelocity)}
+            x1={toSvgX(0)}
+            y1={toSvgY(v_m)}
+            x2={toSvgX(T_max)}
+            y2={toSvgY(v_m)}
             stroke={CHART_COLORS.asymptote}
             strokeWidth={1}
             strokeDasharray="4,4"
           />
-          <text x={padL + innerW - 10} y={toChartY(v_m, yMax, padT, innerH, isVelocity) - 4} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">
+          <text x={toSvgX(T_max) - font(7)} y={toSvgY(v_m) - 4} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">
             收尾速度 v_m = {v_m.toFixed(2)} m/s
           </text>
         </g>
       )}
 
-      {/* X 轴刻度 (时间) */}
-      {[0, 0.25, 0.5, 0.75, 1.0].map((ratio, idx) => {
-        const tVal = ratio * T_max
-        const tx = toChartX(tVal, padL, innerW, T_max)
-        return (
-          <g key={`tx-${idx}`}>
-            <line x1={tx} y1={padT + innerH} x2={tx} y2={padT + innerH + 4} stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
-            <text x={tx} y={padT + innerH + 12} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="middle">
-              {tVal.toFixed(1)}
-            </text>
-          </g>
-        )
-      })}
-
       {/* v=0 中间参考线 */}
       {isVelocity && (
         <line
-          x1={padL}
-          y1={padT + innerH / 2}
-          x2={padL + innerW}
-          y2={padT + innerH / 2}
+          x1={toSvgX(0)}
+          y1={toSvgY(0)}
+          x2={toSvgX(T_max)}
+          y2={toSvgY(0)}
           stroke={CHART_COLORS.tickMark}
           strokeWidth={0.6}
           strokeDasharray="2,2"
           opacity={0.65}
         />
       )}
-
-      {/* Y 轴刻度 */}
-      {(isVelocity ? [-1.0, -0.5, 0, 0.5, 1.0] : [0, 0.33, 0.66, 1.0]).map((ratio, idx) => {
-        const val = ratio * yMax
-        const ty = toChartY(val, yMax, padT, innerH, isVelocity)
-        return (
-          <g key={`ty-${idx}`}>
-            <line x1={padL - 4} y1={ty} x2={padL} y2={ty} stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
-            <text x={padL - 6} y={ty + 2.5} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">
-              {val.toFixed(1)}
-            </text>
-          </g>
-        )
-      })}
 
       {/* 预测虚线 */}
       <path d={`M ${ptsStr}`} fill="none" stroke={curveColor} strokeWidth={1} strokeDasharray="3,3" opacity={0.4} />
@@ -171,7 +109,40 @@ const ChartSVG = React.memo(function ChartSVG({
           </circle>
         </g>
       )}
-    </svg>
+    </g>
+  )
+}
+
+const ChartSVG = React.memo(function ChartSVG({
+  title, yLabel, curveColor, samplePoints, getVal, yMax, curVal,
+  isVelocity, time, T_max, chartW, chartH, mode, v_m,
+}: ChartSVGProps) {
+  const yDomain: [number, number] = isVelocity ? [-yMax, yMax] : [0, yMax]
+
+  return (
+    <BasePhysicsChart
+      xDomain={[0, T_max]}
+      yDomain={yDomain}
+      xLabel="t / s"
+      yLabel={yLabel}
+      title={title}
+      variant="standard"
+      initialSize={{ width: chartW, height: chartH }}
+      gridCount={{ x: 4, y: isVelocity ? 4 : 3 }}
+      yBaseline={isVelocity ? 0 : undefined}
+    >
+      <ChartSVGContent
+        samplePoints={samplePoints}
+        getVal={getVal}
+        curVal={curVal}
+        isVelocity={isVelocity}
+        time={time}
+        T_max={T_max}
+        curveColor={curveColor}
+        mode={mode}
+        v_m={v_m}
+      />
+    </BasePhysicsChart>
   )
 })
 

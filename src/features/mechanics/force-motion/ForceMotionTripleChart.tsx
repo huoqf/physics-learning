@@ -3,6 +3,7 @@ import { CHART_COLORS, FX_CHART_COLORS, VT_CHART_COLORS, DASH, FONT, OPACITY, ST
 import { colors } from '@/theme/colors'
 import { useCanvasSize } from '@/utils/useCanvasSize'
 import { FORCE_MOTION_CHART_PADDING_RATIO } from './forceMotionLayout'
+import { ChartCursor } from '@/components/Chart'
 
 interface ChartPoint {
   t: number
@@ -40,6 +41,7 @@ interface SingleChartProps {
   areaText: string
   terminalValue?: number
   zeroBased: boolean
+  font: (base: number) => number
 }
 
 function SingleChart({
@@ -53,6 +55,7 @@ function SingleChart({
   areaText,
   terminalValue,
   zeroBased,
+  font,
 }: SingleChartProps) {
   const layout = useMemo(() => {
     const padding = Math.max(Math.min(width, height) * FORCE_MOTION_CHART_PADDING_RATIO, FONT.labelBold)
@@ -158,11 +161,17 @@ function SingleChart({
         />
       )}
 
-      {/* 扫描线 */}
-      <line x1={layout.scanX} x2={layout.scanX} y1={layout.top} y2={layout.bottom} stroke={CHART_COLORS.reference} strokeWidth={STROKE.chartRef} strokeDasharray={DASH.tangent.join(' ')} />
-
-      {/* 当前点 */}
-      <circle cx={layout.scanX} cy={layout.toY(currentValue)} r={Math.max(STROKE.vectorMain, FONT.small * 0.35)} fill={CHART_COLORS.highlight} />
+      {/* 扫描线 + 当前点（使用 ChartCursor） */}
+      <ChartCursor
+        x={currentTime}
+        dataPoints={[{ y: currentValue, label: yLabel.split('/')[0], series: 'primary' }]}
+        showLabels={false}
+        toSvgX={layout.toX}
+        toSvgY={layout.toY}
+        plotOrigin={{ x: layout.left, y: layout.top }}
+        plotSize={{ width: layout.chartWidth, height: layout.chartHeight }}
+        font={font}
+      />
 
       {/* 面积文字 */}
       <text x={layout.left + FONT.small} y={layout.top + FONT.label} fill={CHART_COLORS.titleText} fontSize={FONT.annotation} fontWeight={FONT.labelWeight}>{areaText}</text>
@@ -182,7 +191,7 @@ export default function ForceMotionTripleChart({
   areaTextX,
 }: ForceMotionTripleChartProps) {
   const [containerRef, size] = useCanvasSize({ width: 900, height: 200 })
-  const { width, height } = size
+  const { width, height, font } = size
 
   const chartWidth = Math.max(1, Math.floor((width - 8) / 3))
 
@@ -204,6 +213,7 @@ export default function ForceMotionTripleChart({
           yLabel="F/N"
           areaText={areaTextF}
           zeroBased={false}
+          font={font}
         />
       </div>
 
@@ -220,6 +230,7 @@ export default function ForceMotionTripleChart({
           areaText={areaTextV}
           terminalValue={terminalVelocity}
           zeroBased={true}
+          font={font}
         />
       </div>
 
@@ -235,6 +246,7 @@ export default function ForceMotionTripleChart({
           yLabel="x/m"
           areaText={areaTextX}
           zeroBased={true}
+          font={font}
         />
       </div>
     </div>
