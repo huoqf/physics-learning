@@ -18,7 +18,7 @@ export { ChartTangent } from './ChartTangent'
 // 业务预设 (Business Presets)
 // ============================================================================
 export { VelocityTimeChart } from './VelocityTimeChart'
-export type { ChartDataSeries } from './VelocityTimeChart'
+export type { ChartDataSeries, VTStage } from './VelocityTimeChart'
 export { DisplacementTimeChart } from './DisplacementTimeChart'
 export { AccelerationTimeChart } from './AccelerationTimeChart'
 export { RelationChart } from './RelationChart'

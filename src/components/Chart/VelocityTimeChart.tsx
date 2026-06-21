@@ -3,8 +3,36 @@ import { BasePhysicsChart } from './BasePhysicsChart'
 import { useChartContext } from './ChartContext'
 import { ChartCursor } from './ChartCursor'
 import { ChartArea } from './ChartArea'
-import { PHYSICS_COLORS, SERIES_MAP, FONT } from '@/theme/physics'
+import { PHYSICS_COLORS, CHART_COLORS, SERIES_MAP, FONT } from '@/theme/physics'
 import type { ChartSeriesVariant, ChartAreaVariant, ChartAreaIntensity } from '@/theme/physics'
+
+/**
+ * 阶段背景着色（用于「过程被人为切分为若干语义阶段」的 v-t 场景，
+ * 如 SatelliteAnimation Mode 1 的「发射/转弯/在轨」三阶段）。
+ *
+ * 每个 stage 渲染为：
+ * - 全 Y 域的矩形背景（[from, to] × [yMin, yMax]，绘制在曲线下方）
+ * - 顶部居中的阶段标签（可选）
+ * - from/to 处的垂直虚线分隔（可选）
+ *
+ * stages 之间不强制相邻或互斥；越界部分（from/to 超出 xDomain）会被 clip。
+ */
+export interface VTStage {
+  /** 阶段起始时间（物理坐标） */
+  from: number
+  /** 阶段结束时间（物理坐标） */
+  to: number
+  /** 矩形填充色（CSS color）；不传则不画矩形 */
+  color?: string
+  /** 矩形不透明度，默认 0.18 */
+  opacity?: number
+  /** 阶段标签（顶部居中）；不传则不画 */
+  label?: string
+  /** 标签颜色（不传则继承 color，否则 fallback 到 labelText） */
+  labelColor?: string
+  /** 是否画 from/to 处的垂直虚线分隔，默认 true */
+  showDividers?: boolean
+}
 
 /** 单条数据系列 */
 export interface ChartDataSeries {
@@ -63,6 +91,12 @@ interface VelocityTimeChartProps {
   showGrid?: boolean
   /** 额外数据系列（多曲线对比） */
   additionalSeries?: ChartDataSeries[]
+  /**
+   * 阶段背景着色（绘制于曲线/面积下方，不遮挡数据）。
+   * 适用「过程被人为切分为若干语义阶段」的场景，如
+   * SatelliteAnimation Mode 1 的「发射/转弯/在轨」三阶段。
+   */
+  stages?: VTStage[]
   /** 额外 className */
   className?: string
 }
@@ -112,6 +146,7 @@ function VTContent({
   showCursor,
   series,
   additionalSeries,
+  stages,
 }: Omit<VelocityTimeChartProps, 'tMax' | 'vRange' | 'title' | 'className' | 'domainPoints'>) {
   const ctx = useChartContext()
 
@@ -159,12 +194,78 @@ function VTContent({
   }, [points, additionalSeries, currentTime, series])
 
   if (!ctx) return null
-  const { plotOrigin, plotSize, font } = ctx
+  const { plotOrigin, plotSize, font, toSvgX } = ctx
 
   const hasLegend = additionalSeries && additionalSeries.length > 0
 
   return (
     <g>
+      {/* 阶段背景（绘制于曲线/面积下方，不遮挡数据） */}
+      {stages && stages.length > 0 && (
+        <g>
+          {stages.map((stage, i) => {
+            // 把 from/to clip 到 plot 区域内
+            const x1 = toSvgX(stage.from)
+            const x2 = toSvgX(stage.to)
+            const clipLeft = Math.max(plotOrigin.x, Math.min(x1, x2))
+            const clipRight = Math.min(plotOrigin.x + plotSize.width, Math.max(x1, x2))
+            const w = Math.max(0, clipRight - clipLeft)
+            const labelColor = stage.labelColor ?? stage.color ?? PHYSICS_COLORS.labelText
+            const showDividers = stage.showDividers ?? true
+
+            return (
+              <g key={`stage-${i}`}>
+                {/* 背景矩形 */}
+                {stage.color && w > 0 && (
+                  <rect
+                    x={clipLeft}
+                    y={plotOrigin.y}
+                    width={w}
+                    height={plotSize.height}
+                    fill={stage.color}
+                    opacity={stage.opacity ?? 0.18}
+                  />
+                )}
+                {/* 分隔虚线：from / to 各一条（只在 plot 区域内的才画） */}
+                {showDividers && x1 >= plotOrigin.x && x1 <= plotOrigin.x + plotSize.width && (
+                  <line
+                    x1={x1} y1={plotOrigin.y}
+                    x2={x1} y2={plotOrigin.y + plotSize.height}
+                    stroke={CHART_COLORS.gridLine}
+                    strokeWidth={1}
+                    strokeDasharray="3,3"
+                    opacity={0.7}
+                  />
+                )}
+                {showDividers && x2 >= plotOrigin.x && x2 <= plotOrigin.x + plotSize.width && (
+                  <line
+                    x1={x2} y1={plotOrigin.y}
+                    x2={x2} y2={plotOrigin.y + plotSize.height}
+                    stroke={CHART_COLORS.gridLine}
+                    strokeWidth={1}
+                    strokeDasharray="3,3"
+                    opacity={0.7}
+                  />
+                )}
+                {/* 阶段标签：顶部居中 */}
+                {stage.label && w > 0 && (
+                  <text
+                    x={clipLeft + w / 2}
+                    y={plotOrigin.y + font(FONT.small) + 2}
+                    fontSize={font(FONT.small)}
+                    fill={labelColor}
+                    textAnchor="middle"
+                    fontWeight="bold"
+                  >
+                    {stage.label}
+                  </text>
+                )}
+              </g>
+            )
+          })}
+        </g>
+      )}
+
       {/* 面积 + 曲线 */}
       {mainCurve}
       {extraCurves}
@@ -226,6 +327,7 @@ export function VelocityTimeChart({
   series = 'primary',
   showGrid = true,
   additionalSeries,
+  stages,
   className = '',
 }: VelocityTimeChartProps) {
   const computedVRange = useMemo((): [number, number] => {
@@ -265,6 +367,7 @@ export function VelocityTimeChart({
         showCursor={showCursor}
         series={series}
         additionalSeries={additionalSeries}
+        stages={stages}
       />
     </BasePhysicsChart>
   )

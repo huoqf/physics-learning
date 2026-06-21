@@ -5,8 +5,8 @@ import { useShallow } from 'zustand/react/shallow'
 import { calculateOrbitalSpeed } from '@/physics'
 import { GRAVITATIONAL_CONSTANT, EARTH_MASS, EARTH_RADIUS } from '@/physics/constants'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { RelationChart } from '@/components/Chart'
-import type { RelationDataSeries } from '@/components/Chart'
+import { RelationChart, VelocityTimeChart } from '@/components/Chart'
+import type { RelationDataSeries, VTStage } from '@/components/Chart'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_COLORS } from '@/theme/physics'
@@ -1039,9 +1039,9 @@ export default function SatelliteAnimation() {
                 </text>
               </g>
             </g>
-            {/* ── 卡片 2：v-t 实时速度曲线（比例系数驱动）────────── */}
+            {/* ── 卡片 2：v-t 实时速度曲线 ── 已迁移到 VelocityTimeChart + stages */}
             {(() => {
-              // 动态计算vt卡片尺寸
+              // 卡片尺寸（保留比例驱动的画中画风格）
               const vtScale = VTCARD.scaleFactor
               const vtCardWidth = Math.max(
                 VTCARD.base.width * vtScale,
@@ -1053,47 +1053,25 @@ export default function SatelliteAnimation() {
               )
               const vtCardX = canvasSize.width - vtCardWidth - 15
               const vtCardY = canvasSize.height - vtCardHeight - 20
-              const vtPL = VTCARD.base.padLeft * vtScale
-              const vtPT = VTCARD.base.padTop * vtScale
-              const fontScale = vtScale
 
-              // 计算曲线坐标
-              const vtIW = vtCardWidth - vtPL - VTCARD.base.padRight * vtScale
-              const vtIH = vtCardHeight - vtPT - VTCARD.base.padBottom * vtScale
-              const mapX = (t: number) => vtPL + (t / 15) * vtIW
-              const mapY = (vVal: number) => vtPT + vtIH - (vVal / 12) * vtIH
+              // 把 [number, number][] 转为 VelocityTimeChart 期望的 {t, v}[]
+              const vtPoints = vtSamplePoints.map(([t, v]) => ({ t, v }))
 
-              // 当前游标位置
-              const curT = Math.min(15, time)
-              let curVVal = 0
-              if (curT < LAYOUT.mode1.orbitEntryTime) {
-                curVVal = v0 * (curT / LAYOUT.mode1.orbitEntryTime)
-              } else if (launchData) {
-                curVVal = launchData.crashed ? 0 : (() => {
-                  const r0 = LAYOUT.mode1.rLaunchRatio * EARTH_RADIUS
-                  const v0_m = v0 * 1000
-                  const v_sq = v0_m * v0_m + 2 * GRAVITATIONAL_CONSTANT * EARTH_MASS * (1 / launchData.r_phys - 1 / r0)
-                  return v_sq > 0 ? Math.sqrt(v_sq) / 1000 : 0
-                })()
-              }
-
-              const dotX = mapX(curT)
-              const dotY = mapY(curVVal)
-              const x0 = mapX(0)
-              const x3 = mapX(LAYOUT.mode1.launchDuration)
-              const x8 = mapX(LAYOUT.mode1.orbitEntryTime)
-              const x15 = mapX(15)
-
-              // 曲线路径
-              let curvePath = ''
-              if (vtSamplePoints.length > 1) {
-                const ptsStr = vtSamplePoints.map(([t, vVal]) => `${mapX(t)},${mapY(vVal)}`)
-                curvePath = `M ${ptsStr.join(' L ')}`
-              }
+              // 三阶段背景：发射 / 转弯 / 在轨
+              const launchT = LAYOUT.mode1.launchDuration
+              const entryT = LAYOUT.mode1.orbitEntryTime
+              const stages: VTStage[] = [
+                { from: 0, to: launchT, color: colors.neutral[200], opacity: 0.35,
+                  label: '发射示意', labelColor: colors.neutral[600] },
+                { from: launchT, to: entryT, color: CHART_COLORS.areaFill, opacity: 0.35,
+                  label: '转弯示意', labelColor: CHART_COLORS.primary },
+                { from: entryT, to: 15, color: CHART_COLORS.areaFillAlt, opacity: 0.35,
+                  label: '轨道运动', labelColor: CHART_COLORS.compareA },
+              ]
 
               return (
                 <g transform={`translate(${vtCardX}, ${vtCardY})`}>
-                  {/* 毛玻璃卡片背景 */}
+                  {/* 毛玻璃卡片背景（保留装饰风格） */}
                   <rect
                     width={vtCardWidth}
                     height={vtCardHeight}
@@ -1103,68 +1081,23 @@ export default function SatelliteAnimation() {
                     strokeWidth={0.8}
                     filter="url(#card-shadow)"
                   />
-                  {/* 标题 */}
-                  <text x={vtCardWidth / 2} y={vtPT - 4} fontSize={8 * fontScale} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold" fontFamily="PingFang SC, sans-serif">
-                    线速度-时间变化曲线 (v-t)
-                  </text>
-                  {/* 物理模型说明 */}
-                  <text x={vtCardWidth / 2} y={vtPT + 6} fontSize={5 * fontScale} fill={colors.neutral[400]} textAnchor="middle" fontFamily="PingFang SC, sans-serif">
-                    (前8秒发射示意，后为开普勒轨道)
-                  </text>
 
-                  {/* 三阶段背景填充 */}
-                  <rect x={x0} y={vtPT} width={x3 - x0} height={vtIH} fill={colors.neutral[50]} opacity={0.5} />
-                  <rect x={x3} y={vtPT} width={x8 - x3} height={vtIH} fill={CHART_COLORS.areaFill} opacity={0.5} />
-                  <rect x={x8} y={vtPT} width={x15 - x8} height={vtIH} fill={CHART_COLORS.areaFillAlt} opacity={0.5} />
-
-                  {/* 阶段垂直线 */}
-                  <line x1={x3} y1={vtPT} x2={x3} y2={vtPT + vtIH} stroke={colors.neutral[300]} strokeWidth={0.8} strokeDasharray="2,2" />
-                  <line x1={x8} y1={vtPT} x2={x8} y2={vtPT + vtIH} stroke={colors.neutral[300]} strokeWidth={0.8} strokeDasharray="2,2" />
-
-                  {/* 区域文字 */}
-                  <text x={x0 + (x3 - x0)/2} y={vtPT + 10 * fontScale} fontSize={6 * fontScale} fill={colors.neutral[500]} textAnchor="middle">发射示意</text>
-                  <text x={x3 + (x8 - x3)/2} y={vtPT + 10 * fontScale} fontSize={6 * fontScale} fill={CHART_COLORS.primary} textAnchor="middle">转弯示意</text>
-                  <text x={x8 + (x15 - x8)/2} y={vtPT + 10 * fontScale} fontSize={6 * fontScale} fill={CHART_COLORS.compareA} textAnchor="middle">轨道运动</text>
-
-                  {/* 坐标轴 */}
-                  <line x1={vtPL - 4 * fontScale} y1={vtPT + vtIH} x2={vtPL + vtIW + 6 * fontScale} y2={vtPT + vtIH} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} />
-                  <line x1={vtPL} y1={vtPT - 6 * fontScale} x2={vtPL} y2={vtPT + vtIH + 4 * fontScale} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} />
-
-                  {/* 坐标轴方向箭头 */}
-                  <polygon points={`${vtPL + vtIW + 6 * fontScale} ${vtPT + vtIH - 2}, ${vtPL + vtIW + 9 * fontScale} ${vtPT + vtIH}, ${vtPL + vtIW + 6 * fontScale} ${vtPT + vtIH + 2}`} fill={CHART_COLORS.axisArrow} />
-                  <polygon points={`${vtPL - 2} ${vtPT - 6 * fontScale}, ${vtPL} ${vtPT - 9 * fontScale}, ${vtPL + 2} ${vtPT - 6 * fontScale}`} fill={CHART_COLORS.axisArrow} />
-
-                  {/* 轴标签 */}
-                  <text x={vtPL + vtIW + 6 * fontScale} y={vtPT + vtIH + 8 * fontScale} fontSize={6 * fontScale} fill={CHART_COLORS.labelText} textAnchor="end">时间 t (s)</text>
-                  <text x={vtPL - 4 * fontScale} y={vtPT - 4 * fontScale} fontSize={6 * fontScale} fill={CHART_COLORS.labelText} textAnchor="end">v (km/s)</text>
-
-                  {/* 刻度 */}
-                  <line x1={vtPL - 2} y1={mapY(0)} x2={vtPL} y2={mapY(0)} stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
-                  <text x={vtPL - 4 * fontScale} y={mapY(0) + 2} fontSize={6 * fontScale} fill={CHART_COLORS.tickLabel} textAnchor="end">0</text>
-
-                  <line x1={vtPL - 2} y1={mapY(7.9)} x2={vtPL} y2={mapY(7.9)} stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
-                  <text x={vtPL - 4 * fontScale} y={mapY(7.9) + 2} fontSize={6 * fontScale} fill={CHART_COLORS.tickLabel} textAnchor="end">7.9</text>
-
-                  <line x1={vtPL - 2} y1={mapY(11.2)} x2={vtPL} y2={mapY(11.2)} stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
-                  <text x={vtPL - 4 * fontScale} y={mapY(11.2) + 2} fontSize={6 * fontScale} fill={CHART_COLORS.tickLabel} textAnchor="end">11.2</text>
-
-                  {/* v-t 实时曲线 */}
-                  {curvePath && (
-                    <path d={curvePath} fill="none" stroke={PHYSICS_COLORS.velocity} strokeWidth={1.2} opacity={0.85} />
-                  )}
-
-                  {/* 投影线与游标 */}
-                  {isLaunched === 1 && (
-                    <g>
-                      <line x1={dotX} y1={dotY} x2={dotX} y2={vtPT + vtIH} stroke={CHART_COLORS.reference} strokeWidth={0.5} strokeDasharray="1.5,1.5" />
-                      <line x1={vtPL} y1={dotY} x2={dotX} y2={dotY} stroke={CHART_COLORS.reference} strokeWidth={0.5} strokeDasharray="1.5,1.5" />
-                      <circle cx={dotX} cy={dotY} r={2.5} fill={PHYSICS_COLORS.velocity} />
-                      <circle cx={dotX} cy={dotY} r={4.5} fill="none" stroke={PHYSICS_COLORS.velocity} strokeWidth={0.8} opacity={0.6}>
-                        <animate attributeName="r" values="2.5;6;2.5" dur="1.5s" repeatCount="indefinite" />
-                        <animate attributeName="opacity" values="0.8;0;0.8" dur="1.5s" repeatCount="indefinite" />
-                      </circle>
-                    </g>
-                  )}
+                  {/* VelocityTimeChart 主体（嵌入 foreignObject）
+                      isLaunched=0 时 currentTime=0，cursor 隐于左边界 */}
+                  <foreignObject x={4} y={4} width={vtCardWidth - 8} height={vtCardHeight - 8}>
+                    <div style={{ width: '100%', height: '100%' }}>
+                      <VelocityTimeChart
+                        points={vtPoints}
+                        currentTime={isLaunched === 1 ? Math.min(15, time) : 0}
+                        tMax={15}
+                        title="线速度-时间变化曲线 (v-t)"
+                        stages={stages}
+                        series="primary"
+                        showGrid
+                        showCursor={isLaunched === 1}
+                      />
+                    </div>
+                  </foreignObject>
                 </g>
               )
             })()}

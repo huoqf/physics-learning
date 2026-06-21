@@ -1,6 +1,6 @@
 # 延后处理待办事项
 
-> 仅保留未完成项。最后更新：2026-06-21（RelationChart 预设 + 5 个页面迁移完成 + ForceMotion 面积补齐）
+> 仅保留未完成项。最后更新：2026-06-21（V-T stages API + SatelliteAnimation Mode 1 收尾）
 
 ---
 
@@ -54,7 +54,9 @@
 | ~~绘制数据 / 定标数据解耦~~ | ~~VelocityTime / DisplacementTime / AccelerationTime 三个预设统一加 `domainPoints`~~ | ~~高~~ ✅ |
 | 渐近线 | 收尾速度、极限值虚线标注 | 中 |
 | 面积渐变填充 | linearGradient 生成面积着色 | 中 |
-| **阶段背景着色** | X 轴区间矩形分段填充（如 SatelliteAnimation Mode 1 发射/转弯/在轨三阶段）| 中（已被 SatelliteAnimation Mode 1 v-t 阻塞）|
+| ~~阶段背景着色~~ | ~~X 轴区间矩形分段填充（如 SatelliteAnimation Mode 1 发射/转弯/在轨三阶段）~~ | ~~中~~ ✅ commit `3623de6` (API) + `66df556` (迁移) |
+| VelocityTimeChart 加 markers（horizontal）| 用于 SatelliteAnimation Mode 1 v-t 的 7.9/11.2 km/s 第一/第二宇宙速度水平参考线 | 中（迁移时简化为标准刻度，标记可后补） |
+| VelocityTimeChart 加 subtitle | 用于副标题文案（如「(前8秒发射示意，后为开普勒轨道)」）| 低 |
 | 交互悬浮 | Hover 显示数值卡片 | 低 |
 | 双 Y 轴 | 左右各一个 Y 轴 | 低 |
 | ~~SingleChart Y 范围加 padding~~ | ~~`ForceMotionTripleChart.SingleChart` 现 `Math.max(1, ...values)` 无顶部喘气空间，曲线峰值贴图顶~~ | ~~低~~ ✅ commit `3aba5f6` |
@@ -64,13 +66,12 @@
 
 ### 页面迁移状态
 
-**已迁移：** ChargeInEField(vy-t)、CuttingEMF(v-t/a-t)、~~ForceMotionTripleChart(F-t/v-t/x-t 游标 + 面积)~~ ✅、MiniChart(7 个消费方)、MaxwellBoltzmannChart(f(v)-v)、ACGeneration(e-t)、~~FreeFallDripAnimation(v-t)~~ ✅、~~FreeFallAnimation(v-t 双曲线)~~ ✅、~~IntermolecularForceChart(F-r 三曲线 / Ep-r)~~ ✅、~~CoulombLaw BasicMode(F-r)~~ ✅、~~ElectricFieldBasicScene(E-r + F-r)~~ ✅、~~ThinLensAnimation(线性 + 双曲线 + 共轭法标记)~~ ✅、~~SatelliteAnimation Mode 0(v-r + T-r 画中画)~~ ✅
+**已迁移：** ChargeInEField(vy-t)、CuttingEMF(v-t/a-t)、~~ForceMotionTripleChart(F-t/v-t/x-t 游标 + 面积)~~ ✅、MiniChart(7 个消费方)、MaxwellBoltzmannChart(f(v)-v)、ACGeneration(e-t)、~~FreeFallDripAnimation(v-t)~~ ✅、~~FreeFallAnimation(v-t 双曲线)~~ ✅、~~IntermolecularForceChart(F-r 三曲线 / Ep-r)~~ ✅、~~CoulombLaw BasicMode(F-r)~~ ✅、~~ElectricFieldBasicScene(E-r + F-r)~~ ✅、~~ThinLensAnimation(线性 + 双曲线 + 共轭法标记)~~ ✅、~~SatelliteAnimation Mode 0(v-r + T-r 画中画)~~ ✅、~~SatelliteAnimation Mode 1(v-t 三阶段)~~ ✅
 
 **未迁移：**
 
 | 页面 | 图表类型 | 需要的预设 | 难度 |
 |------|---------|------|:----:|
-| SatelliteAnimation Mode 1 | v-t 三阶段时间曲线 | VelocityTimeChart + **阶段背景着色扩展** | 中 |
 | ACValues | I-t + Q-t | VelocityTimeChart 变体 | 中 |
 | ClapeyronAnimation | P-V 等温线 | **PVTChart** | 中 |
 | GasLawsAnimation | P-V / V-T / P-T | **PVTChart** | 中 |
@@ -91,7 +92,7 @@
 6. ~~ThinLensAnimation（验证多模式切换 + 水平参考线 + 独立标记点）~~ ✅
 7. ~~SatelliteAnimation Mode 0（验证画中画卡片 + foreignObject 拖拽热区分层）~~ ✅
 8. ~~ForceMotionTripleChart 面积补齐（ChartArea 在非 BasePhysicsChart 容器复用）~~ ✅
-9. **VelocityTimeChart 扩展「阶段背景着色」** → 解锁 SatelliteAnimation Mode 1 v-t 三阶段曲线
+9. ~~VelocityTimeChart 扩展「阶段背景着色」 + SatelliteAnimation Mode 1 迁移~~ ✅
 10. **创建 PVTChart 预设** → 批量解锁 ClapeyronAnimation / GasLawsAnimation / FirstLawCenterExtra
 11. **创建 ChartSecant 插件** → 启动高难度三件套（VelocityVT / VelocityXT / VerticalThrow）
 12. 其余按需
