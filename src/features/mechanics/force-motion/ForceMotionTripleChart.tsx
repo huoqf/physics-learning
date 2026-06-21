@@ -1,9 +1,11 @@
 import { useMemo } from 'react'
-import { CHART_COLORS, FX_CHART_COLORS, VT_CHART_COLORS, DASH, FONT, OPACITY, STROKE } from '@/theme/physics'
+import { CHART_COLORS, FX_CHART_COLORS, VT_CHART_COLORS, DASH, FONT, STROKE } from '@/theme/physics'
+import type { ChartAreaVariant } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { useCanvasSize } from '@/utils/useCanvasSize'
 import { FORCE_MOTION_CHART_PADDING_RATIO } from './forceMotionLayout'
-import { ChartCursor } from '@/components/Chart'
+import { ChartCursor, ChartArea, ChartContext } from '@/components/Chart'
+import type { ChartContextValue } from '@/components/Chart'
 
 interface ChartPoint {
   t: number
@@ -39,6 +41,8 @@ interface SingleChartProps {
   color: string
   yLabel: string
   areaText: string
+  /** 曲线下方面积填充变体（不传则不画面积） */
+  areaVariant?: ChartAreaVariant
   terminalValue?: number
   zeroBased: boolean
   font: (base: number) => number
@@ -53,6 +57,7 @@ function SingleChart({
   color,
   yLabel,
   areaText,
+  areaVariant,
   terminalValue,
   zeroBased,
   font,
@@ -88,14 +93,27 @@ function SingleChart({
 
   const curvePath = buildPath(layout.curve)
 
+  // 仅当显示面积时构造 ChartContext：让 ChartArea 共用 SingleChart 的坐标系
+  const chartCtx: ChartContextValue | null = useMemo(() => {
+    if (!areaVariant) return null
+    return {
+      toSvgX: layout.toX,
+      toSvgY: layout.toY,
+      plotOrigin: { x: layout.left, y: layout.top },
+      plotSize: { width: layout.chartWidth, height: layout.chartHeight },
+      font,
+      px: (n) => n,
+    }
+  }, [areaVariant, layout, font])
+
+  // 面积 points 在物理坐标系（x=t, y=value），按 currentTime 截断以与曲线动态一致
+  const areaPoints = useMemo(
+    () => areaVariant ? points.filter((p) => p.t <= currentTime + 1e-9).map((p) => ({ x: p.t, y: p.value })) : [],
+    [areaVariant, points, currentTime],
+  )
+
   return (
     <svg width={width} height={height} className="w-full h-full select-none">
-      <defs>
-        <pattern id={`area-grid-${yLabel}`} width="8" height="8" patternUnits="userSpaceOnUse">
-          <path d="M 8 0 L 0 0 0 8" fill="none" stroke={color} strokeWidth={STROKE.guide} opacity={OPACITY.hatch} />
-        </pattern>
-      </defs>
-
       {/* 网格 */}
       {[0.25, 0.5, 0.75].map((ratio) => {
         const y = layout.top + ratio * layout.chartHeight
@@ -135,6 +153,20 @@ function SingleChart({
       {/* 标签 */}
       <text x={layout.right} y={layout.bottom + FONT.axis} textAnchor="end" fill={CHART_COLORS.labelText} fontSize={FONT.axis}>t/s</text>
       <text x={layout.left} y={Math.max(FONT.axis, layout.top - FONT.small)} fill={color} fontSize={FONT.axis} fontWeight="bold">{yLabel}</text>
+
+      {/* 面积填充（曲线下方，使用 ChartArea；按 currentTime 截断） */}
+      {chartCtx && areaPoints.length >= 2 && (
+        <ChartContext.Provider value={chartCtx}>
+          <ChartArea
+            points={areaPoints}
+            baseline={0}
+            variant={areaVariant!}
+            intensity="subtle"
+            stroke={color}
+            strokeWidth={STROKE.guide}
+          />
+        </ChartContext.Provider>
+      )}
 
       {/* 曲线 */}
       {curvePath && (
@@ -201,7 +233,7 @@ export default function ForceMotionTripleChart({
 
   return (
     <div ref={containerRef} className="w-full h-full grid grid-cols-3 gap-1">
-      {/* F-t 图 — 橙色 */}
+      {/* F-t 图 — 橙色，面积 = 冲量 ∫Fdt */}
       <div className="bg-white rounded-lg border border-neutral-100 overflow-hidden">
         <SingleChart
           width={chartWidth}
@@ -212,12 +244,13 @@ export default function ForceMotionTripleChart({
           color={FX_CHART_COLORS.forceCurve}
           yLabel="F/N"
           areaText={areaTextF}
+          areaVariant="warm"
           zeroBased={false}
           font={font}
         />
       </div>
 
-      {/* v-t 图 — 蓝色 */}
+      {/* v-t 图 — 蓝色，面积 = 位移 ∫vdt */}
       <div className="bg-white rounded-lg border border-neutral-100 overflow-hidden">
         <SingleChart
           width={chartWidth}
@@ -228,13 +261,14 @@ export default function ForceMotionTripleChart({
           color={VT_CHART_COLORS.velocityCurve}
           yLabel="v/(m·s⁻¹)"
           areaText={areaTextV}
+          areaVariant="default"
           terminalValue={terminalVelocity}
           zeroBased={true}
           font={font}
         />
       </div>
 
-      {/* x-t 图 — 灰色 */}
+      {/* x-t 图 — 灰色（位移轨迹本身就是积分结果，不画面积避免重复） */}
       <div className="bg-white rounded-lg border border-neutral-100 overflow-hidden">
         <SingleChart
           width={chartWidth}

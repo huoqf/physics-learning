@@ -1,6 +1,6 @@
 # 延后处理待办事项
 
-> 仅保留未完成项。最后更新：2026-06-21（图表组件化阶段性整理）
+> 仅保留未完成项。最后更新：2026-06-21（RelationChart 预设 + 5 个页面迁移完成 + ForceMotion 面积补齐）
 
 ---
 
@@ -18,6 +18,8 @@
 | VelocityTimeChart | ✅（含 `domainPoints` 定标解耦 + 多曲线 `additionalSeries`） |
 | DisplacementTimeChart | ✅（含 `domainPoints` 定标解耦） |
 | AccelerationTimeChart | ✅（含 `domainPoints` 定标解耦） |
+| RelationChart | ✅（通用 Y=f(X)，含 `additionalSeries` / `cursorX` / `markers` 三轴模式） |
+| `interpolateY` 工具 | ✅（线性插值纯函数，10 单测） |
 
 > **公共约定（`points` vs `domainPoints`）**
 > 三个 `*-TimeChart` 预设统一遵循：
@@ -29,12 +31,18 @@
 >
 > 同源问题历史：见 commit `bbd1108`（V-T 治本）、`35abec4`（DT/AT 同步补齐）。
 
+> **RelationChart markers 三轴模式（commit `6b1aee4`）**
+> `RelationMarker` 通过可选的 `axis` 字段统一三种用途，按 `x`/`y` 齐全度自动推断：
+> - `'vertical'`：贯穿全图的垂直参考线 + X 轴外短刻度 + 居中标签（只给 `x`）
+> - `'horizontal'`：贯穿全图的水平参考线 + 右上角标签（只给 `y`）
+> - `'point'`：圆点 + 右上角偏移标签（同时给 `x` 和 `y`）
+
 ### 待创建预设
 
 | 组件 | 用途 | 优先级 |
 |------|------|:------:|
 | PVTChart | P-V / V-T / P-T 热力学图 | 中（解锁 Clapeyron/GasLaws/FirstLawCenter 3 个页面） |
-| RelationChart | 通用 Y=f(X) 关系图 | 中（解锁 CoulombLaw/ElectricField/Satellite(T-r)/ThinLens/IntermolecularForce 5 个页面） |
+| ~~RelationChart~~ | ~~通用 Y=f(X) 关系图~~ | ~~中~~ ✅ |
 | ChartAsymptote 插件 | 渐近线（如收尾速度） | 低 |
 | ChartSecant 插件 | 割线 + 斜率三角形（与 ChartTangent 平行） | 中（VelocityVTChart/VelocityXTChart/VerticalThrow 三个高难度页面都需要） |
 
@@ -46,6 +54,7 @@
 | ~~绘制数据 / 定标数据解耦~~ | ~~VelocityTime / DisplacementTime / AccelerationTime 三个预设统一加 `domainPoints`~~ | ~~高~~ ✅ |
 | 渐近线 | 收尾速度、极限值虚线标注 | 中 |
 | 面积渐变填充 | linearGradient 生成面积着色 | 中 |
+| **阶段背景着色** | X 轴区间矩形分段填充（如 SatelliteAnimation Mode 1 发射/转弯/在轨三阶段）| 中（已被 SatelliteAnimation Mode 1 v-t 阻塞）|
 | 交互悬浮 | Hover 显示数值卡片 | 低 |
 | 双 Y 轴 | 左右各一个 Y 轴 | 低 |
 | MiniChart 评估 `domainPoints` 需求 | 已有 7 个消费方，需逐个看是否按 `time` 截断 points 再决定是否补齐 | 中 |
@@ -53,21 +62,16 @@
 
 ### 页面迁移状态
 
-**已迁移：** ChargeInEField(vy-t)、CuttingEMF(v-t/a-t)、ForceMotionTripleChart(F-t/v-t/x-t 游标)、MiniChart(7 个消费方)、MaxwellBoltzmannChart(f(v)-v)、ACGeneration(e-t)、~~FreeFallDripAnimation(v-t)~~ ✅、~~FreeFallAnimation(v-t 双曲线)~~ ✅
+**已迁移：** ChargeInEField(vy-t)、CuttingEMF(v-t/a-t)、~~ForceMotionTripleChart(F-t/v-t/x-t 游标 + 面积)~~ ✅、MiniChart(7 个消费方)、MaxwellBoltzmannChart(f(v)-v)、ACGeneration(e-t)、~~FreeFallDripAnimation(v-t)~~ ✅、~~FreeFallAnimation(v-t 双曲线)~~ ✅、~~IntermolecularForceChart(F-r 三曲线 / Ep-r)~~ ✅、~~CoulombLaw BasicMode(F-r)~~ ✅、~~ElectricFieldBasicScene(E-r + F-r)~~ ✅、~~ThinLensAnimation(线性 + 双曲线 + 共轭法标记)~~ ✅、~~SatelliteAnimation Mode 0(v-r + T-r 画中画)~~ ✅
 
 **未迁移：**
 
 | 页面 | 图表类型 | 需要的预设 | 难度 |
 |------|---------|------|:----:|
-| CoulombLaw | F-r | RelationChart | 低 |
-| ElectricFieldBasicScene | E-r + F-r | RelationChart | 低 |
-| ForceMotionTripleChart | 面积部分（游标已迁） | 现有 `ChartArea` 可直接用 | 低 |
-| SatelliteAnimation | v-t + T-r | VelocityTimeChart + RelationChart | 中 |
-| ThinLensAnimation | 1/v-1/u | RelationChart | 中 |
+| SatelliteAnimation Mode 1 | v-t 三阶段时间曲线 | VelocityTimeChart + **阶段背景着色扩展** | 中 |
 | ACValues | I-t + Q-t | VelocityTimeChart 变体 | 中 |
 | ClapeyronAnimation | P-V 等温线 | **PVTChart** | 中 |
 | GasLawsAnimation | P-V / V-T / P-T | **PVTChart** | 中 |
-| IntermolecularForceChart | F-r / Ep-r | RelationChart | 中 |
 | VelocityVTChart | v-t 滑动窗口+面积+割线+切线 | VelocityTimeChart + ChartTangent + **ChartSecant** | 高 |
 | VelocityXTChart | x-t 切线+割线三角形 | DisplacementTimeChart + ChartTangent + **ChartSecant** | 高 |
 | VerticalThrowAnimation | v-t + y-t 双图+切线+交互 | VelocityTimeChart + DisplacementTimeChart + ChartTangent | 高 |
@@ -79,11 +83,16 @@
 **迁移顺序：**
 1. ~~FreeFallDripAnimation~~ ✅
 2. ~~FreeFallAnimation~~ ✅
-3. **创建 RelationChart 预设** → 批量解锁 CoulombLaw / ElectricFieldBasicScene / IntermolecularForceChart / ThinLensAnimation / SatelliteAnimation(T-r)
-4. ForceMotionTripleChart 面积部分（小修补，可与 ③ 并行）
-5. **创建 PVTChart 预设** → 批量解锁 ClapeyronAnimation / GasLawsAnimation / FirstLawCenterExtra
-6. **创建 ChartSecant 插件** → 启动高难度三件套（VelocityVT / VelocityXT / VerticalThrow）
-7. 其余按需
+3. ~~创建 RelationChart 预设~~ ✅
+4. ~~IntermolecularForceChart 试点（验证 markers / 多曲线 / 多模式）~~ ✅
+5. ~~CoulombLaw / ElectricFieldBasicScene（验证 foreignObject 嵌入 + 多图并列）~~ ✅
+6. ~~ThinLensAnimation（验证多模式切换 + 水平参考线 + 独立标记点）~~ ✅
+7. ~~SatelliteAnimation Mode 0（验证画中画卡片 + foreignObject 拖拽热区分层）~~ ✅
+8. ~~ForceMotionTripleChart 面积补齐（ChartArea 在非 BasePhysicsChart 容器复用）~~ ✅
+9. **VelocityTimeChart 扩展「阶段背景着色」** → 解锁 SatelliteAnimation Mode 1 v-t 三阶段曲线
+10. **创建 PVTChart 预设** → 批量解锁 ClapeyronAnimation / GasLawsAnimation / FirstLawCenterExtra
+11. **创建 ChartSecant 插件** → 启动高难度三件套（VelocityVT / VelocityXT / VerticalThrow）
+12. 其余按需
 
 ---
 
@@ -97,6 +106,8 @@
 | `UniformAccelerationCenterExtra.tsx` | 669 | 已有 5 个子组件，直接搬迁 |
 | `VerticalThrowAnimation.tsx` | 697 | 先拆图表区（依赖 ChartSecant 预设） |
 | `AccelerationCenterExtra.tsx` | 646 | 需修复规范违反 |
+
+> 已自然脱困（迁图后行数下降至 500 以下）：~~`ThinLensAnimation.tsx`~~ 376 行（468 → 376）
 
 ---
 

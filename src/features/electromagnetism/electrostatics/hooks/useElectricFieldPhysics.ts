@@ -144,21 +144,25 @@ export interface ElectricFieldPhysicsResult {
     enetTip: { x: number; y: number }
   } | null
   fieldLinesPaths: string[]
+  /**
+   * E-r / F-r 对比图所需数据 + 像素布局。
+   * 重构后：物理数据（points / eMax / fMax）与渲染层（toX/toYE/path）解耦，
+   * 由消费方传给 RelationChart 即可完成绘制。
+   */
   chartProps: {
+    /** 图表像素布局 */
     chartW: number
     chartH: number
     chartLeft: number
-    bottomY_E: number
-    bottomY_F: number
     topY_E: number
     topY_F: number
-    toX: (r: number) => number
-    toYE: (e: number) => number
-    toYF: (f: number) => number
-    pathE: string
-    pathF: string
+    /** 物理数据 */
+    rMin: number
+    rMax: number
     eMax: number
     fMax: number
+    /** 整段曲线采样点，供 RelationChart 直接消费 */
+    points: { r: number; E: number; F: number }[]
   } | null
 }
 
@@ -365,10 +369,11 @@ export function useElectricFieldPhysics(p: ElectricFieldPhysicsParams): Electric
     }
   }, [mode, qSource, q1, q2, chargeConfig, showFieldLines, cx, cy, cx1, cy1, cx2, cy2, w, h])
 
-  // 图表数据
+  // 图表数据 + 像素布局（曲线生成 / Path 字符串交给 RelationChart）
   const chartProps = useMemo(() => {
     if (mode !== 0) return null
 
+    // 像素布局
     const chartW = w * 0.16
     const chartH = h * 0.3
     const bottomY_E = h * 0.42
@@ -377,24 +382,16 @@ export function useElectricFieldPhysics(p: ElectricFieldPhysicsParams): Electric
     const topY_F = bottomY_F - chartH
     const chartLeft = w * 0.7
 
+    // 物理域
     const rMin = 1.0
     const rMax = 6.0
 
-    const toX = (rVal: number) => chartLeft + ((rVal - rMin) / (rMax - rMin)) * chartW
-
+    // Y 轴上界（用最小允许 r 的场强 / 力作上界，避免极小 r 的奇点把曲线压扁）
     const qSI = Math.abs(qSource * 1e-6)
     const { E: eMax } = calculateElectricField(COULOMB_K, qSI, 1.2 * 0.01)
-    const toYE = (eVal: number) => {
-      const clamped = Math.min(eVal, eMax)
-      return bottomY_E - (clamped / eMax) * chartH
-    }
-
     const fMax = eMax * 2.0 * 1e-6
-    const toYF = (fVal: number) => {
-      const clamped = Math.min(fVal, fMax)
-      return bottomY_F - (clamped / fMax) * chartH
-    }
 
+    // 整段曲线采样（仅当 qSource / qTest 变化时重算）
     const points: { r: number; E: number; F: number }[] = []
     const step = 0.1
     for (let r = rMin; r <= rMax + 0.01; r += step) {
@@ -404,18 +401,9 @@ export function useElectricFieldPhysics(p: ElectricFieldPhysicsParams): Electric
       points.push({ r, E, F })
     }
 
-    const pathE = points.map((pt, idx) =>
-      `${idx === 0 ? 'M' : 'L'} ${toX(pt.r).toFixed(1)},${toYE(pt.E).toFixed(1)}`
-    ).join(' ')
-
-    const pathF = points.map((pt, idx) =>
-      `${idx === 0 ? 'M' : 'L'} ${toX(pt.r).toFixed(1)},${toYF(pt.F).toFixed(1)}`
-    ).join(' ')
-
     return {
-      chartW, chartH, chartLeft,
-      bottomY_E, bottomY_F, topY_E, topY_F,
-      toX, toYE, toYF, pathE, pathF, eMax, fMax,
+      chartW, chartH, chartLeft, topY_E, topY_F,
+      rMin, rMax, eMax, fMax, points,
     }
   }, [mode, qSource, qTest, w, h])
 

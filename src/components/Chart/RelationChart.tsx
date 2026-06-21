@@ -59,13 +59,25 @@ export interface RelationDataSeries {
 }
 
 export interface RelationMarker {
-  /** X 坐标 */
-  x: number
-  /** Y 坐标，省略则只画整条垂直虚线 */
+  /**
+   * 标记类型：
+   * - `'vertical'`（默认）：以 `x` 定位的垂直参考线 / 单点
+   * - `'horizontal'`：以 `y` 定位的水平参考线 / 单点
+   * - `'point'`：必须同时给 `x` 和 `y`，画一个标记点（不画十字线）
+   *
+   * 等价规则：当 axis 未给出时，按 `x` / `y` 是否齐全自动推断：
+   * - 只给 `x` → `vertical`
+   * - 只给 `y` → `horizontal`
+   * - 同时给 `x` 和 `y` → `point`
+   */
+  axis?: 'vertical' | 'horizontal' | 'point'
+  /** X 坐标（vertical / point 用） */
+  x?: number
+  /** Y 坐标（horizontal / point 用） */
   y?: number
   /** 标签文本 */
   label?: string
-  /** 颜色，默认 reference 色 */
+  /** 颜色，默认 equilibrium 色 */
   color?: string
 }
 
@@ -212,12 +224,15 @@ function RCContent({
 
       {/* 标记点 / 参考线 */}
       {markers?.map((m, i) => {
-        const mx = toSvgX(m.x)
         const mColor = m.color ?? CHART_COLORS.equilibrium
-        return (
-          <g key={`marker-${i}`}>
-            {/* 整条垂直参考线（y 省略时） */}
-            {m.y == null && (
+        // 推断 axis：未指定时按 x/y 齐全度判断
+        const axis: 'vertical' | 'horizontal' | 'point' =
+          m.axis ?? (m.x != null && m.y != null ? 'point' : m.x != null ? 'vertical' : 'horizontal')
+
+        if (axis === 'vertical' && m.x != null) {
+          const mx = toSvgX(m.x)
+          return (
+            <g key={`marker-${i}`}>
               <line
                 x1={mx} y1={plotOrigin.y}
                 x2={mx} y2={plotOrigin.y + plotSize.height}
@@ -226,38 +241,83 @@ function RCContent({
                 strokeDasharray={DASH.reference.join(' ')}
                 opacity={0.6}
               />
-            )}
-            {/* 标记点 */}
-            {m.y != null && (
+              {/* X 轴外短刻度 */}
+              <line
+                x1={mx} y1={plotOrigin.y + plotSize.height}
+                x2={mx} y2={plotOrigin.y + plotSize.height + 6}
+                stroke={mColor} strokeWidth={STROKE.tick}
+              />
+              {m.label && (
+                <text
+                  x={mx}
+                  y={plotOrigin.y + plotSize.height + font(FONT.small) + 6}
+                  fontSize={font(FONT.small)}
+                  fill={mColor}
+                  textAnchor="middle"
+                  fontWeight="bold"
+                >
+                  {m.label}
+                </text>
+              )}
+            </g>
+          )
+        }
+
+        if (axis === 'horizontal' && m.y != null) {
+          const my = toSvgY(m.y)
+          return (
+            <g key={`marker-${i}`}>
+              <line
+                x1={plotOrigin.x} y1={my}
+                x2={plotOrigin.x + plotSize.width} y2={my}
+                stroke={mColor}
+                strokeWidth={STROKE.reference}
+                strokeDasharray={DASH.reference.join(' ')}
+                opacity={0.6}
+              />
+              {m.label && (
+                <text
+                  x={plotOrigin.x + plotSize.width - 4}
+                  y={my - 4}
+                  fontSize={font(FONT.small)}
+                  fill={mColor}
+                  textAnchor="end"
+                  fontWeight="bold"
+                >
+                  {m.label}
+                </text>
+              )}
+            </g>
+          )
+        }
+
+        // axis === 'point'：必须同时有 x 和 y
+        if (axis === 'point' && m.x != null && m.y != null) {
+          const mx = toSvgX(m.x)
+          const my = toSvgY(m.y)
+          return (
+            <g key={`marker-${i}`}>
               <circle
-                cx={mx} cy={toSvgY(m.y)} r={3.5}
+                cx={mx} cy={my} r={3.5}
                 fill={mColor} stroke={CHART_COLORS.highlight} strokeWidth={1.2}
               />
-            )}
-            {/* 短刻度 + 标签 */}
-            <line
-              x1={mx} y1={plotOrigin.y + plotSize.height}
-              x2={mx} y2={plotOrigin.y + plotSize.height + 6}
-              stroke={mColor} strokeWidth={STROKE.tick}
-            />
-            {m.label && (
-              <text
-                x={mx}
-                y={
-                  m.y != null
-                    ? toSvgY(m.y) - 8
-                    : plotOrigin.y + plotSize.height + font(FONT.small) + 6
-                }
-                fontSize={font(FONT.small)}
-                fill={mColor}
-                textAnchor="middle"
-                fontWeight="bold"
-              >
-                {m.label}
-              </text>
-            )}
-          </g>
-        )
+              {m.label && (
+                <text
+                  x={mx + 6}
+                  y={my - 6}
+                  fontSize={font(FONT.small)}
+                  fill={mColor}
+                  textAnchor="start"
+                  fontWeight="bold"
+                >
+                  {m.label}
+                </text>
+              )}
+            </g>
+          )
+        }
+
+        return null
       })}
 
       {/* 游标十字标 + 圆点 + 数值 */}

@@ -1,12 +1,12 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { OPTICS_COLORS, STROKE, FONT, DASH, CANVAS_COLORS, OPACITY } from '@/theme/physics'
-import { colors } from '@/theme/colors'
+import { OPTICS_COLORS, STROKE, FONT, DASH, CANVAS_COLORS } from '@/theme/physics'
 import { calculateThinLens } from '@/physics/optics'
 import { useThinLensPhysics } from './useThinLensPhysics'
-import type { ChartPoint, ConjugateResult } from './types'
+import { RelationChart } from '@/components/Chart'
+import type { RelationMarker } from '@/components/Chart'
 
 const VIEW_WIDTH = 800
 const VIEW_HEIGHT = 500
@@ -151,135 +151,6 @@ function LightRays({ objSvgX, objTopY, cx, cy, imgSvgX, imgTopY, imgH, isReal, f
   )
 }
 
-function LinearChart({ chartData, currentChartPoint, fCm, scale, font }: {
-  chartData: ChartPoint[]; currentChartPoint: ChartPoint; fCm: number
-  scale: number; font: (v: number) => number
-}) {
-  const xMax = 1 / (fCm / 100 * 1.01) * 1.1
-  const yMax = xMax
-  const plotW = VIEW_WIDTH - 100
-  const plotH = CHART_H
-  const toX = (v: number) => 60 + (v / xMax) * plotW
-  const toY = (v: number) => CHART_TOP + plotH - (v / yMax) * plotH
-
-  const pathD = chartData
-    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(p.x)},${toY(p.y)}`)
-    .join(' ')
-
-  return (
-    <>
-      <path d={pathD} fill="none" stroke={OPTICS_COLORS.lightRay}
-        strokeWidth={STROKE.chartMain} />
-      {currentChartPoint.x > 0 && currentChartPoint.y > 0 && (
-        <g>
-          <circle cx={toX(currentChartPoint.x)} cy={toY(currentChartPoint.y)}
-            r={4 * scale} fill={OPTICS_COLORS.criticalAngle}
-            stroke={colors.neutral.white} strokeWidth={STROKE.chartSub} />
-          <text x={toX(currentChartPoint.x) + 8 * scale}
-            y={toY(currentChartPoint.y) - 6 * scale} dominantBaseline="auto"
-            fill={OPTICS_COLORS.criticalAngle} fontSize={font(9)} fontFamily={FONT.family}>
-            ({currentChartPoint.x.toFixed(2)}, {currentChartPoint.y.toFixed(2)})
-          </text>
-        </g>
-      )}
-      <text x={VIEW_WIDTH / 2} y={CHART_TOP + CHART_H + 18}
-        textAnchor="middle" dominantBaseline="auto" fill={CANVAS_COLORS.labelText}
-        fontSize={font(10)} fontFamily={FONT.family}>
-        1/u (cm⁻¹)
-      </text>
-      <text x={50} y={CHART_TOP + CHART_H / 2}
-        textAnchor="middle" dominantBaseline="middle" fill={CANVAS_COLORS.labelText}
-        fontSize={font(10)} fontFamily={FONT.family}
-        transform={`rotate(-90, 50, ${CHART_TOP + CHART_H / 2})`}>
-        1/v (cm⁻¹)
-      </text>
-    </>
-  )
-}
-
-function HyperbolaChart({ chartData, currentChartPoint, conjugate, fCm, scale, font }: {
-  chartData: ChartPoint[]; currentChartPoint: ChartPoint; conjugate: ConjugateResult
-  fCm: number; scale: number; font: (v: number) => number
-}) {
-  const uMin = fCm * 1.01
-  const uMax = fCm * 4
-  const vMax = uMax
-  const plotW = VIEW_WIDTH - 100
-  const plotH = CHART_H
-  const toX = (v: number) => 60 + ((v - uMin) / (uMax - uMin)) * plotW
-  const toY = (v: number) => CHART_TOP + plotH - (v / vMax) * plotH
-
-  const pathD = chartData
-    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(p.x)},${toY(p.y)}`)
-    .join(' ')
-
-  const vertexY = toY(2 * fCm)
-
-  return (
-    <>
-      <path d={pathD} fill="none" stroke={OPTICS_COLORS.lightRay}
-        strokeWidth={STROKE.chartMain} />
-
-      {/* L=4f 顶点标注 */}
-      <line x1={60} y1={vertexY} x2={VIEW_WIDTH - 40} y2={vertexY}
-        stroke={OPTICS_COLORS.focalPoint} strokeWidth={STROKE.reference}
-        strokeDasharray={`${DASH.reference[0]} ${DASH.reference[1]}`} opacity={0.5} />
-      <text x={VIEW_WIDTH - 38} y={vertexY - 4} textAnchor="end" dominantBaseline="auto"
-        fill={OPTICS_COLORS.focalPoint} fontSize={font(8)} fontFamily={FONT.family}>
-        L_min=4f
-      </text>
-
-      {/* 当前点 */}
-      {currentChartPoint.x > 0 && currentChartPoint.y > 0 && (
-        <g>
-          <circle cx={toX(currentChartPoint.x)} cy={toY(currentChartPoint.y)}
-            r={4 * scale} fill={OPTICS_COLORS.criticalAngle}
-            stroke={colors.neutral.white} strokeWidth={STROKE.chartSub} />
-          <text x={toX(currentChartPoint.x) + 8 * scale}
-            y={toY(currentChartPoint.y) - 6 * scale} dominantBaseline="auto"
-            fill={OPTICS_COLORS.criticalAngle} fontSize={font(9)} fontFamily={FONT.family}>
-            u={currentChartPoint.x.toFixed(1)}, v={currentChartPoint.y.toFixed(1)}
-          </text>
-        </g>
-      )}
-
-      {/* 共轭法双点 */}
-      {conjugate.valid && (
-        <>
-          <circle cx={toX(conjugate.u1 * 100)} cy={toY(conjugate.v1 * 100)}
-            r={3.5 * scale} fill={OPTICS_COLORS.lightRayRefracted}
-            stroke={colors.neutral.white} strokeWidth={1} />
-          <circle cx={toX(conjugate.u2 * 100)} cy={toY(conjugate.v2 * 100)}
-            r={3.5 * scale} fill={OPTICS_COLORS.wavelengthGreen}
-            stroke={colors.neutral.white} strokeWidth={1} />
-          <text x={toX(conjugate.u1 * 100) + 6 * scale}
-            y={toY(conjugate.v1 * 100) - 5 * scale} dominantBaseline="auto"
-            fill={OPTICS_COLORS.lightRayRefracted} fontSize={font(8)} fontFamily={FONT.family}>
-            ①
-          </text>
-          <text x={toX(conjugate.u2 * 100) + 6 * scale}
-            y={toY(conjugate.v2 * 100) - 5 * scale} dominantBaseline="auto"
-            fill={OPTICS_COLORS.wavelengthGreen} fontSize={font(8)} fontFamily={FONT.family}>
-            ②
-          </text>
-        </>
-      )}
-
-      <text x={VIEW_WIDTH / 2} y={CHART_TOP + CHART_H + 18}
-        textAnchor="middle" dominantBaseline="auto" fill={CANVAS_COLORS.labelText}
-        fontSize={font(10)} fontFamily={FONT.family}>
-        u (cm)
-      </text>
-      <text x={50} y={CHART_TOP + CHART_H / 2}
-        textAnchor="middle" dominantBaseline="middle" fill={CANVAS_COLORS.labelText}
-        fontSize={font(10)} fontFamily={FONT.family}
-        transform={`rotate(-90, 50, ${CHART_TOP + CHART_H / 2})`}>
-        v (cm)
-      </text>
-    </>
-  )
-}
-
 export default function ThinLensAnimation() {
   const { params } = useAnimationStore(
     useShallow((s) => ({ params: s.params }))
@@ -339,6 +210,44 @@ export default function ThinLensAnimation() {
   }, [])
 
   const { chartData, currentChartPoint, conjugate } = physics
+
+  // ── RelationChart 数据准备 ────────────────────────────────────────────
+  // chartData 形状统一为 {x, y}，可直接喂给 RelationChart
+  const chartPoints = chartData
+
+  // 是否显示当前点圆点：原逻辑要求 x>0 && y>0
+  const showCursor = currentChartPoint.x > 0 && currentChartPoint.y > 0
+
+  // 线性模式：xDomain 和 yDomain（原 LinearChart 内部计算）
+  const linearMax = useMemo(() => {
+    const xMax = 1 / (fCm / 100 * 1.01) * 1.1
+    return xMax
+  }, [fCm])
+
+  // 双曲线模式：xDomain 和 yDomain（原 HyperbolaChart 内部计算）
+  const hyperbolaDomain = useMemo(() => {
+    const uMin = fCm * 1.01
+    const uMax = fCm * 4
+    return { uMin, uMax, vMax: uMax }
+  }, [fCm])
+
+  // 双曲线模式 markers：L_min=4f 水平参考线 + 共轭法 ①② 两个独立标记点
+  const hyperbolaMarkers = useMemo<RelationMarker[]>(() => {
+    const out: RelationMarker[] = [
+      { axis: 'horizontal', y: 2 * fCm, label: 'L_min=4f', color: OPTICS_COLORS.focalPoint },
+    ]
+    if (conjugate.valid) {
+      out.push({
+        axis: 'point', x: conjugate.u1 * 100, y: conjugate.v1 * 100,
+        label: '①', color: OPTICS_COLORS.lightRayRefracted,
+      })
+      out.push({
+        axis: 'point', x: conjugate.u2 * 100, y: conjugate.v2 * 100,
+        label: '②', color: OPTICS_COLORS.wavelengthGreen,
+      })
+    }
+    return out
+  }, [fCm, conjugate])
 
   return (
     <div ref={containerRef} className="w-full h-full">
@@ -423,45 +332,44 @@ export default function ThinLensAnimation() {
           )
         })()}
 
-        {/* ── 下方图表区域 ── */}
-        <g>
-          <text
-            x={VIEW_WIDTH / 2} y={CHART_TOP - 10}
-            textAnchor="middle" dominantBaseline="auto"
-            fill={CANVAS_COLORS.labelText}
-            fontSize={font(11)}
-            fontFamily={FONT.family}
-            fontWeight="bold"
+        {/* ── 下方图表区域：通过 foreignObject 嵌入 RelationChart ── */}
+        {chartPoints.length >= 2 && (
+          <foreignObject
+            x={20} y={CHART_TOP - 20}
+            width={VIEW_WIDTH - 40} height={CHART_H + 50}
           >
-            {mode === 0 ? '1/v - 1/u 线性图' : 'v - u 双曲线图'}
-          </text>
-
-          {/* 图表坐标轴 */}
-          <line x1={60} y1={CHART_TOP + CHART_H} x2={VIEW_WIDTH - 40} y2={CHART_TOP + CHART_H}
-            stroke={CANVAS_COLORS.labelText} strokeWidth={STROKE.axis} />
-          <line x1={60} y1={CHART_TOP} x2={60} y2={CHART_TOP + CHART_H}
-            stroke={CANVAS_COLORS.labelText} strokeWidth={STROKE.axis} />
-
-          {/* 图表数据曲线 */}
-          {chartData.length >= 2 && (
-            mode === 0 ? (
-              <LinearChart chartData={chartData} currentChartPoint={currentChartPoint}
-                fCm={fCm} scale={scale} font={font} />
-            ) : (
-              <HyperbolaChart chartData={chartData} currentChartPoint={currentChartPoint}
-                conjugate={conjugate} fCm={fCm} scale={scale} font={font} />
-            )
-          )}
-
-          {/* 图表网格线 */}
-          {Array.from({ length: 5 }).map((_, i) => {
-            const y = CHART_TOP + (CHART_H * i) / 4
-            return (
-              <line key={`grid-${i}`} x1={60} y1={y} x2={VIEW_WIDTH - 40} y2={y}
-                stroke={CANVAS_COLORS.grid} strokeWidth={STROKE.grid} opacity={OPACITY.grid} />
-            )
-          })}
-        </g>
+            <div style={{ width: '100%', height: '100%' }}>
+              {mode === 0 ? (
+                <RelationChart
+                  points={chartPoints}
+                  xLabel="1/u (cm⁻¹)"
+                  yLabel="1/v (cm⁻¹)"
+                  title="1/v - 1/u 线性图"
+                  xDomain={[0, linearMax]}
+                  yDomain={[0, linearMax]}
+                  cursorX={showCursor ? currentChartPoint.x : undefined}
+                  cursorLabel={(x, y) => `(${x.toFixed(2)}, ${y.toFixed(2)})`}
+                  color={OPTICS_COLORS.lightRay}
+                  strokeWidth={2}
+                />
+              ) : (
+                <RelationChart
+                  points={chartPoints}
+                  xLabel="u (cm)"
+                  yLabel="v (cm)"
+                  title="v - u 双曲线图"
+                  xDomain={[hyperbolaDomain.uMin, hyperbolaDomain.uMax]}
+                  yDomain={[0, hyperbolaDomain.vMax]}
+                  cursorX={showCursor ? currentChartPoint.x : undefined}
+                  cursorLabel={(x, y) => `u=${x.toFixed(1)}, v=${y.toFixed(1)}`}
+                  markers={hyperbolaMarkers}
+                  color={OPTICS_COLORS.lightRay}
+                  strokeWidth={2}
+                />
+              )}
+            </div>
+          </foreignObject>
+        )}
       </svg>
     </div>
   )

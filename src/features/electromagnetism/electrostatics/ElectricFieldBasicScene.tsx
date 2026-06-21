@@ -2,10 +2,15 @@
  * ElectricFieldBasicScene.tsx — 基础模式场景（单电荷 + 试探电荷 + 图表）
  *
  * 从 ElectricField.tsx 拆分：mode=0 的中间屏渲染。
+ *
+ * 图表部分已迁移至 RelationChart，由 useElectricFieldPhysics 提供
+ * 纯物理数据（points / eMax / fMax），本组件只负责像素布局 + foreignObject 嵌入。
  */
-import { PHYSICS_COLORS, CANVAS_STYLE, CHART_COLORS } from '@/theme/physics'
+import { useMemo } from 'react'
+import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { RelationChart } from '@/components/Chart'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
@@ -39,17 +44,13 @@ interface Props {
     chartW: number
     chartH: number
     chartLeft: number
-    bottomY_E: number
-    bottomY_F: number
     topY_E: number
     topY_F: number
-    toX: (r: number) => number
-    toYE: (e: number) => number
-    toYF: (f: number) => number
-    pathE: string
-    pathF: string
+    rMin: number
+    rMax: number
     eMax: number
     fMax: number
+    points: { r: number; E: number; F: number }[]
   } | null
 }
 
@@ -63,6 +64,16 @@ export function ElectricFieldBasicScene({
     originY: 0,
   }
   const sceneScale = createSceneScale(basicScene)
+
+  // 把 chartProps.points 拆成 E-r / F-r 两条曲线
+  const ePoints = useMemo(
+    () => chartProps?.points.map((p) => ({ x: p.r, y: p.E })) ?? [],
+    [chartProps],
+  )
+  const fPoints = useMemo(
+    () => chartProps?.points.map((p) => ({ x: p.r, y: p.F })) ?? [],
+    [chartProps],
+  )
 
   return (
     <g>
@@ -146,66 +157,50 @@ export function ElectricFieldBasicScene({
         </g>
       )}
 
-      {/* 对比图表 */}
+      {/* 对比图表：E-r / F-r 双图通过 foreignObject 嵌入 RelationChart */}
       {chartProps && (
         <g>
           {/* E-r 图表 */}
-          <g>
-            <rect x={chartProps.chartLeft} y={chartProps.topY_E - 15}
-              width={chartProps.chartW + 15} height={chartProps.chartH + 30}
-              fill="white" stroke={CHART_COLORS.axisLine} rx={4} />
-            <text x={chartProps.chartLeft + chartProps.chartW / 2 + 5} y={chartProps.topY_E - 4}
-              fontSize="10" fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
-              E-r 场强曲线
-            </text>
-            <line x1={chartProps.chartLeft} y1={chartProps.topY_E}
-              x2={chartProps.chartLeft} y2={chartProps.bottomY_E}
-              stroke={CHART_COLORS.axisLine} strokeWidth={1.5} />
-            <line x1={chartProps.chartLeft} y1={chartProps.bottomY_E}
-              x2={chartProps.chartLeft + chartProps.chartW} y2={chartProps.bottomY_E}
-              stroke={CHART_COLORS.axisLine} strokeWidth={1.5} />
-            <text x={chartProps.chartLeft + chartProps.chartW} y={chartProps.bottomY_E + 12}
-              fontSize="8" fill={CHART_COLORS.labelText} textAnchor="end">
-              r/cm
-            </text>
-            <text x={chartProps.chartLeft - 5} y={chartProps.topY_E + 8}
-              fontSize="8" fill={CHART_COLORS.labelText} textAnchor="end">
-              E
-            </text>
-            <path d={chartProps.pathE} fill="none"
-              stroke={PHYSICS_COLORS.electricField} strokeWidth={1.8} />
-            <circle cx={chartProps.toX(basicPhysics.distCm)} cy={chartProps.toYE(basicPhysics.E)}
-              r={4} fill={PHYSICS_COLORS.electricField} stroke="white" strokeWidth={1.2} />
-          </g>
+          <foreignObject
+            x={chartProps.chartLeft} y={chartProps.topY_E}
+            width={chartProps.chartW} height={chartProps.chartH}
+          >
+            <div style={{ width: '100%', height: '100%' }}>
+              <RelationChart
+                points={ePoints}
+                xLabel="r / cm"
+                yLabel="E / (N/C)"
+                title="E-r 场强曲线"
+                xDomain={[chartProps.rMin, chartProps.rMax]}
+                yDomain={[0, chartProps.eMax]}
+                cursorX={basicPhysics.distCm}
+                cursorLabel={(_x, y) => `E=${y.toExponential(2)}`}
+                color={PHYSICS_COLORS.electricField}
+                strokeWidth={1.8}
+              />
+            </div>
+          </foreignObject>
 
           {/* F-r 图表 */}
-          <g>
-            <rect x={chartProps.chartLeft} y={chartProps.topY_F - 15}
-              width={chartProps.chartW + 15} height={chartProps.chartH + 30}
-              fill="white" stroke={CHART_COLORS.axisLine} rx={4} />
-            <text x={chartProps.chartLeft + chartProps.chartW / 2 + 5} y={chartProps.topY_F - 4}
-              fontSize="10" fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
-              F-r 静电力曲线
-            </text>
-            <line x1={chartProps.chartLeft} y1={chartProps.topY_F}
-              x2={chartProps.chartLeft} y2={chartProps.bottomY_F}
-              stroke={CHART_COLORS.axisLine} strokeWidth={1.5} />
-            <line x1={chartProps.chartLeft} y1={chartProps.bottomY_F}
-              x2={chartProps.chartLeft + chartProps.chartW} y2={chartProps.bottomY_F}
-              stroke={CHART_COLORS.axisLine} strokeWidth={1.5} />
-            <text x={chartProps.chartLeft + chartProps.chartW} y={chartProps.bottomY_F + 12}
-              fontSize="8" fill={CHART_COLORS.labelText} textAnchor="end">
-              r/cm
-            </text>
-            <text x={chartProps.chartLeft - 5} y={chartProps.topY_F + 8}
-              fontSize="8" fill={CHART_COLORS.labelText} textAnchor="end">
-              F
-            </text>
-            <path d={chartProps.pathF} fill="none"
-              stroke={PHYSICS_COLORS.electricForce} strokeWidth={1.8} />
-            <circle cx={chartProps.toX(basicPhysics.distCm)} cy={chartProps.toYF(basicPhysics.F)}
-              r={4} fill={PHYSICS_COLORS.electricForce} stroke="white" strokeWidth={1.2} />
-          </g>
+          <foreignObject
+            x={chartProps.chartLeft} y={chartProps.topY_F}
+            width={chartProps.chartW} height={chartProps.chartH}
+          >
+            <div style={{ width: '100%', height: '100%' }}>
+              <RelationChart
+                points={fPoints}
+                xLabel="r / cm"
+                yLabel="F / N"
+                title="F-r 静电力曲线"
+                xDomain={[chartProps.rMin, chartProps.rMax]}
+                yDomain={[0, chartProps.fMax]}
+                cursorX={basicPhysics.distCm}
+                cursorLabel={(_x, y) => `F=${y.toExponential(2)}`}
+                color={PHYSICS_COLORS.electricForce}
+                strokeWidth={1.8}
+              />
+            </div>
+          </foreignObject>
         </g>
       )}
     </g>

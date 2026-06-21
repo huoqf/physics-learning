@@ -5,6 +5,8 @@ import { useShallow } from 'zustand/react/shallow'
 import { calculateOrbitalSpeed } from '@/physics'
 import { GRAVITATIONAL_CONSTANT, EARTH_MASS, EARTH_RADIUS } from '@/physics/constants'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { RelationChart } from '@/components/Chart'
+import type { RelationDataSeries } from '@/components/Chart'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_COLORS } from '@/theme/physics'
@@ -369,7 +371,7 @@ export default function SatelliteAnimation() {
   const orbitRadiusPx = r_meters * scale
 
   // 卫星 0 运动角度 (由物理周期计算)
-  const { v: v_圆, T: T_圆 } = calculateOrbitalSpeed(EARTH_MASS, r_meters, GRAVITATIONAL_CONSTANT)
+  const { T: T_圆 } = calculateOrbitalSpeed(EARTH_MASS, r_meters, GRAVITATIONAL_CONSTANT)
   const omega_圆 = (2 * Math.PI) / T_圆
   const timeScale圆 = LAYOUT.mode0.timeScale
   const angle_圆 = omega_圆 * time * timeScale圆
@@ -432,23 +434,9 @@ export default function SatelliteAnimation() {
   const cardX = canvasSize.width - cardWidth - LAYOUT.card.x
   const cardY = LAYOUT.card.y
 
+  // 仅保留拖拽热区点击→r 反算需要的两个量；图表轴/内边距由 RelationChart 接管
   const padLeft = LAYOUT.card.base.padLeft * cardScale
-  const padRight = LAYOUT.card.base.padRight * cardScale
-  const padTop = LAYOUT.card.base.padTop * cardScale
-  const padBottom = LAYOUT.card.base.padBottom * cardScale
-
-  const innerW = cardWidth - padLeft - padRight
-  const innerH = cardHeight - padTop - padBottom
-
-  // 将 r [LAYOUT.mode0.rMin, LAYOUT.mode0.rMax] 映射 to X 轴
-  const toCardX = useCallback((valR: number) => {
-    return padLeft + ((valR - LAYOUT.mode0.rMin) / (LAYOUT.mode0.rMax - LAYOUT.mode0.rMin)) * innerW
-  }, [innerW, padLeft])
-
-  // 将归一化物理量 [0, 1] 映射 to Y 轴
-  const toCardY = useCallback((valNorm: number) => {
-    return padTop + innerH - valNorm * innerH
-  }, [innerH, padTop])
+  const innerW = cardWidth - padLeft - LAYOUT.card.base.padRight * cardScale
 
   // 图表拖拽反向调距
   const handleDragChart = useCallback((clientX: number, svgRect: DOMRect) => {
@@ -490,39 +478,39 @@ export default function SatelliteAnimation() {
     handleDragChart(e.clientX, rect)
   }
 
-  // ── 产生画中画曲线路径 ──
+  // ── v-r / T-r 画中画曲线数据（归一化到 [0, 1]，共享 Y 轴）──
   const v_max_val = Math.sqrt(GRAVITATIONAL_CONSTANT * EARTH_MASS / (LAYOUT.mode0.rMin * 1e6)) // r_min 时的速度
   const T_max_val = 2 * Math.PI * Math.pow(LAYOUT.mode0.rMax * 1e6, 1.5) / Math.sqrt(GRAVITATIONAL_CONSTANT * EARTH_MASS) // r_max 时的周期
 
-  const generateVChartPath = () => {
+  const vrPoints = useMemo(() => {
     const steps = 30
-    const pts: string[] = []
+    const pts: { x: number; y: number }[] = []
     for (let i = 0; i <= steps; i++) {
-      const curR_M = (LAYOUT.mode0.rMin + (i / steps) * (LAYOUT.mode0.rMax - LAYOUT.mode0.rMin)) * 1e6
-      const curV = Math.sqrt(GRAVITATIONAL_CONSTANT * EARTH_MASS / curR_M)
-      const normV = curV / v_max_val
-      pts.push(`${toCardX(curR_M / 1e6)},${toCardY(normV)}`)
+      const curR_Mm = LAYOUT.mode0.rMin + (i / steps) * (LAYOUT.mode0.rMax - LAYOUT.mode0.rMin)
+      const curV = Math.sqrt(GRAVITATIONAL_CONSTANT * EARTH_MASS / (curR_Mm * 1e6))
+      pts.push({ x: curR_Mm, y: curV / v_max_val })
     }
-    return `M ${pts.join(' L ')}`
-  }
+    return pts
+  }, [v_max_val])
 
-  const generateTChartPath = () => {
+  const trPoints = useMemo(() => {
     const steps = 30
-    const pts: string[] = []
+    const pts: { x: number; y: number }[] = []
     for (let i = 0; i <= steps; i++) {
-      const curR_M = (LAYOUT.mode0.rMin + (i / steps) * (LAYOUT.mode0.rMax - LAYOUT.mode0.rMin)) * 1e6
-      const curT = 2 * Math.PI * Math.pow(curR_M, 1.5) / Math.sqrt(GRAVITATIONAL_CONSTANT * EARTH_MASS)
-      const normT = curT / T_max_val
-      pts.push(`${toCardX(curR_M / 1e6)},${toCardY(normT)}`)
+      const curR_Mm = LAYOUT.mode0.rMin + (i / steps) * (LAYOUT.mode0.rMax - LAYOUT.mode0.rMin)
+      const curT = 2 * Math.PI * Math.pow(curR_Mm * 1e6, 1.5) / Math.sqrt(GRAVITATIONAL_CONSTANT * EARTH_MASS)
+      pts.push({ x: curR_Mm, y: curT / T_max_val })
     }
-    return `M ${pts.join(' L ')}`
-  }
+    return pts
+  }, [T_max_val])
 
-  const curVNorm = v_圆 / v_max_val
-  const curTNorm = T_圆 / T_max_val
-  const dotPx = toCardX(r)
-  const dotPyV = toCardY(curVNorm)
-  const dotPyT = toCardY(curTNorm)
+  // v-r 图主系列 + T-r 附加系列
+  const trSeries: RelationDataSeries[] = useMemo(() => [{
+    points: trPoints,
+    label: '周期 T(r)',
+    color: CHART_COLORS.compareD,
+    strokeWidth: 1.4,
+  }], [trPoints])
 
   // ── 手绘太阳翼飞船卫星组件 ──
   const renderSatelliteSvg = (angleRad: number, drawScale: number = 1.0) => {
@@ -890,10 +878,12 @@ export default function SatelliteAnimation() {
           </g>
         )}
 
-        {/* 5. 画中画：线速度/周期-半径关系曲线 (对齐圆周运动精密毛玻璃与刻度，仅模式0显示) */}
+        {/* 5. 画中画：线速度/周期-半径关系曲线（仅模式0显示） */}
+        {/*    迁移到 RelationChart：通过 foreignObject 嵌入；                 */}
+        {/*    外层 <g> 保留毛玻璃背景容器 + 拖拽热区（保留原始交互）          */}
         {showChart === 1 && mode === 0 && (
           <g transform={`translate(${cardX}, ${cardY})`}>
-            {/* 毛玻璃卡片背景 */}
+            {/* 毛玻璃卡片背景（保留原有装饰风格） */}
             <rect
               width={cardWidth}
               height={cardHeight}
@@ -904,81 +894,42 @@ export default function SatelliteAnimation() {
               filter="url(#card-shadow)"
             />
 
-            {/* 标题 */}
-            <text
-              x={cardWidth / 2}
-              y={16}
-              fontSize={font(8)}
-              fill={CHART_COLORS.titleText}
-              textAnchor="middle"
-              fontWeight="bold"
-              fontFamily="PingFang SC, sans-serif"
+            {/* RelationChart 主体（图表完整覆盖卡片内部）。
+                pointerEvents=none 让点击穿透到下方的拖拽热区。 */}
+            <foreignObject
+              x={4} y={4}
+              width={cardWidth - 8} height={cardHeight - 8}
+              style={{ pointerEvents: 'none' }}
             >
-              轨道物理量-半径关系曲线 (v-r / T-r)
-            </text>
+              <div style={{ width: '100%', height: '100%' }}>
+                <RelationChart
+                  points={vrPoints}
+                  additionalSeries={trSeries}
+                  xLabel="半径 r"
+                  yLabel="v / T (归一化)"
+                  title="轨道物理量-半径关系曲线 (v-r / T-r)"
+                  xDomain={[LAYOUT.mode0.rMin, LAYOUT.mode0.rMax]}
+                  yDomain={[0, 1]}
+                  cursorX={r}
+                  cursorLabel={(_x, y) => y.toFixed(2)}
+                  color={PHYSICS_COLORS.velocity}
+                  strokeWidth={1.4}
+                  series="primary"
+                />
+              </div>
+            </foreignObject>
 
-            {/* 坐标轴 (CHART_COLORS.axisLine) */}
-            {/* X 轴 */}
-            <line x1={padLeft - 5} y1={padTop + innerH} x2={padLeft + innerW + 10} y2={padTop + innerH} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} />
-            {/* Y 轴 */}
-            <line x1={padLeft} y1={padTop - 8} x2={padLeft} y2={padTop + innerH + 5} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} />
-
-            {/* 坐标轴箭头 */}
-            <polygon points={`${padLeft + innerW + 10} ${padTop + innerH - 2.5}, ${padLeft + innerW + 14} ${padTop + innerH}, ${padLeft + innerW + 10} ${padTop + innerH + 2.5}`} fill={CHART_COLORS.axisArrow} />
-            <polygon points={`${padLeft - 2.5} ${padTop - 8}, ${padLeft} ${padTop - 12}, ${padLeft + 2.5} ${padTop - 8}`} fill={CHART_COLORS.axisArrow} />
-
-            {/* 轴标签 */}
-            <text x={padLeft + innerW + 10} y={padTop + innerH + 11} fontSize={font(7)} fill={CHART_COLORS.labelText} textAnchor="end">半径 r</text>
-            <text x={padLeft - 6} y={padTop - 8} fontSize={font(7)} fill={CHART_COLORS.labelText} textAnchor="middle">v / T</text>
-
-            {/* X 轴起止刻度线与标注 */}
-            <line x1={toCardX(LAYOUT.mode0.rMin)} y1={padTop + innerH} x2={toCardX(LAYOUT.mode0.rMin)} y2={padTop + innerH + 3} stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
-            <text x={toCardX(LAYOUT.mode0.rMin)} y={padTop + innerH + 10} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="middle">{LAYOUT.mode0.rMin.toFixed(2)}</text>
-
-            <line x1={toCardX(LAYOUT.mode0.rMax)} y1={padTop + innerH} x2={toCardX(LAYOUT.mode0.rMax)} y2={padTop + innerH + 3} stroke={CHART_COLORS.tickMark} strokeWidth={0.8} />
-            <text x={toCardX(LAYOUT.mode0.rMax)} y={padTop + innerH + 10} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="middle">{LAYOUT.mode0.rMax.toFixed(1)}</text>
-
-            {/* v 曲线 (速度随 r 递减，用经典蓝表示) */}
-            <path
-              d={generateVChartPath()}
-              fill="none"
-              stroke={PHYSICS_COLORS.velocity}
-              strokeWidth={1.2}
-              opacity={0.85}
-            />
-
-            {/* T 曲线 (周期随 r 递增，用向心力品红或对照线表示) */}
-            <path
-              d={generateTChartPath()}
-              fill="none"
-              stroke={CHART_COLORS.compareD}
-              strokeWidth={1.2}
-              opacity={0.85}
-            />
-
-            {/* 曲线文本标签 */}
-            <text x={toCardX(8.5)} y={toCardY(0.85)} fontSize={font(7)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">速度 v(r)</text>
-            <text x={toCardX(15.0)} y={toCardY(0.70)} fontSize={font(7)} fill={CHART_COLORS.compareD} fontWeight="bold">周期 T(r)</text>
-
-            {/* 拖动图表横轴热区 */}
+            {/* 拖动图表横轴热区 —— 覆盖整张卡片接收拖拽（事件由 onMouseDown
+                触发 handleChartMouseDown，后续 mousemove 走外层 SVG）。 */}
             <rect
-              x={padLeft}
-              y={padTop}
-              width={innerW}
-              height={innerH}
+              x={0}
+              y={0}
+              width={cardWidth}
+              height={cardHeight}
               fill="transparent"
               className="cursor-ew-resize"
               onMouseDown={handleChartMouseDown}
             />
-
-            {/* 当前状态投影线 */}
-            <line x1={dotPx} y1={dotPyV} x2={dotPx} y2={padTop + innerH} stroke={CHART_COLORS.reference} strokeWidth={0.6} strokeDasharray="2,2" />
-            <line x1={padLeft} y1={dotPyV} x2={dotPx} y2={dotPyV} stroke={CHART_COLORS.reference} strokeWidth={0.6} strokeDasharray="2,2" />
-            <line x1={padLeft} y1={dotPyT} x2={dotPx} y2={dotPyT} stroke={CHART_COLORS.reference} strokeWidth={0.6} strokeDasharray="2,2" />
-
-            {/* 状态游标指示点 */}
-            <circle cx={dotPx} cy={dotPyV} r={2.5} fill={PHYSICS_COLORS.velocity} />
-            <circle cx={dotPx} cy={dotPyT} r={2.5} fill={CHART_COLORS.compareD} />
           </g>
         )}
 
