@@ -1,5 +1,6 @@
 import { lazy } from 'react'
 import { defineAnimations } from '../defineAnimations'
+import { FORCE_MOTION_MAX_TIME } from '@/features/mechanics/force-motion/forceMotionLayout'
 
 export const mechanicsForceMotionAnimations = defineAnimations({
   'anim-force-motion-topic': {
@@ -16,6 +17,12 @@ export const mechanicsForceMotionAnimations = defineAnimations({
       env3: 0,
     },
     paramMeta: [],
+    // 长时观察：收尾速度（mode 9）需要 5τ 才能看到位移线性段；
+    // 恒力加速（mode 1/2）30s 处位移会贴顶变水平线造成「卡住」错觉。
+    // 60s（FORCE_MOTION_MAX_TIME）足够覆盖典型物理观察过程，且不会让时间轴
+    // 尾部空白过多。同常量也被 ForceMotionTopic 用于生成图表 domainPoints，
+    // 单一来源避免播放上限与图表定标范围不一致。
+    maxTime: FORCE_MOTION_MAX_TIME,
     SidebarExtra: lazy(() => import('@/features/mechanics/force-motion/ForceMotionSidebar')),
   },
 })

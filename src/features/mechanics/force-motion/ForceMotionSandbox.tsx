@@ -15,7 +15,15 @@ import {
 
 interface ForceMotionSandboxProps {
   state: ForceMotionState
+  /** 实时轨迹（按 currentTime 截断），用于绘制历史轨迹线 */
   trajectory: ForceMotionState[]
+  /**
+   * 完整观察窗口轨迹（仅随 params 变化），用于 scale 定标，
+   * 不传则回退到 `trajectory`。
+   * 与 ForceMotionTripleChart 的 domainPoints 共用 observationTime，
+   * 避免长时模式让物体超出动画区域。
+   */
+  domainTrajectory?: ForceMotionState[]
 }
 
 function vectorEnd(length: number, dx: number, dy: number) {
@@ -28,7 +36,7 @@ function pathFrom(points: Array<{ cx: number; cy: number }>): string {
   return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.cx.toFixed(1)} ${point.cy.toFixed(1)}`).join(' ')
 }
 
-export default function ForceMotionSandbox({ state, trajectory }: ForceMotionSandboxProps) {
+export default function ForceMotionSandbox({ state, trajectory, domainTrajectory }: ForceMotionSandboxProps) {
   const [containerRef, size] = useCanvasSize({ width: 640, height: 320 })
   const { width, height } = size
 
@@ -38,9 +46,11 @@ export default function ForceMotionSandbox({ state, trajectory }: ForceMotionSan
     const originX = width * FORCE_MOTION_SANDBOX_ORIGIN_X_RATIO
     const originY = height * FORCE_MOTION_SANDBOX_ORIGIN_Y_RATIO
 
-    // 计算轨迹范围用于自动缩放
-    const xValues = trajectory.map((point) => point.x)
-    const yValues = trajectory.map((point) => -point.y)
+    // 定标用完整窗口轨迹（按 observationTime 提前算好的整段），回退到实时 trajectory
+    const rangeSource = domainTrajectory ?? trajectory
+    const xValues = rangeSource.map((point) => point.x)
+    const yValues = rangeSource.map((point) => -point.y)
+    // 当前状态也纳入（防止 currentTime 超出 observationTime 时物体瞬间越界）
     xValues.push(state.x)
     yValues.push(-state.y)
 
@@ -50,7 +60,8 @@ export default function ForceMotionSandbox({ state, trajectory }: ForceMotionSan
     // 自动缩放，留边距
     const scaleX = (width * 0.8) / maxX
     const scaleY = (height * 0.7) / maxY
-    const scale = Math.max(0.1, Math.min(scaleX, scaleY))
+    // 下界仅保留极小防御值，避免除零；不强制把大跨度运动留在画面内
+    const scale = Math.max(0.001, Math.min(scaleX, scaleY))
 
     const body = physicsToCanvasWithOrigin(state.x, -state.y, originX, originY, scale)
     const track = trajectory.map((point) =>
@@ -88,7 +99,7 @@ export default function ForceMotionSandbox({ state, trajectory }: ForceMotionSan
       speedVector,
       accelVector,
     }
-  }, [height, state, trajectory, width])
+  }, [height, state, trajectory, domainTrajectory, width])
 
   const sceneConfig = useMemo((): SceneConfig => ({
     vectorBounds: { x: 0, y: 0, width, height },

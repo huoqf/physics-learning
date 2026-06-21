@@ -57,6 +57,8 @@
 | **阶段背景着色** | X 轴区间矩形分段填充（如 SatelliteAnimation Mode 1 发射/转弯/在轨三阶段）| 中（已被 SatelliteAnimation Mode 1 v-t 阻塞）|
 | 交互悬浮 | Hover 显示数值卡片 | 低 |
 | 双 Y 轴 | 左右各一个 Y 轴 | 低 |
+| ~~SingleChart Y 范围加 padding~~ | ~~`ForceMotionTripleChart.SingleChart` 现 `Math.max(1, ...values)` 无顶部喘气空间，曲线峰值贴图顶~~ | ~~低~~ ✅ commit `3aba5f6` |
+| ~~terminal 渐近线避免与曲线重合~~ | ~~在 zeroBased=true 的 v-t 图上 `terminalValue === maxAbs`，渐近虚线与曲线峰会重叠看不清~~ | ~~低~~ ✅ 同上（顺带解决） |
 | MiniChart 评估 `domainPoints` 需求 | 已有 7 个消费方，需逐个看是否按 `time` 截断 points 再决定是否补齐 | 中 |
 | MiniChart 是否并入 Chart/ 命名空间 | 现位于 `components/UI/`，语义更像图表预设 | 低 |
 
@@ -145,7 +147,18 @@
 
 ---
 
-## 七、Viewport 架构
+## 七、动画引擎层（轻量后续项）
+
+**P3** — 关联 commit `e9e010b`（maxTime 由 AnimationConfig 可覆盖）
+
+- `useAnimationLifecycle` 全局默认 `maxTime = 30` 仍硬编码在 hook 里，
+  长期可考虑：① 提到 `theme/motion` 等配置层；② 对未声明 `maxTime`
+  的动画按类别（碰撞/抛体短时型 vs 收尾/卫星长时型）给智能默认值
+- 当前策略「显式 opt-in 更长 maxTime」对维护友好，无紧迫性
+
+---
+
+## 八、Viewport 架构
 
 **P1** — 动画充满显示区域，避免 overlay 后主体缩小
 

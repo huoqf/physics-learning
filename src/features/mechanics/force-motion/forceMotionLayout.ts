@@ -1,4 +1,5 @@
 import { GRAVITY } from '@/physics/constants'
+import { getForceMotionMode } from '@/physics/forceMotion'
 import type { ForceMotionModeOption, ForceMotionParamConfig } from './ForceMotionTypes'
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -91,6 +92,91 @@ export const FORCE_MOTION_SANDBOX_ORIGIN_X_RATIO = 0.5
 export const FORCE_MOTION_SANDBOX_ORIGIN_Y_RATIO = 0.5
 export const FORCE_MOTION_CHART_PADDING_RATIO = 0.12
 export const FORCE_MOTION_OBJECT_SIZE_RATIO = 0.075
+
+/**
+ * 力与运动专题的播放上限（秒）。
+ *
+ * 仅用于 `mechanics-force-motion` registry 的 `maxTime`（驱动
+ * useAnimationLifecycle 的播放上限，避免 30s 卡死）。
+ *
+ * 注意：本常量不是图表 / 动画的「观察窗口」——后者按模式各异，
+ * 通过 `getForceMotionObservationTime(params)` 推断。
+ * 60s 是「最长可能观察时间」的上限兜底，覆盖收尾速度等长时模式。
+ */
+export const FORCE_MOTION_MAX_TIME = 60
+
+/**
+ * 按模式推断「典型观察时长」（秒），用于图表 `domainPoints` 与
+ * 动画沙盒 scale 的定标窗口。
+ *
+ * 设计原则：
+ * - 周期型（圆周 / 简谐）：取 5 个周期，看清波形与振幅
+ * - 收尾型：取 5τ 或 maxTime 兜底
+ * - 长时单调（匀加速 / 匀减速 / 类抛体 / 类平抛 / 线性变力）：取播放上限 60s
+ * - 平衡：5s 足够（物体静止，无需长窗）
+ * - 抛体类（constant-angle-curve）：按落地估算（粗略 2·v0·sinθ/g）
+ *
+ * @param params 当前动画参数（含 mode 与各物理量）
+ * @returns 观察时长（秒），范围 [1, FORCE_MOTION_MAX_TIME]
+ */
+export function getForceMotionObservationTime(params: Record<string, number>): number {
+  const mode = getForceMotionMode(params.mode)
+  const v0 = params.v0 ?? 5
+  const m = Math.max(0.1, params.m ?? 2)
+  const env1 = params.env1 ?? 0
+  const env2 = params.env2 ?? 0
+  const clamp = (v: number) => Math.max(1, Math.min(FORCE_MOTION_MAX_TIME, v))
+
+  switch (mode) {
+    case 'balance':
+      return 5
+
+    case 'simple-harmonic': {
+      const k = Math.max(0.1, env1 || 60)
+      const period = 2 * Math.PI * Math.sqrt(m / k)
+      return clamp(5 * period)
+    }
+
+    case 'uniform-circular': {
+      const R = Math.max(0.1, env1 || 5)
+      const period = (2 * Math.PI * R) / Math.max(0.1, v0)
+      return clamp(5 * period)
+    }
+
+    case 'variable-circular': {
+      // 变速圆周非严格周期，按近似周期估算
+      const R = Math.max(0.1, env1 || 5)
+      const periodApprox = 2 * Math.PI * Math.sqrt(R / GRAVITY)
+      return clamp(5 * periodApprox)
+    }
+
+    case 'constant-angle-curve': {
+      // 类抛体：从 v0·sinθ 上升到落地，估算 2·v0·sinθ/g（θ=0 时取兜底 6s）
+      const g = Math.max(0.1, env1 || GRAVITY)
+      const theta = params.theta ?? 0
+      const vy0 = v0 * Math.sin((theta * Math.PI) / 180)
+      const flight = vy0 > 0.1 ? (2 * vy0) / g : 6
+      return clamp(flight + 2) // 留 2s 缓冲
+    }
+
+    case 'terminal-variable-force': {
+      // 收尾运动：5τ。
+      // power 模式（P/v 阻力）：v_m = P/kf，τ ≈ m·v_m/P = m/kf
+      // drag  模式（kv 阻力）：τ = m/kf
+      // 两种 subMode 的 τ 都退化为 m/kf
+      const kf = Math.max(0.1, env2 || 4)
+      return clamp(5 * (m / kf))
+    }
+
+    case 'uniform-accel-line':
+    case 'uniform-decel-line':
+    case 'projectile-like':
+    case 'linear-variable-force':
+    default:
+      // 长时单调演化：用兜底播放上限
+      return FORCE_MOTION_MAX_TIME
+  }
+}
 
 // 边界检测阈值
 export const FORCE_MOTION_BOUNDARY_X = 50

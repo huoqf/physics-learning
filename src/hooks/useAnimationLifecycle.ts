@@ -97,7 +97,8 @@ function usePlaybackLoop(
   const speed = useAnimationStore((s) => s.speed)
   const direction = useAnimationStore((s) => s.direction)
   const [canvasDimmed, setCanvasDimmed] = useState(false)
-  const maxTime = 30
+  // 每个动画可在 config 中通过 maxTime 覆盖播放上限；不传则走全局默认 30s
+  const maxTime = config?.maxTime ?? 30
 
   // 暂停时延迟 dimmed
   useEffect(() => {

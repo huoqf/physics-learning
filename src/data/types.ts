@@ -87,6 +87,16 @@ export interface AnimationConfig {
     t: number,
     dt: number,
   ) => Partial<import('@/stores').PhysicsState> | null
+  /**
+   * 动画最大可播放时间（秒）。不传则走全局默认 30s。
+   *
+   * 适用场景：长时观察类（收尾速度、长时演化、循环周期长等）。
+   * 例如「力与运动专题」的恒力加速 / 收尾速度模式，30s 不够覆盖
+   * 完整观察过程，会让位移在 30s 处变成水平线，造成「卡住」错觉。
+   *
+   * 默认值在 useAnimationLifecycle 内：`config?.maxTime ?? 30`。
+   */
+  maxTime?: number
 }
 
 export interface Problem {
