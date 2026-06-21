@@ -1,6 +1,6 @@
 # 延后处理待办事项
 
-> 仅保留未完成项。最后更新：2026-06-21
+> 仅保留未完成项。最后更新：2026-06-21（图表组件化阶段性整理）
 
 ---
 
@@ -15,56 +15,75 @@
 | ChartCursor | ✅ |
 | ChartArea | ✅ |
 | ChartTangent | ✅ |
-| VelocityTimeChart | ✅ |
-| DisplacementTimeChart | ✅ |
-| AccelerationTimeChart | ✅ |
+| VelocityTimeChart | ✅（含 `domainPoints` 定标解耦 + 多曲线 `additionalSeries`） |
+| DisplacementTimeChart | ✅（含 `domainPoints` 定标解耦） |
+| AccelerationTimeChart | ✅（含 `domainPoints` 定标解耦） |
+
+> **公共约定（`points` vs `domainPoints`）**
+> 三个 `*-TimeChart` 预设统一遵循：
+> - `points`：用于**绘制**，可按 `currentTime` 截断（图表内部也会再截一次）。
+> - `domainPoints?`：用于**坐标轴定标**（自动 vRange/xRange/aRange），未传时回退到 `points`。
+> - **推荐传完整未截断的整段轨迹给 `domainPoints`**，否则 Y 轴会随时间扩张，重现
+>   "v-t 曲线初始时刻贴着 Y 轴、被时间拉斜" 的视觉错觉。
+> - 已显式传 `vRange/xRange/aRange` 时 `domainPoints` 不参与计算。
+>
+> 同源问题历史：见 commit `bbd1108`（V-T 治本）、`35abec4`（DT/AT 同步补齐）。
 
 ### 待创建预设
 
 | 组件 | 用途 | 优先级 |
 |------|------|:------:|
-| PVTChart | P-V / V-T / P-T 热力学图 | 中 |
-| RelationChart | 通用 Y=f(X) 关系图 | 中 |
+| PVTChart | P-V / V-T / P-T 热力学图 | 中（解锁 Clapeyron/GasLaws/FirstLawCenter 3 个页面） |
+| RelationChart | 通用 Y=f(X) 关系图 | 中（解锁 CoulombLaw/ElectricField/Satellite(T-r)/ThinLens/IntermolecularForce 5 个页面） |
 | ChartAsymptote 插件 | 渐近线（如收尾速度） | 低 |
+| ChartSecant 插件 | 割线 + 斜率三角形（与 ChartTangent 平行） | 中（VelocityVTChart/VelocityXTChart/VerticalThrow 三个高难度页面都需要） |
 
 ### 待补充功能
 
 | 功能 | 说明 | 优先级 |
 |------|------|:------:|
 | ~~多曲线对比~~ | ~~单图表内多条曲线（如真空 vs 空气阻力）~~ | ~~中~~ ✅ |
+| ~~绘制数据 / 定标数据解耦~~ | ~~VelocityTime / DisplacementTime / AccelerationTime 三个预设统一加 `domainPoints`~~ | ~~高~~ ✅ |
 | 渐近线 | 收尾速度、极限值虚线标注 | 中 |
 | 面积渐变填充 | linearGradient 生成面积着色 | 中 |
 | 交互悬浮 | Hover 显示数值卡片 | 低 |
 | 双 Y 轴 | 左右各一个 Y 轴 | 低 |
+| MiniChart 评估 `domainPoints` 需求 | 已有 7 个消费方，需逐个看是否按 `time` 截断 points 再决定是否补齐 | 中 |
+| MiniChart 是否并入 Chart/ 命名空间 | 现位于 `components/UI/`，语义更像图表预设 | 低 |
 
 ### 页面迁移状态
 
-**已迁移：** ChargeInEField(vy-t)、CuttingEMF(v-t/a-t)、ForceMotionTripleChart(F-t/v-t/x-t 游标)、MiniChart(7 个消费方)、MaxwellBoltzmannChart(f(v)-v)、ACGeneration(e-t)
+**已迁移：** ChargeInEField(vy-t)、CuttingEMF(v-t/a-t)、ForceMotionTripleChart(F-t/v-t/x-t 游标)、MiniChart(7 个消费方)、MaxwellBoltzmannChart(f(v)-v)、ACGeneration(e-t)、~~FreeFallDripAnimation(v-t)~~ ✅、~~FreeFallAnimation(v-t 双曲线)~~ ✅
 
 **未迁移：**
 
-| 页面 | 图表类型 | 难度 |
-|------|---------|:----:|
-| ~~FreeFallDripAnimation~~ | ~~v-t 单曲线+面积~~ | ~~低~~ ✅ |
-| CoulombLaw | F-r | 低 |
-| ElectricFieldBasicScene | E-r + F-r | 低 |
-| ForceMotionTripleChart | 面积部分 | 低 |
-| ~~FreeFallAnimation~~ | ~~v-t 双曲线+渐变面积~~ | ~~中~~ ✅ |
-| SatelliteAnimation | v-t + T-r | 中 |
-| ThinLensAnimation | 1/v-1/u | 中 |
-| ACValues | I-t + Q-t | 中 |
-| ClapeyronAnimation | P-V 等温线 | 中 |
-| GasLawsAnimation | P-V / V-T / P-T | 中 |
-| IntermolecularForceChart | F-r / Ep-r | 中 |
-| VelocityVTChart | v-t 滑动窗口+面积+割线+切线 | 高 |
-| VelocityXTChart | x-t 切线+割线三角形 | 高 |
-| VerticalThrowAnimation | v-t + y-t 双图+切线+交互 | 高 |
-| KineticEnergyAnimation | 4 面板 Ek-x/W/Ep/F-x/F-x/a-t | 高 |
-| PowerAnimation | 4 面板 v-t/P-t/F-v/a-t | 高 |
-| FaradayChartPanel | Φ-t + E-t 双图 | 高 |
-| FirstLawCenterExtra | P-V 循环 | 高 |
+| 页面 | 图表类型 | 需要的预设 | 难度 |
+|------|---------|------|:----:|
+| CoulombLaw | F-r | RelationChart | 低 |
+| ElectricFieldBasicScene | E-r + F-r | RelationChart | 低 |
+| ForceMotionTripleChart | 面积部分（游标已迁） | 现有 `ChartArea` 可直接用 | 低 |
+| SatelliteAnimation | v-t + T-r | VelocityTimeChart + RelationChart | 中 |
+| ThinLensAnimation | 1/v-1/u | RelationChart | 中 |
+| ACValues | I-t + Q-t | VelocityTimeChart 变体 | 中 |
+| ClapeyronAnimation | P-V 等温线 | **PVTChart** | 中 |
+| GasLawsAnimation | P-V / V-T / P-T | **PVTChart** | 中 |
+| IntermolecularForceChart | F-r / Ep-r | RelationChart | 中 |
+| VelocityVTChart | v-t 滑动窗口+面积+割线+切线 | VelocityTimeChart + ChartTangent + **ChartSecant** | 高 |
+| VelocityXTChart | x-t 切线+割线三角形 | DisplacementTimeChart + ChartTangent + **ChartSecant** | 高 |
+| VerticalThrowAnimation | v-t + y-t 双图+切线+交互 | VelocityTimeChart + DisplacementTimeChart + ChartTangent | 高 |
+| KineticEnergyAnimation | 4 面板 Ek-x/W/Ep/F-x/F-x/a-t | RelationChart + AccelerationTimeChart | 高 |
+| PowerAnimation | 4 面板 v-t/P-t/F-v/a-t | 多个预设组合 | 高 |
+| FaradayChartPanel | Φ-t + E-t 双图 | 通用 t-* 预设 | 高 |
+| FirstLawCenterExtra | P-V 循环 | **PVTChart** | 高 |
 
-**迁移顺序：** ~~①FreeFallDripAnimation~~ ✅ → ②CoulombLaw / ElectricFieldBasicScene → ③FreeFallAnimation → ④其余按需
+**迁移顺序：**
+1. ~~FreeFallDripAnimation~~ ✅
+2. ~~FreeFallAnimation~~ ✅
+3. **创建 RelationChart 预设** → 批量解锁 CoulombLaw / ElectricFieldBasicScene / IntermolecularForceChart / ThinLensAnimation / SatelliteAnimation(T-r)
+4. ForceMotionTripleChart 面积部分（小修补，可与 ③ 并行）
+5. **创建 PVTChart 预设** → 批量解锁 ClapeyronAnimation / GasLawsAnimation / FirstLawCenterExtra
+6. **创建 ChartSecant 插件** → 启动高难度三件套（VelocityVT / VelocityXT / VerticalThrow）
+7. 其余按需
 
 ---
 
@@ -74,9 +93,9 @@
 
 | 文件 | 行数 | 计划 |
 |------|------|------|
-| `FreeFallAnimation.tsx` | 709 | 按 JSX 块拆子组件 |
+| `FreeFallAnimation.tsx` | 644（V-T 迁移后已减约 65 行） | 按 JSX 块拆子组件 |
 | `UniformAccelerationCenterExtra.tsx` | 669 | 已有 5 个子组件，直接搬迁 |
-| `VerticalThrowAnimation.tsx` | 623 | 先拆图表区 |
+| `VerticalThrowAnimation.tsx` | 697 | 先拆图表区（依赖 ChartSecant 预设） |
 | `AccelerationCenterExtra.tsx` | 646 | 需修复规范违反 |
 
 ---

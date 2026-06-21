@@ -256,6 +256,7 @@ export default function FreeFallAnimation() {
     return Math.round(effectiveXMax * 10) / 10
   }, [groundTimeA])
 
+  // 用于绘制的点：按 time 截断（图表本身也会再按 currentTime 截断一次，这里保留以减少传输量）
   const vtPointsA = useMemo(() => {
     return pointsA.filter((p) => p.t <= Math.min(time, vtXMax) + 1e-9).map((p) => ({ t: p.t, v: p.v }))
   }, [pointsA, time, vtXMax])
@@ -264,14 +265,24 @@ export default function FreeFallAnimation() {
     return pointsB.filter((p) => p.t <= Math.min(time, vtXMax) + 1e-9).map((p) => ({ t: p.t, v: p.v }))
   }, [pointsB, time, vtXMax])
 
+  // 用于坐标轴定标的“完整”点：仅按 vtXMax 截尾，不随 time 变化，避免 Y 轴动态扩张
+  const vtDomainPointsA = useMemo(() => {
+    return pointsA.filter((p) => p.t <= vtXMax + 1e-9).map((p) => ({ t: p.t, v: p.v }))
+  }, [pointsA, vtXMax])
+
+  const vtDomainPointsB = useMemo(() => {
+    return pointsB.filter((p) => p.t <= vtXMax + 1e-9).map((p) => ({ t: p.t, v: p.v }))
+  }, [pointsB, vtXMax])
+
   const vtAdditionalSeries: ChartDataSeries[] = useMemo(() => [{
     points: vtPointsB,
+    domainPoints: vtDomainPointsB,
     label: matB.label,
     series: 'accent',
     showArea: true,
     areaVariant: 'alt',
     areaIntensity: 'subtle',
-  }], [vtPointsB, matB.label])
+  }], [vtPointsB, vtDomainPointsB, matB.label])
 
   // ── 渲染 ─────────────────────────────────────────────────────────────────
   return (
@@ -597,6 +608,7 @@ export default function FreeFallAnimation() {
           <div style={{ width: '100%', height: '100%' }}>
             <VelocityTimeChart
               points={vtPointsA}
+              domainPoints={vtDomainPointsA}
               currentTime={Math.min(time, vtXMax)}
               tMax={vtXMax}
               title="速度－时间图像 (v-t 图)"

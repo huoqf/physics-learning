@@ -203,9 +203,15 @@ export default function FreeFallDripAnimation() {
     return Math.round(effectiveXMax * 10) / 10
   }, [groundTime])
 
+  // 用于绘制的点：按 time 截断
   const vtPoints = useMemo(() => {
     return points.filter((p) => p.t <= Math.min(time, vtXMax) + 1e-9)
   }, [points, time, vtXMax])
+
+  // 用于坐标轴定标的“完整”点：仅按 vtXMax 截尾，不随 time 变化，避免 Y 轴动态扩张
+  const vtDomainPoints = useMemo(() => {
+    return points.filter((p) => p.t <= vtXMax + 1e-9)
+  }, [points, vtXMax])
 
   // ── 渲染 ──────────────────────────────────────────────────────────────────
   return (
@@ -513,6 +519,7 @@ export default function FreeFallDripAnimation() {
           <div style={{ width: '100%', height: '100%' }}>
             <VelocityTimeChart
               points={vtPoints}
+              domainPoints={vtDomainPoints}
               currentTime={Math.min(time, vtXMax)}
               tMax={vtXMax}
               title="速度－时间图像 (v-t 图)"

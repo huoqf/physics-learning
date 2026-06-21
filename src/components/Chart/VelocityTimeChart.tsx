@@ -8,8 +8,15 @@ import type { ChartSeriesVariant, ChartAreaVariant, ChartAreaIntensity } from '@
 
 /** 单条数据系列 */
 export interface ChartDataSeries {
-  /** 数据点序列（物理坐标） */
+  /** 数据点序列（物理坐标）—— 用于绘制，可由调用方按 currentTime 截断或交给图表内部截断 */
   points: { t: number; v: number }[]
+  /**
+   * 用于坐标轴定标的数据点序列（物理坐标）。
+   * 与 `points` 解耦：`points` 决定“画什么”（随时间增长的轨迹），
+   * `domainPoints` 决定“坐标系多大”（应为完整、稳定的整段轨迹）。
+   * 不传时回退到 `points`（保持向后兼容）。
+   */
+  domainPoints?: { t: number; v: number }[]
   /** 系列标签（图例显示） */
   label?: string
   /** 曲线颜色变体 */
@@ -23,13 +30,20 @@ export interface ChartDataSeries {
 }
 
 interface VelocityTimeChartProps {
-  /** 主数据点序列（物理坐标） */
+  /** 主数据点序列（物理坐标）—— 用于绘制 */
   points: { t: number; v: number }[]
+  /**
+   * 用于坐标轴定标的主数据点序列（物理坐标）。
+   * 与 `points` 解耦：`points` 决定“画什么”，`domainPoints` 决定“坐标系多大”。
+   * 不传时回退到 `points`（保持向后兼容）。
+   * 推荐做法：传入完整未截断的整段轨迹，避免 Y 轴随时间扩张产生“一根贴着 Y 轴的竖线被拉斜”的视觉错觉。
+   */
+  domainPoints?: { t: number; v: number }[]
   /** 当前时间（物理坐标） */
   currentTime: number
   /** 时间范围 */
   tMax: number
-  /** 速度范围（不传则自动计算） */
+  /** 速度范围（不传则基于 domainPoints / additionalSeries.domainPoints 自动计算） */
   vRange?: [number, number]
   /** 标题 */
   title?: string
@@ -98,7 +112,7 @@ function VTContent({
   showCursor,
   series,
   additionalSeries,
-}: Omit<VelocityTimeChartProps, 'tMax' | 'vRange' | 'title' | 'className'>) {
+}: Omit<VelocityTimeChartProps, 'tMax' | 'vRange' | 'title' | 'className' | 'domainPoints'>) {
   const ctx = useChartContext()
 
   const mainColor = SERIES_MAP[series ?? 'primary']
@@ -199,6 +213,7 @@ function VTContent({
 
 export function VelocityTimeChart({
   points,
+  domainPoints,
   currentTime,
   tMax,
   vRange,
@@ -215,15 +230,19 @@ export function VelocityTimeChart({
 }: VelocityTimeChartProps) {
   const computedVRange = useMemo((): [number, number] => {
     if (vRange) return vRange
-    // 收集所有系列的数据点
-    const allVals: number[] = points.map((p) => p.v)
-    additionalSeries?.forEach((s) => s.points.forEach((p) => allVals.push(p.v)))
+    // 收集所有系列的“定标数据”——优先用 domainPoints，回退到 points
+    const mainSource = domainPoints ?? points
+    const allVals: number[] = mainSource.map((p) => p.v)
+    additionalSeries?.forEach((s) => {
+      const src = s.domainPoints ?? s.points
+      src.forEach((p) => allVals.push(p.v))
+    })
     if (allVals.length === 0) return [-5, 5]
-    let lo = Math.min(0, ...allVals)
-    let hi = Math.max(0, ...allVals)
+    const lo = Math.min(0, ...allVals)
+    const hi = Math.max(0, ...allVals)
     const pad = (hi - lo) * 0.15 || 1
     return [lo - pad, hi + pad]
-  }, [points, additionalSeries, vRange])
+  }, [points, domainPoints, additionalSeries, vRange])
 
   return (
     <BasePhysicsChart

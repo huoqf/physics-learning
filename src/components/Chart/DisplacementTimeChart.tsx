@@ -7,9 +7,19 @@ import { PHYSICS_COLORS } from '@/theme/physics'
 import type { ChartSeriesVariant, ChartAreaVariant, ChartAreaIntensity } from '@/theme/physics'
 
 interface DisplacementTimeChartProps {
+  /** 主数据点序列（物理坐标）—— 用于绘制 */
   points: { t: number; x: number }[]
+  /**
+   * 用于坐标轴定标的数据点序列（物理坐标）。
+   * 与 `points` 解耦：`points` 决定“画什么”，`domainPoints` 决定“坐标系多大”。
+   * 不传时回退到 `points`（保持向后兼容）。
+   * 推荐做法：传入完整未截断的整段轨迹，避免 Y 轴随时间扩张产生
+   * “一根贴着 Y 轴的竖线被拉斜”的视觉错觉（详见 VelocityTimeChart 同类修复）。
+   */
+  domainPoints?: { t: number; x: number }[]
   currentTime: number
   tMax: number
+  /** 位移范围（不传则基于 domainPoints / points 自动计算） */
   xRange?: [number, number]
   title?: string
   showArea?: boolean
@@ -30,10 +40,8 @@ function STContent({
   areaIntensity,
   showCursor,
   series,
-}: Omit<DisplacementTimeChartProps, 'tMax' | 'xRange' | 'title' | 'className'>) {
+}: Omit<DisplacementTimeChartProps, 'tMax' | 'xRange' | 'title' | 'className' | 'domainPoints'>) {
   const ctx = useChartContext()
-  if (!ctx) return null
-  const { toSvgX, toSvgY } = ctx
 
   const visiblePoints = useMemo(
     () => points.filter((p) => p.t <= currentTime + 1e-9),
@@ -41,16 +49,19 @@ function STContent({
   )
 
   const curvePath = useMemo(() => {
-    if (visiblePoints.length < 2) return ''
+    if (!ctx || visiblePoints.length < 2) return ''
+    const { toSvgX, toSvgY } = ctx
     return (
       'M ' +
       visiblePoints
         .map((p) => `${toSvgX(p.t).toFixed(2)},${toSvgY(p.x).toFixed(2)}`)
         .join(' L ')
     )
-  }, [visiblePoints, toSvgX, toSvgY])
+  }, [ctx, visiblePoints])
 
   const curveColor = PHYSICS_COLORS[series === 'secondary' ? 'angularVelocity' : 'displacement']
+
+  if (!ctx) return null
 
   return (
     <g>
@@ -88,6 +99,7 @@ function STContent({
 
 export function DisplacementTimeChart({
   points,
+  domainPoints,
   currentTime,
   tMax,
   xRange,
@@ -102,13 +114,15 @@ export function DisplacementTimeChart({
 }: DisplacementTimeChartProps) {
   const computedXRange = useMemo((): [number, number] => {
     if (xRange) return xRange
-    if (points.length === 0) return [-5, 5]
-    const vals = points.map((p) => p.x)
-    let lo = Math.min(0, ...vals)
-    let hi = Math.max(0, ...vals)
+    // 优先使用 domainPoints 定标，回退到 points
+    const rangeSource = domainPoints ?? points
+    if (rangeSource.length === 0) return [-5, 5]
+    const vals = rangeSource.map((p) => p.x)
+    const lo = Math.min(0, ...vals)
+    const hi = Math.max(0, ...vals)
     const pad = (hi - lo) * 0.15 || 1
     return [lo - pad, hi + pad]
-  }, [points, xRange])
+  }, [points, domainPoints, xRange])
 
   return (
     <BasePhysicsChart

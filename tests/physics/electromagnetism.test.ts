@@ -159,28 +159,41 @@ describe('electromagnetism', () => {
   })
 
   it('远距离输电：高压输电低损耗', () => {
-    // P=100kW, U=10kV, R=10Ω
-    const res = calculatePowerTransmission(100000, 10000, 10, 100, 1000, 1000, 100)
-    expect(res.I_line).toBeCloseTo(10, 10) // I = P/U = 10A
-    expect(res.U_loss).toBeCloseTo(100, 10) // ΔU = IR = 100V
-    expect(res.P_loss).toBeCloseTo(1000, 10) // ΔP = I²R = 1kW
-    expect(res.eta).toBeCloseTo(0.99, 10) // 效率 99%
+    // 新签名 (P1, U2, r, k)：P=100kW, U2=10kV, r=10Ω, k=0.022 (10kV→220V 降压)
+    const res = calculatePowerTransmission(100000, 10000, 10, 0.022)
+    expect(res.I_line).toBeCloseTo(10, 10)       // I = P1/U2 = 10A
+    expect(res.deltaU).toBeCloseTo(100, 10)      // ΔU = I·r = 100V
+    expect(res.P_loss).toBeCloseTo(1000, 10)     // ΔP = I²·r = 1kW
+    expect(res.U3).toBeCloseTo(9900, 10)         // U3 = U2 - ΔU = 9900V
+    expect(res.P3).toBeCloseTo(99000, 10)        // P3 = P1 - ΔP = 99kW
+    expect(res.U4).toBeCloseTo(217.8, 6)         // U4 = U3·k ≈ 217.8V
+    expect(res.P_user).toBeCloseTo(99000, 10)
+    expect(res.eta).toBeCloseTo(0.99, 10)        // 效率 99%
   })
 
   it('远距离输电：低压输电高损耗', () => {
-    // P=100kW, U=1kV, R=10Ω
-    const res = calculatePowerTransmission(100000, 1000, 10, 100, 1000, 1000, 100)
-    expect(res.I_line).toBeCloseTo(100, 10) // I = P/U = 100A
-    expect(res.U_loss).toBeCloseTo(1000, 10) // ΔU = IR = 1000V
-    expect(res.P_loss).toBeCloseTo(100000, 10) // ΔP = I²R = 100kW
-    expect(res.eta).toBeCloseTo(0, 10) // 效率 0%（全部损耗）
+    // 新签名 (P1, U2, r, k)：P=100kW, U2=1kV, r=10Ω, k=0.22 (1kV→220V 降压)
+    const res = calculatePowerTransmission(100000, 1000, 10, 0.22)
+    expect(res.I_line).toBeCloseTo(100, 10)      // I = P1/U2 = 100A
+    expect(res.deltaU).toBeCloseTo(1000, 10)     // ΔU = I·r = 1000V（恰好等于 U2，端压降为 0）
+    expect(res.P_loss).toBeCloseTo(100000, 10)   // ΔP = I²·r = 100kW（全部损耗在线路）
+    expect(res.U3).toBeCloseTo(0, 10)            // U3 = U2 - ΔU = 0V
+    expect(res.P3).toBeCloseTo(0, 10)
+    expect(res.U4).toBeCloseTo(0, 10)
+    expect(res.P_user).toBeCloseTo(0, 10)
+    expect(res.eta).toBeCloseTo(0, 10)           // 效率 0%（全部损耗）
   })
 
   it('远距离输电：除零保护', () => {
-    const res = calculatePowerTransmission(100000, 0, 10, 100, 1000, 1000, 100)
+    // U2=0 → I_line short-circuit 为 0
+    const res = calculatePowerTransmission(100000, 0, 10, 0.022)
     expect(res.I_line).toBe(0)
-    const res2 = calculatePowerTransmission(0, 10000, 10, 100, 1000, 1000, 100)
+    expect(res.deltaU).toBe(0)
+    expect(res.P_loss).toBe(0)
+    // P1=0 → eta short-circuit 为 0
+    const res2 = calculatePowerTransmission(0, 10000, 10, 0.022)
     expect(res2.eta).toBe(0)
+    expect(res2.I_line).toBe(0)
   })
 
   // ===== [M4-1.x] 导体切割磁感线扩展 =====
