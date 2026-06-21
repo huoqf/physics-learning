@@ -1,0 +1,411 @@
+import { useMemo } from 'react'
+import { BasePhysicsChart } from './BasePhysicsChart'
+import { useChartContext } from './ChartContext'
+import { interpolateY } from './interpolation'
+import {
+  PHYSICS_COLORS,
+  CHART_COLORS,
+  SERIES_MAP,
+  REFERENCE_MAP,
+  STROKE,
+  DASH,
+  FONT,
+} from '@/theme/physics'
+import type { ChartSeriesVariant, ChartReferenceVariant } from '@/theme/physics'
+
+/**
+ * 通用关系图 (Y = f(X))。
+ *
+ * 与 *-TimeChart 系列的区别：
+ * - 时间图：`points` 随 currentTime 动态增长 → 需要 `domainPoints` 解耦绘制 vs 定标
+ * - 关系图：`points` 一开始就是整段静态曲线 → 直接用 `points` 定标即稳定，无需 domainPoints
+ *
+ * 典型用途：F-r、E-r、Ep-r、1/u-1/v、v-r、T-r、F-V 等任意 Y=f(X) 函数图像
+ *
+ * 设计要点：
+ * - `cursorX`：当前 X 值，自动在 points 中线性插值出 y 并画十字标 + 圆点
+ * - `markers`：特殊点 / 参考线（y 省略时画整条 vertical 虚线）
+ * - `additionalSeries`：多曲线（同坐标系），与 VelocityTimeChart 的 API 完全对齐
+ * - `showZeroLine`：当 Y 可正可负时显示零基准虚线
+ */
+
+export interface RelationDataSeries {
+  /** 数据点序列（物理坐标） */
+  points: { x: number; y: number }[]
+  /** 系列标签（图例显示） */
+  label?: string
+  /** 曲线颜色变体 */
+  series?: ChartSeriesVariant
+  /** 自定义颜色（覆盖 series 映射） */
+  color?: string
+  /** 线宽，默认 2 */
+  strokeWidth?: number
+  /** 虚线模式，例如 [4, 4] */
+  strokeDasharray?: number[]
+}
+
+export interface RelationMarker {
+  /** X 坐标 */
+  x: number
+  /** Y 坐标，省略则只画整条垂直虚线 */
+  y?: number
+  /** 标签文本 */
+  label?: string
+  /** 颜色，默认 reference 色 */
+  color?: string
+}
+
+export interface RelationChartProps {
+  /** 主曲线数据点（物理坐标） */
+  points: { x: number; y: number }[]
+  /** 额外曲线（同坐标系叠加） */
+  additionalSeries?: RelationDataSeries[]
+  /** X 轴范围；不传则基于所有 series 自动计算 */
+  xDomain?: [number, number]
+  /** Y 轴范围；不传则基于所有 series 自动计算（含 0 基准 + 15% padding） */
+  yDomain?: [number, number]
+  /** X 轴标签 */
+  xLabel: string
+  /** Y 轴标签 */
+  yLabel: string
+  /** 标题 */
+  title?: string
+  /**
+   * 当前 X 值；传入时自动在 points 中线性插值 y、画十字标 + 圆点 +（可选）数值标注。
+   * 不传则不画游标。
+   */
+  cursorX?: number
+  /** 游标标签格式化函数；返回 null 则只画圆点不画文本 */
+  cursorLabel?: (x: number, y: number) => string | null
+  /** 游标线颜色变体 */
+  cursorVariant?: ChartReferenceVariant
+  /** 是否显示 Y=0 虚线（当 yDomain 跨越 0 时建议开启） */
+  showZeroLine?: boolean
+  /** 是否显示网格 */
+  showGrid?: boolean
+  /** 特殊点 / 参考线标记 */
+  markers?: RelationMarker[]
+  /** 主曲线颜色变体 */
+  series?: ChartSeriesVariant
+  /** 主曲线自定义颜色（覆盖 series） */
+  color?: string
+  /** 主曲线线宽，默认 2 */
+  strokeWidth?: number
+  /** 额外 className */
+  className?: string
+}
+
+function buildPath(
+  pts: { x: number; y: number }[],
+  toSvgX: (v: number) => number,
+  toSvgY: (v: number) => number,
+): string {
+  if (pts.length < 2) return ''
+  return (
+    'M ' +
+    pts
+      .map((p) => `${toSvgX(p.x).toFixed(2)},${toSvgY(p.y).toFixed(2)}`)
+      .join(' L ')
+  )
+}
+
+function RCContent({
+  points,
+  additionalSeries,
+  cursorX,
+  cursorLabel,
+  cursorVariant,
+  markers,
+  series,
+  color,
+  strokeWidth,
+}: Omit<
+  RelationChartProps,
+  'tMax' | 'xDomain' | 'yDomain' | 'xLabel' | 'yLabel' | 'title' | 'className' | 'showZeroLine' | 'showGrid'
+>) {
+  const ctx = useChartContext()
+  const mainColor = color ?? SERIES_MAP[series ?? 'primary']
+
+  const mainPath = useMemo(() => {
+    if (!ctx) return ''
+    return buildPath(points, ctx.toSvgX, ctx.toSvgY)
+  }, [ctx, points])
+
+  const extraPaths = useMemo(() => {
+    if (!ctx || !additionalSeries?.length) return []
+    return additionalSeries.map((s) => ({
+      d: buildPath(s.points, ctx.toSvgX, ctx.toSvgY),
+      color: s.color ?? (s.series ? SERIES_MAP[s.series] : PHYSICS_COLORS.displacement),
+      strokeWidth: s.strokeWidth ?? 2,
+      strokeDasharray: s.strokeDasharray,
+      label: s.label,
+    }))
+  }, [ctx, additionalSeries])
+
+  // 游标：对主曲线 + 额外曲线分别插值
+  const cursorPoints = useMemo(() => {
+    if (cursorX == null) return []
+    const out: Array<{ x: number; y: number; color: string; label?: string }> = []
+    const yMain = interpolateY(points, cursorX)
+    if (yMain != null) out.push({ x: cursorX, y: yMain, color: mainColor })
+    additionalSeries?.forEach((s) => {
+      const y = interpolateY(s.points, cursorX)
+      if (y != null) {
+        out.push({
+          x: cursorX,
+          y,
+          color: s.color ?? (s.series ? SERIES_MAP[s.series] : PHYSICS_COLORS.displacement),
+          label: s.label,
+        })
+      }
+    })
+    return out
+  }, [cursorX, points, additionalSeries, mainColor])
+
+  if (!ctx) return null
+  const { toSvgX, toSvgY, plotOrigin, plotSize, font } = ctx
+  const cursorColor = REFERENCE_MAP[cursorVariant ?? 'highlight']
+
+  return (
+    <g>
+      {/* 额外曲线（先画，主曲线压在上面） */}
+      {extraPaths.map((p, i) =>
+        p.d ? (
+          <path
+            key={`extra-${i}`}
+            d={p.d}
+            fill="none"
+            stroke={p.color}
+            strokeWidth={p.strokeWidth}
+            strokeDasharray={p.strokeDasharray?.join(' ')}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        ) : null,
+      )}
+
+      {/* 主曲线 */}
+      {mainPath && (
+        <path
+          d={mainPath}
+          fill="none"
+          stroke={mainColor}
+          strokeWidth={strokeWidth ?? 2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
+
+      {/* 标记点 / 参考线 */}
+      {markers?.map((m, i) => {
+        const mx = toSvgX(m.x)
+        const mColor = m.color ?? CHART_COLORS.equilibrium
+        return (
+          <g key={`marker-${i}`}>
+            {/* 整条垂直参考线（y 省略时） */}
+            {m.y == null && (
+              <line
+                x1={mx} y1={plotOrigin.y}
+                x2={mx} y2={plotOrigin.y + plotSize.height}
+                stroke={mColor}
+                strokeWidth={STROKE.reference}
+                strokeDasharray={DASH.reference.join(' ')}
+                opacity={0.6}
+              />
+            )}
+            {/* 标记点 */}
+            {m.y != null && (
+              <circle
+                cx={mx} cy={toSvgY(m.y)} r={3.5}
+                fill={mColor} stroke={CHART_COLORS.highlight} strokeWidth={1.2}
+              />
+            )}
+            {/* 短刻度 + 标签 */}
+            <line
+              x1={mx} y1={plotOrigin.y + plotSize.height}
+              x2={mx} y2={plotOrigin.y + plotSize.height + 6}
+              stroke={mColor} strokeWidth={STROKE.tick}
+            />
+            {m.label && (
+              <text
+                x={mx}
+                y={
+                  m.y != null
+                    ? toSvgY(m.y) - 8
+                    : plotOrigin.y + plotSize.height + font(FONT.small) + 6
+                }
+                fontSize={font(FONT.small)}
+                fill={mColor}
+                textAnchor="middle"
+                fontWeight="bold"
+              >
+                {m.label}
+              </text>
+            )}
+          </g>
+        )
+      })}
+
+      {/* 游标十字标 + 圆点 + 数值 */}
+      {cursorX != null && cursorPoints.length > 0 && (
+        <g>
+          {/* 垂直线 */}
+          <line
+            x1={toSvgX(cursorX)} y1={plotOrigin.y}
+            x2={toSvgX(cursorX)} y2={plotOrigin.y + plotSize.height}
+            stroke={cursorColor}
+            strokeWidth={STROKE.chartRef}
+            strokeDasharray={DASH.tangent.join(' ')}
+            opacity={0.65}
+          />
+          {cursorPoints.map((cp, i) => {
+            const cy = toSvgY(cp.y)
+            return (
+              <g key={`cursor-pt-${i}`}>
+                {/* 水平参考线（只对第一个点画，避免多曲线时混乱） */}
+                {i === 0 && (
+                  <line
+                    x1={plotOrigin.x} y1={cy}
+                    x2={plotOrigin.x + plotSize.width} y2={cy}
+                    stroke={cursorColor}
+                    strokeWidth={STROKE.chartRef}
+                    strokeDasharray={DASH.tangent.join(' ')}
+                    opacity={0.4}
+                  />
+                )}
+                <circle
+                  cx={toSvgX(cursorX)} cy={cy} r={font(FONT.small) * 0.45}
+                  fill={cp.color} stroke={CHART_COLORS.highlight} strokeWidth={1.5}
+                />
+                {cursorLabel && (() => {
+                  const txt = cursorLabel(cp.x, cp.y)
+                  if (txt == null) return null
+                  return (
+                    <text
+                      x={toSvgX(cursorX) + font(FONT.small) * 0.6}
+                      y={cy - font(FONT.small) * 0.4}
+                      fontSize={font(FONT.small)}
+                      fill={cp.color}
+                      fontWeight="bold"
+                    >
+                      {txt}
+                    </text>
+                  )
+                })()}
+              </g>
+            )
+          })}
+        </g>
+      )}
+
+      {/* 图例（多系列时显示） */}
+      {additionalSeries && additionalSeries.length > 0 && (
+        <g>
+          {/* 主系列 */}
+          <line
+            x1={plotOrigin.x + plotSize.width - 130} y1={plotOrigin.y + 10}
+            x2={plotOrigin.x + plotSize.width - 115} y2={plotOrigin.y + 10}
+            stroke={mainColor} strokeWidth={2}
+          />
+          <text
+            x={plotOrigin.x + plotSize.width - 110} y={plotOrigin.y + 13}
+            fontSize={font(FONT.small)} fill={PHYSICS_COLORS.labelText}
+          >
+            {(series ?? 'primary') === 'primary' ? '主' : ''}
+          </text>
+          {/* 额外系列 */}
+          {additionalSeries.map((s, i) => {
+            const c = s.color ?? (s.series ? SERIES_MAP[s.series] : PHYSICS_COLORS.displacement)
+            const baseY = plotOrigin.y + 10 + (i + 1) * 14
+            return (
+              <g key={`legend-${i}`}>
+                <line
+                  x1={plotOrigin.x + plotSize.width - 130} y1={baseY}
+                  x2={plotOrigin.x + plotSize.width - 115} y2={baseY}
+                  stroke={c} strokeWidth={s.strokeWidth ?? 2}
+                  strokeDasharray={s.strokeDasharray?.join(' ')}
+                />
+                <text
+                  x={plotOrigin.x + plotSize.width - 110} y={baseY + 3}
+                  fontSize={font(FONT.small)} fill={PHYSICS_COLORS.labelText}
+                >
+                  {s.label ?? `${i + 2}`}
+                </text>
+              </g>
+            )
+          })}
+        </g>
+      )}
+    </g>
+  )
+}
+
+export function RelationChart({
+  points,
+  additionalSeries,
+  xDomain,
+  yDomain,
+  xLabel,
+  yLabel,
+  title,
+  cursorX,
+  cursorLabel = (_x, y) => y.toFixed(2),
+  cursorVariant = 'highlight',
+  showZeroLine,
+  showGrid = true,
+  markers,
+  series = 'primary',
+  color,
+  strokeWidth,
+  className = '',
+}: RelationChartProps) {
+  const computedXDomain = useMemo((): [number, number] => {
+    if (xDomain) return xDomain
+    const xs: number[] = points.map((p) => p.x)
+    additionalSeries?.forEach((s) => s.points.forEach((p) => xs.push(p.x)))
+    if (xs.length === 0) return [0, 1]
+    const lo = Math.min(...xs)
+    const hi = Math.max(...xs)
+    const pad = (hi - lo) * 0.02 || 0.5
+    return [lo - pad, hi + pad]
+  }, [points, additionalSeries, xDomain])
+
+  const computedYDomain = useMemo((): [number, number] => {
+    if (yDomain) return yDomain
+    const ys: number[] = points.map((p) => p.y)
+    additionalSeries?.forEach((s) => s.points.forEach((p) => ys.push(p.y)))
+    if (ys.length === 0) return [-1, 1]
+    const lo = Math.min(0, ...ys)
+    const hi = Math.max(0, ...ys)
+    const pad = (hi - lo) * 0.15 || 1
+    return [lo - pad, hi + pad]
+  }, [points, additionalSeries, yDomain])
+
+  // 自动判断是否需要零线：Y 跨越 0 时默认开启
+  const effectiveZeroLine = showZeroLine ?? (computedYDomain[0] < 0 && computedYDomain[1] > 0)
+
+  return (
+    <BasePhysicsChart
+      xDomain={computedXDomain}
+      yDomain={computedYDomain}
+      xLabel={xLabel}
+      yLabel={yLabel}
+      title={title}
+      yBaseline={effectiveZeroLine ? 0 : undefined}
+      showGrid={showGrid}
+      className={className}
+    >
+      <RCContent
+        points={points}
+        additionalSeries={additionalSeries}
+        cursorX={cursorX}
+        cursorLabel={cursorLabel}
+        cursorVariant={cursorVariant}
+        markers={markers}
+        series={series}
+        color={color}
+        strokeWidth={strokeWidth}
+      />
+    </BasePhysicsChart>
+  )
+}
