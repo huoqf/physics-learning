@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useCanvasSize, type CanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -6,10 +6,10 @@ import { calculateCoulombForce, calculateThreeChargeForces } from '@/physics'
 import {
   PHYSICS_COLORS,
   CANVAS_STYLE,
-  CHART_COLORS,
 } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { RelationChart } from '@/components/Chart'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
@@ -65,7 +65,6 @@ function BasicMode({
   const updateParam = useAnimationStore((s) => s.updateParam)
   const [dragging, setDragging] = useState(false)
   const [dragR, setDragR] = useState(rParam)
-  const { font } = canvasSize
 
   useEffect(() => {
     setDragR(rParam)
@@ -103,30 +102,24 @@ function BasicMode({
   }
   const sceneScale = createSceneScale(basicScene)
 
+  // ── F-r 图：交给 RelationChart ──────────────────────────────────────
+  // 图表容器位于右侧区域，用 <foreignObject> 嵌入 React 组件
   const chartLeft = stageWidth + w * 0.03
   const chartTop = h * LAYOUT.chartPaddingRatio
   const chartWidth = w - chartLeft - w * LAYOUT.chartPaddingRatio
   const chartHeight = h * 0.4
-  const chartBottom = chartTop + chartHeight
 
-  const frData = (() => {
-    const points: Array<{ r: number; F: number }> = []
+  // F-r 整段曲线数据（仅当 q1/q2 变化时重算）
+  const frPoints = useMemo(() => {
+    const pts: { x: number; y: number }[] = []
     const { rMin, rMax, rStep } = LAYOUT.frDataRange
-    for (let ri = rMin; ri <= rMax; ri += rStep) {
+    for (let ri = rMin; ri <= rMax + 1e-9; ri += rStep) {
       const riSI = ri * 0.01
       const { F: Fi } = calculateCoulombForce(COULOMB_K, q1SI, q2SI, riSI)
-      points.push({ r: ri, F: Fi })
+      pts.push({ x: ri, y: Fi })
     }
-    return points
-  })()
-
-  const fMax = Math.max(...frData.map(p => p.F), 1) * 1.1
-  const toChartX = (ri: number) => chartLeft + ((ri - LAYOUT.frDataRange.rMin) / (LAYOUT.frDataRange.rMax - LAYOUT.frDataRange.rMin)) * chartWidth
-  const toChartY = (Fi: number) => chartBottom - (Fi / fMax) * chartHeight
-
-  const frPath = frData.map((p, i) =>
-    `${i === 0 ? 'M' : 'L'} ${toChartX(p.r).toFixed(1)},${toChartY(p.F).toFixed(1)}`
-  ).join(' ')
+    return pts
+  }, [q1SI, q2SI])
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -229,30 +222,22 @@ function BasicMode({
         </g>
       )}
 
-      <g>
-        <rect x={chartLeft - 10} y={chartTop - 20} width={chartWidth + 20} height={chartHeight + 40}
-          fill="white" stroke={CHART_COLORS.axisLine} rx={4} />
-        <text x={chartLeft + chartWidth / 2} y={chartTop - 8} fontSize={CANVAS_STYLE.font.labelSize}
-          fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">F-r 图像</text>
-
-        <line x1={chartLeft} y1={chartTop} x2={chartLeft} y2={chartBottom}
-          stroke={CHART_COLORS.axisLine} strokeWidth={CANVAS_STYLE.stroke.chartMain} />
-        <line x1={chartLeft} y1={chartBottom} x2={chartLeft + chartWidth} y2={chartBottom}
-          stroke={CHART_COLORS.axisLine} strokeWidth={CANVAS_STYLE.stroke.chartMain} />
-
-        <text x={chartLeft + chartWidth / 2} y={chartBottom + 20} fontSize={font(9)} textAnchor="middle" fill={CHART_COLORS.labelText}>r / cm</text>
-        <text x={chartLeft - 8} y={chartTop + chartHeight / 2} fontSize={font(9)} textAnchor="middle" fill={CHART_COLORS.labelText}
-          transform={`rotate(-90, ${chartLeft - 8}, ${chartTop + chartHeight / 2})`}>F / N</text>
-
-        {frPath && <path d={frPath} fill="none" stroke={PHYSICS_COLORS.electricForce} strokeWidth={CANVAS_STYLE.stroke.chartMain} />}
-
-        <circle cx={toChartX(r)} cy={toChartY(F)} r={5}
-          fill={PHYSICS_COLORS.electricForce} stroke="white" strokeWidth={2} />
-        <line x1={toChartX(r)} y1={chartBottom} x2={toChartX(r)} y2={toChartY(F)}
-          stroke={PHYSICS_COLORS.electricForce} strokeWidth={1} strokeDasharray="3,3" opacity={0.5} />
-        <line x1={chartLeft} y1={toChartY(F)} x2={toChartX(r)} y2={toChartY(F)}
-          stroke={PHYSICS_COLORS.electricForce} strokeWidth={1} strokeDasharray="3,3" opacity={0.5} />
-      </g>
+      {/* F-r 图：通过 foreignObject 嵌入 RelationChart */}
+      <foreignObject x={chartLeft} y={chartTop} width={chartWidth} height={chartHeight}>
+        <div style={{ width: '100%', height: '100%' }}>
+          <RelationChart
+            points={frPoints}
+            xLabel="r / cm"
+            yLabel="F / N"
+            title="F-r 图像"
+            xDomain={[LAYOUT.frDataRange.rMin, LAYOUT.frDataRange.rMax]}
+            cursorX={r}
+            cursorLabel={(_x, y) => `F=${y.toExponential(2)} N`}
+            color={PHYSICS_COLORS.electricForce}
+            strokeWidth={2}
+          />
+        </div>
+      </foreignObject>
 
     </svg>
   )
