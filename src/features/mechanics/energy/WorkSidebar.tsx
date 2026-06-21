@@ -14,7 +14,7 @@ const WorkSidebar: FC<SidebarExtraProps> = ({
   animationActions,
   disabled,
 }) => {
-  const mode = params.mode ?? 0
+  const mode = (params.mode ?? 0) as 0 | 1
 
   const handleModeChange = (value: number | string) => {
     updateParam('mode', value as number)
@@ -35,8 +35,8 @@ const WorkSidebar: FC<SidebarExtraProps> = ({
       />
       <p className="text-[10px] text-neutral-400 leading-tight">
         {mode === 0
-          ? '拖动 θ 观察投影颜色变化：绿=正功，红=负功，灰=不做功'
-          : '观察支持力随 θ 变化，当 Fsinθ≥mg 时滑块脱地'}
+          ? '左图 v-t 速度曲线，右图 F-x 功面积；拖动 θ 观察投影变化'
+          : '左图 F-x 多力复合，右图能量柱看板；观察支持力随 θ 变化'}
       </p>
     </div>
   )

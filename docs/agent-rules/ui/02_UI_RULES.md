@@ -85,6 +85,9 @@ Canvas/SVG 中的颜色按**语义层级**严格隔离，禁止混用：
 1. **物理 Canvas 内禁止使用 UI 色表达物理量**：力、速度、加速度、电动势等物理量的颜色必须且只能来自 `PHYSICS_COLORS.*`，禁止挪用 `colors.primary`（UI 蓝）或 `colors.danger`（UI 红）充当物理量颜色。
 2. **UI 色仅限 Canvas 内的非物理教学元素**：阶段徽章、平衡状态指示、警告横幅、系统分析框等 UI 教学反馈可以使用 `colors.primary/danger/success/warning`，但同一画面中物理量颜色与 UI 教学色不得产生视觉冲突（如同屏的蓝色速度矢量与蓝色阶段徽章）。
 3. **`withAlpha` 半透明派生**：需要半透明变体时使用 `withAlpha(token, alpha)`（从 `@/theme/physics` 引入），禁止手动拼接 `rgba()`。
+4. **禁止 `colors.neutral.*` 直接用于 Canvas/SVG**：网格线、参考线、分隔线、标注框底色等 Canvas 基础设施颜色必须通过 `CANVAS_COLORS.*` 或 `CHART_COLORS.*` 引用，禁止直接使用 `colors.neutral[200]`/`colors.neutral[300]`/`colors.neutral.white` 等裸值。对应关系：`CANVAS_COLORS.grid` = neutral[200]，`CHART_COLORS.reference` = neutral[400]。
+5. **禁止子路径导入**：`withAlpha` 等 theme 导出必须从 `@/theme/physics` 统一入口引入，禁止 `from '@/theme/physics/colors'` 等子路径导入。
+6. **SVG 文字必须用 `font()` 缩放**：Canvas/SVG 内所有 `<text fontSize={...}>` 必须使用 `font(N)` 函数包裹（内置 clamp 7–16），禁止裸值 `fontSize={11}` 或手动 `Math.max(10, ...)` 计算。
 
 ### 3.1 球体材质附加规范
 
