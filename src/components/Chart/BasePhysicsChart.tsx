@@ -1,6 +1,6 @@
 import { useMemo, type ReactNode } from 'react'
 import { ChartContext, type ChartContextValue } from './ChartContext'
-import { CHART_COLORS, CHART_LAYOUT, FONT, STROKE, DASH, OPACITY } from '@/theme/physics'
+import { CHART_COLORS, CHART_LAYOUT, FONT, STROKE, DASH } from '@/theme/physics'
 import { useCanvasSize } from '@/utils'
 
 export interface BasePhysicsChartProps {
@@ -16,6 +16,8 @@ export interface BasePhysicsChartProps {
   formatY?: (v: number) => string
   /** y 轴基准线位置（物理坐标），默认为 yDomain[0]。设为 0 可实现双向 Y 轴 */
   yBaseline?: number
+  /** 是否显示网格线，默认 true */
+  showGrid?: boolean
   children?: ReactNode
   className?: string
 }
@@ -32,6 +34,7 @@ export function BasePhysicsChart({
   formatX,
   formatY,
   yBaseline,
+  showGrid = true,
   children,
   className = '',
 }: BasePhysicsChartProps) {
@@ -102,7 +105,7 @@ export function BasePhysicsChart({
           )}
 
           {/* Y 轴网格线 */}
-          {Array.from({ length: adaptiveGrid.y + 1 }, (_, idx) => {
+          {showGrid && Array.from({ length: adaptiveGrid.y + 1 }, (_, idx) => {
             const gridY = margin.top + (plotH * idx) / adaptiveGrid.y
             return (
               <line
@@ -110,15 +113,14 @@ export function BasePhysicsChart({
                 x1={margin.left} y1={gridY}
                 x2={margin.left + plotW} y2={gridY}
                 stroke={CHART_COLORS.gridLine}
-                strokeWidth={STROKE.grid}
+                strokeWidth={STROKE.guide}
                 strokeDasharray={DASH.guide.join(',')}
-                opacity={OPACITY.gridChart}
               />
             )
           })}
 
           {/* X 轴网格线 */}
-          {Array.from({ length: adaptiveGrid.x + 1 }, (_, idx) => {
+          {showGrid && Array.from({ length: adaptiveGrid.x + 1 }, (_, idx) => {
             const gridX = margin.left + (plotW * idx) / adaptiveGrid.x
             return (
               <line
@@ -126,9 +128,8 @@ export function BasePhysicsChart({
                 x1={gridX} y1={margin.top}
                 x2={gridX} y2={margin.top + plotH}
                 stroke={CHART_COLORS.gridLine}
-                strokeWidth={STROKE.grid}
+                strokeWidth={STROKE.guide}
                 strokeDasharray={DASH.guide.join(',')}
-                opacity={OPACITY.gridChart}
               />
             )
           })}
@@ -153,7 +154,6 @@ export function BasePhysicsChart({
               stroke={CHART_COLORS.zeroline}
               strokeWidth={STROKE.reference}
               strokeDasharray={DASH.reference.join(',')}
-              opacity={0.4}
             />
           )}
 
@@ -165,7 +165,7 @@ export function BasePhysicsChart({
               <g key={`xval-${i}`}>
                 <line
                   x1={x} y1={margin.top + plotH}
-                  x2={x} y2={margin.top + px(isMini ? 3 : 4)}
+                  x2={x} y2={margin.top + plotH - px(isMini ? 3 : 4)}
                   stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick}
                 />
                 <text

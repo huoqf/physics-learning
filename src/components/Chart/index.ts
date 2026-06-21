@@ -13,3 +13,10 @@ export type { ChartContextValue } from './ChartContext'
 export { ChartCursor } from './ChartCursor'
 export { ChartArea } from './ChartArea'
 export { ChartTangent } from './ChartTangent'
+
+// ============================================================================
+// 业务预设 (Business Presets)
+// ============================================================================
+export { VelocityTimeChart } from './VelocityTimeChart'
+export { DisplacementTimeChart } from './DisplacementTimeChart'
+export { AccelerationTimeChart } from './AccelerationTimeChart'

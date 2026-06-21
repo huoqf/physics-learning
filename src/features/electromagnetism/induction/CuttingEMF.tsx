@@ -3,8 +3,7 @@ import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { computeRodConstants, computeRodStateAtTime, calculateCuttingEMF } from '@/physics'
-import { PHYSICS_COLORS, EM_COLORS, CHART_COLORS, VT_CHART_COLORS, AT_CHART_COLORS } from '@/theme/physics'
-import { colors } from '@/theme/colors'
+import { PHYSICS_COLORS, EM_COLORS, CHART_COLORS, VT_CHART_COLORS, AT_CHART_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { withAlpha } from '@/theme/physics'
 import { physicsToCanvasWithOrigin, computeScale } from '@/utils/coordinate'
 import { Rails, ConductorRod, VectorArrow, VectorDefs } from '@/components/Physics'
@@ -273,7 +272,7 @@ export default function CuttingEMF() {
 
     // 绘制残影
     if (isPlaying && time > 0) {
-      ctx.fillStyle = withAlpha(colors.neutral.white, 0.18)
+      ctx.fillStyle = withAlpha(CANVAS_COLORS.objectFill, 0.18)
       ctx.fillRect(0, 0, canvasSize.width, sceneHeight)
 
       // 在当前位置绘制半透明淡蓝色棒影
@@ -494,7 +493,7 @@ export default function CuttingEMF() {
             <path
               d={`M ${railLeftPos.cx} ${railCy - railSpacing / 2} L ${railLeftPos.cx - px(16)} ${railCy - railSpacing / 2} L ${railLeftPos.cx - px(16)} ${railCy - px(20)} M ${railLeftPos.cx - px(16)} ${railCy + px(20)} L ${railLeftPos.cx - px(16)} ${railCy + railSpacing / 2} L ${railLeftPos.cx} ${railCy + railSpacing / 2}`}
               fill="none"
-              stroke={colors.neutral[800]}
+              stroke={CANVAS_COLORS.labelText}
               strokeWidth="2.5"
             />
             {/* 电阻框 */}
@@ -503,8 +502,8 @@ export default function CuttingEMF() {
               y={railCy - px(20)}
               width={px(20)}
               height={px(40)}
-              fill="white"
-              stroke={colors.neutral[800]}
+              fill={CANVAS_COLORS.objectFill}
+              stroke={CANVAS_COLORS.labelText}
               strokeWidth="2.5"
               rx={px(2)}
             />
@@ -512,7 +511,7 @@ export default function CuttingEMF() {
               x={railLeftPos.cx - px(16)}
               y={railCy}
               fontSize={font(11)}
-              fill={colors.neutral[800]}
+              fill={CANVAS_COLORS.labelText}
               fontWeight="bold"
               textAnchor="middle"
               dominantBaseline="middle"

@@ -130,7 +130,7 @@ export function FaradayChartPanel({
           stroke={CHART_COLORS.axisLine} strokeWidth={CANVAS_STYLE.stroke.axis} />
         {/* 坐标轴标签 */}
         <text x={dashLeft} y={yEmfMid - chartHalfH - 6} fontSize={CANVAS_STYLE.font.axisSize}
-          fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold">
+          fill={PHYSICS_COLORS.emf} fontWeight="bold">
           E − t 图 (V)
         </text>
         <text x={dashRight + 2} y={yEmfMid + 4} fontSize={font(9)} fill={CHART_COLORS.tickLabel}>

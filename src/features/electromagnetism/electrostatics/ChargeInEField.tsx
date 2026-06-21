@@ -2,13 +2,13 @@ import { useEffect, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
-import { colors } from '@/theme/colors'
+import { PHYSICS_COLORS, CANVAS_STYLE, CANVAS_COLORS, SCENE_COLORS } from '@/theme/physics'
+import { withAlpha } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { createSceneScale } from '@/scene/SceneScale'
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
-import { MiniChart } from '@/components/UI'
+import { VelocityTimeChart } from '@/components/Chart'
 import {
   calculateChargeInEFieldTrajectory,
   getChargeInEFieldTimeScale,
@@ -187,12 +187,9 @@ export default function ChargeInEField() {
     }
   }, [points])
 
-  // 10. 映射符合 MiniChart 类型的点
-  const chartPoints = useMemo(() => {
-    return points.map(p => ({
-      t: p.t,
-      vy: p.vy
-    }))
+  // 10. 映射图表数据点
+  const vtPoints = useMemo(() => {
+    return points.map(p => ({ t: p.t, v: p.vy }))
   }, [points])
 
   // X 轴网格线
@@ -236,8 +233,8 @@ export default function ChargeInEField() {
           {gridLines}
 
           {/* 粒子发射枪 */}
-          <rect x={region.left - 24} y={midY - 8} width={24} height={16} fill={colors.neutral[600]} rx={2} stroke={colors.neutral[800]} strokeWidth={1.5} />
-          <circle cx={region.left - 24} cy={midY} r={4} fill={colors.neutral[500]} />
+          <rect x={region.left - 24} y={midY - 8} width={24} height={16} fill={SCENE_COLORS.electricalApparatus.terminalBody} rx={2} stroke={CANVAS_COLORS.labelText} strokeWidth={1.5} />
+          <circle cx={region.left - 24} cy={midY} r={4} fill={SCENE_COLORS.electricalApparatus.terminalCore} />
 
           {/* 上极板 */}
           <line x1={region.left} y1={topPlateY} x2={region.right} y2={topPlateY}
@@ -288,7 +285,7 @@ export default function ChargeInEField() {
 
           {/* 粒子 */}
           <circle cx={cx} cy={cy} r={10} fill={PHYSICS_COLORS.positiveCharge} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={2} />
-          <text x={cx} y={cy + 4.5} fontSize="13" fill={colors.neutral.white} textAnchor="middle" fontWeight="bold">+</text>
+          <text x={cx} y={cy + 4.5} fontSize="13" fill={CANVAS_COLORS.annotation} textAnchor="middle" fontWeight="bold">+</text>
 
           {/* 速度分量与速度分解虚线框 */}
           {showVectors && !ended && (
@@ -334,7 +331,7 @@ export default function ChargeInEField() {
               />
               <text x={cx + vx_px + 8} y={cy + vy_px + (vy_px > 0 ? 8 : -4)} fontSize="10" fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
 
-              {/* 电场力 F_E (橙色) */}
+              {/* 电场力 F_E (紫色) */}
               <VectorArrow
                 origin={{ x: cx, y: -cy }}
                 vector={{ x: 0, y: -currentState.ay + (useGravity ? 9.8 : 0) }}
@@ -359,8 +356,8 @@ export default function ChargeInEField() {
           {/* 终止状态指示 */}
           {ended && (
             <g transform={`translate(${cx}, ${cy + (cy > midY ? -18 : 24)})`}>
-              <rect x={-45} y={-14} width={90} height={20} fill="rgba(30, 41, 59, 0.85)" rx={4} />
-              <text fontSize="10" fill={colors.neutral.white} textAnchor="middle" fontWeight="bold" y={0}>
+              <rect x={-45} y={-14} width={90} height={20} fill={withAlpha(CANVAS_COLORS.labelText, 0.85)} rx={4} />
+              <text fontSize="10" fill={CANVAS_COLORS.objectFill} textAnchor="middle" fontWeight="bold" y={0}>
                 {hitType === 'top' ? '撞击上极板' : hitType === 'bottom' ? '撞击下极板' : '已射出电场'}
               </text>
             </g>
@@ -370,21 +367,13 @@ export default function ChargeInEField() {
 
       {/* 图像显示区 */}
       <div className="h-[150px] bg-white rounded-xl shadow-sm border border-neutral-100 p-2">
-        <MiniChart
-          title="竖直方向分速度 - 时间图像 (vy - t)"
-          xMin={0}
-          xMax={simResult.tEnd}
-          yMin={chartYBounds.min}
-          yMax={chartYBounds.max}
-          points={chartPoints}
-          lines={[
-            { key: 'vy', color: PHYSICS_COLORS.velocityY, name: '分速度 vy', strokeWidth: 2 }
-          ]}
-          currentVals={{ vy: currentState.vy }}
-          currentXVal={tSim}
-          xLabel="t (s)"
-          yLabel="vy (m/s)"
-          minHeight={130}
+        <VelocityTimeChart
+          points={vtPoints}
+          currentTime={tSim}
+          tMax={simResult.tEnd}
+          vRange={[chartYBounds.min, chartYBounds.max]}
+          title="vᵧ - t 图像"
+          showArea
         />
       </div>
     </div>

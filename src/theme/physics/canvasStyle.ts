@@ -65,7 +65,7 @@ export const OPACITY = {
   vectorThin:       0.5,  // 细矢量
   trackHistory:     0.4,  // 历史轨迹
   grid:             0.3,  // 场景网格线
-  gridChart:        0.15, // 图表网格线（比场景更轻，避免混淆主曲线）
+  gridChart:        0.5, // 图表网格线
   reference:        0.5,  // 参考线
   guide:            0.4,  // 导引线
   annotation:       0.8,  // 标注
