@@ -3,6 +3,7 @@ import { useState, useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CHART_COLORS } from '@/theme/physics'
@@ -413,8 +414,10 @@ export default function PotentialEnergyAnimation() {
           // ─── 重力势能场景 ───
           <g>
             {/* 地面底盘 */}
-            <line x1={animLeft} y1={groundY} x2={animRight} y2={groundY} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.groundLine} />
-            <line x1={animLeft} y1={groundY + 3} x2={animRight} y2={groundY + 3} stroke={colors.neutral[200]} strokeWidth={0.5} />
+            <PhysicsGround
+              x={animLeft} y={groundY} width={animRight - animLeft}
+              appearance={{ showHatch: true }}
+            />
 
             {/* 垂直导轨 */}
             <line
@@ -498,7 +501,9 @@ export default function PotentialEnergyAnimation() {
           // ─── 弹性势能场景 ───
           <g>
             {/* 水平光滑路面 */}
-            <line x1={animLeft} y1={groundY} x2={animRight} y2={groundY} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.groundLine} />
+            <PhysicsGround
+              x={animLeft} y={groundY} width={animRight - animLeft}
+            />
 
             {/* 左侧固定墙壁 */}
             <rect

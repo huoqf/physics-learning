@@ -1,6 +1,7 @@
 // ============================================================================
 // 力学组件 (Mechanics)
 // ============================================================================
+export { PhysicsGround } from "./PhysicsGround"
 export { Ball } from './Ball'
 export { Block } from './Block'
 export { SportsCar } from './SportsCar'

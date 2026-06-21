@@ -17,6 +17,7 @@ import {
 import { useFreeFallPhysics } from './useFreeFallPhysics'
 import { getPhysicsAtTime, GRAVITY } from '@/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { Ball } from '@/components/Physics/Ball'
 import { VelocityTimeChart } from '@/components/Chart'
@@ -340,8 +341,14 @@ export default function FreeFallAnimation() {
         <text x={featherX} y={originY - 18} fontSize={font(9)} fill={CHART_COLORS.compareB} textAnchor="middle" fontWeight="bold">{matB.label}</text>
 
         {/* 地面线 */}
-        <line x1={tubeLeft + 10} y1={groundY} x2={tubeRight - 10} y2={groundY}
-          stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.groundLine} opacity={0.5} />
+        <PhysicsGround
+          x={tubeLeft + 10}
+          y={groundY}
+          width={tubeRight - tubeLeft - 20}
+          appearance={{
+            color: 'rgba(51, 65, 85, 0.5)' // PHYSICS_COLORS.labelText is neutral-700 (#334155), alpha 0.5
+          }}
+        />
 
         {/* y=0 释放线 */}
         <line x1={ballX} y1={originY - 20} x2={ballX} y2={groundY + 20}

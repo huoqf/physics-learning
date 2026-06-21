@@ -11,6 +11,7 @@ import {
 } from '@/physics/kineticEnergy'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { Block } from '@/components/Physics/Block'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
@@ -726,8 +727,12 @@ export default function KineticEnergyAnimation() {
         {/* ══════════════════════════════════════════════ */}
 
         {/* 轨道底盘直线段 */}
-        <line x1={padding * 0.5} y1={groundY} x2={canvasSize.width - padding * 0.5} y2={groundY} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.groundLine} />
-        <line x1={padding * 0.5} y1={groundY + 3} x2={canvasSize.width - padding * 0.5} y2={groundY + 3} stroke={colors.neutral[200]} strokeWidth={0.5} />
+        <PhysicsGround
+          x={padding * 0.5}
+          y={groundY}
+          width={canvasSize.width - padding}
+          appearance={{ showHatch: true }}
+        />
 
         {/* ── 进阶模式下的 1/4 圆弧曲面轨道 ── */}
         {/* 圆弧圆心在 (padding + R*scale, groundY - R*scale)，球沿内侧下滑 */}

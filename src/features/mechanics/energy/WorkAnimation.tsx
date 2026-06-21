@@ -13,6 +13,7 @@ import {
 } from '@/physics/work'
 import type { WorkKinematics } from '@/physics/work'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 import { WorkVTChart } from './WorkVTChart'
@@ -157,16 +158,6 @@ export default function WorkAnimation() {
     return lines
   }, [showGrid, vp.visibleW, startX, maxVisibleX])
 
-  const landmarkLabels = useMemo(() => {
-    const count = 5
-    const labels: { x: number; text: string }[] = []
-    for (let i = 0; i <= count; i++) {
-      const dist = (12 * i) / count
-      labels.push({ x: startX + dist * scale, text: `${dist.toFixed(0)}m` })
-    }
-    return labels
-  }, [scale, startX])
-
   const forceArrowLen = Math.min(F * 2.5, 80)
   const angleRad = (angleDeg * Math.PI) / 180
   const forceDx = forceArrowLen * Math.cos(angleRad)
@@ -263,18 +254,18 @@ export default function WorkAnimation() {
 
         {/* ═══ 下半部: 场景区 ═══ */}
         <g transform={`translate(0, ${sceneOffsetY})`}>
-          <line x1={startX} y1={groundYInScene} x2={maxVisibleX} y2={groundYInScene}
-            stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.groundLine} />
-          {landmarkLabels.map((lm, i) => (
-            <g key={`lm-${i}`}>
-              <line x1={lm.x} y1={groundYInScene} x2={lm.x} y2={groundYInScene + 6}
-                stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.tick} />
-              <text x={lm.x} y={groundYInScene + sceneFontSize + 6}
-                fontSize={sceneSmallFont} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
-                {lm.text}
-              </text>
-            </g>
-          ))}
+          <PhysicsGround
+            x={startX}
+            y={groundYInScene}
+            width={maxVisibleX - startX}
+            appearance={{ showHatch: true }}
+            ruler={{
+              domain: [0, 12],
+              pixelPerUnit: scale,
+              tickInterval: 2.4, // 使用精确的间距以生成原始的 5 个等分区间
+              unit: 'm'
+            }}
+          />
 
           {gridLines.map((gl) => (
             <line key={gl.key} x1={gl.x} y1={groundYInScene - objH * 2.5}

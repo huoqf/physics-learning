@@ -12,6 +12,7 @@ import {
   elasticCollision1D,
 } from '@/physics/momentum'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 import {
@@ -19,7 +20,6 @@ import {
   SCENE_COLORS,
   CHART_COLORS,
   CANVAS_STYLE,
-  STROKE,
   FONT,
 } from '@/theme/physics'
 
@@ -290,37 +290,19 @@ export default function MomentumAnimation() {
 
         </defs>
 
-        {/* ========== 地面线 ========== */}
-        <line
-          x1={MOMENTUM_LAYOUT.canvasPadding}
-          y1={groundY}
-          x2={canvasSize.width - MOMENTUM_LAYOUT.canvasPadding}
-          y2={groundY}
-          stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={STROKE.groundLine}
+        {/* ========== 地面与标尺 ========== */}
+        <PhysicsGround
+          x={MOMENTUM_LAYOUT.canvasPadding}
+          y={groundY}
+          width={canvasSize.width - MOMENTUM_LAYOUT.canvasPadding * 2}
+          appearance={{ showHatch: true }}
+          ruler={{
+            domain: [0, 100], // 任意domain，这里我们只关心axisArrow
+            showAxisArrow: true,
+            axisLabel: isAdvanced ? 'x 正方向' : 'x',
+            axisOffset: 20
+          }}
         />
-
-        {/* ========== x 轴正方向标尺 ========== */}
-        <line
-          x1={canvasSize.width - MOMENTUM_LAYOUT.canvasPadding - MOMENTUM_LAYOUT.directionScaleLen}
-          y1={groundY + 20}
-          x2={canvasSize.width - MOMENTUM_LAYOUT.canvasPadding - 8}
-          y2={groundY + 20}
-          stroke={PHYSICS_COLORS.axis}
-          strokeWidth={STROKE.axis}
-        />
-        <polygon
-          points={`${canvasSize.width - MOMENTUM_LAYOUT.canvasPadding},${groundY + 20} ${canvasSize.width - MOMENTUM_LAYOUT.canvasPadding - 8},${groundY + 16} ${canvasSize.width - MOMENTUM_LAYOUT.canvasPadding - 8},${groundY + 24}`}
-          fill={PHYSICS_COLORS.axis}
-        />
-        <text
-          x={canvasSize.width - MOMENTUM_LAYOUT.canvasPadding + 5}
-          y={groundY + 24}
-          fontSize={FONT.axisSize}
-          fill={PHYSICS_COLORS.labelTextLight}
-        >
-          {isAdvanced ? 'x 正方向' : 'x'}
-        </text>
 
         {/* ========== 基础模式：单球 ========== */}
         {!isAdvanced && (
