@@ -6,17 +6,25 @@ import { ChartArea } from './ChartArea'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import type { ChartSeriesVariant, ChartAreaVariant, ChartAreaIntensity } from '@/theme/physics'
 
-interface DisplacementTimeChartProps {
+/** 静态模式：points 既是绘制数据也是定标数据 */
+interface StaticDTChartProps {
+  mode?: 'static'
   /** 主数据点序列（物理坐标）—— 用于绘制 */
   points: { t: number; x: number }[]
-  /**
-   * 用于坐标轴定标的数据点序列（物理坐标）。
-   * 与 `points` 解耦：`points` 决定“画什么”，`domainPoints` 决定“坐标系多大”。
-   * 不传时回退到 `points`（保持向后兼容）。
-   * 推荐做法：传入完整未截断的整段轨迹，避免 Y 轴随时间扩张产生
-   * “一根贴着 Y 轴的竖线被拉斜”的视觉错觉（详见 VelocityTimeChart 同类修复）。
-   */
+  /** 用于坐标轴定标的数据点序列（物理坐标）。静态模式可选，不传回退到 points */
   domainPoints?: { t: number; x: number }[]
+}
+
+/** 动画模式：points 截断绘制，domainPoints 必传定标 */
+interface AnimatedDTChartProps {
+  mode: 'animated'
+  /** 主数据点序列（物理坐标）—— 用于绘制，可按 currentTime 截断 */
+  points: { t: number; x: number }[]
+  /** 用于坐标轴定标的数据点序列（物理坐标）—— 必传完整轨迹，防止 Y 轴抖动 */
+  domainPoints: { t: number; x: number }[]
+}
+
+type DisplacementTimeChartProps = (StaticDTChartProps | AnimatedDTChartProps) & {
   currentTime: number
   /** 时间范围（兼容旧 API；未传 tDomain 时使用 [0, tMax]） */
   tMax: number
@@ -54,7 +62,7 @@ function STContent({
   tDomain,
   underlay,
   children,
-}: Omit<DisplacementTimeChartProps, 'tMax' | 'xRange' | 'title' | 'className' | 'domainPoints'>) {
+}: Omit<DisplacementTimeChartProps, 'tMax' | 'xRange' | 'title' | 'className' | 'domainPoints' | 'mode'>) {
   const ctx = useChartContext()
 
   const visiblePoints = useMemo(() => {
@@ -134,7 +142,14 @@ export function DisplacementTimeChart({
   underlay,
   children,
   className = '',
+  mode = 'static',
 }: DisplacementTimeChartProps) {
+  if (process.env.NODE_ENV !== 'production' && mode === 'animated' && !domainPoints) {
+    console.warn(
+      'DisplacementTimeChart: animated mode requires domainPoints to keep axis domain stable.'
+    )
+  }
+
   const computedXRange = useMemo((): [number, number] => {
     if (xRange) return xRange
     // 优先使用 domainPoints 定标，回退到 points

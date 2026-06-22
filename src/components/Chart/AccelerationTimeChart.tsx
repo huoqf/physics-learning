@@ -6,17 +6,25 @@ import { ChartArea } from './ChartArea'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import type { ChartSeriesVariant, ChartAreaVariant, ChartAreaIntensity } from '@/theme/physics'
 
-interface AccelerationTimeChartProps {
+/** 静态模式：points 既是绘制数据也是定标数据 */
+interface StaticATChartProps {
+  mode?: 'static'
   /** 主数据点序列（物理坐标）—— 用于绘制 */
   points: { t: number; a: number }[]
-  /**
-   * 用于坐标轴定标的数据点序列（物理坐标）。
-   * 与 `points` 解耦：`points` 决定“画什么”，`domainPoints` 决定“坐标系多大”。
-   * 不传时回退到 `points`（保持向后兼容）。
-   * 推荐做法：传入完整未截断的整段轨迹，避免 Y 轴随时间扩张产生
-   * “一根贴着 Y 轴的竖线被拉斜”的视觉错觉（详见 VelocityTimeChart 同类修复）。
-   */
+  /** 用于坐标轴定标的数据点序列（物理坐标）。静态模式可选，不传回退到 points */
   domainPoints?: { t: number; a: number }[]
+}
+
+/** 动画模式：points 截断绘制，domainPoints 必传定标 */
+interface AnimatedATChartProps {
+  mode: 'animated'
+  /** 主数据点序列（物理坐标）—— 用于绘制，可按 currentTime 截断 */
+  points: { t: number; a: number }[]
+  /** 用于坐标轴定标的数据点序列（物理坐标）—— 必传完整轨迹，防止 Y 轴抖动 */
+  domainPoints: { t: number; a: number }[]
+}
+
+type AccelerationTimeChartProps = (StaticATChartProps | AnimatedATChartProps) & {
   currentTime: number
   tMax: number
   /** 加速度范围（不传则基于 domainPoints / points 自动计算） */
@@ -40,7 +48,7 @@ function ATContent({
   areaIntensity,
   showCursor,
   series,
-}: Omit<AccelerationTimeChartProps, 'tMax' | 'aRange' | 'title' | 'className' | 'domainPoints'>) {
+}: Omit<AccelerationTimeChartProps, 'tMax' | 'aRange' | 'title' | 'className' | 'domainPoints' | 'mode'>) {
   const ctx = useChartContext()
 
   const visiblePoints = useMemo(
@@ -111,7 +119,14 @@ export function AccelerationTimeChart({
   showCursor = true,
   series = 'primary',
   className = '',
+  mode = 'static',
 }: AccelerationTimeChartProps) {
+  if (process.env.NODE_ENV !== 'production' && mode === 'animated' && !domainPoints) {
+    console.warn(
+      'AccelerationTimeChart: animated mode requires domainPoints to keep axis domain stable.'
+    )
+  }
+
   const computedARange = useMemo((): [number, number] => {
     if (aRange) return aRange
     // 优先使用 domainPoints 定标，回退到 points

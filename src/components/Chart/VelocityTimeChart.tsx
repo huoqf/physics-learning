@@ -57,16 +57,29 @@ export interface ChartDataSeries {
   areaIntensity?: ChartAreaIntensity
 }
 
-interface VelocityTimeChartProps {
+/** 静态模式：points 既是绘制数据也是定标数据 */
+interface StaticChartProps {
+  mode?: 'static'
   /** 主数据点序列（物理坐标）—— 用于绘制 */
   points: { t: number; v: number }[]
-  /**
-   * 用于坐标轴定标的主数据点序列（物理坐标）。
-   * 与 `points` 解耦：`points` 决定“画什么”，`domainPoints` 决定“坐标系多大”。
-   * 不传时回退到 `points`（保持向后兼容）。
-   * 推荐做法：传入完整未截断的整段轨迹，避免 Y 轴随时间扩张产生“一根贴着 Y 轴的竖线被拉斜”的视觉错觉。
-   */
+  /** 用于坐标轴定标的数据点序列（物理坐标）。静态模式可选，不传回退到 points */
   domainPoints?: { t: number; v: number }[]
+  /** 额外数据系列（多曲线对比） */
+  additionalSeries?: ChartDataSeries[]
+}
+
+/** 动画模式：points 截断绘制，domainPoints 必传定标 */
+interface AnimatedChartProps {
+  mode: 'animated'
+  /** 主数据点序列（物理坐标）—— 用于绘制，可按 currentTime 截断 */
+  points: { t: number; v: number }[]
+  /** 用于坐标轴定标的数据点序列（物理坐标）—— 必传完整轨迹，防止 Y 轴抖动 */
+  domainPoints: { t: number; v: number }[]
+  /** 额外数据系列（多曲线对比） */
+  additionalSeries?: ChartDataSeries[]
+}
+
+type VelocityTimeChartProps = (StaticChartProps | AnimatedChartProps) & {
   /** 当前时间（物理坐标） */
   currentTime: number
   /** 时间范围（兼容旧 API；未传 tDomain 时使用 [0, tMax]） */
@@ -95,8 +108,6 @@ interface VelocityTimeChartProps {
   series?: ChartSeriesVariant
   /** 是否显示网格线 */
   showGrid?: boolean
-  /** 额外数据系列（多曲线对比） */
-  additionalSeries?: ChartDataSeries[]
   /** 绘制在曲线下方的插件层（如额外面积填充） */
   underlay?: ReactNode
   /** 绘制在曲线上方的插件层（如割线、切线、游标扩展） */
@@ -162,7 +173,7 @@ function VTContent({
   tDomain,
   underlay,
   children,
-}: Omit<VelocityTimeChartProps, 'tMax' | 'vRange' | 'title' | 'className' | 'domainPoints'>) {
+}: Omit<VelocityTimeChartProps, 'tMax' | 'vRange' | 'title' | 'className' | 'domainPoints' | 'mode'>) {
   const ctx = useChartContext()
 
   const mainColor = SERIES_MAP[series ?? 'primary']
@@ -359,7 +370,15 @@ export function VelocityTimeChart({
   children,
   stages,
   className = '',
+  mode = 'static',
 }: VelocityTimeChartProps) {
+  if (process.env.NODE_ENV !== 'production' && mode === 'animated' && !domainPoints) {
+    console.warn(
+      'VelocityTimeChart: animated mode requires domainPoints to keep axis domain stable. ' +
+      'Without it, Y-axis will jitter as points are truncated over time.'
+    )
+  }
+
   const computedVRange = useMemo((): [number, number] => {
     if (vRange) return vRange
     // 收集所有系列的“定标数据”——优先用 domainPoints，回退到 points
