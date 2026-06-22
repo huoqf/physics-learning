@@ -1,5 +1,5 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { Card, Slider, TipCard } from '@/components/UI'
+import { Card, Slider, TipCard, OptionButton } from '@/components/UI'
 import {
   FORCE_MOTION_MODES,
   FORCE_MOTION_PARAM_CONFIGS,
@@ -29,7 +29,7 @@ export default function ForceMotionSidebar({
     newParams.env1 = getForceMotionDefaultEnv(nextMode)
 
     setParams(newParams)
-    animationActions.restartAnimation()
+    animationActions.resetAnimation()
   }
 
   const handleParamChange = (key: string, value: number) => {
@@ -44,20 +44,19 @@ export default function ForceMotionSidebar({
       {/* 模式选择 */}
       <Card className="p-3">
         <h3 className="text-xs font-semibold text-neutral-600 mb-2">运动模式选择</h3>
-        <select
-          value={modeIndex}
-          disabled={disabled}
-          onChange={(e) => handleModeChange(Number(e.target.value))}
-          className="w-full text-sm border border-neutral-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-        >
+        <div className="grid grid-cols-2 gap-1.5">
           {FORCE_MOTION_MODES.map((mode) => (
-            <option key={mode.value} value={mode.value}>
-              {mode.value + 1}. {mode.label}
-            </option>
+            <OptionButton
+              key={mode.value}
+              label={`${mode.value + 1}. ${mode.label}`}
+              selected={mode.value === modeIndex}
+              disabled={disabled}
+              onClick={() => handleModeChange(mode.value)}
+            />
           ))}
-        </select>
+        </div>
         {currentMode && (
-          <div className="mt-2 text-[11px] text-neutral-500">
+          <div className="mt-2 text-[11px] text-neutral-500 pt-2 border-t border-neutral-100">
             {currentMode.description}
           </div>
         )}
