@@ -134,6 +134,7 @@
 2. `SCENE_COLORS`(464行) 拆为 materialColors/sceneEquipment/glowEffects
 3. `COMMON_MATERIALS` / `SPHERE_COLORS` 合并为 `MATERIAL_PRESETS`
 4. 明暗层命名 `{Part}{Layer}` 小写化
+5. ✅ 重力矢量 token 修正：FreeFall/VerticalThrow/DripAnimation 的 `type="acceleration"` → `type="gravity"`，refMagnitudes 补充 `gravity: GRAVITY`
 
 ---
 
@@ -175,6 +176,10 @@
 - ✅ ViewportInfo 增加 visibleX/visibleY
 - ✅ transform 改为设计稿左上角语义
 - ✅ Transformer 试点验证（designWidth 760→380，scale 0.58→1.0）
+- ✅ Work（wide + 比例布局型）
+- ✅ Transformer（同上）
+- ✅ SatelliteAnimation（earthRadiusPx × vp.scale + 开普勒速度方向修正）
+- ✅ KeplerAnimation（scaleBase × vp.scale，移除 0.8~1.2 clamping + 删除网格背景）
 
 ### 待做
 
@@ -182,8 +187,7 @@
 
 | 试点 | 布局类型 | 验证目标 |
 |------|---------|---------|
-| Work | wide + 比例布局型 | `vp.visibleX/Y/W/H` 替代 `canvas.width/height` |
-| Velocity | wide + 比例布局型 | 同上 |
+| Velocity | wide + 比例布局型 | `vp.visibleX/Y/W/H` 替代 `canvas.width/height` |
 | Collision / Momentum | wide + top/bottom | 可选，验证几何效果 |
 
 接入策略：比例布局型用 `vp.visibleX/Y/W/H`；常量布局型保持常量，确保不超出 `vp.visibleW/H`；新动画直接用 `<g transform={vp.transform}>`。
