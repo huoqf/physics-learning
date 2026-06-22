@@ -3,6 +3,8 @@
 > 日期：2026-06-22  
 > 范围：只评估 `src/features/electromagnetism/induction/CuttingEMF.tsx` 内的 V-T / a-T 图表；不迁移、不修既有 lint、不碰其他电磁图表。  
 > 目标：判断当前局部 `ChartSVG` 是否可复用 `VelocityTimeChart` / `AccelerationTimeChart`。
+>
+> 第八轮执行结果：已按评估结论只迁移 V-T 到 `VelocityTimeChart`；a-T 暂留局部 `ChartSVG`；未改公共组件，未修既有 lint。
 
 ---
 
@@ -24,7 +26,7 @@ const ChartSVG = React.memo(function ChartSVG(...) {
 
 | 图表 | 当前标题 | 数据字段 | 当前实现 |
 |---|---|---|---|
-| V-T | `速度－时间图像 (v-t 图)` | `samplePoints[].v` | `BasePhysicsChart` + 局部 `ChartSVGContent` |
+| V-T | `速度－时间图像 (v-t 图)` | `samplePoints[].v` | 第八轮已迁入 `VelocityTimeChart` |
 | a-T | `加速度－时间图像 (a-t 图)` | `samplePoints[].a` | `BasePhysicsChart` + 局部 `ChartSVGContent` |
 
 当前已经不是完全裸手写坐标轴，而是**局部使用了 `BasePhysicsChart`**。风险主要在“同类 TimeChart 预设没有复用”和“局部图表内容层重复”。
@@ -128,16 +130,16 @@ Unexpected any
 
 | 结论 | 判断 | 动作 |
 |---|---|---|
-| V-T 可迁入 `VelocityTimeChart` | ✅ 推荐后续小步迁移 | 可保持完整参考线，渐近线用 children 自定义 |
+| V-T 可迁入 `VelocityTimeChart` | ✅ 已完成 | 已保持完整参考线，收尾速度渐近线用 children 自定义 |
 | a-T 可迁入 `AccelerationTimeChart` | ⚠️ 部分可行 | 若保留完整参考线，需要先给 AT 预设补通用参考线/children 能力，或接受视觉简化 |
-| 保留局部 `ChartSVG` | ✅ 当前可接受 | 已经基于 `BasePhysicsChart`，且不是裸手写坐标轴 |
+| 保留局部 `ChartSVG` | ✅ 当前仅用于 a-T | a-T 已经基于 `BasePhysicsChart`，且不是裸手写坐标轴 |
 
 **评估结论：**
 
 ```txt
-CuttingEMF 的 V-T 图具备较高迁移可行性，可后续小步迁入 VelocityTimeChart；
+CuttingEMF 的 V-T 图具备较高迁移可行性，已在第八轮小步迁入 VelocityTimeChart；
 a-T 图可复用 AccelerationTimeChart 的动态与定标能力，但当前缺少完整理论参考线/children 插槽，不能无损迁移；
-因此不建议一轮强迁两图。后续若推进，优先迁 V-T，或先补齐 AccelerationTimeChart 的通用参考线能力后再迁 a-T。
+因此不建议一轮强迁两图。后续若推进 a-T，应先补齐 AccelerationTimeChart 的通用参考线能力，或接受视觉简化。
 ```
 
 ---

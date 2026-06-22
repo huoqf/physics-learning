@@ -55,7 +55,7 @@ BasePhysicsChart / RelationChart / VelocityTimeChart / DisplacementTimeChart / A
 | `VerticalThrowCharts` V-T | 竖直上抛 / `VerticalThrowCharts.tsx` | V-T | `VelocityTimeChart` + 插件层 | ✅ | ✅ 已传 | ✅ 已收口 |
 | `SatelliteAnimation` Mode 1 V-T | 卫星 / `SatelliteAnimation.tsx` | V-T 三阶段 | `VelocityTimeChart` + stages | ✅ | 待复核 | ✅ 已迁移，markers 可后补 |
 | `ChargeInEField` vy-T | 电场中带电粒子 / `ChargeInEField.tsx` | vy-T | `VelocityTimeChart` | ✅ | 显式 `vRange`，不依赖 | ✅ 已用标准组件 |
-| `CuttingEMF` V-T | 导体棒切割磁感线 / `CuttingEMF.tsx` | V-T | `BasePhysicsChart` 局部封装 `ChartSVG` | ✅ | 显式 domain | ✅ 第七轮评估完成：可后续小步迁入 VelocityTimeChart |
+| `CuttingEMF` V-T | 导体棒切割磁感线 / `CuttingEMF.tsx` | V-T | `VelocityTimeChart` + children 渐近线 | ✅ | `domainPoints` + `vRange` | ✅ 第八轮已迁移 |
 | `ConnectedBodiesCenterExtra` V-T | 连接体 / `ConnectedBodiesCenterExtra.tsx` | V-T mini | `MiniChart` | ✅ | 已评估 | ✅ MiniChart 低风险 |
 | `NewtonSecondCenterExtra` V-T | 牛顿第二定律 / `NewtonSecondCenterExtra.tsx` | V-T mini | `MiniChart` | ✅ | 已评估 | ✅ MiniChart 低风险 |
 | `WeightlessnessCenterExtra` V-T | 超重失重 / `WeightlessnessCenterExtra.tsx` | V-T mini | `MiniChart` | ✅ | 已评估 | ✅ MiniChart 低风险 |
@@ -120,7 +120,7 @@ BasePhysicsChart / RelationChart / VelocityTimeChart / DisplacementTimeChart / A
 | `ElectricFieldBasicScene` F-r | 电场强度 / `ElectricFieldBasicScene.tsx` | F-r | `RelationChart` | 随参 | 不适用 | ✅ 已迁移 |
 | `ElectricPotentialChartScene` φ-x | 电势 / `ElectricPotentialChartScene.tsx` | φ-x + hover 切线 | 手写 SVG | ✅ hover/播放 | 待评估 | 🔶 场景强绑定，待盘点 |
 | `AmpereFIChart` F-I | 安培力 / `AmpereFIChart.tsx` | F-I | RelationChart 业务适配层 | 随参 | 已收口 | ✅ 已迁移：统一 `F=-BIL`，稳定 yDomain ±100N，当前点 cursor |
-| `CuttingEMF` V-T / a-T | 电磁感应 / `CuttingEMF.tsx` | V-T + a-T | `BasePhysicsChart` 局部封装 | ✅ | 显式 domain | ✅ 第七轮评估完成：V-T 可迁；a-T 无损迁移需补参考线/children 能力 |
+| `CuttingEMF` V-T / a-T | 电磁感应 / `CuttingEMF.tsx` | V-T + a-T | V-T 已迁 `VelocityTimeChart`；a-T 保留 `BasePhysicsChart` 局部封装 | ✅ | 显式 domain / domainPoints | ✅ V-T 已迁；a-T 无损迁移需补参考线/children 能力 |
 | `FaradayChartPanel` Φ-T | 法拉第电磁感应 / `FaradayChartPanel.tsx` | Φ-T | `VelocityTimeChart` 泛用 | ✅ | ✅ 已传 | ✅ 已迁移 |
 | `FaradayChartPanel` E-T | 法拉第电磁感应 / `FaradayChartPanel.tsx` | E-T | `VelocityTimeChart` 泛用 | ✅ | ✅ 已传 | ✅ 已迁移 |
 | `ACGeneration` Φ-T / e-T | 交流电产生 / `ACGeneration.tsx` | Φ/e-T mini | `MiniChart` | ✅ | 已评估 | ✅ MiniChart 低风险 |
@@ -270,7 +270,7 @@ BasePhysicsChart / RelationChart / VelocityTimeChart / DisplacementTimeChart / A
 |---|---|---|
 | `MiniChart` cursor 越界 | 明显小问题 | ✅ 同轮小修：cursor clamp 到 xDomain，dev mode 越界 warning |
 | `SecondLawCenterExtra` currentXVal 越界 | 由 MiniChart 统一修复 | ✅ 不改消费方 |
-| `CuttingEMF` V-T / a-T | 双图 + 渐近线 + 局部 BasePhysicsChart 封装，且文件存在既有 lint 问题 | 暂缓；后续单独评估，不混入低风险批处理 |
+| `CuttingEMF` V-T / a-T | 第七轮已单独评估；第八轮已迁 V-T，a-T 暂留，文件仍有既有 lint 问题 | ✅ V-T 已收口；a-T 后续单独评估，不混入低风险批处理 |
 | `ElectricPotentialChartScene` | hover 切线 + 鼠标求导 + 场景交互 | 暂缓复杂图表 |
 | `ForceMotionTripleChart` | 三联图 + 面积 + 游标 + 自定义 SingleChart | 暂缓复杂图表 |
 | `SatelliteAnimation` markers/subtitle | 已迁移到 VelocityTimeChart，属于教学增强 | 暂不作为收口任务 |
@@ -279,14 +279,14 @@ BasePhysicsChart / RelationChart / VelocityTimeChart / DisplacementTimeChart / A
 
 ---
 
-## 10. 第七轮评估结论：`CuttingEMF` V-T / a-T
+## 10. 第七/八轮结论：`CuttingEMF` V-T / a-T
 
 > 评估文档见：[`CUTTING_EMF_CHART_EVALUATION.md`](./CUTTING_EMF_CHART_EVALUATION.md)。  
-> 范围：只评估 `CuttingEMF.tsx` 内 V-T / a-T 图表是否可复用 `VelocityTimeChart` / `AccelerationTimeChart`；未迁移，未修既有 lint，未碰其他电磁图表。
+> 第七轮只评估 `CuttingEMF.tsx` 内 V-T / a-T 图表是否可复用 `VelocityTimeChart` / `AccelerationTimeChart`；第八轮只迁移 V-T，a-T 暂留，未修既有 lint，未碰其他电磁图表。
 
 | 图表 | 结论 | 后续动作 |
 |---|---|---|
-| V-T | ✅ 可较干净迁入 `VelocityTimeChart` | 后续可小步迁移；收尾速度渐近线可用 children 自定义 |
+| V-T | ✅ 已迁入 `VelocityTimeChart` | 收尾速度渐近线使用 children 自定义；a-T 未动 |
 | a-T | ⚠️ 可复用 `AccelerationTimeChart` 的动态与定标能力，但无损迁移缺参考线/children 能力 | 暂不强迁；若要无损迁移，先补通用参考线能力或接受视觉简化 |
 
 结论：`CuttingEMF` 当前已基于 `BasePhysicsChart`，不是裸手写坐标轴；后续不建议一轮强迁两图。

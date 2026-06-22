@@ -8,7 +8,7 @@ import { withAlpha } from '@/theme/physics'
 import { physicsToCanvasWithOrigin, computeScale } from '@/utils/coordinate'
 import { Rails, ConductorRod, VectorArrow, VectorDefs } from '@/components/Physics'
 import { CuttingEMFHandRule } from './CuttingEMFHandRule'
-import { BasePhysicsChart, useChartContext } from '@/components/Chart'
+import { BasePhysicsChart, useChartContext, VelocityTimeChart } from '@/components/Chart'
 
 // 物理世界坐标边界 (物理单位：米)
 // x: 从 -1.0 到 11.0m (有效轨道 0 ~ 10.0m，两侧预留边距)
@@ -144,6 +144,37 @@ const ChartSVG = React.memo(function ChartSVG({
     </BasePhysicsChart>
   )
 })
+
+function TerminalVelocityReference({ v_m }: { v_m: number }) {
+  const ctx = useChartContext()
+  if (!ctx || !Number.isFinite(v_m)) return null
+
+  const { toSvgY, plotOrigin, plotSize, font } = ctx
+  const y = toSvgY(v_m)
+
+  return (
+    <g>
+      <line
+        x1={plotOrigin.x}
+        y1={y}
+        x2={plotOrigin.x + plotSize.width}
+        y2={y}
+        stroke={CHART_COLORS.asymptote}
+        strokeWidth={1}
+        strokeDasharray="4,4"
+      />
+      <text
+        x={plotOrigin.x + plotSize.width - font(7)}
+        y={y - 4}
+        fontSize={font(7)}
+        fill={CHART_COLORS.tickLabel}
+        textAnchor="end"
+      >
+        收尾速度 v_m = {v_m.toFixed(2)} m/s
+      </text>
+    </g>
+  )
+}
 
 export default function CuttingEMF() {
   const { params, time, isPlaying, setIsPlaying, showGrid } = useAnimationStore(
@@ -382,6 +413,11 @@ export default function CuttingEMF() {
     return pts
   }, [mode, T_max, v, v_m, a_0, tau])
 
+  const vtPoints = useMemo(
+    () => samplePoints.map((p) => ({ t: p.t, v: p.v })),
+    [samplePoints]
+  )
+
   // v-t 图 Y 轴上限
   const vYMax = mode === 0 ? Math.max(1.0, Math.abs(v)) * 1.2 : v_m * 1.2
   // a-t 图 Y 轴上限
@@ -394,24 +430,25 @@ export default function CuttingEMF() {
     <div ref={containerRef} className="w-full h-full flex flex-col bg-neutral-50 p-2 gap-2 relative">
       {/* 上方：v-t 和 a-t 自适应采样图表 */}
       <div className="w-full shrink-0 flex items-center justify-between gap-4" style={{ height: chartHeight }}>
-        <ChartSVG
+        <VelocityTimeChart
+          mode="animated"
+          points={vtPoints}
+          domainPoints={vtPoints}
+          referencePoints={vtPoints}
+          currentTime={Math.min(time, T_max)}
+          tMax={T_max}
+          vRange={[-vYMax, vYMax]}
           title="速度－时间图像 (v-t 图)"
+          xLabel="t / s"
           yLabel="v / (m·s⁻¹)"
-          curveColor={VT_CHART_COLORS.velocityCurve}
-          samplePoints={samplePoints}
-          getVal={(p) => p.v}
-          yMax={vYMax}
-          curVal={finalV}
-          isVelocity={true}
-          time={time}
-          T_max={T_max}
-          chartW={chartW}
-          chartH={chartH}
-          px={px}
-          font={font}
-          mode={mode}
-          v_m={v_m}
-        />
+          series="primary"
+          showCursor={time <= T_max}
+          showReferenceLine
+          referenceColor={VT_CHART_COLORS.velocityCurve}
+          referenceOpacity={0.4}
+        >
+          {mode === 1 && <TerminalVelocityReference v_m={v_m} />}
+        </VelocityTimeChart>
         <ChartSVG
           title="加速度－时间图像 (a-t 图)"
           yLabel="a / (m·s⁻²)"

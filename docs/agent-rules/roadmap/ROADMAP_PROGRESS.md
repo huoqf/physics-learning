@@ -34,7 +34,7 @@
 > 只保留当前焦点，已完成任务详见 `process/PROCESS_LOG.md`
 
 - **当前里程碑**：[M4] 电磁/热/光/原子模块 🚧 进行中
-- **当前焦点**：[M4-1] 电磁学 ✅ 已收官 · [M4-1.x] CuttingEMF 增强（PR 4 探索任务卡 ⏳） · [M4-2] 热学纯函数库 ✅ · [M4-3] 光学纯函数库 ✅
+- **当前焦点**：[M4-1] 电磁学 ✅ 已收官 · [M4-1.x] CuttingEMF 增强 ✅ · [M4-2] 热学纯函数库 ✅ · [M4-3] 光学纯函数库 ✅
 - **架构完善**：AnimationPage 规范合规重构（773→275行，registry 驱动）✅ · 项目规范整合至 .trae/rules/project_rules.md ✅ · 矢量箭头统一架构（VectorArrow + refMagnitude 归一化 + SceneConfig refMagnitudes + 项目规范同步）✅
 - **力学增强**：竖直上抛运动三屏联动重构 + 进阶模式 ✅ · 速度动画进阶版重构（基础版+进阶版双模式，含变加速/简谐振动/往返多阶段3种模型）✅ · 力的合成与分解手势拖拽重构与三模式教学改进 ✅ · 共点力平衡双绳悬挂手势拖拽重构与封闭三角形演示 ✅
 - **图表迁移**：KineticEnergyAnimation（995→157行）✅ · PowerAnimation（841→192行）✅
