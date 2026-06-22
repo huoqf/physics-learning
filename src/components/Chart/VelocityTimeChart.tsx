@@ -77,6 +77,10 @@ interface VelocityTimeChartProps {
   vRange?: [number, number]
   /** 标题 */
   title?: string
+  /** X 轴标签，默认 t (s) */
+  xLabel?: string
+  /** Y 轴标签，默认 v (m/s) */
+  yLabel?: string
   /** 主系列是否显示面积填充 */
   showArea?: boolean
   /** 面积截取区间（物理坐标），默认 [0, currentTime] */
@@ -341,6 +345,8 @@ export function VelocityTimeChart({
   tDomain,
   vRange,
   title = 'v-t 图像',
+  xLabel = 't (s)',
+  yLabel = 'v (m/s)',
   showArea = false,
   areaRange,
   areaVariant,
@@ -374,8 +380,8 @@ export function VelocityTimeChart({
     <BasePhysicsChart
       xDomain={tDomain ?? [0, tMax]}
       yDomain={computedVRange}
-      xLabel="t (s)"
-      yLabel="v (m/s)"
+      xLabel={xLabel}
+      yLabel={yLabel}
       title={title}
       yBaseline={computedVRange[0] < 0 ? 0 : undefined}
       showGrid={showGrid}

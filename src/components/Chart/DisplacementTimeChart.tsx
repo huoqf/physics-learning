@@ -25,6 +25,10 @@ interface DisplacementTimeChartProps {
   /** 位移范围（不传则基于 domainPoints / points 自动计算） */
   xRange?: [number, number]
   title?: string
+  /** X 轴标签，默认 t (s) */
+  xLabel?: string
+  /** Y 轴标签，默认 x (m) */
+  yLabel?: string
   showArea?: boolean
   areaRange?: [number, number]
   areaVariant?: ChartAreaVariant
@@ -119,6 +123,8 @@ export function DisplacementTimeChart({
   tDomain,
   xRange,
   title = 'x-t 图像',
+  xLabel = 't (s)',
+  yLabel = 'x (m)',
   showArea = false,
   areaRange,
   areaVariant,
@@ -145,8 +151,8 @@ export function DisplacementTimeChart({
     <BasePhysicsChart
       xDomain={tDomain ?? [0, tMax]}
       yDomain={computedXRange}
-      xLabel="t (s)"
-      yLabel="x (m)"
+      xLabel={xLabel}
+      yLabel={yLabel}
       title={title}
       yBaseline={computedXRange[0] < 0 ? 0 : undefined}
       className={className}

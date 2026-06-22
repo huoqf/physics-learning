@@ -1,4 +1,4 @@
-import type { MouseEvent } from 'react'
+import { useMemo, useRef, type MouseEvent } from 'react'
 import {
   PHYSICS_COLORS,
   CHART_COLORS,
@@ -8,14 +8,20 @@ import {
   DASH,
   FONT,
 } from '@/theme/physics'
-import { ChartSecant, ChartTangent } from '@/components/Chart'
+import {
+  ChartArea,
+  ChartCursor,
+  ChartSecant,
+  ChartTangent,
+  DisplacementTimeChart,
+  VelocityTimeChart,
+  useChartContext,
+} from '@/components/Chart'
 import type { UseVerticalThrowChartLayoutResult } from './useVerticalThrowChartLayout'
-import type { UseVerticalThrowPhysicsResult } from './useVerticalThrowPhysics'
+import type { UseVerticalThrowPhysicsResult, VerticalThrowTrajectoryPoint } from './useVerticalThrowPhysics'
 
 /** 脉冲动画周期 (ms) */
 const PULSE_PERIOD = 800
-
-type ChartKind = 'vt' | 'yt'
 
 interface VerticalThrowChartsProps {
   layout: UseVerticalThrowChartLayoutResult
@@ -26,19 +32,663 @@ interface VerticalThrowChartsProps {
   showDoubleTrack: boolean
   targetHeight: number
   g: number
-  clampedY: number
-  clampedVacuumY: number
-  font: (v: number) => number
-  onChartClick: (e: MouseEvent<SVGElement>, chartType: ChartKind) => void
-  onChartMouseDown: (e: MouseEvent<SVGElement>, chartType: ChartKind) => void
+  onTimeChange: (time: number) => void
+}
+
+interface TimePoint {
+  t: number
+  v: number
+}
+
+interface DisplacementPoint {
+  t: number
+  x: number
+}
+
+function toSvgLocalX(e: MouseEvent<SVGElement>): number {
+  const svg = e.currentTarget.ownerSVGElement
+  if (!svg) return 0
+  const rect = svg.getBoundingClientRect()
+  const svgWidth = svg.viewBox.baseVal.width || svg.width.baseVal.value || rect.width
+  return (e.clientX - rect.left) * (svgWidth / Math.max(rect.width, 1))
+}
+
+function buildPath(
+  points: { x: number; y: number }[],
+  toSvgX: (v: number) => number,
+  toSvgY: (v: number) => number,
+): string {
+  if (points.length < 2) return ''
+  return (
+    'M ' +
+    points
+      .map((p) => `${toSvgX(p.x).toFixed(2)},${toSvgY(p.y).toFixed(2)}`)
+      .join(' L ')
+  )
+}
+
+function FullCurve({
+  points,
+  color,
+  strokeWidth = 1,
+  strokeDasharray,
+  opacity = 0.18,
+}: {
+  points: { x: number; y: number }[]
+  color: string
+  strokeWidth?: number
+  strokeDasharray?: string
+  opacity?: number
+}) {
+  const ctx = useChartContext()
+  const d = useMemo(() => {
+    if (!ctx) return ''
+    return buildPath(points, ctx.toSvgX, ctx.toSvgY)
+  }, [ctx, points])
+
+  if (!d) return null
+  return (
+    <path
+      d={d}
+      fill="none"
+      stroke={color}
+      strokeWidth={strokeWidth}
+      strokeDasharray={strokeDasharray}
+      opacity={opacity}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  )
+}
+
+function TimeScrubber({
+  tDomain,
+  onTimeChange,
+}: {
+  tDomain: [number, number]
+  onTimeChange: (time: number) => void
+}) {
+  const ctx = useChartContext()
+  const draggingRef = useRef(false)
+
+  if (!ctx) return null
+
+  const selectTime = (e: MouseEvent<SVGElement>) => {
+    const localX = toSvgLocalX(e)
+    const rawRatio = (localX - ctx.plotOrigin.x) / Math.max(ctx.plotSize.width, 1)
+    const ratio = Math.min(1, Math.max(0, rawRatio))
+    const t = tDomain[0] + ratio * (tDomain[1] - tDomain[0])
+    onTimeChange(t)
+  }
+
+  return (
+    <rect
+      x={ctx.plotOrigin.x}
+      y={ctx.plotOrigin.y}
+      width={ctx.plotSize.width}
+      height={ctx.plotSize.height}
+      fill="transparent"
+      cursor="crosshair"
+      onMouseDown={(e) => {
+        draggingRef.current = true
+        selectTime(e)
+      }}
+      onMouseMove={(e) => {
+        if (draggingRef.current) selectTime(e)
+      }}
+      onMouseUp={() => {
+        draggingRef.current = false
+      }}
+      onMouseLeave={() => {
+        draggingRef.current = false
+      }}
+      onClick={selectTime}
+    />
+  )
+}
+
+function VTAreaLayer({
+  trajectoryPoints,
+  activeTime,
+  peakTime,
+  advancedMode,
+  sliceDensity,
+  interpolatePoints,
+}: {
+  trajectoryPoints: VerticalThrowTrajectoryPoint[]
+  activeTime: number
+  peakTime: number
+  advancedMode: number
+  sliceDensity: number
+  interpolatePoints: UseVerticalThrowPhysicsResult['interpolatePoints']
+}) {
+  const ctx = useChartContext()
+  const areaPoints = useMemo(
+    () => trajectoryPoints.map((p) => ({ x: p.t, y: p.v })),
+    [trajectoryPoints],
+  )
+
+  const sliceRects = useMemo(() => {
+    if (!ctx || advancedMode !== 1 || sliceDensity <= 0) return []
+    const rects: Array<{ x: number; y: number; w: number; h: number; positive: boolean }> = []
+    for (let t = 0; t < activeTime; t += sliceDensity) {
+      const sliceEnd = Math.min(t + sliceDensity, activeTime)
+      const { v } = interpolatePoints(t, trajectoryPoints)
+      const x1 = ctx.toSvgX(t)
+      const x2 = ctx.toSvgX(sliceEnd)
+      const y0 = ctx.toSvgY(0)
+      const yV = ctx.toSvgY(v)
+      rects.push({
+        x: x1,
+        y: v >= 0 ? yV : y0,
+        w: Math.max(0, x2 - x1),
+        h: Math.abs(y0 - yV),
+        positive: v >= 0,
+      })
+    }
+    return rects
+  }, [ctx, advancedMode, sliceDensity, activeTime, interpolatePoints, trajectoryPoints])
+
+  if (advancedMode === 1 && sliceDensity > 0) {
+    return (
+      <g>
+        {sliceRects.map((rect, idx) => (
+          <rect
+            key={`vt-slice-${idx}`}
+            x={rect.x}
+            y={rect.y}
+            width={rect.w}
+            height={rect.h}
+            fill={rect.positive ? PHYSICS_COLORS.velocityX : PHYSICS_COLORS.acceleration}
+            opacity={0.16}
+          />
+        ))}
+      </g>
+    )
+  }
+
+  return (
+    <g>
+      {activeTime > 0 && (
+        <ChartArea
+          points={areaPoints}
+          xRange={[0, Math.min(peakTime, activeTime)]}
+          baseline={0}
+          variant="default"
+          intensity="normal"
+          stroke={PHYSICS_COLORS.velocity}
+          strokeWidth={0.8}
+        />
+      )}
+      {activeTime > peakTime && (
+        <ChartArea
+          points={areaPoints}
+          xRange={[peakTime, activeTime]}
+          baseline={0}
+          variant="warm"
+          intensity="normal"
+          stroke={PHYSICS_COLORS.acceleration}
+          strokeWidth={0.8}
+        />
+      )}
+    </g>
+  )
+}
+
+function VerticalThrowVTChart({
+  layout,
+  physics,
+  advancedMode,
+  sliceDensity,
+  airResistance,
+  showDoubleTrack,
+  g,
+  onTimeChange,
+}: Pick<VerticalThrowChartsProps, 'layout' | 'physics' | 'advancedMode' | 'sliceDensity' | 'airResistance' | 'showDoubleTrack' | 'g' | 'onTimeChange'>) {
+  const {
+    xMax,
+    vtVMax,
+  } = layout
+  const {
+    trajectory,
+    effectiveTime,
+    isLanded,
+    isAtPeak,
+    maxHeightTime,
+    areaValues,
+    targetHeightIntersections,
+    vT1,
+    vT2,
+    interpolatePoints,
+  } = physics
+
+  const tDomain: [number, number] = [0, xMax]
+  const activeTime = Math.min(effectiveTime, xMax)
+  const activeAir = interpolatePoints(activeTime, trajectory.points)
+  const activeVac = interpolatePoints(activeTime, trajectory.vacuumPoints)
+
+  const airVTPoints = useMemo<TimePoint[]>(
+    () => trajectory.points.map((p) => ({ t: p.t, v: p.v })),
+    [trajectory.points],
+  )
+  const vacVTPoints = useMemo(
+    () => trajectory.vacuumPoints.filter((p) => p.t <= xMax + 1e-9).map((p) => ({ x: p.t, y: p.v })),
+    [trajectory.vacuumPoints, xMax],
+  )
+  const airFullPoints = useMemo(
+    () => trajectory.points.filter((p) => p.t <= xMax + 1e-9).map((p) => ({ x: p.t, y: p.v })),
+    [trajectory.points, xMax],
+  )
+
+  return (
+    <VelocityTimeChart
+      points={airVTPoints}
+      domainPoints={airVTPoints}
+      currentTime={activeTime}
+      tMax={xMax}
+      tDomain={tDomain}
+      vRange={[-vtVMax, vtVMax]}
+      title="速度-时间图像 (v-t 图)"
+      xLabel="t/s"
+      yLabel="v/(m·s⁻¹)"
+      showArea={false}
+      showCursor={false}
+      className="w-full h-full"
+      underlay={
+        <>
+          <FullCurve points={airFullPoints} color={VT_CHART_COLORS.velocityCurve} strokeWidth={1} opacity={0.14} />
+          {airResistance > 0 && (
+            <FullCurve
+              points={vacVTPoints}
+              color={CHART_COLORS.asymptote}
+              strokeWidth={1}
+              strokeDasharray="3,3"
+              opacity={0.55}
+            />
+          )}
+          <VTAreaLayer
+            trajectoryPoints={trajectory.points}
+            activeTime={activeTime}
+            peakTime={maxHeightTime}
+            advancedMode={advancedMode}
+            sliceDensity={sliceDensity}
+            interpolatePoints={interpolatePoints}
+          />
+        </>
+      }
+    >
+      {showDoubleTrack && !isLanded && (
+        <FullCurve
+          points={trajectory.vacuumPoints.filter((p) => p.t <= activeTime + 1e-9).map((p) => ({ x: p.t, y: p.v }))}
+          color={PHYSICS_COLORS.position}
+          strokeWidth={1.5}
+          opacity={0.75}
+        />
+      )}
+
+      {isAtPeak && (
+        <g>
+          <ChartTangent
+            point={{ x: maxHeightTime, y: 0 }}
+            slope={-g}
+            extent={Math.min(0.5, xMax * 0.08)}
+            label="k = -g"
+            color={CHART_COLORS.criticalPt}
+            strokeWidth={1}
+            lineOpacity={0.85}
+            showPoint={false}
+            strokeDasharray="2,2"
+          />
+          <circle cx={0} cy={0} r={0} fill="none" />
+          <PeakPulse x={maxHeightTime} y={0} />
+        </g>
+      )}
+
+      {advancedMode === 1 && targetHeightIntersections && (
+        <VTTargetMarkers
+          activeTime={activeTime}
+          targetHeightIntersections={targetHeightIntersections}
+          vT1={vT1}
+          vT2={vT2}
+        />
+      )}
+
+      {!isAtPeak && activeTime > 0 && (
+        <CurrentPoint x={activeTime} y={activeAir.v} color={VT_CHART_COLORS.velocityCurve} />
+      )}
+      {showDoubleTrack && !isLanded && (
+        <CurrentPoint x={activeTime} y={activeVac.v} color={PHYSICS_COLORS.position} radius={3.5} />
+      )}
+
+      {activeTime > 0 && (
+        <ChartCursor
+          x={activeTime}
+          dataPoints={[{ y: activeAir.v, label: 'v', series: 'primary' }]}
+          showLabels={false}
+        />
+      )}
+
+      {advancedMode === 1 && areaValues && <AreaValuesBox areaValues={areaValues} />}
+      <TimeScrubber tDomain={tDomain} onTimeChange={onTimeChange} />
+    </VelocityTimeChart>
+  )
+}
+
+function VerticalThrowYTChart({
+  layout,
+  physics,
+  advancedMode,
+  airResistance,
+  showDoubleTrack,
+  targetHeight,
+  onTimeChange,
+}: Pick<VerticalThrowChartsProps, 'layout' | 'physics' | 'advancedMode' | 'airResistance' | 'showDoubleTrack' | 'targetHeight' | 'onTimeChange'>) {
+  const { xMax, ytYMax } = layout
+  const {
+    trajectory,
+    effectiveTime,
+    effectiveV,
+    isLanded,
+    isAtPeak,
+    maxHeight,
+    maxHeightTime,
+    targetHeightIntersections,
+    interpolatePoints,
+  } = physics
+
+  const tDomain: [number, number] = [0, xMax]
+  const activeTime = Math.min(effectiveTime, xMax)
+  const activeAir = interpolatePoints(activeTime, trajectory.points)
+  const activeVac = interpolatePoints(activeTime, trajectory.vacuumPoints)
+
+  const airYTPoints = useMemo<DisplacementPoint[]>(
+    () => trajectory.points.map((p) => ({ t: p.t, x: Math.max(p.y, 0) })),
+    [trajectory.points],
+  )
+  const airFullPoints = useMemo(
+    () => trajectory.points.filter((p) => p.t <= xMax + 1e-9).map((p) => ({ x: p.t, y: Math.max(p.y, 0) })),
+    [trajectory.points, xMax],
+  )
+  const vacFullPoints = useMemo(
+    () => trajectory.vacuumPoints.filter((p) => p.t <= xMax + 1e-9).map((p) => ({ x: p.t, y: Math.max(p.y, 0) })),
+    [trajectory.vacuumPoints, xMax],
+  )
+
+  return (
+    <DisplacementTimeChart
+      points={airYTPoints}
+      domainPoints={airYTPoints}
+      currentTime={activeTime}
+      tMax={xMax}
+      tDomain={tDomain}
+      xRange={[0, ytYMax]}
+      title="位移-时间图像 (y-t 图)"
+      xLabel="t/s"
+      yLabel="y/m"
+      showArea
+      areaVariant="warm"
+      areaIntensity="subtle"
+      showCursor={false}
+      series="success"
+      className="w-full h-full"
+      underlay={
+        <>
+          <FullCurve points={airFullPoints} color={XT_CHART_COLORS.positionCurve} strokeWidth={1} opacity={0.12} />
+          {airResistance > 0 && (
+            <FullCurve
+              points={vacFullPoints}
+              color={CHART_COLORS.asymptote}
+              strokeWidth={1}
+              strokeDasharray="3,3"
+              opacity={0.55}
+            />
+          )}
+        </>
+      }
+    >
+      <HorizontalMarker y={maxHeight} label="H" color={CHART_COLORS.zeroline} opacity={0.55} />
+
+      {advancedMode === 1 && targetHeight > 0 && targetHeight < maxHeight && (
+        <TargetHeightLayer
+          targetHeight={targetHeight}
+          targetHeightIntersections={targetHeightIntersections}
+        />
+      )}
+
+      {showDoubleTrack && !isLanded && (
+        <FullCurve
+          points={trajectory.vacuumPoints.filter((p) => p.t <= activeTime + 1e-9).map((p) => ({ x: p.t, y: Math.max(p.y, 0) }))}
+          color={PHYSICS_COLORS.position}
+          strokeWidth={1.5}
+          opacity={0.75}
+        />
+      )}
+
+      {advancedMode === 1 && activeTime > 0.05 && !isLanded && (
+        <ChartSecant
+          point={{ x: 0, y: 0 }}
+          secantPoint={{ x: activeTime, y: Math.max(activeAir.y, 0) }}
+          label="v̄"
+          dxLabel="t"
+          dyLabel="y"
+          color={PHYSICS_COLORS.secantLine}
+          showTriangle
+          strokeWidth={1}
+          strokeDasharray="3,2"
+          lineOpacity={0.65}
+          triangleOpacity={0.07}
+        />
+      )}
+
+      {advancedMode === 1 && activeTime > 0.05 && !isLanded && (
+        <ChartTangent
+          point={{ x: activeTime, y: Math.max(activeAir.y, 0) }}
+          slope={effectiveV}
+          extent={Math.min(0.6, xMax * 0.08)}
+          label="k = v"
+          color={VT_CHART_COLORS.slopeTangent}
+          strokeWidth={1}
+          lineOpacity={0.75}
+          showPoint={false}
+        />
+      )}
+
+      {isAtPeak && <PeakPulse x={maxHeightTime} y={maxHeight} color={CHART_COLORS.highlight} />}
+      {!isAtPeak && activeTime > 0 && (
+        <CurrentPoint x={activeTime} y={Math.max(activeAir.y, 0)} color={XT_CHART_COLORS.positionCurve} />
+      )}
+      {showDoubleTrack && !isLanded && (
+        <CurrentPoint x={activeTime} y={Math.max(activeVac.y, 0)} color={PHYSICS_COLORS.position} radius={3.5} />
+      )}
+
+      {activeTime > 0 && (
+        <ChartCursor
+          x={activeTime}
+          dataPoints={[{ y: Math.max(activeAir.y, 0), label: 'y', series: 'success' }]}
+          showLabels={false}
+        />
+      )}
+      <TimeScrubber tDomain={tDomain} onTimeChange={onTimeChange} />
+    </DisplacementTimeChart>
+  )
+}
+
+function CurrentPoint({ x, y, color, radius = 4.5 }: { x: number; y: number; color: string; radius?: number }) {
+  const ctx = useChartContext()
+  if (!ctx) return null
+  return <circle cx={ctx.toSvgX(x)} cy={ctx.toSvgY(y)} r={radius} fill={color} opacity={0.9} />
+}
+
+function PeakPulse({ x, y, color = VT_CHART_COLORS.zeroCrossing }: { x: number; y: number; color?: string }) {
+  const ctx = useChartContext()
+  if (!ctx) return null
+  return (
+    <g>
+      <circle cx={ctx.toSvgX(x)} cy={ctx.toSvgY(y)} r={6} fill={color} opacity={0.6}>
+        <animate attributeName="r" values="6;10;6" dur={`${PULSE_PERIOD}ms`} repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.6;1;0.6" dur={`${PULSE_PERIOD}ms`} repeatCount="indefinite" />
+      </circle>
+      <circle cx={ctx.toSvgX(x)} cy={ctx.toSvgY(y)} r={3} fill={color} />
+    </g>
+  )
+}
+
+function VTTargetMarkers({
+  activeTime,
+  targetHeightIntersections,
+  vT1,
+  vT2,
+}: {
+  activeTime: number
+  targetHeightIntersections: { t1: number; t2: number }
+  vT1: number
+  vT2: number
+}) {
+  const ctx = useChartContext()
+  if (!ctx) return null
+  const opacity = Math.abs(activeTime - targetHeightIntersections.t1) < 0.2 || Math.abs(activeTime - targetHeightIntersections.t2) < 0.2 ? 0.95 : 0.25
+  return (
+    <g opacity={opacity}>
+      {[{ t: targetHeightIntersections.t1, v: vT1 }, { t: targetHeightIntersections.t2, v: vT2 }].map((p, idx) => (
+        <g key={`vt-target-${idx}`}>
+          <line
+            x1={ctx.plotOrigin.x} y1={ctx.toSvgY(p.v)}
+            x2={ctx.toSvgX(p.t)} y2={ctx.toSvgY(p.v)}
+            stroke={CHART_COLORS.highlight}
+            strokeWidth={0.8}
+            strokeDasharray="2,2"
+          />
+          <circle cx={ctx.toSvgX(p.t)} cy={ctx.toSvgY(p.v)} r={3.5} fill={CHART_COLORS.highlight} />
+        </g>
+      ))}
+    </g>
+  )
+}
+
+function HorizontalMarker({
+  y,
+  label,
+  color,
+  opacity = 0.6,
+}: {
+  y: number
+  label?: string
+  color: string
+  opacity?: number
+}) {
+  const ctx = useChartContext()
+  if (!ctx) return null
+  return (
+    <g opacity={opacity}>
+      <line
+        x1={ctx.plotOrigin.x}
+        y1={ctx.toSvgY(y)}
+        x2={ctx.plotOrigin.x + ctx.plotSize.width}
+        y2={ctx.toSvgY(y)}
+        stroke={color}
+        strokeWidth={STROKE.reference}
+        strokeDasharray={DASH.reference.join(' ')}
+      />
+      {label && (
+        <text
+          x={ctx.plotOrigin.x + ctx.plotSize.width - 4}
+          y={ctx.toSvgY(y) - 4}
+          fontSize={ctx.font(FONT.small)}
+          fill={color}
+          textAnchor="end"
+          fontWeight="bold"
+        >
+          {label}
+        </text>
+      )}
+    </g>
+  )
+}
+
+function TargetHeightLayer({
+  targetHeight,
+  targetHeightIntersections,
+}: {
+  targetHeight: number
+  targetHeightIntersections: { t1: number; t2: number } | null
+}) {
+  const ctx = useChartContext()
+  if (!ctx) return null
+
+  return (
+    <g>
+      <HorizontalMarker y={targetHeight} label={`y=${targetHeight}m`} color={CHART_COLORS.highlight} opacity={0.75} />
+      {targetHeightIntersections && (
+        <>
+          {[targetHeightIntersections.t1, targetHeightIntersections.t2].map((t, idx) => (
+            <g key={`yt-target-${idx}`}>
+              <line
+                x1={ctx.toSvgX(t)} y1={ctx.plotOrigin.y}
+                x2={ctx.toSvgX(t)} y2={ctx.plotOrigin.y + ctx.plotSize.height}
+                stroke={CHART_COLORS.highlight}
+                strokeWidth={0.8}
+                strokeDasharray={DASH.tangent.join(' ')}
+                opacity={0.5}
+              />
+              <text
+                x={ctx.toSvgX(t)}
+                y={ctx.plotOrigin.y + ctx.plotSize.height + ctx.font(8)}
+                fontSize={ctx.font(8)}
+                fill={CHART_COLORS.highlight}
+                textAnchor="middle"
+              >
+                t{idx + 1}={t.toFixed(2)}s
+              </text>
+            </g>
+          ))}
+        </>
+      )}
+    </g>
+  )
+}
+
+function AreaValuesBox({
+  areaValues,
+}: {
+  areaValues: NonNullable<UseVerticalThrowPhysicsResult['areaValues']>
+}) {
+  const ctx = useChartContext()
+  if (!ctx) return null
+
+  const x = ctx.plotOrigin.x + ctx.plotSize.width - 116
+  const y = ctx.plotOrigin.y + 6
+  return (
+    <g>
+      <rect
+        x={x}
+        y={y}
+        width={112}
+        height={44}
+        fill={PHYSICS_COLORS.objectFillNeutral}
+        opacity={0.88}
+        rx={3}
+        stroke={CHART_COLORS.gridLine}
+        strokeWidth={0.8}
+      />
+      <text x={x + 104} y={y + 13} fontSize={ctx.font(8)} fill={VT_CHART_COLORS.areaShade} textAnchor="end" fontWeight="bold">
+        上升位移 S⁺ = {areaValues.positive.toFixed(2)} m
+      </text>
+      <text x={x + 104} y={y + 25} fontSize={ctx.font(8)} fill={VT_CHART_COLORS.zeroCrossing} textAnchor="end" fontWeight="bold">
+        下落位移 S⁻ = {areaValues.negative.toFixed(2)} m
+      </text>
+      <text x={x + 104} y={y + 37} fontSize={ctx.font(8)} fill={CHART_COLORS.labelText} textAnchor="end" fontWeight="bold">
+        当前高度 y = {areaValues.net.toFixed(2)} m
+      </text>
+    </g>
+  )
 }
 
 /**
  * 竖直上抛右侧双图表区。
  *
- * 先从 VerticalThrowAnimation 主文件拆出独立组件，承接 ChartSecant / ChartTangent
- * 插件化结果；下一步可在本组件内继续迁入 VelocityTimeChart / DisplacementTimeChart
- * 预设，避免主动画文件同时承担舞台和图表双重职责。
+ * 这里完成高难度三件套的最后一步：右侧 v-t / y-t 图迁入
+ * VelocityTimeChart / DisplacementTimeChart 预设，仅保留上抛专题特有的
+ * 标记、割线、切线、目标高度与面积信息作为插件层。
  */
 export function VerticalThrowCharts({
   layout,
@@ -49,375 +699,47 @@ export function VerticalThrowCharts({
   showDoubleTrack,
   targetHeight,
   g,
-  clampedY,
-  clampedVacuumY,
-  font,
-  onChartClick,
-  onChartMouseDown,
+  onTimeChange,
 }: VerticalThrowChartsProps) {
   const {
     dataX,
     dataWidth,
     vtChartTop,
     vtChartHeight,
-    vtInnerPad,
-    vtInnerW,
-    vtInnerH,
-    xMax,
-    vtToX,
-    vtToY,
     ytChartTop,
     ytChartHeight,
-    ytInnerPad,
-    ytInnerW,
-    ytInnerH,
-    ytToX,
-    ytToY,
-    vtYTicks,
-    xticks,
-    ytYTicks,
-    vtData,
-    ytData,
-    vtPositiveAreaD,
-    vtNegativeAreaD,
-    ytAreaD,
-    sliceRects,
   } = layout
-
-  const {
-    maxHeight,
-    maxHeightTime,
-    effectiveTime,
-    effectiveV,
-    vacuumV,
-    isLanded,
-    isAtPeak,
-    areaValues,
-    targetHeightIntersections,
-    vT1,
-    vT2,
-  } = physics
 
   return (
     <>
-        {/* ========== 右侧：v-t 图 ========== */}
-        <g transform={`translate(${dataX}, ${vtChartTop})`}>
-          <rect width={dataWidth} height={vtChartHeight} fill="white" rx={4} stroke={CHART_COLORS.axisLine} />
-          <text x={dataWidth / 2} y={18} fontSize={FONT.axis} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
-            速度-时间图像 (v-t 图)
-          </text>
+      <foreignObject x={dataX} y={vtChartTop} width={dataWidth} height={vtChartHeight}>
+        <div className="w-full h-full">
+          <VerticalThrowVTChart
+            layout={layout}
+            physics={physics}
+            advancedMode={advancedMode}
+            sliceDensity={sliceDensity}
+            airResistance={airResistance}
+            showDoubleTrack={showDoubleTrack}
+            g={g}
+            onTimeChange={onTimeChange}
+          />
+        </div>
+      </foreignObject>
 
-          <line x1={vtInnerPad.left} y1={vtInnerPad.top} x2={vtInnerPad.left} y2={vtInnerPad.top + vtInnerH}
-            stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-          <line x1={vtInnerPad.left} y1={vtToY(0)} x2={vtInnerPad.left + vtInnerW} y2={vtToY(0)}
-            stroke={CHART_COLORS.zeroline} strokeWidth={STROKE.axisBold} />
-
-          {xticks.map(t => (
-            <g key={`vt-xt-${t}`}>
-              <line x1={vtToX(t)} y1={vtToY(0) - 4} x2={vtToX(t)} y2={vtToY(0) + 4}
-                stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={vtToX(t)} y={vtToY(0) + 16} fontSize={font(9)} textAnchor="middle" fill={CHART_COLORS.tickLabel}>{t}</text>
-            </g>
-          ))}
-
-          {vtYTicks.map(v => (
-            <g key={`vt-yt-${v}`}>
-              <line x1={vtInnerPad.left - 4} y1={vtToY(v)} x2={vtInnerPad.left} y2={vtToY(v)}
-                stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={vtInnerPad.left - 8} y={vtToY(v) + 3} fontSize={font(9)} textAnchor="end" fill={CHART_COLORS.tickLabel}>{v}</text>
-            </g>
-          ))}
-
-          <text x={vtInnerPad.left + vtInnerW / 2} y={vtInnerPad.top + vtInnerH + 28}
-            fontSize={font(10)} textAnchor="middle" fill={CHART_COLORS.labelText}>t/s</text>
-          <text x={vtInnerPad.left - 30} y={vtInnerPad.top + vtInnerH / 2}
-            fontSize={font(10)} textAnchor="middle" fill={CHART_COLORS.labelText}
-            transform={`rotate(-90, ${vtInnerPad.left - 30}, ${vtInnerPad.top + vtInnerH / 2})`}>v/(m·s⁻¹)</text>
-
-          {advancedMode === 1 && sliceDensity > 0 ? (
-            sliceRects.map((rect, idx) => (
-              <rect key={`slice-${idx}`}
-                x={rect.x} y={rect.y} width={rect.w} height={rect.h}
-                fill={rect.positive ? 'url(#gridPattern)' : 'url(#stripePattern)'}
-                opacity={0.55}
-              />
-            ))
-          ) : (
-            <>
-              {vtPositiveAreaD && (
-                <path d={vtPositiveAreaD} fill="url(#aurora-blue-grad)" />
-              )}
-              {vtNegativeAreaD && (
-                <path d={vtNegativeAreaD} fill="url(#aurora-red-grad)" />
-              )}
-            </>
-          )}
-
-          {airResistance > 0 && vtData.vacFull && (
-            <path d={vtData.vacFull} fill="none" stroke={CHART_COLORS.asymptote} strokeWidth={1} strokeDasharray="3,3" opacity={0.6} />
-          )}
-
-          {vtData.airFull && (
-            <path d={vtData.airFull} fill="none" stroke={VT_CHART_COLORS.velocityCurve} strokeWidth={1} opacity={0.15} />
-          )}
-
-          {showDoubleTrack && vtData.vacActive && (
-            <path d={vtData.vacActive} fill="none" stroke={PHYSICS_COLORS.position} strokeWidth={1.5} opacity={0.7} />
-          )}
-
-          {vtData.airActive && (
-            <path d={vtData.airActive} fill="none" stroke={VT_CHART_COLORS.velocityCurve} strokeWidth={2} filter="url(#glow-filter-blue)" />
-          )}
-
-          {isAtPeak && (
-            <g>
-              <ChartTangent
-                point={{ x: maxHeightTime, y: 0 }}
-                slope={-g}
-                extent={Math.min(0.5, xMax * 0.08)}
-                label="k = -g"
-                color={CHART_COLORS.criticalPt}
-                strokeWidth={1}
-                lineOpacity={0.85}
-                showPoint={false}
-                strokeDasharray="2,2"
-                toSvgX={vtToX}
-                toSvgY={vtToY}
-                font={font}
-              />
-
-              <circle cx={vtToX(maxHeightTime)} cy={vtToY(0)} r={6}
-                fill={VT_CHART_COLORS.zeroCrossing} opacity={0.6}>
-                <animate attributeName="r" values="6;10;6" dur={`${PULSE_PERIOD}ms`} repeatCount="indefinite" />
-                <animate attributeName="opacity" values="0.6;1;0.6" dur={`${PULSE_PERIOD}ms`} repeatCount="indefinite" />
-              </circle>
-              <circle cx={vtToX(maxHeightTime)} cy={vtToY(0)} r={3}
-                fill={VT_CHART_COLORS.zeroCrossing} />
-            </g>
-          )}
-
-          {advancedMode === 1 && targetHeightIntersections && (
-            <g opacity={Math.abs(effectiveTime - targetHeightIntersections.t1) < 0.2 || Math.abs(effectiveTime - targetHeightIntersections.t2) < 0.2 ? 0.95 : 0.25}>
-              <line
-                x1={vtInnerPad.left} y1={vtToY(vT1)}
-                x2={vtToX(targetHeightIntersections.t1)} y2={vtToY(vT1)}
-                stroke={CHART_COLORS.highlight} strokeWidth={0.8} strokeDasharray="2,2"
-              />
-              <circle cx={vtToX(targetHeightIntersections.t1)} cy={vtToY(vT1)} r={3.5} fill={CHART_COLORS.highlight} />
-
-              <line
-                x1={vtInnerPad.left} y1={vtToY(vT2)}
-                x2={vtToX(targetHeightIntersections.t2)} y2={vtToY(vT2)}
-                stroke={CHART_COLORS.highlight} strokeWidth={0.8} strokeDasharray="2,2"
-              />
-              <circle cx={vtToX(targetHeightIntersections.t2)} cy={vtToY(vT2)} r={3.5} fill={CHART_COLORS.highlight} />
-            </g>
-          )}
-
-          {!isAtPeak && effectiveTime > 0 && (
-            <g>
-              <circle cx={vtToX(effectiveTime)} cy={vtToY(effectiveV)} r={4.5} fill={VT_CHART_COLORS.velocityCurve} />
-              <circle cx={vtToX(effectiveTime)} cy={vtToY(effectiveV)} r={7} fill="none" stroke={VT_CHART_COLORS.velocityCurve} strokeWidth={0.5} opacity={0.5} />
-            </g>
-          )}
-
-          {showDoubleTrack && !isLanded && (
-            <circle cx={vtToX(effectiveTime)} cy={vtToY(vacuumV)} r={3.5} fill={PHYSICS_COLORS.position} opacity={0.8} />
-          )}
-
-          <rect x={vtInnerPad.left} y={vtInnerPad.top} width={vtInnerW} height={vtInnerH}
-            fill="transparent" cursor="crosshair"
-            onClick={(e) => onChartClick(e, 'vt')}
-            onMouseDown={(e) => onChartMouseDown(e, 'vt')} />
-
-          {effectiveTime > 0 && (
-            <g>
-              <line x1={vtToX(effectiveTime)} y1={vtInnerPad.top}
-                x2={vtToX(effectiveTime)} y2={vtInnerPad.top + vtInnerH}
-                stroke={VT_CHART_COLORS.slopeTangent} strokeWidth={1}
-                strokeDasharray={DASH.tangent.join(' ')} opacity={0.8} />
-              <circle cx={vtToX(effectiveTime)} cy={vtInnerPad.top} r={2} fill={VT_CHART_COLORS.slopeTangent} />
-            </g>
-          )}
-
-          {advancedMode === 1 && areaValues && (
-            <g>
-              <rect x={vtInnerPad.left + vtInnerW - 105} y={vtInnerPad.top + 6} width={100} height={42} fill={PHYSICS_COLORS.objectFillNeutral} opacity={0.85} rx={3} stroke={CHART_COLORS.gridLine} strokeWidth={0.8} />
-              <text x={vtInnerPad.left + vtInnerW - 10} y={vtInnerPad.top + 16}
-                fontSize={font(8)} fill={VT_CHART_COLORS.areaShade} textAnchor="end" fontWeight="bold">
-                上升位移 S⁺ = {areaValues.positive.toFixed(2)} m
-              </text>
-              <text x={vtInnerPad.left + vtInnerW - 10} y={vtInnerPad.top + 26}
-                fontSize={font(8)} fill={VT_CHART_COLORS.zeroCrossing} textAnchor="end" fontWeight="bold">
-                下落位移 S⁻ = {areaValues.negative.toFixed(2)} m
-              </text>
-              <text x={vtInnerPad.left + vtInnerW - 10} y={vtInnerPad.top + 36}
-                fontSize={font(8)} fill={CHART_COLORS.labelText} textAnchor="end" fontWeight="bold">
-                当前高度 y = {areaValues.net.toFixed(2)} m
-              </text>
-            </g>
-          )}
-        </g>
-
-        {/* ========== 右侧：y-t 图 ========== */}
-        <g transform={`translate(${dataX}, ${ytChartTop})`}>
-          <rect width={dataWidth} height={ytChartHeight} fill="white" rx={4} stroke={CHART_COLORS.axisLine} />
-          <text x={dataWidth / 2} y={16} fontSize={FONT.axis} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
-            位移-时间图像 (y-t 图)
-          </text>
-
-          <line x1={ytInnerPad.left} y1={ytInnerPad.top} x2={ytInnerPad.left} y2={ytInnerPad.top + ytInnerH}
-            stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-          <line x1={ytInnerPad.left} y1={ytInnerPad.top + ytInnerH} x2={ytInnerPad.left + ytInnerW} y2={ytInnerPad.top + ytInnerH}
-            stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-
-          {xticks.map(t => (
-            <g key={`yt-xt-${t}`}>
-              <line x1={ytToX(t)} y1={ytInnerPad.top + ytInnerH - 4} x2={ytToX(t)} y2={ytInnerPad.top + ytInnerH + 4}
-                stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={ytToX(t)} y={ytInnerPad.top + ytInnerH + 16} fontSize={font(9)} textAnchor="middle" fill={CHART_COLORS.tickLabel}>{t}</text>
-            </g>
-          ))}
-
-          {ytYTicks.map(y => (
-            <g key={`yt-ytick-${y}`}>
-              <line x1={ytInnerPad.left - 4} y1={ytToY(y)} x2={ytInnerPad.left} y2={ytToY(y)}
-                stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-              <text x={ytInnerPad.left - 8} y={ytToY(y) + 3} fontSize={font(9)} textAnchor="end" fill={CHART_COLORS.tickLabel}>{y}</text>
-            </g>
-          ))}
-
-          <text x={ytInnerPad.left + ytInnerW / 2} y={ytInnerPad.top + ytInnerH + 28}
-            fontSize={font(10)} textAnchor="middle" fill={CHART_COLORS.labelText}>t/s</text>
-          <text x={ytInnerPad.left - 30} y={ytInnerPad.top + ytInnerH / 2}
-            fontSize={font(10)} textAnchor="middle" fill={CHART_COLORS.labelText}
-            transform={`rotate(-90, ${ytInnerPad.left - 30}, ${ytInnerPad.top + ytInnerH / 2})`}>y/m</text>
-
-          <line x1={ytInnerPad.left} y1={ytToY(maxHeight)} x2={ytInnerPad.left + ytInnerW} y2={ytToY(maxHeight)}
-            stroke={CHART_COLORS.zeroline} strokeWidth={0.8}
-            strokeDasharray={DASH.reference.join(' ')} opacity={0.6} />
-
-          {advancedMode === 1 && targetHeight > 0 && targetHeight < maxHeight && (
-            <>
-              <line x1={ytInnerPad.left} y1={ytToY(targetHeight)}
-                x2={ytInnerPad.left + ytInnerW} y2={ytToY(targetHeight)}
-                stroke={CHART_COLORS.highlight} strokeWidth={STROKE.reference}
-                strokeDasharray={DASH.reference.join(' ')} opacity={0.7} />
-              <text x={ytInnerPad.left + ytInnerW - 3} y={ytToY(targetHeight) - 4}
-                fontSize={FONT.small} fill={CHART_COLORS.highlight} textAnchor="end" opacity={0.8}>
-                高度 y = {targetHeight}m
-              </text>
-              {targetHeightIntersections && (
-                <>
-                  <line x1={ytToX(targetHeightIntersections.t1)} y1={ytInnerPad.top}
-                    x2={ytToX(targetHeightIntersections.t1)} y2={ytInnerPad.top + ytInnerH}
-                    stroke={CHART_COLORS.highlight} strokeWidth={0.8}
-                    strokeDasharray={DASH.tangent.join(' ')} opacity={0.5} />
-                  <text x={ytToX(targetHeightIntersections.t1)} y={ytInnerPad.top + ytInnerH + 26}
-                    fontSize={font(8)} fill={CHART_COLORS.highlight} textAnchor="middle">
-                    t₁={targetHeightIntersections.t1.toFixed(2)}s
-                  </text>
-                  <line x1={ytToX(targetHeightIntersections.t2)} y1={ytInnerPad.top}
-                    x2={ytToX(targetHeightIntersections.t2)} y2={ytInnerPad.top + ytInnerH}
-                    stroke={CHART_COLORS.highlight} strokeWidth={0.8}
-                    strokeDasharray={DASH.tangent.join(' ')} opacity={0.5} />
-                  <text x={ytToX(targetHeightIntersections.t2)} y={ytInnerPad.top + ytInnerH + 26}
-                    fontSize={font(8)} fill={CHART_COLORS.highlight} textAnchor="middle">
-                    t₂={targetHeightIntersections.t2.toFixed(2)}s
-                  </text>
-                </>
-              )}
-            </>
-          )}
-
-          {ytAreaD && (
-            <path d={ytAreaD} fill={XT_CHART_COLORS.positionCurve} opacity={0.08} />
-          )}
-
-          {airResistance > 0 && ytData.vacFull && (
-            <path d={ytData.vacFull} fill="none" stroke={CHART_COLORS.asymptote} strokeWidth={1} strokeDasharray="3,3" opacity={0.6} />
-          )}
-
-          {ytData.airFull && (
-            <path d={ytData.airFull} fill="none" stroke={XT_CHART_COLORS.positionCurve} strokeWidth={1} opacity={0.15} />
-          )}
-
-          {showDoubleTrack && ytData.vacActive && (
-            <path d={ytData.vacActive} fill="none" stroke={PHYSICS_COLORS.position} strokeWidth={1.5} opacity={0.7} />
-          )}
-
-          {ytData.airActive && (
-            <path d={ytData.airActive} fill="none" stroke={XT_CHART_COLORS.positionCurve} strokeWidth={2} filter="url(#glow-filter-blue)" />
-          )}
-
-          {advancedMode === 1 && effectiveTime > 0.05 && !isLanded && (
-            <ChartSecant
-              point={{ x: 0, y: 0 }}
-              secantPoint={{ x: effectiveTime, y: clampedY }}
-              label="v̄"
-              dxLabel="t"
-              dyLabel="y"
-              color={PHYSICS_COLORS.secantLine}
-              showTriangle={sliceDensity > 0}
-              strokeWidth={1}
-              strokeDasharray="3,2"
-              lineOpacity={0.65}
-              triangleOpacity={0.07}
-              toSvgX={ytToX}
-              toSvgY={ytToY}
-              font={font}
-            />
-          )}
-
-          {advancedMode === 1 && effectiveTime > 0.05 && !isLanded && (
-            <ChartTangent
-              point={{ x: effectiveTime, y: clampedY }}
-              slope={effectiveV}
-              extent={Math.min(0.6, xMax * 0.08)}
-              label="k = v"
-              color={VT_CHART_COLORS.slopeTangent}
-              strokeWidth={1}
-              lineOpacity={0.75}
-              showPoint={false}
-              toSvgX={ytToX}
-              toSvgY={ytToY}
-              font={font}
-            />
-          )}
-
-          {isAtPeak && (
-            <g>
-              <circle cx={ytToX(maxHeightTime)} cy={ytToY(maxHeight)} r={5}
-                fill={CHART_COLORS.highlight} opacity={0.7}>
-                <animate attributeName="r" values="5;8;5" dur={`${PULSE_PERIOD}ms`} repeatCount="indefinite" />
-                <animate attributeName="opacity" values="0.7;1;0.7" dur={`${PULSE_PERIOD}ms`} repeatCount="indefinite" />
-              </circle>
-            </g>
-          )}
-
-          {!isAtPeak && effectiveTime > 0 && (
-            <circle cx={ytToX(effectiveTime)} cy={ytToY(clampedY)} r={4.5} fill={XT_CHART_COLORS.positionCurve} />
-          )}
-
-          {showDoubleTrack && !isLanded && (
-            <circle cx={ytToX(effectiveTime)} cy={ytToY(clampedVacuumY)} r={3.5} fill={PHYSICS_COLORS.position} opacity={0.8} />
-          )}
-
-          <rect x={ytInnerPad.left} y={ytInnerPad.top} width={ytInnerW} height={ytInnerH}
-            fill="transparent" cursor="crosshair"
-            onClick={(e) => onChartClick(e, 'yt')}
-            onMouseDown={(e) => onChartMouseDown(e, 'yt')} />
-
-          {effectiveTime > 0 && (
-            <g>
-              <line x1={ytToX(effectiveTime)} y1={ytInnerPad.top}
-                x2={ytToX(effectiveTime)} y2={ytInnerPad.top + ytInnerH}
-                stroke={VT_CHART_COLORS.slopeTangent} strokeWidth={1}
-                strokeDasharray={DASH.tangent.join(' ')} opacity={0.8} />
-              <circle cx={ytToX(effectiveTime)} cy={ytInnerPad.top} r={2} fill={VT_CHART_COLORS.slopeTangent} />
-            </g>
-          )}
-        </g>
+      <foreignObject x={dataX} y={ytChartTop} width={dataWidth} height={ytChartHeight}>
+        <div className="w-full h-full">
+          <VerticalThrowYTChart
+            layout={layout}
+            physics={physics}
+            advancedMode={advancedMode}
+            airResistance={airResistance}
+            showDoubleTrack={showDoubleTrack}
+            targetHeight={targetHeight}
+            onTimeChange={onTimeChange}
+          />
+        </div>
+      </foreignObject>
     </>
   )
 }

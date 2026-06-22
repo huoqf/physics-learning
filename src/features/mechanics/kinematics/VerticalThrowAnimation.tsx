@@ -1,5 +1,5 @@
 import { useCanvasSize } from '@/utils'
-import React, { useEffect, useCallback, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import {
@@ -92,13 +92,8 @@ export default function VerticalThrowAnimation() {
     displayMaxHeight,
     scale,
     vtChartTop,
-    vtInnerPad,
-    vtInnerW,
-    xMax,
     vtToX,
     vtToY,
-    ytInnerPad,
-    ytInnerW,
     ghostBalls,
   } = layout
 
@@ -145,56 +140,6 @@ export default function VerticalThrowAnimation() {
     }
   }, [])
 
-  // ── 时间轴拖拽 ──
-  const isDraggingRef = useRef(false)
-
-  const handleChartMouseDown = useCallback((e: React.MouseEvent<SVGElement>, chartType: 'vt' | 'yt') => {
-    isDraggingRef.current = true
-    const svg = e.currentTarget.closest('svg')
-    if (!svg) return
-    const rect = svg.getBoundingClientRect()
-    const clickX = e.clientX - rect.left
-    const pad = chartType === 'vt' ? vtInnerPad : ytInnerPad
-    const innerW = chartType === 'vt' ? vtInnerW : ytInnerW
-    const chartDataX = dataX + pad.left
-    const tClick = ((clickX - chartDataX) / innerW) * xMax
-    if (tClick >= 0 && tClick <= totalTime) {
-      setTime(tClick)
-      setIsPlaying(false)
-    }
-  }, [dataX, vtInnerPad, ytInnerPad, vtInnerW, ytInnerW, xMax, totalTime, setTime, setIsPlaying])
-
-  const handleSvgMouseMove = useCallback((e: React.MouseEvent<SVGElement>) => {
-    if (!isDraggingRef.current) return
-    const svg = e.currentTarget
-    const rect = svg.getBoundingClientRect()
-    const clickX = e.clientX - rect.left
-    const chartDataX = dataX + vtInnerPad.left
-    const tClick = ((clickX - chartDataX) / vtInnerW) * xMax
-    if (tClick >= 0 && tClick <= totalTime) {
-      setTime(tClick)
-      setIsPlaying(false)
-    }
-  }, [dataX, vtInnerPad, vtInnerW, xMax, totalTime, setTime, setIsPlaying])
-
-  const handleSvgMouseUp = useCallback(() => {
-    isDraggingRef.current = false
-  }, [])
-
-  const handleChartClick = useCallback((e: React.MouseEvent<SVGElement>, chartType: 'vt' | 'yt') => {
-    const svg = e.currentTarget.closest('svg')
-    if (!svg) return
-    const rect = svg.getBoundingClientRect()
-    const clickX = e.clientX - rect.left
-    const pad = chartType === 'vt' ? vtInnerPad : ytInnerPad
-    const innerW = chartType === 'vt' ? vtInnerW : ytInnerW
-    const chartDataX = dataX + pad.left
-    const tClick = ((clickX - chartDataX) / innerW) * xMax
-    if (tClick >= 0 && tClick <= totalTime) {
-      setTime(tClick)
-      setIsPlaying(false)
-    }
-  }, [dataX, vtInnerPad, ytInnerPad, vtInnerW, ytInnerW, xMax, totalTime, setTime, setIsPlaying])
   // ── 渲染 ──
   return (
     <div ref={containerRef} className="w-full h-full">
@@ -202,9 +147,6 @@ export default function VerticalThrowAnimation() {
         width={canvasSize.width}
         height={canvasSize.height}
         className="bg-white rounded-lg shadow-inner"
-        onMouseMove={handleSvgMouseMove}
-        onMouseUp={handleSvgMouseUp}
-        onMouseLeave={handleSvgMouseUp}
       >
 
         {/* ========== defs ========== */}
@@ -403,11 +345,10 @@ export default function VerticalThrowAnimation() {
           showDoubleTrack={showDoubleTrack}
           targetHeight={targetHeight}
           g={g}
-          clampedY={clampedY}
-          clampedVacuumY={clampedVacuumY}
-          font={font}
-          onChartClick={handleChartClick}
-          onChartMouseDown={handleChartMouseDown}
+          onTimeChange={(nextTime) => {
+            setTime(nextTime)
+            setIsPlaying(false)
+          }}
         />
       </svg>
     </div>

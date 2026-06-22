@@ -1,6 +1,6 @@
 # 延后处理待办事项
 
-> 仅保留未完成项。最后更新：2026-06-22（VerticalThrow 图表区拆出 VerticalThrowCharts，主文件 741→415 行，脱离 P0 超长文件）
+> 仅保留未完成项。最后更新：2026-06-22（高难度三件套收官：VelocityVT / VelocityXT / VerticalThrow 均迁入图表预设体系）
 
 ---
 
@@ -68,7 +68,7 @@
 
 ### 页面迁移状态
 
-**已迁移：** ChargeInEField(vy-t)、CuttingEMF(v-t/a-t)、~~ForceMotionTripleChart(F-t/v-t/x-t 游标 + 面积)~~ ✅、MiniChart(7 个消费方)、MaxwellBoltzmannChart(f(v)-v)、ACGeneration(e-t)、~~FreeFallDripAnimation(v-t)~~ ✅、~~FreeFallAnimation(v-t 双曲线)~~ ✅、~~IntermolecularForceChart(F-r 三曲线 / Ep-r)~~ ✅、~~CoulombLaw BasicMode(F-r)~~ ✅、~~ElectricFieldBasicScene(E-r + F-r)~~ ✅、~~ThinLensAnimation(线性 + 双曲线 + 共轭法标记)~~ ✅、~~SatelliteAnimation Mode 0(v-r + T-r 画中画)~~ ✅、~~SatelliteAnimation Mode 1(v-t 三阶段)~~ ✅、~~ClapeyronAnimation(P-V 等温线 + 等温线族)~~ ✅、~~GasLawsAnimation(P-V/V-T/P-T mode 切换)~~ ✅、~~FirstLawCenterExtra(P-V 循环 + 分段高亮)~~ ✅、~~VelocityVTChart(v-t 滑动窗口+面积+割线+切线)~~ ✅、~~VelocityXTChart(x-t 割线三角形+切线)~~ ✅
+**已迁移：** ChargeInEField(vy-t)、CuttingEMF(v-t/a-t)、~~ForceMotionTripleChart(F-t/v-t/x-t 游标 + 面积)~~ ✅、MiniChart(7 个消费方)、MaxwellBoltzmannChart(f(v)-v)、ACGeneration(e-t)、~~FreeFallDripAnimation(v-t)~~ ✅、~~FreeFallAnimation(v-t 双曲线)~~ ✅、~~IntermolecularForceChart(F-r 三曲线 / Ep-r)~~ ✅、~~CoulombLaw BasicMode(F-r)~~ ✅、~~ElectricFieldBasicScene(E-r + F-r)~~ ✅、~~ThinLensAnimation(线性 + 双曲线 + 共轭法标记)~~ ✅、~~SatelliteAnimation Mode 0(v-r + T-r 画中画)~~ ✅、~~SatelliteAnimation Mode 1(v-t 三阶段)~~ ✅、~~ClapeyronAnimation(P-V 等温线 + 等温线族)~~ ✅、~~GasLawsAnimation(P-V/V-T/P-T mode 切换)~~ ✅、~~FirstLawCenterExtra(P-V 循环 + 分段高亮)~~ ✅、~~VelocityVTChart(v-t 滑动窗口+面积+割线+切线)~~ ✅、~~VelocityXTChart(x-t 割线三角形+切线)~~ ✅、~~VerticalThrowCharts(v-t/y-t 双图 + 割线/切线/目标高度/面积/双轨对照)~~ ✅
 
 **未迁移：**
 
@@ -77,7 +77,7 @@
 | ACValues | I-t + Q-t | VelocityTimeChart 变体 | 中 |
 | ~~VelocityVTChart~~ | ~~v-t 滑动窗口+面积+割线+切线~~ | ✅ 已迁入 VelocityTimeChart + tDomain + underlay/children + ChartSecant/ChartTangent |
 | ~~VelocityXTChart~~ | ~~x-t 切线+割线三角形~~ | ✅ 已迁入 DisplacementTimeChart + tDomain + children + ChartSecant/ChartTangent |
-| VerticalThrowCharts | v-t + y-t 双图+切线+交互 | ✅ 图表区已从 VerticalThrowAnimation 拆出；ChartSecant/ChartTangent 已集中在组件内；待后续迁入 VelocityTimeChart/DisplacementTimeChart 预设 | 高（组件化进行中） |
+| ~~VerticalThrowCharts~~ | ~~v-t + y-t 双图+切线+交互~~ | ✅ 已迁入 VelocityTimeChart / DisplacementTimeChart + ChartSecant/ChartTangent 插件层 |
 | KineticEnergyAnimation | 4 面板 Ek-x/W/Ep/F-x/F-x/a-t | RelationChart + AccelerationTimeChart | 高 |
 | PowerAnimation | 4 面板 v-t/P-t/F-v/a-t | 多个预设组合 | 高 |
 | FaradayChartPanel | Φ-t + E-t 双图 | 通用 t-* 预设 | 高 |
@@ -98,7 +98,7 @@
 8. ~~ForceMotionTripleChart 面积补齐（ChartArea 在非 BasePhysicsChart 容器复用）~~ ✅
 9. ~~VelocityTimeChart 扩展「阶段背景着色」 + SatelliteAnimation Mode 1 迁移~~ ✅
 10. ~~~~创建 PVTChart 预设~~~~ → 改为直接用 RelationChart，三个热力学页面一次性迁完 ✅
-11. ~~创建 ChartSecant 插件~~ ✅ → ~~VelocityVT / VelocityXT 迁入图表预设~~ ✅ → ~~VerticalThrow 图表区拆出独立组件~~ ✅；后续继续在 VerticalThrowCharts 内迁入 VelocityTimeChart/DisplacementTimeChart 预设
+11. ~~创建 ChartSecant 插件~~ ✅ → ~~VelocityVT / VelocityXT 迁入图表预设~~ ✅ → ~~VerticalThrow 图表区拆出独立组件~~ ✅ → ~~VerticalThrowCharts 迁入 VelocityTimeChart/DisplacementTimeChart~~ ✅（高难度三件套收官）
 12. 其余按需
 
 ---
@@ -111,7 +111,8 @@
 |------|------|------|
 | `FreeFallAnimation.tsx` | 644（V-T 迁移后已减约 65 行） | 按 JSX 块拆子组件 |
 | `UniformAccelerationCenterExtra.tsx` | 669 | 已有 5 个子组件，直接搬迁 |
-| ~~`VerticalThrowAnimation.tsx`~~ | ~~741~~ → 415（图表区拆至 `VerticalThrowCharts.tsx` 425 行） | ✅ 已脱离 P0；后续在 VerticalThrowCharts 内继续迁预设 |
+| ~~`VerticalThrowAnimation.tsx`~~ | ~~741~~ → 356（图表区拆至 `VerticalThrowCharts.tsx`） | ✅ 已脱离 P0 |
+| `VerticalThrowCharts.tsx` | 747（已完成图表预设迁移，下一步按 VT/YT/layers 拆分） | 拆成 VerticalThrowVTChart / VerticalThrowYTChart / chartLayers |
 | `AccelerationCenterExtra.tsx` | 646 | 需修复规范违反 |
 
 > 已自然脱困（迁图后行数下降至 500 以下）：~~`ThinLensAnimation.tsx`~~ 376 行（468 → 376）
