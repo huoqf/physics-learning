@@ -78,8 +78,8 @@
 | ~~VelocityVTChart~~ | ~~v-t 滑动窗口+面积+割线+切线~~ | ✅ 已迁入 VelocityTimeChart + tDomain + underlay/children + ChartSecant/ChartTangent |
 | ~~VelocityXTChart~~ | ~~x-t 切线+割线三角形~~ | ✅ 已迁入 DisplacementTimeChart + tDomain + children + ChartSecant/ChartTangent |
 | ~~VerticalThrowCharts~~ | ~~v-t + y-t 双图+切线+交互~~ | ✅ 已迁入 VelocityTimeChart / DisplacementTimeChart + ChartSecant/ChartTangent 插件层 |
-| KineticEnergyAnimation | 4 面板 Ek-x/W/Ep/F-x/F-x/a-t | RelationChart + AccelerationTimeChart | 高 |
-| PowerAnimation | 4 面板 v-t/P-t/F-v/a-t | 多个预设组合 | 高 |
+| ~~KineticEnergyAnimation~~ | ~~4 面板 Ek-x/W/Ep/a-t~~ | ✅ 已迁入 RelationChart + AccelerationTimeChart（KineticEnergyCharts 2×2 grid + domainPoints 定标） |
+| ~~PowerAnimation~~ | ~~4 面板 v-t/P-t/F-v/a-t~~ | ✅ 已迁入 VelocityTimeChart + RelationChart + AccelerationTimeChart（PowerCharts Tab + yDomain 定标） |
 | ~~FaradayChartPanel~~ | ~~Φ-t + E-t 双图~~ | ✅ 已迁入 VelocityTimeChart（全曲线 + 当前时刻游标 + E=0 提示） |
 
 **教学体验后续优化（不阻塞主线）：**

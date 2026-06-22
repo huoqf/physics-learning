@@ -51,12 +51,19 @@ export function WorkVTChart({
 
   const progress = Math.min(currentTime / maxAnimTime, 1)
   const currentT = isFinite(t_total) ? progress * progress * t_total : 0
+  const currentV = a * currentT
 
-  const linePath = useMemo(() => {
-    if (!isFinite(t_total)) return `M ${toX(0)} ${toY(0)}`
+  const fullPath = useMemo(() => {
+    if (!isFinite(t_total)) return ''
     return `M ${toX(0)} ${toY(0)} L ${toX(t_total)} ${toY(v_max)}`
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [t_total, v_max, a, layout])
+
+  const revealedPath = useMemo(() => {
+    if (!isFinite(t_total) || currentT <= 0) return ''
+    return `M ${toX(0)} ${toY(0)} L ${toX(currentT)} ${toY(currentV)}`
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentT, currentV, a, layout])
 
   return (
     <g>
@@ -124,21 +131,30 @@ export function WorkVTChart({
         )
       })}
 
-      {/* v-t 曲线（恒加速 = 直线，调参数时斜率立即变化） */}
-      {isFinite(t_total) && (
-        <path d={linePath} fill="none" stroke={VT_CHART_COLORS.velocityCurve}
+      {/* v-t 参考线（浅色虚线，表示完整理论轨迹） */}
+      {fullPath && (
+        <path d={fullPath} fill="none" stroke={CHART_COLORS.reference}
+          strokeWidth={STROKE.vectorThin} strokeDasharray={DASH.guide.join(',')}
+          opacity={0.4} />
+      )}
+
+      {/* v-t 已发生线段（实线，随时间逐步生成） */}
+      {revealedPath && (
+        <path d={revealedPath} fill="none" stroke={VT_CHART_COLORS.velocityCurve}
           strokeWidth={STROKE.vectorMain} strokeLinecap="round" />
       )}
 
       {/* 当前时刻游标 */}
-      <g>
-        <line x1={toX(Math.max(0, currentT))} y1={layout.top + layout.chartH}
-          x2={toX(Math.max(0, currentT))} y2={toY(a * Math.max(0, currentT))}
-          stroke={VT_CHART_COLORS.velocityCurve} strokeWidth={STROKE.vectorThin}
-          strokeDasharray={DASH.guide.join(',')} opacity={OPACITY.guide} />
-        <circle cx={toX(Math.max(0, currentT))} cy={toY(a * Math.max(0, currentT))} r={font(4)}
-          fill={VT_CHART_COLORS.velocityCurve} stroke={CANVAS_COLORS.grid} strokeWidth={1.5} />
-      </g>
+      {currentT > 0 && (
+        <g>
+          <line x1={toX(currentT)} y1={layout.top + layout.chartH}
+            x2={toX(currentT)} y2={toY(currentV)}
+            stroke={VT_CHART_COLORS.velocityCurve} strokeWidth={STROKE.vectorThin}
+            strokeDasharray={DASH.guide.join(',')} opacity={OPACITY.guide} />
+          <circle cx={toX(currentT)} cy={toY(currentV)} r={font(4)}
+            fill={VT_CHART_COLORS.velocityCurve} stroke={CANVAS_COLORS.grid} strokeWidth={1.5} />
+        </g>
+      )}
 
       {/* 图例 */}
       <g transform={`translate(${layout.left + layout.chartW - font(80)}, ${layout.top + font(8)})`}>
