@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useCallback, useEffect } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateOrbitalSpeed } from '@/physics'
@@ -13,9 +13,11 @@ import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_COLORS } from '@/the
 import { colors } from '@/theme/colors'
 
 const LAYOUT = {
+  designWidth: 650,
+  designHeight: 450,
   // 地球与比例尺
   earth: {
-    radiusPx: 55, // 地球渲染像素半径
+    radiusPx: 70, // 地球渲染像素半径（设计基准，实际由 vp.scale 缩放）
   },
   // 卫星大小
   satellite: {
@@ -122,6 +124,11 @@ export default function SatelliteAnimation() {
   const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
   const { font } = canvasSize
 
+  const vp = useViewport(canvasSize, {
+    designWidth: LAYOUT.designWidth,
+    designHeight: LAYOUT.designHeight,
+  })
+
   const {
     r = 7.0,
     mode = 0,
@@ -139,8 +146,8 @@ export default function SatelliteAnimation() {
   }, [mode, isPlaying, isLaunched, updateParam])
 
   // 模式1入轨后居中，让完整轨道对称显示
-  const centerX = mode === 1 ? canvasSize.width * 0.5 : canvasSize.width / 2
-  const centerY = canvasSize.height / 2
+  const centerX = vp.centerX
+  const centerY = vp.centerY
 
   const sceneConfig = useMemo((): SceneConfig => ({
     vectorBounds: {
@@ -278,13 +285,34 @@ export default function SatelliteAnimation() {
       }
     }
 
+    // ── 计算速度方向（开普勒轨道精确方向，非简单垂直于半径）──
+    const finalTheta = crashed ? crashTheta : theta
+    const deltaAngle = finalTheta - orbitEntryAngle
+    let vRadial: number
+    let vTangential: number
+    if (isFarOrigin) {
+      vRadial = -(h * e * Math.sin(deltaAngle)) / p
+      vTangential = (h / p) * (1 - e * Math.cos(deltaAngle))
+    } else {
+      vRadial = (h * e * Math.sin(deltaAngle)) / p
+      vTangential = (h / p) * (1 + e * Math.cos(deltaAngle))
+    }
+    // 极坐标 → 笛卡尔（物理坐标系 y↑）
+    const velDirX = vRadial * Math.cos(finalTheta) - vTangential * Math.sin(finalTheta)
+    const velDirY = vRadial * Math.sin(finalTheta) + vTangential * Math.cos(finalTheta)
+    const velMag = Math.sqrt(velDirX * velDirX + velDirY * velDirY)
+    const velocityDir = velMag > 0
+      ? { x: velDirX / velMag, y: velDirY / velMag }
+      : { x: 0, y: 1 }
+
     return {
       crashed,
       phase,
-      theta: crashed ? crashTheta : theta,
+      theta: finalTheta,
       r_phys,
       satAngle,
       orbitPoints,
+      velocityDir,
       r0, v_c, e, p, h, isFarOrigin, alpha
     }
   }, [mode, v0, isLaunched, time])
@@ -363,8 +391,8 @@ export default function SatelliteAnimation() {
   }, [mode, v0])
 
   // ── 像素映射比例尺 ──
-  const scale = LAYOUT.earth.radiusPx / EARTH_RADIUS // 像素/米 比例尺
-  const earthRadiusPx = EARTH_RADIUS * scale
+  const earthRadiusPx = LAYOUT.earth.radiusPx * vp.scale
+  const scale = earthRadiusPx / EARTH_RADIUS // 像素/米 比例尺
 
   // ── 模式 0 轨道及坐标 ──
   const r_meters = r * 1e6
@@ -865,10 +893,10 @@ export default function SatelliteAnimation() {
                   sceneScale={sceneScale}
                   pixelLength={0.45 * Math.sqrt((satLaunchX - centerX) ** 2 + (satLaunchY - centerY) ** 2)}
                 />
-                {/* 速度 */}
+                {/* 速度（开普勒轨道精确方向） */}
                 <VectorArrow
                   origin={{ x: satLaunchX - centerX, y: centerY - satLaunchY }}
-                  vector={{ x: satLaunchY - centerY, y: satLaunchX - centerX }}
+                  vector={launchData.velocityDir ?? { x: 0, y: 1 }}
                   type="velocity"
                   sceneScale={sceneScale}
                   pixelLength={0.45 * Math.sqrt((satLaunchX - centerX) ** 2 + (satLaunchY - centerY) ** 2)}

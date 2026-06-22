@@ -105,7 +105,7 @@ export default function VerticalThrowAnimation() {
     originX: 0,
     originY: 0,
     // acceleration 使用固定参考值（对应侧栏 g 最大值），否则 g/ref=g 会让加速度箭头长度恒定
-    refMagnitudes: { velocity: v0, acceleration: 15 },
+    refMagnitudes: { velocity: v0, acceleration: 15, gravity: 15 },
   }
   const vtSceneScale = createSceneScale(vtScene)
 
@@ -271,14 +271,14 @@ export default function VerticalThrowAnimation() {
             <VectorArrow
               origin={{ x: leftBallX - 18, y: -currentBallY }}
               vector={{ x: 0, y: -g }}
-              type="acceleration"
+              type="gravity"
               sceneScale={vtSceneScale}
               strokeWidth={STROKE.vectorMain}
             />
             <text
               x={leftBallX - 30} y={currentBallY + vtSceneScale.maxVectorLength * 0.5}
-              fontSize={FONT.small} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">
-              a
+              fontSize={FONT.small} fill={PHYSICS_COLORS.gravity} fontWeight="bold">
+              g
             </text>
           </g>
         )}
@@ -289,15 +289,15 @@ export default function VerticalThrowAnimation() {
               <VectorArrow
                 origin={{ x: leftBallX - 18, y: -currentBallY }}
                 vector={{ x: 0, y: -g }}
-                type="acceleration"
+                type="gravity"
                 sceneScale={vtSceneScale}
                 strokeWidth={STROKE.vectorMain}
               />
               <animate attributeName="opacity" values="1;0.3;1" dur={`${PULSE_PERIOD}ms`} repeatCount="indefinite" />
             </g>
             <text x={leftBallX - 30} y={currentBallY + vtSceneScale.maxVectorLength * 0.5}
-              fontSize={FONT.small} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">
-              a
+              fontSize={FONT.small} fill={PHYSICS_COLORS.gravity} fontWeight="bold">
+              g
               <animate attributeName="opacity" values="1;0.3;1" dur={`${PULSE_PERIOD}ms`} repeatCount="indefinite" />
             </text>
           </g>

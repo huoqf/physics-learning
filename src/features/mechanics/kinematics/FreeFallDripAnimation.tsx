@@ -76,6 +76,14 @@ export default function FreeFallDripAnimation() {
   const g0 = useMemo(() => calcGByLatitude(latitude), [latitude])
   const g = useMemo(() => calcGByAltitude(g0, altitude), [g0, altitude])
 
+  // 将计算出的 g 同步回 params，供侧边栏显示
+  const updateParam = useAnimationStore((s) => s.updateParam)
+  useEffect(() => {
+    if (Math.abs(g - (params.g ?? GRAVITY)) > 0.001) {
+      updateParam('g', Math.round(g * 1000) / 1000)
+    }
+  }, [g, params.g, updateParam])
+
   // ── 布局分区（左动画 + 右数据）────────────────────────────────────────
   const stageRatio = 0.5
   const stageWidth = canvasSize.width * stageRatio
@@ -103,6 +111,7 @@ export default function FreeFallDripAnimation() {
     refMagnitudes: {
       velocity: Math.sqrt(2 * g * TUBE_HEIGHT),
       acceleration: GRAVITY,
+      gravity: GRAVITY,
     },
   }
   const dripSceneScale = createSceneScale(dripScene)
@@ -404,16 +413,12 @@ export default function FreeFallDripAnimation() {
               <VectorArrow
                 origin={{ x: tubeCenterX - DROP_RADIUS - 8, y: -pixelY }}
                 vector={{ x: 0, y: -g }}
-                type="acceleration"
+                type="gravity"
                 sceneScale={dripSceneScale}
                 strokeWidth={STROKE.vectorSub}
               />
               <text x={tubeCenterX - DROP_RADIUS - 18} y={pixelY + 14}
-                fontSize={FONT.small} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">g</text>
-              {g > GRAVITY && (
-                <text x={tubeCenterX - DROP_RADIUS - 18} y={pixelY + 24}
-                  fontSize={font(7)} fill={PHYSICS_COLORS.acceleration} fontWeight="bold" opacity={0.7}>▲max</text>
-              )}
+                fontSize={FONT.small} fill={PHYSICS_COLORS.gravity} fontWeight="bold">g</text>
             </g>
           )
         })()}

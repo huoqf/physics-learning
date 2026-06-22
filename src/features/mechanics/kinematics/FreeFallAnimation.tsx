@@ -105,6 +105,7 @@ export default function FreeFallAnimation() {
     refMagnitudes: {
       velocity: Math.sqrt(2 * g * TUBE_PHYSICAL_HEIGHT),
       acceleration: GRAVITY,
+      gravity: GRAVITY,
       force: 0.5,
     },
   }
@@ -456,15 +457,15 @@ export default function FreeFallAnimation() {
             <VectorArrow
               origin={{ x: ballX - 28, y: -renderYA }}
               vector={{ x: 0, y: -g }}
-              type="acceleration"
+              type="gravity"
               sceneScale={ffSceneScale}
               strokeWidth={STROKE.vectorMain}
             />
             <text x={ballX - 40} y={Math.min(renderYA + ffSceneScale.maxVectorLength * 0.5, groundY - 10)}
-              fontSize={FONT.small} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">g</text>
+              fontSize={FONT.small} fill={PHYSICS_COLORS.gravity} fontWeight="bold">g</text>
             {g > GRAVITY && (
               <text x={ballX - 40} y={Math.min(renderYA + ffSceneScale.maxVectorLength * 0.5, groundY - 10) + 10}
-                fontSize={font(7)} fill={PHYSICS_COLORS.acceleration} fontWeight="bold" opacity={0.7}>▲max</text>
+                fontSize={font(7)} fill={PHYSICS_COLORS.gravity} fontWeight="bold" opacity={0.7}>▲max</text>
             )}
           </g>
         )}
@@ -473,15 +474,15 @@ export default function FreeFallAnimation() {
             <VectorArrow
               origin={{ x: featherX - 28, y: -renderYB }}
               vector={{ x: 0, y: -g }}
-              type="acceleration"
+              type="gravity"
               sceneScale={ffSceneScale}
               strokeWidth={STROKE.vectorMain}
             />
             <text x={featherX - 40} y={Math.min(renderYB + ffSceneScale.maxVectorLength * 0.5, groundY - 10)}
-              fontSize={FONT.small} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">g</text>
+              fontSize={FONT.small} fill={PHYSICS_COLORS.gravity} fontWeight="bold">g</text>
             {g > GRAVITY && (
               <text x={featherX - 40} y={Math.min(renderYB + ffSceneScale.maxVectorLength * 0.5, groundY - 10) + 10}
-                fontSize={font(7)} fill={PHYSICS_COLORS.acceleration} fontWeight="bold" opacity={0.7}>▲max</text>
+                fontSize={font(7)} fill={PHYSICS_COLORS.gravity} fontWeight="bold" opacity={0.7}>▲max</text>
             )}
           </g>
         )}
