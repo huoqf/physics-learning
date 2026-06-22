@@ -245,10 +245,7 @@ function VerticalThrowVTChart({
   g,
   onTimeChange,
 }: Pick<VerticalThrowChartsProps, 'layout' | 'physics' | 'advancedMode' | 'sliceDensity' | 'airResistance' | 'showDoubleTrack' | 'g' | 'onTimeChange'>) {
-  const {
-    xMax,
-    vtVMax,
-  } = layout
+  const { xMax, vtVMax } = layout
   const {
     trajectory,
     effectiveTime,
@@ -339,7 +336,6 @@ function VerticalThrowVTChart({
             showPoint={false}
             strokeDasharray="2,2"
           />
-          <circle cx={0} cy={0} r={0} fill="none" />
           <PeakPulse x={maxHeightTime} y={0} />
         </g>
       )}
@@ -391,12 +387,14 @@ function VerticalThrowYTChart({
     isLanded,
     isAtPeak,
     maxHeight,
+    maxHeightVac,
     maxHeightTime,
     targetHeightIntersections,
     interpolatePoints,
   } = physics
 
   const tDomain: [number, number] = [0, xMax]
+  const yDomainMax = Math.max(ytYMax, maxHeight * 1.15, maxHeightVac * 1.15, 5)
   const activeTime = Math.min(effectiveTime, xMax)
   const activeAir = interpolatePoints(activeTime, trajectory.points)
   const activeVac = interpolatePoints(activeTime, trajectory.vacuumPoints)
@@ -421,7 +419,7 @@ function VerticalThrowYTChart({
       currentTime={activeTime}
       tMax={xMax}
       tDomain={tDomain}
-      xRange={[0, ytYMax]}
+      xRange={[0, yDomainMax]}
       title="位移-时间图像 (y-t 图)"
       xLabel="t/s"
       yLabel="y/m"

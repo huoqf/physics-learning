@@ -1,10 +1,16 @@
 /**
  * FaradayChartPanel.tsx — 法拉第电磁感应实时数据看板（Φ-t / E-t 双图表）
  *
- * 从 FaradayLaw.tsx 拆分：右侧图表区域渲染。
+ * 右侧图表区域迁移到通用 VelocityTimeChart 预设：
+ * - Φ-t：磁通量随时间变化，保留当前时刻游标
+ * - E-t：感应电动势随时间变化，保留 E=0 特殊提示
  */
-import { PHYSICS_COLORS, CANVAS_STYLE, CHART_COLORS } from '@/theme/physics'
+import { useMemo } from 'react'
+import { PHYSICS_COLORS, CHART_COLORS, FONT } from '@/theme/physics'
+import { ChartCursor, VelocityTimeChart, useChartContext } from '@/components/Chart'
 import type { FaradayChartPoint } from '@/physics/electromagnetism'
+
+const FARADAY_CHART_DURATION = 10
 
 interface Props {
   mode: number
@@ -34,144 +40,199 @@ interface Props {
   font: (base: number) => number
 }
 
+function paddedDomain(min: number, max: number, fallbackSpan = 1): [number, number] {
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return [-fallbackSpan, fallbackSpan]
+  if (Math.abs(max - min) < 1e-9) {
+    const span = Math.max(Math.abs(max), fallbackSpan)
+    return [min - span, max + span]
+  }
+  const pad = (max - min) * 0.12
+  return [min - pad, max + pad]
+}
+
+function symmetricDomain(absMax: number, fallback = 1): [number, number] {
+  const m = Math.max(Math.abs(absMax), fallback)
+  return [-m * 1.12, m * 1.12]
+}
+
+function FaradayCursor({
+  t,
+  y,
+  label,
+  unit,
+  series = 'primary',
+  digits,
+}: {
+  t: number
+  y: number
+  label: string
+  unit: string
+  series?: 'primary' | 'secondary' | 'accent' | 'warm' | 'success'
+  digits: number
+}) {
+  return (
+    <ChartCursor
+      x={t}
+      dataPoints={[{ y, label, series }]}
+      formatValue={(v) => `${v.toFixed(digits)} ${unit}`}
+    />
+  )
+}
+
+function ZeroEmfNote() {
+  const ctx = useChartContext()
+  if (!ctx) return null
+  return (
+    <text
+      x={ctx.plotOrigin.x + ctx.plotSize.width / 2}
+      y={ctx.plotOrigin.y + ctx.font(FONT.small) + 4}
+      fontSize={ctx.font(FONT.small)}
+      fill={CHART_COLORS.compareC}
+      textAnchor="middle"
+      fontWeight="bold"
+      opacity={0.9}
+    >
+      E = 0（k = 0，磁场恒定，无感应电动势）
+    </text>
+  )
+}
+
+function TimeBadge({ t }: { t: number }) {
+  return (
+    <div
+      style={{
+        fontSize: 11,
+        lineHeight: '16px',
+        color: PHYSICS_COLORS.labelTextLight,
+        textAlign: 'center',
+        fontWeight: 600,
+      }}
+    >
+      实时数据看板 · t = {t.toFixed(2)} s · 0 ~ {FARADAY_CHART_DURATION}s
+    </div>
+  )
+}
+
 export function FaradayChartPanel({
   mode,
+  chartPoints,
   currentState,
   dashLeft,
-  dashRight,
   dashW,
-  yPhiMid,
-  yEmfMid,
-  chartHalfH,
+  H,
+  chartPadTop,
   phiMinVal,
   phiMaxVal,
-  toPhiY,
-  yPhiZero,
-  toChartX,
-  toEmfY,
-  phiPathD,
-  emfPathD,
-  indicatorX,
+  maxEmfVal,
   emfIsZero,
-  chartPadTop,
-  font,
+  tNow,
 }: Props) {
+  const phiSeries = useMemo(
+    () => chartPoints.map((p) => ({ t: p.t, v: p.phi })),
+    [chartPoints],
+  )
+
+  const emfSeries = useMemo(
+    () => chartPoints.map((p) => ({ t: p.t, v: p.emf })),
+    [chartPoints],
+  )
+
+  const phiRange = useMemo((): [number, number] => {
+    if (mode === 0) {
+      const absMax = Math.max(
+        Math.abs(phiMinVal),
+        Math.abs(phiMaxVal),
+        Math.abs(currentState.phi),
+        0.05,
+      )
+      return symmetricDomain(absMax, 0.05)
+    }
+    return paddedDomain(
+      Math.min(0, phiMinVal, currentState.phi),
+      Math.max(0, phiMaxVal, currentState.phi),
+      0.05,
+    )
+  }, [mode, phiMinVal, phiMaxVal, currentState.phi])
+
+  const emfRange = useMemo((): [number, number] => {
+    const absMax = Math.max(maxEmfVal, Math.abs(currentState.emf), emfIsZero ? 1 : 0.1)
+    return symmetricDomain(absMax, emfIsZero ? 1 : 0.1)
+  }, [maxEmfVal, currentState.emf, emfIsZero])
+
+  const panelY = Math.max(0, chartPadTop - 18)
+  const panelH = Math.max(120, H - panelY - 4)
+
   return (
-    <g clipPath="url(#chartClip)">
-      {/* 标题 */}
-      <text x={dashLeft + dashW / 2} y={chartPadTop - 8} fontSize={CANVAS_STYLE.font.labelSize}
-        fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
-        实时数据看板 (t = 0 ~ 10s)
-      </text>
+    <foreignObject x={dashLeft} y={panelY} width={dashW} height={panelH}>
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6,
+          boxSizing: 'border-box',
+          padding: '0 2px 2px 2px',
+          background: 'transparent',
+        }}
+      >
+        <TimeBadge t={tNow} />
 
-      {/* ── Φ-t 图 (磁通量) ── */}
-      <g>
-        {/* 网格背景 */}
-        {[-1, -0.5, 0, 0.5, 1].map((ratio) => {
-          const y = mode === 1
-            ? toPhiY(phiMinVal + (phiMaxVal - phiMinVal) * (1 - (ratio + 1) / 2))
-            : yPhiMid + ratio * chartHalfH
-          return (
-            <line key={`phigrid-${ratio}`} x1={dashLeft} y1={y} x2={dashRight} y2={y}
-              stroke={CHART_COLORS.gridLine} strokeWidth="0.5"
-              strokeDasharray={ratio === 0 ? undefined : '2,3'} />
-          )
-        })}
-        {/* x 轴 */}
-        <line x1={dashLeft} y1={yPhiZero} x2={dashRight} y2={yPhiZero}
-          stroke={CHART_COLORS.axisLine} strokeWidth={CANVAS_STYLE.stroke.axis} />
-        {/* y 轴 */}
-        <line x1={dashLeft} y1={yPhiMid - chartHalfH - 4} x2={dashLeft} y2={yPhiMid + chartHalfH + 4}
-          stroke={CHART_COLORS.axisLine} strokeWidth={CANVAS_STYLE.stroke.axis} />
-        {/* 坐标轴标签 */}
-        <text x={dashLeft} y={yPhiMid - chartHalfH - 6} fontSize={CANVAS_STYLE.font.axisSize}
-          fill={PHYSICS_COLORS.magneticField} fontWeight="bold">
-          Φ − t 图 (Wb)
-        </text>
-        {/* 曲线 */}
-        <path d={phiPathD} fill="none" stroke={CHART_COLORS.primary}
-          strokeWidth={CANVAS_STYLE.stroke.objectLine} strokeLinejoin="round" strokeLinecap="round" />
-        {/* 焦点球与垂直红指示线 */}
-        <line x1={indicatorX} y1={yPhiMid - chartHalfH} x2={indicatorX} y2={yPhiMid + chartHalfH}
-          stroke={CHART_COLORS.reference} strokeWidth={CANVAS_STYLE.stroke.chartRef}
-          strokeDasharray="4,3" />
-        <circle cx={indicatorX} cy={toPhiY(currentState.phi)} r="4"
-          fill={CHART_COLORS.primary} stroke="white" strokeWidth="1.5" />
-        <text x={indicatorX + 6}
-          y={Math.max(yPhiMid - chartHalfH + 10, Math.min(yPhiMid + chartHalfH - 4, toPhiY(currentState.phi) - 6))}
-          fontSize={font(10)} fill={CHART_COLORS.primary} fontWeight="bold">
-          Φ={currentState.phi.toFixed(3)} Wb
-        </text>
-        {/* Φ-t 图的 t 轴刻度数字 */}
-        <g fontSize={font(9)} fill={CHART_COLORS.tickLabel}>
-          {[0, 2.5, 5.0, 7.5, 10.0].map((tVal) => (
-            <text key={`phitick-${tVal}`} x={toChartX(tVal)} y={yPhiMid + chartHalfH + 12} textAnchor="middle">
-              {tVal.toFixed(1)}
-            </text>
-          ))}
-        </g>
-      </g>
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <VelocityTimeChart
+            points={phiSeries}
+            domainPoints={phiSeries}
+            currentTime={tNow}
+            tMax={FARADAY_CHART_DURATION}
+            tDomain={[0, FARADAY_CHART_DURATION]}
+            vRange={phiRange}
+            title="Φ − t 图（磁通量）"
+            xLabel="t/s"
+            yLabel="Φ/Wb"
+            showCursor={false}
+            showArea={false}
+            series="primary"
+            className="w-full h-full"
+          >
+            <FaradayCursor
+              t={tNow}
+              y={currentState.phi}
+              label="Φ"
+              unit="Wb"
+              digits={3}
+              series="primary"
+            />
+          </VelocityTimeChart>
+        </div>
 
-      {/* ── E-t 图 (感应电动势) ── */}
-      <g>
-        {/* 网格背景 */}
-        {[-1, -0.5, 0, 0.5, 1].map((ratio) => {
-          const y = yEmfMid + ratio * chartHalfH
-          return (
-            <line key={`emfgrid-${ratio}`} x1={dashLeft} y1={y} x2={dashRight} y2={y}
-              stroke={CHART_COLORS.gridLine} strokeWidth="0.5"
-              strokeDasharray={ratio === 0 ? undefined : '2,3'} />
-          )
-        })}
-        {/* 坐标轴 */}
-        <line x1={dashLeft} y1={yEmfMid} x2={dashRight} y2={yEmfMid}
-          stroke={CHART_COLORS.axisLine} strokeWidth={CANVAS_STYLE.stroke.axis} />
-        <line x1={dashLeft} y1={yEmfMid - chartHalfH - 4} x2={dashLeft} y2={yEmfMid + chartHalfH + 4}
-          stroke={CHART_COLORS.axisLine} strokeWidth={CANVAS_STYLE.stroke.axis} />
-        {/* 坐标轴标签 */}
-        <text x={dashLeft} y={yEmfMid - chartHalfH - 6} fontSize={CANVAS_STYLE.font.axisSize}
-          fill={PHYSICS_COLORS.emf} fontWeight="bold">
-          E − t 图 (V)
-        </text>
-        <text x={dashRight + 2} y={yEmfMid + 4} fontSize={font(9)} fill={CHART_COLORS.tickLabel}>
-          t/s
-        </text>
-        {/* 曲线：k=0 时显示虚线+标注 */}
-        {emfIsZero ? (
-          <g>
-            <line x1={dashLeft} y1={yEmfMid} x2={dashRight} y2={yEmfMid}
-              stroke={CHART_COLORS.compareC} strokeWidth={CANVAS_STYLE.stroke.objectLine}
-              strokeDasharray="6,4" opacity={0.7} />
-            <text x={dashLeft + dashW / 2} y={yEmfMid - 8} fontSize={font(10)}
-              fill={CHART_COLORS.compareC} textAnchor="middle" opacity={0.9}>
-              E = 0（k = 0，磁场恒定，无感应电动势）
-            </text>
-          </g>
-        ) : (
-          <path d={emfPathD} fill="none" stroke={CHART_COLORS.compareC}
-            strokeWidth={CANVAS_STYLE.stroke.objectLine} strokeLinejoin="round" strokeLinecap="round" />
-        )}
-        {/* 焦点球与垂直指示线 */}
-        <line x1={indicatorX} y1={yEmfMid - chartHalfH} x2={indicatorX} y2={yEmfMid + chartHalfH}
-          stroke={CHART_COLORS.reference} strokeWidth={CANVAS_STYLE.stroke.chartRef}
-          strokeDasharray="4,3" />
-        <circle cx={indicatorX} cy={toEmfY(currentState.emf)} r="4"
-          fill={CHART_COLORS.compareC} stroke="white" strokeWidth="1.5" />
-        <text x={indicatorX + 6}
-          y={Math.max(yEmfMid - chartHalfH + 10, Math.min(yEmfMid + chartHalfH - 4, toEmfY(currentState.emf) - 6))}
-          fontSize={font(10)} fill={CHART_COLORS.compareC} fontWeight="bold">
-          E={currentState.emf.toFixed(2)} V
-        </text>
-
-        {/* 时间轴刻度数字 */}
-        <g fontSize={font(9)} fill={CHART_COLORS.tickLabel}>
-          {[0, 2.5, 5.0, 7.5, 10.0].map((tVal) => (
-            <text key={`tick-${tVal}`} x={toChartX(tVal)} y={yEmfMid + chartHalfH + 12} textAnchor="middle">
-              {tVal.toFixed(1)}
-            </text>
-          ))}
-        </g>
-      </g>
-    </g>
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <VelocityTimeChart
+            points={emfSeries}
+            domainPoints={emfSeries}
+            currentTime={tNow}
+            tMax={FARADAY_CHART_DURATION}
+            tDomain={[0, FARADAY_CHART_DURATION]}
+            vRange={emfRange}
+            title="E − t 图（感应电动势）"
+            xLabel="t/s"
+            yLabel="E/V"
+            showCursor={false}
+            showArea={false}
+            series="warm"
+            className="w-full h-full"
+          >
+            {emfIsZero && <ZeroEmfNote />}
+            <FaradayCursor
+              t={tNow}
+              y={currentState.emf}
+              label="E"
+              unit="V"
+              digits={2}
+              series="warm"
+            />
+          </VelocityTimeChart>
+        </div>
+      </div>
+    </foreignObject>
   )
 }

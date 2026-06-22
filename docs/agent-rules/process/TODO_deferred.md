@@ -1,6 +1,6 @@
 # 延后处理待办事项
 
-> 仅保留未完成项。最后更新：2026-06-22（高难度三件套收官：VelocityVT / VelocityXT / VerticalThrow 均迁入图表预设体系）
+> 仅保留未完成项。最后更新：2026-06-22（高难度三件套收官 + FaradayChartPanel + ACValues 迁入 VelocityTimeChart 预设）
 
 ---
 
@@ -68,19 +68,19 @@
 
 ### 页面迁移状态
 
-**已迁移：** ChargeInEField(vy-t)、CuttingEMF(v-t/a-t)、~~ForceMotionTripleChart(F-t/v-t/x-t 游标 + 面积)~~ ✅、MiniChart(7 个消费方)、MaxwellBoltzmannChart(f(v)-v)、ACGeneration(e-t)、~~FreeFallDripAnimation(v-t)~~ ✅、~~FreeFallAnimation(v-t 双曲线)~~ ✅、~~IntermolecularForceChart(F-r 三曲线 / Ep-r)~~ ✅、~~CoulombLaw BasicMode(F-r)~~ ✅、~~ElectricFieldBasicScene(E-r + F-r)~~ ✅、~~ThinLensAnimation(线性 + 双曲线 + 共轭法标记)~~ ✅、~~SatelliteAnimation Mode 0(v-r + T-r 画中画)~~ ✅、~~SatelliteAnimation Mode 1(v-t 三阶段)~~ ✅、~~ClapeyronAnimation(P-V 等温线 + 等温线族)~~ ✅、~~GasLawsAnimation(P-V/V-T/P-T mode 切换)~~ ✅、~~FirstLawCenterExtra(P-V 循环 + 分段高亮)~~ ✅、~~VelocityVTChart(v-t 滑动窗口+面积+割线+切线)~~ ✅、~~VelocityXTChart(x-t 割线三角形+切线)~~ ✅、~~VerticalThrowCharts(v-t/y-t 双图 + 割线/切线/目标高度/面积/双轨对照)~~ ✅
+**已迁移：** ChargeInEField(vy-t)、CuttingEMF(v-t/a-t)、~~ForceMotionTripleChart(F-t/v-t/x-t 游标 + 面积)~~ ✅、MiniChart(7 个消费方)、MaxwellBoltzmannChart(f(v)-v)、ACGeneration(e-t)、~~FreeFallDripAnimation(v-t)~~ ✅、~~FreeFallAnimation(v-t 双曲线)~~ ✅、~~IntermolecularForceChart(F-r 三曲线 / Ep-r)~~ ✅、~~CoulombLaw BasicMode(F-r)~~ ✅、~~ElectricFieldBasicScene(E-r + F-r)~~ ✅、~~ThinLensAnimation(线性 + 双曲线 + 共轭法标记)~~ ✅、~~SatelliteAnimation Mode 0(v-r + T-r 画中画)~~ ✅、~~SatelliteAnimation Mode 1(v-t 三阶段)~~ ✅、~~ClapeyronAnimation(P-V 等温线 + 等温线族)~~ ✅、~~GasLawsAnimation(P-V/V-T/P-T mode 切换)~~ ✅、~~FirstLawCenterExtra(P-V 循环 + 分段高亮)~~ ✅、~~VelocityVTChart(v-t 滑动窗口+面积+割线+切线)~~ ✅、~~VelocityXTChart(x-t 割线三角形+切线)~~ ✅、~~VerticalThrowCharts(v-t/y-t 双图 + 割线/切线/目标高度/面积/双轨对照)~~ ✅、~~FaradayChartPanel(Φ-t + E-t 双图)~~ ✅、~~ACValues(I-t + Q-t 双图)~~ ✅
 
 **未迁移：**
 
 | 页面 | 图表类型 | 需要的预设 | 难度 |
 |------|---------|------|:----:|
-| ACValues | I-t + Q-t | VelocityTimeChart 变体 | 中 |
+| ~~ACValues~~ | ~~I-t + Q-t~~ | ✅ 已迁入 VelocityTimeChart（多曲线 `additionalSeries` + tDomain + children 插件层） |
 | ~~VelocityVTChart~~ | ~~v-t 滑动窗口+面积+割线+切线~~ | ✅ 已迁入 VelocityTimeChart + tDomain + underlay/children + ChartSecant/ChartTangent |
 | ~~VelocityXTChart~~ | ~~x-t 切线+割线三角形~~ | ✅ 已迁入 DisplacementTimeChart + tDomain + children + ChartSecant/ChartTangent |
 | ~~VerticalThrowCharts~~ | ~~v-t + y-t 双图+切线+交互~~ | ✅ 已迁入 VelocityTimeChart / DisplacementTimeChart + ChartSecant/ChartTangent 插件层 |
 | KineticEnergyAnimation | 4 面板 Ek-x/W/Ep/F-x/F-x/a-t | RelationChart + AccelerationTimeChart | 高 |
 | PowerAnimation | 4 面板 v-t/P-t/F-v/a-t | 多个预设组合 | 高 |
-| FaradayChartPanel | Φ-t + E-t 双图 | 通用 t-* 预设 | 高 |
+| ~~FaradayChartPanel~~ | ~~Φ-t + E-t 双图~~ | ✅ 已迁入 VelocityTimeChart（全曲线 + 当前时刻游标 + E=0 提示） |
 
 **教学体验后续优化（不阻塞主线）：**
 - **GasLawsAnimation 三图同屏**：当前迁移仅保留原 mode 切换。教学上 P-V/V-T/P-T 三图同屏更有价值（让学生同时看到「哪个量不变、哪两个量成什么关系」），适合作为未来教学重构项。
@@ -99,7 +99,9 @@
 9. ~~VelocityTimeChart 扩展「阶段背景着色」 + SatelliteAnimation Mode 1 迁移~~ ✅
 10. ~~~~创建 PVTChart 预设~~~~ → 改为直接用 RelationChart，三个热力学页面一次性迁完 ✅
 11. ~~创建 ChartSecant 插件~~ ✅ → ~~VelocityVT / VelocityXT 迁入图表预设~~ ✅ → ~~VerticalThrow 图表区拆出独立组件~~ ✅ → ~~VerticalThrowCharts 迁入 VelocityTimeChart/DisplacementTimeChart~~ ✅（高难度三件套收官）
-12. 其余按需
+12. ~~FaradayChartPanel Φ-t/E-t 双图迁移~~ ✅
+13. ~~ACValues I-t/Q-t 双图迁移~~ ✅
+14. 其余按需
 
 ---
 

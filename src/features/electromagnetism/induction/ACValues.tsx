@@ -20,9 +20,13 @@ import {
   PHYSICS_COLORS,
   CANVAS_STYLE,
   SCENE_COLORS,
+  STROKE,
+  DASH,
+  FONT,
 } from '@/theme/physics'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { LightBulb } from '@/components/Physics/LightBulb'
+import { ChartCursor, VelocityTimeChart, useChartContext } from '@/components/Chart'
 import {
   getTheoreticalThermalState,
   checkEquivalence,
@@ -60,6 +64,248 @@ function tempToColor(temp: number): string {
   const g = Math.round(210 - t * 120)
   const b = Math.round(240 - t * 170)
   return `rgb(${r}, ${g}, ${b})`
+}
+
+function ChartHorizontalLine({
+  y,
+  label,
+  color,
+  dash = DASH.reference.join(' '),
+  opacity = 0.75,
+}: {
+  y: number
+  label?: string
+  color: string
+  dash?: string
+  opacity?: number
+}) {
+  const ctx = useChartContext()
+  if (!ctx) return null
+  const py = ctx.toSvgY(y)
+  return (
+    <g opacity={opacity}>
+      <line
+        x1={ctx.plotOrigin.x}
+        y1={py}
+        x2={ctx.plotOrigin.x + ctx.plotSize.width}
+        y2={py}
+        stroke={color}
+        strokeWidth={STROKE.reference}
+        strokeDasharray={dash}
+      />
+      {label && (
+        <text
+          x={ctx.plotOrigin.x + ctx.plotSize.width - 4}
+          y={py - 4}
+          fontSize={ctx.font(FONT.small)}
+          fill={color}
+          textAnchor="end"
+          fontWeight="bold"
+        >
+          {label}
+        </text>
+      )}
+    </g>
+  )
+}
+
+function ChartVerticalLines({
+  times,
+  color,
+  activeTime,
+  activeColor,
+}: {
+  times: number[]
+  color: string
+  activeTime?: number
+  activeColor?: string
+}) {
+  const ctx = useChartContext()
+  if (!ctx) return null
+  return (
+    <g>
+      {times.map((timeValue) => {
+        const x = ctx.toSvgX(timeValue)
+        const active = activeTime != null && Math.abs(activeTime - timeValue) < VISUAL_PERIOD * 0.05
+        return (
+          <g key={`period-${timeValue}`}>
+            <line
+              x1={x}
+              y1={ctx.plotOrigin.y}
+              x2={x}
+              y2={ctx.plotOrigin.y + ctx.plotSize.height}
+              stroke={active && activeColor ? activeColor : color}
+              strokeWidth={active ? STROKE.reference : STROKE.guide}
+              strokeDasharray={DASH.projection.join(' ')}
+              opacity={active ? 0.75 : 0.35}
+            />
+            <text
+              x={x + 2}
+              y={ctx.plotOrigin.y + ctx.plotSize.height - 3}
+              fontSize={ctx.font(7.5)}
+              fill={color}
+              opacity={0.65}
+            >
+              {`${Math.round(timeValue / VISUAL_PERIOD)}T`}
+            </text>
+          </g>
+        )
+      })}
+    </g>
+  )
+}
+
+function ChartPointPulse({
+  x,
+  y,
+  color,
+}: {
+  x: number
+  y: number
+  color: string
+}) {
+  const ctx = useChartContext()
+  if (!ctx) return null
+  const cx = ctx.toSvgX(x)
+  const cy = ctx.toSvgY(y)
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={7} fill={color} stroke={colors.neutral.white} strokeWidth={2} opacity={0.9} />
+      <circle cx={cx} cy={cy} r={12} fill="none" stroke={color} strokeWidth={1.5} opacity={0.4} />
+    </g>
+  )
+}
+
+interface ACValuesChartPanelProps {
+  wavePoints: { t: number; v: number }[]
+  qPoints: { t: number; qAc: number; qDc: number }[]
+  maxT: number
+  t: number
+  iNow: number
+  Im: number
+  Idc: number
+  iAxisRange: number
+  maxQ: number
+  isSuccess: boolean
+  atPeriodEnd: boolean
+  qAc: number
+  qDc: number
+  colors: {
+    iAC: string
+    iDC: string
+    im: string
+    qAc: string
+    qDc: string
+    period: string
+    success: string
+  }
+}
+
+function ACValuesChartPanel({
+  wavePoints,
+  qPoints,
+  maxT,
+  t,
+  iNow,
+  Im,
+  Idc,
+  iAxisRange,
+  maxQ,
+  isSuccess,
+  atPeriodEnd,
+  qAc,
+  qDc,
+  colors: chartColors,
+}: ACValuesChartPanelProps) {
+  const periodLines = useMemo(() => {
+    const count = Math.ceil(maxT / VISUAL_PERIOD)
+    return Array.from({ length: count }, (_, i) => (i + 1) * VISUAL_PERIOD).filter((v) => v <= maxT + 1e-9)
+  }, [maxT])
+
+  const qAcSeries = useMemo(
+    () => qPoints.map((p) => ({ t: p.t, v: p.qAc })),
+    [qPoints]
+  )
+  const qDcSeries = useMemo(
+    () => qPoints.map((p) => ({ t: p.t, v: p.qDc })),
+    [qPoints]
+  )
+
+  return (
+    <div className="w-full h-full flex flex-col gap-1">
+      <div className="flex-1 min-h-0">
+        <VelocityTimeChart
+          points={wavePoints}
+          domainPoints={wavePoints}
+          currentTime={maxT}
+          tMax={maxT}
+          tDomain={[0, maxT]}
+          vRange={[-iAxisRange, iAxisRange]}
+          title="① 电流对比"
+          xLabel="t/s"
+          yLabel="i/A"
+          showCursor={false}
+          showArea={false}
+          series="primary"
+          className="w-full h-full"
+        >
+          <ChartVerticalLines times={periodLines} color={chartColors.period} />
+          <ChartHorizontalLine y={Im} label={`Im=${Im.toFixed(1)}A`} color={chartColors.im} opacity={0.55} />
+          {Idc > 0 && (
+            <ChartHorizontalLine
+              y={Idc}
+              label={`Idc=${Idc.toFixed(2)}A`}
+              color={chartColors.iDC}
+              dash="8,4"
+              opacity={0.85}
+            />
+          )}
+          <ChartCursor
+            x={t}
+            dataPoints={[{ y: iNow, label: 'i', series: 'primary' }]}
+            formatValue={(v) => `${v.toFixed(2)} A`}
+            showLabels
+          />
+        </VelocityTimeChart>
+      </div>
+
+      <div className="flex-1 min-h-0">
+        <VelocityTimeChart
+          points={qAcSeries}
+          domainPoints={qAcSeries}
+          currentTime={t}
+          tMax={maxT}
+          tDomain={[0, maxT]}
+          vRange={[0, maxQ]}
+          title="② 热量赛跑"
+          xLabel="t/s"
+          yLabel="Q/J"
+          showCursor={false}
+          showArea={false}
+          series="success"
+          additionalSeries={[{ points: qDcSeries, domainPoints: qDcSeries, label: 'Qdc', series: 'warm' }]}
+          className="w-full h-full"
+        >
+          <ChartVerticalLines
+            times={periodLines}
+            color={chartColors.period}
+            activeTime={isSuccess && atPeriodEnd ? t : undefined}
+            activeColor={chartColors.success}
+          />
+          <ChartCursor
+            x={t}
+            dataPoints={[
+              { y: qAc, label: 'Qac', series: 'success' },
+              { y: qDc, label: 'Qdc', series: 'warm' },
+            ]}
+            formatValue={(v) => `${v.toFixed(1)} J`}
+            showLabels
+          />
+          {isSuccess && atPeriodEnd && <ChartPointPulse x={t} y={qAc} color={chartColors.success} />}
+        </VelocityTimeChart>
+      </div>
+    </div>
+  )
 }
 
 export default function ACValues() {
@@ -192,26 +438,13 @@ export default function ACValues() {
     return Math.max(I_eff * I_eff * R * 2 * VISUAL_PERIOD, 1)
   }, [waveformType, Im, R, duty, Idc])
 
-  // ─── 图表公共边距 ─────────────────────────────────────────────────
-  const chartMargin = { left: 48, right: 20, top: 8, bottom: 6 }
+  // ─── 图表数据（迁移到 VelocityTimeChart 预设）──────────────────────
+  const chartMargin = { left: 48, right: 20 }
   const chartPlotW = LAYOUT.halfW * 2 + pad - chartMargin.left - chartMargin.right
   const maxT = Math.max(t, VISUAL_PERIOD * 2)
 
-  // X 轴映射（两舱共享）
-  const toChartX = useCallback(
-    (tVal: number) => chartMargin.left + (tVal / maxT) * chartPlotW,
-    [chartPlotW, maxT]
-  )
-
   // 上层：I-t 纵轴（以 0 为中线，完整正负轴）
-  const iAxisRange = Im * 1.25   // 正负对称显示
-  const topPlotH = LAYOUT.topChamberH - chartMargin.top - chartMargin.bottom
-  const toTopY_I = useCallback(
-    (iVal: number) =>
-      chartMargin.top + topPlotH / 2 - (iVal / iAxisRange) * (topPlotH / 2),
-    [topPlotH, iAxisRange]
-  )
-  const topZeroY = chartMargin.top + topPlotH / 2
+  const iAxisRange = Math.max(Im * 1.25, Math.abs(Idc) * 1.25, 1)
 
   // 下层：Q-t 纵轴（动态上限）
   const maxQ = useMemo(() => {
@@ -219,42 +452,21 @@ export default function ACValues() {
     return Math.max(currentMax * 1.2, gaugeMax * 0.05)  // 早期保持一定可见比例
   }, [state.Q_ac, state.Q_dc, gaugeMax])
 
-  const botPlotH = LAYOUT.botChamberH - chartMargin.top - chartMargin.bottom
-  const toBottomY_Q = useCallback(
-    (qVal: number) =>
-      LAYOUT.botChamberY + chartMargin.top + botPlotH - (qVal / maxQ) * botPlotH,
-    [LAYOUT.botChamberY, botPlotH, maxQ]
-  )
-
-  // ─── 波形路径（上层 I-t）──────────────────────────────────────────
-  const waveformPath = useMemo(() => {
-    const pts: string[] = []
-    const totalT = Math.max(t, VISUAL_PERIOD * 2)
+  const wavePoints = useMemo(() => {
     const samples = 240
-    for (let i = 0; i <= samples; i++) {
-      const ti = (totalT * i) / samples
-      const iVal = getInstantaneousCurrent(ti)
-      const px = toChartX(ti)
-      const py = toTopY_I(iVal)
-      pts.push(`${i === 0 ? 'M' : 'L'} ${px.toFixed(1)} ${py.toFixed(1)}`)
+    return Array.from({ length: samples + 1 }, (_, i) => {
+      const ti = (maxT * i) / samples
+      return { t: ti, v: getInstantaneousCurrent(ti) }
+    })
+  }, [maxT, getInstantaneousCurrent])
+
+  const qChartPoints = useMemo(() => {
+    const pts = chartPoints.map((p) => ({ t: p.t, qAc: p.Q_ac, qDc: p.Q_dc }))
+    if (pts.length === 0 || Math.abs(pts[pts.length - 1].t - t) > 1e-9) {
+      pts.push({ t, qAc: state.Q_ac, qDc: state.Q_dc })
     }
-    return pts.join(' ')
-  }, [t, getInstantaneousCurrent, toChartX, toTopY_I])
-
-  // ─── Q-t 曲线路径（下层热量舱）──────────────────────────────────
-  const qAcPath = useMemo(() => {
-    if (chartPoints.length < 2) return ''
-    return chartPoints
-      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${toChartX(p.t).toFixed(1)} ${toBottomY_Q(p.Q_ac).toFixed(1)}`)
-      .join(' ')
-  }, [chartPoints, toChartX, toBottomY_Q])
-
-  const qDcPath = useMemo(() => {
-    if (chartPoints.length < 2) return ''
-    return chartPoints
-      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${toChartX(p.t).toFixed(1)} ${toBottomY_Q(p.Q_dc).toFixed(1)}`)
-      .join(' ')
-  }, [chartPoints, toChartX, toBottomY_Q])
+    return pts
+  }, [chartPoints, t, state.Q_ac, state.Q_dc])
 
   // ─── 颜色 Token ───────────────────────────────────────────────────
   // AC 电流波形：速度蓝（电荷运动）
@@ -295,377 +507,39 @@ export default function ACValues() {
       >
 
         {/* ═══════════════════════════════════════════
-            上层【I-t 电流舱】
+            上区：I-t / Q-t 标准图表舱
         ═══════════════════════════════════════════ */}
-        <g>
-          {/* 背景框 */}
-          <rect
-            x={chartMargin.left - 4}
-            y={chartMargin.top - 4}
-            width={chartPlotW + 8}
-            height={topPlotH + 8}
-            fill={colors.neutral.white}
-            stroke={colors.neutral[200]}
-            strokeWidth={CANVAS_STYLE.stroke.grid}
-            rx={4}
+        <foreignObject
+          x={chartMargin.left - 4}
+          y={0}
+          width={chartPlotW + 8}
+          height={LAYOUT.chartH}
+        >
+          <ACValuesChartPanel
+            wavePoints={wavePoints}
+            qPoints={qChartPoints}
+            maxT={maxT}
+            t={t}
+            iNow={iNow}
+            Im={Im}
+            Idc={Idc}
+            iAxisRange={iAxisRange}
+            maxQ={maxQ}
+            isSuccess={isSuccess}
+            atPeriodEnd={atPeriodEnd}
+            qAc={state.Q_ac}
+            qDc={state.Q_dc}
+            colors={{
+              iAC: C_iAC,
+              iDC: C_iDC,
+              im: C_Im,
+              qAc: C_Qac,
+              qDc: C_Qdc,
+              period: C_period,
+              success: C_success,
+            }}
           />
-
-          {/* 标题标签 */}
-          <text
-            x={chartMargin.left}
-            y={chartMargin.top - 6}
-            fontSize={font(8.5)}
-            fill={PHYSICS_COLORS.labelTextLight}
-            fontWeight="600"
-          >
-            ① 电流对比
-          </text>
-          <text
-            x={chartMargin.left + chartPlotW}
-            y={chartMargin.top - 6}
-            fontSize={font(8.5)}
-            fill={PHYSICS_COLORS.labelTextLight}
-            textAnchor="end"
-          >
-            i / A
-          </text>
-
-          {/* 网格线（5条横线） */}
-          {Array.from({ length: 5 }).map((_, i) => {
-            const gy = chartMargin.top + (topPlotH * i) / 4
-            return (
-              <line
-                key={`top-grid-${i}`}
-                x1={chartMargin.left}
-                y1={gy}
-                x2={chartMargin.left + chartPlotW}
-                y2={gy}
-                stroke={PHYSICS_COLORS.grid}
-                strokeWidth={0.5}
-                opacity={0.25}
-              />
-            )
-          })}
-
-          {/* 零线（加粗虚线） */}
-          <line
-            x1={chartMargin.left}
-            y1={topZeroY}
-            x2={chartMargin.left + chartPlotW}
-            y2={topZeroY}
-            stroke={PHYSICS_COLORS.labelTextLight}
-            strokeWidth={0.8}
-            strokeDasharray="4,4"
-            opacity={0.4}
-          />
-
-          {/* 左轴刻度：Im / 0 / -Im */}
-          <text x={chartMargin.left - 4} y={chartMargin.top + font(4)} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">{Im.toFixed(1)}</text>
-          <text x={chartMargin.left - 4} y={topZeroY + font(3)} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">0</text>
-          <text x={chartMargin.left - 4} y={chartMargin.top + topPlotH - font(2)} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">-{Im.toFixed(1)}</text>
-
-          {/* 峰值参考线 Im（顶部浅灰虚线） */}
-          <line
-            x1={chartMargin.left}
-            y1={toTopY_I(Im)}
-            x2={chartMargin.left + chartPlotW}
-            y2={toTopY_I(Im)}
-            stroke={C_Im}
-            strokeWidth={1}
-            strokeDasharray="3,5"
-            opacity={0.45}
-          />
-          <text
-            x={chartMargin.left + chartPlotW - 2}
-            y={toTopY_I(Im) - 3}
-            fontSize={font(8)}
-            fill={C_Im}
-            textAnchor="end"
-            opacity={0.7}
-          >
-            Im={Im.toFixed(1)}A
-          </text>
-
-          {/* AC 电流波形（蓝色） */}
-          <path
-            d={waveformPath}
-            fill="none"
-            stroke={C_iAC}
-            strokeWidth={1.8}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-
-          {/* 直流参考线 Idc（红色水平线，实时随滑块平移） */}
-          {Idc > 0 && (
-            <>
-              <line
-                x1={chartMargin.left}
-                y1={toTopY_I(Idc)}
-                x2={chartMargin.left + chartPlotW}
-                y2={toTopY_I(Idc)}
-                stroke={C_iDC}
-                strokeWidth={2}
-                strokeDasharray="8,4"
-                opacity={0.85}
-              />
-              {/* Idc 标注 */}
-              <rect
-                x={chartMargin.left + 4}
-                y={toTopY_I(Idc) - font(9)}
-                width={font(46)}
-                height={font(10)}
-                fill={colors.neutral.white}
-                opacity={0.85}
-                rx={2}
-              />
-              <text
-                x={chartMargin.left + 6}
-                y={toTopY_I(Idc) - font(1)}
-                fontSize={font(8)}
-                fill={C_iDC}
-                fontWeight="600"
-              >
-                Idc={Idc.toFixed(2)}A
-              </text>
-            </>
-          )}
-
-          {/* 周期竖虚线（上层） */}
-          {Array.from({ length: Math.ceil(maxT / VISUAL_PERIOD) + 1 }).map((_, i) => {
-            const periodT = i * VISUAL_PERIOD
-            if (periodT > maxT || periodT === 0) return null
-            const px = toChartX(periodT)
-            return (
-              <line
-                key={`top-period-${i}`}
-                x1={px} y1={chartMargin.top}
-                x2={px} y2={chartMargin.top + topPlotH}
-                stroke={C_period}
-                strokeWidth={0.6}
-                strokeDasharray="2,5"
-                opacity={0.35}
-              />
-            )
-          })}
-
-          {/* 当前时刻游标 */}
-          <line
-            x1={toChartX(t)} y1={chartMargin.top}
-            x2={toChartX(t)} y2={chartMargin.top + topPlotH}
-            stroke={PHYSICS_COLORS.labelTextLight}
-            strokeWidth={0.8}
-            strokeDasharray="2,3"
-            opacity={0.45}
-          />
-
-          {/* 图例（右上角） */}
-          <g transform={`translate(${chartMargin.left + chartPlotW - 80}, ${chartMargin.top + 6})`}>
-            <line x1={0} y1={0} x2={14} y2={0} stroke={C_iAC} strokeWidth={1.8} />
-            <text x={17} y={4} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight}>i(t) 交流</text>
-            <line x1={0} y1={13} x2={14} y2={13} stroke={C_iDC} strokeWidth={2} strokeDasharray="6,3" />
-            <text x={17} y={17} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight}>Idc 直流</text>
-          </g>
-        </g>
-
-        {/* ═══════════════════════════════════════════
-            分隔线（极细）
-        ═══════════════════════════════════════════ */}
-        <g transform={`translate(0, ${LAYOUT.dividerY})`}>
-          <line
-            x1={chartMargin.left - 4}
-            y1={LAYOUT.dividerH / 2}
-            x2={chartMargin.left + chartPlotW + 8}
-            y2={LAYOUT.dividerH / 2}
-            stroke={colors.neutral[200]}
-            strokeWidth={1}
-          />
-          <text
-            x={chartMargin.left + chartPlotW + 6}
-            y={LAYOUT.dividerH / 2 + font(4)}
-            fontSize={font(8)}
-            fill={PHYSICS_COLORS.labelTextLight}
-            opacity={0.6}
-          >
-            Q ↓
-          </text>
-        </g>
-
-        {/* ═══════════════════════════════════════════
-            下层【Q-t 热量舱】
-        ═══════════════════════════════════════════ */}
-        <g>
-          {/* 背景框 */}
-          <rect
-            x={chartMargin.left - 4}
-            y={LAYOUT.botChamberY + chartMargin.top - 4}
-            width={chartPlotW + 8}
-            height={botPlotH + 8}
-            fill={colors.neutral.white}
-            stroke={colors.neutral[200]}
-            strokeWidth={CANVAS_STYLE.stroke.grid}
-            rx={4}
-          />
-
-          {/* 标题标签 */}
-          <text
-            x={chartMargin.left}
-            y={LAYOUT.botChamberY + chartMargin.top - 6}
-            fontSize={font(8.5)}
-            fill={PHYSICS_COLORS.labelTextLight}
-            fontWeight="600"
-          >
-            ② 热量赛跑
-          </text>
-          <text
-            x={chartMargin.left + chartPlotW}
-            y={LAYOUT.botChamberY + chartMargin.top - 6}
-            fontSize={font(8.5)}
-            fill={PHYSICS_COLORS.labelTextLight}
-            textAnchor="end"
-          >
-            Q / J
-          </text>
-
-          {/* 网格线 */}
-          {Array.from({ length: 4 }).map((_, i) => {
-            const gy = LAYOUT.botChamberY + chartMargin.top + (botPlotH * i) / 3
-            return (
-              <line
-                key={`bot-grid-${i}`}
-                x1={chartMargin.left} y1={gy}
-                x2={chartMargin.left + chartPlotW} y2={gy}
-                stroke={PHYSICS_COLORS.grid}
-                strokeWidth={0.5}
-                opacity={0.25}
-              />
-            )
-          })}
-
-          {/* 左轴刻度 */}
-          <text
-            x={chartMargin.left - 4}
-            y={LAYOUT.botChamberY + chartMargin.top + font(4)}
-            fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end"
-          >
-            {maxQ.toFixed(0)}J
-          </text>
-          <text
-            x={chartMargin.left - 4}
-            y={LAYOUT.botChamberY + chartMargin.top + botPlotH}
-            fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end"
-          >
-            0
-          </text>
-
-          {/* 周期竖虚线（下层）+ T 标注 */}
-          {Array.from({ length: Math.ceil(maxT / VISUAL_PERIOD) + 1 }).map((_, i) => {
-            const periodT = i * VISUAL_PERIOD
-            if (periodT > maxT || periodT === 0) return null
-            const px = toChartX(periodT)
-            const label = `${i}T`
-            const isAtEnd = isNearPeriodEnd(t, VISUAL_PERIOD) && Math.abs(t - periodT) < VISUAL_PERIOD * 0.05
-            return (
-              <g key={`bot-period-${i}`}>
-                <line
-                  x1={px} y1={LAYOUT.botChamberY + chartMargin.top}
-                  x2={px} y2={LAYOUT.botChamberY + chartMargin.top + botPlotH}
-                  stroke={isAtEnd && isSuccess ? C_success : C_period}
-                  strokeWidth={isAtEnd ? 1.2 : 0.6}
-                  strokeDasharray="2,5"
-                  opacity={isAtEnd ? 0.7 : 0.35}
-                />
-                <text
-                  x={px + 2}
-                  y={LAYOUT.botChamberY + chartMargin.top + botPlotH - 3}
-                  fontSize={font(7.5)}
-                  fill={C_period}
-                  opacity={0.6}
-                >
-                  {label}
-                </text>
-              </g>
-            )
-          })}
-
-          {/* 时间横轴标签 */}
-          <text
-            x={chartMargin.left + chartPlotW / 2}
-            y={LAYOUT.botChamberY + chartMargin.top + botPlotH + font(13)}
-            fontSize={font(9)}
-            fill={PHYSICS_COLORS.labelText}
-            textAnchor="middle"
-            fontWeight="bold"
-          >
-            时间 t (s)
-          </text>
-
-          {/* Q_ac 热量曲线（势能紫，实线） */}
-          {qAcPath && (
-            <path
-              d={qAcPath}
-              fill="none"
-              stroke={C_Qac}
-              strokeWidth={2.2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          )}
-
-          {/* Q_dc 热量曲线（功率黄，实线） */}
-          {qDcPath && (
-            <path
-              d={qDcPath}
-              fill="none"
-              stroke={C_Qdc}
-              strokeWidth={2.2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          )}
-
-          {/* 当前时刻游标 */}
-          <line
-            x1={toChartX(t)} y1={LAYOUT.botChamberY + chartMargin.top}
-            x2={toChartX(t)} y2={LAYOUT.botChamberY + chartMargin.top + botPlotH}
-            stroke={PHYSICS_COLORS.labelTextLight}
-            strokeWidth={0.8}
-            strokeDasharray="2,3"
-            opacity={0.45}
-          />
-
-          {/* 撞线高亮圆点：周期终点且等效成功 */}
-          {isSuccess && atPeriodEnd && chartPoints.length > 0 && (
-            <>
-              <circle
-                cx={toChartX(t)}
-                cy={toBottomY_Q(state.Q_ac)}
-                r={7}
-                fill={C_success}
-                stroke={colors.neutral.white}
-                strokeWidth={2}
-                opacity={0.9}
-              />
-              <circle
-                cx={toChartX(t)}
-                cy={toBottomY_Q(state.Q_ac)}
-                r={12}
-                fill="none"
-                stroke={C_success}
-                strokeWidth={1.5}
-                opacity={0.4}
-              />
-            </>
-          )}
-
-          {/* 图例 */}
-          <g transform={`translate(${chartMargin.left + 6}, ${LAYOUT.botChamberY + chartMargin.top + 8})`}>
-            <line x1={0} y1={0} x2={14} y2={0} stroke={C_Qac} strokeWidth={2.2} />
-            <text x={17} y={4} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight}>Q_ac 交流热量</text>
-            <line x1={0} y1={13} x2={14} y2={13} stroke={C_Qdc} strokeWidth={2.2} />
-            <text x={17} y={17} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight}>Q_dc 直流热量</text>
-          </g>
-        </g>
+        </foreignObject>
 
         {/* ═══════════════════════════════════════════
             下区：双 Card 对比舱（加热盒 + 能量槽）
