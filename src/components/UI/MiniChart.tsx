@@ -4,7 +4,7 @@
  * 支持：多曲线、静态参考线、当前时刻标记、图例、响应式尺寸
  * 基于 BasePhysicsChart 实现，颜色统一使用 theme token
  */
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { BasePhysicsChart, useChartContext } from '@/components/Chart'
 import { CHART_COLORS, FONT } from '@/theme/physics'
 
@@ -48,6 +48,8 @@ function MiniChartContent({
   points,
   lines,
   xKey,
+  xMin,
+  xMax,
   currentVals,
   currentXVal,
   staticLines,
@@ -55,23 +57,27 @@ function MiniChartContent({
   points: Record<string, number>[]
   lines: MiniChartLine[]
   xKey: string
+  xMin: number
+  xMax: number
   currentVals: Record<string, number>
   currentXVal: number
   staticLines: MiniChartStaticLine[]
 }) {
   const ctx = useChartContext()
 
+  const clampedCurrentX = Math.max(xMin, Math.min(xMax, currentXVal))
+
   const visiblePoints = useMemo(() => {
     if (xKey === 't') {
-      return points.filter((p) => p.t <= currentXVal + 1e-9)
+      return points.filter((p) => p.t >= xMin - 1e-9 && p.t <= clampedCurrentX + 1e-9)
     }
     return points
-  }, [points, xKey, currentXVal])
+  }, [points, xKey, xMin, clampedCurrentX])
 
   if (!ctx) return null
   const { toSvgX, toSvgY, plotOrigin, plotSize, font } = ctx
 
-  const cursorX = toSvgX(Math.min(currentXVal, Infinity))
+  const cursorX = toSvgX(clampedCurrentX)
 
   return (
     <g>
@@ -178,6 +184,15 @@ export function MiniChart({
   minHeight = 130,
   className = '',
 }: MiniChartProps) {
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production' && (currentXVal < xMin || currentXVal > xMax)) {
+      console.warn(
+        `MiniChart: currentXVal (${currentXVal}) is outside xDomain [${xMin}, ${xMax}]. ` +
+        'Cursor is clamped to the chart domain.'
+      )
+    }
+  }, [currentXVal, xMin, xMax])
+
   return (
     <BasePhysicsChart
       xDomain={[xMin, xMax]}
@@ -193,6 +208,8 @@ export function MiniChart({
         points={points}
         lines={lines}
         xKey={xKey}
+        xMin={xMin}
+        xMax={xMax}
         currentVals={currentVals}
         currentXVal={currentXVal}
         staticLines={staticLines}

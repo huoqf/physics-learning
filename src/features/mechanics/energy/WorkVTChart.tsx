@@ -1,170 +1,75 @@
 import { useMemo } from 'react'
-import { VT_CHART_COLORS, CHART_COLORS, PHYSICS_COLORS, STROKE, DASH, OPACITY, CANVAS_COLORS } from '@/theme/physics'
+import { VelocityTimeChart } from '@/components/Chart'
+import { PHYSICS_COLORS } from '@/theme/physics'
+import { computeVTPoints } from '@/physics/work'
 import type { WorkKinematics } from '@/physics/work'
-
-const VT_LAYOUT = {
-  topPaddingRatio: 0.08,
-  bottomPaddingRatio: 0.12,
-  leftPaddingRatio: 0.10,
-  rightPaddingRatio: 0.06,
-} as const
 
 interface WorkVTChartProps {
   canvasSize: { width: number; height: number }
+  /**
+   * 保留旧接口以减少 WorkAnimation 调用面变更。
+   * 组件已迁移到公共 VelocityTimeChart，字号由 BasePhysicsChart 自适应管理。
+   */
   font: (size: number) => number
   kinematics: WorkKinematics
   currentTime: number
   maxAnimTime: number
 }
 
+/**
+ * 恒力做功场景的 v-t 图。
+ *
+ * 说明：该组件原先是手写 SVG 坐标图，单独维护坐标轴、网格、参考线、游标与硬编码定标。
+ * 现在改为薄适配层：数据语义仍来自 WorkKinematics，渲染统一交给公共 VelocityTimeChart。
+ */
 export function WorkVTChart({
   canvasSize,
-  font,
   kinematics,
   currentTime,
   maxAnimTime,
 }: WorkVTChartProps) {
-  const { a, v_max, t_total } = kinematics
+  const { a, t_total } = kinematics
 
-  const layout = useMemo(() => {
-    const top = canvasSize.height * VT_LAYOUT.topPaddingRatio
-    const bottom = canvasSize.height * VT_LAYOUT.bottomPaddingRatio
-    const left = canvasSize.width * VT_LAYOUT.leftPaddingRatio
-    const right = canvasSize.width * VT_LAYOUT.rightPaddingRatio
-    return {
-      top,
-      bottom,
-      left,
-      right,
-      chartW: canvasSize.width - left - right,
-      chartH: canvasSize.height - top - bottom,
-    }
-  }, [canvasSize.width, canvasSize.height])
+  const points = useMemo(() => computeVTPoints(kinematics, 80), [kinematics])
 
-  const VT_AXIS = { vMax: 65 } as const
-
-  const tMax = isFinite(t_total) ? t_total * 1.15 : 10
-  const vMax = VT_AXIS.vMax
-
-  const toX = (t: number) => layout.left + (t / tMax) * layout.chartW
-  const toY = (v: number) => layout.top + layout.chartH - (v / vMax) * layout.chartH
-
+  const tMax = isFinite(t_total) && t_total > 0 ? t_total * 1.15 : 10
   const progress = Math.min(currentTime / maxAnimTime, 1)
-  const currentT = isFinite(t_total) ? progress * progress * t_total : 0
-  const currentV = a * currentT
-
-  const fullPath = useMemo(() => {
-    if (!isFinite(t_total)) return ''
-    return `M ${toX(0)} ${toY(0)} L ${toX(t_total)} ${toY(v_max)}`
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [t_total, v_max, a, layout])
-
-  const revealedPath = useMemo(() => {
-    if (!isFinite(t_total) || currentT <= 0) return ''
-    return `M ${toX(0)} ${toY(0)} L ${toX(currentT)} ${toY(currentV)}`
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentT, currentV, a, layout])
+  const currentT = isFinite(t_total) && t_total > 0 ? progress * progress * t_total : 0
 
   return (
-    <g>
-      {/* 坐标轴 */}
-      <line x1={layout.left} y1={layout.top} x2={layout.left} y2={layout.top + layout.chartH}
-        stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axisBold} />
-      <line x1={layout.left} y1={layout.top + layout.chartH}
-        x2={layout.left + layout.chartW} y2={layout.top + layout.chartH}
-        stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axisBold} />
-
-      {/* X 轴刻度 */}
-      {Array.from({ length: 6 }, (_, i) => {
-        const t = (i / 5) * tMax
-        const x = toX(t)
-        return (
-          <g key={`xt-${i}`}>
-            <line x1={x} y1={layout.top + layout.chartH} x2={x} y2={layout.top + layout.chartH + 4}
-              stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-            <text x={x} y={layout.top + layout.chartH + font(10) + 4}
-              fontSize={font(9)} fill={CHART_COLORS.tickLabel} textAnchor="middle">
-              {t.toFixed(1)}
-            </text>
-          </g>
-        )
-      })}
-      <text x={layout.left + layout.chartW / 2} y={layout.top + layout.chartH + font(14)}
-        fontSize={font(10)} fill={CHART_COLORS.labelText} textAnchor="middle">
-        t (s)
-      </text>
-
-      {/* Y 轴刻度 */}
-      {Array.from({ length: 6 }, (_, i) => {
-        const v = (i / 5) * vMax
-        const y = toY(v)
-        return (
-          <g key={`yt-${i}`}>
-            <line x1={layout.left - 4} y1={y} x2={layout.left} y2={y}
-              stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-            <text x={layout.left - font(10) - 2} y={y + font(3)}
-              fontSize={font(9)} fill={CHART_COLORS.tickLabel} textAnchor="end">
-              {v.toFixed(1)}
-            </text>
-          </g>
-        )
-      })}
-      <text x={layout.left - font(18)} y={layout.top + layout.chartH / 2}
-        fontSize={font(10)} fill={CHART_COLORS.labelText} textAnchor="middle"
-        transform={`rotate(-90, ${layout.left - font(18)}, ${layout.top + layout.chartH / 2})`}>
-        v (m/s)
-      </text>
-
-      {/* 网格线 */}
-      {Array.from({ length: 6 }, (_, i) => {
-        const x = toX((i / 5) * tMax)
-        return (
-          <line key={`gx-${i}`} x1={x} y1={layout.top} x2={x} y2={layout.top + layout.chartH}
-            stroke={CHART_COLORS.gridLine} strokeWidth={STROKE.grid} strokeDasharray={DASH.guide.join(',')} />
-        )
-      })}
-      {Array.from({ length: 6 }, (_, i) => {
-        const y = toY((i / 5) * vMax)
-        return (
-          <line key={`gy-${i}`} x1={layout.left} y1={y} x2={layout.left + layout.chartW} y2={y}
-            stroke={CHART_COLORS.gridLine} strokeWidth={STROKE.grid} strokeDasharray={DASH.guide.join(',')} />
-        )
-      })}
-
-      {/* v-t 参考线（浅色虚线，表示完整理论轨迹） */}
-      {fullPath && (
-        <path d={fullPath} fill="none" stroke={CHART_COLORS.reference}
-          strokeWidth={STROKE.vectorThin} strokeDasharray={DASH.guide.join(',')}
-          opacity={0.4} />
-      )}
-
-      {/* v-t 已发生线段（实线，随时间逐步生成） */}
-      {revealedPath && (
-        <path d={revealedPath} fill="none" stroke={VT_CHART_COLORS.velocityCurve}
-          strokeWidth={STROKE.vectorMain} strokeLinecap="round" />
-      )}
-
-      {/* 当前时刻游标 */}
-      {currentT > 0 && (
-        <g>
-          <line x1={toX(currentT)} y1={layout.top + layout.chartH}
-            x2={toX(currentT)} y2={toY(currentV)}
-            stroke={VT_CHART_COLORS.velocityCurve} strokeWidth={STROKE.vectorThin}
-            strokeDasharray={DASH.guide.join(',')} opacity={OPACITY.guide} />
-          <circle cx={toX(currentT)} cy={toY(currentV)} r={font(4)}
-            fill={VT_CHART_COLORS.velocityCurve} stroke={CANVAS_COLORS.grid} strokeWidth={1.5} />
-        </g>
-      )}
-
-      {/* 图例 */}
-      <g transform={`translate(${layout.left + layout.chartW - font(80)}, ${layout.top + font(8)})`}>
-        <text fontSize={font(9)} fill={CHART_COLORS.labelText} fontWeight="bold">
-          v(t) = at
-        </text>
-        <text y={font(12)} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight}>
-          a = {a.toFixed(2)} m/s²
-        </text>
-      </g>
-    </g>
+    <foreignObject width={canvasSize.width} height={canvasSize.height}>
+      <div style={{ width: canvasSize.width, height: canvasSize.height }}>
+        <VelocityTimeChart
+          mode="animated"
+          points={points}
+          domainPoints={points}
+          referencePoints={points}
+          currentTime={currentT}
+          tMax={tMax}
+          xLabel="t (s)"
+          yLabel="v (m/s)"
+          title="v-t"
+          series="primary"
+          showCursor={currentT > 0}
+          showReferenceLine
+          referenceColor={PHYSICS_COLORS.labelTextLight}
+          referenceOpacity={0.45}
+        />
+        <div
+          style={{
+            position: 'relative',
+            marginTop: -canvasSize.height + 8,
+            marginLeft: Math.max(48, canvasSize.width - 104),
+            fontSize: 10,
+            lineHeight: '14px',
+            color: PHYSICS_COLORS.labelTextLight,
+            pointerEvents: 'none',
+            fontWeight: 700,
+          }}
+        >
+          v(t)=at<br />a={a.toFixed(2)} m/s²
+        </div>
+      </div>
+    </foreignObject>
   )
 }

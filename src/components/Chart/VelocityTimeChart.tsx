@@ -3,7 +3,7 @@ import { BasePhysicsChart } from './BasePhysicsChart'
 import { useChartContext } from './ChartContext'
 import { ChartCursor } from './ChartCursor'
 import { ChartArea } from './ChartArea'
-import { PHYSICS_COLORS, CHART_COLORS, SERIES_MAP, FONT } from '@/theme/physics'
+import { PHYSICS_COLORS, CHART_COLORS, SERIES_MAP, FONT, STROKE, DASH } from '@/theme/physics'
 import type { ChartSeriesVariant, ChartAreaVariant, ChartAreaIntensity } from '@/theme/physics'
 
 /**
@@ -96,6 +96,14 @@ type VelocityTimeChartProps = (StaticChartProps | AnimatedChartProps) & {
   yLabel?: string
   /** 主系列是否显示面积填充 */
   showArea?: boolean
+  /** 是否显示完整理论参考线（不随 currentTime 截断） */
+  showReferenceLine?: boolean
+  /** 理论参考线数据；不传时默认使用主系列 domainPoints ?? points */
+  referencePoints?: { t: number; v: number }[]
+  /** 理论参考线颜色，默认 CHART_COLORS.reference */
+  referenceColor?: string
+  /** 理论参考线不透明度，默认 0.45 */
+  referenceOpacity?: number
   /** 面积截取区间（物理坐标），默认 [0, currentTime] */
   areaRange?: [number, number]
   /** 面积填充变体 */
@@ -161,8 +169,13 @@ function renderCurve(
 
 function VTContent({
   points,
+  domainPoints,
   currentTime,
   showArea,
+  showReferenceLine,
+  referencePoints,
+  referenceColor,
+  referenceOpacity,
   areaRange,
   areaVariant,
   areaIntensity,
@@ -173,10 +186,34 @@ function VTContent({
   tDomain,
   underlay,
   children,
-}: Omit<VelocityTimeChartProps, 'tMax' | 'vRange' | 'title' | 'className' | 'domainPoints' | 'mode'>) {
+}: Omit<VelocityTimeChartProps, 'tMax' | 'vRange' | 'title' | 'className' | 'mode'>) {
   const ctx = useChartContext()
 
   const mainColor = SERIES_MAP[series ?? 'primary']
+
+  // 完整理论参考线：独立于 currentTime，避免“参考轨迹”和“已揭示轨迹”语义混用。
+  const referenceCurve = useMemo(() => {
+    if (!ctx || !showReferenceLine) return null
+    const [tMin, tMax] = tDomain ?? [0, Infinity]
+    const source = referencePoints ?? domainPoints ?? points
+    const visible = source.filter((p) => p.t >= tMin - 1e-9 && p.t <= tMax + 1e-9)
+    if (visible.length < 2) return null
+    const pathD =
+      'M ' +
+      visible.map((p) => `${ctx.toSvgX(p.t).toFixed(2)},${ctx.toSvgY(p.v).toFixed(2)}`).join(' L ')
+    return (
+      <path
+        d={pathD}
+        fill="none"
+        stroke={referenceColor ?? CHART_COLORS.reference}
+        strokeWidth={STROKE.vectorThin}
+        strokeDasharray={DASH.guide.join(',')}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity={referenceOpacity ?? 0.45}
+      />
+    )
+  }, [ctx, showReferenceLine, referencePoints, domainPoints, points, tDomain, referenceColor, referenceOpacity])
 
   // 主曲线
   const mainCurve = useMemo(() => {
@@ -299,6 +336,9 @@ function VTContent({
       {/* 插件底层（面积/背景增强） */}
       {underlay}
 
+      {/* 完整理论参考线（不随 currentTime 截断） */}
+      {referenceCurve}
+
       {/* 面积 + 曲线 */}
       {mainCurve}
       {extraCurves}
@@ -359,6 +399,10 @@ export function VelocityTimeChart({
   xLabel = 't (s)',
   yLabel = 'v (m/s)',
   showArea = false,
+  showReferenceLine = false,
+  referencePoints,
+  referenceColor,
+  referenceOpacity,
   areaRange,
   areaVariant,
   areaIntensity,
@@ -408,8 +452,13 @@ export function VelocityTimeChart({
     >
       <VTContent
         points={points}
+        domainPoints={domainPoints}
         currentTime={currentTime}
         showArea={showArea}
+        showReferenceLine={showReferenceLine}
+        referencePoints={referencePoints}
+        referenceColor={referenceColor}
+        referenceOpacity={referenceOpacity}
         areaRange={areaRange}
         areaVariant={areaVariant}
         areaIntensity={areaIntensity}
