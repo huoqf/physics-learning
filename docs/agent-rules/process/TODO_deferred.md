@@ -1,6 +1,6 @@
 # 延后处理待办事项
 
-> 仅保留未完成项。最后更新：2026-06-22（CuttingEMF V-T 迁入 VelocityTimeChart，a-T 暂留）
+> 仅保留未完成项。最后更新：2026-06-22（电磁低风险关系图第九轮批量迁移完成）
 
 ---
 
@@ -30,6 +30,8 @@
 | `KineticEnergyCharts` | Ek-x / W / Ep / a-T | RelationChart + AccelerationTimeChart | `domainPoints` / yDomain | ✅ 已迁移 |
 | `FaradayChartPanel` | Φ-T / E-T | VelocityTimeChart 泛用 | 多曲线/游标 | ✅ 已迁移 |
 | `AmpereFIChart` | F-I | RelationChart 业务适配层 | `F=-BIL` 符号统一 + 稳定 yDomain + 当前点 cursor | ✅ 已迁移，不改公共组件 |
+| `OhmLawCenterExtra` | U-I | RelationChart 业务适配层 | 参考曲线 + 历史扫掠 + 当前点 | ✅ 第九轮已迁移 |
+| `ClosedCircuitCenterExtra` | U-I / P-R | RelationChart 业务适配层 | 当前点 + 关键 marker | ✅ 第九轮已迁移 |
 | `ElectricPotentialChartScene` | 电势相关曲线 | 场景内图表 | 与动画强绑定，待确认是否适合迁移 | 🔶 待盘点 |
 | `IntermolecularForceChart` | F-r / Ep-r | RelationChart | markers / 多曲线 | ✅ 已迁移 |
 | `MaxwellBoltzmannChart` | f(v)-v | 图表预设/自定义混合 | 待核对是否需要 RelationChart 收口 | 🔶 待盘点 |
@@ -161,6 +163,8 @@
 | ~~FaradayChartPanel~~ | ~~Φ-t + E-t 双图~~ | ✅ 已迁入 VelocityTimeChart（全曲线 + 当前时刻游标 + E=0 提示） |
 | ~~WorkFSChart~~ | ~~F-s / W-s 复合图~~ | ✅ 保留业务图，已完成最小底层收口；暂不迁 RelationChart，暂不抽 ForceDisplacementChart |
 | ~~AmpereFIChart~~ | ~~F-I~~ | ✅ 已迁入 RelationChart 业务适配层；统一 `F=-BIL`，yDomain 稳定为 ±100N；未改公共组件 |
+| ~~OhmLawCenterExtra~~ | ~~U-I 伏安特性图~~ | ✅ 第九轮已迁入 RelationChart 业务适配层 |
+| ~~ClosedCircuitCenterExtra~~ | ~~U-I / P-R 关系图~~ | ✅ 第九轮已迁入 RelationChart 业务适配层 |
 | ElectricPotentialChartScene | 电势/电场相关图 | 待盘点：若与主动画强绑定，可保留自定义但统一 scale/axis |
 | MaxwellBoltzmannChart | f(v)-v | MiniChart 评估完成：保留 MiniChart，无需 RelationChart 迁移 |
 | ~~MiniChart~~ | ~~小型趋势图~~ | ✅ 第五轮评估完成：暂无 `domainPoints` 必要，暂不迁目录 |
@@ -192,7 +196,8 @@
 19. ~~第六轮 MiniChart cursor clamp / warning 小修~~ ✅ 已完成；同时完成低风险项快速筛查，复杂图表继续暂缓
 20. ~~第七轮限定评估 `CuttingEMF` V-T / a-T~~ ✅ V-T 可迁；a-T 无损迁移需补 `AccelerationTimeChart` 参考线/children 能力；该轮未迁移、未修既有 lint
 21. ~~第八轮 `CuttingEMF` V-T 单图迁移~~ ✅ 已迁入 `VelocityTimeChart`，收尾速度渐近线用 children 自定义；a-T 暂留，公共组件未动，既有 lint 未修
-22. 其余按需
+22. ~~第九轮电磁低风险单曲线关系图批量收口~~ ✅ `OhmLawCenterExtra`、`ClosedCircuitCenterExtra` 已迁入 RelationChart；`CircuitAnalysisCenterExtra` / `ElectricPotentialChartScene` / `CuttingEMF a-T` 暂缓
+23. 其余按需
 
 ---
 

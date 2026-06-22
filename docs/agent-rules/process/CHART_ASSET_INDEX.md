@@ -120,6 +120,9 @@ BasePhysicsChart / RelationChart / VelocityTimeChart / DisplacementTimeChart / A
 | `ElectricFieldBasicScene` F-r | 电场强度 / `ElectricFieldBasicScene.tsx` | F-r | `RelationChart` | 随参 | 不适用 | ✅ 已迁移 |
 | `ElectricPotentialChartScene` φ-x | 电势 / `ElectricPotentialChartScene.tsx` | φ-x + hover 切线 | 手写 SVG | ✅ hover/播放 | 待评估 | 🔶 场景强绑定，待盘点 |
 | `AmpereFIChart` F-I | 安培力 / `AmpereFIChart.tsx` | F-I | RelationChart 业务适配层 | 随参 | 已收口 | ✅ 已迁移：统一 `F=-BIL`，稳定 yDomain ±100N，当前点 cursor |
+| `OhmLawCenterExtra` U-I | 欧姆定律 / `OhmLawCenterExtra.tsx` | U-I 伏安特性 | RelationChart 业务适配层 | 随参/扫掠 | 显式 domain | ✅ 第九轮已迁移 |
+| `ClosedCircuitCenterExtra` U-I / P-R | 闭合电路 / `ClosedCircuitCenterExtra.tsx` | U-I / P-R 关系图 | RelationChart 业务适配层 | 随参 | 显式 domain | ✅ 第九轮已迁移 |
+| `CircuitAnalysisCenterExtra` U/I 柱状图 | 串并联电路 / `CircuitAnalysisCenterExtra.tsx` | 电压/电流分配柱状图 | 手写 SVG | 随参 | 显式 domain | 🔶 暂缓：非单曲线关系图 |
 | `CuttingEMF` V-T / a-T | 电磁感应 / `CuttingEMF.tsx` | V-T + a-T | V-T 已迁 `VelocityTimeChart`；a-T 保留 `BasePhysicsChart` 局部封装 | ✅ | 显式 domain / domainPoints | ✅ V-T 已迁；a-T 无损迁移需补参考线/children 能力 |
 | `FaradayChartPanel` Φ-T | 法拉第电磁感应 / `FaradayChartPanel.tsx` | Φ-T | `VelocityTimeChart` 泛用 | ✅ | ✅ 已传 | ✅ 已迁移 |
 | `FaradayChartPanel` E-T | 法拉第电磁感应 / `FaradayChartPanel.tsx` | E-T | `VelocityTimeChart` 泛用 | ✅ | ✅ 已传 | ✅ 已迁移 |
@@ -290,3 +293,19 @@ BasePhysicsChart / RelationChart / VelocityTimeChart / DisplacementTimeChart / A
 | a-T | ⚠️ 可复用 `AccelerationTimeChart` 的动态与定标能力，但无损迁移缺参考线/children 能力 | 暂不强迁；若要无损迁移，先补通用参考线能力或接受视觉简化 |
 
 结论：`CuttingEMF` 当前已基于 `BasePhysicsChart`，不是裸手写坐标轴；后续不建议一轮强迁两图。
+
+---
+
+## 11. 第九轮电磁低风险关系图批量收口
+
+> 评估文档见：[`ELECTROMAGNETISM_LOW_RISK_CHARTS_EVALUATION.md`](./ELECTROMAGNETISM_LOW_RISK_CHARTS_EVALUATION.md)。
+
+| 对象 | 结论 |
+|---|---|
+| `OhmLawCenterExtra` U-I | ✅ 已迁入 `RelationChart` 业务适配层 |
+| `ClosedCircuitCenterExtra` U-I / P-R | ✅ 已迁入 `RelationChart` 业务适配层 |
+| `CircuitAnalysisCenterExtra` U/I 柱状图 | 暂缓：非单曲线关系图 |
+| `ElectricPotentialChartScene` | 暂缓：hover 切线 + 场景同步 |
+| `CuttingEMF` a-T | 暂缓：无损迁移需 `AccelerationTimeChart` 补参考线/children 能力 |
+
+本轮未改公共组件，未处理全量 lint，未碰复杂交互图。
