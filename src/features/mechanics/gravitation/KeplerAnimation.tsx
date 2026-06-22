@@ -1,7 +1,7 @@
-import { useCanvasSize, physicsToCanvas } from '@/utils'
+import { useCanvasSize, useViewport, physicsToCanvas } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, STROKE, CANVAS_STYLE, KEPLER_CONFIG, VECTOR_DISPLAY, INSET_CHART, GRID_DISPLAY } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CANVAS_STYLE, KEPLER_CONFIG, VECTOR_DISPLAY, INSET_CHART } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { calculateKeplerOrbit, solveKeplerEquation } from '@/physics/celestial'
 import { useMemo } from 'react'
@@ -17,34 +17,26 @@ function clamp(value: number, min: number, max: number): number {
 // ─── 阶段二：动态计算配置（语义化命名，主题驱动）────────────────────
 
 export default function KeplerAnimation() {
-    const {params, time, showVectors, showFormulas, showGrid} = useAnimationStore(
+    const {params, time, showVectors, showFormulas} = useAnimationStore(
     useShallow((s) => ({
     params: s.params,
     time: s.time,
     showVectors: s.showVectors,
     showFormulas: s.showFormulas,
-    showGrid: s.showGrid,
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
   const { font } = canvasSize
 
+  const vp = useViewport(canvasSize, {
+    designWidth: 650,
+    designHeight: 450,
+  })
+
   const mode = params.mode ?? 0 // 0=第一定律, 1=第二定律, 2=第三定律
 
-  // ─── 动态轨道缩放 ───────────────────────────────────────────────
-  const scale = useMemo(() => {
-    const baseScale = KEPLER_CONFIG.scaleBase
-    const adaptiveFactor = Math.min(
-      canvasSize.width / KEPLER_CONFIG.referenceWidth,
-      canvasSize.height / KEPLER_CONFIG.referenceHeight
-    )
-    const clampedFactor = clamp(
-      adaptiveFactor,
-      KEPLER_CONFIG.scaleMinFactor,
-      KEPLER_CONFIG.scaleMaxFactor
-    )
-    return baseScale * clampedFactor
-  }, [canvasSize])
+  // ─── 轨道缩放（由 vp.scale 驱动）──────────────────────────────
+  const scale = KEPLER_CONFIG.scaleBase * vp.scale
 
   // ─── 行星 A (主行星) 轨道参数 ───
   const a1 = params.a ?? 4.5
@@ -57,8 +49,8 @@ export default function KeplerAnimation() {
   const rMax = a1 + c1
 
   // ─── 画面几何中心与焦点坐标 ───
-  const centerX = canvasSize.width / 2
-  const centerY = canvasSize.height / 2
+  const centerX = vp.centerX
+  const centerY = vp.centerY
   const sunX = centerX + c1 * scale  // 右焦点放置太阳
   const sunY = centerY
   const foci2X = centerX - c1 * scale // 左焦点(虚焦点)
@@ -132,58 +124,6 @@ export default function KeplerAnimation() {
     }
     return points
   }, [a1, b1, time, T1, canvasSize, scale])
-
-  // ─── 动态网格间距 ───────────────────────────────────────────────
-  const gridSpacing = useMemo(() => {
-    const base = GRID_DISPLAY.spacingBase
-    const scaleFactor = Math.min(
-      canvasSize.width / KEPLER_CONFIG.referenceWidth,
-      canvasSize.height / KEPLER_CONFIG.referenceHeight
-    )
-    return clamp(base * scaleFactor, GRID_DISPLAY.minSpacing, GRID_DISPLAY.maxSpacing)
-  }, [canvasSize])
-
-  // ─── 网格线 (符合浅色风格) ───
-  const gridLines = useMemo(() => {
-    if (!showGrid) return []
-    const lines = []
-    const xSpacing = gridSpacing
-    const ySpacing = gridSpacing
-    const xHalfCount = Math.floor(canvasSize.width / (2 * xSpacing))
-    const yHalfCount = Math.floor(canvasSize.height / (2 * ySpacing))
-
-    for (let i = -xHalfCount; i <= xHalfCount; i++) {
-      lines.push(
-        <line
-          key={`grid-x-${i}`}
-          x1={centerX + i * xSpacing}
-          y1={10}
-          x2={centerX + i * xSpacing}
-          y2={canvasSize.height - 10}
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={STROKE.grid}
-          opacity={0.8}
-          strokeDasharray="4,4"
-        />
-      )
-    }
-    for (let i = -yHalfCount; i <= yHalfCount; i++) {
-      lines.push(
-        <line
-          key={`grid-y-${i}`}
-          x1={10}
-          y1={centerY + i * ySpacing}
-          x2={canvasSize.width - 10}
-          y2={centerY + i * ySpacing}
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={STROKE.grid}
-          opacity={0.8}
-          strokeDasharray="4,4"
-        />
-      )
-    }
-    return lines
-  }, [showGrid, canvasSize.width, canvasSize.height, centerX, centerY, gridSpacing])
 
   // ─── 第二定律面积区间扇形路径 ───
   const deltaTPercent = KEPLER_CONFIG.sweepTimeRatio
@@ -346,9 +286,6 @@ export default function KeplerAnimation() {
             <stop offset="100%" stopColor={PHYSICS_COLORS.axis} stopOpacity={0} />
           </radialGradient>
         </defs>
-
-        {/* ── 背景网格 ── */}
-        {gridLines}
 
         {/* ── 辅助坐标轴 ── */}
         <line
