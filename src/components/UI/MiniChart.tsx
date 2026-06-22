@@ -60,8 +60,6 @@ function MiniChartContent({
   staticLines: MiniChartStaticLine[]
 }) {
   const ctx = useChartContext()
-  if (!ctx) return null
-  const { toSvgX, toSvgY, plotOrigin, plotSize, font } = ctx
 
   const visiblePoints = useMemo(() => {
     if (xKey === 't') {
@@ -69,6 +67,9 @@ function MiniChartContent({
     }
     return points
   }, [points, xKey, currentXVal])
+
+  if (!ctx) return null
+  const { toSvgX, toSvgY, plotOrigin, plotSize, font } = ctx
 
   const cursorX = toSvgX(Math.min(currentXVal, Infinity))
 

@@ -8,6 +8,18 @@ interface ChartTangentProps {
   extent?: number
   label?: string
   variant?: ChartReferenceVariant
+  /** 直接指定切线颜色（优先于 variant） */
+  color?: string
+  /** 切线线宽 */
+  strokeWidth?: number
+  /** 切线透明度 */
+  lineOpacity?: number
+  /** 切线虚线配置；不传则为实线 */
+  strokeDasharray?: string
+  /** 是否绘制切点 */
+  showPoint?: boolean
+  /** 切点半径 */
+  pointRadius?: number
   showSecant?: boolean
   secantPoint?: { x: number; y: number }
   toSvgX?: (v: number) => number
@@ -21,6 +33,12 @@ export function ChartTangent({
   extent = 1,
   label,
   variant = 'tangent',
+  color,
+  strokeWidth = STROKE.tangent,
+  lineOpacity = 0.7,
+  strokeDasharray,
+  showPoint = true,
+  pointRadius,
   showSecant = false,
   secantPoint,
   toSvgX: toSvgXProp,
@@ -34,7 +52,7 @@ export function ChartTangent({
 
   if (!toSvgX || !toSvgY || !fontFn) return null
 
-  const lineColor = REFERENCE_MAP[variant]
+  const lineColor = color ?? REFERENCE_MAP[variant]
 
   const tanX1 = toSvgX(point.x - extent)
   const tanY1 = toSvgY(point.y - slope * extent)
@@ -48,17 +66,20 @@ export function ChartTangent({
         x1={tanX1} y1={tanY1}
         x2={tanX2} y2={tanY2}
         stroke={lineColor}
-        strokeWidth={STROKE.tangent}
-        opacity={0.7}
+        strokeWidth={strokeWidth}
+        strokeDasharray={strokeDasharray}
+        opacity={lineOpacity}
       />
 
       {/* 切点 */}
-      <circle
-        cx={toSvgX(point.x)}
-        cy={toSvgY(point.y)}
-        r={fontFn(FONT.small) * 0.3}
-        fill={lineColor}
-      />
+      {showPoint && (
+        <circle
+          cx={toSvgX(point.x)}
+          cy={toSvgY(point.y)}
+          r={pointRadius ?? fontFn(FONT.small) * 0.3}
+          fill={lineColor}
+        />
+      )}
 
       {/* 标签 */}
       {label && (

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { BasePhysicsChart } from './BasePhysicsChart'
 import { useChartContext } from './ChartContext'
 import { ChartCursor } from './ChartCursor'
@@ -18,7 +18,10 @@ interface DisplacementTimeChartProps {
    */
   domainPoints?: { t: number; x: number }[]
   currentTime: number
+  /** 时间范围（兼容旧 API；未传 tDomain 时使用 [0, tMax]） */
   tMax: number
+  /** 可选时间窗口，用于滑动窗口图表 */
+  tDomain?: [number, number]
   /** 位移范围（不传则基于 domainPoints / points 自动计算） */
   xRange?: [number, number]
   title?: string
@@ -28,6 +31,10 @@ interface DisplacementTimeChartProps {
   areaIntensity?: ChartAreaIntensity
   showCursor?: boolean
   series?: ChartSeriesVariant
+  /** 绘制在曲线下方的插件层 */
+  underlay?: ReactNode
+  /** 绘制在曲线上方的插件层 */
+  children?: ReactNode
   className?: string
 }
 
@@ -40,13 +47,16 @@ function STContent({
   areaIntensity,
   showCursor,
   series,
+  tDomain,
+  underlay,
+  children,
 }: Omit<DisplacementTimeChartProps, 'tMax' | 'xRange' | 'title' | 'className' | 'domainPoints'>) {
   const ctx = useChartContext()
 
-  const visiblePoints = useMemo(
-    () => points.filter((p) => p.t <= currentTime + 1e-9),
-    [points, currentTime],
-  )
+  const visiblePoints = useMemo(() => {
+    const [tMin, tMax] = tDomain ?? [0, Infinity]
+    return points.filter((p) => p.t >= tMin - 1e-9 && p.t <= Math.min(currentTime, tMax) + 1e-9)
+  }, [points, currentTime, tDomain])
 
   const curvePath = useMemo(() => {
     if (!ctx || visiblePoints.length < 2) return ''
@@ -65,6 +75,8 @@ function STContent({
 
   return (
     <g>
+      {underlay}
+
       {showArea && visiblePoints.length >= 2 && (
         <ChartArea
           points={visiblePoints.map((p) => ({ x: p.t, y: p.x }))}
@@ -86,6 +98,8 @@ function STContent({
         />
       )}
 
+      {children}
+
       {showCursor && visiblePoints.length > 0 && (
         <ChartCursor
           x={currentTime}
@@ -102,6 +116,7 @@ export function DisplacementTimeChart({
   domainPoints,
   currentTime,
   tMax,
+  tDomain,
   xRange,
   title = 'x-t 图像',
   showArea = false,
@@ -110,6 +125,8 @@ export function DisplacementTimeChart({
   areaIntensity,
   showCursor = true,
   series = 'primary',
+  underlay,
+  children,
   className = '',
 }: DisplacementTimeChartProps) {
   const computedXRange = useMemo((): [number, number] => {
@@ -126,7 +143,7 @@ export function DisplacementTimeChart({
 
   return (
     <BasePhysicsChart
-      xDomain={[0, tMax]}
+      xDomain={tDomain ?? [0, tMax]}
       yDomain={computedXRange}
       xLabel="t (s)"
       yLabel="x (m)"
@@ -143,6 +160,9 @@ export function DisplacementTimeChart({
         areaIntensity={areaIntensity}
         showCursor={showCursor}
         series={series}
+        tDomain={tDomain}
+        underlay={underlay}
+        children={children}
       />
     </BasePhysicsChart>
   )

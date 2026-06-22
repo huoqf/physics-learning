@@ -18,6 +18,8 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 06-22 | components/Chart + mechanics/kinematics | refactor | VelocityTimeChart / DisplacementTimeChart 增加 tDomain 滑动窗口与 underlay/children 插件层；VelocityVTChart 迁入 VelocityTimeChart，保留 Δt 面积、平均速度线、割线/切线加速度语义；VelocityXTChart 迁入 DisplacementTimeChart，保留 x-t 割线三角形、切线与 Δt→0 提示；test/build 通过，lint 剩余非本次 5 个 error |
+| 06-21 | components/Chart + mechanics/kinematics | feature | 创建 ChartSecant 插件（割线+斜率三角形，支持 ChartContext 与 legacy SVG 显式坐标）；ChartTangent 扩展 color/stroke/opacity/dash/showPoint；VelocityVT 接入 v-t 割线/切线读平均/瞬时加速度；VelocityXT 接入 x-t 割线三角形与切线；VerticalThrow 启动图表插件化（v-t 最高点切线、y-t 割线/切线）；修复 ChartArea/MiniChart 条件 Hook 顺序问题；test/build 通过，lint 剩余非本次 5 个 error |
 | 06-19 | thermodynamics | feature | 热力学第二定律动画模块：secondLaw.ts（粒子碰撞热传导/气体扩散/Ω微观态数计算/温度→颜色映射）；SecondLawAnimation.tsx（Canvas粒子+SVG叠加+逆向警告框）；SecondLawSidebar.tsx（场景切换+正向/逆向按钮）；SecondLawCenterExtra.tsx（MiniChart无序度时序图）；useAnimationStore新增direction字段；types.ts AnimationActions新增setDirection；useAnimationLifecycle支持方向乘数；tsc零错误，build成功 |
 | 06-19 | hooks/animation | fix | useAnimationLifecycle rAF首帧零delta触发<=0守卫导致动画无法播放：首帧deltaTime=0使time保持0，新加<=0守卫立即禁止播放。修复：direction===-1条件限定，仅逆向时触发。useAnimationLifecycle.ts 1行改动 |
 | 06-18 | physics | feature | 光学纯函数库 optics.ts：calculateRefraction（斯涅尔定律）、calculateCriticalAngle（全反射临界角）、calculateThinLens（薄透镜成像）；注册 index.ts，tsc 零错误 |

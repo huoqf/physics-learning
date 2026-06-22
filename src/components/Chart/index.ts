@@ -13,6 +13,8 @@ export type { ChartContextValue } from './ChartContext'
 export { ChartCursor } from './ChartCursor'
 export { ChartArea } from './ChartArea'
 export { ChartTangent } from './ChartTangent'
+export { ChartSecant } from './ChartSecant'
+export type { ChartSecantProps } from './ChartSecant'
 
 // ============================================================================
 // 业务预设 (Business Presets)

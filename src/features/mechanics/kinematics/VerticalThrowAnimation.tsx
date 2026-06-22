@@ -18,6 +18,7 @@ import { useVerticalThrowChartLayout } from './useVerticalThrowChartLayout'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { Ball } from '@/components/Physics/Ball'
+import { ChartSecant, ChartTangent } from '@/components/Chart'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
@@ -487,12 +488,20 @@ export default function VerticalThrowAnimation() {
 
           {isAtPeak && (
             <g>
-              <line
-                x1={vtToX(Math.max(maxHeightTime - 0.5, 0))} y1={vtToY(g * 0.5)}
-                x2={vtToX(Math.min(maxHeightTime + 0.5, xMax))} y2={vtToY(-g * 0.5)}
-                stroke={CHART_COLORS.criticalPt} strokeWidth={1} strokeDasharray="2,2"
+              <ChartTangent
+                point={{ x: maxHeightTime, y: 0 }}
+                slope={-g}
+                extent={Math.min(0.5, xMax * 0.08)}
+                label="k = -g"
+                color={CHART_COLORS.criticalPt}
+                strokeWidth={1}
+                lineOpacity={0.85}
+                showPoint={false}
+                strokeDasharray="2,2"
+                toSvgX={vtToX}
+                toSvgY={vtToY}
+                font={font}
               />
-              <text x={vtToX(maxHeightTime) + 8} y={vtToY(0) - 8} fontSize={font(8)} fill={CHART_COLORS.criticalPt}>切线斜率 k = -g</text>
 
               <circle cx={vtToX(maxHeightTime)} cy={vtToY(0)} r={6}
                 fill={VT_CHART_COLORS.zeroCrossing} opacity={0.6}>
@@ -656,6 +665,41 @@ export default function VerticalThrowAnimation() {
 
           {ytData.airActive && (
             <path d={ytData.airActive} fill="none" stroke={XT_CHART_COLORS.positionCurve} strokeWidth={2} filter="url(#glow-filter-blue)" />
+          )}
+
+          {advancedMode === 1 && effectiveTime > 0.05 && !isLanded && (
+            <ChartSecant
+              point={{ x: 0, y: 0 }}
+              secantPoint={{ x: effectiveTime, y: clampedY }}
+              label="v̄"
+              dxLabel="t"
+              dyLabel="y"
+              color={PHYSICS_COLORS.secantLine}
+              showTriangle={sliceDensity > 0}
+              strokeWidth={1}
+              strokeDasharray="3,2"
+              lineOpacity={0.65}
+              triangleOpacity={0.07}
+              toSvgX={ytToX}
+              toSvgY={ytToY}
+              font={font}
+            />
+          )}
+
+          {advancedMode === 1 && effectiveTime > 0.05 && !isLanded && (
+            <ChartTangent
+              point={{ x: effectiveTime, y: clampedY }}
+              slope={effectiveV}
+              extent={Math.min(0.6, xMax * 0.08)}
+              label="k = v"
+              color={VT_CHART_COLORS.slopeTangent}
+              strokeWidth={1}
+              lineOpacity={0.75}
+              showPoint={false}
+              toSvgX={ytToX}
+              toSvgY={ytToY}
+              font={font}
+            />
           )}
 
           {isAtPeak && (

@@ -23,14 +23,14 @@ export function ChartArea({
   strokeWidth = 0.5,
 }: ChartAreaProps) {
   const ctx = useChartContext()
-  if (!ctx) return null
-  const { toSvgX, toSvgY } = ctx
+  const toSvgX = ctx?.toSvgX
+  const toSvgY = ctx?.toSvgY
 
   const fillColor = AREA_FILL_MAP[variant]
   const fillOpacity = AREA_INTENSITY_MAP[intensity]
 
   const pathD = useMemo(() => {
-    if (points.length < 2) return ''
+    if (!toSvgX || !toSvgY || points.length < 2) return ''
 
     const filtered = xRange
       ? points.filter((p) => p.x >= xRange[0] - 1e-9 && p.x <= xRange[1] + 1e-9)
@@ -46,7 +46,7 @@ export function ChartArea({
     return d
   }, [points, xRange, baseline, toSvgX, toSvgY])
 
-  if (!pathD) return null
+  if (!ctx || !pathD) return null
 
   return (
     <path

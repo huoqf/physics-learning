@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { BasePhysicsChart } from './BasePhysicsChart'
 import { useChartContext } from './ChartContext'
 import { ChartCursor } from './ChartCursor'
@@ -69,8 +69,10 @@ interface VelocityTimeChartProps {
   domainPoints?: { t: number; v: number }[]
   /** 当前时间（物理坐标） */
   currentTime: number
-  /** 时间范围 */
+  /** 时间范围（兼容旧 API；未传 tDomain 时使用 [0, tMax]） */
   tMax: number
+  /** 可选时间窗口，用于滑动窗口图表 */
+  tDomain?: [number, number]
   /** 速度范围（不传则基于 domainPoints / additionalSeries.domainPoints 自动计算） */
   vRange?: [number, number]
   /** 标题 */
@@ -91,6 +93,10 @@ interface VelocityTimeChartProps {
   showGrid?: boolean
   /** 额外数据系列（多曲线对比） */
   additionalSeries?: ChartDataSeries[]
+  /** 绘制在曲线下方的插件层（如额外面积填充） */
+  underlay?: ReactNode
+  /** 绘制在曲线上方的插件层（如割线、切线、游标扩展） */
+  children?: ReactNode
   /**
    * 阶段背景着色（绘制于曲线/面积下方，不遮挡数据）。
    * 适用「过程被人为切分为若干语义阶段」的场景，如
@@ -112,8 +118,10 @@ function renderCurve(
   areaVariant: ChartAreaVariant,
   areaIntensity: ChartAreaIntensity,
   areaRange?: [number, number],
+  tDomain?: [number, number],
 ) {
-  const visible = pts.filter((p) => p.t <= currentTime + 1e-9)
+  const [tMin, tMax] = tDomain ?? [0, Infinity]
+  const visible = pts.filter((p) => p.t >= tMin - 1e-9 && p.t <= Math.min(currentTime, tMax) + 1e-9)
   if (visible.length < 2) return null
 
   const pathD =
@@ -147,6 +155,9 @@ function VTContent({
   series,
   additionalSeries,
   stages,
+  tDomain,
+  underlay,
+  children,
 }: Omit<VelocityTimeChartProps, 'tMax' | 'vRange' | 'title' | 'className' | 'domainPoints'>) {
   const ctx = useChartContext()
 
@@ -158,8 +169,9 @@ function VTContent({
     return renderCurve(
       points, currentTime, ctx.toSvgX, ctx.toSvgY, mainColor,
       showArea ?? false, areaVariant ?? 'default', areaIntensity ?? 'normal', areaRange,
+      tDomain,
     )
-  }, [ctx, points, currentTime, mainColor, showArea, areaVariant, areaIntensity, areaRange])
+  }, [ctx, points, currentTime, mainColor, showArea, areaVariant, areaIntensity, areaRange, tDomain])
 
   // 额外曲线
   const extraCurves = useMemo(() => {
@@ -169,19 +181,22 @@ function VTContent({
       return renderCurve(
         s.points, currentTime, ctx.toSvgX, ctx.toSvgY, color,
         s.showArea ?? false, s.areaVariant ?? 'alt', s.areaIntensity ?? 'subtle',
+        undefined,
+        tDomain,
       )
     })
-  }, [ctx, additionalSeries, currentTime])
+  }, [ctx, additionalSeries, currentTime, tDomain])
 
   // 游标数据点
   const cursorPoints = useMemo(() => {
+    const [tMin, tMax] = tDomain ?? [0, Infinity]
     const pts: Array<{ y: number; label: string; series: ChartSeriesVariant }> = []
-    const mainVisible = points.filter((p) => p.t <= currentTime + 1e-9)
+    const mainVisible = points.filter((p) => p.t >= tMin - 1e-9 && p.t <= Math.min(currentTime, tMax) + 1e-9)
     if (mainVisible.length > 0) {
       pts.push({ y: mainVisible[mainVisible.length - 1].v, label: 'v', series: series ?? 'primary' })
     }
     additionalSeries?.forEach((s, i) => {
-      const visible = s.points.filter((p) => p.t <= currentTime + 1e-9)
+      const visible = s.points.filter((p) => p.t >= tMin - 1e-9 && p.t <= Math.min(currentTime, tMax) + 1e-9)
       if (visible.length > 0) {
         pts.push({
           y: visible[visible.length - 1].v,
@@ -191,7 +206,7 @@ function VTContent({
       }
     })
     return pts
-  }, [points, additionalSeries, currentTime, series])
+  }, [points, additionalSeries, currentTime, series, tDomain])
 
   if (!ctx) return null
   const { plotOrigin, plotSize, font, toSvgX } = ctx
@@ -266,9 +281,15 @@ function VTContent({
         </g>
       )}
 
+      {/* 插件底层（面积/背景增强） */}
+      {underlay}
+
       {/* 面积 + 曲线 */}
       {mainCurve}
       {extraCurves}
+
+      {/* 插件顶层（割线/切线/自定义游标） */}
+      {children}
 
       {/* 游标 */}
       {showCursor && cursorPoints.length > 0 && (
@@ -317,6 +338,7 @@ export function VelocityTimeChart({
   domainPoints,
   currentTime,
   tMax,
+  tDomain,
   vRange,
   title = 'v-t 图像',
   showArea = false,
@@ -327,6 +349,8 @@ export function VelocityTimeChart({
   series = 'primary',
   showGrid = true,
   additionalSeries,
+  underlay,
+  children,
   stages,
   className = '',
 }: VelocityTimeChartProps) {
@@ -348,7 +372,7 @@ export function VelocityTimeChart({
 
   return (
     <BasePhysicsChart
-      xDomain={[0, tMax]}
+      xDomain={tDomain ?? [0, tMax]}
       yDomain={computedVRange}
       xLabel="t (s)"
       yLabel="v (m/s)"
@@ -368,6 +392,9 @@ export function VelocityTimeChart({
         series={series}
         additionalSeries={additionalSeries}
         stages={stages}
+        tDomain={tDomain}
+        underlay={underlay}
+        children={children}
       />
     </BasePhysicsChart>
   )
