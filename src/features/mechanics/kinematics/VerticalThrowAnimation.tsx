@@ -104,7 +104,8 @@ export default function VerticalThrowAnimation() {
     vectorBounds: { x: 0, y: 0, width: stageWidth, height: stageHeight },
     originX: 0,
     originY: 0,
-    refMagnitudes: { velocity: v0, acceleration: g },
+    // acceleration 使用固定参考值（对应侧栏 g 最大值），否则 g/ref=g 会让加速度箭头长度恒定
+    refMagnitudes: { velocity: v0, acceleration: 15 },
   }
   const vtSceneScale = createSceneScale(vtScene)
 

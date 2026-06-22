@@ -121,14 +121,19 @@ export function useVerticalThrowChartLayout(
   // v-t 图轴范围
   const { vtVMax, vtTickStep, xMax } = useMemo(() => {
     const vMax = Math.max(v0 * 1.15, 5)
-    const clampedXMax = Math.max(Math.min(totalTime * 1.15, 10), 2)
+    // 时间轴不能随当前 g 同比例收缩，否则 v-t 斜率视觉上会被归一化，
+    // 学生调节 g 时看不出斜率变化。以侧栏最小 g=5m/s² 对应的
+    // 最长真空飞行时间作为稳定参考，同时兼顾有阻力时的实际 totalTime。
+    const slowestVacuumTime = v0 > 0 ? (2 * v0) / 5 : 2
+    const referenceTime = Math.max(totalTime, slowestVacuumTime)
+    const clampedXMax = Math.max(Math.min(referenceTime * 1.05, 10), 2)
     let tickStep: number
     if (vMax <= 5) tickStep = 1
     else if (vMax <= 10) tickStep = 2
     else if (vMax <= 20) tickStep = 5
     else tickStep = 10
     return { vtVMax: vMax, vtTickStep: tickStep, xMax: clampedXMax }
-  }, [v0, totalTime, vtInnerH])
+  }, [v0, totalTime])
 
   // ── 坐标变换函数（useCallback 包裹，稳定引用） ──
   const vtToX = useCallback(
@@ -152,14 +157,16 @@ export function useVerticalThrowChartLayout(
   const ytInnerH = ytChartHeight - ytInnerPad.top - ytInnerPad.bottom
 
   const { ytYMax, ytTickStep } = useMemo(() => {
-    const yMax = Math.max(maxHeight * 1.15, 5)
+    // y-t 图需要同时容纳实际轨道与真空对照轨道；若只按有阻力
+    // 最大高度定标，真空抛物线会在图顶被 ytToY clamp 成水平折线。
+    const yMax = Math.max(Math.max(maxHeight, maxHeightVac) * 1.15, 5)
     let tickStep: number
     if (yMax <= 5) tickStep = 1
     else if (yMax <= 10) tickStep = 2
     else if (yMax <= 20) tickStep = 5
     else tickStep = 10
     return { ytYMax: yMax, ytTickStep: tickStep }
-  }, [maxHeight])
+  }, [maxHeight, maxHeightVac])
 
   const ytToX = useCallback(
     (t: number) => ytInnerPad.left + (t / xMax) * ytInnerW,
