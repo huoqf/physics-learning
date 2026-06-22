@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from 'react'
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { useAnimationStore } from '@/stores'
 import { calculatePoliceChase } from '@/physics'
 import { PHYSICS_COLORS, CHART_COLORS, STROKE, DASH, FONT } from '@/theme/physics'
@@ -90,6 +90,24 @@ export default function AccelerationCenterExtra() {
   const warningTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const meetTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
+  const clearAutoPauseTimers = useCallback(() => {
+    if (warningTimerRef.current) {
+      clearTimeout(warningTimerRef.current)
+      warningTimerRef.current = undefined
+    }
+    if (meetTimerRef.current) {
+      clearTimeout(meetTimerRef.current)
+      meetTimerRef.current = undefined
+    }
+    setShowMaxGapWarning(false)
+    setShowMeetWarning(false)
+  }, [])
+
+  const handlePlayPause = useCallback(() => {
+    clearAutoPauseTimers()
+    setIsPlaying(!isPlaying)
+  }, [clearAutoPauseTimers, setIsPlaying, isPlaying])
+
   useEffect(() => {
     // 重置时清除标记
     if (time === 0) {
@@ -149,6 +167,15 @@ export default function AccelerationCenterExtra() {
       if (meetTimerRef.current) clearTimeout(meetTimerRef.current)
     }
   }, [])
+
+  // 参数变更时清除待命 timer（防止预设切换后 timer 意外触发）
+  const prevParamsRef = useRef(params)
+  useEffect(() => {
+    if (prevParamsRef.current !== params) {
+      clearAutoPauseTimers()
+      prevParamsRef.current = params
+    }
+  }, [params, clearAutoPauseTimers])
 
   // ── 布局计算 ──
   const padding = containerSize.width * LAYOUT.CHART_PADDING_RATIO
@@ -696,8 +723,8 @@ export default function AccelerationCenterExtra() {
           speed={speed}
           time={time}
           maxTime={effectiveMaxTime}
-          onPlayPause={() => setIsPlaying(!isPlaying)}
-          onReset={() => { setTime(0); setIsPlaying(false) }}
+          onPlayPause={handlePlayPause}
+          onReset={() => { clearAutoPauseTimers(); setTime(0); setIsPlaying(false) }}
           onSpeedChange={setSpeed}
           onTimeChange={setTime}
         />
