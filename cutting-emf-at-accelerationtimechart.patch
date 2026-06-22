@@ -1,0 +1,533 @@
+diff --git a/docs/agent-rules/process/CHART_ASSET_INDEX.md b/docs/agent-rules/process/CHART_ASSET_INDEX.md
+index 80ba500..ec7ef78 100644
+--- a/docs/agent-rules/process/CHART_ASSET_INDEX.md
++++ b/docs/agent-rules/process/CHART_ASSET_INDEX.md
+@@ -75,7 +75,7 @@ BasePhysicsChart / RelationChart / VelocityTimeChart / DisplacementTimeChart / A
+ | `AccelerationTimeChart` | `src/components/Chart/AccelerationTimeChart.tsx` | a-T 标准预设 | 公共组件 | ✅ | ✅ 动画模式必需 | ✅ 标准组件 |
+ | `PowerCharts` a-T | 功率 / `PowerCharts.tsx` | a-T | `AccelerationTimeChart` | ✅ | 待复核 | ✅ 已迁移 |
+ | `KineticEnergyCharts` a-T | 动能 / `KineticEnergyCharts.tsx` | a-T | `AccelerationTimeChart` | ✅ | 待复核 | ✅ 已迁移 |
+-| `CuttingEMF` a-T | 导体棒切割磁感线 / `CuttingEMF.tsx` | a-T | `BasePhysicsChart` 局部封装 `ChartSVG` | ✅ | 显式 domain | ✅ 第七轮评估完成：可部分复用 AccelerationTimeChart；无损迁移需参考线/children 能力 |
++| `CuttingEMF` a-T | 导体棒切割磁感线 / `CuttingEMF.tsx` | a-T | `AccelerationTimeChart` | ✅ | `domainPoints` + `aRange` | ✅ 已迁移；参考线能力已补齐 |
+ | `ConnectedBodiesCenterExtra` a-T | 连接体 / `ConnectedBodiesCenterExtra.tsx` | a-T mini | `MiniChart` | ✅ | 已评估 | ✅ MiniChart 低风险 |
+ | `NewtonSecondCenterExtra` a-T | 牛顿第二定律 / `NewtonSecondCenterExtra.tsx` | a-T mini | `MiniChart` | ✅ | 已评估 | ✅ MiniChart 低风险 |
+ | `WeightlessnessCenterExtra` a-T | 超重失重 / `WeightlessnessCenterExtra.tsx` | a-T mini | `MiniChart` | ✅ | 已评估 | ✅ MiniChart 低风险 |
+@@ -123,7 +123,7 @@ BasePhysicsChart / RelationChart / VelocityTimeChart / DisplacementTimeChart / A
+ | `OhmLawCenterExtra` U-I | 欧姆定律 / `OhmLawCenterExtra.tsx` | U-I 伏安特性 | RelationChart 业务适配层 | 随参/扫掠 | 显式 domain | ✅ 第九轮已迁移 |
+ | `ClosedCircuitCenterExtra` U-I / P-R | 闭合电路 / `ClosedCircuitCenterExtra.tsx` | U-I / P-R 关系图 | RelationChart 业务适配层 | 随参 | 显式 domain | ✅ 第九轮已迁移 |
+ | `CircuitAnalysisCenterExtra` U/I 柱状图 | 串并联电路 / `CircuitAnalysisCenterExtra.tsx` | 电压/电流分配柱状图 | 手写 SVG | 随参 | 显式 domain | 🔶 暂缓：非单曲线关系图 |
+-| `CuttingEMF` V-T / a-T | 电磁感应 / `CuttingEMF.tsx` | V-T + a-T | V-T 已迁 `VelocityTimeChart`；a-T 保留 `BasePhysicsChart` 局部封装 | ✅ | 显式 domain / domainPoints | ✅ V-T 已迁；a-T 无损迁移需补参考线/children 能力 |
++| `CuttingEMF` V-T / a-T | 电磁感应 / `CuttingEMF.tsx` | V-T + a-T | `VelocityTimeChart` + `AccelerationTimeChart` | ✅ | `domainPoints` + 显式 range | ✅ V-T / a-T 均已迁移 |
+ | `FaradayChartPanel` Φ-T | 法拉第电磁感应 / `FaradayChartPanel.tsx` | Φ-T | `VelocityTimeChart` 泛用 | ✅ | ✅ 已传 | ✅ 已迁移 |
+ | `FaradayChartPanel` E-T | 法拉第电磁感应 / `FaradayChartPanel.tsx` | E-T | `VelocityTimeChart` 泛用 | ✅ | ✅ 已传 | ✅ 已迁移 |
+ | `ACGeneration` Φ-T / e-T | 交流电产生 / `ACGeneration.tsx` | Φ/e-T mini | `MiniChart` | ✅ | 已评估 | ✅ MiniChart 低风险 |
+@@ -285,14 +285,14 @@ BasePhysicsChart / RelationChart / VelocityTimeChart / DisplacementTimeChart / A
+ ## 10. 第七/八轮结论：`CuttingEMF` V-T / a-T
+ 
+ > 评估文档见：[`CUTTING_EMF_CHART_EVALUATION.md`](./CUTTING_EMF_CHART_EVALUATION.md)。  
+-> 第七轮只评估 `CuttingEMF.tsx` 内 V-T / a-T 图表是否可复用 `VelocityTimeChart` / `AccelerationTimeChart`；第八轮只迁移 V-T，a-T 暂留，未修既有 lint，未碰其他电磁图表。
++> 第七轮评估 `CuttingEMF.tsx` 内 V-T / a-T 图表是否可复用 TimeChart 预设；第八轮迁 V-T，第九轮补齐 `AccelerationTimeChart` 参考线/children 能力并迁 a-T；未修既有 lint，未碰其他电磁图表。
+ 
+ | 图表 | 结论 | 后续动作 |
+ |---|---|---|
+ | V-T | ✅ 已迁入 `VelocityTimeChart` | 收尾速度渐近线使用 children 自定义；a-T 未动 |
+-| a-T | ⚠️ 可复用 `AccelerationTimeChart` 的动态与定标能力，但无损迁移缺参考线/children 能力 | 暂不强迁；若要无损迁移，先补通用参考线能力或接受视觉简化 |
++| a-T | ✅ 已迁入 `AccelerationTimeChart` | 已补通用 reference line / children 能力，保留完整理论参考线 |
+ 
+-结论：`CuttingEMF` 当前已基于 `BasePhysicsChart`，不是裸手写坐标轴；后续不建议一轮强迁两图。
++结论：`CuttingEMF` 顶部 V-T / a-T 双图均已迁入公共 TimeChart 预设；既有 lint 仍单独处理。
+ 
+ ---
+ 
+@@ -306,6 +306,6 @@ BasePhysicsChart / RelationChart / VelocityTimeChart / DisplacementTimeChart / A
+ | `ClosedCircuitCenterExtra` U-I / P-R | ✅ 已迁入 `RelationChart` 业务适配层 |
+ | `CircuitAnalysisCenterExtra` U/I 柱状图 | 暂缓：非单曲线关系图 |
+ | `ElectricPotentialChartScene` | 暂缓：hover 切线 + 场景同步 |
+-| `CuttingEMF` a-T | 暂缓：无损迁移需 `AccelerationTimeChart` 补参考线/children 能力 |
++| `CuttingEMF` a-T | ✅ 已迁入 `AccelerationTimeChart` |
+ 
+ 本轮未改公共组件，未处理全量 lint，未碰复杂交互图。
+diff --git a/docs/agent-rules/process/CUTTING_EMF_CHART_EVALUATION.md b/docs/agent-rules/process/CUTTING_EMF_CHART_EVALUATION.md
+index 4b51965..4416763 100644
+--- a/docs/agent-rules/process/CUTTING_EMF_CHART_EVALUATION.md
++++ b/docs/agent-rules/process/CUTTING_EMF_CHART_EVALUATION.md
+@@ -4,7 +4,7 @@
+ > 范围：只评估 `src/features/electromagnetism/induction/CuttingEMF.tsx` 内的 V-T / a-T 图表；不迁移、不修既有 lint、不碰其他电磁图表。  
+ > 目标：判断当前局部 `ChartSVG` 是否可复用 `VelocityTimeChart` / `AccelerationTimeChart`。
+ >
+-> 第八轮执行结果：已按评估结论只迁移 V-T 到 `VelocityTimeChart`；a-T 暂留局部 `ChartSVG`；未改公共组件，未修既有 lint。
++> 第九轮执行结果：已补齐 `AccelerationTimeChart` 的通用 reference line / children 能力，并将 a-T 迁入 `AccelerationTimeChart`；V-T / a-T 均已迁入公共 TimeChart 预设，未修既有 lint。
+ 
+ ---
+ 
+@@ -27,7 +27,7 @@ const ChartSVG = React.memo(function ChartSVG(...) {
+ | 图表 | 当前标题 | 数据字段 | 当前实现 |
+ |---|---|---|---|
+ | V-T | `速度－时间图像 (v-t 图)` | `samplePoints[].v` | 第八轮已迁入 `VelocityTimeChart` |
+-| a-T | `加速度－时间图像 (a-t 图)` | `samplePoints[].a` | `BasePhysicsChart` + 局部 `ChartSVGContent` |
++| a-T | `加速度－时间图像 (a-t 图)` | `samplePoints[].a` | 第九轮已迁入 `AccelerationTimeChart` |
+ 
+ 当前已经不是完全裸手写坐标轴，而是**局部使用了 `BasePhysicsChart`**。风险主要在“同类 TimeChart 预设没有复用”和“局部图表内容层重复”。
+ 
+@@ -131,15 +131,15 @@ Unexpected any
+ | 结论 | 判断 | 动作 |
+ |---|---|---|
+ | V-T 可迁入 `VelocityTimeChart` | ✅ 已完成 | 已保持完整参考线，收尾速度渐近线用 children 自定义 |
+-| a-T 可迁入 `AccelerationTimeChart` | ⚠️ 部分可行 | 若保留完整参考线，需要先给 AT 预设补通用参考线/children 能力，或接受视觉简化 |
+-| 保留局部 `ChartSVG` | ✅ 当前仅用于 a-T | a-T 已经基于 `BasePhysicsChart`，且不是裸手写坐标轴 |
++| a-T 可迁入 `AccelerationTimeChart` | ✅ 已完成 | 已补通用 reference line / children 能力，保留完整理论参考线 |
++| 保留局部 `ChartSVG` | ❌ 已移除 | V-T / a-T 均已迁入公共 TimeChart 预设 |
+ 
+ **评估结论：**
+ 
+ ```txt
+ CuttingEMF 的 V-T 图具备较高迁移可行性，已在第八轮小步迁入 VelocityTimeChart；
+-a-T 图可复用 AccelerationTimeChart 的动态与定标能力，但当前缺少完整理论参考线/children 插槽，不能无损迁移；
+-因此不建议一轮强迁两图。后续若推进 a-T，应先补齐 AccelerationTimeChart 的通用参考线能力，或接受视觉简化。
++a-T 图已在补齐 AccelerationTimeChart 通用参考线 / children 能力后完成无损迁移；
++CuttingEMF 顶部 V-T / a-T 双图均已使用公共 TimeChart 预设。
+ ```
+ 
+ ---
+@@ -154,5 +154,5 @@ a-T 图可复用 AccelerationTimeChart 的动态与定标能力，但当前缺
+ 不碰其他电磁图表；
+ 不处理主场景导轨 / 磁场 / 手势层；
+ 不扩展 RelationChart；
+-如需扩展 AccelerationTimeChart，只加与 VelocityTimeChart 对齐的通用 reference line / children 能力。
++AccelerationTimeChart 已补与 VelocityTimeChart 对齐的通用 reference line / children 能力。
+ ```
+diff --git a/docs/agent-rules/process/TODO_deferred.md b/docs/agent-rules/process/TODO_deferred.md
+index 1bf251c..8f3db60 100644
+--- a/docs/agent-rules/process/TODO_deferred.md
++++ b/docs/agent-rules/process/TODO_deferred.md
+@@ -1,6 +1,6 @@
+ # 延后处理待办事项
+ 
+-> 仅保留未完成项。最后更新：2026-06-22（电磁低风险关系图第九轮批量迁移完成）
++> 仅保留未完成项。最后更新：2026-06-22（CuttingEMF a-T 迁入 AccelerationTimeChart + 电磁低风险关系图批量迁移）
+ 
+ ---
+ 
+@@ -148,7 +148,7 @@
+ 
+ ### 页面迁移状态
+ 
+-**已迁移/评估：** ChargeInEField(vy-t)、CuttingEMF(v-t 已迁 VelocityTimeChart，a-t 暂留)、~~ForceMotionTripleChart(F-t/v-t/x-t 游标 + 面积)~~ ✅、MiniChart(7 个消费方)、MaxwellBoltzmannChart(f(v)-v)、ACGeneration(e-t)、~~WorkVTChart(v-t 手写 SVG → VelocityTimeChart 薄适配层)~~ ✅、~~FreeFallDripAnimation(v-t)~~ ✅、~~FreeFallAnimation(v-t 双曲线)~~ ✅、~~IntermolecularForceChart(F-r 三曲线 / Ep-r)~~ ✅、~~CoulombLaw BasicMode(F-r)~~ ✅、~~ElectricFieldBasicScene(E-r + F-r)~~ ✅、~~ThinLensAnimation(线性 + 双曲线 + 共轭法标记)~~ ✅、~~SatelliteAnimation Mode 0(v-r + T-r 画中画)~~ ✅、~~SatelliteAnimation Mode 1(v-t 三阶段)~~ ✅、~~ClapeyronAnimation(P-V 等温线 + 等温线族)~~ ✅、~~GasLawsAnimation(P-V/V-T/P-T mode 切换)~~ ✅、~~FirstLawCenterExtra(P-V 循环 + 分段高亮)~~ ✅、~~VelocityVTChart(v-t 滑动窗口+面积+割线+切线)~~ ✅、~~VelocityXTChart(x-t 割线三角形+切线)~~ ✅、~~VerticalThrowCharts(v-t/y-t 双图 + 割线/切线/目标高度/面积/双轨对照)~~ ✅、~~FaradayChartPanel(Φ-t + E-t 双图)~~ ✅、~~ACValues(I-t + Q-t 双图)~~ ✅
++**已迁移/评估：** ChargeInEField(vy-t)、CuttingEMF(v-t/a-t 已迁 TimeChart 预设)、~~ForceMotionTripleChart(F-t/v-t/x-t 游标 + 面积)~~ ✅、MiniChart(7 个消费方)、MaxwellBoltzmannChart(f(v)-v)、ACGeneration(e-t)、~~WorkVTChart(v-t 手写 SVG → VelocityTimeChart 薄适配层)~~ ✅、~~FreeFallDripAnimation(v-t)~~ ✅、~~FreeFallAnimation(v-t 双曲线)~~ ✅、~~IntermolecularForceChart(F-r 三曲线 / Ep-r)~~ ✅、~~CoulombLaw BasicMode(F-r)~~ ✅、~~ElectricFieldBasicScene(E-r + F-r)~~ ✅、~~ThinLensAnimation(线性 + 双曲线 + 共轭法标记)~~ ✅、~~SatelliteAnimation Mode 0(v-r + T-r 画中画)~~ ✅、~~SatelliteAnimation Mode 1(v-t 三阶段)~~ ✅、~~ClapeyronAnimation(P-V 等温线 + 等温线族)~~ ✅、~~GasLawsAnimation(P-V/V-T/P-T mode 切换)~~ ✅、~~FirstLawCenterExtra(P-V 循环 + 分段高亮)~~ ✅、~~VelocityVTChart(v-t 滑动窗口+面积+割线+切线)~~ ✅、~~VelocityXTChart(x-t 割线三角形+切线)~~ ✅、~~VerticalThrowCharts(v-t/y-t 双图 + 割线/切线/目标高度/面积/双轨对照)~~ ✅、~~FaradayChartPanel(Φ-t + E-t 双图)~~ ✅、~~ACValues(I-t + Q-t 双图)~~ ✅
+ 
+ **未迁移：**
+ 
+@@ -196,8 +196,9 @@
+ 19. ~~第六轮 MiniChart cursor clamp / warning 小修~~ ✅ 已完成；同时完成低风险项快速筛查，复杂图表继续暂缓
+ 20. ~~第七轮限定评估 `CuttingEMF` V-T / a-T~~ ✅ V-T 可迁；a-T 无损迁移需补 `AccelerationTimeChart` 参考线/children 能力；该轮未迁移、未修既有 lint
+ 21. ~~第八轮 `CuttingEMF` V-T 单图迁移~~ ✅ 已迁入 `VelocityTimeChart`，收尾速度渐近线用 children 自定义
+-22. ~~第九轮电磁低风险单曲线关系图批量收口~~ ✅ `OhmLawCenterExtra`、`ClosedCircuitCenterExtra` 已迁入 RelationChart；`CircuitAnalysisCenterExtra` / `ElectricPotentialChartScene` / `CuttingEMF a-T` 暂缓
+-23. 其余按需
++22. ~~第九轮 `CuttingEMF` a-T 迁移~~ ✅ 已补 `AccelerationTimeChart` reference line / children 能力，并迁入 a-T；既有 lint 未修
++23. ~~第十轮电磁低风险单曲线关系图批量收口~~ ✅ `OhmLawCenterExtra`、`ClosedCircuitCenterExtra` 已迁入 RelationChart；`CircuitAnalysisCenterExtra` / `ElectricPotentialChartScene` 暂缓
++24. 其余按需
+ 
+ ---
+ 
+diff --git a/src/components/Chart/AccelerationTimeChart.tsx b/src/components/Chart/AccelerationTimeChart.tsx
+index 22ee0b1..2ff3381 100644
+--- a/src/components/Chart/AccelerationTimeChart.tsx
++++ b/src/components/Chart/AccelerationTimeChart.tsx
+@@ -1,9 +1,9 @@
+-import { useMemo } from 'react'
++import { useMemo, type ReactNode } from 'react'
+ import { BasePhysicsChart } from './BasePhysicsChart'
+ import { useChartContext } from './ChartContext'
+ import { ChartCursor } from './ChartCursor'
+ import { ChartArea } from './ChartArea'
+-import { PHYSICS_COLORS } from '@/theme/physics'
++import { PHYSICS_COLORS, CHART_COLORS, STROKE, DASH } from '@/theme/physics'
+ import type { ChartSeriesVariant, ChartAreaVariant, ChartAreaIntensity } from '@/theme/physics'
+ 
+ /** 静态模式：points 既是绘制数据也是定标数据 */
+@@ -30,25 +30,44 @@ type AccelerationTimeChartProps = (StaticATChartProps | AnimatedATChartProps) &
+   /** 加速度范围（不传则基于 domainPoints / points 自动计算） */
+   aRange?: [number, number]
+   title?: string
++  /** 是否显示完整理论参考线（不随 currentTime 截断） */
++  showReferenceLine?: boolean
++  /** 理论参考线数据；不传时默认使用 domainPoints ?? points */
++  referencePoints?: { t: number; a: number }[]
++  /** 理论参考线颜色，默认 CHART_COLORS.reference */
++  referenceColor?: string
++  /** 理论参考线不透明度，默认 0.45 */
++  referenceOpacity?: number
+   showArea?: boolean
+   areaRange?: [number, number]
+   areaVariant?: ChartAreaVariant
+   areaIntensity?: ChartAreaIntensity
+   showCursor?: boolean
+   series?: ChartSeriesVariant
++  /** 绘制在曲线下方的插件层 */
++  underlay?: ReactNode
++  /** 绘制在曲线上方的插件层 */
++  children?: ReactNode
+   className?: string
+ }
+ 
+ function ATContent({
+   points,
++  domainPoints,
+   currentTime,
++  showReferenceLine,
++  referencePoints,
++  referenceColor,
++  referenceOpacity,
+   showArea,
+   areaRange,
+   areaVariant,
+   areaIntensity,
+   showCursor,
+   series,
+-}: Omit<AccelerationTimeChartProps, 'tMax' | 'aRange' | 'title' | 'className' | 'domainPoints' | 'mode'>) {
++  underlay,
++  children,
++}: Omit<AccelerationTimeChartProps, 'tMax' | 'aRange' | 'title' | 'className' | 'mode'>) {
+   const ctx = useChartContext()
+ 
+   const visiblePoints = useMemo(
+@@ -69,10 +88,37 @@ function ATContent({
+ 
+   const curveColor = PHYSICS_COLORS[series === 'secondary' ? 'angularAccel' : 'acceleration']
+ 
++  const referencePath = useMemo(() => {
++    if (!ctx || !showReferenceLine) return ''
++    const source = referencePoints ?? domainPoints ?? points
++    if (source.length < 2) return ''
++    const { toSvgX, toSvgY } = ctx
++    return (
++      'M ' +
++      source
++        .map((p) => `${toSvgX(p.t).toFixed(2)},${toSvgY(p.a).toFixed(2)}`)
++        .join(' L ')
++    )
++  }, [ctx, showReferenceLine, referencePoints, domainPoints, points])
++
+   if (!ctx) return null
+ 
+   return (
+     <g>
++      {underlay}
++
++      {referencePath && (
++        <path
++          d={referencePath}
++          fill="none"
++          stroke={referenceColor ?? CHART_COLORS.reference}
++          strokeWidth={STROKE.vectorThin}
++          strokeDasharray={DASH.guide.join(',')}
++          strokeLinecap="round"
++          strokeLinejoin="round"
++          opacity={referenceOpacity ?? 0.45}
++        />
++      )}
+       {showArea && visiblePoints.length >= 2 && (
+         <ChartArea
+           points={visiblePoints.map((p) => ({ x: p.t, y: p.a }))}
+@@ -94,6 +140,8 @@ function ATContent({
+         />
+       )}
+ 
++      {children}
++
+       {showCursor && visiblePoints.length > 0 && (
+         <ChartCursor
+           x={currentTime}
+@@ -112,12 +160,18 @@ export function AccelerationTimeChart({
+   tMax,
+   aRange,
+   title = 'a-t 图像',
++  showReferenceLine = false,
++  referencePoints,
++  referenceColor,
++  referenceOpacity,
+   showArea = false,
+   areaRange,
+   areaVariant,
+   areaIntensity,
+   showCursor = true,
+   series = 'primary',
++  underlay,
++  children,
+   className = '',
+   mode = 'static',
+ }: AccelerationTimeChartProps) {
+@@ -151,13 +205,20 @@ export function AccelerationTimeChart({
+     >
+       <ATContent
+         points={points}
++        domainPoints={domainPoints}
+         currentTime={currentTime}
++        showReferenceLine={showReferenceLine}
++        referencePoints={referencePoints}
++        referenceColor={referenceColor}
++        referenceOpacity={referenceOpacity}
+         showArea={showArea}
+         areaRange={areaRange}
+         areaVariant={areaVariant}
+         areaIntensity={areaIntensity}
+         showCursor={showCursor}
+         series={series}
++        underlay={underlay}
++        children={children}
+       />
+     </BasePhysicsChart>
+   )
+diff --git a/src/features/electromagnetism/induction/CuttingEMF.tsx b/src/features/electromagnetism/induction/CuttingEMF.tsx
+index 4b91bcd..932886a 100644
+--- a/src/features/electromagnetism/induction/CuttingEMF.tsx
++++ b/src/features/electromagnetism/induction/CuttingEMF.tsx
+@@ -1,4 +1,4 @@
+-import React, { useEffect, useRef, useMemo } from 'react'
++import { useEffect, useRef, useMemo } from 'react'
+ import { useCanvasSize } from '@/utils'
+ import { useAnimationStore } from '@/stores'
+ import { useShallow } from 'zustand/react/shallow'
+@@ -8,7 +8,7 @@ import { withAlpha } from '@/theme/physics'
+ import { physicsToCanvasWithOrigin, computeScale } from '@/utils/coordinate'
+ import { Rails, ConductorRod, VectorArrow, VectorDefs } from '@/components/Physics'
+ import { CuttingEMFHandRule } from './CuttingEMFHandRule'
+-import { BasePhysicsChart, useChartContext, VelocityTimeChart } from '@/components/Chart'
++import { useChartContext, VelocityTimeChart, AccelerationTimeChart } from '@/components/Chart'
+ 
+ // 物理世界坐标边界 (物理单位：米)
+ // x: 从 -1.0 到 11.0m (有效轨道 0 ~ 10.0m，两侧预留边距)
+@@ -16,135 +16,6 @@ import { BasePhysicsChart, useChartContext, VelocityTimeChart } from '@/componen
+ const WORLD = { xMin: -1.0, xMax: 11.0, yMin: -1.5, yMax: 1.5 } as const
+ const X_LIMIT = 10.0 // 轨道最右端限位
+ 
+-interface ChartSVGProps {
+-  title: string
+-  yLabel: string
+-  curveColor: string
+-  samplePoints: { t: number; v: number; a: number }[]
+-  getVal: (p: { t: number; v: number; a: number }) => number
+-  yMax: number
+-  curVal: number
+-  isVelocity: boolean
+-  time: number
+-  T_max: number
+-  chartW: number
+-  chartH: number
+-  px: (n: number) => number
+-  font: (n: number) => number
+-  mode: number
+-  v_m: number
+-}
+-
+-function ChartSVGContent({
+-  samplePoints, getVal, curVal, isVelocity, time, T_max, curveColor, mode, v_m,
+-}: Omit<ChartSVGProps, 'chartW' | 'chartH' | 'px' | 'font' | 'title' | 'yLabel' | 'yMax'>) {
+-  const ctx = useChartContext()
+-  if (!ctx) return null
+-  const { toSvgX, toSvgY, font } = ctx
+-
+-  const ptsStr = useMemo(() => {
+-    return samplePoints
+-      .map((p) => `${toSvgX(p.t).toFixed(1)},${toSvgY(getVal(p)).toFixed(1)}`)
+-      .join(' L ')
+-  }, [samplePoints, getVal, toSvgX, toSvgY])
+-
+-  const activePts = samplePoints.filter((p) => p.t <= time)
+-  const activePtsStr = activePts.length >= 2
+-    ? 'M ' + activePts.map((p) => `${toSvgX(p.t).toFixed(1)},${toSvgY(getVal(p)).toFixed(1)}`).join(' L ')
+-    : ''
+-
+-  const curPtX = toSvgX(time)
+-  const curPtY = toSvgY(curVal)
+-
+-  return (
+-    <g>
+-      {/* 收尾速度渐近线 */}
+-      {isVelocity && mode === 1 && (
+-        <g>
+-          <line
+-            x1={toSvgX(0)}
+-            y1={toSvgY(v_m)}
+-            x2={toSvgX(T_max)}
+-            y2={toSvgY(v_m)}
+-            stroke={CHART_COLORS.asymptote}
+-            strokeWidth={1}
+-            strokeDasharray="4,4"
+-          />
+-          <text x={toSvgX(T_max) - font(7)} y={toSvgY(v_m) - 4} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">
+-            收尾速度 v_m = {v_m.toFixed(2)} m/s
+-          </text>
+-        </g>
+-      )}
+-
+-      {/* v=0 中间参考线 */}
+-      {isVelocity && (
+-        <line
+-          x1={toSvgX(0)}
+-          y1={toSvgY(0)}
+-          x2={toSvgX(T_max)}
+-          y2={toSvgY(0)}
+-          stroke={CHART_COLORS.tickMark}
+-          strokeWidth={0.6}
+-          strokeDasharray="2,2"
+-          opacity={0.65}
+-        />
+-      )}
+-
+-      {/* 预测虚线 */}
+-      <path d={`M ${ptsStr}`} fill="none" stroke={curveColor} strokeWidth={1} strokeDasharray="3,3" opacity={0.4} />
+-
+-      {/* 动态实线 */}
+-      {activePtsStr && (
+-        <path d={activePtsStr} fill="none" stroke={curveColor} strokeWidth={1.8} />
+-      )}
+-
+-      {/* 动态游标点 */}
+-      {time <= T_max && (
+-        <g>
+-          <circle cx={curPtX} cy={curPtY} r={3} fill={curveColor} />
+-          <circle cx={curPtX} cy={curPtY} r={6} fill="none" stroke={curveColor} strokeWidth={0.8} opacity={0.6}>
+-            <animate attributeName="r" values="3;8;3" dur="2s" repeatCount="indefinite" />
+-            <animate attributeName="opacity" values="0.8;0;0.8" dur="2s" repeatCount="indefinite" />
+-          </circle>
+-        </g>
+-      )}
+-    </g>
+-  )
+-}
+-
+-const ChartSVG = React.memo(function ChartSVG({
+-  title, yLabel, curveColor, samplePoints, getVal, yMax, curVal,
+-  isVelocity, time, T_max, chartW, chartH, mode, v_m,
+-}: ChartSVGProps) {
+-  const yDomain: [number, number] = isVelocity ? [-yMax, yMax] : [0, yMax]
+-
+-  return (
+-    <BasePhysicsChart
+-      xDomain={[0, T_max]}
+-      yDomain={yDomain}
+-      xLabel="t / s"
+-      yLabel={yLabel}
+-      title={title}
+-      variant="standard"
+-      initialSize={{ width: chartW, height: chartH }}
+-      gridCount={{ x: 4, y: isVelocity ? 4 : 3 }}
+-      yBaseline={isVelocity ? 0 : undefined}
+-    >
+-      <ChartSVGContent
+-        samplePoints={samplePoints}
+-        getVal={getVal}
+-        curVal={curVal}
+-        isVelocity={isVelocity}
+-        time={time}
+-        T_max={T_max}
+-        curveColor={curveColor}
+-        mode={mode}
+-        v_m={v_m}
+-      />
+-    </BasePhysicsChart>
+-  )
+-})
+-
+ function TerminalVelocityReference({ v_m }: { v_m: number }) {
+   const ctx = useChartContext()
+   if (!ctx || !Number.isFinite(v_m)) return null
+@@ -418,55 +289,58 @@ export default function CuttingEMF() {
+     [samplePoints]
+   )
+ 
++  const atPoints = useMemo(
++    () => samplePoints.map((p) => ({ t: p.t, a: p.a })),
++    [samplePoints]
++  )
++
+   // v-t 图 Y 轴上限
+   const vYMax = mode === 0 ? Math.max(1.0, Math.abs(v)) * 1.2 : v_m * 1.2
+   // a-t 图 Y 轴上限
+   const aYMax = mode === 0 ? 1.0 : a_0 * 1.2
+ 
+-  const chartW = (canvasSize.width - px(24)) / 2
+-  const chartH = chartHeight - px(12)
+-
+   return (
+     <div ref={containerRef} className="w-full h-full flex flex-col bg-neutral-50 p-2 gap-2 relative">
+       {/* 上方：v-t 和 a-t 自适应采样图表 */}
+       <div className="w-full shrink-0 flex items-center justify-between gap-4" style={{ height: chartHeight }}>
+-        <VelocityTimeChart
+-          mode="animated"
+-          points={vtPoints}
+-          domainPoints={vtPoints}
+-          referencePoints={vtPoints}
+-          currentTime={Math.min(time, T_max)}
+-          tMax={T_max}
+-          vRange={[-vYMax, vYMax]}
+-          title="速度－时间图像 (v-t 图)"
+-          xLabel="t / s"
+-          yLabel="v / (m·s⁻¹)"
+-          series="primary"
+-          showCursor={time <= T_max}
+-          showReferenceLine
+-          referenceColor={VT_CHART_COLORS.velocityCurve}
+-          referenceOpacity={0.4}
+-        >
+-          {mode === 1 && <TerminalVelocityReference v_m={v_m} />}
+-        </VelocityTimeChart>
+-        <ChartSVG
+-          title="加速度－时间图像 (a-t 图)"
+-          yLabel="a / (m·s⁻²)"
+-          curveColor={AT_CHART_COLORS.accelCurve}
+-          samplePoints={samplePoints}
+-          getVal={(p) => p.a}
+-          yMax={aYMax}
+-          curVal={finalA}
+-          isVelocity={false}
+-          time={time}
+-          T_max={T_max}
+-          chartW={chartW}
+-          chartH={chartH}
+-          px={px}
+-          font={font}
+-          mode={mode}
+-          v_m={v_m}
+-        />
++        <div className="flex-1 min-w-0 h-full">
++          <VelocityTimeChart
++            mode="animated"
++            points={vtPoints}
++            domainPoints={vtPoints}
++            referencePoints={vtPoints}
++            currentTime={Math.min(time, T_max)}
++            tMax={T_max}
++            vRange={[-vYMax, vYMax]}
++            title="速度－时间图像 (v-t 图)"
++            xLabel="t / s"
++            yLabel="v / (m·s⁻¹)"
++            series="primary"
++            showCursor={time <= T_max}
++            showReferenceLine
++            referenceColor={VT_CHART_COLORS.velocityCurve}
++            referenceOpacity={0.4}
++          >
++            {mode === 1 && <TerminalVelocityReference v_m={v_m} />}
++          </VelocityTimeChart>
++        </div>
++        <div className="flex-1 min-w-0 h-full">
++          <AccelerationTimeChart
++            mode="animated"
++            points={atPoints}
++            domainPoints={atPoints}
++            referencePoints={atPoints}
++            currentTime={Math.min(time, T_max)}
++            tMax={T_max}
++            aRange={[0, aYMax]}
++            title="加速度－时间图像 (a-t 图)"
++            series="primary"
++            showCursor={time <= T_max}
++            showReferenceLine
++            referenceColor={AT_CHART_COLORS.accelCurve}
++            referenceOpacity={0.4}
++          />
++        </div>
+       </div>
+ 
+       {/* 下方：Canvas 高频运动轨迹 + SVG 静态与矢量叠加区域 */}
