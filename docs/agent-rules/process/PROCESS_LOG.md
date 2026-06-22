@@ -18,6 +18,7 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 06-22 | mechanics/kinematics | refactor | VerticalThrow 图表区拆分：新增 VerticalThrowCharts.tsx 承接右侧 v-t/y-t 双图、ChartSecant/ChartTangent 插件、目标高度/面积/双轨对照标记和图表交互热区；VerticalThrowAnimation.tsx 741→415 行，脱离 P0 超长文件；test/build 通过，lint 剩余非本次 5 个 error |
 | 06-22 | components/Chart + mechanics/kinematics | refactor | VelocityTimeChart / DisplacementTimeChart 增加 tDomain 滑动窗口与 underlay/children 插件层；VelocityVTChart 迁入 VelocityTimeChart，保留 Δt 面积、平均速度线、割线/切线加速度语义；VelocityXTChart 迁入 DisplacementTimeChart，保留 x-t 割线三角形、切线与 Δt→0 提示；test/build 通过，lint 剩余非本次 5 个 error |
 | 06-21 | components/Chart + mechanics/kinematics | feature | 创建 ChartSecant 插件（割线+斜率三角形，支持 ChartContext 与 legacy SVG 显式坐标）；ChartTangent 扩展 color/stroke/opacity/dash/showPoint；VelocityVT 接入 v-t 割线/切线读平均/瞬时加速度；VelocityXT 接入 x-t 割线三角形与切线；VerticalThrow 启动图表插件化（v-t 最高点切线、y-t 割线/切线）；修复 ChartArea/MiniChart 条件 Hook 顺序问题；test/build 通过，lint 剩余非本次 5 个 error |
 | 06-19 | thermodynamics | feature | 热力学第二定律动画模块：secondLaw.ts（粒子碰撞热传导/气体扩散/Ω微观态数计算/温度→颜色映射）；SecondLawAnimation.tsx（Canvas粒子+SVG叠加+逆向警告框）；SecondLawSidebar.tsx（场景切换+正向/逆向按钮）；SecondLawCenterExtra.tsx（MiniChart无序度时序图）；useAnimationStore新增direction字段；types.ts AnimationActions新增setDirection；useAnimationLifecycle支持方向乘数；tsc零错误，build成功 |
