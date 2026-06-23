@@ -1,7 +1,7 @@
 # CANVAS_PRESETS 迁移盘点
 
 > 核查日期：2026-06-23
-> 总调用点：77（55 已迁移 + 22 硬编码）
+> 总调用点：77（56 已迁移 + 21 硬编码）
 
 ---
 
@@ -19,9 +19,9 @@
 
 ---
 
-## A. 已迁移至现有 preset（55 调用点）
+## A. 已迁移至现有 preset（56 调用点）
 
-### tall: 700×450（11）
+### tall: 700×450（12）
 
 | 文件 | 行 |
 |---|---|
@@ -36,6 +36,7 @@
 | electromagnetism/electrostatics/ElectricField.tsx | 35 |
 | electromagnetism/electrostatics/ElectricPotential.tsx | 23 |
 | electromagnetism/electrostatics/FieldLines.tsx | 120 |
+| electromagnetism/induction/CuttingEMF.tsx | 203 |
 
 ### mediumTall: 650×450（6）
 
@@ -113,7 +114,7 @@
 
 ---
 
-## B. 硬编码（22 调用点）
+## B. 硬编码（21 调用点）
 
 ### 物理坐标系占位符 100×100（5）
 
@@ -156,12 +157,6 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 | mechanics/dynamics/ConnectedBodiesAnimation.tsx | 53 | 600×400 | 连接体 |
 | mechanics/kinematics/VelocityAnimationStrip.tsx | 34 | 700×200 | 横条场景 |
 
-### 待确认（1）
-
-| 文件 | 行 | 尺寸 | 说明 |
-|---|---|---|---|
-| electromagnetism/induction/CuttingEMF.tsx | 203 | 700×440 | 差 extraWide 100px 宽 |
-
 ### 动态传入（1）
 
 | 文件 | 行 | 说明 |
@@ -174,11 +169,11 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 
 | 分类 | 调用点 | 操作 |
 |---|---:|---|
-| A. 已迁移至 preset | 55 | ✅ 已替换 |
-| B. 硬编码 | 22 | 保持现状 |
+| A. 已迁移至 preset | 56 | ✅ 已替换 |
+| B. 硬编码 | 21 | 保持现状 |
 | **合计** | **77** | — |
 
-- 已迁移从 7 增至 55（新增 48）
-- 硬编码从 70 降至 22（减少 69%）
+- 已迁移从 7 增至 56（新增 49）
+- 硬编码从 70 降至 21（减少 70%）
 - CANVAS_PRESETS 从 6 个增至 7 个（新增 mediumWide）
 - tsc 零错误通过

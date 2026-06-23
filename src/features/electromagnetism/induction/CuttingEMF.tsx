@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { computeRodConstants, computeRodStateAtTime, calculateCuttingEMF } from '@/physics'
 import { PHYSICS_COLORS, EM_COLORS, CHART_COLORS, VT_CHART_COLORS, AT_CHART_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { withAlpha } from '@/theme/physics'
@@ -200,7 +201,7 @@ export default function CuttingEMF() {
   } = params
 
   // 1. 动态画布测量与响应式
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 440 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
   const { px, font } = canvasSize
 
   const chartHeight = px(190)
