@@ -4,14 +4,7 @@ import type { ScoreRecord } from '@/stores'
 import { getKnowledgeNode } from '@/data/knowledgeTree'
 import { getProblemById } from '@/data/problems'
 import { colors } from '@/theme/colors'
-
-const MODULE_LABELS: Record<string, string> = {
-  mechanics: '力学',
-  electricity: '电磁学',
-  thermodynamics: '热学',
-  optics: '光学',
-  atomic: '原子物理',
-}
+import { MODULE_LABELS } from '@/utils/moduleHelpers'
 
 interface ScoreReportProps {
   record: Omit<ScoreRecord, 'id' | 'timestamp'>

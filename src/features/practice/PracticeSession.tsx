@@ -3,7 +3,7 @@ import { Clock, Pause, Play, Lightbulb, Eye, Check, X } from 'lucide-react'
 import type { Problem } from '@/data/types'
 import type { PracticeMode, ScoreRecord } from '@/stores'
 import { useProblemStore, usePracticeStore, useWrongStore } from '@/stores'
-import { getKnowledgeNode } from '@/data/knowledgeTree'
+import { moduleOf } from '@/utils/moduleHelpers'
 import { KatexFormula } from '@/components/UI/KatexFormula'
 import { ScoreReport } from '@/components/UI'
 import { colors } from '@/theme/colors'
@@ -13,11 +13,6 @@ interface PracticeSessionProps {
   problems: Problem[]
   onExit: () => void
   onReviewKnowledge?: (animId: string) => void
-}
-
-function moduleOf(knowledgeIds: string[]): string {
-  const node = knowledgeIds.map((k) => getKnowledgeNode(k)).find(Boolean)
-  return node?.module ?? knowledgeIds[0]?.split('-')[0] ?? 'other'
 }
 
 /** 渲染含 $...$ / $$...$$ 的文本 */

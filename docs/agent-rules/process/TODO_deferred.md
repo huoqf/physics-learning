@@ -65,58 +65,44 @@
 
 | 文件 | 行数 |
 |---|---|
-| VerticalThrowCharts.tsx | 741 |
-| PotentialEnergyAnimation.tsx | 736 |
-| FreeFallAnimation.tsx | 645 |
-| UniformAccelerationCenterExtra.tsx | 644 |
-| MomentumAnimation.tsx | 577 |
-| EnergyConservationAnimation.tsx | 566 |
-| ObliqueThrowAnimation.tsx | 530 |
-| AccelerationCenterExtra.tsx | 522 |
-| UniformAccelerationAnimation.tsx | 518 |
-
-> 已脱困：< 500 行：ThinLensAnimation(376)、GravityAnimation(482)、ProjectileAnimation(479)、CentripetalAnimation(389)
+| VerticalThrowCharts.tsx | 694 |
+| PotentialEnergyAnimation.tsx | 669 |
+| UniformAccelerationCenterExtra.tsx | 596 |
+| FreeFallAnimation.tsx | 589 |
+| MomentumAnimation.tsx | 530 |
+| EnergyConservationAnimation.tsx | 513 |
 
 ---
 
-## 三、重复代码提取（P2）
+## 三、主题/命名统一（P2-P3）— 维护中心化规范
 
-`MODULE_LABELS`、`moduleOf`、`toggle`、`chip`、`formatDate` 在 WrongPage/PracticePage/ScoreReport/PracticeSession 中重复 → 提取到 `src/utils/moduleHelpers.ts`
+> **2026-06-23 架构决策**：不拆分 colors.ts / sceneColors.ts。它们是项目级色彩规范中心，567 处引用是设计意图而非问题。
+> 16K/30K 对配置型颜色文件可接受。目标改为：维护中心化规范，而非强行拆散。
 
----
-
-## 四、主题/命名统一（P2-P3）
-
-1. `SCENE_COLORS` 渐变 `string[]` → 语义化对象（~50 处）
-2. `SCENE_COLORS`(464行) → materialColors / sceneEquipment / glowEffects
-3. `COMMON_MATERIALS` / `SPHERE_COLORS` → `MATERIAL_PRESETS`
-4. 明暗层命名 `{Part}{Layer}` 小写化
-5. ✅ 重力矢量 token 修正完成
+1. ✅ 重力矢量 token 修正完成
+2. 保持 colors.ts / sceneColors.ts 作为权威来源
+3. 内部做清晰分区 + 注释（sceneColors.ts 当前 529 行）
+4. 统一导出命名
+5. 阻止组件内私自定义颜色（现有违规需逐步清理）
+6. 暂缓大规模迁移 SCENE_COLORS 引用
 
 ---
 
-## 五、响应式缩放（P1，第 0-2 步已完成）
+## 四、响应式缩放（P1，第 0-2 步已完成）
 
-- **A 类** SVG fontSize 裸值：68 处 / 9 文件
-- **C 类** Tailwind text-[Npx]：16 处 / 3 文件
-- **D 类** useCanvasSize → CANVAS_PRESETS：27 处 / 25 文件
-
----
-
-## 六、未使用组件（P2）
-
-已清理：PageShell、Magnet、VTChart、PhysicsGraph、DataTable、UI/VectorArrow（旧版）
-暂留：`ProgressBadge.tsx`
+- **A 类** SVG fontSize 裸值：107+ 处 / 25+ 文件（原 68/9，随功能扩展增长）
+- **C 类** Tailwind text-[Npx]：42 处 / 17+ 文件（原 16/3，sidebar/panel 面板大量使用）
+- **D 类** useCanvasSize → CANVAS_PRESETS：仅 7 个文件已迁移（ACValues, GasLaws, Clapeyron, PowerTransmission, SecondLaw, FirstLaw, ClapeyronCenterExtra），其余仍用硬编码尺寸
 
 ---
 
-## 七、动画引擎层（P3）
+## 五、动画引擎层（P3）
 
 `useAnimationLifecycle` 全局默认 `maxTime = 30` 硬编码 → 长期提到配置层；当前「显式 opt-in」策略无紧迫性
 
 ---
 
-## 八、Viewport 架构（P1）
+## 六、Viewport 架构（P1）
 
 ### 已完成
 

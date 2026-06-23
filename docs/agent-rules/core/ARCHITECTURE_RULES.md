@@ -54,6 +54,7 @@ src/
 ├── utils/                  # 坐标、动画、存储、轨迹插值等共享工具
 │   ├── animation.ts        #   动画帧 Hook（useAnimationFrame / useSimulationFrame）
 │   ├── coordinate.ts       #   坐标转换（physicsToCanvas / computeScale）
+│   ├── moduleHelpers.tsx   #   跨页面共享工具（MODULE_LABELS、moduleOf、formatDate、toggle、chip）
 │   ├── useCanvasSize.ts    #   画布尺寸响应式 Hook（scale / px / font）
 │   └── storage.ts          #   IndexedDB / LocalStorage 封装
 ├── data/

@@ -6,15 +6,7 @@ import { NOTE_MAX_LENGTH } from '@/stores/useWrongStore'
 import { getProblemById } from '@/data/problems'
 import { getKnowledgeNode } from '@/data/knowledgeTree'
 import { colors } from '@/theme/colors'
-
-// ---- 常量映射 ----
-const MODULE_LABELS: Record<string, string> = {
-  mechanics: '力学',
-  electricity: '电磁学',
-  thermodynamics: '热学',
-  optics: '光学',
-  atomic: '原子物理',
-}
+import { MODULE_LABELS, moduleOf, formatDateShort, toggle, chip } from '@/utils/moduleHelpers'
 
 const STATUS_META: Record<WrongStatus, { label: string; color: string }> = {
   new: { label: '未复习', color: colors.danger[500] },
@@ -24,17 +16,6 @@ const STATUS_META: Record<WrongStatus, { label: string; color: string }> = {
 }
 
 type SortKey = 'recent' | 'errors' | 'difficulty'
-
-function formatDate(ts: number): string {
-  const d = new Date(ts)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-}
-
-function moduleOf(knowledgeIds: string[]): string {
-  const node = knowledgeIds.map((k) => getKnowledgeNode(k)).find(Boolean)
-  return node?.module ?? knowledgeIds[0]?.split('-')[0] ?? 'other'
-}
 
 function isThisWeek(ts: number): boolean {
   return Date.now() - ts <= 7 * 24 * 60 * 60 * 1000
@@ -132,7 +113,7 @@ const WrongCard = React.memo(function WrongCard({
         )}
 
         <div className="border-t border-neutral-100 pt-2 text-xs text-neutral-500 flex items-center justify-between">
-          <span>最近作答：{formatDate(r.lastAttemptTime)}</span>
+          <span>最近作答：{formatDateShort(r.lastAttemptTime)}</span>
           <span>错 {r.errorCount} 次</span>
         </div>
 
@@ -209,13 +190,6 @@ export default function WrongPage() {
   const [noteDraft, setNoteDraft] = useState('')
   const [menuFor, setMenuFor] = useState<string | null>(null)
 
-  function toggle<T>(set: Set<T>, value: T): Set<T> {
-    const next = new Set(set)
-    if (next.has(value)) next.delete(value)
-    else next.add(value)
-    return next
-  }
-
   // ---- 统计面板 ----
   const stats = useMemo(() => {
     const total = records.length
@@ -269,21 +243,6 @@ export default function WrongPage() {
       onEditNote={(id, note) => { setNoteDraft(note); setNoteEditing(id) }}
       onDelete={(id) => setConfirmDelete(id)}
     />
-  )
-
-  // ---- chip 组件 ----
-  const chip = (active: boolean, label: string, onClick: () => void, key?: string) => (
-    <button
-      key={key ?? label}
-      onClick={onClick}
-      className={`px-3 py-1 rounded-full text-sm transition-colors active:scale-[0.97] ${
-        active
-          ? 'bg-primary-600 text-white'
-          : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-      }`}
-    >
-      {label}
-    </button>
   )
 
   const hasAny = records.length > 0
