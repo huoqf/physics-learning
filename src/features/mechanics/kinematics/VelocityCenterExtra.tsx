@@ -1,10 +1,6 @@
 import { useMemo, useEffect } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS } from '@/theme/physics'
-import {
-  calculateInstantaneousVelocity,
-} from '@/physics'
 import type { VariableMotionModel, VariableMotionParams } from '@/physics'
 import { VelocityXTChart } from './VelocityXTChart'
 import { VelocityVTChart } from './VelocityVTChart'
@@ -59,9 +55,6 @@ export default function VelocityCenterExtra() {
     return 30
   }, [model, modelParams.omega])
 
-  // ── 当前物理状态 ──
-  const { vBar, vInst, residual } = calculateInstantaneousVelocity(model, modelParams, t0, deltaT)
-
   // SHM 模式下到达 chartTMax 自动暂停，展示完整波形
   useEffect(() => {
     if (model === 'shm' && isPlaying && time >= chartTMax) {
@@ -69,26 +62,8 @@ export default function VelocityCenterExtra() {
     }
   }, [model, isPlaying, time, chartTMax, setIsPlaying])
 
-  const modelNames = ['变加速（F递增）', '简谐振动', '往返多阶段']
-
   return (
     <div className="w-full h-full flex flex-col gap-3">
-      {/* ── 信息条 ── */}
-      <div className="w-full shrink-0 bg-white rounded-xl shadow-sm border border-neutral-100 px-4 py-2 flex items-center gap-4 text-xs">
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-1 rounded shrink-0" style={{ backgroundColor: PHYSICS_COLORS.secantLine }} />
-          <span className="text-neutral-600">v̄ = {vBar.toFixed(3)} m/s</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-1 rounded shrink-0" style={{ backgroundColor: PHYSICS_COLORS.tangentLine }} />
-          <span className="text-neutral-600">v = {vInst.toFixed(3)} m/s</span>
-        </div>
-        <span className="text-neutral-500">残差 = {residual.toFixed(4)}</span>
-        <div className="ml-auto text-neutral-400 shrink-0">
-          {modelNames[modelIdx]}
-        </div>
-      </div>
-
       {/* ── 横向布局：图表左右并列在上，动画在下 ── */}
       {/* Row 1: x-t 图 + v-t 图 左右并列 */}
       <div className="w-full flex-[2] flex flex-row gap-3">

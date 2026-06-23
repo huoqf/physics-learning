@@ -1,7 +1,7 @@
 # CANVAS_PRESETS 迁移盘点
 
 > 核查日期：2026-06-23
-> 总调用点：77（63 已迁移 + 14 硬编码）
+> 总调用点：76（63 已迁移 + 13 硬编码）
 
 ---
 
@@ -155,7 +155,6 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 |---|---|---|---|
 | mechanics/force-motion/ForceMotionTripleChart.tsx | 274 | 900×200 | 三图横排 |
 | BoundaryMagneticField/ChargeInBField.tsx | 68 | 200×180 | 小缩略图 |
-| mechanics/kinematics/VelocityAnimationStrip.tsx | 34 | 700×200 | 横条场景 |
 
 ### 动态传入（1）
 
@@ -170,10 +169,11 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 | 分类 | 调用点 | 操作 |
 |---|---:|---|
 | A. 已迁移至 preset | 63 | ✅ 已替换 |
-| B. 硬编码 | 14 | 保持现状 |
-| **合计** | **77** | — |
+| B. 硬编码 | 13 | 保持现状 |
+| **合计** | **76** | — |
 
 - 已迁移从 7 增至 63（新增 56）
-- 硬编码从 70 降至 14（减少 80%）
+- 硬编码从 70 降至 13（减少 81%）
 - CANVAS_PRESETS 从 6 个增至 7 个（新增 mediumWide）
+- 删除 VelocityAnimationStrip（1 调用点）
 - tsc 零错误通过
