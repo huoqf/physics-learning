@@ -1,7 +1,7 @@
 # CANVAS_PRESETS 迁移盘点
 
 > 核查日期：2026-06-23
-> 总调用点：77（60 已迁移 + 17 硬编码）
+> 总调用点：77（61 已迁移 + 16 硬编码）
 
 ---
 
@@ -19,7 +19,7 @@
 
 ---
 
-## A. 已迁移至现有 preset（60 调用点）
+## A. 已迁移至现有 preset（61 调用点）
 
 ### tall: 700×450（13）
 
@@ -63,7 +63,7 @@
 | electromagnetism/dc-circuits/ClosedCircuit.tsx | 15 |
 | thermodynamics/kinematics/IntermolecularForcesAnimation.tsx | 35 |
 
-### wide: 700×400（16）
+### wide: 700×400（17）
 
 | 文件 | 行 |
 |---|---|
@@ -78,6 +78,7 @@
 | electromagnetism/induction/Transformer.tsx | 126 |
 | electromagnetism/induction/ACValues.tsx | 320 |
 | thermodynamics/kinematics/BrownianMotion.tsx | 61 |
+| thermodynamics/kinematics/IntermolecularForcesCenterExtra.tsx | 12 |
 | thermodynamics/gasLaws/GasLawsAnimation.tsx | 66 |
 | thermodynamics/gasLaws/ClapeyronAnimation.tsx | 62 |
 | thermodynamics/gasLaws/ClapeyronCenterExtra.tsx | 25 |
@@ -118,7 +119,7 @@
 
 ---
 
-## B. 硬编码（17 调用点）
+## B. 硬编码（16 调用点）
 
 ### 物理坐标系占位符 100×100（5）
 
@@ -144,7 +145,7 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 | mechanics/dynamics/FrictionCenterExtra.tsx | 10 | 400×200 |
 | electromagnetism/dc-circuits/CircuitAnalysisCenterExtra.tsx | 10 | 400×200 |
 
-### 唯一尺寸（5）
+### 唯一尺寸（4）
 
 各有特殊布局需求，不适合强行统一。
 
@@ -154,7 +155,6 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 | mechanics/energy/WorkAnimation.tsx | 56 | 700×650 | 上下分区（图表+场景） |
 | electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField.tsx | 11 | 800×600 | 主场景 |
 | electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField.tsx | 68 | 200×180 | 小缩略图 |
-| thermodynamics/kinematics/IntermolecularForcesCenterExtra.tsx | 12 | 600×300 | 紧凑图 |
 | mechanics/kinematics/VelocityAnimationStrip.tsx | 34 | 700×200 | 横条场景 |
 
 ### 动态传入（1）
@@ -169,11 +169,11 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 
 | 分类 | 调用点 | 操作 |
 |---|---:|---|
-| A. 已迁移至 preset | 60 | ✅ 已替换 |
-| B. 硬编码 | 17 | 保持现状 |
+| A. 已迁移至 preset | 61 | ✅ 已替换 |
+| B. 硬编码 | 16 | 保持现状 |
 | **合计** | **77** | — |
 
-- 已迁移从 7 增至 60（新增 53）
-- 硬编码从 70 降至 17（减少 76%）
+- 已迁移从 7 增至 61（新增 54）
+- 硬编码从 70 降至 16（减少 77%）
 - CANVAS_PRESETS 从 6 个增至 7 个（新增 mediumWide）
 - tsc 零错误通过

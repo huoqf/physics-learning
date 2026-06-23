@@ -1,6 +1,7 @@
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import IntermolecularForceChart from './IntermolecularForceChart'
 
 export default function IntermolecularForcesCenterExtra() {
@@ -9,7 +10,7 @@ export default function IntermolecularForcesCenterExtra() {
   )
 
   const r = params.params.r ?? 2.0
-  const [containerRef, canvasSize] = useCanvasSize({ width: 600, height: 300 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
   const { font } = canvasSize
 
   const chartWidth = (canvasSize.width - 32) / 2
