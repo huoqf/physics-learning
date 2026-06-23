@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useCanvasSize, PX_PER_METER } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { Spring } from '@/components/UI'
@@ -50,7 +51,7 @@ export default function ConnectedBodiesAnimation() {
     updateParam: s.updateParam,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 600, height: 400 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumWide)
   const { font } = canvasSize
 
   const {

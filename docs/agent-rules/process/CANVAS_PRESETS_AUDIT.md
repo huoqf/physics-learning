@@ -1,7 +1,7 @@
 # CANVAS_PRESETS 迁移盘点
 
 > 核查日期：2026-06-23
-> 总调用点：77（59 已迁移 + 18 硬编码）
+> 总调用点：77（60 已迁移 + 17 硬编码）
 
 ---
 
@@ -19,7 +19,7 @@
 
 ---
 
-## A. 已迁移至现有 preset（59 调用点）
+## A. 已迁移至现有 preset（60 调用点）
 
 ### tall: 700×450（13）
 
@@ -84,7 +84,7 @@
 | thermodynamics/secondLaw/SecondLawAnimation.tsx | 52 |
 | thermodynamics/firstLaw/FirstLawAnimation.tsx | 78 |
 
-### mediumWide: 650×400（6）
+### mediumWide: 650×400（7）
 
 | 文件 | 行 |
 |---|---|
@@ -94,6 +94,7 @@
 | mechanics/dynamics/SpringForceCenterExtra.tsx | 11 |
 | mechanics/dynamics/WeightlessnessCenterExtra.tsx | 11 |
 | mechanics/dynamics/NewtonSecondCenterExtra.tsx | 11 |
+| mechanics/dynamics/ConnectedBodiesAnimation.tsx | 53 |
 
 ### square: 600×600（3）
 
@@ -117,7 +118,7 @@
 
 ---
 
-## B. 硬编码（18 调用点）
+## B. 硬编码（17 调用点）
 
 ### 物理坐标系占位符 100×100（5）
 
@@ -143,7 +144,7 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 | mechanics/dynamics/FrictionCenterExtra.tsx | 10 | 400×200 |
 | electromagnetism/dc-circuits/CircuitAnalysisCenterExtra.tsx | 10 | 400×200 |
 
-### 唯一尺寸（6）
+### 唯一尺寸（5）
 
 各有特殊布局需求，不适合强行统一。
 
@@ -154,7 +155,6 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 | electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField.tsx | 11 | 800×600 | 主场景 |
 | electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField.tsx | 68 | 200×180 | 小缩略图 |
 | thermodynamics/kinematics/IntermolecularForcesCenterExtra.tsx | 12 | 600×300 | 紧凑图 |
-| mechanics/dynamics/ConnectedBodiesAnimation.tsx | 53 | 600×400 | 连接体 |
 | mechanics/kinematics/VelocityAnimationStrip.tsx | 34 | 700×200 | 横条场景 |
 
 ### 动态传入（1）
@@ -169,11 +169,11 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 
 | 分类 | 调用点 | 操作 |
 |---|---:|---|
-| A. 已迁移至 preset | 59 | ✅ 已替换 |
-| B. 硬编码 | 18 | 保持现状 |
+| A. 已迁移至 preset | 60 | ✅ 已替换 |
+| B. 硬编码 | 17 | 保持现状 |
 | **合计** | **77** | — |
 
-- 已迁移从 7 增至 59（新增 52）
-- 硬编码从 70 降至 18（减少 74%）
+- 已迁移从 7 增至 60（新增 53）
+- 硬编码从 70 降至 17（减少 76%）
 - CANVAS_PRESETS 从 6 个增至 7 个（新增 mediumWide）
 - tsc 零错误通过
