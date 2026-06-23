@@ -1,6 +1,7 @@
 import { useAnimationStore } from '@/stores'
 import { SimulationView } from './SimulationView'
 import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { colors } from '@/theme/colors'
 import { PHYSICS_COLORS } from '@/theme/physics'
 
@@ -8,7 +9,7 @@ import { PHYSICS_COLORS } from '@/theme/physics'
 export default function ChargeInBField() {
     const params = useAnimationStore((s) => s.params)
   const mode = params.mode ?? 0 // 0: 基础, 1: 进阶
-  const [sizeRef, size] = useCanvasSize({ width: 800, height: 600 })
+  const [sizeRef, size] = useCanvasSize(CANVAS_PRESETS.standard)
 
   const isWide = size.width > size.height * 1.1
 
