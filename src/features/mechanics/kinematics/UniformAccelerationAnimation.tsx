@@ -9,7 +9,6 @@ import {
   VT_CHART_COLORS,
   STROKE,
   DASH,
-  FONT,
 } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { SportsCar } from '@/components/Physics/SportsCar'
@@ -17,22 +16,24 @@ import { VectorDefs, markerId } from '@/components/Physics/VectorDefs'
 import { selectMarkerTier } from '@/theme/physics/vectorStyle'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
+import { VelocityTimeChart } from '@/components/Chart'
+import { useChartContext } from '@/components/Chart/ChartContext'
 
 /**
- * 匀变速直线运动 · 基础模式动画
+ * 匀变速直线运动 · 基础模式动画（已完成图表迁移）
  *
- * 上半部分：v-t 图面积可视化（可演示微元切割逼近或平均速度割补法）
+ * 上半部分：使用 VelocityTimeChart 标准预设 + 自定义 area 插件层
  * 下半部分：运动舞台（线框小车 + 轮轴旋转滚动 + 分段位移投影带）
  *
- * 严格符合 project_rules.md 视觉与信息密度要求。
+ * 保留4种教学面积模式（微元/等效割补/拆分公式/合并梯形），通过 underlay/children 实现。
  */
 export default function UniformAccelerationAnimation() {
-    const {params, time, showVectors, setIsPlaying} = useAnimationStore(
+  const { params, time, showVectors, setIsPlaying } = useAnimationStore(
     useShallow((s) => ({
-    params: s.params,
-    time: s.time,
-    showVectors: s.showVectors,
-    setIsPlaying: s.setIsPlaying,
+      params: s.params,
+      time: s.time,
+      showVectors: s.showVectors,
+      setIsPlaying: s.setIsPlaying,
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 400 })
@@ -47,12 +48,6 @@ export default function UniformAccelerationAnimation() {
 
   // 上半部分：v-t 图（60%）
   const chartSectionHeight = canvasSize.height * 0.6
-  const chartLeft = padding + 30
-  const chartRight = canvasSize.width - padding
-  const chartWidth = chartRight - chartLeft
-  const chartInnerTop = 24
-  const chartInnerBottom = chartSectionHeight - 20
-  const chartInnerHeight = chartInnerBottom - chartInnerTop
 
   // 下半部分：动画舞台（40%）
   const stageTop = chartSectionHeight + 4
@@ -98,62 +93,51 @@ export default function UniformAccelerationAnimation() {
     return { vtYMin: Math.floor(vMin), vtYMax: Math.ceil(vMax) }
   }, [v0, a])
 
-  const toChartX = (t: number) => chartLeft + (t / VT_X_MAX) * chartWidth
-  const toChartY = (vel: number) => chartInnerBottom - ((vel - vtYMin) / (vtYMax - vtYMin)) * chartInnerHeight
-
-  // v-t 图曲线数据（渐进绘制到当前时间）
-  const vtPathData = useMemo(() => {
+  // v-t 图曲线数据（完整 domainPoints 用于定标）
+  const vtDomainPoints = useMemo(() => {
     const dt = 0.05
-    const points: string[] = []
-    const limitT = Math.min(time, VT_X_MAX)
-    for (let t = 0; t <= limitT + 0.001; t += dt) {
+    const pts: { t: number; v: number }[] = []
+    for (let t = 0; t <= VT_X_MAX + 0.001; t += dt) {
       const { v: vel } = calculateAcceleratedMotion(v0, a, t)
-      points.push(`${t === 0 ? 'M' : 'L'} ${toChartX(t).toFixed(1)},${toChartY(vel).toFixed(1)}`)
+      pts.push({ t, v: vel })
     }
-    // 确保最后一帧封口完美
-    if (limitT > 0) {
-      const { v: vel } = calculateAcceleratedMotion(v0, a, limitT)
-      points.push(`L ${toChartX(limitT).toFixed(1)},${toChartY(vel).toFixed(1)}`)
-    }
-    return points.join(' ')
-  }, [v0, a, time, toChartX, toChartY])
+    return pts
+  }, [v0, a])
 
-  // ── 微元法窄条分块计算 (N 份) ──
+  // 当前时间截断的 points（用于绘制）
+  const vtActivePoints = useMemo(
+    () => vtDomainPoints.filter(p => p.t <= time + 0.01),
+    [vtDomainPoints, time]
+  )
+
+  // ── 微元法窄条分块计算 (N 份) —— 纯物理数据，不含像素坐标 ──
   const microSlices = useMemo(() => {
     if (splitN <= 0 || time <= 0) return []
     const slices: {
-      leftX: number
-      rightX: number
-      heightY: number
+      t0: number
+      t1: number
+      vi: number
       area: number
       index: number
     }[] = []
     const dt = time / splitN
     for (let j = 0; j < splitN; j++) {
-      const t_j = j * dt
-      const { v: v_j } = calculateAcceleratedMotion(v0, a, t_j)
-      const leftX = toChartX(t_j)
-      const rightX = toChartX(t_j + dt)
-      const heightY = toChartY(v_j)
-      slices.push({
-        leftX,
-        rightX,
-        heightY,
-        area: v_j * dt,
-        index: j,
-      })
+      const t0 = j * dt
+      const t1 = t0 + dt
+      const { v: vi } = calculateAcceleratedMotion(v0, a, t0)
+      slices.push({ t0, t1, vi, area: vi * dt, index: j })
     }
     return slices
-  }, [splitN, time, v0, a, toChartX, toChartY])
+  }, [splitN, time, v0, a])
 
   // 微元估算位移累加和
   const microSlicesAreaSum = useMemo(() => {
     return microSlices.reduce((sum, s) => sum + s.area, 0)
   }, [microSlices])
 
-  // 面积填充路径
-  const areaPaths = useMemo(() => {
-    if (time <= 0) return { positive: '', negative: '', rect: '', triangle: '' }
+  // 面积填充物理数据（渲染时在 AreaUnderlay 中用 ctx.toSvgX/Y 转换）
+  const areaSegments = useMemo(() => {
+    if (time <= 0) return { positive: [] as { t: number; v: number }[], negative: [] as { t: number; v: number }[], rect: null as { tStart: number; tEnd: number; v: number } | null, triangle: null as { t0: number; v0: number; t1: number; v1: number } | null }
 
     const tZero = a !== 0 ? -v0 / a : -1
     const segments: { tStart: number; tEnd: number; isPositive: boolean }[] = []
@@ -165,40 +149,33 @@ export default function UniformAccelerationAnimation() {
       segments.push({ tStart: 0, tEnd: time, isPositive: v >= 0 || (v0 >= 0 && time < 0.01) })
     }
 
-    const posSegs = segments.filter(seg => seg.isPositive)
-    const positivePath = posSegs.map(seg => {
+    const buildCurve = (seg: { tStart: number; tEnd: number }) => {
+      const pts: { t: number; v: number }[] = []
       const dt = 0.05
-      const pts: string[] = []
       for (let t = seg.tStart; t <= seg.tEnd + 0.001; t += dt) {
         const tt = Math.min(t, seg.tEnd)
         const { v: vel } = calculateAcceleratedMotion(v0, a, tt)
-        pts.push(`${toChartX(tt).toFixed(1)},${toChartY(vel).toFixed(1)}`)
+        pts.push({ t: tt, v: vel })
       }
-      return `M ${toChartX(seg.tStart).toFixed(1)},${toChartY(0).toFixed(1)} L ${pts.join(' L ')} L ${toChartX(seg.tEnd).toFixed(1)},${toChartY(0).toFixed(1)} Z`
-    }).join(' ')
+      return pts
+    }
 
-    const negSegs = segments.filter(seg => !seg.isPositive)
-    const negativePath = negSegs.map(seg => {
-      const dt = 0.05
-      const pts: string[] = []
-      for (let t = seg.tStart; t <= seg.tEnd + 0.001; t += dt) {
-        const tt = Math.min(t, seg.tEnd)
-        const { v: vel } = calculateAcceleratedMotion(v0, a, tt)
-        pts.push(`${toChartX(tt).toFixed(1)},${toChartY(vel).toFixed(1)}`)
-      }
-      return `M ${toChartX(seg.tStart).toFixed(1)},${toChartY(0).toFixed(1)} L ${pts.join(' L ')} L ${toChartX(seg.tEnd).toFixed(1)},${toChartY(0).toFixed(1)} Z`
-    }).join(' ')
+    const positive = segments.filter(s => s.isPositive).flatMap(buildCurve)
+    const negative = segments.filter(s => !s.isPositive).flatMap(buildCurve)
 
-    const rectPath = time > 0
-      ? `M ${toChartX(0).toFixed(1)},${toChartY(0).toFixed(1)} L ${toChartX(0).toFixed(1)},${toChartY(v0).toFixed(1)} L ${toChartX(time).toFixed(1)},${toChartY(v0).toFixed(1)} L ${toChartX(time).toFixed(1)},${toChartY(0).toFixed(1)} Z`
-      : ''
+    const rect = time > 0 ? { tStart: 0, tEnd: time, v: v0 } : null
+    const triangle = time > 0 ? { t0: 0, v0, t1: time, v1: v } : null
 
-    const triPath = time > 0
-      ? `M ${toChartX(0).toFixed(1)},${toChartY(v0).toFixed(1)} L ${toChartX(time).toFixed(1)},${toChartY(v).toFixed(1)} L ${toChartX(time).toFixed(1)},${toChartY(v0).toFixed(1)} Z`
-      : ''
+    return { positive, negative, rect, triangle }
+  }, [v0, a, v, time])
 
-    return { positive: positivePath, negative: negativePath, rect: rectPath, triangle: triPath }
-  }, [v0, a, v, time, toChartX, toChartY])
+  // 割补法三角形顶点 —— 纯物理坐标
+  const equivRectGeometry = useMemo(() => {
+    if (showEquivRect !== 1 || time <= 0) return null
+    const halfT = time / 2
+    const { v: vHalf } = calculateAcceleratedMotion(v0, a, halfT)
+    return { t0: 0, tHalf: halfT, tEnd: time, v0, vHalf, vEnd: v }
+  }, [showEquivRect, time, v0, a, v])
 
   // ── 地面刻度直尺 ──
   const landmarks = useMemo(() => {
@@ -214,225 +191,206 @@ export default function UniformAccelerationAnimation() {
     return labels
   }, [scale, startX, maxVisibleX])
 
-  // v-t 图刻度
-  const xticks = [0, 2, 4, 6, 8]
-  const yticks = useMemo(() => {
-    const step = (vtYMax - vtYMin) > 20 ? 10 : (vtYMax - vtYMin) > 10 ? 5 : 2
-    const ticks: number[] = []
-    for (let val = Math.ceil(vtYMin / step) * step; val <= vtYMax; val += step) {
-      ticks.push(val)
-    }
-    return ticks
-  }, [vtYMin, vtYMax])
+  // 自定义面积插件层（4种模式）—— 全部使用 chart context 坐标系
+  const AreaUnderlay = () => {
+    const ctx = useChartContext()
+    if (!ctx) return null
 
-  // 割补法三角形顶点计算
-  const equivRectGeometry = useMemo(() => {
-    if (showEquivRect !== 1 || time <= 0) return null
-    const halfT = time / 2
-    const { v: vHalf } = calculateAcceleratedMotion(v0, a, halfT)
-    const x0 = toChartX(0)
-    const xHalf = toChartX(halfT)
-    const xEnd = toChartX(time)
-    const y0 = toChartY(v0)
-    const yHalf = toChartY(vHalf)
-    const yEnd = toChartY(v)
-    const yZero = toChartY(0)
-
-    // 左下角空缺三角形: (x0, y0) -> (xHalf, yHalf) -> (x0, yHalf)
-    const emptyTriD = `M ${x0},${y0} L ${xHalf},${yHalf} L ${x0},${yHalf} Z`
-    // 右上角超出三角形: (xHalf, yHalf) -> (xEnd, yEnd) -> (xEnd, yHalf)
-    const extraTriD = `M ${xHalf},${yHalf} L ${xEnd},${yEnd} L ${xEnd},${yHalf} Z`
-
-    return { x0, xHalf, xEnd, y0, yHalf, yEnd, yZero, vHalf, emptyTriD, extraTriD }
-  }, [showEquivRect, time, v0, a, v, toChartX, toChartY])
-
-  return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
-        {/* ══════════ 上半部分：v-t 图面积可视化 ══════════ */}
-
-        {/* 坐标轴 */}
-        <line x1={chartLeft} y1={chartInnerTop} x2={chartLeft} y2={chartInnerBottom} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axis} />
-        <line x1={chartLeft} y1={toChartY(0)} x2={chartRight} y2={toChartY(0)} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axisBold} />
-
-        {/* X 轴刻度 */}
-        {xticks.map(t => (
-          <g key={`xt-${t}`}>
-            <line x1={toChartX(t)} y1={toChartY(0) - 3} x2={toChartX(t)} y2={toChartY(0) + 3} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-            <text x={toChartX(t)} y={toChartY(0) + 14} fontSize={font(8)} textAnchor="middle" fill={CHART_COLORS.tickLabel} fontWeight="600">{t}</text>
-          </g>
-        ))}
-
-        {/* Y 轴刻度 */}
-        {yticks.map(vel => (
-          <g key={`yt-${vel}`}>
-            <line x1={chartLeft - 3} y1={toChartY(vel)} x2={chartLeft} y2={toChartY(vel)} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-            <text x={chartLeft - 7} y={toChartY(vel) + 3} fontSize={font(8)} textAnchor="end" fill={CHART_COLORS.tickLabel} fontWeight="600">{vel}</text>
-          </g>
-        ))}
-
-        {/* 轴标签 */}
-        <text x={chartRight - 10} y={toChartY(0) - 8} fontSize={font(9)} fill={CHART_COLORS.labelText} fontWeight="bold">t / s</text>
-        <text x={chartLeft - 10} y={chartInnerTop - 10} fontSize={font(9)} fill={CHART_COLORS.labelText} textAnchor="end" fontWeight="bold">v / (m/s)</text>
-        <text x={chartLeft + chartWidth / 2} y={16} fontSize={FONT.labelBold} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">匀变速直线运动 v-t 图象</text>
-
-        {/* 1. 面积填充逻辑 */}
-        {splitN > 0 ? (
-          // A. 微元法分割窄条绘制 (N 份)
-          <g>
-            {microSlices.map((slice) => (
+    if (splitN > 0) {
+      // A. 微元法分割窄条
+      return (
+        <g>
+          {microSlices.map((slice) => {
+            const x0 = ctx.toSvgX(slice.t0)
+            const x1 = ctx.toSvgX(slice.t1)
+            const yTop = ctx.toSvgY(slice.vi)
+            const yBase = ctx.toSvgY(0)
+            return (
               <rect
                 key={`slice-${slice.index}`}
-                x={slice.leftX}
-                y={Math.min(slice.heightY, toChartY(0))}
-                width={Math.max(0.5, slice.rightX - slice.leftX)}
-                height={Math.max(0.5, Math.abs(toChartY(0) - slice.heightY))}
+                x={x0}
+                y={Math.min(yTop, yBase)}
+                width={Math.max(0.5, x1 - x0)}
+                height={Math.max(0.5, Math.abs(yBase - yTop))}
                 fill={VT_CHART_COLORS.areaShade}
                 opacity={0.3}
                 stroke={PHYSICS_COLORS.grid}
                 strokeWidth={0.5}
               />
-            ))}
-            {/* 微元估算面积值标注 */}
-            {time > 0 && (
-              <text
-                x={toChartX(time / 2)}
-                y={toChartY(v0 * 0.5) + (v0 >= 0 ? -6 : 12)}
-                fontSize={font(9)}
-                textAnchor="middle"
-                fill={PHYSICS_COLORS.displacement}
-                fontWeight="bold"
-              >
-                积分和 ∑v_i·Δt ≈ {microSlicesAreaSum.toFixed(2)} m
-              </text>
-            )}
-          </g>
-        ) : showEquivRect === 1 && equivRectGeometry ? (
-          // B. 等效矩形割补法绘制
-          <g>
-            {/* 等效平均速度矩形 (v_half * t) */}
-            <rect
-              x={equivRectGeometry.x0}
-              y={Math.min(equivRectGeometry.yHalf, toChartY(0))}
-              width={equivRectGeometry.xEnd - equivRectGeometry.x0}
-              height={Math.abs(toChartY(0) - equivRectGeometry.yHalf)}
-              fill={VT_CHART_COLORS.areaShade}
-              opacity={0.2}
-              stroke={PHYSICS_COLORS.velocity}
-              strokeWidth={1}
-              strokeDasharray="4 2"
-            />
-            {/* 左下三角形：空缺部分 (填充斜纹) */}
-            <path
-              d={equivRectGeometry.emptyTriD}
-              fill={CHART_COLORS.areaFillWarm}
-              opacity={0.3}
-            />
-            <text x={equivRectGeometry.x0 + 8} y={equivRectGeometry.yHalf + (v0 >= v ? 10 : -6)} fontSize={font(8)} fill={CHART_COLORS.labelText} opacity={0.8}>缺失</text>
-
-            {/* 右上三角形：超出部分 */}
-            <path
-              d={equivRectGeometry.extraTriD}
-              fill={CHART_COLORS.areaFillWarm}
-              opacity={0.3}
-            />
-            <text x={equivRectGeometry.xEnd - 24} y={equivRectGeometry.yHalf + (v0 >= v ? -6 : 10)} fontSize={font(8)} fill={CHART_COLORS.labelText} opacity={0.8}>超出</text>
-
-            {/* 割补平移指示线 (画一条曲线箭头从超出到缺失) */}
-            <path
-              d={`M ${equivRectGeometry.xHalf + (equivRectGeometry.xEnd - equivRectGeometry.xHalf) * 0.5},${(equivRectGeometry.yHalf + equivRectGeometry.yEnd) / 2} Q ${equivRectGeometry.xHalf},${equivRectGeometry.yHalf - 15} ${equivRectGeometry.x0 + (equivRectGeometry.xHalf - equivRectGeometry.x0) * 0.5},${(equivRectGeometry.yHalf + equivRectGeometry.y0) / 2}`}
-              fill="none"
-              stroke={PHYSICS_COLORS.referencePoint}
-              strokeWidth={1.5}
-              strokeDasharray="3 3"
-              markerEnd={`url(#${markerId(selectMarkerTier(60), PHYSICS_COLORS.referencePoint)})`}
-            />
-
-            {/* 平均速度标注 */}
+            )
+          })}
+          {time > 0 && (
             <text
-              x={equivRectGeometry.xEnd - 4}
-              y={equivRectGeometry.yHalf - 4}
-              fontSize={font(8)}
-              textAnchor="end"
-              fill={PHYSICS_COLORS.averageVelocity}
+              x={ctx.toSvgX(time / 2)}
+              y={ctx.toSvgY(v0 * 0.5) + (v0 >= 0 ? -6 : 12)}
+              fontSize={font(9)}
+              textAnchor="middle"
+              fill={PHYSICS_COLORS.displacement}
               fontWeight="bold"
             >
-              平均速度 v̄ = v(t/2) = {equivRectGeometry.vHalf.toFixed(2)} m/s
+              积分和 ∑v_i·Δt ≈ {microSlicesAreaSum.toFixed(2)} m
             </text>
-          </g>
-        ) : showSplit === 1 ? (
-          // C. 经典拆分模式: v₀t (矩形) + ½at² (三角形)
-          <>
-            {/* 矩形分块 v₀t */}
-            {areaPaths.rect && <path d={areaPaths.rect} fill={VT_CHART_COLORS.areaShade} opacity={0.35} />}
-            {/* 三角形分块 ½at² */}
-            {areaPaths.triangle && <path d={areaPaths.triangle} fill={CHART_COLORS.areaFillWarm} opacity={0.35} />}
-            {/* v₀ 高度虚线分隔 */}
-            {time > 0 && (
-              <line
-                x1={toChartX(0)}
-                y1={toChartY(v0)}
-                x2={toChartX(time)}
-                y2={toChartY(v0)}
-                stroke={CHART_COLORS.axisLine}
-                strokeWidth={1}
-                strokeDasharray={DASH.guide.join(',')}
-                opacity={0.6}
-              />
-            )}
-            {/* 矩形面积值标注 */}
-            {time > 0 && v0 !== 0 && (
-              <text
-                x={toChartX(time / 2)}
-                y={toChartY(v0 / 2) + 3}
-                fontSize={font(9)}
-                textAnchor="middle"
-                fill={VT_CHART_COLORS.velocityCurve}
-                fontWeight="bold"
-              >
-                v₀t = {(v0 * time).toFixed(1)} m
-              </text>
-            )}
-            {/* 三角形面积值标注 */}
-            {time > 0 && a !== 0 && (
-              <text
-                x={toChartX(time * 0.65)}
-                y={toChartY(v0 + (v - v0) * 0.35) + 3}
-                fontSize={font(9)}
-                textAnchor="middle"
-                fill={VT_CHART_COLORS.velocityCurve}
-                fontWeight="bold"
-              >
-                ½at² = {(0.5 * a * time * time).toFixed(1)} m
-              </text>
-            )}
-          </>
-        ) : (
-          // D. 合并梯形面积
-          <>
-            {areaPaths.positive && <path d={areaPaths.positive} fill={VT_CHART_COLORS.areaShade} opacity={0.3} />}
-            {areaPaths.negative && <path d={areaPaths.negative} fill={CHART_COLORS.areaFillWarm} opacity={0.3} />}
-          </>
-        )}
+          )}
+        </g>
+      )
+    }
 
-        {/* 4. v-t 曲线 */}
-        {vtPathData && (
-          <path d={vtPathData} fill="none" stroke={VT_CHART_COLORS.velocityCurve} strokeWidth={STROKE.chartMain} />
-        )}
+    if (showEquivRect === 1 && equivRectGeometry) {
+      // B. 等效矩形割补法
+      const { t0, tHalf, tEnd, v0: ev0, vHalf, vEnd } = equivRectGeometry
+      const px0 = ctx.toSvgX(t0)
+      const pxHalf = ctx.toSvgX(tHalf)
+      const pxEnd = ctx.toSvgX(tEnd)
+      const py0 = ctx.toSvgY(ev0)
+      const pyHalf = ctx.toSvgY(vHalf)
+      const pyEnd = ctx.toSvgY(vEnd)
+      const pyZero = ctx.toSvgY(0)
+      return (
+        <g>
+          <rect
+            x={px0}
+            y={Math.min(pyHalf, pyZero)}
+            width={pxEnd - px0}
+            height={Math.abs(pyZero - pyHalf)}
+            fill={VT_CHART_COLORS.areaShade}
+            opacity={0.2}
+            stroke={PHYSICS_COLORS.velocity}
+            strokeWidth={1}
+            strokeDasharray="4 2"
+          />
+          <path d={`M ${px0},${py0} L ${pxHalf},${pyHalf} L ${px0},${pyHalf} Z`} fill={CHART_COLORS.areaFillWarm} opacity={0.3} />
+          <text x={px0 + 8} y={pyHalf + (ev0 >= vEnd ? 10 : -6)} fontSize={font(8)} fill={CHART_COLORS.labelText} opacity={0.8}>缺失</text>
 
-        {/* 5. 当前时刻竖轴线 */}
-        {time > 0 && time <= VT_X_MAX && (
-          <line x1={toChartX(time)} y1={chartInnerTop} x2={toChartX(time)} y2={chartInnerBottom} stroke={PHYSICS_COLORS.velocity} strokeWidth={STROKE.reference} strokeDasharray={DASH.guide.join(',')} opacity={0.5} />
-        )}
+          <path d={`M ${pxHalf},${pyHalf} L ${pxEnd},${pyEnd} L ${pxEnd},${pyHalf} Z`} fill={CHART_COLORS.areaFillWarm} opacity={0.3} />
+          <text x={pxEnd - 24} y={pyHalf + (ev0 >= vEnd ? -6 : 10)} fontSize={font(8)} fill={CHART_COLORS.labelText} opacity={0.8}>超出</text>
 
-        {/* ══════════ 下半部分：动画舞台 ══════════ */}
+          <path
+            d={`M ${pxHalf + (pxEnd - pxHalf) * 0.5},${(pyHalf + pyEnd) / 2} Q ${pxHalf},${pyHalf - 15} ${px0 + (pxHalf - px0) * 0.5},${(pyHalf + py0) / 2}`}
+            fill="none"
+            stroke={PHYSICS_COLORS.referencePoint}
+            strokeWidth={1.5}
+            strokeDasharray="3 3"
+            markerEnd={`url(#${markerId(selectMarkerTier(60), PHYSICS_COLORS.referencePoint)})`}
+          />
 
-        {/* 分隔线 */}
-        <line x1={padding} y1={chartSectionHeight} x2={canvasSize.width - padding} y2={chartSectionHeight} stroke={CHART_COLORS.gridLine} strokeWidth={1} />
+          <text
+            x={pxEnd - 4}
+            y={pyHalf - 4}
+            fontSize={font(8)}
+            textAnchor="end"
+            fill={PHYSICS_COLORS.averageVelocity}
+            fontWeight="bold"
+          >
+            平均速度 v̄ = v(t/2) = {vHalf.toFixed(2)} m/s
+          </text>
+        </g>
+      )
+    }
+
+    if (showSplit === 1) {
+      // C. 经典拆分模式: v₀t 矩形 + ½at² 三角形
+      const { rect, triangle } = areaSegments
+      return (
+        <>
+          {rect && (
+            <rect
+              x={ctx.toSvgX(rect.tStart)}
+              y={Math.min(ctx.toSvgY(rect.v), ctx.toSvgY(0))}
+              width={Math.max(0, ctx.toSvgX(rect.tEnd) - ctx.toSvgX(rect.tStart))}
+              height={Math.abs(ctx.toSvgY(0) - ctx.toSvgY(rect.v))}
+              fill={VT_CHART_COLORS.areaShade}
+              opacity={0.35}
+            />
+          )}
+          {triangle && (
+            <path
+              d={`M ${ctx.toSvgX(triangle.t0)},${ctx.toSvgY(triangle.v0)} L ${ctx.toSvgX(triangle.t1)},${ctx.toSvgY(triangle.v1)} L ${ctx.toSvgX(triangle.t1)},${ctx.toSvgY(triangle.v0)} Z`}
+              fill={CHART_COLORS.areaFillWarm}
+              opacity={0.35}
+            />
+          )}
+          {time > 0 && (
+            <line
+              x1={ctx.toSvgX(0)}
+              y1={ctx.toSvgY(v0)}
+              x2={ctx.toSvgX(time)}
+              y2={ctx.toSvgY(v0)}
+              stroke={CHART_COLORS.axisLine}
+              strokeWidth={1}
+              strokeDasharray={DASH.guide.join(',')}
+              opacity={0.6}
+            />
+          )}
+          {time > 0 && v0 !== 0 && (
+            <text x={ctx.toSvgX(time / 2)} y={ctx.toSvgY(v0 / 2) + 3} fontSize={font(9)} textAnchor="middle" fill={VT_CHART_COLORS.velocityCurve} fontWeight="bold">
+              v₀t = {(v0 * time).toFixed(1)} m
+            </text>
+          )}
+          {time > 0 && a !== 0 && (
+            <text x={ctx.toSvgX(time * 0.65)} y={ctx.toSvgY(v0 + (v - v0) * 0.35) + 3} fontSize={font(9)} textAnchor="middle" fill={VT_CHART_COLORS.velocityCurve} fontWeight="bold">
+              ½at² = {(0.5 * a * time * time).toFixed(1)} m
+            </text>
+          )}
+        </>
+      )
+    }
+
+    // D. 合并梯形面积
+    const buildAreaPath = (pts: { t: number; v: number }[]) => {
+      if (pts.length === 0) return ''
+      const yBase = ctx.toSvgY(0)
+      const first = pts[0]
+      const last = pts[pts.length - 1]
+      let d = `M ${ctx.toSvgX(first.t).toFixed(1)},${yBase.toFixed(1)}`
+      for (const p of pts) {
+        d += ` L ${ctx.toSvgX(p.t).toFixed(1)},${ctx.toSvgY(p.v).toFixed(1)}`
+      }
+      d += ` L ${ctx.toSvgX(last.t).toFixed(1)},${yBase.toFixed(1)} Z`
+      return d
+    }
+    const posPath = buildAreaPath(areaSegments.positive)
+    const negPath = buildAreaPath(areaSegments.negative)
+    return (
+      <>
+        {posPath && <path d={posPath} fill={VT_CHART_COLORS.areaShade} opacity={0.3} />}
+        {negPath && <path d={negPath} fill={CHART_COLORS.areaFillWarm} opacity={0.3} />}
+      </>
+    )
+  }
+
+  return (
+    <div ref={containerRef} className="w-full h-full flex flex-col">
+      {/* ══════════ 上半部分：v-t 图（使用 VelocityTimeChart 标准组件） ══════════ */}
+      <div style={{ height: chartSectionHeight }}>
+        <VelocityTimeChart
+          mode="animated"
+          points={vtActivePoints}
+          domainPoints={vtDomainPoints}
+          currentTime={time}
+          tMax={VT_X_MAX}
+          vRange={[vtYMin, vtYMax]}
+          title="匀变速直线运动 v-t 图象"
+          xLabel="t / s"
+          yLabel="v / (m/s)"
+          showArea={false}
+          showCursor={time > 0 && time <= VT_X_MAX}
+          showGrid
+          underlay={<AreaUnderlay />}
+        />
+      </div>
+
+      {/* 分隔线 */}
+      <svg width={canvasSize.width} height={1} className="flex-shrink-0">
+        <line x1={padding} y1={0} x2={canvasSize.width - padding} y2={0} stroke={CHART_COLORS.gridLine} strokeWidth={1} />
+      </svg>
+
+      {/* ══════════ 下半部分：动画舞台 ══════════ */}
+      <div className="flex-1 relative">
+        <svg width={canvasSize.width} height={canvasSize.height - chartSectionHeight} className="absolute inset-0">
+        <g transform={`translate(0, ${-chartSectionHeight})`}>
 
         {/* 地面精密厘米直尺跑道 */}
         <line x1={padding * 0.5} y1={groundY} x2={canvasSize.width - padding * 0.5} y2={groundY} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.groundLine} />
-        {/* 厘米直尺细小刻度线 */}
         {Array.from({ length: Math.floor((canvasSize.width - padding) / 10) + 1 }).map((_, idx) => {
           const tickX = padding * 0.5 + idx * 10
           const isMajor = idx % 5 === 0
@@ -462,14 +420,12 @@ export default function UniformAccelerationAnimation() {
         <line x1={startX} y1={groundY - objH * 2.2} x2={startX} y2={groundY + 4} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axisBold} strokeDasharray={DASH.boundary.join(',')} />
         <text x={startX} y={groundY + fontSize + 8} fontSize={fontSize} fill={PHYSICS_COLORS.axis} textAnchor="middle" fontWeight="bold">0</text>
 
-        {/* 6. 位移投影带 (分段或完整) */}
+        {/* 位移投影带 (分段或完整) */}
         {!isOffscreen && s !== 0 && (
           splitN > 0 ? (
-            // A. 分段投影带 (对应微积分逼近窄条位移)
             <g>
               {microSlices.map((slice) => {
                 const sliceW = slice.area * scale
-                // 积分前段位移和
                 const prevSum = microSlices.slice(0, slice.index).reduce((sum, curr) => sum + curr.area, 0)
                 const sliceX = startX + prevSum * scale
                 return (
@@ -488,7 +444,6 @@ export default function UniformAccelerationAnimation() {
               })}
             </g>
           ) : (
-            // B. 完整位移投影带
             <rect
               x={Math.min(startX, currentX)}
               y={groundY + 4}
@@ -501,7 +456,7 @@ export default function UniformAccelerationAnimation() {
           )
         )}
 
-        {/* 7. 工程线框风格小车 */}
+        {/* 工程线框风格小车 */}
         {!isOffscreen && (
           <SportsCar
             x={currentX}
@@ -527,7 +482,6 @@ export default function UniformAccelerationAnimation() {
           </g>
         )}
 
-        {/* 加速度恒定标识 */}
         {showVectors && !isOffscreen && Math.abs(a) > 0.05 && (
           <g>
             <VectorArrow
@@ -556,7 +510,9 @@ export default function UniformAccelerationAnimation() {
 
         {/* 箭头标记定义 */}
         <VectorDefs colors={[PHYSICS_COLORS.velocity, PHYSICS_COLORS.acceleration, PHYSICS_COLORS.referencePoint]} />
+        </g>
       </svg>
+      </div>
     </div>
   )
 }

@@ -69,24 +69,9 @@ export default function UniformAccelerationCenterExtra() {
   const [hoveredFlashIdx, setHoveredFlashIdx] = useState<number | null>(null)
 
   const T = flashPeriod
-  const deltaX = a * T * T
-  const vAtHalfT = (v0 + physics.v) / 2
 
   return (
     <div className="w-full h-full flex flex-col gap-2">
-      {/* ── 信息条 ── */}
-      <div className="w-full shrink-0 bg-white rounded-xl shadow-sm border border-neutral-100 px-4 py-2.5 flex items-center gap-4 text-xs font-semibold">
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PHYSICS_COLORS.displacement }} />
-          <span className="text-neutral-700">相邻位移差 Δx = aT² = <span className="font-mono font-bold text-red-600">{deltaX.toFixed(3)}</span> m</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: PHYSICS_COLORS.averageVelocity }} />
-          <span className="text-neutral-700">中间时刻速度 v(t/2) = <span className="font-mono font-bold">{vAtHalfT.toFixed(2)}</span> m/s</span>
-        </div>
-        <span className="text-neutral-500 font-medium ml-auto">频闪周期 T = {T.toFixed(1)}s</span>
-      </div>
-
       {/* ── 上半部分：数据表 + v-t图(含公式推导) 并列 ── */}
       <div className="w-full flex-[3] flex flex-row gap-2">
         {/* 左侧：频闪数据表 */}
@@ -456,7 +441,7 @@ function VtChartWithArea({
   }, [hoveredFlashIdx, T, v0, a, physics.flashPoints.length, VT_X_MAX])
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full relative">
       <VelocityTimeChart
         mode="animated"
         points={vtActivePoints}
@@ -476,6 +461,10 @@ function VtChartWithArea({
           <AreaDifferenceOverlay {...areaChildren} />
         )}
       </VelocityTimeChart>
+      {/* 分析窗口标注 */}
+      <div className="absolute bottom-1 right-2 text-[10px] text-neutral-400 pointer-events-none select-none">
+        分析窗口 0–{VT_X_MAX}s
+      </div>
     </div>
   )
 }
