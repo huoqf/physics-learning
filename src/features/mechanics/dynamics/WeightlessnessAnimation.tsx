@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateElevatorMotion } from '@/physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
@@ -45,7 +46,7 @@ export default function WeightlessnessAnimation() {
     }))
   )
   // 备用尺寸设为高瘦型电梯井尺寸
-  const [containerRef, canvasSize] = useCanvasSize({ width: 230, height: 440 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
 
   const { a = 2, g = 9.8, m = 50, advancedMode = 0, modelIdx = 0 } = params
 
