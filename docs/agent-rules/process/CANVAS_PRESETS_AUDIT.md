@@ -1,7 +1,7 @@
 # CANVAS_PRESETS 迁移盘点
 
 > 核查日期：2026-06-23
-> 总调用点：72（含 2 JSDoc 示例 + 7 已迁移 + 63 硬编码）
+> 总调用点：77（51 已迁移 + 26 硬编码）
 
 ---
 
@@ -15,11 +15,11 @@
 | wide | 700×400 | 匀加速、感应等 |
 | mediumWide | 650×400 | 欧姆定律、弹簧力等（本次新增） |
 | square | 600×600 | 圆周运动、向心力等 |
-| extraWide | 800×440 | 变压器、法拉第等 |
+| extraWide | 800×440 | 变压器、法拉第、光学等 |
 
 ---
 
-## A. 已迁移至现有 preset（36 调用点）
+## A. 已迁移至现有 preset（51 调用点）
 
 ### tall: 700×450（10）
 
@@ -59,20 +59,34 @@
 | electromagnetism/dc-circuits/ClosedCircuit.tsx | 15 |
 | thermodynamics/kinematics/IntermolecularForcesAnimation.tsx | 35 |
 
-### wide: 700×400（10）
+### wide: 700×400（15）
 
 | 文件 | 行 |
 |---|---|
-| mechanics/kinematics/UniformAccelerationAnimation.tsx | 39 |
-| electromagnetism/induction/LenzsLaw.tsx | 19 |
-| electromagnetism/induction/InductionPhenomenon.tsx | 31 |
-| electromagnetism/magnetism/ChargeInBField.tsx | 29 |
-| mechanics/dynamics/NewtonSecondAnimation.tsx | 24 |
-| thermodynamics/kinematics/BrownianMotion.tsx | 61 |
-| mechanics/force-motion/ForceMotionSandbox.tsx | 76 |
-| mechanics/kinematics/VelocityAnimationStrip.tsx | 34 |
-| mechanics/kinematics/AccelerationAnimation.tsx | 42 |
 | mechanics/kinematics/VelocityAnimation.tsx | 29 |
+| mechanics/kinematics/AccelerationAnimation.tsx | 42 |
+| mechanics/kinematics/UniformAccelerationAnimation.tsx | 40 |
+| mechanics/dynamics/NewtonSecondAnimation.tsx | 24 |
+| mechanics/force-motion/ForceMotionSandbox.tsx | 76 |
+| electromagnetism/magnetism/ChargeInBField.tsx | 29 |
+| electromagnetism/induction/InductionPhenomenon.tsx | 31 |
+| electromagnetism/induction/LenzsLaw.tsx | 19 |
+| electromagnetism/induction/ACValues.tsx | 320 |
+| thermodynamics/kinematics/BrownianMotion.tsx | 61 |
+| thermodynamics/gasLaws/GasLawsAnimation.tsx | 66 |
+| thermodynamics/gasLaws/ClapeyronAnimation.tsx | 62 |
+| thermodynamics/gasLaws/ClapeyronCenterExtra.tsx | 25 |
+| thermodynamics/secondLaw/SecondLawAnimation.tsx | 52 |
+| thermodynamics/firstLaw/FirstLawAnimation.tsx | 78 |
+
+### mediumWide: 650×400（4）
+
+| 文件 | 行 |
+|---|---|
+| electromagnetism/dc-circuits/OhmLaw.tsx | 11 |
+| mechanics/dynamics/SpringForceAnimation.tsx | 21 |
+| mechanics/dynamics/WeightlessnessCenterExtra.tsx | 11 |
+| mechanics/dynamics/NewtonSecondCenterExtra.tsx | 11 |
 
 ### square: 600×600（3）
 
@@ -82,83 +96,36 @@
 | mechanics/circular/CircularMotionAnimation.tsx | 72 |
 | electromagnetism/magnetism/BoundaryMagneticField/SimulationView.tsx | 12 |
 
-### extraWide: 800×440（1）
+### extraWide: 800×440（6）
 
 | 文件 | 行 |
 |---|---|
 | electromagnetism/induction/FaradayLaw.tsx | 24 |
+| electromagnetism/induction/PowerTransmission.tsx | 53 |
+| optics/thin-lens/ThinLensAnimation.tsx | 158 |
+| optics/total-internal-reflection/TIRAnimation.tsx | 37 |
+| optics/refraction/RefractionAnimation.tsx | 41 |
+| optics/reflection/ReflectionAnimation.tsx | 30 |
 
 ---
 
-## B. 新增 mediumWide 后迁移（4 调用点）
-
-| 文件 | 行 | 尺寸 |
-|---|---|---|
-| electromagnetism/dc-circuits/OhmLaw.tsx | 11 | 650×400 |
-| mechanics/dynamics/SpringForceAnimation.tsx | 21 | 650×400 |
-| mechanics/dynamics/WeightlessnessCenterExtra.tsx | 11 | 650×400 |
-| mechanics/dynamics/NewtonSecondCenterExtra.tsx | 11 | 650×400 |
-
----
-
-## C. 不替换（35 调用点）
-
-### 已迁移（7，CANVAS_PRESETS.xxx 语法）
-
-| 文件 | preset |
-|---|---|
-| electromagnetism/induction/ACValues.tsx | wide |
-| thermodynamics/gasLaws/GasLawsAnimation.tsx | wide |
-| thermodynamics/gasLaws/ClapeyronAnimation.tsx | wide |
-| electromagnetism/induction/PowerTransmission.tsx | extraWide |
-| thermodynamics/secondLaw/SecondLawAnimation.tsx | wide |
-| thermodynamics/firstLaw/FirstLawAnimation.tsx | wide |
-| thermodynamics/gasLaws/ClapeyronCenterExtra.tsx | wide |
+## B. 硬编码（26 调用点）
 
 ### 物理坐标系占位符 100×100（5）
 
-| 文件 | 行 |
-|---|---|
-| mechanics/kinematics/ProjectileAnimation.tsx | 55 |
-| mechanics/kinematics/ObliqueThrowAnimation.tsx | 57 |
-| mechanics/kinematics/FreeFallDripAnimation.tsx | 67 |
-| mechanics/kinematics/VerticalThrowAnimation.tsx | 37 |
-| mechanics/kinematics/FreeFallAnimation.tsx | 66 |
-
-### 动态传入（5）
+物理坐标系基准值，组件内动态缩放，无需 preset 化。
 
 | 文件 | 行 | 说明 |
 |---|---|---|
-| optics/thin-lens/ThinLensAnimation.tsx | 158 | VIEW_WIDTH×VIEW_HEIGHT |
-| optics/total-internal-reflection/TIRAnimation.tsx | 37 | VIEW_WIDTH×VIEW_HEIGHT |
-| optics/refraction/RefractionAnimation.tsx | 41 | VIEW_WIDTH×VIEW_HEIGHT |
-| optics/reflection/ReflectionAnimation.tsx | 30 | VIEW_WIDTH×VIEW_HEIGHT |
-| components/Chart/BasePhysicsChart.tsx | 45 | initW×initH（props） |
+| mechanics/kinematics/ProjectileAnimation.tsx | 55 | 抛体运动 |
+| mechanics/kinematics/ObliqueThrowAnimation.tsx | 57 | 斜抛运动 |
+| mechanics/kinematics/FreeFallDripAnimation.tsx | 67 | 自由落体水滴 |
+| mechanics/kinematics/VerticalThrowAnimation.tsx | 37 | 竖直上抛 |
+| mechanics/kinematics/FreeFallAnimation.tsx | 66 | 自由落体 |
 
-### 唯一尺寸（10）
+### compact 子场景（5）
 
-| 文件 | 行 | 尺寸 |
-|---|---|---|
-| mechanics/force-motion/ForceMotionTripleChart.tsx | 274 | 900×200 |
-| mechanics/energy/WorkAnimation.tsx | 56 | 700×650 |
-| electromagnetism/electrostatics/ChargeInEField.tsx | 27 | 700×460 |
-| mechanics/dynamics/WeightlessnessAnimation.tsx | 48 | 230×440 |
-| electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField.tsx | 11 | 800×600 |
-| electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField.tsx | 68 | 200×180 |
-| electromagnetism/induction/Transformer.tsx | 126 | 760×440 |
-| electromagnetism/induction/ACGeneration.tsx | 33 | 820×480 |
-| electromagnetism/dc-circuits/CircuitAnalysis.tsx | 58 | 650×360 |
-| thermodynamics/kinematics/IntermolecularForcesCenterExtra.tsx | 12 | 600×300 |
-| mechanics/dynamics/SpringForceCenterExtra.tsx | 11 | 420×315 |
-
-### 待确认（2）
-
-| 文件 | 行 | 尺寸 | 说明 |
-|---|---|---|---|
-| mechanics/dynamics/FrictionAnimation.tsx | 26 | 650×420 | 差 standard 50px 宽 |
-| electromagnetism/induction/CuttingEMF.tsx | 203 | 700×440 | 差 extraWide 100px 宽 |
-
-### compact 相关（5，暂不处理）
+CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 
 | 文件 | 行 | 尺寸 |
 |---|---|---|
@@ -168,17 +135,50 @@
 | mechanics/dynamics/FrictionCenterExtra.tsx | 10 | 400×200 |
 | electromagnetism/dc-circuits/CircuitAnalysisCenterExtra.tsx | 10 | 400×200 |
 
+### 唯一尺寸（12）
+
+各有特殊布局需求，不适合强行统一。
+
+| 文件 | 行 | 尺寸 | 原因 |
+|---|---|---|---|
+| mechanics/force-motion/ForceMotionTripleChart.tsx | 274 | 900×200 | 三图横排 |
+| mechanics/energy/WorkAnimation.tsx | 56 | 700×650 | 上下分区（图表+场景） |
+| electromagnetism/electrostatics/ChargeInEField.tsx | 27 | 700×460 | 差 tall 10px 高 |
+| mechanics/dynamics/WeightlessnessAnimation.tsx | 48 | 230×440 | 窄高（失重单轨） |
+| electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField.tsx | 11 | 800×600 | 主场景 |
+| electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField.tsx | 68 | 200×180 | 小缩略图 |
+| electromagnetism/induction/Transformer.tsx | 126 | 760×440 | 差 extraWide 40px |
+| electromagnetism/induction/ACGeneration.tsx | 33 | 820×480 | 差 extraWide 20px |
+| electromagnetism/dc-circuits/CircuitAnalysis.tsx | 58 | 650×360 | 电路图特殊比例 |
+| thermodynamics/kinematics/IntermolecularForcesCenterExtra.tsx | 12 | 600×300 | 紧凑图 |
+| mechanics/dynamics/SpringForceCenterExtra.tsx | 11 | 420×315 | 弹簧力紧凑图 |
+| mechanics/dynamics/ConnectedBodiesAnimation.tsx | 53 | 600×400 | 连接体 |
+| mechanics/kinematics/VelocityAnimationStrip.tsx | 34 | 700×200 | 横条场景 |
+
+### 待确认（2）
+
+| 文件 | 行 | 尺寸 | 说明 |
+|---|---|---|---|
+| mechanics/dynamics/FrictionAnimation.tsx | 26 | 650×420 | 差 standard 50px 宽 |
+| electromagnetism/induction/CuttingEMF.tsx | 203 | 700×440 | 差 extraWide 100px 宽 |
+
+### 动态传入（1）
+
+| 文件 | 行 | 说明 |
+|---|---|---|
+| components/Chart/BasePhysicsChart.tsx | 45 | initW×initH（props 传入） |
+
 ---
 
 ## 汇总
 
 | 分类 | 调用点 | 操作 |
 |---|---:|---|
-| A. 精确映射现有 preset | 36 | ✅ 已替换 |
-| B. 新增 mediumWide | 4 | ✅ 已替换 |
-| C. 不替换 | 28 | 保持现状 |
-| **合计** | **68** | — |
+| A. 已迁移至 preset | 51 | ✅ 已替换 |
+| B. 硬编码 | 26 | 保持现状 |
+| **合计** | **77** | — |
 
-- 硬编码从 68 降至 28（减少 59%）
+- 已迁移从 7 增至 51（新增 44）
+- 硬编码从 70 降至 26（减少 63%）
 - CANVAS_PRESETS 从 6 个增至 7 个（新增 mediumWide）
 - tsc 零错误通过
