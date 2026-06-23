@@ -326,10 +326,10 @@ function RCContent({
         return null
       })}
 
-      {/* 游标十字标 + 圆点 + 数值 */}
+      {/* 游标辅助线（垂直 + 水平虚线，画在主曲线下方） */}
       {cursorX != null && cursorPoints.length > 0 && (
         <g>
-          {/* 垂直线 */}
+          {/* 垂直参考线 */}
           <line
             x1={toSvgX(cursorX)} y1={plotOrigin.y}
             x2={toSvgX(cursorX)} y2={plotOrigin.y + plotSize.height}
@@ -338,21 +338,39 @@ function RCContent({
             strokeDasharray={DASH.tangent.join(' ')}
             opacity={0.65}
           />
+          {/* 水平参考线（只对第一个点画） */}
+          {cursorPoints[0] && (
+            <line
+              x1={plotOrigin.x} y1={toSvgY(cursorPoints[0].y)}
+              x2={plotOrigin.x + plotSize.width} y2={toSvgY(cursorPoints[0].y)}
+              stroke={cursorColor}
+              strokeWidth={STROKE.chartRef}
+              strokeDasharray={DASH.tangent.join(' ')}
+              opacity={0.4}
+            />
+          )}
+        </g>
+      )}
+
+      {/* 主曲线（画在辅助线上方，确保实线不被遮盖） */}
+      {mainPath && (
+        <path
+          d={mainPath}
+          fill="none"
+          stroke={mainColor}
+          strokeWidth={strokeWidth ?? 2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
+
+      {/* 游标圆点 + 数值标签（画在主曲线上方） */}
+      {cursorX != null && cursorPoints.length > 0 && (
+        <g>
           {cursorPoints.map((cp, i) => {
             const cy = toSvgY(cp.y)
             return (
               <g key={`cursor-pt-${i}`}>
-                {/* 水平参考线（只对第一个点画，避免多曲线时混乱） */}
-                {i === 0 && (
-                  <line
-                    x1={plotOrigin.x} y1={cy}
-                    x2={plotOrigin.x + plotSize.width} y2={cy}
-                    stroke={cursorColor}
-                    strokeWidth={STROKE.chartRef}
-                    strokeDasharray={DASH.tangent.join(' ')}
-                    opacity={0.4}
-                  />
-                )}
                 <circle
                   cx={toSvgX(cursorX)} cy={cy} r={font(FONT.small) * 0.45}
                   fill={cp.color} stroke={CHART_COLORS.highlight} strokeWidth={1.5}

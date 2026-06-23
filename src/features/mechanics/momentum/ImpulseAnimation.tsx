@@ -260,10 +260,11 @@ export default function ImpulseAnimation() {
     return pts
   }, [FMax, t_total, forceTypeStr])
 
-  // 裁剪后的曲线（仅绘制当前已发生的部分，实现渐进出现）
+  // 渐进绘制：基础模式只有 2 个端点，filter 会退化为 1 点导致不渲染；
+  // 直接用 currentT 构造末端点，保证始终有 2 个点可成线
   const basicFtPoints = useMemo(
-    () => basicFtPointsAll.filter((p) => p.x <= currentT_basic + 1e-9),
-    [basicFtPointsAll, currentT_basic]
+    () => [{ x: 0, y: F }, { x: currentT_basic, y: F }],
+    [F, currentT_basic]
   )
 
   const advancedFtPoints = useMemo(
