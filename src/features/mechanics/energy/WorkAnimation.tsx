@@ -2,6 +2,7 @@ import { useCanvasSize, useViewport } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OPACITY, withAlpha, CANVAS_COLORS } from '@/theme/physics'
 import {
   calculateWorkBasic,
@@ -53,7 +54,7 @@ export default function WorkAnimation() {
       showGrid: s.showGrid,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 650 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
   const { font } = canvasSize
 
   const mode = (params.mode ?? 0) as 0 | 1
