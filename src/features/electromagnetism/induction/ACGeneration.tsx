@@ -13,6 +13,7 @@ import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, FONT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { MagneticPoles, RotatingCoil } from '@/components/Physics'
@@ -30,7 +31,7 @@ export default function ACGeneration() {
       speed: s.speed,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 820, height: 480 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide)
   const { font } = canvasSize
 
   const mode = params.mode ?? 0

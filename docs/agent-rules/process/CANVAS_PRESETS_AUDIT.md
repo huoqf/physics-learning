@@ -1,7 +1,7 @@
 # CANVAS_PRESETS 迁移盘点
 
 > 核查日期：2026-06-23
-> 总调用点：77（52 已迁移 + 25 硬编码）
+> 总调用点：77（53 已迁移 + 24 硬编码）
 
 ---
 
@@ -19,7 +19,7 @@
 
 ---
 
-## A. 已迁移至现有 preset（52 调用点）
+## A. 已迁移至现有 preset（53 调用点）
 
 ### tall: 700×450（11）
 
@@ -97,12 +97,13 @@
 | mechanics/circular/CircularMotionAnimation.tsx | 72 |
 | electromagnetism/magnetism/BoundaryMagneticField/SimulationView.tsx | 12 |
 
-### extraWide: 800×440（6）
+### extraWide: 800×440（7）
 
 | 文件 | 行 |
 |---|---|
 | electromagnetism/induction/FaradayLaw.tsx | 24 |
 | electromagnetism/induction/PowerTransmission.tsx | 53 |
+| electromagnetism/induction/ACGeneration.tsx | 33 |
 | optics/thin-lens/ThinLensAnimation.tsx | 158 |
 | optics/total-internal-reflection/TIRAnimation.tsx | 37 |
 | optics/refraction/RefractionAnimation.tsx | 41 |
@@ -110,7 +111,7 @@
 
 ---
 
-## B. 硬编码（25 调用点）
+## B. 硬编码（24 调用点）
 
 ### 物理坐标系占位符 100×100（5）
 
@@ -136,7 +137,7 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 | mechanics/dynamics/FrictionCenterExtra.tsx | 10 | 400×200 |
 | electromagnetism/dc-circuits/CircuitAnalysisCenterExtra.tsx | 10 | 400×200 |
 
-### 唯一尺寸（11）
+### 唯一尺寸（10）
 
 各有特殊布局需求，不适合强行统一。
 
@@ -148,7 +149,6 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 | electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField.tsx | 11 | 800×600 | 主场景 |
 | electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField.tsx | 68 | 200×180 | 小缩略图 |
 | electromagnetism/induction/Transformer.tsx | 126 | 760×440 | 差 extraWide 40px |
-| electromagnetism/induction/ACGeneration.tsx | 33 | 820×480 | 差 extraWide 20px |
 | electromagnetism/dc-circuits/CircuitAnalysis.tsx | 58 | 650×360 | 电路图特殊比例 |
 | thermodynamics/kinematics/IntermolecularForcesCenterExtra.tsx | 12 | 600×300 | 紧凑图 |
 | mechanics/dynamics/SpringForceCenterExtra.tsx | 11 | 420×315 | 弹簧力紧凑图 |
@@ -174,11 +174,11 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 
 | 分类 | 调用点 | 操作 |
 |---|---:|---|
-| A. 已迁移至 preset | 52 | ✅ 已替换 |
-| B. 硬编码 | 25 | 保持现状 |
+| A. 已迁移至 preset | 53 | ✅ 已替换 |
+| B. 硬编码 | 24 | 保持现状 |
 | **合计** | **77** | — |
 
-- 已迁移从 7 增至 52（新增 45）
-- 硬编码从 70 降至 25（减少 64%）
+- 已迁移从 7 增至 53（新增 46）
+- 硬编码从 70 降至 24（减少 66%）
 - CANVAS_PRESETS 从 6 个增至 7 个（新增 mediumWide）
 - tsc 零错误通过
