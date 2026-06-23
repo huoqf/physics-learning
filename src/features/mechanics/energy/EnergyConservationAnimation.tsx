@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, ENERGY_COLORS, SCENE_COLORS, STROKE, CHART_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { KatexFormula } from '@/components/UI'
+import { RelationChart } from '@/components/Chart'
 import {
   precomputePendulumTrajectory,
   precomputeValleyTrajectory,
@@ -66,7 +67,6 @@ export default function EnergyConservationAnimation() {
   const padding = canvasSize.width * 0.06
   const wallX = canvasSize.width - padding * 0.8
   // 上半部 52% 为图表，下半部 48% 为动画
-  const chartTop = canvasSize.height * 0.06
   const chartBottom = canvasSize.height * 0.52
   const chartLeft = padding * 1.5
   const chartRight = canvasSize.width - padding
@@ -217,8 +217,7 @@ export default function EnergyConservationAnimation() {
   const barTot_H = (state.Etot / maxEnergy) * maxBarH
 
   // ── 图表曲线 Y 映射 ──
-  const toChartX = (t: number) => chartLeft + (t / tMax) * chartWidth
-  const toChartY = (energyVal: number) => chartBottom - (energyVal / maxEnergy) * (chartBottom - chartTop - 15)
+  // toChartX/toChartY removed: chart mapping handled by RelationChart
 
   const visiblePoints = useMemo(
     () => trajectory.filter(p => p.t <= time + 0.01),
@@ -314,103 +313,47 @@ export default function EnergyConservationAnimation() {
         </defs>
 
         {/* ══════════════════════════════════════════════ */}
-        {/* 上半部分：图表区 */}
+        {/* 上半部分：图表区（RelationChart） */}
         {/* ══════════════════════════════════════════════ */}
-        <g>
-          <text x={chartLeft} y={chartTop - 4} fontSize={font(10)} fill={PHYSICS_COLORS.mechanicalEnergy} fontWeight="bold">
-            {mode === 0 ? 'E-t (单摆动能/重力势能及机械能消长守恒图)' : 'E-t (山谷阻尼动能/势能/内能及总能量守恒图)'}
-          </text>
-          
-          <line x1={chartLeft} y1={chartTop} x2={chartLeft} y2={chartBottom} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-          <line x1={chartLeft} y1={chartBottom} x2={chartRight} y2={chartBottom} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-
-          {/* 刻度 */}
-          {[0, 0.5, 1].map((frac, i) => {
-            const energyVal = maxEnergy * frac
-            const y = toChartY(energyVal)
-            return (
-              <g key={`ep-y-${i}`}>
-                <line x1={chartLeft - 3} y1={y} x2={chartLeft} y2={y} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                <text x={chartLeft - 5} y={y + 3} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">
-                  {energyVal.toFixed(0)}J
-                </text>
-              </g>
-            )
-          })}
-          {[0, 0.5, 1].map((frac, i) => {
-            const tVal = tMax * frac
-            const xPos = toChartX(tVal)
-            return (
-              <g key={`ep-x-${i}`}>
-                <line x1={xPos} y1={chartBottom} x2={xPos} y2={chartBottom + 3} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                <text x={xPos} y={chartBottom + 9} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="middle">{tVal.toFixed(0)}s</text>
-              </g>
-            )
-          })}
-
-          {/* 图例 */}
-          <g transform={`translate(${chartRight - (mode === 0 ? 180 : 235)}, ${chartTop - 12})`}>
-            <line x1={0} y1={3} x2={8} y2={3} stroke={PHYSICS_COLORS.potentialEnergy} strokeWidth={1.5} />
-            <text x={12} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>Ep (重力势能)</text>
-
-            <line x1={65} y1={3} x2={73} y2={3} stroke={PHYSICS_COLORS.kineticEnergy} strokeWidth={1.5} />
-            <text x={77} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>Ek (动能)</text>
-
-            {mode === 1 && (
-              <>
-                <line x1={115} y1={3} x2={123} y2={3} stroke={ENERGY_COLORS.internalEnergy} strokeWidth={1.5} />
-                <text x={127} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>Q (内能/摩擦热)</text>
-              </>
-            )}
-
-            <line x1={mode === 0 ? 115 : 180} y1={3} x2={mode === 0 ? 123 : 188} y2={3} stroke={colors.neutral[500]} strokeWidth={1.5} strokeDasharray="3,1" />
-            <text x={mode === 0 ? 127 : 192} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>
-              {mode === 0 ? 'E (总机械能)' : 'E总 (总能量)'}
-            </text>
-          </g>
-
-          {/* 曲线绘制 */}
-          {visiblePoints.length >= 2 && (
-            <g>
-              {/* 1. 重力势能 Ep */}
-              <polyline
-                points={visiblePoints.map(p => `${toChartX(p.t)},${toChartY(p.Ep)}`).join(' ')}
-                fill="none"
-                stroke={PHYSICS_COLORS.potentialEnergy}
-                strokeWidth={STROKE.chartMain}
-              />
-              {/* 2. 动能 Ek */}
-              <polyline
-                points={visiblePoints.map(p => `${toChartX(p.t)},${toChartY(p.Ek)}`).join(' ')}
-                fill="none"
-                stroke={PHYSICS_COLORS.kineticEnergy}
-                strokeWidth={STROKE.chartMain}
-              />
-              {/* 3. 内能 Q (仅在山谷模式下绘制) */}
-              {mode === 1 && (
-                <polyline
-                  points={visiblePoints.map(p => `${toChartX(p.t)},${toChartY(p.Q)}`).join(' ')}
-                  fill="none"
-                  stroke={ENERGY_COLORS.internalEnergy}
-                  strokeWidth={STROKE.chartMain}
-                />
-              )}
-              {/* 4. 总能量 Etot */}
-              <polyline
-                points={visiblePoints.map(p => `${toChartX(p.t)},${toChartY(p.Etot)}`).join(' ')}
-                fill="none"
-                stroke={colors.neutral[500]}
-                strokeWidth={1.2}
-                strokeDasharray="4,2"
-              />
-            </g>
-          )}
-
-          {/* 同步亮点 */}
-          <circle cx={toChartX(state.t)} cy={toChartY(state.Ep)} r={3} fill={PHYSICS_COLORS.potentialEnergy} stroke={colors.neutral.white} strokeWidth={1} />
-          <circle cx={toChartX(state.t)} cy={toChartY(state.Ek)} r={3} fill={PHYSICS_COLORS.kineticEnergy} stroke={colors.neutral.white} strokeWidth={1} />
-          {mode === 1 && <circle cx={toChartX(state.t)} cy={toChartY(state.Q)} r={3} fill={ENERGY_COLORS.internalEnergy} stroke={colors.neutral.white} strokeWidth={1} />}
-        </g>
+        <foreignObject x={chartLeft - 30} y={0} width={chartWidth + 30} height={chartBottom + 15}>
+          <div style={{ width: '100%', height: '100%' }}>
+            <RelationChart
+              points={visiblePoints.map(p => ({ x: p.t, y: p.Ep }))}
+              additionalSeries={[
+                {
+                  points: visiblePoints.map(p => ({ x: p.t, y: p.Ek })),
+                  label: 'Ek (动能)',
+                  series: 'secondary',
+                  color: PHYSICS_COLORS.kineticEnergy,
+                },
+                ...(mode === 1
+                  ? [{
+                      points: visiblePoints.map(p => ({ x: p.t, y: p.Q })),
+                      label: 'Q (内能)',
+                      series: 'secondary' as const,
+                      color: ENERGY_COLORS.internalEnergy,
+                    }]
+                  : []),
+                {
+                  points: visiblePoints.map(p => ({ x: p.t, y: p.Etot })),
+                  label: mode === 0 ? 'E (总机械能)' : 'E总 (总能量)',
+                  series: 'secondary' as const,
+                  color: colors.neutral[500],
+                  strokeDasharray: [4, 2],
+                  strokeWidth: 1.2,
+                },
+              ]}
+              xDomain={[0, tMax]}
+              yDomain={[0, maxEnergy]}
+              xLabel="t (s)"
+              yLabel="E (J)"
+              title={mode === 0 ? 'E-t (单摆动能/重力势能及机械能消长守恒图)' : 'E-t (山谷阻尼动能/势能/内能及总能量守恒图)'}
+              color={PHYSICS_COLORS.potentialEnergy}
+              cursorX={state.t}
+              cursorLabel={() => null}
+            />
+          </div>
+        </foreignObject>
 
         {/* ══════════════════════════════════════════════ */}
         {/* 下半部分：动画区 */}

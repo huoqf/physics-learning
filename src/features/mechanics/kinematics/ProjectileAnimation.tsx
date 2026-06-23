@@ -13,6 +13,7 @@ import {
   CANVAS_STYLE,
 } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { VelocityTimeChart } from '@/components/Chart'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { Ball } from '@/components/Physics/Ball'
 import { createSceneScale } from '@/scene/SceneScale'
@@ -162,19 +163,11 @@ export default function ProjectileAnimation() {
   const vtX = canvasSize.width - vtWidth - 20
   const vtY = 20
 
-  const vtInnerPad = { left: 40, right: 15, top: 22, bottom: 25 }
-  const vtInnerW = vtWidth - vtInnerPad.left - vtInnerPad.right
-  const vtInnerH = vtHeight - vtInnerPad.top - vtInnerPad.bottom
-
   const vtXMax = maxTime * 1.15
-  // Y 轴范围：vy 为负值（向下），vx 为正值；需覆盖 [vyMin, vxMax]
   const vtVyMin = -g * maxTime * 1.15
   const vtVxMax = v0x * 1.15
   const vtVMin = Math.min(vtVyMin, 0)
   const vtVMax = Math.max(vtVxMax, 0)
-
-  const vtToX = useCallback((t: number) => vtInnerPad.left + (t / vtXMax) * vtInnerW, [vtXMax, vtInnerW])
-  const vtToY = useCallback((v: number) => vtInnerPad.top + vtInnerH - ((v - vtVMin) / (vtVMax - vtVMin)) * vtInnerH, [vtVMin, vtVMax, vtInnerH])
 
   // ── 5. 动态轨迹曲线路径生成 ─────────────────────────────
   const activeT = Math.min(effectiveTime, groundTime)
@@ -202,51 +195,37 @@ export default function ProjectileAnimation() {
     return pts.length > 1 ? `M ${pts.join(' L ')}` : ''
   }, [trajectory.vacuumPoints, activeTVac, scale, originX, originY, showDoubleTrack])
 
-  // v-t 图分速度路径
-  const vtData = useMemo(() => {
-    const getVxPath = (pts: typeof trajectory.points, maxT: number) => {
-      const arr: string[] = []
-      for (const pt of pts) {
-        if (pt.t > maxT + 1e-5) break
-        arr.push(`${vtToX(pt.t)},${vtToY(pt.vx)}`)
-      }
-      return arr.length > 1 ? `M ${arr.join(' L ')}` : ''
-    }
-    const getVyPath = (pts: typeof trajectory.points, maxT: number) => {
-      const arr: string[] = []
-      for (const pt of pts) {
-        if (pt.t > maxT + 1e-5) break
-        arr.push(`${vtToX(pt.t)},${vtToY(pt.vy)}`)
-      }
-      return arr.length > 1 ? `M ${arr.join(' L ')}` : ''
-    }
-
-    return {
-      vxFull: getVxPath(trajectory.points, groundTime),
-      vxActive: getVxPath(trajectory.points, activeT),
-      vyFull: getVyPath(trajectory.points, groundTime),
-      vyActive: getVyPath(trajectory.points, activeT),
-      // 真空对照
-      vxFullVac: getVxPath(trajectory.vacuumPoints, groundTimeVac),
-      vxActiveVac: getVxPath(trajectory.vacuumPoints, activeTVac),
-      vyFullVac: getVyPath(trajectory.vacuumPoints, groundTimeVac),
-      vyActiveVac: getVyPath(trajectory.vacuumPoints, activeTVac),
-    }
-  }, [trajectory, groundTime, groundTimeVac, activeT, activeTVac, vtToX, vtToY])
+  // v-t 图 VelocityTimeChart 数据
+  const vtPointsVx = useMemo(
+    () => trajectory.points.filter(pt => pt.t <= activeT + 1e-5).map(pt => ({ t: pt.t, v: pt.vx })),
+    [trajectory.points, activeT]
+  )
+  const vtDomainVx = useMemo(
+    () => trajectory.points.map(pt => ({ t: pt.t, v: pt.vx })),
+    [trajectory.points]
+  )
+  const vtPointsVy = useMemo(
+    () => trajectory.points.filter(pt => pt.t <= activeT + 1e-5).map(pt => ({ t: pt.t, v: pt.vy })),
+    [trajectory.points, activeT]
+  )
+  const vtDomainVy = useMemo(
+    () => trajectory.points.map(pt => ({ t: pt.t, v: pt.vy })),
+    [trajectory.points]
+  )
 
   // ── 6. 时间游标拖拽手势解算 ─────────────────────────────
   const isDraggingRef = useRef(false)
 
   const handleDragTime = useCallback(
     (clientX: number, svgRect: DOMRect) => {
-      const clickX = clientX - svgRect.left - vtX - vtInnerPad.left
-      const tClick = (clickX / vtInnerW) * vtXMax
+      const clickX = clientX - svgRect.left - vtX - 4
+      const tClick = (clickX / (vtWidth - 8)) * vtXMax
       if (tClick >= 0 && tClick <= maxTime) {
         setTime(tClick)
         setIsPlaying(false)
       }
     },
-    [vtX, vtInnerPad, vtInnerW, vtXMax, maxTime, setTime, setIsPlaying]
+    [vtX, vtWidth, vtXMax, maxTime, setTime, setIsPlaying]
   )
 
   const handleSvgMouseMove = useCallback(
@@ -450,9 +429,8 @@ export default function ProjectileAnimation() {
           <text x={ballCanvas.cx} y={groundY - 18} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.displacement} fontWeight="bold" textAnchor="middle">落地</text>
         )}
 
-        {/* ========== 右上角：画中画悬浮 v-t 图像 ========== */}
+        {/* ========== 右上角：画中画悬浮 v-t 图像（VelocityTimeChart） ========== */}
         <g transform={`translate(${vtX}, ${vtY})`}>
-          {/* 科学浮动毛玻璃面板 (半透明 + 阴影) */}
           <rect
             width={vtWidth}
             height={vtHeight}
@@ -462,98 +440,38 @@ export default function ProjectileAnimation() {
             strokeWidth={0.8}
             filter="drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12))"
           />
-          <text x={vtWidth / 2} y={15} fontSize={font(8)} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
-            速度分量-时间 (v-t 图)
-          </text>
 
-          {/* 图像坐标轴 */}
-          <line x1={vtInnerPad.left} y1={vtInnerPad.top + vtInnerH} x2={vtInnerPad.left + vtInnerW} y2={vtInnerPad.top + vtInnerH} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} />
-          <line x1={vtInnerPad.left} y1={vtInnerPad.top} x2={vtInnerPad.left} y2={vtInnerPad.top + vtInnerH} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} />
+          <foreignObject x={4} y={4} width={vtWidth - 8} height={vtHeight - 8} style={{ pointerEvents: 'none' }}>
+            <div style={{ width: '100%', height: '100%' }}>
+              <VelocityTimeChart
+                mode="animated"
+                points={vtPointsVx}
+                domainPoints={vtDomainVx}
+                additionalSeries={[
+                  {
+                    points: vtPointsVy,
+                    domainPoints: vtDomainVy,
+                    label: 'vᵧ',
+                    series: 'secondary',
+                  },
+                ]}
+                currentTime={effectiveTime}
+                tMax={vtXMax}
+                vRange={[vtVMin, vtVMax]}
+                title="速度分量-时间 (v-t 图)"
+                showCursor={!isLanded}
+                showGrid={false}
+              />
+            </div>
+          </foreignObject>
 
-          {/* v = 0 零线（水平参考线） */}
-          {vtVMin < 0 && (
-            <line x1={vtInnerPad.left} y1={vtToY(0)} x2={vtInnerPad.left + vtInnerW} y2={vtToY(0)} stroke={CHART_COLORS.axisLine} strokeWidth={0.5} strokeDasharray="3,2" />
-          )}
-
-          {/* Y 轴刻度（含负值） */}
-          {(() => {
-            const range = vtVMax - vtVMin
-            const step = range / 4
-            const ticks: number[] = []
-            for (let v = vtVMin; v <= vtVMax + 1e-9; v += step) {
-              ticks.push(v)
-            }
-            return ticks.map((val, i) => {
-              const yPos = vtToY(val)
-              return (
-                <g key={`vt-y-${i}`}>
-                  <line x1={vtInnerPad.left - 3} y1={yPos} x2={vtInnerPad.left} y2={yPos} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} />
-                  <text x={vtInnerPad.left - 6} y={yPos + 2.5} fontSize={font(7)} fill={CHART_COLORS.labelText} textAnchor="end">{val.toFixed(1)}</text>
-                </g>
-              )
-            })
-          })()}
-          <text x={vtInnerPad.left - 5} y={vtInnerPad.top - 6} fontSize={font(7)} fill={CHART_COLORS.labelText} textAnchor="middle">v (m/s)</text>
-
-          {/* X 轴刻度 */}
-          {[0, 0.5, 1.0].map((ratio) => {
-            const val = vtXMax * ratio
-            const xPos = vtToX(val)
-            return (
-              <g key={`vt-x-${ratio}`}>
-                <line x1={xPos} y1={vtInnerPad.top + vtInnerH} x2={xPos} y2={vtInnerPad.top + vtInnerH + 3} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} />
-                <text x={xPos} y={vtInnerPad.top + vtInnerH + 9} fontSize={font(7)} fill={CHART_COLORS.labelText} textAnchor="middle">{val.toFixed(2)}s</text>
-              </g>
-            )
-          })}
-
-          {/* 速度分量曲线绘制 */}
-          {/* 真空对照 (虚线) */}
-          {showDoubleTrack && vtData.vxFullVac && (
-            <path d={vtData.vxFullVac} fill="none" stroke={PHYSICS_COLORS.velocityX} strokeWidth={0.8} strokeDasharray="2,2" opacity={0.4} />
-          )}
-          {showDoubleTrack && vtData.vyFullVac && (
-            <path d={vtData.vyFullVac} fill="none" stroke={PHYSICS_COLORS.velocityY} strokeWidth={0.8} strokeDasharray="2,2" opacity={0.4} />
-          )}
-
-          {/* 有阻力实际曲线 */}
-          {vtData.vxFull && (
-            <path d={vtData.vxFull} fill="none" stroke={PHYSICS_COLORS.velocityX} strokeWidth={0.8} opacity={0.3} />
-          )}
-          {vtData.vxActive && (
-            <path d={vtData.vxActive} fill="none" stroke={PHYSICS_COLORS.velocityX} strokeWidth={1.5} />
-          )}
-
-          {vtData.vyFull && (
-            <path d={vtData.vyFull} fill="none" stroke={PHYSICS_COLORS.velocityY} strokeWidth={0.8} opacity={0.3} />
-          )}
-          {vtData.vyActive && (
-            <path d={vtData.vyActive} fill="none" stroke={PHYSICS_COLORS.velocityY} strokeWidth={1.5} />
-          )}
-
-          {/* 分速度文本标签 */}
-          <text x={vtInnerPad.left + vtInnerW - 3} y={vtToY(currentState.vx) - 5} fontSize={font(8)} fill={PHYSICS_COLORS.velocityX} textAnchor="end" fontWeight="bold">vₓ</text>
-          <text x={vtInnerPad.left + vtInnerW - 3} y={vtToY(currentState.vy) + 9} fontSize={font(8)} fill={PHYSICS_COLORS.velocityY} textAnchor="end" fontWeight="bold">vᵧ</text>
-
-          {/* 指针拖动触发热区，方便鼠标左右拖动 */}
           <rect
-            x={vtInnerPad.left}
-            y={vtInnerPad.top}
-            width={vtInnerW}
-            height={vtInnerH}
+            x={0} y={0}
+            width={vtWidth} height={vtHeight}
             fill="transparent"
             className="cursor-ew-resize"
             onMouseDown={handleChartMouseDown}
           />
-
-          {/* 时间线游标指针与圆点 */}
-          {!isLanded && (
-            <g>
-              <line x1={vtToX(effectiveTime)} y1={vtInnerPad.top} x2={vtToX(effectiveTime)} y2={vtInnerPad.top + vtInnerH} stroke={CHART_COLORS.reference} strokeWidth={0.8} strokeDasharray="2,1" />
-              <circle cx={vtToX(effectiveTime)} cy={vtToY(currentState.vx)} r={2.5} fill={PHYSICS_COLORS.velocityX} />
-              <circle cx={vtToX(effectiveTime)} cy={vtToY(currentState.vy)} r={2.5} fill={PHYSICS_COLORS.velocityY} />
-            </g>
-          )}
         </g>
       </svg>
     </div>

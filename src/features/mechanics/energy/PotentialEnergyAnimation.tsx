@@ -4,6 +4,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+import { RelationChart } from '@/components/Chart'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CHART_COLORS } from '@/theme/physics'
@@ -92,9 +93,7 @@ export default function PotentialEnergyAnimation() {
   const barAreaBottom = chartAreaTop + (chartAreaBottom - chartAreaTop) * 0.32
 
   // 下部 E-t 图像区域 (62%)
-  const etAreaTop = barAreaBottom + (chartAreaBottom - chartAreaTop) * 0.06
   const etAreaBottom = chartAreaBottom
-  const etAreaMidY = (etAreaTop + etAreaBottom) / 2
 
   // 左侧动画区布局
   const animLeft = padding
@@ -290,20 +289,17 @@ export default function PotentialEnergyAnimation() {
   // 对比柱基准线 Y 坐标
   const barBaseY = barAreaTop + 18 + maxBarH + 5
 
-  // ── 图表曲线参数 ──
-  const toChartX = (t: number) => chartLeft + (t / tMax) * chartWidth
+  // ── 图表数据（RelationChart 接管坐标映射） ──
+  const gravityMaxE = m * g * 10
+  const springMaxE = 0.5 * k * 3.2 * 3.2
 
-  // 模式1抛物线映射
-  const toSpringChartX = (xVal: number) => chartLeft + ((xVal + 3.2) / 6.4) * chartWidth
-  const toSpringChartY = (energyVal: number) => {
-    const maxE = 0.5 * k * 3.2 * 3.2
-    return etAreaBottom - (energyVal / (maxE * 1.15)) * (etAreaBottom - etAreaTop - 20)
-  }
-
-  const toGravityChartY = (energyVal: number) => {
-    const maxE = m * g * 10
-    return etAreaMidY - (energyVal / (maxE * 1.15)) * (etAreaMidY - etAreaTop)
-  }
+  // 弹簧抛物线完整曲线数据
+  const springCurvePoints = useMemo(() => {
+    return Array.from({ length: 81 }, (_, idx) => {
+      const xVal = -3.2 + (idx * 6.4) / 80
+      return { x: xVal, y: 0.5 * k * xVal * xVal }
+    })
+  }, [k])
 
   const visiblePoints = useMemo(
     () => trajectory.filter(p => p.t <= time + 0.01),
@@ -659,155 +655,59 @@ export default function PotentialEnergyAnimation() {
         {/* ══════════════════════════════════════════════ */}
 
         {mode === 0 ? (
-          // ─── 重力势能 E-t 曲线图 ───
-          <g>
-            <text x={chartLeft} y={etAreaTop - 2} fontSize={smallFont} fill={PHYSICS_COLORS.potentialEnergy} fontWeight="bold">
-              E-t (重力势能、动能及机械能变化 图像)
-            </text>
-
-            {/* y 轴零势能中线 */}
-            <line x1={chartLeft} y1={etAreaMidY} x2={chartRight} y2={etAreaMidY} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} />
-            <line x1={chartLeft} y1={etAreaTop} x2={chartLeft} y2={etAreaBottom} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-            <line x1={chartLeft} y1={etAreaBottom} x2={chartRight} y2={etAreaBottom} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-
-            {/* 刻度 */}
-            {[-1, 0, 1].map((frac, i) => {
-              const energyVal = m * g * 10 * frac
-              const y = toGravityChartY(energyVal)
-              return (
-                <g key={`ep-y-${i}`}>
-                  <line x1={chartLeft - 3} y1={y} x2={chartLeft} y2={y} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={chartLeft - 5} y={y + 3} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">
-                    {energyVal.toFixed(0)}J
-                  </text>
-                </g>
-              )
-            })}
-            {[0, 0.5, 1].map((frac, i) => {
-              const tVal = tMax * frac
-              const xPos = toChartX(tVal)
-              return (
-                <g key={`ep-x-${i}`}>
-                  <line x1={xPos} y1={etAreaBottom} x2={xPos} y2={etAreaBottom + 3} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={xPos} y={etAreaBottom + 9} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="middle">{tVal.toFixed(0)}s</text>
-                </g>
-              )
-            })}
-
-            {/* 图例 */}
-            <g transform={`translate(${chartRight - 160}, ${etAreaTop - 12})`}>
-              <line x1={0} y1={3} x2={8} y2={3} stroke={PHYSICS_COLORS.potentialEnergy} strokeWidth={1.5} />
-              <text x={12} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>Ep</text>
-
-              <line x1={35} y1={3} x2={43} y2={3} stroke={PHYSICS_COLORS.kineticEnergy} strokeWidth={1.5} />
-              <text x={47} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>Ek</text>
-
-              <line x1={70} y1={3} x2={78} y2={3} stroke={colors.neutral[500]} strokeWidth={1.5} strokeDasharray="3,1" />
-              <text x={82} y={5} fontSize={font(7)} fill={CHART_COLORS.tickLabel}>E总</text>
-            </g>
-
-            {/* 曲线绘制 */}
-            {visiblePoints.length >= 2 && (
-              <g>
-                <polyline
-                  points={visiblePoints.map(p => `${toChartX(p.t)},${toGravityChartY(p.Ep)}`).join(' ')}
-                  fill="none"
-                  stroke={PHYSICS_COLORS.potentialEnergy}
-                  strokeWidth={STROKE.chartMain}
-                />
-                <polyline
-                  points={visiblePoints.map(p => `${toChartX(p.t)},${toGravityChartY(p.Ek)}`).join(' ')}
-                  fill="none"
-                  stroke={PHYSICS_COLORS.kineticEnergy}
-                  strokeWidth={STROKE.chartMain}
-                />
-                <polyline
-                  points={visiblePoints.map(p => `${toChartX(p.t)},${toGravityChartY(p.Ep + p.Ek)}`).join(' ')}
-                  fill="none"
-                  stroke={colors.neutral[500]}
-                  strokeWidth={1.2}
-                  strokeDasharray="4,2"
-                />
-              </g>
-            )}
-
-            {/* 动点同步亮点 */}
-            <circle cx={toChartX(state.t)} cy={toGravityChartY(state.Ep)} r={3} fill={PHYSICS_COLORS.potentialEnergy} stroke={colors.neutral.white} strokeWidth={1} />
-            <circle cx={toChartX(state.t)} cy={toGravityChartY(state.Ek)} r={3} fill={PHYSICS_COLORS.kineticEnergy} stroke={colors.neutral.white} strokeWidth={1} />
-          </g>
+          // ─── 重力势能 E-t 曲线图（RelationChart） ───
+          <foreignObject x={chartLeft - 30} y={barAreaBottom} width={chartWidth + 50} height={etAreaBottom - barAreaBottom + 10}>
+            <div style={{ width: '100%', height: '100%' }}>
+              <RelationChart
+                points={visiblePoints.map(p => ({ x: p.t, y: p.Ep }))}
+                additionalSeries={[
+                  {
+                    points: visiblePoints.map(p => ({ x: p.t, y: p.Ek })),
+                    label: 'Ek',
+                    series: 'secondary',
+                    color: PHYSICS_COLORS.kineticEnergy,
+                  },
+                  {
+                    points: visiblePoints.map(p => ({ x: p.t, y: p.Ep + p.Ek })),
+                    label: 'E总',
+                    series: 'secondary',
+                    color: colors.neutral[500],
+                    strokeDasharray: [4, 2],
+                    strokeWidth: 1.2,
+                  },
+                ]}
+                xDomain={[0, tMax]}
+                yDomain={[-gravityMaxE * 1.15, gravityMaxE * 1.15]}
+                xLabel="t (s)"
+                yLabel="E (J)"
+                title="E-t (重力势能、动能及机械能变化 图像)"
+                color={PHYSICS_COLORS.potentialEnergy}
+                cursorX={state.t}
+                cursorLabel={() => null}
+                showZeroLine
+              />
+            </div>
+          </foreignObject>
         ) : (
-          // ─── 弹性势能 Ep-x 抛物线图 ───
-          <g>
-            <text x={chartLeft} y={etAreaTop - 2} fontSize={smallFont} fill={PHYSICS_COLORS.potentialElastic} fontWeight="bold">
-              E_p-x (弹性势能抛物线对称图像)
-            </text>
-
-            <line x1={chartLeft} y1={etAreaBottom} x2={chartRight} y2={etAreaBottom} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-            <line x1={toSpringChartX(0)} y1={etAreaTop} x2={toSpringChartX(0)} y2={etAreaBottom} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} />
-
-            {/* 抛物线横坐标刻度 */}
-            {[-3, -2, -1, 0, 1, 2, 3].map((xVal, i) => {
-              const xPos = toSpringChartX(xVal)
-              return (
-                <g key={`sp-x-${i}`}>
-                  <line x1={xPos} y1={etAreaBottom} x2={xPos} y2={etAreaBottom + 3} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={xPos} y={etAreaBottom + 9} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="middle">
-                    {xVal > 0 ? '+' : ''}{xVal}m
-                  </text>
-                </g>
-              )
-            })}
-
-            {/* 抛物线纵轴能量刻度 */}
-            {[0, 0.5, 1].map((frac, i) => {
-              const maxE = 0.5 * k * 3.2 * 3.2
-              const eVal = maxE * frac
-              const y = toSpringChartY(eVal)
-              return (
-                <g key={`sp-y-${i}`}>
-                  <line x1={chartLeft - 3} y1={y} x2={chartLeft} y2={y} stroke={CHART_COLORS.tickMark} strokeWidth={0.5} />
-                  <text x={chartLeft - 5} y={y + 3} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">
-                    {eVal.toFixed(0)}J
-                  </text>
-                </g>
-              )
-            })}
-
-            {/* 完整的背景抛物线 */}
-            <path
-              d={Array.from({ length: 81 }).map((_, idx) => {
-                const xVal = -3.2 + (idx * 6.4) / 80
-                const epVal = 0.5 * k * xVal * xVal
-                const cmd = idx === 0 ? 'M' : 'L'
-                return `${cmd} ${toSpringChartX(xVal)} ${toSpringChartY(epVal)}`
-              }).join(' ')}
-              fill="none"
-              stroke={PHYSICS_COLORS.potentialElastic}
-              strokeWidth={1.5}
-              opacity={0.35}
-            />
-
-            {/* 当前高亮滚球亮点 */}
-            <circle
-              cx={toSpringChartX(state.pos)}
-              cy={toSpringChartY(state.Ep)}
-              r={4.5}
-              fill={PHYSICS_COLORS.potentialElastic}
-              stroke={colors.neutral.white}
-              strokeWidth={1.2}
-              className="transition-all duration-75 ease-out"
-            />
-
-            {/* 对称标示辅助虚线 */}
-            {Math.abs(state.pos) > 0.05 && (
-              <g stroke={colors.neutral[300]} strokeWidth={0.6} strokeDasharray="2,2">
-                <line x1={toSpringChartX(state.pos)} y1={toSpringChartY(state.Ep)} x2={chartLeft} y2={toSpringChartY(state.Ep)} />
-                <line x1={toSpringChartX(state.pos)} y1={toSpringChartY(state.Ep)} x2={toSpringChartX(state.pos)} y2={etAreaBottom} />
-                <line x1={toSpringChartX(-state.pos)} y1={toSpringChartY(state.Ep)} x2={toSpringChartX(-state.pos)} y2={etAreaBottom} />
-                <circle cx={toSpringChartX(-state.pos)} cy={toSpringChartY(state.Ep)} r={2.5} fill="none" stroke={PHYSICS_COLORS.potentialElastic} opacity={0.6} />
-              </g>
-            )}
-          </g>
+          // ─── 弹性势能 Ep-x 抛物线图（RelationChart） ───
+          <foreignObject x={chartLeft - 30} y={barAreaBottom} width={chartWidth + 50} height={etAreaBottom - barAreaBottom + 10}>
+            <div style={{ width: '100%', height: '100%' }}>
+              <RelationChart
+                points={springCurvePoints}
+                xDomain={[-3.2, 3.2]}
+                yDomain={[0, springMaxE * 1.15]}
+                xLabel="x (m)"
+                yLabel="E_p (J)"
+                title="E_p-x (弹性势能抛物线对称图像)"
+                color={PHYSICS_COLORS.potentialElastic}
+                cursorX={state.pos}
+                cursorLabel={() => null}
+                markers={Math.abs(state.pos) > 0.05 ? [
+                  { axis: 'point', x: -state.pos, y: state.Ep, label: '对称点', color: PHYSICS_COLORS.potentialElastic },
+                ] : []}
+              />
+            </div>
+          </foreignObject>
         )}
 
         {/* ══════════════════════════════════════════════ */}

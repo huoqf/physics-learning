@@ -1,12 +1,11 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { useAnimationStore } from '@/stores'
 import { calculatePoliceChase } from '@/physics'
-import { PHYSICS_COLORS, CHART_COLORS, STROKE, DASH, FONT } from '@/theme/physics'
-import { SVG_FILTER } from '@/theme/physics/canvasStyle'
+import { PHYSICS_COLORS, STROKE, DASH, FONT } from '@/theme/physics'
 import { AnimationControls, Card } from '@/components/UI'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { SportsCar } from '@/components/Physics/SportsCar'
+import { RelationChart, VelocityTimeChart } from '@/components/Chart'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
@@ -179,23 +178,9 @@ export default function AccelerationCenterExtra() {
 
   // ── 布局计算 ──
   const padding = containerSize.width * LAYOUT.CHART_PADDING_RATIO
-  const chartHeight = containerSize.height * LAYOUT.CHART_HEIGHT_RATIO
   const animHeight = containerSize.height * LAYOUT.ANIMATION_HEIGHT_RATIO
-  const chartWidth = (containerSize.width - padding * 3) / 2
 
-  // ── x-t 图坐标转换 ──
-  const xtYMax = Math.max(deltaX0 + vA * effectiveMaxTime, deltaX0 + 50)
-  const xtYMin = -10
-  const toXtX = (t: number) => padding + (t / effectiveMaxTime) * chartWidth
-  const toXtY = (x: number) => chartHeight * 0.85 - ((x - xtYMin) / (xtYMax - xtYMin)) * chartHeight * 0.7
-
-  // ── v-t 图坐标转换 ──
-  const vtYMax = Math.max(vA, vMax) * 1.2
-  const vtYMin = -2
-  const toVtX = (t: number) => padding * 2 + chartWidth + (t / effectiveMaxTime) * chartWidth
-  const toVtY = (v: number) => chartHeight * 0.85 - ((v - vtYMin) / (vtYMax - vtYMin)) * chartHeight * 0.7
-
-  // ── x-t 图数据 ──
+  // ── x-t 图数据（原始） ──
   const xtCarData = useMemo(() => {
     const pts: { t: number; x: number }[] = []
     for (let t = 0; t <= effectiveMaxTime; t += 0.1) {
@@ -209,25 +194,18 @@ export default function AccelerationCenterExtra() {
     const t1 = t0 + vMax / aB
     for (let t = 0; t <= effectiveMaxTime; t += 0.1) {
       let x: number
-      if (t < t0) {
-        x = 0
-      } else if (t < t1) {
-        x = 0.5 * aB * (t - t0) * (t - t0)
-      } else {
-        const xB_t1 = 0.5 * aB * (t1 - t0) * (t1 - t0)
-        x = xB_t1 + vMax * (t - t1)
-      }
+      if (t < t0) { x = 0 }
+      else if (t < t1) { x = 0.5 * aB * (t - t0) * (t - t0) }
+      else { x = 0.5 * aB * (t1 - t0) * (t1 - t0) + vMax * (t - t1) }
       pts.push({ t, x })
     }
     return pts
-  }, [vA, deltaX0, t0, aB, vMax, effectiveMaxTime])
+  }, [t0, aB, vMax, effectiveMaxTime])
 
-  // ── v-t 图数据 ──
+  // ── v-t 图数据（原始） ──
   const vtCarData = useMemo(() => {
     const pts: { t: number; v: number }[] = []
-    for (let t = 0; t <= effectiveMaxTime; t += 0.1) {
-      pts.push({ t, v: vA })
-    }
+    for (let t = 0; t <= effectiveMaxTime; t += 0.1) { pts.push({ t, v: vA }) }
     return pts
   }, [vA, effectiveMaxTime])
 
@@ -236,17 +214,47 @@ export default function AccelerationCenterExtra() {
     const t1 = t0 + vMax / aB
     for (let t = 0; t <= effectiveMaxTime; t += 0.1) {
       let v: number
-      if (t < t0) {
-        v = 0
-      } else if (t < t1) {
-        v = aB * (t - t0)
-      } else {
-        v = vMax
-      }
+      if (t < t0) { v = 0 }
+      else if (t < t1) { v = aB * (t - t0) }
+      else { v = vMax }
       pts.push({ t, v })
     }
     return pts
   }, [t0, aB, vMax, effectiveMaxTime])
+
+  // ── x-t 图数据（RelationChart 格式: {x, y}） ──
+  const xtCarPoints = useMemo(
+    () => xtCarData.filter(p => p.t <= time + 0.01).map(p => ({ x: p.t, y: p.x })),
+    [xtCarData, time]
+  )
+  const xtPolicePoints = useMemo(
+    () => xtPoliceData.filter(p => p.t <= time + 0.01).map(p => ({ x: p.t, y: p.x })),
+    [xtPoliceData, time]
+  )
+
+  // ── v-t 图数据（VelocityTimeChart 格式） ──
+  const vtCarPoints = useMemo(
+    () => vtCarData.filter(p => p.t <= time + 0.01).map(p => ({ t: p.t, v: p.v })),
+    [vtCarData, time]
+  )
+  const vtCarDomain = useMemo(
+    () => vtCarData.map(p => ({ t: p.t, v: p.v })),
+    [vtCarData]
+  )
+  const vtPolicePoints = useMemo(
+    () => vtPoliceData.filter(p => p.t <= time + 0.01).map(p => ({ t: p.t, v: p.v })),
+    [vtPoliceData, time]
+  )
+  const vtPoliceDomain = useMemo(
+    () => vtPoliceData.map(p => ({ t: p.t, v: p.v })),
+    [vtPoliceData]
+  )
+
+  // ── 坐标范围 ──
+  const xtYMax = Math.max(deltaX0 + vA * effectiveMaxTime, deltaX0 + 50)
+  const xtYMin = -10
+  const vtYMax = Math.max(vA, vMax) * 1.2
+  const vtYMin = -2
 
   // ── 公路动画布局 ──
   const roadY = animHeight * LAYOUT.ROAD_Y_RATIO
@@ -277,272 +285,52 @@ export default function AccelerationCenterExtra() {
     <div ref={containerRef} className="w-full h-full flex flex-col">
       {/* ══════════ 上层：并列双图表 ══════════ */}
       <div className="flex-1 flex flex-row relative">
-        <svg width={containerSize.width} height={chartHeight} className="absolute inset-0">
-          <defs>
-            {/* 发光滤镜 */}
-            <filter id="glow-blue" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation={SVG_FILTER.glow.stdDeviation} result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-            <filter id="glow-red" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation={SVG_FILTER.glow.stdDeviation} result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-            {/* 箭头标记 */}
-            <VectorDefs colors={[PHYSICS_COLORS.velocity]} />
-          </defs>
+        {/* ── 左：x-t 图象（RelationChart） ── */}
+        <div className="w-1/2 h-full p-1">
+          <RelationChart
+            points={xtCarPoints}
+            additionalSeries={[
+              {
+                points: xtPolicePoints,
+                label: '警车',
+                series: 'secondary',
+                color: PHYSICS_COLORS.velocity,
+              },
+            ]}
+            xDomain={[0, effectiveMaxTime]}
+            yDomain={[xtYMin, xtYMax]}
+            xLabel="t / s"
+            yLabel="x / m"
+            title="位移 - 时间图象 (x-t)"
+            color={PHYSICS_COLORS.displacement}
+            cursorX={time > 0 ? time : undefined}
+            cursorLabel={() => null}
+            showGrid
+          />
+        </div>
 
-          {/* ── 左：x-t 图象 ── */}
-          {(() => {
-            const chartLeft = padding
-            const chartTop = chartHeight * 0.12
-            const chartBottom = chartHeight * 0.85
-
-            return (
-              <g>
-                {/* 标题 */}
-                <text x={chartLeft + chartWidth / 2} y={chartHeight * 0.08} fontSize={FONT.labelBold} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
-                  位移 - 时间图象 (x-t)
-                </text>
-
-                {/* 坐标轴 */}
-                <line x1={chartLeft} y1={chartTop} x2={chartLeft} y2={chartBottom} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axis} />
-                <line x1={chartLeft} y1={toXtY(0)} x2={chartLeft + chartWidth} y2={toXtY(0)} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axisBold} />
-
-                {/* X 轴刻度 */}
-                {Array.from({ length: 5 }).map((_, i) => {
-                  const t = Math.round((effectiveMaxTime * i) / 4)
-                  return (
-                    <g key={`xt-xt-${t}`}>
-                      <line x1={toXtX(t)} y1={toXtY(0) - 3} x2={toXtX(t)} y2={toXtY(0) + 3} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-                      <text x={toXtX(t)} y={toXtY(0) + 14} fontSize={FONT.small} textAnchor="middle" fill={CHART_COLORS.tickLabel} fontWeight="600">{t}</text>
-                    </g>
-                  )
-                })}
-
-                {/* Y 轴刻度 */}
-                {[0, 100, 200, 300, 400, 500].map(x => {
-                  if (x > xtYMax) return null
-                  return (
-                    <g key={`xt-yt-${x}`}>
-                      <line x1={chartLeft - 3} y1={toXtY(x)} x2={chartLeft} y2={toXtY(x)} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-                      <text x={chartLeft - 7} y={toXtY(x) + 3} fontSize={FONT.small} textAnchor="end" fill={CHART_COLORS.tickLabel} fontWeight="600">{x}</text>
-                    </g>
-                  )
-                })}
-
-                {/* 轴标签 */}
-                <text x={chartLeft + chartWidth - 5} y={toXtY(0) - 8} fontSize={FONT.annotation} fill={CHART_COLORS.labelText} fontWeight="bold">t / s</text>
-                <text x={chartLeft - 10} y={chartTop - 5} fontSize={FONT.annotation} fill={CHART_COLORS.labelText} textAnchor="end" fontWeight="bold">x / m</text>
-
-                {/* 轿车 x-t 曲线 */}
-                <path
-                  d={'M ' + xtCarData.filter(p => p.t <= time).map(p => `${toXtX(p.t)},${toXtY(p.x)}`).join(' L ')}
-                  fill="none"
-                  stroke={PHYSICS_COLORS.displacement}
-                  strokeWidth={STROKE.chartMain}
-                />
-
-                {/* 警车 x-t 曲线 */}
-                <path
-                  d={'M ' + xtPoliceData.filter(p => p.t <= time).map(p => `${toXtX(p.t)},${toXtY(p.x)}`).join(' L ')}
-                  fill="none"
-                  stroke={PHYSICS_COLORS.velocity}
-                  strokeWidth={STROKE.chartMain}
-                />
-
-                {/* 时间扫描线 */}
-                {time > 0 && (
-                  <line
-                    x1={toXtX(time)}
-                    y1={chartTop}
-                    x2={toXtX(time)}
-                    y2={chartBottom}
-                    stroke={PHYSICS_COLORS.velocity}
-                    strokeWidth={STROKE.reference}
-                    strokeDasharray={DASH.guide.join(' ')}
-                    opacity={0.5}
-                  />
-                )}
-
-                {/* 当前状态点 */}
-                {time > 0 && (
-                  <g>
-                    <circle cx={toXtX(time)} cy={toXtY(state.xA + deltaX0)} r={4} fill={PHYSICS_COLORS.displacement} stroke="white" strokeWidth={2} />
-                    <circle cx={toXtX(time)} cy={toXtY(state.xB)} r={4} fill={PHYSICS_COLORS.velocity} stroke="white" strokeWidth={2} />
-                  </g>
-                )}
-
-                {/* 相遇点蓝色光圈 */}
-                {state.tMeet !== null && state.tMeet <= time && (
-                  <g>
-                    <circle cx={toXtX(state.tMeet)} cy={toXtY(state.xA + deltaX0)} r={8} fill="none" stroke={PHYSICS_COLORS.velocity} strokeWidth={2} filter="url(#glow-blue)">
-                      <animate attributeName="r" values="6;10;6" dur="1.5s" repeatCount="indefinite" />
-                      <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite" />
-                    </circle>
-                  </g>
-                )}
-              </g>
-            )
-          })()}
-
-          {/* ── 右：v-t 图象 ── */}
-          {(() => {
-            const chartLeft = padding * 2 + chartWidth
-            const chartTop = chartHeight * 0.12
-            const chartBottom = chartHeight * 0.85
-
-            // 阴影面积路径
-            const shadePath = (() => {
-              if (time <= 0) return ''
-              const pts: string[] = []
-              const dt = 0.1
-              for (let t = 0; t <= time + 0.001; t += dt) {
-                const tt = Math.min(t, time)
-                const vCar = vA
-                let vPol: number
-                const t1 = t0 + vMax / aB
-                if (tt < t0) {
-                  vPol = 0
-                } else if (tt < t1) {
-                  vPol = aB * (tt - t0)
-                } else {
-                  vPol = vMax
-                }
-                const yTop = toVtY(Math.max(vCar, vPol))
-                if (pts.length === 0) {
-                  pts.push(`M ${toVtX(tt)},${yTop}`)
-                } else {
-                  pts.push(`L ${toVtX(tt)},${yTop}`)
-                }
-              }
-              // 闭合到底部
-              for (let t = time; t >= -0.001; t -= 0.1) {
-                const tt = Math.max(t, 0)
-                const vCar = vA
-                let vPol: number
-                const t1 = t0 + vMax / aB
-                if (tt < t0) {
-                  vPol = 0
-                } else if (tt < t1) {
-                  vPol = aB * (tt - t0)
-                } else {
-                  vPol = vMax
-                }
-                const yBot = toVtY(Math.min(vCar, vPol))
-                pts.push(`L ${toVtX(tt)},${yBot}`)
-              }
-              pts.push('Z')
-              return pts.join(' ')
-            })()
-
-            return (
-              <g>
-                {/* 标题 */}
-                <text x={chartLeft + chartWidth / 2} y={chartHeight * 0.08} fontSize={FONT.labelBold} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
-                  速度 - 时间图象 (v-t)
-                </text>
-
-                {/* 坐标轴 */}
-                <line x1={chartLeft} y1={chartTop} x2={chartLeft} y2={chartBottom} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axis} />
-                <line x1={chartLeft} y1={toVtY(0)} x2={chartLeft + chartWidth} y2={toVtY(0)} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axisBold} />
-
-                {/* X 轴刻度 */}
-                {Array.from({ length: 5 }).map((_, i) => {
-                  const t = Math.round((effectiveMaxTime * i) / 4)
-                  return (
-                    <g key={`vt-xt-${t}`}>
-                      <line x1={toVtX(t)} y1={toVtY(0) - 3} x2={toVtX(t)} y2={toVtY(0) + 3} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-                      <text x={toVtX(t)} y={toVtY(0) + 14} fontSize={FONT.small} textAnchor="middle" fill={CHART_COLORS.tickLabel} fontWeight="600">{t}</text>
-                    </g>
-                  )
-                })}
-
-                {/* Y 轴刻度 */}
-                {[0, 10, 20, 30, 40, 50, 60].map(v => {
-                  if (v > vtYMax) return null
-                  return (
-                    <g key={`vt-yt-${v}`}>
-                      <line x1={chartLeft - 3} y1={toVtY(v)} x2={chartLeft} y2={toVtY(v)} stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick} />
-                      <text x={chartLeft - 7} y={toVtY(v) + 3} fontSize={FONT.small} textAnchor="end" fill={CHART_COLORS.tickLabel} fontWeight="600">{v}</text>
-                    </g>
-                  )
-                })}
-
-                {/* 轴标签 */}
-                <text x={chartLeft + chartWidth - 5} y={toVtY(0) - 8} fontSize={FONT.annotation} fill={CHART_COLORS.labelText} fontWeight="bold">t / s</text>
-                <text x={chartLeft - 10} y={chartTop - 5} fontSize={FONT.annotation} fill={CHART_COLORS.labelText} textAnchor="end" fontWeight="bold">v / (m/s)</text>
-
-                {/* 阴影面积（位移差） */}
-                {shadePath && (
-                  <path d={shadePath} fill={PHYSICS_COLORS.accelerationY} opacity={0.2} />
-                )}
-
-                {/* 轿车 v-t 曲线 */}
-                <path
-                  d={'M ' + vtCarData.filter(p => p.t <= time).map(p => `${toVtX(p.t)},${toVtY(p.v)}`).join(' L ')}
-                  fill="none"
-                  stroke={PHYSICS_COLORS.velocity}
-                  strokeWidth={STROKE.chartMain}
-                />
-
-                {/* 警车 v-t 曲线 */}
-                <path
-                  d={'M ' + vtPoliceData.filter(p => p.t <= time).map(p => `${toVtX(p.t)},${toVtY(p.v)}`).join(' L ')}
-                  fill="none"
-                  stroke={PHYSICS_COLORS.acceleration}
-                  strokeWidth={STROKE.chartMain}
-                />
-
-                {/* 时间扫描线 */}
-                {time > 0 && (
-                  <line
-                    x1={toVtX(time)}
-                    y1={chartTop}
-                    x2={toVtX(time)}
-                    y2={chartBottom}
-                    stroke={PHYSICS_COLORS.velocity}
-                    strokeWidth={STROKE.reference}
-                    strokeDasharray={DASH.guide.join(' ')}
-                    opacity={0.5}
-                  />
-                )}
-
-                {/* 共速点红色光圈 */}
-                {state.tEqual > 0 && state.tEqual <= time && (
-                  <g>
-                    <circle cx={toVtX(state.tEqual)} cy={toVtY(vA)} r={8} fill="none" stroke={PHYSICS_COLORS.acceleration} strokeWidth={2} filter="url(#glow-red)">
-                      <animate attributeName="r" values="6;10;6" dur="1.5s" repeatCount="indefinite" />
-                      <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite" />
-                    </circle>
-                    {/* 向下引垂直虚线 */}
-                    <line
-                      x1={toVtX(state.tEqual)}
-                      y1={toVtY(vA)}
-                      x2={toVtX(state.tEqual)}
-                      y2={toVtY(0)}
-                      stroke={PHYSICS_COLORS.acceleration}
-                      strokeWidth={STROKE.reference}
-                      strokeDasharray={DASH.reference.join(' ')}
-                      opacity={0.6}
-                    />
-                    <text x={toVtX(state.tEqual)} y={toVtY(0) + 18} fontSize={FONT.small} fill={PHYSICS_COLORS.acceleration} textAnchor="middle" fontWeight="bold">
-                      t={state.tEqual.toFixed(1)}s
-                    </text>
-                  </g>
-                )}
-              </g>
-            )
-          })()}
-        </svg>
+        {/* ── 右：v-t 图象（VelocityTimeChart） ── */}
+        <div className="w-1/2 h-full p-1">
+          <VelocityTimeChart
+            mode="animated"
+            points={vtCarPoints}
+            domainPoints={vtCarDomain}
+            additionalSeries={[
+              {
+                points: vtPolicePoints,
+                domainPoints: vtPoliceDomain,
+                label: '警车',
+                series: 'secondary',
+              },
+            ]}
+            currentTime={time}
+            tMax={effectiveMaxTime}
+            vRange={[vtYMin, vtYMax]}
+            title="速度 - 时间图象 (v-t)"
+            showCursor={time > 0}
+          />
+        </div>
       </div>
-
       {/* ══════════ 下层：真实公路追击动画 ══════════ */}
       <div className="flex-1 relative">
         <svg width={containerSize.width} height={animHeight} className="absolute inset-0">

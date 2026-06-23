@@ -4,6 +4,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateCircularMotion } from '@/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { RelationChart } from '@/components/Chart'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 import {
@@ -71,7 +72,7 @@ export default function CentripetalAnimation() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize({ width: 600, height: 600 })
-  const { font } = canvasSize
+  // canvasSize.font removed: chart text now handled by RelationChart
 
   const {
     r = 2,
@@ -127,29 +128,15 @@ export default function CentripetalAnimation() {
 
   const cardInnerPad = CENTRIPETAL_LAYOUT.waveCardPadding
   const cardInnerW = cardWidth - cardInnerPad.left - cardInnerPad.right
-  const cardInnerH = cardHeight - cardInnerPad.top - cardInnerPad.bottom
 
-  const toCardX = useCallback(
-    (acc: number) => cardInnerPad.left + (acc / CENTRIPETAL_CHART_RANGE.aMax) * cardInnerW,
-    [cardInnerW, cardInnerPad.left]
+  // ── 4. RelationChart 数据：F=ma 线性曲线 ──────────────────
+  const faPoints = useMemo(
+    () => [
+      { x: 0, y: 0 },
+      { x: CENTRIPETAL_CHART_RANGE.aMax, y: CENTRIPETAL_CHART_RANGE.aMax * m },
+    ],
+    [m],
   )
-
-  const toCardY = useCallback(
-    (force: number) => {
-      const bottomY = cardInnerPad.top + cardInnerH
-      return bottomY - (force / CENTRIPETAL_CHART_RANGE.fMax) * cardInnerH
-    },
-    [cardInnerH, cardInnerPad.top]
-  )
-
-  // ── 4. 卡片 F=ma 动态射线路径 ─────────────────────────────
-  const lineFmaD = useMemo(() => {
-    const x1 = toCardX(0)
-    const y1 = toCardY(0)
-    const x2 = toCardX(CENTRIPETAL_CHART_RANGE.aMax)
-    const y2 = toCardY(CENTRIPETAL_CHART_RANGE.aMax * m)
-    return `M ${x1},${y1} L ${x2},${y2}`
-  }, [m, toCardX, toCardY])
 
   // ── 5. 右上角图表手势拖拽联动 ─────────────────────────────
   const isDraggingRef = useRef(false)
@@ -347,7 +334,7 @@ export default function CentripetalAnimation() {
           </g>
         )}
 
-        {/* ========== 右上角：画中画悬浮 F-a 图表 ========== */}
+        {/* ========== 右上角：画中画悬浮 F-a 图表（RelationChart） ========== */}
         {showFaCard && (
           <g transform={`translate(${cardX}, ${cardY})`}>
             {/* 毛玻璃卡片背景 */}
@@ -360,142 +347,40 @@ export default function CentripetalAnimation() {
               strokeWidth={0.8}
               filter="drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12))"
             />
-            <text
-              x={cardWidth / 2}
-              y={16}
-              fontSize={font(8)}
-              fill={CHART_COLORS.titleText}
-              textAnchor="middle"
-              fontWeight="bold"
+
+            {/* RelationChart 主体 */}
+            <foreignObject
+              x={4} y={4}
+              width={cardWidth - 8} height={cardHeight - 8}
+              style={{ pointerEvents: 'none' }}
             >
-              动力学联动 (F_c = m · a_c)
-            </text>
-
-            {/* 坐标轴 */}
-            <line
-              x1={cardInnerPad.left}
-              y1={cardInnerPad.top + cardInnerH}
-              x2={cardInnerPad.left + cardInnerW}
-              y2={cardInnerPad.top + cardInnerH}
-              stroke={CHART_COLORS.axisLine}
-              strokeWidth={0.8}
-            />
-            <line
-              x1={cardInnerPad.left}
-              y1={cardInnerPad.top}
-              x2={cardInnerPad.left}
-              y2={cardInnerPad.top + cardInnerH}
-              stroke={CHART_COLORS.axisLine}
-              strokeWidth={0.8}
-            />
-
-            {/* X轴刻度：加速度 a_c */}
-            {[0, 50, 100].map((val) => {
-              const xPos = toCardX(val)
-              return (
-                <g key={`fa-x-${val}`}>
-                  <line
-                    x1={xPos}
-                    y1={cardInnerPad.top + cardInnerH}
-                    x2={xPos}
-                    y2={cardInnerPad.top + cardInnerH + 3}
-                    stroke={CHART_COLORS.axisLine}
-                    strokeWidth={0.8}
-                  />
-                  <text
-                    x={xPos}
-                    y={cardInnerPad.top + cardInnerH + 9}
-                    fontSize={font(7)}
-                    fill={CHART_COLORS.labelText}
-                    textAnchor="middle"
-                  >
-                    {val}
-                  </text>
-                </g>
-              )
-            })}
-            <text x={cardInnerPad.left + cardInnerW} y={cardInnerPad.top + cardInnerH + 8} fontSize={font(7)} fill={CHART_COLORS.labelText} textAnchor="start"> a (m/s²)</text>
-
-            {/* Y轴刻度：力 F_c */}
-            {[0, 250, 500].map((val) => {
-              const yPos = toCardY(val)
-              return (
-                <g key={`fa-y-${val}`}>
-                  <line
-                    x1={cardInnerPad.left - 3}
-                    y1={yPos}
-                    x2={cardInnerPad.left}
-                    y2={yPos}
-                    stroke={CHART_COLORS.axisLine}
-                    strokeWidth={0.8}
-                  />
-                  <text
-                    x={cardInnerPad.left - 6}
-                    y={yPos + 2.5}
-                    fontSize={font(7)}
-                    fill={CHART_COLORS.labelText}
-                    textAnchor="end"
-                  >
-                    {val}
-                  </text>
-                </g>
-              )
-            })}
-            <text x={cardInnerPad.left - 5} y={cardInnerPad.top - 6} fontSize={font(7)} fill={CHART_COLORS.labelText} textAnchor="middle">F (N)</text>
-
-            {/* 绘制 F = ma 斜率射线 */}
-            {lineFmaD && (
-              <path
-                d={lineFmaD}
-                fill="none"
-                stroke={PHYSICS_COLORS.forceNet}
-                strokeWidth={1.5}
-              />
-            )}
-            <text
-              x={toCardX(85)}
-              y={toCardY(85 * m) - 5}
-              fontSize={font(7)}
-              fill={PHYSICS_COLORS.labelText}
-              fontWeight="bold"
-            >
-              m = {m.toFixed(1)}kg
-            </text>
+              <div style={{ width: '100%', height: '100%' }}>
+                <RelationChart
+                  points={faPoints}
+                  xDomain={[0, CENTRIPETAL_CHART_RANGE.aMax]}
+                  yDomain={[0, CENTRIPETAL_CHART_RANGE.fMax]}
+                  xLabel="a (m/s²)"
+                  yLabel="F (N)"
+                  title={`动力学联动 (F_c = m · a_c)  m=${m.toFixed(1)}kg`}
+                  color={PHYSICS_COLORS.appliedForce}
+                  strokeWidth={1.5}
+                  cursorX={a_c}
+                  cursorLabel={(_x, f) => `F=${f.toFixed(1)}N`}
+                  markers={[]}
+                />
+              </div>
+            </foreignObject>
 
             {/* 拖动图表热区 */}
             <rect
-              x={cardInnerPad.left}
-              y={cardInnerPad.top}
-              width={cardInnerW}
-              height={cardInnerH}
+              x={0}
+              y={0}
+              width={cardWidth}
+              height={cardHeight}
               fill="transparent"
               className="cursor-ew-resize"
               onMouseDown={handleChartMouseDown}
             />
-
-            {/* 当前向心加速度与力的联动定位游标 */}
-            <g>
-              <line
-                x1={toCardX(a_c)}
-                y1={cardInnerPad.top}
-                x2={toCardX(a_c)}
-                y2={cardInnerPad.top + cardInnerH}
-                stroke={CHART_COLORS.reference}
-                strokeWidth={0.8}
-                strokeDasharray="2,1"
-              />
-              <line
-                x1={cardInnerPad.left}
-                y1={toCardY(F_c)}
-                x2={cardInnerPad.left + cardInnerW}
-                y2={toCardY(F_c)}
-                stroke={CHART_COLORS.reference}
-                strokeWidth={0.8}
-                strokeDasharray="2,1"
-              />
-              {/* 十字交叉点圆圈 */}
-              <circle cx={toCardX(a_c)} cy={toCardY(F_c)} r={3} fill={PHYSICS_COLORS.forceNet} />
-            </g>
           </g>
         )}
       </svg>

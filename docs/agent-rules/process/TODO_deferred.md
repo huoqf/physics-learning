@@ -1,10 +1,35 @@
 # 延后处理待办事项
 
-> 仅保留未完成项。最后更新：2026-06-22（电磁低风险关系图第九轮批量迁移完成）
+> 仅保留未完成项。最后更新：2026-06-23（第10-13轮图表迁移：力学/能量批量收口）
 
 ---
 
 ## 一、图表组件迁移
+
+### 累计迁移总览（第10-13轮）
+
+| # | 组件 | 原行数 | 现行数 | 减少 | 预设 |
+|---|---|---|---|---|---|
+| 1 | CentripetalAnimation | 504 | 389 | -115 | RelationChart |
+| 2 | GravityAnimation | 650 | 482 | -168 | RelationChart |
+| 3 | MomentumAnimation | 712 | 577 | -135 | RelationChart |
+| 4 | ObliqueThrowAnimation | 611 | 530 | -81 | VelocityTimeChart |
+| 5 | ProjectileAnimation | 560 | 478 | -82 | VelocityTimeChart |
+| 6 | EnergyConservationAnimation | 623 | 566 | -57 | RelationChart |
+| 7 | PotentialEnergyAnimation | 836 | 736 | -100 | RelationChart |
+| 8 | AccelerationCenterExtra | 734 | 522 | -212 | RelationChart + VelocityTimeChart |
+| 9 | UniformAccelerationCenterExtra | 731 | 655 | -76 | VelocityTimeChart + children 插件层 |
+
+**小计**：-1026 行
+
+### 剩余未迁移
+
+| 组件 | 行数 | 难点 |
+|---|---|---|
+| UniformAccelerationAnimation | 562 | 4种面积模式+投影带联动（与舞台紧耦合） |
+| ForceMotionTripleChart | — | 低优 |
+| ElectricPotentialChartScene | — | 待盘点 |
+| MaxwellBoltzmannChart | — | 待确认 |
 
 ### 图表资产清单 / 收口状态
 
@@ -36,17 +61,17 @@
 | `IntermolecularForceChart` | F-r / Ep-r | RelationChart | markers / 多曲线 | ✅ 已迁移 |
 | `MaxwellBoltzmannChart` | f(v)-v | 图表预设/自定义混合 | 待核对是否需要 RelationChart 收口 | 🔶 待盘点 |
 | `MiniChart` | 小型趋势图 | UI 组件 | 消费方显式传 domain；暂无 `domainPoints` 必要；cursor 已 clamp | ✅ 第五/六轮收口完成；暂不迁目录 |
-| `AccelerationCenterExtra` | X-T / V-T 双图并列（警车追击） | 纯内联 SVG 手写 | 双车多曲线 `additionalSeries`、面积（位移差）、游标、相遇/共速光圈动画；待迁 `DisplacementTimeChart` + `VelocityTimeChart` | 🔶 待迁移（734 行 P0） |
-| `UniformAccelerationAnimation` | V-T 单图 + 动画舞台（匀变速基础） | 纯内联 SVG 手写 | 4 种面积可视化模式（微元法/等效矩形割补/经典拆分/合并梯形）、游标；待迁 `VelocityTimeChart` + `children` 承载面积模式 | 🔶 待迁移（562 行，接近 P0） |
-| `UniformAccelerationCenterExtra` | V-T + 频闪虚影 + 数据表 + 公式推导（四屏联动） | 纯内联 SVG 手写 | 频闪点 markers、平行四边形差值面积证明、十字投影游标+读数气泡；待迁 `VelocityTimeChart` + `markers` + `children` | 🔶 待迁移（731 行 P0） |
-| `ObliqueThrowAnimation` | V-T（vx/vy 双曲线，画中画） | 纯内联 SVG 手写 | 双曲线 vx/vy、游标、零线；画中画嵌入动画主 SVG；待迁 `VelocityTimeChart` + `additionalSeries` | 🔶 待迁移（549 行） |
-| `ProjectileAnimation` | V-T（vx/vy 双曲线，画中画） | 纯内联 SVG 手写 | 双曲线 vx/vy、游标、零线；画中画嵌入动画主 SVG；待迁 `VelocityTimeChart` + `additionalSeries` | 🔶 待迁移（505 行） |
-| `ImpulseAnimation` | F-t（冲量面积图） | RelationChart + ChartArea | F-t 曲线渐进绘制（裁剪 points）+ 固定域（DOMAIN_DEFAULTS）+ 面积填充 + 微元切割插件层 | ✅ 已迁移 |
-| `MomentumAnimation` | Ek-p（画中画关系图） | 纯内联 SVG 手写 | Ek=p²/(2m) 曲线、双球对比；画中画嵌入动画主 SVG；待迁 `RelationChart` | 🔶 待迁移（712 行） |
-| `CentripetalAnimation` | F-a（画中画关系图） | 纯内联 SVG 手写 | F_c=m·a_c 线性关系、双线对比；画中画嵌入动画主 SVG；待迁 `RelationChart` | 🔶 待迁移（504 行） |
-| `GravityAnimation` | F-r（平方反比律曲线，画中画） | 纯内联 SVG 手写 | F=GMm/r² 双曲线；画中画嵌入动画主 SVG；待迁 `RelationChart` | 🔶 待迁移（650 行） |
-| `PotentialEnergyAnimation` | Ep/Ek/机械能 + 弹簧 Ep-x（双图） | 纯内联 SVG 手写 | 双模式（重力/弹簧）能量-时间 + 弹簧势能-位移图；手写 `toChartX/toSpringChartX`；待拆分后迁 `RelationChart` | 🔶 待迁移（755 行） |
-| `EnergyConservationAnimation` | Ep/Ek/Q/Etot-T（多曲线） | 纯内联 SVG 手写 | 能量-时间多曲线（含内能 Q 模式）；手写 `toChartX/toChartY`；待迁 `RelationChart` + `additionalSeries` | 🔶 待迁移（562 行） |
+| `AccelerationCenterExtra` | X-T / V-T 双图并列（警车追击） | RelationChart + VelocityTimeChart | ✅ 第12轮已迁移（-212 行） |
+| `UniformAccelerationAnimation` | V-T 单图 + 动画舞台（匀变速基础） | 纯内联 SVG 手写 | 🔶 待迁移（562 行）：4 种面积模式+投影带联动（与舞台紧耦合） |
+| `UniformAccelerationCenterExtra` | V-T + 频闪虚影 + 数据表 + 公式推导（四屏联动） | VelocityTimeChart + children 插件层 | ✅ 第13轮已迁移（-76 行） |
+| `ObliqueThrowAnimation` | V-T（vx/vy 双曲线，画中画） | VelocityTimeChart | ✅ 第10轮已迁移（-81 行） |
+| `ProjectileAnimation` | V-T（vx/vy 双曲线，画中画） | VelocityTimeChart | ✅ 第10轮已迁移（-82 行） |
+| `ImpulseAnimation` | F-t（冲量面积图） | RelationChart + ChartArea | ✅ 已迁移 |
+| `MomentumAnimation` | Ek-p（画中画关系图） | RelationChart | ✅ 第10轮已迁移（-135 行） |
+| `CentripetalAnimation` | F-a（画中画关系图） | RelationChart | ✅ 第10轮已迁移（-115 行） |
+| `GravityAnimation` | F-r（平方反比律曲线，画中画） | RelationChart | ✅ 第10轮已迁移（-168 行） |
+| `PotentialEnergyAnimation` | Ep/Ek/机械能 + 弹簧 Ep-x（双图） | RelationChart | ✅ 第12-13轮已迁移（-100 行） |
+| `EnergyConservationAnimation` | Ep/Ek/Q/Etot-T（多曲线） | RelationChart | ✅ 第10轮已迁移（-57 行） |
 
 ### 能力矩阵
 
@@ -159,7 +184,7 @@
 
 ### 页面迁移状态
 
-**已迁移/评估：** ChargeInEField(vy-t)、CuttingEMF(v-t 已迁 VelocityTimeChart，a-t 暂留)、~~ForceMotionTripleChart(F-t/v-t/x-t 游标 + 面积)~~ ✅、MiniChart(7 个消费方)、MaxwellBoltzmannChart(f(v)-v)、ACGeneration(e-t)、~~WorkVTChart(v-t 手写 SVG → VelocityTimeChart 薄适配层)~~ ✅、~~FreeFallDripAnimation(v-t)~~ ✅、~~FreeFallAnimation(v-t 双曲线)~~ ✅、~~IntermolecularForceChart(F-r 三曲线 / Ep-r)~~ ✅、~~CoulombLaw BasicMode(F-r)~~ ✅、~~ElectricFieldBasicScene(E-r + F-r)~~ ✅、~~ThinLensAnimation(线性 + 双曲线 + 共轭法标记)~~ ✅、~~SatelliteAnimation Mode 0(v-r + T-r 画中画)~~ ✅、~~SatelliteAnimation Mode 1(v-t 三阶段)~~ ✅、~~ClapeyronAnimation(P-V 等温线 + 等温线族)~~ ✅、~~GasLawsAnimation(P-V/V-T/P-T mode 切换)~~ ✅、~~FirstLawCenterExtra(P-V 循环 + 分段高亮)~~ ✅、~~VelocityVTChart(v-t 滑动窗口+面积+割线+切线)~~ ✅、~~VelocityXTChart(x-t 割线三角形+切线)~~ ✅、~~VerticalThrowCharts(v-t/y-t 双图 + 割线/切线/目标高度/面积/双轨对照)~~ ✅、~~FaradayChartPanel(Φ-t + E-t 双图)~~ ✅、~~ACValues(I-t + Q-t 双图)~~ ✅
+**已迁移/评估：** ChargeInEField(vy-t)、CuttingEMF(v-t 已迁 VelocityTimeChart，a-t 暂留)、~~ForceMotionTripleChart(F-t/v-t/x-t 游标 + 面积)~~ ✅、MiniChart(7 个消费方)、MaxwellBoltzmannChart(f(v)-v)、ACGeneration(e-t)、~~WorkVTChart(v-t 手写 SVG → VelocityTimeChart 薄适配层)~~ ✅、~~FreeFallDripAnimation(v-t)~~ ✅、~~FreeFallAnimation(v-t 双曲线)~~ ✅、~~IntermolecularForceChart(F-r 三曲线 / Ep-r)~~ ✅、~~CoulombLaw BasicMode(F-r)~~ ✅、~~ElectricFieldBasicScene(E-r + F-r)~~ ✅、~~ThinLensAnimation(线性 + 双曲线 + 共轭法标记)~~ ✅、~~SatelliteAnimation Mode 0(v-r + T-r 画中画)~~ ✅、~~SatelliteAnimation Mode 1(v-t 三阶段)~~ ✅、~~ClapeyronAnimation(P-V 等温线 + 等温线族)~~ ✅、~~GasLawsAnimation(P-V/V-T/P-T mode 切换)~~ ✅、~~FirstLawCenterExtra(P-V 循环 + 分段高亮)~~ ✅、~~VelocityVTChart(v-t 滑动窗口+面积+割线+切线)~~ ✅、~~VelocityXTChart(x-t 割线三角形+切线)~~ ✅、~~VerticalThrowCharts(v-t/y-t 双图 + 割线/切线/目标高度/面积/双轨对照)~~ ✅、~~FaradayChartPanel(Φ-t + E-t 双图)~~ ✅、~~ACValues(I-t + Q-t 双图)~~ ✅、~~CentripetalAnimation(F-a RelationChart)~~ ✅、~~GravityAnimation(F-r RelationChart)~~ ✅、~~MomentumAnimation(Ek-p RelationChart)~~ ✅、~~EnergyConservationAnimation(Ep/Ek/Q-T RelationChart)~~ ✅、~~ObliqueThrowAnimation(vx/vy-T VelocityTimeChart)~~ ✅、~~ProjectileAnimation(vx/vy-T VelocityTimeChart)~~ ✅、~~PotentialEnergyAnimation(Ep/Ek-T + 弹簧 Ep-x RelationChart)~~ ✅、~~AccelerationCenterExtra(X-T/V-T RelationChart + VelocityTimeChart)~~ ✅、~~UniformAccelerationCenterExtra(V-T 频闪+数据表+公式 VelocityTimeChart)~~ ✅
 
 **未迁移：**
 
@@ -177,8 +202,7 @@
 | ~~OhmLawCenterExtra~~ | ~~U-I 伏安特性图~~ | ✅ 第九轮已迁入 RelationChart 业务适配层 |
 | ~~ClosedCircuitCenterExtra~~ | ~~U-I / P-R 关系图~~ | ✅ 第九轮已迁入 RelationChart 业务适配层 |
 | ElectricPotentialChartScene | 电势/电场相关图 | 待盘点：若与主动画强绑定，可保留自定义但统一 scale/axis |
-| MaxwellBoltzmannChart | f(v)-v | MiniChart 评估完成：保留 MiniChart，无需 RelationChart 迁移 |
-| ~~MiniChart~~ | ~~小型趋势图~~ | ✅ 第五轮评估完成：暂无 `domainPoints` 必要，暂不迁目录 |
+| MaxwellBoltzmannChart | f(v)-v | 待确认：MiniChart 评估完成，保留 MiniChart，无需 RelationChart 迁移 |
 
 **教学体验后续优化（不阻塞主线）：**
 - **GasLawsAnimation 三图同屏**：当前迁移仅保留原 mode 切换。教学上 P-V/V-T/P-T 三图同屏更有价值（让学生同时看到「哪个量不变、哪两个量成什么关系」），适合作为未来教学重构项。
@@ -208,7 +232,11 @@
 20. ~~第七轮限定评估 `CuttingEMF` V-T / a-T~~ ✅ V-T 可迁；a-T 无损迁移需补 `AccelerationTimeChart` 参考线/children 能力；该轮未迁移、未修既有 lint
 21. ~~第八轮 `CuttingEMF` V-T 单图迁移~~ ✅ 已迁入 `VelocityTimeChart`，收尾速度渐近线用 children 自定义；a-T 暂留，公共组件未动，既有 lint 未修
 22. ~~第九轮电磁低风险单曲线关系图批量收口~~ ✅ `OhmLawCenterExtra`、`ClosedCircuitCenterExtra` 已迁入 RelationChart；`CircuitAnalysisCenterExtra` / `ElectricPotentialChartScene` / `CuttingEMF a-T` 暂缓
-23. 其余按需
+23. ~~第十轮力学画中画关系图批量收口~~ ✅ `CentripetalAnimation`(F-a)、`GravityAnimation`(F-r)、`MomentumAnimation`(Ek-p)、`EnergyConservationAnimation`(Ep/Ek/Q-T) 迁入 RelationChart；`ObliqueThrowAnimation`(vx/vy-T)、`ProjectileAnimation`(vx/vy-T) 迁入 VelocityTimeChart
+24. ~~第十一轮势能迁移~~ ✅ `PotentialEnergyAnimation`(Ep/Ek-T + 弹簧 Ep-x) 迁入 RelationChart（与第十二轮合并为最新版）
+25. ~~第十二轮加速度中心+势能迁移~~ ✅ `AccelerationCenterExtra`(X-T/V-T 双图) 迁入 RelationChart + VelocityTimeChart；`PotentialEnergyAnimation` 迁入 RelationChart（-100 行）
+26. ~~第十三轮匀加速中心迁移~~ ✅ `UniformAccelerationCenterExtra`(V-T + 频闪 + 数据表 + 公式推导) 迁入 VelocityTimeChart + children 插件层（-76 行）
+27. 其余按需
 
 ---
 
@@ -219,12 +247,18 @@
 | 文件 | 行数 | 计划 |
 |------|------|------|
 | `FreeFallAnimation.tsx` | 644（V-T 迁移后已减约 65 行） | 按 JSX 块拆子组件 |
-| `UniformAccelerationCenterExtra.tsx` | 669 | 已有 5 个子组件，直接搬迁 |
-| ~~`VerticalThrowAnimation.tsx`~~ | ~~741~~ → 356（图表区拆至 `VerticalThrowCharts.tsx`） | ✅ 已脱离 P0 |
 | `VerticalThrowCharts.tsx` | 747（已完成图表预设迁移，下一步按 VT/YT/layers 拆分） | 拆成 VerticalThrowVTChart / VerticalThrowYTChart / chartLayers |
-| `AccelerationCenterExtra.tsx` | 646 | 需修复规范违反 |
+| `AccelerationCenterExtra.tsx` | 522（第12轮迁移后） | ✅ 已迁移，P0 降级 |
+| `UniformAccelerationCenterExtra.tsx` | 655（第13轮迁移后） | ✅ 已迁移，P0 降级 |
+| `MomentumAnimation.tsx` | 577（第10轮迁移后） | ✅ 已迁移，P0 降级 |
+| `GravityAnimation.tsx` | 482（第10轮迁移后） | ✅ 已迁移，脱困 |
+| `CentripetalAnimation.tsx` | 389（第10轮迁移后） | ✅ 已迁移，脱困 |
+| `ObliqueThrowAnimation.tsx` | 530（第10轮迁移后） | ✅ 已迁移，P0 降级 |
+| `ProjectileAnimation.tsx` | 478（第10轮迁移后） | ✅ 已迁移，脱困 |
+| `EnergyConservationAnimation.tsx` | 566（第10轮迁移后） | ✅ 已迁移，P0 降级 |
+| `PotentialEnergyAnimation.tsx` | 736（第12-13轮迁移后） | ✅ 已迁移，P0 降级 |
 
-> 已自然脱困（迁图后行数下降至 500 以下）：~~`ThinLensAnimation.tsx`~~ 376 行（468 → 376）
+> 已自然脱困（迁图后行数下降至 500 以下）：~~`ThinLensAnimation.tsx`~~ 376 行（468 → 376）、`GravityAnimation` 482 行、`ProjectileAnimation` 478 行、`CentripetalAnimation` 389 行
 
 ---
 

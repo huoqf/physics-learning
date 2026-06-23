@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -6,6 +6,7 @@ import { PHYSICS_COLORS, CANVAS_STYLE, SCENE_COLORS, CHART_COLORS } from '@/them
 import { physicsToCanvas, computeScale } from '@/utils/coordinate'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { RelationChart } from '@/components/Chart'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
@@ -20,7 +21,7 @@ export default function GravityAnimation() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
-  const { font } = canvasSize
+  // canvasSize.font removed: chart text handled by RelationChart
 
   const { m1 = 1000, m2 = 10, r = 5, mode = 0, preset = 0, showChart = 1 } = params
 
@@ -82,35 +83,33 @@ export default function GravityAnimation() {
   const isDraggingChartRef = useRef(false)
   const svgRef = useRef<SVGSVGElement>(null)
 
-  // ── 画中画 F-r 平方反比曲线定位与映射 ──
+  // ── 画中画 F-r 平方反比曲线定位 ──
   const cardWidth = Math.max(220, canvasSize.width * 0.35)
   const cardHeight = Math.max(150, canvasSize.height * 0.33)
   const cardX = canvasSize.width - cardWidth - 20
   const cardY = 20
 
-  const padLeft = 42
-  const padRight = 18
-  const padTop = 28
-  const padBottom = 28
+  const R_DOMAIN: [number, number] = [1.5, 18.0]
 
-  const innerW = cardWidth - padLeft - padRight
-  const innerH = cardHeight - padTop - padBottom
-
-  const toCardX = useCallback((valR: number) => {
-    return padLeft + ((valR - 1.5) / (18.0 - 1.5)) * innerW
-  }, [innerW, padLeft])
-
-  const toCardY = useCallback((valFNorm: number) => {
-    // 归一化 F 范围是 [0, 1]，映射到 [padTop + innerH, padTop]
-    return padTop + innerH - valFNorm * innerH
-  }, [innerH, padTop])
+  // RelationChart 数据：F ∝ 1/r² 归一化曲线
+  const frPoints = useMemo(() => {
+    const steps = 40
+    const pts: { x: number; y: number }[] = []
+    for (let i = 0; i <= steps; i++) {
+      const tR = R_DOMAIN[0] + (i / steps) * (R_DOMAIN[1] - R_DOMAIN[0])
+      const tFNorm = (R_DOMAIN[0] * R_DOMAIN[0]) / (tR * tR)
+      pts.push({ x: tR, y: tFNorm })
+    }
+    return pts
+  }, [])
 
   // ── 图表反向拖拽调距 ──
   const handleDragChart = useCallback((clientX: number, svgRect: DOMRect) => {
-    const clickX = clientX - svgRect.left - cardX - padLeft
-    const rRatio = clickX / innerW
-    const targetR = 1.5 + rRatio * (18.0 - 1.5)
-    const finalR = Math.max(1.5, Math.min(18.0, targetR))
+    // foreignObject 占据卡片内部 x=4, w=cardWidth-8，用比例估算 r
+    const clickX = clientX - svgRect.left - cardX - 4
+    const rRatio = clickX / (cardWidth - 8)
+    const targetR = R_DOMAIN[0] + rRatio * (R_DOMAIN[1] - R_DOMAIN[0])
+    const finalR = Math.max(R_DOMAIN[0], Math.min(R_DOMAIN[1], targetR))
 
     if (mode === 1 && preset !== 0) {
       setParams({
@@ -121,7 +120,7 @@ export default function GravityAnimation() {
     } else {
       updateParam('r', finalR)
     }
-  }, [cardX, padLeft, innerW, mode, preset, params, setParams, updateParam])
+  }, [cardX, cardWidth, mode, preset, params, setParams, updateParam])
 
   const handleMouseDown = (target: 'obj1' | 'obj2') => {
     if (isDraggingChartRef.current) return
@@ -149,7 +148,7 @@ export default function GravityAnimation() {
       } else if (dragTarget === 'obj1') {
         newR = (-2 * (mouseX - canvasSize.width / 2)) / scale
       }
-      const finalR = Math.max(1.5, Math.min(18.0, newR))
+      const finalR = Math.max(R_DOMAIN[0], Math.min(R_DOMAIN[1], newR))
 
       if (mode === 1 && preset !== 0) {
         setParams({ ...params, r: finalR, preset: 0 })
@@ -239,22 +238,8 @@ export default function GravityAnimation() {
 
   const arrowLen = 15 + Math.min(Math.log10(F_rel + 1) * 15, 65)
 
-  // ── 产生平方反比图线路径 ──
-  const generateChartPath = () => {
-    const steps = 40
-    const pts: string[] = []
-    for (let i = 0; i <= steps; i++) {
-      const tR = 1.5 + (i / steps) * (18.0 - 1.5)
-      const tFNorm = (1.5 * 1.5) / (tR * tR)
-      pts.push(`${toCardX(tR)},${toCardY(tFNorm)}`)
-    }
-    return `M ${pts.join(' L ')}`
-  }
-
-  // 当前状态小球
-  const curFNorm = (1.5 * 1.5) / (r * r)
-  const dotPx = toCardX(r)
-  const dotPy = toCardY(curFNorm)
+  // 当前归一化力
+  // curFNorm removed: cursor handled by RelationChart
 
   return (
     <div ref={containerRef} className="w-full h-full relative select-none">
@@ -442,7 +427,7 @@ export default function GravityAnimation() {
           </g>
         )}
 
-        {/* 7. 画中画：平方反比 F-r 曲线 (对齐圆周运动毛玻璃与精细刻度) */}
+        {/* 7. 画中画：平方反比 F-r 曲线（RelationChart） */}
         {showChart === 1 && (
           <g transform={`translate(${cardX}, ${cardY})`}>
             {/* 毛玻璃卡片背景 */}
@@ -455,193 +440,40 @@ export default function GravityAnimation() {
               strokeWidth={0.8}
               filter="url(#card-shadow)"
             />
-            
-            {/* 标题 */}
-            <text
-              x={cardWidth / 2}
-              y={16}
-              fontSize={font(8)}
-              fill={CHART_COLORS.titleText}
-              textAnchor="middle"
-              fontWeight="bold"
-              fontFamily="PingFang SC, sans-serif"
+
+            {/* RelationChart 主体 */}
+            <foreignObject
+              x={4} y={4}
+              width={cardWidth - 8} height={cardHeight - 8}
+              style={{ pointerEvents: 'none' }}
             >
-              平方反比律 F - r 关系曲线
-            </text>
+              <div style={{ width: '100%', height: '100%' }}>
+                <RelationChart
+                  points={frPoints}
+                  xDomain={[R_DOMAIN[0], R_DOMAIN[1]]}
+                  yDomain={[0, 1]}
+                  xLabel="间距 r"
+                  yLabel="力 F (归一化)"
+                  title="平方反比律 F - r 关系曲线"
+                  color={PHYSICS_COLORS.gravity}
+                  strokeWidth={1.5}
+                  cursorX={r}
+                  cursorLabel={(_x, y) => `F=${y.toFixed(3)}`}
+                  markers={[]}
+                />
+              </div>
+            </foreignObject>
 
-            {/* 坐标轴 (CHART_COLORS.axisLine) */}
-            {/* X 轴 */}
-            <line
-              x1={padLeft - 5}
-              y1={padTop + innerH}
-              x2={padLeft + innerW + 10}
-              y2={padTop + innerH}
-              stroke={CHART_COLORS.axisLine}
-              strokeWidth={0.8}
-            />
-            {/* Y 轴 */}
-            <line
-              x1={padLeft}
-              y1={padTop - 8}
-              x2={padLeft}
-              y2={padTop + innerH + 5}
-              stroke={CHART_COLORS.axisLine}
-              strokeWidth={0.8}
-            />
-
-            {/* 坐标轴箭头 */}
-            <polygon points={`${padLeft + innerW + 10} ${padTop + innerH - 2.5}, ${padLeft + innerW + 14} ${padTop + innerH}, ${padLeft + innerW + 10} ${padTop + innerH + 2.5}`} fill={CHART_COLORS.axisArrow} />
-            <polygon points={`${padLeft - 2.5} ${padTop - 8}, ${padLeft} ${padTop - 12}, ${padLeft + 2.5} ${padTop - 8}`} fill={CHART_COLORS.axisArrow} />
-
-            {/* 轴物理量标签 */}
-            <text x={padLeft + innerW + 10} y={padTop + innerH + 11} fontSize={font(7)} fill={CHART_COLORS.labelText} textAnchor="end">间距 r</text>
-            <text x={padLeft - 6} y={padTop - 8} fontSize={font(7)} fill={CHART_COLORS.labelText} textAnchor="middle">力 F</text>
-
-            {/* 零水平虚线参考 */}
-            <line
-              x1={padLeft}
-              y1={toCardY(0)}
-              x2={padLeft + innerW}
-              y2={toCardY(0)}
-              stroke={CHART_COLORS.zeroline}
-              strokeWidth={0.6}
-              strokeDasharray="2,2"
-            />
-
-            {/* X 轴起止刻度 Tick 线与数值标注 */}
-            {/* 起点刻度 1.5 */}
-            <line
-              x1={toCardX(1.5)}
-              y1={padTop + innerH}
-              x2={toCardX(1.5)}
-              y2={padTop + innerH + 3}
-              stroke={CHART_COLORS.tickMark}
-              strokeWidth={0.8}
-            />
-            <text
-              x={toCardX(1.5)}
-              y={padTop + innerH + 10}
-              fontSize={font(7)}
-              fill={CHART_COLORS.tickLabel}
-              textAnchor="middle"
-            >
-              1.5
-            </text>
-
-            {/* 终点刻度 18.0 */}
-            <line
-              x1={toCardX(18.0)}
-              y1={padTop + innerH}
-              x2={toCardX(18.0)}
-              y2={padTop + innerH + 3}
-              stroke={CHART_COLORS.tickMark}
-              strokeWidth={0.8}
-            />
-            <text
-              x={toCardX(18.0)}
-              y={padTop + innerH + 10}
-              fontSize={font(7)}
-              fill={CHART_COLORS.tickLabel}
-              textAnchor="middle"
-            >
-              18.0
-            </text>
-
-            {/* Y 轴刻度：强引力 (1.0) 和 弱引力 (0) */}
-            <line
-              x1={padLeft - 3}
-              y1={toCardY(1.0)}
-              x2={padLeft}
-              y2={toCardY(1.0)}
-              stroke={CHART_COLORS.tickMark}
-              strokeWidth={0.8}
-            />
-            <text
-              x={padLeft - 5}
-              y={toCardY(1.0) + 2.5}
-              fontSize={font(7)}
-              fill={CHART_COLORS.tickLabel}
-              textAnchor="end"
-            >
-              极大
-            </text>
-
-            <line
-              x1={padLeft - 3}
-              y1={toCardY(0.1)}
-              x2={padLeft}
-              y2={toCardY(0.1)}
-              stroke={CHART_COLORS.tickMark}
-              strokeWidth={0.8}
-            />
-            <text
-              x={padLeft - 5}
-              y={toCardY(0.1) + 2.5}
-              fontSize={font(7)}
-              fill={CHART_COLORS.tickLabel}
-              textAnchor="end"
-            >
-              极小
-            </text>
-
-            {/* 平滑的平方反比曲线 */}
-            <path
-              d={generateChartPath()}
-              fill="none"
-              stroke={PHYSICS_COLORS.gravity}
-              strokeWidth={1.5}
-              opacity={0.85}
-            />
-
-            {/* 曲线文本标签 */}
-            <text
-              x={toCardX(8.0)}
-              y={toCardY(0.2) - 6}
-              fontSize={font(7)}
-              fill={PHYSICS_COLORS.gravity}
-              fontWeight="bold"
-              opacity={0.7}
-            >
-              F ∝ 1/r²
-            </text>
-
-            {/* 拖动图表横轴热区 */}
+            {/* 拖动图表热区 */}
             <rect
-              x={padLeft}
-              y={padTop}
-              width={innerW}
-              height={innerH}
+              x={0}
+              y={0}
+              width={cardWidth}
+              height={cardHeight}
               fill="transparent"
               className="cursor-ew-resize"
               onMouseDown={handleChartMouseDown}
             />
-
-            {/* 当前状态投影线 */}
-            <line
-              x1={dotPx}
-              y1={dotPy}
-              x2={dotPx}
-              y2={padTop + innerH}
-              stroke={CHART_COLORS.reference}
-              strokeWidth={0.6}
-              strokeDasharray="2,2"
-            />
-            <line
-              x1={padLeft}
-              y1={dotPy}
-              x2={dotPx}
-              y2={dotPy}
-              stroke={CHART_COLORS.reference}
-              strokeWidth={0.6}
-              strokeDasharray="2,2"
-            />
-
-            {/* 状态游标指示点 */}
-            <circle cx={dotPx} cy={dotPy} r={3} fill={PHYSICS_COLORS.gravity} />
-            <circle cx={dotPx} cy={dotPy} r={6} fill="none" stroke={PHYSICS_COLORS.gravity} strokeWidth={0.8} opacity={0.6}>
-              <animate attributeName="r" values="3;8;3" dur="2.4s" repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.8;0;0.8" dur="2.4s" repeatCount="indefinite" />
-            </circle>
           </g>
         )}
       </svg>

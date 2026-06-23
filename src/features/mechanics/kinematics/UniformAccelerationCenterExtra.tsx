@@ -6,7 +6,6 @@ import { calculateAcceleratedMotion } from '@/physics'
 import {
   PHYSICS_COLORS,
   CHART_COLORS,
-  SCENE_COLORS,
   VT_CHART_COLORS,
   STROKE,
   DASH,
@@ -16,6 +15,8 @@ import { AnimationControls } from '@/components/UI'
 import { SportsCar } from '@/components/Physics/SportsCar'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { VelocityTimeChart } from '@/components/Chart'
+import { useChartContext } from '@/components/Chart/ChartContext'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 
@@ -413,17 +414,6 @@ function VtChartWithArea({
   T: number
   hoveredFlashIdx: number | null
 }) {
-  const [containerRef, canvasSize] = useCanvasSize({ width: 400, height: 230 })
-  const { font } = canvasSize
-
-  const padding = canvasSize.width * 0.12
-  const chartLeft = padding
-  const chartRight = canvasSize.width - padding * 0.5
-  const chartTop = 26
-  const chartBottom = canvasSize.height - 10
-  const chartWidth = chartRight - chartLeft
-  const chartHeight = chartBottom - chartTop
-
   const VT_X_MAX = 8
   const { vtYMin, vtYMax } = useMemo(() => {
     const vEnd = v0 + a * VT_X_MAX
@@ -432,42 +422,23 @@ function VtChartWithArea({
     return { vtYMin: Math.floor(vMin), vtYMax: Math.ceil(vMax) }
   }, [v0, a])
 
-  const toX = (t: number) => chartLeft + (t / VT_X_MAX) * chartWidth
-  const toY = (vel: number) => chartBottom - ((vel - vtYMin) / (vtYMax - vtYMin)) * chartHeight
-
-  const vtPath = useMemo(() => {
-    const dt = 0.05
-    const pts: string[] = []
-    for (let t = 0; t <= Math.min(time, VT_X_MAX) + dt; t += dt) {
+  // VelocityTimeChart 数据
+  const vtPoints = useMemo(() => {
+    const pts: { t: number; v: number }[] = []
+    for (let t = 0; t <= VT_X_MAX; t += 0.05) {
       const { v: vel } = calculateAcceleratedMotion(v0, a, t)
-      pts.push(`${t === 0 ? 'M' : 'L'} ${toX(t).toFixed(1)},${toY(vel).toFixed(1)}`)
+      pts.push({ t, v: vel })
     }
-    return pts.join(' ')
-  }, [v0, a, time, toX, toY])
+    return pts
+  }, [v0, a])
 
-  // 默认整体位移面积
-  const areaPath = useMemo(() => {
-    if (time <= 0) return ''
-    const dt = 0.05
-    const pts: string[] = []
-    for (let t = 0; t <= time + dt; t += dt) {
-      const tt = Math.min(t, time)
-      const { v: vel } = calculateAcceleratedMotion(v0, a, tt)
-      pts.push(`L ${toX(tt).toFixed(1)},${toY(vel).toFixed(1)}`)
-    }
-    return `M ${toX(0).toFixed(1)},${toY(0).toFixed(1)} ${pts.join(' ')} L ${toX(time).toFixed(1)},${toY(0).toFixed(1)} Z`
-  }, [v0, a, time, toX, toY])
+  const vtActivePoints = useMemo(
+    () => vtPoints.filter(p => p.t <= time + 0.01),
+    [vtPoints, time]
+  )
 
-  // 频闪时刻投影点
-  const flashDots = useMemo(() => {
-    return physics.flashPoints.map(pt => ({
-      x: toX(pt.time),
-      y: toY(pt.velocity),
-    }))
-  }, [physics.flashPoints, toX, toY])
-
-  // ── 逐差法梯形面积差在 v-t 图上的平行四边形几何证明 ──
-  const areaDifferenceGeometry = useMemo(() => {
+  // 平行四边形差值面积 children
+  const areaChildren = useMemo(() => {
     if (hoveredFlashIdx === null || hoveredFlashIdx <= 0 || hoveredFlashIdx >= physics.flashPoints.length) {
       return null
     }
@@ -475,144 +446,97 @@ function VtChartWithArea({
     const t_prev = (idx - 1) * T
     const t_curr = idx * T
     const t_next = (idx + 1) * T
-
     if (t_next > VT_X_MAX) return null
 
     const v_prev = v0 + a * t_prev
     const v_curr = v0 + a * t_curr
     const v_next = v0 + a * t_next
 
-    // 梯形 1 (前区间 [(idx-1)T, idxT]) 顶点
-    const trap1Points = [
-      `${toX(t_prev)},${toY(0)}`,
-      `${toX(t_prev)},${toY(v_prev)}`,
-      `${toX(t_curr)},${toY(v_curr)}`,
-      `${toX(t_curr)},${toY(0)}`
-    ].join(' L ')
-
-    // 梯形 2 (后区间 [idxT, (idx+1)T]) 顶点
-    const trap2Points = [
-      `${toX(t_curr)},${toY(0)}`,
-      `${toX(t_curr)},${toY(v_curr)}`,
-      `${toX(t_next)},${toY(v_next)}`,
-      `${toX(t_next)},${toY(0)}`
-    ].join(' L ')
-
-    // 两面积之差 (平行四边形):
-    // 顶点1: (idxT, v_prev)
-    // 顶点2: (idxT, v_curr)
-    // 顶点3: ((idx+1)T, v_next)
-    // 顶点4: ((idx+1)T, v_curr)
-    const diffPolyPoints = [
-      `${toX(t_curr)},${toY(v_prev)}`,
-      `${toX(t_curr)},${toY(v_curr)}`,
-      `${toX(t_next)},${toY(v_next)}`,
-      `${toX(t_next)},${toY(v_curr)}`
-    ].join(' L ')
-
-    return {
-      trap1D: `M ${trap1Points} Z`,
-      trap2D: `M ${trap2Points} Z`,
-      diffD: `M ${diffPolyPoints} Z`,
-      midT: t_curr,
-      nextT: t_next,
-      v_curr,
-      v_prev
-    }
-  }, [hoveredFlashIdx, T, v0, a, toX, toY])
-
-  const xticks = [0, 2, 4, 6, 8]
-  const yticks = useMemo(() => {
-    const step = (vtYMax - vtYMin) > 20 ? 10 : (vtYMax - vtYMin) > 10 ? 5 : 2
-    const ticks: number[] = []
-    for (let val = Math.ceil(vtYMin / step) * step; val <= vtYMax; val += step) {
-      ticks.push(val)
-    }
-    return ticks
-  }, [vtYMin, vtYMax])
+    return { t_prev, t_curr, t_next, v_prev, v_curr, v_next }
+  }, [hoveredFlashIdx, T, v0, a, physics.flashPoints.length, VT_X_MAX])
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg">
-        <text x={canvasSize.width / 2} y={15} fontSize={font(11)} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">匀变速直线运动 v-t 图象</text>
-
-        {/* 坐标轴 */}
-        <line x1={chartLeft} y1={chartTop} x2={chartLeft} y2={chartBottom} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-        <line x1={chartLeft} y1={toY(0)} x2={chartRight} y2={toY(0)} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-
-        {/* 刻度 */}
-        {xticks.map(t => (
-          <g key={`xt-${t}`}>
-            <line x1={toX(t)} y1={toY(0) - 3} x2={toX(t)} y2={toY(0) + 3} stroke={CHART_COLORS.tickMark} />
-            <text x={toX(t)} y={toY(0) + 12} fontSize={font(8)} textAnchor="middle" fill={CHART_COLORS.tickLabel} fontWeight="600">{t}</text>
-          </g>
-        ))}
-        {yticks.map(vel => (
-          <g key={`yt-${vel}`}>
-            <line x1={chartLeft - 3} y1={toY(vel)} x2={chartLeft} y2={toY(vel)} stroke={CHART_COLORS.tickMark} />
-            <text x={chartLeft - 6} y={toY(vel) + 3} fontSize={font(8)} textAnchor="end" fill={CHART_COLORS.tickLabel} fontWeight="600">{vel}</text>
-          </g>
-        ))}
-
-        {/* 面积高亮（有交互则优先绘制交互差值面积，无交互画普通位移面积） */}
-        {areaDifferenceGeometry ? (
-          <g>
-            {/* 梯形 1 面积 (弱填充) */}
-            <path d={areaDifferenceGeometry.trap1D} fill={VT_CHART_COLORS.areaShade} opacity={0.12} stroke={PHYSICS_COLORS.velocity} strokeWidth={0.5} strokeDasharray="2 2" />
-            {/* 梯形 2 面积 (弱填充) */}
-            <path d={areaDifferenceGeometry.trap2D} fill={VT_CHART_COLORS.areaShade} opacity={0.12} stroke={PHYSICS_COLORS.velocity} strokeWidth={0.5} strokeDasharray="2 2" />
-            {/* 平行四边形差值面积 (红色高亮代表位移差) */}
-            <path d={areaDifferenceGeometry.diffD} fill={CHART_COLORS.areaFillWarm} opacity={0.45} stroke={PHYSICS_COLORS.acceleration} strokeWidth={1.5} />
-            
-            {/* 差值平行四边形标注 */}
-            <text
-              x={toX((areaDifferenceGeometry.midT + areaDifferenceGeometry.nextT) / 2)}
-              y={(toY(areaDifferenceGeometry.v_curr) + toY(areaDifferenceGeometry.v_prev)) / 2 + 3}
-              fontSize={font(8)}
-              fill={PHYSICS_COLORS.acceleration}
-              textAnchor="middle"
-              fontWeight="bold"
-            >
-              面积差 ΔS = aT²
-            </text>
-          </g>
-        ) : (
-          areaPath && <path d={areaPath} fill={VT_CHART_COLORS.areaShade} opacity={0.25} />
+    <div className="w-full h-full">
+      <VelocityTimeChart
+        mode="animated"
+        points={vtActivePoints}
+        domainPoints={vtPoints}
+        currentTime={time}
+        tMax={VT_X_MAX}
+        vRange={[vtYMin, vtYMax]}
+        title="匀变速直线运动 v-t 图象"
+        showArea
+        showCursor={time > 0 && time <= VT_X_MAX}
+        showGrid
+      >
+        {/* 频闪点 */}
+        <FlashDotOverlay flashPoints={physics.flashPoints} />
+        {/* 平行四边形差值面积叠加层 */}
+        {areaChildren && (
+          <AreaDifferenceOverlay {...areaChildren} />
         )}
-
-        {/* v-t 图主图线 */}
-        {vtPath && <path d={vtPath} fill="none" stroke={VT_CHART_COLORS.velocityCurve} strokeWidth={STROKE.chartMain} />}
-
-        {/* 频闪时刻点 */}
-        {flashDots.map((dot, i) => (
-          <circle key={i} cx={dot.x} cy={dot.y} r={3} fill={PHYSICS_COLORS.referencePoint} />
-        ))}
-
-        {/* 动态十字投影对齐虚线和读数气泡 */}
-        {time > 0 && time <= VT_X_MAX && (
-          <g>
-            {/* 十字线 */}
-            <line x1={chartLeft} y1={toY(physics.v)} x2={toX(time)} y2={toY(physics.v)} stroke={PHYSICS_COLORS.grid} strokeWidth={0.8} strokeDasharray={DASH.projection.join(' ')} />
-            <line x1={toX(time)} y1={toY(0)} x2={toX(time)} y2={toY(physics.v)} stroke={PHYSICS_COLORS.grid} strokeWidth={0.8} strokeDasharray={DASH.projection.join(' ')} />
-            
-            {/* 状态指示点 */}
-            <circle cx={toX(time)} cy={toY(physics.v)} r={4} fill={PHYSICS_COLORS.velocity} stroke="white" strokeWidth={1} />
-
-            {/* X 轴气泡 */}
-            <rect x={toX(time) - 15} y={toY(0) + 14} width="30" height="11" rx="2.5" fill={SCENE_COLORS.materials.sliderMetalGrad[0]} stroke={PHYSICS_COLORS.axis} strokeWidth={0.5} />
-            <text x={toX(time)} y={toY(0) + 22} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
-              {time.toFixed(1)}s
-            </text>
-
-            {/* Y 轴气泡 */}
-            <rect x={chartLeft - 32} y={toY(physics.v) - 5} width="28" height="11" rx="2.5" fill={PHYSICS_COLORS.objectFill} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={0.5} />
-            <text x={chartLeft - 18} y={toY(physics.v) + 3} fontSize={font(8)} fill={PHYSICS_COLORS.velocity} textAnchor="middle" fontWeight="bold">
-              {physics.v.toFixed(1)}
-            </text>
-          </g>
-        )}
-      </svg>
+      </VelocityTimeChart>
     </div>
+  )
+}
+
+/** 频闪点插件层 */
+function FlashDotOverlay({
+  flashPoints,
+}: {
+  flashPoints: { time: number; velocity: number }[]
+}) {
+  const ctx = useChartContext()
+  if (!ctx) return null
+  return (
+    <g>
+      {flashPoints.map((pt, i) => (
+        <circle
+          key={i}
+          cx={ctx.toSvgX(pt.time)}
+          cy={ctx.toSvgY(pt.velocity)}
+          r={3}
+          fill={PHYSICS_COLORS.referencePoint}
+        />
+      ))}
+    </g>
+  )
+}
+
+/** 平行四边形差值面积插件层（使用 ChartContext 坐标） */
+function AreaDifferenceOverlay({
+  t_prev, t_curr, t_next, v_prev, v_curr, v_next,
+}: {
+  t_prev: number; t_curr: number; t_next: number
+  v_prev: number; v_curr: number; v_next: number
+}) {
+  const ctx = useChartContext()
+  if (!ctx) return null
+  const { toSvgX, toSvgY, font } = ctx
+
+  // 梯形 1
+  const trap1D = `M ${toSvgX(t_prev)},${toSvgY(0)} L ${toSvgX(t_prev)},${toSvgY(v_prev)} L ${toSvgX(t_curr)},${toSvgY(v_curr)} L ${toSvgX(t_curr)},${toSvgY(0)} Z`
+  // 梯形 2
+  const trap2D = `M ${toSvgX(t_curr)},${toSvgY(0)} L ${toSvgX(t_curr)},${toSvgY(v_curr)} L ${toSvgX(t_next)},${toSvgY(v_next)} L ${toSvgX(t_next)},${toSvgY(0)} Z`
+  // 差值平行四边形
+  const diffD = `M ${toSvgX(t_curr)},${toSvgY(v_prev)} L ${toSvgX(t_curr)},${toSvgY(v_curr)} L ${toSvgX(t_next)},${toSvgY(v_next)} L ${toSvgX(t_next)},${toSvgY(v_curr)} Z`
+
+  return (
+    <g>
+      <path d={trap1D} fill={VT_CHART_COLORS.areaShade} opacity={0.12} stroke={PHYSICS_COLORS.velocity} strokeWidth={0.5} strokeDasharray="2 2" />
+      <path d={trap2D} fill={VT_CHART_COLORS.areaShade} opacity={0.12} stroke={PHYSICS_COLORS.velocity} strokeWidth={0.5} strokeDasharray="2 2" />
+      <path d={diffD} fill={CHART_COLORS.areaFillWarm} opacity={0.45} stroke={PHYSICS_COLORS.acceleration} strokeWidth={1.5} />
+      <text
+        x={toSvgX((t_curr + t_next) / 2)}
+        y={(toSvgY(v_curr) + toSvgY(v_prev)) / 2 + 3}
+        fontSize={font(8)}
+        fill={PHYSICS_COLORS.acceleration}
+        textAnchor="middle"
+        fontWeight="bold"
+      >
+        面积差 ΔS = aT²
+      </text>
+    </g>
   )
 }
 

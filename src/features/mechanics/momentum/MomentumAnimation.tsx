@@ -13,6 +13,7 @@ import {
 } from '@/physics/momentum'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+import { RelationChart } from '@/components/Chart'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
 import {
@@ -76,7 +77,7 @@ export default function MomentumAnimation() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 450 })
-  const { font } = canvasSize
+  // canvasSize.font removed: chart text handled by RelationChart
 
   const {
     m = 3,
@@ -210,45 +211,21 @@ export default function MomentumAnimation() {
   const cardX = canvasSize.width - cardWidth - MOMENTUM_LAYOUT.ekCardRightOffset
   const cardY = 20
 
-  const cardInnerPad = MOMENTUM_LAYOUT.ekCardPadding
-  const cardInnerW = cardWidth - cardInnerPad.left - cardInnerPad.right
-  const cardInnerH = cardHeight - cardInnerPad.top - cardInnerPad.bottom
-
-  // Ek-p 关系图：每个球各自的曲线，与动画同步
-  const ekCurveDataA = useMemo(() => {
+  // RelationChart 数据：A球/B球各自 Ek=p²/(2m) 曲线
+  const ekCurvePointsA = useMemo(() => {
     const fixedP = Math.abs(pA) || 0.1
-    return generateMomentumEnergyCurve(fixedP, 0.5, 10, 30)
+    return generateMomentumEnergyCurve(fixedP, 0.5, 10, 30).map(d => ({ x: d.m, y: d.Ek }))
   }, [pA])
 
-  const ekCurveDataB = useMemo(() => {
+  const ekCurvePointsB = useMemo(() => {
     const fixedP = Math.abs(pB) || 0.1
-    return generateMomentumEnergyCurve(fixedP, 0.5, 10, 30)
+    return generateMomentumEnergyCurve(fixedP, 0.5, 10, 30).map(d => ({ x: d.m, y: d.Ek }))
   }, [pB])
 
   const ekMax = useMemo(() => {
-    const allEks = [...ekCurveDataA.map(d => d.Ek), ...ekCurveDataB.map(d => d.Ek), EkA, EkB]
+    const allEks = [...ekCurvePointsA.map(d => d.y), ...ekCurvePointsB.map(d => d.y), EkA, EkB]
     return Math.max(...allEks, 1)
-  }, [ekCurveDataA, ekCurveDataB, EkA, EkB])
-
-  const toCardX = (mass: number) => cardInnerPad.left + ((mass - 0.5) / 9.5) * cardInnerW
-  const toCardY = (ek: number) => {
-    const bottomY = cardInnerPad.top + cardInnerH
-    return bottomY - (ek / ekMax) * cardInnerH
-  }
-
-  // A球 Ek-p 曲线路径
-  const ekCurvePathA = useMemo(() => {
-    if (ekCurveDataA.length < 2) return ''
-    const points = ekCurveDataA.map(d => `${toCardX(d.m)},${toCardY(d.Ek)}`)
-    return `M ${points[0]} L ${points.slice(1).join(' L ')}`
-  }, [ekCurveDataA, ekMax, cardInnerW, cardInnerH])
-
-  // B球 Ek-p 曲线路径
-  const ekCurvePathB = useMemo(() => {
-    if (ekCurveDataB.length < 2) return ''
-    const points = ekCurveDataB.map(d => `${toCardX(d.m)},${toCardY(d.Ek)}`)
-    return `M ${points[0]} L ${points.slice(1).join(' L ')}`
-  }, [ekCurveDataB, ekMax, cardInnerW, cardInnerH])
+  }, [ekCurvePointsA, ekCurvePointsB, EkA, EkB])
 
   // ── 矢量安全映射长度 ────────────────────────────────────────
   const vMaxRef = MOMENTUM_PARAM_BOUNDS.vMax
@@ -546,7 +523,7 @@ export default function MomentumAnimation() {
           </g>
         )}
 
-        {/* ========== 进阶模式：Ek-p 关系图（画中画） ========== */}
+        {/* ========== 进阶模式：Ek-p 关系图（RelationChart 画中画） ========== */}
         {showEkCard && (
           <g transform={`translate(${cardX}, ${cardY})`}>
             {/* 毛玻璃卡片背景 */}
@@ -559,151 +536,39 @@ export default function MomentumAnimation() {
               strokeWidth={0.8}
               filter="drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12))"
             />
-            <text
-              x={cardWidth / 2}
-              y={16}
-              fontSize={font(8)}
-              fill={CHART_COLORS.titleText}
-              textAnchor="middle"
-              fontWeight="bold"
+
+            {/* RelationChart 主体 */}
+            <foreignObject
+              x={4} y={4}
+              width={cardWidth - 8} height={cardHeight - 8}
+              style={{ pointerEvents: 'none' }}
             >
-              E_k = p²/(2m) 关系图
-            </text>
-
-            {/* 图例 */}
-            <line x1={cardInnerPad.left} y1={cardInnerPad.top - 8} x2={cardInnerPad.left + 14} y2={cardInnerPad.top - 8} stroke={PHYSICS_COLORS.momentum} strokeWidth={1.5} />
-            <text x={cardInnerPad.left + 17} y={cardInnerPad.top - 5} fontSize={font(6)} fill={PHYSICS_COLORS.momentum}>A球</text>
-            <line x1={cardInnerPad.left + 42} y1={cardInnerPad.top - 8} x2={cardInnerPad.left + 56} y2={cardInnerPad.top - 8} stroke={PHYSICS_COLORS.impulse} strokeWidth={1.5} strokeDasharray="3,2" />
-            <text x={cardInnerPad.left + 59} y={cardInnerPad.top - 5} fontSize={font(6)} fill={PHYSICS_COLORS.impulse}>B球</text>
-
-            {/* 坐标轴 */}
-            <line
-              x1={cardInnerPad.left}
-              y1={cardInnerPad.top + cardInnerH}
-              x2={cardInnerPad.left + cardInnerW}
-              y2={cardInnerPad.top + cardInnerH}
-              stroke={CHART_COLORS.axisLine}
-              strokeWidth={0.8}
-            />
-            <line
-              x1={cardInnerPad.left}
-              y1={cardInnerPad.top}
-              x2={cardInnerPad.left}
-              y2={cardInnerPad.top + cardInnerH}
-              stroke={CHART_COLORS.axisLine}
-              strokeWidth={0.8}
-            />
-
-            {/* X轴标签：质量 m */}
-            <text
-              x={cardInnerPad.left + cardInnerW}
-              y={cardInnerPad.top + cardInnerH + 12}
-              fontSize={font(7)}
-              fill={CHART_COLORS.labelText}
-              textAnchor="end"
-            >
-              m (kg)
-            </text>
-
-            {/* Y轴标签：动能 E_k */}
-            <text
-              x={cardInnerPad.left - 5}
-              y={cardInnerPad.top - 6}
-              fontSize={font(7)}
-              fill={CHART_COLORS.labelText}
-              textAnchor="middle"
-            >
-              E_k (J)
-            </text>
-
-            {/* X轴刻度 */}
-            {[1, 3, 5, 7, 10].map((val) => (
-              <g key={`ek-x-${val}`}>
-                <line
-                  x1={toCardX(val)}
-                  y1={cardInnerPad.top + cardInnerH}
-                  x2={toCardX(val)}
-                  y2={cardInnerPad.top + cardInnerH + 3}
-                  stroke={CHART_COLORS.axisLine}
-                  strokeWidth={0.8}
+              <div style={{ width: '100%', height: '100%' }}>
+                <RelationChart
+                  points={ekCurvePointsA}
+                  additionalSeries={[
+                    {
+                      points: ekCurvePointsB,
+                      label: 'B球',
+                      series: 'secondary',
+                      strokeDasharray: [4, 3],
+                    },
+                  ]}
+                  xDomain={[0.5, 10]}
+                  yDomain={[0, ekMax * 1.15]}
+                  xLabel="m (kg)"
+                  yLabel="E_k (J)"
+                  title="E_k = p²/(2m) 关系图"
+                  color={PHYSICS_COLORS.momentum}
+                  strokeWidth={1.5}
+                  series="primary"
+                  markers={[
+                    { axis: 'point', x: mA, y: EkA, label: 'A', color: PHYSICS_COLORS.momentum },
+                    { axis: 'point', x: mB, y: EkB, label: 'B', color: PHYSICS_COLORS.impulse },
+                  ]}
                 />
-                <text
-                  x={toCardX(val)}
-                  y={cardInnerPad.top + cardInnerH + 9}
-                  fontSize={font(7)}
-                  fill={CHART_COLORS.labelText}
-                  textAnchor="middle"
-                >
-                  {val}
-                </text>
-              </g>
-            ))}
-
-            {/* A球 Ek-p 曲线（实线） */}
-            {ekCurvePathA && (
-              <path
-                d={ekCurvePathA}
-                fill="none"
-                stroke={PHYSICS_COLORS.momentum}
-                strokeWidth={1.5}
-              />
-            )}
-
-            {/* B球 Ek-p 曲线（虚线） */}
-            {ekCurvePathB && (
-              <path
-                d={ekCurvePathB}
-                fill="none"
-                stroke={PHYSICS_COLORS.impulse}
-                strokeWidth={1.5}
-                strokeDasharray="4,3"
-              />
-            )}
-
-            {/* 当前 A球 和 B球 标注点 */}
-            <circle
-              cx={toCardX(mA)}
-              cy={toCardY(EkA)}
-              r={3}
-              fill={PHYSICS_COLORS.momentum}
-            />
-            <text
-              x={toCardX(mA) + 6}
-              y={toCardY(EkA) - 2}
-              fontSize={font(7)}
-              fill={PHYSICS_COLORS.momentum}
-              fontWeight="bold"
-            >
-              A
-            </text>
-
-            <circle
-              cx={toCardX(mB)}
-              cy={toCardY(EkB)}
-              r={3}
-              fill={PHYSICS_COLORS.impulse}
-            />
-            <text
-              x={toCardX(mB) + 6}
-              y={toCardY(EkB) - 2}
-              fontSize={font(7)}
-              fill={PHYSICS_COLORS.impulse}
-              fontWeight="bold"
-            >
-              B
-            </text>
-
-            {/* 关键结论标注 */}
-            <text
-              x={cardWidth / 2}
-              y={cardHeight - 6}
-              fontSize={font(7)}
-              fill={PHYSICS_COLORS.kineticEnergy}
-              textAnchor="middle"
-              fontWeight="bold"
-            >
-              p 不变时，m↑ → E_k↓
-            </text>
+              </div>
+            </foreignObject>
           </g>
         )}
       </svg>
