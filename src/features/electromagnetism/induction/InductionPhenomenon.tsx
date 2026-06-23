@@ -421,7 +421,7 @@ export default function InductionPhenomenon() {
                 x={0}
                 y={18}
                 fill={colors.neutral[500]}
-                fontSize={8}
+                fontSize={font(8)}
                 fontWeight="bold"
                 textAnchor="middle"
               >

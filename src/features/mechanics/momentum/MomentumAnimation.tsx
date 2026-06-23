@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -78,7 +78,12 @@ export default function MomentumAnimation() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
-  // canvasSize.font removed: chart text handled by RelationChart
+  const { font } = canvasSize
+
+  const vp = useViewport(canvasSize, {
+    designWidth: 700,
+    designHeight: 450,
+  })
 
   const {
     m = 3,
@@ -97,39 +102,39 @@ export default function MomentumAnimation() {
 
   const sceneConfig = useMemo((): SceneConfig => ({
     vectorBounds: {
-      x: 0,
+      x: vp.visibleX,
       y: 0,
-      width: canvasSize.width - MOMENTUM_LAYOUT.canvasPadding * 2,
+      width: vp.visibleW - MOMENTUM_LAYOUT.canvasPadding * 2,
       height: canvasSize.height - MOMENTUM_LAYOUT.canvasPadding,
     },
-    originX: 0,
+    originX: vp.visibleX,
     originY: groundY,
-    worldWidth: canvasSize.width,
+    worldWidth: vp.visibleW,
     worldHeight: canvasSize.height,
     refMagnitudes: {
       velocity: MOMENTUM_PARAM_BOUNDS.vMax,
       momentum: MOMENTUM_PARAM_BOUNDS.mMax * MOMENTUM_PARAM_BOUNDS.vMax,
     },
-  }), [canvasSize.width, canvasSize.height, groundY]);
+  }), [vp.visibleX, vp.visibleW, canvasSize.height, groundY]);
 
   const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
 
   // ── 基础模式：单球 ──────────────────────────────────────────
   const p_basic = calculateMomentumScalar(m, v)
   const R_basic = MOMENTUM_LAYOUT.steelBallBaseRadius + m * MOMENTUM_LAYOUT.massRadiusScale
-  const basicBallX = canvasSize.width * 0.35
+  const basicBallX = vp.visibleX + vp.visibleW * 0.35
 
   // ── 进阶模式：双球一维对冲动画 ──────────────────────────────
   const R_A = MOMENTUM_LAYOUT.steelBallBaseRadius + mA * MOMENTUM_LAYOUT.massRadiusScale
   const R_B = MOMENTUM_LAYOUT.steelBallBaseRadius + mB * MOMENTUM_LAYOUT.massRadiusScale
 
   // 动画区域边界
-  const leftBound = MOMENTUM_LAYOUT.canvasPadding + R_A
-  const rightBound = canvasSize.width - MOMENTUM_LAYOUT.canvasPadding - R_B
+  const leftBound = vp.visibleX + MOMENTUM_LAYOUT.canvasPadding + R_A
+  const rightBound = vp.visibleX + vp.visibleW - MOMENTUM_LAYOUT.canvasPadding - R_B
 
   // 初始位置：A在左侧，B在右侧
-  const initPosAx = canvasSize.width * 0.25
-  const initPosBx = canvasSize.width * 0.75
+  const initPosAx = vp.visibleX + vp.visibleW * 0.25
+  const initPosBx = vp.visibleX + vp.visibleW * 0.75
 
   // 计算碰撞时刻和碰后速度
   const { collisionTime, posAx, posBx, currentVA, currentVB } = useMemo(() => {
@@ -207,9 +212,9 @@ export default function MomentumAnimation() {
   // ── 进阶模式：Ek-p 关系图 ───────────────────────────────────
   const showEkCard = isAdvanced && showEkChart === 1
 
-  const cardWidth = Math.max(MOMENTUM_LAYOUT.ekCardMinWidth, canvasSize.width * 0.32)
+  const cardWidth = Math.max(MOMENTUM_LAYOUT.ekCardMinWidth, vp.visibleW * 0.32)
   const cardHeight = Math.max(MOMENTUM_LAYOUT.ekCardMinHeight, canvasSize.height * 0.35)
-  const cardX = canvasSize.width - cardWidth - MOMENTUM_LAYOUT.ekCardRightOffset
+  const cardX = vp.visibleX + vp.visibleW - cardWidth - MOMENTUM_LAYOUT.ekCardRightOffset
   const cardY = 20
 
   // RelationChart 数据：A球/B球各自 Ek=p²/(2m) 曲线

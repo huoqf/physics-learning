@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useMemo, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -28,17 +28,22 @@ export default function VelocityAnimation() {
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
 
+  const vp = useViewport(canvasSize, {
+    designWidth: 700,
+    designHeight: 400,
+  })
+
   const scene = params.scene ?? 0      // 0=公交, 1=短跑
   const v = params.v ?? 8              // m/s
   const deltaT = params.deltaT ?? 2    // s
   const totalDuration = params.totalDuration ?? 10 // s
 
   // ── 动态布局 ──
-  const padding = canvasSize.width * 0.07
+  const padding = vp.visibleW * 0.07
   const groundY = canvasSize.height * 0.72
-  const scale = (canvasSize.width - 2 * padding) / (v * totalDuration)
-  const startX = padding
-  const maxVisibleX = canvasSize.width - padding
+  const scale = (vp.visibleW - 2 * padding) / (v * totalDuration)
+  const startX = vp.visibleX + padding
+  const maxVisibleX = vp.visibleX + vp.visibleW - padding
 
   const rawX = startX + v * time * scale
   const isAtBoundary = rawX >= maxVisibleX
@@ -89,7 +94,7 @@ export default function VelocityAnimation() {
 
 
   // ── 物体尺寸 ──
-  const objW = canvasSize.width * 0.06
+  const objW = vp.visibleW * 0.06
   const objH = scene === 0 ? objW * 0.7 : objW * 0.9
 
   // ── 矢量场景配置 ──
@@ -279,7 +284,7 @@ export default function VelocityAnimation() {
 
         {/* ── 6. 测速仪微观视窗 ── */}
         {isDeltaTSmall && (
-          <g transform={`translate(${canvasSize.width - padding - 80}, ${padding})`}>
+          <g transform={`translate(${vp.visibleX + vp.visibleW - padding - 80}, ${padding})`}>
             <rect width={70} height={50} rx={6} fill={colors.neutral[50]} stroke={PHYSICS_COLORS.magnifier} strokeWidth={STROKE.annotation} />
             <text x={35} y={18} fontSize={smallFont} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">测速仪</text>
             <text x={35} y={40} fontSize={fontSize * 1.2} fill={PHYSICS_COLORS.velocity} fontWeight="bold" textAnchor="middle">
@@ -316,7 +321,7 @@ export default function VelocityAnimation() {
         )}
 
         {/* ── 场景标签 ── */}
-        <text x={padding} y={fontSize + 4} fontSize={fontSize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
+        <text x={vp.visibleX + padding} y={fontSize + 4} fontSize={fontSize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
           {scene === 0 ? '公交车进站' : '百米短跑冲线'}
         </text>
 

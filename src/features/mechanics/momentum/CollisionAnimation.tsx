@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -49,6 +49,11 @@ export default function CollisionAnimation() {
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
   const { font } = canvasSize
 
+  const vp = useViewport(canvasSize, {
+    designWidth: 700,
+    designHeight: 450,
+  })
+
   const {
     m1 = 3, v1 = 5,
     m2 = 2, v2 = 0,
@@ -63,19 +68,19 @@ export default function CollisionAnimation() {
 
   const sceneConfig = useMemo((): SceneConfig => ({
     vectorBounds: {
-      x: 0,
+      x: vp.visibleX,
       y: 0,
-      width: canvasSize.width - COL_LAYOUT.canvasPadding * 2,
+      width: vp.visibleW - COL_LAYOUT.canvasPadding * 2,
       height: canvasSize.height - COL_LAYOUT.canvasPadding,
     },
-    originX: 0,
+    originX: vp.visibleX,
     originY: groundY,
-    worldWidth: canvasSize.width,
+    worldWidth: vp.visibleW,
     worldHeight: canvasSize.height,
     refMagnitudes: {
       velocity: 12,
     },
-  }), [canvasSize.width, canvasSize.height, groundY]);
+  }), [vp.visibleX, vp.visibleW, canvasSize.height, groundY]);
 
   const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
 
@@ -83,8 +88,8 @@ export default function CollisionAnimation() {
   const R_A = COL_LAYOUT.ballBaseRadius + m1 * COL_LAYOUT.massRadiusScale
   const R_B = COL_LAYOUT.ballBaseRadius + m2 * COL_LAYOUT.massRadiusScale
 
-  const initPosAx = canvasSize.width * 0.25
-  const initPosBx = canvasSize.width * 0.7
+  const initPosAx = vp.visibleX + vp.visibleW * 0.25
+  const initPosBx = vp.visibleX + vp.visibleW * 0.7
 
   // 碰撞计算
   const gap = initPosBx - R_B - (initPosAx + R_A)
@@ -129,8 +134,8 @@ export default function CollisionAnimation() {
   }
 
   // 边界约束
-  const leftBound = COL_LAYOUT.canvasPadding + R_A
-  const rightBound = canvasSize.width - COL_LAYOUT.canvasPadding - R_B
+  const leftBound = vp.visibleX + COL_LAYOUT.canvasPadding + R_A
+  const rightBound = vp.visibleX + vp.visibleW - COL_LAYOUT.canvasPadding - R_B
   posAx = Math.max(leftBound, Math.min(rightBound + R_B - R_A, posAx))
   posBx = Math.max(leftBound - R_A + R_B, Math.min(rightBound, posBx))
 
@@ -150,8 +155,8 @@ export default function CollisionAnimation() {
   // 进阶模式碰撞动画
   const R_Adv = COL_LAYOUT.ballBaseRadius + mA * COL_LAYOUT.massRadiusScale
   const R_Bdv = COL_LAYOUT.ballBaseRadius + mB * COL_LAYOUT.massRadiusScale
-  const initPosAAdv = canvasSize.width * 0.25
-  const initPosBAdv = canvasSize.width * 0.7
+  const initPosAAdv = vp.visibleX + vp.visibleW * 0.25
+  const initPosBAdv = vp.visibleX + vp.visibleW * 0.7
   const gapAdv = initPosBAdv - R_Bdv - (initPosAAdv + R_Adv)
   const approachAdv = vA * COL_LAYOUT.velocityScale
   let colTimeAdv = Infinity
@@ -176,8 +181,8 @@ export default function CollisionAnimation() {
     curVB = vBAfter
   }
 
-  posAAdv = Math.max(COL_LAYOUT.canvasPadding + R_Adv, Math.min(canvasSize.width - COL_LAYOUT.canvasPadding - R_Adv, posAAdv))
-  posBAdv = Math.max(COL_LAYOUT.canvasPadding + R_Bdv, Math.min(canvasSize.width - COL_LAYOUT.canvasPadding - R_Bdv, posBAdv))
+  posAAdv = Math.max(vp.visibleX + COL_LAYOUT.canvasPadding + R_Adv, Math.min(vp.visibleX + vp.visibleW - COL_LAYOUT.canvasPadding - R_Adv, posAAdv))
+  posBAdv = Math.max(vp.visibleX + COL_LAYOUT.canvasPadding + R_Bdv, Math.min(vp.visibleX + vp.visibleW - COL_LAYOUT.canvasPadding - R_Bdv, posBAdv))
 
   // 质心
   const xCmAdv = (mA * posAAdv + mB * posBAdv) / (mA + mB)

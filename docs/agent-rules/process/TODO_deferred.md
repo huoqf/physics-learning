@@ -90,7 +90,7 @@
 
 ## 四、响应式缩放（P1，第 0-2 步已完成）
 
-- **A 类** SVG fontSize 裸值：已迁移 8 文件（力学 3 + 电磁学 5），剩余 11 文件纯硬编码 + 2 文件混合。详见 [`FONT_SIZE_AUDIT.md`](./FONT_SIZE_AUDIT.md)
+- **A 类** SVG fontSize 裸值：已迁移 8 文件（力学 3 + 电磁学 5），剩余 11 文件纯硬编码 + 1 文件混合。详见 [`FONT_SIZE_AUDIT.md`](./FONT_SIZE_AUDIT.md)
 - **C 类** Tailwind text-[Npx]：42 处 / 17+ 文件（原 16/3，sidebar/panel 面板大量使用）
 - **D 类** useCanvasSize → CANVAS_PRESETS：已迁移 47/72 调用点（原 7/72），剩余 28 为唯一尺寸/占位符/动态传入，不建议替换。新增 `mediumWide: 650×400` preset。详见 [`CANVAS_PRESETS_AUDIT.md`](./CANVAS_PRESETS_AUDIT.md)
 
@@ -107,13 +107,13 @@
 ### 已完成
 
 - ✅ ViewportInfo visibleX/visibleY · transform 设计稿左上角语义 · Transformer 试点
-- ✅ Work / Transformer / SatelliteAnimation / KeplerAnimation 接入
+- ✅ Work / Transformer / SatelliteAnimation / KeplerAnimation / ElectricField / FieldLines / 4 光学模块 接入
+- ✅ Velocity / Collision / Momentum 试点推广（overlay 避让）
 
 ### 待做
 
-1. **试点推广**：Velocity(wide)、Collision/Momentum(top/bottom)
-2. **沉淀 SceneLayoutProfile**：AnimationConfig.sceneLayout 接口
-3. **统一 panel layout 工具**：viewport overlay 和 DOM panel 同源计算
+1. **沉淀 SceneLayoutProfile**：AnimationConfig.sceneLayout 接口
+2. **统一 panel layout 工具**：viewport overlay 和 DOM panel 同源计算
 
 ### 硬约束
 
