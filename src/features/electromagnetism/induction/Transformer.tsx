@@ -18,6 +18,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useCanvasSize, useViewport } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, CANVAS_STYLE, FONT } from '@/theme/physics'
 import { calculateTransformerWithLoad } from '@/physics'
 import { DialMeter, Rheostat } from '@/components/Physics'
@@ -123,7 +124,7 @@ export default function Transformer() {
     useShallow((s) => ({ params: s.params }))
   )
 
-  const [containerRef, canvasSize] = useCanvasSize({ width: 760, height: 440 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
   const { font, px } = canvasSize
 
   const mode = params.mode ?? 0 // 0=基础, 1=进阶
