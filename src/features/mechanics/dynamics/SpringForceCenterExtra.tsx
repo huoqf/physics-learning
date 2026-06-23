@@ -1,5 +1,6 @@
 import { FC, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { useAnimationStore } from '@/stores'
@@ -8,7 +9,7 @@ import { VectorDefs } from '@/components/Physics/VectorDefs'
 export const SpringForceCenterExtra: FC = () => {
     const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
-  const [containerRef, canvasSize] = useCanvasSize({ width: 420, height: 315 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumWide)
   const { font } = canvasSize
 
   const k = params.k ?? 100
