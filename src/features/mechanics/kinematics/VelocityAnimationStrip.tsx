@@ -2,6 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OBJECT } from '@/theme/physics'
 import { Spring } from '@/components/UI'
 import { calculateInstantaneousVelocity } from '@/physics'
@@ -31,7 +32,7 @@ export default function VelocityAnimationStrip({
     }))
   )
   const deltaT = params.deltaT ?? 0.5
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 200 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide)
 
   // ── 布局参数 ──
   const padding = canvasSize.width * 0.07

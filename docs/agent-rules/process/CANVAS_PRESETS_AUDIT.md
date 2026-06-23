@@ -1,7 +1,7 @@
 # CANVAS_PRESETS 迁移盘点
 
 > 核查日期：2026-06-23
-> 总调用点：76（63 已迁移 + 13 硬编码）
+> 总调用点：76（64 已迁移 + 12 硬编码）
 
 ---
 
@@ -19,7 +19,7 @@
 
 ---
 
-## A. 已迁移至现有 preset（63 调用点）
+## A. 已迁移至现有 preset（64 调用点）
 
 ### tall: 700×450（13）
 
@@ -107,13 +107,14 @@
 | mechanics/circular/CircularMotionAnimation.tsx | 72 |
 | electromagnetism/magnetism/BoundaryMagneticField/SimulationView.tsx | 12 |
 
-### extraWide: 800×440（7）
+### extraWide: 800×440（8）
 
 | 文件 | 行 |
 |---|---|
 | electromagnetism/induction/FaradayLaw.tsx | 24 |
 | electromagnetism/induction/PowerTransmission.tsx | 53 |
 | electromagnetism/induction/ACGeneration.tsx | 33 |
+| mechanics/kinematics/VelocityAnimationStrip.tsx | 34 |
 | optics/thin-lens/ThinLensAnimation.tsx | 158 |
 | optics/total-internal-reflection/TIRAnimation.tsx | 37 |
 | optics/refraction/RefractionAnimation.tsx | 41 |
@@ -121,7 +122,7 @@
 
 ---
 
-## B. 硬编码（14 调用点）
+## B. 硬编码（12 调用点）
 
 ### 物理坐标系占位符 100×100（5）
 
@@ -168,12 +169,12 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 
 | 分类 | 调用点 | 操作 |
 |---|---:|---|
-| A. 已迁移至 preset | 63 | ✅ 已替换 |
-| B. 硬编码 | 13 | 保持现状 |
+| A. 已迁移至 preset | 64 | ✅ 已替换 |
+| B. 硬编码 | 12 | 保持现状 |
 | **合计** | **76** | — |
 
-- 已迁移从 7 增至 63（新增 56）
-- 硬编码从 70 降至 13（减少 81%）
+- 已迁移从 7 增至 64（新增 57）
+- 硬编码从 70 降至 12（减少 83%）
 - CANVAS_PRESETS 从 6 个增至 7 个（新增 mediumWide）
-- 删除 VelocityAnimationStrip（1 调用点）
+- tsc 零错误通过
 - tsc 零错误通过
