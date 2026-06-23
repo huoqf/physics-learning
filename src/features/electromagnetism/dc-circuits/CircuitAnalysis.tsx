@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { DialMeter, DCSource, Rheostat } from '@/components/Physics'
@@ -55,7 +56,7 @@ function getPointOnPath(points: Point[], progress: number): Point {
 export default function CircuitAnalysis() {
     const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
-  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 360 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumWide)
   const { font } = canvasSize
 
   // 参数配置
