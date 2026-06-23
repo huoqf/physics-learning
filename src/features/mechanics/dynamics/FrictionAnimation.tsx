@@ -2,6 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { computeScale } from '@/utils/coordinate'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, CANVAS_COLORS, CANVAS_STYLE, FONT, SCENE_COLORS, CHART_COLORS } from '@/theme/physics'
 import { calculateFrictionPullModel, calculateFrictionInclineModel } from '@/physics'
 import { GRAVITY } from '@/physics/constants'
@@ -23,7 +24,7 @@ export default function FrictionAnimation() {
     showGrid: s.showGrid,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 420 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.standard)
   const { font } = canvasSize
 
   const pullScale = computeScale(canvasSize.width - 200, 1, { xMin: 0, xMax: 5, yMin: 0, yMax: 1 })

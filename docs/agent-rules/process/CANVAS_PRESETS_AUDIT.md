@@ -1,7 +1,7 @@
 # CANVAS_PRESETS 迁移盘点
 
 > 核查日期：2026-06-23
-> 总调用点：77（53 已迁移 + 24 硬编码）
+> 总调用点：77（54 已迁移 + 23 硬编码）
 
 ---
 
@@ -19,7 +19,7 @@
 
 ---
 
-## A. 已迁移至现有 preset（53 调用点）
+## A. 已迁移至现有 preset（54 调用点）
 
 ### tall: 700×450（11）
 
@@ -48,7 +48,7 @@
 | mechanics/gravitation/SatelliteAnimation.tsx | 124 |
 | mechanics/dynamics/VectorAdditionAnimation.tsx | 30 |
 
-### standard: 700×420（7）
+### standard: 700×420（8）
 
 | 文件 | 行 |
 |---|---|
@@ -56,6 +56,7 @@
 | mechanics/energy/PotentialEnergyAnimation.tsx | 46 |
 | mechanics/energy/PowerAnimation.tsx | 34 |
 | mechanics/energy/KineticEnergyAnimation.tsx | 31 |
+| mechanics/dynamics/FrictionAnimation.tsx | 26 |
 | electromagnetism/magnetism/VelocitySelector.tsx | 25 |
 | electromagnetism/dc-circuits/ClosedCircuit.tsx | 15 |
 | thermodynamics/kinematics/IntermolecularForcesAnimation.tsx | 35 |
@@ -111,7 +112,7 @@
 
 ---
 
-## B. 硬编码（24 调用点）
+## B. 硬编码（23 调用点）
 
 ### 物理坐标系占位符 100×100（5）
 
@@ -155,11 +156,10 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 | mechanics/dynamics/ConnectedBodiesAnimation.tsx | 53 | 600×400 | 连接体 |
 | mechanics/kinematics/VelocityAnimationStrip.tsx | 34 | 700×200 | 横条场景 |
 
-### 待确认（2）
+### 待确认（1）
 
 | 文件 | 行 | 尺寸 | 说明 |
 |---|---|---|---|
-| mechanics/dynamics/FrictionAnimation.tsx | 26 | 650×420 | 差 standard 50px 宽 |
 | electromagnetism/induction/CuttingEMF.tsx | 203 | 700×440 | 差 extraWide 100px 宽 |
 
 ### 动态传入（1）
@@ -174,11 +174,11 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 
 | 分类 | 调用点 | 操作 |
 |---|---:|---|
-| A. 已迁移至 preset | 53 | ✅ 已替换 |
-| B. 硬编码 | 24 | 保持现状 |
+| A. 已迁移至 preset | 54 | ✅ 已替换 |
+| B. 硬编码 | 23 | 保持现状 |
 | **合计** | **77** | — |
 
-- 已迁移从 7 增至 53（新增 46）
-- 硬编码从 70 降至 24（减少 66%）
+- 已迁移从 7 增至 54（新增 47）
+- 硬编码从 70 降至 23（减少 67%）
 - CANVAS_PRESETS 从 6 个增至 7 个（新增 mediumWide）
 - tsc 零错误通过
