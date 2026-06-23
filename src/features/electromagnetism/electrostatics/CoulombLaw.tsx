@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useCanvasSize, type CanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateCoulombForce, calculateThreeChargeForces } from '@/physics'
@@ -33,7 +34,7 @@ export default function CoulombLaw() {
     showFormulas: s.showFormulas,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 450 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
 
   const mode = params.mode ?? 0
 

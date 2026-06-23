@@ -1,5 +1,6 @@
 import { useState, useRef, useMemo, useCallback, useEffect } from 'react'
 import { useCanvasSize, useViewport } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateOrbitalSpeed } from '@/physics'
@@ -121,7 +122,7 @@ export default function SatelliteAnimation() {
     setIsPlaying: s.setIsPlaying,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumTall)
   const { font } = canvasSize
 
   const vp = useViewport(canvasSize, {

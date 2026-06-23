@@ -1,5 +1,6 @@
 import { useEffect, useRef, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { colors } from '@/theme/colors'
@@ -9,7 +10,7 @@ import { calcTrajectoryCenter } from '@/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 
 export function SimulationView() {
-  const [sizeRef, canvasSize] = useCanvasSize({ width: 600, height: 600 })
+  const [sizeRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.square)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
     const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)

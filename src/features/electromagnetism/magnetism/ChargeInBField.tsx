@@ -1,4 +1,5 @@
 import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateChargeInMagField } from '@/physics'
@@ -26,7 +27,7 @@ export default function ChargeInBField() {
     showGrid: s.showGrid,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 400 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
 
   const { q = 1, m = 1, v = 10, B = 1 } = params
   const { r, T, omega } = calculateChargeInMagField(Math.abs(q), m, Math.abs(v), B)

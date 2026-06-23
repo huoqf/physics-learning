@@ -29,6 +29,7 @@ export default function ElectricField() {
   const showFieldLines = (params.showFieldLines ?? 1) === 1
 
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 480 })
+  const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 
   const w = canvasSize.width
@@ -251,7 +252,7 @@ export default function ElectricField() {
                   <text x={0} y={84} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.electricForce} fontWeight="bold">
                     决定式：E = k·Q/r²
                   </text>
-                  <text x={0} y={100} fontSize="10" fill={colors.neutral[500]}>
+                  <text x={0} y={100} fontSize={font(10)} fill={colors.neutral[500]}>
                     * 改变试探电荷 q，E保持恒定！
                   </text>
                 </>
@@ -266,7 +267,7 @@ export default function ElectricField() {
                   <text x={0} y={64} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.electricField} fontWeight="bold">
                     合场强：E合 = E₁ + E₂
                   </text>
-                  <text x={0} y={82} fontSize="10" fill={colors.neutral[500]}>
+                  <text x={0} y={82} fontSize={font(10)} fill={colors.neutral[500]}>
                     * 拖拽 P 点感受平行四边形合成
                   </text>
                 </>

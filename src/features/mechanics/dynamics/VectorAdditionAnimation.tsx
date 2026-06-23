@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
 import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
@@ -27,7 +28,7 @@ export default function VectorAdditionAnimation() {
     updateParam: s.updateParam,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumTall)
   const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 

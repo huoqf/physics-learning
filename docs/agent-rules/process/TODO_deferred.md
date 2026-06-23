@@ -90,9 +90,9 @@
 
 ## 四、响应式缩放（P1，第 0-2 步已完成）
 
-- **A 类** SVG fontSize 裸值：107+ 处 / 25+ 文件（原 68/9，随功能扩展增长）
+- **A 类** SVG fontSize 裸值：已迁移 7 文件（力学 3 + 电磁学 4），剩余 11 文件纯硬编码 + 3 文件混合。详见 [`FONT_SIZE_AUDIT.md`](./FONT_SIZE_AUDIT.md)
 - **C 类** Tailwind text-[Npx]：42 处 / 17+ 文件（原 16/3，sidebar/panel 面板大量使用）
-- **D 类** useCanvasSize → CANVAS_PRESETS：仅 7 个文件已迁移（ACValues, GasLaws, Clapeyron, PowerTransmission, SecondLaw, FirstLaw, ClapeyronCenterExtra），其余仍用硬编码尺寸
+- **D 类** useCanvasSize → CANVAS_PRESETS：已迁移 40/72 调用点（原 7/72），剩余 32 为唯一尺寸/占位符/动态传入，不建议替换。新增 `mediumWide: 650×400` preset。详见 [`CANVAS_PRESETS_AUDIT.md`](./CANVAS_PRESETS_AUDIT.md)
 
 ---
 

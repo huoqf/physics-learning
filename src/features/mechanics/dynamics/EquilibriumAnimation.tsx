@@ -1,5 +1,6 @@
 import { useRef, useEffect, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { clampEndpoint } from '@/utils/coordinate'
 import type { CanvasBounds } from '@/utils/coordinate'
 import { useAnimationStore } from '@/stores'
@@ -23,7 +24,7 @@ export default function EquilibriumAnimation() {
     time: s.time,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumTall)
   const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 

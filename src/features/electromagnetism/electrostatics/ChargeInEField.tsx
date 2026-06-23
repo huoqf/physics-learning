@@ -25,6 +25,7 @@ export default function ChargeInEField() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 460 })
+  const { font } = canvasSize
 
   const U = params.U ?? 200
   const v0 = params.v0 ?? 20
@@ -240,7 +241,7 @@ export default function ChargeInEField() {
           <line x1={region.left} y1={topPlateY} x2={region.right} y2={topPlateY}
             stroke={curFieldSign > 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
             strokeWidth={5} strokeLinecap="round" />
-          <text x={region.left - 15} y={topPlateY + 5} fontSize="14" fontWeight="bold" textAnchor="end"
+          <text x={region.left - 15} y={topPlateY + 5} fontSize={font(14)} fontWeight="bold" textAnchor="end"
             fill={curFieldSign > 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}>
             {curFieldSign > 0 ? '＋' : '－'}
           </text>
@@ -249,7 +250,7 @@ export default function ChargeInEField() {
           <line x1={region.left} y1={bottomPlateY} x2={region.right} y2={bottomPlateY}
             stroke={curFieldSign > 0 ? PHYSICS_COLORS.negativeCharge : PHYSICS_COLORS.positiveCharge}
             strokeWidth={5} strokeLinecap="round" />
-          <text x={region.left - 15} y={bottomPlateY + 5} fontSize="14" fontWeight="bold" textAnchor="end"
+          <text x={region.left - 15} y={bottomPlateY + 5} fontSize={font(14)} fontWeight="bold" textAnchor="end"
             fill={curFieldSign > 0 ? PHYSICS_COLORS.negativeCharge : PHYSICS_COLORS.positiveCharge}>
             {curFieldSign > 0 ? '－' : '＋'}
           </text>
@@ -272,7 +273,7 @@ export default function ChargeInEField() {
             )
           })}
           {showVectors && (
-            <text x={region.right - 10} y={midY - 10} fontSize="11" fill={PHYSICS_COLORS.electricField} fontWeight="bold" textAnchor="end">
+            <text x={region.right - 10} y={midY - 10} fontSize={font(11)} fill={PHYSICS_COLORS.electricField} fontWeight="bold" textAnchor="end">
               E (匀强电场)
             </text>
           )}
@@ -285,7 +286,7 @@ export default function ChargeInEField() {
 
           {/* 粒子 */}
           <circle cx={cx} cy={cy} r={10} fill={PHYSICS_COLORS.positiveCharge} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={2} />
-          <text x={cx} y={cy + 4.5} fontSize="13" fill={CANVAS_COLORS.annotation} textAnchor="middle" fontWeight="bold">+</text>
+          <text x={cx} y={cy + 4.5} fontSize={font(13)} fill={CANVAS_COLORS.annotation} textAnchor="middle" fontWeight="bold">+</text>
 
           {/* 速度分量与速度分解虚线框 */}
           {showVectors && !ended && (
@@ -305,7 +306,7 @@ export default function ChargeInEField() {
                 strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                 pixelLength={vxPxLen}
               />
-              <text x={cx + vx_px + 8} y={cy + 3} fontSize="10" fill={PHYSICS_COLORS.velocityX} fontWeight="bold">v₀</text>
+              <text x={cx + vx_px + 8} y={cy + 3} fontSize={font(10)} fill={PHYSICS_COLORS.velocityX} fontWeight="bold">v₀</text>
 
               {/* vy (竖直分速度，浅蓝) */}
               {Math.abs(currentState.vy) > 0.05 && (
@@ -318,7 +319,7 @@ export default function ChargeInEField() {
                   pixelLength={vyPxLen}
                 />
               )}
-              <text x={cx - 3} y={cy + vy_px + (vy_px > 0 ? 12 : -4)} fontSize="10" fill={PHYSICS_COLORS.velocityY} fontWeight="bold" textAnchor="middle">vᵧ</text>
+              <text x={cx - 3} y={cy + vy_px + (vy_px > 0 ? 12 : -4)} fontSize={font(10)} fill={PHYSICS_COLORS.velocityY} fontWeight="bold" textAnchor="middle">vᵧ</text>
 
               {/* 合速度 v (深蓝) */}
               <VectorArrow
@@ -329,7 +330,7 @@ export default function ChargeInEField() {
                 strokeWidth={CANVAS_STYLE.stroke.vectorMain}
                 pixelLength={totalPxLen}
               />
-              <text x={cx + vx_px + 8} y={cy + vy_px + (vy_px > 0 ? 8 : -4)} fontSize="10" fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
+              <text x={cx + vx_px + 8} y={cy + vy_px + (vy_px > 0 ? 8 : -4)} fontSize={font(10)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
 
               {/* 电场力 F_E (紫色) */}
               <VectorArrow
@@ -357,7 +358,7 @@ export default function ChargeInEField() {
           {ended && (
             <g transform={`translate(${cx}, ${cy + (cy > midY ? -18 : 24)})`}>
               <rect x={-45} y={-14} width={90} height={20} fill={withAlpha(CANVAS_COLORS.labelText, 0.85)} rx={4} />
-              <text fontSize="10" fill={CANVAS_COLORS.objectFill} textAnchor="middle" fontWeight="bold" y={0}>
+              <text fontSize={font(10)} fill={CANVAS_COLORS.objectFill} textAnchor="middle" fontWeight="bold" y={0}>
                 {hitType === 'top' ? '撞击上极板' : hitType === 'bottom' ? '撞击下极板' : '已射出电场'}
               </text>
             </g>

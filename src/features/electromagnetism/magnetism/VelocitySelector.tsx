@@ -1,5 +1,6 @@
 import { useEffect, useRef, useMemo, useId } from 'react'
 import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateVelocitySelectorTrajectory } from '@/physics'
@@ -22,7 +23,7 @@ interface ParticleState {
 
 export default function VelocitySelector() {
   const gradId = useId()
-  const [sizeRef, canvasSize] = useCanvasSize({ width: 700, height: 420 })
+  const [sizeRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.standard)
   const { font } = canvasSize
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
@@ -478,7 +479,7 @@ export default function VelocitySelector() {
             key={cross.id}
             x={cross.x}
             y={cross.y + 5}
-            fontSize="15"
+            fontSize={font(15)}
             fill={PHYSICS_COLORS.magneticFieldCross}
             opacity="0.32"
             textAnchor="middle"
@@ -609,7 +610,7 @@ export default function VelocitySelector() {
             <text
               x={chartXOffset + chartWidth / 2}
               y={chartYOffset - 4}
-              fontSize="11"
+              fontSize={font(11)}
               fill={colors.neutral[600]}
               fontWeight="bold"
               textAnchor="middle"
@@ -634,7 +635,7 @@ export default function VelocitySelector() {
             <text
               x={chartXOffset + chartWidth + 16}
               y={toChartY(0) + 12}
-              fontSize="9"
+              fontSize={font(9)}
               fill={colors.neutral[500]}
               fontWeight="bold"
               textAnchor="middle"
@@ -658,7 +659,7 @@ export default function VelocitySelector() {
             <text
               x={chartXOffset - 8}
               y={chartYOffset - 4}
-              fontSize="9"
+              fontSize={font(9)}
               fill={colors.neutral[500]}
               fontWeight="bold"
             >
@@ -669,7 +670,7 @@ export default function VelocitySelector() {
             <text
               x={chartXOffset - 8}
               y={toChartY(0) + 3}
-              fontSize="9"
+              fontSize={font(9)}
               fill={colors.neutral[400]}
             >
               0
@@ -697,7 +698,7 @@ export default function VelocitySelector() {
             <text
               x={chartXOffset + chartWidth + 4}
               y={toChartY(d_phys / 2) + 3}
-              fontSize="8"
+              fontSize={font(8)}
               fill={colors.neutral[400]}
             >
               +d/2
@@ -705,7 +706,7 @@ export default function VelocitySelector() {
             <text
               x={chartXOffset + chartWidth + 4}
               y={toChartY(-d_phys / 2) + 3}
-              fontSize="8"
+              fontSize={font(8)}
               fill={colors.neutral[400]}
             >
               -d/2
@@ -743,7 +744,7 @@ export default function VelocitySelector() {
                 <text
                   x={toChartX(chartData.vFilter)}
                   y={chartYOffset + chartHeight - 4}
-                  fontSize="8"
+                  fontSize={font(8)}
                   fill={PHYSICS_COLORS.magneticField}
                   fontWeight="bold"
                   textAnchor="middle"

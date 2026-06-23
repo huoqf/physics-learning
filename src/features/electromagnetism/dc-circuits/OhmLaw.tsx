@@ -1,4 +1,5 @@
 import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { calculateOhmLaw } from '@/physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
@@ -8,7 +9,7 @@ import { LightBulb, DialMeter, DCSource } from '@/components/Physics'
 export default function OhmLaw() {
     const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
-  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 400 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumWide)
   const { font } = canvasSize
 
   const mode = params.mode ?? 0 // 0=定值电阻, 1=小灯泡

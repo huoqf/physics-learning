@@ -65,6 +65,8 @@ export const CANVAS_PRESETS = {
   mediumTall: { width: 650, height: 450 },
   /** 700×400 — 匀加速、感应、洛伦兹等 5 个动画 */
   wide:       { width: 700, height: 400 },
+  /** 650×400 — 欧姆定律、弹簧力、失重/牛二 CenterExtra 等 4 个动画 */
+  mediumWide: { width: 650, height: 400 },
   /** 600×600 — 圆周运动、向心力、边界磁场 3 个动画 */
   square:     { width: 600, height: 600 },
   /** 800×440 — 变压器、法拉第、输电 3 个动画 */

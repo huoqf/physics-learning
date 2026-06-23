@@ -1,4 +1,5 @@
 import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useState, useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -35,7 +36,7 @@ export default function EnergyConservationAnimation() {
     setTime: s.setTime,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 420 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.standard)
   const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 

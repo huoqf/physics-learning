@@ -24,6 +24,7 @@ export default function FrictionAnimation() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 420 })
+  const { font } = canvasSize
 
   const pullScale = computeScale(canvasSize.width - 200, 1, { xMin: 0, xMax: 5, yMin: 0, yMax: 1 })
   const inclineScale = computeScale(canvasSize.height * 0.6, 1, { xMin: 0, xMax: 3, yMin: 0, yMax: 1 })
@@ -287,7 +288,7 @@ export default function FrictionAnimation() {
             </g>
             {/* 轴销旋转点 */}
             <circle cx={pivotX} cy={pivotY} r={5} fill={PHYSICS_COLORS.gravity} stroke={PHYSICS_COLORS.labelText} strokeWidth={1.5} />
-            <text x={pivotX} y={pivotY + 16} fontSize="9" fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">支点</text>
+            <text x={pivotX} y={pivotY + 16} fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">支点</text>
 
             {/* 使用旋转 transform 绘制斜面板和木箱 */}
             <g transform={`translate(${pivotX}, ${pivotY}) rotate(${-angle})`}>
@@ -391,7 +392,7 @@ export default function FrictionAnimation() {
               />
               <text
                 x={pivotX + 48} y={pivotY - 12}
-                fontSize="11" fill={CANVAS_COLORS.annotation} fontWeight="bold"
+                fontSize={font(11)} fill={CANVAS_COLORS.annotation} fontWeight="bold"
               >
                 θ = {angle}°
               </text>

@@ -1,5 +1,6 @@
 import { useRef, useCallback, useState, useEffect } from 'react'
 import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { computeScale, physicsToCanvasWithOrigin } from '@/utils/coordinate'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -58,7 +59,7 @@ export default function BrownianMotion() {
     })),
   )
 
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 400 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
   const { width, height, font } = canvasSize
 
   const mode = params.mode ?? 0

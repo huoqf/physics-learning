@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react'
 import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
@@ -28,7 +29,7 @@ export default function InductionPhenomenon() {
     setParams: s.setParams,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 400 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
   const { font } = canvasSize
 
   // 自变量提取

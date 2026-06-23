@@ -66,6 +66,7 @@ function VelocityChart() {
   const progressTime = time > 0 ? (time % tCycle) - tSlideIn : -tSlideIn
 
   const [sizeRef, canvasSize] = useCanvasSize({ width: 200, height: 180 })
+  const { font } = canvasSize
 
   const cw = canvasSize.width
   const ch = canvasSize.height
@@ -123,7 +124,7 @@ function VelocityChart() {
               <text
                 x={(inBFieldStart + inBFieldEnd) / 2}
                 y={(yV + zeroY) / 2 + 3}
-                fontSize="9"
+                fontSize={font(9)}
                 fill="#3B82F699"
                 textAnchor="middle"
                 fontWeight="500"
@@ -142,7 +143,7 @@ function VelocityChart() {
               strokeWidth="1.5"
               strokeDasharray="3,3"
             />
-            <text x={inBFieldStart} y={ch - paddingBottom + 12} fontSize="9" fill={colors.neutral[400]} textAnchor="middle">
+            <text x={inBFieldStart} y={ch - paddingBottom + 12} fontSize={font(9)} fill={colors.neutral[400]} textAnchor="middle">
               射入
             </text>
 
@@ -155,7 +156,7 @@ function VelocityChart() {
               strokeWidth="1.5"
               strokeDasharray="3,3"
             />
-            <text x={inBFieldEnd} y={ch - paddingBottom + 12} fontSize="9" fill={colors.neutral[400]} textAnchor="middle">
+            <text x={inBFieldEnd} y={ch - paddingBottom + 12} fontSize={font(9)} fill={colors.neutral[400]} textAnchor="middle">
               射出
             </text>
 
@@ -171,7 +172,7 @@ function VelocityChart() {
               />
               <polygon points={`${inBFieldStart + 5},${ch - paddingBottom - 14} ${inBFieldStart},${ch - paddingBottom - 12} ${inBFieldStart + 5},${ch - paddingBottom - 10}`} fill={colors.neutral[500]} />
               <polygon points={`${inBFieldEnd - 5},${ch - paddingBottom - 14} ${inBFieldEnd},${ch - paddingBottom - 12} ${inBFieldEnd - 5},${ch - paddingBottom - 10}`} fill={colors.neutral[500]} />
-              <text x={(inBFieldStart + inBFieldEnd) / 2} y={ch - paddingBottom - 16} fontSize="8" fill={colors.neutral[500]} textAnchor="middle" fontWeight="bold">
+              <text x={(inBFieldStart + inBFieldEnd) / 2} y={ch - paddingBottom - 16} fontSize={font(8)} fill={colors.neutral[500]} textAnchor="middle" fontWeight="bold">
                 时宽 Δt = {tOut.toFixed(2)}s
               </text>
             </g>
@@ -207,20 +208,20 @@ function VelocityChart() {
             />
 
             {/* 轴标签 */}
-            <text x={cw - 12} y={zeroY + 15} fontSize="9" fill={colors.neutral[500]} textAnchor="middle" fontWeight="bold">
+            <text x={cw - 12} y={zeroY + 15} fontSize={font(9)} fill={colors.neutral[500]} textAnchor="middle" fontWeight="bold">
               t
             </text>
-            <text x={paddingLeft - 12} y={paddingTop - 5} fontSize="9" fill={colors.neutral[500]} textAnchor="middle" fontWeight="bold">
+            <text x={paddingLeft - 12} y={paddingTop - 5} fontSize={font(9)} fill={colors.neutral[500]} textAnchor="middle" fontWeight="bold">
               v
             </text>
 
             {/* y 轴数值刻度 */}
-            <text x={paddingLeft - 8} y={yV + 3} fontSize="9" fill={PHYSICS_COLORS.velocity} textAnchor="end" fontWeight="bold">
+            <text x={paddingLeft - 8} y={yV + 3} fontSize={font(9)} fill={PHYSICS_COLORS.velocity} textAnchor="end" fontWeight="bold">
               {v.toFixed(1)}
             </text>
             <line x1={paddingLeft - 3} y1={yV} x2={paddingLeft} y2={yV} stroke={PHYSICS_COLORS.velocity} strokeWidth="1.5" />
 
-            <text x={paddingLeft - 8} y={zeroY + 3} fontSize="9" fill={colors.neutral[400]} textAnchor="end">
+            <text x={paddingLeft - 8} y={zeroY + 3} fontSize={font(9)} fill={colors.neutral[400]} textAnchor="end">
               0
             </text>
 

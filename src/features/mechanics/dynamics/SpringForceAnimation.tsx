@@ -1,4 +1,5 @@
 import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { computeScale } from '@/utils/coordinate'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -18,7 +19,7 @@ export default function SpringForceAnimation() {
     showGrid: s.showGrid,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 400 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumWide)
   const { font } = canvasSize
 
   const { k = 100, m = 1 } = params

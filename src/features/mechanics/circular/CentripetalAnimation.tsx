@@ -1,4 +1,5 @@
 import { useCanvasSize, physicsToCanvasWithOrigin } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import React, { useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -71,7 +72,7 @@ export default function CentripetalAnimation() {
     updateParam: s.updateParam,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 600, height: 600 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.square)
   // canvasSize.font removed: chart text now handled by RelationChart
 
   const {

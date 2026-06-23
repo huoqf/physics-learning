@@ -1,4 +1,5 @@
 import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -55,7 +56,7 @@ export default function MomentumConservationAnimation() {
     showVectors: s.showVectors,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 450 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
 
   const {
     m1 = 3, v1 = 5,

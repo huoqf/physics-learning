@@ -1,4 +1,5 @@
 import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { calculateClosedCircuit } from '@/physics'
 import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
@@ -12,7 +13,7 @@ import { DialMeter, Rheostat } from '@/components/Physics'
 export default function ClosedCircuit() {
     const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 420 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.standard)
   const { font } = canvasSize
 
   const EMF = params.EMF ?? 6

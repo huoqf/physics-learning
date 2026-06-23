@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { Ball } from '@/components/Physics/Ball'
@@ -32,7 +33,7 @@ export default function IntermolecularForcesAnimation() {
       showVectors: s.showVectors,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 420 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.standard)
   const { font } = canvasSize
 
   const mode = params.mode ?? 0

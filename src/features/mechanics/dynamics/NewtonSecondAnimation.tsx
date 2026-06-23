@@ -1,4 +1,5 @@
 import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import {
@@ -21,7 +22,7 @@ export default function NewtonSecondAnimation() {
     showGrid: s.showGrid,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 400 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
 
   const {
     F = 10,

@@ -1,4 +1,5 @@
 import { useCanvasSize, useViewport, physicsToCanvas } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CANVAS_STYLE, KEPLER_CONFIG, VECTOR_DISPLAY, INSET_CHART } from '@/theme/physics'
@@ -25,7 +26,7 @@ export default function KeplerAnimation() {
     showFormulas: s.showFormulas,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumTall)
   const { font } = canvasSize
 
   const vp = useViewport(canvasSize, {

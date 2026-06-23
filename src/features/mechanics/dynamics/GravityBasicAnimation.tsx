@@ -1,5 +1,6 @@
 import { FC, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
@@ -38,7 +39,8 @@ export const GravityBasicAnimation: FC = () => {
     isPlaying: s.isPlaying,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumTall)
+  const { font } = canvasSize
 
   // 参数解析
   const mode = params.mode ?? 0 // 0=地球自转重力分解, 1=悬挂重心实验
@@ -246,8 +248,8 @@ export const GravityBasicAnimation: FC = () => {
               strokeWidth={1.5}
               strokeDasharray="5,4"
             />
-            <text x={cx} y={cy - earthData.R_earth - 36} fontSize="11" fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">自转轴 (北极 N)</text>
-            <text x={cx} y={cy + earthData.R_earth + 44} fontSize="11" fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">南极 S</text>
+            <text x={cx} y={cy - earthData.R_earth - 36} fontSize={font(11)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">自转轴 (北极 N)</text>
+            <text x={cx} y={cy + earthData.R_earth + 44} fontSize={font(11)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">南极 S</text>
 
             {/* 地球圆形本体 */}
             <circle
@@ -265,7 +267,7 @@ export const GravityBasicAnimation: FC = () => {
               strokeWidth={1}
               strokeDasharray="2,2"
             />
-            <text x={cx - earthData.R_earth + 16} y={cy - 4} fontSize="9" fill={withAlpha(colors.neutral.white, 0.7)} fontWeight="bold">赤道面</text>
+            <text x={cx - earthData.R_earth + 16} y={cy - 4} fontSize={font(9)} fill={withAlpha(colors.neutral.white, 0.7)} fontWeight="bold">赤道面</text>
 
             {/* 绘制纬度虚线圈 (物体所在纬度) */}
             {earthData.effectiveLat > 0 && earthData.effectiveLat < 90 && (
@@ -377,7 +379,7 @@ export const GravityBasicAnimation: FC = () => {
                 {earthData.angleDeviation > 0.5 && earthData.effectiveLat > 10 && earthData.effectiveLat < 80 && (
                   <text
                     x={earthData.objX + 18} y={earthData.objY - 22}
-                    fontSize="10" fill={CANVAS_COLORS.annotation} fontWeight="bold"
+                    fontSize={font(10)} fill={CANVAS_COLORS.annotation} fontWeight="bold"
                   >
                     偏角 θ ≈ {earthData.angleDeviation.toFixed(1)}°
                   </text>
@@ -393,11 +395,11 @@ export const GravityBasicAnimation: FC = () => {
               strokeWidth={1.5}
             />
             {/* 标注球体质量 (可见标注 1/5) */}
-            <text x={earthData.objX} y={earthData.objY - 14} fontSize="11" fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
+            <text x={earthData.objX} y={earthData.objY - 14} fontSize={font(11)} fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
               m
             </text>
             {/* 纬度数值标注 (可见标注 2/5) */}
-            <text x={cx + 10} y={cy - 10} fontSize="11" fill="white" fontWeight="bold">
+            <text x={cx + 10} y={cy - 10} fontSize={font(11)} fill="white" fontWeight="bold">
               φ = {earthData.effectiveLat.toFixed(1)}°
             </text>
           </g>
@@ -470,7 +472,7 @@ export const GravityBasicAnimation: FC = () => {
                 key={`hole-label-${idx}`}
                 x={hole.cx + (idx === 0 ? -10 : idx === 1 ? 10 : 8)}
                 y={hole.cy + (idx === 2 ? 12 : -8)}
-                fontSize="9"
+                fontSize={font(9)}
                 fill={PHYSICS_COLORS.labelTextLight}
                 fontWeight="bold"
                 textAnchor="middle"
@@ -500,7 +502,7 @@ export const GravityBasicAnimation: FC = () => {
                 <text
                   x={plateData.canvasWeight.cx}
                   y={plateData.canvasWeight.cy - 12 - weightMass * 2}
-                  fontSize="9"
+                  fontSize={font(9)}
                   fill={SCENE_COLORS.sphere.brassWeight.stroke}
                   fontWeight="bold"
                   textAnchor="middle"
@@ -533,7 +535,7 @@ export const GravityBasicAnimation: FC = () => {
               <text
                 x={plateData.canvasCenter.cx + 10}
                 y={plateData.canvasCenter.cy - 4}
-                fontSize="11"
+                fontSize={font(11)}
                 fill={CANVAS_COLORS.annotation}
                 fontWeight="bold"
               >
@@ -546,7 +548,7 @@ export const GravityBasicAnimation: FC = () => {
               <text
                 x={plateData.pinX + 16}
                 y={plateData.pinY + 140}
-                fontSize="10"
+                fontSize={font(10)}
                 fill={PHYSICS_COLORS.acceleration}
                 fontWeight="bold"
               >

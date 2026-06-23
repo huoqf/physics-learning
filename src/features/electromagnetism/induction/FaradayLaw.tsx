@@ -4,6 +4,7 @@
  * 职责：Store 订阅 + 参数提取 + 布局计算 + 组合子组件
  */
 import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
@@ -21,7 +22,7 @@ export default function FaradayLaw() {
     }))
   )
 
-  const [containerRef, canvasSize] = useCanvasSize({ width: 800, height: 440 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide)
   const { font } = canvasSize
 
   // ── 物理参数提取 ──────────────────────────────────────────────────────

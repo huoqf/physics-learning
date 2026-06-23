@@ -6,9 +6,10 @@ import { calculateNewtonSecondVariableMotion } from '@/physics'
 import { AnimationControls, MiniChart } from '@/components/UI'
 import NewtonSecondAnimation from './NewtonSecondAnimation'
 import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 
 export default function NewtonSecondCenterExtra() {
-    const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 400 })
+    const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumWide)
     const { font } = canvasSize
     const {params, time, isPlaying, speed, setIsPlaying, setTime, setSpeed} = useAnimationStore(
     useShallow((s) => ({

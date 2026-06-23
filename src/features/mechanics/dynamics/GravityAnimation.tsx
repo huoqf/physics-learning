@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE, SCENE_COLORS, CHART_COLORS } from '@/theme/physics'
@@ -20,8 +21,8 @@ export default function GravityAnimation() {
     time: s.time,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 650, height: 450 })
-  // canvasSize.font removed: chart text handled by RelationChart
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumTall)
+  const { font } = canvasSize
 
   const { m1 = 1000, m2 = 10, r = 5, mode = 0, preset = 0, showChart = 1 } = params
 
@@ -306,7 +307,7 @@ export default function GravityAnimation() {
           <text
             x={(obj1X + obj2X) / 2}
             y={obj1Y + 92}
-            fontSize="12"
+            fontSize={font(12)}
             fill={PHYSICS_COLORS.labelTextLight}
             textAnchor="middle"
             fontWeight="bold"
@@ -331,7 +332,7 @@ export default function GravityAnimation() {
           <text
             x={obj1X}
             y={obj1Y - radius1 - 10}
-            fontSize="12"
+            fontSize={font(12)}
             fill={PHYSICS_COLORS.labelText}
             textAnchor="middle"
             fontWeight="bold"
@@ -365,7 +366,7 @@ export default function GravityAnimation() {
           <text
             x={obj2X}
             y={obj2Y - radius2 - 10}
-            fontSize="12"
+            fontSize={font(12)}
             fill={PHYSICS_COLORS.labelText}
             textAnchor="middle"
             fontWeight="bold"
@@ -398,7 +399,7 @@ export default function GravityAnimation() {
             <text
               x={obj1X + radius1 + arrowLen / 2}
               y={obj1Y - 8}
-              fontSize="11"
+              fontSize={font(11)}
               fill={PHYSICS_COLORS.gravity}
               fontWeight="bold"
               textAnchor="middle"
@@ -417,7 +418,7 @@ export default function GravityAnimation() {
             <text
               x={obj2X - radius2 - arrowLen / 2}
               y={obj2Y - 8}
-              fontSize="11"
+              fontSize={font(11)}
               fill={PHYSICS_COLORS.gravity}
               fontWeight="bold"
               textAnchor="middle"
