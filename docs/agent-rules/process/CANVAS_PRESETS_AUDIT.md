@@ -1,7 +1,7 @@
 # CANVAS_PRESETS 迁移盘点
 
 > 核查日期：2026-06-23
-> 总调用点：76（64 已迁移 + 12 硬编码）
+> 总调用点：76（65 已迁移 + 11 硬编码）
 
 ---
 
@@ -19,7 +19,7 @@
 
 ---
 
-## A. 已迁移至现有 preset（64 调用点）
+## A. 已迁移至现有 preset（65 调用点）
 
 ### tall: 700×450（13）
 
@@ -107,7 +107,7 @@
 | mechanics/circular/CircularMotionAnimation.tsx | 72 |
 | electromagnetism/magnetism/BoundaryMagneticField/SimulationView.tsx | 12 |
 
-### extraWide: 800×440（8）
+### extraWide: 800×440（9）
 
 | 文件 | 行 |
 |---|---|
@@ -115,6 +115,7 @@
 | electromagnetism/induction/PowerTransmission.tsx | 53 |
 | electromagnetism/induction/ACGeneration.tsx | 33 |
 | mechanics/kinematics/VelocityAnimationStrip.tsx | 34 |
+| mechanics/force-motion/ForceMotionTripleChart.tsx | 274 |
 | optics/thin-lens/ThinLensAnimation.tsx | 158 |
 | optics/total-internal-reflection/TIRAnimation.tsx | 37 |
 | optics/refraction/RefractionAnimation.tsx | 41 |
@@ -122,7 +123,7 @@
 
 ---
 
-## B. 硬编码（12 调用点）
+## B. 硬编码（11 调用点）
 
 ### 物理坐标系占位符 100×100（5）
 
@@ -148,13 +149,12 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 | mechanics/dynamics/FrictionCenterExtra.tsx | 10 | 400×200 |
 | electromagnetism/dc-circuits/CircuitAnalysisCenterExtra.tsx | 10 | 400×200 |
 
-### 唯一尺寸（2）
+### 唯一尺寸（1）
 
 各有特殊布局需求，不适合强行统一。
 
 | 文件 | 行 | 尺寸 | 原因 |
 |---|---|---|---|
-| mechanics/force-motion/ForceMotionTripleChart.tsx | 274 | 900×200 | 三图横排 |
 | BoundaryMagneticField/ChargeInBField.tsx | 68 | 200×180 | 小缩略图 |
 
 ### 动态传入（1）
@@ -169,12 +169,12 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 
 | 分类 | 调用点 | 操作 |
 |---|---:|---|
-| A. 已迁移至 preset | 64 | ✅ 已替换 |
-| B. 硬编码 | 12 | 保持现状 |
+| A. 已迁移至 preset | 65 | ✅ 已替换 |
+| B. 硬编码 | 11 | 保持现状 |
 | **合计** | **76** | — |
 
-- 已迁移从 7 增至 64（新增 57）
-- 硬编码从 70 降至 12（减少 83%）
+- 已迁移从 7 增至 65（新增 58）
+- 硬编码从 70 降至 11（减少 84%）
 - CANVAS_PRESETS 从 6 个增至 7 个（新增 mediumWide）
 - tsc 零错误通过
 - tsc 零错误通过

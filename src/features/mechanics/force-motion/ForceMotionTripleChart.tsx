@@ -3,6 +3,7 @@ import { CHART_COLORS, FX_CHART_COLORS, VT_CHART_COLORS, DASH, FONT, STROKE } fr
 import type { ChartAreaVariant } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { useCanvasSize } from '@/utils/useCanvasSize'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { FORCE_MOTION_CHART_PADDING_RATIO } from './forceMotionLayout'
 import { ChartCursor, ChartArea, ChartContext } from '@/components/Chart'
 import type { ChartContextValue } from '@/components/Chart'
@@ -271,7 +272,7 @@ export default function ForceMotionTripleChart({
   areaTextV,
   areaTextX,
 }: ForceMotionTripleChartProps) {
-  const [containerRef, size] = useCanvasSize({ width: 900, height: 200 })
+  const [containerRef, size] = useCanvasSize(CANVAS_PRESETS.extraWide)
   const { width, height, font } = size
 
   const chartWidth = Math.max(1, Math.floor((width - 8) / 3))
