@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { DASH, FONT, OPACITY, PHYSICS_COLORS, STROKE } from '@/theme/physics'
 import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
 import { useCanvasSize } from '@/utils/useCanvasSize'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { VectorArrow, Ball, Block, SportsCar, ConductingRod, PhysicsGround, CapacitorPlates } from '@/components/Physics'
 import { createSceneScale } from '@/scene/SceneScale'
 import type { SceneConfig } from '@/scene/SceneConfig'
@@ -73,7 +74,7 @@ function getSpringPath(x1: number, y1: number, x2: number, y2: number, turns = 1
 }
 
 export default function ForceMotionSandbox({ state, trajectory, domainTrajectory }: ForceMotionSandboxProps) {
-  const [containerRef, size] = useCanvasSize({ width: 640, height: 320 })
+  const [containerRef, size] = useCanvasSize(CANVAS_PRESETS.wide)
   const { width, height, font } = size
   const params = useAnimationStore((s) => s.params)
 

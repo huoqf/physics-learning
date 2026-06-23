@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useCanvasSize, useAnimationFrame } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateCapacitor } from '@/physics'
 import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
@@ -28,7 +29,7 @@ export default function Capacitor() {
   )
   
   // 底部动画 SVG 容器的自适应尺寸 Hook
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 300 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
   const { font } = canvasSize
 
   const { S = 100, d = 5, epsilon_r = 1, U = 12, connected = 1 } = params

@@ -19,9 +19,9 @@
 
 ---
 
-## A. 已迁移至现有 preset（29 调用点）
+## A. 已迁移至现有 preset（36 调用点）
 
-### tall: 700×450（6）
+### tall: 700×450（10）
 
 | 文件 | 行 |
 |---|---|
@@ -31,6 +31,10 @@
 | mechanics/momentum/MomentumConservationAnimation.tsx | 58 |
 | mechanics/momentum/CollisionAnimation.tsx | 48 |
 | mechanics/momentum/MomentumTheoremAnimation.tsx | 74 |
+| electromagnetism/electrostatics/Capacitor.tsx | 31 |
+| electromagnetism/electrostatics/ElectricField.tsx | 35 |
+| electromagnetism/electrostatics/ElectricPotential.tsx | 23 |
+| electromagnetism/electrostatics/FieldLines.tsx | 120 |
 
 ### mediumTall: 650×450（6）
 
@@ -55,7 +59,7 @@
 | electromagnetism/dc-circuits/ClosedCircuit.tsx | 15 |
 | thermodynamics/kinematics/IntermolecularForcesAnimation.tsx | 35 |
 
-### wide: 700×400（6）
+### wide: 700×400（10）
 
 | 文件 | 行 |
 |---|---|
@@ -65,6 +69,10 @@
 | electromagnetism/magnetism/ChargeInBField.tsx | 29 |
 | mechanics/dynamics/NewtonSecondAnimation.tsx | 24 |
 | thermodynamics/kinematics/BrownianMotion.tsx | 61 |
+| mechanics/force-motion/ForceMotionSandbox.tsx | 76 |
+| mechanics/kinematics/VelocityAnimationStrip.tsx | 34 |
+| mechanics/kinematics/AccelerationAnimation.tsx | 42 |
+| mechanics/kinematics/VelocityAnimation.tsx | 29 |
 
 ### square: 600×600（3）
 
@@ -127,11 +135,10 @@
 | optics/reflection/ReflectionAnimation.tsx | 30 | VIEW_WIDTH×VIEW_HEIGHT |
 | components/Chart/BasePhysicsChart.tsx | 45 | initW×initH（props） |
 
-### 唯一尺寸（18）
+### 唯一尺寸（10）
 
 | 文件 | 行 | 尺寸 |
 |---|---|---|
-| mechanics/force-motion/ForceMotionSandbox.tsx | 76 | 640×320 |
 | mechanics/force-motion/ForceMotionTripleChart.tsx | 274 | 900×200 |
 | mechanics/energy/WorkAnimation.tsx | 56 | 700×650 |
 | electromagnetism/electrostatics/ChargeInEField.tsx | 27 | 700×460 |
@@ -140,14 +147,7 @@
 | electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField.tsx | 68 | 200×180 |
 | electromagnetism/induction/Transformer.tsx | 126 | 760×440 |
 | electromagnetism/induction/ACGeneration.tsx | 33 | 820×480 |
-| electromagnetism/electrostatics/ElectricPotential.tsx | 22 | 700×500 |
-| electromagnetism/electrostatics/FieldLines.tsx | 117 | 700×480 |
-| electromagnetism/electrostatics/ElectricField.tsx | 31 | 700×480 |
 | electromagnetism/dc-circuits/CircuitAnalysis.tsx | 58 | 650×360 |
-| mechanics/kinematics/VelocityAnimation.tsx | 28 | 700×350 |
-| mechanics/kinematics/AccelerationAnimation.tsx | 41 | 700×350 |
-| electromagnetism/electrostatics/Capacitor.tsx | 31 | 700×300 |
-| mechanics/kinematics/VelocityAnimationStrip.tsx | 34 | 700×200 |
 | thermodynamics/kinematics/IntermolecularForcesCenterExtra.tsx | 12 | 600×300 |
 | mechanics/dynamics/SpringForceCenterExtra.tsx | 11 | 420×315 |
 
@@ -174,11 +174,11 @@
 
 | 分类 | 调用点 | 操作 |
 |---|---:|---|
-| A. 精确映射现有 preset | 29 | ✅ 已替换 |
+| A. 精确映射现有 preset | 36 | ✅ 已替换 |
 | B. 新增 mediumWide | 4 | ✅ 已替换 |
-| C. 不替换 | 35 | 保持现状 |
+| C. 不替换 | 28 | 保持现状 |
 | **合计** | **68** | — |
 
-- 硬编码从 68 降至 35（减少 49%）
+- 硬编码从 68 降至 28（减少 59%）
 - CANVAS_PRESETS 从 6 个增至 7 个（新增 mediumWide）
 - tsc 零错误通过

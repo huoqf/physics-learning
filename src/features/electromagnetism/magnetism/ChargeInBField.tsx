@@ -7,27 +7,22 @@ import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 
 const GRID_MARGIN = 40
-const FONT = {
-  title: 14,
-  label: CANVAS_STYLE.font.labelSize,
-  axis: CANVAS_STYLE.font.axisSize,
-  magnetic: 16,
-}
 const CHARGE_RADIUS = CANVAS_STYLE.object.pointMassRadius
 const VECTOR_LEN_V = 40
 
 /** 带电粒子在匀强磁场中圆周运动：r = mv/(qB)，T = 2πm/(qB)，轨迹实时绘制 */
 export default function ChargeInBField() {
-    const {params, time, showVectors, showFormulas, showGrid} = useAnimationStore(
+  const {params, time, showVectors, showFormulas, showGrid} = useAnimationStore(
     useShallow((s) => ({
-    params: s.params,
-    time: s.time,
-    showVectors: s.showVectors,
-    showFormulas: s.showFormulas,
-    showGrid: s.showGrid,
+      params: s.params,
+      time: s.time,
+      showVectors: s.showVectors,
+      showFormulas: s.showFormulas,
+      showGrid: s.showGrid,
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const { font } = canvasSize
 
   const { q = 1, m = 1, v = 10, B = 1 } = params
   const { r, T, omega } = calculateChargeInMagField(Math.abs(q), m, Math.abs(v), B)
@@ -74,7 +69,7 @@ export default function ChargeInBField() {
 
         {/* 磁场 B 方向 */}
         <g>
-          <text x={cx} y={GRID_MARGIN} fontSize={FONT.title} fill={PHYSICS_COLORS.magneticField} textAnchor="middle" fontWeight="bold">
+          <text x={cx} y={GRID_MARGIN} fontSize={font(14)} fill={PHYSICS_COLORS.magneticField} textAnchor="middle" fontWeight="bold">
             B = {B.toFixed(1)} T（垂直纸面向里 ⊗）
           </text>
           {Array.from({ length: gridCols }).map((_, i) =>
@@ -83,7 +78,7 @@ export default function ChargeInBField() {
                 key={`b-${i}-${j}`}
                 x={80 + i * gridSpacingX}
                 y={80 + j * gridSpacingY}
-                fontSize={FONT.magnetic}
+                fontSize={font(16)}
                 fill={PHYSICS_COLORS.magneticField}
                 opacity={0.2}
                 textAnchor="middle"
@@ -100,17 +95,17 @@ export default function ChargeInBField() {
         {/* 圆心到粒子半径线 */}
         <line x1={cx} y1={cy} x2={px} y2={py}
           stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.reference} strokeDasharray="3,3" opacity={0.6} />
-        <text x={(cx + px) / 2 + 6} y={(cy + py) / 2} fontSize={FONT.axis} fill={PHYSICS_COLORS.labelText}>
+        <text x={(cx + px) / 2 + 6} y={(cy + py) / 2} fontSize={font(CANVAS_STYLE.font.axisSize)} fill={PHYSICS_COLORS.labelText}>
           r
         </text>
 
         {/* 圆心 */}
         <circle cx={cx} cy={cy} r={CANVAS_STYLE.object.minRadius} fill={PHYSICS_COLORS.labelText} />
-        <text x={cx + 8} y={cy + 4} fontSize={FONT.axis} fill={PHYSICS_COLORS.labelText}>O</text>
+        <text x={cx + 8} y={cy + 4} fontSize={font(CANVAS_STYLE.font.axisSize)} fill={PHYSICS_COLORS.labelText}>O</text>
 
         {/* 带电粒子 */}
         <circle cx={px} cy={py} r={CHARGE_RADIUS} fill={chargeColor} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-        <text x={px} y={py + 4} fontSize={FONT.magnetic} fill={PHYSICS_COLORS.objectFill} textAnchor="middle" fontWeight="bold">
+        <text x={px} y={py + 4} fontSize={font(16)} fill={PHYSICS_COLORS.objectFill} textAnchor="middle" fontWeight="bold">
           {q >= 0 ? '+' : '−'}
         </text>
 
@@ -125,7 +120,7 @@ export default function ChargeInBField() {
               pixelLength={VECTOR_LEN_V}
             />
             <text x={px - Math.sin(theta) * 25 - 8} y={py - Math.cos(theta) * 25 - 6}
-              fontSize={FONT.axis} fill={PHYSICS_COLORS.velocity} fontWeight="bold">
+              fontSize={font(CANVAS_STYLE.font.axisSize)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">
               v
             </text>
           </g>
@@ -142,7 +137,7 @@ export default function ChargeInBField() {
               pixelLength={fLen}
             />
             <text x={px - Math.cos(theta) * fLen / 2 + 8} y={py + Math.sin(theta) * fLen / 2}
-              fontSize={FONT.axis} fill={PHYSICS_COLORS.lorentzForce} fontWeight="bold">
+              fontSize={font(CANVAS_STYLE.font.axisSize)} fill={PHYSICS_COLORS.lorentzForce} fontWeight="bold">
               F
             </text>
           </g>
@@ -150,17 +145,17 @@ export default function ChargeInBField() {
 
         {showFormulas && (
           <g transform="translate(20, 20)">
-            <text fontSize={FONT.title} fill={PHYSICS_COLORS.labelText} fontWeight="bold">带电粒子在磁场中运动</text>
-            <text x={0} y={24} fontSize={FONT.axis} fill={PHYSICS_COLORS.axis}>r = mv/(qB)</text>
-            <text x={0} y={42} fontSize={FONT.axis} fill={PHYSICS_COLORS.axis}>T = 2πm/(qB)</text>
-            <text x={0} y={60} fontSize={FONT.axis} fill={PHYSICS_COLORS.axis}>ω = qB/m</text>
-            <text x={0} y={84} fontSize={FONT.label} fill={PHYSICS_COLORS.velocity} fontWeight="bold">
+            <text fontSize={font(14)} fill={PHYSICS_COLORS.labelText} fontWeight="bold">带电粒子在磁场中运动</text>
+            <text x={0} y={24} fontSize={font(CANVAS_STYLE.font.axisSize)} fill={PHYSICS_COLORS.axis}>r = mv/(qB)</text>
+            <text x={0} y={42} fontSize={font(CANVAS_STYLE.font.axisSize)} fill={PHYSICS_COLORS.axis}>T = 2πm/(qB)</text>
+            <text x={0} y={60} fontSize={font(CANVAS_STYLE.font.axisSize)} fill={PHYSICS_COLORS.axis}>ω = qB/m</text>
+            <text x={0} y={84} fontSize={font(CANVAS_STYLE.font.labelSize)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">
               r = {r.toFixed(3)} m
             </text>
-            <text x={0} y={102} fontSize={FONT.label} fill={PHYSICS_COLORS.velocity} fontWeight="bold">
+            <text x={0} y={102} fontSize={font(CANVAS_STYLE.font.labelSize)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">
               T = {T.toFixed(3)} s
             </text>
-            <text x={0} y={120} fontSize={FONT.label} fill={PHYSICS_COLORS.magneticField} fontWeight="bold">
+            <text x={0} y={120} fontSize={font(CANVAS_STYLE.font.labelSize)} fill={PHYSICS_COLORS.magneticField} fontWeight="bold">
               ω = {omega.toFixed(3)} rad/s
             </text>
           </g>

@@ -10,11 +10,11 @@
 
 | 分类 | 文件数 | 调用点 | 操作 |
 |---|---:|---:|---|
-| A. 可直接改（有 useCanvasSize，解构 font 即可） | 7 | 42 | 改解构 + 替换 |
+| A. 可直接改（有 useCanvasSize，解构 font 即可） | 8 | 50 | 改解构 + 替换 |
 | B. 需引入 font（subcomponent，需加 prop） | 11 | 53 | 需改 props 接口 + 父组件传参 |
-| C. 混合文件（部分已迁移，剩余硬编码） | 3 | 20 | 补齐硬编码部分 |
+| C. 混合文件（部分已迁移，剩余硬编码） | 2 | 10 | 补齐硬编码部分 |
 | D. 不建议改（图表 tick / 特殊布局） | 0 | 0 | — |
-| **合计** | **21** | **115** | — |
+| **合计** | **21** | **113** | — |
 
 > 注：115 = 107（纯硬编码文件）+ 8（混合文件中的硬编码部分，Capacitor 10 + InductionPhenomenon 1 + SatelliteAnimation 9 = 20，但 InductionPhenomenon 和 SatelliteAnimation 已大部分迁移，实际硬编码为 1+9=10）
 
@@ -22,7 +22,7 @@
 
 ---
 
-## A. 可直接改（7 文件，42 调用点）
+## A. 可直接改（8 文件，50 调用点）
 
 已有 `useCanvasSize`，只需改解构 `const [ref, { font }] = useCanvasSize(...)` 再替换。
 
@@ -35,6 +35,7 @@
 | 5 | mechanics/dynamics/FrictionAnimation.tsx | 2 | `canvasSize` |
 | 6 | electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField.tsx | 8 | `size` |
 | 7 | electromagnetism/electrostatics/ElectricField.tsx | 2 | `canvasSize` |
+| 8 | electromagnetism/magnetism/ChargeInBField.tsx | 8 | `canvasSize` |
 
 ---
 
@@ -76,28 +77,27 @@ Subcomponent，无 `useCanvasSize`，需在 props 接口加 `font: (v: number) =
 
 ---
 
-## C. 混合文件（3 文件）
+## C. 混合文件（2 文件）
 
 已有部分 `fontSize={font(N)}`，剩余硬编码需补齐。
 
 | # | 文件 | 硬编码数 | 已用 font() 数 |
 |---|---|---:|---:|
-| 1 | electromagnetism/electrostatics/Capacitor.tsx | 10 | 0 |
-| 2 | mechanics/gravitation/SatelliteAnimation.tsx | 9 | 3 |
-| 3 | electromagnetism/induction/InductionPhenomenon.tsx | 1 | 4 |
+| 1 | mechanics/gravitation/SatelliteAnimation.tsx | 9 | 3 |
+| 2 | electromagnetism/induction/InductionPhenomenon.tsx | 1 | 4 |
 
 ---
 
 ## 建议实施顺序
 
-### Phase 1: A 类（7 文件，最安全）
+### Phase 1: A 类（8 文件，最安全）
 改解构 + 替换。改动最小，风险最低。
 - 力学：GravityAnimation(5), GravityBasicAnimation(10), FrictionAnimation(2)
-- 电磁学：ChargeInEField(8), VelocitySelector(8), ElectricField(2), BoundaryMagneticField/ChargeInBField(8)
+- 电磁学：ChargeInEField(8), VelocitySelector(8), ElectricField(2), BoundaryMagneticField/ChargeInBField(8), ChargeInBField(8)
 
-### Phase 2: C 类混合文件（3 文件）
+### Phase 2: C 类混合文件（2 文件）
 补齐已有 font() 文件中的硬编码残留。
-- Capacitor(10), SatelliteAnimation(9), InductionPhenomenon(1)
+- SatelliteAnimation(9), InductionPhenomenon(1)
 
 ### Phase 3: B 类 subcomponent（11 文件）
 需改 props 接口 + 父组件传参。影响面较大，建议逐个文件处理。
