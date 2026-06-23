@@ -36,6 +36,17 @@
 | `IntermolecularForceChart` | F-r / Ep-r | RelationChart | markers / 多曲线 | ✅ 已迁移 |
 | `MaxwellBoltzmannChart` | f(v)-v | 图表预设/自定义混合 | 待核对是否需要 RelationChart 收口 | 🔶 待盘点 |
 | `MiniChart` | 小型趋势图 | UI 组件 | 消费方显式传 domain；暂无 `domainPoints` 必要；cursor 已 clamp | ✅ 第五/六轮收口完成；暂不迁目录 |
+| `AccelerationCenterExtra` | X-T / V-T 双图并列（警车追击） | 纯内联 SVG 手写 | 双车多曲线 `additionalSeries`、面积（位移差）、游标、相遇/共速光圈动画；待迁 `DisplacementTimeChart` + `VelocityTimeChart` | 🔶 待迁移（734 行 P0） |
+| `UniformAccelerationAnimation` | V-T 单图 + 动画舞台（匀变速基础） | 纯内联 SVG 手写 | 4 种面积可视化模式（微元法/等效矩形割补/经典拆分/合并梯形）、游标；待迁 `VelocityTimeChart` + `children` 承载面积模式 | 🔶 待迁移（562 行，接近 P0） |
+| `UniformAccelerationCenterExtra` | V-T + 频闪虚影 + 数据表 + 公式推导（四屏联动） | 纯内联 SVG 手写 | 频闪点 markers、平行四边形差值面积证明、十字投影游标+读数气泡；待迁 `VelocityTimeChart` + `markers` + `children` | 🔶 待迁移（731 行 P0） |
+| `ObliqueThrowAnimation` | V-T（vx/vy 双曲线，画中画） | 纯内联 SVG 手写 | 双曲线 vx/vy、游标、零线；画中画嵌入动画主 SVG；待迁 `VelocityTimeChart` + `additionalSeries` | 🔶 待迁移（549 行） |
+| `ProjectileAnimation` | V-T（vx/vy 双曲线，画中画） | 纯内联 SVG 手写 | 双曲线 vx/vy、游标、零线；画中画嵌入动画主 SVG；待迁 `VelocityTimeChart` + `additionalSeries` | 🔶 待迁移（505 行） |
+| `ImpulseAnimation` | F-t（冲量面积图） | 纯内联 SVG 手写 | F-t 曲线+面积填充、矩形近似+渐进积分；手写 `toChartX/toChartY`；待迁 `RelationChart` + `ChartArea` | 🔶 待迁移（443 行） |
+| `MomentumAnimation` | Ek-p（画中画关系图） | 纯内联 SVG 手写 | Ek=p²/(2m) 曲线、双球对比；画中画嵌入动画主 SVG；待迁 `RelationChart` | 🔶 待迁移（712 行） |
+| `CentripetalAnimation` | F-a（画中画关系图） | 纯内联 SVG 手写 | F_c=m·a_c 线性关系、双线对比；画中画嵌入动画主 SVG；待迁 `RelationChart` | 🔶 待迁移（504 行） |
+| `GravityAnimation` | F-r（平方反比律曲线，画中画） | 纯内联 SVG 手写 | F=GMm/r² 双曲线；画中画嵌入动画主 SVG；待迁 `RelationChart` | 🔶 待迁移（650 行） |
+| `PotentialEnergyAnimation` | Ep/Ek/机械能 + 弹簧 Ep-x（双图） | 纯内联 SVG 手写 | 双模式（重力/弹簧）能量-时间 + 弹簧势能-位移图；手写 `toChartX/toSpringChartX`；待拆分后迁 `RelationChart` | 🔶 待迁移（755 行） |
+| `EnergyConservationAnimation` | Ep/Ek/Q/Etot-T（多曲线） | 纯内联 SVG 手写 | 能量-时间多曲线（含内能 Q 模式）；手写 `toChartX/toChartY`；待迁 `RelationChart` + `additionalSeries` | 🔶 待迁移（562 行） |
 
 ### 能力矩阵
 
