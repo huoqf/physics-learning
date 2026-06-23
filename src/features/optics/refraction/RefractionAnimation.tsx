@@ -1,7 +1,8 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { OPTICS_COLORS, STROKE, FONT, DASH, CANVAS_COLORS } from '@/theme/physics'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { deg2rad } from '@/math/angle'
 import { calculateRefraction } from '@/physics/optics'
 
@@ -38,7 +39,12 @@ export default function RefractionAnimation() {
   const { params } = useAnimationStore(
     useShallow((s) => ({ params: s.params }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: VIEW_WIDTH, height: VIEW_HEIGHT })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide)
+
+  const vp = useViewport(canvasSize, {
+    designWidth: VIEW_WIDTH,
+    designHeight: VIEW_HEIGHT,
+  })
 
   const theta1 = params.theta1 ?? 45
   const n = params.n ?? 1.5
@@ -52,41 +58,32 @@ export default function RefractionAnimation() {
   const theta2Rad = isNaN(theta2_deg) ? 0 : deg2rad(theta2_deg)
 
   const { width, height, font } = canvasSize
-  const scale = Math.min(width / VIEW_WIDTH, height / VIEW_HEIGHT)
-  const cx = width / 2
-  const cy = height / 2
-
-  if (isAdvanced) {
-    return (
-      <div ref={containerRef} className="w-full h-full">
-        <svg
-          viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
-          preserveAspectRatio="xMidYMid meet"
-          className="w-full h-full"
-        >
-          <AdvancedMode
-            theta1={theta1} theta1Rad={theta1Rad}
-            theta2_deg={theta2_deg} theta2Rad={theta2Rad}
-            n={n} cx={cx} cy={cy} scale={scale} font={font}
-            rectD={RECT_D}
-          />
-        </svg>
-      </div>
-    )
-  }
+  const cx = VIEW_WIDTH / 2
+  const cy = VIEW_HEIGHT / 2
 
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg
-        viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
+        viewBox={`0 0 ${width} ${height}`}
         preserveAspectRatio="xMidYMid meet"
         className="w-full h-full"
       >
-        <BasicMode
-          theta1={theta1} theta1Rad={theta1Rad}
-          theta2_deg={theta2_deg} theta2Rad={theta2Rad}
-          n={n} cx={cx} cy={cy} scale={scale} font={font}
-        />
+        <g transform={vp.transform}>
+          {isAdvanced ? (
+            <AdvancedMode
+              theta1={theta1} theta1Rad={theta1Rad}
+              theta2_deg={theta2_deg} theta2Rad={theta2Rad}
+              n={n} cx={cx} cy={cy} font={font}
+              rectD={RECT_D}
+            />
+          ) : (
+            <BasicMode
+              theta1={theta1} theta1Rad={theta1Rad}
+              theta2_deg={theta2_deg} theta2Rad={theta2Rad}
+              n={n} cx={cx} cy={cy} font={font}
+            />
+          )}
+        </g>
       </svg>
     </div>
   )
@@ -95,17 +92,17 @@ export default function RefractionAnimation() {
 /* ─── 基础模式：半圆形玻璃砖 ────────────────────────────────────────── */
 
 function BasicMode({
-  theta1, theta1Rad, theta2_deg, theta2Rad, n, cx, cy, scale, font,
+  theta1, theta1Rad, theta2_deg, theta2Rad, n, cx, cy, font,
 }: {
   theta1: number; theta1Rad: number
   theta2_deg: number; theta2Rad: number
-  n: number; cx: number; cy: number; scale: number
+  n: number; cx: number; cy: number
   font: (v: number) => number
 }) {
-  const R = SEMI_R * scale
-  const normalLen = NORMAL_LENGTH * scale
-  const rayLen = RAY_LEN * scale
-  const arcR = 40 * scale
+  const R = SEMI_R
+  const normalLen = NORMAL_LENGTH
+  const rayLen = RAY_LEN
+  const arcR = 40
 
   const isTotalReflection = isNaN(theta2_deg)
 
@@ -159,7 +156,7 @@ function BasicMode({
         strokeWidth={STROKE.vectorMain}
       />
       <polygon
-        points={arrowHeadPoints(cx, cy, incDirX, incDirY, 10 * scale, 4 * scale)}
+        points={arrowHeadPoints(cx, cy, incDirX, incDirY, 10, 4)}
         fill={OPTICS_COLORS.lightRay}
       />
 
@@ -172,7 +169,7 @@ function BasicMode({
             strokeWidth={STROKE.vectorMain}
           />
           <polygon
-            points={arrowHeadPoints(refEndX, refEndY, refDirX, refDirY, 10 * scale, 4 * scale)}
+            points={arrowHeadPoints(refEndX, refEndY, refDirX, refDirY, 10, 4)}
             fill={OPTICS_COLORS.lightRayRefracted}
           />
         </>
@@ -181,7 +178,7 @@ function BasicMode({
       {/* 全反射提示 */}
       {isTotalReflection && (
         <text
-          x={cx + 80 * scale} y={cy}
+          x={cx + 80} y={cy}
           textAnchor="start"
           dominantBaseline="middle"
           fill={OPTICS_COLORS.criticalAngle}
@@ -204,7 +201,7 @@ function BasicMode({
 
         const midInc = deg2rad((incStart + incEnd) / 2)
         const midRef = deg2rad((refStart + refEnd) / 2)
-        const labelR = arcR + 14 * scale
+        const labelR = arcR + 14
 
         return (
           <g>
@@ -270,19 +267,19 @@ function BasicMode({
 /* ─── 进阶模式：平行玻璃砖 ────────────────────────────────────────── */
 
 function AdvancedMode({
-  theta1, theta1Rad, theta2_deg, theta2Rad, n, cx, cy, scale, font, rectD,
+  theta1, theta1Rad, theta2_deg, theta2Rad, n, cx, cy, font, rectD,
 }: {
   theta1: number; theta1Rad: number
   theta2_deg: number; theta2Rad: number
-  n: number; cx: number; cy: number; scale: number
+  n: number; cx: number; cy: number
   font: (v: number) => number
   rectD: number
 }) {
-  const W = RECT_W * scale
-  const D = rectD * scale
-  const normalLen = NORMAL_LENGTH * scale * 0.6
-  const rayLen = RAY_LEN * scale
-  const arcR = 35 * scale
+  const W = RECT_W
+  const D = rectD
+  const normalLen = NORMAL_LENGTH * 0.6
+  const rayLen = RAY_LEN
+  const arcR = 35
 
   const isTotalReflection = isNaN(theta2_deg)
 
@@ -358,7 +355,7 @@ function AdvancedMode({
         strokeWidth={STROKE.vectorMain}
       />
       <polygon
-        points={arrowHeadPoints(entryX, entryY, incDirX, incDirY, 10 * scale, 4 * scale)}
+        points={arrowHeadPoints(entryX, entryY, incDirX, incDirY, 10, 4)}
         fill={OPTICS_COLORS.lightRay}
       />
 
@@ -386,7 +383,7 @@ function AdvancedMode({
       {/* 全反射提示 */}
       {isTotalReflection && (
         <text
-          x={entryX + 30 * scale} y={entryY + 40 * scale}
+          x={entryX + 30} y={entryY + 40}
           textAnchor="start"
           dominantBaseline="middle"
           fill={OPTICS_COLORS.criticalAngle}
@@ -406,7 +403,7 @@ function AdvancedMode({
             strokeWidth={STROKE.vectorMain}
           />
           <polygon
-            points={arrowHeadPoints(outEndX, outEndY, outDirX, outDirY, 10 * scale, 4 * scale)}
+            points={arrowHeadPoints(outEndX, outEndY, outDirX, outDirY, 10, 4)}
             fill={OPTICS_COLORS.lightRay}
           />
         </>
@@ -425,8 +422,8 @@ function AdvancedMode({
           />
           {/* Δx 标签 */}
           <text
-            x={(exitX + footX) / 2 + perpDirX * 12 * scale}
-            y={(exitY + footY) / 2 + perpDirY * 12 * scale}
+            x={(exitX + footX) / 2 + perpDirX * 12}
+            y={(exitY + footY) / 2 + perpDirY * 12}
             textAnchor="middle"
             dominantBaseline="middle"
             fill={OPTICS_COLORS.lateralOffset}
@@ -445,7 +442,7 @@ function AdvancedMode({
         const incEnd = -90 + theta1
 
         const midInc = deg2rad((incStart + incEnd) / 2)
-        const labelR = arcR + 14 * scale
+        const labelR = arcR + 14
 
         return (
           <g>
@@ -477,7 +474,7 @@ function AdvancedMode({
         const refEnd = -90 + theta2_deg
 
         const midRef = deg2rad((refStart + refEnd) / 2)
-        const labelR = arcR + 14 * scale
+        const labelR = arcR + 14
 
         return (
           <g>

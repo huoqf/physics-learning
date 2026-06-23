@@ -1,7 +1,8 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { OPTICS_COLORS, STROKE, FONT, DASH, CANVAS_COLORS } from '@/theme/physics'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { deg2rad } from '@/math/angle'
 import { calculateCriticalAngle, calculateRefraction, calculateIlluminatedRadius } from '@/physics/optics'
 
@@ -34,7 +35,12 @@ export default function TIRAnimation() {
   const { params } = useAnimationStore(
     useShallow((s) => ({ params: s.params }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: VIEW_WIDTH, height: VIEW_HEIGHT })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide)
+
+  const vp = useViewport(canvasSize, {
+    designWidth: VIEW_WIDTH,
+    designHeight: VIEW_HEIGHT,
+  })
 
   const mode = params.mode ?? 0
   const theta1 = params.theta1 ?? 30
@@ -42,42 +48,36 @@ export default function TIRAnimation() {
   const depth = params.depth ?? 2
 
   const { width, height, font } = canvasSize
-  const scale = Math.min(width / VIEW_WIDTH, height / VIEW_HEIGHT)
 
   const { theta_c_deg } = calculateCriticalAngle(n, 1)
   const isTotalReflection = theta1 >= theta_c_deg
 
-  if (mode === 1) {
-    return (
-      <div ref={containerRef} className="w-full h-full">
-        <svg
-          viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
-          preserveAspectRatio="xMidYMid meet"
-          className="w-full h-full"
-        >
-          <PointSourceMode
-            depth={depth} n={n} theta_c_deg={theta_c_deg}
-            cx={width * 0.35} cy={height * WATER_SURFACE_Y_RATIO}
-            width={width} height={height} scale={scale} font={font}
-          />
-        </svg>
-      </div>
-    )
-  }
+  const cx = VIEW_WIDTH / 2
+  const cy = VIEW_HEIGHT * WATER_SURFACE_Y_RATIO
 
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg
-        viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
+        viewBox={`0 0 ${width} ${height}`}
         preserveAspectRatio="xMidYMid meet"
         className="w-full h-full"
       >
-        <SingleBeamMode
-          theta1={theta1} n={n} theta_c_deg={theta_c_deg}
-          isTotalReflection={isTotalReflection}
-          cx={width / 2} cy={height * WATER_SURFACE_Y_RATIO}
-          width={width} height={height} scale={scale} font={font}
-        />
+        <g transform={vp.transform}>
+          {mode === 1 ? (
+            <PointSourceMode
+              depth={depth} n={n} theta_c_deg={theta_c_deg}
+              cx={VIEW_WIDTH * 0.35} cy={cy}
+              font={font}
+            />
+          ) : (
+            <SingleBeamMode
+              theta1={theta1} n={n} theta_c_deg={theta_c_deg}
+              isTotalReflection={isTotalReflection}
+              cx={cx} cy={cy}
+              font={font}
+            />
+          )}
+        </g>
       </svg>
     </div>
   )
@@ -87,15 +87,15 @@ export default function TIRAnimation() {
 
 function SingleBeamMode({
   theta1, n, theta_c_deg, isTotalReflection,
-  cx, cy, width, height, scale, font,
+  cx, cy, font,
 }: {
   theta1: number; n: number; theta_c_deg: number; isTotalReflection: boolean
-  cx: number; cy: number; width: number; height: number; scale: number
+  cx: number; cy: number
   font: (v: number) => number
 }) {
-  const normalLen = NORMAL_LENGTH * scale
-  const rayLen = RAY_LEN * scale
-  const arcR = 40 * scale
+  const normalLen = NORMAL_LENGTH
+  const rayLen = RAY_LEN
+  const arcR = 40
   const theta1Rad = deg2rad(theta1)
 
   const incidentDirX = Math.sin(theta1Rad)
@@ -129,16 +129,16 @@ function SingleBeamMode({
   return (
     <g>
       {/* 空气区域 */}
-      <rect x={0} y={0} width={width} height={cy}
+      <rect x={0} y={0} width={VIEW_WIDTH} height={cy}
         fill={OPTICS_COLORS.airFill} />
 
       {/* 水区域 */}
-      <rect x={0} y={cy} width={width} height={height - cy}
+      <rect x={0} y={cy} width={VIEW_WIDTH} height={VIEW_HEIGHT - cy}
         fill={OPTICS_COLORS.waterFill} />
 
       {/* 水面 */}
       <line
-        x1={0} y1={cy} x2={width} y2={cy}
+        x1={0} y1={cy} x2={VIEW_WIDTH} y2={cy}
         stroke={OPTICS_COLORS.lightRayNormal}
         strokeWidth={STROKE.objectLine}
       />
@@ -160,7 +160,7 @@ function SingleBeamMode({
         strokeWidth={STROKE.vectorMain}
       />
       <polygon
-        points={arrowHeadPoints(cx, cy, incidentDirX, incidentDirY, 10 * scale, 4 * scale)}
+        points={arrowHeadPoints(cx, cy, incidentDirX, incidentDirY, 10, 4)}
         fill={OPTICS_COLORS.lightRay}
       />
 
@@ -174,7 +174,7 @@ function SingleBeamMode({
             strokeWidth={STROKE.vectorMain}
           />
           <polygon
-            points={arrowHeadPoints(refrEndX, refrEndY, refrDirX, refrDirY, 10 * scale, 4 * scale)}
+            points={arrowHeadPoints(refrEndX, refrEndY, refrDirX, refrDirY, 10, 4)}
             fill={OPTICS_COLORS.lightRayRefracted}
           />
         </g>
@@ -189,7 +189,7 @@ function SingleBeamMode({
           strokeWidth={STROKE.vectorMain}
         />
         <polygon
-          points={arrowHeadPoints(refEndX, refEndY, reflectedDirX, reflectedDirY, 10 * scale, 4 * scale)}
+          points={arrowHeadPoints(refEndX, refEndY, reflectedDirX, reflectedDirY, 10, 4)}
           fill={OPTICS_COLORS.lightRayReflected}
         />
       </g>
@@ -197,7 +197,7 @@ function SingleBeamMode({
       {/* 全反射提示 */}
       {isTotalReflection && (
         <text
-          x={cx + 60 * scale} y={cy + 30 * scale}
+          x={cx + 60} y={cy + 30}
           textAnchor="start"
           dominantBaseline="middle"
           fill={OPTICS_COLORS.criticalAngle}
@@ -220,8 +220,8 @@ function SingleBeamMode({
             opacity={0.7}
           />
           <text
-            x={cx + (arcR + 14 * scale) * Math.cos(deg2rad(-90 + theta1 / 2))}
-            y={cy + (arcR + 14 * scale) * Math.sin(deg2rad(-90 + theta1 / 2))}
+            x={cx + (arcR + 14) * Math.cos(deg2rad(-90 + theta1 / 2))}
+            y={cy + (arcR + 14) * Math.sin(deg2rad(-90 + theta1 / 2))}
             textAnchor="middle"
             dominantBaseline="middle"
             fill={CANVAS_COLORS.annotation}
@@ -244,8 +244,8 @@ function SingleBeamMode({
             strokeDasharray={`${DASH.reference[0]} ${DASH.reference[1]}`}
           />
           <text
-            x={cx + (arcR * 0.7 + 14 * scale) * Math.cos(deg2rad(-90 + theta_c_deg / 2))}
-            y={cy + (arcR * 0.7 + 14 * scale) * Math.sin(deg2rad(-90 + theta_c_deg / 2))}
+            x={cx + (arcR * 0.7 + 14) * Math.cos(deg2rad(-90 + theta_c_deg / 2))}
+            y={cy + (arcR * 0.7 + 14) * Math.sin(deg2rad(-90 + theta_c_deg / 2))}
             textAnchor="middle"
             dominantBaseline="middle"
             fill={OPTICS_COLORS.criticalAngle}
@@ -259,7 +259,7 @@ function SingleBeamMode({
 
       {/* 标注文字 */}
       <text
-        x={cx + 80 * scale} y={cy - 15 * scale}
+        x={cx + 80} y={cy - 15}
         textAnchor="start"
         fill={CANVAS_COLORS.labelTextLight}
         fontSize={font(10)}
@@ -268,7 +268,7 @@ function SingleBeamMode({
         空气 (n=1.00)
       </text>
       <text
-        x={cx + 80 * scale} y={cy + 25 * scale}
+        x={cx + 80} y={cy + 25}
         textAnchor="start"
         fill={CANVAS_COLORS.labelTextLight}
         fontSize={font(10)}
@@ -283,47 +283,46 @@ function SingleBeamMode({
 /* ─── 模式 1：水下点光源视场 ────────────────────────────────────── */
 
 function PointSourceMode({
-  depth, n, theta_c_deg,
-  cx, cy, width, height, scale, font,
+  depth, n, theta_c_deg, cx, cy, font,
 }: {
   depth: number; n: number; theta_c_deg: number
-  cx: number; cy: number; width: number; height: number; scale: number
+  cx: number; cy: number
   font: (v: number) => number
 }) {
   const { radius: R } = calculateIlluminatedRadius(depth, n)
   const validR = isNaN(R) ? 0 : R
 
-  const normalLen = NORMAL_LENGTH * scale * 0.7
+  const normalLen = NORMAL_LENGTH * 0.7
   const thetaCRad = deg2rad(theta_c_deg)
 
-  const lightSourceY = cy + depth * DEPTH_SCALE * scale
+  const lightSourceY = cy + depth * DEPTH_SCALE
 
-  const boundaryLeftX = cx - validR * DEPTH_SCALE * scale
-  const boundaryRightX = cx + validR * DEPTH_SCALE * scale
+  const boundaryLeftX = cx - validR * DEPTH_SCALE
+  const boundaryRightX = cx + validR * DEPTH_SCALE
 
-  const topViewCx = width * 0.75
-  const topViewCy = height * 0.25
-  const topViewMaxR = Math.min(width * 0.18, height * 0.22)
-  const displayR = Math.min(topViewMaxR, validR * 15 * scale)
+  const topViewCx = VIEW_WIDTH * 0.75
+  const topViewCy = VIEW_HEIGHT * 0.25
+  const topViewMaxR = Math.min(VIEW_WIDTH * 0.18, VIEW_HEIGHT * 0.22)
+  const displayR = Math.min(topViewMaxR, validR * 15)
 
-  const chartX = width * 0.58
-  const chartY = height * 0.55
-  const chartW = width * 0.38
-  const chartH = height * 0.4
+  const chartX = VIEW_WIDTH * 0.58
+  const chartY = VIEW_HEIGHT * 0.55
+  const chartW = VIEW_WIDTH * 0.38
+  const chartH = VIEW_HEIGHT * 0.4
 
   return (
     <g>
       {/* 空气区域 */}
-      <rect x={0} y={0} width={width} height={cy}
+      <rect x={0} y={0} width={VIEW_WIDTH} height={cy}
         fill={OPTICS_COLORS.airFill} />
 
       {/* 水区域 */}
-      <rect x={0} y={cy} width={width} height={height - cy}
+      <rect x={0} y={cy} width={VIEW_WIDTH} height={VIEW_HEIGHT - cy}
         fill={OPTICS_COLORS.waterFill} />
 
       {/* 水面 */}
       <line
-        x1={0} y1={cy} x2={width * 0.55} y2={cy}
+        x1={0} y1={cy} x2={VIEW_WIDTH * 0.55} y2={cy}
         stroke={OPTICS_COLORS.lightRayNormal}
         strokeWidth={STROKE.objectLine}
       />
@@ -338,9 +337,9 @@ function PointSourceMode({
       />
 
       {/* 点光源 */}
-      <circle cx={cx} cy={lightSourceY} r={5 * scale}
+      <circle cx={cx} cy={lightSourceY} r={5}
         fill={OPTICS_COLORS.lightRay} opacity={0.9} />
-      <circle cx={cx} cy={lightSourceY} r={10 * scale}
+      <circle cx={cx} cy={lightSourceY} r={10}
         fill="none" stroke={OPTICS_COLORS.lightRay} strokeWidth={STROKE.reference}
         opacity={0.3} />
 
@@ -355,7 +354,7 @@ function PointSourceMode({
       <polygon
         points={arrowHeadPoints(boundaryLeftX, cy,
           Math.sin(-thetaCRad), -Math.cos(thetaCRad),
-          8 * scale, 3 * scale)}
+          8, 3)}
         fill={OPTICS_COLORS.criticalAngle}
         opacity={0.8}
       />
@@ -371,7 +370,7 @@ function PointSourceMode({
       <polygon
         points={arrowHeadPoints(boundaryRightX, cy,
           Math.sin(thetaCRad), -Math.cos(thetaCRad),
-          8 * scale, 3 * scale)}
+          8, 3)}
         fill={OPTICS_COLORS.criticalAngle}
         opacity={0.8}
       />
@@ -387,15 +386,15 @@ function PointSourceMode({
 
       {/* 临界角弧标注 */}
       <path
-        d={arcPath(cx, cy, 30 * scale, -90, -90 - theta_c_deg)}
+        d={arcPath(cx, cy, 30, -90, -90 - theta_c_deg)}
         fill="none"
         stroke={CANVAS_COLORS.annotation}
         strokeWidth={STROKE.annotation}
         opacity={0.7}
       />
       <text
-        x={cx + (30 * scale + 12 * scale) * Math.cos(deg2rad(-90 - theta_c_deg / 2))}
-        y={cy + (30 * scale + 12 * scale) * Math.sin(deg2rad(-90 - theta_c_deg / 2))}
+        x={cx + (30 + 12) * Math.cos(deg2rad(-90 - theta_c_deg / 2))}
+        y={cy + (30 + 12) * Math.sin(deg2rad(-90 - theta_c_deg / 2))}
         textAnchor="middle"
         dominantBaseline="middle"
         fill={CANVAS_COLORS.annotation}
@@ -407,14 +406,14 @@ function PointSourceMode({
 
       {/* 深度标注 */}
       <line
-        x1={cx + 20 * scale} y1={cy}
-        x2={cx + 20 * scale} y2={lightSourceY}
+        x1={cx + 20} y1={cy}
+        x2={cx + 20} y2={lightSourceY}
         stroke={CANVAS_COLORS.labelTextLight}
         strokeWidth={STROKE.annotation}
         strokeDasharray={`${DASH.reference[0]} ${DASH.reference[1]}`}
       />
       <text
-        x={cx + 28 * scale} y={(cy + lightSourceY) / 2}
+        x={cx + 28} y={(cy + lightSourceY) / 2}
         textAnchor="start"
         dominantBaseline="middle"
         fill={CANVAS_COLORS.labelText}
@@ -426,7 +425,7 @@ function PointSourceMode({
 
       {/* 标注文字 */}
       <text
-        x={cx + 60 * scale} y={cy - 10 * scale}
+        x={cx + 60} y={cy - 10}
         textAnchor="start"
         fill={CANVAS_COLORS.labelTextLight}
         fontSize={font(10)}
@@ -435,7 +434,7 @@ function PointSourceMode({
         空气
       </text>
       <text
-        x={cx + 60 * scale} y={lightSourceY + 5 * scale}
+        x={cx + 60} y={lightSourceY + 5}
         textAnchor="start"
         fill={CANVAS_COLORS.labelTextLight}
         fontSize={font(10)}
@@ -447,7 +446,7 @@ function PointSourceMode({
       {/* ── 右上：俯视图 ── */}
       <g>
         <text
-          x={topViewCx} y={topViewCy - topViewMaxR - 10 * scale}
+          x={topViewCx} y={topViewCy - topViewMaxR - 10}
           textAnchor="middle"
           fill={CANVAS_COLORS.labelText}
           fontSize={font(11)}
@@ -475,7 +474,7 @@ function PointSourceMode({
         )}
 
         {/* 中心点（光源正上方） */}
-        <circle cx={topViewCx} cy={topViewCy} r={3 * scale}
+        <circle cx={topViewCx} cy={topViewCy} r={3}
           fill={OPTICS_COLORS.lightRay} />
 
         {/* 半径标注 */}
@@ -489,7 +488,7 @@ function PointSourceMode({
             />
             <text
               x={topViewCx + displayR / 2}
-              y={topViewCy + 14 * scale}
+              y={topViewCy + 14}
               textAnchor="middle"
               fill={OPTICS_COLORS.criticalAngle}
               fontSize={font(10)}
@@ -504,7 +503,7 @@ function PointSourceMode({
       {/* ── 右下：S-h 响应曲线 ── */}
       <g>
         <text
-          x={chartX + chartW / 2} y={chartY - 8 * scale}
+          x={chartX + chartW / 2} y={chartY - 8}
           textAnchor="middle"
           fill={CANVAS_COLORS.labelText}
           fontSize={font(11)}
@@ -563,11 +562,11 @@ function PointSourceMode({
           const py = chartY + chartH - (chartH * curS) / sMax
           return (
             <g>
-              <circle cx={px} cy={py} r={4 * scale}
+              <circle cx={px} cy={py} r={4}
                 fill={OPTICS_COLORS.criticalAngle}
                 stroke="white" strokeWidth={STROKE.chartSub} />
               <text
-                x={px + 8 * scale} y={py - 6 * scale}
+                x={px + 8} y={py - 6}
                 fill={OPTICS_COLORS.criticalAngle}
                 fontSize={font(9)}
                 fontFamily={FONT.family}
@@ -583,7 +582,7 @@ function PointSourceMode({
           const px = chartX + (chartW * (v - 0.5)) / 4.5
           return (
             <text key={v}
-              x={px} y={chartY + chartH + 14 * scale}
+              x={px} y={chartY + chartH + 14}
               textAnchor="middle"
               fill={CANVAS_COLORS.labelTextLight}
               fontSize={font(9)}
@@ -596,7 +595,7 @@ function PointSourceMode({
 
         {/* X 轴标签 */}
         <text
-          x={chartX + chartW / 2} y={chartY + chartH + 26 * scale}
+          x={chartX + chartW / 2} y={chartY + chartH + 26}
           textAnchor="middle"
           fill={CANVAS_COLORS.labelText}
           fontSize={font(10)}
@@ -607,12 +606,12 @@ function PointSourceMode({
 
         {/* Y 轴标签 */}
         <text
-          x={chartX - 8 * scale} y={chartY + chartH / 2}
+          x={chartX - 8} y={chartY + chartH / 2}
           textAnchor="middle"
           fill={CANVAS_COLORS.labelText}
           fontSize={font(10)}
           fontFamily={FONT.family}
-          transform={`rotate(-90, ${chartX - 8 * scale}, ${chartY + chartH / 2})`}
+          transform={`rotate(-90, ${chartX - 8}, ${chartY + chartH / 2})`}
         >
           S (m²)
         </text>

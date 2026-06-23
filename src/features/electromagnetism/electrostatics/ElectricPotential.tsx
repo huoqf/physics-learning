@@ -2,6 +2,7 @@ import React, { useRef, useState, useMemo, useEffect } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateNonUniformEField } from '@/physics'
 import { useElectricPotentialPhysics, Q_SOURCE, X_Q, Y_Q, X_A, Y_A, X_B, Y_B, X_REF, X_GROUND, Y_GROUND, RUN_DURATION } from './hooks/useElectricPotentialPhysics'
 import { ElectricPotentialChartScene } from './ElectricPotentialChartScene'
@@ -19,7 +20,7 @@ export default function ElectricPotential() {
   const updateParam = useAnimationStore((s) => s.updateParam)
   const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
 
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 500 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
   const { font } = canvasSize
   const animSvgRef = useRef<SVGSVGElement>(null)
   const chartSvgRef = useRef<SVGSVGElement>(null)
@@ -33,8 +34,8 @@ export default function ElectricPotential() {
   const phiA = params.phiA ?? 0
 
   // 自适应尺寸逻辑
-  const w = canvasSize.width || 700
-  const hTotal = canvasSize.height || 500
+  const w = canvasSize.width
+  const hTotal = canvasSize.height
   const hChart = hTotal / 2
   const hAnim = hTotal / 2
 

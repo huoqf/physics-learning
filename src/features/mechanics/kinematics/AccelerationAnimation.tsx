@@ -2,6 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateDualObjectComparison } from '@/physics'
 import { PHYSICS_COLORS, STROKE, DASH, FONT } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
@@ -38,7 +39,7 @@ export default function AccelerationAnimation() {
     setIsPlaying: s.setIsPlaying,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 350 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
   const { font } = canvasSize
 
   const vA = params.vA ?? 200

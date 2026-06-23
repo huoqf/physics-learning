@@ -4,6 +4,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OBJECT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateAverageVelocity } from '@/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
@@ -25,7 +26,7 @@ export default function VelocityAnimation() {
     setIsPlaying: s.setIsPlaying,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 350 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
 
   const scene = params.scene ?? 0      // 0=公交, 1=短跑
   const v = params.v ?? 8              // m/s
