@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, CANVAS_STYLE, CANVAS_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { withAlpha } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
@@ -24,7 +25,7 @@ export default function ChargeInEField() {
     setIsPlaying: s.setIsPlaying,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 460 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
   const { font } = canvasSize
 
   const U = params.U ?? 200

@@ -1,7 +1,7 @@
 # CANVAS_PRESETS 迁移盘点
 
 > 核查日期：2026-06-23
-> 总调用点：77（51 已迁移 + 26 硬编码）
+> 总调用点：77（52 已迁移 + 25 硬编码）
 
 ---
 
@@ -19,9 +19,9 @@
 
 ---
 
-## A. 已迁移至现有 preset（51 调用点）
+## A. 已迁移至现有 preset（52 调用点）
 
-### tall: 700×450（10）
+### tall: 700×450（11）
 
 | 文件 | 行 |
 |---|---|
@@ -32,6 +32,7 @@
 | mechanics/momentum/CollisionAnimation.tsx | 48 |
 | mechanics/momentum/MomentumTheoremAnimation.tsx | 74 |
 | electromagnetism/electrostatics/Capacitor.tsx | 31 |
+| electromagnetism/electrostatics/ChargeInEField.tsx | 27 |
 | electromagnetism/electrostatics/ElectricField.tsx | 35 |
 | electromagnetism/electrostatics/ElectricPotential.tsx | 23 |
 | electromagnetism/electrostatics/FieldLines.tsx | 120 |
@@ -109,7 +110,7 @@
 
 ---
 
-## B. 硬编码（26 调用点）
+## B. 硬编码（25 调用点）
 
 ### 物理坐标系占位符 100×100（5）
 
@@ -135,7 +136,7 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 | mechanics/dynamics/FrictionCenterExtra.tsx | 10 | 400×200 |
 | electromagnetism/dc-circuits/CircuitAnalysisCenterExtra.tsx | 10 | 400×200 |
 
-### 唯一尺寸（12）
+### 唯一尺寸（11）
 
 各有特殊布局需求，不适合强行统一。
 
@@ -143,7 +144,6 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 |---|---|---|---|
 | mechanics/force-motion/ForceMotionTripleChart.tsx | 274 | 900×200 | 三图横排 |
 | mechanics/energy/WorkAnimation.tsx | 56 | 700×650 | 上下分区（图表+场景） |
-| electromagnetism/electrostatics/ChargeInEField.tsx | 27 | 700×460 | 差 tall 10px 高 |
 | mechanics/dynamics/WeightlessnessAnimation.tsx | 48 | 230×440 | 窄高（失重单轨） |
 | electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField.tsx | 11 | 800×600 | 主场景 |
 | electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField.tsx | 68 | 200×180 | 小缩略图 |
@@ -174,11 +174,11 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 
 | 分类 | 调用点 | 操作 |
 |---|---:|---|
-| A. 已迁移至 preset | 51 | ✅ 已替换 |
-| B. 硬编码 | 26 | 保持现状 |
+| A. 已迁移至 preset | 52 | ✅ 已替换 |
+| B. 硬编码 | 25 | 保持现状 |
 | **合计** | **77** | — |
 
-- 已迁移从 7 增至 51（新增 44）
-- 硬编码从 70 降至 26（减少 63%）
+- 已迁移从 7 增至 52（新增 45）
+- 硬编码从 70 降至 25（减少 64%）
 - CANVAS_PRESETS 从 6 个增至 7 个（新增 mediumWide）
 - tsc 零错误通过
