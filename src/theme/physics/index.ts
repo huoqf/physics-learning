@@ -222,7 +222,7 @@ export type ChartReferenceVariant = 'default' | 'highlight' | 'tangent'
 /** 数据曲线颜色变体 */
 export type ChartSeriesVariant = 'primary' | 'secondary' | 'accent' | 'warm' | 'success'
 /** 面积填充变体 */
-export type ChartAreaVariant = 'default' | 'alt' | 'warm'
+export type ChartAreaVariant = 'default' | 'alt' | 'warm' | 'impulse'
 /** 面积填充强度 */
 export type ChartAreaIntensity = 'subtle' | 'normal' | 'strong'
 
@@ -247,6 +247,7 @@ export const AREA_FILL_MAP: Record<ChartAreaVariant, string> = {
   default: CHART_COLORS.areaFill,
   alt:     CHART_COLORS.areaFillAlt,
   warm:    CHART_COLORS.areaFillWarm,
+  impulse: PHYSICS_COLORS.impulse,
 }
 
 /** 面积填充强度映射 */

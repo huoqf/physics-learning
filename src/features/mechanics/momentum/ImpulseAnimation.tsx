@@ -15,11 +15,12 @@ import type { SceneConfig } from '@/scene/SceneConfig'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,
-  CHART_COLORS,
   CANVAS_STYLE,
   STROKE,
   FONT,
+  CHART_COLORS,
 } from '@/theme/physics'
+import { RelationChart, ChartArea, useChartContext } from '@/components/Chart'
 
 /** 冲量动画布局常量 */
 const IMPULSE_LAYOUT = {
@@ -31,25 +32,140 @@ const IMPULSE_LAYOUT = {
   sliderHeight: 30,
   /** 滑块宽度 (px) */
   sliderWidth: 50,
-  /** 推力手高度 (px) */
-  pushHandHeight: 50,
-  /** F-t 图表区域 */
-  chart: {
-    marginTop: 20,
-    marginLeft: 55,
-    marginRight: 30,
-    marginBottom: 40,
-  },
   /** 微元切割数 */
   nSlices: 16,
 } as const
 
+/**
+ * 图表域默认参考值
+ * 用于计算固定的 xDomain / yDomain，不随用户调参变化，
+ * 确保参数修改时曲线视觉上产生变化而非坐标轴等比缩放。
+ */
+const DOMAIN_DEFAULTS = {
+  /** 基础模式默认力 (N) */
+  F_ref: 20,
+  /** 基础模式默认时间 (s) */
+  t_ref: 5,
+  /** 进阶模式默认最大力 (N) */
+  FMax_ref: 20,
+  /** 进阶模式默认总时间 (s) */
+  tTotal_ref: 5,
+} as const
+
+/**
+ * F-t 微元切割图层
+ * 用于进阶模式：在 RelationChart 内部渲染微元矩形
+ */
+function ImpulseSlicesLayer({
+  slices,
+  completedSlices,
+  currentT,
+  t_total,
+}: {
+  slices: ReturnType<typeof calculateImpulseSlices>
+  completedSlices: number
+  currentT: number
+  t_total: number
+}) {
+  const ctx = useChartContext()
+  if (!ctx) return null
+  const { toSvgX, toSvgY, font } = ctx
+
+  return (
+    <g>
+      {slices.map((slice, i) => {
+        const x0 = toSvgX(slice.tStart)
+        const x1 = toSvgX(slice.tEnd)
+        const yF = toSvgY(slice.FAvg)
+        const y0 = toSvgY(0)
+        const isCompleted = i < completedSlices
+        const isCurrent = i === completedSlices && currentT < t_total
+        const w = Math.max(0, x1 - x0)
+        const h = Math.max(0, y0 - yF)
+
+        if (!isCompleted && !isCurrent) return null
+
+        return (
+          <g key={`slice-${i}`}>
+            <rect
+              x={x0}
+              y={yF}
+              width={w}
+              height={h}
+              fill={PHYSICS_COLORS.impulse}
+              opacity={isCompleted ? 0.28 : 0.14}
+              stroke={PHYSICS_COLORS.impulse}
+              strokeWidth={0.5}
+            />
+            {/* 微元切割线 */}
+            <line
+              x1={x1}
+              y1={yF}
+              x2={x1}
+              y2={y0}
+              stroke={PHYSICS_COLORS.impulse}
+              strokeWidth={0.5}
+              strokeDasharray="2,2"
+              opacity={0.5}
+            />
+          </g>
+        )
+      })}
+      {/* Δt 标注 */}
+      {completedSlices > 0 && currentT < t_total && (
+        <text
+          x={toSvgX(currentT) + 5}
+          y={ctx.plotOrigin.y + font(FONT.small) + 2}
+          fontSize={font(FONT.small)}
+          fill={PHYSICS_COLORS.velocity}
+        >
+          Δt
+        </text>
+      )}
+    </g>
+  )
+}
+
+/**
+ * 面积标注图层（显示冲量数值）
+ */
+function ImpulseLabelLayer({
+  currentT,
+  impulseText,
+  yPos,
+}: {
+  currentT: number
+  impulseText: string
+  yPos: number
+}) {
+  const ctx = useChartContext()
+  if (!ctx) return null
+  const { toSvgX, toSvgY, font } = ctx
+
+  // 标签放在当前时间中点
+  const labelX = toSvgX(currentT / 2)
+  const labelY = toSvgY(yPos)
+
+  return (
+    <text
+      x={labelX}
+      y={labelY}
+      fontSize={font(FONT.small)}
+      fill={PHYSICS_COLORS.impulse}
+      fontWeight="bold"
+      textAnchor="middle"
+    >
+      {impulseText}
+    </text>
+  )
+}
+
 export default function ImpulseAnimation() {
-    const {params, time, showVectors} = useAnimationStore(
+  const { params, time, showVectors } = useAnimationStore(
     useShallow((s) => ({
-    params: s.params,
-    time: s.time,
-    showVectors: s.showVectors,
+      params: s.params,
+      time: s.time,
+      showVectors: s.showVectors,
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 450 })
@@ -68,23 +184,26 @@ export default function ImpulseAnimation() {
 
   const groundY = canvasSize.height - IMPULSE_LAYOUT.groundOffset
 
-  const sceneConfig = useMemo((): SceneConfig => ({
-    vectorBounds: {
-      x: 0,
-      y: 0,
-      width: canvasSize.width - IMPULSE_LAYOUT.canvasPadding * 2,
-      height: canvasSize.height - IMPULSE_LAYOUT.canvasPadding,
-    },
-    originX: 0,
-    originY: groundY,
-    worldWidth: canvasSize.width,
-    worldHeight: canvasSize.height,
-    refMagnitudes: {
-      force: 200,
-    },
-  }), [canvasSize.width, canvasSize.height, groundY]);
+  const sceneConfig = useMemo(
+    (): SceneConfig => ({
+      vectorBounds: {
+        x: 0,
+        y: 0,
+        width: canvasSize.width - IMPULSE_LAYOUT.canvasPadding * 2,
+        height: canvasSize.height - IMPULSE_LAYOUT.canvasPadding,
+      },
+      originX: 0,
+      originY: groundY,
+      worldWidth: canvasSize.width,
+      worldHeight: canvasSize.height,
+      refMagnitudes: {
+        force: 200,
+      },
+    }),
+    [canvasSize.width, canvasSize.height, groundY]
+  )
 
-  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig])
 
   // ── 基础模式：恒力 ──────────────────────────────────────────
   const currentT_basic = Math.min(time, t_duration)
@@ -92,8 +211,18 @@ export default function ImpulseAnimation() {
 
   // ── 进阶模式：变力 ──────────────────────────────────────────
   const currentT_advanced = Math.min(time, t_total)
-  const currentFt = calculateInstantaneousForce(currentT_advanced, FMax, t_total, forceTypeStr)
-  const totalImpulse = calculateAnalyticalImpulse(t_total, FMax, t_total, forceTypeStr)
+  const currentFt = calculateInstantaneousForce(
+    currentT_advanced,
+    FMax,
+    t_total,
+    forceTypeStr
+  )
+  const totalImpulse = calculateAnalyticalImpulse(
+    t_total,
+    FMax,
+    t_total,
+    forceTypeStr
+  )
 
   // 微元切片
   const slices = useMemo(
@@ -107,69 +236,40 @@ export default function ImpulseAnimation() {
     Math.floor(currentT_advanced / dt),
     IMPULSE_LAYOUT.nSlices
   )
-  const cumulativeImpulseSlices = completedSlices > 0
-    ? slices[completedSlices - 1].cumulativeI
-    : 0
+  const cumulativeImpulseSlices =
+    completedSlices > 0 ? slices[completedSlices - 1].cumulativeI : 0
 
-  // ── F-t 图表坐标映射 ────────────────────────────────────────
-  const chartArea = {
-    x: IMPULSE_LAYOUT.chart.marginLeft,
-    y: IMPULSE_LAYOUT.chart.marginTop,
-    w: canvasSize.width - IMPULSE_LAYOUT.chart.marginLeft - IMPULSE_LAYOUT.chart.marginRight,
-    h: canvasSize.height * 0.45 - IMPULSE_LAYOUT.chart.marginTop - IMPULSE_LAYOUT.chart.marginBottom,
-  }
+  // ── F-t 数据点（RelationChart 用） ─────────────────────────
+  // 完整曲线（用于 ChartArea 面积填充，内部已按 xRange 裁剪）
+  const basicFtPointsAll = useMemo(
+    () => [
+      { x: 0, y: F },
+      { x: t_duration, y: F },
+    ],
+    [F, t_duration]
+  )
 
-  const fMaxRef = Math.max(F, FMax, 1) * 1.2
-  const tMaxRef = Math.max(t_duration, t_total, 1) * 1.1
-
-  const toChartX = (t: number) => chartArea.x + (t / tMaxRef) * chartArea.w
-  const toChartY = (f: number) => chartArea.y + chartArea.h - (f / fMaxRef) * chartArea.h
-
-  // ── 基础模式：F-t 曲线路径（矩形） ─────────────────────────
-  const basicRectPath = useMemo(() => {
-    const x0 = toChartX(0)
-    const x1 = toChartX(t_duration)
-    const y0 = toChartY(0)
-    const yF = toChartY(F)
-    return `M ${x0},${y0} L ${x0},${yF} L ${x1},${yF} L ${x1},${y0}`
-  }, [F, t_duration, chartArea])
-
-  // 基础模式：当前时间填充
-  const basicFillPath = useMemo(() => {
-    const x0 = toChartX(0)
-    const xCur = toChartX(currentT_basic)
-    const y0 = toChartY(0)
-    const yF = toChartY(F)
-    return `M ${x0},${y0} L ${x0},${yF} L ${xCur},${yF} L ${xCur},${y0} Z`
-  }, [F, currentT_basic, chartArea])
-
-  // ── 进阶模式：F-t 曲线路径 ─────────────────────────────────
-  const advancedCurvePath = useMemo(() => {
-    const points: string[] = []
+  const advancedFtPointsAll = useMemo(() => {
     const steps = 60
+    const pts: { x: number; y: number }[] = []
     for (let i = 0; i <= steps; i++) {
       const t = (i / steps) * t_total
       const f = calculateInstantaneousForce(t, FMax, t_total, forceTypeStr)
-      points.push(`${toChartX(t)},${toChartY(f)}`)
+      pts.push({ x: t, y: f })
     }
-    return `M ${points[0]} L ${points.slice(1).join(' L ')}`
-  }, [FMax, t_total, forceTypeStr, chartArea])
+    return pts
+  }, [FMax, t_total, forceTypeStr])
 
-  // 进阶模式：曲线下面积填充（到当前时间）
-  const advancedFillPath = useMemo(() => {
-    if (currentT_advanced <= 0) return ''
-    const points: string[] = []
-    const steps = 40
-    const y0 = toChartY(0)
-    points.push(`${toChartX(0)},${y0}`)
-    for (let i = 0; i <= steps; i++) {
-      const t = (i / steps) * currentT_advanced
-      const f = calculateInstantaneousForce(t, FMax, t_total, forceTypeStr)
-      points.push(`${toChartX(t)},${toChartY(f)}`)
-    }
-    points.push(`${toChartX(currentT_advanced)},${y0}`)
-    return `M ${points.join(' L ')} Z`
-  }, [FMax, t_total, forceTypeStr, currentT_advanced, chartArea])
+  // 裁剪后的曲线（仅绘制当前已发生的部分，实现渐进出现）
+  const basicFtPoints = useMemo(
+    () => basicFtPointsAll.filter((p) => p.x <= currentT_basic + 1e-9),
+    [basicFtPointsAll, currentT_basic]
+  )
+
+  const advancedFtPoints = useMemo(
+    () => advancedFtPointsAll.filter((p) => p.x <= currentT_advanced + 1e-9),
+    [advancedFtPointsAll, currentT_advanced]
+  )
 
   // ── 滑块动画位置 ────────────────────────────────────────────
   const sliderTrackY = groundY - IMPULSE_LAYOUT.sliderHeight / 2
@@ -182,307 +282,203 @@ export default function ImpulseAnimation() {
   const sliderDisplacement_advanced = currentT_advanced * 10
   const sliderX_advanced = IMPULSE_LAYOUT.canvasPadding + sliderDisplacement_advanced
 
+  // ── 图表域（基于默认参考值固定，不随用户调参变化） ────────
+  const basicXDomain: [number, number] = [0, DOMAIN_DEFAULTS.t_ref * 1.1]
+  const basicYDomain: [number, number] = [0, DOMAIN_DEFAULTS.F_ref * 1.25]
+
+  const advancedXDomain: [number, number] = [0, DOMAIN_DEFAULTS.tTotal_ref * 1.05]
+  const advancedYDomain: [number, number] = [0, DOMAIN_DEFAULTS.FMax_ref * 1.25]
+
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg
-        width={canvasSize.width}
-        height={canvasSize.height}
-        className="bg-white rounded-lg shadow-inner"
-      >
-        {/* ========== defs ========== */}
-        <defs>
-        </defs>
-
-        {/* ========== 地面线 ========== */}
-        <line
-          x1={IMPULSE_LAYOUT.canvasPadding}
-          y1={groundY}
-          x2={canvasSize.width - IMPULSE_LAYOUT.canvasPadding}
-          y2={groundY}
-          stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={STROKE.groundLine}
-        />
-
-        {/* ========== 基础模式：恒力 + F-t 矩形 ========== */}
-        {!isAdvanced && (
-          <g>
-            {/* 滑块 */}
-            <rect
-              x={sliderX_basic}
-              y={sliderTrackY - IMPULSE_LAYOUT.sliderHeight / 2}
-              width={IMPULSE_LAYOUT.sliderWidth}
-              height={IMPULSE_LAYOUT.sliderHeight}
-              rx={6}
-              fill={SCENE_COLORS.materials.steelSphereGrad[1]}
-              stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
-              strokeWidth={CANVAS_STYLE.stroke.objectLine}
-            />
-
-            {/* 推力手（箭头） */}
-            {showVectors && (
-              <VectorArrow
-                origin={{ x: sliderX_basic - 5, y: groundY - sliderTrackY }}
-                vector={{ x: -F, y: 0 }}
-                type="appliedForce"
-                sceneScale={sceneScale}
+    <div ref={containerRef} className="w-full h-full flex flex-col bg-neutral-50 gap-2 p-2">
+      {/* ========== F-t 图表区域（顶部） ========== */}
+      <div className="w-full" style={{ height: canvasSize.height * 0.48 }}>
+        {!isAdvanced ? (
+          /* 基础模式：恒力 F-t */
+          <RelationChart
+            points={basicFtPoints}
+            xDomain={basicXDomain}
+            yDomain={basicYDomain}
+            xLabel="t (s)"
+            yLabel="F (N)"
+            title="F-t 图像（冲量 = 面积）"
+            cursorX={Math.min(currentT_basic, basicXDomain[1])}
+            cursorLabel={() => null}
+            series="primary"
+            color={PHYSICS_COLORS.forceNet}
+            showGrid
+            underlay={
+              <ChartArea
+                points={basicFtPointsAll}
+                xRange={[0, currentT_basic]}
+                baseline={0}
+                variant="impulse"
+                intensity="normal"
               />
-            )}
+            }
+            children={
+              <ImpulseLabelLayer
+                currentT={currentT_basic}
+                impulseText={`I = ${currentImpulse_basic.toFixed(1)} N·s`}
+                yPos={F / 2}
+              />
+            }
+          />
+        ) : (
+          /* 进阶模式：变力 F-t + 微元法 */
+          <RelationChart
+            points={advancedFtPoints}
+            xDomain={advancedXDomain}
+            yDomain={advancedYDomain}
+            xLabel="t (s)"
+            yLabel="F(t) (N)"
+            title="F-t 图像（微元法求冲量）"
+            cursorX={Math.min(currentT_advanced, advancedXDomain[1])}
+            cursorLabel={() => null}
+            series="primary"
+            color={PHYSICS_COLORS.forceNet}
+            showGrid
+            underlay={
+              <ChartArea
+                points={advancedFtPointsAll}
+                xRange={[0, currentT_advanced]}
+                baseline={0}
+                variant="impulse"
+                intensity="subtle"
+              />
+            }
+            children={
+              <>
+                <ImpulseSlicesLayer
+                  slices={slices}
+                  completedSlices={completedSlices}
+                  currentT={currentT_advanced}
+                  t_total={t_total}
+                />
+                <ImpulseLabelLayer
+                  currentT={currentT_advanced}
+                  impulseText={
+                    currentT_advanced >= t_total
+                      ? `I = ${totalImpulse.toFixed(1)} N·s`
+                      : `∑FΔt = ${cumulativeImpulseSlices.toFixed(1)} N·s`
+                  }
+                  yPos={FMax * 0.5}
+                />
+              </>
+            }
+          />
+        )}
+      </div>
 
-            {/* F-t 图表区域 */}
+      {/* ========== 物理动画区域（底部） ========== */}
+      <div className="flex-1 relative bg-white rounded-lg shadow-inner overflow-hidden">
+        <svg width={canvasSize.width} height={canvasSize.height * 0.52} className="absolute inset-0">
+          {/* 地面线 */}
+          <line
+            x1={IMPULSE_LAYOUT.canvasPadding}
+            y1={groundY - canvasSize.height * 0.48}
+            x2={canvasSize.width - IMPULSE_LAYOUT.canvasPadding}
+            y2={groundY - canvasSize.height * 0.48}
+            stroke={PHYSICS_COLORS.labelText}
+            strokeWidth={STROKE.groundLine}
+          />
+
+          {!isAdvanced ? (
+            /* 基础模式滑块 */
             <g>
-              {/* 坐标轴 */}
-              <line
-                x1={chartArea.x}
-                y1={toChartY(0)}
-                x2={chartArea.x + chartArea.w}
-                y2={toChartY(0)}
-                stroke={CHART_COLORS.axisLine}
-                strokeWidth={1}
+              <rect
+                x={sliderX_basic}
+                y={sliderTrackY - canvasSize.height * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2}
+                width={IMPULSE_LAYOUT.sliderWidth}
+                height={IMPULSE_LAYOUT.sliderHeight}
+                rx={6}
+                fill={SCENE_COLORS.materials.steelSphereGrad[1]}
+                stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
+                strokeWidth={CANVAS_STYLE.stroke.objectLine}
               />
-              <line
-                x1={chartArea.x}
-                y1={chartArea.y}
-                x2={chartArea.x}
-                y2={chartArea.y + chartArea.h}
-                stroke={CHART_COLORS.axisLine}
-                strokeWidth={1}
-              />
-
-              {/* 轴标签 */}
+              {showVectors && (
+                <VectorArrow
+                  origin={{
+                    x: sliderX_basic - 5,
+                    y: groundY - sliderTrackY,
+                  }}
+                  vector={{ x: -F, y: 0 }}
+                  type="appliedForce"
+                  sceneScale={sceneScale}
+                />
+              )}
+              {/* 冲量数值标注 */}
               <text
-                x={chartArea.x + chartArea.w}
-                y={toChartY(0) + 15}
-                fontSize={FONT.axisSize}
-                fill={CHART_COLORS.labelText}
-                textAnchor="end"
-              >
-                t (s)
-              </text>
-              <text
-                x={chartArea.x - 8}
-                y={chartArea.y - 2}
-                fontSize={FONT.axisSize}
-                fill={CHART_COLORS.labelText}
-                textAnchor="end"
-              >
-                F (N)
-              </text>
-
-              {/* F-t 矩形轮廓 */}
-              <path
-                d={basicRectPath}
-                fill="none"
-                stroke={PHYSICS_COLORS.forceNet}
-                strokeWidth={1.5}
-              />
-
-              {/* 当前时间填充面积 */}
-              <path
-                d={basicFillPath}
-                fill={PHYSICS_COLORS.impulse}
-                opacity={0.25}
-              />
-
-              {/* 面积标注 */}
-              <text
-                x={toChartX(currentT_basic / 2)}
-                y={toChartY(F / 2)}
+                x={sliderX_basic + IMPULSE_LAYOUT.sliderWidth / 2}
+                y={sliderTrackY - canvasSize.height * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2 - 12}
                 fontSize={FONT.smallSize}
                 fill={PHYSICS_COLORS.impulse}
-                fontWeight="bold"
                 textAnchor="middle"
+                fontWeight="bold"
               >
                 I = {currentImpulse_basic.toFixed(1)} N·s
               </text>
-
-              {/* F 刻度 */}
-              <line x1={chartArea.x - 4} y1={toChartY(F)} x2={chartArea.x} y2={toChartY(F)} stroke={CHART_COLORS.axisLine} strokeWidth={1} />
-              <text x={chartArea.x - 6} y={toChartY(F) + 3} fontSize={FONT.smallSize} fill={CHART_COLORS.labelText} textAnchor="end">
-                {F.toFixed(0)}
-              </text>
-
-              {/* t 刻度 */}
-              <line x1={toChartX(t_duration)} y1={toChartY(0)} x2={toChartX(t_duration)} y2={toChartY(0) + 4} stroke={CHART_COLORS.axisLine} strokeWidth={1} />
-              <text x={toChartX(t_duration)} y={toChartY(0) + 13} fontSize={FONT.smallSize} fill={CHART_COLORS.labelText} textAnchor="middle">
-                {t_duration.toFixed(1)}
-              </text>
-            </g>
-          </g>
-        )}
-
-        {/* ========== 进阶模式：变力 + 微元法 ========== */}
-        {isAdvanced && (
-          <g>
-            {/* 滑块 */}
-            <rect
-              x={sliderX_advanced}
-              y={sliderTrackY - IMPULSE_LAYOUT.sliderHeight / 2}
-              width={IMPULSE_LAYOUT.sliderWidth}
-              height={IMPULSE_LAYOUT.sliderHeight}
-              rx={6}
-              fill={SCENE_COLORS.materials.steelSphereGrad[1]}
-              stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
-              strokeWidth={CANVAS_STYLE.stroke.objectLine}
-            />
-
-            {/* 渐变推力臂 */}
-            {showVectors && currentFt > 0 && (
-              <VectorArrow
-                origin={{ x: sliderX_advanced - 5, y: groundY - sliderTrackY }}
-                vector={{ x: -currentFt * 2, y: 0 }}
-                type="appliedForce"
-                sceneScale={sceneScale}
-              />
-            )}
-
-            {/* F-t 图表区域 */}
-            <g>
-              {/* 坐标轴 */}
-              <line
-                x1={chartArea.x}
-                y1={toChartY(0)}
-                x2={chartArea.x + chartArea.w}
-                y2={toChartY(0)}
-                stroke={CHART_COLORS.axisLine}
-                strokeWidth={1}
-              />
-              <line
-                x1={chartArea.x}
-                y1={chartArea.y}
-                x2={chartArea.x}
-                y2={chartArea.y + chartArea.h}
-                stroke={CHART_COLORS.axisLine}
-                strokeWidth={1}
-              />
-
-              {/* 轴标签 */}
               <text
-                x={chartArea.x + chartArea.w}
-                y={toChartY(0) + 15}
-                fontSize={FONT.axisSize}
-                fill={CHART_COLORS.labelText}
-                textAnchor="end"
-              >
-                t (s)
-              </text>
-              <text
-                x={chartArea.x - 8}
-                y={chartArea.y - 2}
-                fontSize={FONT.axisSize}
-                fill={CHART_COLORS.labelText}
-                textAnchor="end"
-              >
-                F(t) (N)
-              </text>
-
-              {/* 微元切割矩形 */}
-              {slices.map((slice, i) => {
-                const x0 = toChartX(slice.tStart)
-                const x1 = toChartX(slice.tEnd)
-                const yF = toChartY(slice.FAvg)
-                const y0 = toChartY(0)
-                const isCompleted = i < completedSlices
-                const isCurrent = i === completedSlices && currentT_advanced < t_total
-
-                return (
-                  <g key={`slice-${i}`}>
-                    <rect
-                      x={x0}
-                      y={yF}
-                      width={x1 - x0}
-                      height={y0 - yF}
-                      fill={isCompleted ? PHYSICS_COLORS.impulse : (isCurrent ? PHYSICS_COLORS.impulse : 'transparent')}
-                      opacity={isCompleted ? 0.3 : (isCurrent ? 0.15 : 0)}
-                      stroke={isCompleted || isCurrent ? PHYSICS_COLORS.impulse : CHART_COLORS.axisLine}
-                      strokeWidth={0.5}
-                      strokeDasharray={isCompleted || isCurrent ? 'none' : '2,2'}
-                    />
-                    {/* 微元切割线 */}
-                    {(isCompleted || isCurrent) && (
-                      <line
-                        x1={x1}
-                        y1={yF}
-                        x2={x1}
-                        y2={y0}
-                        stroke={PHYSICS_COLORS.impulse}
-                        strokeWidth={0.5}
-                        strokeDasharray="2,2"
-                        opacity={0.5}
-                      />
-                    )}
-                  </g>
-                )
-              })}
-
-              {/* 曲线下面积填充（到当前时间） */}
-              <path
-                d={advancedFillPath}
-                fill={PHYSICS_COLORS.impulse}
-                opacity={0.1}
-              />
-
-              {/* F-t 曲线 */}
-              <path
-                d={advancedCurvePath}
-                fill="none"
-                stroke={PHYSICS_COLORS.forceNet}
-                strokeWidth={2}
-              />
-
-              {/* 当前时间指示线 */}
-              {currentT_advanced > 0 && currentT_advanced < t_total && (
-                <line
-                  x1={toChartX(currentT_advanced)}
-                  y1={chartArea.y}
-                  x2={toChartX(currentT_advanced)}
-                  y2={toChartY(0)}
-                  stroke={PHYSICS_COLORS.velocity}
-                  strokeWidth={1}
-                  strokeDasharray="4,3"
-                />
-              )}
-
-              {/* F_max 刻度 */}
-              <line x1={chartArea.x - 4} y1={toChartY(FMax)} x2={chartArea.x} y2={toChartY(FMax)} stroke={CHART_COLORS.axisLine} strokeWidth={1} />
-              <text x={chartArea.x - 6} y={toChartY(FMax) + 3} fontSize={FONT.smallSize} fill={CHART_COLORS.labelText} textAnchor="end">
-                {FMax.toFixed(0)}
-              </text>
-
-              {/* t_total 刻度 */}
-              <line x1={toChartX(t_total)} y1={toChartY(0)} x2={toChartX(t_total)} y2={toChartY(0) + 4} stroke={CHART_COLORS.axisLine} strokeWidth={1} />
-              <text x={toChartX(t_total)} y={toChartY(0) + 13} fontSize={FONT.smallSize} fill={CHART_COLORS.labelText} textAnchor="middle">
-                {t_total.toFixed(1)}
-              </text>
-
-              {/* 积分标注 */}
-              <text
-                x={toChartX(currentT_advanced / 2)}
-                y={toChartY(FMax * 0.5)}
+                x={sliderX_basic + IMPULSE_LAYOUT.sliderWidth / 2}
+                y={sliderTrackY - canvasSize.height * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2 + 35}
                 fontSize={FONT.smallSize}
-                fill={PHYSICS_COLORS.impulse}
-                fontWeight="bold"
+                fill={CHART_COLORS.labelText}
                 textAnchor="middle"
               >
-                {currentT_advanced >= t_total
-                  ? `I = ${totalImpulse.toFixed(1)} N·s`
-                  : `∑FΔt = ${cumulativeImpulseSlices.toFixed(1)} N·s`}
+                t = {currentT_basic.toFixed(2)} s
               </text>
-
-              {/* Δt 标注 */}
-              {completedSlices > 0 && currentT_advanced < t_total && (
-                <text
-                  x={toChartX(currentT_advanced) + 5}
-                  y={chartArea.y + 10}
-                  fontSize={FONT.smallSize}
-                  fill={PHYSICS_COLORS.velocity}
-                >
-                  Δt
-                </text>
-              )}
             </g>
-          </g>
-        )}
-      </svg>
+          ) : (
+            /* 进阶模式滑块 */
+            <g>
+              <rect
+                x={sliderX_advanced}
+                y={sliderTrackY - canvasSize.height * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2}
+                width={IMPULSE_LAYOUT.sliderWidth}
+                height={IMPULSE_LAYOUT.sliderHeight}
+                rx={6}
+                fill={SCENE_COLORS.materials.steelSphereGrad[1]}
+                stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
+                strokeWidth={CANVAS_STYLE.stroke.objectLine}
+              />
+              {showVectors && currentFt > 0 && (
+                <VectorArrow
+                  origin={{
+                    x: sliderX_advanced - 5,
+                    y: groundY - sliderTrackY,
+                  }}
+                  vector={{ x: -currentFt * 2, y: 0 }}
+                  type="appliedForce"
+                  sceneScale={sceneScale}
+                />
+              )}
+              {/* 冲量数值标注 */}
+              <text
+                x={sliderX_advanced + IMPULSE_LAYOUT.sliderWidth / 2}
+                y={sliderTrackY - canvasSize.height * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2 - 12}
+                fontSize={FONT.smallSize}
+                fill={PHYSICS_COLORS.impulse}
+                textAnchor="middle"
+                fontWeight="bold"
+              >
+                {currentT_advanced >= t_total
+                  ? `I = ${totalImpulse.toFixed(1)}`
+                  : `∑FΔt = ${cumulativeImpulseSlices.toFixed(1)}`}{' '}
+                N·s
+              </text>
+              <text
+                x={sliderX_advanced + IMPULSE_LAYOUT.sliderWidth / 2}
+                y={sliderTrackY - canvasSize.height * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2 + 35}
+                fontSize={FONT.smallSize}
+                fill={CHART_COLORS.labelText}
+                textAnchor="middle"
+              >
+                F = {currentFt.toFixed(1)} N · t = {currentT_advanced.toFixed(2)} s
+              </text>
+            </g>
+          )}
+        </svg>
+      </div>
     </div>
   )
 }

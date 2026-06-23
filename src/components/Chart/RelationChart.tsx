@@ -117,6 +117,10 @@ export interface RelationChartProps {
   color?: string
   /** 主曲线线宽，默认 2 */
   strokeWidth?: number
+  /** 绘制在曲线下方的插件层（如面积填充） */
+  underlay?: React.ReactNode
+  /** 绘制在曲线上方的插件层（如微元切割、教学注释） */
+  children?: React.ReactNode
   /** 额外 className */
   className?: string
 }
@@ -145,10 +149,9 @@ function RCContent({
   series,
   color,
   strokeWidth,
-}: Omit<
-  RelationChartProps,
-  'tMax' | 'xDomain' | 'yDomain' | 'xLabel' | 'yLabel' | 'title' | 'className' | 'showZeroLine' | 'showGrid'
->) {
+  underlay,
+  children,
+}: RelationChartProps) {
   const ctx = useChartContext()
   const mainColor = color ?? SERIES_MAP[series ?? 'primary']
 
@@ -194,6 +197,9 @@ function RCContent({
 
   return (
     <g>
+      {/* 插件底层（面积/背景增强） */}
+      {underlay}
+
       {/* 额外曲线（先画，主曲线压在上面） */}
       {extraPaths.map((p, i) =>
         p.d ? (
@@ -222,7 +228,7 @@ function RCContent({
         />
       )}
 
-      {/* 标记点 / 参考线 */}
+      {/* 标记点 / 参考线（底层参考） */}
       {markers?.map((m, i) => {
         const mColor = m.color ?? CHART_COLORS.equilibrium
         // 推断 axis：未指定时按 x/y 齐全度判断
@@ -410,6 +416,9 @@ function RCContent({
           })}
         </g>
       )}
+
+      {/* 插件顶层（微元切割、教学注释等） */}
+      {children}
     </g>
   )
 }
@@ -431,6 +440,8 @@ export function RelationChart({
   series = 'primary',
   color,
   strokeWidth,
+  underlay,
+  children,
   className = '',
 }: RelationChartProps) {
   const computedXDomain = useMemo((): [number, number] => {
@@ -479,6 +490,10 @@ export function RelationChart({
         series={series}
         color={color}
         strokeWidth={strokeWidth}
+        underlay={underlay}
+        children={children}
+        xLabel={xLabel}
+        yLabel={yLabel}
       />
     </BasePhysicsChart>
   )

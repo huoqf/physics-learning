@@ -41,7 +41,7 @@
 | `UniformAccelerationCenterExtra` | V-T + 频闪虚影 + 数据表 + 公式推导（四屏联动） | 纯内联 SVG 手写 | 频闪点 markers、平行四边形差值面积证明、十字投影游标+读数气泡；待迁 `VelocityTimeChart` + `markers` + `children` | 🔶 待迁移（731 行 P0） |
 | `ObliqueThrowAnimation` | V-T（vx/vy 双曲线，画中画） | 纯内联 SVG 手写 | 双曲线 vx/vy、游标、零线；画中画嵌入动画主 SVG；待迁 `VelocityTimeChart` + `additionalSeries` | 🔶 待迁移（549 行） |
 | `ProjectileAnimation` | V-T（vx/vy 双曲线，画中画） | 纯内联 SVG 手写 | 双曲线 vx/vy、游标、零线；画中画嵌入动画主 SVG；待迁 `VelocityTimeChart` + `additionalSeries` | 🔶 待迁移（505 行） |
-| `ImpulseAnimation` | F-t（冲量面积图） | 纯内联 SVG 手写 | F-t 曲线+面积填充、矩形近似+渐进积分；手写 `toChartX/toChartY`；待迁 `RelationChart` + `ChartArea` | 🔶 待迁移（443 行） |
+| `ImpulseAnimation` | F-t（冲量面积图） | RelationChart + ChartArea | F-t 曲线渐进绘制（裁剪 points）+ 固定域（DOMAIN_DEFAULTS）+ 面积填充 + 微元切割插件层 | ✅ 已迁移 |
 | `MomentumAnimation` | Ek-p（画中画关系图） | 纯内联 SVG 手写 | Ek=p²/(2m) 曲线、双球对比；画中画嵌入动画主 SVG；待迁 `RelationChart` | 🔶 待迁移（712 行） |
 | `CentripetalAnimation` | F-a（画中画关系图） | 纯内联 SVG 手写 | F_c=m·a_c 线性关系、双线对比；画中画嵌入动画主 SVG；待迁 `RelationChart` | 🔶 待迁移（504 行） |
 | `GravityAnimation` | F-r（平方反比律曲线，画中画） | 纯内联 SVG 手写 | F=GMm/r² 双曲线；画中画嵌入动画主 SVG；待迁 `RelationChart` | 🔶 待迁移（650 行） |
