@@ -8,10 +8,7 @@
 
 | 文件 | 行数 |
 |---|---|
-| VerticalThrowCharts.tsx | 741 |
 | UniformAccelerationCenterExtra.tsx | 603 |
-| FreeFallAnimation.tsx | 645 |
-| MomentumAnimation.tsx | 582 |
 | EnergyConservationAnimation.tsx | 567 |
 
 ---
@@ -26,10 +23,15 @@
 
 ## 三、Viewport 架构（P1）
 
+### 已完成
+
+- ✅ FrictionAnimation 迁移至 useViewport（P3 示范）
+- ✅ NewtonSecondAnimation 迁移至 useViewport
+
 ### 待做
 
 1. **统一 panel layout 工具**：viewport overlay 和 DOM panel 同源计算
-2. **其余 dynamics 组件 Viewport 迁移**：NewtonSecond / Gravity / Spring（按 FrictionAnimation P3 范本）
+2. **其余 dynamics 组件 Viewport 迁移**：Gravity / Spring（按 FrictionAnimation P3 范本）
 
 ### 硬约束
 
