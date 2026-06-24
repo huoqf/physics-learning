@@ -178,13 +178,12 @@ function TerminalVelocityReference({ v_m }: { v_m: number }) {
 }
 
 export default function CuttingEMF() {
-  const { params, time, isPlaying, setIsPlaying, showGrid } = useAnimationStore(
+  const { params, time, isPlaying, setIsPlaying } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
       time: s.time,
       isPlaying: s.isPlaying,
       setIsPlaying: s.setIsPlaying,
-      showGrid: s.showGrid,
     }))
   )
 
@@ -315,29 +314,6 @@ export default function CuttingEMF() {
       ctx.fillRect(rodPos.cx - rodW / 2, topY, rodW, bottomY - topY)
     }
   }, [time, isPlaying, B, L, R, mode, finalX, railSpacing, railCy, rodPos.cx, canvasSize.width, canvasSize.height, px])
-
-  // 6. 辅助网格
-  const gridLines = useMemo(() => {
-    if (!showGrid) return null
-    const lines = []
-    const spacing = px(40)
-    const cols = Math.floor(canvasSize.width / spacing)
-    const rows = Math.floor(sceneHeight / spacing)
-
-    for (let i = 0; i <= cols; i++) {
-      lines.push(
-        <line key={`gx-${i}`} x1={i * spacing} y1={0} x2={i * spacing} y2={sceneHeight}
-          stroke={PHYSICS_COLORS.grid} strokeWidth={0.5} strokeDasharray="2,3" />
-      )
-    }
-    for (let j = 0; j <= rows; j++) {
-      lines.push(
-        <line key={`gy-${j}`} x1={0} y1={j * spacing} x2={canvasSize.width} y2={j * spacing}
-          stroke={PHYSICS_COLORS.grid} strokeWidth={0.5} strokeDasharray="2,3" />
-      )
-    }
-    return lines
-  }, [showGrid, canvasSize.width, px])
 
   // 7. 匀强磁场点阵格
   const fieldSymbols = useMemo(() => {
@@ -495,9 +471,6 @@ export default function CuttingEMF() {
               PHYSICS_COLORS.lorentzForce
             ]} />
           </defs>
-
-          {/* 网格参考背景 */}
-          {gridLines}
 
           {/* 双导轨 */}
           <Rails

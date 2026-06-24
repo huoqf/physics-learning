@@ -170,12 +170,6 @@ export default function VerticalThrowAnimation() {
 
           <VectorDefs colors={[PHYSICS_COLORS.velocity, PHYSICS_COLORS.acceleration]} />
 
-          <pattern id="gridPattern" width="8" height="8" patternUnits="userSpaceOnUse">
-            <path d="M0 0L8 8M8 0L0 8" stroke={SCENE_COLORS.effects.patternGrid} strokeWidth="0.5" opacity={0.35} />
-          </pattern>
-          <pattern id="stripePattern" width="6" height="6" patternUnits="userSpaceOnUse">
-            <path d="M0 6L6 0" stroke={SCENE_COLORS.effects.patternStripe} strokeWidth="1" opacity={0.35} />
-          </pattern>
         </defs>
 
         {/* ========== 左侧：物理演练区 ========== */}

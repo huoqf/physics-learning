@@ -41,12 +41,11 @@ const SPRING_VISUAL = {
 }
 
 export default function ConnectedBodiesAnimation() {
-    const {params, time, showVectors, showGrid, isPlaying, setIsPlaying, updateParam} = useAnimationStore(
+    const {params, time, showVectors, isPlaying, setIsPlaying, updateParam} = useAnimationStore(
     useShallow((s) => ({
     params: s.params,
     time: s.time,
     showVectors: s.showVectors,
-    showGrid: s.showGrid,
     isPlaying: s.isPlaying,
     setIsPlaying: s.setIsPlaying,
     updateParam: s.updateParam,
@@ -297,28 +296,6 @@ export default function ConnectedBodiesAnimation() {
   const isM1View = analysisView === 2
   const isM2View = analysisView === 3
 
-  // 网格线绘制
-  const gridLines = []
-  if (showGrid) {
-    const gridCount = 12
-    for (let i = 0; i <= gridCount; i++) {
-      const xPos = startX + (i * (animWidth - startX - 50)) / gridCount
-      gridLines.push(
-        <line
-          key={`cb-grid-${i}`}
-          x1={xPos}
-          y1={30}
-          x2={xPos}
-          y2={groundY}
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={0.5}
-          strokeDasharray="3,3"
-          opacity={0.3}
-        />
-      )
-    }
-  }
-
   // 力大小文本定义
   const f1_val = parseFloat((physicsResult.f1 ?? physicsResult.f1Max).toFixed(1))
   const f2_val = parseFloat((physicsResult.f2 ?? physicsResult.f2Max).toFixed(1))
@@ -327,8 +304,6 @@ export default function ConnectedBodiesAnimation() {
   return (
     <div ref={containerRef} className="w-full h-full relative select-none">
       <svg width={animWidth} height={animHeight} className="bg-white rounded-lg shadow-inner">
-        {gridLines}
-
         {/* 粗糙地平线 */}
         <PhysicsGround
           x={20} y={groundY} width={animWidth - 40}

@@ -8,7 +8,7 @@ import {
   calculateAcceleratedMotion,
   calculateNewtonSecondVariableMotion,
 } from '@/physics'
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
 import type { SceneLayoutProfile } from '@/scene'
 import { Block } from '@/components/Physics/Block'
@@ -44,12 +44,11 @@ const NEWTON_ARROW = {
 // ──────────────────────────────────────────────────────────────────────
 
 export default function NewtonSecondAnimation() {
-    const {params, time, showVectors, showGrid} = useAnimationStore(
+    const {params, time, showVectors} = useAnimationStore(
     useShallow((s) => ({
     params: s.params,
     time: s.time,
     showVectors: s.showVectors,
-    showGrid: s.showGrid,
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
@@ -122,25 +121,6 @@ export default function NewtonSecondAnimation() {
   const cx = carX + carWidth / 2
   const cy = carY + carHeight / 2
 
-  const gridLines = []
-  if (showGrid) {
-    for (let i = 0; i <= 20; i++) {
-      const xPos = originX + (i * vp.visibleW * NEWTON_LAYOUT.gridWidthRatio) / 20
-      gridLines.push(
-        <line
-          key={`vline-${i}`}
-          x1={xPos}
-          y1={groundY - 20}
-          x2={xPos}
-          y2={groundY + 10}
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={STROKE.grid}
-          strokeDasharray={DASH.axis.join(' ')}
-        />
-      )
-    }
-  }
-
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg
@@ -148,9 +128,6 @@ export default function NewtonSecondAnimation() {
         height={canvasSize.height}
         className="bg-white rounded-lg shadow-inner"
       >
-        {/* 精密实验室格线 */}
-        {gridLines}
-
         {/* 轨道 */}
         <PhysicsGround
           x={originX - 20} y={groundY}

@@ -4,7 +4,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateElevatorMotion } from '@/physics'
-import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { colors } from '@/theme/colors'
@@ -36,12 +36,11 @@ const LAYOUT = {
 }
 
 export default function WeightlessnessAnimation() {
-    const {params, time, showVectors, showGrid, isPlaying, setIsPlaying} = useAnimationStore(
+    const {params, time, showVectors, isPlaying, setIsPlaying} = useAnimationStore(
     useShallow((s) => ({
     params: s.params,
     time: s.time,
     showVectors: s.showVectors,
-    showGrid: s.showGrid,
     isPlaying: s.isPlaying,
     setIsPlaying: s.setIsPlaying,
     }))
@@ -231,27 +230,6 @@ export default function WeightlessnessAnimation() {
   const weight = m * g
   const pointerAngle = Math.min(Math.max(((currentN - weight) / weight) * LAYOUT.pointerMaxAngle, -LAYOUT.pointerMaxAngle), LAYOUT.pointerMaxAngle)
 
-  // 井道背景线
-  const gridLines = []
-  if (showGrid) {
-    const gridCount = 10
-    for (let i = 0; i <= gridCount; i++) {
-      const yPos = shaftTop + (i * shaftHeight) / gridCount
-      gridLines.push(
-        <line
-          key={`grid-y-${i}`}
-          x1={centerX - elevatorWidth / 2 - 20}
-          y1={yPos}
-          x2={centerX + elevatorWidth / 2 + 20}
-          y2={yPos}
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={STROKE.grid}
-          strokeDasharray={DASH.axis.join(' ')}
-        />
-      )
-    }
-  }
-
   // ── 右侧 N - a 图表辅助计算与参数 ──
   const aMin = -12
   const aMax = 12
@@ -276,9 +254,6 @@ export default function WeightlessnessAnimation() {
         height={canvasSize.height}
         className="bg-white rounded-lg shadow-inner"
       >
-        {/* 背景格线 */}
-        {gridLines}
-
         {/* 观光电梯轨道 */}
         <line
           x1={centerX - elevatorWidth / 2 - 15}

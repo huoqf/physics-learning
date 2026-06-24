@@ -257,19 +257,6 @@ export default function FreeFallDripAnimation() {
 
         {/* ========== 左侧动画舞台 ========== */}
 
-        {/* 精密实验室标尺网格背景 */}
-        {Array.from({ length: 21 }).map((_, idx) => {
-          const gridY = tubeTopY + (tubePixelHeight * idx) / 20
-          return (
-            <line
-              key={`grid-${idx}`}
-              x1={tubeLeft} y1={gridY} x2={tubeRight} y2={gridY}
-              stroke="rgba(148, 163, 184, 0.05)"
-              strokeWidth={1}
-            />
-          )
-        })}
-
         {/* 1. 滴水龙头 */}
         <g>
           {/* 龙头主体 */}

@@ -20,12 +20,11 @@ const SPRING_LAYOUT = {
 // ──────────────────────────────────────────────────────────────────────
 
 export default function SpringForceAnimation() {
-    const {params, time, showVectors, showGrid} = useAnimationStore(
+    const {params, time, showVectors} = useAnimationStore(
     useShallow((s) => ({
     params: s.params,
     time: s.time,
     showVectors: s.showVectors,
-    showGrid: s.showGrid,
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumWide)
@@ -57,35 +56,10 @@ export default function SpringForceAnimation() {
   }
   const springSceneScale = createSceneScale(springScene)
 
-  // ── 网格线绘制 ──
-  const gridLines = []
-  if (showGrid) {
-    // 围绕平衡位置 eqX 绘制
-    for (let i = -4; i <= 4; i++) {
-      const xPos = eqX + i * (scale * 0.5)
-      gridLines.push(
-        <line
-          key={`gridline-${i}`}
-          x1={xPos}
-          y1={groundY - 110}
-          x2={xPos}
-          y2={groundY + 40}
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={STROKE.grid}
-          strokeDasharray={DASH.axis.join(' ')}
-        />
-      )
-    }
-  }
-
-
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
-        {/* 1. 辅助网格 */}
-        {gridLines}
-        
-        {/* 2. 精密实验室地面 */}
+        {/* 1. 精密实验室地面 */}
         <PhysicsGround
           x={40} y={groundY} width={canvasSize.width - 80}
           appearance={{ color: PHYSICS_COLORS.axis, showBaseShadow: true }}

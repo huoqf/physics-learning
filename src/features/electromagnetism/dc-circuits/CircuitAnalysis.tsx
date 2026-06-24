@@ -496,34 +496,6 @@ export default function CircuitAnalysis() {
         className="w-full h-full bg-white rounded-xl shadow-inner border border-neutral-100"
         preserveAspectRatio="xMidYMid meet"
       >
-
-
-        {/* 绘制背景网格（轻量） */}
-        {Array.from({ length: 13 }, (_, i) => (
-          <line
-            key={`bg-grid-x-${i}`}
-            x1={i * 50}
-            y1={0}
-            x2={i * 50}
-            y2={360}
-            stroke={PHYSICS_COLORS.grid}
-            strokeWidth={0.5}
-            opacity={0.3}
-          />
-        ))}
-        {Array.from({ length: 8 }, (_, i) => (
-          <line
-            key={`bg-grid-y-${i}`}
-            x1={0}
-            y1={i * 50}
-            x2={650}
-            y2={i * 50}
-            stroke={PHYSICS_COLORS.grid}
-            strokeWidth={0.5}
-            opacity={0.3}
-          />
-        ))}
-
         {/* 绘制主体电路 */}
         {renderCircuit()}
       </svg>

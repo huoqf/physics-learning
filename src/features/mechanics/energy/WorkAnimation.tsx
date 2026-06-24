@@ -1,4 +1,4 @@
-﻿import { useCanvasSize, useViewport } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -46,12 +46,11 @@ const WORK_LAYOUT = {
  * 上下分区布局：图表区（上）+ 场景区（下）
  */
 export default function WorkAnimation() {
-  const { params, time, showVectors, showGrid } = useAnimationStore(
+  const { params, time, showVectors } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
       time: s.time,
       showVectors: s.showVectors,
-      showGrid: s.showGrid,
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
@@ -148,16 +147,6 @@ export default function WorkAnimation() {
 
   const sceneFontSize = font(11)
   const sceneSmallFont = font(9)
-
-  const gridLines = useMemo(() => {
-    if (!showGrid) return []
-    const lines: { x: number; key: string }[] = []
-    const gridCount = Math.max(8, Math.floor(vp.visibleW / 60))
-    for (let i = 0; i <= gridCount; i++) {
-      lines.push({ x: startX + (i * (maxVisibleX - startX)) / gridCount, key: `grid-${i}` })
-    }
-    return lines
-  }, [showGrid, vp.visibleW, startX, maxVisibleX])
 
   const forceArrowLen = Math.min(F * 2.5, 80)
   const angleRad = (angleDeg * Math.PI) / 180
@@ -267,13 +256,6 @@ export default function WorkAnimation() {
               unit: 'm'
             }}
           />
-
-          {gridLines.map((gl) => (
-            <line key={gl.key} x1={gl.x} y1={groundYInScene - objH * 2.5}
-              x2={gl.x} y2={groundYInScene + 4}
-              stroke={PHYSICS_COLORS.grid} strokeWidth={STROKE.grid}
-              strokeDasharray={DASH.guide.join(',')} />
-          ))}
 
           <line x1={originX} y1={groundYInScene - objH * 2.5}
             x2={originX} y2={groundYInScene + 4}
