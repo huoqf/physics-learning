@@ -8,12 +8,11 @@
 
 | 文件 | 行数 |
 |---|---|
-| VerticalThrowCharts.tsx | 694 |
-| PotentialEnergyAnimation.tsx | 670 |
-| UniformAccelerationCenterExtra.tsx | 596 |
-| FreeFallAnimation.tsx | 589 |
-| MomentumAnimation.tsx | 534 |
-| EnergyConservationAnimation.tsx | 514 |
+| VerticalThrowCharts.tsx | 741 |
+| UniformAccelerationCenterExtra.tsx | 603 |
+| FreeFallAnimation.tsx | 645 |
+| MomentumAnimation.tsx | 582 |
+| EnergyConservationAnimation.tsx | 567 |
 
 ---
 
