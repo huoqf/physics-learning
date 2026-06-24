@@ -1,14 +1,28 @@
 import { FC, useMemo } from 'react'
-import { useCanvasSize } from '@/utils'
 import { PHYSICS_COLORS, CHART_COLORS } from '@/theme/physics'
 import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { calculateFrictionPullModel, calculateDoubleFrictionIncline } from '@/physics'
 import { GRAVITY } from '@/physics/constants'
-import { MiniChart } from '@/components/UI'
+import { MiniChart, AnimationControls } from '@/components/UI'
+import FrictionAnimation from './FrictionAnimation'
+import { useCanvasSize } from '@/utils'
 
 export const FrictionCenterExtra: FC = () => {
-  const [containerRef, canvasSize] = useCanvasSize({ width: 400, height: 200 })
-  const params = useAnimationStore((s) => s.params)
+  // 右侧图表容器大小监听，用于动态调整 MiniChart 大小
+  const [chartContainerRef, chartSize] = useCanvasSize({ width: 400, height: 350 })
+
+  const { params, time, isPlaying, speed, setIsPlaying, setTime, setSpeed } = useAnimationStore(
+    useShallow((s) => ({
+      params: s.params,
+      time: s.time,
+      isPlaying: s.isPlaying,
+      speed: s.speed,
+      setIsPlaying: s.setIsPlaying,
+      setTime: s.setTime,
+      setSpeed: s.setSpeed,
+    }))
+  )
 
   const mode = params.mode ?? 0
   const m = params.m ?? 5
@@ -32,15 +46,11 @@ export const FrictionCenterExtra: FC = () => {
     const step = 0.5
     const limit = 45
 
-    // 静摩擦递增段
     for (let F = 0; F < f_max; F += step) {
       data.push({ F, f: F })
     }
-    // 精确的突变临界点前
     data.push({ F: f_max - 0.001, f: f_max })
-    // 精确的突变临界点后
     data.push({ F: f_max + 0.001, f: f_slip })
-    // 滑动摩擦段
     for (let F = f_max + 0.5; F <= limit; F += step) {
       data.push({ F, f: f_slip })
     }
@@ -53,13 +63,11 @@ export const FrictionCenterExtra: FC = () => {
     const data = []
     const step = 1.0
 
-    // 计算临界角
     const mu_1_static = 1.12 * mu_1
     const criticalAngleRad = Math.atan(mu_1_static)
     const criticalAngle = (criticalAngleRad * 180) / Math.PI
 
     for (let theta = 0; theta <= 90; theta += step) {
-      // 临界段点集插值，展示明显的突跃
       if (theta > criticalAngle - step && theta < criticalAngle) {
         const resMinus = calculateDoubleFrictionIncline({ m, M, theta: criticalAngle - 0.001, mu_1, mu_2, g })
         data.push({ theta: criticalAngle - 0.001, f1: resMinus.f1, f2: resMinus.f2 })
@@ -73,7 +81,6 @@ export const FrictionCenterExtra: FC = () => {
     return data.sort((a, b) => a.theta - b.theta)
   }, [mode, m, M, mu_1, mu_2, g])
 
-  // 动态图表纵轴上限计算
   const yMax = useMemo(() => {
     if (mode === 0) {
       const f_max = 1.12 * mu * m * g
@@ -85,50 +92,75 @@ export const FrictionCenterExtra: FC = () => {
   }, [mode, m, M, mu, g])
 
   return (
-    <div ref={containerRef} className="w-full h-full p-2 border-b border-neutral-200/60 bg-neutral-50/50 flex items-center justify-center">
-      {mode === 0 ? (
-        <MiniChart
-          title="f - F 关系图像"
-          xMin={0}
-          xMax={45}
-          yMin={0}
-          yMax={yMax}
-          points={pullPoints}
-          xKey="F"
-          xLabel="外拉力 F (N)"
-          yLabel="摩擦力 f (N)"
-          lines={[
-            { key: 'f', color: PHYSICS_COLORS.friction, name: '摩擦力 f' }
-          ]}
-          currentVals={{ f: pullResult.f_actual }}
-          currentXVal={F_applied}
-          staticLines={[
-            { value: pullResult.f_max, color: CHART_COLORS.criticalPt, strokeDasharray: '3,3', name: '最大静摩擦力 f_max' }
-          ]}
-          minWidth={canvasSize.width - 24}
-          minHeight={canvasSize.height - 24}
+    <div className="w-full h-full flex flex-col gap-3 p-1 overflow-hidden">
+      {/* 上半部分：动画与图表并列 */}
+      <div className="w-full flex-1 min-h-0 flex flex-row gap-3">
+        {/* 左侧：动画区 */}
+        <div className="flex-1 min-w-0 bg-white rounded-xl shadow-sm overflow-hidden relative border border-neutral-100">
+          <FrictionAnimation />
+        </div>
+
+        {/* 右侧：图表区 */}
+        <div ref={chartContainerRef} className="flex-1 min-w-0 bg-white rounded-xl shadow-sm overflow-hidden border border-neutral-100 p-2 flex items-center justify-center">
+          {mode === 0 ? (
+            <MiniChart
+              title="f - F 关系图像"
+              xMin={0}
+              xMax={45}
+              yMin={0}
+              yMax={yMax}
+              points={pullPoints}
+              xKey="F"
+              xLabel="外拉力 F (N)"
+              yLabel="摩擦力 f (N)"
+              lines={[
+                { key: 'f', color: PHYSICS_COLORS.friction, name: '摩擦力 f' }
+              ]}
+              currentVals={{ f: pullResult.f_actual }}
+              currentXVal={F_applied}
+              staticLines={[
+                { value: pullResult.f_max, color: CHART_COLORS.criticalPt, strokeDasharray: '3,3', name: '最大静摩擦力 f_max' }
+              ]}
+              minWidth={chartSize.width - 16}
+              minHeight={chartSize.height - 16}
+            />
+          ) : (
+            <MiniChart
+              title="f - θ 关系图像 (双曲线)"
+              xMin={0}
+              xMax={90}
+              yMin={0}
+              yMax={yMax}
+              points={inclinePoints}
+              xKey="theta"
+              xLabel="倾角 θ (°)"
+              yLabel="摩擦力 f (N)"
+              lines={[
+                { key: 'f1', color: PHYSICS_COLORS.friction, name: '滑块摩擦力 f₁' },
+                { key: 'f2', color: PHYSICS_COLORS.appliedForce, name: '地面摩擦力 f₂' }
+              ]}
+              currentVals={{ f1: inclineResult.f1, f2: inclineResult.f2 }}
+              currentXVal={angle}
+              minWidth={chartSize.width - 16}
+              minHeight={chartSize.height - 16}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* 下半部分：通栏控制条 */}
+      <div className="w-full shrink-0 bg-white rounded-xl shadow-sm border border-neutral-100 p-2">
+        <AnimationControls
+          isPlaying={isPlaying}
+          speed={speed}
+          time={time}
+          maxTime={30}
+          onPlayPause={() => setIsPlaying(!isPlaying)}
+          onReset={() => setTime(0)}
+          onSpeedChange={setSpeed}
+          onTimeChange={setTime}
         />
-      ) : (
-        <MiniChart
-          title="f - θ 关系图像 (双曲线)"
-          xMin={0}
-          xMax={90}
-          yMin={0}
-          yMax={yMax}
-          points={inclinePoints}
-          xKey="theta"
-          xLabel="倾角 θ (°)"
-          yLabel="摩擦力 f (N)"
-          lines={[
-            { key: 'f1', color: PHYSICS_COLORS.friction, name: '滑块摩擦力 f₁' },
-            { key: 'f2', color: PHYSICS_COLORS.appliedForce, name: '地面摩擦力 f₂' }
-          ]}
-          currentVals={{ f1: inclineResult.f1, f2: inclineResult.f2 }}
-          currentXVal={angle}
-          minWidth={canvasSize.width - 24}
-          minHeight={canvasSize.height - 24}
-        />
-      )}
+      </div>
     </div>
   )
 }

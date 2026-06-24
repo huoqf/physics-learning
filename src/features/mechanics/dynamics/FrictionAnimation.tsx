@@ -94,9 +94,9 @@ export default function FrictionAnimation() {
   const res_m2 = calculateDoubleFrictionIncline({ m, M, theta: angle, mu_1, mu_2, g })
 
   // 位移上限（供仿真边界处理，与渲染几何保持一致）
-  // 模式一：滑块右边缘到达画布右边缘时循环回起点（保持速度，展示合外力下的持续加速）
+  // 模式一：滑块右边缘到达画布右边缘时停止（模拟撞墙，速度归零位置保持）
   const x1Limit_m = (canvasSize.width - 60 - 140 - 22) / pullScale
-  // 模式二：滑块到达斜面底端时重置回顶端（boardLength*0.85 为可滑距离，扣除起始偏移）
+  // 模式二：滑块到达斜面底端时停止（滑落地面，速度归零位置保持）
   const boardLength_px = canvasSize.width * 0.45
   const xRelLimit_m = (boardLength_px * 0.85) / inclineScale
 
@@ -122,9 +122,10 @@ export default function FrictionAnimation() {
       let newX1 = prev.x1 + newV1 * dt
 
       if (newV1 <= 0.001) newV1 = 0
-      // 到达画布右边缘时循环回起点，保持速度（合外力不变下持续加速）
-      if (newX1 > x1Limit_m) {
-        newX1 -= x1Limit_m
+      // 到达画布右边缘时停止（撞墙，速度归零位置保持）
+      if (newX1 >= x1Limit_m) {
+        newX1 = x1Limit_m
+        newV1 = 0
       }
 
       const next = { ...prev, x1: newX1, v1: newV1 }
@@ -149,19 +150,20 @@ export default function FrictionAnimation() {
       let newV_rel = prev.v_rel + a_rel_frame * dt
       let newX_rel = prev.x_rel + newV_rel * dt
       if (newV_rel <= 0.001) newV_rel = 0
-      // 到达斜面底端时重置回顶端，从静止重新下滑（完整演示滑下斜面）
-      if (newX_rel > xRelLimit_m) {
-        newX_rel = 0
+      // 到达斜面底端时停止（滑落地面，速度归零位置保持）
+      if (newX_rel >= xRelLimit_m) {
+        newX_rel = xRelLimit_m
         newV_rel = 0
       }
 
       let newVM = prev.vM + a_M_frame * dt
       let newXM = prev.xM + newVM * dt
       if (newVM <= 0.001) newVM = 0
-      // 斜面体到达画布右边缘时循环回起点
+      // 斜面体到达画布右边缘时停止（撞墙，速度归零位置保持）
       const xMLimit_m = (canvasSize.width - 30 - canvasSize.width * 0.18 - boardLength_px * Math.cos(angleRad)) / inclineScale
-      if (xMLimit_m > 0 && newXM > xMLimit_m) {
-        newXM -= xMLimit_m
+      if (xMLimit_m > 0 && newXM >= xMLimit_m) {
+        newXM = xMLimit_m
+        newVM = 0
       }
 
       const next = { ...prev, x_rel: newX_rel, v_rel: newV_rel, xM: newXM, vM: newVM }
@@ -193,14 +195,14 @@ export default function FrictionAnimation() {
   const boxLocalX = boxLocalStartX + displacement_rel
 
   // 绝对世界坐标 (滑块重心)
-  const localY = -boxSize / 2 - 4
+  const localY = -boxSize / 2
   const deltaX = boxLocalX * Math.cos(angleRad) - localY * Math.sin(angleRad)
   const deltaY = boxLocalX * Math.sin(angleRad) + localY * Math.cos(angleRad)
   const blockWorldX = pivotX + displacement_M + deltaX
   const blockWorldY = groundY_m2 - H + deltaY
 
   return (
-    <div ref={containerRef} className="w-full h-full">
+    <div ref={containerRef} className="w-full h-full overflow-hidden">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
         <defs>
           {/* 钢体材质渐变 */}
@@ -221,15 +223,15 @@ export default function FrictionAnimation() {
         {/* ─── 模式一：水平面拉力模型渲染 ─── */}
         {mode === 0 && (
           <g>
-            {/* 水平地面平台 (组件化) */}
+            {/* 水平地面 (组件化，地面带斜线阴影，不使用有厚度的 platform 矩形) */}
             <PhysicsGround
               x={60}
               y={groundY_m1}
               width={canvasSize.width - 120}
-              type="platform"
+              type="ground"
               appearance={{
-                thickness: 18,
-                showHatch: true
+                showHatch: true,
+                color: '#475569'
               }}
             />
 
@@ -331,15 +333,15 @@ export default function FrictionAnimation() {
         {/* ─── 模式二：双重摩擦力斜面模型渲染 ─── */}
         {mode === 1 && (
           <g>
-            {/* 地面线 (组件化) */}
+            {/* 地面线 (组件化，带斜线阴影，不再使用 platform) */}
             <PhysicsGround
               x={30}
               y={groundY_m2}
               width={canvasSize.width - 60}
-              type="platform"
+              type="ground"
               appearance={{
-                thickness: 8,
-                showHatch: true
+                showHatch: true,
+                color: '#475569'
               }}
             />
 
@@ -352,8 +354,8 @@ export default function FrictionAnimation() {
                   ${pivotX + displacement_M + W},${groundY_m2}
                   ${pivotX + displacement_M},${groundY_m2 - H}
                 `}
-                fill="url(#incline-metal)"
-                stroke={CANVAS_COLORS.objectStroke}
+                fill="#E2E8F0"
+                stroke="#475569"
                 strokeWidth={1.5}
               />
               <text
@@ -367,18 +369,12 @@ export default function FrictionAnimation() {
               </text>
             </g>
 
-            {/* 2. 嵌套 transform 绘制斜面板滑轨和滑块 */}
+            {/* 2. 嵌套 transform 绘制滑块 (直接贴在斜面上滑动) */}
             <g transform={`translate(${pivotX + displacement_M}, ${groundY_m2 - H}) rotate(${angle})`}>
-              {/* 斜面板轨道 */}
-              <rect
-                x={0} y={-4} width={boardLength} height={8}
-                fill="url(#steel-rail)" stroke={SCENE_COLORS.pendulum.pivotStroke} strokeWidth={1} rx={1}
-              />
-
               {/* 木箱滑块 */}
               <Block
                 x={boxLocalX - boxSize / 2}
-                y={-boxSize - 4}
+                y={-boxSize}
                 width={boxSize}
                 height={boxSize}
                 type="wood"

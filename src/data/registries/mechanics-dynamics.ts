@@ -52,6 +52,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       M: 10,
       mu_1: 0.3,
       mu_2: 0.2,
+      advancedMode: 1,
     },
     paramMeta: [
       { key: 'm', label: '滑块质量 m', min: 1, max: 20, step: 0.5, unit: 'kg' },
@@ -65,6 +66,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     ],
     SidebarExtra: lazy(() => import('@/features/mechanics/dynamics/FrictionSidebar')),
     CenterExtra: lazy(() => import('@/features/mechanics/dynamics/FrictionCenterExtra')),
+    centerExtraMode: 'advancedMode',
   },
   'anim-vector-addition': {
     title: '力的合成与分解',

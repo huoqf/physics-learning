@@ -20,14 +20,14 @@ const U_MAX = 48.0                                         // 约 48 V (断开�
 const E_MAX = 12.0 / (2 * 1e-3)                             // 6000 V/m
 
 export default function Capacitor() {
-    const {params, showVectors, showFormulas} = useAnimationStore(
+  const { params, showVectors, showFormulas } = useAnimationStore(
     useShallow((s) => ({
-    params: s.params,
-    showVectors: s.showVectors,
-    showFormulas: s.showFormulas,
+      params: s.params,
+      showVectors: s.showVectors,
+      showFormulas: s.showFormulas,
     }))
   )
-  
+
   // 底部动画 SVG 容器的自适应尺寸 Hook
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
   const { font } = canvasSize
@@ -75,7 +75,7 @@ export default function Capacitor() {
   // ---- 100% 自适应画布几何布局 (去除任何 Y 轴写死常数) ----
   const cx = canvasSize.width * 0.35   // 电容器中心点横向自适应比例 (偏左)
   const cy = canvasSize.height / 2    // 电容器和静电计的垂直中心正好在 SVG 的中心，随高度拉伸自适应
-  
+
   const gapPx = Math.max(30, Math.min(150, d * 15))    // 板距映射像素 30 - 150
   const plateW = Math.max(90, Math.min(240, S * 1.1))  // 板宽映射像素 90 - 240
   const plateThick = 12
@@ -93,7 +93,7 @@ export default function Capacitor() {
   const numParticles = Math.max(2, Math.min(10, Math.round(particleRatio * 8) + 2))
 
   const particles = Array.from({ length: numParticles }, (_, i) => {
-    const px = numParticles > 1 
+    const px = numParticles > 1
       ? plateLeft + 10 + (i * (plateW - 20)) / (numParticles - 1)
       : cx
     return px
@@ -107,7 +107,7 @@ export default function Capacitor() {
   const drawFlowingParticles = () => {
     if (!isFlowing || !isConnected) return null
 
-    const speed = 2.5 
+    const speed = 2.5
     const dotsCount = 3
     const dots = []
 
@@ -336,11 +336,11 @@ export default function Capacitor() {
             {/* 上极板左侧出线 */}
             <line x1={plateLeft} y1={topPlateY + plateThick / 2} x2={bx} y2={topPlateY + plateThick / 2} stroke={PHYSICS_COLORS.labelText} strokeWidth={2} />
             <line x1={bx} y1={topPlateY + plateThick / 2} x2={bx} y2={isConnected ? cy - 18 : cy - 26} stroke={PHYSICS_COLORS.labelText} strokeWidth={2} />
-            
+
             {/* 下极板左侧出线 */}
             <line x1={plateLeft} y1={botPlateY + plateThick / 2} x2={bx} y2={botPlateY + plateThick / 2} stroke={PHYSICS_COLORS.labelText} strokeWidth={2} />
             <line x1={bx} y1={botPlateY + plateThick / 2} x2={bx} y2={cy + 18} stroke={PHYSICS_COLORS.labelText} strokeWidth={2} />
-            
+
             {/* 导线上流动的电荷粒子 */}
             {drawFlowingParticles()}
 
@@ -351,10 +351,10 @@ export default function Capacitor() {
                 <line x1={bx - 6} y1={cy - 6} x2={bx + 6} y2={cy - 6} stroke={PHYSICS_COLORS.positiveCharge} strokeWidth={1.5} />
                 <line x1={bx - 12} y1={cy + 6} x2={bx + 12} y2={cy + 6} stroke={PHYSICS_COLORS.negativeCharge} strokeWidth={3.5} />
                 <line x1={bx - 6} y1={cy + 18} x2={bx + 6} y2={cy + 18} stroke={PHYSICS_COLORS.negativeCharge} strokeWidth={1.5} />
-                
+
                 <line x1={bx} y1={cy - 26} x2={bx} y2={cy - 18} stroke={PHYSICS_COLORS.labelText} strokeWidth={2} />
                 <circle cx={bx} cy={cy - 26} r={2} fill={PHYSICS_COLORS.labelText} />
-                
+
                 <text x={bx - 20} y={cy + 4} fontSize="11" fill={PHYSICS_COLORS.labelText} textAnchor="end" fontWeight="bold">
                   接通电源
                 </text>
@@ -368,7 +368,7 @@ export default function Capacitor() {
                 <line x1={bx} y1={cy - 26} x2={bx + 10} y2={cy - 38} stroke={PHYSICS_COLORS.labelText} strokeWidth={2.5} />
                 <circle cx={bx} cy={cy - 26} r={2.5} fill={PHYSICS_COLORS.labelText} />
                 <circle cx={bx} cy={cy - 18} r={2.5} fill={PHYSICS_COLORS.labelText} />
-                
+
                 <line x1={bx} y1={cy - 14} x2={bx} y2={cy + 14} stroke={PHYSICS_COLORS.grid} strokeWidth={2} strokeDasharray="3,3" />
 
                 <text x={bx - 20} y={cy + 4} fontSize="11" fill={PHYSICS_COLORS.labelTextLight} textAnchor="end" fontWeight="bold">
@@ -386,7 +386,7 @@ export default function Capacitor() {
             {/* 圆环外壳 */}
             <circle cx={ex} cy={ey} r={55} fill="none" stroke={colors.neutral[500]} strokeWidth={3.5} className="shadow-sm" />
             <circle cx={ex} cy={ey} r={52} fill={colors.neutral[50]} />
-            
+
             {/* 底座地线 */}
             <rect x={ex - 12} y={ey + 55} width={24} height={8} fill={colors.neutral[500]} rx={1} />
             <line x1={ex} y1={ey + 63} x2={ex} y2={ey + 82} stroke={colors.neutral[500]} strokeWidth={2} />
