@@ -128,6 +128,11 @@ export interface RelationChartProps {
    * 不传则用 BasePhysicsChart 默认值。
    */
   initialSize?: { width: number; height: number }
+  /**
+   * 固定尺寸模式：直接指定图表像素宽高，跳过 DOM 测量。
+   * 用于嵌入主 SVG（无需 foreignObject）等场景。
+   */
+  fixedSize?: { width: number; height: number }
   /** 图表变体（standard / mini），透传给 BasePhysicsChart */
   variant?: 'standard' | 'mini'
   /** 额外 className */
@@ -470,6 +475,7 @@ export function RelationChart({
   underlay,
   children,
   initialSize,
+  fixedSize,
   variant,
   className = '',
 }: RelationChartProps) {
@@ -506,6 +512,7 @@ export function RelationChart({
       yLabel={yLabel}
       title={title}
       variant={variant}
+      fixedSize={fixedSize}
       yBaseline={effectiveZeroLine ? 0 : undefined}
       showGrid={showGrid}
       initialSize={initialSize}

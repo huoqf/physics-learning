@@ -157,54 +157,42 @@ export function ElectricFieldBasicScene({
         </g>
       )}
 
-      {/* 对比图表：E-r / F-r 双图通过 foreignObject 嵌入 RelationChart */}
+      {/* 对比图表：E-r / F-r 双图直接作为 SVG 元素绘制 */}
       {chartProps && (
         <g>
           {/* E-r 图表 */}
-          <foreignObject
-            x={chartProps.chartLeft} y={chartProps.topY_E}
-            width={chartProps.chartW} height={chartProps.chartH}
-          >
-            <div style={{ width: '100%', height: '100%' }}>
-              <RelationChart
-                points={ePoints}
-                xLabel="r / cm"
-                yLabel="E / (N/C)"
-                title="E-r 场强曲线"
-                xDomain={[chartProps.rMin, chartProps.rMax]}
-                yDomain={[0, chartProps.eMax]}
-                cursorX={basicPhysics.distCm}
-                cursorLabel={(_x, y) => `E=${y.toExponential(2)}`}
-                color={PHYSICS_COLORS.electricField}
-                strokeWidth={1.8}
-                variant="mini"
-                initialSize={{ width: chartProps.chartW, height: chartProps.chartH }}
-              />
-            </div>
-          </foreignObject>
+          <g transform={`translate(${chartProps.chartLeft}, ${chartProps.topY_E})`}>
+            <RelationChart
+              points={ePoints}
+              xLabel="r / cm"
+              yLabel="E / (N/C)"
+              title="E-r 场强曲线"
+              xDomain={[chartProps.rMin, chartProps.rMax]}
+              yDomain={[0, chartProps.eMax]}
+              cursorX={basicPhysics.distCm}
+              cursorLabel={(_x, y) => `E=${y.toExponential(2)}`}
+              color={PHYSICS_COLORS.electricField}
+              strokeWidth={1.8}
+              fixedSize={{ width: chartProps.chartW, height: chartProps.chartH }}
+            />
+          </g>
 
           {/* F-r 图表 */}
-          <foreignObject
-            x={chartProps.chartLeft} y={chartProps.topY_F}
-            width={chartProps.chartW} height={chartProps.chartH}
-          >
-            <div style={{ width: '100%', height: '100%' }}>
-              <RelationChart
-                points={fPoints}
-                xLabel="r / cm"
-                yLabel="F / N"
-                title="F-r 静电力曲线"
-                xDomain={[chartProps.rMin, chartProps.rMax]}
-                yDomain={[0, chartProps.fMax]}
-                cursorX={basicPhysics.distCm}
-                cursorLabel={(_x, y) => `F=${y.toExponential(2)}`}
-                color={PHYSICS_COLORS.electricForce}
-                strokeWidth={1.8}
-                variant="mini"
-                initialSize={{ width: chartProps.chartW, height: chartProps.chartH }}
-              />
-            </div>
-          </foreignObject>
+          <g transform={`translate(${chartProps.chartLeft}, ${chartProps.topY_F})`}>
+            <RelationChart
+              points={fPoints}
+              xLabel="r / cm"
+              yLabel="F / N"
+              title="F-r 静电力曲线"
+              xDomain={[chartProps.rMin, chartProps.rMax]}
+              yDomain={[0, chartProps.fMax]}
+              cursorX={basicPhysics.distCm}
+              cursorLabel={(_x, y) => `F=${y.toExponential(2)}`}
+              color={PHYSICS_COLORS.electricForce}
+              strokeWidth={1.8}
+              fixedSize={{ width: chartProps.chartW, height: chartProps.chartH }}
+            />
+          </g>
         </g>
       )}
     </g>
