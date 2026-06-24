@@ -110,7 +110,7 @@ describe('buildPhysicsQuantities', () => {
   })
 
   it('向心力物理量：进阶模式包含向心力且数值计算正确', () => {
-    const qs = buildPhysicsQuantities('anim-centripetal', { r: 2, v: 4, m: 3, advancedMode: 1 }, 1)
+    const qs = buildPhysicsQuantities('anim-centripetal', { r: 2, v: 4, m: 3, advancedMode: 0 }, 1)
     expect(find(qs, '向心加速度') as number).toBeCloseTo(8, 5)
     expect(find(qs, '向心力') as number).toBeCloseTo(24, 5)
   })

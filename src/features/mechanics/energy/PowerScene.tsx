@@ -1,7 +1,8 @@
-﻿import { useMemo } from 'react'
-import { PHYSICS_COLORS, SCENE_COLORS, STROKE } from '@/theme/physics'
+import { useMemo } from 'react'
+import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 import type { PowerModelState } from '@/physics/power'
@@ -100,10 +101,10 @@ export function PowerScene({
         </linearGradient>
       </defs>
 
-      <line x1={padding * 0.5} y1={groundY} x2={canvasSize.width - padding * 0.5} y2={groundY}
-        stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.groundLine} />
-      <line x1={padding * 0.5} y1={groundY + 3} x2={canvasSize.width - padding * 0.5} y2={groundY + 3}
-        stroke={colors.neutral[200]} strokeWidth={0.5} />
+      <PhysicsGround
+        x={padding * 0.5} y={groundY} width={canvasSize.width - padding}
+        appearance={{ color: PHYSICS_COLORS.labelText, showBaseShadow: true }}
+      />
 
       <text x={padding} y={canvasSize.height * 0.60} fontSize={Math.max(10, canvasSize.width * 0.016)}
         fill={PHYSICS_COLORS.labelText} fontWeight="bold">

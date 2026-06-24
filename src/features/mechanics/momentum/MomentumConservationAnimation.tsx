@@ -1,4 +1,4 @@
-﻿import { useCanvasSize } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -15,13 +15,13 @@ import {
   willSliderFallOff,
 } from '@/physics/momentumConservation'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,
   CANVAS_STYLE,
-  STROKE,
   FONT,
 } from '@/theme/physics'
 
@@ -208,13 +208,10 @@ export default function MomentumConservationAnimation() {
         </defs>
 
         {/* ========== 地面线 ========== */}
-        <line
-          x1={MC_LAYOUT.canvasPadding}
-          y1={groundY}
-          x2={canvasSize.width - MC_LAYOUT.canvasPadding}
-          y2={groundY}
-          stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={STROKE.groundLine}
+        <PhysicsGround
+          x={MC_LAYOUT.canvasPadding} y={groundY}
+          width={canvasSize.width - 2 * MC_LAYOUT.canvasPadding}
+          appearance={{ color: PHYSICS_COLORS.labelText }}
         />
 
         {/* ========== 基础模式：两球碰撞 ========== */}

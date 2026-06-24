@@ -13,6 +13,7 @@ import {
 import { useUniformAccelerationPhysics } from './useUniformAccelerationPhysics'
 import { AnimationControls } from '@/components/UI'
 import { SportsCar } from '@/components/Physics/SportsCar'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { VelocityTimeChart } from '@/components/Chart'
@@ -229,15 +230,17 @@ function StroboscopicAnimation({
     <div ref={containerRef} className="w-full h-full">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg">
         {/* 测距厘米轨道尺 */}
-        <line x1={padding * 0.5} y1={groundY} x2={canvasSize.width - padding * 0.5} y2={groundY} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.groundLine} />
-        {Array.from({ length: Math.floor((canvasSize.width - padding) / 10) + 1 }).map((_, idx) => {
-          const tickX = padding * 0.5 + idx * 10
-          const isMajor = idx % 5 === 0
-          const tickHeight = isMajor ? 5 : 2.5
-          return (
-            <line key={`gt-${idx}`} x1={tickX} y1={groundY} x2={tickX} y2={groundY + tickHeight} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.tick} />
-          )
-        })}
+        <PhysicsGround
+          x={padding * 0.5} y={groundY}
+          width={canvasSize.width - padding}
+          appearance={{ color: PHYSICS_COLORS.labelText }}
+          ruler={{
+            domain: [0, 100],
+            pixelPerUnit: scale,
+            tickInterval: 20,
+            unit: 'm',
+          }}
+        />
 
         {/* 原点标记 */}
         <line x1={originX} y1={groundY - objH * 2.2} x2={originX} y2={groundY + 4} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axisBold} strokeDasharray={DASH.boundary.join(',')} />

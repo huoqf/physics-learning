@@ -1,4 +1,4 @@
-﻿import { useCanvasSize, useViewport } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useMemo, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -8,6 +8,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateAverageVelocity } from '@/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 
@@ -106,20 +107,6 @@ export default function VelocityAnimation() {
   }
   const sceneScale = createSceneScale(velocityScene)
 
-  // ── 地标标签 ──
-  const landmarkLabels = useMemo(() => {
-    const count = 5
-    const labels: { x: number; text: string }[] = []
-    for (let i = 0; i <= count; i++) {
-      const dist = (v * totalDuration * i) / count
-      labels.push({
-        x: startX + dist * scale,
-        text: `${dist.toFixed(0)}m`,
-      })
-    }
-    return labels
-  }, [v, totalDuration, scale, startX])
-
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
@@ -140,22 +127,17 @@ export default function VelocityAnimation() {
         </defs>
 
         {/* ── 1. 地面坐标轴 + 地标 ── */}
-        <line
-          x1={padding * 0.5}
-          y1={groundY}
-          x2={canvasSize.width - padding * 0.5}
-          y2={groundY}
-          stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={STROKE.groundLine}
+        <PhysicsGround
+          x={padding * 0.5} y={groundY}
+          width={canvasSize.width - padding}
+          appearance={{ color: PHYSICS_COLORS.labelText }}
+          ruler={{
+            domain: [0, v * totalDuration],
+            pixelPerUnit: scale,
+            tickInterval: (v * totalDuration) / 5,
+            unit: 'm',
+          }}
         />
-        {landmarkLabels.map((lm, i) => (
-          <g key={`lm-${i}`}>
-            <line x1={lm.x} y1={groundY} x2={lm.x} y2={groundY + 6} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.tick} />
-            <text x={lm.x} y={groundY + fontSize + 6} fontSize={smallFont} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
-              {lm.text}
-            </text>
-          </g>
-        ))}
 
 
 

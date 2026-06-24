@@ -1,4 +1,4 @@
-﻿import { useCanvasSize } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useState, useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -7,6 +7,7 @@ import { PHYSICS_COLORS, ENERGY_COLORS, SCENE_COLORS, STROKE, CHART_COLORS } fro
 import { colors } from '@/theme/colors'
 import { KatexFormula } from '@/components/UI'
 import { RelationChart } from '@/components/Chart'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import {
   precomputePendulumTrajectory,
   precomputeValleyTrajectory,
@@ -365,7 +366,11 @@ export default function EnergyConservationAnimation() {
           <g>
             {/* 顶部悬挂支架 */}
             <rect x={animCenterX - 20} y={hangY - 12} width={40} height={12} fill={colors.neutral[400]} rx={1} />
-            <line x1={animCenterX - 30} y1={hangY} x2={animCenterX + 30} y2={hangY} stroke={colors.neutral[600]} strokeWidth={2} />
+            <PhysicsGround
+              x={animCenterX - 30} y={hangY} width={60}
+              type="bracket"
+              appearance={{ color: colors.neutral[600] }}
+            />
 
             {/* 运动极限虚导线范围 */}
             <path

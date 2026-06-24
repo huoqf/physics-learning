@@ -1,13 +1,14 @@
-﻿import { FC, useMemo } from 'react'
+import { FC, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CANVAS_STYLE, FONT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { withAlpha } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 
@@ -409,11 +410,10 @@ export const GravityBasicAnimation: FC = () => {
         {mode === 1 && plateData && (
           <g>
             {/* 绘制背景物理支架/黑板刻度 */}
-            <line
-              x1={cx - 150} y1={plateData.pinY - 40}
-              x2={cx + 150} y2={plateData.pinY - 40}
-              stroke={PHYSICS_COLORS.axis}
-              strokeWidth={STROKE.groundLine}
+            <PhysicsGround
+              x={cx - 150} y={plateData.pinY - 40} width={300}
+              type="bracket"
+              appearance={{ color: PHYSICS_COLORS.axis }}
             />
             {/* 悬挂钉子 (固定点) */}
             <circle

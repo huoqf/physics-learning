@@ -1,4 +1,4 @@
-﻿import { useCanvasSize } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -13,6 +13,7 @@ import {
   DASH,
   FONT,
 } from '@/theme/physics'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { calcGByLatitude, calcGByAltitude, GRAVITY } from '@/physics'
 import { useFreeFallPhysics } from './useFreeFallPhysics'
 import { getPhysicsAtTime } from '@/physics'
@@ -311,8 +312,10 @@ export default function FreeFallDripAnimation() {
             x1={tubeLeft + 3} y1={tubeTopY + 6} x2={tubeLeft + 3} y2={tubeBottomY - 6}
             stroke={colors.neutral.white} strokeWidth={1.5} opacity={0.3}
           />
-          <line x1={tubeLeft} y1={tubeBottomY} x2={tubeRight} y2={tubeBottomY}
-            stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.groundLine} />
+          <PhysicsGround
+            x={tubeLeft} y={tubeBottomY} width={tubeRight - tubeLeft}
+            appearance={{ color: PHYSICS_COLORS.labelText }}
+          />
           {/* 刻度 */}
           {scaleMarks.map((mark) => {
             const py = tubeTopY + mark.y * scale

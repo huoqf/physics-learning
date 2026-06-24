@@ -1,10 +1,11 @@
-﻿import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { useAnimationStore } from '@/stores'
 import { calculatePoliceChase } from '@/physics'
 import { PHYSICS_COLORS, STROKE, DASH, FONT } from '@/theme/physics'
 import { AnimationControls, Card } from '@/components/UI'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { SportsCar } from '@/components/Physics/SportsCar'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { RelationChart, VelocityTimeChart } from '@/components/Chart'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
@@ -335,35 +336,16 @@ export default function AccelerationCenterExtra() {
       <div className="flex-1 relative">
         <svg width={containerSize.width} height={animHeight} className="absolute inset-0">
           {/* 公路 */}
-          <line x1={roadLeft} y1={roadY} x2={roadRight} y2={roadY} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.groundLine} />
-          {/* 公路刻度 */}
-          {Array.from({ length: Math.floor(roadWidth / 30) + 1 }).map((_, idx) => {
-            const tickX = roadLeft + idx * 30
-            const isMajor = idx % 5 === 0
-            const tickHeight = isMajor ? 8 : 4
-            return (
-              <line
-                key={`road-tick-${idx}`}
-                x1={tickX}
-                y1={roadY}
-                x2={tickX}
-                y2={roadY + tickHeight}
-                stroke={PHYSICS_COLORS.axis}
-                strokeWidth={STROKE.tick}
-              />
-            )
-          })}
-          {/* 地标 */}
-          {[0, 100, 200, 300, 400, 500].map(d => {
-            const px = startX + d * scale
-            if (px > roadRight) return null
-            return (
-              <g key={`landmark-${d}`}>
-                <line x1={px} y1={roadY} x2={px} y2={roadY + 10} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.tickBold} />
-                <text x={px} y={roadY + 22} fontSize={FONT.small} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">{d}m</text>
-              </g>
-            )
-          })}
+          <PhysicsGround
+            x={roadLeft} y={roadY} width={roadWidth}
+            appearance={{ color: PHYSICS_COLORS.labelText }}
+            ruler={{
+              domain: [0, maxDist],
+              pixelPerUnit: scale,
+              tickInterval: 100,
+              unit: 'm',
+            }}
+          />
 
           {/* 起始参考线 */}
           <line x1={startX} y1={roadY - 40} x2={startX} y2={roadY + 15} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axisBold} strokeDasharray={DASH.boundary.join(' ')} />

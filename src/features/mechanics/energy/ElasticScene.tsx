@@ -33,10 +33,12 @@ export function ElasticScene({
       <PhysicsGround x={animLeft} y={groundY} width={animRight - animLeft} />
 
       {/* 左侧固定墙壁 */}
-      <rect x={animLeft} y={groundY - 60} width={15} height={60} fill={CANVAS_COLORS.axis} stroke={CANVAS_COLORS.trackHistory} strokeWidth={1} />
-      {Array.from({ length: 6 }).map((_, idx) => (
-        <line key={`wall-${idx}`} x1={animLeft} y1={groundY - 10 - idx * 10} x2={animLeft + 15} y2={groundY - 20 - idx * 10} stroke={CANVAS_COLORS.trackHistory} strokeWidth={1} />
-      ))}
+      <PhysicsGround
+        x={animLeft} y={groundY - 60} width={15}
+        type="wall"
+        wall={{ height: 60, hatchCount: 6, hatchSide: 'right' }}
+        appearance={{ color: CANVAS_COLORS.trackHistory, fillColor: CANVAS_COLORS.axis, showHatch: true }}
+      />
 
       {/* 平衡位置虚线 */}
       <line x1={toPixelX(0) + objW * 0.5} y1={groundY - 55} x2={toPixelX(0) + objW * 0.5} y2={groundY + 12} stroke={CHART_COLORS.reference} strokeWidth={1} strokeDasharray="3,2" opacity={0.8} />

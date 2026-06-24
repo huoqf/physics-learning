@@ -1,14 +1,15 @@
-﻿import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useCanvasSize, PX_PER_METER } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT, CANVAS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, FONT, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { Spring } from '@/components/UI'
 import { calculateConnectedBody, calculateConnectedBodyTimeline, GRAVITY } from '@/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 
@@ -329,21 +330,9 @@ export default function ConnectedBodiesAnimation() {
         {gridLines}
 
         {/* 粗糙地平线 */}
-        <line
-          x1={20}
-          y1={groundY}
-          x2={animWidth - 20}
-          y2={groundY}
-          stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={STROKE.groundLine}
-        />
-        <rect
-          x={20}
-          y={groundY}
-          width={animWidth - 40}
-          height={6}
-          fill="url(#ground-pattern)"
-          opacity={0.35}
+        <PhysicsGround
+          x={20} y={groundY} width={animWidth - 40}
+          appearance={{ color: PHYSICS_COLORS.labelText, showHatch: true }}
         />
 
         {/* ==================== 视图一：整体法分析包裹系统框 ==================== */}
@@ -604,12 +593,6 @@ export default function ConnectedBodiesAnimation() {
 
 
         <defs>
-          {/* 地面草坪阻力纹路 */}
-          <pattern id="ground-pattern" width="10" height="6" patternUnits="userSpaceOnUse">
-            <line x1="0" y1="6" x2="6" y2="0" stroke={colors.neutral[300]} strokeWidth="0.8" />
-            <line x1="5" y1="6" x2="10" y2="1" stroke={colors.neutral[300]} strokeWidth="0.8" />
-          </pattern>
-
           {/* m1 金属渐变 */}
           <linearGradient id="m1-metal-grad" x1="0" y1="0" x2="1" y2="0">
             {SCENE_COLORS.materials.sliderMetalGrad.map((color, idx) => (

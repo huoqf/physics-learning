@@ -1,4 +1,4 @@
-﻿import { useCanvasSize } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -10,6 +10,7 @@ import {
   calculateFluidImpactForce,
 } from '@/physics/momentumTheorem'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 import {
@@ -395,27 +396,12 @@ export default function MomentumTheoremAnimation() {
             />
 
             {/* 固定支架 */}
-            <rect
-              x={plateX + MT_LAYOUT.plateWidth + 55}
-              y={plateTopY - 10}
-              width={12}
-              height={MT_LAYOUT.plateHeight + 20}
-              fill={PHYSICS_COLORS.labelTextLight}
-              stroke={PHYSICS_COLORS.labelText}
-              strokeWidth={1}
+            <PhysicsGround
+              x={plateX + MT_LAYOUT.plateWidth + 55} y={plateTopY - 10} width={12}
+              type="wall"
+              wall={{ height: MT_LAYOUT.plateHeight + 20, hatchCount: 5, hatchSide: 'right' }}
+              appearance={{ color: PHYSICS_COLORS.labelText, fillColor: PHYSICS_COLORS.labelTextLight, showHatch: true }}
             />
-            {/* 支架斜线纹理 */}
-            {Array.from({ length: 5 }).map((_, i) => (
-              <line
-                key={`hatch-${i}`}
-                x1={plateX + MT_LAYOUT.plateWidth + 55}
-                y1={plateTopY - 10 + i * (MT_LAYOUT.plateHeight + 20) / 5}
-                x2={plateX + MT_LAYOUT.plateWidth + 55 + 12}
-                y2={plateTopY - 10 + (i + 1) * (MT_LAYOUT.plateHeight + 20) / 5}
-                stroke={PHYSICS_COLORS.labelText}
-                strokeWidth={0.8}
-              />
-            ))}
 
             {/* 弹簧 */}
             <path

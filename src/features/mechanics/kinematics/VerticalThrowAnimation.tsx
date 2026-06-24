@@ -1,4 +1,4 @@
-﻿import { useCanvasSize } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -13,6 +13,7 @@ import {
 } from '@/theme/physics'
 import { useVerticalThrowPhysics } from './useVerticalThrowPhysics'
 import { useVerticalThrowChartLayout } from './useVerticalThrowChartLayout'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { Ball } from '@/components/Physics/Ball'
@@ -178,8 +179,10 @@ export default function VerticalThrowAnimation() {
         </defs>
 
         {/* ========== 左侧：物理演练区 ========== */}
-        <line x1={30} y1={groundY} x2={stageWidth - 20} y2={groundY}
-          stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.groundLine} />
+        <PhysicsGround
+          x={30} y={groundY} width={stageWidth - 50}
+          appearance={{ color: PHYSICS_COLORS.labelText }}
+        />
 
         <text x={25} y={originY + 4} fontSize={FONT.small} fill={PHYSICS_COLORS.axis} textAnchor="end">
           {displayMaxHeight.toFixed(1)}m

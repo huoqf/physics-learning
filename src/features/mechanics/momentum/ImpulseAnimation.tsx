@@ -1,4 +1,4 @@
-﻿import { useCanvasSize } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -17,11 +17,11 @@ import {
   PHYSICS_COLORS,
   SCENE_COLORS,
   CANVAS_STYLE,
-  STROKE,
   FONT,
   CHART_COLORS,
 } from '@/theme/physics'
 import { RelationChart, ChartArea, useChartContext } from '@/components/Chart'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 
 /** 冲量动画布局常量 */
 const IMPULSE_LAYOUT = {
@@ -376,13 +376,11 @@ export default function ImpulseAnimation() {
       <div className="flex-1 relative bg-white rounded-lg shadow-inner overflow-hidden">
         <svg width={canvasSize.width} height={canvasSize.height * 0.52} className="absolute inset-0">
           {/* 地面线 */}
-          <line
-            x1={IMPULSE_LAYOUT.canvasPadding}
-            y1={groundY - canvasSize.height * 0.48}
-            x2={canvasSize.width - IMPULSE_LAYOUT.canvasPadding}
-            y2={groundY - canvasSize.height * 0.48}
-            stroke={PHYSICS_COLORS.labelText}
-            strokeWidth={STROKE.groundLine}
+          <PhysicsGround
+            x={IMPULSE_LAYOUT.canvasPadding}
+            y={groundY - canvasSize.height * 0.48}
+            width={canvasSize.width - 2 * IMPULSE_LAYOUT.canvasPadding}
+            appearance={{ color: PHYSICS_COLORS.labelText }}
           />
 
           {!isAdvanced ? (

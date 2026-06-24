@@ -1,4 +1,4 @@
-﻿import { useCanvasSize } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -13,6 +13,7 @@ import {
 } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { SportsCar } from '@/components/Physics/SportsCar'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { VectorDefs, markerId } from '@/components/Physics/VectorDefs'
 import { selectMarkerTier } from '@/theme/physics'
 import { createSceneScale } from '@/scene'
@@ -177,20 +178,6 @@ export default function UniformAccelerationAnimation() {
     const { v: vHalf } = calculateAcceleratedMotion(v0, a, halfT)
     return { t0: 0, tHalf: halfT, tEnd: time, v0, vHalf, vEnd: v }
   }, [showEquivRect, time, v0, a, v])
-
-  // ── 地面刻度直尺 ──
-  const landmarks = useMemo(() => {
-    const count = 5
-    const labels: { x: number; text: string }[] = []
-    for (let i = 0; i <= count; i++) {
-      const dist = i * 20
-      const px = startX + dist * scale
-      if (px <= maxVisibleX) {
-        labels.push({ x: px, text: `${dist.toFixed(0)}m` })
-      }
-    }
-    return labels
-  }, [scale, startX, maxVisibleX])
 
   // 自定义面积插件层（4种模式）—— 全部使用 chart context 坐标系
   const AreaUnderlay = () => {
@@ -391,31 +378,17 @@ export default function UniformAccelerationAnimation() {
         <g transform={`translate(0, ${-chartSectionHeight})`}>
 
         {/* 地面精密厘米直尺跑道 */}
-        <line x1={padding * 0.5} y1={groundY} x2={canvasSize.width - padding * 0.5} y2={groundY} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.groundLine} />
-        {Array.from({ length: Math.floor((canvasSize.width - padding) / 10) + 1 }).map((_, idx) => {
-          const tickX = padding * 0.5 + idx * 10
-          const isMajor = idx % 5 === 0
-          const tickHeight = isMajor ? 6 : 3
-          return (
-            <line
-              key={`ground-tick-${idx}`}
-              x1={tickX}
-              y1={groundY}
-              x2={tickX}
-              y2={groundY + tickHeight}
-              stroke={PHYSICS_COLORS.axis}
-              strokeWidth={STROKE.tick}
-            />
-          )
-        })}
-
-        {/* 测距地标文本 */}
-        {landmarks.map((lm, i) => (
-          <g key={`lm-${i}`}>
-            <line x1={lm.x} y1={groundY} x2={lm.x} y2={groundY + 8} stroke={PHYSICS_COLORS.labelText} strokeWidth={STROKE.tickBold} />
-            <text x={lm.x} y={groundY + fontSize + 8} fontSize={smallFont} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">{lm.text}</text>
-          </g>
-        ))}
+        <PhysicsGround
+          x={padding * 0.5} y={groundY}
+          width={canvasSize.width - padding}
+          appearance={{ color: PHYSICS_COLORS.labelText }}
+          ruler={{
+            domain: [0, 100],
+            pixelPerUnit: scale,
+            tickInterval: 20,
+            unit: 'm',
+          }}
+        />
 
         {/* 起始参考线 */}
         <line x1={startX} y1={groundY - objH * 2.2} x2={startX} y2={groundY + 4} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axisBold} strokeDasharray={DASH.boundary.join(',')} />

@@ -63,16 +63,23 @@ export interface PhysicsGroundProps {
   width: number;
   
   // === 2. 支撑面形态 ===
-  type?: 'ground' | 'platform';
+  type?: 'ground' | 'platform' | 'wall' | 'bracket';
   appearance?: {
-    thickness?: number;    // 如果是 platform 模式下的平台厚度
-    showHatch?: boolean;   // 绘制斜线纹理（真正的物理地面阴影）
-    showBaseShadow?: boolean; // 保留向后兼容（绘制一条细线）
-    color?: string;        // 覆盖线框色，默认 PHYSICS_COLORS.labelText
-    fillColor?: string;    // platform 填充色
+    thickness?: number;    // platform: 平台厚度 (默认 20)
+    showHatch?: boolean;   // 斜线纹理 (ground/wall/bracket 通用)
+    showBaseShadow?: boolean; // 平行细线 (向后兼容)
+    color?: string;        // 覆盖线框色
+    fillColor?: string;    // platform/wall 填充色
   };
 
-  // === 3. 物理标尺配置 (可选) ===
+  // === 3. wall 专属配置 ===
+  wall?: {
+    height: number;           // 墙体高度 (必填)
+    hatchCount?: number;      // hatch 斜线数量 (默认 8)
+    hatchSide?: 'left' | 'right'; // hatch 方向 (默认 'right')
+  };
+
+  // === 4. 物理标尺配置 (可选) ===
   ruler?: {
     position?: 'top' | 'bottom'; // 标尺在平面的上方还是下方 (默认 bottom)
     domain: [number, number];    // 物理量起止范围
@@ -102,6 +109,7 @@ export function PhysicsGround({
   width,
   type = 'ground',
   appearance,
+  wall,
   ruler,
   children
 }: PhysicsGroundProps) {
@@ -149,6 +157,80 @@ export function PhysicsGround({
           stroke={strokeColor}
           strokeWidth={CANVAS_STYLE.stroke.objectLine}
         />
+      );
+    }
+
+    if (type === 'wall') {
+      if (!wall) {
+        console.error('PhysicsGround: type="wall" requires wall prop');
+        return null;
+      }
+      const { height: h, hatchCount = 8, hatchSide = 'right' } = wall;
+      return (
+        <g>
+          {/* 墙体矩形主体 */}
+          <rect
+            x={x}
+            y={y}
+            width={width}
+            height={h}
+            fill={fillColor}
+            stroke={strokeColor}
+            strokeWidth={CANVAS_STYLE.stroke.objectLine}
+          />
+          {/* 斜线 hatch */}
+          {appearance?.showHatch && Array.from({ length: hatchCount }).map((_, i) => {
+            const step = h / hatchCount;
+            // left: 左下→右上 (/)  |  right: 左上→右下 (\)
+            const x1 = x;
+            const y1 = hatchSide === 'left' ? y + i * step + step : y + i * step;
+            const x2 = x + width;
+            const y2 = hatchSide === 'left' ? y + i * step : y + i * step + step;
+            return (
+              <line key={i}
+                x1={x1} y1={y1}
+                x2={x2} y2={y2}
+                stroke={strokeColor} strokeWidth={1.5} opacity={0.4} />
+            );
+          })}
+        </g>
+      );
+    }
+
+    if (type === 'bracket') {
+      return (
+        <g>
+          {/* 横梁主线 */}
+          <line
+            x1={x} y1={y}
+            x2={x + width} y2={y}
+            stroke={strokeColor}
+            strokeWidth={CANVAS_STYLE.stroke.groundLine}
+          />
+          {/* 可选平行细线（粗糙面效果） */}
+          {appearance?.showBaseShadow && (
+            <line
+              x1={x} y1={y + 3}
+              x2={x + width} y2={y + 3}
+              stroke={strokeColor}
+              strokeWidth={1}
+              opacity={0.3}
+            />
+          )}
+          {/* 可选斜线纹理（MomentumTheoremAnimation 支架样式） */}
+          {/* NOTE: showHatch 的默认布局 (y-80, 8条线) 为 MomentumTheoremAnimation 兼容，
+              如遇更复杂支架结构，优先用 children 组合而非继续加 props */}
+          {appearance?.showHatch && (
+            <g opacity={0.4}>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <line key={i}
+                  x1={x} y1={y - 80 + i * 15}
+                  x2={x + width} y2={y - 80 + i * 15 + 15}
+                  stroke={strokeColor} strokeWidth={1.5} />
+              ))}
+            </g>
+          )}
+        </g>
       );
     }
     

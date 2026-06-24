@@ -1,4 +1,4 @@
-﻿import { useCanvasSize } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -10,6 +10,7 @@ import type { VariableMotionModel, VariableMotionParams } from '@/physics'
 import { useVelocityPhysics } from './useVelocityPhysics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { Ball } from '@/components/Physics/Ball'
 import { Block } from '@/components/Physics/Block'
 import { createSceneScale } from '@/scene'
@@ -111,17 +112,6 @@ export default function VelocityAnimationStrip({
     return pts.map(p => toPixelX(p.x))
   }, [points, time, toPixelX])
 
-  // ── 地面刻度 ──
-  const groundTicks = useMemo(() => {
-    const count = 8
-    const ticks: { x: number; label: string }[] = []
-    for (let i = 0; i <= count; i++) {
-      const val = xRange.min + ((xRange.max - xRange.min) * i) / count
-      ticks.push({ x: toPixelX(val), label: val.toFixed(1) })
-    }
-    return ticks
-  }, [xRange, toPixelX])
-
   // ── 字体与尺寸 ──
   const fontSize = Math.max(10, canvasSize.width * 0.017)
   const smallFont = Math.max(9, fontSize * 0.85)
@@ -178,14 +168,18 @@ export default function VelocityAnimationStrip({
           {model === 'multi-stage' && stageName ? `${stageName} · ` : ''}v = {vInst.toFixed(2)} m/s
         </text>
 
-        {/* 地面标尺文字标注 */}
-        {groundTicks.map((gt, i) => (
-          <g key={`gt-${i}`}>
-            <text x={gt.x} y={groundY + fontSize + 12} fontSize={smallFont} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
-              {gt.label}m
-            </text>
-          </g>
-        ))}
+        {/* 地面标尺 */}
+        <PhysicsGround
+          x={startX} y={groundY}
+          width={endX - startX}
+          appearance={{ color: PHYSICS_COLORS.labelText }}
+          ruler={{
+            domain: [xRange.min, xRange.max],
+            pixelPerUnit: (endX - startX) / (xRange.max - xRange.min),
+            tickInterval: (xRange.max - xRange.min) / 8,
+            unit: 'm',
+          }}
+        />
 
         {/* ── 2. 打点轨迹（发光渐变） ── */}
         {dotTrail.map((dx, i) => {

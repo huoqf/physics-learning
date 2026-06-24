@@ -7,6 +7,7 @@ import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physic
 import { Spring } from '@/components/UI'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 
@@ -85,45 +86,17 @@ export default function SpringForceAnimation() {
         {gridLines}
         
         {/* 2. 精密实验室地面 */}
-        <line
-          x1={40}
-          y1={groundY}
-          x2={canvasSize.width - 40}
-          y2={groundY}
-          stroke={PHYSICS_COLORS.axis}
-          strokeWidth={STROKE.groundLine}
-        />
-        <line
-          x1={40}
-          y1={groundY + 1}
-          x2={canvasSize.width - 40}
-          y2={groundY + 1}
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={0.8}
+        <PhysicsGround
+          x={40} y={groundY} width={canvasSize.width - 80}
+          appearance={{ color: PHYSICS_COLORS.axis, showBaseShadow: true }}
         />
 
         {/* 3. 左侧固定墙体 */}
-        <g opacity={0.4}>
-          {Array.from({ length: 8 }).map((_, i) => (
-            <line
-              key={`wall-hatch-${i}`}
-              x1={40}
-              y1={groundY - 100 + i * 15}
-              x2={75}
-              y2={groundY - 100 + i * 15 + 15}
-              stroke={PHYSICS_COLORS.axis}
-              strokeWidth={1.5}
-            />
-          ))}
-        </g>
-        <rect
-          x={40}
-          y={groundY - 100}
-          width={40}
-          height={100}
-          fill={PHYSICS_COLORS.objectFillNeutral}
-          stroke={PHYSICS_COLORS.axis}
-          strokeWidth={CANVAS_STYLE.stroke.objectLine}
+        <PhysicsGround
+          x={40} y={groundY - 100} width={40}
+          type="wall"
+          wall={{ height: 100, hatchCount: 8, hatchSide: 'right' }}
+          appearance={{ color: PHYSICS_COLORS.axis, fillColor: PHYSICS_COLORS.objectFillNeutral, showHatch: true }}
         />
         
         {/* 4. 动态螺旋弹簧 */}

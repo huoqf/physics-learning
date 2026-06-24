@@ -1,4 +1,4 @@
-﻿import { useCanvasSize } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -8,6 +8,7 @@ import { PHYSICS_COLORS, STROKE, DASH, FONT } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { SportsCar } from '@/components/Physics/SportsCar'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 
@@ -120,65 +121,23 @@ export default function AccelerationAnimation() {
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
-        {/* ── 1. 双轨精密测距尺赛道 ── */}
-        {/* 飞机轨道主线 */}
-        <line
-          x1={padding}
-          y1={topTrackY}
-          x2={canvasSize.width - padding}
-          y2={topTrackY}
-          stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={STROKE.groundLine}
+        {/* ── 1. 跑车赛道 ── */}
+        <PhysicsGround
+          x={padding} y={bottomTrackY}
+          width={canvasSize.width - 2 * padding}
+          appearance={{ color: PHYSICS_COLORS.labelText }}
+          ruler={{
+            domain: [0, vA * 10],
+            pixelPerUnit: scale,
+            tickInterval: vA * 2,
+            unit: 'm',
+          }}
         />
-        {/* 飞机轨道精细刻度 (每10px一格，50px一大格) */}
-        {Array.from({ length: Math.floor((canvasSize.width - 2 * padding) / 10) + 1 }).map((_, idx) => {
-          const tickX = padding + idx * 10
-          const isMajor = idx % 5 === 0
-          const tickHeight = isMajor ? 6 : 3
-          return (
-            <line
-              key={`tick-top-${idx}`}
-              x1={tickX}
-              y1={topTrackY}
-              x2={tickX}
-              y2={topTrackY + tickHeight}
-              stroke={PHYSICS_COLORS.axis}
-              strokeWidth={STROKE.tick}
-            />
-          )
-        })}
-
-        {/* 跑车轨道主线 */}
-        <line
-          x1={padding}
-          y1={bottomTrackY}
-          x2={canvasSize.width - padding}
-          y2={bottomTrackY}
-          stroke={PHYSICS_COLORS.labelText}
-          strokeWidth={STROKE.groundLine}
-        />
-        {/* 跑车轨道精细刻度 */}
-        {Array.from({ length: Math.floor((canvasSize.width - 2 * padding) / 10) + 1 }).map((_, idx) => {
-          const tickX = padding + idx * 10
-          const isMajor = idx % 5 === 0
-          const tickHeight = isMajor ? 6 : 3
-          return (
-            <line
-              key={`tick-bottom-${idx}`}
-              x1={tickX}
-              y1={bottomTrackY}
-              x2={tickX}
-              y2={bottomTrackY + tickHeight}
-              stroke={PHYSICS_COLORS.axis}
-              strokeWidth={STROKE.tick}
-            />
-          )
-        })}
 
         {/* 起始参考线 */}
         <line
           x1={startX}
-          y1={topTrackY - 30}
+          y1={bottomTrackY - 80}
           x2={startX}
           y2={bottomTrackY + 20}
           stroke={PHYSICS_COLORS.axis}
@@ -188,7 +147,6 @@ export default function AccelerationAnimation() {
         <text x={startX - 10} y={bottomTrackY + 32} fontSize={FONT.axis} fill={PHYSICS_COLORS.axis} textAnchor="middle">0</text>
 
         {/* 赛道标签 */}
-        <text x={padding + 4} y={topTrackY - 12} fontSize={FONT.small} fill={PHYSICS_COLORS.labelTextLight} fontWeight="600">飞机 A（匀速运动 vA={vA}m/s）</text>
         <text x={padding + 4} y={bottomTrackY - 12} fontSize={FONT.small} fill={PHYSICS_COLORS.labelTextLight} fontWeight="600">跑车 B（匀加速运动 aB={aB}m/s²）</text>
 
         {/* ── 3. 频闪打点计时器打点投影 ── */}

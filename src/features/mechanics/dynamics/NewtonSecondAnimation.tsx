@@ -13,6 +13,7 @@ import { IDENTITY_SCENE_SCALE } from '@/scene'
 import type { SceneLayoutProfile } from '@/scene'
 import { Block } from '@/components/Physics/Block'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { useAnimationLayout } from '@/context/AnimationLayoutContext'
 
 // ── 布局常量 ──────────────────────────────────────────────────────────
@@ -151,13 +152,10 @@ export default function NewtonSecondAnimation() {
         {gridLines}
 
         {/* 轨道 */}
-        <line
-          x1={originX - 20}
-          y1={groundY}
-          x2={vp.visibleX + vp.visibleW * NEWTON_LAYOUT.trackEndRatio}
-          y2={groundY}
-          stroke={SCENE_COLORS.surface.groundStroke}
-          strokeWidth={STROKE.groundLine}
+        <PhysicsGround
+          x={originX - 20} y={groundY}
+          width={vp.visibleX + vp.visibleW * NEWTON_LAYOUT.trackEndRatio - (originX - 20)}
+          appearance={{ color: SCENE_COLORS.surface.groundStroke }}
         />
         {/* 轨道左侧挡板 */}
         <line
