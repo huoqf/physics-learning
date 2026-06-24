@@ -114,6 +114,11 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       { key: 'm', label: '质量 m', min: 0.5, max: 10, step: 0.5, unit: 'kg' },
       { key: 'mu', label: '动摩擦系数 μ', min: 0, max: 0.5, step: 0.05, unit: '', showIf: 'modelIdx', showIfValue: 0 },
     ],
+    sceneLayout: {
+      mode: 'visibleArea',
+      designWidth: 700,
+      designHeight: 400,
+    },
     SidebarExtra: lazy(() => import('@/features/mechanics/dynamics/NewtonSecondSidebar')),
     CenterExtra: lazy(() => import('@/features/mechanics/dynamics/NewtonSecondCenterExtra')),
     centerExtraMode: 'advancedMode',

@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -10,17 +10,29 @@ import {
 } from '@/physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
+import type { SceneLayoutProfile } from '@/scene'
 import { Block } from '@/components/Physics/Block'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { computeScale } from '@/utils/coordinate'
+import { useAnimationLayout } from '@/context/AnimationLayoutContext'
 
 // ── 布局常量 ──────────────────────────────────────────────────────────
+const NEWTON_DESIGN = { width: 700, height: 400 } as const
+
 const NEWTON_LAYOUT = {
-  groundOffset: 80,    // px：地面距画布底部
-  originX: 80,         // px：小车出发点（也是轨道左挡板位置）
-  carWidth: 80,        // px：小车宽度
-  safeMarginR: 200,    // px：小车终点右侧安全边距
+  groundYRatio: 0.80,        // 比例：地面距画布顶部
+  originXRatio: 0.11,        // 比例：小车出发点占画布宽度
+  carWidth: 80,              // px：小车宽度
+  safeMarginRRatio: 0.29,    // 比例：小车终点右侧安全边距占画布宽度
+  gridWidthRatio: 0.81,      // 比例：网格线宽度占画布宽度
+  trackEndRatio: 0.96,       // 比例：轨道右端占画布宽度
 } as const
+
+const NEWTON_SCENE_PROFILE: SceneLayoutProfile = {
+  mode: 'visibleArea',
+  designWidth: NEWTON_DESIGN.width,
+  designHeight: NEWTON_DESIGN.height,
+}
+// ──────────────────────────────────────────────────────────────────────
 
 const NEWTON_ARROW = {
   forceScale: 2.5,     // px/N：拉力/摩擦力像素比例
@@ -40,6 +52,14 @@ export default function NewtonSecondAnimation() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+
+  const contextProfile = useAnimationLayout()
+  const sceneProfile = contextProfile ?? NEWTON_SCENE_PROFILE
+
+  const vp = useViewport(canvasSize, {
+    designWidth: sceneProfile.designWidth,
+    designHeight: sceneProfile.designHeight,
+  })
 
   const {
     F = 10,
@@ -85,15 +105,13 @@ export default function NewtonSecondAnimation() {
     s = motionRes.s
   }
 
-  const WORLD = { xMin: 0, xMax: 15, yMin: 0, yMax: 5 } as const
-  const scale = computeScale(canvasSize.width - 280, canvasSize.height, WORLD) // 280 = PANEL.right.standard，compact 模式需手动同步
-  const groundY = canvasSize.height - NEWTON_LAYOUT.groundOffset
-  const originX = NEWTON_LAYOUT.originX
+  const groundY = vp.visibleY + vp.visibleH * NEWTON_LAYOUT.groundYRatio
+  const originX = vp.visibleX + vp.visibleW * NEWTON_LAYOUT.originXRatio
 
   // 限制小车不跑出 Canvas 屏幕
-  const maxCanvasS = canvasSize.width - NEWTON_LAYOUT.safeMarginR
-  const canvasS = s * scale
-  const displayCanvasS = Math.min(canvasS, maxCanvasS)
+  const maxCanvasS = vp.visibleX + vp.visibleW * (1 - NEWTON_LAYOUT.safeMarginRRatio)
+  const canvasS = s * (vp.visibleW / NEWTON_DESIGN.width)
+  const displayCanvasS = Math.min(canvasS, maxCanvasS - originX)
 
   // 小车尺寸
   const carWidth = NEWTON_LAYOUT.carWidth
@@ -106,7 +124,7 @@ export default function NewtonSecondAnimation() {
   const gridLines = []
   if (showGrid) {
     for (let i = 0; i <= 20; i++) {
-      const xPos = originX + (i * (canvasSize.width - 130)) / 20
+      const xPos = originX + (i * vp.visibleW * NEWTON_LAYOUT.gridWidthRatio) / 20
       gridLines.push(
         <line
           key={`vline-${i}`}
@@ -136,7 +154,7 @@ export default function NewtonSecondAnimation() {
         <line
           x1={originX - 20}
           y1={groundY}
-          x2={canvasSize.width - 30}
+          x2={vp.visibleX + vp.visibleW * NEWTON_LAYOUT.trackEndRatio}
           y2={groundY}
           stroke={SCENE_COLORS.surface.groundStroke}
           strokeWidth={STROKE.groundLine}
