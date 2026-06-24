@@ -23,7 +23,7 @@ export const ClosedCircuitCenterExtra: FC = () => {
   const R = params.R ?? 10
 
   // 物理计算
-  const { I, U_terminal, P_output, eta } = useMemo(() => {
+  const { I, P_output, eta } = useMemo(() => {
     return calculateClosedCircuit(EMF, r, R)
   }, [EMF, r, R])
 
@@ -105,14 +105,6 @@ export const ClosedCircuitCenterExtra: FC = () => {
         <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-lg border border-neutral-100 shadow-sm px-3 py-1.5 flex flex-col gap-0.5 min-w-[105px] pointer-events-none">
           <div className="text-[8px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">
             电路即时状态
-          </div>
-          <div className="text-[10px] flex items-center justify-between gap-3">
-            <span className="text-neutral-500">电流 I</span>
-            <span className="font-mono font-bold text-red-600">{I.toFixed(3)} A</span>
-          </div>
-          <div className="text-[10px] flex items-center justify-between gap-3">
-            <span className="text-neutral-500">路端电压 U</span>
-            <span className="font-mono font-bold text-amber-700">{U_terminal.toFixed(2)} V</span>
           </div>
           <div className="text-[10px] flex items-center justify-between gap-3">
             <span className="text-neutral-500">内电压 U内</span>
