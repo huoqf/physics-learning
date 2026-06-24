@@ -7,21 +7,19 @@ import { useState, useEffect, useRef } from 'react'
 import { useCanvasSize, useViewport } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
-import { colors } from '@/theme/colors'
+import { PHYSICS_COLORS } from '@/theme/physics'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useElectricFieldPhysics } from './hooks/useElectricFieldPhysics'
 import { ElectricFieldBasicScene } from './ElectricFieldBasicScene'
 import { ElectricFieldAdvancedScene } from './ElectricFieldAdvancedScene'
 
 const DESIGN_WIDTH = 700
-const DESIGN_HEIGHT = 480
+const DESIGN_HEIGHT = 450
 
 export default function ElectricField() {
-  const { params, showFormulas } = useAnimationStore(
+  const { params } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
-      showFormulas: s.showFormulas,
     }))
   )
   const updateParam = useAnimationStore((s) => s.updateParam)
@@ -33,7 +31,7 @@ export default function ElectricField() {
   const showFieldLines = (params.showFieldLines ?? 1) === 1
 
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
-  const { width, height, font } = canvasSize
+  const { width, height } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 
   const vp = useViewport(canvasSize, {
@@ -217,67 +215,6 @@ export default function ElectricField() {
               isDragging={isDragging}
               advancedArrows={physics.advancedArrows}
             />
-          )}
-
-          {/* 公式悬浮看板 */}
-          {showFormulas && (
-            <g transform="translate(20, 20)">
-              <rect
-                x={0}
-                y={0}
-                width={210}
-                height={mode === 0 ? 130 : 110}
-                fill={colors.neutral.white}
-                opacity={0.92}
-                stroke={PHYSICS_COLORS.grid}
-                strokeWidth={1.5}
-                rx={6}
-              />
-              <g transform="translate(12, 18)">
-                <text
-                  fontSize={CANVAS_STYLE.font.bodySize}
-                  fill={PHYSICS_COLORS.labelText}
-                  fontWeight="bold"
-                >
-                  {mode === 0 ? '电场强度比值定义' : '合电场强度矢量叠加'}
-                </text>
-
-                {mode === 0 ? (
-                  <>
-                    <text x={0} y={24} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.labelText}>
-                      场强大小：E = {physics.basicPhysics.E.toExponential(2)} N/C
-                    </text>
-                    <text x={0} y={44} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.labelText}>
-                      静电力：F = {physics.basicPhysics.F.toExponential(2)} N
-                    </text>
-                    <text x={0} y={64} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.electricField} fontWeight="bold">
-                      定义式：E = F / |q|
-                    </text>
-                    <text x={0} y={84} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.electricForce} fontWeight="bold">
-                      决定式：E = k·Q/r²
-                    </text>
-                    <text x={0} y={100} fontSize={font(10)} fill={colors.neutral[500]}>
-                      * 改变试探电荷 q，E保持恒定！
-                    </text>
-                  </>
-                ) : (
-                  <>
-                    <text x={0} y={24} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.labelText}>
-                      E₁ = {Math.sqrt(physics.advancedPhysics.E1x ** 2 + physics.advancedPhysics.E1y ** 2).toExponential(1)} N/C
-                    </text>
-                    <text x={0} y={44} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.labelText}>
-                      E₂ = {Math.sqrt(physics.advancedPhysics.E2x ** 2 + physics.advancedPhysics.E2y ** 2).toExponential(1)} N/C
-                    </text>
-                    <text x={0} y={64} fontSize={CANVAS_STYLE.font.axisSize} fill={PHYSICS_COLORS.electricField} fontWeight="bold">
-                      合场强：E合 = E₁ + E₂
-                    </text>
-                    <text x={0} y={82} fontSize={font(10)} fill={colors.neutral[500]}>
-                      * 拖拽 P 点感受平行四边形合成
-                    </text>
-                  </>
-                )}
-              </g>
-            </g>
           )}
 
           {/* Defs */}
