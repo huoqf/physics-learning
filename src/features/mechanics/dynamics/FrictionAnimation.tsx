@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useCanvasSize } from '@/utils'
-import { computeScale } from '@/utils/coordinate'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useSimulationFrame } from '@/utils/animation'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -12,8 +11,35 @@ import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { Block } from '@/components/Physics/Block'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
+import type { SceneLayoutProfile } from '@/scene'
+import { useAnimationLayout } from '@/context/AnimationLayoutContext'
+
+// ── 布局常量 ──────────────────────────────────────────────────────────
+const FRICTION_DESIGN = { width: 800, height: 440 } as const
+
+const FRICTION_LAYOUT = {
+  groundYRatio_m1: 0.75,       // 比例：模式一地面距可视区域顶部
+  boxStartXRatio: 0.175,       // 比例：滑块起始 X 占可视区域宽度
+  pullScaleRightMargin: 0.075, // 比例：拉力比例尺右侧留白
+  groundYRatio_m2: 0.84,       // 比例：模式二地面距可视区域顶部
+  pivotRatio: 0.18,            // 比例：斜面支点距可视区域左侧
+  boardLengthRatio: 0.52,      // 比例：斜轨长度占可视区域宽度
+} as const
+
+const FRICTION_SCENE_PROFILE: SceneLayoutProfile = {
+  mode: 'visibleArea',
+  designWidth: FRICTION_DESIGN.width,
+  designHeight: FRICTION_DESIGN.height,
+  refMagnitudes: {
+    appliedForce: 40,
+    friction: 40,
+    normalForce: 40,
+    gravity: 40,
+    force: 40,
+  },
+}
+// ──────────────────────────────────────────────────────────────────────
 
 export default function FrictionAnimation() {
   const { params, time, showVectors } = useAnimationStore(
@@ -26,24 +52,20 @@ export default function FrictionAnimation() {
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide)
   const { font } = canvasSize
 
-  // 物理量参考比例尺计算 (800×440 响应式预设)
-  const pullScale = computeScale(canvasSize.width - 240, 1, { xMin: 0, xMax: 5, yMin: 0, yMax: 1 })
-  const inclineScale = computeScale(canvasSize.height * 0.5, 1, { xMin: 0, xMax: 3.5, yMin: 0, yMax: 1 })
+  const contextProfile = useAnimationLayout()
+  const sceneProfile = contextProfile ?? FRICTION_SCENE_PROFILE
 
-  // 声明统一的 SceneConfig，使 VectorArrow 归一化长度符合规范
-  const frictionScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
-    originX: 0,
-    originY: 0,
-    refMagnitudes: {
-      appliedForce: 40,
-      friction: 40,
-      normalForce: 40,
-      gravity: 40,
-      force: 40,
-    },
-  }
-  const frictionSceneScale = createSceneScale(frictionScene)
+  const vp = useViewport(canvasSize, {
+    designWidth: sceneProfile.designWidth,
+    designHeight: sceneProfile.designHeight,
+  })
+
+  // 物理量参考比例尺计算（基于可视区域）
+  const pullScale = (vp.visibleW * (1 - FRICTION_LAYOUT.boxStartXRatio - FRICTION_LAYOUT.pullScaleRightMargin)) / 5
+  const inclineScale = (vp.visibleH * 0.5) / 3.5
+
+  // 声明统一的 SceneScale，使 VectorArrow 归一化长度符合规范
+  const frictionSceneScale = createSceneScaleFromViewport(vp, sceneProfile)
 
   const mode = params.mode ?? 0
   const m = params.m ?? 5
@@ -93,11 +115,18 @@ export default function FrictionAnimation() {
   const angleRad = (angle * Math.PI) / 180
   const res_m2 = calculateDoubleFrictionIncline({ m, M, theta: angle, mu_1, mu_2, g })
 
+  // 布局坐标（供仿真与渲染共用）
+  const groundY_m1 = vp.visibleY + vp.visibleH * FRICTION_LAYOUT.groundYRatio_m1
+  const boxStartX_m1 = vp.visibleX + vp.visibleW * FRICTION_LAYOUT.boxStartXRatio
+  const groundY_m2 = vp.visibleY + vp.visibleH * FRICTION_LAYOUT.groundYRatio_m2
+  const pivotX = vp.visibleX + vp.visibleW * FRICTION_LAYOUT.pivotRatio
+  const boardLength = vp.visibleW * FRICTION_LAYOUT.boardLengthRatio
+  const boardLength_px = boardLength
+
   // 位移上限（供仿真边界处理，与渲染几何保持一致）
   // 模式一：滑块右边缘到达画布右边缘时停止（模拟撞墙，速度归零位置保持）
-  const x1Limit_m = (canvasSize.width - 60 - 140 - 22) / pullScale
+  const x1Limit_m = (vp.visibleW - boxStartX_m1 - 22) / pullScale
   // 模式二：滑块到达斜面底端时停止（滑落地面，速度归零位置保持）
-  const boardLength_px = canvasSize.width * 0.45
   const xRelLimit_m = (boardLength_px * 0.85) / inclineScale
 
   // 实时仿真积分：始终运行，参数变化时由上方 useEffect 复位
@@ -160,7 +189,7 @@ export default function FrictionAnimation() {
       let newXM = prev.xM + newVM * dt
       if (newVM <= 0.001) newVM = 0
       // 斜面体到达画布右边缘时停止（撞墙，速度归零位置保持）
-      const xMLimit_m = (canvasSize.width - 30 - canvasSize.width * 0.18 - boardLength_px * Math.cos(angleRad)) / inclineScale
+      const xMLimit_m = (vp.visibleW - 30 - vp.visibleW * FRICTION_LAYOUT.pivotRatio - boardLength_px * Math.cos(angleRad)) / inclineScale
       if (xMLimit_m > 0 && newXM >= xMLimit_m) {
         newXM = xMLimit_m
         newVM = 0
@@ -177,16 +206,11 @@ export default function FrictionAnimation() {
   const displacement_M = simState.xM * inclineScale
   const displacement_rel = simState.x_rel * inclineScale
 
-  const groundY_m1 = canvasSize.height - 110
-  const boxStartX_m1 = 140
   const boxSize = 44
   const boxX_m1 = boxStartX_m1 + displacement_m1
   const boxY_m1 = groundY_m1 - boxSize
 
   // 斜面与地面坐标几何
-  const groundY_m2 = canvasSize.height - 70
-  const pivotX = canvasSize.width * 0.18
-  const boardLength = canvasSize.width * 0.45 // 斜轨长度
   const H = boardLength * Math.sin(angleRad)
   const W = boardLength * Math.cos(angleRad)
 
@@ -227,7 +251,7 @@ export default function FrictionAnimation() {
             <PhysicsGround
               x={60}
               y={groundY_m1}
-              width={canvasSize.width - 120}
+              width={vp.visibleW - 120}
               type="ground"
               appearance={{
                 showHatch: true,
@@ -259,7 +283,7 @@ export default function FrictionAnimation() {
             {/* 拉绳 (连向右端) */}
             <line
               x1={boxX_m1 + boxSize / 2} y1={groundY_m1 - boxSize / 2}
-              x2={canvasSize.width - 60} y2={groundY_m1 - boxSize / 2}
+              x2={vp.visibleX + vp.visibleW - 60} y2={groundY_m1 - boxSize / 2}
               stroke={SCENE_COLORS.surface.smoothMark} strokeWidth={1} strokeDasharray="3,3"
             />
 
@@ -337,7 +361,7 @@ export default function FrictionAnimation() {
             <PhysicsGround
               x={30}
               y={groundY_m2}
-              width={canvasSize.width - 60}
+              width={vp.visibleW - 60}
               type="ground"
               appearance={{
                 showHatch: true,
@@ -544,11 +568,11 @@ export default function FrictionAnimation() {
             {/* 倾角标注弧线 */}
             <g>
               <path
-                d={`M ${pivotX + displacement_M + 40} ${groundY_m2} A 40 40 0 0 0 ${pivotX + displacement_M + 40 * Math.cos(angleRad)} ${groundY_m2 - 40 * Math.sin(angleRad)}`}
+                d={`M ${pivotX + displacement_M + W - 40} ${groundY_m2} A 40 40 0 0 0 ${pivotX + displacement_M + W - 40 * Math.cos(angleRad)} ${groundY_m2 - 40 * Math.sin(angleRad)}`}
                 fill="none" stroke={CANVAS_COLORS.annotation} strokeWidth={1.2}
               />
               <text
-                x={pivotX + displacement_M + 48} y={groundY_m2 - 12}
+                x={pivotX + displacement_M + W - 52} y={groundY_m2 - 10}
                 fontSize={font(11)} fill={CANVAS_COLORS.annotation} fontWeight="bold"
               >
                 θ = {angle}°

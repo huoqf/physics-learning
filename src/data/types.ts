@@ -1,5 +1,6 @@
 import type { LazyExoticComponent, ComponentType } from 'react'
 import type { DiscoveryStepData } from '@/components/UI/DiscoveryGuide'
+import type { SceneLayoutProfile } from '@/scene'
 
 export interface KnowledgeNode {
   id: string
@@ -97,6 +98,8 @@ export interface AnimationConfig {
    * 默认值在 useAnimationLifecycle 内：`config?.maxTime ?? 30`。
    */
   maxTime?: number
+  /** 场景布局 profile：声明组件如何消费 ViewportInfo，用于 createSceneScaleFromViewport */
+  sceneLayout?: SceneLayoutProfile
 }
 
 export interface Problem {

@@ -13,9 +13,11 @@ import {
   ErrorBoundary,
   DiscoveryGuide,
 } from '@/components/UI'
+import { LAYOUT } from '@/theme'
 import { duration, easing } from '@/theme/motion'
 import { ThreePanel } from '@/components/Layout'
 import { useAnimationLifecycle } from '@/hooks/useAnimationLifecycle'
+import { AnimationLayoutContext } from '@/context/AnimationLayoutContext'
 
 /**
  * 中心动画区域 — 订阅 time（每帧更新），与左侧/右侧面板隔离。
@@ -108,7 +110,9 @@ function AnimationCenter({
                 <Suspense
                   fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
                 >
-                  <AnimationComponent />
+                  <AnimationLayoutContext.Provider value={config.sceneLayout}>
+                    <AnimationComponent />
+                  </AnimationLayoutContext.Provider>
                 </Suspense>
               </ErrorBoundary>
             </div>
@@ -139,7 +143,9 @@ function AnimationCenter({
               <Suspense
                 fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
               >
-                <AnimationComponent />
+                <AnimationLayoutContext.Provider value={config.sceneLayout}>
+                  <AnimationComponent />
+                </AnimationLayoutContext.Provider>
               </Suspense>
             </ErrorBoundary>
           </div>
@@ -283,7 +289,7 @@ export default function AnimationPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-56px)] flex flex-col bg-neutral-50">
+    <div className="flex flex-col bg-neutral-50" style={{ height: `calc(100vh - ${LAYOUT.topBarHeight}px)` }}>
       {/* 顶部栏 */}
       <div className="flex items-center gap-4 px-6 h-14 bg-primary-800 shadow-sm border-b border-neutral-200">
         <button

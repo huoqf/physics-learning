@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useCallback, useMemo } from 'react'
+import { useState, useRef, useCallback, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
@@ -10,6 +10,20 @@ import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { RelationChart } from '@/components/Chart'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
+
+// ── 布局常量 ──────────────────────────────────────────────────────────
+const GRAVITY_LAYOUT = {
+  scaleWidthRatio: 0.65,   // 比例：天体区宽度占画布宽度
+  cardWidthRatio: 0.35,    // 比例：画中画卡片宽度占画布宽度
+  cardHeightRatio: 0.33,   // 比例：画中画卡片高度占画布高度
+  cardMargin: 20,          // px：画中画右边距
+} as const
+
+const GRAVITY_RIPPLE = {
+  largeBodyExtra: 80,      // px：大天体涟漪增量（调参值，非物理推导）
+  smallBodyExtra: 60,      // px：小天体涟漪增量（调参值，非物理推导）
+} as const
+// ──────────────────────────────────────────────────────────────────────
 
 export default function GravityAnimation() {
     const {params, setParams, updateParam, showVectors, time} = useAnimationStore(
@@ -28,7 +42,7 @@ export default function GravityAnimation() {
 
   // ── 科学坐标转换 ──
   const WORLD = { xMin: -6, xMax: 6, yMin: -4, yMax: 4 } as const
-  const scale = computeScale(canvasSize.width * 0.65, canvasSize.height, WORLD)
+  const scale = computeScale(canvasSize.width * GRAVITY_LAYOUT.scaleWidthRatio, canvasSize.height, WORLD)
   
   // 天体 1 放置在左侧 -r/2，天体 2 放置在右侧 r/2
   const pos1 = physicsToCanvas(-r / 2, 0, canvasSize.width, canvasSize.height, scale)
@@ -85,10 +99,10 @@ export default function GravityAnimation() {
   const svgRef = useRef<SVGSVGElement>(null)
 
   // ── 画中画 F-r 平方反比曲线定位 ──
-  const cardWidth = Math.max(220, canvasSize.width * 0.35)
-  const cardHeight = Math.max(150, canvasSize.height * 0.33)
-  const cardX = canvasSize.width - cardWidth - 20
-  const cardY = 20
+  const cardWidth = Math.max(220, canvasSize.width * GRAVITY_LAYOUT.cardWidthRatio)
+  const cardHeight = Math.max(150, canvasSize.height * GRAVITY_LAYOUT.cardHeightRatio)
+  const cardX = canvasSize.width - cardWidth - GRAVITY_LAYOUT.cardMargin
+  const cardY = GRAVITY_LAYOUT.cardMargin
 
   const R_DOMAIN: [number, number] = [1.5, 18.0]
 
@@ -177,7 +191,7 @@ export default function GravityAnimation() {
 
   for (let i = 0; i < numRipples; i++) {
     const phase1 = ((time * 0.6) + i / numRipples) % 1.0
-    const maxR1 = radius1 + 80
+    const maxR1 = radius1 + GRAVITY_RIPPLE.largeBodyExtra
     const minR1 = radius1 + 5
     const currentR1 = maxR1 - phase1 * (maxR1 - minR1)
     const opacity1 = phase1 < 0.15 ? (phase1 / 0.15) * 0.22 : (1 - phase1) / 0.85 * 0.22
@@ -197,7 +211,7 @@ export default function GravityAnimation() {
     )
 
     const phase2 = ((time * 0.6) + (i + 0.5) / numRipples) % 1.0
-    const maxR2 = radius2 + 60
+    const maxR2 = radius2 + GRAVITY_RIPPLE.smallBodyExtra
     const minR2 = radius2 + 5
     const currentR2 = maxR2 - phase2 * (maxR2 - minR2)
     const opacity2 = phase2 < 0.15 ? (phase2 / 0.15) * 0.22 : (1 - phase2) / 0.85 * 0.22

@@ -64,6 +64,18 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       { key: 'mu_1', label: '斜面摩擦系数 μ₁', min: 0, max: 1, step: 0.05, unit: '', showIf: 'mode', showIfValue: 1 },
       { key: 'mu_2', label: '地面摩擦系数 μ₂', min: 0, max: 1, step: 0.05, unit: '', showIf: 'mode', showIfValue: 1 },
     ],
+    sceneLayout: {
+      mode: 'visibleArea',
+      designWidth: 800,
+      designHeight: 440,
+      refMagnitudes: {
+        appliedForce: 40,
+        friction: 40,
+        normalForce: 40,
+        gravity: 40,
+        force: 40,
+      },
+    },
     SidebarExtra: lazy(() => import('@/features/mechanics/dynamics/FrictionSidebar')),
     CenterExtra: lazy(() => import('@/features/mechanics/dynamics/FrictionCenterExtra')),
     centerExtraMode: 'advancedMode',

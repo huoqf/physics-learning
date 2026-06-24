@@ -1,4 +1,4 @@
-﻿import { useCanvasSize } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { computeScale } from '@/utils/coordinate'
 import { useAnimationStore } from '@/stores'
@@ -9,6 +9,14 @@ import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
+
+// ── 布局常量 ──────────────────────────────────────────────────────────
+const SPRING_LAYOUT = {
+  groundYOffset: 30,   // px：地面距画布中心偏移
+  boxSize: 44,         // px：振子方块大小
+  wallRightX: 80,      // px：墙体右侧边缘（弹簧固定端位置）
+} as const
+// ──────────────────────────────────────────────────────────────────────
 
 export default function SpringForceAnimation() {
     const {params, time, showVectors, showGrid} = useAnimationStore(
@@ -31,14 +39,14 @@ export default function SpringForceAnimation() {
 
   // ── 科学布局坐标系 ──
   const eqX = canvasSize.width / 2 // 平衡位置在 Canvas 中心 (325px)
-  const groundY = canvasSize.height / 2 + 30 // 地面 Y 坐标
-  const boxSize = 44 // 振子方块大小
+  const groundY = canvasSize.height / 2 + SPRING_LAYOUT.groundYOffset // 地面 Y 坐标
+  const boxSize = SPRING_LAYOUT.boxSize // 振子方块大小
   const WORLD = { xMin: -0.6, xMax: 0.6, yMin: -0.3, yMax: 0.3 } as const
   const scale = computeScale(canvasSize.width, canvasSize.height, WORLD, 80)
   
   const currentX = displacement * scale // 当前偏离平衡位置的像素位移
   const centerX = eqX + currentX         // 振子当前的中心 X 坐标
-  const wallRightX = 80                  // 墙体右侧边缘，即弹簧固定端位置
+  const wallRightX = SPRING_LAYOUT.wallRightX // 墙体右侧边缘，即弹簧固定端位置
 
   const springScene: SceneConfig = {
     vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },

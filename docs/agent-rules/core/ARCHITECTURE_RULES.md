@@ -262,6 +262,20 @@ tests/
 
 物理比例尺**必须**通过 `computeScale()`（`src/utils/coordinate.ts`）基于画布尺寸和物理世界范围计算，禁止在组件内写 `scale = N` 等硬编码比例尺。
 
+### 6.1 两条坐标路径适用场景
+
+项目中存在两条并行的坐标缩放路径，新组件开发者须明确选用：
+
+| 路径 | 入口 | 适用场景 | 来源 |
+|------|------|---------|------|
+| 路径 A（推荐） | `useViewport()` | 场景元素的比例定位（**新组件强制**） | `src/utils/useViewport.ts` |
+| 路径 B（保留） | `computeScale()` | 物理量→像素转换（与 useViewport 可共存） | `src/utils/coordinate.ts` |
+
+- **useViewport** → 场景元素的比例定位（新组件强制使用）
+- **computeScale** → 物理量→像素转换（保留，与 useViewport 可共存）
+- **createSceneScaleFromViewport** → 当组件已使用 useViewport 时，用此替代 `createSceneScale` 构建 SceneScale
+- 新增组件**禁止**使用绝对像素定位（如 `groundY = height - N`），必须用 `vp.visibleH * ratio` 或 LAYOUT 具名常量
+
 ---
 
 ## 7. 动画系统规则

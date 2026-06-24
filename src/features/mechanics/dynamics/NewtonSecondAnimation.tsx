@@ -14,6 +14,22 @@ import { Block } from '@/components/Physics/Block'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { computeScale } from '@/utils/coordinate'
 
+// ── 布局常量 ──────────────────────────────────────────────────────────
+const NEWTON_LAYOUT = {
+  groundOffset: 80,    // px：地面距画布底部
+  originX: 80,         // px：小车出发点（也是轨道左挡板位置）
+  carWidth: 80,        // px：小车宽度
+  safeMarginR: 200,    // px：小车终点右侧安全边距
+} as const
+
+const NEWTON_ARROW = {
+  forceScale: 2.5,     // px/N：拉力/摩擦力像素比例
+  velScale: 5.0,       // px/(m/s)：速度
+  accelScale: 8.0,     // px/(m/s²)：加速度
+  vertFixedLen: 45,    // px：G/FN 固定长度
+} as const
+// ──────────────────────────────────────────────────────────────────────
+
 export default function NewtonSecondAnimation() {
     const {params, time, showVectors, showGrid} = useAnimationStore(
     useShallow((s) => ({
@@ -70,17 +86,17 @@ export default function NewtonSecondAnimation() {
   }
 
   const WORLD = { xMin: 0, xMax: 15, yMin: 0, yMax: 5 } as const
-  const scale = computeScale(canvasSize.width - 280, canvasSize.height, WORLD)
-  const groundY = canvasSize.height - 80
-  const originX = 80
+  const scale = computeScale(canvasSize.width - 280, canvasSize.height, WORLD) // 280 = PANEL.right.standard，compact 模式需手动同步
+  const groundY = canvasSize.height - NEWTON_LAYOUT.groundOffset
+  const originX = NEWTON_LAYOUT.originX
 
   // 限制小车不跑出 Canvas 屏幕
-  const maxCanvasS = canvasSize.width - 200
+  const maxCanvasS = canvasSize.width - NEWTON_LAYOUT.safeMarginR
   const canvasS = s * scale
   const displayCanvasS = Math.min(canvasS, maxCanvasS)
 
   // 小车尺寸
-  const carWidth = 80
+  const carWidth = NEWTON_LAYOUT.carWidth
   const carHeight = 35 + m * 5
   const carX = originX + displayCanvasS
   const carY = groundY - carHeight
@@ -156,10 +172,10 @@ export default function NewtonSecondAnimation() {
               vector={{ x: 1, y: 0 }}
               type="appliedForce"
               sceneScale={IDENTITY_SCENE_SCALE}
-              pixelLength={Math.max(15, F_applied * 2.5)}
+              pixelLength={Math.max(15, F_applied * NEWTON_ARROW.forceScale)}
             />
             <text
-              x={cx + Math.max(15, F_applied * 2.5) + 8}
+              x={cx + Math.max(15, F_applied * NEWTON_ARROW.forceScale) + 8}
               y={cy + 4}
               fontSize={FONT.bodySize}
               fill={PHYSICS_COLORS.appliedForce}
@@ -176,10 +192,10 @@ export default function NewtonSecondAnimation() {
                   vector={{ x: -1, y: 0 }}
                   type="friction"
 sceneScale={IDENTITY_SCENE_SCALE}
-                  pixelLength={Math.max(15, f * 2.5)}
+                  pixelLength={Math.max(15, f * NEWTON_ARROW.forceScale)}
                 />
                 <text
-                  x={cx - Math.max(15, f * 2.5) - 8}
+                  x={cx - Math.max(15, f * NEWTON_ARROW.forceScale) - 8}
                   y={cy + 4}
                   fontSize={FONT.axisSize}
                   fill={PHYSICS_COLORS.friction}
@@ -197,7 +213,7 @@ sceneScale={IDENTITY_SCENE_SCALE}
               vector={{ x: 0, y: -1 }}
               type="gravity"
               sceneScale={IDENTITY_SCENE_SCALE}
-              pixelLength={45}
+              pixelLength={NEWTON_ARROW.vertFixedLen}
             />
             <text
               x={cx}
@@ -216,7 +232,7 @@ sceneScale={IDENTITY_SCENE_SCALE}
               vector={{ x: 0, y: 1 }}
               type="normalForce"
               sceneScale={IDENTITY_SCENE_SCALE}
-              pixelLength={45}
+              pixelLength={NEWTON_ARROW.vertFixedLen}
             />
             <text
               x={cx}
@@ -237,11 +253,11 @@ sceneScale={IDENTITY_SCENE_SCALE}
                   vector={{ x: 1, y: 0 }}
                   type="force"
                   sceneScale={IDENTITY_SCENE_SCALE}
-                  pixelLength={Math.max(25, F_net * 2.5)}
+                  pixelLength={Math.max(25, F_net * NEWTON_ARROW.forceScale)}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain * 1.5}
                 />
                 <text
-                  x={Math.max(25, F_net * 2.5) + 8}
+                  x={Math.max(25, F_net * NEWTON_ARROW.forceScale) + 8}
                   y={4}
                   fontSize={FONT.bodySize}
                   fill={PHYSICS_COLORS.forceNet}
@@ -259,10 +275,10 @@ sceneScale={IDENTITY_SCENE_SCALE}
                 vector={{ x: 1, y: 0 }}
                 type="velocity"
                 sceneScale={IDENTITY_SCENE_SCALE}
-                pixelLength={Math.max(15, v * 5)}
+                pixelLength={Math.max(15, v * NEWTON_ARROW.velScale)}
               />
               <text
-                x={Math.max(15, v * 5) + 8}
+                x={Math.max(15, v * NEWTON_ARROW.velScale) + 8}
                 y={4}
                 fontSize={FONT.axisSize}
                 fill={PHYSICS_COLORS.velocity}
@@ -280,10 +296,10 @@ sceneScale={IDENTITY_SCENE_SCALE}
                   vector={{ x: 1, y: 0 }}
                   type="acceleration"
                   sceneScale={IDENTITY_SCENE_SCALE}
-                  pixelLength={Math.max(15, a * 8)}
-                />
-                <text
-                  x={Math.max(15, a * 8) + 8}
+                pixelLength={Math.max(15, a * NEWTON_ARROW.accelScale)}
+              />
+              <text
+                x={Math.max(15, a * NEWTON_ARROW.accelScale) + 8}
                   y={4}
                   fontSize={FONT.axisSize}
                   fill={PHYSICS_COLORS.acceleration}

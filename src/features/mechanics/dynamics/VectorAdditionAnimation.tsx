@@ -1,4 +1,4 @@
-﻿import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
@@ -39,7 +39,7 @@ export default function VectorAdditionAnimation() {
   const mode = params.mode ?? 0 // 0 = 平行四边形, 1 = 三角形, 2 = 正交分解
   
   const WORLD = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 } as const
-  const scale = computeScale(canvasSize.width, canvasSize.height, WORLD) * 0.6
+  const scale = computeScale(canvasSize.width, canvasSize.height, WORLD) * 0.6 // 0.6：拖拽命中区域与矢量端点强耦合，细微 scale 差异导致静默错位，不提取
 
   const vaScene: SceneConfig = {
     vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },

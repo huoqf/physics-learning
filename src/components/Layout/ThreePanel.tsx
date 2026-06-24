@@ -1,27 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { PanelLeftOpen, PanelLeftClose } from 'lucide-react'
-import { BREAKPOINT, PANEL } from '@/theme/spacing'
+import { PANEL } from '@/theme/spacing'
 import { duration, easing } from '@/theme/motion'
-
-// ─── 响应式断点分级 ──────────────────────────────────────────────────────
-type Tier = 'mobile' | 'tablet' | 'compact' | 'standard'
-
-function getTier(w: number): Tier {
-  if (w >= BREAKPOINT.desktop) return 'standard'   // ≥1440
-  if (w >= BREAKPOINT.tablet)  return 'compact'     // 1280–1439
-  if (w >= BREAKPOINT.mobile)  return 'tablet'       // 1024–1279
-  return 'mobile'                                    // < 1024
-}
-
-function useBreakpoint(): Tier {
-  const [tier, setTier] = useState<Tier>(() => getTier(window.innerWidth))
-  useEffect(() => {
-    const onResize = () => setTier(getTier(window.innerWidth))
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
-  return tier
-}
+import { useBreakpoint } from '@/utils'
 
 // ─── ThreePanel ──────────────────────────────────────────────────────────
 interface ThreePanelProps {
