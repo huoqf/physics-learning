@@ -373,14 +373,12 @@ export function useElectricFieldPhysics(p: ElectricFieldPhysicsParams): Electric
   const chartProps = useMemo(() => {
     if (mode !== 0) return null
 
-    // 像素布局
-    const chartW = w * 0.16
-    const chartH = h * 0.3
-    const bottomY_E = h * 0.42
-    const bottomY_F = h * 0.84
-    const topY_E = bottomY_E - chartH
-    const topY_F = bottomY_F - chartH
-    const chartLeft = w * 0.7
+    // 像素布局：右侧图表区上下排列 E-r / F-r
+    const chartW = w * 0.36
+    const chartH = h * 0.45
+    const chartLeft = w * 0.62
+    const topY_E = h * 0.03
+    const topY_F = h * 0.53
 
     // 物理域
     const rMin = 1.0

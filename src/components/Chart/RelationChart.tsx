@@ -121,6 +121,15 @@ export interface RelationChartProps {
   underlay?: React.ReactNode
   /** 绘制在曲线上方的插件层（如微元切割、教学注释） */
   children?: React.ReactNode
+  /**
+   * 图表容器设计基准尺寸（透传给 BasePhysicsChart 的 initialSize）。
+   * 当图表嵌入 foreignObject 等小容器时，传入实际容器尺寸可避免 useCanvasSize
+   * 用默认 700×400 基准导致 scale 过小、字体被 clamp 到 7px。
+   * 不传则用 BasePhysicsChart 默认值。
+   */
+  initialSize?: { width: number; height: number }
+  /** 图表变体（standard / mini），透传给 BasePhysicsChart */
+  variant?: 'standard' | 'mini'
   /** 额外 className */
   className?: string
 }
@@ -460,6 +469,8 @@ export function RelationChart({
   strokeWidth,
   underlay,
   children,
+  initialSize,
+  variant,
   className = '',
 }: RelationChartProps) {
   const computedXDomain = useMemo((): [number, number] => {
@@ -494,8 +505,10 @@ export function RelationChart({
       xLabel={xLabel}
       yLabel={yLabel}
       title={title}
+      variant={variant}
       yBaseline={effectiveZeroLine ? 0 : undefined}
       showGrid={showGrid}
+      initialSize={initialSize}
       className={className}
     >
       <RCContent

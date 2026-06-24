@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ElectricFieldBasicScene.tsx — 基础模式场景（单电荷 + 试探电荷 + 图表）
  *
  * 从 ElectricField.tsx 拆分：mode=0 的中间屏渲染。
@@ -177,6 +177,8 @@ export function ElectricFieldBasicScene({
                 cursorLabel={(_x, y) => `E=${y.toExponential(2)}`}
                 color={PHYSICS_COLORS.electricField}
                 strokeWidth={1.8}
+                variant="mini"
+                initialSize={{ width: chartProps.chartW, height: chartProps.chartH }}
               />
             </div>
           </foreignObject>
@@ -198,6 +200,8 @@ export function ElectricFieldBasicScene({
                 cursorLabel={(_x, y) => `F=${y.toExponential(2)}`}
                 color={PHYSICS_COLORS.electricForce}
                 strokeWidth={1.8}
+                variant="mini"
+                initialSize={{ width: chartProps.chartW, height: chartProps.chartH }}
               />
             </div>
           </foreignObject>
