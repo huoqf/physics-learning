@@ -1,0 +1,213 @@
+import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_STYLE, FONT } from '@/theme/physics'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+import { RelationChart } from '@/components/Chart'
+import type { SceneScale } from '@/scene'
+import { MOMENTUM_LAYOUT } from './MomentumAnimation'
+
+interface MomentumSceneProps {
+  canvasSize: { width: number; height: number }
+  sceneScale: SceneScale
+  isAdvanced: boolean
+  showVectors: boolean
+  // 基础模式
+  m: number; v: number; p_basic: number; R_basic: number; basicBallX: number
+  ballCenterY: number; groundY: number
+  mapArrowLen: (val: number) => number
+  mapMomentumBarH: (pVal: number) => number
+  // 进阶模式
+  mA: number; mB: number
+  R_A: number; R_B: number
+  clampedPosAx: number; clampedPosBx: number
+  currentVA: number; currentVB: number
+  pA: number; pB: number; pTotal: number
+  EkA: number; EkB: number
+  xCm: number
+  hasCollided: boolean; collisionTime: number; time: number
+  // Ek-p 图
+  showEkCard: boolean
+  cardWidth: number; cardHeight: number; cardX: number; cardY: number
+  ekCurvePointsA: Array<{ x: number; y: number }>
+  ekCurvePointsB: Array<{ x: number; y: number }>
+  ekMax: number
+}
+
+export function MomentumScene({
+  canvasSize, sceneScale, isAdvanced, showVectors,
+  m, v, p_basic, R_basic, basicBallX, ballCenterY, groundY,
+  mapArrowLen, mapMomentumBarH,
+  mA, mB, R_A, R_B, clampedPosAx, clampedPosBx,
+  currentVA, currentVB, pA, pB, pTotal, EkA, EkB, xCm,
+  hasCollided, collisionTime, time,
+  showEkCard, cardWidth, cardHeight, cardX, cardY,
+  ekCurvePointsA, ekCurvePointsB, ekMax,
+}: MomentumSceneProps) {
+  return (
+    <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
+      <defs>
+        <radialGradient id="steel-sphere-grad-mom" cx="30%" cy="30%" r="70%">
+          <stop offset="0%" stopColor={SCENE_COLORS.materials.steelSphereGrad[0]} />
+          <stop offset="40%" stopColor={SCENE_COLORS.materials.steelSphereGrad[1]} />
+          <stop offset="80%" stopColor={SCENE_COLORS.materials.steelSphereGrad[2]} />
+          <stop offset="100%" stopColor={SCENE_COLORS.materials.steelSphereGrad[3]} />
+        </radialGradient>
+        <radialGradient id="steel-sphere-grad-mom-b" cx="30%" cy="30%" r="70%">
+          <stop offset="0%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[0]} />
+          <stop offset="40%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[1]} />
+          <stop offset="80%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[2]} />
+          <stop offset="100%" stopColor={SCENE_COLORS.materials.vacuumSphereGrad[3]} />
+        </radialGradient>
+      </defs>
+
+      {/* 地面 */}
+      <PhysicsGround
+        x={MOMENTUM_LAYOUT.canvasPadding} y={groundY}
+        width={canvasSize.width - MOMENTUM_LAYOUT.canvasPadding * 2}
+        appearance={{ showHatch: true }}
+        ruler={{ domain: [0, 100], showAxisArrow: true, axisLabel: isAdvanced ? 'x 正方向' : 'x', axisOffset: 20 }}
+      />
+
+      {/* 基础模式 */}
+      {!isAdvanced && (
+        <g>
+          <circle cx={basicBallX} cy={ballCenterY} r={R_basic}
+            fill="url(#steel-sphere-grad-mom)" stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
+            strokeWidth={CANVAS_STYLE.stroke.objectLine} />
+          <text x={basicBallX} y={ballCenterY - R_basic - 8} fontSize={FONT.bodySize}
+            fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
+            m = {m.toFixed(1)} kg
+          </text>
+          {showVectors && v > 0 && (
+            <VectorArrow origin={{ x: basicBallX + R_basic + 4, y: groundY - ballCenterY }}
+              vector={{ x: v, y: 0 }} type="velocity" sceneScale={sceneScale} />
+          )}
+          <g transform={`translate(${basicBallX + R_basic + mapArrowLen(v) + 30}, ${ballCenterY})`}>
+            <rect x={-MOMENTUM_LAYOUT.momentumBarWidth / 2} y={p_basic >= 0 ? -mapMomentumBarH(p_basic) : 0}
+              width={MOMENTUM_LAYOUT.momentumBarWidth} height={mapMomentumBarH(p_basic)}
+              fill={PHYSICS_COLORS.momentum} opacity={0.7} rx={3} />
+            <text x={0} y={p_basic >= 0 ? -mapMomentumBarH(p_basic) - 6 : mapMomentumBarH(p_basic) + 14}
+              fontSize={FONT.smallSize} fill={PHYSICS_COLORS.momentum} fontWeight="bold" textAnchor="middle">
+              p = {p_basic.toFixed(1)}
+            </text>
+          </g>
+        </g>
+      )}
+
+      {/* 进阶模式 */}
+      {isAdvanced && (
+        <g>
+          {/* A球 */}
+          <circle cx={clampedPosAx} cy={ballCenterY} r={R_A}
+            fill="url(#steel-sphere-grad-mom)" stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
+            strokeWidth={CANVAS_STYLE.stroke.objectLine} />
+          <text x={clampedPosAx} y={ballCenterY + 4} fontSize={FONT.smallSize} fill="white" textAnchor="middle" fontWeight="bold">A</text>
+          <text x={clampedPosAx} y={ballCenterY - R_A - 8} fontSize={FONT.axisSize}
+            fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
+            m_A = {mA.toFixed(1)} kg
+          </text>
+
+          {/* B球 */}
+          <circle cx={clampedPosBx} cy={ballCenterY} r={R_B}
+            fill="url(#steel-sphere-grad-mom-b)" stroke={SCENE_COLORS.materials.vacuumSphereGrad[2]}
+            strokeWidth={CANVAS_STYLE.stroke.objectLine} />
+          <text x={clampedPosBx} y={ballCenterY + 4} fontSize={FONT.smallSize} fill="white" textAnchor="middle" fontWeight="bold">B</text>
+          <text x={clampedPosBx} y={ballCenterY - R_B - 8} fontSize={FONT.axisSize}
+            fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
+            m_B = {mB.toFixed(1)} kg
+          </text>
+
+          {/* 质心 */}
+          <circle cx={xCm} cy={ballCenterY} r={4} fill={PHYSICS_COLORS.referencePoint}
+            stroke={PHYSICS_COLORS.referencePoint} strokeWidth={1} />
+          <text x={xCm} y={ballCenterY + 18} fontSize={FONT.smallSize}
+            fill={PHYSICS_COLORS.referencePoint} textAnchor="middle">质心</text>
+
+          {/* 碰撞闪光 */}
+          {hasCollided && Math.abs(time - collisionTime) < 0.3 && (
+            <circle cx={(clampedPosAx + clampedPosBx) / 2} cy={ballCenterY}
+              r={8 + (0.3 - Math.abs(time - collisionTime)) * 30}
+              fill={PHYSICS_COLORS.kineticEnergy} opacity={0.3} />
+          )}
+
+          {/* 速度/动量矢量 */}
+          {showVectors && (
+            <g>
+              {currentVA !== 0 && (
+                <VectorArrow origin={{ x: clampedPosAx, y: groundY - ballCenterY + R_A + 20 }}
+                  vector={{ x: currentVA, y: 0 }} type="velocity" sceneScale={sceneScale} />
+              )}
+              <text x={clampedPosAx + mapArrowLen(currentVA) * Math.sign(currentVA) / 2}
+                y={ballCenterY - R_A - 26} fontSize={FONT.smallSize}
+                fill={PHYSICS_COLORS.velocity} fontWeight="bold" textAnchor="middle">
+                v_A = {currentVA > 0 ? '+' : ''}{currentVA.toFixed(1)}
+              </text>
+
+              {currentVB !== 0 && (
+                <VectorArrow origin={{ x: clampedPosBx, y: groundY - ballCenterY + R_B + 20 }}
+                  vector={{ x: currentVB, y: 0 }} type="velocity" sceneScale={sceneScale}
+                  color={PHYSICS_COLORS.elasticForce} />
+              )}
+              <text x={clampedPosBx + mapArrowLen(currentVB) * Math.sign(currentVB) / 2}
+                y={ballCenterY - R_B - 26} fontSize={FONT.smallSize}
+                fill={PHYSICS_COLORS.elasticForce} fontWeight="bold" textAnchor="middle">
+                v_B = {currentVB > 0 ? '+' : ''}{currentVB.toFixed(1)}
+              </text>
+
+              {pA !== 0 && (
+                <VectorArrow origin={{ x: clampedPosAx, y: 0 }}
+                  vector={{ x: pA, y: 0 }} type="momentum" sceneScale={sceneScale} />
+              )}
+              <text x={clampedPosAx} y={groundY + MOMENTUM_LAYOUT.momentumAxisY - 6}
+                fontSize={FONT.smallSize} fill={PHYSICS_COLORS.momentum} textAnchor="middle">
+                p_A = {pA > 0 ? '+' : ''}{pA.toFixed(1)}
+              </text>
+
+              {pB !== 0 && (
+                <VectorArrow origin={{ x: clampedPosBx, y: 0 }}
+                  vector={{ x: pB, y: 0 }} type="momentum" sceneScale={sceneScale}
+                  color={PHYSICS_COLORS.impulse} />
+              )}
+              <text x={clampedPosBx} y={groundY + MOMENTUM_LAYOUT.momentumAxisY - 6}
+                fontSize={FONT.smallSize} fill={PHYSICS_COLORS.impulse} textAnchor="middle">
+                p_B = {pB > 0 ? '+' : ''}{pB.toFixed(1)}
+              </text>
+
+              {pTotal !== 0 && (
+                <VectorArrow origin={{ x: xCm, y: 0 }}
+                  vector={{ x: pTotal, y: 0 }} type="momentum" sceneScale={sceneScale} />
+              )}
+              <text x={xCm} y={groundY + MOMENTUM_LAYOUT.totalMomentumAxisY - 6}
+                fontSize={FONT.smallSize} fill={PHYSICS_COLORS.momentum} textAnchor="middle" fontWeight="bold">
+                p_总 = {pTotal > 0 ? '+' : ''}{pTotal.toFixed(1)}
+              </text>
+            </g>
+          )}
+        </g>
+      )}
+
+      {/* Ek-p 关系图 */}
+      {showEkCard && (
+        <g transform={`translate(${cardX}, ${cardY})`}>
+          <rect width={cardWidth} height={cardHeight} fill={SCENE_COLORS.labels.glassPanelBg}
+            rx={8} stroke={CHART_COLORS.axisLine} strokeWidth={0.8}
+            filter="drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12))" />
+          <foreignObject x={4} y={4} width={cardWidth - 8} height={cardHeight - 8}
+            style={{ pointerEvents: 'none' }}>
+            <div style={{ width: '100%', height: '100%' }}>
+              <RelationChart
+                points={ekCurvePointsA}
+                additionalSeries={[{ points: ekCurvePointsB, label: 'B球', series: 'secondary', strokeDasharray: [4, 3] }]}
+                xDomain={[0.5, 10]} yDomain={[0, ekMax * 1.15]}
+                xLabel="m (kg)" yLabel="E_k (J)" title="E_k = p²/(2m) 关系图"
+                color={PHYSICS_COLORS.momentum} strokeWidth={1.5} series="primary"
+                markers={[
+                  { axis: 'point', x: mA, y: EkA, label: 'A', color: PHYSICS_COLORS.momentum },
+                  { axis: 'point', x: mB, y: EkB, label: 'B', color: PHYSICS_COLORS.impulse },
+                ]} />
+            </div>
+          </foreignObject>
+        </g>
+      )}
+    </svg>
+  )
+}
