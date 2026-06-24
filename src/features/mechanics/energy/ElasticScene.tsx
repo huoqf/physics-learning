@@ -1,4 +1,4 @@
-import { PHYSICS_COLORS, SCENE_COLORS, STROKE, CHART_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, STROKE, CHART_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
@@ -33,9 +33,9 @@ export function ElasticScene({
       <PhysicsGround x={animLeft} y={groundY} width={animRight - animLeft} />
 
       {/* 左侧固定墙壁 */}
-      <rect x={animLeft} y={groundY - 60} width={15} height={60} fill={colors.neutral[300]} stroke={colors.neutral[400]} strokeWidth={1} />
+      <rect x={animLeft} y={groundY - 60} width={15} height={60} fill={CANVAS_COLORS.axis} stroke={CANVAS_COLORS.trackHistory} strokeWidth={1} />
       {Array.from({ length: 6 }).map((_, idx) => (
-        <line key={`wall-${idx}`} x1={animLeft} y1={groundY - 10 - idx * 10} x2={animLeft + 15} y2={groundY - 20 - idx * 10} stroke={colors.neutral[400]} strokeWidth={1} />
+        <line key={`wall-${idx}`} x1={animLeft} y1={groundY - 10 - idx * 10} x2={animLeft + 15} y2={groundY - 20 - idx * 10} stroke={CANVAS_COLORS.trackHistory} strokeWidth={1} />
       ))}
 
       {/* 平衡位置虚线 */}

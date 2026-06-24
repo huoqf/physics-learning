@@ -1,5 +1,4 @@
-import { PHYSICS_COLORS } from '@/theme/physics'
-import { colors } from '@/theme/colors'
+import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 
 interface EnergyBarChartProps {
   mode: number
@@ -24,7 +23,7 @@ export function EnergyBarChart({
         {mode === 0 ? 'W重 = -ΔEp 等价验证' : 'W弹 = -ΔEp 等价验证'}
       </text>
 
-      <line x1={chartLeft + 10} y1={barBaseY} x2={chartLeft + chartWidth * 0.6} y2={barBaseY} stroke={colors.neutral[400]} strokeWidth={0.8} />
+      <line x1={chartLeft + 10} y1={barBaseY} x2={chartLeft + chartWidth * 0.6} y2={barBaseY} stroke={CANVAS_COLORS.trackHistory} strokeWidth={0.8} />
 
       {/* W 柱 */}
       <rect x={chartLeft + chartWidth * 0.12} y={barBaseY - barW_H} width={chartWidth * 0.16} height={Math.max(barW_H, 0.5)} fill={PHYSICS_COLORS.work} opacity={0.85} rx={1} />
@@ -36,7 +35,7 @@ export function EnergyBarChart({
       </text>
 
       {/* = */}
-      <text x={chartLeft + chartWidth * 0.35} y={barBaseY - maxBarH * 0.4} fontSize={font(14)} fill={colors.neutral[600]} textAnchor="middle" fontWeight="bold">=</text>
+      <text x={chartLeft + chartWidth * 0.35} y={barBaseY - maxBarH * 0.4} fontSize={font(14)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">=</text>
 
       {/* -ΔEp 柱 */}
       <rect x={chartLeft + chartWidth * 0.42} y={barBaseY - barDeltaEp_H} width={chartWidth * 0.16} height={Math.max(barDeltaEp_H, 0.5)} fill={PHYSICS_COLORS.potentialEnergy} opacity={0.85} rx={1} />

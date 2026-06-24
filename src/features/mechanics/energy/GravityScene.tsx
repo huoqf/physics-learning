@@ -1,4 +1,4 @@
-import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, STROKE, DASH } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
@@ -31,7 +31,7 @@ export function GravityScene({
       />
 
       <line x1={animCenterX} y1={toPixelY(10.0)} x2={animCenterX} y2={groundY}
-        stroke={colors.neutral[200]} strokeWidth={1} strokeDasharray="3,3" />
+        stroke={CANVAS_COLORS.grid} strokeWidth={1} strokeDasharray="3,3" />
 
       <g>
         <line x1={animLeft} y1={toPixelY(y_ref)} x2={animRight} y2={toPixelY(y_ref)}
@@ -66,8 +66,8 @@ export function GravityScene({
 
       {[0, 2, 4, 6, 8, 10].map(h => (
         <g key={`ruler-${h}`}>
-          <line x1={animLeft} y1={toPixelY(h)} x2={animLeft + 8} y2={toPixelY(h)} stroke={colors.neutral[400]} strokeWidth={0.5} />
-          <text x={animLeft + 10} y={toPixelY(h) + 3} fontSize={font(7)} fill={colors.neutral[400]}>{h}m</text>
+          <line x1={animLeft} y1={toPixelY(h)} x2={animLeft + 8} y2={toPixelY(h)} stroke={CANVAS_COLORS.trackHistory} strokeWidth={0.5} />
+          <text x={animLeft + 10} y={toPixelY(h) + 3} fontSize={font(7)} fill={CANVAS_COLORS.trackHistory}>{h}m</text>
         </g>
       ))}
     </g>

@@ -4,8 +4,7 @@ import { useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { createSceneScale } from '@/scene'
-import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
-import { colors } from '@/theme/colors'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { KatexFormula } from '@/components/UI'
 import {
   precomputeGravityTrajectory,
@@ -185,7 +184,7 @@ export default function PotentialEnergyAnimation() {
         )}
 
         {/* 分隔线 */}
-        <line x1={dividerX} y1={padding} x2={dividerX} y2={canvasSize.height * 0.90} stroke={colors.neutral[200]} strokeWidth={1} />
+        <line x1={dividerX} y1={padding} x2={dividerX} y2={canvasSize.height * 0.90} stroke={CANVAS_COLORS.grid} strokeWidth={1} />
 
         {/* 右侧对比柱 */}
         <EnergyBarChart mode={mode} chartLeft={chartLeft} chartWidth={chartWidth}
@@ -200,13 +199,13 @@ export default function PotentialEnergyAnimation() {
           tMax={tMax} gravityMaxE={gravityMaxE} springMaxE={springMaxE} state={state} />
 
         {/* 底部标注 */}
-        <line x1={padding} y1={bottomY - 6} x2={canvasSize.width - padding} y2={bottomY - 6} stroke={colors.neutral[100]} strokeWidth={0.5} />
+        <line x1={padding} y1={bottomY - 6} x2={canvasSize.width - padding} y2={bottomY - 6} stroke={CANVAS_COLORS.grid} strokeWidth={0.5} />
         {bottomLabels.map((item, idx) => {
           const spacing = canvasSize.width / bottomLabels.length
           const cx = spacing * idx + spacing * 0.5
           return (
             <g key={`bottom-${idx}`}>
-              <text x={cx} y={bottomY + 4} fontSize={font(8)} fill={colors.neutral[500]} textAnchor="middle" fontWeight="semibold">{item.label}</text>
+              <text x={cx} y={bottomY + 4} fontSize={font(8)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle" fontWeight="semibold">{item.label}</text>
               <text x={cx} y={bottomY + 16} fontSize={font(9)} fill={item.color} textAnchor="middle" fontWeight="bold">{item.value}</text>
             </g>
           )
