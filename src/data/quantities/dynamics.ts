@@ -9,7 +9,7 @@ import {
   GRAVITY,
   calculateEarthGravity,
   calculateFrictionPullModel,
-  calculateFrictionInclineModel,
+  calculateDoubleFrictionIncline,
   calculateConnectedBody,
   calculateVectorAddition,
   calculateOrthogonalDecomposition,
@@ -127,12 +127,13 @@ export function buildDynamicsQuantities(
       if (mode === 0) {
         // 水平外力模型 (f-F)
         const F_applied = params.F_applied ?? 15
-        const { a, F_net, isSliding } = calculateFrictionPullModel(m, mu, F_applied, g)
+        const { a, F_net, isSliding, f_actual } = calculateFrictionPullModel(m, mu, F_applied, g)
 
         return {
           quantities: [
             ...base,
             { label: '运动状态', value: isSliding ? '匀加速滑动' : '静止', unit: '', highlight: isSliding ? 'positive' as const : 'zero' as const },
+            { label: '摩擦力 f', value: f_actual.toFixed(2), unit: 'N', highlight: f_actual > 0.05 ? 'positive' as const : 'zero' as const },
             { label: '合外力 F_合', value: F_net.toFixed(2), unit: 'N', highlight: F_net > 0.05 ? 'positive' as const : 'zero' as const },
             { label: '加速度 a', value: a.toFixed(2), unit: 'm/s²', highlight: a > 0.05 ? 'positive' as const : 'zero' as const },
           ],
@@ -149,27 +150,45 @@ export function buildDynamicsQuantities(
           ]
         }
       } else {
-        // 斜面倾角模型 (f-θ)
-        const angle = params.angle ?? 15
-        const { a, criticalAngle, isSliding } = calculateFrictionInclineModel(m, mu, angle, g)
+        // 双重摩擦力斜面模型 (f-θ)
+        const M = params.M ?? 10
+        const theta = params.angle ?? 15
+        const mu_1 = params.mu_1 ?? 0.3
+        const mu_2 = params.mu_2 ?? 0.2
+        const res = calculateDoubleFrictionIncline({ m, M, theta, mu_1, mu_2, g })
+
+        let stateStr = '完全静止'
+        let stateHighlight: 'zero' | 'positive' | 'extreme' = 'zero'
+        if (res.isBlockSliding && res.isInclineSliding) {
+          stateStr = '双加速错位滑动'
+          stateHighlight = 'extreme'
+        } else if (res.isBlockSliding) {
+          stateStr = '滑块滑动 / 斜面静止'
+          stateHighlight = 'positive'
+        }
+
+        const a1 = Math.sqrt(res.a_1x * res.a_1x + res.a_1y * res.a_1y)
 
         return {
           quantities: [
             ...base,
-            { label: '运动状态', value: isSliding ? '匀加速下滑' : '静止平衡', unit: '', highlight: isSliding ? 'positive' as const : 'zero' as const },
-            { label: '临界下滑角 θ_c', value: criticalAngle.toFixed(1), unit: '°', highlight: 'extreme' as const },
-            { label: '加速度 a', value: a.toFixed(2), unit: 'm/s²', highlight: a > 0.05 ? 'positive' as const : 'zero' as const },
+            { label: '运动状态', value: stateStr, unit: '', highlight: stateHighlight },
+            { label: '滑块对斜面摩擦力 f₁', value: res.f1.toFixed(2), unit: 'N', highlight: res.f1 > 0.05 ? 'positive' as const : 'zero' as const },
+            { label: '斜面所受地摩擦力 f₂', value: res.f2.toFixed(2), unit: 'N', highlight: res.f2 > 0.05 ? 'positive' as const : 'zero' as const },
+            { label: '斜面水平加速度 a_M', value: res.a_M.toFixed(2), unit: 'm/s²', highlight: res.a_M > 0.05 ? 'positive' as const : 'zero' as const },
+            { label: '滑块对地加速度 a₁', value: a1.toFixed(2), unit: 'm/s²', highlight: a1 > 0.05 ? 'positive' as const : 'zero' as const },
+            { label: '临界下滑角 θ_c', value: res.criticalAngle.toFixed(1), unit: '°', highlight: 'extreme' as const },
           ],
           formulas: [
-            { name: '斜面支持力', latex: 'F_N = mg\\cos\\theta', level: 'core' },
-            { name: '下滑重力分力', latex: 'G_x = mg\\sin\\theta', level: 'core' },
-            { name: '静止平衡', latex: 'f = G_x = mg\\sin\\theta', level: 'important', condition: '静止时' },
-            { name: '下滑滑动', latex: 'f = \\mu F_N = \\mu mg\\cos\\theta', level: 'important', condition: '滑动时' }
+            { name: '几何关联', latex: '\\tan\\theta = \\frac{a_{1y}}{a_{1x} + a_M}', level: 'core' },
+            { name: '竖直分解', latex: 'mg - F_{N1}\\cos\\theta - f_1\\sin\\theta = ma_{1y}', level: 'core', condition: '滑块沿y轴' },
+            { name: '水平分解', latex: 'F_{N1}\\sin\\theta - f_1\\cos\\theta = ma_{1x}', level: 'important', condition: '滑块沿x轴' },
+            { name: '斜面动力学', latex: 'F_{N1}\\sin\\theta - f_1\\cos\\theta - f_2 = Ma_M', level: 'important', condition: '斜面沿x轴' }
           ],
           gaokaoPoints: [
-            { text: '临界条件 tan θ_c = μ_s，超过后摩擦力突跳减小。', importance: 'gaokao' as const },
-            { text: '静止时 f 随 θ 增大（正弦）；滑动时 f 随 θ 增大而减小（余弦）。', importance: 'hard' as const },
-            { text: '若 μ ≥ tan θ，物体无论如何释放均不下滑。', importance: 'hard' as const }
+            { text: '临界条件 tan θ_c = 1.12 μ₁，超过后滑块在斜面上滑动并突跳减小。', importance: 'gaokao' as const },
+            { text: '当滑块给斜面的水平推力大于地面最大静摩擦力时，斜面体同步向右加速运动。', importance: 'hard' as const },
+            { text: '解答摩擦力多体系统必须建立地面系惯性参考坐标系进行正交分解。', importance: 'core' as const }
           ]
         }
       }

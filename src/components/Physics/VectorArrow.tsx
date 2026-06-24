@@ -25,6 +25,10 @@ interface VectorArrowProps {
   pixelLength?: number
   /** 自定义参考量级（覆盖 sceneScale.refMagnitudes[type]） */
   refMagnitude?: number
+  /** 矢量符号名称标签 */
+  label?: string
+  /** 是否使用虚线箭头 */
+  dashed?: boolean
 }
 
 function perpendicular(v: Vector2): Vector2 {
@@ -49,6 +53,8 @@ export function VectorArrow({
   strokeWidth,
   pixelLength: overrideLength,
   refMagnitude: overrideRefMag,
+  label,
+  dashed,
 }: VectorArrowProps) {
   if (magnitude(vector) === 0) return null;
 
@@ -80,6 +86,26 @@ export function VectorArrow({
   const fillColor = color ?? VECTOR_COLORS[type];
   const stroke = strokeWidth ?? Math.max(3, totalLength * 0.04);
 
+  const pxDirX = dir.x;
+  const pxDirY = -dir.y;
+
+  let textAnchor: 'start' | 'end' | 'middle' = 'middle';
+  if (pxDirX > 0.3) {
+    textAnchor = 'start';
+  } else if (pxDirX < -0.3) {
+    textAnchor = 'end';
+  }
+
+  let dy = '0.35em';
+  if (pxDirY > 0.5) {
+    dy = '1em';
+  } else if (pxDirY < -0.5) {
+    dy = '-0.3em';
+  }
+
+  const textX = tipX + pxDirX * 10;
+  const textY = tipY + pxDirY * 10;
+
   return (
     <g>
       {lineLen > 0 && (
@@ -91,12 +117,26 @@ export function VectorArrow({
           stroke={fillColor}
           strokeWidth={stroke}
           strokeLinecap="round"
+          {...(dashed ? { strokeDasharray: '4 4' } : {})}
         />
       )}
       <polygon
         points={`${baseLeftX},${baseLeftY} ${tipX},${tipY} ${baseRightX},${baseRightY}`}
         fill={fillColor}
       />
+      {label && (
+        <text
+          x={textX}
+          y={textY}
+          fill={fillColor}
+          fontSize={11}
+          fontWeight="bold"
+          textAnchor={textAnchor}
+          dy={dy}
+        >
+          {label}
+        </text>
+      )}
     </g>
   );
 }

@@ -1,15 +1,14 @@
 import { FC, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, CHART_COLORS } from '@/theme/physics'
 import { useAnimationStore } from '@/stores'
-import { calculateFrictionPullModel, calculateFrictionInclineModel } from '@/physics'
+import { calculateFrictionPullModel, calculateDoubleFrictionIncline } from '@/physics'
 import { GRAVITY } from '@/physics/constants'
-import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { MiniChart } from '@/components/UI'
 
 export const FrictionCenterExtra: FC = () => {
-    const [containerRef, canvasSize] = useCanvasSize({ width: 400, height: 200 })
-    const { font } = canvasSize
-    const params = useAnimationStore((s) => s.params)
+  const [containerRef, canvasSize] = useCanvasSize({ width: 400, height: 200 })
+  const params = useAnimationStore((s) => s.params)
 
   const mode = params.mode ?? 0
   const m = params.m ?? 5
@@ -17,229 +16,119 @@ export const FrictionCenterExtra: FC = () => {
   const g = params.g ?? GRAVITY
   const F_applied = params.F_applied ?? 15
   const angle = params.angle ?? 15
+  const M = params.M ?? 10
+  const mu_1 = params.mu_1 ?? 0.3
+  const mu_2 = params.mu_2 ?? 0.2
 
   const pullResult = calculateFrictionPullModel(m, mu, F_applied, g)
-  const inclineResult = calculateFrictionInclineModel(m, mu, angle, g)
+  const inclineResult = calculateDoubleFrictionIncline({ m, M, theta: angle, mu_1, mu_2, g })
 
-  const margin = { left: 18, right: 14, top: 18, bottom: 18 }
-  const plotW = 100 - margin.left - margin.right
-  const plotH = 100 - margin.top - margin.bottom
-  const originX = margin.left
-  const originY = margin.top + plotH
+  // 1. 基础模式点集：外力 F 从 0 到 45 N
+  const pullPoints = useMemo(() => {
+    if (mode !== 0) return []
+    const data = []
+    const f_max = 1.12 * mu * m * g
+    const f_slip = mu * m * g
+    const step = 0.5
+    const limit = 45
 
-  const model1Data = useMemo(() => {
-    if (mode !== 0) return null
-    const { f_max, f_slip, f_actual, isSliding } = calculateFrictionPullModel(m, mu, F_applied, g)
-    const toSvgX = (F: number) => originX + (F / 60) * plotW
-    const toSvgY = (f: number) => originY - (f / 40) * plotH
-    const p0 = `${toSvgX(0)},${toSvgY(0)}`
-    const p1 = `${toSvgX(f_max)},${toSvgY(f_max)}`
-    const p2 = `${toSvgX(f_max + 0.1)},${toSvgY(f_slip)}`
-    const p3 = `${toSvgX(60)},${toSvgY(f_slip)}`
-    const linePath = `M ${p0} L ${p1} L ${p2} L ${p3}`
-    return { f_max, f_slip, f_actual, isSliding, toSvgX, toSvgY, linePath }
-  }, [mode, m, mu, g, F_applied])
-
-  const model2Data = useMemo(() => {
-    if (mode !== 1) return null
-    const { criticalAngle, f_actual, isSliding } = calculateFrictionInclineModel(m, mu, angle, g)
-    const toSvgX = (deg: number) => originX + (deg / 90) * plotW
-    const toSvgY = (f: number) => originY - (f / 40) * plotH
-    const points: string[] = []
-    const step = 1.5
-    for (let deg = 0; deg <= 90; deg += step) {
-      const { f_actual: fVal, f_max, f_slip } = calculateFrictionInclineModel(m, mu, deg, g)
-      if (Math.abs(deg - criticalAngle) < step) {
-        // 临界角处绘制突跳：从最大静摩擦力降到滑动摩擦力
-        points.push(`${toSvgX(criticalAngle - 0.1)},${toSvgY(f_max)}`)
-        points.push(`${toSvgX(criticalAngle + 0.1)},${toSvgY(f_slip)}`)
-      } else {
-        points.push(`${toSvgX(deg)},${toSvgY(fVal)}`)
-      }
+    // 静摩擦递增段
+    for (let F = 0; F < f_max; F += step) {
+      data.push({ F, f: F })
     }
-    const linePath = `M ` + points.join(' L ')
-    return { criticalAngle, f_actual, isSliding, toSvgX, toSvgY, linePath }
-  }, [mode, m, mu, g, angle])
+    // 精确的突变临界点前
+    data.push({ F: f_max - 0.001, f: f_max })
+    // 精确的突变临界点后
+    data.push({ F: f_max + 0.001, f: f_slip })
+    // 滑动摩擦段
+    for (let F = f_max + 0.5; F <= limit; F += step) {
+      data.push({ F, f: f_slip })
+    }
+    return data
+  }, [mode, m, mu, g])
 
-  const fs = 3.6
-  const sfs = 2.8
+  // 2. 进阶模式点集：倾角 theta 从 0 到 90 度
+  const inclinePoints = useMemo(() => {
+    if (mode !== 1) return []
+    const data = []
+    const step = 1.0
 
-  // 浮动状态卡片数据
-  const statusCard = mode === 0 ? {
-    title: '水平拉力模型',
-    items: [
-      { label: '状态', value: pullResult.isSliding ? '滑动' : '静止', color: pullResult.isSliding ? 'text-amber-600' : 'text-emerald-600' },
-      { label: '摩擦力 f', value: `${pullResult.f_actual.toFixed(1)} N` },
-      { label: '加速度 a', value: `${pullResult.a.toFixed(2)} m/s²` },
-    ]
-  } : {
-    title: '斜面倾角模型',
-    items: [
-      { label: '状态', value: inclineResult.isSliding ? '下滑' : '静止', color: inclineResult.isSliding ? 'text-amber-600' : 'text-emerald-600' },
-      { label: '摩擦力 f', value: `${inclineResult.f_actual.toFixed(1)} N` },
-      { label: '临界角 θ_c', value: `${inclineResult.criticalAngle.toFixed(1)}°` },
-    ]
-  }
+    // 计算临界角
+    const mu_1_static = 1.12 * mu_1
+    const criticalAngleRad = Math.atan(mu_1_static)
+    const criticalAngle = (criticalAngleRad * 180) / Math.PI
+
+    for (let theta = 0; theta <= 90; theta += step) {
+      // 临界段点集插值，展示明显的突跃
+      if (theta > criticalAngle - step && theta < criticalAngle) {
+        const resMinus = calculateDoubleFrictionIncline({ m, M, theta: criticalAngle - 0.001, mu_1, mu_2, g })
+        data.push({ theta: criticalAngle - 0.001, f1: resMinus.f1, f2: resMinus.f2 })
+
+        const resPlus = calculateDoubleFrictionIncline({ m, M, theta: criticalAngle + 0.001, mu_1, mu_2, g })
+        data.push({ theta: criticalAngle + 0.001, f1: resPlus.f1, f2: resPlus.f2 })
+      }
+      const res = calculateDoubleFrictionIncline({ m, M, theta, mu_1, mu_2, g })
+      data.push({ theta, f1: res.f1, f2: res.f2 })
+    }
+    return data.sort((a, b) => a.theta - b.theta)
+  }, [mode, m, M, mu_1, mu_2, g])
+
+  // 动态图表纵轴上限计算
+  const yMax = useMemo(() => {
+    if (mode === 0) {
+      const f_max = 1.12 * mu * m * g
+      return Math.max(20, Math.ceil(f_max * 1.25))
+    } else {
+      const maxFVal = Math.max(m * g, M * g)
+      return Math.max(15, Math.ceil(maxFVal * 1.15))
+    }
+  }, [mode, m, M, mu, g])
 
   return (
-    <div ref={containerRef} className="w-full h-full flex gap-3 px-1.5 py-1.5 border-b border-neutral-200/60 bg-neutral-50/50">
-      {/* 全宽图表区域 */}
-      <div className="flex-1 bg-white rounded-xl shadow-sm p-3 border border-neutral-100 flex items-center justify-center min-w-0 relative">
-        <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
-          <defs>
-            <VectorDefs colors={[PHYSICS_COLORS.labelText]} />
-          </defs>
-
-          {/* 标题 */}
-          <text x={margin.left} y={margin.top - 7} fontSize={fs} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
-            {mode === 0 ? 'f - F 图像' : 'f - θ 图像'}
-          </text>
-
-          {/* Y轴网格 */}
-          {[10, 20, 30].map((val) => {
-            const y = mode === 0 ? model1Data!.toSvgY(val) : model2Data!.toSvgY(val)
-            return (
-              <line
-                key={`grid-y-${val}`}
-                x1={originX} y1={y} x2={originX + plotW} y2={y}
-                stroke={PHYSICS_COLORS.grid} strokeWidth={0.25} strokeDasharray="1,1"
-              />
-            )
-          })}
-          {/* X轴网格 */}
-          {mode === 0 ? (
-            [15, 30, 45].map((val) => {
-              const x = model1Data!.toSvgX(val)
-              return (
-                <line
-                  key={`grid-x-mode1-${val}`}
-                  x1={x} y1={margin.top} x2={x} y2={originY}
-                  stroke={PHYSICS_COLORS.grid} strokeWidth={0.25} strokeDasharray="1,1"
-                />
-              )
-            })
-          ) : (
-            [30, 60].map((val) => {
-              const x = model2Data!.toSvgX(val)
-              return (
-                <line
-                  key={`grid-x-mode2-${val}`}
-                  x1={x} y1={margin.top} x2={x} y2={originY}
-                  stroke={PHYSICS_COLORS.grid} strokeWidth={0.25} strokeDasharray="1,1"
-                />
-              )
-            })
-          )}
-
-          {/* 坐标轴 */}
-          <line x1={originX - 2} y1={originY} x2={originX + plotW + 3} y2={originY}
-            stroke={PHYSICS_COLORS.labelText} strokeWidth={0.4} markerEnd="url(#arrow-medium-1E293B)" />
-          <line x1={originX} y1={originY + 2} x2={originX} y2={margin.top - 3}
-            stroke={PHYSICS_COLORS.labelText} strokeWidth={0.4} markerEnd="url(#arrow-medium-1E293B)" />
-
-          <text x={originX + plotW + 4} y={originY + 1.2} fontSize={fs} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
-            {mode === 0 ? 'F (N)' : 'θ (°)'}
-          </text>
-          <text x={originX - 5} y={margin.top - 4} fontSize={fs} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
-            f (N)
-          </text>
-
-          {/* 刻度值 */}
-          {[10, 20, 30].map((val) => {
-            const y = mode === 0 ? model1Data!.toSvgY(val) : model2Data!.toSvgY(val)
-            return (
-              <g key={`tick-y-${val}`}>
-                <line x1={originX - 1} y1={y} x2={originX} y2={y} stroke={PHYSICS_COLORS.labelText} strokeWidth={0.3} />
-                <text x={originX - 2.5} y={y + 1} fontSize={sfs} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end" fontFamily="monospace">{val}</text>
-              </g>
-            )
-          })}
-          {mode === 0 ? (
-            [15, 30, 45, 60].map((val) => {
-              const x = model1Data!.toSvgX(val)
-              return (
-                <g key={`tick-x-m1-${val}`}>
-                  <line x1={x} y1={originY} x2={x} y2={originY + 1} stroke={PHYSICS_COLORS.labelText} strokeWidth={0.3} />
-                  <text x={x} y={originY + 4.2} fontSize={sfs} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontFamily="monospace">{val}</text>
-                </g>
-              )
-            })
-          ) : (
-            [30, 60, 90].map((val) => {
-              const x = model2Data!.toSvgX(val)
-              return (
-                <g key={`tick-x-m2-${val}`}>
-                  <line x1={x} y1={originY} x2={x} y2={originY + 1} stroke={PHYSICS_COLORS.labelText} strokeWidth={0.3} />
-                  <text x={x} y={originY + 4.2} fontSize={sfs} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontFamily="monospace">{val}</text>
-                </g>
-              )
-            })
-          )}
-          <text x={originX - 2.5} y={originY + 3.5} fontSize={sfs} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">0</text>
-
-          {/* 曲线 */}
-          {mode === 0 && model1Data && (
-            <path d={model1Data.linePath} fill="none" stroke={PHYSICS_COLORS.friction} strokeWidth={0.7} />
-          )}
-          {mode === 1 && model2Data && (
-            <path d={model2Data.linePath} fill="none" stroke={PHYSICS_COLORS.friction} strokeWidth={0.7} />
-          )}
-
-          {/* 游标 */}
-          {mode === 0 && model1Data && (
-            <g>
-              <line x1={model1Data.toSvgX(F_applied)} y1={originY} x2={model1Data.toSvgX(F_applied)} y2={model1Data.toSvgY(model1Data.f_actual)}
-                stroke={PHYSICS_COLORS.axis} strokeWidth={0.25} strokeDasharray="1,1" />
-              <line x1={originX} y1={model1Data.toSvgY(model1Data.f_actual)} x2={model1Data.toSvgX(F_applied)} y2={model1Data.toSvgY(model1Data.f_actual)}
-                stroke={PHYSICS_COLORS.friction} strokeWidth={0.25} strokeDasharray="1,1" />
-              <line x1={model1Data.toSvgX(model1Data.f_max)} y1={margin.top} x2={model1Data.toSvgX(model1Data.f_max)} y2={originY}
-                stroke={PHYSICS_COLORS.frictionStatic} strokeWidth={0.3} strokeDasharray="2,2" opacity={0.5} />
-              <text x={model1Data.toSvgX(model1Data.f_max) + 1.5} y={margin.top + 5} fontSize={font(2.5)} fill={PHYSICS_COLORS.frictionStatic} fontWeight="bold">
-                f_max
-              </text>
-              <circle cx={model1Data.toSvgX(F_applied)} cy={model1Data.toSvgY(model1Data.f_actual)} r={2.2} fill={PHYSICS_COLORS.friction} opacity={0.25} />
-              <circle cx={model1Data.toSvgX(F_applied)} cy={model1Data.toSvgY(model1Data.f_actual)} r={1.2} fill={PHYSICS_COLORS.friction} />
-              <text x={model1Data.toSvgX(F_applied) + 3} y={model1Data.toSvgY(model1Data.f_actual) - 2} fontSize={font(3.2)} fill={PHYSICS_COLORS.friction} fontWeight="bold">
-                {model1Data.isSliding ? '滑动' : '静摩擦'} f = {model1Data.f_actual.toFixed(1)} N
-              </text>
-            </g>
-          )}
-
-          {mode === 1 && model2Data && (
-            <g>
-              <line x1={model2Data.toSvgX(angle)} y1={originY} x2={model2Data.toSvgX(angle)} y2={model2Data.toSvgY(model2Data.f_actual)}
-                stroke={PHYSICS_COLORS.axis} strokeWidth={0.25} strokeDasharray="1,1" />
-              <line x1={originX} y1={model2Data.toSvgY(model2Data.f_actual)} x2={model2Data.toSvgX(angle)} y2={model2Data.toSvgY(model2Data.f_actual)}
-                stroke={PHYSICS_COLORS.friction} strokeWidth={0.25} strokeDasharray="1,1" />
-              <line x1={model2Data.toSvgX(model2Data.criticalAngle)} y1={margin.top} x2={model2Data.toSvgX(model2Data.criticalAngle)} y2={originY}
-                stroke={PHYSICS_COLORS.frictionStatic} strokeWidth={0.3} strokeDasharray="2,2" opacity={0.5} />
-              <text x={model2Data.toSvgX(model2Data.criticalAngle) + 1.5} y={margin.top + 5} fontSize={font(2.5)} fill={PHYSICS_COLORS.frictionStatic} fontWeight="bold">
-                θ_c ≈ {model2Data.criticalAngle.toFixed(1)}°
-              </text>
-              <circle cx={model2Data.toSvgX(angle)} cy={model2Data.toSvgY(model2Data.f_actual)} r={2.2} fill={PHYSICS_COLORS.friction} opacity={0.25} />
-              <circle cx={model2Data.toSvgX(angle)} cy={model2Data.toSvgY(model2Data.f_actual)} r={1.2} fill={PHYSICS_COLORS.friction} />
-              <text x={model2Data.toSvgX(angle) + (angle > 50 ? -28 : 3)} y={model2Data.toSvgY(model2Data.f_actual) - 2} fontSize={font(3.2)} fill={PHYSICS_COLORS.friction} fontWeight="bold">
-                {model2Data.isSliding ? '滑动' : '静摩擦'} f = {model2Data.f_actual.toFixed(1)} N
-              </text>
-            </g>
-          )}
-        </svg>
-
-        {/* 浮动状态卡片 */}
-        <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-lg border border-neutral-100 shadow-sm px-3 py-2">
-          <div style={{ fontSize: font(10) }} className="font-bold text-neutral-400 uppercase tracking-wider mb-1">
-            {statusCard.title}
-          </div>
-          <div className="flex flex-col gap-0.5">
-            {statusCard.items.map((item, i) => (
-              <div key={i} style={{ fontSize: font(11) }} className="flex items-center justify-between gap-3">
-                <span className="text-neutral-500">{item.label}</span>
-                <span className={`font-bold ${item.color || 'text-neutral-800'}`}>{item.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+    <div ref={containerRef} className="w-full h-full p-2 border-b border-neutral-200/60 bg-neutral-50/50 flex items-center justify-center">
+      {mode === 0 ? (
+        <MiniChart
+          title="f - F 关系图像"
+          xMin={0}
+          xMax={45}
+          yMin={0}
+          yMax={yMax}
+          points={pullPoints}
+          xKey="F"
+          xLabel="外拉力 F (N)"
+          yLabel="摩擦力 f (N)"
+          lines={[
+            { key: 'f', color: PHYSICS_COLORS.friction, name: '摩擦力 f' }
+          ]}
+          currentVals={{ f: pullResult.f_actual }}
+          currentXVal={F_applied}
+          staticLines={[
+            { value: pullResult.f_max, color: CHART_COLORS.criticalPt, strokeDasharray: '3,3', name: '最大静摩擦力 f_max' }
+          ]}
+          minWidth={canvasSize.width - 24}
+          minHeight={canvasSize.height - 24}
+        />
+      ) : (
+        <MiniChart
+          title="f - θ 关系图像 (双曲线)"
+          xMin={0}
+          xMax={90}
+          yMin={0}
+          yMax={yMax}
+          points={inclinePoints}
+          xKey="theta"
+          xLabel="倾角 θ (°)"
+          yLabel="摩擦力 f (N)"
+          lines={[
+            { key: 'f1', color: PHYSICS_COLORS.friction, name: '滑块摩擦力 f₁' },
+            { key: 'f2', color: PHYSICS_COLORS.appliedForce, name: '地面摩擦力 f₂' }
+          ]}
+          currentVals={{ f1: inclineResult.f1, f2: inclineResult.f2 }}
+          currentXVal={angle}
+          minWidth={canvasSize.width - 24}
+          minHeight={canvasSize.height - 24}
+        />
+      )}
     </div>
   )
 }

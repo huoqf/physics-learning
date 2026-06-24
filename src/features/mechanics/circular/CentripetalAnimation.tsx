@@ -1,9 +1,9 @@
-﻿import { useCanvasSize, physicsToCanvasWithOrigin } from '@/utils'
+import { useCanvasSize, physicsToCanvas } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import React, { useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { calculateCircularMotion } from '@/physics'
+import { calculateCircularMotion, precomputeVerticalCircularMotion, GRAVITY } from '@/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { RelationChart } from '@/components/Chart'
 import { createSceneScale } from '@/scene'
@@ -14,13 +14,12 @@ import {
   CHART_COLORS,
   CANVAS_STYLE,
   STROKE,
-  FONT,
   DASH,
 } from '@/theme/physics'
 
 /** 向心加速度动画参数范围（滑块边界） */
 const CENTRIPETAL_PARAM_BOUNDS = {
-  rMin: 1, rMax: 5,
+  rMin: 3, rMax: 5,
   vMin: 1, vMax: 10,
   mMin: 1, mMax: 5,
 } as const
@@ -46,9 +45,9 @@ const CENTRIPETAL_LAYOUT = {
   /** 质量缩放半径系数 (px/kg) */
   massRadiusScale: 1.5,
   /** 波形卡片最小宽度 (px) */
-  waveCardMinWidth: 220,
+  waveCardMinWidth: 260,
   /** 波形卡片最小高度 (px) */
-  waveCardMinHeight: 150,
+  waveCardMinHeight: 180,
   /** 波形卡片右侧偏移 (px) */
   waveCardRightOffset: 20,
   /** 波形卡片内边距 */
@@ -61,67 +60,124 @@ const CENTRIPETAL_LAYOUT = {
   axisExtension: 30,
 } as const
 
+const SIMULATION_DT = 0.002 // 2ms step for extremely smooth movement and collision
+
 export default function CentripetalAnimation() {
-    const {params, time, showVectors, showGrid, setIsPlaying, updateParam} = useAnimationStore(
+  const { params, time, showVectors, setIsPlaying, updateParam } = useAnimationStore(
     useShallow((s) => ({
-    params: s.params,
-    time: s.time,
-    showVectors: s.showVectors,
-    showGrid: s.showGrid,
-    setIsPlaying: s.setIsPlaying,
-    updateParam: s.updateParam,
+      params: s.params,
+      time: s.time,
+      showVectors: s.showVectors,
+      setIsPlaying: s.setIsPlaying,
+      updateParam: s.updateParam,
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.square)
-  // canvasSize.font removed: chart text now handled by RelationChart
 
   const {
-    r = 2,
+    r = 3,
     v = 3,
+    v0 = 5,
     m = 1,
     advancedMode = 0,
     showWaveform = 1,
+    trackType = 0,
   } = params
 
+  const isAdvanced = advancedMode === 1
+  const showFaCard = !isAdvanced && showWaveform === 1
+
+  // ── 2. 进阶模式下的竖直圆仿真 ──────────────────────────
+  const { trajectory } = useMemo(() => {
+    return precomputeVerticalCircularMotion(r, v0, m, trackType)
+  }, [r, v0, m, trackType])
+
+  const currentPoint = useMemo(() => {
+    if (!isAdvanced) return null
+    const idx = Math.round(time / SIMULATION_DT)
+    const clamped = Math.max(0, Math.min(trajectory.length - 1, idx))
+    return trajectory[clamped]
+  }, [isAdvanced, trajectory, time])
+
+  const activeTrajectory = useMemo(() => {
+    if (!isAdvanced) return []
+    const idx = Math.round(time / SIMULATION_DT)
+    const clamped = Math.max(0, Math.min(trajectory.length - 1, idx))
+    return trajectory.slice(0, clamped + 1)
+  }, [isAdvanced, trajectory, time])
+
+  // 基础模式解析解
   const omega = v / r
   const a_c = (v * v) / r
   const F_c = m * a_c
 
-  const { x, y } = calculateCircularMotion(r, omega, time)
+  const basicMotion = useMemo(() => {
+    return calculateCircularMotion(r, omega, time)
+  }, [r, omega, time])
 
-  // ── 1. 自适应比例尺（消除越界 Bug） ──────────────────────────
-  const centerX = canvasSize.width / 2
-  const centerY = canvasSize.height / 2
-  const rMax = CENTRIPETAL_LAYOUT.rMax
+  // 当前小球物理坐标
+  const x = isAdvanced && currentPoint ? currentPoint.x : basicMotion.x
+  const y = isAdvanced && currentPoint ? currentPoint.y : basicMotion.y
+
+  // ── 3. 自适应比例尺（消除越界 Bug） ──────────────────────────
   const minCanvasDim = Math.min(canvasSize.width, canvasSize.height)
-  const scale = (minCanvasDim - CENTRIPETAL_LAYOUT.canvasPadding) / (2 * rMax)
+  const scale = (minCanvasDim - CENTRIPETAL_LAYOUT.canvasPadding) / (2 * CENTRIPETAL_LAYOUT.rMax)
 
-  const ballPos = physicsToCanvasWithOrigin(x, y, centerX, centerY, scale)
+  // 统一通过 physicsToCanvas() 进行坐标转换，原点定位在画布中心
+  const ballPos = physicsToCanvas(x, y, canvasSize.width, canvasSize.height, scale)
+  const centerPos = physicsToCanvas(0, 0, canvasSize.width, canvasSize.height, scale)
+  const centerX = centerPos.cx
+  const centerY = centerPos.cy
 
-  const sceneConfig = useMemo((): SceneConfig => ({
-    vectorBounds: {
-      x: 0,
-      y: 0,
-      width: canvasSize.width - CENTRIPETAL_LAYOUT.canvasPadding,
-      height: canvasSize.height - CENTRIPETAL_LAYOUT.canvasPadding,
-    },
-    originX: centerX,
-    originY: centerY,
-    worldWidth: (canvasSize.width - CENTRIPETAL_LAYOUT.canvasPadding) / scale,
-    worldHeight: (canvasSize.height - CENTRIPETAL_LAYOUT.canvasPadding) / scale,
-    refMagnitudes: {
-      velocity: CENTRIPETAL_CHART_RANGE.vMax,
-      acceleration: CENTRIPETAL_CHART_RANGE.aMax,
-      force: CENTRIPETAL_CHART_RANGE.fMax,
-    },
-  }), [canvasSize.width, canvasSize.height, centerX, centerY, rMax, scale]);
+  const sceneConfig = useMemo((): SceneConfig => {
+    // 基础模式自适应基准
+    const basicRefV = Math.max(v * 1.4, 4.0)
+    const basicRefA = Math.max(a_c, 4.0)
+    const basicRefF = Math.max(F_c, 5.0)
 
-  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
+    // 进阶模式自适应基准 (力统一以最低点支持力大小为基准，保障比例保真)
+    const advRefV = Math.max(v0 * 1.4, 6.0)
+    const advRefA = Math.max((v0 * v0) / r, 10.0)
+    const advRefF = Math.max(m * GRAVITY + (m * v0 * v0) / r, 15.0)
 
-  const isAdvanced = advancedMode === 1
-  const showFaCard = isAdvanced && showWaveform === 1
+    return {
+      vectorBounds: {
+        x: 0,
+        y: 0,
+        width: canvasSize.width - CENTRIPETAL_LAYOUT.canvasPadding,
+        height: canvasSize.height - CENTRIPETAL_LAYOUT.canvasPadding,
+      },
+      originX: centerX,
+      originY: centerY,
+      worldWidth: (canvasSize.width - CENTRIPETAL_LAYOUT.canvasPadding) / scale,
+      worldHeight: (canvasSize.height - CENTRIPETAL_LAYOUT.canvasPadding) / scale,
+      refMagnitudes: {
+        velocity: isAdvanced ? advRefV : basicRefV,
+        acceleration: isAdvanced ? advRefA : basicRefA,
+        force: isAdvanced ? advRefF : basicRefF,
+        gravity: isAdvanced ? advRefF : basicRefF,
+        normalForce: isAdvanced ? advRefF : basicRefF,
+        tension: isAdvanced ? advRefF : basicRefF,
+      },
+    }
+  }, [
+    canvasSize.width,
+    canvasSize.height,
+    centerX,
+    centerY,
+    scale,
+    isAdvanced,
+    v,
+    v0,
+    r,
+    m,
+    a_c,
+    F_c,
+  ])
 
-  // ── 3. 右上角悬浮 F-a 画中画卡片定位 ─────────────────────
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig])
+
+  // ── 4. 右上角悬浮卡片定位 ─────────────────────
   const cardWidth = Math.max(CENTRIPETAL_LAYOUT.waveCardMinWidth, canvasSize.width * 0.35)
   const cardHeight = Math.max(CENTRIPETAL_LAYOUT.waveCardMinHeight, canvasSize.height * 0.3)
   const cardX = canvasSize.width - cardWidth - CENTRIPETAL_LAYOUT.waveCardRightOffset
@@ -130,7 +186,7 @@ export default function CentripetalAnimation() {
   const cardInnerPad = CENTRIPETAL_LAYOUT.waveCardPadding
   const cardInnerW = cardWidth - cardInnerPad.left - cardInnerPad.right
 
-  // ── 4. RelationChart 数据：F=ma 线性曲线 ──────────────────
+  // ── 5. RelationChart 数据：F=ma 线性曲线 ──────────────────
   const faPoints = useMemo(
     () => [
       { x: 0, y: 0 },
@@ -139,7 +195,7 @@ export default function CentripetalAnimation() {
     [m],
   )
 
-  // ── 5. 右上角图表手势拖拽联动 ─────────────────────────────
+  // ── 6. 右上角图表手势拖拽联动 ─────────────────────────────
   const isDraggingRef = useRef(false)
 
   const handleDragTime = useCallback(
@@ -181,47 +237,8 @@ export default function CentripetalAnimation() {
     [handleDragTime]
   )
 
-  // ── 6. 辐射网格背景 ──────────────────────────────────────
-  const gridBackground = useMemo(() => {
-    if (!showGrid) return null
-    const elements: React.ReactElement[] = []
-    const gridLayers = CENTRIPETAL_LAYOUT.gridLayers
-    for (let i = 1; i <= gridLayers; i++) {
-      const radiusPhys = (rMax / gridLayers) * i
-      elements.push(
-        <circle
-          key={`grid-circle-${i}`}
-          cx={centerX}
-          cy={centerY}
-          r={radiusPhys * scale}
-          fill="none"
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={STROKE.grid}
-          strokeDasharray={DASH.axis.join(' ')}
-        />
-      )
-    }
-    for (let deg = 0; deg < 360; deg += CENTRIPETAL_LAYOUT.gridAngleStep) {
-      const rad = (deg * Math.PI) / 180
-      const rayEnd = physicsToCanvasWithOrigin(rMax * Math.cos(rad), rMax * Math.sin(rad), centerX, centerY, scale)
-      elements.push(
-        <line
-          key={`grid-ray-${deg}`}
-          x1={centerX}
-          y1={centerY}
-          x2={rayEnd.cx}
-          y2={rayEnd.cy}
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={STROKE.grid}
-          strokeDasharray={DASH.axis.join(' ')}
-        />
-      )
-    }
-    return elements
-  }, [showGrid, centerX, centerY, scale])
-
   return (
-    <div ref={containerRef} className="w-full h-full">
+    <div ref={containerRef} className="w-full h-full relative">
       <svg
         width={canvasSize.width}
         height={canvasSize.height}
@@ -239,30 +256,81 @@ export default function CentripetalAnimation() {
             <stop offset="80%" stopColor={SCENE_COLORS.sphere.steel.gradient[2]} />
             <stop offset="100%" stopColor={SCENE_COLORS.sphere.steel.gradient[3]} />
           </radialGradient>
-
         </defs>
 
-        {/* 辐射网格背景 */}
-        {gridBackground}
+        {/* 进阶模式下的运行轨迹残影 */}
+        {isAdvanced && activeTrajectory.length > 0 && (
+          <path
+            d={activeTrajectory
+              .map((pt, idx) => {
+                const pos = physicsToCanvas(pt.x, pt.y, canvasSize.width, canvasSize.height, scale)
+                return `${idx === 0 ? 'M' : 'L'} ${pos.cx} ${pos.cy}`
+              })
+              .join(' ')}
+            fill="none"
+            stroke={PHYSICS_COLORS.trackHistory}
+            strokeWidth={STROKE.trackHistory}
+            strokeDasharray={DASH.trackHistory.join(' ')}
+            opacity={0.6}
+          />
+        )}
 
-        {/* 圆周运动轨道环 (轻量、清爽的高级质感) */}
-        <circle
-          cx={centerX}
-          cy={centerY}
-          r={r * scale}
-          fill="none"
-          stroke={PHYSICS_COLORS.trackHistory}
-          strokeWidth={STROKE.trackHistory}
-        />
-        <circle
-          cx={centerX}
-          cy={centerY}
-          r={r * scale}
-          fill="none"
-          stroke={PHYSICS_COLORS.trackHistory}
-          strokeWidth={STROKE.trackHistory + 1.5}
-          opacity={0.08}
-        />
+        {/* 圆周运动轨道环 */}
+        {(!isAdvanced || trackType === 0) ? (
+          <>
+            <circle
+              cx={centerX}
+              cy={centerY}
+              r={r * scale}
+              fill="none"
+              stroke={PHYSICS_COLORS.trackHistory}
+              strokeWidth={STROKE.trackHistory}
+            />
+            <circle
+              cx={centerX}
+              cy={centerY}
+              r={r * scale}
+              fill="none"
+              stroke={PHYSICS_COLORS.trackHistory}
+              strokeWidth={STROKE.trackHistory + 1.5}
+              opacity={0.08}
+            />
+          </>
+        ) : (
+          <>
+            {/* 中心虚线参考轴 */}
+            <circle
+              cx={centerX}
+              cy={centerY}
+              r={r * scale}
+              fill="none"
+              stroke={PHYSICS_COLORS.trackHistory}
+              strokeWidth={1}
+              strokeDasharray="4 4"
+              opacity={0.5}
+            />
+            {/* 双壁圆形槽轨道外圈 */}
+            <circle
+              cx={centerX}
+              cy={centerY}
+              r={r * scale + (CENTRIPETAL_LAYOUT.steelBallBaseRadius + m * CENTRIPETAL_LAYOUT.massRadiusScale)}
+              fill="none"
+              stroke={PHYSICS_COLORS.trackHistory}
+              strokeWidth={1.5}
+              opacity={0.3}
+            />
+            {/* 双壁圆形槽轨道内圈 */}
+            <circle
+              cx={centerX}
+              cy={centerY}
+              r={r * scale - (CENTRIPETAL_LAYOUT.steelBallBaseRadius + m * CENTRIPETAL_LAYOUT.massRadiusScale)}
+              fill="none"
+              stroke={PHYSICS_COLORS.trackHistory}
+              strokeWidth={1.5}
+              opacity={0.3}
+            />
+          </>
+        )}
 
         {/* 水平与垂直正交坐标轴 */}
         <line
@@ -282,19 +350,81 @@ export default function CentripetalAnimation() {
           strokeWidth={STROKE.axis}
         />
 
-        <text x={centerX + r * scale + 20} y={centerY + 14} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">x</text>
-        <text x={centerX + 12} y={centerY - r * scale - 20} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">y</text>
+        {/* 字体尺寸统一使用 canvasSize.font() 缩放适配 */}
+        <text
+          x={centerX + r * scale + 20}
+          y={centerY + 14}
+          fontSize={canvasSize.font(12)}
+          fill={PHYSICS_COLORS.labelText}
+          textAnchor="middle"
+        >
+          x
+        </text>
+        <text
+          x={centerX + 12}
+          y={centerY - r * scale - 20}
+          fontSize={canvasSize.font(12)}
+          fill={PHYSICS_COLORS.labelText}
+          textAnchor="middle"
+        >
+          y
+        </text>
 
-        {/* 半径参考线 */}
-        <line
-          x1={centerX}
-          y1={centerY}
-          x2={ballPos.cx}
-          y2={ballPos.cy}
-          stroke={PHYSICS_COLORS.axis}
-          strokeWidth={STROKE.reference}
-          strokeDasharray={DASH.axis.join(' ')}
-        />
+        {/* 半径参考线 / 实物连线 */}
+        {!isAdvanced ? (
+          <line
+            x1={centerX}
+            y1={centerY}
+            x2={ballPos.cx}
+            y2={ballPos.cy}
+            stroke={PHYSICS_COLORS.axis}
+            strokeWidth={STROKE.reference}
+            strokeDasharray={DASH.axis.join(' ')}
+          />
+        ) : trackType === 0 ? (
+          // 绳模型：仅在轨道滑动状态下画出绳子
+          currentPoint && currentPoint.state === 'on-track' && (
+            <line
+              x1={centerX}
+              y1={centerY}
+              x2={ballPos.cx}
+              y2={ballPos.cy}
+              stroke={SCENE_COLORS.surface.ropeColor}
+              strokeWidth={1.8}
+            />
+          )
+        ) : (
+          // 杆模型：始终连着刚性杆，并在中心有销轴
+          <>
+            <line
+              x1={centerX}
+              y1={centerY}
+              x2={ballPos.cx}
+              y2={ballPos.cy}
+              stroke={SCENE_COLORS.pendulum.rodFill}
+              strokeWidth={5.5}
+              strokeLinecap="round"
+            />
+            <line
+              x1={centerX}
+              y1={centerY}
+              x2={ballPos.cx}
+              y2={ballPos.cy}
+              stroke={SCENE_COLORS.pendulum.rodStroke}
+              strokeWidth={1.2}
+              strokeLinecap="round"
+              opacity={0.8}
+            />
+            <circle
+              cx={centerX}
+              cy={centerY}
+              r={5}
+              fill={SCENE_COLORS.pendulum.pivotFill}
+              stroke={SCENE_COLORS.pendulum.pivotStroke}
+              strokeWidth={1.5}
+            />
+          </>
+        )}
 
         {/* 旋转的拟物钢球 */}
         <circle
@@ -308,45 +438,112 @@ export default function CentripetalAnimation() {
 
         {/* 矢量箭头标注 */}
         {showVectors && (
-          <g>
-            {/* 线速度矢量 v */}
-            <VectorArrow
-              origin={{ x, y }}
-              vector={{ x: -y * (v / r), y: x * (v / r) }}
-              type="velocity"
-              sceneScale={sceneScale}
-            />
-            {/* 向心加速度 a */}
-            <VectorArrow
-              origin={{ x, y }}
-              vector={{ x: -x * (a_c / r), y: -y * (a_c / r) }}
-              type="acceleration"
-              sceneScale={sceneScale}
-            />
-            {/* 向心合外力 F (仅进阶模式) */}
-            {isAdvanced && (
+          isAdvanced && currentPoint ? (
+            <g>
+              {/* 线速度 v */}
+              <VectorArrow
+                origin={{ x, y }}
+                vector={{ x: currentPoint.vx, y: currentPoint.vy }}
+                type="velocity"
+                sceneScale={sceneScale}
+                label="v"
+              />
+              {/* 加速度 a */}
+              {currentPoint.state === 'on-track' ? (
+                <VectorArrow
+                  origin={{ x, y }}
+                  vector={{
+                    x: -(currentPoint.N / m) * Math.sin(currentPoint.theta),
+                    y: (currentPoint.N / m) * Math.cos(currentPoint.theta) - GRAVITY
+                  }}
+                  type="acceleration"
+                  sceneScale={sceneScale}
+                  label="a"
+                />
+              ) : (
+                <VectorArrow
+                  origin={{ x, y }}
+                  vector={{ x: 0, y: -GRAVITY }}
+                  type="acceleration"
+                  sceneScale={sceneScale}
+                  label="a"
+                />
+              )}
+              {/* 重力 G */}
+              <VectorArrow
+                origin={{ x, y }}
+                vector={{ x: 0, y: -m * GRAVITY }}
+                type="gravity"
+                sceneScale={sceneScale}
+                label="G"
+              />
+              {/* 轨道支持力/拉力 FN/FT */}
+              {currentPoint.state === 'on-track' && (
+                <VectorArrow
+                  origin={{ x, y }}
+                  vector={{
+                    x: -currentPoint.N * Math.sin(currentPoint.theta),
+                    y: currentPoint.N * Math.cos(currentPoint.theta)
+                  }}
+                  type={trackType === 0 ? 'tension' : 'normalForce'}
+                  sceneScale={sceneScale}
+                  label={trackType === 0 ? 'F_T' : 'F_N'}
+                />
+              )}
+              {/* 合外力 F_net (效果力，虚线) */}
+              <VectorArrow
+                origin={{ x, y }}
+                vector={{
+                  x: currentPoint.state === 'on-track' ? -currentPoint.N * Math.sin(currentPoint.theta) : 0,
+                  y: (currentPoint.state === 'on-track' ? currentPoint.N * Math.cos(currentPoint.theta) : 0) - m * GRAVITY
+                }}
+                type="force"
+                sceneScale={sceneScale}
+                dashed={true}
+                label="F_合 (效果力)"
+              />
+            </g>
+          ) : (
+            <g>
+              {/* 线速度 v */}
+              <VectorArrow
+                origin={{ x, y }}
+                vector={{ x: -y * (v / r), y: x * (v / r) }}
+                type="velocity"
+                sceneScale={sceneScale}
+                label="v"
+              />
+              {/* 向心加速度 a */}
+              <VectorArrow
+                origin={{ x, y }}
+                vector={{ x: -x * (a_c / r), y: -y * (a_c / r) }}
+                type="acceleration"
+                sceneScale={sceneScale}
+                label="a_n"
+              />
+              {/* 向心力 F (效果力，虚线) */}
               <VectorArrow
                 origin={{ x, y }}
                 vector={{ x: -x * (F_c / r), y: -y * (F_c / r) }}
                 type="force"
                 sceneScale={sceneScale}
+                dashed={true}
+                label="F_n (效果力)"
               />
-            )}
-          </g>
+            </g>
+          )
         )}
 
-        {/* ========== 右上角：画中画悬浮 F-a 图表（RelationChart） ========== */}
+        {/* ========== 右上角：画中画悬浮 F-a 图表 (RelationChart, 仅基础模式) ========== */}
         {showFaCard && (
           <g transform={`translate(${cardX}, ${cardY})`}>
-            {/* 毛玻璃卡片背景 */}
             <rect
               width={cardWidth}
               height={cardHeight}
-              fill={SCENE_COLORS.labels.glassPanelBg}
+              fill="#FFFFFF"
               rx={8}
               stroke={CHART_COLORS.axisLine}
               strokeWidth={0.8}
-              filter="drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12))"
             />
 
             {/* RelationChart 主体 */}
