@@ -118,28 +118,6 @@ export const OhmLawCenterExtra: FC = () => {
           />
         </div>
 
-        {/* 浮动状态卡片 */}
-        <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-lg border border-neutral-100 shadow-sm px-3 py-1.5 pointer-events-none">
-          <div className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">
-            实验实时数据
-          </div>
-          <div className="flex flex-col gap-0.5 min-w-[90px]">
-            <div className="text-[10px] flex items-center justify-between gap-3">
-              <span className="text-neutral-500">电压 U</span>
-              <span className="font-bold text-primary-700">{U.toFixed(1)} V</span>
-            </div>
-            <div className="text-[10px] flex items-center justify-between gap-3">
-              <span className="text-neutral-500">电流 I</span>
-              <span className="font-bold text-red-600">{currentI.toFixed(3)} A</span>
-            </div>
-            <div className="text-[10px] flex items-center justify-between gap-3">
-              <span className="text-neutral-500">等效电阻</span>
-              <span className="font-bold text-neutral-700">
-                {mode === 0 ? `${R} Ω` : `${(5 + 2 * U).toFixed(1)} Ω`}
-              </span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   )
