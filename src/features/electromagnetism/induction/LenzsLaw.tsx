@@ -4,6 +4,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE, CANVAS_COLORS } from '@/theme/physics'
+import { IDENTITY_SCENE_SCALE } from '@/scene'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { calculateLenzsLaw } from '@/physics'
 import { useAnimationFrame } from '@/utils/animation'
@@ -204,7 +205,7 @@ export default function LenzsLaw() {
             origin={{ x: cx + dx, y: isDown ? magnetY + 35 : coilY }}
             vector={{ x: 0, y: isDown ? -1 : 1 }}
             type="magneticField"
-            sceneScale={{ originX: 0, originY: 0, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+            sceneScale={IDENTITY_SCENE_SCALE}
             pixelLength={Math.abs(priY2 - priY1)}
             strokeWidth={CANVAS_STYLE.stroke.reference}
           />
@@ -221,7 +222,7 @@ export default function LenzsLaw() {
               origin={{ x: cx + dx, y: indY1 }}
               vector={{ x: 0, y: isUp ? 1 : -1 }}
               type="currentDirection"
-              sceneScale={{ originX: 0, originY: 0, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+              sceneScale={IDENTITY_SCENE_SCALE}
               pixelLength={Math.abs(indY2 - indY1)}
               strokeWidth={CANVAS_STYLE.stroke.vectorSub}
             />
@@ -274,10 +275,10 @@ export default function LenzsLaw() {
           {forceDirection !== 0 && (
             <g>
               <VectorArrow
-                origin={{ x: 0, y: 0 }}
+                origin={{ x: 65, y: 35 }}
                 vector={{ x: 0, y: forceDirection > 0 ? 1 : -1 }}
                 type="lorentzForce"
-                sceneScale={{ originX: 65, originY: 35, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                sceneScale={IDENTITY_SCENE_SCALE}
                 pixelLength={forceArrowLength}
               />
               <text 

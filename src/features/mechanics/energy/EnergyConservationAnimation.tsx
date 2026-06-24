@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+﻿import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useState, useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -14,8 +14,8 @@ import {
 } from '@/physics/energyConservation'
 import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { createSceneScale } from '@/scene/SceneScale'
-import type { SceneConfig } from '@/scene/SceneConfig'
+import { createSceneScale } from '@/scene'
+import type { SceneConfig } from '@/scene'
 
 /**
  * 机械能守恒定律实验室（全新重构美化规范版）

@@ -9,6 +9,7 @@ import {
   calculateNewtonSecondVariableMotion,
 } from '@/physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
+import { IDENTITY_SCENE_SCALE } from '@/scene'
 import { Block } from '@/components/Physics/Block'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { computeScale } from '@/utils/coordinate'
@@ -151,10 +152,10 @@ export default function NewtonSecondAnimation() {
           <g>
             {/* 1. 拉力 F (外力) */}
             <VectorArrow
-              origin={{ x: 0, y: 0 }}
+              origin={{ x: cx, y: cy }}
               vector={{ x: 1, y: 0 }}
               type="appliedForce"
-              sceneScale={{ originX: cx, originY: cy, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+              sceneScale={IDENTITY_SCENE_SCALE}
               pixelLength={Math.max(15, F_applied * 2.5)}
             />
             <text
@@ -171,10 +172,10 @@ export default function NewtonSecondAnimation() {
             {f > 0.01 && (
               <>
                 <VectorArrow
-                  origin={{ x: 0, y: 0 }}
+                  origin={{ x: cx, y: cy }}
                   vector={{ x: -1, y: 0 }}
                   type="friction"
-sceneScale={{ originX: cx, originY: cy, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+sceneScale={IDENTITY_SCENE_SCALE}
                   pixelLength={Math.max(15, f * 2.5)}
                 />
                 <text
@@ -192,10 +193,10 @@ sceneScale={{ originX: cx, originY: cy, scaleX: 1, scaleY: 1, scale: 1, maxVecto
 
             {/* 3. 重力 G = mg (向下，深绿) */}
             <VectorArrow
-              origin={{ x: 0, y: 0 }}
+              origin={{ x: cx, y: cy }}
               vector={{ x: 0, y: -1 }}
               type="gravity"
-              sceneScale={{ originX: cx, originY: cy, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+              sceneScale={IDENTITY_SCENE_SCALE}
               pixelLength={45}
             />
             <text
@@ -211,10 +212,10 @@ sceneScale={{ originX: cx, originY: cy, scaleX: 1, scaleY: 1, scale: 1, maxVecto
 
             {/* 4. 支持力 F_N (向上，青绿) */}
             <VectorArrow
-              origin={{ x: 0, y: 0 }}
+              origin={{ x: cx, y: cy }}
               vector={{ x: 0, y: 1 }}
               type="normalForce"
-              sceneScale={{ originX: cx, originY: cy, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+              sceneScale={IDENTITY_SCENE_SCALE}
               pixelLength={45}
             />
             <text
@@ -235,7 +236,7 @@ sceneScale={{ originX: cx, originY: cy, scaleX: 1, scaleY: 1, scale: 1, maxVecto
                   origin={{ x: 0, y: 0 }}
                   vector={{ x: 1, y: 0 }}
                   type="force"
-                  sceneScale={{ originX: 0, originY: 0, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                  sceneScale={IDENTITY_SCENE_SCALE}
                   pixelLength={Math.max(25, F_net * 2.5)}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain * 1.5}
                 />
@@ -257,7 +258,7 @@ sceneScale={{ originX: cx, originY: cy, scaleX: 1, scaleY: 1, scale: 1, maxVecto
                 origin={{ x: 0, y: 0 }}
                 vector={{ x: 1, y: 0 }}
                 type="velocity"
-                sceneScale={{ originX: 0, originY: 0, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                sceneScale={IDENTITY_SCENE_SCALE}
                 pixelLength={Math.max(15, v * 5)}
               />
               <text
@@ -278,7 +279,7 @@ sceneScale={{ originX: cx, originY: cy, scaleX: 1, scaleY: 1, scale: 1, maxVecto
                   origin={{ x: 0, y: 0 }}
                   vector={{ x: 1, y: 0 }}
                   type="acceleration"
-                  sceneScale={{ originX: 0, originY: 0, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                  sceneScale={IDENTITY_SCENE_SCALE}
                   pixelLength={Math.max(15, a * 8)}
                 />
                 <text

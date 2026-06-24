@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+﻿import { useEffect, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -7,7 +7,7 @@ import { PHYSICS_COLORS, CANVAS_STYLE, CANVAS_COLORS, SCENE_COLORS } from '@/the
 import { withAlpha } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
-import { createSceneScale } from '@/scene/SceneScale'
+import { createSceneScale } from '@/scene'
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
 import { VelocityTimeChart } from '@/components/Chart'
 import {

@@ -1,12 +1,12 @@
-import { useCanvasSize, physicsToCanvasWithOrigin } from '@/utils'
+﻿import { useCanvasSize, physicsToCanvasWithOrigin } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import React, { useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateCircularMotion } from '@/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { createSceneScale } from '@/scene/SceneScale'
-import type { SceneConfig } from '@/scene/SceneConfig'
+import { createSceneScale } from '@/scene'
+import type { SceneConfig } from '@/scene'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,

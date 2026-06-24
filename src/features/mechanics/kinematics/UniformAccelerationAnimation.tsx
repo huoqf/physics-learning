@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+﻿import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -14,11 +14,11 @@ import {
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { SportsCar } from '@/components/Physics/SportsCar'
 import { VectorDefs, markerId } from '@/components/Physics/VectorDefs'
-import { selectMarkerTier } from '@/theme/physics/vectorStyle'
-import { createSceneScale } from '@/scene/SceneScale'
-import type { SceneConfig } from '@/scene/SceneConfig'
+import { selectMarkerTier } from '@/theme/physics'
+import { createSceneScale } from '@/scene'
+import type { SceneConfig } from '@/scene'
 import { VelocityTimeChart } from '@/components/Chart'
-import { useChartContext } from '@/components/Chart/ChartContext'
+import { useChartContext } from '@/components/Chart'
 
 /**
  * 匀变速直线运动 · 基础模式动画（已完成图表迁移）

@@ -1,4 +1,4 @@
-import { useCanvasSize, physicsToCanvasWithOrigin } from '@/utils'
+﻿import { useCanvasSize, physicsToCanvasWithOrigin } from '@/utils'
 import React, { useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -16,8 +16,8 @@ import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VelocityTimeChart } from '@/components/Chart'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { Ball } from '@/components/Physics/Ball'
-import { createSceneScale } from '@/scene/SceneScale'
-import type { SceneConfig } from '@/scene/SceneConfig'
+import { createSceneScale } from '@/scene'
+import type { SceneConfig } from '@/scene'
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
 
 /** 物理常数：最大抛出高度 (m) */

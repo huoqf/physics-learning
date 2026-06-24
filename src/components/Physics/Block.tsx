@@ -62,6 +62,11 @@ export interface BlockProps extends SVGProps<SVGGElement> {
    * 整体透明度。
    */
   opacity?: number;
+  /**
+   * 字体缩放函数（由父组件 useCanvasSize 提供）。
+   * 不传则使用默认值 `(n: number) => n`。
+   */
+  font?: (base: number) => number;
 }
 
 /**
@@ -95,6 +100,7 @@ export function Block({
   stroke,
   strokeWidth = 1.5,
   opacity,
+  font = (n: number) => n,
   ...restProps
 }: BlockProps) {
   const uniqueId = useId().replace(/:/g, '-');
@@ -234,7 +240,7 @@ export function Block({
         <text
           x={x + width / 2}
           y={y + height / 2 + 3.5 - (hasWheels ? 1 : 0)}
-          fontSize={10}
+          fontSize={font(10)}
           fill={labelColor}
           textAnchor="middle"
           fontWeight="bold"

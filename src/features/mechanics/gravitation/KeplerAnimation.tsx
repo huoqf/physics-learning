@@ -1,4 +1,4 @@
-import { useCanvasSize, useViewport, physicsToCanvas } from '@/utils'
+﻿import { useCanvasSize, useViewport, physicsToCanvas } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -7,8 +7,8 @@ import { colors } from '@/theme/colors'
 import { calculateKeplerOrbit, solveKeplerEquation } from '@/physics/celestial'
 import { useMemo } from 'react'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { createSceneScale } from '@/scene/SceneScale'
-import type { SceneConfig } from '@/scene/SceneConfig'
+import { createSceneScale } from '@/scene'
+import type { SceneConfig } from '@/scene'
 
 // ─── 工具函数 ─────────────────────────────────────────────────────
 function clamp(value: number, min: number, max: number): number {

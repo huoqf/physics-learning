@@ -1,11 +1,11 @@
-import { useMemo } from 'react'
+﻿import { useMemo } from 'react'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CANVAS_STYLE, VECTOR_DISPLAY } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { Block } from '@/components/Physics/Block'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
-import { createSceneScale } from '@/scene/SceneScale'
-import type { SceneConfig } from '@/scene/SceneConfig'
+import { createSceneScale } from '@/scene'
+import type { SceneConfig } from '@/scene'
 import type { KEModelState } from '@/physics/kineticEnergy'
 
 const KE_SCENE_LAYOUT = {

@@ -4,9 +4,7 @@ import type { ChartAreaVariant } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { useCanvasSize } from '@/utils/useCanvasSize'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { FORCE_MOTION_CHART_PADDING_RATIO } from './forceMotionLayout'
-import { ChartCursor, ChartArea, ChartContext } from '@/components/Chart'
-import type { ChartContextValue } from '@/components/Chart'
+import { BasePhysicsChart, ChartCursor, ChartArea, useChartContext } from '@/components/Chart'
 
 interface ChartPoint {
   t: number
@@ -35,11 +33,6 @@ interface ForceMotionTripleChartProps {
   areaTextX: string
 }
 
-function buildPath(points: Array<{ x: number; y: number }>): string {
-  if (points.length === 0) return ''
-  return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(' ')
-}
-
 interface SingleChartProps {
   width: number
   height: number
@@ -59,45 +52,34 @@ interface SingleChartProps {
   areaVariant?: ChartAreaVariant
   terminalValue?: number
   zeroBased: boolean
-  font: (base: number) => number
 }
 
-function SingleChart({
-  width,
-  height,
-  points,
-  domainPoints,
-  currentTime,
-  currentValue,
-  color,
-  yLabel,
-  areaText,
-  areaVariant,
-  terminalValue,
-  zeroBased,
-  font,
-}: SingleChartProps) {
-  const layout = useMemo(() => {
-    const padding = Math.max(Math.min(width, height) * FORCE_MOTION_CHART_PADDING_RATIO, FONT.labelBold)
-    const left = padding * 1.2
-    const right = width - padding * 0.6
-    const top = padding * 0.8
-    const bottom = height - padding * 1.1
-    const chartWidth = Math.max(1, right - left)
-    const chartHeight = Math.max(1, bottom - top)
-
-    // 定标用全量观察窗口数据，回退到实时 points（保持向后兼容）。
-    // 关键：maxTime 仅由 rangeSource 决定，不再叠加 currentTime，
-    // 避免播放超过观察窗口时 X 域被反向扩张。
+/**
+ * 计算 Y 轴范围 + maxTime + 面积点集 + 游标可见性
+ *
+ * 定标用全量观察窗口数据，回退到实时 points（保持向后兼容）。
+ * maxTime 仅由 rangeSource 决定，不再叠加 currentTime，
+ * 避免播放超过观察窗口时 X 域被反向扩张。
+ */
+function useChartDomains({
+  points, domainPoints, currentTime, terminalValue, zeroBased, areaVariant,
+}: {
+  points: Array<{ t: number; value: number }>
+  domainPoints?: Array<{ t: number; value: number }>
+  currentTime: number
+  terminalValue?: number
+  zeroBased: boolean
+  areaVariant?: ChartAreaVariant
+}) {
+  return useMemo(() => {
     const rangeSource = domainPoints ?? points
     const maxTime = Math.max(rangeSource.at(-1)?.t ?? 1, 1)
-    const values = rangeSource.map((p) => p.value)
-    if (terminalValue != null) values.push(terminalValue)
-    values.push(0)
 
     // Y 轴范围 + 15% padding（与 RelationChart / VelocityTimeChart 一致）
     // 避免恒值曲线（如恒力 F=const）整段贴图顶；同时让 terminalValue
     // 渐近线与曲线峰之间留出视觉缓冲。
+    const baseValues = rangeSource.map((p) => p.value)
+    const values = terminalValue != null ? [...baseValues, terminalValue, 0] : [...baseValues, 0]
     const maxAbs = Math.max(1, ...values.map(Math.abs))
     let minValue = zeroBased ? 0 : (values.some((v) => v < 0) ? -maxAbs : 0)
     let maxValue = maxAbs
@@ -111,107 +93,65 @@ function SingleChart({
       minValue -= pad
       maxValue += pad
     }
-    const valueSpan = Math.max(1, maxValue - minValue)
 
-    const toX = (t: number) => left + (t / maxTime) * chartWidth
-    const toY = (value: number) => bottom - ((value - minValue) / valueSpan) * chartHeight
+    // 面积 points 在物理坐标系（x=t, y=value），按 currentTime 截断以与曲线动态一致
+    // 面积同时按 currentTime 和观察窗口 maxTime 双截断：
+    // 既反映播放进度，又不超出图表 X 域
+    const areaPoints = areaVariant
+      ? points
+          .filter((p) => p.t <= Math.min(currentTime, maxTime) + 1e-9)
+          .map((p) => ({ x: p.t, y: p.value }))
+      : []
 
-    // 绘制点过滤：超出观察窗口 (t > maxTime) 的点不画
-    // 避免曲线伸出绘图区右边，与 cursor 隐藏策略保持一致
-    const visiblePoints = points.filter((p) => p.t <= maxTime + 1e-9)
-    const curve = visiblePoints.map((p) => ({ x: toX(p.t), y: toY(p.value) }))
-    const zeroY = toY(0)
-    // cursor 钳制：currentTime > maxTime 时不画（由调用方判断 isCursorVisible）
+    // cursor 钳制：currentTime > maxTime 时不画（避免 cursor 跑出右边）
     const isCursorVisible = currentTime <= maxTime + 1e-9
-    const scanX = toX(Math.min(currentTime, maxTime))
 
-    return {
-      left, right, top, bottom, chartWidth, chartHeight,
-      toX, toY, curve, zeroY, scanX, maxTime, isCursorVisible,
-    }
-  }, [points, domainPoints, currentTime, height, terminalValue, width, zeroBased])
+    return { maxTime, minValue, maxValue, areaPoints, isCursorVisible }
+  }, [points, domainPoints, currentTime, terminalValue, zeroBased, areaVariant])
+}
 
-  const curvePath = buildPath(layout.curve)
+/** SingleChart 内部内容：通过 useChartContext 获取 BasePhysicsChart 提供的坐标系 */
+function SingleChartContent({
+  points, currentTime, currentValue, color, yLabel, areaText,
+  areaVariant, terminalValue, maxTime, areaPoints, isCursorVisible,
+}: {
+  points: Array<{ t: number; value: number }>
+  currentTime: number
+  currentValue: number
+  color: string
+  yLabel: string
+  areaText: string
+  areaVariant?: ChartAreaVariant
+  terminalValue?: number
+  maxTime: number
+  areaPoints: Array<{ x: number; y: number }>
+  isCursorVisible: boolean
+}) {
+  const ctx = useChartContext()
 
-  // 仅当显示面积时构造 ChartContext：让 ChartArea 共用 SingleChart 的坐标系
-  const chartCtx: ChartContextValue | null = useMemo(() => {
-    if (!areaVariant) return null
-    return {
-      toSvgX: layout.toX,
-      toSvgY: layout.toY,
-      plotOrigin: { x: layout.left, y: layout.top },
-      plotSize: { width: layout.chartWidth, height: layout.chartHeight },
-      font,
-      px: (n) => n,
-    }
-  }, [areaVariant, layout, font])
+  // 绘制点过滤：超出观察窗口 (t > maxTime) 的点不画
+  // 避免曲线伸出绘图区右边，与 cursor 隐藏策略保持一致
+  const curvePath = useMemo(() => {
+    if (!ctx) return ''
+    const visible = points.filter((p) => p.t <= maxTime + 1e-9)
+    if (visible.length < 2) return ''
+    return 'M ' + visible.map((p) => `${ctx.toSvgX(p.t).toFixed(2)},${ctx.toSvgY(p.value).toFixed(2)}`).join(' L ')
+  }, [ctx, points, maxTime])
 
-  // 面积 points 在物理坐标系（x=t, y=value），按 currentTime 截断以与曲线动态一致
-  // 面积同时按 currentTime 和观察窗口 maxTime 双截断：
-  // 既反映播放进度，又不超出图表 X 域
-  const areaPoints = useMemo(
-    () => {
-      if (!areaVariant) return []
-      const cap = Math.min(currentTime, layout.maxTime)
-      return points.filter((p) => p.t <= cap + 1e-9).map((p) => ({ x: p.t, y: p.value }))
-    },
-    [areaVariant, points, currentTime, layout.maxTime],
-  )
+  if (!ctx) return null
 
   return (
-    <svg width={width} height={height} className="w-full h-full select-none">
-      {/* 网格 */}
-      {[0.25, 0.5, 0.75].map((ratio) => {
-        const y = layout.top + ratio * layout.chartHeight
-        return (
-          <line
-            key={`row-${ratio}`}
-            x1={layout.left}
-            x2={layout.right}
-            y1={y}
-            y2={y}
-            stroke={CHART_COLORS.gridLine}
-            strokeWidth={STROKE.grid}
-            strokeDasharray={DASH.guide.join(' ')}
-          />
-        )
-      })}
-      {[0.25, 0.5, 0.75].map((ratio) => {
-        const x = layout.left + ratio * layout.chartWidth
-        return (
-          <line
-            key={`col-${ratio}`}
-            x1={x}
-            x2={x}
-            y1={layout.top}
-            y2={layout.bottom}
-            stroke={CHART_COLORS.gridLine}
-            strokeWidth={STROKE.grid}
-            strokeDasharray={DASH.guide.join(' ')}
-          />
-        )
-      })}
-
-      {/* 坐标轴 */}
-      <line x1={layout.left} x2={layout.right} y1={layout.bottom} y2={layout.bottom} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axis} />
-      <line x1={layout.left} x2={layout.left} y1={layout.top} y2={layout.bottom} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axis} />
-
-      {/* 标签 */}
-      <text x={layout.right} y={layout.bottom + FONT.axis} textAnchor="end" fill={CHART_COLORS.labelText} fontSize={FONT.axis}>t/s</text>
-      <text x={layout.left} y={Math.max(FONT.axis, layout.top - FONT.small)} fill={color} fontSize={FONT.axis} fontWeight="bold">{yLabel}</text>
-
+    <g>
       {/* 面积填充（曲线下方，使用 ChartArea；按 currentTime 截断） */}
-      {chartCtx && areaPoints.length >= 2 && (
-        <ChartContext.Provider value={chartCtx}>
-          <ChartArea
-            points={areaPoints}
-            baseline={0}
-            variant={areaVariant!}
-            intensity="subtle"
-            stroke={color}
-            strokeWidth={STROKE.guide}
-          />
-        </ChartContext.Provider>
+      {areaVariant && areaPoints.length >= 2 && (
+        <ChartArea
+          points={areaPoints}
+          baseline={0}
+          variant={areaVariant}
+          intensity="subtle"
+          stroke={color}
+          strokeWidth={STROKE.guide}
+        />
       )}
 
       {/* 曲线 */}
@@ -229,34 +169,73 @@ function SingleChart({
       {/* 渐近线 */}
       {terminalValue != null && (
         <line
-          x1={layout.left}
-          x2={layout.right}
-          y1={layout.toY(terminalValue)}
-          y2={layout.toY(terminalValue)}
+          x1={ctx.plotOrigin.x}
+          x2={ctx.plotOrigin.x + ctx.plotSize.width}
+          y1={ctx.toSvgY(terminalValue)}
+          y2={ctx.toSvgY(terminalValue)}
           stroke={CHART_COLORS.asymptote}
           strokeWidth={STROKE.chartRef}
           strokeDasharray={DASH.boundary.join(' ')}
         />
       )}
 
-      {/* 扫描线 + 当前点（使用 ChartCursor）
+      {/* 扫描线 + 当前点（使用 ChartCursor，自动消费 ChartContext）
           当 currentTime 超出观察窗口 maxTime 时隐藏，避免 cursor 跑出右边 */}
-      {layout.isCursorVisible && (
+      {isCursorVisible && (
         <ChartCursor
           x={currentTime}
           dataPoints={[{ y: currentValue, label: yLabel.split('/')[0], series: 'primary' }]}
           showLabels={false}
-          toSvgX={layout.toX}
-          toSvgY={layout.toY}
-          plotOrigin={{ x: layout.left, y: layout.top }}
-          plotSize={{ width: layout.chartWidth, height: layout.chartHeight }}
-          font={font}
         />
       )}
 
       {/* 面积文字 */}
-      <text x={layout.left + FONT.small} y={layout.top + FONT.label} fill={CHART_COLORS.titleText} fontSize={FONT.annotation} fontWeight={FONT.labelWeight}>{areaText}</text>
-    </svg>
+      <text
+        x={ctx.plotOrigin.x + ctx.font(FONT.small)}
+        y={ctx.plotOrigin.y + ctx.font(FONT.label)}
+        fill={CHART_COLORS.titleText}
+        fontSize={ctx.font(FONT.annotation)}
+        fontWeight={FONT.labelWeight}
+      >
+        {areaText}
+      </text>
+    </g>
+  )
+}
+
+function SingleChart({
+  width, height, points, domainPoints, currentTime, currentValue,
+  color, yLabel, areaText, areaVariant, terminalValue, zeroBased,
+}: SingleChartProps) {
+  const { maxTime, minValue, maxValue, areaPoints, isCursorVisible } = useChartDomains({
+    points, domainPoints, currentTime, terminalValue, zeroBased, areaVariant,
+  })
+
+  return (
+    <BasePhysicsChart
+      xDomain={[0, maxTime]}
+      yDomain={[minValue, maxValue]}
+      xLabel="t/s"
+      yLabel={yLabel}
+      yBaseline={minValue < 0 ? 0 : undefined}
+      initialSize={{ width, height }}
+      variant="mini"
+      showGrid={true}
+    >
+      <SingleChartContent
+        points={points}
+        currentTime={currentTime}
+        currentValue={currentValue}
+        color={color}
+        yLabel={yLabel}
+        areaText={areaText}
+        areaVariant={areaVariant}
+        terminalValue={terminalValue}
+        maxTime={maxTime}
+        areaPoints={areaPoints}
+        isCursorVisible={isCursorVisible}
+      />
+    </BasePhysicsChart>
   )
 }
 
@@ -273,7 +252,7 @@ export default function ForceMotionTripleChart({
   areaTextX,
 }: ForceMotionTripleChartProps) {
   const [containerRef, size] = useCanvasSize(CANVAS_PRESETS.extraWide)
-  const { width, height, font } = size
+  const { width, height } = size
 
   const chartWidth = Math.max(1, Math.floor((width - 8) / 3))
 
@@ -303,7 +282,6 @@ export default function ForceMotionTripleChart({
           areaText={areaTextF}
           areaVariant="warm"
           zeroBased={false}
-          font={font}
         />
       </div>
 
@@ -322,7 +300,6 @@ export default function ForceMotionTripleChart({
           areaVariant="default"
           terminalValue={terminalVelocity}
           zeroBased={true}
-          font={font}
         />
       </div>
 
@@ -339,7 +316,6 @@ export default function ForceMotionTripleChart({
           yLabel="x/m"
           areaText={areaTextX}
           zeroBased={true}
-          font={font}
         />
       </div>
     </div>

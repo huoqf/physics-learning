@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateElevatorMotion } from '@/physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
+import { IDENTITY_SCENE_SCALE } from '@/scene'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { colors } from '@/theme/colors'
 
@@ -388,10 +389,10 @@ export default function WeightlessnessAnimation() {
           <g>
             {/* 重力 G (深绿) */}
             <VectorArrow
-              origin={{ x: 0, y: 0 }}
+              origin={{ x: objCx, y: objCy }}
               vector={{ x: 0, y: -1 }}
               type="gravity"
-              sceneScale={{ originX: objCx, originY: objCy, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+              sceneScale={IDENTITY_SCENE_SCALE}
               pixelLength={45}
             />
             <text
@@ -408,10 +409,10 @@ export default function WeightlessnessAnimation() {
             {currentN > 0.01 && (
               <>
                 <VectorArrow
-                  origin={{ x: 0, y: 0 }}
+                  origin={{ x: objCx, y: objCy }}
                   vector={{ x: 0, y: 1 }}
                   type="normalForce"
-sceneScale={{ originX: objCx, originY: objCy, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                  sceneScale={IDENTITY_SCENE_SCALE}
                   pixelLength={45 * (currentN / weight)}
                 />
                 <text
@@ -433,7 +434,7 @@ sceneScale={{ originX: objCx, originY: objCy, scaleX: 1, scaleY: 1, scale: 1, ma
                   origin={{ x: 0, y: 0 }}
                   vector={{ x: 0, y: actualA > 0 ? 1 : -1 }}
                   type="acceleration"
-                  sceneScale={{ originX: 0, originY: 0, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                  sceneScale={IDENTITY_SCENE_SCALE}
                   pixelLength={Math.abs(actualA) * 10}
                 />
                 <text
@@ -456,7 +457,7 @@ sceneScale={{ originX: objCx, originY: objCy, scaleX: 1, scaleY: 1, scale: 1, ma
                   origin={{ x: 0, y: 0 }}
                   vector={{ x: 0, y: currentV > 0 ? 1 : -1 }}
                   type="velocity"
-                  sceneScale={{ originX: 0, originY: 0, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                  sceneScale={IDENTITY_SCENE_SCALE}
                   pixelLength={Math.abs(currentV) * 6}
                 />
                 <text

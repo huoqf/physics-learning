@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { calculateChargeInMagField } from '@/physics'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { IDENTITY_SCENE_SCALE } from '@/scene'
 
 const GRID_MARGIN = 40
 const CHARGE_RADIUS = CANVAS_STYLE.object.pointMassRadius
@@ -113,10 +114,10 @@ export default function ChargeInBField() {
         {showVectors && (
           <g>
             <VectorArrow
-              origin={{ x: 0, y: 0 }}
+              origin={{ x: px, y: py }}
               vector={{ x: -Math.sin(theta), y: Math.cos(theta) }}
               type="velocity"
-              sceneScale={{ originX: px, originY: py, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+              sceneScale={IDENTITY_SCENE_SCALE}
               pixelLength={VECTOR_LEN_V}
             />
             <text x={px - Math.sin(theta) * 25 - 8} y={py - Math.cos(theta) * 25 - 6}
@@ -130,10 +131,10 @@ export default function ChargeInBField() {
         {showVectors && fLen > 0 && (
           <g>
             <VectorArrow
-              origin={{ x: 0, y: 0 }}
+              origin={{ x: px, y: py }}
               vector={{ x: -Math.cos(theta), y: -Math.sin(theta) }}
               type="lorentzForce"
-              sceneScale={{ originX: px, originY: py, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+              sceneScale={IDENTITY_SCENE_SCALE}
               pixelLength={fLen}
             />
             <text x={px - Math.cos(theta) * fLen / 2 + 8} y={py + Math.sin(theta) * fLen / 2}

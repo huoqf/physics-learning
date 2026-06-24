@@ -1,9 +1,10 @@
-import React, { useState, useRef, useCallback } from 'react'
+﻿import React, { useState, useRef, useCallback } from 'react'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
+import { IDENTITY_SCENE_SCALE } from '@/scene'
 import { colors } from '@/theme/colors'
 import { calculateMagnetInduction, calculateCoilInduction } from '@/physics'
 import { useAnimationFrame } from '@/utils/animation'
@@ -292,7 +293,7 @@ export default function InductionPhenomenon() {
                   origin={{ x: magnetX, y: -(coilY - 30) }}
                   vector={{ x: magnetSpeed * 15, y: 0 }}
                   type="velocity"
-                  sceneScale={{ originX: 0, originY: 0, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                  sceneScale={IDENTITY_SCENE_SCALE}
                   color={PHYSICS_COLORS.velocity}
                   pixelLength={Math.abs(magnetSpeed * 15)}
                 />

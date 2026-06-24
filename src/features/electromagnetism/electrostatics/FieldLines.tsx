@@ -7,6 +7,7 @@ import { radius } from '@/theme/radius'
 import { shadow } from '@/theme/shadow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { IDENTITY_SCENE_SCALE } from '@/scene'
 
 // 物理与绘图常量
 const COULOMB_K = 9e9
@@ -618,10 +619,10 @@ export default function FieldLines() {
             {probePhysics.forceArrow && (
               <g>
                 <VectorArrow
-                  origin={{ x: 0, y: 0 }}
+                  origin={{ x: probeX, y: probeY }}
                   vector={{ x: probePhysics.forceArrow[0], y: -probePhysics.forceArrow[1] }}
                   type="electricForce"
-                  sceneScale={{ originX: probeX, originY: probeY, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                  sceneScale={IDENTITY_SCENE_SCALE}
                   pixelLength={Math.sqrt(probePhysics.forceArrow[0] ** 2 + probePhysics.forceArrow[1] ** 2)}
                   strokeWidth={3}
                 />

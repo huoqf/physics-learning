@@ -1,4 +1,4 @@
-import { useRef, useEffect, useMemo } from 'react'
+﻿import { useRef, useEffect, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { clampEndpoint } from '@/utils/coordinate'
@@ -10,8 +10,8 @@ import { useEquilibriumPhysics } from './useEquilibriumPhysics'
 import { GRAVITY } from '@/physics/constants'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
-import { createSceneScale } from '@/scene/SceneScale'
-import type { SceneConfig } from '@/scene/SceneConfig'
+import { createSceneScale } from '@/scene'
+import type { SceneConfig } from '@/scene'
 
 export default function EquilibriumAnimation() {
     const {params, showVectors, showFormulas, showGrid, isPlaying, time} = useAnimationStore(

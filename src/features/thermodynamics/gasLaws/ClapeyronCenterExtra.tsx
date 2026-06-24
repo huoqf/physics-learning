@@ -1,10 +1,10 @@
-import { useMemo } from 'react'
+﻿import { useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PV_CHART_COLORS, CHART_COLORS } from '@/theme/physics'
-import { STROKE, FONT } from '@/theme/physics/canvasStyle'
+import { STROKE, FONT } from '@/theme/physics'
 import { solveClapeyron, generateIsothermFamily } from '@/physics/clapeyron'
 
 const N_DEFAULT = 1

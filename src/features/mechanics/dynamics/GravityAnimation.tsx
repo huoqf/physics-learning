@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from 'react'
+﻿import { useState, useRef, useCallback, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
@@ -8,8 +8,8 @@ import { physicsToCanvas, computeScale } from '@/utils/coordinate'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { RelationChart } from '@/components/Chart'
-import { createSceneScale } from '@/scene/SceneScale'
-import type { SceneConfig } from '@/scene/SceneConfig'
+import { createSceneScale } from '@/scene'
+import type { SceneConfig } from '@/scene'
 
 export default function GravityAnimation() {
     const {params, setParams, updateParam, showVectors, time} = useAnimationStore(

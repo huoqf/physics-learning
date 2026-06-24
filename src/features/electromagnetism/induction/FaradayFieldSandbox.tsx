@@ -1,9 +1,10 @@
-/**
+﻿/**
  * FaradayFieldSandbox.tsx — 法拉第电磁感应进阶模式场景（匀变磁场）
  *
  * 从 FaradayLaw.tsx 拆分：进阶模式 (mode=1) 的中间屏渲染。
  */
 import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { IDENTITY_SCENE_SCALE } from '@/scene'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { COIL_RX, COIL_RY } from './hooks/useFaradayPhysics'
 
@@ -88,7 +89,7 @@ export function FaradayFieldSandbox({
             origin={{ x: 0, y: -10 }}
             vector={{ x: inducedCurrentDir > 0 ? 1 : -1, y: 0 }}
             type="currentDirection"
-            sceneScale={{ originX: 0, originY: 0, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+            sceneScale={IDENTITY_SCENE_SCALE}
             pixelLength={30}
             strokeWidth={2}
           />

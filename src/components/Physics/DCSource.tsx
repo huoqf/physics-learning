@@ -4,6 +4,22 @@ import { colors } from '@/theme/colors'
 
 const ELECTRICAL = SCENE_COLORS.electricalApparatus
 
+// 字体基准常量（按设计稿比例缩放，不走 font() 以免与 getInstrumentLayout 双缩放）
+const FONT_BASE = {
+  instrument: {
+    voltage: 14,
+    brand: 7,
+    terminal: 9,
+  },
+  battery: {
+    polarity: 11,
+    label: 7,
+  },
+  symbol: {
+    label: 10,
+  },
+} as const
+
 export interface DCSourceProps {
   /** 中心 x 坐标 */
   x?: number
@@ -136,7 +152,7 @@ export const DCSource: React.FC<DCSourceProps> = ({
           x={0}
           y={-11 * (height / 80)}
           fill={ELECTRICAL.ledDisplayGreen}
-          fontSize={14 * (Math.min(width, height) / 80)}
+          fontSize={FONT_BASE.instrument.voltage * (Math.min(width, height) / 80)}
           fontWeight="bold"
           fontFamily="monospace"
           textAnchor="middle"
@@ -150,7 +166,7 @@ export const DCSource: React.FC<DCSourceProps> = ({
           x={0}
           y={8 * (height / 80)}
           fill={colors.neutral[400]}
-          fontSize={7 * (Math.min(width, height) / 80)}
+          fontSize={FONT_BASE.instrument.brand * (Math.min(width, height) / 80)}
           fontWeight="bold"
           textAnchor="middle"
           letterSpacing={0.5}
@@ -162,14 +178,14 @@ export const DCSource: React.FC<DCSourceProps> = ({
         {/* 正极接线柱 (+) */}
         <circle cx={posTerminalX} cy={terminalY} r={layout.terminalR} fill={SCENE_COLORS_CIRCUIT.batteryPos} stroke={SCENE_COLORS_CIRCUIT.batteryPos} strokeWidth={1} />
         <circle cx={posTerminalX} cy={terminalY} r={layout.axisR} fill={SCENE_COLORS_CIRCUIT.batteryPos} />
-        <text x={posTerminalX} y={terminalY - 11 * (height / 80)} fill={SCENE_COLORS_CIRCUIT.batteryPos} fontSize={9 * (Math.min(width, height) / 80)} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
+        <text x={posTerminalX} y={terminalY - 11 * (height / 80)} fill={SCENE_COLORS_CIRCUIT.batteryPos} fontSize={FONT_BASE.instrument.terminal * (Math.min(width, height) / 80)} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
           +
         </text>
 
         {/* 负极接线柱 (-) */}
         <circle cx={negTerminalX} cy={terminalY} r={layout.terminalR} fill={SCENE_COLORS_CIRCUIT.batteryNeg} stroke={colors.neutral[900]} strokeWidth={1} />
         <circle cx={negTerminalX} cy={terminalY} r={layout.axisR} fill={colors.neutral[900]} />
-        <text x={negTerminalX} y={terminalY - 11 * (height / 80)} fill={colors.neutral[400]} fontSize={9 * (Math.min(width, height) / 80)} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
+        <text x={negTerminalX} y={terminalY - 11 * (height / 80)} fill={colors.neutral[400]} fontSize={FONT_BASE.instrument.terminal * (Math.min(width, height) / 80)} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
           -
         </text>
       </g>
@@ -266,7 +282,7 @@ export const DCSource: React.FC<DCSourceProps> = ({
           x={isLeftPositive ? -21 * (width / 60) : 21 * (width / 60)}
           y={4}
           fill={colors.neutral.white}
-          fontSize={11 * (Math.min(width, height) / 30)}
+          fontSize={FONT_BASE.battery.polarity * (Math.min(width, height) / 30)}
           fontWeight="bold"
           textAnchor="middle"
           style={{ userSelect: 'none' }}
@@ -277,7 +293,7 @@ export const DCSource: React.FC<DCSourceProps> = ({
           x={isLeftPositive ? 21 * (width / 60) : -21 * (width / 60)}
           y={3}
           fill={colors.neutral.white}
-          fontSize={11 * (Math.min(width, height) / 30)}
+          fontSize={FONT_BASE.battery.polarity * (Math.min(width, height) / 30)}
           fontWeight="bold"
           textAnchor="middle"
           style={{ userSelect: 'none' }}
@@ -290,7 +306,7 @@ export const DCSource: React.FC<DCSourceProps> = ({
           x={0}
           y={4}
           fill={colors.neutral[600]}
-          fontSize={7 * (Math.min(width, height) / 30)}
+          fontSize={FONT_BASE.battery.label * (Math.min(width, height) / 30)}
           fontWeight="bold"
           textAnchor="middle"
           style={{ userSelect: 'none' }}
@@ -326,7 +342,7 @@ export const DCSource: React.FC<DCSourceProps> = ({
         x={0}
         y={-20}
         fill={c.wire}
-        fontSize={10}
+        fontSize={FONT_BASE.symbol.label}
         fontWeight="bold"
         textAnchor="middle"
         style={{ userSelect: 'none' }}

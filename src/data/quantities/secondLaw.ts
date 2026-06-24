@@ -1,7 +1,7 @@
-/**
+﻿/**
  * 热力学第二定律物理量看板数据构建。
  */
-import { SECOND_LAW_COLORS } from '@/theme/physics/secondLawColors'
+import { SECOND_LAW_COLORS } from '@/theme/physics'
 import type { PhysicsPanelData } from './types'
 
 export function buildSecondLawQuantities(

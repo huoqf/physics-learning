@@ -1,4 +1,4 @@
-import { useCanvasSize, useViewport } from '@/utils'
+﻿import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -14,8 +14,8 @@ import {
   isHeavyLightCase,
 } from '@/physics/collision'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { createSceneScale } from '@/scene/SceneScale'
-import type { SceneConfig } from '@/scene/SceneConfig'
+import { createSceneScale } from '@/scene'
+import type { SceneConfig } from '@/scene'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,

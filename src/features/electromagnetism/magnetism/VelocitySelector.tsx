@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo, useId } from 'react'
+﻿import { useEffect, useRef, useMemo, useId } from 'react'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
@@ -10,8 +10,8 @@ import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { CapacitorPlates } from '@/components/Physics/CapacitorPlates'
 import { ParticleEmitter } from '@/components/Physics/ParticleEmitter'
-import { createSceneScale, worldToPixel } from '@/scene/SceneScale'
-import type { SceneConfig } from '@/scene/SceneConfig'
+import { createSceneScale, worldToPixel } from '@/scene'
+import type { SceneConfig } from '@/scene'
 import { HandRule } from '@/components/Physics/HandRule'
 
 interface ParticleState {

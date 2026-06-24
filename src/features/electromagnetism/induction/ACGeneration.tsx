@@ -212,11 +212,6 @@ export default function ACGeneration() {
       <svg width={W} height={H}
         className="bg-white rounded-lg shadow-inner select-none"
         style={{ display: 'block' }}>
-        <defs>
-          <marker id="aB" markerWidth={font(7)} markerHeight={font(5)} refX={font(6)} refY={font(2.5)} orient="auto">
-            <polygon points={`0 0,${font(7)} ${font(2.5)},0 ${font(5)}`} fill={SCENE_COLORS.coil.enamelBase} />
-          </marker>
-        </defs>
 
         {/* 左右分界线 */}
         <line x1={SIMW} y1={0} x2={SIMW} y2={H} stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} />

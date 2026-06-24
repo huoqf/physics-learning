@@ -1,9 +1,9 @@
-/**
+﻿/**
  * 热力学第一定律物理量看板数据构建。
  */
 import { calculateInternalEnergy } from '../../physics/thermodynamics'
 import { deltaUtoDeltaT } from '../../physics/firstLaw'
-import { FIRST_LAW_COLORS } from '@/theme/physics/firstLawColors'
+import { FIRST_LAW_COLORS } from '@/theme/physics'
 import { THERMO_COLORS } from '@/theme/physics'
 import type { PhysicsPanelData } from './types'
 

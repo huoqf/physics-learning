@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+﻿import { useCanvasSize } from '@/utils'
 import { useEffect, useMemo, useState } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -16,9 +16,9 @@ import { SportsCar } from '@/components/Physics/SportsCar'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { VelocityTimeChart } from '@/components/Chart'
-import { useChartContext } from '@/components/Chart/ChartContext'
-import { createSceneScale } from '@/scene/SceneScale'
-import type { SceneConfig } from '@/scene/SceneConfig'
+import { useChartContext } from '@/components/Chart'
+import { createSceneScale } from '@/scene'
+import type { SceneConfig } from '@/scene'
 
 /**
  * 频闪虚影 (GhostCar)

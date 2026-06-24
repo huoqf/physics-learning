@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+﻿import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { computeScale } from '@/utils/coordinate'
 import { useAnimationStore } from '@/stores'
@@ -7,8 +7,8 @@ import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physic
 import { Spring } from '@/components/UI'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
-import { createSceneScale } from '@/scene/SceneScale'
-import type { SceneConfig } from '@/scene/SceneConfig'
+import { createSceneScale } from '@/scene'
+import type { SceneConfig } from '@/scene'
 
 export default function SpringForceAnimation() {
     const {params, time, showVectors, showGrid} = useAnimationStore(
@@ -245,7 +245,7 @@ export default function SpringForceAnimation() {
 
         <defs>
           <VectorDefs colors={[PHYSICS_COLORS.elasticForce]} />
-          {/* 尺寸线端点装饰箭头 (双向标注专用) */}
+          {/* 尺寸线端点装饰箭头 (双向标注专用)，几何标注非物理矢量，不适用铁律 1d */}
           <marker id="arrow-displacement-start" markerWidth="6" markerHeight="6" refX="1" refY="3" orient="auto">
             <polygon points="6 1, 0 3, 6 5" fill={PHYSICS_COLORS.displacement} />
           </marker>

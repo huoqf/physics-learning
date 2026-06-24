@@ -466,9 +466,11 @@ export default function Capacitor() {
 
           {/* 渐变定义 Defs */}
           <defs>
+            {/* 场线方向标注，非物理矢量（虚线场线，VectorArrow 不支持 strokeDasharray），不适用铁律 1d */}
             <marker id="arrow-cap-E" markerWidth="7" markerHeight="6" refX="5" refY="3" orient="auto">
               <polygon points="0 0, 7 3, 0 6" fill={PHYSICS_COLORS.electricField} />
             </marker>
+            {/* 几何标注（板间距刻度），非物理矢量，不适用铁律 1d */}
             <marker id="tick-cap" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
               <line x1={0} y1={3} x2={6} y2={3} stroke={PHYSICS_COLORS.axis} strokeWidth={1.5} />
             </marker>

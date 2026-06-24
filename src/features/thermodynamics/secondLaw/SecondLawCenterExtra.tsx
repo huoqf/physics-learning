@@ -1,8 +1,8 @@
-import { useRef, useMemo } from 'react'
+﻿import { useRef, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { Card, MiniChart } from '@/components/UI'
-import { SECOND_LAW_COLORS } from '@/theme/physics/secondLawColors'
+import { SECOND_LAW_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
 const MAX_POINTS = 200

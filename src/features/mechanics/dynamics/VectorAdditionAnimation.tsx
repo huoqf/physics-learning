@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react'
+﻿import { useRef, useState, useEffect } from 'react'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
@@ -8,8 +8,8 @@ import { canvasToPhysics, computeScale } from '@/utils/coordinate'
 import { useVectorAdditionPhysics } from './useVectorAdditionPhysics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
-import { createSceneScale } from '@/scene/SceneScale'
-import type { SceneConfig } from '@/scene/SceneConfig'
+import { createSceneScale } from '@/scene'
+import type { SceneConfig } from '@/scene'
 
 // 特殊磁力吸附角度定义
 const SNAP_ANGLES = [0, 30, 45, 60, 90, 120, 150, 180]

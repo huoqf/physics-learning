@@ -4,6 +4,7 @@ import { colors } from '@/theme/colors'
 import { radius } from '@/theme/radius'
 import { shadow } from '@/theme/shadow'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { IDENTITY_SCENE_SCALE } from '@/scene'
 import type { ElectricPotentialPhysicsResult, PathPoint } from './hooks/useElectricPotentialPhysics'
 
 interface Props {
@@ -63,7 +64,7 @@ export function ElectricPotentialAnimScene({
       >
         {/* 定义箭头和渐变 */}
         <defs>
-          {/* 接地符号 Marker */}
+          {/* 接地符号 Marker，电路符号非物理矢量，不适用铁律 1d */}
           <marker id="ground-symbol" viewBox="0 0 10 10" refX="5" refY="0" markerWidth="10" markerHeight="10" orient="auto">
             <line x1={5} y1={0} x2={5} y2={6} stroke={colors.neutral[400]} strokeWidth={1.5} />
             <line x1={1} y1={6} x2={9} y2={6} stroke={colors.neutral[400]} strokeWidth={1.5} />
@@ -96,10 +97,10 @@ export function ElectricPotentialAnimScene({
             return len > 0.1 ? (
               <VectorArrow
                 key={`ev-${i}`}
-                origin={{ x: 0, y: 0 }}
+                origin={{ x: v.cx, y: v.cy }}
                 vector={{ x: v.dx, y: -v.dy }}
                 type="electricField"
-                sceneScale={{ originX: v.cx, originY: v.cy, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                sceneScale={IDENTITY_SCENE_SCALE}
                 pixelLength={len}
                 strokeWidth={1.0}
               />
@@ -230,10 +231,10 @@ export function ElectricPotentialAnimScene({
             />
             {/* 场强指示矢量箭头 */}
             <VectorArrow
-              origin={{ x: 0, y: 0 }}
+              origin={{ x: hoverIndicator.cx, y: hoverIndicator.cy }}
               vector={{ x: hoverIndicator.dx, y: -hoverIndicator.dy }}
               type="electricField"
-              sceneScale={{ originX: hoverIndicator.cx, originY: hoverIndicator.cy, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+              sceneScale={IDENTITY_SCENE_SCALE}
               pixelLength={Math.sqrt(hoverIndicator.dx * hoverIndicator.dx + hoverIndicator.dy * hoverIndicator.dy)}
               strokeWidth={hoverIndicator.thickness}
             />
@@ -258,10 +259,10 @@ export function ElectricPotentialAnimScene({
             {particleForceArrow && (
               <g>
                 <VectorArrow
-                  origin={{ x: 0, y: 0 }}
+                  origin={{ x: particleCanvasPos.cx, y: particleCanvasPos.cy }}
                   vector={{ x: particleForceArrow.dx, y: -particleForceArrow.dy }}
                   type="electricForce"
-                  sceneScale={{ originX: particleCanvasPos.cx, originY: particleCanvasPos.cy, scaleX: 1, scaleY: 1, scale: 1, maxVectorLength: 999 }}
+                  sceneScale={IDENTITY_SCENE_SCALE}
                   pixelLength={Math.sqrt(particleForceArrow.dx * particleForceArrow.dx + particleForceArrow.dy * particleForceArrow.dy)}
                   strokeWidth={2.8}
                 />

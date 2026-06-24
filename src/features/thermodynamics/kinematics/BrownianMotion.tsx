@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState, useEffect } from 'react'
+﻿import { useRef, useCallback, useState, useEffect } from 'react'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { computeScale, physicsToCanvasWithOrigin } from '@/utils/coordinate'
@@ -7,10 +7,10 @@ import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
 import { stepBrownianMotion } from '@/physics/brownianMotion'
 import { THERMO_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
-import { THERMAL_COLORS } from '@/theme/physics/sceneColors'
+import { THERMAL_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
-import type { SceneScale } from '@/scene/SceneScale'
+import type { SceneScale } from '@/scene'
 
 interface ParticleState {
   x: number

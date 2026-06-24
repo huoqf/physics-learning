@@ -1,4 +1,4 @@
-import { useCanvasSize, physicsToCanvasWithOrigin } from '@/utils'
+﻿import { useCanvasSize, physicsToCanvasWithOrigin } from '@/utils'
 import React, { useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -15,8 +15,8 @@ import {
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { VelocityTimeChart } from '@/components/Chart'
-import { createSceneScale } from '@/scene/SceneScale'
-import type { SceneConfig } from '@/scene/SceneConfig'
+import { createSceneScale } from '@/scene'
+import type { SceneConfig } from '@/scene'
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
 
 /** 斜抛动画布局常量 */

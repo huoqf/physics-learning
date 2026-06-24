@@ -1,11 +1,11 @@
-import { useRef, useCallback, useState, useEffect, useMemo } from 'react'
+﻿import { useRef, useCallback, useState, useEffect, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { SECOND_LAW_COLORS } from '@/theme/physics/secondLawColors'
-import { STROKE, FONT } from '@/theme/physics/canvasStyle'
+import { SECOND_LAW_COLORS } from '@/theme/physics'
+import { STROKE, FONT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import {
   initHeatConductionParticles,

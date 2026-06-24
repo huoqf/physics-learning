@@ -1,9 +1,9 @@
-import { useMemo } from 'react'
+﻿import { useMemo } from 'react'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { createSceneScale } from '@/scene/SceneScale'
-import type { SceneConfig } from '@/scene/SceneConfig'
+import { createSceneScale } from '@/scene'
+import type { SceneConfig } from '@/scene'
 import type { PowerModelState } from '@/physics/power'
 
 interface PowerSceneProps {

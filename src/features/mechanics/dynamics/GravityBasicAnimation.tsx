@@ -1,15 +1,15 @@
-import { FC, useMemo } from 'react'
+﻿import { FC, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { withAlpha } from '@/theme/physics/colors'
+import { withAlpha } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
-import { createSceneScale } from '@/scene/SceneScale'
-import type { SceneConfig } from '@/scene/SceneConfig'
+import { createSceneScale } from '@/scene'
+import type { SceneConfig } from '@/scene'
 
 // 定义悬挂薄板的本地顶点
 const PLATE_VERTICES = [

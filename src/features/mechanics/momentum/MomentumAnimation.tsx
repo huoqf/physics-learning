@@ -15,8 +15,8 @@ import {
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { RelationChart } from '@/components/Chart'
-import { createSceneScale } from '@/scene/SceneScale'
-import type { SceneConfig } from '@/scene/SceneConfig'
+import { createSceneScale } from '@/scene'
+import type { SceneConfig } from '@/scene'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,
@@ -78,7 +78,6 @@ export default function MomentumAnimation() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
-  const { font } = canvasSize
 
   const vp = useViewport(canvasSize, {
     designWidth: 700,
