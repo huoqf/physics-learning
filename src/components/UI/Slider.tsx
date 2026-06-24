@@ -1,21 +1,110 @@
 import React from 'react'
 
+/**
+ * Slider 滑块组件 Props 接口。
+ * 用于数值范围选择，支持自定义标签、单位和格式化显示。
+ */
 interface SliderProps {
+  /**
+   * 当前滑块值。
+   */
   value: number
+  /**
+   * 滑块最小值。
+   */
   min: number
+  /**
+   * 滑块最大值。
+   */
   max: number
+  /**
+   * 滑块步长。
+   * @default 0.1
+   */
   step?: number
+  /**
+   * 数值单位（显示在值后面）。
+   * @default ''
+   */
   unit?: string
+  /**
+   * 滑块标签（显示在左上方）。
+   */
   label?: string
+  /**
+   * 值变化时的回调函数。
+   */
   onChange: (value: number) => void
+  /**
+   * 是否禁用滑块。
+   * @default false
+   */
   disabled?: boolean
+  /**
+   * 最小值标签（显示在滑块下方左侧）。
+   */
   minLabel?: string
+  /**
+   * 最大值标签（显示在滑块下方右侧）。
+   */
   maxLabel?: string
+  /**
+   * 中间值标签（显示在滑块下方中间）。
+   */
   midLabel?: string
+  /**
+   * 自定义值格式化函数。
+   * 用于控制值的显示格式，如保留小数位数。
+   */
   formatValue?: (v: number) => string
+  /**
+   * 描述文本（显示在滑块下方右侧，灰色小字）。
+   */
   description?: string
 }
 
+/**
+ * Slider 滑块组件
+ *
+ * 【设计意图】
+ * 1. 提供直观的数值范围选择交互，适用于物理模拟参数调整。
+ * 2. 支持自定义标签、单位和格式化显示，满足不同场景需求。
+ * 3. 内置禁用状态和响应式设计，在移动端也能良好使用。
+ * 4. 可自定义步长和显示格式，适应不同精度要求的参数调整。
+ *
+ * @example
+ * ```tsx
+ * // 基础滑块
+ * <Slider
+ *   value={50}
+ *   min={0}
+ *   max={100}
+ *   onChange={(v) => console.log(v)}
+ * />
+ *
+ * // 带标签和单位的滑块
+ * <Slider
+ *   value={2.5}
+ *   min={0}
+ *   max={10}
+ *   step={0.1}
+ *   unit="m/s"
+ *   label="初速度"
+ *   onChange={(v) => setVelocity(v)}
+ * />
+ *
+ * // 带自定义格式化的滑块
+ * <Slider
+ *   value={0.5}
+ *   min={0}
+ *   max={1}
+ *   step={0.01}
+ *   label="摩擦系数"
+ *   formatValue={(v) => `${(v * 100).toFixed(0)}%`}
+ *   onChange={(v) => setFriction(v)}
+ * />
+ * ```
+ */
 export const Slider: React.FC<SliderProps> = ({
   value,
   min,

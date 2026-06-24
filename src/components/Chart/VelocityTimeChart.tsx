@@ -388,6 +388,52 @@ function VTContent({
   )
 }
 
+/**
+ * VelocityTimeChart 速度-时间图像组件
+ *
+ * 【设计意图】
+ * 1. 专门用于物理实验中的速度-时间（v-t）图像展示。
+ * 2. 支持静态和动画两种模式：静态模式用于展示完整数据，动画模式用于实时模拟。
+ * 3. 支持多数据系列对比，可同时展示多条曲线。
+ * 4. 内置阶段背景着色，用于区分不同运动阶段（如发射/转弯/在轨）。
+ * 5. 支持面积填充、参考线、游标等交互功能，增强数据可视化效果。
+ *
+ * @example
+ * ```tsx
+ * // 静态模式：展示完整 v-t 图像
+ * <VelocityTimeChart
+ *   points={[
+ *     { t: 0, v: 0 },
+ *     { t: 2, v: 10 },
+ *     { t: 4, v: 10 },
+ *     { t: 6, v: 0 },
+ *   ]}
+ *   currentTime={6}
+ *   tMax={6}
+ * />
+ *
+ * // 动画模式：实时模拟 v-t 图像
+ * <VelocityTimeChart
+ *   mode="animated"
+ *   points={trajectoryPoints}
+ *   domainPoints={fullTrajectory}
+ *   currentTime={simulationTime}
+ *   tMax={10}
+ *   showArea={true}
+ *   showCursor={true}
+ * />
+ *
+ * // 多系列对比
+ * <VelocityTimeChart
+ *   points={seriesA}
+ *   currentTime={5}
+ *   tMax={5}
+ *   additionalSeries={[
+ *     { points: seriesB, label: 'B', series: 'secondary' }
+ *   ]}
+ * />
+ * ```
+ */
 export function VelocityTimeChart({
   points,
   domainPoints,

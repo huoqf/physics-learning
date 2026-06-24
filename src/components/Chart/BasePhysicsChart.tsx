@@ -7,30 +7,116 @@ function clamp(v: number, min: number, max: number) {
   return v < min ? min : v > max ? max : v
 }
 
+/**
+ * BasePhysicsChart 基础物理图表组件 Props 接口。
+ * 所有物理图表的基础设施，提供坐标系、网格、刻度等通用功能。
+ */
 export interface BasePhysicsChartProps {
+  /**
+   * X 轴物理坐标范围 [min, max]。
+   */
   xDomain: [number, number]
+  /**
+   * Y 轴物理坐标范围 [min, max]。
+   */
   yDomain: [number, number]
+  /**
+   * X 轴标签文本。
+   */
   xLabel: string
+  /**
+   * Y 轴标签文本。
+   */
   yLabel: string
+  /**
+   * 图表标题（显示在图表上方）。
+   */
   title?: string
+  /**
+   * 图表变体。
+   * - 'standard': 标准尺寸图表
+   * - 'mini': 迷你尺寸图表，适用于嵌入式展示
+   * @default 'standard'
+   */
   variant?: 'standard' | 'mini'
+  /**
+   * 初始尺寸（用于响应式图表）。
+   * 不传则使用主题中的默认尺寸。
+   */
   initialSize?: { width: number; height: number }
   /**
    * 固定尺寸模式：直接指定图表像素宽高，跳过 useCanvasSize DOM 测量。
    * 用于嵌入主 SVG（无需 foreignObject）等场景。传入后返回纯 <g> 而非 <div>+<svg>。
    */
   fixedSize?: { width: number; height: number }
+  /**
+   * 网格线数量配置。
+   * 不传则使用主题中的默认值。
+   */
   gridCount?: { x?: number; y?: number }
+  /**
+   * X 轴刻度格式化函数。
+   * 不传则使用默认的 `v.toFixed(1)`。
+   */
   formatX?: (v: number) => string
+  /**
+   * Y 轴刻度格式化函数。
+   * 不传则使用默认的 `v.toFixed(1)`。
+   */
   formatY?: (v: number) => string
-  /** y 轴基准线位置（物理坐标），默认为 yDomain[0]。设为 0 可实现双向 Y 轴 */
+  /**
+   * y 轴基准线位置（物理坐标），默认为 yDomain[0]。
+   * 设为 0 可实现双向 Y 轴（正负值都有显示）。
+   */
   yBaseline?: number
-  /** 是否显示网格线，默认 true */
+  /**
+   * 是否显示网格线。
+   * @default true
+   */
   showGrid?: boolean
+  /**
+   * 子元素（图表插件内容，如曲线、面积、游标等）。
+   */
   children?: ReactNode
+  /**
+   * 额外的 CSS 类名。
+   */
   className?: string
 }
 
+/**
+ * BasePhysicsChart 基础物理图表组件
+ *
+ * 【设计意图】
+ * 1. 提供所有物理图表的基础设施：坐标系、网格、刻度、标签等。
+ * 2. 支持响应式和固定尺寸两种模式，适应不同使用场景。
+ * 3. 通过 ChartContext 向子组件传递坐标转换函数，实现插件化架构。
+ * 4. 支持自定义格式化函数、网格数量、基准线等，满足个性化需求。
+ *
+ * @example
+ * ```tsx
+ * // 基础图表
+ * <BasePhysicsChart
+ *   xDomain={[0, 10]}
+ *   yDomain={[0, 100]}
+ *   xLabel="t (s)"
+ *   yLabel="v (m/s)"
+ *   title="速度-时间图像"
+ * />
+ *
+ * // 带子组件的图表
+ * <BasePhysicsChart
+ *   xDomain={[0, 10]}
+ *   yDomain={[-5, 5]}
+ *   xLabel="t (s)"
+ *   yLabel="a (m/s²)"
+ *   yBaseline={0}
+ * >
+ *   <ChartLine points={data} />
+ *   <ChartCursor x={currentTime} />
+ * </BasePhysicsChart>
+ * ```
+ */
 export function BasePhysicsChart({
   xDomain,
   yDomain,

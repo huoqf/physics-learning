@@ -5,13 +5,63 @@ import { duration, easing } from '@/theme/motion'
 import { useBreakpoint } from '@/utils'
 
 // ─── ThreePanel ──────────────────────────────────────────────────────────
+
+/**
+ * ThreePanel 三栏布局组件 Props 接口。
+ * 提供响应式三栏布局，支持桌面端固定侧边栏和移动端抽屉/堆叠模式。
+ */
 interface ThreePanelProps {
+  /**
+   * 左侧面板内容。
+   * 在桌面端显示为固定侧边栏，在移动端显示为抽屉式面板。
+   */
   left?: React.ReactNode
+  /**
+   * 中间主内容区域。
+   * 始终占据主要空间，是页面的核心内容区。
+   */
   center: React.ReactNode
+  /**
+   * 右侧面板内容。
+   * 在桌面端显示为固定侧边栏，在移动端下移到主内容下方。
+   */
   right?: React.ReactNode
+  /**
+   * 额外的 CSS 类名。
+   */
   className?: string
 }
 
+/**
+ * ThreePanel 三栏布局组件
+ *
+ * 【设计意图】
+ * 1. 提供响应式三栏布局，适配桌面端、平板端和移动端。
+ * 2. 桌面端：左侧面板（参数区）固定，中间（画布）自适应，右侧面板（图例/信息）固定。
+ * 3. 平板端：左侧面板变为抽屉式，点击按钮展开/收起。
+ * 4. 移动端：左侧面板抽屉式，右侧面板下移到主内容下方。
+ * 5. 所有过渡动画使用统一的缓动函数和时长，保证视觉一致性。
+ *
+ * @example
+ * ```tsx
+ * // 基础三栏布局
+ * <ThreePanel
+ *   left={<ParamPanel />}
+ *   center={<PhysicsCanvas />}
+ *   right={<InfoPanel />}
+ * />
+ *
+ * // 仅有中间内容
+ * <ThreePanel center={<FullWidthContent />} />
+ *
+ * // 带自定义类名
+ * <ThreePanel
+ *   left={<ControlPanel />}
+ *   center={<MainView />}
+ *   className="h-screen"
+ * />
+ * ```
+ */
 export const ThreePanel: React.FC<ThreePanelProps> = ({
   left,
   center,

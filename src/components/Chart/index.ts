@@ -1,3 +1,24 @@
+/**
+ * 图表组件库
+ *
+ * 提供项目中所有物理图表相关的组件，包括速度-时间图像、位移-时间图像等。
+ * 所有图表基于 BasePhysicsChart 基础设施，支持插件化架构和响应式布局。
+ *
+ * @example
+ * ```tsx
+ * import { VelocityTimeChart, ChartCursor, ChartArea } from '@/components/Chart'
+ *
+ * // 使用图表组件
+ * <VelocityTimeChart
+ *   points={data}
+ *   currentTime={5}
+ *   tMax={10}
+ *   showArea={true}
+ * >
+ *   <ChartCursor x={currentTime} />
+ * </VelocityTimeChart>
+ * ```
+ */
 // ============================================================================
 // 图表基础设施 (Chart Infrastructure)
 // ============================================================================

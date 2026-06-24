@@ -1,3 +1,20 @@
+/**
+ * UI 组件库
+ *
+ * 提供项目中所有通用 UI 组件，包括按钮、滑块、卡片、表单控件等。
+ * 所有组件遵循统一的设计规范，支持主题定制和响应式布局。
+ *
+ * @example
+ * ```tsx
+ * import { Button, Slider, Card } from '@/components/UI'
+ *
+ * // 使用 UI 组件
+ * <Card>
+ *   <Button onClick={() => console.log('clicked')}>确认</Button>
+ *   <Slider value={50} min={0} max={100} onChange={(v) => console.log(v)} />
+ * </Card>
+ * ```
+ */
 export { Button } from './Button'
 export { Slider } from './Slider'
 export { KatexFormula } from './KatexFormula'

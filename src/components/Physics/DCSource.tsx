@@ -20,26 +20,66 @@ const FONT_BASE = {
   },
 } as const
 
+/**
+ * DCSource 直流电源组件 Props 接口。
+ * 支持三种渲染模式：数字稳压电源、干电池、电路原理图符号。
+ */
 export interface DCSourceProps {
-  /** 中心 x 坐标 */
+  /**
+   * 中心 x 坐标（SVG 坐标系）。
+   * @default 0
+   */
   x?: number
-  /** 中心 y 坐标 */
+  /**
+   * 中心 y 坐标（SVG 坐标系）。
+   * @default 0
+   */
   y?: number
-  /** 电压值 */
+  /**
+   * 电压值（单位：V）。
+   * 会显示在电源的显示屏或标签上。
+   * @default 0
+   */
   voltage?: number
-  /** 电源类型: 'instrument' (数字稳压电源) | 'battery' (干电池) | 'symbol' (电路原理图符号) */
+  /**
+   * 电源类型。
+   * - 'instrument': 数字稳压电源（拟物风格，带 LED 显示屏）
+   * - 'battery': 干电池（拟物经典电池外观）
+   * - 'symbol': 电路原理图符号（标准电路图符号）
+   * @default 'instrument'
+   */
   type?: 'instrument' | 'battery' | 'symbol'
-  /** 自定义宽度 */
+  /**
+   * 自定义宽度（像素）。
+   * 不传则使用各类型的默认尺寸。
+   */
   width?: number
-  /** 自定义高度 */
+  /**
+   * 自定义高度（像素）。
+   * 不传则使用各类型的默认尺寸。
+   */
   height?: number
-  /** 自定义标签（默认：'DC SOURCE' 或 '1.5V' 等） */
+  /**
+   * 自定义标签文本。
+   * 不传则使用默认标签（如 'DC SOURCE' 或 '1.5V'）。
+   */
   label?: string
-  /** 极性朝向：'left-positive' (正极在左) | 'right-positive' (正极在右) */
+  /**
+   * 极性朝向。
+   * - 'left-positive': 正极在左，负极在右
+   * - 'right-positive': 正极在右，负极在左
+   * @default 'left-positive'
+   */
   polarity?: 'left-positive' | 'right-positive'
-  /** 是否禁用/不工作 */
+  /**
+   * 是否禁用/不工作。
+   * 为 true 时会降低透明度并禁用交互。
+   * @default false
+   */
   disabled?: boolean
-  /** 类名 */
+  /**
+   * 额外的 CSS 类名。
+   */
   className?: string
 }
 
@@ -76,6 +116,45 @@ const getBatteryLayout = (width: number, height: number) => {
   }
 }
 
+/**
+ * DCSource 直流电源组件
+ *
+ * 【设计意图】
+ * 1. 统一物理实验中直流电源的视觉表现，支持三种渲染模式。
+ * 2. 数字稳压电源模式：拟物 LED 显示屏，实时显示电压值。
+ * 3. 干电池模式：经典电池外观，带极性涂装和电极头部。
+ * 4. 电路原理图符号：标准电路图符号，适用于原理图展示。
+ * 5. 所有模式支持极性反转和禁用状态，满足不同实验场景需求。
+ *
+ * @example
+ * ```tsx
+ * // 数字稳压电源
+ * <DCSource
+ *   x={100}
+ *   y={200}
+ *   voltage={12.0}
+ *   type="instrument"
+ * />
+ *
+ * // 干电池（正极在右）
+ * <DCSource
+ *   x={150}
+ *   y={200}
+ *   voltage={1.5}
+ *   type="battery"
+ *   polarity="right-positive"
+ * />
+ *
+ * // 电路原理图符号
+ * <DCSource
+ *   x={200}
+ *   y={200}
+ *   voltage={9.0}
+ *   type="symbol"
+ *   label="9V"
+ * />
+ * ```
+ */
 export const DCSource: React.FC<DCSourceProps> = ({
   x = 0,
   y = 0,
