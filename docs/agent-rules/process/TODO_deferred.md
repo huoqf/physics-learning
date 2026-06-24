@@ -1,6 +1,6 @@
 # 延后处理待办事项
 
-> 最后更新：2026-06-23
+> 最后更新：2026-06-24
 
 ---
 
@@ -109,11 +109,13 @@
 - ✅ ViewportInfo visibleX/visibleY · transform 设计稿左上角语义 · Transformer 试点
 - ✅ Work / Transformer / SatelliteAnimation / KeplerAnimation / ElectricField / FieldLines / 4 光学模块 接入
 - ✅ Velocity / Collision / Momentum 试点推广（overlay 避让）
+- ✅ SceneLayoutProfile 沉淀：AnimationConfig.sceneLayout 接口 + AnimationLayoutContext 下发（P4）
+- ✅ FrictionAnimation 迁移至 useViewport 比例定位（P3 示范）
 
 ### 待做
 
-1. **沉淀 SceneLayoutProfile**：AnimationConfig.sceneLayout 接口
-2. **统一 panel layout 工具**：viewport overlay 和 DOM panel 同源计算
+1. **统一 panel layout 工具**：viewport overlay 和 DOM panel 同源计算
+2. **其余 dynamics 组件 Viewport 迁移**：NewtonSecond / Gravity / Spring（按 P3 范本）
 
 ### 硬约束
 
