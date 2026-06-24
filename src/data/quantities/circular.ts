@@ -80,11 +80,30 @@ export function buildCircularQuantities(
         const pt = trajectory[clamped]
         const currentV = Math.sqrt(pt.vx * pt.vx + pt.vy * pt.vy)
 
+        // 运动学加速度分解计算
+        const g = 9.8
+        let a_xiang = 0
+        let a_qie = 0
+        let a_he = 0
+
+        if (pt.state === 'on-track') {
+          a_xiang = (currentV * currentV) / r
+          a_qie = Math.abs(g * Math.sin(pt.theta))
+          a_he = Math.sqrt(a_xiang * a_xiang + a_qie * a_qie)
+        } else {
+          a_xiang = 0
+          a_qie = 0
+          a_he = g
+        }
+
         quantities = [
           { label: '最低点初速 v₀', value: v0.toFixed(2), unit: 'm/s' },
           { label: '脱轨临界初速', value: vSwingLimit.toFixed(2), unit: 'm/s' },
           { label: '通轨临界初速', value: vLoopLimit.toFixed(2), unit: 'm/s' },
           { label: '当前速度 v', value: currentV.toFixed(2), unit: 'm/s' },
+          { label: '向心加速度 a_向', value: a_xiang.toFixed(2), unit: 'm/s²' },
+          { label: '切向加速度 a_切', value: a_qie.toFixed(2), unit: 'm/s²' },
+          { label: '合加速度 a_合', value: a_he.toFixed(2), unit: 'm/s²' },
           {
             label: '轨道支持力 N',
             value: pt.state === 'flying'
@@ -119,14 +138,14 @@ export function buildCircularQuantities(
           ...base,
           { label: '线速度 v', value: v.toFixed(2), unit: 'm/s' },
           { label: '角速度 ω', value: omega.toFixed(2), unit: 'rad/s' },
-          { label: '向心加速度 a_n', value: a_c.toFixed(2), unit: 'm/s²' },
-          { label: '向心力 F_n', value: F_c.toFixed(2), unit: 'N' },
+          { label: '向心加速度 a_向', value: a_c.toFixed(2), unit: 'm/s²' },
+          { label: '向心力 F_向', value: F_c.toFixed(2), unit: 'N' },
           { label: '周期 T', value: T.toFixed(2), unit: 's' }
         ]
 
         formulas = [
-          { name: '向心力大小', latex: 'F_n = m a_n = m \\frac{v^2}{r} = m \\omega^2 r', level: 'core' },
-          { name: '向心加速度', latex: 'a_n = \\frac{v^2}{r} = \\omega^2 r', level: 'core' },
+          { name: '向心力大小', latex: 'F_{\\text{向}} = m a_{\\text{向}} = m \\frac{v^2}{r} = m \\omega^2 r', level: 'core' },
+          { name: '向心加速度', latex: 'a_{\\text{向}} = \\frac{v^2}{r} = \\omega^2 r', level: 'core' },
           { name: '线速度与周期', latex: 'v = \\frac{2\\pi r}{T}', level: 'core' }
         ]
 

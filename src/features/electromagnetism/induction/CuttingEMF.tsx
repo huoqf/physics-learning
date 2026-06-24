@@ -196,8 +196,11 @@ export default function CuttingEMF() {
     F_ext = 2.0,
     m = 0.2,
     showForceAnalysis = 1,
-    B_out = 0,
   } = params
+
+  // 磁场方向由 B 的符号决定：B > 0 → 向里 ⊗ (B_out=0)；B < 0 → 向外 ⊙ (B_out=1)
+  const B_out = B < 0 ? 1 : 0
+  const absB = Math.abs(B)
 
   // 1. 动态画布测量与响应式
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
@@ -219,8 +222,8 @@ export default function CuttingEMF() {
 
   // 特征常数
   const { terminalVelocity: v_m, timeConstant: tau, initialAcceleration: a_0 } = useMemo(
-    () => computeRodConstants(B, L, R, m, F_ext),
-    [B, L, R, m, F_ext]
+    () => computeRodConstants(absB, L, R, m, F_ext),
+    [absB, L, R, m, F_ext]
   )
 
   if (mode === 0) {
@@ -233,19 +236,19 @@ export default function CuttingEMF() {
     } else {
       x_current = X_LIMIT + v * time
     }
-    const res = calculateCuttingEMF(B, L, v_current, R, 90, 0, B_out)
+    const res = calculateCuttingEMF(absB, L, v_current, R, 90, 0, B_out)
     EMF_current = res.EMF
     I_current = res.I
     F_amp_current = res.F_ampere
   } else {
     // 进阶模式：自由释放(变加速)
-    const res = computeRodStateAtTime(time, B, L, R, m, F_ext)
+    const res = computeRodStateAtTime(time, absB, L, R, m, F_ext)
     x_current = res.x
     v_current = res.v
     a_current = res.a
     F_amp_current = res.F_amp
     const dirFactor = B_out === 0 ? 1 : -1
-    EMF_current = B * L * v_current * dirFactor
+    EMF_current = absB * L * v_current * dirFactor
     I_current = R > 0 ? EMF_current / R : 0
   }
 
@@ -337,7 +340,7 @@ export default function CuttingEMF() {
             y={sy}
             fontSize={font(14)}
             fill={PHYSICS_COLORS.magneticField}
-            opacity={Math.min(0.45, 0.2 + (B / 3.0) * 0.25)}
+            opacity={Math.min(0.45, 0.2 + (absB / 3.0) * 0.25)}
             textAnchor="middle"
             dominantBaseline="middle"
             style={{ userSelect: 'none' }}
@@ -348,7 +351,7 @@ export default function CuttingEMF() {
       }
     }
     return symbols
-  }, [B, B_out, railLeftPos.cx, railRightPos.cx, railSpacing, railCy, px, font])
+  }, [absB, B_out, railLeftPos.cx, railRightPos.cx, railSpacing, railCy, px, font])
 
   // 8. 物理量矢量归一化比例尺
   const localSceneScale = useMemo(() => {
@@ -495,7 +498,7 @@ export default function CuttingEMF() {
             fontWeight="extrabold"
             alignmentBaseline="middle"
           >
-            匀强磁场 B = {B.toFixed(1)} T {B_out === 1 ? '(⊙ 垂直纸面向外)' : '(⊗ 垂直纸面向里)'}
+            匀强磁场 B = {absB.toFixed(1)} T {B_out === 1 ? '(⊙ 垂直纸面向外)' : '(⊗ 垂直纸面向里)'}
           </text>
 
           {/* 电阻符号与阻值标注 (在轨道左侧端点) */}

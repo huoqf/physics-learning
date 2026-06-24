@@ -17,7 +17,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     title: '向心加速度与向心力',
     knowledgeId: 'mechanics-5-5',
     Component: lazy(() => import('@/features/mechanics/circular/CentripetalAnimation')),
-    defaultParams: { r: 3, v: 3, v0: 5, m: 1, advancedMode: 0, showWaveform: 1, trackType: 0 },
+    defaultParams: { r: 3, v: 3, v0: 5, m: 1, advancedMode: 0, showWaveform: 1, trackType: 0, showAcceleration: 1 },
     paramMeta: [
       { key: 'r', label: '半径 r', min: 3, max: 5, step: 0.1, unit: 'm' },
       { key: 'v', label: '线速度 v', min: 1, max: 10, step: 0.5, unit: 'm/s', hideIf: 'advancedMode', hideIfValue: 1 },

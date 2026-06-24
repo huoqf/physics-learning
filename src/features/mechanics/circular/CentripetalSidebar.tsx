@@ -25,6 +25,15 @@ export default function CentripetalSidebar({
         }}
         disabled={disabled}
       />
+ 
+      <div className="mt-3 space-y-3">
+        <ToggleSwitch
+          label="显示加速度矢量"
+          checked={(params.showAcceleration ?? 1) === 1}
+          onChange={(checked) => updateParam('showAcceleration', checked ? 1 : 0)}
+          disabled={disabled}
+        />
+      </div>
 
       {!isAdvanced && (
         <div className="mt-3 space-y-3">

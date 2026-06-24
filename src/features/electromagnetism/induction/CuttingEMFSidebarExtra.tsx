@@ -78,9 +78,9 @@ export const CuttingEMFSidebarExtra: React.FC<CuttingEMFSidebarExtraProps> = ({
 
         <div className="space-y-4">
           <Slider
-            label="磁感应强度 B"
+            label="磁感应强度 B（负=向外⊙）"
             value={B}
-            min={0.1}
+            min={-3.0}
             max={3.0}
             step={0.1}
             unit="T"

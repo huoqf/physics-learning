@@ -1,4 +1,4 @@
-import { useCanvasSize, physicsToCanvas } from '@/utils'
+import { useCanvasSize, physicsToCanvasWithOrigin, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import React, { useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -9,13 +9,14 @@ import { RelationChart } from '@/components/Chart'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 import {
+  colors,
   PHYSICS_COLORS,
   SCENE_COLORS,
   CHART_COLORS,
   CANVAS_STYLE,
   STROKE,
   DASH,
-} from '@/theme/physics'
+} from '@/theme'
 
 /** 向心加速度动画参数范围（滑块边界） */
 const CENTRIPETAL_PARAM_BOUNDS = {
@@ -82,6 +83,7 @@ export default function CentripetalAnimation() {
     advancedMode = 0,
     showWaveform = 1,
     trackType = 0,
+    showAcceleration = 1,
   } = params
 
   const isAdvanced = advancedMode === 1
@@ -123,11 +125,23 @@ export default function CentripetalAnimation() {
   const minCanvasDim = Math.min(canvasSize.width, canvasSize.height)
   const scale = (minCanvasDim - CENTRIPETAL_LAYOUT.canvasPadding) / (2 * CENTRIPETAL_LAYOUT.rMax)
 
-  // 统一通过 physicsToCanvas() 进行坐标转换，原点定位在画布中心
-  const ballPos = physicsToCanvas(x, y, canvasSize.width, canvasSize.height, scale)
-  const centerPos = physicsToCanvas(0, 0, canvasSize.width, canvasSize.height, scale)
-  const centerX = centerPos.cx
-  const centerY = centerPos.cy
+  const cardWidth = isAdvanced
+    ? Math.max(290, canvasSize.width * 0.38)
+    : Math.max(CENTRIPETAL_LAYOUT.waveCardMinWidth, canvasSize.width * 0.35)
+
+  // 依据右侧图表卡片或受力特写卡片宽度，使用 Viewport 架构自动进行比例定位和原点避让计算
+  const isLeftShifted = showFaCard || isAdvanced
+  const vp = useViewport(canvasSize, {
+    designWidth: 600,
+    designHeight: 600,
+    overlayRight: isLeftShifted ? Math.round(cardWidth) : 0,
+  })
+
+  const centerX = vp.centerX
+  const centerY = vp.centerY
+
+  // 统一通过 physicsToCanvasWithOrigin() 自定义原点进行坐标转换
+  const ballPos = physicsToCanvasWithOrigin(x, y, centerX, centerY, scale)
 
   const sceneConfig = useMemo((): SceneConfig => {
     // 基础模式自适应基准
@@ -178,8 +192,9 @@ export default function CentripetalAnimation() {
   const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig])
 
   // ── 4. 右上角悬浮卡片定位 ─────────────────────
-  const cardWidth = Math.max(CENTRIPETAL_LAYOUT.waveCardMinWidth, canvasSize.width * 0.35)
-  const cardHeight = Math.max(CENTRIPETAL_LAYOUT.waveCardMinHeight, canvasSize.height * 0.3)
+  const cardHeight = isAdvanced
+    ? Math.max(340, canvasSize.height * 0.55)
+    : Math.max(CENTRIPETAL_LAYOUT.waveCardMinHeight, canvasSize.height * 0.3)
   const cardX = canvasSize.width - cardWidth - CENTRIPETAL_LAYOUT.waveCardRightOffset
   const cardY = 20
 
@@ -263,7 +278,7 @@ export default function CentripetalAnimation() {
           <path
             d={activeTrajectory
               .map((pt, idx) => {
-                const pos = physicsToCanvas(pt.x, pt.y, canvasSize.width, canvasSize.height, scale)
+                const pos = physicsToCanvasWithOrigin(pt.x, pt.y, centerX, centerY, scale)
                 return `${idx === 0 ? 'M' : 'L'} ${pos.cx} ${pos.cy}`
               })
               .join(' ')}
@@ -449,7 +464,7 @@ export default function CentripetalAnimation() {
                 label="v"
               />
               {/* 加速度 a */}
-              {currentPoint.state === 'on-track' ? (
+              {showAcceleration === 1 && (currentPoint.state === 'on-track' ? (
                 <VectorArrow
                   origin={{ x, y }}
                   vector={{
@@ -458,7 +473,7 @@ export default function CentripetalAnimation() {
                   }}
                   type="acceleration"
                   sceneScale={sceneScale}
-                  label="a"
+                  label="a_合"
                 />
               ) : (
                 <VectorArrow
@@ -466,9 +481,9 @@ export default function CentripetalAnimation() {
                   vector={{ x: 0, y: -GRAVITY }}
                   type="acceleration"
                   sceneScale={sceneScale}
-                  label="a"
+                  label="a_合"
                 />
-              )}
+              ))}
               {/* 重力 G */}
               <VectorArrow
                 origin={{ x, y }}
@@ -514,13 +529,15 @@ export default function CentripetalAnimation() {
                 label="v"
               />
               {/* 向心加速度 a */}
-              <VectorArrow
-                origin={{ x, y }}
-                vector={{ x: -x * (a_c / r), y: -y * (a_c / r) }}
-                type="acceleration"
-                sceneScale={sceneScale}
-                label="a_n"
-              />
+              {showAcceleration === 1 && (
+                <VectorArrow
+                  origin={{ x, y }}
+                  vector={{ x: -x * (a_c / r), y: -y * (a_c / r) }}
+                  type="acceleration"
+                  sceneScale={sceneScale}
+                  label="a_向"
+                />
+              )}
               {/* 向心力 F (效果力，虚线) */}
               <VectorArrow
                 origin={{ x, y }}
@@ -528,7 +545,7 @@ export default function CentripetalAnimation() {
                 type="force"
                 sceneScale={sceneScale}
                 dashed={true}
-                label="F_n (效果力)"
+                label="F_向 (效果力)"
               />
             </g>
           )
@@ -581,6 +598,297 @@ export default function CentripetalAnimation() {
             />
           </g>
         )}
+
+        {/* ========== 右上角：画中画悬浮受力正交分解卡片 (仅进阶模式) ========== */}
+        {isAdvanced && currentPoint && (() => {
+          // 基于特写卡片宽高的自适应缩放因子，完全避免像素硬编码
+          const zoom = Math.min(cardWidth / 290, (cardHeight * 0.45) / 153)
+          
+          const ballCX = cardWidth * 0.50
+          const ballCY = cardHeight * 0.28 // 向上微调以匹配自适应尺寸
+          
+          const theta = currentPoint.theta
+          const thetaDeg = (theta * 180) / Math.PI
+          
+          // 径向（朝外）和切向（前进）单位像素向量
+          const dx_out = Math.sin(theta)
+          const dy_out = Math.cos(theta)
+          const dx_tangent = Math.cos(theta)
+          const dy_tangent = -Math.sin(theta)
+          
+          const gLen = 75 * zoom // 自适应重力投影长度
+          const advRefF = Math.max(m * GRAVITY + (m * v0 * v0) / r, 15.0)
+          const F_constraint_val = currentPoint.state === 'flying' ? 0 : currentPoint.N
+          
+          // 约束力小箭头长度（基于 zoom 缩放）
+          const nForceLen = currentPoint.state === 'flying' ? 0 : Math.max(25 * zoom, Math.min(80 * zoom, (Math.abs(F_constraint_val) / advRefF) * 80 * zoom)) * (F_constraint_val >= 0 ? 1 : -1)
+          const px_N = nForceLen * (-dx_out)
+          const py_N = nForceLen * (-dy_out)
+          
+          // 重力分量投影大小
+          const Gn_val_abs = Math.abs(m * GRAVITY * Math.cos(theta))
+          const Gt_val_abs = Math.abs(m * GRAVITY * Math.sin(theta))
+          
+          const px_G_n = gLen * Math.cos(theta) * Math.sin(theta)
+          const py_G_n = gLen * Math.cos(theta) * Math.cos(theta)
+          const px_G_t = -gLen * Math.sin(theta) * Math.cos(theta)
+          const py_G_t = gLen * Math.sin(theta) * Math.sin(theta)
+          
+          const F_xiang_val = currentPoint.state === 'on-track'
+            ? m * r * currentPoint.omega * currentPoint.omega
+            : 0
+          const G_val = m * GRAVITY
+
+          // 局部受力箭头绘制辅助函数（粗细与尺寸基于 zoom 缩放）
+          const renderCloseUpArrow = (
+            x1: number,
+            y1: number,
+            x2: number,
+            y2: number,
+            color: string,
+            dashed = false
+          ) => {
+            const dx = x2 - x1
+            const dy = y2 - y1
+            const len = Math.sqrt(dx * dx + dy * dy)
+            if (len < 1.5) return null
+
+            const ux = dx / len
+            const uy = dy / len
+
+            const headLen = 10 * zoom
+            const headWidth = 8 * zoom
+
+            const lineEndX = x2 - ux * headLen
+            const lineEndY = y2 - uy * headLen
+
+            const perpX = -uy
+            const perpY = ux
+
+            const p1X = lineEndX + perpX * (headWidth / 2)
+            const p1Y = lineEndY + perpY * (headWidth / 2)
+            const p2X = lineEndX - perpX * (headWidth / 2)
+            const p2Y = lineEndY - perpY * (headWidth / 2)
+
+            return (
+              <g key={`${x2}-${y2}-${color}`}>
+                <line
+                  x1={x1}
+                  y1={y1}
+                  x2={lineEndX}
+                  y2={lineEndY}
+                  stroke={color}
+                  strokeWidth={Math.max(1.2, 2.2 * zoom)} // 保证最小线宽
+                  strokeLinecap="round"
+                  {...(dashed ? { strokeDasharray: '3 2' } : {})}
+                />
+                <polygon
+                  points={`${p1X},${p1Y} ${x2},${y2} ${p2X},${p2Y}`}
+                  fill={color}
+                />
+              </g>
+            )
+          }
+          
+          return (
+            <g transform={`translate(${cardX}, ${cardY})`}>
+              <rect
+                width={cardWidth}
+                height={cardHeight}
+                fill={colors.neutral.white}
+                rx={8}
+                stroke={CHART_COLORS.axisLine}
+                strokeWidth={0.8}
+              />
+              
+              {/* === 上半部：局部受力分解示意图 === */}
+              {/* 局部法向轴 (n) */}
+              <line
+                x1={ballCX - dx_out * 90 * zoom} // 尺寸基于 zoom 动态计算
+                y1={ballCY - dy_out * 90 * zoom}
+                x2={ballCX + dx_out * 90 * zoom}
+                y2={ballCY + dy_out * 90 * zoom}
+                stroke={PHYSICS_COLORS.axis}
+                strokeWidth={0.8}
+                strokeDasharray="2 2"
+                opacity={0.6}
+              />
+              <text
+                x={ballCX - dx_out * 96 * zoom}
+                y={ballCY - dy_out * 96 * zoom + 3}
+                fontSize={canvasSize.font(Math.max(8, 10 * zoom))}
+                fill={PHYSICS_COLORS.labelTextLight}
+                textAnchor="middle"
+              >
+                n
+              </text>
+              
+              {/* 局部切向轴 (τ) */}
+              <line
+                x1={ballCX - dx_tangent * 90 * zoom}
+                y1={ballCY - dy_tangent * 90 * zoom}
+                x2={ballCX + dx_tangent * 90 * zoom}
+                y2={ballCY + dy_tangent * 90 * zoom}
+                stroke={PHYSICS_COLORS.axis}
+                strokeWidth={0.8}
+                strokeDasharray="2 2"
+                opacity={0.6}
+              />
+              <text
+                x={ballCX + dx_tangent * 96 * zoom}
+                y={ballCY + dy_tangent * 96 * zoom + 3}
+                fontSize={canvasSize.font(Math.max(8, 10 * zoom))}
+                fill={PHYSICS_COLORS.labelTextLight}
+                textAnchor="middle"
+              >
+                τ
+              </text>
+              
+              {/* 重力分解投影线 */}
+              <line
+                x1={ballCX + px_G_n}
+                y1={ballCY + py_G_n}
+                x2={ballCX + px_G_n + px_G_t}
+                y2={ballCY + py_G_n + py_G_t}
+                stroke={PHYSICS_COLORS.gravity}
+                strokeWidth={0.8}
+                strokeDasharray="2 2"
+                opacity={0.4}
+              />
+              <line
+                x1={ballCX + px_G_t}
+                y1={ballCY + py_G_t}
+                x2={ballCX + px_G_t + px_G_n}
+                y2={ballCY + py_G_t + py_G_n}
+                stroke={PHYSICS_COLORS.gravity}
+                strokeWidth={0.8}
+                strokeDasharray="2 2"
+                opacity={0.4}
+              />
+              
+              {/* 绘制局部受力箭头 */}
+              {renderCloseUpArrow(ballCX, ballCY, ballCX + px_G_n, ballCY + py_G_n, PHYSICS_COLORS.gravity, true)}
+              {renderCloseUpArrow(ballCX, ballCY, ballCX + px_G_t, ballCY + py_G_t, PHYSICS_COLORS.gravity, true)}
+              {renderCloseUpArrow(ballCX, ballCY, ballCX + px_N, ballCY + py_N, trackType === 0 ? PHYSICS_COLORS.tension : PHYSICS_COLORS.normalForce)}
+              {renderCloseUpArrow(ballCX, ballCY, ballCX, ballCY + gLen, PHYSICS_COLORS.gravity)}
+              
+              {/* 局部中心受力小球（半径基于 zoom 自适应） */}
+              <circle
+                cx={ballCX}
+                cy={ballCY}
+                r={12 * zoom}
+                fill="url(#steel-sphere-grad)"
+                stroke={SCENE_COLORS.sphere.steel.stroke}
+                strokeWidth={1}
+              />
+              
+              {/* === 下半部：解题辅助公式与实时计算文本 === */}
+              <foreignObject x={15} y={cardHeight * 0.52} width={cardWidth - 30} height={cardHeight * 0.44}>
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  fontFamily: 'sans-serif',
+                  fontSize: canvasSize.font(10.5),
+                  color: colors.neutral[600],
+                  lineHeight: '1.4'
+                }}>
+                  <div style={{
+                    fontWeight: 'bold',
+                    fontSize: canvasSize.font(11),
+                    color: colors.neutral[800],
+                    borderBottom: '1px solid ' + colors.neutral[200],
+                    paddingBottom: '4px',
+                    display: 'flex',
+                    justifyContent: 'space-between'
+                  }}>
+                    <span>受力正交分解</span>
+                    <span>θ = {thetaDeg.toFixed(0)}°</span>
+                  </div>
+                  
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: '1fr 1fr', 
+                    gap: '6px 16px', 
+                    margin: '5px 0' 
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>法向 G<sub>n</sub>=mg|cosθ|:</span>
+                      <span style={{ fontWeight: 'bold', color: PHYSICS_COLORS.gravity }}>{Gn_val_abs.toFixed(1)} N</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>轨道 {trackType === 0 ? 'F_T' : 'F_N'}:</span>
+                      <span style={{ fontWeight: 'bold', color: trackType === 0 ? PHYSICS_COLORS.tension : PHYSICS_COLORS.normalForce }}>
+                        {F_constraint_val.toFixed(1)} N
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>切向 G<sub>t</sub>=mg|sinθ|:</span>
+                      <span style={{ fontWeight: 'bold', color: PHYSICS_COLORS.gravity }}>{Gt_val_abs.toFixed(1)} N</span>
+                    </div>
+                    <div></div>
+                  </div>
+                  
+                  {currentPoint.state === 'flying' ? (
+                    <div style={{
+                      borderTop: '1px solid ' + colors.neutral[200],
+                      paddingTop: '4px',
+                    }}>
+                      <div style={{ fontSize: canvasSize.font(9), color: colors.danger[600], fontWeight: 'bold' }}>脱轨自由飞行 (抛体运动):</div>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        fontWeight: 'bold',
+                        color: PHYSICS_COLORS.appliedForce,
+                        fontSize: canvasSize.font(11.5),
+                        marginTop: '2px'
+                      }}>
+                        <span>F<sub>合</sub> = G:</span>
+                        <span>{G_val.toFixed(1)} N</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{
+                      borderTop: '1px solid ' + colors.neutral[200],
+                      paddingTop: '4px',
+                    }}>
+                      <div style={{ fontSize: canvasSize.font(9), color: colors.neutral[500] }}>
+                        向心方向合力 (
+                        {Math.cos(theta) > 0.001 ? (
+                          <>
+                            F<sub>向</sub> = {trackType === 0 ? 'F_T' : 'F_N'} - G<sub>n</sub>
+                          </>
+                        ) : Math.cos(theta) < -0.001 ? (
+                          <>
+                            F<sub>向</sub> = {trackType === 0 ? 'F_T' : 'F_N'} + G<sub>n</sub>
+                          </>
+                        ) : (
+                          <>
+                            F<sub>向</sub> = {trackType === 0 ? 'F_T' : 'F_N'}
+                          </>
+                        )}
+                        ):
+                      </div>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        fontWeight: 'bold',
+                        color: PHYSICS_COLORS.appliedForce,
+                        fontSize: canvasSize.font(11.5),
+                        marginTop: '2px'
+                      }}>
+                        <span>F<sub>向</sub>:</span>
+                        <span>{F_xiang_val.toFixed(1)} N</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </foreignObject>
+            </g>
+          )
+        })()}
       </svg>
     </div>
   )

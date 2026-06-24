@@ -1154,13 +1154,15 @@ export function buildElectromagnetismQuantities(
     case 'anim-cutting-emf': {
       // 导体切割磁感线：仅展示因变量，彻底禁绝自变量 B, L, R, m, F_ext
       const B = params.B ?? 1.5
+      const absB = Math.abs(B)
+      // 磁场方向由 B 的符号决定：B > 0 → 向里 ⊗ (B_out=0)；B < 0 → 向外 ⊙ (B_out=1)
+      const B_out = B < 0 ? 1 : 0
       const L = params.L ?? 1.0
       const R = params.R ?? 2.0
       const m = params.m ?? 0.2
       const F_ext = params.F_ext ?? 2.0
       const mode = params.mode ?? 0 // 0=基础: 恒速, 1=进阶: 自由释放
       const showForceAnalysis = params.showForceAnalysis ?? 1
-      const B_out = params.B_out ?? 0
 
       let v = 0
       let a = 0
@@ -1173,19 +1175,20 @@ export function buildElectromagnetismQuantities(
         // 基础模式：恒速切割，速度 v 是参数，加速度 a 为 0
         v = params.v ?? 2.0
         a = 0
-        const res = calculateCuttingEMF(B, L, v, R, 90, 0, B_out)
+        const res = calculateCuttingEMF(absB, L, v, R, 90, 0, B_out)
         EMF = res.EMF
         I = res.I
         F_amp = res.F_ampere
         P_heat = F_amp * Math.abs(v)
       } else {
         // 进阶模式：自由释放，采用解析解计算
-        const res = computeRodStateAtTime(time, B, L, R, m, F_ext)
+        const res = computeRodStateAtTime(time, absB, L, R, m, F_ext)
         v = res.v
         a = res.a
         F_amp = res.F_amp
         P_heat = res.P_heat
-        EMF = B * L * v
+        const dirFactor = B_out === 0 ? 1 : -1
+        EMF = absB * L * v * dirFactor
         I = R > 0 ? EMF / R : 0
       }
 

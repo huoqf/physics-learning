@@ -54,14 +54,13 @@ export const electromagnetismInductionAnimations = defineAnimations({
     SidebarExtra: lazy(() => import('@/features/electromagnetism/induction/CuttingEMFSidebarExtra')),
     defaultParams: {
       mode: 0, // 0=基础: 恒速切割, 1=进阶: 自由释放(变加速)
-      B: 1.5, // T
+      B: 1.5, // T（负值表示磁场方向向外⊙，正值表示向里⊗）
       L: 1.0, // m
       v: 2.0, // m/s
       R: 2.0, // Ω
       F_ext: 2.0, // N
       m: 0.2, // kg
       showForceAnalysis: 1, // 开启受力分析
-      B_out: 0, // 磁场方向 0=向里⊗ 1=向外⊙
     },
     paramMeta: [],
   },
