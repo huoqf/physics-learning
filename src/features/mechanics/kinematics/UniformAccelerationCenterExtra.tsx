@@ -1,4 +1,4 @@
-﻿import { useCanvasSize } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { useEffect, useMemo, useState } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -95,9 +95,6 @@ export default function UniformAccelerationCenterExtra() {
               T={T}
               hoveredFlashIdx={hoveredFlashIdx}
             />
-          </div>
-          <div className="flex-1 border-t border-neutral-100 px-4 py-2">
-            <DerivationPanel v0={v0} a={a} time={time} T={T} />
           </div>
         </div>
       </div>
@@ -526,44 +523,6 @@ function AreaDifferenceOverlay({
         面积差 ΔS = aT²
       </text>
     </g>
-  )
-}
-
-// ═══════════════════════════════════════════════════════════════
-// 子组件：公式推导面板
-// ═══════════════════════════════════════════════════════════════
-function DerivationPanel({
-  v0, a, time, T,
-}: {
-  v0: number; a: number; time: number
-  T: number
-}) {
-  const [containerRef, canvasSize] = useCanvasSize({ width: 400, height: 80 })
-  const { font } = canvasSize
-  const { v, s } = calculateAcceleratedMotion(v0, a, time)
-  const deltaX = a * T * T
-
-  return (
-    <div ref={containerRef} className="flex flex-row gap-4 text-xs font-semibold">
-      <div className="flex-1 bg-neutral-50 border border-neutral-200 rounded-lg p-1.5 shadow-sm">
-        <p style={{ fontSize: font(9) }} className="text-neutral-400 mb-0.5">相邻位移差 (逐差法)</p>
-        <p className="font-mono text-neutral-700">
-          Δx = aT² = {a}×{T}² = <span className="font-bold text-primary-600">{deltaX.toFixed(3)} m</span>
-        </p>
-      </div>
-      <div className="flex-1 bg-primary-50/50 border border-primary-100 rounded-lg p-1.5 shadow-sm">
-        <p style={{ fontSize: font(9) }} className="text-primary-400 mb-0.5">末速度公式</p>
-        <p className="font-mono text-neutral-700">
-          v_t = v₀+at = {v0}+{a}×{time.toFixed(1)} = <span className="font-bold text-primary-600">{v.toFixed(2)} m/s</span>
-        </p>
-      </div>
-      <div className="flex-1 bg-neutral-50 border border-neutral-200 rounded-lg p-1.5 shadow-sm">
-        <p style={{ fontSize: font(9) }} className="text-neutral-400 mb-0.5">位移公式</p>
-        <p className="font-mono text-neutral-700">
-          x = v₀t+½at² = <span className="font-bold text-neutral-800">{s.toFixed(2)} m</span>
-        </p>
-      </div>
-    </div>
   )
 }
 
