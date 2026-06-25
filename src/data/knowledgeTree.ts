@@ -369,6 +369,17 @@ export const knowledgeTree: KnowledgeNode[] = [
     problemIds: [],
     prerequisites: ['mechanics-8-4'],
   },
+  {
+    id: 'mechanics-8-6',
+    title: '动量守恒应用',
+    chapter: '第8章 动量',
+    module: 'mechanics',
+    importance: 'hard',
+    animationIds: ['anim-momentum-application'],
+    problemIds: [],
+    prerequisites: ['mechanics-8-4'],
+  },
+
 
   {
     id: 'electricity-1-1',

@@ -5,6 +5,15 @@ import {
   calculateCollisionTime,
   calculateFluidImpactForce,
 } from '@/physics/momentumTheorem'
+import {
+  precomputeCurvedSlot,
+  interpolateCurvedSlot,
+  precomputeSpringBlocks,
+  interpolateSpringBlocks,
+  calculateManBoatState,
+  getManBoatAutoMotion
+} from '@/physics/momentumApplication'
+
 
 export function buildMomentumQuantities(
   animId: string,
@@ -448,6 +457,125 @@ export function buildMomentumQuantities(
             { text: '等质量完全弹性碰撞：两球速度直接交换', importance: 'gaokao' as const },
             { text: 'm_A≪m_B撞静止大球，小球原速反弹，大球近似静止', importance: 'gaokao' as const },
             { text: '碰撞必须满足：后球速度不大于前球，总机械能不增加', importance: 'gaokao' as const },
+          ],
+        }
+      }
+    }
+    case 'anim-momentum-application': {
+      const modelType = params.modelType ?? 0
+      
+      if (modelType === 0) {
+        // 弧形槽-滑块模型
+        const m = params.m_block ?? 2
+        const M = params.M_slot ?? 5
+        const R = params.R_slot ?? 1.5
+        
+        const states = precomputeCurvedSlot(m, M, R, 9.8, 6.0, 0.002)
+        const st = interpolateCurvedSlot(states, _time)
+        
+        // 计算最低点极限秒杀速度（解析解）
+        const v_block_bottom = -Math.sqrt((2 * 9.8 * R * M) / (M + m))
+        const v_slot_bottom = -(m / M) * v_block_bottom
+        
+        return {
+          quantities: [
+            { label: '滑块质量 m', value: m.toFixed(1), unit: 'kg' },
+            { label: '弧形槽质量 M', value: M.toFixed(1), unit: 'kg' },
+            { label: '滑块水平速度 vx', value: st.v_x.toFixed(2), unit: 'm/s', highlight: st.v_x < 0 ? 'negative' as const : undefined },
+            { label: '弧形槽速度 Vx', value: st.v_X.toFixed(2), unit: 'm/s', highlight: st.v_X > 0 ? 'positive' as const : undefined },
+            { label: '最低点滑块速度 v_min', value: v_block_bottom.toFixed(2), unit: 'm/s', highlight: 'negative' as const },
+            { label: '最低点槽速度 V_max', value: v_slot_bottom.toFixed(2), unit: 'm/s', highlight: 'positive' as const },
+            { label: '相互作用弹力 N', value: st.N.toFixed(1), unit: 'N', highlight: 'extreme' as const },
+            { label: '滑块动能 Ek', value: st.Ek_m.toFixed(1), unit: 'J' },
+          ],
+          formulas: [
+            { name: '水平动量守恒', latex: 'm v_x + M V_x = 0', level: 'core' as const },
+            { name: '机械能守恒', latex: '\\frac{1}{2}m(v_x^2 + v_y^2) + \\frac{1}{2}M V_x^2 + mgy = mgR', level: 'core' as const },
+            { name: '最低点滑块速度', latex: 'v_x = -\\sqrt{\\frac{2gRM}{M+m}}', level: 'important' as const },
+            { name: '最低点槽速度', latex: 'V_x = \\sqrt{\\frac{2gRm^2}{M(M+m)}}', level: 'important' as const },
+          ],
+          gaokaoPoints: [
+            { text: '系统水平方向无外力且无摩擦，水平动量在下滑中严格守恒', importance: 'core' as const },
+            { text: '由于重力做功，系统机械能守恒。求最低点速度时，联立代数方程最简单', importance: 'gaokao' as const },
+            { text: '最低点时，弹力达到最大值，公式为 N = m(v_相对²/R + g)', importance: 'hard' as const },
+          ],
+        }
+      } else if (modelType === 1) {
+        // 弹簧双滑块
+        const mA = params.mA_spring ?? 2
+        const mB = params.mB_spring ?? 3
+        const v0 = params.v0_spring ?? 5
+        const k = params.k_spring ?? 20
+        
+        const states = precomputeSpringBlocks(mA, mB, v0, k, 1.5, 3.5, 6.0, 0.002)
+        const st = interpolateSpringBlocks(states, _time)
+        const pTotal = mA * v0
+        
+        return {
+          quantities: [
+            { label: '系统总动量 p_总', value: pTotal.toFixed(1), unit: 'kg·m/s' },
+            { label: 'A球速度 v_A', value: st.vA.toFixed(2), unit: 'm/s' },
+            { label: 'B球速度 v_B', value: st.vB.toFixed(2), unit: 'm/s' },
+            { label: '弹簧形变量 δ', value: st.delta.toFixed(2), unit: 'm', highlight: st.delta > 0 ? 'extreme' as const : undefined },
+            { label: '弹性势能 E_p', value: st.Ep.toFixed(1), unit: 'J', highlight: st.Ep > 0 ? 'positive' as const : undefined },
+            { label: '系统总能量 E_总', value: st.Etotal.toFixed(1), unit: 'J' },
+          ],
+          formulas: [
+            { name: '动量守恒', latex: 'm_A v_A + m_B v_B = m_A v_0', level: 'core' as const },
+            { name: '能量守恒', latex: '\\frac{1}{2}m_A v_A^2 + \\frac{1}{2}m_B v_B^2 + \\frac{1}{2}k \\delta^2 = \\frac{1}{2}m_A v_0^2', level: 'core' as const },
+            { name: '共速（压缩最短）速度', latex: 'v_{\\text{共}} = \\frac{m_A v_0}{m_A + m_B}', level: 'important' as const },
+          ],
+          gaokaoPoints: [
+            { text: '弹簧压缩量最大（共速）时，系统弹性势能最大，动能最小', importance: 'core' as const },
+            { text: '弹簧恢复原长（且即将分离）时，两滑块速度差最大，能量全部转化为动能', importance: 'gaokao' as const },
+            { text: '若弹簧不与滑块粘连，恢复原长即为两滑块的分离临界点', importance: 'hard' as const },
+          ],
+        }
+      } else {
+        // 人船模型
+        const m = params.m_person ?? 50
+        const M = params.M_boat ?? 150
+        const L = params.L_boat ?? 4
+        const manBoatControl = params.manBoatControl ?? 0
+        const manRelS = params.manRelS ?? 0
+        const manVRel = params.manVRel ?? 0
+        
+        let s = manRelS
+        let v_rel = manVRel
+        if (manBoatControl === 0) {
+          const motion = getManBoatAutoMotion(_time, L, 4.0)
+          s = motion.s
+          v_rel = motion.v_rel
+        }
+        
+        const st = calculateManBoatState(s, v_rel, m, M, L)
+        
+        // 计算绝对位移（初始绝对位置 x_0 = -(M*L*0.5)/(m+M)）
+        const x0 = -(M * L * 0.5) / (m + M)
+        const disp_person = st.x_person - x0
+        const disp_boat = st.x_boat - x0
+        
+        return {
+          quantities: [
+            { label: '人绝对位置 x1', value: st.x_person.toFixed(2), unit: 'm', highlight: 'positive' as const },
+            { label: '船绝对位置 x2', value: st.x_boat.toFixed(2), unit: 'm', highlight: 'negative' as const },
+            { label: '系统总质心 x_cm', value: st.x_cm.toFixed(3), unit: 'm', highlight: 'zero' as const },
+            { label: '人绝对速度 v1', value: st.v_person.toFixed(2), unit: 'm/s' },
+            { label: '船绝对速度 v2', value: st.v_boat.toFixed(2), unit: 'm/s' },
+            { label: '人绝对位移 s1', value: disp_person.toFixed(2), unit: 'm', highlight: 'positive' as const },
+            { label: '船绝对位移 s2', value: disp_boat.toFixed(2), unit: 'm', highlight: 'negative' as const },
+            { label: '人位移乘积 m*s1', value: (m * Math.abs(disp_person)).toFixed(1), unit: 'kg·m', highlight: 'extreme' as const },
+            { label: '船位移乘积 M*s2', value: (M * Math.abs(disp_boat)).toFixed(1), unit: 'kg·m', highlight: 'extreme' as const },
+          ],
+          formulas: [
+            { name: '瞬时动量平衡', latex: 'm v_1 + M v_2 = 0', level: 'core' as const },
+            { name: '位移守恒关系', latex: 'm x_1 + M x_2 = 0 \\implies m x_1 = M x_2', level: 'core' as const },
+            { name: '质心不变公式', latex: 'x_{\\text{cm}} = \\frac{m x_1 + M x_boatCenter}{m + M} = \\text{const}', level: 'important' as const },
+          ],
+          gaokaoPoints: [
+            { text: '系统初始静止且水平方向无外力，系统的质心坐标绝对守恒', importance: 'core' as const },
+            { text: '位移关系 m s1 = M s2 中的位移必须是以地面为参考系的绝对位移', importance: 'gaokao' as const },
+            { text: '本模型适用于人走船停、人跑船动等过程，不受人走动速度是否均匀的影响', importance: 'gaokao' as const },
           ],
         }
       }

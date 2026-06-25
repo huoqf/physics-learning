@@ -75,6 +75,8 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-impulse-concept':       { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
   'anim-momentum-conservation': { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
   'anim-collision':             { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
+  'anim-momentum-application':   { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
+
 
   // 电磁学
   'anim-coulomb-law':           { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },

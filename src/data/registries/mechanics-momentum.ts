@@ -79,4 +79,28 @@ export const mechanicsMomentumAnimations = defineAnimations({
     ],
     SidebarExtra: lazy(() => import('@/features/mechanics/momentum/CollisionSidebar')),
   },
+  'anim-momentum-application': {
+    title: '动量守恒应用',
+    knowledgeId: 'mechanics-8-6',
+    Component: lazy(() => import('@/features/mechanics/momentum/MomentumApplicationAnimation')),
+    defaultParams: {
+      modelType: 0, // 0: 弧形槽-滑块, 1: 弹簧双滑块, 2: 人船模型
+      m_block: 2,
+      M_slot: 5,
+      R_slot: 1.5,
+      mA_spring: 2,
+      mB_spring: 3,
+      v0_spring: 5,
+      k_spring: 20,
+      m_person: 50,
+      M_boat: 150,
+      L_boat: 4,
+      manBoatControl: 0, // 0: 自动, 1: 键盘
+    },
+    paramMeta: [
+      { key: 'modelType', label: '选择经典模型', min: 0, max: 2, step: 1, unit: '', showIf: 'always' }
+    ],
+    SidebarExtra: lazy(() => import('@/features/mechanics/momentum/MomentumApplicationSidebar')),
+  },
 })
+

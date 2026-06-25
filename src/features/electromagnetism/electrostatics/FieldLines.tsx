@@ -1,5 +1,5 @@
 import React, { useRef, useMemo } from 'react'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
@@ -14,6 +14,7 @@ const COULOMB_K = 9e9
 const CHARGE_RADIUS = 22
 const PROBE_CHARGE = 1e-6 // 探针试探电荷 +1.0 μC
 
+// ⚠️ viewBox 固定为设计坐标系，不随容器变化，避免 ResizeObserver 延迟引起视觉放大跳变
 const DESIGN_WIDTH = 700
 const DESIGN_HEIGHT = 480
 
@@ -100,7 +101,7 @@ function traceFieldLine(
     points.push([x, y])
   }
 
-  // 计算中间箭头的绘制位置（大约在路径 of 45% 处）
+  // 计算中间箭头的绘制位置（大约在路径 45% 处）
   let arrowPos: [number, number, number] | null = null
   if (points.length > 5) {
     const midIdx = Math.floor(points.length * 0.45)
@@ -119,13 +120,8 @@ export default function FieldLines() {
   const params = useAnimationStore((s) => s.params)
   const updateParam = useAnimationStore((s) => s.updateParam)
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
-  const { width, height, font } = canvasSize
+  const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
-
-  const vp = useViewport(canvasSize, {
-    designWidth: DESIGN_WIDTH,
-    designHeight: DESIGN_HEIGHT,
-  })
 
   const w = DESIGN_WIDTH
   const h = DESIGN_HEIGHT
@@ -163,13 +159,25 @@ export default function FieldLines() {
     }
   }, [topology, qSource, cx, cy, separation])
 
-  // 2. 交互逻辑：试探粒子探针的拖拽 (映射为设计坐标)
+  // 2. 交互逻辑：利用 SVG 原生矩阵变换将屏幕坐标精确映射到设计坐标
+  //    无需手动计算 vp.tx / vp.scale，避免与 viewBox 混用引起误差
+  const clientToDesign = (clientX: number, clientY: number) => {
+    const svg = svgRef.current
+    if (!svg) return null
+    const pt = svg.createSVGPoint()
+    pt.x = clientX
+    pt.y = clientY
+    const ctm = svg.getScreenCTM()
+    if (!ctm) return null
+    return pt.matrixTransform(ctm.inverse())
+  }
+
   const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     const svg = svgRef.current
     if (!svg) return
-    const rect = svg.getBoundingClientRect()
-    const x = (e.clientX - rect.left - vp.tx) / vp.scale
-    const y = (e.clientY - rect.top - vp.ty) / vp.scale
+    const pt = clientToDesign(e.clientX, e.clientY)
+    if (!pt) return
+    const { x, y } = pt
 
     // 检查是否点中探针
     const dist = Math.sqrt((x - probeX) ** 2 + (y - probeY) ** 2)
@@ -185,15 +193,12 @@ export default function FieldLines() {
 
   const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
     if (!isDragging) return
-    const svg = svgRef.current
-    if (!svg) return
-    const rect = svg.getBoundingClientRect()
-    let x = (e.clientX - rect.left - vp.tx) / vp.scale
-    let y = (e.clientY - rect.top - vp.ty) / vp.scale
+    const pt = clientToDesign(e.clientX, e.clientY)
+    if (!pt) return
 
     // 画面边界保护
-    x = Math.max(15, Math.min(w - 15, x))
-    y = Math.max(15, Math.min(h - 15, y))
+    const x = Math.max(15, Math.min(w - 15, pt.x))
+    const y = Math.max(15, Math.min(h - 15, pt.y))
 
     // 避碰保护
     for (const c of charges) {
@@ -438,17 +443,20 @@ export default function FieldLines() {
         </div>
       </div>
 
-      {/* SVG 动画视口 */}
+      {/* SVG 动画视口
+          ✅ viewBox 固定为设计坐标系（700×480），不随容器真实像素变化
+          ✅ preserveAspectRatio="xMidYMid meet" 负责自动居中缩放适配容器
+          ✅ 消除了 ResizeObserver 首次触发时 viewBox 变化导致的视觉放大跳变 */}
       <svg
         ref={svgRef}
-        viewBox={`0 0 ${width} ${height}`}
+        viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`}
         preserveAspectRatio="xMidYMid meet"
         className="w-full h-full bg-white block rounded-xl border border-neutral-100 select-none cursor-crosshair"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
-        <g transform={vp.transform}>
+        <g>
           {/* 1. 紫色等势面网络层 */}
           {showEquipotentials && (
             <g>
