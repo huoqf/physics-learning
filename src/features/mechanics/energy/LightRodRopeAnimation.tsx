@@ -1,32 +1,30 @@
-import { useMemo, useRef } from 'react'
+import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, ENERGY_COLORS, SCENE_COLORS } from '@/theme/physics'
-import { colors } from '@/theme/colors'
+import { PHYSICS_COLORS, ENERGY_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { Ball } from '@/components/Physics/Ball'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { RelationChart } from '@/components/Chart'
 import { IDENTITY_SCENE_SCALE } from '@/scene/SceneScale'
 import { precomputeLightRodRopeTrajectory, getLRRStateAtTime } from '@/physics/lightRodRope'
 import { GRAVITY } from '@/physics/constants'
+import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 
 // 设计尺寸 (Viewport 架构)
 const DESIGN_WIDTH = 800
 const DESIGN_HEIGHT = 500
 
 export default function LightRodRopeAnimation() {
-  const { params, time, isPlaying, setIsPlaying, updateParam, setTime } = useAnimationStore(
+  const { params, time } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
       time: s.time,
-      isPlaying: s.isPlaying,
-      setIsPlaying: s.setIsPlaying,
-      updateParam: s.updateParam,
-      setTime: s.setTime,
     }))
   )
 
-  const svgRef = useRef<SVGSVGElement>(null)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.standard)
+  const { font } = canvasSize
 
   // 1. 参数提取
   const m1 = params.m1 ?? 1.0 // A球质量 (kg)
@@ -111,8 +109,6 @@ export default function LightRodRopeAnimation() {
     return list
   }, [constraint, showParticles, time, x_A, y_A, x_B, y_B, state.powerB])
 
-  const font = (size: number) => Math.max(8, Math.min(16, size))
-
   // 构造 RelationChart 的曲线点（X 坐标用度数 0 ~ 90）
   const ep1Series = useMemo(() => {
     return chartCurves.map((pt) => ({ x: pt.theta * (180 / Math.PI), y: pt.EA }))
@@ -127,9 +123,8 @@ export default function LightRodRopeAnimation() {
   }, [chartCurves])
 
   return (
-    <div className="relative w-full h-full bg-white rounded-xl shadow-inner overflow-hidden select-none">
+    <div ref={containerRef} className="relative w-full h-full bg-white rounded-xl shadow-inner overflow-hidden select-none">
       <svg
-        ref={svgRef}
         viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`}
         preserveAspectRatio="xMidYMid meet"
         className="w-full h-full"
@@ -137,11 +132,11 @@ export default function LightRodRopeAnimation() {
         {/* ── 左半部分：动画区 ── */}
         <g>
           {/* 天花板 */}
-          <rect x={pivotX - 40} y={198} width={80} height={10} fill={colors.neutral[300]} rx={1} />
-          <line x1={pivotX - 50} y1={208} x2={pivotX + 50} y2={208} stroke={colors.neutral[400]} strokeWidth={1.5} />
+          <rect x={pivotX - 40} y={198} width={80} height={10} fill={SCENE_COLORS.surface.wallFill} rx={1} />
+          <line x1={pivotX - 50} y1={208} x2={pivotX + 50} y2={208} stroke={SCENE_COLORS.pendulum.arcPath} strokeWidth={1.5} />
 
           {/* 旋转轴 */}
-          <circle cx={pivotX} cy={pivotY} r={4} fill={colors.neutral[600]} />
+          <circle cx={pivotX} cy={pivotY} r={4} fill={SCENE_COLORS.pendulum.pivotFill} />
 
           {/* 杆/绳渲染 */}
           {constraint === 0 ? (
@@ -150,7 +145,7 @@ export default function LightRodRopeAnimation() {
               y1={pivotY}
               x2={x_B}
               y2={y_B}
-              stroke={colors.neutral[400]}
+              stroke={SCENE_COLORS.pendulum.rodFill}
               strokeWidth={3}
               strokeLinecap="round"
             />
@@ -161,7 +156,7 @@ export default function LightRodRopeAnimation() {
                 y1={pivotY}
                 x2={x_A}
                 y2={y_A}
-                stroke={colors.neutral[500]}
+                stroke={SCENE_COLORS.pendulum.rodFill}
                 strokeWidth={1}
                 strokeDasharray="2,1"
               />
@@ -170,7 +165,7 @@ export default function LightRodRopeAnimation() {
                 y1={pivotY}
                 x2={x_B}
                 y2={y_B}
-                stroke={colors.neutral[500]}
+                stroke={SCENE_COLORS.pendulum.rodFill}
                 strokeWidth={1}
                 strokeDasharray="2,1"
               />
@@ -185,7 +180,7 @@ export default function LightRodRopeAnimation() {
               cy={p.y}
               r={2.2}
               fill="white"
-              stroke={colors.primary[400]}
+              stroke={PHYSICS_COLORS.kineticEnergy}
               strokeWidth={0.5}
               opacity={0.8}
             />
@@ -200,7 +195,7 @@ export default function LightRodRopeAnimation() {
             stroke={SCENE_COLORS.sphere.pendulumBob.stroke}
             strokeWidth={1.5}
           />
-          <text x={x_A} y={y_A - 14} fontSize={font(8.5)} fill={colors.neutral[700]} fontWeight="bold" textAnchor="middle">
+          <text x={x_A} y={y_A - 14} fontSize={font(8.5)} fill={CANVAS_COLORS.labelText} fontWeight="bold" textAnchor="middle">
             A ({m1.toFixed(1)}kg)
           </text>
 
@@ -213,7 +208,7 @@ export default function LightRodRopeAnimation() {
             stroke={SCENE_COLORS.sphere.pendulumBob.stroke}
             strokeWidth={1.5}
           />
-          <text x={x_B} y={y_B - 17} fontSize={font(8.5)} fill={colors.neutral[700]} fontWeight="bold" textAnchor="middle">
+          <text x={x_B} y={y_B - 17} fontSize={font(8.5)} fill={CANVAS_COLORS.labelText} fontWeight="bold" textAnchor="middle">
             B ({m2.toFixed(1)}kg)
           </text>
 
@@ -237,14 +232,14 @@ export default function LightRodRopeAnimation() {
             <VectorArrow
               origin={{ x: x_A, y: -y_A }}
               vector={{ x: state.F_A.x * 2.5, y: state.F_A.y * 2.5 }}
-              type="forceNet"
+              type="force"
               sceneScale={IDENTITY_SCENE_SCALE}
               label={constraint === 0 ? "F_杆A" : "F_绳A"}
             />
             <VectorArrow
               origin={{ x: x_B, y: -y_B }}
               vector={{ x: state.F_B.x * 2.5, y: state.F_B.y * 2.5 }}
-              type="forceNet"
+              type="force"
               sceneScale={IDENTITY_SCENE_SCALE}
               label={constraint === 0 ? "F_杆B" : "F_绳B"}
             />

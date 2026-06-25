@@ -47,7 +47,16 @@ export interface LRRModelState {
 }
 
 /**
- * 预计算双球连接体系统的运动轨迹（数值积分）
+ * 预计算双球连接体系统的运动轨迹（数值积分）。
+ *
+ * @param m1 - A球质量 (kg)
+ * @param m2 - B球质量 (kg)
+ * @param L - 杆/绳总长度 (m)
+ * @param g - 重力加速度 (m/s²)
+ * @param mode - 约束类型：0=刚性轻杆，1=柔性轻绳
+ * @param tMax - 最大模拟时间 (s)，默认 15
+ * @param dt - 时间步长 (s)，默认 0.02
+ * @returns 轨迹点数组，按时间升序排列
  */
 export function precomputeLightRodRopeTrajectory(
   m1: number,
@@ -213,7 +222,11 @@ export function precomputeLightRodRopeTrajectory(
 }
 
 /**
- * 线性插值器取得指定时刻的状态
+ * 线性插值器取得指定时刻的状态。
+ *
+ * @param points - 预计算的轨迹点数组（按时间升序）
+ * @param t - 目标时间 (s)
+ * @returns 该时刻的插值状态，包含角度、角速度、能量、作用力等
  */
 export function getLRRStateAtTime(
   points: LRRModelState[],
