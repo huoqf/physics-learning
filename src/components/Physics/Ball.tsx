@@ -1,5 +1,7 @@
 import { useId, SVGProps } from 'react';
-import { SCENE_COLORS } from '@/theme/physics';
+import { SCENE_COLORS, PHYSICS_COLORS } from '@/theme/physics';
+import { colors } from '@/theme/colors';
+import type { ChargeSign } from './types';
 
 /**
  * 物理小球预设类型。
@@ -18,7 +20,7 @@ export type BallPresetType =
  * 物理小球组件 Props 接口。
  * 继承自 SVGProps<SVGCircleElement>，支持所有标准的 SVG circle 属性（例如 onClick、onMouseDown、cursor 等）。
  */
-export interface BallProps extends Omit<SVGProps<SVGCircleElement>, 'cx' | 'cy' | 'r' | 'fill'> {
+export interface BallProps extends Omit<SVGProps<SVGCircleElement>, 'cx' | 'cy' | 'r' | 'fill' | 'type'> {
   /**
    * 小球中心点在 Canvas/SVG 坐标系中的 X 轴像素坐标。
    * 单位：像素 (px)。
@@ -55,6 +57,11 @@ export interface BallProps extends Omit<SVGProps<SVGCircleElement>, 'cx' | 'cy' 
    * 该参数会与预设自身的透明度进行叠加应用。
    */
   opacity?: number;
+  /**
+   * 小球的电性标识，正电荷/负电荷/中性
+   * @default 'none'
+   */
+  chargeSign?: ChargeSign;
 }
 
 /**
@@ -96,6 +103,7 @@ export function Ball({
   stroke,
   strokeWidth = 1,
   opacity,
+  chargeSign = 'none',
   ...restProps
 }: BallProps) {
   // 生成独一无二的渐变 ID，防止在多球渲染或多页面跳转时 SVG 渐变 ID 冲突导致的纹理丢失
@@ -104,7 +112,7 @@ export function Ball({
 
   // 提取预设球体参数
   const spherePreset = SCENE_COLORS.sphere[type];
-  const colors = spherePreset.gradient;
+  const colorsList = spherePreset.gradient;
   const offsets = PRES_GRADIENT_OFFSETS[type];
   const opacities = 'opacity' in spherePreset ? spherePreset.opacity : undefined;
 
@@ -121,7 +129,7 @@ export function Ball({
       <defs>
         {/* 3D 球体径向反射渐变，光源质心偏置 30% */}
         <radialGradient id={gradientId} cx="30%" cy="30%" r="70%">
-          {colors.map((color, idx) => {
+          {colorsList.map((color, idx) => {
             const offsetVal = `${offsets[idx]}%`;
             // 若为 steelGhost 等包含不均匀透明度的球体，需读取其对应的 stopOpacity
             const stopOpacity = opacities ? opacities[idx] : undefined;
@@ -158,6 +166,31 @@ export function Ball({
         opacity={0.65}
         pointerEvents="none"
       />
+
+      {/* 3. 带电性标识 (居中悬浮徽章，用于电场、磁场等粒子偏转实验) */}
+      {chargeSign && chargeSign !== 'none' && (
+        <g transform={`translate(${cx}, ${cy})`} pointerEvents="none">
+          <circle
+            cx={0}
+            cy={0}
+            r={Math.max(5, r * 0.45)}
+            fill={chargeSign === '+' ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
+            stroke={colors.neutral.white}
+            strokeWidth={Math.max(0.6, r * 0.05)}
+          />
+          <text
+            x={0}
+            y={Math.max(1.8, r * 0.16)}
+            fill={colors.neutral.white}
+            fontSize={Math.max(7, r * 0.6)}
+            fontWeight="bold"
+            textAnchor="middle"
+            fontFamily="monospace"
+          >
+            {chargeSign === '+' ? '+' : '−'}
+          </text>
+        </g>
+      )}
     </g>
   );
 }

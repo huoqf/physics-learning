@@ -1,6 +1,7 @@
 import { useId, SVGProps } from 'react';
-import { SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics';
+import { SCENE_COLORS, CANVAS_COLORS, PHYSICS_COLORS } from '@/theme/physics';
 import { colors } from '@/theme/colors';
+import type { ChargeSign } from './types';
 
 /**
  * 物理物块/滑块预设类型。
@@ -15,7 +16,7 @@ export type BlockPresetType = 'wood' | 'metal' | 'woodCart' | 'metalCart';
  * 物理滑块组件 Props 接口。
  * 继承自 SVGProps<SVGGElement>，支持所有标准的 SVG 元素事件及属性绑定。
  */
-export interface BlockProps extends SVGProps<SVGGElement> {
+export interface BlockProps extends Omit<SVGProps<SVGGElement>, 'type'> {
   /**
    * 滑块左上角在 Canvas/SVG 坐标系中的 X 轴像素坐标。
    * 单位：像素 (px)。
@@ -67,6 +68,32 @@ export interface BlockProps extends SVGProps<SVGGElement> {
    * 不传则使用默认值 `(n: number) => n`。
    */
   font?: (base: number) => number;
+  /**
+   * 物块带电性标记
+   * @default 'none'
+   */
+  chargeSign?: ChargeSign;
+  /**
+   * 是否采用半透明材质，在受力分析等从几何中心发出矢量的场景下，
+   * 开启半透明可以防止滑块遮挡从其中心发出的受力、速度等矢量箭头。
+   * @default false
+   */
+  translucent?: boolean;
+  /**
+   * 是否在滑块中心渲染几何中心（质心）标记点，指示受力作用点。
+   * @default false
+   */
+  showCenterOfMass?: boolean;
+  /**
+   * 小车的瞬时速度，用于车轮滚转角度计算（仅对 woodCart/metalCart 预设有效）
+   * @default 0
+   */
+  velocity?: number;
+  /**
+   * 动画运行时间，配合速度计算车轮滚转角度（仅对 woodCart/metalCart 预设有效）
+   * @default 0
+   */
+  time?: number;
 }
 
 /**
@@ -101,6 +128,11 @@ export function Block({
   strokeWidth = 1.5,
   opacity,
   font = (n: number) => n,
+  chargeSign = 'none',
+  translucent = false,
+  showCenterOfMass = false,
+  velocity = 0,
+  time = 0,
   ...restProps
 }: BlockProps) {
   const uniqueId = useId().replace(/:/g, '-');
@@ -126,10 +158,13 @@ export function Block({
 
   // 2. 车轮位置及大小参数（仅用于 woodCart / metalCart 小车）
   const hasWheels = type === 'woodCart' || type === 'metalCart';
-  const wheelR = Math.max(3.5, height * 0.13); // 轮子半径自适应
+  const wheelR = Math.max(3.5, height * 0.14); // 轮子半径自适应
   const wheelY = y + height - 1.5; // 车轮中心置于底盘边缘微偏上，嵌入车身一部分
   const wheelX1 = x + width * 0.22;
   const wheelX2 = x + width * 0.78;
+
+  // 轮子旋转角度计算：根据速度和时间决定
+  const rotation = (velocity * time * 35) % 360;
 
   // 滑块内部木纹的 X 轴偏移
   const woodLinesX = [width * 0.28, width * 0.5, width * 0.72];
@@ -174,8 +209,12 @@ export function Block({
             stroke={colors.neutral[800]}
             strokeWidth={0.8}
           />
-          {/* 左轮辐/金属轴心点 */}
-          <circle cx={wheelX1} cy={wheelY} r={wheelR * 0.3} fill={CANVAS_COLORS.labelTextLight} />
+          {/* 左轮辐，带动态旋转 */}
+          <g transform={`translate(${wheelX1}, ${wheelY}) rotate(${rotation})`}>
+            <line x1={-wheelR} y1={0} x2={wheelR} y2={0} stroke={colors.neutral[800]} strokeWidth={0.6} />
+            <line x1={0} y1={-wheelR} x2={0} y2={wheelR} stroke={colors.neutral[800]} strokeWidth={0.6} />
+          </g>
+          <circle cx={wheelX1} cy={wheelY} r={wheelR * 0.3} fill={CANVAS_COLORS.labelTextLight} stroke={colors.neutral[800]} strokeWidth={0.5} />
 
           {/* 右侧车轮 */}
           <circle
@@ -186,8 +225,12 @@ export function Block({
             stroke={colors.neutral[800]}
             strokeWidth={0.8}
           />
-          {/* 右轮辐/金属轴心点 */}
-          <circle cx={wheelX2} cy={wheelY} r={wheelR * 0.3} fill={CANVAS_COLORS.labelTextLight} />
+          {/* 右轮辐，带动态旋转 */}
+          <g transform={`translate(${wheelX2}, ${wheelY}) rotate(${rotation})`}>
+            <line x1={-wheelR} y1={0} x2={wheelR} y2={0} stroke={colors.neutral[800]} strokeWidth={0.6} />
+            <line x1={0} y1={-wheelR} x2={0} y2={wheelR} stroke={colors.neutral[800]} strokeWidth={0.6} />
+          </g>
+          <circle cx={wheelX2} cy={wheelY} r={wheelR * 0.3} fill={CANVAS_COLORS.labelTextLight} stroke={colors.neutral[800]} strokeWidth={0.5} />
         </g>
       )}
 
@@ -198,14 +241,15 @@ export function Block({
         width={width}
         height={height - (hasWheels ? 1 : 0)} // 略微收缩底边以契合轮子
         fill={fillColor}
+        fillOpacity={translucent ? 0.4 : undefined}
         stroke={stroke ?? defaultStroke}
         strokeWidth={strokeWidth}
-        rx={isWood ? 3 : 2}
+        rx={isWood ? 4.5 : 3.5}
       />
 
-      {/* 3. 木质花纹纹路 (仅适用于木质材质) */}
+      {/* 3. 木质花纹纹路 (仅适用于木质材质，弱化不透明度和线宽以呈现逼真自然的木板拼合感) */}
       {isWood && (
-        <g pointerEvents="none" opacity={0.18}>
+        <g pointerEvents="none" opacity={0.07}>
           {woodLinesX.map((lx, idx) => (
             <line
               key={`wood-line-${idx}`}
@@ -214,7 +258,7 @@ export function Block({
               x2={x + lx}
               y2={y + height - (hasWheels ? 2.5 : 1.5)}
               stroke={colors.neutral[900]}
-              strokeWidth={0.8}
+              strokeWidth={0.6}
               strokeDasharray="4 3"
             />
           ))}
@@ -230,7 +274,7 @@ export function Block({
           y2={y + 1}
           stroke={colors.neutral.white}
           strokeWidth={0.8}
-          opacity={0.5}
+          opacity={translucent ? 0.25 : 0.5}
           pointerEvents="none"
         />
       )}
@@ -249,6 +293,40 @@ export function Block({
         >
           {label}
         </text>
+      )}
+
+      {/* 6. 质心标点（辅助力学受力分析，明确力的起点作用点） */}
+      {showCenterOfMass && (
+        <g transform={`translate(${x + width / 2}, ${y + (height - (hasWheels ? 1 : 0)) / 2})`} pointerEvents="none">
+          <line x1={-5} y1={0} x2={5} y2={0} stroke={PHYSICS_COLORS.forceNet} strokeWidth={1.2} />
+          <line x1={0} y1={-5} x2={0} y2={5} stroke={PHYSICS_COLORS.forceNet} strokeWidth={1.2} />
+          <circle cx={0} cy={0} r={1.5} fill={PHYSICS_COLORS.forceNet} />
+        </g>
+      )}
+
+      {/* 7. 带电性标识 (右上角悬浮徽章，符合电场/磁场带电物体偏转教学) */}
+      {chargeSign && chargeSign !== 'none' && (
+        <g transform={`translate(${x + width - 10}, ${y + 10})`} pointerEvents="none">
+          <circle
+            cx={0}
+            cy={0}
+            r={6.5}
+            fill={chargeSign === '+' ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
+            stroke={colors.neutral.white}
+            strokeWidth={1}
+          />
+          <text
+            x={0}
+            y={2.5}
+            fill={colors.neutral.white}
+            fontSize={8}
+            fontWeight="bold"
+            textAnchor="middle"
+            fontFamily="monospace"
+          >
+            {chargeSign === '+' ? '+' : '−'}
+          </text>
+        </g>
       )}
     </g>
   );

@@ -1,11 +1,8 @@
 import { ReactNode } from 'react';
 import { CANVAS_STYLE, SCENE_COLORS, CHART_COLORS, PHYSICS_COLORS } from '@/theme/physics';
+import { calculateNiceStep, createRulerTicks as coreCreateRulerTicks, TickMark } from '@/utils/ruler';
 
-export interface TickMark {
-  value: number;
-  isMinor: boolean;
-  label: string;
-}
+export type { TickMark };
 
 /**
  * 自动计算尺子/坐标轴的所有刻度
@@ -15,45 +12,7 @@ export function createRulerTicks(
   tickInterval: number,
   minorTicks: number = 0
 ): TickMark[] {
-  const [start, end] = domain;
-  const min = Math.min(start, end);
-  const max = Math.max(start, end);
-  const ticks: TickMark[] = [];
-  const epsilon = 1e-10;
-
-  if (tickInterval <= 0) return [];
-  
-  // 主刻度
-  let currentMajor = Math.ceil(min / tickInterval - epsilon) * tickInterval;
-  
-  while (currentMajor <= max + epsilon) {
-    const valMajor = parseFloat(currentMajor.toFixed(6));
-    ticks.push({ value: valMajor, isMinor: false, label: String(valMajor) });
-    
-    if (minorTicks > 0) {
-      const step = tickInterval / (minorTicks + 1);
-      for (let i = 1; i <= minorTicks; i++) {
-        const minorVal = currentMajor + i * step;
-        if (minorVal <= max + epsilon) {
-          ticks.push({ value: parseFloat(minorVal.toFixed(6)), isMinor: true, label: '' });
-        }
-      }
-    }
-    currentMajor += tickInterval;
-  }
-
-  if (minorTicks > 0 && ticks.length > 0) {
-    const firstMajor = ticks[0].value;
-    const step = tickInterval / (minorTicks + 1);
-    for (let i = 1; i <= minorTicks; i++) {
-      const minorVal = firstMajor - i * step;
-      if (minorVal >= min - epsilon) {
-        ticks.push({ value: parseFloat(minorVal.toFixed(6)), isMinor: true, label: '' });
-      }
-    }
-  }
-
-  return ticks.sort((a, b) => a.value - b.value);
+  return coreCreateRulerTicks(domain, tickInterval, minorTicks);
 }
 
 export interface PhysicsGroundProps {
@@ -97,6 +56,10 @@ export interface PhysicsGroundProps {
     axisOffset?: number;         // 坐标轴离地面的独立 Y 偏移（默认 0：紧贴地面）
   };
 
+  // === 5. 接触面物理性质 (可选) ===
+  isSmooth?: boolean;           // 是否是光滑镜面 (优先级最高，高光白线 + 冰蓝发光影)
+  roughness?: number;           // 粗糙度 (0 到 1 之间)，大于 0 时绘制锯齿摩擦点
+
   children?: ReactNode;
 }
 
@@ -111,6 +74,8 @@ export function PhysicsGround({
   appearance,
   wall,
   ruler,
+  isSmooth = false,
+  roughness = 0,
   children
 }: PhysicsGroundProps) {
   // 面基础样式
@@ -122,7 +87,6 @@ export function PhysicsGround({
   const hatchId = `hatch-${Math.round(x)}-${Math.round(y)}-${Math.round(width)}`;
 
   // 计算刻度
-  const hasTicks = ruler?.tickInterval !== undefined && ruler.tickInterval > 0;
   let ticks: TickMark[] = [];
   let pxPerUnit = 0;
   
@@ -130,10 +94,19 @@ export function PhysicsGround({
     const span = ruler.domain[1] - ruler.domain[0];
     pxPerUnit = ruler.pixelPerUnit || (span === 0 ? 1 : width / span);
     
-    if (ruler.tickInterval !== undefined) {
-      ticks = createRulerTicks(ruler.domain, ruler.tickInterval, ruler.minorTicks);
+    let interval = ruler.tickInterval;
+    let minor = ruler.minorTicks || 0;
+    
+    if (interval === undefined || interval <= 0) {
+      const stepInfo = calculateNiceStep(ruler.domain, width);
+      interval = stepInfo.tickInterval;
+      minor = stepInfo.minorTicks;
     }
+    
+    ticks = coreCreateRulerTicks(ruler.domain, interval, minor);
   }
+
+  const hasTicks = ruler !== undefined && ticks.length > 0;
 
   // 标尺 Y 位置计算：如果不提供 offset，则紧贴表面 (对于地面，baseline = y)
   const rPos = ruler?.position || 'bottom';
@@ -146,17 +119,92 @@ export function PhysicsGround({
 
   // === 渲染支撑面 ===
   const renderSurface = () => {
-    if (type === 'platform') {
+    // 绘制粗糙度锯齿
+    const renderRoughness = (baseY: number) => {
+      if (isSmooth || !roughness || roughness <= 0) return null;
+      const clampedRough = Math.max(0, Math.min(1, roughness));
+      const step = Math.max(8, width / 80); // 自适应锯齿步长，减少超宽地面下的 DOM 节点压力
+      const count = Math.floor(width / step);
+      const points: string[] = [];
+      for (let i = 0; i <= count; i++) {
+        const px = x + i * step;
+        const py = baseY + (i % 2 === 0 ? 0 : 3 * clampedRough);
+        points.push(`${px},${py}`);
+      }
       return (
-        <rect
-          x={x}
-          y={y}
-          width={width}
-          height={thickness}
-          fill={fillColor}
+        <polyline
+          points={points.join(' ')}
+          fill="none"
           stroke={strokeColor}
-          strokeWidth={CANVAS_STYLE.stroke.objectLine}
+          strokeWidth={1.2}
+          opacity={0.4 + clampedRough * 0.4}
         />
+      );
+    };
+
+    if (type === 'platform') {
+      const hasCustomFill = !!appearance?.fillColor;
+      const platformFill = hasCustomFill ? fillColor : `url(#platform-grad-${hatchId})`;
+
+      return (
+        <g>
+          <defs>
+            {/* 3D金属质感渐变，复用系统标准的 springMetalGrad */}
+            {!hasCustomFill && (
+              <linearGradient id={`platform-grad-${hatchId}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor={SCENE_COLORS.spring.springMetalGrad[0]} />
+                <stop offset="25%" stopColor={SCENE_COLORS.spring.springMetalGrad[1]} />
+                <stop offset="50%" stopColor={SCENE_COLORS.spring.springMetalGrad[2]} />
+                <stop offset="100%" stopColor={SCENE_COLORS.spring.springMetalGrad[3]} />
+              </linearGradient>
+            )}
+            {/* 光滑冰蓝渐变 */}
+            {isSmooth && (
+              <linearGradient id={`smooth-glow-${hatchId}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.0" />
+              </linearGradient>
+            )}
+          </defs>
+
+          {/* 镜面冰蓝发光（顶层上方悬浮） */}
+          {isSmooth && (
+            <rect
+              x={x}
+              y={y - 6}
+              width={width}
+              height={6}
+              fill={`url(#smooth-glow-${hatchId})`}
+            />
+          )}
+
+          {/* 平台本体 */}
+          <rect
+            x={x}
+            y={y}
+            width={width}
+            height={thickness}
+            fill={platformFill}
+            stroke={strokeColor}
+            strokeWidth={CANVAS_STYLE.stroke.objectLine}
+          />
+
+          {/* 粗糙锯齿 (如果不是光滑的) */}
+          {renderRoughness(y)}
+
+          {/* 镜面高光白线 */}
+          {isSmooth && (
+            <line
+              x1={x + 1}
+              y1={y + 1}
+              x2={x + width - 1}
+              y2={y + 1}
+              stroke="#F0F9FF"
+              strokeWidth={1.5}
+              opacity={0.9}
+            />
+          )}
+        </g>
       );
     }
 
@@ -237,20 +285,40 @@ export function PhysicsGround({
     // ground (物理地面)
     return (
       <g>
-        {/* 斜线阴影纹理（教科书经典地面画法） */}
-        {appearance?.showHatch && (
-          <>
-            <defs>
-              <pattern id={hatchId} width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                <line x1="0" y1="0" x2="0" y2="10" stroke={strokeColor} strokeWidth="1.5" opacity={0.35} />
-              </pattern>
-            </defs>
-            <rect x={x} y={y} width={width} height={12} fill={`url(#${hatchId})`} />
-          </>
+        <defs>
+          {/* 斜线阴影纹理 */}
+          {appearance?.showHatch && (
+            <pattern id={hatchId} width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="10" stroke={strokeColor} strokeWidth="1.5" opacity={0.35} />
+            </pattern>
+          )}
+          {/* 光滑冰蓝渐变 */}
+          {isSmooth && (
+            <linearGradient id={`smooth-glow-${hatchId}`} x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.0" />
+            </linearGradient>
+          )}
+        </defs>
+
+        {/* 斜线阴影纹理 */}
+        {appearance?.showHatch && !isSmooth && (
+          <rect x={x} y={y} width={width} height={12} fill={`url(#${hatchId})`} />
+        )}
+
+        {/* 镜面冰蓝发光（地面线下方发光） */}
+        {isSmooth && (
+          <rect
+            x={x}
+            y={y}
+            width={width}
+            height={8}
+            fill={`url(#smooth-glow-${hatchId})`}
+          />
         )}
         
-        {/* 备用的平行细线 */}
-        {appearance?.showBaseShadow && !appearance?.showHatch && (
+        {/* 备用的平行细线 (非光滑、非斜线纹理时展示) */}
+        {appearance?.showBaseShadow && !appearance?.showHatch && !isSmooth && (
           <line
             x1={x} y1={y + 3}
             x2={x + width} y2={y + 3}
@@ -260,6 +328,9 @@ export function PhysicsGround({
           />
         )}
 
+        {/* 粗糙锯齿 (如果不是光滑的) */}
+        {renderRoughness(y)}
+
         {/* 主地面线 */}
         <line 
           x1={x} y1={y} 
@@ -267,6 +338,19 @@ export function PhysicsGround({
           stroke={strokeColor} 
           strokeWidth={CANVAS_STYLE.stroke.groundLine} 
         />
+
+        {/* 镜面高光白线 */}
+        {isSmooth && (
+          <line
+            x1={x}
+            y1={y}
+            x2={x + width}
+            y2={y}
+            stroke="#F0F9FF"
+            strokeWidth={2}
+            opacity={0.9}
+          />
+        )}
       </g>
     );
   };

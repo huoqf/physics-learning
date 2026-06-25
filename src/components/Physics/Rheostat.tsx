@@ -26,6 +26,8 @@ export interface RheostatProps {
   disabled?: boolean
   /** 其他 CSS 类名 */
   className?: string
+  /** 是否启用动画，关闭后不仅停止时间动画，而且停止渲染任何粒子或不需要的动态修饰元素以减轻 DOM 开销 */
+  animated?: boolean
 }
 
 // 渲染计算函数
@@ -55,6 +57,7 @@ export const Rheostat: React.FC<RheostatProps> = ({
   unit = 'Ω',
   disabled = false,
   className = '',
+  animated = true,
 }) => {
   const c = SCENE_COLORS.circuit
   const layout = getRheostatLayout(width)

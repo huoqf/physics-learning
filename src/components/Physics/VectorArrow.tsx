@@ -29,6 +29,8 @@ interface VectorArrowProps {
   label?: string
   /** 是否使用虚线箭头 */
   dashed?: boolean
+  /** 是否在箭头外侧增加发光阴影，提高对比度 */
+  glow?: boolean
 }
 
 function perpendicular(v: Vector2): Vector2 {
@@ -55,6 +57,7 @@ export function VectorArrow({
   refMagnitude: overrideRefMag,
   label,
   dashed,
+  glow,
 }: VectorArrowProps) {
   if (magnitude(vector) === 0) return null;
 
@@ -106,8 +109,10 @@ export function VectorArrow({
   const textX = tipX + pxDirX * 10;
   const textY = tipY + pxDirY * 10;
 
+  const filterStyle = glow ? { filter: `drop-shadow(0px 0px 3.5px ${fillColor})` } : undefined;
+
   return (
-    <g>
+    <g style={filterStyle}>
       {lineLen > 0 && (
         <line
           x1={x1}
@@ -120,10 +125,20 @@ export function VectorArrow({
           {...(dashed ? { strokeDasharray: '4 4' } : {})}
         />
       )}
-      <polygon
-        points={`${baseLeftX},${baseLeftY} ${tipX},${tipY} ${baseRightX},${baseRightY}`}
-        fill={fillColor}
-      />
+      {dashed ? (
+        <polygon
+          points={`${baseLeftX},${baseLeftY} ${tipX},${tipY} ${baseRightX},${baseRightY}`}
+          fill="none"
+          stroke={fillColor}
+          strokeWidth={Math.max(1.2, stroke * 0.7)}
+          strokeLinejoin="round"
+        />
+      ) : (
+        <polygon
+          points={`${baseLeftX},${baseLeftY} ${tipX},${tipY} ${baseRightX},${baseRightY}`}
+          fill={fillColor}
+        />
+      )}
       {label && (
         <text
           x={textX}

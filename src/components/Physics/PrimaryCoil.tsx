@@ -1,5 +1,5 @@
 import React, { useId } from 'react'
-import { SCENE_COLORS, PHYSICS_COLORS } from '@/theme/physics'
+import { SCENE_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
 /**
@@ -26,6 +26,8 @@ export interface PrimaryCoilProps {
   showIronCore?: boolean
   /** 自定义 CSS 类名 */
   className?: string
+  /** 是否启用流光粒子动画，默认为 true。关闭后不仅停止时间动画，而且停止渲染 any 粒子类装饰元素以减轻 DOM 开销 */
+  animated?: boolean
 }
 
 /**
@@ -35,7 +37,7 @@ export interface PrimaryCoilProps {
  * - 铁芯：拟物金属渐变
  * - 漆包绿线绕线，前后两层绘制 + 高光
  * - 左右引出绿色皮导线
- * - 电流流光粒子（红色光点），表示回路中有稳恒电流
+ * - 电流流光粒子（绿色荧光光点），表示回路中有稳恒电流
  */
 export const PrimaryCoil: React.FC<PrimaryCoilProps> = ({
   x = 0,
@@ -48,6 +50,7 @@ export const PrimaryCoil: React.FC<PrimaryCoilProps> = ({
   time = 0,
   showIronCore = true,
   className = '',
+  animated = true,
 }) => {
   const c = SCENE_COLORS.coil
   const uniqueId = useId().replace(/:/g, '-')
@@ -61,9 +64,22 @@ export const PrimaryCoil: React.FC<PrimaryCoilProps> = ({
   const startX = -width / 2 + step
   const turnCenters = Array.from({ length: turns }).map((_, i) => startX + i * step)
 
+  const displayTurns = turns
+  // 动态缩减线宽，防止线圈线条重合叠在一块
+  const baseStrokeWidth = 5
+  const strokeW = Math.max(1.5, baseStrokeWidth * Math.min(1, 6 / displayTurns))
+  const highlightW = Math.max(0.5, 1.5 * Math.min(1, 6 / displayTurns))
+  const backStrokeW = Math.max(1.0, 3.5 * Math.min(1, 6 / displayTurns))
+  
+  // 粒子半径随匝数增加自适应变细，避免大匝数下粒子体积过于庞大
+  const particleR = Math.max(2.0, 4.5 * Math.min(1, 6 / displayTurns))
+
   // 粒子流动
   const hasCurrent = Math.abs(current) > 0.01
   const flowSpeed = current * 4 // 流动速度
+
+  // 流光粒子仅在 animated = true 且有电流时渲染，实现静态回退
+  const showParticles = hasCurrent && animated
 
   return (
     <g transform={`translate(${x}, ${y})`} className={className}>
@@ -99,7 +115,7 @@ export const PrimaryCoil: React.FC<PrimaryCoilProps> = ({
           d={`M ${cx} ${-ry} A ${rx} ${ry} 0 0 0 ${cx} ${ry}`}
           fill="none"
           stroke={c.enamelStroke}
-          strokeWidth="3"
+          strokeWidth={backStrokeW}
           opacity="0.3"
         />
       ))}
@@ -127,25 +143,26 @@ export const PrimaryCoil: React.FC<PrimaryCoilProps> = ({
             d={`M ${cx} ${ry} A ${rx} ${ry} 0 0 0 ${cx} ${-ry}`}
             fill="none"
             stroke={c.enamelBase}
-            strokeWidth="4.5"
+            strokeWidth={strokeW}
             strokeLinecap="round"
           />
-          {/* 高光 */}
+          {/* 高光 (统一白色半透明 0.6) */}
           <path
             d={`M ${cx - 0.8} ${ry - 1.8} A ${rx - 0.8} ${ry - 1.8} 0 0 0 ${cx - 0.8} ${-ry + 1.8}`}
             fill="none"
-            stroke="#ADCE5A" // 绿高光色
-            strokeWidth="1"
+            stroke="#FFFFFF" 
+            strokeWidth={highlightW}
             opacity="0.6"
             strokeLinecap="round"
           />
         </g>
       ))}
 
-      {/* 5. 绘制原电流流动粒子 (红色光点，表示回路中有稳恒电流在流动) */}
-      {hasCurrent &&
+      {/* 5. 绘制原电流流动粒子 (绿色荧光光点) */}
+      {showParticles &&
         turnCenters.map((cx, idx) => {
-          return [0, 1].map((pIdx) => {
+          // 精简粒子数量 50%，每个匝仅渲染 1 个流光粒子
+          return [0].map((pIdx) => {
             const phase = pIdx * Math.PI
             const t = ((time * flowSpeed + phase) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2)
 
@@ -159,9 +176,9 @@ export const PrimaryCoil: React.FC<PrimaryCoilProps> = ({
                 key={`pri-glow-${idx}-${pIdx}`}
                 cx={px}
                 cy={py}
-                r="3.5"
-                fill={PHYSICS_COLORS.electricCurrent} // 电流红
-                filter="drop-shadow(0 0 2px #EF4444)"
+                r={particleR}
+                fill={SCENE_COLORS.coil.activeGlow || '#10B981'} 
+                filter="drop-shadow(0 0 2px #10B981)"
               />
             )
           })

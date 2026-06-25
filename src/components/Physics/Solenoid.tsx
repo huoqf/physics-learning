@@ -1,5 +1,5 @@
 import React, { useId } from 'react'
-import { SCENE_COLORS, PHYSICS_COLORS } from '@/theme/physics'
+import { SCENE_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
 /**
@@ -26,6 +26,8 @@ export interface SolenoidProps {
   className?: string
   /** 是否显示铁芯，默认 true */
   showIronCore?: boolean
+  /** 是否启用流光粒子动画，默认为 true。关闭后不仅停止时间动画，而且停止渲染任何粒子类装饰元素以减轻 DOM 开销 */
+  animated?: boolean
 }
 
 /**
@@ -49,6 +51,7 @@ export const Solenoid: React.FC<SolenoidProps> = ({
   time = 0,
   className = '',
   showIronCore = true,
+  animated = true,
 }) => {
   const c = SCENE_COLORS.coil
   const uniqueId = useId().replace(/:/g, '-')
@@ -83,16 +86,19 @@ export const Solenoid: React.FC<SolenoidProps> = ({
   // 粒子半径随匝数增加自适应变细，避免大匝数下粒子体积过于庞大
   const particleR = Math.max(2.0, 4.5 * Math.min(1, 6 / displayTurns))
 
+  // 流光粒子仅在 animated = true 且有电流时渲染，实现静态回退
+  const showParticles = hasCurrent && animated
+
   return (
     <g transform={`translate(${x}, ${y})`} className={className}>
       {/* 1. 绘制管状骨架/铁芯 (拟物金属渐变) */}
       <defs>
         <linearGradient id={ironCoreGradId} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor={colors.neutral[600]} />
-          <stop offset="30%" stopColor={colors.neutral[400]} />
-          <stop offset="50%" stopColor={colors.neutral[200]} />
-          <stop offset="70%" stopColor={colors.neutral[400]} />
-          <stop offset="100%" stopColor={colors.neutral[700]} />
+          <stop offset="0%" stopColor={colors.neutral[700]} />
+          <stop offset="30%" stopColor={colors.neutral[500]} />
+          <stop offset="50%" stopColor={colors.neutral[300]} />
+          <stop offset="70%" stopColor={colors.neutral[500]} />
+          <stop offset="100%" stopColor={colors.neutral[800]} />
         </linearGradient>
       </defs>
       {/* 铁芯主体 */}
@@ -102,7 +108,7 @@ export const Solenoid: React.FC<SolenoidProps> = ({
           y={-ry + 6}
           width={width + 20}
           height={height - 12}
-          rx="4"
+          rx="3"
           fill={`url(#${ironCoreGradId})`}
           stroke={colors.neutral[800]}
           strokeWidth="1.5"
@@ -148,25 +154,26 @@ export const Solenoid: React.FC<SolenoidProps> = ({
             strokeWidth={strokeW}
             strokeLinecap="round"
           />
-          {/* 铜线受光面高光 */}
+          {/* 铜线受光面高光 (统一白色半透明 0.6) */}
           <path
             d={`M ${cx - 1} ${ry - 2} A ${rx - 1} ${ry - 2} 0 0 0 ${cx - 1} ${-ry + 2}`}
             fill="none"
-            stroke={c.copperLight}
+            stroke="#FFFFFF"
             strokeWidth={highlightW}
             strokeLinecap="round"
-            opacity="0.7"
+            opacity="0.6"
           />
         </g>
       ))}
 
       {/* 5. 绘制感应电流流动粒子 */}
-      {hasCurrent &&
+      {showParticles &&
         turnCenters.map((cx, idx) => {
           // 稀疏化：只在满足间隔的匝上画粒子，防止高匝数下挤成一列
           if (idx % stepInterval !== 0) return null
 
-          return [0, 1].map((pIdx) => {
+          // 精简粒子数量 50%，每个匝仅渲染 1 个流光粒子
+          return [0].map((pIdx) => {
             // 错开相位：不同线圈匝的粒子引入 idx * 0.6 的相位偏差，呈现错落有致的流光效果
             const phase = pIdx * Math.PI + idx * 0.6
             const t = ((time * flowSpeed + phase) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2)
@@ -182,8 +189,8 @@ export const Solenoid: React.FC<SolenoidProps> = ({
                 cx={px}
                 cy={py}
                 r={particleR}
-                fill={PHYSICS_COLORS.kineticEnergy}
-                filter="drop-shadow(0 0 2px #06B6D4)"
+                fill={SCENE_COLORS.coil.activeGlow || '#10B981'}
+                filter="drop-shadow(0 0 2px #10B981)"
               />
             )
           })

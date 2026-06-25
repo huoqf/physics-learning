@@ -79,3 +79,5 @@ export type { GalvanometerProps } from './Galvanometer'
 export type { PrimaryCoilProps } from './PrimaryCoil'
 export type { DCSourceProps } from './DCSource'
 export type { RheostatProps } from './Rheostat'
+export type { ChargeSign } from './types'
+

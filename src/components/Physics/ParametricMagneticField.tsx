@@ -1,4 +1,5 @@
 import React from 'react';
+import { MAGNET_COLORS } from '@/theme/physics';
 
 /**
  * 参数化磁感线组件 Props
@@ -14,6 +15,8 @@ interface MagneticFieldProps {
   canvasHeight: number
   /** 磁感线颜色，默认 '#4ade80' */
   lineColor?: string
+  /** 是否展示小磁针探针，默认 false */
+  showCompasses?: boolean
 }
 
 /**
@@ -23,7 +26,7 @@ interface MagneticFieldProps {
  * - 外部回道线（虚线）：从 N 极出发经空气绕回 S 极，分内/中/外三圈
  * - 内部闭合线（实线）：在磁铁内部从 S 极回到 N 极，体现磁感线闭合本质
  * - 两端轴线延伸段（虚线）：N 极外侧发射、S 极外侧注入
- * - 5 点方向箭头：标注 N 外侧、S 外侧、上下中圈、内部中心的场向
+ * - 5 点方向箭头：标注 N 外侧、S 外侧、上下中圈、内部中心的场向（有磁针时可由磁针替代）
  * - 边界安全裁剪：防止磁感线飞出画布
  */
 export const ParametricMagneticField: React.FC<MagneticFieldProps> = ({
@@ -31,7 +34,8 @@ export const ParametricMagneticField: React.FC<MagneticFieldProps> = ({
   h,
   pole,
   canvasHeight,
-  lineColor = '#4ade80'
+  lineColor = '#4ade80',
+  showCompasses = false
 }) => {
   const halfW = w / 2;
   const halfH = h / 2;
@@ -190,6 +194,27 @@ export const ParametricMagneticField: React.FC<MagneticFieldProps> = ({
     );
   };
 
+  // 统一的小磁针渲染函数：支持按磁场切线偏转，红端指N，蓝端指S
+  const renderCompass = (cx: number, cy: number, angle: number) => {
+    const r = 8.5; // 直径 17px
+    const borderStroke = MAGNET_COLORS.bodyStroke || '#737373';
+    return (
+      <g transform={`translate(${cx}, ${cy})`} className="magnetic-compass">
+        {/* 外表壳 */}
+        <circle r={r} fill="#FFFFFF" stroke={borderStroke} strokeWidth={1} />
+        {/* 指针组 */}
+        <g transform={`rotate(${angle})`}>
+          {/* N 极指向右端面，涂红色 */}
+          <polygon points={`0,-2.5 ${r - 2.5},0 0,2.5`} fill={MAGNET_COLORS.northBase} />
+          {/* S 极指向左端面，涂蓝色 */}
+          <polygon points={`0,-2.5 ${-r + 2.5},0 0,2.5`} fill={MAGNET_COLORS.southBase} />
+          {/* 转轴铜钉 */}
+          <circle r={1.5} fill={borderStroke} />
+        </g>
+      </g>
+    );
+  };
+
   return (
     <g className="parametric-magnetic-field-simulation">
       {/* 渲染外部磁感线 (虚线) */}
@@ -205,10 +230,17 @@ export const ParametricMagneticField: React.FC<MagneticFieldProps> = ({
       ))}
       <line x1={-halfW * pole} y1={0} x2={halfW * pole} y2={0} stroke={lineColor} strokeWidth={1.5} opacity={0.6} />
 
-      {/* 渲染 5 点高清晰降噪固定箭头系统 */}
-      {arrows.map((arrow, idx) => (
+      {/* 渲染 5 点高清晰降噪固定箭头系统 (非展示磁针模式下) */}
+      {!showCompasses && arrows.map((arrow, idx) => (
         <g key={`arrow-${idx}`} data-role={arrow.role}>
           {renderArrow(arrow.x, arrow.y, arrow.angle)}
+        </g>
+      ))}
+
+      {/* 渲染 5 点偏转小磁针探针 */}
+      {showCompasses && arrows.map((arrow, idx) => (
+        <g key={`compass-${idx}`} data-role={arrow.role}>
+          {renderCompass(arrow.x, arrow.y, arrow.angle)}
         </g>
       ))}
     </g>
