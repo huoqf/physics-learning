@@ -52,18 +52,20 @@ export default function EnergyConservationAnimation() {
 
   // ── 拖拽状态 Ref ──
   const dragRef = useRef<{
-    isDragging: boolean
+    isDraggingObj: boolean
+    isDraggingRefLine: boolean
     startY: number
     startX: number
     startVal: number
   }>({
-    isDragging: false,
+    isDraggingObj: false,
+    isDraggingRefLine: false,
     startY: 0,
     startX: 0,
     startVal: 0,
   })
 
-  const [isHovered, setIsHovered] = useState(false)
+  const [cursorType, setCursorType] = useState<'default' | 'grab' | 'grabbing' | 'ns-resize'>('default')
 
   // ── 布局与映射参数 ──
   const padding = canvasSize.width * 0.06
@@ -79,8 +81,8 @@ export default function EnergyConservationAnimation() {
   const animLeftBoundary = padding * 1.5
   const animRightBoundary = wallX - 110 // 避让右侧卡片
   const animCenterX = (animLeftBoundary + animRightBoundary) / 2
-  const objW = canvasSize.width * 0.07
-  const objH = objW * 0.7 // 小车扁一点
+  const objW = canvasSize.width * 0.05
+  const objH = objW * 0.6 // 小车更扁更精致
 
   const animAreaHeight = groundY - chartBottom
   const R_pix_base = animAreaHeight * 0.7     // 基准像素长度（对应 5.0m）
@@ -126,6 +128,15 @@ export default function EnergyConservationAnimation() {
     [trajectory, time]
   )
 
+  // 获取零势能面及偏移量参数
+  const hRef = params.hRef ?? 0.0
+  const E_offset = m * g * hRef
+  const Ep_adj = state.Ep - E_offset
+  const Etot_adj = state.Etot - E_offset
+
+  const lowestY = mode === 0 ? hangY + R_pix : groundY
+  const yRefLine = lowestY - hRef * physScale
+
   // ── 拖拽响应事件 ──
   const handleMouseDown = (e: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
     if (isPlaying) return
@@ -135,7 +146,20 @@ export default function EnergyConservationAnimation() {
     const mouseX = e.clientX - rect.left
     const mouseY = e.clientY - rect.top
 
-    // 检查是否点击在摆球或滑块上
+    // 1. 检查是否点击在零势能面附近
+    if (Math.abs(mouseY - yRefLine) <= 8) {
+      dragRef.current = {
+        isDraggingObj: false,
+        isDraggingRefLine: true,
+        startY: mouseY,
+        startX: mouseX,
+        startVal: hRef,
+      }
+      setCursorType('ns-resize')
+      return
+    }
+
+    // 2. 检查是否点击在摆球或滑块上
     const pos = getObjectPixelPos(state.theta)
     const isOverObj =
       mode === 0
@@ -147,12 +171,38 @@ export default function EnergyConservationAnimation() {
 
     if (isOverObj) {
       dragRef.current = {
-        isDragging: true,
+        isDraggingObj: true,
+        isDraggingRefLine: false,
         startY: mouseY,
         startX: mouseX,
         startVal: theta0,
       }
+      setCursorType('grabbing')
     }
+  }
+
+  const getCursorType = (mouseX: number, mouseY: number, hRefVal: number): 'default' | 'grab' | 'grabbing' | 'ns-resize' => {
+    if (isPlaying) return 'default'
+    if (dragRef.current.isDraggingRefLine) return 'ns-resize'
+    if (dragRef.current.isDraggingObj) return 'grabbing'
+
+    const curLowestY = mode === 0 ? hangY + R_pix : groundY
+    const curYRefLine = curLowestY - hRefVal * physScale
+    if (Math.abs(mouseY - curYRefLine) <= 8) {
+      return 'ns-resize'
+    }
+
+    const pos = getObjectPixelPos(state.theta)
+    const isOverObj =
+      mode === 0
+        ? Math.hypot(mouseX - pos.x, mouseY - pos.y) <= 18
+        : mouseX >= pos.x - objW * 0.6 &&
+          mouseX <= pos.x + objW * 0.6 &&
+          mouseY >= pos.y - objH - 5 &&
+          mouseY <= pos.y + 10
+
+    if (isOverObj) return 'grab'
+    return 'default'
   }
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
@@ -161,7 +211,17 @@ export default function EnergyConservationAnimation() {
     const mouseX = e.clientX - rect.left
     const mouseY = e.clientY - rect.top
 
-    if (dragRef.current.isDragging) {
+    if (dragRef.current.isDraggingRefLine) {
+      const dy = mouseY - dragRef.current.startY
+      let nextHRef = dragRef.current.startVal - dy / physScale
+      const maxHRef = R_model * 1.2
+      nextHRef = Math.max(-2.0, Math.min(maxHRef, nextHRef))
+      updateParam('hRef', nextHRef)
+      setCursorType('ns-resize')
+      return
+    }
+
+    if (dragRef.current.isDraggingObj) {
       const centerY = mode === 0 ? hangY : valleyCenterY
       const dx = mouseX - animCenterX
       const dy = mouseY - centerY
@@ -177,49 +237,33 @@ export default function EnergyConservationAnimation() {
       updateParam('theta0', Math.round(thetaDeg))
       setTime(0)
       setIsPlaying(false)
+      setCursorType('grabbing')
       return
     }
 
-    if (isPlaying) {
-      setIsHovered(false)
-      return
-    }
-
-    // 判断 Hover 状态
-    const pos = getObjectPixelPos(state.theta)
-    const isOverObj =
-      mode === 0
-        ? Math.hypot(mouseX - pos.x, mouseY - pos.y) <= 18
-        : mouseX >= pos.x - objW * 0.6 &&
-          mouseX <= pos.x + objW * 0.6 &&
-          mouseY >= pos.y - objH - 5 &&
-          mouseY <= pos.y + 10
-
-    setIsHovered(isOverObj)
+    setCursorType(getCursorType(mouseX, mouseY, hRef))
   }
 
   const handleMouseUpOrLeave = () => {
     dragRef.current = {
-      isDragging: false,
+      isDraggingObj: false,
+      isDraggingRefLine: false,
       startY: 0,
       startX: 0,
       startVal: 0,
     }
+    setCursorType('default')
   }
 
-  // ── 三柱能量对比柱参数 ──
-  // 从轨迹中获取初始总能量（避免重复物理公式，符合铁律 2）
+  // ── 柱状图高度及范围 ──
   const initialTotalEnergy = trajectory.length > 0 ? trajectory[0].Etot : 10
   const maxEnergy = Math.max(initialTotalEnergy * 1.15, 10)
   const maxBarH = 55
 
   const barEk_H = (state.Ek / maxEnergy) * maxBarH
-  const barEp_H = (state.Ep / maxEnergy) * maxBarH
-  // 第三柱：单摆为机械能，山谷为总能量 (机械能+内能)
-  const barTot_H = (state.Etot / maxEnergy) * maxBarH
-
-  // ── 图表曲线 Y 映射 ──
-  // toChartX/toChartY removed: chart mapping handled by RelationChart
+  const barEp_H = (Ep_adj / maxEnergy) * maxBarH
+  const barQ_H = (state.Q / maxEnergy) * maxBarH
+  const barTot_H = (Etot_adj / maxEnergy) * maxBarH
 
   const visiblePoints = useMemo(
     () => trajectory.filter(p => p.t <= time + 0.01),
@@ -235,14 +279,7 @@ export default function EnergyConservationAnimation() {
   const objPos = getObjectPixelPos(state.theta)
   const thetaDeg = (state.theta * 180) / Math.PI
 
-  // ── 随动公式 ──
-  const getLiveFormula = () => {
-    if (mode === 0) {
-      return `E = E_k + E_p = ${state.Etot.toFixed(1)}\\text{J}`;
-    } else {
-      return `E_{\\text{总}} = E_{\\text{机}} + Q = ${state.Etot.toFixed(1)}\\text{J}`;
-    }
-  }
+
 
   // 绘制山谷 150° 对称轨道线
   const arcLimitDeg = 72
@@ -260,32 +297,20 @@ export default function EnergyConservationAnimation() {
   }), [canvasSize.width, canvasSize.height]);
   const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
 
+  // 动态 Y 范围计算
+  const chartYMin = Math.min(0, -E_offset) * 1.1
+  const chartYMax = Math.max(initialTotalEnergy, initialTotalEnergy - E_offset) * 1.15
+  const dynamicYDomain: [number, number] = [chartYMin, Math.max(chartYMax, 10)]
+
   return (
     <div ref={containerRef} className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">
       {/* 拖拽交互提示气泡 */}
       {!isPlaying && (
         <div className="absolute top-3 right-4 px-2 py-0.5 bg-neutral-50 text-neutral-400 font-semibold rounded border pointer-events-none z-10 animate-pulse" style={{ fontSize: font(9) }}>
-          鼠标按住并左右摆动 {mode === 0 ? '摆球' : '滑块'} 可自由调节起摆初始角度
+          鼠标拖动 {mode === 0 ? '摆球' : '滑块'} 改变初始角，拖拽“零势能面”演示重力势能相对性
         </div>
       )}
 
-      {/* 随物块移动的实时物理公式 */}
-      <div
-        className="absolute bg-white/95 px-2 py-0.5 rounded shadow-sm border border-neutral-200 pointer-events-none z-10 transition-all duration-100 ease-out"
-        style={{
-          left: `${objPos.x}px`,
-          bottom: mode === 0 ? `${canvasSize.height - objPos.y + 18}px` : `${canvasSize.height - objPos.y + objH + 12}px`,
-          transform: 'translateX(-50%)',
-        }}
-      >
-        <span style={{ fontSize: font(10) }}>
-          <KatexFormula
-            formula={getLiveFormula()}
-            mode="inline"
-            className="text-violet-700 font-semibold"
-          />
-        </span>
-      </div>
 
       {/* 主 SVG 画面 */}
       <svg
@@ -296,7 +321,7 @@ export default function EnergyConservationAnimation() {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUpOrLeave}
         onMouseLeave={handleMouseUpOrLeave}
-        style={{ cursor: isHovered ? 'grab' : 'default' }}
+        style={{ cursor: cursorType }}
         className="bg-transparent"
       >
         <defs>
@@ -320,7 +345,7 @@ export default function EnergyConservationAnimation() {
         <foreignObject x={chartLeft - 30} y={0} width={chartWidth + 30} height={chartBottom + 15}>
           <div style={{ width: '100%', height: '100%' }}>
             <RelationChart
-              points={visiblePoints.map(p => ({ x: p.t, y: p.Ep }))}
+              points={visiblePoints.map(p => ({ x: p.t, y: p.Ep - E_offset }))}
               additionalSeries={[
                 {
                   points: visiblePoints.map(p => ({ x: p.t, y: p.Ek })),
@@ -337,7 +362,7 @@ export default function EnergyConservationAnimation() {
                     }]
                   : []),
                 {
-                  points: visiblePoints.map(p => ({ x: p.t, y: p.Etot })),
+                  points: visiblePoints.map(p => ({ x: p.t, y: p.Etot - E_offset })),
                   label: mode === 0 ? 'E (总机械能)' : 'E总 (总能量)',
                   series: 'secondary' as const,
                   color: colors.neutral[500],
@@ -346,7 +371,7 @@ export default function EnergyConservationAnimation() {
                 },
               ]}
               xDomain={[0, tMax]}
-              yDomain={[0, maxEnergy]}
+              yDomain={dynamicYDomain}
               xLabel="t (s)"
               yLabel="E (J)"
               title={mode === 0 ? 'E-t (单摆动能/重力势能及机械能消长守恒图)' : 'E-t (山谷阻尼动能/势能/内能及总能量守恒图)'}
@@ -381,20 +406,41 @@ export default function EnergyConservationAnimation() {
               strokeDasharray="3,3"
             />
 
-            {/* 零势能基准底线（最低点） */}
-            <line
-              x1={animCenterX - 110}
-              y1={hangY + R_pix}
-              x2={animCenterX + 110}
-              y2={hangY + R_pix}
-              stroke={CHART_COLORS.reference}
-              strokeWidth={0.8}
-              strokeDasharray="3,2"
-              opacity={0.7}
-            />
-            <text x={animCenterX} y={hangY + R_pix + 10} fontSize={font(7.5)} fill={CHART_COLORS.reference} textAnchor="middle">
-              参考零势能面 (y=0)
-            </text>
+            {/* 零势能基准线（可拖动） */}
+            <g
+              className="cursor-ns-resize"
+              onMouseDown={handleMouseDown}
+            >
+              <line
+                x1={animCenterX - 120}
+                y1={yRefLine}
+                x2={animCenterX + 120}
+                y2={yRefLine}
+                stroke={CHART_COLORS.reference}
+                strokeWidth={1.2}
+                strokeDasharray="3,2"
+                opacity={0.85}
+              />
+              <line
+                x1={animCenterX - 150}
+                y1={yRefLine}
+                x2={animCenterX + 150}
+                y2={yRefLine}
+                stroke="transparent"
+                strokeWidth={12}
+              />
+              <text
+                x={animCenterX}
+                y={yRefLine > hangY + R_pix - 5 ? yRefLine - 6 : yRefLine + 11}
+                fontSize={font(7.5)}
+                fill={CHART_COLORS.reference}
+                textAnchor="middle"
+                fontWeight="semibold"
+                className="select-none pointer-events-none"
+              >
+                参考零势能面 (y={hRef.toFixed(1)}m)
+              </text>
+            </g>
 
             {/* 摆线 */}
             <line
@@ -451,32 +497,53 @@ export default function EnergyConservationAnimation() {
               opacity={0.8}
             />
 
-            {/* 底部零势能参考虚线 */}
-            <line
-              x1={animCenterX - 110}
-              y1={groundY}
-              x2={animCenterX + 110}
-              y2={groundY}
-              stroke={CHART_COLORS.reference}
-              strokeWidth={0.8}
-              strokeDasharray="3,2"
-              opacity={0.7}
-            />
-            <text x={animCenterX} y={groundY + 10} fontSize={font(7.5)} fill={CHART_COLORS.reference} textAnchor="middle">
-              谷底零势能面 (y=0)
-            </text>
+            {/* 零势能基准线（可拖动） */}
+            <g
+              className="cursor-ns-resize"
+              onMouseDown={handleMouseDown}
+            >
+              <line
+                x1={animCenterX - 120}
+                y1={yRefLine}
+                x2={animCenterX + 120}
+                y2={yRefLine}
+                stroke={CHART_COLORS.reference}
+                strokeWidth={1.2}
+                strokeDasharray="3,2"
+                opacity={0.85}
+              />
+              <line
+                x1={animCenterX - 150}
+                y1={yRefLine}
+                x2={animCenterX + 150}
+                y2={yRefLine}
+                stroke="transparent"
+                strokeWidth={12}
+              />
+              <text
+                x={animCenterX}
+                y={yRefLine > groundY - 5 ? yRefLine - 6 : yRefLine + 11}
+                fontSize={font(7.5)}
+                fill={CHART_COLORS.reference}
+                textAnchor="middle"
+                fontWeight="semibold"
+                className="select-none pointer-events-none"
+              >
+                谷底零势能面 (y={hRef.toFixed(1)}m)
+              </text>
+            </g>
 
             {/* 小车（沿圆弧贴紧滑行，并顺着切向倾角旋转） */}
             <g transform={`translate(${objPos.x}, ${objPos.y}) rotate(${-thetaDeg}) translate(${-objW / 2}, ${-objH})`}>
               {/* 木车身 */}
               <rect width={objW} height={objH - 1} rx={2} fill="url(#block-grad)" stroke={SCENE_COLORS.materials.woodSphereGrad[1]} strokeWidth={1.5} />
               
-              <text x={objW * 0.5} y={objH * 0.6} fontSize={font(9)} fill={colors.neutral[800]} fontWeight="bold" textAnchor="middle">
+              <text x={objW * 0.5} y={objH * 0.6} fontSize={font(8)} fill={colors.neutral[800]} fontWeight="bold" textAnchor="middle">
                 {m.toFixed(1)}kg
               </text>
               {/* 轮子 */}
-              <circle cx={objW * 0.25} cy={objH - 0.5} r={2} fill={colors.neutral[800]} />
-              <circle cx={objW * 0.75} cy={objH - 0.5} r={2} fill={colors.neutral[800]} />
+              <circle cx={objW * 0.25} cy={objH - 0.3} r={1.6} fill={colors.neutral[800]} />
+              <circle cx={objW * 0.75} cy={objH - 0.3} r={1.6} fill={colors.neutral[800]} />
 
               {/* 切向速度矢量 v */}
               {showVectors && Math.abs(state.v) > 0.1 && (() => {
@@ -506,62 +573,141 @@ export default function EnergyConservationAnimation() {
           </g>
         )}
 
-        {/* ── 三柱能量守恒验证面板卡片 ── */}
-        <g transform={`translate(${wallX - 90}, ${canvasSize.height * 0.58})`}>
+        {/* ── 三柱/四柱能量守恒验证面板卡片 ── */}
+        <g transform={`translate(${wallX - (mode === 0 ? 90 : 115)}, ${canvasSize.height * 0.55})`}>
           {/* 半透明白底毛玻璃 */}
-          <rect width={90} height={85} rx={6} fill={SCENE_COLORS.labels.glassPanelBg} stroke={colors.neutral[200]} strokeWidth={0.8} />
+          <rect width={mode === 0 ? 90 : 115} height={105} rx={6} fill={SCENE_COLORS.labels.glassPanelBg} stroke={colors.neutral[200]} strokeWidth={0.8} />
 
-          <g transform="translate(0, 65)">
-            <line x1={8} y1={0} x2={82} y2={0} stroke={colors.neutral[400]} strokeWidth={0.8} />
+          {/* 柱状图坐标系，基准线 y=0 移至 70 */}
+          <g transform="translate(0, 70)">
+            {/* 基准零线 */}
+            <line x1={8} y1={0} x2={mode === 0 ? 82 : 107} y2={0} stroke={colors.neutral[400]} strokeWidth={0.8} />
 
             {/* 柱 1：动能 Ek (青色) */}
             <rect
-              x={12}
+              x={mode === 0 ? 12 : 10}
               y={-barEk_H}
               width={14}
-              height={Math.max(barEk_H, 0.5)}
+              height={Math.max(barEk_H, 0.1)}
               fill={PHYSICS_COLORS.kineticEnergy}
               opacity={0.85}
               rx={0.5}
             />
-            <text x={19} y={-barEk_H - 4} fontSize={font(7.5)} fill={PHYSICS_COLORS.kineticEnergy} textAnchor="middle" fontWeight="bold">
-              {state.Ek.toFixed(0)}
+            <text
+              x={mode === 0 ? 19 : 17}
+              y={-barEk_H - 4}
+              fontSize={font(7.5)}
+              fill={PHYSICS_COLORS.kineticEnergy}
+              textAnchor="middle"
+              fontWeight="bold"
+            >
+              {state.Ek.toFixed(1)}
             </text>
-            <text x={19} y={12} fontSize={font(7.5)} fill={PHYSICS_COLORS.kineticEnergy} textAnchor="middle" fontWeight="semibold">
+            <text
+              x={mode === 0 ? 19 : 17}
+              y={22}
+              fontSize={font(7.5)}
+              fill={PHYSICS_COLORS.kineticEnergy}
+              textAnchor="middle"
+              fontWeight="semibold"
+            >
               Ek
             </text>
 
             {/* 柱 2：重力势能 Ep (紫色) */}
             <rect
-              x={38}
-              y={-barEp_H}
+              x={mode === 0 ? 38 : 35}
+              y={barEp_H >= 0 ? -barEp_H : 0}
               width={14}
-              height={Math.max(barEp_H, 0.5)}
+              height={Math.max(Math.abs(barEp_H), 0.1)}
               fill={PHYSICS_COLORS.potentialEnergy}
               opacity={0.85}
               rx={0.5}
             />
-            <text x={45} y={-barEp_H - 4} fontSize={font(7.5)} fill={PHYSICS_COLORS.potentialEnergy} textAnchor="middle" fontWeight="bold">
-              {state.Ep.toFixed(0)}
+            <text
+              x={mode === 0 ? 45 : 42}
+              y={barEp_H >= 0 ? -barEp_H - 4 : Math.abs(barEp_H) + 10}
+              fontSize={font(7.5)}
+              fill={PHYSICS_COLORS.potentialEnergy}
+              textAnchor="middle"
+              fontWeight="bold"
+            >
+              {Ep_adj.toFixed(1)}
             </text>
-            <text x={45} y={12} fontSize={font(7.5)} fill={PHYSICS_COLORS.potentialEnergy} textAnchor="middle" fontWeight="semibold">
+            <text
+              x={mode === 0 ? 45 : 42}
+              y={22}
+              fontSize={font(7.5)}
+              fill={PHYSICS_COLORS.potentialEnergy}
+              textAnchor="middle"
+              fontWeight="semibold"
+            >
               Ep
             </text>
 
-            {/* 柱 3：总能量 Etot (深灰色) */}
+            {/* 柱 3 (仅在 mode === 1 时显示)：内能 Q (红色) */}
+            {mode === 1 && (
+              <>
+                <rect
+                  x={60}
+                  y={-barQ_H}
+                  width={14}
+                  height={Math.max(barQ_H, 0.1)}
+                  fill={ENERGY_COLORS.internalEnergy}
+                  opacity={0.85}
+                  rx={0.5}
+                />
+                <text
+                  x={67}
+                  y={-barQ_H - 4}
+                  fontSize={font(7.5)}
+                  fill={ENERGY_COLORS.internalEnergy}
+                  textAnchor="middle"
+                  fontWeight="bold"
+                >
+                  {state.Q.toFixed(1)}
+                </text>
+                <text
+                  x={67}
+                  y={22}
+                  fontSize={font(7.5)}
+                  fill={ENERGY_COLORS.internalEnergy}
+                  textAnchor="middle"
+                  fontWeight="semibold"
+                >
+                  Q
+                </text>
+              </>
+            )}
+
+            {/* 柱 4 (对于 mode === 0 是第 3 柱，对于 mode === 1 是第 4 柱)：总能量 E (灰色) */}
             <rect
-              x={64}
-              y={-barTot_H}
+              x={mode === 0 ? 64 : 85}
+              y={barTot_H >= 0 ? -barTot_H : 0}
               width={14}
-              height={Math.max(barTot_H, 0.5)}
+              height={Math.max(Math.abs(barTot_H), 0.1)}
               fill={colors.neutral[500]}
               opacity={0.85}
               rx={0.5}
             />
-            <text x={71} y={-barTot_H - 4} fontSize={font(7.5)} fill={colors.neutral[600]} textAnchor="middle" fontWeight="bold">
-              {state.Etot.toFixed(0)}
+            <text
+              x={mode === 0 ? 71 : 92}
+              y={barTot_H >= 0 ? -barTot_H - 4 : Math.abs(barTot_H) + 10}
+              fontSize={font(7.5)}
+              fill={colors.neutral[600]}
+              textAnchor="middle"
+              fontWeight="bold"
+            >
+              {Etot_adj.toFixed(1)}
             </text>
-            <text x={71} y={12} fontSize={font(7.5)} fill={colors.neutral[600]} textAnchor="middle" fontWeight="semibold">
+            <text
+              x={mode === 0 ? 71 : 92}
+              y={22}
+              fontSize={font(7.5)}
+              fill={colors.neutral[600]}
+              textAnchor="middle"
+              fontWeight="semibold"
+            >
               {mode === 0 ? 'E机' : 'E总'}
             </text>
           </g>

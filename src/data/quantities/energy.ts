@@ -238,6 +238,8 @@ export function buildEnergyQuantities(
       const L = params.L ?? 5
       const R = params.R ?? 5
       const mu = params.mu ?? 0.1
+      const hRef = params.hRef ?? 0.0
+      const E_offset = m * g * hRef
 
       if (mode === 0) {
         // ── 单摆模式 ──
@@ -245,18 +247,21 @@ export function buildEnergyQuantities(
         const state = getECStateAtTime(trajectory, time)
         const thetaDeg = (state.theta * 180) / Math.PI
 
+        const Ep_adj = state.Ep - E_offset
+        const Etot_adj = state.Etot - E_offset
+
         return {
           quantities: [
             ...base,
             { label: '摆角 θ', value: `${thetaDeg.toFixed(1)}°`, unit: '' },
-            { label: '重力势能 Ep', value: state.Ep.toFixed(1), unit: 'J', highlight: 'positive' as const },
+            { label: '重力势能 Ep', value: Ep_adj.toFixed(1), unit: 'J', highlight: 'positive' as const },
             { label: '实时动能 Ek', value: state.Ek.toFixed(1), unit: 'J', highlight: 'positive' as const },
-            { label: '总机械能 E', value: state.Etot.toFixed(1), unit: 'J', highlight: 'extreme' as const },
+            { label: '总机械能 E', value: Etot_adj.toFixed(1), unit: 'J', highlight: 'extreme' as const },
             { label: '实时速度 v', value: state.v.toFixed(2), unit: 'm/s' },
           ],
           formulas: [
-            { name: '摆球高度', latex: 'h = L(1 - \\cos\\theta)', note: '以最低点为零参考面', level: 'important' },
-            { name: '重力势能', latex: 'E_p = mgh', level: 'core' },
+            { name: '摆球高度', latex: 'h = L(1 - \\cos\\theta)', note: '以最低点为零参考面时', level: 'important' },
+            { name: '重力势能', latex: 'E_p = mg(h - h_{\\text{参}})', note: 'h为距离最低点高度，h_参为零势能面高度', level: 'core' },
             { name: '机械能守恒', latex: 'E_k + E_p = \\text{常量}', level: 'core', condition: '无空气阻力下' },
           ],
           gaokaoPoints: [
@@ -271,20 +276,24 @@ export function buildEnergyQuantities(
         const state = getECStateAtTime(trajectory, time)
         const thetaDeg = (state.theta * 180) / Math.PI
 
+        const Ep_adj = state.Ep - E_offset
+        const Emech_adj = state.Ep + state.Ek - E_offset
+        const Etot_adj = state.Etot - E_offset
+
         return {
           quantities: [
             ...base,
             { label: '当前位置 θ', value: `${thetaDeg.toFixed(1)}°`, unit: '' },
-            { label: '重力势能 Ep', value: state.Ep.toFixed(1), unit: 'J', highlight: 'positive' as const },
+            { label: '重力势能 Ep', value: Ep_adj.toFixed(1), unit: 'J', highlight: 'positive' as const },
             { label: '实时动能 Ek', value: state.Ek.toFixed(1), unit: 'J', highlight: 'positive' as const },
-            { label: '机械能 E_机', value: (state.Ep + state.Ek).toFixed(1), unit: 'J' },
+            { label: '机械能 E_机', value: Emech_adj.toFixed(1), unit: 'J' },
             { label: '内能(生热) Q', value: state.Q.toFixed(1), unit: 'J', highlight: 'negative' as const },
-            { label: '总能量 E_总', value: state.Etot.toFixed(1), unit: 'J', highlight: 'extreme' as const },
+            { label: '总能量 E_总', value: Etot_adj.toFixed(1), unit: 'J', highlight: 'extreme' as const },
           ],
           formulas: [
             { name: '支持力', latex: 'F_N = mg\\cos\\theta + \\frac{mv^2}{R}', note: '凹轨道底部滑块压力最大', level: 'important' },
             { name: '摩擦力', latex: 'f = \\mu F_N', level: 'core' },
-            { name: '摩擦产热', latex: 'Q = \\int f \\, ds', note: '摩擦生热内能，属于过程量', level: 'core' },
+            { name: '功能关系', latex: 'Q = \\Delta E_{\\text{损}} = E_{\\text{机初}} - E_{\\text{机末}}', note: '内能增加等于系统机械能的减少', level: 'core' },
             { name: '能量守恒', latex: 'E_k + E_p + Q = E_0', level: 'core', condition: '机械能不守恒，但总能量守恒' },
           ],
           gaokaoPoints: [

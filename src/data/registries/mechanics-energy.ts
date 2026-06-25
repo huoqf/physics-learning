@@ -63,7 +63,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
     title: '机械能守恒定律',
     knowledgeId: 'mechanics-7-5',
     Component: lazy(() => import('@/features/mechanics/energy/EnergyConservationAnimation')),
-    defaultParams: { m: 2.0, g: 9.8, L: 5.0, theta0: 45, R: 5.0, mu: 0.1, mode: 0 },
+    defaultParams: { m: 2.0, g: 9.8, L: 5.0, theta0: 45, R: 5.0, mu: 0.1, mode: 0, hRef: 0.0 },
     paramMeta: [
       { key: 'm', label: '质量 m', min: 0.5, max: 5.0, step: 0.5, unit: 'kg' },
       { key: 'theta0', label: '初始角 θ₀', min: -60, max: 60, step: 5, unit: '°' },

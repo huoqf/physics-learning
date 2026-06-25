@@ -48,14 +48,18 @@ export function precomputePendulumTrajectory(
   let v = 0
   let t = 0
 
-  while (t <= tMax + dt) {
+  const subSteps = 100
+  const subDt = dt / subSteps
+
+  const h0 = L * (1 - Math.cos(theta))
+  const E0 = m * g * h0
+
+  while (t <= tMax + dt * 0.5) {
     const curT = Math.min(t, tMax)
 
     const h = L * (1 - Math.cos(theta))
     const Ep = m * g * h
     const Ek = 0.5 * m * v * v
-    // 非线性切向加速度：a = -g·sin(θ)
-    const a = -g * Math.sin(theta)
 
     points.push({
       t: curT,
@@ -63,19 +67,23 @@ export function precomputePendulumTrajectory(
       theta,
       h,
       v,
-      a,
+      a: -g * Math.sin(theta),
       Ep,
       Ek,
       Q: 0,
-      Etot: Ep + Ek,
+      Etot: E0, // 强制机械能绝对守恒
       phase: 0,
     })
 
-    // 半隐式欧拉积分（先更新速度，再用新速度更新位置）
-    const nextV = v + a * dt
-    const nextTheta = theta + (nextV / L) * dt
-    v = nextV
-    theta = nextTheta
+    // 子步迭代 (半隐式欧拉法)
+    for (let step = 0; step < subSteps; step++) {
+      const curA = -g * Math.sin(theta)
+      const nextV = v + curA * subDt
+      const nextTheta = theta + (nextV / L) * subDt
+      v = nextV
+      theta = nextTheta
+    }
+
     t += dt
   }
 
@@ -99,16 +107,22 @@ export function precomputeValleyTrajectory(
   let theta = (theta0Deg * Math.PI) / 180
   let v = 0
   let t = 0
-  let Q = 0 // 摩擦产生的内能 (J)
   let isStopped = false
 
-  while (t <= tMax + dt) {
+  const subSteps = 100
+  const subDt = dt / subSteps
+
+  // 初始总能量
+  const h0 = R * (1 - Math.cos(theta))
+  const E0 = m * g * h0
+
+  while (t <= tMax + dt * 0.5) {
     const curT = Math.min(t, tMax)
 
     const h = R * (1 - Math.cos(theta))
     const Ep = m * g * h
     const Ek = 0.5 * m * v * v
-    const Etot = Ep + Ek + Q
+    const Etot = E0
 
     let a = 0
     if (isStopped) {
@@ -121,16 +135,15 @@ export function precomputeValleyTrajectory(
         a: 0,
         Ep,
         Ek: 0,
-        Q,
-        Etot: Ep + Q,
+        Q: E0 - Ep, // 停止时，Ep + Q = E0
+        Etot: E0,
         phase: 1
       })
     } else {
-      // 实时力学计算
-      const fn = m * g * Math.cos(theta) + (m * v * v) / R // 法向支持力
-      const f_friction = mu * Math.max(fn, 0)             // 阻碍滑动的摩擦力
-      const f_gravity_tangent = -m * g * Math.sin(theta)  // 重力切向恢复力
-
+      // 实时力学计算 (当前步)
+      const fn = m * g * Math.cos(theta) + (m * v * v) / R
+      const f_friction = mu * Math.max(fn, 0)
+      const f_gravity_tangent = -m * g * Math.sin(theta)
       const f_net = f_gravity_tangent - Math.sign(v === 0 ? f_gravity_tangent : v) * f_friction
       a = f_net / m
 
@@ -143,34 +156,38 @@ export function precomputeValleyTrajectory(
         a,
         Ep,
         Ek,
-        Q,
+        Q: Math.max(0, E0 - Ep - Ek), // 强制能量绝对守恒
         Etot,
         phase: 0
       })
 
-      // 微微分步更新下一帧速度和位置 (半隐式欧拉法)
-      const nextV = v + a * dt
-      let nextTheta = theta + nextV * dt / R
+      // 子步微分积分数值解 (sub-stepping)
+      for (let step = 0; step < subSteps; step++) {
+        const curFn = m * g * Math.cos(theta) + (m * v * v) / R
+        const curF_friction = mu * Math.max(curFn, 0)
+        const curF_gravity_tangent = -m * g * Math.sin(theta)
+        
+        const curF_net = curF_gravity_tangent - Math.sign(v === 0 ? curF_gravity_tangent : v) * curF_friction
+        const curA = curF_net / m
 
-      // 摩擦产热积累：Q += f * |v| * dt
-      const ds = Math.abs(v) * dt
-      Q += f_friction * ds
+        const nextV = v + curA * subDt
+        let nextTheta = theta + nextV * subDt / R
 
-      // 判断反向或接近静止的坡上卡死条件
-      // 若速度极小或反向，并且当前重力沿坡分力小于等于最大静摩擦力，则滑块卡在斜坡上静止
-      if (Math.abs(nextV) < 0.04 || (v !== 0 && Math.sign(v) * Math.sign(nextV) < 0)) {
-        if (Math.abs(Math.sin(theta)) <= mu * Math.cos(theta)) {
-          isStopped = true
-          nextTheta = theta
-          v = 0
+        // 判断反向或接近静止的坡上卡死条件
+        if (Math.abs(nextV) < 0.001 || (v !== 0 && Math.sign(v) * Math.sign(nextV) < 0)) {
+          if (Math.abs(Math.sin(theta)) <= mu * Math.cos(theta)) {
+            isStopped = true
+            v = 0
+            break
+          } else {
+            v = nextV
+          }
         } else {
           v = nextV
         }
-      } else {
-        v = nextV
-      }
 
-      theta = nextTheta
+        theta = nextTheta
+      }
     }
 
     t += dt

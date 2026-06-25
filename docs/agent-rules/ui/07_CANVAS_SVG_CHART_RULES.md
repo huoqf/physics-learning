@@ -99,43 +99,117 @@ const layout = {
 </svg>
 ```
 
-### 2.5 进阶方案：归一化坐标系（可选）
+### 2.4 🚨 SVG viewBox 铁律（禁止双重缩放）
 
-对于需要更高灵活性的场景，可使用归一化坐标系 (100 x 60)：
+> **违反此条将导致初次进入页面时出现画面"缓缓放大"视觉跳变。**
 
-```ts
-const scene = {
-  width: 100,
-  height: 60,
-  paddingX: 8,
-  paddingY: 6,
-  centerY: 30,
-}
+#### 问题根因
 
-const regions = {
-  scene: {
-    x: scene.paddingX,
-    y: scene.paddingY,
-    w: (scene.width - scene.paddingX * 2) * 0.6,
-    h: scene.height - scene.paddingY * 2,
-  },
-  // ...
-}
+`viewBox` 动态绑定容器真实像素尺寸，同时又通过 `vp.transform` 做第二次缩放，形成**双重缩放反模式**：
+- 首帧：`width/height` = `useCanvasSize` 初始值（设计稿默认尺寸），`vp.scale ≈ 1`
+- ResizeObserver 触发后：`width/height` → 真实容器尺寸，viewBox 扩大，画面出现放大跳变
 
-<svg viewBox={`0 0 ${scene.width} ${scene.height}`} preserveAspectRatio="xMidYMid meet">
+#### 禁止的做法（反模式）
+
+```tsx
+// ❌ 严禁：viewBox 绑定容器真实像素 + 同时用 vp.transform 二次缩放
+const { width, height } = canvasSize
+const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 480 })
+
+<svg viewBox={`0 0 ${width} ${height}`}>   {/* ← width/height 由 ResizeObserver 动态更新 */}
+  <g transform={vp.transform}>              {/* ← 又做了一次缩放，双重缩放！ */}
+    ...设计坐标内容...
+  </g>
+</svg>
 ```
 
-> **注意**：归一化坐标需要同步更新所有子组件内部坐标，改动范围较大，非必要不采用。
+#### 正确做法：二选一
+
+**方式A（推荐）：viewBox 固定设计尺寸，SVG 自动缩放**
+
+```tsx
+// ✅ 正确：viewBox 固定为设计坐标系，preserveAspectRatio 负责自适应容器
+const DESIGN_WIDTH = 700
+const DESIGN_HEIGHT = 480
+
+<svg
+  viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`}  // ← 恒定，不随容器变化
+  preserveAspectRatio="xMidYMid meet"               // ← SVG 原生居中缩放
+  className="w-full h-full"
+>
+  <g>  {/* 无 transform，直接用设计坐标 */}
+    ...
+  </g>
+</svg>
+
+// 指针事件坐标映射：使用 SVG 原生矩阵变换（精确，无需手动计算偏移）
+const clientToDesign = (clientX: number, clientY: number) => {
+  const svg = svgRef.current
+  if (!svg) return null
+  const pt = svg.createSVGPoint()
+  pt.x = clientX
+  pt.y = clientY
+  const ctm = svg.getScreenCTM()
+  if (!ctm) return null
+  return pt.matrixTransform(ctm.inverse())
+}
+```
+
+**方式B（合法）：viewBox 固定设计尺寸 + vp.transform（用于 overlay 偏移场景）**
+
+```tsx
+// ✅ 合法：当需要 overlay 避让（如右侧信息面板遮挡）时，可用 vp.transform
+// 但 viewBox 必须绑定到真实容器尺寸
+const { width, height } = canvasSize
+const vp = useViewport(canvasSize, {
+  designWidth: 700,
+  designHeight: 480,
+  overlayRight: 240,  // 右侧面板宽度
+})
+
+<svg viewBox={`0 0 ${width} ${height}`}>
+  <g transform={vp.transform}>
+    ...内容仅出现在可视区域内...
+  </g>
+</svg>
+// ⚠️ 此方式首帧仍有轻微跳变，非必要优先使用方式A
+```
+
+#### 判断规则
+
+| 情况 | 正确做法 |
+|------|----------|
+| 无 overlay，内容全屏居中 | **方式A**：viewBox = 固定设计尺寸，无 vp.transform |
+| 有 overlay（如右侧面板遮挡内容区） | **方式B**：viewBox = 真实容器尺寸 + vp.transform |
+| 只用 `vp.visibleX/W` 定位浮层，不用 `vp.transform` | **方式A** + 保留 `useViewport` 仅读取布局信息 |
+
+#### 指针事件坐标映射对比
+
+```tsx
+// ❌ 旧做法（与 vp.transform 绑定，易出错）
+const x = (e.clientX - rect.left - vp.tx) / vp.scale
+const y = (e.clientY - rect.top - vp.ty) / vp.scale
+
+// ✅ 新做法（SVG 原生，精确，适用于方式A）
+const pt = svg.createSVGPoint()
+pt.x = e.clientX; pt.y = e.clientY
+const { x, y } = pt.matrixTransform(svg.getScreenCTM()!.inverse())
+```
+
 
 ### 2.6 验收标准
 
 | 检查项 | 标准 |
 |--------|------|
 | SVG 标签 | 使用 `viewBox` + `preserveAspectRatio`，禁止 `width/height` 硬编码像素 |
+| **viewBox 值** | **禁止 `viewBox={\`0 0 ${width} ${height}\`}` 同时使用 `<g transform={vp.transform}>`（双重缩放）** |
+| **viewBox 固定** | **无 overlay 需求时，viewBox 必须绑定设计常量（`DESIGN_WIDTH/HEIGHT`），而非容器实时尺寸** |
 | 布局坐标 | 使用比例常量计算，禁止散落的无语义像素值 |
 | 物理比例尺 | 使用 `computeScale()` 计算，禁止 `scale = N` 硬编码 |
 | 字体大小 | SVG 内使用 `fontSize={font(N)}`，画布内 HTML 使用 `style={{ fontSize: font(N) }}`，禁止裸值 |
-| 响应式 | 调整浏览器窗口大小时，布局比例保持不变 |
+| 响应式 | 调整浏览器窗口大小时，布局比例保持不变，无视觉跳变 |
+| **指针事件** | **有交互拖拽的 SVG 组件使用 `getScreenCTM().inverse()` 矩阵变换，禁止手动计算 `vp.tx/vp.scale` 偏移** |
+
 
 ---
 

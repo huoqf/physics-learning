@@ -63,6 +63,7 @@ const EnergyConservationSidebar: FC<SidebarExtraProps> = ({
       updateParam('mu', 0.10)
       updateParam('theta0', 55)
     }
+    updateParam('hRef', 0.0)
     animationActions.resetAnimation()
   }
 
@@ -72,6 +73,7 @@ const EnergyConservationSidebar: FC<SidebarExtraProps> = ({
     updateParam('g', preset.g)
     updateParam('L', preset.L)
     updateParam('theta0', preset.theta0)
+    updateParam('hRef', 0.0)
     animationActions.resetAnimation()
   }
 
@@ -82,6 +84,7 @@ const EnergyConservationSidebar: FC<SidebarExtraProps> = ({
     updateParam('R', preset.R)
     updateParam('mu', preset.mu)
     updateParam('theta0', preset.theta0)
+    updateParam('hRef', 0.0)
     animationActions.resetAnimation()
   }
 
