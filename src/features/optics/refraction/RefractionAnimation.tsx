@@ -1,4 +1,4 @@
-import { useCanvasSize, useViewport } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { OPTICS_COLORS, STROKE, FONT, DASH, CANVAS_COLORS } from '@/theme/physics'
@@ -41,11 +41,6 @@ export default function RefractionAnimation() {
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide)
 
-  const vp = useViewport(canvasSize, {
-    designWidth: VIEW_WIDTH,
-    designHeight: VIEW_HEIGHT,
-  })
-
   const theta1 = params.theta1 ?? 45
   const n = params.n ?? 1.5
   const advancedMode = params.advancedMode ?? 0
@@ -57,18 +52,18 @@ export default function RefractionAnimation() {
   const theta1Rad = deg2rad(theta1)
   const theta2Rad = isNaN(theta2_deg) ? 0 : deg2rad(theta2_deg)
 
-  const { width, height, font } = canvasSize
+  const { font } = canvasSize
   const cx = VIEW_WIDTH / 2
   const cy = VIEW_HEIGHT / 2
 
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg
-        viewBox={`0 0 ${width} ${height}`}
+        viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
         preserveAspectRatio="xMidYMid meet"
         className="w-full h-full"
       >
-        <g transform={vp.transform}>
+        <g>
           {isAdvanced ? (
             <AdvancedMode
               theta1={theta1} theta1Rad={theta1Rad}

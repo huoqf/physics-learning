@@ -1,4 +1,4 @@
-import { useCanvasSize, useViewport } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { OPTICS_COLORS, STROKE, FONT, DASH, CANVAS_COLORS } from '@/theme/physics'
@@ -37,17 +37,12 @@ export default function TIRAnimation() {
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide)
 
-  const vp = useViewport(canvasSize, {
-    designWidth: VIEW_WIDTH,
-    designHeight: VIEW_HEIGHT,
-  })
-
   const mode = params.mode ?? 0
   const theta1 = params.theta1 ?? 30
   const n = params.n ?? 1.33
   const depth = params.depth ?? 2
 
-  const { width, height, font } = canvasSize
+  const { font } = canvasSize
 
   const { theta_c_deg } = calculateCriticalAngle(n, 1)
   const isTotalReflection = theta1 >= theta_c_deg
@@ -58,11 +53,11 @@ export default function TIRAnimation() {
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg
-        viewBox={`0 0 ${width} ${height}`}
+        viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
         preserveAspectRatio="xMidYMid meet"
         className="w-full h-full"
       >
-        <g transform={vp.transform}>
+        <g>
           {mode === 1 ? (
             <PointSourceMode
               depth={depth} n={n} theta_c_deg={theta_c_deg}

@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef } from 'react'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { OPTICS_COLORS, STROKE, FONT, DASH, CANVAS_COLORS } from '@/theme/physics'
@@ -158,11 +158,6 @@ export default function ThinLensAnimation() {
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide)
 
-  const vp = useViewport(canvasSize, {
-    designWidth: VIEW_WIDTH,
-    designHeight: VIEW_HEIGHT,
-  })
-
   const physics = useThinLensPhysics()
   const svgRef = useRef<SVGSVGElement>(null)
   const isDraggingRef = useRef(false)
@@ -173,7 +168,7 @@ export default function ThinLensAnimation() {
   const uCm = params.u ?? 30
   const LCm = params.L ?? 50
 
-  const { width, height, font } = canvasSize
+  const { font } = canvasSize
 
   const cx = VIEW_WIDTH / 2
   const cy = RAIL_Y
@@ -203,14 +198,15 @@ export default function ThinLensAnimation() {
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDraggingRef.current || !svgRef.current || mode !== 1) return
     const svg = svgRef.current
-    const rect = svg.getBoundingClientRect()
-    // 使用 viewport 变换公式，排除居中 tx 和缩放 scale 的干扰，映射到设计空间
-    const svgX = (e.clientX - rect.left - vp.tx) / vp.scale
+    const pt = svg.createSVGPoint()
+    pt.x = e.clientX
+    pt.y = e.clientY
+    const { x: svgX } = pt.matrixTransform(svg.getScreenCTM()!.inverse())
     const lensCenterSvgX = cx
     const deltaCm = ((svgX - lensCenterSvgX) / SCALE_CM) * 100
     const uNew = Math.max(1, Math.min(LCm - 1, uCm + deltaCm))
     useAnimationStore.getState().updateParam('u', uNew)
-  }, [mode, cx, vp.tx, vp.scale, LCm, uCm])
+  }, [mode, cx, LCm, uCm])
 
   const handleMouseUp = useCallback(() => {
     isDraggingRef.current = false
@@ -259,14 +255,14 @@ export default function ThinLensAnimation() {
     <div ref={containerRef} className="w-full h-full">
       <svg
         ref={svgRef}
-        viewBox={`0 0 ${width} ${height}`}
+        viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
         preserveAspectRatio="xMidYMid meet"
         className="w-full h-full"
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
-        <g transform={vp.transform}>
+        <g>
           {/* 主光轴 */}
           <line
             x1={20} y1={cy} x2={VIEW_WIDTH - 20} y2={cy}

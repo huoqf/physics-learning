@@ -4,7 +4,7 @@
  * 职责：Store 订阅 + 参数提取 + 布局计算 + 组合子组件
  */
 import { useState, useEffect, useRef } from 'react'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS } from '@/theme/physics'
@@ -31,13 +31,8 @@ export default function ElectricField() {
   const showFieldLines = (params.showFieldLines ?? 1) === 1
 
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
-  const { width, height } = canvasSize
+  const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
-
-  const vp = useViewport(canvasSize, {
-    designWidth: DESIGN_WIDTH,
-    designHeight: DESIGN_HEIGHT,
-  })
 
   const w = DESIGN_WIDTH
   const h = DESIGN_HEIGHT
@@ -98,9 +93,10 @@ export default function ElectricField() {
   const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     const svg = svgRef.current
     if (!svg) return
-    const rect = svg.getBoundingClientRect()
-    const x = (e.clientX - rect.left - vp.tx) / vp.scale
-    const y = (e.clientY - rect.top - vp.ty) / vp.scale
+    const pt = svg.createSVGPoint()
+    pt.x = e.clientX
+    pt.y = e.clientY
+    const { x, y } = pt.matrixTransform(svg.getScreenCTM()!.inverse())
 
     const dist = Math.sqrt((x - testX) ** 2 + (y - testY) ** 2)
     if (dist < 24) {
@@ -113,9 +109,10 @@ export default function ElectricField() {
     if (!isDragging) return
     const svg = svgRef.current
     if (!svg) return
-    const rect = svg.getBoundingClientRect()
-    let x = (e.clientX - rect.left - vp.tx) / vp.scale
-    let y = (e.clientY - rect.top - vp.ty) / vp.scale
+    const pt = svg.createSVGPoint()
+    pt.x = e.clientX
+    pt.y = e.clientY
+    let { x, y } = pt.matrixTransform(svg.getScreenCTM()!.inverse())
 
     x = Math.max(15, Math.min(w - 15, x))
     y = Math.max(15, Math.min(h - 15, y))
@@ -158,14 +155,14 @@ export default function ElectricField() {
     <div ref={containerRef} className="w-full h-full">
       <svg
         ref={svgRef}
-        viewBox={`0 0 ${width} ${height}`}
+        viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`}
         preserveAspectRatio="xMidYMid meet"
         className="w-full h-full bg-white rounded-lg shadow-inner select-none cursor-crosshair block"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
-        <g transform={vp.transform}>
+        <g>
           {/* 1. 背景电场线 */}
           {physics.fieldLinesPaths.map((d, idx) => (
             <path
