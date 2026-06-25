@@ -40,7 +40,7 @@ export const SegmentedControl: FC<SegmentedControlProps> = ({
         </span>
       )}
       <div
-        className={`grid ${colsClass} gap-2 p-1 bg-neutral-100 rounded-lg`}
+        className={`grid ${colsClass} gap-1 p-1 bg-neutral-100 rounded-lg`}
       >
         {options.map((opt) => {
           const isActive = opt.value === value
@@ -51,12 +51,12 @@ export const SegmentedControl: FC<SegmentedControlProps> = ({
                 if (!disabled && !isActive) onChange(opt.value)
               }}
               disabled={disabled}
-              className={`py-1.5 text-xs font-semibold rounded-md transition-all ${
+              className={`py-1.5 text-xs font-semibold rounded-md transition-all active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 ${
                 disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
               } ${
                 isActive
                   ? 'bg-white text-primary-700 shadow-sm font-bold'
-                  : 'text-neutral-600 hover:text-neutral-950'
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/50'
               }`}
               style={{
                 transitionDuration: `${duration.fast}ms`,

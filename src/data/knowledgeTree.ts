@@ -72,6 +72,16 @@ export const knowledgeTree: KnowledgeNode[] = [
     problemIds: [],
     prerequisites: ['mechanics-2-1'],
   },
+  {
+    id: 'mechanics-2-4',
+    title: '运动学图像扩展',
+    chapter: '第2章 匀变速直线运动',
+    module: 'mechanics',
+    importance: 'gaokao',
+    animationIds: ['anim-kinematics-advanced'],
+    problemIds: [],
+    prerequisites: ['mechanics-2-3'],
+  },
 
   {
     id: 'mechanics-3-1',
@@ -81,7 +91,7 @@ export const knowledgeTree: KnowledgeNode[] = [
     importance: 'core',
     animationIds: ['anim-gravity-basic'],
     problemIds: [],
-    prerequisites: ['mechanics-2-3'],
+    prerequisites: ['mechanics-2-4'],
   },
   {
     id: 'mechanics-3-2',

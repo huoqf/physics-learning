@@ -44,6 +44,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-uniform-acceleration':  { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
   'anim-free-fall':             { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
   'anim-vertical-throw':        { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
+  'anim-kinematics-advanced':   { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
   'anim-projectile':            { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
   'anim-oblique-throw':         { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
 

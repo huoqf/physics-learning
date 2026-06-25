@@ -138,11 +138,7 @@ export const Slider: React.FC<SliderProps> = ({
       {description && (
         <div className="text-right text-[10px] text-neutral-400 -mt-1 mb-2">{description}</div>
       )}
-      <div className="relative h-2 bg-neutral-200 rounded-full">
-        <div
-          className="absolute left-0 top-0 h-full bg-primary-500 rounded-full transition-all duration-150"
-          style={{ width: `${percentage}%` }}
-        />
+      <div className="relative h-2 bg-neutral-200 rounded-full flex items-center">
         <input
           type="range"
           min={min}
@@ -151,10 +147,14 @@ export const Slider: React.FC<SliderProps> = ({
           value={value}
           onChange={(e) => onChange(parseFloat(e.target.value))}
           disabled={disabled}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          className="peer absolute -inset-y-2 left-0 w-full h-6 opacity-0 cursor-pointer z-10"
         />
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary-500 rounded-full shadow-sm transition-all duration-150"
+          className="absolute left-0 top-0 h-full bg-primary-500 rounded-full pointer-events-none transition-all duration-150 peer-hover:bg-primary-600"
+          style={{ width: `${percentage}%` }}
+        />
+        <div
+          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary-500 rounded-full shadow-sm pointer-events-none transition-all duration-150 peer-hover:scale-115 peer-focus-visible:ring-2 peer-focus-visible:ring-primary-300 peer-focus-visible:ring-offset-1 peer-active:scale-95"
           style={{ left: `calc(${percentage}% - 8px)` }}
         />
       </div>

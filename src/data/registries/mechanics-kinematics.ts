@@ -94,4 +94,23 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     ],
     SidebarExtra: lazy(() => import('@/features/mechanics/kinematics/ObliqueThrowSidebar')),
   },
+  'anim-kinematics-advanced': {
+    title: '运动学图像扩展',
+    knowledgeId: 'mechanics-2-4',
+    Component: lazy(() => import('@/features/mechanics/kinematics/KinematicsAdvancedAnimation')),
+    defaultParams: {
+      v0: 4.0,
+      a: 2.0,
+      t: 0,
+      chartMode: 0,
+      showAux: 1,
+      showVectors: 1,
+    },
+    paramMeta: [
+      { key: 'v0', label: '初速度 v₀', min: 0.0, max: 10.0, step: 0.1, unit: 'm/s' },
+      { key: 'a', label: '加速度 a', min: -4.0, max: 4.0, step: 0.1, unit: 'm/s²' },
+    ],
+    SidebarExtra: lazy(() => import('@/features/mechanics/kinematics/KinematicsAdvancedSidebar')),
+  },
 })
+

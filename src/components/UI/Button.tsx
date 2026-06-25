@@ -65,7 +65,7 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyles = [
-    'inline-flex items-center justify-center font-medium rounded-md transition-all duration-200',
+    'relative inline-flex items-center justify-center font-medium rounded-md transition-all duration-200',
     'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
     'active:scale-[0.97]',
   ]
@@ -108,6 +108,7 @@ export const Button: React.FC<ButtonProps> = ({
   return (
     <button
       disabled={isDisabled}
+      aria-busy={loading}
       className={[
         ...baseStyles,
         ...variantStyles[variant],
@@ -117,8 +118,14 @@ export const Button: React.FC<ButtonProps> = ({
       ].join(' ')}
       {...props}
     >
-      {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-      {children}
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <Loader2 className="w-4 h-4 animate-spin" />
+        </div>
+      )}
+      <span className={loading ? 'opacity-0' : 'inline-flex items-center justify-center'}>
+        {children}
+      </span>
     </button>
   )
 }

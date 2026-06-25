@@ -110,17 +110,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
           <span className="text-sm text-neutral-600 min-w-[40px]">
             {time.toFixed(1)}s
           </span>
-          <div className="flex-1 relative h-2 bg-neutral-200 rounded-full">
-            <div
-              className="absolute left-0 top-0 h-full rounded-full transition-all"
-              style={{
-                width: `${percentage}%`,
-                backgroundColor: speedColor,
-                transitionProperty: 'all',
-                transitionDuration: `${duration.fast}ms`,
-                transitionTimingFunction: 'ease-out',
-              }}
-            />
+          <div className="flex-1 relative h-2 bg-neutral-200 rounded-full flex items-center">
             <input
               type="range"
               min={0}
@@ -128,18 +118,22 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
               step={0.1}
               value={time}
               onChange={handleSliderChange}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              className="peer absolute -inset-y-2 left-0 w-full h-6 opacity-0 cursor-pointer z-10"
             />
             <div
-              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-sm transition-all"
+              className="absolute left-0 top-0 h-full rounded-full pointer-events-none transition-all duration-150"
+              style={{
+                width: `${percentage}%`,
+                backgroundColor: speedColor,
+              }}
+            />
+            <div
+              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-sm pointer-events-none transition-all duration-150 peer-hover:scale-115 peer-focus-visible:ring-2 peer-focus-visible:ring-primary-300 peer-focus-visible:ring-offset-1 peer-active:scale-95"
               style={{
                 left: `calc(${percentage}% - 8px)`,
                 borderColor: speedColor,
                 borderWidth: '2px',
                 borderStyle: 'solid',
-                transitionProperty: 'all',
-                transitionDuration: `${duration.fast}ms`,
-                transitionTimingFunction: 'ease-out',
               }}
             />
           </div>

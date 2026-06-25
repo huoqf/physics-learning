@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useState } from 'react'
+import { ChevronDown, Award, AlertTriangle, AlertCircle, Info, BookOpen } from 'lucide-react'
 import { KatexFormula } from './KatexFormula'
 import { colors } from '@/theme/colors'
 import { duration } from '@/theme/motion'
@@ -51,18 +52,18 @@ const FORMULA_LEVEL_STYLES: Record<string, { bg: string; text: string; label: st
 
 // 高考要点级别样式
 const GAOKAO_LEVEL_STYLES: Record<string, { bg: string; border: string; text: string; label: string; labelBg: string; labelText: string }> = {
-  gaokao: { bg: colors.accent[100], border: colors.accent[600], text: colors.accent[700], label: '高考', labelBg: colors.accent[600], labelText: '#fff' },
-  hard: { bg: colors.danger[100], border: colors.danger[600], text: colors.danger[700], label: '难点', labelBg: colors.danger[600], labelText: '#fff' },
-  core: { bg: colors.primary[100], border: colors.primary[600], text: colors.primary[700], label: '核心', labelBg: colors.primary[600], labelText: '#fff' },
-  basic: { bg: colors.neutral[100], border: colors.neutral[500], text: colors.neutral[600], label: '基础', labelBg: colors.neutral[500], labelText: '#fff' },
-  extend: { bg: colors.secondary[100], border: colors.secondary[600], text: colors.secondary[700], label: '拓展', labelBg: colors.secondary[600], labelText: '#fff' },
+  gaokao: { bg: colors.accent[50], border: colors.accent[500], text: colors.accent[700], label: '高考要点', labelBg: colors.accent[600], labelText: '#fff' },
+  hard: { bg: colors.danger[50], border: colors.danger[400], text: colors.danger[700], label: '重难点', labelBg: colors.danger[500], labelText: '#fff' },
+  core: { bg: colors.primary[50], border: colors.primary[400], text: colors.primary[700], label: '核心考点', labelBg: colors.primary[600], labelText: '#fff' },
+  basic: { bg: colors.neutral[50], border: colors.neutral[300], text: colors.neutral[600], label: '基础概念', labelBg: colors.neutral[500], labelText: '#fff' },
+  extend: { bg: colors.secondary[50], border: colors.secondary[400], text: colors.secondary[700], label: '拓展延伸', labelBg: colors.secondary[600], labelText: '#fff' },
 }
 
 // 易错警示级别样式
-const WARNING_LEVEL_STYLES: Record<string, { bg: string; border: string; text: string; icon: string }> = {
-  danger: { bg: colors.danger[50], border: colors.danger[500], text: colors.danger[700], icon: '⚠' },
-  warning: { bg: colors.accent[50], border: colors.accent[500], text: colors.accent[700], icon: '⚡' },
-  info: { bg: colors.primary[50], border: colors.primary[500], text: colors.primary[700], icon: '💡' },
+const WARNING_LEVEL_STYLES: Record<string, { bg: string; border: string; text: string }> = {
+  danger: { bg: colors.danger[50], border: colors.danger[500], text: colors.danger[700] },
+  warning: { bg: colors.accent[50], border: colors.accent[500], text: colors.accent[700] },
+  info: { bg: colors.primary[50], border: colors.primary[500], text: colors.primary[700] },
 }
 
 // 暂停原因文案
@@ -83,6 +84,11 @@ export const PhysicsPanel: React.FC<PhysicsPanelProps> = ({
   pauseReason,
   title = '物理量',
 }) => {
+  const [formulasOpen, setFormulasOpen] = useState(true)
+  const [warningsOpen, setWarningsOpen] = useState(true)
+  const [gaokaoOpen, setGaokaoOpen] = useState(true)
+  const [mnemonicOpen, setMnemonicOpen] = useState(true)
+
   // 数值颜色：正数 neutral-700、负数 danger-600、零值 neutral-400、极值 accent-600
   const getValueColor = (quantity: PhysicsQuantity) => {
     if (quantity.highlight === 'negative') return colors.danger[600]
@@ -92,10 +98,10 @@ export const PhysicsPanel: React.FC<PhysicsPanelProps> = ({
   }
 
   return (
-    <div className="w-full h-full bg-white rounded-lg shadow-sm border border-neutral-200 p-4 overflow-y-auto">
+    <div className="w-full h-full bg-white rounded-lg shadow-sm border border-neutral-200 p-4 overflow-y-auto space-y-5">
       {/* ── 物理量区 ── */}
-      <div className="mb-4">
-        <h3 className="text-xs font-semibold text-neutral-600 mb-3">{title}</h3>
+      <div>
+        <h3 className="text-xs font-semibold text-neutral-600 mb-3 border-b border-neutral-100 pb-1.5">{title}</h3>
 
         <div className="space-y-2">
           {quantities.map((q, index) => (
@@ -111,7 +117,7 @@ export const PhysicsPanel: React.FC<PhysicsPanelProps> = ({
               <div className="flex items-center gap-1.5 min-w-0">
                 {q.color && (
                   <span
-                    className="shrink-0 w-2 h-2 rounded-full"
+                    className="shrink-0 w-2.5 h-2.5 rounded-full border border-white shadow-sm"
                     style={{ backgroundColor: q.color }}
                   />
                 )}
@@ -119,14 +125,14 @@ export const PhysicsPanel: React.FC<PhysicsPanelProps> = ({
                   {q.symbol ? `${q.label} ${q.symbol}` : q.label}
                 </span>
               </div>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-baseline gap-1 shrink-0">
                 <span
-                  className="text-sm font-mono font-medium"
+                  className="text-sm font-mono font-semibold"
                   style={{ color: getValueColor(q) }}
                 >
                   {typeof q.value === 'number' ? q.value.toFixed(2) : q.value}
                 </span>
-                {q.unit && <span className="text-xs text-neutral-500">{q.unit}</span>}
+                {q.unit && <span className="text-[10px] text-neutral-500 font-medium ml-1">{q.unit}</span>}
               </div>
             </div>
           ))}
@@ -136,130 +142,180 @@ export const PhysicsPanel: React.FC<PhysicsPanelProps> = ({
       {/* ── 终止态指示 ── */}
       {isTerminal && pauseReason && pauseReason !== 'none' && (
         <div
-          className="mb-4 px-3 py-2 rounded-lg text-xs font-medium"
+          className="px-3 py-2.5 rounded-lg text-xs font-semibold flex items-center gap-2 border shadow-sm animate-pulse"
           style={{
             backgroundColor: colors.accent[50],
             color: colors.accent[700],
-            border: `1px solid ${colors.accent[200]}`,
+            borderColor: colors.accent[200],
           }}
         >
-          {PAUSE_REASON_TEXT[pauseReason] ?? '运动终止'}
+          <span className="text-sm">🛑</span>
+          <span>系统提示：{PAUSE_REASON_TEXT[pauseReason] ?? '运动终止'}</span>
         </div>
       )}
 
       {/* ── 公式区 ── */}
       {formulas.length > 0 && (
-        <div className="mb-4">
-          <h3 className="text-xs font-semibold text-neutral-600 mb-2">公式</h3>
-          <div className="space-y-1.5">
-            {formulas.map((formula, index) => {
-              const levelStyle = formula.level ? FORMULA_LEVEL_STYLES[formula.level] : undefined
-              return (
-                <div key={index} className="text-xs">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-neutral-500 inline">{formula.name}：</span>
-                    <span className="ml-1 inline-block">
+        <div>
+          <button
+            onClick={() => setFormulasOpen(!formulasOpen)}
+            className="w-full flex items-center justify-between text-xs font-semibold text-neutral-600 mb-2.5 hover:text-neutral-900 transition-colors focus:outline-none cursor-pointer border-b border-neutral-100 pb-1.5"
+          >
+            <div className="flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5 text-primary-500" />
+              <span>公式体系</span>
+            </div>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${formulasOpen ? 'rotate-0' : '-rotate-90'}`} />
+          </button>
+          {formulasOpen && (
+            <div className="space-y-2.5 transition-all duration-200">
+              {formulas.map((formula, index) => {
+                const levelStyle = formula.level ? FORMULA_LEVEL_STYLES[formula.level] : undefined
+                return (
+                  <div key={index} className="p-2.5 rounded-lg border border-primary-100 bg-primary-50/20 text-xs shadow-sm flex flex-col gap-1">
+                    <div className="flex items-center justify-between flex-wrap gap-1.5">
+                      <span className="font-semibold text-neutral-800">{formula.name}</span>
+                      {levelStyle && (
+                        <span
+                          className="text-[9px] px-1 py-0.5 rounded font-semibold"
+                          style={{ backgroundColor: levelStyle.bg, color: levelStyle.text }}
+                        >
+                          {levelStyle.label}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex justify-center py-1.5 bg-white rounded border border-neutral-100/50 my-1 overflow-x-auto min-h-[36px] items-center">
                       <KatexFormula formula={formula.latex} mode="inline" />
-                    </span>
-                    {levelStyle && (
-                      <span
-                        className="text-[9px] px-1 py-0.5 rounded font-medium"
-                        style={{ backgroundColor: levelStyle.bg, color: levelStyle.text }}
-                      >
-                        {levelStyle.label}
-                      </span>
+                    </div>
+                    {formula.condition && (
+                      <div className="text-[10px] text-accent-700 mt-0.5 flex items-start gap-1 font-medium">
+                        <span className="shrink-0 text-[8px] bg-accent-100 text-accent-700 px-1 py-0.2 rounded font-semibold leading-none mt-0.5">条件</span>
+                        <span>{formula.condition}</span>
+                      </div>
+                    )}
+                    {formula.note && (
+                      <div className="text-[10px] text-neutral-400 mt-0.5 pl-1">
+                        💡 {formula.note}
+                      </div>
                     )}
                   </div>
-                  {formula.condition && (
-                    <div className="mt-0.5 text-[10px] italic pl-1" style={{ color: colors.accent[600] }}>
-                      适用条件：{formula.condition}
-                    </div>
-                  )}
-                  {formula.note && (
-                    <div className="mt-0.5 text-[10px] text-neutral-400 pl-1">
-                      {formula.note}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 
       {/* ── 易错警示区 ── */}
       {warnings.length > 0 && (
-        <div className="mb-4">
-          <h3 className="text-xs font-semibold text-neutral-600 mb-2">易错警示</h3>
-          <div className="space-y-1.5">
-            {warnings.map((w, index) => {
-              const style = WARNING_LEVEL_STYLES[w.level] ?? WARNING_LEVEL_STYLES.info
-              return (
-                <div
-                  key={index}
-                  className="px-2.5 py-1.5 rounded text-xs leading-relaxed"
-                  style={{
-                    backgroundColor: style.bg,
-                    borderLeft: `3px solid ${style.border}`,
-                    color: style.text,
-                  }}
-                >
-                  <span className="mr-1">{style.icon}</span>
-                  {w.text}
-                </div>
-              )
-            })}
-          </div>
+        <div>
+          <button
+            onClick={() => setWarningsOpen(!warningsOpen)}
+            className="w-full flex items-center justify-between text-xs font-semibold text-neutral-600 mb-2.5 hover:text-neutral-900 transition-colors focus:outline-none cursor-pointer border-b border-neutral-100 pb-1.5"
+          >
+            <div className="flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 text-danger-500" />
+              <span>易错警示</span>
+            </div>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${warningsOpen ? 'rotate-0' : '-rotate-90'}`} />
+          </button>
+          {warningsOpen && (
+            <div className="space-y-2 transition-all duration-200">
+              {warnings.map((w, index) => {
+                const style = WARNING_LEVEL_STYLES[w.level] ?? WARNING_LEVEL_STYLES.info
+                const IconComponent = w.level === 'danger' ? AlertCircle : (w.level === 'warning' ? AlertTriangle : Info)
+                return (
+                  <div
+                    key={index}
+                    className="p-3 rounded-lg border-l-4 text-xs leading-relaxed flex items-start gap-2 shadow-sm border border-neutral-100"
+                    style={{
+                      backgroundColor: style.bg,
+                      borderLeftColor: style.border,
+                      color: style.text,
+                    }}
+                  >
+                    <IconComponent className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>{w.text}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 
       {/* ── 高考要点区 ── */}
       {gaokaoPoints.length > 0 && (
-        <div className="mb-4">
-          <h3 className="text-xs font-semibold text-neutral-600 mb-2">高考要点</h3>
-          <div className="space-y-2">
-            {gaokaoPoints.map((point, index) => {
-              const style = GAOKAO_LEVEL_STYLES[point.importance] ?? GAOKAO_LEVEL_STYLES.basic
-              return (
-                <div
-                  key={index}
-                  className="p-2 rounded text-xs leading-relaxed"
-                  style={{
-                    backgroundColor: style.bg,
-                    borderLeft: `4px solid ${style.border}`,
-                    color: style.text,
-                  }}
-                >
-                  <div className="flex items-start gap-1.5">
-                    <span
-                      className="shrink-0 text-[9px] px-1 py-0.5 rounded font-medium leading-none mt-0.5"
-                      style={{ backgroundColor: style.labelBg, color: style.labelText }}
-                    >
-                      {style.label}
-                    </span>
-                    <span className="block">{point.text}</span>
+        <div>
+          <button
+            onClick={() => setGaokaoOpen(!gaokaoOpen)}
+            className="w-full flex items-center justify-between text-xs font-semibold text-neutral-600 mb-2.5 hover:text-neutral-900 transition-colors focus:outline-none cursor-pointer border-b border-neutral-100 pb-1.5"
+          >
+            <div className="flex items-center gap-1.5">
+              <Award className="w-3.5 h-3.5 text-accent-600" />
+              <span>高考要点</span>
+            </div>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${gaokaoOpen ? 'rotate-0' : '-rotate-90'}`} />
+          </button>
+          {gaokaoOpen && (
+            <div className="space-y-2 transition-all duration-200">
+              {gaokaoPoints.map((point, index) => {
+                const style = GAOKAO_LEVEL_STYLES[point.importance] ?? GAOKAO_LEVEL_STYLES.basic
+                return (
+                  <div
+                    key={index}
+                    className="p-3 rounded-lg border-l-4 text-xs leading-relaxed flex items-start gap-2 shadow-sm border border-neutral-100"
+                    style={{
+                      backgroundColor: style.bg,
+                      borderLeftColor: style.border,
+                      color: style.text,
+                    }}
+                  >
+                    <Award className="w-4 h-4 shrink-0 mt-0.5 text-accent-600" />
+                    <div className="flex flex-col gap-1.5 w-full">
+                      <div className="flex items-center">
+                        <span
+                          className="text-[9px] px-1 py-0.5 rounded font-semibold leading-none"
+                          style={{ backgroundColor: style.labelBg, color: style.labelText }}
+                        >
+                          {style.label}
+                        </span>
+                      </div>
+                      <span className="text-neutral-700 font-medium">{point.text}</span>
+                    </div>
                   </div>
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 
       {/* ── 口诀区 ── */}
       {mnemonic && (
-        <div className="mb-4">
-          <h3 className="text-xs font-semibold text-neutral-600 mb-2">口诀</h3>
-          <div
-            className="px-3 py-2 rounded-lg text-xs leading-relaxed"
-            style={{
-              backgroundColor: colors.secondary[50],
-              border: `1px solid ${colors.secondary[200]}`,
-              color: colors.secondary[700],
-            }}
+        <div>
+          <button
+            onClick={() => setMnemonicOpen(!mnemonicOpen)}
+            className="w-full flex items-center justify-between text-xs font-semibold text-neutral-600 mb-2.5 hover:text-neutral-900 transition-colors focus:outline-none cursor-pointer border-b border-neutral-100 pb-1.5"
           >
-            {mnemonic}
-          </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">🗣️</span>
+              <span>记忆口诀</span>
+            </div>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${mnemonicOpen ? 'rotate-0' : '-rotate-90'}`} />
+          </button>
+          {mnemonicOpen && (
+            <div
+              className="px-3 py-2.5 rounded-lg text-xs leading-relaxed border shadow-sm font-medium"
+              style={{
+                backgroundColor: colors.secondary[50],
+                borderColor: colors.secondary[200],
+                color: colors.secondary[700],
+              }}
+            >
+              {mnemonic}
+            </div>
+          )}
         </div>
       )}
 

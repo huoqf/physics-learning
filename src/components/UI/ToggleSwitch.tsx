@@ -34,16 +34,17 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
         onClick={() => onChange(!checked)}
         style={transitionStyle}
         className={[
-          'w-9 h-5 rounded-full relative shrink-0 transition-all active:scale-[0.97]',
-          checked ? 'bg-primary-600' : 'bg-neutral-300',
+          'w-9 h-5 rounded-full relative shrink-0 transition-all active:scale-[0.95]',
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1',
+          checked ? 'bg-primary-600' : 'bg-neutral-300 hover:bg-neutral-400/80',
           disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',
         ].join(' ')}
       >
         <span
           style={transitionStyle}
           className={[
-            'w-3.5 h-3.5 rounded-full bg-white absolute top-[3px] transition-all',
-            checked ? 'left-[18px]' : 'left-[3px]',
+            'w-3.5 h-3.5 rounded-full bg-white shadow-md absolute top-[3px] transition-all',
+            checked ? 'left-[19px] scale-[1.05]' : 'left-[3px]',
           ].join(' ')}
         />
       </button>

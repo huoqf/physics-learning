@@ -64,30 +64,34 @@ export const DiscoveryGuide: React.FC<DiscoveryGuideProps> = ({
       </div>
 
       {/* 步骤指示器 */}
-      <div className="flex items-center gap-1 px-3 py-2 bg-neutral-50 border-b border-neutral-200 shrink-0">
-        {steps.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => handleStepClick(index)}
-            className="flex-1 h-1.5 rounded-full transition-all hover:scale-110"
-            style={{
-              backgroundColor:
-                index <= currentStep
-                  ? colors.primary[600]
-                  : colors.neutral[300],
-              transitionProperty: 'all',
-              transitionDuration: `${duration.fast}ms`,
-              transitionTimingFunction: easing.standard,
-            }}
-          />
-        ))}
+      <div className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-neutral-50/50 border-b border-neutral-200 shrink-0">
+        {steps.map((_, index) => {
+          const isActive = index === currentStep
+          const isCompleted = index < currentStep
+          return (
+            <button
+              key={index}
+              onClick={() => handleStepClick(index)}
+              className="h-1.5 rounded-full transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1"
+              style={{
+                width: isActive || isCompleted ? '24px' : '10px',
+                backgroundColor:
+                  isActive
+                    ? colors.primary[600]
+                    : isCompleted
+                      ? colors.primary[400]
+                      : colors.neutral[300],
+              }}
+            />
+          )
+        })}
       </div>
 
       {/* 步骤标题 */}
       <div className="px-3 pt-3 pb-2 shrink-0">
         <div className="flex items-center gap-2">
           <span
-            className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+            className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-sm"
             style={{ backgroundColor: colors.primary[600] }}
           >
             {currentStep + 1}
@@ -117,9 +121,8 @@ export const DiscoveryGuide: React.FC<DiscoveryGuideProps> = ({
           {!showHint ? (
             <button
               onClick={() => setShowHint(true)}
-              className="flex items-center gap-1.5 text-xs text-amber-600 hover:text-amber-700 transition-all"
+              className="flex items-center gap-1.5 text-xs text-amber-600 hover:text-amber-700 active:scale-[0.96] transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1 px-1 py-0.5 rounded"
               style={{
-                transitionProperty: 'all',
                 transitionDuration: `${duration.fast}ms`,
                 transitionTimingFunction: easing.standard,
               }}
@@ -129,18 +132,13 @@ export const DiscoveryGuide: React.FC<DiscoveryGuideProps> = ({
             </button>
           ) : (
             <div
-              className="p-2 rounded text-xs leading-relaxed border-l-4"
+              className="p-2.5 rounded-lg border-l-4 border-amber-500 bg-amber-50 text-amber-900 shadow-sm text-xs leading-relaxed"
               style={{
-                backgroundColor: colors.accent[50],
-                color: colors.accent[800],
-                borderLeftColor: colors.accent[500],
-                transitionProperty: 'all',
-                transitionDuration: `${duration.normal}ms`,
-                transitionTimingFunction: easing.standard,
+                animation: `fadeIn ${duration.normal}ms ${easing.standard}`,
               }}
             >
               <div className="flex items-start gap-1.5">
-                <Lightbulb className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <Lightbulb className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-600 animate-pulse" />
                 <span>{step.hint}</span>
               </div>
             </div>
@@ -153,9 +151,8 @@ export const DiscoveryGuide: React.FC<DiscoveryGuideProps> = ({
         <button
           onClick={handlePrev}
           disabled={isFirst}
-          className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-200 active:scale-[0.98]"
+          className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-200 hover:text-neutral-900 active:scale-[0.96] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-1 cursor-pointer"
           style={{
-            transitionProperty: 'all',
             transitionDuration: `${duration.fast}ms`,
             transitionTimingFunction: easing.standard,
             color: colors.neutral[700],
@@ -165,16 +162,15 @@ export const DiscoveryGuide: React.FC<DiscoveryGuideProps> = ({
           <span>上一步</span>
         </button>
 
-        <span className="text-xs text-neutral-500">
+        <span className="text-xs font-semibold font-mono text-neutral-500">
           {currentStep + 1} / {steps.length}
         </span>
 
         <button
           onClick={handleNext}
-          className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-medium text-white transition-all hover:opacity-90 active:scale-[0.98]"
+          className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-medium text-white transition-all hover:bg-primary-700 active:scale-[0.96] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 cursor-pointer"
           style={{
             backgroundColor: colors.primary[600],
-            transitionProperty: 'all',
             transitionDuration: `${duration.fast}ms`,
             transitionTimingFunction: easing.standard,
           }}

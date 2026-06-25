@@ -19,6 +19,8 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 06-25 | components/UI | refactor | UI通用组件优化与美化：修复 Slider/ParamControl/AnimationControls 自定义圆纽遮挡 input 导致的交互卡顿，增加 z-10 peer 与 h-6 交互区并添加 pointer-events-none；Button 8态规范并用 absolute 居中 spinner + opacity-0 文字消除 loading 宽度抖动；ToggleSwitch 增加 focus-visible、圆纽 shadow-md 与两端对称；SegmentedControl 增加 hover/active 缩放反馈；PhysicsPanel 手风琴折叠默认展开，重构公式/要点/警示卡片并引入 Lucide 矢量图标，规范数值 font-mono 及语义色彩显示；DiscoveryGuide capsule 进度条与 fadeIn 提示；单元测试 289 通过 |
+| 06-25 | mechanics/kinematics | feature | 新增运动学进阶（图象逆推模型）：引入上下自适应布局，基于 Viewport 架构缩放，由 RelationChart 联动展示一次函数物理规律及刹车状态拦截 |
 | 06-25 | mechanics/momentum | refactor | 动量定理三屏重构：净化主屏右侧卡片为自适应图表，数值监测看板移植至右侧屏 `momentum.ts` 量表并联动 `_time`；基础模式添加缓冲垫标注 |
 | 06-24 | mechanics/dynamics | feature | 摩擦力演示重构：calculateDoubleFrictionIncline 双体解算，anim-friction 自变量感知，MiniChart 组件化双曲线映射，取消网格与重合的浮动卡片，PhysicsGround/Block 器材替换，对地加速度正交分解辅助线，tsc零错误 |
 | 06-24 | project | refactor | 结构修复方案全量执行：P0-1 清理自造 marker（ACGeneration 删 aB，Capacitor/SpringForce/ElectricPotential 加注释）；P0-2 ForceMotionTripleChart 重写（三次 BasePhysicsChart + SingleChartContent 模式）；P0-4 AnalysisPage/WrongPage 业务逻辑外迁（新建 9 文件，页面薄壳化）；P1-1 定义 SceneLayoutProfile + IDENTITY_SCENE_SCALE + createSceneScaleFromViewport；P1-2 批量修复 50 文件子路径导入（9 组模式）；P2-1 DCSource/Block fontSize 迁移（FONT_BASE 常量 + 可选 font prop）；P2-2 清理 23 处 VectorArrow 假 sceneScale；P2-3 颜色+像素值清单记录；tsc 零错误 |

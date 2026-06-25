@@ -111,7 +111,7 @@ export const ParamControl: React.FC<ParamControlProps> = ({
                     max={param.max}
                     step={param.step || 0.1}
                     disabled={disabled}
-                    className="w-20 px-2 py-1 text-sm text-right font-mono border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-20 px-2 py-1 text-sm text-right font-mono border border-neutral-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   {param.unit && (
                     <span className="text-xs text-neutral-500 min-w-[20px]">
@@ -121,16 +121,7 @@ export const ParamControl: React.FC<ParamControlProps> = ({
                 </div>
               </div>
 
-              <div className="relative h-2 bg-neutral-200 rounded-full">
-                <div
-                  className="absolute left-0 top-0 h-full bg-primary-500 rounded-full transition-all"
-                  style={{
-                    width: `${percentage}%`,
-                    transitionProperty: 'all',
-                    transitionDuration: `${duration.fast}ms`,
-                    transitionTimingFunction: 'ease-out',
-                  }}
-                />
+              <div className="relative h-2 bg-neutral-200 rounded-full flex items-center">
                 <input
                   type="range"
                   min={param.min}
@@ -141,15 +132,18 @@ export const ParamControl: React.FC<ParamControlProps> = ({
                     handleSliderChange(param.key, parseFloat(e.target.value), param)
                   }
                   disabled={disabled}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  className="peer absolute -inset-y-2 left-0 w-full h-6 opacity-0 cursor-pointer z-10"
                 />
                 <div
-                  className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary-500 rounded-full shadow-sm transition-all"
+                  className="absolute left-0 top-0 h-full bg-primary-500 rounded-full pointer-events-none transition-all duration-150 peer-hover:bg-primary-600"
+                  style={{
+                    width: `${percentage}%`,
+                  }}
+                />
+                <div
+                  className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary-500 rounded-full shadow-sm pointer-events-none transition-all duration-150 peer-hover:scale-115 peer-focus-visible:ring-2 peer-focus-visible:ring-primary-300 peer-focus-visible:ring-offset-1 peer-active:scale-95"
                   style={{
                     left: `calc(${percentage}% - 8px)`,
-                    transitionProperty: 'all',
-                    transitionDuration: `${duration.fast}ms`,
-                    transitionTimingFunction: 'ease-out',
                   }}
                 />
               </div>
