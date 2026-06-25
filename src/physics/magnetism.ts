@@ -1,3 +1,5 @@
+import { GRAVITY } from './constants'
+
 /**
  * 磁场纯函数库。
  * 无副作用，不依赖 React/DOM/window。单位采用 SI。
@@ -287,7 +289,7 @@ export function solveAdvancedAmpere(
   t: number = 0,
   scene: { xMin: number; xMax: number } = AMPERE_ADVANCED_SCENE
 ): AdvancedAmperePhysicsResult {
-  const g = 9.8
+  const g = GRAVITY
 
   const F_ampere = -B * I * L
   const rad = (theta * Math.PI) / 180

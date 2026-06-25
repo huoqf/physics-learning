@@ -52,7 +52,6 @@ export const mechanicsEnergyAnimations = defineAnimations({
     defaultParams: { m: 2, g: 9.8, y0: 8, y_ref: 3, k: 100, x0: 2.0, mode: 0 },
     paramMeta: [
       { key: 'm', label: '质量 m', min: 0.5, max: 8, step: 0.5, unit: 'kg' },
-      { key: 'g', label: '重力加速度 g', min: 5, max: 15, step: 0.1, unit: 'm/s²', showIf: 'mode', showIfValue: 0 },
       { key: 'y0', label: '初始高度 y₀', min: 2, max: 10, step: 0.5, unit: 'm', showIf: 'mode', showIfValue: 0 },
       { key: 'y_ref', label: '零势能面 y_ref', min: 0, max: 8, step: 0.5, unit: 'm', showIf: 'mode', showIfValue: 0 },
       { key: 'k', label: '弹簧系数 k', min: 20, max: 200, step: 10, unit: 'N/m', showIf: 'mode', showIfValue: 1 },
@@ -67,7 +66,6 @@ export const mechanicsEnergyAnimations = defineAnimations({
     defaultParams: { m: 2.0, g: 9.8, L: 5.0, theta0: 45, R: 5.0, mu: 0.1, mode: 0 },
     paramMeta: [
       { key: 'm', label: '质量 m', min: 0.5, max: 5.0, step: 0.5, unit: 'kg' },
-      { key: 'g', label: '重力加速度 g', min: 5, max: 15, step: 0.1, unit: 'm/s²' },
       { key: 'theta0', label: '初始角 θ₀', min: -60, max: 60, step: 5, unit: '°' },
       { key: 'L', label: '摆线长度 L', min: 2.0, max: 8.0, step: 0.5, unit: 'm', showIf: 'mode', showIfValue: 0 },
       { key: 'R', label: '轨道半径 R', min: 2.0, max: 8.0, step: 0.5, unit: 'm', showIf: 'mode', showIfValue: 1 },

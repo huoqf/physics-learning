@@ -375,7 +375,7 @@ export function buildDynamicsQuantities(
         s = motion.s
       } else {
         // 普通模式：匀加速直线运动
-        const g = 9.8
+        const g = GRAVITY
         const N = m * g
         f = mu * N
         F_applied = F

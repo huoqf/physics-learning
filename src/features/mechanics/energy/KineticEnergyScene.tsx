@@ -1,4 +1,4 @@
-﻿import { useMemo } from 'react'
+import { useMemo } from 'react'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CANVAS_STYLE, VECTOR_DISPLAY } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
@@ -7,6 +7,7 @@ import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 import type { KEModelState } from '@/physics/kineticEnergy'
+import { GRAVITY } from '@/physics/constants'
 
 const KE_SCENE_LAYOUT = {
   leftPaddingRatio: 0.06,
@@ -311,7 +312,7 @@ export function KineticEnergyScene({
             )}
 
             {state.phase === 0 && (() => {
-              const g = 9.8
+              const g = GRAVITY
               const mg = m * g
               const normalForce = mg * Math.cos(state.theta) + m * state.v * state.v / R
               const fFriction = mu * normalForce

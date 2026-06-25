@@ -1,6 +1,7 @@
 import React from 'react'
 import { colors } from '@/theme/colors'
 import { PHYSICS_COLORS } from '@/theme/physics'
+import { GRAVITY } from '@/physics/constants'
 import { computeScale } from '@/utils/coordinate'
 
 interface ForcePolygonProps {
@@ -32,7 +33,7 @@ export const ForcePolygon: React.FC<ForcePolygonProps> = ({
   const scale = computeScale(w, h, { xMin: -5, xMax: 5, yMin: -5, yMax: 5 })
 
   const m = 0.5
-  const g = 9.8
+  const g = GRAVITY
 
   // 依次生成受力矢量的首尾节点坐标 (像素级)
   // 矢量 1: 重力 G (竖直向下，像素 y 变大)

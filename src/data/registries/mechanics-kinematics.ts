@@ -70,7 +70,6 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     defaultParams: { v0: 15, g: GRAVITY, t: 0, advancedMode: 0, sliceDensity: 0, airResistance: 0, targetHeight: 0 },
     paramMeta: [
       { key: 'v0', label: '初速度 v₀', min: 0, max: 30, step: 0.1, unit: 'm/s' },
-      { key: 'g', label: '重力加速度 g', min: 5, max: 15, step: 0.1, unit: 'm/s²' },
     ],
     SidebarExtra: lazy(() => import('@/features/mechanics/kinematics/VerticalThrowSidebar')),
   },
@@ -81,7 +80,6 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     defaultParams: { v0x: 10, g: GRAVITY, t: 0, advancedMode: 0, airResistance: 0, showVacuumCompare: 1 },
     paramMeta: [
       { key: 'v0x', label: '初速度 v₀', min: 2, max: 20, step: 0.1, unit: 'm/s' },
-      { key: 'g', label: '重力加速度 g', min: 5, max: 15, step: 0.1, unit: 'm/s²' },
     ],
     SidebarExtra: lazy(() => import('@/features/mechanics/kinematics/ProjectileSidebar')),
   },
@@ -93,7 +91,6 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     paramMeta: [
       { key: 'v0', label: '初速度 v₀', min: 5, max: 30, step: 0.1, unit: 'm/s' },
       { key: 'angle', label: '抛射角 θ', min: 10, max: 80, step: 1, unit: '°' },
-      { key: 'g', label: '重力加速度 g', min: 5, max: 15, step: 0.1, unit: 'm/s²' },
     ],
     SidebarExtra: lazy(() => import('@/features/mechanics/kinematics/ObliqueThrowSidebar')),
   },

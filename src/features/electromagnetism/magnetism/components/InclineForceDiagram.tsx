@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import { colors } from '@/theme/colors'
 import { PHYSICS_COLORS } from '@/theme/physics'
+import { GRAVITY } from '@/physics/constants'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { computeScale } from '@/utils/coordinate'
 import type { AdvancedAmperePhysicsResult } from '../ampereForceModel'
@@ -70,7 +71,7 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
 
   // 重力 mg (竖直向下，即 y 轴负方向，对于 y1 = originY - origin.y * scaleY，物理矢量 y 负值即向下)
   const m = 0.5
-  const g = 9.8
+  const g = GRAVITY
   const G_phys = { x: 0, y: -m * g }
 
   // 支持力 N (垂直斜面向左上方)

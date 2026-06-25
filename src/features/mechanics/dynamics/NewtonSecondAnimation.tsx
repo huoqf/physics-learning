@@ -8,6 +8,7 @@ import {
   calculateAcceleratedMotion,
   calculateNewtonSecondVariableMotion,
 } from '@/physics'
+import { GRAVITY } from '@/physics/constants'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
 import type { SceneLayoutProfile } from '@/scene'
@@ -92,7 +93,7 @@ export default function NewtonSecondAnimation() {
     v = motion.v
     s = motion.s
   } else {
-    const g = 9.8
+    const g = GRAVITY
     const N = m * g
     const frictionRes = calculateFriction(mu, N, true)
     f = frictionRes.f

@@ -57,7 +57,6 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     paramMeta: [
       { key: 'm', label: '滑块质量 m', min: 1, max: 20, step: 0.5, unit: 'kg' },
       { key: 'mu', label: '动摩擦系数 μ', min: 0, max: 1, step: 0.05, unit: '', showIf: 'mode', showIfValue: 0 },
-      { key: 'g', label: '重力加速度 g', min: 5, max: 15, step: 0.1, unit: 'm/s²', showIf: 'mode', showIfValue: 0 },
       { key: 'F_applied', label: '外拉力 F', min: 0, max: 40, step: 0.5, unit: 'N', showIf: 'mode', showIfValue: 0 },
       { key: 'M', label: '斜面质量 M', min: 2, max: 30, step: 0.5, unit: 'kg', showIf: 'mode', showIfValue: 1 },
       { key: 'angle', label: '斜面倾角 θ', min: 0, max: 80, step: 1, unit: '°', showIf: 'mode', showIfValue: 1 },

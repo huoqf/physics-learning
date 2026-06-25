@@ -1,4 +1,5 @@
 import { calculateCircularMotion, precomputeVerticalCircularMotion } from '../../physics'
+import { GRAVITY } from '../../physics/constants'
 import type { PhysicsPanelData, PhysicsQuantity, Formula, GaokaoPoint } from './types'
 
 export function buildCircularQuantities(
@@ -81,7 +82,7 @@ export function buildCircularQuantities(
         const currentV = Math.sqrt(pt.vx * pt.vx + pt.vy * pt.vy)
 
         // 运动学加速度分解计算
-        const g = 9.8
+        const g = GRAVITY
         let a_xiang = 0
         let a_qie = 0
         let a_he = 0

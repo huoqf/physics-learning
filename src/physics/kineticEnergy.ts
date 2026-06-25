@@ -1,3 +1,5 @@
+import { GRAVITY } from './constants'
+
 /**
  * src/physics/kineticEnergy.ts
  * 动能定理物理计算 — 纯函数，无副作用
@@ -144,7 +146,7 @@ export function precomputeCurvedTrackTrajectory(
   dt: number = 0.02
 ): { points: KEModelState[]; t_c: number; v_c: number; h_max: number } {
   const points: KEModelState[] = []
-  const g = 9.8
+  const g = GRAVITY
 
   // 数值积分实时变量
   // 初始角度：光滑轨道从 0.02 rad 开始；粗糙轨道从 arctan(mu)+0.01 开始

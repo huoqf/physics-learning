@@ -1,4 +1,5 @@
 import type { PhysicsPanelData, PhysicsQuantity } from './types'
+import { GRAVITY } from '@/physics/constants'
 import {
   calculateFallVelocity,
   calculateAverageImpactForce,
@@ -86,7 +87,7 @@ export function buildMomentumQuantities(
     case 'anim-impulse': {
       const advancedMode = params.advancedMode ?? 0
       const isAdvanced = advancedMode === 1
-      const g = 9.8
+      const g = GRAVITY
 
       if (!isAdvanced) {
         // ── 基础模式：缓冲垫碰撞 ──
@@ -319,7 +320,7 @@ export function buildMomentumQuantities(
         const v0 = params.v0 ?? 6
         const mu = params.mu ?? 0.3
         const L = params.L ?? 2
-        const g = 9.8
+        const g = GRAVITY
 
         const pTotal = m_slider * v0
         const vCommon = (m_slider * v0) / (m_slider + M_board)

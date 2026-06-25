@@ -1044,7 +1044,7 @@ export function precomputeVerticalCircularMotion(
   maxTime = 30,
   dt = 0.002
 ): { trajectory: VerticalCircularMotionPoint[]; vSwingLimit: number; vLoopLimit: number } {
-  const g = 9.8
+  const g = GRAVITY
   const steps = Math.ceil(maxTime / dt)
   const trajectory: VerticalCircularMotionPoint[] = []
 

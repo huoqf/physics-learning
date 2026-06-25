@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import { SegmentedControl, Button } from '@/components/UI'
+import { SegmentedControl, Button, OptionButton } from '@/components/UI'
 import type { SidebarExtraProps } from '@/data/types'
 
 interface GravityPreset {
@@ -21,10 +21,17 @@ interface SpringPreset {
   mode: number
 }
 
-const GRAVITY_PRESETS: GravityPreset[] = [
+const GRAVITY_SCENE_PRESETS: GravityPreset[] = [
   { name: '地平参考面', icon: '🍏', m: 2.0, g: 9.8, y0: 8.0, y_ref: 0.0, mode: 0 },
   { name: '高台参考面', icon: '🌌', m: 2.0, g: 9.8, y0: 8.0, y_ref: 5.0, mode: 0 },
 ]
+
+const GRAVITY_FIELD_PRESETS = [
+  { label: '🌍 地球', g: 9.8 },
+  { label: '🌙 月球', g: 1.63 },
+  { label: '🔴 火星', g: 3.72 },
+  { label: '🪐 木星', g: 24.79 },
+] as const
 
 const SPRING_PRESETS: SpringPreset[] = [
   { name: '强拉伸释放', icon: '🏹', m: 2.0, k: 150, x0: 2.5, mode: 1 },
@@ -45,7 +52,6 @@ const PotentialEnergySidebar: FC<SidebarExtraProps> = ({
   const handleModeChange = (value: number | string) => {
     const nextMode = value as number
     updateParam('mode', nextMode)
-    // 切换模式，重置安全默认值
     if (nextMode === 0) {
       updateParam('m', 2.0)
       updateParam('g', 9.8)
@@ -96,22 +102,41 @@ const PotentialEnergySidebar: FC<SidebarExtraProps> = ({
       </p>
 
       {mode === 0 ? (
-        <div className="flex flex-col gap-2 mt-2">
-          <h4 className="text-xs font-semibold text-neutral-700">参考面经典预设</h4>
-          <div className="grid grid-cols-2 gap-2">
-            {GRAVITY_PRESETS.map((preset) => (
-              <Button
-                key={preset.name}
-                variant="secondary"
-                size="sm"
-                disabled={disabled}
-                onClick={() => applyGravityPreset(preset)}
-                className="flex items-center gap-1 justify-start font-normal text-[11px]"
-              >
-                <span>{preset.icon}</span>
-                <span>{preset.name}</span>
-              </Button>
-            ))}
+        <div className="flex flex-col gap-3 mt-2">
+          {/* 星球重力场预设 */}
+          <div>
+            <h4 className="text-xs font-semibold text-neutral-700 mb-2">环境重力场</h4>
+            <div className="flex gap-2 flex-wrap">
+              {GRAVITY_FIELD_PRESETS.map((preset) => (
+                <OptionButton
+                  key={preset.g}
+                  label={preset.label}
+                  selected={params.g === preset.g}
+                  disabled={disabled}
+                  onClick={() => updateParam('g', preset.g)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* 参考面经典预设 */}
+          <div>
+            <h4 className="text-xs font-semibold text-neutral-700">参考面经典预设</h4>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              {GRAVITY_SCENE_PRESETS.map((preset) => (
+                <Button
+                  key={preset.name}
+                  variant="secondary"
+                  size="sm"
+                  disabled={disabled}
+                  onClick={() => applyGravityPreset(preset)}
+                  className="flex items-center gap-1 justify-start font-normal text-[11px]"
+                >
+                  <span>{preset.icon}</span>
+                  <span>{preset.name}</span>
+                </Button>
+              ))}
+            </div>
           </div>
         </div>
       ) : (
