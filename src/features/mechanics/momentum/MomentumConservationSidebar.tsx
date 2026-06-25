@@ -1,4 +1,4 @@
-import { SegmentedControl } from '@/components/UI'
+import { SegmentedControl, Slider } from '@/components/UI'
 import type { SidebarExtraProps } from '@/data/types'
 
 export default function MomentumConservationSidebar({
@@ -8,9 +8,11 @@ export default function MomentumConservationSidebar({
   disabled,
 }: SidebarExtraProps) {
   const advancedMode = params.advancedMode ?? 0
+  const collisionType = params.collisionType ?? 0
+  const e_coefficient = params.e_coefficient ?? 0.5
 
   return (
-    <div className="mt-4 pt-4 border-t border-neutral-200">
+    <div className="mt-4 pt-4 border-t border-neutral-200 flex flex-col gap-4">
       <SegmentedControl
         label="观察模式"
         options={[
@@ -24,6 +26,38 @@ export default function MomentumConservationSidebar({
         }}
         disabled={disabled}
       />
+      {advancedMode === 0 && (
+        <>
+          <SegmentedControl
+            label="碰撞类型"
+            options={[
+              { label: '弹性', value: 0 },
+              { label: '完全非弹性', value: 1 },
+              { label: '恢复系数可调', value: 2 },
+            ]}
+            value={collisionType}
+            onChange={(v) => {
+              updateParam('collisionType', v as number)
+              animationActions.resetAnimation()
+            }}
+            disabled={disabled}
+          />
+          {collisionType === 2 && (
+            <Slider
+              label="恢复系数 e"
+              value={e_coefficient}
+              min={0}
+              max={1}
+              step={0.05}
+              onChange={(v) => {
+                updateParam('e_coefficient', v)
+                animationActions.resetAnimation()
+              }}
+              disabled={disabled}
+            />
+          )}
+        </>
+      )}
     </div>
   )
 }

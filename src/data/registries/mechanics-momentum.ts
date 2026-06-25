@@ -50,7 +50,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
     title: '动量守恒定律',
     knowledgeId: 'mechanics-8-4',
     Component: lazy(() => import('@/features/mechanics/momentum/MomentumConservationAnimation')),
-    defaultParams: { m1: 3, v1: 5, m2: 2, v2: 0, m_slider: 1, M_board: 3, v0: 6, mu: 0.3, L: 2, advancedMode: 0 },
+    defaultParams: { m1: 3, v1: 5, m2: 2, v2: 0, m_slider: 1, M_board: 3, v0: 6, mu: 0.3, L: 2, advancedMode: 0, collisionType: 0, e_coefficient: 0.5 },
     paramMeta: [
       { key: 'm1', label: 'A球质量 m₁', min: 0.5, max: 10, step: 0.5, unit: 'kg', showIf: 'advancedMode', showIfValue: 0 },
       { key: 'v1', label: 'A球速度 v₁', min: -10, max: 10, step: 0.5, unit: 'm/s', showIf: 'advancedMode', showIfValue: 0 },

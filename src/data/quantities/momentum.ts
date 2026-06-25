@@ -1,4 +1,10 @@
 import type { PhysicsPanelData, PhysicsQuantity } from './types'
+import {
+  calculateFallVelocity,
+  calculateAverageImpactForce,
+  calculateCollisionTime,
+  calculateFluidImpactForce,
+} from '@/physics/momentumTheorem'
 
 export function buildMomentumQuantities(
   animId: string,
@@ -71,33 +77,89 @@ export function buildMomentumQuantities(
     case 'anim-impulse': {
       const advancedMode = params.advancedMode ?? 0
       const isAdvanced = advancedMode === 1
+      const g = 9.8
 
       if (!isAdvanced) {
         // ── 基础模式：缓冲垫碰撞 ──
         const m = params.m ?? 2
         const h = params.h ?? 2
         const k = params.k ?? 5
-        const g = 9.8
-        const v = Math.sqrt(2 * g * h)
-        const dt = m / k
-        const deltaP = m * v
-        const F_avg = deltaP / dt + m * g
+        const cushionMaxCompression = 30
+
+        const fallV = calculateFallVelocity(h, g)
+        const collisionDt = calculateCollisionTime(m, k)
+        const F_avg = calculateAverageImpactForce(m, fallV, collisionDt, g)
+        const fallTime = Math.sqrt((2 * h) / g)
+        const totalTime = fallTime + collisionDt * 2
+        const currentT = _time % (totalTime + 1)
+
+        let phase: 'falling' | 'compressing' | 'recovering' | 'done'
+        let cushionCompression = 0
+
+        if (currentT < fallTime) {
+          phase = 'falling'
+        } else if (currentT < fallTime + collisionDt) {
+          phase = 'compressing'
+          const dt = currentT - fallTime
+          const ratio = dt / collisionDt
+          cushionCompression = ratio * cushionMaxCompression
+          cushionCompression = ratio * cushionMaxCompression
+        } else if (currentT < fallTime + collisionDt * 2) {
+          phase = 'recovering'
+          const dt = currentT - fallTime - collisionDt
+          const ratio = 1 - dt / collisionDt
+          cushionCompression = ratio * cushionMaxCompression
+        } else {
+          phase = 'done'
+          cushionCompression = 0
+        }
+
+        const F_max = F_avg * 2
+        const currentImpulse = (() => {
+          if (currentT <= fallTime) return 0
+          if (currentT <= fallTime + collisionDt) {
+            const dt = currentT - fallTime
+            return 0.5 * F_max * ((dt * dt) / collisionDt)
+          }
+          if (currentT <= fallTime + collisionDt * 2) {
+            const dt = currentT - fallTime - collisionDt
+            const firstHalf = 0.5 * F_max * collisionDt
+            const secondHalf = F_max * dt - 0.5 * F_max * ((dt * dt) / collisionDt)
+            return firstHalf + secondHalf
+          }
+          return F_max * collisionDt
+        })()
+
+        const p1 = -(m * fallV)
+        const p2 = (() => {
+          if (phase === 'falling') {
+            return -(m * fallV * (currentT / fallTime))
+          }
+          if (phase === 'compressing' || phase === 'recovering') {
+            return m * fallV * (1 - cushionCompression / cushionMaxCompression)
+          }
+          return 0
+        })()
 
         return {
           quantities: [
             ...base,
-            { label: '碰前速度', value: v.toFixed(2), unit: 'm/s' },
-            { label: '动量变化', value: deltaP.toFixed(1), unit: 'kg·m/s' },
-            { label: '碰撞时间', value: dt.toFixed(2), unit: 's' },
-            { label: '平均冲力', value: F_avg.toFixed(1), unit: 'N', highlight: 'extreme' as const },
+            { label: '碰前动量 p₁', value: p1.toFixed(2), unit: 'kg·m/s', highlight: 'negative' as const },
+            { label: '碰后动量 p₂', value: p2.toFixed(2), unit: 'kg·m/s', highlight: p2 >= 0 ? 'positive' as const : 'negative' as const },
+            { label: '支持力冲量 I_N', value: currentImpulse.toFixed(2), unit: 'N·s', highlight: 'extreme' as const },
+            { label: '合外力冲量 I_net', value: (2 * m * fallV).toFixed(2), unit: 'N·s', highlight: 'positive' as const },
+            { label: '碰撞时间 Δt', value: collisionDt.toFixed(2), unit: 's' },
+            { label: '平均支持力 F_avg', value: F_avg.toFixed(1), unit: 'N' },
           ],
           formulas: [
-            { name: '碰前速度', latex: 'v = \\sqrt{2gh}', level: 'important' as const },
-            { name: '动量定理', latex: 'F_{\\text{合}}\\Delta t = \\Delta p', level: 'core' as const },
-            { name: '平均冲力', latex: 'F = \\frac{\\Delta p}{\\Delta t} + mg', level: 'important' as const },
+            { name: '动量变化量 (Δp)', latex: `\\Delta p = ${(2 * m * fallV).toFixed(2)}\\text{ kg·m/s}`, level: 'important' as const },
+            { name: '支持力总冲量 (I_N)', latex: `I_N = ${(2 * m * fallV + 2 * m * g * collisionDt).toFixed(2)}\\text{ N·s}`, level: 'important' as const },
+            { name: '重力总冲量 (I_g)', latex: `I_g = ${(2 * m * g * collisionDt).toFixed(2)}\\text{ N·s}`, level: 'important' as const },
+            { name: '动量定理公式', latex: 'I_N - I_g = \\Delta p', level: 'core' as const, note: '重力冲量不可忽略，支持力冲量减去重力冲量等于动量变化量' },
           ],
           gaokaoPoints: [
-            { text: '动量定理公式为 F_合Δt = Δp，注意必须是合外力', importance: 'core' as const },
+            { text: '动量定理公式为 F_合Δt = Δp，必须使用合外力', importance: 'core' as const },
+            { text: 'F-t 图线下方的面积等于对应的冲量', importance: 'gaokao' as const },
           ],
         }
       } else {
@@ -106,27 +168,28 @@ export function buildMomentumQuantities(
         const S = params.S ?? 0.01
         const v_fluid = params.v_fluid ?? 5
         const alpha = params.alpha ?? 0
-        const dm = rho * S * v_fluid * 0.001
-        const p_initial = dm * v_fluid
-        const p_final = -alpha * dm * v_fluid
-        const F_impact = rho * S * v_fluid * v_fluid * (1 + alpha)
+        const impactForce = calculateFluidImpactForce(rho, S, v_fluid, alpha)
+        const advancedXMax = 5
+        const currentT_adv = _time % advancedXMax
+        const currentImpulse_adv = impactForce * currentT_adv
+        const dm_dt = rho * S * v_fluid
 
         return {
           quantities: [
             ...base,
-            { label: '微元质量 Δm', value: dm.toFixed(4), unit: 'kg' },
-            { label: '碰前总动量', value: p_initial.toFixed(2), unit: 'kg·m/s' },
-            { label: '碰后总动量', value: p_final.toFixed(2), unit: 'kg·m/s' },
-            { label: '动量变化率', value: (rho * S * v_fluid * v_fluid * (1 + alpha)).toFixed(1), unit: 'N' },
-            { label: '挡板冲击力', value: F_impact.toFixed(1), unit: 'N', highlight: 'extreme' as const },
+            { label: '质量流量 dm/dt', value: dm_dt.toFixed(2), unit: 'kg/s' },
+            { label: '流体冲击力 F', value: impactForce.toFixed(1), unit: 'N', highlight: 'extreme' as const },
+            { label: '冲击时间 t', value: currentT_adv.toFixed(2), unit: 's' },
+            { label: '累计冲击冲量 I', value: currentImpulse_adv.toFixed(2), unit: 'N·s', highlight: 'positive' as const },
           ],
           formulas: [
-            { name: '微元质量', latex: '\\Delta m = \\rho S v \\Delta t', level: 'core' as const },
-            { name: '冲击力', latex: 'F = \\rho S v^2 (1+\\alpha)', level: 'core' as const },
+            { name: '碰前动量变化率 p_in\'', latex: `p_{\\text{in}}' = ${(rho * S * v_fluid * v_fluid).toFixed(1)}\\text{ N}`, level: 'important' as const },
+            { name: '反弹动量变化率 p_out\'', latex: `p_{\\text{out}}' = -${(alpha * rho * S * v_fluid * v_fluid).toFixed(1)}\\text{ N}`, level: 'important' as const },
+            { name: '冲击力公式', latex: 'F = p_{\\text{in}}\' - p_{\\text{out}}\'', level: 'core' as const, note: '冲击力等于流体流入与流出的动量变化率之差' },
           ],
           gaokaoPoints: [
-            { text: '流体冲击问题，核心是构建 Δm = ρSvΔt 微元模型', importance: 'gaokao' as const },
-            { text: '区分流体碰后是"贴墙流下"还是"原速反弹"', importance: 'gaokao' as const },
+            { text: '流体冲击物体的力等于单位时间内流体动量的变化量', importance: 'gaokao' as const },
+            { text: '微元法是构建连续流体受力模型的关键物理方法', importance: 'core' as const },
           ],
         }
       }
@@ -195,25 +258,49 @@ export function buildMomentumQuantities(
         const v1 = params.v1 ?? 5
         const m2 = params.m2 ?? 2
         const v2 = params.v2 ?? 0
+        const collisionType = params.collisionType ?? 0 // 0: 弹性, 1: 完全非弹性, 2: 恢复系数可调
+        const e_coefficient = params.e_coefficient ?? 0.5
+
+        let e = 1.0
+        let typeName = '完全弹性碰撞'
+        if (collisionType === 1) {
+          e = 0.0
+          typeName = '完全非弹性碰撞'
+        } else if (collisionType === 2) {
+          e = e_coefficient
+          typeName = `非弹性碰撞 (e = ${e.toFixed(2)})`
+        }
+
         const pInitial = m1 * v1 + m2 * v2
-        const totalM = m1 + m2
-        const vAfter = pInitial / totalM
-        const p1After = m1 * vAfter
-        const p2After = m2 * vAfter
+        const v1After = ((m1 - e * m2) * v1 + m2 * (1 + e) * v2) / (m1 + m2)
+        const v2After = (m1 * (1 + e) * v1 + (m2 - e * m1) * v2) / (m1 + m2)
+
+        const p1After = m1 * v1After
+        const p2After = m2 * v2After
+        const pTotalAfter = p1After + p2After
+
+        const EkInitial = 0.5 * m1 * v1 * v1 + 0.5 * m2 * v2 * v2
+        const EkAfter = 0.5 * m1 * v1After * v1After + 0.5 * m2 * v2After * v2After
+        const EkLoss = EkInitial - EkAfter
 
         return {
           quantities: [
             ...base,
+            { label: '碰撞类型', value: typeName, unit: '' },
             { label: '碰前总动量', value: pInitial.toFixed(1), unit: 'kg·m/s' },
-            { label: '碰后A动量', value: p1After.toFixed(1), unit: 'kg·m/s' },
-            { label: '碰后B动量', value: p2After.toFixed(1), unit: 'kg·m/s' },
-            { label: '碰后总动量', value: (p1After + p2After).toFixed(1), unit: 'kg·m/s', highlight: 'positive' as const },
+            { label: '碰后A速度', value: v1After.toFixed(2), unit: 'm/s' },
+            { label: '碰后B速度', value: v2After.toFixed(2), unit: 'm/s' },
+            { label: '碰后总动量', value: pTotalAfter.toFixed(1), unit: 'kg·m/s', highlight: 'positive' as const },
+            { label: '机械能损失', value: EkLoss.toFixed(2), unit: 'J', highlight: EkLoss > 0.01 ? 'extreme' : undefined },
           ],
           formulas: [
             { name: '动量守恒', latex: 'm_1v_1 + m_2v_2 = m_1v_1\' + m_2v_2\'', level: 'core' as const },
+            { name: '恢复系数', latex: 'e = -\\frac{v_1\' - v_2\'}{v_1 - v_2}', level: 'important' as const },
           ],
           gaokaoPoints: [
-            { text: '守恒条件是系统合外力为零，内力交换不影响总动量', importance: 'core' as const },
+            { text: '系统所受合外力为零，总动量在碰撞前后严格守恒', importance: 'core' as const },
+            { text: '弹性碰撞 (e=1) 机械能守恒；完全非弹性碰撞 (e=0) 机械能损失最大', importance: 'gaokao' as const },
+            { text: '高考常考恢复系数 e 在 0 到 1 之间的一般碰撞，此时动量守恒，动能减少', importance: 'gaokao' as const },
           ],
         }
       } else {
@@ -222,35 +309,77 @@ export function buildMomentumQuantities(
         const M_board = params.M_board ?? 3
         const v0 = params.v0 ?? 6
         const mu = params.mu ?? 0.3
+        const L = params.L ?? 2
         const g = 9.8
+
         const pTotal = m_slider * v0
         const vCommon = (m_slider * v0) / (m_slider + M_board)
         const tCommon = (M_board * vCommon) / (mu * m_slider * g)
-        const x1 = v0 * tCommon - 0.5 * mu * g * tCommon * tCommon
-        const x2 = 0.5 * (mu * m_slider * g / M_board) * tCommon * tCommon
-        const deltaX = x1 - x2
-        const Q = mu * m_slider * g * deltaX
+        const x1AtCommon = v0 * tCommon - 0.5 * mu * g * tCommon * tCommon
+        const x2AtCommon = 0.5 * (mu * m_slider * g / M_board) * tCommon * tCommon
+        const deltaXAtCommon = x1AtCommon - x2AtCommon
 
-        return {
-          quantities: [
-            ...base,
-            { label: '系统总动量', value: pTotal.toFixed(1), unit: 'kg·m/s' },
-            { label: '共同速度', value: vCommon.toFixed(2), unit: 'm/s' },
-            { label: '达共速时间', value: tCommon.toFixed(2), unit: 's' },
-            { label: '滑块位移 x₁', value: x1.toFixed(2), unit: 'm' },
-            { label: '木板位移 x₂', value: x2.toFixed(2), unit: 'm' },
-            { label: '相对位移 Δx', value: deltaX.toFixed(2), unit: 'm' },
-            { label: '摩擦生热 Q', value: Q.toFixed(1), unit: 'J', highlight: 'extreme' as const },
-          ],
-          formulas: [
-            { name: '共同速度', latex: 'v_{\\text{共}} = \\frac{mv_0}{m+M}', level: 'core' as const },
-            { name: '摩擦生热', latex: 'Q = \\mu mg \\Delta x_{\\text{相对}}', level: 'important' as const },
-          ],
-          gaokaoPoints: [
-            { text: '滑块木板模型中，摩擦力为内力，系统总动量守恒', importance: 'gaokao' as const },
-            { text: '达到共同速度是相对运动结束、内能损失最大的临界点', importance: 'gaokao' as const },
-            { text: '系统内摩擦生热公式为 Q = f·Δx_相对', importance: 'gaokao' as const },
-          ],
+        const isFallen = deltaXAtCommon > L
+
+        if (isFallen) {
+          // 已经滑落飞出
+          const a_rel = mu * g * (1 + m_slider / M_board)
+          const tFall = (v0 - Math.sqrt(v0 * v0 - 2 * a_rel * L)) / a_rel
+          const x1 = v0 * tFall - 0.5 * mu * g * tFall * tFall
+          const x2 = 0.5 * (mu * m_slider * g / M_board) * tFall * tFall
+          const Q = mu * m_slider * g * L
+          const vSliderFall = v0 - mu * g * tFall
+          const vBoardFall = (mu * m_slider * g / M_board) * tFall
+
+          return {
+            quantities: [
+              ...base,
+              { label: '系统总动量', value: pTotal.toFixed(1), unit: 'kg·m/s' },
+              { label: '状态结论', value: '未达到共速，滑块已滑落', unit: '', highlight: 'negative' as const },
+              { label: '滑落时刻', value: tFall.toFixed(2), unit: 's' },
+              { label: '滑块滑落速度', value: vSliderFall.toFixed(2), unit: 'm/s' },
+              { label: '木板滑落速度', value: vBoardFall.toFixed(2), unit: 'm/s' },
+              { label: '滑块位移 x₁', value: x1.toFixed(2), unit: 'm' },
+              { label: '木板位移 x₂', value: x2.toFixed(2), unit: 'm' },
+              { label: '相对位移 Δx', value: L.toFixed(2), unit: 'm' },
+              { label: '摩擦生热 Q', value: Q.toFixed(1), unit: 'J', highlight: 'extreme' as const },
+            ],
+            formulas: [
+              { name: '滑落临界', latex: '\\Delta x_{\\text{相对}} = L', level: 'core' as const },
+              { name: '摩擦生热', latex: 'Q = \\mu mgL', level: 'important' as const },
+            ],
+            gaokaoPoints: [
+              { text: '当木板长度 L 小于达到共速所需的相对位移时，滑块会从木板上滑落', importance: 'gaokao' as const },
+              { text: '滑落后，由于不受摩擦力，滑块与木板均做匀速直线运动，系统总动量守恒', importance: 'gaokao' as const },
+              { text: '滑落临界问题是高考物理压轴题的高频考点，需注意相对位移与板长关系', importance: 'gaokao' as const },
+            ],
+          }
+        } else {
+          // 达共速，未滑落
+          const Q = mu * m_slider * g * deltaXAtCommon
+
+          return {
+            quantities: [
+              ...base,
+              { label: '系统总动量', value: pTotal.toFixed(1), unit: 'kg·m/s' },
+              { label: '状态结论', value: '达到共速，未滑落', unit: '', highlight: 'positive' as const },
+              { label: '共同速度', value: vCommon.toFixed(2), unit: 'm/s' },
+              { label: '达共速时间', value: tCommon.toFixed(2), unit: 's' },
+              { label: '滑块位移 x₁', value: x1AtCommon.toFixed(2), unit: 'm' },
+              { label: '木板位移 x₂', value: x2AtCommon.toFixed(2), unit: 'm' },
+              { label: '相对位移 Δx', value: deltaXAtCommon.toFixed(2), unit: 'm' },
+              { label: '摩擦生热 Q', value: Q.toFixed(1), unit: 'J', highlight: 'extreme' as const },
+            ],
+            formulas: [
+              { name: '共同速度', latex: 'v_{\\text{共}} = \\frac{mv_0}{m+M}', level: 'core' as const },
+              { name: '摩擦生热', latex: 'Q = \\mu mg \\Delta x_{\\text{相对}}', level: 'important' as const },
+            ],
+            gaokaoPoints: [
+              { text: '滑块木板模型中，摩擦力为内力，系统总动量守恒', importance: 'gaokao' as const },
+              { text: '达到共同速度是相对运动结束、内能损失最大的临界点', importance: 'gaokao' as const },
+              { text: '系统内摩擦生热公式为 Q = f·Δx_相对', importance: 'gaokao' as const },
+            ],
+          }
         }
       }
     }

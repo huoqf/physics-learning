@@ -19,6 +19,7 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 06-25 | mechanics/momentum | refactor | 动量定理三屏重构：净化主屏右侧卡片为自适应图表，数值监测看板移植至右侧屏 `momentum.ts` 量表并联动 `_time`；基础模式添加缓冲垫标注 |
 | 06-24 | mechanics/dynamics | feature | 摩擦力演示重构：calculateDoubleFrictionIncline 双体解算，anim-friction 自变量感知，MiniChart 组件化双曲线映射，取消网格与重合的浮动卡片，PhysicsGround/Block 器材替换，对地加速度正交分解辅助线，tsc零错误 |
 | 06-24 | project | refactor | 结构修复方案全量执行：P0-1 清理自造 marker（ACGeneration 删 aB，Capacitor/SpringForce/ElectricPotential 加注释）；P0-2 ForceMotionTripleChart 重写（三次 BasePhysicsChart + SingleChartContent 模式）；P0-4 AnalysisPage/WrongPage 业务逻辑外迁（新建 9 文件，页面薄壳化）；P1-1 定义 SceneLayoutProfile + IDENTITY_SCENE_SCALE + createSceneScaleFromViewport；P1-2 批量修复 50 文件子路径导入（9 组模式）；P2-1 DCSource/Block fontSize 迁移（FONT_BASE 常量 + 可选 font prop）；P2-2 清理 23 处 VectorArrow 假 sceneScale；P2-3 颜色+像素值清单记录；tsc 零错误 |
 | 06-22 | mechanics/kinematics + Chart | refactor | 高难度三件套收官：VerticalThrowCharts 右侧 v-t/y-t 双图迁入 VelocityTimeChart / DisplacementTimeChart 预设；用 foreignObject 承载标准图表，专题特有的全轨迹淡线、真空对照、面积/切片、目标高度、最高点、割线/切线和时间拖拽改为插件层；VelocityTimeChart/DisplacementTimeChart 增加 xLabel/yLabel；test/build 通过，lint 剩余非本次 5 个 error |
