@@ -19,6 +19,7 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 06-25 | optics/thin-lens | refactor | 薄透镜成像页面动画重构：修正凸透镜、凹透镜及实像、虚像下的三条特殊光线几何追迹方程；新增 CandleShape 倒立烛身渲染以符合物理实像性质；解锁共轭测焦距模式拖拽限制并引入基于 SVG 滤镜 feGaussianBlur 的动态调焦模糊和透明度变化；重绘主光轴为厘米刻度金属光学导轨，加入透镜玻璃感材质与激光束微光发光特效；RelationChart 颜色重构为合规 warm 变体并高亮 conjugate 点 |
 | 06-25 | components/UI | refactor | UI通用组件优化与美化：修复 Slider/ParamControl/AnimationControls 自定义圆纽遮挡 input 导致的交互卡顿，增加 z-10 peer 与 h-6 交互区并添加 pointer-events-none；Button 8态规范并用 absolute 居中 spinner + opacity-0 文字消除 loading 宽度抖动；ToggleSwitch 增加 focus-visible、圆纽 shadow-md 与两端对称；SegmentedControl 增加 hover/active 缩放反馈；PhysicsPanel 手风琴折叠默认展开，重构公式/要点/警示卡片并引入 Lucide 矢量图标，规范数值 font-mono 及语义色彩显示；DiscoveryGuide capsule 进度条与 fadeIn 提示；单元测试 289 通过 |
 | 06-25 | mechanics/kinematics | feature | 新增运动学进阶（图象逆推模型）：引入上下自适应布局，基于 Viewport 架构缩放，由 RelationChart 联动展示一次函数物理规律及刹车状态拦截 |
 | 06-25 | mechanics/momentum | refactor | 动量定理三屏重构：净化主屏右侧卡片为自适应图表，数值监测看板移植至右侧屏 `momentum.ts` 量表并联动 `_time`；基础模式添加缓冲垫标注 |
