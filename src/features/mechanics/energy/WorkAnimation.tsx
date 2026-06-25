@@ -109,16 +109,6 @@ export default function WorkAnimation() {
     [F, s, angleDeg, m, mu, g]
   )
 
-  const currentWorkBasic = useMemo(
-    () => calculateWorkBasic(F, currentS, angleDeg),
-    [F, currentS, angleDeg]
-  )
-
-  const currentWorkAdvanced = useMemo(
-    () => calculateWorkAdvanced(F, currentS, angleDeg, m, mu, g),
-    [F, currentS, angleDeg, m, mu, g]
-  )
-
   const kinematics: WorkKinematics = useMemo(
     () => mode === 0
       ? calculateWorkKinematicsBasic(F, s, angleDeg, m)
@@ -464,30 +454,7 @@ export default function WorkAnimation() {
             </g>
           )}
 
-          <g transform={`translate(${maxVisibleX - 120}, ${groundYInScene - objH * 1.5})`}>
-            {mode === 0 ? (
-              <g>
-                <text x={0} y={0} fontSize={sceneSmallFont} fill={PHYSICS_COLORS.work} fontWeight="bold">
-                  W = {currentWorkBasic.W.toFixed(1)} J
-                </text>
-                <text x={0} y={sceneFontSize * 1.3} fontSize={sceneSmallFont} fill={PHYSICS_COLORS.labelTextLight}>
-                  Fx = {currentWorkBasic.Fx.toFixed(1)} N
-                </text>
-              </g>
-            ) : (
-              <g>
-                <text x={0} y={0} fontSize={sceneSmallFont} fill={PHYSICS_COLORS.work} fontWeight="bold">
-                  WF = {currentWorkAdvanced.W_F.toFixed(1)} J
-                </text>
-                <text x={0} y={sceneFontSize * 1.3} fontSize={sceneSmallFont} fill={PHYSICS_COLORS.friction}>
-                  Wf = {currentWorkAdvanced.W_f.toFixed(1)} J
-                </text>
-                <text x={0} y={sceneFontSize * 2.6} fontSize={sceneSmallFont} fill={PHYSICS_COLORS.forceNet}>
-                  Wnet = {currentWorkAdvanced.W_net.toFixed(1)} J
-                </text>
-              </g>
-            )}
-          </g>
+
         </g>
       </svg>
     </div>
