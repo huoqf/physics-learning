@@ -42,12 +42,11 @@ const FRICTION_SCENE_PROFILE: SceneLayoutProfile = {
 // ──────────────────────────────────────────────────────────────────────
 
 export default function FrictionAnimation() {
-  const { params, time, showVectors, updateParam } = useAnimationStore(
+  const { params, time, showVectors } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
       time: s.time,
       showVectors: s.showVectors,
-      updateParam: s.updateParam,
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide)
@@ -80,40 +79,6 @@ export default function FrictionAnimation() {
 
   const weight = m * g
   const weight_M = M * g
-
-  // ─── 拉力 F_applied 鼠标拖拽直接操控手势 ───
-  const isBasicMode = mode === 0
-  const [isDragging, setIsDragging] = useState(false)
-  const dragStartRef = useRef({ clientX: 0, startF: 0 })
-
-  const handleDragStart = (e: React.MouseEvent) => {
-    e.preventDefault()
-    dragStartRef.current = { clientX: e.clientX, startF: F_applied }
-    setIsDragging(true)
-  }
-
-  useEffect(() => {
-    if (!isDragging) return
-
-    const handlePointerMove = (e: PointerEvent) => {
-      const deltaX = e.clientX - dragStartRef.current.clientX
-      const deltaF = deltaX / 5
-      const newF = Math.min(50, Math.max(0, Math.round(dragStartRef.current.startF + deltaF)))
-      updateParam('F_applied', newF)
-    }
-
-    const handlePointerUp = () => {
-      setIsDragging(false)
-    }
-
-    window.addEventListener('pointermove', handlePointerMove)
-    window.addEventListener('pointerup', handlePointerUp)
-
-    return () => {
-      window.removeEventListener('pointermove', handlePointerMove)
-      window.removeEventListener('pointerup', handlePointerUp)
-    }
-  }, [isDragging, updateParam])
 
   // ─── 实时动力学积分（useSimulationFrame，独立于播放键）───
   // useState 触发渲染，useRef 保存最新状态避免 rAF 回调过期闭包
@@ -323,37 +288,9 @@ export default function FrictionAnimation() {
             />
 
             {/* 受力分析矢量 (自动归一化长度) */}
-            {showVectors && isBasicMode && (
+            {showVectors && (
               <g>
-                {/* 1. 外拉力 F (向右) - 带拖拽手柄 */}
-                <VectorArrow
-                  origin={{ x: boxX_m1 + boxSize / 2, y: -(groundY_m1 - boxSize / 2) }}
-                  vector={{ x: F_applied, y: 0 }}
-                  type="appliedForce"
-                  sceneScale={frictionSceneScale}
-                />
-                <text
-                  x={boxX_m1 + boxSize / 2 + 30} y={groundY_m1 - boxSize / 2 - 12}
-                  fontSize={font(FONT.axisSize)} fill={PHYSICS_COLORS.appliedForce} fontWeight="bold"
-                >
-                  F = {F_applied}N
-                </text>
-                {/* 拖拽热区圆圈 */}
-                <circle
-                  cx={boxX_m1 + boxSize / 2 + (F_applied / 50) * 80}
-                  cy={-(groundY_m1 - boxSize / 2)}
-                  r={12}
-                  fill={PHYSICS_COLORS.appliedForce}
-                  opacity={0.0}
-                  className="cursor-ew-resize hover:opacity-15 active:opacity-30 transition-opacity duration-150"
-                  onMouseDown={handleDragStart}
-                />
-              </g>
-            )}
-
-            {showVectors && !isBasicMode && (
-              <g>
-                {/* 1. 外拉力 F (向右) - 非基础模式无拖拽 */}
+                {/* 1. 外拉力 F (向右) */}
                 <VectorArrow
                   origin={{ x: boxX_m1 + boxSize / 2, y: -(groundY_m1 - boxSize / 2) }}
                   vector={{ x: F_applied, y: 0 }}
@@ -644,13 +581,6 @@ export default function FrictionAnimation() {
           </g>
         )}
       </svg>
-
-      {/* 水平拉力直接拖拽控制小标提示 */}
-      {isBasicMode && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[11px] text-neutral-400 bg-white/80 px-3 py-1 rounded-full shadow-sm pointer-events-none">
-          💡 可用鼠标按住并左右拖拽拉力 F 箭头端点调节大小
-        </div>
-      )}
     </div>
   )
 }
