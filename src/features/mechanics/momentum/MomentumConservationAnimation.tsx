@@ -1,4 +1,4 @@
-import { useCanvasSize, useViewport } from '@/utils'
+import { useCanvasSize, useViewport, getPointsUpToTime } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -29,38 +29,6 @@ const MC_LAYOUT = {
   /** 重力加速度 (m/s²) */
   g: 9.8,
 } as const
-
-// 辅助函数：截断并插值生成当前时间刻度以前的数据点
-function getPointsUpToTime(domainPoints: Array<{ t: number; v: number }>, currentTime: number) {
-  if (domainPoints.length === 0) return []
-  const result: Array<{ t: number; v: number }> = []
-  for (let i = 0; i < domainPoints.length; i++) {
-    const pt = domainPoints[i]
-    if (pt.t < currentTime) {
-      result.push(pt)
-    } else {
-      if (i > 0) {
-        const prev = domainPoints[i - 1]
-        const ratio = (currentTime - prev.t) / (pt.t - prev.t)
-        const interpolatedV = prev.v + ratio * (pt.v - prev.v)
-        result.push({ t: currentTime, v: interpolatedV })
-      } else {
-        result.push({ t: currentTime, v: pt.v })
-      }
-      break
-    }
-  }
-  const lastPt = domainPoints[domainPoints.length - 1]
-  if (currentTime >= lastPt.t) {
-    if (result.length < domainPoints.length) {
-      result.push(lastPt)
-    }
-    if (currentTime > lastPt.t) {
-      result.push({ t: currentTime, v: lastPt.v })
-    }
-  }
-  return result
-}
 
 export default function MomentumConservationAnimation() {
   const { params, time, showVectors } = useAnimationStore(
