@@ -77,11 +77,11 @@ export const mechanicsEnergyAnimations = defineAnimations({
     title: '竖直弹簧复合模型',
     knowledgeId: 'mechanics-7-6',
     Component: lazy(() => import('@/features/mechanics/energy/SpringCompositeAnimation')),
-    defaultParams: { m: 0.5, k: 50, h: 0.8, showVectors: 1, autoPause: 1 },
+    defaultParams: { m: 0.5, k: 50, h: 0.8, mode: 0, showVectors: 1, autoPause: 1 },
     paramMeta: [
       { key: 'm', label: '质量 m', min: 0.1, max: 1.0, step: 0.05, unit: 'kg' },
       { key: 'k', label: '劲度系数 k', min: 10, max: 100, step: 5, unit: 'N/m' },
-      { key: 'h', label: '释放高度 h', min: 0.2, max: 1.5, step: 0.05, unit: 'm' },
+      { key: 'h', label: '释放高度 h', min: 0.2, max: 1.5, step: 0.05, unit: 'm', showIf: 'mode', showIfValue: 0 },
     ],
     SidebarExtra: lazy(() => import('@/features/mechanics/energy/SpringCompositeSidebar')),
   },

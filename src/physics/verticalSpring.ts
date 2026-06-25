@@ -5,25 +5,25 @@
 
 export interface VSModelState {
   /** 时间 (s) */
-  t: number
+  t: number;
   /** 位移 (m)，以原长位置 A 为 0 点，向下为正 */
-  x: number
+  x: number;
   /** 瞬时速度 (m/s)，向下为正 */
-  v: number
+  v: number;
   /** 瞬时加速度 (m/s²)，向下为正 */
-  a: number
+  a: number;
   /** 重力势能 (J)，以最低点 C 为零势能面 */
-  Ep: number
+  Ep: number;
   /** 弹性势能 (J) */
-  Epe: number
+  Epe: number;
   /** 动能 (J) */
-  Ek: number
+  Ek: number;
   /** 总能量 (J) */
-  Etot: number
+  Etot: number;
   /** 合外力 (N)，向下为正 */
-  F_net: number
+  F_net: number;
   /** 弹簧弹力 (N)，向上为正 */
-  F_spring: number
+  F_spring: number;
 }
 
 /**
@@ -35,6 +35,7 @@ export interface VSModelState {
  * @param g - 重力加速度 (m/s²)
  * @param tMax - 最大模拟时间 (s)，默认 15
  * @param dt - 时间步长 (s)，默认 0.02
+ * @param mode - 模式：0=下落砸弹簧（情况1），1=原长释放（情况2）
  * @returns 轨迹点数组，按时间升序排列
  */
 export function precomputeVerticalSpringTrajectory(
@@ -43,92 +44,142 @@ export function precomputeVerticalSpringTrajectory(
   h: number,
   g: number,
   tMax: number = 15,
-  dt: number = 0.02
+  dt: number = 0.02,
+  mode: number = 0
 ): VSModelState[] {
-  const points: VSModelState[] = []
+  const points: VSModelState[] = [];
 
-  // 1. 物理关键节点计算
-  const t0 = Math.sqrt((2 * h) / g) // 自由下落到触网时间 (s)
-  const v0 = g * t0 // 触网速度 (m/s)
+  // 平衡位置 (m)，两种模式共用
+  const xB = (m * g) / k;
+  const omega = Math.sqrt(k / m); // 简谐运动圆频率
 
-  const xB = (m * g) / k // 平衡位置 (m)
-  const omega = Math.sqrt(k / m) // 简谐运动圆频率
-  // 简谐振幅 A = sqrt(xB^2 + (v0/omega)^2)
-  const A = Math.sqrt(xB * xB + (v0 * v0) / (omega * omega))
-  
-  // 初位相 phi，因为 x(0)=0 => xB + A cos(phi) = 0 => cos(phi) = -xB / A
-  // 且 v(0) = v0 > 0 => -A omega sin(phi) > 0 => sin(phi) < 0
-  // 所以 phi 处于第三象限 (pi, 1.5*pi)
-  const phi = Math.PI + Math.atan(v0 / (omega * xB))
-  
-  // 弹簧中运动半周期时间 (s)
-  const tSpring = (2 * (2 * Math.PI - phi)) / omega
+  if (mode === 1) {
+    // ── 情况 2：弹簧固定在顶部，小球从原长位置由静止释放 ──
+    // 简谐运动：平衡位置 xB，振幅 A = xB（从原长释放）
+    const A = xB;
+    const phi = Math.PI; // x(0)=0 => xB + A*cos(phi)=0 => cos(phi)=-1 => phi=π
 
-  // 单周期总时间
-  const T = 2 * t0 + tSpring
+    // 简谐运动周期
+    const T_spring = (2 * Math.PI) / omega;
 
-  // 最低位置 C 点的物理坐标 (m)
-  const xC = xB + A
+    // 最低位置 D 点的物理坐标 (m)：xC = xB + A = 2*xB
+    const xC = xB + A;
 
-  // 释放点的总能量 (以最低点为重力势能零点)
-  // 释放点高度相对于最低点为 h + xC
-  const E0 = m * g * (h + xC)
+    // 释放点的总能量 (以最低点为重力势能零点)
+    // 释放点（原长位置）高度相对于最低点为 xC
+    const E0 = m * g * xC;
 
-  let t = 0
-  while (t <= tMax + dt * 0.5) {
-    const curT = Math.min(t, tMax)
-    const tMod = curT % T
+    let t = 0;
+    while (t <= tMax + dt * 0.5) {
+      const curT = Math.min(t, tMax);
+      const tMod = curT % T_spring;
 
-    let x = 0
-    let v = 0
-    let a = 0
-    let F_spring = 0
+      // 简谐运动：x = xB + A*cos(ωt + φ)
+      const x = xB + A * Math.cos(omega * tMod + phi);
+      const v = -A * omega * Math.sin(omega * tMod + phi);
+      const a = -A * omega * omega * Math.cos(omega * tMod + phi);
+      const F_spring = k * x;
 
-    if (tMod < t0) {
-      // 自由落体
-      x = 0.5 * g * tMod * tMod - h
-      v = g * tMod
-      a = g
-      F_spring = 0
-    } else if (tMod < t0 + tSpring) {
-      // 弹簧简谐运动
-      const tPrime = tMod - t0
-      x = xB + A * Math.cos(omega * tPrime + phi)
-      v = -A * omega * Math.sin(omega * tPrime + phi)
-      a = -A * omega * omega * Math.cos(omega * tPrime + phi)
-      F_spring = k * x
-    } else {
-      // 触网反弹上抛阶段
-      const tDoublePrime = tMod - t0 - tSpring
-      x = -v0 * tDoublePrime + 0.5 * g * tDoublePrime * tDoublePrime
-      v = -v0 + g * tDoublePrime
-      a = g
-      F_spring = 0
+      // 能量计算
+      const Ep = m * g * (xC - x); // 重力势能 (D点为零)
+      const Epe = 0.5 * k * x * x; // 弹性势能（始终有伸长）
+      const Ek = 0.5 * m * v * v; // 动能
+      const F_net = m * g - k * x;
+
+      points.push({
+        t: curT,
+        x,
+        v,
+        a,
+        Ep,
+        Epe,
+        Ek,
+        Etot: E0, // 强制机械能绝对守恒
+        F_net,
+        F_spring,
+      });
+
+      t += dt;
     }
+  } else {
+    // ── 情况 1：弹簧固定在地面，小球从上方自由落体砸向弹簧（原有逻辑）──
+    const t0 = Math.sqrt((2 * h) / g); // 自由下落到触网时间 (s)
+    const v0 = g * t0; // 触网速度 (m/s)
 
-    // 能量计算
-    const Ep = m * g * (xC - x) // 重力势能 (C点为零)
-    const Epe = x >= 0 ? 0.5 * k * x * x : 0 // 弹性势能
-    const Ek = 0.5 * m * v * v // 动能
-    const F_net = m * g - (x >= 0 ? k * x : 0)
+    // 简谐振幅 A = sqrt(xB^2 + (v0/omega)^2)
+    const A = Math.sqrt(xB * xB + (v0 * v0) / (omega * omega));
 
-    points.push({
-      t: curT,
-      x,
-      v,
-      a,
-      Ep,
-      Epe,
-      Ek,
-      Etot: E0, // 强制机械能绝对守恒
-      F_net,
-      F_spring,
-    })
+    // 初位相 phi
+    const phi = Math.PI + Math.atan(v0 / (omega * xB));
 
-    t += dt
+    // 弹簧中运动半周期时间 (s)
+    const tSpring = (2 * (2 * Math.PI - phi)) / omega;
+
+    // 单周期总时间
+    const T = 2 * t0 + tSpring;
+
+    // 最低位置 C 点的物理坐标 (m)
+    const xC = xB + A;
+
+    // 释放点的总能量 (以最低点为重力势能零点)
+    const E0 = m * g * (h + xC);
+
+    let t = 0;
+    while (t <= tMax + dt * 0.5) {
+      const curT = Math.min(t, tMax);
+      const tMod = curT % T;
+
+      let x = 0;
+      let v = 0;
+      let a = 0;
+      let F_spring = 0;
+
+      if (tMod < t0) {
+        // 自由落体
+        x = 0.5 * g * tMod * tMod - h;
+        v = g * tMod;
+        a = g;
+        F_spring = 0;
+      } else if (tMod < t0 + tSpring) {
+        // 弹簧简谐运动
+        const tPrime = tMod - t0;
+        x = xB + A * Math.cos(omega * tPrime + phi);
+        v = -A * omega * Math.sin(omega * tPrime + phi);
+        a = -A * omega * omega * Math.cos(omega * tPrime + phi);
+        F_spring = k * x;
+      } else {
+        // 触网反弹上抛阶段
+        const tDoublePrime = tMod - t0 - tSpring;
+        x = -v0 * tDoublePrime + 0.5 * g * tDoublePrime * tDoublePrime;
+        v = -v0 + g * tDoublePrime;
+        a = g;
+        F_spring = 0;
+      }
+
+      // 能量计算
+      const Ep = m * g * (xC - x); // 重力势能 (C点为零)
+      const Epe = x >= 0 ? 0.5 * k * x * x : 0; // 弹性势能
+      const Ek = 0.5 * m * v * v; // 动能
+      const F_net = m * g - (x >= 0 ? k * x : 0);
+
+      points.push({
+        t: curT,
+        x,
+        v,
+        a,
+        Ep,
+        Epe,
+        Ek,
+        Etot: E0, // 强制机械能绝对守恒
+        F_net,
+        F_spring,
+      });
+
+      t += dt;
+    }
   }
 
-  return points
+  return points;
 }
 
 /**
@@ -138,27 +189,24 @@ export function precomputeVerticalSpringTrajectory(
  * @param t - 目标时间 (s)
  * @returns 该时刻的插值状态，包含位置、速度、加速度、各能量分量
  */
-export function getVSStateAtTime(
-  points: VSModelState[],
-  t: number
-): VSModelState {
+export function getVSStateAtTime(points: VSModelState[], t: number): VSModelState {
   if (points.length === 0) {
-    return { t: 0, x: 0, v: 0, a: 0, Ep: 0, Epe: 0, Ek: 0, Etot: 0, F_net: 0, F_spring: 0 }
+    return { t: 0, x: 0, v: 0, a: 0, Ep: 0, Epe: 0, Ek: 0, Etot: 0, F_net: 0, F_spring: 0 };
   }
-  if (t <= points[0].t) return { ...points[0] }
-  if (t >= points[points.length - 1].t) return { ...points[points.length - 1] }
+  if (t <= points[0].t) return { ...points[0] };
+  if (t >= points[points.length - 1].t) return { ...points[points.length - 1] };
 
-  let lo = 0
-  let hi = points.length - 1
+  let lo = 0;
+  let hi = points.length - 1;
   while (lo < hi - 1) {
-    const mid = (lo + hi) >> 1
-    if (points[mid].t <= t) lo = mid
-    else hi = mid
+    const mid = (lo + hi) >> 1;
+    if (points[mid].t <= t) lo = mid;
+    else hi = mid;
   }
 
-  const p0 = points[lo]
-  const p1 = points[hi]
-  const ratio = (t - p0.t) / (p1.t - p0.t)
+  const p0 = points[lo];
+  const p1 = points[hi];
+  const ratio = (t - p0.t) / (p1.t - p0.t);
 
   return {
     t,
@@ -171,5 +219,5 @@ export function getVSStateAtTime(
     Etot: p0.Etot + (p1.Etot - p0.Etot) * ratio,
     F_net: p0.F_net + (p1.F_net - p0.F_net) * ratio,
     F_spring: p0.F_spring + (p1.F_spring - p0.F_spring) * ratio,
-  }
+  };
 }
