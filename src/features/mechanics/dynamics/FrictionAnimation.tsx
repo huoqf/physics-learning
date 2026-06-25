@@ -11,9 +11,10 @@ import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { Block } from '@/components/Physics/Block'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
-import { createSceneScaleFromViewport, worldToPixel } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import type { SceneLayoutProfile } from '@/scene'
 import { useAnimationLayout } from '@/context/AnimationLayoutContext'
+import { calculateVectorPixelLength } from '@/utils/vectorLength'
 
 // ── 布局常量 ──────────────────────────────────────────────────────────
 const FRICTION_DESIGN = { width: 800, height: 440 } as const
@@ -97,8 +98,8 @@ export default function FrictionAnimation() {
 
     const handlePointerMove = (e: PointerEvent) => {
       const deltaX = e.clientX - dragStartRef.current.clientX
-      const deltaF = deltaX / 5
-      const newF = Math.min(50, Math.max(0, Math.round(dragStartRef.current.startF + deltaF)))
+      const deltaF = deltaX / 5.5
+      const newF = Math.min(40, Math.max(0, Math.round((dragStartRef.current.startF + deltaF) * 2) / 2))
       updateParam('F_applied', newF)
     }
 
@@ -333,24 +334,29 @@ export default function FrictionAnimation() {
                   sceneScale={frictionSceneScale}
                 />
                 {isBasicMode ? (() => {
-                  // 计算箭头端点像素坐标
-                  const tipPixel = worldToPixel(
-                    boxX_m1 + boxSize / 2 + F_applied,
-                    -(groundY_m1 - boxSize / 2),
-                    frictionSceneScale
+                  // 精准计算和 VectorArrow 内部完全相同的箭头像素长度，使拖拽热区和文字标签和箭头尖端完美重合！
+                  const refMag = frictionSceneScale.refMagnitudes?.appliedForce ?? 40
+                  const totalPxLen = calculateVectorPixelLength(
+                    F_applied,
+                    'appliedForce',
+                    frictionSceneScale.maxVectorLength,
+                    refMag
                   )
+                  const tipPxX = boxX_m1 + boxSize / 2 + totalPxLen
+                  const tipPxY = groundY_m1 - boxSize / 2
+
                   return (
                     <>
                       <text
-                        x={tipPixel.px + 8} y={tipPixel.py + 4}
+                        x={tipPxX + 8} y={tipPxY + 4}
                         fontSize={font(FONT.axisSize)} fill={PHYSICS_COLORS.appliedForce} fontWeight="bold"
                       >
                         F = {F_applied}N
                       </text>
                       {/* 拖拽热区圆圈 */}
                       <circle
-                        cx={tipPixel.px}
-                        cy={tipPixel.py}
+                        cx={tipPxX}
+                        cy={tipPxY}
                         r={12}
                         fill={PHYSICS_COLORS.appliedForce}
                         opacity={0.0}
