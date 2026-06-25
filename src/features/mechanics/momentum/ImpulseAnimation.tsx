@@ -17,7 +17,6 @@ import {
   PHYSICS_COLORS,
   SCENE_COLORS,
   CANVAS_STYLE,
-  FONT,
   CHART_COLORS,
 } from '@/theme/physics'
 import { RelationChart, ChartArea, useChartContext } from '@/components/Chart'
@@ -116,8 +115,8 @@ function ImpulseSlicesLayer({
       {completedSlices > 0 && currentT < t_total && (
         <text
           x={toSvgX(currentT) + 5}
-          y={ctx.plotOrigin.y + font(FONT.small) + 2}
-          fontSize={font(FONT.small)}
+          y={ctx.plotOrigin.y + font(10) + 2}
+          fontSize={font(10)}
           fill={PHYSICS_COLORS.velocity}
         >
           Δt
@@ -151,7 +150,7 @@ function ImpulseLabelLayer({
     <text
       x={labelX}
       y={labelY}
-      fontSize={font(FONT.small)}
+      fontSize={font(10)}
       fill={PHYSICS_COLORS.impulse}
       fontWeight="bold"
       textAnchor="middle"
@@ -411,7 +410,7 @@ export default function ImpulseAnimation() {
               <text
                 x={sliderX_basic + IMPULSE_LAYOUT.sliderWidth / 2}
                 y={sliderTrackY - canvasSize.height * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2 - 12}
-                fontSize={FONT.smallSize}
+                fontSize={canvasSize.font(10)}
                 fill={PHYSICS_COLORS.impulse}
                 textAnchor="middle"
                 fontWeight="bold"
@@ -421,7 +420,7 @@ export default function ImpulseAnimation() {
               <text
                 x={sliderX_basic + IMPULSE_LAYOUT.sliderWidth / 2}
                 y={sliderTrackY - canvasSize.height * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2 + 35}
-                fontSize={FONT.smallSize}
+                fontSize={canvasSize.font(10)}
                 fill={CHART_COLORS.labelText}
                 textAnchor="middle"
               >
@@ -456,7 +455,7 @@ export default function ImpulseAnimation() {
               <text
                 x={sliderX_advanced + IMPULSE_LAYOUT.sliderWidth / 2}
                 y={sliderTrackY - canvasSize.height * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2 - 12}
-                fontSize={FONT.smallSize}
+                fontSize={canvasSize.font(10)}
                 fill={PHYSICS_COLORS.impulse}
                 textAnchor="middle"
                 fontWeight="bold"
@@ -469,7 +468,7 @@ export default function ImpulseAnimation() {
               <text
                 x={sliderX_advanced + IMPULSE_LAYOUT.sliderWidth / 2}
                 y={sliderTrackY - canvasSize.height * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2 + 35}
-                fontSize={FONT.smallSize}
+                fontSize={canvasSize.font(10)}
                 fill={CHART_COLORS.labelText}
                 textAnchor="middle"
               >

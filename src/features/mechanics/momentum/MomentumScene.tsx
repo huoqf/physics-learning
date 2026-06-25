@@ -1,4 +1,4 @@
-import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_STYLE, FONT } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { RelationChart } from '@/components/Chart'
@@ -6,7 +6,7 @@ import type { SceneScale } from '@/scene'
 import { MOMENTUM_LAYOUT } from './MomentumAnimation'
 
 interface MomentumSceneProps {
-  canvasSize: { width: number; height: number }
+  canvasSize: { width: number; height: number; font: (v: number) => number }
   sceneScale: SceneScale
   isAdvanced: boolean
   showVectors: boolean
@@ -73,7 +73,7 @@ export function MomentumScene({
           <circle cx={basicBallX} cy={ballCenterY} r={R_basic}
             fill="url(#steel-sphere-grad-mom)" stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
             strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-          <text x={basicBallX} y={ballCenterY - R_basic - 8} fontSize={FONT.bodySize}
+          <text x={basicBallX} y={ballCenterY - R_basic - 8} fontSize={canvasSize.font(13)}
             fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
             m = {m.toFixed(1)} kg
           </text>
@@ -86,7 +86,7 @@ export function MomentumScene({
               width={MOMENTUM_LAYOUT.momentumBarWidth} height={mapMomentumBarH(p_basic)}
               fill={PHYSICS_COLORS.momentum} opacity={0.7} rx={3} />
             <text x={0} y={p_basic >= 0 ? -mapMomentumBarH(p_basic) - 6 : mapMomentumBarH(p_basic) + 14}
-              fontSize={FONT.smallSize} fill={PHYSICS_COLORS.momentum} fontWeight="bold" textAnchor="middle">
+              fontSize={canvasSize.font(10)} fill={PHYSICS_COLORS.momentum} fontWeight="bold" textAnchor="middle">
               p = {p_basic.toFixed(1)}
             </text>
           </g>
@@ -100,8 +100,8 @@ export function MomentumScene({
           <circle cx={clampedPosAx} cy={ballCenterY} r={R_A}
             fill="url(#steel-sphere-grad-mom)" stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
             strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-          <text x={clampedPosAx} y={ballCenterY + 4} fontSize={FONT.smallSize} fill="white" textAnchor="middle" fontWeight="bold">A</text>
-          <text x={clampedPosAx} y={ballCenterY - R_A - 8} fontSize={FONT.axisSize}
+          <text x={clampedPosAx} y={ballCenterY + 4} fontSize={canvasSize.font(10)} fill="white" textAnchor="middle" fontWeight="bold">A</text>
+          <text x={clampedPosAx} y={ballCenterY - R_A - 8} fontSize={canvasSize.font(12)}
             fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
             m_A = {mA.toFixed(1)} kg
           </text>
@@ -110,8 +110,8 @@ export function MomentumScene({
           <circle cx={clampedPosBx} cy={ballCenterY} r={R_B}
             fill="url(#steel-sphere-grad-mom-b)" stroke={SCENE_COLORS.materials.vacuumSphereGrad[2]}
             strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-          <text x={clampedPosBx} y={ballCenterY + 4} fontSize={FONT.smallSize} fill="white" textAnchor="middle" fontWeight="bold">B</text>
-          <text x={clampedPosBx} y={ballCenterY - R_B - 8} fontSize={FONT.axisSize}
+          <text x={clampedPosBx} y={ballCenterY + 4} fontSize={canvasSize.font(10)} fill="white" textAnchor="middle" fontWeight="bold">B</text>
+          <text x={clampedPosBx} y={ballCenterY - R_B - 8} fontSize={canvasSize.font(12)}
             fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
             m_B = {mB.toFixed(1)} kg
           </text>
@@ -119,7 +119,7 @@ export function MomentumScene({
           {/* 质心 */}
           <circle cx={xCm} cy={ballCenterY} r={4} fill={PHYSICS_COLORS.referencePoint}
             stroke={PHYSICS_COLORS.referencePoint} strokeWidth={1} />
-          <text x={xCm} y={ballCenterY + 18} fontSize={FONT.smallSize}
+          <text x={xCm} y={ballCenterY + 18} fontSize={canvasSize.font(10)}
             fill={PHYSICS_COLORS.referencePoint} textAnchor="middle">质心</text>
 
           {/* 碰撞闪光 */}
@@ -137,7 +137,7 @@ export function MomentumScene({
                   vector={{ x: currentVA, y: 0 }} type="velocity" sceneScale={sceneScale} />
               )}
               <text x={clampedPosAx + mapArrowLen(currentVA) * Math.sign(currentVA) / 2}
-                y={ballCenterY - R_A - 26} fontSize={FONT.smallSize}
+                y={ballCenterY - R_A - 26} fontSize={canvasSize.font(10)}
                 fill={PHYSICS_COLORS.velocity} fontWeight="bold" textAnchor="middle">
                 v_A = {currentVA > 0 ? '+' : ''}{currentVA.toFixed(1)}
               </text>
@@ -148,7 +148,7 @@ export function MomentumScene({
                   color={PHYSICS_COLORS.elasticForce} />
               )}
               <text x={clampedPosBx + mapArrowLen(currentVB) * Math.sign(currentVB) / 2}
-                y={ballCenterY - R_B - 26} fontSize={FONT.smallSize}
+                y={ballCenterY - R_B - 26} fontSize={canvasSize.font(10)}
                 fill={PHYSICS_COLORS.elasticForce} fontWeight="bold" textAnchor="middle">
                 v_B = {currentVB > 0 ? '+' : ''}{currentVB.toFixed(1)}
               </text>
@@ -158,7 +158,7 @@ export function MomentumScene({
                   vector={{ x: pA, y: 0 }} type="momentum" sceneScale={sceneScale} />
               )}
               <text x={clampedPosAx} y={groundY + MOMENTUM_LAYOUT.momentumAxisY - 6}
-                fontSize={FONT.smallSize} fill={PHYSICS_COLORS.momentum} textAnchor="middle">
+                fontSize={canvasSize.font(10)} fill={PHYSICS_COLORS.momentum} textAnchor="middle">
                 p_A = {pA > 0 ? '+' : ''}{pA.toFixed(1)}
               </text>
 
@@ -168,7 +168,7 @@ export function MomentumScene({
                   color={PHYSICS_COLORS.impulse} />
               )}
               <text x={clampedPosBx} y={groundY + MOMENTUM_LAYOUT.momentumAxisY - 6}
-                fontSize={FONT.smallSize} fill={PHYSICS_COLORS.impulse} textAnchor="middle">
+                fontSize={canvasSize.font(10)} fill={PHYSICS_COLORS.impulse} textAnchor="middle">
                 p_B = {pB > 0 ? '+' : ''}{pB.toFixed(1)}
               </text>
 
@@ -177,7 +177,7 @@ export function MomentumScene({
                   vector={{ x: pTotal, y: 0 }} type="momentum" sceneScale={sceneScale} />
               )}
               <text x={xCm} y={groundY + MOMENTUM_LAYOUT.totalMomentumAxisY - 6}
-                fontSize={FONT.smallSize} fill={PHYSICS_COLORS.momentum} textAnchor="middle" fontWeight="bold">
+                fontSize={canvasSize.font(10)} fill={PHYSICS_COLORS.momentum} textAnchor="middle" fontWeight="bold">
                 p_总 = {pTotal > 0 ? '+' : ''}{pTotal.toFixed(1)}
               </text>
             </g>

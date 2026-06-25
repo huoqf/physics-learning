@@ -21,7 +21,6 @@ import {
   PHYSICS_COLORS,
   SCENE_COLORS,
   CANVAS_STYLE,
-  FONT,
 } from '@/theme/physics'
 
 /** 碰撞动画布局常量 */
@@ -230,13 +229,13 @@ export default function CollisionAnimation() {
             <circle cx={posAx} cy={groundY - R_A} r={R_A}
               fill="url(#steel-sphere-grad-col)" stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
               strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-            <text x={posAx} y={groundY - R_A + 4} fontSize={FONT.smallSize} fill="white" textAnchor="middle" fontWeight="bold">A</text>
+            <text x={posAx} y={groundY - R_A + 4} fontSize={canvasSize.font(10)} fill="white" textAnchor="middle" fontWeight="bold">A</text>
 
             {/* B球 */}
             <circle cx={posBx} cy={groundY - R_B} r={R_B}
               fill="url(#steel-sphere-grad-col-b)" stroke={SCENE_COLORS.materials.vacuumSphereGrad[2]}
               strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-            <text x={posBx} y={groundY - R_B + 4} fontSize={FONT.smallSize} fill="white" textAnchor="middle" fontWeight="bold">B</text>
+            <text x={posBx} y={groundY - R_B + 4} fontSize={canvasSize.font(10)} fill="white" textAnchor="middle" fontWeight="bold">B</text>
 
             {/* 碰撞特效：弹性=弹簧，非弹性=胶水 */}
             {hasCollided && Math.abs(time - collisionTime) < 0.4 && (
@@ -273,7 +272,7 @@ export default function CollisionAnimation() {
                     sceneScale={sceneScale}
                   />
                 )}
-                <text x={posAx} y={groundY - R_A * 2 - 16} fontSize={FONT.smallSize}
+                <text x={posAx} y={groundY - R_A * 2 - 16} fontSize={canvasSize.font(10)}
                   fill={PHYSICS_COLORS.velocity} textAnchor="middle" fontWeight="bold">
                   v₁={currentV1.toFixed(1)}
                 </text>
@@ -287,7 +286,7 @@ export default function CollisionAnimation() {
                     color={PHYSICS_COLORS.elasticForce}
                   />
                 )}
-                <text x={posBx} y={groundY - R_B * 2 - 16} fontSize={FONT.smallSize}
+                <text x={posBx} y={groundY - R_B * 2 - 16} fontSize={canvasSize.font(10)}
                   fill={PHYSICS_COLORS.elasticForce} textAnchor="middle" fontWeight="bold">
                   v₂={currentV2.toFixed(1)}
                 </text>
@@ -296,16 +295,16 @@ export default function CollisionAnimation() {
 
             {/* 机械能守恒验证 */}
             <g transform={`translate(${COL_LAYOUT.canvasPadding}, 20)`}>
-              <text fontSize={FONT.bodySize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
+              <text fontSize={canvasSize.font(13)} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
                 {isElastic === 1 ? '完全弹性碰撞' : '完全非弹性碰撞'}
               </text>
-              <text x={0} y={20} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.kineticEnergy}>
+              <text x={0} y={20} fontSize={canvasSize.font(12)} fill={PHYSICS_COLORS.kineticEnergy}>
                 E_k初 = {EkBefore.toFixed(1)} J
               </text>
-              <text x={0} y={38} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.kineticEnergy}>
+              <text x={0} y={38} fontSize={canvasSize.font(12)} fill={PHYSICS_COLORS.kineticEnergy}>
                 E_k末 = {EkAfter.toFixed(1)} J
               </text>
-              <text x={0} y={56} fontSize={FONT.axisSize}
+              <text x={0} y={56} fontSize={canvasSize.font(12)}
                 fill={Math.abs(EkBefore - EkAfter) < 0.1 ? PHYSICS_COLORS.kineticEnergy : PHYSICS_COLORS.heatLoss}
                 fontWeight="bold">
                 {Math.abs(EkBefore - EkAfter) < 0.1 ? '✓ 机械能守恒' : `ΔE_k = ${(EkBefore - EkAfter).toFixed(1)} J（损失）`}
@@ -327,7 +326,7 @@ export default function CollisionAnimation() {
             <line x1={xCmAdv} y1={20} x2={xCmAdv} y2={groundY}
               stroke={PHYSICS_COLORS.referencePoint} strokeWidth={1}
               strokeDasharray="4,4" opacity={0.4} />
-            <text x={xCmAdv} y={16} fontSize={FONT.smallSize} fill={PHYSICS_COLORS.referencePoint} textAnchor="middle">
+            <text x={xCmAdv} y={16} fontSize={canvasSize.font(10)} fill={PHYSICS_COLORS.referencePoint} textAnchor="middle">
               质心
             </text>
 
@@ -335,13 +334,13 @@ export default function CollisionAnimation() {
             <circle cx={posAAdv} cy={groundY - R_Adv} r={R_Adv}
               fill="url(#steel-sphere-grad-col)" stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
               strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-            <text x={posAAdv} y={groundY - R_Adv + 4} fontSize={FONT.smallSize} fill="white" textAnchor="middle" fontWeight="bold">A</text>
+            <text x={posAAdv} y={groundY - R_Adv + 4} fontSize={canvasSize.font(10)} fill="white" textAnchor="middle" fontWeight="bold">A</text>
 
             {/* B球 */}
             <circle cx={posBAdv} cy={groundY - R_Bdv} r={R_Bdv}
               fill="url(#steel-sphere-grad-col-b)" stroke={SCENE_COLORS.materials.vacuumSphereGrad[2]}
               strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-            <text x={posBAdv} y={groundY - R_Bdv + 4} fontSize={FONT.smallSize} fill="white" textAnchor="middle" fontWeight="bold">B</text>
+            <text x={posBAdv} y={groundY - R_Bdv + 4} fontSize={canvasSize.font(10)} fill="white" textAnchor="middle" fontWeight="bold">B</text>
 
             {/* 碰撞闪光 */}
             {hasCollidedAdv && Math.abs(time - colTimeAdv) < 0.3 && (
@@ -361,7 +360,7 @@ export default function CollisionAnimation() {
                     sceneScale={sceneScale}
                   />
                 )}
-                <text x={posAAdv} y={groundY - R_Adv * 2 - 16} fontSize={FONT.smallSize}
+                <text x={posAAdv} y={groundY - R_Adv * 2 - 16} fontSize={canvasSize.font(10)}
                   fill={PHYSICS_COLORS.velocity} fontWeight="bold" textAnchor="middle">
                   v_A' = {curVA.toFixed(2)}
                 </text>
@@ -375,7 +374,7 @@ export default function CollisionAnimation() {
                     color={PHYSICS_COLORS.elasticForce}
                   />
                 )}
-                <text x={posBAdv} y={groundY - R_Bdv * 2 - 16} fontSize={FONT.smallSize}
+                <text x={posBAdv} y={groundY - R_Bdv * 2 - 16} fontSize={canvasSize.font(10)}
                   fill={PHYSICS_COLORS.elasticForce} fontWeight="bold" textAnchor="middle">
                   v_B' = {curVB.toFixed(2)}
                 </text>
@@ -384,7 +383,7 @@ export default function CollisionAnimation() {
 
             {/* 动能变化双柱状图 */}
             <g transform={`translate(${canvasSize.width - 180}, 20)`}>
-              <text x={60} y={-4} fontSize={FONT.smallSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
+              <text x={60} y={-4} fontSize={canvasSize.font(10)} fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
                 动能变化
               </text>
 
@@ -411,7 +410,7 @@ export default function CollisionAnimation() {
 
               {/* ΔE_k */}
               {deltaEk > 0.01 && (
-                <text x={60} y={COL_LAYOUT.ekBarMaxHeight + 15} fontSize={FONT.smallSize}
+                <text x={60} y={COL_LAYOUT.ekBarMaxHeight + 15} fontSize={canvasSize.font(10)}
                   fill={PHYSICS_COLORS.heatLoss} textAnchor="middle" fontWeight="bold">
                   ΔE_k = {deltaEk.toFixed(1)} J
                 </text>
@@ -420,13 +419,13 @@ export default function CollisionAnimation() {
 
             {/* 特例高亮提示 */}
             {velocitySwap && hasCollidedAdv && (
-              <text x={canvasSize.width / 2} y={30} fontSize={FONT.bodySize}
+              <text x={canvasSize.width / 2} y={30} fontSize={canvasSize.font(13)}
                 fill={PHYSICS_COLORS.kineticEnergy} fontWeight="bold" textAnchor="middle">
                 等质量弹性碰撞：速度交换！A静止，B带走全部速度
               </text>
             )}
             {heavyLight && hasCollidedAdv && (
-              <text x={canvasSize.width / 2} y={30} fontSize={FONT.bodySize}
+              <text x={canvasSize.width / 2} y={30} fontSize={canvasSize.font(13)}
                 fill={PHYSICS_COLORS.velocity} fontWeight="bold" textAnchor="middle">
                 大撞小：v_B' ≈ 2v_A = {(2 * vA).toFixed(1)} m/s
               </text>

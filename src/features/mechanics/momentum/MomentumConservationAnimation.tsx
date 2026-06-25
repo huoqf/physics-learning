@@ -22,7 +22,6 @@ import {
   PHYSICS_COLORS,
   SCENE_COLORS,
   CANVAS_STYLE,
-  FONT,
 } from '@/theme/physics'
 
 /** 动量守恒动画布局常量 */
@@ -226,7 +225,7 @@ export default function MomentumConservationAnimation() {
               stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
               strokeWidth={CANVAS_STYLE.stroke.objectLine}
             />
-            <text x={posAx} y={groundY - R_A + 4} fontSize={FONT.smallSize} fill="white" textAnchor="middle" fontWeight="bold">
+            <text x={posAx} y={groundY - R_A + 4} fontSize={canvasSize.font(10)} fill="white" textAnchor="middle" fontWeight="bold">
               A
             </text>
 
@@ -239,7 +238,7 @@ export default function MomentumConservationAnimation() {
               stroke={SCENE_COLORS.materials.vacuumSphereGrad[2]}
               strokeWidth={CANVAS_STYLE.stroke.objectLine}
             />
-            <text x={posBx} y={groundY - R_B + 4} fontSize={FONT.smallSize} fill="white" textAnchor="middle" fontWeight="bold">
+            <text x={posBx} y={groundY - R_B + 4} fontSize={canvasSize.font(10)} fill="white" textAnchor="middle" fontWeight="bold">
               B
             </text>
 
@@ -265,7 +264,7 @@ export default function MomentumConservationAnimation() {
                     sceneScale={sceneScale}
                   />
                 )}
-                <text x={posAx} y={groundY - R_A * 2 - 16} fontSize={FONT.smallSize} fill={PHYSICS_COLORS.velocity} textAnchor="middle" fontWeight="bold">
+                <text x={posAx} y={groundY - R_A * 2 - 16} fontSize={canvasSize.font(10)} fill={PHYSICS_COLORS.velocity} textAnchor="middle" fontWeight="bold">
                   v₁={currentV1.toFixed(1)}
                 </text>
 
@@ -278,7 +277,7 @@ export default function MomentumConservationAnimation() {
                     color={PHYSICS_COLORS.elasticForce}
                   />
                 )}
-                <text x={posBx} y={groundY - R_B * 2 - 16} fontSize={FONT.smallSize} fill={PHYSICS_COLORS.elasticForce} textAnchor="middle" fontWeight="bold">
+                <text x={posBx} y={groundY - R_B * 2 - 16} fontSize={canvasSize.font(10)} fill={PHYSICS_COLORS.elasticForce} textAnchor="middle" fontWeight="bold">
                   v₂={currentV2.toFixed(1)}
                 </text>
               </g>
@@ -296,7 +295,7 @@ export default function MomentumConservationAnimation() {
                 opacity={0.7}
                 rx={2}
               />
-              <text x={mapMomentumBar(m1 * v1) / 2} y={10} fontSize={FONT.smallSize} fill="white" textAnchor="middle" fontWeight="bold">
+              <text x={mapMomentumBar(m1 * v1) / 2} y={10} fontSize={canvasSize.font(10)} fill="white" textAnchor="middle" fontWeight="bold">
                 p₁
               </text>
 
@@ -310,12 +309,12 @@ export default function MomentumConservationAnimation() {
                 opacity={0.7}
                 rx={2}
               />
-              <text x={mapMomentumBar(m1 * v1) + mapMomentumBar(m2 * v2) / 2} y={10} fontSize={FONT.smallSize} fill="white" textAnchor="middle" fontWeight="bold">
+              <text x={mapMomentumBar(m1 * v1) + mapMomentumBar(m2 * v2) / 2} y={10} fontSize={canvasSize.font(10)} fill="white" textAnchor="middle" fontWeight="bold">
                 p₂
               </text>
 
               {/* 总动量标注 */}
-              <text x={mapMomentumBar(pTotal)} y={-4} fontSize={FONT.smallSize} fill={PHYSICS_COLORS.momentum} fontWeight="bold">
+              <text x={mapMomentumBar(pTotal)} y={-4} fontSize={canvasSize.font(10)} fill={PHYSICS_COLORS.momentum} fontWeight="bold">
                 p_总 = {pTotal.toFixed(1)} kg·m/s
               </text>
             </g>
@@ -339,7 +338,7 @@ export default function MomentumConservationAnimation() {
             <text
               x={boardPixelX + boardPixelW / 2}
               y={boardTopY + MC_LAYOUT.boardHeight / 2 + 3}
-              fontSize={FONT.smallSize}
+              fontSize={canvasSize.font(10)}
               fill="white"
               textAnchor="middle"
               fontWeight="bold"
@@ -376,7 +375,7 @@ export default function MomentumConservationAnimation() {
             <text
               x={sliderOffBoard ? boardPixelX + boardPixelW + 5 + MC_LAYOUT.sliderWidth / 2 : sliderPixelX}
               y={sliderTopY + MC_LAYOUT.sliderHeight / 2 + 3}
-              fontSize={FONT.smallSize}
+              fontSize={canvasSize.font(10)}
               fill="white"
               textAnchor="middle"
               fontWeight="bold"
@@ -408,7 +407,7 @@ export default function MomentumConservationAnimation() {
             <text
               x={boardInitX + (m_slider * currentXSlider + M_board * currentXBoard) / (m_slider + M_board) * dScale}
               y={boardTopY - 8}
-              fontSize={FONT.smallSize}
+              fontSize={canvasSize.font(10)}
               fill={PHYSICS_COLORS.referencePoint}
               textAnchor="middle"
             >
@@ -444,7 +443,7 @@ export default function MomentumConservationAnimation() {
                 <text
                   x={(sliderOffBoard ? boardPixelX + boardPixelW + 5 + MC_LAYOUT.sliderWidth / 2 : sliderPixelX) + mapArrowLen(currentVSlider) / 2}
                   y={sliderTopY - 16}
-                  fontSize={FONT.smallSize}
+                  fontSize={canvasSize.font(10)}
                   fill={PHYSICS_COLORS.velocity}
                   fontWeight="bold"
                   textAnchor="middle"
@@ -465,7 +464,7 @@ export default function MomentumConservationAnimation() {
                 <text
                   x={boardPixelX + boardPixelW / 2 + mapArrowLen(currentVBoard) / 2}
                   y={boardTopY + MC_LAYOUT.boardHeight + 12}
-                  fontSize={FONT.smallSize}
+                  fontSize={canvasSize.font(10)}
                   fill={PHYSICS_COLORS.elasticForce}
                   fontWeight="bold"
                   textAnchor="middle"
@@ -478,7 +477,7 @@ export default function MomentumConservationAnimation() {
                   <text
                     x={canvasSize.width * 0.5}
                     y={sliderTopY - 12}
-                    fontSize={FONT.smallSize}
+                    fontSize={canvasSize.font(10)}
                     fill={PHYSICS_COLORS.kineticEnergy}
                     fontWeight="bold"
                     textAnchor="middle"
@@ -494,7 +493,7 @@ export default function MomentumConservationAnimation() {
               <text
                 x={canvasSize.width * 0.5}
                 y={30}
-                fontSize={FONT.bodySize}
+                fontSize={canvasSize.font(13)}
                 fill={PHYSICS_COLORS.forceArrowRed}
                 fontWeight="bold"
                 textAnchor="middle"
