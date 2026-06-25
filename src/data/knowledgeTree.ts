@@ -328,6 +328,26 @@ export const knowledgeTree: KnowledgeNode[] = [
     problemIds: [],
     prerequisites: ['mechanics-7-4'],
   },
+  {
+    id: 'mechanics-7-6',
+    title: '竖直弹簧复合模型',
+    chapter: '第7章 机械能',
+    module: 'mechanics',
+    importance: 'hard',
+    animationIds: ['anim-vertical-spring'],
+    problemIds: [],
+    prerequisites: ['mechanics-7-5'],
+  },
+  {
+    id: 'mechanics-7-7',
+    title: '轻杆/绳连接体模型',
+    chapter: '第7章 机械能',
+    module: 'mechanics',
+    importance: 'hard',
+    animationIds: ['anim-light-rod-rope'],
+    problemIds: [],
+    prerequisites: ['mechanics-7-6'],
+  },
 
   {
     id: 'mechanics-8-1',
@@ -337,7 +357,7 @@ export const knowledgeTree: KnowledgeNode[] = [
     importance: 'basic',
     animationIds: ['anim-momentum'],
     problemIds: [],
-    prerequisites: ['mechanics-7-5'],
+    prerequisites: ['mechanics-7-7'],
   },
   {
     id: 'mechanics-8-2',

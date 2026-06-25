@@ -106,7 +106,10 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-kinetic-energy':        { loader: () => import('./quantities/energy'),         builderName: 'buildEnergyQuantities' },
   'anim-potential-energy':      { loader: () => import('./quantities/energy'),         builderName: 'buildEnergyQuantities' },
   'anim-energy-conservation':   { loader: () => import('./quantities/energy'),         builderName: 'buildEnergyQuantities' },
+  'anim-vertical-spring':       { loader: () => import('./quantities/energy'),         builderName: 'buildEnergyQuantities' },
+  'anim-light-rod-rope':        { loader: () => import('./quantities/energy'),         builderName: 'buildEnergyQuantities' },
   'anim-work':                  { loader: () => import('./quantities/energy'),         builderName: 'buildEnergyQuantities' },
+
 
   // 热学
   'anim-brownian-motion':       { loader: () => import('./quantities/thermodynamics'), builderName: 'buildThermodynamicsQuantities' },

@@ -20,8 +20,14 @@ import {
   precomputePendulumTrajectory,
   precomputeValleyTrajectory,
   getECStateAtTime,
+  precomputeVerticalSpringTrajectory,
+  getVSStateAtTime,
+  precomputeLightRodRopeTrajectory,
+  getLRRStateAtTime,
 } from '../../physics'
 import type { PhysicsPanelData, PhysicsQuantity } from './types'
+import { PHYSICS_COLORS, ENERGY_COLORS } from '@/theme/physics'
+
 
 export function buildEnergyQuantities(
   animId: string,
@@ -302,6 +308,88 @@ export function buildEnergyQuantities(
             { text: '滑块在往复摆动幅度逐渐变小后，若滑到最高点时重力切向分力小于最大静摩擦力（|tanθ| ≤ μ），将卡死停在坡上。', importance: 'hard' as const },
           ],
         }
+      }
+    }
+    case 'anim-vertical-spring': {
+      const m = params.m ?? 0.5
+      const k = params.k ?? 50
+      const h = params.h ?? 0.8
+      const g = GRAVITY
+
+      const trajectory = precomputeVerticalSpringTrajectory(m, k, h, g, 15)
+      const state = getVSStateAtTime(trajectory, time)
+      const xB = (m * g) / k
+
+      // 根据当前位移 x 与平衡位置 xB 动态推导运动方程
+      let equation = 'mg = ma (a = g, v↑)'
+      let eqHighlight: 'positive' | 'negative' | 'zero' | 'extreme' | undefined = undefined
+
+      if (state.x < -0.001) {
+        equation = 'mg = ma (a = g, v↑)'
+      } else if (state.x >= -0.001 && state.x < xB - 0.002) {
+        equation = 'mg - kx = ma (a↓, v↑)'
+        eqHighlight = 'positive'
+      } else if (Math.abs(state.x - xB) <= 0.002) {
+        equation = 'mg - kx_B = 0 (a = 0, v = vmax)'
+        eqHighlight = 'extreme'
+      } else {
+        equation = 'kx - mg = ma (a↑, v↓)'
+        eqHighlight = 'negative'
+      }
+
+      return {
+        quantities: [
+          ...base,
+          { label: '当前运动方程', value: equation, unit: '', highlight: eqHighlight },
+          { label: '瞬时合外力', symbol: 'F合', value: state.F_net, unit: 'N', highlight: state.F_net === 0 ? 'zero' as const : state.F_net < 0 ? 'negative' as const : undefined },
+          { label: '瞬时动能', symbol: 'Ek', value: state.Ek, unit: 'J', highlight: 'positive' as const },
+          { label: '弹簧弹力', symbol: 'F弹', value: state.F_spring, unit: 'N', highlight: state.F_spring > 0.05 ? 'positive' as const : undefined },
+          { label: '瞬时速度', symbol: 'v', value: state.v, unit: 'm/s', highlight: state.v > 0.05 ? 'positive' as const : state.v < -0.05 ? 'negative' as const : 'zero' as const },
+          { label: '弹簧形变量', symbol: 'x', value: Math.max(0, state.x), unit: 'm', highlight: state.x > 0.001 ? 'positive' as const : 'zero' as const },
+        ],
+        formulas: [
+          { name: '触网前自由落体', latex: 'mg = ma \\implies a = g, v \\uparrow', condition: 'x < 0', level: 'important' },
+          { name: '触网至平衡位置', latex: 'mg - kx = ma \\implies a \\downarrow, v \\uparrow', condition: '0 \\le x < x_B', level: 'core' },
+          { name: '平衡位置瞬间', latex: 'mg - kx_B = 0 \\implies a = 0, v = v_{\\max}, E_k = \\max', condition: 'x = x_B', level: 'core', note: '此时速度及动能达到最大点' },
+          { name: '过平衡点至最低点', latex: 'kx - mg = ma \\implies a \\uparrow (向上), v \\downarrow', condition: 'x_B < x \\le x_C', level: 'core' },
+        ],
+        gaokaoPoints: [
+          { text: '【速度最大点误区】小球速度与动能最大的位置在平衡位置（mg = kx），而非刚接触弹簧的 A 点。', importance: 'hard' as const },
+          { text: '【极值独立性】改变初始下落高度 h，小球振动最大速度所处平衡位置 B 的坐标（mg/k）保持绝对不变。', importance: 'extend' as const },
+        ],
+      }
+    }
+    case 'anim-light-rod-rope': {
+      const m1 = params.m1 ?? 1.0
+      const m2 = params.m2 ?? 1.0
+      const L = params.L ?? 1.2
+      const g = GRAVITY
+      const constraint = params.constraint ?? 0 // 0=杆, 1=绳
+
+      const trajectory = precomputeLightRodRopeTrajectory(m1, m2, L, g, constraint, 15)
+      const state = getLRRStateAtTime(trajectory, time)
+
+      return {
+        quantities: [
+          ...base,
+          { label: 'A球机械能', symbol: 'EA', value: state.EA, unit: 'J', color: ENERGY_COLORS.potentialGravity },
+          { label: 'B球机械能', symbol: 'EB', value: state.EB, unit: 'J', color: ENERGY_COLORS.potentialElastic },
+          { label: '系统总能量', symbol: 'E总', value: state.Etot, unit: 'J', highlight: 'extreme' as const, color: PHYSICS_COLORS.kineticEnergy },
+          ...(constraint === 0
+            ? [{ label: '能量传输功率', symbol: 'P_trans', value: state.powerB, unit: 'W', highlight: state.powerB > 0.05 ? 'positive' as const : undefined }]
+            : []),
+          { label: 'A球线速度', symbol: 'v_A', value: state.vA, unit: 'm/s' },
+          { label: 'B球线速度', symbol: 'v_B', value: state.vB, unit: 'm/s' },
+        ],
+        formulas: [
+          { name: '角速度与线速度约束', latex: '\\omega_A = \\omega_B \\implies v_B = 2v_A', condition: '刚性轻杆连接下', level: 'important' },
+          { name: '轻杆对个体做功', latex: 'W_{\\text{杆}\\to A} = \\Delta E_A < 0 \\quad W_{\\text{杆}\\to B} = \\Delta E_B > 0', condition: '刚性杆摆下时，能量从 A 向 B 转移', level: 'core' },
+          { name: '系统总能量守恒', latex: 'W_{\\text{杆}\\to A} + W_{\\text{杆}\\to B} = 0 \\implies \\Delta E_{\\text{系统}} = 0', level: 'core' },
+        ],
+        gaokaoPoints: [
+          { text: '【系统守恒，个体不守恒】轻杆拉力不沿杆方向，对个体做功不为零，故个体机械能不守恒；但弹力属于内力且总功之和为零，系统总机械能守恒。', importance: 'hard' as const },
+          { text: '【杆-绳拓扑突变】切换为轻绳后，绳子松弛无法提供非径向力，无法进行能量传输，两球退化为独立单摆各自机械能守恒。', importance: 'extend' as const },
+        ],
       }
     }
     case 'anim-work': {

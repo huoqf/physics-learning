@@ -73,4 +73,29 @@ export const mechanicsEnergyAnimations = defineAnimations({
     ],
     SidebarExtra: lazy(() => import('@/features/mechanics/energy/EnergyConservationSidebar')),
   },
+  'anim-vertical-spring': {
+    title: '竖直弹簧复合模型',
+    knowledgeId: 'mechanics-7-6',
+    Component: lazy(() => import('@/features/mechanics/energy/SpringCompositeAnimation')),
+    defaultParams: { m: 0.5, k: 50, h: 0.8, showVectors: 1, autoPause: 1 },
+    paramMeta: [
+      { key: 'm', label: '质量 m', min: 0.1, max: 1.0, step: 0.05, unit: 'kg' },
+      { key: 'k', label: '劲度系数 k', min: 10, max: 100, step: 5, unit: 'N/m' },
+      { key: 'h', label: '释放高度 h', min: 0.2, max: 1.5, step: 0.05, unit: 'm' },
+    ],
+    SidebarExtra: lazy(() => import('@/features/mechanics/energy/SpringCompositeSidebar')),
+  },
+  'anim-light-rod-rope': {
+    title: '轻杆/轻绳连接体',
+    knowledgeId: 'mechanics-7-7',
+    Component: lazy(() => import('@/features/mechanics/energy/LightRodRopeAnimation')),
+    defaultParams: { m1: 1.0, m2: 1.0, L: 1.2, constraint: 0, showParticles: 1 },
+    paramMeta: [
+      { key: 'm1', label: 'A球质量 m₁', min: 0.1, max: 2.0, step: 0.1, unit: 'kg' },
+      { key: 'm2', label: 'B球质量 m₂', min: 0.1, max: 2.0, step: 0.1, unit: 'kg' },
+      { key: 'L', label: '轻杆长度 L', min: 0.5, max: 1.5, step: 0.05, unit: 'm' },
+    ],
+    SidebarExtra: lazy(() => import('@/features/mechanics/energy/LightRodRopeSidebar')),
+  },
 })
+
