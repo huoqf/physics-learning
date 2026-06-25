@@ -1,5 +1,5 @@
 import React from 'react';
-import { MAGNET_COLORS } from '@/theme/physics';
+import { MAGNET_COLORS, PHYSICS_COLORS } from '@/theme/physics';
 
 /**
  * 参数化磁感线组件 Props
@@ -34,7 +34,7 @@ export const ParametricMagneticField: React.FC<MagneticFieldProps> = ({
   h,
   pole,
   canvasHeight,
-  lineColor = '#4ade80',
+  lineColor = PHYSICS_COLORS.magneticField,
   showCompasses = false
 }) => {
   const halfW = w / 2;

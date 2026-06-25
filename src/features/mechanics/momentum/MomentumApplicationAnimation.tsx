@@ -22,6 +22,52 @@ import {
   getManBoatAutoMotion
 } from '@/physics/momentumApplication'
 
+// ─── 布局常量 ───────────────────────────────────────────────────────────────
+const CANVAS_DESIGN = { width: 700, height: 180 }
+const GROUND_X = 0
+const GROUND_Y = 130
+const GROUND_WIDTH = 700
+const GRAVITY = 9.8
+
+// 弧形槽-滑块
+const SLOT_PX_PER_M = 40
+const SLOT_ORIGIN_X = 350
+const SLOT_EXTRA_WIDTH = 35
+
+// 弹簧双滑块
+const SPRING_PX_PER_M = 40
+const SPRING_ORIGIN_X = 350
+const SPRING_NATURAL_LENGTH_PX = 80
+
+// 人船模型
+const BOAT_PX_PER_M = 30
+const BOAT_ORIGIN_X = 350
+const BOAT_WALK_DURATION = 2.5
+const BOAT_AUTO_STEPS = 100
+
+// 物体尺寸
+const BLOCK_SIZE = { width: 40, height: 24 }
+const BALL_RADIUS_PX = 10
+
+// 能量柱
+const ENERGY_CUP = { width: 30, height: 25, maxHeight: 20, padding: 3, innerWidth: 24 }
+
+// 质心标记
+const CM_STAR = { coreRadius: 4, glowRadius: 10, labelOffset: 16 }
+
+// 临界点提示
+const CRITICAL_TIP = { x: -50, y: -10, width: 100, height: 20 }
+
+// 天平布局
+const BALANCE = { beamLength: 60, pxPerUnit: 8, minBarWidth: 3, barY: -12, barHeight: 8, textY: -16 }
+
+// 交互
+const KEYBOARD_SPEED = 3
+
+// 仿真配置
+const SLOT_SIM = { duration: 6, dt: 0.016 }
+const SPRING_SIM = { duration: 3.5, dt: 0.016 }
+
 export default function MomentumApplicationAnimation() {
   const { params, time } = useAnimationStore(
     useShallow((s) => ({
@@ -39,7 +85,7 @@ export default function MomentumApplicationAnimation() {
 
   // 1. 画布尺寸与视口适配（遵循 useCanvasSize + Viewport 架构铁律）
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_DESIGN)
-  const vp = useViewport(canvasSize, CANVAS_DESIGN)
+  const vp = useViewport(canvasSize, { designWidth: CANVAS_DESIGN.width, designHeight: CANVAS_DESIGN.height })
 
   const {
     modelType = 0, // 0: 弧形槽-滑块, 1: 弹簧双滑块, 2: 人船模型
@@ -899,16 +945,16 @@ export default function MomentumApplicationAnimation() {
                     if (isCompressing) {
                       return (
                         <g transform="translate(325, 20)">
-                          <path d="M 0 0 L 50 0 M 42 -4 L 50 0 L 42 4" stroke={PHYSICS_COLORS.electricField} strokeWidth="2.5" strokeLinecap="round" />
-                          <text x="25" y="-6" fill={PHYSICS_COLORS.electricField} fontSize={8} textAnchor="middle">动能 &rArr; 弹性能</text>
+                          <path d="M 0 0 L 50 0 M 42 -4 L 50 0 L 42 4" stroke={PHYSICS_COLORS.kineticEnergy} strokeWidth="2.5" strokeLinecap="round" />
+                          <text x="25" y="-6" fill={PHYSICS_COLORS.kineticEnergy} fontSize={8} textAnchor="middle">动能 &rArr; 弹性能</text>
                         </g>
                       )
                     }
                     if (isReleasing) {
                       return (
                         <g transform="translate(325, 20)">
-                          <path d="M 50 0 L 0 0 M 8 -4 L 0 0 L 8 4" stroke={PHYSICS_COLORS.magneticField} strokeWidth="2.5" strokeLinecap="round" />
-                          <text x="25" y="-6" fill={PHYSICS_COLORS.magneticField} fontSize={8} textAnchor="middle">弹性能 &rArr; 动能</text>
+                          <path d="M 50 0 L 0 0 M 8 -4 L 0 0 L 8 4" stroke={PHYSICS_COLORS.potentialElastic} strokeWidth="2.5" strokeLinecap="round" />
+                          <text x="25" y="-6" fill={PHYSICS_COLORS.potentialElastic} fontSize={8} textAnchor="middle">弹性能 &rArr; 动能</text>
                         </g>
                       )
                     }
@@ -975,10 +1021,10 @@ export default function MomentumApplicationAnimation() {
                 {/* 金色质心十字星 (绝对 0 坐标锁定，闪烁) */}
                 <g transform={`translate(${BOAT_ORIGIN_X}, 95)`}>
                   <circle r={`${CM_STAR.glowRadius}`} fill={`url(#${gradIdGlowGold})`} />
-                  <circle r={`${CM_STAR.coreRadius}`} fill={PHYSICS_COLORS.electricField} />
-                  <line x1={`-${CM_STAR.glowRadius}`} y1="0" x2={`${CM_STAR.glowRadius}`} y2="0" stroke={PHYSICS_COLORS.electricField} strokeWidth="1.2" />
-                  <line x1="0" y1={`-${CM_STAR.glowRadius}`} x2="0" y2={`${CM_STAR.glowRadius}`} stroke={PHYSICS_COLORS.electricField} strokeWidth="1.2" />
-                  <text x="0" y={`${CM_STAR.labelOffset}`} fill={PHYSICS_COLORS.electricField} fontSize={canvasSize.font(8)} fontWeight="bold" textAnchor="middle">
+                  <circle r={`${CM_STAR.coreRadius}`} fill={CANVAS_COLORS.referencePoint} />
+                  <line x1={`-${CM_STAR.glowRadius}`} y1="0" x2={`${CM_STAR.glowRadius}`} y2="0" stroke={CANVAS_COLORS.referencePoint} strokeWidth="1.2" />
+                  <line x1="0" y1={`-${CM_STAR.glowRadius}`} x2="0" y2={`${CM_STAR.glowRadius}`} stroke={CANVAS_COLORS.referencePoint} strokeWidth="1.2" />
+                  <text x="0" y={`${CM_STAR.labelOffset}`} fill={CANVAS_COLORS.referencePoint} fontSize={canvasSize.font(8)} fontWeight="bold" textAnchor="middle">
                     系统质心 (锁定 0)
                   </text>
                 </g>
@@ -1054,7 +1100,7 @@ export default function MomentumApplicationAnimation() {
                   vector={{ x: boatState.v_boat, y: 0 }}
                   type="velocity"
                   sceneScale={sceneScaleBoat}
-                  color={PHYSICS_COLORS.electricField}
+                  color={PHYSICS_COLORS.velocity}
                 />
 
                 {/* 自动模式绝对空间位移展示 (行走完毕时) */}
@@ -1083,16 +1129,16 @@ export default function MomentumApplicationAnimation() {
                     return (
                       <g>
                         {/* 人的绝对位移线 */}
-                        <line x1={xp0_px} y1={personLineY} x2={xpend_px} y2={personLineY} stroke={PHYSICS_COLORS.magneticField} strokeWidth="1.2" strokeDasharray="2 2" />
-                        <polygon points={`${xpend_px},${personLineY} ${xpend_px + (disp_person < 0 ? arrowSize : -arrowSize)},${personLineY - 3} ${xpend_px + (disp_person < 0 ? arrowSize : -arrowSize)},${personLineY + 3}`} fill={PHYSICS_COLORS.magneticField} />
-                        <text x={(xp0_px + xpend_px) / 2} y={personLineY - 5} fill={PHYSICS_COLORS.magneticField} fontSize={canvasSize.font(8)} textAnchor="middle" fontWeight="bold">
+                        <line x1={xp0_px} y1={personLineY} x2={xpend_px} y2={personLineY} stroke={PHYSICS_COLORS.displacement} strokeWidth="1.2" strokeDasharray="2 2" />
+                        <polygon points={`${xpend_px},${personLineY} ${xpend_px + (disp_person < 0 ? arrowSize : -arrowSize)},${personLineY - 3} ${xpend_px + (disp_person < 0 ? arrowSize : -arrowSize)},${personLineY + 3}`} fill={PHYSICS_COLORS.displacement} />
+                        <text x={(xp0_px + xpend_px) / 2} y={personLineY - 5} fill={PHYSICS_COLORS.displacement} fontSize={canvasSize.font(8)} textAnchor="middle" fontWeight="bold">
                           人绝对位移 x1 = {Math.abs(disp_person).toFixed(2)}m
                         </text>
 
                         {/* 船的绝对位移线 */}
-                        <line x1={xb0_px} y1={boatLineY} x2={xbend_px} y2={boatLineY} stroke={PHYSICS_COLORS.forceNet} strokeWidth="1.2" strokeDasharray="2 2" />
-                        <polygon points={`${xbend_px},${boatLineY} ${xbend_px + (disp_boat < 0 ? arrowSize : -arrowSize)},${boatLineY - 3} ${xbend_px + (disp_boat < 0 ? arrowSize : -arrowSize)},${boatLineY + 3}`} fill={PHYSICS_COLORS.forceNet} />
-                        <text x={(xb0_px + xbend_px) / 2} y={boatLineY + 10} fill={PHYSICS_COLORS.forceNet} fontSize={canvasSize.font(8)} textAnchor="middle" fontWeight="bold">
+                        <line x1={xb0_px} y1={boatLineY} x2={xbend_px} y2={boatLineY} stroke={PHYSICS_COLORS.displacementX} strokeWidth="1.2" strokeDasharray="2 2" />
+                        <polygon points={`${xbend_px},${boatLineY} ${xbend_px + (disp_boat < 0 ? arrowSize : -arrowSize)},${boatLineY - 3} ${xbend_px + (disp_boat < 0 ? arrowSize : -arrowSize)},${boatLineY + 3}`} fill={PHYSICS_COLORS.displacementX} />
+                        <text x={(xb0_px + xbend_px) / 2} y={boatLineY + 10} fill={PHYSICS_COLORS.displacementX} fontSize={canvasSize.font(8)} textAnchor="middle" fontWeight="bold">
                           船绝对位移 x2 = {Math.abs(disp_boat).toFixed(2)}m
                         </text>
                       </g>

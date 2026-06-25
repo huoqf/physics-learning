@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useMemo, useCallback, useEffect } from 'react'
+import { useState, useRef, useMemo, useCallback, useEffect } from 'react'
 import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
@@ -685,9 +685,9 @@ export default function SatelliteAnimation() {
           </radialGradient>
           {/* 火箭尾焰渐变 */}
           <linearGradient id="rocket-fire-grad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#f97316" />
-            <stop offset="50%" stopColor="#ef4444" />
-            <stop offset="100%" stopColor="#dc2626" stopOpacity="0.6" />
+            <stop offset="0%" stopColor={PHYSICS_COLORS.heatLoss} stopOpacity={0.8} />
+            <stop offset="50%" stopColor={PHYSICS_COLORS.internalEnergy} stopOpacity={0.9} />
+            <stop offset="100%" stopColor={PHYSICS_COLORS.internalEnergy} stopOpacity={0.6} />
           </linearGradient>
           {/* 卡片阴影滤镜 */}
           <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="120%">

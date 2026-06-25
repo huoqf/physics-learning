@@ -1,4 +1,4 @@
-﻿import { useRef, useCallback, useState, useEffect } from 'react'
+import { useRef, useCallback, useState, useEffect } from 'react'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { computeScale, physicsToCanvasWithOrigin } from '@/utils/coordinate'
@@ -217,9 +217,9 @@ export default function BrownianMotion() {
             <stop offset="100%" stopColor={THERMAL_COLORS.beakerFill} stopOpacity={0.6} />
           </linearGradient>
           <radialGradient id="pollen-grad" cx="40%" cy="35%">
-            <stop offset="0%" stopColor={colors.accent[200]} />
-            <stop offset="60%" stopColor={colors.accent[500]} />
-            <stop offset="100%" stopColor={colors.accent[600]} />
+            <stop offset="0%" stopColor={THERMO_COLORS.temperatureHigh} stopOpacity={0.6} />
+            <stop offset="60%" stopColor={THERMO_COLORS.heatAbsorb} stopOpacity={0.8} />
+            <stop offset="100%" stopColor={THERMO_COLORS.heatAbsorb} />
           </radialGradient>
           <filter id={CANVAS_STYLE.SVG_FILTER.glow.id}>
             <feGaussianBlur stdDeviation={CANVAS_STYLE.SVG_FILTER.glow.stdDeviation} result="blur" />

@@ -1,4 +1,5 @@
 import React from 'react';
+import { PHYSICS_COLORS } from '@/theme/physics';
 
 /**
  * 耦合线圈磁感线组件 Props
@@ -46,7 +47,7 @@ export const CoupledCoilField: React.FC<CoupledCoilFieldProps> = ({
   y,
   current,
   canvasHeight,
-  lineColor = '#10B981',
+  lineColor = PHYSICS_COLORS.magneticField,
 }) => {
   const primaryLeft = primaryX - primaryW / 2;
   const secondaryRight = secondaryX + secondaryW / 2;

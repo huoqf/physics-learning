@@ -298,9 +298,9 @@ export function Block({
       {/* 6. 质心标点（辅助力学受力分析，明确力的起点作用点） */}
       {showCenterOfMass && (
         <g transform={`translate(${x + width / 2}, ${y + (height - (hasWheels ? 1 : 0)) / 2})`} pointerEvents="none">
-          <line x1={-5} y1={0} x2={5} y2={0} stroke={PHYSICS_COLORS.forceNet} strokeWidth={1.2} />
-          <line x1={0} y1={-5} x2={0} y2={5} stroke={PHYSICS_COLORS.forceNet} strokeWidth={1.2} />
-          <circle cx={0} cy={0} r={1.5} fill={PHYSICS_COLORS.forceNet} />
+          <line x1={-5} y1={0} x2={5} y2={0} stroke={CANVAS_COLORS.referencePoint} strokeWidth={1.2} />
+          <line x1={0} y1={-5} x2={0} y2={5} stroke={CANVAS_COLORS.referencePoint} strokeWidth={1.2} />
+          <circle cx={0} cy={0} r={1.5} fill={CANVAS_COLORS.referencePoint} />
         </g>
       )}
 

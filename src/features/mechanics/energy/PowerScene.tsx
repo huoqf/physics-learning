@@ -277,15 +277,15 @@ export function PowerScene({
       {(params.mode ?? 1) === 1 && state.v > 0.01 && (
         <g transform={`translate(${padding}, ${canvasSize.height * 0.66})`}>
           <rect width={80} height={18} rx={3} fill={
-            state.phase === 0 ? colors.primary[100] :
-            state.phase === 1 ? colors.warning[100] : colors.success[100]
+            state.phase === 0 ? colors.neutral[100] :
+            state.phase === 1 ? colors.neutral[200] : colors.neutral[300]
           } stroke={
-            state.phase === 0 ? colors.primary[600] :
-            state.phase === 1 ? colors.warning[600] : colors.success[600]
+            state.phase === 0 ? colors.neutral[400] :
+            state.phase === 1 ? colors.neutral[500] : colors.neutral[500]
           } strokeWidth={0.8} />
           <text x={40} y={12} fontSize={Math.max(9, canvasSize.width * 0.016 * 0.8)} fontWeight="bold" textAnchor="middle" fill={
-            state.phase === 0 ? colors.primary[700] :
-            state.phase === 1 ? colors.warning[700] : colors.success[700]
+            state.phase === 0 ? colors.neutral[700] :
+            state.phase === 1 ? colors.neutral[700] : colors.neutral[700]
           }>
             {state.phase === 0 ? '匀加速阶段' : state.phase === 1 ? '变加速阶段' : '已达最大速'}
           </text>

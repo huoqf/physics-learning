@@ -86,12 +86,12 @@ export default function OhmLaw() {
   const digitColors = [
     '#1C1917', // 0: 黑色
     '#78350F', // 1: 棕色
-    PHYSICS_COLORS.positiveCharge, // 2: 红色 (Red-500)
-    PHYSICS_COLORS.emf, // 3: 橙色 (Amber-600)
-    PHYSICS_COLORS.equipotential, // 4: 黄色 (Amber-600)
-    PHYSICS_COLORS.magneticField, // 5: 绿色 (Emerald-500)
-    PHYSICS_COLORS.magnetSouth, // 6: 蓝色 (Blue-600)
-    PHYSICS_COLORS.tension, // 7: 紫色 (Purple-500)
+    '#EF4444', // 2: 红色
+    '#F97316', // 3: 橙色
+    '#EAB308', // 4: 黄色
+    '#22C55E', // 5: 绿色
+    '#3B82F6', // 6: 蓝色
+    '#8B5CF6', // 7: 紫色
     '#4B5563', // 8: 灰色
     '#F3F4F6', // 9: 白色
   ]

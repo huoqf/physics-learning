@@ -69,7 +69,7 @@ export const COIL_COLORS = {
   insulationSt:  '#1F2937', // 绝缘皮描边    — gray-800
 
   // 通电激活状态
-  activeGlow:    '#059669', // 通电光晕      — emerald-600（与 PHYSICS_COLORS.electricCurrent 一致）
+  activeGlow:    '#059669', // 通电光晕 — emerald-600（设备激活/通电状态指示，非物理量语义）
   activeGlowBg:  '#D1FAE5', // 通电光晕背景  — emerald-100
 } as const
 

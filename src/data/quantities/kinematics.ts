@@ -18,6 +18,7 @@ import {
   calculatePoliceChase,
 } from '../../physics'
 import { interpolateTrajectoryPoint } from '../../utils/trajectory'
+import { PHYSICS_COLORS } from '../../theme/physics'
 
 export function buildKinematicsQuantities(
   animId: string,
@@ -432,9 +433,9 @@ export function buildKinematicsQuantities(
       const k = chartMode === 0 ? 2 * a : 0.5 * a
 
       const quantities = [
-        { label: '速度平方 v²', value: v2, unit: 'm²/s²', color: '#2563EB' },
-        { label: '比值 x/t', value: xOverT, unit: 'm/s', color: '#0284C7' },
-        { label: '图象实时斜率 k', value: k, unit: 'm/s²', color: '#DC2626' }
+        { label: '速度平方 v²', value: v2, unit: 'm²/s²', color: PHYSICS_COLORS.velocity },
+        { label: '比值 x/t', value: xOverT, unit: 'm/s', color: PHYSICS_COLORS.averageVelocity },
+        { label: '图象实时斜率 k', value: k, unit: 'm/s²', color: PHYSICS_COLORS.acceleration }
       ]
 
       const formulas = chartMode === 0 ? [

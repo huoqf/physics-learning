@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback } from 'react'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
@@ -246,8 +246,8 @@ export default function InductionPhenomenon() {
 
               return (
                 <g key={`glow-wire-${i}`}>
-                  <circle cx={pLeft.x} cy={pLeft.y} r="4" fill={PHYSICS_COLORS.kineticEnergy} filter="drop-shadow(0 0 2px #06B6D4)" />
-                  <circle cx={pRight.x} cy={pRight.y} r="4" fill={PHYSICS_COLORS.kineticEnergy} filter="drop-shadow(0 0 2px #06B6D4)" />
+                  <circle cx={pLeft.x} cy={pLeft.y} r="4" fill={PHYSICS_COLORS.electricCurrent} filter="drop-shadow(0 0 2px #EF4444)" />
+                  <circle cx={pRight.x} cy={pRight.y} r="4" fill={PHYSICS_COLORS.electricCurrent} filter="drop-shadow(0 0 2px #EF4444)" />
                 </g>
               )
             })}

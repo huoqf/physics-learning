@@ -360,12 +360,12 @@ export function KineticEnergyScene({
       {mode === 1 && (
         <g transform={`translate(${padding}, ${canvasSize.height * 0.75})`}>
           <rect width={80} height={18} rx={3} fill={
-            state.phase === 0 ? colors.primary[100] : colors.warning[100]
+            state.phase === 0 ? colors.neutral[100] : colors.neutral[200]
           } stroke={
-            state.phase === 0 ? colors.primary[600] : colors.warning[600]
+            state.phase === 0 ? colors.neutral[400] : colors.neutral[500]
           } strokeWidth={0.8} />
           <text x={40} y={12} fontSize={Math.max(CANVAS_STYLE.FONT.small - 1, canvasSize.width * 0.016 * 0.8)} fontWeight="bold" textAnchor="middle" fill={
-            state.phase === 0 ? colors.primary[700] : colors.warning[700]
+            state.phase === 0 ? colors.neutral[700] : colors.neutral[700]
           }>
             {state.phase === 0 ? '曲面下滑中' : '水平滑行中'}
           </text>

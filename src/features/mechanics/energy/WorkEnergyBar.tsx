@@ -36,7 +36,7 @@ export function WorkEnergyBar({ canvasSize, font, energyBars, maxWorkRef }: Work
   const bars = useMemo(() => [
     { label: 'WF', value: WF, color: PHYSICS_COLORS.work },
     { label: '|Wf|', value: Wf_abs, color: PHYSICS_COLORS.friction },
-    { label: 'Ek', value: Ek, color: PHYSICS_COLORS.forceNet },
+    { label: 'Ek', value: Ek, color: PHYSICS_COLORS.kineticEnergy },
   ], [WF, Wf_abs, Ek])
 
   return (

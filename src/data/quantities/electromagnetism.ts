@@ -853,7 +853,7 @@ export function buildElectromagnetismQuantities(
             { label: '磁感应强度 B', value: `${Math.abs(B).toFixed(1)}`, unit: `T (${B > 0 ? '垂直纸面向里' : B < 0 ? '垂直纸面向外' : '无磁场'})`, color: PHYSICS_COLORS.magneticField },
             { label: '电流 I', value: `${Math.abs(I).toFixed(1)}`, unit: `A (${I > 0 ? '向上' : I < 0 ? '向下' : '无电流'})`, color: PHYSICS_COLORS.electricCurrent },
             { label: '有效长度 L', value: L.toFixed(1), unit: 'm', color: colors.neutral[500] },
-            { label: '安培力 F', value: `${Math.abs(res.F).toFixed(2)}`, unit: `N${fDirText}`, color: PHYSICS_COLORS.forceNet, highlight: res.FAbs > 1e-4 ? 'extreme' : 'zero' },
+            { label: '安培力 F', value: `${Math.abs(res.F).toFixed(2)}`, unit: `N${fDirText}`, color: PHYSICS_COLORS.lorentzForce, highlight: res.FAbs > 1e-4 ? 'extreme' : 'zero' },
           ],
           formulas: [
             { name: '安培力大小公式', latex: 'F = BIL \\quad (\\vec{B} \\perp \\vec{I})', level: 'core', condition: '当磁场与电流垂直时' },
@@ -888,7 +888,7 @@ export function buildElectromagnetismQuantities(
         return {
           quantities: [
             ...base,
-            { label: '安培力 F_安', value: Math.abs(res.F_ampere).toFixed(2), unit: `N (${res.F_ampere > 1e-4 ? '水平向右' : res.F_ampere < -1e-4 ? '水平向左' : '为零'})`, color: PHYSICS_COLORS.forceNet },
+            { label: '安培力 F_安', value: Math.abs(res.F_ampere).toFixed(2), unit: `N (${res.F_ampere > 1e-4 ? '水平向右' : res.F_ampere < -1e-4 ? '水平向左' : '为零'})`, color: PHYSICS_COLORS.lorentzForce },
             { label: '支持力 N', value: res.N.toFixed(2), unit: 'N', color: PHYSICS_COLORS.normalForce },
             { label: '摩擦力 f', value: fText, unit: fUnit, color: PHYSICS_COLORS.friction, highlight: res.state === 'equilibrium' ? undefined : 'extreme' },
             { label: '瞬时加速度 a', value: res.a.toFixed(2), unit: 'm/s²', color: PHYSICS_COLORS.acceleration, highlight: Math.abs(res.a) > 0.01 ? 'extreme' : 'zero' },
@@ -1076,6 +1076,7 @@ export function buildElectromagnetismQuantities(
             symbol: 'E', 
             value: Math.abs(emf), 
             unit: 'V',
+            color: PHYSICS_COLORS.emf,
             highlight: Math.abs(emf) > 1e-4 ? 'extreme' as const : 'zero' as const
           },
           { 
@@ -1194,9 +1195,9 @@ export function buildElectromagnetismQuantities(
 
       const quantities = [
         ...base,
-        { label: '感应电动势 E', value: Math.abs(EMF).toFixed(3), unit: 'V', color: PHYSICS_COLORS.magneticField },
+        { label: '感应电动势 E', value: Math.abs(EMF).toFixed(3), unit: 'V', color: PHYSICS_COLORS.emf },
         { label: '感应电流 I', value: Math.abs(I).toFixed(3), unit: 'A', color: PHYSICS_COLORS.electricCurrent },
-        { label: '瞬时安培力 F_安', symbol: 'F_{安}', value: F_amp.toFixed(3), unit: 'N', color: PHYSICS_COLORS.forceNet, highlight: 'extreme' as const },
+        { label: '瞬时安培力 F_安', symbol: 'F_{安}', value: F_amp.toFixed(3), unit: 'N', color: PHYSICS_COLORS.lorentzForce, highlight: 'extreme' as const },
         { label: '回路发热功率 P_热', symbol: 'P_{热}', value: P_heat.toFixed(3), unit: 'W', color: PHYSICS_COLORS.heatLoss },
       ]
 

@@ -327,7 +327,7 @@ export default function CircuitAnalysis() {
   const renderResistor = (x: number, y: number, label: string, resistance: number) => {
     // 电阻色环根据阻值确定 (这里 R1=20 对应红-黑-黑，R3=30 对应橙-黑-黑)
     const is30 = resistance === 30
-    const ring1Color = is30 ? PHYSICS_COLORS.electricPotential : '#EF4444' // 3对应橙黄，2对应红
+    const ring1Color = is30 ? '#F97316' : '#EF4444' // 3对应橙色，2对应红色（电阻色环国际标准）
     const ring2Color = '#1C1917' // 0对应黑
     const ring3Color = '#1C1917' // 乘数 10^0 = 1 对应黑
     const ring4Color = '#D4AF37' // 误差5% 金色

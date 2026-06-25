@@ -1,4 +1,4 @@
-﻿import { useCanvasSize, useViewport, physicsToCanvas } from '@/utils'
+import { useCanvasSize, useViewport, physicsToCanvas } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -314,9 +314,9 @@ export default function KeplerAnimation() {
             {/* 近日点扫过面积 */}
             <path
               d={perihelionSector}
-              fill={PHYSICS_COLORS.electricField}
+              fill={CANVAS_COLORS.annotation}
               fillOpacity={isInPerihelion ? 0.28 : 0.12}
-              stroke={PHYSICS_COLORS.electricField}
+              stroke={CANVAS_COLORS.annotation}
               strokeOpacity={0.35}
               strokeWidth={1}
               className="transition-all duration-200"
@@ -335,9 +335,9 @@ export default function KeplerAnimation() {
             {/* 远日点扫过面积 */}
             <path
               d={aphelionSector}
-              fill={PHYSICS_COLORS.electricField}
+              fill={CANVAS_COLORS.annotation}
               fillOpacity={isInAphelion ? 0.28 : 0.12}
-              stroke={PHYSICS_COLORS.electricField}
+              stroke={CANVAS_COLORS.annotation}
               strokeOpacity={0.35}
               strokeWidth={1}
               className="transition-all duration-200"
@@ -494,11 +494,11 @@ export default function KeplerAnimation() {
 
         {/* ── 8. 恒星(太阳)渲染 ── */}
         <circle cx={sunX} cy={sunY} r={28} fill="url(#sun-glow-grad)" className="animate-pulse" />
-        <circle cx={sunX} cy={sunY} r={14} fill={PHYSICS_COLORS.electricFieldLine} stroke={PHYSICS_COLORS.electricField} strokeWidth={1} />
+        <circle cx={sunX} cy={sunY} r={14} fill={colors.accent[200]} stroke={colors.accent[600]} strokeWidth={1} />
         <text
           x={sunX - 11}
           y={sunY + 32}
-          fill={PHYSICS_COLORS.electricField}
+          fill={colors.accent[600]}
           fontSize={font(11)}
           fontWeight="bold"
           className="select-none"

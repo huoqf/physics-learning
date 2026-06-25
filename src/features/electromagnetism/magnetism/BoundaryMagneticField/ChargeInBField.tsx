@@ -3,7 +3,7 @@ import { SimulationView } from './SimulationView'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { colors } from '@/theme/colors'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
 
 
 export default function ChargeInBField() {
@@ -115,8 +115,8 @@ function VelocityChart() {
               y={yV}
               width={inBFieldEnd - inBFieldStart}
               height={zeroY - yV}
-              fill="#3B82F614"
-              stroke="#3B82F622"
+              fill={withAlpha(PHYSICS_COLORS.negativeCharge, 0.08)}
+              stroke={withAlpha(PHYSICS_COLORS.negativeCharge, 0.13)}
               strokeWidth="1"
               strokeDasharray="2,2"
             />
@@ -126,7 +126,7 @@ function VelocityChart() {
                 x={(inBFieldStart + inBFieldEnd) / 2}
                 y={(yV + zeroY) / 2 + 3}
                 fontSize={font(9)}
-                fill="#3B82F699"
+                fill={withAlpha(PHYSICS_COLORS.negativeCharge, 0.6)}
                 textAnchor="middle"
                 fontWeight="500"
               >

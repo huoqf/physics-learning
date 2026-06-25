@@ -40,8 +40,8 @@ function InterceptBubble({ chartMode, v0 }: { chartMode: number; v0: number }) {
   return (
     <g>
       {/* 截距交点 */}
-      <circle cx={cx} cy={cy} r={4.5} fill="none" stroke="#DC2626" strokeWidth={1.5} />
-      <circle cx={cx} cy={cy} r={2} fill="#DC2626" />
+      <circle cx={cx} cy={cy} r={4.5} fill="none" stroke={PHYSICS_COLORS.acceleration} strokeWidth={1.5} />
+      <circle cx={cx} cy={cy} r={2} fill={PHYSICS_COLORS.acceleration} />
 
       {/* 气泡框 */}
       <rect
@@ -58,7 +58,7 @@ function InterceptBubble({ chartMode, v0 }: { chartMode: number; v0: number }) {
         x={bx + bubbleW / 2}
         y={by + bubbleH / 2 + font(3)}
         fontSize={font(9)}
-        fill="#DC2626"
+        fill={PHYSICS_COLORS.acceleration}
         fontWeight="bold"
         textAnchor="middle"
         className="select-none font-sans"
@@ -181,7 +181,7 @@ export default function KinematicsAdvancedAnimation() {
             y1={arrowVY}
             x2={blockCenterX + arrowLenV}
             y2={arrowVY}
-            stroke="#2563EB"
+            stroke={PHYSICS_COLORS.velocity}
             strokeWidth={2}
             markerEnd="url(#arrow-blue)"
           />
@@ -189,7 +189,7 @@ export default function KinematicsAdvancedAnimation() {
             x={blockCenterX + arrowLenV / 2}
             y={arrowVY - 5}
             fontSize={font(8)}
-            fill="#2563EB"
+            fill={PHYSICS_COLORS.velocity}
             fontWeight="bold"
             textAnchor="middle"
             className="select-none font-mono"
@@ -213,7 +213,7 @@ export default function KinematicsAdvancedAnimation() {
             y1={arrowAY}
             x2={tipX}
             y2={arrowAY}
-            stroke="#DC2626"
+            stroke={PHYSICS_COLORS.acceleration}
             strokeWidth={2}
             markerEnd="url(#arrow-red)"
           />
@@ -221,7 +221,7 @@ export default function KinematicsAdvancedAnimation() {
             x={blockCenterX + (isPositive ? arrowLenA : -arrowLenA) / 2}
             y={arrowAY - 5}
             fontSize={font(8)}
-            fill="#DC2626"
+            fill={PHYSICS_COLORS.acceleration}
             fontWeight="bold"
             textAnchor="middle"
             className="select-none font-mono"
@@ -311,7 +311,7 @@ export default function KinematicsAdvancedAnimation() {
                 markerHeight="6"
                 orient="auto-start-reverse"
               >
-                <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill="#2563EB" />
+                <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill={PHYSICS_COLORS.velocity} />
               </marker>
               <marker
                 id="arrow-red"
@@ -322,7 +322,7 @@ export default function KinematicsAdvancedAnimation() {
                 markerHeight="6"
                 orient="auto-start-reverse"
               >
-                <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill="#DC2626" />
+                <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill={PHYSICS_COLORS.acceleration} />
               </marker>
             </defs>
 
@@ -333,7 +333,7 @@ export default function KinematicsAdvancedAnimation() {
                 y1={GROUND_Y - 50}
                 x2={ORIGIN_X}
                 y2={GROUND_Y + 6}
-                stroke="#DC2626"
+                stroke={PHYSICS_COLORS.acceleration}
                 strokeWidth={1}
                 strokeDasharray="2,2"
                 opacity={0.6}
@@ -342,7 +342,7 @@ export default function KinematicsAdvancedAnimation() {
                 x={ORIGIN_X}
                 y={GROUND_Y - 55}
                 fontSize={font(8)}
-                fill="#DC2626"
+                fill={PHYSICS_COLORS.acceleration}
                 textAnchor="middle"
                 className="select-none font-sans font-medium"
               >

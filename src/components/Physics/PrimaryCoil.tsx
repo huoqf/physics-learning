@@ -177,8 +177,8 @@ export const PrimaryCoil: React.FC<PrimaryCoilProps> = ({
                 cx={px}
                 cy={py}
                 r={particleR}
-                fill={SCENE_COLORS.coil.activeGlow || '#10B981'} 
-                filter="drop-shadow(0 0 2px #10B981)"
+                fill={SCENE_COLORS.coil.activeGlow || '#059669'} 
+                filter={`drop-shadow(0 0 2px ${SCENE_COLORS.coil.activeGlow || '#059669'})`}
               />
             )
           })
