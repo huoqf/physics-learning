@@ -85,6 +85,12 @@ export default function MomentumTheoremAnimation() {
   const isAdvanced = advancedMode === 1
   const groundY = canvasSize.height - MT_LAYOUT.groundOffset
 
+  // 基于截面积 S 计算动态尺寸（平方根缩放，视觉更自然）
+  const sScale = Math.sqrt(S / 0.01) // 以 S=0.01 为基准
+  const nozzleHeight = Math.max(20, Math.min(40, 32 * sScale)) // 管口高度
+  const fluidHeight = Math.max(14, Math.min(28, 26 * sScale)) // 流体柱高度
+  const particleR = Math.max(2, Math.min(4, 3 * sScale)) // 粒子半径
+
   // 1. 动态计算右侧卡片宽度与 Viewport 避让
   const cardWidth = Math.max(300, canvasSize.width * 0.42)
   const vp = useViewport(canvasSize, {
@@ -493,9 +499,9 @@ export default function MomentumTheoremAnimation() {
               {/* 玻璃管道背景与管壁高光线 */}
               <rect
                 x={nozzleX + 15}
-                y={-16}
+                y={-nozzleHeight / 2}
                 width={Math.max(0, plateX + springCompression - nozzleX - 15)}
-                height={32}
+                height={nozzleHeight}
                 fill="rgba(219, 234, 254, 0.12)"
                 stroke="rgba(255, 255, 255, 0.25)"
                 strokeWidth={1}
@@ -503,17 +509,17 @@ export default function MomentumTheoremAnimation() {
               />
               <line
                 x1={nozzleX + 15}
-                y1={-16}
+                y1={-nozzleHeight / 2}
                 x2={plateX + springCompression}
-                y2={-16}
+                y2={-nozzleHeight / 2}
                 stroke="rgba(255, 255, 255, 0.65)"
                 strokeWidth={1.5}
               />
               <line
                 x1={nozzleX + 15}
-                y1={16}
+                y1={nozzleHeight / 2}
                 x2={plateX + springCompression}
-                y2={16}
+                y2={nozzleHeight / 2}
                 stroke="rgba(255, 255, 255, 0.45)"
                 strokeWidth={1.5}
               />
@@ -521,9 +527,9 @@ export default function MomentumTheoremAnimation() {
               {/* 蓝色流体柱 (比玻璃管稍细) */}
               <rect
                 x={nozzleX + 15}
-                y={-13}
+                y={-fluidHeight / 2}
                 width={Math.max(0, plateX + springCompression - nozzleX - 15)}
-                height={26}
+                height={fluidHeight}
                 fill="url(#fluid-grad)"
                 rx={1}
               />
@@ -534,7 +540,7 @@ export default function MomentumTheoremAnimation() {
                   key={`particle-${i}`}
                   cx={p.x}
                   cy={p.offsetY}
-                  r={MT_LAYOUT.particleRadius}
+                  r={particleR}
                   fill={p.hit ? PHYSICS_COLORS.impulse : PHYSICS_COLORS.velocity}
                   opacity={p.hit ? 0.5 : 0.8}
                 />
@@ -544,9 +550,9 @@ export default function MomentumTheoremAnimation() {
               {/* 法兰固定环 */}
               <rect
                 x={nozzleX - 18}
-                y={-19}
+                y={-nozzleHeight / 2 - 3}
                 width={6}
-                height={38}
+                height={nozzleHeight + 6}
                 rx={1.5}
                 fill={SCENE_COLORS.materials.steelSphereGrad[2]}
                 stroke={SCENE_COLORS.materials.steelSphereGrad[3]}
@@ -555,9 +561,9 @@ export default function MomentumTheoremAnimation() {
               {/* 喷嘴主体 */}
               <rect
                 x={nozzleX - 12}
-                y={-16}
+                y={-nozzleHeight / 2}
                 width={27}
-                height={32}
+                height={nozzleHeight}
                 rx={3}
                 fill="url(#metal-grad-mt)"
                 stroke={SCENE_COLORS.materials.steelSphereGrad[3]}
@@ -623,10 +629,10 @@ export default function MomentumTheoremAnimation() {
 
               {/* Δm 标注框与文字 (随挡板移动自适应居中) */}
               <rect
-                x={(nozzleX + 15 + plateX + springCompression) / 2 - 15}
-                y={-13}
-                width={30}
-                height={26}
+                x={(nozzleX + 15 + plateX + springCompression) / 2 - fluidHeight / 2}
+                y={-fluidHeight / 2}
+                width={fluidHeight}
+                height={fluidHeight}
                 fill="none"
                 stroke={PHYSICS_COLORS.momentum}
                 strokeWidth={1.5}
