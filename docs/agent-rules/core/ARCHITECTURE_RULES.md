@@ -268,13 +268,13 @@ tests/
 
 | 路径 | 入口 | 适用场景 | 来源 |
 |------|------|---------|------|
-| 路径 A（推荐） | `useViewport()` | 场景元素的比例定位（**新组件强制**） | `src/utils/useViewport.ts` |
-| 路径 B（保留） | `computeScale()` | 物理量→像素转换（与 useViewport 可共存） | `src/utils/coordinate.ts` |
+| 路径 A（强制） | `useViewport()` | 场景元素的比例定位（**全部组件强制**） | `src/utils/useViewport.ts` |
+| 路径 B（保留） | `computeScale()` | 物理量→像素转换，与 useViewport 共存 | `src/utils/coordinate.ts` |
 
-- **useViewport** → 场景元素的比例定位（新组件强制使用）
+- **useViewport** → 场景元素的比例定位（**全部 Animation 组件强制使用**）
 - **computeScale** → 物理量→像素转换（保留，与 useViewport 可共存）
 - **createSceneScaleFromViewport** → 当组件已使用 useViewport 时，用此替代 `createSceneScale` 构建 SceneScale
-- 新增组件**禁止**使用绝对像素定位（如 `groundY = height - N`），必须用 `vp.visibleH * ratio` 或 LAYOUT 具名常量
+- 所有 Animation 组件**禁止**使用绝对像素定位（如 `groundY = height - N`），必须用 `vp.visibleH * ratio` 或 LAYOUT 具名常量
 
 ---
 

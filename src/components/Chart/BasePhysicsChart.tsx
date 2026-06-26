@@ -166,13 +166,17 @@ export function BasePhysicsChart({
   const px = useFixed ? (v: number) => v : autoSize.px
   const font = useFixed ? (v: number) => clamp(v, 7, 16) : autoSize.font
 
+  const isCompactHeight = height < 220
+  const marginTopVal = isCompactHeight ? 16 : (isMini ? CHART_LAYOUT.miniMarginTop : CHART_LAYOUT.marginTop)
+  const marginBottomVal = isCompactHeight ? 38 : (isMini ? CHART_LAYOUT.miniMarginBottom : CHART_LAYOUT.marginBottom)
+
   const margin = {
     left: px(isMini ? CHART_LAYOUT.miniMarginLeft : CHART_LAYOUT.marginLeft),
     right: yDomain2
       ? px(isMini ? CHART_LAYOUT.miniMarginLeft : CHART_LAYOUT.marginLeft)
       : px(isMini ? CHART_LAYOUT.miniMarginRight : CHART_LAYOUT.marginRight),
-    top: px(isMini ? CHART_LAYOUT.miniMarginTop : CHART_LAYOUT.marginTop),
-    bottom: px(isMini ? CHART_LAYOUT.miniMarginBottom : CHART_LAYOUT.marginBottom),
+    top: px(marginTopVal),
+    bottom: px(marginBottomVal),
   }
 
   const plotW = Math.max(10, width - margin.left - margin.right)

@@ -1,7 +1,7 @@
 # Canvas/SVG/图表动态布局与渲染规范
 
 > 优先级：低于 02_UI_RULES.md，高于动画实现细节
-> 最后更新：2026-06-16
+> 最后更新：2026-06-26
 
 ---
 
@@ -32,12 +32,13 @@
 <BasicAmpereScene x={20} y={40} w={480} h={400} />
 ```
 
-### 2.2 推荐方案：useCanvasSize + computeScale（首选）
+### 2.2 强制方案：useCanvasSize + useViewport（铁律）
 
-所有动画组件**必须**使用 `useCanvasSize()` 获取画布尺寸，通过返回的 `scale` / `px()` / `font()` 函数进行响应式缩放：
+所有动画组件**必须**一起使用 `useCanvasSize()` + `useViewport()` 获取画布尺寸，通过 `vp.transform` 实现响应式布局：
 
 ```tsx
-const [containerRef, { width, height, scale, px, font }] = useCanvasSize(CANVAS_PRESETS.wide)
+const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 480 })
 ```
 
 物理比例尺**必须**通过 `computeScale()` 基于物理世界范围计算：
@@ -61,7 +62,10 @@ const physicsScale = computeScale(width, height, WORLD, padding)
 
 画布预设尺寸从 `CANVAS_PRESETS`（`@/theme/spacing`）引用，动画 UI token 从 `@/theme/animationTokens` 引用。
 
-### 2.3 备选方案：viewBox + 比例常量
+### 2.3 旧段策遗留：viewBox + 比例常量（新组件禁用）
+
+> ⚠️ **新动画组件禁止使用此方案**。存量测试证明固定 viewBox 在某些屏幕尺寸和三栏布局下存在内容护照跨引问题，且无法支持 overlay 憿让。  
+> 局部去除的旧组件（`ReflectionAnimation`、`ThinLensAnimation`）且如如此使用，待迁移完成后此注将被删除。
 
 ```ts
 // ✅ 推荐：使用 viewBox + 比例常量
@@ -209,6 +213,7 @@ const { x, y } = pt.matrixTransform(svg.getScreenCTM()!.inverse())
 | 字体大小 | SVG 内使用 `fontSize={font(N)}`，画布内 HTML 使用 `style={{ fontSize: font(N) }}`，禁止裸值 |
 | 响应式 | 调整浏览器窗口大小时，布局比例保持不变，无视觉跳变 |
 | **指针事件** | **有交互拖拽的 SVG 组件使用 `getScreenCTM().inverse()` 矩阵变换，禁止手动计算 `vp.tx/vp.scale` 偏移** |
+| **useViewport** | **新动画组件必须使用，viewBox = 真实容器尺寸 + `<g transform={vp.transform}>`** |
 
 
 ---

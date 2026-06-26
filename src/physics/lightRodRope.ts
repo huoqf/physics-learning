@@ -76,6 +76,10 @@ export interface LRRModelState {
   eventA?: 'slack' | 'tension' | null
   /** B球在该时间步触发的事件 */
   eventB?: 'slack' | 'tension' | null
+  /** 径向速度 (m/s) (代表绳的伸缩速度) */
+  vr: number
+  /** 运动阶段结束原因 */
+  stopReason?: 'reach_bottom' | 'slack' | null
 }
 
 /**
@@ -121,22 +125,33 @@ export function precomputeLightRodRopeTrajectory(
   // 绳子拉直状态极径
   let r_A = R_A0
   let r_B = R_B0
-  let v_r = 0.0 // 径向速度 (A球向外为正)
+  let v_r = 0.0 // 径向速度 (A球向外/向下为正)
+
+  if (mode === 1) {
+    thetaA = Math.PI / 2
+    thetaB = theta0
+    wA = 0.0
+    wB = 0.0
+    r_A = R_A0
+    r_B = R_B0
+    v_r = 0.0
+  }
 
   // 初始直角物理坐标 (悬挂点为原点，x向右为正，y向下为正)
-  let x_A = r_A * Math.cos(thetaA)
+  let x_A = mode === 1 ? 0.0 : r_A * Math.cos(thetaA)
   let y_A = r_A * Math.sin(thetaA)
   let x_B = r_B * Math.cos(thetaB)
   let y_B = r_B * Math.sin(thetaB)
 
   // 初始直角物理坐标下速度分量 (x向右为正，y向下为正)
-  let vAx = v_r * Math.cos(thetaA) - r_A * wA * Math.sin(thetaA)
-  let vAy = v_r * Math.sin(thetaA) + r_A * wA * Math.cos(thetaA)
-  let vBx = -v_r * Math.cos(thetaB) - r_B * wB * Math.sin(thetaB)
-  let vBy = -v_r * Math.sin(thetaB) + r_B * wB * Math.cos(thetaB)
+  let vAx = mode === 1 ? 0.0 : v_r * Math.cos(thetaA) - r_A * wA * Math.sin(thetaA)
+  let vAy = mode === 1 ? 0.0 : v_r * Math.sin(thetaA) + r_A * wA * Math.cos(thetaA)
+  let vBx = mode === 1 ? 0.0 : -v_r * Math.cos(thetaB) - r_B * wB * Math.sin(thetaB)
+  let vBy = mode === 1 ? 0.0 : -v_r * Math.sin(thetaB) + r_B * wB * Math.cos(thetaB)
 
   // 绳子是否松弛 (一端松弛即整根松弛)
   let isSlack = false
+  let stopReason: 'reach_bottom' | 'slack' | null = null
 
   let t = 0.0
   const subSteps = 100
@@ -216,47 +231,36 @@ export function precomputeLightRodRopeTrajectory(
       T_A = F_Ar
       T_B = F_Br
     } else {
-      // 双绳分系两球（跨滑轮动力学耦合连接体）
-
-      // 用当前的实际物理高度计算势能 (零势点为 L_rope 挂垂底端)
-      epA = m1 * g * (L_rope - y_A)
+      // 双绳分系两球（定滑轮耦合高考动力学模型）
+      epA = m1 * g * (L_rope - r_A)
       epB = m2 * g * (L_rope - y_B)
 
-      // 动能
-      ekA = 0.5 * m1 * (vAx * vAx + vAy * vAy)
-      ekB = 0.5 * m2 * (vBx * vBx + vBy * vBy)
+      ekA = 0.5 * m1 * v_r * v_r
+      ekB = 0.5 * m2 * (v_r * v_r + r_B * wB * r_B * wB)
 
-      // 绳拉力计算 (若拉紧，绳张力 T 沿径向向内作用在两个球上)
-      if (!isSlack) {
-        // 利用动力学约束方程解出张力 T
-        const numerator = g * (Math.sin(thetaA) + Math.sin(thetaB)) + r_A * wA * wA + r_B * wB * wB
-        const denominator = 1.0 / m1 + 1.0 / m2
-        const T = numerator / denominator
-        const T_val = T > 0 ? T : 0.0
+      // 用当前的实际状态计算绳张力 T
+      const numerator = g * (1 + Math.sin(thetaB)) + r_B * wB * wB
+      const denominator = 1.0 / m1 + 1.0 / m2
+      const T = numerator / denominator
+      const T_val = T > 0 ? T : 0.0
 
-        T_A = T_val
-        T_B = T_val
+      T_A = T_val
+      T_B = T_val
 
-        // A球拉力矢量 (Cartesian 坐标，x右，y向上为正)
-        F_Ax = -T_val * Math.cos(thetaA)
-        F_Ay = T_val * Math.sin(thetaA)
-        F_A_radial = { x: F_Ax, y: F_Ay }
+      // A球拉力矢量 (物理坐标 x->, y-向上为正)
+      // A球只在竖直方向移动，拉力竖直向上，即 F_A = (0, T_val)
+      F_Ax = 0.0
+      F_Ay = T_val
+      F_A_radial = { x: 0.0, y: T_val }
 
-        // B球拉力矢量
-        F_Bx = -T_val * Math.cos(thetaB)
-        F_By = T_val * Math.sin(thetaB)
-        F_B_radial = { x: F_Bx, y: F_By }
+      // B球拉力矢量指向滑轮 (即 -cos(thetaB), sin(thetaB))
+      F_Bx = -T_val * Math.cos(thetaB)
+      F_By = T_val * Math.sin(thetaB)
+      F_B_radial = { x: F_Bx, y: F_By }
 
-        // 绳对小球拉扯做功的瞬时功率 P = F * v
-        // 绳拉力为反径向，A球径向速度为 v_r，B球径向速度为 -v_r
-        powerA = -T_val * v_r
-        powerB = T_val * v_r // 严格满足 powerA + powerB = 0
-      } else {
-        T_A = 0
-        T_B = 0
-        powerA = 0
-        powerB = 0
-      }
+      // 绳拉力做功的瞬时功率 P = F * v
+      powerA = -T_val * v_r
+      powerB = T_val * v_r
     }
 
     const EA = ekA + epA
@@ -297,13 +301,22 @@ export function precomputeLightRodRopeTrajectory(
       T_A,
       T_B,
       eventA: stepEventA,
-      eventB: stepEventB
+      eventB: stepEventB,
+      vr: mode === 1 ? v_r : 0.0,
+      stopReason
     })
+
+    if (stopReason) {
+      break
+    }
 
     // 如果是最后一点，直接跳出
     if (t >= tMax) break
 
     // 子步数值积分 (Euler-Cromer)
+    let breakOuter = false
+    let stepStopReason: 'reach_bottom' | 'slack' | null = null
+
     for (let step = 0; step < subSteps; step++) {
       if (mode === 0) {
         // 刚性轻杆
@@ -326,133 +339,109 @@ export function precomputeLightRodRopeTrajectory(
         vBy = R_B0 * wB * Math.cos(thetaB)
       } else {
         // 双绳分系，跨滑轮动力学耦合
+        const numerator = g * (1 + Math.sin(thetaB)) + r_B * wB * wB
+        const denominator = 1.0 / m1 + 1.0 / m2
+        const T = numerator / denominator
 
-        if (!isSlack) {
-          // ─── 绳拉紧状态下的耦合运动 ───
-          const numerator = g * (Math.sin(thetaA) + Math.sin(thetaB)) + r_A * wA * wA + r_B * wB * wB
-          const denominator = 1.0 / m1 + 1.0 / m2
-          const T = numerator / denominator
-
-          if (T < 0) {
-            // 张力降为 0，绳松弛
-            isSlack = true
-            stepEventA = 'slack'
-            stepEventB = 'slack'
-            
-            // 松弛后转为独立的抛体加速
-            vAy = vAy + g * subDt
-            x_A = x_A + vAx * subDt
-            y_A = y_A + vAy * subDt + 0.5 * g * subDt * subDt
-
-            vBy = vBy + g * subDt
-            x_B = x_B + vBx * subDt
-            y_B = y_B + vBy * subDt + 0.5 * g * subDt * subDt
-            
-            r_A = Math.sqrt(x_A * x_A + y_A * y_A)
-            thetaA = Math.atan2(y_A, x_A)
-            r_B = Math.sqrt(x_B * x_B + y_B * y_B)
-            thetaB = Math.atan2(y_B, x_B)
-            
-            wA = (-vAx * y_A + vAy * x_A) / (r_A * r_A)
-            wB = (-vBx * y_B + vBy * x_B) / (r_B * r_B)
-            v_r = (vAx * x_A + vAy * y_A) / r_A
-          } else {
-            // 拉紧状态加速
-            const a_r = g * Math.sin(thetaA) - T / m1 + r_A * wA * wA
-            const alpha_A = (-g * Math.cos(thetaA) - 2.0 * v_r * wA) / r_A
-            const alpha_B = (-g * Math.cos(thetaB) + 2.0 * v_r * wB) / r_B
-
-            v_r = v_r + a_r * subDt
-            wA = wA + alpha_A * subDt
-            wB = wB + alpha_B * subDt
-
-            r_A = r_A + v_r * subDt
-            
-            // 极径幅值保护，防止小球冲入滑轮中心导致除零发散
-            const MIN_R = 0.05
-            if (r_A < MIN_R) {
-              r_A = MIN_R
-              v_r = 0
-            } else if (r_A > L_rope - MIN_R) {
-              r_A = L_rope - MIN_R
-              v_r = 0
-            }
-            r_B = L_rope - r_A
-
-            thetaA = thetaA + wA * subDt
-            thetaB = thetaB + wB * subDt
-
-            // 更新直角物理坐标与速度
-            x_A = r_A * Math.cos(thetaA)
-            y_A = r_A * Math.sin(thetaA)
-            vAx = v_r * Math.cos(thetaA) - r_A * wA * Math.sin(thetaA)
-            vAy = v_r * Math.sin(thetaA) + r_A * wA * Math.cos(thetaA)
-
-            x_B = r_B * Math.cos(thetaB)
-            y_B = r_B * Math.sin(thetaB)
-            vBx = -v_r * Math.cos(thetaB) - r_B * wB * Math.sin(thetaB)
-            vBy = -v_r * Math.sin(thetaB) + r_B * wB * Math.cos(thetaB)
-          }
-        } else {
-          // ─── 绳松弛状态下，小球做独立的抛体运动 ───
-          vAy = vAy + g * subDt
-          x_A = x_A + vAx * subDt
-          y_A = y_A + vAy * subDt + 0.5 * g * subDt * subDt
-
-          vBy = vBy + g * subDt
-          x_B = x_B + vBx * subDt
-          y_B = y_B + vBy * subDt + 0.5 * g * subDt * subDt
-
-          // 重新反算极坐标状态
-          r_A = Math.sqrt(x_A * x_A + y_A * y_A)
-          thetaA = Math.atan2(y_A, x_A)
-          r_B = Math.sqrt(x_B * x_B + y_B * y_B)
-          thetaB = Math.atan2(y_B, x_B)
-
-          // 重新投影算极坐标速度分量
-          const vAr_cur = (vAx * x_A + vAy * y_A) / r_A
-          const vBr_cur = (vBx * x_B + vBy * y_B) / r_B
-          wA = (-vAx * y_A + vAy * x_A) / (r_A * r_A)
-          wB = (-vBx * y_B + vBy * x_B) / (r_B * r_B)
-
-          // 重新拉直判定：极径之和超出或等于绳总长，且处于径向向外拉伸趋势
-          if (r_A + r_B >= L_rope) {
-            const v_rel = vAr_cur + vBr_cur
-            if (v_rel > 0) {
-              // 发生拉紧非弹性碰撞，系统径向动量在两球之间转移
-              const v_r_new = (m1 * vAr_cur - m2 * vBr_cur) / (m1 + m2)
-              v_r = v_r_new
-
-              // 更新速度分量
-              vAx = v_r * Math.cos(thetaA) - r_A * wA * Math.sin(thetaA)
-              vAy = v_r * Math.sin(thetaA) + r_A * wA * Math.cos(thetaA)
-              vBx = -v_r * Math.cos(thetaB) - r_B * wB * Math.sin(thetaB)
-              vBy = -v_r * Math.sin(thetaB) + r_B * wB * Math.cos(thetaB)
-
-              // 几何位置微调，纠正数值漂移
-              const scale = L_rope / (r_A + r_B)
-              r_A = r_A * scale
-              r_B = r_B * scale
-              x_A = r_A * Math.cos(thetaA)
-              y_A = r_A * Math.sin(thetaA)
-              x_B = r_B * Math.cos(thetaB)
-              y_B = r_B * Math.sin(thetaB)
-
-              isSlack = false
-              stepEventA = 'tension'
-              stepEventB = 'tension'
-            }
-          }
+        if (T <= 0.0001) {
+          isSlack = true
+          stepStopReason = 'slack'
+          breakOuter = true
+          break
         }
+
+        if (thetaB >= Math.PI / 2) {
+          thetaB = Math.PI / 2
+          wB = 0
+          v_r = 0
+          stepStopReason = 'reach_bottom'
+          breakOuter = true
+          break
+        }
+
+        // 拉紧状态加速
+        const a_r = g - T / m1
+        const alpha_B = (g * Math.cos(thetaB) + 2.0 * v_r * wB) / r_B
+
+        v_r = v_r + a_r * subDt
+        wB = wB + alpha_B * subDt
+        thetaB = thetaB + wB * subDt
+
+        r_A = r_A + v_r * subDt
+        
+        // 极径幅值保护，防止小球冲入滑轮中心导致除零发散
+        const MIN_R = 0.05
+        if (r_A < MIN_R) {
+          r_A = MIN_R
+          v_r = 0
+        } else if (r_A > L_rope - MIN_R) {
+          r_A = L_rope - MIN_R
+          v_r = 0
+        }
+        r_B = L_rope - r_A
+
+        // 更新直角物理坐标与速度
+        x_A = 0.0
+        y_A = r_A
+        vAx = 0.0
+        vAy = v_r
+
+        x_B = r_B * Math.cos(thetaB)
+        y_B = r_B * Math.sin(thetaB)
+        vBx = -v_r * Math.cos(thetaB) - r_B * wB * Math.sin(thetaB)
+        vBy = -v_r * Math.sin(thetaB) + r_B * wB * Math.cos(thetaB)
       }
     }
 
-    // 将本时间步内子步发生的事件记录到轨迹点的最后状态
-    if (stepEventA) {
-      points[points.length - 1].eventA = stepEventA
+    if (stepStopReason) {
+      stopReason = stepStopReason
     }
-    if (stepEventB) {
-      points[points.length - 1].eventB = stepEventB
+
+    if (breakOuter) {
+      // 记录最后一刻截断状态点
+      t += dt
+      let lastEpA = m1 * g * (L_rope - r_A)
+      let lastEpB = m2 * g * (L_rope - y_B)
+      let lastEkA = 0.5 * m1 * v_r * v_r
+      let lastEkB = 0.5 * m2 * (v_r * v_r + r_B * wB * r_B * wB)
+      
+      points.push({
+        t,
+        mode,
+        thetaA,
+        thetaB,
+        wA,
+        wB,
+        vA: Math.sqrt(vAx * vAx + vAy * vAy),
+        vB: Math.sqrt(vBx * vBx + vBy * vBy),
+        alphaA: 0,
+        alphaB: 0,
+        EpA: lastEpA,
+        EpB: lastEpB,
+        EkA: lastEkA,
+        EkB: lastEkB,
+        EA: lastEkA + lastEpA,
+        EB: lastEkB + lastEpB,
+        Etot: lastEkA + lastEpA + lastEkB + lastEpB,
+        F_A: { x: 0.0, y: stopReason === 'slack' ? 0.0 : T_A },
+        F_B: {
+          x: stopReason === 'slack' ? 0.0 : -T_B * Math.cos(thetaB),
+          y: stopReason === 'slack' ? 0.0 : T_B * Math.sin(thetaB),
+        },
+        powerB: 0.0,
+        powerA: 0.0,
+        x_A_rel: x_A,
+        y_A_rel: y_A,
+        x_B_rel: x_B,
+        y_B_rel: y_B,
+        isSlackA: isSlack,
+        isSlackB: isSlack,
+        T_A: stopReason === 'slack' ? 0.0 : T_A,
+        T_B: stopReason === 'slack' ? 0.0 : T_B,
+        vr: v_r,
+        stopReason
+      })
+      break
     }
 
     t += dt
@@ -478,7 +467,8 @@ export function getLRRStateAtTime(
       alphaA: 0, alphaB: 0, EpA: 0, EpB: 0, EkA: 0, EkB: 0, EA: 0, EB: 0, Etot: 0,
       F_A: { x: 0, y: 0 }, F_B: { x: 0, y: 0 }, powerB: 0, powerA: 0,
       x_A_rel: 0, y_A_rel: 0, x_B_rel: 0, y_B_rel: 0,
-      isSlackA: false, isSlackB: false, T_A: 0, T_B: 0
+      isSlackA: false, isSlackB: false, T_A: 0, T_B: 0,
+      vr: 0.0, stopReason: null
     }
   }
   if (t <= points[0].t) return { ...points[0] }
@@ -550,5 +540,7 @@ export function getLRRStateAtTime(
     T_B: p0.T_B + (p1.T_B - p0.T_B) * ratio,
     eventA: p0.eventA || p1.eventA,
     eventB: p0.eventB || p1.eventB,
+    vr: p0.vr + (p1.vr - p0.vr) * ratio,
+    stopReason: p1.stopReason || p0.stopReason
   }
 }

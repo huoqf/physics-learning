@@ -362,9 +362,9 @@ export function buildEnergyQuantities(
     case 'anim-light-rod-rope': {
       const m1 = params.m1 ?? 1.0
       const m2 = params.m2 ?? 1.0
-      const L = params.L ?? 1.2
-      const g = GRAVITY
       const constraint = params.constraint ?? 0 // 0=杆, 1=绳
+      const L = constraint === 0 ? (params.L ?? 1.2) : 1.2
+      const g = GRAVITY
 
       const trajectory = precomputeLightRodRopeTrajectory(m1, m2, L, g, constraint, 6)
       const state = getLRRStateAtTime(trajectory, time)
@@ -392,25 +392,28 @@ export function buildEnergyQuantities(
           ],
         }
       } else {
-        // ── 双绳分系两球 ──
+        // ── 双绳分系两球（跨定滑轮高考模型） ──
         return {
           quantities: [
             ...base,
             { label: 'A球机械能', symbol: 'EA', value: state.EA, unit: 'J', color: ENERGY_COLORS.potentialGravity },
             { label: 'B球机械能', symbol: 'EB', value: state.EB, unit: 'J', color: ENERGY_COLORS.potentialElastic },
             { label: '系统总能量', symbol: 'E总', value: state.Etot, unit: 'J', highlight: 'extreme' as const, color: PHYSICS_COLORS.kineticEnergy },
-            { label: '绳张力', symbol: 'T', value: state.T_A, unit: 'N', highlight: state.T_A < 0.01 ? 'zero' as const : undefined },
-            { label: 'A球线速度', symbol: 'v_A', value: state.vA, unit: 'm/s' },
-            { label: 'B球线速度', symbol: 'v_B', value: state.vB, unit: 'm/s' },
+            { label: '绳中张力', symbol: 'T', value: state.T_B, unit: 'N', highlight: state.T_B < 0.01 ? 'zero' as const : undefined },
+            { label: 'A球速度 (v_A)', symbol: 'v_A', value: state.vA, unit: 'm/s' },
+            { label: 'B球速度 (v_B)', symbol: 'v_B', value: state.vB, unit: 'm/s' },
+            { label: '沿绳速度分量', symbol: 'v_\\parallel', value: state.vr, unit: 'm/s', color: PHYSICS_COLORS.velocity },
           ],
           formulas: [
-            { name: '沿绳速度约束', latex: 'v_{A\\parallel} = v_{B\\parallel} \\quad (\\text{仅绳紧绷时})', condition: '绳紧绷时两球沿绳方向速度分量相等', level: 'important' },
-            { name: '动力学临界', latex: 'T \\ge 0', condition: '绳只能提供拉力，不能提供推力', level: 'core' },
-            { name: '能量突变', latex: 'T=0 \\implies W_{\\text{绳}}=0 \\implies \\Delta E_A=\\Delta E_B=0', condition: '绳松弛后各球机械能守恒', level: 'core' },
+            { name: '初始瞬时张力', latex: 'T_0 = \\frac{g(1+\\cos\\theta_0)}{1/m_1 + 1/m_2}', note: '静止释放瞬时，绳中拉力大小', level: 'important' },
+            { name: '初始瞬时加速度', latex: 'a_{A0} = g - \\frac{T_0}{m_1}, \\quad a_{Bt0} = g\\sin\\theta_0', note: 'A球竖直加速度，B球摆动切向加速度', level: 'important' },
+            { name: '沿绳速度约束', latex: 'v_A = v_B\\cos\\phi = v_\\parallel', note: '由于绳不可伸长，两球沿绳分速度相等', level: 'core' },
+            { name: '系统机械能守恒', latex: '\\Delta E_{\\text{k增}} = \\Delta E_{\\text{p减}}', note: '第一运动阶段系统总机械能守恒', level: 'core' },
           ],
           gaokaoPoints: [
-            { text: '【软约束特征】绳子只能提供拉力。一旦出现推力趋势，绳子瞬间松弛塌软，小球脱离圆周轨道转为抛体运动。', importance: 'hard' as const },
-            { text: '【图形突变（扣题关键）】盯着 P-t 图！当某球的功率突然砸向 0 轴并保持水平时，说明该绳已松弛，系统的能量转移终止。', importance: 'extend' as const },
+            { text: '【初始瞬时】释放瞬时两球速度及向心加速度为0，但沿绳方向加速度大小相等。对两球分别列牛顿第二定律，可隔离解出初始拉力T_0与A、B球的加速度。', importance: 'gaokao' as const },
+            { text: '【速度关联】任意时刻，小球 A 的竖直速度 v_A 等于小球 B 在沿绳方向的速度分量 v_∥。摆球 B 的合速度为沿绳与切向分速度的矢量和，因此恒有 v_B >= v_A。', importance: 'hard' as const },
+            { text: '【能量守恒】第一运动阶段，系统无非保守外力做功，系统总机械能守恒。到达最低点或绳松弛瞬时，机械能守恒方程（动能增量等于势能减量）完全成立。', importance: 'core' as const },
           ],
         }
       }

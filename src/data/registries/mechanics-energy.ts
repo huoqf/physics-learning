@@ -238,9 +238,9 @@ export const mechanicsEnergyAnimations = defineAnimations({
     paramMeta: [
       { key: 'm1', label: 'A球质量 m₁', min: 0.5, max: 1.5, step: 0.1, unit: 'kg' },
       { key: 'm2', label: 'B球质量 m₂', min: 0.5, max: 1.5, step: 0.1, unit: 'kg' },
-      { key: 'L', label: '轻杆长度 L', min: 1.0, max: 1.4, step: 0.05, unit: 'm' },
-      { key: 'theta0', label: '初始偏角 θ₀', min: 15, max: 45, step: 5, unit: '°' },
-      { key: 'v0', label: '初始速度 v₀', min: 0.0, max: 6.0, step: 0.5, unit: 'm/s' },
+      { key: 'L', label: '轻杆长度 L', min: 1.0, max: 1.4, step: 0.05, unit: 'm', showIf: 'constraint', showIfValue: 0 },
+      { key: 'theta0', label: '初始偏角 θ₀', min: 15, max: 90, step: 5, unit: '°' },
+      { key: 'v0', label: '初始速度 v₀', min: 0.0, max: 6.0, step: 0.5, unit: 'm/s', hideIf: 'constraint', hideIfValue: 1 },
     ],
     SidebarExtra: lazy(() => import('@/features/mechanics/energy/LightRodRopeSidebar')),
   },

@@ -1,6 +1,6 @@
 # 延后处理待办事项
 
-> 最后更新：2026-06-24
+> 最后更新：2026-06-26
 
 ---
 
@@ -23,18 +23,20 @@
 
 ## 三、Viewport 架构（P1）
 
-### 已完成
+### 进度
 
-- ✅ FrictionAnimation 迁移至 useViewport（P3 示范）
-- ✅ NewtonSecondAnimation 迁移至 useViewport
+- ✅ 42/44 Animation 组件已完成 useViewport 迁移（含 Transformer.tsx）
+- ⏳ 剩余 2 个光学组件使用固定 viewBox 方案，待迁移：
+  - `ReflectionAnimation.tsx`（低风险，~225 行，无拖拽）
+  - `ThinLensAnimation.tsx`（中等风险，~811 行，含拖拽 + foreignObject）
 
-### 待做
-
-1. **统一 panel layout 工具**：viewport overlay 和 DOM panel 同源计算
-2. **其余 dynamics 组件 Viewport 迁移**：Gravity / Spring（按 FrictionAnimation P3 范本）
-
-### 硬约束
+### 硬约束（迁移时遵守）
 
 - transform 必须采用设计稿左上角语义
 - overlay 和 DOM panel 尺寸来自同一计算结果
 - 不让组件反向 import registry
+- `ThinLensAnimation` 迁移后须人工验证两种模式（基础/共轭法）和拖拽精度
+
+### 参考
+
+- 迁移指南见 [`VIEWPORT_AUDIT.md §4`](../../VIEWPORT_AUDIT.md)
