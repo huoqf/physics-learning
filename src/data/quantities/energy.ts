@@ -369,27 +369,50 @@ export function buildEnergyQuantities(
       const trajectory = precomputeLightRodRopeTrajectory(m1, m2, L, g, constraint, 6)
       const state = getLRRStateAtTime(trajectory, time)
 
-      return {
-        quantities: [
-          ...base,
-          { label: 'A球机械能', symbol: 'EA', value: state.EA, unit: 'J', color: ENERGY_COLORS.potentialGravity },
-          { label: 'B球机械能', symbol: 'EB', value: state.EB, unit: 'J', color: ENERGY_COLORS.potentialElastic },
-          { label: '系统总能量', symbol: 'E总', value: state.Etot, unit: 'J', highlight: 'extreme' as const, color: PHYSICS_COLORS.kineticEnergy },
-          ...(constraint === 0
-            ? [{ label: '能量传输功率', symbol: 'P_trans', value: state.powerB, unit: 'W', highlight: state.powerB > 0.05 ? 'positive' as const : undefined }]
-            : []),
-          { label: 'A球线速度', symbol: 'v_A', value: state.vA, unit: 'm/s' },
-          { label: 'B球线速度', symbol: 'v_B', value: state.vB, unit: 'm/s' },
-        ],
-        formulas: [
-          { name: '角速度与线速度约束', latex: '\\omega_A = \\omega_B \\implies v_B = 2v_A', condition: '刚性轻杆连接下', level: 'important' },
-          { name: '轻杆对个体做功', latex: 'W_{\\text{杆}\\to A} = \\Delta E_A < 0 \\quad W_{\\text{杆}\\to B} = \\Delta E_B > 0', condition: '刚性杆摆下时，能量从 A 向 B 转移', level: 'core' },
-          { name: '系统总能量守恒', latex: 'W_{\\text{杆}\\to A} + W_{\\text{杆}\\to B} = 0 \\implies \\Delta E_{\\text{系统}} = 0', level: 'core' },
-        ],
-        gaokaoPoints: [
-          { text: '【系统守恒，个体不守恒】轻杆拉力不沿杆方向，对个体做功不为零，故个体机械能不守恒；但弹力属于内力且总功之和为零，系统总机械能守恒。', importance: 'hard' as const },
-          { text: '【杆-绳拓扑突变】切换为轻绳后，绳子松弛无法提供非径向力，无法进行能量传输，两球退化为独立单摆各自机械能守恒。', importance: 'extend' as const },
-        ],
+      if (constraint === 0) {
+        // ── 刚性轻杆连接 ──
+        return {
+          quantities: [
+            ...base,
+            { label: 'A球机械能', symbol: 'EA', value: state.EA, unit: 'J', color: ENERGY_COLORS.potentialGravity },
+            { label: 'B球机械能', symbol: 'EB', value: state.EB, unit: 'J', color: ENERGY_COLORS.potentialElastic },
+            { label: '系统总能量', symbol: 'E总', value: state.Etot, unit: 'J', highlight: 'extreme' as const, color: PHYSICS_COLORS.kineticEnergy },
+            { label: '能量传输功率', symbol: 'P_trans', value: state.powerB, unit: 'W', highlight: state.powerB > 0.05 ? 'positive' as const : undefined },
+            { label: 'A球线速度', symbol: 'v_A', value: state.vA, unit: 'm/s' },
+            { label: 'B球线速度', symbol: 'v_B', value: state.vB, unit: 'm/s' },
+          ],
+          formulas: [
+            { name: '运动学约束', latex: '\\omega_A = \\omega_B \\implies \\frac{v_A}{v_B} = \\frac{r_A}{r_B}', level: 'important' },
+            { name: '能量与做功约束', latex: 'W_{\\text{杆}\\to A} + W_{\\text{杆}\\to B} = 0', level: 'core' },
+            { name: '系统守恒', latex: '\\Delta E_A = -\\Delta E_B \\implies E_{\\text{总}} = \\text{常数}', level: 'core' },
+          ],
+          gaokaoPoints: [
+            { text: '【个体不守恒，系统守恒】杆对单个小球做功（P≠0），导致个体机械能不守恒；但杆对系统做总功为 0，系统总机械能守恒（E-t 图中灰线绝对水平）。', importance: 'hard' as const },
+            { text: '【无速度底线】杆既能拉也能"托"（支持力）。小球到达最高点的临界速度可以为 0。', importance: 'extend' as const },
+          ],
+        }
+      } else {
+        // ── 双绳分系两球 ──
+        return {
+          quantities: [
+            ...base,
+            { label: 'A球机械能', symbol: 'EA', value: state.EA, unit: 'J', color: ENERGY_COLORS.potentialGravity },
+            { label: 'B球机械能', symbol: 'EB', value: state.EB, unit: 'J', color: ENERGY_COLORS.potentialElastic },
+            { label: '系统总能量', symbol: 'E总', value: state.Etot, unit: 'J', highlight: 'extreme' as const, color: PHYSICS_COLORS.kineticEnergy },
+            { label: '绳张力', symbol: 'T', value: state.T_A, unit: 'N', highlight: state.T_A < 0.01 ? 'zero' as const : undefined },
+            { label: 'A球线速度', symbol: 'v_A', value: state.vA, unit: 'm/s' },
+            { label: 'B球线速度', symbol: 'v_B', value: state.vB, unit: 'm/s' },
+          ],
+          formulas: [
+            { name: '沿绳速度约束', latex: 'v_{A\\parallel} = v_{B\\parallel} \\quad (\\text{仅绳紧绷时})', condition: '绳紧绷时两球沿绳方向速度分量相等', level: 'important' },
+            { name: '动力学临界', latex: 'T \\ge 0', condition: '绳只能提供拉力，不能提供推力', level: 'core' },
+            { name: '能量突变', latex: 'T=0 \\implies W_{\\text{绳}}=0 \\implies \\Delta E_A=\\Delta E_B=0', condition: '绳松弛后各球机械能守恒', level: 'core' },
+          ],
+          gaokaoPoints: [
+            { text: '【软约束特征】绳子只能提供拉力。一旦出现推力趋势，绳子瞬间松弛塌软，小球脱离圆周轨道转为抛体运动。', importance: 'hard' as const },
+            { text: '【图形突变（扣题关键）】盯着 P-t 图！当某球的功率突然砸向 0 轴并保持水平时，说明该绳已松弛，系统的能量转移终止。', importance: 'extend' as const },
+          ],
+        }
       }
     }
     case 'anim-work': {
