@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -47,14 +47,15 @@ export default function WeightlessnessAnimation() {
   )
   // 备用尺寸设为高瘦型电梯井尺寸
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
+  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 450 })
 
   const { a = 2, g = 9.8, m = 50, advancedMode = 0, modelIdx = 0 } = params
 
   // ── 布局分区与自适应自顶向下计算，不要写死像素 ──
-  const isWide = advancedMode !== 1 && canvasSize.width >= 500
-  const animWidth = isWide ? canvasSize.width * 0.42 : canvasSize.width
-  const chartWidth = isWide ? canvasSize.width * 0.52 : 0
-  const chartX = isWide ? canvasSize.width * 0.46 : 0
+  const isWide = advancedMode !== 1 && vp.visibleW >= 500
+  const animWidth = isWide ? vp.visibleW * 0.42 : vp.visibleW
+  const chartWidth = isWide ? vp.visibleW * 0.52 : 0
+  const chartX = isWide ? vp.visibleW * 0.46 : 0
 
   // currentA: N-a 图表用的参数预览值（始终跟随参数 a）
   // actualA: 电梯实际加速度（驱动矢量箭头、漂浮判定等视觉元素）
@@ -68,7 +69,7 @@ export default function WeightlessnessAnimation() {
 
   // 1. 视轨井道与行程参数动态计算
   const shaftTop = LAYOUT.shaftTopOffset
-  const shaftBottom = canvasSize.height - LAYOUT.shaftBottomOffset
+  const shaftBottom = vp.visibleH - LAYOUT.shaftBottomOffset
   const shaftHeight = shaftBottom - shaftTop
 
   // 电梯尺寸比例自适应
@@ -236,9 +237,9 @@ export default function WeightlessnessAnimation() {
   const nMin = 0
   const nMax = m * 22
 
-  const margin = { left: 45, right: 15, top: canvasSize.height < 320 ? 25 : 40, bottom: canvasSize.height < 320 ? 25 : 40 }
+  const margin = { left: 45, right: 15, top: vp.visibleH < 320 ? 25 : 40, bottom: vp.visibleH < 320 ? 25 : 40 }
   const plotW = Math.max(10, chartWidth - margin.left - margin.right)
-  const plotH = Math.max(10, canvasSize.height - margin.top - margin.bottom)
+  const plotH = Math.max(10, vp.visibleH - margin.top - margin.bottom)
 
   const toChartX = (valA: number) => chartX + margin.left + ((valA - aMin) / (aMax - aMin)) * plotW
   const toChartY = (valN: number) => margin.top + plotH - ((valN - nMin) / (nMax - nMin)) * plotH
@@ -250,8 +251,8 @@ export default function WeightlessnessAnimation() {
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg
-        width={canvasSize.width}
-        height={canvasSize.height}
+        width={vp.visibleW}
+        height={vp.visibleH}
         className="bg-white rounded-lg shadow-inner"
       >
         {/* 观光电梯轨道 */}

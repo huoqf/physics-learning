@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useEffect, useMemo, useState } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -23,6 +23,7 @@ export default function FreeFallAnimation() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize({ width: 100, height: 100 })
+  const vp = useViewport(canvasSize, { designWidth: 100, designHeight: 100 })
 
   // 参数
   const pressure = params.pressure ?? 0
@@ -40,7 +41,7 @@ export default function FreeFallAnimation() {
   const [rippleB, setRippleB] = useState<{ x: number; y: number; time: number } | null>(null)
 
   // 布局
-  const layout = useFreeFallLayout(canvasSize)
+  const layout = useFreeFallLayout({ width: vp.visibleW, height: vp.visibleH })
   const { stageWidth, stageHeight, originY, groundY, ballX, featherX } = layout
 
   // 缩放
@@ -137,8 +138,8 @@ export default function FreeFallAnimation() {
   }, [pressure])
 
   // v-t 图
-  const vtChartTop = canvasSize.height * 0.03
-  const vtChartHeight = canvasSize.height * 0.62
+  const vtChartTop = vp.visibleH * 0.03
+  const vtChartHeight = vp.visibleH * 0.62
   const vtXMax = useMemo(() => Math.round(Math.max(Math.min(groundTimeA * 1.2, 8), 2) * 10) / 10, [groundTimeA])
   const vtPointsA = useMemo(() => pointsA.filter(p => p.t <= Math.min(time, vtXMax) + 1e-9).map(p => ({ t: p.t, v: p.v })), [pointsA, time, vtXMax])
   const vtPointsB = useMemo(() => pointsB.filter(p => p.t <= Math.min(time, vtXMax) + 1e-9).map(p => ({ t: p.t, v: p.v })), [pointsB, time, vtXMax])
@@ -152,7 +153,7 @@ export default function FreeFallAnimation() {
   return (
     <div ref={containerRef} className="w-full h-full">
       <FreeFallScene
-        canvasSize={canvasSize} layout={layout}
+        canvasSize={{ width: vp.visibleW, height: vp.visibleH, font: canvasSize.font }} layout={layout}
         objectA={objectA} objectB={objectB} matA={matA} matB={matB}
         pressure={pressure} g={g}
         stateA={stateA} stateB={stateB}

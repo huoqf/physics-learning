@@ -1,5 +1,5 @@
-﻿import { useRef, useEffect, useMemo } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useRef, useEffect, useMemo } from 'react'
+import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { clampEndpoint } from '@/utils/coordinate'
 import type { CanvasBounds } from '@/utils/coordinate'
@@ -25,11 +25,12 @@ export default function EquilibriumAnimation() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumTall)
+  const vp = useViewport(canvasSize, { designWidth: 650, designHeight: 450 })
   const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 
   const eqScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    vectorBounds: { x: 0, y: 0, width: vp.visibleW, height: vp.visibleH },
     originX: 0,
     originY: 0,
   }
@@ -47,8 +48,8 @@ export default function EquilibriumAnimation() {
     theta1,
     theta2,
     mode,
-    canvasWidth: canvasSize.width,
-    canvasHeight: canvasSize.height,
+    canvasWidth: vp.visibleW,
+    canvasHeight: vp.visibleH,
     isPlaying,
     time,
   })
@@ -83,16 +84,16 @@ export default function EquilibriumAnimation() {
     resetPhysics,
   } = physicsData
 
-  const centerX = canvasSize.width / 2
-  const centerY = canvasSize.height / 2 - 45
+  const centerX = vp.visibleW / 2
+  const centerY = vp.visibleH / 2 - 45
 
   // 2a. 画布边界与 display 端点（沿向量方向等比裁剪，防止溢出）
   const canvasBounds: CanvasBounds = useMemo(() => ({
     left: 10,
     top: 10,
-    right: canvasSize.width - 10,
-    bottom: canvasSize.height - 10,
-  }), [canvasSize.width, canvasSize.height])
+    right: vp.visibleW - 10,
+    bottom: vp.visibleH - 10,
+  }), [vp.visibleW, vp.visibleH])
 
   // 主画布 display 端点
   const gDisplayEnd = useMemo(() => clampEndpoint(gEnd, ballCenter, canvasBounds), [gEnd, ballCenter, canvasBounds])
@@ -110,9 +111,9 @@ export default function EquilibriumAnimation() {
   const triBounds: CanvasBounds = useMemo(() => ({
     left: triOrigin.cx - 100,
     top: triOrigin.cy - 20,
-    right: Math.min(canvasSize.width - 10, triOrigin.cx + 185),
-    bottom: Math.min(canvasSize.height - 10, triOrigin.cy + 140),
-  }), [triOrigin, canvasSize.width, canvasSize.height])
+    right: Math.min(vp.visibleW - 10, triOrigin.cx + 185),
+    bottom: Math.min(vp.visibleH - 10, triOrigin.cy + 140),
+  }), [triOrigin, vp.visibleW, vp.visibleH])
 
   const triGDisplayEnd = useMemo(() => clampEndpoint(triGEnd, triOrigin, triBounds), [triGEnd, triOrigin, triBounds])
   const triT1DisplayEnd = useMemo(() => clampEndpoint(triT1End, triGEnd, triBounds), [triT1End, triGEnd, triBounds])
@@ -120,7 +121,7 @@ export default function EquilibriumAnimation() {
 
   // 3. 背景物理网格
   const gridLines = []
-  if (showGrid && canvasSize.width > 0) {
+  if (showGrid && vp.visibleW > 0) {
     for (let i = -6; i <= 6; i++) {
       const xPos = centerX + i * 50
       gridLines.push(
@@ -129,7 +130,7 @@ export default function EquilibriumAnimation() {
           x1={xPos}
           y1={10}
           x2={xPos}
-          y2={canvasSize.height - 10}
+          y2={vp.visibleH - 10}
           stroke={PHYSICS_COLORS.grid}
           strokeWidth={CANVAS_STYLE.stroke.grid}
           opacity={CANVAS_STYLE.opacity.grid}
@@ -144,7 +145,7 @@ export default function EquilibriumAnimation() {
           key={`grid-y-${i}`}
           x1={10}
           y1={yPos}
-          x2={canvasSize.width - 10}
+          x2={vp.visibleW - 10}
           y2={yPos}
           stroke={PHYSICS_COLORS.grid}
           strokeWidth={CANVAS_STYLE.stroke.grid}
@@ -157,7 +158,7 @@ export default function EquilibriumAnimation() {
 
   // 4. 半透明量角器刻度底盘
   const protractorTicks = []
-  if (brokenLine === 'none' && canvasSize.width > 0) {
+  if (brokenLine === 'none' && vp.visibleW > 0) {
     for (let deg = 15; deg < 90; deg += 15) {
       const rad = (deg * Math.PI) / 180
       protractorTicks.push(
@@ -191,17 +192,17 @@ export default function EquilibriumAnimation() {
 
   // 6. T-θ 关系曲线图表计算：不要写死像素，动态分配放大显示
   const hasRope = brokenLine !== 'both'
-  const chartW = Math.max(185, Math.min(220, canvasSize.width * 0.32))
-  const chartH = Math.max(125, Math.min(150, canvasSize.height * 0.32))
-  const chartX0 = canvasSize.width - chartW - 20
-  const chartY0 = canvasSize.height - 30
+  const chartW = Math.max(185, Math.min(220, vp.visibleW * 0.32))
+  const chartH = Math.max(125, Math.min(150, vp.visibleH * 0.32))
+  const chartX0 = vp.visibleW - chartW - 20
+  const chartY0 = vp.visibleH - 30
 
   const thetaToX = (thetaVal: number) => chartX0 + ((thetaVal - 10) / 80) * chartW
   const tToY = (tVal: number) => chartY0 - (tVal / 60) * chartH
 
   // 构建对称悬挂的正割关系理论曲线
   let secantPathD = ''
-  if (canvasSize.width > 0) {
+  if (vp.visibleW > 0) {
     const points: string[] = []
     for (let deg = 10; deg <= 90; deg += 2) {
       const rad = (deg * Math.PI) / 180
@@ -240,8 +241,8 @@ export default function EquilibriumAnimation() {
 
       <svg
         ref={svgRef}
-        width={canvasSize.width}
-        height={canvasSize.height}
+        width={vp.visibleW}
+        height={vp.visibleH}
         className="bg-neutral-50 rounded-xl shadow-inner border border-neutral-200"
         onMouseMove={(e) => updateDragMouse(e.clientX, e.clientY, svgRef.current)}
         onTouchMove={(e) => {
@@ -529,7 +530,7 @@ export default function EquilibriumAnimation() {
         </g>
 
         {/* ==================== 模式 3：三力闭合多边形 ==================== */}
-        {mode === 3 && canvasSize.width > 0 && (
+        {mode === 3 && vp.visibleW > 0 && (
           <g>
             <rect x={centerX + 65} y={centerY + 30} width={185} height={140} fill="white" fillOpacity={0.85} stroke={PHYSICS_COLORS.grid} strokeWidth={1} rx={6} />
             <text x={centerX + 157} y={centerY + 48} fontSize={CANVAS_STYLE.font.annotation} fill={PHYSICS_COLORS.labelTextLight} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family} textAnchor="middle">
@@ -653,7 +654,7 @@ export default function EquilibriumAnimation() {
         )}
 
         {/* ==================== 右下角内嵌 T-θ 关系曲线图表 ==================== */}
-        {hasRope && canvasSize.width > 0 && (
+        {hasRope && vp.visibleW > 0 && (
           <g>
             {/* 图表底色和边框 */}
             <rect x={chartX0 - 10} y={chartY0 - chartH - 10} width={chartW + 20} height={chartH + 20} fill="white" fillOpacity={0.9} stroke={PHYSICS_COLORS.grid} strokeWidth={1} rx={4} />

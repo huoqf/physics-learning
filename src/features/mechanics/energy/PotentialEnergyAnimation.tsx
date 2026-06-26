@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -26,6 +26,7 @@ export default function PotentialEnergyAnimation() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.standard)
+  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 420 })
   const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 
@@ -39,15 +40,15 @@ export default function PotentialEnergyAnimation() {
   const tMax = 15
 
   // 布局
-  const padding = canvasSize.width * 0.03
-  const fontSize = Math.max(10, canvasSize.width * 0.016)
+  const padding = vp.visibleW * 0.03
+  const fontSize = Math.max(10, vp.visibleW * 0.016)
   const smallFont = Math.max(9, fontSize * 0.8)
-  const dividerX = canvasSize.width * 0.50
-  const chartLeft = dividerX + canvasSize.width * 0.02
-  const chartRight = canvasSize.width - padding
+  const dividerX = vp.visibleW * 0.50
+  const chartLeft = dividerX + vp.visibleW * 0.02
+  const chartRight = vp.visibleW - padding
   const chartWidth = chartRight - chartLeft
   const chartAreaTop = padding
-  const chartAreaBottom = canvasSize.height * 0.90
+  const chartAreaBottom = vp.visibleH * 0.90
   const barAreaTop = chartAreaTop
   const barAreaBottom = chartAreaTop + (chartAreaBottom - chartAreaTop) * 0.32
   const etAreaBottom = chartAreaBottom
@@ -55,13 +56,13 @@ export default function PotentialEnergyAnimation() {
   const animRight = dividerX - padding * 0.5
   const animWidth = animRight - animLeft
   const animCenterX = (animLeft + animRight) / 2
-  const bottomY = canvasSize.height * 0.92
+  const bottomY = vp.visibleH * 0.92
 
   // 坐标转换
-  const groundY = canvasSize.height * 0.82
-  const objW = Math.min(animWidth * 0.18, canvasSize.width * 0.075)
+  const groundY = vp.visibleH * 0.82
+  const objW = Math.min(animWidth * 0.18, vp.visibleW * 0.075)
   const ballR = objW * 0.45
-  const animTopMargin = canvasSize.height * 0.08
+  const animTopMargin = vp.visibleH * 0.08
   const animHeightLimit = groundY - animTopMargin
   const scaleY = animHeightLimit / 10
   const toPixelY = (yVal: number) => groundY - yVal * scaleY
@@ -145,7 +146,7 @@ export default function PotentialEnergyAnimation() {
         className="absolute bg-white/95 px-2 py-0.5 rounded shadow-sm border border-neutral-200 pointer-events-none z-10 transition-all duration-100 ease-out"
         style={{
           left: mode === 0 ? `${animCenterX}px` : `${toPixelX(state.pos) + objW * 0.5}px`,
-          bottom: mode === 0 ? `${canvasSize.height - toPixelY(state.pos) + 2 * ballR + 10}px` : `${canvasSize.height - groundY + ballR + 10}px`,
+          bottom: mode === 0 ? `${vp.visibleH - toPixelY(state.pos) + 2 * ballR + 10}px` : `${vp.visibleH - groundY + ballR + 10}px`,
           transform: 'translateX(-50%)',
         }}
       >
@@ -156,7 +157,7 @@ export default function PotentialEnergyAnimation() {
       </div>
 
       {/* 主 SVG */}
-      <svg ref={svgRef} width={canvasSize.width} height={canvasSize.height}
+      <svg ref={svgRef} width={vp.visibleW} height={vp.visibleH}
         onMouseDown={handleMouseDown} onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUpOrLeave} onMouseLeave={handleMouseUpOrLeave}
         style={{ cursor }} className="bg-transparent"
@@ -184,7 +185,7 @@ export default function PotentialEnergyAnimation() {
         )}
 
         {/* 分隔线 */}
-        <line x1={dividerX} y1={padding} x2={dividerX} y2={canvasSize.height * 0.90} stroke={CANVAS_COLORS.grid} strokeWidth={1} />
+        <line x1={dividerX} y1={padding} x2={dividerX} y2={vp.visibleH * 0.90} stroke={CANVAS_COLORS.grid} strokeWidth={1} />
 
         {/* 右侧对比柱 */}
         <EnergyBarChart mode={mode} chartLeft={chartLeft} chartWidth={chartWidth}
@@ -199,9 +200,9 @@ export default function PotentialEnergyAnimation() {
           tMax={tMax} gravityMaxE={gravityMaxE} springMaxE={springMaxE} state={state} />
 
         {/* 底部标注 */}
-        <line x1={padding} y1={bottomY - 6} x2={canvasSize.width - padding} y2={bottomY - 6} stroke={CANVAS_COLORS.grid} strokeWidth={0.5} />
+        <line x1={padding} y1={bottomY - 6} x2={vp.visibleW - padding} y2={bottomY - 6} stroke={CANVAS_COLORS.grid} strokeWidth={0.5} />
         {bottomLabels.map((item, idx) => {
-          const spacing = canvasSize.width / bottomLabels.length
+          const spacing = vp.visibleW / bottomLabels.length
           const cx = spacing * idx + spacing * 0.5
           return (
             <g key={`bottom-${idx}`}>

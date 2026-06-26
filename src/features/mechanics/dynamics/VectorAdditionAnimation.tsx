@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -29,6 +29,7 @@ export default function VectorAdditionAnimation() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumTall)
+  const vp = useViewport(canvasSize, { designWidth: 650, designHeight: 450 })
   const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 
@@ -39,10 +40,10 @@ export default function VectorAdditionAnimation() {
   const mode = params.mode ?? 0 // 0 = 平行四边形, 1 = 三角形, 2 = 正交分解
   
   const WORLD = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 } as const
-  const scale = computeScale(canvasSize.width, canvasSize.height, WORLD) * 0.6 // 0.6：拖拽命中区域与矢量端点强耦合，细微 scale 差异导致静默错位，不提取
+  const scale = computeScale(vp.visibleW, vp.visibleH, WORLD) * 0.6 // 0.6：拖拽命中区域与矢量端点强耦合，细微 scale 差异导致静默错位，不提取
 
   const vaScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    vectorBounds: { x: 0, y: 0, width: vp.visibleW, height: vp.visibleH },
     originX: 0,
     originY: 0,
   }
@@ -54,8 +55,8 @@ export default function VectorAdditionAnimation() {
     f2,
     angle,
     mode,
-    canvasWidth: canvasSize.width,
-    canvasHeight: canvasSize.height,
+    canvasWidth: vp.visibleW,
+    canvasHeight: vp.visibleH,
     scale,
     time,
     isPlaying,
@@ -72,14 +73,14 @@ export default function VectorAdditionAnimation() {
 
   // 核心拖动处理函数（含精密吸附）
   const handleDragMove = (clientX: number, clientY: number) => {
-    if (!activeDrag || !svgRef.current || canvasSize.width === 0) return
+    if (!activeDrag || !svgRef.current || vp.visibleW === 0) return
 
     const rect = svgRef.current.getBoundingClientRect()
     const cx = clientX - rect.left
     const cy = clientY - rect.top
 
     // 转换为物理坐标 (px, py)
-    const { x: px, y: py } = canvasToPhysics(cx, cy, canvasSize.width, canvasSize.height, scale)
+    const { x: px, y: py } = canvasToPhysics(cx, cy, vp.visibleW, vp.visibleH, scale)
 
     if (activeDrag === 'f1') {
       // ===== 拖拽 F1 (分力 1) =====
@@ -170,13 +171,13 @@ export default function VectorAdditionAnimation() {
     }
   }, [activeDrag])
 
-  const centerX = canvasSize.width / 2
-  const centerY = canvasSize.height / 2
+  const centerX = vp.visibleW / 2
+  const centerY = vp.visibleH / 2
 
   // 4. 构建精密坐标轴刻度及标注 (Grid & Ticks)
   const ticks = []
   const tickLength = 4
-  if (canvasSize.width > 0) {
+  if (vp.visibleW > 0) {
     // 沿 X 轴刻度 (每隔 5N 标数字，每隔 1N 画个刻度线)
     for (let fVal = -20; fVal <= 20; fVal++) {
       if (fVal === 0) continue
@@ -193,7 +194,7 @@ export default function VectorAdditionAnimation() {
           strokeWidth={isMajor ? CANVAS_STYLE.stroke.tickBold : CANVAS_STYLE.stroke.tick}
         />
       )
-      if (isMajor && cx > 30 && cx < canvasSize.width - 30) {
+      if (isMajor && cx > 30 && cx < vp.visibleW - 30) {
         ticks.push(
           <text
             key={`tick-text-x-${fVal}`}
@@ -225,7 +226,7 @@ export default function VectorAdditionAnimation() {
           strokeWidth={isMajor ? CANVAS_STYLE.stroke.tickBold : CANVAS_STYLE.stroke.tick}
         />
       )
-      if (isMajor && cy > 30 && cy < canvasSize.height - 30) {
+      if (isMajor && cy > 30 && cy < vp.visibleH - 30) {
         ticks.push(
           <text
             key={`tick-text-y-${fVal}`}
@@ -245,7 +246,7 @@ export default function VectorAdditionAnimation() {
 
   // 5. 动态背景网格 (Grid Lines)
   const gridLines = []
-  if (showGrid && canvasSize.width > 0) {
+  if (showGrid && vp.visibleW > 0) {
     // 每隔 5N 绘制一条细网格
     for (let fVal = -20; fVal <= 20; fVal += 5) {
       const xPos = centerX + fVal * scale
@@ -255,7 +256,7 @@ export default function VectorAdditionAnimation() {
           x1={xPos}
           y1={10}
           x2={xPos}
-          y2={canvasSize.height - 10}
+          y2={vp.visibleH - 10}
           stroke={PHYSICS_COLORS.grid}
           strokeWidth={CANVAS_STYLE.stroke.grid}
           opacity={CANVAS_STYLE.opacity.grid}
@@ -270,7 +271,7 @@ export default function VectorAdditionAnimation() {
           key={`grid-y-${fVal}`}
           x1={10}
           y1={yPos}
-          x2={canvasSize.width - 10}
+          x2={vp.visibleW - 10}
           y2={yPos}
           stroke={PHYSICS_COLORS.grid}
           strokeWidth={CANVAS_STYLE.stroke.grid}
@@ -304,8 +305,8 @@ export default function VectorAdditionAnimation() {
     <div ref={containerRef} className="w-full h-full relative select-none">
       <svg
         ref={svgRef}
-        width={canvasSize.width}
-        height={canvasSize.height}
+        width={vp.visibleW}
+        height={vp.visibleH}
         className="bg-neutral-50 rounded-xl shadow-inner border border-neutral-200"
         onMouseMove={(e) => handleDragMove(e.clientX, e.clientY)}
         onTouchMove={(e) => {
@@ -324,7 +325,7 @@ export default function VectorAdditionAnimation() {
         <line
           x1={20}
           y1={centerY}
-          x2={canvasSize.width - 20}
+          x2={vp.visibleW - 20}
           y2={centerY}
           stroke={PHYSICS_COLORS.axis}
           strokeWidth={CANVAS_STYLE.stroke.axisBold}
@@ -333,7 +334,7 @@ export default function VectorAdditionAnimation() {
           x1={centerX}
           y1={20}
           x2={centerX}
-          y2={canvasSize.height - 20}
+          y2={vp.visibleH - 20}
           stroke={PHYSICS_COLORS.axis}
           strokeWidth={CANVAS_STYLE.stroke.axisBold}
         />
@@ -651,7 +652,7 @@ export default function VectorAdditionAnimation() {
                   />
                 </g>
 
-                {/* 隐藏的 F2 拖拽原点把手（即使在平移状态下，也允许通过原把手虚影位置或平移后位置拖拽 F2） */}
+                {/* F2 拖拽把手（三角形模式下位于平移后箭头末端） */}
                 <g
                   onMouseDown={(e) => handleDragStart('f2', e)}
                   onTouchStart={(e) => {
@@ -659,16 +660,15 @@ export default function VectorAdditionAnimation() {
                   }}
                   className="group cursor-grab active:cursor-grabbing"
                 >
-                  <circle cx={f2End.cx} cy={f2End.cy} r={16} fill="transparent" opacity={0} />
+                  <circle cx={f2ShiftedEnd.cx} cy={f2ShiftedEnd.cy} r={16} fill="transparent" opacity={0} />
                   <circle
-                    cx={f2End.cx}
-                    cy={f2End.cy}
-                    r={5}
-                    fill="none"
-                    stroke={PHYSICS_COLORS.tension}
-                    strokeWidth={1}
-                    strokeDasharray="2,2"
-                    opacity={0.5}
+                    cx={f2ShiftedEnd.cx}
+                    cy={f2ShiftedEnd.cy}
+                    r={6}
+                    fill={PHYSICS_COLORS.tension}
+                    stroke="white"
+                    strokeWidth={1.5}
+                    className="group-hover:scale-125 transition-transform"
                   />
                 </g>
 

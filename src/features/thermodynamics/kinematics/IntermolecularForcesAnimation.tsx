@@ -1,5 +1,5 @@
-﻿import { useState, useEffect, useCallback } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useState, useEffect, useCallback } from 'react'
+import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -34,13 +34,14 @@ export default function IntermolecularForcesAnimation() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.standard)
+  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 420 })
   const { font } = canvasSize
 
   const mode = params.mode ?? 0
   const rParam = params.r ?? 2.0
 
-  const w = canvasSize.width
-  const h = canvasSize.height
+  const w = vp.visibleW
+  const h = vp.visibleH
 
   const stageWidth = w * LAYOUT.stageWidthRatio
   const centerX = stageWidth / 2

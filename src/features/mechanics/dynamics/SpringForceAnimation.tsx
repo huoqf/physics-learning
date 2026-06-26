@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { computeScale } from '@/utils/coordinate'
 import { useAnimationStore } from '@/stores'
@@ -28,6 +28,7 @@ export default function SpringForceAnimation() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumWide)
+  const vp = useViewport(canvasSize, { designWidth: 650, designHeight: 400 })
   const { font } = canvasSize
 
   const { k = 100, m = 1 } = params
@@ -38,18 +39,18 @@ export default function SpringForceAnimation() {
   const springForce = -k * displacement
 
   // ── 科学布局坐标系 ──
-  const eqX = canvasSize.width / 2 // 平衡位置在 Canvas 中心 (325px)
-  const groundY = canvasSize.height / 2 + SPRING_LAYOUT.groundYOffset // 地面 Y 坐标
+  const eqX = vp.visibleW / 2 // 平衡位置在 Canvas 中心 (325px)
+  const groundY = vp.visibleH / 2 + SPRING_LAYOUT.groundYOffset // 地面 Y 坐标
   const boxSize = SPRING_LAYOUT.boxSize // 振子方块大小
   const WORLD = { xMin: -0.6, xMax: 0.6, yMin: -0.3, yMax: 0.3 } as const
-  const scale = computeScale(canvasSize.width, canvasSize.height, WORLD, 80)
+  const scale = computeScale(vp.visibleW, vp.visibleH, WORLD, 80)
   
   const currentX = displacement * scale // 当前偏离平衡位置的像素位移
   const centerX = eqX + currentX         // 振子当前的中心 X 坐标
   const wallRightX = SPRING_LAYOUT.wallRightX // 墙体右侧边缘，即弹簧固定端位置
 
   const springScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    vectorBounds: { x: 0, y: 0, width: vp.visibleW, height: vp.visibleH },
     originX: 0,
     originY: 0,
     refMagnitudes: { force: k * amplitude },
@@ -58,10 +59,10 @@ export default function SpringForceAnimation() {
 
   return (
     <div ref={containerRef} className="w-full h-full">
-      <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
+      <svg width={vp.visibleW} height={vp.visibleH} className="bg-white rounded-lg shadow-inner">
         {/* 1. 精密实验室地面 */}
         <PhysicsGround
-          x={40} y={groundY} width={canvasSize.width - 80}
+          x={40} y={groundY} width={vp.visibleW - 80}
           appearance={{ color: PHYSICS_COLORS.axis, showBaseShadow: true }}
         />
 

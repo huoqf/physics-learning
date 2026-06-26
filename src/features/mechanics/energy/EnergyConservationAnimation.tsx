@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useState, useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -37,6 +37,7 @@ export default function EnergyConservationAnimation() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.standard)
+  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 420 })
   const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 
@@ -67,20 +68,20 @@ export default function EnergyConservationAnimation() {
   const [cursorType, setCursorType] = useState<'default' | 'grab' | 'grabbing' | 'ns-resize'>('default')
 
   // ── 布局与映射参数 ──
-  const padding = canvasSize.width * 0.06
-  const wallX = canvasSize.width - padding * 0.8
+  const padding = vp.visibleW * 0.06
+  const wallX = vp.visibleW - padding * 0.8
   // 上半部 52% 为图表，下半部 48% 为动画
-  const chartBottom = canvasSize.height * 0.52
+  const chartBottom = vp.visibleH * 0.52
   const chartLeft = padding * 1.5
-  const chartRight = canvasSize.width - padding
+  const chartRight = vp.visibleW - padding
   const chartWidth = chartRight - chartLeft
 
   // 动画区地面与中心基准
-  const groundY = canvasSize.height * 0.85
+  const groundY = vp.visibleH * 0.85
   const animLeftBoundary = padding * 1.5
   const animRightBoundary = wallX - 110 // 避让右侧卡片
   const animCenterX = (animLeftBoundary + animRightBoundary) / 2
-  const objW = canvasSize.width * 0.05
+  const objW = vp.visibleW * 0.05
   const objH = objW * 0.6 // 小车更扁更精致
 
   const animAreaHeight = groundY - chartBottom
@@ -94,7 +95,7 @@ export default function EnergyConservationAnimation() {
   )
 
   // 模式 0 悬挂点与摆线
-  const hangY = canvasSize.height * 0.55 + 15
+  const hangY = vp.visibleH * 0.55 + 15
 
   // 模式 1 山谷轨道圆心
   const valleyCenterY = groundY - R_pix
@@ -288,12 +289,12 @@ export default function EnergyConservationAnimation() {
   const arcEndY = valleyCenterY + R_pix * Math.cos(arcLimitDeg * Math.PI / 180)
 
   const sceneConfig = useMemo((): SceneConfig => ({
-    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    vectorBounds: { x: 0, y: 0, width: vp.visibleW, height: vp.visibleH },
     originX: 0,
     originY: 0,
-    worldWidth: canvasSize.width,
-    worldHeight: canvasSize.height,
-  }), [canvasSize.width, canvasSize.height]);
+    worldWidth: vp.visibleW,
+    worldHeight: vp.visibleH,
+  }), [vp.visibleW, vp.visibleH]);
   const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
 
   // 动态 Y 范围计算
@@ -314,8 +315,8 @@ export default function EnergyConservationAnimation() {
       {/* 主 SVG 画面 */}
       <svg
         ref={svgRef}
-        width={canvasSize.width}
-        height={canvasSize.height}
+        width={vp.visibleW}
+        height={vp.visibleH}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUpOrLeave}
@@ -470,7 +471,7 @@ export default function EnergyConservationAnimation() {
               return (
                 <VectorArrow
                   origin={{ x: objPos.x, y: -objPos.y }}
-                  vector={{ x: Math.cos(state.theta) * arrowPx, y: Math.sin(state.theta) * arrowPx }}
+                  vector={{ x: Math.cos(state.theta) * arrowPx * Math.sign(state.v), y: Math.sin(state.theta) * arrowPx * Math.sign(state.v) }}
                   type="velocity"
                   sceneScale={sceneScale}
                   pixelLength={arrowPx}
@@ -551,7 +552,7 @@ export default function EnergyConservationAnimation() {
                 return (
                   <VectorArrow
                     origin={{ x: objW * 0.5, y: -(objH + 3) }}
-                    vector={{ x: arrowPx, y: 0 }}
+                    vector={{ x: arrowPx * Math.sign(state.v), y: 0 }}
                     type="velocity"
                     sceneScale={sceneScale}
                     pixelLength={arrowPx}
@@ -573,7 +574,7 @@ export default function EnergyConservationAnimation() {
         )}
 
         {/* ── 三柱/四柱能量守恒验证面板卡片 ── */}
-        <g transform={`translate(${wallX - (mode === 0 ? 90 : 115)}, ${canvasSize.height * 0.55})`}>
+        <g transform={`translate(${wallX - (mode === 0 ? 90 : 115)}, ${vp.visibleH * 0.55})`}>
           {/* 半透明白底毛玻璃 */}
           <rect width={mode === 0 ? 90 : 115} height={105} rx={6} fill={SCENE_COLORS.labels.glassPanelBg} stroke={colors.neutral[200]} strokeWidth={0.8} />
 

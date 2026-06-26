@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -33,6 +33,7 @@ export default function PowerAnimation() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.standard)
+  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 420 })
   const { font } = canvasSize
   const [showCriticalTip, setShowCriticalTip] = useState(false)
   const hasPausedRef = useRef(false)
@@ -94,11 +95,11 @@ export default function PowerAnimation() {
     return trajectory[trajectory.length - 1].s
   }, [trajectory])
 
-  const padding = canvasSize.width * 0.06
+  const padding = vp.visibleW * 0.06
   const scale = useMemo(() => {
-    const trackWidth = canvasSize.width - 2 * padding - canvasSize.width * 0.08
+    const trackWidth = vp.visibleW - 2 * padding - vp.visibleW * 0.08
     return sMax > 0 ? trackWidth / sMax : 1
-  }, [canvasSize.width, padding, sMax])
+  }, [vp.visibleW, padding, sMax])
 
   const getLiveFormula = () => {
     if (state.v < 0.05) return 'v=0'
@@ -114,13 +115,13 @@ export default function PowerAnimation() {
     }
   }
 
-  const carX = Math.min(padding + state.s * scale, canvasSize.width - padding - canvasSize.width * 0.08)
-  const groundY = canvasSize.height * POWER_LAYOUT.groundYRatio
-  const objW = canvasSize.width * 0.08
+  const carX = Math.min(padding + state.s * scale, vp.visibleW - padding - vp.visibleW * 0.08)
+  const groundY = vp.visibleH * POWER_LAYOUT.groundYRatio
+  const objW = vp.visibleW * 0.08
   const objH = objW * 0.6
 
-  const chartHeight = canvasSize.height * (POWER_LAYOUT.chartBottomRatio - POWER_LAYOUT.chartTopRatio)
-  const sceneHeight = canvasSize.height * (1 - POWER_LAYOUT.dividerRatio)
+  const chartHeight = vp.visibleH * (POWER_LAYOUT.chartBottomRatio - POWER_LAYOUT.chartTopRatio)
+  const sceneHeight = vp.visibleH * (1 - POWER_LAYOUT.dividerRatio)
 
   return (
     <div ref={containerRef} className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden flex flex-col">
@@ -140,7 +141,7 @@ export default function PowerAnimation() {
           className="absolute bg-white/95 px-2 py-0.5 rounded shadow-sm border border-neutral-200 pointer-events-none z-10 transition-all duration-100 ease-out"
           style={{
             left: `${carX + objW * 0.5}px`,
-            bottom: `${canvasSize.height - groundY + objH + 12}px`,
+            bottom: `${vp.visibleH - groundY + objH + 12}px`,
             transform: 'translateX(-50%)',
           }}
         >
@@ -154,7 +155,7 @@ export default function PowerAnimation() {
         </div>
       )}
 
-      <div className="flex-1 min-h-0" style={{ height: chartHeight }}>
+      <div className="min-h-0 overflow-hidden" style={{ height: chartHeight }}>
         <PowerCharts
           trajectory={trajectory}
           currentTime={time}
@@ -166,11 +167,11 @@ export default function PowerAnimation() {
       </div>
 
       <div className="w-full" style={{ height: 1 }}>
-        <svg width={canvasSize.width} height={1}>
+        <svg width={vp.visibleW} height={1}>
           <line
-            x1={canvasSize.width * 0.03}
+            x1={vp.visibleW * 0.03}
             y1={0.5}
-            x2={canvasSize.width * 0.97}
+            x2={vp.visibleW * 0.97}
             y2={0.5}
             stroke={colors.neutral[200]}
             strokeWidth={1}
@@ -182,7 +183,7 @@ export default function PowerAnimation() {
         <PowerScene
           state={state}
           params={{ P: P_rated, m, f, carType: params.carType, mode }}
-          canvasSize={{ width: canvasSize.width, height: sceneHeight, font }}
+          canvasSize={{ width: vp.visibleW, height: sceneHeight, font }}
           showVectors={showVectors}
           maxV={maxV}
           scale={scale}

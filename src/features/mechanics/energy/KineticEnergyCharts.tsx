@@ -75,13 +75,6 @@ export function KineticEnergyCharts({
     return [lo - pad, hi + pad]
   }, [trajectory])
 
-  const epYDomain = useMemo((): [number, number] => {
-    const vals = trajectory.map(p => p.Ep)
-    if (vals.length === 0) return [0, 10]
-    const hi = Math.max(...vals)
-    return [0, hi * 1.15]
-  }, [trajectory])
-
   const atYDomain = useMemo((): [number, number] => {
     const vals = trajectory.map(p => Math.abs(p.a))
     if (vals.length === 0) return [0, 10]
@@ -145,7 +138,7 @@ export function KineticEnergyCharts({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-1 h-full">
+    <div className="grid grid-cols-3 gap-1 h-full">
       {ekChart}
       <RelationChart
         xLabel="x (m)"
@@ -156,32 +149,11 @@ export function KineticEnergyCharts({
         showZeroLine
         series="primary"
         additionalSeries={[
-          {
-            points: epVisible,
-            label: 'W重',
-            series: 'success',
-            strokeWidth: 1.5,
-          },
-          {
-            points: frictionWorkVisible,
-            label: 'W摩',
-            series: 'warm',
-            strokeWidth: 1.5,
-          },
+          { points: epVisible, label: 'W重', series: 'success', strokeWidth: 1.5 },
+          { points: frictionWorkVisible, label: 'W摩', series: 'warm', strokeWidth: 1.5 },
         ]}
         cursorX={lastX}
         cursorLabel={(_x, y) => `W=${y.toFixed(1)}J`}
-        markers={[{ axis: 'vertical', x: criticalX, label: 'R', color: CHART_COLORS.criticalPt }]}
-      />
-      <RelationChart
-        xLabel="x (m)"
-        yLabel="Ep (J)"
-        points={epVisible}
-        xDomain={xDomain}
-        yDomain={epYDomain}
-        series="secondary"
-        cursorX={lastX}
-        cursorLabel={(_x, y) => `Ep=${y.toFixed(1)}J`}
         markers={[{ axis: 'vertical', x: criticalX, label: 'R', color: CHART_COLORS.criticalPt }]}
       />
       {atChart}

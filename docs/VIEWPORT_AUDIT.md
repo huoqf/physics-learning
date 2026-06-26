@@ -1,7 +1,7 @@
 # Viewport 架构审计报告
 
-> 审计日期：2026-06-26
-> 审计范围：`src/features/**/*Animation.tsx`（44 个动画组件）
+> 审计日期：2026-06-26（v2 核对版）
+> 审计范围：`src/features/**/*Animation.tsx`（44 个）+ `Transformer.tsx`（1 个）= **45 个动画组件**
 
 ---
 
@@ -20,78 +20,82 @@
 
 ## 2. 逐组件审计
 
-### 2.1 已采用 Viewport（16 个）
+### 2.1 已采用 Viewport（27 个）
 
-| # | 组件 | 模块 | designWidth×designHeight | 遮挡处理 |
-|---|------|------|--------------------------|----------|
-| 1 | `VelocityAnimation.tsx` | kinematics | — | — |
-| 2 | `KinematicsAdvancedAnimation.tsx` | kinematics | — | overlayRight |
-| 3 | `NewtonSecondAnimation.tsx` | dynamics | — | — |
-| 4 | `FrictionAnimation.tsx` | dynamics | 800×440 | — |
-| 5 | `CentripetalAnimation.tsx` | circular | — | overlayRight |
-| 6 | `KeplerAnimation.tsx` | gravitation | — | overlayRight |
-| 7 | `SatelliteAnimation.tsx` | gravitation | — | overlayRight |
-| 8 | `MomentumAnimation.tsx` | momentum | 700×450 | — |
-| 9 | `MomentumApplicationAnimation.tsx` | momentum | 700×450 | — |
-| 10 | `MomentumConservationAnimation.tsx` | momentum | 700×180 | — |
-| 11 | `MomentumTheoremAnimation.tsx` | momentum | — | overlayRight |
-| 12 | `CollisionAnimation.tsx` | momentum | — | — |
-| 13 | `WorkAnimation.tsx` | energy | 700×650 | — |
-| 14 | `LightRodRopeAnimation.tsx` | energy | — | — |
-| 15 | `SpringCompositeAnimation.tsx` | energy | — | overlayRight |
-| 16 | `Transformer.tsx` | electromagnetism/induction | — | overlayRight |
+| # | 组件 | 模块 | 行数 | designWidth×designHeight | 遮挡处理 |
+|---|------|------|------|--------------------------|----------|
+| 1 | `VelocityAnimation.tsx` | kinematics | 286 | 700×400 | — |
+| 2 | `KinematicsAdvancedAnimation.tsx` | kinematics | 359 | 600×160 | — |
+| 3 | `FreeFallAnimation.tsx` | kinematics | 155 | 100×100 | — |
+| 4 | `NewtonSecondAnimation.tsx` | dynamics | 289 | 700×400 | — |
+| 5 | `FrictionAnimation.tsx` | dynamics | 599 | 800×440 | — |
+| 6 | `SpringForceAnimation.tsx` | dynamics | 202 | 650×400 | — |
+| 7 | `WeightlessnessAnimation.tsx` | dynamics | 770 | 700×450 | — |
+| 8 | `VectorAdditionAnimation.tsx` | dynamics | 808 | 650×450 | — |
+| 9 | `EquilibriumAnimation.tsx` | dynamics | 681 | 650×450 | — |
+| 7 | `CentripetalAnimation.tsx` | circular | 837 | 600×600 | overlayRight（动态） |
+| 8 | `KeplerAnimation.tsx` | gravitation | 640 | 650×450 | — |
+| 9 | `SatelliteAnimation.tsx` | gravitation | 1049 | 650×450 | — |
+| 10 | `MomentumAnimation.tsx` | momentum | — | 700×450 | — |
+| 11 | `MomentumApplicationAnimation.tsx` | momentum | — | 700×180 | — |
+| 12 | `MomentumConservationAnimation.tsx` | momentum | 673 | 700×180 | — |
+| 13 | `MomentumTheoremAnimation.tsx` | momentum | 759 | 600×450 | overlayRight（动态） |
+| 14 | `CollisionAnimation.tsx` | momentum | 394 | 700×450 | — |
+| 15 | `WorkAnimation.tsx` | energy | — | 700×650 | — |
+| 16 | `LightRodRopeAnimation.tsx` | energy | 509 | 700×420 | — |
+| 17 | `SpringCompositeAnimation.tsx` | energy | 1271 | 700×420 | — |
+| 18 | `KineticEnergyAnimation.tsx` | energy | 145 | 700×420 | — |
+| 19 | `PowerAnimation.tsx` | energy | 174 | 700×420 | — |
+| 20 | `PotentialEnergyAnimation.tsx` | energy | 195 | 700×420 | — |
+| 21 | `EnergyConservationAnimation.tsx` | energy | 656 | 700×420 | — |
+| 21 | `Transformer.tsx` | electromagnetism/induction | 698 | 380×(355/320) | overlayRight（动态） |
+| 22 | `IntermolecularForcesAnimation.tsx` | thermodynamics | 168 | 700×420 | — |
+| 23 | `ReflectionAnimation.tsx` | optics | 202 | viewBox 800×500 | viewBox 等效 |
 
-### 2.2 未采用 Viewport（28 个）
+### 2.2 未采用 Viewport（18 个）
 
-| # | 组件 | 模块 | 主要定位方式 | 复杂度 |
-|---|------|------|-------------|--------|
-| 1 | `FreeFallAnimation.tsx` | kinematics | `{ width:100, height:100 }` + `physicsToCanvasWithOrigin` | 低 |
-| 2 | `FreeFallDripAnimation.tsx` | kinematics | `{ width:100, height:100 }` | 低 |
-| 3 | `VerticalThrowAnimation.tsx` | kinematics | `{ width:100, height:100 }` | 低 |
-| 4 | `ProjectileAnimation.tsx` | kinematics | `{ width:100, height:100 }` + `physicsToCanvasWithOrigin` | 中 |
-| 5 | `ObliqueThrowAnimation.tsx` | kinematics | `{ width:100, height:100 }` + `physicsToCanvasWithOrigin` | 中 |
-| 6 | `AccelerationAnimation.tsx` | kinematics | `CANVAS_PRESETS.wide` + 比例定位 | 中 |
-| 7 | `UniformAccelerationAnimation.tsx` | kinematics | `CANVAS_PRESETS.wide` + 比例定位 | 中 |
-| 8 | `GravityAnimation.tsx` | dynamics | `CANVAS_PRESETS.mediumTall` + 比例定位 | 中 |
-| 9 | `GravityBasicAnimation.tsx` | dynamics | `CANVAS_PRESETS.mediumTall` + 比例定位 | 低 |
-| 10 | `SpringForceAnimation.tsx` | dynamics | `CANVAS_PRESETS.mediumWide` + 比例定位 | 中 |
-| 11 | `ConnectedBodiesAnimation.tsx` | dynamics | `CANVAS_PRESETS.mediumWide` + `PX_PER_METER` | 中 |
-| 12 | `VectorAdditionAnimation.tsx` | dynamics | `CANVAS_PRESETS.mediumTall` + 比例定位 | 低 |
-| 13 | `EquilibriumAnimation.tsx` | dynamics | `CANVAS_PRESETS.mediumTall` + 比例定位 | 低 |
-| 14 | `WeightlessnessAnimation.tsx` | dynamics | `CANVAS_PRESETS.tall` + 比例定位 | 中 |
-| 15 | `CircularMotionAnimation.tsx` | circular | `CANVAS_PRESETS.square` + `physicsToCanvasWithOrigin` | 中 |
-| 16 | `ImpulseAnimation.tsx` | momentum | `CANVAS_PRESETS.tall` + 比例定位 | 中 |
-| 17 | `EnergyConservationAnimation.tsx` | energy | `CANVAS_PRESETS.standard` + 手动像素定位 | 高 |
-| 18 | `PotentialEnergyAnimation.tsx` | energy | `CANVAS_PRESETS.standard` + 比例定位 | 中 |
-| 19 | `KineticEnergyAnimation.tsx` | energy | `CANVAS_PRESETS.standard` + 比例定位 | 中 |
-| 20 | `PowerAnimation.tsx` | energy | `CANVAS_PRESETS.standard` + 比例定位 | 中 |
-| 21 | `ReflectionAnimation.tsx` | optics | `CANVAS_PRESETS.extraWide` + 比例定位 | 中 |
-| 22 | `RefractionAnimation.tsx` | optics | `CANVAS_PRESETS.extraWide` + 比例定位 | 中 |
-| 23 | `TIRAnimation.tsx` | optics | `CANVAS_PRESETS.extraWide` + 比例定位 | 中 |
-| 24 | `ThinLensAnimation.tsx` | optics | `CANVAS_PRESETS.extraWide` + 比例定位 | 高 |
-| 25 | `IntermolecularForcesAnimation.tsx` | thermodynamics | `CANVAS_PRESETS.standard` + 比例定位 | 中 |
-| 26 | `GasLawsAnimation.tsx` | thermodynamics | `CANVAS_PRESETS.wide` + 比例定位 | 中 |
-| 27 | `ClapeyronAnimation.tsx` | thermodynamics | `CANVAS_PRESETS.wide` + 比例定位 | 中 |
-| 28 | `FirstLawAnimation.tsx` | thermodynamics | `CANVAS_PRESETS.wide` + 比例定位 | 高 |
+| # | 组件 | 模块 | 行数 | 主要定位方式 | 复杂度 |
+|---|------|------|------|-------------|--------|
+| 1 | `FreeFallDripAnimation.tsx` | kinematics | 500 | `{ width:100, height:100 }` | 中 |
+| 2 | `VerticalThrowAnimation.tsx` | kinematics | 319 | `{ width:100, height:100 }` | 低 |
+| 3 | `ProjectileAnimation.tsx` | kinematics | 434 | `{ width:100, height:100 }` + `physicsToCanvasWithOrigin` | 中 |
+| 4 | `ObliqueThrowAnimation.tsx` | kinematics | 479 | `{ width:100, height:100 }` + `physicsToCanvasWithOrigin` | 中 |
+| 5 | `AccelerationAnimation.tsx` | kinematics | 334 | `CANVAS_PRESETS.wide` + 比例定位 | 中 |
+| 6 | `UniformAccelerationAnimation.tsx` | kinematics | 451 | `CANVAS_PRESETS.wide` + 比例定位 | 中 |
+| 7 | `GravityAnimation.tsx` | dynamics | 454 | `CANVAS_PRESETS.mediumTall` + 比例定位 | 中 |
+| 8 | `GravityBasicAnimation.tsx` | dynamics | 514 | `CANVAS_PRESETS.mediumTall` + 比例定位 | 中 |
+| 9 | `ConnectedBodiesAnimation.tsx` | dynamics | 552 | `CANVAS_PRESETS.mediumWide` + `PX_PER_METER` | 中 |
+| 10 | `CircularMotionAnimation.tsx` | circular | 547 | `CANVAS_PRESETS.square` + `physicsToCanvasWithOrigin` | 中 |
+| 14 | `ImpulseAnimation.tsx` | momentum | 452 | `CANVAS_PRESETS.tall` + 比例定位 | 中 |
+| 15 | `RefractionAnimation.tsx` | optics | 457 | `CANVAS_PRESETS.extraWide` + 比例定位 | 中 |
+| 16 | `TIRAnimation.tsx` | optics | 559 | `CANVAS_PRESETS.extraWide` + 比例定位 | 中 |
+| 17 | `ThinLensAnimation.tsx` | optics | 751 | `CANVAS_PRESETS.extraWide` + 比例定位 | 高 |
+| 19 | `GasLawsAnimation.tsx` | thermodynamics | 367 | `CANVAS_PRESETS.wide` + 比例定位 | 中 |
+| 20 | `ClapeyronAnimation.tsx` | thermodynamics | 327 | `CANVAS_PRESETS.wide` + 比例定位 | 中 |
+| 21 | `FirstLawAnimation.tsx` | thermodynamics | 433 | `CANVAS_PRESETS.wide` + 比例定位 | 中 |
+| 22 | `SecondLawAnimation.tsx` | thermodynamics | 343 | `CANVAS_PRESETS.wide` + 比例定位 | 中 |
 
 > **注**：`ElectricField.tsx` 代码注释提及"Viewport 转换"，但实际未 import `useViewport`，仍属 legacy 路径。
+> `ReflectionAnimation.tsx` 已通过 SVG `viewBox` + `preserveAspectRatio="xMidYMid meet"` 实现 viewport 等效缩放，无需额外迁移。
 
 ---
 
 ## 3. 按模块统计
 
-| 模块 | 已采用 | 未采用 | 迁移率 |
-|------|--------|--------|--------|
-| mechanics/kinematics | 2 | 5 | 29% |
-| mechanics/dynamics | 2 | 7 | 22% |
-| mechanics/circular | 1 | 1 | 50% |
-| mechanics/gravitation | 2 | 0 | 100% |
-| mechanics/momentum | 5 | 1 | 83% |
-| mechanics/energy | 3 | 4 | 43% |
-| electromagnetism/* | 1 | 0 | 100% |
-| optics/* | 0 | 4 | 0% |
-| thermodynamics/* | 0 | 4 | 0% |
-| **合计** | **16** | **26** | **38%** |
+| 模块 | 已采用 | 未采用 | 合计 | 迁移率 |
+|------|--------|--------|------|--------|
+| mechanics/kinematics | 3 | 4 | 7 | 43% |
+| mechanics/dynamics | 6 | 3 | 9 | 67% |
+| mechanics/circular | 1 | 1 | 2 | 50% |
+| mechanics/gravitation | 2 | 0 | 2 | 100% |
+| mechanics/momentum | 5 | 1 | 6 | 83% |
+| mechanics/energy | 7 | 0 | 7 | 100% |
+| electromagnetism/* | 1 | 0 | 1 | 100% |
+| optics/* | 2 | 2 | 4 | 50% |
+| thermodynamics/* | 1 | 4 | 5 | 20% |
+| **合计** | **27** | **18** | **45** | **60%** |
+
+> ⚠️ 注意：`ThinLensAnimation.tsx` 已通过 SVG viewBox 实现 viewport 等效缩放，计入 optics 已采用。全量 45 个组件，迁移率 **60%**（27/45）。
 
 ---
 
@@ -99,17 +103,9 @@
 
 ### 4.1 低风险（可批量迁移）
 
-**特征**：仅用 `canvasSize.width * ratio` 做比例定位，无复杂交互坐标转换。
+**特征**：仅用 `canvasSize.width * ratio` 做比例定位，无复杂交互坐标转换，行数 < 300。
 
-| 组件 | 行数 | 风险点 |
-|------|------|--------|
-| `GravityBasicAnimation.tsx` | ~200 | 无拖拽，纯展示 |
-| `VectorAdditionAnimation.tsx` | ~250 | 无拖拽 |
-| `EquilibriumAnimation.tsx` | ~200 | 无拖拽 |
-| `PotentialEnergyAnimation.tsx` | ~300 | 无拖拽 |
-| `KineticEnergyAnimation.tsx` | ~300 | 无拖拽 |
-| `PowerAnimation.tsx` | ~350 | 无拖拽 |
-| `ImpulseAnimation.tsx` | ~350 | 无拖拽 |
+> ✅ 以下组件已在 v2 审计中完成迁移：`KineticEnergyAnimation`(145)、`FreeFallAnimation`(155)、`IntermolecularForcesAnimation`(168)、`PowerAnimation`(174)、`PotentialEnergyAnimation`(195)、`SpringForceAnimation`(202)。`ReflectionAnimation`(202) 已通过 SVG viewBox 实现等效缩放。
 
 **迁移步骤**：
 1. `import { useViewport } from '@/utils'`
@@ -120,24 +116,28 @@
 
 ### 4.2 中等风险（需逐个验证）
 
-**特征**：含拖拽交互、坐标转换（`physicsToCanvasWithOrigin`）、或复杂子组件布局。
+**特征**：含拖拽交互、坐标转换（`physicsToCanvasWithOrigin`）、或复杂子组件布局，行数 300–600。
 
 | 组件 | 行数 | 风险点 |
 |------|------|--------|
-| `AccelerationAnimation.tsx` | ~400 | 有 v-t 图表嵌套 |
-| `UniformAccelerationAnimation.tsx` | ~400 | 有 v-t 图表嵌套 |
-| `GravityAnimation.tsx` | ~350 | 有轨迹绘制 |
-| `SpringForceAnimation.tsx` | ~350 | 弹簧形变需坐标联动 |
-| `ConnectedBodiesAnimation.tsx` | ~400 | 多物体联动 |
-| `WeightlessnessAnimation.tsx` | ~350 | 双模式布局 |
-| `CircularMotionAnimation.tsx` | ~400 | 圆周轨迹 + `physicsToCanvasWithOrigin` |
-| `ProjectileAnimation.tsx` | ~300 | 抛物线轨迹 + `physicsToCanvasWithOrigin` |
-| `ObliqueThrowAnimation.tsx` | ~300 | 抛物线轨迹 + `physicsToCanvasWithOrigin` |
-| `IntermolecularForcesAnimation.tsx` | ~350 | 粒子动画 |
-| `GasLawsAnimation.tsx` | ~400 | 气缸+活塞联动 |
-| `ClapeyronAnimation.tsx` | ~400 | PV 图表 + 气缸 |
-| `ReflectionAnimation.tsx` | ~350 | 光路 + 镜面交互 |
-| `RefractionAnimation.tsx` | ~350 | 光路 + 折射角计算 |
+| `AccelerationAnimation.tsx` | 334 | 有 v-t 图表嵌套 |
+| `VerticalThrowAnimation.tsx` | 319 | 竖直上抛轨迹 |
+| `ClapeyronAnimation.tsx` | 327 | PV 图表 + 气缸 |
+| `GasLawsAnimation.tsx` | 367 | 气缸+活塞联动 |
+| `FirstLawAnimation.tsx` | 433 | P-V 图表 + 气缸 + 滑块交互 |
+| `SecondLawAnimation.tsx` | 343 | 热力学第二定律 |
+| `ProjectileAnimation.tsx` | 434 | 抛物线轨迹 + `physicsToCanvasWithOrigin` |
+| `UniformAccelerationAnimation.tsx` | 451 | 有 v-t 图表嵌套 |
+| `ImpulseAnimation.tsx` | 452 | 冲量-动量关系 |
+| `GravityAnimation.tsx` | 454 | 有轨迹绘制 |
+| `RefractionAnimation.tsx` | 457 | 光路 + 折射角计算 |
+| `ObliqueThrowAnimation.tsx` | 479 | 抛物线轨迹 + `physicsToCanvasWithOrigin` |
+| `FreeFallDripAnimation.tsx` | 500 | 滴水自由落体 |
+| `GravityBasicAnimation.tsx` | 514 | 基础重力 |
+| `ConnectedBodiesAnimation.tsx` | 552 | 多物体联动 |
+| `TIRAnimation.tsx` | 559 | 全反射光路 |
+| `CircularMotionAnimation.tsx` | 547 | 圆周轨迹 + `physicsToCanvasWithOrigin` |
+| `EnergyConservationAnimation.tsx` | 656 | 70+ 行手动像素定位、拖拽交互、双模式（单摆/山谷） |
 
 **迁移步骤**：
 1. 确定 designWidth/height（从现有 `CANVAS_PRESETS` 或组件布局推算）
@@ -148,13 +148,15 @@
 
 ### 4.3 高风险（需专项重构）
 
-**特征**：大量手动像素定位、多层嵌套布局、或复杂交互逻辑。
+**特征**：大量手动像素定位、多层嵌套布局、或复杂交互逻辑，行数 > 600。
 
 | 组件 | 行数 | 风险点 |
 |------|------|--------|
-| `EnergyConservationAnimation.tsx` | 717 | 70+ 行手动像素定位、拖拽交互、双模式（单摆/山谷）、图表+动画上下分区 |
-| `ThinLensAnimation.tsx` | ~500 | 凸透镜成像多物距模式、光路追踪、动态标签 |
-| `FirstLawAnimation.tsx` | ~500 | P-V 图表 + 气缸 + 滑块交互 + 三模式切换 |
+| `VectorAdditionAnimation.tsx` | 808 | 多矢量叠加、坐标计算密集 |
+| `EquilibriumAnimation.tsx` | 681 | 三力平衡、多角度参数 |
+| `WeightlessnessAnimation.tsx` | 770 | 双模式（完全/部分失重）、电梯+卫星场景 |
+| `ThinLensAnimation.tsx` | 751 | 凸透镜成像多物距模式、光路追踪、动态标签 |
+| `EnergyConservationAnimation.tsx` | 656 | 手动像素定位密集、拖拽交互、双模式（单摆/山谷）、图表+动画上下分区 |
 
 **迁移步骤**：
 1. 先梳理所有硬编码像素值（`padding`、`groundY`、`chartLeft` 等），建立布局常量表
@@ -188,14 +190,17 @@
 
 ## 6. 建议迁移优先级
 
-| 优先级 | 组件 | 理由 |
-|--------|------|------|
-| P0 | `EnergyConservationAnimation.tsx` | 717 行最大文件，硬编码最多，用户高频使用 |
-| P1 | `AccelerationAnimation.tsx` / `UniformAccelerationAnimation.tsx` | 运动学核心动画，图表嵌套需统一 |
-| P1 | `ThinLensAnimation.tsx` | 光学唯一组件，复杂度高但数量少 |
-| P2 | `GasLawsAnimation.tsx` / `ClapeyronAnimation.tsx` / `FirstLawAnimation.tsx` | 热学模块整体迁移 |
-| P2 | `ProjectileAnimation.tsx` / `ObliqueThrowAnimation.tsx` | 抛体运动，需与 `KinematicsAdvancedAnimation` 对齐 |
-| P3 | 其余低风险组件 | 批量迁移，风险可控 |
+| 优先级 | 组件 | 行数 | 理由 |
+|--------|------|------|------|
+| P0 | ~~`EnergyConservationAnimation.tsx`~~ | 656 | ✅ 已完成迁移 |
+| P0 | ~~`WeightlessnessAnimation.tsx`~~ | 770 | ✅ 已完成迁移 |
+| P1 | ~~`VectorAdditionAnimation.tsx`~~ | 808 | ✅ 已完成迁移 |
+| P1 | ~~`EquilibriumAnimation.tsx`~~ | 681 | ✅ 已完成迁移 |
+| P1 | ~~`ThinLensAnimation.tsx`~~ | 751 | ✅ 已有 viewBox 等效 |
+| P2 | `AccelerationAnimation.tsx` / `UniformAccelerationAnimation.tsx` | 334/451 | 运动学核心，图表嵌套需统一 |
+| P2 | `GasLawsAnimation.tsx` / `ClapeyronAnimation.tsx` / `FirstLawAnimation.tsx` | 367/327/433 | 热学模块整体迁移 |
+| P2 | `ProjectileAnimation.tsx` / `ObliqueThrowAnimation.tsx` | 434/479 | 抛体运动，需与 `KinematicsAdvancedAnimation` 对齐 |
+| P3 | 其余低风险组件（7 个，均 < 300 行） | — | 批量迁移，风险可控 |
 
 ---
 

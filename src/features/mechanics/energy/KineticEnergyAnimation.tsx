@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -30,6 +30,7 @@ export default function KineticEnergyAnimation() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.standard)
+  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 420 })
   const { font } = canvasSize
   const [showCriticalTip, setShowCriticalTip] = useState(false)
   const hasPausedRef = useRef(false)
@@ -44,11 +45,11 @@ export default function KineticEnergyAnimation() {
   const tMax = 15
 
   const { points: trajectory, t_c, v_c, x_max, scale } = useMemo(() => {
-    const paddingVal = canvasSize.width * 0.06
-    const rightPadding = canvasSize.width * 0.048
-    const gY = canvasSize.height * KE_LAYOUT.groundYRatio
-    const max_pixel_dist = canvasSize.width - paddingVal - rightPadding
-    const max_pixel_height = gY - canvasSize.height * KE_LAYOUT.dividerRatio - 24
+    const paddingVal = vp.visibleW * 0.06
+    const rightPadding = vp.visibleW * 0.048
+    const gY = vp.visibleH * KE_LAYOUT.groundYRatio
+    const max_pixel_dist = vp.visibleW - paddingVal - rightPadding
+    const max_pixel_height = gY - vp.visibleH * KE_LAYOUT.dividerRatio - 24
 
     if (mode === 0) {
       const x_end = s_target * 1.6
@@ -61,7 +62,7 @@ export default function KineticEnergyAnimation() {
       const res = precomputeCurvedTrackTrajectory(m, v0, R, mu, x_end)
       return { points: res.points, t_c: res.t_c, v_c: res.v_c, x_max: x_end, scale: scaleVal }
     }
-  }, [mode, m, v0, F_pull, s_target, R, mu, canvasSize])
+  }, [mode, m, v0, F_pull, s_target, R, mu, vp.visibleW, vp.visibleH])
 
   const state = useMemo(
     () => getKEStateAtTime(trajectory, time),
@@ -90,8 +91,8 @@ export default function KineticEnergyAnimation() {
     }
   }, [time, t_c, isPlaying, setIsPlaying])
 
-  const chartHeight = canvasSize.height * (KE_LAYOUT.chartBottomRatio - KE_LAYOUT.chartTopRatio)
-  const sceneHeight = canvasSize.height * (1 - KE_LAYOUT.dividerRatio)
+  const chartHeight = vp.visibleH * (KE_LAYOUT.chartBottomRatio - KE_LAYOUT.chartTopRatio)
+  const sceneHeight = vp.visibleH * (1 - KE_LAYOUT.dividerRatio)
 
   return (
     <div ref={containerRef} className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden flex flex-col">
@@ -118,7 +119,7 @@ export default function KineticEnergyAnimation() {
         </div>
       )}
 
-      <div className="flex-1 min-h-0" style={{ height: chartHeight }}>
+      <div className="min-h-0 overflow-hidden" style={{ height: chartHeight }}>
         <KineticEnergyCharts
           trajectory={trajectory}
           currentTime={time}
@@ -130,11 +131,11 @@ export default function KineticEnergyAnimation() {
       </div>
 
       <div className="w-full" style={{ height: 1 }}>
-        <svg width={canvasSize.width} height={1}>
+        <svg width={vp.visibleW} height={1}>
           <line
-            x1={canvasSize.width * 0.03}
+            x1={vp.visibleW * 0.03}
             y1={0.5}
-            x2={canvasSize.width * 0.97}
+            x2={vp.visibleW * 0.97}
             y2={0.5}
             stroke={colors.neutral[200]}
             strokeWidth={1}
@@ -146,7 +147,7 @@ export default function KineticEnergyAnimation() {
         <KineticEnergyScene
           state={state}
           params={{ m, v0, F: F_pull, s: s_target, R, mu, mode }}
-          canvasSize={{ width: canvasSize.width, height: sceneHeight, font }}
+          canvasSize={{ width: vp.visibleW, height: sceneHeight, font }}
           showVectors={showVectors}
           v_c={v_c}
           scale={scale}
