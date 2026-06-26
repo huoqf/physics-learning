@@ -75,6 +75,22 @@ export interface BasePhysicsChartProps {
    */
   showGrid?: boolean
   /**
+   * 第二 Y 轴物理坐标范围 [min, max]（双 Y 轴支持）。
+   */
+  yDomain2?: [number, number]
+  /**
+   * 第二 Y 轴标签文本。
+   */
+  yLabel2?: string
+  /**
+   * 第二 Y 轴刻度格式化函数。
+   */
+  formatY2?: (v: number) => string
+  /**
+   * 第二 y 轴基准线位置（物理坐标），默认为 yDomain2[0]。
+   */
+  yBaseline2?: number
+  /**
    * 子元素（图表插件内容，如曲线、面积、游标等）。
    */
   children?: ReactNode
@@ -133,6 +149,10 @@ export function BasePhysicsChart({
   showGrid = true,
   children,
   className = '',
+  yDomain2,
+  yLabel2,
+  formatY2,
+  yBaseline2,
 }: BasePhysicsChartProps) {
   const isMini = variant === 'mini'
   const initW = initialSize?.width ?? (isMini ? CHART_LAYOUT.miniWidth : CHART_LAYOUT.defaultWidth)
@@ -147,9 +167,11 @@ export function BasePhysicsChart({
   const font = useFixed ? (v: number) => clamp(v, 7, 16) : autoSize.font
 
   const margin = {
-    left:   px(isMini ? CHART_LAYOUT.miniMarginLeft   : CHART_LAYOUT.marginLeft),
-    right:  px(isMini ? CHART_LAYOUT.miniMarginRight  : CHART_LAYOUT.marginRight),
-    top:    px(isMini ? CHART_LAYOUT.miniMarginTop    : CHART_LAYOUT.marginTop),
+    left: px(isMini ? CHART_LAYOUT.miniMarginLeft : CHART_LAYOUT.marginLeft),
+    right: yDomain2
+      ? px(isMini ? CHART_LAYOUT.miniMarginLeft : CHART_LAYOUT.marginLeft)
+      : px(isMini ? CHART_LAYOUT.miniMarginRight : CHART_LAYOUT.marginRight),
+    top: px(isMini ? CHART_LAYOUT.miniMarginTop : CHART_LAYOUT.marginTop),
     bottom: px(isMini ? CHART_LAYOUT.miniMarginBottom : CHART_LAYOUT.marginBottom),
   }
 
@@ -168,6 +190,14 @@ export function BasePhysicsChart({
   const baselineY = margin.top + plotH - (baseline - yDomain[0]) * yScale
   const toSvgY = (physY: number) => baselineY - (physY - baseline) * yScale
 
+  const yRange2 = yDomain2 ? Math.max(Number.EPSILON, yDomain2[1] - yDomain2[0]) : 0
+  const yScale2 = yDomain2 ? plotH / yRange2 : 0
+  const baseline2 = yBaseline2 ?? (yDomain2 ? yDomain2[0] : 0)
+  const baselineY2 = yDomain2 ? margin.top + plotH - (baseline2 - yDomain2[0]) * yScale2 : 0
+  const toSvgY2 = yDomain2
+    ? (physY2: number) => baselineY2 - (physY2 - baseline2) * yScale2
+    : undefined
+
   const adaptiveGrid = useMemo(() => {
     const baseX = gridCount?.x ?? (isMini ? CHART_LAYOUT.miniGridCountX : CHART_LAYOUT.gridCountX)
     const baseY = gridCount?.y ?? (isMini ? CHART_LAYOUT.miniGridCountY : CHART_LAYOUT.gridCountY)
@@ -180,13 +210,14 @@ export function BasePhysicsChart({
 
   const tickFormatX = formatX ?? ((v: number) => v.toFixed(1))
   const tickFormatY = formatY ?? ((v: number) => v.toFixed(1))
+  const tickFormatY2 = formatY2 ?? ((v: number) => v.toFixed(1))
 
   const ctx: ChartContextValue = useMemo(() => ({
-    toSvgX, toSvgY,
+    toSvgX, toSvgY, toSvgY2,
     plotOrigin: { x: margin.left, y: margin.top },
     plotSize: { width: plotW, height: plotH },
     font, px,
-  }), [toSvgX, toSvgY, margin.left, margin.top, plotW, plotH, font, px])
+  }), [toSvgX, toSvgY, toSvgY2, margin.left, margin.top, plotW, plotH, font, px])
 
   const chartContent = (
     <>
@@ -329,6 +360,55 @@ export function BasePhysicsChart({
       >
         {yLabel}
       </text>
+
+      {/* 第二 Y 轴线 */}
+      {yDomain2 && (
+        <line
+          x1={margin.left + plotW} y1={margin.top}
+          x2={margin.left + plotW} y2={margin.top + plotH}
+          stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.axisBold}
+        />
+      )}
+
+      {/* 第二 Y 轴刻度 */}
+      {yDomain2 && Array.from({ length: adaptiveGrid.y + 1 }, (_, i) => {
+        const val = yDomain2[0] + (yRange2 * i) / adaptiveGrid.y
+        const y = toSvgY2 ? toSvgY2(val) : 0
+        return (
+          <g key={`y2val-${i}`}>
+            <line
+              x1={margin.left + plotW} y1={y}
+              x2={margin.left + plotW + px(isMini ? 2 : 3)} y2={y}
+              stroke={CHART_COLORS.tickMark} strokeWidth={STROKE.tick}
+            />
+            <text
+              x={margin.left + plotW + px(isMini ? 4 : 5)}
+              y={y + font(isMini ? FONT.small : FONT.axis) * 0.35}
+              fontSize={font(isMini ? FONT.small : FONT.axis)}
+              fill={CHART_COLORS.tickLabel}
+              textAnchor="start"
+              fontFamily="monospace"
+            >
+              {tickFormatY2(val)}
+            </text>
+          </g>
+        )
+      })}
+
+      {/* 第二 Y 轴标签 */}
+      {yDomain2 && yLabel2 && (
+        <text
+          x={margin.left + plotW + font(isMini ? 12 : 18)}
+          y={margin.top + plotH / 2}
+          fontSize={font(isMini ? FONT.small : FONT.axis)}
+          fill={CHART_COLORS.labelText}
+          textAnchor="middle"
+          fontWeight="bold"
+          transform={`rotate(90, ${margin.left + plotW + font(isMini ? 12 : 18)}, ${margin.top + plotH / 2})`}
+        >
+          {yLabel2}
+        </text>
+      )}
 
       {/* 插槽内容 */}
       {children}

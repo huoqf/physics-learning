@@ -57,7 +57,6 @@ export const Rheostat: React.FC<RheostatProps> = ({
   unit = 'Ω',
   disabled = false,
   className = '',
-  animated = true,
 }) => {
   const c = SCENE_COLORS.circuit
   const layout = getRheostatLayout(width)

@@ -6,191 +6,349 @@ import { Ball } from '@/components/Physics/Ball';
 import { Spring } from '@/components/UI/Spring';
 import { PhysicsGround } from '@/components/Physics/PhysicsGround';
 import { VectorArrow } from '@/components/Physics/VectorArrow';
-import { IDENTITY_SCENE_SCALE } from '@/scene/SceneScale';
+import { createSceneScale } from '@/scene/SceneScale';
+import type { SceneConfig } from '@/scene/SceneConfig';
 import { precomputeVerticalSpringTrajectory, getVSStateAtTime } from '@/physics/verticalSpring';
-import { GRAVITY } from '@/physics/constants';
-import { useCanvasSize, computeScale } from '@/utils';
-import { CANVAS_PRESETS } from '@/theme/spacing';
 import { BasePhysicsChart, useChartContext } from '@/components/Chart';
+import { GRAVITY } from '@/physics/constants';
+import { useCanvasSize, useViewport } from '@/utils';
+import { CANVAS_PRESETS } from '@/theme/spacing';
 
-// ── 右侧图表的自定义绘制层 ──
-// 实现反向 Y轴高度共轴对齐，X轴代表能量，Y轴代表位置，左侧辅助线穿透
+/**
+ * 能量图像的自定义渲染内容组件
+ */
 function SpringEnergyChartContent({
   m,
   k,
   h,
-  xC,
-  xB,
+  xD_phys,
   g,
-  Etot,
-  y_A,
-  physScale,
   state,
+  mode,
+  viewMode,
+  E_max,
 }: {
   m: number;
   k: number;
   h: number;
-  xC: number;
-  xB: number;
+  xD_phys: number;
   g: number;
-  Etot: number;
-  y_A: number;
-  physScale: number;
   state: ReturnType<typeof getVSStateAtTime>;
+  mode: number;
+  viewMode: 'y-E' | 'E-x';
+  E_max: number;
 }) {
   const ctx = useChartContext();
   if (!ctx) return null;
-  const { toSvgX, plotOrigin, plotSize, font } = ctx;
+  const { toSvgX, toSvgY } = ctx;
 
-  // 1. 生成大 SVG 物理高度 1:1 对齐的四条能量曲线
-  const pointsCount = 100;
-  const yMin = -h;
-  const yMax = xC;
-  const dy = (yMax - yMin) / (pointsCount - 1);
+  const pointsCount = 80;
 
-  const epPoints: string[] = [];
-  const epePoints: string[] = [];
-  const ekPoints: string[] = [];
+  if (viewMode === 'E-x') {
+    // ── 高考标准坐标系 (E-x)：自变量为下落位移 x [0, x_max_phys]，因变量为能量 E [0, E_max] ──
+    const x_max_phys = mode === 1 ? xD_phys : h + xD_phys;
+    const dx = x_max_phys / (pointsCount - 1);
+    const epPoints: string[] = [];
+    const epePoints: string[] = [];
+    const ekPoints: string[] = [];
 
-  for (let i = 0; i < pointsCount; i++) {
-    const curX = yMin + i * dy; // 物理位移 x (向上为负，向下为正)
-    const ep = m * g * (xC - curX);
-    const epe = curX >= 0 ? 0.5 * k * curX * curX : 0;
-    const ek = Math.max(0, Etot - ep - epe);
+    for (let i = 0; i < pointsCount; i++) {
+      const curX = i * dx; // 物理位移 x (小球自下落以来的总位移)
+      let ep = 0;
+      let epe = 0;
+      if (mode === 1) {
+        ep = m * g * (xD_phys - curX);
+        epe = 0.5 * k * curX * curX;
+      } else {
+        ep = m * g * (h + xD_phys - curX);
+        if (curX <= h) {
+          epe = 0;
+        } else {
+          const compressX = curX - h;
+          epe = 0.5 * k * compressX * compressX;
+        }
+      }
+      const ek = Math.max(0, state.Etot - ep - epe);
 
-    // 右侧 transform 偏移了 translate(380, 20)，所以 Y 坐标要减去 20
-    const y_pixel = y_A + curX * physScale - 20;
+      epPoints.push(`${toSvgX(curX).toFixed(1)},${toSvgY(ep).toFixed(1)}`);
+      epePoints.push(`${toSvgX(curX).toFixed(1)},${toSvgY(epe).toFixed(1)}`);
+      ekPoints.push(`${toSvgX(curX).toFixed(1)},${toSvgY(ek).toFixed(1)}`);
+    }
 
-    epPoints.push(`${toSvgX(ep).toFixed(2)},${y_pixel.toFixed(2)}`);
-    epePoints.push(`${toSvgX(epe).toFixed(2)},${y_pixel.toFixed(2)}`);
-    ekPoints.push(`${toSvgX(ek).toFixed(2)},${y_pixel.toFixed(2)}`);
+    const epPath = `M ${epPoints.join(' L ')}`;
+    const epePath = `M ${epePoints.join(' L ')}`;
+    const ekPath = `M ${ekPoints.join(' L ')}`;
+
+    // 裁剪游标 x 位置为总位移（Mode 0 以释放点为原点，需加 h）
+    const cursorX = mode === 0 ? state.x + h : state.x;
+    const showCursor = cursorX >= -0.005;
+    const clampedX = Math.max(0, cursorX);
+    const x_cursor = toSvgX(clampedX);
+
+    // 垂直同步参考线位置计算
+    const xA = 0;
+    const xB = mode === 1 ? 0 : h;
+    const xC = mode === 1 ? (m * g) / k : h + (m * g) / k;
+    const xD = x_max_phys;
+
+    const svgXA = toSvgX(xA);
+    const svgXB = toSvgX(xB);
+    const svgXC = toSvgX(xC);
+    const svgXD = toSvgX(xD);
+
+    return (
+      <g>
+        {/* 特征位置垂直参考线 */}
+        <g opacity={0.4}>
+          {mode === 0 && (
+            <line
+              x1={svgXB}
+              y1={toSvgY(E_max)}
+              x2={svgXB}
+              y2={toSvgY(0)}
+              stroke={CANVAS_COLORS.axis}
+              strokeWidth={1}
+              strokeDasharray='3,3'
+            />
+          )}
+          <line
+            x1={svgXC}
+            y1={toSvgY(E_max)}
+            x2={svgXC}
+            y2={toSvgY(0)}
+            stroke={PHYSICS_COLORS.referencePoint}
+            strokeWidth={1}
+            strokeDasharray='3,3'
+          />
+          <line
+            x1={svgXD}
+            y1={toSvgY(E_max)}
+            x2={svgXD}
+            y2={toSvgY(0)}
+            stroke={PHYSICS_COLORS.heatLoss}
+            strokeWidth={1}
+            strokeDasharray='3,3'
+          />
+        </g>
+
+        {/* 特征位置字母标识 */}
+        <g fontSize={8} fontWeight='bold' textAnchor='middle' opacity={0.65}>
+          {mode === 0 && (
+            <text x={svgXA + 6} y={toSvgY(E_max) + 10} fill={CANVAS_COLORS.labelTextLight}>
+              A
+            </text>
+          )}
+          {mode === 0 && (
+            <text x={svgXB} y={toSvgY(E_max) + 10} fill={CANVAS_COLORS.labelTextLight}>
+              B
+            </text>
+          )}
+          <text x={svgXC} y={toSvgY(E_max) + 10} fill={PHYSICS_COLORS.referencePoint}>
+            C
+          </text>
+          <text x={svgXD - 6} y={toSvgY(E_max) + 10} fill={PHYSICS_COLORS.heatLoss}>
+            D
+          </text>
+        </g>
+
+        {/* 三条能量高考标准曲线 */}
+        <path d={epPath} fill='none' stroke={PHYSICS_COLORS.potentialGravity} strokeWidth={1.8} />
+        <path d={epePath} fill='none' stroke={PHYSICS_COLORS.potentialElastic} strokeWidth={1.8} />
+        <path d={ekPath} fill='none' stroke={PHYSICS_COLORS.kineticEnergy} strokeWidth={2} />
+        {/* 总机械能水平直线 */}
+        <line
+          x1={toSvgX(0)}
+          y1={toSvgY(state.Etot)}
+          x2={toSvgX(x_max_phys)}
+          y2={toSvgY(state.Etot)}
+          stroke={PHYSICS_COLORS.mechanicalEnergy}
+          strokeWidth={1.8}
+        />
+
+        {showCursor && (
+          <>
+            {/* 垂直游标扫描线 */}
+            <line
+              x1={x_cursor}
+              y1={toSvgY(E_max)}
+              x2={x_cursor}
+              y2={toSvgY(0)}
+              stroke={CANVAS_COLORS.trackHistory}
+              strokeWidth={1}
+              strokeDasharray='2,2'
+              opacity={0.85}
+            />
+            {/* 顶部的游标指向标 */}
+            <polygon
+              points={`${x_cursor - 4.5},${toSvgY(0)} ${x_cursor},${toSvgY(0) - 6} ${x_cursor + 4.5},${toSvgY(0)}`}
+              fill={CANVAS_COLORS.labelTextLight}
+            />
+
+            {/* 各交点圆圈 */}
+            <circle
+              cx={x_cursor}
+              cy={toSvgY(state.Ep)}
+              r={4}
+              fill={PHYSICS_COLORS.potentialGravity}
+              stroke='white'
+              strokeWidth={1}
+            />
+            <circle
+              cx={x_cursor}
+              cy={toSvgY(state.Epe)}
+              r={4}
+              fill={PHYSICS_COLORS.potentialElastic}
+              stroke='white'
+              strokeWidth={1}
+            />
+            <circle
+              cx={x_cursor}
+              cy={toSvgY(state.Ek)}
+              r={4}
+              fill={PHYSICS_COLORS.kineticEnergy}
+              stroke='white'
+              strokeWidth={1}
+            />
+            <circle
+              cx={x_cursor}
+              cy={toSvgY(state.Etot)}
+              r={4}
+              fill={PHYSICS_COLORS.mechanicalEnergy}
+              stroke='white'
+              strokeWidth={1}
+            />
+
+            {/* 悬浮文本标签 */}
+            <text
+              x={x_cursor}
+              y={toSvgY(state.Ep) - 7}
+              fontSize={8}
+              fill={PHYSICS_COLORS.potentialGravity}
+              fontWeight='bold'
+              textAnchor='middle'
+            >
+              {`Ep: ${state.Ep.toFixed(1)}J`}
+            </text>
+            <text
+              x={x_cursor}
+              y={toSvgY(state.Epe)}
+              dy='11'
+              fontSize={8}
+              fill={PHYSICS_COLORS.potentialElastic}
+              fontWeight='bold'
+              textAnchor='middle'
+            >
+              {`E弹: ${state.Epe.toFixed(1)}J`}
+            </text>
+            {state.Ek > 0.05 && (
+              <text
+                x={x_cursor}
+                y={toSvgY(state.Ek)}
+                dy='-7'
+                fontSize={8}
+                fill={PHYSICS_COLORS.kineticEnergy}
+                fontWeight='bold'
+                textAnchor='middle'
+              >
+                {`Ek: ${state.Ek.toFixed(1)}J`}
+              </text>
+            )}
+            <text
+              x={x_cursor + 6}
+              y={toSvgY(state.Etot)}
+              dy='3.2'
+              fontSize={8}
+              fill={PHYSICS_COLORS.mechanicalEnergy}
+              fontWeight='bold'
+              textAnchor='start'
+            >
+              {`E总: ${state.Etot.toFixed(1)}J`}
+            </text>
+          </>
+        )}
+      </g>
+    );
   }
 
-  const epPath = `M ${epPoints.join(' L ')}`;
-  const epePath = `M ${epePoints.join(' L ')}`;
-  const ekPath = `M ${ekPoints.join(' L ')}`;
+  // ── 直观高度对齐坐标系 (y-E)：自变量为高度 y (向上为正)，因变量为能量 E ──
+  const epPts: string[] = [];
+  const epePts: string[] = [];
+  const ekPts: string[] = [];
 
-  // 总能量竖直直线：X = toSvgX(Etot)
-  const x_Etot = toSvgX(Etot);
-  const y_top = y_A - h * physScale - 20;
-  const y_bottom = y_A + xC * physScale - 20;
+  if (mode === 1) {
+    // 模式2：原长由静止释放，没有自由落体段，全程都在 [-xD_phys, 0] 区间
+    const dy = -xD_phys / (pointsCount - 1);
+    for (let i = 0; i < pointsCount; i++) {
+      const curY_phys = -xD_phys + i * -dy; // 升序从 -xD_phys 到 0
+      const curX = -curY_phys;
+      const ep = m * g * (curY_phys + xD_phys);
+      const epe = 0.5 * k * curX * curX;
+      const ek = Math.max(0, state.Etot - ep - epe);
+      const y_pixel = toSvgY(curY_phys);
 
-  // 实时水平游标线位置
-  const y_current = y_A + state.x * physScale - 20;
+      epPts.push(`${toSvgX(ep).toFixed(1)},${y_pixel.toFixed(1)}`);
+      epePts.push(`${toSvgX(epe).toFixed(1)},${y_pixel.toFixed(1)}`);
+      ekPts.push(`${toSvgX(ek).toFixed(1)},${y_pixel.toFixed(1)}`);
+    }
+  } else {
+    // 模式0：自由落体砸弹簧。以 B 点 (y=0) 进行双段高精度平滑相切采样
+    const p1Count = 40; // 段一：弹簧压缩段 (从 -xD_phys 到 0)
+    const dy1 = xD_phys / (p1Count - 1);
+    for (let i = 0; i < p1Count; i++) {
+      const curY_phys = -xD_phys + i * dy1;
+      const curX = -curY_phys;
+      const ep = m * g * (curY_phys + xD_phys);
+      const epe = 0.5 * k * curX * curX;
+      const ek = Math.max(0, state.Etot - ep - epe);
+      const y_pixel = toSvgY(curY_phys);
 
-  // 辅助线向左穿透动画区的 X 坐标位移
-  // 由于外层包裹在 translate(380, 20) 中，向左延长 340 像素刚好到达大 SVG 的 X = 40 处
-  const x_left_penetrate = -340;
-  const x_right_edge = plotOrigin.x + plotSize.width;
+      epPts.push(`${toSvgX(ep).toFixed(1)},${y_pixel.toFixed(1)}`);
+      epePts.push(`${toSvgX(epe).toFixed(1)},${y_pixel.toFixed(1)}`);
+      ekPts.push(`${toSvgX(ek).toFixed(1)},${y_pixel.toFixed(1)}`);
+    }
+
+    const p2Count = 40; // 段二：自由落体段 (从 0 到 h)
+    const dy2 = h / (p2Count - 1);
+    for (let i = 0; i < p2Count; i++) {
+      const curY_phys = 0 + i * dy2;
+      const ep = m * g * (curY_phys + xD_phys);
+      const epe = 0; // 自由落体无弹性势能，弹性势能线严格为 0
+      const ek = Math.max(0, state.Etot - ep); // 动能线为完美直线段，与 Ep 严格对称
+      const y_pixel = toSvgY(curY_phys);
+
+      epPts.push(`${toSvgX(ep).toFixed(1)},${y_pixel.toFixed(1)}`);
+      epePts.push(`${toSvgX(epe).toFixed(1)},${y_pixel.toFixed(1)}`);
+      ekPts.push(`${toSvgX(ek).toFixed(1)},${y_pixel.toFixed(1)}`);
+    }
+  }
+
+  const epPath = `M ${epPts.join(' L ')}`;
+  const epePath = `M ${epePts.join(' L ')}`;
+  const ekPath = `M ${ekPts.join(' L ')}`;
+
+  const y_current = toSvgY(-state.x);
 
   return (
     <g>
-      {/* ── 三条水平辅助线向右穿透进入图表区 ── */}
-      {/* A线 (原长线) 穿透 */}
-      <line
-        x1={x_left_penetrate}
-        y1={y_A - 20}
-        x2={x_right_edge}
-        y2={y_A - 20}
-        stroke={CANVAS_COLORS.axis}
-        strokeWidth={1}
-        strokeDasharray='3,3'
-      />
-      <text
-        x={x_right_edge + 8}
-        y={y_A - 20 + 3}
-        fontSize={font(8.5)}
-        fill={CANVAS_COLORS.labelTextLight}
-        textAnchor='start'
-        fontWeight='bold'
-      >
-        A线 (原长)
-      </text>
-
-      {/* B线 (平衡位置) 穿透 */}
-      <line
-        x1={x_left_penetrate}
-        y1={y_A + xB * physScale - 20}
-        x2={x_right_edge}
-        y2={y_A + xB * physScale - 20}
-        stroke={PHYSICS_COLORS.referencePoint}
-        strokeWidth={1.2}
-        strokeDasharray='3,3'
-        opacity={0.8}
-      />
-      <text
-        x={x_right_edge + 8}
-        y={y_A + xB * physScale - 20 + 3}
-        fontSize={font(9)}
-        fill={PHYSICS_COLORS.frictionStatic}
-        textAnchor='start'
-        fontWeight='bold'
-      >
-        B线 (v最大)
-      </text>
-
-      {/* C线 (最低点) 穿透 */}
-      <line
-        x1={x_left_penetrate}
-        y1={y_A + xC * physScale - 20}
-        x2={x_right_edge}
-        y2={y_A + xC * physScale - 20}
-        stroke={PHYSICS_COLORS.heatLoss}
-        strokeWidth={1.2}
-        strokeDasharray='3,3'
-        opacity={0.8}
-      />
-      <text
-        x={x_right_edge + 8}
-        y={y_A + xC * physScale - 20 + 3}
-        fontSize={font(8.5)}
-        fill={PHYSICS_COLORS.tangentLine}
-        textAnchor='start'
-        fontWeight='bold'
-      >
-        C线 (最低点)
-      </text>
-
-      {/* ── 能量曲线绘制 ── */}
-      {/* 1. 重力势能 Ep (紫色向左下方倾斜的直线) */}
-      <path d={epPath} fill='none' stroke={PHYSICS_COLORS.potentialGravity} strokeWidth={2} />
-
-      {/* 2. 弹性势能 Epe (A线以上竖直零能量，A线以下向右下方弯曲的抛物线) */}
-      <path d={epePath} fill='none' stroke={PHYSICS_COLORS.potentialElastic} strokeWidth={2} />
-
-      {/* 3. 动能 Ek (A线前为直线，过了A线弯曲，顶点在纵向对齐B线，在C线归零) */}
+      <path d={epPath} fill='none' stroke={PHYSICS_COLORS.potentialGravity} strokeWidth={1.8} />
+      <path d={epePath} fill='none' stroke={PHYSICS_COLORS.potentialElastic} strokeWidth={1.8} />
       <path d={ekPath} fill='none' stroke={PHYSICS_COLORS.kineticEnergy} strokeWidth={2} />
-
-      {/* 4. 总机械能 E_总 (竖直绝对直线) */}
       <line
-        x1={x_Etot}
-        y1={y_top}
-        x2={x_Etot}
-        y2={y_bottom}
+        x1={toSvgX(state.Etot)}
+        y1={toSvgY(mode === 1 ? 0 : h)}
+        x2={toSvgX(state.Etot)}
+        y2={toSvgY(-xD_phys)}
         stroke={PHYSICS_COLORS.mechanicalEnergy}
-        strokeWidth={2}
+        strokeWidth={1.8}
       />
 
-      {/* ── 实时游标水平对齐穿透线 ── */}
-      <line
-        x1={x_left_penetrate}
-        y1={y_current}
-        x2={x_right_edge}
-        y2={y_current}
-        stroke={CANVAS_COLORS.trackHistory}
-        strokeWidth={1}
-        strokeDasharray='2,2'
-        opacity={0.85}
-      />
-
-      {/* 与各条曲线的交点圆点 */}
       <circle
         cx={toSvgX(state.Ep)}
         cy={y_current}
         r={4}
         fill={PHYSICS_COLORS.potentialGravity}
         stroke='white'
-        strokeWidth={1.2}
+        strokeWidth={1}
       />
       <circle
         cx={toSvgX(state.Epe)}
@@ -198,7 +356,7 @@ function SpringEnergyChartContent({
         r={4}
         fill={PHYSICS_COLORS.potentialElastic}
         stroke='white'
-        strokeWidth={1.2}
+        strokeWidth={1}
       />
       <circle
         cx={toSvgX(state.Ek)}
@@ -206,81 +364,441 @@ function SpringEnergyChartContent({
         r={4}
         fill={PHYSICS_COLORS.kineticEnergy}
         stroke='white'
-        strokeWidth={1.2}
+        strokeWidth={1}
       />
       <circle
-        cx={toSvgX(Etot)}
+        cx={toSvgX(state.Etot)}
         cy={y_current}
         r={4}
         fill={PHYSICS_COLORS.mechanicalEnergy}
         stroke='white'
-        strokeWidth={1.2}
+        strokeWidth={1}
       />
 
-      {/* 在交点处悬浮渲染能量实数小字标签 (在大 SVG 边缘避让处) */}
-      <g transform={`translate(${x_right_edge + 8}, ${y_current})`}>
-        {Math.abs(y_current - (y_A - 20)) > 15 &&
-          Math.abs(y_current - (y_A + xB * physScale - 20)) > 15 &&
-          Math.abs(y_current - (y_A + xC * physScale - 20)) > 15 && (
-            <>
-              <text
-                x={0}
-                y={-10}
-                fontSize={font(8)}
-                fill={PHYSICS_COLORS.potentialGravity}
-                fontWeight='bold'
-              >
-                {`Ep: ${state.Ep.toFixed(1)}J`}
-              </text>
-              <text
-                x={0}
-                y={2}
-                fontSize={font(8)}
-                fill={PHYSICS_COLORS.potentialElastic}
-                fontWeight='bold'
-              >
-                {`Ep': ${state.Epe.toFixed(1)}J`}
-              </text>
-              <text
-                x={0}
-                y={14}
-                fontSize={font(8)}
-                fill={PHYSICS_COLORS.kineticEnergy}
-                fontWeight='bold'
-              >
-                {`Ek: ${state.Ek.toFixed(1)}J`}
-              </text>
-            </>
+      <text
+        x={toSvgX(state.Ep)}
+        y={y_current - 7}
+        fontSize={8}
+        fill={PHYSICS_COLORS.potentialGravity}
+        fontWeight='bold'
+        textAnchor='middle'
+      >
+        {`Ep: ${state.Ep.toFixed(1)}J`}
+      </text>
+      {state.x > 0.005 && (
+        <text
+          x={toSvgX(state.Epe)}
+          y={y_current + 11}
+          fontSize={8}
+          fill={PHYSICS_COLORS.potentialElastic}
+          fontWeight='bold'
+          textAnchor='middle'
+        >
+          {`E弹: ${state.Epe.toFixed(1)}J`}
+        </text>
+      )}
+      {state.Ek > 0.05 && (
+        <text
+          x={toSvgX(state.Ek)}
+          y={y_current - 7}
+          fontSize={8}
+          fill={PHYSICS_COLORS.kineticEnergy}
+          fontWeight='bold'
+          textAnchor='middle'
+        >
+          {`Ek: ${state.Ek.toFixed(1)}J`}
+        </text>
+      )}
+      <text
+        x={toSvgX(state.Etot) + 6}
+        y={y_current + 3}
+        fontSize={8}
+        fill={PHYSICS_COLORS.mechanicalEnergy}
+        fontWeight='bold'
+        textAnchor='start'
+      >
+        {`E总: ${state.Etot.toFixed(1)}J`}
+      </text>
+    </g>
+  );
+}
+
+/**
+ * 合外力-高度/位移图表的自定义渲染内容组件
+ */
+function SpringForceChartContent({
+  m,
+  k,
+  h,
+  xD_phys,
+  g,
+  state,
+  mode,
+  yPhysMax,
+  viewMode,
+  F_max,
+}: {
+  m: number;
+  k: number;
+  h: number;
+  xD_phys: number;
+  g: number;
+  state: ReturnType<typeof getVSStateAtTime>;
+  mode: number;
+  yPhysMax: number;
+  viewMode: 'y-E' | 'E-x';
+  F_max: number;
+}) {
+  const ctx = useChartContext();
+  if (!ctx) return null;
+  const { toSvgX, toSvgY, toSvgY2 } = ctx;
+
+  // 1. 动态刷新力学标签：根据小球的实时速度 v 决定加速/减速描述
+  let leftLabel = '← 向上合力';
+  let rightLabel = '向下合力 →';
+
+  if (viewMode === 'E-x') {
+    // 高考标准下：Y轴是力，X轴是位移。加速为上，减速为下
+    leftLabel = '向下合力 (加速) ↑';
+    rightLabel = '向上合力 (减速) ↓';
+  } else {
+    // 直观对齐下：X轴是力，Y轴是高度。加速减速取决于速度方向
+    if (state.v > 0.01) {
+      // 速度向下 (v > 0)
+      leftLabel = '← 向上合力 (减速)';
+      rightLabel = '向下合力 (加速) →';
+    } else if (state.v < -0.01) {
+      // 速度向上 (v < 0)
+      leftLabel = '← 向上合力 (加速)';
+      rightLabel = '向下合力 (减速) →';
+    } else {
+      leftLabel = '← 向上合力';
+      rightLabel = '向下合力 →';
+    }
+  }
+
+  if (viewMode === 'E-x') {
+    // ── 高考标准坐标系 (F-x)：自变量为下落位移 x [0, x_max_phys]，因变量为合外力 F [-F_max, F_max] ──
+    const y_current = toSvgY(state.F_net);
+    const cursorX = mode === 0 ? state.x + h : state.x;
+    const x_current = toSvgX(Math.max(0, cursorX));
+
+    const x_max_phys = mode === 1 ? xD_phys : h + xD_phys;
+    const forcePoints: string[] = [];
+    const vPoints: string[] = [];
+    const pointsCount = 80;
+    const dx = x_max_phys / (pointsCount - 1);
+
+    // 下落阶段 (v >= 0)
+    for (let i = 0; i < pointsCount; i++) {
+      const curX = i * dx;
+      let F_net_val = 0;
+      let ep = 0;
+      let epe = 0;
+      if (mode === 1) {
+        F_net_val = m * g - k * curX;
+        ep = m * g * (xD_phys - curX);
+        epe = 0.5 * k * curX * curX;
+      } else {
+        if (curX <= h) {
+          F_net_val = m * g;
+          ep = m * g * (h + xD_phys - curX);
+          epe = 0;
+        } else {
+          F_net_val = m * g - k * (curX - h);
+          ep = m * g * (h + xD_phys - curX);
+          epe = 0.5 * k * (curX - h) * (curX - h);
+        }
+      }
+      const ek = Math.max(0, state.Etot - ep - epe);
+      const vVal = Math.sqrt((2 * ek) / m);
+
+      forcePoints.push(`${toSvgX(curX).toFixed(1)},${toSvgY(F_net_val).toFixed(1)}`);
+      vPoints.push(`${toSvgX(curX).toFixed(1)},${toSvgY2 ? toSvgY2(vVal).toFixed(1) : 0}`);
+    }
+    // 上升阶段 (v <= 0)
+    for (let i = pointsCount - 1; i >= 0; i--) {
+      const curX = i * dx;
+      let ep = 0;
+      let epe = 0;
+      if (mode === 1) {
+        ep = m * g * (xD_phys - curX);
+        epe = 0.5 * k * curX * curX;
+      } else {
+        if (curX <= h) {
+          ep = m * g * (h + xD_phys - curX);
+          epe = 0;
+        } else {
+          ep = m * g * (h + xD_phys - curX);
+          epe = 0.5 * k * (curX - h) * (curX - h);
+        }
+      }
+      const ek = Math.max(0, state.Etot - ep - epe);
+      const vVal = -Math.sqrt((2 * ek) / m);
+      vPoints.push(`${toSvgX(curX).toFixed(1)},${toSvgY2 ? toSvgY2(vVal).toFixed(1) : 0}`);
+    }
+
+    const forcePath = `M ${forcePoints.join(' L ')}`;
+    const vPath = `M ${vPoints.join(' L ')} Z`; // 整个下落上升周期闭合
+    const showCursor = cursorX >= -0.005;
+
+    // 垂直同步参考线位置计算
+    const xA = 0;
+    const xB = mode === 1 ? 0 : h;
+    const xC = mode === 1 ? (m * g) / k : h + (m * g) / k;
+    const xD = x_max_phys;
+
+    const svgXA = toSvgX(xA);
+    const svgXB = toSvgX(xB);
+    const svgXC = toSvgX(xC);
+    const svgXD = toSvgX(xD);
+
+    return (
+      <g>
+        {/* 特征位置垂直参考线 */}
+        <g opacity={0.4}>
+          {mode === 0 && (
+            <line
+              x1={svgXB}
+              y1={toSvgY(F_max)}
+              x2={svgXB}
+              y2={toSvgY(-F_max)}
+              stroke={CANVAS_COLORS.axis}
+              strokeWidth={1}
+              strokeDasharray='3,3'
+            />
           )}
+          <line
+            x1={svgXC}
+            y1={toSvgY(F_max)}
+            x2={svgXC}
+            y2={toSvgY(-F_max)}
+            stroke={PHYSICS_COLORS.referencePoint}
+            strokeWidth={1}
+            strokeDasharray='3,3'
+          />
+          <line
+            x1={svgXD}
+            y1={toSvgY(F_max)}
+            x2={svgXD}
+            y2={toSvgY(-F_max)}
+            stroke={PHYSICS_COLORS.heatLoss}
+            strokeWidth={1}
+            strokeDasharray='3,3'
+          />
+        </g>
+
+        {/* 特征位置字母标识 */}
+        <g fontSize={8} fontWeight='bold' textAnchor='middle' opacity={0.65}>
+          {mode === 0 && (
+            <text x={svgXA + 6} y={toSvgY(F_max) + 10} fill={CANVAS_COLORS.labelTextLight}>
+              A
+            </text>
+          )}
+          {mode === 0 && (
+            <text x={svgXB} y={toSvgY(F_max) + 10} fill={CANVAS_COLORS.labelTextLight}>
+              B
+            </text>
+          )}
+          <text x={svgXC} y={toSvgY(F_max) + 10} fill={PHYSICS_COLORS.referencePoint}>
+            C
+          </text>
+          <text x={svgXD - 6} y={toSvgY(F_max) + 10} fill={PHYSICS_COLORS.heatLoss}>
+            D
+          </text>
+        </g>
+
+        {/* 力学区间指示标注 */}
+        <text
+          x={20}
+          y={toSvgY(F_max * 0.5)}
+          fontSize={7.5}
+          fill={PHYSICS_COLORS.gravity}
+          fontWeight='semibold'
+          textAnchor='start'
+        >
+          {leftLabel}
+        </text>
+        <text
+          x={20}
+          y={toSvgY(-F_max * 0.5)}
+          fontSize={7.5}
+          fill={PHYSICS_COLORS.acceleration}
+          fontWeight='semibold'
+          textAnchor='start'
+        >
+          {rightLabel}
+        </text>
+
+        <path d={forcePath} fill='none' stroke={PHYSICS_COLORS.forceNet} strokeWidth={2} />
+        {toSvgY2 && (
+          <path d={vPath} fill='none' stroke={PHYSICS_COLORS.velocity} strokeWidth={1.8} />
+        )}
+
+        {showCursor && (
+          <>
+            {/* 垂直游标线 */}
+            <line
+              x1={x_current}
+              y1={toSvgY(F_max)}
+              x2={x_current}
+              y2={toSvgY(-F_max)}
+              stroke={CANVAS_COLORS.trackHistory}
+              strokeWidth={1}
+              strokeDasharray='2,2'
+              opacity={0.8}
+            />
+            {/* 游标交点 */}
+            <circle
+              cx={x_current}
+              cy={y_current}
+              r={4}
+              fill={PHYSICS_COLORS.forceNet}
+              stroke='white'
+              strokeWidth={1}
+            />
+            <text
+              x={x_current}
+              y={y_current - 7}
+              fontSize={8}
+              fill={PHYSICS_COLORS.forceNet}
+              fontWeight='bold'
+              textAnchor='middle'
+            >
+              {`F合: ${state.F_net.toFixed(1)}N`}
+            </text>
+
+            {toSvgY2 && (
+              <>
+                {/* 速度游标交点 */}
+                <circle
+                  cx={x_current}
+                  cy={toSvgY2(state.v)}
+                  r={4}
+                  fill={PHYSICS_COLORS.velocity}
+                  stroke='white'
+                  strokeWidth={1}
+                />
+                <text
+                  x={x_current}
+                  y={toSvgY2(state.v)}
+                  dy='11'
+                  fontSize={8}
+                  fill={PHYSICS_COLORS.velocity}
+                  fontWeight='bold'
+                  textAnchor='middle'
+                >
+                  {`v: ${state.v.toFixed(1)}m/s`}
+                </text>
+              </>
+            )}
+          </>
+        )}
       </g>
+    );
+  }
+
+  // ── 直观高度对齐坐标系 (y-F)：自变量为高度 y [-xD_phys, h] (X轴为合外力 F) ──
+  const y_current = toSvgY(-state.x);
+
+  const y_A_local = toSvgY(mode === 1 ? 0 : yPhysMax);
+  const y_B_local = toSvgY(0);
+  const y_D_local = toSvgY(-xD_phys);
+
+  const F_A = m * g;
+  const F_B = m * g;
+  const F_D = m * g - k * xD_phys;
+
+  let forcePath = '';
+  if (mode === 0) {
+    forcePath = `M ${toSvgX(F_A).toFixed(1)} ${y_A_local.toFixed(1)} L ${toSvgX(F_B).toFixed(1)} ${y_B_local.toFixed(1)} L ${toSvgX(F_D).toFixed(1)} ${y_D_local.toFixed(1)}`;
+  } else {
+    forcePath = `M ${toSvgX(F_B).toFixed(1)} ${y_B_local.toFixed(1)} L ${toSvgX(F_D).toFixed(1)} ${y_D_local.toFixed(1)}`;
+  }
+
+  return (
+    <g>
+      {/* 实时动态力学标签 */}
+      <text
+        x={toSvgX(-F_max * 0.45)}
+        y={48}
+        fontSize={7.5}
+        fill={PHYSICS_COLORS.acceleration}
+        fontWeight='semibold'
+        textAnchor='middle'
+      >
+        {leftLabel}
+      </text>
+      <text
+        x={toSvgX(F_max * 0.45)}
+        y={48}
+        fontSize={7.5}
+        fill={PHYSICS_COLORS.gravity}
+        fontWeight='semibold'
+        textAnchor='middle'
+      >
+        {rightLabel}
+      </text>
+
+      <path d={forcePath} fill='none' stroke={PHYSICS_COLORS.forceNet} strokeWidth={2} />
+
+      <circle
+        cx={toSvgX(state.F_net)}
+        cy={y_current}
+        r={4}
+        fill={PHYSICS_COLORS.forceNet}
+        stroke='white'
+        strokeWidth={1}
+      />
+
+      <text
+        x={toSvgX(state.F_net)}
+        y={y_current - 7}
+        fontSize={8}
+        fill={PHYSICS_COLORS.forceNet}
+        fontWeight='bold'
+        textAnchor='middle'
+      >
+        {`F合: ${state.F_net.toFixed(1)}N`}
+      </text>
     </g>
   );
 }
 
 export default function SpringCompositeAnimation() {
-  const { params, time, isPlaying, setIsPlaying, updateParam, setTime } = useAnimationStore(
+  const { params, time, isPlaying, setIsPlaying, setTime } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
       time: s.time,
       isPlaying: s.isPlaying,
       setIsPlaying: s.setIsPlaying,
-      updateParam: s.updateParam,
       setTime: s.setTime,
     }))
   );
 
   const svgRef = useRef<SVGSVGElement>(null);
 
-  // 1. 使用项目的响应式画布组件，使用 extraWide (800x440) 进行统一大屏展示
+  // 1. 画布基准尺寸 (700 x 420)
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide);
   const { font } = canvasSize;
+
+  const DESIGN_WIDTH = 700;
+  const DESIGN_HEIGHT = 420;
+
+  const vp = useViewport(canvasSize, {
+    designWidth: DESIGN_WIDTH,
+    designHeight: DESIGN_HEIGHT,
+  });
+
+  // 图像视图模式状态：'y-E' (直观对齐) | 'E-x' (高考标准)
+  const [viewMode, setViewMode] = useState<'y-E' | 'E-x'>('y-E');
 
   // 2. 物理参数提取
   const m = params.m ?? 0.5;
   const k = params.k ?? 50;
   const h = params.h ?? 0.8;
   const g = GRAVITY;
-  const mode = params.mode ?? 0; // 0=下落砸弹簧，1=原长释放
+  const mode = params.mode ?? 0;
 
   const showVectors = params.showVectors !== 0;
   const autoPause = params.autoPause !== 0;
@@ -295,98 +813,83 @@ export default function SpringCompositeAnimation() {
     return getVSStateAtTime(trajectory, time);
   }, [trajectory, time]);
 
-  // 4. 左侧动画区设计坐标与比例尺
-  const DESIGN_WIDTH = 800;
-  const DESIGN_HEIGHT = 440;
-  const centerX = 190; // 动画区水平中心
-  const y_ground = 420; // 地面 Y 像素
+  // 动态分析轨迹中的最低点物理位移 (即 x 轴最大值，用于三图 Y 轴物理量 1:1 精确映射)
+  const xD_phys = useMemo(() => {
+    if (trajectory.length === 0) return 0.5;
+    return Math.max(...trajectory.map((pt) => pt.x));
+  }, [trajectory]);
 
-  const xB = (m * g) / k; // 平衡位置
-  const omega = Math.sqrt(k / m); // 圆频率
+  // 4. 三图高度 1:1 精确同步映射推导 (总高度 420, 图表高度 350)
+  const yPhysMin = -xD_phys; // 最小值（最低点在下，物理高度负值）
+  const yPhysMax = mode === 1 ? 0 : h; // 最大值（释放点在上，物理高度正值）
+  const chartHeight = 350;
+  const marginTop = 25;
+  const marginBottom = 35;
+  const plotH = chartHeight - marginTop - marginBottom; // 290px
 
-  let A_amp: number; // 振幅
-  let xC: number; // 最低点
-  let v0: number; // 触网速度（情况1）
-  let t0: number; // 自由落体时间（情况1）
+  // 物理坐标 (向上为正) 转换到图表局部的 Y 像素
+  const toLocalSvgY = (physY: number) => {
+    const ratio = (physY - yPhysMin) / (yPhysMax - yPhysMin);
+    return marginTop + plotH - ratio * plotH;
+  };
 
-  if (mode === 1) {
-    // 情况2：原长释放，振幅 = xB
-    A_amp = xB;
-    xC = xB + A_amp; // = 2*xB
-    v0 = 0;
-    t0 = 0;
-  } else {
-    // 情况1：下落砸弹簧
-    t0 = Math.sqrt((2 * h) / g);
-    v0 = g * t0;
-    A_amp = Math.sqrt(xB * xB + (v0 * v0) / (omega * omega));
-    xC = xB + A_amp;
-  }
+  const centerX = 85;
+  // 变换原点至平移容器 Y=25 对齐
+  const y_B = 25 + toLocalSvgY(0);
+  const y_A = 25 + toLocalSvgY(mode === 1 ? 0 : h);
+  const xC_phys = (m * g) / k;
+  const y_C = 25 + toLocalSvgY(-xC_phys);
+  const y_D = 25 + toLocalSvgY(-xD_phys);
+  const ballY = 25 + toLocalSvgY(-state.x);
+  const y_ground = 380;
 
-  // 根据物理范围动态计算比例尺和原点位置（使用 computeScale）
-  const yMin = mode === 1 ? 0 : -h; // 物理坐标最小值（情况2从原长开始，情况1从释放点开始）
-  const yMax = xC; // 物理坐标最大值（最低点）
-
-  // 左侧动画区可用尺寸（预留上下边距）
-  const animCanvasW = centerX * 2; // 水平可用宽度
-  const animCanvasH = DESIGN_HEIGHT - 80; // 垂直可用高度（上下各留 40px）
-  const animPadding = 40; // 边距
-
-  // 使用 computeScale 计算缩放比，自动适配两种模式
-  const physScale = computeScale(
-    animCanvasW,
-    animCanvasH,
-    { xMin: 0, xMax: 1, yMin, yMax }, // x 维度不参与计算，仅 y 维度有效
-    animPadding
-  );
-
-  // 原长位置（x=0）的 Y 像素位置：顶部边距 + |yMin| * scale
-  const y_A = animPadding + Math.abs(yMin) * physScale;
-
-  // 小球中心 Y 像素位置：ballY = y_A - 14 + state.x * physScale (小球半径 r=14)
-  const ballY = y_A - 14 + state.x * physScale;
-
-  const y_lineA = y_A;
-  const y_lineB = y_A + xB * physScale;
-  const y_lineC = y_A + xC * physScale;
-
-  // 弹簧渲染位置
+  // 弹簧在设计画布上的顶底端 Y 坐标计算
   let springTopY: number;
   let springBottomY: number;
 
   if (mode === 1) {
-    // 情况2：弹簧固定在顶部，小球挂在下面
-    // 弹簧顶端固定在 y_A（顶部），底端连接小球顶部
-    springTopY = y_A;
-    springBottomY = ballY - 14; // 小球顶部
+    springTopY = 20; // 顶部悬挂点（支架视觉位置）
+    springBottomY = ballY - 14;
   } else {
-    // 情况1：弹簧固定在地面，小球从上方落下
-    // 弹簧底端固定在 y_ground，顶端在弹簧原长或贴紧小球底部
-    springTopY = state.x < 0 ? y_A : ballY + 14;
+    springTopY = state.x < 0 ? y_B : ballY + 14;
     springBottomY = y_ground;
   }
 
-  // 5. 特征点平衡位置自动暂停逻辑 (仅执行暂停，不包含视觉特效)
-  let T: number; // 周期
-  let t_cross: number; // 经过平衡点时刻
+  // 5. 特征点平衡位置自动暂停逻辑
+  const omega = Math.sqrt(k / m);
+  let T: number;
+  let t_cross: number;
 
   if (mode === 1) {
-    // 情况2：纯简谐运动，周期 T = 2π/ω
     T = (2 * Math.PI) / omega;
-    // 从原长(x=0)释放，第一次到达平衡位置(xB)的时刻
-    // x = xB + xB*cos(ωt + π) = xB(1 - cos(ωt))
-    // 当 x = xB 时，cos(ωt) = 0，ωt = π/2，t = π/(2ω)
     t_cross = Math.PI / (2 * omega);
   } else {
-    // 情况1：原有逻辑
-    const phi = Math.PI + Math.atan(v0 / (omega * xB));
+    const t0 = Math.sqrt((2 * h) / g);
+    const v0 = g * t0;
+    const phi = Math.PI + Math.atan(v0 / (omega * xC_phys));
     const tSpring = (2 * (2 * Math.PI - phi)) / omega;
     T = 2 * t0 + tSpring;
     t_cross = t0 + (1.5 * Math.PI - phi) / omega;
   }
 
+  // 矢量归一化 SceneScale（refMagnitudes 驱动箭头长度随状态变化）
+  const vMax = mode === 1 ? xC_phys * omega : Math.sqrt(2 * g * (h + xC_phys));
+  const springSceneConfig: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: 170, height: 350 },
+    originX: 0,
+    originY: 0,
+    refMagnitudes: {
+      gravity: m * g,
+      elasticForce: k * xD_phys,
+      velocity: Math.max(vMax, 1),
+      acceleration: g * 2,
+    },
+  };
+  const springSceneScale = createSceneScale(springSceneConfig);
+
   const lastTimeRef = useRef(time);
   const lastCrossTimeRef = useRef(-1);
+  const [showPauseTip, setShowPauseTip] = useState(false);
 
   useEffect(() => {
     if (!autoPause || !isPlaying) {
@@ -408,6 +911,7 @@ export default function SpringCompositeAnimation() {
         lastCrossTimeRef.current = t_cross_c;
         setTime(t_cross_c);
         setIsPlaying(false);
+        setShowPauseTip(true); // 自动定格气泡显示
         break;
       }
     }
@@ -415,44 +919,65 @@ export default function SpringCompositeAnimation() {
     lastTimeRef.current = time;
   }, [time, autoPause, isPlaying, T, t_cross, setTime, setIsPlaying]);
 
-  // 6. 拖拽定位坐标反算：使用 getScreenCTM().inverse() 精确映射
+  // 监听播放状态，播放时自动隐藏定格气泡
+  useEffect(() => {
+    if (isPlaying) {
+      setShowPauseTip(false);
+    }
+  }, [isPlaying]);
+
+  // 6. 静定态联动扫查交互拖拽反算
   const [isDragging, setIsDragging] = useState(false);
-  const dragStartY = useRef(0);
-  const dragStartH = useRef(0);
 
   const getSVGCoords = (e: React.MouseEvent<SVGSVGElement> | MouseEvent) => {
     const svg = svgRef.current;
     if (!svg) return { x: 0, y: 0 };
-    const pt = svg.createSVGPoint();
-    pt.x = e.clientX;
-    pt.y = e.clientY;
-    const ctm = svg.getScreenCTM();
-    if (!ctm) return { x: 0, y: 0 };
-    const transformed = pt.matrixTransform(ctm.inverse());
-    return { x: transformed.x, y: transformed.y };
+    const rect = svg.getBoundingClientRect();
+    const containerX = e.clientX - rect.left;
+    const containerY = e.clientY - rect.top;
+
+    const x = (containerX - vp.tx) / vp.scale;
+    const y = (containerY - vp.ty) / vp.scale;
+    return { x, y };
   };
 
   const handleMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
     if (isPlaying) return;
     const { x, y } = getSVGCoords(e);
-
-    // 只对左半边小球的拖拽做出响应
     const distToBall = Math.hypot(x - centerX, y - ballY);
-    if (distToBall <= 20) {
+    if (distToBall <= 25) {
       setIsDragging(true);
-      dragStartY.current = y;
-      dragStartH.current = h;
+      setShowPauseTip(false); // 手动拖拽时关闭暂停提示
     }
   };
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
     if (!isDragging) return;
     const { y } = getSVGCoords(e);
-    const dy = dragStartY.current - y;
-    const dh = dy / physScale;
-    const nextH = Math.min(Math.max(dragStartH.current + dh, 0.2), 1.5);
-    updateParam('h', nextH);
-    setTime(0);
+
+    // 从设计像素坐标精准反算为物理位移
+    const local_y = y - 25;
+    const clampedLocalY = Math.min(Math.max(local_y, 25), 315);
+    const ratio = (315 - clampedLocalY) / 290;
+    const x_drag = xD_phys - ratio * ((mode === 1 ? 0 : h) + xD_phys);
+
+    const fallingPoints = trajectory.filter((pt) => pt.v >= -0.02);
+    const searchTarget = fallingPoints.length > 0 ? fallingPoints : trajectory;
+
+    let bestPoint = searchTarget[0];
+    let minDiff = Infinity;
+
+    searchTarget.forEach((pt) => {
+      const diff = Math.abs(pt.x - x_drag);
+      if (diff < minDiff) {
+        minDiff = diff;
+        bestPoint = pt;
+      }
+    });
+
+    if (bestPoint) {
+      setTime(bestPoint.t);
+    }
   };
 
   const handleMouseUpOrLeave = () => {
@@ -461,201 +986,401 @@ export default function SpringCompositeAnimation() {
     }
   };
 
+  const E_max = state.Etot * 1.15;
+  const F_max = k * xD_phys * 1.15;
+  const v_max = vMax * 1.15;
+  const x_max_phys = mode === 1 ? xD_phys : h + xD_phys;
+
   return (
     <div
       ref={containerRef}
-      className='w-full h-full flex items-center justify-center bg-white rounded-xl shadow-inner overflow-hidden select-none'
+      className='relative w-full h-full flex items-center justify-center bg-white rounded-xl shadow-inner overflow-hidden select-none'
     >
-      {/* 独立大 SVG 视图，整合左侧动力学场景与右侧高度共轴图表 */}
+      {/* ── 高考标准与直观对齐双态视图切换按钮 ── */}
+      <div className='absolute top-4 right-4 flex items-center gap-1.5 p-1 bg-neutral-100/90 backdrop-blur border border-neutral-200 rounded-lg shadow-sm z-30'>
+        <button
+          onClick={() => setViewMode('y-E')}
+          className={`px-2.5 py-1 rounded text-[10px] font-semibold transition-all cursor-pointer ${viewMode === 'y-E'
+            ? 'bg-white text-neutral-800 shadow-sm'
+            : 'text-neutral-500 hover:text-neutral-700'
+            }`}
+        >
+          直观对齐 (y - E)
+        </button>
+        <button
+          onClick={() => setViewMode('E-x')}
+          className={`px-2.5 py-1 rounded text-[10px] font-semibold transition-all cursor-pointer ${viewMode === 'E-x'
+            ? 'bg-white text-neutral-800 shadow-sm'
+            : 'text-neutral-500 hover:text-neutral-700'
+            }`}
+        >
+          高考标准 (E - x)
+        </button>
+      </div>
+
       <svg
         ref={svgRef}
-        viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`}
-        className='w-full h-full bg-transparent'
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className='bg-transparent overflow-hidden'
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUpOrLeave}
         onMouseLeave={handleMouseUpOrLeave}
         style={{ cursor: isDragging ? 'grabbing' : !isPlaying ? 'grab' : 'default' }}
       >
-        {/* ── 拖拽交互提示 ── */}
-        {!isPlaying && !isDragging && (
-          <text
-            x={40}
-            y={30}
-            fontSize={font(9.5)}
-            fill={CANVAS_COLORS.labelTextLight}
-            fontWeight='semibold'
-            className='animate-pulse'
-          >
-            {mode === 1
-              ? '💡 挂球模式：弹簧固定在顶部，小球从原长位置释放'
-              : '💡 鼠标拖动左侧小球可改变初始释放高度 h'}
-          </text>
-        )}
-
-        {/* ── 左半部分：动力学场景 ── */}
-        <g>
-          {/* 固定底座 */}
-          <PhysicsGround
-            x={centerX - 50}
-            y={y_ground}
-            width={100}
-            type='bracket'
-            appearance={{ color: CANVAS_COLORS.labelTextLight }}
-          />
-
-          {/* 地面 */}
-          <PhysicsGround
-            x={centerX - 90}
-            y={y_ground + 8}
-            width={180}
-            type='ground'
-            appearance={{ color: CANVAS_COLORS.trackHistory }}
-          />
-
-          {/* 弹簧渲染 */}
-          <Spring
-            x1={centerX}
-            y1={springTopY}
-            x2={centerX}
-            y2={springBottomY}
-            coils={12}
-            radius={12}
-          />
-
-          {/* 下落小球 */}
-          <Ball
-            cx={centerX}
-            cy={ballY}
-            r={14}
-            type='oscillatorMetal'
-            stroke={SCENE_COLORS.sphere.oscillatorMetal.stroke}
-            strokeWidth={1.5}
-          />
-
-          {/* 物理矢量箭头渲染 */}
-          {showVectors && (
-            <g>
-              {/* 重力 G: 灰色，绑定在小球中心 */}
-              <VectorArrow
-                origin={{ x: centerX, y: -ballY }}
-                vector={{ x: 0, y: -m * g * 12 }}
-                type='gravity'
-                color={PHYSICS_COLORS.gravity}
-                sceneScale={IDENTITY_SCENE_SCALE}
-                label='G'
-              />
-
-              {/* 弹力 F: 蓝色 */}
+        <g transform={vp.transform}>
+          {!isPlaying && !isDragging && (
+            <text
+              x={35}
+              y={20}
+              fontSize={font(9.5)}
+              fill={CANVAS_COLORS.labelTextLight}
+              fontWeight='semibold'
+              className='animate-pulse'
+            >
               {mode === 1
-                ? // 情况2：弹簧始终有伸长，弹力向上
-                  state.x > 0 && (
-                    <VectorArrow
-                      origin={{ x: centerX, y: -(ballY - 14) }}
-                      vector={{ x: 0, y: -state.F_spring * 6 }}
-                      type='elasticForce'
-                      color={PHYSICS_COLORS.elasticForce}
-                      sceneScale={IDENTITY_SCENE_SCALE}
-                      label='F'
-                    />
-                  )
-                : // 情况1：只在接触压缩时显示，弹力向上
-                  state.x >= 0 && (
-                    <VectorArrow
-                      origin={{ x: centerX, y: -(ballY + 14) }}
-                      vector={{ x: 0, y: state.F_spring * 6 }}
-                      type='elasticForce'
-                      color={PHYSICS_COLORS.elasticForce}
-                      sceneScale={IDENTITY_SCENE_SCALE}
-                      label='F'
-                    />
-                  )}
-
-              {/* 速度 v: 绿色，绑定在小球左侧 25 像素 */}
-              {Math.abs(state.v) > 0.05 && (
-                <VectorArrow
-                  origin={{ x: centerX - 25, y: -ballY }}
-                  vector={{ x: 0, y: -state.v * 16 }}
-                  type='velocity'
-                  color={PHYSICS_COLORS.velocity}
-                  sceneScale={IDENTITY_SCENE_SCALE}
-                  label='v'
-                />
-              )}
-
-              {/* 加速度 a: 红色，绑定在小球右侧 25 像素 */}
-              {Math.abs(state.a) > 0.05 && (
-                <VectorArrow
-                  origin={{ x: centerX + 25, y: -ballY }}
-                  vector={{ x: 0, y: -state.a * 6 }}
-                  type='acceleration'
-                  color={PHYSICS_COLORS.acceleration}
-                  sceneScale={IDENTITY_SCENE_SCALE}
-                  label='a'
-                />
-              )}
-            </g>
+                ? '💡 挂球扫查：在小球上按住并上下拖拽，联动扫查图线交点'
+                : '💡 下落扫查：按住小球拖拽进行慢动作扫查；高度 h 可在左侧滑块修改'}
+            </text>
           )}
 
-          {/* 左侧水平特征短虚线 (引导线，只延伸到中轴线) */}
-          <g opacity={0.6}>
+          {/* ── 左侧物理动画高度特征参考虚线 (仅限左侧指示，防右侧污染) ── */}
+          <g opacity={0.65}>
+            {mode === 0 && (
+              <line
+                x1={30}
+                y1={y_A}
+                x2={viewMode === 'y-E' ? 645 : 105}
+                y2={y_A}
+                stroke={CANVAS_COLORS.axis}
+                strokeWidth={1}
+                strokeDasharray='3,3'
+              />
+            )}
             <line
-              x1={40}
-              y1={y_lineA}
-              x2={centerX + 20}
-              y2={y_lineA}
+              x1={30}
+              y1={y_B}
+              x2={viewMode === 'y-E' ? 645 : 105}
+              y2={y_B}
               stroke={CANVAS_COLORS.axis}
-              strokeWidth={1}
+              strokeWidth={1.2}
               strokeDasharray='3,3'
             />
             <line
-              x1={40}
-              y1={y_lineB}
-              x2={centerX + 20}
-              y2={y_lineB}
+              x1={30}
+              y1={y_C}
+              x2={viewMode === 'y-E' ? 645 : 105}
+              y2={y_C}
               stroke={PHYSICS_COLORS.referencePoint}
               strokeWidth={1.2}
               strokeDasharray='3,3'
             />
             <line
-              x1={40}
-              y1={y_lineC}
-              x2={centerX + 20}
-              y2={y_lineC}
+              x1={30}
+              y1={y_D}
+              x2={viewMode === 'y-E' ? 645 : 105}
+              y2={y_D}
               stroke={PHYSICS_COLORS.heatLoss}
               strokeWidth={1.2}
               strokeDasharray='3,3'
             />
           </g>
-        </g>
 
-        {/* ── 右半部分：自定义高度共轴能量图 (基于 BasePhysicsChart 组件组合构建) ── */}
-        <g transform='translate(380, 20)'>
-          <BasePhysicsChart
-            xDomain={[0, Math.max(state.Etot * 1.05, 10)]}
-            yDomain={[xC, mode === 1 ? 0 : -h]} // 轴向反转映射，大值 xC 在底
-            xLabel='E (J)'
-            yLabel='x (m)'
-            fixedSize={{ width: 380, height: 380 }}
-            gridCount={{ x: 5, y: 5 }}
-            formatX={(v: number) => `${v.toFixed(0)}J`}
-            formatY={(_v: number) => ''} // 屏蔽纵轴密集的位移数字刻度
-          >
-            <SpringEnergyChartContent
-              m={m}
-              k={k}
-              h={mode === 1 ? 0 : h}
-              xC={xC}
-              xB={xB}
-              g={g}
-              Etot={state.Etot}
-              y_A={y_A}
-              physScale={physScale}
-              state={state}
+          {/* 左侧特征字母徽章 */}
+          <g fontSize={11} fontWeight='bold' textAnchor='middle'>
+            {mode === 0 && (
+              <g transform={`translate(18, ${y_A + 3})`}>
+                <circle
+                  r={8}
+                  fill={CANVAS_COLORS.axis}
+                  fillOpacity={0.2}
+                  stroke={CANVAS_COLORS.axis}
+                  strokeWidth={1}
+                />
+                <text fill={CANVAS_COLORS.labelTextLight} fontSize={9} dy='0.31em'>
+                  A
+                </text>
+              </g>
+            )}
+            <g transform={`translate(18, ${y_B + 3})`}>
+              <circle
+                r={8}
+                fill={CANVAS_COLORS.axis}
+                fillOpacity={0.2}
+                stroke={CANVAS_COLORS.axis}
+                strokeWidth={1.2}
+              />
+              <text fill={CANVAS_COLORS.labelTextLight} fontSize={9} dy='0.31em'>
+                B
+              </text>
+            </g>
+            <g transform={`translate(18, ${y_C + 3})`}>
+              <circle
+                r={8}
+                fill={PHYSICS_COLORS.referencePoint}
+                fillOpacity={0.15}
+                stroke={PHYSICS_COLORS.referencePoint}
+                strokeWidth={1.2}
+              />
+              <text fill={PHYSICS_COLORS.referencePoint} fontSize={9} dy='0.31em'>
+                C
+              </text>
+            </g>
+            <g transform={`translate(18, ${y_D + 3})`}>
+              <circle
+                r={8}
+                fill={PHYSICS_COLORS.heatLoss}
+                fillOpacity={0.15}
+                stroke={PHYSICS_COLORS.heatLoss}
+                strokeWidth={1.2}
+              />
+              <text fill={PHYSICS_COLORS.heatLoss} fontSize={9} dy='0.31em'>
+                D
+              </text>
+            </g>
+          </g>
+
+          {/* 右侧特征文字标签 (仅直观高度对齐视图下显示) */}
+          {viewMode === 'y-E' && (
+            <g fontSize={9.5} fill={CANVAS_COLORS.labelTextLight} textAnchor='start'>
+              {mode === 0 && (
+                <text x={650} y={y_A + 3}>
+                  A (释放点)
+                </text>
+              )}
+              <text x={650} y={y_B + 3}>
+                B (原长点)
+              </text>
+              <text x={650} y={y_C + 3} fill={PHYSICS_COLORS.frictionStatic}>
+                C (平衡位置)
+              </text>
+              <text x={650} y={y_D + 3} fill={PHYSICS_COLORS.tangentLine}>
+                D (最低点)
+              </text>
+            </g>
+          )}
+
+          {/* ── 左区：物理动画 ── */}
+          <g>
+            {mode === 1 ? (
+              <g transform='scale(1, -1) translate(0, -100)'>
+                <PhysicsGround
+                  x={centerX - 40}
+                  y={80}
+                  width={80}
+                  type='bracket'
+                  appearance={{ color: CANVAS_COLORS.labelTextLight }}
+                />
+              </g>
+            ) : (
+              <PhysicsGround
+                x={centerX - 40}
+                y={y_ground}
+                width={80}
+                type='bracket'
+                appearance={{ color: CANVAS_COLORS.labelTextLight }}
+              />
+            )}
+
+            {mode === 0 && (
+              <PhysicsGround
+                x={centerX - 65}
+                y={y_ground + 8}
+                width={130}
+                type='ground'
+                appearance={{ color: CANVAS_COLORS.trackHistory }}
+              />
+            )}
+
+            <Spring
+              x1={centerX}
+              y1={springTopY}
+              x2={centerX}
+              y2={springBottomY}
+              coils={12}
+              radius={11}
             />
-          </BasePhysicsChart>
+
+            <Ball
+              cx={centerX}
+              cy={ballY}
+              r={14}
+              type='oscillatorMetal'
+              stroke={SCENE_COLORS.sphere.oscillatorMetal.stroke}
+              strokeWidth={1.5}
+            />
+
+            {showVectors && (
+              <g>
+                <VectorArrow
+                  origin={{ x: centerX, y: -ballY }}
+                  vector={{ x: 0, y: -m * g }}
+                  type='gravity'
+                  color={PHYSICS_COLORS.gravity}
+                  sceneScale={springSceneScale}
+                  label='G'
+                />
+
+                {mode === 1
+                  ? state.x > 0 && (
+                    <VectorArrow
+                      origin={{ x: centerX, y: -(ballY - 14) }}
+                      vector={{ x: 0, y: state.F_spring }}
+                      type='elasticForce'
+                      color={PHYSICS_COLORS.elasticForce}
+                      sceneScale={springSceneScale}
+                      label='F弹'
+                    />
+                  )
+                  : state.x >= 0 && (
+                    <VectorArrow
+                      origin={{ x: centerX, y: -(ballY + 14) }}
+                      vector={{ x: 0, y: state.F_spring }}
+                      type='elasticForce'
+                      color={PHYSICS_COLORS.elasticForce}
+                      sceneScale={springSceneScale}
+                      label='F弹'
+                    />
+                  )}
+
+                {Math.abs(state.v) > 0.05 && (
+                  <VectorArrow
+                    origin={{ x: centerX - 23, y: -ballY }}
+                    vector={{ x: 0, y: -state.v }}
+                    type='velocity'
+                    color={PHYSICS_COLORS.velocity}
+                    sceneScale={springSceneScale}
+                    label='v'
+                  />
+                )}
+
+                {Math.abs(state.a) > 0.05 && (
+                  <VectorArrow
+                    origin={{ x: centerX + 23, y: -ballY }}
+                    vector={{ x: 0, y: -state.a }}
+                    type='acceleration'
+                    color={PHYSICS_COLORS.acceleration}
+                    sceneScale={springSceneScale}
+                    label='a'
+                  />
+                )}
+              </g>
+            )}
+          </g>
+
+          {/* ── 中区：能量图表 ── */}
+          <g transform='translate(195, 25)'>
+            <BasePhysicsChart
+              xDomain={viewMode === 'E-x' ? [0, x_max_phys] : [0, E_max]}
+              yDomain={viewMode === 'E-x' ? [0, E_max] : [-xD_phys, mode === 1 ? 0 : h]}
+              xLabel={viewMode === 'E-x' ? 'x (m)' : 'E (J)'}
+              yLabel={viewMode === 'E-x' ? 'E (J)' : 'y (m)'}
+              title={viewMode === 'E-x' ? '能量 - 位移图像 (E - x)' : '能量 - 高度图像 (E - y)'}
+              fixedSize={{ width: 230, height: 350 }}
+              showGrid={false}
+              gridCount={{ x: 4, y: 5 }}
+              formatX={
+                viewMode === 'E-x'
+                  ? (v: number) => `${v.toFixed(1)}m`
+                  : (v: number) => `${v.toFixed(0)}J`
+              }
+              formatY={viewMode === 'E-x' ? (v: number) => `${v.toFixed(0)}J` : () => ''}
+            >
+              <SpringEnergyChartContent
+                m={m}
+                k={k}
+                h={mode === 1 ? 0 : h}
+                xD_phys={xD_phys}
+                g={g}
+                state={state}
+                mode={mode}
+                viewMode={viewMode}
+                E_max={E_max}
+              />
+            </BasePhysicsChart>
+          </g>
+
+          {/* ── 右区：合外力图表 ── */}
+          <g transform='translate(445, 25)'>
+            <BasePhysicsChart
+              xDomain={viewMode === 'E-x' ? [0, x_max_phys] : [-F_max, F_max]}
+              yDomain={viewMode === 'E-x' ? [-F_max, F_max] : [-xD_phys, mode === 1 ? 0 : h]}
+              yDomain2={viewMode === 'E-x' ? [-v_max, v_max] : undefined}
+              xLabel={viewMode === 'E-x' ? 'x (m)' : 'F合 (N)'}
+              yLabel={viewMode === 'E-x' ? 'F合 (N)' : ''}
+              yLabel2={viewMode === 'E-x' ? 'v (m/s)' : undefined}
+              title={
+                viewMode === 'E-x' ? '合外力 / 速度 - 位移图像 (F/v - x)' : '合外力 - 高度图像 (F合 - y)'
+              }
+              fixedSize={{ width: 200, height: 350 }}
+              showGrid={false}
+              gridCount={{ x: 4, y: 5 }}
+              formatX={
+                viewMode === 'E-x'
+                  ? (v: number) => `${v.toFixed(1)}m`
+                  : (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(0)}N`
+              }
+              formatY={
+                viewMode === 'E-x' ? (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(0)}N` : () => ''
+              }
+              formatY2={
+                viewMode === 'E-x' ? (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(1)}` : undefined
+              }
+              yBaseline={0}
+              yBaseline2={0}
+            >
+              <SpringForceChartContent
+                m={m}
+                k={k}
+                h={mode === 1 ? 0 : h}
+                xD_phys={xD_phys}
+                g={g}
+                state={state}
+                mode={mode}
+                yPhysMax={mode === 1 ? 0 : h}
+                viewMode={viewMode}
+                F_max={F_max}
+              />
+            </BasePhysicsChart>
+          </g>
+
+          {/* ── 左区小球实时滑动高度光标 (仅在直观对齐或左侧动画区边界内渲染，不跨越干扰标准图像) ── */}
+          <g>
+            <line
+              x1={30}
+              y1={ballY}
+              x2={viewMode === 'y-E' ? 645 : 105}
+              y2={ballY}
+              stroke={CANVAS_COLORS.trackHistory}
+              strokeWidth={1}
+              strokeDasharray='2,2'
+              opacity={0.8}
+            />
+            <polygon
+              points={`30,${ballY - 4.5} 36,${ballY} 30,${ballY + 4.5}`}
+              fill={CANVAS_COLORS.labelTextLight}
+            />
+          </g>
         </g>
       </svg>
+
+      {/* 自动暂停教学定格卡片 (毛玻璃+微动效) */}
+      {showPauseTip && (
+        <div className='absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2.5 bg-amber-50/95 backdrop-blur-md border border-amber-200 shadow-xl rounded-lg text-xs text-amber-950 flex items-start gap-2.5 max-w-[85%] animate-in fade-in slide-in-from-top-2 duration-300 z-50'>
+          <span className='shrink-0 text-amber-500 font-bold text-sm leading-none'>💡</span>
+          <div className='leading-normal'>
+            <strong>已在平衡位置（C点）自动定格：</strong>此时重力等于弹力，合外力为零（a =
+            0），小球的<strong>速度与动能达到全过程的最大值</strong>。点击下方播放按钮可继续运动。
+          </div>
+          <button
+            onClick={() => setShowPauseTip(false)}
+            className='shrink-0 text-amber-400 hover:text-amber-600 ml-1 font-bold text-base leading-none transition-colors'
+          >
+            ×
+          </button>
+        </div>
+      )}
     </div>
   );
 }

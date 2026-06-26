@@ -415,12 +415,10 @@ export function buildKinematicsQuantities(
       const v0 = params.v0 ?? 4.0
       const a = params.a ?? 2.0
       const chartMode = params.chartMode ?? 0
-      const showAux = params.showAux ?? 1
 
       // 刹车拦截
       const isBraking = a < 0
       const tBrake = isBraking ? -v0 / a : Infinity
-      const xMax = isBraking ? - (v0 * v0) / (2 * a) : Infinity
 
       const isStopped = time >= tBrake && isBraking
       const tEff = isStopped ? tBrake : time
@@ -468,7 +466,7 @@ export function buildKinematicsQuantities(
       if (isBraking) {
         warnings.push({
           text: `刹车情境：在 t = ${tBrake.toFixed(2)}s 时滑块静止，此后图象发生无物理意义断点。`,
-          level: (isStopped ? 'danger' : 'warning') as const
+          level: isStopped ? ('danger' as const) : ('warning' as const)
         })
       }
 

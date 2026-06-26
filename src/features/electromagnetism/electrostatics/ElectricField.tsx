@@ -30,8 +30,7 @@ export default function ElectricField() {
   const rTest = params.rTest ?? 3.0
   const showFieldLines = (params.showFieldLines ?? 1) === 1
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
-  const { font } = canvasSize
+  const [containerRef] = useCanvasSize(CANVAS_PRESETS.tall)
   const svgRef = useRef<SVGSVGElement>(null)
 
   const w = DESIGN_WIDTH

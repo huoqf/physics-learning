@@ -5,7 +5,6 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, ENERGY_COLORS, SCENE_COLORS, STROKE, CHART_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { KatexFormula } from '@/components/UI'
 import { RelationChart } from '@/components/Chart'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import {
