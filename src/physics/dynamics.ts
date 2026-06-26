@@ -8,38 +8,8 @@ export function calculateFriction(mu: number, N: number, _isKinetic: boolean): {
   return { f: mu * N };
 }
 
-export function calculateElasticForce(k: number, x: number): { F: number } {
-  return { F: -k * x };
-}
-
 export function calculateCoulombForce(k: number, q1: number, q2: number, r: number): { F: number } {
   return { F: k * Math.abs(q1 * q2) / (r * r) };
-}
-
-/**
- * 计算万有引力
- * F = G·m1·m2 / r²
- *
- * @param G 万有引力常量 (N·m²/kg²)，通常取 6.674e-11
- * @param m1 物体1质量 (kg)，必须 > 0
- * @param m2 物体2质量 (kg)，必须 > 0
- * @param r 两物体间距 (m)，必须 > 0
- * @returns F 万有引力大小 (N)
- *
- * @category M4
- */
-export function calculateGravitation(G: number, m1: number, m2: number, r: number): { F: number } {
-  return { F: G * m1 * m2 / (r * r) };
-}
-
-export function calculateInclinedPlane(m: number, angleDeg: number, mu: number, g: number): { N: number; f: number; a: number; F_parallel: number; F_vertical: number } {
-  const angleRad = (angleDeg * Math.PI) / 180;
-  const F_parallel = m * g * Math.sin(angleRad);
-  const F_vertical = m * g * Math.cos(angleRad);
-  const N = F_vertical;
-  const f = mu * N;
-  const a = (F_parallel - f) / m;
-  return { N, f, a, F_parallel, F_vertical };
 }
 
 /**

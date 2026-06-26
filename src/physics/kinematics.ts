@@ -227,10 +227,6 @@ export function calculateInstantaneousVelocity(
   return { vBar, vInst, residual: Math.abs(vBar - vInst) }
 }
 
-export function calculateUniformMotion(v: number, t: number): { s: number } {
-  return { s: v * t };
-}
-
 export function calculateAcceleratedMotion(v0: number, a: number, t: number): { v: number; s: number } {
   return {
     v: v0 + a * t,
@@ -328,68 +324,6 @@ export function calculateCircularMotion(r: number, omega: number, t: number): { 
     v: r * omega,
     a_c: r * omega * omega,
     period: (2 * Math.PI) / omega
-  };
-}
-
-/**
- * 由周期推算匀速圆周运动参数
- *
- * @param r 圆周运动半径 (m)，正值
- * @param T 周期 (s)，正值
- * @returns omega 角速度 (rad/s)、v 线速度大小 (m/s)、a_c 向心加速度大小 (m/s²)
- */
-export function calculateCircularFromPeriod(r: number, T: number): { omega: number; v: number; a_c: number } {
-  const omega = (2 * Math.PI) / T;
-  return {
-    omega,
-    v: r * omega,
-    a_c: r * omega * omega
-  };
-}
-
-interface FreeFallPoint {
-  time: number;
-  y: number;
-  v: number;
-  a: number;
-}
-
-export function calculateFreeFallWithDrag(v0: number, g: number, dragK: number, m: number, totalTime: number, dt: number = 0.001): { positions: FreeFallPoint[]; finalY: number; finalV: number; isTerminal: boolean } {
-  if (dragK === 0) {
-    const points: FreeFallPoint[] = [];
-    for (let t = 0; t <= totalTime + 0.0001; t += 0.1) {
-      const { v, y } = calculateFreeFall(v0, g, t);
-      points.push({ time: t, y, v, a: g });
-    }
-    const { v: finalV, y: finalY } = calculateFreeFall(v0, g, totalTime);
-    return { positions: points, finalY, finalV, isTerminal: false };
-  }
-
-  const points: FreeFallPoint[] = []
-  let currentV = v0;
-  let currentY = 0;
-  let t = 0;
-
-  points.push({ time: 0, y: 0, v: v0, a: g });
-
-  const terminalV = Math.sqrt((m * g) / dragK);
-
-  while (t <= totalTime + 0.0001) {
-    const acceleration = g - (dragK * currentV * Math.abs(currentV)) / m;
-    currentV += acceleration * dt;
-    currentY += currentV * dt;
-    t += dt;
-
-    if (Math.abs(acceleration) < 0.001 || Math.abs(currentV) >= terminalV * 0.999) {
-      break;
-    }
-  }
-
-  return {
-    positions: points,
-    finalY: currentY,
-    finalV: currentV,
-    isTerminal: Math.abs(currentV) >= terminalV * 0.999
   };
 }
 
@@ -597,34 +531,6 @@ export function calculateDualObjectComparison(
   }
 
   return { vA, vB, deltaVA, deltaVB, aA, aB, sA, sB, conclusion }
-}
-
-/**
- * 根据速度与加速度方向判定运动状态（进阶版）。
- * @param v - 当前速度 (m/s)
- * @param a - 当前加速度 (m/s²)
- * @returns 矢量方向关系与运动状态
- */
-export function determineMotionState(
-  v: number,
-  a: number
-): {
-  /** v⃗ 与 a⃗ 的方向关系 */
-  direction: '同向' | '反向' | '速度为零'
-  /** 运动状态判定 */
-  motion: '加速' | '减速' | '匀速'
-} {
-  if (Math.abs(v) < 1e-9) {
-    return { direction: '速度为零', motion: a !== 0 ? '加速' : '匀速' }
-  }
-  if (Math.abs(a) < 1e-9) {
-    return { direction: v > 0 ? '同向' : '反向', motion: '匀速' }
-  }
-  const sameDirection = (v > 0 && a > 0) || (v < 0 && a < 0)
-  return {
-    direction: sameDirection ? '同向' : '反向',
-    motion: sameDirection ? '加速' : '减速',
-  }
 }
 
 /**

@@ -11,29 +11,6 @@ export interface CanvasPoint {
 /** 默认物理-像素比例尺：30px = 1m（适用于水平单向运动场景） */
 export const PX_PER_METER = 30
 
-/**
- * 物理距离（m）转像素距离（px）
- *
- * 适用于水平单向运动场景（如连接体、摩擦力模型）。
- * 二维运动场景应使用 physicsToCanvas()。
- *
- * @param meters 物理距离 (m)
- * @returns 像素距离 (px)
- */
-export function metersToPx(meters: number): number {
-  return meters * PX_PER_METER
-}
-
-/**
- * 像素距离（px）转物理距离（m）
- *
- * @param px 像素距离 (px)
- * @returns 物理距离 (m)
- */
-export function pxToMeters(px: number): number {
-  return px / PX_PER_METER
-}
-
 /** 物理世界边界（物理单位，如米） */
 export interface WorldBounds {
   xMin: number; xMax: number
@@ -114,30 +91,6 @@ export function physicsToCanvasWithOrigin(
   return { cx, cy };
 }
 
-/**
- * Canvas 坐标 → 物理坐标（自定义原点）
- *
- * physicsToCanvasWithOrigin 的逆变换。
- *
- * @param cx Canvas 像素横坐标 (px)
- * @param cy Canvas 像素纵坐标 (px)
- * @param originX Canvas 中物理原点的 X 像素位置 (px)
- * @param originY Canvas 中物理原点的 Y 像素位置 (px)
- * @param scale 物理单位到像素的缩放比 (px/m)
- * @returns 物理坐标 { x, y }，y 向上为正
- */
-export function canvasToPhysicsWithOrigin(
-  cx: number,
-  cy: number,
-  originX: number,
-  originY: number,
-  scale: number
-): Point {
-  const x = (cx - originX) / scale;
-  const y = (originY - cy) / scale;
-  return { x, y };
-}
-
 /** 画布矩形边界 */
 export interface CanvasBounds {
   left: number
@@ -180,39 +133,4 @@ export function clampEndpoint(
     cx: origin.cx + dx * tMax,
     cy: origin.cy + dy * tMax,
   }
-}
-
-/**
- * 标签位置边界保护。
- *
- * 文字标签有宽度/高度和锚点偏移，clampEndpoint 保证端点在画布内，
- * 但文字仍可能贴边被裁。本函数检查标签矩形是否超出边界，
- * 若超出则翻转偏移方向。
- *
- * @param anchor 标签锚点坐标
- * @param offset 原始偏移 { dx, dy }
- * @param labelW 标签宽度 (px)
- * @param labelH 标签高度 (px)
- * @param bounds 画布边界
- * @returns 修正后的锚点坐标
- */
-export function clampLabelPosition(
-  anchor: CanvasPoint,
-  offset: { dx: number; dy: number },
-  labelW: number,
-  labelH: number,
-  bounds: CanvasBounds,
-): CanvasPoint {
-  let cx = anchor.cx + offset.dx
-  let cy = anchor.cy + offset.dy
-
-  // 水平翻转
-  if (cx - labelW / 2 < bounds.left) cx = anchor.cx - offset.dx
-  if (cx + labelW / 2 > bounds.right) cx = anchor.cx - offset.dx
-
-  // 垂直翻转
-  if (cy - labelH / 2 < bounds.top) cy = anchor.cy - offset.dy
-  if (cy + labelH / 2 > bounds.bottom) cy = anchor.cy - offset.dy
-
-  return { cx, cy }
 }

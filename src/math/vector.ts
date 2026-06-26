@@ -48,16 +48,6 @@ export function vectorDot(a: Vector2, b: Vector2): number {
 }
 
 /**
- * 2D向量叉积（返回z分量的标量值）
- * @param a 向量A [m/s, m/s², N, 等]
- * @param b 向量B [m/s, m/s², N, 等]
- * @returns 叉积的z分量 [m²/s², m²/s⁴, N², 等]
- */
-export function vectorCross(a: Vector2, b: Vector2): number {
-  return a.x * b.y - a.y * b.x;
-}
-
-/**
  * 向量模长
  * @param v 向量 [m/s, m/s², N, 等]
  * @returns 模长 [m/s, m/s², N, 等]
@@ -77,22 +67,5 @@ export function vectorNormalize(v: Vector2): Vector2 {
     return { x: 0, y: 0 };
   }
   return vectorScale(v, 1 / mag);
-}
-
-/**
- * 两个向量之间的夹角
- * @param a 向量A [m/s, m/s², N, 等]
- * @param b 向量B [m/s, m/s², N, 等]
- * @returns 夹角 [rad]
- */
-export function vectorAngle(a: Vector2, b: Vector2): number {
-  const dot = vectorDot(a, b);
-  const magA = vectorMagnitude(a);
-  const magB = vectorMagnitude(b);
-  if (magA === 0 || magB === 0) {
-    return 0;
-  }
-  const cosTheta = Math.max(-1, Math.min(1, dot / (magA * magB)));
-  return Math.acos(cosTheta);
 }
 

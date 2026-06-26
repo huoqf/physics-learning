@@ -7,7 +7,7 @@ import { BarChart3 } from 'lucide-react'
 
 export const CircuitAnalysisCenterExtra: FC = () => {
     const params = useAnimationStore((s) => s.params)
-  const [_containerRef, canvasSize] = useCanvasSize({ width: 400, height: 200 })
+  const [, canvasSize] = useCanvasSize({ width: 400, height: 200 })
   const { font } = canvasSize
 
   const mode = params.mode ?? 0 // 0=基础, 1=进阶

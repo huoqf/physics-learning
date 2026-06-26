@@ -9,11 +9,6 @@
  *
  * @category M4
  */
-export function calculateWork(F: number, s: number, angleDeg: number): { W: number } {
-  const angleRad = (angleDeg * Math.PI) / 180;
-  return { W: F * s * Math.cos(angleRad) };
-}
-
 export function calculateKineticEnergy(m: number, v: number): { Ek: number } {
   return { Ek: 0.5 * m * v * v };
 }
@@ -41,20 +36,6 @@ export function calculateMechanicalEnergy(m: number, v: number, g: number, h: nu
 
 export function calculateMomentum(m: number, v: number): { p: number } {
   return { p: m * v };
-}
-
-/**
- * 计算冲量
- * I = F·Δt（恒力冲量）
- *
- * @param F 恒力大小 (N)
- * @param t 作用时间 (s)，必须 ≥ 0
- * @returns I 冲量 (N·s)
- *
- * @category M4
- */
-export function calculateImpulse(F: number, t: number): { I: number } {
-  return { I: F * t };
 }
 
 export function calculateElasticCollision(m1: number, v1: number, m2: number, v2: number): { v1f: number; v2f: number; deltaEk: number } {
