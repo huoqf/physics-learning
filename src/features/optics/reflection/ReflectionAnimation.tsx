@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { OPTICS_COLORS, STROKE, FONT, DASH, CANVAS_COLORS } from '@/theme/physics'
@@ -9,6 +9,7 @@ import type { Vector2 } from '@/math/vector'
 
 const VIEW_WIDTH = 800
 const VIEW_HEIGHT = 500
+const REFLECTION_DESIGN = { width: VIEW_WIDTH, height: VIEW_HEIGHT } as const
 const RAY_LENGTH = 200
 const MIRROR_HALF = 160
 const NORMAL_LENGTH = 180
@@ -29,6 +30,11 @@ export default function ReflectionAnimation() {
     useShallow((s) => ({ params: s.params }))
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide)
+
+  const vp = useViewport(canvasSize, {
+    designWidth: REFLECTION_DESIGN.width,
+    designHeight: REFLECTION_DESIGN.height,
+  })
 
   const theta1 = params.theta1 ?? 45
   const mirrorRotation = params.mirrorRotation ?? 0
@@ -61,11 +67,11 @@ export default function ReflectionAnimation() {
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg
-        viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full"
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className="bg-white rounded-lg shadow-inner"
       >
-        <g>
+        <g transform={vp.transform}>
           {/* Protractor */}
           {showNormal && (
             <g opacity={0.25}>

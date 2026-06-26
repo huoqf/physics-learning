@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { OPTICS_COLORS, STROKE, FONT, DASH, CANVAS_COLORS } from '@/theme/physics'
@@ -11,6 +11,7 @@ import type { RelationMarker } from '@/components/Chart'
 
 const VIEW_WIDTH = 800
 const VIEW_HEIGHT = 500
+const THIN_LENS_DESIGN = { width: VIEW_WIDTH, height: VIEW_HEIGHT } as const
 const RAIL_Y = 200
 const CHART_TOP = 340
 const CHART_H = 130
@@ -95,6 +96,11 @@ export default function ThinLensAnimation() {
   const svgRef = useRef<SVGSVGElement>(null)
   const isDraggingRef = useRef<'object' | 'lens' | false>(false)
 
+  const vp = useViewport(canvasSize, {
+    designWidth: THIN_LENS_DESIGN.width,
+    designHeight: THIN_LENS_DESIGN.height,
+  })
+
   const mode = (params.mode ?? 0) as 0 | 1
   const isConcave = (params.isConcave ?? 0) === 1
   const fCm = params.f ?? 10
@@ -153,7 +159,9 @@ export default function ThinLensAnimation() {
     const pt = svg.createSVGPoint()
     pt.x = e.clientX
     pt.y = e.clientY
-    const { x: svgX } = pt.matrixTransform(svg.getScreenCTM()!.inverse())
+    const svgPt = pt.matrixTransform(svg.getScreenCTM()!.inverse())
+    // 画布像素坐标 → 设计空间坐标（逆 vp.transform）
+    const svgX = (svgPt.x - vp.tx) / vp.scale
 
     if (mode === 0) {
       if (isDraggingRef.current === 'object') {
@@ -167,7 +175,7 @@ export default function ThinLensAnimation() {
         useAnimationStore.getState().updateParam('u', uNew)
       }
     }
-  }, [mode, cx, LCm, objSvgX])
+  }, [mode, cx, LCm, objSvgX, vp.tx, vp.scale])
 
   const handleMouseUp = useCallback(() => {
     isDraggingRef.current = false
@@ -404,13 +412,14 @@ export default function ThinLensAnimation() {
     <div ref={containerRef} className="w-full h-full">
       <svg
         ref={svgRef}
-        viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full"
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className="bg-white rounded-lg shadow-inner"
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
+        <g transform={vp.transform}>
         <defs>
           {/* 光线及火焰微光特效 */}
           <filter id="optics-glow" x="-50%" y="-50%" width="200%" height="200%">
@@ -803,6 +812,7 @@ export default function ThinLensAnimation() {
               </div>
             </foreignObject>
           )}
+        </g>
         </g>
       </svg>
     </div>
