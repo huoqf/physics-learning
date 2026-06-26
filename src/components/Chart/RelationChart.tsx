@@ -117,6 +117,8 @@ export interface RelationChartProps {
   color?: string
   /** 主曲线线宽，默认 2 */
   strokeWidth?: number
+  /** 主曲线的图例标签；若不传，则当 series 为 'primary' 时默认显示 '主' */
+  mainLabel?: string
   /** 绘制在曲线下方的插件层（如面积填充） */
   underlay?: React.ReactNode
   /** 绘制在曲线上方的插件层（如微元切割、教学注释） */
@@ -163,6 +165,7 @@ function RCContent({
   series,
   color,
   strokeWidth,
+  mainLabel,
   underlay,
   children,
 }: RelationChartProps) {
@@ -423,7 +426,7 @@ function RCContent({
             x={plotOrigin.x + plotSize.width - 110} y={plotOrigin.y + 13}
             fontSize={font(FONT.small)} fill={PHYSICS_COLORS.labelText}
           >
-            {(series ?? 'primary') === 'primary' ? '主' : ''}
+            {mainLabel ?? ((series ?? 'primary') === 'primary' ? '主' : '')}
           </text>
           {/* 额外系列 */}
           {additionalSeries.map((s, i) => {
@@ -472,6 +475,7 @@ export function RelationChart({
   series = 'primary',
   color,
   strokeWidth,
+  mainLabel,
   underlay,
   children,
   initialSize,
@@ -528,6 +532,7 @@ export function RelationChart({
         series={series}
         color={color}
         strokeWidth={strokeWidth}
+        mainLabel={mainLabel}
         underlay={underlay}
         children={children}
         xLabel={xLabel}

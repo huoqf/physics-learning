@@ -366,7 +366,7 @@ export function buildEnergyQuantities(
       const g = GRAVITY
       const constraint = params.constraint ?? 0 // 0=杆, 1=绳
 
-      const trajectory = precomputeLightRodRopeTrajectory(m1, m2, L, g, constraint, 15)
+      const trajectory = precomputeLightRodRopeTrajectory(m1, m2, L, g, constraint, 6)
       const state = getLRRStateAtTime(trajectory, time)
 
       return {

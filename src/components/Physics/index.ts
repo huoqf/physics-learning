@@ -23,6 +23,7 @@ export { PhysicsGround } from "./PhysicsGround"
 export { Ball } from './Ball'
 export { Block } from './Block'
 export { SportsCar } from './SportsCar'
+export { Pulley } from './Pulley'
 
 // ============================================================================
 // 电磁学 - 静电场 (Electrostatics)
@@ -79,5 +80,6 @@ export type { GalvanometerProps } from './Galvanometer'
 export type { PrimaryCoilProps } from './PrimaryCoil'
 export type { DCSourceProps } from './DCSource'
 export type { RheostatProps } from './Rheostat'
+export type { PulleyProps } from './Pulley'
 export type { ChargeSign } from './types'
 
