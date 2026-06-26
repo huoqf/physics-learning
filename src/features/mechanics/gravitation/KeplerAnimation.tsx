@@ -7,6 +7,7 @@ import { colors } from '@/theme/colors'
 import { calculateKeplerOrbit, solveKeplerEquation } from '@/physics/celestial'
 import { useMemo } from 'react'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { RelationChart } from '@/components/Chart'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 
@@ -232,11 +233,9 @@ export default function KeplerAnimation() {
     return { width, height, padding }
   }, [canvasSize])
 
-  // ─── 第三定律画中画图表几何计算 ───
+  // ─── 第三定律画中画图表尺寸 ───
   const chartW = chartDimensions.width
   const chartH = chartDimensions.height
-  const chartX0 = canvasSize.width - chartW - chartDimensions.padding
-  const chartY0 = canvasSize.height - chartDimensions.padding
 
   // 动力学量程换算
   const a3_1 = a1 * a1 * a1
@@ -249,9 +248,6 @@ export default function KeplerAnimation() {
   // 动态分配量程，保证斜线恒为对角线
   const maxA3 = Math.max(a3_1, a3_2) * 1.15
   const maxT2 = maxA3 * k_ratio
-
-  const a3ToX = (val: number) => chartX0 + (val / maxA3) * chartW
-  const t2ToY = (val: number) => chartY0 - (val / maxT2) * chartH
 
   return (
     <div ref={containerRef} className="w-full h-full relative flex items-center justify-center">
@@ -578,74 +574,53 @@ export default function KeplerAnimation() {
 
         {/* ── 11. 第三定律模式下，T² - a³ 对角直线图像 (画中画) ── */}
         {mode === 2 && (
-          <g>
-            {/* 图表底色和边框 */}
-            <rect
-              x={chartX0 - 10}
-              y={chartY0 - chartH - 10}
-              width={chartW + 20}
-              height={chartH + 20}
-              fill={colors.neutral.white}
-              fillOpacity={0.9}
-              stroke={PHYSICS_COLORS.grid}
-              strokeWidth={1}
-              rx={6}
+          <g transform={`translate(${canvasSize.width - chartW - chartDimensions.padding}, ${canvasSize.height - chartH - chartDimensions.padding})`}>
+            <RelationChart
+              points={[{ x: a3_1, y: t2_1 }, { x: a3_2, y: t2_2 }]}
+              xDomain={[0, maxA3]}
+              yDomain={[0, maxT2]}
+              xLabel="a³"
+              yLabel="T²"
+              title="T² - a³ 关系图像"
+              series="primary"
+              fixedSize={{ width: chartW, height: chartH }}
+              variant="mini"
+              showGrid={false}
+              markers={[
+                {
+                  axis: 'point',
+                  x: maxA3,
+                  y: maxT2,
+                  label: '斜率 k',
+                  color: PHYSICS_COLORS.friction,
+                },
+                {
+                  axis: 'point',
+                  x: a3_1,
+                  y: t2_1,
+                  label: 'A',
+                  color: PHYSICS_COLORS.velocity,
+                },
+                {
+                  axis: 'point',
+                  x: a3_2,
+                  y: t2_2,
+                  label: 'B',
+                  color: PHYSICS_COLORS.averageVelocity,
+                },
+              ]}
+              additionalSeries={[
+                {
+                  points: [
+                    { x: 0, y: 0 },
+                    { x: maxA3, y: maxT2 },
+                  ],
+                  color: PHYSICS_COLORS.friction,
+                  strokeDasharray: [4, 4],
+                  strokeWidth: 1.5,
+                },
+              ]}
             />
-            <text
-              x={chartX0 + chartW / 2}
-              y={chartY0 - chartH - 2}
-              fontSize={font(9)}
-              fill={PHYSICS_COLORS.labelTextLight}
-              fontWeight="bold"
-              textAnchor="middle"
-            >
-              T² - a³ 关系图像
-            </text>
-
-            {/* 图像坐标轴 */}
-            <line x1={chartX0} y1={chartY0} x2={chartX0 + chartW + 5} y2={chartY0} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={1} />
-            <line x1={chartX0} y1={chartY0} x2={chartX0} y2={chartY0 - chartH - 5} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={1} />
-            <text x={chartX0 + chartW + 2} y={chartY0 + 9} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">a³</text>
-            <text x={chartX0 - 4} y={chartY0 - chartH} fontSize={font(8)} fill={PHYSICS_COLORS.labelTextLight}>T²</text>
-
-            {/* 坐标刻度 */}
-            <text x={chartX0} y={chartY0 + 9} fontSize={font(7)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">0</text>
-            <text x={chartX0 + chartW} y={chartY0 + 9} fontSize={font(7)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
-              {maxA3.toFixed(0)}
-            </text>
-            <text x={chartX0 - 4} y={chartY0 - chartH + 3} fontSize={font(7)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">
-              {maxT2.toFixed(0)}
-            </text>
-
-            {/* 第三定律理论正比斜率线 */}
-            <line
-              x1={chartX0}
-              y1={chartY0}
-              x2={chartX0 + chartW}
-              y2={chartY0 - chartH}
-              stroke={PHYSICS_COLORS.friction}
-              strokeWidth={1.5}
-              strokeOpacity={0.65}
-            />
-            <text
-              x={chartX0 + chartW - 10}
-              y={chartY0 - chartH + 12}
-              fontSize={font(8)}
-              fill={PHYSICS_COLORS.friction}
-              fontWeight="semibold"
-            >
-              斜率 k
-            </text>
-
-            {/* 行星 A 在图表中的当前状态游标点 (经典蓝) */}
-            <circle cx={a3ToX(a3_1)} cy={t2ToY(t2_1)} r={4} fill={PHYSICS_COLORS.velocity} />
-            <circle cx={a3ToX(a3_1)} cy={t2ToY(t2_1)} r={8} fill="none" stroke={PHYSICS_COLORS.velocity} strokeWidth={0.5} opacity={0.5} className="animate-ping" />
-            <text x={a3ToX(a3_1) - 6} y={t2ToY(t2_1) - 5} fontSize={font(7)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">A</text>
-
-            {/* 行星 B 在图表中的当前状态游标点 (天空蓝/次要速度) */}
-            <circle cx={a3ToX(a3_2)} cy={t2ToY(t2_2)} r={4} fill={PHYSICS_COLORS.averageVelocity} />
-            <circle cx={a3ToX(a3_2)} cy={t2ToY(t2_2)} r={8} fill="none" stroke={PHYSICS_COLORS.averageVelocity} strokeWidth={0.5} opacity={0.5} className="animate-ping" />
-            <text x={a3ToX(a3_2) + 6} y={t2ToY(t2_2) - 5} fontSize={font(7)} fill={PHYSICS_COLORS.averageVelocity} fontWeight="bold">B</text>
           </g>
         )}
 
