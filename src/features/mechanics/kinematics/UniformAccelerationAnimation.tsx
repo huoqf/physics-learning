@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -21,6 +21,8 @@ import type { SceneConfig } from '@/scene'
 import { VelocityTimeChart } from '@/components/Chart'
 import { useChartContext } from '@/components/Chart'
 
+const UA_DESIGN = { width: 700, height: 400 } as const
+
 /**
  * 匀变速直线运动 · 基础模式动画（已完成图表迁移）
  *
@@ -41,34 +43,39 @@ export default function UniformAccelerationAnimation() {
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
   const { font } = canvasSize
 
+  const vp = useViewport(canvasSize, {
+    designWidth: UA_DESIGN.width,
+    designHeight: UA_DESIGN.height,
+  })
+
   const { v0 = 0, a = 1.5, showSplit = 1, splitN = 0, showEquivRect = 0 } = params
 
   // ── 动态布局 ──
-  const padding = canvasSize.width * 0.07
-  const fontSize = Math.max(10, canvasSize.width * 0.017)
+  const padding = vp.visibleW * 0.07
+  const fontSize = Math.max(10, vp.visibleW * 0.017)
   const smallFont = Math.max(9, fontSize * 0.85)
 
   // 上半部分：v-t 图（60%）
-  const chartSectionHeight = canvasSize.height * 0.6
+  const chartSectionHeight = vp.visibleH * 0.6
 
   // 下半部分：动画舞台（40%）
   const stageTop = chartSectionHeight + 4
-  const stageHeight = canvasSize.height - stageTop
+  const stageHeight = vp.visibleH - stageTop
   const groundY = stageTop + stageHeight * 0.72
-  const objW = canvasSize.width * 0.06
+  const objW = vp.visibleW * 0.06
   const objH = objW * 0.7
 
   // 物理位移坐标缩放
-  const baseScale = canvasSize.width * 0.03
+  const baseScale = vp.visibleW * 0.03
   const scale = baseScale
   const startX = padding
-  const maxVisibleX = canvasSize.width - padding
+  const maxVisibleX = vp.visibleX + vp.visibleW - padding
 
   // ── 矢量场景配置 ──
   const maxVel = Math.max(Math.abs(v0) + Math.abs(a) * 8, 10)
   const maxAcc = Math.max(Math.abs(a) * 2, 5)
   const uaScene: SceneConfig = {
-    vectorBounds: { x: 0, y: stageTop, width: canvasSize.width, height: stageHeight },
+    vectorBounds: { x: vp.visibleX, y: stageTop, width: vp.visibleW, height: stageHeight },
     originX: 0,
     originY: 0,
     refMagnitudes: { velocity: maxVel, acceleration: maxAcc },
@@ -369,18 +376,17 @@ export default function UniformAccelerationAnimation() {
 
       {/* 分隔线 */}
       <svg width={canvasSize.width} height={1} className="flex-shrink-0">
-        <line x1={padding} y1={0} x2={canvasSize.width - padding} y2={0} stroke={CHART_COLORS.gridLine} strokeWidth={1} />
+        <line x1={vp.visibleX + padding} y1={0} x2={vp.visibleX + vp.visibleW - padding} y2={0} stroke={CHART_COLORS.gridLine} strokeWidth={1} />
       </svg>
 
       {/* ══════════ 下半部分：动画舞台 ══════════ */}
       <div className="flex-1 relative">
-        <svg width={canvasSize.width} height={canvasSize.height - chartSectionHeight} className="absolute inset-0">
-        <g transform={`translate(0, ${-chartSectionHeight})`}>
+        <svg viewBox={`0 ${chartSectionHeight} ${canvasSize.width} ${canvasSize.height - chartSectionHeight}`} preserveAspectRatio="xMidYMid meet" className="absolute inset-0 w-full h-full">
 
         {/* 地面精密厘米直尺跑道 */}
         <PhysicsGround
-          x={padding * 0.5} y={groundY}
-          width={canvasSize.width - padding}
+          x={vp.visibleX + padding * 0.5} y={groundY}
+          width={vp.visibleW - padding}
           appearance={{ color: PHYSICS_COLORS.labelText }}
           ruler={{
             domain: [0, 100],
@@ -484,7 +490,6 @@ export default function UniformAccelerationAnimation() {
 
         {/* 箭头标记定义 */}
         <VectorDefs colors={[PHYSICS_COLORS.velocity, PHYSICS_COLORS.acceleration, PHYSICS_COLORS.referencePoint]} />
-        </g>
       </svg>
       </div>
     </div>

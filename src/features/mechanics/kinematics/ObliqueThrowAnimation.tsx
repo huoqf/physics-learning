@@ -1,4 +1,4 @@
-﻿import { useCanvasSize, physicsToCanvasWithOrigin } from '@/utils'
+import { useCanvasSize, useViewport, physicsToCanvasWithOrigin } from '@/utils'
 import React, { useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -18,6 +18,8 @@ import { VelocityTimeChart } from '@/components/Chart'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
+
+const OBLIQUE_DESIGN = { width: 100, height: 100 } as const
 
 /** 斜抛动画布局常量 */
 const OBLIQUE_THROW_LAYOUT = {
@@ -56,6 +58,11 @@ export default function ObliqueThrowAnimation() {
   )
   const [containerRef, canvasSize] = useCanvasSize({ width: 100, height: 100 })
   const { font } = canvasSize
+
+  const vp = useViewport(canvasSize, {
+    designWidth: OBLIQUE_DESIGN.width,
+    designHeight: OBLIQUE_DESIGN.height,
+  })
 
   const {
     v0 = 15,
@@ -102,20 +109,20 @@ export default function ObliqueThrowAnimation() {
   )
 
   // ── 3. 全宽物理舞台定位参数 ──────────────────────────────
-  const originX = OBLIQUE_THROW_LAYOUT.originX
-  const groundY = canvasSize.height * OBLIQUE_THROW_LAYOUT.groundYRatio
-  const stageHeight = groundY - OBLIQUE_THROW_LAYOUT.topPadding
+  const originX = vp.visibleX + OBLIQUE_THROW_LAYOUT.originX
+  const groundY = vp.visibleY + vp.visibleH * OBLIQUE_THROW_LAYOUT.groundYRatio
+  const stageHeight = groundY - (vp.visibleY + OBLIQUE_THROW_LAYOUT.topPadding)
 
   const maxX = Math.max(range, rangeVac, 1)
   const maxY = Math.max(maxHeight, maxHeightVac, 1)
 
   // 双轴自适应等比例缩放（取两轴的最小值锁定 1:1 比例）
-  const scaleX = (canvasSize.width - originX - OBLIQUE_THROW_LAYOUT.rightPadding) / maxX
+  const scaleX = (vp.visibleW - OBLIQUE_THROW_LAYOUT.originX - OBLIQUE_THROW_LAYOUT.rightPadding) / maxX
   const scaleY = stageHeight / maxY
   const scale = Math.min(scaleX, scaleY)
 
   const obliqueScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: stageHeight },
+    vectorBounds: { x: vp.visibleX, y: vp.visibleY, width: vp.visibleW, height: stageHeight },
     originX: 0,
     originY: 0,
     refMagnitudes: { velocity: Math.max(v0, 10) },
@@ -158,9 +165,9 @@ export default function ObliqueThrowAnimation() {
   const showDoubleTrack = advancedMode === 1 && airResistance > 0 && showVacuumCompare === 1
 
   // ── 4. 右上角悬浮 v-t 图像画中画定位 ─────────────────────
-  const vtWidth = Math.max(220, canvasSize.width * 0.35)
-  const vtHeight = Math.max(150, canvasSize.height * 0.34)
-  const vtX = canvasSize.width - vtWidth - 20
+  const vtWidth = Math.max(220, vp.visibleW * 0.35)
+  const vtHeight = Math.max(150, vp.visibleH * 0.34)
+  const vtX = vp.visibleX + vp.visibleW - vtWidth - 20
   const vtY = 20
 
   const vtXMax = maxTime * 1.15
@@ -264,7 +271,7 @@ export default function ObliqueThrowAnimation() {
           key={`h-grid-${i}`}
           x1={originX}
           y1={yPos}
-          x2={canvasSize.width - 20}
+          x2={vp.visibleX + vp.visibleW - 20}
           y2={yPos}
           stroke={PHYSICS_COLORS.grid}
           strokeWidth={STROKE.grid}
@@ -274,7 +281,7 @@ export default function ObliqueThrowAnimation() {
     }
     // 垂直网格
     for (let i = 1; i < gridCols; i++) {
-      const xPos = originX + (i * (canvasSize.width - originX - 20)) / gridCols
+      const xPos = originX + (i * (vp.visibleW - OBLIQUE_THROW_LAYOUT.originX - OBLIQUE_THROW_LAYOUT.rightPadding)) / gridCols
       lines.push(
         <line
           key={`v-grid-${i}`}
@@ -289,7 +296,7 @@ export default function ObliqueThrowAnimation() {
       )
     }
     return lines
-  }, [showGrid, groundY, stageHeight, canvasSize.width])
+  }, [showGrid, groundY, stageHeight, vp.visibleW])
 
   // 弹射炮筒角度矢量计算
   const angleRad = (angle * Math.PI) / 180
@@ -338,11 +345,11 @@ export default function ObliqueThrowAnimation() {
 
         {/* 坐标轴 */}
         <line x1={originX} y1={groundY - stageHeight} x2={originX} y2={groundY} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axis} />
-        <line x1={originX} y1={groundY} x2={canvasSize.width - 15} y2={groundY} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axis} />
+        <line x1={originX} y1={groundY} x2={vp.visibleX + vp.visibleW - 15} y2={groundY} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axis} />
 
         <text x={originX - 10} y={groundY - maxY * scale + 4} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="end">y = {maxY.toFixed(1)}m</text>
         <text x={originX - 10} y={groundY + 4} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="end">y = 0</text>
-        <text x={canvasSize.width - 25} y={groundY + 16} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">x</text>
+        <text x={vp.visibleX + vp.visibleW - 25} y={groundY + 16} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">x</text>
 
         {/* 抛出角度指示盘 (动态扇形弧) */}
         {!isLanded && (
@@ -414,7 +421,7 @@ export default function ObliqueThrowAnimation() {
 
         {/* 实际钢珠小球 */}
         <circle
-          cx={Math.min(canvasSize.width - OBLIQUE_THROW_LAYOUT.steelBallRadius, ballCanvas.cx)}
+          cx={Math.min(vp.visibleX + vp.visibleW - OBLIQUE_THROW_LAYOUT.steelBallRadius, ballCanvas.cx)}
           cy={Math.min(groundY, ballCanvas.cy)}
           r={OBLIQUE_THROW_LAYOUT.steelBallRadius}
           fill="url(#steel-sphere-grad)"

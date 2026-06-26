@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -21,6 +21,8 @@ import {
 } from '@/theme/physics'
 import { RelationChart, ChartArea, useChartContext } from '@/components/Chart'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+
+const IMPULSE_DESIGN = { width: 700, height: 450 } as const
 
 /** 冲量动画布局常量 */
 const IMPULSE_LAYOUT = {
@@ -170,6 +172,11 @@ export default function ImpulseAnimation() {
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
 
+  const vp = useViewport(canvasSize, {
+    designWidth: IMPULSE_DESIGN.width,
+    designHeight: IMPULSE_DESIGN.height,
+  })
+
   const {
     F = 10,
     t_duration = 3,
@@ -182,25 +189,25 @@ export default function ImpulseAnimation() {
   const isAdvanced = advancedMode === 1
   const forceTypeStr: ForceTimeType = forceType === 1 ? 'sine' : 'linear'
 
-  const groundY = canvasSize.height - IMPULSE_LAYOUT.groundOffset
+  const groundY = vp.visibleY + vp.visibleH - IMPULSE_LAYOUT.groundOffset
 
   const sceneConfig = useMemo(
     (): SceneConfig => ({
       vectorBounds: {
-        x: 0,
-        y: 0,
-        width: canvasSize.width - IMPULSE_LAYOUT.canvasPadding * 2,
-        height: canvasSize.height - IMPULSE_LAYOUT.canvasPadding,
+        x: vp.visibleX,
+        y: vp.visibleY,
+        width: vp.visibleW - IMPULSE_LAYOUT.canvasPadding * 2,
+        height: vp.visibleH - IMPULSE_LAYOUT.canvasPadding,
       },
       originX: 0,
       originY: groundY,
-      worldWidth: canvasSize.width,
-      worldHeight: canvasSize.height,
+      worldWidth: vp.visibleW,
+      worldHeight: vp.visibleH,
       refMagnitudes: {
         force: 200,
       },
     }),
-    [canvasSize.width, canvasSize.height, groundY]
+    [vp.visibleX, vp.visibleY, vp.visibleW, vp.visibleH, groundY]
   )
 
   const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig])
@@ -293,7 +300,7 @@ export default function ImpulseAnimation() {
   return (
     <div ref={containerRef} className="w-full h-full flex flex-col bg-neutral-50 gap-2 p-2">
       {/* ========== F-t 图表区域（顶部） ========== */}
-      <div className="w-full" style={{ height: canvasSize.height * 0.48 }}>
+      <div className="w-full" style={{ height: vp.visibleH * 0.48 }}>
         {!isAdvanced ? (
           /* 基础模式：恒力 F-t */
           <RelationChart
@@ -373,11 +380,11 @@ export default function ImpulseAnimation() {
 
       {/* ========== 物理动画区域（底部） ========== */}
       <div className="flex-1 relative bg-white rounded-lg shadow-inner overflow-hidden">
-        <svg width={canvasSize.width} height={canvasSize.height * 0.52} className="absolute inset-0">
+        <svg width={canvasSize.width} height={vp.visibleH * 0.52} className="absolute inset-0">
           {/* 地面线 */}
           <PhysicsGround
             x={IMPULSE_LAYOUT.canvasPadding}
-            y={groundY - canvasSize.height * 0.48}
+            y={groundY - vp.visibleH * 0.48}
             width={canvasSize.width - 2 * IMPULSE_LAYOUT.canvasPadding}
             appearance={{ color: PHYSICS_COLORS.labelText }}
           />
@@ -387,7 +394,7 @@ export default function ImpulseAnimation() {
             <g>
               <rect
                 x={sliderX_basic}
-                y={sliderTrackY - canvasSize.height * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2}
+                y={sliderTrackY - vp.visibleH * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2}
                 width={IMPULSE_LAYOUT.sliderWidth}
                 height={IMPULSE_LAYOUT.sliderHeight}
                 rx={6}
@@ -409,7 +416,7 @@ export default function ImpulseAnimation() {
               {/* 冲量数值标注 */}
               <text
                 x={sliderX_basic + IMPULSE_LAYOUT.sliderWidth / 2}
-                y={sliderTrackY - canvasSize.height * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2 - 12}
+                y={sliderTrackY - vp.visibleH * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2 - 12}
                 fontSize={canvasSize.font(10)}
                 fill={PHYSICS_COLORS.impulse}
                 textAnchor="middle"
@@ -419,7 +426,7 @@ export default function ImpulseAnimation() {
               </text>
               <text
                 x={sliderX_basic + IMPULSE_LAYOUT.sliderWidth / 2}
-                y={sliderTrackY - canvasSize.height * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2 + 35}
+                y={sliderTrackY - vp.visibleH * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2 + 35}
                 fontSize={canvasSize.font(10)}
                 fill={CHART_COLORS.labelText}
                 textAnchor="middle"
@@ -432,7 +439,7 @@ export default function ImpulseAnimation() {
             <g>
               <rect
                 x={sliderX_advanced}
-                y={sliderTrackY - canvasSize.height * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2}
+                y={sliderTrackY - vp.visibleH * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2}
                 width={IMPULSE_LAYOUT.sliderWidth}
                 height={IMPULSE_LAYOUT.sliderHeight}
                 rx={6}
@@ -454,7 +461,7 @@ export default function ImpulseAnimation() {
               {/* 冲量数值标注 */}
               <text
                 x={sliderX_advanced + IMPULSE_LAYOUT.sliderWidth / 2}
-                y={sliderTrackY - canvasSize.height * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2 - 12}
+                y={sliderTrackY - vp.visibleH * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2 - 12}
                 fontSize={canvasSize.font(10)}
                 fill={PHYSICS_COLORS.impulse}
                 textAnchor="middle"
@@ -467,7 +474,7 @@ export default function ImpulseAnimation() {
               </text>
               <text
                 x={sliderX_advanced + IMPULSE_LAYOUT.sliderWidth / 2}
-                y={sliderTrackY - canvasSize.height * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2 + 35}
+                y={sliderTrackY - vp.visibleH * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2 + 35}
                 fontSize={canvasSize.font(10)}
                 fill={CHART_COLORS.labelText}
                 textAnchor="middle"

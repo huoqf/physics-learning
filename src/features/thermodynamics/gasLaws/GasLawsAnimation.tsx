@@ -1,5 +1,5 @@
-﻿import { useRef, useCallback, useState, useMemo } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useRef, useCallback, useState, useMemo } from 'react'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
@@ -16,6 +16,8 @@ import {
 } from '@/physics/gasLaws'
 import { RelationChart } from '@/components/Chart'
 import type { RelationMarker } from '@/components/Chart'
+
+const GAS_LAWS_DESIGN = { width: 700, height: 400 } as const
 
 // ─── 物理常量 ─────────────────────────────────────────────────────────────
 const N_DEFAULT = 1
@@ -64,7 +66,12 @@ export default function GasLawsAnimation() {
   )
 
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
-  const { width, height, font } = canvasSize
+  const { font } = canvasSize
+
+  const vp = useViewport(canvasSize, {
+    designWidth: GAS_LAWS_DESIGN.width,
+    designHeight: GAS_LAWS_DESIGN.height,
+  })
 
   const mode = params.mode ?? 0
   const T = params.T ?? 300
@@ -72,10 +79,10 @@ export default function GasLawsAnimation() {
 
   // 气缸内区域（像素）
   const scene = {
-    x: width * LAYOUT.sceneLeftRatio,
-    y: height * LAYOUT.sceneTopRatio,
-    w: width * LAYOUT.sceneWidthRatio,
-    h: height * LAYOUT.sceneHeightRatio,
+    x: vp.visibleX + vp.visibleW * LAYOUT.sceneLeftRatio,
+    y: vp.visibleY + vp.visibleH * LAYOUT.sceneTopRatio,
+    w: vp.visibleW * LAYOUT.sceneWidthRatio,
+    h: vp.visibleH * LAYOUT.sceneHeightRatio,
   }
 
   // 气缸壁参数
@@ -368,17 +375,17 @@ export default function GasLawsAnimation() {
   }], [chartConfig.currentX, chartConfig.currentY])
 
   // 图表布局（保留原 LAYOUT 比例）
-  const chartX = width * LAYOUT.chartLeftRatio
-  const chartY = height * LAYOUT.chartTopRatio
-  const chartW = width * LAYOUT.chartWidthRatio
-  const chartH = height * LAYOUT.chartHeightRatio
+  const chartX = vp.visibleX + vp.visibleW * LAYOUT.chartLeftRatio
+  const chartY = vp.visibleY + vp.visibleH * LAYOUT.chartTopRatio
+  const chartW = vp.visibleW * LAYOUT.chartWidthRatio
+  const chartH = vp.visibleH * LAYOUT.chartHeightRatio
 
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg
-        viewBox={`0 0 ${width} ${height}`}
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full"
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className="bg-white rounded-lg shadow-inner"
       >
         {renderCylinder()}
 

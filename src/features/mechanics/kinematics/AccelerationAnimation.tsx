@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -11,6 +11,8 @@ import { SportsCar } from '@/components/Physics/SportsCar'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
+
+const ACCEL_DESIGN = { width: 700, height: 400 } as const
 
 /** 布局常量（语义化命名，替代魔法数字） */
 const LAYOUT = {
@@ -43,16 +45,21 @@ export default function AccelerationAnimation() {
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
   const { font } = canvasSize
 
+  const vp = useViewport(canvasSize, {
+    designWidth: ACCEL_DESIGN.width,
+    designHeight: ACCEL_DESIGN.height,
+  })
+
   const vA = params.vA ?? 200
   const aB = params.aB ?? 5
   const deltaT = params.deltaT ?? 1 // 频闪打点周期 T 对齐观测微元 deltaT
 
   // ── 布局计算 ──
-  const padding = canvasSize.width * LAYOUT.TRACK_PADDING_RATIO
-  const topTrackY = canvasSize.height * LAYOUT.TRACK_TOP_RATIO
-  const bottomTrackY = canvasSize.height * LAYOUT.TRACK_BOTTOM_RATIO
-  const startX = canvasSize.width * LAYOUT.START_X_RATIO
-  const maxVisibleX = canvasSize.width - LAYOUT.MAX_X_MARGIN
+  const padding = vp.visibleW * LAYOUT.TRACK_PADDING_RATIO
+  const topTrackY = vp.visibleH * LAYOUT.TRACK_TOP_RATIO
+  const bottomTrackY = vp.visibleH * LAYOUT.TRACK_BOTTOM_RATIO
+  const startX = vp.visibleW * LAYOUT.START_X_RATIO
+  const maxVisibleX = vp.visibleX + vp.visibleW - LAYOUT.MAX_X_MARGIN
 
   // ── 物理计算 ──
   const result = useMemo(
@@ -68,7 +75,7 @@ export default function AccelerationAnimation() {
 
   // ── 矢量场景配置 ──
   const accScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    vectorBounds: { x: vp.visibleX, y: vp.visibleY, width: vp.visibleW, height: vp.visibleH },
     originX: 0,
     originY: 0,
     refMagnitudes: { velocity: Math.max(vA, 10) * 1.5, acceleration: aB * 2 },

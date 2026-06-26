@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useMemo } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -10,6 +10,8 @@ import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { RelationChart } from '@/components/Chart'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
+
+const GRAVITY_DESIGN = { width: 650, height: 450 } as const
 
 // ── 布局常量 ──────────────────────────────────────────────────────────
 const GRAVITY_LAYOUT = {
@@ -38,15 +40,20 @@ export default function GravityAnimation() {
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumTall)
   const { font } = canvasSize
 
+  const vp = useViewport(canvasSize, {
+    designWidth: GRAVITY_DESIGN.width,
+    designHeight: GRAVITY_DESIGN.height,
+  })
+
   const { m1 = 1000, m2 = 10, r = 5, mode = 0, preset = 0, showChart = 1 } = params
 
   // ── 科学坐标转换 ──
   const WORLD = { xMin: -6, xMax: 6, yMin: -4, yMax: 4 } as const
-  const scale = computeScale(canvasSize.width * GRAVITY_LAYOUT.scaleWidthRatio, canvasSize.height, WORLD)
+  const scale = computeScale(vp.visibleW * GRAVITY_LAYOUT.scaleWidthRatio, vp.visibleH, WORLD)
   
   // 天体 1 放置在左侧 -r/2，天体 2 放置在右侧 r/2
-  const pos1 = physicsToCanvas(-r / 2, 0, canvasSize.width, canvasSize.height, scale)
-  const pos2 = physicsToCanvas(r / 2, 0, canvasSize.width, canvasSize.height, scale)
+  const pos1 = physicsToCanvas(-r / 2, 0, vp.visibleW, vp.visibleH, scale)
+  const pos2 = physicsToCanvas(r / 2, 0, vp.visibleW, vp.visibleH, scale)
 
   const obj1X = pos1.cx
   const obj1Y = pos1.cy
@@ -86,7 +93,7 @@ export default function GravityAnimation() {
   }
 
   const gravScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    vectorBounds: { x: vp.visibleX, y: vp.visibleY, width: vp.visibleW, height: vp.visibleH },
     originX: 0,
     originY: 0,
     refMagnitudes: { gravity: 1 },
@@ -99,10 +106,10 @@ export default function GravityAnimation() {
   const svgRef = useRef<SVGSVGElement>(null)
 
   // ── 画中画 F-r 平方反比曲线定位 ──
-  const cardWidth = Math.max(220, canvasSize.width * GRAVITY_LAYOUT.cardWidthRatio)
-  const cardHeight = Math.max(150, canvasSize.height * GRAVITY_LAYOUT.cardHeightRatio)
-  const cardX = canvasSize.width - cardWidth - GRAVITY_LAYOUT.cardMargin
-  const cardY = GRAVITY_LAYOUT.cardMargin
+  const cardWidth = Math.max(220, vp.visibleW * GRAVITY_LAYOUT.cardWidthRatio)
+  const cardHeight = Math.max(150, vp.visibleH * GRAVITY_LAYOUT.cardHeightRatio)
+  const cardX = vp.visibleX + vp.visibleW - cardWidth - GRAVITY_LAYOUT.cardMargin
+  const cardY = vp.visibleY + GRAVITY_LAYOUT.cardMargin
 
   const R_DOMAIN: [number, number] = [1.5, 18.0]
 
@@ -159,9 +166,9 @@ export default function GravityAnimation() {
       const mouseX = e.clientX - rect.left
       let newR = r
       if (dragTarget === 'obj2') {
-        newR = (2 * (mouseX - canvasSize.width / 2)) / scale
+        newR = (2 * (mouseX - vp.centerX)) / scale
       } else if (dragTarget === 'obj1') {
-        newR = (-2 * (mouseX - canvasSize.width / 2)) / scale
+        newR = (-2 * (mouseX - vp.centerX)) / scale
       }
       const finalR = Math.max(R_DOMAIN[0], Math.min(R_DOMAIN[1], newR))
 

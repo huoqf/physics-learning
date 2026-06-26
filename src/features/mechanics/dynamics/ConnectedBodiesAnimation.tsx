@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useCanvasSize, PX_PER_METER } from '@/utils'
+import { useCanvasSize, useViewport, PX_PER_METER } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -12,6 +12,8 @@ import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
+
+const CONNECTED_DESIGN = { width: 650, height: 400 } as const
 
 /** 连接体场景布局常量 */
 const LAYOUT = {
@@ -54,6 +56,11 @@ export default function ConnectedBodiesAnimation() {
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumWide)
   const { font } = canvasSize
 
+  const vp = useViewport(canvasSize, {
+    designWidth: CONNECTED_DESIGN.width,
+    designHeight: CONNECTED_DESIGN.height,
+  })
+
   const {
     m1 = 2,
     m2 = 3,
@@ -70,12 +77,12 @@ export default function ConnectedBodiesAnimation() {
   const totalMass = m1 + m2
 
   // 2. 屏幕自适应布局与行程参数计算
-  const animWidth = canvasSize.width
-  const animHeight = canvasSize.height
-  const groundY = animHeight - LAYOUT.groundOffset
+  const animWidth = vp.visibleW
+  const animHeight = vp.visibleH
+  const groundY = vp.visibleY + vp.visibleH - LAYOUT.groundOffset
 
-  const startX = animWidth * LAYOUT.startXRatio
-  const endX = animWidth * LAYOUT.endXRatio
+  const startX = vp.visibleX + vp.visibleW * LAYOUT.startXRatio
+  const endX = vp.visibleX + vp.visibleW * LAYOUT.endXRatio
 
   // 质量块的宽度自适应
   const w1 = Math.min(LAYOUT.blockMaxWidth, animWidth * LAYOUT.blockWidthRatio)
@@ -251,7 +258,7 @@ export default function ConnectedBodiesAnimation() {
   const dragTargetX = m2X + w2 + arrowLength
 
   const cbScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    vectorBounds: { x: vp.visibleX, y: vp.visibleY, width: vp.visibleW, height: vp.visibleH },
     originX: 0,
     originY: 0,
     refMagnitudes: { force: Math.max(F, 30), friction: Math.max(F, 30), tension: Math.max(F, 30) },

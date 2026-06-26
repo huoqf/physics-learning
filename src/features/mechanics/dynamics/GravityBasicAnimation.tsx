@@ -1,5 +1,5 @@
 import { FC, useMemo } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -11,6 +11,8 @@ import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
+
+const GRAV_BASIC_DESIGN = { width: 650, height: 450 } as const
 
 // 定义悬挂薄板的本地顶点
 const PLATE_VERTICES = [
@@ -43,6 +45,11 @@ export const GravityBasicAnimation: FC = () => {
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumTall)
   const { font } = canvasSize
 
+  const vp = useViewport(canvasSize, {
+    designWidth: GRAV_BASIC_DESIGN.width,
+    designHeight: GRAV_BASIC_DESIGN.height,
+  })
+
   // 参数解析
   const mode = params.mode ?? 0 // 0=地球自转重力分解, 1=悬挂重心实验
   const latitude = params.latitude ?? 45 // 纬度 (0~90度)
@@ -54,11 +61,11 @@ export const GravityBasicAnimation: FC = () => {
   const weightMass = params.weightMass ?? 1.2 // 配重相对质量 (0.2 ~ 2.0)
   const showLines = params.showLines ?? 1 // 是否显示悬挂垂线
 
-  const cx = canvasSize.width / 2
-  const cy = canvasSize.height / 2
+  const cx = vp.centerX
+  const cy = vp.centerY
 
   const gravBasicScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    vectorBounds: { x: vp.visibleX, y: vp.visibleY, width: vp.visibleW, height: vp.visibleH },
     originX: 0,
     originY: 0,
   }

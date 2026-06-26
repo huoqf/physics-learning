@@ -1,4 +1,4 @@
-﻿import { useCanvasSize, physicsToCanvasWithOrigin } from '@/utils'
+import { useCanvasSize, useViewport, physicsToCanvasWithOrigin } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import React, { useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -16,6 +16,8 @@ import {
   FONT,
   DASH,
 } from '@/theme/physics'
+
+const CIRCULAR_DESIGN = { width: 600, height: 600 } as const
 
 /** 匀速圆周运动参数范围（滑块边界） */
 const CIRCULAR_MOTION_PARAM_BOUNDS = {
@@ -73,6 +75,11 @@ export default function CircularMotionAnimation() {
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.square)
   const { font } = canvasSize
 
+  const vp = useViewport(canvasSize, {
+    designWidth: CIRCULAR_DESIGN.width,
+    designHeight: CIRCULAR_DESIGN.height,
+  })
+
   const {
     r = 2,
     omega = 1,
@@ -84,10 +91,10 @@ export default function CircularMotionAnimation() {
   const { x, y, v, a_c, period } = calculateCircularMotion(r, omega, time)
 
   // ── 1. 自适应等比例尺（防止出界） ──────────────────────────
-  const centerX = canvasSize.width / 2
-  const centerY = canvasSize.height / 2
+  const centerX = vp.centerX
+  const centerY = vp.centerY
   const rMax = CIRCULAR_MOTION_LAYOUT.rMax
-  const minCanvasDim = Math.min(canvasSize.width, canvasSize.height)
+  const minCanvasDim = Math.min(vp.visibleW, vp.visibleH)
   // 根据视口较短边和最大半径动态映射，四周留出安全余量
   const scale = (minCanvasDim - CIRCULAR_MOTION_LAYOUT.canvasPadding) / (2 * rMax)
 
@@ -95,20 +102,20 @@ export default function CircularMotionAnimation() {
 
   const sceneConfig = useMemo((): SceneConfig => ({
     vectorBounds: {
-      x: 0,
-      y: 0,
-      width: canvasSize.width - CIRCULAR_MOTION_LAYOUT.canvasPadding,
-      height: canvasSize.height - CIRCULAR_MOTION_LAYOUT.canvasPadding,
+      x: vp.visibleX,
+      y: vp.visibleY,
+      width: vp.visibleW - CIRCULAR_MOTION_LAYOUT.canvasPadding,
+      height: vp.visibleH - CIRCULAR_MOTION_LAYOUT.canvasPadding,
     },
     originX: centerX,
     originY: centerY,
-    worldWidth: (canvasSize.width - CIRCULAR_MOTION_LAYOUT.canvasPadding) / scale,
-    worldHeight: (canvasSize.height - CIRCULAR_MOTION_LAYOUT.canvasPadding) / scale,
+    worldWidth: (vp.visibleW - CIRCULAR_MOTION_LAYOUT.canvasPadding) / scale,
+    worldHeight: (vp.visibleH - CIRCULAR_MOTION_LAYOUT.canvasPadding) / scale,
     refMagnitudes: {
       velocity: CIRCULAR_MOTION_CHART_RANGE.vMax,
       acceleration: CIRCULAR_MOTION_CHART_RANGE.aMax,
     },
-  }), [canvasSize.width, canvasSize.height, centerX, centerY, rMax, scale]);
+  }), [vp.visibleX, vp.visibleY, vp.visibleW, vp.visibleH, centerX, centerY, rMax, scale]);
 
   const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
 
@@ -119,10 +126,10 @@ export default function CircularMotionAnimation() {
   const showWaveCard = isAdvanced && showWaveform === 1
 
   // ── 2. 右上角悬浮正余弦画中画定位 ─────────────────────────
-  const cardWidth = Math.max(CIRCULAR_MOTION_LAYOUT.waveCardMinWidth, canvasSize.width * 0.35)
-  const cardHeight = Math.max(CIRCULAR_MOTION_LAYOUT.waveCardMinHeight, canvasSize.height * 0.3)
-  const cardX = canvasSize.width - cardWidth - CIRCULAR_MOTION_LAYOUT.waveCardRightOffset
-  const cardY = 20
+  const cardWidth = Math.max(CIRCULAR_MOTION_LAYOUT.waveCardMinWidth, vp.visibleW * 0.35)
+  const cardHeight = Math.max(CIRCULAR_MOTION_LAYOUT.waveCardMinHeight, vp.visibleH * 0.3)
+  const cardX = vp.visibleX + vp.visibleW - cardWidth - CIRCULAR_MOTION_LAYOUT.waveCardRightOffset
+  const cardY = vp.visibleY + 20
 
   const cardInnerPad = CIRCULAR_MOTION_LAYOUT.waveCardPadding
   const cardInnerW = cardWidth - cardInnerPad.left - cardInnerPad.right

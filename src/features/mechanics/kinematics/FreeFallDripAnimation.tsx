@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -22,6 +22,8 @@ import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { VelocityTimeChart } from '@/components/Chart'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
+
+const DRIP_DESIGN = { width: 100, height: 100 } as const
 
 // ─── 物理常量 ────────────────────────────────────────────────────────────────
 /** 管高度 (m) */
@@ -68,6 +70,11 @@ export default function FreeFallDripAnimation() {
   const [containerRef, canvasSize] = useCanvasSize({ width: 100, height: 100 })
   const { font } = canvasSize
 
+  const vp = useViewport(canvasSize, {
+    designWidth: DRIP_DESIGN.width,
+    designHeight: DRIP_DESIGN.height,
+  })
+
   // ── 参数 ──────────────────────────────────────────────────────────────────
   const dripPeriod = params.dripPeriod ?? 0.5
   const latitude = params.latitude ?? 45
@@ -87,26 +94,26 @@ export default function FreeFallDripAnimation() {
 
   // ── 布局分区（左动画 + 右数据）────────────────────────────────────────
   const stageRatio = 0.5
-  const stageWidth = canvasSize.width * stageRatio
-  const gapWidth = canvasSize.width * 0.02
-  const dataX = stageWidth + gapWidth
-  const dataWidth = canvasSize.width - dataX
+  const stageWidth = vp.visibleW * stageRatio
+  const gapWidth = vp.visibleW * 0.02
+  const dataX = vp.visibleX + stageWidth + gapWidth
+  const dataWidth = vp.visibleW - stageWidth - gapWidth
 
   // ── 左侧动画舞台布局 ────────────────────────────────────────────────────
-  const tubeCenterX = stageWidth * 0.5
+  const tubeCenterX = vp.visibleX + stageWidth * 0.5
   const tubeWidthPx = Math.min(stageWidth * 0.28, 120)
   const tubeLeft = tubeCenterX - tubeWidthPx / 2
   const tubeRight = tubeCenterX + tubeWidthPx / 2
 
-  const tubeTopY = canvasSize.height * 0.15
-  const tubeBottomY = canvasSize.height * 0.88
+  const tubeTopY = vp.visibleY + vp.visibleH * 0.15
+  const tubeBottomY = vp.visibleY + vp.visibleH * 0.88
   const tubePixelHeight = tubeBottomY - tubeTopY
 
   // 物理坐标到像素的缩放
   const scale = tubePixelHeight / TUBE_HEIGHT
 
   const dripScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: stageWidth, height: canvasSize.height },
+    vectorBounds: { x: vp.visibleX, y: vp.visibleY, width: stageWidth, height: vp.visibleH },
     originX: 0,
     originY: 0,
     refMagnitudes: {
@@ -206,8 +213,8 @@ export default function FreeFallDripAnimation() {
   }, [nearestDrop, time, points, tubeCenterX, tubeTopY, scale])
 
   // ── v-t 图参数 ────────────────────────────────────────────────────────
-  const vtChartTop = canvasSize.height * 0.03
-  const vtChartHeight = canvasSize.height * 0.62
+  const vtChartTop = vp.visibleY + vp.visibleH * 0.03
+  const vtChartHeight = vp.visibleH * 0.62
   const vtXMax = useMemo(() => {
     const effectiveXMax = Math.max(Math.min(groundTime * 1.2, 8), 2)
     return Math.round(effectiveXMax * 10) / 10
@@ -448,7 +455,7 @@ export default function FreeFallDripAnimation() {
 
         {/* 频闪数据表格 */}
         <g transform={`translate(${dataX}, ${vtChartTop})`}>
-          <rect width={dataWidth} height={canvasSize.height * 0.32}
+          <rect width={dataWidth} height={vp.visibleH * 0.32}
             fill="white" stroke={CHART_COLORS.gridLine} rx={4} />
           <text x={dataWidth / 2} y={18} fontSize={FONT.axis}
             fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
@@ -470,7 +477,7 @@ export default function FreeFallDripAnimation() {
           {flashData.map((row, i) => {
             const isCurrent = i === flashData.length - 1
             const deltaY = i > 0 ? row.y - flashData[i - 1].y : 0
-            const availableH = canvasSize.height * 0.32 - 55
+            const availableH = vp.visibleH * 0.32 - 55
             const maxRows = Math.min(flashData.length, Math.floor(availableH / 16))
             const displayRows = flashData.slice(-maxRows)
             if (!displayRows.includes(row)) return null
@@ -510,7 +517,7 @@ export default function FreeFallDripAnimation() {
         </g>
 
         {/* v-t 图 */}
-        <foreignObject x={dataX} y={vtChartTop + canvasSize.height * 0.32 + 12} width={dataWidth} height={vtChartHeight}>
+        <foreignObject x={dataX} y={vtChartTop + vp.visibleH * 0.32 + 12} width={dataWidth} height={vtChartHeight}>
           <div style={{ width: '100%', height: '100%' }}>
             <VelocityTimeChart
               points={vtPoints}
@@ -525,23 +532,23 @@ export default function FreeFallDripAnimation() {
         </foreignObject>
 
         {/* 底部文字标注（5个） */}
-        <text x={dataX + 8} y={canvasSize.height * 0.97} fontSize={FONT.small}
+        <text x={dataX + 8} y={vp.visibleY + vp.visibleH * 0.97} fontSize={FONT.small}
           fill={PHYSICS_COLORS.velocity} fontFamily="monospace" fontWeight="bold">
           T = {dripPeriod.toFixed(1)} s
         </text>
-        <text x={dataX + dataWidth * 0.25} y={canvasSize.height * 0.97} fontSize={FONT.small}
+        <text x={dataX + dataWidth * 0.25} y={vp.visibleY + vp.visibleH * 0.97} fontSize={FONT.small}
           fill={PHYSICS_COLORS.velocity} fontFamily="monospace" fontWeight="bold">
           v = {nearestPhysics.v.toFixed(2)} m/s
         </text>
-        <text x={dataX + dataWidth * 0.5} y={canvasSize.height * 0.97} fontSize={FONT.small}
+        <text x={dataX + dataWidth * 0.5} y={vp.visibleY + vp.visibleH * 0.97} fontSize={FONT.small}
           fill={PHYSICS_COLORS.displacement} fontFamily="monospace" fontWeight="bold">
           h = {nearestPhysics.y.toFixed(3)} m
         </text>
-        <text x={dataX + dataWidth * 0.75} y={canvasSize.height * 0.97} fontSize={FONT.small}
+        <text x={dataX + dataWidth * 0.75} y={vp.visibleY + vp.visibleH * 0.97} fontSize={FONT.small}
           fill={PHYSICS_COLORS.acceleration} fontFamily="monospace" fontWeight="bold">
           g = {g.toFixed(3)} m/s²
         </text>
-        <text x={dataX + dataWidth} y={canvasSize.height * 0.97} fontSize={FONT.small}
+        <text x={dataX + dataWidth} y={vp.visibleY + vp.visibleH * 0.97} fontSize={FONT.small}
           fill={PHYSICS_COLORS.labelTextLight} textAnchor="end" fontFamily="monospace">
           φ = {latitude.toFixed(0)}°
         </text>

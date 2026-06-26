@@ -1,5 +1,5 @@
-﻿import { useRef, useCallback, useState } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useRef, useCallback, useState } from 'react'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
@@ -10,6 +10,8 @@ import { STROKE, FONT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { calculateInternalEnergy } from '@/physics/thermodynamics'
 import { deltaUtoDeltaT, temperatureToSpeedScale, internalEnergyToColor } from '@/physics/firstLaw'
+
+const FIRST_LAW_DESIGN = { width: 700, height: 400 } as const
 
 // ─── 物理常量 ─────────────────────────────────────────────────────────────
 const N_DEFAULT = 1
@@ -76,7 +78,12 @@ export default function FirstLawAnimation() {
   )
 
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
-  const { width, height, font } = canvasSize
+  const { font } = canvasSize
+
+  const vp = useViewport(canvasSize, {
+    designWidth: FIRST_LAW_DESIGN.width,
+    designHeight: FIRST_LAW_DESIGN.height,
+  })
 
   const W_input = params.W ?? 0
   const Q_raw = params.Q ?? 0
@@ -91,10 +98,10 @@ export default function FirstLawAnimation() {
 
   // ─── 场景区域 ──────────────────────────────────────────────────────────
   const scene = {
-    x: width * LAYOUT.sceneLeftRatio,
-    y: height * LAYOUT.sceneTopRatio,
-    w: width * LAYOUT.sceneWidthRatio,
-    h: height * LAYOUT.sceneHeightRatio,
+    x: vp.visibleX + vp.visibleW * LAYOUT.sceneLeftRatio,
+    y: vp.visibleY + vp.visibleH * LAYOUT.sceneTopRatio,
+    w: vp.visibleW * LAYOUT.sceneWidthRatio,
+    h: vp.visibleH * LAYOUT.sceneHeightRatio,
   }
 
   const cylinderMargin = scene.w * 0.15
@@ -342,10 +349,10 @@ export default function FirstLawAnimation() {
 
   // ─── 能量天平柱状图渲染（上方） ────────────────────────────────────────
   const renderEnergyChart = () => {
-    const chartX = width * LAYOUT.chartLeftRatio
-    const chartY = height * LAYOUT.chartTopRatio
-    const chartW = width * LAYOUT.chartWidthRatio
-    const chartH = height * LAYOUT.chartHeightRatio
+    const chartX = vp.visibleX + vp.visibleW * LAYOUT.chartLeftRatio
+    const chartY = vp.visibleY + vp.visibleH * LAYOUT.chartTopRatio
+    const chartW = vp.visibleW * LAYOUT.chartWidthRatio
+    const chartH = vp.visibleH * LAYOUT.chartHeightRatio
 
     const margin = { left: 48, right: 24, top: 20, bottom: 28 }
     const plotX = chartX + margin.left
@@ -466,9 +473,9 @@ export default function FirstLawAnimation() {
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg
-        viewBox={`0 0 ${width} ${height}`}
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full"
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className="bg-white rounded-lg shadow-inner"
       >
         {renderEnergyChart()}
         {renderCylinder()}

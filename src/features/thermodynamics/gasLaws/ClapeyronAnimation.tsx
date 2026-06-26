@@ -1,5 +1,5 @@
-﻿import { useRef, useCallback, useState, useMemo } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useRef, useCallback, useState, useMemo } from 'react'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
@@ -9,6 +9,8 @@ import { STROKE, FONT } from '@/theme/physics'
 import { solveClapeyron, generateIsothermFamily } from '@/physics/clapeyron'
 import { RelationChart } from '@/components/Chart'
 import type { RelationDataSeries, RelationMarker } from '@/components/Chart'
+
+const CLAPEYRON_DESIGN = { width: 700, height: 400 } as const
 
 // ─── 物理常量 ─────────────────────────────────────────────────────────────
 const N_DEFAULT = 1
@@ -60,7 +62,12 @@ export default function ClapeyronAnimation() {
   )
 
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
-  const { width, height, font } = canvasSize
+  const { font } = canvasSize
+
+  const vp = useViewport(canvasSize, {
+    designWidth: CLAPEYRON_DESIGN.width,
+    designHeight: CLAPEYRON_DESIGN.height,
+  })
 
   const mode = params.mode ?? 0
   const T = params.T ?? 300
@@ -68,10 +75,10 @@ export default function ClapeyronAnimation() {
 
   // 气缸内区域（像素）
   const scene = {
-    x: width * LAYOUT.sceneLeftRatio,
-    y: height * LAYOUT.sceneTopRatio,
-    w: width * LAYOUT.sceneWidthRatio,
-    h: height * LAYOUT.sceneHeightRatio,
+    x: vp.visibleX + vp.visibleW * LAYOUT.sceneLeftRatio,
+    y: vp.visibleY + vp.visibleH * LAYOUT.sceneTopRatio,
+    w: vp.visibleW * LAYOUT.sceneWidthRatio,
+    h: vp.visibleH * LAYOUT.sceneHeightRatio,
   }
 
   // 气缸壁参数
@@ -286,10 +293,10 @@ export default function ClapeyronAnimation() {
   // ─── 图表渲染 ──────────────────────────────────────────────────────────
   // ── P-V 图：迁移到 RelationChart ──
   // 图表区位置（保留原 LAYOUT 比例，外层 <foreignObject> 定位）
-  const chartX = width * LAYOUT.chartLeftRatio
-  const chartY = height * LAYOUT.chartTopRatio
-  const chartW = width * LAYOUT.chartWidthRatio
-  const chartH = height * LAYOUT.chartHeightRatio
+  const chartX = vp.visibleX + vp.visibleW * LAYOUT.chartLeftRatio
+  const chartY = vp.visibleY + vp.visibleH * LAYOUT.chartTopRatio
+  const chartW = vp.visibleW * LAYOUT.chartWidthRatio
+  const chartH = vp.visibleH * LAYOUT.chartHeightRatio
 
   // Y 轴上界：取 (V_MIN, T_MAX) 的极端 P 值，让所有等温线族都在视图内
   const pMaxAll = useMemo(
@@ -327,9 +334,9 @@ export default function ClapeyronAnimation() {
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg
-        viewBox={`0 0 ${width} ${height}`}
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full"
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className="bg-white rounded-lg shadow-inner"
       >
         {renderCylinder()}
 

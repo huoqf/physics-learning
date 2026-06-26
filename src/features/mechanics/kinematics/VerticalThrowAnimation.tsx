@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -21,6 +21,8 @@ import { VerticalThrowCharts } from './VerticalThrowCharts'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 
+const VT_DESIGN = { width: 100, height: 100 } as const
+
 /** 脉冲动画周期 (ms) */
 const PULSE_PERIOD = 800
 
@@ -37,6 +39,11 @@ export default function VerticalThrowAnimation() {
   )
   const [containerRef, canvasSize] = useCanvasSize({ width: 100, height: 100 })
   const { font } = canvasSize
+
+  const vp = useViewport(canvasSize, {
+    designWidth: VT_DESIGN.width,
+    designHeight: VT_DESIGN.height,
+  })
 
   const { v0 = 15, g = 9.8, advancedMode = 0, sliceDensity = 0, airResistance = 0, targetHeight = 0, showVacuumCompare = 1 } = params
 
@@ -67,8 +74,8 @@ export default function VerticalThrowAnimation() {
 
   // ── 图表布局（Hook 提取） ──
   const layout = useVerticalThrowChartLayout(
-    canvasSize.width,
-    canvasSize.height,
+    vp.visibleW,
+    vp.visibleH,
     totalTime,
     maxHeight,
     maxHeightTime,

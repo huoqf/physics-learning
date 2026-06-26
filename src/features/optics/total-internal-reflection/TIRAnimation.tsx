@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { OPTICS_COLORS, STROKE, FONT, DASH, CANVAS_COLORS } from '@/theme/physics'
@@ -8,6 +8,7 @@ import { calculateCriticalAngle, calculateRefraction, calculateIlluminatedRadius
 
 const VIEW_WIDTH = 800
 const VIEW_HEIGHT = 500
+const TIR_DESIGN = { width: VIEW_WIDTH, height: VIEW_HEIGHT } as const
 const NORMAL_LENGTH = 160
 const RAY_LEN = 180
 const WATER_SURFACE_Y_RATIO = 0.4
@@ -37,6 +38,11 @@ export default function TIRAnimation() {
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide)
 
+  const vp = useViewport(canvasSize, {
+    designWidth: TIR_DESIGN.width,
+    designHeight: TIR_DESIGN.height,
+  })
+
   const mode = params.mode ?? 0
   const theta1 = params.theta1 ?? 30
   const n = params.n ?? 1.33
@@ -53,11 +59,11 @@ export default function TIRAnimation() {
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg
-        viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full"
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className="bg-white rounded-lg shadow-inner"
       >
-        <g>
+        <g transform={vp.transform}>
           {mode === 1 ? (
             <PointSourceMode
               depth={depth} n={n} theta_c_deg={theta_c_deg}

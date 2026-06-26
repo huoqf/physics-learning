@@ -1,5 +1,5 @@
-﻿import { useRef, useCallback, useState, useEffect, useMemo } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useRef, useCallback, useState, useEffect, useMemo } from 'react'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
@@ -18,6 +18,8 @@ import {
   type Particle,
   type Scenario,
 } from '@/physics/secondLaw'
+
+const SECOND_LAW_DESIGN = { width: 700, height: 400 } as const
 
 // ─── 常量 ─────────────────────────────────────────────────────────────
 const PARTICLE_COUNT = 160
@@ -50,7 +52,12 @@ export default function SecondLawAnimation() {
   )
 
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
-  const { width, height, font } = canvasSize
+  const { font } = canvasSize
+
+  const vp = useViewport(canvasSize, {
+    designWidth: SECOND_LAW_DESIGN.width,
+    designHeight: SECOND_LAW_DESIGN.height,
+  })
 
   const scene = params.scene ?? 0
   const scenario: Scenario = scene === 0 ? 'heat-conduction' : 'gas-diffusion'
@@ -128,10 +135,10 @@ export default function SecondLawAnimation() {
 
   // ─── 布局计算 ──────────────────────────────────────────────────────
   const container = {
-    x: width * LAYOUT.containerLeftRatio,
-    y: height * LAYOUT.containerTopRatio,
-    w: width * LAYOUT.containerWidthRatio,
-    h: height * LAYOUT.containerHeightRatio,
+    x: vp.visibleX + vp.visibleW * LAYOUT.containerLeftRatio,
+    y: vp.visibleY + vp.visibleH * LAYOUT.containerTopRatio,
+    w: vp.visibleW * LAYOUT.containerWidthRatio,
+    h: vp.visibleH * LAYOUT.containerHeightRatio,
   }
 
   const midX = container.x + container.w / 2
@@ -146,11 +153,11 @@ export default function SecondLawAnimation() {
     if (!ctx) return
 
     const dpr = window.devicePixelRatio || 1
-    canvas.width = width * dpr
-    canvas.height = height * dpr
+    canvas.width = canvasSize.width * dpr
+    canvas.height = canvasSize.height * dpr
     ctx.scale(dpr, dpr)
 
-    ctx.clearRect(0, 0, width, height)
+    ctx.clearRect(0, 0, canvasSize.width, canvasSize.height)
 
     // 绘制容器背景
     if (scenario === 'gas-diffusion') {
@@ -187,7 +194,7 @@ export default function SecondLawAnimation() {
       ctx.fill()
     }
     ctx.globalAlpha = 1
-  }, [width, height, scenario, container, midX, time])
+  }, [canvasSize.width, canvasSize.height, scenario, container, midX, time])
 
   // ─── 平衡态检测 ─────────────────────────────────────────────────
   const isEquilibrium = useMemo(() => {
@@ -210,15 +217,15 @@ export default function SecondLawAnimation() {
 
       {/* SVG 叠加层：容器边框、隔板、标注、警告框 */}
       <svg
-        viewBox={`0 0 ${width} ${height}`}
-        preserveAspectRatio="xMidYMid meet"
-        className="absolute inset-0 w-full h-full"
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className="absolute inset-0"
         style={{ zIndex: 10 }}
       >
         {/* 场景标题 */}
         <text
-          x={width / 2}
-          y={height * LAYOUT.labelTopRatio + 10}
+          x={vp.visibleX + vp.visibleW / 2}
+          y={vp.visibleY + vp.visibleH * LAYOUT.labelTopRatio + 10}
           fontSize={font(13)}
           fontWeight="bold"
           fill={colors.neutral[800]}
@@ -319,8 +326,8 @@ export default function SecondLawAnimation() {
 
         {/* 状态标注 */}
         <text
-          x={width / 2}
-          y={height * LAYOUT.statusBottomRatio}
+          x={vp.visibleX + vp.visibleW / 2}
+          y={vp.visibleY + vp.visibleH * LAYOUT.statusBottomRatio}
           fontSize={font(11)}
           fill={isEquilibrium ? SECOND_LAW_COLORS.equilibriumLabel : '#64748B'}
           textAnchor="middle"
@@ -336,10 +343,10 @@ export default function SecondLawAnimation() {
         {isReversing && (
           <g>
             <rect
-              x={width * 0.15}
-              y={height * 0.35}
-              width={width * 0.7}
-              height={height * 0.18}
+              x={vp.visibleX + vp.visibleW * 0.15}
+              y={vp.visibleY + vp.visibleH * 0.35}
+              width={vp.visibleW * 0.7}
+              height={vp.visibleH * 0.18}
               fill={SECOND_LAW_COLORS.warningBg}
               stroke={SECOND_LAW_COLORS.warningBorder}
               strokeWidth={2}
@@ -347,8 +354,8 @@ export default function SecondLawAnimation() {
               opacity={0.92}
             />
             <text
-              x={width / 2}
-              y={height * 0.42}
+              x={vp.visibleX + vp.visibleW / 2}
+              y={vp.visibleY + vp.visibleH * 0.42}
               fontSize={font(15)}
               fontWeight="bold"
               fill={SECOND_LAW_COLORS.warningText}
@@ -358,8 +365,8 @@ export default function SecondLawAnimation() {
               非自发过程：违反热力学第二定律
             </text>
             <text
-              x={width / 2}
-              y={height * 0.48}
+              x={vp.visibleX + vp.visibleW / 2}
+              y={vp.visibleY + vp.visibleH * 0.48}
               fontSize={font(11)}
               fill={SECOND_LAW_COLORS.warningText}
               textAnchor="middle"

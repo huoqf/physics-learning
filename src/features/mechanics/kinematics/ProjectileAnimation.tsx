@@ -1,4 +1,4 @@
-﻿import { useCanvasSize, physicsToCanvasWithOrigin } from '@/utils'
+import { useCanvasSize, useViewport, physicsToCanvasWithOrigin } from '@/utils'
 import React, { useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -19,6 +19,8 @@ import { Ball } from '@/components/Physics/Ball'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
+
+const PROJ_DESIGN = { width: 100, height: 100 } as const
 
 /** 物理常数：最大抛出高度 (m) */
 const PHYSICS_HEIGHT = 10.0
@@ -54,6 +56,11 @@ export default function ProjectileAnimation() {
   )
   const [containerRef, canvasSize] = useCanvasSize({ width: 100, height: 100 })
   const { font } = canvasSize
+
+  const vp = useViewport(canvasSize, {
+    designWidth: PROJ_DESIGN.width,
+    designHeight: PROJ_DESIGN.height,
+  })
 
   const {
     v0x = 10,
@@ -99,9 +106,9 @@ export default function ProjectileAnimation() {
   )
 
   // ── 3. 铺满式物理舞台参数 ─────────────────────────────────
-  const originX = PROJECTILE_LAYOUT.originX
-  const originY = canvasSize.height * PROJECTILE_LAYOUT.originYRatio
-  const groundY = canvasSize.height * PROJECTILE_LAYOUT.groundYRatio
+  const originX = vp.visibleX + PROJECTILE_LAYOUT.originX
+  const originY = vp.visibleY + vp.visibleH * PROJECTILE_LAYOUT.originYRatio
+  const groundY = vp.visibleY + vp.visibleH * PROJECTILE_LAYOUT.groundYRatio
   const stageHeight = groundY - originY
 
   // 获取轨迹的水平最大位移，用以动态解算 scaleX
@@ -110,12 +117,12 @@ export default function ProjectileAnimation() {
   const maxX = Math.max(lastPoint.x, lastPointVac.x, 1)
 
   // 双轴自适应等比例缩放（取最小值以保证水平与竖直方向绝对不出界）
-  const scaleX = (canvasSize.width - originX - PROJECTILE_LAYOUT.rightPadding) / maxX
+  const scaleX = (vp.visibleW - PROJECTILE_LAYOUT.originX - PROJECTILE_LAYOUT.rightPadding) / maxX
   const scaleY = stageHeight / PHYSICS_HEIGHT
   const scale = Math.min(scaleX, scaleY)
 
   const projScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: stageHeight },
+    vectorBounds: { x: vp.visibleX, y: vp.visibleY, width: vp.visibleW, height: stageHeight },
     originX: 0,
     originY: 0,
     refMagnitudes: { velocity: Math.max(v0x, 10) },
@@ -158,9 +165,9 @@ export default function ProjectileAnimation() {
   const showDoubleTrack = advancedMode === 1 && airResistance > 0 && showVacuumCompare === 1
 
   // ── 4. 右上角悬浮 v-t 图像尺寸设计 ───────────────────────
-  const vtWidth = Math.max(220, canvasSize.width * 0.35)
-  const vtHeight = Math.max(150, canvasSize.height * 0.34)
-  const vtX = canvasSize.width - vtWidth - 20
+  const vtWidth = Math.max(220, vp.visibleW * 0.35)
+  const vtHeight = Math.max(150, vp.visibleH * 0.34)
+  const vtX = vp.visibleX + vp.visibleW - vtWidth - 20
   const vtY = 20
 
   const vtXMax = maxTime * 1.15
@@ -267,7 +274,7 @@ export default function ProjectileAnimation() {
           key={`h-grid-${i}`}
           x1={originX}
           y1={yPos}
-          x2={canvasSize.width - 20}
+          x2={vp.visibleX + vp.visibleW - 20}
           y2={yPos}
           stroke={PHYSICS_COLORS.grid}
           strokeWidth={STROKE.grid}
@@ -277,7 +284,7 @@ export default function ProjectileAnimation() {
     }
     // 垂直网格
     for (let i = 1; i < gridCols; i++) {
-      const xPos = originX + (i * (canvasSize.width - originX - 20)) / gridCols
+      const xPos = originX + (i * (vp.visibleW - PROJECTILE_LAYOUT.originX - PROJECTILE_LAYOUT.rightPadding)) / gridCols
       lines.push(
         <line
           key={`v-grid-${i}`}
@@ -292,7 +299,7 @@ export default function ProjectileAnimation() {
       )
     }
     return lines
-  }, [showGrid, originY, groundY, stageHeight, canvasSize.width])
+  }, [showGrid, originY, groundY, stageHeight, vp.visibleW])
 
   return (
     <div ref={containerRef} className="w-full h-full">
@@ -377,7 +384,7 @@ export default function ProjectileAnimation() {
 
         {/* 实际钢珠小球 (水平飞跃) */}
         <Ball
-          cx={Math.min(canvasSize.width - PROJECTILE_LAYOUT.steelBallRadius, ballCanvas.cx)}
+          cx={Math.min(vp.visibleX + vp.visibleW - PROJECTILE_LAYOUT.steelBallRadius, ballCanvas.cx)}
           cy={Math.min(groundY, ballCanvas.cy)}
           r={PROJECTILE_LAYOUT.steelBallRadius}
           type="steel"
