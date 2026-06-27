@@ -2,7 +2,7 @@ import { useCanvasSize, useViewport, physicsToCanvasWithOrigin } from '@/utils'
 import React, { useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { precomputeObliqueThrowWithDrag } from '@/physics/kinematics'
+import { precomputeObliqueThrowWithDrag } from '@/physics'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,

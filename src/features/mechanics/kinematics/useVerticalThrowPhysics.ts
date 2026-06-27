@@ -3,7 +3,7 @@ import {
   precomputeVerticalThrowTrajectory,
   VerticalThrowResult,
   VerticalThrowTrajectoryPoint,
-} from '@/physics/kinematics'
+} from '@/physics'
 
 export type { VerticalThrowResult, VerticalThrowTrajectoryPoint }
 export { precomputeVerticalThrowTrajectory }

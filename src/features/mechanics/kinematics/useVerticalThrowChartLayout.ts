@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from 'react'
-import { VerticalThrowTrajectoryPoint } from '@/physics/kinematics'
+import { VerticalThrowTrajectoryPoint } from '@/physics'
 
 export interface ChartPadding {
   left: number
