@@ -4,30 +4,25 @@
 
 ---
 
-## 一、超长文件 Top 5（P0 — 需拆分/重构）
+## 一、超长文件拆分（P0）— ✅ 全部完成
 
-| # | 文件 | 行数 | 状态 |
-|---|---|---|---|
-| 1 | ~~`src/data/quantities/electromagnetism.ts`~~ → `electromagnetism/` | 1,517 → 6 模块 | ✅ 已完成 |
-| 2 | `src/features/mechanics/energy/SpringCompositeAnimation.tsx` | 1,271 | ⬜ 待处理 |
-| 3 | `src/features/mechanics/momentum/MomentumApplicationAnimation.tsx` | 1,065 | ⬜ 待处理 |
-| 4 | `src/features/mechanics/gravitation/SatelliteAnimation.tsx` | 1,049 | ⬜ 待处理 |
-| 5 | ~~`src/physics/dynamics.ts`~~ → `dynamics/` | 1,074 → 6 模块 | ✅ 已完成 |
+### 待处理
 
-> 补充：以下动画组件亦超 500 行，需关注拆分：
+（无）
+
+> 以下动画组件亦超 500 行，可关注拆分：
 > - `EnergyConservationAnimation.tsx` — 657
 > - `UniformAccelerationCenterExtra.tsx` — 560
 
-### 拆分风险评估（2026-06-27）
+### 已完成
 
-| # | 文件 | 风险 | 消费者 | 关键因素 |
-|---|---|---|---|---|
-| 1 | ~~`electromagnetism.ts`~~ | ~~🟢 **低**~~ | ~~1~~ | ✅ **已完成**（2026-06-27）。拆为 5 个域模块（electrostatics/dc-circuits/magnetism/induction/ac）+ index.ts 调度器，`tsc --noEmit` 零错误。`physicsQuantities.ts` 注册表无需改动。 |
-| 2 | `SpringCompositeAnimation.tsx` | 🟢 **低** | 1（懒加载） | `SpringEnergyChartContent`(405行) + `SpringForceChartContent`(338行) 均为纯 props 驱动的内部渲染组件，提取为同级文件零耦合。主文件降至 ~620 行；进一步抽取 `useSpringAnimation` hook 可至 ~400 行。 |
-| 3 | `MomentumApplicationAnimation.tsx` | 🟢 **低** | 1（懒加载） | 3 个物理模型（曲槽/弹簧/人船）完全独立，`modelType` 门控已是天然边界。零交叉依赖，各自提取为独立组件 + 1 个编排器即可。Model 2 的键盘逻辑需抽为 `useManBoatKeyboard` hook。 |
-| 4 | `SatelliteAnimation.tsx` | 🟢 **低** | 1（懒加载） | 可拆为 6-7 个文件：`LAYOUT` 配置、Kepler 物理 hook、v-t 采样 hook、SVG 形状组件、Mode-0/Mode-1 场景、图表交互。难点：`renderEarth` 在 3 处被闭包调用，需提取为 props 传入的独立组件。 |
-
-**优先级建议**：先处理 #1（数据层拆分，无 UI 风险）和 #3（模型间零耦合，机械拆分），再处理 #2（提取内部组件），最后处理 #4（闭包依赖较多）。
+| 文件 | 拆分方式 | 日期 |
+|---|---|---|
+| ~~`electromagnetism.ts`~~ → `electromagnetism/` | 5 域模块 + index 调度器（1,517 → 6 模块） | 2026-06-27 |
+| ~~`SpringCompositeAnimation.tsx`~~ | 提取 `SpringEnergyChartContent` + `SpringForceChartContent`（1,271 → 630 + 395 + 325） | 2026-06-27 |
+| ~~`MomentumApplicationAnimation.tsx`~~ | 提取 `CurvedSlotModel` + `SpringBlocksModel` + `ManBoatModel`（1,171 → 108 + 160 + 170 + 255） | 2026-06-27 |
+| ~~`dynamics.ts`~~ → `dynamics/` | 6 模块（1,074 → 6 模块） | 2026-06-27 |
+| ~~`SatelliteAnimation.tsx`~~ | 提取 `satelliteLayout` + `SatelliteShapes` + `useSatellitePhysics` + `useOrbitCurves`（1,138 → 343 + 48 + 51 + 183 + 32） | 2026-06-27 |
 
 ---
 
@@ -39,8 +34,8 @@
 
 ---
 
-## 三、代码质量审查 — P2 预防性优化（待观察）
+## 三、代码质量审查（P2 预防性优化）
 
-| # | 条目 | 前提条件 |
-|---|---|---|
-| 3-1 | `WrongPage.renderCard` 提取为 `React.memo` 组件 | `WrongCard` 已有 `React.memo`，但 `menuFor` 状态只影响被点击的单张卡，收益有限；视后续性能需求决定 |
+| 条目 | 前提条件 |
+|---|---|
+| `WrongPage.renderCard` 提取为 `React.memo` | `WrongCard` 已有 `React.memo`，但 `menuFor` 状态只影响被点击的单张卡，收益有限；视后续性能需求决定 |
