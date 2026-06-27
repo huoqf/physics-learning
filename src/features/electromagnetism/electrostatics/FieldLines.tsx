@@ -3,10 +3,9 @@ import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { radius } from '@/theme/radius'
-import { shadow } from '@/theme/shadow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { EnergyBars } from '@/components/Physics/EnergyBars'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
 
 // 物理与绘图常量
@@ -399,48 +398,15 @@ export default function FieldLines() {
   return (
     <div ref={containerRef} className="w-full h-full relative">
       {/* 实时能量分配卡片 */}
-      <div
-        className="absolute right-4 bottom-4 z-10 bg-white/80 backdrop-blur-md border border-neutral-200/50 rounded-xl p-3 flex flex-col items-center select-none"
-        style={{
-          boxShadow: shadow.md,
-          borderRadius: radius.lg,
-          width: '150px',
-        }}
-      >
-        <span className="font-bold text-neutral-500 mb-2.5" style={{ fontSize: font(10) }}>实时能量分配 (守恒)</span>
-        
-        <div className="h-28 flex justify-around items-end w-full relative px-2">
-          <div className="absolute inset-x-0 top-0 border-t border-dashed border-neutral-200 flex justify-between text-neutral-300 font-mono pointer-events-none" style={{ fontSize: font(7.5) }}>
-            <span>100%</span>
-          </div>
-          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t border-dashed border-neutral-200 flex justify-between text-neutral-300 font-mono pointer-events-none" style={{ fontSize: font(7.5) }}>
-            <span>50%</span>
-          </div>
-
-          {/* 动能柱 */}
-          <div className="flex flex-col items-center h-full justify-end w-10">
-            <div className="w-4 h-full bg-neutral-100/50 border border-neutral-200/30 rounded-full flex items-end overflow-hidden">
-              <div
-                className="w-full rounded-full transition-all duration-150 ease-out"
-                style={{ height: `${probePhysics.pctEk}%`, backgroundColor: PHYSICS_COLORS.kineticEnergy }}
-              />
-            </div>
-            <span className="font-bold mt-1 font-mono" style={{ fontSize: font(10), color: PHYSICS_COLORS.kineticEnergy }}>Ek</span>
-            <span className="font-medium" style={{ fontSize: font(8), color: PHYSICS_COLORS.kineticEnergy }}>动能</span>
-          </div>
-
-          {/* 势能柱 */}
-          <div className="flex flex-col items-center h-full justify-end w-10">
-            <div className="w-4 h-full bg-neutral-100/50 border border-neutral-200/30 rounded-full flex items-end overflow-hidden">
-              <div
-                className="w-full rounded-full transition-all duration-150 ease-out"
-                style={{ height: `${probePhysics.pctEp}%`, backgroundColor: PHYSICS_COLORS.potentialEnergy }}
-              />
-            </div>
-            <span className="font-bold mt-1 font-mono" style={{ fontSize: font(10), color: PHYSICS_COLORS.potentialEnergy }}>Ep</span>
-            <span className="font-medium" style={{ fontSize: font(8), color: PHYSICS_COLORS.potentialEnergy }}>势能</span>
-          </div>
-        </div>
+      <div className="absolute right-4 bottom-4 z-10" style={{ width: '150px' }}>
+        <EnergyBars
+          items={[
+            { key: 'Ek', label: 'Ek', value: probePhysics.pctEk, color: PHYSICS_COLORS.kineticEnergy },
+            { key: 'Ep', label: 'Ep', value: probePhysics.pctEp, color: PHYSICS_COLORS.potentialEnergy },
+          ]}
+          title="实时能量分配"
+          font={font}
+        />
       </div>
 
       {/* SVG 动画视口
