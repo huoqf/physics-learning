@@ -12,6 +12,7 @@
 | 2 | `src/features/mechanics/energy/SpringCompositeAnimation.tsx` | 1,271 | ⬜ 待处理 |
 | 3 | `src/features/mechanics/momentum/MomentumApplicationAnimation.tsx` | 1,065 | ⬜ 待处理 |
 | 4 | `src/features/mechanics/gravitation/SatelliteAnimation.tsx` | 1,049 | ⬜ 待处理 |
+| 5 | ~~`src/physics/dynamics.ts`~~ → `dynamics/` | 1,074 → 6 模块 | ✅ 已完成 |
 
 > 补充：以下动画组件亦超 500 行，需关注拆分：
 > - `EnergyConservationAnimation.tsx` — 657
