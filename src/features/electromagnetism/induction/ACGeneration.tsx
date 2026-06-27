@@ -8,7 +8,7 @@
  * @agent-rule 遵循 useCanvasSize + PHYSICS_COLORS theme token
  * @agent-rule 中间屏左右分区：左侧 SVG 仿真，右侧 MiniChart 时序曲线
  */
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useCallback } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -74,11 +74,11 @@ export default function ACGeneration() {
   const OX = SIMW * 0.5
   const OY = H * 0.42
 
-  function project3D(x: number, y: number, z: number): Point2D {
+  const project3D = useCallback((x: number, y: number, z: number): Point2D => {
     const sx = x + z * Z_SCALE * Math.cos(Z_ANGLE)
     const sy = -y - z * Z_SCALE * Math.sin(Z_ANGLE)
     return { x: OX + sx * SCALE, y: OY + sy * SCALE }
-  }
+  }, [OX, OY, SCALE, Z_ANGLE])
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 磁感线（立体多排分布）
@@ -97,7 +97,7 @@ export default function ACGeneration() {
       })
     })
     return lines
-  }, [OX, OY, SCALE])
+  }, [project3D])
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 转轴和旋转箭头

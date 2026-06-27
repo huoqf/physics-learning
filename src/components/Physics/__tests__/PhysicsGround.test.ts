@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { createRulerTicks } from '../PhysicsGround'
+import { createRulerTicks } from '../physicsGroundUtils'
 import { render } from '@testing-library/react'
 import React from 'react'
 import { PhysicsGround } from '../PhysicsGround'

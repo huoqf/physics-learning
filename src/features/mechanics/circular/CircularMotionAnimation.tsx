@@ -115,7 +115,7 @@ export default function CircularMotionAnimation() {
       velocity: CIRCULAR_MOTION_CHART_RANGE.vMax,
       acceleration: CIRCULAR_MOTION_CHART_RANGE.aMax,
     },
-  }), [vp.visibleX, vp.visibleY, vp.visibleW, vp.visibleH, centerX, centerY, rMax, scale]);
+  }), [vp.visibleX, vp.visibleY, vp.visibleW, vp.visibleH, centerX, centerY, scale]);
 
   const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
 
@@ -254,7 +254,7 @@ export default function CircularMotionAnimation() {
       )
     }
     return elements
-  }, [showGrid, centerX, centerY, scale])
+  }, [showGrid, centerX, centerY, scale, rMax])
 
   // ── 6. 扫过扇形角度弧 path ──────────────────────────────
   const angleSectorPath = useMemo(() => {

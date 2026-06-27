@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useMemo, useId } from 'react'
+import { useEffect, useRef, useMemo, useCallback, useId } from 'react'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
@@ -274,7 +274,7 @@ export default function VelocitySelector() {
 
       particlesRef.current = updatedParticles
     }
-  }, [mode, singleParticle, time, keepTrack, E_param, B_param, qOverM_param, q_param, canvasSize])
+  }, [mode, singleParticle, time, keepTrack, E_param, B_param, qOverM_param, q_param, canvasSize, sceneScale, showElectricField, v0_param])
 
   // 5. $y - v$ 偏转图表曲线构建 (仅进阶模式)
   const chartData = useMemo(() => {
@@ -351,18 +351,18 @@ export default function VelocitySelector() {
   const chartXOffset = cx_in
   const chartYOffset = canvasSize.height * 0.08 // 占高度的 8%
 
-  const toChartX = (v: number) => {
+  const toChartX = useCallback((v: number) => {
     const vMin = 1.0
     const vMax = 25.0
     return chartXOffset + ((v - vMin) / (vMax - vMin)) * chartWidth
-  }
+  }, [chartXOffset, chartWidth])
 
-  const toChartY = (yVal: number) => {
+  const toChartY = useCallback((yVal: number) => {
     // y 物理范围为 [-d_phys/2, d_phys/2]，即 [-1.0, 1.0]
     // 映射到图表像素中线偏移，向上为y正方向
     const halfH = chartHeight / 2
     return chartYOffset + halfH - (yVal / (d_phys / 2)) * halfH
-  }
+  }, [chartHeight, chartYOffset, d_phys])
 
   const chartCurvePath = useMemo(() => {
     if (!chartData) return ''
@@ -387,7 +387,7 @@ export default function VelocitySelector() {
       }
     })
     return path.trim()
-  }, [chartData])
+  }, [chartData, toChartX, toChartY])
 
   // 7. 网格辅助线（已删除）
 
@@ -416,7 +416,7 @@ export default function VelocitySelector() {
       }
     }
     return arr
-  }, [mode, B_param, cy, gap_plate_px, w_plate_px])
+  }, [mode, B_param, cy, gap_plate_px, w_plate_px, canvasSize.height, cx_in])
 
   // 9. 计算左手定则手部姿态参数
   const handPoseParams = useMemo(() => {

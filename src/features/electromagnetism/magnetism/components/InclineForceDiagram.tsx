@@ -5,6 +5,7 @@ import { GRAVITY } from '@/physics/constants'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { computeScale } from '@/utils/coordinate'
 import type { AdvancedAmperePhysicsResult } from '../ampereForceModel'
+import type { SceneScale } from '@/scene'
 
 interface InclineForceDiagramProps {
   x: number
@@ -58,16 +59,17 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
   // 物理力到像素长度的映射比例：把最大重力 mg (~5N) 映射为 32 像素
   const forceScale = computeScale(w, h, { xMin: -5, xMax: 5, yMin: -5, yMax: 5 })
 
-  const localScale = useMemo(() => {
+  const localScale = useMemo<SceneScale>(() => {
     return {
       originX: px,
       originY: py,
       scaleX: forceScale,
       scaleY: forceScale,
+      scale: forceScale,
       maxVectorLength: 60,
       refMagnitudes: { force: 2.0 },
-    } as any
-  }, [px, py])
+    }
+  }, [px, py, forceScale])
 
   // 重力 mg (竖直向下，即 y 轴负方向，对于 y1 = originY - origin.y * scaleY，物理矢量 y 负值即向下)
   const m = 0.5

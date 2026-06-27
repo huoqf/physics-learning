@@ -194,7 +194,11 @@ function computeFingerTip(finger: Finger): { x: number; y: number } {
  *
  *  - 'right'：右手（拇指在左下侧，指向左上方）
  *  - 'left' ：左手（拇指在右下侧，指向右上方）= 右手水平镜像
+ *
+ * TODO(P1): 此函数与骨骼类型紧密耦合，提取到独立文件会引入循环依赖风险。
+ * 暂时 suppress fast-refresh warning，后续在组件拆分时一并重构。
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function getFingersForPose(pose: HandPose, chirality: HandChirality = 'right'): Finger[] {
   const base = POSE_TABLE[pose]
   return chirality === 'right' ? base : mirrorX(base)

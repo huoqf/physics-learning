@@ -102,7 +102,7 @@ export default function ProjectileAnimation() {
         ay: p1.ay + (p2.ay - p1.ay) * frac,
       }
     },
-    []
+    [trajectory]
   )
 
   // ── 3. 铺满式物理舞台参数 ─────────────────────────────────
@@ -299,7 +299,7 @@ export default function ProjectileAnimation() {
       )
     }
     return lines
-  }, [showGrid, originY, groundY, stageHeight, vp.visibleW])
+  }, [showGrid, originY, groundY, stageHeight, vp.visibleW, originX, vp.visibleX])
 
   return (
     <div ref={containerRef} className="w-full h-full">

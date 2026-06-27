@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useMemo } from 'react'
+import { useEffect, useRef, useMemo, useCallback } from 'react'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
@@ -69,7 +69,7 @@ export function SimulationView() {
   const sceneScale = createSceneScale(sceneConfig)
 
   // 粒子在指定时间进度 progressTime 下的运动坐标及速度状态计算函数
-  const getParticleState = (tVal: number) => {
+  const getParticleState = useCallback((tVal: number) => {
     const cxAngle = thetaRad + sign * Math.PI / 2
     const xc = R * Math.cos(cxAngle)
     const yc = R * Math.sin(cxAngle)
@@ -111,7 +111,7 @@ export function SimulationView() {
     }
 
     return { px, py, vx, vy }
-  }
+  }, [thetaRad, sign, R, omega, v, tOut])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -277,7 +277,8 @@ export function SimulationView() {
     R,
     sign,
     tOut,
-    tSlideIn
+    tSlideIn,
+    getParticleState
   ])
 
   // 为了 SVG 矢量箭头计算粒子实时状态与受力向量

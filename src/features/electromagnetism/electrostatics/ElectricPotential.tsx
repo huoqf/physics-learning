@@ -103,7 +103,7 @@ export default function ElectricPotential() {
         return `${idx === 0 ? 'M' : 'L'} ${cx.toFixed(1)},${cy.toFixed(1)}`
       })
       .join(' ')
-  }, [handPath, physics.physicsToCanvas])
+  }, [handPath, physics])
 
   // 4. 手绘路径绘制事件
   const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {

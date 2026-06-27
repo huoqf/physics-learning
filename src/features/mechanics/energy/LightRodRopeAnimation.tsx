@@ -7,6 +7,7 @@ import { Ball, Pulley, VectorArrow } from '@/components/Physics'
 import { RelationChart } from '@/components/Chart'
 import { IDENTITY_SCENE_SCALE } from '@/scene/SceneScale'
 import { precomputeLightRodRopeTrajectory, getLRRStateAtTime } from '@/physics/lightRodRope'
+import type { LRRModelState } from '@/physics/lightRodRope'
 import { GRAVITY } from '@/physics/constants'
 import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -18,7 +19,7 @@ const DESIGN_HEIGHT = 420
 /**
  * 实时能量分配动态柱状图 (双绳模式专用)
  */
-const EnergyBars = ({ state, initialEtot }: { state: any; initialEtot: number }) => {
+const EnergyBars = ({ state, initialEtot }: { state: LRRModelState; initialEtot: number }) => {
   const { EpA, EkA, EpB, EkB, Etot } = state
   const maxVal = initialEtot > 0 ? initialEtot : 1.0
 
@@ -152,7 +153,7 @@ export default function LightRodRopeAnimation() {
   // 2. 预计算物理轨迹
   const trajectory = useMemo(() => {
     return precomputeLightRodRopeTrajectory(m1, m2, L, g, constraint, tMax, 0.02, theta0Rad, v0)
-  }, [m1, m2, L, constraint, theta0Rad, v0])
+  }, [m1, m2, L, g, constraint, theta0Rad, v0])
 
   // 当前时刻插值状态
   const state = useMemo(() => {

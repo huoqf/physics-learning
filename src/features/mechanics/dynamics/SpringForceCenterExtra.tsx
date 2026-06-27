@@ -1,4 +1,4 @@
-import { FC, useMemo } from 'react'
+import { FC, useMemo, useCallback } from 'react'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS } from '@/theme/physics'
@@ -29,9 +29,9 @@ export const SpringForceCenterExtra: FC = () => {
   const cy = margin.top + plotH / 2  // 50
 
   // 位移映射范围 x: [-0.6, 0.6]
-  const toSvgX = (x: number) => cx + (x / 0.6) * (plotW / 2)
+  const toSvgX = useCallback((x: number) => cx + (x / 0.6) * (plotW / 2), [cx, plotW])
   // 弹力映射范围 F: [-110, 110] (当 k=200, x=0.5 时最大力为 100N)
-  const toSvgY = (F: number) => cy - (F / 110) * (plotH / 2)
+  const toSvgY = useCallback((F: number) => cy - (F / 110) * (plotH / 2), [cy, plotH])
 
   // ── 弹性势能三角形面积路径 ──
   const areaPathD = useMemo(() => {
@@ -39,7 +39,7 @@ export const SpringForceCenterExtra: FC = () => {
     const endX = toSvgX(displacement)
     const endY = toSvgY(springForce)
     return `M ${startX},${cy} L ${endX},${cy} L ${endX},${endY} Z`
-  }, [displacement, springForce, cx, cy])
+  }, [displacement, springForce, cy, toSvgX, toSvgY])
 
   // ── 计算胡克定律线段端点 ──
   // 在 x = -0.55 和 x = 0.55 处的值

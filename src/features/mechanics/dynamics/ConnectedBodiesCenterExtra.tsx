@@ -75,11 +75,11 @@ export default function ConnectedBodiesCenterExtra() {
   const currentV = isPlaying && time > 0 ? acceleration * effectiveTime : 0
   const currentT = isPlaying && time > 0 && time < tMax ? tension : physicsResult.displayTension
 
-  const currentVals = {
+  const currentVals = useMemo(() => ({
     a: currentA,
     v: currentV,
     T: currentT,
-  }
+  }), [currentA, currentV, currentT])
 
   // 极限范围动态估计
   const maxV = acceleration * tMax || 5
@@ -166,7 +166,7 @@ export default function ConnectedBodiesCenterExtra() {
         currentXVal: effectiveTime,
       }
     }
-  }, [analysisView, acceleration, tension, mu, F, points, tMuPoints, m1, totalMass, currentVals, effectiveTime, maxT])
+  }, [analysisView, acceleration, tension, mu, F, points, tMuPoints, m1, totalMass, currentVals, effectiveTime, maxT, g, m2])
 
   return (
     <div className="w-full h-full flex flex-col gap-2.5 p-1">

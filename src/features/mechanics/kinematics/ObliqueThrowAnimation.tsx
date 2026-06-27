@@ -105,7 +105,7 @@ export default function ObliqueThrowAnimation() {
         ay: p1.ay + (p2.ay - p1.ay) * frac,
       }
     },
-    []
+    [trajectory]
   )
 
   // ── 3. 全宽物理舞台定位参数 ──────────────────────────────
@@ -296,7 +296,7 @@ export default function ObliqueThrowAnimation() {
       )
     }
     return lines
-  }, [showGrid, groundY, stageHeight, vp.visibleW])
+  }, [showGrid, groundY, stageHeight, vp.visibleW, originX, vp.visibleX])
 
   // 弹射炮筒角度矢量计算
   const angleRad = (angle * Math.PI) / 180

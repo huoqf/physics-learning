@@ -13,6 +13,42 @@ export function calculateCoulombForce(k: number, q1: number, q2: number, r: numb
 }
 
 /**
+ * 计算万有引力大小
+ *
+ * 万有引力定律：F = G·m₁·m₂ / r²
+ *
+ * @param G 万有引力常量 [N·m²/kg²]
+ * @param m1 物体1质量 [kg]
+ * @param m2 物体2质量 [kg]
+ * @param r 两物体质心距离 [m]，必须 > 0
+ * @returns F 引力大小 [N]，始终为正
+ *
+ * @category M1
+ */
+export function calculateGravitation(G: number, m1: number, m2: number, r: number): { F: number } {
+  return { F: (G * m1 * m2) / (r * r) };
+}
+
+/**
+ * 计算胡克定律弹力（恢复力）
+ *
+ * 以弹簧平衡位置为原点，x 为相对平衡位置的有符号位移：
+ *   - 拉伸时 x > 0，返回 F < 0（指向平衡位置）
+ *   - 压缩时 x < 0，返回 F > 0（指向平衡位置）
+ *
+ * 即 F = -k·x
+ *
+ * @param k 弹簧劲度系数 [N/m]
+ * @param x 相对平衡位置的有符号位移 [m]；拉伸为正，压缩为负
+ * @returns F 恢复力 [N]，方向总指向平衡位置
+ *
+ * @category M1
+ */
+export function calculateElasticForce(k: number, x: number): { F: number } {
+  return { F: -k * x };
+}
+
+/**
  * 连接体问题静态张力范围（仅静止态有意义）
  *
  * 静止时张力由静摩擦分配决定，不唯一。取值范围受两物体最大静摩擦力约束：

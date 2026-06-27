@@ -3,7 +3,7 @@
  *
  * 从 FaradayLaw.tsx 拆分：所有物理计算、图表数据、电路路径、电子位置。
  */
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 import { computeFaradayMagnetFlux, FaradayChartPoint } from '@/physics/electromagnetism'
 
 // ─── 物理与几何常量 ─────────────────────────────────────────────────────────
@@ -299,7 +299,7 @@ export function useFaradayPhysics(
     return len
   }, [circuitPath])
 
-  const getElectronicPos = (fraction: number) => {
+  const getElectronicPos = useCallback((fraction: number) => {
     const target = ((fraction % 1) + 1) % 1 * totalPathLen
     let acc = 0
     for (let i = 1; i < circuitPath.length; i++) {
@@ -316,7 +316,7 @@ export function useFaradayPhysics(
       acc += segLen
     }
     return circuitPath[0]
-  }
+  }, [circuitPath, totalPathLen])
 
   const electronFlowSpeed = currentState.emf * 25
   const electronCount = 10
@@ -326,7 +326,7 @@ export function useFaradayPhysics(
       const drift = (i / electronCount + time * electronFlowSpeed / 100) % 1
       return getElectronicPos(drift)
     })
-  }, [mode, currentState.emf, time])
+  }, [mode, currentState.emf, time, electronFlowSpeed, getElectronicPos])
 
   // ── 进阶模式 ────────────────────────────────────────────────────────
   const fieldDots = useMemo(() => {

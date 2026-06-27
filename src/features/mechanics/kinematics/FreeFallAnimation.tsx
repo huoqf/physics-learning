@@ -15,6 +15,9 @@ import { useFreeFallLayout } from './useFreeFallLayout'
 import { FreeFallScene } from './FreeFallScene'
 import type { ChartDataSeries } from '@/components/Chart'
 
+const TIME_SLICE_COLORS = [CHART_COLORS.primary, CHART_COLORS.compareB, CHART_COLORS.compareC, CHART_COLORS.criticalPt] as const
+const TIME_SLICE_RATIOS = [1, 3, 5, 7] as const
+
 export default function FreeFallAnimation() {
   const { params, time, showVectors, showGrid, showTimeSlices, setIsPlaying } = useAnimationStore(
     useShallow((s) => ({
@@ -74,10 +77,10 @@ export default function FreeFallAnimation() {
   // 波纹同步
   useEffect(() => {
     setRippleA(isLandedA ? { x: ballX, y: groundY, time } : null)
-  }, [isLandedA, ballX, groundY])
+  }, [isLandedA, ballX, groundY, time])
   useEffect(() => {
     setRippleB(isLandedB ? { x: featherX + stateB.swayDx, y: groundY, time } : null)
-  }, [isLandedB, featherX, stateB.swayDx, groundY])
+  }, [isLandedB, featherX, stateB.swayDx, groundY, time])
 
   // 轨迹
   const trailA = useMemo(() => pointsA.filter(p => p.t <= time + 1e-9).map(p => ({ x: ballX, y: originY + p.y * scale })), [pointsA, time, ballX, originY, scale])
@@ -108,8 +111,6 @@ export default function FreeFallAnimation() {
   const flashPointsTableB = useMemo(() => pointsB.filter(p => p.t <= time + 1e-9 && Math.round(p.t * 100) % 10 === 0), [pointsB, time])
 
   // 时间切片
-  const TIME_SLICE_COLORS = [CHART_COLORS.primary, CHART_COLORS.compareB, CHART_COLORS.compareC, CHART_COLORS.criticalPt] as const
-  const TIME_SLICE_RATIOS = [1, 3, 5, 7] as const
   const timeSliceBlocks = useMemo(() => {
     if (!showTimeSlices) return []
     const blocks: Array<{ y: number; height: number; ratio: number | null; color: string; displacement: number }> = []

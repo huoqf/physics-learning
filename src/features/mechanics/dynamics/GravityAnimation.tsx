@@ -11,6 +11,8 @@ import { RelationChart } from '@/components/Chart'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 
+const R_DOMAIN: [number, number] = [1.5, 18.0]
+
 const GRAVITY_DESIGN = { width: 650, height: 450 } as const
 
 // ── 布局常量 ──────────────────────────────────────────────────────────
@@ -110,8 +112,6 @@ export default function GravityAnimation() {
   const cardHeight = Math.max(150, vp.visibleH * GRAVITY_LAYOUT.cardHeightRatio)
   const cardX = vp.visibleX + vp.visibleW - cardWidth - GRAVITY_LAYOUT.cardMargin
   const cardY = vp.visibleY + GRAVITY_LAYOUT.cardMargin
-
-  const R_DOMAIN: [number, number] = [1.5, 18.0]
 
   // RelationChart 数据：F ∝ 1/r² 归一化曲线
   const frPoints = useMemo(() => {

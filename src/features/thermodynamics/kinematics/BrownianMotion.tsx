@@ -160,7 +160,7 @@ export default function BrownianMotion() {
 
       setTick((t) => t + 1)
     },
-    [temperature, particleD, width, height, mode, showMolecules, scale, pollenRadius],
+    [temperature, particleD, mode, showMolecules, scale, pollenRadius],
   )
 
   useAnimationFrame(handleFrame, { playing: isPlaying })

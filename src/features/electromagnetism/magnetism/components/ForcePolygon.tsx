@@ -3,13 +3,14 @@ import { colors } from '@/theme/colors'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { GRAVITY } from '@/physics/constants'
 import { computeScale } from '@/utils/coordinate'
+import type { AdvancedAmperePhysicsResult } from '../ampereForceModel'
 
 interface ForcePolygonProps {
   x: number
   y: number
   w: number
   h: number
-  physicsResult: any
+  physicsResult: AdvancedAmperePhysicsResult
   theta: number
 }
 

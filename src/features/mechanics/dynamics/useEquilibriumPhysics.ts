@@ -121,7 +121,7 @@ export function useEquilibriumPhysics({
         vy: 0,
       }))
     }
-  }, [theta1, theta2, m, canvasWidth, canvasHeight, leftAnchor.cy, centerX, centerY])
+  }, [theta1, theta2, m, canvasWidth, canvasHeight, leftAnchor.cy, centerX, centerY, physState.isDragging, physState.brokenLine])
 
   // 5. 帧更新动力学物理引擎 (通过 useSimulationFrame 统一 rAF 入口，纯计算由 physics/ 提供)
   useSimulationFrame(
@@ -382,8 +382,6 @@ export function useEquilibriumPhysics({
     leftAnchor,
     rightAnchor,
     m,
-    theta1,
-    theta2,
     centerX,
     centerY,
     startDrag,

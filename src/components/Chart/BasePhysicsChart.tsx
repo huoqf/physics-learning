@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react'
+import { useMemo, useCallback, type ReactNode } from 'react'
 import { ChartContext, type ChartContextValue } from './ChartContext'
 import { CHART_COLORS, CHART_LAYOUT, FONT, STROKE, DASH } from '@/theme/physics'
 import { useCanvasSize } from '@/utils'
@@ -163,8 +163,8 @@ export function BasePhysicsChart({
   const useFixed = fixedSize != null
   const width = useFixed ? fixedSize.width : autoSize.width
   const height = useFixed ? fixedSize.height : autoSize.height
-  const px = useFixed ? (v: number) => v : autoSize.px
-  const font = useFixed ? (v: number) => clamp(v, 7, 16) : autoSize.font
+  const px = useMemo(() => useFixed ? (v: number) => v : autoSize.px, [useFixed, autoSize.px])
+  const font = useMemo(() => useFixed ? (v: number) => clamp(v, 7, 16) : autoSize.font, [useFixed, autoSize.font])
 
   const isCompactHeight = height < 220
   const marginTopVal = isCompactHeight ? 16 : (isMini ? CHART_LAYOUT.miniMarginTop : CHART_LAYOUT.marginTop)
@@ -188,19 +188,20 @@ export function BasePhysicsChart({
   const xScale = plotW / xRange
   const yScale = plotH / yRange
 
-  const toSvgX = (physX: number) => margin.left + (physX - xDomain[0]) * xScale
+  const toSvgX = useCallback((physX: number) => margin.left + (physX - xDomain[0]) * xScale, [margin.left, xDomain, xScale])
 
   const baseline = yBaseline ?? yDomain[0]
   const baselineY = margin.top + plotH - (baseline - yDomain[0]) * yScale
-  const toSvgY = (physY: number) => baselineY - (physY - baseline) * yScale
+  const toSvgY = useCallback((physY: number) => baselineY - (physY - baseline) * yScale, [baselineY, baseline, yScale])
 
   const yRange2 = yDomain2 ? Math.max(Number.EPSILON, yDomain2[1] - yDomain2[0]) : 0
   const yScale2 = yDomain2 ? plotH / yRange2 : 0
   const baseline2 = yBaseline2 ?? (yDomain2 ? yDomain2[0] : 0)
   const baselineY2 = yDomain2 ? margin.top + plotH - (baseline2 - yDomain2[0]) * yScale2 : 0
-  const toSvgY2 = yDomain2
+  const toSvgY2 = useMemo(() => yDomain2
     ? (physY2: number) => baselineY2 - (physY2 - baseline2) * yScale2
     : undefined
+  , [yDomain2, baselineY2, baseline2, yScale2])
 
   const adaptiveGrid = useMemo(() => {
     const baseX = gridCount?.x ?? (isMini ? CHART_LAYOUT.miniGridCountX : CHART_LAYOUT.gridCountX)
@@ -210,7 +211,7 @@ export function BasePhysicsChart({
     if (tiny) return { x: CHART_LAYOUT.minGridX, y: CHART_LAYOUT.minGridY }
     if (compact) return { x: CHART_LAYOUT.compactGridX, y: CHART_LAYOUT.compactGridY }
     return { x: baseX, y: baseY }
-  }, [gridCount, plotW, plotH, isMini])
+  }, [gridCount, plotW, plotH, isMini, px])
 
   const tickFormatX = formatX ?? ((v: number) => v.toFixed(1))
   const tickFormatY = formatY ?? ((v: number) => v.toFixed(1))

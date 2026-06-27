@@ -40,6 +40,8 @@ const FRICTION_SCENE_PROFILE: SceneLayoutProfile = {
     force: 40,
   },
 }
+const INITIAL_SIM = { x1: 0, v1: 0, xM: 0, vM: 0, x_rel: 0, v_rel: 0 }
+
 // ──────────────────────────────────────────────────────────────────────
 
 export default function FrictionAnimation() {
@@ -118,7 +120,6 @@ export default function FrictionAnimation() {
 
   // ─── 实时动力学积分（useSimulationFrame，独立于播放键）───
   // useState 触发渲染，useRef 保存最新状态避免 rAF 回调过期闭包
-  const INITIAL_SIM = { x1: 0, v1: 0, xM: 0, vM: 0, x_rel: 0, v_rel: 0 }
   const [simState, setSimState] = useState(INITIAL_SIM)
   const simStateRef = useRef(INITIAL_SIM)
 
@@ -126,7 +127,6 @@ export default function FrictionAnimation() {
   useEffect(() => {
     simStateRef.current = INITIAL_SIM
     setSimState(INITIAL_SIM)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, m, mu, g, F_applied, angle, M, mu_1, mu_2])
 
   // 全局复位（time → 0）时复位

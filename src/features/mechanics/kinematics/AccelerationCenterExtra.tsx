@@ -158,7 +158,7 @@ export default function AccelerationCenterExtra() {
     }
 
     prevTimeRef.current = time
-  }, [time, isPlaying, state, setIsPlaying, setTime])
+  }, [time, isPlaying, state, effectiveMaxTime, setIsPlaying, setTime])
 
   // 组件卸载时清理 timer
   useEffect(() => {

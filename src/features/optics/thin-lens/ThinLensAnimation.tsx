@@ -369,7 +369,7 @@ export default function ThinLensAnimation() {
       r3: { incident: r3_incident, refracted: r3_refracted, extended: r3_extended, guide: r3_guide },
       imgTopY
     }
-  }, [isValid, mode, objSvgX, uCm, fSvgDist, isReal, imgH, isConcave, imgSvgX, lensSvgX, screenSvgX])
+  }, [isValid, mode, objSvgX, uCm, fSvgDist, isReal, imgH, isConcave, imgSvgX, lensSvgX, screenSvgX, cy, fCm])
 
   // ── RelationChart 数据准备 ────────────────────────────────────────────
   const chartPoints = chartData

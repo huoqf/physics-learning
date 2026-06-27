@@ -134,12 +134,12 @@ export default function SecondLawAnimation() {
   )
 
   // ─── 布局计算 ──────────────────────────────────────────────────────
-  const container = {
+  const container = useMemo(() => ({
     x: vp.visibleX + vp.visibleW * LAYOUT.containerLeftRatio,
     y: vp.visibleY + vp.visibleH * LAYOUT.containerTopRatio,
     w: vp.visibleW * LAYOUT.containerWidthRatio,
     h: vp.visibleH * LAYOUT.containerHeightRatio,
-  }
+  }), [vp.visibleX, vp.visibleY, vp.visibleW, vp.visibleH])
 
   const midX = container.x + container.w / 2
 
@@ -204,7 +204,7 @@ export default function SecondLawAnimation() {
     }
     const { ratio } = computeParticleDistribution(particlesRef.current)
     return ratio < UNIFORMITY_THRESHOLD
-  }, [scenario, time])
+  }, [scenario])
 
   return (
     <div ref={containerRef} className="w-full h-full relative">

@@ -1,19 +1,9 @@
 import { ReactNode } from 'react';
 import { CANVAS_STYLE, SCENE_COLORS, CHART_COLORS, PHYSICS_COLORS } from '@/theme/physics';
-import { calculateNiceStep, createRulerTicks as coreCreateRulerTicks, TickMark } from '@/utils/ruler';
+import { calculateNiceStep } from '@/utils/ruler';
+import { createRulerTicks, type TickMark } from './physicsGroundUtils';
 
 export type { TickMark };
-
-/**
- * 自动计算尺子/坐标轴的所有刻度
- */
-export function createRulerTicks(
-  domain: [number, number],
-  tickInterval: number,
-  minorTicks: number = 0
-): TickMark[] {
-  return coreCreateRulerTicks(domain, tickInterval, minorTicks);
-}
 
 export interface PhysicsGroundProps {
   // === 1. 基础位置与尺寸 ===
@@ -103,7 +93,7 @@ export function PhysicsGround({
       minor = stepInfo.minorTicks;
     }
     
-    ticks = coreCreateRulerTicks(ruler.domain, interval, minor);
+    ticks = createRulerTicks(ruler.domain, interval, minor);
   }
 
   const hasTicks = ruler !== undefined && ticks.length > 0;

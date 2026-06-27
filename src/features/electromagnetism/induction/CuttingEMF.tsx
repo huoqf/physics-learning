@@ -10,6 +10,7 @@ import { physicsToCanvasWithOrigin, computeScale } from '@/utils/coordinate'
 import { Rails, ConductorRod, VectorArrow, VectorDefs } from '@/components/Physics'
 import { CuttingEMFHandRule } from './CuttingEMFHandRule'
 import { BasePhysicsChart, useChartContext, VelocityTimeChart } from '@/components/Chart'
+import type { SceneScale } from '@/scene'
 
 // 物理世界坐标边界 (物理单位：米)
 // x: 从 -1.0 到 11.0m (有效轨道 0 ~ 10.0m，两侧预留边距)
@@ -40,20 +41,25 @@ function ChartSVGContent({
   samplePoints, getVal, curVal, isVelocity, time, T_max, curveColor, mode, v_m,
 }: Omit<ChartSVGProps, 'chartW' | 'chartH' | 'px' | 'font' | 'title' | 'yLabel' | 'yMax'>) {
   const ctx = useChartContext()
-  if (!ctx) return null
-  const { toSvgX, toSvgY, font } = ctx
+  const safeToSvgX = ctx?.toSvgX
+  const safeToSvgY = ctx?.toSvgY
 
   const ptsStr = useMemo(() => {
+    if (!safeToSvgX || !safeToSvgY) return ''
     return samplePoints
-      .map((p) => `${toSvgX(p.t).toFixed(1)},${toSvgY(getVal(p)).toFixed(1)}`)
+      .map((p) => `${safeToSvgX(p.t).toFixed(1)},${safeToSvgY(getVal(p)).toFixed(1)}`)
       .join(' L ')
-  }, [samplePoints, getVal, toSvgX, toSvgY])
+  }, [samplePoints, getVal, safeToSvgX, safeToSvgY])
 
   const activePts = samplePoints.filter((p) => p.t <= time)
-  const activePtsStr = activePts.length >= 2
-    ? 'M ' + activePts.map((p) => `${toSvgX(p.t).toFixed(1)},${toSvgY(getVal(p)).toFixed(1)}`).join(' L ')
-    : ''
+  const activePtsStr = useMemo(() => {
+    if (!safeToSvgX || !safeToSvgY || activePts.length < 2) return ''
+    return 'M ' + activePts.map((p) => `${safeToSvgX(p.t).toFixed(1)},${safeToSvgY(getVal(p)).toFixed(1)}`).join(' L ')
+  }, [activePts, getVal, safeToSvgX, safeToSvgY])
 
+  if (!ctx) return null
+
+  const { toSvgX, toSvgY, font } = ctx
   const curPtX = toSvgX(time)
   const curPtY = toSvgY(curVal)
 
@@ -316,7 +322,7 @@ export default function CuttingEMF() {
       ctx.fillStyle = withAlpha(PHYSICS_COLORS.velocity, 0.35) // 速度蓝发光
       ctx.fillRect(rodPos.cx - rodW / 2, topY, rodW, bottomY - topY)
     }
-  }, [time, isPlaying, B, L, R, mode, finalX, railSpacing, railCy, rodPos.cx, canvasSize.width, canvasSize.height, px])
+  }, [time, isPlaying, B, L, R, mode, finalX, railSpacing, railCy, rodPos.cx, canvasSize.width, canvasSize.height, px, sceneHeight])
 
   // 7. 匀强磁场点阵格
   const fieldSymbols = useMemo(() => {
@@ -354,20 +360,21 @@ export default function CuttingEMF() {
   }, [absB, B_out, railLeftPos.cx, railRightPos.cx, railSpacing, railCy, px, font])
 
   // 8. 物理量矢量归一化比例尺
-  const localSceneScale = useMemo(() => {
+  const localSceneScale = useMemo<SceneScale>(() => {
     return {
       originX: originX,
       originY: originY,
       scaleX: scale,
       scaleY: scale,
+      scale,
       maxVectorLength: px(60),
       refMagnitudes: {
         velocity: 3.0,
         acceleration: 10.0,
         force: 5.0,
       },
-    } as any
-  }, [rodPos.cx, railCy, scale, px])
+    }
+  }, [scale, px, originX, originY])
 
   // 9. 图表解析解采样与自适应轴
   // 时间轴上限

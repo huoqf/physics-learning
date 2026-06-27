@@ -224,7 +224,7 @@ function StroboscopicAnimation({
     const w2 = d2 * scale
 
     return { w1, w2, label1: `Δx${idx}`, label2: `Δx${idx+1}`, val1: d1, val2: d2, diff: d2 - d1 }
-  }, [hoveredFlashIdx, physics.flashPoints, scale, originX])
+  }, [hoveredFlashIdx, physics.flashPoints, scale])
 
   return (
     <div ref={containerRef} className="w-full h-full">

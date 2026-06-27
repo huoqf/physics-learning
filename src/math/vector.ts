@@ -48,6 +48,32 @@ export function vectorDot(a: Vector2, b: Vector2): number {
 }
 
 /**
+ * 2D 向量叉积（标量）
+ * @param a 向量A [m/s, m/s², N, 等]
+ * @param b 向量B [m/s, m/s², N, 等]
+ * @returns 标量叉积 a.x * b.y - a.y * b.x [m²/s², m²/s⁴, N², 等]
+ */
+export function vectorCross(a: Vector2, b: Vector2): number {
+  return a.x * b.y - a.y * b.x;
+}
+
+/**
+ * 计算两个向量之间的夹角
+ * @param a 向量A [m/s, m/s², N, 等]
+ * @param b 向量B [m/s, m/s², N, 等]
+ * @returns 夹角 [rad]，范围 [0, π]；任一为零向量时返回 0
+ */
+export function vectorAngle(a: Vector2, b: Vector2): number {
+  const magA = vectorMagnitude(a);
+  const magB = vectorMagnitude(b);
+  if (magA === 0 || magB === 0) {
+    return 0;
+  }
+  const cos = vectorDot(a, b) / (magA * magB);
+  return Math.acos(Math.max(-1, Math.min(1, cos)));
+}
+
+/**
  * 向量模长
  * @param v 向量 [m/s, m/s², N, 等]
  * @returns 模长 [m/s, m/s², N, 等]

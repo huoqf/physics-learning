@@ -79,7 +79,7 @@ export default function ElectricField() {
       setTestX(midX + rTest * pxPerCm)
       setTestY(midY)
     }
-  }, [rTest, mode, cx, cy, cx1, cx2, cy1, cy2, isDragging])
+  }, [rTest, mode, cx, cy, cx1, cx2, cy1, cy2, isDragging, pxPerCm])
 
   // 物理计算 (在设计空间中进行)
   const physics = useElectricFieldPhysics({

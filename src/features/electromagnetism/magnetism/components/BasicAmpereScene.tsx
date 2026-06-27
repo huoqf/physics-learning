@@ -7,6 +7,7 @@ import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { DCSource } from '@/components/Physics/DCSource'
 import { UniformMagneticField } from './UniformMagneticField'
 import type { BasicAmperePhysicsResult } from '../ampereForceModel'
+import type { SceneScale } from '@/scene'
 
 interface BasicAmpereSceneProps {
   x: number // 归一化布局 X 起点
@@ -53,18 +54,19 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
   const rodX = cx + ((physicsResult.x - 0) / (pMax - pMin)) * railW
 
   // 2. 局部物理量矢量比例尺
-  const localScale = useMemo(() => {
+  const localScale = useMemo<SceneScale>(() => {
     return {
       originX: rodX,
       originY: cy,
       scaleX: 8.0, // 力矢量像素比例
       scaleY: 8.0,
+      scale: 8.0,
       maxVectorLength: 90,
       refMagnitudes: {
         force: 2.0,
         velocity: 2.0,
       },
-    } as any
+    }
   }, [rodX, cy])
 
   // 3. 电源位置与连接导线 (自适应 railH 间距)

@@ -237,7 +237,7 @@ export function useElectricPotentialPhysics({
         cy: chartPadding.top + (1 - yPct) * chartHeight,
       }
     }
-  }, [chartYLimit, chartWidth, chartHeight])
+  }, [chartYLimit, chartWidth, chartHeight, chartPadding.left, chartPadding.top])
 
   const chartPathD = useMemo(() => {
     return chartPoints
