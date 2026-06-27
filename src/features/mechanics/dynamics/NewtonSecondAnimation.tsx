@@ -9,7 +9,7 @@ import {
   calculateNewtonSecondVariableMotion,
 } from '@/physics'
 import { GRAVITY } from '@/physics/constants'
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
 import type { SceneLayoutProfile } from '@/scene'
 import { Block } from '@/components/Physics/Block'
@@ -133,7 +133,7 @@ export default function NewtonSecondAnimation() {
         <PhysicsGround
           x={originX - 20} y={groundY}
           width={vp.visibleX + vp.visibleW * NEWTON_LAYOUT.trackEndRatio - (originX - 20)}
-          appearance={{ color: SCENE_COLORS.surface.groundStroke }}
+          appearance={{ color: PHYSICS_COLORS.labelText }}
         />
         {/* 轨道左侧挡板 */}
         <line
@@ -141,7 +141,7 @@ export default function NewtonSecondAnimation() {
           y1={groundY - 30}
           x2={originX - 20}
           y2={groundY}
-          stroke={SCENE_COLORS.surface.groundStroke}
+          stroke={PHYSICS_COLORS.labelText}
           strokeWidth={STROKE.groundLine}
         />
 
