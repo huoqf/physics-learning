@@ -176,3 +176,47 @@ export function calculateDoubleFrictionIncline(params: {
     }
   }
 }
+
+export function calculateFrictionInclineModel(
+  m: number,
+  mu: number,
+  angleDeg: number,
+  g: number
+): {
+  F_normal: number;
+  F_gravity_parallel: number;
+  muStatic: number;
+  f_max: number;
+  f_slip: number;
+  f_actual: number;
+  a: number;
+  criticalAngle: number;
+  isSliding: boolean;
+} {
+  const weight = m * g;
+  const angleRad = (angleDeg * Math.PI) / 180;
+  const muStatic = mu * DEFAULT_STATIC_FRICTION_RATIO;
+  const criticalAngleRad = Math.atan(muStatic);
+  const criticalAngle = (criticalAngleRad * 180) / Math.PI;
+  const isSliding = angleDeg > criticalAngle;
+
+  const F_normal = weight * Math.cos(angleRad);
+  const F_gravity_parallel = weight * Math.sin(angleRad);
+  const f_max = muStatic * F_normal;
+  const f_slip = mu * F_normal;
+  const f_actual = isSliding ? f_slip : F_gravity_parallel;
+  const a = isSliding ? g * Math.sin(angleRad) - mu * g * Math.cos(angleRad) : 0;
+
+  return {
+    F_normal,
+    F_gravity_parallel,
+    muStatic,
+    f_max,
+    f_slip,
+    f_actual,
+    a,
+    criticalAngle,
+    isSliding
+  };
+}
+

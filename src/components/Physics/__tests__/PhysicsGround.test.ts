@@ -4,6 +4,11 @@ import { render } from '@testing-library/react'
 import React from 'react'
 import { PhysicsGround } from '../PhysicsGround'
 
+// 辅助渲染函数：将 SVG 子组件包裹在 <svg> 容器中，避免 jsdom unrecognized tag 警告
+function renderWithSvg(ui: React.ReactElement) {
+  return render(React.createElement('svg', null, ui))
+}
+
 describe('createRulerTicks', () => {
   it('should return empty array if tickInterval <= 0', () => {
     expect(createRulerTicks([0, 10], 0)).toEqual([])
@@ -57,7 +62,7 @@ describe('createRulerTicks', () => {
 
 describe('PhysicsGround - wall type', () => {
   it('should render wall rect when type="wall" with wall prop', () => {
-    const { container } = render(
+    const { container } = renderWithSvg(
       React.createElement(PhysicsGround, {
         x: 40, y: 100, width: 40, type: 'wall',
         wall: { height: 100 }
@@ -73,7 +78,7 @@ describe('PhysicsGround - wall type', () => {
 
   it('should return null and console.error when type="wall" but no wall prop', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    const { container } = render(
+    const { container } = renderWithSvg(
       React.createElement(PhysicsGround, {
         x: 40, y: 100, width: 40, type: 'wall'
       })
@@ -86,7 +91,7 @@ describe('PhysicsGround - wall type', () => {
   })
 
   it('should render hatch lines when showHatch=true', () => {
-    const { container } = render(
+    const { container } = renderWithSvg(
       React.createElement(PhysicsGround, {
         x: 40, y: 100, width: 40, type: 'wall',
         wall: { height: 80, hatchCount: 4 },
@@ -99,7 +104,7 @@ describe('PhysicsGround - wall type', () => {
   })
 
   it('should render hatch left-to-right upward when hatchSide="left"', () => {
-    const { container } = render(
+    const { container } = renderWithSvg(
       React.createElement(PhysicsGround, {
         x: 0, y: 0, width: 100, type: 'wall',
         wall: { height: 100, hatchCount: 1, hatchSide: 'left' },
@@ -113,7 +118,7 @@ describe('PhysicsGround - wall type', () => {
   })
 
   it('should render hatch right-to-left downward when hatchSide="right"', () => {
-    const { container } = render(
+    const { container } = renderWithSvg(
       React.createElement(PhysicsGround, {
         x: 0, y: 0, width: 100, type: 'wall',
         wall: { height: 100, hatchCount: 1, hatchSide: 'right' },
@@ -127,7 +132,7 @@ describe('PhysicsGround - wall type', () => {
   })
 
   it('should not render hatch when showHatch is false', () => {
-    const { container } = render(
+    const { container } = renderWithSvg(
       React.createElement(PhysicsGround, {
         x: 40, y: 100, width: 40, type: 'wall',
         wall: { height: 80 },
@@ -141,7 +146,7 @@ describe('PhysicsGround - wall type', () => {
 
 describe('PhysicsGround - bracket type', () => {
   it('should render bracket main line', () => {
-    const { container } = render(
+    const { container } = renderWithSvg(
       React.createElement(PhysicsGround, {
         x: 0, y: 100, width: 200, type: 'bracket'
       })
@@ -155,7 +160,7 @@ describe('PhysicsGround - bracket type', () => {
   })
 
   it('should render showBaseShadow parallel line', () => {
-    const { container } = render(
+    const { container } = renderWithSvg(
       React.createElement(PhysicsGround, {
         x: 0, y: 100, width: 200, type: 'bracket',
         appearance: { showBaseShadow: true }
@@ -168,7 +173,7 @@ describe('PhysicsGround - bracket type', () => {
   })
 
   it('should render showHatch斜线纹理 (MomentumTheoremAnimation兼容)', () => {
-    const { container } = render(
+    const { container } = renderWithSvg(
       React.createElement(PhysicsGround, {
         x: 0, y: 100, width: 200, type: 'bracket',
         appearance: { showHatch: true }
@@ -185,18 +190,19 @@ describe('PhysicsGround - bracket type', () => {
 
 describe('PhysicsGround - backward compatibility', () => {
   it('ground type should work without new props', () => {
-    const { container } = render(
+    const { container } = renderWithSvg(
       React.createElement(PhysicsGround, {
         x: 0, y: 100, width: 300
       })
     )
-    const line = container.querySelector('line')
+    const lines = container.querySelectorAll('line')
+    const line = Array.from(lines).find(l => !l.closest('pattern'))
     expect(line).toBeTruthy()
     expect(line?.getAttribute('y1')).toBe('100')
   })
 
   it('platform type should work unchanged', () => {
-    const { container } = render(
+    const { container } = renderWithSvg(
       React.createElement(PhysicsGround, {
         x: 0, y: 100, width: 300, type: 'platform',
         appearance: { thickness: 30 }

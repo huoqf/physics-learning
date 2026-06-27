@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useId } from 'react';
 import { CANVAS_STYLE, SCENE_COLORS, CHART_COLORS, PHYSICS_COLORS } from '@/theme/physics';
 import { calculateNiceStep } from '@/utils/ruler';
 import { createRulerTicks, type TickMark } from './physicsGroundUtils';
@@ -73,8 +73,12 @@ export function PhysicsGround({
   const fillColor = appearance?.fillColor || SCENE_COLORS.surface.groundFill;
   const thickness = appearance?.thickness || 20;
 
-  // 生成一个随机 ID 给 pattern，避免同一页面多个组件冲突
-  const hatchId = `hatch-${Math.round(x)}-${Math.round(y)}-${Math.round(width)}`;
+  // 使用 React 18/19 的 useId 生成唯一的 ID，避免同一页面多个组件冲突
+  const uniqueId = useId();
+  const hatchId = `hatch-${uniqueId.replace(/:/g, '')}`;
+
+  // 默认对 ground 和 wall 开启斜线纹理，其他类型需显式指定
+  const showHatch = appearance?.showHatch ?? (type === 'ground' || type === 'wall');
 
   // 计算刻度
   let ticks: TickMark[] = [];
@@ -217,7 +221,7 @@ export function PhysicsGround({
             strokeWidth={CANVAS_STYLE.stroke.objectLine}
           />
           {/* 斜线 hatch */}
-          {appearance?.showHatch && Array.from({ length: hatchCount }).map((_, i) => {
+          {showHatch && Array.from({ length: hatchCount }).map((_, i) => {
             const step = h / hatchCount;
             // left: 左下→右上 (/)  |  right: 左上→右下 (\)
             const x1 = x;
@@ -258,7 +262,7 @@ export function PhysicsGround({
           {/* 可选斜线纹理（MomentumTheoremAnimation 支架样式） */}
           {/* NOTE: showHatch 的默认布局 (y-80, 8条线) 为 MomentumTheoremAnimation 兼容，
               如遇更复杂支架结构，优先用 children 组合而非继续加 props */}
-          {appearance?.showHatch && (
+          {showHatch && (
             <g opacity={0.4}>
               {Array.from({ length: 8 }).map((_, i) => (
                 <line key={i}
@@ -277,9 +281,10 @@ export function PhysicsGround({
       <g>
         <defs>
           {/* 斜线阴影纹理 */}
-          {appearance?.showHatch && (
+          {showHatch && (
             <pattern id={hatchId} width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-              <line x1="0" y1="0" x2="0" y2="10" stroke={strokeColor} strokeWidth="1.5" opacity={0.35} />
+              {/* x1=5, x2=5 将线居中以防止在 tile 边界被浏览器裁剪 */}
+              <line x1="5" y1="0" x2="5" y2="10" stroke={strokeColor} strokeWidth="1.5" opacity={0.35} />
             </pattern>
           )}
           {/* 光滑冰蓝渐变 */}
@@ -292,7 +297,7 @@ export function PhysicsGround({
         </defs>
 
         {/* 斜线阴影纹理 */}
-        {appearance?.showHatch && !isSmooth && (
+        {showHatch && !isSmooth && (
           <rect x={x} y={y} width={width} height={12} fill={`url(#${hatchId})`} />
         )}
 
@@ -308,7 +313,7 @@ export function PhysicsGround({
         )}
         
         {/* 备用的平行细线 (非光滑、非斜线纹理时展示) */}
-        {appearance?.showBaseShadow && !appearance?.showHatch && !isSmooth && (
+        {appearance?.showBaseShadow && !showHatch && !isSmooth && (
           <line
             x1={x} y1={y + 3}
             x2={x + width} y2={y + 3}
