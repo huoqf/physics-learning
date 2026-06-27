@@ -406,6 +406,7 @@ export default function FieldLines() {
           ]}
           title="实时能量分配"
           font={font}
+          className="bg-transparent border-none p-0"
         />
       </div>
 
