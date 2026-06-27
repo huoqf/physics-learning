@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS } from '@/theme/physics'
-import { AnimationControls, MiniChart } from '@/components/UI'
+import { AnimationControls, MiniChart, Card } from '@/components/UI'
 import { calculateConnectedBody, GRAVITY } from '@/physics'
 import ConnectedBodiesAnimation from './ConnectedBodiesAnimation'
 
@@ -175,7 +175,7 @@ export default function ConnectedBodiesCenterExtra() {
         {/* 上方：60% 或 50% 高度双图表并列 */}
         <div className="w-full h-1/2 flex flex-row gap-3 min-h-0">
           {/* 图表一：速度-时间图 (v-t) */}
-          <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden p-2 border border-neutral-100 min-h-0">
+          <Card className="flex-1 overflow-hidden p-2 min-h-0">
             <MiniChart
               title="速度 - 时间 (v-t)"
               xMin={0}
@@ -189,24 +189,24 @@ export default function ConnectedBodiesCenterExtra() {
               currentVals={currentVals}
               currentXVal={effectiveTime}
             />
-          </div>
+          </Card>
 
           {/* 图表二：根据分析视图动态切换的探究曲线 */}
-          <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden p-2 border border-neutral-100 min-h-0">
+          <Card className="flex-1 overflow-hidden p-2 min-h-0">
             <MiniChart {...chartTwoProps} />
-          </div>
+          </Card>
         </div>
 
         {/* 下方：50% 高度自适应满宽动画 */}
-        <div className="w-full h-1/2 bg-white rounded-xl shadow-sm overflow-hidden relative border border-neutral-100 flex flex-col min-h-0">
+        <Card className="w-full h-1/2 overflow-hidden relative flex flex-col min-h-0">
           <div className="flex-1 min-h-0 relative">
             <ConnectedBodiesAnimation />
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* 底部动画控制栏 */}
-      <div className="w-full shrink-0 bg-white rounded-xl shadow-sm p-2 border border-neutral-100">
+      <Card className="w-full shrink-0 p-2">
         <AnimationControls
           isPlaying={isPlaying}
           speed={speed}
@@ -217,7 +217,7 @@ export default function ConnectedBodiesCenterExtra() {
           onSpeedChange={setSpeed}
           onTimeChange={setTime}
         />
-      </div>
+      </Card>
     </div>
   )
 }

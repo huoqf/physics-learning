@@ -3,7 +3,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { calculateNewtonSecondVariableMotion } from '@/physics'
-import { AnimationControls, MiniChart } from '@/components/UI'
+import { AnimationControls, MiniChart, Card } from '@/components/UI'
 import NewtonSecondAnimation from './NewtonSecondAnimation'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -103,7 +103,7 @@ export default function NewtonSecondCenterExtra() {
       {/* 顶部图表展示区 */}
       <div className="w-full flex-1 min-h-0 flex flex-row gap-3">
         {/* F-t 图像 */}
-        <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden p-2 border border-neutral-100">
+        <Card className="flex-1 overflow-hidden p-2">
           <MiniChart
             title="力 - 时间 (F-t)"
             xMin={0}
@@ -121,10 +121,10 @@ export default function NewtonSecondCenterExtra() {
             currentVals={currentVals}
             currentXVal={time}
           />
-        </div>
+        </Card>
 
         {/* a-t 图像 */}
-        <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden p-2 border border-neutral-100">
+        <Card className="flex-1 overflow-hidden p-2">
           <MiniChart
             title="加速度 - 时间 (a-t)"
             xMin={0}
@@ -140,10 +140,10 @@ export default function NewtonSecondCenterExtra() {
             currentVals={currentVals}
             currentXVal={time}
           />
-        </div>
+        </Card>
 
         {/* v-t 图像 */}
-        <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden p-2 border border-neutral-100">
+        <Card className="flex-1 overflow-hidden p-2">
           <MiniChart
             title="速度 - 时间 (v-t)"
             xMin={0}
@@ -159,19 +159,19 @@ export default function NewtonSecondCenterExtra() {
             currentVals={currentVals}
             currentXVal={time}
           />
-        </div>
+        </Card>
       </div>
 
       {/* 中部小车动画区 */}
-      <div className="w-full h-[180px] shrink-0 bg-white rounded-xl shadow-sm overflow-hidden relative border border-neutral-100">
+      <Card className="w-full h-[180px] shrink-0 overflow-hidden relative">
         <NewtonSecondAnimation />
         <div style={{ fontSize: font(10) }} className="absolute top-2 right-3 text-neutral-400 font-semibold bg-white/80 px-2 py-0.5 rounded-full shadow-sm">
           {modelNames[modelIdx]}
         </div>
-      </div>
+      </Card>
 
       {/* 底部动画控制栏 */}
-      <div className="w-full shrink-0 bg-white rounded-xl shadow-sm p-2 border border-neutral-100">
+      <Card className="w-full shrink-0 p-2">
         <AnimationControls
           isPlaying={isPlaying}
           speed={speed}
@@ -182,7 +182,7 @@ export default function NewtonSecondCenterExtra() {
           onSpeedChange={setSpeed}
           onTimeChange={setTime}
         />
-      </div>
+      </Card>
     </div>
   )
 }

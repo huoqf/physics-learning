@@ -10,6 +10,7 @@ import { useEquilibriumPhysics } from './useEquilibriumPhysics'
 import { GRAVITY } from '@/physics/constants'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { Button } from '@/components/UI'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 
@@ -231,12 +232,13 @@ export default function EquilibriumAnimation() {
     <div ref={containerRef} className="w-full h-full relative select-none">
       {/* 绳索断裂时的扁平化重置按钮 */}
       {brokenLine !== 'none' && (
-        <button
+        <Button
           onClick={resetPhysics}
-          className="absolute top-4 right-4 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-semibold shadow-sm flex items-center gap-1.5 transition-all active:scale-[0.97]"
+          variant="danger"
+          className="absolute top-4 right-4"
         >
           <span>⚠ 绳子断裂！重置细绳</span>
-        </button>
+        </Button>
       )}
 
       <svg

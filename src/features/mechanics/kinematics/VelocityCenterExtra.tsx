@@ -5,7 +5,7 @@ import type { VariableMotionModel, VariableMotionParams } from '@/physics'
 import { VelocityXTChart } from './VelocityXTChart'
 import { VelocityVTChart } from './VelocityVTChart'
 import VelocityAnimationStrip from './VelocityAnimationStrip'
-import { AnimationControls } from '@/components/UI'
+import { AnimationControls, Card } from '@/components/UI'
 
 /**
  * 速度进阶版 CenterExtra — 三合一布局容器
@@ -67,7 +67,7 @@ export default function VelocityCenterExtra() {
       {/* ── 横向布局：图表左右并列在上，动画在下 ── */}
       {/* Row 1: x-t 图 + v-t 图 左右并列 */}
       <div className="w-full flex-[2] flex flex-row gap-3">
-        <div className="flex-1 bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
+        <Card className="flex-1 overflow-hidden">
           <VelocityXTChart
             model={model}
             modelParams={modelParams}
@@ -75,8 +75,8 @@ export default function VelocityCenterExtra() {
             deltaT={deltaT}
             tMax={chartTMax}
           />
-        </div>
-        <div className="flex-1 bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
+        </Card>
+        <Card className="flex-1 overflow-hidden">
           <VelocityVTChart
             model={model}
             modelParams={modelParams}
@@ -84,19 +84,19 @@ export default function VelocityCenterExtra() {
             deltaT={deltaT}
             tMax={chartTMax}
           />
-        </div>
+        </Card>
       </div>
       {/* Row 2: 运动动画带 */}
-      <div className="w-full flex-1 bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
+      <Card className="w-full flex-1 overflow-hidden">
         <VelocityAnimationStrip
           model={model}
           modelParams={modelParams}
           tMax={chartTMax}
         />
-      </div>
+      </Card>
 
       {/* ── 动画控制栏 ── */}
-      <div className="w-full shrink-0 bg-white rounded-xl shadow-sm border border-neutral-100 p-2">
+      <Card className="w-full shrink-0 p-2">
         <AnimationControls
           isPlaying={isPlaying}
           speed={speed}
@@ -107,7 +107,7 @@ export default function VelocityCenterExtra() {
           onSpeedChange={setSpeed}
           onTimeChange={setTime}
         />
-      </div>
+      </Card>
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { RelationChart } from '@/components/Chart'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { useAnimationStore } from '@/stores'
 import { LineChart } from 'lucide-react'
+import { Card } from '@/components/UI'
 
 const OHM_CHART_DOMAIN = {
   uMax: 10,
@@ -77,20 +78,20 @@ export const OhmLawCenterExtra: FC = () => {
   if (showChart === 0) {
     return (
       <div className="w-full h-full flex gap-3 px-1.5 py-1.5 border-b border-neutral-200/60 bg-neutral-50/50">
-        <div className="flex-1 bg-white rounded-xl shadow-sm p-4 border border-neutral-100 flex flex-col items-center justify-center text-center">
+        <Card className="flex-1 p-4 flex flex-col items-center justify-center text-center">
           <LineChart className="w-12 h-12 text-neutral-300 mb-2 stroke-[1.5]" />
           <h3 className="text-sm font-semibold text-neutral-600 mb-1">U-I 伏安特性图表已隐藏</h3>
           <p className="text-xs text-neutral-400 max-w-xs">
             您可以在左侧控制面板中开启「显示 U-I 实时图表」，观察定值电阻与非线性小灯泡的特性曲线。
           </p>
-        </div>
+        </Card>
       </div>
     )
   }
 
   return (
     <div className="w-full h-full flex gap-3 px-1.5 py-1.5 border-b border-neutral-200/60 bg-neutral-50/50">
-      <div className="flex-1 bg-white rounded-xl shadow-sm p-3 border border-neutral-100 flex items-center justify-center min-w-0 relative">
+      <Card className="flex-1 p-3 flex items-center justify-center min-w-0 relative">
         <div className="w-full h-full min-h-0">
           <RelationChart
             title={mode === 0 ? `U-I 特性曲线（定值电阻 R = ${R} Ω）` : 'U-I 特性曲线（非线性小灯泡）'}
@@ -118,7 +119,7 @@ export const OhmLawCenterExtra: FC = () => {
           />
         </div>
 
-      </div>
+      </Card>
     </div>
   )
 }

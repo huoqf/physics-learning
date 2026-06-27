@@ -5,6 +5,7 @@ import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { useAnimationStore } from '@/stores'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { Card } from '@/components/UI'
 
 export const SpringForceCenterExtra: FC = () => {
     const params = useAnimationStore((s) => s.params)
@@ -59,7 +60,7 @@ export const SpringForceCenterExtra: FC = () => {
 
   return (
     <div ref={containerRef} className="w-full flex justify-center bg-neutral-50 py-1 border-b border-neutral-100 shrink-0">
-      <div className="w-full max-w-[420px] aspect-[4/3] bg-white rounded-xl shadow-sm p-3 border border-neutral-100">
+      <Card className="w-full max-w-[420px] aspect-[4/3] p-3">
         <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
           <defs>
             {/* 弹性势能面积填充渐变 */}
@@ -227,7 +228,7 @@ export const SpringForceCenterExtra: FC = () => {
             </text>
           )}
         </svg>
-      </div>
+      </Card>
     </div>
   )
 }

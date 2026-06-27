@@ -4,6 +4,7 @@ import { colors } from '@/theme/colors'
 import { useAnimationStore } from '@/stores'
 import { useCanvasSize } from '@/utils'
 import { BarChart3 } from 'lucide-react'
+import { Card } from '@/components/UI'
 
 export const CircuitAnalysisCenterExtra: FC = () => {
     const params = useAnimationStore((s) => s.params)
@@ -64,13 +65,13 @@ export const CircuitAnalysisCenterExtra: FC = () => {
   if (showChart === 0) {
     return (
       <div className="w-full h-full flex gap-3 px-1.5 py-1.5 border-b border-neutral-200/60 bg-neutral-50/50">
-        <div className="flex-1 bg-white rounded-xl shadow-sm p-4 border border-neutral-100 flex flex-col items-center justify-center text-center">
+        <Card className="flex-1 p-4 flex flex-col items-center justify-center text-center">
           <BarChart3 className="w-12 h-12 text-neutral-300 mb-2 stroke-[1.5]" />
           <h3 className="text-sm font-semibold text-neutral-600 mb-1">分配对比柱状图已隐藏</h3>
           <p className="text-xs text-neutral-400 max-w-xs">
             您可以在左侧控制面板中开启「显示分配对比柱状图」，直观观察电压、电流在不同元件之间的此消彼长分配规律。
           </p>
-        </div>
+        </Card>
       </div>
     )
   }
@@ -114,7 +115,7 @@ export const CircuitAnalysisCenterExtra: FC = () => {
 
   return (
     <div className="w-full h-full flex gap-3 px-1.5 py-1.5 border-b border-neutral-200/60 bg-neutral-50/50">
-      <div className="flex-1 bg-white rounded-xl shadow-sm p-3 border border-neutral-100 flex items-center justify-center min-w-0 relative">
+      <Card className="flex-1 p-3 flex items-center justify-center min-w-0 relative">
         <svg viewBox="0 0 240 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
           {/* ================= 左半部分：电压分配 U (V) ================= */}
           <text x={22} y={11} fontSize={font(4.5)} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
@@ -256,7 +257,7 @@ export const CircuitAnalysisCenterExtra: FC = () => {
             )
           })}
         </svg>
-      </div>
+      </Card>
     </div>
   )
 }

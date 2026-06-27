@@ -6,6 +6,7 @@ import { useProblemStore, usePracticeStore, useWrongStore } from '@/stores'
 import { moduleOf } from '@/utils/moduleHelpers'
 import { KatexFormula } from '@/components/UI/KatexFormula'
 import { ScoreReport } from '@/components/UI'
+import { Card, Button } from '@/components/UI'
 import { colors } from '@/theme/colors'
 
 interface PracticeSessionProps {
@@ -168,18 +169,19 @@ export function PracticeSession({ mode, problems, onExit, onReviewKnowledge }: P
             <div className="flex items-center gap-2 font-mono text-sm text-neutral-700">
               <Clock className="w-4 h-4" />
               {fmtTime(elapsed)}
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setPaused((p) => !p)}
-                className="text-neutral-500 hover:text-neutral-700"
                 aria-label={paused ? '继续' : '暂停'}
               >
                 {paused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-              </button>
+              </Button>
             </div>
           )}
-          <button onClick={onExit} className="text-sm text-neutral-500 hover:text-neutral-700">
+          <Button variant="ghost" size="sm" onClick={onExit}>
             退出
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -195,7 +197,7 @@ export function PracticeSession({ mode, problems, onExit, onReviewKnowledge }: P
       </div>
 
       {/* 题干 */}
-      <div className="bg-white rounded-xl shadow-md p-6 mb-4">
+      <Card className="p-6 mb-4">
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <span className="text-xs px-2 py-0.5 rounded bg-primary-50 text-primary-700">{problem.year}</span>
           <span className="text-xs px-2 py-0.5 rounded bg-neutral-100 text-neutral-600">{problem.province}</span>
@@ -211,12 +213,14 @@ export function PracticeSession({ mode, problems, onExit, onReviewKnowledge }: P
         {/* 练习模式：提示按钮（展示首步描述作为思路提示） */}
         {!isTest && !revealed && problem.steps[0] && (
           <div className="mt-4">
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setShowHint((v) => !v)}
-              className="flex items-center gap-1 text-sm text-secondary-600 hover:text-secondary-700"
+              className="text-secondary-600 hover:text-secondary-700"
             >
               <Lightbulb className="w-4 h-4" /> {showHint ? '隐藏提示' : '查看提示'}
-            </button>
+            </Button>
             {showHint && (
               <p className="mt-2 text-sm text-neutral-600 bg-secondary-50 rounded-lg px-3 py-2">
                 💡 {problem.steps[0].description}
@@ -224,19 +228,20 @@ export function PracticeSession({ mode, problems, onExit, onReviewKnowledge }: P
             )}
           </div>
         )}
-      </div>
+      </Card>
 
       {/* 揭示解析 */}
       {!revealed ? (
-        <button
+        <Button
+          variant="secondary"
           onClick={() => setRevealed(true)}
-          className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-neutral-200 rounded-xl text-neutral-700 hover:bg-neutral-50 active:scale-[0.99]"
+          className="w-full"
         >
           <Eye className="w-4 h-4" />
           {isTest ? '提交并查看答案' : '查看解析'}
-        </button>
+        </Button>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
+        <Card className="p-6">
           <h3 className="text-sm font-semibold text-neutral-800 mb-3">分步解析</h3>
           <ol className="space-y-4">
             {problem.steps.map((step, i) => (
@@ -261,12 +266,12 @@ export function PracticeSession({ mode, problems, onExit, onReviewKnowledge }: P
                 >
                   <Check className="w-4 h-4" /> 答对了
                 </button>
-                <button
+                <Button
+                  variant="danger"
                   onClick={() => judge(false)}
-                  className="flex items-center gap-1 px-4 py-2 rounded-lg bg-danger-100 text-danger-700 hover:bg-danger-200 active:scale-[0.97]"
                 >
                   <X className="w-4 h-4" /> 答错了
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
@@ -283,32 +288,31 @@ export function PracticeSession({ mode, problems, onExit, onReviewKnowledge }: P
               </span>
             </div>
           )}
-        </div>
+        </Card>
       )}
 
       {/* 底部导航 */}
       <div className="flex items-center justify-between mt-6">
-        <button
+        <Button
+          variant="ghost"
           onClick={goPrev}
           disabled={currentIndex === 0}
-          className="px-4 py-2 rounded-lg text-neutral-600 hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.97]"
         >
           上一题
-        </button>
+        </Button>
         {currentIndex < problems.length - 1 ? (
-          <button
+          <Button
             onClick={goNext}
-            className="px-5 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 active:scale-[0.97]"
           >
             下一题
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
             onClick={finishSession}
-            className="px-5 py-2 rounded-lg bg-success-600 text-white hover:bg-success-700 active:scale-[0.97]"
+            className="bg-success-600 hover:bg-success-700"
           >
             完成并查看成绩
-          </button>
+          </Button>
         )}
       </div>
     </div>

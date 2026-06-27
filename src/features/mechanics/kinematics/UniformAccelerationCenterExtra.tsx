@@ -11,7 +11,7 @@ import {
   DASH,
 } from '@/theme/physics'
 import { useUniformAccelerationPhysics } from './useUniformAccelerationPhysics'
-import { AnimationControls } from '@/components/UI'
+import { AnimationControls, Card } from '@/components/UI'
 import { SportsCar } from '@/components/Physics/SportsCar'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
@@ -76,7 +76,7 @@ export default function UniformAccelerationCenterExtra() {
       {/* ── 上半部分：数据表 + v-t图(含公式推导) 并列 ── */}
       <div className="w-full flex-[3] flex flex-row gap-2">
         {/* 左侧：频闪数据表 */}
-        <div className="w-[35%] bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
+        <Card className="w-[35%] overflow-hidden">
           <FlashDataTable
             flashPoints={physics.flashPoints}
             a={a}
@@ -84,9 +84,9 @@ export default function UniformAccelerationCenterExtra() {
             hoveredFlashIdx={hoveredFlashIdx}
             setHoveredFlashIdx={setHoveredFlashIdx}
           />
-        </div>
+        </Card>
         {/* 右侧：v-t 图 + 公式推导 */}
-        <div className="flex-1 bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden flex flex-col">
+        <Card className="flex-1 overflow-hidden flex flex-col">
           <div className="flex-[3]">
             <VtChartWithArea
               v0={v0}
@@ -97,11 +97,11 @@ export default function UniformAccelerationCenterExtra() {
               hoveredFlashIdx={hoveredFlashIdx}
             />
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* ── 下半部分：频闪虚影动画（精密对比槽） ── */}
-      <div className="w-full flex-[2] bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
+      <Card className="w-full flex-[2] overflow-hidden">
         <StroboscopicAnimation
           v0={v0}
           a={a}
@@ -110,10 +110,10 @@ export default function UniformAccelerationCenterExtra() {
           showVectors={showVectors}
           hoveredFlashIdx={hoveredFlashIdx}
         />
-      </div>
+      </Card>
 
       {/* ── 动画控制栏 ── */}
-      <div className="w-full shrink-0 bg-white rounded-xl shadow-sm border border-neutral-100 p-2">
+      <Card className="w-full shrink-0 p-2">
         <AnimationControls
           isPlaying={isPlaying}
           speed={speed}
@@ -124,7 +124,7 @@ export default function UniformAccelerationCenterExtra() {
           onSpeedChange={setSpeed}
           onTimeChange={setTime}
         />
-      </div>
+      </Card>
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { RelationChart } from '@/components/Chart'
 import { PHYSICS_COLORS, CHART_COLORS } from '@/theme/physics'
 import { useAnimationStore } from '@/stores'
 import { calculateClosedCircuit } from '@/physics'
+import { Card } from '@/components/UI'
 
 const UI_DOMAIN = {
   iMax: 8,
@@ -96,7 +97,7 @@ export const ClosedCircuitCenterExtra: FC = () => {
 
   return (
     <div className="w-full h-full flex gap-3 px-1.5 py-1.5 border-b border-neutral-200/60 bg-neutral-50/50">
-      <div className="flex-1 bg-white rounded-xl shadow-sm p-3 border border-neutral-100 flex items-center justify-center min-w-0 relative">
+      <Card className="flex-1 p-3 flex items-center justify-center min-w-0 relative">
         <div className="w-full h-full min-h-0">
           {chart}
         </div>
@@ -119,7 +120,7 @@ export const ClosedCircuitCenterExtra: FC = () => {
             <span className="font-mono font-bold text-emerald-600">{(eta * 100).toFixed(1)}%</span>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
   )
 }

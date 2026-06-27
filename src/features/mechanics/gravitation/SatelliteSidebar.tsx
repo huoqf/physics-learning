@@ -1,6 +1,6 @@
 import type { SidebarExtraProps } from '@/data/types'
 import { duration, easing } from '@/theme/motion'
-import { SegmentedControl, OptionButton, ToggleSwitch, TipCard } from '@/components/UI'
+import { SegmentedControl, OptionButton, ToggleSwitch, TipCard, Button } from '@/components/UI'
 
 export default function SatelliteSidebar({ params, updateParam, setParams, animationActions, disabled }: SidebarExtraProps) {
   const mode = params.mode ?? 0
@@ -90,12 +90,12 @@ export default function SatelliteSidebar({ params, updateParam, setParams, anima
           </div>
 
           <div className="grid grid-cols-2 gap-3 pt-2">
-            <button onClick={handleLaunch} disabled={isLaunched === 1} className={`py-2.5 text-xs font-bold rounded-lg transition-all shadow-sm cursor-pointer border text-center ${isLaunched === 1 ? 'bg-neutral-100 border-neutral-200 text-neutral-400' : 'bg-primary-600 border-primary-600 text-white hover:bg-primary-700 active:scale-[0.97]'}`}>
-              🚀 点击发射
-            </button>
-            <button onClick={handleReset} className="py-2.5 text-xs font-bold rounded-lg transition-all shadow-sm cursor-pointer border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50 active:scale-[0.97]">
-              🔄 重置轨道
-            </button>
+            <Button onClick={handleLaunch} disabled={isLaunched === 1}>
+              🚀 发射
+            </Button>
+            <Button onClick={handleReset} variant="secondary">
+              🔄 重置
+            </Button>
           </div>
 
           <TipCard>

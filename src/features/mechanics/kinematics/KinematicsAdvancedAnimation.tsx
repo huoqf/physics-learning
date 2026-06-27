@@ -7,6 +7,7 @@ import { PHYSICS_COLORS } from '@/theme/physics'
 import { Block } from '@/components/Physics/Block'
 import { RelationChart } from '@/components/Chart'
 import { useChartContext } from '@/components/Chart'
+import { Card } from '@/components/UI'
 
 // ── Viewport 布局常量（适配矮胖的横向运动上下布局） ──
 const DESIGN_W = 600
@@ -274,7 +275,7 @@ export default function KinematicsAdvancedAnimation() {
   return (
     <div className="flex flex-col h-full w-full gap-3 p-3 overflow-hidden select-none">
       {/* 上侧：图表反馈区 */}
-      <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl shadow-sm border border-neutral-100 p-3 relative">
+      <Card className="flex-1 min-h-0 flex flex-col p-3 relative">
         <h3 className="text-xs font-semibold text-neutral-600 mb-1.5 shrink-0">函数图像分析</h3>
         <div className="flex-1 min-h-0 relative">
           <RelationChart
@@ -294,10 +295,10 @@ export default function KinematicsAdvancedAnimation() {
             )}
           </RelationChart>
         </div>
-      </div>
+      </Card>
 
       {/* 下侧：物理仿真轨道 */}
-      <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl shadow-sm border border-neutral-100 p-3">
+      <Card className="flex-1 min-h-0 flex flex-col p-3">
         <h3 className="text-xs font-semibold text-neutral-600 mb-1.5 shrink-0">物理仿真轨道</h3>
         <div ref={containerRef} className="flex-1 min-h-0 w-full bg-white rounded-lg relative overflow-hidden">
           <svg width={canvasSize.width} height={canvasSize.height} className="w-full h-full">
@@ -391,7 +392,7 @@ export default function KinematicsAdvancedAnimation() {
             </g>
           </svg>
         </div>
-      </div>
+      </Card>
     </div>
   )
 }

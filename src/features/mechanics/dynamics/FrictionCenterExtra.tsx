@@ -4,7 +4,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateFrictionPullModel, calculateDoubleFrictionIncline } from '@/physics'
 import { GRAVITY } from '@/physics/constants'
-import { MiniChart, AnimationControls } from '@/components/UI'
+import { MiniChart, AnimationControls, Card } from '@/components/UI'
 import FrictionAnimation from './FrictionAnimation'
 import { useCanvasSize } from '@/utils'
 
@@ -96,12 +96,13 @@ export const FrictionCenterExtra: FC = () => {
       {/* 上半部分：动画与图表并列 */}
       <div className="w-full flex-1 min-h-0 flex flex-row gap-3">
         {/* 左侧：动画区 */}
-        <div className="flex-1 min-w-0 bg-white rounded-xl shadow-sm overflow-hidden relative border border-neutral-100">
+        <Card className="flex-1 min-w-0 overflow-hidden relative">
           <FrictionAnimation />
-        </div>
+        </Card>
 
         {/* 右侧：图表区 */}
-        <div ref={chartContainerRef} className="flex-1 min-w-0 bg-white rounded-xl shadow-sm overflow-hidden border border-neutral-100 p-2 flex items-center justify-center">
+        <div ref={chartContainerRef} className="flex-1 min-w-0">
+        <Card className="h-full overflow-hidden p-2 flex items-center justify-center">
           {mode === 0 ? (
             <MiniChart
               title="f - F 关系图像"
@@ -145,11 +146,12 @@ export const FrictionCenterExtra: FC = () => {
               minHeight={chartSize.height - 16}
             />
           )}
+        </Card>
         </div>
       </div>
 
       {/* 下半部分：通栏控制条 */}
-      <div className="w-full shrink-0 bg-white rounded-xl shadow-sm border border-neutral-100 p-2">
+      <Card className="w-full shrink-0 p-2">
         <AnimationControls
           isPlaying={isPlaying}
           speed={speed}
@@ -160,7 +162,7 @@ export const FrictionCenterExtra: FC = () => {
           onSpeedChange={setSpeed}
           onTimeChange={setTime}
         />
-      </div>
+      </Card>
     </div>
   )
 }

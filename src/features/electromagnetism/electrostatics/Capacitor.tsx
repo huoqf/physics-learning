@@ -6,6 +6,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateCapacitor } from '@/physics'
 import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
+import { Card } from '@/components/UI'
 
 // 物理常数定义 (SI)
 const EPS0 = 8.854e-12
@@ -187,7 +188,7 @@ export default function Capacitor() {
   return (
     <div className="w-full h-full flex flex-col gap-3 p-3 bg-neutral-50 overflow-hidden">
       {/* 1. 顶部物理量相对百分比联动柱状图 (HTML 极简卡片卡槽设计，响应式高度) */}
-      <div className="h-[135px] shrink-0 bg-white rounded-xl shadow-sm border border-neutral-100 p-3 flex flex-col justify-between relative overflow-hidden">
+      <Card className="h-[135px] shrink-0 p-3 flex flex-col justify-between relative overflow-hidden">
         {/* 柱状图头部信息 */}
         <div className="flex justify-between items-center z-10">
           <span className="text-xs font-semibold text-neutral-600">物理量相对百分比联动柱状图 (0% - 100%)</span>
@@ -215,10 +216,11 @@ export default function Capacitor() {
           {renderChartBar('U', voltage.toFixed(1), 'V', pctU, '电压', 'bg-gradient-to-t from-amber-700 to-amber-500', 'text-amber-700')}
           {renderChartBar('E', Math.round(field).toString(), 'V/m', pctE, '场强', 'bg-gradient-to-t from-amber-600 to-yellow-500', 'text-amber-600')}
         </div>
-      </div>
+      </Card>
 
       {/* 2. 底部模拟动画区域 (SVG 容器，利用 flex-1 高度完全自适应) */}
-      <div ref={containerRef} className="flex-1 min-h-0 bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden relative">
+      <div ref={containerRef} className="flex-1 min-h-0">
+      <Card className="h-full overflow-hidden relative">
         {/* 顶部悬浮的教学卡片 (HTML绝对定位，干净美观且不遮挡极板) */}
         {showFormulas && (
           <div className="absolute left-4 top-4 z-10 bg-white/95 backdrop-blur-sm border border-neutral-100 rounded-xl p-3 shadow-md w-48 text-xs leading-relaxed transition-all">
@@ -476,6 +478,7 @@ export default function Capacitor() {
             </marker>
           </defs>
         </svg>
+      </Card>
       </div>
     </div>
   )

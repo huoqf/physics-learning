@@ -10,6 +10,7 @@ import { createSceneScale } from '@/scene/SceneScale';
 import type { SceneConfig } from '@/scene/SceneConfig';
 import { precomputeVerticalSpringTrajectory, getVSStateAtTime } from '@/physics/verticalSpring';
 import { BasePhysicsChart } from '@/components/Chart';
+import { SegmentedControl } from '@/components/UI';
 import { GRAVITY } from '@/physics/constants';
 import { useCanvasSize, useViewport } from '@/utils';
 import { CANVAS_PRESETS } from '@/theme/spacing';
@@ -248,25 +249,15 @@ export default function SpringCompositeAnimation() {
       className='relative w-full h-full flex items-center justify-center bg-white rounded-xl shadow-inner overflow-hidden select-none'
     >
       {/* ── 高考标准与直观对齐双态视图切换按钮 ── */}
-      <div className='absolute top-4 right-4 flex items-center gap-1.5 p-1 bg-neutral-100/90 backdrop-blur border border-neutral-200 rounded-lg shadow-sm z-30'>
-        <button
-          onClick={() => setViewMode('y-E')}
-          className={`px-2.5 py-1 rounded text-[10px] font-semibold transition-all cursor-pointer ${viewMode === 'y-E'
-            ? 'bg-white text-neutral-800 shadow-sm'
-            : 'text-neutral-500 hover:text-neutral-700'
-            }`}
-        >
-          直观对齐 (y - E)
-        </button>
-        <button
-          onClick={() => setViewMode('E-x')}
-          className={`px-2.5 py-1 rounded text-[10px] font-semibold transition-all cursor-pointer ${viewMode === 'E-x'
-            ? 'bg-white text-neutral-800 shadow-sm'
-            : 'text-neutral-500 hover:text-neutral-700'
-            }`}
-        >
-          高考标准 (E - x)
-        </button>
+      <div className='absolute top-4 right-4 z-30'>
+        <SegmentedControl
+          options={[
+            { label: '直观对齐 (y - E)', value: 'y-E' },
+            { label: '高考标准 (E - x)', value: 'E-x' },
+          ]}
+          value={viewMode}
+          onChange={(v) => setViewMode(v as 'y-E' | 'E-x')}
+        />
       </div>
 
       <svg

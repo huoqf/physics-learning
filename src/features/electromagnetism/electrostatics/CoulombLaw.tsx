@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useCanvasSize, type CanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
@@ -11,6 +11,7 @@ import {
 import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { RelationChart } from '@/components/Chart'
+import { Button } from '@/components/UI'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 
@@ -482,12 +483,11 @@ function ThreeChargeMode({
       </svg>
 
       <div className="shrink-0 p-3 bg-neutral-50 border-t border-neutral-200 flex items-center gap-4">
-        <button
+        <Button
           onClick={handleAutoBalance}
-          className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium text-sm hover:bg-primary-700 active:scale-[0.97] transition-all"
         >
           自动平衡
-        </button>
+        </Button>
         <div className="flex items-center gap-2 text-xs text-neutral-600">
           <span>Q₁、Q₂固定</span>
           <span className="text-neutral-400">|</span>

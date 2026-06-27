@@ -3,7 +3,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { calculateElevatorMotion } from '@/physics'
-import { AnimationControls, MiniChart } from '@/components/UI'
+import { AnimationControls, MiniChart, Card } from '@/components/UI'
 import WeightlessnessAnimation from './WeightlessnessAnimation'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -86,19 +86,19 @@ export default function WeightlessnessCenterExtra() {
       {/* 核心左右布局区域 */}
       <div className="w-full flex-1 min-h-0 flex flex-row gap-3">
         {/* 左侧：35% 宽度，电梯动画（高瘦型自适应） */}
-        <div className="w-[35%] min-w-[200px] h-full bg-white rounded-xl shadow-sm overflow-hidden relative border border-neutral-100 flex flex-col">
+        <Card className="w-[35%] min-w-[200px] h-full overflow-hidden relative flex flex-col">
           <div className="flex-1 min-h-0 relative">
             <WeightlessnessAnimation />
           </div>
           <div style={{ fontSize: font(10) }} className="absolute top-2 right-3 text-neutral-400 font-semibold bg-white/80 px-2 py-0.5 rounded-full shadow-sm select-none">
             {modelNames[modelIdx]}
           </div>
-        </div>
+        </Card>
 
         {/* 右侧：65% 宽度，三图表垂直同轴叠放 */}
         <div className="flex-1 h-full flex flex-col gap-2 min-h-0">
           {/* a-t 图 */}
-          <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden p-2 border border-neutral-100 min-h-0">
+          <Card className="flex-1 overflow-hidden p-2 min-h-0">
             <MiniChart
               title="加速度 - 时间 (a-t)"
               xMin={0}
@@ -114,10 +114,10 @@ export default function WeightlessnessCenterExtra() {
               currentVals={currentVals}
               currentXVal={time}
             />
-          </div>
+          </Card>
 
           {/* N-t 图 (支持力) */}
-          <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden p-2 border border-neutral-100 min-h-0">
+          <Card className="flex-1 overflow-hidden p-2 min-h-0">
             <MiniChart
               title="支持力/视重 - 时间 (N-t)"
               xMin={0}
@@ -136,10 +136,10 @@ export default function WeightlessnessCenterExtra() {
               currentVals={currentVals}
               currentXVal={time}
             />
-          </div>
+          </Card>
 
           {/* v-t 图 */}
-          <div className="flex-1 bg-white rounded-xl shadow-sm overflow-hidden p-2 border border-neutral-100 min-h-0">
+          <Card className="flex-1 overflow-hidden p-2 min-h-0">
             <MiniChart
               title="速度 - 时间 (v-t)"
               xMin={0}
@@ -155,12 +155,12 @@ export default function WeightlessnessCenterExtra() {
               currentVals={currentVals}
               currentXVal={time}
             />
-          </div>
+          </Card>
         </div>
       </div>
 
       {/* 底部动画控制栏 */}
-      <div className="w-full shrink-0 bg-white rounded-xl shadow-sm p-2 border border-neutral-100">
+      <Card className="w-full shrink-0 p-2">
         <AnimationControls
           isPlaying={isPlaying}
           speed={speed}
@@ -171,7 +171,7 @@ export default function WeightlessnessCenterExtra() {
           onSpeedChange={setSpeed}
           onTimeChange={setTime}
         />
-      </div>
+      </Card>
     </div>
   )
 }

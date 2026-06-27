@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -10,6 +10,7 @@ import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { createSceneScale } from '@/scene'
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
 import { VelocityTimeChart } from '@/components/Chart'
+import { Card } from '@/components/UI'
 import {
   calculateChargeInEFieldTrajectory,
   getChargeInEFieldTimeScale,
@@ -225,7 +226,7 @@ export default function ChargeInEField() {
   return (
     <div ref={containerRef} className="w-full h-full flex flex-col gap-4">
       {/* 动画反馈区 */}
-      <div className="flex-1 min-h-0 bg-white rounded-xl shadow-sm border border-neutral-100 p-3 relative">
+      <Card className="flex-1 min-h-0 p-3 relative">
         <svg width={canvasSize.width - 26} height={animHeight} className="overflow-visible select-none">
           <defs>
             <VectorDefs colors={[PHYSICS_COLORS.velocity, PHYSICS_COLORS.velocityY, PHYSICS_COLORS.acceleration, PHYSICS_COLORS.electricForce, PHYSICS_COLORS.gravity]} />
@@ -365,10 +366,10 @@ export default function ChargeInEField() {
             </g>
           )}
         </svg>
-      </div>
+      </Card>
 
       {/* 图像显示区 */}
-      <div className="h-[150px] bg-white rounded-xl shadow-sm border border-neutral-100 p-2">
+      <Card className="h-[150px] p-2">
         <VelocityTimeChart
           points={vtPoints}
           currentTime={tSim}
@@ -377,7 +378,7 @@ export default function ChargeInEField() {
           title="vᵧ - t 图像"
           showArea
         />
-      </div>
+      </Card>
     </div>
   )
 }
