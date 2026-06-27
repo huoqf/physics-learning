@@ -6,9 +6,9 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     title: '匀速圆周运动',
     knowledgeId: 'mechanics-5-4',
     Component: lazy(() => import('@/features/mechanics/circular/CircularMotionAnimation')),
-    defaultParams: { r: 2, omega: 1, t: 0, advancedMode: 0, showProjection: 1, showWaveform: 1 },
+    defaultParams: { r: 5, omega: 1, t: 0, advancedMode: 0, showProjection: 1, showWaveform: 1 },
     paramMeta: [
-      { key: 'r', label: '半径 r', min: 1, max: 10, step: 0.1, unit: 'm' },
+      { key: 'r', label: '半径 r', min: 5, max: 10, step: 0.1, unit: 'm' },
       { key: 'omega', label: '角速度 ω', min: 0.1, max: 5, step: 0.1, unit: 'rad/s' },
     ],
     SidebarExtra: lazy(() => import('@/features/mechanics/circular/CircularMotionSidebar')),

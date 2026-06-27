@@ -24,6 +24,7 @@ export { Ball } from './Ball'
 export { Block } from './Block'
 export { SportsCar } from './SportsCar'
 export { Pulley } from './Pulley'
+export { EnergyBars } from './EnergyBars'
 
 // ============================================================================
 // 电磁学 - 静电场 (Electrostatics)

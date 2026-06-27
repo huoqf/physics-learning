@@ -117,8 +117,8 @@ export default function VerticalThrowAnimation() {
   }
   const vtSceneScale = createSceneScale(vtScene)
 
-  const currentBallY = originY + (displayMaxHeight - clampedY) * scale
-  const currentVacuumBallY = originY + (displayMaxHeight - clampedVacuumY) * scale
+  const currentBallY = originY + (displayMaxHeight - clampedY) * scale - 14
+  const currentVacuumBallY = originY + (displayMaxHeight - clampedVacuumY) * scale - 13
 
   // ── 落地自动暂停 ──
   useEffect(() => {

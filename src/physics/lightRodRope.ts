@@ -80,6 +80,14 @@ export interface LRRModelState {
   vr: number
   /** 运动阶段结束原因 */
   stopReason?: 'reach_bottom' | 'slack' | null
+  /** A球直角物理速度 x (m/s) */
+  vAx: number
+  /** A球直角物理速度 y (m/s) */
+  vAy: number
+  /** B球直角物理速度 x (m/s) */
+  vBx: number
+  /** B球直角物理速度 y (m/s) */
+  vBy: number
 }
 
 /**
@@ -135,6 +143,14 @@ export function precomputeLightRodRopeTrajectory(
     r_A = R_A0
     r_B = R_B0
     v_r = 0.0
+  } else if (mode === 2) {
+    thetaA = theta0
+    thetaB = theta0
+    wA = w0
+    wB = w0
+    r_A = R_A0
+    r_B = R_B0
+    v_r = 0.0
   }
 
   // 初始直角物理坐标 (悬挂点为原点，x向右为正，y向下为正)
@@ -152,6 +168,12 @@ export function precomputeLightRodRopeTrajectory(
   // 绳子是否松弛 (一端松弛即整根松弛)
   let isSlack = false
   let stopReason: 'reach_bottom' | 'slack' | null = null
+
+  // 模式 2 辅助变量
+  let last_T_OA = 0
+  let last_T_AB = 0
+  let last_isSlackA = false
+  let last_isSlackB = false
 
   let t = 0.0
   const subSteps = 100
@@ -230,7 +252,7 @@ export function precomputeLightRodRopeTrajectory(
 
       T_A = F_Ar
       T_B = F_Br
-    } else {
+    } else if (mode === 1) {
       // 双绳分系两球（定滑轮耦合高考动力学模型）
       epA = m1 * g * (L_rope - r_A)
       epB = m2 * g * (L_rope - y_B)
@@ -261,7 +283,48 @@ export function precomputeLightRodRopeTrajectory(
       // 绳拉力做功的瞬时功率 P = F * v
       powerA = -T_val * v_r
       powerB = T_val * v_r
+    } else {
+      // mode === 2: 轻绳连接体三阶段
+      epA = m1 * g * (R_A0 - y_A)
+      epB = m2 * g * (R_B0 - y_B)
+
+      ekA = 0.5 * m1 * (vAx * vAx + vAy * vAy)
+      ekB = 0.5 * m2 * (vBx * vBx + vBy * vBy)
+
+      T_A = last_T_OA
+      T_B = last_T_AB
+
+      isSlack = last_isSlackB
+
+      const d_A = Math.sqrt(x_A * x_A + y_A * y_A)
+      const nx_OA = d_A > 1e-6 ? x_A / d_A : 0
+      const ny_OA = d_A > 1e-6 ? y_A / d_A : 1
+
+      const d_AB = Math.sqrt((x_B - x_A) * (x_B - x_A) + (y_B - y_A) * (y_B - y_A))
+      const nx_AB = d_AB > 1e-6 ? (x_B - x_A) / d_AB : 0
+      const ny_AB = d_AB > 1e-6 ? (y_B - y_A) / d_AB : 1
+
+      F_Ax = -T_A * nx_OA
+      F_Ay = T_A * ny_OA
+      F_A_radial = { x: F_Ax, y: F_Ay }
+
+      F_Bx = -T_B * nx_AB
+      F_By = T_B * ny_AB
+      F_B_radial = { x: F_Bx, y: F_By }
+
+      const vBx_phys = vBx
+      const vBy_phys = -vBy
+      powerB = F_Bx * vBx_phys + F_By * vBy_phys
+
+      const vAx_phys = vAx
+      const vAy_phys = -vAy
+      powerA = (T_B * nx_AB) * vAx_phys + (-T_B * ny_AB) * vAy_phys
     }
+
+    const d_AB_cur = Math.sqrt((x_B - x_A) * (x_B - x_A) + (y_B - y_A) * (y_B - y_A))
+    const nx_AB_cur = d_AB_cur > 1e-6 ? (x_B - x_A) / d_AB_cur : 0
+    const ny_AB_cur = d_AB_cur > 1e-6 ? (y_B - y_A) / d_AB_cur : 1
+    const vr_cur = vBx * nx_AB_cur + vBy * ny_AB_cur
 
     const EA = ekA + epA
     const EB = ekB + epB
@@ -296,14 +359,18 @@ export function precomputeLightRodRopeTrajectory(
       y_A_rel: y_A,
       x_B_rel: x_B,
       y_B_rel: y_B,
-      isSlackA: isSlack,
-      isSlackB: isSlack,
+      isSlackA: mode === 2 ? last_isSlackA : isSlack,
+      isSlackB: mode === 2 ? last_isSlackB : isSlack,
       T_A,
       T_B,
       eventA: stepEventA,
       eventB: stepEventB,
-      vr: mode === 1 ? v_r : 0.0,
-      stopReason
+      vr: mode === 1 ? v_r : (mode === 2 ? vr_cur : 0.0),
+      stopReason,
+      vAx: vAx,
+      vAy: -vAy,
+      vBx: vBx,
+      vBy: -vBy
     })
 
     if (stopReason) {
@@ -313,9 +380,13 @@ export function precomputeLightRodRopeTrajectory(
     // 如果是最后一点，直接跳出
     if (t >= tMax) break
 
-    // 子步数值积分 (Euler-Cromer)
+    // 子步数值积分 (Euler-Cromer / PBD)
     let breakOuter = false
     let stepStopReason: 'reach_bottom' | 'slack' | null = null
+
+    // 模式 2 碰撞冲量累计
+    let t_impact_OA_dt = 0
+    let t_impact_AB_dt = 0
 
     for (let step = 0; step < subSteps; step++) {
       if (mode === 0) {
@@ -337,7 +408,7 @@ export function precomputeLightRodRopeTrajectory(
         y_B = R_B0 * Math.sin(thetaB)
         vBx = -R_B0 * wB * Math.sin(thetaB)
         vBy = R_B0 * wB * Math.cos(thetaB)
-      } else {
+      } else if (mode === 1) {
         // 双绳分系，跨滑轮动力学耦合
         const numerator = g * (1 + Math.sin(thetaB)) + r_B * wB * wB
         const denominator = 1.0 / m1 + 1.0 / m2
@@ -390,7 +461,176 @@ export function precomputeLightRodRopeTrajectory(
         y_B = r_B * Math.sin(thetaB)
         vBx = -v_r * Math.cos(thetaB) - r_B * wB * Math.sin(thetaB)
         vBy = -v_r * Math.sin(thetaB) + r_B * wB * Math.cos(thetaB)
+      } else {
+        // mode === 2: 轻绳连接体三阶段 PBD 仿真
+        // 1. 预测步：仅受重力作用 (y向下为正)
+        const vAx_pred = vAx
+        const vAy_pred = vAy + g * subDt
+        const vBx_pred = vBx
+        const vBy_pred = vBy + g * subDt
+
+        let xA_pred = x_A + vAx_pred * subDt
+        let yA_pred = y_A + vAy_pred * subDt
+        let xB_pred = x_B + vBx_pred * subDt
+        let yB_pred = y_B + vBy_pred * subDt
+
+        // 2. 碰撞检测与速度同化
+        const R_A = L / 2
+        const R_AB = L / 2
+
+        const d_A_old = Math.sqrt(x_A * x_A + y_A * y_A)
+        const d_AB_old = Math.sqrt((x_B - x_A) * (x_B - x_A) + (y_B - y_A) * (y_B - y_A))
+
+        const d_A_pred = Math.sqrt(xA_pred * xA_pred + yA_pred * yA_pred)
+        const d_AB_pred = Math.sqrt((xB_pred - xA_pred) * (xB_pred - xA_pred) + (yB_pred - yA_pred) * (yB_pred - yA_pred))
+
+        let T_impact_OA = 0
+        let T_impact_AB = 0
+
+        // OA 绳拉直碰撞检测
+        if (d_A_old < R_A - 0.001 && d_A_pred >= R_A) {
+          stepEventA = 'tension'
+          const nx = xA_pred / d_A_pred
+          const ny = yA_pred / d_A_pred
+          const v_radial = vAx_pred * nx + vAy_pred * ny
+          if (v_radial > 0) {
+            // 完全非弹性碰撞，消去向外分量
+            const vAx_corr = vAx_pred - v_radial * nx
+            const vAy_corr = vAy_pred - v_radial * ny
+            T_impact_OA = (m1 * v_radial) / subDt
+            xA_pred = x_A + vAx_corr * subDt
+            yA_pred = y_A + vAy_corr * subDt
+          }
+        }
+
+        // AB 绳拉直碰撞检测
+        if (d_AB_old < R_AB - 0.001 && d_AB_pred >= R_AB) {
+          stepEventB = 'tension'
+          const dx = xB_pred - xA_pred
+          const dy = yB_pred - yA_pred
+          const len = Math.sqrt(dx * dx + dy * dy)
+          const nx = len > 1e-6 ? dx / len : 0
+          const ny = len > 1e-6 ? dy / len : 1
+
+          const vA_para = vAx_pred * nx + vAy_pred * ny
+          const vB_para = vBx_pred * nx + vBy_pred * ny
+          const v_rel = vB_para - vA_para
+          if (v_rel > 0) {
+            // 同化沿绳速度
+            const v_para_new = (m1 * vA_para + m2 * vB_para) / (m1 + m2)
+            const vAx_corr = vAx_pred + (v_para_new - vA_para) * nx
+            const vAy_corr = vAy_pred + (v_para_new - vA_para) * ny
+            const vBx_corr = vBx_pred + (v_para_new - vB_para) * nx
+            const vBy_corr = vBy_pred + (v_para_new - vB_para) * ny
+
+            T_impact_AB = (m1 * m2 * v_rel) / ((m1 + m2) * subDt)
+
+            xA_pred = x_A + vAx_corr * subDt
+            yA_pred = y_A + vAy_corr * subDt
+            xB_pred = x_B + vBx_corr * subDt
+            yB_pred = y_B + vBy_corr * subDt
+          }
+        }
+
+        // 3. PBD 约束投影迭代
+        let xA_pbd = xA_pred
+        let yA_pbd = yA_pred
+        let xB_pbd = xB_pred
+        let yB_pbd = yB_pred
+
+        for (let iter = 0; iter < 5; iter++) {
+          // OA 绳约束
+          const len_OA = Math.sqrt(xA_pbd * xA_pbd + yA_pbd * yA_pbd)
+          if (len_OA > R_A) {
+            xA_pbd = R_A * (xA_pbd / len_OA)
+            yA_pbd = R_A * (yA_pbd / len_OA)
+          }
+
+          // AB 绳约束
+          const dx = xB_pbd - xA_pbd
+          const dy = yB_pbd - yA_pbd
+          const len_AB = Math.sqrt(dx * dx + dy * dy)
+          if (len_AB > R_AB) {
+            const C = len_AB - R_AB
+            const nx = dx / len_AB
+            const ny = dy / len_AB
+            const w1 = 1.0 / m1
+            const w2 = 1.0 / m2
+            const invMassSum = w1 + w2
+            xA_pbd += (w1 / invMassSum) * C * nx
+            yA_pbd += (w1 / invMassSum) * C * ny
+            xB_pbd -= (w2 / invMassSum) * C * nx
+            yB_pbd -= (w2 / invMassSum) * C * ny
+          }
+        }
+
+        // 4. 更新速度与位置
+        vAx = (xA_pbd - x_A) / subDt
+        vAy = (yA_pbd - y_A) / subDt
+        vBx = (xB_pbd - x_B) / subDt
+        vBy = (yB_pbd - y_B) / subDt
+
+        x_A = xA_pbd
+        y_A = yA_pbd
+        x_B = xB_pbd
+        y_B = yB_pbd
+
+        // 5. 绳子松紧判定与解析张力计算
+        const d_A = Math.sqrt(x_A * x_A + y_A * y_A)
+        const d_AB = Math.sqrt((x_B - x_A) * (x_B - x_A) + (y_B - y_A) * (y_B - y_A))
+
+        last_isSlackA = d_A < R_A - 0.002
+        last_isSlackB = d_AB < R_AB - 0.002
+
+        const nx_OA = d_A > 1e-6 ? x_A / d_A : 0
+        const ny_OA = d_A > 1e-6 ? y_A / d_A : 1
+
+        const nx_AB = d_AB > 1e-6 ? (x_B - x_A) / d_AB : 0
+        const ny_AB = d_AB > 1e-6 ? (y_B - y_A) / d_AB : 1
+
+        const v_rel_x = vBx - vAx
+        const v_rel_y = vBy - vAy
+        const v_rel_para = v_rel_x * nx_AB + v_rel_y * ny_AB
+        const v_rel_perp_x = v_rel_x - v_rel_para * nx_AB
+        const v_rel_perp_y = v_rel_y - v_rel_para * ny_AB
+        const v_rel_perp_sq = v_rel_perp_x * v_rel_perp_x + v_rel_perp_y * v_rel_perp_y
+
+        const vA_para = vAx * nx_OA + vAy * ny_OA
+        const vA_perp_x = vAx - vA_para * nx_OA
+        const vA_perp_y = vAy - vA_para * ny_OA
+        const vA_perp_sq = vA_perp_x * vA_perp_x + vA_perp_y * vA_perp_y
+
+        let T_AB_smooth = 0
+        if (!last_isSlackB) {
+          T_AB_smooth = m2 * (g * ny_AB + v_rel_perp_sq / R_AB)
+          if (T_AB_smooth < 0) T_AB_smooth = 0
+        }
+
+        let T_OA_smooth = 0
+        if (!last_isSlackA) {
+          const cos_phi = nx_AB * nx_OA + ny_AB * ny_OA
+          T_OA_smooth = m1 * (g * ny_OA + vA_perp_sq / R_A) + T_AB_smooth * cos_phi
+          if (T_OA_smooth < 0) T_OA_smooth = 0
+        }
+
+        t_impact_OA_dt += T_impact_OA * subDt
+        t_impact_AB_dt += T_impact_AB * subDt
+
+        last_T_OA = T_OA_smooth
+        last_T_AB = T_AB_smooth
+
+        if (d_A_old >= R_A - 0.001 && last_isSlackA) {
+          stepEventA = 'slack'
+        }
+        if (d_AB_old >= R_AB - 0.001 && last_isSlackB) {
+          stepEventB = 'slack'
+        }
       }
+    }
+
+    if (mode === 2) {
+      last_T_OA += t_impact_OA_dt / dt
+      last_T_AB += t_impact_AB_dt / dt
     }
 
     if (stepStopReason) {
@@ -439,7 +679,11 @@ export function precomputeLightRodRopeTrajectory(
         T_A: stopReason === 'slack' ? 0.0 : T_A,
         T_B: stopReason === 'slack' ? 0.0 : T_B,
         vr: v_r,
-        stopReason
+        stopReason,
+        vAx: vAx,
+        vAy: -vAy,
+        vBx: vBx,
+        vBy: -vBy
       })
       break
     }
@@ -468,7 +712,8 @@ export function getLRRStateAtTime(
       F_A: { x: 0, y: 0 }, F_B: { x: 0, y: 0 }, powerB: 0, powerA: 0,
       x_A_rel: 0, y_A_rel: 0, x_B_rel: 0, y_B_rel: 0,
       isSlackA: false, isSlackB: false, T_A: 0, T_B: 0,
-      vr: 0.0, stopReason: null
+      vr: 0.0, stopReason: null,
+      vAx: 0, vAy: 0, vBx: 0, vBy: 0
     }
   }
   if (t <= points[0].t) return { ...points[0] }
@@ -541,6 +786,10 @@ export function getLRRStateAtTime(
     eventA: p0.eventA || p1.eventA,
     eventB: p0.eventB || p1.eventB,
     vr: p0.vr + (p1.vr - p0.vr) * ratio,
-    stopReason: p1.stopReason || p0.stopReason
+    stopReason: p1.stopReason || p0.stopReason,
+    vAx: p0.vAx + (p1.vAx - p0.vAx) * ratio,
+    vAy: p0.vAy + (p1.vAy - p0.vAy) * ratio,
+    vBx: p0.vBx + (p1.vBx - p0.vBx) * ratio,
+    vBy: p0.vBy + (p1.vBy - p0.vBy) * ratio
   }
 }

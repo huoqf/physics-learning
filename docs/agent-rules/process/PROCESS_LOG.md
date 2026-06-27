@@ -18,7 +18,7 @@
 ## 最近变更摘要
 
 | 日期 | 模块 | 类型 | 变更 |
-|------|------|------|------|
+| 06-27 | mechanics/energy | feature | 新增轻绳连接体三阶段模型：在 lightRodRope.ts 中实现基于 PBD 几何约束投影的三阶段运动学数值积分算法；攻克摆动下落拉紧瞬时的沿绳完全非弹性碰撞速度同化计算，并在拉直时刻解析叠加张力脉冲尖脉冲；重构 LightRodRopeSidebar 追加 showVelocityDecomp 速度三角形 Toggle 并彻底隔离长文本；重塑 EnergyBars 语义色，在碰撞瞬间总能量柱增加红光发光与“碰撞损失”Badge；联动控制当显示速度三角形时隐藏拉力和重力；右侧屏实时并存渲染以时间为轴的 v-t 与 F-t 关联曲线，并由 markers 指示状态突变标记线；tsc 静态检查无错误 |
 | 06-25 | optics/thin-lens | refactor | 薄透镜成像页面动画重构：修正凸透镜、凹透镜及实像、虚像下的三条特殊光线几何追迹方程；新增 CandleShape 倒立烛身渲染以符合物理实像性质；解锁共轭测焦距模式拖拽限制并引入基于 SVG 滤镜 feGaussianBlur 的动态调焦模糊和透明度变化；重绘主光轴为厘米刻度金属光学导轨，加入透镜玻璃感材质与激光束微光发光特效；RelationChart 颜色重构为合规 warm 变体并高亮 conjugate 点 |
 | 06-25 | components/UI | refactor | UI通用组件优化与美化：修复 Slider/ParamControl/AnimationControls 自定义圆纽遮挡 input 导致的交互卡顿，增加 z-10 peer 与 h-6 交互区并添加 pointer-events-none；Button 8态规范并用 absolute 居中 spinner + opacity-0 文字消除 loading 宽度抖动；ToggleSwitch 增加 focus-visible、圆纽 shadow-md 与两端对称；SegmentedControl 增加 hover/active 缩放反馈；PhysicsPanel 手风琴折叠默认展开，重构公式/要点/警示卡片并引入 Lucide 矢量图标，规范数值 font-mono 及语义色彩显示；DiscoveryGuide capsule 进度条与 fadeIn 提示；单元测试 289 通过 |
 | 06-25 | mechanics/kinematics | feature | 新增运动学进阶（图象逆推模型）：引入上下自适应布局，基于 Viewport 架构缩放，由 RelationChart 联动展示一次函数物理规律及刹车状态拦截 |

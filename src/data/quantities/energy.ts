@@ -391,7 +391,7 @@ export function buildEnergyQuantities(
             { text: '【无速度底线】杆既能拉也能"托"（支持力）。小球到达最高点的临界速度可以为 0。', importance: 'extend' as const },
           ],
         }
-      } else {
+      } else if (constraint === 1) {
         // ── 双绳分系两球（跨定滑轮高考模型） ──
         return {
           quantities: [
@@ -414,6 +414,31 @@ export function buildEnergyQuantities(
             { text: '【初始瞬时】释放瞬时两球速度及向心加速度为0，但沿绳方向加速度大小相等。对两球分别列牛顿第二定律，可隔离解出初始拉力T_0与A、B球的加速度。', importance: 'gaokao' as const },
             { text: '【速度关联】任意时刻，小球 A 的竖直速度 v_A 等于小球 B 在沿绳方向的速度分量 v_∥。摆球 B 的合速度为沿绳与切向分速度的矢量和，因此恒有 v_B >= v_A。', importance: 'hard' as const },
             { text: '【能量守恒】第一运动阶段，系统无非保守外力做功，系统总机械能守恒。到达最低点或绳松弛瞬时，机械能守恒方程（动能增量等于势能减量）完全成立。', importance: 'core' as const },
+          ],
+        }
+      } else {
+        // ── 轻绳连接体三阶段（新模式） ──
+        return {
+          quantities: [
+            ...base,
+            { label: 'A球机械能', symbol: 'EA', value: state.EA, unit: 'J', color: ENERGY_COLORS.potentialGravity },
+            { label: 'B球机械能', symbol: 'EB', value: state.EB, unit: 'J', color: ENERGY_COLORS.potentialElastic },
+            { label: '系统总能量', symbol: 'E总', value: state.Etot, unit: 'J', highlight: 'extreme' as const, color: PHYSICS_COLORS.kineticEnergy },
+            { label: 'OA绳张力', symbol: 'T_OA', value: state.T_A, unit: 'N', highlight: state.T_A < 0.01 ? 'zero' as const : undefined },
+            { label: 'AB绳张力', symbol: 'T_AB', value: state.T_B, unit: 'N', highlight: state.T_B < 0.01 ? 'zero' as const : undefined },
+            { label: 'A球速度 (v_A)', symbol: 'v_A', value: state.vA, unit: 'm/s' },
+            { label: 'B球速度 (v_B)', symbol: 'v_B', value: state.vB, unit: 'm/s' },
+            { label: '沿绳速度分量', symbol: 'v_\\parallel', value: state.vr, unit: 'm/s', color: PHYSICS_COLORS.velocity },
+          ],
+          formulas: [
+            { name: '沿绳速度关联', latex: 'v_{A\\parallel} = v_{B\\parallel} = v_\\parallel', note: 'AB绳绷紧时，两球沿绳分速度相等', level: 'important' },
+            { name: '单体与系统能量', latex: 'W_{\\text{绳}} = \\Delta E_{\\text{单}}, \\quad E_{\\text{系统}} = E_A + E_B', note: '绳不做功阶段各自守恒，绳做功阶段系统守恒', level: 'core' },
+            { name: '拉直碰撞损失', latex: '\\Delta E_{\\text{内}} = \\frac{1}{2}\\frac{m_1 m_2}{m_1 + m_2}(v_{A\\parallel} - v_{B\\parallel})^2', note: '拉直瞬间沿绳方向发生完全非弹性碰撞，系统机械能损失', level: 'core' },
+          ],
+          gaokaoPoints: [
+            { text: '【状态判断】绳子张力为 0 时进入松弛阶段，小球各自做抛体或单摆，各自机械能守恒；拉直瞬间发生碰撞，机械能发生损失。', importance: 'gaokao' as const },
+            { text: '【速度关联】绷紧摆动时，小球 A 和 B 沿绳连线方向的速度分量相等。小球 B 的合速度为沿绳与垂直绳方向的速度矢量和。', importance: 'hard' as const },
+            { text: '【高考口诀】记住高考解题三大步骤：“看绳辨状态，沿绳解速度，分段列守恒”。这能帮助你快速理清多状态突变大题。', importance: 'gaokao' as const },
           ],
         }
       }

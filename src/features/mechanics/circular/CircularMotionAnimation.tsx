@@ -21,7 +21,7 @@ const CIRCULAR_DESIGN = { width: 600, height: 600 } as const
 
 /** 匀速圆周运动参数范围（滑块边界） */
 const CIRCULAR_MOTION_PARAM_BOUNDS = {
-  rMin: 1, rMax: 10,
+  rMin: 5, rMax: 10,
   omegaMin: 0.1, omegaMax: 5,
 } as const
 
@@ -53,16 +53,12 @@ const CIRCULAR_MOTION_LAYOUT = {
   waveCardPadding: { left: 40, right: 15, top: 25, bottom: 25 },
   /** 波形采样步数 */
   waveSteps: 100,
-  /** 同心参考环层数 */
-  gridLayers: 4,
-  /** 辐射角线间隔 (°) */
-  gridAngleStep: 30,
   /** 坐标轴延伸长度 (px) */
   axisExtension: 30,
 } as const
 
 export default function CircularMotionAnimation() {
-    const {params, time, showVectors, showGrid, setIsPlaying, setTime} = useAnimationStore(
+    const {params, time, showVectors, setIsPlaying, setTime} = useAnimationStore(
     useShallow((s) => ({
     params: s.params,
     time: s.time,
@@ -215,48 +211,7 @@ export default function CircularMotionAnimation() {
     [handleDragTime]
   )
 
-  // ── 5. 同心环与辐射网格背景 ──────────────────────────────
-  const gridBackground = useMemo(() => {
-    if (!showGrid) return null
-    const elements: React.ReactElement[] = []
-    // 绘制 4 层同心参考环
-    const gridLayers = CIRCULAR_MOTION_LAYOUT.gridLayers
-    for (let i = 1; i <= gridLayers; i++) {
-      const radiusPhys = (rMax / gridLayers) * i
-      elements.push(
-        <circle
-          key={`grid-circle-${i}`}
-          cx={centerX}
-          cy={centerY}
-          r={radiusPhys * scale}
-          fill="none"
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={STROKE.grid}
-          strokeDasharray={DASH.axis.join(' ')}
-        />
-      )
-    }
-    // 绘制每 30 度的辐射角轴线
-    for (let deg = 0; deg < 360; deg += CIRCULAR_MOTION_LAYOUT.gridAngleStep) {
-      const rad = (deg * Math.PI) / 180
-      const rayEnd = physicsToCanvasWithOrigin(rMax * Math.cos(rad), rMax * Math.sin(rad), centerX, centerY, scale)
-      elements.push(
-        <line
-          key={`grid-ray-${deg}`}
-          x1={centerX}
-          y1={centerY}
-          x2={rayEnd.cx}
-          y2={rayEnd.cy}
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={STROKE.grid}
-          strokeDasharray={DASH.axis.join(' ')}
-        />
-      )
-    }
-    return elements
-  }, [showGrid, centerX, centerY, scale, rMax])
-
-  // ── 6. 扫过扇形角度弧 path ──────────────────────────────
+  // ── 5. 扫过扇形角度弧 path ──────────────────────────────
   const angleSectorPath = useMemo(() => {
     // 限制在单圈 [0, 2pi) 用于扇形角度渲染
     const currentAngleRad = (omega * time) % (2 * Math.PI)
@@ -300,9 +255,6 @@ export default function CircularMotionAnimation() {
             <stop offset="100%" stopColor={SCENE_COLORS.sphere.steelGhost.gradient[3]} stopOpacity={SCENE_COLORS.sphere.steelGhost.opacity[3]} />
           </radialGradient>
         </defs>
-
-        {/* 辐射网格背景 */}
-        {gridBackground}
 
         {/* ========== 主物理圆形演练区 ========== */}
 

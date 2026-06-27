@@ -3,11 +3,10 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { Ball, Pulley, VectorArrow } from '@/components/Physics'
+import { Ball, Pulley, VectorArrow, EnergyBars } from '@/components/Physics'
 import { RelationChart } from '@/components/Chart'
 import { IDENTITY_SCENE_SCALE } from '@/scene/SceneScale'
 import { precomputeLightRodRopeTrajectory, getLRRStateAtTime } from '@/physics/lightRodRope'
-import type { LRRModelState } from '@/physics/lightRodRope'
 import { GRAVITY } from '@/physics/constants'
 import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -16,104 +15,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 const DESIGN_WIDTH = 700
 const DESIGN_HEIGHT = 420
 
-/**
- * 实时能量分配动态柱状图 (双绳模式专用)
- */
-const EnergyBars = ({ state, initialEtot }: { state: LRRModelState; initialEtot: number }) => {
-  const { EpA, EkA, EpB, EkB, Etot } = state
-  const maxVal = initialEtot > 0 ? initialEtot : 1.0
-
-  const getPercent = (val: number) => {
-    return Math.min(100, Math.max(0, (val / maxVal) * 100))
-  }
-
-  return (
-    <div className="flex flex-col p-1 bg-transparent select-none">
-      <div className="text-[10px] font-bold text-neutral-600 mb-1 flex justify-between items-center">
-        <span>系统机械能实时分配 (J)</span>
-        <span className="text-[9px] text-neutral-400 font-normal">初始: {initialEtot.toFixed(2)} J</span>
-      </div>
-
-      <div className="relative h-10 flex items-end justify-between pt-2.5 px-1 border-b border-neutral-200">
-        {/* 紫色虚线代表系统总能量 */}
-        <div
-          className="absolute left-0 right-0 border-t border-dashed border-purple-500 opacity-60 z-0 pointer-events-none transition-all duration-100"
-          style={{ bottom: `${getPercent(Etot)}%` }}
-        />
-
-        {/* EpA */}
-        <div className="flex flex-col items-center flex-1 z-10">
-          <div className="relative w-4 bg-neutral-100 rounded-t-sm h-8 flex items-end">
-            <div
-              className="w-full bg-purple-600/70 rounded-t-sm transition-all duration-100"
-              style={{ height: `${getPercent(EpA)}%` }}
-            />
-            <span className="absolute -top-3 text-[8px] font-bold text-purple-700 w-full text-center">
-              {EpA.toFixed(2)}
-            </span>
-          </div>
-          <span className="text-[8px] mt-0.5 font-bold text-neutral-500">Ep_A</span>
-        </div>
-
-        {/* EkA */}
-        <div className="flex flex-col items-center flex-1 z-10">
-          <div className="relative w-4 bg-neutral-100 rounded-t-sm h-8 flex items-end">
-            <div
-              className="w-full bg-blue-500 rounded-t-sm transition-all duration-100"
-              style={{ height: `${getPercent(EkA)}%` }}
-            />
-            <span className="absolute -top-3 text-[8px] font-bold text-blue-600 w-full text-center">
-              {EkA.toFixed(2)}
-            </span>
-          </div>
-          <span className="text-[8px] mt-0.5 font-bold text-neutral-500">Ek_A</span>
-        </div>
-
-        {/* EpB */}
-        <div className="flex flex-col items-center flex-1 z-10">
-          <div className="relative w-4 bg-neutral-100 rounded-t-sm h-8 flex items-end">
-            <div
-              className="w-full bg-purple-600 rounded-t-sm transition-all duration-100"
-              style={{ height: `${getPercent(EpB)}%` }}
-            />
-            <span className="absolute -top-3 text-[8px] font-bold text-purple-800 w-full text-center">
-              {EpB.toFixed(2)}
-            </span>
-          </div>
-          <span className="text-[8px] mt-0.5 font-bold text-neutral-500">Ep_B</span>
-        </div>
-
-        {/* EkB */}
-        <div className="flex flex-col items-center flex-1 z-10">
-          <div className="relative w-4 bg-neutral-100 rounded-t-sm h-8 flex items-end">
-            <div
-              className="w-full bg-blue-600 rounded-t-sm transition-all duration-100"
-              style={{ height: `${getPercent(EkB)}%` }}
-            />
-            <span className="absolute -top-3 text-[8px] font-bold text-blue-700 w-full text-center">
-              {EkB.toFixed(2)}
-            </span>
-          </div>
-          <span className="text-[8px] mt-0.5 font-bold text-neutral-500">Ek_B</span>
-        </div>
-
-        {/* E总柱 */}
-        <div className="flex flex-col items-center flex-1 z-10">
-          <div className="relative w-4 bg-purple-50 rounded-t-sm h-8 flex items-end border border-purple-100">
-            <div
-              className="w-full bg-purple-600 rounded-t-sm transition-all duration-100"
-              style={{ height: `${getPercent(Etot)}%` }}
-            />
-            <span className="absolute -top-3 text-[8px] font-bold text-purple-900 w-full text-center">
-              {Etot.toFixed(2)}
-            </span>
-          </div>
-          <span className="text-[8px] mt-0.5 font-bold text-purple-700">E总</span>
-        </div>
-      </div>
-    </div>
-  )
-}
+import { ENERGY_COLORS } from '@/theme/physics'
 
 export default function LightRodRopeAnimation() {
   const { params, time, setTime, setIsPlaying } = useAnimationStore(
@@ -136,8 +38,8 @@ export default function LightRodRopeAnimation() {
   // 1. 参数提取
   const m1 = params.m1 ?? 1.0 // A球质量 (kg)
   const m2 = params.m2 ?? 1.0 // B球质量 (kg)
-  const constraint = params.constraint ?? 0 // 0=杆, 1=绳
-  const L = constraint === 0 ? (params.L ?? 1.2) : 1.2 // 杆总长 (m)，双绳分系固定为1.2m
+  const constraint = params.constraint ?? 0 // 0=杆, 1=定滑轮绳, 2=轻绳三阶段
+  const L = constraint === 0 ? (params.L ?? 1.2) : 1.2 // 杆总长 (m)
   const g = GRAVITY
   const showParticles = params.showParticles !== 0 // 1=开, 0=关
   const theta0 = params.theta0 ?? 30 // 初始释放角 (度)
@@ -145,6 +47,7 @@ export default function LightRodRopeAnimation() {
   const showGravity = params.showGravity !== 0
   const showTension = params.showTension !== 0
   const showResolution = params.showResolution !== 0
+  const showVelocityDecomp = constraint === 2 && params.showVelocityDecomp !== 0
 
   const theta0Rad = useMemo(() => ((90 - theta0) * Math.PI) / 180, [theta0])
 
@@ -175,7 +78,7 @@ export default function LightRodRopeAnimation() {
 
   // 3. 布局像素计算
   const pivotX = 180 // 轴心 X
-  const pivotY = 130 // 轴心 Y (下移以避开上方能量条)
+  const pivotY = 166 // 轴心 Y (下移以避开上方能量条)
   const L_pix = L * 180 // 摆长对应的像素长度
 
   // 滑轮半径 (12px)
@@ -203,49 +106,38 @@ export default function LightRodRopeAnimation() {
   const curHB = Math.max(0, state.y_B_rel - yB0)
   const curThetaB = Math.abs(90 - (state.thetaB * 180) / Math.PI)
 
-  const vHSeriesA = useMemo(() => {
-    if (trajectory.length === 0) return []
-    return trajectory.map((pt) => ({
-      x: Math.max(0, pt.y_B_rel - yB0),
-      y: pt.vA,
-    }))
+  // 合并全部图表数据序列的计算，单次遍历轨迹以极大提高性能并消减冗余代码
+  const chartsData = useMemo(() => {
+    const et1: {x: number; y: number}[] = []
+    const et2: {x: number; y: number}[] = []
+    const etot: {x: number; y: number}[] = []
+    const pt1: {x: number; y: number}[] = []
+    const pt2: {x: number; y: number}[] = []
+    const vHA: {x: number; y: number}[] = []
+    const vHB: {x: number; y: number}[] = []
+    const tTheta: {x: number; y: number}[] = []
+    const vAt: {x: number; y: number}[] = []
+    const vBt: {x: number; y: number}[] = []
+    const tOA: {x: number; y: number}[] = []
+    const tAB: {x: number; y: number}[] = []
+
+    trajectory.forEach((pt) => {
+      et1.push({ x: pt.t, y: pt.EA })
+      et2.push({ x: pt.t, y: pt.EB })
+      etot.push({ x: pt.t, y: pt.Etot })
+      pt1.push({ x: pt.t, y: pt.powerA })
+      pt2.push({ x: pt.t, y: pt.powerB })
+      vHA.push({ x: Math.max(0, pt.y_B_rel - yB0), y: pt.vA })
+      vHB.push({ x: Math.max(0, pt.y_B_rel - yB0), y: pt.vB })
+      tTheta.push({ x: Math.abs(90 - (pt.thetaB * 180) / Math.PI), y: pt.T_B })
+      vAt.push({ x: pt.t, y: pt.vA })
+      vBt.push({ x: pt.t, y: pt.vB })
+      tOA.push({ x: pt.t, y: pt.T_A })
+      tAB.push({ x: pt.t, y: pt.T_B })
+    })
+
+    return { et1, et2, etot, pt1, pt2, vHA, vHB, tTheta, vAt, vBt, tOA, tAB }
   }, [trajectory, yB0])
-
-  const vHSeriesB = useMemo(() => {
-    if (trajectory.length === 0) return []
-    return trajectory.map((pt) => ({
-      x: Math.max(0, pt.y_B_rel - yB0),
-      y: pt.vB,
-    }))
-  }, [trajectory, yB0])
-
-  const tThetaSeries = useMemo(() => {
-    return trajectory.map((pt) => ({
-      x: Math.abs(90 - (pt.thetaB * 180) / Math.PI),
-      y: pt.T_B,
-    }))
-  }, [trajectory])
-
-  // 刚性轻杆模式下：能量与功率的时间曲线序列
-  const et1Series = useMemo(() => {
-    return trajectory.map((pt) => ({ x: pt.t, y: pt.EA }))
-  }, [trajectory])
-
-  const et2Series = useMemo(() => {
-    return trajectory.map((pt) => ({ x: pt.t, y: pt.EB }))
-  }, [trajectory])
-
-  const etotSeries = useMemo(() => {
-    return trajectory.map((pt) => ({ x: pt.t, y: pt.Etot }))
-  }, [trajectory])
-
-  const pt1Series = useMemo(() => {
-    return trajectory.map((pt) => ({ x: pt.t, y: pt.powerA }))
-  }, [trajectory])
-
-  const pt2Series = useMemo(() => {
-    return trajectory.map((pt) => ({ x: pt.t, y: pt.powerB }))
-  }, [trajectory])
 
   // 动态计算功率轴的最大值（对称）
   const P_max = useMemo(() => {
@@ -261,6 +153,40 @@ export default function LightRodRopeAnimation() {
 
   // 能量范围计算
   const E_max = (trajectory[0]?.Etot ?? 1.0) * 1.35
+
+  // 模式 2 碰撞闪烁判定
+  const hasCollisionRecent = useMemo(() => {
+    if (constraint !== 2) return false
+    const idx = trajectory.findIndex(pt => pt.t <= time && pt.t > time - 0.15)
+    if (idx !== -1 && trajectory[idx].eventB === 'tension') {
+      return true
+    }
+    return false
+  }, [trajectory, time, constraint])
+
+  // 模式 2 图表 markers 突变点标记
+  const chartMarkers = useMemo(() => {
+    if (constraint !== 2) return []
+    const list: any[] = []
+    trajectory.forEach((pt) => {
+      if (pt.eventB === 'tension') {
+        list.push({
+          axis: 'vertical',
+          x: pt.t,
+          label: '绳拉直',
+          color: '#EF4444'
+        })
+      } else if (pt.eventB === 'slack') {
+        list.push({
+          axis: 'vertical',
+          x: pt.t,
+          label: '绳松弛',
+          color: '#6B7280'
+        })
+      }
+    })
+    return list
+  }, [trajectory, constraint])
 
   // 刚性轻杆能量传输粒子定位
   const particles = useMemo(() => {
@@ -311,6 +237,48 @@ export default function LightRodRopeAnimation() {
   const x_B_tan = x_B + F_B_tangential.x * FORCE_DRAW_SCALE
   const y_B_tan = y_B - F_B_tangential.y * FORCE_DRAW_SCALE
 
+  // 统一绘制可能松弛的轻绳的辅助函数
+  const renderRope = (
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    isSlack: boolean,
+    nominalLength: number
+  ) => {
+    if (isSlack) {
+      const dx = x2 - x1
+      const dy = y2 - y1
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      // 松弛程度的物理拟合，保留至少 6px 的视觉下弯弧度
+      const sag = Math.max(6, (nominalLength - dist) * 0.8)
+      const cx = (x1 + x2) / 2
+      const cy = (y1 + y2) / 2 + sag
+      return (
+        <path
+          d={`M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`}
+          fill="none"
+          stroke={SCENE_COLORS.surface.ropeColor}
+          strokeWidth={1.5}
+          strokeDasharray="4,4"
+          strokeLinecap="round"
+        />
+      )
+    } else {
+      return (
+        <line
+          x1={x1}
+          y1={y1}
+          x2={x2}
+          y2={y2}
+          stroke={SCENE_COLORS.surface.ropeActive}
+          strokeWidth={1.5}
+          strokeLinecap="round"
+        />
+      )
+    }
+  }
+
   return (
     <div ref={containerRef} className="relative w-full h-full bg-white rounded-xl shadow-inner overflow-hidden select-none">
       <svg
@@ -322,106 +290,83 @@ export default function LightRodRopeAnimation() {
           {/* ── 左半部分：动画区 ── */}
           <g>
             {/* 能量条实时分配（左侧上方） */}
-            {constraint === 1 && (
+            {(constraint === 1 || constraint === 2) && (
               <foreignObject x={20} y={15} width={320} height={85}>
-                <EnergyBars state={state} initialEtot={trajectory[0]?.Etot ?? 1.0} />
+                <EnergyBars
+                  items={[
+                    { key: 'EpA', label: 'Ep_A', value: state.EpA, color: ENERGY_COLORS.potentialGravity },
+                    { key: 'EkA', label: 'Ek_A', value: state.EkA, color: ENERGY_COLORS.kineticEnergy },
+                    { key: 'EpB', label: 'Ep_B', value: state.EpB, color: ENERGY_COLORS.potentialElastic },
+                    { key: 'EkB', label: 'Ek_B', value: state.EkB, color: ENERGY_COLORS.kineticEnergy },
+                    { key: 'Etot', label: 'E总', value: state.Etot, color: ENERGY_COLORS.mechanicalEnergy },
+                  ]}
+                  initialEtot={trajectory[0]?.Etot ?? 1.0}
+                  font={font}
+                  hasCollision={hasCollisionRecent}
+                  collisionKey="Etot"
+                />
               </foreignObject>
             )}
 
             {/* 依据约束模式，动态渲染固定点或定滑轮 */}
             {constraint === 0 ? (
               <>
-                {/* 刚性轻杆：普通的旋转轴 */}
-                <rect x={pivotX - 40} y={128} width={80} height={10} fill={SCENE_COLORS.surface.wallFill} rx={1} />
-                <line x1={pivotX - 50} y1={138} x2={pivotX + 50} y2={138} stroke={SCENE_COLORS.pendulum.arcPath} strokeWidth={1.5} />
+                {/* 刚性轻杆：微调上移并加装垂直悬挂轴销，满足力学装配常识 */}
+                <rect x={pivotX - 40} y={pivotY - 14} width={80} height={8} fill={SCENE_COLORS.surface.wallFill} rx={1} />
+                <line x1={pivotX - 50} y1={pivotY - 6} x2={pivotX + 50} y2={pivotY - 6} stroke={SCENE_COLORS.pendulum.arcPath} strokeWidth={1.5} />
+                <line x1={pivotX} y1={pivotY - 6} x2={pivotX} y2={pivotY} stroke={SCENE_COLORS.pendulum.rodStroke} strokeWidth={1.5} />
                 <circle cx={pivotX} cy={pivotY} r={4} fill={SCENE_COLORS.pendulum.pivotFill} />
               </>
+            ) : constraint === 1 ? (
+              <Pulley cx={pivotX} cy={pivotY} r={12} hangerTopY={pivotY - 35} />
             ) : (
-              <Pulley cx={pivotX} cy={pivotY} r={12} hangerTopY={95} />
+              <>
+                {/* 轻绳三阶段：微调上移并加装垂直悬挂轴销，满足力学装配常识 */}
+                <rect x={pivotX - 30} y={pivotY - 14} width={60} height={8} fill={SCENE_COLORS.surface.wallFill} rx={1} />
+                <line x1={pivotX - 40} y1={pivotY - 6} x2={pivotX + 40} y2={pivotY - 6} stroke={SCENE_COLORS.pendulum.arcPath} strokeWidth={1.5} />
+                <line x1={pivotX} y1={pivotY - 6} x2={pivotX} y2={pivotY} stroke={SCENE_COLORS.pendulum.rodStroke} strokeWidth={1.5} />
+                <circle cx={pivotX} cy={pivotY} r={4} fill={SCENE_COLORS.pendulum.pivotFill} />
+              </>
             )}
 
             {/* 杆/绳渲染 */}
             {constraint === 0 ? (
-              <line
-                x1={pivotX}
-                y1={pivotY}
-                x2={x_B}
-                y2={y_B}
-                stroke={SCENE_COLORS.pendulum.rodFill}
-                strokeWidth={3}
-                strokeLinecap="round"
-              />
-            ) : (
+              <g>
+                {/* 杆的主体实心金属杆身（无阴影/无重影叠层） */}
+                <line
+                  x1={pivotX}
+                  y1={pivotY}
+                  x2={x_B}
+                  y2={y_B}
+                  stroke={SCENE_COLORS.pendulum.rodFill}
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                />
+                {/* 悬挂支点 O、中间 A 球和末端 B 球节点处的微型金属转轴卡套 */}
+                <circle cx={pivotX} cy={pivotY} r={5} fill="none" stroke={SCENE_COLORS.pendulum.rodFill} strokeWidth={1} />
+                <circle cx={x_A} cy={y_A} r={4} fill="none" stroke={SCENE_COLORS.pendulum.rodFill} strokeWidth={1} />
+                <circle cx={x_B} cy={y_B} r={5} fill="none" stroke={SCENE_COLORS.pendulum.rodFill} strokeWidth={1.2} />
+              </g>
+            ) : constraint === 1 ? (
               <g>
                 {/* 绕在滑轮顶部的绳子弧线 */}
                 <path
                   d={`M ${x_start_A} ${y_start_A} A ${R_p} ${R_p} 0 0 1 ${x_start_B} ${y_start_B}`}
                   fill="none"
-                  stroke={SCENE_COLORS.pendulum.rodFill}
+                  stroke={SCENE_COLORS.surface.ropeActive}
                   strokeWidth={1.5}
                 />
-
                 {/* 绳 A */}
-                {state.isSlackA ? (
-                  (() => {
-                    const dx = x_A - x_start_A
-                    const dy = y_A - y_start_A
-                    const dist = Math.sqrt(dx * dx + dy * dy)
-                    const R_pix = L_pix / 2
-                    const sag = Math.max(5, (R_pix - dist) * 0.8)
-                    const cx = (x_start_A + x_A) / 2
-                    const cy = (y_start_A + y_A) / 2 + sag
-                    return (
-                      <path
-                        d={`M ${x_start_A} ${y_start_A} Q ${cx} ${cy} ${x_A} ${y_A}`}
-                        fill="none"
-                        stroke={SCENE_COLORS.pendulum.rodFill}
-                        strokeWidth={1.5}
-                        strokeDasharray="3,3"
-                      />
-                    )
-                  })()
-                ) : (
-                  <line
-                    x1={x_start_A}
-                    y1={y_start_A}
-                    x2={x_A}
-                    y2={y_A}
-                    stroke={SCENE_COLORS.pendulum.rodFill}
-                    strokeWidth={1.5}
-                  />
-                )}
-
+                {renderRope(x_start_A, y_start_A, x_A, y_A, state.isSlackA, L_pix / 2)}
                 {/* 绳 B */}
-                {state.isSlackB ? (
-                  (() => {
-                    const dx = x_B - x_start_B
-                    const dy = y_B - y_start_B
-                    const dist = Math.sqrt(dx * dx + dy * dy)
-                    const R_pix = L_pix
-                    const sag = Math.max(5, (R_pix - dist) * 0.8)
-                    const cx = (x_start_B + x_B) / 2
-                    const cy = (y_start_B + y_B) / 2 + sag
-                    return (
-                      <path
-                        d={`M ${x_start_B} ${y_start_B} Q ${cx} ${cy} ${x_B} ${y_B}`}
-                        fill="none"
-                        stroke={SCENE_COLORS.pendulum.rodFill}
-                        strokeWidth={1.5}
-                        strokeDasharray="3,3"
-                      />
-                    )
-                  })()
-                ) : (
-                  <line
-                    x1={x_start_B}
-                    y1={y_start_B}
-                    x2={x_B}
-                    y2={y_B}
-                    stroke={SCENE_COLORS.pendulum.rodFill}
-                    strokeWidth={1.5}
-                  />
-                )}
+                {renderRope(x_start_B, y_start_B, x_B, y_B, state.isSlackB, L_pix)}
+              </g>
+            ) : (
+              <g>
+                {/* 绳 OA */}
+                {renderRope(pivotX, pivotY, x_A, y_A, state.isSlackA, L_pix / 2)}
+                {/* 绳 AB */}
+                {renderRope(x_A, y_A, x_B, y_B, state.isSlackB, L_pix / 2)}
               </g>
             )}
 
@@ -459,10 +404,10 @@ export default function LightRodRopeAnimation() {
               strokeWidth={1.5}
             />
 
-            {/* 受力矢量箭头 */}
+            {/* 受力与速度矢量箭头 */}
             <g>
-              {/* 1. 重力控制显示 */}
-              {showGravity && (
+              {/* 1. 重力控制显示（开启速度分解时隐藏重力以防过载） */}
+              {showGravity && (!showVelocityDecomp || constraint !== 2) && (
                 <>
                   <VectorArrow
                     origin={{ x: x_A, y: -y_A }}
@@ -580,7 +525,7 @@ export default function LightRodRopeAnimation() {
                     </>
                   )}
                 </>
-              ) : (
+              ) : constraint === 1 ? (
                 <>
                   {showTension && (
                     <>
@@ -601,7 +546,180 @@ export default function LightRodRopeAnimation() {
                     </>
                   )}
                 </>
+              ) : (
+                <>
+                  {/* constraint === 2: 轻绳三阶段绳子张力矢量 (开启速度分解时自动隐藏) */}
+                  {showTension && !showVelocityDecomp && (
+                    <>
+                      {/* OA 绳拉力指向悬挂点 O */}
+                      <VectorArrow
+                        origin={{ x: x_A, y: -y_A }}
+                        vector={state.F_A}
+                        pixelLength={state.T_A * 2.5}
+                        type="tension"
+                        sceneScale={IDENTITY_SCENE_SCALE}
+                        label="T_OA"
+                      />
+
+                      {/* AB 绳对 A 球拉力指向 B 球 */}
+                      {(() => {
+                        const dx_AB = x_B - x_A
+                        const dy_AB = y_B - y_A
+                        const len_AB = Math.sqrt(dx_AB * dx_AB + dy_AB * dy_AB)
+                        const nx_AB = len_AB > 1e-6 ? dx_AB / len_AB : 0
+                        const ny_AB = len_AB > 1e-6 ? dy_AB / len_AB : 1
+                        const F_A_AB_phys = {
+                          x: state.T_B * nx_AB,
+                          y: -state.T_B * ny_AB
+                        }
+                        return (
+                          <VectorArrow
+                            origin={{ x: x_A, y: -y_A }}
+                            vector={F_A_AB_phys}
+                            pixelLength={state.T_B * 2.5}
+                            type="tension"
+                            sceneScale={IDENTITY_SCENE_SCALE}
+                            label="T_AB"
+                          />
+                        )
+                      })()}
+
+                      {/* AB 绳对 B 球拉力指向 A 球 */}
+                      <VectorArrow
+                        origin={{ x: x_B, y: -y_B }}
+                        vector={state.F_B}
+                        pixelLength={state.T_B * 2.5}
+                        type="tension"
+                        sceneScale={IDENTITY_SCENE_SCALE}
+                        label="T_AB"
+                      />
+                    </>
+                  )}
+                </>
               )}
+
+              {/* 3. 模式 2 速度矢量与直角分解三角形 (开启时隐藏拉力与重力以保 Canvas 清洁) */}
+              {constraint === 2 && showVelocityDecomp && (() => {
+                const dx_AB = x_B - x_A
+                const dy_AB = y_B - y_A
+                const len_AB = Math.sqrt(dx_AB * dx_AB + dy_AB * dy_AB)
+                const nx_AB = len_AB > 1e-6 ? dx_AB / len_AB : 0
+                const ny_AB = len_AB > 1e-6 ? dy_AB / len_AB : 1
+
+                const vScale = 22 // 速度渲染比例尺，防越界
+
+                // A 球速度投影与矢量
+                const vA_para = state.vAx * nx_AB + state.vAy * (-ny_AB)
+                const vAx_para = vA_para * nx_AB
+                const vAy_para = vA_para * (-ny_AB)
+                const vAx_perp = state.vAx - vAx_para
+                const vAy_perp = state.vAy - vAy_para
+
+                const x_A_v = x_A + state.vAx * vScale
+                const y_A_v = y_A - state.vAy * vScale
+                const x_A_v_para = x_A + vAx_para * vScale
+                const y_A_v_para = y_A - vAy_para * vScale
+
+                // B 球速度投影与矢量
+                const vB_para = state.vBx * nx_AB + state.vBy * (-ny_AB)
+                const vBx_para = vB_para * nx_AB
+                const vBy_para = vB_para * (-ny_AB)
+                const vBx_perp = state.vBx - vBx_para
+                const vBy_perp = state.vBy - vBy_para
+
+                const x_B_v = x_B + state.vBx * vScale
+                const y_B_v = y_B - state.vBy * vScale
+                const x_B_v_para = x_B + vBx_para * vScale
+                const y_B_v_para = y_B - vBy_para * vScale
+
+                return (
+                  <>
+                    {/* A球速度矢量 */}
+                    <VectorArrow
+                      origin={{ x: x_A, y: -y_A }}
+                      vector={{ x: state.vAx, y: state.vAy }}
+                      pixelLength={state.vA * vScale}
+                      type="velocity"
+                      sceneScale={IDENTITY_SCENE_SCALE}
+                      label="v_A"
+                    />
+                    <VectorArrow
+                      origin={{ x: x_A, y: -y_A }}
+                      vector={{ x: vAx_para, y: vAy_para }}
+                      pixelLength={Math.abs(vA_para) * vScale}
+                      type="velocity"
+                      color={PHYSICS_COLORS.velocityX}
+                      sceneScale={IDENTITY_SCENE_SCALE}
+                      label="v_A∥"
+                    />
+                    <VectorArrow
+                      origin={{ x: x_A, y: -y_A }}
+                      vector={{ x: vAx_perp, y: vAy_perp }}
+                      pixelLength={Math.sqrt(vAx_perp * vAx_perp + vAy_perp * vAy_perp) * vScale}
+                      type="velocity"
+                      color={PHYSICS_COLORS.velocityY}
+                      sceneScale={IDENTITY_SCENE_SCALE}
+                      label="v_A⊥"
+                    />
+                    <line
+                      x1={x_A_v_para} y1={y_A_v_para}
+                      x2={x_A_v} y2={y_A_v}
+                      stroke={PHYSICS_COLORS.axis}
+                      strokeWidth={1}
+                      strokeDasharray="2,2"
+                    />
+
+                    {/* B球速度矢量 */}
+                    <VectorArrow
+                      origin={{ x: x_B, y: -y_B }}
+                      vector={{ x: state.vBx, y: state.vBy }}
+                      pixelLength={state.vB * vScale}
+                      type="velocity"
+                      sceneScale={IDENTITY_SCENE_SCALE}
+                      label="v_B"
+                    />
+                    <VectorArrow
+                      origin={{ x: x_B, y: -y_B }}
+                      vector={{ x: vBx_para, y: vBy_para }}
+                      pixelLength={Math.abs(vB_para) * vScale}
+                      type="velocity"
+                      color={PHYSICS_COLORS.velocityX}
+                      sceneScale={IDENTITY_SCENE_SCALE}
+                      label="v_B∥"
+                    />
+                    <VectorArrow
+                      origin={{ x: x_B, y: -y_B }}
+                      vector={{ x: vBx_perp, y: vBy_perp }}
+                      pixelLength={Math.sqrt(vBx_perp * vBx_perp + vBy_perp * vBy_perp) * vScale}
+                      type="velocity"
+                      color={PHYSICS_COLORS.velocityY}
+                      sceneScale={IDENTITY_SCENE_SCALE}
+                      label="v_B⊥"
+                    />
+                    <line
+                      x1={x_B_v_para} y1={y_B_v_para}
+                      x2={x_B_v} y2={y_B_v}
+                      stroke={PHYSICS_COLORS.axis}
+                      strokeWidth={1}
+                      strokeDasharray="2,2"
+                    />
+
+                    {/* 绷紧时的相等文字指示 */}
+                    {!state.isSlackB && (
+                      <text
+                        x={(x_A + x_B) / 2}
+                        y={(y_A + y_B) / 2 - 12}
+                        textAnchor="middle"
+                        fill={PHYSICS_COLORS.velocityX}
+                        fontSize={font ? font(9) : 9}
+                        fontWeight="bold"
+                      >
+                        v_A∥ = v_B∥
+                      </text>
+                    )}
+                  </>
+                )
+              })()}
             </g>
 
             {/* 终点 UI 扁平状态警示 Alert 提示框 (仅在双绳模式下生效，无毛玻璃滤镜) */}
@@ -646,17 +764,17 @@ export default function LightRodRopeAnimation() {
               <>
                 <div className="flex-1 min-h-0">
                   <RelationChart
-                    points={et1Series}
+                    points={chartsData.et1}
                     mainLabel="A球机械能 EA"
                     color={PHYSICS_COLORS.velocity}
                     additionalSeries={[
                       {
-                        points: et2Series,
+                        points: chartsData.et2,
                         label: 'B球机械能 EB',
                         color: PHYSICS_COLORS.power,
                       },
                       {
-                        points: etotSeries,
+                        points: chartsData.etot,
                         label: '系统总能 E总',
                         color: PHYSICS_COLORS.mechanicalEnergy,
                         strokeWidth: 2,
@@ -673,12 +791,12 @@ export default function LightRodRopeAnimation() {
 
                 <div className="flex-1 min-h-0">
                   <RelationChart
-                    points={pt1Series}
+                    points={chartsData.pt1}
                     mainLabel="杆对 A 功率 PA"
                     color={PHYSICS_COLORS.velocity}
                     additionalSeries={[
                       {
-                        points: pt2Series,
+                        points: chartsData.pt2,
                         label: "杆对 B 功率 PB",
                         color: PHYSICS_COLORS.power,
                       },
@@ -693,18 +811,18 @@ export default function LightRodRopeAnimation() {
                   />
                 </div>
               </>
-            ) : (
+            ) : constraint === 1 ? (
               // 双绳分系高考模式下：两个关联曲线图并列纵向展示（不切换）
               <>
                 <div className="flex-1 min-h-0">
                   <RelationChart
                     key="vh-chart"
-                    points={vHSeriesA}
+                    points={chartsData.vHA}
                     mainLabel="A球速度 vA"
                     color={PHYSICS_COLORS.velocity}
                     additionalSeries={[
                       {
-                        points: vHSeriesB,
+                        points: chartsData.vHB,
                         label: 'B球速度 vB',
                         color: PHYSICS_COLORS.power,
                       },
@@ -719,13 +837,60 @@ export default function LightRodRopeAnimation() {
                 <div className="flex-1 min-h-0">
                   <RelationChart
                     key="Ttheta-chart"
-                    points={tThetaSeries}
+                    points={chartsData.tTheta}
                     mainLabel="绳子张力 T"
                     color={PHYSICS_COLORS.velocity}
                     xLabel="B绳与竖直方向偏角 θ (°)"
                     yLabel="张力 T (N)"
                     title="张力-偏角 (T-θ) 曲线"
                     cursorX={curThetaB}
+                  />
+                </div>
+              </>
+            ) : (
+              // constraint === 2: 轻绳三阶段高考模型下，并存展示 v-t 速度与 F-t 张力时间曲线图 (带状态拉直/松弛突变虚线标注)
+              <>
+                <div className="flex-1 min-h-0">
+                  <RelationChart
+                    key="vt-chart"
+                    points={chartsData.vAt}
+                    mainLabel="A球速度 vA"
+                    color={PHYSICS_COLORS.velocity}
+                    additionalSeries={[
+                      {
+                        points: chartsData.vBt,
+                        label: 'B球速度 vB',
+                        color: PHYSICS_COLORS.power,
+                      },
+                    ]}
+                    xDomain={[0, tMax]}
+                    xLabel="时间 t (s)"
+                    yLabel="速度 v (m/s)"
+                    title="速度-时间 (v-t) 曲线"
+                    cursorX={time}
+                    markers={chartMarkers}
+                  />
+                </div>
+
+                <div className="flex-1 min-h-0">
+                  <RelationChart
+                    key="Ft-chart"
+                    points={chartsData.tOA}
+                    mainLabel="OA绳张力 T_OA"
+                    color={PHYSICS_COLORS.velocity}
+                    additionalSeries={[
+                      {
+                        points: chartsData.tAB,
+                        label: 'AB绳张力 T_AB',
+                        color: PHYSICS_COLORS.power,
+                      },
+                    ]}
+                    xDomain={[0, tMax]}
+                    xLabel="时间 t (s)"
+                    yLabel="张力 T (N)"
+                    title="绳中张力-时间 (F-t) 曲线"
+                    cursorX={time}
+                    markers={chartMarkers}
                   />
                 </div>
               </>
