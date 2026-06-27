@@ -167,7 +167,7 @@ export default function LightRodRopeAnimation() {
   // 模式 2 图表 markers 突变点标记
   const chartMarkers = useMemo(() => {
     if (constraint !== 2) return []
-    const list: any[] = []
+    const list: { axis: 'point' | 'vertical' | 'horizontal'; x: number; label: string; color: string }[] = []
     trajectory.forEach((pt) => {
       if (pt.eventB === 'tension') {
         list.push({

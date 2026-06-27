@@ -7,13 +7,13 @@ import {
   computeFaradayMagnetFlux,
 } from '../../../physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
-import type { PhysicsPanelData } from '../types'
+import type { PhysicsPanelData, PhysicsQuantity } from '../types'
 
 export function handleInduction(
   animId: string,
-  params: Record<string, any>,
+  params: Record<string, number>,
   time: number,
-  base: any[]
+  base: PhysicsQuantity[]
 ): PhysicsPanelData | null {
   switch (animId) {
     case 'anim-faraday-law': {

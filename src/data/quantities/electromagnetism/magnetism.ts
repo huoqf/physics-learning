@@ -3,7 +3,7 @@ import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import type { PhysicsPanelData } from '../types'
 
-export function handleMagnetism(animId: string, params: Record<string, any>, time: number, base: PhysicsPanelData['quantities']): PhysicsPanelData | null {
+export function handleMagnetism(animId: string, params: Record<string, number>, time: number, base: PhysicsPanelData['quantities']): PhysicsPanelData | null {
   switch (animId) {
     case 'anim-ampere-force': {
       const mode = params.mode ?? 0
