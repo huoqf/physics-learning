@@ -14,7 +14,7 @@ interface PhysicsDBSchema extends DBSchema {
 
 let dbPromise: Promise<IDBPDatabase<PhysicsDBSchema>> | null = null;
 
-async function getDB(): Promise<IDBPDatabase<PhysicsDBSchema>> {
+async function getOrOpenDB(): Promise<IDBPDatabase<PhysicsDBSchema>> {
   if (!dbPromise) {
     dbPromise = openDB<PhysicsDBSchema>(DB_NAME, 1, {
       upgrade(db) {
@@ -61,7 +61,7 @@ export const storage = {
 
   async getDB<T>(key: string): Promise<T | null> {
     try {
-      const db = await getDB();
+      const db = await getOrOpenDB();
       const value = await db.get(STORE_NAME, key);
       return (value as T) || null;
     } catch {
@@ -71,7 +71,7 @@ export const storage = {
 
   async setDB<T>(key: string, value: T): Promise<void> {
     try {
-      const db = await getDB();
+      const db = await getOrOpenDB();
       await db.put(STORE_NAME, value, key);
       checkDBSize();
     } catch {
@@ -81,7 +81,7 @@ export const storage = {
 
   async removeDB(key: string): Promise<void> {
     try {
-      const db = await getDB();
+      const db = await getOrOpenDB();
       await db.delete(STORE_NAME, key);
     } catch {
       console.error('Failed to remove from IndexedDB');
@@ -90,7 +90,7 @@ export const storage = {
 
   async clearDB(): Promise<void> {
     try {
-      const db = await getDB();
+      const db = await getOrOpenDB();
       await db.clear(STORE_NAME);
     } catch {
       console.error('Failed to clear IndexedDB');

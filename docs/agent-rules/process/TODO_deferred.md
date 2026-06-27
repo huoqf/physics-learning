@@ -84,14 +84,14 @@
 - **文件**：`src/utils/storage.ts` L17 & L62
 - **问题**：模块内部 `async function getDB()` 返回 DB 实例；`storage.getDB<T>(key)` 返回数据。同名不同签名，搜索/跳转易混淆。
 - **修复**：内部函数改名为 `getOrOpenDB()`。
-- **状态**：⬜ 待处理
+- **状态**：✅ 已完成（2026-06-27）
 
 ### 5-2  `useProgressStore.reset` — 冗余状态覆盖
 
 - **文件**：`src/stores/useProgressStore.ts` L75-L80
 - **问题**：`...initialState` 之后又手动覆盖 `viewedAnimations: []` 和 `masteredKnowledge: []`，这两个字段在 `initialState` 中已是空数组，属无效重复代码。
 - **修复**：`reset: () => set({ ...initialState })`
-- **状态**：⬜ 待处理
+- **状态**：✅ 已完成（2026-06-27）
 
 ---
 

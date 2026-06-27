@@ -72,12 +72,7 @@ export const useProgressStore = create<ProgressState>()(
         return { animationProgress, knowledgeProgress }
       },
 
-      reset: () =>
-        set({
-          ...initialState,
-          viewedAnimations: [],
-          masteredKnowledge: [],
-        }),
+      reset: () => set({ ...initialState }),
     }),
     {
       name: STORAGE_KEY,
