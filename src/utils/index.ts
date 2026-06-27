@@ -6,3 +6,4 @@ export * from './useBreakpoint';
 export * from './storage';
 export * from './chartData';
 export * from './formatNumber';
+export * from './layoutLabels';

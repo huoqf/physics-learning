@@ -1,4 +1,4 @@
-import { useCanvasSize, useViewport } from '@/utils'
+import { useCanvasSize, useViewport, layoutLabels } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -122,6 +122,17 @@ export default function NewtonSecondAnimation() {
   const cx = carX + carWidth / 2
   const cy = carY + carHeight / 2
 
+  // 标签避让：F_N、v、a 三个标签在物块上方，需自动分离
+  const labelFontSize = FONT.axisSize
+  const positionedLabels = layoutLabels([
+    { x: cx, y: cy - 52, text: `F_N=${(m * 9.8).toFixed(1)}N`, fontSize: labelFontSize, anchor: 'middle', priority: 2 },
+    { x: carX + Math.max(15, v * NEWTON_ARROW.velScale) + 8, y: carY - 15, text: `v=${v.toFixed(2)} m/s`, fontSize: labelFontSize, anchor: 'start', priority: 1 },
+    { x: carX + Math.max(15, a * NEWTON_ARROW.accelScale) + 8, y: carY - 32, text: `a=${a.toFixed(2)} m/s²`, fontSize: labelFontSize, anchor: 'start', priority: 0 },
+  ], {
+    bounds: { left: 0, right: canvasSize.width, top: 0, bottom: groundY },
+    padding: 4,
+  })
+
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg
@@ -233,8 +244,8 @@ export default function NewtonSecondAnimation() {
               pixelLength={NEWTON_ARROW.vertFixedLen}
             />
             <text
-              x={cx}
-              y={cy - 52}
+              x={positionedLabels[0].x}
+              y={positionedLabels[0].y}
               fontSize={FONT.axisSize}
               fill={PHYSICS_COLORS.normalForce}
               fontWeight="bold"
@@ -267,45 +278,43 @@ export default function NewtonSecondAnimation() {
             )}
 
             {/* 6. 速度 v 矢量 (经典蓝，画在车顶上方) */}
-            <g transform={`translate(${carX}, ${carY - 15})`}>
-              <VectorArrow
-                origin={{ x: 0, y: 0 }}
-                vector={{ x: 1, y: 0 }}
-                type="velocity"
-                sceneScale={IDENTITY_SCENE_SCALE}
-                pixelLength={Math.max(15, v * NEWTON_ARROW.velScale)}
-              />
-              <text
-                x={Math.max(15, v * NEWTON_ARROW.velScale) + 8}
-                y={4}
-                fontSize={FONT.axisSize}
-                fill={PHYSICS_COLORS.velocity}
-                fontWeight="bold"
-              >
-                v={v.toFixed(2)} m/s
-              </text>
-            </g>
+            <VectorArrow
+              origin={{ x: cx, y: cy }}
+              vector={{ x: 1, y: 0 }}
+              type="velocity"
+              sceneScale={IDENTITY_SCENE_SCALE}
+              pixelLength={Math.max(15, v * NEWTON_ARROW.velScale)}
+            />
+            <text
+              x={positionedLabels[1].x}
+              y={positionedLabels[1].y}
+              fontSize={FONT.axisSize}
+              fill={PHYSICS_COLORS.velocity}
+              fontWeight="bold"
+            >
+              v={v.toFixed(2)} m/s
+            </text>
 
             {/* 7. 加速度 a 矢量 (警示红，画在速度上方) */}
             {a > 0.01 && (
-              <g transform={`translate(${carX}, ${carY - 32})`}>
+              <>
                 <VectorArrow
-                  origin={{ x: 0, y: 0 }}
+                  origin={{ x: cx, y: cy }}
                   vector={{ x: 1, y: 0 }}
                   type="acceleration"
                   sceneScale={IDENTITY_SCENE_SCALE}
-                pixelLength={Math.max(15, a * NEWTON_ARROW.accelScale)}
-              />
-              <text
-                x={Math.max(15, a * NEWTON_ARROW.accelScale) + 8}
-                  y={4}
+                  pixelLength={Math.max(15, a * NEWTON_ARROW.accelScale)}
+                />
+                <text
+                  x={positionedLabels[2].x}
+                  y={positionedLabels[2].y}
                   fontSize={FONT.axisSize}
                   fill={PHYSICS_COLORS.acceleration}
                   fontWeight="bold"
                 >
                   a={a.toFixed(2)} m/s²
                 </text>
-              </g>
+              </>
             )}
           </g>
         )}
