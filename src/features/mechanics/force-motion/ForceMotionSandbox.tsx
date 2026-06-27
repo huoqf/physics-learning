@@ -1,4 +1,4 @@
-﻿import { useMemo } from 'react'
+import { useMemo } from 'react'
 import { DASH, FONT, OPACITY, PHYSICS_COLORS, STROKE } from '@/theme/physics'
 import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
 import { useCanvasSize } from '@/utils/useCanvasSize'
@@ -628,23 +628,14 @@ export default function ForceMotionSandbox({ state, trajectory, domainTrajectory
 
         {/* 合外力矢量 F/分力/合力 （依据物理语义涂色） */}
         {state.mode !== 'balance' && state.mode !== 'terminal-variable-force' && (
-          <>
-            <VectorArrow
-              origin={{ x: view.body.cx, y: -view.body.cy }}
-              vector={{ x: view.forceVector.x, y: -view.forceVector.y }}
-              type="force"
-              color={forceArrowColor}
-              sceneScale={sceneScale}
-              pixelLength={Math.sqrt(view.forceVector.x ** 2 + view.forceVector.y ** 2)}
-            />
-            <text
-              x={view.body.cx + view.forceVector.x + FONT.small}
-              y={view.body.cy + view.forceVector.y}
-              fill={forceArrowColor}
-              fontSize={font(FONT.axis)}
-              fontWeight="bold"
-            >{forceLabel}</text>
-          </>
+          <VectorArrow
+            origin={{ x: view.body.cx, y: -view.body.cy }}
+            vector={{ x: view.forceVector.x, y: -view.forceVector.y }}
+            type="force"
+            color={forceArrowColor}
+            sceneScale={sceneScale}
+            pixelLength={Math.sqrt(view.forceVector.x ** 2 + view.forceVector.y ** 2)}
+          />
         )}
 
         {/* 模式 9 收尾变力的受力分解渲染 */}
@@ -711,27 +702,58 @@ export default function ForceMotionSandbox({ state, trajectory, domainTrajectory
           sceneScale={sceneScale}
           pixelLength={Math.sqrt(view.speedVector.x ** 2 + view.speedVector.y ** 2)}
         />
-        <text
-          x={view.body.cx + view.speedVector.x + FONT.small}
-          y={view.body.cy + view.speedVector.y}
-          fill={PHYSICS_COLORS.velocity}
-          fontSize={font(FONT.axis)}
-        >v</text>
+        {(() => {
+          const fontSize = font(FONT.axis)
+          const offset = fontSize * 1.5
+          const clampY = (y: number) => Math.max(fontSize, Math.min(height - fontSize, y))
 
-        {/* 加速度矢量 a — 红色 */}
-        <VectorArrow
-          origin={{ x: view.body.cx, y: -view.body.cy }}
-          vector={{ x: view.accelVector.x, y: -view.accelVector.y }}
-          type="acceleration"
-          sceneScale={sceneScale}
-          pixelLength={Math.sqrt(view.accelVector.x ** 2 + view.accelVector.y ** 2)}
-        />
-        <text
-          x={view.body.cx + view.accelVector.x + FONT.small}
-          y={view.body.cy + view.accelVector.y}
-          fill={PHYSICS_COLORS.acceleration}
-          fontSize={font(FONT.axis)}
-        >a</text>
+          const vLabelX = state.v < 0.1
+            ? view.body.cx + view.objectSize
+            : view.body.cx + view.speedVector.x + offset
+          const vLabelY = state.v < 0.1
+            ? view.body.cy
+            : view.body.cy + view.speedVector.y
+
+          const aLabelX = view.body.cx + view.accelVector.x + offset
+          const aLabelRawY = view.body.cy + view.accelVector.y
+          const aLabelY = Math.abs(aLabelRawY - vLabelY) < fontSize * 1.5
+            ? clampY(Math.max(aLabelRawY, vLabelY) + fontSize * 1.5)
+            : aLabelRawY
+
+          const forceLabelRawY = view.body.cy + view.forceVector.y
+          const tooCloseToV = Math.abs(forceLabelRawY - vLabelY) < fontSize * 1.5
+          const tooCloseToA = Math.abs(forceLabelRawY - aLabelY) < fontSize * 1.5
+          const forceLabelY = (tooCloseToV || tooCloseToA)
+            ? clampY(forceLabelRawY + fontSize * 1.5)
+            : forceLabelRawY
+
+          return (
+            <>
+              <text
+                x={vLabelX}
+                y={vLabelY}
+                fill={PHYSICS_COLORS.velocity}
+                fontSize={fontSize}
+              >v</text>
+
+              <text
+                x={aLabelX}
+                y={aLabelY}
+                fill={PHYSICS_COLORS.acceleration}
+                fontSize={fontSize}
+              >a</text>
+
+              {/* forceLabel 在 v/a 渲染之后再定位，但需要提前计算 y */}
+              <text
+                x={view.body.cx + view.forceVector.x + FONT.small}
+                y={forceLabelY}
+                fill={forceArrowColor}
+                fontSize={fontSize}
+                fontWeight="bold"
+              >{forceLabel}</text>
+            </>
+          )
+        })()}
       </svg>
     </div>
   )

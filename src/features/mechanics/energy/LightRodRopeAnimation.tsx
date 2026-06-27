@@ -290,23 +290,31 @@ export default function LightRodRopeAnimation() {
           {/* ── 左半部分：动画区 ── */}
           <g>
             {/* 能量条实时分配（左侧上方） */}
-            {(constraint === 1 || constraint === 2) && (
-              <foreignObject x={20} y={15} width={320} height={85}>
-                <EnergyBars
-                  items={[
-                    { key: 'EpA', label: 'Ep_A', value: state.EpA, color: ENERGY_COLORS.potentialGravity },
-                    { key: 'EkA', label: 'Ek_A', value: state.EkA, color: ENERGY_COLORS.kineticEnergy },
-                    { key: 'EpB', label: 'Ep_B', value: state.EpB, color: ENERGY_COLORS.potentialElastic },
-                    { key: 'EkB', label: 'Ek_B', value: state.EkB, color: ENERGY_COLORS.kineticEnergy },
-                    { key: 'Etot', label: 'E总', value: state.Etot, color: ENERGY_COLORS.mechanicalEnergy },
-                  ]}
-                  initialEtot={trajectory[0]?.Etot ?? 1.0}
-                  font={font}
-                  hasCollision={hasCollisionRecent}
-                  collisionKey="Etot"
-                />
-              </foreignObject>
-            )}
+            {(constraint === 1 || constraint === 2) && (() => {
+              const energyItems = [
+                { key: 'EpA', label: 'Ep_A', value: state.EpA, color: ENERGY_COLORS.potentialGravity },
+                { key: 'EkA', label: 'Ek_A', value: state.EkA, color: ENERGY_COLORS.kineticEnergy },
+                { key: 'EpB', label: 'Ep_B', value: state.EpB, color: ENERGY_COLORS.potentialElastic },
+                { key: 'EkB', label: 'Ek_B', value: state.EkB, color: ENERGY_COLORS.kineticEnergy },
+                { key: 'Etot', label: 'E总', value: state.Etot, color: ENERGY_COLORS.mechanicalEnergy },
+              ]
+              const minItemWidth = 58
+              const foWidth = Math.min(320, canvasSize.width * 0.45)
+              const needsCompact = foWidth < energyItems.length * minItemWidth || energyItems.length > 3
+              const foHeight = needsCompact ? 75 : 85
+              return (
+                <foreignObject x={20} y={15} width={foWidth} height={foHeight}>
+                  <EnergyBars
+                    items={energyItems}
+                    initialEtot={trajectory[0]?.Etot ?? 1.0}
+                    font={font}
+                    hasCollision={hasCollisionRecent}
+                    collisionKey="Etot"
+                    compact={needsCompact}
+                  />
+                </foreignObject>
+              )
+            })()}
 
             {/* 依据约束模式，动态渲染固定点或定滑轮 */}
             {constraint === 0 ? (

@@ -15,7 +15,7 @@ export interface EnergyBarsProps {
   items: EnergyBarItem[]
   /** 初始总能量参考值（绘制系统总能量虚线），可选 */
   initialEtot?: number
-  /** 面板标题，默认“系统机械能实时分配 (J)” */
+  /** 面板标题，默认"系统机械能实时分配 (J)" */
   title?: string
   /** 响应式字体缩放函数，可选 */
   font?: (size: number) => number
@@ -23,6 +23,8 @@ export interface EnergyBarsProps {
   hasCollision?: boolean
   /** 触发碰撞闪烁高亮的能量柱 key，可选 */
   collisionKey?: string
+  /** 紧凑模式：缩小字号、截短标签、缩减间距 */
+  compact?: boolean
 }
 
 /**
@@ -35,6 +37,7 @@ export const EnergyBars: FC<EnergyBarsProps> = ({
   font,
   hasCollision = false,
   collisionKey,
+  compact = false,
 }) => {
   const values = items.map((item) => item.value)
   const maxVal = Math.max(
@@ -48,24 +51,34 @@ export const EnergyBars: FC<EnergyBarsProps> = ({
   }
 
   const fSize = (s: number) => (font ? font(s) : s)
+  const titleFs = compact ? 9 : 10.5
+  const valueFs = compact ? 7 : 8
+  const labelFs = compact ? 7 : 8
+  const barHeight = compact ? 'h-10' : 'h-12'
+  const gapClass = compact ? 'gap-1' : 'gap-2'
+
+  const truncateLabel = (label: string) => {
+    if (!compact || label.length <= 3) return label
+    return label.slice(0, 2) + '…'
+  }
 
   return (
     <div className="flex flex-col p-2 bg-white rounded-lg border border-neutral-200/50 select-none w-full">
       {/* 头部标题与数值对齐 */}
       <div 
         className="font-bold text-neutral-700 mb-2 flex justify-between items-center px-0.5"
-        style={{ fontSize: fSize(10.5) }}
+        style={{ fontSize: fSize(titleFs) }}
       >
         <span className="tracking-wide">{title}</span>
         {initialEtot !== undefined && (
           <span className="text-neutral-400 font-medium font-mono" style={{ fontSize: fSize(9) }}>
-            初始: {initialEtot.toFixed(2)} J
+            初始: {compact ? initialEtot.toFixed(1) : initialEtot.toFixed(2)} J
           </span>
         )}
       </div>
 
       {/* 柱形主区域：基础高度提升至 48px，使柱子更加伸展可见 */}
-      <div className="relative h-14 flex items-end justify-between pt-4 px-1.5 border-b border-neutral-200/80 gap-2">
+      <div className={`relative ${barHeight} flex items-end justify-between pt-4 px-1.5 border-b border-neutral-200/80 ${gapClass}`}>
         {/* 系统总能量参考线：改用更细、更克制的淡灰线 */}
         {initialEtot !== undefined && (
           <div
@@ -111,12 +124,12 @@ export const EnergyBars: FC<EnergyBarsProps> = ({
                 <span 
                   className={`absolute -top-4.5 font-semibold font-mono w-full text-center truncate px-0.5 transition-colors duration-300`}
                   style={{ 
-                    fontSize: fSize(8),
+                    fontSize: fSize(valueFs),
                     color: isColliding ? '#EF4444' : (item.textColor || '#525252')
                   }}
                   title={item.value.toFixed(2)}
                 >
-                  {item.value.toFixed(2)}
+                  {compact ? item.value.toFixed(1) : item.value.toFixed(2)}
                 </span>
               </div>
               
@@ -125,10 +138,10 @@ export const EnergyBars: FC<EnergyBarsProps> = ({
                 className={`mt-1 font-bold truncate w-full text-center transition-colors duration-300 ${
                   isColliding ? 'text-red-500 font-extrabold' : 'text-neutral-500'
                 }`} 
-                style={{ fontSize: fSize(8) }}
+                style={{ fontSize: fSize(labelFs) }}
                 title={item.label}
               >
-                {item.label}
+                {truncateLabel(item.label)}
               </span>
             </div>
           )

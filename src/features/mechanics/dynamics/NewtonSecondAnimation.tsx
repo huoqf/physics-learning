@@ -179,27 +179,31 @@ export default function NewtonSecondAnimation() {
             </text>
 
             {/* 2. 摩擦力 f (当存在摩擦力时) */}
-            {f > 0.01 && (
-              <>
-                <VectorArrow
-                  origin={{ x: cx, y: cy }}
-                  vector={{ x: -1, y: 0 }}
-                  type="friction"
-sceneScale={IDENTITY_SCENE_SCALE}
-                  pixelLength={Math.max(15, f * NEWTON_ARROW.forceScale)}
-                />
-                <text
-                  x={cx - Math.max(15, f * NEWTON_ARROW.forceScale) - 8}
-                  y={cy + 4}
-                  fontSize={FONT.axisSize}
-                  fill={PHYSICS_COLORS.friction}
-                  fontWeight="bold"
-                  textAnchor="end"
-                >
-                  f={f.toFixed(1)}N
-                </text>
-              </>
-            )}
+            {f > 0.01 && (() => {
+              const shouldSeparateFrictionLabel = F_applied > 0.01
+              const fLabelY = shouldSeparateFrictionLabel ? cy + 4 + FONT.bodySize * 1.2 : cy + 4
+              return (
+                <>
+                  <VectorArrow
+                    origin={{ x: cx, y: cy }}
+                    vector={{ x: -1, y: 0 }}
+                    type="friction"
+                    sceneScale={IDENTITY_SCENE_SCALE}
+                    pixelLength={Math.max(15, f * NEWTON_ARROW.forceScale)}
+                  />
+                  <text
+                    x={cx - Math.max(15, f * NEWTON_ARROW.forceScale) - 8}
+                    y={fLabelY}
+                    fontSize={FONT.axisSize}
+                    fill={PHYSICS_COLORS.friction}
+                    fontWeight="bold"
+                    textAnchor="end"
+                  >
+                    f={f.toFixed(1)}N
+                  </text>
+                </>
+              )
+            })()}
 
             {/* 3. 重力 G = mg (向下，深绿) */}
             <VectorArrow

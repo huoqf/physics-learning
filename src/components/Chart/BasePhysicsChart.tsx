@@ -1,7 +1,7 @@
 import { useMemo, useCallback, type ReactNode } from 'react'
 import { ChartContext, type ChartContextValue } from './ChartContext'
 import { CHART_COLORS, CHART_LAYOUT, FONT, STROKE, DASH } from '@/theme/physics'
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, smartFormat } from '@/utils'
 
 function clamp(v: number, min: number, max: number) {
   return v < min ? min : v > max ? max : v
@@ -56,12 +56,12 @@ export interface BasePhysicsChartProps {
   gridCount?: { x?: number; y?: number }
   /**
    * X 轴刻度格式化函数。
-   * 不传则使用默认的 `v.toFixed(1)`。
+   * 不传则使用智能格式化（自动选择科学计数法或小数位）。
    */
   formatX?: (v: number) => string
   /**
    * Y 轴刻度格式化函数。
-   * 不传则使用默认的 `v.toFixed(1)`。
+   * 不传则使用智能格式化（自动选择科学计数法或小数位）。
    */
   formatY?: (v: number) => string
   /**
@@ -213,9 +213,32 @@ export function BasePhysicsChart({
     return { x: baseX, y: baseY }
   }, [gridCount, plotW, plotH, isMini, px])
 
-  const tickFormatX = formatX ?? ((v: number) => v.toFixed(1))
-  const tickFormatY = formatY ?? ((v: number) => v.toFixed(1))
-  const tickFormatY2 = formatY2 ?? ((v: number) => v.toFixed(1))
+  const tickFormatX = formatX ?? smartFormat
+  const tickFormatY = formatY ?? smartFormat
+  const tickFormatY2 = formatY2 ?? smartFormat
+
+  const effectiveGrid = useMemo(() => {
+    const fontSize = font(isMini ? FONT.small : FONT.axis)
+    let gx = adaptiveGrid.x
+    let gy = adaptiveGrid.y
+
+    const ySpacing = plotH / gy
+    const yMinRequired = fontSize * 1.6
+    if (ySpacing < yMinRequired) {
+      gy = Math.max(2, Math.floor(plotH / yMinRequired))
+    }
+
+    const maxLabelW = Array.from({ length: gx + 1 }, (_, i) => {
+      const val = xDomain[0] + (xRange * i) / gx
+      return tickFormatX(val).length * fontSize * 0.6
+    }).reduce((a, b) => Math.max(a, b), 0)
+    const xSpacing = plotW / gx
+    if (xSpacing < maxLabelW + 4) {
+      gx = Math.max(2, Math.floor(plotW / (maxLabelW + 4)))
+    }
+
+    return { x: gx, y: gy }
+  }, [adaptiveGrid, plotW, plotH, font, isMini, xDomain, xRange, tickFormatX])
 
   const ctx: ChartContextValue = useMemo(() => ({
     toSvgX, toSvgY, toSvgY2,
@@ -240,8 +263,8 @@ export function BasePhysicsChart({
       )}
 
       {/* Y 轴网格线 */}
-      {showGrid && Array.from({ length: adaptiveGrid.y + 1 }, (_, idx) => {
-        const gridY = margin.top + (plotH * idx) / adaptiveGrid.y
+      {showGrid && Array.from({ length: effectiveGrid.y + 1 }, (_, idx) => {
+        const gridY = margin.top + (plotH * idx) / effectiveGrid.y
         return (
           <line
             key={`grid-y-${idx}`}
@@ -255,8 +278,8 @@ export function BasePhysicsChart({
       })}
 
       {/* X 轴网格线 */}
-      {showGrid && Array.from({ length: adaptiveGrid.x + 1 }, (_, idx) => {
-        const gridX = margin.left + (plotW * idx) / adaptiveGrid.x
+      {showGrid && Array.from({ length: effectiveGrid.x + 1 }, (_, idx) => {
+        const gridX = margin.left + (plotW * idx) / effectiveGrid.x
         return (
           <line
             key={`grid-x-${idx}`}
@@ -293,8 +316,8 @@ export function BasePhysicsChart({
       )}
 
       {/* X 轴刻度 */}
-      {Array.from({ length: adaptiveGrid.x + 1 }, (_, i) => {
-        const val = xDomain[0] + (xRange * i) / adaptiveGrid.x
+      {Array.from({ length: effectiveGrid.x + 1 }, (_, i) => {
+        const val = xDomain[0] + (xRange * i) / effectiveGrid.x
         const x = toSvgX(val)
         return (
           <g key={`xval-${i}`}>
@@ -317,8 +340,8 @@ export function BasePhysicsChart({
       })}
 
       {/* Y 轴刻度 */}
-      {Array.from({ length: adaptiveGrid.y + 1 }, (_, i) => {
-        const val = yDomain[0] + (yRange * i) / adaptiveGrid.y
+      {Array.from({ length: effectiveGrid.y + 1 }, (_, i) => {
+        const val = yDomain[0] + (yRange * i) / effectiveGrid.y
         const y = toSvgY(val)
         return (
           <g key={`yval-${i}`}>
@@ -376,8 +399,8 @@ export function BasePhysicsChart({
       )}
 
       {/* 第二 Y 轴刻度 */}
-      {yDomain2 && Array.from({ length: adaptiveGrid.y + 1 }, (_, i) => {
-        const val = yDomain2[0] + (yRange2 * i) / adaptiveGrid.y
+      {yDomain2 && Array.from({ length: effectiveGrid.y + 1 }, (_, i) => {
+        const val = yDomain2[0] + (yRange2 * i) / effectiveGrid.y
         const y = toSvgY2 ? toSvgY2(val) : 0
         return (
           <g key={`y2val-${i}`}>
