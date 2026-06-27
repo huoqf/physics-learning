@@ -51,6 +51,15 @@
 | 动效 duration / easing | `import { duration, easing, transition } from '@/theme/motion'` |
 | 圆角 / 阴影 | `import { radius } from '@/theme/radius'` / `import { shadow, glowRing } from '@/theme/shadow'` |
 
+### 图表与布局工具
+
+| 需求 | 操作 |
+|------|------|
+| 图表坐标轴刻度自动格式化 | `BasePhysicsChart` 默认使用 `smartFormat`，无需手动传 `formatY`；需自定义时传 `formatY={(v) => ...}` |
+| 智能数字格式化（大数/小数自动切科学计数法） | `import { smartFormat } from '@/utils'` |
+| SVG 标签避让（多标签位置冲突） | `import { layoutLabels } from '@/utils'`，传入 `{ x, y, text, fontSize, priority }[]`，输出避让后坐标 |
+| 能量柱紧凑模式 | `EnergyBars` 组件 `compact` prop，自动缩小字号/截短标签/缩减间距 |
+
 > **import 路径规则**：从最具体的子模块入口引用（如 `@/theme/physics`、`@/theme/colors`、`@/theme/motion`）。
 > `@/theme` 统一入口仍可用，但子模块路径优先（语义更明确、tree-shaking 更友好）。
 
