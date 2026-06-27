@@ -1,4 +1,5 @@
 import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
+import { SVGSingleBar } from '@/components/Physics/SVGSingleBar'
 
 interface EnergyBarChartProps {
   mode: number
@@ -17,6 +18,11 @@ export function EnergyBarChart({
   state, deltaEp,
   font, smallFont,
 }: EnergyBarChartProps) {
+  const wBarX = chartLeft + chartWidth * 0.12
+  const wBarWidth = chartWidth * 0.16
+  const epBarX = chartLeft + chartWidth * 0.42
+  const epBarWidth = chartWidth * 0.16
+
   return (
     <g>
       <text x={chartLeft} y={barAreaTop + 10} fontSize={smallFont} fill={PHYSICS_COLORS.work} fontWeight="bold">
@@ -26,25 +32,33 @@ export function EnergyBarChart({
       <line x1={chartLeft + 10} y1={barBaseY} x2={chartLeft + chartWidth * 0.6} y2={barBaseY} stroke={CANVAS_COLORS.trackHistory} strokeWidth={0.8} />
 
       {/* W 柱 */}
-      <rect x={chartLeft + chartWidth * 0.12} y={barBaseY - barW_H} width={chartWidth * 0.16} height={Math.max(barW_H, 0.5)} fill={PHYSICS_COLORS.work} opacity={0.85} rx={1} />
-      <text x={chartLeft + chartWidth * 0.20} y={barBaseY - barW_H - 4} fontSize={font(8)} fill={PHYSICS_COLORS.work} textAnchor="middle" fontWeight="bold">
-        {state.W >= 0 ? '+' : ''}{state.W.toFixed(1)}J
-      </text>
-      <text x={chartLeft + chartWidth * 0.20} y={barBaseY + 12} fontSize={font(8)} fill={PHYSICS_COLORS.work} textAnchor="middle" fontWeight="semibold">
-        {mode === 0 ? 'W重' : 'W弹'}
-      </text>
+      <SVGSingleBar
+        x={wBarX}
+        baseY={barBaseY}
+        height={barW_H}
+        barWidth={wBarWidth}
+        color={PHYSICS_COLORS.work}
+        label={mode === 0 ? 'W重' : 'W弹'}
+        valueText={`${state.W >= 0 ? '+' : ''}${state.W.toFixed(1)}J`}
+        font={font}
+        showTrack={false}
+      />
 
       {/* = */}
       <text x={chartLeft + chartWidth * 0.35} y={barBaseY - maxBarH * 0.4} fontSize={font(14)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">=</text>
 
       {/* -ΔEp 柱 */}
-      <rect x={chartLeft + chartWidth * 0.42} y={barBaseY - barDeltaEp_H} width={chartWidth * 0.16} height={Math.max(barDeltaEp_H, 0.5)} fill={PHYSICS_COLORS.potentialEnergy} opacity={0.85} rx={1} />
-      <text x={chartLeft + chartWidth * 0.50} y={barBaseY - barDeltaEp_H - 4} fontSize={font(8)} fill={PHYSICS_COLORS.potentialEnergy} textAnchor="middle" fontWeight="bold">
-        {-deltaEp >= 0 ? '+' : ''}{(-deltaEp).toFixed(1)}J
-      </text>
-      <text x={chartLeft + chartWidth * 0.50} y={barBaseY + 12} fontSize={font(8)} fill={PHYSICS_COLORS.potentialEnergy} textAnchor="middle" fontWeight="semibold">
-        -ΔEp
-      </text>
+      <SVGSingleBar
+        x={epBarX}
+        baseY={barBaseY}
+        height={barDeltaEp_H}
+        barWidth={epBarWidth}
+        color={PHYSICS_COLORS.potentialEnergy}
+        label="-ΔEp"
+        valueText={`${-deltaEp >= 0 ? '+' : ''}${(-deltaEp).toFixed(1)}J`}
+        font={font}
+        showTrack={false}
+      />
     </g>
   )
 }

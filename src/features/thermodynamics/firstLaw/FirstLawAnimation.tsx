@@ -6,8 +6,8 @@ import { useAnimationFrame } from '@/utils/animation'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { THERMO_COLORS, THERMAL_COLORS } from '@/theme/physics'
 import { FIRST_LAW_COLORS } from '@/theme/physics'
-import { STROKE, FONT } from '@/theme/physics'
-import { colors } from '@/theme/colors'
+import { STROKE, FONT, CANVAS_COLORS } from '@/theme/physics'
+import { SVGSingleBar } from '@/components/Physics/SVGSingleBar'
 import { calculateInternalEnergy } from '@/physics/thermodynamics'
 import { deltaUtoDeltaT, temperatureToSpeedScale, internalEnergyToColor } from '@/physics/firstLaw'
 
@@ -378,7 +378,7 @@ export default function FirstLawAnimation() {
           y={chartY + 12}
           fontSize={font(11)}
           fontWeight="bold"
-          fill={colors.neutral[800]}
+          fill={CANVAS_COLORS.labelText}
           fontFamily={FONT.family}
         >
           实时能量收支天平
@@ -390,7 +390,7 @@ export default function FirstLawAnimation() {
           y1={zeroY}
           x2={plotX + plotW}
           y2={zeroY}
-          stroke={colors.neutral[400]}
+          stroke={CANVAS_COLORS.axis}
           strokeWidth={STROKE.reference}
           strokeDasharray="4 2"
         />
@@ -398,7 +398,7 @@ export default function FirstLawAnimation() {
           x={plotX - 6}
           y={zeroY + 3}
           fontSize={font(9)}
-          fill={colors.neutral[400]}
+          fill={CANVAS_COLORS.axis}
           textAnchor="end"
           fontFamily={FONT.family}
         >
@@ -408,50 +408,24 @@ export default function FirstLawAnimation() {
         {/* 柱体 */}
         {bars.map((bar, i) => {
           const cx = plotX + plotW * (0.18 + i * 0.32)
-          const barH = Math.abs(bar.value) / MAX_ABS_DU * maxBarH
-          const isPositive = bar.value >= 0
-          const barY = isPositive ? zeroY - barH : zeroY
+          const barH = (bar.value / MAX_ABS_DU) * maxBarH
           const displayVal = Math.abs(bar.value) > 1000
             ? (bar.value / 1000).toFixed(1) + 'k'
             : bar.value.toFixed(0)
 
           return (
-            <g key={bar.label}>
-              {/* 柱体 */}
-              <rect
-                x={cx - barWidth / 2}
-                y={barY}
-                width={barWidth}
-                height={Math.max(1, barH)}
-                fill={bar.color}
-                rx={3}
-                opacity={0.85}
-              />
-              {/* 数值标注 */}
-              <text
-                x={cx}
-                y={isPositive ? barY - 6 : barY + barH + 14}
-                fontSize={font(10)}
-                fill={bar.color}
-                textAnchor="middle"
-                fontWeight="bold"
-                fontFamily={FONT.family}
-              >
-                {displayVal} J
-              </text>
-              {/* 标签 */}
-              <text
-                x={cx}
-                y={plotY + plotH + 16}
-                fontSize={font(10)}
-                fill={colors.neutral[600]}
-                textAnchor="middle"
-                fontFamily={FONT.family}
-                fontWeight="bold"
-              >
-                {bar.label}
-              </text>
-            </g>
+            <SVGSingleBar
+              key={bar.label}
+              x={cx - barWidth / 2}
+              baseY={zeroY}
+              height={-barH}
+              barWidth={barWidth}
+              color={bar.color}
+              label={bar.label}
+              valueText={`${displayVal} J`}
+              font={font}
+              showTrack={false}
+            />
           )
         })}
 
@@ -460,7 +434,7 @@ export default function FirstLawAnimation() {
           x={plotX + plotW}
           y={chartY + 12}
           fontSize={font(9)}
-          fill={colors.neutral[500]}
+          fill={CANVAS_COLORS.labelTextLight}
           textAnchor="end"
           fontFamily={FONT.family}
         >

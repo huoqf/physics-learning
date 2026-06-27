@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
+import { SVGSingleBar } from '@/components/Physics/SVGSingleBar'
 
 const ENERGY_BAR_LAYOUT = {
   maxBarHeightRatio: 0.55,
@@ -83,42 +84,18 @@ export function WorkEnergyBar({ canvasSize, font, energyBars, maxWorkRef }: Work
           + i * (layout.barW + layout.barGap)
 
         return (
-          <g key={bar.label}>
-            {/* 柱体 */}
-            <rect
-              x={x}
-              y={layout.baseY - barH}
-              width={layout.barW}
-              height={Math.max(0, barH)}
-              fill={bar.color}
-              opacity={0.85}
-              rx={1}
-            />
-
-            {/* 数值 */}
-            <text
-              x={x + layout.barW / 2}
-              y={layout.baseY - barH - font(4)}
-              fontSize={font(8.5)}
-              fill={bar.color}
-              textAnchor="middle"
-              fontWeight="bold"
-            >
-              {bar.value.toFixed(1)}J
-            </text>
-
-            {/* 标签 */}
-            <text
-              x={x + layout.barW / 2}
-              y={layout.baseY + font(12)}
-              fontSize={font(9)}
-              fill={bar.color}
-              textAnchor="middle"
-              fontWeight="semibold"
-            >
-              {bar.label}
-            </text>
-          </g>
+          <SVGSingleBar
+            key={bar.label}
+            x={x}
+            baseY={layout.baseY}
+            height={barH}
+            barWidth={layout.barW}
+            color={bar.color}
+            label={bar.label}
+            valueText={`${bar.value.toFixed(1)}J`}
+            font={font}
+            showTrack={false}
+          />
         )
       })}
 
