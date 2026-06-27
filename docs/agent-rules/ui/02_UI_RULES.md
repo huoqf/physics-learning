@@ -264,6 +264,75 @@ Primary（primary-600）/ Secondary（white + primary边框）/ Ghost（transpar
 * **复用铁律**：开发新场景前必须先检查该目录。**禁止**在单个页面中重复手绘或重写已有的器材/实体（如小灯泡、小车等）。
 * **新增规范**：若需新增通用物理器材（如滑块等），应将其抽离为 `src/components/Physics/` 下的独立组件，并严格保证所有颜色来自 `SCENE_COLORS`。
 
+#### Physics — 物理场景渲染（`@/components/Physics`）
+
+| 组件 | 适用场景 |
+|------|---------|
+| `Ball` | 质点/小球（含速度拖尾、材质变体） |
+| `Block` | 滑块/木块（含摩擦面、标注） |
+| `PhysicsGround` | 地面/斜面/传送带（支持多种纹理和角度） |
+| `VectorArrow` | 力/速度/加速度等矢量箭头 |
+| `VectorDefs` | SVG `<defs>` 箭头 marker（与 VectorArrow 配套） |
+| `SportsCar` | 流线型运动小车 |
+| `Pulley` | 滑轮 |
+| `HandRule` | 左/右手定则手势示意 |
+| `SkeletalHand` | 骨骼手势（精细版左右手定则） |
+| `EnergyBars` | 能量柱状条（动能/势能/总能） |
+| `BarMagnet` | 条形磁铁（N/S 极） |
+| `MagneticPoles` | 磁极对场景 |
+| `ParametricMagneticField` | 参数化磁场可视化 |
+| `RotatingCoil` | 旋转线圈（交变电流） |
+| `PrimaryCoil` | 原线圈/互感线圈 |
+| `Solenoid` | 螺线管 |
+| `CoupledCoilField` | 互感线圈磁场 |
+| `ConductingRod` | 导体棒（电磁感应场景） |
+| `Rails` | 导轨（电磁感应/安培力场景） |
+| `CapacitorPlates` | 平行板电容器 |
+| `DCSource` | 直流电源（电池/恒压源） |
+| `Rheostat` | 滑动变阻器 |
+| `LightBulb` | 灯泡（含发光效果） |
+| `Galvanometer` | 电流计 |
+| `DialMeter` | 指针式表盘（电流/电压表） |
+| `ParticleEmitter` | 粒子发射器（带电粒子场景） |
+
+#### Chart — 物理图表（`@/components/Chart`）
+
+| 组件 | 适用场景 |
+|------|---------|
+| `BasePhysicsChart` | **所有新图表的原子容器**（双轴/网格/刻度/轴标签） |
+| `ChartCursor` | 图表游标（十字线 + 数值标签） |
+| `ChartArea` | 曲线下方面积填充（位移/功等积分语义） |
+| `ChartTangent` | 切线 + 切点（速度/斜率展示） |
+| `ChartSecant` | 割线（平均速度展示） |
+| `VelocityTimeChart` | 预制 v-t 图（含游标/面积/切线） |
+| `DisplacementTimeChart` | 预制 s-t 图 |
+| `AccelerationTimeChart` | 预制 a-t 图 |
+| `RelationChart` | 通用物理关系图（F-x、T²-a³ 等） |
+
+#### Layout — 布局（`@/components/Layout`）
+
+| 组件 | 适用场景 |
+|------|---------|
+| `ThreePanel` | 三栏主布局（左参数 / 中画布 / 右公式） |
+
+#### UI — UI 基础（`@/components/UI`）
+
+| 组件 | 适用场景 |
+|------|---------|
+| `AnimationControls` | 播放/暂停/重置控制条 |
+| `ParamControl` | 参数滑块控件（左屏参数区） |
+| `PhysicsPanel` | 右侧公式/信息面板容器 |
+| `Slider` | 通用滑条 |
+| `SegmentedControl` | 分段选择控件（模式切换） |
+| `ToggleSwitch` | 开关切换（显示矢量/网格等） |
+| `Button` | 通用按钮 |
+| `KatexFormula` | KaTeX 公式渲染 |
+| `MiniChart` | 小型内嵌图表（信息面板内） |
+| `Spring` | 弹簧 SVG 组件 |
+| `TipCard` | 提示卡片 |
+
+> **barrel import 规则**：所有组件从对应目录的 barrel 入口导入，禁止子路径导入（如 `@/components/Physics/Ball`）。
+
 ---
 
 ## 8. UI 专属禁止项

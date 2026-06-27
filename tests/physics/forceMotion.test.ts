@@ -56,6 +56,134 @@ describe('calculateForceMotionState', () => {
     expect(calculateForceMotionState({ ...base, chartType: 2 }, 2).chartValueX).toBeCloseTo(4.667, 3)
   })
 
+  it('平衡状态：F合=0，a=0，v恒定', () => {
+    const state = calculateForceMotionState({ mode: 0, chartType: 0, v0: 5, theta: 30, m: 2 }, 3)
+
+    expect(state.mode).toBe('balance')
+    expect(state.F).toBeCloseTo(0, 8)
+    expect(state.a).toBeCloseTo(0, 8)
+    expect(state.vx).toBeCloseTo(5 * Math.cos(Math.PI / 6), 8)
+    expect(state.vy).toBeCloseTo(5 * Math.sin(Math.PI / 6), 8)
+    expect(state.x).toBeCloseTo(state.vx * 3, 8)
+    expect(state.y).toBeCloseTo(state.vy * 3, 8)
+    expect(state.isTerminal).toBe(true)
+  })
+
+  it('匀减速直线：刹车陷阱，v=0后停止运动', () => {
+    const state = calculateForceMotionState({ mode: 2, chartType: 1, v0: 10, theta: 0, m: 2, env1: 10 }, 5)
+
+    expect(state.mode).toBe('uniform-decel-line')
+    expect(state.v).toBeCloseTo(0, 1)
+    expect(state.isTerminal).toBe(true)
+    expect(state.pauseReason).toBe('brake')
+  })
+
+  it('匀减速直线：未停止时速度线性减小', () => {
+    const state = calculateForceMotionState({ mode: 2, chartType: 1, v0: 10, theta: 0, m: 2, env1: 20 }, 0.5)
+
+    expect(state.mode).toBe('uniform-decel-line')
+    expect(state.v).toBeCloseTo(5, 8)
+    expect(state.isTerminal).toBe(false)
+  })
+
+  it('匀变速曲线（斜抛）：水平匀速，竖直受重力', () => {
+    const v0 = 20
+    const theta = 45
+    const g = 10
+    const m = 1
+    const t = 1
+
+    const state = calculateForceMotionState({ mode: 3, chartType: 0, v0, theta, m, env1: g }, t)
+
+    expect(state.mode).toBe('constant-angle-curve')
+    expect(state.vx).toBeCloseTo(v0 * Math.cos(Math.PI / 4), 8)
+    expect(state.ay).toBeCloseTo(-g, 8)
+    expect(state.Fy).toBeCloseTo(-m * g, 8)
+    expect(state.Fx).toBeCloseTo(0, 8)
+    expect(state.x).toBeCloseTo(v0 * Math.cos(Math.PI / 4) * t, 8)
+    expect(state.y).toBeCloseTo(v0 * Math.sin(Math.PI / 4) * t - 0.5 * g * t * t, 8)
+  })
+
+  it('类平抛运动：v0垂直于恒力方向，力有x分量时vx增大', () => {
+    const v0 = 10
+    const F = 20
+    const m = 2
+    const theta = 45
+    const t = 2
+
+    const state = calculateForceMotionState({ mode: 4, chartType: 0, v0, theta, m, env1: F }, t)
+
+    expect(state.mode).toBe('projectile-like')
+    const ax = (F * Math.cos(Math.PI / 4)) / m
+    const ay = (F * Math.sin(Math.PI / 4)) / m
+    expect(state.vx).toBeCloseTo(v0 + ax * t, 8)
+    expect(state.vy).toBeCloseTo(ay * t, 8)
+    expect(state.x).toBeCloseTo(v0 * t + 0.5 * ax * t * t, 8)
+    expect(state.y).toBeCloseTo(0.5 * ay * t * t, 8)
+  })
+
+  it('匀速圆周：v大小恒定，向心力 = mv²/R', () => {
+    const v0 = 10
+    const R = 5
+    const m = 2
+
+    const state = calculateForceMotionState({ mode: 5, chartType: 0, v0, theta: 0, m, env1: R }, 2)
+
+    expect(state.mode).toBe('uniform-circular')
+    expect(state.v).toBeCloseTo(v0, 8)
+    expect(state.F).toBeCloseTo(m * v0 * v0 / R, 8)
+    expect(state.work).toBeCloseTo(0, 8)
+  })
+
+  it('匀速圆周：轨迹为圆', () => {
+    const v0 = 6
+    const R = 3
+    const m = 1
+    const omega = v0 / R
+
+    const state = calculateForceMotionState({ mode: 5, chartType: 0, v0, theta: 0, m, env1: R }, Math.PI / (2 * omega))
+
+    expect(state.x).toBeCloseTo(0, 8)
+    expect(state.y).toBeCloseTo(R, 8)
+  })
+
+  it('变速圆周（绳模型）：能量守恒 v² = v0² - 2gΔy', () => {
+    const R = 2
+    const m = 1
+    const v0 = 5
+
+    const state = calculateForceMotionState({ mode: 6, chartType: 0, v0, theta: 0, m, env1: R, env2: 0 }, 1)
+
+    expect(state.mode).toBe('variable-circular')
+    const g = 9.8
+    const deltaH = state.y - (-R)
+    expect(0.5 * m * state.v * state.v + m * g * deltaH).toBeCloseTo(0.5 * m * v0 * v0, 0)
+  })
+
+  it('变速圆周（杆模型）：杆约束不松弛，能量守恒', () => {
+    const R = 2
+    const m = 1
+    const v0 = 10
+
+    const state = calculateForceMotionState({ mode: 6, chartType: 0, v0, theta: 0, m, env1: R, env2: 1 }, 0.5)
+
+    expect(state.mode).toBe('variable-circular')
+    expect(state.isTerminal).toBe(false)
+    const expectedKE = 0.5 * m * v0 * v0
+    const actualKE = 0.5 * m * state.v * state.v
+    expect(state.work).toBeCloseTo(actualKE - expectedKE, 0)
+  })
+
+  it('终端速度模式（power）：恒定功率启动，v逼近P/f', () => {
+    const params = { mode: 9, chartType: 1, v0: 0, theta: 0, m: 1000, env1: 60000, env2: 2000, env3: 0 }
+    const state = calculateForceMotionState(params, 200)
+
+    expect(state.mode).toBe('terminal-variable-force')
+    expect(state.terminalVelocity).toBeCloseTo(30, 8)
+    expect(state.v).toBeCloseTo(30, 1)
+    expect(Math.abs(state.a)).toBeLessThan(0.5)
+  })
+
   it('默认图表和采样结果应稳定', () => {
     expect(getForceMotionDefaultChartType(1)).toBe(0)
     expect(getForceMotionDefaultChartType(2)).toBe(0)

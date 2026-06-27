@@ -71,17 +71,19 @@ function persistDebounced(records: WrongRecord[]): void {
   }, 500)
 }
 
-/** 页面关闭前刷出待写入的防抖队列 */
-if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', () => {
+/** 页面关闭前刷出待写入的防抖队列，返回清理函数 */
+export function registerBeforeUnload(): () => void {
+  if (typeof window === 'undefined') return () => {}
+  const handler = () => {
     if (persistTimer !== null) {
       clearTimeout(persistTimer)
       persistTimer = null
-      // 用当前 store 中的最新 records 同步写入
       const latest = useWrongStore.getState().records
       persist(latest)
     }
-  })
+  }
+  window.addEventListener('beforeunload', handler)
+  return () => window.removeEventListener('beforeunload', handler)
 }
 
 export const useWrongStore = create<WrongState>((set, get) => ({

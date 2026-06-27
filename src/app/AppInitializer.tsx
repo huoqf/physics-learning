@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useWrongStore } from '@/stores/useWrongStore'
+import { useWrongStore, registerBeforeUnload } from '@/stores/useWrongStore'
 import { usePracticeStore } from '@/stores/usePracticeStore'
 
 /**
@@ -12,10 +12,16 @@ export function AppInitializer({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
+    const cleanup = registerBeforeUnload()
+
     Promise.all([
       useWrongStore.getState().hydrate(),
       usePracticeStore.getState().hydrate(),
-    ]).then(() => setReady(true))
+    ])
+      .catch((err) => console.error('[AppInitializer] 水合异常:', err))
+      .finally(() => setReady(true))
+
+    return cleanup
   }, [])
 
   if (!ready) {

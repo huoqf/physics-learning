@@ -1,94 +1,4 @@
-/**
- * src/physics/lightRodRope.ts
- * 轻杆/绳连接体物理计算模块 — 包含刚性约束与柔性绳拓扑的轨迹积分
- */
-
-export interface LRRModelState {
-  /** 时间 (s) */
-  t: number
-  /** 约束类型: 0=刚性轻杆, 1=柔性轻绳 */
-  mode: number
-  /** A球角位移 (rad)，以水平向右为 0，顺时针向下为正 */
-  thetaA: number
-  /** B球角位移 (rad)，以水平向右为 0，顺时针向下为正 */
-  thetaB: number
-  /** A球角速度 (rad/s) */
-  wA: number
-  /** B球角速度 (rad/s) */
-  wB: number
-  /** A球线速度大小 (m/s) */
-  vA: number
-  /** B球线速度大小 (m/s) */
-  vB: number
-  /** A球角加速度 (rad/s²) */
-  alphaA: number
-  /** B球角加速度 (rad/s²) */
-  alphaB: number
-  /** A球重力势能 (J)，以最低点(theta=pi/2)为 0 势能面 */
-  EpA: number
-  /** B球重力势能 (J)，以最低点(theta=pi/2)为 0 势能面 */
-  EpB: number
-  /** A球动能 (J) */
-  EkA: number
-  /** B球动能 (J) */
-  EkB: number
-  /** A球总机械能 (J) */
-  EA: number
-  /** B球总机械能 (J) */
-  EB: number
-  /** 系统总机械能 (J) */
-  Etot: number
-  /** 杆/绳对 A球的作用力矢量 (N)，物理坐标 x->, y-向上 */
-  F_A: { x: number; y: number }
-  /** 杆/绳对 B球的作用力矢量 (N) */
-  F_B: { x: number; y: number }
-  /** 杆/绳对 A球的径向作用力矢量 (N) */
-  F_A_radial?: { x: number; y: number }
-  /** 杆/绳对 A球的切向作用力矢量 (N) */
-  F_A_tangential?: { x: number; y: number }
-  /** 杆/绳对 B球的径向作用力矢量 (N) */
-  F_B_radial?: { x: number; y: number }
-  /** 杆/绳对 B球的切向作用力矢量 (N) */
-  F_B_tangential?: { x: number; y: number }
-  /** 能量传输功率 (W) (从A向B为正，柔性绳下为0) */
-  powerB: number
-  /** 杆对 A球做功功率 (W) */
-  powerA: number
-
-  // 新增字段
-  /** A球相对挂点的直角坐标 X (m) */
-  x_A_rel: number
-  /** A球相对挂点的直角坐标 Y (m，向下为正) */
-  y_A_rel: number
-  /** B球相对挂点的直角坐标 X (m) */
-  x_B_rel: number
-  /** B球相对挂点的直角坐标 Y (m，向下为正) */
-  y_B_rel: number
-  /** A球绳子是否松弛 */
-  isSlackA: boolean
-  /** B球绳子是否松弛 */
-  isSlackB: boolean
-  /** A球绳子拉力大小 (N) */
-  T_A: number
-  /** B球绳子拉力大小 (N) */
-  T_B: number
-  /** A球在该时间步触发的事件 */
-  eventA?: 'slack' | 'tension' | null
-  /** B球在该时间步触发的事件 */
-  eventB?: 'slack' | 'tension' | null
-  /** 径向速度 (m/s) (代表绳的伸缩速度) */
-  vr: number
-  /** 运动阶段结束原因 */
-  stopReason?: 'reach_bottom' | 'slack' | null
-  /** A球直角物理速度 x (m/s) */
-  vAx: number
-  /** A球直角物理速度 y (m/s) */
-  vAy: number
-  /** B球直角物理速度 x (m/s) */
-  vBx: number
-  /** B球直角物理速度 y (m/s) */
-  vBy: number
-}
+import type { LRRModelState } from './types'
 
 /**
  * 预计算双球连接体系统的运动轨迹（数值积分）。
@@ -213,27 +123,21 @@ export function precomputeLightRodRopeTrajectory(
       alphaA = (2 * (m1 + 2 * m2) * g * Math.cos(theta)) / ((m1 + 4 * m2) * L)
       alphaB = alphaA
 
-      // 两球的物理高度（向上为正，最低点为负。为了势能为正，以最低点为零：hA = L/2 * (1 - sin(theta))）
-      // 当theta = pi/2 (最低点)时，sin(theta) = 1 => Ep = 0
       epA = m1 * g * (L / 2) * (1 - Math.sin(theta))
       epB = m2 * g * L * (1 - Math.sin(theta))
 
-      // 速度大小
       const vA_val = (L / 2) * w
       const vB_val = L * w
 
       ekA = 0.5 * m1 * vA_val * vA_val
       ekB = 0.5 * m2 * vB_val * vB_val
 
-      // 杆对 B 的受力
       const F_Br = m2 * g * Math.sin(theta) + m2 * L * w * w
       const F_Bt = (m2 * g * Math.cos(theta) * m1) / (m1 + 4 * m2)
 
-      // 杆对 A 的受力
       const F_Ar = m1 * g * Math.sin(theta) + m1 * (L / 2) * w * w
       const F_At = (-m1 * g * Math.cos(theta) * 2 * m2) / (m1 + 4 * m2)
 
-      // 转换成 Cartesian 坐标系 (物理坐标系：x向右, y向上)
       F_Bx = -F_Br * Math.cos(theta) - F_Bt * Math.sin(theta)
       F_By = F_Br * Math.sin(theta) - F_Bt * Math.cos(theta)
 
@@ -246,7 +150,6 @@ export function precomputeLightRodRopeTrajectory(
       F_A_radial = { x: -F_Ar * Math.cos(theta), y: F_Ar * Math.sin(theta) }
       F_A_tangential = { x: -F_At * Math.sin(theta), y: -F_At * Math.cos(theta) }
 
-      // 能量传输功率 P_B = F_Bt * vB_val = F_Bt * L * w
       powerB = F_Bt * L * w
       powerA = -powerB
 
@@ -260,7 +163,6 @@ export function precomputeLightRodRopeTrajectory(
       ekA = 0.5 * m1 * v_r * v_r
       ekB = 0.5 * m2 * (v_r * v_r + r_B * wB * r_B * wB)
 
-      // 用当前的实际状态计算绳张力 T
       const numerator = g * (1 + Math.sin(thetaB)) + r_B * wB * wB
       const denominator = 1.0 / m1 + 1.0 / m2
       const T = numerator / denominator
@@ -269,18 +171,14 @@ export function precomputeLightRodRopeTrajectory(
       T_A = T_val
       T_B = T_val
 
-      // A球拉力矢量 (物理坐标 x->, y-向上为正)
-      // A球只在竖直方向移动，拉力竖直向上，即 F_A = (0, T_val)
       F_Ax = 0.0
       F_Ay = T_val
       F_A_radial = { x: 0.0, y: T_val }
 
-      // B球拉力矢量指向滑轮 (即 -cos(thetaB), sin(thetaB))
       F_Bx = -T_val * Math.cos(thetaB)
       F_By = T_val * Math.sin(thetaB)
       F_B_radial = { x: F_Bx, y: F_By }
 
-      // 绳拉力做功的瞬时功率 P = F * v
       powerA = -T_val * v_r
       powerB = T_val * v_r
     } else {
@@ -398,7 +296,6 @@ export function precomputeLightRodRopeTrajectory(
         thetaB = thetaA
         wB = wA
 
-        // 更新直角物理坐标
         x_A = R_A0 * Math.cos(thetaA)
         y_A = R_A0 * Math.sin(thetaA)
         vAx = -R_A0 * wA * Math.sin(thetaA)
@@ -451,7 +348,6 @@ export function precomputeLightRodRopeTrajectory(
         }
         r_B = L_rope - r_A
 
-        // 更新直角物理坐标与速度
         x_A = 0.0
         y_A = r_A
         vAx = 0.0
@@ -494,7 +390,6 @@ export function precomputeLightRodRopeTrajectory(
           const ny = yA_pred / d_A_pred
           const v_radial = vAx_pred * nx + vAy_pred * ny
           if (v_radial > 0) {
-            // 完全非弹性碰撞，消去向外分量
             const vAx_corr = vAx_pred - v_radial * nx
             const vAy_corr = vAy_pred - v_radial * ny
             T_impact_OA = (m1 * v_radial) / subDt
@@ -516,7 +411,6 @@ export function precomputeLightRodRopeTrajectory(
           const vB_para = vBx_pred * nx + vBy_pred * ny
           const v_rel = vB_para - vA_para
           if (v_rel > 0) {
-            // 同化沿绳速度
             const v_para_new = (m1 * vA_para + m2 * vB_para) / (m1 + m2)
             const vAx_corr = vAx_pred + (v_para_new - vA_para) * nx
             const vAy_corr = vAy_pred + (v_para_new - vA_para) * ny
@@ -539,14 +433,12 @@ export function precomputeLightRodRopeTrajectory(
         let yB_pbd = yB_pred
 
         for (let iter = 0; iter < 5; iter++) {
-          // OA 绳约束
           const len_OA = Math.sqrt(xA_pbd * xA_pbd + yA_pbd * yA_pbd)
           if (len_OA > R_A) {
             xA_pbd = R_A * (xA_pbd / len_OA)
             yA_pbd = R_A * (yA_pbd / len_OA)
           }
 
-          // AB 绳约束
           const dx = xB_pbd - xA_pbd
           const dy = yB_pbd - yA_pbd
           const len_AB = Math.sqrt(dx * dx + dy * dy)
@@ -692,104 +584,4 @@ export function precomputeLightRodRopeTrajectory(
   }
 
   return points
-}
-
-/**
- * 线性插值器取得指定时刻的状态。
- *
- * @param points - 预计算的轨迹点数组（按时间升序）
- * @param t - 目标时间 (s)
- * @returns 该时刻的插值状态，包含角度、角速度、能量、作用力等
- */
-export function getLRRStateAtTime(
-  points: LRRModelState[],
-  t: number
-): LRRModelState {
-  if (points.length === 0) {
-    return {
-      t: 0, mode: 0, thetaA: 0, thetaB: 0, wA: 0, wB: 0, vA: 0, vB: 0,
-      alphaA: 0, alphaB: 0, EpA: 0, EpB: 0, EkA: 0, EkB: 0, EA: 0, EB: 0, Etot: 0,
-      F_A: { x: 0, y: 0 }, F_B: { x: 0, y: 0 }, powerB: 0, powerA: 0,
-      x_A_rel: 0, y_A_rel: 0, x_B_rel: 0, y_B_rel: 0,
-      isSlackA: false, isSlackB: false, T_A: 0, T_B: 0,
-      vr: 0.0, stopReason: null,
-      vAx: 0, vAy: 0, vBx: 0, vBy: 0
-    }
-  }
-  if (t <= points[0].t) return { ...points[0] }
-  if (t >= points[points.length - 1].t) return { ...points[points.length - 1] }
-
-  let lo = 0
-  let hi = points.length - 1
-  while (lo < hi - 1) {
-    const mid = (lo + hi) >> 1
-    if (points[mid].t <= t) lo = mid
-    else hi = mid
-  }
-
-  const p0 = points[lo]
-  const p1 = points[hi]
-  const ratio = (t - p0.t) / (p1.t - p0.t)
-
-  return {
-    t,
-    mode: p0.mode,
-    thetaA: p0.thetaA + (p1.thetaA - p0.thetaA) * ratio,
-    thetaB: p0.thetaB + (p1.thetaB - p0.thetaB) * ratio,
-    wA: p0.wA + (p1.wA - p0.wA) * ratio,
-    wB: p0.wB + (p1.wB - p0.wB) * ratio,
-    vA: p0.vA + (p1.vA - p0.vA) * ratio,
-    vB: p0.vB + (p1.vB - p0.vB) * ratio,
-    alphaA: p0.alphaA + (p1.alphaA - p0.alphaA) * ratio,
-    alphaB: p0.alphaB + (p1.alphaB - p0.alphaB) * ratio,
-    EpA: p0.EpA + (p1.EpA - p0.EpA) * ratio,
-    EpB: p0.EpB + (p1.EpB - p0.EpB) * ratio,
-    EkA: p0.EkA + (p1.EkA - p0.EkA) * ratio,
-    EkB: p0.EkB + (p1.EkB - p0.EkB) * ratio,
-    EA: p0.EA + (p1.EA - p0.EA) * ratio,
-    EB: p0.EB + (p1.EB - p0.EB) * ratio,
-    Etot: p0.Etot + (p1.Etot - p0.Etot) * ratio,
-    F_A: {
-      x: p0.F_A.x + (p1.F_A.x - p0.F_A.x) * ratio,
-      y: p0.F_A.y + (p1.F_A.y - p0.F_A.y) * ratio,
-    },
-    F_B: {
-      x: p0.F_B.x + (p1.F_B.x - p0.F_B.x) * ratio,
-      y: p0.F_B.y + (p1.F_B.y - p0.F_B.y) * ratio,
-    },
-    F_A_radial: {
-      x: (p0.F_A_radial?.x ?? 0) + ((p1.F_A_radial?.x ?? 0) - (p0.F_A_radial?.x ?? 0)) * ratio,
-      y: (p0.F_A_radial?.y ?? 0) + ((p1.F_A_radial?.y ?? 0) - (p0.F_A_radial?.y ?? 0)) * ratio,
-    },
-    F_A_tangential: {
-      x: (p0.F_A_tangential?.x ?? 0) + ((p1.F_A_tangential?.x ?? 0) - (p0.F_A_tangential?.x ?? 0)) * ratio,
-      y: (p0.F_A_tangential?.y ?? 0) + ((p1.F_A_tangential?.y ?? 0) - (p0.F_A_tangential?.y ?? 0)) * ratio,
-    },
-    F_B_radial: {
-      x: (p0.F_B_radial?.x ?? 0) + ((p1.F_B_radial?.x ?? 0) - (p0.F_B_radial?.x ?? 0)) * ratio,
-      y: (p0.F_B_radial?.y ?? 0) + ((p1.F_B_radial?.y ?? 0) - (p0.F_B_radial?.y ?? 0)) * ratio,
-    },
-    F_B_tangential: {
-      x: (p0.F_B_tangential?.x ?? 0) + ((p1.F_B_tangential?.x ?? 0) - (p0.F_B_tangential?.x ?? 0)) * ratio,
-      y: (p0.F_B_tangential?.y ?? 0) + ((p1.F_B_tangential?.y ?? 0) - (p0.F_B_tangential?.y ?? 0)) * ratio,
-    },
-    powerB: p0.powerB + (p1.powerB - p0.powerB) * ratio,
-    powerA: p0.powerA + (p1.powerA - p0.powerA) * ratio,
-    x_A_rel: p0.x_A_rel + (p1.x_A_rel - p0.x_A_rel) * ratio,
-    y_A_rel: p0.y_A_rel + (p1.y_A_rel - p0.y_A_rel) * ratio,
-    x_B_rel: p0.x_B_rel + (p1.x_B_rel - p0.x_B_rel) * ratio,
-    y_B_rel: p0.y_B_rel + (p1.y_B_rel - p0.y_B_rel) * ratio,
-    isSlackA: ratio < 0.5 ? p0.isSlackA : p1.isSlackA,
-    isSlackB: ratio < 0.5 ? p0.isSlackB : p1.isSlackB,
-    T_A: p0.T_A + (p1.T_A - p0.T_A) * ratio,
-    T_B: p0.T_B + (p1.T_B - p0.T_B) * ratio,
-    eventA: p0.eventA || p1.eventA,
-    eventB: p0.eventB || p1.eventB,
-    vr: p0.vr + (p1.vr - p0.vr) * ratio,
-    stopReason: p1.stopReason || p0.stopReason,
-    vAx: p0.vAx + (p1.vAx - p0.vAx) * ratio,
-    vAy: p0.vAy + (p1.vAy - p0.vAy) * ratio,
-    vBx: p0.vBx + (p1.vBx - p0.vBx) * ratio,
-    vBy: p0.vBy + (p1.vBy - p0.vBy) * ratio
-  }
 }

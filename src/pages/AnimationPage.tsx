@@ -48,6 +48,21 @@ function AnimationCenter({
   const showCenterExtraInBasic = CenterExtraComponent && !centerExtraModeKey
   const maxTime = config.maxTime ?? 30
 
+  const controlBar = (wrapperClassName: string) => (
+    <div className={wrapperClassName}>
+      <AnimationControls
+        isPlaying={isPlaying}
+        speed={speed}
+        time={time}
+        maxTime={maxTime}
+        onPlayPause={() => setIsPlaying(!isPlaying)}
+        onReset={handleReset}
+        onSpeedChange={setSpeed}
+        onTimeChange={setTime}
+      />
+    </div>
+  )
+
   if (isDiscoveryMode && config.DiscoveryComponent) {
     return (
       <div className="w-full h-full bg-white rounded-xl shadow-md overflow-hidden flex flex-col">
@@ -60,18 +75,7 @@ function AnimationCenter({
             </Suspense>
           </ErrorBoundary>
         </div>
-        <div className="px-4 pb-4 shrink-0 border-t border-neutral-100">
-          <AnimationControls
-            isPlaying={isPlaying}
-            speed={speed}
-            time={time}
-            maxTime={maxTime}
-            onPlayPause={() => setIsPlaying(!isPlaying)}
-            onReset={handleReset}
-            onSpeedChange={setSpeed}
-            onTimeChange={setTime}
-          />
-        </div>
+        {controlBar('px-4 pb-4 shrink-0 border-t border-neutral-100')}
       </div>
     )
   }
@@ -86,6 +90,8 @@ function AnimationCenter({
       </ErrorBoundary>
     )
   }
+
+  const standardControlBar = controlBar('px-2 pb-2 pt-1 shrink-0')
 
   return (
     <div className="flex flex-col h-full">
@@ -116,18 +122,7 @@ function AnimationCenter({
                 </Suspense>
               </ErrorBoundary>
             </div>
-            <div className="px-2 pb-2 pt-1 shrink-0">
-              <AnimationControls
-                isPlaying={isPlaying}
-                speed={speed}
-                time={time}
-                maxTime={maxTime}
-                onPlayPause={() => setIsPlaying(!isPlaying)}
-                onReset={handleReset}
-                onSpeedChange={setSpeed}
-                onTimeChange={setTime}
-              />
-            </div>
+            {standardControlBar}
           </div>
         </>
       ) : (
@@ -149,18 +144,7 @@ function AnimationCenter({
               </Suspense>
             </ErrorBoundary>
           </div>
-          <div className="px-2 pb-2 pt-1 shrink-0">
-            <AnimationControls
-              isPlaying={isPlaying}
-              speed={speed}
-              time={time}
-              maxTime={maxTime}
-              onPlayPause={() => setIsPlaying(!isPlaying)}
-              onReset={handleReset}
-              onSpeedChange={setSpeed}
-              onTimeChange={setTime}
-            />
-          </div>
+          {standardControlBar}
         </>
       )}
     </div>
