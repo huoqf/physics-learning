@@ -2,7 +2,7 @@ import { create } from 'zustand'
 
 interface KnowledgeState {
   currentNode: string | null
-  expandedNodes: Set<string>
+  expandedNodes: string[]
   history: string[]
   setCurrentNode: (nodeId: string | null) => void
   toggleNode: (nodeId: string) => void
@@ -14,39 +14,31 @@ interface KnowledgeState {
 
 export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
   currentNode: null,
-  expandedNodes: new Set(),
+  expandedNodes: [],
   history: [],
   setCurrentNode: (nodeId) => {
     const state = get()
-    if (state.currentNode) {
-      set({ history: [...state.history, state.currentNode] })
-    }
-    set({ currentNode: nodeId })
-    if (nodeId) {
-      set((state) => ({
-        expandedNodes: new Set(state.expandedNodes).add(nodeId)
-      }))
-    }
+    const history = state.currentNode
+      ? [...state.history, state.currentNode]
+      : state.history
+    const expandedNodes = nodeId && !state.expandedNodes.includes(nodeId)
+      ? [...state.expandedNodes, nodeId]
+      : state.expandedNodes
+    set({ history, currentNode: nodeId, expandedNodes })
   },
-  toggleNode: (nodeId) => set((state) => {
-    const newExpanded = new Set(state.expandedNodes)
-    if (newExpanded.has(nodeId)) {
-      newExpanded.delete(nodeId)
-    } else {
-      newExpanded.add(nodeId)
-    }
-    return { expandedNodes: newExpanded }
-  }),
-  expandNode: (nodeId) => set((state) => {
-    const newExpanded = new Set(state.expandedNodes)
-    newExpanded.add(nodeId)
-    return { expandedNodes: newExpanded }
-  }),
-  collapseNode: (nodeId) => set((state) => {
-    const newExpanded = new Set(state.expandedNodes)
-    newExpanded.delete(nodeId)
-    return { expandedNodes: newExpanded }
-  }),
+  toggleNode: (nodeId) => set((state) => ({
+    expandedNodes: state.expandedNodes.includes(nodeId)
+      ? state.expandedNodes.filter((id) => id !== nodeId)
+      : [...state.expandedNodes, nodeId]
+  })),
+  expandNode: (nodeId) => set((state) => ({
+    expandedNodes: state.expandedNodes.includes(nodeId)
+      ? state.expandedNodes
+      : [...state.expandedNodes, nodeId]
+  })),
+  collapseNode: (nodeId) => set((state) => ({
+    expandedNodes: state.expandedNodes.filter((id) => id !== nodeId)
+  })),
   goBack: () => {
     const state = get()
     if (state.history.length > 0) {
@@ -60,7 +52,7 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => ({
   },
   reset: () => set({
     currentNode: null,
-    expandedNodes: new Set(),
+    expandedNodes: [],
     history: []
   })
 }))

@@ -1,6 +1,6 @@
 # 延后处理待办事项
 
-> 最后更新：2026-06-27
+> 最后更新：2026-06-27（2026-06-27 追加：代码质量审查 P0-P3 条目）
 
 ---
 
@@ -45,3 +45,65 @@
 ### 进度
 
 - ✅ 44/44 Animation 组件已完成 useViewport 迁移（含 Transformer.tsx、ReflectionAnimation、ThinLensAnimation）
+
+---
+
+## 四、代码质量审查 — P0 确定性问题（2026-06-27）
+
+> 来源：代码质量分析报告。以下为有实际 bug 或确定性性能问题的条目，建议本周内修复。
+
+### 4-1  `useKnowledgeStore` — `Set` 序列化风险
+
+- **文件**：`src/stores/useKnowledgeStore.ts`
+- **问题**：`expandedNodes: new Set<string>()` 在 `JSON.stringify` 后变为 `{}`，若未来对该 store 加 `persist` 中间件，数据将静默丢失。
+- **修复**：将 `Set` 改为 `string[]`，读取时按需 `new Set(arr)`，写回时 `Array.from(set)`。
+- **状态**：✅ 已完成（2026-06-27）
+
+### 4-2  `useKnowledgeStore.setCurrentNode` — 连续三次 `set` 调用
+
+- **文件**：`src/stores/useKnowledgeStore.ts` L19-L29
+- **问题**：同一导航动作触发三次 Zustand 订阅者通知，导致不必要的三次重渲染。
+- **修复**：合并为一次 `set((state) => ({ history, currentNode, expandedNodes }))` 原子更新。
+- **状态**：✅ 已完成（2026-06-27），与 4-1 同步修复
+
+### 4-3  `AnimationPage.AnimationCenter` — `maxTime` 忽略 `config.maxTime` 配置
+
+- **文件**：`src/pages/AnimationPage.tsx` L49
+- **问题**：`AnimationCenter` 内 `const maxTime = 30` 写死，永远不读取 `config.maxTime`；而 `useAnimationLifecycle` 已正确读取 `config?.maxTime ?? 30`。对于注册表中声明了自定义时长的动画，进度条范围将显示错误。
+- **修复**：改为 `const maxTime = config.maxTime ?? 30`，与 `useAnimationLifecycle` 保持一致。
+- **状态**：✅ 已完成（2026-06-27）
+
+---
+
+## 五、代码质量审查 — P1 可维护性问题（2026-06-27）
+
+> 不会立即 crash，修复成本极低，建议同步处理。
+
+### 5-1  `storage.ts` — 内部函数与公开方法同名
+
+- **文件**：`src/utils/storage.ts` L17 & L62
+- **问题**：模块内部 `async function getDB()` 返回 DB 实例；`storage.getDB<T>(key)` 返回数据。同名不同签名，搜索/跳转易混淆。
+- **修复**：内部函数改名为 `getOrOpenDB()`。
+- **状态**：⬜ 待处理
+
+### 5-2  `useProgressStore.reset` — 冗余状态覆盖
+
+- **文件**：`src/stores/useProgressStore.ts` L75-L80
+- **问题**：`...initialState` 之后又手动覆盖 `viewedAnimations: []` 和 `masteredKnowledge: []`，这两个字段在 `initialState` 中已是空数组，属无效重复代码。
+- **修复**：`reset: () => set({ ...initialState })`
+- **状态**：⬜ 待处理
+
+---
+
+## 六、代码质量审查 — P2/P3 预防性优化（2026-06-27）
+
+> 以下条目需结合具体场景判断是否处理，不强制。
+
+| # | 条目 | 优先级 | 前提条件 | 状态 |
+|---|---|:---:|---|---|
+| 6-1 | `AnimationCenter` 多次独立 store 订阅合并（`useShallow` + `getState` 分离） | P2 | 结合实际渲染频率验证是否有明显开销 | ⬜ |
+| 6-2 | `sidebarExtraProps` / `handleReset` memo 化 | P2 | 仅当 `SidebarExtra`/`AnimationControls` 有 `React.memo` 包装时才有收益 | ⬜ |
+| 6-3 | `WrongPage.renderCard` 提取为 `React.memo` 组件 | P2 | 当 `WrongCard` 渲染开销增大时处理，当前为风格建议 | ⬜ |
+| 6-4 | `src/physics/` 纯函数单元测试补充 | P3 | 优先覆盖 `dynamics.ts`、`electrostatics.ts`、`kinematics/` | ⬜ |
+| 6-5 | `dynamics.ts` 拆分（31KB，1153行） | P3 | 参考 `kinematics/` 拆分模式，按子主题建子目录 | ⬜ |
+| 6-6 | `animationRegistry.ts` 注册表 lazy 加载 | P3 | 需先用 bundle 分析工具确认实际包体积影响再决策 | ⬜ |

@@ -46,7 +46,7 @@ function AnimationCenter({
   const centerExtraModeKey = config.centerExtraMode
   const isCenterExtraFull = centerExtraModeKey != null && params[centerExtraModeKey] === 1
   const showCenterExtraInBasic = CenterExtraComponent && !centerExtraModeKey
-  const maxTime = 30
+  const maxTime = config.maxTime ?? 30
 
   if (isDiscoveryMode && config.DiscoveryComponent) {
     return (
