@@ -125,27 +125,15 @@ export function precomputeConstantKETrajectory(
 /**
  * 圆弧曲面轨道下滑（进阶模式，变力做功）— 预计算完整轨迹
  *
- * 物理模型（凹型 1/4 圆弧轨道，高考标准）：
- * - 1/4 凹型圆弧轨道，半径为 R。顶端 θ=0（轨道左侧，切线竖直），最低点 θ=PI/2（轨道底端，切线水平）
- * - 球在轨道内壁（凹面侧）滑行，圆心在轨道上方偏右
- * - 底端满足高考标准：F_N - mg = mv²/R，切线严格水平
- * - 微元数值积分求解切向运动方程：a_t = g*cosθ - mu*(g*sinθ + v^2/R)
- *
- * 几何参数方程：
- *   x = R*(1 - cosθ)  水平位移（θ=0时x=0，θ=π/2时x=R）
- *   y = R*sinθ        垂直下降高度（θ=0时y=0，θ=π/2时y=R）
- *
- * 力学分析（θ 为从轨道左侧起始的角度）：
- *   重力切向分量：mg·cosθ（θ=0时切线竖直，重力全部分量沿切向；θ=π/2时切线水平，分量为0）
- *   法向力：N = mg·sinθ + mv²/R（重力法向分量 + 向心力需求）
- *   摩擦力：f = μN
- *   切向合力：F_net = mg·cosθ - f
+ * 物理模型：
+ * - 1/4 圆弧轨道，半径为 R。顶端 θ=0，最低点 θ=PI/2
+ * - 微元数值积分求解切向运动方程：a_t = g*sinθ - mu*(g*cosθ + v^2/R)
  *
  * @param m 质量 (kg)
  * @param v0 初速度 (m/s)
  * @param R 轨道半径 (m)
  * @param mu 动摩擦因数
- * @param x_end 最大水平位移 (m)
+ * @param tMax 最大模拟时间 (s)
  * @param dt 时间步长 (s)
  * @returns 轨道点与触底时间 t_c
  */
@@ -161,9 +149,9 @@ export function precomputeCurvedTrackTrajectory(
   const g = GRAVITY
 
   // 数值积分实时变量
-  // 凹型弧 θ=0 时切线竖直向下，重力切向分量 = mg·cos(0) = mg > 0
-  // 球自然下滑，不存在静摩擦阻碍启动的问题，无需 arctan(mu) 偏移
-  let theta = 0.001 // 从极小角度开始，避免除零
+  // 初始角度：光滑轨道从 0.02 rad 开始；粗糙轨道从 arctan(mu)+0.01 开始
+  // 物理原因：theta=0 时重力切向分量为 0，静摩擦会阻止球启动
+  let theta = mu > 0 ? Math.atan(mu) + 0.01 : 0.02
   let v = v0
   let t = 0
   let W_f = 0 // 摩擦力做功 (负值)
@@ -188,14 +176,14 @@ export function precomputeCurvedTrackTrajectory(
     let phase = 0
 
     if (!reachedBottom) {
-      // 1. 凹型曲面下滑阶段 (数值微分积分)
-      // 凹型圆弧轨道内侧，球在轨道内壁滑行：
-      //   N = m*g*sinθ + m*v²/R（重力法向分量 + 向心力需求）
+      // 1. 曲面下滑阶段 (数值微分积分)
+      // 凹型圆弧轨道内侧，法向力指向圆心方向：
+      //   N = m*g*cosθ + m*v²/R（重力法向分量 + 向心力需求）
       //   f = μ*N（摩擦力）
-      //   F_切向 = m*g*cosθ - f（重力切向分量 - 摩擦力）
-      const normalForce = m * g * Math.sin(theta) + (m * v * v) / R // 法向力 (N)
+      //   F_切向 = m*g*sinθ - f（重力切向分量 - 摩擦力）
+      const normalForce = m * g * Math.cos(theta) + (m * v * v) / R // 法向力 (N)
       const frictionForce = mu * normalForce                         // 摩擦力 (N)
-      const fGravityTangent = m * g * Math.cos(theta)                // 重力切向分力 (N)
+      const fGravityTangent = m * g * Math.sin(theta)                // 重力切向分力 (N)
       F_net = fGravityTangent - frictionForce                        // 切向合力 (N)
       a = F_net / m                                                   // 切向加速度 (m/s²)
 
@@ -224,14 +212,14 @@ export function precomputeCurvedTrackTrajectory(
         v_c = v
       }
 
-      x = R * (1 - Math.cos(theta))    // 水平位移 (m) — 凹型弧参数方程
-      y = R * Math.sin(theta)           // 垂直下降高度 (m) — 凹型弧参数方程
+      x = R * Math.sin(theta)              // 水平位移 (m)
+      y = R * (1 - Math.cos(theta))        // 垂直下降高度 (m)
       Ek = 0.5 * m * v * v
       Ep = m * g * y               // 重力功 W_G = mgy
       W = Ep + W_f                 // 总功 W_net = W_G + W_f
       phase = 0
     } else {
-      // 2. 水平面匀速滑行阶段（底端切线水平，速度方向水平，完美衔接）
+      // 2. 水平面匀速滑行阶段
       a = 0
       v = v_c
       x = R + v_c * (t - t_c)

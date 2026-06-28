@@ -90,9 +90,8 @@ export function KineticEnergyScene({
     const distToCenter = Math.sqrt(dxToCenter * dxToCenter + dyToCenter * dyToCenter)
     inwardDirX = distToCenter > 0 ? dxToCenter / distToCenter : 0
     inwardDirY = distToCenter > 0 ? dyToCenter / distToCenter : 0
-    // 凹型弧：球在轨道内侧（靠近圆心方向），球心沿 inwardDir 偏移
-    ballCX = trackCX + ballR * inwardDirX
-    ballCY = trackCY + ballR * inwardDirY
+    ballCX = trackCX - ballR * inwardDirX
+    ballCY = trackCY - ballR * inwardDirY
     tangentDirX = -inwardDirY
     tangentDirY = inwardDirX
   } else {
@@ -160,15 +159,14 @@ export function KineticEnergyScene({
 
       {mode === 1 && (
         <g>
-          {/* 凹型1/4圆弧轨道：sweep-flag=0 绘制内凹弧（碗形），底端切线水平 */}
           <path
-            d={`M ${padding} ${groundY - R * scale} A ${R * scale} ${R * scale} 0 0 0 ${padding + R * scale} ${groundY}`}
+            d={`M ${padding} ${groundY - R * scale} A ${R * scale} ${R * scale} 0 0 1 ${padding + R * scale} ${groundY}`}
             fill="none"
             stroke={PHYSICS_COLORS.labelText}
             strokeWidth={STROKE.trackLine}
           />
           <path
-            d={`M ${padding} ${groundY - R * scale} A ${R * scale} ${R * scale} 0 0 0 ${padding + R * scale} ${groundY}`}
+            d={`M ${padding} ${groundY - R * scale} A ${R * scale} ${R * scale} 0 0 1 ${padding + R * scale} ${groundY}`}
             fill="none"
             stroke={colors.neutral[100]}
             strokeWidth={STROKE.objectThin}
@@ -316,8 +314,7 @@ export function KineticEnergyScene({
             {state.phase === 0 && (() => {
               const g = GRAVITY
               const mg = m * g
-              // 凹型弧：法向力 N = mg*sinθ + mv²/R（高考标准：底端 F_N - mg = mv²/R）
-              const normalForce = mg * Math.sin(state.theta) + m * state.v * state.v / R
+              const normalForce = mg * Math.cos(state.theta) + m * state.v * state.v / R
               const fFriction = mu * normalForce
               const gravityLen = ballR + (mg / Math.max(fMax, 0.1)) * (vectorMaxLen - ballR)
               const frictionLen = ballR + (fFriction / Math.max(fMax, 0.1)) * (vectorMaxLen - ballR)
