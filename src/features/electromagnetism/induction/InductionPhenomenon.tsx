@@ -273,8 +273,8 @@ export default function InductionPhenomenon() {
         />
 
         {/* 科学仪表看板：磁通量大小 */}
-        <g transform="translate(560, 30)" opacity="0.85">
-          <rect x="0" y="0" width="110" height="42" rx="6" fill={SCENE_COLORS.labels.panelBg} stroke={colors.neutral[700]} strokeWidth="1" />
+        <g transform="translate(560, 30)">
+          <rect x="0" y="0" width="110" height="42" rx="6" fill="#0F172A" fillOpacity={0.9} stroke={colors.neutral[600]} strokeWidth={1} />
           <text x="10" y="16" fill={colors.neutral[400]} fontSize={font(9)} fontWeight="bold">磁通量 Φ</text>
           <text x="10" y="32" fill={EM_COLORS.magneticField} fontSize={font(12)} fontWeight="bold" style={{ fontFamily: 'monospace' }}>
             {phi.toFixed(3)} Wb

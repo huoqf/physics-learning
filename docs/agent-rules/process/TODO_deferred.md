@@ -1,6 +1,6 @@
 # 延后处理待办事项
 
-> 最后更新：2026-06-27
+> 最后更新：2026-06-28
 
 ---
 
@@ -12,7 +12,6 @@
 
 > 以下文件仍超 400 行，可关注拆分：
 > - `lightRodRope/trajectory.ts` — 485（主积分函数，3 种模式共享 20+ 状态变量，拆分风险高）
-> - `momentumApplication.ts` — 462
 > - `EnergyConservationAnimation.tsx` — 657
 > - `UniformAccelerationCenterExtra.tsx` — 560
 
@@ -28,6 +27,7 @@
 | ~~`forceMotion.ts`~~ → `forceMotion/` | index + types + utils + 10 个 modes/*（716 → 13 模块） | 2026-06-27 |
 | ~~`lightRodRope.ts`~~ → `lightRodRope/` | index + types + interpolate + trajectory（795 → 4 模块） | 2026-06-27 |
 | ~~`magnetism.ts`~~ → `magnetism/` | index + forces + ampereForce + velocitySelector（556 → 4 模块） | 2026-06-27 |
+| ~~`momentumApplication.ts`~~ → `momentumApplication/` | curvedSlot + springBlocks + manBoat + index（524 → 4 模块） | 2026-06-28 |
 
 ---
 
