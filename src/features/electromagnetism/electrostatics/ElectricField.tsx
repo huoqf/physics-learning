@@ -162,7 +162,7 @@ export default function ElectricField() {
         onPointerUp={handlePointerUp}
       >
         <g>
-          {/* 1. 背景电场线 */}
+          {/* 1. 背景电场线（虚线场线方向标注，非单点物理矢量，不适用 VectorArrow） */}
           {physics.fieldLinesPaths.map((d, idx) => (
             <path
               key={`field-line-${idx}`}
@@ -215,6 +215,7 @@ export default function ElectricField() {
 
           {/* Defs */}
           <defs>
+            {/* 电场线方向标注，非单点物理矢量；虚线场线不适用 VectorArrow */}
             <marker
               id="arrow-efield"
               markerWidth="8"
