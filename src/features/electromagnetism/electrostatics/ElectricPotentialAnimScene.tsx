@@ -381,7 +381,7 @@ export function ElectricPotentialAnimScene({
       <div className="absolute left-4 top-2 pointer-events-none bg-white/80 backdrop-blur-sm px-2 py-1 rounded text-xs flex items-center gap-2 border border-neutral-200/50 shadow-sm">
         <span className="font-bold text-neutral-600">非匀强电场物理动画 (匀强场 + 点电荷)</span>
         {drawMode === 1 && !isPlaying && handPath.length === 0 && (
-          <span className="text-indigo-600 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200/40 animate-pulse" style={{ fontSize: font(10) }}>
+          <span className="alert-card-info py-0.5 px-2 font-bold" style={{ fontSize: font(10) }}>
             ✍️ 请按住 A 点拖拽画线至 B
           </span>
         )}

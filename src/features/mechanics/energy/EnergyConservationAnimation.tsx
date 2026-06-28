@@ -306,7 +306,7 @@ export default function EnergyConservationAnimation() {
     <div ref={containerRef} className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">
       {/* 拖拽交互提示气泡 */}
       {!isPlaying && (
-        <div className="absolute top-3 right-4 px-2 py-0.5 bg-neutral-50 text-neutral-400 font-semibold rounded border pointer-events-none z-10 animate-pulse" style={{ fontSize: font(9) }}>
+        <div className="absolute top-3 right-4 alert-card-neutral py-1 px-2.5 font-semibold pointer-events-none z-10" style={{ fontSize: font(9) }}>
           鼠标拖动 {mode === 0 ? '摆球' : '滑块'} 改变初始角，拖拽“零势能面”演示重力势能相对性
         </div>
       )}

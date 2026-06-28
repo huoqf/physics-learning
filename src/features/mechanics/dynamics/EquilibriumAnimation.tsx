@@ -1,5 +1,6 @@
 import { useRef, useEffect, useMemo } from 'react'
 import { useCanvasSize, useViewport } from '@/utils'
+import { useTimedPulse } from '@/hooks/useTimedPulse'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { clampEndpoint } from '@/utils/coordinate'
 import type { CanvasBounds } from '@/utils/coordinate'
@@ -84,6 +85,10 @@ export default function EquilibriumAnimation() {
     endDrag,
     resetPhysics,
   } = physicsData
+
+  const showOverloadPulse = useTimedPulse(isOverloaded && brokenLine === 'none', 3000)
+  const showBreak1Pulse = useTimedPulse(brokenLine !== 'none' && brokenLine !== 'right', 3000)
+  const showBreak2Pulse = useTimedPulse(brokenLine !== 'none' && brokenLine !== 'left', 3000)
 
   const centerX = vp.visibleW / 2
   const centerY = vp.visibleH / 2 - 45
@@ -632,7 +637,7 @@ export default function EquilibriumAnimation() {
                   绳 1 张力 T₁ = {t1.toFixed(1)} N
                 </text>
               ) : (
-                <text x={0} y={60} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.forceArrowRed} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family} className="animate-pulse">
+                <text x={0} y={60} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.forceArrowRed} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family} className={showBreak1Pulse ? 'animate-pulse' : ''}>
                   绳 1 已断裂！
                 </text>
               )}
@@ -641,13 +646,13 @@ export default function EquilibriumAnimation() {
                   绳 2 张力 T₂ = {t2.toFixed(1)} N
                 </text>
               ) : (
-                <text x={0} y={80} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.forceArrowRed} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family} className="animate-pulse">
+                <text x={0} y={80} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.forceArrowRed} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family} className={showBreak2Pulse ? 'animate-pulse' : ''}>
                   绳 2 已断裂！
                 </text>
               )}
               
               {isOverloaded && brokenLine === 'none' && (
-                <text x={0} y={105} fontSize={font(12)} fill={PHYSICS_COLORS.forceArrowRed} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family} className="animate-pulse">
+                <text x={0} y={105} fontSize={font(12)} fill={PHYSICS_COLORS.forceArrowRed} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family} className={showOverloadPulse ? 'animate-pulse' : ''}>
                   ⚠ 过载警示：拉力超过安全阈值！
                 </text>
               )}

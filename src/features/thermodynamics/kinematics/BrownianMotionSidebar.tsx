@@ -46,11 +46,11 @@ export default function BrownianMotionSidebar({
       />
 
       {mode === 1 && (
-        <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-          <p className="text-xs text-amber-700 font-medium">
+        <div className="mt-2 alert-card-warning">
+          <p className="font-semibold">
             进阶模式展示微观碰撞机制
           </p>
-          <p className="text-xs text-amber-600 mt-1">
+          <p className="text-[11px] opacity-90 mt-1">
             蓝色小球为液体分子，橙色箭头为瞬时合力
           </p>
         </div>

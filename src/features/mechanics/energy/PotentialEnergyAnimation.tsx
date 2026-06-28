@@ -136,7 +136,7 @@ export default function PotentialEnergyAnimation() {
     <div ref={containerRef} className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">
       {/* 拖拽提示 */}
       {!isPlaying && (
-        <div className="absolute top-2 left-2 px-2 py-0.5 bg-neutral-50 text-neutral-400 font-semibold rounded border pointer-events-none z-10 animate-pulse" style={{ fontSize: font(9) }}>
+        <div className="absolute top-2 left-2 alert-card-neutral py-1 px-2.5 font-semibold pointer-events-none z-10" style={{ fontSize: font(9) }}>
           {mode === 0 ? '拖动物块改变释放高度，拖动虚线改变零势能面' : '拖动滑块可调节初始形变大小'}
         </div>
       )}

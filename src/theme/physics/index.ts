@@ -54,8 +54,70 @@ export type {
 } from './colors'
 
 // ─── 场景结构性颜色 ───────────────────────────────────────────────────────────
+import {
+  COMMON_MATERIALS,
+  SPHERE_COLORS,
+  ENVIRONMENT_COLORS,
+  SPECIAL_EFFECTS,
+  SAFETY_PRESETS,
+  LAB_LABELS,
+  CHART_COMPONENT_COLORS,
+} from './scene/materials'
+
+import {
+  SPRING_COLORS,
+  SURFACE_COLORS,
+  PENDULUM_COLORS,
+  MECHANICS_APPARATUS_COLORS,
+} from './scene/mechanics'
+
+import {
+  MAGNET_COLORS,
+  COIL_COLORS,
+  CIRCUIT_COLORS,
+  BULB_GLOW_COLORS,
+  HAND_COLORS,
+  ELECTRICAL_APPARATUS_COLORS,
+  ELECTROSTATIC_APPARATUS_COLORS,
+} from './scene/electricity'
+
+import {
+  THERMAL_COLORS,
+  THERMO_CHAMBER_COLORS,
+} from './scene/thermal'
+
+import {
+  OPTICAL_COLORS,
+  MODERN_PHYSICS_COLORS,
+} from './scene/optics'
+
+export const SCENE_COLORS = {
+  materials: COMMON_MATERIALS,
+  sphere: SPHERE_COLORS,
+  environment: ENVIRONMENT_COLORS,
+  effects: SPECIAL_EFFECTS,
+  safety: SAFETY_PRESETS,
+  labels: LAB_LABELS,
+  magnet:   MAGNET_COLORS,
+  coil:     COIL_COLORS,
+  spring:   SPRING_COLORS,
+  surface:  SURFACE_COLORS,
+  pendulum: PENDULUM_COLORS,
+  circuit:  CIRCUIT_COLORS,
+  bulb:     BULB_GLOW_COLORS,
+  hand:     HAND_COLORS,
+  optical:  OPTICAL_COLORS,
+  thermal:  THERMAL_COLORS,
+
+  mechanicsApparatus: MECHANICS_APPARATUS_COLORS,
+  electricalApparatus: ELECTRICAL_APPARATUS_COLORS,
+  electrostaticApparatus: ELECTROSTATIC_APPARATUS_COLORS,
+  thermoChamber: THERMO_CHAMBER_COLORS,
+  modernPhysics: MODERN_PHYSICS_COLORS,
+  charts: CHART_COMPONENT_COLORS,
+} as const;
+
 export {
-  SCENE_COLORS,
   COMMON_MATERIALS,
   SPHERE_COLORS,
   ENVIRONMENT_COLORS,
@@ -72,31 +134,28 @@ export {
   HAND_COLORS,
   OPTICAL_COLORS,
   THERMAL_COLORS,
-} from './sceneColors'
+}
 
-export type {
-  SceneColorGroup,
-  MaterialsColorKey,
-  SpherePresetKey,
-  EnvironmentColorKey,
-  EffectsColorKey,
-  SafetyColorKey,
-  LabLabelsColorKey,
-  MagnetColorKey,
-  CoilColorKey,
-  SpringColorKey,
-  SurfaceColorKey,
-  PendulumColorKey,
-  CircuitColorKey,
-  BulbColorKey,
-  HandColorKey,
-  OpticalColorKey,
-  ThermalColorKey,
-} from './sceneColors'
+export type SceneColorGroup   = keyof typeof SCENE_COLORS
+export type MaterialsColorKey = keyof typeof COMMON_MATERIALS
+export type SpherePresetKey   = keyof typeof SPHERE_COLORS
+export type EnvironmentColorKey = keyof typeof ENVIRONMENT_COLORS
+export type EffectsColorKey   = keyof typeof SPECIAL_EFFECTS
+export type SafetyColorKey    = keyof typeof SAFETY_PRESETS
+export type LabLabelsColorKey = keyof typeof LAB_LABELS
+export type MagnetColorKey    = keyof typeof MAGNET_COLORS
+export type CoilColorKey      = keyof typeof COIL_COLORS
+export type SpringColorKey    = keyof typeof SPRING_COLORS
+export type SurfaceColorKey   = keyof typeof SURFACE_COLORS
+export type PendulumColorKey  = keyof typeof PENDULUM_COLORS
+export type CircuitColorKey   = keyof typeof CIRCUIT_COLORS
+export type BulbColorKey      = keyof typeof BULB_GLOW_COLORS
+export type HandColorKey      = keyof typeof HAND_COLORS
+export type OpticalColorKey   = keyof typeof OPTICAL_COLORS
+export type ThermalColorKey   = keyof typeof THERMAL_COLORS
 
 // ─── 图表配色大一统桥接层 (Chart Color Semantic Bridge) ────────────────────────
 import { PHYSICS_COLORS, withAlpha } from './colors'
-import { SCENE_COLORS } from './sceneColors'
 
 export const CHART_COLORS = {
   // 网格和轴线直接映射至场景 UI 结构色

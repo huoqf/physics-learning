@@ -56,3 +56,42 @@
   --color-neutral-800: #262626;
   --color-neutral-900: #171717;
 }
+
+/* 1. 抽取基础公共样式类 */
+@utility alert-card-base {
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  transition: all var(--duration-default) var(--easing-ease-out);
+}
+
+/* 2. 语义色扩展类 */
+@utility alert-card-info {
+  @apply alert-card-base;
+  background-color: var(--color-primary-50);
+  border-color: var(--color-primary-200);
+  color: var(--color-primary-800);
+}
+
+@utility alert-card-warning {
+  @apply alert-card-base;
+  background-color: var(--color-warning-50);
+  border-color: var(--color-warning-200);
+  color: var(--color-warning-800);
+}
+
+@utility alert-card-danger {
+  @apply alert-card-base;
+  background-color: var(--color-danger-50);
+  border-color: var(--color-danger-200);
+  color: var(--color-danger-800);
+}
+
+@utility alert-card-neutral {
+  @apply alert-card-base;
+  background-color: var(--color-neutral-50);
+  border-color: var(--color-neutral-200);
+  color: var(--color-neutral-700);
+}
+

@@ -279,7 +279,6 @@ export default function SpringCompositeAnimation() {
               fontSize={font(9.5)}
               fill={CANVAS_COLORS.labelTextLight}
               fontWeight='semibold'
-              className='animate-pulse'
             >
               {mode === 1
                 ? '💡 挂球扫查：在小球上按住并上下拖拽，联动扫查图线交点'
@@ -609,7 +608,7 @@ export default function SpringCompositeAnimation() {
 
       {/* 自动暂停教学定格卡片 (毛玻璃+微动效) */}
       {showPauseTip && (
-        <div className='absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2.5 bg-amber-50/95 backdrop-blur-md border border-amber-200 shadow-xl rounded-lg text-xs text-amber-950 flex items-start gap-2.5 max-w-[85%] animate-in fade-in slide-in-from-top-2 duration-300 z-50'>
+        <div className='absolute top-4 left-1/2 -translate-x-1/2 alert-card-warning shadow-xl flex items-start gap-2.5 max-w-[85%] animate-in fade-in slide-in-from-top-2 duration-300 z-50'>
           <span className='shrink-0 text-amber-500 font-bold text-sm leading-none'>💡</span>
           <div className='leading-normal'>
             <strong>已在平衡位置（C点）自动定格：</strong>此时重力等于弹力，合外力为零（a =

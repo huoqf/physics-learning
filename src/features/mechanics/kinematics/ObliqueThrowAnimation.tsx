@@ -472,8 +472,8 @@ export default function ObliqueThrowAnimation() {
         {/* 最高点物理指示 */}
         {!isLanded && Math.abs(currentState.vy) < 0.25 && currentState.y > 0.5 * maxHeight && (
           <g transform={`translate(${ballCanvas.cx - 60}, ${ballCanvas.cy - 45})`}>
-            <rect width={120} height={38} fill={SCENE_COLORS.labels.panelBg} opacity={0.92} rx={4} stroke={CHART_COLORS.criticalPt} strokeWidth={1} />
-            <polygon points="60 38, 55 43, 65 38" fill={SCENE_COLORS.labels.panelBg} stroke={CHART_COLORS.criticalPt} strokeWidth={0.5} />
+            <rect width={120} height={38} fill={SCENE_COLORS.labels.panelBg} opacity={0.92} rx={4} stroke={CHART_COLORS.highlight} strokeWidth={1} />
+            <polygon points="60 38, 55 43, 65 38" fill={SCENE_COLORS.labels.panelBg} stroke={CHART_COLORS.highlight} strokeWidth={0.5} />
             <text x={60} y={13} fontSize={font(8)} fill={SCENE_COLORS.labels.panelText} textAnchor="middle" fontWeight="bold">最高点 H = {maxHeight.toFixed(2)}m</text>
             <text x={60} y={25} fontSize={font(7)} fill={SCENE_COLORS.labels.panelTextMuted} textAnchor="middle">vᵧ = 0, 合速度 v = vₓ</text>
           </g>

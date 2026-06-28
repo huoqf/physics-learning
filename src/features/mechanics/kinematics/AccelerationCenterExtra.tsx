@@ -473,14 +473,14 @@ export default function AccelerationCenterExtra() {
 
         {/* 最大间距警告气泡 */}
         {showMaxGapWarning && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-500 text-white font-bold text-xs py-2 px-3 rounded-lg shadow-lg border border-amber-600 animate-pulse">
-            ⚠️ 共速时刻：此时两车距离最大！Δx = {state.deltaX.toFixed(1)} m
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 alert-card-warning font-bold text-xs shadow-lg">
+            ℹ️ 共速时刻：此时两车距离最大！Δx = {state.deltaX.toFixed(1)} m
           </div>
         )}
 
         {/* 相遇警告气泡 */}
         {showMeetWarning && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-green-600 text-white font-bold text-xs py-2 px-3 rounded-lg shadow-lg border border-green-700 animate-pulse">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 alert-card-info font-bold text-xs shadow-lg">
             🚔 警车追上轿车！t = {state.tMeet?.toFixed(1)} s
           </div>
         )}

@@ -3,6 +3,7 @@ import { ChevronDown, Award, AlertTriangle, AlertCircle, Info, BookOpen } from '
 import { KatexFormula } from './KatexFormula'
 import { colors } from '@/theme/colors'
 import { duration } from '@/theme/motion'
+import { useTimedPulse } from '@/hooks/useTimedPulse'
 
 interface PhysicsQuantity {
   label: string
@@ -88,6 +89,7 @@ export const PhysicsPanel: React.FC<PhysicsPanelProps> = ({
   const [warningsOpen, setWarningsOpen] = useState(true)
   const [gaokaoOpen, setGaokaoOpen] = useState(true)
   const [mnemonicOpen, setMnemonicOpen] = useState(true)
+  const showPulse = useTimedPulse(!!isTerminal, 3000)
 
   // 数值颜色：正数 neutral-700、负数 danger-600、零值 neutral-400、极值 accent-600
   const getValueColor = (quantity: PhysicsQuantity) => {
@@ -142,7 +144,7 @@ export const PhysicsPanel: React.FC<PhysicsPanelProps> = ({
       {/* ── 终止态指示 ── */}
       {isTerminal && pauseReason && pauseReason !== 'none' && (
         <div
-          className="px-3 py-2.5 rounded-lg text-xs font-semibold flex items-center gap-2 border shadow-sm animate-pulse"
+          className={`px-3 py-2.5 rounded-lg text-xs font-semibold flex items-center gap-2 border shadow-sm ${showPulse ? 'animate-pulse' : ''}`}
           style={{
             backgroundColor: colors.accent[50],
             color: colors.accent[700],

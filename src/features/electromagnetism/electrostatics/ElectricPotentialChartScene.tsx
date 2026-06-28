@@ -254,7 +254,7 @@ export function ElectricPotentialChartScene({
       {/* 标题与操作提示 */}
       <div className="absolute left-4 top-2 pointer-events-none bg-white/80 backdrop-blur-sm px-2 py-1 rounded text-xs flex items-center gap-2 border border-neutral-200/50 shadow-sm">
         <span className="font-bold text-neutral-600">φ - x 关系图线 (一维水平路径)</span>
-        <span className="text-amber-600 font-semibold bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200/40 animate-pulse" style={{ fontSize: font(10) }}>
+        <span className="alert-card-warning py-0.5 px-2 font-semibold" style={{ fontSize: font(10) }}>
           ↔ 左右移动鼠标滑动求导
         </span>
       </div>

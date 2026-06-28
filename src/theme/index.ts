@@ -62,8 +62,8 @@ export {
   HAND_COLORS,
   OPTICAL_COLORS,
   THERMAL_COLORS,
-} from './physics/sceneColors'
-export type { SceneColorGroup }                 from './physics/sceneColors'
+} from './physics'
+export type { SceneColorGroup }                 from './physics'
 
 // ─── 物理图像配色 ─────────────────────────────────────────────────────────────
 export {
