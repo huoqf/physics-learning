@@ -48,3 +48,21 @@ export type QuantityBuilder = (
   params: Record<string, number>,
   time: number,
 ) => PhysicsPanelData | null
+
+/** 参数归一化工具类型 */
+export type ParamDefs<T> = { [K in keyof T]: { default: T[K]; required?: boolean } }
+
+/**
+ * 将 Record<string, number> 归一化为具名接口。
+ * 仅处理 params 中存在的 key，缺失的用 defaults 补齐。
+ */
+export function normalizeParams<T extends Record<string, number>>(
+  params: Record<string, number>,
+  defs: ParamDefs<T>,
+): T {
+  const result = {} as Record<string, number>
+  for (const key in defs) {
+    result[key] = params[key] ?? defs[key].default
+  }
+  return result as T
+}

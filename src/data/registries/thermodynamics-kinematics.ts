@@ -13,7 +13,7 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
       particleD: 5,
       showTrajectory: 1,
       showMolecules: 0,
-    },
+    } as const,
     paramMeta: [
       { key: 'temperature', label: '温度 T', min: 273, max: 373, step: 1, unit: 'K' },
       { key: 'particleD', label: '微粒直径 d', min: 1, max: 10, step: 0.5, unit: 'μm' },
@@ -30,7 +30,7 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
       mode: 0,
       r: 2.0,
       autoRelease: 0,
-    },
+    } as const,
     paramMeta: [
       { key: 'r', label: '分子间距 r', min: 0.5, max: 10, step: 0.1, unit: 'r₀' },
     ],

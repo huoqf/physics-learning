@@ -3,7 +3,8 @@
  *
  * 从 physicsQuantities.ts 拆分出的运动学相关动画物理量构建逻辑。
  */
-import type { PhysicsPanelData } from './types'
+import type { PhysicsPanelData, ParamDefs } from './types'
+import { normalizeParams } from './types'
 import type { VariableMotionModel, VariableMotionParams } from '../../physics'
 import {
   GRAVITY,
@@ -20,21 +21,99 @@ import {
 import { interpolateTrajectoryPoint } from '../../utils/trajectory'
 import { PHYSICS_COLORS } from '../../theme/physics'
 
+/** 运动学构建器参数类型 */
+interface KinematicsParams {
+  advancedMode: number
+  v: number
+  deltaT: number
+  modelIdx: number
+  modelK: number
+  modelV0: number
+  modelA: number
+  modelOmega: number
+  modelA1: number
+  modelVMax: number
+  modelA3: number
+  modelT1: number
+  modelT2Dur: number
+  modelTStop: number
+  modelA5: number
+  v0: number
+  a: number
+  g: number
+  vA: number
+  aB: number
+  deltaX0: number
+  t0: number
+  vMax: number
+  flashPeriod: number
+  pressure: number
+  objectA: number
+  objectB: number
+  latitude: number
+  altitude: number
+  dripPeriod: number
+  targetHeight: number
+  chartMode: number
+  v0x: number
+  airResistance: number
+  angle: number
+}
+
+const KINEMATICS_DEFAULTS: ParamDefs<KinematicsParams> = {
+  advancedMode: { default: 0 },
+  v: { default: 8 },
+  deltaT: { default: 2 },
+  modelIdx: { default: 0 },
+  modelK: { default: 1 },
+  modelV0: { default: 0 },
+  modelA: { default: 5 },
+  modelOmega: { default: 2 },
+  modelA1: { default: 2 },
+  modelVMax: { default: 6 },
+  modelA3: { default: 3 },
+  modelT1: { default: 3 },
+  modelT2Dur: { default: 2 },
+  modelTStop: { default: 2 },
+  modelA5: { default: 3 },
+  v0: { default: 0 },
+  a: { default: 1.5 },
+  g: { default: 9.8 },
+  vA: { default: 200 },
+  aB: { default: 5 },
+  deltaX0: { default: 50 },
+  t0: { default: 1 },
+  vMax: { default: 40 },
+  flashPeriod: { default: 1 },
+  pressure: { default: 0 },
+  objectA: { default: 0 },
+  objectB: { default: 0 },
+  latitude: { default: 45 },
+  altitude: { default: 0 },
+  dripPeriod: { default: 0.5 },
+  targetHeight: { default: 0 },
+  chartMode: { default: 0 },
+  v0x: { default: 10 },
+  airResistance: { default: 0 },
+  angle: { default: 45 },
+}
+
 export function buildKinematicsQuantities(
   animId: string,
   params: Record<string, number>,
   time: number
 ): PhysicsPanelData | null {
   const base: PhysicsPanelData['quantities'] = []
+  const p = normalizeParams(params, KINEMATICS_DEFAULTS)
 
   switch (animId) {
     case 'anim-velocity': {
-      const isAdvanced = (params.advancedMode ?? 0) === 1
+      const isAdvanced = (p.advancedMode ?? 0) === 1
 
       if (!isAdvanced) {
         // ── 基础版：生活场景，平均速度 vs 瞬时速度 ──
-        const v = params.v ?? 8
-        const deltaT = params.deltaT ?? 2
+        const v = p.v ?? 8
+        const deltaT = p.deltaT ?? 2
         const t1 = time
         const t2 = time + deltaT
         const x1 = v * t1
@@ -60,23 +139,23 @@ export function buildKinematicsQuantities(
         }
       } else {
         // ── 进阶版：图象极限逼近 ──
-        const modelIdx = params.modelIdx ?? 0
+        const modelIdx = p.modelIdx ?? 0
         const model: VariableMotionModel = ['force-increasing', 'shm', 'multi-stage'][modelIdx] as VariableMotionModel
         const modelParams: VariableMotionParams = {
-          k: params.modelK ?? 1,
-          v0: params.modelV0 ?? 0,
-          A: params.modelA ?? 5,
-          omega: params.modelOmega ?? 2,
-          a1: params.modelA1 ?? 2,
-          vMax: params.modelVMax ?? 6,
-          a3: params.modelA3 ?? 3,
-          t1: params.modelT1 ?? 3,
-          t2Duration: params.modelT2Dur ?? 2,
-          tStop: params.modelTStop ?? 2,
-          a5: params.modelA5 ?? 3,
+          k: p.modelK ?? 1,
+          v0: p.modelV0 ?? 0,
+          A: p.modelA ?? 5,
+          omega: p.modelOmega ?? 2,
+          a1: p.modelA1 ?? 2,
+          vMax: p.modelVMax ?? 6,
+          a3: p.modelA3 ?? 3,
+          t1: p.modelT1 ?? 3,
+          t2Duration: p.modelT2Dur ?? 2,
+          tStop: p.modelTStop ?? 2,
+          a5: p.modelA5 ?? 3,
         }
         const t0 = time
-        const deltaT = params.deltaT ?? 0.5
+        const deltaT = p.deltaT ?? 0.5
         const { vBar, vInst, residual } = calculateInstantaneousVelocity(model, modelParams, t0, deltaT)
 
         if (model === 'multi-stage') {
@@ -144,13 +223,13 @@ export function buildKinematicsQuantities(
       }
     }
     case 'anim-acceleration': {
-      const advancedMode = params.advancedMode ?? 0
+      const advancedMode = p.advancedMode ?? 0
 
       if (advancedMode === 0) {
         // ── 基础版：双物体赛跑 ──
-        const vA = params.vA ?? 200
-        const aB = params.aB ?? 5
-        const deltaT = params.deltaT ?? 1
+        const vA = p.vA ?? 200
+        const aB = p.aB ?? 5
+        const deltaT = p.deltaT ?? 1
         const result = calculateDualObjectComparison(vA, aB, deltaT, time)
         return {
           quantities: [
@@ -167,11 +246,11 @@ export function buildKinematicsQuantities(
         }
       } else {
         // ── 进阶版：警车追击问题 ──
-        const vA = params.vA ?? 30
-        const deltaX0 = params.deltaX0 ?? 50
-        const t0 = params.t0 ?? 1
-        const aB = params.aB ?? 3
-        const vMax = params.vMax ?? 40
+        const vA = p.vA ?? 30
+        const deltaX0 = p.deltaX0 ?? 50
+        const t0 = p.t0 ?? 1
+        const aB = p.aB ?? 3
+        const vMax = p.vMax ?? 40
         const state = calculatePoliceChase(vA, deltaX0, t0, aB, vMax, time)
 
         // 共速时刻
@@ -202,9 +281,9 @@ export function buildKinematicsQuantities(
       }
     }
     case 'anim-uniform-acceleration': {
-      const v0 = params.v0 ?? 0
-      const a = params.a ?? 1.5
-      const advancedMode = params.advancedMode ?? 0
+      const v0 = p.v0 ?? 0
+      const a = p.a ?? 1.5
+      const advancedMode = p.advancedMode ?? 0
       const { v, s } = calculateAcceleratedMotion(v0, a, time)
 
       if (advancedMode === 0) {
@@ -235,7 +314,7 @@ export function buildKinematicsQuantities(
         }
       } else {
         // ── 进阶模式：逐差法与平均速度推论 ──
-        const T = params.flashPeriod ?? 1
+        const T = p.flashPeriod ?? 1
         const deltaX = a * T * T
         const vAtHalfS = Math.sqrt((v0 * v0 + v * v) / 2)
         const vAtHalfT = (v0 + v) / 2
@@ -269,15 +348,15 @@ export function buildKinematicsQuantities(
       }
     }
     case 'anim-free-fall': {
-      const advancedMode = params.advancedMode ?? 0
+      const advancedMode = p.advancedMode ?? 0
 
       if (advancedMode === 0) {
         // ── 基础模式：牛顿管实验 ──
-        const v0 = params.v0 ?? 0
-        const g = params.g ?? GRAVITY
-        const pressure = params.pressure ?? 0
-        const objectA = params.objectA ?? 0
-        const objectB = params.objectB ?? 0
+        const v0 = p.v0 ?? 0
+        const g = p.g ?? GRAVITY
+        const pressure = p.pressure ?? 0
+        const objectA = p.objectA ?? 0
+        const objectB = p.objectB ?? 0
         const { v: vA } = calculateFreeFall(v0, g, time)
         const { v: vB } = calculateFreeFall(v0, g, time)
         // 阻力估算（简化：用当前速度估算阻力大小）
@@ -311,9 +390,9 @@ export function buildKinematicsQuantities(
         }
       } else {
         // ── 进阶模式：滴水法测g ──
-        const latitude = params.latitude ?? 45
-        const altitude = params.altitude ?? 0
-        const dripPeriod = params.dripPeriod ?? 0.5
+        const latitude = p.latitude ?? 45
+        const altitude = p.altitude ?? 0
+        const dripPeriod = p.dripPeriod ?? 0.5
         const R_EARTH = 6371e3
         // 纬度修正
         const gLat = 9.780 * (1 + 0.005302 * Math.sin(latitude * Math.PI / 180) ** 2)
@@ -346,10 +425,10 @@ export function buildKinematicsQuantities(
       }
     }
     case 'anim-vertical-throw': {
-      const v0 = params.v0 ?? 15
-      const g = params.g ?? GRAVITY
-      const advancedMode = params.advancedMode ?? 0
-      const targetHeight = params.targetHeight ?? 0
+      const v0 = p.v0 ?? 15
+      const g = p.g ?? GRAVITY
+      const advancedMode = p.advancedMode ?? 0
+      const targetHeight = p.targetHeight ?? 0
       const totalTime = (2 * v0) / g
       // 竖直上抛：取向上为正，等价于自由落体公式中 g 取负
       const { v } = calculateFreeFall(v0, -g, time)
@@ -412,9 +491,9 @@ export function buildKinematicsQuantities(
       }
     }
     case 'anim-kinematics-advanced': {
-      const v0 = params.v0 ?? 4.0
-      const a = params.a ?? 2.0
-      const chartMode = params.chartMode ?? 0
+      const v0 = p.v0 ?? 4.0
+      const a = p.a ?? 2.0
+      const chartMode = p.chartMode ?? 0
 
       // 刹车拦截
       const isBraking = a < 0
@@ -487,9 +566,9 @@ export function buildKinematicsQuantities(
       }
     }
     case 'anim-projectile': {
-      const v0x = params.v0x ?? 10
-      const g = params.g ?? GRAVITY
-      const airResistance = params.airResistance ?? 0
+      const v0x = p.v0x ?? 10
+      const g = p.g ?? GRAVITY
+      const airResistance = p.airResistance ?? 0
       const PHYSICS_HEIGHT = 10.0
 
       // 预计算完整轨迹
@@ -531,10 +610,10 @@ export function buildKinematicsQuantities(
       }
     }
     case 'anim-oblique-throw': {
-      const v0 = params.v0 ?? 15
-      const angle = params.angle ?? 45
-      const g = params.g ?? GRAVITY
-      const airResistance = params.airResistance ?? 0
+      const v0 = p.v0 ?? 15
+      const angle = p.angle ?? 45
+      const g = p.g ?? GRAVITY
+      const airResistance = p.airResistance ?? 0
 
       // 预计算完整轨迹
       const result = precomputeObliqueThrowWithDrag(v0, angle, g, airResistance)

@@ -15,7 +15,7 @@ export const mechanicsForceMotionAnimations = defineAnimations({
       env1: 0,
       env2: 0,
       env3: 0,
-    },
+    } as const,
     paramMeta: [],
     // 长时观察：收尾速度（mode 9）需要 5τ 才能看到位移线性段；
     // 恒力加速（mode 1/2）30s 处位移会贴顶变水平线造成「卡住」错觉。

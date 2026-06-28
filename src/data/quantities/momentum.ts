@@ -1,4 +1,5 @@
-import type { PhysicsPanelData, PhysicsQuantity } from './types'
+import type { PhysicsPanelData, PhysicsQuantity, ParamDefs } from './types'
+import { normalizeParams } from './types'
 import { GRAVITY } from '@/physics/constants'
 import {
   calculateFallVelocity,
@@ -15,6 +16,100 @@ import {
   getManBoatAutoMotion
 } from '@/physics/momentumApplication'
 
+/** 动量构建器参数类型 */
+interface MomentumParams {
+  advancedMode: number
+  m: number
+  v: number
+  mA: number
+  vA: number
+  mB: number
+  vB: number
+  h: number
+  k: number
+  rho: number
+  S: number
+  v_fluid: number
+  alpha: number
+  F: number
+  t_duration: number
+  FMax: number
+  t_total: number
+  forceType: number
+  m1: number
+  v1: number
+  m2: number
+  v2: number
+  collisionType: number
+  e_coefficient: number
+  isElastic: number
+  m_slider: number
+  M_board: number
+  mu: number
+  L: number
+  kLoss: number
+  modelType: number
+  m_block: number
+  M_slot: number
+  R_slot: number
+  mA_spring: number
+  mB_spring: number
+  v0_spring: number
+  k_spring: number
+  m_person: number
+  M_boat: number
+  L_boat: number
+  manBoatControl: number
+  manRelS: number
+  manVRel: number
+}
+
+const MOMENTUM_DEFAULTS: ParamDefs<MomentumParams> = {
+  advancedMode: { default: 0 },
+  m: { default: 3 },
+  v: { default: 4 },
+  mA: { default: 3 },
+  vA: { default: 5 },
+  mB: { default: 2 },
+  vB: { default: -3 },
+  h: { default: 2 },
+  k: { default: 5 },
+  rho: { default: 1000 },
+  S: { default: 0.01 },
+  v_fluid: { default: 5 },
+  alpha: { default: 0 },
+  F: { default: 10 },
+  t_duration: { default: 3 },
+  FMax: { default: 10 },
+  t_total: { default: 3 },
+  forceType: { default: 0 },
+  m1: { default: 3 },
+  v1: { default: 5 },
+  m2: { default: 2 },
+  v2: { default: 0 },
+  collisionType: { default: 0 },
+  e_coefficient: { default: 0.5 },
+  isElastic: { default: 1 },
+  m_slider: { default: 1 },
+  M_board: { default: 3 },
+  mu: { default: 0.3 },
+  L: { default: 2 },
+  kLoss: { default: 0 },
+  modelType: { default: 0 },
+  m_block: { default: 2 },
+  M_slot: { default: 5 },
+  R_slot: { default: 1.5 },
+  mA_spring: { default: 2 },
+  mB_spring: { default: 3 },
+  v0_spring: { default: 5 },
+  k_spring: { default: 20 },
+  m_person: { default: 50 },
+  M_boat: { default: 150 },
+  L_boat: { default: 4 },
+  manBoatControl: { default: 0 },
+  manRelS: { default: 0 },
+  manVRel: { default: 0 },
+}
 
 export function buildMomentumQuantities(
   animId: string,
@@ -22,24 +117,25 @@ export function buildMomentumQuantities(
   _time: number,
 ): PhysicsPanelData | null {
   const base: PhysicsQuantity[] = []
+  const p = normalizeParams(params, MOMENTUM_DEFAULTS)
 
   switch (animId) {
     case 'anim-momentum': {
-      const advancedMode = params.advancedMode ?? 0
+      const advancedMode = p.advancedMode ?? 0
       const isAdvanced = advancedMode === 1
 
       if (!isAdvanced) {
         // ── 基础模式：单球 ──
-        const m = params.m ?? 3
-        const v = params.v ?? 4
-        const p = m * v
+        const m = p.m ?? 3
+        const v = p.v ?? 4
+        const pVal = m * v
 
         return {
           quantities: [
             ...base,
             { label: '质量 m', value: m.toFixed(1), unit: 'kg' },
             { label: '速度 v', value: v.toFixed(1), unit: 'm/s' },
-            { label: '动量 p', value: p.toFixed(1), unit: 'kg·m/s', highlight: 'positive' as const },
+            { label: '动量 p', value: pVal.toFixed(1), unit: 'kg·m/s', highlight: 'positive' as const },
           ],
           formulas: [
             { name: '动量定义', latex: 'p = mv', level: 'core' as const },
@@ -51,10 +147,10 @@ export function buildMomentumQuantities(
         }
       } else {
         // ── 进阶模式：双球一维 ──
-        const mA = params.mA ?? 3
-        const vA = params.vA ?? 5
-        const mB = params.mB ?? 2
-        const vB = params.vB ?? -3
+        const mA = p.mA ?? 3
+        const vA = p.vA ?? 5
+        const mB = p.mB ?? 2
+        const vB = p.vB ?? -3
 
         const pA = mA * vA
         const pB = mB * vB
@@ -85,15 +181,15 @@ export function buildMomentumQuantities(
       }
     }
     case 'anim-impulse': {
-      const advancedMode = params.advancedMode ?? 0
+      const advancedMode = p.advancedMode ?? 0
       const isAdvanced = advancedMode === 1
       const g = GRAVITY
 
       if (!isAdvanced) {
         // ── 基础模式：缓冲垫碰撞 ──
-        const m = params.m ?? 2
-        const h = params.h ?? 2
-        const k = params.k ?? 5
+        const m = p.m ?? 2
+        const h = p.h ?? 2
+        const k = p.k ?? 5
         const cushionMaxCompression = 30
 
         const fallV = calculateFallVelocity(h, g)
@@ -174,10 +270,10 @@ export function buildMomentumQuantities(
         }
       } else {
         // ── 进阶模式：流体冲击 ──
-        const rho = params.rho ?? 1000
-        const S = params.S ?? 0.01
-        const v_fluid = params.v_fluid ?? 5
-        const alpha = params.alpha ?? 0
+        const rho = p.rho ?? 1000
+        const S = p.S ?? 0.01
+        const v_fluid = p.v_fluid ?? 5
+        const alpha = p.alpha ?? 0
         const impactForce = calculateFluidImpactForce(rho, S, v_fluid, alpha)
         const advancedXMax = 5
         const currentT_adv = _time % advancedXMax
@@ -205,13 +301,13 @@ export function buildMomentumQuantities(
       }
     }
     case 'anim-impulse-concept': {
-      const advancedMode = params.advancedMode ?? 0
+      const advancedMode = p.advancedMode ?? 0
       const isAdvanced = advancedMode === 1
 
       if (!isAdvanced) {
         // ── 基础模式：恒力 ──
-        const F = params.F ?? 10
-        const t_duration = params.t_duration ?? 3
+        const F = p.F ?? 10
+        const t_duration = p.t_duration ?? 3
         const I = F * t_duration
 
         return {
@@ -230,9 +326,9 @@ export function buildMomentumQuantities(
         }
       } else {
         // ── 进阶模式：变力 ──
-        const FMax = params.FMax ?? 10
-        const t_total = params.t_total ?? 3
-        const forceType = params.forceType === 1 ? 'sine' : 'linear'
+        const FMax = p.FMax ?? 10
+        const t_total = p.t_total ?? 3
+        const forceType = p.forceType === 1 ? 'sine' : 'linear'
         // 解析积分
         const totalI = forceType === 'sine'
           ? (FMax * t_total) / Math.PI * 2
@@ -259,17 +355,17 @@ export function buildMomentumQuantities(
       }
     }
     case 'anim-momentum-conservation': {
-      const advancedMode = params.advancedMode ?? 0
+      const advancedMode = p.advancedMode ?? 0
       const isAdvanced = advancedMode === 1
 
       if (!isAdvanced) {
         // ── 基础模式：两球碰撞 ──
-        const m1 = params.m1 ?? 3
-        const v1 = params.v1 ?? 5
-        const m2 = params.m2 ?? 2
-        const v2 = params.v2 ?? 0
-        const collisionType = params.collisionType ?? 0 // 0: 弹性, 1: 完全非弹性, 2: 恢复系数可调
-        const e_coefficient = params.e_coefficient ?? 0.5
+        const m1 = p.m1 ?? 3
+        const v1 = p.v1 ?? 5
+        const m2 = p.m2 ?? 2
+        const v2 = p.v2 ?? 0
+        const collisionType = p.collisionType ?? 0 // 0: 弹性, 1: 完全非弹性, 2: 恢复系数可调
+        const e_coefficient = p.e_coefficient ?? 0.5
 
         let e = 1.0
         let typeName = '完全弹性碰撞'
@@ -315,11 +411,11 @@ export function buildMomentumQuantities(
         }
       } else {
         // ── 进阶模式：滑块-木板 ──
-        const m_slider = params.m_slider ?? 1
-        const M_board = params.M_board ?? 3
-        const v0 = params.v0 ?? 6
-        const mu = params.mu ?? 0.3
-        const L = params.L ?? 2
+        const m_slider = p.m_slider ?? 1
+        const M_board = p.M_board ?? 3
+        const v0 = p.v0 ?? 6
+        const mu = p.mu ?? 0.3
+        const L = p.L ?? 2
         const g = GRAVITY
 
         const pTotal = m_slider * v0
@@ -394,16 +490,16 @@ export function buildMomentumQuantities(
       }
     }
     case 'anim-collision': {
-      const advancedMode = params.advancedMode ?? 0
+      const advancedMode = p.advancedMode ?? 0
       const isAdvanced = advancedMode === 1
 
       if (!isAdvanced) {
         // ── 基础模式 ──
-        const m1 = params.m1 ?? 3
-        const v1 = params.v1 ?? 5
-        const m2 = params.m2 ?? 2
-        const v2 = params.v2 ?? 0
-        const isElastic = params.isElastic ?? 1
+        const m1 = p.m1 ?? 3
+        const v1 = p.v1 ?? 5
+        const m2 = p.m2 ?? 2
+        const v2 = p.v2 ?? 0
+        const isElastic = p.isElastic ?? 1
         const EkInitial = 0.5 * m1 * v1 * v1 + 0.5 * m2 * v2 * v2
         let EkFinal: number
         if (isElastic === 1) {
@@ -432,10 +528,10 @@ export function buildMomentumQuantities(
         }
       } else {
         // ── 进阶模式 ──
-        const mA = params.mA ?? 3
-        const vA = params.vA ?? 5
-        const mB = params.mB ?? 2
-        const kLoss = params.kLoss ?? 0
+        const mA = p.mA ?? 3
+        const vA = p.vA ?? 5
+        const mB = p.mB ?? 2
+        const kLoss = p.kLoss ?? 0
         const e = 1 - kLoss
         const totalM = mA + mB
         const vAf = (mA - e * mB) / totalM * vA
@@ -463,13 +559,13 @@ export function buildMomentumQuantities(
       }
     }
     case 'anim-momentum-application': {
-      const modelType = params.modelType ?? 0
+      const modelType = p.modelType ?? 0
       
       if (modelType === 0) {
         // 弧形槽-滑块模型
-        const m = params.m_block ?? 2
-        const M = params.M_slot ?? 5
-        const R = params.R_slot ?? 1.5
+        const m = p.m_block ?? 2
+        const M = p.M_slot ?? 5
+        const R = p.R_slot ?? 1.5
         
         const states = precomputeCurvedSlot(m, M, R, 9.8, 6.0, 0.002)
         const st = interpolateCurvedSlot(states, _time)
@@ -503,10 +599,10 @@ export function buildMomentumQuantities(
         }
       } else if (modelType === 1) {
         // 弹簧双滑块
-        const mA = params.mA_spring ?? 2
-        const mB = params.mB_spring ?? 3
-        const v0 = params.v0_spring ?? 5
-        const k = params.k_spring ?? 20
+        const mA = p.mA_spring ?? 2
+        const mB = p.mB_spring ?? 3
+        const v0 = p.v0_spring ?? 5
+        const k = p.k_spring ?? 20
         
         const states = precomputeSpringBlocks(mA, mB, v0, k, 1.5, 3.5, 6.0, 0.002)
         const st = interpolateSpringBlocks(states, _time)
@@ -534,12 +630,12 @@ export function buildMomentumQuantities(
         }
       } else {
         // 人船模型
-        const m = params.m_person ?? 50
-        const M = params.M_boat ?? 150
-        const L = params.L_boat ?? 4
-        const manBoatControl = params.manBoatControl ?? 0
-        const manRelS = params.manRelS ?? 0
-        const manVRel = params.manVRel ?? 0
+        const m = p.m_person ?? 50
+        const M = p.M_boat ?? 150
+        const L = p.L_boat ?? 4
+        const manBoatControl = p.manBoatControl ?? 0
+        const manRelS = p.manRelS ?? 0
+        const manVRel = p.manVRel ?? 0
         
         let s = manRelS
         let v_rel = manVRel

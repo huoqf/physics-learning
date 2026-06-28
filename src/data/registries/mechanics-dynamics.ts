@@ -7,7 +7,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '弹力演示',
     knowledgeId: 'mechanics-3-2',
     Component: lazy(() => import('@/features/mechanics/dynamics/SpringForceAnimation')),
-    defaultParams: { k: 100, x: 0, m: 1 },
+    defaultParams: { k: 100, x: 0, m: 1 } as const,
     paramMeta: [
       { key: 'k', label: '劲度系数 k', min: 10, max: 200, step: 5, unit: 'N/m' },
       { key: 'm', label: '质量 m', min: 0.5, max: 5, step: 0.1, unit: 'kg' },
@@ -28,7 +28,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       weightY: 25,
       weightMass: 1.2,
       showLines: 1,
-    },
+    } as const,
     paramMeta: [
       { key: 'latitude', label: '地理纬度 φ', min: 0, max: 90, step: 1, unit: '°', showIf: 'mode', showIfValue: 0 },
       { key: 'omegaScale', label: '自转向心力放大', min: 1, max: 150, step: 5, unit: '倍', showIf: 'mode', showIfValue: 0 },
@@ -53,7 +53,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       mu_1: 0.3,
       mu_2: 0.2,
       advancedMode: 1,
-    },
+    } as const,
     paramMeta: [
       { key: 'm', label: '滑块质量 m', min: 1, max: 20, step: 0.5, unit: 'kg' },
       { key: 'mu', label: '动摩擦系数 μ', min: 0, max: 1, step: 0.05, unit: '', showIf: 'mode', showIfValue: 0 },
@@ -83,7 +83,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '力的合成与分解',
     knowledgeId: 'mechanics-3-4',
     Component: lazy(() => import('@/features/mechanics/dynamics/VectorAdditionAnimation')),
-    defaultParams: { f1: 10, f2: 8, angle: 60, mode: 0 },
+    defaultParams: { f1: 10, f2: 8, angle: 60, mode: 0 } as const,
     paramMeta: [
       { key: 'f1', label: '力 F₁ / 待分解力', min: 1, max: 20, step: 0.5, unit: 'N' },
       { key: 'f2', label: '力 F₂', min: 1, max: 20, step: 0.5, unit: 'N' },
@@ -95,7 +95,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '共点力平衡',
     knowledgeId: 'mechanics-3-5',
     Component: lazy(() => import('@/features/mechanics/dynamics/EquilibriumAnimation')),
-    defaultParams: { m: 2.0, theta1: 45, theta2: 45, mode: 0 },
+    defaultParams: { m: 2.0, theta1: 45, theta2: 45, mode: 0 } as const,
     paramMeta: [
       { key: 'm', label: '砝码质量 m', min: 0.5, max: 5.0, step: 0.1, unit: 'kg' },
       { key: 'theta1', label: '左挂绳夹角 θ₁', min: 10, max: 85, step: 1, unit: '°' },
@@ -107,7 +107,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '牛顿第二定律',
     knowledgeId: 'mechanics-4-2',
     Component: lazy(() => import('@/features/mechanics/dynamics/NewtonSecondAnimation')),
-    defaultParams: { F: 10, m: 2, mu: 0, advancedMode: 0, modelIdx: 0, k: 2, F0: 15, omega: 1.5 },
+    defaultParams: { F: 10, m: 2, mu: 0, advancedMode: 0, modelIdx: 0, k: 2, F0: 15, omega: 1.5 } as const,
     paramMeta: [
       { key: 'F', label: '拉力 F', min: 0, max: 50, step: 1, unit: 'N', showIf: 'advancedMode', showIfValue: 0 },
       { key: 'm', label: '质量 m', min: 0.5, max: 10, step: 0.5, unit: 'kg' },
@@ -126,7 +126,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '超重与失重',
     knowledgeId: 'mechanics-4-4',
     Component: lazy(() => import('@/features/mechanics/dynamics/WeightlessnessAnimation')),
-    defaultParams: { a: 2, g: GRAVITY, m: 50, advancedMode: 0, modelIdx: 0 },
+    defaultParams: { a: 2, g: GRAVITY, m: 50, advancedMode: 0, modelIdx: 0 } as const,
     paramMeta: [
       { key: 'a', label: '电梯加速度 a', min: -10, max: 10, step: 0.5, unit: 'm/s²', showIf: 'advancedMode', showIfValue: 0 },
       { key: 'm', label: '质量 m', min: 20, max: 100, step: 5, unit: 'kg' },
@@ -139,7 +139,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '连接体问题',
     knowledgeId: 'mechanics-4-5',
     Component: lazy(() => import('@/features/mechanics/dynamics/ConnectedBodiesAnimation')),
-    defaultParams: { m1: 2, m2: 3, F: 15, mu: 0.1, advancedMode: 0, analysisView: 0, connectionType: 0 },
+    defaultParams: { m1: 2, m2: 3, F: 15, mu: 0.1, advancedMode: 0, analysisView: 0, connectionType: 0 } as const,
     paramMeta: [
       { key: 'm1', label: '质量 m₁', min: 1, max: 10, step: 0.5, unit: 'kg' },
       { key: 'm2', label: '质量 m₂', min: 1, max: 10, step: 0.5, unit: 'kg' },
@@ -154,7 +154,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '万有引力定律',
     knowledgeId: 'mechanics-6-2',
     Component: lazy(() => import('@/features/mechanics/dynamics/GravityAnimation')),
-    defaultParams: { m1: 1000, m2: 10, r: 5, mode: 0, preset: 0, showChart: 1 },
+    defaultParams: { m1: 1000, m2: 10, r: 5, mode: 0, preset: 0, showChart: 1 } as const,
     paramMeta: [
       { key: 'm1', label: '质量 m₁', min: 100, max: 5000, step: 100, unit: '', showIf: 'mode', showIfValue: 0 },
       { key: 'm2', label: '质量 m₂', min: 1, max: 100, step: 1, unit: '', showIf: 'mode', showIfValue: 0 },

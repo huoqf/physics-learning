@@ -8,7 +8,7 @@ export const thermodynamicsSecondLawAnimations = defineAnimations({
     Component: lazy(() => import('@/features/thermodynamics/secondLaw/SecondLawAnimation')),
     defaultParams: {
       scene: 0,
-    },
+    } as const,
     SidebarExtra: lazy(() => import('@/features/thermodynamics/secondLaw/SecondLawSidebar')),
     CenterExtra: lazy(() => import('@/features/thermodynamics/secondLaw/SecondLawCenterExtra')),
   },

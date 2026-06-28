@@ -12,7 +12,7 @@ export const opticsTotalInternalReflectionAnimations = defineAnimations({
       theta1: 30,
       depth: 2,
       n: 1.33,
-    },
+    } as const,
     paramMeta: [
       { key: 'theta1', label: '入射角 i', min: 0, max: 90, step: 1, unit: '°', showIf: 'mode', showIfValue: 0 },
       { key: 'depth', label: '光源深度 h', min: 0.5, max: 5, step: 0.1, unit: 'm', showIf: 'mode', showIfValue: 1 },

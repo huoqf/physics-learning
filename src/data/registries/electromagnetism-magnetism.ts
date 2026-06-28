@@ -17,7 +17,7 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
       mu: 0.2,
       showLeftHand: 1,
       showForceComponents: 1,
-    },
+    } as const,
     paramMeta: [
       { key: 'I', label: '电流 I', min: -10.0, max: 10.0, step: 0.5, unit: 'A' },
       { key: 'B', label: '磁感应强度 B', min: -2.0, max: 2.0, step: 0.1, unit: 'T' },
@@ -42,7 +42,7 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
       keepTrack: 1,
       showElectricField: 1,
       showHandRule: 1,
-    },
+    } as const,
     paramMeta: [
       { key: 'v0', label: '入射速度 v', min: 2, max: 20, step: 0.5, unit: 'm/s' },
       { key: 'B', label: '磁感应强度 B', min: 0.2, max: 4.0, step: 0.1, unit: 'T' },
@@ -55,7 +55,7 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
     knowledgeId: 'electricity-3-3',
     Component: lazy(() => import('@/features/electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField')),
     SidebarExtra: lazy(() => import('@/features/electromagnetism/magnetism/BoundaryMagneticField/ChargeInBFieldSidebar')),
-    defaultParams: { mode: 0, q: 1, m: 1, v: 10, B: 1, theta: 90, showArc: 1, showEnvelope: 0 },
+    defaultParams: { mode: 0, q: 1, m: 1, v: 10, B: 1, theta: 90, showArc: 1, showEnvelope: 0 } as const,
     paramMeta: [
       { key: 'v', label: '速度 v', min: 1, max: 50, step: 1, unit: 'm/s', showIf: 'mode', showIfValue: 0 },
       { key: 'B', label: '磁感应强度 B', min: 0.1, max: 5, step: 0.1, unit: 'T' },

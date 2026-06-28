@@ -12,7 +12,7 @@ export const opticsRefractionAnimations = defineAnimations({
       n: 1.5,
       advancedMode: 0,
       glassThickness: 20,
-    },
+    } as const,
     paramMeta: [
       { key: 'theta1', label: '入射角 θ₁', min: 0, max: 90, step: 1, unit: '°' },
       { key: 'n', label: '玻璃折射率 n', min: 1.2, max: 1.9, step: 0.01 },

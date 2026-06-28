@@ -9,7 +9,7 @@ export const electromagnetismDcCircuitsAnimations = defineAnimations({
     Component: lazy(() => import('@/features/electromagnetism/dc-circuits/OhmLaw')),
     CenterExtra: lazy(() => import('@/features/electromagnetism/dc-circuits/OhmLawCenterExtra')),
     SidebarExtra: lazy(() => import('@/features/electromagnetism/dc-circuits/OhmLawSidebar')),
-    defaultParams: { U: 2, R: 10, mode: 0, showChart: 1 },
+    defaultParams: { U: 2, R: 10, mode: 0, showChart: 1 } as const,
   },
   'anim-circuit-analysis': {
     title: '串并联电路及电路动态分析',
@@ -17,7 +17,7 @@ export const electromagnetismDcCircuitsAnimations = defineAnimations({
     Component: lazy(() => import('@/features/electromagnetism/dc-circuits/CircuitAnalysis')),
     CenterExtra: lazy(() => import('@/features/electromagnetism/dc-circuits/CircuitAnalysisCenterExtra')),
     SidebarExtra: lazy(() => import('@/features/electromagnetism/dc-circuits/CircuitAnalysisSidebar')),
-    defaultParams: { U: 12, R1: 20, R2: 10, R3: 30, mode: 0, subMode: 0, showChart: 1 },
+    defaultParams: { U: 12, R1: 20, R2: 10, R3: 30, mode: 0, subMode: 0, showChart: 1 } as const,
   },
   'anim-closed-circuit': {
     title: '闭合电路欧姆定律',
@@ -25,6 +25,6 @@ export const electromagnetismDcCircuitsAnimations = defineAnimations({
     Component: lazy(() => import('@/features/electromagnetism/dc-circuits/ClosedCircuit')),
     CenterExtra: lazy(() => import('@/features/electromagnetism/dc-circuits/ClosedCircuitCenterExtra')),
     SidebarExtra: lazy(() => import('@/features/electromagnetism/dc-circuits/ClosedCircuitSidebar')),
-    defaultParams: { EMF: 6, r: 2, R: 10, mode: 1, highlightLoss: 0 },
+    defaultParams: { EMF: 6, r: 2, R: 10, mode: 1, highlightLoss: 0 } as const,
   },
 })

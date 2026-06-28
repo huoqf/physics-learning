@@ -18,7 +18,7 @@ export const electromagnetismInductionAnimations = defineAnimations({
       dR_dt: 0,
       circuitSwitch: 1,
       hasIronCore: 1,
-    },
+    } as const,
     paramMeta: [],
   },
   'anim-faraday-law': {
@@ -32,14 +32,14 @@ export const electromagnetismInductionAnimations = defineAnimations({
       B: 1.2,
       magnetV: 140,
       dBdt: 0.5,
-    },
+    } as const,
     paramMeta: [],
   },
   'anim-lenzs-law': {
     title: '楞次定律',
     knowledgeId: 'electricity-4-1',
     Component: lazy(() => import('@/features/electromagnetism/induction/LenzsLaw')),
-    defaultParams: { magnetSpeed: 2, magnetPole: 1, coilN: 10 },
+    defaultParams: { magnetSpeed: 2, magnetPole: 1, coilN: 10 } as const,
     paramMeta: [
       { key: 'magnetSpeed', label: '磁铁速度', min: 0.5, max: 5, step: 0.5, unit: '' },
       { key: 'magnetPole', label: '磁极朝向', min: -1, max: 1, step: 2, unit: '1=N下 -1=S下' },
@@ -61,7 +61,7 @@ export const electromagnetismInductionAnimations = defineAnimations({
       F_ext: 2.0, // N
       m: 0.2, // kg
       showForceAnalysis: 1, // 开启受力分析
-    },
+    } as const,
     paramMeta: [],
   },
 })

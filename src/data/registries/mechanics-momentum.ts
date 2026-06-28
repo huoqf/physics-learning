@@ -6,7 +6,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
     title: '动量',
     knowledgeId: 'mechanics-8-1',
     Component: lazy(() => import('@/features/mechanics/momentum/MomentumAnimation')),
-    defaultParams: { m: 3, v: 4, mA: 3, vA: 5, mB: 2, vB: -3, advancedMode: 0, showEkChart: 1 },
+    defaultParams: { m: 3, v: 4, mA: 3, vA: 5, mB: 2, vB: -3, advancedMode: 0, showEkChart: 1 } as const,
     paramMeta: [
       { key: 'm', label: '质量 m', min: 1, max: 10, step: 0.5, unit: 'kg', showIf: 'advancedMode', showIfValue: 0 },
       { key: 'v', label: '速度 v', min: 1, max: 10, step: 0.5, unit: 'm/s', showIf: 'advancedMode', showIfValue: 0 },
@@ -21,7 +21,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
     title: '冲量',
     knowledgeId: 'mechanics-8-2',
     Component: lazy(() => import('@/features/mechanics/momentum/ImpulseAnimation')),
-    defaultParams: { F: 10, t_duration: 3, FMax: 10, t_total: 3, forceType: 0, advancedMode: 0 },
+    defaultParams: { F: 10, t_duration: 3, FMax: 10, t_total: 3, forceType: 0, advancedMode: 0 } as const,
     paramMeta: [
       { key: 'F', label: '恒力 F', min: 1, max: 20, step: 0.5, unit: 'N', showIf: 'advancedMode', showIfValue: 0 },
       { key: 't_duration', label: '作用时间 t', min: 1, max: 10, step: 0.5, unit: 's', showIf: 'advancedMode', showIfValue: 0 },
@@ -34,7 +34,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
     title: '动量定理',
     knowledgeId: 'mechanics-8-3',
     Component: lazy(() => import('@/features/mechanics/momentum/MomentumTheoremAnimation')),
-    defaultParams: { m: 2, h: 2, k: 5, rho: 1000, S: 0.01, v_fluid: 5, alpha: 0, advancedMode: 0 },
+    defaultParams: { m: 2, h: 2, k: 5, rho: 1000, S: 0.01, v_fluid: 5, alpha: 0, advancedMode: 0 } as const,
     paramMeta: [
       { key: 'm', label: '物体质量 m', min: 0.5, max: 10, step: 0.5, unit: 'kg', showIf: 'advancedMode', showIfValue: 0 },
       { key: 'h', label: '下落高度 h', min: 0.5, max: 5, step: 0.5, unit: 'm', showIf: 'advancedMode', showIfValue: 0 },
@@ -50,7 +50,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
     title: '动量守恒定律',
     knowledgeId: 'mechanics-8-4',
     Component: lazy(() => import('@/features/mechanics/momentum/MomentumConservationAnimation')),
-    defaultParams: { m1: 3, v1: 5, m2: 2, v2: 0, m_slider: 1, M_board: 3, v0: 6, mu: 0.3, L: 2, advancedMode: 0, collisionType: 0, e_coefficient: 0.5 },
+    defaultParams: { m1: 3, v1: 5, m2: 2, v2: 0, m_slider: 1, M_board: 3, v0: 6, mu: 0.3, L: 2, advancedMode: 0, collisionType: 0, e_coefficient: 0.5 } as const,
     paramMeta: [
       { key: 'm1', label: 'A球质量 m₁', min: 0.5, max: 10, step: 0.5, unit: 'kg', showIf: 'advancedMode', showIfValue: 0 },
       { key: 'v1', label: 'A球速度 v₁', min: -10, max: 10, step: 0.5, unit: 'm/s', showIf: 'advancedMode', showIfValue: 0 },
@@ -67,7 +67,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
     title: '弹性碰撞与非弹性碰撞',
     knowledgeId: 'mechanics-8-5',
     Component: lazy(() => import('@/features/mechanics/momentum/CollisionAnimation')),
-    defaultParams: { m1: 3, v1: 5, m2: 2, v2: 0, isElastic: 1, mA: 3, vA: 5, mB: 2, kLoss: 0, advancedMode: 0 },
+    defaultParams: { m1: 3, v1: 5, m2: 2, v2: 0, isElastic: 1, mA: 3, vA: 5, mB: 2, kLoss: 0, advancedMode: 0 } as const,
     paramMeta: [
       { key: 'm1', label: 'A球质量 m₁', min: 0.5, max: 10, step: 0.5, unit: 'kg', showIf: 'advancedMode', showIfValue: 0 },
       { key: 'v1', label: 'A球速度 v₁', min: -10, max: 10, step: 0.5, unit: 'm/s', showIf: 'advancedMode', showIfValue: 0 },
@@ -96,7 +96,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
       M_boat: 150,
       L_boat: 4,
       manBoatControl: 0, // 0: 自动, 1: 键盘
-    },
+    } as const,
     paramMeta: [
       { key: 'modelType', label: '选择经典模型', min: 0, max: 2, step: 1, unit: '', showIf: 'always' }
     ],

@@ -12,7 +12,7 @@ export const opticsReflectionAnimations = defineAnimations({
       advancedMode: 0,
       mirrorRotation: 0,
       showNormal: 1,
-    },
+    } as const,
     paramMeta: [
       { key: 'theta1', label: '入射角 θ₁', min: 0, max: 90, step: 1, unit: '°' },
       {

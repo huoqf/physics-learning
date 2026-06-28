@@ -62,12 +62,12 @@ export interface SidebarExtraProps {
   disabled?: boolean
 }
 
-export interface AnimationConfig {
+export interface AnimationConfig<P extends Record<string, number> = Record<string, number>> {
   id: string
   title: string
   knowledgeId: string
   Component: LazyExoticComponent<ComponentType>
-  defaultParams: Record<string, number>
+  defaultParams: P
   /** 参数控件元数据（替代页面层硬编码的 paramConfigs） */
   paramMeta?: ParamMeta[]
   /** 是否支持发现模式 */
@@ -84,7 +84,7 @@ export interface AnimationConfig {
   centerExtraMode?: string
   /** 可选：有物理状态需要每帧计算的动画才声明（如粒子轨迹） */
   updatePhysics?: (
-    params: Record<string, number>,
+    params: P,
     t: number,
     dt: number,
   ) => Partial<import('@/stores').PhysicsState> | null

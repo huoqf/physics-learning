@@ -13,7 +13,7 @@ export const opticsThinLensAnimations = defineAnimations({
       u: 30,
       f: 10,
       L: 50,
-    },
+    } as const,
     paramMeta: [
       { key: 'u', label: '物距 u', min: 1, max: 80, step: 0.5, unit: 'cm',
         showIf: 'mode', showIfValue: 0 },

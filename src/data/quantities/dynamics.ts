@@ -4,7 +4,8 @@
  * 从 physicsQuantities.ts 拆分而来，涵盖连接体、弹簧力、摩擦力、
  * 平衡、矢量合成、牛顿第二定律、超失重、重力基础、万有引力等动画。
  */
-import type { PhysicsPanelData, PhysicsQuantity, Formula, GaokaoPoint } from './types'
+import type { PhysicsPanelData, PhysicsQuantity, Formula, GaokaoPoint, ParamDefs } from './types'
+import { normalizeParams } from './types'
 import {
   GRAVITY,
   calculateEarthGravity,
@@ -18,21 +19,93 @@ import {
   calculateElevatorMotion,
 } from '../../physics'
 
+/** 动力学构建器参数类型 */
+interface DynamicsParams {
+  m1: number
+  m2: number
+  F: number
+  mu: number
+  advancedMode: number
+  analysisView: number
+  k: number
+  m: number
+  omega: number
+  mode: number
+  g: number
+  F_applied: number
+  M: number
+  angle: number
+  mu_1: number
+  mu_2: number
+  theta1: number
+  theta2: number
+  f1: number
+  f2: number
+  modelIdx: number
+  F0: number
+  a: number
+  latitude: number
+  omegaScale: number
+  suspendPoint: number
+  showWeight: number
+  weightMass: number
+  weightX: number
+  weightY: number
+  preset: number
+  r: number
+}
+
+const DYNAMICS_DEFAULTS: ParamDefs<DynamicsParams> = {
+  m1: { default: 2 },
+  m2: { default: 3 },
+  F: { default: 15 },
+  mu: { default: 0.1 },
+  advancedMode: { default: 0 },
+  analysisView: { default: 0 },
+  k: { default: 100 },
+  m: { default: 5 },
+  omega: { default: 1.5 },
+  mode: { default: 0 },
+  g: { default: 9.8 },
+  F_applied: { default: 15 },
+  M: { default: 10 },
+  angle: { default: 15 },
+  mu_1: { default: 0.3 },
+  mu_2: { default: 0.2 },
+  theta1: { default: 45 },
+  theta2: { default: 45 },
+  f1: { default: 10 },
+  f2: { default: 8 },
+  modelIdx: { default: 0 },
+  F0: { default: 15 },
+  a: { default: 2 },
+  latitude: { default: 45 },
+  omegaScale: { default: 80 },
+  suspendPoint: { default: 0 },
+  showWeight: { default: 0 },
+  weightMass: { default: 1.2 },
+  weightX: { default: 25 },
+  weightY: { default: 25 },
+  preset: { default: 0 },
+  r: { default: 5 },
+}
+
 export function buildDynamicsQuantities(
   animId: string,
   params: Record<string, number>,
   time: number
 ): PhysicsPanelData | null {
   const base: PhysicsQuantity[] = []
+  const p = normalizeParams(params, DYNAMICS_DEFAULTS)
 
   switch (animId) {
     case 'anim-connected-bodies': {
-      const m1 = params.m1 ?? 2
-      const m2 = params.m2 ?? 3
-      const F = params.F ?? 15
-      const mu = params.mu ?? 0.1
-      const advancedMode = params.advancedMode ?? 0
-      const analysisView = params.analysisView ?? 0 // 0=普通, 1=整体, 2=隔离m1, 3=隔离m2
+      const m1 = p.m1 ?? 2
+      const m2 = p.m2 ?? 3
+      const F = p.F ?? 15
+      const mu = p.mu ?? 0.1
+      const advancedMode = p.advancedMode ?? 0
+      const analysisView = p.analysisView ?? 0 // 0=普通, 1=整体, 2=隔离m1, 3=隔离m2
 
       // 1. 物理计算（单一来源：calculateConnectedBody）
       const physicsResult = calculateConnectedBody(m1, m2, F, mu, GRAVITY)
@@ -94,8 +167,8 @@ export function buildDynamicsQuantities(
     }
 
     case 'anim-spring-force': {
-      const k = params.k ?? 100
-      const m = params.m ?? 1
+      const k = p.k ?? 100
+      const m = p.m ?? 1
       const omega = Math.sqrt(k / m)
       const amplitude = 0.5
       const displacement = amplitude * Math.sin(omega * time)
@@ -119,14 +192,14 @@ export function buildDynamicsQuantities(
     }
 
     case 'anim-friction': {
-      const mode = params.mode ?? 0
-      const m = params.m ?? 5
-      const mu = params.mu ?? 0.3
-      const g = params.g ?? GRAVITY
+      const mode = p.mode ?? 0
+      const m = p.m ?? 5
+      const mu = p.mu ?? 0.3
+      const g = p.g ?? GRAVITY
 
       if (mode === 0) {
         // 水平外力模型 (f-F)
-        const F_applied = params.F_applied ?? 15
+        const F_applied = p.F_applied ?? 15
         const { a, F_net, isSliding, f_actual } = calculateFrictionPullModel(m, mu, F_applied, g)
 
         return {
@@ -151,10 +224,10 @@ export function buildDynamicsQuantities(
         }
       } else {
         // 双重摩擦力斜面模型 (f-θ)
-        const M = params.M ?? 10
-        const theta = params.angle ?? 15
-        const mu_1 = params.mu_1 ?? 0.3
-        const mu_2 = params.mu_2 ?? 0.2
+        const M = p.M ?? 10
+        const theta = p.angle ?? 15
+        const mu_1 = p.mu_1 ?? 0.3
+        const mu_2 = p.mu_2 ?? 0.2
         const res = calculateDoubleFrictionIncline({ m, M, theta, mu_1, mu_2, g })
 
         let stateStr = '完全静止'
@@ -195,10 +268,10 @@ export function buildDynamicsQuantities(
     }
 
     case 'anim-equilibrium': {
-      const m = params.m ?? 2.0
-      const theta1 = params.theta1 ?? 45
-      const theta2 = params.theta2 ?? 45
-      const mode = params.mode ?? 0 // 0 = 基础悬挂, 1 = 平行四边形, 2 = 正交分解, 3 = 封闭三角形
+      const m = p.m ?? 2.0
+      const theta1 = p.theta1 ?? 45
+      const theta2 = p.theta2 ?? 45
+      const mode = p.mode ?? 0 // 0 = 基础悬挂, 1 = 平行四边形, 2 = 正交分解, 3 = 封闭三角形
       const g = GRAVITY
       const gravity = m * g
 
@@ -297,10 +370,10 @@ export function buildDynamicsQuantities(
 
     case 'anim-vector-addition': {
       const quantities: PhysicsQuantity[] = [...base]
-      const f1 = params.f1 ?? 10
-      const f2 = params.f2 ?? 8
-      const angle = params.angle ?? 60
-      const mode = params.mode ?? 0 // 0=平行四边形, 1=三角形, 2=正交分解
+      const f1 = p.f1 ?? 10
+      const f2 = p.f2 ?? 8
+      const angle = p.angle ?? 60
+      const mode = p.mode ?? 0 // 0=平行四边形, 1=三角形, 2=正交分解
 
       if (mode === 2) {
         const { fx, fy } = calculateOrthogonalDecomposition(f1, angle)
@@ -348,10 +421,10 @@ export function buildDynamicsQuantities(
     }
 
     case 'anim-newton-second': {
-      const F = params.F ?? 10
-      const m = params.m ?? 2
-      const mu = params.mu ?? 0
-      const advancedMode = params.advancedMode ?? 0
+      const F = p.F ?? 10
+      const m = p.m ?? 2
+      const mu = p.mu ?? 0
+      const advancedMode = p.advancedMode ?? 0
 
       let F_applied = F
       let f = 0
@@ -362,10 +435,10 @@ export function buildDynamicsQuantities(
 
       if (advancedMode === 1) {
         // 进阶模式：变力运动
-        const modelIdx = (params.modelIdx ?? 0) as 0 | 1
-        const k = params.k ?? 2
-        const F0 = params.F0 ?? 15
-        const omega = params.omega ?? 1.5
+        const modelIdx = (p.modelIdx ?? 0) as 0 | 1
+        const k = p.k ?? 2
+        const F0 = p.F0 ?? 15
+        const omega = p.omega ?? 1.5
         const motion = calculateNewtonSecondVariableMotion(modelIdx, { m, mu, k, F0, omega }, time)
         F_applied = motion.F_applied
         f = motion.f
@@ -407,10 +480,10 @@ export function buildDynamicsQuantities(
     }
 
     case 'anim-weightlessness': {
-      const m = params.m ?? 50
-      const g = params.g ?? 9.8
-      const a_param = params.a ?? 2
-      const advancedMode = params.advancedMode ?? 0
+      const m = p.m ?? 50
+      const g = p.g ?? 9.8
+      const a_param = p.a ?? 2
+      const advancedMode = p.advancedMode ?? 0
 
       let a = a_param
       let v = 0
@@ -418,7 +491,7 @@ export function buildDynamicsQuantities(
       let stateName = '正常平衡'
 
       if (advancedMode === 1) {
-        const modelIdx = (params.modelIdx ?? 0) as 0 | 1
+        const modelIdx = (p.modelIdx ?? 0) as 0 | 1
         const motion = calculateElevatorMotion(modelIdx, m, g, time)
         a = motion.a
         v = motion.v
@@ -464,12 +537,12 @@ export function buildDynamicsQuantities(
     }
 
     case 'anim-gravity-basic': {
-      const mode = params.mode ?? 0
+      const mode = p.mode ?? 0
 
       if (mode === 0) {
         // 地球自转模式
-        const latitude = params.latitude ?? 45
-        const omegaScale = params.omegaScale ?? 80
+        const latitude = p.latitude ?? 45
+        const omegaScale = p.omegaScale ?? 80
         const m = 1.0
         const F_gravitation = 100 // 相对基准大小
         const { F_grav, F_centripetal, G_force, angleDeviation } = calculateEarthGravity(
@@ -496,16 +569,16 @@ export function buildDynamicsQuantities(
       }
 
       // mode=1: 悬挂法重心实验
-      const suspendPoint = params.suspendPoint ?? 0
-      const showWeight = params.showWeight ?? 0
-      const weightMass = params.weightMass ?? 1.2
+      const suspendPoint = p.suspendPoint ?? 0
+      const showWeight = p.showWeight ?? 0
+      const weightMass = p.weightMass ?? 1.2
 
       const baseCenterX = 5, baseCenterY = 5
       let centerX = baseCenterX, centerY = baseCenterY
       if (showWeight === 1) {
         const totalMass = 1.0 + weightMass
-        centerX = (baseCenterX * 1.0 + (params.weightX ?? 25) * weightMass) / totalMass
-        centerY = (baseCenterY * 1.0 + (params.weightY ?? 25) * weightMass) / totalMass
+        centerX = (baseCenterX * 1.0 + (p.weightX ?? 25) * weightMass) / totalMass
+        centerY = (baseCenterY * 1.0 + (p.weightY ?? 25) * weightMass) / totalMass
       }
 
       return {
@@ -532,13 +605,13 @@ export function buildDynamicsQuantities(
     }
 
     case 'anim-gravity': {
-      const mode = params.mode ?? 0 // 0=相对单位, 1=真实尺度
-      const preset = params.preset ?? 0 // 0=自定义, 1=地月, 2=日地, 3=同步卫星, 4=宇航员
+      const mode = p.mode ?? 0 // 0=相对单位, 1=真实尺度
+      const preset = p.preset ?? 0 // 0=自定义, 1=地月, 2=日地, 3=同步卫星, 4=宇航员
       const G = 6.674e-11
 
-      let m1 = params.m1 ?? 1000
-      let m2 = params.m2 ?? 10
-      let r = params.r ?? 5
+      let m1 = p.m1 ?? 1000
+      let m2 = p.m2 ?? 10
+      let r = p.r ?? 5
       let F_val = 0
 
       if (mode === 1) {
@@ -580,9 +653,9 @@ export function buildDynamicsQuantities(
             break
           default:
             // 自定义：用 params 的滑块相对放大作为真实尺度
-            realM1 = (params.m1 ?? 1000) * 1e21
-            realM2 = (params.m2 ?? 10) * 1e20
-            realR = (params.r ?? 5) * 1e7
+            realM1 = (p.m1 ?? 1000) * 1e21
+            realM2 = (p.m2 ?? 10) * 1e20
+            realR = (p.r ?? 5) * 1e7
             name1 = '天体 1'
             name2 = '天体 2'
             break

@@ -7,7 +7,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
     title: '恒力做功',
     knowledgeId: 'mechanics-7-1',
     Component: lazy(() => import('@/features/mechanics/energy/WorkAnimation')),
-    defaultParams: { F: 10, angleDeg: 30, s: 5, m: 2, mu: 0.3, g: GRAVITY, mode: 0 },
+    defaultParams: { F: 10, angleDeg: 30, s: 5, m: 2, mu: 0.3, g: GRAVITY, mode: 0 } as const,
     paramMeta: [
       { key: 'F', label: '拉力 F', min: 0, max: 50, step: 1, unit: 'N' },
       { key: 'angleDeg', label: '夹角 θ', min: 0, max: 180, step: 5, unit: '°' },
@@ -39,7 +39,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
     title: '功率',
     knowledgeId: 'mechanics-7-2',
     Component: lazy(() => import('@/features/mechanics/energy/PowerAnimation')),
-    defaultParams: { P: 60000, m: 2000, f: 2000, a: 1.5, mode: 0 },
+    defaultParams: { P: 60000, m: 2000, f: 2000, a: 1.5, mode: 0 } as const,
     paramMeta: [
       { key: 'P', label: '额定功率 P', min: 10000, max: 200000, step: 5000, unit: 'W' },
       { key: 'm', label: '质量 m', min: 500, max: 5000, step: 100, unit: 'kg' },
@@ -70,7 +70,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
     title: '动能定理',
     knowledgeId: 'mechanics-7-3',
     Component: lazy(() => import('@/features/mechanics/energy/KineticEnergyAnimation')),
-    defaultParams: { m: 2, v0: 0, F: 15, s: 6, R: 5, mu: 0.15, mode: 0 },
+    defaultParams: { m: 2, v0: 0, F: 15, s: 6, R: 5, mu: 0.15, mode: 0 } as const,
     paramMeta: [
       { key: 'm', label: '质量 m', min: 1, max: 10, step: 0.5, unit: 'kg' },
       { key: 'v0', label: '初速度 v₀', min: 0, max: 5, step: 0.5, unit: 'm/s' },
@@ -121,7 +121,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
     title: '重力势能与弹性势能',
     knowledgeId: 'mechanics-7-4',
     Component: lazy(() => import('@/features/mechanics/energy/PotentialEnergyAnimation')),
-    defaultParams: { m: 2, g: 9.8, y0: 8, y_ref: 3, k: 100, x0: 2.0, mode: 0 },
+    defaultParams: { m: 2, g: 9.8, y0: 8, y_ref: 3, k: 100, x0: 2.0, mode: 0 } as const,
     paramMeta: [
       { key: 'm', label: '质量 m', min: 0.5, max: 8, step: 0.5, unit: 'kg' },
       {
@@ -171,7 +171,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
     title: '机械能守恒定律',
     knowledgeId: 'mechanics-7-5',
     Component: lazy(() => import('@/features/mechanics/energy/EnergyConservationAnimation')),
-    defaultParams: { m: 2.0, g: 9.8, L: 5.0, theta0: 45, R: 5.0, mu: 0.1, mode: 0, hRef: 0.0 },
+    defaultParams: { m: 2.0, g: 9.8, L: 5.0, theta0: 45, R: 5.0, mu: 0.1, mode: 0, hRef: 0.0 } as const,
     paramMeta: [
       { key: 'm', label: '质量 m', min: 0.5, max: 5.0, step: 0.5, unit: 'kg' },
       { key: 'theta0', label: '初始角 θ₀', min: -60, max: 60, step: 5, unit: '°' },
@@ -212,7 +212,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
     title: '竖直弹簧复合模型',
     knowledgeId: 'mechanics-7-6',
     Component: lazy(() => import('@/features/mechanics/energy/SpringCompositeAnimation')),
-    defaultParams: { m: 0.5, k: 50, h: 0.8, mode: 0, showVectors: 1, autoPause: 0 },
+    defaultParams: { m: 0.5, k: 50, h: 0.8, mode: 0, showVectors: 1, autoPause: 0 } as const,
     paramMeta: [
       { key: 'm', label: '质量 m', min: 0.2, max: 0.8, step: 0.1, unit: 'kg' },
       { key: 'k', label: '劲度系数 k', min: 30, max: 80, step: 10, unit: 'N/m' },
@@ -234,7 +234,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
     knowledgeId: 'mechanics-7-7',
     maxTime: 6,
     Component: lazy(() => import('@/features/mechanics/energy/LightRodRopeAnimation')),
-    defaultParams: { m1: 1.0, m2: 1.0, L: 1.2, constraint: 0, showParticles: 1, theta0: 30, v0: 0.0, showGravity: 1, showTension: 1, showResolution: 1 },
+    defaultParams: { m1: 1.0, m2: 1.0, L: 1.2, constraint: 0, showParticles: 1, theta0: 30, v0: 0.0, showGravity: 1, showTension: 1, showResolution: 1 } as const,
     paramMeta: [
       { key: 'm1', label: 'A球质量 m₁', min: 0.5, max: 1.5, step: 0.1, unit: 'kg' },
       { key: 'm2', label: 'B球质量 m₂', min: 0.5, max: 1.5, step: 0.1, unit: 'kg' },

@@ -12,7 +12,7 @@ export const thermodynamicsFirstLawAnimations = defineAnimations({
       Q: 0,
       adiabatic: 0,
       T: 300,
-    },
+    } as const,
     paramMeta: [
       { key: 'W', label: '外界做功 W', min: -500, max: 500, step: 10, unit: 'J' },
       { key: 'Q', label: '热源供热量 Q', min: -500, max: 500, step: 10, unit: 'J',

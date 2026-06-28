@@ -11,7 +11,7 @@ export const thermodynamicsGasLawsAnimations = defineAnimations({
       mode: 0,
       T: 300,
       V: 5e-3,
-    },
+    } as const,
     paramMeta: [
       { key: 'T', label: '温度 T', min: 200, max: 600, step: 1, unit: 'K' },
       { key: 'V', label: '体积 V', min: 1e-4, max: 1e-2, step: 1e-4, unit: 'm³' },
@@ -28,7 +28,7 @@ export const thermodynamicsGasLawsAnimations = defineAnimations({
       mode: 0,
       V: 5e-3,
       T: 300,
-    },
+    } as const,
     paramMeta: [
       { key: 'V', label: '体积 V', min: 1e-4, max: 1e-2, step: 1e-4, unit: 'm³' },
       { key: 'T', label: '温度 T', min: 200, max: 600, step: 1, unit: 'K' },

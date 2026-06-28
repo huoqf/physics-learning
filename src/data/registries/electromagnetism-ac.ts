@@ -12,7 +12,7 @@ export const electromagnetismAcAnimations = defineAnimations({
       mode: 0,
       B: 0.5, S: 0.04, omega: 2, N: 100, initialPhase: 0,
       showVelocityDecomp: 0, showCoilNormal: 0,
-    },
+    } as const,
     paramMeta: [],
   },
   'anim-ac-values': {
@@ -27,7 +27,7 @@ export const electromagnetismAcAnimations = defineAnimations({
       R: 10,
       Idc: 3,
       duty: 0.5,
-    },
+    } as const,
     paramMeta: [],
   },
   'anim-transformer': {
@@ -35,7 +35,7 @@ export const electromagnetismAcAnimations = defineAnimations({
     knowledgeId: 'electricity-5-3',
     Component: lazy(() => import('@/features/electromagnetism/induction/Transformer')),
     SidebarExtra: lazy(() => import('@/features/electromagnetism/induction/TransformerSidebarExtra')),
-    defaultParams: { mode: 0, n1: 100, n2: 200, U1: 220, R: 50 },
+    defaultParams: { mode: 0, n1: 100, n2: 200, U1: 220, R: 50 } as const,
     paramMeta: [
       { key: 'n1', label: '原线圈匝数 n₁', min: 10, max: 500, step: 10, unit: '匝' },
       { key: 'n2', label: '副线圈匝数 n₂', min: 10, max: 500, step: 10, unit: '匝' },
@@ -58,7 +58,7 @@ export const electromagnetismAcAnimations = defineAnimations({
       N: 10,                // 用户并联户数（进阶模式）
       showIdeal: 0,         // 0/1 显示理想无损耗对比
       peakLoad: 0,          // 0/1 一键触发傍晚用电高峰
-    },
+    } as const,
     paramMeta: [
       // 基础模式只显示 U2（核心变量）
       { key: 'U2', label: '输电电压 U₂', min: 2, max: 50, step: 1, unit: 'kV' },
