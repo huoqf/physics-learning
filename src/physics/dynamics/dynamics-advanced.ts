@@ -296,7 +296,7 @@ export function precomputeVerticalCircularMotion(
   const vLoopLimit = trackType === 1 ? Math.sqrt(4 * g * r) : Math.sqrt(5 * g * r)
 
   let category: 'swing' | 'fall' | 'loop' = 'fall'
-  if (v0 <= vSwingLimit) {
+  if (v0 < vSwingLimit) {
     category = 'swing'
   } else if (v0 >= vLoopLimit) {
     category = 'loop'
@@ -354,22 +354,41 @@ export function precomputeVerticalCircularMotion(
       vy = vyFly - g * tFly
       N = 0
 
-      // 再次撞击圆轨道壁的回收碰撞检测
-      if (tFly > 0.05 && x * x + y * y >= r * r) {
-        const dist = Math.sqrt(x * x + y * y)
-        x = (x / dist) * r
-        y = (y / dist) * r
-        theta = Math.atan2(x, -y)
+      // 绳模型：脱轨/松弛后先按抛体运动；当绳长再次达到 r 且径向向外运动时，
+      // 绳子瞬间绷紧，径向速度由约束冲量消除，只保留切向速度。
+      // 这不是“无模型吸回轨道”，而是不可伸长轻绳的非弹性绷紧模型。
+      const distSq = x * x + y * y
+      if (trackType === 0 && distSq >= r * r) {
+        const dist = Math.sqrt(distSq)
+        const nx = x / dist
+        const ny = y / dist
+        const radialVelocity = vx * nx + vy * ny
 
-        const cosT = Math.cos(theta)
-        const sinT = Math.sin(theta)
-        const vt = vx * cosT + vy * sinT
+        if (radialVelocity > 0) {
+          x = nx * r
+          y = ny * r
+          theta = Math.atan2(x, -y)
 
-        state = 'on-track'
-        omega = vt / r
-        vx = r * omega * cosT
-        vy = r * omega * sinT
-        N = m * g * cosT + m * r * omega * omega
+          const cosT = Math.cos(theta)
+          const sinT = Math.sin(theta)
+          const vt = vx * cosT + vy * sinT
+
+          omega = vt / r
+          vx = r * omega * cosT
+          vy = r * omega * sinT
+          N = m * g * cosT + m * r * omega * omega
+
+          if (N > 0) {
+            state = 'on-track'
+          } else {
+            N = 0
+            flyTime = currentTime
+            xFly = x
+            yFly = y
+            vxFly = vx
+            vyFly = vy
+          }
+        }
       }
     }
 

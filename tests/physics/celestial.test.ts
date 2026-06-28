@@ -140,7 +140,7 @@ describe('Kepler Physics Calculations', () => {
 
       expect(v1).toBeCloseTo(expectedV1, 2)
       expect(v2).toBeCloseTo(expectedV2, 2)
-      expect(v3).toBeCloseTo(Math.sqrt(11.2), 4)
+      expect(v3).toBeCloseTo(16.7e3, 4)
     })
 
     it('should determine launch trajectories correctly', () => {

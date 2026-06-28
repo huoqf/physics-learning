@@ -11,7 +11,7 @@ export const FORCE_MOTION_MODES: ForceMotionModeOption[] = [
   { value: 1, label: '匀加速直线', description: '恒力，a恒定，v-t直线', category: 'basic' },
   { value: 2, label: '匀减速直线', description: '恒力反向，刹车陷阱', category: 'basic' },
   { value: 3, label: '匀变速曲线', description: '定角力，如斜抛', category: 'curve' },
-  { value: 4, label: '类平抛运动', description: '初速垂直于恒力', category: 'curve' },
+  { value: 4, label: '恒力偏转运动', description: 'θ=90°时为类平抛', category: 'curve' },
   { value: 5, label: '匀速圆周运动', description: '向心力，v大小不变', category: 'circular' },
   { value: 6, label: '变速圆周运动', description: '竖直面内，绳/杆模型', category: 'circular' },
   { value: 7, label: '简谐运动', description: 'F=-kx，弹簧振子', category: 'variable' },
@@ -49,7 +49,7 @@ export const FORCE_MOTION_PARAM_CONFIGS: Record<number, ForceMotionParamConfig[]
   ],
   4: [
     { key: 'v0', label: '初速度 v₀', min: 0, max: 10, step: 0.5, unit: 'm/s', defaultValue: 5 },
-    { key: 'theta', label: '力与速度夹角 θ', min: 0, max: 180, step: 1, unit: '°', defaultValue: 90 },
+    { key: 'theta', label: '力与初速度夹角 θ', min: 0, max: 180, step: 1, unit: '°', defaultValue: 90 },
     { key: 'm', label: '质量 m', min: 0.5, max: 20, step: 0.5, unit: 'kg', defaultValue: 2 },
     { key: 'env1', label: '电场力 F', min: 1, max: 50, step: 1, unit: 'N', defaultValue: 10 },
   ],
@@ -112,7 +112,7 @@ export const FORCE_MOTION_MAX_TIME = 60
  * 设计原则：
  * - 周期型（圆周 / 简谐）：取 5 个周期，看清波形与振幅
  * - 收尾型：取 5τ 或 maxTime 兜底
- * - 长时单调（匀加速 / 匀减速 / 类抛体 / 类平抛 / 线性变力）：取播放上限 60s
+ * - 长时单调（匀加速 / 匀减速 / 类抛体 / 恒力偏转 / 线性变力）：取播放上限 60s
  * - 平衡：5s 足够（物体静止，无需长窗）
  * - 抛体类（constant-angle-curve）：按落地估算（粗略 2·v0·sinθ/g）
  *

@@ -133,13 +133,15 @@ export default function Transformer() {
   const U1 = params.U1 ?? 220
   const R = params.R ?? 50
 
-  const { U2, I2, I1, P_input, P_output } = calculateTransformerWithLoad(n1, n2, U1, R)
+  const { U2, I2, I1, P_input, P_output, isShortCircuit } = calculateTransformerWithLoad(n1, n2, U1, R)
+  const displayI1 = Number.isFinite(I1) ? I1 : 999
+  const displayI2 = Number.isFinite(I2) ? I2 : 999
 
   // ── 电表量程（自适应）────────────────────────────────────────────────
   const v1Max = useMemo(() => niceMeterMax(U1), [U1])
   const v2Max = useMemo(() => niceMeterMax(U2), [U2])
-  const a1Max = useMemo(() => niceMeterMax(I1), [I1])
-  const a2Max = useMemo(() => niceMeterMax(I2), [I2])
+  const a1Max = useMemo(() => niceMeterMax(displayI1), [displayI1])
+  const a2Max = useMemo(() => niceMeterMax(displayI2), [displayI2])
 
   // ── 布局尺寸与物理结构定义（口字形闭合铁芯与线圈重合嵌套布局） ─────────────────
   const W = canvasSize.width
@@ -211,18 +213,18 @@ export default function Transformer() {
   )
 
   // 电子流速随电流增大而加快（duration 缩短）
-  const primaryFlowDur = Math.max(0.35, Math.min(3, 1.8 / (I1 + 0.3)))
-  const secondaryFlowDur = Math.max(0.35, Math.min(3, 1.8 / (I2 + 0.3)))
+  const primaryFlowDur = isShortCircuit ? 0.35 : Math.max(0.35, Math.min(3, 1.8 / (I1 + 0.3)))
+  const secondaryFlowDur = isShortCircuit ? 0.35 : Math.max(0.35, Math.min(3, 1.8 / (I2 + 0.3)))
 
   // ── 磁通量荧光管道与粒子流动（沿着立柱中心磁路闭合传导，磁通粒子顺滑穿过线圈中心） ──────
   // 磁通粒子流速随电压增大而加快
   const fluxFlowDur = Math.max(0.4, Math.min(2.5, 300 / (U1 + 15)))
 
   // 计算线圈发光强度参数，与回路实际电流挂钩
-  const glowRadius1 = Math.max(1.5, Math.min(6, 1 + I1 * 0.25))
-  const glowRadius2 = Math.max(1.5, Math.min(6, 1 + I2 * 0.25))
-  const primaryGlowOpacity = Math.max(0.12, Math.min(0.85, 0.12 + I1 * 0.15))
-  const secondaryGlowOpacity = Math.max(0.12, Math.min(0.85, 0.12 + I2 * 0.15))
+  const glowRadius1 = Math.max(1.5, Math.min(6, 1 + displayI1 * 0.25))
+  const glowRadius2 = Math.max(1.5, Math.min(6, 1 + displayI2 * 0.25))
+  const primaryGlowOpacity = Math.max(0.12, Math.min(0.85, 0.12 + displayI1 * 0.15))
+  const secondaryGlowOpacity = Math.max(0.12, Math.min(0.85, 0.12 + displayI2 * 0.15))
 
   const fluxRings = useMemo(() => {
     const rings = []
@@ -279,10 +281,10 @@ export default function Transformer() {
   const chainSteps: ChainStep[] = [
     { key: 'U1', label: 'U₁', value: U1, unit: 'V', color: PHYSICS_COLORS.emf },
     { key: 'U2', label: 'U₂', value: U2, unit: 'V', color: PHYSICS_COLORS.magnetSouth },
-    { key: 'I2', label: 'I₂', value: I2, unit: 'A', color: PHYSICS_COLORS.magnetSouth },
-    { key: 'Pout', label: 'P_out', value: P_output, unit: 'W', color: PHYSICS_COLORS.power },
-    { key: 'Pin', label: 'P_in', value: P_input, unit: 'W', color: PHYSICS_COLORS.power },
-    { key: 'I1', label: 'I₁', value: I1, unit: 'A', color: PHYSICS_COLORS.electricCurrent },
+    { key: 'I2', label: 'I₂', value: displayI2, unit: 'A', color: PHYSICS_COLORS.magnetSouth },
+    { key: 'Pout', label: 'P_out', value: Number.isFinite(P_output) ? P_output : 9999, unit: 'W', color: PHYSICS_COLORS.power },
+    { key: 'Pin', label: 'P_in', value: Number.isFinite(P_input) ? P_input : 9999, unit: 'W', color: PHYSICS_COLORS.power },
+    { key: 'I1', label: 'I₁', value: displayI1, unit: 'A', color: PHYSICS_COLORS.electricCurrent },
   ]
 
   const [dominoStep, setDominoStep] = useState(-1)
@@ -320,8 +322,8 @@ export default function Transformer() {
 
   // ── 功率配平参考（1kW 归一化）──────────────────────────────────────────
   const pRef = 1000
-  const pBarW = Math.min(100, (P_input / pRef) * 100)
-  const powerBalanced = Math.abs(P_input - P_output) < 0.01
+  const pBarW = isShortCircuit ? 100 : Math.min(100, (P_input / pRef) * 100)
+  const powerBalanced = !isShortCircuit && Math.abs(P_input - P_output) < 0.01
 
   return (
     <div ref={containerRef} className="w-full h-full relative">
@@ -620,7 +622,7 @@ export default function Transformer() {
             V₁
           </text>
           {/* A1 原边电流表 */}
-          <DialMeter type="A" value={I1} max={a1Max} x={v1X} y={meterBotY} r={meterR} />
+          <DialMeter type="A" value={displayI1} max={a1Max} x={v1X} y={meterBotY} r={meterR} />
           <text
             x={v1X}
             y={meterBotY + meterR + px(10)}
@@ -644,7 +646,7 @@ export default function Transformer() {
             V₂
           </text>
           {/* A2 副边电流表 */}
-          <DialMeter type="A" value={I2} max={a2Max} x={v2X} y={meterBotY} r={meterR} />
+          <DialMeter type="A" value={displayI2} max={a2Max} x={v2X} y={meterBotY} r={meterR} />
           <text
             x={v2X}
             y={meterBotY + meterR + px(10)}
@@ -674,7 +676,7 @@ export default function Transformer() {
               fill={PHYSICS_COLORS.labelText}
               fontWeight="bold"
             >
-              U₂/U₁ = n₂/n₁ · P_in = P_out{powerBalanced ? ' ✓' : ''}
+              {isShortCircuit ? '副边短路：理想模型电流趋于无穷大' : `U₂/U₁ = n₂/n₁ · P_in = P_out${powerBalanced ? ' ✓' : ''}`}
             </text>
           </g>
         </svg>
@@ -694,7 +696,7 @@ export default function Transformer() {
               <div className="flex justify-between mb-1" style={{ fontSize: font(FONT.smallSize + 2) }}>
                 <span className="text-neutral-500">P_in（输入）</span>
                 <span className="font-mono font-bold" style={{ color: PHYSICS_COLORS.power }}>
-                  {P_input.toFixed(1)} W
+                  {Number.isFinite(P_input) ? P_input.toFixed(1) + ' W' : '∞ W'}
                 </span>
               </div>
               <div className="h-3 rounded-full bg-neutral-100 overflow-hidden">
@@ -709,7 +711,7 @@ export default function Transformer() {
               <div className="flex justify-between mb-1" style={{ fontSize: font(FONT.smallSize + 2) }}>
                 <span className="text-neutral-500">P_out（输出）</span>
                 <span className="font-mono font-bold" style={{ color: PHYSICS_COLORS.power }}>
-                  {P_output.toFixed(1)} W
+                  {Number.isFinite(P_output) ? P_output.toFixed(1) + ' W' : '∞ W'}
                 </span>
               </div>
               <div className="h-3 rounded-full bg-neutral-100 overflow-hidden">
@@ -718,7 +720,7 @@ export default function Transformer() {
               </div>
             </div>
             <div className="text-emerald-600 font-semibold" style={{ fontSize: font(FONT.smallSize + 2) }}>
-              {powerBalanced ? '✓ P_in = P_out 严格守恒' : '计算中…'}
+              {isShortCircuit ? '⚠ 短路：电流超出理想模型有限范围' : powerBalanced ? '✓ P_in = P_out 严格守恒' : '计算中…'}
             </div>
           </Card>
 

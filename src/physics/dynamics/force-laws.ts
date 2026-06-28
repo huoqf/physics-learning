@@ -1,17 +1,23 @@
-export function calculateNewtonSecond(F_net: number, m: number): { a: number } {
-  return { a: F_net / m };
+export function calculateNewtonSecond(F_net: number, m: number): { a: number; valid: boolean } {
+  if (m <= 0) return { a: NaN, valid: false };
+  return { a: F_net / m, valid: true };
 }
 
-export function calculateFriction(mu: number, N: number, _isKinetic: boolean): { f: number } {
-  return { f: mu * N };
+export function calculateFriction(mu: number, N: number): { f: number; valid: boolean } {
+  if (mu < 0 || N < 0) return { f: NaN, valid: false };
+  return { f: mu * N, valid: true };
 }
 
-export function calculateCoulombForce(k: number, q1: number, q2: number, r: number): { F: number } {
-  return { F: k * Math.abs(q1 * q2) / (r * r) };
+export function calculateCoulombForce(k: number, q1: number, q2: number, r: number): { F: number; valid: boolean; singular: boolean } {
+  if (r === 0) return { F: Math.abs(q1 * q2) === 0 ? 0 : Infinity, valid: false, singular: true };
+  if (r < 0) return { F: NaN, valid: false, singular: false };
+  return { F: k * Math.abs(q1 * q2) / (r * r), valid: true, singular: false };
 }
 
-export function calculateGravitation(G: number, m1: number, m2: number, r: number): { F: number } {
-  return { F: (G * m1 * m2) / (r * r) };
+export function calculateGravitation(G: number, m1: number, m2: number, r: number): { F: number; valid: boolean; singular: boolean } {
+  if (r === 0) return { F: m1 * m2 === 0 ? 0 : Infinity, valid: false, singular: true };
+  if (r < 0) return { F: NaN, valid: false, singular: false };
+  return { F: (G * m1 * m2) / (r * r), valid: true, singular: false };
 }
 
 /**

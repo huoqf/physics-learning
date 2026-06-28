@@ -16,15 +16,60 @@ export function calcVariableCircular(
   const dt = 0.001
   let theta = theta0
   let omega = omega0
+  let slackState: { t: number; x: number; y: number; vx: number; vy: number } | null = null
+
+  const stateOnCircle = () => {
+    const v = omega * R
+    const x = R * Math.sin(theta)
+    const y = -R * Math.cos(theta)
+    const vx = v * Math.cos(theta)
+    const vy = v * Math.sin(theta)
+    const tension = m * (v * v / R + g * Math.cos(theta))
+    return { v, x, y, vx, vy, tension }
+  }
+
   const steps = Math.floor(t / dt)
+  let curT = 0
   for (let i = 0; i < steps; i++) {
+    const cur = stateOnCircle()
+    if (model === 'rope' && cur.tension <= 0) {
+      slackState = { t: curT, x: cur.x, y: cur.y, vx: cur.vx, vy: cur.vy }
+      break
+    }
     const domega = -(g / R) * Math.sin(theta) * dt
     omega += domega
     theta += omega * dt
+    curT += dt
   }
-  const rem = t - steps * dt
-  omega += -(g / R) * Math.sin(theta) * rem
-  theta += omega * rem
+
+  if (!slackState) {
+    const rem = t - steps * dt
+    const cur = stateOnCircle()
+    if (model === 'rope' && cur.tension <= 0) {
+      slackState = { t: curT, x: cur.x, y: cur.y, vx: cur.vx, vy: cur.vy }
+    } else {
+      omega += -(g / R) * Math.sin(theta) * rem
+      theta += omega * rem
+    }
+  }
+
+  if (slackState) {
+    const tau = Math.max(0, t - slackState.t)
+    const x = slackState.x + slackState.vx * tau
+    const y = slackState.y + slackState.vy * tau - 0.5 * g * tau * tau
+    const vx = slackState.vx
+    const vy = slackState.vy - g * tau
+    const v2 = vx * vx + vy * vy
+    return {
+      x, y, vx, vy,
+      ax: 0, ay: -g,
+      Fx: 0, Fy: -m * g,
+      work: 0.5 * m * v2 - 0.5 * m * v0 * v0,
+      impulse: 0,
+      isTerminal: true,
+      pauseReason: 'terminal',
+    }
+  }
 
   const v = omega * R
   const x = R * Math.sin(theta)
@@ -40,17 +85,6 @@ export function calcVariableCircular(
 
   const Fx = m * ax
   const Fy = m * ay
-
-  if (model === 'rope' && Math.cos(theta) < -0.99 && v < Math.sqrt(g * R)) {
-    return {
-      x, y, vx: 0, vy: 0, ax: 0, ay: 0,
-      Fx: 0, Fy: 0,
-      work: m * g * (R - y),
-      impulse: 0,
-      isTerminal: true,
-      pauseReason: 'terminal',
-    }
-  }
 
   return {
     x, y, vx, vy, ax, ay, Fx, Fy,

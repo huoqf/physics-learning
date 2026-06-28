@@ -31,7 +31,7 @@ const MODE_FORMULAS: Record<ForceMotionMode, Formula[]> = {
     { name: '竖直位移', latex: 'y=v_0\\sin\\theta\\cdot t-\\frac{1}{2}gt^2', level: 'core', condition: '忽略空气阻力，取抛出点为原点' },
   ],
   'projectile-like': [
-    { name: '运动分解', latex: 'x=v_0t,\\;y=\\frac{1}{2}at^2', level: 'core', condition: '初速度垂直于恒力方向' },
+    { name: '运动分解', latex: 'x=v_0t+\\frac{1}{2}a_x t^2,\\;y=\\frac{1}{2}a_y t^2', level: 'core', condition: '恒力与初速度夹角为 θ；θ=90° 时退化为类平抛' },
     { name: '偏转角', latex: '\\tan\\varphi=\\frac{at}{v_0}', level: 'important', condition: '偏转角为速度方向与初速度方向的夹角' },
     { name: '带电粒子', latex: 'a=\\frac{qE}{m}', level: 'important', condition: '匀强电场中，忽略重力' },
   ],
@@ -85,8 +85,8 @@ const MODE_GAOKAO_POINTS: Record<ForceMotionMode, GaokaoPoint[]> = {
     { text: '任意相等时间内速度变化量大小方向均相同', importance: 'core' },
   ],
   'projectile-like': [
-    { text: '带电粒子在匀强电场中的偏转', importance: 'gaokao' },
-    { text: '运动独立性：分解为沿力与垂直力两个方向', importance: 'core' },
+    { text: '带电粒子在匀强电场中的偏转；当初速度垂直电场力时为类平抛', importance: 'gaokao' },
+    { text: '运动独立性：一般恒力偏转需分解为初速度方向与垂直方向；θ=90° 是最常见类平抛特例', importance: 'core' },
   ],
   'uniform-circular': [
     { text: '天体运行圆轨道的向心力来源', importance: 'gaokao' },
@@ -128,7 +128,7 @@ const MODE_WARNINGS: Record<ForceMotionMode, WarningItem[]> = {
     { text: '任意相等时间内，速度变化量的大小和方向均相同', level: 'info' },
   ],
   'projectile-like': [
-    { text: '运动的独立性，必须分解为沿力与垂直力两个方向', level: 'warning' },
+    { text: '注意：只有 θ=90° 时才是标准类平抛；其他角度是一般恒力偏转运动', level: 'warning' },
   ],
   'uniform-circular': [
     { text: '速度方向时刻在变，向心力不做功', level: 'info' },
@@ -156,7 +156,7 @@ const MODE_MNEMONICS: Record<ForceMotionMode, string> = {
   'uniform-accel-line': '恒力生恒加速度，v-t图线是直线。',
   'uniform-decel-line': '刹车陷阱要牢记，速度为零不再动。',
   'constant-angle-curve': '定角力下曲线跑，Δv方向总不变。',
-  'projectile-like': '初速垂直于恒力，分解独立来处理。',
+  'projectile-like': '恒力偏转先分解，θ为直角才类平抛。',
   'uniform-circular': '向心力垂直速度，大小不变方向变。',
   'variable-circular': '绳杆模型要区分，临界速度记心间。',
   'simple-harmonic': '回复力与位移反，平衡位置速度最大。',

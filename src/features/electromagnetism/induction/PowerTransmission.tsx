@@ -64,7 +64,7 @@ export default function PowerTransmission() {
   const showIdeal = (params.showIdeal ?? 0) === 1
 
   // ─── 因变量（纯函数计算）─────────────────────────────────────────────────────
-  const { I_line, deltaU, P_loss, U3, U4, P_user, eta } = calculatePowerTransmission(
+  const { I_line, deltaU, P_loss, U3, U4, P_user, eta, isOverloaded } = calculatePowerTransmission(
     P1, U2, r, k
   )
 
@@ -298,6 +298,14 @@ export default function PowerTransmission() {
         className="bg-white rounded-lg shadow-inner select-none"
         style={{ fontFamily: CANVAS_STYLE.font.family }}
       >
+        {isOverloaded && (
+          <g>
+            <rect x={px(12)} y={px(10)} width={W - px(24)} height={px(28)} rx={px(6)} fill="#fee2e2" stroke="#ef4444" />
+            <text x={W / 2} y={px(29)} textAnchor="middle" fontSize={font(12)} fill="#b91c1c" fontWeight="bold">
+              线路过载：损耗超过供电能力，用户端电压/功率已按 0 处理
+            </text>
+          </g>
+        )}
         <defs>
           <filter id="heatWave" x="-20%" y="-60%" width="140%" height="220%">
             <feGaussianBlur in="SourceGraphic" stdDeviation={blurStd} />

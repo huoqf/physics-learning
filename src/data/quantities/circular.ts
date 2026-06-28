@@ -106,26 +106,26 @@ export function buildCircularQuantities(
           { label: '切向加速度 a_切', value: a_qie.toFixed(2), unit: 'm/s²' },
           { label: '合加速度 a_合', value: a_he.toFixed(2), unit: 'm/s²' },
           {
-            label: '轨道支持力 N',
+            label: trackType === 0 ? '绳拉力 T' : '杆/轨道约束力 N',
             value: pt.state === 'flying'
               ? '0.00'
-              : `${Math.abs(pt.N).toFixed(2)} ${pt.N > 0.01 ? '(向心拉/压)' : pt.N < -0.01 ? '(离心支/推)' : ''}`,
+              : `${(trackType === 0 ? Math.max(0, pt.N) : pt.N).toFixed(2)} ${pt.N > 0.01 ? '(向心拉/压)' : pt.N < -0.01 ? '(离心支/推)' : ''}`,
             unit: 'N'
           },
           { label: '运动状态', value: pt.state === 'on-track' ? '轨道滑动' : '脱轨飞行', unit: '' }
         ]
 
         formulas = [
-          { name: '最低点支持力', latex: 'F_{N,\\text{lowest}} = mg + m\\frac{v_0^2}{r}', level: 'core' },
-          { name: '等高点支持力', latex: 'F_N = m\\frac{v^2}{r}', level: 'core' },
-          { name: '最高点支持力', latex: 'F_N = m\\frac{v^2}{r} - mg', level: 'core' },
+          { name: '一般法向方程（θ自最低点起算）', latex: 'N = m\\frac{v^2}{r} + mg\\cos\\theta', level: 'core' },
+          { name: '最低点约束力', latex: 'N_{\\text{lowest}} = mg + m\\frac{v_0^2}{r}', level: 'core' },
+          { name: '最高点约束力', latex: 'N_{\\text{top}} = m\\frac{v^2}{r} - mg', level: 'core' },
           { name: '最高点临界速度 (绳模型)', latex: 'v_{\\min} = \\sqrt{gr}', level: 'important' }
         ]
 
         gaokaoPoints = [
-          { text: '绳模型与杆模型：绳模型在最高点支持力（拉力）必须大于等于零，临界速度为 v = √gr；杆模型对小球可拉可撑，在最高点通过的临界条件仅为 v > 0。', importance: 'gaokao' as const },
+          { text: '绳模型与杆模型：绳模型约束力为拉力 T，必须 T≥0，最高点临界速度为 v = √gr；杆模型对小球可拉可撑，在最高点通过的能量临界条件为 v > 0。', importance: 'gaokao' as const },
           { text: '弹力方向判定：在杆模型中，最高点速度 v > √gr 时受到向下的拉力；当 v < √gr 时受到向上的支撑力；v = √gr 时不受弹力。', importance: 'hard' as const },
-          { text: '超重与失重：最低点是小球受轨支持力最大的地方，处于超重状态，公式为 F_N = mg + mv²/r。', importance: 'core' as const },
+          { text: '超重与失重：最低点是约束力最大的地方，处于超重状态，公式为 N = mg + mv²/r。', importance: 'core' as const },
           { text: '合外力与向心力：竖直平面圆周运动的合外力包括法向的向心力和切向力。向心力是效果力，改变速度方向；切向力改变速度大小。在受力分析中，绝不能将向心力或合外力作为独立的性质力画出。', importance: 'core' as const }
         ]
       } else {

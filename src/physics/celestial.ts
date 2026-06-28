@@ -71,19 +71,19 @@ export function calculatePlanetDensity(T_surface: number, G: number): { rho: num
  * 计算三个宇宙速度
  * v1 = √(GM/R)（环绕速度）
  * v2 = √(2GM/R)（逃逸速度）
- * v3 = √(11.2)（相对地球的第三宇宙速度近似，单位 km/s）
+ * v3 ≈ 16.7 km/s（地球表面的第三宇宙速度近似，返回 m/s）
  *
  * @param M 中心天体质量 (kg)，必须 > 0
  * @param R 中心天体半径 (m)，必须 > 0
  * @param G 万有引力常量 (N·m²/kg²)
- * @returns v1 第一宇宙速度 (m/s)、v2 第二宇宙速度 (m/s)、v3 第三宇宙速度近似 (km/s)
+ * @returns v1 第一宇宙速度 (m/s)、v2 第二宇宙速度 (m/s)、v3 地球第三宇宙速度近似 (m/s)
  *
  * @category M4
  */
 export function calculateEscapeSpeed(M: number, R: number, G: number): { v1: number; v2: number; v3: number } {
   const v1 = Math.sqrt(G * M / R);
   const v2 = Math.sqrt(2 * G * M / R);
-  const v3 = Math.sqrt(11.2);
+  const v3 = 16.7e3;
   return { v1, v2, v3 };
 }
 

@@ -4,10 +4,10 @@
  */
 
 /**
- * 法拉第电磁感应定律 EMF = N·(dΦ/dt)（V）
+ * 法拉第-楞次定律 EMF = -N·(dΦ/dt)（V）
  */
 export function calculateFaradayEMF(N: number, dPhi_dt: number): { EMF: number } {
-  return { EMF: N * dPhi_dt }
+  return { EMF: -N * dPhi_dt }
 }
 
 /**
@@ -306,7 +306,7 @@ export function calculateCoilInduction(
  * @returns 感应电动势 E，单位：V
  */
 export function computeFaradayEmf(turns: number, area: number, dBdt: number): number {
-  return turns * area * dBdt
+  return -turns * area * dBdt
 }
 
 /**

@@ -50,8 +50,7 @@ export function calculateIdealGas(
   // 综合气态方程 p1V1/T1 = p2V2/T2 → 求缺失的那个
   if (solvedP2 === 0 && V2 !== undefined && T2 !== undefined) {
     // 求 p2
-    solvedP2 = T1 > 0 ? (p1 * V1 * T2) / (V1 * T1) : 0
-    solvedP2 = (p1 * T2) / T1
+    solvedP2 = T1 > 0 && V2 > 0 ? (p1 * V1 * T2) / (V2 * T1) : 0
   } else if (solvedV2 === 0 && p2 !== undefined && T2 !== undefined) {
     // 求 V2
     solvedV2 = T1 > 0 ? (p1 * V1 * T2) / (p2 * T1) : 0

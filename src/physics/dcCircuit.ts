@@ -4,8 +4,10 @@
  */
 
 /** 欧姆定律 I = U/R（A） */
-export function calculateOhmLaw(U: number, R: number): { I: number } {
-  return { I: U / R }
+export function calculateOhmLaw(U: number, R: number): { I: number; valid: boolean; shortCircuit: boolean } {
+  if (R === 0) return { I: U === 0 ? NaN : Math.sign(U) * Infinity, valid: false, shortCircuit: true }
+  if (R < 0) return { I: NaN, valid: false, shortCircuit: false }
+  return { I: U / R, valid: true, shortCircuit: false }
 }
 
 /** 串联电阻 R_total = ΣR（Ω） */
@@ -29,11 +31,15 @@ export function calculateClosedCircuit(
   EMF: number,
   r: number,
   R_ext: number
-): { I: number; U_terminal: number; P_output: number; P_total: number; eta: number } {
-  const I = EMF / (R_ext + r)
+): { I: number; U_terminal: number; P_output: number; P_total: number; eta: number; valid: boolean } {
+  const totalR = R_ext + r
+  if (totalR <= 0) {
+    return { I: NaN, U_terminal: NaN, P_output: NaN, P_total: NaN, eta: NaN, valid: false }
+  }
+  const I = EMF / totalR
   const U_terminal = EMF - I * r
   const P_output = U_terminal * I
   const P_total = EMF * I
   const eta = P_total === 0 ? 0 : P_output / P_total
-  return { I, U_terminal, P_output, P_total, eta }
+  return { I, U_terminal, P_output, P_total, eta, valid: true }
 }

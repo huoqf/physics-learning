@@ -95,7 +95,7 @@ export default function NewtonSecondAnimation() {
   } else {
     const g = GRAVITY
     const N = m * g
-    const frictionRes = calculateFriction(mu, N, true)
+    const frictionRes = calculateFriction(mu, N)
     f = frictionRes.f
     F_applied = F
     F_net = Math.max(0, F_applied - f)

@@ -87,7 +87,7 @@ export function precomputeGravityTrajectory(
     if (nextY <= 0) {
       nextY = 0
       // 速度反向并乘以恢复系数
-      let reflectedV = -v * e
+      let reflectedV = -nextV * e
       if (Math.abs(reflectedV) < 0.15) {
         reflectedV = 0 // 低于门限值时静止
       }

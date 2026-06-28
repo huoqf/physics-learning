@@ -10,7 +10,7 @@
  * 双丝线悬挂小球库仑平衡计算。
  *
  * 物理模型：两个相同质量 m 的小球，各用长 L 的丝线悬挂于同一点，
- * 带电量 q₁、q₂ 后因库仑力排斥/吸引而张开角度 θ。
+ * 带同号电量 q₁、q₂ 后因库仑力排斥而张开角度 θ。异号电荷在同悬点模型下无对称分离平衡。
  *
  * 平衡条件（隔离法）：
  *   水平：F_库 = T·sinθ
@@ -44,8 +44,14 @@ export function calculateCoulombPendulum(
   attractive: boolean
   x1: number
   x2: number
+  hasSeparatedEquilibrium: boolean
 } {
   const attractive = q1 * q2 < 0
+
+  if (attractive) {
+    // 同一点悬挂的异号电荷会相互靠近/接触，不存在“向外张开”的对称分离平衡解。
+    return { theta: 0, r: 0, F: 0, T: m * g, attractive, x1: 0, x2: 0, hasSeparatedEquilibrium: false }
+  }
 
   // 迭代求解平衡角 θ
   // tanθ = k|q₁q₂| / (4L²sin²θ · mg)
@@ -85,7 +91,7 @@ export function calculateCoulombPendulum(
   const x1 = sign * L * Math.sin(theta)
   const x2 = -sign * L * Math.sin(theta)
 
-  return { theta, r, F, T, attractive, x1, x2 }
+  return { theta, r, F, T, attractive, x1, x2, hasSeparatedEquilibrium: true }
 }
 
 /**
@@ -134,18 +140,23 @@ export function calculateThreeChargeForces(
 }
 
 /** 点电荷电场强度 E = kq/r²（N/C） */
-export function calculateElectricField(k: number, q: number, r: number): { E: number } {
-  return { E: (k * q) / (r * r) }
+export function calculateElectricField(k: number, q: number, r: number): { E: number; valid: boolean; singular: boolean } {
+  if (r === 0) return { E: q === 0 ? NaN : Math.sign(q) * Infinity, valid: false, singular: true }
+  if (r < 0) return { E: NaN, valid: false, singular: false }
+  return { E: (k * q) / (r * r), valid: true, singular: false }
 }
 
 /** 点电荷电势 V = kq/r（V） */
-export function calculateElectricPotential(k: number, q: number, r: number): { V: number } {
-  return { V: (k * q) / r }
+export function calculateElectricPotential(k: number, q: number, r: number): { V: number; valid: boolean; singular: boolean } {
+  if (r === 0) return { V: q === 0 ? NaN : Math.sign(q) * Infinity, valid: false, singular: true }
+  if (r < 0) return { V: NaN, valid: false, singular: false }
+  return { V: (k * q) / r, valid: true, singular: false }
 }
 
 /** 平行板电容 C = εS/d（F） */
-export function calculateCapacitor(epsilon: number, S: number, d: number): { C: number } {
-  return { C: (epsilon * S) / d }
+export function calculateCapacitor(epsilon: number, S: number, d: number): { C: number; valid: boolean } {
+  if (epsilon < 0 || S < 0 || d <= 0) return { C: NaN, valid: false }
+  return { C: (epsilon * S) / d, valid: true }
 }
 
 export interface EFieldSimulationPoint {
@@ -330,6 +341,9 @@ export function getChargeInEFieldTimeScale(tEnd: number, isAC: boolean): number 
 
 /**
  * 计算非匀强电场（由水平匀强背景电场与一个点电荷叠加而成）中的电势与场强。
+ *
+ * 注意：这是用于教学可视化的“正则化点电荷模型”。为避免 r→0 时数值发散，
+ * 点电荷距离会被限制在最小半径 0.1 m 内；因此近场结果不是严格库仑场。
  * 
  * 物理模型：
  * 空间存在一水平向右的匀强电场 E_base，以及一个固定位置 (xq, yq) 的点电荷 Q。
@@ -345,7 +359,7 @@ export function getChargeInEFieldTimeScale(tEnd: number, isAC: boolean): number 
  * @param x_ref        匀强电场参考 x 坐标 (m)，在此处匀强电场电势为 0
  * @param x_ground     大地参考 x 坐标 (m)
  * @param y_ground     大地参考 y 坐标 (m)
- * @returns phi 电势 (V), Ex 电场 x 分量 (V/m), Ey 电场 y 分量 (V/m), E 场强大小 (V/m)
+ * @returns phi 电势 (V), Ex/Ey 场强分量 (V/m), E 场强大小 (V/m)，以及正则化标记
  */
 export function calculateNonUniformEField(
   x: number,
@@ -358,12 +372,14 @@ export function calculateNonUniformEField(
   x_ref: number,
   x_ground: number,
   y_ground: number
-): { phi: number; Ex: number; Ey: number; E: number } {
+): { phi: number; Ex: number; Ey: number; E: number; isRegularized: boolean; rEffective: number } {
   const k = 9e9
+  const MIN_R = 0.1 // 可视化正则化半径：10 cm
   const dx = x - xq
   const dy = y - yq
   const r = Math.sqrt(dx * dx + dy * dy)
-  const rClamped = Math.max(0.1, r) // 限制最小距离 10cm，防止除零与发散
+  const rClamped = Math.max(MIN_R, r)
+  const isRegularized = r < MIN_R
 
   // 1. 点电荷产生的电势与场强
   const phiPoint = (k * Q) / rClamped
@@ -388,12 +404,12 @@ export function calculateNonUniformEField(
   if (zeroRef === 'ground') {
     const dxGround = x_ground - xq
     const dyGround = y_ground - yq
-    const rGround = Math.max(0.1, Math.sqrt(dxGround * dxGround + dyGround * dyGround))
+    const rGround = Math.max(MIN_R, Math.sqrt(dxGround * dxGround + dyGround * dyGround))
     const phiPointGround = (k * Q) / rGround
     const phiBaseGround = -E_base * (x_ground - x_ref)
     const phiGroundRef = phiBaseGround + phiPointGround
     phi = phiRaw - phiGroundRef
   }
 
-  return { phi, Ex, Ey, E }
+  return { phi, Ex, Ey, E, isRegularized, rEffective: rClamped }
 }

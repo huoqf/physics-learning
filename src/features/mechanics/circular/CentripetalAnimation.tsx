@@ -397,8 +397,8 @@ export default function CentripetalAnimation() {
             strokeDasharray={DASH.axis.join(' ')}
           />
         ) : trackType === 0 ? (
-          // 绳模型：仅在轨道滑动状态下画出绳子
-          currentPoint && currentPoint.state === 'on-track' && (
+          // 绳模型：始终画出绳子；松弛时用虚线表示，绷紧后提供约束冲量/拉力
+          currentPoint && (
             <line
               x1={centerX}
               y1={centerY}
@@ -406,6 +406,8 @@ export default function CentripetalAnimation() {
               y2={ballPos.cy}
               stroke={SCENE_COLORS.surface.ropeColor}
               strokeWidth={1.8}
+              strokeDasharray={currentPoint.state === 'flying' ? DASH.axis.join(' ') : undefined}
+              opacity={currentPoint.state === 'flying' ? 0.55 : 1}
             />
           )
         ) : (
@@ -819,9 +821,9 @@ export default function CentripetalAnimation() {
                       <span style={{ fontWeight: 'bold', color: PHYSICS_COLORS.gravity }}>{Gn_val_abs.toFixed(1)} N</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>轨道 {trackType === 0 ? 'F_T' : 'F_N'}:</span>
+                      <span>{trackType === 0 ? '绳拉力 F_T' : '约束力 F_N'}:</span>
                       <span style={{ fontWeight: 'bold', color: trackType === 0 ? PHYSICS_COLORS.tension : PHYSICS_COLORS.normalForce }}>
-                        {F_constraint_val.toFixed(1)} N
+                        {(trackType === 0 ? Math.max(0, F_constraint_val) : F_constraint_val).toFixed(1)} N
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -836,7 +838,7 @@ export default function CentripetalAnimation() {
                       borderTop: '1px solid ' + colors.neutral[200],
                       paddingTop: '4px',
                     }}>
-                      <div style={{ fontSize: canvasSize.font(9), color: colors.danger[600], fontWeight: 'bold' }}>脱轨自由飞行 (抛体运动):</div>
+                      <div style={{ fontSize: canvasSize.font(9), color: colors.danger[600], fontWeight: 'bold' }}>绳松弛：抛体运动，绳再次绷紧会消除径向速度:</div>
                       <div style={{
                         display: 'flex',
                         justifyContent: 'space-between',

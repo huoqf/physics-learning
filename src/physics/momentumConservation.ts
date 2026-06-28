@@ -75,7 +75,7 @@ export function calculateCommonVelocityTime(
 }
 
 /**
- * 计算滑块在达到共速过程中的位移
+ * 计算滑块位移；传入 m/M 时自动在共速后转为共同匀速
  * x1 = v0·t - 0.5·μ·g·t²
  *
  * @param v0 滑块初速度 (m/s)
@@ -85,13 +85,20 @@ export function calculateCommonVelocityTime(
  * @returns x1 滑块位移 (m)
  */
 export function calculateSliderDisplacement(
-  v0: number, mu: number, t: number, g: number = 9.8
+  v0: number, mu: number, t: number, g: number = 9.8, m?: number, M?: number
 ): number {
-  return v0 * t - 0.5 * mu * g * t * t
+  if (m === undefined || M === undefined || mu <= 0) {
+    return v0 * t - 0.5 * mu * g * t * t
+  }
+  const vCommon = calculateCommonVelocity(m, v0, M)
+  const tCommon = calculateCommonVelocityTime(M, vCommon, mu, m, g)
+  if (t <= tCommon) return v0 * t - 0.5 * mu * g * t * t
+  const xCommon = v0 * tCommon - 0.5 * mu * g * tCommon * tCommon
+  return xCommon + vCommon * (t - tCommon)
 }
 
 /**
- * 计算木板在达到共速过程中的位移
+ * 计算木板位移；传入 v0 时自动在共速后转为共同匀速
  * x2 = 0.5·(μ·m·g/M)·t²
  *
  * @param mu 动摩擦因数
@@ -102,14 +109,19 @@ export function calculateSliderDisplacement(
  * @returns x2 木板位移 (m)
  */
 export function calculateBoardDisplacement(
-  mu: number, m: number, M: number, t: number, g: number = 9.8
+  mu: number, m: number, M: number, t: number, g: number = 9.8, v0?: number
 ): number {
   const aBoard = (mu * m * g) / M
-  return 0.5 * aBoard * t * t
+  if (v0 === undefined || mu <= 0) return 0.5 * aBoard * t * t
+  const vCommon = calculateCommonVelocity(m, v0, M)
+  const tCommon = calculateCommonVelocityTime(M, vCommon, mu, m, g)
+  if (t <= tCommon) return 0.5 * aBoard * t * t
+  const xCommon = 0.5 * aBoard * tCommon * tCommon
+  return xCommon + vCommon * (t - tCommon)
 }
 
 /**
- * 计算滑块在时刻 t 的速度
+ * 计算滑块在时刻 t 的速度；传入 m/M 时共速后保持 v_共
  * v_slider = v0 - μ·g·t
  *
  * @param v0 滑块初速度 (m/s)
@@ -119,9 +131,14 @@ export function calculateBoardDisplacement(
  * @returns v_slider 滑块速度 (m/s)
  */
 export function calculateSliderVelocity(
-  v0: number, mu: number, t: number, g: number = 9.8
+  v0: number, mu: number, t: number, g: number = 9.8, m?: number, M?: number
 ): number {
-  return Math.max(v0 - mu * g * t, 0)
+  if (m === undefined || M === undefined || mu <= 0) {
+    return Math.max(v0 - mu * g * t, 0)
+  }
+  const vCommon = calculateCommonVelocity(m, v0, M)
+  const tCommon = calculateCommonVelocityTime(M, vCommon, mu, m, g)
+  return t <= tCommon ? v0 - mu * g * t : vCommon
 }
 
 /**

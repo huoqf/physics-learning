@@ -106,8 +106,8 @@ describe('electromagnetism', () => {
     expect(calculateChargeInMagField(2, 0, 3, 0.5).omega).toBe(0)
   })
 
-  it('法拉第电磁感应 EMF = N·dΦ/dt', () => {
-    expect(calculateFaradayEMF(100, 0.02).EMF).toBeCloseTo(2, 10)
+  it('法拉第-楞次定律 EMF = -N·dΦ/dt', () => {
+    expect(calculateFaradayEMF(100, 0.02).EMF).toBeCloseTo(-2, 10)
   })
 
   it('理想变压器：升压 n1=100 n2=200 U1=220 → U2=440, I2=I1/2', () => {
@@ -119,7 +119,7 @@ describe('electromagnetism', () => {
   it('交流有效值 V_rms = V_peak/√2', () => {
     const res = calculateACRMS(311)
     expect(res.V_rms).toBeCloseTo(311 / Math.SQRT2, 6)
-    expect(res.I_rms).toBeCloseTo(311 / Math.SQRT2, 6)
+    expect(Number.isNaN(res.I_rms)).toBe(true)
   })
 
   // ===== [M4-1] 交变电流模块测试 =====
@@ -155,7 +155,7 @@ describe('electromagnetism', () => {
     expect(res.U2).toBe(0)
     expect(res.I1).toBe(0)
     const res2 = calculateTransformerWithLoad(100, 200, 220, 0)
-    expect(res2.I2).toBe(0)
+    expect(res2.I2).toBe(Infinity)
   })
 
   it('远距离输电：高压输电低损耗', () => {
@@ -463,9 +463,9 @@ describe('electromagnetism', () => {
 
   // ===== 法拉第定律重构纯函数测试 =====
   describe('法拉第定律重构纯函数', () => {
-    it('computeFaradayEmf: E = n * S * dB/dt 计算准确', () => {
+    it('computeFaradayEmf: E = -n * S * dB/dt 计算准确', () => {
       const E = computeFaradayEmf(50, 0.02, 0.5)
-      expect(E).toBeCloseTo(50 * 0.02 * 0.5, 10) // 0.5V
+      expect(E).toBeCloseTo(-50 * 0.02 * 0.5, 10) // -0.5V
     })
 
     it('computeFaradayMagnetFlux: 磁铁在不同位置的磁通量计算正确', () => {

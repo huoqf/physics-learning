@@ -38,7 +38,7 @@ export function calculateTransformer(
  */
 export function calculateACRMS(V_peak: number, I_peak?: number): { V_rms: number; I_rms: number } {
   const factor = Math.SQRT1_2 // 1/√2
-  return { V_rms: V_peak * factor, I_rms: (I_peak !== undefined ? I_peak : V_peak) * factor }
+  return { V_rms: V_peak * factor, I_rms: I_peak !== undefined ? I_peak * factor : Number.NaN }
 }
 
 /**
@@ -55,13 +55,16 @@ export function calculateTransformerWithLoad(
   n2: number,
   U1: number,
   R: number
-): { U2: number; I2: number; I1: number; P_input: number; P_output: number } {
+): { U2: number; I2: number; I1: number; P_input: number; P_output: number; isShortCircuit: boolean; valid: boolean } {
   const U2 = n1 === 0 ? 0 : U1 * (n2 / n1)
-  const I2 = R === 0 ? 0 : U2 / R
+  if (R === 0) {
+    return { U2, I2: Infinity, I1: Infinity, P_input: Infinity, P_output: Infinity, isShortCircuit: true, valid: false }
+  }
+  const I2 = U2 / R
   const I1 = n1 === 0 ? 0 : I2 * (n2 / n1)
   const P_input = U1 * I1
   const P_output = U2 * I2
-  return { U2, I2, I1, P_input, P_output }
+  return { U2, I2, I1, P_input, P_output, isShortCircuit: false, valid: n1 > 0 && n2 > 0 && R > 0 }
 }
 
 /**
@@ -111,8 +114,9 @@ export function computeACGenerationState(
 
   const r = coilRadius ?? Math.sqrt(S / Math.PI)
   const vTangential = omega * r
-  const vPerp = vTangential * Math.cos(theta)
-  const vPara = vTangential * Math.sin(theta)
+  // θ 为线圈法线与磁场夹角：e ∝ sinθ，因此有效切割磁感线速度分量同相于 sinθ
+  const vPerp = vTangential * Math.sin(theta)
+  const vPara = vTangential * Math.cos(theta)
 
   const sinT = Math.sin(theta)
   const cosT = Math.cos(theta)
@@ -165,6 +169,8 @@ export function calculatePowerTransmission(
   P_user: number
   /** 输电效率 (0-1) */
   eta: number
+  /** 参数是否导致线路损耗超过供给或电压跌为负（非物理过载） */
+  isOverloaded: boolean
 } {
   // 【输电线】
   const I_line = U2 === 0 ? 0 : P1 / U2
@@ -172,15 +178,20 @@ export function calculatePowerTransmission(
   const P_loss = I_line * I_line * r
 
   // 【降压端】
-  const U3 = U2 - deltaU
-  const P3 = P1 - P_loss
+  const rawU3 = U2 - deltaU
+  const rawP3 = P1 - P_loss
+  const isOverloaded = rawU3 < 0 || rawP3 < 0
+
+  // 非物理过载参数下，用户端不应出现负电压/负功率，钳制为 0 供 UI 告警态使用
+  const U3 = Math.max(0, rawU3)
+  const P3 = Math.max(0, rawP3)
 
   // 【用户端】U4 = U3 * k
   const U4 = U3 * k
   const P_user = P3
 
   // 【效率】
-  const eta = P1 === 0 ? 0 : P_user / P1
+  const eta = P1 === 0 ? 0 : Math.max(0, Math.min(1, P_user / P1))
 
-  return { P1, I_line, deltaU, P_loss, U3, P3, U4, P_user, eta }
+  return { P1, I_line, deltaU, P_loss, U3, P3, U4, P_user, eta, isOverloaded }
 }
