@@ -1,48 +1,98 @@
 import { AnimationConfig } from './types'
+
+// ─── Core: 力学 6 子模块（同步加载） ───
+
 import { mechanicsKinematicsAnimations } from './registries/mechanics-kinematics'
 import { mechanicsDynamicsAnimations } from './registries/mechanics-dynamics'
 import { mechanicsCircularGravitationAnimations } from './registries/mechanics-circular-gravitation'
 import { mechanicsForceMotionAnimations } from './registries/mechanics-force-motion'
 import { mechanicsEnergyAnimations } from './registries/mechanics-energy'
 import { mechanicsMomentumAnimations } from './registries/mechanics-momentum'
-import { electromagnetismElectrostaticsAnimations } from './registries/electromagnetism-electrostatics'
-import { electromagnetismDcCircuitsAnimations } from './registries/electromagnetism-dc-circuits'
-import { electromagnetismMagnetismAnimations } from './registries/electromagnetism-magnetism'
-import { electromagnetismInductionAnimations } from './registries/electromagnetism-induction'
-import { electromagnetismAcAnimations } from './registries/electromagnetism-ac'
-import { thermodynamicsKinematicsAnimations } from './registries/thermodynamics-kinematics'
-import { thermodynamicsGasLawsAnimations } from './registries/thermodynamics-gas-laws'
-import { thermodynamicsFirstLawAnimations } from './registries/thermodynamics-first-law'
-import { thermodynamicsSecondLawAnimations } from './registries/thermodynamics-second-law'
-import { opticsReflectionAnimations } from './registries/optics-reflection'
-import { opticsRefractionAnimations } from './registries/optics-refraction'
-import { opticsTotalInternalReflectionAnimations } from './registries/optics-total-internal-reflection'
-import { opticsThinLensAnimations } from './registries/optics-thin-lens'
 
-export const animationRegistry: Record<string, AnimationConfig> = {
+const coreRegistry: Record<string, AnimationConfig> = {
   ...mechanicsKinematicsAnimations,
   ...mechanicsDynamicsAnimations,
   ...mechanicsCircularGravitationAnimations,
   ...mechanicsForceMotionAnimations,
   ...mechanicsEnergyAnimations,
   ...mechanicsMomentumAnimations,
-  ...electromagnetismElectrostaticsAnimations,
-  ...electromagnetismDcCircuitsAnimations,
-  ...electromagnetismMagnetismAnimations,
-  ...electromagnetismInductionAnimations,
-  ...electromagnetismAcAnimations,
-  ...thermodynamicsKinematicsAnimations,
-  ...thermodynamicsGasLawsAnimations,
-  ...thermodynamicsFirstLawAnimations,
-  ...thermodynamicsSecondLawAnimations,
-  ...opticsReflectionAnimations,
-  ...opticsRefractionAnimations,
-  ...opticsTotalInternalReflectionAnimations,
-  ...opticsThinLensAnimations,
 }
 
+// ─── Extended: 电磁学 5 + 热学 4 + 光学 4（懒加载） ───
+
+let fullRegistry: Record<string, AnimationConfig> = { ...coreRegistry }
+let extendedLoaded = false
+let extendedPromise: Promise<void> | null = null
+
+async function loadExtendedRegistry(): Promise<void> {
+  if (extendedLoaded) return
+  if (!extendedPromise) {
+    extendedPromise = (async () => {
+      const [
+        { electromagnetismElectrostaticsAnimations: emElectrostatics },
+        { electromagnetismDcCircuitsAnimations: emDcCircuits },
+        { electromagnetismMagnetismAnimations: emMagnetism },
+        { electromagnetismInductionAnimations: emInduction },
+        { electromagnetismAcAnimations: emAc },
+        { thermodynamicsKinematicsAnimations: thermoKinematics },
+        { thermodynamicsGasLawsAnimations: thermoGasLaws },
+        { thermodynamicsFirstLawAnimations: thermoFirstLaw },
+        { thermodynamicsSecondLawAnimations: thermoSecondLaw },
+        { opticsReflectionAnimations: opticsReflection },
+        { opticsRefractionAnimations: opticsRefraction },
+        { opticsTotalInternalReflectionAnimations: opticsTotalInternalReflection },
+        { opticsThinLensAnimations: opticsThinLens },
+      ] = await Promise.all([
+        import('./registries/electromagnetism-electrostatics'),
+        import('./registries/electromagnetism-dc-circuits'),
+        import('./registries/electromagnetism-magnetism'),
+        import('./registries/electromagnetism-induction'),
+        import('./registries/electromagnetism-ac'),
+        import('./registries/thermodynamics-kinematics'),
+        import('./registries/thermodynamics-gas-laws'),
+        import('./registries/thermodynamics-first-law'),
+        import('./registries/thermodynamics-second-law'),
+        import('./registries/optics-reflection'),
+        import('./registries/optics-refraction'),
+        import('./registries/optics-total-internal-reflection'),
+        import('./registries/optics-thin-lens'),
+      ])
+
+      Object.assign(
+        fullRegistry,
+        emElectrostatics, emDcCircuits, emMagnetism, emInduction, emAc,
+        thermoKinematics, thermoGasLaws, thermoFirstLaw, thermoSecondLaw,
+        opticsReflection, opticsRefraction, opticsTotalInternalReflection, opticsThinLens,
+      )
+      extendedLoaded = true
+    })()
+  }
+  await extendedPromise
+}
+
+// ─── 公共 API ───
+
+/** 静态总动画数，不依赖动态加载 */
+export const ANIMATION_COUNT = 65
+
+/** 同步获取 config（core 动画立即命中，extended 动画未加载时返回 undefined） */
 export function getAnimationConfig(id: string): AnimationConfig | undefined {
-  return animationRegistry[id]
+  return fullRegistry[id]
+}
+
+/** 异步获取 config（extended 动画自动触发懒加载） */
+export async function getAnimationConfigAsync(id: string): Promise<AnimationConfig | undefined> {
+  if (!fullRegistry[id]) {
+    await loadExtendedRegistry()
+  }
+  return fullRegistry[id]
+}
+
+/** 预加载 extended registry（进入电磁/热学/光学模块页时调用） */
+export function preloadExtendedRegistry(): void {
+  if (!extendedLoaded && !extendedPromise) {
+    extendedPromise = loadExtendedRegistry()
+  }
 }
 
 export { defineAnimations } from './defineAnimations'

@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import { useParams } from 'react-router-dom'
-import { getAnimationConfig } from '@/data/animationRegistry'
+import { getAnimationConfig, getAnimationConfigAsync } from '@/data/animationRegistry'
 import { preloadQuantityBuilder } from '@/data/physicsQuantities'
 import { useAnimationStore, useProgressStore, type PhysicsState } from '@/stores'
 import { useAppStore } from '@/stores/useAppStore'
 import type { DiscoveryStepData } from '@/components/UI/DiscoveryGuide'
 import { useAnimationFrame } from '@/utils/animation'
 import { duration } from '@/theme/motion'
+import type { AnimationConfig } from '@/data/types'
 
 export interface AnimationLifecycleResult {
-  config: ReturnType<typeof getAnimationConfig>
+  config: AnimationConfig | undefined
+  configLoading: boolean
   isDiscoveryMode: boolean
   canvasDimmed: boolean
   handleReset: () => void
@@ -32,8 +34,40 @@ function useAnimationConfig() {
   const { markAnimationViewed } = useProgressStore()
 
   const currentTimeRef = useRef(0)
-  const config = id ? getAnimationConfig(id) : undefined
+  const [config, setConfig] = useState<AnimationConfig | undefined>(() => {
+    // core 动画同步命中，避免不必要的 loading 闪烁
+    return id ? getAnimationConfig(id) : undefined
+  })
+  const [configLoading, setConfigLoading] = useState(() => {
+    // core 已命中则不需要 loading
+    return id ? !getAnimationConfig(id) : false
+  })
   const prevConfigIdRef = useRef<string | undefined>(undefined)
+
+  // 异步加载 config（extended 动画走此路径）
+  useEffect(() => {
+    if (!id) {
+      setConfig(undefined)
+      setConfigLoading(false)
+      return
+    }
+    // core 同步命中则跳过异步
+    const syncConfig = getAnimationConfig(id)
+    if (syncConfig) {
+      setConfig(syncConfig)
+      setConfigLoading(false)
+      return
+    }
+    setConfigLoading(true)
+    let cancelled = false
+    getAnimationConfigAsync(id).then((c) => {
+      if (!cancelled) {
+        setConfig(c)
+        setConfigLoading(false)
+      }
+    })
+    return () => { cancelled = true }
+  }, [id])
 
   // config 变更时初始化 store
   useEffect(() => {
@@ -50,12 +84,12 @@ function useAnimationConfig() {
     }
   }, [config, setParams, setTime, setIsPlaying, setPhysicsState, setMode, markAnimationViewed])
 
-  return { config, currentTimeRef }
+  return { config, configLoading, currentTimeRef }
 }
 
 /* ─── 子 hook: 发现模式步骤管理 ─── */
 
-function useDiscoveryMode(config: ReturnType<typeof getAnimationConfig>) {
+function useDiscoveryMode(config: AnimationConfig | undefined) {
   const { mode, discoveryStep, setDiscoveryStep, setDiscoveryMaxStep, nextDiscoveryStep, prevDiscoveryStep } = useAppStore()
   const [discoverySteps, setDiscoverySteps] = useState<DiscoveryStepData[]>([])
 
@@ -86,7 +120,7 @@ function useDiscoveryMode(config: ReturnType<typeof getAnimationConfig>) {
 /* ─── 子 hook: 播放循环 (rAF + updatePhysics) ─── */
 
 function usePlaybackLoop(
-  config: ReturnType<typeof getAnimationConfig>,
+  config: AnimationConfig | undefined,
   currentTimeRef: RefObject<number>,
 ) {
   const isPlaying = useAnimationStore((s) => s.isPlaying)
@@ -163,12 +197,13 @@ function usePlaybackLoop(
 /* ─── 主 hook: 组合三个子 hook ─── */
 
 export function useAnimationLifecycle(): AnimationLifecycleResult {
-  const { config, currentTimeRef } = useAnimationConfig()
+  const { config, configLoading, currentTimeRef } = useAnimationConfig()
   const discovery = useDiscoveryMode(config)
   const playback = usePlaybackLoop(config, currentTimeRef)
 
   return {
     config,
+    configLoading,
     ...discovery,
     ...playback,
   }

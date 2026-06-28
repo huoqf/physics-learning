@@ -3,7 +3,7 @@ import { useProgressStore } from '@/stores'
 import { colors } from '@/theme/colors'
 import { BookOpen } from 'lucide-react'
 import { knowledgeTree } from '@/data/knowledgeTree'
-import { animationRegistry } from '@/data/animationRegistry'
+import { ANIMATION_COUNT } from '@/data/animationRegistry'
 import { useEffect } from 'react'
 
 export default function KnowledgePage() {
@@ -11,7 +11,7 @@ export default function KnowledgePage() {
   const { knowledgeProgress, animationProgress } = getProgress()
 
   useEffect(() => {
-    setTotalCounts(Object.keys(animationRegistry).length, knowledgeTree.length)
+    setTotalCounts(ANIMATION_COUNT, knowledgeTree.length)
   }, [setTotalCounts])
 
   return (

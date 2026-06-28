@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { BookOpen, Play, BookOpenCheck, ClipboardList } from 'lucide-react'
 import { useProgressStore } from '../stores'
 import { knowledgeTree } from '../data/knowledgeTree'
-import { animationRegistry } from '../data/animationRegistry'
+import { ANIMATION_COUNT } from '../data/animationRegistry'
 import { colors } from '@/theme/colors'
 import { useEffect } from 'react'
 
@@ -13,7 +13,7 @@ export default function HomePage() {
   const { animationProgress, knowledgeProgress } = getProgress()
 
   useEffect(() => {
-    setTotalCounts(Object.keys(animationRegistry).length, knowledgeTree.length)
+    setTotalCounts(ANIMATION_COUNT, knowledgeTree.length)
   }, [setTotalCounts])
 
   const quickActions = [
@@ -100,7 +100,7 @@ export default function HomePage() {
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-neutral-600">动画学习</span>
                   <span className="font-medium text-neutral-800">
-                    {viewedAnimations.length} / {Object.keys(animationRegistry).length}
+                    {viewedAnimations.length} / {ANIMATION_COUNT}
                   </span>
                 </div>
                 <div className="h-2 bg-neutral-200 rounded-full overflow-hidden">

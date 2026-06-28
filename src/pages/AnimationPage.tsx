@@ -1,7 +1,6 @@
 import { Suspense, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, FlaskConical, Play, RotateCcw } from 'lucide-react'
-import { getAnimationConfig } from '@/data/animationRegistry'
 import { buildPhysicsQuantities } from '@/data/physicsQuantities'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -18,6 +17,7 @@ import { duration, easing } from '@/theme/motion'
 import { ThreePanel } from '@/components/Layout'
 import { useAnimationLifecycle } from '@/hooks/useAnimationLifecycle'
 import { AnimationLayoutContext } from '@/context/AnimationLayoutContext'
+import type { AnimationConfig } from '@/data/types'
 
 /**
  * 中心动画区域 — 订阅 time（每帧更新），与左侧/右侧面板隔离。
@@ -28,7 +28,7 @@ function AnimationCenter({
   canvasDimmed,
   handleReset,
 }: {
-  config: NonNullable<ReturnType<typeof getAnimationConfig>>
+  config: AnimationConfig
   isDiscoveryMode: boolean
   canvasDimmed: boolean
   handleReset: () => void
@@ -192,6 +192,7 @@ export default function AnimationPage() {
 
   const {
     config,
+    configLoading,
     isDiscoveryMode,
     canvasDimmed,
     handleReset,
@@ -201,6 +202,17 @@ export default function AnimationPage() {
     nextDiscoveryStep,
     prevDiscoveryStep,
   } = useAnimationLifecycle()
+
+  // config 加载中
+  if (configLoading) {
+    return (
+      <div className="flex flex-col bg-neutral-50" style={{ height: `calc(100vh - ${LAYOUT.topBarHeight}px)` }}>
+        <div className="flex-1 flex items-center justify-center text-neutral-400">
+          加载动画配置中…
+        </div>
+      </div>
+    )
+  }
 
   // 低频状态：selector 订阅，避免 time 变化触发重渲染
   const { params, showTimeSlices, showDualObjects } = useAnimationStore(
