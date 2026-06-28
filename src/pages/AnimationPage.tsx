@@ -84,7 +84,7 @@ function AnimationCenter({
   if (isCenterExtraFull && CenterExtraComponent) {
     return (
       <ErrorBoundary resetKey={config.id}>
-        <Suspense fallback={null}>
+        <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400 text-sm">加载动画中…</div>}>
           <CenterExtraComponent />
         </Suspense>
       </ErrorBoundary>
@@ -99,7 +99,7 @@ function AnimationCenter({
         <>
           <div className="h-1/2 min-h-0">
             <ErrorBoundary resetKey={config.id}>
-              <Suspense fallback={null}>
+              <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400 text-sm">加载动画中…</div>}>
                 <CenterExtraComponent />
               </Suspense>
             </ErrorBoundary>
@@ -345,7 +345,7 @@ export default function AnimationPage() {
             )}
             {/* 侧边栏扩展：通过 registry 挂载的特异 UI */}
             {config.SidebarExtra && !isDiscoveryMode && (
-              <Suspense fallback={null}>
+              <Suspense fallback={<div className="w-full h-8 flex items-center justify-center text-neutral-300 text-xs">加载中…</div>}>
                 <config.SidebarExtra {...sidebarExtraProps} />
               </Suspense>
             )}

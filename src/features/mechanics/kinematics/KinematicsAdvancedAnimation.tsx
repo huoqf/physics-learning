@@ -3,8 +3,12 @@ import { useCanvasSize, useViewport } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, STROKE } from '@/theme/physics'
 import { Block } from '@/components/Physics/Block'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { calculateVectorPixelLength } from '@/utils/vectorLength'
+import { createSceneScale } from '@/scene'
+import type { SceneConfig } from '@/scene'
 import { RelationChart } from '@/components/Chart'
 import { useChartContext } from '@/components/Chart'
 import { Card } from '@/components/UI'
@@ -167,72 +171,25 @@ export default function KinematicsAdvancedAnimation() {
     )
   }
 
-  // 矢量箭头尺寸计算与渲染
+  // 矢量箭头尺寸计算与渲染：使用统一 VectorArrow，物理量级由 refMagnitudes 归一化
   const blockCenterX = sliderX + BLOCK_W / 2
-  const arrowVectors = []
-  if (showVectors) {
-    // 1. 速度矢量 (v)
-    if (v > 0) {
-      const arrowLenV = Math.min(100, v * 7)
-      const arrowVY = sliderY - 8
-      arrowVectors.push(
-        <g key="velocity-arrow">
-          <line
-            x1={blockCenterX}
-            y1={arrowVY}
-            x2={blockCenterX + arrowLenV}
-            y2={arrowVY}
-            stroke={PHYSICS_COLORS.velocity}
-            strokeWidth={2}
-            markerEnd="url(#arrow-blue)"
-          />
-          <text
-            x={blockCenterX + arrowLenV / 2}
-            y={arrowVY - 5}
-            fontSize={font(8)}
-            fill={PHYSICS_COLORS.velocity}
-            fontWeight="bold"
-            textAnchor="middle"
-            className="select-none font-mono"
-          >
-            v = {v.toFixed(1)} m/s
-          </text>
-        </g>
-      )
-    }
-
-    // 2. 加速度矢量 (a)
-    if (Math.abs(a) > 0.05) {
-      const arrowLenA = Math.min(100, Math.abs(a) * 15)
-      const arrowAY = sliderY - 22
-      const isPositive = a > 0
-      const tipX = isPositive ? blockCenterX + arrowLenA : blockCenterX - arrowLenA
-      arrowVectors.push(
-        <g key="accel-arrow">
-          <line
-            x1={blockCenterX}
-            y1={arrowAY}
-            x2={tipX}
-            y2={arrowAY}
-            stroke={PHYSICS_COLORS.acceleration}
-            strokeWidth={2}
-            markerEnd="url(#arrow-red)"
-          />
-          <text
-            x={blockCenterX + (isPositive ? arrowLenA : -arrowLenA) / 2}
-            y={arrowAY - 5}
-            fontSize={font(8)}
-            fill={PHYSICS_COLORS.acceleration}
-            fontWeight="bold"
-            textAnchor="middle"
-            className="select-none font-mono"
-          >
-            a = {a.toFixed(1)} m/s²
-          </text>
-        </g>
-      )
-    }
+  const maxVelocity = Math.max(Math.abs(v0) + Math.abs(a) * 10, Math.abs(v), 10)
+  const maxAcceleration = Math.max(Math.abs(a) * 2, 5)
+  const vectorScene: SceneConfig = {
+    vectorBounds: { x: 0, y: 0, width: DESIGN_W, height: DESIGN_H },
+    originX: 0,
+    originY: 0,
+    refMagnitudes: { velocity: maxVelocity, acceleration: maxAcceleration },
   }
+  const vectorSceneScale = createSceneScale(vectorScene)
+  const velocityArrowY = sliderY - 8
+  const accelerationArrowY = sliderY - 22
+  const velocityArrowLen = calculateVectorPixelLength(
+    v, 'velocity', vectorSceneScale.maxVectorLength, maxVelocity,
+  )
+  const accelerationArrowLen = calculateVectorPixelLength(
+    Math.abs(a), 'acceleration', vectorSceneScale.maxVectorLength, maxAcceleration,
+  )
 
   // ── 图表数据 points 计算 ──
   const points = []
@@ -302,31 +259,6 @@ export default function KinematicsAdvancedAnimation() {
         <h3 className="text-xs font-semibold text-neutral-600 mb-1.5 shrink-0">物理仿真轨道</h3>
         <div ref={containerRef} className="flex-1 min-h-0 w-full bg-white rounded-lg relative overflow-hidden">
           <svg width={canvasSize.width} height={canvasSize.height} className="w-full h-full">
-            <defs>
-              <marker
-                id="arrow-blue"
-                viewBox="0 0 10 10"
-                refX="6"
-                refY="5"
-                markerWidth="6"
-                markerHeight="6"
-                orient="auto-start-reverse"
-              >
-                <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill={PHYSICS_COLORS.velocity} />
-              </marker>
-              <marker
-                id="arrow-red"
-                viewBox="0 0 10 10"
-                refX="6"
-                refY="5"
-                markerWidth="6"
-                markerHeight="6"
-                orient="auto-start-reverse"
-              >
-                <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill={PHYSICS_COLORS.acceleration} />
-              </marker>
-            </defs>
-
             <g transform={vp.transform}>
               {/* 起始标志线 */}
               <line
@@ -388,7 +320,51 @@ export default function KinematicsAdvancedAnimation() {
               />
 
               {/* 矢量箭头 */}
-              {arrowVectors}
+              {showVectors && v > 0 && (
+                <g>
+                  <VectorArrow
+                    origin={{ x: blockCenterX, y: -velocityArrowY }}
+                    vector={{ x: v, y: 0 }}
+                    type="velocity"
+                    sceneScale={vectorSceneScale}
+                    strokeWidth={STROKE.vectorMain}
+                  />
+                  <text
+                    x={blockCenterX + velocityArrowLen / 2}
+                    y={velocityArrowY - 5}
+                    fontSize={font(8)}
+                    fill={PHYSICS_COLORS.velocity}
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    className="select-none font-mono"
+                  >
+                    v = {v.toFixed(1)} m/s
+                  </text>
+                </g>
+              )}
+
+              {showVectors && Math.abs(a) > 0.05 && (
+                <g>
+                  <VectorArrow
+                    origin={{ x: blockCenterX, y: -accelerationArrowY }}
+                    vector={{ x: a, y: 0 }}
+                    type="acceleration"
+                    sceneScale={vectorSceneScale}
+                    strokeWidth={STROKE.vectorSub}
+                  />
+                  <text
+                    x={blockCenterX + (a > 0 ? 1 : -1) * accelerationArrowLen / 2}
+                    y={accelerationArrowY - 5}
+                    fontSize={font(8)}
+                    fill={PHYSICS_COLORS.acceleration}
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    className="select-none font-mono"
+                  >
+                    a = {a.toFixed(1)} m/s²
+                  </text>
+                </g>
+              )}
             </g>
           </svg>
         </div>

@@ -1,4 +1,4 @@
-import { lazy } from 'react'
+import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
 
 export const thermodynamicsFirstLawAnimations = defineAnimations({

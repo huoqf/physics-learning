@@ -1,4 +1,4 @@
-import { lazy } from 'react'
+import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
 
 // ===== 电磁学 · 交变电流（[M4-1]）=====

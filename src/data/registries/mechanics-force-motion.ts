@@ -1,4 +1,4 @@
-import { lazy } from 'react'
+import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
 import { FORCE_MOTION_MAX_TIME } from '@/features/mechanics/force-motion/forceMotionLayout'
 

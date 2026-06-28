@@ -1,4 +1,4 @@
-import { lazy } from 'react'
+import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
 
 // ===== 热学 · 分子动理论 =====

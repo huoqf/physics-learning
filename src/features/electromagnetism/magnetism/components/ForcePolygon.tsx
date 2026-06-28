@@ -1,8 +1,11 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { colors } from '@/theme/colors'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { GRAVITY } from '@/physics/constants'
 import { computeScale } from '@/utils/coordinate'
+import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { createSceneScale } from '@/scene'
+import type { SceneConfig } from '@/scene'
 import type { AdvancedAmperePhysicsResult } from '../ampereForceModel'
 
 interface ForcePolygonProps {
@@ -36,6 +39,24 @@ export const ForcePolygon: React.FC<ForcePolygonProps> = ({
   const m = 0.5
   const g = GRAVITY
 
+  // 构造适配局部像素空间的 sceneScale（originX/Y=0, scale=1，y 轴翻转由 VectorArrow 内部处理）
+  const maxForce = Math.max(m * g, physicsResult.F_ampere, physicsResult.f, physicsResult.N, 1)
+  const sceneConfig = useMemo((): SceneConfig => ({
+    vectorBounds: { x: 0, y: 0, width: w, height: h },
+    originX: 0,
+    originY: 0,
+    worldWidth: w,
+    worldHeight: h,
+    refMagnitudes: {
+      gravity: maxForce,
+      lorentzForce: maxForce,
+      friction: maxForce,
+      normalForce: maxForce,
+      force: maxForce,
+    },
+  }), [w, h, maxForce])
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig])
+
   // 依次生成受力矢量的首尾节点坐标 (像素级)
   // 矢量 1: 重力 G (竖直向下，像素 y 变大)
   const gLen = m * g * scale
@@ -66,62 +87,13 @@ export const ForcePolygon: React.FC<ForcePolygonProps> = ({
   const hasGap = Math.hypot(gapX, gapY) > 0.8
   const isEquilibrium = !hasGap
 
-  // 自定义绘制箭头函数 (带颜色和线宽)
-  const renderVectorLine = (
-    id: string,
-    x1: number,
-    y1: number,
-    x2: number,
-    y2: number,
-    color: string,
-    label: string,
-    labelPos: 'left' | 'right' | 'top' | 'bottom'
-  ) => {
-    const len = Math.hypot(x2 - x1, y2 - y1)
-    if (len < 1.5) return null
-
-    const dx = (x2 - x1) / len
-    const dy = (y2 - y1) / len
-
-    // 箭头帽
-    const headLen = 4
-    const headW = 3
-    const arrowX = x2
-    const arrowY = y2
-
-    const px = -dy
-    const py = dx
-
-    const capL = { x: x2 - dx * headLen + px * (headW / 2), y: y2 - dy * headLen + py * (headW / 2) }
-    const capR = { x: x2 - dx * headLen - px * (headW / 2), y: y2 - dy * headLen - py * (headW / 2) }
-
-    // 文本偏移
-    let tx = x1 + (x2 - x1) / 2
-    let ty = y1 + (y2 - y1) / 2
-    if (labelPos === 'left') tx -= 8
-    else if (labelPos === 'right') tx += 8
-    else if (labelPos === 'top') ty -= 5
-    else if (labelPos === 'bottom') ty += 7
-
-    return (
-      <g key={id}>
-        <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth="1.6" strokeLinecap="round" />
-        <polygon points={`${arrowX},${arrowY} ${capL.x},${capL.y} ${capR.x},${capR.y}`} fill={color} />
-        <text
-          x={tx}
-          y={ty}
-          fontSize="6"
-          fill={color}
-          fontWeight="extrabold"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          style={{ userSelect: 'none' }}
-        >
-          {label}
-        </text>
-      </g>
-    )
-  }
+  // 像素坐标 → VectorArrow 物理坐标：x 不变，y 取反（VectorArrow 内部 y↑）
+  const toPhys = (px: number, py: number) => ({ x: px, y: -py })
+  const vecBetween = (ax: number, ay: number, bx: number, by: number) => ({
+    origin: toPhys(ax, ay),
+    vector: { x: bx - ax, y: -(by - ay) },
+    pixelLength: Math.hypot(bx - ax, by - ay),
+  })
 
   return (
     <g transform={`translate(${x}, ${y})`}>
@@ -161,34 +133,36 @@ export const ForcePolygon: React.FC<ForcePolygonProps> = ({
       </text>
 
       {/* 矢量 1: 重力 G */}
-      {renderVectorLine('g', p0.x, p0.y, p1.x, p1.y, PHYSICS_COLORS.gravity ?? colors.neutral[600], 'G', 'left')}
+      {(() => { const v = vecBetween(p0.x, p0.y, p1.x, p1.y); return v.origin && (
+        <VectorArrow origin={v.origin} vector={v.vector} type="gravity" sceneScale={sceneScale}
+          pixelLength={v.pixelLength} color={PHYSICS_COLORS.gravity ?? colors.neutral[600]} label="G" strokeWidth={1.6} />
+      ) })()}
 
       {/* 矢量 2: 安培力 F_安 */}
-      {renderVectorLine('fa', p1.x, p1.y, p2.x, p2.y, PHYSICS_COLORS.lorentzForce, 'F_安', 'bottom')}
+      {(() => { const v = vecBetween(p1.x, p1.y, p2.x, p2.y); return v.origin && (
+        <VectorArrow origin={v.origin} vector={v.vector} type="lorentzForce" sceneScale={sceneScale}
+          pixelLength={v.pixelLength} color={PHYSICS_COLORS.lorentzForce} label="F_安" strokeWidth={1.6} />
+      ) })()}
 
       {/* 矢量 3: 摩擦力 f */}
-      {renderVectorLine('f', p2.x, p2.y, p3.x, p3.y, PHYSICS_COLORS.friction, 'f', 'right')}
+      {(() => { const v = vecBetween(p2.x, p2.y, p3.x, p3.y); return v.origin && (
+        <VectorArrow origin={v.origin} vector={v.vector} type="friction" sceneScale={sceneScale}
+          pixelLength={v.pixelLength} color={PHYSICS_COLORS.friction} label="f" strokeWidth={1.6} />
+      ) })()}
 
       {/* 矢量 4: 支持力 N */}
-      {renderVectorLine('n', p3.x, p3.y, p4.x, p4.y, PHYSICS_COLORS.normalForce, 'N', 'top')}
+      {(() => { const v = vecBetween(p3.x, p3.y, p4.x, p4.y); return v.origin && (
+        <VectorArrow origin={v.origin} vector={v.vector} type="normalForce" sceneScale={sceneScale}
+          pixelLength={v.pixelLength} color={PHYSICS_COLORS.normalForce} label="N" strokeWidth={1.6} />
+      ) })()}
 
       {/* 合力缺口 (如果不平衡，展示红色虚线闪烁矢量) */}
-      {hasGap && (
+      {hasGap && (() => { const v = vecBetween(p4.x, p4.y, p0.x, p0.y); return v.origin && (
         <g>
-          {/* 带呼吸闪烁的红色虚线箭头 */}
-          <line
-            x1={p4.x}
-            y1={p4.y}
-            x2={p0.x}
-            y2={p0.y}
-            stroke={PHYSICS_COLORS.forceNet}
-            strokeWidth="1.5"
-            strokeDasharray="2,2"
-            className="animate-pulse"
-          />
-          {renderVectorLine('f_net', p4.x, p4.y, p0.x, p0.y, PHYSICS_COLORS.forceNet, 'F_合', 'left')}
+          <VectorArrow origin={v.origin} vector={v.vector} type="force" sceneScale={sceneScale}
+            pixelLength={v.pixelLength} color={PHYSICS_COLORS.forceNet} label="F_合" strokeWidth={1.5} dashed />
         </g>
-      )}
+      ) })()}
 
       {/* 原点小圆圈以标明起始 */}
       <circle cx={p0.x} cy={p0.y} r="1.5" fill={colors.success[600]} />

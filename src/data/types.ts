@@ -66,7 +66,7 @@ export interface AnimationConfig<P extends Record<string, number> = Record<strin
   id: string
   title: string
   knowledgeId: string
-  Component: LazyExoticComponent<ComponentType>
+  Component: LazyExoticComponent<ComponentType> & { preload?: () => Promise<void> }
   defaultParams: P
   /** 参数控件元数据（替代页面层硬编码的 paramConfigs） */
   paramMeta?: ParamMeta[]

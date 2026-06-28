@@ -1,6 +1,6 @@
 # 延后处理待办事项
 
-> 最后更新：2026-06-28（架构核查后更新）
+> 最后更新：2026-06-28（矢量审计 + 懒加载预加载完成后更新）
 
 ---
 
@@ -20,43 +20,19 @@
 
 ## 三、代码质量（P2 预防性优化）
 
-### 3.1 animationRegistry 懒加载（P0，已评估，待执行）
+### 3.1 animationRegistry 懒加载（P0，路由级预加载 ✅ 已完成）
 
-**方案**：两级拆分（core / extended），路由级预加载。
+> 核心拆分（core/extended 两级）+ `getAnimationConfigAsync` 已在之前完成。
+> 2026-06-28 新增路由级预加载，解决首次加载 chunk 失败白屏问题。
 
-| 层级 | 内容 | 加载方式 | 预估体积 |
-|------|------|----------|----------|
-| Core（同步） | 力学 6 文件（kinematics/dynamics/circular-gravitation/force-motion/energy/momentum） | 首屏同步 import | ~30 KB |
-| Extended（懒加载） | 电磁学 5 + 热学 4 + 光学 4 = 13 文件 | 动态 `import()` | ~37 KB |
+**已完成**：
+- `src/utils/lazyWithPreload.ts` — 包装 `React.lazy`，自动暴露 `preload()` 方法
+- 19 个 registry 文件：`import { lazy }` → `import { lazyWithPreload as lazy }`
+- `KnowledgeTree.tsx`：`onMouseEnter` 触发 `config.Component.preload?.()`
+- `AnimationPage.tsx`：3 处 `Suspense fallback={null}` → 可见 loading 态
+- `AnimationConfig.Component` 类型扩展 `preload?` 方法
 
-**接口设计**：
-- `getAnimationConfig(id)` — 同步，只保证 core 同步命中
-- `getAnimationConfigAsync(id)` — 扩展动画统一走此异步接口
-- `preloadExtendedRegistry()` — 用户进入电磁学、热学、光学模块页时调用
-- `ANIMATION_COUNT` — 静态常量，不要为计数加载扩展包
-
-**调用方改造**：
-- `AnimationPage` / `useAnimationLifecycle` — 改为优先支持 async
-
-**风险与执行策略**：
-
-> 核心风险：同步 config 改异步后对 `AnimationPage → config 获取 → useAnimationLifecycle 初始化` 链路的时序影响。
-
-| 风险 | 等级 | 缓解措施 |
-|------|------|---------|
-| config 异步中间状态 | 中 | `AnimationPage` 增加明确状态机（loading/loaded/notFound/error），不依赖 `config == null` 散落判断 |
-| 路由/预加载时序 | 中 | `/animation/:id` 为统一路由，不在路由层区分 core/extended；extended registry 在组件层加载 |
-| 测试 mock | 低-中 | 补 `getAnimationConfigAsync`、direct URL 访问 extended 动画、loading→loaded 生命周期时序测试 |
-| count 维护 | 低 | 常量或文档约定，不影响拆分决策 |
-
-**执行顺序**：
-1. 先设计 `AnimationPage` 状态机（loading/loaded/notFound/error），确保外层传入 config 已 ready 后 `useAnimationLifecycle` 才初始化
-2. 再实现 core/extended 拆分 + `getAnimationConfigAsync`
-3. 最后补测试
-
-**收益**：首屏 registry chunk 从 66.65 KB 降至 ~30 KB（减少 ~37 KB raw / ~10 KB gzip）。
-
-工作量：2-3 天（含 loading 状态设计）。
+**效果**：用户 hover 知识点卡片时预取 chunk，首次进入时大概率已缓存。配合 visible fallback + ErrorBoundary retry，白屏体验彻底消除。
 
 ### 3.2 params 类型安全 — 内部具名接口（P1）— ✅ 已完成
 
@@ -104,7 +80,41 @@
 
 `useKnowledgeStore.ts` 中 `expandedNodes: string[]`，O(n) includes。当前节点 < 200，无感知性能问题。节点 500+ 时再评估。
 
-### 3.7 其他
+### 3.7 矢量组件替换审计（P2）— 部分完成
+
+> 2026-06-28 矢量使用审计。ForcePolygon 已重构为 VectorArrow，剩余为合理例外或低优先级。
+
+**已完成**：
+
+| 文件 | 原始问题 | 处理方式 |
+|------|---------|---------|
+| `electromagnetism/magnetism/components/ForcePolygon.tsx` | 完全手写 `renderVectorLine()`（line+polygon+text） | ✅ 重构为 VectorArrow，使用 local sceneScale + pixelLength 模式 |
+
+**剩余（合理例外，暂不替换）**：
+
+| 文件 | 行号 | 类型 | 原因 |
+|------|------|------|------|
+| `mechanics/momentum/ManBoatModel.tsx` | 246-250 | 位移标注箭头 | 几何尺寸标注（虚线+箭头），非物理矢量场景。VectorArrow 不支持虚线位移标注样式 |
+| `electromagnetism/electrostatics/Capacitor.tsx` | 472-473 | 场线方向 marker | SVG `<marker>` 内 polygon，用于虚线场线方向。VectorArrow 不支持 strokeDasharray |
+| `electromagnetism/electrostatics/ElectricField.tsx` | 227 | 场线方向 marker | 同上，SVG marker 内 polygon |
+| `mechanics/dynamics/SpringForceAnimation.tsx` | 205-209 | 尺寸标注 marker | 注释明确标注"几何标注非物理矢量"，双向标注箭头 |
+
+**VectorArrow 已正确使用的页面**（抽查确认无 origin.y 错误）：
+
+- `KineticEnergyScene.tsx` — 7 处 VectorArrow，origin 已修正为 `-ballCY`
+- `CentripetalAnimation.tsx` — 9 处
+- `NewtonSecondAnimation.tsx` — 7 处
+- `EquilibriumAnimation.tsx` — 11 处
+- `ForceMotionSandbox.tsx` — 5 处
+- `MomentumScene.tsx` — 6 处，origin 与 SceneConfig.originY 匹配
+- `ValleyScene.tsx` / `PendulumScene.tsx` — 各 1 处
+- `StroboscopicAnimation.tsx` — 2 处
+- `ObliqueThrowAnimation.tsx` / `VerticalThrowAnimation.tsx` — 各 2-3 处
+- `SpringCompositeAnimation.tsx` — 5 处
+- `LightRodRopeAnimation.tsx` — 17 处
+- `CoulombLaw.tsx` / `ElectricPotentialAnimScene.tsx` / `FieldLines.tsx` — 各 1-3 处
+
+### 3.8 其他
 
 | 条目 | 前提条件 |
 |---|---|

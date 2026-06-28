@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, ChevronDown, CheckCircle2, Circle } from 'lucide-react'
 import { knowledgeTree } from '@/data/knowledgeTree'
+import { getAnimationConfigAsync } from '@/data/animationRegistry'
 import { useProgressStore } from '@/stores'
 import { colors } from '@/theme/colors'
 import { duration } from '@/theme/motion'
@@ -59,6 +60,13 @@ const KnowledgeNodeItem: React.FC<{
     }
   }
 
+  const handleHover = useCallback(() => {
+    node.animationIds.forEach(async (id) => {
+      const config = await getAnimationConfigAsync(id)
+      config?.Component.preload?.()
+    })
+  }, [node.animationIds])
+
   return (
     <div
       className="group flex items-center gap-2 py-2 px-3 rounded-md hover:bg-neutral-50 cursor-pointer transition-all active:scale-[0.99]"
@@ -69,6 +77,7 @@ const KnowledgeNodeItem: React.FC<{
         transitionTimingFunction: 'ease-out'
       }}
       onClick={handleClick}
+      onMouseEnter={handleHover}
     >
       <div className="flex-shrink-0">
         {isMastered ? (
