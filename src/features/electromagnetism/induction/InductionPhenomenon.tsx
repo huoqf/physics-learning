@@ -3,7 +3,7 @@ import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS, CANVAS_COLORS, CHART_COLORS, FONT } from '@/theme/physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
 import { colors } from '@/theme/colors'
 import { calculateMagnetInduction, calculateCoilInduction } from '@/physics'
@@ -274,8 +274,8 @@ export default function InductionPhenomenon() {
 
         {/* 科学仪表看板：磁通量大小 */}
         <g transform="translate(560, 30)">
-          <rect x="0" y="0" width="110" height="42" rx="6" fill="#0F172A" fillOpacity={0.9} stroke={colors.neutral[600]} strokeWidth={1} />
-          <text x="10" y="16" fill={colors.neutral[400]} fontSize={font(9)} fontWeight="bold">磁通量 Φ</text>
+          <rect x="0" y="0" width="110" height="42" rx="6" fill={SCENE_COLORS.labels.glassPanelBg} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} />
+          <text x="10" y="16" fill={CHART_COLORS.labelText} fontSize={font(FONT.small)} fontWeight="bold">磁通量 Φ</text>
           <text x="10" y="32" fill={EM_COLORS.magneticField} fontSize={font(12)} fontWeight="bold" style={{ fontFamily: 'monospace' }}>
             {phi.toFixed(3)} Wb
           </text>
