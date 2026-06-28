@@ -28,15 +28,21 @@
 
 工作量：2-3 天（含 loading 状态设计）。
 
-### 3.2 params 类型安全 — 内部具名接口（P1）— ✅ 已完成
+### 3.2 params 类型安全 — 内部具名接口（P1）
 
-`types.ts` 新增 `ParamDefs<T>` + `normalizeParams()` 工具函数；kinematics/momentum/dynamics 三个高频构建器引入具名接口 + 默认值映射，外部签名不变。
+`physicsQuantities.ts` 是动态分发层，调用方传 `Record<string, number>`，无法改具名签名。方案：构建器内部定义具名接口 + `normalizeParams()` 归一化，外部签名不变。
 
-已覆盖 3 文件 168 处 `params.xxx` 访问。剩余 21 个构建器文件可按需分批迁移。
+当前 354 处 `params.xxx` 未类型化访问，分布在 24 个量构建器文件中。
 
-### 3.3 AnimationConfig 泛型联动（P2）— ✅ 已完成
+优先文件（按访问频次）：kinematics(57) / momentum(57) / dynamics(54)
 
-`AnimationConfig<P>` 泛型化，`defineAnimations<T>` 支持类型推断，19 个 registry 文件共 57 处 `defaultParams` 添加 `as const` 编译期校验。
+工作量：3 个高频文件约 1.5-2 天，随需求分批。
+
+### 3.3 AnimationConfig 泛型联动（P2）
+
+`defaultParams` 类型与量构建器参数类型联动，缺少必要 key 时编译期报错。
+
+工作量：3-5 天，规划季度。
 
 ### 3.4 expandedNodes 数组 → Set（P3，按需）
 
