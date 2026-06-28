@@ -27,14 +27,14 @@ const VT_DESIGN = { width: 100, height: 100 } as const
 const PULSE_PERIOD = 800
 
 export default function VerticalThrowAnimation() {
-    const {params, time, isPlaying, showVectors, setIsPlaying, setTime} = useAnimationStore(
+  const { params, time, isPlaying, showVectors, setIsPlaying, setTime } = useAnimationStore(
     useShallow((s) => ({
-    params: s.params,
-    time: s.time,
-    isPlaying: s.isPlaying,
-    showVectors: s.showVectors,
-    setIsPlaying: s.setIsPlaying,
-    setTime: s.setTime,
+      params: s.params,
+      time: s.time,
+      isPlaying: s.isPlaying,
+      showVectors: s.showVectors,
+      setIsPlaying: s.setIsPlaying,
+      setTime: s.setTime,
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize({ width: 100, height: 100 })
@@ -307,34 +307,97 @@ export default function VerticalThrowAnimation() {
           </g>
         )}
 
-        {isAtPeak && (
-          <g transform={`translate(${leftBallX + (showDoubleTrack ? -122 : 24)}, ${currentBallY - 45})`}>
-            <rect width={116} height={42} fill={SCENE_COLORS.labels.panelBg} opacity={0.92} rx={4} stroke={CHART_COLORS.criticalPt} strokeWidth={1} filter="drop-shadow(0 2px 4px rgba(0,0,0,0.25))" />
-            <polygon points={showDoubleTrack ? "116 21, 122 21, 116 26" : "0 21, -6 21, 0 26"} fill={SCENE_COLORS.labels.panelBg} stroke={CHART_COLORS.criticalPt} strokeWidth={0.5} />
-            <text x={58} y={13} fontSize={font(9)} fill={SCENE_COLORS.labels.panelText} textAnchor="middle" fontWeight="bold">瞬时状态 v = 0</text>
-            <text x={58} y={25} fontSize={font(8)} fill={SCENE_COLORS.labels.panelTextMuted} textAnchor="middle">但 a = -g = -{g} m/s²</text>
-            <text x={58} y={35} fontSize={font(8)} fill={SCENE_COLORS.labels.panelTextMuted} textAnchor="middle">合力 F_合 = mg 向下</text>
-          </g>
-        )}
+        {isAtPeak && (() => {
+          const peakPanelW = vp.visibleW * 0.2
+          const peakPanelH = vp.visibleH * 0.08
+          const peakGap = vp.visibleH * 0.025
+          const panelAbove = currentBallY - peakGap - peakPanelH > vp.visibleY
+          const panelY = panelAbove
+            ? currentBallY - peakGap - peakPanelH
+            : currentBallY + vp.visibleH * 0.03
+          const panelX = showDoubleTrack
+            ? leftBallX - peakPanelW - vp.visibleW * 0.02
+            : leftBallX + vp.visibleW * 0.04
+          const lineH = peakPanelH / 3.2
+          return (
+            <g transform={`translate(${panelX}, ${panelY})`}>
+              <rect
+                width={peakPanelW}
+                height={peakPanelH}
+                fill={SCENE_COLORS.labels.glassPanelBg}
+                rx={6}
+                stroke={CHART_COLORS.axisLine}
+                strokeWidth={0.8}
+                filter="drop-shadow(0 4px 10px rgba(0,0,0,0.1))"
+              />
+              {showDoubleTrack ? (
+                <polygon
+                  points={`${peakPanelW} ${peakPanelH / 2}, ${peakPanelW + 6} ${peakPanelH / 2}, ${peakPanelW} ${peakPanelH / 2 + 5}`}
+                  fill={SCENE_COLORS.labels.glassPanelBg}
+                  stroke={CHART_COLORS.axisLine}
+                  strokeWidth={0.8}
+                />
+              ) : (
+                <polygon
+                  points={panelAbove
+                    ? `0 ${peakPanelH / 2}, -6 ${peakPanelH / 2}, 0 ${peakPanelH / 2 + 5}`
+                    : `0 0, -6 0, 0 -5`}
+                  fill={SCENE_COLORS.labels.glassPanelBg}
+                  stroke={CHART_COLORS.axisLine}
+                  strokeWidth={0.8}
+                />
+              )}
+              <text x={peakPanelW / 2} y={lineH} fontSize={font(9)} fill={CHART_COLORS.labelText} textAnchor="middle" fontWeight="bold">
+                瞬时状态 <tspan fill={PHYSICS_COLORS.velocity}>v = 0</tspan>
+              </text>
+              <text x={peakPanelW / 2} y={lineH * 2} fontSize={font(8)} fill={CHART_COLORS.labelText} textAnchor="middle">
+                但 <tspan fill={PHYSICS_COLORS.acceleration} fontWeight="bold">a = -g</tspan> = -{g} m/s²
+              </text>
+              <text x={peakPanelW / 2} y={lineH * 3} fontSize={font(8)} fill={CHART_COLORS.labelText} textAnchor="middle">
+                合力 <tspan fill={PHYSICS_COLORS.forceNet} fontWeight="bold">F_合</tspan> = <tspan fill={PHYSICS_COLORS.gravity} fontWeight="bold">mg</tspan> 向下
+              </text>
+            </g>
+          )
+        })()}
 
-        {advancedMode === 1 && targetHeightIntersections && !isLanded && (
-          <>
-            {Math.abs(effectiveTime - targetHeightIntersections.t1) < 0.15 && (
-              <g transform={`translate(${leftBallX + 24}, ${currentBallY - 15})`}>
-                <rect width={95} height={26} fill={SCENE_COLORS.labels.panelBg} opacity={0.88} rx={3} stroke={CHART_COLORS.highlight} strokeWidth={0.8} />
-                <text x={47} y={11} fontSize={font(8)} fill={SCENE_COLORS.labels.panelText} textAnchor="middle" fontWeight="bold">① 上升阶段经过</text>
-                <text x={47} y={20} fontSize={font(8)} fill={PHYSICS_COLORS.deltaHighlight} textAnchor="middle">v = +{effectiveV.toFixed(1)} m/s</text>
-              </g>
-            )}
-            {Math.abs(effectiveTime - targetHeightIntersections.t2) < 0.15 && (
-              <g transform={`translate(${leftBallX + 24}, ${currentBallY - 15})`}>
-                <rect width={95} height={26} fill={SCENE_COLORS.labels.panelBg} opacity={0.88} rx={3} stroke={CHART_COLORS.highlight} strokeWidth={0.8} />
-                <text x={47} y={11} fontSize={font(8)} fill={SCENE_COLORS.labels.panelText} textAnchor="middle" fontWeight="bold">② 下落阶段经过</text>
-                <text x={47} y={20} fontSize={font(8)} fill={SCENE_COLORS.labels.panelTextMuted} textAnchor="middle">v = {effectiveV.toFixed(1)} m/s</text>
-              </g>
-            )}
-          </>
-        )}
+        {advancedMode === 1 && targetHeightIntersections && !isLanded && (() => {
+          const tgW = vp.visibleW * 0.13
+          const tgH = vp.visibleH * 0.045
+          const tgGap = vp.visibleH * 0.015
+          const tgAbove = currentBallY - tgGap - tgH > vp.visibleY
+          const tgY = tgAbove ? currentBallY - tgGap - tgH : currentBallY + vp.visibleH * 0.025
+          const tgX = leftBallX + vp.visibleW * 0.03
+          return (
+            <>
+              {Math.abs(effectiveTime - targetHeightIntersections.t1) < 0.15 && (
+                <g transform={`translate(${tgX}, ${tgY})`}>
+                  <rect width={tgW} height={tgH} fill={SCENE_COLORS.labels.glassPanelBg} rx={6} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} />
+                  <polygon
+                    points={tgAbove
+                      ? `0 ${tgH / 2}, -5 ${tgH / 2}, 0 ${tgH / 2 + 4}`
+                      : `0 0, -5 0, 0 -4`}
+                    fill={SCENE_COLORS.labels.glassPanelBg} stroke={CHART_COLORS.axisLine} strokeWidth={0.8}
+                  />
+                  <text x={tgW / 2} y={tgH * 0.4} fontSize={font(8)} fill={CHART_COLORS.labelText} textAnchor="middle" fontWeight="bold">① 上升阶段经过</text>
+                  <text x={tgW / 2} y={tgH * 0.8} fontSize={font(8)} fill={PHYSICS_COLORS.deltaHighlight} textAnchor="middle">v = +{effectiveV.toFixed(1)} m/s</text>
+                </g>
+              )}
+              {Math.abs(effectiveTime - targetHeightIntersections.t2) < 0.15 && (
+                <g transform={`translate(${tgX}, ${tgY})`}>
+                  <rect width={tgW} height={tgH} fill={SCENE_COLORS.labels.glassPanelBg} rx={6} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} />
+                  <polygon
+                    points={tgAbove
+                      ? `0 ${tgH / 2}, -5 ${tgH / 2}, 0 ${tgH / 2 + 4}`
+                      : `0 0, -5 0, 0 -4`}
+                    fill={SCENE_COLORS.labels.glassPanelBg} stroke={CHART_COLORS.axisLine} strokeWidth={0.8}
+                  />
+                  <text x={tgW / 2} y={tgH * 0.4} fontSize={font(8)} fill={CHART_COLORS.labelText} textAnchor="middle" fontWeight="bold">② 下落阶段经过</text>
+                  <text x={tgW / 2} y={tgH * 0.8} fontSize={font(8)} fill={SCENE_COLORS.labels.panelTextMuted} textAnchor="middle">v = {effectiveV.toFixed(1)} m/s</text>
+                </g>
+              )}
+            </>
+          )
+        })()}
 
         {isLanded && (
           <text x={leftBallX} y={groundY - 30} fontSize={FONT.small} fill={PHYSICS_COLORS.labelText}

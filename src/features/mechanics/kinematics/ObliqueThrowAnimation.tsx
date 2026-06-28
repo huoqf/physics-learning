@@ -46,14 +46,15 @@ const OBLIQUE_THROW_LAYOUT = {
 } as const
 
 export default function ObliqueThrowAnimation() {
-    const {params, time, showVectors, showGrid, setIsPlaying, setTime} = useAnimationStore(
+  const { params, time, isPlaying, showVectors, showGrid, setIsPlaying, setTime } = useAnimationStore(
     useShallow((s) => ({
-    params: s.params,
-    time: s.time,
-    showVectors: s.showVectors,
-    showGrid: s.showGrid,
-    setIsPlaying: s.setIsPlaying,
-    setTime: s.setTime,
+      params: s.params,
+      time: s.time,
+      isPlaying: s.isPlaying,
+      showVectors: s.showVectors,
+      showGrid: s.showGrid,
+      setIsPlaying: s.setIsPlaying,
+      setTime: s.setTime,
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize({ width: 100, height: 100 })
@@ -163,6 +164,29 @@ export default function ObliqueThrowAnimation() {
   const vacBallCanvas = physicsToCanvasWithOrigin(vacuumState.x, vacuumState.y, originX, groundY, scale)
 
   const showDoubleTrack = advancedMode === 1 && airResistance > 0 && showVacuumCompare === 1
+
+  // 最高点检测与自动暂停
+  const isAtPeak = !isLanded && Math.abs(currentState.vy) < 0.25 && currentState.y > 0.5 * maxHeight && effectiveTime > 0.05
+  const hasPausedAtPeakRef = useRef(false)
+  const peakTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  useEffect(() => {
+    if (isAtPeak && isPlaying && !hasPausedAtPeakRef.current) {
+      setIsPlaying(false)
+      hasPausedAtPeakRef.current = true
+      peakTimerRef.current = setTimeout(() => {
+        setIsPlaying(true)
+      }, 1000)
+    }
+    if (!isAtPeak) {
+      hasPausedAtPeakRef.current = false
+    }
+  }, [isAtPeak, isPlaying, setIsPlaying])
+
+  useEffect(() => {
+    return () => {
+      if (peakTimerRef.current) clearTimeout(peakTimerRef.current)
+    }
+  }, [])
 
   // ── 4. 右上角悬浮 v-t 图像画中画定位 ─────────────────────
   const vtWidth = Math.max(220, vp.visibleW * 0.35)
@@ -470,14 +494,41 @@ export default function ObliqueThrowAnimation() {
         )}
 
         {/* 最高点物理指示 */}
-        {!isLanded && Math.abs(currentState.vy) < 0.25 && currentState.y > 0.5 * maxHeight && (
-          <g transform={`translate(${ballCanvas.cx - 60}, ${ballCanvas.cy - 45})`}>
-            <rect width={120} height={38} fill={SCENE_COLORS.labels.panelBg} opacity={0.92} rx={4} stroke={CHART_COLORS.highlight} strokeWidth={1} />
-            <polygon points="60 38, 55 43, 65 38" fill={SCENE_COLORS.labels.panelBg} stroke={CHART_COLORS.highlight} strokeWidth={0.5} />
-            <text x={60} y={13} fontSize={font(8)} fill={SCENE_COLORS.labels.panelText} textAnchor="middle" fontWeight="bold">最高点 H = {maxHeight.toFixed(2)}m</text>
-            <text x={60} y={25} fontSize={font(7)} fill={SCENE_COLORS.labels.panelTextMuted} textAnchor="middle">vᵧ = 0, 合速度 v = vₓ</text>
-          </g>
-        )}
+        {isAtPeak && (() => {
+          const peakW = vp.visibleW * 0.16
+          const peakH = vp.visibleH * 0.065
+          const peakGap = vp.visibleH * 0.025
+          const panelAbove = ballCanvas.cy - peakGap - peakH > vp.visibleY
+          const py = panelAbove ? ballCanvas.cy - peakGap - peakH : ballCanvas.cy + vp.visibleH * 0.03
+          const px = ballCanvas.cx - peakW / 2
+          return (
+            <g transform={`translate(${px}, ${py})`}>
+              <rect
+                width={peakW}
+                height={peakH}
+                fill={SCENE_COLORS.labels.glassPanelBg}
+                rx={6}
+                stroke={CHART_COLORS.axisLine}
+                strokeWidth={0.8}
+                filter="drop-shadow(0 4px 10px rgba(0,0,0,0.1))"
+              />
+              <polygon
+                points={panelAbove
+                  ? `${peakW / 2} ${peakH}, ${peakW / 2 - 5} ${peakH + 5}, ${peakW / 2 + 5} ${peakH}`
+                  : `${peakW / 2} 0, ${peakW / 2 - 5} -5, ${peakW / 2 + 5} 0`}
+                fill={SCENE_COLORS.labels.glassPanelBg}
+                stroke={CHART_COLORS.axisLine}
+                strokeWidth={0.8}
+              />
+              <text x={peakW / 2} y={peakH * 0.38} fontSize={font(9)} fill={CHART_COLORS.labelText} textAnchor="middle" fontWeight="bold">
+                最高点 H = {maxHeight.toFixed(2)}m
+              </text>
+              <text x={peakW / 2} y={peakH * 0.72} fontSize={font(8)} fill={CHART_COLORS.labelText} textAnchor="middle">
+                <tspan fill={PHYSICS_COLORS.velocity}>v_y = 0</tspan>, 合速度 <tspan fill={PHYSICS_COLORS.velocity}>v = v_x</tspan>
+              </text>
+            </g>
+          )
+        })()}
 
         {/* 落地状态 */}
         {isLanded && (
