@@ -328,6 +328,60 @@ tests/
 
 禁止直接在 `physicsQuantities.ts` 中添加 switch-case 构建逻辑。
 
+### 8.1.2 参数类型安全规范
+
+**构建器参数归一化**：构建器文件应定义具名接口 + 默认值映射，通过 `normalizeParams()` 将 `Record<string, number>` 归一化为类型安全的具名接口。
+
+```ts
+// quantities/kinematics.ts 示例
+import { normalizeParams, type ParamDefs } from './types'
+
+interface KinematicsParams {
+  v0: number
+  a: number
+  g: number
+  // ...
+}
+
+const KINEMATICS_DEFAULTS: ParamDefs<KinematicsParams> = {
+  v0: { default: 0 },
+  a: { default: 1.5 },
+  g: { default: 9.8 },
+  // ...
+}
+
+export function buildKinematicsQuantities(
+  animId: string,
+  params: Record<string, number>,  // 外部签名不变
+  time: number,
+): PhysicsPanelData | null {
+  const p = normalizeParams(params, KINEMATICS_DEFAULTS)  // 内部类型安全
+  // 使用 p.v0, p.a, p.g 而非 params.v0, params.a, params.g
+}
+```
+
+**AnimationConfig 泛型联动**：`AnimationConfig<P>` 已泛型化，registry 文件的 `defaultParams` 必须添加 `as const` 以获得编译期字面量类型校验。
+
+```ts
+// registries/mechanics-kinematics.ts 示例
+export const mechanicsKinematicsAnimations = defineAnimations({
+  'anim-velocity': {
+    title: '速度演示',
+    knowledgeId: 'mechanics-1-3',
+    Component: lazy(() => import('...')),
+    defaultParams: {
+      v: 8, t: 0, scene: 0,
+    } as const,  // 必须添加 as const
+    // ...
+  },
+})
+```
+
+**新增动画时的类型安全检查清单**：
+1. 构建器文件：定义具名接口 + 默认值映射 + `normalizeParams` 调用
+2. Registry 文件：`defaultParams` 添加 `as const`
+3. 验证：`npx tsc --noEmit` 零错误
+
 ### 8.2 错题数据流
 
 ```

@@ -1,7 +1,7 @@
 # AGENT.md — Trae VIBE CODE 执行入口
 
 > **面向 AI Agent / Trae VIBE CODE 的执行入口。**
-> 核心规范已整合至 `.trae/rules/project_rules.md`（Trae IDE 自动加载），本文件保留按需加载索引与任务标记约定。
+> 核心规范位于 `docs/agent-rules/core/ARCHITECTURE_RULES.md`，本文件保留按需加载索引与任务标记约定。
 > **开发环境**：便携版 Node.js 位于 `D:\node-v24`，编译/安装依赖时需加入 PATH。
 
 ---
@@ -11,15 +11,15 @@
 ### 自动加载（无需手动读取）
 
 ```
-.trae/rules/project_rules.md — 核心规范（Trae IDE 每次任务自动加载）
+docs/agent-rules/core/ARCHITECTURE_RULES.md — 核心规范（架构细则与铁律权威定义）
 ```
 
-该文件已整合：项目目标、技术栈、目录结构、组件分层、全局铁律、状态管理、数据层、坐标系统、动画系统、路由、代码规范、UI 规范核心摘要、依赖管理、性能测试、构建打包、任务 Checklist。
+该文件包含：项目目标、技术栈、目录结构、组件分层、全局铁律、状态管理、数据层、坐标系统、动画系统、路由、代码规范、依赖管理、性能测试、构建打包、参数类型安全规范。
 
 ### 必读（每次任务）
 
 ```
-.trae/rules/project_rules.md → 当前里程碑 ROADMAP_Mx_*.md
+docs/agent-rules/core/ARCHITECTURE_RULES.md → 当前里程碑 ROADMAP_Mx_*.md
 ```
 
 ### 按需读取（触发时才读，否则跳过）
@@ -35,7 +35,7 @@
 | 查看全局进度 / 选下一个任务 | `docs/agent-rules/roadmap/ROADMAP_PROGRESS.md` |
 | 申报依赖 / 查历史决策 / 追问题 | `docs/agent-rules/process/PROCESS_LOG.md` |
 
-> **文档优先级**：`.trae/rules/project_rules.md` > ARCHITECTURE_RULES > 02_UI > 03~06
+> **文档优先级**：ARCHITECTURE_RULES > 02_UI > 03~06
 
 ### 无需读文档，直接 import 代码
 
