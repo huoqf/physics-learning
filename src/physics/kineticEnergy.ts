@@ -55,14 +55,15 @@ export function precomputeConstantKETrajectory(
   const a_const = F_pull / m
   
   // 计算加速到位移 s_target 所需的时间 t_c
+  const discriminant = v0 * v0 + 2 * a_const * s_target
   let t_c = 0
-  if (a_const > 0) {
-    t_c = (-v0 + Math.sqrt(v0 * v0 + 2 * a_const * s_target)) / a_const
+  if (a_const > 0 && discriminant >= 0) {
+    t_c = (-v0 + Math.sqrt(discriminant)) / a_const
   } else if (v0 > 0) {
     t_c = s_target / v0
   }
   
-  const v_c = Math.sqrt(v0 * v0 + 2 * a_const * s_target) // 临界末速度
+  const v_c = discriminant >= 0 ? Math.sqrt(discriminant) : 0 // 临界末速度
 
   let t = 0
   let curX = 0
@@ -163,7 +164,7 @@ export function precomputeCurvedTrackTrajectory(
   // 数值积分实时变量
   // 凹型弧 θ=0 时切线竖直向下，重力切向分量 = mg·cos(0) = mg > 0
   // 球自然下滑，不存在静摩擦阻碍启动的问题，无需 arctan(mu) 偏移
-  let theta = 0.001 // 从极小角度开始，避免除零
+  let theta = Math.max(0.001, mu > 0 ? 0.01 : 0.001) // 从极小角度开始，避免除零
   let v = v0
   let t = 0
   let W_f = 0 // 摩擦力做功 (负值)
@@ -201,9 +202,13 @@ export function precomputeCurvedTrackTrajectory(
 
       // 欧拉步长更新速度
       const nextV = v + a * dt
-      if (nextV < 0) {
+      if (nextV <= 0) {
         v = 0
         a = 0
+        // 球静止，终止积分
+        reachedBottom = true
+        t_c = t
+        v_c = 0
       } else {
         v = nextV
       }

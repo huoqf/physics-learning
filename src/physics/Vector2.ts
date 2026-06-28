@@ -4,7 +4,8 @@ export interface Vector2 {
 }
 
 export function magnitude(v: Vector2): number {
-  return Math.sqrt(v.x * v.x + v.y * v.y);
+  const m = Math.sqrt(v.x * v.x + v.y * v.y);
+  return isFinite(m) ? m : 0;
 }
 
 export function normalize(v: Vector2): Vector2 {
@@ -26,4 +27,16 @@ export function add(a: Vector2, b: Vector2): Vector2 {
 
 export function fromPhysics(mag: number, angleRad: number): Vector2 {
   return { x: mag * Math.cos(angleRad), y: mag * Math.sin(angleRad) };
+}
+
+export function subtract(a: Vector2, b: Vector2): Vector2 {
+  return { x: a.x - b.x, y: a.y - b.y };
+}
+
+export function dot(a: Vector2, b: Vector2): number {
+  return a.x * b.x + a.y * b.y;
+}
+
+export function lengthSq(v: Vector2): number {
+  return v.x * v.x + v.y * v.y;
 }

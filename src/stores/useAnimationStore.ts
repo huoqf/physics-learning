@@ -38,14 +38,14 @@ interface AnimationState {
   reset: () => void
 }
 
-export const useAnimationStore = create<AnimationState>((set) => ({
-  animationType: null,
-  params: {},
-  lastChangedParam: null,
+const initialState = {
+  animationType: null as string | null,
+  params: {} as Record<string, number>,
+  lastChangedParam: null as string | null,
   time: 0,
   isPlaying: false,
   speed: 1,
-  direction: 1,
+  direction: 1 as 1 | -1,
   showVectors: true,
   showFormulas: true,
   showGrid: true,
@@ -55,7 +55,11 @@ export const useAnimationStore = create<AnimationState>((set) => ({
     position: { x: 0, y: 0 },
     velocity: { vx: 0, vy: 0 },
     trajectory: [],
-  },
+  } as PhysicsState,
+}
+
+export const useAnimationStore = create<AnimationState>((set) => ({
+  ...initialState,
   setAnimationType: (type) => set({ animationType: type }),
   setParams: (params) => set({ params }),
   updateParam: (key, value) => set((state) => ({
@@ -74,22 +78,5 @@ export const useAnimationStore = create<AnimationState>((set) => ({
   setPhysicsState: (physicsState) => set((state) => ({
     physicsState: typeof physicsState === 'function' ? physicsState(state.physicsState) : physicsState
   })),
-  reset: () => set({
-    animationType: null,
-    params: {},
-    time: 0,
-    isPlaying: false,
-    speed: 1,
-    direction: 1,
-    showVectors: true,
-    showFormulas: true,
-    showGrid: true,
-    showTimeSlices: false,
-    showDualObjects: false,
-    physicsState: {
-      position: { x: 0, y: 0 },
-      velocity: { vx: 0, vy: 0 },
-      trajectory: [],
-    },
-  })
+  reset: () => set(initialState),
 }))

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import { useParams } from 'react-router-dom'
+import { useShallow } from 'zustand/react/shallow'
 import { getAnimationConfig, getAnimationConfigAsync } from '@/data/animationRegistry'
 import { preloadQuantityBuilder } from '@/data/physicsQuantities'
 import { useAnimationStore, useProgressStore, type PhysicsState } from '@/stores'
@@ -26,10 +27,14 @@ export interface AnimationLifecycleResult {
 
 function useAnimationConfig() {
   const { id } = useParams<{ id: string }>()
-  const setParams = useAnimationStore((s) => s.setParams)
-  const setTime = useAnimationStore((s) => s.setTime)
-  const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
-  const setPhysicsState = useAnimationStore((s) => s.setPhysicsState)
+  const { setParams, setTime, setIsPlaying, setPhysicsState } = useAnimationStore(
+    useShallow((s) => ({
+      setParams: s.setParams,
+      setTime: s.setTime,
+      setIsPlaying: s.setIsPlaying,
+      setPhysicsState: s.setPhysicsState,
+    }))
+  )
   const { setMode } = useAppStore()
   const { markAnimationViewed } = useProgressStore()
 

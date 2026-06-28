@@ -203,17 +203,6 @@ export default function AnimationPage() {
     prevDiscoveryStep,
   } = useAnimationLifecycle()
 
-  // config 加载中
-  if (configLoading) {
-    return (
-      <div className="flex flex-col bg-neutral-50" style={{ height: `calc(100vh - ${LAYOUT.topBarHeight}px)` }}>
-        <div className="flex-1 flex items-center justify-center text-neutral-400">
-          加载动画配置中…
-        </div>
-      </div>
-    )
-  }
-
   // 低频状态：selector 订阅，避免 time 变化触发重渲染
   const { params, showTimeSlices, showDualObjects } = useAnimationStore(
     useShallow((s) => ({
@@ -227,6 +216,17 @@ export default function AnimationPage() {
   const { setParams, setTime, setIsPlaying, updateParam, toggleTimeSlices, toggleDualObjects, setDirection } = useAnimationStore.getState()
 
   const { setMode } = useAppStore()
+
+  // config 加载中
+  if (configLoading) {
+    return (
+      <div className="flex flex-col bg-neutral-50" style={{ height: `calc(100vh - ${LAYOUT.topBarHeight}px)` }}>
+        <div className="flex-1 flex items-center justify-center text-neutral-400">
+          加载动画配置中…
+        </div>
+      </div>
+    )
+  }
 
   if (!config || !config.Component) {
     return (

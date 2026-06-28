@@ -10,6 +10,7 @@ import { lazy, type LazyExoticComponent, type ComponentType } from 'react'
  * Comp.preload()
  * ```
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function lazyWithPreload<T extends ComponentType<any>>(
   factory: () => Promise<{ default: T }>,
 ): LazyExoticComponent<T> & { preload: () => Promise<void> } {

@@ -27,7 +27,13 @@ async function getOrOpenDB(): Promise<IDBPDatabase<PhysicsDBSchema>> {
   return dbPromise;
 }
 
+let lastCheckTime = 0;
+const CHECK_INTERVAL = 60_000;
+
 function checkDBSize(): void {
+  const now = Date.now();
+  if (now - lastCheckTime < CHECK_INTERVAL) return;
+  lastCheckTime = now;
   if ('storage' in navigator && 'estimate' in navigator.storage) {
     navigator.storage.estimate().then((estimate) => {
       if (estimate.usage && estimate.usage > MAX_DB_SIZE) {

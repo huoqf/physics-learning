@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route, Outlet } from 'react-router-dom';
 import Layout from './app/Layout';
 
 // 路由级代码分割：各页面按需加载，避免首屏打入全部页面与重型依赖
@@ -24,54 +24,14 @@ export default function App() {
     <HashRouter>
       <Routes>
         <Route element={<Layout />}>
-          <Route
-            path="/"
-            element={
-              <Suspense fallback={<RouteFallback />}>
-                <HomePage />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/animation/:id"
-            element={
-              <Suspense fallback={<RouteFallback />}>
-                <AnimationPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/analysis/:id"
-            element={
-              <Suspense fallback={<RouteFallback />}>
-                <AnalysisPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/practice"
-            element={
-              <Suspense fallback={<RouteFallback />}>
-                <PracticePage />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/wrong"
-            element={
-              <Suspense fallback={<RouteFallback />}>
-                <WrongPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/knowledge"
-            element={
-              <Suspense fallback={<RouteFallback />}>
-                <KnowledgePage />
-              </Suspense>
-            }
-          />
+          <Route element={<Suspense fallback={<RouteFallback />}> <Outlet /> </Suspense>}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/animation/:id" element={<AnimationPage />} />
+            <Route path="/analysis/:id" element={<AnalysisPage />} />
+            <Route path="/practice" element={<PracticePage />} />
+            <Route path="/wrong" element={<WrongPage />} />
+            <Route path="/knowledge" element={<KnowledgePage />} />
+          </Route>
         </Route>
         <Route
           path="/dev/playground"
