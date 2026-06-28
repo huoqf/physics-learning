@@ -2,7 +2,7 @@
 
 ## 当前周期
 
-- 当前日期：2026-W26（06-24）
+- 当前日期：2026-W26（06-28）
 - 当前里程碑：M4 电磁/热/光/原子模块
 - 本周详细日志：[2026-W26.md](./logs/2026-W26.md)
 - 提交流程：[CHECKLIST.md](./CHECKLIST.md)
@@ -16,6 +16,10 @@
 - 完整历史：[2026-06.md](./logs/2026-06.md)
 
 ## 最近变更摘要
+
+| 日期 | 模块 | 类型 | 变更 |
+|------|------|------|------|
+| 06-28 | physics | refactor | 超长文件拆分 P0 收官：momentumApplication.ts(524行)→curvedSlot+springBlocks+manBoat+index；EnergyConservationAnimation.tsx(718行)→PendulumScene+ValleyScene+EnergyConservationBarChart+ZeroPotentialLine；UniformAccelerationCenterExtra.tsx(606行)→StroboscopicAnimation+VtChartWithArea+FlashDataTable；TODO_deferred.md 精简 |
 
 | 日期 | 模块 | 类型 | 变更 |
 | 06-27 | mechanics/energy | feature | 新增轻绳连接体三阶段模型：在 lightRodRope.ts 中实现基于 PBD 几何约束投影的三阶段运动学数值积分算法；攻克摆动下落拉紧瞬时的沿绳完全非弹性碰撞速度同化计算，并在拉直时刻解析叠加张力脉冲尖脉冲；重构 LightRodRopeSidebar 追加 showVelocityDecomp 速度三角形 Toggle 并彻底隔离长文本；重塑 EnergyBars 语义色，在碰撞瞬间总能量柱增加红光发光与“碰撞损失”Badge；联动控制当显示速度三角形时隐藏拉力和重力；右侧屏实时并存渲染以时间为轴的 v-t 与 F-t 关联曲线，并由 markers 指示状态突变标记线；tsc 静态检查无错误 |

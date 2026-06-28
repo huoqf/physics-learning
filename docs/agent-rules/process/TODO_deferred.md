@@ -6,28 +6,7 @@
 
 ## 一、超长文件拆分（P0）— ✅ 全部完成
 
-### 待处理
-
-（无）
-
-> 以下文件仍超 400 行，可关注拆分：
-> - `lightRodRope/trajectory.ts` — 485（主积分函数，3 种模式共享 20+ 状态变量，拆分风险高）
-
-### 已完成
-
-| 文件 | 拆分方式 | 日期 |
-|---|---|---|
-| ~~`electromagnetism.ts`~~ → `electromagnetism/` | 5 域模块 + index 调度器（1,517 → 6 模块） | 2026-06-27 |
-| ~~`SpringCompositeAnimation.tsx`~~ | 提取 `SpringEnergyChartContent` + `SpringForceChartContent`（1,271 → 630 + 395 + 325） | 2026-06-27 |
-| ~~`MomentumApplicationAnimation.tsx`~~ | 提取 `CurvedSlotModel` + `SpringBlocksModel` + `ManBoatModel`（1,171 → 108 + 160 + 170 + 255） | 2026-06-27 |
-| ~~`dynamics.ts`~~ → `dynamics/` | 6 模块（1,074 → 6 模块） | 2026-06-27 |
-| ~~`SatelliteAnimation.tsx`~~ | 提取 `satelliteLayout` + `SatelliteShapes` + `useSatellitePhysics` + `useOrbitCurves`（1,138 → 343 + 48 + 51 + 183 + 32） | 2026-06-27 |
-| ~~`forceMotion.ts`~~ → `forceMotion/` | index + types + utils + 10 个 modes/*（716 → 13 模块） | 2026-06-27 |
-| ~~`lightRodRope.ts`~~ → `lightRodRope/` | index + types + interpolate + trajectory（795 → 4 模块） | 2026-06-27 |
-| ~~`magnetism.ts`~~ → `magnetism/` | index + forces + ampereForce + velocitySelector（556 → 4 模块） | 2026-06-27 |
-| ~~`momentumApplication.ts`~~ → `momentumApplication/` | curvedSlot + springBlocks + manBoat + index（524 → 4 模块） | 2026-06-28 |
-| ~~`EnergyConservationAnimation.tsx`~~ | 提取 PendulumScene + ValleyScene + EnergyConservationBarChart + ZeroPotentialLine（718 → 5 模块） | 2026-06-28 |
-| ~~`UniformAccelerationCenterExtra.tsx`~~ | 提取 StroboscopicAnimation + VtChartWithArea + FlashDataTable（606 → 4 模块） | 2026-06-28 |
+> 仅剩 `lightRodRope/trajectory.ts` (485行) 可关注拆分，但因 3 种模式共享 20+ 状态变量，拆分风险高，暂不处理。
 
 ---
 
