@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CANVAS_STYLE, VECTOR_DISPLAY } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CANVAS_STYLE } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { Block } from '@/components/Physics/Block'
@@ -90,8 +90,9 @@ export function KineticEnergyScene({
     const distToCenter = Math.sqrt(dxToCenter * dxToCenter + dyToCenter * dyToCenter)
     inwardDirX = distToCenter > 0 ? dxToCenter / distToCenter : 0
     inwardDirY = distToCenter > 0 ? dyToCenter / distToCenter : 0
-    ballCX = trackCX - ballR * inwardDirX
-    ballCY = trackCY - ballR * inwardDirY
+    // 凹型弧：球在轨道内侧（靠近圆心方向），球心沿 inwardDir 偏移
+    ballCX = trackCX + ballR * inwardDirX
+    ballCY = trackCY + ballR * inwardDirY
     tangentDirX = -inwardDirY
     tangentDirY = inwardDirX
   } else {
@@ -103,11 +104,6 @@ export function KineticEnergyScene({
     inwardDirY = -1
   }
 
-  const vMax = mode === 0 ? Math.sqrt(v0 * v0 + 2 * (F_pull / m) * s_target) : Math.sqrt(v0 * v0 + 2 * 9.8 * R)
-  const fMax = mode === 0 ? F_pull : m * 9.8
-  const vectorMaxLen = Math.min(canvasSize.width, canvasSize.height) * VECTOR_DISPLAY.force.maxLengthRatio
-  const vArrowLen = ballR + (state.v / Math.max(vMax, 0.1)) * (vectorMaxLen - ballR)
-  const fArrowLen = ballR + (Math.abs(state.F) / Math.max(fMax, 0.1)) * (vectorMaxLen - ballR)
 
   const carX = padding + state.x * scale
 
@@ -130,13 +126,26 @@ export function KineticEnergyScene({
     return { x, opacity }
   })
 
-  const sceneConfig = useMemo((): SceneConfig => ({
-    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
-    originX: 0,
-    originY: 0,
-    worldWidth: canvasSize.width,
-    worldHeight: canvasSize.height,
-  }), [canvasSize.width, canvasSize.height])
+  const sceneConfig = useMemo((): SceneConfig => {
+    // 矢量归一化基准量级（确保同屏矢量比例保真）
+    const refF = mode === 0 ? F_pull : Math.max(m * 9.8 * 1.5, 15) // 力基准
+    const refV = mode === 0 ? Math.sqrt(v0 * v0 + 2 * (F_pull / m) * s_target) : Math.sqrt(v0 * v0 + 2 * 9.8 * R) // 速度基准
+    return {
+      vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+      originX: 0,
+      originY: 0,
+      worldWidth: canvasSize.width,
+      worldHeight: canvasSize.height,
+      refMagnitudes: {
+        velocity: refV,
+        force: refF,
+        gravity: refF,
+        normalForce: refF,
+        friction: refF,
+        appliedForce: refF,
+      },
+    }
+  }, [canvasSize.width, canvasSize.height, mode, m, v0, F_pull, s_target, R])
   const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig])
 
   return (
@@ -159,14 +168,15 @@ export function KineticEnergyScene({
 
       {mode === 1 && (
         <g>
+          {/* 凹型1/4圆弧轨道：sweep-flag=0 绘制内凹弧（碗形），底端切线水平 */}
           <path
-            d={`M ${padding} ${groundY - R * scale} A ${R * scale} ${R * scale} 0 0 1 ${padding + R * scale} ${groundY}`}
+            d={`M ${padding} ${groundY - R * scale} A ${R * scale} ${R * scale} 0 0 0 ${padding + R * scale} ${groundY}`}
             fill="none"
             stroke={PHYSICS_COLORS.labelText}
             strokeWidth={STROKE.trackLine}
           />
           <path
-            d={`M ${padding} ${groundY - R * scale} A ${R * scale} ${R * scale} 0 0 1 ${padding + R * scale} ${groundY}`}
+            d={`M ${padding} ${groundY - R * scale} A ${R * scale} ${R * scale} 0 0 0 ${padding + R * scale} ${groundY}`}
             fill="none"
             stroke={colors.neutral[100]}
             strokeWidth={STROKE.objectThin}
@@ -270,20 +280,20 @@ export function KineticEnergyScene({
           {showVectors && state.F > 0.1 && (
             <VectorArrow
               origin={{ x: -Math.min(state.F * 1.5, 45), y: objH * 0.5 }}
-              vector={{ x: -1, y: 0 }}
+              vector={{ x: -state.F, y: 0 }}
               type="appliedForce"
               sceneScale={sceneScale}
-              pixelLength={Math.min(state.F * 1.5, 45) - 2}
+              label="F"
             />
           )}
 
           {showVectors && state.v > 0.05 && (
             <VectorArrow
               origin={{ x: objW * 0.5, y: -3.5 }}
-              vector={{ x: 1, y: 0 }}
+              vector={{ x: state.v, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
-              pixelLength={Math.min(state.v * 4.5, 60)}
+              label="v"
             />
           )}
         </g>
@@ -299,45 +309,59 @@ export function KineticEnergyScene({
           />
 
           <g>
+            {/* 切向合外力 F_net（驱动 ΔEk 变化的力） */}
             {Math.abs(state.F) > 0.1 && (
               <VectorArrow
                 origin={{ x: ballCX, y: canvasSize.height - ballCY }}
                 vector={state.F >= 0
-                  ? { x: tangentDirX, y: -tangentDirY }
-                  : { x: -tangentDirX, y: tangentDirY }}
-                type="elasticForce"
+                  ? { x: state.F * tangentDirX, y: -state.F * tangentDirY }
+                  : { x: state.F * tangentDirX, y: -state.F * tangentDirY }}
+                type="force"
                 sceneScale={sceneScale}
-                pixelLength={fArrowLen}
+                label="F合"
               />
             )}
 
+            {/* 曲面段：逐力分解（重力、法向力、摩擦力） */}
             {state.phase === 0 && (() => {
               const g = GRAVITY
               const mg = m * g
-              const normalForce = mg * Math.cos(state.theta) + m * state.v * state.v / R
+              // 凹型弧：法向力 N = mg*sinθ + mv²/R（高考标准：底端 F_N - mg = mv²/R）
+              const normalForce = mg * Math.sin(state.theta) + m * state.v * state.v / R
               const fFriction = mu * normalForce
-              const gravityLen = ballR + (mg / Math.max(fMax, 0.1)) * (vectorMaxLen - ballR)
-              const frictionLen = ballR + (fFriction / Math.max(fMax, 0.1)) * (vectorMaxLen - ballR)
               return (
                 <g>
+                  {/* 重力 mg：竖直向下 */}
                   {mg > 0.1 && (
                     <VectorArrow
                       origin={{ x: ballCX, y: canvasSize.height - ballCY }}
-                      vector={{ x: 0, y: -1 }}
+                      vector={{ x: 0, y: -mg }}
                       type="gravity"
                       sceneScale={sceneScale}
-                      pixelLength={gravityLen}
                       strokeWidth={STROKE.vectorSub}
+                      label="mg"
                     />
                   )}
+                  {/* 法向力 N：指向圆心（凹型弧内侧） */}
+                  {normalForce > 0.1 && (
+                    <VectorArrow
+                      origin={{ x: ballCX, y: canvasSize.height - ballCY }}
+                      vector={{ x: normalForce * inwardDirX, y: -normalForce * inwardDirY }}
+                      type="normalForce"
+                      sceneScale={sceneScale}
+                      strokeWidth={STROKE.vectorSub}
+                      label="N"
+                    />
+                  )}
+                  {/* 摩擦力 f：与运动方向相反（沿切线上坡） */}
                   {fFriction > 0.1 && (
                     <VectorArrow
                       origin={{ x: ballCX, y: canvasSize.height - ballCY }}
-                      vector={{ x: tangentDirX, y: -tangentDirY }}
+                      vector={{ x: -fFriction * tangentDirX, y: fFriction * tangentDirY }}
                       type="friction"
                       sceneScale={sceneScale}
-                      pixelLength={frictionLen}
                       strokeWidth={STROKE.vectorSub}
+                      label="f"
                     />
                   )}
                 </g>
@@ -345,13 +369,14 @@ export function KineticEnergyScene({
             })()}
           </g>
 
+          {/* 速度 v：沿切线方向（下滑方向） */}
           {showVectors && state.v > 0.05 && (
             <VectorArrow
               origin={{ x: ballCX, y: canvasSize.height - ballCY }}
-              vector={{ x: tangentDirX, y: -tangentDirY }}
+              vector={{ x: state.v * tangentDirX, y: -state.v * tangentDirY }}
               type="velocity"
               sceneScale={sceneScale}
-              pixelLength={vArrowLen}
+              label="v"
             />
           )}
         </g>
