@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CANVAS_STYLE } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { SVGSingleBar } from '@/components/Physics/SVGSingleBar'
 import { Block } from '@/components/Physics/Block'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { createSceneScale } from '@/scene'
@@ -15,6 +16,8 @@ const KE_SCENE_LAYOUT = {
   groundYRatio: 0.85,
   ballToTrackRatio: 0.10,
   ballMaxWidthRatio: 0.025,
+  barPanelWidthRatio: 0.13,
+  barBaselineRatio: 0.45,
 } as const
 
 interface KineticEnergySceneProps {
@@ -221,49 +224,49 @@ export function KineticEnergyScene({
         />
       )}
 
-      <g transform={`translate(${canvasSize.width - padding - 90}, ${canvasSize.height * 0.58})`}>
-        <rect width={90} height={85} rx={6} fill={SCENE_COLORS.labels.glassPanelBg} stroke={colors.neutral[200]} strokeWidth={0.8} />
-        
-        <g transform="translate(0, 65)">
-          <line x1={8} y1={0} x2={82} y2={0} stroke={colors.neutral[400]} strokeWidth={0.8} />
+      {(() => {
+        const panelW = canvasSize.width * KE_SCENE_LAYOUT.barPanelWidthRatio
+        const barW = panelW * 0.22
+        const bar1X = panelW * 0.12
+        const eqX = panelW * 0.5
+        const bar2X = panelW * 0.62
+        const eqY = -barW * 1.1
+        return (
+          <g transform={`translate(${canvasSize.width - padding - panelW}, ${groundY - canvasSize.height * KE_SCENE_LAYOUT.barBaselineRatio})`}>
+            <g transform={`translate(0, ${canvasSize.height * KE_SCENE_LAYOUT.barBaselineRatio * 0.5})`}>
+              <line x1={barW * 0.5} y1={0} x2={panelW - barW * 0.5} y2={0} stroke={colors.neutral[400]} strokeWidth={0.8} />
 
-          <rect
-            x={14}
-            y={-barW_H}
-            width={16}
-            height={barW_H}
-            fill={PHYSICS_COLORS.work}
-            opacity={0.85}
-            rx={0.5}
-          />
-          <text x={22} y={-barW_H - 4} fontSize={font(8.5)} fill={PHYSICS_COLORS.work} textAnchor="middle" fontWeight="bold">
-            {state.W >= 0 ? '+' : ''}{state.W.toFixed(1)}J
-          </text>
-          <text x={22} y={12} fontSize={font(8.5)} fill={PHYSICS_COLORS.work} textAnchor="middle" fontWeight="semibold">
-            功 W
-          </text>
+              <SVGSingleBar
+                x={bar1X}
+                baseY={0}
+                height={barW_H}
+                barWidth={barW}
+                color={PHYSICS_COLORS.work}
+                label="功 W"
+                valueText={`${state.W >= 0 ? '+' : ''}${state.W.toFixed(1)}J`}
+                font={font}
+                showTrack={false}
+              />
 
-          <rect
-            x={60}
-            y={-barEk_H}
-            width={16}
-            height={barEk_H}
-            fill={PHYSICS_COLORS.kineticEnergy}
-            opacity={0.85}
-            rx={0.5}
-          />
-          <text x={68} y={-barEk_H - 4} fontSize={font(8.5)} fill={PHYSICS_COLORS.kineticEnergy} textAnchor="middle" fontWeight="bold">
-            {deltaEk >= 0 ? '+' : ''}{deltaEk.toFixed(1)}J
-          </text>
-          <text x={68} y={12} fontSize={font(8.5)} fill={PHYSICS_COLORS.kineticEnergy} textAnchor="middle" fontWeight="semibold">
-            ΔEk
-          </text>
-          
-          <text x={45} y={-18} fontSize={font(12)} fill={colors.neutral[600]} textAnchor="middle" fontWeight="bold">
-            =
-          </text>
-        </g>
-      </g>
+              <text x={eqX} y={eqY} fontSize={font(12)} fill={colors.neutral[600]} textAnchor="middle" fontWeight="bold">
+                =
+              </text>
+
+              <SVGSingleBar
+                x={bar2X}
+                baseY={0}
+                height={barEk_H}
+                barWidth={barW}
+                color={PHYSICS_COLORS.kineticEnergy}
+                label="ΔEk"
+                valueText={`${deltaEk >= 0 ? '+' : ''}${deltaEk.toFixed(1)}J`}
+                font={font}
+                showTrack={false}
+              />
+            </g>
+          </g>
+        )
+      })()}
 
       {mode === 0 ? (
         <g transform={`translate(${carX}, ${groundY - objH})`}>
@@ -279,8 +282,8 @@ export function KineticEnergyScene({
 
           {showVectors && state.F > 0.1 && (
             <VectorArrow
-              origin={{ x: -Math.min(state.F * 1.5, 45), y: objH * 0.5 }}
-              vector={{ x: -state.F, y: 0 }}
+              origin={{ x: objW, y: objH * 0.5 }}
+              vector={{ x: state.F, y: 0 }}
               type="appliedForce"
               sceneScale={sceneScale}
               label="F"
@@ -312,10 +315,8 @@ export function KineticEnergyScene({
             {/* 切向合外力 F_net（驱动 ΔEk 变化的力） */}
             {Math.abs(state.F) > 0.1 && (
               <VectorArrow
-                origin={{ x: ballCX, y: canvasSize.height - ballCY }}
-                vector={state.F >= 0
-                  ? { x: state.F * tangentDirX, y: -state.F * tangentDirY }
-                  : { x: state.F * tangentDirX, y: -state.F * tangentDirY }}
+                origin={{ x: ballCX, y: -ballCY }}
+                vector={{ x: state.F * tangentDirX, y: -state.F * tangentDirY }}
                 type="force"
                 sceneScale={sceneScale}
                 label="F合"
@@ -334,7 +335,7 @@ export function KineticEnergyScene({
                   {/* 重力 mg：竖直向下 */}
                   {mg > 0.1 && (
                     <VectorArrow
-                      origin={{ x: ballCX, y: canvasSize.height - ballCY }}
+                      origin={{ x: ballCX, y: -ballCY }}
                       vector={{ x: 0, y: -mg }}
                       type="gravity"
                       sceneScale={sceneScale}
@@ -345,7 +346,7 @@ export function KineticEnergyScene({
                   {/* 法向力 N：指向圆心（凹型弧内侧） */}
                   {normalForce > 0.1 && (
                     <VectorArrow
-                      origin={{ x: ballCX, y: canvasSize.height - ballCY }}
+                      origin={{ x: ballCX, y: -ballCY }}
                       vector={{ x: normalForce * inwardDirX, y: -normalForce * inwardDirY }}
                       type="normalForce"
                       sceneScale={sceneScale}
@@ -356,7 +357,7 @@ export function KineticEnergyScene({
                   {/* 摩擦力 f：与运动方向相反（沿切线上坡） */}
                   {fFriction > 0.1 && (
                     <VectorArrow
-                      origin={{ x: ballCX, y: canvasSize.height - ballCY }}
+                      origin={{ x: ballCX, y: -ballCY }}
                       vector={{ x: -fFriction * tangentDirX, y: fFriction * tangentDirY }}
                       type="friction"
                       sceneScale={sceneScale}
@@ -372,7 +373,7 @@ export function KineticEnergyScene({
           {/* 速度 v：沿切线方向（下滑方向） */}
           {showVectors && state.v > 0.05 && (
             <VectorArrow
-              origin={{ x: ballCX, y: canvasSize.height - ballCY }}
+              origin={{ x: ballCX, y: -ballCY }}
               vector={{ x: state.v * tangentDirX, y: -state.v * tangentDirY }}
               type="velocity"
               sceneScale={sceneScale}
