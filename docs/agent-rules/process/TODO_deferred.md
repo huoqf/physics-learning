@@ -1,6 +1,6 @@
 # 延后处理待办事项
 
-> 最后更新：2026-06-28（矢量审计 + 懒加载预加载完成后更新）
+> 最后更新：2026-06-28（矢量审计完成、懒加载预加载完成后更新）
 
 ---
 
@@ -80,41 +80,7 @@
 
 `useKnowledgeStore.ts` 中 `expandedNodes: string[]`，O(n) includes。当前节点 < 200，无感知性能问题。节点 500+ 时再评估。
 
-### 3.7 矢量组件替换审计（P2）— 部分完成
-
-> 2026-06-28 矢量使用审计。ForcePolygon 已重构为 VectorArrow，剩余为合理例外或低优先级。
-
-**已完成**：
-
-| 文件 | 原始问题 | 处理方式 |
-|------|---------|---------|
-| `electromagnetism/magnetism/components/ForcePolygon.tsx` | 完全手写 `renderVectorLine()`（line+polygon+text） | ✅ 重构为 VectorArrow，使用 local sceneScale + pixelLength 模式 |
-
-**剩余（合理例外，暂不替换）**：
-
-| 文件 | 行号 | 类型 | 原因 |
-|------|------|------|------|
-| `mechanics/momentum/ManBoatModel.tsx` | 246-250 | 位移标注箭头 | 几何尺寸标注（虚线+箭头），非物理矢量场景。VectorArrow 不支持虚线位移标注样式 |
-| `electromagnetism/electrostatics/Capacitor.tsx` | 472-473 | 场线方向 marker | SVG `<marker>` 内 polygon，用于虚线场线方向。VectorArrow 不支持 strokeDasharray |
-| `electromagnetism/electrostatics/ElectricField.tsx` | 227 | 场线方向 marker | 同上，SVG marker 内 polygon |
-| `mechanics/dynamics/SpringForceAnimation.tsx` | 205-209 | 尺寸标注 marker | 注释明确标注"几何标注非物理矢量"，双向标注箭头 |
-
-**VectorArrow 已正确使用的页面**（抽查确认无 origin.y 错误）：
-
-- `KineticEnergyScene.tsx` — 7 处 VectorArrow，origin 已修正为 `-ballCY`
-- `CentripetalAnimation.tsx` — 9 处
-- `NewtonSecondAnimation.tsx` — 7 处
-- `EquilibriumAnimation.tsx` — 11 处
-- `ForceMotionSandbox.tsx` — 5 处
-- `MomentumScene.tsx` — 6 处，origin 与 SceneConfig.originY 匹配
-- `ValleyScene.tsx` / `PendulumScene.tsx` — 各 1 处
-- `StroboscopicAnimation.tsx` — 2 处
-- `ObliqueThrowAnimation.tsx` / `VerticalThrowAnimation.tsx` — 各 2-3 处
-- `SpringCompositeAnimation.tsx` — 5 处
-- `LightRodRopeAnimation.tsx` — 17 处
-- `CoulombLaw.tsx` / `ElectricPotentialAnimScene.tsx` / `FieldLines.tsx` — 各 1-3 处
-
-### 3.8 其他
+### 3.7 其他
 
 | 条目 | 前提条件 |
 |---|---|
