@@ -192,10 +192,10 @@ export default function VerticalThrowAnimation() {
         <text x={leftBallX + (showDoubleTrack ? -20 : 18)} y={groundY + 14} fontSize={FONT.small} fill={PHYSICS_COLORS.axis}>y=0</text>
 
         <line x1={30} y1={originY + (displayMaxHeight - maxHeight) * scale} x2={stageWidth - 20} y2={originY + (displayMaxHeight - maxHeight) * scale}
-          stroke={PHYSICS_COLORS.potentialEnergy} strokeWidth={STROKE.reference}
-          strokeDasharray={DASH.reference.join(' ')} opacity={0.5} />
+          stroke={CHART_COLORS.highlight} strokeWidth={STROKE.reference}
+          strokeDasharray={DASH.reference.join(' ')} opacity={0.6} />
         <text x={stageWidth - 18} y={originY + (displayMaxHeight - maxHeight) * scale - 4} fontSize={FONT.small}
-          fill={PHYSICS_COLORS.potentialEnergy} textAnchor="end" opacity={0.7}>
+          fill={CHART_COLORS.highlight} textAnchor="end" fontWeight="bold">
           最高点 H = {maxHeight.toFixed(2)}m
         </text>
 
