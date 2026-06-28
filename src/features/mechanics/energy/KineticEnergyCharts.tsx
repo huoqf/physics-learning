@@ -117,7 +117,7 @@ export function KineticEnergyCharts({
 
   if (mode === 0) {
     return (
-      <div className="grid grid-cols-2 gap-1 h-full">
+      <div className="grid grid-cols-3 gap-1 h-full">
         {ekChart}
         <RelationChart
           xLabel="x (m)"
@@ -130,9 +130,7 @@ export function KineticEnergyCharts({
           cursorLabel={(_x, y) => `W=${y.toFixed(1)}J`}
           markers={[{ axis: 'vertical', x: criticalX, label: 's', color: CHART_COLORS.criticalPt }]}
         />
-        <div className="col-span-2">
-          {atChart}
-        </div>
+        {atChart}
       </div>
     )
   }

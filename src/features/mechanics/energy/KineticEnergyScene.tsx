@@ -90,8 +90,8 @@ export function KineticEnergyScene({
     const distToCenter = Math.sqrt(dxToCenter * dxToCenter + dyToCenter * dyToCenter)
     inwardDirX = distToCenter > 0 ? dxToCenter / distToCenter : 0
     inwardDirY = distToCenter > 0 ? dyToCenter / distToCenter : 0
-    ballCX = trackCX + ballR * inwardDirX
-    ballCY = trackCY + ballR * inwardDirY
+    ballCX = trackCX - ballR * inwardDirX
+    ballCY = trackCY - ballR * inwardDirY
     tangentDirX = -inwardDirY
     tangentDirY = inwardDirX
   } else {
