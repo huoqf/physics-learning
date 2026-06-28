@@ -3,19 +3,20 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useState, useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, ENERGY_COLORS, SCENE_COLORS, STROKE, CHART_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, ENERGY_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { RelationChart } from '@/components/Chart'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import {
   precomputePendulumTrajectory,
   precomputeValleyTrajectory,
   getECStateAtTime,
 } from '@/physics/energyConservation'
 import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
+import { PendulumScene } from './PendulumScene'
+import { ValleyScene } from './ValleyScene'
+import { EnergyConservationBarChart } from './EnergyConservationBarChart'
 
 /**
  * 机械能守恒定律实验室（全新重构美化规范版）
@@ -387,331 +388,59 @@ export default function EnergyConservationAnimation() {
         {/* ══════════════════════════════════════════════ */}
 
         {mode === 0 ? (
-          // ─── 经典单摆动画场景 ───
-          <g>
-            {/* 顶部悬挂支架 */}
-            <rect x={animCenterX - 20} y={hangY - 12} width={40} height={12} fill={colors.neutral[400]} rx={1} />
-            <PhysicsGround
-              x={animCenterX - 30} y={hangY} width={60}
-              type="bracket"
-              appearance={{ color: colors.neutral[600] }}
-            />
-
-            {/* 运动极限虚导线范围 */}
-            <path
-              d={`M ${animCenterX - R_pix * Math.sin(60 * Math.PI / 180)} ${hangY + R_pix * Math.cos(60 * Math.PI / 180)} A ${R_pix} ${R_pix} 0 0 0 ${animCenterX + R_pix * Math.sin(60 * Math.PI / 180)} ${hangY + R_pix * Math.cos(60 * Math.PI / 180)}`}
-              fill="none"
-              stroke={colors.neutral[100]}
-              strokeWidth={1}
-              strokeDasharray="3,3"
-            />
-
-            {/* 零势能基准线（可拖动） */}
-            <g
-              className="cursor-ns-resize"
-              onMouseDown={handleMouseDown}
-            >
-              <line
-                x1={animCenterX - 120}
-                y1={yRefLine}
-                x2={animCenterX + 120}
-                y2={yRefLine}
-                stroke={CHART_COLORS.reference}
-                strokeWidth={1.2}
-                strokeDasharray="3,2"
-                opacity={0.85}
-              />
-              <line
-                x1={animCenterX - 150}
-                y1={yRefLine}
-                x2={animCenterX + 150}
-                y2={yRefLine}
-                stroke="transparent"
-                strokeWidth={12}
-              />
-              <text
-                x={animCenterX}
-                y={yRefLine > hangY + R_pix - 5 ? yRefLine - 6 : yRefLine + 11}
-                fontSize={font(7.5)}
-                fill={CHART_COLORS.reference}
-                textAnchor="middle"
-                fontWeight="semibold"
-                className="select-none pointer-events-none"
-              >
-                参考零势能面 (y={hRef.toFixed(1)}m)
-              </text>
-            </g>
-
-            {/* 摆线 */}
-            <line
-              x1={animCenterX}
-              y1={hangY}
-              x2={objPos.x}
-              y2={objPos.y}
-              stroke={colors.neutral[700]}
-              strokeWidth={1.2}
-            />
-            {/* 轴心点 */}
-            <circle cx={animCenterX} cy={hangY} r={3} fill={colors.neutral[800]} />
-
-            {/* 摆球 */}
-            <circle
-              cx={objPos.x}
-              cy={objPos.y}
-              r={12}
-              fill="url(#pendulum-bob-grad)"
-              stroke={SCENE_COLORS.sphere.pendulumBob.stroke}
-              strokeWidth={1.5}
-            />
-            
-            {/* 切向速度矢量 v */}
-            {showVectors && Math.abs(state.v) > 0.15 && (() => {
-              const velRatio = Math.min(Math.abs(state.v) / maxV, 1)
-              const arrowPx = Math.max(14, velRatio * sceneScale.maxVectorLength * 0.85)
-              return (
-                <VectorArrow
-                  origin={{ x: objPos.x, y: -objPos.y }}
-                  vector={{ x: Math.cos(state.theta) * arrowPx * Math.sign(state.v), y: Math.sin(state.theta) * arrowPx * Math.sign(state.v) }}
-                  type="velocity"
-                  sceneScale={sceneScale}
-                  pixelLength={arrowPx}
-                />
-              )
-            })()}
-          </g>
+          <PendulumScene
+            animCenterX={animCenterX}
+            hangY={hangY}
+            R_pix={R_pix}
+            objPos={objPos}
+            state={state}
+            showVectors={showVectors}
+            maxV={maxV}
+            sceneScale={sceneScale}
+            yRefLine={yRefLine}
+            hRef={hRef}
+            font={font}
+            handleMouseDown={handleMouseDown}
+          />
         ) : (
-          // ─── 山谷滑行过山车场景 ───
-          <g>
-            {/* 凹圆弧轨道线 */}
-            <path
-              d={`M ${arcStartX} ${arcStartY} A ${R_pix} ${R_pix} 0 0 0 ${arcEndX} ${arcEndY}`}
-              fill="none"
-              stroke={PHYSICS_COLORS.labelText}
-              strokeWidth={STROKE.groundLine}
-            />
-            <path
-              d={`M ${arcStartX} ${arcStartY} A ${R_pix} ${R_pix} 0 0 0 ${arcEndX} ${arcEndY}`}
-              fill="none"
-              stroke={colors.neutral[100]}
-              strokeWidth={0.5}
-              opacity={0.8}
-            />
-
-            {/* 零势能基准线（可拖动） */}
-            <g
-              className="cursor-ns-resize"
-              onMouseDown={handleMouseDown}
-            >
-              <line
-                x1={animCenterX - 120}
-                y1={yRefLine}
-                x2={animCenterX + 120}
-                y2={yRefLine}
-                stroke={CHART_COLORS.reference}
-                strokeWidth={1.2}
-                strokeDasharray="3,2"
-                opacity={0.85}
-              />
-              <line
-                x1={animCenterX - 150}
-                y1={yRefLine}
-                x2={animCenterX + 150}
-                y2={yRefLine}
-                stroke="transparent"
-                strokeWidth={12}
-              />
-              <text
-                x={animCenterX}
-                y={yRefLine > groundY - 5 ? yRefLine - 6 : yRefLine + 11}
-                fontSize={font(7.5)}
-                fill={CHART_COLORS.reference}
-                textAnchor="middle"
-                fontWeight="semibold"
-                className="select-none pointer-events-none"
-              >
-                谷底零势能面 (y={hRef.toFixed(1)}m)
-              </text>
-            </g>
-
-            {/* 小车（沿圆弧贴紧滑行，并顺着切向倾角旋转） */}
-            <g transform={`translate(${objPos.x}, ${objPos.y}) rotate(${-thetaDeg}) translate(${-objW / 2}, ${-objH})`}>
-              {/* 木车身 */}
-              <rect width={objW} height={objH - 1} rx={2} fill="url(#block-grad)" stroke={SCENE_COLORS.materials.woodSphereGrad[1]} strokeWidth={1.5} />
-              
-              <text x={objW * 0.5} y={objH * 0.6} fontSize={font(8)} fill={colors.neutral[800]} fontWeight="bold" textAnchor="middle">
-                {m.toFixed(1)}kg
-              </text>
-              {/* 轮子 */}
-              <circle cx={objW * 0.25} cy={objH - 0.3} r={1.6} fill={colors.neutral[800]} />
-              <circle cx={objW * 0.75} cy={objH - 0.3} r={1.6} fill={colors.neutral[800]} />
-
-              {/* 切向速度矢量 v */}
-              {showVectors && Math.abs(state.v) > 0.1 && (() => {
-                const velRatio = Math.min(Math.abs(state.v) / maxV, 1)
-                const arrowPx = Math.max(14, velRatio * sceneScale.maxVectorLength * 0.85)
-                return (
-                  <VectorArrow
-                    origin={{ x: objW * 0.5, y: -(objH + 3) }}
-                    vector={{ x: arrowPx * Math.sign(state.v), y: 0 }}
-                    type="velocity"
-                    sceneScale={sceneScale}
-                    pixelLength={arrowPx}
-                  />
-                )
-              })()}
-            </g>
-
-            {/* 阶段状态指示：卡死停在坡上时闪烁提示 */}
-            {state.phase === 1 && (
-              <g transform={`translate(${animCenterX - 45}, ${groundY - 110})`}>
-                <rect width={90} height={18} rx={3} fill="rgba(239, 68, 68, 0.08)" stroke="rgba(239, 68, 68, 0.4)" strokeWidth={0.8} />
-                <text x={45} y={12} fontSize={font(7.5)} fontWeight="bold" textAnchor="middle" fill={ENERGY_COLORS.internalEnergy}>
-                  摩擦受力平衡已静止
-                </text>
-              </g>
-            )}
-          </g>
+          <ValleyScene
+            animCenterX={animCenterX}
+            groundY={groundY}
+            R_pix={R_pix}
+            arcStartX={arcStartX}
+            arcStartY={arcStartY}
+            arcEndX={arcEndX}
+            arcEndY={arcEndY}
+            objPos={objPos}
+            objW={objW}
+            objH={objH}
+            thetaDeg={thetaDeg}
+            state={state}
+            m={m}
+            showVectors={showVectors}
+            maxV={maxV}
+            sceneScale={sceneScale}
+            yRefLine={yRefLine}
+            hRef={hRef}
+            font={font}
+            handleMouseDown={handleMouseDown}
+          />
         )}
 
         {/* ── 三柱/四柱能量守恒验证面板卡片 ── */}
-        <g transform={`translate(${wallX - (mode === 0 ? 90 : 115)}, ${vp.visibleH * 0.55})`}>
-          {/* 半透明白底毛玻璃 */}
-          <rect width={mode === 0 ? 90 : 115} height={105} rx={6} fill={SCENE_COLORS.labels.glassPanelBg} stroke={colors.neutral[200]} strokeWidth={0.8} />
-
-          {/* 柱状图坐标系，基准线 y=0 移至 70 */}
-          <g transform="translate(0, 70)">
-            {/* 基准零线 */}
-            <line x1={8} y1={0} x2={mode === 0 ? 82 : 107} y2={0} stroke={colors.neutral[400]} strokeWidth={0.8} />
-
-            {/* 柱 1：动能 Ek (青色) */}
-            <rect
-              x={mode === 0 ? 12 : 10}
-              y={-barEk_H}
-              width={14}
-              height={Math.max(barEk_H, 0.1)}
-              fill={PHYSICS_COLORS.kineticEnergy}
-              opacity={0.85}
-              rx={0.5}
-            />
-            <text
-              x={mode === 0 ? 19 : 17}
-              y={-barEk_H - 4}
-              fontSize={font(7.5)}
-              fill={PHYSICS_COLORS.kineticEnergy}
-              textAnchor="middle"
-              fontWeight="bold"
-            >
-              {state.Ek.toFixed(1)}
-            </text>
-            <text
-              x={mode === 0 ? 19 : 17}
-              y={22}
-              fontSize={font(7.5)}
-              fill={PHYSICS_COLORS.kineticEnergy}
-              textAnchor="middle"
-              fontWeight="semibold"
-            >
-              Ek
-            </text>
-
-            {/* 柱 2：重力势能 Ep (紫色) */}
-            <rect
-              x={mode === 0 ? 38 : 35}
-              y={barEp_H >= 0 ? -barEp_H : 0}
-              width={14}
-              height={Math.max(Math.abs(barEp_H), 0.1)}
-              fill={PHYSICS_COLORS.potentialEnergy}
-              opacity={0.85}
-              rx={0.5}
-            />
-            <text
-              x={mode === 0 ? 45 : 42}
-              y={barEp_H >= 0 ? -barEp_H - 4 : Math.abs(barEp_H) + 10}
-              fontSize={font(7.5)}
-              fill={PHYSICS_COLORS.potentialEnergy}
-              textAnchor="middle"
-              fontWeight="bold"
-            >
-              {Ep_adj.toFixed(1)}
-            </text>
-            <text
-              x={mode === 0 ? 45 : 42}
-              y={22}
-              fontSize={font(7.5)}
-              fill={PHYSICS_COLORS.potentialEnergy}
-              textAnchor="middle"
-              fontWeight="semibold"
-            >
-              Ep
-            </text>
-
-            {/* 柱 3 (仅在 mode === 1 时显示)：内能 Q (红色) */}
-            {mode === 1 && (
-              <>
-                <rect
-                  x={60}
-                  y={-barQ_H}
-                  width={14}
-                  height={Math.max(barQ_H, 0.1)}
-                  fill={ENERGY_COLORS.internalEnergy}
-                  opacity={0.85}
-                  rx={0.5}
-                />
-                <text
-                  x={67}
-                  y={-barQ_H - 4}
-                  fontSize={font(7.5)}
-                  fill={ENERGY_COLORS.internalEnergy}
-                  textAnchor="middle"
-                  fontWeight="bold"
-                >
-                  {state.Q.toFixed(1)}
-                </text>
-                <text
-                  x={67}
-                  y={22}
-                  fontSize={font(7.5)}
-                  fill={ENERGY_COLORS.internalEnergy}
-                  textAnchor="middle"
-                  fontWeight="semibold"
-                >
-                  Q
-                </text>
-              </>
-            )}
-
-            {/* 柱 4 (对于 mode === 0 是第 3 柱，对于 mode === 1 是第 4 柱)：总能量 E (灰色) */}
-            <rect
-              x={mode === 0 ? 64 : 85}
-              y={barTot_H >= 0 ? -barTot_H : 0}
-              width={14}
-              height={Math.max(Math.abs(barTot_H), 0.1)}
-              fill={colors.neutral[500]}
-              opacity={0.85}
-              rx={0.5}
-            />
-            <text
-              x={mode === 0 ? 71 : 92}
-              y={barTot_H >= 0 ? -barTot_H - 4 : Math.abs(barTot_H) + 10}
-              fontSize={font(7.5)}
-              fill={colors.neutral[600]}
-              textAnchor="middle"
-              fontWeight="bold"
-            >
-              {Etot_adj.toFixed(1)}
-            </text>
-            <text
-              x={mode === 0 ? 71 : 92}
-              y={22}
-              fontSize={font(7.5)}
-              fill={colors.neutral[600]}
-              textAnchor="middle"
-              fontWeight="semibold"
-            >
-              {mode === 0 ? 'E机' : 'E总'}
-            </text>
-          </g>
-        </g>
+        <EnergyConservationBarChart
+          mode={mode}
+          wallX={wallX}
+          vpVisibleH={vp.visibleH}
+          state={state}
+          Ep_adj={Ep_adj}
+          Etot_adj={Etot_adj}
+          barEk_H={barEk_H}
+          barEp_H={barEp_H}
+          barQ_H={barQ_H}
+          barTot_H={barTot_H}
+          font={font}
+        />
       </svg>
     </div>
   )

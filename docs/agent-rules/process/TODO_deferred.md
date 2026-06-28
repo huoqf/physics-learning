@@ -12,8 +12,6 @@
 
 > 以下文件仍超 400 行，可关注拆分：
 > - `lightRodRope/trajectory.ts` — 485（主积分函数，3 种模式共享 20+ 状态变量，拆分风险高）
-> - `EnergyConservationAnimation.tsx` — 657
-> - `UniformAccelerationCenterExtra.tsx` — 560
 
 ### 已完成
 
@@ -28,6 +26,8 @@
 | ~~`lightRodRope.ts`~~ → `lightRodRope/` | index + types + interpolate + trajectory（795 → 4 模块） | 2026-06-27 |
 | ~~`magnetism.ts`~~ → `magnetism/` | index + forces + ampereForce + velocitySelector（556 → 4 模块） | 2026-06-27 |
 | ~~`momentumApplication.ts`~~ → `momentumApplication/` | curvedSlot + springBlocks + manBoat + index（524 → 4 模块） | 2026-06-28 |
+| ~~`EnergyConservationAnimation.tsx`~~ | 提取 PendulumScene + ValleyScene + EnergyConservationBarChart + ZeroPotentialLine（718 → 5 模块） | 2026-06-28 |
+| ~~`UniformAccelerationCenterExtra.tsx`~~ | 提取 StroboscopicAnimation + VtChartWithArea + FlashDataTable（606 → 4 模块） | 2026-06-28 |
 
 ---
 
