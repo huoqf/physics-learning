@@ -17,7 +17,7 @@ interface PendulumSceneProps {
   yRefLine: number
   hRef: number
   font: (n: number) => number
-  handleMouseDown: (e: React.MouseEvent<SVGSVGElement, MouseEvent>) => void
+  handleMouseDown: (e: React.MouseEvent<SVGElement>) => void
 }
 
 export function PendulumScene({
@@ -62,7 +62,7 @@ export function PendulumScene({
         hangY={hangY}
         R_pix={R_pix}
         font={font}
-        onMouseDown={handleMouseDown as any}
+        onMouseDown={handleMouseDown}
       />
 
       {/* 摆线 */}

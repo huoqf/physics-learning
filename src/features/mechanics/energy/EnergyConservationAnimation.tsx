@@ -139,7 +139,7 @@ export default function EnergyConservationAnimation() {
   const yRefLine = lowestY - hRef * physScale
 
   // ── 拖拽响应事件 ──
-  const handleMouseDown = (e: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
+  const handleMouseDown = (e: React.MouseEvent<SVGElement>) => {
     if (isPlaying) return
 
     const rect = svgRef.current?.getBoundingClientRect()

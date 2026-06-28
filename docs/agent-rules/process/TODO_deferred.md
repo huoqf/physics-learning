@@ -1,6 +1,6 @@
 # 延后处理待办事项
 
-> 最后更新：2026-06-28
+> 最后更新：2026-06-28（3.1 方案已评估）
 
 ---
 
@@ -20,29 +20,39 @@
 
 ## 三、代码质量（P2 预防性优化）
 
-### 3.1 animationRegistry 懒加载（P0，最高风险）
+### 3.1 animationRegistry 懒加载（P0，已评估，待执行）
 
-`animationRegistry.ts` 20 个同步 import，chunk 66.59 KB raw / 17.35 KB gzip。改为按前缀动态 `import()`，`getAnimationConfig` 变 async。
+**方案**：两级拆分（core / extended），路由级预加载。
 
-**风险**：唯一运行时调用点 `useAnimationLifecycle.ts:35` 需重构；需设计 config 未加载时的 loading/fallback UI；路由切换中间状态处理；测试 mock 策略。
+| 层级 | 内容 | 加载方式 | 预估体积 |
+|------|------|----------|----------|
+| Core（同步） | 力学 6 文件（kinematics/dynamics/circular-gravitation/force-motion/energy/momentum） | 首屏同步 import | ~30 KB |
+| Extended（懒加载） | 电磁学 5 + 热学 4 + 光学 4 = 13 文件 | 动态 `import()` | ~37 KB |
+
+**接口设计**：
+- `getAnimationConfig(id)` — 同步，只保证 core 同步命中
+- `getAnimationConfigAsync(id)` — 扩展动画统一走此异步接口
+- `preloadExtendedRegistry()` — 用户进入电磁学、热学、光学模块页时调用
+- `ANIMATION_COUNT` — 静态常量，不要为计数加载扩展包
+
+**调用方改造**：
+- `AnimationPage` / `useAnimationLifecycle` — 改为优先支持 async
+
+**风险**：config 异步加载引入中间状态；需 loading/fallback UI；测试 mock 策略。
+
+**收益**：首屏 registry chunk 从 66.65 KB 降至 ~30 KB（减少 ~37 KB raw / ~10 KB gzip）。
 
 工作量：2-3 天（含 loading 状态设计）。
 
-### 3.2 params 类型安全 — 内部具名接口（P1）
+### 3.2 params 类型安全 — 内部具名接口（P1）— ✅ 已完成
 
-`physicsQuantities.ts` 是动态分发层，调用方传 `Record<string, number>`，无法改具名签名。方案：构建器内部定义具名接口 + `normalizeParams()` 归一化，外部签名不变。
+`types.ts` 新增 `ParamDefs<T>` + `normalizeParams()` 工具函数；kinematics/momentum/dynamics 三个高频构建器引入具名接口 + 默认值映射，外部签名不变。
 
-当前 354 处 `params.xxx` 未类型化访问，分布在 24 个量构建器文件中。
+已覆盖 3 文件 168 处 `params.xxx` 访问。剩余 21 个构建器文件可按需分批迁移。
 
-优先文件（按访问频次）：kinematics(57) / momentum(57) / dynamics(54)
+### 3.3 AnimationConfig 泛型联动（P2）— ✅ 已完成
 
-工作量：3 个高频文件约 1.5-2 天，随需求分批。
-
-### 3.3 AnimationConfig 泛型联动（P2）
-
-`defaultParams` 类型与量构建器参数类型联动，缺少必要 key 时编译期报错。
-
-工作量：3-5 天，规划季度。
+`AnimationConfig<P>` 泛型化，`defineAnimations<T>` 支持类型推断，19 个 registry 文件共 57 处 `defaultParams` 添加 `as const` 编译期校验。
 
 ### 3.4 expandedNodes 数组 → Set（P3，按需）
 

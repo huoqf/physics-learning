@@ -24,7 +24,7 @@ interface ValleySceneProps {
   yRefLine: number
   hRef: number
   font: (n: number) => number
-  handleMouseDown: (e: React.MouseEvent<SVGSVGElement, MouseEvent>) => void
+  handleMouseDown: (e: React.MouseEvent<SVGElement>) => void
 }
 
 export function ValleyScene({
@@ -74,7 +74,7 @@ export function ValleyScene({
         mode={1}
         groundY={groundY}
         font={font}
-        onMouseDown={handleMouseDown as any}
+        onMouseDown={handleMouseDown}
       />
 
       {/* 小车（沿圆弧贴紧滑行，并顺着切向倾角旋转） */}

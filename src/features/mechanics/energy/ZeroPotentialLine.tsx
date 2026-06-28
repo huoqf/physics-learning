@@ -9,7 +9,7 @@ interface ZeroPotentialLineProps {
   groundY?: number
   R_pix?: number
   font: (n: number) => number
-  onMouseDown: (e: React.MouseEvent<SVGGElement, MouseEvent>) => void
+  onMouseDown: (e: React.MouseEvent<SVGElement>) => void
 }
 
 export function ZeroPotentialLine({
