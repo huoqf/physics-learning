@@ -1,22 +1,12 @@
-import React, { useEffect, useRef, useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { computeRodConstants, computeRodStateAtTime, calculateCuttingEMF } from '@/physics'
-import { PHYSICS_COLORS, EM_COLORS, CHART_COLORS, VT_CHART_COLORS, AT_CHART_COLORS, CANVAS_COLORS } from '@/theme/physics'
-import { withAlpha } from '@/theme/physics'
-import { physicsToCanvasWithOrigin, computeScale } from '@/utils/coordinate'
-import { Rails, ConductorRod, VectorArrow, VectorDefs } from '@/components/Physics'
-import { CuttingEMFHandRule } from './CuttingEMFHandRule'
-import { BasePhysicsChart, useChartContext, VelocityTimeChart } from '@/components/Chart'
-import type { SceneScale } from '@/scene'
-
-// 物理世界坐标边界 (物理单位：米)
-// x: 从 -1.0 到 11.0m (有效轨道 0 ~ 10.0m，两侧预留边距)
-// y: 从 -1.5 到 1.5m (轨道间距 L 为 0.5 ~ 2.0m，关于 0 对称)
-const WORLD = { xMin: -1.0, xMax: 11.0, yMin: -1.5, yMax: 1.5 } as const
-const X_LIMIT = 10.0 // 轨道最右端限位
+import { VT_CHART_COLORS, AT_CHART_COLORS, CHART_COLORS } from '@/theme/physics'
+import { VelocityTimeChart, BasePhysicsChart, useChartContext } from '@/components/Chart'
+import { useCuttingEMFPhysics } from './hooks/useCuttingEMFPhysics'
+import { CuttingEMFScene } from './components/CuttingEMFScene'
 
 interface ChartSVGProps {
   title: string
@@ -31,15 +21,13 @@ interface ChartSVGProps {
   T_max: number
   chartW: number
   chartH: number
-  px: (n: number) => number
-  font: (n: number) => number
   mode: number
   v_m: number
 }
 
 function ChartSVGContent({
   samplePoints, getVal, curVal, isVelocity, time, T_max, curveColor, mode, v_m,
-}: Omit<ChartSVGProps, 'chartW' | 'chartH' | 'px' | 'font' | 'title' | 'yLabel' | 'yMax'>) {
+}: Omit<ChartSVGProps, 'chartW' | 'chartH' | 'title' | 'yLabel' | 'yMax'>) {
   const ctx = useChartContext()
   const safeToSvgX = ctx?.toSvgX
   const safeToSvgY = ctx?.toSvgY
@@ -65,7 +53,6 @@ function ChartSVGContent({
 
   return (
     <g>
-      {/* 收尾速度渐近线 */}
       {isVelocity && mode === 1 && (
         <g>
           <line
@@ -83,7 +70,6 @@ function ChartSVGContent({
         </g>
       )}
 
-      {/* v=0 中间参考线 */}
       {isVelocity && (
         <line
           x1={toSvgX(0)}
@@ -97,15 +83,12 @@ function ChartSVGContent({
         />
       )}
 
-      {/* 预测虚线 */}
       <path d={`M ${ptsStr}`} fill="none" stroke={curveColor} strokeWidth={1} strokeDasharray="3,3" opacity={0.4} />
 
-      {/* 动态实线 */}
       {activePtsStr && (
         <path d={activePtsStr} fill="none" stroke={curveColor} strokeWidth={1.8} />
       )}
 
-      {/* 动态游标点 */}
       {time <= T_max && (
         <g>
           <circle cx={curPtX} cy={curPtY} r={3} fill={curveColor} />
@@ -194,7 +177,7 @@ export default function CuttingEMF() {
   )
 
   const {
-    mode = 0, // 0=基础: 恒速, 1=进阶: 自由释放
+    mode = 0,
     B = 1.5,
     L = 1.0,
     v = 2.0,
@@ -204,613 +187,68 @@ export default function CuttingEMF() {
     showForceAnalysis = 1,
   } = params
 
-  // 磁场方向由 B 的符号决定：B > 0 → 向里 ⊗ (B_out=0)；B < 0 → 向外 ⊙ (B_out=1)
-  const B_out = B < 0 ? 1 : 0
-  const absB = Math.abs(B)
-
-  // 1. 动态画布测量与响应式
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
-  const { px, font } = canvasSize
 
-  const chartHeight = px(190)
-  const sceneHeight = px(234)
+  const physics = useCuttingEMFPhysics({ mode, B, L, v, R, F_ext, m }, canvasSize, time)
 
-  // 2. 动态比例尺计算 (基于下方运动区域的尺寸)
-  const scale = computeScale(canvasSize.width, sceneHeight, WORLD)
-
-  // 3. 计算导体棒当前帧的物理状态
-  let x_current = 0
-  let v_current = 0
-  let a_current = 0
-  let F_amp_current = 0
-  let I_current = 0
-  let EMF_current = 0
-
-  // 特征常数
-  const { terminalVelocity: v_m, timeConstant: tau, initialAcceleration: a_0 } = useMemo(
-    () => computeRodConstants(absB, L, R, m, F_ext),
-    [absB, L, R, m, F_ext]
-  )
-
-  if (mode === 0) {
-    // 基础模式：恒速切割
-    v_current = v
-    a_current = 0
-    // 如果速度为负，初始在右端(10.0)，向左移动；如果速度为正，初始在左端(0)，向右移动
-    if (v >= 0) {
-      x_current = v * time
-    } else {
-      x_current = X_LIMIT + v * time
-    }
-    const res = calculateCuttingEMF(absB, L, v_current, R, 90, 0, B_out)
-    EMF_current = res.EMF
-    I_current = res.I
-    F_amp_current = res.F_ampere
-  } else {
-    // 进阶模式：自由释放(变加速)
-    const res = computeRodStateAtTime(time, absB, L, R, m, F_ext)
-    x_current = res.x
-    v_current = res.v
-    a_current = res.a
-    F_amp_current = res.F_amp
-    const dirFactor = B_out === 0 ? 1 : -1
-    EMF_current = absB * L * v_current * dirFactor
-    I_current = R > 0 ? EMF_current / R : 0
-  }
-
-  // 限位切断
-  const hasHitLimit = v_current >= 0 ? x_current >= X_LIMIT : x_current <= 0
-  const finalX = Math.max(0, Math.min(X_LIMIT, x_current))
-  const finalV = hasHitLimit ? 0 : v_current
-  const finalA = hasHitLimit ? 0 : a_current
-  const finalFamp = hasHitLimit ? 0 : Math.abs(F_amp_current)
-  const finalI = hasHitLimit ? 0 : I_current
-
-  // 计算外力和安培力大小及方向分量 (根据速度方向确定阻碍/驱动受力)
-  const ampForceX = finalV > 0 ? -finalFamp : (finalV < 0 ? finalFamp : 0)
-  const extForceX = mode === 1 ? F_ext : (finalV > 0 ? finalFamp : (finalV < 0 ? -finalFamp : 0))
-
-  // 监听限位并自动暂停
   useEffect(() => {
-    if (isPlaying && hasHitLimit) {
+    if (isPlaying && physics.hasHitLimit) {
       setIsPlaying(false)
     }
-  }, [hasHitLimit, isPlaying, setIsPlaying])
-
-  // 4. 像素定位与坐标系映射
-  const originX = 1.0 * scale
-  const originY = sceneHeight / 2
-  const toCanvas = (wx: number, wy: number) => {
-    return physicsToCanvasWithOrigin(wx, wy, originX, originY, scale)
-  }
-
-  const railLeftPos = toCanvas(0, 0)
-  const railRightPos = toCanvas(X_LIMIT, 0)
-  const rodPos = toCanvas(finalX, 0)
-  
-  const railSpacing = L * scale
-  const railLength = railRightPos.cx - railLeftPos.cx
-  const railCx = (railLeftPos.cx + railRightPos.cx) / 2
-  const railCy = railLeftPos.cy
-
-  // 5. Canvas 粒子与发光残影高频更新
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    const prevParamsKey = `${B}-${L}-${R}-${mode}-${canvasSize.width}-${canvasSize.height}`
-    const isReset = time === 0 || !isPlaying
-
-    // 重置或参数改变时清空尾迹
-    if (isReset || canvas.dataset.prevParams !== prevParamsKey) {
-      ctx.clearRect(0, 0, canvasSize.width, sceneHeight)
-      canvas.dataset.prevParams = prevParamsKey
-    }
-
-    // 绘制残影
-    if (isPlaying && time > 0) {
-      ctx.fillStyle = withAlpha(CANVAS_COLORS.objectFill, 0.18)
-      ctx.fillRect(0, 0, canvasSize.width, sceneHeight)
-
-      // 在当前位置绘制半透明淡蓝色棒影
-      const rodW = px(6)
-      const topY = railCy - railSpacing / 2 - px(6)
-      const bottomY = railCy + railSpacing / 2 + px(6)
-      ctx.fillStyle = withAlpha(PHYSICS_COLORS.velocity, 0.35) // 速度蓝发光
-      ctx.fillRect(rodPos.cx - rodW / 2, topY, rodW, bottomY - topY)
-    }
-  }, [time, isPlaying, B, L, R, mode, finalX, railSpacing, railCy, rodPos.cx, canvasSize.width, canvasSize.height, px, sceneHeight])
-
-  // 7. 匀强磁场点阵格
-  const fieldSymbols = useMemo(() => {
-    const symbols = []
-    const symbol = B_out === 1 ? '⊙' : '⊗'
-    const stepX = px(30)
-    const stepY = px(25)
-
-    const xStart = railLeftPos.cx + px(10)
-    const xEnd = railRightPos.cx - px(10)
-    const yStart = railCy - railSpacing / 2 + px(10)
-    const yEnd = railCy + railSpacing / 2 - px(10)
-
-    let idx = 0
-    for (let sx = xStart; sx <= xEnd; sx += stepX) {
-      for (let sy = yStart; sy <= yEnd; sy += stepY) {
-        symbols.push(
-          <text
-            key={`b-sym-${idx++}`}
-            x={sx}
-            y={sy}
-            fontSize={font(14)}
-            fill={PHYSICS_COLORS.magneticField}
-            opacity={Math.min(0.45, 0.2 + (absB / 3.0) * 0.25)}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            style={{ userSelect: 'none' }}
-          >
-            {symbol}
-          </text>
-        )
-      }
-    }
-    return symbols
-  }, [absB, B_out, railLeftPos.cx, railRightPos.cx, railSpacing, railCy, px, font])
-
-  // 8. 物理量矢量归一化比例尺
-  const localSceneScale = useMemo<SceneScale>(() => {
-    return {
-      originX: originX,
-      originY: originY,
-      scaleX: scale,
-      scaleY: scale,
-      scale,
-      maxVectorLength: px(60),
-      refMagnitudes: {
-        velocity: 3.0,
-        acceleration: 10.0,
-        force: 5.0,
-      },
-    }
-  }, [scale, px, originX, originY])
-
-  // 9. 图表解析解采样与自适应轴
-  // 时间轴上限
-  const T_max = mode === 0 ? 5.0 : Math.max(5.0, Math.min(20.0, 4 * tau))
-  // 采样点
-  const samplePoints = useMemo(() => {
-    const pts = []
-    const count = 60
-    for (let i = 0; i <= count; i++) {
-      const tVal = (i / count) * T_max
-      let vVal = 0
-      let aVal = 0
-      if (mode === 0) {
-        vVal = v
-        aVal = 0
-      } else {
-        const exp = Math.exp(-tVal / tau)
-        vVal = v_m * (1 - exp)
-        aVal = a_0 * exp
-      }
-      pts.push({ t: tVal, v: vVal, a: aVal })
-    }
-    return pts
-  }, [mode, T_max, v, v_m, a_0, tau])
-
-  const vtPoints = useMemo(
-    () => samplePoints.map((p) => ({ t: p.t, v: p.v })),
-    [samplePoints]
-  )
-
-  // v-t 图 Y 轴上限
-  const vYMax = mode === 0 ? Math.max(1.0, Math.abs(v)) * 1.2 : v_m * 1.2
-  // a-t 图 Y 轴上限
-  const aYMax = mode === 0 ? 1.0 : a_0 * 1.2
-
-  const chartW = (canvasSize.width - px(24)) / 2
-  const chartH = chartHeight - px(12)
+  }, [physics.hasHitLimit, isPlaying, setIsPlaying])
 
   return (
     <div ref={containerRef} className="w-full h-full flex flex-col bg-neutral-50 p-2 gap-2 relative">
-      {/* 上方：v-t 和 a-t 自适应采样图表 */}
-      <div className="w-full shrink-0 flex items-center justify-between gap-4" style={{ height: chartHeight }}>
+      <div className="w-full shrink-0 flex items-center justify-between gap-4" style={{ height: physics.chartHeight }}>
         <VelocityTimeChart
           mode="animated"
-          points={vtPoints}
-          domainPoints={vtPoints}
-          referencePoints={vtPoints}
-          currentTime={Math.min(time, T_max)}
-          tMax={T_max}
-          vRange={[-vYMax, vYMax]}
+          points={physics.vtPoints}
+          domainPoints={physics.vtPoints}
+          referencePoints={physics.vtPoints}
+          currentTime={Math.min(time, physics.T_max)}
+          tMax={physics.T_max}
+          vRange={[-physics.vYMax, physics.vYMax]}
           title="速度－时间图像 (v-t 图)"
           xLabel="t / s"
           yLabel="v / (m·s⁻¹)"
           series="primary"
-          showCursor={time <= T_max}
+          showCursor={time <= physics.T_max}
           showReferenceLine
           referenceColor={VT_CHART_COLORS.velocityCurve}
           referenceOpacity={0.4}
         >
-          {mode === 1 && <TerminalVelocityReference v_m={v_m} />}
+          {mode === 1 && <TerminalVelocityReference v_m={physics.v_m} />}
         </VelocityTimeChart>
         <ChartSVG
           title="加速度－时间图像 (a-t 图)"
           yLabel="a / (m·s⁻²)"
           curveColor={AT_CHART_COLORS.accelCurve}
-          samplePoints={samplePoints}
+          samplePoints={physics.samplePoints}
           getVal={(p) => p.a}
-          yMax={aYMax}
-          curVal={finalA}
+          yMax={physics.aYMax}
+          curVal={physics.finalA}
           isVelocity={false}
           time={time}
-          T_max={T_max}
-          chartW={chartW}
-          chartH={chartH}
-          px={px}
-          font={font}
+          T_max={physics.T_max}
+          chartW={physics.chartW}
+          chartH={physics.chartH}
           mode={mode}
-          v_m={v_m}
+          v_m={physics.v_m}
         />
       </div>
 
-      {/* 下方：Canvas 高频运动轨迹 + SVG 静态与矢量叠加区域 */}
-      <div className="w-full relative bg-white rounded-lg border border-neutral-200 overflow-hidden shadow-sm flex-1 min-h-0" style={{ height: sceneHeight }}>
-        {/* 1. 底层高频残影 Canvas */}
-        <canvas
-          ref={canvasRef}
-          width={canvasSize.width}
-          height={sceneHeight}
-          className="absolute inset-0 z-0 pointer-events-none"
-        />
-
-        {/* 2. 上层 SVG 静态、矢量及辅助线层 */}
-        <svg
-          width={canvasSize.width}
-          height={sceneHeight}
-          className="absolute inset-0 z-10 w-full h-full bg-transparent"
-        >
-          <defs>
-            <VectorDefs colors={[
-              PHYSICS_COLORS.velocity,
-              PHYSICS_COLORS.acceleration,
-              PHYSICS_COLORS.forceNet,
-              PHYSICS_COLORS.appliedForce,
-              PHYSICS_COLORS.lorentzForce
-            ]} />
-          </defs>
-
-          {/* 双导轨 */}
-          <Rails
-            type="horizontal"
-            width={canvasSize.width}
-            height={sceneHeight}
-            cx={railCx}
-            cy={railCy}
-            length={railLength}
-            spacing={railSpacing}
-          />
-
-          {/* 磁场背景格 */}
-          {fieldSymbols}
-
-          {/* 匀强磁场上方标注 */}
-          <text
-            x={px(20)}
-            y={px(20)}
-            fontSize={font(11)}
-            fill={PHYSICS_COLORS.magneticField}
-            fontWeight="extrabold"
-            alignmentBaseline="middle"
-          >
-            匀强磁场 B = {absB.toFixed(1)} T {B_out === 1 ? '(⊙ 垂直纸面向外)' : '(⊗ 垂直纸面向里)'}
-          </text>
-
-          {/* 电阻符号与阻值标注 (在轨道左侧端点) */}
-          <g>
-            {/* 上轨左端和下轨左端到电阻的连线 */}
-            <path
-              d={`M ${railLeftPos.cx} ${railCy - railSpacing / 2} L ${railLeftPos.cx - px(16)} ${railCy - railSpacing / 2} L ${railLeftPos.cx - px(16)} ${railCy - px(20)} M ${railLeftPos.cx - px(16)} ${railCy + px(20)} L ${railLeftPos.cx - px(16)} ${railCy + railSpacing / 2} L ${railLeftPos.cx} ${railCy + railSpacing / 2}`}
-              fill="none"
-              stroke={CANVAS_COLORS.labelText}
-              strokeWidth="2.5"
-            />
-            {/* 电阻框 */}
-            <rect
-              x={railLeftPos.cx - px(26)}
-              y={railCy - px(20)}
-              width={px(20)}
-              height={px(40)}
-              fill={CANVAS_COLORS.objectFill}
-              stroke={CANVAS_COLORS.labelText}
-              strokeWidth="2.5"
-              rx={px(2)}
-            />
-            <text
-              x={railLeftPos.cx - px(16)}
-              y={railCy}
-              fontSize={font(11)}
-              fill={CANVAS_COLORS.labelText}
-              fontWeight="bold"
-              textAnchor="middle"
-              dominantBaseline="middle"
-              style={{ userSelect: 'none' }}
-            >
-              R
-            </text>
-            <text
-              x={railLeftPos.cx - px(38)}
-              y={railCy}
-              fontSize={font(9.5)}
-              fill={PHYSICS_COLORS.labelText}
-              textAnchor="end"
-              dominantBaseline="middle"
-              style={{ userSelect: 'none' }}
-            >
-              电阻 R = {R.toFixed(1)} Ω
-            </text>
-          </g>
-
-          {/* 导体棒 */}
-          <ConductorRod
-            type="horizontal"
-            x={rodPos.cx}
-            currentDir={finalI > 1e-4 ? 'in' : finalI < -1e-4 ? 'out' : 'none'}
-            spacing={railSpacing}
-            height={sceneHeight}
-          />
-
-          {/* 导体棒电动势标注 */}
-          {Math.abs(EMF_current) > 0.01 && (
-            <text
-              x={rodPos.cx - px(15)}
-              y={railCy - px(10)}
-              fontSize={font(9.5)}
-              fill={PHYSICS_COLORS.emf}
-              fontWeight="bold"
-              textAnchor="end"
-              dominantBaseline="middle"
-              style={{ userSelect: 'none' }}
-            >
-              E_感 = {Math.abs(EMF_current).toFixed(2)} V
-            </text>
-          )}
-
-          {/* 导体棒电势极性标注 (+ / −) */}
-          {Math.abs(EMF_current) > 0.01 && (
-            <g>
-              {/* 顶端电势极性 (高电势为红正，低电势为蓝负) */}
-              <text
-                x={rodPos.cx + px(10)}
-                y={railCy - railSpacing / 2 - px(8)}
-                fontSize={font(12)}
-                fill={EMF_current > 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
-                fontWeight="extrabold"
-                textAnchor="middle"
-                dominantBaseline="middle"
-                style={{ userSelect: 'none' }}
-              >
-                {EMF_current > 0 ? '+' : '−'}
-              </text>
-              {/* 底端电势极性 */}
-              <text
-                x={rodPos.cx + px(10)}
-                y={railCy + railSpacing / 2 + px(8)}
-                fontSize={font(12)}
-                fill={EMF_current > 0 ? PHYSICS_COLORS.negativeCharge : PHYSICS_COLORS.positiveCharge}
-                fontWeight="extrabold"
-                textAnchor="middle"
-                dominantBaseline="middle"
-                style={{ userSelect: 'none' }}
-              >
-                {EMF_current > 0 ? '−' : '+'}
-              </text>
-            </g>
-          )}
-
-          {/* 闭合回路电流流光特效 (顺/逆时针根据电流方向流动) */}
-          {Math.abs(finalI) > 1e-4 && (
-            <path
-              d={`M ${railLeftPos.cx - px(16)} ${railCy - railSpacing / 2} 
-                  L ${rodPos.cx} ${railCy - railSpacing / 2} 
-                  L ${rodPos.cx} ${railCy + railSpacing / 2} 
-                  L ${railLeftPos.cx - px(16)} ${railCy + railSpacing / 2} 
-                  Z`}
-              fill="none"
-              stroke={EM_COLORS.electricCurrent} // 亮黄色电荷流光
-              strokeWidth={px(3)}
-              strokeDasharray={`${px(1)}, ${px(15)}`}
-              strokeLinecap="round"
-              strokeDashoffset={finalI >= 0 ? time * px(35) : -time * px(35)}
-              opacity={0.85}
-              style={{ pointerEvents: 'none' }}
-            />
-          )}
-
-          {/* 左右手骨骼手联动 (叠放在通电导体棒下方并随之移动) */}
-          {showForceAnalysis === 1 && (
-            <g opacity={0.85}>
-              <CuttingEMFHandRule
-                svgRef={undefined}
-                vDir={finalV > 0 ? 1 : finalV < 0 ? -1 : 0}
-                B_out={(B_out === 1 ? 1 : 0) as 0 | 1}
-                isBack={B_out === 1}
-                rule="right" // 切割磁感线判断感应电流方向，始终用右手定则 (拇→v, 食→B, 中→I)
-                fist={false}
-                cx={rodPos.cx}
-                cy={railCy + railSpacing / 2 + px(45)}
-                scale={canvasSize.scale * 0.42}
-                draggable={false}
-              />
-            </g>
-          )}
-
-          {/* 矢量箭头 (只在 showForceAnalysis 开启时渲染) */}
-          {showForceAnalysis === 1 && (
-            <g>
-              {/* 1. 速度 v 箭头 (蓝色，朝右/朝左，垂直向上偏置 0.6) */}
-              <VectorArrow
-                origin={{ x: finalX, y: L / 2 + 0.3 }}
-                vector={{ x: finalV, y: 0 }}
-                type="velocity"
-                sceneScale={localSceneScale}
-                strokeWidth={2.5}
-              />
-              {Math.abs(finalV) > 0.05 && (
-                <text
-                  x={rodPos.cx + (finalV > 0 ? px(30) : -px(35))}
-                  y={railCy - railSpacing / 2 - px(25)}
-                  fontSize={font(10)}
-                  fill={PHYSICS_COLORS.velocity}
-                  fontWeight="bold"
-                  textAnchor="middle"
-                  style={{ userSelect: 'none' }}
-                >
-                  v = {finalV.toFixed(2)} m/s
-                </text>
-              )}
-
-              {/* 2. 加速度 a 箭头 (红色，朝右/朝左，移至上轨道上方以腾出下方手势空间) */}
-              <VectorArrow
-                origin={{ x: finalX, y: L / 2 + 0.7 }}
-                vector={{ x: finalA, y: 0 }}
-                type="acceleration"
-                sceneScale={localSceneScale}
-                strokeWidth={2.5}
-              />
-              {Math.abs(finalA) > 0.05 && (
-                <text
-                  x={rodPos.cx + (finalA > 0 ? px(30) : -px(35))}
-                  y={railCy - railSpacing / 2 - px(55)}
-                  fontSize={font(10)}
-                  fill={PHYSICS_COLORS.acceleration}
-                  fontWeight="bold"
-                  textAnchor="middle"
-                  style={{ userSelect: 'none' }}
-                >
-                  a = {finalA.toFixed(2)} m/s²
-                </text>
-              )}
-
-              {/* 3. 外力 F_外 (橙色，垂直向上偏置 0.15) */}
-              {((mode === 1 && F_ext > 0) || (mode === 0 && Math.abs(extForceX) > 0.01)) && (
-                <g>
-                  <VectorArrow
-                    origin={{ x: finalX, y: 0.15 }}
-                    vector={{ x: extForceX, y: 0 }}
-                    type="appliedForce"
-                    sceneScale={localSceneScale}
-                    strokeWidth={2.5}
-                  />
-                  <text
-                    x={rodPos.cx + (extForceX > 0 ? px(35) : -px(35))}
-                    y={railCy - px(20)}
-                    fontSize={font(9.5)}
-                    fill={PHYSICS_COLORS.appliedForce}
-                    fontWeight="bold"
-                    textAnchor={extForceX > 0 ? 'start' : 'end'}
-                    style={{ userSelect: 'none' }}
-                  >
-                    F_外 = {Math.abs(extForceX).toFixed(2)} N
-                  </text>
-                </g>
-              )}
-
-              {/* 4. 安培力 F_安 (橙色，垂直向上偏置 0.15) */}
-              {Math.abs(ampForceX) > 0.01 && (
-                <g>
-                  <VectorArrow
-                    origin={{ x: finalX, y: 0.15 }}
-                    vector={{ x: ampForceX, y: 0 }}
-                    type="lorentzForce"
-                    sceneScale={localSceneScale}
-                    strokeWidth={2.5}
-                  />
-                  <text
-                    x={rodPos.cx + (ampForceX > 0 ? px(35) : -px(35))}
-                    y={railCy - px(20)}
-                    fontSize={font(9.5)}
-                    fill={PHYSICS_COLORS.lorentzForce}
-                    fontWeight="bold"
-                    textAnchor={ampForceX > 0 ? 'start' : 'end'}
-                    style={{ userSelect: 'none' }}
-                  >
-                    F_安 = {Math.abs(ampForceX).toFixed(2)} N
-                  </text>
-                </g>
-              )}
-
-              {/* 5. 合力 F_合 (橙色，仅在变加速 mode === 1 时渲染，垂直向下偏置 0.15) */}
-              {mode === 1 && (
-                <g>
-                  <VectorArrow
-                    origin={{ x: finalX, y: -0.15 }}
-                    vector={{ x: F_ext + ampForceX, y: 0 }}
-                    type="appliedForce"
-                    sceneScale={localSceneScale}
-                    strokeWidth={2.5}
-                  />
-                  <text
-                    x={rodPos.cx + (F_ext + ampForceX > 0 ? px(25) : -px(25))}
-                    y={railCy + px(20)}
-                    fontSize={font(9.5)}
-                    fill={PHYSICS_COLORS.forceNet}
-                    fontWeight="bold"
-                    textAnchor={F_ext + ampForceX > 0 ? 'start' : 'end'}
-                    style={{ userSelect: 'none' }}
-                  >
-                    F_合 = {Math.abs(F_ext + ampForceX).toFixed(2)} N
-                  </text>
-                </g>
-              )}
-
-              {/* 匀速运动受力平衡状态说明文字 (置于上轨道左侧，避开下方手势空间) */}
-              {mode === 0 && Math.abs(finalV) > 0.05 && (
-                <text
-                  x={rodPos.cx - px(25)}
-                  y={railCy - railSpacing / 2 - px(8)}
-                  fontSize={font(9.5)}
-                  fill={PHYSICS_COLORS.labelText}
-                  fontWeight="bold"
-                  textAnchor="end"
-                  style={{ userSelect: 'none' }}
-                >
-                  外力驱动匀速运动 (F_外 = F_安，受力平衡)
-                </text>
-              )}
-            </g>
-          )}
-
-          {/* 边缘限位警示图层 */}
-          {hasHitLimit && (
-            <g>
-              <rect
-                x={canvasSize.width / 2 - px(100)}
-                y={px(15)}
-                width={px(200)}
-                height={px(25)}
-                fill={withAlpha(PHYSICS_COLORS.forceArrowRed, 0.08)}
-                stroke={withAlpha(PHYSICS_COLORS.forceArrowRed, 0.3)}
-                strokeWidth={1.5}
-                rx={px(4)}
-              />
-              <text
-                x={canvasSize.width / 2}
-                y={px(27.5)}
-                fontSize={font(10)}
-                fill={PHYSICS_COLORS.forceArrowRed}
-                fontWeight="bold"
-                textAnchor="middle"
-                dominantBaseline="middle"
-              >
-                ⚠️ 已到达导轨边缘限位
-              </text>
-            </g>
-          )}
-        </svg>
-      </div>
+      <CuttingEMFScene
+        physics={physics}
+        canvasSize={canvasSize}
+        time={time}
+        isPlaying={isPlaying}
+        mode={mode}
+        showForceAnalysis={showForceAnalysis}
+        F_ext={F_ext}
+        L={L}
+        R={R}
+        B={B}
+      />
     </div>
   )
 }
