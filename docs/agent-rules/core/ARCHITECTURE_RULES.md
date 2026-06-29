@@ -38,6 +38,7 @@ src/
 │   │   ├── gravitation/    #   万有引力
 │   │   ├── momentum/       #   动量与冲量
 │   │   ├── energy/         #   功与能量
+│   │   │   └── lightRodRope/  # 轻杆/轻绳图表子组件
 │   │   └── force-motion/   #   力-运动沙盒（多力综合演示）
 │   ├── electromagnetism/   # 电磁学（按物理主题分子目录）
 │   │   ├── electrostatics/ #   静电场（库仑、电场、电容器…）
@@ -68,7 +69,10 @@ src/
 │   │   ├── momentum.ts
 │   │   ├── electromagnetism.ts
 │   │   ├── forceMotion.ts
-│   │   └── energy.ts
+│   │   ├── energy.ts
+│   │   └── energyCases/    # energy 大 case 拆分子目录
+│   │       ├── verticalSpring.ts
+│   │       └── lightRodRope.ts
 │   ├── knowledgeTree.ts    # 知识树索引（扁平源数据）
 │   ├── buildKnowledgeTree.ts # 运行时建树（扁平→层级，支持 parentId）
 │   ├── defineAnimations.ts # defineAnimations 工具函数

@@ -9,16 +9,15 @@
 > 拆分大 TSX 大组件风险高（SVG 坐标、动画状态易错），收益偏低。
 > 仅在改功能时顺手抽纯计算逻辑（trajectory / geometry / scales），不建议作为主线推进。
 
->800 行（4 个）：
+>800 行（3 个）：
 
 | 文件 | 行数 | 建议 |
 |------|-----:|------|
 | `ACValues.tsx` | 908 | 电磁交流逻辑复杂，谨慎拆分 |
-| `LightRodRopeAnimation.tsx` | 849 | 已有 trajectory.ts，可继续抽图表/几何 |
 | `CentripetalAnimation.tsx` | 848 | 可抽 `useCentripetalModel` 和几何计算 |
 | `VectorAdditionAnimation.tsx` | 808 | 可抽向量几何与渲染 layer |
 
-600-800 行（10 个）：
+600-800 行（11 个）：
 
 | 文件 | 行数 |
 |------|-----:|
@@ -30,6 +29,7 @@
 | `knowledgeTree.ts` | 734 |
 | `Transformer.tsx` | 724 |
 | `VelocitySelector.tsx` | 720 |
+| `LightRodRopeAnimation.tsx` | 719 |
 | `ForceMotionSandbox.tsx` | 694 |
 | `EquilibriumAnimation.tsx` | 688 |
 
@@ -108,24 +108,28 @@
 
 当前 quantities 文件偏大，随动画数量增长会变成第二个 registry 巨石：
 
-| 文件 | 行数 |
-|------|-----:|
-| `momentum.ts` | 740 |
-| `dynamics.ts` | 640 |
-| `kinematics.ts` | 602 |
-| `energy.ts` | 497 |
+| 文件 | 行数 | 备注 |
+|------|-----:|------|
+| `momentum.ts` | 740 | |
+| `dynamics.ts` | 640 | |
+| `kinematics.ts` | 602 | |
+| `energy.ts` | 362 | verticalSpring/lightRodRope 已拆至 `energyCases/` |
 
-建议按动画拆分为子目录：
+建议按动画拆分为子目录（以 momentum 为例，8 个 case → 7 个文件）：
 
 ```text
 data/quantities/momentum/
-├── index.ts
-├── impulse.ts
-├── collision.ts
-├── manBoat.ts
-├── curvedSlot.ts
-└── springBlocks.ts
+├── index.ts              # 聚合导出 + 共享类型
+├── momentum.ts           # anim-momentum
+├── impulse.ts            # anim-impulse + anim-impulse-concept
+├── momentumConservation.ts  # anim-momentum-conservation
+├── collision.ts          # anim-collision
+├── curvedSlot.ts         # anim-curved-slot
+├── springBlocks.ts       # anim-spring-blocks
+└── manBoat.ts            # anim-man-boat
 ```
+
+dynamics（640 行）和 kinematics（602 行）可按同样模式拆分。
 
 好处：减少超长 switch/case，每个动画的 physics panel 可单测，AI 修改单个模型时上下文更小。
 
@@ -158,10 +162,10 @@ data/quantities/momentum/
 
 | 风险 | 说明 |
 |------|------|
-| 单文件膨胀 | 4 个 >800 行动画混合了参数读取、物理计算、坐标换算、SVG 绘制、图表、教学逻辑 |
+| 单文件膨胀 | 3 个 >800 行动画混合了参数读取、物理计算、坐标换算、SVG 绘制、图表、教学逻辑 |
 | physics 抽离不一致 | 部分动画已有独立 physics 模块，部分仍混合在组件中 |
 | params 类型链路中断 | `AnimationConfig<P>` 已泛型化，但 store 仍退化为 `Record<string, number>` |
-| quantities 文件膨胀 | 4 个大文件（497-740 行），随动画增长会变成第二个巨石 |
+| quantities 文件膨胀 | momentum(740)/dynamics(640)/kinematics(602) 仍偏大，energy(362) 已拆 |
 | 测试覆盖不均 | physics/utils 测试扎实，但动画视觉/坐标映射/图表同步测试偏少 |
 | 主题 token 未完全收敛 | Tailwind text-[Npx] 69 处，SVG fontSize 64 处，#FFFFFF 9 处 |
 
@@ -188,7 +192,7 @@ src/physics/<domain>/<model>.ts  # 纯计算，无 React
 
 **近期（1-2 周）**：~~useAnimationStore 类型增强~~（已完成）、quantities 大文件拆分
 
-**中期（2-6 周）**：选 LightRodRopeAnimation 做拆分试点、quantities 按动画拆分、建立 viewModel 单测模板
+**中期（2-6 周）**：~~选 LightRodRopeAnimation 做拆分试点~~（已完成）、quantities 按动画拆分、建立 viewModel 单测模板
 
 **长期（6 周+）**：registry + params + quantities 类型闭环、animation module 标准化、自动架构检查进入 CI
 

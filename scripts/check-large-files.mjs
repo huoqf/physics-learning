@@ -14,7 +14,6 @@ const HARD_LIMIT = 1000
 
 const ALLOWLIST = new Set([
   'src/features/electromagnetism/induction/ACValues.tsx',
-  'src/features/mechanics/energy/LightRodRopeAnimation.tsx',
   'src/features/mechanics/circular/CentripetalAnimation.tsx',
   'src/features/mechanics/dynamics/VectorAdditionAnimation.tsx',
   'src/features/mechanics/momentum/MomentumTheoremAnimation.tsx',
