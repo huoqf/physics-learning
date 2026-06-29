@@ -367,9 +367,7 @@ export default function MomentumConservationAnimation() {
       {/* ==================== 下方仿真动画区 (高度占用很小，由 viewport 架构自适应 contain 居中渲染) ==================== */}
       <div ref={containerRef} className="flex-1 min-h-[100px] bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden">
         <svg
-          width={canvasSize.width}
-          height={canvasSize.height}
-          className="w-full h-full"
+          className="w-full h-full block"
         >
           {/* Defs */}
           <defs>

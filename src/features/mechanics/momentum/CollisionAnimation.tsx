@@ -195,9 +195,7 @@ export default function CollisionAnimation() {
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg
-        width={canvasSize.width}
-        height={canvasSize.height}
-        className="bg-white rounded-lg shadow-inner"
+        className="w-full h-full block bg-white rounded-lg shadow-inner"
       >
         {/* ========== defs ========== */}
         <defs>

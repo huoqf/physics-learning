@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
 
 export interface CanvasSize {
   width: number
@@ -35,6 +35,15 @@ export function useCanvasSize(
 ): [RefObject<HTMLDivElement | null>, CanvasSize] {
   const containerRef = useRef<HTMLDivElement>(null)
   const [raw, setRaw] = useState({ width: initial.width, height: initial.height })
+
+  useLayoutEffect(() => {
+    const element = containerRef.current
+    if (!element) return
+    const rect = element.getBoundingClientRect()
+    if (rect.width > 0 && rect.height > 0) {
+      setRaw({ width: rect.width, height: rect.height })
+    }
+  }, [])
 
   useEffect(() => {
     const element = containerRef.current

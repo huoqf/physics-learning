@@ -149,9 +149,7 @@ export default function CurvedSlotAnimation() {
         className="flex-[5] bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[220px]"
       >
         <svg
-          width={canvasSize.width}
-          height={canvasSize.height}
-          className="w-full h-full"
+          className="w-full h-full block"
         >
           <g transform={vp.transform}>
             <defs>
@@ -187,10 +185,10 @@ export default function CurvedSlotAnimation() {
               
               const renderWheel = (cx: number) => (
                 <g transform={`translate(${cx}, ${wheelY}) rotate(${wheelAngleDeg})`}>
-                  <circle cx="0" cy="0" r="6" fill="#E2E8F0" stroke="#475569" strokeWidth="1" />
-                  <circle cx="0" cy="0" r="1.5" fill="#334155" />
-                  <line x1="-6" y1="0" x2="6" y2="0" stroke="#475569" strokeWidth="0.8" />
-                  <line x1="0" y1="-6" x2="0" y2="6" stroke="#475569" strokeWidth="0.8" />
+                  <circle cx="0" cy="0" r="6" fill={SCENE_COLORS.materials.aluminumMetalGrad[1]} stroke={SCENE_COLORS.materials.aluminumMetalGrad[3]} strokeWidth="1" />
+                  <circle cx="0" cy="0" r="1.5" fill={SCENE_COLORS.pendulum.pivotStroke} />
+                  <line x1="-6" y1="0" x2="6" y2="0" stroke={SCENE_COLORS.materials.aluminumMetalGrad[3]} strokeWidth="0.8" />
+                  <line x1="0" y1="-6" x2="0" y2="6" stroke={SCENE_COLORS.materials.aluminumMetalGrad[3]} strokeWidth="0.8" />
                 </g>
               )
               

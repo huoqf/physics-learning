@@ -224,46 +224,55 @@ export default function SpringBlocksAnimation() {
   }, [states, time])
 
   return (
-    <div className="w-full h-full flex flex-col gap-4 p-4 box-border bg-neutral-50 overflow-hidden">
-      {/* 上方图表展示 */}
-      <div className="flex gap-4 h-[220px] shrink-0">
-        <div className="flex-1 bg-white border border-neutral-200/80 rounded-xl p-3 shadow-sm relative overflow-hidden flex flex-col">
+    <div className="w-full h-full flex flex-col gap-2 p-2 box-border bg-neutral-50 overflow-hidden">
+      {/* 上方图表与能量柱展示 */}
+      <div className="flex-[4] min-h-[160px] grid grid-cols-3 gap-2">
+        <div className="bg-white border border-neutral-200/80 rounded-xl p-2.5 shadow-sm relative overflow-hidden flex flex-col">
           <div className="flex-grow min-h-0 relative">
-            <VelocityTimeChart 
-              mode="animated" 
-              points={vtPoints_A} 
-              domainPoints={vtDomain_A} 
-              currentTime={time} 
-              tMax={6} 
-              title="速度-时间图像 (V-T)" 
-              xLabel="时间 t (s)" 
-              yLabel="速度 v (m/s)" 
-              additionalSeries={[{ points: vtPoints_B, domainPoints: vtDomain_B, label: '滑块 B', series: 'secondary' }]} 
-              showArea={false} 
+            <VelocityTimeChart
+              mode="animated"
+              points={vtPoints_A}
+              domainPoints={vtDomain_A}
+              currentTime={time}
+              tMax={6}
+              title=""
+              xLabel="t (s)"
+              yLabel=""
+              additionalSeries={[{ points: vtPoints_B, domainPoints: vtDomain_B, label: '滑块 B', series: 'secondary' }]}
+              showArea={false}
               stages={stages}
             >
               <CenterOfMassVelocityLine vG={vG} />
             </VelocityTimeChart>
           </div>
         </div>
-        <div className="flex-1 bg-white border border-neutral-200/80 rounded-xl p-3 shadow-sm relative overflow-hidden flex flex-col">
+        <div className="bg-white border border-neutral-200/80 rounded-xl p-2.5 shadow-sm relative overflow-hidden flex flex-col">
           <div className="flex-grow min-h-0 relative">
-            <VelocityTimeChart 
-              mode="animated" 
-              points={etPoints_Ek} 
-              domainPoints={etDomain_Ek} 
-              currentTime={time} 
-              tMax={6} 
-              title="能量-时间图像 (E-T)" 
-              xLabel="时间 t (s)" 
-              yLabel="能量 E (J)" 
+            <VelocityTimeChart
+              mode="animated"
+              points={etPoints_Ek}
+              domainPoints={etDomain_Ek}
+              currentTime={time}
+              tMax={6}
+              title=""
+              xLabel="t (s)"
+              yLabel=""
               additionalSeries={[
-                { points: etPoints_Ep, domainPoints: etDomain_Ep, label: '弹性势能 Ep', series: 'secondary' }, 
+                { points: etPoints_Ep, domainPoints: etDomain_Ep, label: '弹性势能 Ep', series: 'secondary' },
                 { points: etPoints_Total, domainPoints: etDomain_Total, label: '总机械能', series: 'success' }
-              ]} 
-              showArea={false} 
+              ]}
+              showArea={false}
               stages={stages}
             />
+          </div>
+        </div>
+        <div className="bg-white border border-neutral-200/80 rounded-xl p-2.5 shadow-sm relative overflow-hidden flex flex-col">
+          <div className="text-[10px] font-bold text-neutral-800 border-b pb-1 mb-1.5 flex items-center justify-between">
+            <span>能量实时分配</span>
+            <span className="text-[9px] text-neutral-400 font-mono">E (J)</span>
+          </div>
+          <div className="flex-grow min-h-0 flex items-center justify-center">
+            <EnergyBars items={energyBarItems} initialEtot={springState.Etotal} compact={true} />
           </div>
         </div>
       </div>
@@ -271,17 +280,11 @@ export default function SpringBlocksAnimation() {
       {/* 下方物理仿真动画区 */}
       <div
         ref={containerRef}
-        className="flex-grow bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden flex flex-col justify-between"
+        className="flex-[5] min-h-[220px] bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden flex flex-col justify-between"
       >
-        {/* 能量实时分配柱状图（绝对定位悬浮在顶部中央） */}
-        <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-10 w-[240px] pointer-events-none">
-          <EnergyBars items={energyBarItems} initialEtot={springState.Etotal} compact={true} />
-        </div>
 
         <svg
-          width={canvasSize.width}
-          height={canvasSize.height}
-          className="w-full h-full"
+          className="w-full h-full block"
         >
           <g transform={vp.transform}>
             {/* 地面 (开启 isSmooth 光滑镜面效果) */}
@@ -363,15 +366,15 @@ export default function SpringBlocksAnimation() {
               return <Spring x1={springLeft_px} y1={GROUND_Y - 15} x2={springRight_px} y2={GROUND_Y - 15} coils={10} radius={7} isLightWeight={isSeparated} color={isSeparated ? SCENE_COLORS.charts.referenceLine : undefined} />
             })()}
 
-            {/* 能量状态转换指示（悬浮在弹簧上方，居中渲染，Y坐标适度下调规避EnergyBars遮挡） */}
+            {/* 能量状态转换指示（悬浮在弹簧上方，居中渲染） */}
             {(() => {
               const prevT = Math.max(0, time - 0.05)
               const prevState = interpolateSpringBlocks(states, prevT)
               const isEnergyToSpring = springState.Ep > prevState.Ep + 0.1
               const isSpringToEnergy = springState.Ep < prevState.Ep - 0.1
               
-              if (isEnergyToSpring) return <g transform="translate(325, 62)"><path d="M 50 0 L 0 0 M 8 -4 L 0 0 L 8 4" stroke={PHYSICS_COLORS.kineticEnergy} strokeWidth="2" strokeLinecap="round" /><text x="25" y="-6" fill={PHYSICS_COLORS.kineticEnergy} fontSize={8} fontWeight="bold" textAnchor="middle">动能 &rArr; 弹性能</text></g>
-              if (isSpringToEnergy) return <g transform="translate(325, 62)"><path d="M 0 0 L 50 0 M 42 -4 L 50 0 L 42 4" stroke={PHYSICS_COLORS.potentialElastic} strokeWidth="2" strokeLinecap="round" /><text x="25" y="-6" fill={PHYSICS_COLORS.potentialElastic} fontSize={8} fontWeight="bold" textAnchor="middle">弹性能 &rArr; 动能</text></g>
+              if (isEnergyToSpring) return <g transform="translate(325, 48)"><path d="M 50 0 L 0 0 M 8 -4 L 0 0 L 8 4" stroke={PHYSICS_COLORS.kineticEnergy} strokeWidth="2" strokeLinecap="round" /><text x="25" y="-6" fill={PHYSICS_COLORS.kineticEnergy} fontSize={8} fontWeight="bold" textAnchor="middle">动能 &rArr; 弹性能</text></g>
+              if (isSpringToEnergy) return <g transform="translate(325, 48)"><path d="M 0 0 L 50 0 M 42 -4 L 50 0 L 42 4" stroke={PHYSICS_COLORS.potentialElastic} strokeWidth="2" strokeLinecap="round" /><text x="25" y="-6" fill={PHYSICS_COLORS.potentialElastic} fontSize={8} fontWeight="bold" textAnchor="middle">弹性能 &rArr; 动能</text></g>
               return null
             })()}
 

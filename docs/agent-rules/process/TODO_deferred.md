@@ -86,3 +86,13 @@
 |---|---|
 | `WrongPage.renderCard` 提取为 `React.memo` | `WrongCard` 已有 `React.memo`，但 `menuFor` 状态只影响被点击的单张卡，收益有限；视后续性能需求决定 |
 | `RightPhysicsPanel` 计算逻辑抽取 | 当前 `useMemo` 与展示组件在同一文件（AnimationPage:157-188），可抽取为独立 hook 提升测试独立性；优先级低 |
+
+### 3.8 缺失场景色 token（P2）
+
+| 文件 | 硬编码值 | 用途 | 建议 token 名 |
+|------|---------|------|-------------|
+| `ManBoatAnimation.tsx:269` | `#0284c7` | 水面填充色 | `SCENE_COLORS.mechanics.waterSurface` |
+| `ManBoatAnimation.tsx:273` | `#0ea5e9` | 水波纹描边 | `SCENE_COLORS.mechanics.waterRipple` |
+| `CurvedSlotAnimation.tsx:213,221` | `#FFFFFF` | 弧形槽内弧高光 | `SCENE_COLORS.materials.slotHighlight`（通用白色高光，优先级低） |
+
+> 待 `src/theme/physics/scene/mechanics.ts` 新增对应 token 后替换。

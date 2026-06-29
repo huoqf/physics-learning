@@ -339,9 +339,7 @@ export default function MomentumTheoremAnimation() {
     <div ref={containerRef} className="w-full h-full relative overflow-hidden bg-neutral-50 rounded-xl">
       {/* ========== 左侧物理动画容器 (大 SVG) ========== */}
       <svg
-        width={canvasSize.width}
-        height={canvasSize.height}
-        className="absolute inset-0 pointer-events-none select-none"
+        className="absolute inset-0 w-full h-full pointer-events-none select-none"
       >
         <defs>
           <radialGradient id="steel-sphere-grad-mt" cx="30%" cy="30%" r="70%">

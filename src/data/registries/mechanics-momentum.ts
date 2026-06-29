@@ -124,9 +124,11 @@ export const mechanicsMomentumAnimations = defineAnimations({
     Component: lazy(() => import('@/features/mechanics/momentum/ManBoatAnimation')),
     defaultParams: {
       m_person: 50,
+      m_person2: 60,
       M_boat: 150,
       L_boat: 4,
       manBoatControl: 0,
+      manBoatMode: 0,
     } as const,
     paramMeta: [
       { key: 'm_person', label: '人质量 m', min: 30, max: 100, step: 2, unit: 'kg' },

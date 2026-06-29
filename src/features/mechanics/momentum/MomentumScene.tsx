@@ -43,7 +43,7 @@ export function MomentumScene({
   ekCurvePointsA, ekCurvePointsB, ekMax,
 }: MomentumSceneProps) {
   return (
-    <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
+    <svg className="w-full h-full block bg-white rounded-lg shadow-inner">
       <defs>
         <radialGradient id="steel-sphere-grad-mom" cx="30%" cy="30%" r="70%">
           <stop offset="0%" stopColor={SCENE_COLORS.materials.steelSphereGrad[0]} />
