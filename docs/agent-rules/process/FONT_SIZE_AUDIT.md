@@ -2,8 +2,8 @@
 
 > 核查日期：2026-06-29（更新）
 > 原始审计：2026-06-23
-> 总硬编码 fontSize：~89 处 / 21 文件（D 类已迁移）
-> 已用 `fontSize={font(N)}` 或 `canvasSize.font()`：~401 处（已迁移）
+> 总硬编码 fontSize：~86 处 / 18 文件（chart 裸值 3 处已修复）
+> 已用 `fontSize={font(N)}` 或 `canvasSize.font()`：~404 处（已迁移）
 
 ---
 
@@ -11,11 +11,24 @@
 
 | 分类 | 文件数 | 调用点 | 状态 |
 |---|---:|---:|---|
+| E. chart 配置对象裸值 | 3 | 3 | ✅ 全部完成 |
 | A. 已迁移（原 A 类，有 useCanvasSize） | 8 | 50 | ✅ 全部完成 |
 | D. 已迁移（遗漏文件） | 11 | 38 | ✅ 全部完成 |
 | B. 需引入 font（subcomponent，需加 prop） | 11 | 49 | 待执行 |
 | C. 混合文件（部分已迁移，剩余硬编码） | 2 | 10 | 待补齐 |
-| **合计** | **32** | **147** | — |
+| **合计** | **35** | **150** | — |
+
+---
+
+## E. chart 配置对象裸值 ✅（3 文件，3 调用点）
+
+> 2026-06-29 通过 `fontsize-audit-fix.patch` 修复。
+
+| # | 文件 | 原硬编码 | 改为 | 方式 |
+|---|---|---:|---|---|
+| 1 | electromagnetism/induction/FaradayChartPanel.tsx:104 | `fontSize: 11` | `font(FONT.subtickSize)` | 父组件 FaradayLaw 已传 font |
+| 2 | electromagnetism/magnetism/components/AmpereFIChart.tsx:95 | `fontSize: 9` | `font(FONT.small)` | 可选 prop，默认恒等 |
+| 3 | mechanics/energy/WorkVTChart.tsx:63 | `fontSize: 10` | `font(10)` | 父组件 WorkAnimation 已传 font |
 
 ---
 

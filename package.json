@@ -9,7 +9,12 @@
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "audit:deps": "npm audit --audit-level=moderate",
+    "check:font-size": "node scripts/check-font-size.mjs",
+    "check:large-files": "node scripts/check-large-files.mjs",
+    "check:architecture": "npm run check:font-size && npm run check:large-files",
+    "check": "npm run build && npm test -- --run && npm run audit:deps && npm run check:architecture"
   },
   "dependencies": {
     "idb": "^8.0.2",
@@ -32,7 +37,7 @@
     "@typescript-eslint/eslint-plugin": "^8.23.0",
     "@typescript-eslint/parser": "^8.23.0",
     "@vitejs/plugin-react": "^4.3.4",
-    "@vitest/coverage-v8": "^3.0.5",
+    "@vitest/coverage-v8": "^3.2.6",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.20.1",
     "eslint-plugin-react-hooks": "^5.1.0",
@@ -43,7 +48,7 @@
     "prettier": "^3.4.2",
     "tailwindcss": "^4.3.0",
     "typescript": "^5.7.2",
-    "vite": "^6.0.11",
-    "vitest": "^3.0.5"
+    "vite": "^6.4.3",
+    "vitest": "^3.2.6"
   }
 }

@@ -6,9 +6,14 @@ export interface PhysicsState {
   trajectory: { x: number; y: number }[]
 }
 
-interface AnimationState {
+export type AnimationParamValue = number
+export type AnimationParamKey = string
+export type AnimationParams = Record<AnimationParamKey, AnimationParamValue>
+export type StoreUpdater<T> = T | ((prev: T) => T)
+
+interface AnimationDataState {
   animationType: string | null
-  params: Record<string, number>
+  params: AnimationParams
   /** 最后修改的参数 key（用于右侧因果链高亮） */
   lastChangedParam: string | null
   time: number
@@ -22,9 +27,12 @@ interface AnimationState {
   showTimeSlices: boolean
   showDualObjects: boolean
   physicsState: PhysicsState
+}
+
+export interface AnimationState extends AnimationDataState {
   setAnimationType: (type: string | null) => void
-  setParams: (params: Record<string, number>) => void
-  updateParam: (key: string, value: number) => void
+  setParams: (params: AnimationParams) => void
+  updateParam: (key: AnimationParamKey, value: AnimationParamValue) => void
   setTime: (time: number) => void
   setIsPlaying: (isPlaying: boolean) => void
   setSpeed: (speed: number) => void
@@ -34,18 +42,18 @@ interface AnimationState {
   toggleGrid: () => void
   toggleTimeSlices: () => void
   toggleDualObjects: () => void
-  setPhysicsState: (state: PhysicsState | ((prev: PhysicsState) => PhysicsState)) => void
+  setPhysicsState: (state: StoreUpdater<PhysicsState>) => void
   reset: () => void
 }
 
-const initialState = {
-  animationType: null as string | null,
-  params: {} as Record<string, number>,
+const initialState: AnimationDataState = {
+  animationType: null,
+  params: {},
   lastChangedParam: null as string | null,
   time: 0,
   isPlaying: false,
   speed: 1,
-  direction: 1 as 1 | -1,
+  direction: 1,
   showVectors: true,
   showFormulas: true,
   showGrid: true,
@@ -55,7 +63,7 @@ const initialState = {
     position: { x: 0, y: 0 },
     velocity: { vx: 0, vy: 0 },
     trajectory: [],
-  } as PhysicsState,
+  },
 }
 
 export const useAnimationStore = create<AnimationState>((set) => ({

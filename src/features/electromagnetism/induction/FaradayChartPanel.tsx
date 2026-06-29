@@ -97,11 +97,11 @@ function ZeroEmfNote() {
   )
 }
 
-function TimeBadge({ t }: { t: number }) {
+function TimeBadge({ t, font }: { t: number; font: (base: number) => number }) {
   return (
     <div
       style={{
-        fontSize: 11,
+        fontSize: font(FONT.subtickSize),
         lineHeight: '16px',
         color: PHYSICS_COLORS.labelTextLight,
         textAlign: 'center',
@@ -126,6 +126,7 @@ export function FaradayChartPanel({
   maxEmfVal,
   emfIsZero,
   tNow,
+  font,
 }: Props) {
   const phiSeries = useMemo(
     () => chartPoints.map((p) => ({ t: p.t, v: p.phi })),
@@ -176,7 +177,7 @@ export function FaradayChartPanel({
           background: 'transparent',
         }}
       >
-        <TimeBadge t={tNow} />
+        <TimeBadge t={tNow} font={font} />
 
         <div style={{ flex: 1, minHeight: 0 }}>
           <VelocityTimeChart

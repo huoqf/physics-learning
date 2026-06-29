@@ -24,6 +24,7 @@ interface WorkVTChartProps {
  */
 export function WorkVTChart({
   canvasSize,
+  font,
   kinematics,
   currentTime,
   maxAnimTime,
@@ -60,7 +61,7 @@ export function WorkVTChart({
             position: 'relative',
             marginTop: -canvasSize.height + 8,
             marginLeft: Math.max(48, canvasSize.width - 104),
-            fontSize: 10,
+            fontSize: font(10),
             lineHeight: '14px',
             color: PHYSICS_COLORS.labelTextLight,
             pointerEvents: 'none',
