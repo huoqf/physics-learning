@@ -13,14 +13,12 @@ const SOFT_LIMIT = 800
 const HARD_LIMIT = 1000
 
 const ALLOWLIST = new Set([
-  'src/features/electromagnetism/induction/ACValues.tsx',
   'src/features/mechanics/circular/CentripetalAnimation.tsx',
   'src/features/mechanics/dynamics/VectorAdditionAnimation.tsx',
   'src/features/mechanics/momentum/MomentumTheoremAnimation.tsx',
   'src/features/mechanics/dynamics/WeightlessnessAnimation.tsx',
   'src/features/electromagnetism/magnetism/VelocitySelector.tsx',
   'src/features/optics/thin-lens/ThinLensAnimation.tsx',
-  'src/features/electromagnetism/induction/CuttingEMF.tsx',
 ])
 
 function walk(dir) {
