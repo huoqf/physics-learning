@@ -1,6 +1,6 @@
 # 延后处理待办事项
 
-> 最后更新：2026-06-29（架构守护脚本 + 模型单测已应用 + npm audit + quantities 拆分，24 文件 / 340 测试）
+> 最后更新：2026-06-29（架构守护脚本 + 模型单测已应用 + npm audit + quantities 拆分 + CuttingEMF 拆分试点，24 文件 / 340 测试）
 
 ---
 
@@ -9,27 +9,29 @@
 > 拆分大 TSX 大组件风险高（SVG 坐标、动画状态易错），收益偏低。
 > 仅在改功能时顺手抽纯计算逻辑（trajectory / geometry / scales），不建议作为主线推进。
 
->800 行（3 个）：
+>800 行（8 个，已拆 CuttingEMF）：
 
 | 文件 | 行数 | 建议 |
 |------|-----:|------|
-| `ACValues.tsx` | 908 | 电磁交流逻辑复杂，谨慎拆分 |
-| `CentripetalAnimation.tsx` | 848 | 可抽 `useCentripetalModel` 和几何计算 |
-| `VectorAdditionAnimation.tsx` | 808 | 可抽向量几何与渲染 layer |
+| `ACValues.tsx` | 966 | 电磁交流逻辑复杂，谨慎拆分；AC/DC 两个 HeatingBoxCard 可参数化消除重复 |
+| `LightRodRopeAnimation.tsx` | 911 | 可抽 `useLightRodRopePhysics` + 轨道/杆绳场景组件 |
+| `CentripetalAnimation.tsx` | 898 | 可抽 `useCentripetalPhysics` + `ForceDecompositionCard` |
+| `VectorAdditionAnimation.tsx` | 859 | 可抽向量几何与渲染 layer |
+| `MomentumTheoremAnimation.tsx` | 837 | 可抽 `useMomentumTheoremPhysics` + 基础/进阶场景 |
+| `WeightlessnessAnimation.tsx` | 830 | 可抽 `useWeightlessnessPhysics` + 基础/进阶场景 |
+| `VelocitySelector.tsx` | 823 | 可抽 `useVelocitySelectorPhysics` + 速度选择器场景 |
+| `ThinLensAnimation.tsx` | 821 | 可抽 `useThinLensPhysics` + 光路场景 |
 
-600-800 行（11 个）：
+> ✅ 已完成试点：`CuttingEMF.tsx`（816→3 文件：254+168+398 行）
+> 拆分模式：`hooks/useXxxPhysics.ts`（物理计算+布局几何）+ `components/XxxScene.tsx`（SVG 场景）+ 薄编排层
+
+600-800 行（9 个）：
 
 | 文件 | 行数 |
 |------|-----:|
-| `WeightlessnessAnimation.tsx` | 771 |
-| `ThinLensAnimation.tsx` | 760 |
-| `MomentumTheoremAnimation.tsx` | 757 |
-| `CuttingEMF.tsx` | 753 |
 | `momentum.ts`（quantities） | 740 |
 | `knowledgeTree.ts` | 734 |
 | `Transformer.tsx` | 724 |
-| `VelocitySelector.tsx` | 720 |
-| `LightRodRopeAnimation.tsx` | 719 |
 | `ForceMotionSandbox.tsx` | 694 |
 | `EquilibriumAnimation.tsx` | 688 |
 
