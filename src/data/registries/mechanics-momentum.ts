@@ -79,28 +79,61 @@ export const mechanicsMomentumAnimations = defineAnimations({
     ],
     SidebarExtra: lazy(() => import('@/features/mechanics/momentum/CollisionSidebar')),
   },
-  'anim-momentum-application': {
-    title: '动量守恒应用',
-    knowledgeId: 'mechanics-8-6',
-    Component: lazy(() => import('@/features/mechanics/momentum/MomentumApplicationAnimation')),
+  'anim-curved-slot': {
+    title: '弧形槽与滑块模型',
+    knowledgeId: 'mechanics-8-6-1',
+    Component: lazy(() => import('@/features/mechanics/momentum/CurvedSlotAnimation')),
     defaultParams: {
-      modelType: 0, // 0: 弧形槽-滑块, 1: 弹簧双滑块, 2: 人船模型
       m_block: 2,
       M_slot: 5,
       R_slot: 1.5,
+      isFixed: 0,
+      slotShape: 0,
+      showVectors: 1,
+      showDisplacement: 0,
+    } as const,
+    paramMeta: [
+      { key: 'm_block', label: '滑块质量 m', min: 0.5, max: 5, step: 0.1, unit: 'kg' },
+      { key: 'M_slot', label: '弧形槽质量 M', min: 1, max: 10, step: 0.1, unit: 'kg' },
+      { key: 'R_slot', label: '轨道半径 R', min: 0.8, max: 2.5, step: 0.1, unit: 'm' },
+    ],
+    SidebarExtra: lazy(() => import('@/features/mechanics/momentum/CurvedSlotSidebar')),
+  },
+  'anim-spring-blocks': {
+    title: '弹簧-双滑块模型',
+    knowledgeId: 'mechanics-8-6-2',
+    Component: lazy(() => import('@/features/mechanics/momentum/SpringBlocksAnimation')),
+    defaultParams: {
       mA_spring: 2,
       mB_spring: 3,
       v0_spring: 5,
       k_spring: 20,
+      connectionMode_spring: 0,
+    } as const,
+    paramMeta: [
+      { key: 'mA_spring', label: '滑块 A 质量 m_A', min: 0.5, max: 5, step: 0.1, unit: 'kg' },
+      { key: 'mB_spring', label: '滑块 B 质量 m_B', min: 0.5, max: 5, step: 0.1, unit: 'kg' },
+      { key: 'v0_spring', label: 'A 初速度 v₀', min: 2, max: 8, step: 0.2, unit: 'm/s' },
+      { key: 'k_spring', label: '劲度系数 k', min: 5, max: 50, step: 1, unit: 'N/m' },
+    ],
+    SidebarExtra: lazy(() => import('@/features/mechanics/momentum/SpringBlocksSidebar')),
+  },
+  'anim-man-boat': {
+    title: '人船模型',
+    knowledgeId: 'mechanics-8-6-3',
+    Component: lazy(() => import('@/features/mechanics/momentum/ManBoatAnimation')),
+    defaultParams: {
       m_person: 50,
       M_boat: 150,
       L_boat: 4,
-      manBoatControl: 0, // 0: 自动, 1: 键盘
+      manBoatControl: 0,
     } as const,
     paramMeta: [
-      { key: 'modelType', label: '选择经典模型', min: 0, max: 2, step: 1, unit: '', showIf: 'always' }
+      { key: 'm_person', label: '人质量 m', min: 30, max: 100, step: 2, unit: 'kg' },
+      { key: 'M_boat', label: '船质量 M', min: 50, max: 300, step: 10, unit: 'kg' },
+      { key: 'L_boat', label: '船长 L', min: 3, max: 7, step: 0.2, unit: 'm' },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/momentum/MomentumApplicationSidebar')),
+    SidebarExtra: lazy(() => import('@/features/mechanics/momentum/ManBoatSidebar')),
   },
 })
 

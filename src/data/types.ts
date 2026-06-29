@@ -11,6 +11,7 @@ export interface KnowledgeNode {
   animationIds: string[]
   problemIds: string[]
   prerequisites: string[]
+  parentId?: string
 }
 
 /** 参数控件元数据 */

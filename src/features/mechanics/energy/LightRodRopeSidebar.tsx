@@ -28,9 +28,9 @@ const LightRodRopeSidebar: FC<SidebarExtraProps> = ({
       <SegmentedControl
         label="连接约束拓扑"
         options={[
-          { value: 0, label: '刚性轻杆连接' },
-          { value: 1, label: '双绳分系两球' },
-          { value: 2, label: '轻绳连接体三阶段' },
+          { value: 0, label: '轻杆双球' },
+          { value: 1, label: '定滑轮绳连' },
+          { value: 2, label: '双绳串联' },
         ]}
         value={constraint}
         onChange={handleConstraintChange}

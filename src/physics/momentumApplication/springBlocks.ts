@@ -41,7 +41,8 @@ export function precomputeSpringBlocks(
   L0: number = 1.5,
   xB0: number = 3.5,
   totalDuration: number = 6.0,
-  dt: number = 0.002
+  dt: number = 0.002,
+  connectionMode: number = 0
 ): SpringBlocksState[] {
   const states: SpringBlocksState[] = []
   
@@ -63,17 +64,16 @@ export function precomputeSpringBlocks(
     let aA = 0
     let aB = 0
     
-    if (!hasSeparated) {
-      const springLeft = xB - L0
-      if (xA >= springLeft) {
+    if (hasTouched && !hasSeparated) {
+      delta = xA - (xB - L0) // 压缩为正，拉伸为负
+      if (connectionMode === 0 && delta < 0) {
+        delta = 0
+        hasSeparated = true
+      }
+    } else if (!hasTouched) {
+      if (xA >= xB - L0) {
         hasTouched = true
-        delta = xA - springLeft // 压缩量为正
-        
-        // 若压缩量变负，说明在接触后又拉伸了，二者发生分离
-        if (delta < 0) {
-          delta = 0
-          hasSeparated = true
-        }
+        delta = xA - (xB - L0)
       }
     }
     
@@ -104,9 +104,8 @@ export function precomputeSpringBlocks(
       let d_vB_dt = 0
       
       if (hasTouched && !hasSeparated) {
-        const springL = x_B - L0
-        const d = x_A - springL
-        if (d > 0) {
+        const d = x_A - (x_B - L0)
+        if (connectionMode === 1 || d > 0) {
           d_vA_dt = -(k * d) / mA
           d_vB_dt = (k * d) / mB
         }

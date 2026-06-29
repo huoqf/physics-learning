@@ -76,7 +76,9 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-impulse-concept':       { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
   'anim-momentum-conservation': { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
   'anim-collision':             { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
-  'anim-momentum-application':   { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
+  'anim-curved-slot':            { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
+  'anim-spring-blocks':          { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
+  'anim-man-boat':               { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
 
 
   // 电磁学

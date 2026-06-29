@@ -2,6 +2,8 @@ import { Suspense, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, FlaskConical, Play, RotateCcw } from 'lucide-react'
 import { buildPhysicsQuantities } from '@/data/physicsQuantities'
+import { getAnimationConfig } from '@/data/animationRegistry'
+import { knowledgeTree } from '@/data/knowledgeTree'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAppStore } from '@/stores/useAppStore'
@@ -203,6 +205,23 @@ export default function AnimationPage() {
     prevDiscoveryStep,
   } = useAnimationLifecycle()
 
+  // 查找同属一个知识点的关联动画列表 (高考同考点经典模型切换)
+  const siblingAnimations = useMemo(() => {
+    if (!config) return []
+    const currentKnowledgeNode = knowledgeTree.find((node) =>
+      node.animationIds.includes(config.id)
+    )
+    if (!currentKnowledgeNode || currentKnowledgeNode.animationIds.length <= 1) {
+      return []
+    }
+    return currentKnowledgeNode.animationIds
+      .map((aid) => {
+        const cfg = getAnimationConfig(aid)
+        return cfg ? { id: aid, title: cfg.title } : null
+      })
+      .filter(Boolean) as Array<{ id: string; title: string }>
+  }, [config])
+
   // 低频状态：selector 订阅，避免 time 变化触发重渲染
   const { params, showTimeSlices, showDualObjects } = useAnimationStore(
     useShallow((s) => ({
@@ -320,8 +339,39 @@ export default function AnimationPage() {
       </div>
 
       <ThreePanel
-        left={(paramControlParams.length > 0 || config.SidebarExtra) ? (
-          <div className="p-4 relative">
+        left={(paramControlParams.length > 0 || config.SidebarExtra || siblingAnimations.length > 1) ? (
+          <div className="p-4 relative flex flex-col">
+            {/* 关联模型切换 Tab (高考考点变式切换) */}
+            {siblingAnimations.length > 1 && (
+              <div className="bg-neutral-100/80 p-1.5 rounded-xl flex flex-col gap-1 border border-neutral-200/50 mb-3 shrink-0">
+                <div className="text-[10px] font-bold text-neutral-400 px-2 pt-0.5 pb-1">
+                  💡 高考同考点经典模型切换
+                </div>
+                <div className="grid gap-1 p-0.5" style={{ gridTemplateColumns: `repeat(${siblingAnimations.length}, minmax(0, 1fr))` }}>
+                  {siblingAnimations.map((anim) => {
+                    const isActive = anim.id === config.id
+                    return (
+                      <button
+                        key={anim.id}
+                        onClick={() => {
+                          if (!isActive) {
+                            navigate(`/animation/${anim.id}`)
+                          }
+                        }}
+                        className={`px-1 py-1.5 rounded-lg text-[10px] font-bold leading-tight transition-all duration-200 text-center flex items-center justify-center min-h-[32px] cursor-pointer ${
+                          isActive
+                            ? 'bg-white shadow-sm text-primary-700 border border-neutral-200/30'
+                            : 'text-neutral-500 hover:text-neutral-800 hover:bg-white/40 active:scale-[0.97]'
+                        }`}
+                      >
+                        {anim.title.replace('模型', '')}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* 批量重置（右上角，仅无 ParamControl 时显示） */}
             {paramControlParams.length === 0 && config.SidebarExtra && !isDiscoveryMode && (
               <button
@@ -336,18 +386,22 @@ export default function AnimationPage() {
             )}
 
             {paramControlParams.length > 0 && (
-              <ParamControl
-                params={paramControlParams}
-                onParamChange={updateParam}
-                onReset={handleReset}
-                disabled={isDiscoveryMode}
-              />
+              <div className="shrink-0">
+                <ParamControl
+                  params={paramControlParams}
+                  onParamChange={updateParam}
+                  onReset={handleReset}
+                  disabled={isDiscoveryMode}
+                />
+              </div>
             )}
             {/* 侧边栏扩展：通过 registry 挂载的特异 UI */}
             {config.SidebarExtra && !isDiscoveryMode && (
-              <Suspense fallback={<div className="w-full h-8 flex items-center justify-center text-neutral-300 text-xs">加载中…</div>}>
-                <config.SidebarExtra {...sidebarExtraProps} />
-              </Suspense>
+              <div className="flex-grow min-h-0 overflow-y-auto">
+                <Suspense fallback={<div className="w-full h-8 flex items-center justify-center text-neutral-300 text-xs">加载中…</div>}>
+                  <config.SidebarExtra {...sidebarExtraProps} />
+                </Suspense>
+              </div>
             )}
           </div>
         ) : undefined}

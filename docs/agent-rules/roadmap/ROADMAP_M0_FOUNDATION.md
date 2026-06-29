@@ -141,6 +141,7 @@
     animationIds: string[]
     problemIds: string[]
     prerequisites: string[]  // 前置知识点id
+    parentId?: string   // 可选：父节点id，用于构建层级树（扁平存储+运行时建树）
   }
 
   // 动画场景

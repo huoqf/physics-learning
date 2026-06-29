@@ -69,7 +69,8 @@ src/
 │   │   ├── electromagnetism.ts
 │   │   ├── forceMotion.ts
 │   │   └── energy.ts
-│   ├── knowledgeTree.ts    # 知识树索引（单文件）
+│   ├── knowledgeTree.ts    # 知识树索引（扁平源数据）
+│   ├── buildKnowledgeTree.ts # 运行时建树（扁平→层级，支持 parentId）
 │   ├── defineAnimations.ts # defineAnimations 工具函数
 │   ├── registries/         # 按模块拆分的动画子注册表
 │   │   ├── mechanics-kinematics.ts
@@ -302,7 +303,8 @@ tests/
 |---------|------|
 | 核心类型定义（AnimationConfig 等） | `src/data/types.ts` |
 | 题目与解析 | `src/data/problems/` |
-| 知识树索引（单文件） | `src/data/knowledgeTree.ts` |
+| 知识树索引（扁平源数据） | `src/data/knowledgeTree.ts` |
+| 知识树建树工具（扁平→层级） | `src/data/buildKnowledgeTree.ts` |
 | 动画注册表合并入口 | `src/data/animationRegistry.ts` |
 | 动画注册表子模块 | `src/data/registries/*.ts` |
 | defineAnimations 工具 | `src/data/defineAnimations.ts` |

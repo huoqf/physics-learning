@@ -7,7 +7,7 @@ import type { LRRModelState } from './types'
  * @param m2 - B球质量 (kg)
  * @param L - 杆/绳总长度 (m)
  * @param g - 重力加速度 (m/s²)
- * @param mode - 约束类型：0=刚性轻杆，1=双绳分系两球（跨滑轮耦合）
+ * @param mode - 约束类型：0=刚性轻杆，1=定滑轮绳连（跨滑轮耦合）
  * @param tMax - 最大模拟时间 (s)，默认 15
  * @param dt - 时间步长 (s)，默认 0.02
  * @param theta0 - 初始角度 (rad)
@@ -115,7 +115,7 @@ export function precomputeLightRodRopeTrajectory(
     let stepEventB: 'slack' | 'tension' | null = null
 
     if (mode === 0) {
-      // 刚性轻杆连接 (物理计算逻辑完全保持不变)
+      // 轻杆双球 (物理计算逻辑完全保持不变)
       const theta = thetaA // 刚性连接，A/B 角度相等
       const w = wA
       
@@ -156,7 +156,7 @@ export function precomputeLightRodRopeTrajectory(
       T_A = F_Ar
       T_B = F_Br
     } else if (mode === 1) {
-      // 双绳分系两球（定滑轮耦合高考动力学模型）
+      // 定滑轮绳连（定滑轮耦合高考动力学模型）
       epA = m1 * g * (L_rope - r_A)
       epB = m2 * g * (L_rope - y_B)
 
@@ -182,7 +182,7 @@ export function precomputeLightRodRopeTrajectory(
       powerA = -T_val * v_r
       powerB = T_val * v_r
     } else {
-      // mode === 2: 轻绳连接体三阶段
+      // mode === 2: 双绳串联
       epA = m1 * g * (R_A0 - y_A)
       epB = m2 * g * (R_B0 - y_B)
 
@@ -358,7 +358,7 @@ export function precomputeLightRodRopeTrajectory(
         vBx = -v_r * Math.cos(thetaB) - r_B * wB * Math.sin(thetaB)
         vBy = -v_r * Math.sin(thetaB) + r_B * wB * Math.cos(thetaB)
       } else {
-        // mode === 2: 轻绳连接体三阶段 PBD 仿真
+        // mode === 2: 双绳串联 PBD 仿真
         // 1. 预测步：仅受重力作用 (y向下为正)
         const vAx_pred = vAx
         const vAy_pred = vAy + g * subDt

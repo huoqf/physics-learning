@@ -66,10 +66,15 @@ export function precomputeCurvedSlot(
   R: number,
   g: number = 9.8,
   totalDuration: number = 6.0,
-  dt: number = 0.002
+  dt: number = 0.002,
+  isFixed: number = 0,
+  slotShape: number = 0
 ): CurvedSlotState[] {
   const states: CurvedSlotState[] = []
   
+  // 轨道固定时，将有效 M 设为极大值，使槽的加速度逼近 0，模拟固定地面
+  const M_eff = isFixed ? 1e8 : M
+
   // 初始状态
   let theta = Math.PI / 2
   let omega = 0
@@ -88,25 +93,38 @@ export function precomputeCurvedSlot(
   for (let step = 0; step <= steps; step++) {
     t = step * dt
 
-    if (!hasReachedBottom) {
-      // 1. 物理量反解
-      // 水平质心守恒: (M + m)X + m R sin(theta) = m R (因为初始 X=0, theta=pi/2)
-      const X = (m * R * (1 - Math.sin(theta))) / (M + m)
-      const v_X = -(m * R * omega * Math.cos(theta)) / (M + m)
+    // 如果是四分之一圆弧轨道 (slotShape === 0) 且已到最低点，则小球脱离滑出
+    const shouldRelease = slotShape === 0 && hasReachedBottom
 
+    if (!shouldRelease) {
+      // 1. 物理量反解
+      // 水平质心守恒: (M_eff + m)X + m R sin(theta) = m R
+      // 即 X = m R (1 - sin(theta)) / (M_eff + m)
+      let X = (m * R * (1 - Math.sin(theta))) / (M_eff + m)
+      let v_X = -(m * R * omega * Math.cos(theta)) / (M_eff + m)
+
+      // 如果轨道固定，强制槽的位置和速度为 0
+      if (isFixed) {
+        X = 0
+        v_X = 0
+      }
+
+      // 滑块坐标：
+      // 当 theta > 0 时，滑块在最低点右侧，相对坐标为 (R*sin(theta), R*(1-cos(theta)))
+      // 这里的 x 和 y 为绝对坐标
       const x = X + R * Math.sin(theta)
       const y = R * (1 - Math.cos(theta))
 
       const v_x = v_X + R * omega * Math.cos(theta)
       const v_y = R * omega * Math.sin(theta)
 
-      // 弹力大小
-      const N = (m * M * (R * omega * omega + g * Math.cos(theta))) / (M + m * Math.sin(theta) * Math.sin(theta))
-      const N_x = N * Math.sin(theta) // 作用在槽上的水平弹力，正向为右
-      const N_y = N * Math.cos(theta) // 竖直弹力，正向为上
+      // 弹力大小 (当固定时 M_eff 极大，N 简缩为 m * (R * omega^2 + g * cos(theta)))
+      const N = (m * M_eff * (R * omega * omega + g * Math.cos(theta))) / (M_eff + m * Math.sin(theta) * Math.sin(theta))
+      const N_x = isFixed ? 0 : N * Math.sin(theta) // 作用在槽上的水平力，固定时为 0
+      const N_y = N * Math.cos(theta)
 
       const Ek_m = 0.5 * m * (v_x * v_x + v_y * v_y)
-      const Ek_M = 0.5 * M * v_X * v_X
+      const Ek_M = isFixed ? 0 : 0.5 * M * v_X * v_X
       const Ep = m * g * y
 
       states.push({
@@ -114,7 +132,7 @@ export function precomputeCurvedSlot(
       })
 
       // 判断是否滑到最低点 (theta = 0)
-      if (theta <= 0.0001) {
+      if (slotShape === 0 && theta <= 0.0001) {
         hasReachedBottom = true
         tEnd = t
         X_end = X
@@ -124,38 +142,50 @@ export function precomputeCurvedSlot(
       } else {
         // RK4 推进 theta 和 omega
         const k1_theta = omega
-        const k1_omega = getCurvedSlotAlpha(theta, omega, m, M, R, g)
+        const k1_omega = getCurvedSlotAlpha(theta, omega, m, M_eff, R, g)
 
         const t2 = theta + 0.5 * dt * k1_theta
         const w2 = omega + 0.5 * dt * k1_omega
         const k2_theta = w2
-        const k2_omega = getCurvedSlotAlpha(t2, w2, m, M, R, g)
+        const k2_omega = getCurvedSlotAlpha(t2, w2, m, M_eff, R, g)
 
         const t3 = theta + 0.5 * dt * k2_theta
         const w3 = omega + 0.5 * dt * k2_omega
         const k3_theta = w3
-        const k3_omega = getCurvedSlotAlpha(t3, w3, m, M, R, g)
+        const k3_omega = getCurvedSlotAlpha(t3, w3, m, M_eff, R, g)
 
         const t4 = theta + dt * k3_theta
         const w4 = omega + dt * k3_omega
         const k4_theta = w4
-        const k4_omega = getCurvedSlotAlpha(t4, w4, m, M, R, g)
+        const k4_omega = getCurvedSlotAlpha(t4, w4, m, M_eff, R, g)
 
         theta += (dt / 6) * (k1_theta + 2 * k2_theta + 2 * k3_theta + k4_theta)
         omega += (dt / 6) * (k1_omega + 2 * k2_omega + 2 * k3_omega + k4_omega)
 
         // 边界限制
-        if (theta < 0) theta = 0
+        if (slotShape === 0) {
+          // 四分之一圆弧限制不能越过最低点或回弹越过顶部
+          if (theta < 0) theta = 0
+        } else {
+          // 对称半圆轨道限制在 [-pi/2, pi/2]
+          if (theta < -Math.PI / 2) {
+            theta = -Math.PI / 2
+            omega = 0
+          } else if (theta > Math.PI / 2) {
+            theta = Math.PI / 2
+            omega = 0
+          }
+        }
       }
     } else {
-      // 脱离弧形槽，各自做水平匀速直线运动，弹力为 0
+      // 四分之一轨道下滑出后，各自在光滑水平面上做水平匀速直线运动，弹力为 0
       const dtAfter = t - tEnd
       const X = X_end + v_X_final * dtAfter
       const x = x_end + v_x_final * dtAfter
       const y = 0
       
       const Ek_m = 0.5 * m * v_x_final * v_x_final
-      const Ek_M = 0.5 * M * v_X_final * v_X_final
+      const Ek_M = isFixed ? 0 : 0.5 * M * v_X_final * v_X_final
 
       states.push({
         t,

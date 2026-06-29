@@ -370,7 +370,7 @@ export function buildEnergyQuantities(
       const state = getLRRStateAtTime(trajectory, time)
 
       if (constraint === 0) {
-        // ── 刚性轻杆连接 ──
+        // ── 轻杆双球 ──
         return {
           quantities: [
             ...base,
@@ -392,7 +392,7 @@ export function buildEnergyQuantities(
           ],
         }
       } else if (constraint === 1) {
-        // ── 双绳分系两球（跨定滑轮高考模型） ──
+        // ── 定滑轮绳连（跨定滑轮高考模型） ──
         return {
           quantities: [
             ...base,
@@ -417,7 +417,7 @@ export function buildEnergyQuantities(
           ],
         }
       } else {
-        // ── 轻绳连接体三阶段（新模式） ──
+        // ── 双绳串联（新模式） ──
         return {
           quantities: [
             ...base,
