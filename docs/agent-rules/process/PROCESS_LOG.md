@@ -2,7 +2,7 @@
 
 ## 当前周期
 
-- 当前日期：2026-W26（06-28）
+- 当前日期：2026-W26（06-29）
 - 当前里程碑：M4 电磁/热/光/原子模块
 - 本周详细日志：[2026-W26.md](./logs/2026-W26.md)
 - 提交流程：[CHECKLIST.md](./CHECKLIST.md)
@@ -19,6 +19,7 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 06-29 | electromagnetism/induction | refactor | ACValues.tsx 超长文件拆分：965行→5文件（ACValues.tsx 234行编排层 + useACValuesPhysics.ts 119行hook + ACValuesChartPanel.tsx 238行图表面板 + HeatingBox.tsx 225行参数化加热盒 + utils.ts 9行纯函数）；AC/DC加热盒从~340行重复代码合并为1个参数化组件；TODO_deferred.md 更新为纯待办计划 |
 | 06-28 | physics | refactor | 超长文件拆分 P0 收官：momentumApplication.ts(524行)→curvedSlot+springBlocks+manBoat+index；EnergyConservationAnimation.tsx(718行)→PendulumScene+ValleyScene+EnergyConservationBarChart+ZeroPotentialLine；UniformAccelerationCenterExtra.tsx(606行)→StroboscopicAnimation+VtChartWithArea+FlashDataTable；TODO_deferred.md 精简 |
 | 06-28 | mechanics/energy | fix | 动能定理矢量显示修复：变力模式 origin.y 坐标错误导致矢量渲染到屏幕外；恒力模式力箭头方向与物理不符；能量柱改用 SVGSingleBar 组件 + ratio 布局替代硬编码像素 |
 | 06-28 | electromagnetism | refactor | ForcePolygon 手写箭头重构为 VectorArrow：引入 local sceneScale + pixelLength 模式，19 个 registry 文件改用 lazyWithPreload |
