@@ -1,6 +1,6 @@
 # 延后处理待办事项
 
-> 最后更新：2026-06-29（架构守护脚本 + 模型单测已应用，24 文件 / 340 测试）
+> 最后更新：2026-06-29（架构守护脚本 + 模型单测已应用 + npm audit + quantities 拆分，24 文件 / 340 测试）
 
 ---
 
@@ -95,43 +95,23 @@
 
 优先：`ManBoatAnimation.tsx` 水面/水波纹 token 化。`#FFFFFF` 建议分语义处理（specularWhite / edgeHighlightWhite / panelText），不要全部归为一个 token。
 
-### 3.5 依赖安全审计（P1/P2）
+### 3.5 依赖安全审计（P1/P2）— ✅ 已完成
 
-> `npm install` 输出 4 个漏洞：1 moderate、1 high、2 critical。
+> `npm audit` 当前 0 漏洞（依赖已更新），build + 340 测试通过。
 
-- [ ] 执行 `npm audit` 查看漏洞来源（生产依赖 / 开发依赖 / 传递依赖）
-- [ ] 优先修复 high / critical
-- [ ] 不要盲目 `npm audit fix --force`，评估破坏性
-- [ ] 修复后 `npm run build && npm test` 验证
+- [x] 执行 `npm audit` 查看漏洞来源（生产依赖 / 开发依赖 / 传递依赖）
+- [x] 优先修复 high / critical
+- [x] 不要盲目 `npm audit fix --force`，评估破坏性
+- [x] 修复后 `npm run build && npm test` 验证
 
-### 3.6 quantities 大文件拆分（P1/P2）
+### 3.6 quantities 大文件拆分（P1/P2）— ✅ 已完成
 
-当前 quantities 文件偏大，随动画数量增长会变成第二个 registry 巨石：
+> momentum.ts (791行) → 7 case 文件 + index.ts（最大 205 行）
+> dynamics.ts (711行) → 9 case 文件 + index.ts（最大 109 行）
+> kinematics.ts (659行) → 8 case 文件 + index.ts（最大 155 行）
 
-| 文件 | 行数 | 备注 |
-|------|-----:|------|
-| `momentum.ts` | 740 | |
-| `dynamics.ts` | 640 | |
-| `kinematics.ts` | 602 | |
-| `energy.ts` | 362 | verticalSpring/lightRodRope 已拆至 `energyCases/` |
-
-建议按动画拆分为子目录（以 momentum 为例，8 个 case → 7 个文件）：
-
-```text
-data/quantities/momentum/
-├── index.ts              # 聚合导出 + 共享类型
-├── momentum.ts           # anim-momentum
-├── impulse.ts            # anim-impulse + anim-impulse-concept
-├── momentumConservation.ts  # anim-momentum-conservation
-├── collision.ts          # anim-collision
-├── curvedSlot.ts         # anim-curved-slot
-├── springBlocks.ts       # anim-spring-blocks
-└── manBoat.ts            # anim-man-boat
-```
-
-dynamics（640 行）和 kinematics（602 行）可按同样模式拆分。
-
-好处：减少超长 switch/case，每个动画的 physics panel 可单测，AI 修改单个模型时上下文更小。
+拆分模式：遵循 electromagnetism/ 目录模式，每个 case 独立文件，index.ts 统一调度。
+所有新文件 41-205 行，远低于 800 行 soft limit。build + 340 测试通过。
 
 ### 3.7 架构守护脚本（P1）— ✅ 已完成
 
@@ -192,7 +172,7 @@ src/physics/<domain>/<model>.ts  # 纯计算，无 React
 
 **近期（1-2 周）**：~~useAnimationStore 类型增强~~（已完成）、quantities 大文件拆分
 
-**中期（2-6 周）**：~~选 LightRodRopeAnimation 做拆分试点~~（已完成）、quantities 按动画拆分、建立 viewModel 单测模板
+**中期（2-6 周）**：~~选 LightRodRopeAnimation 做拆分试点~~（已完成）、~~quantities 按动画拆分~~（已完成）、建立 viewModel 单测模板
 
 **长期（6 周+）**：registry + params + quantities 类型闭环、animation module 标准化、自动架构检查进入 CI
 
@@ -202,8 +182,8 @@ src/physics/<domain>/<model>.ts  # 纯计算，无 React
 
 | 顺序 | 事项 | 风险 | 收益 | 优先级 |
 |---:|------|---:|---:|---:|
-| 1 | npm audit 高危/严重漏洞核查 | 中 | 高 | P1/P2 |
-| 2 | quantities 大文件按动画拆分 | 中 | 高 | P1/P2 |
+| 1 | ~~npm audit 高危/严重漏洞核查~~ | 中 | 高 | P1/P2 ✅ |
+| 2 | ~~quantities 大文件按动画拆分~~ | 中 | 高 | P1/P2 ✅ |
 | 3 | `ManBoatAnimation` 水面色 token 化 | 低 | 中 | P2 |
 | 4 | 更新 `CANVAS_PRESETS_AUDIT.md` allowlist | 低 | 中 | P2 |
 | 5 | Tailwind `text-[Npx]` 分域替换 | 中 | 中 | P2 |

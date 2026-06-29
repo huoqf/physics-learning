@@ -62,12 +62,12 @@ src/
 │   ├── types.ts            # AnimationConfig 等核心类型定义
 │   ├── problems/           # 题目与解析数据
 │   ├── quantities/         # 物理量构建器（按物理主题拆分，懒加载）
-│   │   ├── kinematics.ts
-│   │   ├── dynamics.ts
+│   │   ├── kinematics/     # 运动学（8 case，按动画拆分）
+│   │   ├── dynamics/       # 动力学（9 case，按动画拆分）
+│   │   ├── momentum/       # 动量（7 case，按动画拆分）
+│   │   ├── electromagnetism/ # 电磁学（5 case，按域拆分）
 │   │   ├── circular.ts
 │   │   ├── gravitation.ts
-│   │   ├── momentum.ts
-│   │   ├── electromagnetism.ts
 │   │   ├── forceMotion.ts
 │   │   ├── energy.ts
 │   │   └── energyCases/    # energy 大 case 拆分子目录
@@ -339,7 +339,7 @@ tests/
 **构建器参数归一化**：构建器文件应定义具名接口 + 默认值映射，通过 `normalizeParams()` 将 `Record<string, number>` 归一化为类型安全的具名接口。
 
 ```ts
-// quantities/kinematics.ts 示例
+// quantities/kinematics/velocity.ts 示例
 import { normalizeParams, type ParamDefs } from './types'
 
 interface KinematicsParams {
