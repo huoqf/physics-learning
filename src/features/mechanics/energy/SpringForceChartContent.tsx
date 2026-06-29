@@ -31,22 +31,22 @@ export function SpringForceChartContent({
   if (!ctx) return null;
   const { toSvgX, toSvgY, toSvgY2 } = ctx;
 
-  let leftLabel = '← 向上合力';
-  let rightLabel = '向下合力 →';
+  let leftLabel = '← F合<0：向上';
+  let rightLabel = 'F合>0：向下 →';
 
   if (viewMode === 'E-x') {
-    leftLabel = '向下合力 (加速) ↑';
-    rightLabel = '向上合力 (减速) ↓';
+    leftLabel = 'F合 > 0：向下';
+    rightLabel = 'F合 < 0：向上';
   } else {
     if (state.v > 0.01) {
-      leftLabel = '← 向上合力 (减速)';
-      rightLabel = '向下合力 (加速) →';
+      leftLabel = '← F合<0：向上 (减速)';
+      rightLabel = 'F合>0：向下 (加速) →';
     } else if (state.v < -0.01) {
-      leftLabel = '← 向上合力 (加速)';
-      rightLabel = '向下合力 (减速) →';
+      leftLabel = '← F合<0：向上 (加速)';
+      rightLabel = 'F合>0：向下 (减速) →';
     } else {
-      leftLabel = '← 向上合力';
-      rightLabel = '向下合力 →';
+      leftLabel = '← F合<0：向上';
+      rightLabel = 'F合>0：向下 →';
     }
   }
 

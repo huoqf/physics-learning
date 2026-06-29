@@ -48,7 +48,7 @@ const SpringCompositeSidebar: FC<SidebarExtraProps> = ({ params, updateParam, di
       <p className='text-[10px] text-neutral-400 leading-normal'>
         {mode === 1 ? (
           <>
-            弹簧固定在顶部，小球从原长位置（B点）由静止释放。
+            弹簧固定在顶部，小球从原长位置 B 点由静止释放。
             B→C段重力大于弹力，小球做加速度减小的加速运动；C点（平衡位置）速度达到最大；C→D段弹力大于重力，小球做加速度增大的减速运动。
             根据简谐运动的对称性，最低点D的伸长量满足 x_D = 2x_C，此时弹簧拉力为 2mg，合力大小为
             mg，方向向上。
@@ -57,7 +57,7 @@ const SpringCompositeSidebar: FC<SidebarExtraProps> = ({ params, updateParam, di
           <>
             自由落体段（A→B）：小球仅受重力，加速度 a = g 恒定，速度持续增大。
             加速压缩段（B→C）：小球接触弹簧，受到向上的弹力，但 mg &gt; kx，合外力仍向下，加速度 a
-            逐渐减小，小球继续做加速运动，速度在平衡位置 C 点（mg = kx_C）达到最大值。
+            逐渐减小，小球继续做加速运动，速度在平衡位置 C 点（kx_C = mg）达到最大值。
             减速压缩段（C→D）：过平衡点后，弹力大于重力，合外力向上且逐渐增大，小球做加速度增大的减速运动，直到最低点
             D 点速度降为 0，此时弹簧压缩量最大，弹性势能达到最高峰。
           </>

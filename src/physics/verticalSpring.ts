@@ -6,13 +6,13 @@
 export interface VSModelState {
   /** 时间 (s) */
   t: number;
-  /** 位移 (m)，以原长位置 A 为 0 点，向下为正 */
+  /** 位移 (m)，以弹簧原长/接触位置 B 为 0 点，向下为正 */
   x: number;
   /** 瞬时速度 (m/s)，向下为正 */
   v: number;
   /** 瞬时加速度 (m/s²)，向下为正 */
   a: number;
-  /** 重力势能 (J)，以最低点 C 为零势能面 */
+  /** 重力势能 (J)，以最低点 D 为零势能面 */
   Ep: number;
   /** 弹性势能 (J) */
   Epe: number;
@@ -62,7 +62,7 @@ export function precomputeVerticalSpringTrajectory(
     // 简谐运动周期
     const T_spring = (2 * Math.PI) / omega;
 
-    // 最低位置 D 点的物理坐标 (m)：xC = xB + A = 2*xB
+    // 最低位置 D 点的物理坐标 (m)：xD = xB + A = 2*xB
     const xC = xB + A;
 
     // 释放点的总能量 (以最低点为重力势能零点)
@@ -118,7 +118,7 @@ export function precomputeVerticalSpringTrajectory(
     // 单周期总时间
     const T = 2 * t0 + tSpring;
 
-    // 最低位置 C 点的物理坐标 (m)
+    // 最低位置 D 点的物理坐标 (m)
     const xC = xB + A;
 
     // 释放点的总能量 (以最低点为重力势能零点)
@@ -157,7 +157,7 @@ export function precomputeVerticalSpringTrajectory(
       }
 
       // 能量计算
-      const Ep = m * g * (xC - x); // 重力势能 (C点为零)
+      const Ep = m * g * (xC - x); // 重力势能 (D点为零)
       const Epe = x >= 0 ? 0.5 * k * x * x : 0; // 弹性势能
       const Ek = 0.5 * m * v * v; // 动能
       const F_net = m * g - (x >= 0 ? k * x : 0);

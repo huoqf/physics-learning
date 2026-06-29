@@ -43,7 +43,8 @@ export default function SpringCompositeAnimation() {
   });
 
   // 图像视图模式状态：'y-E' (直观对齐) | 'E-x' (高考标准)
-  const [viewMode, setViewMode] = useState<'y-E' | 'E-x'>('y-E');
+  // 默认使用高考更常见的 E-x / F-x 图像；y-E 仅作为高度对齐辅助视图。
+  const [viewMode, setViewMode] = useState<'y-E' | 'E-x'>('E-x');
 
   // 2. 物理参数提取
   const m = params.m ?? 0.5;
@@ -71,13 +72,15 @@ export default function SpringCompositeAnimation() {
     return Math.max(...trajectory.map((pt) => pt.x));
   }, [trajectory]);
 
-  // 4. 三图高度 1:1 精确同步映射推导 (总高度 420, 图表高度 350)
+  // 4. 三图高度 1:1 精确同步映射推导。
+  // 必须与 BasePhysicsChart 的 fixedSize 标准内边距保持一致，否则 y-E 视图中
+  // 小球水平光标与图表游标会出现十几像素的视觉偏差。
   const yPhysMin = -xD_phys; // 最小值（最低点在下，物理高度负值）
   const yPhysMax = mode === 1 ? 0 : h; // 最大值（释放点在上，物理高度正值）
   const chartHeight = 350;
-  const marginTop = 25;
-  const marginBottom = 35;
-  const plotH = chartHeight - marginTop - marginBottom; // 290px
+  const marginTop = 22;
+  const marginBottom = 22;
+  const plotH = chartHeight - marginTop - marginBottom; // 306px
 
   // 物理坐标 (向上为正) 转换到图表局部的 Y 像素
   const toLocalSvgY = (physY: number) => {
@@ -125,7 +128,12 @@ export default function SpringCompositeAnimation() {
   }
 
   // 矢量归一化 SceneScale（refMagnitudes 驱动箭头长度随状态变化）
-  const vMax = mode === 1 ? xC_phys * omega : Math.sqrt(2 * g * (h + xC_phys));
+  // 速度轴范围使用轨迹真实最大速度，避免下落砸弹簧模式把
+  // sqrt(2g(h+xB)) 误当 vmax，导致 v-x 图纵轴偏大。
+  const vMax = useMemo(() => {
+    if (trajectory.length === 0) return 1;
+    return Math.max(1e-6, ...trajectory.map((pt) => Math.abs(pt.v)));
+  }, [trajectory]);
   const springSceneConfig: SceneConfig = {
     vectorBounds: { x: 0, y: 0, width: 170, height: 350 },
     originX: 0,
@@ -207,10 +215,10 @@ export default function SpringCompositeAnimation() {
     if (!isDragging) return;
     const { y } = getSVGCoords(e);
 
-    // 从设计像素坐标精准反算为物理位移
+    // 从设计像素坐标精准反算为物理位移（与 y-E 图表坐标完全同源）
     const local_y = y - 25;
-    const clampedLocalY = Math.min(Math.max(local_y, 25), 315);
-    const ratio = (315 - clampedLocalY) / 290;
+    const clampedLocalY = Math.min(Math.max(local_y, marginTop), marginTop + plotH);
+    const ratio = (marginTop + plotH - clampedLocalY) / plotH;
     const x_drag = xD_phys - ratio * ((mode === 1 ? 0 : h) + xD_phys);
 
     const fallingPoints = trajectory.filter((pt) => pt.v >= -0.02);
@@ -549,11 +557,13 @@ export default function SpringCompositeAnimation() {
               xDomain={viewMode === 'E-x' ? [0, x_max_phys] : [-F_max, F_max]}
               yDomain={viewMode === 'E-x' ? [-F_max, F_max] : [-xD_phys, mode === 1 ? 0 : h]}
               yDomain2={viewMode === 'E-x' ? [-v_max, v_max] : undefined}
-              xLabel={viewMode === 'E-x' ? 'x (m)' : 'F合 (N)'}
-              yLabel={viewMode === 'E-x' ? 'F合 (N)' : ''}
+              xLabel={viewMode === 'E-x' ? 'x (m)' : 'F合 (N，向下为正)'}
+              yLabel={viewMode === 'E-x' ? 'F合 (N，向下为正)' : ''}
               yLabel2={viewMode === 'E-x' ? 'v (m/s)' : undefined}
               title={
-                viewMode === 'E-x' ? '合外力 / 速度 - 位移图像 (F/v - x)' : '合外力 - 高度图像 (F合 - y)'
+                viewMode === 'E-x'
+                  ? '合外力 / 速度 - 位移图像 (向下为正)'
+                  : '合外力 - 高度图像 (F合 - y，向下为正)'
               }
               fixedSize={{ width: 200, height: 350 }}
               showGrid={false}
