@@ -329,7 +329,7 @@ export default function SpringCompositeAnimation() {
           </g>
 
           {/* 左侧特征字母徽章 */}
-          <g fontSize={11} fontWeight='bold' textAnchor='middle'>
+          <g fontSize={font(11)} fontWeight='bold' textAnchor='middle'>
             {mode === 0 && (
               <g transform={`translate(18, ${y_A + 3})`}>
                 <circle
@@ -339,7 +339,7 @@ export default function SpringCompositeAnimation() {
                   stroke={CANVAS_COLORS.axis}
                   strokeWidth={1}
                 />
-                <text fill={CANVAS_COLORS.labelTextLight} fontSize={9} dy='0.31em'>
+                <text fill={CANVAS_COLORS.labelTextLight} fontSize={font(9)} dy='0.31em'>
                   A
                 </text>
               </g>
@@ -352,7 +352,7 @@ export default function SpringCompositeAnimation() {
                 stroke={CANVAS_COLORS.axis}
                 strokeWidth={1.2}
               />
-              <text fill={CANVAS_COLORS.labelTextLight} fontSize={9} dy='0.31em'>
+              <text fill={CANVAS_COLORS.labelTextLight} fontSize={font(9)} dy='0.31em'>
                 B
               </text>
             </g>
@@ -364,7 +364,7 @@ export default function SpringCompositeAnimation() {
                 stroke={PHYSICS_COLORS.referencePoint}
                 strokeWidth={1.2}
               />
-              <text fill={PHYSICS_COLORS.referencePoint} fontSize={9} dy='0.31em'>
+              <text fill={PHYSICS_COLORS.referencePoint} fontSize={font(9)} dy='0.31em'>
                 C
               </text>
             </g>
@@ -376,7 +376,7 @@ export default function SpringCompositeAnimation() {
                 stroke={PHYSICS_COLORS.heatLoss}
                 strokeWidth={1.2}
               />
-              <text fill={PHYSICS_COLORS.heatLoss} fontSize={9} dy='0.31em'>
+              <text fill={PHYSICS_COLORS.heatLoss} fontSize={font(9)} dy='0.31em'>
                 D
               </text>
             </g>
@@ -384,7 +384,7 @@ export default function SpringCompositeAnimation() {
 
           {/* 右侧特征文字标签 (仅直观高度对齐视图下显示) */}
           {viewMode === 'y-E' && (
-            <g fontSize={9.5} fill={CANVAS_COLORS.labelTextLight} textAnchor='start'>
+            <g fontSize={font(9.5)} fill={CANVAS_COLORS.labelTextLight} textAnchor='start'>
               {mode === 0 && (
                 <text x={650} y={y_A + 3}>
                   A (释放点)
@@ -538,6 +538,7 @@ export default function SpringCompositeAnimation() {
                 mode={mode}
                 viewMode={viewMode}
                 E_max={E_max}
+                font={font}
               />
             </BasePhysicsChart>
           </g>
@@ -582,6 +583,7 @@ export default function SpringCompositeAnimation() {
                 yPhysMax={mode === 1 ? 0 : h}
                 viewMode={viewMode}
                 F_max={F_max}
+                font={font}
               />
             </BasePhysicsChart>
           </g>

@@ -25,7 +25,7 @@ const SPRING_SIM = { duration: 3.5, dt: 0.016 }
 const CANVAS_DESIGN = { width: 700, height: 180 }
 
 // 质心速度水平虚线组件
-function CenterOfMassVelocityLine({ vG }: { vG: number }) {
+function CenterOfMassVelocityLine({ vG, font }: { vG: number; font: (base: number) => number }) {
   const ctx = useChartContext()
   if (!ctx) return null
   const { toSvgY, plotOrigin, plotSize } = ctx
@@ -48,7 +48,7 @@ function CenterOfMassVelocityLine({ vG }: { vG: number }) {
         x={x2 - 8}
         y={y - 4}
         fill={colors.warning[600]}
-        fontSize={8}
+        fontSize={font(8)}
         fontWeight="bold"
         textAnchor="end"
       >
@@ -67,6 +67,7 @@ export default function SpringBlocksAnimation() {
   )
 
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_DESIGN)
+  const { font } = canvasSize
   const vp = useViewport(canvasSize, { designWidth: CANVAS_DESIGN.width, designHeight: CANVAS_DESIGN.height })
 
   // 参数解析
@@ -242,7 +243,7 @@ export default function SpringBlocksAnimation() {
               showArea={false}
               stages={stages}
             >
-              <CenterOfMassVelocityLine vG={vG} />
+              <CenterOfMassVelocityLine vG={vG} font={font} />
             </VelocityTimeChart>
           </div>
         </div>
@@ -291,7 +292,7 @@ export default function SpringBlocksAnimation() {
             <PhysicsGround x={GROUND_X} y={GROUND_Y} width={GROUND_WIDTH} isSmooth={true} appearance={{ color: PHYSICS_COLORS.labelText }} />
 
             {/* 光滑水平地面教学标识 */}
-            <text x="20" y={GROUND_Y - 6} fill={colors.neutral[400]} fontSize={8} fontWeight="bold" fontStyle="italic">
+            <text x="20" y={GROUND_Y - 6} fill={colors.neutral[400]} fontSize={font(8)} fontWeight="bold" fontStyle="italic">
               光滑水平地面 (μ = 0)
             </text>
 
@@ -373,8 +374,8 @@ export default function SpringBlocksAnimation() {
               const isEnergyToSpring = springState.Ep > prevState.Ep + 0.1
               const isSpringToEnergy = springState.Ep < prevState.Ep - 0.1
               
-              if (isEnergyToSpring) return <g transform="translate(325, 48)"><path d="M 50 0 L 0 0 M 8 -4 L 0 0 L 8 4" stroke={PHYSICS_COLORS.kineticEnergy} strokeWidth="2" strokeLinecap="round" /><text x="25" y="-6" fill={PHYSICS_COLORS.kineticEnergy} fontSize={8} fontWeight="bold" textAnchor="middle">动能 &rArr; 弹性能</text></g>
-              if (isSpringToEnergy) return <g transform="translate(325, 48)"><path d="M 0 0 L 50 0 M 42 -4 L 50 0 L 42 4" stroke={PHYSICS_COLORS.potentialElastic} strokeWidth="2" strokeLinecap="round" /><text x="25" y="-6" fill={PHYSICS_COLORS.potentialElastic} fontSize={8} fontWeight="bold" textAnchor="middle">弹性能 &rArr; 动能</text></g>
+              if (isEnergyToSpring) return <g transform="translate(325, 48)"><path d="M 50 0 L 0 0 M 8 -4 L 0 0 L 8 4" stroke={PHYSICS_COLORS.kineticEnergy} strokeWidth="2" strokeLinecap="round" /><text x="25" y="-6" fill={PHYSICS_COLORS.kineticEnergy} fontSize={font(8)} fontWeight="bold" textAnchor="middle">动能 &rArr; 弹性能</text></g>
+              if (isSpringToEnergy) return <g transform="translate(325, 48)"><path d="M 0 0 L 50 0 M 42 -4 L 50 0 L 42 4" stroke={PHYSICS_COLORS.potentialElastic} strokeWidth="2" strokeLinecap="round" /><text x="25" y="-6" fill={PHYSICS_COLORS.potentialElastic} fontSize={font(8)} fontWeight="bold" textAnchor="middle">弹性能 &rArr; 动能</text></g>
               return null
             })()}
 

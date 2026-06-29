@@ -12,6 +12,7 @@ export function SpringEnergyChartContent({
   mode,
   viewMode,
   E_max,
+  font = (n: number) => n,
 }: {
   m: number;
   k: number;
@@ -22,6 +23,7 @@ export function SpringEnergyChartContent({
   mode: number;
   viewMode: 'y-E' | 'E-x';
   E_max: number;
+  font?: (base: number) => number;
 }) {
   const ctx = useChartContext();
   if (!ctx) return null;
@@ -112,7 +114,7 @@ export function SpringEnergyChartContent({
           />
         </g>
 
-        <g fontSize={8} fontWeight='bold' textAnchor='middle' opacity={0.65}>
+        <g fontSize={font(8)} fontWeight='bold' textAnchor='middle' opacity={0.65}>
           {mode === 0 && (
             <text x={svgXA + 6} y={toSvgY(E_max) + 10} fill={CANVAS_COLORS.labelTextLight}>
               A
@@ -196,7 +198,7 @@ export function SpringEnergyChartContent({
             <text
               x={x_cursor}
               y={toSvgY(state.Ep) - 7}
-              fontSize={8}
+              fontSize={font(8)}
               fill={PHYSICS_COLORS.potentialGravity}
               fontWeight='bold'
               textAnchor='middle'
@@ -207,7 +209,7 @@ export function SpringEnergyChartContent({
               x={x_cursor}
               y={toSvgY(state.Epe)}
               dy='11'
-              fontSize={8}
+              fontSize={font(8)}
               fill={PHYSICS_COLORS.potentialElastic}
               fontWeight='bold'
               textAnchor='middle'
@@ -219,7 +221,7 @@ export function SpringEnergyChartContent({
                 x={x_cursor}
                 y={toSvgY(state.Ek)}
                 dy='-7'
-                fontSize={8}
+                fontSize={font(8)}
                 fill={PHYSICS_COLORS.kineticEnergy}
                 fontWeight='bold'
                 textAnchor='middle'
@@ -231,7 +233,7 @@ export function SpringEnergyChartContent({
               x={x_cursor + 6}
               y={toSvgY(state.Etot)}
               dy='3.2'
-              fontSize={8}
+              fontSize={font(8)}
               fill={PHYSICS_COLORS.mechanicalEnergy}
               fontWeight='bold'
               textAnchor='start'
@@ -349,7 +351,7 @@ export function SpringEnergyChartContent({
       <text
         x={toSvgX(state.Ep)}
         y={y_current - 7}
-        fontSize={8}
+        fontSize={font(8)}
         fill={PHYSICS_COLORS.potentialGravity}
         fontWeight='bold'
         textAnchor='middle'
@@ -360,7 +362,7 @@ export function SpringEnergyChartContent({
         <text
           x={toSvgX(state.Epe)}
           y={y_current + 11}
-          fontSize={8}
+          fontSize={font(8)}
           fill={PHYSICS_COLORS.potentialElastic}
           fontWeight='bold'
           textAnchor='middle'
@@ -372,7 +374,7 @@ export function SpringEnergyChartContent({
         <text
           x={toSvgX(state.Ek)}
           y={y_current - 7}
-          fontSize={8}
+          fontSize={font(8)}
           fill={PHYSICS_COLORS.kineticEnergy}
           fontWeight='bold'
           textAnchor='middle'
@@ -383,7 +385,7 @@ export function SpringEnergyChartContent({
       <text
         x={toSvgX(state.Etot) + 6}
         y={y_current + 3}
-        fontSize={8}
+        fontSize={font(8)}
         fill={PHYSICS_COLORS.mechanicalEnergy}
         fontWeight='bold'
         textAnchor='start'

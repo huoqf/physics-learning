@@ -13,6 +13,7 @@ export function SpringForceChartContent({
   yPhysMax,
   viewMode,
   F_max,
+  font = (n: number) => n,
 }: {
   m: number;
   k: number;
@@ -24,6 +25,7 @@ export function SpringForceChartContent({
   yPhysMax: number;
   viewMode: 'y-E' | 'E-x';
   F_max: number;
+  font?: (base: number) => number;
 }) {
   const ctx = useChartContext();
   if (!ctx) return null;
@@ -154,7 +156,7 @@ export function SpringForceChartContent({
           />
         </g>
 
-        <g fontSize={8} fontWeight='bold' textAnchor='middle' opacity={0.65}>
+        <g fontSize={font(8)} fontWeight='bold' textAnchor='middle' opacity={0.65}>
           {mode === 0 && (
             <text x={svgXA + 6} y={toSvgY(F_max) + 10} fill={CANVAS_COLORS.labelTextLight}>
               A
@@ -176,7 +178,7 @@ export function SpringForceChartContent({
         <text
           x={20}
           y={toSvgY(F_max * 0.5)}
-          fontSize={7.5}
+          fontSize={font(7.5)}
           fill={PHYSICS_COLORS.gravity}
           fontWeight='semibold'
           textAnchor='start'
@@ -186,7 +188,7 @@ export function SpringForceChartContent({
         <text
           x={20}
           y={toSvgY(-F_max * 0.5)}
-          fontSize={7.5}
+          fontSize={font(7.5)}
           fill={PHYSICS_COLORS.acceleration}
           fontWeight='semibold'
           textAnchor='start'
@@ -222,7 +224,7 @@ export function SpringForceChartContent({
             <text
               x={x_current}
               y={y_current - 7}
-              fontSize={8}
+              fontSize={font(8)}
               fill={PHYSICS_COLORS.forceNet}
               fontWeight='bold'
               textAnchor='middle'
@@ -244,7 +246,7 @@ export function SpringForceChartContent({
                   x={x_current}
                   y={toSvgY2(state.v)}
                   dy='11'
-                  fontSize={8}
+                  fontSize={font(8)}
                   fill={PHYSICS_COLORS.velocity}
                   fontWeight='bold'
                   textAnchor='middle'
@@ -281,7 +283,7 @@ export function SpringForceChartContent({
       <text
         x={toSvgX(-F_max * 0.45)}
         y={48}
-        fontSize={7.5}
+        fontSize={font(7.5)}
         fill={PHYSICS_COLORS.acceleration}
         fontWeight='semibold'
         textAnchor='middle'
@@ -291,7 +293,7 @@ export function SpringForceChartContent({
       <text
         x={toSvgX(F_max * 0.45)}
         y={48}
-        fontSize={7.5}
+        fontSize={font(7.5)}
         fill={PHYSICS_COLORS.gravity}
         fontWeight='semibold'
         textAnchor='middle'
@@ -313,7 +315,7 @@ export function SpringForceChartContent({
       <text
         x={toSvgX(state.F_net)}
         y={y_current - 7}
-        fontSize={8}
+        fontSize={font(8)}
         fill={PHYSICS_COLORS.forceNet}
         fontWeight='bold'
         textAnchor='middle'

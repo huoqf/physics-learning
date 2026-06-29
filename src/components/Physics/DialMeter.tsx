@@ -16,6 +16,8 @@ export interface DialMeterProps {
   y: number
   /** 表盘外圈半径，默认 28 */
   r?: number
+  /** 字体缩放函数（由父组件 useCanvasSize 提供） */
+  font?: (base: number) => number
 }
 
 /**
@@ -30,6 +32,7 @@ export const DialMeter: React.FC<DialMeterProps> = ({
   x,
   y,
   r = 28,
+  font = (n: number) => n,
 }) => {
   const isVoltage = type === 'V'
   const max = customMax ?? (isVoltage ? 10 : 2)
@@ -78,18 +81,18 @@ export const DialMeter: React.FC<DialMeterProps> = ({
       />
 
       {/* 刻度值文本 */}
-      <text x={-15} y={11} fontSize={6} fill={textLight} textAnchor="middle" fontFamily="monospace">
+      <text x={-15} y={11} fontSize={font(6)} fill={textLight} textAnchor="middle" fontFamily="monospace">
         {minText}
       </text>
-      <text x={0} y={-14} fontSize={6} fill={textLight} textAnchor="middle" fontFamily="monospace">
+      <text x={0} y={-14} fontSize={font(6)} fill={textLight} textAnchor="middle" fontFamily="monospace">
         {midText}
       </text>
-      <text x={15} y={11} fontSize={6} fill={textLight} textAnchor="middle" fontFamily="monospace">
+      <text x={15} y={11} fontSize={font(6)} fill={textLight} textAnchor="middle" fontFamily="monospace">
         {maxText}
       </text>
 
       {/* 仪表类型标识 "V" 或 "A" */}
-      <text x={0} y={16} fontSize={10} fill={themeColor} fontWeight="bold" textAnchor="middle">
+      <text x={0} y={16} fontSize={font(10)} fill={themeColor} fontWeight="bold" textAnchor="middle">
         {type}
       </text>
 

@@ -52,6 +52,8 @@ export interface HandRuleProps {
   opacity?: number
   /** 是否手背 */
   isBack?: boolean
+  /** 字体缩放函数（由父组件 useCanvasSize 提供） */
+  font?: (base: number) => number
 }
 
 const DEFAULT_TIP_LABELS: Record<'thumb' | 'index' | 'middle', string> = {
@@ -83,6 +85,7 @@ export function HandRule({
   title,
   opacity = 1,
   isBack = false,
+  font = (n: number) => n,
 }: HandRuleProps) {
   // ── 自动推算目标姿态（rotationDeg / chirality / pose）─────────────────
   // 故意只追踪 .x/.y，传入新对象但坐标未变时不会重新计算
@@ -192,7 +195,7 @@ export function HandRule({
           x={cx}
           y={cy - 78}
           textAnchor="middle"
-          fontSize={12}
+          fontSize={font(12)}
           fontWeight="bold"
           fill={PHYSICS_COLORS.labelText}
           style={{ userSelect: 'none' }}
@@ -220,6 +223,7 @@ export function HandRule({
           showTipMarker={showTipMarker}
           tipLabels={tipLabels}
           tipColors={tipColors}
+          font={font}
         />
       </g>
       {/* 拖拽/复位提示 */}
@@ -228,7 +232,7 @@ export function HandRule({
           x={cx}
           y={cy + 78}
           textAnchor="middle"
-          fontSize={10}
+          fontSize={font(10)}
           fill={PHYSICS_COLORS.axis}
           style={{ userSelect: 'none' }}
         >

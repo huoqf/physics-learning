@@ -27,6 +27,8 @@ interface LightBulbProps {
   showLabel?: boolean
   /** 标签文本内容，默认为 "小灯泡" */
   label?: string
+  /** 字体缩放函数（由父组件 useCanvasSize 提供） */
+  font?: (base: number) => number
 }
 
 export const LightBulb: FC<LightBulbProps> = ({
@@ -37,6 +39,7 @@ export const LightBulb: FC<LightBulbProps> = ({
   scale = 1.0,
   showLabel = true,
   label = '小灯泡',
+  font = (n: number) => n,
 }) => {
   // 动态生成唯一的渐变 ID，防止同屏渲染多个灯泡时渐变冲突
   const uniqueId = useId().replace(/:/g, '-')
@@ -124,7 +127,7 @@ export const LightBulb: FC<LightBulbProps> = ({
           x={0}
           y={32}
           fill={CANVAS_COLORS.labelTextLight}
-          fontSize={11}
+          fontSize={font(11)}
           fontWeight="bold"
           textAnchor="middle"
         >

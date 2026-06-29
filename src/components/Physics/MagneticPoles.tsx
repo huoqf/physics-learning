@@ -100,6 +100,11 @@ export interface MagneticPolesProps {
    * 描边粗细等级，默认 1.2
    */
   strokeWidth?: number
+
+  /**
+   * 字体缩放函数（由父组件 useCanvasSize 提供）
+   */
+  font?: (base: number) => number
 }
 
 /**
@@ -130,6 +135,7 @@ export const MagneticPoles: React.FC<MagneticPolesProps> = ({
   showLabels = true,
   opacity = 1.0,
   strokeWidth = 1.2,
+  font = (n: number) => n,
 }) => {
   const uniqueId = useId().replace(/:/g, '-')
 
@@ -297,7 +303,7 @@ export const MagneticPoles: React.FC<MagneticPolesProps> = ({
             x={nTextPos.x + 1}
             y={nTextPos.y + 1}
             fontWeight="bold"
-            fontSize={36}
+            fontSize={font(36)}
             fill={SCENE_COLORS.magnet.northStroke}
             fontFamily="Times New Roman"
             style={{ userSelect: 'none' }}
@@ -309,7 +315,7 @@ export const MagneticPoles: React.FC<MagneticPolesProps> = ({
             x={nTextPos.x}
             y={nTextPos.y}
             fontWeight="bold"
-            fontSize={36}
+            fontSize={font(36)}
             fill={SCENE_COLORS.magnet.northLabel}
             fontFamily="Times New Roman"
             style={{ userSelect: 'none' }}
@@ -322,7 +328,7 @@ export const MagneticPoles: React.FC<MagneticPolesProps> = ({
             x={sTextPos.x + 1}
             y={sTextPos.y + 1}
             fontWeight="bold"
-            fontSize={36}
+            fontSize={font(36)}
             fill={SCENE_COLORS.magnet.southStroke}
             fontFamily="Times New Roman"
             style={{ userSelect: 'none' }}
@@ -334,7 +340,7 @@ export const MagneticPoles: React.FC<MagneticPolesProps> = ({
             x={sTextPos.x}
             y={sTextPos.y}
             fontWeight="bold"
-            fontSize={36}
+            fontSize={font(36)}
             fill={SCENE_COLORS.magnet.southLabel}
             fontFamily="Times New Roman"
             style={{ userSelect: 'none' }}

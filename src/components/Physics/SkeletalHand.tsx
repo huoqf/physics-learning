@@ -275,9 +275,10 @@ interface FingerViewProps {
   showTipMarker: boolean
   tipLabel?: string
   tipColor?: string
+  font: (base: number) => number
 }
 
-function FingerView({ finger, highlight, showTipMarker, tipLabel, tipColor }: FingerViewProps) {
+function FingerView({ finger, highlight, showTipMarker, tipLabel, tipColor, font }: FingerViewProps) {
   // 指尖在 hand 局部坐标系下的真实位置（沿骨链累计旋转），用于在指尖放标签环
   const tip = computeFingerTip(finger)
   return (
@@ -297,7 +298,7 @@ function FingerView({ finger, highlight, showTipMarker, tipLabel, tipColor }: Fi
             x={0}
             y={4}
             textAnchor="middle"
-            fontSize={12}
+            fontSize={font(12)}
             fontWeight="bold"
             fill={TIP_RING_LABEL}
           >
@@ -317,7 +318,7 @@ function FingerView({ finger, highlight, showTipMarker, tipLabel, tipColor }: Fi
 const PALM_W = 64
 const PALM_H = 72
 
-function Palm({ chirality, isBack }: { chirality: HandChirality, isBack: boolean }) {
+function Palm({ chirality, isBack, font }: { chirality: HandChirality, isBack: boolean, font: (base: number) => number }) {
   // 掌心朝向观察者时标注"掌心"，背向时标注"手背"
   const label = isBack ? "手背" : "掌心"
   const handLabel = chirality === 'left' ? "左手" : "右手"
@@ -340,7 +341,7 @@ function Palm({ chirality, isBack }: { chirality: HandChirality, isBack: boolean
         x={0}
         y={-5}
         textAnchor="middle"
-        fontSize={14}
+        fontSize={font(14)}
         fontWeight="bold"
         fill={SKIN_STROKE}
         style={{ userSelect: 'none', pointerEvents: 'none' }}
@@ -351,7 +352,7 @@ function Palm({ chirality, isBack }: { chirality: HandChirality, isBack: boolean
         x={0}
         y={22}
         textAnchor="middle"
-        fontSize={16}
+        fontSize={font(16)}
         fontWeight="bold"
         fill={SKIN_STROKE}
         style={{ userSelect: 'none', pointerEvents: 'none' }}
@@ -397,6 +398,8 @@ export interface SkeletonHandProps {
   /** 容器 style 透传 */
   style?: CSSProperties
   className?: string
+  /** 字体缩放函数（由父组件 useCanvasSize 提供） */
+  font?: (base: number) => number
 }
 
 const DEFAULT_TIP_LABELS: Record<Finger['name'], string> = {
@@ -431,6 +434,7 @@ export function SkeletonHand({
   onPointerDown,
   style,
   className,
+  font = (n: number) => n,
 }: SkeletonHandProps) {
   const displayChirality = isBack
     ? (chirality === 'left' ? 'right' : 'left')
@@ -445,7 +449,7 @@ export function SkeletonHand({
       onPointerDown={onPointerDown}
       className={className}
     >
-      {showPalm && <Palm chirality={chirality} isBack={isBack} />}
+      {showPalm && <Palm chirality={chirality} isBack={isBack} font={font} />}
       {fingers.map((finger) => (
         <FingerView
           key={finger.name}
@@ -454,6 +458,7 @@ export function SkeletonHand({
           showTipMarker={!!showTipMarker[finger.name]}
           tipLabel={mergedLabels[finger.name]}
           tipColor={mergedColors[finger.name]}
+          font={font}
         />
       ))}
     </g>

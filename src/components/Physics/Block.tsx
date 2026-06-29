@@ -319,7 +319,7 @@ export function Block({
             x={0}
             y={2.5}
             fill={colors.neutral.white}
-            fontSize={8}
+            fontSize={font(8)}
             fontWeight="bold"
             textAnchor="middle"
             fontFamily="monospace"

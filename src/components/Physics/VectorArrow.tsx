@@ -31,6 +31,8 @@ interface VectorArrowProps {
   dashed?: boolean
   /** 是否在箭头外侧增加发光阴影，提高对比度 */
   glow?: boolean
+  /** 字体缩放函数（由父组件 useCanvasSize 提供） */
+  font?: (base: number) => number
 }
 
 function perpendicular(v: Vector2): Vector2 {
@@ -58,6 +60,7 @@ export function VectorArrow({
   label,
   dashed,
   glow,
+  font = (n: number) => n,
 }: VectorArrowProps) {
   if (magnitude(vector) === 0) return null;
 
@@ -144,7 +147,7 @@ export function VectorArrow({
           x={textX}
           y={textY}
           fill={fillColor}
-          fontSize={11}
+          fontSize={font(11)}
           fontWeight="bold"
           textAnchor={textAnchor}
           dy={dy}
