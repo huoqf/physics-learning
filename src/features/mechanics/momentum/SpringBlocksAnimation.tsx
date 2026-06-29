@@ -40,14 +40,14 @@ function CenterOfMassVelocityLine({ vG }: { vG: number }) {
         y1={y}
         x2={x2}
         y2={y}
-        stroke="#EAB308" // 黄色
+        stroke={colors.warning[500]}
         strokeWidth={1.2}
         strokeDasharray="3,3"
       />
       <text
         x={x2 - 8}
         y={y - 4}
-        fill="#D97706" // 略深琥珀色以增加对比度
+        fill={colors.warning[600]}
         fontSize={8}
         fontWeight="bold"
         textAnchor="end"
@@ -179,19 +179,19 @@ export default function SpringBlocksAnimation() {
     return [
       {
         key: 'ekA',
-        label: '动能 EkA',
+        label: 'EkA',
         value: springState.EkA,
         color: PHYSICS_COLORS.kineticEnergy,
       },
       {
         key: 'ekB',
-        label: '动能 EkB',
+        label: 'EkB',
         value: springState.EkB,
         color: PHYSICS_COLORS.kineticEnergy,
       },
       {
         key: 'ep',
-        label: '势能 Ep',
+        label: 'Ep',
         value: springState.Ep,
         color: PHYSICS_COLORS.potentialEnergy,
       },
@@ -356,9 +356,7 @@ export default function SpringBlocksAnimation() {
               if (connectionMode_spring === 1) {
                 springLeft_px = xA_px
               } else {
-                if (xA_px > springLeft_px) {
-                  springLeft_px = xA_px
-                }
+                springLeft_px = Math.max(xA_px, springLeft_px)
               }
               
               const isSeparated = connectionMode_spring === 0 && springState.delta === 0 && time > 0.5 && springState.vB > springState.vA
@@ -372,8 +370,8 @@ export default function SpringBlocksAnimation() {
               const isEnergyToSpring = springState.Ep > prevState.Ep + 0.1
               const isSpringToEnergy = springState.Ep < prevState.Ep - 0.1
               
-              if (isEnergyToSpring) return <g transform="translate(325, 62)"><path d="M 0 0 L 50 0 M 42 -4 L 50 0 L 42 4" stroke={PHYSICS_COLORS.kineticEnergy} strokeWidth="2" strokeLinecap="round" /><text x="25" y="-6" fill={PHYSICS_COLORS.kineticEnergy} fontSize={8} fontWeight="bold" textAnchor="middle">动能 &rArr; 弹性能</text></g>
-              if (isSpringToEnergy) return <g transform="translate(325, 62)"><path d="M 50 0 L 0 0 M 8 -4 L 0 0 L 8 4" stroke={PHYSICS_COLORS.potentialElastic} strokeWidth="2" strokeLinecap="round" /><text x="25" y="-6" fill={PHYSICS_COLORS.potentialElastic} fontSize={8} fontWeight="bold" textAnchor="middle">弹性能 &rArr; 动能</text></g>
+              if (isEnergyToSpring) return <g transform="translate(325, 62)"><path d="M 50 0 L 0 0 M 8 -4 L 0 0 L 8 4" stroke={PHYSICS_COLORS.kineticEnergy} strokeWidth="2" strokeLinecap="round" /><text x="25" y="-6" fill={PHYSICS_COLORS.kineticEnergy} fontSize={8} fontWeight="bold" textAnchor="middle">动能 &rArr; 弹性能</text></g>
+              if (isSpringToEnergy) return <g transform="translate(325, 62)"><path d="M 0 0 L 50 0 M 42 -4 L 50 0 L 42 4" stroke={PHYSICS_COLORS.potentialElastic} strokeWidth="2" strokeLinecap="round" /><text x="25" y="-6" fill={PHYSICS_COLORS.potentialElastic} fontSize={8} fontWeight="bold" textAnchor="middle">弹性能 &rArr; 动能</text></g>
               return null
             })()}
 
