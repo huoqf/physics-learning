@@ -15,7 +15,7 @@
 | 文件 | 行数 | 已有 physics 模块 |
 |---|---:|:---:|
 | ~~`VectorAdditionAnimation.tsx`~~ | ~~808→78~~ | ✅ 已拆分 |
-| `WeightlessnessAnimation.tsx` | 771 | 无 |
+| ~~`WeightlessnessAnimation.tsx`~~ | ~~771→29~~ | ✅ 已拆分 |
 | `ThinLensAnimation.tsx` | 761 | `optics.ts`(209行) |
 | `MomentumTheoremAnimation.tsx` | 758 | `momentumTheorem.ts`(124行) |
 | `VelocitySelector.tsx` | 720 | `velocitySelector.ts`(149行) |
@@ -219,7 +219,7 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 | 顺序 | 事项 | 风险 | 收益 | 优先级 |
 |:---:|------|:---:|:---:|:---:|
 | 1 | ~~`VectorAdditionAnimation` 拆分~~ | ~~中~~ | ~~高~~ | ✅ 已完成 |
-| 2 | `WeightlessnessAnimation` 拆分（无 physics，需新建） | 中 | 高 | P2 |
+| 2 | ~~`WeightlessnessAnimation` 拆分~~ | ~~中~~ | ~~高~~ | ✅ 已完成 |
 | 3 | `ThinLensAnimation` 拆分（已有 physics，继续抽） | 低 | 高 | P2 |
 | 4 | `MomentumTheoremAnimation` 拆分（已有 physics，继续抽） | 低 | 高 | P2 |
 | 5 | 选 1 个大动画做 viewModel 拆分试点 | 中 | 高 | P2 |
