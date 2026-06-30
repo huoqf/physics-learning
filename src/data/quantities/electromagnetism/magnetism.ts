@@ -103,7 +103,7 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
             { label: '入射速度 v', value: v0.toFixed(1), unit: 'm/s', color: PHYSICS_COLORS.velocity },
             { label: '磁场强度 B', value: B.toFixed(1), unit: 'T', color: PHYSICS_COLORS.magneticField },
             { label: '洛伦兹力 F_洛', value: Math.abs(F_lorentz).toFixed(2), unit: 'N', color: PHYSICS_COLORS.lorentzForce, highlight: F_lorentz === 0 ? 'zero' : 'extreme' },
-            { label: '轨道半径 R', value: R.toFixed(2), unit: 'm', color: '#64748B' },
+            { label: '轨道半径 R', value: R.toFixed(2), unit: 'm', color: colors.neutral[500] },
           ],
           formulas: [
             {

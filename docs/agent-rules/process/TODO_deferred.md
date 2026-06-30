@@ -74,6 +74,19 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 详见 [`FONT_SIZE_AUDIT.md`](./FONT_SIZE_AUDIT.md)、[`CANVAS_PRESETS_AUDIT.md`](./CANVAS_PRESETS_AUDIT.md)
 
+### 2.2 ~~`colors.neutral[]` 批量替换~~ → 主题色系统统一（P2）
+
+> **核验结论**：原始审计发现"colors.neutral[] 未走主题 token"不成立。`colors.neutral[]` 本身就是主题 token（从 `@/theme/colors` 导入），不存在 `theme.colors.neutral` 替代目标。硬编码 hex 值在 .tsx 中为零。
+>
+> **真正的问题**：`colors.ts`（slate 蓝色调）与 `index.css` `@theme`（纯灰色调）定义了两套中性色，色值不同（如 neutral-500: `#64748B` vs `#737373`），导致 inline style 与 Tailwind class 视觉不一致。
+
+| 类别 | 问题 | 规模 | 方案 |
+|:---:|------|------|------|
+| B | 两套中性色定义不一致 | 2 个定义源 | 统一 `colors.ts` 与 `index.css` `@theme` 的 neutral 色值为同一套 |
+| C | 数据文件硬编码 hex | 1 处 | `src/data/quantities/electromagnetism/magnetism.ts:106` 的 `#64748B` 替换为 `colors.neutral[500]` |
+
+**策略**：先统一色值定义源（B），再修复唯一的数据文件违规（C）。修改后跑 `npm run check && npm test` 确认无视觉回归。
+
 ### 2.3 rgba() 手写与硬编码 fontSize（P3）
 
 | 文件 | 行号 | 问题 | 结论 |
