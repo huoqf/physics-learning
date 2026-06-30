@@ -23,7 +23,7 @@ export const electromagnetismInductionAnimations = defineAnimations({
   },
   'anim-faraday-law': {
     title: '法拉第电磁感应定律',
-    knowledgeId: 'electricity-4-2',
+    knowledgeId: 'electricity-4-3',
     Component: lazy(() => import('@/features/electromagnetism/induction/FaradayLaw')),
     SidebarExtra: lazy(() => import('@/features/electromagnetism/induction/FaradaySidebarExtra')),
     defaultParams: {
@@ -37,7 +37,7 @@ export const electromagnetismInductionAnimations = defineAnimations({
   },
   'anim-lenzs-law': {
     title: '楞次定律',
-    knowledgeId: 'electricity-4-1',
+    knowledgeId: 'electricity-4-2',
     Component: lazy(() => import('@/features/electromagnetism/induction/LenzsLaw')),
     defaultParams: { magnetSpeed: 2, magnetPole: 1, coilN: 10 } as const,
     paramMeta: [
@@ -49,7 +49,7 @@ export const electromagnetismInductionAnimations = defineAnimations({
   },
   'anim-cutting-emf': {
     title: '导体切割磁感线',
-    knowledgeId: 'electricity-4-3',
+    knowledgeId: 'electricity-4-4',
     Component: lazy(() => import('@/features/electromagnetism/induction/CuttingEMF')),
     SidebarExtra: lazy(() => import('@/features/electromagnetism/induction/CuttingEMFSidebarExtra')),
     defaultParams: {
