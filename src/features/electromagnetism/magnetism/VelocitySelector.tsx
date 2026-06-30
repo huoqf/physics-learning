@@ -4,7 +4,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateVelocitySelectorTrajectory } from '@/physics'
-import { PHYSICS_COLORS, CHART_COLORS, CANVAS_STYLE, FONT } from '@/theme/physics'
+import { PHYSICS_COLORS, CHART_COLORS, CANVAS_STYLE, FONT, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
@@ -625,12 +625,12 @@ export default function VelocitySelector() {
               y1={toChartY(0)}
               x2={chartXOffset + chartWidth + 10}
               y2={toChartY(0)}
-              stroke={colors.neutral[400]}
+              stroke={CANVAS_COLORS.axis}
               strokeWidth="1.2"
             />
             <polygon
               points={`${chartXOffset + chartWidth + 10},${toChartY(0) - 3.5} ${chartXOffset + chartWidth + 16},${toChartY(0)} ${chartXOffset + chartWidth + 10},${toChartY(0) + 3.5}`}
-              fill={colors.neutral[400]}
+              fill={CANVAS_COLORS.axis}
             />
             <text
               x={chartXOffset + chartWidth + 16}
@@ -649,12 +649,12 @@ export default function VelocitySelector() {
               y1={chartYOffset + chartHeight}
               x2={chartXOffset}
               y2={chartYOffset - 5}
-              stroke={colors.neutral[400]}
+              stroke={CANVAS_COLORS.axis}
               strokeWidth="1.2"
             />
             <polygon
               points={`${chartXOffset - 3.5},${chartYOffset - 5} ${chartXOffset},${chartYOffset - 11} ${chartXOffset + 3.5},${chartYOffset - 5}`}
-              fill={colors.neutral[400]}
+              fill={CANVAS_COLORS.axis}
             />
             <text
               x={chartXOffset - 8}

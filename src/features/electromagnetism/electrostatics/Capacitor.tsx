@@ -4,7 +4,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateCapacitor } from '@/physics'
-import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { Card } from '@/components/UI'
 
@@ -416,7 +416,7 @@ export default function Capacitor() {
               const x2 = ex + 47 * Math.sin(rad)
               const y2 = ey + 47 * Math.cos(rad)
               return (
-                <line key={`tick-${i}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke={colors.neutral[400]} strokeWidth={1.2} />
+                <line key={`tick-${i}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke={CANVAS_COLORS.trackHistory} strokeWidth={1.2} />
               )
             })}
 

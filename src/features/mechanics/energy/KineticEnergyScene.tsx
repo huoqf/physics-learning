@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CANVAS_STYLE } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CANVAS_STYLE, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { SVGSingleBar } from '@/components/Physics/SVGSingleBar'
@@ -234,7 +234,7 @@ export function KineticEnergyScene({
         return (
           <g transform={`translate(${canvasSize.width - padding - panelW}, ${groundY - canvasSize.height * KE_SCENE_LAYOUT.barBaselineRatio})`}>
             <g transform={`translate(0, ${canvasSize.height * KE_SCENE_LAYOUT.barBaselineRatio * 0.5})`}>
-              <line x1={barW * 0.5} y1={0} x2={panelW - barW * 0.5} y2={0} stroke={colors.neutral[400]} strokeWidth={0.8} />
+              <line x1={barW * 0.5} y1={0} x2={panelW - barW * 0.5} y2={0} stroke={CANVAS_COLORS.grid} strokeWidth={0.8} />
 
               <SVGSingleBar
                 x={bar1X}

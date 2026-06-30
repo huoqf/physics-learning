@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { colors } from '@/theme/colors'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { GRAVITY } from '@/physics/constants'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { computeScale } from '@/utils/coordinate'
@@ -235,7 +235,7 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
       <path
         d={`M ${x0 + 18} ${y0} A 18 18 0 0 0 ${x0 + 18 * Math.cos(thetaRad)} ${y0 - 18 * Math.sin(thetaRad)}`}
         fill="none"
-        stroke={colors.neutral[400]}
+        stroke={CANVAS_COLORS.trackHistory}
         strokeWidth="0.8"
       />
       <text
@@ -296,7 +296,7 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
 
       {/* 投影辅助虚线 (重力与安培力分解) */}
       {showForceComponents && (
-        <g stroke={colors.neutral[400]} strokeWidth="0.6" strokeDasharray="1.5,1.5" opacity="0.8">
+        <g stroke={CANVAS_COLORS.trackHistory} strokeWidth="0.6" strokeDasharray="1.5,1.5" opacity="0.8">
           {/* 重力投影到 y' 轴 (垂直斜面) */}
           <line
             x1={px}

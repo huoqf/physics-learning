@@ -16,7 +16,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useCanvasSize } from '@/utils'
 import { colors } from '@/theme/colors'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useACValuesPhysics } from './hooks/useACValuesPhysics'
 import { ACValuesChartPanel } from './components/ACValuesChartPanel'
@@ -174,7 +174,7 @@ export default function ACValues() {
           <line
             x1={LAYOUT.pad + LAYOUT.halfW} y1={font(8)}
             x2={LAYOUT.pad + LAYOUT.halfW} y2={LAYOUT.chamberH - font(8)}
-            stroke={colors.neutral[200]} strokeWidth={1}
+            stroke={CANVAS_COLORS.grid} strokeWidth={1}
           />
 
           <g transform={`translate(${LAYOUT.pad * 2 + LAYOUT.halfW}, 0)`}>

@@ -1,5 +1,5 @@
 import React, { type RefObject } from 'react'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import type { ElectricPotentialPhysicsResult } from './hooks/useElectricPotentialPhysics'
 
@@ -122,7 +122,7 @@ export function ElectricPotentialChartScene({
           y1={chartPadding.top + chartHeight}
           x2={chartPadding.left + chartWidth}
           y2={chartPadding.top + chartHeight}
-          stroke={colors.neutral[400]}
+          stroke={CANVAS_COLORS.axis}
           strokeWidth={1.5}
         />
         <line
@@ -130,7 +130,7 @@ export function ElectricPotentialChartScene({
           y1={chartPadding.top}
           x2={chartPadding.left}
           y2={chartPadding.top + chartHeight}
-          stroke={colors.neutral[400]}
+          stroke={CANVAS_COLORS.axis}
           strokeWidth={1.5}
         />
 
@@ -162,7 +162,7 @@ export function ElectricPotentialChartScene({
           const p = chartPhysToCanvas(xp, chartYLimit.min)
           return (
             <g key={`lbl-x-${i}`}>
-              <line x1={p.cx} y1={p.cy} x2={p.cx} y2={p.cy + 4} stroke={colors.neutral[400]} strokeWidth={1.5} />
+              <line x1={p.cx} y1={p.cy} x2={p.cx} y2={p.cy + 4} stroke={CANVAS_COLORS.trackHistory} strokeWidth={1.5} />
               <text x={p.cx} y={p.cy + 16} fontSize={font(9.5)} fill={colors.neutral[600]} textAnchor="middle" className="font-mono">
                 {xp.toFixed(1)}
               </text>
@@ -174,7 +174,7 @@ export function ElectricPotentialChartScene({
           const p = chartPhysToCanvas(xStartPhys, phi)
           return (
             <g key={`lbl-y-${i}`}>
-              <line x1={p.cx} y1={p.cy} x2={p.cx - 4} y2={p.cy} stroke={colors.neutral[400]} strokeWidth={1.5} />
+              <line x1={p.cx} y1={p.cy} x2={p.cx - 4} y2={p.cy} stroke={CANVAS_COLORS.trackHistory} strokeWidth={1.5} />
               <text x={p.cx - 8} y={p.cy + 3.5} fontSize={font(9.5)} fill={colors.neutral[600]} textAnchor="end" className="font-mono">
                 {Math.round(phi)}
               </text>

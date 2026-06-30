@@ -10,19 +10,6 @@
 
 ### 风险 1：单个动画 TSX 文件过长
 
-当前较大的文件（实际行数）：
-
-| 文件 | 行数 | 已有 physics 模块 |
-|---|---:|:---:|
-| ~~`VectorAdditionAnimation.tsx`~~ | ~~808→78~~ | ✅ 已拆分 |
-| ~~`WeightlessnessAnimation.tsx`~~ | ~~771→29~~ | ✅ 已拆分 |
-| `ThinLensAnimation.tsx` | 761 | `optics.ts`(209行) |
-| `MomentumTheoremAnimation.tsx` | 758 | `momentumTheorem.ts`(124行) |
-| `VelocitySelector.tsx` | 720 | `velocitySelector.ts`(149行) |
-| `EquilibriumAnimation.tsx` | 688 | `equilibrium.ts`(289行) |
-| `MomentumConservationAnimation.tsx` | 671 | `momentumConservation.ts`(190行) |
-| `KeplerAnimation.tsx` | 621 | `celestial.ts`(218行) |
-
 问题本质：**关注点混合**。一个动画文件同时包含参数读取、物理计算、坐标换算、动画状态、SVG 绘制、图表绘制、标注文本、教学逻辑、交互逻辑。
 
 长期风险：
@@ -33,7 +20,7 @@
 
 ### 风险 2：`features` 与 `physics` 抽离程度不一致
 
-部分动画已有独立物理模块（如 `equilibrium.ts` 289行、`momentumConservation.ts` 190行），但 `WeightlessnessAnimation`（771行）仍缺少独立 physics 模块。
+部分动画已有独立物理模块（如 `equilibrium.ts` 289行、`momentumConservation.ts` 190行），但剩余大文件虽已有 physics 模块，仍混合大量布局几何与渲染逻辑。
 
 ### 风险 3：registry、params、quantities 三条链路类型中断
 
@@ -73,27 +60,26 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 禁止反向依赖：physics → features、data → pages、components → features
 
-### 拆分目的（不是为了拆而拆）
+### 拆分原则
 
-拆分要解决具体问题：
+**目的**（不是为了拆而拆）：
 1. **物理计算无法独立测试** → 抽纯函数到 `src/physics/`
 2. **改显示逻辑可能破坏物理** → 分离 view/model
 3. **视觉回归难发现** → 抽 viewModel 便于断言坐标
 4. **新人维护上下文过大** → 模块化降低认知负担
 
-**验收标准**：拆分后必须满足以下至少一项，否则不拆：
+**验收标准**（拆分后必须满足至少一项）：
 - 新增了可独立运行的单元测试
 - 物理计算与渲染逻辑解耦
 - 单文件行数降到 500 以下
 - 减少了跨模块耦合
 
-### 三段式拆分原则
-
+**三段式拆分**：
 1. **第一层：纯物理计算** → `src/physics/...`（无 React/DOM/SVG/Zustand，可单元测试）
 2. **第二层：几何/视图模型** → `features/.../model/viewModel.ts` 或 `hooks/useXxxGeometry.ts`
 3. **第三层：React 展示组件** → 只负责读取 viewModel、渲染 SVG、绑定交互
 
-拆分铁律：
+**铁律**：
 - 一次只拆一个动画，每次只抽一个层次，每次补一组测试
 - 物理 hook 零 JSX：`hooks/useXxxPhysics.ts` 只返回数据，不含 `<` 标签
 - 组件复用优先：场景中已有 `src/components/` 下的组件时必须直接使用
@@ -102,21 +88,21 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 ---
 
-## 一、超长文件拆分（按优先级）
+## 一、超长文件拆分（P2）
 
-| 优先级 | 文件 | 行数 | 已有 physics | 建议原因 |
-|:---:|------|-----:|:---:|---------|
-| ~~1~~ | ~~`VectorAdditionAnimation.tsx`~~ | ~~808→78~~ | ✅ | ✅ 已完成 |
-| 2 | `WeightlessnessAnimation.tsx` | 771 | 无 | 物理模型明确，需新建 physics 模块 |
-| 3 | `ThinLensAnimation.tsx` | 761 | `optics.ts` | 已有 physics，可继续抽 geometry model |
-| 4 | `MomentumTheoremAnimation.tsx` | 758 | `momentumTheorem.ts` | 已有 physics，可继续抽 viewModel |
-| 5 | `VelocitySelector.tsx` | 720 | `velocitySelector.ts` | 已有 physics，电磁轨迹适合 physics/model 化 |
+| 文件 | 行数 | 已有 physics | 拆分方向 | 目标行数 |
+|------|-----:|:---:|---------|-----:|
+| `Transformer.tsx` | 724 | 无 | 场景→组件，电表/线圈→独立组件 | ~200 |
+| `ThinLensAnimation.tsx` | 761 | `optics.ts`(209行) | 光线追踪→hook，CandleShape→组件 | ~200 |
+| `MomentumTheoremAnimation.tsx` | 758 | `momentumTheorem.ts`(124行) | 布局几何→hook，双模式→独立组件 | ~150 |
+| `VelocitySelector.tsx` | 720 | `velocitySelector.ts`(149行) | 粒子→hook，Canvas/SVG→组件 | ~150 |
+| `ForceMotionSandbox.tsx` | 694 | `forceMotion/` | 调试工具，评估是否需要拆分 | — |
 
 > 观察：`EquilibriumAnimation.tsx`(688)、`MomentumConservationAnimation.tsx`(671)、`KeplerAnimation.tsx`(621) 临近阈值，暂不动。
 
 ---
 
-## 二、响应式缩放（P1/P2 分级）
+## 二、响应式缩放（P1/P2）
 
 | 类别 | 问题 | 规模 | 方案 |
 |:---:|------|------|------|
@@ -126,6 +112,50 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 | D | `useCanvasSize({ ... })` 硬编码 | 14 处 | 多数为合理例外，更新 allowlist 文档即可 |
 
 详见 [`FONT_SIZE_AUDIT.md`](./FONT_SIZE_AUDIT.md)、[`CANVAS_PRESETS_AUDIT.md`](./CANVAS_PRESETS_AUDIT.md)
+
+---
+
+## 二-b、Canvas 颜色违规（P1）
+
+**问题**：Canvas/SVG 中大量直接使用 `colors.neutral[]`，违反 §3.0.1 隔离铁律。规范要求通过 `CANVAS_COLORS.*` 或 `CHART_COLORS.*` 引用。
+
+**规模**：原 227 处，第一批已修复 20 处（10 个文件），剩余约 207 处。
+
+**第一批已完成**（2026-06-30）：网格线、坐标轴、刻度线、分隔线等明确 canvas 基础设施，替换为 `CANVAS_COLORS.grid`/`axis`/`trackHistory`。详见 `CANVAS_COLORS_REPLACEMENT_PLAN.md`。
+
+**剩余高频违规文件**（需逐案审查语义）：
+
+| 文件 | 剩余违规数 | 典型问题 |
+|------|:------:|---------|
+| `SatelliteAnimation.tsx` | 12+ | `colors.neutral[600/700]` 用于 SVG 笔画和填充 |
+| `InductionPhenomenon.tsx` | 10+ | `colors.neutral[50-800]` 用于电路元件 |
+| `ForceDecompositionCard.tsx` | 6 | `colors.neutral[200-800]` 用于卡片 |
+| `PendulumScene.tsx` | 6 | `colors.neutral[100-800]` 用于摆线和支架 |
+| `ClosedCircuit.tsx` | 5 | `colors.neutral[600-800]` 用于导线渐变 |
+| `AmpereFIChart.tsx` | 5 | `colors.neutral[50-600]` 用于图表卡片 |
+| `OhmLaw.tsx` | 4 | `colors.neutral[400-800]` 用于元件 |
+| `ValleyScene.tsx` | 4 | `colors.neutral[100/800]` 用于块体 |
+
+**方案**：按域分批替换，逐文件审查语义后替换。区分 canvas 基础设施（可替换）与 UI 元素/物理实体（保留）。
+
+---
+
+## 二-c、rgba() 手写与硬编码 fontSize（P3）
+
+**rgba() 手写**（5 处）：
+
+| 文件 | 行号 | 问题 |
+|------|------|------|
+| `ThinLensAnimation.tsx` | 210 | `rgba(2, 132, 199, 0.2)` → `withAlpha()` |
+| `PowerTransmission.tsx` | 83,90,97 | 动态颜色计算，需评估 |
+| `MomentumScene.tsx` | 193 | `rgba(0, 0, 0, 0.12)` → `withAlpha()` |
+
+**硬编码 fontSize**（3 处）：
+
+| 文件 | 行号 | 问题 |
+|------|------|------|
+| `LightRodRopeScene.tsx` | 470,497 | `fontSize={9/11}` → `font(9/11)` |
+| `VectorPlayground.tsx` | 65 | 开发调试文件，可忽略 |
 
 ---
 
@@ -191,12 +221,15 @@ export interface AnimationModule<P extends AnimationParams> {
 
 比 E2E 轻很多，但能覆盖大量教学错误。
 
-### 4.4 Store selector 优化（P3）
+### 4.4 Store selector 优化（P2）
 
-> `useAnimationStore` 当前整体订阅，派生数据（当前速度、图表点、公式）应由 selector/hook 计算。
+> 审计发现：116 处 useAnimationStore 调用中，~38 处使用精确 selector，~74 处使用解构 selector，~4 处无 selector。
 
 建议拆分为：`useAnimationParams()`、`usePlaybackState()`、`useAnimationDisplayOptions()`。
 通过 selector 降低组件不必要重渲染。
+
+**需立即修复**：
+- `useEquilibriumPhysics.ts:74` — `const { updateParam } = useAnimationStore()` 无 selector，必须添加
 
 ### 4.5 Registry + params + quantities 类型闭环（P3）
 
@@ -211,117 +244,3 @@ isValidParamKey(animationId, key)
 ```
 
 Phase 3 目标：registry.defaultParams、quantities builder params、AnimationPage params 来自同一份参数定义。
-
----
-
-## 五、执行优先级
-
-| 顺序 | 事项 | 风险 | 收益 | 优先级 |
-|:---:|------|:---:|:---:|:---:|
-| 1 | ~~`VectorAdditionAnimation` 拆分~~ | ~~中~~ | ~~高~~ | ✅ 已完成 |
-| 2 | ~~`WeightlessnessAnimation` 拆分~~ | ~~中~~ | ~~高~~ | ✅ 已完成 |
-| 3 | `ThinLensAnimation` 拆分（已有 physics，继续抽） | 低 | 高 | P2 |
-| 4 | `MomentumTheoremAnimation` 拆分（已有 physics，继续抽） | 低 | 高 | P2 |
-| 5 | 选 1 个大动画做 viewModel 拆分试点 | 中 | 高 | P2 |
-| 6 | Tailwind `text-[Npx]` 分域替换 | 中 | 中 | P2 |
-| 7 | A/B 类 SVG fontSize 响应式迁移 | 中高 | 中 | P2/P3 |
-| 8 | `VelocitySelector` 拆分（已有 physics，继续抽） | 低 | 高 | P2/P3 |
-| 9 | AnimationModule 规范建立 | 中 | 高 | P3 |
-| 10 | Store selector 优化 | 中 | 中 | P3 |
-| 11 | Registry + params + quantities 类型闭环 | 高 | 高 | P3 |
-
----
-
-## 附录：大文件拆分方向（基于代码分析）
-
-> 每个文件的拆分方向基于实际代码结构，不是模板。不拆的部分说明原因。
-
-### A1. VectorAdditionAnimation.tsx — ✅ 已完成
-
-**拆分结果**（808行 → 78行，降91%）：
-
-| 文件 | 行数 | 职责 |
-|------|-----:|------|
-| `VectorAdditionAnimation.tsx` | 78 | 薄编排层 |
-| `useVectorDrag.ts` | 61 | 拖拽交互+吸附逻辑 |
-| `VectorGrid.tsx` | 71 | 网格+刻度渲染 |
-| `VectorAngleArc.tsx` | 39 | 角度弧线标注 |
-| `VectorFormulaPanel.tsx` | 56 | 公式面板 |
-| `VectorDecomposition.tsx` | 59 | 正交分解模式 |
-| `VectorParallelogram.tsx` | 63 | 平行四边形模式 |
-| `VectorTriangle.tsx` | 62 | 三角形模式 |
-
----
-
-### A2. WeightlessnessAnimation.tsx（771行）
-
-**已有**：`calculateElevatorMotion`（`@/physics`）— 底层物理计算已抽取。
-
-**剩余问题**：主文件混合了布局几何（电梯位置、体重计位置、图表坐标）、场景渲染（井道、电梯、体重计、砝码、图表）、动画状态管理。
-
-| 区域 | 行数 | 拆分方向 | 验收价值 |
-|------|-----:|---------|---------|
-| 布局几何计算（电梯/体重计/砝码位置） | ~120 | `useWeightlessnessLayout` hook | 几何计算与渲染解耦，便于断言关键坐标 |
-| 图表坐标映射 | ~80 | `useWeightlessnessChart` hook 或合入 layout | 图表逻辑独立 |
-| 电梯井+电梯渲染 | ~150 | `ElevatorShaft` 组件 | 场景组件复用 |
-| 体重计+砝码渲染 | ~120 | `WeightScale` 组件 | 场景组件复用 |
-| 力箭头渲染 | ~80 | 已有 `VectorArrow`，提取 `WeightlessnessVectors` 组件 | 减少主文件JSX |
-| 图表渲染 | ~120 | `WeightlessnessChart` 组件 | 图表与场景分离 |
-
-**目标**：主文件降到 ~150 行。
-
----
-
-### A3. ThinLensAnimation.tsx（761行）
-
-**已有**：`useThinLensPhysics.ts` + `calculateThinLens`（`@/physics/optics`）— 物理+视图模型已部分抽取。
-
-**剩余问题**：光线追踪计算（~180行 useMemo）嵌在主文件中，是最大的可拆块。
-
-| 区域 | 行数 | 拆分方向 | 验收价值 |
-|------|-----:|---------|---------|
-| 光线追踪路径计算 | ~180 | `useThinLensRays` hook 或 `model/rayTracing.ts` | 核心光学逻辑可独立单测 |
-| `CandleShape` / `FocalMarks` | ~60 | 已是局部函数，可提升为 `components/CandleShape.tsx` 等 | 组件复用 |
-| 拖拽交互 | ~40 | 合入现有 hook 或新建 `useThinLensDrag` | 交互逻辑解耦 |
-| 图表数据准备 | ~50 | 合入 `useThinLensPhysics` | 减少主文件 |
-| 光线 SVG 渲染 | ~150 | `ThinLensRays` 组件 | 渲染与计算分离 |
-
-**目标**：主文件降到 ~200 行。
-
----
-
-### A4. MomentumTheoremAnimation.tsx（758行）
-
-**已有**：`calculateFallVelocity`、`calculateAverageImpactForce` 等（`@/physics/momentumTheorem`）— 物理计算已抽取。
-
-**剩余问题**：主文件含布局几何、粒子系统、基础/进阶双模式渲染、图表。
-
-| 区域 | 行数 | 拆分方向 | 验收价值 |
-|------|-----:|---------|---------|
-| 布局几何（球位置、缓冲垫压缩、弹簧） | ~100 | `useMomentumTheoremLayout` hook | 几何计算可独立测试 |
-| 粒子系统（进阶模式流体粒子） | ~80 | `useParticleSimulation` hook | 粒子逻辑与渲染解耦 |
-| 图表数据（F-t / v-t / p-t） | ~100 | 合入 layout hook 或独立 `useMomentumCharts` | 图表逻辑独立 |
-| 基础模式场景渲染 | ~120 | `MomentumBasicScene` 组件 | 模式独立维护 |
-| 进阶模式场景渲染 | ~150 | `MomentumAdvancedScene` 组件 | 模式独立维护 |
-| 图表渲染 | ~80 | 复用 `RelationChart` / `ChartArea`，提取配置 | 减少主文件 |
-
-**目标**：主文件降到 ~150 行。
-
----
-
-### A5. VelocitySelector.tsx（720行）
-
-**已有**：`calculateVelocitySelectorTrajectory`（`@/physics`）— 轨迹计算已抽取。
-
-**剩余问题**：主文件含粒子状态管理、Canvas 粒子渲染、图表数据、SVG 场景。
-
-| 区域 | 行数 | 拆分方向 | 验收价值 |
-|------|-----:|---------|---------|
-| 粒子状态管理（发射/更新/清理） | ~100 | `useVelocitySelectorParticles` hook | 粒子生命周期与渲染解耦 |
-| Canvas 粒子渲染 | ~150 | `VelocitySelectorCanvas` 组件 | Canvas 逻辑独立 |
-| 图表数据+曲线路径 | ~100 | `useVelocitySelectorChart` hook | 图表逻辑独立 |
-| 磁场符号阵列 | ~30 | `MagneticFieldSymbols` 组件 | 纯渲染 |
-| 手势规则计算 | ~40 | 合入 physics hook | 减少主文件 |
-| SVG 场景渲染 | ~200 | `VelocitySelectorScene` 组件 | 场景与 Canvas 分离 |
-
-**目标**：主文件降到 ~150 行。

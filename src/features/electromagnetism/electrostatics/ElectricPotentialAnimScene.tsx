@@ -1,5 +1,5 @@
 import React, { type RefObject } from 'react'
-import { PHYSICS_COLORS, EM_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, EM_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { radius } from '@/theme/radius'
 import { shadow } from '@/theme/shadow'
@@ -66,10 +66,10 @@ export function ElectricPotentialAnimScene({
         <defs>
           {/* 接地符号 Marker，电路符号非物理矢量，不适用铁律 1d */}
           <marker id="ground-symbol" viewBox="0 0 10 10" refX="5" refY="0" markerWidth="10" markerHeight="10" orient="auto">
-            <line x1={5} y1={0} x2={5} y2={6} stroke={colors.neutral[400]} strokeWidth={1.5} />
-            <line x1={1} y1={6} x2={9} y2={6} stroke={colors.neutral[400]} strokeWidth={1.5} />
-            <line x1={2.5} y1={8} x2={7.5} y2={8} stroke={colors.neutral[400]} strokeWidth={1.5} />
-            <line x1={4} y1={10} x2={6} y2={10} stroke={colors.neutral[400]} strokeWidth={1.5} />
+            <line x1={5} y1={0} x2={5} y2={6} stroke={CANVAS_COLORS.trackHistory} strokeWidth={1.5} />
+            <line x1={1} y1={6} x2={9} y2={6} stroke={CANVAS_COLORS.trackHistory} strokeWidth={1.5} />
+            <line x1={2.5} y1={8} x2={7.5} y2={8} stroke={CANVAS_COLORS.trackHistory} strokeWidth={1.5} />
+            <line x1={4} y1={10} x2={6} y2={10} stroke={CANVAS_COLORS.trackHistory} strokeWidth={1.5} />
           </marker>
           {/* 场源正电荷光晕渐变 */}
           <radialGradient id="source-glow" cx="50%" cy="50%" r="50%">
@@ -84,7 +84,7 @@ export function ElectricPotentialAnimScene({
           y1={hAnim}
           x2={w}
           y2={hAnim}
-          stroke={colors.neutral[300]}
+          stroke={CANVAS_COLORS.axis}
           strokeWidth={3}
         />
         {/* 接地引脚符号 */}
@@ -114,7 +114,7 @@ export function ElectricPotentialAnimScene({
           y1={posA.cy}
           x2={posB.cx}
           y2={posB.cy}
-          stroke={colors.neutral[200]}
+          stroke={CANVAS_COLORS.grid}
           strokeWidth={1.5}
           strokeDasharray="4,6"
         />

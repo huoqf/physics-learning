@@ -1,4 +1,4 @@
-import { PHYSICS_COLORS, ENERGY_COLORS, SCENE_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, ENERGY_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
 interface EnergyConservationBarChartProps {
@@ -39,7 +39,7 @@ export function EnergyConservationBarChart({
       {/* 柱状图坐标系，基准线 y=0 移至 70 */}
       <g transform="translate(0, 70)">
         {/* 基准零线 */}
-        <line x1={8} y1={0} x2={mode === 0 ? 82 : 107} y2={0} stroke={colors.neutral[400]} strokeWidth={0.8} />
+        <line x1={8} y1={0} x2={mode === 0 ? 82 : 107} y2={0} stroke={CANVAS_COLORS.grid} strokeWidth={0.8} />
 
         {/* 柱 1：动能 Ek (青色) */}
         <rect

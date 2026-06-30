@@ -292,8 +292,8 @@ export default function ThinLensAnimation() {
                         fill={SCENE_COLORS.materials.structBgLight} stroke={SCENE_COLORS.materials.structFill} strokeWidth={1.5}
                         filter={`drop-shadow(0px 2px 4px ${withAlpha(SCENE_COLORS.materials.structStrokeDark, 0.15)})`}
                       />
-                      <line x1={screenSvgX - 4} y1={cy} x2={screenSvgX + 4} y2={cy} stroke={colors.neutral[400]} strokeWidth={0.5} />
-                      <line x1={screenSvgX} y1={cy - 60} x2={screenSvgX} y2={cy + 60} stroke={colors.neutral[400]} strokeWidth={0.5} />
+                      <line x1={screenSvgX - 4} y1={cy} x2={screenSvgX + 4} y2={cy} stroke={CANVAS_COLORS.trackHistory} strokeWidth={0.5} />
+                      <line x1={screenSvgX} y1={cy - 60} x2={screenSvgX} y2={cy + 60} stroke={CANVAS_COLORS.trackHistory} strokeWidth={0.5} />
                       <text x={screenSvgX} y={cy - 72} textAnchor="middle" dominantBaseline="auto"
                         fill={SCENE_COLORS.materials.structStrokeMid} fontSize={font(9)} fontFamily={FONT.family} fontWeight="bold">
                         光屏 (L={LCm}cm)

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
@@ -173,9 +173,9 @@ export function PowerScene({
           <g>
             <rect x={0} y={objH * 0.83} width={objW} height={3} fill={colors.neutral[600]} />
             <rect x={0} y={objH * 0.08} width={objW * 0.65} height={objH * 0.75} rx={1} fill="url(#truck-cargo-grad)" stroke={colors.neutral[400]} strokeWidth={1} />
-            <line x1={objW * 0.16} y1={objH * 0.08} x2={objW * 0.16} y2={objH * 0.83} stroke={colors.neutral[400]} strokeWidth={0.5} />
-            <line x1={objW * 0.32} y1={objH * 0.08} x2={objW * 0.32} y2={objH * 0.83} stroke={colors.neutral[400]} strokeWidth={0.5} />
-            <line x1={objW * 0.48} y1={objH * 0.08} x2={objW * 0.48} y2={objH * 0.83} stroke={colors.neutral[400]} strokeWidth={0.5} />
+            <line x1={objW * 0.16} y1={objH * 0.08} x2={objW * 0.16} y2={objH * 0.83} stroke={CANVAS_COLORS.grid} strokeWidth={0.5} />
+            <line x1={objW * 0.32} y1={objH * 0.08} x2={objW * 0.32} y2={objH * 0.83} stroke={CANVAS_COLORS.grid} strokeWidth={0.5} />
+            <line x1={objW * 0.48} y1={objH * 0.08} x2={objW * 0.48} y2={objH * 0.83} stroke={CANVAS_COLORS.grid} strokeWidth={0.5} />
             <path
               d={`M ${objW * 0.67} ${objH * 0.83} L ${objW * 0.67} ${objH * 0.22} L ${objW * 0.82} ${objH * 0.22} L ${objW * 0.95} ${objH * 0.42} L ${objW * 0.95} ${objH * 0.83} Z`}
               fill="url(#truck-head-grad)"
