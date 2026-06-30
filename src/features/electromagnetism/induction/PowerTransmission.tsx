@@ -515,9 +515,9 @@ export default function PowerTransmission() {
             // 粒子生命阶段：初期亮黄 → 中期橙红 → 末期暗红
             const lifeRatio = p.life / p.maxLife
             const particleColor = lifeRatio < 0.3
-              ? '#FBBF24' // 亮黄（amber-400）
+              ? colors.accent[400] // 亮黄
               : lifeRatio < 0.7
-                ? '#F97316' // 橙色（orange-500）
+                ? colors.warning[500] // 橙色
                 : TRANSMISSION_COLORS.thermalGlow // 暗红
             return (
               <g key={p.id}>

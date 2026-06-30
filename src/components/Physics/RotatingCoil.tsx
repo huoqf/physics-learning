@@ -1,5 +1,6 @@
 import React from 'react'
 import { SCENE_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 
 /**
  * 3D 坐标类型描述
@@ -519,8 +520,8 @@ export const RotatingCoil: React.FC<RotatingCoilProps> = ({
 
     const baseCol = SCENE_COLORS.coil.insulation
     const strokeCol = SCENE_COLORS.coil.insulationSt
-    const shadowCol = '#111827'
-    const highlightCol = '#4B5563'
+    const shadowCol = colors.neutral[900]
+    const highlightCol = colors.neutral[600]
 
     const keyPrefix = `brush-${isLeftSide ? 'left' : 'right'}-${zCenter.toFixed(2)}`
 

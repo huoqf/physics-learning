@@ -189,8 +189,8 @@ export const Solenoid: React.FC<SolenoidProps> = ({
                 cx={px}
                 cy={py}
                 r={particleR}
-                fill={SCENE_COLORS.coil.activeGlow || '#059669'}
-                filter={`drop-shadow(0 0 2px ${SCENE_COLORS.coil.activeGlow || '#059669'})`}
+                fill={SCENE_COLORS.coil.activeGlow || colors.success[600]}
+                filter={`drop-shadow(0 0 2px ${SCENE_COLORS.coil.activeGlow || colors.success[600]})`}
               />
             )
           })

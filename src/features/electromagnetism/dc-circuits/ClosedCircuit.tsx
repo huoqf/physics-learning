@@ -3,6 +3,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { calculateClosedCircuit } from '@/physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 import { DialMeter, Rheostat } from '@/components/Physics'
 
 /**
@@ -93,9 +94,9 @@ export default function ClosedCircuit() {
 
           {/* 内阻发热暗红色系渐变 */}
           <radialGradient id="heat-grad" cx="70%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#DC2626" stopOpacity="1" />
-            <stop offset="70%" stopColor="#7F1D1D" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#7F1D1D" stopOpacity="0" />
+            <stop offset="0%" stopColor={colors.danger[600]} stopOpacity="1" />
+            <stop offset="70%" stopColor={colors.danger[900]} stopOpacity="0.8" />
+            <stop offset="100%" stopColor={colors.danger[900]} stopOpacity="0" />
           </radialGradient>
 
 

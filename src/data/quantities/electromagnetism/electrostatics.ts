@@ -6,6 +6,7 @@ import {
   getChargeInEFieldTimeScale,
 } from '../../../physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 import type { PhysicsPanelData, PhysicsQuantity } from '../types'
 
 const COULOMB_K = 9e9
@@ -442,7 +443,7 @@ export function handleElectrostatics(
           { label: 'B点电势 φ_B', value: phiB.toFixed(1), unit: 'V', color: PHYSICS_COLORS.electricPotential },
           { label: '两点电势差 U_AB', value: U_AB.toFixed(1), unit: 'V', highlight: 'extreme' as const },
           { label: '电势能变化 ΔEp', value: delta_Ep.toExponential(4), unit: 'J', color: PHYSICS_COLORS.potentialEnergy, highlight: 'extreme' as const },
-          { label: '图像切线斜率 |k|', value: slopeK.toFixed(1), unit: 'V/m', color: '#EAB308', highlight: 'extreme' as const },
+          { label: '图像切线斜率 |k|', value: slopeK.toFixed(1), unit: 'V/m', color: colors.accent[500], highlight: 'extreme' as const },
         ],
         formulas: [
           { name: '两点电势差', latex: 'U_{AB} = \\varphi_A - \\varphi_B', level: 'core' },
