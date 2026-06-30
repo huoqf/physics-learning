@@ -1,854 +1,90 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef } from 'react'
 import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
-import { canvasToPhysics, computeScale } from '@/utils/coordinate'
+import { computeScale } from '@/utils/coordinate'
 import { useVectorAdditionPhysics } from './useVectorAdditionPhysics'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { useVectorDrag } from './useVectorDrag'
+import { VectorGrid } from './VectorGrid'
+import { VectorAngleArc } from './VectorAngleArc'
+import { VectorFormulaPanel } from './VectorFormulaPanel'
+import { VectorDecomposition } from './VectorDecomposition'
+import { VectorParallelogram } from './VectorParallelogram'
+import { VectorTriangle } from './VectorTriangle'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 
-// 特殊磁力吸附角度定义
-const SNAP_ANGLES = [0, 30, 45, 60, 90, 120, 150, 180]
-const SNAP_ANGLE_THRESHOLD = 2.5 // 角度吸附门槛（度）
-const SNAP_FORCE_THRESHOLD = 0.15 // 大小吸附门槛（N）
-
 export default function VectorAdditionAnimation() {
-    const {params, showVectors, showFormulas, showGrid, isPlaying, time, updateParam} = useAnimationStore(
+  const { params, showVectors, showFormulas, showGrid, isPlaying, time, updateParam } = useAnimationStore(
     useShallow((s) => ({
-    params: s.params,
-    showVectors: s.showVectors,
-    showFormulas: s.showFormulas,
-    showGrid: s.showGrid,
-    isPlaying: s.isPlaying,
-    time: s.time,
-    updateParam: s.updateParam,
+      params: s.params, showVectors: s.showVectors, showFormulas: s.showFormulas,
+      showGrid: s.showGrid, isPlaying: s.isPlaying, time: s.time, updateParam: s.updateParam,
     }))
   )
+
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumTall)
   const vp = useViewport(canvasSize, { designWidth: 650, designHeight: 450 })
   const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 
-  // 1. 获取当前力学参数（未设定时使用 Registry 默认值）
   const f1 = params.f1 ?? 10
   const f2 = params.f2 ?? 8
   const angle = params.angle ?? 60
-  const mode = params.mode ?? 0 // 0 = 平行四边形, 1 = 三角形, 2 = 正交分解
-  
+  const mode = params.mode ?? 0
+
   const WORLD = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 } as const
-  const scale = computeScale(vp.visibleW, vp.visibleH, WORLD) * 0.6 // 0.6：拖拽命中区域与矢量端点强耦合，细微 scale 差异导致静默错位，不提取
+  const scale = computeScale(vp.visibleW, vp.visibleH, WORLD) * 0.6
 
   const vaScene: SceneConfig = {
     vectorBounds: { x: 0, y: 0, width: vp.visibleW, height: vp.visibleH },
-    originX: 0,
-    originY: 0,
+    originX: 0, originY: 0,
   }
   const vaSceneScale = createSceneScale(vaScene)
 
-  // 2. 调用计算型 Hook 包装物理及坐标换算逻辑（新规范）
   const physicsData = useVectorAdditionPhysics({
-    f1,
-    f2,
-    angle,
-    mode,
-    canvasWidth: vp.visibleW,
-    canvasHeight: vp.visibleH,
-    scale,
-    time,
-    isPlaying,
+    f1, f2, angle, mode, canvasWidth: vp.visibleW, canvasHeight: vp.visibleH, scale, time, isPlaying,
   })
 
-  // 3. 拖拽交互状态管理
-  const [activeDrag, setActiveDrag] = useState<'f1' | 'f2' | 'f' | null>(null)
-
-  // 处理手势按下
-  const handleDragStart = (target: 'f1' | 'f2' | 'f', e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault()
-    setActiveDrag(target)
-  }
-
-  // 核心拖动处理函数（含精密吸附）
-  const handleDragMove = (clientX: number, clientY: number) => {
-    if (!activeDrag || !svgRef.current || vp.visibleW === 0) return
-
-    const rect = svgRef.current.getBoundingClientRect()
-    const cx = clientX - rect.left
-    const cy = clientY - rect.top
-
-    // 转换为物理坐标 (px, py)
-    const { x: px, y: py } = canvasToPhysics(cx, cy, vp.visibleW, vp.visibleH, scale)
-
-    if (activeDrag === 'f1') {
-      // ===== 拖拽 F1 (分力 1) =====
-      // 力的合成模式下，F1 始终沿 x 轴正方向，拖拽只能改变其大小
-      let newF1 = px
-      
-      // 大小吸附（接近 0.5N 整数倍时吸附）
-      const roundedF1 = Math.round(newF1 * 2) / 2
-      if (Math.abs(newF1 - roundedF1) < SNAP_FORCE_THRESHOLD) {
-        newF1 = roundedF1
-      }
-      
-      // 限幅限制 [1, 20]
-      newF1 = Math.max(1, Math.min(20, newF1))
-      updateParam('f1', newF1)
-    } else if (activeDrag === 'f2') {
-      // ===== 拖拽 F2 (分力 2) =====
-      // 力的合成模式下，F2 可以自由旋转并拉伸
-      let rawF2 = Math.sqrt(px * px + py * py)
-      let rawAngle = Math.abs((Math.atan2(py, px) * 180) / Math.PI)
-
-      // 夹角 θ 限制在 [0, 180] 之间
-      rawAngle = Math.max(0, Math.min(180, rawAngle))
-
-      // 磁性角度吸附
-      for (const snapA of SNAP_ANGLES) {
-        if (Math.abs(rawAngle - snapA) < SNAP_ANGLE_THRESHOLD) {
-          rawAngle = snapA
-          break
-        }
-      }
-
-      // 大小吸附
-      const roundedF2 = Math.round(rawF2 * 2) / 2
-      if (Math.abs(rawF2 - roundedF2) < SNAP_FORCE_THRESHOLD) {
-        rawF2 = roundedF2
-      }
-
-      // 限幅限制 [1, 20]
-      const newF2 = Math.max(1, Math.min(20, rawF2))
-      const newAngle = Math.max(0, Math.min(180, rawAngle))
-
-      updateParam('f2', newF2)
-      updateParam('angle', newAngle)
-    } else if (activeDrag === 'f') {
-      // ===== 拖拽 F (正交分解中的合力) =====
-      // 此时 f1 作为待分解力的模，angle 作为它的方向角
-      let rawF = Math.sqrt(px * px + py * py)
-      let rawAngle = Math.abs((Math.atan2(py, px) * 180) / Math.PI)
-
-      // 夹角 θ 限制在 [0, 180] 之间
-      rawAngle = Math.max(0, Math.min(180, rawAngle))
-
-      // 角度吸附
-      for (const snapA of SNAP_ANGLES) {
-        if (Math.abs(rawAngle - snapA) < SNAP_ANGLE_THRESHOLD) {
-          rawAngle = snapA
-          break
-        }
-      }
-
-      // 大小吸附
-      const roundedF = Math.round(rawF * 2) / 2
-      if (Math.abs(rawF - roundedF) < SNAP_FORCE_THRESHOLD) {
-        rawF = roundedF
-      }
-
-      const newF1 = Math.max(1, Math.min(20, rawF))
-      const newAngle = Math.max(0, Math.min(180, rawAngle))
-
-      updateParam('f1', newF1)
-      updateParam('angle', newAngle)
-    }
-  }
-
-  // 绑定全局鼠标/触摸释放事件
-  useEffect(() => {
-    const handleGlobalMouseUp = () => {
-      if (activeDrag) setActiveDrag(null)
-    }
-    
-    window.addEventListener('mouseup', handleGlobalMouseUp)
-    window.addEventListener('touchend', handleGlobalMouseUp)
-    
-    return () => {
-      window.removeEventListener('mouseup', handleGlobalMouseUp)
-      window.removeEventListener('touchend', handleGlobalMouseUp)
-    }
-  }, [activeDrag])
+  const { handleDragStart, handleDragMove } = useVectorDrag({ svgRef, visibleW: vp.visibleW, visibleH: vp.visibleH, scale, updateParam })
 
   const centerX = vp.visibleW / 2
   const centerY = vp.visibleH / 2
 
-  // 4. 构建精密坐标轴刻度及标注 (Grid & Ticks)
-  const ticks = []
-  const tickLength = 4
-  if (vp.visibleW > 0) {
-    // 沿 X 轴刻度 (每隔 5N 标数字，每隔 1N 画个刻度线)
-    for (let fVal = -20; fVal <= 20; fVal++) {
-      if (fVal === 0) continue
-      const cx = centerX + fVal * scale
-      const isMajor = fVal % 5 === 0
-      ticks.push(
-        <line
-          key={`tick-x-${fVal}`}
-          x1={cx}
-          y1={centerY - (isMajor ? tickLength * 1.5 : tickLength)}
-          x2={cx}
-          y2={centerY + (isMajor ? tickLength * 1.5 : tickLength)}
-          stroke={PHYSICS_COLORS.axis}
-          strokeWidth={isMajor ? CANVAS_STYLE.stroke.tickBold : CANVAS_STYLE.stroke.tick}
-        />
-      )
-      if (isMajor && cx > 30 && cx < vp.visibleW - 30) {
-        ticks.push(
-          <text
-            key={`tick-text-x-${fVal}`}
-            x={cx}
-            y={centerY + 16}
-            fontSize={CANVAS_STYLE.font.axis}
-            fontFamily={CANVAS_STYLE.font.family}
-            fill={PHYSICS_COLORS.labelTextLight}
-            textAnchor="middle"
-          >
-            {fVal}N
-          </text>
-        )
-      }
-    }
-    // 沿 Y 轴刻度
-    for (let fVal = -10; fVal <= 15; fVal++) {
-      if (fVal === 0) continue
-      const cy = centerY - fVal * scale
-      const isMajor = fVal % 5 === 0
-      ticks.push(
-        <line
-          key={`tick-y-${fVal}`}
-          x1={centerX - (isMajor ? tickLength * 1.5 : tickLength)}
-          y1={cy}
-          x2={centerX + (isMajor ? tickLength * 1.5 : tickLength)}
-          y2={cy}
-          stroke={PHYSICS_COLORS.axis}
-          strokeWidth={isMajor ? CANVAS_STYLE.stroke.tickBold : CANVAS_STYLE.stroke.tick}
-        />
-      )
-      if (isMajor && cy > 30 && cy < vp.visibleH - 30) {
-        ticks.push(
-          <text
-            key={`tick-text-y-${fVal}`}
-            x={centerX - 12}
-            y={cy + 4}
-            fontSize={CANVAS_STYLE.font.axis}
-            fontFamily={CANVAS_STYLE.font.family}
-            fill={PHYSICS_COLORS.labelTextLight}
-            textAnchor="end"
-          >
-            {fVal}N
-          </text>
-        )
-      }
-    }
-  }
-
-  // 5. 动态背景网格 (Grid Lines)
-  const gridLines = []
-  if (showGrid && vp.visibleW > 0) {
-    // 每隔 5N 绘制一条细网格
-    for (let fVal = -20; fVal <= 20; fVal += 5) {
-      const xPos = centerX + fVal * scale
-      gridLines.push(
-        <line
-          key={`grid-x-${fVal}`}
-          x1={xPos}
-          y1={10}
-          x2={xPos}
-          y2={vp.visibleH - 10}
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={CANVAS_STYLE.stroke.grid}
-          opacity={CANVAS_STYLE.opacity.grid}
-          strokeDasharray="4,4"
-        />
-      )
-    }
-    for (let fVal = -15; fVal <= 15; fVal += 5) {
-      const yPos = centerY - fVal * scale
-      gridLines.push(
-        <line
-          key={`grid-y-${fVal}`}
-          x1={10}
-          y1={yPos}
-          x2={vp.visibleW - 10}
-          y2={yPos}
-          stroke={PHYSICS_COLORS.grid}
-          strokeWidth={CANVAS_STYLE.stroke.grid}
-          opacity={CANVAS_STYLE.opacity.grid}
-          strokeDasharray="4,4"
-        />
-      )
-    }
-  }
-
-  const {
-    origin,
-    f1End,
-    f2End,
-    fResultantEnd,
-    f1ToResultant,
-    f2ToResultant,
-    f2ShiftedStart,
-    f2ShiftedEnd,
-    fxEnd,
-    fyEnd,
-    fxProj,
-    fyProj,
-    thetaArcPath,
-    thetaTextPos,
-    alphaArcPath,
-    alphaTextPos,
-  } = physicsData
-
   return (
     <div ref={containerRef} className="w-full h-full relative select-none">
-      <svg
-        ref={svgRef}
-        width={vp.visibleW}
-        height={vp.visibleH}
+      <svg ref={svgRef} width={vp.visibleW} height={vp.visibleH}
         className="bg-neutral-50 rounded-xl shadow-inner border border-neutral-200"
         onMouseMove={(e) => handleDragMove(e.clientX, e.clientY)}
-        onTouchMove={(e) => {
-          if (e.touches.length > 0) {
-            handleDragMove(e.touches[0].clientX, e.touches[0].clientY)
-          }
-        }}
-      >
-        {/* 背景网格 */}
-        {gridLines}
+        onTouchMove={(e) => { if (e.touches.length > 0) handleDragMove(e.touches[0].clientX, e.touches[0].clientY) }}>
 
-        {/* 刻度及标注 */}
-        {ticks}
+        <VectorGrid centerX={centerX} centerY={centerY} scale={scale}
+          visibleW={vp.visibleW} visibleH={vp.visibleH} showGrid={showGrid} />
 
-        {/* 精密坐标轴（X与Y轴，主轴加粗） */}
-        <line
-          x1={20}
-          y1={centerY}
-          x2={vp.visibleW - 20}
-          y2={centerY}
-          stroke={PHYSICS_COLORS.axis}
-          strokeWidth={CANVAS_STYLE.stroke.axisBold}
-        />
-        <line
-          x1={centerX}
-          y1={20}
-          x2={centerX}
-          y2={vp.visibleH - 20}
-          stroke={PHYSICS_COLORS.axis}
-          strokeWidth={CANVAS_STYLE.stroke.axisBold}
-        />
+        <line x1={20} y1={centerY} x2={vp.visibleW - 20} y2={centerY}
+          stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.axisBold} />
+        <line x1={centerX} y1={20} x2={centerX} y2={vp.visibleH - 20}
+          stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.axisBold} />
 
-        {/* 原点十字靶标与受力实体节点 */}
-        <circle
-          cx={centerX}
-          cy={centerY}
-          r={CANVAS_STYLE.object.pointMassRadius}
-          fill={PHYSICS_COLORS.labelText}
-          stroke={PHYSICS_COLORS.objectStroke}
-          strokeWidth={1.5}
-        />
-        <circle
-          cx={centerX}
-          cy={centerY}
-          r={12}
-          fill="none"
-          stroke={PHYSICS_COLORS.axis}
-          strokeWidth={1}
-          strokeDasharray="2,2"
-        />
+        <circle cx={centerX} cy={centerY} r={CANVAS_STYLE.object.pointMassRadius}
+          fill={PHYSICS_COLORS.labelText} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1.5} />
+        <circle cx={centerX} cy={centerY} r={12} fill="none"
+          stroke={PHYSICS_COLORS.axis} strokeWidth={1} strokeDasharray="2,2" />
 
         {showVectors && (
           <g>
-            {/* ==================== 模式 2：正交分解渲染 ==================== */}
-            {mode === 2 && (
-              <>
-                {/* 水平分力 Fx */}
-                <VectorArrow
-                   origin={{ x: origin.cx, y: -origin.cy }}
-                   vector={{ x: fxEnd.cx - origin.cx, y: -(fxEnd.cy - origin.cy) }}
-                   type="forceComponent"
-                   sceneScale={vaSceneScale}
-                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                   pixelLength={Math.hypot(fxEnd.cx - origin.cx, fxEnd.cy - origin.cy)}
-                 />
-                 <text
-                   x={fxEnd.cx > origin.cx ? fxEnd.cx - 8 : fxEnd.cx + 8}
-                   y={origin.cy + 18}
-                   fontSize={CANVAS_STYLE.font.label}
-                   fontFamily={CANVAS_STYLE.font.family}
-                   fill={PHYSICS_COLORS.forceComponent}
-                   fontWeight="bold"
-                   textAnchor={fxEnd.cx > origin.cx ? "end" : "start"}
-                 >
-                   F_x
-                 </text>
- 
-                 {/* 竖直分力 Fy */}
-                 <VectorArrow
-                   origin={{ x: origin.cx, y: -origin.cy }}
-                    vector={{ x: fyEnd.cx - origin.cx, y: -(fyEnd.cy - origin.cy) }}
-                    type="forceComponent"
-                    sceneScale={vaSceneScale}
-                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                   pixelLength={Math.hypot(fyEnd.cx - origin.cx, fyEnd.cy - origin.cy)}
-                 />
-                <text
-                  x={origin.cx - 12}
-                  y={fyEnd.cy > origin.cy ? fyEnd.cy - 6 : fyEnd.cy + 14}
-                  fontSize={CANVAS_STYLE.font.label}
-                  fontFamily={CANVAS_STYLE.font.family}
-                  fill={PHYSICS_COLORS.forceComponent}
-                  fontWeight="bold"
-                  textAnchor="end"
-                >
-                  F_y
-                </text>
-
-                {/* 投影虚线 */}
-                <line
-                  x1={fxProj.x1}
-                  y1={fxProj.y1}
-                  x2={fxProj.x2}
-                  y2={fxProj.y2}
-                  stroke={PHYSICS_COLORS.axis}
-                  strokeWidth={CANVAS_STYLE.stroke.reference}
-                  strokeDasharray={CANVAS_STYLE.dash.projection.join(',')}
-                />
-                <line
-                  x1={fyProj.x1}
-                  y1={fyProj.y1}
-                  x2={fyProj.x2}
-                  y2={fyProj.y2}
-                  stroke={PHYSICS_COLORS.axis}
-                  strokeWidth={CANVAS_STYLE.stroke.reference}
-                  strokeDasharray={CANVAS_STYLE.dash.projection.join(',')}
-                />
-
-                {/* 待分解合力 F */}
-                <VectorArrow
-                  origin={{ x: origin.cx, y: -origin.cy }}
-                  vector={{ x: fResultantEnd.cx - origin.cx, y: -(fResultantEnd.cy - origin.cy) }}
-                  type="force"
-                  sceneScale={vaSceneScale}
-                  strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                  pixelLength={Math.hypot(fResultantEnd.cx - origin.cx, fResultantEnd.cy - origin.cy)}
-                />
-                <text
-                  x={fResultantEnd.cx + (fResultantEnd.cx > origin.cx ? 8 : -14)}
-                  y={fResultantEnd.cy + (fResultantEnd.cy > origin.cy ? 14 : -8)}
-                  fontSize={CANVAS_STYLE.font.labelBold}
-                  fontFamily={CANVAS_STYLE.font.family}
-                  fill={PHYSICS_COLORS.forceNet}
-                  fontWeight="bold"
-                >
-                  F
-                </text>
-
-                {/* 待分解合力 F 拖拽靶区 */}
-                <g
-                  onMouseDown={(e) => handleDragStart('f', e)}
-                  onTouchStart={(e) => {
-                    if (e.touches.length > 0) handleDragStart('f', e)
-                  }}
-                  className="group cursor-grab active:cursor-grabbing"
-                >
-                  {/* 隐性大把手 */}
-                  <circle cx={fResultantEnd.cx} cy={fResultantEnd.cy} r={16} fill="transparent" opacity={0} />
-                  {/* 可见同心圆靶环 */}
-                  <circle
-                    cx={fResultantEnd.cx}
-                    cy={fResultantEnd.cy}
-                    r={6}
-                    fill={PHYSICS_COLORS.forceNet}
-                    stroke="white"
-                    strokeWidth={1.5}
-                    className="group-hover:scale-125 transition-transform shadow-md"
-                  />
-                  <circle
-                    cx={fResultantEnd.cx}
-                    cy={fResultantEnd.cy}
-                    r={10}
-                    fill="none"
-                    stroke={PHYSICS_COLORS.forceNet}
-                    strokeWidth={1}
-                    opacity={0.4}
-                    className="animate-pulse"
-                  />
-                </g>
-              </>
-            )}
-
-            {/* ==================== 模式 0：平行四边形定则渲染 ==================== */}
-            {mode === 0 && (
-              <>
-                {/* 分力 F1 */}
-                <VectorArrow
-                  origin={{ x: origin.cx, y: -origin.cy }}
-                  vector={{ x: f1End.cx - origin.cx, y: -(f1End.cy - origin.cy) }}
-                  type="appliedForce"
-                  sceneScale={vaSceneScale}
-                  strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  pixelLength={Math.hypot(f1End.cx - origin.cx, f1End.cy - origin.cy)}
-                />
-                <text
-                  x={f1End.cx}
-                  y={f1End.cy + 18}
-                  fontSize={CANVAS_STYLE.font.label}
-                  fontFamily={CANVAS_STYLE.font.family}
-                  fill={PHYSICS_COLORS.appliedForce}
-                  fontWeight="bold"
-                  textAnchor="middle"
-                >
-                  F₁
-                </text>
-
-                {/* F1 拖拽把手 */}
-                <g
-                  onMouseDown={(e) => handleDragStart('f1', e)}
-                  onTouchStart={(e) => {
-                    if (e.touches.length > 0) handleDragStart('f1', e)
-                  }}
-                  className="group cursor-ew-resize"
-                >
-                  <circle cx={f1End.cx} cy={f1End.cy} r={16} fill="transparent" opacity={0} />
-                  <circle
-                    cx={f1End.cx}
-                    cy={f1End.cy}
-                    r={6}
-                    fill={PHYSICS_COLORS.appliedForce}
-                    stroke="white"
-                    strokeWidth={1.5}
-                    className="group-hover:scale-125 transition-transform"
-                  />
-                </g>
-
-                {/* 分力 F2 */}
-                <VectorArrow
-                  origin={{ x: origin.cx, y: -origin.cy }}
-                  vector={{ x: f2End.cx - origin.cx, y: -(f2End.cy - origin.cy) }}
-                  type="tension"
-                  sceneScale={vaSceneScale}
-                  strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  pixelLength={Math.hypot(f2End.cx - origin.cx, f2End.cy - origin.cy)}
-                />
-                <text
-                  x={f2End.cx + (f2End.cx > origin.cx ? 8 : -16)}
-                  y={f2End.cy - 8}
-                  fontSize={CANVAS_STYLE.font.label}
-                  fontFamily={CANVAS_STYLE.font.family}
-                  fill={PHYSICS_COLORS.tension}
-                  fontWeight="bold"
-                  textAnchor={f2End.cx > origin.cx ? "start" : "end"}
-                >
-                  F₂
-                </text>
-
-                {/* F2 拖拽把手 */}
-                <g
-                  onMouseDown={(e) => handleDragStart('f2', e)}
-                  onTouchStart={(e) => {
-                    if (e.touches.length > 0) handleDragStart('f2', e)
-                  }}
-                  className="group cursor-grab active:cursor-grabbing"
-                >
-                  <circle cx={f2End.cx} cy={f2End.cy} r={16} fill="transparent" opacity={0} />
-                  <circle
-                    cx={f2End.cx}
-                    cy={f2End.cy}
-                    r={6}
-                    fill={PHYSICS_COLORS.tension}
-                    stroke="white"
-                    strokeWidth={1.5}
-                    className="group-hover:scale-125 transition-transform"
-                  />
-                </g>
-
-                {/* 平行四边形辅助边线 */}
-                <line
-                  x1={f1ToResultant.x1}
-                  y1={f1ToResultant.y1}
-                  x2={f1ToResultant.x2}
-                  y2={f1ToResultant.y2}
-                  stroke={PHYSICS_COLORS.tension}
-                  strokeWidth={CANVAS_STYLE.stroke.reference}
-                  opacity={CANVAS_STYLE.opacity.reference}
-                  strokeDasharray={CANVAS_STYLE.dash.reference.join(',')}
-                />
-                <line
-                  x1={f2ToResultant.x1}
-                  y1={f2ToResultant.y1}
-                  x2={f2ToResultant.x2}
-                  y2={f2ToResultant.y2}
-                  stroke={PHYSICS_COLORS.appliedForce}
-                  strokeWidth={CANVAS_STYLE.stroke.reference}
-                  opacity={CANVAS_STYLE.opacity.reference}
-                  strokeDasharray={CANVAS_STYLE.dash.reference.join(',')}
-                />
-
-                {/* 合力 F */}
-                <VectorArrow
-                  origin={{ x: origin.cx, y: -origin.cy }}
-                  vector={{ x: fResultantEnd.cx - origin.cx, y: -(fResultantEnd.cy - origin.cy) }}
-                  type="force"
-                  sceneScale={vaSceneScale}
-                  strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                  pixelLength={Math.hypot(fResultantEnd.cx - origin.cx, fResultantEnd.cy - origin.cy)}
-                />
-                <text
-                  x={fResultantEnd.cx + 8}
-                  y={fResultantEnd.cy - 8}
-                  fontSize={CANVAS_STYLE.font.labelBold}
-                  fontFamily={CANVAS_STYLE.font.family}
-                  fill={PHYSICS_COLORS.forceNet}
-                  fontWeight="bold"
-                >
-                  F
-                </text>
-              </>
-            )}
-
-            {/* ==================== 模式 1：三角形定则渲染 ==================== */}
-            {mode === 1 && (
-              <>
-                {/* 分力 F1 */}
-                <VectorArrow
-                  origin={{ x: origin.cx, y: -origin.cy }}
-                  vector={{ x: f1End.cx - origin.cx, y: -(f1End.cy - origin.cy) }}
-                  type="appliedForce"
-                  sceneScale={vaSceneScale}
-                  strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  pixelLength={Math.hypot(f1End.cx - origin.cx, f1End.cy - origin.cy)}
-                />
-                <text
-                  x={f1End.cx}
-                  y={f1End.cy + 18}
-                  fontSize={CANVAS_STYLE.font.label}
-                  fontFamily={CANVAS_STYLE.font.family}
-                  fill={PHYSICS_COLORS.appliedForce}
-                  fontWeight="bold"
-                  textAnchor="middle"
-                >
-                  F₁
-                </text>
-
-                {/* F1 拖拽把手 */}
-                <g
-                  onMouseDown={(e) => handleDragStart('f1', e)}
-                  onTouchStart={(e) => {
-                    if (e.touches.length > 0) handleDragStart('f1', e)
-                  }}
-                  className="group cursor-ew-resize"
-                >
-                  <circle cx={f1End.cx} cy={f1End.cy} r={16} fill="transparent" opacity={0} />
-                  <circle
-                    cx={f1End.cx}
-                    cy={f1End.cy}
-                    r={6}
-                    fill={PHYSICS_COLORS.appliedForce}
-                    stroke="white"
-                    strokeWidth={1.5}
-                    className="group-hover:scale-125 transition-transform"
-                  />
-                </g>
-
-                {/* F2 拖拽把手（三角形模式下位于平移后箭头末端） */}
-                <g
-                  onMouseDown={(e) => handleDragStart('f2', e)}
-                  onTouchStart={(e) => {
-                    if (e.touches.length > 0) handleDragStart('f2', e)
-                  }}
-                  className="group cursor-grab active:cursor-grabbing"
-                >
-                  <circle cx={f2ShiftedEnd.cx} cy={f2ShiftedEnd.cy} r={16} fill="transparent" opacity={0} />
-                  <circle
-                    cx={f2ShiftedEnd.cx}
-                    cy={f2ShiftedEnd.cy}
-                    r={6}
-                    fill={PHYSICS_COLORS.tension}
-                    stroke="white"
-                    strokeWidth={1.5}
-                    className="group-hover:scale-125 transition-transform"
-                  />
-                </g>
-
-                {/* 平移后首尾相接的 F2 矢量 */}
-                <VectorArrow
-                  origin={{ x: f2ShiftedStart.cx, y: -f2ShiftedStart.cy }}
-                  vector={{ x: f2ShiftedEnd.cx - f2ShiftedStart.cx, y: -(f2ShiftedEnd.cy - f2ShiftedStart.cy) }}
-                  type="tension"
-                  sceneScale={vaSceneScale}
-                  strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                  pixelLength={Math.hypot(f2ShiftedEnd.cx - f2ShiftedStart.cx, f2ShiftedEnd.cy - f2ShiftedStart.cy)}
-                />
-                <text
-                  x={f2ShiftedEnd.cx + (f2ShiftedEnd.cx > f2ShiftedStart.cx ? 8 : -16)}
-                  y={f2ShiftedEnd.cy - 8}
-                  fontSize={CANVAS_STYLE.font.label}
-                  fontFamily={CANVAS_STYLE.font.family}
-                  fill={PHYSICS_COLORS.tension}
-                  fontWeight="bold"
-                  textAnchor={f2ShiftedEnd.cx > f2ShiftedStart.cx ? "start" : "end"}
-                >
-                  F₂
-                </text>
-
-                {/* 平移过程中的辅助导轨线（首首连接线、尾尾连接线，弱化） */}
-                {isPlaying && (
-                  <line
-                    x1={origin.cx}
-                    y1={origin.cy}
-                    x2={f1End.cx}
-                    y2={f1End.cy}
-                    stroke={PHYSICS_COLORS.axis}
-                    strokeWidth={CANVAS_STYLE.stroke.guide}
-                    opacity={CANVAS_STYLE.opacity.guide}
-                    strokeDasharray={CANVAS_STYLE.dash.guide.join(',')}
-                  />
-                )}
-
-                {/* 闭合合力 F */}
-                <VectorArrow
-                  origin={{ x: origin.cx, y: -origin.cy }}
-                  vector={{ x: fResultantEnd.cx - origin.cx, y: -(fResultantEnd.cy - origin.cy) }}
-                  type="force"
-                  sceneScale={vaSceneScale}
-                  strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                  pixelLength={Math.hypot(fResultantEnd.cx - origin.cx, fResultantEnd.cy - origin.cy)}
-                />
-                <text
-                  x={fResultantEnd.cx + 8}
-                  y={fResultantEnd.cy - 8}
-                  fontSize={CANVAS_STYLE.font.labelBold}
-                  fontFamily={CANVAS_STYLE.font.family}
-                  fill={PHYSICS_COLORS.forceNet}
-                  fontWeight="bold"
-                >
-                  F
-                </text>
-              </>
-            )}
+            {mode === 2 && <VectorDecomposition physicsData={physicsData} sceneScale={vaSceneScale} onDragStart={handleDragStart} />}
+            {mode === 0 && <VectorParallelogram physicsData={physicsData} sceneScale={vaSceneScale} onDragStart={handleDragStart} />}
+            {mode === 1 && <VectorTriangle physicsData={physicsData} sceneScale={vaSceneScale} isPlaying={isPlaying} onDragStart={handleDragStart} />}
           </g>
         )}
 
-        {/* ==================== 弧线与度数标注 ==================== */}
-        {/* 夹角 θ 弧线 */}
-        {thetaArcPath && (
-          <g>
-            <path
-              d={thetaArcPath}
-              fill="none"
-              stroke={PHYSICS_COLORS.labelTextLight}
-              strokeWidth={1.2}
-              strokeDasharray="2,2"
-            />
-            {/* 度数背景框（防坐标轴重叠遮挡） */}
-            <rect
-              x={thetaTextPos.cx - 16}
-              y={thetaTextPos.cy - 9}
-              width={32}
-              height={16}
-              fill="white"
-              fillOpacity={0.85}
-              rx={3}
-            />
-            <text
-              x={thetaTextPos.cx}
-              y={thetaTextPos.cy + 3}
-              fontSize={CANVAS_STYLE.font.annotation}
-              fontFamily={CANVAS_STYLE.font.family}
-              fill={PHYSICS_COLORS.labelText}
-              textAnchor="middle"
-            >
-              {angle.toFixed(0)}°
-            </text>
-          </g>
-        )}
+        <VectorAngleArc physicsData={physicsData} angle={angle} mode={mode} font={font} />
 
-        {/* 合力偏角 α 弧线 (仅合成模式下且 theta != 0) */}
-        {mode !== 2 && alphaArcPath && (
-          <g>
-            <path
-              d={alphaArcPath}
-              fill="none"
-              stroke={PHYSICS_COLORS.forceNet}
-              strokeWidth={1}
-            />
-            <rect
-              x={alphaTextPos.cx - 18}
-              y={alphaTextPos.cy - 9}
-              width={36}
-              height={16}
-              fill="white"
-              fillOpacity={0.85}
-              rx={3}
-            />
-            <text
-              x={alphaTextPos.cx}
-              y={alphaTextPos.cy + 3}
-              fontSize={font(11)}
-              fontFamily={CANVAS_STYLE.font.family}
-              fill={PHYSICS_COLORS.forceNet}
-              fontWeight="bold"
-              textAnchor="middle"
-            >
-              α={physicsData.resultAngleDeg.toFixed(0)}°
-            </text>
-          </g>
-        )}
+        {showFormulas && <VectorFormulaPanel mode={mode} f1={f1} f2={f2} angle={angle} physicsData={physicsData} />}
 
-        {/* ==================== 静态标注（公式与参数） ==================== */}
-        {showFormulas && (
-          <g transform="translate(20, 30)">
-            <text
-              fontSize={CANVAS_STYLE.font.title}
-              fill={PHYSICS_COLORS.labelText}
-              fontWeight="bold"
-              fontFamily={CANVAS_STYLE.font.family}
-            >
-              {mode === 2 ? "力的正交分解" : "力的合成（共点力）"}
-            </text>
-            
-            <g transform="translate(0, 15)">
-              {mode === 2 ? (
-                <>
-                  <text x={0} y={15} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.forceNet} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family}>
-                    原合力 F = {f1.toFixed(1)} N
-                  </text>
-                  <text x={0} y={35} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.labelTextLight} fontFamily={CANVAS_STYLE.font.family}>
-                    分解偏角 θ = {angle.toFixed(0)}°
-                  </text>
-                  <text x={0} y={65} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family}>
-                    水平分量 F_x = {physicsData.fxVal.toFixed(2)} N
-                  </text>
-                  <text x={0} y={85} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.forceComponent} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family}>
-                    竖直分量 F_y = {physicsData.fyVal.toFixed(2)} N
-                  </text>
-                </>
-              ) : (
-                <>
-                  <text x={0} y={15} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.appliedForce} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family}>
-                    分力 F₁ = {f1.toFixed(1)} N
-                  </text>
-                  <text x={0} y={35} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.tension} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family}>
-                    分力 F₂ = {f2.toFixed(1)} N
-                  </text>
-                  <text x={0} y={55} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.labelTextLight} fontFamily={CANVAS_STYLE.font.family}>
-                    夹角 θ = {angle.toFixed(0)}°
-                  </text>
-                  <text x={0} y={85} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.forceNet} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family}>
-                    合力 F = {physicsData.fResultant.toFixed(2)} N
-                  </text>
-                  <text x={0} y={105} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.forceNet} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family}>
-                    合力偏角 α = {physicsData.resultAngleDeg.toFixed(1)}°
-                  </text>
-                </>
-              )}
-            </g>
-          </g>
-        )}
-
-        {/* SVG Marker 箭头统一定义 */}
         <defs>
           <VectorDefs colors={[PHYSICS_COLORS.forceNet, PHYSICS_COLORS.appliedForce, PHYSICS_COLORS.tension, PHYSICS_COLORS.forceComponent]} />
         </defs>
