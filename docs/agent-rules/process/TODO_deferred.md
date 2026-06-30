@@ -48,12 +48,11 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 | 优先级 | 文件 | 当前行数 | 拆分方案 |
 |:---:|------|-----:|---------|
-| 1 | `CentripetalAnimation.tsx` | 898 | 提取 `useCentripetalPhysics` hook + 拆 `CentripetalScene` |
-| 2 | `VectorAdditionAnimation.tsx` | 859 | 几何计算多，抽纯函数收益高 |
-| 3 | `MomentumTheoremAnimation.tsx` | 837 | 提取 `useMomentumTheoremPhysics` hook（基础+进阶场景） |
-| 4 | `WeightlessnessAnimation.tsx` | 830 | 提取 `useWeightlessnessPhysics` hook + 拆 `WeightlessnessChart` |
-| 5 | `VelocitySelector.tsx` | 823 | 已有 `physics/magnetism/velocitySelector.ts`，抽 `useVelocitySelectorPhysics` hook + Canvas 粒子渲染分离 |
-| 6 | `ThinLensAnimation.tsx` | 821 | 已有 `physics/optics.ts`，抽 geometry model |
+| 1 | `VectorAdditionAnimation.tsx` | 859 | 几何计算多，抽纯函数收益高 |
+| 2 | `MomentumTheoremAnimation.tsx` | 837 | 提取 `useMomentumTheoremPhysics` hook（基础+进阶场景） |
+| 3 | `WeightlessnessAnimation.tsx` | 830 | 提取 `useWeightlessnessPhysics` hook + 拆 `WeightlessnessChart` |
+| 4 | `VelocitySelector.tsx` | 823 | 已有 `physics/magnetism/velocitySelector.ts`，抽 `useVelocitySelectorPhysics` hook + Canvas 粒子渲染分离 |
+| 5 | `ThinLensAnimation.tsx` | 821 | 已有 `physics/optics.ts`，抽 geometry model |
 
 > 观察：`Transformer.tsx`(724)、`ForceMotionSandbox.tsx`(694)、`EquilibriumAnimation.tsx`(688) 临近阈值，暂不动。
 
