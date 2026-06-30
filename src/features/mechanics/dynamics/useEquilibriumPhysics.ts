@@ -71,7 +71,7 @@ export function useEquilibriumPhysics({
   canvasHeight,
   time,
 }: UseEquilibriumPhysicsProps): EquilibriumPhysicsData {
-  const { updateParam } = useAnimationStore()
+  const updateParam = useAnimationStore((s) => s.updateParam)
 
   // 1. 定义物理状态 (实际位置、速度、断线状态、张力)
   const [physState, setPhysState] = useState({

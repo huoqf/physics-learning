@@ -20,6 +20,7 @@
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
 | 06-30 | theme | refactor | Canvas 颜色违规第一批修复：10 个文件 20 处 `colors.neutral[]` → `CANVAS_COLORS.*`（grid/axis/trackHistory），消除网格线、坐标轴、刻度线、分隔线的硬编码颜色；tsc 零错误 |
+| 06-30 | theme | fix | P3 低风险项修复：LightRodRopeScene 2 处硬编码 fontSize→font()；ThinLensAnimation/MomentumScene 2 处 rgba()→withAlpha()；useEquilibriumPhysics 1 处无 selector store 调用→精确 selector；tsc 零错误 |
 | 06-30 | mechanics/kinematics | refactor | VectorAdditionAnimation 拆分完成：808行→78行（降91%），抽取 useVectorDrag.ts(61行拖拽吸附)、VectorGrid.tsx(71行网格)、VectorAngleArc.tsx(39行角度弧)、VectorFormulaPanel.tsx(56行公式面板)、VectorDecomposition/Parallelogram/Triangle 三模式组件；TODO_deferred.md 移除已完成项 |
 | 06-30 | mechanics/weightlessness | refactor | WeightlessnessAnimation 拆分完成：771行→29行，新建 useWeightlessnessPhysics.ts 物理hook + layout/viewModel；TODO_deferred.md 移除已完成项 |
 | 06-29 | electromagnetism/induction | refactor | ACValues.tsx 超长文件拆分：965行→5文件（ACValues.tsx 234行编排层 + useACValuesPhysics.ts 119行hook + ACValuesChartPanel.tsx 238行图表面板 + HeatingBox.tsx 225行参数化加热盒 + utils.ts 9行纯函数）；AC/DC加热盒从~340行重复代码合并为1个参数化组件；TODO_deferred.md 更新为纯待办计划 |

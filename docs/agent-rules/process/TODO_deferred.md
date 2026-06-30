@@ -142,20 +142,20 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 ## 二-c、rgba() 手写与硬编码 fontSize（P3）
 
-**rgba() 手写**（5 处）：
+**rgba() 手写**（5 处，已修复 2 处）：
 
-| 文件 | 行号 | 问题 |
-|------|------|------|
-| `ThinLensAnimation.tsx` | 210 | `rgba(2, 132, 199, 0.2)` → `withAlpha()` |
-| `PowerTransmission.tsx` | 83,90,97 | 动态颜色计算，需评估 |
-| `MomentumScene.tsx` | 193 | `rgba(0, 0, 0, 0.12)` → `withAlpha()` |
+| 文件 | 行号 | 问题 | 状态 |
+|------|------|------|:----:|
+| `ThinLensAnimation.tsx` | 210 | `rgba(2, 132, 199, 0.2)` → `withAlpha()` | ✅ |
+| `MomentumScene.tsx` | 193 | `rgba(0, 0, 0, 0.12)` → `withAlpha()` | ✅ |
+| `PowerTransmission.tsx` | 83,90,97 | 动态颜色计算，需评估 | 待定 |
 
-**硬编码 fontSize**（3 处）：
+**硬编码 fontSize**（3 处，已修复 2 处）：
 
-| 文件 | 行号 | 问题 |
-|------|------|------|
-| `LightRodRopeScene.tsx` | 470,497 | `fontSize={9/11}` → `font(9/11)` |
-| `VectorPlayground.tsx` | 65 | 开发调试文件，可忽略 |
+| 文件 | 行号 | 问题 | 状态 |
+|------|------|------|:----:|
+| `LightRodRopeScene.tsx` | 470,497 | `fontSize={9/11}` → `font(9/11)` | ✅ |
+| `VectorPlayground.tsx` | 65 | 开发调试文件，可忽略 | — |
 
 ---
 
@@ -228,8 +228,8 @@ export interface AnimationModule<P extends AnimationParams> {
 建议拆分为：`useAnimationParams()`、`usePlaybackState()`、`useAnimationDisplayOptions()`。
 通过 selector 降低组件不必要重渲染。
 
-**需立即修复**：
-- `useEquilibriumPhysics.ts:74` — `const { updateParam } = useAnimationStore()` 无 selector，必须添加
+**已修复**（2026-06-30）：
+- ~~`useEquilibriumPhysics.ts:74` — `const { updateParam } = useAnimationStore()` 无 selector~~ → 已改为精确 selector
 
 ### 4.5 Registry + params + quantities 类型闭环（P3）
 

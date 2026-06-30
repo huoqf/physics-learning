@@ -1,4 +1,4 @@
-import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_STYLE, withAlpha } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { RelationChart } from '@/components/Chart'
@@ -190,7 +190,7 @@ export function MomentumScene({
         <g transform={`translate(${cardX}, ${cardY})`}>
           <rect width={cardWidth} height={cardHeight} fill={SCENE_COLORS.labels.glassPanelBg}
             rx={8} stroke={CHART_COLORS.axisLine} strokeWidth={0.8}
-            filter="drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12))" />
+            filter={`drop-shadow(0 4px 12px ${withAlpha('#000000', 0.12)})`} />
           <foreignObject x={4} y={4} width={cardWidth - 8} height={cardHeight - 8}
             style={{ pointerEvents: 'none' }}>
             <div style={{ width: '100%', height: '100%' }}>

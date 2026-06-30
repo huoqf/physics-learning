@@ -207,7 +207,7 @@ export default function ThinLensAnimation() {
               <path
                 d={lensShape(cx, cy, 60, isConcave)}
                 fill="url(#lens-grad)" stroke={OPTICS_COLORS.lensStroke} strokeWidth={2.5}
-                filter="drop-shadow(0px 2px 4px rgba(2, 132, 199, 0.2))"
+                filter={`drop-shadow(0px 2px 4px ${withAlpha('#2563EB', 0.2)})`}
               />
               <path
                 d={isConcave

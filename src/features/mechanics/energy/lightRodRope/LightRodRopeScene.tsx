@@ -9,7 +9,8 @@ interface LightRodRopeSceneProps {
 }
 
 export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
-  const { params, state, layout, forceVectors, particles, tEnd, time } = physics
+  const { params, state, layout, forceVectors, particles, tEnd, time, canvasSize } = physics
+  const { font } = canvasSize
   const { constraint, showGravity, showTension, showResolution, showVelocityDecomp } = params
   const {
     pivotX,
@@ -467,7 +468,7 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
                     y={(y_A + y_B) / 2 - 12}
                     textAnchor="middle"
                     fill={PHYSICS_COLORS.velocityX}
-                    fontSize={9}
+                    fontSize={font(9)}
                     fontWeight="bold"
                   >
                     v_A∥ = v_B∥
@@ -494,7 +495,7 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
             y={18}
             textAnchor="middle"
             fill={state.stopReason === 'slack' ? colors.danger[700] : colors.success[700]}
-            fontSize={11}
+            fontSize={font(11)}
             fontWeight="bold"
           >
             {state.stopReason === 'slack'
