@@ -53,6 +53,16 @@ export default [
     },
   },
 
+  // 2-b) Node 脚本（ESM .mjs）
+  {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      sourceType: 'module',
+      globals: { ...globals.node },
+    },
+  },
+
   // 3) 测试文件（vitest 全局 + 放宽 any）
   {
     files: ['tests/**/*.{ts,tsx}'],

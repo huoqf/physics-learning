@@ -191,12 +191,6 @@ export const HeatingBox = React.memo(function HeatingBox({
             stroke={colors.neutral.white} strokeWidth={2} opacity={0.7}
           />
         )}
-        {isAC && false && isSuccess && atPeriodEnd && (
-          <text x={slotX + slotW / 2} y={fillY - font(3)}
-            fontSize={font(9)} textAnchor="middle" fill={colorSuccess} fontWeight="bold">
-            ✓
-          </text>
-        )}
         {!isAC && isSuccess && atPeriodEnd && (
           <text x={slotX + slotW / 2} y={fillY - font(3)}
             fontSize={font(9)} textAnchor="middle" fill={colorSuccess} fontWeight="bold">

@@ -11,7 +11,8 @@ import { RelationChart } from '@/components/Chart'
 import type { RelationMarker } from '@/components/Chart'
 
 import { useThinLensRays } from './hooks/useThinLensRays'
-import { CandleShape, FocalMarks, lensShape } from './components/ThinLensShapes'
+import { CandleShape, FocalMarks } from './components/ThinLensShapes'
+import { lensShape } from './components/lensGeometry'
 import { ThinLensRail } from './components/ThinLensRail'
 import { ThinLensRays } from './components/ThinLensRays'
 

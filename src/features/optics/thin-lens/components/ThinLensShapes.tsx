@@ -1,12 +1,5 @@
 import { OPTICS_COLORS, STROKE, FONT } from '@/theme/physics'
 
-export function lensShape(cx: number, cy: number, halfH: number, isConcave: boolean): string {
-  const bow = isConcave ? -8 : 8
-  const top = cy - halfH
-  const bot = cy + halfH
-  return `M ${cx} ${top} Q ${cx + bow} ${cy} ${cx} ${bot} Q ${cx - bow} ${cy} ${cx} ${top} Z`
-}
-
 export function CandleShape({ x, y, h, opacity = 1, inverted = false, showGlow = true, filter }: {
   x: number; y: number; h: number; opacity?: number; inverted?: boolean; showGlow?: boolean; filter?: string
 }) {

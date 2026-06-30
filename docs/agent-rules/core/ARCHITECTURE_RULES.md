@@ -44,9 +44,11 @@ src/
 │   │   ├── electrostatics/ #   静电场（库仑、电场、电容器…）
 │   │   ├── dc-circuits/    #   恒定电流（欧姆、串并联…）
 │   │   ├── magnetism/      #   磁场（安培力、洛伦兹力…）
+│   │   │   └── velocity-selector/  # 速度选择器（model/hooks/components）
 │   │   └── induction/      #   电磁感应与交变电流（含 AC 动画）
-│   ├── thermodynamics/     #   热学（待开发）
-│   ├── optics/             #   光学（待开发）
+│   │       └── transformer/  # 变压器（model/hooks/components）
+│   ├── thermodynamics/     #   热学（理想气体、热力学定律）
+│   ├── optics/             #   光学（折射、反射、薄透镜）
 │   ├── atomic/             #   原子物理（待开发）
 │   ├── practice/           #   练习会话组件
 │   └── dev/                #   开发调试专用（不纳入生产功能）
@@ -126,10 +128,16 @@ electron/                   # Electron 预留目录
 
 tests/
 ├── setup.ts
-└── utils/
-    ├── coordinate.test.ts
-    └── animation.test.ts
-```��── mechanics-energy.ts
+├── features/               # 功能模块单元测试（view model、纯函数）
+├── components/             # 组件测试
+│   ├── Chart/
+│   └── Physics/
+├── data/                   # 数据层测试
+├── math/                   # 数学工具测试
+├── physics/                # 物理计算测试
+├── stores/                 # Store 测试
+└── utils/                  # 工具函数测试
+```
 │   │   ├── mechanics-momentum.ts
 │   │   ├── electromagnetism-electrostatics.ts
 │   │   ├── electromagnetism-dc-circuits.ts
@@ -169,9 +177,15 @@ electron/                   # Electron 预留目录
 
 tests/
 ├── setup.ts
-└── utils/
-    ├── coordinate.test.ts
-    └── animation.test.ts
+├── features/               # 功能模块单元测试（view model、纯函数）
+├── components/             # 组件测试
+│   ├── Chart/
+│   └── Physics/
+├── data/                   # 数据层测试
+├── math/                   # 数学工具测试
+├── physics/                # 物理计算测试
+├── stores/                 # Store 测试
+└── utils/                  # 工具函数测试
 ```
 
 新增规则：
@@ -489,7 +503,16 @@ Tailwind v4 使用 CSS-first 配置，颜色通过 `src/index.css` 中的 `@them
 ### 12.1 代码组织指南
 
 - **Feature 子目录分组**：`features/mechanics/` 和 `features/electromagnetism/` 下按物理主题分子目录（mechanics: kinematics/dynamics/circular/gravitation/momentum/energy；electromagnetism: electrostatics/dc-circuits/magnetism/induction/shared），新增动画文件放入对应子目录，禁止平铺
-- **大文件拆分**：单文件超过 500 行时应考虑按职责拆分为独立模块，通过懒加载或 barrel 文件组织
+- **大文件拆分**：单文件超过 500 行时应按职责拆分为独立模块，推荐三段式结构：
+  ```
+  features/<domain>/<topic>/
+  ├── XxxAnimation.tsx          # 薄编排层（store 读取 + 组件组合）
+  ├── <topic>/
+  │   ├── model/                # 纯计算函数 + view model（可独立单测）
+  │   ├── hooks/                # 状态逻辑（零 JSX）
+  │   └── components/           # 渲染组件（纯展示）
+  ```
+  拆分验收标准：新增可独立运行的单元测试，或物理计算与渲染逻辑解耦，或单文件行数降到 500 以下。
 - **重复逻辑提取**：多处出现的相同计算模式（如轨迹插值）应提取为 `src/utils/` 下的通用工具函数
 
 ```ts
