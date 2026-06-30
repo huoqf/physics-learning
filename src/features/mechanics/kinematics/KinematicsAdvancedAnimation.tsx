@@ -3,7 +3,7 @@ import { useCanvasSize, useViewport } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme'
-import { PHYSICS_COLORS, STROKE } from '@/theme/physics'
+import { PHYSICS_COLORS, STROKE, CANVAS_COLORS } from '@/theme/physics'
 import { Block } from '@/components/Physics/Block'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
@@ -54,8 +54,8 @@ function InterceptBubble({ chartMode, v0 }: { chartMode: number; v0: number }) {
         width={bubbleW}
         height={bubbleH}
         rx={3}
-        fill="#FEF2F2"
-        stroke="#FECACA"
+        fill={CANVAS_COLORS.dangerBg}
+        stroke={CANVAS_COLORS.dangerBorder}
         strokeWidth={1}
       />
       <text

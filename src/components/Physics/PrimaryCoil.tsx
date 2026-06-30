@@ -150,7 +150,7 @@ export const PrimaryCoil: React.FC<PrimaryCoilProps> = ({
           <path
             d={`M ${cx - 0.8} ${ry - 1.8} A ${rx - 0.8} ${ry - 1.8} 0 0 0 ${cx - 0.8} ${-ry + 1.8}`}
             fill="none"
-            stroke="#FFFFFF" 
+            stroke={SCENE_COLORS.materials.specularWhite} 
             strokeWidth={highlightW}
             opacity="0.6"
             strokeLinecap="round"

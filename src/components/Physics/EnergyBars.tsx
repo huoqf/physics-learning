@@ -1,4 +1,5 @@
 import { FC } from 'react'
+import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
 
 export interface EnergyBarItem {
   key: string
@@ -89,7 +90,7 @@ export const EnergyBars: FC<EnergyBarsProps> = ({
 
         {items.map((item) => {
           const isColliding = hasCollision && collisionKey === item.key
-          const itemColor = isColliding ? '#EF4444' : item.color
+          const itemColor = isColliding ? PHYSICS_COLORS.alertRed : item.color
 
           return (
             <div key={item.key} className="flex flex-col items-center flex-1 z-10 min-w-0">
@@ -125,7 +126,7 @@ export const EnergyBars: FC<EnergyBarsProps> = ({
                   className={`absolute -top-4.5 font-semibold font-mono w-full text-center truncate px-0.5 transition-colors duration-300`}
                   style={{ 
                     fontSize: fSize(valueFs),
-                    color: isColliding ? '#EF4444' : (item.textColor || '#525252')
+                    color: isColliding ? PHYSICS_COLORS.alertRed : (item.textColor || SCENE_COLORS.materials.structStrokeLight)
                   }}
                   title={item.value.toFixed(2)}
                 >

@@ -11,6 +11,7 @@ import {
   DASH,
   FONT,
   CANVAS_STYLE,
+  withAlpha,
 } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
@@ -510,7 +511,7 @@ export default function ObliqueThrowAnimation() {
                 rx={6}
                 stroke={CHART_COLORS.axisLine}
                 strokeWidth={0.8}
-                filter="drop-shadow(0 4px 10px rgba(0,0,0,0.1))"
+                filter={`drop-shadow(0 4px 10px ${withAlpha(SCENE_COLORS.materials.structStrokeDark, 0.1)})`}
               />
               <polygon
                 points={panelAbove
@@ -545,7 +546,7 @@ export default function ObliqueThrowAnimation() {
             rx={8}
             stroke={CHART_COLORS.axisLine}
             strokeWidth={0.8}
-            filter="drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12))"
+            filter={`drop-shadow(0 4px 12px ${SCENE_COLORS.effects.shadowLight})`}
           />
 
           {/* vx 主曲线 */}

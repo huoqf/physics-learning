@@ -1,5 +1,6 @@
 import { useMemo, useEffect } from 'react'
 import { useAnimationStore } from '@/stores'
+import { PHYSICS_COLORS } from '@/theme/physics'
 import { useShallow } from 'zustand/react/shallow'
 import { precomputeLightRodRopeTrajectory, getLRRStateAtTime } from '@/physics/lightRodRope'
 import type { LRRModelState } from '@/physics/lightRodRope'
@@ -260,14 +261,14 @@ export function useLightRodRopePhysics(): UseLightRodRopePhysicsResult {
           axis: 'vertical',
           x: pt.t,
           label: '绳拉直',
-          color: '#EF4444',
+          color: PHYSICS_COLORS.alertRed,
         })
       } else if (pt.eventB === 'slack') {
         list.push({
           axis: 'vertical',
           x: pt.t,
           label: '绳松弛',
-          color: '#6B7280',
+          color: PHYSICS_COLORS.secantLine,
         })
       }
     })

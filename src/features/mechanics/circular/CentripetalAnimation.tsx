@@ -559,7 +559,7 @@ export default function CentripetalAnimation() {
             <rect
               width={cardWidth}
               height={cardHeight}
-              fill="#FFFFFF"
+              fill={SCENE_COLORS.materials.specularWhite}
               rx={8}
               stroke={CHART_COLORS.axisLine}
               strokeWidth={0.8}

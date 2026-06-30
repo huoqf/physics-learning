@@ -1,5 +1,5 @@
 import React from 'react'
-import { SCENE_COLORS } from '@/theme/physics'
+import { SCENE_COLORS, withAlpha } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
 const ELECTRICAL = SCENE_COLORS.electricalApparatus
@@ -198,7 +198,7 @@ export const DCSource: React.FC<DCSourceProps> = ({
           width={layout.baseW}
           height={layout.baseH}
           rx={layout.cornerRadius}
-          fill="rgba(15, 23, 42, 0.15)"
+          fill={withAlpha(colors.neutral[900], 0.15)}
           filter="blur(2px)"
         />
 
@@ -235,7 +235,7 @@ export const DCSource: React.FC<DCSourceProps> = ({
           fontWeight="bold"
           fontFamily="monospace"
           textAnchor="middle"
-          style={{ filter: 'drop-shadow(0px 0px 2px rgba(34, 197, 94, 0.8))', userSelect: 'none' }}
+          style={{ filter: `drop-shadow(0px 0px 2px ${withAlpha(colors.success[500], 0.8)})`, userSelect: 'none' }}
         >
           {voltage.toFixed(1)} V
         </text>
@@ -289,7 +289,7 @@ export const DCSource: React.FC<DCSourceProps> = ({
           width={layout.baseW}
           height={layout.baseH}
           rx={layout.cornerRadius}
-          fill="rgba(15, 23, 42, 0.12)"
+          fill={withAlpha(colors.neutral[900], 0.12)}
           filter="blur(1.5px)"
         />
 

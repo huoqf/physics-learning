@@ -436,7 +436,7 @@ export const GravityBasicAnimation: FC = () => {
               fill="url(#plate-grad)"
               stroke={PHYSICS_COLORS.labelText}
               strokeWidth={1.8}
-              filter="drop-shadow(2px 4px 6px rgba(0,0,0,0.15))"
+              filter={`drop-shadow(2px 4px 6px ${withAlpha(SCENE_COLORS.materials.structStrokeDark, 0.15)})`}
             />
 
             {/* 绘制已经画出的重力铅垂线 (对应 3 个悬挂孔) */}

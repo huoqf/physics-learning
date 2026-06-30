@@ -1,5 +1,5 @@
 import React from 'react'
-import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_COLORS, SCENE_COLORS, withAlpha } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { duration, easing } from '@/theme/motion'
 
@@ -62,14 +62,14 @@ export const DialMeter: React.FC<DialMeterProps> = ({
         </linearGradient>
         {/* 表盘外阴影，模拟立体悬浮 */}
         <filter id={`dial-shadow-${type}`} x="-25%" y="-25%" width="150%" height="150%">
-          <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#0F172A" floodOpacity="0.12" />
+          <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor={SCENE_COLORS.materials.structStrokeDark} floodOpacity="0.12" />
         </filter>
       </defs>
 
       {/* 外圈金属边框（带立体投影） */}
       <circle cx={0} cy={0} r={28} fill={`url(#dial-ring-${type})`} filter={`url(#dial-shadow-${type})`} />
       {/* 表盘底色 (毛玻璃透明质感) */}
-      <circle cx={0} cy={0} r={25} fill="rgba(248, 250, 252, 0.94)" stroke={colors.neutral[600]} strokeWidth={1.0} />
+      <circle cx={0} cy={0} r={25} fill={withAlpha(SCENE_COLORS.materials.structBgLight, 0.94)} stroke={SCENE_COLORS.materials.structStrokeMid} strokeWidth={1.0} />
 
       {/* 弧形刻度线 */}
       <path

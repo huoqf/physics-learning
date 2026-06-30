@@ -54,6 +54,8 @@ export const SURFACE_COLORS = {
   pulleyStroke:  '#1F2937', // 滑轮描边
   ropeColor:     '#92400E', // 绳子主色      — amber-800（天然麻绳）
   ropeActive:    '#D97706', // 绳子受力态    — amber-600
+  waterFill:     '#0284C7', // 水面填充      — sky-600
+  waterRipple:   '#0EA5E9', // 水波纹描边    — sky-500
 } as const
 
 // ─── 摆 / 转动体 (Pendulum & Rotation) ───────────────────────────────────────

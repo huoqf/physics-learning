@@ -13,7 +13,8 @@ import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, withAlpha } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 import { RelationChart, ChartArea } from '@/components/Chart'
 import { Spring } from '@/components/UI'
 
@@ -500,8 +501,8 @@ export default function MomentumTheoremAnimation() {
                 y={-nozzleHeight / 2}
                 width={Math.max(0, plateX + springCompression - nozzleX - 15)}
                 height={nozzleHeight}
-                fill="rgba(219, 234, 254, 0.12)"
-                stroke="rgba(255, 255, 255, 0.25)"
+                fill={withAlpha(colors.primary[100], 0.12)}
+                stroke={SCENE_COLORS.effects.glowWhiteLight}
                 strokeWidth={1}
                 rx={1.5}
               />
@@ -510,7 +511,7 @@ export default function MomentumTheoremAnimation() {
                 y1={-nozzleHeight / 2}
                 x2={plateX + springCompression}
                 y2={-nozzleHeight / 2}
-                stroke="rgba(255, 255, 255, 0.65)"
+                stroke={SCENE_COLORS.effects.glowWhite}
                 strokeWidth={1.5}
               />
               <line
@@ -518,7 +519,7 @@ export default function MomentumTheoremAnimation() {
                 y1={nozzleHeight / 2}
                 x2={plateX + springCompression}
                 y2={nozzleHeight / 2}
-                stroke="rgba(255, 255, 255, 0.45)"
+                stroke={withAlpha(colors.neutral.white, 0.45)}
                 strokeWidth={1.5}
               />
 

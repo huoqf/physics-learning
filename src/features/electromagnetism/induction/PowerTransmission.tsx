@@ -15,6 +15,7 @@
  * @agent-rule 所有字体使用 font()，所有像素使用 px()
  */
 import { useRef, useMemo, useCallback, useState } from 'react'
+import { colors } from '@/theme/colors'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -300,8 +301,8 @@ export default function PowerTransmission() {
       >
         {isOverloaded && (
           <g>
-            <rect x={px(12)} y={px(10)} width={W - px(24)} height={px(28)} rx={px(6)} fill="#fee2e2" stroke="#ef4444" />
-            <text x={W / 2} y={px(29)} textAnchor="middle" fontSize={font(12)} fill="#b91c1c" fontWeight="bold">
+            <rect x={px(12)} y={px(10)} width={W - px(24)} height={px(28)} rx={px(6)} fill={colors.danger[100]} stroke={colors.danger[500]} />
+            <text x={W / 2} y={px(29)} textAnchor="middle" fontSize={font(12)} fill={colors.danger[700]} fontWeight="bold">
               线路过载：损耗超过供电能力，用户端电压/功率已按 0 处理
             </text>
           </g>

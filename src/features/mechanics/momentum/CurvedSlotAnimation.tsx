@@ -210,7 +210,7 @@ export default function CurvedSlotAnimation() {
                 return (
                   <g>
                     <path d={`M ${X_px} ${COMP_GROUND_Y} L ${X_px + R_px + SLOT_EXTRA_WIDTH} ${COMP_GROUND_Y} L ${X_px + R_px + SLOT_EXTRA_WIDTH} ${COMP_GROUND_Y - R_px} L ${X_px + R_px} ${COMP_GROUND_Y - R_px} A ${R_px} ${R_px} 0 0 1 ${X_px} ${COMP_GROUND_Y} Z`} fill={`url(#${gradId})`} stroke={SCENE_COLORS.materials.aluminumMetalGrad[3]} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-                    <path d={`M ${X_px + R_px} ${COMP_GROUND_Y - R_px} A ${R_px} ${R_px} 0 0 1 ${X_px} ${COMP_GROUND_Y}`} fill="none" stroke="#FFFFFF" strokeWidth="1.5" />
+                    <path d={`M ${X_px + R_px} ${COMP_GROUND_Y - R_px} A ${R_px} ${R_px} 0 0 1 ${X_px} ${COMP_GROUND_Y}`} fill="none" stroke={SCENE_COLORS.materials.edgeHighlightWhite} strokeWidth="1.5" />
                   </g>
                 )
               } else {
@@ -218,7 +218,7 @@ export default function CurvedSlotAnimation() {
                 return (
                   <g>
                     <path d={`M ${X_px - R_px - SLOT_EXTRA_WIDTH} ${COMP_GROUND_Y} L ${X_px + R_px + SLOT_EXTRA_WIDTH} ${COMP_GROUND_Y} L ${X_px + R_px + SLOT_EXTRA_WIDTH} ${COMP_GROUND_Y - R_px} L ${X_px + R_px} ${COMP_GROUND_Y - R_px} A ${R_px} ${R_px} 0 0 1 ${X_px - R_px} ${COMP_GROUND_Y - R_px} L ${X_px - R_px - SLOT_EXTRA_WIDTH} ${COMP_GROUND_Y - R_px} Z`} fill={`url(#${gradId})`} stroke={SCENE_COLORS.materials.aluminumMetalGrad[3]} strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-                    <path d={`M ${X_px + R_px} ${COMP_GROUND_Y - R_px} A ${R_px} ${R_px} 0 0 1 ${X_px - R_px} ${COMP_GROUND_Y - R_px}`} fill="none" stroke="#FFFFFF" strokeWidth="1.5" />
+                    <path d={`M ${X_px + R_px} ${COMP_GROUND_Y - R_px} A ${R_px} ${R_px} 0 0 1 ${X_px - R_px} ${COMP_GROUND_Y - R_px}`} fill="none" stroke={SCENE_COLORS.materials.edgeHighlightWhite} strokeWidth="1.5" />
                   </g>
                 )
               }

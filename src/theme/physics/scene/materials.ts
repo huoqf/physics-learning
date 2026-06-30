@@ -41,8 +41,23 @@ export const COMMON_MATERIALS = {
       core:  '#FFFFFF',
       glow:  '#22C55E',
       beam:  'rgba(34, 197, 94, 0.18)',
-    }
-  }
+    },
+  },
+  edgeHighlightWhite: 'rgba(255, 255, 255, 0.85)',
+  specularWhite:      'rgba(255, 255, 255, 0.55)',
+  structStrokeDark:   '#0F172A',
+  structStroke:       '#1E293B',
+  structFill:         '#334155',
+  structStrokeMid:    '#475569',
+  structStrokeLight:  '#64748B',
+  structStrokePale:   '#CBD5E1',
+  structFillPale:     '#E2E8F0',
+  structBgPale:       '#F0F9FF',
+  structBgLight:      '#F8FAFC',
+  stoneStroke:        '#78716C',
+  pulleyLight:        '#F5F5F5',
+  pulleyMid:          '#B5B5B5',
+  pulleyDark:         '#404040',
 } as const
 
 // ─── 球体 / 球形器材材质规范 (Sphere & Orb Bodies) ───────────────────────────
@@ -136,6 +151,7 @@ export const ENVIRONMENT_COLORS = {
   // 介质/空气环境（普通阻力轨道外观）
   mediaStroke:      '#475569', // neutral-600
   mediaBorder:      '#0F172A', // neutral-900
+  spaceBg:          '#020617', // 太空背景色
 } as const
 
 // ─── 物理特效与微积分切片 (Special Effects & Math Slices) ─────────────────────
@@ -149,6 +165,10 @@ export const SPECIAL_EFFECTS = {
   patternStripe:    '#EF4444', // 红
   // 扇形扫过面积/光束填充半透明特效
   sectorFill:       'rgba(251, 191, 36, 0.15)',
+  shadowLight:      'rgba(0, 0, 0, 0.12)',
+  shadowMedium:     'rgba(0, 0, 0, 0.25)',
+  glowWhite:        'rgba(255, 255, 255, 0.65)',
+  glowWhiteLight:   'rgba(255, 255, 255, 0.25)',
 } as const
 
 // ─── 安全与警示 (Safety & Warnings) ──────────────────────────────────────────
@@ -186,4 +206,10 @@ export const CHART_COMPONENT_COLORS = {
   // 图表特殊标注点
   highlightPt:  '#F59E0B', // 极值/高亮点 (仅限图表标注)
   criticalPt:   '#EF4444', // 临界/突变标记点
+
+  // 电路图表对比色
+  circuitR1:    '#3B82F6',
+  circuitR2:    '#F97316',
+  circuitTotal: '#64748B',
+  circuitR3:    '#10B981',
 } as const;

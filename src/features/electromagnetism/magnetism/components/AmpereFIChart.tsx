@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { RelationChart } from '@/components/Chart'
 import { colors } from '@/theme/colors'
-import { FONT, PHYSICS_COLORS } from '@/theme/physics'
+import { FONT, PHYSICS_COLORS, withAlpha } from '@/theme/physics'
 
 const AMPERE_FI_DOMAIN = {
   iMin: -10,
@@ -92,7 +92,7 @@ export const AmpereFIChart: React.FC<AmpereFIChartProps> = ({
             top: 8,
             padding: '3px 5px',
             borderRadius: 4,
-            background: 'rgba(255, 255, 255, 0.82)',
+            background: withAlpha(colors.neutral.white, 0.82),
             border: `1px solid ${colors.neutral[200]}`,
             fontSize: font(FONT.small),
             lineHeight: '12px',

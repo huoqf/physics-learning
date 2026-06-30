@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { DialMeter, DCSource, Rheostat } from '@/components/Physics'
 
@@ -323,28 +323,25 @@ export default function CircuitAnalysis() {
     )
   }
 
-  // 2. 定值色环电阻
+  // 2. 高考标准电阻器符号
   const renderResistor = (x: number, y: number, label: string, resistance: number) => {
-    // 电阻色环根据阻值确定 (这里 R1=20 对应红-黑-黑，R3=30 对应橙-黑-黑)
-    const is30 = resistance === 30
-    const ring1Color = is30 ? '#F97316' : '#EF4444' // 3对应橙色，2对应红色（电阻色环国际标准）
-    const ring2Color = '#1C1917' // 0对应黑
-    const ring3Color = '#1C1917' // 乘数 10^0 = 1 对应黑
-    const ring4Color = '#D4AF37' // 误差5% 金色
-
     return (
       <g transform={`translate(${x}, ${y})`}>
-        {/* 电阻体 */}
-        <rect x={-20} y={-9} width={40} height={18} rx={4} fill={colors.neutral[50]} stroke={colors.neutral[500]} strokeWidth={1.5} />
-        {/* 两端金属端盖 */}
-        <path d="M -20 -9 L -16 -9 L -16 9 L -20 9 Z" fill={colors.neutral[400]} />
-        <path d="M 20 -9 L 16 -9 L 16 9 L 20 9 Z" fill={colors.neutral[400]} />
-        {/* 色环 */}
-        <rect x={-11} y={-9} width={3} height={18} fill={ring1Color} />
-        <rect x={-5} y={-9} width={3} height={18} fill={ring2Color} />
-        <rect x={1} y={-9} width={3} height={18} fill={ring3Color} />
-        <rect x={9} y={-9} width={3} height={18} fill={ring4Color} />
-        {/* 文字标注 */}
+        {/* 电阻器符号 (高考标准矩形框) */}
+        <rect
+          x={-18}
+          y={-9}
+          width={36}
+          height={18}
+          fill={SCENE_COLORS.circuit.resistorFill}
+          stroke={SCENE_COLORS.circuit.resistorStroke}
+          strokeWidth={2}
+        />
+        {/* 电阻标号 R1 / R3 */}
+        <text x={0} y={4} fill={colors.neutral[800]} fontSize={font(9.5)} fontWeight="bold" textAnchor="middle">
+          {label.split(' ')[0]}
+        </text>
+        {/* 下方阻值标注 */}
         <text x={0} y={22} fill={PHYSICS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="middle">
           {label} = {resistance}Ω
         </text>

@@ -246,8 +246,8 @@ export default function InductionPhenomenon() {
 
               return (
                 <g key={`glow-wire-${i}`}>
-                  <circle cx={pLeft.x} cy={pLeft.y} r="4" fill={PHYSICS_COLORS.electricCurrent} filter="drop-shadow(0 0 2px #EF4444)" />
-                  <circle cx={pRight.x} cy={pRight.y} r="4" fill={PHYSICS_COLORS.electricCurrent} filter="drop-shadow(0 0 2px #EF4444)" />
+                  <circle cx={pLeft.x} cy={pLeft.y} r="4" fill={PHYSICS_COLORS.electricCurrent} filter={`drop-shadow(0 0 2px ${PHYSICS_COLORS.alertRed})`} />
+                  <circle cx={pRight.x} cy={pRight.y} r="4" fill={PHYSICS_COLORS.electricCurrent} filter={`drop-shadow(0 0 2px ${PHYSICS_COLORS.alertRed})`} />
                 </g>
               )
             })}
@@ -374,9 +374,9 @@ export default function InductionPhenomenon() {
 
                   return (
                     <g key={`pri-wire-glow-${i}`}>
-                      <circle cx={pLeft.x} cy={pLeft.y} r="3.5" fill={PHYSICS_COLORS.electricCurrent} filter="drop-shadow(0 0 2px #EF4444)" />
-                      <circle cx={pBatToR.x} cy={pBatToR.y} r="3.5" fill={PHYSICS_COLORS.electricCurrent} filter="drop-shadow(0 0 2px #EF4444)" />
-                      <circle cx={pRight.x} cy={pRight.y} r="3.5" fill={PHYSICS_COLORS.electricCurrent} filter="drop-shadow(0 0 2px #EF4444)" />
+                      <circle cx={pLeft.x} cy={pLeft.y} r="3.5" fill={PHYSICS_COLORS.electricCurrent} filter={`drop-shadow(0 0 2px ${PHYSICS_COLORS.alertRed})`} />
+                      <circle cx={pBatToR.x} cy={pBatToR.y} r="3.5" fill={PHYSICS_COLORS.electricCurrent} filter={`drop-shadow(0 0 2px ${PHYSICS_COLORS.alertRed})`} />
+                      <circle cx={pRight.x} cy={pRight.y} r="3.5" fill={PHYSICS_COLORS.electricCurrent} filter={`drop-shadow(0 0 2px ${PHYSICS_COLORS.alertRed})`} />
                     </g>
                   )
                 })}

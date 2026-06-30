@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { DASH, FONT, OPACITY, PHYSICS_COLORS, STROKE } from '@/theme/physics'
+import { DASH, FONT, OPACITY, PHYSICS_COLORS, STROKE, SCENE_COLORS } from '@/theme/physics'
 import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
 import { useCanvasSize } from '@/utils/useCanvasSize'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -392,7 +392,7 @@ export default function ForceMotionSandbox({ state, trajectory, domainTrajectory
               ))}
             </g>
             {/* 拟物弹簧折线 */}
-            <path d={springPath} fill="none" stroke="#78716c" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+            <path d={springPath} fill="none" stroke={SCENE_COLORS.materials.structStrokeLight} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
           </>
         )}
 
@@ -404,11 +404,11 @@ export default function ForceMotionSandbox({ state, trajectory, domainTrajectory
               y1={0}
               x2={20 * Math.cos((params.theta * Math.PI) / 180)}
               y2={-20 * Math.sin((params.theta * Math.PI) / 180)}
-              stroke="#475569"
+              stroke={SCENE_COLORS.materials.structStrokeMid}
               strokeWidth={6}
               strokeLinecap="round"
             />
-            <path d="M-10 0 L10 0 L5 -6 L-5 -6 Z" fill="#334155" />
+            <path d="M-10 0 L10 0 L5 -6 L-5 -6 Z" fill={SCENE_COLORS.materials.structFill} />
           </g>
         )}
 
@@ -471,8 +471,8 @@ export default function ForceMotionSandbox({ state, trajectory, domainTrajectory
               if (isRod) {
                 return (
                   <g opacity={0.95}>
-                    <line x1={view.originX} y1={view.originY} x2={view.body.cx} y2={view.body.cy} stroke="#cbd5e1" strokeWidth={5} strokeLinecap="round" />
-                    <line x1={view.originX} y1={view.originY} x2={view.body.cx} y2={view.body.cy} stroke="#475569" strokeWidth={1} strokeLinecap="round" />
+                    <line x1={view.originX} y1={view.originY} x2={view.body.cx} y2={view.body.cy} stroke={SCENE_COLORS.materials.structStrokePale} strokeWidth={5} strokeLinecap="round" />
+                    <line x1={view.originX} y1={view.originY} x2={view.body.cx} y2={view.body.cy} stroke={SCENE_COLORS.materials.structStrokeMid} strokeWidth={1} strokeLinecap="round" />
                   </g>
                 )
               } else {
@@ -504,8 +504,8 @@ export default function ForceMotionSandbox({ state, trajectory, domainTrajectory
               }
             })()}
             {/* 圆心转轴销 */}
-            <circle cx={view.originX} cy={view.originY} r={5} fill="#475569" stroke="#1e293b" strokeWidth={1.5} />
-            <circle cx={view.originX} cy={view.originY} r={1.5} fill="#ffffff" />
+            <circle cx={view.originX} cy={view.originY} r={5} fill={SCENE_COLORS.materials.structStrokeMid} stroke={SCENE_COLORS.materials.structStroke} strokeWidth={1.5} />
+            <circle cx={view.originX} cy={view.originY} r={1.5} fill={SCENE_COLORS.materials.specularWhite} />
           </>
         )}
 
@@ -529,8 +529,8 @@ export default function ForceMotionSandbox({ state, trajectory, domainTrajectory
         {/* 垂直导轨与背景磁场 (模式 9 阻力单杆子模式) */}
         {state.mode === 'terminal-variable-force' && params.env3 > 0.5 && (
           <>
-            <line x1={view.originX - 35} y1={0} x2={view.originX - 35} y2={height} stroke="#64748b" strokeWidth={3} />
-            <line x1={view.originX + 35} y1={0} x2={view.originX + 35} y2={height} stroke="#64748b" strokeWidth={3} />
+            <line x1={view.originX - 35} y1={0} x2={view.originX - 35} y2={height} stroke={SCENE_COLORS.materials.structStrokeLight} strokeWidth={3} />
+            <line x1={view.originX + 35} y1={0} x2={view.originX + 35} y2={height} stroke={SCENE_COLORS.materials.structStrokeLight} strokeWidth={3} />
             
             {magneticGrid.map((p, idx) => (
               <g key={`b-cross-${idx}`} opacity={0.35} transform={`translate(${p.x}, ${p.y})`}>

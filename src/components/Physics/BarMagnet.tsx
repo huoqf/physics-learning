@@ -1,5 +1,6 @@
 import React from 'react'
-import { SCENE_COLORS } from '@/theme/physics'
+import { SCENE_COLORS, withAlpha } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 
 /**
  * 条形磁铁组件 Props
@@ -113,8 +114,8 @@ export const BarMagnet: React.FC<BarMagnetProps> = ({
       />
 
       {/* 中间分界缝隙/过渡 */}
-      <line x1="0" y1={-halfH} x2="0" y2={halfH} stroke="rgba(0, 0, 0, 0.3)" strokeWidth="1" />
-      <line x1="-1" y1={-halfH} x2="-1" y2={halfH} stroke="rgba(255, 255, 255, 0.2)" strokeWidth="1" />
+      <line x1="0" y1={-halfH} x2="0" y2={halfH} stroke={withAlpha(colors.neutral[900], 0.3)} strokeWidth="1" />
+      <line x1="-1" y1={-halfH} x2="-1" y2={halfH} stroke={withAlpha(colors.neutral.white, 0.2)} strokeWidth="1" />
 
       {/* 极性文字标注 */}
       <text

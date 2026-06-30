@@ -1,5 +1,5 @@
 import { FC, useId } from 'react'
-import { SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
+import { SCENE_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
 
 /**
  * 物理电学实验公共器材组件：小灯泡
@@ -95,13 +95,13 @@ export const LightBulb: FC<LightBulbProps> = ({
         cx={0}
         cy={-10}
         r={18}
-        fill={isLit ? `rgba(254, 249, 196, ${Math.min(0.35, 0.05 + power * 0.07)})` : SCENE_COLORS.circuit.bulbGlass}
+        fill={isLit ? withAlpha(SCENE_COLORS.bulb.glassNormal, Math.min(0.35, 0.05 + power * 0.07)) : SCENE_COLORS.circuit.bulbGlass}
         stroke={isLit ? SCENE_COLORS.bulb.normal : SCENE_COLORS.circuit.bulbGlassStroke}
         strokeWidth={1.8}
       />
       <path
         d="M -11 4 C -11 -2, -18 -8, -18 -10 C -18 -20, 18 -20, 18 -10 C 18 -8, 11 -2, 11 4 Z"
-        fill={isLit ? `rgba(254, 249, 196, ${Math.min(0.2, 0.02 + power * 0.04)})` : 'rgba(255, 255, 255, 0.15)'}
+        fill={isLit ? withAlpha(SCENE_COLORS.bulb.glassNormal, Math.min(0.2, 0.02 + power * 0.04)) : withAlpha(SCENE_COLORS.materials.specularWhite, 0.15)}
         stroke={isLit ? SCENE_COLORS.bulb.normal : SCENE_COLORS.circuit.bulbGlassStroke}
         strokeWidth={1.5}
       />

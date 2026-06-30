@@ -266,11 +266,11 @@ export default function ManBoatAnimation() {
               y={GROUND_Y}
               width={GROUND_WIDTH}
               isSmooth={true}
-              appearance={{ showHatch: false, color: '#0284c7' }}
+              appearance={{ showHatch: false, color: SCENE_COLORS.surface.waterFill }}
               ruler={{ domain: [-6.667, 6.667], pixelPerUnit: BOAT_PX_PER_M, tickInterval: 1, unit: 'm', position: 'bottom', showAxisLine: true }}
             />
             {/* 水面淡波纹 */}
-            <g opacity="0.3" stroke="#0ea5e9" strokeWidth="1.2" fill="none">
+            <g opacity="0.3" stroke={SCENE_COLORS.surface.waterRipple} strokeWidth="1.2" fill="none">
               <path d="M 50,134 Q 65,132 80,134 T 110,134 T 140,134" strokeDasharray="3 3" />
               <path d="M 250,135 Q 265,133 280,135 T 310,135 T 340,135" strokeDasharray="3 3" />
               <path d="M 450,134 Q 465,132 480,134 T 510,134 T 540,134" strokeDasharray="3 3" />

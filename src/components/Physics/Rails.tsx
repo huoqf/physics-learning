@@ -1,5 +1,5 @@
 import React, { useId } from 'react'
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, withAlpha } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
 /**
@@ -156,7 +156,7 @@ export const Rails: React.FC<RailsProps> = ({
                 fill={colors.neutral.white}
                 stroke={colors.neutral[200]}
                 strokeWidth={CANVAS_STYLE.stroke.grid}
-                style={{ filter: `drop-shadow(${CANVAS_STYLE.svgFilter.shadow.dx}px ${CANVAS_STYLE.svgFilter.shadow.dy}px rgba(15,23,42,0.06))` }}
+                style={{ filter: `drop-shadow(${CANVAS_STYLE.svgFilter.shadow.dx}px ${CANVAS_STYLE.svgFilter.shadow.dy}px ${withAlpha(SCENE_COLORS.materials.structStrokeDark, 0.06)})` }}
               />
               <text
                 x="0"
@@ -314,7 +314,7 @@ export const Rails: React.FC<RailsProps> = ({
         rx={bgRx}
         stroke={colors.neutral[200]}
         strokeWidth={CANVAS_STYLE.stroke.objectThin}
-        style={{ filter: `drop-shadow(${CANVAS_STYLE.svgFilter.shadow.dx}px ${CANVAS_STYLE.svgFilter.shadow.dy}px rgba(15,23,42,0.06))` }}
+        style={{ filter: `drop-shadow(${CANVAS_STYLE.svgFilter.shadow.dx}px ${CANVAS_STYLE.svgFilter.shadow.dy}px ${withAlpha(SCENE_COLORS.materials.structStrokeDark, 0.06)})` }}
       />
       <rect
         x={x1 - bgPadX + bgInnerOffset}

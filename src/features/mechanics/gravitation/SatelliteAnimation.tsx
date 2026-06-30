@@ -153,7 +153,7 @@ export default function SatelliteAnimation() {
             <stop offset="100%" stopColor={PHYSICS_COLORS.internalEnergy} stopOpacity={0.6} />
           </linearGradient>
           <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="120%">
-            <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000000" floodOpacity="0.12" />
+            <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor={SCENE_COLORS.materials.structStrokeDark} floodOpacity="0.12" />
           </filter>
         </defs>
 
@@ -270,7 +270,7 @@ export default function SatelliteAnimation() {
               <rect width={240} height={160} fill={SCENE_COLORS.labels.glassPanelBg} rx={8} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} filter="url(#card-shadow)" />
               <text x={120} y={18} fontSize={font(9)} fill={CANVAS_COLORS.labelText} textAnchor="middle" fontWeight="bold" fontFamily="PingFang SC, sans-serif">CAM-01: 发射与并轨特写监控</text>
               <g transform="translate(10, 28)">
-                <rect width={220} height={120} fill="#020617" rx={4} />
+                <rect width={220} height={120} fill={SCENE_COLORS.environment.spaceBg} rx={4} />
                 <g style={{ clipPath: 'inset(0px round 4px)' }}>
                   {(() => {
                     const zoomLevel = 4.0

@@ -67,7 +67,7 @@ export const Pulley: FC<PulleyProps> = ({
         cx={cx}
         cy={cy}
         r={r}
-        fill="#f5f5f5"
+        fill={SCENE_COLORS.materials.pulleyLight}
         stroke={SCENE_COLORS.pendulum.rodFill}
         strokeWidth={2}
       />
@@ -77,7 +77,7 @@ export const Pulley: FC<PulleyProps> = ({
         cy={cy}
         r={Math.max(3, r - 4)}
         fill="none"
-        stroke="#b5b5b5"
+        stroke={SCENE_COLORS.materials.pulleyMid}
         strokeWidth={1}
         strokeDasharray="2,2"
       />
@@ -86,7 +86,7 @@ export const Pulley: FC<PulleyProps> = ({
         cx={cx}
         cy={cy}
         r={3}
-        fill="#404040"
+        fill={SCENE_COLORS.materials.pulleyDark}
       />
     </g>
   )

@@ -232,25 +232,21 @@ export default function ClosedCircuit() {
 
         {/* B. 内阻部分 r */}
         <g transform="translate(370, 320)">
-          {/* 电阻陶瓷体 */}
+          {/* 电阻器符号 (高考标准矩形框) */}
           <rect
             x={0}
             y={-9}
             width={36}
             height={18}
-            rx={2}
-            fill={colors.neutral[200]}
-            stroke={PHYSICS_COLORS.resistance}
-            strokeWidth={1.5}
+            fill={SCENE_COLORS.circuit.resistorFill}
+            stroke={SCENE_COLORS.circuit.resistorStroke}
+            strokeWidth={2}
           />
-          {/* 电阻两端金属帽 */}
-          <rect x={0} y={-9} width={4} height={18} fill={colors.neutral[400]} />
-          <rect x={32} y={-9} width={4} height={18} fill={colors.neutral[400]} />
-          {/* 动态色环 (使用棕、红、金表示其内阻) */}
-          <rect x={8} y={-9} width={3} height={18} fill="#78350F" />
-          <rect x={15} y={-9} width={3} height={18} fill="#DC2626" />
-          <rect x={26} y={-9} width={3} height={18} fill="#D4AF37" />
-
+          {/* 阻值字母标注 */}
+          <text x={18} y={4} fill={colors.neutral[800]} fontSize={font(10)} fontWeight="bold" textAnchor="middle">
+            r
+          </text>
+          
           {/* 连接回主干路 */}
           <line x1={36} y1={0} x2={80} y2={0} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
 

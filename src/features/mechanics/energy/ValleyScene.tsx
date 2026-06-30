@@ -1,5 +1,5 @@
 import { colors } from '@/theme/colors'
-import { PHYSICS_COLORS, ENERGY_COLORS, STROKE, SCENE_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, ENERGY_COLORS, STROKE, SCENE_COLORS, withAlpha } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { ZeroPotentialLine } from './ZeroPotentialLine'
 import type { SceneScale } from '@/scene'
@@ -108,7 +108,7 @@ export function ValleyScene({
       {/* 阶段状态指示：卡死停在坡上时闪烁提示 */}
       {state.phase === 1 && (
         <g transform={`translate(${animCenterX - 45}, ${groundY - 110})`}>
-          <rect width={90} height={18} rx={3} fill="rgba(239, 68, 68, 0.08)" stroke="rgba(239, 68, 68, 0.4)" strokeWidth={0.8} />
+          <rect width={90} height={18} rx={3} fill={withAlpha(PHYSICS_COLORS.alertRed, 0.08)} stroke={withAlpha(PHYSICS_COLORS.alertRed, 0.4)} strokeWidth={0.8} />
           <text x={45} y={12} fontSize={font(7.5)} fontWeight="bold" textAnchor="middle" fill={ENERGY_COLORS.internalEnergy}>
             摩擦受力平衡已静止
           </text>

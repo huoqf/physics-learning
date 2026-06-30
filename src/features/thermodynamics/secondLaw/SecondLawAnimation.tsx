@@ -4,7 +4,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { SECOND_LAW_COLORS } from '@/theme/physics'
+import { SECOND_LAW_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { STROKE, FONT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import {
@@ -329,7 +329,7 @@ export default function SecondLawAnimation() {
           x={vp.visibleX + vp.visibleW / 2}
           y={vp.visibleY + vp.visibleH * LAYOUT.statusBottomRatio}
           fontSize={font(11)}
-          fill={isEquilibrium ? SECOND_LAW_COLORS.equilibriumLabel : '#64748B'}
+          fill={isEquilibrium ? SECOND_LAW_COLORS.equilibriumLabel : SCENE_COLORS.materials.structStrokeLight}
           textAnchor="middle"
           fontWeight={isEquilibrium ? 'bold' : 'normal'}
           fontFamily={FONT.family}

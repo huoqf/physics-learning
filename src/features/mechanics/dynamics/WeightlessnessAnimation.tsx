@@ -4,7 +4,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateElevatorMotion } from '@/physics'
-import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_STYLE, STROKE, FONT, withAlpha } from '@/theme/physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { colors } from '@/theme/colors'
@@ -754,7 +754,7 @@ export default function WeightlessnessAnimation() {
                   strokeWidth={0.8}
                   rx={3}
                   opacity={0.92}
-                  filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))"
+                  filter={`drop-shadow(0 2px 4px ${withAlpha(SCENE_COLORS.materials.structStrokeDark, 0.1)})`}
                 />
                 <text x={8} y={14} fontSize={sfs - 0.5} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
                   a = {currentA.toFixed(1)} m/s²

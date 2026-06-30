@@ -2,7 +2,8 @@ import { useCallback, useMemo, useRef } from 'react'
 import { useCanvasSize, useViewport } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { OPTICS_COLORS, STROKE, FONT, DASH, CANVAS_COLORS } from '@/theme/physics'
+import { OPTICS_COLORS, STROKE, DASH, CANVAS_COLORS, FONT, SCENE_COLORS, withAlpha } from '@/theme/physics'
+import { colors } from '@/theme/colors'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateThinLens } from '@/physics/optics'
 import { useThinLensPhysics } from './useThinLensPhysics'
@@ -443,11 +444,11 @@ export default function ThinLensAnimation() {
 
           {/* 金属导轨渐变 */}
           <linearGradient id="rail-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#334155" />
-            <stop offset="25%" stopColor="#94A3B8" />
-            <stop offset="60%" stopColor="#CBD5E1" />
-            <stop offset="85%" stopColor="#64748B" />
-            <stop offset="100%" stopColor="#1E293B" />
+            <stop offset="0%" stopColor={colors.neutral[700]} />
+            <stop offset="25%" stopColor={colors.neutral[400]} />
+            <stop offset="60%" stopColor={colors.neutral[300]} />
+            <stop offset="85%" stopColor={colors.neutral[500]} />
+            <stop offset="100%" stopColor={colors.neutral[800]} />
           </linearGradient>
 
           {/* 动态高斯模糊调焦滤镜 */}
@@ -463,12 +464,12 @@ export default function ThinLensAnimation() {
           <g>
             <rect
               x={15} y={cy + 8} width={VIEW_WIDTH - 30} height={14}
-              fill="url(#rail-grad)" rx={2} stroke="#0F172A" strokeWidth={1}
+              fill="url(#rail-grad)" rx={2} stroke={SCENE_COLORS.materials.structStrokeDark} strokeWidth={1}
             />
             {/* 导轨中心凹槽 */}
             <line
               x1={20} y1={cy + 15} x2={VIEW_WIDTH - 20} y2={cy + 15}
-              stroke="#0F172A" strokeWidth={1.5}
+              stroke={SCENE_COLORS.materials.structStrokeDark} strokeWidth={1.5}
             />
             {/* 导轨厘米刻度尺 */}
             {(() => {
@@ -488,7 +489,7 @@ export default function ThinLensAnimation() {
                       key={`tick-${cm}`}
                       x1={tx} y1={cy + 8}
                       x2={tx} y2={cy + 8 + tickH}
-                      stroke={isBig ? "#0F172A" : "#475569"}
+                      stroke={isBig ? SCENE_COLORS.materials.structStrokeDark : SCENE_COLORS.materials.structStrokeMid}
                       strokeWidth={isBig ? 1.5 : 0.8}
                     />
                   )
@@ -499,7 +500,7 @@ export default function ThinLensAnimation() {
                         key={`label-${cm}`}
                         x={tx} y={cy + 30}
                         fontSize={font(8)}
-                        fill="#334155"
+                        fill={SCENE_COLORS.materials.structFill}
                         textAnchor="middle"
                         fontFamily={FONT.family}
                         fontWeight="bold"
@@ -523,7 +524,7 @@ export default function ThinLensAnimation() {
                       key={`tick-${cm}`}
                       x1={tx} y1={cy + 8}
                       x2={tx} y2={cy + 8 + tickH}
-                      stroke={isBig ? "#0F172A" : "#475569"}
+                      stroke={isBig ? SCENE_COLORS.materials.structStrokeDark : SCENE_COLORS.materials.structStrokeMid}
                       strokeWidth={isBig ? 1.5 : 0.8}
                     />
                   )
@@ -534,7 +535,7 @@ export default function ThinLensAnimation() {
                         key={`label-${cm}`}
                         x={tx} y={cy + 30}
                         fontSize={font(8)}
-                        fill="#334155"
+                        fill={SCENE_COLORS.materials.structFill}
                         textAnchor="middle"
                         fontFamily={FONT.family}
                         fontWeight="bold"
@@ -583,7 +584,7 @@ export default function ThinLensAnimation() {
                 ? `M ${cx - 3} ${cy - 50} Q ${cx + 3} ${cy} ${cx - 3} ${cy + 50}`
                 : `M ${cx - 3} ${cy - 50} Q ${cx + 1} ${cy} ${cx - 3} ${cy + 50}`
               }
-              fill="none" stroke="#FFFFFF" strokeWidth={1.5} opacity={0.65}
+              fill="none" stroke={colors.neutral.white} strokeWidth={1.5} opacity={0.65}
             />
             {/* 透镜拖动指示手势 */}
             {mode === 1 && (
@@ -706,17 +707,17 @@ export default function ThinLensAnimation() {
                 <g>
                   {/* 物理光屏 */}
                   <g>
-                    <line x1={screenSvgX} y1={cy} x2={screenSvgX} y2={cy + 40} stroke="#475569" strokeWidth={3} />
-                    <rect x={screenSvgX - 15} y={cy + 40} width={30} height={6} fill="#1E293B" rx={1} />
+                    <line x1={screenSvgX} y1={cy} x2={screenSvgX} y2={cy + 40} stroke={SCENE_COLORS.materials.structStrokeMid} strokeWidth={3} />
+                    <rect x={screenSvgX - 15} y={cy + 40} width={30} height={6} fill={SCENE_COLORS.materials.structStroke} rx={1} />
                     <rect
                       x={screenSvgX - 4} y={cy - 65} width={8} height={130}
-                      fill="#F8FAFC" stroke="#334155" strokeWidth={1.5}
-                      filter="drop-shadow(0px 2px 4px rgba(0,0,0,0.15))"
+                      fill={SCENE_COLORS.materials.structBgLight} stroke={SCENE_COLORS.materials.structFill} strokeWidth={1.5}
+                      filter={`drop-shadow(0px 2px 4px ${withAlpha(SCENE_COLORS.materials.structStrokeDark, 0.15)})`}
                     />
-                    <line x1={screenSvgX - 4} y1={cy} x2={screenSvgX + 4} y2={cy} stroke="#94A3B8" strokeWidth={0.5} />
-                    <line x1={screenSvgX} y1={cy - 60} x2={screenSvgX} y2={cy + 60} stroke="#94A3B8" strokeWidth={0.5} />
+                    <line x1={screenSvgX - 4} y1={cy} x2={screenSvgX + 4} y2={cy} stroke={colors.neutral[400]} strokeWidth={0.5} />
+                    <line x1={screenSvgX} y1={cy - 60} x2={screenSvgX} y2={cy + 60} stroke={colors.neutral[400]} strokeWidth={0.5} />
                     <text x={screenSvgX} y={cy - 72} textAnchor="middle" dominantBaseline="auto"
-                      fill="#475569" fontSize={font(9)} fontFamily={FONT.family} fontWeight="bold">
+                      fill={SCENE_COLORS.materials.structStrokeMid} fontSize={font(9)} fontFamily={FONT.family} fontWeight="bold">
                       光屏 (L={LCm}cm)
                     </text>
                   </g>

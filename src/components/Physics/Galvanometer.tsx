@@ -1,5 +1,5 @@
 import React from 'react'
-import { SCENE_COLORS } from '@/theme/physics'
+import { SCENE_COLORS, withAlpha } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
 /**
@@ -66,7 +66,7 @@ export const Galvanometer: React.FC<GalvanometerProps> = ({
         width={120}
         height={110}
         rx="8"
-        fill="rgba(0, 0, 0, 0.15)"
+        fill={withAlpha(colors.neutral[900], 0.15)}
         filter="blur(3px)"
       />
 
@@ -189,7 +189,7 @@ export const Galvanometer: React.FC<GalvanometerProps> = ({
           y1="0.8"
           x2="0.8"
           y2="-51.2"
-          stroke="rgba(15, 23, 42, 0.15)"
+          stroke={withAlpha(colors.neutral[900], 0.15)}
           strokeWidth="1.8"
           strokeLinecap="round"
         />

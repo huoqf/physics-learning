@@ -9,6 +9,7 @@ import {
   OPACITY,
   DASH,
   FONT,
+  withAlpha,
 } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
@@ -133,7 +134,7 @@ export function FreeFallScene({
         <text x={featherX} y={originY - 18} fontSize={font(9)} fill={CHART_COLORS.compareB} textAnchor="middle" fontWeight="bold">{matB.label}</text>
 
         <PhysicsGround x={tubeLeft + 10} y={groundY} width={tubeRight - tubeLeft - 20}
-          appearance={{ color: 'rgba(51, 65, 85, 0.5)' }} />
+          appearance={{ color: withAlpha(SCENE_COLORS.materials.structFill, 0.5) }} />
 
         <line x1={ballX} y1={originY - 20} x2={ballX} y2={groundY + 20}
           stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axis} strokeDasharray={DASH.axis.join(' ')} opacity={0.3} />
@@ -193,7 +194,7 @@ export function FreeFallScene({
             </g>
           ) : (
             <g>
-              <rect x={-10} y={-4} width={20} height={8} fill="rgba(245, 158, 11, 0.15)"
+              <rect x={-10} y={-4} width={20} height={8} fill={withAlpha(colors.warning[500], 0.15)}
                 stroke={CHART_COLORS.compareB} strokeWidth={STROKE.objectLine} rx={1} />
               <line x1={-10} y1={0} x2={10} y2={0} stroke={CHART_COLORS.compareB} strokeWidth={0.5} opacity={0.6} />
             </g>

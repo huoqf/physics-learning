@@ -445,7 +445,7 @@ export default function ProjectileAnimation() {
             rx={8}
             stroke={CHART_COLORS.axisLine}
             strokeWidth={0.8}
-            filter="drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12))"
+            filter={`drop-shadow(0 4px 12px ${SCENE_COLORS.effects.shadowLight})`}
           />
 
           <foreignObject x={4} y={4} width={vtWidth - 8} height={vtHeight - 8} style={{ pointerEvents: 'none' }}>

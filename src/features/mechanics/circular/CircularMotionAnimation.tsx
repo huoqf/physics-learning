@@ -406,7 +406,7 @@ export default function CircularMotionAnimation() {
               rx={8}
               stroke={CHART_COLORS.axisLine}
               strokeWidth={0.8}
-              filter="drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12))"
+              filter={`drop-shadow(0 4px 12px ${SCENE_COLORS.effects.shadowLight})`}
             />
             <text
               x={cardWidth / 2}

@@ -212,6 +212,15 @@ export const CANVAS_COLORS = {
   annotation:         '#8B5CF6',           // 标注文字框 — violet-500
   originMark:         colors.neutral[800], // 坐标原点标记
   vectorTip:          colors.neutral[800], // 箭头尖端描边
+
+  // 警示危险场景配色
+  alertRed:           '#EF4444',
+  dangerDark:         '#DC2626',
+  dangerText:         '#B91C1C',
+  dangerBg:           '#FEF2F2',
+  dangerBorder:       '#FECACA',
+  dangerBgFill:       '#fee2e2',
+  dangerGradient:     '#7F1D1D',
 } as const
 
 // ─── 聚合导出：PHYSICS_COLORS ─────────────────────────────────────────

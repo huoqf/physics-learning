@@ -14,7 +14,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, FONT } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, FONT, withAlpha } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { MagneticPoles, RotatingCoil } from '@/components/Physics'
 import { MiniChart } from '@/components/UI'
@@ -242,15 +242,15 @@ export default function ACGeneration() {
             {fieldLines.map((line, i) => (
               <g key={i}>
                 <line x1={line.p1.x} y1={line.p1.y} x2={line.p2.x} y2={line.p2.y}
-                  stroke="rgba(96, 165, 250, 0.18)" strokeWidth={7} strokeLinecap="round" />
+                  stroke={withAlpha(colors.primary[400], 0.18)} strokeWidth={7} strokeLinecap="round" />
                 <line x1={line.p1.x} y1={line.p1.y} x2={line.p2.x} y2={line.p2.y}
-                  stroke="rgba(96, 165, 250, 0.45)" strokeWidth={3} strokeLinecap="round" />
+                  stroke={withAlpha(colors.primary[400], 0.45)} strokeWidth={3} strokeLinecap="round" />
                 <line x1={line.p1.x} y1={line.p1.y} x2={line.p2.x} y2={line.p2.y}
-                  stroke="rgba(255, 255, 255, 0.85)" strokeWidth={1.5} strokeLinecap="round"
+                  stroke={withAlpha(colors.neutral.white, 0.85)} strokeWidth={1.5} strokeLinecap="round"
                   strokeDasharray="12, 36" strokeDashoffset={-t * 50} style={{ filter: 'blur(0.5px)' }} />
                 <polygon
                   points={`${line.p2.x},${line.p2.y} ${line.p2.x - font(12)},${line.p2.y - font(6)} ${line.p2.x - font(12)},${line.p2.y + font(6)}`}
-                  fill="rgba(96, 165, 250, 0.9)" />
+                  fill={withAlpha(colors.primary[400], 0.9)} />
               </g>
             ))}
           </g>

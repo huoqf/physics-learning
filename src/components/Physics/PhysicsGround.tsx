@@ -193,7 +193,7 @@ export function PhysicsGround({
               y1={y + 1}
               x2={x + width - 1}
               y2={y + 1}
-              stroke="#F0F9FF"
+              stroke={SCENE_COLORS.materials.structBgPale}
               strokeWidth={1.5}
               opacity={0.9}
             />
@@ -341,7 +341,7 @@ export function PhysicsGround({
             y1={y}
             x2={x + width}
             y2={y}
-            stroke="#F0F9FF"
+            stroke={SCENE_COLORS.materials.structBgPale}
             strokeWidth={2}
             opacity={0.9}
           />

@@ -112,7 +112,7 @@ export const CapacitorPlates: React.FC<CapacitorPlatesProps> = ({
                 y1={yStart}
                 x2={flX}
                 y2={yEnd}
-                stroke={PHYSICS_COLORS.electricFieldLine || 'rgba(217, 119, 6, 0.42)'}
+                stroke={PHYSICS_COLORS.electricFieldLine}
                 strokeWidth={1.5}
                 markerEnd={`url(#electric-field-arrow-${gradId})`}
               />

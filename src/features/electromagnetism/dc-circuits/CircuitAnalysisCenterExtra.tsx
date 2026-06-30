@@ -1,6 +1,5 @@
 import { FC, useMemo } from 'react'
-import { PHYSICS_COLORS } from '@/theme/physics'
-import { colors } from '@/theme/colors'
+import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { useAnimationStore } from '@/stores'
 import { useCanvasSize } from '@/utils'
 import { BarChart3 } from 'lucide-react'
@@ -88,18 +87,17 @@ export const CircuitAnalysisCenterExtra: FC = () => {
   // 电流最大参考值为 1.2 A (并联短路除外，做截断限制)
   const toSvgY_I = (i: number) => originY - (Math.min(1.2, i) / 1.2) * plotH
 
-  // 根据当前拓扑结构确定项目
   const items = mode === 0 
     ? [
-        { label: 'R₁', u: circuitData.U1, i: circuitData.I1, color: '#3B82F6' },
-        { label: 'R₂ (变)', u: circuitData.U2, i: circuitData.I2, color: '#F97316' },
-        { label: '总电路', u: U, i: circuitData.Itotal, color: '#64748B' },
+        { label: 'R₁', u: circuitData.U1, i: circuitData.I1, color: SCENE_COLORS.charts.circuitR1 },
+        { label: 'R₂ (变)', u: circuitData.U2, i: circuitData.I2, color: SCENE_COLORS.charts.circuitR2 },
+        { label: '总电路', u: U, i: circuitData.Itotal, color: SCENE_COLORS.charts.circuitTotal },
       ]
     : [
-        { label: 'R₁', u: circuitData.U1, i: circuitData.I1, color: '#3B82F6' },
-        { label: 'R₂ (变)', u: circuitData.U2, i: circuitData.I2, color: '#F97316' },
-        { label: 'R₃', u: circuitData.U2, i: circuitData.I3, color: '#10B981' },
-        { label: '总电路', u: U, i: circuitData.Itotal, color: '#64748B' },
+        { label: 'R₁', u: circuitData.U1, i: circuitData.I1, color: SCENE_COLORS.charts.circuitR1 },
+        { label: 'R₂ (变)', u: circuitData.U2, i: circuitData.I2, color: SCENE_COLORS.charts.circuitR2 },
+        { label: 'R₃', u: circuitData.U2, i: circuitData.I3, color: SCENE_COLORS.charts.circuitR3 },
+        { label: '总电路', u: U, i: circuitData.Itotal, color: SCENE_COLORS.charts.circuitTotal },
       ]
 
   const numItems = items.length
@@ -234,7 +232,7 @@ export const CircuitAnalysisCenterExtra: FC = () => {
                   <path
                     d={`M ${x + 2} ${y + 2} L ${x + colWidth / 2} ${y - 1} L ${x + colWidth - 2} ${y + 2}`}
                     fill="none"
-                    stroke={colors.neutral.white}
+                    stroke={SCENE_COLORS.materials.edgeHighlightWhite}
                     strokeWidth={0.6}
                   />
                 )}

@@ -158,7 +158,7 @@ export const Solenoid: React.FC<SolenoidProps> = ({
           <path
             d={`M ${cx - 1} ${ry - 2} A ${rx - 1} ${ry - 2} 0 0 0 ${cx - 1} ${-ry + 2}`}
             fill="none"
-            stroke="#FFFFFF"
+            stroke={SCENE_COLORS.materials.specularWhite}
             strokeWidth={highlightW}
             strokeLinecap="round"
             opacity="0.6"

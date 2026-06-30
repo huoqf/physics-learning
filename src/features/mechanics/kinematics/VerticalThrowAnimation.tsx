@@ -10,6 +10,7 @@ import {
   DASH,
   FONT,
   CANVAS_STYLE,
+  withAlpha,
 } from '@/theme/physics'
 import { useVerticalThrowPhysics } from './useVerticalThrowPhysics'
 import { useVerticalThrowChartLayout } from './useVerticalThrowChartLayout'
@@ -328,7 +329,7 @@ export default function VerticalThrowAnimation() {
                 rx={6}
                 stroke={CHART_COLORS.axisLine}
                 strokeWidth={0.8}
-                filter="drop-shadow(0 4px 10px rgba(0,0,0,0.1))"
+                filter={`drop-shadow(0 4px 10px ${withAlpha(SCENE_COLORS.materials.structStrokeDark, 0.1)})`}
               />
               {showDoubleTrack ? (
                 <polygon

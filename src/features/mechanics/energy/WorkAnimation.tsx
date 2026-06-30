@@ -264,9 +264,9 @@ export default function WorkAnimation() {
             <rect x={objW * 0.7} y={objH * 0.15} width={objW * 0.2} height={objH * 0.3} rx={1}
               fill={PHYSICS_COLORS.objectFill} opacity={0.85} />
             <line x1={objW * 0.15} y1={objH * 0.15} x2={objW * 0.22} y2={objH * 0.45}
-              stroke="#FFFFFF" strokeWidth={1} opacity={0.6} />
+              stroke={SCENE_COLORS.materials.specularWhite} strokeWidth={1} opacity={0.6} />
             <line x1={objW * 0.45} y1={objH * 0.15} x2={objW * 0.52} y2={objH * 0.45}
-              stroke="#FFFFFF" strokeWidth={1} opacity={0.6} />
+              stroke={SCENE_COLORS.materials.specularWhite} strokeWidth={1} opacity={0.6} />
             <line x1={objW * 0.05} y1={objH * 0.55} x2={objW * 0.95} y2={objH * 0.55}
               stroke={PHYSICS_COLORS.velocityY} strokeWidth={1} opacity={0.5} />
             <g transform={`translate(${objW * 0.22}, ${objH - 3})`}>

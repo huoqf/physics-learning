@@ -291,7 +291,7 @@ export default function GravityAnimation() {
 
           <VectorDefs colors={[PHYSICS_COLORS.gravity]} />
           <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="120%">
-            <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000000" floodOpacity="0.12" />
+            <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor={SCENE_COLORS.effects.shadowLight} />
           </filter>
         </defs>
 

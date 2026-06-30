@@ -2,7 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { calculateOhmLaw } from '@/physics'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { LightBulb, DialMeter, DCSource } from '@/components/Physics'
 
@@ -82,25 +82,7 @@ export default function OhmLaw() {
     return getLoopPosition(pos)
   })
 
-  // 电阻色环定义
-  const digitColors = [
-    '#1C1917', // 0: 黑色
-    '#78350F', // 1: 棕色
-    '#EF4444', // 2: 红色
-    '#F97316', // 3: 橙色
-    '#EAB308', // 4: 黄色
-    '#22C55E', // 5: 绿色
-    '#3B82F6', // 6: 蓝色
-    '#8B5CF6', // 7: 紫色
-    '#4B5563', // 8: 灰色
-    '#F3F4F6', // 9: 白色
-  ]
-  const firstDigit = Math.floor(R_eff / 10)
-  const secondDigit = Math.round(R_eff) % 10
-  const band1Color = digitColors[Math.min(9, Math.max(0, firstDigit))]
-  const band2Color = digitColors[Math.min(9, Math.max(0, secondDigit))]
-  const band3Color = '#1C1917' // 乘数 10^0 = 1 (黑色)
-  const band4Color = '#D4AF37' // 误差 5% (金色)
+
 
   return (
     <div ref={containerRef} className="w-full h-full flex items-center justify-center p-2">
@@ -185,36 +167,20 @@ export default function OhmLaw() {
         {!isBulb ? (
           /* ----- A. 定值电阻元件 ----- */
           <g transform="translate(330, 160)">
-            {/* 色环电阻陶瓷本体 */}
+            {/* 高考标准电阻符号 (矩形框) */}
             <rect
-              x={-24}
+              x={-20}
               y={-10}
-              width={48}
+              width={40}
               height={20}
-              rx={6}
-              fill={colors.neutral[200]}
-              stroke={colors.neutral[500]}
-              strokeWidth={1.5}
+              fill={SCENE_COLORS.circuit.resistorFill}
+              stroke={SCENE_COLORS.circuit.resistorStroke}
+              strokeWidth={2}
             />
-            {/* 电阻两端金属帽 */}
-            <path
-              d="M -24 -10 L -18 -10 L -18 10 L -24 10 Z"
-              fill={colors.neutral[400]}
-            />
-            <path
-              d="M 24 -10 L 18 -10 L 18 10 L 24 10 Z"
-              fill={colors.neutral[400]}
-            />
-            
-            {/* 动态色环 1 */}
-            <rect x={-14} y={-10} width={4} height={20} fill={band1Color} />
-            {/* 动态色环 2 */}
-            <rect x={-6} y={-10} width={4} height={20} fill={band2Color} />
-            {/* 动态色环 3 (倍率) */}
-            <rect x={2} y={-10} width={4} height={20} fill={band3Color} />
-            {/* 动态色环 4 (误差环-金色) */}
-            <rect x={11} y={-10} width={4} height={20} fill={band4Color} />
-
+            {/* 电阻符号文字 R */}
+            <text x={0} y={4} fill={colors.neutral[800]} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
+              R
+            </text>
             {/* 文字标签 */}
             <text x={0} y={24} fill={colors.neutral[600]} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
               定值电阻 R

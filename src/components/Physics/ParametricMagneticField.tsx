@@ -1,5 +1,5 @@
 import React from 'react';
-import { MAGNET_COLORS, PHYSICS_COLORS } from '@/theme/physics';
+import { MAGNET_COLORS, PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics';
 
 /**
  * 参数化磁感线组件 Props
@@ -201,7 +201,7 @@ export const ParametricMagneticField: React.FC<MagneticFieldProps> = ({
     return (
       <g transform={`translate(${cx}, ${cy})`} className="magnetic-compass">
         {/* 外表壳 */}
-        <circle r={r} fill="#FFFFFF" stroke={borderStroke} strokeWidth={1} />
+        <circle r={r} fill={SCENE_COLORS.materials.specularWhite} stroke={borderStroke} strokeWidth={1} />
         {/* 指针组 */}
         <g transform={`rotate(${angle})`}>
           {/* N 极指向右端面，涂红色 */}

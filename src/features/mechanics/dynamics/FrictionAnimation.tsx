@@ -291,7 +291,7 @@ export default function FrictionAnimation() {
               type="ground"
               appearance={{
                 showHatch: true,
-                color: '#475569'
+                color: SCENE_COLORS.materials.structStrokeMid
               }}
             />
 
@@ -435,7 +435,7 @@ export default function FrictionAnimation() {
               type="ground"
               appearance={{
                 showHatch: true,
-                color: '#475569'
+                color: SCENE_COLORS.materials.structStrokeMid
               }}
             />
 
@@ -448,8 +448,8 @@ export default function FrictionAnimation() {
                   ${pivotX + displacement_M + W},${groundY_m2}
                   ${pivotX + displacement_M},${groundY_m2 - H}
                 `}
-                fill="#E2E8F0"
-                stroke="#475569"
+                fill={SCENE_COLORS.materials.structFillPale}
+                stroke={SCENE_COLORS.materials.structStrokeMid}
                 strokeWidth={1.5}
               />
               <text

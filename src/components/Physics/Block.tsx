@@ -152,8 +152,8 @@ export function Block({
     labelColor = 'rgba(67, 20, 7, 0.9)'; // 深木褐色
   } else {
     // 采用不锈钢深灰色作为 stroke
-    defaultStroke = '#334155';
-    labelColor = '#1E293B'; // 经典 neutral-800
+    defaultStroke = SCENE_COLORS.materials.structFill;
+    labelColor = SCENE_COLORS.materials.structStroke; // 经典 neutral-800
   }
 
   // 2. 车轮位置及大小参数（仅用于 woodCart / metalCart 小车）
