@@ -268,9 +268,9 @@ export default function SpringBlocksAnimation() {
           </div>
         </div>
         <div className="bg-white border border-neutral-200/80 rounded-xl p-2.5 shadow-sm relative overflow-hidden flex flex-col">
-          <div className="text-[10px] font-bold text-neutral-800 border-b pb-1 mb-1.5 flex items-center justify-between">
+          <div className="text-ui-base font-bold text-neutral-800 border-b pb-1 mb-1.5 flex items-center justify-between">
             <span>能量实时分配</span>
-            <span className="text-[9px] text-neutral-400 font-mono">E (J)</span>
+            <span className="text-ui-sm text-neutral-400 font-mono">E (J)</span>
           </div>
           <div className="flex-grow min-h-0 flex items-center justify-center">
             <EnergyBars items={energyBarItems} initialEtot={springState.Etotal} compact={true} />
@@ -402,7 +402,7 @@ export default function SpringBlocksAnimation() {
           </g>
         </svg>
 
-        <div className="p-3 bg-neutral-50 border-t border-neutral-200/80 text-[11px] text-neutral-600 flex items-center justify-between">
+        <div className="p-3 bg-neutral-50 border-t border-neutral-200/80 text-ui-md text-neutral-600 flex items-center justify-between">
           <div>
             <p>💡 <strong>弹簧双滑块</strong>：胡克定律的变力让物体做正弦/余弦式的变加速运动。但动量守恒锁定了两条速度曲线波动的"黄色平均中轴线"（即黄色质心参考线），能量守恒则决定了两条曲线的上下波幅。</p>
           </div>

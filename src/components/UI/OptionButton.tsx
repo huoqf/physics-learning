@@ -81,7 +81,7 @@ export const OptionButton: React.FC<OptionButtonProps> = ({
       {hasDescription ? (
         <span className="flex justify-between items-center w-full">
           <span>{label}</span>
-          <span className="font-mono text-[9px] text-neutral-400">
+          <span className="font-mono text-ui-sm text-neutral-400">
             {description}
           </span>
         </span>

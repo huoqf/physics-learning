@@ -91,7 +91,7 @@ export const PowerTransmissionSidebarExtra: React.FC<SidebarExtraProps> = ({
           onChange={handleScenarioChange}
           disabled={disabled}
         />
-        <span className="text-[10px] text-neutral-400 block mt-1">
+        <span className="text-ui-base text-neutral-400 block mt-1">
           {scenario === 0
             ? '高电压远距离：自动锁定 P₁=500kW, r=50Ω'
             : '低电压近距离：自动锁定 P₁=100kW, r=5Ω'}

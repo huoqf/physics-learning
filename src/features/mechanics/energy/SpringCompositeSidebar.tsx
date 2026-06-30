@@ -45,7 +45,7 @@ const SpringCompositeSidebar: FC<SidebarExtraProps> = ({ params, updateParam, di
         />
       </div>
 
-      <p className='text-[10px] text-neutral-400 leading-normal'>
+      <p className='text-ui-base text-neutral-400 leading-normal'>
         {mode === 1 ? (
           <>
             弹簧固定在顶部，小球从原长位置 B 点由静止释放。

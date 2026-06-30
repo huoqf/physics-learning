@@ -33,7 +33,7 @@ const WorkSidebar: FC<SidebarExtraProps> = ({
         onChange={handleModeChange}
         disabled={disabled}
       />
-      <p className="text-[10px] text-neutral-400 leading-tight">
+      <p className="text-ui-base text-neutral-400 leading-tight">
         {mode === 0
           ? '左图 v-t 速度曲线，右图 F-x 功面积；拖动 θ 观察投影变化'
           : '左图 F-x 多力复合，右图能量柱看板；观察支持力随 θ 变化'}

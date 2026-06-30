@@ -1,5 +1,4 @@
-import { colors } from '@/theme/colors'
-import { PHYSICS_COLORS, ENERGY_COLORS, STROKE, SCENE_COLORS, withAlpha } from '@/theme/physics'
+import { PHYSICS_COLORS, ENERGY_COLORS, STROKE, SCENE_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { ZeroPotentialLine } from './ZeroPotentialLine'
 import type { SceneScale } from '@/scene'
@@ -61,7 +60,7 @@ export function ValleyScene({
       <path
         d={`M ${arcStartX} ${arcStartY} A ${R_pix} ${R_pix} 0 0 0 ${arcEndX} ${arcEndY}`}
         fill="none"
-        stroke={colors.neutral[100]}
+        stroke={CANVAS_COLORS.gridSubtle}
         strokeWidth={0.5}
         opacity={0.8}
       />
@@ -82,12 +81,12 @@ export function ValleyScene({
         {/* 木车身 */}
         <rect width={objW} height={objH - 1} rx={2} fill="url(#block-grad)" stroke={SCENE_COLORS.materials.woodSphereGrad[1]} strokeWidth={1.5} />
         
-        <text x={objW * 0.5} y={objH * 0.6} fontSize={font(8)} fill={colors.neutral[800]} fontWeight="bold" textAnchor="middle">
+        <text x={objW * 0.5} y={objH * 0.6} fontSize={font(8)} fill={CANVAS_COLORS.labelText} fontWeight="bold" textAnchor="middle">
           {m.toFixed(1)}kg
         </text>
         {/* 轮子 */}
-        <circle cx={objW * 0.25} cy={objH - 0.3} r={1.6} fill={colors.neutral[800]} />
-        <circle cx={objW * 0.75} cy={objH - 0.3} r={1.6} fill={colors.neutral[800]} />
+        <circle cx={objW * 0.25} cy={objH - 0.3} r={1.6} fill={CANVAS_COLORS.labelText} />
+        <circle cx={objW * 0.75} cy={objH - 0.3} r={1.6} fill={CANVAS_COLORS.labelText} />
 
         {/* 切向速度矢量 v */}
         {showVectors && Math.abs(state.v) > 0.1 && (() => {

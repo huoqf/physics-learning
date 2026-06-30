@@ -61,15 +61,6 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 > 观察：`EquilibriumAnimation.tsx`(688)、`MomentumConservationAnimation.tsx`(671)、`KeplerAnimation.tsx`(621)、`FrictionAnimation.tsx`(598)、`PowerTransmission.tsx`(594)、`SpringCompositeAnimation.tsx`(585)、`TIRAnimation.tsx`(564)、`FieldLines.tsx`(559)、`ConnectedBodiesAnimation.tsx`(557)、`ObliqueThrowAnimation.tsx`(534)、`GravityBasicAnimation.tsx`(519)、`CircularMotionAnimation.tsx`(506)、`FreeFallDripAnimation.tsx`(505) 已超过或临近阈值，但职责相对集中，暂不作为首批拆分目标。
 
-### 已完成
-
-| 文件 | 最终行数 | 说明 |
-|------|-------:|------|
-| `Transformer.tsx` | 90 | 拆分为 `transformer/model`、`transformer/hooks`、`transformer/components`，补 `transformerModel` 单测 |
-| `VelocitySelector.tsx` | 100 | 拆分为 `velocity-selector/model`、`velocity-selector/hooks`、`velocity-selector/components`，补 `velocitySelectorModel` 单测 |
-| `ThinLensAnimation.tsx` | 357 | 低于 500 行阈值，后续仅在物理/几何映射风险出现时继续拆 |
-| `MomentumTheoremAnimation.tsx` | 110 | 低于 500 行阈值，移出拆分清单 |
-
 ---
 
 ## 二、响应式与颜色规范
@@ -78,38 +69,17 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 | 类别 | 问题 | 规模 | 方案 |
 |:---:|------|------|------|
-| A | SVG 子组件硬编码 `fontSize` | 1 处 | 加 `font` prop 由父组件传入 |
 | B | 混合文件残留 | 0 处 | 已全部清理 |
-| C | Tailwind `text-[Npx]` | 31 文件 69 处 | 按域分批替换，建立语义 class（`text-ui-xs`、`text-panel-label` 等） |
 | D | `useCanvasSize({ ... })` 硬编码 | 11 处 | 多数为合理例外，更新 allowlist 文档即可 |
 
 详见 [`FONT_SIZE_AUDIT.md`](./FONT_SIZE_AUDIT.md)、[`CANVAS_PRESETS_AUDIT.md`](./CANVAS_PRESETS_AUDIT.md)
 
-### 2.2 Canvas 颜色违规（P1）
-
-Canvas/SVG 中直接使用 `colors.neutral[]` 违反隔离铁律。规范要求通过 `CANVAS_COLORS.*` 或 `CHART_COLORS.*` 引用。
-
-第一批已修复 20 处（10 个文件），剩余约 42 处。
-
-**剩余高频违规文件**：
-
-| 文件 | 违规数 | 典型问题 |
-|------|:------:|---------|
-| `SatelliteAnimation.tsx` | 9 | `colors.neutral[600/700]` 用于 SVG 笔画和填充 |
-| `InductionPhenomenon.tsx` | 5 | `colors.neutral[50-800]` 用于电路元件 |
-| `ForceDecompositionCard.tsx` | 6 | `colors.neutral[200-800]` 用于卡片 |
-| `PendulumScene.tsx` | 5 | `colors.neutral[100-800]` 用于摆线和支架 |
-| `ClosedCircuit.tsx` | 4 | `colors.neutral[600-800]` 用于导线渐变 |
-| `AmpereFIChart.tsx` | 5 | `colors.neutral[50-600]` 用于图表卡片 |
-| `OhmLaw.tsx` | 4 | `colors.neutral[400-800]` 用于元件 |
-| `ValleyScene.tsx` | 4 | `colors.neutral[100/800]` 用于块体 |
-
 ### 2.3 rgba() 手写与硬编码 fontSize（P3）
 
-| 文件 | 行号 | 问题 |
-|------|------|------|
-| `PowerTransmission.tsx` | 83,90,97 | 动态 rgba() 颜色计算，需评估 |
-| `VectorPlayground.tsx` | 65 | 开发调试文件，可忽略 |
+| 文件 | 行号 | 问题 | 结论 |
+|------|------|------|------|
+| `PowerTransmission.tsx` | 83,90,97 | 动态 rgba() 颜色计算 | 合理使用：物理驱动的运行时颜色插值（白→黄→暗红），非静态色值硬编码，跳过 |
+| `VectorPlayground.tsx` | 65 | 开发调试文件 | 可忽略，跳过 |
 
 ---
 
@@ -179,6 +149,18 @@ export interface AnimationModule<P extends AnimationParams> {
 
 建议拆分为：`useAnimationParams()`、`usePlaybackState()`、`useAnimationDisplayOptions()`。
 通过 selector 降低组件不必要重渲染。
+
+**风险评估**：
+- 选择器拆分若内部仍返回新对象 → 重渲染问题不变甚至更糟
+- 遗漏订阅字段 → 功能静默失效（最隐蔽）
+- 引用稳定性破坏 → `useEffect`/`useMemo` 依赖意外触发
+- 与 `useShallow` 交互可能产生意外行为
+
+**降险策略**：
+1. 先用 React DevTools Profiler 记录 3-5 个高频交互场景基线，只迁移确认有重渲染问题的组件
+2. 逐 hook 推进：`usePlaybackState()`（字段最稳定）→ `useAnimationParams()` → `useAnimationDisplayOptions()`
+3. 每个 hook 补引用稳定性测试（`Object.is` 前后返回值）
+4. 不追求全覆盖，跳过低频交互组件（SidebarExtra、TipCard 等）
 
 ### 4.5 Registry + params + quantities 类型闭环（P3）
 

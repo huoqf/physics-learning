@@ -56,7 +56,7 @@ export default function ForceMotionSidebar({
           ))}
         </div>
         {currentMode && (
-          <div className="mt-2 text-[11px] text-neutral-500 pt-2 border-t border-neutral-100">
+          <div className="mt-2 text-ui-md text-neutral-500 pt-2 border-t border-neutral-100">
             {currentMode.description}
           </div>
         )}

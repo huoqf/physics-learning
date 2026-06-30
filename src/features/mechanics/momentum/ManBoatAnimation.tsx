@@ -213,12 +213,12 @@ export default function ManBoatAnimation() {
         {/* 动量守恒实时检测天平 */}
         <div className="bg-white border border-neutral-200/80 rounded-xl p-2.5 shadow-sm flex flex-col justify-between">
           <div>
-            <div className="text-[10px] font-bold text-neutral-800 border-b pb-1 mb-1.5 flex items-center justify-between">
+            <div className="text-ui-base font-bold text-neutral-800 border-b pb-1 mb-1.5 flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 动量监测
               </span>
-              <span className="text-[9px] text-neutral-400 font-mono">p (kg·m/s)</span>
+              <span className="text-ui-sm text-neutral-400 font-mono">p (kg·m/s)</span>
             </div>
           </div>
 
@@ -232,7 +232,7 @@ export default function ManBoatAnimation() {
           </div>
 
           <div className="border-t border-neutral-200/60 pt-1.5 flex items-center justify-between">
-            <span className="text-emerald-600 font-bold text-[10px]">系统总动量 Σp</span>
+            <span className="text-emerald-600 font-bold text-ui-base">系统总动量 Σp</span>
             <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 font-mono">
               {Math.abs(p_total) < 1e-4 ? '0.000' : p_total.toFixed(3)}
             </span>
@@ -396,7 +396,7 @@ export default function ManBoatAnimation() {
           </g>
         </svg>
 
-        <div className="p-2.5 bg-neutral-50 border-t border-neutral-200/80 text-[10px] text-neutral-500 leading-tight">
+        <div className="p-2.5 bg-neutral-50 border-t border-neutral-200/80 text-ui-base text-neutral-500 leading-tight">
           💡 <strong>无外力与质心锁定</strong>：水平面无摩擦，系统水平方向外力为 0，质心十字星完全锁定不动。不论是变速、中途停顿还是先后走动，只要起止时刻静止，系统的总位移仅由初始和末尾位置决定，完美符合动量守恒。
         </div>
       </div>

@@ -60,7 +60,7 @@ export default function ClosedCircuitSidebar({
           onChange={(checked) => updateParam('highlightLoss', checked ? 1 : 0)}
           disabled={disabled}
         />
-        <p className="text-[10px] text-neutral-400 mt-1.5 leading-relaxed">
+        <p className="text-ui-base text-neutral-400 mt-1.5 leading-relaxed">
           激活后，电流增大时电源内部（内阻 r 区域）红光渐变加深，隐喻内阻产生的焦耳热能损耗。
         </p>
       </div>

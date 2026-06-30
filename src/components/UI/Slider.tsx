@@ -136,7 +136,7 @@ export const Slider: React.FC<SliderProps> = ({
         </div>
       )}
       {description && (
-        <div className="text-right text-[10px] text-neutral-400 -mt-1 mb-2">{description}</div>
+        <div className="text-right text-ui-base text-neutral-400 -mt-1 mb-2">{description}</div>
       )}
       <div className="relative h-2 bg-neutral-200 rounded-full flex items-center">
         <input
@@ -159,7 +159,7 @@ export const Slider: React.FC<SliderProps> = ({
         />
       </div>
       {(minLabel || maxLabel) && (
-        <div className="relative flex justify-between text-[10px] text-neutral-400 mt-0.5">
+        <div className="relative flex justify-between text-ui-base text-neutral-400 mt-0.5">
           <span>{minLabel}</span>
           {midLabel && (
             <span className="absolute left-1/2 -translate-x-1/2">{midLabel}</span>

@@ -156,7 +156,7 @@ export const ACValuesSidebarExtra: React.FC<SidebarExtraProps> = ({
         >
           Auto · 一键等效
         </Button>
-        <span className="text-[10px] text-neutral-400 block mt-1 text-center">
+        <span className="text-ui-base text-neutral-400 block mt-1 text-center">
           {revealed || isFound
             ? <>将 Idc 自动吸附至理论有效值 I_eff = {I_eff.toFixed(2)} A</>
             : '将 Idc 自动吸附至当前波形的理论有效值'}

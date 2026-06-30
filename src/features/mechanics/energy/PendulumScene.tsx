@@ -1,5 +1,4 @@
-import { colors } from '@/theme/colors'
-import { SCENE_COLORS } from '@/theme/physics'
+import { SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { ZeroPotentialLine } from './ZeroPotentialLine'
@@ -37,18 +36,18 @@ export function PendulumScene({
   return (
     <g>
       {/* 顶部悬挂支架 */}
-      <rect x={animCenterX - 20} y={hangY - 12} width={40} height={12} fill={colors.neutral[400]} rx={1} />
+      <rect x={animCenterX - 20} y={hangY - 12} width={40} height={12} fill={CANVAS_COLORS.trackHistory} rx={1} />
       <PhysicsGround
         x={animCenterX - 30} y={hangY} width={60}
         type="bracket"
-        appearance={{ color: colors.neutral[600] }}
+        appearance={{ color: CANVAS_COLORS.labelTextLight }}
       />
 
       {/* 运动极限虚导线范围 */}
       <path
         d={`M ${animCenterX - R_pix * Math.sin(60 * Math.PI / 180)} ${hangY + R_pix * Math.cos(60 * Math.PI / 180)} A ${R_pix} ${R_pix} 0 0 0 ${animCenterX + R_pix * Math.sin(60 * Math.PI / 180)} ${hangY + R_pix * Math.cos(60 * Math.PI / 180)}`}
         fill="none"
-        stroke={colors.neutral[100]}
+        stroke={CANVAS_COLORS.gridSubtle}
         strokeWidth={1}
         strokeDasharray="3,3"
       />
@@ -71,11 +70,11 @@ export function PendulumScene({
         y1={hangY}
         x2={objPos.x}
         y2={objPos.y}
-        stroke={colors.neutral[700]}
+        stroke={CANVAS_COLORS.strokeDark}
         strokeWidth={1.2}
       />
       {/* 轴心点 */}
-      <circle cx={animCenterX} cy={hangY} r={3} fill={colors.neutral[800]} />
+      <circle cx={animCenterX} cy={hangY} r={3} fill={CANVAS_COLORS.labelText} />
 
       {/* 摆球 */}
       <circle

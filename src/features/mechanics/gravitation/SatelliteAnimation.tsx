@@ -203,10 +203,10 @@ export default function SatelliteAnimation() {
         {mode === 1 && launchData && (
           <g>
             <g transform={`translate(${centerX + earthRadiusPx}, ${centerY})`}>
-              <path d="M 0 0 L 6 -10 L 10 -10 L 4 0 Z" fill="none" stroke={colors.neutral[600]} strokeWidth={1} />
-              <path d="M 4 -10 L 1 -15 L 4 -15 L 7 -10 Z" fill="none" stroke={colors.neutral[600]} strokeWidth={1} />
-              <line x1={0} y1={0} x2={0} y2={-15} stroke={colors.neutral[600]} strokeWidth={1.2} />
-              <circle cx={0} cy={0} r={1.5} fill={colors.neutral[700]} />
+              <path d="M 0 0 L 6 -10 L 10 -10 L 4 0 Z" fill="none" stroke={CANVAS_COLORS.labelTextLight} strokeWidth={1} />
+              <path d="M 4 -10 L 1 -15 L 4 -15 L 7 -10 Z" fill="none" stroke={CANVAS_COLORS.labelTextLight} strokeWidth={1} />
+              <line x1={0} y1={0} x2={0} y2={-15} stroke={CANVAS_COLORS.labelTextLight} strokeWidth={1.2} />
+              <circle cx={0} cy={0} r={1.5} fill={CANVAS_COLORS.strokeDark} />
             </g>
             <text x={centerX + earthRadiusPx + 10} y={centerY + 12} fontSize="9" fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">文昌发射场</text>
 
@@ -280,9 +280,9 @@ export default function SatelliteAnimation() {
                       <g transform={`translate(${dx}, ${dy}) scale(${zoomLevel})`}>
                         <g transform={`translate(${-centerX}, ${-centerY})`}><EarthSvg centerX={centerX} centerY={centerY} earthRadiusPx={earthRadiusPx} /></g>
                         <g transform={`translate(${centerX + earthRadiusPx}, ${centerY})`}>
-                          <path d="M 0 0 L 6 -10 L 10 -10 L 4 0 Z" fill="none" stroke={colors.neutral[300]} strokeWidth={0.8} opacity={0.6} />
-                          <path d="M 4 -10 L 1 -15 L 4 -15 L 7 -10 Z" fill="none" stroke={colors.neutral[300]} strokeWidth={0.8} opacity={0.6} />
-                          <line x1={0} y1={0} x2={0} y2={-15} stroke={colors.neutral[300]} strokeWidth={1.0} opacity={0.6} />
+                          <path d="M 0 0 L 6 -10 L 10 -10 L 4 0 Z" fill="none" stroke={CANVAS_COLORS.axis} strokeWidth={0.8} opacity={0.6} />
+                          <path d="M 4 -10 L 1 -15 L 4 -15 L 7 -10 Z" fill="none" stroke={CANVAS_COLORS.axis} strokeWidth={0.8} opacity={0.6} />
+                          <line x1={0} y1={0} x2={0} y2={-15} stroke={CANVAS_COLORS.axis} strokeWidth={1.0} opacity={0.6} />
                         </g>
                         {(() => {
                           const targetOrbitRadiusPx = launchData.r0 * scale
@@ -302,7 +302,7 @@ export default function SatelliteAnimation() {
                     )
                   })()}
                 </g>
-                <rect width={220} height={120} fill="none" stroke={colors.neutral[700]} strokeWidth={1} rx={4} pointerEvents="none" />
+                <rect width={220} height={120} fill="none" stroke={CANVAS_COLORS.strokeDark} strokeWidth={1} rx={4} pointerEvents="none" />
                 <text x={8} y={14} fontSize={font(6)} fill={CANVAS_COLORS.labelTextLight} fontFamily="monospace" opacity={0.85}>ZOOM: 4.0X</text>
                 <text x={212} y={14} fontSize={font(6)} fill={CANVAS_COLORS.labelTextLight} fontFamily="monospace" textAnchor="end" opacity={0.85}>
                   {launchData.phase === 'liftoff' ? 'LIFTOFF' : launchData.phase === 'gravityTurn' ? 'G-TURN' : 'IN_ORBIT'}
@@ -321,7 +321,7 @@ export default function SatelliteAnimation() {
               const launchT = LAYOUT.mode1.launchDuration
               const entryT = LAYOUT.mode1.orbitEntryTime
               const stages: VTStage[] = [
-                { from: 0, to: launchT, color: colors.neutral[200], opacity: 0.35, label: '发射示意', labelColor: colors.neutral[600] },
+                { from: 0, to: launchT, color: CANVAS_COLORS.grid, opacity: 0.35, label: '发射示意', labelColor: CANVAS_COLORS.labelTextLight },
                 { from: launchT, to: entryT, color: CHART_COLORS.areaFill, opacity: 0.35, label: '转弯示意', labelColor: CHART_COLORS.primary },
                 { from: entryT, to: 15, color: CHART_COLORS.areaFillAlt, opacity: 0.35, label: '轨道运动', labelColor: CHART_COLORS.compareA },
               ]

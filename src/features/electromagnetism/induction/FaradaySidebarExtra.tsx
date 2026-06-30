@@ -75,7 +75,7 @@ export const FaradaySidebarExtra: React.FC<FaradaySidebarExtraProps> = ({
             unit="匝"
             onChange={handleNChange}
           />
-          <span className="text-[10px] text-neutral-400 block mt-1 leading-relaxed">
+          <span className="text-ui-base text-neutral-400 block mt-1 leading-relaxed">
             匝数越多，单位磁通量变化产生的感应电动势越大。
           </span>
         </div>
@@ -105,7 +105,7 @@ export const FaradaySidebarExtra: React.FC<FaradaySidebarExtraProps> = ({
                 unit="px/s"
                 onChange={handleVChange}
               />
-              <span className="text-[10px] text-neutral-400 block mt-1 leading-relaxed">
+              <span className="text-ui-base text-neutral-400 block mt-1 leading-relaxed">
                 磁铁相对线圈移动的速度。速度越快，穿过线圈的磁通量变化越剧烈，感应电动势峰值越高。
               </span>
             </div>
@@ -123,7 +123,7 @@ export const FaradaySidebarExtra: React.FC<FaradaySidebarExtraProps> = ({
                 unit="T/s"
                 onChange={handleDBdtChange}
               />
-              <span className="text-[10px] text-neutral-400 block mt-1 leading-relaxed">
+              <span className="text-ui-base text-neutral-400 block mt-1 leading-relaxed">
                 k &gt; 0：B 从 0 线性增强（产生逆时针感应电流）；k &lt; 0：B 从 0 线性减弱（产生顺时针感应电流）；k = 0：无感应电动势。
               </span>
             </div>

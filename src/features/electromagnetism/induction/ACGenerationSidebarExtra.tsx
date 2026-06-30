@@ -65,7 +65,7 @@ export const ACGenerationSidebarExtra: React.FC<SidebarExtraProps> = ({
                 onChange={(val) => updateParam('initialPhase', (val * Math.PI) / 180)}
                 disabled={disabled}
               />
-              <span className="text-[10px] text-neutral-400 block -mt-2">
+              <span className="text-ui-base text-neutral-400 block -mt-2">
                 θ₀=0° 为中性面起始，θ₀=90° 为最大电动势面起始
               </span>
               <Slider
@@ -78,7 +78,7 @@ export const ACGenerationSidebarExtra: React.FC<SidebarExtraProps> = ({
                 onChange={(val) => updateParam('N', val)}
                 disabled={disabled}
               />
-              <span className="text-[10px] text-neutral-400 block -mt-2">
+              <span className="text-ui-base text-neutral-400 block -mt-2">
                 匝数影响峰值 Em=NBSω，不影响磁通量 Φ
               </span>
             </div>

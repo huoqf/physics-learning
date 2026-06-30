@@ -50,7 +50,7 @@ export default function BrownianMotionSidebar({
           <p className="font-semibold">
             进阶模式展示微观碰撞机制
           </p>
-          <p className="text-[11px] opacity-90 mt-1">
+          <p className="text-ui-md opacity-90 mt-1">
             蓝色小球为液体分子，橙色箭头为瞬时合力
           </p>
         </div>

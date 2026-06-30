@@ -25,7 +25,7 @@ export const TipCard: React.FC<TipCardProps> = ({
   return (
     <div
       className={[
-        'p-3 rounded-lg border text-[11px] leading-relaxed',
+        'p-3 rounded-lg border text-ui-md leading-relaxed',
         variantStyles[variant],
         className,
       ].join(' ')}

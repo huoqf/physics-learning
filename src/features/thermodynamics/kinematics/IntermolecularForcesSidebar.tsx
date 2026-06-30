@@ -29,7 +29,7 @@ export default function IntermolecularForcesSidebar({
           <p className="font-semibold">
             自动释放模式
           </p>
-          <p className="text-[11px] opacity-90 mt-1">
+          <p className="text-ui-md opacity-90 mt-1">
             分子将根据当前合力自主加速运动
           </p>
         </div>
@@ -51,7 +51,7 @@ export default function IntermolecularForcesSidebar({
           <p className="font-semibold">
             进阶模式：力与势能关联
           </p>
-          <p className="text-[11px] opacity-90 mt-1">
+          <p className="text-ui-md opacity-90 mt-1">
             右侧图表切换为 E_p-r 曲线，观察势阱
           </p>
         </div>

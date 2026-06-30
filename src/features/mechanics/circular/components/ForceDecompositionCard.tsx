@@ -2,7 +2,7 @@ import React from 'react'
 import type { VerticalCircularMotionPoint } from '@/physics/dynamics/dynamics-advanced'
 import { GRAVITY } from '@/physics'
 import type { CanvasSize } from '@/utils'
-import { colors, PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS } from '@/theme'
+import { colors, PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_COLORS } from '@/theme'
 
 interface ForceDecompositionCardProps {
   currentPoint: VerticalCircularMotionPoint
@@ -155,12 +155,12 @@ export const ForceDecompositionCard = React.memo(function ForceDecompositionCard
           width: '100%', height: '100%',
           display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
           fontFamily: 'sans-serif', fontSize: canvasSize.font(10.5),
-          color: colors.neutral[600], lineHeight: '1.4'
+          color: CANVAS_COLORS.labelTextLight, lineHeight: '1.4'
         }}>
           <div style={{
             fontWeight: 'bold', fontSize: canvasSize.font(11),
-            color: colors.neutral[800],
-            borderBottom: '1px solid ' + colors.neutral[200],
+            color: CANVAS_COLORS.labelText,
+            borderBottom: '1px solid ' + CANVAS_COLORS.grid,
             paddingBottom: '4px',
             display: 'flex', justifyContent: 'space-between'
           }}>
@@ -187,7 +187,7 @@ export const ForceDecompositionCard = React.memo(function ForceDecompositionCard
           </div>
 
           {currentPoint.state === 'flying' ? (
-            <div style={{ borderTop: '1px solid ' + colors.neutral[200], paddingTop: '4px' }}>
+            <div style={{ borderTop: '1px solid ' + CANVAS_COLORS.grid, paddingTop: '4px' }}>
               <div style={{ fontSize: canvasSize.font(9), color: colors.danger[600], fontWeight: 'bold' }}>绳松弛：抛体运动，绳再次绷紧会消除径向速度:</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: PHYSICS_COLORS.appliedForce, fontSize: canvasSize.font(11.5), marginTop: '2px' }}>
                 <span>F<sub>合</sub> = G:</span>
@@ -195,8 +195,8 @@ export const ForceDecompositionCard = React.memo(function ForceDecompositionCard
               </div>
             </div>
           ) : (
-            <div style={{ borderTop: '1px solid ' + colors.neutral[200], paddingTop: '4px' }}>
-              <div style={{ fontSize: canvasSize.font(9), color: colors.neutral[500] }}>
+            <div style={{ borderTop: '1px solid ' + CANVAS_COLORS.grid, paddingTop: '4px' }}>
+              <div style={{ fontSize: canvasSize.font(9), color: CANVAS_COLORS.textMuted }}>
                 向心方向合力 (
                 {Math.cos(theta) > 0.001 ? (
                   <>F<sub>向</sub> = {trackType === 0 ? 'F_T' : 'F_N'} - G<sub>n</sub></>

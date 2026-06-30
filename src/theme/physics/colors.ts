@@ -202,12 +202,15 @@ export const CANVAS_COLORS = {
   trackHistoryAlt:    '#C4B5FD',           // 对照轨迹/投影 — violet-300
   axis:               colors.neutral[300], // 坐标轴、参考线
   grid:               colors.neutral[200], // 网格线
+  gridSubtle:         colors.neutral[100], // 浅网格/轻描边
   labelText:          colors.neutral[800], // Canvas 内文字标注
   labelTextLight:     colors.neutral[600], // Canvas 次要文字
+  textMuted:          colors.neutral[500], // 灰色辅助文字/元件填充
   objectFill:         '#EFF6FF',           // 物体填充（浅蓝）— primary-50
   objectStroke:       '#1E40AF',           // 物体轮廓 — primary-800
   objectFillNeutral:  colors.neutral[50],  // 中性物体填充
   objectFillWarm:     '#FFF7ED',           // 暖色物体填充 — orange-50
+  strokeDark:         colors.neutral[700], // 深色描边/外框
   referencePoint:     '#F59E0B',           // 参考点标注 — amber-500
   annotation:         '#8B5CF6',           // 标注文字框 — violet-500
   originMark:         colors.neutral[800], // 坐标原点标记

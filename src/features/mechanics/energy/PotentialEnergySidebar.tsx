@@ -95,7 +95,7 @@ const PotentialEnergySidebar: FC<SidebarExtraProps> = ({
         disabled={disabled}
       />
       
-      <p className="text-[10px] text-neutral-400 leading-tight">
+      <p className="text-ui-base text-neutral-400 leading-tight">
         {mode === 0
           ? '重力势能：物体与地球共有。零势能参考面可自由调节，用来探究势能的相对性及 W_G = -ΔE_p。支持在暂停时用鼠标上下拉动物块或参考面。'
           : '弹性势能：弹簧形变所产生。无论拉伸（x>0）还是压缩（x<0），弹性势能均关于平衡位置对称且恒为正（E_p ∝ x²）。支持在暂停时左右拖动物块。'}
@@ -130,7 +130,7 @@ const PotentialEnergySidebar: FC<SidebarExtraProps> = ({
                   size="sm"
                   disabled={disabled}
                   onClick={() => applyGravityPreset(preset)}
-                  className="flex items-center gap-1 justify-start font-normal text-[11px]"
+                  className="flex items-center gap-1 justify-start font-normal text-ui-md"
                 >
                   <span>{preset.icon}</span>
                   <span>{preset.name}</span>
@@ -150,7 +150,7 @@ const PotentialEnergySidebar: FC<SidebarExtraProps> = ({
                 size="sm"
                 disabled={disabled}
                 onClick={() => applySpringPreset(preset)}
-                className="flex items-center gap-1 justify-start font-normal text-[11px]"
+                className="flex items-center gap-1 justify-start font-normal text-ui-md"
               >
                 <span>{preset.icon}</span>
                 <span>{preset.name}</span>

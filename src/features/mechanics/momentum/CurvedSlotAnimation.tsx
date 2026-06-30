@@ -111,9 +111,9 @@ export default function CurvedSlotAnimation() {
       <div className="flex-[4] min-h-[160px] grid grid-cols-3 gap-2">
         {/* 速度图表 */}
         <div className="bg-white border border-neutral-200/80 rounded-xl p-2.5 shadow-sm relative overflow-hidden flex flex-col">
-          <div className="text-[10px] font-bold text-neutral-800 border-b pb-1 mb-1.5 flex items-center justify-between">
+          <div className="text-ui-base font-bold text-neutral-800 border-b pb-1 mb-1.5 flex items-center justify-between">
             <span>速度随时间变化 (V-T)</span>
-            <span className="text-[9px] text-neutral-400 font-mono">v (m/s)</span>
+            <span className="text-ui-sm text-neutral-400 font-mono">v (m/s)</span>
           </div>
           <div className="flex-grow min-h-0 relative">
             <VelocityTimeChart mode="animated" points={vtPoints_m_vx} domainPoints={vtDomain_m_vx} currentTime={time} tMax={6} title="" xLabel="t (s)" yLabel="" additionalSeries={[{ points: vtPoints_m_vy, domainPoints: vtDomain_m_vy, label: '滑块 vy (竖直)', series: 'secondary' }, { points: vtPoints_M_vx, domainPoints: vtDomain_M_vx, label: '圆弧槽 Vx', series: 'success' }]} showArea={false} />
@@ -122,9 +122,9 @@ export default function CurvedSlotAnimation() {
 
         {/* 动量图表 */}
         <div className="bg-white border border-neutral-200/80 rounded-xl p-2.5 shadow-sm relative overflow-hidden flex flex-col">
-          <div className="text-[10px] font-bold text-neutral-800 border-b pb-1 mb-1.5 flex items-center justify-between">
+          <div className="text-ui-base font-bold text-neutral-800 border-b pb-1 mb-1.5 flex items-center justify-between">
             <span>水平动量随时间变化 (P-T)</span>
-            <span className="text-[9px] text-neutral-400 font-mono">p (kg·m/s)</span>
+            <span className="text-ui-sm text-neutral-400 font-mono">p (kg·m/s)</span>
           </div>
           <div className="flex-grow min-h-0 relative">
             <VelocityTimeChart mode="animated" points={ptPoints_m} domainPoints={ptDomain_m} currentTime={time} tMax={6} title="" xLabel="t (s)" yLabel="" additionalSeries={[{ points: ptPoints_M, domainPoints: ptDomain_M, label: '圆弧槽 Px', series: 'secondary' }, { points: ptPoints_Total, domainPoints: ptDomain_Total, label: '系统总动量 Px', series: 'success' }]} showArea={false} />
@@ -133,9 +133,9 @@ export default function CurvedSlotAnimation() {
 
         {/* 能量图表 */}
         <div className="bg-white border border-neutral-200/80 rounded-xl p-2.5 shadow-sm relative overflow-hidden flex flex-col">
-          <div className="text-[10px] font-bold text-neutral-800 border-b pb-1 mb-1.5 flex items-center justify-between">
+          <div className="text-ui-base font-bold text-neutral-800 border-b pb-1 mb-1.5 flex items-center justify-between">
             <span>机械能分配 (E-T)</span>
-            <span className="text-[9px] text-neutral-400 font-mono">E (J)</span>
+            <span className="text-ui-sm text-neutral-400 font-mono">E (J)</span>
           </div>
           <div className="flex-grow min-h-0 relative">
             <VelocityTimeChart mode="animated" points={etPoints_Ek_m} domainPoints={etDomain_Ek_m} currentTime={time} tMax={6} title="" xLabel="t (s)" yLabel="" additionalSeries={[{ points: etPoints_Ek_M, domainPoints: etDomain_Ek_M, label: '圆弧槽 Ek', series: 'secondary' }, { points: etPoints_Ep, domainPoints: etDomain_Ep, label: '重力势能 Ep', series: 'warm' }, { points: etPoints_Total, domainPoints: etDomain_Total, label: '总机械能', series: 'success' }]} showArea={false} />

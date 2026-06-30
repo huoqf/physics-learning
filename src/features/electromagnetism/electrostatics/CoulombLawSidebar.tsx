@@ -27,7 +27,7 @@ export default function CoulombLawSidebar({ params, updateParam, animationAction
           <p className="font-semibold">
             💡 拖拽电荷改变位置，观察合力变化
           </p>
-          <p className="text-[11px] opacity-90 mt-1">
+          <p className="text-ui-md opacity-90 mt-1">
             三个点电荷平衡条件：两大夹小、两同夹异、远小近大
           </p>
         </div>

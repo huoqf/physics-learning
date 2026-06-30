@@ -104,18 +104,18 @@ export const ClosedCircuitCenterExtra: FC = () => {
 
         {/* 浮动实时状态卡片 */}
         <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-lg border border-neutral-100 shadow-sm px-3 py-1.5 flex flex-col gap-0.5 min-w-[105px] pointer-events-none">
-          <div className="text-[8px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">
+          <div className="text-ui-xs font-bold text-neutral-400 uppercase tracking-wider mb-0.5">
             电路即时状态
           </div>
-          <div className="text-[10px] flex items-center justify-between gap-3">
+          <div className="text-ui-base flex items-center justify-between gap-3">
             <span className="text-neutral-500">内电压 U内</span>
             <span className="font-mono font-bold text-neutral-600">{U_internal.toFixed(2)} V</span>
           </div>
-          <div className="text-[10px] flex items-center justify-between gap-3">
+          <div className="text-ui-base flex items-center justify-between gap-3">
             <span className="text-neutral-500">输出功率</span>
             <span className="font-mono font-bold text-amber-600">{P_output.toFixed(2)} W</span>
           </div>
-          <div className="text-[10px] flex items-center justify-between gap-3">
+          <div className="text-ui-base flex items-center justify-between gap-3">
             <span className="text-neutral-500">电源效率</span>
             <span className="font-mono font-bold text-emerald-600">{(eta * 100).toFixed(1)}%</span>
           </div>

@@ -57,6 +57,23 @@
   --color-neutral-900: #171717;
 }
 
+/* ─── 语义字体大小 ─────────────────────────────────────────────── */
+@utility text-ui-xs {
+  font-size: 8px;
+}
+
+@utility text-ui-sm {
+  font-size: 9px;
+}
+
+@utility text-ui-base {
+  font-size: 10px;
+}
+
+@utility text-ui-md {
+  font-size: 11px;
+}
+
 /* 1. 抽取基础公共样式类 */
 @utility alert-card-base {
   border: 1px solid transparent;

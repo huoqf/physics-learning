@@ -2,8 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { calculateClosedCircuit } from '@/physics'
-import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
-import { colors } from '@/theme/colors'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { DialMeter, Rheostat } from '@/components/Physics'
 
 /**
@@ -88,8 +87,8 @@ export default function ClosedCircuit() {
         <defs>
           {/* 电源外壳金属质感渐变 */}
           <linearGradient id="battery-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={colors.neutral[600]} />
-            <stop offset="100%" stopColor={colors.neutral[800]} />
+            <stop offset="0%" stopColor={CANVAS_COLORS.labelTextLight} />
+            <stop offset="100%" stopColor={CANVAS_COLORS.labelText} />
           </linearGradient>
 
           {/* 内阻发热暗红色系渐变 */}
@@ -217,7 +216,7 @@ export default function ClosedCircuit() {
           <line x1={30} y1={0} x2={55} y2={0} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
 
           {/* 负极片 (短粗) */}
-          <line x1={20} y1={-10} x2={20} y2={10} stroke={colors.neutral[800]} strokeWidth={4} />
+          <line x1={20} y1={-10} x2={20} y2={10} stroke={CANVAS_COLORS.labelText} strokeWidth={4} />
           {/* 正极片 (长细) */}
           <line x1={30} y1={-18} x2={30} y2={18} stroke={SCENE_COLORS.circuit.batteryPos} strokeWidth={2.2} />
 
@@ -243,7 +242,7 @@ export default function ClosedCircuit() {
             strokeWidth={2}
           />
           {/* 阻值字母标注 */}
-          <text x={18} y={4} fill={colors.neutral[800]} fontSize={font(10)} fontWeight="bold" textAnchor="middle">
+          <text x={18} y={4} fill={CANVAS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="middle">
             r
           </text>
           

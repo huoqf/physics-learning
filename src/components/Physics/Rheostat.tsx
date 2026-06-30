@@ -24,6 +24,8 @@ export interface RheostatProps {
   unit?: string
   /** 是否禁用/不可见交互 */
   disabled?: boolean
+  /** 字体缩放函数（由父组件 useCanvasSize 提供） */
+  font?: (base: number) => number
   /** 其他 CSS 类名 */
   className?: string
   /** 是否启用动画，关闭后不仅停止时间动画，而且停止渲染任何粒子或不需要的动态修饰元素以减轻 DOM 开销 */
@@ -57,6 +59,7 @@ export const Rheostat: React.FC<RheostatProps> = ({
   unit = 'Ω',
   disabled = false,
   className = '',
+  font = (base: number) => base,
 }) => {
   const c = SCENE_COLORS.circuit
   const layout = getRheostatLayout(width)
@@ -158,7 +161,7 @@ export const Rheostat: React.FC<RheostatProps> = ({
           x={0}
           y={26 * layout.scale}
           fill={PHYSICS_COLORS.labelText}
-          fontSize={10.5 * layout.scale}
+          fontSize={font(10.5)}
           fontWeight="bold"
           textAnchor="middle"
           style={{ userSelect: 'none' }}

@@ -5,7 +5,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS, CANVAS_COLORS, CHART_COLORS, FONT } from '@/theme/physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
-import { colors } from '@/theme/colors'
+
 import { calculateMagnetInduction, calculateCoilInduction } from '@/physics'
 import { useAnimationFrame } from '@/utils/animation'
 import {
@@ -394,11 +394,11 @@ export default function InductionPhenomenon() {
               style={{ userSelect: 'none' }}
             >
               {/* 底座 */}
-              <rect x={-12} y={-5} width={24} height={10} rx={2} fill={colors.neutral[50]} stroke={colors.neutral[500]} strokeWidth={1} />
+              <rect x={-12} y={-5} width={24} height={10} rx={2} fill={CANVAS_COLORS.objectFillNeutral} stroke={CANVAS_COLORS.textMuted} strokeWidth={1} />
               {/* 左触点 */}
-              <circle cx={-10} cy={0} r={3} fill={circuitSwitch ? PHYSICS_COLORS.electricCurrent : colors.neutral[400]} stroke={colors.neutral[800]} strokeWidth={1} />
+              <circle cx={-10} cy={0} r={3} fill={circuitSwitch ? PHYSICS_COLORS.electricCurrent : CANVAS_COLORS.trackHistory} stroke={CANVAS_COLORS.labelText} strokeWidth={1} />
               {/* 右触点 */}
-              <circle cx={10} cy={0} r={3} fill={circuitSwitch ? PHYSICS_COLORS.electricCurrent : colors.neutral[400]} stroke={colors.neutral[800]} strokeWidth={1} />
+              <circle cx={10} cy={0} r={3} fill={circuitSwitch ? PHYSICS_COLORS.electricCurrent : CANVAS_COLORS.trackHistory} stroke={CANVAS_COLORS.labelText} strokeWidth={1} />
               {/* 刀闸横杆 */}
               <line
                 x1={-10} y1={0}
@@ -414,14 +414,14 @@ export default function InductionPhenomenon() {
                 cy={circuitSwitch ? 0 : -12}
                 r={3}
                 fill={circuitSwitch ? PHYSICS_COLORS.electricCurrent : CANVAS_COLORS.objectStroke}
-                stroke={colors.neutral[800]}
+                stroke={CANVAS_COLORS.labelText}
                 strokeWidth={0.8}
               />
               {/* 开关标签 */}
               <text
                 x={0}
                 y={18}
-                fill={colors.neutral[500]}
+                fill={CANVAS_COLORS.textMuted}
                 fontSize={font(8)}
                 fontWeight="bold"
                 textAnchor="middle"

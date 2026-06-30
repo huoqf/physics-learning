@@ -654,7 +654,7 @@ export default function FrictionAnimation() {
 
       {/* 水平拉力直接拖拽控制小标提示 */}
       {isBasicMode && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[11px] text-neutral-400 bg-white/80 px-3 py-1 rounded-full shadow-sm pointer-events-none">
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-ui-md text-neutral-400 bg-white/80 px-3 py-1 rounded-full shadow-sm pointer-events-none">
           💡 可用鼠标按住并左右拖拽拉力 F 箭头端点调节大小
         </div>
       )}

@@ -65,7 +65,7 @@ const PowerSidebar: FC<SidebarExtraProps> = ({
         disabled={disabled}
       />
       
-      <p className="text-[10px] text-neutral-400 leading-tight">
+      <p className="text-ui-base text-neutral-400 leading-tight">
         {mode === 0
           ? '汽车以额定功率 P 起动，牵引力 F=P/v 随速度增大而减小，加速度逐渐降为零。'
           : '先匀加速（F 恒定），当功率达到额定值后切换为恒功率变加速，直至匀速。'}

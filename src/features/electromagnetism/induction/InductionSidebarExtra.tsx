@@ -108,7 +108,7 @@ export const InductionSidebarExtra: React.FC<InductionSidebarExtraProps> = ({
                 unit="px/s"
                 onChange={handleSpeedChange}
               />
-              <span className="text-[10px] text-neutral-400 block mt-1 leading-relaxed">
+              <span className="text-ui-base text-neutral-400 block mt-1 leading-relaxed">
                 正值代表磁铁向右运动（插入/靠近线圈），负值代表磁铁向左运动（拔出/远离线圈）。
               </span>
             </div>
@@ -123,7 +123,7 @@ export const InductionSidebarExtra: React.FC<InductionSidebarExtraProps> = ({
                 onChange={(checked) => updateParam('circuitSwitch', checked ? 1 : 0)}
               />
             </div>
-            <span className="text-[10px] text-neutral-400 block leading-relaxed">
+            <span className="text-ui-base text-neutral-400 block leading-relaxed">
               点击画布上的开关或此处切换。断开瞬间和闭合瞬间都会在副线圈中产生感应电流。
             </span>
 
@@ -134,7 +134,7 @@ export const InductionSidebarExtra: React.FC<InductionSidebarExtraProps> = ({
                 onChange={(checked) => updateParam('hasIronCore', checked ? 1 : 0)}
               />
             </div>
-            <span className="text-[10px] text-neutral-400 block leading-relaxed">
+            <span className="text-ui-base text-neutral-400 block leading-relaxed">
               铁芯能大幅增强磁场聚集能力。关闭后感应电流显著减弱，演示真实实验中为何必须插入铁棒。
             </span>
 
@@ -149,7 +149,7 @@ export const InductionSidebarExtra: React.FC<InductionSidebarExtraProps> = ({
                 onChange={handleResistanceChange}
                 disabled={!circuitSwitch}
               />
-              <span className="text-[10px] text-neutral-400 block mt-1 leading-relaxed">
+              <span className="text-ui-base text-neutral-400 block mt-1 leading-relaxed">
                 拖动滑块改变阻值。改变阻值的速度越快，感应电流越大；静止时无感应电流。
                 {!circuitSwitch && '（电路断开时不可调）'}
               </span>

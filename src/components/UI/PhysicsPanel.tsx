@@ -134,7 +134,7 @@ export const PhysicsPanel: React.FC<PhysicsPanelProps> = ({
                 >
                   {typeof q.value === 'number' ? q.value.toFixed(2) : q.value}
                 </span>
-                {q.unit && <span className="text-[10px] text-neutral-500 font-medium ml-1">{q.unit}</span>}
+                {q.unit && <span className="text-ui-base text-neutral-500 font-medium ml-1">{q.unit}</span>}
               </div>
             </div>
           ))}
@@ -179,7 +179,7 @@ export const PhysicsPanel: React.FC<PhysicsPanelProps> = ({
                       <span className="font-semibold text-neutral-800">{formula.name}</span>
                       {levelStyle && (
                         <span
-                          className="text-[9px] px-1 py-0.5 rounded font-semibold"
+                          className="text-ui-sm px-1 py-0.5 rounded font-semibold"
                           style={{ backgroundColor: levelStyle.bg, color: levelStyle.text }}
                         >
                           {levelStyle.label}
@@ -190,13 +190,13 @@ export const PhysicsPanel: React.FC<PhysicsPanelProps> = ({
                       <KatexFormula formula={formula.latex} mode="inline" />
                     </div>
                     {formula.condition && (
-                      <div className="text-[10px] text-accent-700 mt-0.5 flex items-start gap-1 font-medium">
-                        <span className="shrink-0 text-[8px] bg-accent-100 text-accent-700 px-1 py-0.2 rounded font-semibold leading-none mt-0.5">条件</span>
+                      <div className="text-ui-base text-accent-700 mt-0.5 flex items-start gap-1 font-medium">
+                        <span className="shrink-0 text-ui-xs bg-accent-100 text-accent-700 px-1 py-0.2 rounded font-semibold leading-none mt-0.5">条件</span>
                         <span>{formula.condition}</span>
                       </div>
                     )}
                     {formula.note && (
-                      <div className="text-[10px] text-neutral-400 mt-0.5 pl-1">
+                      <div className="text-ui-base text-neutral-400 mt-0.5 pl-1">
                         💡 {formula.note}
                       </div>
                     )}
@@ -277,7 +277,7 @@ export const PhysicsPanel: React.FC<PhysicsPanelProps> = ({
                     <div className="flex flex-col gap-1.5 w-full">
                       <div className="flex items-center">
                         <span
-                          className="text-[9px] px-1 py-0.5 rounded font-semibold leading-none"
+                          className="text-ui-sm px-1 py-0.5 rounded font-semibold leading-none"
                           style={{ backgroundColor: style.labelBg, color: style.labelText }}
                         >
                           {style.label}

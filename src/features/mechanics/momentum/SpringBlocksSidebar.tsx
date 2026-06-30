@@ -45,7 +45,7 @@ export default function SpringBlocksSidebar({
               animationActions.resetAnimation()
             }}
             disabled={disabled}
-            className="text-[11px] py-1 px-2"
+            className="text-ui-md py-1 px-2"
           >
             等质交换速度
           </Button>
@@ -63,7 +63,7 @@ export default function SpringBlocksSidebar({
               animationActions.resetAnimation()
             }}
             disabled={disabled}
-            className="text-[11px] py-1 px-2"
+            className="text-ui-md py-1 px-2"
           >
             小碰大 (反弹)
           </Button>
@@ -81,7 +81,7 @@ export default function SpringBlocksSidebar({
               animationActions.resetAnimation()
             }}
             disabled={disabled}
-            className="text-[11px] py-1 px-2"
+            className="text-ui-md py-1 px-2"
           >
             大碰小 (同向)
           </Button>
@@ -99,7 +99,7 @@ export default function SpringBlocksSidebar({
               animationActions.resetAnimation()
             }}
             disabled={disabled}
-            className="text-[11px] py-1 px-2"
+            className="text-ui-md py-1 px-2"
           >
             固连往复振动
           </Button>

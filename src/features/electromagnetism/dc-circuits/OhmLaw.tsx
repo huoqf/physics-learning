@@ -2,8 +2,7 @@ import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { calculateOhmLaw } from '@/physics'
-import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
-import { colors } from '@/theme/colors'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { LightBulb, DialMeter, DCSource } from '@/components/Physics'
 
 export default function OhmLaw() {
@@ -95,8 +94,8 @@ export default function OhmLaw() {
 
           {/* 表盘金属圈渐变 */}
           <linearGradient id="dial-ring" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={colors.neutral[400]} />
-            <stop offset="100%" stopColor={colors.neutral[600]} />
+            <stop offset="0%" stopColor={CANVAS_COLORS.trackHistory} />
+            <stop offset="100%" stopColor={CANVAS_COLORS.labelTextLight} />
           </linearGradient>
         </defs>
 
@@ -178,11 +177,11 @@ export default function OhmLaw() {
               strokeWidth={2}
             />
             {/* 电阻符号文字 R */}
-            <text x={0} y={4} fill={colors.neutral[800]} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
+            <text x={0} y={4} fill={CANVAS_COLORS.labelText} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
               R
             </text>
             {/* 文字标签 */}
-            <text x={0} y={24} fill={colors.neutral[600]} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
+            <text x={0} y={24} fill={CANVAS_COLORS.labelTextLight} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
               定值电阻 R
             </text>
           </g>

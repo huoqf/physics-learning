@@ -68,7 +68,7 @@ const KineticEnergySidebar: FC<SidebarExtraProps> = ({
         disabled={disabled}
       />
       
-      <p className="text-[10px] text-neutral-400 leading-tight">
+      <p className="text-ui-base text-neutral-400 leading-tight">
         {mode === 0
           ? '恒力做功：水平面光滑，恒力 F 在位移 s 区间内加速物块，随后撤力，物块匀速。'
           : '变力做功：滑块沿 1/4 凹型圆弧轨道（碗形内壁）下滑，受重力和变摩擦力作用，动能与功的变化相匹配，底端切线水平后匀速。底端满足高考标准：F_N − mg = mv²/R。'}

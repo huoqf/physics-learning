@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { RelationChart } from '@/components/Chart'
 import { colors } from '@/theme/colors'
-import { FONT, PHYSICS_COLORS, withAlpha } from '@/theme/physics'
+import { FONT, PHYSICS_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
 
 const AMPERE_FI_DOMAIN = {
   iMin: -10,
@@ -58,8 +58,8 @@ export const AmpereFIChart: React.FC<AmpereFIChartProps> = ({
           height: h,
           boxSizing: 'border-box',
           borderRadius: 6,
-          border: `1.2px solid ${colors.neutral[200]}`,
-          background: colors.neutral[50],
+          border: `1.2px solid ${CANVAS_COLORS.grid}`,
+          background: CANVAS_COLORS.objectFillNeutral,
           overflow: 'hidden',
         }}
       >
@@ -80,7 +80,7 @@ export const AmpereFIChart: React.FC<AmpereFIChartProps> = ({
               axis: 'vertical',
               x: 0,
               label: 'I=0',
-              color: colors.neutral[300],
+              color: CANVAS_COLORS.axis,
             },
           ]}
         />
@@ -93,10 +93,10 @@ export const AmpereFIChart: React.FC<AmpereFIChartProps> = ({
             padding: '3px 5px',
             borderRadius: 4,
             background: withAlpha(colors.neutral.white, 0.82),
-            border: `1px solid ${colors.neutral[200]}`,
+            border: `1px solid ${CANVAS_COLORS.grid}`,
             fontSize: font(FONT.small),
             lineHeight: '12px',
-            color: colors.neutral[600],
+            color: CANVAS_COLORS.labelTextLight,
             fontWeight: 700,
             pointerEvents: 'none',
             userSelect: 'none',

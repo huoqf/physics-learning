@@ -66,7 +66,7 @@ export default function ElectricFieldSidebar({
           <p className="font-semibold leading-relaxed">
             💡 物理提示：
           </p>
-          <p className="text-[11px] opacity-90 mt-1 leading-relaxed">
+          <p className="text-ui-md opacity-90 mt-1 leading-relaxed">
             1. 支持直接拖动<b>试探电荷 q</b> 在空间中任意移动位置。<br />
             2. 调节上方 <b>试探电量 q</b> 观察：黄色 <b>E 矢量</b> 保持恒定，橙色 <b>F 矢量</b> 正比缩放/反向，直观体验场强的独立性。
           </p>
@@ -76,7 +76,7 @@ export default function ElectricFieldSidebar({
           <p className="font-semibold leading-relaxed">
             💡 物理提示：
           </p>
-          <p className="text-[11px] opacity-90 mt-1 leading-relaxed">
+          <p className="text-ui-md opacity-90 mt-1 leading-relaxed">
             1. 在空间内拖拽试探电荷，观察分矢量 <b>E₁</b> 与 <b>E₂</b> 的平行四边形矢量叠加合成。<br />
             2. 切换不同配置，观察同种电荷与异种电荷空间场强的叠加区别。
           </p>

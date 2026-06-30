@@ -82,7 +82,7 @@ export function VtChartWithArea({
         )}
       </VelocityTimeChart>
       {/* 分析窗口标注 */}
-      <div className="absolute bottom-1 right-2 text-[10px] text-neutral-400 pointer-events-none select-none">
+      <div className="absolute bottom-1 right-2 text-ui-base text-neutral-400 pointer-events-none select-none">
         分析窗口 0–{VT_X_MAX}s
       </div>
     </div>

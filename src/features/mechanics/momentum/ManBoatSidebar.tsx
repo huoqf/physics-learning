@@ -87,7 +87,7 @@ export default function ManBoatSidebar({
                 animationActions.resetAnimation()
               }}
               disabled={disabled}
-              className="text-[11px] py-1 px-2"
+              className="text-ui-md py-1 px-2"
             >
               等质交换 (船不移)
             </Button>
@@ -106,7 +106,7 @@ export default function ManBoatSidebar({
                 animationActions.resetAnimation()
               }}
               disabled={disabled}
-              className="text-[11px] py-1 px-2"
+              className="text-ui-md py-1 px-2"
             >
               不等质交换位置
             </Button>
@@ -125,7 +125,7 @@ export default function ManBoatSidebar({
                 animationActions.resetAnimation()
               }}
               disabled={disabled}
-              className="text-[11px] py-1 px-2"
+              className="text-ui-md py-1 px-2"
             >
               相向走向中央
             </Button>
@@ -144,7 +144,7 @@ export default function ManBoatSidebar({
                 animationActions.resetAnimation()
               }}
               disabled={disabled}
-              className="text-[11px] py-1 px-2"
+              className="text-ui-md py-1 px-2"
             >
               依次依次运动
             </Button>
