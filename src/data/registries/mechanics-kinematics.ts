@@ -110,6 +110,11 @@ export const mechanicsKinematicsAnimations = defineAnimations({
       { key: 'v0', label: '初速度 v₀', min: 0.0, max: 10.0, step: 0.1, unit: 'm/s' },
       { key: 'a', label: '加速度 a', min: -4.0, max: 4.0, step: 0.1, unit: 'm/s²' },
     ],
+    controlMeta: [
+      { type: 'segmented', key: 'chartMode', label: '函数图象模式切换', resetOnChange: true,
+        options: [{ value: 0, label: 'v²-x模式' }, { value: 1, label: 'x/t-t模式' }] },
+      { type: 'toggle', key: 'showAux', label: '显示斜率/截距解析辅助线' },
+    ],
     SidebarExtra: lazy(() => import('@/features/mechanics/kinematics/KinematicsAdvancedSidebar')),
   },
 })

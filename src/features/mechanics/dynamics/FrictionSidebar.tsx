@@ -1,5 +1,5 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { SegmentedControl, ToggleSwitch, OptionButton, LeftPanelSection } from '@/components/UI'
+import { ToggleSwitch, OptionButton, LeftPanelSection } from '@/components/UI'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 
@@ -10,7 +10,7 @@ const GRAVITY_PRESETS = [
   { label: '🪐 木星', g: 24.79 },
 ] as const
 
-export default function FrictionSidebar({ params, updateParam, animationActions, disabled }: SidebarExtraProps) {
+export default function FrictionSidebar({ params, updateParam, disabled }: SidebarExtraProps) {
   const mode = params.mode ?? 0
 
   const { showVectors, toggleVectors } = useAnimationStore(
@@ -20,25 +20,8 @@ export default function FrictionSidebar({ params, updateParam, animationActions,
     }))
   )
 
-  const handleModeChange = (value: number | string) => {
-    updateParam('mode', value as number)
-    animationActions.resetAnimation()
-  }
-
   return (
     <LeftPanelSection bodyClassName="flex flex-col gap-4">
-      <SegmentedControl
-        label="演示模式"
-        options={[
-          { value: 0, label: '水平拉力模型 (f-F)' },
-          { value: 1, label: '斜面倾角模型 (f-θ)' },
-        ]}
-        value={mode}
-        onChange={handleModeChange}
-        disabled={disabled}
-      />
-
-      {/* 星球重力场预设 — 仅水平拉力模型 */}
       {mode === 0 && (
         <div>
           <p className="text-xs font-semibold text-neutral-600 mb-2">环境重力场</p>
@@ -63,4 +46,3 @@ export default function FrictionSidebar({ params, updateParam, animationActions,
     </LeftPanelSection>
   )
 }
-

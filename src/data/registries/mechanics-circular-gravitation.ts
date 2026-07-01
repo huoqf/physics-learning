@@ -11,7 +11,14 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
       { key: 'r', label: '半径 r', min: 5, max: 10, step: 0.1, unit: 'm' },
       { key: 'omega', label: '角速度 ω', min: 0.1, max: 5, step: 0.1, unit: 'rad/s' },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/circular/CircularMotionSidebar')),
+    controlMeta: [
+      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+        options: [{ value: 0, label: '基础' }, { value: 1, label: '进阶' }] },
+      { type: 'toggle', key: 'showProjection', label: '简谐运动投影对比', group: '显示辅助',
+        showIf: 'advancedMode', showIfValue: 1 },
+      { type: 'toggle', key: 'showWaveform', label: '显示联动波形图', group: '显示辅助',
+        showIf: 'advancedMode', showIfValue: 1 },
+    ],
   },
   'anim-centripetal': {
     title: '向心加速度与向心力',
@@ -24,7 +31,16 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
       { key: 'v0', label: '最低点初速度 v₀', min: 1, max: 15, step: 0.5, unit: 'm/s', showIf: 'advancedMode', showIfValue: 1 },
       { key: 'm', label: '质量 m', min: 0.5, max: 5, step: 0.1, unit: 'kg' },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/circular/CentripetalSidebar')),
+    controlMeta: [
+      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+        options: [{ value: 0, label: '基础模式 (匀速)' }, { value: 1, label: '进阶模式 (竖直圆)' }] },
+      { type: 'toggle', key: 'showAcceleration', label: '显示加速度矢量', group: '显示辅助' },
+      { type: 'toggle', key: 'showWaveform', label: '显示 F-a 联动图表', group: '显示辅助',
+        hideIf: 'advancedMode', hideIfValue: 1 },
+      { type: 'segmented', key: 'trackType', label: '轨道物理模型', group: '模型选择', resetOnChange: true,
+        showIf: 'advancedMode', showIfValue: 1,
+        options: [{ value: 0, label: '单面轨 (绳模型)' }, { value: 1, label: '双面轨 (杆模型)' }] },
+    ],
   },
   'anim-kepler': {
     title: '开普勒定律',

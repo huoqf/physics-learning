@@ -34,7 +34,14 @@ export const electromagnetismAcAnimations = defineAnimations({
     title: '变压器原理',
     knowledgeId: 'electricity-5-3',
     Component: lazy(() => import('@/features/electromagnetism/induction/Transformer')),
-    SidebarExtra: lazy(() => import('@/features/electromagnetism/induction/TransformerSidebarExtra')),
+    controlMeta: [
+      { type: 'segmented', key: 'mode', label: '实验模式', group: '模型选择', resetOnChange: true,
+        options: [{ value: 0, label: '基础：变压变流' }, { value: 1, label: '进阶：负载因果链' }] },
+      { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 0,
+        content: '调节 U₁、n₁、n₂，观察四只电表读数与变压变流规律 U₂/U₁ = n₂/n₁。' },
+      { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 1, variant: 'warning',
+        content: '拖动负载电阻 R，观察副边电流 I₂ → 输出功率 P_out → 输入功率 P_in → 原边电流 I₁ 的多米诺因果链。' },
+    ],
     defaultParams: { mode: 0, n1: 100, n2: 200, U1: 220, R: 50 } as const,
     paramMeta: [
       { key: 'n1', label: '原线圈匝数 n₁', min: 10, max: 500, step: 10, unit: '匝' },

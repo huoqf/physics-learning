@@ -15,7 +15,12 @@ export const mechanicsMomentumAnimations = defineAnimations({
       { key: 'mB', label: 'B球质量 m_B', min: 1, max: 10, step: 0.5, unit: 'kg', showIf: 'advancedMode', showIfValue: 1 },
       { key: 'vB', label: 'B球速度 v_B', min: -10, max: 10, step: 0.5, unit: 'm/s', showIf: 'advancedMode', showIfValue: 1 },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/momentum/MomentumSidebar')),
+    controlMeta: [
+      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+        options: [{ value: 0, label: '基础' }, { value: 1, label: '进阶' }] },
+      { type: 'toggle', key: 'showEkChart', label: '显示 Ek-p 关系图', group: '显示辅助',
+        showIf: 'advancedMode', showIfValue: 1 },
+    ],
   },
   'anim-impulse-concept': {
     title: '冲量',
@@ -28,7 +33,13 @@ export const mechanicsMomentumAnimations = defineAnimations({
       { key: 'FMax', label: '力最大值 F_max', min: 1, max: 20, step: 0.5, unit: 'N', showIf: 'advancedMode', showIfValue: 1 },
       { key: 't_total', label: '作用总时间 t', min: 1, max: 10, step: 0.5, unit: 's', showIf: 'advancedMode', showIfValue: 1 },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/momentum/ImpulseSidebar')),
+    controlMeta: [
+      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+        options: [{ value: 0, label: '基础' }, { value: 1, label: '进阶' }] },
+      { type: 'segmented', key: 'forceType', label: '力变化类型', group: '模型选择', resetOnChange: true,
+        showIf: 'advancedMode', showIfValue: 1,
+        options: [{ value: 0, label: '线性衰减' }, { value: 1, label: '正弦半波' }] },
+    ],
   },
   'anim-impulse': {
     title: '动量定理',
@@ -44,7 +55,10 @@ export const mechanicsMomentumAnimations = defineAnimations({
       { key: 'v_fluid', label: '流速 v', min: 1, max: 10, step: 0.5, unit: 'm/s', showIf: 'advancedMode', showIfValue: 1 },
       { key: 'alpha', label: '反弹系数 α', min: 0, max: 1, step: 0.1, unit: '', showIf: 'advancedMode', showIfValue: 1 },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/momentum/MomentumTheoremSidebar')),
+    controlMeta: [
+      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+        options: [{ value: 0, label: '基础' }, { value: 1, label: '进阶' }] },
+    ],
   },
   'anim-momentum-conservation': {
     title: '动量守恒定律',
@@ -61,7 +75,15 @@ export const mechanicsMomentumAnimations = defineAnimations({
       { key: 'mu', label: '动摩擦因数 μ', min: 0.1, max: 0.6, step: 0.05, unit: '', showIf: 'advancedMode', showIfValue: 1 },
       { key: 'L', label: '木板长度 L', min: 0.5, max: 5, step: 0.5, unit: 'm', showIf: 'advancedMode', showIfValue: 1 },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/momentum/MomentumConservationSidebar')),
+    controlMeta: [
+      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+        options: [{ value: 0, label: '基础' }, { value: 1, label: '进阶' }] },
+      { type: 'segmented', key: 'collisionType', label: '碰撞类型', group: '模型选择', resetOnChange: true,
+        showIf: 'advancedMode', showIfValue: 0,
+        options: [{ value: 0, label: '弹性' }, { value: 1, label: '完全非弹性' }, { value: 2, label: '恢复系数可调' }] },
+      { type: 'number', key: 'e_coefficient', label: '恢复系数 e', min: 0, max: 1, step: 0.05, unit: '',
+        showIf: 'collisionType', showIfValue: 2, resetOnChange: true },
+    ],
   },
   'anim-collision': {
     title: '弹性碰撞与非弹性碰撞',
@@ -77,7 +99,13 @@ export const mechanicsMomentumAnimations = defineAnimations({
       { key: 'vA', label: 'A球初速度 v_A', min: 1, max: 10, step: 0.5, unit: 'm/s', showIf: 'advancedMode', showIfValue: 1 },
       { key: 'kLoss', label: '能量损失系数 k', min: 0, max: 1, step: 0.1, unit: '', showIf: 'advancedMode', showIfValue: 1 },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/momentum/CollisionSidebar')),
+    controlMeta: [
+      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+        options: [{ value: 0, label: '基础' }, { value: 1, label: '进阶' }] },
+      { type: 'segmented', key: 'isElastic', label: '碰撞类型', group: '模型选择', resetOnChange: true,
+        hideIf: 'advancedMode', hideIfValue: 1,
+        options: [{ value: 1, label: '完全弹性' }, { value: 0, label: '完全非弹性' }] },
+    ],
   },
   'anim-curved-slot': {
     title: '弧形槽与滑块模型',
@@ -97,7 +125,14 @@ export const mechanicsMomentumAnimations = defineAnimations({
       { key: 'M_slot', label: '弧形槽质量 M', min: 1, max: 10, step: 0.1, unit: 'kg' },
       { key: 'R_slot', label: '轨道半径 R', min: 0.8, max: 2.5, step: 0.1, unit: 'm' },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/momentum/CurvedSlotSidebar')),
+    controlMeta: [
+      { type: 'segmented', key: 'isFixed', label: '轨道约束状态', group: '模型选择', resetOnChange: true,
+        options: [{ value: 0, label: '自由滑动 (动量守恒)' }, { value: 1, label: '固定在地面' }] },
+      { type: 'segmented', key: 'slotShape', label: '轨道物理形状', group: '模型选择', resetOnChange: true,
+        options: [{ value: 0, label: '四分之一滑出轨道' }, { value: 1, label: '对称半圆轨道' }] },
+      { type: 'toggle', key: 'showVectors', label: '显示受力分析', group: '显示辅助' },
+      { type: 'toggle', key: 'showDisplacement', label: '显示位移标注', group: '显示辅助' },
+    ],
   },
   'anim-spring-blocks': {
     title: '弹簧-双滑块模型',

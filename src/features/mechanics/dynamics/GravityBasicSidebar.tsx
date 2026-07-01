@@ -1,109 +1,30 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { duration, easing } from '@/theme/motion'
-import { SegmentedControl, OptionButton, ToggleSwitch, TipCard, Slider, LeftPanelSection } from '@/components/UI'
+import { OptionButton, LeftPanelSection } from '@/components/UI'
 
 export default function GravityBasicSidebar({ params, updateParam, animationActions, disabled }: SidebarExtraProps) {
-  const mode = params.mode ?? 0
   const suspendPoint = params.suspendPoint ?? 0
-  const showLines = params.showLines ?? 1
-  const showWeight = params.showWeight ?? 0
-  const latitude = params.latitude ?? 45
-  const omegaScale = params.omegaScale ?? 80
-
-  const handleModeChange = (value: number | string) => {
-    updateParam('mode', value as number)
-    // 切换模式重置动画时间与播放状态
-    animationActions.resetAnimation()
-  }
 
   const handleSuspendPointChange = (idx: number) => {
     updateParam('suspendPoint', idx)
-    // 重新悬挂时，必须重置动画时间，以触发板的阻尼摆动晃动效果
     animationActions.resetAnimation()
   }
 
   return (
     <LeftPanelSection bodyClassName="flex flex-col gap-4">
-      {/* 演示模式选择 */}
-      <SegmentedControl
-        label="演示模式"
-        options={[
-          { label: '地球自转重力分解', value: 0 },
-          { label: '悬挂法重心实验', value: 1 },
-        ]}
-        value={mode}
-        onChange={handleModeChange}
-        disabled={disabled}
-      />
-
-      {/* 模式 0 地球自转重力分解专有控件 */}
-      {mode === 0 && (
-        <div className="flex flex-col gap-4" style={{ animation: `fadeIn ${duration.fast}ms ${easing.standard}` }}>
-          <Slider
-            label="纬度 φ"
-            value={latitude}
-            min={0}
-            max={90}
-            step={1}
-            unit="°"
-            minLabel="赤道 0°"
-            maxLabel="北极 90°"
-            onChange={(v) => updateParam('latitude', v)}
-            disabled={disabled}
-          />
-
-          <Slider
-            label="离心力放大倍数"
-            value={omegaScale}
-            min={10}
-            max={300}
-            step={10}
-            unit="×"
-            minLabel="10×"
-            maxLabel="300×"
-            onChange={(v) => updateParam('omegaScale', v)}
-            disabled={disabled}
-          />
-
-          <TipCard variant="info">
-            💡 <strong>提示：</strong>真实地球自转产生的离心力仅为引力的约 0.0034（1/290），为便于观察已放大显示。点击播放按钮可自动演示纬度从赤道到极地的变化。
-          </TipCard>
+      <div className="flex flex-col gap-2">
+        <p className="text-xs font-semibold text-neutral-600">选择悬挂孔 (A1 - A3)</p>
+        <div className="grid grid-cols-3 gap-2">
+          {[0, 1, 2].map((idx) => (
+            <OptionButton
+              key={`suspend-btn-${idx}`}
+              label={`挂载点 A${idx + 1}`}
+              selected={suspendPoint === idx}
+              onClick={() => handleSuspendPointChange(idx)}
+              disabled={disabled}
+            />
+          ))}
         </div>
-      )}
-
-      {/* 模式 1 重心实验专有侧边控件 */}
-      {mode === 1 && (
-        <div className="flex flex-col gap-4" style={{ animation: `fadeIn ${duration.fast}ms ${easing.standard}` }}>
-          <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold text-neutral-600">选择悬挂孔 (A1 - A3)</p>
-            <div className="grid grid-cols-3 gap-2">
-              {[0, 1, 2].map((idx) => (
-                <OptionButton
-                  key={`suspend-btn-${idx}`}
-                  label={`挂载点 A${idx + 1}`}
-                  selected={suspendPoint === idx}
-                  onClick={() => handleSuspendPointChange(idx)}
-                  disabled={disabled}
-                />
-              ))}
-            </div>
-          </div>
-
-          <ToggleSwitch
-            checked={showWeight === 1}
-            onChange={(checked) => updateParam('showWeight', checked ? 1 : 0)}
-            label="启用黄铜配重"
-            disabled={disabled}
-          />
-
-          <ToggleSwitch
-            checked={showLines === 1}
-            onChange={(checked) => updateParam('showLines', checked ? 1 : 0)}
-            label="显示悬挂铅垂虚线"
-            disabled={disabled}
-          />
-        </div>
-      )}
+      </div>
     </LeftPanelSection>
   )
 }

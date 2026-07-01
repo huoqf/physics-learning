@@ -234,7 +234,7 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 2. ✅ **P1：统一左屏容器**（2026-07-01 已完成主体）：新增 `LeftPanel / LeftPanelSection / LeftPanelScrollArea` 并接入 `AnimationPage` 顶层左屏；已批量迁移 49 个静态根容器 SidebarExtra 到 `LeftPanelSection`。剩余 Fragment/动态根容器类复杂 SidebarExtra 后续随 controlMeta 迁移处理。
 3. ✅ **P2：扩展参数协议**（2026-07-01 已完成）：`ParamMeta` 已增加 `group / description / marks / importance / resetOnChange`，`ParamControl` 已支持分组、说明、标记与重要性样式。
 4. ✅ **P2：引入 `controlMeta`**（2026-07-01 第一阶段已完成）：已新增 `ControlMeta` 协议与 `ControlPanel` 渲染器，支持 `number / segmented / toggle / preset / tip`；已迁移库仑定律、力的合成与分解、共点力平衡、恒力做功、开普勒定律等简单 SidebarExtra。
-5. **P2/P3：收敛 SidebarExtra**：继续把简单模式切换、显示开关、预设按钮、提示卡从手写 SidebarExtra 迁移到 `controlMeta`；真正复杂的页面专属控制继续保留。
+5. ✅ **P2/P3：收敛 SidebarExtra**（2026-07-01 主体完成）：32 个动画已迁移（24 完全删除 + 8 部分精简），SidebarExtra 从 61 个降至 29 个。剩余 29 个因含自定义按钮、useAnimationStore、复杂预设网格、onChange 联动等原因保留。详见 `SIDEBAREXTRA_MIGRATION_REPORT.md`。若需进一步收敛需扩展 controlMeta 协议（动态 preset、action 类型、动态 tip、storeToggle）。
 
 **验收标准**：
 - 左屏基础结构一致，控件分组明确；默认恢复语义清晰。
