@@ -1,7 +1,7 @@
 import React from 'react'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { MagneticFieldGrid } from '@/components/Physics/MagneticFieldGrid'
+import { MagneticFieldGrid } from '@/components/Physics'
 
 interface UniformMagneticFieldProps {
   x: number

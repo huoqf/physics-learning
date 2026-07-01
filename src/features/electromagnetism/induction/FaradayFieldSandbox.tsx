@@ -5,8 +5,7 @@
  */
 import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { MagneticFieldSymbols } from '@/components/Physics/MagneticFieldGrid'
+import { VectorArrow, MagneticFieldSymbols } from '@/components/Physics'
 import { COIL_RX, COIL_RY } from './hooks/useFaradayPhysics'
 
 interface Props {

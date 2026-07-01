@@ -7,8 +7,7 @@ import { colors } from '@/theme/colors'
 import { createSceneScale, worldToPixel } from '@/scene'
 import type { SceneConfig } from '@/scene'
 import { calcTrajectoryCenter } from '@/physics'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { drawMagneticFieldGrid } from '@/components/Physics/MagneticFieldGrid'
+import { VectorArrow, drawMagneticFieldGrid } from '@/components/Physics'
 
 export function SimulationView() {
   const [sizeRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.square)
