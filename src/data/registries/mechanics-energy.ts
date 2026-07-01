@@ -210,7 +210,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
   },
   'anim-vertical-spring': {
     title: '竖直弹簧复合模型',
-    knowledgeId: 'mechanics-7-6',
+    knowledgeId: 'mechanics-7-6-1',
     Component: lazy(() => import('@/features/mechanics/energy/SpringCompositeAnimation')),
     defaultParams: { m: 0.5, k: 50, h: 0.8, mode: 0, showVectors: 1, autoPause: 0 } as const,
     paramMeta: [
@@ -231,7 +231,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
   },
   'anim-light-rod-rope': {
     title: '轻杆/轻绳连接体',
-    knowledgeId: 'mechanics-7-7',
+    knowledgeId: 'mechanics-7-6-2',
     maxTime: 6,
     Component: lazy(() => import('@/features/mechanics/energy/LightRodRopeAnimation')),
     defaultParams: { m1: 1.0, m2: 1.0, L: 1.2, constraint: 0, showParticles: 1, theta0: 30, v0: 0.0, showGravity: 1, showTension: 1, showResolution: 1 } as const,
