@@ -555,16 +555,6 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
       {/* --- 9. 右手螺旋定则 (安培定则) 可视化面板 --- */}
       {showHandRule === 1 && lenzResult.fluxChange !== 'stable' && (
         <g transform="translate(520, 130)" opacity={getOpacity([4])} className="transition-opacity duration-300">
-          <rect
-            x="0"
-            y="0"
-            width="150"
-            height="180"
-            fill={CANVAS_COLORS.objectFillNeutral}
-            stroke={CANVAS_COLORS.grid}
-            strokeWidth="1.2"
-            rx="6"
-          />
           <text
             x="75"
             y="18"

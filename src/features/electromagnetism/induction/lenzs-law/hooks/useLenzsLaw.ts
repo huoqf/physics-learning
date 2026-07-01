@@ -137,6 +137,19 @@ export function useLenzsLaw() {
 
   const lenzResult = calculateLenzsLaw(magnetPole, velocity)
 
+  // 缓存上一次非 stable 的结果，暂停时沿用以保持感应效果可见
+  const lastResultRef = useRef(lenzResult)
+  const cacheKeyRef = useRef(`${magnetPole}_${motionMode}`)
+  const currentCacheKey = `${magnetPole}_${motionMode}`
+  if (cacheKeyRef.current !== currentCacheKey) {
+    // 磁极或运动模式切换，清除缓存
+    lastResultRef.current = lenzResult
+    cacheKeyRef.current = currentCacheKey
+  } else if (lenzResult.fluxChange !== 'stable') {
+    lastResultRef.current = lenzResult
+  }
+  const displayResult = lenzResult.fluxChange === 'stable' ? lastResultRef.current : lenzResult
+
   // 计算相对距离和磁通量视觉强度的系数 (0.1 ~ 1.0)
   const dist = coilY - magnetY
   const fluxIntensity = Math.max(0.1, Math.min(1.0, 1 - (dist - 35) / 135))
@@ -145,7 +158,7 @@ export function useLenzsLaw() {
     magnetY,
     velocity,
     isDragging,
-    lenzResult,
+    lenzResult: displayResult,
     fluxIntensity,
     time,
     isPlaying,
