@@ -28,6 +28,8 @@ import {
   computeFaradayMagnetFlux,
   generateUniformFaradayPoints,
   generateMagnetFaradayPoints,
+  calculateDoubleBoundaryExit,
+  calculateCircularBoundaryExit,
 } from '@/physics'
 
 const k = 9e9
@@ -493,6 +495,45 @@ describe('electromagnetism', () => {
       expect(pts.length).toBe(101)
       expect(pts[0].t).toBe(0)
       expect(pts[100].t).toBe(10)
+    })
+  })
+
+  // ===== 高考有界磁场计算测试 =====
+  describe('高考有界磁场计算', () => {
+    it('calculateDoubleBoundaryExit: 折回单边界（未穿透）时，出射点应为 2*xc，出射 y 应为 0', () => {
+      // q=1, m=1, v=10, B=1 => R=10
+      // 射入角 theta=90（垂直），磁场宽度 d=15 (> R*(1-cos90) = 10)
+      // 顺时针旋转，cxAngle = 90 - 90 = 0 => xc = 10, yc = 0
+      // 粒子不能穿透，折回，出射点 x = 2*xc = 20, y = 0
+      const res = calculateDoubleBoundaryExit(1, 1, 10, 1, 90, 15)
+      expect(res.isPenetrated).toBe(false)
+      expect(res.x).toBeCloseTo(20, 5)
+      expect(res.y).toBe(0)
+      expect(res.vx).toBeCloseTo(0, 5)
+      expect(res.vy).toBeCloseTo(-10, 5)
+    })
+
+    it('calculateDoubleBoundaryExit: 穿透上边界时，出射 y 应等于 d，isPenetrated 为 true', () => {
+      // q=1, m=1, v=10, B=1 => R=10
+      // 射入角 theta=90（垂直），磁场宽度 d=5 (< 10)
+      // 应该能穿透，出射 y = 5
+      const res = calculateDoubleBoundaryExit(1, 1, 10, 1, 90, 5)
+      expect(res.isPenetrated).toBe(true)
+      expect(res.y).toBe(5)
+      // 几何解：xc=10, yc=0, R=10 => (x-10)^2 + (5-0)^2 = 100 => (x-10)^2 = 75 => x = 10 + sqrt(75) = 10 + 8.660 = 18.660
+      expect(res.x).toBeCloseTo(10 + Math.sqrt(75), 5)
+    })
+
+    it('calculateCircularBoundaryExit: 圆形磁场对称偏转计算，出射角及位置正确', () => {
+      // q=1, m=1, v=10, B=1 => R=10
+      // 磁场半径 Rb=10
+      // x = sign * 2 * R * Rb^2 / (R^2 + Rb^2) = -2000 / 200 = -10 (顺时针 sign=-1)
+      // y = 2 * R^2 * Rb / (R^2 + Rb^2) = 2000 / 200 = 10
+      const res = calculateCircularBoundaryExit(1, 1, 10, 1, 10)
+      expect(res.x).toBeCloseTo(-10, 5)
+      expect(res.y).toBeCloseTo(10, 5)
+      // tan(deltaPhi/2) = Rb/R = 1 => deltaPhi/2 = pi/4 => deltaPhi = pi/2 (90度)
+      expect(res.deltaPhi).toBeCloseTo(Math.PI / 2, 5)
     })
   })
 })

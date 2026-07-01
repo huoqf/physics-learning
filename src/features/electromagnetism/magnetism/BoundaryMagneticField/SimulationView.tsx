@@ -1,117 +1,221 @@
+
 import { useEffect, useRef, useMemo, useCallback } from 'react'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_STYLE, withAlpha } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { createSceneScale, worldToPixel } from '@/scene'
 import type { SceneConfig } from '@/scene'
-import { calcTrajectoryCenter } from '@/physics'
+import {
+  calcParticleRadius,
+  calcParticlePeriod,
+  calculateDoubleBoundaryExit,
+  calculateCircularBoundaryExit,
+} from '@/physics'
 import { VectorArrow, drawMagneticFieldGrid } from '@/components/Physics'
 
 export function SimulationView() {
   const [sizeRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.square)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-    const params = useAnimationStore((s) => s.params)
+  const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
 
-  const mode = params.mode ?? 0
+  const mode = params.mode ?? 0 // 0: 基础, 1: 进阶
+  const boundaryType = params.boundaryType ?? 0 // 0: 单边界, 1: 双平行边界, 2: 圆形边界
+  const dynamicType = params.dynamicType ?? 0 // 0: 旋转圆, 1: 缩放圆, 2: 平移圆
+
   const q = params.q ?? 1
   const m = params.m ?? 1
-  const v = params.v ?? 10
-  const B = params.B ?? 1
-  const thetaParam = params.theta ?? 90
+  const v = params.v ?? 12
+  const B = params.B ?? 1.2
+  const thetaParam = params.theta ?? 60
+  const d = params.magneticWidth ?? 5.0
+  const Rb = params.magneticRadius ?? 4.0
+  const showGeometry = params.showGeometry === 1
   const showArc = params.showArc === 1
   const showEnvelope = params.showEnvelope === 1
 
-  // 基础模式强制垂直入射 θ = 90，进阶模式使用用户调节的夹角
-  const activeTheta = mode === 0 ? 90 : thetaParam
+  // 进阶模式下，不同极值模型强制对应的边界环境，与高考考点高度对齐
+  const activeBoundaryType = mode === 0 ? boundaryType : (
+    dynamicType === 0 ? 0 : // 旋转圆 -> 单边界
+    dynamicType === 1 ? 1 : // 缩放圆 -> 双平行边界
+    0 // 平移圆 -> 单边界
+  )
 
-  // 计算粒子圆周运动的核心物理量
-  const R = Math.abs((m * v) / (q * B))
-  // 根据右手螺旋定则，当 q*B > 0 时，向上射入的粒子受力向右，即向右偏转（sign = -1）
+  // 基础模式可调夹角，圆形磁场强制径向入射
+  const activeTheta = activeBoundaryType === 2 ? 90 : thetaParam
+
+  const R = calcParticleRadius(m, v, q, B)
   const sign = (q * B) >= 0 ? -1 : 1
-  const omega = Math.abs((q * B) / m)
-  const thetaRad = (activeTheta * Math.PI) / 180
 
-  // 磁场内运动圆心角 (向左偏转逆时针 deltaPhi=2*(pi-thetaRad), 向右偏转顺时针 deltaPhi=2*thetaRad)
-  const deltaPhi = sign === 1 ? 2 * (Math.PI - thetaRad) : 2 * thetaRad
-  const tOut = deltaPhi / omega
+  // 计算焦点粒子在磁场中偏转的时间 tOut
+  const tOut = useMemo(() => {
+    if (activeBoundaryType === 0) {
+      const thetaRad = (activeTheta * Math.PI) / 180
+      const deltaPhi = sign === -1 ? 2 * thetaRad : 2 * (Math.PI - thetaRad)
+      const T = calcParticlePeriod(m, q, B)
+      return T > 0 ? (deltaPhi / (2 * Math.PI)) * T : 0
+    } else if (activeBoundaryType === 1) {
+      return calculateDoubleBoundaryExit(q, m, v, B, activeTheta, d).t
+    } else {
+      return calculateCircularBoundaryExit(q, m, v, B, Rb).t
+    }
+  }, [q, m, v, B, activeTheta, activeBoundaryType, d, Rb, sign])
 
-  // 磁场外的直线运动滑行时间设计，以适配连贯动画
   const tSlideIn = 0.5 * tOut
   const tSlideOut = 1.0 * tOut
   const tCycle = tSlideIn + tOut + tSlideOut
 
-  // 将 store 的 time 映射到动画大循环周期中
+  // 映射时间进度
   const progressTime = time > 0 ? (time % tCycle) - tSlideIn : -tSlideIn
 
-  // 物理配置：智能自适应 worldWidth，确保在任何滑块参数下回旋圆都能等比例完全展示
+  // 物理配置：自适应 worldWidth 保证画面在不同参数下完全展示
   const sceneConfig: SceneConfig = useMemo(() => {
-    // 根据当前半径 R 自适应调整世界视口宽度，包络圆最大跨度为 4R，因此设为 4.5 * R 最佳
-    const wWidth = Math.max(0.5, R * 4.5)
+    // 依据最大半径动态缩放
+    const maxR = Math.max(R, activeBoundaryType === 2 ? Rb : d)
+    const wWidth = Math.max(1.0, maxR * 4.8)
     const wHeight = canvasSize.width > 0 ? wWidth * (canvasSize.height / canvasSize.width) : 4.0
 
     return {
       vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
-      // 物理原点(0,0)放在偏下方，以留给 y > 0 的磁场区域足够的纵深
       originX: canvasSize.width / 2,
-      originY: canvasSize.height * 0.70,
+      originY: activeBoundaryType === 2 ? canvasSize.height * 0.78 : canvasSize.height * 0.70,
       worldWidth: wWidth,
       worldHeight: wHeight,
       refMagnitudes: {
-        force: 20,
-        velocity: 50,
+        force: 25,
+        velocity: 45,
       },
     }
-  }, [canvasSize, R])
+  }, [canvasSize, R, activeBoundaryType, d, Rb])
 
   const sceneScale = createSceneScale(sceneConfig)
 
-  // 粒子在指定时间进度 progressTime 下的运动坐标及速度状态计算函数
-  const getParticleState = useCallback((tVal: number) => {
-    const cxAngle = thetaRad + sign * Math.PI / 2
-    const xc = R * Math.cos(cxAngle)
-    const yc = R * Math.sin(cxAngle)
-    const theta0 = cxAngle + Math.PI // 初始极角 (在原点时)
+  // 统一的单粒子轨迹及物理状态求解函数
+  const getParticleState = useCallback((
+    tVal: number,
+    initX: number = 0,
+    initY: number = 0,
+    vVal: number = v,
+    thetaDeg: number = activeTheta
+  ) => {
+    const thetaRad = (thetaDeg * Math.PI) / 180
+    const signVal = (q * B) >= 0 ? -1 : 1
+    const omega = Math.abs((q * B) / m)
+    const Rp = calcParticleRadius(m, vVal, q, B)
+
+    let tOutVal = 0
+    let xOut = 0
+    let yOut = 0
+    let vxOut = 0
+    let vyOut = 0
+
+    if (activeBoundaryType === 0) {
+      // 单边界
+      const deltaPhi = signVal === -1 ? 2 * thetaRad : 2 * (Math.PI - thetaRad)
+      const T = calcParticlePeriod(m, q, B)
+      tOutVal = T > 0 ? (deltaPhi / (2 * Math.PI)) * T : 0
+
+      const cxAngle = thetaRad + signVal * Math.PI / 2
+      xOut = initX + 2 * Rp * Math.cos(cxAngle)
+      yOut = 0
+      const exitAngle = thetaRad + signVal * deltaPhi
+      vxOut = vVal * Math.cos(exitAngle)
+      vyOut = vVal * Math.sin(exitAngle)
+    } else if (activeBoundaryType === 1) {
+      // 双平行边界
+      const res = calculateDoubleBoundaryExit(q, m, vVal, B, thetaDeg, d)
+      tOutVal = res.t
+      xOut = initX + res.x
+      yOut = res.y
+      vxOut = res.vx
+      vyOut = res.vy
+    } else {
+      // 圆形边界
+      const res = calculateCircularBoundaryExit(q, m, vVal, B, Rb)
+      tOutVal = res.t
+      xOut = initX + res.x
+      yOut = res.y
+      vxOut = res.vx
+      vyOut = res.vy
+    }
+
+    const cxAngle = thetaRad + signVal * Math.PI / 2
+    const xc = initX + Rp * Math.cos(cxAngle)
+    const yc = initY + Rp * Math.sin(cxAngle)
+    const theta0 = Math.atan2(initY - yc, initX - xc)
 
     let px = 0
     let py = 0
-    let vx = v * Math.cos(thetaRad)
-    let vy = v * Math.sin(thetaRad)
+    let vx = vVal * Math.cos(thetaRad)
+    let vy = vVal * Math.sin(thetaRad)
 
     if (tVal < 0) {
-      // 阶段 1：射入前的直线运动
-      px = v * tVal * Math.cos(thetaRad)
-      py = v * tVal * Math.sin(thetaRad)
-      vx = v * Math.cos(thetaRad)
-      vy = v * Math.sin(thetaRad)
-    } else if (tVal <= tOut) {
-      // 阶段 2：磁场中偏转圆周运动
-      const curAngle = theta0 + sign * omega * tVal
-      px = xc + R * Math.cos(curAngle)
-      py = yc + R * Math.sin(curAngle)
-      
-      const velocityAngle = curAngle + sign * Math.PI / 2
-      vx = v * Math.cos(velocityAngle)
-      vy = v * Math.sin(velocityAngle)
+      px = initX + vVal * tVal * Math.cos(thetaRad)
+      py = initY + vVal * tVal * Math.sin(thetaRad)
+    } else if (tVal <= tOutVal) {
+      const curAngle = theta0 + signVal * omega * tVal
+      px = xc + Rp * Math.cos(curAngle)
+      py = yc + Rp * Math.sin(curAngle)
+      const velocityAngle = curAngle + signVal * Math.PI / 2
+      vx = vVal * Math.cos(velocityAngle)
+      vy = vVal * Math.sin(velocityAngle)
     } else {
-      // 阶段 3：射出后的直线运动
-      const exitAngle = theta0 + sign * omega * tOut
-      const xOut = xc + R * Math.cos(exitAngle)
-      const yOut = 0
-
-      const exitVelocityAngle = exitAngle + sign * Math.PI / 2
-      vx = v * Math.cos(exitVelocityAngle)
-      vy = v * Math.sin(exitVelocityAngle)
-
-      const dt = tVal - tOut
-      px = xOut + vx * dt
-      py = yOut + vy * dt
+      const dt = tVal - tOutVal
+      px = xOut + vxOut * dt
+      py = yOut + vyOut * dt
+      vx = vxOut
+      vy = vyOut
     }
 
-    return { px, py, vx, vy }
-  }, [thetaRad, sign, R, omega, v, tOut])
+    return { px, py, vx, vy, tOut: tOutVal, xOut, yOut, xc, yc, R: Rp }
+  }, [q, m, B, v, activeTheta, activeBoundaryType, d, Rb])
+
+  // 进阶模式下，生成多粒子粒子族数据
+  const particleFamily = useMemo(() => {
+    if (mode === 0) return []
+
+    const list = []
+    if (dynamicType === 0) {
+      // 旋转圆：同速不同向
+      const angles = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165]
+      // 去重添加焦点粒子
+      const uniqueAngles = Array.from(new Set([...angles, activeTheta])).sort((a, b) => a - b)
+      for (const ang of uniqueAngles) {
+        list.push({
+          initX: 0,
+          vVal: v,
+          theta: ang,
+          isFocus: ang === activeTheta
+        })
+      }
+    } else if (dynamicType === 1) {
+      // 缩放圆：同向不同速
+      const speeds = [v * 0.4, v * 0.6, v * 0.8, v * 1.0, v * 1.2, v * 1.4, v * 1.6]
+      const uniqueSpeeds = Array.from(new Set([...speeds, v])).sort((a, b) => a - b)
+      for (const spd of uniqueSpeeds) {
+        list.push({
+          initX: 0,
+          vVal: spd,
+          theta: activeTheta,
+          isFocus: Math.abs(spd - v) < 1e-3
+        })
+      }
+    } else {
+      // 平移圆：同速同向不同入射点
+      const positions = [-2.0 * R, -1.3 * R, -0.6 * R, 0, 0.6 * R, 1.3 * R, 2.0 * R]
+      for (const pos of positions) {
+        list.push({
+          initX: pos,
+          vVal: v,
+          theta: activeTheta,
+          isFocus: pos === 0
+        })
+      }
+    }
+    return list
+  }, [mode, dynamicType, v, activeTheta, R])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -120,166 +224,301 @@ export function SimulationView() {
     if (!ctx) return
 
     ctx.clearRect(0, 0, canvas.width, canvas.height)
+    const { font } = canvasSize
 
-    // 绘制边界 y = 0
+    // 绘制磁场区域底色与符号网格
     const { py: bStartY } = worldToPixel(0, 0, sceneScale)
-    
-    // 1. 绘制磁场区底色 (y > 0，使用全局主题色并以 0.05 透明度柔和渲染)
+
     ctx.save()
-    ctx.fillStyle = PHYSICS_COLORS.magneticField
-    ctx.globalAlpha = 0.05
-    ctx.fillRect(0, 0, canvas.width, bStartY)
-    ctx.restore()
-    
-    // 2. 绘制磁场方向背景网格符号 (⊙ 出纸面 / ⊗ 入纸面)
-    drawMagneticFieldGrid(ctx, {
-      x: 0,
-      y: 0,
-      w: canvas.width,
-      h: bStartY,
-      B,
-    })
-    
-    // 3. 绘制磁场边界直线线段
-    ctx.beginPath()
-    ctx.moveTo(0, bStartY)
-    ctx.lineTo(canvas.width, bStartY)
-    ctx.strokeStyle = PHYSICS_COLORS.magneticField
-    ctx.lineWidth = 2
-    ctx.stroke()
+    if (activeBoundaryType === 0) {
+      // 单边界：y > 0 的半平面
+      ctx.fillStyle = PHYSICS_COLORS.magneticField
+      ctx.globalAlpha = 0.04
+      ctx.fillRect(0, 0, canvas.width, bStartY)
+      ctx.restore()
 
-    // 4. 绘制轨迹圆心或包络区
-    if (mode === 0) {
-      // 基础模式圆弧与高亮扇形
-      const cxAngle = thetaRad + sign * Math.PI / 2
-      const xc = R * Math.cos(cxAngle)
-      const yc = R * Math.sin(cxAngle)
-      const { px: cx, py: cy } = worldToPixel(xc, yc, sceneScale)
+      drawMagneticFieldGrid(ctx, { x: 0, y: 0, w: canvas.width, h: bStartY, B })
 
-      // 完整轨迹圆形虚线
+      // 绘制单边界线
       ctx.beginPath()
-      ctx.arc(cx, cy, R * sceneScale.scale, 0, 2 * Math.PI)
-      ctx.strokeStyle = PHYSICS_COLORS.trackHistory
-      ctx.setLineDash([4, 4])
-      ctx.lineWidth = 1
+      ctx.moveTo(0, bStartY)
+      ctx.lineTo(canvas.width, bStartY)
+      ctx.strokeStyle = PHYSICS_COLORS.magneticField
+      ctx.lineWidth = 2
       ctx.stroke()
-      ctx.setLineDash([])
 
-      // 扇形高亮显示圆心角
-      if (showArc) {
-        ctx.beginPath()
-        ctx.moveTo(cx, cy)
-        // 磁场内圆弧起止角度
-        const startAngle = cxAngle + Math.PI
-        const endAngle = startAngle + sign * deltaPhi
-        ctx.arc(cx, cy, R * sceneScale.scale, startAngle, endAngle, sign < 0)
-        ctx.lineTo(cx, cy)
-        ctx.fillStyle = PHYSICS_COLORS.positiveCharge + '1c'
-        ctx.fill()
-      }
+      // 边界文字
+      ctx.fillStyle = PHYSICS_COLORS.labelText
+      ctx.font = `${font(CANVAS_STYLE.font.labelSize)}px sans-serif`
+      ctx.fillText('磁场边界 y = 0', 16, bStartY + 18)
+    } else if (activeBoundaryType === 1) {
+      // 平行双边界：0 < y < d
+      const { py: bEndY } = worldToPixel(0, d, sceneScale)
+      ctx.fillStyle = PHYSICS_COLORS.magneticField
+      ctx.globalAlpha = 0.04
+      ctx.fillRect(0, bEndY, canvas.width, bStartY - bEndY)
+      ctx.restore()
+
+      drawMagneticFieldGrid(ctx, { x: 0, y: bEndY, w: canvas.width, h: bStartY - bEndY, B })
+
+      // 下边界线
+      ctx.beginPath()
+      ctx.moveTo(0, bStartY)
+      ctx.lineTo(canvas.width, bStartY)
+      ctx.strokeStyle = PHYSICS_COLORS.magneticField
+      ctx.lineWidth = 2
+      ctx.stroke()
+
+      // 上边界线
+      ctx.beginPath()
+      ctx.moveTo(0, bEndY)
+      ctx.lineTo(canvas.width, bEndY)
+      ctx.strokeStyle = PHYSICS_COLORS.magneticField
+      ctx.lineWidth = 2
+      ctx.stroke()
+
+      ctx.fillStyle = PHYSICS_COLORS.labelText
+      ctx.font = `${font(CANVAS_STYLE.font.labelSize)}px sans-serif`
+      ctx.fillText('磁场边界 y = 0', 16, bStartY + 18)
+      ctx.fillText(`磁场边界 y = d (${d.toFixed(1)}m)`, 16, bEndY - 8)
     } else {
-      // 进阶模式：多入射角“旋转圆”残影展示
-      for (let angle = 10; angle <= 170; angle += 20) {
-        const rad = (angle * Math.PI) / 180
-        const c = calcTrajectoryCenter(rad, R, q, B)
-        const { px: ccx, py: ccy } = worldToPixel(c.xc, c.yc, sceneScale)
-        
-        ctx.beginPath()
-        ctx.arc(ccx, ccy, R * sceneScale.scale, 0, 2 * Math.PI)
-        ctx.strokeStyle = angle === thetaParam ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.objectStroke
-        ctx.globalAlpha = angle === thetaParam ? 1.0 : 0.15
-        ctx.lineWidth = angle === thetaParam ? 2 : 1
-        ctx.stroke()
-      }
-      ctx.globalAlpha = 1.0
+      // 圆形边界：圆心在 (0, Rb)，半径为 Rb
+      const { px: bcx, py: bcy } = worldToPixel(0, Rb, sceneScale)
+      const rPx = Rb * sceneScale.scale
 
-      // 绘制包络区 (半圆)
-      if (showEnvelope) {
-        const { px: ox, py: oy } = worldToPixel(0, 0, sceneScale)
-        ctx.beginPath()
-        ctx.arc(ox, oy, 2 * R * sceneScale.scale, Math.PI, 2 * Math.PI)
-        ctx.fillStyle = PHYSICS_COLORS.electricFieldLine + '1a'
-        ctx.fill()
+      // 剪切磁场符号与背景
+      ctx.save()
+      ctx.beginPath()
+      ctx.arc(bcx, bcy, rPx, 0, 2 * Math.PI)
+      ctx.clip()
+
+      ctx.fillStyle = PHYSICS_COLORS.magneticField
+      ctx.globalAlpha = 0.04
+      ctx.fillRect(bcx - rPx, bcy - rPx, rPx * 2, rPx * 2)
+
+      drawMagneticFieldGrid(ctx, {
+        x: bcx - rPx,
+        y: bcy - rPx,
+        w: rPx * 2,
+        h: rPx * 2,
+        B
+      })
+      ctx.restore()
+
+      // 绘制磁场圆周边界
+      ctx.beginPath()
+      ctx.arc(bcx, bcy, rPx, 0, 2 * Math.PI)
+      ctx.strokeStyle = PHYSICS_COLORS.magneticField
+      ctx.lineWidth = 2
+      ctx.stroke()
+
+      ctx.fillStyle = PHYSICS_COLORS.labelText
+      ctx.font = `${font(CANVAS_STYLE.font.labelSize)}px sans-serif`
+      ctx.fillText(`圆形磁场 (R_b = ${Rb.toFixed(1)}m)`, bcx - rPx + 8, bcy - rPx - 8)
+    }
+
+    // 绘制非焦点粒子的淡色虚线轨迹 (仅在进阶多解模式下)
+    if (mode === 1) {
+      particleFamily.forEach((part) => {
+        if (part.isFocus) return // 焦点粒子下面单独高亮绘制
         
+        // 采样画出完整偏转轨迹圆
+        const pState = getParticleState(0, part.initX, 0, part.vVal, part.theta)
+        const { px: cx, py: cy } = worldToPixel(pState.xc, pState.yc, sceneScale)
+        const rpPx = pState.R * sceneScale.scale
+
+        ctx.beginPath()
+        ctx.arc(cx, cy, rpPx, 0, 2 * Math.PI)
+        ctx.strokeStyle = withAlpha(PHYSICS_COLORS.negativeCharge, 0.12)
+        ctx.setLineDash([2, 3])
+        ctx.lineWidth = 1
+        ctx.stroke()
+        ctx.setLineDash([])
+      })
+
+      // 绘制旋转圆特有的包络圆和圆心轨迹
+      if (dynamicType === 0 && showEnvelope) {
+        const { px: ox, py: oy } = worldToPixel(0, 0, sceneScale)
+        
+        // 包络圆（半径为 2R 的半圆）
         ctx.beginPath()
         ctx.arc(ox, oy, 2 * R * sceneScale.scale, Math.PI, 2 * Math.PI)
-        ctx.strokeStyle = PHYSICS_COLORS.electricFieldLine
+        ctx.fillStyle = withAlpha(PHYSICS_COLORS.appliedForce, 0.04)
+        ctx.fill()
+
+        ctx.beginPath()
+        ctx.arc(ox, oy, 2 * R * sceneScale.scale, Math.PI, 2 * Math.PI)
+        ctx.strokeStyle = PHYSICS_COLORS.appliedForce
+        ctx.setLineDash([6, 4])
         ctx.lineWidth = 1.5
-        ctx.setLineDash([5, 5])
+        ctx.stroke()
+        ctx.setLineDash([])
+
+        // 圆心轨迹（以原点为圆心，半径为 R 的半圆）
+        ctx.beginPath()
+        ctx.arc(ox, oy, R * sceneScale.scale, Math.PI, 2 * Math.PI)
+        ctx.strokeStyle = PHYSICS_COLORS.lorentzForce
+        ctx.setLineDash([3, 3])
+        ctx.lineWidth = 1.2
         ctx.stroke()
         ctx.setLineDash([])
       }
     }
 
-    // 5. 计算粒子当前物理状态并进行渲染
-    const particleState = getParticleState(progressTime)
-    const { px, py } = worldToPixel(particleState.px, particleState.py, sceneScale)
+    // 绘制焦点粒子相关的辅助线（几何定理可视化）
+    const focusState = getParticleState(progressTime, 0, 0, v, activeTheta)
+    
+    if (showGeometry && mode === 0) {
+      const { px: ox, py: oy } = worldToPixel(0, 0, sceneScale)
+      const { px: cx, py: cy } = worldToPixel(focusState.xc, focusState.yc, sceneScale)
+      const { px: ex, py: ey } = worldToPixel(focusState.xOut, focusState.yOut, sceneScale)
 
-    // 绘制粒子运行的彗星拖尾效果 (连续平滑采样)
-    const tailPoints = []
-    const tailDuration = tOut * 0.4
-    const steps = 25
-    for (let i = 0; i <= steps; i++) {
-      const tSample = progressTime - tailDuration * (1 - i / steps)
-      if (tSample >= -tSlideIn) {
-        const tState = getParticleState(tSample)
-        const { px: sX, py: sY } = worldToPixel(tState.px, tState.py, sceneScale)
-        tailPoints.push({ x: sX, y: sY, alpha: i / steps })
-      }
-    }
+      ctx.save()
+      ctx.strokeStyle = PHYSICS_COLORS.axis
+      ctx.lineWidth = 1.2
+      ctx.setLineDash([4, 4])
 
-    if (tailPoints.length > 1) {
-      for (let i = 1; i < tailPoints.length; i++) {
-        const p1 = tailPoints[i - 1]
-        const p2 = tailPoints[i]
+      // 1. 绘制轨迹圆心 O
+      ctx.beginPath()
+      ctx.arc(cx, cy, 3, 0, 2 * Math.PI)
+      ctx.fillStyle = PHYSICS_COLORS.labelText
+      ctx.fill()
+      ctx.font = `bold ${font(11)}px sans-serif`
+      ctx.fillText('O', cx + 6, cy + 4)
+
+      // 2. 连接圆心到入射点、出射点的半径线
+      ctx.beginPath()
+      ctx.moveTo(cx, cy)
+      ctx.lineTo(ox, oy)
+      ctx.moveTo(cx, cy)
+      ctx.lineTo(ex, ey)
+      ctx.stroke()
+
+      // 3. 连弦线
+      ctx.beginPath()
+      ctx.moveTo(ox, oy)
+      ctx.lineTo(ex, ey)
+      ctx.strokeStyle = withAlpha(PHYSICS_COLORS.appliedForce, 0.7)
+      ctx.stroke()
+
+      // 弦上文字标注 L
+      ctx.fillStyle = PHYSICS_COLORS.appliedForce
+      ctx.fillText('弦 L', (ox + ex) / 2 - 8, (oy + ey) / 2 - 8)
+
+      // 半径标注 R
+      ctx.fillStyle = PHYSICS_COLORS.negativeCharge
+      ctx.fillText('R', (cx + ox) / 2 + 8, (cy + oy) / 2 + 8)
+
+      // 4. 显示圆心角高亮扇形
+      if (showArc) {
         ctx.beginPath()
-        ctx.moveTo(p1.x, p1.y)
-        ctx.lineTo(p2.x, p2.y)
-        ctx.strokeStyle = PHYSICS_COLORS.positiveCharge
-        ctx.globalAlpha = p1.alpha * 0.5
-        ctx.lineWidth = CANVAS_STYLE.object.pointMassRadius * 0.7 * p1.alpha
-        ctx.stroke()
+        ctx.moveTo(cx, cy)
+        const startAngle = Math.atan2(oy - cy, ox - cx)
+        const deltaPhiVal = sign === -1 ? 2 * (activeTheta * Math.PI) / 180 : 2 * (Math.PI - (activeTheta * Math.PI) / 180)
+        const endAngle = startAngle + sign * deltaPhiVal
+        ctx.arc(cx, cy, R * sceneScale.scale, startAngle, endAngle, sign < 0)
+        ctx.lineTo(cx, cy)
+        ctx.fillStyle = withAlpha(PHYSICS_COLORS.positiveCharge, 0.08)
+        ctx.fill()
       }
-      ctx.globalAlpha = 1.0
+
+      ctx.restore()
     }
 
-    // 绘制粒子球体本体
+    // 绘制焦点粒子的主轨迹圆
+    const { px: fcx, py: fcy } = worldToPixel(focusState.xc, focusState.yc, sceneScale)
     ctx.beginPath()
-    ctx.arc(px, py, CANVAS_STYLE.object.pointMassRadius, 0, 2 * Math.PI)
-    ctx.fillStyle = PHYSICS_COLORS.positiveCharge
-    ctx.strokeStyle = colors.neutral.white
+    ctx.arc(fcx, fcy, R * sceneScale.scale, 0, 2 * Math.PI)
+    ctx.strokeStyle = PHYSICS_COLORS.positiveCharge
+    ctx.setLineDash([4, 4])
     ctx.lineWidth = 1.5
-    ctx.fill()
     ctx.stroke()
+    ctx.setLineDash([])
+
+    // 绘制粒子并渲染彗星拖尾
+    const drawParticle = (part: { initX: number; vVal: number; theta: number; isFocus: boolean }) => {
+      const pState = getParticleState(progressTime, part.initX, 0, part.vVal, part.theta)
+      const { px: pX, py: pY } = worldToPixel(pState.px, pState.py, sceneScale)
+
+      // 拖尾
+      const tailPoints = []
+      const tailDuration = pState.tOut * 0.35
+      const steps = 18
+      for (let i = 0; i <= steps; i++) {
+        const tSample = progressTime - tailDuration * (1 - i / steps)
+        if (tSample >= -tSlideIn) {
+          const tState = getParticleState(tSample, part.initX, 0, part.vVal, part.theta)
+          const { px: sX, py: sY } = worldToPixel(tState.px, tState.py, sceneScale)
+          tailPoints.push({ x: sX, y: sY, alpha: i / steps })
+        }
+      }
+
+      if (tailPoints.length > 1) {
+        ctx.save()
+        for (let i = 1; i < tailPoints.length; i++) {
+          const p1 = tailPoints[i - 1]
+          const p2 = tailPoints[i]
+          ctx.beginPath()
+          ctx.moveTo(p1.x, p1.y)
+          ctx.lineTo(p2.x, p2.y)
+          ctx.strokeStyle = part.isFocus ? PHYSICS_COLORS.positiveCharge : withAlpha(PHYSICS_COLORS.negativeCharge, 0.3)
+          ctx.globalAlpha = p1.alpha * (part.isFocus ? 0.6 : 0.25)
+          ctx.lineWidth = CANVAS_STYLE.object.pointMassRadius * (part.isFocus ? 0.7 : 0.4) * p1.alpha
+          ctx.stroke()
+        }
+        ctx.restore()
+      }
+
+      // 本体球体
+      ctx.beginPath()
+      ctx.arc(pX, pY, part.isFocus ? CANVAS_STYLE.object.pointMassRadius : CANVAS_STYLE.object.pointMassRadius * 0.7, 0, 2 * Math.PI)
+      ctx.fillStyle = part.isFocus ? PHYSICS_COLORS.positiveCharge : withAlpha(PHYSICS_COLORS.negativeCharge, 0.4)
+      ctx.strokeStyle = colors.neutral.white
+      ctx.lineWidth = part.isFocus ? 1.5 : 1
+      ctx.fill()
+      ctx.stroke()
+    }
+
+    if (mode === 0) {
+      // 基础模式绘制单个粒子
+      drawParticle({ initX: 0, vVal: v, theta: activeTheta, isFocus: true })
+    } else {
+      // 进阶模式绘制全粒子族，非焦点粒子先画以减少视觉遮挡
+      particleFamily.filter(p => !p.isFocus).forEach(p => drawParticle(p))
+      particleFamily.filter(p => p.isFocus).forEach(p => drawParticle(p))
+    }
 
   }, [
     mode,
+    activeBoundaryType,
+    dynamicType,
     q,
     m,
     v,
     B,
-    thetaParam,
+    activeTheta,
+    d,
+    Rb,
+    showGeometry,
     showArc,
     showEnvelope,
     progressTime,
     sceneScale,
     canvasSize,
-    deltaPhi,
-    omega,
-    thetaRad,
+    tOut,
     R,
     sign,
-    tOut,
     tSlideIn,
-    getParticleState
+    getParticleState,
+    particleFamily
   ])
 
-  // 为了 SVG 矢量箭头计算粒子实时状态与受力向量
-  const particleState = getParticleState(progressTime)
-  const inField = progressTime >= 0 && progressTime <= tOut
+  // 物理状态及矢量箭头参数计算 (仅对焦点粒子展示以控制信息密度)
+  const focusState = getParticleState(progressTime, 0, 0, v, activeTheta)
+  const inField = progressTime >= 0 && progressTime <= focusState.tOut
   const forceVector = {
-    x: q * B * particleState.vy,
-    y: -q * B * particleState.vx
+    x: q * B * focusState.vy,
+    y: -q * B * focusState.vx
   }
 
   return (
@@ -296,17 +535,17 @@ export function SimulationView() {
           height={canvasSize.height}
           className="absolute top-0 left-0 pointer-events-none"
         >
-          {/* 粒子速度矢量 */}
+          {/* 焦点粒子速度矢量 */}
           <VectorArrow
-            origin={{ x: particleState.px, y: particleState.py }}
-            vector={{ x: particleState.vx, y: particleState.vy }}
+            origin={{ x: focusState.px, y: focusState.py }}
+            vector={{ x: focusState.vx, y: focusState.vy }}
             type="velocity"
             sceneScale={sceneScale}
           />
-          {/* 粒子受洛伦兹力矢量 (仅在磁场内) */}
+          {/* 焦点粒子洛伦兹力矢量 (仅在磁场偏转区内) */}
           {inField && (
             <VectorArrow
-              origin={{ x: particleState.px, y: particleState.py }}
+              origin={{ x: focusState.px, y: focusState.py }}
               vector={forceVector}
               type="lorentzForce"
               sceneScale={sceneScale}

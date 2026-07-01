@@ -1,4 +1,11 @@
-import { solveBasicAmpere, solveAdvancedAmpere } from '../../../physics'
+import {
+  solveBasicAmpere,
+  solveAdvancedAmpere,
+  calculateDoubleBoundaryExit,
+  calculateCircularBoundaryExit,
+  calcParticleRadius,
+  calcParticlePeriod,
+} from '../../../physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import type { PhysicsPanelData } from '../types'
@@ -185,64 +192,166 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
     }
     case 'anim-charge-in-bfield': {
       const mode = params.mode ?? 0 // 0=基础模式, 1=进阶模式
+      const boundaryType = params.boundaryType ?? 0 // 0=单边界, 1=双边界, 2=圆形
+      const dynamicType = params.dynamicType ?? 0 // 0=旋转圆, 1=缩放圆, 2=平移圆
       const q = params.q ?? 1
       const m = params.m ?? 1
-      const v = params.v ?? 10
-      const B = params.B ?? 1
-      const theta = params.theta ?? 90 // 射入夹角
+      const v = params.v ?? 12
+      const B = params.B ?? 1.2
+      const theta = params.theta ?? 60 // 射入夹角
+      const d = params.magneticWidth ?? 5.0
+      const Rb = params.magneticRadius ?? 4.0
 
-      const R = Math.abs((m * v) / (q * B))
-      const T = Math.abs((2 * Math.PI * m) / (q * B))
-      
-      // 基础模式下的停留时间 t（假设垂直射入，圆心角为 pi）
-      const arcAngle = Math.PI // 这里简化为垂直射出
-      const timeInB = (arcAngle / (2 * Math.PI)) * T
-      
-      // 进阶模式下的最大射出距离 x_max (直径)
-      const xMax = 2 * R
+      const R = calcParticleRadius(m, v, q, B)
+      const T = calcParticlePeriod(m, q, B)
 
       if (mode === 0) {
-        return {
-          quantities: [
-            ...base,
-            { label: '回旋半径 R', value: R.toFixed(2), unit: 'm', color: PHYSICS_COLORS.negativeCharge },
-            { label: '运动周期 T', value: T.toFixed(2), unit: 's', color: PHYSICS_COLORS.lorentzForce },
-            { label: '停留时间 t', value: timeInB.toFixed(2), unit: 's', color: PHYSICS_COLORS.heatLoss, highlight: 'extreme' as const },
-          ],
-          formulas: [
-            { name: '洛伦兹力提供向心力', latex: 'qvB = m\\frac{v^2}{R}', level: 'core' },
-            { name: '回旋半径', latex: 'R = \\frac{mv}{qB}', level: 'core' },
-            { name: '运动周期', latex: 'T = \\frac{2\\pi m}{qB}', level: 'core' },
-            { name: '运动时间', latex: 't = \\frac{\\theta}{2\\pi}T', level: 'core' },
-          ],
-          gaokaoPoints: [
-            { text: '高考考点：粒子在磁场中的运行时间由圆心角决定，与速度无关。', importance: 'gaokao' as const },
-            { text: '确定圆心是解决磁场问题的关键，通常利用两速度垂线的交点或一速度垂线与一条弦的中垂线交点来确定。', importance: 'core' as const },
-          ],
-          warnings: [
-            { text: '易错防坑：错将运动半径与时间混淆，容易误认为速度越大、粒子在磁场中运动时间越长。实际上，在偏转角一定时，运动时间仅取决于周期，与速度大小完全无关！', level: 'danger' }
-          ],
+        // ─── 基础模式 ───
+        if (boundaryType === 0) {
+          // 单边界磁场 (y > 0)
+          const thetaRad = (theta * Math.PI) / 180
+          const sign = (q * B) >= 0 ? -1 : 1
+          const deltaPhi = sign === -1 ? 2 * thetaRad : 2 * (Math.PI - thetaRad)
+          const timeInB = T > 0 ? (deltaPhi / (2 * Math.PI)) * T : 0
+          const exitDistance = 2 * R * Math.sin(thetaRad)
+
+          return {
+            quantities: [
+              ...base,
+              { label: '回旋半径 R', value: R.toFixed(2), unit: 'm', color: PHYSICS_COLORS.negativeCharge },
+              { label: '运动周期 T', value: T.toFixed(2), unit: 's', color: PHYSICS_COLORS.lorentzForce },
+              { label: '偏转圆心角 φ', value: ((deltaPhi * 180) / Math.PI).toFixed(1), unit: '°', color: PHYSICS_COLORS.appliedForce },
+              { label: '停留时间 t', value: timeInB.toFixed(2), unit: 's', color: PHYSICS_COLORS.heatLoss, highlight: 'extreme' as const },
+              { label: '射出点距离 x_out', value: exitDistance.toFixed(2), unit: 'm', color: PHYSICS_COLORS.velocity },
+            ],
+            formulas: [
+              { name: '回旋半径', latex: 'R = \\frac{mv}{qB}', level: 'core' },
+              { name: '运动周期', latex: 'T = \\frac{2\\pi m}{qB}', level: 'core' },
+              { name: '偏转圆心角', latex: '\\Delta\\phi = 2\\theta\\ (或 2(\\pi-\\theta))', level: 'core' },
+              { name: '运动时间', latex: 't = \\frac{\\Delta\\phi}{2\\pi}T', level: 'core' },
+            ],
+            gaokaoPoints: [
+              { text: '粒子在单边界磁场中运动时，射入角 θ 决定了偏转角，且射出点距离始终为弦长 L = 2R*sinθ。', importance: 'gaokao' as const },
+              { text: '运动时间由偏转圆心角唯一决定，与速度大小 v 完全无关。', importance: 'core' as const },
+            ],
+            warnings: [
+              { text: '易错防坑：在偏转角一定的情况下，切勿因速度变大而误认为运动时间变长。时间仅与圆心角和周期有关！', level: 'danger' }
+            ],
+          }
+        } else if (boundaryType === 1) {
+          // 双平行边界磁场 (0 < y < d)
+          const res = calculateDoubleBoundaryExit(q, m, v, B, theta, d)
+
+          return {
+            quantities: [
+              ...base,
+              { label: '回旋半径 R', value: R.toFixed(2), unit: 'm', color: PHYSICS_COLORS.negativeCharge },
+              { label: '临界半径 R_crit', value: res.R_crit.toFixed(2), unit: 'm', color: PHYSICS_COLORS.appliedForce },
+              { label: '是否穿出磁场', value: res.isPenetrated ? '是 (穿透)' : '否 (折回)', unit: '', color: res.isPenetrated ? PHYSICS_COLORS.lorentzForce : PHYSICS_COLORS.heatLoss, highlight: 'extreme' as const },
+              { label: '运动时间 t', value: res.t.toFixed(2), unit: 's', color: PHYSICS_COLORS.heatLoss },
+            ],
+            formulas: [
+              { name: '临界穿透条件', latex: 'R_{crit} = \\frac{d}{1 \\mp \\cos\\theta}', level: 'important' },
+              { name: '穿透判定', latex: 'R \\ge R_{crit} \\implies 穿透', level: 'core' },
+            ],
+            gaokaoPoints: [
+              { text: '双平行边界的临界穿透条件是轨迹圆与边界恰好相切，即 R(1 ∓ cosθ) = d。', importance: 'gaokao' as const },
+              { text: '当速度 v 较小 (R < R_crit) 时，粒子被折回，出射点距离在下边界 x = 2*xc 处。', importance: 'core' as const },
+            ],
+            warnings: [
+              { text: '易错防坑：画相切临界图时，必须分清粒子偏转的方向（向左还是向右），这决定了相切几何关系中的符号是 1-cosθ 还是 1+cosθ。', level: 'danger' }
+            ],
+          }
+        } else {
+          // 圆形边界磁场 (半径 Rb)
+          const res = calculateCircularBoundaryExit(q, m, v, B, Rb)
+
+          return {
+            quantities: [
+              ...base,
+              { label: '回旋半径 R', value: R.toFixed(2), unit: 'm', color: PHYSICS_COLORS.negativeCharge },
+              { label: '磁场半径 R_b', value: Rb.toFixed(2), unit: 'm', color: PHYSICS_COLORS.appliedForce },
+              { label: '偏转角 Δφ', value: ((res.deltaPhi * 180) / Math.PI).toFixed(1), unit: '°', color: PHYSICS_COLORS.lorentzForce },
+              { label: '运动时间 t', value: res.t.toFixed(2), unit: 's', color: PHYSICS_COLORS.heatLoss, highlight: 'extreme' as const },
+            ],
+            formulas: [
+              { name: '圆形磁场对称性', latex: '径向射入 \\implies 径向射出', level: 'important' },
+              { name: '偏转角与半径关系', latex: '\\tan\\frac{\\Delta\\phi}{2} = \\frac{R_b}{R}', level: 'core' },
+            ],
+            gaokaoPoints: [
+              { text: '圆形磁场“对称性定理”：沿径向（指向圆心）射入磁场的粒子，射出时其速度反向延长线必过磁场圆心。', importance: 'gaokao' as const },
+              { text: '该对称性使偏转角中垂线正好经过磁场圆心，形成直角三角形关系：tan(Δφ/2) = R_b / R。', importance: 'core' as const },
+            ],
+            warnings: [
+              { text: '易错防坑：注意此径向对称性仅在粒子“射向磁场圆心”时成立。如果入射速度不指向磁场圆心，出射必不对称！', level: 'danger' }
+            ],
+          }
         }
       } else {
-        return {
-          quantities: [
-            ...base,
-            { label: '当前射入角 θ', value: theta.toFixed(0), unit: '°', color: PHYSICS_COLORS.magneticField },
-            { label: '回旋半径 R', value: R.toFixed(2), unit: 'm', color: PHYSICS_COLORS.negativeCharge },
-            { label: '最大射出距离 x_max', value: xMax.toFixed(2), unit: 'm', color: PHYSICS_COLORS.heatLoss, highlight: 'extreme' as const },
-          ],
-          formulas: [
-            { name: '弦长公式', latex: 'L = 2R\\sin\\frac{\\theta}{2}', level: 'core' },
-            { name: '最大距离', latex: 'x_{\\max} = 2R = \\frac{2mv}{qB}', level: 'core' },
-          ],
-          gaokaoPoints: [
-            { text: '高考考点：高考压轴题常客。找圆心、求半径、定时间；旋转圆与放缩圆边界临界切点分析。', importance: 'gaokao' as const },
-            { text: '旋转圆规律：当速度大小不变、方向改变时，粒子的轨迹圆大小不变，但圆心绕入射点旋转（圆心轨迹为以入射点为圆心、半径为R的圆弧）。', importance: 'core' as const },
-            { text: '临界极值：在磁场边界上，当弦长恰好等于轨迹圆的直径（即 2R）时，粒子射出的距离达到最大值。', importance: 'gaokao' as const },
-          ],
-          warnings: [
-            { text: '易错防坑：找不到动态圆圆心的运动轨迹（通常是以入射点为圆心、半径为R的圆弧），在画临界条件时切点找错导致漏解。', level: 'danger' }
-          ],
+        // ─── 进阶模式 (动态圆极值分析) ───
+        if (dynamicType === 0) {
+          // 旋转圆
+          const xMax = 2 * R
+
+          return {
+            quantities: [
+              ...base,
+              { label: '焦点回旋半径 R', value: R.toFixed(2), unit: 'm', color: PHYSICS_COLORS.negativeCharge },
+              { label: '包络圆半径 2R', value: xMax.toFixed(2), unit: 'm', color: PHYSICS_COLORS.appliedForce, highlight: 'extreme' as const },
+              { label: '最大射出距离 x_max', value: xMax.toFixed(2), unit: 'm', color: PHYSICS_COLORS.heatLoss },
+            ],
+            formulas: [
+              { name: '弦长公式', latex: 'L = 2R\\sin\\frac{\\Delta\\phi}{2}', level: 'core' },
+              { name: '最大放电半径', latex: 'r_{max} = 2R = \\frac{2mv}{qB}', level: 'important' },
+            ],
+            gaokaoPoints: [
+              { text: '旋转圆（初速大小不变，方向改变）的轨迹圆心轨迹是以入射点为圆心、半径为 R 的圆弧。', importance: 'gaokao' as const },
+              { text: '无边界时，旋转圆的包络线为以入射点为圆心、半径为 2R 的圆（也称为最大“放电”区域）。', importance: 'core' as const },
+            ],
+            warnings: [
+              { text: '易错防坑：画边界切点临界时，应确保轨迹圆心位于其圆心轨迹圆弧上，切点为粒子轨迹与边界的切点，而非任意几何交点。', level: 'danger' }
+            ],
+          }
+        } else if (dynamicType === 1) {
+          // 缩放圆
+          return {
+            quantities: [
+              ...base,
+              { label: '当前回旋半径 R', value: R.toFixed(2), unit: 'm', color: PHYSICS_COLORS.negativeCharge },
+              { label: '运动周期 T', value: T.toFixed(2), unit: 's', color: PHYSICS_COLORS.lorentzForce },
+            ],
+            formulas: [
+              { name: '圆心轨迹线', latex: '垂直于入射速度的射线', level: 'core' },
+              { name: '缩放关系', latex: 'R \\propto v', level: 'core' },
+            ],
+            gaokaoPoints: [
+              { text: '缩放圆（初速方向不变，大小改变）的各轨迹圆心在一条垂直于速度方向的直线上平移。', importance: 'gaokao' as const },
+              { text: '在双边界磁场中，随着速度 v 变大，轨迹圆变大。相切于上边界的圆即为“穿透”的临界状态。', importance: 'core' as const },
+            ],
+            warnings: [
+              { text: '易错防坑：不要遗漏磁场边界有两端限制时（如有限宽度的板状磁场），既有穿透上边界的临界，也可能有从左右侧面射出的临界。', level: 'danger' }
+            ],
+          }
+        } else {
+          // 平移圆
+          return {
+            quantities: [
+              ...base,
+              { label: '回旋半径 R', value: R.toFixed(2), unit: 'm', color: PHYSICS_COLORS.negativeCharge },
+              { label: '运动周期 T', value: T.toFixed(2), unit: 's', color: PHYSICS_COLORS.lorentzForce },
+            ],
+            formulas: [
+              { name: '圆心轨迹线', latex: '与入射边界平行的直线', level: 'core' },
+              { name: '入射宽度', latex: '\\Delta x_{in} = \\Delta x_{out}', level: 'core' },
+            ],
+            gaokaoPoints: [
+              { text: '平移圆（一束平行粒子，速度大小与方向皆同）的圆心在一条与入射边界平行的直线上平移。', importance: 'gaokao' as const },
+              { text: '常用于求解粒子束穿过磁场后的聚焦（如磁聚焦）或宽度遮挡问题。', importance: 'core' as const },
+            ],
+            warnings: [
+              { text: '易错防坑：平移圆的各圆轨道由于大小相同且平行，画图时可用直尺平移圆心和轨迹切点来进行直观分析。', level: 'danger' }
+            ],
+          }
         }
       }
     }

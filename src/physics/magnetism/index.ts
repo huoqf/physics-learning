@@ -7,6 +7,8 @@ export {
   calcParticlePeriod,
   calcTrajectoryCenter,
   calcParticleArcAngle,
+  calculateDoubleBoundaryExit,
+  calculateCircularBoundaryExit,
 } from './forces'
 
 export {

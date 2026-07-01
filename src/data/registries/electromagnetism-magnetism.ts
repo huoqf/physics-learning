@@ -55,13 +55,27 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
     knowledgeId: 'electricity-3-3',
     Component: lazy(() => import('@/features/electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField')),
     SidebarExtra: lazy(() => import('@/features/electromagnetism/magnetism/BoundaryMagneticField/ChargeInBFieldSidebar')),
-    defaultParams: { mode: 0, q: 1, m: 1, v: 10, B: 1, theta: 90, showArc: 1, showEnvelope: 0 } as const,
+    defaultParams: {
+      mode: 0,
+      boundaryType: 0, // 0: 单边界, 1: 双平行边界, 2: 圆形边界
+      dynamicType: 0,  // 0: 旋转圆, 1: 缩放圆, 2: 平移圆
+      q: 1,
+      m: 1,
+      v: 12,
+      B: 1.2,
+      theta: 60,
+      magneticWidth: 5.0,
+      magneticRadius: 4.0,
+      showGeometry: 1,
+      showArc: 1,
+      showEnvelope: 0,
+    } as const,
     paramMeta: [
-      { key: 'v', label: '速度 v', min: 1, max: 50, step: 1, unit: 'm/s', showIf: 'mode', showIfValue: 0 },
-      { key: 'B', label: '磁感应强度 B', min: 0.1, max: 5, step: 0.1, unit: 'T' },
-      { key: 'theta', label: '射入夹角 θ', min: 10, max: 170, step: 5, unit: '°', showIf: 'mode', showIfValue: 1 },
-      { key: 'q', label: '电荷量 q', min: 0.1, max: 5, step: 0.1, unit: 'C' },
-      { key: 'm', label: '质量 m', min: 0.1, max: 5, step: 0.1, unit: 'kg' },
+      { key: 'v', label: '速度 v', min: 2.0, max: 20.0, step: 0.5, unit: 'm/s' },
+      { key: 'B', label: '磁感应强度 B', min: 0.2, max: 3.0, step: 0.1, unit: 'T' },
+      { key: 'theta', label: '射入夹角 θ', min: 15, max: 165, step: 5, unit: '°' },
+      { key: 'magneticWidth', label: '板状磁场宽 d', min: 2.0, max: 8.0, step: 0.2, unit: 'm', showIf: 'boundaryType', showIfValue: 1 },
+      { key: 'magneticRadius', label: '圆形磁场半径 R_b', min: 2.0, max: 8.0, step: 0.2, unit: 'm', showIf: 'boundaryType', showIfValue: 2 },
     ],
   },
 })
