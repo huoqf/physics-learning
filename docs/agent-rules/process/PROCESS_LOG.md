@@ -2,13 +2,14 @@
 
 ## 当前周期
 
-- 当前日期：2026-W26（06-30）
+- 当前日期：2026-W27（07-01）
 - 当前里程碑：M4 电磁/热/光/原子模块
-- 本周详细日志：[2026-W26.md](./logs/2026-W26.md)
+- 本周详细日志：[2026-W27.md](./logs/2026-W27.md)
 - 提交流程：[CHECKLIST.md](./CHECKLIST.md)
 
 ## 历史归档（按 ISO 周）
 
+- [2026-W27.md](./logs/2026-W27.md)（07-01 ~ ）
 - [2026-W26.md](./logs/2026-W26.md)（06-22 ~ 06-30）
 - 完整历史：[2026-06.md](./logs/2026-06.md)
 
@@ -16,6 +17,7 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 07-01 | electromagnetism/magnetism | compliance | 安培力 F=BIL 页面规范合规修复：AmpereForce.tsx 补 useViewport（方式B）+ viewBox 改 canvasSize 动态绑定；5 个文件共 10 处 `colors.neutral[]` → `CANVAS_COLORS.*`（InclineForceDiagram/ForcePolygon/UniformMagneticField）；tsc 零错误 |
 | 06-30 | electromagnetism/induction | refactor | Transformer.tsx 拆分：724行→90行，抽取 transformer/model + hooks + components；补 transformerModel 单测 4 项 |
 | 06-30 | electromagnetism/magnetism | refactor | VelocitySelector.tsx 拆分：720行→100行，抽取 velocity-selector/model + hooks + components；补 velocitySelectorModel 单测 4 项 |
 | 06-30 | app | fix | ESLint 配置补齐 `scripts/**/*.mjs` Node globals |

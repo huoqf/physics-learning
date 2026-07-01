@@ -7,7 +7,6 @@ import {
   calcParticlePeriod,
 } from '../../../physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
-import { colors } from '@/theme/colors'
 import type { PhysicsPanelData } from '../types'
 
 export function handleMagnetism(animId: string, params: Record<string, number>, time: number, base: PhysicsPanelData['quantities']): PhysicsPanelData | null {
@@ -16,30 +15,34 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
       const mode = params.mode ?? 0
       const B = params.B ?? 1.0
       const I = params.I ?? 2.0
-      const L = 4.0 // 有效长度固定为 4.0m
+      const L = params.L ?? 4.0 // 联动 L
+      const thetaIB = params.thetaIB ?? 90
+      const bFieldDir = params.bFieldDir ?? 0
       const m = 0.5 // 质量固定为 0.5kg
 
       if (mode === 0) {
         // ── 基础模式 ──
-        const res = solveBasicAmpere(I, B, L, m, time)
+        const res = solveBasicAmpere(I, B, thetaIB, L, m, time)
         const fDirText = res.F > 1e-4 ? ' (向右)' : res.F < -1e-4 ? ' (向左)' : ' (为零)'
         
         return {
           quantities: [
             ...base,
-            { label: '磁感应强度 B', value: `${Math.abs(B).toFixed(1)}`, unit: `T (${B > 0 ? '垂直纸面向里' : B < 0 ? '垂直纸面向外' : '无磁场'})`, color: PHYSICS_COLORS.magneticField },
+            { label: '有效磁场 B_⊥', value: `${Math.abs(res.B_perp).toFixed(2)}`, unit: `T (${B > 0 ? '垂直纸面向里' : B < 0 ? '垂直纸面向外' : '无磁场'})`, color: PHYSICS_COLORS.magneticField },
+            { label: '平行磁场 B_∥', value: `${Math.abs(res.B_para).toFixed(2)}`, unit: 'T (不产生安培力)', color: PHYSICS_COLORS.labelTextLight },
             { label: '电流 I', value: `${Math.abs(I).toFixed(1)}`, unit: `A (${I > 0 ? '向上' : I < 0 ? '向下' : '无电流'})`, color: PHYSICS_COLORS.electricCurrent },
-            { label: '有效长度 L', value: L.toFixed(1), unit: 'm', color: colors.neutral[500] },
+            { label: '有效长度 L', value: L.toFixed(1), unit: 'm', color: PHYSICS_COLORS.textMuted },
             { label: '安培力 F', value: `${Math.abs(res.F).toFixed(2)}`, unit: `N${fDirText}`, color: PHYSICS_COLORS.lorentzForce, highlight: res.FAbs > 1e-4 ? 'extreme' : 'zero' },
           ],
           formulas: [
-            { name: '安培力大小公式', latex: 'F = BIL \\quad (\\vec{B} \\perp \\vec{I})', level: 'core', condition: '当磁场与电流垂直时' },
-            { name: '安培力方向判定', latex: '\\vec{F} = I\\vec{L} \\times \\vec{B}', level: 'core', condition: '遵循左手定则' },
+            { name: '安培力大小公式', latex: 'F = BIL \\sin\\theta_{IB}', level: 'core' as const, condition: 'θ_IB 为磁场与电流夹角' },
+            { name: '垂直/平行分解', latex: 'B_{\\perp} = B\\sin\\theta_{IB}, \\quad B_{\\parallel} = B\\cos\\theta_{IB}', level: 'core' as const },
+            { name: '安培力方向判定', latex: '\\vec{F} = I\\vec{L} \\times \\vec{B}', level: 'core' as const, condition: '遵循左手定则' },
           ],
           gaokaoPoints: [
             { text: '【左手定则三维空间判定】伸开左手，使大拇指与四指垂直且在同一平面内，让磁感线穿过手心（B入掌心），四指指向电流方向，大拇指所指即为安培力方向。', importance: 'gaokao' },
             { text: '【三者方向关系】安培力 F 垂直于磁场 B 和电流 I 决定的平面，但 B 和 I 不一定垂直。当 B 与 I 夹角为 θ 时，F = BIL sinθ。', importance: 'core' },
-            { text: '【有效长度考点】公式中的 L 指的是"有效长度"，即在磁场中且通电的那段导线在垂直磁场方向的投影长度（对双轨即为导轨间距，而非导体棒总长）。', importance: 'gaokao' },
+            { text: '【有效长度考点】公式中的 L 指的是"有效长度"，即在磁场中且通电的那段导线在垂直磁场方向的投影长度。', importance: 'gaokao' },
           ],
           warnings: [
             { text: '易错点：极易混淆左手定则（判定安培力/洛伦兹力方向）与右手定则（判定感应电流/感应电动势方向）。口诀：左力右感。', level: 'danger' },
@@ -50,7 +53,7 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
         // ── 进阶模式 ──
         const theta = params.theta ?? 30
         const mu = params.mu ?? 0.2
-        const res = solveAdvancedAmpere(I, B, theta, mu, L, m, time)
+        const res = solveAdvancedAmpere(I, B, theta, mu, bFieldDir, L, m, time)
         
         let stateText = '静止平衡'
         if (res.state === 'sliding-up') stateText = '向上滑动'
@@ -62,30 +65,52 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
         else if (res.f < -1e-4) fUnit = 'N (沿斜面向下)'
         else fUnit = 'N (为零)'
 
+        // 确定磁场方向描述
+        let bFieldDirectionText = '无安培力'
+        if (Math.abs(res.F_ampere) > 1e-4) {
+          if (bFieldDir === 0) bFieldDirectionText = res.F_ampere > 0 ? '水平向右' : '水平向左'
+          else if (bFieldDir === 1) bFieldDirectionText = res.F_ampere > 0 ? '沿斜面向上' : '沿斜面向下'
+          else bFieldDirectionText = res.F_ampere > 0 ? '竖直向上' : '竖直向下'
+        }
+
+        // 平衡区间说明
+        const rangeText = (Math.abs(B) < 1e-4)
+          ? '无约束'
+          : `${res.I_min.toFixed(2)} A 至 ${res.I_max.toFixed(2)} A`
+
         return {
           quantities: [
             ...base,
-            { label: '安培力 F_安', value: Math.abs(res.F_ampere).toFixed(2), unit: `N (${res.F_ampere > 1e-4 ? '水平向右' : res.F_ampere < -1e-4 ? '水平向左' : '为零'})`, color: PHYSICS_COLORS.lorentzForce },
+            { label: '安培力 F_安', value: Math.abs(res.F_ampere).toFixed(2), unit: `N (${bFieldDirectionText})`, color: PHYSICS_COLORS.lorentzForce },
             { label: '支持力 N', value: res.N.toFixed(2), unit: 'N', color: PHYSICS_COLORS.normalForce },
             { label: '摩擦力 f', value: fText, unit: fUnit, color: PHYSICS_COLORS.friction, highlight: res.state === 'equilibrium' ? undefined : 'extreme' },
             { label: '瞬时加速度 a', value: res.a.toFixed(2), unit: 'm/s²', color: PHYSICS_COLORS.acceleration, highlight: Math.abs(res.a) > 0.01 ? 'extreme' : 'zero' },
+            { label: '平衡电流范围', value: rangeText, unit: '', color: PHYSICS_COLORS.referencePoint, highlight: res.state === 'equilibrium' ? 'positive' : 'negative' },
             { label: '导体棒状态', value: stateText, unit: '', highlight: res.state === 'equilibrium' ? 'positive' : 'negative' },
           ],
           formulas: [
-            { name: '安培力大小', latex: 'F_{\\text{安}} = BIL', level: 'core' },
-            { name: '沿斜面待平衡项', latex: 'R_{\\parallel} = F_{\\text{安}}\\cos\\theta - mg\\sin\\theta', level: 'core', condition: '向上为正' },
-            { name: '斜面正压力', latex: 'N = mg\\cos\\theta + F_{\\text{安}}\\sin\\theta', level: 'core', condition: '安培力向右时' },
-            { name: '静摩擦平衡条件', latex: '|R_{\\parallel}| \\le \\mu N \\implies f = -R_{\\parallel}', level: 'core' },
-            { name: '滑动摩擦与加速度', latex: 'f = -\\mu N \\operatorname{sgn}(R_{\\parallel}) \\implies a = \\frac{R_{\\parallel} + f}{m}', level: 'core', condition: '滑动状态下' },
+            { name: '安培力大小', latex: 'F_{\\text{安}} = BIL', level: 'core' as const },
+            ...(bFieldDir === 0 ? [
+              { name: '沿斜面合外力', latex: 'R_{\\parallel} = F_{\\text{安}}\\cos\\theta - mg\\sin\\theta', level: 'core' as const, condition: '竖直磁场' },
+              { name: '斜面正压力', latex: 'N = mg\\cos\\theta + F_{\\text{安}}\\sin\\theta', level: 'core' as const, condition: '竖直磁场' },
+            ] : bFieldDir === 1 ? [
+              { name: '沿斜面合外力', latex: 'R_{\\parallel} = F_{\\text{安}} - mg\\sin\\theta', level: 'core' as const, condition: '垂直斜面磁场' },
+              { name: '斜面正压力', latex: 'N = mg\\cos\\theta', level: 'core' as const, condition: '垂直斜面磁场' },
+            ] : [
+              { name: '沿斜面合外力', latex: 'R_{\\parallel} = (F_{\\text{安}} - mg)\\sin\\theta', level: 'core' as const, condition: '水平磁场' },
+              { name: '斜面正压力', latex: 'N = (mg - F_{\\text{安}})\\cos\\theta', level: 'core' as const, condition: '水平磁场' },
+            ]),
+            { name: '静摩擦平衡条件', latex: '|R_{\\parallel}| \\le \\mu N \\implies f = -R_{\\parallel}', level: 'core' as const },
+            { name: '滑动摩擦与加速度', latex: 'f = -\\mu N \\operatorname{sgn}(R_{\\parallel}) \\implies a = \\frac{R_{\\parallel} + f}{m}', level: 'core' as const, condition: '滑动状态下' },
           ],
           gaokaoPoints: [
             { text: '【受力分析与分解】解决磁场力与斜面平衡问题时，必须画出二维侧视受力图。将各力沿平行于斜面和垂直于斜面两个方向进行正交分解。', importance: 'gaokao' },
             { text: '【静摩擦力的双向性与临界】静摩擦力的方向取决于导体棒的运动趋势。若安培力较小，棒有下滑趋势，摩擦力向上；若安培力较大，棒有上滑趋势，摩擦力向下。临界平衡状态满足 |f| = μN。', importance: 'gaokao' },
-            { text: '【特殊临界公式】在无摩擦（μ = 0）或特定简化平衡条件下，常能推导得出简化临界公式 F_安 = mg tanθ，注意该公式不具有通用性，应从基本受力分析入手。', importance: 'core' },
+            { text: '【临界电流计算】当静摩擦力达到最大静摩擦力时（f = ±μN），导体棒处于恰不上滑或恰不下滑的临界状态。平衡电流范围 [I_min, I_max] 即对应这两个临界点。', importance: 'gaokao' },
           ],
           warnings: [
-            { text: '易错点：极易把安培力的方向画错！当匀强磁场竖直向上/下时，安培力沿水平方向，而非沿斜面方向。务必注意安培力与磁场及电流两两垂直的几何约束。', level: 'danger' },
-            { text: '易错点：漏掉正压力中安培力的分量！安培力不仅在沿斜面方向有分力，在垂直斜面方向也有分力，导致正压力 N 发生变化，从而改变了最大静摩擦力 μN。', level: 'danger' },
+            { text: '易错点：极易把安培力的方向画错！务必注意安培力与磁场及电流两两垂直的几何约束。例如竖直磁场安培力为水平方向；垂直斜面磁场安培力为沿斜面方向；水平磁场安培力为竖直方向。', level: 'danger' },
+            { text: '易错点：漏掉正压力中安培力的分量！当磁场是竖直或水平方向时，安培力在垂直斜面方向也有分力，导致正压力 N 发生变化，从而改变了最大静摩擦力 μN。', level: 'danger' },
           ],
         }
       }
@@ -110,7 +135,7 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
             { label: '入射速度 v', value: v0.toFixed(1), unit: 'm/s', color: PHYSICS_COLORS.velocity },
             { label: '磁场强度 B', value: B.toFixed(1), unit: 'T', color: PHYSICS_COLORS.magneticField },
             { label: '洛伦兹力 F_洛', value: Math.abs(F_lorentz).toFixed(2), unit: 'N', color: PHYSICS_COLORS.lorentzForce, highlight: F_lorentz === 0 ? 'zero' : 'extreme' },
-            { label: '轨道半径 R', value: R.toFixed(2), unit: 'm', color: colors.neutral[500] },
+            { label: '轨道半径 R', value: R.toFixed(2), unit: 'm', color: PHYSICS_COLORS.textMuted },
           ],
           formulas: [
             {
@@ -235,7 +260,7 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
               { text: '运动时间由偏转圆心角唯一决定，与速度大小 v 完全无关。', importance: 'core' as const },
             ],
             warnings: [
-              { text: '易错防坑：在偏转角一定的情况下，切勿因速度变大而误认为运动时间变长。时间仅与圆心角和周期有关！', level: 'danger' }
+              { text: '易错防坑：在偏转角一定的情况下，切勿因速度变大而误认为运动时间变长。时间仅与圆心角 and 周期有关！', level: 'danger' }
             ],
           }
         } else if (boundaryType === 1) {
@@ -325,7 +350,7 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
               { name: '缩放关系', latex: 'R \\propto v', level: 'core' },
             ],
             gaokaoPoints: [
-              { text: '缩放圆（初速方向不变，大小改变）的各轨迹圆心在一条垂直于速度方向的直线上平移。', importance: 'gaokao' as const },
+              { text: '缩放圆（初速方向不变，大小改变）的各轨迹圆心在一条垂直于速度方向 of 直线上平移。', importance: 'gaokao' as const },
               { text: '在双边界磁场中，随着速度 v 变大，轨迹圆变大。相切于上边界的圆即为“穿透”的临界状态。', importance: 'core' as const },
             ],
             warnings: [

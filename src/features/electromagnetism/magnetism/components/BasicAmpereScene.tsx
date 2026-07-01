@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react'
 import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
-import { colors } from '@/theme/colors'
 import { Rails } from '@/components/Physics/Rails'
 import { ConductingRod } from '@/components/Physics/ConductingRod'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
@@ -21,6 +20,7 @@ interface BasicAmpereSceneProps {
   time: number
   showVectors: boolean
   isLimited: boolean
+  font?: (size: number) => number
 }
 
 export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
@@ -35,6 +35,7 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
   time,
   showVectors,
   isLimited,
+  font = (s) => s,
 }) => {
   // 1. 局部坐标定位
   const cx = w / 2
@@ -107,7 +108,7 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
       <text
         x={cx}
         y={cy - railH / 2 - 12}
-        fontSize="9.5"
+        fontSize={font(9.5)}
         fill={PHYSICS_COLORS.magneticField}
         fontWeight="extrabold"
         textAnchor="middle"
@@ -117,10 +118,10 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
       </text>
 
       {/* 电源至轨道的导线 (黑色发光底条) */}
-      <path d={wire1Path} fill="none" stroke={colors.neutral[300]} strokeWidth="3" />
-      <path d={wire2Path} fill="none" stroke={colors.neutral[300]} strokeWidth="3" />
-      <path d={wire1Path} fill="none" stroke={colors.neutral[800]} strokeWidth="1.5" />
-      <path d={wire2Path} fill="none" stroke={colors.neutral[800]} strokeWidth="1.5" />
+      <path d={wire1Path} fill="none" stroke={PHYSICS_COLORS.gridSubtle} strokeWidth="3" />
+      <path d={wire2Path} fill="none" stroke={PHYSICS_COLORS.gridSubtle} strokeWidth="3" />
+      <path d={wire1Path} fill="none" stroke={PHYSICS_COLORS.strokeDark} strokeWidth="1.5" />
+      <path d={wire2Path} fill="none" stroke={PHYSICS_COLORS.strokeDark} strokeWidth="1.5" />
 
       {/* 导线电流动画流光 */}
       {hasCurrent && (
@@ -190,7 +191,7 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
             <text
               x={rodX + (physicsResult.F > 0 ? 30 : -45)}
               y={cy - 6}
-              fontSize="11"
+              fontSize={font(11)}
               fill={PHYSICS_COLORS.lorentzForce}
               fontWeight="bold"
               style={{ userSelect: 'none' }}
@@ -212,7 +213,7 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
               <text
                 x={rodX + 8}
                 y={cy + (I > 0 ? -25 : 25)}
-                fontSize="11"
+                fontSize={font(11)}
                 fill={PHYSICS_COLORS.electricCurrent}
                 fontWeight="bold"
                 style={{ userSelect: 'none' }}
@@ -240,7 +241,7 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
           <text
             x={cx}
             y={cy - railH / 2 - 20}
-            fontSize="5.5"
+            fontSize={font(8)}
             fill={PHYSICS_COLORS.forceArrowRed}
             fontWeight="bold"
             textAnchor="middle"

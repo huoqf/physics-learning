@@ -274,11 +274,6 @@ export const Rails: React.FC<RailsProps> = ({
   const bgGradId = `horizontal-bg-grad-${uniqueId}`
 
   // 参数化布局常量（基于默认尺寸比例）
-  const bgPadX = 20       // 背景框水平内边距
-  const bgPadY = 30       // 背景框垂直内边距
-  const bgRx = 10         // 背景框圆角
-  const bgInnerOffset = 1 // 内边框偏移
-  const bgInnerRx = 9     // 内边框圆角
   const railH = 8         // 导轨矩形高度
   const railRx = 4        // 导轨圆角
   const railShadowOffset = 0.5 // 导轨阴影矩形偏移
@@ -304,28 +299,7 @@ export const Rails: React.FC<RailsProps> = ({
         </linearGradient>
       </defs>
       
-      {/* 导轨架底座背景（增加了精致的阴影和内发光层，体现悬浮立体感） */}
-      <rect
-        x={x1 - bgPadX}
-        y={y1 - bgPadY}
-        width={length + bgPadX * 2}
-        height={spacing + bgPadY * 2}
-        fill={`url(#${bgGradId})`}
-        rx={bgRx}
-        stroke={colors.neutral[200]}
-        strokeWidth={CANVAS_STYLE.stroke.objectThin}
-        style={{ filter: `drop-shadow(${CANVAS_STYLE.svgFilter.shadow.dx}px ${CANVAS_STYLE.svgFilter.shadow.dy}px ${withAlpha(SCENE_COLORS.materials.structStrokeDark, 0.06)})` }}
-      />
-      <rect
-        x={x1 - bgPadX + bgInnerOffset}
-        y={y1 - bgPadY + bgInnerOffset}
-        width={length + (bgPadX - bgInnerOffset) * 2}
-        height={spacing + (bgPadY - bgInnerOffset) * 2}
-        fill="none"
-        stroke={colors.neutral.white}
-        strokeWidth={CANVAS_STYLE.stroke.objectThin}
-        rx={bgInnerRx}
-      />
+
 
       {/* 导轨 1 */}
       {/* 轨道软阴影 */}

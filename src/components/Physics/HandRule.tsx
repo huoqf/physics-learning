@@ -70,14 +70,10 @@ const DEFAULT_TIP_COLORS: Record<'thumb' | 'index' | 'middle', string> = {
 export function HandRule({
   mode,
   thumbDir,
-  // indexDir: 保留在 HandRuleProps 接口（语义上是"食指方向 / B 方向"），
-  //          但内部不再使用 —— 之前用 BLabel 渲染 ⊙/⊗，现已交给上层组件
-  //          在 B 标题里渲染（避免和标题里的 ⊗ 重复）。
-  //          保留接口字段是为了 API 稳定性。
   middleDir,
   cx,
   cy,
-  scale = 1,
+  scale: propScale,
   draggable = true,
   poseOverride,
   svgRef,
@@ -95,6 +91,26 @@ export function HandRule({
 
   // ── 用户拖拽偏移量（叠加在自动旋转上）───────────────────────────────
   const [userOffset, setUserOffset] = useState(0)
+  // 自动根据 cx, cy 估算不溢出的 scale (1.0 比例下中指高度约 110px，手宽约 120px)
+  const autoScale = useMemo(() => {
+    const maxScaleByHeight = cy / 110
+    const maxScaleByWidth = cx / 60
+    return Math.min(maxScaleByHeight, maxScaleByWidth, 1.0)
+  }, [cx, cy])
+  const scale = propScale ?? autoScale
+
+  // 自动获取宿主根 <svg> 引用，并向下兼容外部传入的 svgRef
+  const gRef = useRef<SVGGElement>(null)
+  const [detectedSvg, setDetectedSvg] = useState<SVGSVGElement | null>(null)
+
+  useEffect(() => {
+    if (gRef.current && gRef.current.ownerSVGElement) {
+      setDetectedSvg(gRef.current.ownerSVGElement)
+    }
+  }, [])
+
+  const svgElement = svgRef?.current ?? detectedSvg
+
   const dragStateRef = useRef<{
     isDragging: boolean
     lastAngle: number
@@ -134,13 +150,21 @@ export function HandRule({
   // ── 拖拽旋转交互 ────────────────────────────────────────────────────
   const handlePointerDown = (e: React.PointerEvent<SVGGElement>) => {
     if (!draggable) return
-    if (!svgRef?.current) return
+    const svg = svgElement
+    if (!svg) return
     e.stopPropagation()
-    const rect = svgRef.current.getBoundingClientRect()
-    // 计算 pointer 相对手掌中心的角度（Canvas 像素坐标）
-    const px = e.clientX - rect.left
-    const py = e.clientY - rect.top
+
+    // 使用 getScreenCTM()!.inverse() 精确映射设计坐标系
+    const pt = svg.createSVGPoint()
+    pt.x = e.clientX
+    pt.y = e.clientY
+    const ctm = e.currentTarget.getScreenCTM()
+    if (!ctm) return
+    const localPt = pt.matrixTransform(ctm.inverse())
+    const px = localPt.x
+    const py = localPt.y
     const angle = (Math.atan2(py - cy, px - cx) * 180) / Math.PI
+
     dragStateRef.current = {
       isDragging: true,
       lastAngle: angle,
@@ -151,11 +175,20 @@ export function HandRule({
   }
   const handlePointerMove = (e: React.PointerEvent<SVGGElement>) => {
     const s = dragStateRef.current
-    if (!s.isDragging || !svgRef?.current) return
-    const rect = svgRef.current.getBoundingClientRect()
-    const px = e.clientX - rect.left
-    const py = e.clientY - rect.top
+    const svg = svgElement
+    if (!s.isDragging || !svg) return
+
+    // 使用 getScreenCTM()!.inverse() 精确映射设计坐标系
+    const pt = svg.createSVGPoint()
+    pt.x = e.clientX
+    pt.y = e.clientY
+    const ctm = e.currentTarget.getScreenCTM()
+    if (!ctm) return
+    const localPt = pt.matrixTransform(ctm.inverse())
+    const px = localPt.x
+    const py = localPt.y
     const angle = (Math.atan2(py - cy, px - cx) * 180) / Math.PI
+
     let delta = angle - s.lastAngle
     // 把 delta 归到 (-180, 180]
     if (delta > 180) delta -= 360
@@ -189,7 +222,7 @@ export function HandRule({
   const tipColors = DEFAULT_TIP_COLORS
 
   return (
-    <g opacity={active ? opacity : 0.45}>
+    <g ref={gRef} opacity={active ? opacity : 0.45}>
       {title && (
         <text
           x={cx}

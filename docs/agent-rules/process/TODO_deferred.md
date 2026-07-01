@@ -57,9 +57,9 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 | 文件 | 当前行数 | 已有 physics | 拆分方向 | 目标行数 |
 |------|-----:|:---:|---------|-----:|
-| `ForceMotionSandbox.tsx` | 694 | `forceMotion/` | 调试工具，先评估是否仍需保留；若保留再拆 viewModel/图表/控制区 | — |
+| `ForceMotionSandbox.tsx` | 758 | `forceMotion/` | 调试工具，先评估是否仍需保留；若保留再拆 viewModel/图表/控制区 | — |
 
-> 观察：`EquilibriumAnimation.tsx`(688)、`MomentumConservationAnimation.tsx`(671)、`KeplerAnimation.tsx`(621)、`FrictionAnimation.tsx`(598)、`PowerTransmission.tsx`(594)、`SpringCompositeAnimation.tsx`(585)、`TIRAnimation.tsx`(564)、`FieldLines.tsx`(559)、`ConnectedBodiesAnimation.tsx`(557)、`ObliqueThrowAnimation.tsx`(534)、`GravityBasicAnimation.tsx`(519)、`CircularMotionAnimation.tsx`(506)、`FreeFallDripAnimation.tsx`(505) 已超过或临近阈值，但职责相对集中，暂不作为首批拆分目标。
+> 观察：`EquilibriumAnimation.tsx`(737)、`MomentumConservationAnimation.tsx`(732)、`KeplerAnimation.tsx`(672)、`TIRAnimation.tsx`(622)、`ConnectedBodiesAnimation.tsx`(609)、`ObliqueThrowAnimation.tsx`(589)、`GravityBasicAnimation.tsx`(572)、`FreeFallDripAnimation.tsx`(559)、`CircularMotionAnimation.tsx`(557)、`PowerTransmission.tsx`→`electromagnetism/induction/`(649)、`SpringCompositeAnimation.tsx`→`mechanics/energy/`(639)、`FieldLines.tsx`→`electromagnetism/electrostatics/`(623) 已超过或临近阈值，但职责相对集中，暂不作为首批拆分目标。
 
 ---
 
@@ -71,16 +71,18 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 ### 1.5.1 删除废弃别名、批量替换组件（P1）
 
-**目标**：将 39 个调用废弃 preset 的组件统一改用 `wide` / `tall` / `square`，随后删除 `spacing.ts` 中的 4 个废弃别名。
+**目标**：将剩余 31 个调用废弃 preset 的组件统一改用 `wide` / `tall` / `square`，随后删除 `spacing.ts` 中的 4 个废弃别名。
+
+> 实际待替换 31 处（`standard` 剩 8、`mediumTall` 剩 6、`mediumWide` 剩 7、`extraWide` 剩 10）。
 
 **替换映射**：
 
-| 废弃 preset | 尺寸 | → 目标 preset | 尺寸 | 影响组件数 |
+| 废弃 preset | 尺寸 | → 目标 preset | 尺寸 | 剩余组件数 |
 |---|---|---|---|---:|
-| `standard` | 700×420 | `wide` | 700×400 | 9 |
+| `standard` | 700×420 | `wide` | 700×400 | 8 |
 | `mediumTall` | 650×450 | `tall` | 700×450 | 6 |
 | `mediumWide` | 650×400 | `wide` | 700×400 | 7 |
-| `extraWide` | 800×440 | `wide` | 700×400 | 9 |
+| `extraWide` | 800×440 | `wide` | 700×400 | 10 |
 
 > `preserveAspectRatio="xMidYMid meet"` 保证尺寸差异在渲染层自动吸收，无需手动调整布局。  
 > `extraWide` → `wide` 宽度由 800 缩至 700，光学/变压器等宽向场景需验证关键标注不被截断。
@@ -88,19 +90,18 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 **待替换组件清单**（来源：`CANVAS_PRESETS_AUDIT.md`）：
 
 <details>
-<summary>standard → wide（9 个）</summary>
+<summary>standard → wide（8 个）</summary>
 
 | 文件 | 行 |
 |---|---|
-| `mechanics/energy/EnergyConservationAnimation.tsx` | 38 |
-| `mechanics/energy/PotentialEnergyAnimation.tsx` | 46 |
-| `mechanics/energy/PowerAnimation.tsx` | 34 |
-| `mechanics/energy/KineticEnergyAnimation.tsx` | 31 |
-| `mechanics/dynamics/FrictionAnimation.tsx` | 26 |
-| `electromagnetism/magnetism/VelocitySelector.tsx` | 25 |
+| `mechanics/energy/EnergyConservationAnimation.tsx` | 40 |
+| `mechanics/energy/PotentialEnergyAnimation.tsx` | 28 |
+| `mechanics/energy/PowerAnimation.tsx` | 35 |
+| `mechanics/energy/KineticEnergyAnimation.tsx` | 32 |
+| `electromagnetism/magnetism/VelocitySelector.tsx` | 21 |
 | `electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField.tsx` | 11 |
-| `electromagnetism/dc-circuits/ClosedCircuit.tsx` | 15 |
-| `thermodynamics/kinematics/IntermolecularForcesAnimation.tsx` | 35 |
+| `electromagnetism/dc-circuits/ClosedCircuit.tsx` | 16 |
+| `thermodynamics/kinematics/IntermolecularForcesAnimation.tsx` | 36 |
 
 </details>
 
@@ -109,12 +110,12 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 | 文件 | 行 |
 |---|---|
-| `mechanics/dynamics/GravityAnimation.tsx` | 23 |
-| `mechanics/dynamics/GravityBasicAnimation.tsx` | 41 |
-| `mechanics/dynamics/EquilibriumAnimation.tsx` | 26 |
-| `mechanics/gravitation/KeplerAnimation.tsx` | 28 |
-| `mechanics/gravitation/SatelliteAnimation.tsx` | 124 |
-| `mechanics/dynamics/VectorAdditionAnimation.tsx` | 30 |
+| `mechanics/dynamics/GravityAnimation.tsx` | 42 |
+| `mechanics/dynamics/GravityBasicAnimation.tsx` | 45 |
+| `mechanics/dynamics/EquilibriumAnimation.tsx` | 29 |
+| `mechanics/gravitation/KeplerAnimation.tsx` | 30 |
+| `mechanics/gravitation/SatelliteAnimation.tsx` | 27 |
+| `mechanics/dynamics/VectorAdditionAnimation.tsx` | 28 |
 
 </details>
 
@@ -124,29 +125,30 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 | 文件 | 行 |
 |---|---|
 | `electromagnetism/dc-circuits/OhmLaw.tsx` | 11 |
-| `electromagnetism/dc-circuits/CircuitAnalysis.tsx` | 58 |
-| `mechanics/dynamics/SpringForceAnimation.tsx` | 21 |
-| `mechanics/dynamics/SpringForceCenterExtra.tsx` | 11 |
-| `mechanics/dynamics/WeightlessnessCenterExtra.tsx` | 11 |
-| `mechanics/dynamics/NewtonSecondCenterExtra.tsx` | 11 |
-| `mechanics/dynamics/ConnectedBodiesAnimation.tsx` | 53 |
+| `electromagnetism/dc-circuits/CircuitAnalysis.tsx` | 59 |
+| `mechanics/dynamics/SpringForceAnimation.tsx` | 30 |
+| `mechanics/dynamics/SpringForceCenterExtra.tsx` | 13 |
+| `mechanics/dynamics/WeightlessnessCenterExtra.tsx` | 12 |
+| `mechanics/dynamics/NewtonSecondCenterExtra.tsx` | 12 |
+| `mechanics/dynamics/ConnectedBodiesAnimation.tsx` | 56 |
 
 </details>
 
 <details>
-<summary>extraWide → wide（9 个，需视觉验证）</summary>
+<summary>extraWide → wide（10 个，需视觉验证）</summary>
 
 | 文件 | 行 | 验证重点 |
 |---|---|---|
-| `electromagnetism/induction/FaradayLaw.tsx` | 24 | 线圈+导轨横向布局 |
-| `electromagnetism/induction/PowerTransmission.tsx` | 53 | 变压器线圈间距 |
-| `electromagnetism/induction/ACGeneration.tsx` | 33 | 旋转线圈 |
-| `mechanics/kinematics/VelocityAnimationStrip.tsx` | 34 | 频闪条带宽度 |
-| `mechanics/force-motion/ForceMotionTripleChart.tsx` | 274 | 三图并排间距 |
-| `optics/thin-lens/ThinLensAnimation.tsx` | 158 | 见 §1.5.2 |
-| `optics/total-internal-reflection/TIRAnimation.tsx` | 37 | 光路长度 |
-| `optics/refraction/RefractionAnimation.tsx` | 41 | 界面+光路 |
-| `optics/reflection/ReflectionAnimation.tsx` | 30 | 见 §1.5.2 |
+| `electromagnetism/induction/FaradayLaw.tsx` | 25 | 线圈+导轨横向布局 |
+| `electromagnetism/induction/PowerTransmission.tsx` | 54 | 变压器线圈间距 |
+| `electromagnetism/induction/ACGeneration.tsx` | 34 | 旋转线圈 |
+| `mechanics/energy/SpringCompositeAnimation.tsx` | 34 | 弹簧复合动画布局 |
+| `mechanics/kinematics/VelocityAnimationStrip.tsx` | 36 | 频闪条带宽度 |
+| `mechanics/force-motion/ForceMotionTripleChart.tsx` | 254 | 三图并排间距 |
+| `optics/thin-lens/ThinLensAnimation.tsx` | 30 | 见 §1.5.2 |
+| `optics/total-internal-reflection/TIRAnimation.tsx` | 39 | 光路长度 |
+| `optics/refraction/RefractionAnimation.tsx` | 43 | 界面+光路 |
+| `optics/reflection/ReflectionAnimation.tsx` | 32 | 见 §1.5.2 |
 
 </details>
 
@@ -207,7 +209,7 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 ### 3.1 AnimationPage 协调职责监控（P2）
 
-> 当前 411 行。触发拆分条件：行数 > 500，或存在物理计算与 JSX 混写，或职责 > 8 类。
+> 当前 436 行。触发拆分条件：行数 > 500，或存在物理计算与 JSX 混写，或职责 > 8 类。
 
 膨胀触发区域：参数过滤（showIf/hideIf）、SidebarExtra props 组装、模式切换、RightPhysicsPanel 计算逻辑。
 如继续增长，优先抽 hook：`useFilteredParams()`、`useSidebarExtraProps()`、`useAnimationMode()`。

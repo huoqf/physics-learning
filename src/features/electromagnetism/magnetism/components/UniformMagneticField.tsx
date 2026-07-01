@@ -1,6 +1,5 @@
 import React from 'react'
-import { PHYSICS_COLORS } from '@/theme/physics'
-import { colors } from '@/theme/colors'
+import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { MagneticFieldGrid } from '@/components/Physics'
 
 interface UniformMagneticFieldProps {
@@ -9,6 +8,7 @@ interface UniformMagneticFieldProps {
   w: number
   h: number
   B: number
+  font?: (size: number) => number
 }
 
 export const UniformMagneticField: React.FC<UniformMagneticFieldProps> = ({
@@ -17,14 +17,9 @@ export const UniformMagneticField: React.FC<UniformMagneticFieldProps> = ({
   w,
   h,
   B,
+  font = (s) => s,
 }) => {
   const hasField = Math.abs(B) > 1e-4
-
-  // 背景层颜色与不透明度
-  const bgFill = hasField
-    ? PHYSICS_COLORS.magneticFieldLine
-    : colors.neutral[100]
-  const bgOpacity = hasField ? 0.15 : 0.02
 
   return (
     <g>
@@ -34,12 +29,8 @@ export const UniformMagneticField: React.FC<UniformMagneticFieldProps> = ({
         y={y}
         width={w}
         height={h}
-        fill={bgFill}
-        fillOpacity={bgOpacity}
-        stroke={hasField ? PHYSICS_COLORS.magneticFieldLine : colors.neutral[300]}
-        strokeWidth="1"
-        strokeOpacity={hasField ? 0.5 : 0.15}
-        rx="6"
+        fill="none"
+        stroke="none"
       />
 
       {/* 磁场方向标志点阵 */}
@@ -72,7 +63,7 @@ export const UniformMagneticField: React.FC<UniformMagneticFieldProps> = ({
             <text
               x="0"
               y="2.5"
-              fontSize="16"
+              fontSize={font(16)}
               fill={PHYSICS_COLORS.magneticField}
               fillOpacity="0.9"
               fontWeight="black"
@@ -90,8 +81,8 @@ export const UniformMagneticField: React.FC<UniformMagneticFieldProps> = ({
         <text
           x={x + w / 2}
           y={y + h / 2}
-          fontSize="2.4"
-          fill={colors.neutral[400]}
+          fontSize={font(12)}
+          fill={CANVAS_COLORS.textMuted}
           fontWeight="medium"
           textAnchor="middle"
           dominantBaseline="middle"

@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react'
-import { colors } from '@/theme/colors'
-import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
+import { CANVAS_COLORS, PHYSICS_COLORS } from '@/theme/physics'
 import { GRAVITY } from '@/physics/constants'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { computeScale } from '@/utils/coordinate'
@@ -17,6 +16,8 @@ interface InclineForceDiagramProps {
   B: number
   theta: number
   showForceComponents: boolean
+  bFieldDir?: number
+  font?: (size: number) => number
 }
 
 export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
@@ -29,6 +30,8 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
   B,
   theta,
   showForceComponents,
+  bFieldDir = 0,
+  font = (s) => s,
 }) => {
   const thetaRad = (theta * Math.PI) / 180
 
@@ -55,9 +58,17 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
   const px = x0 + rodRatio * slopeW
   const py = y0 - rodRatio * slopeH
 
-  // 3. 矢量箭头绘制的坐标转换
-  // 物理力到像素长度的映射比例：把最大重力 mg (~5N) 映射为 32 像素
-  const forceScale = computeScale(w, h, { xMin: -5, xMax: 5, yMin: -5, yMax: 5 })
+  // 3. 矢量箭头绘制的坐标转换，利用最大力进行自适应，防溢出
+  const m = 0.5;
+  const g = GRAVITY;
+  const F_max = Math.max(
+    m * g,
+    Math.abs(physicsResult.F_ampere),
+    Math.abs(physicsResult.f),
+    Math.abs(physicsResult.N),
+    5.0
+  );
+  const forceScale = computeScale(w, h, { xMin: -F_max, xMax: F_max, yMin: -F_max, yMax: F_max })
 
   const localScale = useMemo<SceneScale>(() => {
     return {
@@ -71,20 +82,17 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
     }
   }, [px, py, forceScale])
 
-  // 重力 mg (竖直向下，即 y 轴负方向，对于 y1 = originY - origin.y * scaleY，物理矢量 y 负值即向下)
-  const m = 0.5
-  const g = GRAVITY
+  // 重力 mg
   const G_phys = { x: 0, y: -m * g }
 
-  // 支持力 N (垂直斜面向左上方)
-  // 斜面方向的单位矢量是 (cosθ, sinθ)，支持力方向是 (-sinθ, cosθ)
+  // 支持力 N
   const N_phys = {
     x: -physicsResult.N * Math.sin(thetaRad),
     y: physicsResult.N * Math.cos(thetaRad),
   }
 
-  // 安培力 F_安 (水平向右为正)
-  const Fa_phys = { x: physicsResult.F_ampere, y: 0 }
+  // 安培力 F_安，读取自适应物理分量
+  const Fa_phys = { x: physicsResult.F_ampere_x, y: physicsResult.F_ampere_y }
 
   // 摩擦力 f (沿斜面向上为正，方向为 (cosθ, sinθ)，向下为负)
   const f_phys = {
@@ -127,88 +135,135 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
         y="0"
         width={w}
         height={h}
-        fill={colors.neutral[50]}
-        stroke={colors.neutral[200]}
-        strokeWidth="1.2"
-        rx="6"
+        fill="none"
+        stroke="none"
       />
       <text
         x="12"
         y="18"
-        fontSize="7.5"
-        fill={colors.neutral[700]}
+        fontSize={font(7.5)}
+        fill={CANVAS_COLORS.strokeDark}
         fontWeight="bold"
         style={{ userSelect: 'none' }}
       >
         2D 侧视受力图 (原理)
       </text>
 
+      {/* 平衡电流区间标注 */}
+      <g transform="translate(12, 32)">
+        <text
+          fontSize={font(6.5)}
+          fill={CANVAS_COLORS.textMuted}
+          fontWeight="semibold"
+          style={{ userSelect: 'none' }}
+        >
+          平衡电流范围:
+        </text>
+        <text
+          x="0"
+          y="11"
+          fontSize={font(7)}
+          fill={physicsResult.state === 'equilibrium' ? PHYSICS_COLORS.forceNet : PHYSICS_COLORS.forceArrowRed}
+          fontWeight="bold"
+          style={{ userSelect: 'none' }}
+        >
+          {(() => {
+            const imin = physicsResult.I_min
+            const imax = physicsResult.I_max
+            const formatVal = (v: number) => {
+              if (v === -Infinity) return '-∞'
+              if (v === Infinity) return '+∞'
+              return `${v.toFixed(2)} A`
+            }
+            return `[${formatVal(imin)}, ${formatVal(imax)}]`
+          })()}
+        </text>
+      </g>
+
       {/* 磁场文字标注 */}
       <text
         x={w - 12}
         y="18"
-        fontSize="6.5"
+        fontSize={font(7.5)}
         fill={PHYSICS_COLORS.magneticField}
         fontWeight="extrabold"
         textAnchor="end"
         style={{ userSelect: 'none' }}
       >
-        磁场 B = {Math.abs(B).toFixed(1)} T {B > 1e-4 ? '(竖直向上 ↑)' : B < -1e-4 ? '(竖直向下 ↓)' : '(无磁场)'}
+        磁场 B = {Math.abs(B).toFixed(1)} T {(() => {
+          if (Math.abs(B) < 1e-4) return '(无磁场)';
+          if (bFieldDir === 0) return B > 0 ? '(竖直向上 ↑)' : '(竖直向下 ↓)';
+          if (bFieldDir === 1) return B > 0 ? '(垂直斜面向上 ↗)' : '(垂直斜面向下 ↙)';
+          return B > 0 ? '(水平向右 →)' : '(水平向左 ←)';
+        })()}
       </text>
 
-      {/* 匀强磁场竖直箭头 (指示整个空间磁场) */}
+      {/* 匀强磁场多方向箭头 (指示整个空间磁场) */}
       {Math.abs(B) > 1e-4 && (
         <g opacity="0.45">
           {Array.from({ length: 4 }).map((_, i) => {
-            const fx = padX + 15 + i * ((slopeW - 30) / 3)
-            const isBUp = B > 0
-            const y1 = y0 - 10
-            const y2 = y0 - slopeH - 15
+            const isBUp = B > 0;
+            let lx1 = 0, ly1 = 0, lx2 = 0, ly2 = 0;
+            
+            if (bFieldDir === 0) {
+              const fx = padX + 15 + i * ((slopeW - 30) / 3);
+              lx1 = fx; ly1 = y0 - 10;
+              lx2 = fx; ly2 = y0 - slopeH - 15;
+            } else if (bFieldDir === 1) {
+              const ratio = 0.15 + i * 0.23;
+              const xp = x0 + ratio * slopeW;
+              const yp = y0 - ratio * slopeH;
+              const ext = 35;
+              lx1 = xp + ext * sinT; ly1 = yp + ext * cosT;
+              lx2 = xp - ext * sinT; ly2 = yp - ext * cosT;
+            } else {
+              const fy = y0 - 15 - i * ((slopeH + 10) / 3);
+              lx1 = padX + 10; ly1 = fy;
+              lx2 = w - padX - 10; ly2 = fy;
+            }
+
+            const startX = isBUp ? lx1 : lx2;
+            const startY = isBUp ? ly1 : ly2;
+            const endX = isBUp ? lx2 : lx1;
+            const endY = isBUp ? ly2 : ly1;
+
+            const angleRad = Math.atan2(endY - startY, endX - startX);
+            const angleDeg = (angleRad * 180) / Math.PI;
+
             return (
               <g key={i}>
                 <line
-                  x1={fx}
-                  y1={isBUp ? y1 : y2}
-                  x2={fx}
-                  y2={isBUp ? y2 : y1}
+                  x1={startX}
+                  y1={startY}
+                  x2={endX}
+                  y2={endY}
                   stroke={PHYSICS_COLORS.magneticField}
                   strokeWidth="1"
                   strokeDasharray="2,2"
                 />
-                {/* 在最左侧的磁感线顶部侧面渲染带矢量箭头的 B 物理量标识 */}
+                <g transform={`translate(${endX}, ${endY}) rotate(${angleDeg})`}>
+                  <polygon
+                    points="0,0 -4,-2.2 -4,2.2"
+                    fill={PHYSICS_COLORS.magneticField}
+                  />
+                </g>
                 {i === 0 && (
-                  <g transform={`translate(${fx - 10}, ${y2 + 1})`}>
-                    {/* 上方的矢量箭头 */}
-                    <path
-                      d="M -3,-5 L 2,-5 M -0.5,-6.5 L 2,-5 L -0.5,-3.5"
-                      fill="none"
-                      stroke={PHYSICS_COLORS.magneticField}
-                      strokeWidth="0.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      opacity="0.95"
-                    />
+                  <g transform={`translate(${endX + (bFieldDir === 2 ? -15 : -8)}, ${endY + (bFieldDir === 2 ? 10 : -8)})`}>
                     <text
                       x="0"
-                      y="1.5"
-                      fontSize="7.5"
+                      y="0"
+                      fontSize={font(8)}
                       fill={PHYSICS_COLORS.magneticField}
                       fontWeight="bold"
                       fontStyle="italic"
                       textAnchor="middle"
-                      dominantBaseline="middle"
-                      style={{ userSelect: 'none' }}
                     >
                       B
                     </text>
                   </g>
                 )}
-                <polygon
-                  points={`${fx},${isBUp ? y2 : y1} ${fx - 1.8},${isBUp ? y2 + 3 : y1 - 3} ${fx + 1.8},${isBUp ? y2 + 3 : y1 - 3}`}
-                  fill={PHYSICS_COLORS.magneticField}
-                />
               </g>
-            )
+            );
           })}
         </g>
       )}
@@ -216,8 +271,8 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
       {/* 侧视斜劈 */}
       <polygon
         points={`${x0},${y0} ${rightX},${y0} ${rightX},${topY}`}
-        fill={colors.neutral[200]}
-        stroke={colors.neutral[400]}
+        fill={CANVAS_COLORS.gridSubtle}
+        stroke={CANVAS_COLORS.axis}
         strokeWidth="1"
       />
       {/* 斜面高光顶边 */}
@@ -226,7 +281,7 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
         y1={y0}
         x2={rightX}
         y2={topY}
-        stroke={colors.neutral[100]}
+        stroke={CANVAS_COLORS.white}
         strokeWidth="1"
         strokeLinecap="round"
       />
@@ -241,8 +296,8 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
       <text
         x={x0 + 22}
         y={y0 - 5}
-        fontSize="5.5"
-        fill={colors.neutral[500]}
+        fontSize={font(5.5)}
+        fill={CANVAS_COLORS.textMuted}
         fontWeight="bold"
         style={{ userSelect: 'none' }}
       >
@@ -258,15 +313,15 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
             y1={py + axisLen * sinT}
             x2={px + axisLen * cosT}
             y2={py - axisLen * sinT}
-            stroke={colors.neutral[600]}
+            stroke={CANVAS_COLORS.axis}
             strokeWidth="0.8"
             strokeDasharray="3,3"
           />
           <text
             x={px + axisLen * cosT + 3}
             y={py - axisLen * sinT}
-            fontSize="5"
-            fill={colors.neutral[600]}
+            fontSize={font(5)}
+            fill={CANVAS_COLORS.labelTextLight}
             fontWeight="bold"
           >
             x'
@@ -278,15 +333,15 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
             y1={py + axisLen * cosT}
             x2={px - axisLen * sinT}
             y2={py - axisLen * cosT}
-            stroke={colors.neutral[600]}
+            stroke={CANVAS_COLORS.axis}
             strokeWidth="0.8"
             strokeDasharray="3,3"
           />
           <text
             x={px - axisLen * sinT - 6}
             y={py - axisLen * cosT}
-            fontSize="5"
-            fill={colors.neutral[600]}
+            fontSize={font(5)}
+            fill={CANVAS_COLORS.labelTextLight}
             fontWeight="bold"
           >
             y'
@@ -335,8 +390,8 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
           cx="0"
           cy="0"
           r="7"
-          fill={colors.neutral[100]}
-          stroke={colors.neutral[800]}
+          fill={CANVAS_COLORS.objectFillNeutral}
+          stroke={CANVAS_COLORS.strokeDark}
           strokeWidth="1.5"
         />
         {/* 电流方向符号 */}
@@ -365,8 +420,8 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
       <text
         x={px + 3}
         y={py + G_mag - 2}
-        fontSize="6.5"
-        fill={PHYSICS_COLORS.gravity ?? colors.neutral[600]}
+        fontSize={font(6.5)}
+        fill={PHYSICS_COLORS.gravity}
         fontWeight="bold"
         style={{ userSelect: 'none' }}
       >
@@ -385,7 +440,7 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
       <text
         x={px + N_phys.x * forceScale - 9}
         y={py - N_phys.y * forceScale + 2}
-        fontSize="6.5"
+        fontSize={font(6.5)}
         fill={PHYSICS_COLORS.normalForce}
         fontWeight="bold"
         style={{ userSelect: 'none' }}
@@ -402,12 +457,12 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
             type="lorentzForce"
             sceneScale={localScale}
             strokeWidth={1.8}
-            pixelLength={Math.abs(Fa_phys.x * forceScale)}
+            pixelLength={Math.hypot(Fa_phys.x, Fa_phys.y) * forceScale}
           />
           <text
             x={px + Fa_phys.x * forceScale + (physicsResult.F_ampere > 0 ? 3 : -18)}
             y={py - 3}
-            fontSize="6.5"
+            fontSize={font(6.5)}
             fill={PHYSICS_COLORS.lorentzForce}
             fontWeight="bold"
             style={{ userSelect: 'none' }}
@@ -431,7 +486,7 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
           <text
             x={px + f_phys.x * forceScale + (physicsResult.f > 0 ? 3 : -14)}
             y={py - f_phys.y * forceScale - 3}
-            fontSize="6.5"
+            fontSize={font(6.5)}
             fill={PHYSICS_COLORS.friction}
             fontWeight="bold"
             style={{ userSelect: 'none' }}
@@ -458,7 +513,7 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
           <text
             x={px + (physicsResult.a > 0 ? 15 * cosT + 4 : -15 * cosT - 12)}
             y={py - (physicsResult.a > 0 ? 15 * sinT + 12 : -15 * sinT + 3)}
-            fontSize="6.5"
+            fontSize={font(6.5)}
             fill={PHYSICS_COLORS.acceleration}
             fontWeight="extrabold"
             style={{ userSelect: 'none' }}

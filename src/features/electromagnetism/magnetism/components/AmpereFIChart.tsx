@@ -57,9 +57,8 @@ export const AmpereFIChart: React.FC<AmpereFIChartProps> = ({
           width: w,
           height: h,
           boxSizing: 'border-box',
-          borderRadius: 6,
-          border: `1.2px solid ${CANVAS_COLORS.grid}`,
-          background: CANVAS_COLORS.objectFillNeutral,
+          border: 'none',
+          background: 'transparent',
           overflow: 'hidden',
         }}
       >
