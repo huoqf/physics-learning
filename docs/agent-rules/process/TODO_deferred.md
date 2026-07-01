@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 下文"已从待办移出"仅用于避免重复排期；详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-01
+> 最后更新：2026-07-01（拆分补丁）
 
 ---
 
@@ -53,13 +53,19 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 ## 一、超长文件拆分（P2）
 
+### 已完成
+
+| 文件 | 原行数 | 拆分结果 | 完成日期 |
+|------|-----:|---------|---------|
+| `ForceMotionSandbox.tsx` | 758 | → `hooks/useForceMotionSandbox.ts`(253) + 组件(331) | 2026-07-01 |
+| `EquilibriumAnimation.tsx` | 737 | → `hooks/useEquilibriumLayout.ts`(165) + 组件(430) | 2026-07-01 |
+
 ### 待处理
 
 | 文件 | 当前行数 | 已有 physics | 拆分方向 | 目标行数 |
 |------|-----:|:---:|---------|-----:|
-| `ForceMotionSandbox.tsx` | 758 | `forceMotion/` | 调试工具，先评估是否仍需保留；若保留再拆 viewModel/图表/控制区 | — |
 
-> 观察：`EquilibriumAnimation.tsx`(737)、`MomentumConservationAnimation.tsx`(732)、`KeplerAnimation.tsx`(672)、`TIRAnimation.tsx`(622)、`ConnectedBodiesAnimation.tsx`(609)、`ObliqueThrowAnimation.tsx`(589)、`GravityBasicAnimation.tsx`(572)、`FreeFallDripAnimation.tsx`(559)、`CircularMotionAnimation.tsx`(557)、`PowerTransmission.tsx`→`electromagnetism/induction/`(649)、`SpringCompositeAnimation.tsx`→`mechanics/energy/`(639)、`FieldLines.tsx`→`electromagnetism/electrostatics/`(623) 已超过或临近阈值，但职责相对集中，暂不作为首批拆分目标。
+> 观察：`MomentumConservationAnimation.tsx`(671)、`KeplerAnimation.tsx`(621)、`TIRAnimation.tsx`(564)、`ConnectedBodiesAnimation.tsx`(557)、`ObliqueThrowAnimation.tsx`(589)、`GravityBasicAnimation.tsx`(572)、`FreeFallDripAnimation.tsx`(559)、`CircularMotionAnimation.tsx`(557)、`PowerTransmission.tsx`→`electromagnetism/induction/`(649)、`SpringCompositeAnimation.tsx`→`mechanics/energy/`(639)、`FieldLines.tsx`→`electromagnetism/electrostatics/`(623) 已超过或临近阈值，但职责相对集中，暂不作为首批拆分目标。
 
 ---
 

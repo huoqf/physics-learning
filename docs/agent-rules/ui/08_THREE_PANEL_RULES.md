@@ -2,7 +2,7 @@
 
 > 优先级：低于 02_UI_RULES.md，高于章节实现细节
 > AI任务入口：实现或修改左侧屏、右侧屏、CenterExtra 时必须读本文件
-> 最后更新：2026-06-08
+> 最后更新：2026-07-01
 
 ---
 
@@ -27,29 +27,42 @@
 ### 2.1 左侧屏标准结构
 
 ```text
-LeftPanel
-  ├─ ParameterSection     ← ParamControl（由 animationRegistry.paramMeta 生成）
-  │   └─ Slider           ← 连续参数滑块（min/max/step/unit，可选 minLabel/maxLabel/midLabel/formatValue/description）
-  ├─ SidebarExtra          ← 各动画特异控件（SegmentedControl / ToggleSwitch / OptionButton / Slider / TipCard）
-  └─ ResetButton           ← 右上角重置按钮（仅无 ParamControl 时显示）
+LeftPanel                         ← AnimationPage 左屏唯一顶层容器
+  ├─ LeftPanelSection             ← 同考点模型切换 / 声明式控件分组 / 自定义分区
+  ├─ ControlPanel                 ← 由 animationRegistry.controlMeta 生成（模式、开关、预设、提示等）
+  ├─ ParamControl                 ← 由 animationRegistry.paramMeta 生成（连续数值型物理参数）
+  └─ LeftPanelScrollArea          ← 承载复杂 SidebarExtra 长内容
 ```
 
-**布局顺序**：参数控件在上，模式切换（SegmentedControl）在底部。
+**布局顺序**：同考点模型切换 → `controlMeta` 声明式控件 → `paramMeta` 数值参数 → 复杂 `SidebarExtra`。
 
-不是每章都必须全部出现，但出现时必须使用统一组件和统一样式。
+不是每章都必须全部出现，但出现时必须使用统一组件和统一样式。新页面不得重新手写左屏外层 `p-4 / border-t / rounded-xl` 容器。
 
-### 2.2 组件使用边界
+### 2.2 声明式优先级
 
-| 组件 | 语义 | 使用场景 | 判断标准 |
+| 优先级 | 机制 | 适用内容 | 说明 |
+|---:|------|----------|------|
+| 1 | `paramMeta` → `ParamControl` | 连续数值型物理参数 | 速度、力、电阻、角度、质量等，可附带 `group/description/marks/importance/resetOnChange` |
+| 2 | `controlMeta` → `ControlPanel` | 模式、开关、预设、提示、少量声明式 number | `segmented/toggle/preset/tip/number`，逐步替代简单 SidebarExtra |
+| 3 | `SidebarExtra` | 真正复杂的页面专属控制 | 必须复用 `LeftPanelSection`，禁止散乱容器样式 |
+
+### 2.3 组件使用边界
+
+| 组件 / 协议 | 语义 | 使用场景 | 判断标准 |
 |------|------|----------|----------|
-| `Slider` | 连续参数调节 | 速度、力、电阻、角度等连续物理量 | 值在 min-max 范围内连续变化 |
-| `SegmentedControl` | 同一维度互斥视图切换 | 基础/进阶、轨道/能量、电场线/等势面 | 切换后整体布局或观察方式改变 |
-| `OptionButton` | 参数值/预设/步进选择 | Δt步长、速度预设、教学预设 | 选择后只改变数值或局部显示 |
-| `ToggleSwitch` | 布尔状态开关 | 显示轨迹、显示辅助线、显示矢量 | 开/关，无第三态 |
+| `LeftPanel` | 左屏顶层控制台容器 | AnimationPage 左侧屏 | 统一 padding、gap、定位上下文 |
+| `LeftPanelSection` | 左屏分区卡片 | 模型选择、显示辅助、预设、教学提示、自定义 SidebarExtra 分区 | 替代手写 `border-t` / `bg-white rounded...` 容器 |
+| `LeftPanelScrollArea` | 左屏长内容滚动区 | SidebarExtra 内容较长时 | 保证左屏滚动一致 |
+| `ParamControl` | 标准数值参数组 | registry `paramMeta` | 自动支持精确输入、step 格式化、零点/mark、分组和恢复默认 |
+| `ControlPanel` | 标准非数值控制组 | registry `controlMeta` | 自动渲染模式、开关、预设、提示等 |
+| `Slider` | 连续参数调节 | 仅在复杂 SidebarExtra 中临时使用 | 值在 min-max 范围内连续变化；新标准参数优先迁移到 `paramMeta` |
+| `SegmentedControl` | 同一维度互斥视图切换 | 复杂 SidebarExtra 中临时使用 | 简单模式切换优先迁移到 `controlMeta` |
+| `OptionButton` | 参数值/预设/步进选择 | 复杂 SidebarExtra 中临时使用 | 简单预设优先迁移到 `controlMeta` |
+| `ToggleSwitch` | 布尔状态开关 | 复杂 SidebarExtra 中临时使用 | 简单显示开关优先迁移到 `controlMeta` |
 
-**禁止**：在 SidebarExtra 中手写按钮组、自定义 toggle、内联开关实现、原生 `<input type="range">`。连续参数必须使用 `Slider` 组件。
+**禁止**：新 SidebarExtra 中手写按钮组、自定义 toggle、内联开关实现、原生 `<input type="range">`。连续参数必须使用 `Slider` 或 `paramMeta`；简单模式/开关/提示必须优先使用 `controlMeta`。
 
-### 2.3 进阶模式统一规范
+### 2.4 进阶模式统一规范
 
 | 情况 | 推荐组件 | 示例 |
 |------|----------|------|
@@ -57,7 +70,7 @@ LeftPanel
 | 进阶只是叠加显示额外控件 | `ToggleSwitch` | Projectile（空气阻力开关） |
 | 进阶模式会触发中心区域布局变化 | `SegmentedControl`，切换时调用 `animationActions.resetAnimation()` | ConnectedBodies |
 
-### 2.4 样式 token 规则
+### 2.5 样式 token 规则
 
 #### 控件状态色（必须走 UI token）
 
@@ -80,11 +93,11 @@ LeftPanel
 
 统一使用 `TipCard` 组件。左侧屏提示应简短，只解释当前控件影响，不展开知识讲解。
 
-#### 卡片容器
+#### 左屏卡片容器
 
-侧屏卡片优先使用 `Card` 组件，禁止在章节组件中直接拼接完整卡片样式类名。`Card` 组件标准样式：`bg-white rounded-xl shadow-sm border border-neutral-100`。
+左屏控制台卡片必须优先使用 `LeftPanelSection`；页面级左屏顶层必须使用 `LeftPanel`。复杂 `SidebarExtra` 内部需要分区时，也必须用 `LeftPanelSection`，禁止继续手写完整卡片样式或 `mt-4 pt-4 border-t border-neutral-200` 分隔容器。
 
-**SidebarExtra 容器风格**：SidebarExtra 内部使用线分隔（`border-t border-neutral-200`），不使用卡片包裹（`bg-white rounded-lg shadow-sm border p-4`）。卡片包裹仅用于 ParamControl。
+通用内容卡片（非左屏控制台）仍可使用 `Card` 组件；`Card` 标准样式：`bg-white rounded-xl shadow-sm border border-neutral-100`。
 
 #### 重置按钮
 
@@ -157,10 +170,10 @@ SidebarExtraProps
 
 ### 4.2 SidebarExtra 布局规范
 
-- **参数控件在上**：Slider、ToggleSwitch 等参数控制组件放在顶部
-- **模式切换在下**：SegmentedControl（基础/进阶切换）放在底部
-- **容器风格**：使用 `border-t border-neutral-200` 线分隔，不使用卡片包裹
-- **禁用状态**：通过 `disabled` prop 传递给各子组件，不在容器级设置 `opacity-40 pointer-events-none`
+- **声明式优先**：简单模式切换、显示开关、预设按钮、提示卡必须优先迁移到 `controlMeta`；连续数值参数必须优先迁移到 `paramMeta`。
+- **只承载复杂自定义控制**：仅当控件需要复杂布局、组合逻辑或动态预设时保留 `SidebarExtra`。
+- **容器风格**：`SidebarExtra` 根分区或内部逻辑分区必须使用 `LeftPanelSection`；长内容由 AnimationPage 的 `LeftPanelScrollArea` 承载。
+- **禁用状态**：通过 `disabled` prop 传递给各子组件，不在容器级设置 `opacity-40 pointer-events-none`。
 
 ### 4.3 禁止事项
 
@@ -219,13 +232,13 @@ SidebarExtraProps
 | 检查项 | 标准 |
 |--------|------|
 | 左侧屏是否只包含控制类内容 | 是 |
-| 参数是否通过 ParamControl 或统一控件生成 | 是 |
-| 连续参数是否使用 Slider 组件（非原生 input[type=range]） | 是 |
-| 模式切换是否使用 SegmentedControl | 是 |
-| 状态切换是否使用 ToggleSwitch | 是 |
-| 预设选择是否使用 OptionButton | 是 |
-| SidebarExtra 布局是否参数在上、模式切换在下 | 是 |
-| SidebarExtra 是否使用线分隔而非卡片包裹 | 是 |
+| 参数是否通过 `paramMeta → ParamControl` 或 `controlMeta → ControlPanel` 生成 | 是 |
+| 连续参数是否优先使用 `paramMeta`，复杂例外才使用 `Slider` | 是 |
+| 模式切换是否优先使用 `controlMeta.segmented`，复杂例外才手写 `SegmentedControl` | 是 |
+| 状态切换是否优先使用 `controlMeta.toggle`，复杂例外才手写 `ToggleSwitch` | 是 |
+| 预设选择是否优先使用 `controlMeta.preset`，复杂例外才手写 `OptionButton` | 是 |
+| SidebarExtra 是否仅保留复杂自定义控制 | 是 |
+| SidebarExtra 是否复用 `LeftPanelSection`，无手写分隔/卡片容器 | 是 |
 | 是否存在硬编码控件状态色（bg-blue-*、bg-amber-* 等） | 否 |
 | SidebarExtra 是否直接访问 animation store 的 params/time/isPlaying | 否 |
 | 右侧屏是否包含物理量、公式、高考要点三段 | 是 |

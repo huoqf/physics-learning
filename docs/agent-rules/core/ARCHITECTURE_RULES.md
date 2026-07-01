@@ -357,6 +357,22 @@ export const mechanicsKinematicsAnimations = defineAnimations({
 2. Registry 文件：`defaultParams` 添加 `as const`
 3. 验证：`npx tsc --noEmit` 零错误
 
+### 8.1.3 左屏控制数据协议
+
+`AnimationConfig` 支持两类左屏声明式数据，新增/改造动画时必须优先使用：
+
+| 字段 | 渲染器 | 用途 | 适用内容 |
+|------|--------|------|----------|
+| `paramMeta` | `ParamControl` | 连续数值型物理参数 | 力、速度、角度、质量、电阻等，可声明 `group/description/marks/importance/resetOnChange` |
+| `controlMeta` | `ControlPanel` | 非数值或低频控制 | `number / segmented / toggle / preset / tip`，用于模式切换、显示开关、快捷预设、教学提示 |
+| `SidebarExtra` | 自定义 React 组件 | 复杂页面专属控制 | 仅当声明式协议无法表达时保留，内部必须复用 `LeftPanelSection` |
+
+**迁移原则**：
+1. 简单模式切换、开关、提示和预设不得新写 `SidebarExtra`，必须进入 `controlMeta`。
+2. 连续物理参数不得手写 `Slider`，优先进入 `paramMeta`。
+3. `SidebarExtra` 不得直接访问 store；仍通过 `SidebarExtraProps` 接收 `params/updateParam/setParams/animationActions`。
+4. 左屏具体 UI 结构与验收标准见 `docs/agent-rules/ui/08_THREE_PANEL_RULES.md §2`。
+
 ### 8.2 错题数据流
 
 ```

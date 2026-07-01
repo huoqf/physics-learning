@@ -17,6 +17,7 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 07-01 | docs/rules | docs | 更新左屏控制台项目规范：project_rules 增加"左屏控制台声明式优先"铁律，08_THREE_PANEL/02_UI/ARCHITECTURE 补 LeftPanel、ParamMeta、controlMeta、SidebarExtra 收敛规则 |
 | 07-01 | UI/animation | refactor | controlMeta 第一阶段：新增 ControlMeta 协议与 ControlPanel 渲染器（number/segmented/toggle/preset/tip），AnimationPage 接入声明式控件，库仑定律/力的合成与分解/共点力平衡/恒力做功/开普勒定律等简单 SidebarExtra 迁移为 controlMeta；补 ControlPanel 单测 3 项；build/test/lint/check:architecture 通过 |
 | 07-01 | UI/animation | refactor | ParamMeta 协议扩展：新增 group/description/marks/importance/resetOnChange，ParamControl 支持参数分组、教学说明、关键标记与重要性样式；补单测至 5 项；build/test/lint/check:architecture 通过 |
 | 07-01 | UI/animation | refactor | 左屏容器统一：新增 LeftPanel/LeftPanelSection/LeftPanelScrollArea，AnimationPage 左屏改用统一容器；批量迁移 49 个静态根容器 SidebarExtra 到 LeftPanelSection；build/test/lint/check:architecture 通过 |

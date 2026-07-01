@@ -322,7 +322,11 @@ Primary（primary-600）/ Secondary（white + primary边框）/ Ghost（transpar
 | 组件 | 适用场景 |
 |------|---------|
 | `AnimationControls` | 播放/暂停/重置控制条 |
-| `ParamControl` | 参数滑块控件（左屏参数区） |
+| `LeftPanel` | 动画页左屏控制台顶层容器 |
+| `LeftPanelSection` | 左屏控制台分区卡片（模型选择/显示辅助/预设/提示等） |
+| `LeftPanelScrollArea` | 左屏长内容滚动区域 |
+| `ParamControl` | 参数滑块控件（由 `paramMeta` 生成左屏数值参数区） |
+| `ControlPanel` | 声明式左屏控件渲染器（由 `controlMeta` 生成模式/开关/预设/提示） |
 | `PhysicsPanel` | 右侧公式/信息面板容器 |
 | `Slider` | 通用滑条 |
 | `SegmentedControl` | 分段选择控件（模式切换） |

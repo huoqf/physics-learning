@@ -69,6 +69,7 @@ theme/            # 设计 token（颜色/间距/圆角/阴影/动效）
 | 3 | **组件职责边界**：页面组件薄壳（路由+布局+数据注入）；三屏不交叉（详见 `02_UI_RULES.md §5.1`）；动画状态统一 `useAnimationStore` | 页面塞业务逻辑；右侧屏放参数控件；左侧屏放公式推导；另建 `usePhysicsState` |
 | 4 | **HashRouter only**：禁止 BrowserRouter（Electron `file://` 下路由 404） | BrowserRouter |
 | 5 | **组件复用优先**：场景中存在可复用组件时必须直接使用，禁止在 `features/` 中重复手写等效实现（详见下方展开） | 手写地面纹理/球体/滑块/矢量箭头/图表轴等已有组件实现 |
+| 6 | **左屏控制台声明式优先**：左屏必须使用 `LeftPanel` 体系；数值参数优先 `paramMeta → ParamControl`，模式/开关/预设/提示优先 `controlMeta → ControlPanel`；`SidebarExtra` 仅保留复杂自定义控制 | 新页面手写散乱左屏容器、简单模式切换/开关仍写 SidebarExtra、直接手写 `input[type=range]` |
 
 ### 铁律 1 展开：统一来源六条约束
 
@@ -99,6 +100,12 @@ theme/            # 设计 token（颜色/间距/圆角/阴影/动效）
 ### 铁律 5 展开：组件复用
 
 实现动画场景时，**必须优先使用 `src/components/` 下已有组件**，禁止在 `features/` 内重新手写等效逻辑。
+
+左屏控制区是组件复用重点：
+- 顶层统一使用 `LeftPanel` / `LeftPanelSection` / `LeftPanelScrollArea`
+- 数值参数优先放入 registry 的 `paramMeta`，由 `ParamControl` 渲染
+- 模式、开关、预设、提示优先放入 registry 的 `controlMeta`，由 `ControlPanel` 渲染
+- `SidebarExtra` 仅用于复杂自定义控制，内部也必须复用 `LeftPanelSection`
 
 完整组件清单（Physics / Chart / Layout / UI 四个目录）及 barrel import 规则见 `docs/agent-rules/ui/02_UI_RULES.md §7.1`。
 
@@ -158,4 +165,5 @@ theme/            # 设计 token（颜色/间距/圆角/阴影/动效）
 - [ ] 新增 `src/physics/` 函数有 JSDoc + 单位注释，无 DOM 依赖（铁律 2）
 - [ ] 页面组件薄壳，三屏职责不交叉（铁律 3）
 - [ ] **场景中的物体/地面/矢量/图表/UI 控件已优先使用 `src/components/` 下已有组件，无在 `features/` 内重复手写等效实现（铁律 5）**
+- [ ] **左屏控制台已使用 `LeftPanel` 体系；数值参数走 `paramMeta`，简单模式/开关/预设/提示走 `controlMeta`，仅复杂控制保留 `SidebarExtra`（铁律 6）**
 - [ ] ROADMAP_PROGRESS.md 已更新（如适用）
