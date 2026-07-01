@@ -215,6 +215,7 @@ export const CANVAS_COLORS = {
   annotation:         '#8B5CF6',           // 标注文字框 — violet-500
   originMark:         colors.neutral[800], // 坐标原点标记
   vectorTip:          colors.neutral[800], // 箭头尖端描边
+  white:              colors.neutral.white, // 纯白（用于彩色背景上的文字/高光）
 
   // 警示危险场景配色
   alertRed:           '#EF4444',

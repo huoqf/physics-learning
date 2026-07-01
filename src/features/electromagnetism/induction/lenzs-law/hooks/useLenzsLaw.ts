@@ -26,6 +26,7 @@ export function useLenzsLaw() {
     currentStep = 0,
     showLines = 1,
     showEquivalentPoles = 1,
+    showHandRule = 1,
   } = params
 
   // 局部状态：拖拽位置、是否在拖拽中、强制刷新触发器
@@ -153,6 +154,7 @@ export function useLenzsLaw() {
     coilN,
     showLines,
     showEquivalentPoles,
+    showHandRule,
     handleDragStart,
     handleDragMove,
     handleDragEnd,

@@ -15,6 +15,7 @@ export const LenzsLawSidebarExtra: React.FC<SidebarExtraProps> = ({
   const currentStep = params.currentStep ?? 0
   const showLines = params.showLines ?? 1
   const showEquivalentPoles = params.showEquivalentPoles ?? 1
+  const showHandRule = params.showHandRule ?? 1
 
   return (
     <div className="space-y-6">
@@ -152,6 +153,15 @@ export const LenzsLawSidebarExtra: React.FC<SidebarExtraProps> = ({
             label="显示等效磁极 (来拒去留)"
             checked={showEquivalentPoles === 1}
             onChange={(checked) => updateParam('showEquivalentPoles', checked ? 1 : 0)}
+            disabled={disabled}
+          />
+        </div>
+
+        <div className="flex items-center justify-between">
+          <ToggleSwitch
+            label="显示右手定则 (安培定则)"
+            checked={showHandRule === 1}
+            onChange={(checked) => updateParam('showHandRule', checked ? 1 : 0)}
             disabled={disabled}
           />
         </div>

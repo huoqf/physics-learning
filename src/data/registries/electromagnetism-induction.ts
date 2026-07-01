@@ -53,6 +53,7 @@ export const electromagnetismInductionAnimations = defineAnimations({
       currentStep: 0,
       showLines: 1,
       showEquivalentPoles: 1,
+      showHandRule: 1,
     } as const,
     paramMeta: [],
   },

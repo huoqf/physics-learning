@@ -1,10 +1,11 @@
 import React, { useRef } from 'react'
-import { calculateLenzsLaw } from '@/physics'
-import { PHYSICS_COLORS, CANVAS_STYLE, withAlpha } from '@/theme/physics'
-import { colors } from '@/theme/colors'
-import { VectorArrow, Solenoid, Galvanometer, BarMagnet, ParametricMagneticField } from '@/components/Physics'
+import type { calculateLenzsLaw } from '@/physics'
+import { PHYSICS_COLORS, CANVAS_COLORS, CANVAS_STYLE, withAlpha } from '@/theme/physics'
+import { CANVAS_PRESETS } from '@/theme/spacing'
+import { VectorArrow, Solenoid, Galvanometer, BarMagnet, ParametricMagneticField, SkeletonHand } from '@/components/Physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
-import { layoutLabels } from '@/utils'
+import { layoutLabels, type LabelSlot } from '@/utils'
+import { coilY } from '../hooks/useLenzsLaw'
 
 interface LenzsLawCanvasProps {
   magnetY: number
@@ -19,6 +20,7 @@ interface LenzsLawCanvasProps {
   coilN: number
   showLines: number
   showEquivalentPoles: number
+  showHandRule: number
   handleDragStart: (yDesign: number) => void
   handleDragMove: (yDesign: number) => void
   handleDragEnd: () => void
@@ -26,11 +28,9 @@ interface LenzsLawCanvasProps {
   vpScale: number
 }
 
-// 设计尺寸与固定布局中心
-const DESIGN_WIDTH = 700
-const DESIGN_HEIGHT = 400
-const cx = 350
-const coilY = 240
+// 设计尺寸与固定布局中心（与 CANVAS_PRESETS.wide 一致）
+const { width: DESIGN_WIDTH, height: DESIGN_HEIGHT } = CANVAS_PRESETS.wide
+const cx = DESIGN_WIDTH / 2
 
 // 灵敏电流计中心坐标
 const galX = 130
@@ -48,6 +48,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
   coilN,
   showLines,
   showEquivalentPoles,
+  showHandRule,
   handleDragStart,
   handleDragMove,
   handleDragEnd,
@@ -105,7 +106,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
   const resolvedMonitorPos = layoutLabels(monitorLabels, { padding: 3 })
 
   // 2. 磁体与等效磁极动态说明文字的避让计算
-  const labelsToLayout: import('@/data/quantities/types').PhysicsQuantity extends any ? any : any[] = []
+  const labelsToLayout: (LabelSlot & { id: string })[] = []
 
   const hasForceText = forceDirection !== 0 && getOpacity([4]) === 1.0
   const forceTextY = magnetY + 35 + forceDirection * (forceArrowLength / 2) + 4
@@ -364,19 +365,19 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
             width="120"
             height="50"
             rx="6"
-            fill={colors.accent[100]}
-            stroke={colors.accent[500]}
+            fill={CANVAS_COLORS.objectFillNeutral}
+            stroke={CANVAS_COLORS.grid}
             strokeWidth="1.5"
-            style={{ filter: `drop-shadow(0px 2px 4px ${withAlpha(colors.neutral[900], 0.1)})` }}
+            style={{ filter: `drop-shadow(0px 2px 4px ${withAlpha(CANVAS_COLORS.gridSubtle, 0.3)})` }}
           />
-          <text x="60" y="22" textAnchor="middle" fill={colors.accent[700]} fontSize={font(12)} fontWeight="bold">
+          <text x="60" y="22" textAnchor="middle" fill={CANVAS_COLORS.labelText} fontSize={font(12)} fontWeight="bold">
             磁通量 Φ
           </text>
           <text
             x="60"
             y="40"
             textAnchor="middle"
-            fill={lenzResult.fluxChange === 'increasing' ? colors.danger[600] : (lenzResult.fluxChange === 'decreasing' ? colors.primary[600] : colors.neutral[500])}
+            fill={lenzResult.fluxChange === 'increasing' ? CANVAS_COLORS.dangerDark : (lenzResult.fluxChange === 'decreasing' ? PHYSICS_COLORS.magneticField : CANVAS_COLORS.textMuted)}
             fontSize={font(13)}
             fontWeight="bold"
           >
@@ -426,8 +427,8 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
             markerEnd="url(#arrow-current)"
           />
           <g transform={`translate(${cx + 90}, ${coilY + 30})`}>
-            <rect width="115" height="30" rx="4" fill={colors.danger[100]} stroke={colors.danger[500]} strokeWidth="1.2" />
-            <text x="57" y="19" textAnchor="middle" fill={colors.danger[700]} fontSize={font(11)} fontWeight="bold">
+            <rect width="115" height="30" rx="4" fill={CANVAS_COLORS.dangerBg} stroke={CANVAS_COLORS.alertRed} strokeWidth="1.2" />
+            <text x="57" y="19" textAnchor="middle" fill={CANVAS_COLORS.dangerText} fontSize={font(11)} fontWeight="bold">
               {lenzResult.inducedCurrentDirection === 'counterclockwise' ? 'I感: 逆时针 (←)' : 'I感: 顺时针 (→)'}
             </text>
           </g>
@@ -443,15 +444,15 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
             cy={coilY - 65}
             r="13"
             fill={lenzResult.equivalentPole === 'N' ? PHYSICS_COLORS.magnetNorth : PHYSICS_COLORS.magnetSouth}
-            stroke={colors.neutral.white}
+            stroke={CANVAS_COLORS.gridSubtle}
             strokeWidth="1.5"
-            style={{ filter: `drop-shadow(0px 0px 4px ${withAlpha(colors.neutral[900], 0.2)})` }}
+            style={{ filter: `drop-shadow(0px 0px 4px ${withAlpha(CANVAS_COLORS.gridSubtle, 0.4)})` }}
           />
           <text
             x={cx}
             y={coilY - 61}
             textAnchor="middle"
-            fill={colors.neutral.white}
+            fill={CANVAS_COLORS.white}
             fontWeight="bold"
             fontSize={font(12)}
           >
@@ -474,15 +475,15 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
             cy={coilY + 65}
             r="13"
             fill={lenzResult.equivalentPole === 'N' ? PHYSICS_COLORS.magnetSouth : PHYSICS_COLORS.magnetNorth}
-            stroke={colors.neutral.white}
+            stroke={CANVAS_COLORS.gridSubtle}
             strokeWidth="1.5"
-            style={{ filter: `drop-shadow(0px 0px 4px ${withAlpha(colors.neutral[900], 0.2)})` }}
+            style={{ filter: `drop-shadow(0px 0px 4px ${withAlpha(CANVAS_COLORS.gridSubtle, 0.4)})` }}
           />
           <text
             x={cx}
             y={coilY + 69}
             textAnchor="middle"
-            fill={colors.neutral.white}
+            fill={CANVAS_COLORS.white}
             fontWeight="bold"
             fontSize={font(12)}
           >
@@ -550,6 +551,58 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
           原/感磁场：{lenzResult.fluxChange === 'stable' ? '无' : (lenzResult.fluxChange === 'increasing' ? '反向阻碍' : '同向阻碍')}
         </text>
       </g>
+
+      {/* --- 9. 右手螺旋定则 (安培定则) 可视化面板 --- */}
+      {showHandRule === 1 && lenzResult.fluxChange !== 'stable' && (
+        <g transform="translate(520, 130)" opacity={getOpacity([4])} className="transition-opacity duration-300">
+          <rect
+            x="0"
+            y="0"
+            width="150"
+            height="180"
+            fill={CANVAS_COLORS.objectFillNeutral}
+            stroke={CANVAS_COLORS.grid}
+            strokeWidth="1.2"
+            rx="6"
+          />
+          <text
+            x="75"
+            y="18"
+            fontSize={font(10)}
+            fill={CANVAS_COLORS.strokeDark}
+            fontWeight="bold"
+            textAnchor="middle"
+            style={{ userSelect: 'none' }}
+          >
+            右手螺旋定则 (安培定则)
+          </text>
+          
+          <SkeletonHand
+            cx={75}
+            cy={105}
+            rotation={lenzResult.inducedFieldDirection === 'up' ? -90 : 90}
+            scale={0.7}
+            chirality="right"
+            pose="ampere"
+            highlight={{ thumb: true, index: true, middle: true, ring: true, little: true }}
+            showTipMarker={{ thumb: true }}
+            tipLabels={{ thumb: 'B感' }}
+            tipColors={{ thumb: PHYSICS_COLORS.lorentzForce }}
+            font={font}
+          />
+
+          <text
+            x="75"
+            y="170"
+            fontSize={font(9)}
+            fill={CANVAS_COLORS.textMuted}
+            textAnchor="middle"
+            style={{ userSelect: 'none' }}
+          >
+            {lenzResult.inducedFieldDirection === 'up' ? '大拇指朝上 (B感)' : '大拇指朝下 (B感)'}
+          </text>
+        </g>
+      )}
     </svg>
   )
 }
