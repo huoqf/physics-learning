@@ -4,7 +4,8 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateFrictionPullModel, calculateDoubleFrictionIncline } from '@/physics'
 import { GRAVITY } from '@/physics/constants'
-import { MiniChart, AnimationControls, Card } from '@/components/UI'
+import { AnimationControls, Card } from '@/components/UI'
+import { RelationChart } from '@/components/Chart'
 import FrictionAnimation from './FrictionAnimation'
 import { useCanvasSize } from '@/utils'
 
@@ -104,46 +105,40 @@ export const FrictionCenterExtra: FC = () => {
         <div ref={chartContainerRef} className="flex-1 min-w-0">
         <Card className="h-full overflow-hidden p-2 flex items-center justify-center">
           {mode === 0 ? (
-            <MiniChart
+            <RelationChart
               title="f - F 关系图像"
-              xMin={0}
-              xMax={45}
-              yMin={0}
-              yMax={yMax}
-              points={pullPoints}
-              xKey="F"
               xLabel="外拉力 F (N)"
               yLabel="摩擦力 f (N)"
-              lines={[
-                { key: 'f', color: PHYSICS_COLORS.friction, name: '摩擦力 f' }
+              xDomain={[0, 45]}
+              yDomain={[0, yMax]}
+              points={pullPoints.map((p) => ({ x: p.F, y: p.f }))}
+              cursorX={F_applied}
+              markers={[
+                { y: pullResult.f_max, label: `f_max = ${pullResult.f_max.toFixed(1)}N`, color: CHART_COLORS.criticalPt },
+                { x: pullResult.f_max, label: `F = f_max`, color: CHART_COLORS.reference }
               ]}
-              currentVals={{ f: pullResult.f_actual }}
-              currentXVal={F_applied}
-              staticLines={[
-                { value: pullResult.f_max, color: CHART_COLORS.criticalPt, strokeDasharray: '3,3', name: '最大静摩擦力 f_max' }
-              ]}
-              minWidth={chartSize.width - 16}
-              minHeight={chartSize.height - 16}
+              color={PHYSICS_COLORS.friction}
+              mainLabel="摩擦力 f"
+              initialSize={{ width: chartSize.width - 16, height: chartSize.height - 16 }}
             />
           ) : (
-            <MiniChart
+            <RelationChart
               title="f - θ 关系图像 (双曲线)"
-              xMin={0}
-              xMax={90}
-              yMin={0}
-              yMax={yMax}
-              points={inclinePoints}
-              xKey="theta"
               xLabel="倾角 θ (°)"
               yLabel="摩擦力 f (N)"
-              lines={[
-                { key: 'f1', color: PHYSICS_COLORS.friction, name: '滑块摩擦力 f₁' },
-                { key: 'f2', color: PHYSICS_COLORS.appliedForce, name: '地面摩擦力 f₂' }
+              xDomain={[0, 90]}
+              yDomain={[0, yMax]}
+              points={inclinePoints.map((p) => ({ x: p.theta, y: p.f1 }))}
+              cursorX={angle}
+              markers={[
+                { x: inclineResult.criticalAngle, label: `θc = ${inclineResult.criticalAngle.toFixed(1)}°`, color: CHART_COLORS.criticalPt }
               ]}
-              currentVals={{ f1: inclineResult.f1, f2: inclineResult.f2 }}
-              currentXVal={angle}
-              minWidth={chartSize.width - 16}
-              minHeight={chartSize.height - 16}
+              additionalSeries={[
+                { points: inclinePoints.map((p) => ({ x: p.theta, y: p.f2 })), color: PHYSICS_COLORS.appliedForce, label: '地面摩擦力 f₂' }
+              ]}
+              color={PHYSICS_COLORS.friction}
+              mainLabel="滑块摩擦力 f₁"
+              initialSize={{ width: chartSize.width - 16, height: chartSize.height - 16 }}
             />
           )}
         </Card>
