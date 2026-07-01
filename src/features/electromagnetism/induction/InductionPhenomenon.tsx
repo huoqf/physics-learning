@@ -7,15 +7,78 @@ import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_COLORS } 
 import { colors } from '@/theme/colors'
 import { useAnimationFrame } from '@/utils/animation'
 import { Solenoid, Galvanometer } from '@/components/Physics'
+import { computeInductionMode0, computeInductionMode1, computeInductionMode2 } from '@/physics/induction'
 
 // 导入重构拆分后的独立功能子组件
 import { InductionCutSandbox } from './components/InductionCutSandbox'
 import { InductionMagnetSandbox } from './components/InductionMagnetSandbox'
 import { InductionCoilSandbox } from './components/InductionCoilSandbox'
 
-// 设计坐标系常量 (采用 SVG 缩放方式 A，固定 700 x 400 画布尺寸)
+// ─── 设计坐标系与布局常量 ────────────────────────────────────────
+
+/** SVG 画布设计尺寸（方式 A：固定 viewBox，preserveAspectRatio 自动居中） */
 const DESIGN_W = 700
 const DESIGN_H = 400
+
+/** 场景布局常量：副线圈中心、电流计中心 */
+const LAYOUT = {
+  /** 副线圈中心 x (模式 1/2 共享固定位置) */
+  coilX: 420,
+  /** 副线圈中心 y */
+  coilY: 160,
+  /** 灵敏电流计中心 x */
+  galvanometerX: 420,
+  /** 灵敏电流计中心 y */
+  galvanometerY: 270,
+} as const
+
+/** 各模式下拖拽坐标的有效范围 [min, max] */
+const DRAG_BOUNDS = {
+  rod: [100, 300] as const,
+  magnet: [80, 580] as const,
+  coil: [220, 420] as const,
+} as const
+
+/** 动画帧回调中的物理 / 动效常量 */
+const ANIM = {
+  /** 指针阻尼缓动系数 (每帧趋近比例) */
+  thetaDamping: 0.15,
+  /** 开关脉冲指数衰减速率 */
+  pulseDecayRate: 8,
+  /** 模式 1 自动播放帧速度倍率 */
+  autoPlaySpeedFactor: 60,
+  /** dR/dt 低通滤波器：旧值权重 */
+  dRdtLowPassOld: 0.6,
+  /** dR/dt 低通滤波器：新值权重 */
+  dRdtLowPassNew: 0.4,
+  /** dR/dt 零阈值：低于此值归零 */
+  dRdtZeroThreshold: 0.1,
+  /** dR/dt 最小采样间隔 (s) */
+  dRdtMinSampleInterval: 0.005,
+} as const
+
+export interface InductionParams {
+  /** 实验模式：0=导体切割, 1=磁铁穿过, 2=双线圈互感 */
+  mode: number
+  /** 是否显示磁感线 (0/1) */
+  showLines: number
+  /** 副回路开关 (0=断开, 1=闭合) */
+  subCircuitSwitch: number
+  // 模式 0 参数
+  rodX: number
+  rodSpeed: number
+  // 模式 1 参数
+  magnetX: number
+  magnetSpeed: number
+  magnetPole: number
+  // 模式 2 参数
+  primaryCoilX: number
+  primaryCoilSpeed: number
+  resistance: number
+  dR_dt: number
+  circuitSwitch: number
+  hasIronCore: number
+}
 
 export default function InductionPhenomenon() {
   const { params, isPlaying, setIsPlaying, updateParam, setParams } = useAnimationStore(
@@ -74,65 +137,22 @@ export default function InductionPhenomenon() {
   const prevTime = useRef(performance.now())
 
   // 定位常量
-  const coilX = 420
-  const coilY = 160
-  const galvanometerX = 420
-  const galvanometerY = 270
+  const { coilX, coilY, galvanometerX, galvanometerY } = LAYOUT
 
-  // 3. 物理计算层（将复杂的物理微分公式计算与 JSX 渲染解耦）
-  let phi = 0
-  let dPhi = 0
-  let currentI = 0 // 闭合回路瞬时感应电流
+  // 3. 物理计算层（调用 src/physics/induction.ts 共享纯函数）
+  const inductionResult =
+    mode === 0 ? computeInductionMode0(rodX, rodSpeed, subCircuitSwitch) :
+    mode === 1 ? computeInductionMode1(magnetX, magnetSpeed, magnetPole, coilX, subCircuitSwitch) :
+    computeInductionMode2(
+      primaryCoilX, resistance, circuitSwitch, hasIronCore,
+      primaryCoilSpeed, dR_dt, switchPulse.current,
+      coilX, subCircuitSwitch
+    )
 
-  const ironCoreFactor = hasIronCore ? 1.0 : 0.05
+  const { phi, dPhi, currentI } = inductionResult
+
+  // 模式二低通微分计算需要的辅助值
   const effectiveR = circuitSwitch ? resistance : 99999
-
-  if (mode === 0) {
-    // 实验一：导体切割磁感线 (回路磁通量与 x 成正比，dPhi/dt 与速度成正比)
-    const B0 = 1.0
-    phi = B0 * Math.max(0, (rodX - 80) / 400)
-    dPhi = B0 * (rodSpeed / 400)
-    currentI = subCircuitSwitch === 1 ? dPhi * 2.2 : 0
-  } else if (mode === 1) {
-    // 实验二：磁铁插拔穿过线圈
-    const Phi0 = 1.0
-    const alpha = 0.00015
-    const dx = magnetX - coilX
-    const denom = 1 + alpha * dx * dx
-    phi = (Phi0 / denom) * magnetPole
-
-    const dPhi_dx = (-2 * alpha * dx * Phi0) / (denom * denom)
-    dPhi = dPhi_dx * magnetSpeed * magnetPole
-    currentI = subCircuitSwitch === 1 ? -0.15 * 10 * dPhi : 0
-  } else {
-    // 实验三：双线圈同轴耦合
-    const M0 = 0.8
-    const alphaCoil = 0.00015
-    const dx = primaryCoilX - coilX
-    const denom = 1 + alphaCoil * dx * dx
-    
-    // 互感系数
-    const M = (M0 / denom) * ironCoreFactor
-    const I1 = circuitSwitch ? 10 / effectiveR : 0
-    phi = M * I1
-
-    // 动生项：原线圈运动引起的磁通变化
-    const dM_dx = (-2 * alphaCoil * dx * M0 * ironCoreFactor) / (denom * denom)
-    const dPhi_motion = dM_dx * I1 * primaryCoilSpeed
-
-    // 感生项：原回路电流变化引起的磁通变化 (变阻 dR_dt)
-    let dI1_dt = 0
-    if (circuitSwitch && Math.abs(dR_dt) > 0.01) {
-      dI1_dt = - (10 / (effectiveR * effectiveR)) * dR_dt
-    }
-    const dPhi_transformer = M * dI1_dt
-
-    // 开关瞬间的电磁脉冲感应冲击 (正向或负向脉冲)
-    const dPhi_pulse = switchPulse.current * 0.18
-
-    dPhi = dPhi_motion + dPhi_transformer + dPhi_pulse
-    currentI = subCircuitSwitch === 1 ? -0.8 * 10 * dPhi : 0
-  }
 
   // 4. 定时渲染与物理积分帧循环
   const handleAnimationFrame = useCallback((deltaTime: number) => {
@@ -144,24 +164,25 @@ export default function InductionPhenomenon() {
     setThetaVisual((prev) => {
       const target = Math.max(-1, Math.min(1, currentI * 1.5))
       const diff = target - prev
-      return prev + diff * 0.15
+      return prev + diff * ANIM.thetaDamping
     })
 
     // B. 开关瞬时脉冲衰减
     if (Math.abs(switchPulse.current) > 1e-4) {
-      switchPulse.current *= Math.exp(-dt * 8) // 在 0.3s 内快速衰退
+      switchPulse.current *= Math.exp(-dt * ANIM.pulseDecayRate)
     } else {
       switchPulse.current = 0
     }
 
     // C. 实验二 (磁铁运动) 自动播放运动轨迹
     if (mode === 1 && isPlaying && dragType.current === null) {
-      const nextX = magnetX + magnetSpeed * dt * 60
-      if (nextX >= 580 || nextX <= 80) {
+      const [magnetMin, magnetMax] = DRAG_BOUNDS.magnet
+      const nextX = magnetX + magnetSpeed * dt * ANIM.autoPlaySpeedFactor
+      if (nextX >= magnetMax || nextX <= magnetMin) {
         // 碰壁，平滑停止自动播放
         setParams({
           ...params,
-          magnetX: Math.max(80, Math.min(580, nextX)),
+          magnetX: Math.max(magnetMin, Math.min(magnetMax, nextX)),
           magnetSpeed: 0,
         })
         setIsPlaying(false)
@@ -173,11 +194,11 @@ export default function InductionPhenomenon() {
     // D. 实验三 (双线圈变阻) 阻值变化率低通微分计算
     if (mode === 2) {
       const dt_R = (now - prevTime.current) / 1000
-      if (dt_R > 0.005) {
+      if (dt_R > ANIM.dRdtMinSampleInterval) {
         const dR = effectiveR - prevR.current
         const raw_dR_dt = dR / dt_R
-        const next_dR_dt = dR_dt * 0.6 + raw_dR_dt * 0.4
-        updateParam('dR_dt', Math.abs(next_dR_dt) < 0.1 ? 0 : next_dR_dt)
+        const next_dR_dt = dR_dt * ANIM.dRdtLowPassOld + raw_dR_dt * ANIM.dRdtLowPassNew
+        updateParam('dR_dt', Math.abs(next_dR_dt) < ANIM.dRdtZeroThreshold ? 0 : next_dR_dt)
 
         prevR.current = effectiveR
         prevTime.current = now
@@ -223,15 +244,18 @@ export default function InductionPhenomenon() {
 
     if (dt > 0.005) {
       if (dragType.current === 'rod') {
-        const nextX = Math.max(100, Math.min(300, rodX + dx))
+        const [rodMin, rodMax] = DRAG_BOUNDS.rod
+        const nextX = Math.max(rodMin, Math.min(rodMax, rodX + dx))
         updateParam('rodX', nextX)
         updateParam('rodSpeed', dx / dt)
       } else if (dragType.current === 'magnet') {
-        const nextX = Math.max(80, Math.min(580, magnetX + dx))
+        const [magnetMin, magnetMax] = DRAG_BOUNDS.magnet
+        const nextX = Math.max(magnetMin, Math.min(magnetMax, magnetX + dx))
         updateParam('magnetX', nextX)
         updateParam('magnetSpeed', dx / dt)
       } else if (dragType.current === 'coil') {
-        const nextX = Math.max(220, Math.min(420, primaryCoilX + dx))
+        const [coilMin, coilMax] = DRAG_BOUNDS.coil
+        const nextX = Math.max(coilMin, Math.min(coilMax, primaryCoilX + dx))
         updateParam('primaryCoilX', nextX)
         updateParam('primaryCoilSpeed', dx / dt)
       }

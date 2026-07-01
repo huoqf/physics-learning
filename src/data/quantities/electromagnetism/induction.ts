@@ -3,6 +3,9 @@ import {
   calculateCuttingEMF,
   computeRodStateAtTime,
   computeFaradayMagnetFlux,
+  computeInductionMode0,
+  computeInductionMode1,
+  computeInductionMode2,
 } from '../../../physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import type { PhysicsPanelData, PhysicsQuantity } from '../types'
@@ -268,16 +271,13 @@ export function handleInduction(
     case 'anim-electromagnetic-induction': {
       const mode = params.mode ?? 0 // 0=切割, 1=穿过, 2=双线圈
       const subCircuitSwitch = params.subCircuitSwitch ?? 1
+      const coilX = 420
 
       if (mode === 0) {
         // ── 模式一：导体切割磁感线 ──
         const rodX = params.rodX ?? 200
         const rodSpeed = params.rodSpeed ?? 0
-
-        const B0 = 1.0
-        const phi = B0 * Math.max(0, (rodX - 80) / 400)
-        const dPhi = B0 * (rodSpeed / 400)
-        const currentI = subCircuitSwitch === 1 ? dPhi * 2.2 : 0
+        const { phi, dPhi, currentI } = computeInductionMode0(rodX, rodSpeed, subCircuitSwitch)
         const theta = Math.max(-1, Math.min(1, currentI * 1.5))
 
         let currentDirectionText = '无感应电流'
@@ -311,17 +311,7 @@ export function handleInduction(
         const magnetX = params.magnetX ?? 160
         const magnetSpeed = params.magnetSpeed ?? 0
         const magnetPole = params.magnetPole ?? 1
-        const coilX = 420
-
-        const Phi0 = 1.0
-        const alpha = 0.00015
-        const dx = magnetX - coilX
-        const denom = 1 + alpha * dx * dx
-        const phi = (Phi0 / denom) * magnetPole
-
-        const dPhi_dx = (-2 * alpha * dx * Phi0) / (denom * denom)
-        const dPhi = dPhi_dx * magnetSpeed * magnetPole
-        const currentI = subCircuitSwitch === 1 ? -0.15 * 10 * dPhi : 0
+        const { phi, dPhi, currentI } = computeInductionMode1(magnetX, magnetSpeed, magnetPole, coilX, subCircuitSwitch)
         const theta = Math.max(-1, Math.min(1, currentI * 1.5))
 
         let currentDirectionText = '无感应电流'
@@ -358,30 +348,12 @@ export function handleInduction(
         const dR_dt = params.dR_dt ?? 0
         const circuitSwitch = params.circuitSwitch ?? 1
         const hasIronCore = params.hasIronCore ?? 1
-        const coilX = 420
-
-        const ironCoreFactor = hasIronCore ? 1.0 : 0.05
+        const { phi, dPhi, currentI } = computeInductionMode2(
+          primaryCoilX, resistance, circuitSwitch, hasIronCore,
+          primaryCoilSpeed, dR_dt, 0, coilX, subCircuitSwitch
+        )
         const effectiveR = circuitSwitch ? resistance : 99999
-        const M0 = 0.8
-        const alphaCoil = 0.00015
-        const dx = primaryCoilX - coilX
-        const denom = 1 + alphaCoil * dx * dx
-        
-        const M = (M0 / denom) * ironCoreFactor
         const I1 = circuitSwitch ? 10 / effectiveR : 0
-        const phi = M * I1
-
-        const dM_dx = (-2 * alphaCoil * dx * M0 * ironCoreFactor) / (denom * denom)
-        const dPhi_motion = dM_dx * I1 * primaryCoilSpeed
-
-        let dI1_dt = 0
-        if (circuitSwitch && Math.abs(dR_dt) > 0.01) {
-          dI1_dt = - (10 / (effectiveR * effectiveR)) * dR_dt
-        }
-        const dPhi_transformer = M * dI1_dt
-
-        const dPhi = dPhi_motion + dPhi_transformer
-        const currentI = subCircuitSwitch === 1 ? -0.8 * 10 * dPhi : 0
         const theta = Math.max(-1, Math.min(1, currentI * 1.5))
 
         let currentDirectionText = '无感应电流'

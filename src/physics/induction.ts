@@ -470,3 +470,128 @@ export function computeRodStateAtTime(
 
   return { v, x, a, F_amp, P_heat };
 }
+
+// ─── 电磁感应现象演示：三模式共享物理计算 ────────────────────────────
+
+export interface InductionResult {
+  /** 回路磁通量 Φ (Wb) */
+  phi: number
+  /** 磁通量变化率 dΦ/dt (Wb/s) */
+  dPhi: number
+  /** 感应电流 I (A)，受副回路开关闭合状态影响 */
+  currentI: number
+}
+
+/**
+ * 模式一：导体切割磁感线。
+ *
+ * 匀强磁场 B₀ 中，导体棒沿水平导轨滑动，回路有效面积与棒位置 x 成正比。
+ * 磁通量 Φ = B₀ · (x - x_min) / L_range，变化率 dΦ/dt = B₀ · v / L_range。
+ *
+ * @param rodX      棒在设计坐标系下的 x 坐标
+ * @param rodSpeed  棒当前速度 (px/s)
+ * @param subClosed 副回路是否闭合 (1=闭合, 0=断开)
+ */
+export function computeInductionMode0(
+  rodX: number,
+  rodSpeed: number,
+  subClosed: number
+): InductionResult {
+  const B0 = 1.0
+  const xMin = 80
+  const range = 400
+  const phi = B0 * Math.max(0, (rodX - xMin) / range)
+  const dPhi = B0 * (rodSpeed / range)
+  const currentI = subClosed ? dPhi * 2.2 : 0
+  return { phi, dPhi, currentI }
+}
+
+/**
+ * 模式二：磁铁插拔穿过线圈。
+ *
+ * 条形磁铁在线圈轴线上运动，穿过线圈的磁通量为距离的偶极衰减函数：
+ *   Φ = Φ₀ · pole / (1 + α·dx²)，dx = x - coilX
+ * 磁通量变化率 dΦ/dt = (dΦ/dx) · v · pole。
+ *
+ * @param magnetX    磁铁中心 x 坐标
+ * @param magnetSpeed 磁铁速度 (px/s)
+ * @param magnetPole 磁极朝向 (1=左S右N, -1=左N右S)
+ * @param coilX      副线圈中心 x 坐标
+ * @param subClosed  副回路是否闭合
+ */
+export function computeInductionMode1(
+  magnetX: number,
+  magnetSpeed: number,
+  magnetPole: number,
+  coilX: number,
+  subClosed: number
+): InductionResult {
+  const Phi0 = 1.0
+  const alpha = 0.00015
+  const dx = magnetX - coilX
+  const denom = 1 + alpha * dx * dx
+  const phi = (Phi0 / denom) * magnetPole
+
+  const dPhi_dx = (-2 * alpha * dx * Phi0) / (denom * denom)
+  const dPhi = dPhi_dx * magnetSpeed * magnetPole
+  const currentI = subClosed ? -0.15 * 10 * dPhi : 0
+  return { phi, dPhi, currentI }
+}
+
+/**
+ * 模式三：双线圈互感（原线圈运动 + 变阻器调阻 + 开关通断）。
+ *
+ * 原线圈回路电流 I₁ = V / R_eff，互感系数 M = M₀·ironCore / (1 + α·dx²)。
+ * 穿过副线圈的磁通量 Φ = M · I₁。
+ * 变化率包含三项：动生项（原线圈位移）、感生项（变阻器调阻）、开关脉冲。
+ *
+ * @param primaryCoilX  原线圈 x 坐标
+ * @param resistance    变阻器阻值 (Ω)
+ * @param circuitSwitch 原回路开关 (1=闭合, 0=断开)
+ * @param hasIronCore   是否插入铁芯 (1=有, 0=无)
+ * @param primarySpeed  原线圈速度 (px/s)
+ * @param dR_dt         变阻器阻值变化率 (Ω/s)
+ * @param switchPulse   开关通断瞬时脉冲值 (无脉冲传 0)
+ * @param coilX         副线圈中心 x 坐标
+ * @param subClosed     副回路是否闭合
+ */
+export function computeInductionMode2(
+  primaryCoilX: number,
+  resistance: number,
+  circuitSwitch: number,
+  hasIronCore: number,
+  primarySpeed: number,
+  dR_dt: number,
+  switchPulse: number,
+  coilX: number,
+  subClosed: number
+): InductionResult {
+  const M0 = 0.8
+  const alphaCoil = 0.00015
+  const ironCoreFactor = hasIronCore ? 1.0 : 0.05
+  const effectiveR = circuitSwitch ? resistance : 99999
+
+  const dx = primaryCoilX - coilX
+  const denom = 1 + alphaCoil * dx * dx
+  const M = (M0 / denom) * ironCoreFactor
+  const I1 = circuitSwitch ? 10 / effectiveR : 0
+  const phi = M * I1
+
+  // 动生项：原线圈运动引起的磁通变化
+  const dM_dx = (-2 * alphaCoil * dx * M0 * ironCoreFactor) / (denom * denom)
+  const dPhi_motion = dM_dx * I1 * primarySpeed
+
+  // 感生项：原回路电流变化引起的磁通变化（变阻 dR_dt）
+  let dI1_dt = 0
+  if (circuitSwitch && Math.abs(dR_dt) > 0.01) {
+    dI1_dt = -(10 / (effectiveR * effectiveR)) * dR_dt
+  }
+  const dPhi_transformer = M * dI1_dt
+
+  // 开关瞬时脉冲
+  const dPhi_pulse = switchPulse * 0.18
+
+  const dPhi = dPhi_motion + dPhi_transformer + dPhi_pulse
+  const currentI = subClosed ? -0.8 * 10 * dPhi : 0
+  return { phi, dPhi, currentI }
+}
