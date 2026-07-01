@@ -25,16 +25,39 @@ export interface ForceMotionSandboxProps {
   domainTrajectory?: ForceMotionState[]
 }
 
-function vectorEnd(length: number, dx: number, dy: number) {
+/**
+ * 将方向向量 (dx, dy) 归一化后，取指定像素长度的端点坐标。
+ * @param length 期望的矢量像素长度
+ * @param dx 方向向量 x 分量（物理坐标系）
+ * @param dy 方向向量 y 分量（物理坐标系）
+ * @returns 归一化后的端点 `{ x, y }`，零向量返回原点
+ */
+export function vectorEnd(length: number, dx: number, dy: number) {
   const norm = Math.hypot(dx, dy)
   if (norm < 1e-6) return { x: 0, y: 0 }
   return { x: (dx / norm) * length, y: (dy / norm) * length }
 }
 
-function pathFrom(points: Array<{ cx: number; cy: number }>): string {
+/**
+ * 将画布坐标点数组转换为 SVG path 的 `d` 属性字符串。
+ * @param points 画布坐标点数组，每项含 `cx`（像素 x）、`cy`（像素 y）
+ * @returns 形如 `"M 100.0 200.0 L 150.3 180.2 ..."` 的路径字符串
+ */
+export function pathFrom(points: Array<{ cx: number; cy: number }>): string {
   return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.cx.toFixed(1)} ${point.cy.toFixed(1)}`).join(' ')
 }
 
+/**
+ * 生成弹簧折线的 SVG path 数据。
+ * 起点与终点之间绘制锯齿形弹簧，首尾各留 15% 直线段作为端头。
+ * @param x1 起点 x
+ * @param y1 起点 y
+ * @param x2 终点 x
+ * @param y2 终点 y
+ * @param turns 弹簧圈数，默认 10
+ * @param springWidth 弹簧振幅（像素），默认 6
+ * @returns SVG path `d` 字符串；若两点距离 < 5px 则返回空串
+ */
 export function getSpringPath(x1: number, y1: number, x2: number, y2: number, turns = 10, springWidth = 6) {
   const dx = x2 - x1
   const dy = y2 - y1
