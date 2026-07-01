@@ -109,23 +109,35 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
   const cosT = Math.cos(thetaRad)
   const sinT = Math.sin(thetaRad)
 
-  // 重力在坐标轴上的投影分量 (像素级，从棒心算起)
-  // 沿斜面重力分量 = mg * sinθ (沿斜面向下)
-  // 垂直斜面重力分量 = mg * cosθ (垂直斜面向下)
+  // 任意力矢量在 x'(沿斜面向上) 与 y'(垂直斜面向外) 上的正交投影。
+  // 旧版只按“安培力水平”处理投影，切到“垂直斜面/水平磁场”时虚线会与真实力箭头不一致。
   const G_mag = m * g * forceScale
-  const G_proj_slope_x = -G_mag * sinT * cosT
-  const G_proj_slope_y = G_mag * sinT * sinT
-  const G_proj_perp_x = -G_mag * cosT * sinT
-  const G_proj_perp_y = -G_mag * cosT * cosT
+  const slopeAxis = { x: cosT, y: sinT }
+  const normalAxis = { x: -sinT, y: cosT }
+  const toScreenOffset = (v: { x: number; y: number }) => ({ x: v.x * forceScale, y: -v.y * forceScale })
+  const projectForce = (v: { x: number; y: number }) => {
+    const slopeComp = v.x * slopeAxis.x + v.y * slopeAxis.y
+    const normalComp = v.x * normalAxis.x + v.y * normalAxis.y
+    const slopeVector = { x: slopeComp * slopeAxis.x, y: slopeComp * slopeAxis.y }
+    const normalVector = { x: normalComp * normalAxis.x, y: normalComp * normalAxis.y }
+    return {
+      end: toScreenOffset(v),
+      slope: toScreenOffset(slopeVector),
+      normal: toScreenOffset(normalVector),
+    }
+  }
 
-  // 安培力在坐标轴上的投影分量
-  // 沿斜面安培力分量 = F_安 * cosθ (沿斜面向上为正)
-  // 垂直斜面安培力分量 = F_安 * sinθ (垂直斜面向下)
-  const Fa_mag = physicsResult.F_ampere * forceScale
-  const Fa_proj_slope_x = Fa_mag * cosT * cosT
-  const Fa_proj_slope_y = -Fa_mag * cosT * sinT
-  const Fa_proj_perp_x = Fa_mag * sinT * -sinT
-  const Fa_proj_perp_y = Fa_mag * sinT * -cosT
+  const G_projection = projectForce(G_phys)
+  const Fa_projection = projectForce(Fa_phys)
+
+  // 正方向约定：物理计算中 x' 沿斜面向上为正；因此 a < 0 表示沿斜面下滑。
+  const signAxisLen = 34
+  const signAxisStart = { x: x0 + Math.min(70, slopeW * 0.25), y: y0 - 12 }
+  const signAxisEnd = {
+    x: signAxisStart.x + signAxisLen * cosT,
+    y: signAxisStart.y - signAxisLen * sinT,
+  }
+  const signAxisAngleDeg = (Math.atan2(signAxisEnd.y - signAxisStart.y, signAxisEnd.x - signAxisStart.x) * 180) / Math.PI
 
   return (
     <g transform={`translate(${x}, ${y})`}>
@@ -193,7 +205,7 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
         磁场 B = {Math.abs(B).toFixed(1)} T {(() => {
           if (Math.abs(B) < 1e-4) return '(无磁场)';
           if (bFieldDir === 0) return B > 0 ? '(竖直向上 ↑)' : '(竖直向下 ↓)';
-          if (bFieldDir === 1) return B > 0 ? '(垂直斜面向上 ↗)' : '(垂直斜面向下 ↙)';
+          if (bFieldDir === 1) return B > 0 ? '(垂直斜面向外 ↖)' : '(垂直斜面向内 ↘)';
           return B > 0 ? '(水平向右 →)' : '(水平向左 ←)';
         })()}
       </text>
@@ -304,6 +316,42 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
         {theta}°
       </text>
 
+      {/* 正方向约定：解释右侧面板中加速度正负号 */}
+      <g opacity="0.82">
+        <line
+          x1={signAxisStart.x}
+          y1={signAxisStart.y}
+          x2={signAxisEnd.x}
+          y2={signAxisEnd.y}
+          stroke={CANVAS_COLORS.axis}
+          strokeWidth="1.1"
+          strokeLinecap="round"
+        />
+        <g transform={`translate(${signAxisEnd.x}, ${signAxisEnd.y}) rotate(${signAxisAngleDeg})`}>
+          <polygon points="0,0 -5,-2.5 -5,2.5" fill={CANVAS_COLORS.axis} />
+        </g>
+        <text
+          x={signAxisEnd.x + 4}
+          y={signAxisEnd.y - 3}
+          fontSize={font(5.5)}
+          fill={CANVAS_COLORS.labelTextLight}
+          fontWeight="bold"
+          style={{ userSelect: 'none' }}
+        >
+          +x′
+        </text>
+        <text
+          x={12}
+          y={h - 7}
+          fontSize={font(5.2)}
+          fill={CANVAS_COLORS.textMuted}
+          fontWeight="semibold"
+          style={{ userSelect: 'none' }}
+        >
+          约定：+x′ 沿斜面向上，a&lt;0 表示下滑
+        </text>
+      </g>
+
       {/* 正交分解辅助坐标轴 */}
       {showForceComponents && (
         <g opacity="0.45">
@@ -354,32 +402,32 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
         <g stroke={CANVAS_COLORS.trackHistory} strokeWidth="0.6" strokeDasharray="1.5,1.5" opacity="0.8">
           {/* 重力投影到 y' 轴 (垂直斜面) */}
           <line
-            x1={px}
-            y1={py + G_mag}
-            x2={px + G_proj_perp_x}
-            y2={py - G_proj_perp_y}
+            x1={px + G_projection.end.x}
+            y1={py + G_projection.end.y}
+            x2={px + G_projection.normal.x}
+            y2={py + G_projection.normal.y}
           />
           {/* 重力投影到 x' 轴 (平行斜面) */}
           <line
-            x1={px}
-            y1={py + G_mag}
-            x2={px + G_proj_slope_x}
-            y2={py - G_proj_slope_y}
+            x1={px + G_projection.end.x}
+            y1={py + G_projection.end.y}
+            x2={px + G_projection.slope.x}
+            y2={py + G_projection.slope.y}
           />
 
           {/* 安培力投影到 y' 轴 (垂直斜面) */}
           <line
-            x1={px + Fa_mag}
-            y1={py}
-            x2={px + Fa_proj_perp_x}
-            y2={py - Fa_proj_perp_y}
+            x1={px + Fa_projection.end.x}
+            y1={py + Fa_projection.end.y}
+            x2={px + Fa_projection.normal.x}
+            y2={py + Fa_projection.normal.y}
           />
           {/* 安培力投影到 x' 轴 (平行斜面) */}
           <line
-            x1={px + Fa_mag}
-            y1={py}
-            x2={px + Fa_proj_slope_x}
-            y2={py - Fa_proj_slope_y}
+            x1={px + Fa_projection.end.x}
+            y1={py + Fa_projection.end.y}
+            x2={px + Fa_projection.slope.x}
+            y2={py + Fa_projection.slope.y}
           />
         </g>
       )}
@@ -460,11 +508,12 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
             pixelLength={Math.hypot(Fa_phys.x, Fa_phys.y) * forceScale}
           />
           <text
-            x={px + Fa_phys.x * forceScale + (physicsResult.F_ampere > 0 ? 3 : -18)}
-            y={py - 3}
+            x={px + Fa_phys.x * forceScale + (Fa_phys.x >= 0 ? 4 : -18)}
+            y={py - Fa_phys.y * forceScale + (Fa_phys.y > 0 ? -5 : 11)}
             fontSize={font(6.5)}
             fill={PHYSICS_COLORS.lorentzForce}
             fontWeight="bold"
+            textAnchor={Fa_phys.x < 0 ? 'end' : 'start'}
             style={{ userSelect: 'none' }}
           >
             F_安

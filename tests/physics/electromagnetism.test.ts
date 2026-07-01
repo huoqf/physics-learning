@@ -8,6 +8,7 @@ import {
   calculateParallelResistance,
   calculateClosedCircuit,
   calculateAmpereForce,
+  solveAdvancedAmpere,
   calculateLorentzForce,
   calculateChargeInMagField,
   calculateFaradayEMF,
@@ -90,6 +91,35 @@ describe('electromagnetism', () => {
   it('安培力 F = BIL·sinθ（θ=90° 取最大）', () => {
     expect(calculateAmpereForce(0.5, 2, 1, 90).F).toBeCloseTo(1, 10)
     expect(calculateAmpereForce(0.5, 2, 1, 0).F).toBeCloseTo(0, 10)
+  })
+
+  it('进阶斜面安培力：I>0(⊗)、B竖直向上时 F 应水平向右并有上滑趋势', () => {
+    const res = solveAdvancedAmpere(2, 1, 30, 0.2, 0, 4, 0.5, 0)
+    expect(res.F_ampere).toBeCloseTo(8, 10)
+    expect(res.F_ampere_x).toBeCloseTo(8, 10)
+    expect(res.F_ampere_y).toBeCloseTo(0, 10)
+    expect(res.R_parallel).toBeGreaterThan(0)
+    expect(res.state).toBe('sliding-up')
+    expect(res.I_min).toBeCloseTo(0.4143, 3)
+    expect(res.I_max).toBeCloseTo(1.0769, 3)
+  })
+
+  it('进阶斜面安培力：B垂直斜面向外时 F 应沿斜面向上', () => {
+    const res = solveAdvancedAmpere(2, 1, 30, 0.2, 1, 4, 0.5, 0)
+    expect(res.F_ampere).toBeCloseTo(8, 10)
+    expect(res.F_ampere_x).toBeCloseTo(8 * Math.cos(Math.PI / 6), 10)
+    expect(res.F_ampere_y).toBeCloseTo(8 * Math.sin(Math.PI / 6), 10)
+    expect(res.R_parallel).toBeGreaterThan(0)
+    expect(res.state).toBe('sliding-up')
+  })
+
+  it('进阶斜面安培力：B水平向右时 F 应竖直向下并有下滑趋势', () => {
+    const res = solveAdvancedAmpere(2, 1, 30, 0.2, 2, 4, 0.5, 0)
+    expect(res.F_ampere).toBeCloseTo(-8, 10)
+    expect(res.F_ampere_x).toBeCloseTo(0, 10)
+    expect(res.F_ampere_y).toBeCloseTo(-8, 10)
+    expect(res.R_parallel).toBeLessThan(0)
+    expect(res.state).toBe('sliding-down')
   })
 
   it('洛伦兹力 F = qvB·sinθ', () => {

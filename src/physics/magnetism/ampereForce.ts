@@ -129,8 +129,15 @@ export function solveAdvancedAmpere(
   const g = GRAVITY
   const rad = (theta * Math.PI) / 180
 
-  // 1. 安培力在不同磁场方向下的正负符号及其在 2D 侧视坐标中的分量
-  const F_ampere_raw = -B * I * L
+  // 1. 安培力在不同磁场方向下的正负符号及其在 2D 侧视坐标中的分量。
+  // 进阶斜面模式的主视图把 I > 0 画成“电流流入纸面(⊗)”。
+  // 由 I⃗ × B⃗ 可得：
+  // - B 竖直向上时，F_安 水平向右；
+  // - B 垂直斜面向外时，F_安 沿斜面向上；
+  // - B 水平向右时，F_安 竖直向下。
+  // 因此水平磁场的 F_安 标量与前两种相反号。F_ampere 的正方向随模式定义如下：
+  // 竖直磁场：水平向右为正；垂直斜面磁场：沿斜面向上为正；水平磁场：竖直向上为正。
+  const F_ampere_base = B * I * L
 
   let N = 0
   let R_parallel = 0
@@ -140,21 +147,21 @@ export function solveAdvancedAmpere(
 
   if (bFieldDir === 0) {
     // 竖直磁场：安培力水平向右为正
-    F_ampere = F_ampere_raw
+    F_ampere = F_ampere_base
     F_ampere_x = F_ampere
     F_ampere_y = 0
     N = m * g * Math.cos(rad) + F_ampere * Math.sin(rad)
     R_parallel = F_ampere * Math.cos(rad) - m * g * Math.sin(rad)
   } else if (bFieldDir === 1) {
     // 垂直斜面磁场：安培力沿斜面向上为正
-    F_ampere = F_ampere_raw
+    F_ampere = F_ampere_base
     F_ampere_x = F_ampere * Math.cos(rad)
     F_ampere_y = F_ampere * Math.sin(rad)
     N = m * g * Math.cos(rad)
     R_parallel = F_ampere - m * g * Math.sin(rad)
   } else {
-    // 水平磁场：安培力竖直向上为正
-    F_ampere = F_ampere_raw
+    // 水平磁场：安培力竖直向上为正；I>0 且 B>0(水平向右) 时 F_安 向下，所以取反
+    F_ampere = -F_ampere_base
     F_ampere_x = 0
     F_ampere_y = F_ampere
     N = (m * g - F_ampere) * Math.cos(rad)
@@ -186,8 +193,9 @@ export function solveAdvancedAmpere(
   }
 
   // 3. 计算平衡电流区间 [I_min, I_max]
-  // 设 F_ampere_raw = k_I * I
-  const k_I = -B * L
+  // 设 F_ampere = k_I * I。注意水平磁场下 F_ampere 的正方向是“竖直向上”，
+  // 与 I>0、B>0(水平向右) 对应的真实安培力方向相反，因此 k_I 需取 -B·L。
+  const k_I = bFieldDir === 2 ? -B * L : B * L
   let N_0 = m * g * Math.cos(rad)
   let k_N = 0
   let R_0 = -m * g * Math.sin(rad)

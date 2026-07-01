@@ -17,6 +17,7 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 07-01 | electromagnetism/magnetism | fix | 安培力 F=BIL 进阶斜面平衡分步修复：锁定 3D 磁场包围盒、2D 图补 +x′ 正方向、主屏状态箭头标为 a、矢量多边形按方案 B 改为 p0→p4 真实 F_合；拆出 drawMagneticFieldGrid 消除 lint warning；build/test/lint/check 通过 |
 | 07-01 | electromagnetism/magnetism | compliance | 安培力 F=BIL 页面规范合规修复：AmpereForce.tsx 补 useViewport（方式B）+ viewBox 改 canvasSize 动态绑定；5 个文件共 10 处 `colors.neutral[]` → `CANVAS_COLORS.*`（InclineForceDiagram/ForcePolygon/UniformMagneticField）；tsc 零错误 |
 | 06-30 | electromagnetism/induction | refactor | Transformer.tsx 拆分：724行→90行，抽取 transformer/model + hooks + components；补 transformerModel 单测 4 项 |
 | 06-30 | electromagnetism/magnetism | refactor | VelocitySelector.tsx 拆分：720行→100行，抽取 velocity-selector/model + hooks + components；补 velocitySelectorModel 单测 4 项 |

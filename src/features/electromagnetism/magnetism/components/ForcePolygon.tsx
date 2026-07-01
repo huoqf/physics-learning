@@ -72,10 +72,10 @@ export const ForcePolygon: React.FC<ForcePolygonProps> = ({
     y: p3.y - nLen * cosT,
   }
 
-  // 计算闭合差 (合外力)
-  const gapX = p0.x - p4.x
-  const gapY = p0.y - p4.y
-  const hasGap = Math.hypot(gapX, gapY) > 0.8
+  // 计算真实合外力：从首尾相接多边形的起点 p0 指向终点 p4
+  const resultantX = p4.x - p0.x
+  const resultantY = p4.y - p0.y
+  const hasGap = Math.hypot(resultantX, resultantY) > 0.8
   const isEquilibrium = !hasGap
 
   // 像素坐标 → VectorArrow 物理坐标：x 不变，y 取反（VectorArrow 内部 y↑）
@@ -145,8 +145,8 @@ export const ForcePolygon: React.FC<ForcePolygonProps> = ({
           pixelLength={v.pixelLength} color={PHYSICS_COLORS.normalForce} label="N" strokeWidth={1.6} font={font} />
       ) })()}
 
-      {/* 合力缺口 (如果不平衡，展示红色虚线闪烁矢量) */}
-      {hasGap && (() => { const v = vecBetween(p4.x, p4.y, p0.x, p0.y); return v.origin && (
+      {/* 真实合外力：方案 B，箭头从多边形起点指向终点 */}
+      {hasGap && (() => { const v = vecBetween(p0.x, p0.y, p4.x, p4.y); return v.origin && (
         <g>
           <VectorArrow origin={v.origin} vector={v.vector} type="force" sceneScale={IDENTITY_SCENE_SCALE}
             pixelLength={v.pixelLength} color={PHYSICS_COLORS.forceNet} label="F_合" strokeWidth={1.5} dashed font={font} />

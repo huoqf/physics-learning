@@ -31,19 +31,27 @@ interface ConductingRodProps {
  * 3D 倾斜导轨的基准布局（与 Rails 组件共享同一坐标系）
  * 所有坐标基于此布局，通过 scale 变换缩放
  */
-const getInclinedLayout = (L: number) => {
+const getInclinedLayout = (L: number, theta: number = 30) => {
   const scaleL = 0.5 + L * 0.125
   const dx = 60 * scaleL
   const dy = 40 * scaleL
+
+  // 与 Rails.tsx 的 3D 斜面布局保持一致：用压缩后的屏幕倾角表达真实 θ，
+  // 既保留角度变化趋势，又避免大角度时导轨挤出主视图。
+  const displayAngleDeg = Math.max(8, Math.min(25, theta * 0.55 + 2))
+  const displayAngleRad = (displayAngleDeg * Math.PI) / 180
+  const railRun = 300
+  const railRise = railRun * Math.tan(displayAngleRad)
+
   return {
     // 导轨1 后侧：低处 → 高处
     rail1StartX: 120,
     rail1StartY: 230,
-    rail1EndX: 420,
-    rail1EndY: 130,
+    rail1EndX: 120 + railRun,
+    rail1EndY: 230 - railRise,
     // 导轨1 长度方向跨度
-    railDx: 300,
-    railDy: -100,
+    railDx: railRun,
+    railDy: -railRise,
     // 导轨2 前侧偏移
     dx,
     dy,
@@ -64,6 +72,7 @@ const getInclinedLayout = (L: number) => {
 export const ConductingRod: React.FC<ConductingRodProps> = ({
   type,
   x = 250,
+  theta = 30,
   currentDir = 'in',
   spacing = 100,
   width = 500,
@@ -130,7 +139,7 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
 
   if (type === 'inclined') {
     // 3D 倾斜视图中的导体棒
-    const layout = getInclinedLayout(L)
+    const layout = getInclinedLayout(L, theta)
 
     // 计算缩放比例（基于默认 500×300 画布）
     const scaleX = width / 500

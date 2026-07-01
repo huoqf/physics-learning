@@ -49,7 +49,8 @@ export { BarMagnet } from './BarMagnet'
 export { MagneticPoles } from './MagneticPoles'
 export { ParametricMagneticField } from './ParametricMagneticField'
 export { Solenoid } from './Solenoid'
-export { MagneticFieldGrid, MagneticFieldSymbols, drawMagneticFieldGrid } from './MagneticFieldGrid'
+export { MagneticFieldGrid, MagneticFieldSymbols } from './MagneticFieldGrid'
+export { drawMagneticFieldGrid } from './drawMagneticFieldGrid'
 
 // ============================================================================
 // 电磁学 - 电磁感应 (Electromagnetic Induction)

@@ -30,16 +30,28 @@ interface RailsProps {
  * 3D 倾斜导轨的基准布局（默认 500×300 画布）
  * 所有坐标基于此布局，通过 scale 变换缩放
  */
-const getInclinedLayout = (L: number) => {
+const getInclinedLayout = (L: number, theta: number = 30) => {
   const scaleL = 0.5 + L * 0.125
   const dx = 60 * scaleL
   const dy = 40 * scaleL
+
+  // 3D 主视图是透视示意图，不能按真实 tanθ 等比例绘制，否则 θ=60° 会挤出画布。
+  // 这里用单调压缩后的屏幕倾角：默认 θ=30° 约等于旧版 18.4°，同时让“垂直斜面磁场”
+  // 与实际显示的导轨方向保持几何一致，避免切换磁场方向时看起来不真实。
+  const displayAngleDeg = Math.max(8, Math.min(25, theta * 0.55 + 2))
+  const displayAngleRad = (displayAngleDeg * Math.PI) / 180
+  const railRun = 300
+  const railRise = railRun * Math.tan(displayAngleRad)
+
   return {
     // 导轨1 后侧：低处 → 高处
     rail1StartX: 120,
     rail1StartY: 230,
-    rail1EndX: 420,
-    rail1EndY: 130,
+    rail1EndX: 120 + railRun,
+    rail1EndY: 230 - railRise,
+    // 导轨1 长度方向跨度
+    railDx: railRun,
+    railDy: -railRise,
     // 导轨2 前侧偏移
     dx,
     dy,
@@ -178,7 +190,7 @@ export const Rails: React.FC<RailsProps> = ({
 
   if (type === 'inclined') {
     // 3D 倾斜视图
-    const layout = getInclinedLayout(L)
+    const layout = getInclinedLayout(L, theta)
     const shadowGradId = `rails-shadow-grad-${uniqueId}`
     const railMetalGradId = `rail-metal-grad-${uniqueId}`
 
