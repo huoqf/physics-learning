@@ -8,6 +8,7 @@ import { createSceneScale, worldToPixel } from '@/scene'
 import type { SceneConfig } from '@/scene'
 import { calcTrajectoryCenter } from '@/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { drawMagneticFieldGrid } from '@/components/Physics/MagneticFieldGrid'
 
 export function SimulationView() {
   const [sizeRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.square)
@@ -131,21 +132,14 @@ export function SimulationView() {
     ctx.fillRect(0, 0, canvas.width, bStartY)
     ctx.restore()
     
-    // 2. 绘制磁场方向背景网格符号 (⊙ 出纸面 / ⊗ 入纸面)，使用主题色中对应的 dot/cross 颜色，避免混淆与硬编码
-    ctx.save()
-    ctx.globalAlpha = 0.35 // 设置符号清晰度
-    ctx.fillStyle = B >= 0 ? PHYSICS_COLORS.magneticFieldDot : PHYSICS_COLORS.magneticFieldCross
-    ctx.font = '16px Courier New'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    const symbol = B >= 0 ? '⊙' : '⊗'
-    const spacing = 55
-    for (let x = spacing / 2; x < canvas.width; x += spacing) {
-      for (let y = spacing / 2; y < bStartY; y += spacing) {
-        ctx.fillText(symbol, x, y)
-      }
-    }
-    ctx.restore()
+    // 2. 绘制磁场方向背景网格符号 (⊙ 出纸面 / ⊗ 入纸面)
+    drawMagneticFieldGrid(ctx, {
+      x: 0,
+      y: 0,
+      w: canvas.width,
+      h: bStartY,
+      B,
+    })
     
     // 3. 绘制磁场边界直线线段
     ctx.beginPath()

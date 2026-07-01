@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
+import { MagneticFieldGrid } from '@/components/Physics/MagneticFieldGrid'
 
 interface UniformMagneticFieldProps {
   x: number
@@ -17,28 +18,6 @@ export const UniformMagneticField: React.FC<UniformMagneticFieldProps> = ({
   h,
   B,
 }) => {
-  const rows = 4
-  const cols = 6
-
-  const points = useMemo(() => {
-    const arr: { id: string; px: number; py: number }[] = []
-    if (Math.abs(B) < 1e-4) return arr
-
-    const dx = w / (cols + 1)
-    const dy = h / (rows + 1)
-
-    for (let r = 1; r <= rows; r++) {
-      for (let c = 1; c <= cols; c++) {
-        arr.push({
-          id: `${r}-${c}`,
-          px: x + c * dx,
-          py: y + r * dy,
-        })
-      }
-    }
-    return arr
-  }, [x, y, w, h, B])
-
   const hasField = Math.abs(B) > 1e-4
 
   // 背景层颜色与不透明度
@@ -66,22 +45,17 @@ export const UniformMagneticField: React.FC<UniformMagneticFieldProps> = ({
       {/* 磁场方向标志点阵 */}
       {hasField ? (
         <g>
-          {points.map((pt) => (
-            <text
-              key={pt.id}
-              x={pt.px}
-              y={pt.py}
-              fontSize="16"
-              fill={PHYSICS_COLORS.magneticFieldLine}
-              fillOpacity="0.8"
-              fontWeight="bold"
-              textAnchor="middle"
-              dominantBaseline="middle"
-              style={{ userSelect: 'none' }}
-            >
-              {B > 0 ? '⊗' : '⊙'}
-            </text>
-          ))}
+          <MagneticFieldGrid
+            x={x}
+            y={y}
+            w={w}
+            h={h}
+            direction={B > 0 ? 'in' : 'out'}
+            rows={4}
+            cols={6}
+            color={PHYSICS_COLORS.magneticFieldLine}
+            opacity={0.8}
+          />
           {/* 在右上角渲染大大的带矢量箭头的 B 磁力线标识 */}
           <g transform={`translate(${x + w - 16}, ${y + 14})`}>
             {/* 上方的矢量箭头 */}

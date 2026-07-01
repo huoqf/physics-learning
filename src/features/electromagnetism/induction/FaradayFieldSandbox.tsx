@@ -1,4 +1,4 @@
-﻿/**
+/**
  * FaradayFieldSandbox.tsx — 法拉第电磁感应进阶模式场景（匀变磁场）
  *
  * 从 FaradayLaw.tsx 拆分：进阶模式 (mode=1) 的中间屏渲染。
@@ -6,6 +6,7 @@
 import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { MagneticFieldSymbols } from '@/components/Physics/MagneticFieldGrid'
 import { COIL_RX, COIL_RY } from './hooks/useFaradayPhysics'
 
 interface Props {
@@ -34,26 +35,11 @@ export function FaradayFieldSandbox({
   return (
     <g>
       {/* 1. 动态磁场 6x5 阵列 */}
-      {fieldDots.map((pt, i) => (
-        <g key={`fdot-${i}`} transform={`translate(${pt.x}, ${pt.y})`} opacity={magneticFieldOpacity}>
-          {B_is_in ? (
-            <g>
-              <circle cx="0" cy="0" r="6" fill="none"
-                stroke={PHYSICS_COLORS.magneticFieldCross} strokeWidth="1.2" />
-              <line x1="-3.5" y1="-3.5" x2="3.5" y2="3.5"
-                stroke={PHYSICS_COLORS.magneticFieldCross} strokeWidth="1.2" />
-              <line x1="3.5" y1="-3.5" x2="-3.5" y2="3.5"
-                stroke={PHYSICS_COLORS.magneticFieldCross} strokeWidth="1.2" />
-            </g>
-          ) : (
-            <g>
-              <circle cx="0" cy="0" r="6" fill="none"
-                stroke={PHYSICS_COLORS.magneticFieldDot} strokeWidth="1.2" />
-              <circle cx="0" cy="0" r="1.8" fill={PHYSICS_COLORS.magneticFieldDot} />
-            </g>
-          )}
-        </g>
-      ))}
+      <MagneticFieldSymbols
+        points={fieldDots}
+        direction={B_is_in ? 'in' : 'out'}
+        opacity={magneticFieldOpacity}
+      />
 
       {/* 2. 磁感应强度状态条 */}
       <text x="16" y="30" fontSize={CANVAS_STYLE.font.axisSize}

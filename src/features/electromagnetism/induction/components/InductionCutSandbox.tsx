@@ -1,5 +1,5 @@
 import React from 'react'
-import { ConductingRod } from '@/components/Physics'
+import { ConductingRod, MagneticFieldGrid } from '@/components/Physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
 
 interface InductionCutSandboxProps {
@@ -12,7 +12,7 @@ interface InductionCutSandboxProps {
 
 /**
  * 实验一：导体切割磁感线沙盒组件
- * 
+ *
  * 职责：
  * 1. 渲染匀强磁场矩形区域与磁感线 (⊗)
  * 2. 渲染水平金属导轨
@@ -36,24 +36,6 @@ export const InductionCutSandbox: React.FC<InductionCutSandboxProps> = ({
   const fieldRight = 280
   const fieldTop = 100
   const fieldBottom = 220
-
-  // 磁感线阵列：4行 x 5列
-  const rows = 4
-  const cols = 5
-  const fieldDots = React.useMemo(() => {
-    const dots: { x: number; y: number }[] = []
-    const xStep = (fieldRight - fieldLeft) / (cols - 1)
-    const yStep = (fieldBottom - fieldTop) / (rows - 1)
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        dots.push({
-          x: fieldLeft + c * xStep,
-          y: fieldTop + r * yStep,
-        })
-      }
-    }
-    return dots
-  }, [fieldLeft, fieldRight, fieldTop, fieldBottom])
 
   // 回路连线导线：从导轨右端(320)延伸到主副线圈固定端点插头 (340, 280) 和 (500, 280)
   // 上导轨连线：(320, 110) -> (320, 280) -> (340, 280)
@@ -97,13 +79,16 @@ export const InductionCutSandbox: React.FC<InductionCutSandboxProps> = ({
       </text>
 
       {/* 2. 磁感线 (⊗ 阵列) */}
-      {fieldDots.map((pt, i) => (
-        <g key={`cross-${i}`} transform={`translate(${pt.x}, ${pt.y})`} opacity="0.35">
-          <circle cx="0" cy="0" r="5" fill="none" stroke={PHYSICS_COLORS.magneticFieldCross} strokeWidth="1.2" />
-          <line x1="-3" y1="-3" x2="3" y2="3" stroke={PHYSICS_COLORS.magneticFieldCross} strokeWidth="1.2" />
-          <line x1="3" y1="-3" x2="-3" y2="3" stroke={PHYSICS_COLORS.magneticFieldCross} strokeWidth="1.2" />
-        </g>
-      ))}
+      <MagneticFieldGrid
+        x={fieldLeft}
+        y={fieldTop}
+        w={fieldRight - fieldLeft}
+        h={fieldBottom - fieldTop}
+        direction="in"
+        rows={4}
+        cols={5}
+        radius={5}
+      />
 
       {/* 3. 水平导轨平行线 (金属材质色) */}
       <line

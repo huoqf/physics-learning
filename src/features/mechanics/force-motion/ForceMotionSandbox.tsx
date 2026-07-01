@@ -4,6 +4,7 @@ import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
 import { useCanvasSize } from '@/utils/useCanvasSize'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { VectorArrow, Ball, Block, SportsCar, ConductingRod, PhysicsGround, CapacitorPlates } from '@/components/Physics'
+import { MagneticFieldSymbols } from '@/components/Physics/MagneticFieldGrid'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 import type { ForceMotionState } from '@/physics'
@@ -532,13 +533,11 @@ export default function ForceMotionSandbox({ state, trajectory, domainTrajectory
             <line x1={view.originX - 35} y1={0} x2={view.originX - 35} y2={height} stroke={SCENE_COLORS.materials.structStrokeLight} strokeWidth={3} />
             <line x1={view.originX + 35} y1={0} x2={view.originX + 35} y2={height} stroke={SCENE_COLORS.materials.structStrokeLight} strokeWidth={3} />
             
-            {magneticGrid.map((p, idx) => (
-              <g key={`b-cross-${idx}`} opacity={0.35} transform={`translate(${p.x}, ${p.y})`}>
-                <circle r={6} fill="none" stroke={PHYSICS_COLORS.magneticFieldCross} strokeWidth={1} />
-                <line x1={-3} y1={-3} x2={3} y2={3} stroke={PHYSICS_COLORS.magneticFieldCross} strokeWidth={1} />
-                <line x1={3} y1={-3} x2={-3} y2={3} stroke={PHYSICS_COLORS.magneticFieldCross} strokeWidth={1} />
-              </g>
-            ))}
+            <MagneticFieldSymbols
+              points={magneticGrid}
+              direction="in"
+              strokeWidth={1}
+            />
           </>
         )}
 

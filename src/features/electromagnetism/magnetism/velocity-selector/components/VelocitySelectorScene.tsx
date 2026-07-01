@@ -3,6 +3,7 @@ import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { CapacitorPlates } from '@/components/Physics/CapacitorPlates'
 import { ParticleEmitter } from '@/components/Physics/ParticleEmitter'
+import { MagneticFieldSymbols } from '@/components/Physics/MagneticFieldGrid'
 import { worldToPixel } from '@/scene'
 import { CANVAS_STYLE, FONT, PHYSICS_COLORS } from '@/theme/physics'
 import type { VelocitySelectorChartData, VelocitySelectorChartGeometry, VelocitySelectorLayout, VelocitySelectorParams, MagneticFieldSign } from '../model/velocitySelectorModel'
@@ -129,20 +130,11 @@ export function VelocitySelectorScene({
         <VectorDefs colors={[PHYSICS_COLORS.velocity, PHYSICS_COLORS.lorentzForce, PHYSICS_COLORS.electricForce]} />
       </defs>
 
-      {magneticFieldSigns.map((cross) => (
-        <text
-          key={cross.id}
-          x={cross.x}
-          y={cross.y + 5}
-          fontSize={font(15)}
-          fill={PHYSICS_COLORS.magneticFieldCross}
-          opacity="0.32"
-          textAnchor="middle"
-          fontWeight="bold"
-        >
-          ⊗
-        </text>
-      ))}
+      <MagneticFieldSymbols
+        points={magneticFieldSigns.map((s) => ({ x: s.x, y: s.y + 5 }))}
+        direction="in"
+        opacity={0.32}
+      />
 
       {params.mode === 0 && singleParticle && showVectors && (
         <BasicVectors singleParticle={singleParticle} layout={layout} />
