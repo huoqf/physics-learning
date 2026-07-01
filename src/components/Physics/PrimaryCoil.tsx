@@ -191,4 +191,4 @@ export const PrimaryCoil: React.FC<PrimaryCoilProps> = ({
   )
 }
 
-export default PrimaryCoil
+

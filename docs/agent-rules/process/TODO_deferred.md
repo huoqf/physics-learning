@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 下文"已从待办移出"仅用于避免重复排期；详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-06-30
+> 最后更新：2026-07-01
 
 ---
 
@@ -37,17 +37,17 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 4. 新人维护上下文过大 → 模块化降低认知负担
 
 **验收标准**（拆分后必须满足至少一项）：
+- 物理计算与渲染逻辑解耦（物理计算逻辑完全隔离到纯函数或专用 hook 中，组件 JSX 内零物理公式）
 - 新增了可独立运行的单元测试
-- 物理计算与渲染逻辑解耦
-- 单文件行数降到 500 以下
+- 单文件行数降到 500 以下且无物理计算与 JSX 混写
 - 减少了跨模块耦合
 
 **铁律**：
 - 一次只拆一个动画，每次只抽一个层次，每次补一组测试
-- 物理 hook 零 JSX：`hooks/useXxxPhysics.ts` 只返回数据，不含 `<` 标签
+- 物理 hook 零 JSX：`hooks/useXxxPhysics.ts` 只返回数据，不含 `<` 标签；组件 JSX 零物理公式（即运动学/动力学/电磁学等物理计算逻辑）
 - 组件复用优先：场景中已有 `src/components/` 下的组件时必须直接使用
 - 拆完跑 `npm run check && npm test`
-- **不拆的情况**：文件虽长但职责清晰、无测试需求、拆分后收益不明显
+- **不拆的情况**：文件虽长但职责清晰、无物理计算与 JSX 混写、无测试需求、拆分后收益不明显
 
 ---
 
@@ -62,6 +62,126 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 > 观察：`EquilibriumAnimation.tsx`(688)、`MomentumConservationAnimation.tsx`(671)、`KeplerAnimation.tsx`(621)、`FrictionAnimation.tsx`(598)、`PowerTransmission.tsx`(594)、`SpringCompositeAnimation.tsx`(585)、`TIRAnimation.tsx`(564)、`FieldLines.tsx`(559)、`ConnectedBodiesAnimation.tsx`(557)、`ObliqueThrowAnimation.tsx`(534)、`GravityBasicAnimation.tsx`(519)、`CircularMotionAnimation.tsx`(506)、`FreeFallDripAnimation.tsx`(505) 已超过或临近阈值，但职责相对集中，暂不作为首批拆分目标。
 
 ---
+
+## 一.五、CANVAS_PRESETS 废弃别名清理 & 旧方案迁移
+
+> 登记日期：2026-07-01 | 背景：preset 收敛决策（见 `CANVAS_PRESETS_AUDIT.md §2026-07-01`）
+
+---
+
+### 1.5.1 删除废弃别名、批量替换组件（P1）
+
+**目标**：将 39 个调用废弃 preset 的组件统一改用 `wide` / `tall` / `square`，随后删除 `spacing.ts` 中的 4 个废弃别名。
+
+**替换映射**：
+
+| 废弃 preset | 尺寸 | → 目标 preset | 尺寸 | 影响组件数 |
+|---|---|---|---|---:|
+| `standard` | 700×420 | `wide` | 700×400 | 9 |
+| `mediumTall` | 650×450 | `tall` | 700×450 | 6 |
+| `mediumWide` | 650×400 | `wide` | 700×400 | 7 |
+| `extraWide` | 800×440 | `wide` | 700×400 | 9 |
+
+> `preserveAspectRatio="xMidYMid meet"` 保证尺寸差异在渲染层自动吸收，无需手动调整布局。  
+> `extraWide` → `wide` 宽度由 800 缩至 700，光学/变压器等宽向场景需验证关键标注不被截断。
+
+**待替换组件清单**（来源：`CANVAS_PRESETS_AUDIT.md`）：
+
+<details>
+<summary>standard → wide（9 个）</summary>
+
+| 文件 | 行 |
+|---|---|
+| `mechanics/energy/EnergyConservationAnimation.tsx` | 38 |
+| `mechanics/energy/PotentialEnergyAnimation.tsx` | 46 |
+| `mechanics/energy/PowerAnimation.tsx` | 34 |
+| `mechanics/energy/KineticEnergyAnimation.tsx` | 31 |
+| `mechanics/dynamics/FrictionAnimation.tsx` | 26 |
+| `electromagnetism/magnetism/VelocitySelector.tsx` | 25 |
+| `electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField.tsx` | 11 |
+| `electromagnetism/dc-circuits/ClosedCircuit.tsx` | 15 |
+| `thermodynamics/kinematics/IntermolecularForcesAnimation.tsx` | 35 |
+
+</details>
+
+<details>
+<summary>mediumTall → tall（6 个）</summary>
+
+| 文件 | 行 |
+|---|---|
+| `mechanics/dynamics/GravityAnimation.tsx` | 23 |
+| `mechanics/dynamics/GravityBasicAnimation.tsx` | 41 |
+| `mechanics/dynamics/EquilibriumAnimation.tsx` | 26 |
+| `mechanics/gravitation/KeplerAnimation.tsx` | 28 |
+| `mechanics/gravitation/SatelliteAnimation.tsx` | 124 |
+| `mechanics/dynamics/VectorAdditionAnimation.tsx` | 30 |
+
+</details>
+
+<details>
+<summary>mediumWide → wide（7 个）</summary>
+
+| 文件 | 行 |
+|---|---|
+| `electromagnetism/dc-circuits/OhmLaw.tsx` | 11 |
+| `electromagnetism/dc-circuits/CircuitAnalysis.tsx` | 58 |
+| `mechanics/dynamics/SpringForceAnimation.tsx` | 21 |
+| `mechanics/dynamics/SpringForceCenterExtra.tsx` | 11 |
+| `mechanics/dynamics/WeightlessnessCenterExtra.tsx` | 11 |
+| `mechanics/dynamics/NewtonSecondCenterExtra.tsx` | 11 |
+| `mechanics/dynamics/ConnectedBodiesAnimation.tsx` | 53 |
+
+</details>
+
+<details>
+<summary>extraWide → wide（9 个，需视觉验证）</summary>
+
+| 文件 | 行 | 验证重点 |
+|---|---|---|
+| `electromagnetism/induction/FaradayLaw.tsx` | 24 | 线圈+导轨横向布局 |
+| `electromagnetism/induction/PowerTransmission.tsx` | 53 | 变压器线圈间距 |
+| `electromagnetism/induction/ACGeneration.tsx` | 33 | 旋转线圈 |
+| `mechanics/kinematics/VelocityAnimationStrip.tsx` | 34 | 频闪条带宽度 |
+| `mechanics/force-motion/ForceMotionTripleChart.tsx` | 274 | 三图并排间距 |
+| `optics/thin-lens/ThinLensAnimation.tsx` | 158 | 见 §1.5.2 |
+| `optics/total-internal-reflection/TIRAnimation.tsx` | 37 | 光路长度 |
+| `optics/refraction/RefractionAnimation.tsx` | 41 | 界面+光路 |
+| `optics/reflection/ReflectionAnimation.tsx` | 30 | 见 §1.5.2 |
+
+</details>
+
+**操作步骤**：
+1. 批量替换：`CANVAS_PRESETS.standard` → `CANVAS_PRESETS.wide`（同步更新 `designWidth/Height` 为 `700/400`）
+2. 批量替换：`CANVAS_PRESETS.mediumTall` → `CANVAS_PRESETS.tall`（同步更新 `designWidth/Height` 为 `700/450`）
+3. 批量替换：`CANVAS_PRESETS.mediumWide` → `CANVAS_PRESETS.wide`（同步更新 `designWidth/Height` 为 `700/400`）
+4. 替换 `extraWide` 组件（跳过 §1.5.2 中待迁移的 `ReflectionAnimation`/`ThinLensAnimation`）
+5. 视觉验证 `extraWide` 组件（宽度由 800→700，确认内容无截断）
+6. 删除 `spacing.ts` 中的 4 个废弃别名及注释块
+7. `npx tsc --noEmit` 零错误
+8. 更新本条为已完成
+
+---
+
+### 1.5.2 旧方案组件迁移至 useCanvasSize + useViewport（P2）
+
+**目标**：将以下仍沿用固定 `viewBox + 比例常量`（已禁用旧方案，见 `07_CANVAS_SVG_CHART_RULES.md §2.3`）的组件迁移为方式A。
+
+| 组件 | 路径 | 当前 preset | 迁移方案 |
+|---|---|---|---|
+| `ReflectionAnimation` | `optics/reflection/ReflectionAnimation.tsx` | `extraWide`(800×440) | → `wide`(700×400) + 方式A |
+| `ThinLensAnimation` | `optics/thin-lens/ThinLensAnimation.tsx` | `extraWide`(800×440) | → `wide`(700×400) + 方式A |
+
+**迁移标准**：
+- 删除组件内固定 `VIEW_WIDTH / VIEW_HEIGHT` 常量及比例常量对象
+- 改用 `useCanvasSize(CANVAS_PRESETS.wide)` + `useViewport(canvasSize, { designWidth: 700, designHeight: 400 })`
+- SVG 改为方式A：`viewBox="0 0 700 400" preserveAspectRatio="xMidYMid meet"`，删除 `vp.transform`（无 overlay 场景）
+- 验证光路、界面、标注在不同窗口尺寸下无截断
+- 补充 `npx tsc --noEmit` 零错误
+
+**前置条件**：§1.5.1 完成后再处理（避免 preset 变更与方案变更交叉干扰）。
+
+---
+
 
 ## 二、响应式与颜色规范
 
@@ -87,7 +207,7 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 ### 3.1 AnimationPage 协调职责监控（P2）
 
-> 当前 411 行，未超过 500 行阈值。触发拆分条件：行数 > 500 或职责 > 8 类。
+> 当前 411 行。触发拆分条件：行数 > 500，或存在物理计算与 JSX 混写，或职责 > 8 类。
 
 膨胀触发区域：参数过滤（showIf/hideIf）、SidebarExtra props 组装、模式切换、RightPhysicsPanel 计算逻辑。
 如继续增长，优先抽 hook：`useFilteredParams()`、`useSidebarExtraProps()`、`useAnimationMode()`。

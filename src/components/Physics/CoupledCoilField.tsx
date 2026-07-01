@@ -186,4 +186,4 @@ export const CoupledCoilField: React.FC<CoupledCoilFieldProps> = ({
   );
 };
 
-export default CoupledCoilField;
+

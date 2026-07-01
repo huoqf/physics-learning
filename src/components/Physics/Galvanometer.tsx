@@ -218,4 +218,4 @@ export const Galvanometer: React.FC<GalvanometerProps> = ({
   )
 }
 
-export default Galvanometer
+

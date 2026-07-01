@@ -80,8 +80,19 @@
   --color-warning-600: #ea580c;
   --color-warning-700: #c2410c;
   --color-warning-800: #9a3412;
-  --color-warning-900: #7c2d12;
   --color-warning-950: #431407;
+
+  /* ─── 统一动效时长与缓动 (配合 src/theme/motion.ts) ─────────────────── */
+  --transition-duration-instant: 100ms;
+  --transition-duration-fast: 200ms;
+  --transition-duration-normal: 300ms;
+  --transition-duration-slow: 500ms;
+  --transition-duration-xslow: 800ms;
+
+  --transition-timing-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-timing-decelerate: cubic-bezier(0.0, 0.0, 0.2, 1);
+  --transition-timing-accelerate: cubic-bezier(0.4, 0.0, 1, 1);
+  --transition-timing-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* ─── 语义字体大小 ─────────────────────────────────────────────── */
@@ -139,3 +150,11 @@
   color: var(--color-neutral-700);
 }
 
+/* ─── 排版层级语义类（对应 02_UI_RULES §7 排版层级规范）─────────── */
+@utility text-body {
+  font-size: 15px;
+}
+
+@utility text-body-sm {
+  font-size: 13px;
+}

@@ -352,4 +352,4 @@ export const Rails: React.FC<RailsProps> = ({
   )
 }
 
-export default Rails
+

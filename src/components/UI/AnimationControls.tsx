@@ -146,4 +146,3 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
   )
 }
 
-export default AnimationControls

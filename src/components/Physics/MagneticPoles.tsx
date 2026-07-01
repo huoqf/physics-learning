@@ -417,4 +417,4 @@ export const MagneticPoles: React.FC<MagneticPolesProps> = ({
   )
 }
 
-export default MagneticPoles
+

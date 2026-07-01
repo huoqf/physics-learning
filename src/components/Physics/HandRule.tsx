@@ -243,4 +243,4 @@ export function HandRule({
   )
 }
 
-export default HandRule
+

@@ -183,4 +183,3 @@ export const DiscoveryGuide: React.FC<DiscoveryGuideProps> = ({
   )
 }
 
-export default DiscoveryGuide

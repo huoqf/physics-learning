@@ -57,19 +57,35 @@ export const LAYOUT = {
 // ─── 动画画布预设尺寸（useCanvasSize 回退值）────────────────────────────────
 // 覆盖高频使用的 { width, height } 组合，减少组件内硬编码
 export const CANVAS_PRESETS = {
-  /** 700×450 — 动量、库仑、电容、电场等 11 个动画 */
-  tall:       { width: 700, height: 450 },
-  /** 700×420 — 能量、速度选择器、摩擦力等 8 个动画 */
-  standard:   { width: 700, height: 420 },
-  /** 650×450 — 万有引力、矢量合成、开普勒等 6 个动画 */
-  mediumTall: { width: 650, height: 450 },
-  /** 700×400 — 匀加速、感应、热学等 15 个动画 */
+  /**
+   * 700×400 — 横向场景（运动学、电磁感应、热力学等）
+   * 宽高比约 7:4，适合大多数横向展开的物理演示
+   */
   wide:       { width: 700, height: 400 },
-  /** 650×400 — 欧姆定律、弹簧力等 4 个动画 */
-  mediumWide: { width: 650, height: 400 },
-  /** 600×600 — 圆周运动、向心力等 3 个动画 */
+  /**
+   * 700×450 — 高向场景（动量、静电、竖直运动等）
+   * 宽高比约 14:9，适合有竖向运动轨迹的场景
+   */
+  tall:       { width: 700, height: 450 },
+  /**
+   * 600×600 — 正方形场景（圆周运动、向心力等）
+   * 1:1 比例，适合旋转/圆形轨迹演示
+   */
   square:     { width: 600, height: 600 },
-  /** 800×440 — 变压器、法拉第、光学等 7 个动画 */
+
+  // ─── 废弃别名（@deprecated）────────────────────────────────────────────
+  // 存量组件过渡期保留，新组件禁止使用。统一迁移至上方 3 个 preset 后删除。
+  // standard   → wide   (700×420 → 700×400，高度差 20px，preserveAspectRatio 自适应无感知)
+  // mediumTall → tall   (650×450 → 700×450，宽度差 50px，比例 < 7%)
+  // mediumWide → wide   (650×400 → 700×400，宽度差 50px)
+  // extraWide  → wide   (800×440 → 700×400，光学/变压器横向布局靠 SVG 自适应)
+  /** @deprecated 迁移至 wide */
+  standard:   { width: 700, height: 420 },
+  /** @deprecated 迁移至 tall */
+  mediumTall: { width: 650, height: 450 },
+  /** @deprecated 迁移至 wide */
+  mediumWide: { width: 650, height: 400 },
+  /** @deprecated 迁移至 wide */
   extraWide:  { width: 800, height: 440 },
 } as const
 

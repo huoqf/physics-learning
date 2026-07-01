@@ -117,4 +117,3 @@ export const Spring: React.FC<SpringProps> = ({
   )
 }
 
-export default Spring

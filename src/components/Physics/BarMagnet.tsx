@@ -144,4 +144,4 @@ export const BarMagnet: React.FC<BarMagnetProps> = ({
   )
 }
 
-export default BarMagnet
+

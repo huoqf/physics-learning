@@ -45,7 +45,7 @@
 | 当前步（高亮）| primary-600 4px | primary-50 |
 | 已完成 | success-500 4px | white |
 
-- 展开动效：`height + opacity`，250ms ease-in-out（见 `03_MOTION_RULES`）
+- 展开动效：`height + opacity` 联动，展开/折叠时长见 `03_MOTION_RULES §2`（状态类 `duration.normal`，ease-in-out）
 - 同时展开步骤数：**≤ 2步**（防止认知过载）
 - 同时展开 2 步时：第 1 步的 SVG 小图降级为缩略图（opacity 0.5 + 尺寸缩小 50%），而非完全收起，保留用户对比参考的能力
 - 导航：「上一步」/「下一步」按钮，Primary sm 尺寸

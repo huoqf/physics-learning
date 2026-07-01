@@ -615,4 +615,4 @@ export const RotatingCoil: React.FC<RotatingCoilProps> = ({
   )
 }
 
-export default RotatingCoil
+

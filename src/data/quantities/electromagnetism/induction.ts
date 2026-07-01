@@ -2,8 +2,6 @@ import {
   calculateLenzsLaw,
   calculateCuttingEMF,
   computeRodStateAtTime,
-  calculateMagnetInduction,
-  calculateCoilInduction,
   computeFaradayMagnetFlux,
 } from '../../../physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
@@ -152,6 +150,41 @@ export function handleInduction(
             unit: '',
           },
         ],
+        formulas: [
+          {
+            name: '法拉第电磁感应定律',
+            latex: 'E = n \\frac{\\Delta \\Phi}{\\Delta t}',
+            level: 'core',
+            note: '感应电动势大小由磁通量变化率决定',
+          },
+          {
+            name: '闭合电路欧姆定律',
+            latex: 'I = \\frac{E}{R}',
+            level: 'important',
+            note: '感应电流与感应电动势成正比',
+          },
+        ],
+        gaokaoPoints: [
+          {
+            text: '利用“增反减同”规律判断感应电流的磁场方向',
+            importance: 'gaokao',
+          },
+          {
+            text: '使用右手定则/安培定则判定感应电流的绕行方向',
+            importance: 'gaokao',
+          },
+          {
+            text: '理解“来拒去留”在电磁感应力学效果中的具体表现',
+            importance: 'core',
+          },
+        ],
+        warnings: [
+          {
+            text: '感应磁场并非总与原磁场方向相反。原磁通量减少时，两者方向相同。阻碍的是“变化”，而非阻碍“原磁场本身”。',
+            level: 'warning',
+          },
+        ],
+        mnemonic: '增反减同，来拒去留；增缩减扩，力图阻碍。',
       }
     }
     case 'anim-cutting-emf': {
@@ -233,19 +266,64 @@ export function handleInduction(
       }
     }
     case 'anim-electromagnetic-induction': {
-      const mode = params.mode ?? 0 // 0=基础: 磁铁运动, 1=进阶: 双线圈回路
-      const N = 10 // 固定线圈匝数
+      const mode = params.mode ?? 0 // 0=切割, 1=穿过, 2=双线圈
+      const subCircuitSwitch = params.subCircuitSwitch ?? 1
 
       if (mode === 0) {
-        // ── 基础模式：磁铁插入线圈 ──
-        const magnetX = params.magnetX ?? 200
+        // ── 模式一：导体切割磁感线 ──
+        const rodX = params.rodX ?? 200
+        const rodSpeed = params.rodSpeed ?? 0
+
+        const B0 = 1.0
+        const phi = B0 * Math.max(0, (rodX - 80) / 400)
+        const dPhi = B0 * (rodSpeed / 400)
+        const currentI = subCircuitSwitch === 1 ? dPhi * 2.2 : 0
+        const theta = Math.max(-1, Math.min(1, currentI * 1.5))
+
+        let currentDirectionText = '无感应电流'
+        if (Math.abs(theta) > 0.05) {
+          currentDirectionText = theta > 0 ? '向右偏转 (+)' : '向左偏转 (-)'
+        }
+
+        return {
+          quantities: [
+            ...base,
+            { label: '导体棒位置 x', value: rodX.toFixed(0), unit: 'px' },
+            { label: '导体棒速度 v', value: rodSpeed.toFixed(1), unit: 'px/s', color: PHYSICS_COLORS.velocity },
+            { label: '回路磁通量 Φ', value: phi.toFixed(3), unit: 'Wb', color: PHYSICS_COLORS.magneticField },
+            { label: '磁通量变化率 dΦ/dt', value: dPhi.toFixed(3), unit: 'Wb/s', color: PHYSICS_COLORS.magneticField, highlight: Math.abs(dPhi) > 0.002 ? 'extreme' : 'zero' },
+            { label: '电流计指针偏转', value: currentDirectionText, unit: '', color: PHYSICS_COLORS.kineticEnergy, highlight: Math.abs(theta) > 0.05 ? 'extreme' : 'zero' },
+          ],
+          formulas: [
+            { name: '法拉第电磁感应定律 (动生)', latex: 'E = BLv', level: 'core' },
+            { name: '闭合电路欧姆定律', latex: 'I = \\frac{E}{R}', level: 'core' },
+          ],
+          gaokaoPoints: [
+            { text: '导体切割磁感线是产生感应电动势的经典动生形式，电动势大小由 E=BLv 决定。', importance: 'gaokao' },
+            { text: '感应回路中是否产生感应电流，除了要有感应电动势之外，还必须使回路处于闭合状态。', importance: 'gaokao' },
+          ],
+          warnings: [
+            { text: '易错防坑：若感应回路断开（如副开关断开），即使金属棒高速切割，也只产生电动势而无电流，电流计指针不会偏转。', level: 'danger' }
+          ],
+        }
+      } else if (mode === 1) {
+        // ── 模式二：磁铁穿过线圈 ──
+        const magnetX = params.magnetX ?? 160
         const magnetSpeed = params.magnetSpeed ?? 0
-        const magnetPole = params.magnetPole ?? 1 // 1=左S右N, -1=左N右S
-        const coilX = 400
+        const magnetPole = params.magnetPole ?? 1
+        const coilX = 420
 
-        const { phi, dPhi, theta } = calculateMagnetInduction(magnetX, magnetSpeed, coilX, N, magnetPole)
+        const Phi0 = 1.0
+        const alpha = 0.00015
+        const dx = magnetX - coilX
+        const denom = 1 + alpha * dx * dx
+        const phi = (Phi0 / denom) * magnetPole
 
-        // 判断电流计偏转方向文字
+        const dPhi_dx = (-2 * alpha * dx * Phi0) / (denom * denom)
+        const dPhi = dPhi_dx * magnetSpeed * magnetPole
+        const currentI = subCircuitSwitch === 1 ? -0.15 * 10 * dPhi : 0
+        const theta = Math.max(-1, Math.min(1, currentI * 1.5))
+
         let currentDirectionText = '无感应电流'
         if (Math.abs(theta) > 0.05) {
           currentDirectionText = theta > 0 ? '向右偏转 (+)' : '向左偏转 (-)'
@@ -257,7 +335,7 @@ export function handleInduction(
             { label: '磁铁位置 x', value: magnetX.toFixed(0), unit: 'px' },
             { label: '磁铁速度 v', value: magnetSpeed.toFixed(1), unit: 'px/s', color: PHYSICS_COLORS.velocity },
             { label: '穿过线圈磁通量 Φ', value: phi.toFixed(3), unit: 'Wb', color: PHYSICS_COLORS.magneticField },
-            { label: '磁通量变化率 dΦ/dt', value: dPhi.toFixed(3), unit: 'Wb/s', color: PHYSICS_COLORS.magneticField, highlight: Math.abs(dPhi) > 0.01 ? 'extreme' : undefined },
+            { label: '磁通量变化率 dΦ/dt', value: dPhi.toFixed(3), unit: 'Wb/s', color: PHYSICS_COLORS.magneticField, highlight: Math.abs(dPhi) > 0.002 ? 'extreme' : 'zero' },
             { label: '电流计指针偏转', value: currentDirectionText, unit: '', color: PHYSICS_COLORS.kineticEnergy, highlight: Math.abs(theta) > 0.05 ? 'extreme' : 'zero' },
           ],
           formulas: [
@@ -266,7 +344,6 @@ export function handleInduction(
           ],
           gaokaoPoints: [
             { text: '闭合回路内磁通量发生变化（ΔΦ ≠ 0）是产生感应电流的充要条件。', importance: 'gaokao' },
-            { text: '高考常在大题的第一问中以各种隐蔽几何变化（如线圈旋转、滑条移动、磁铁位移）考查对"变化"的判断。', importance: 'gaokao' },
             { text: '磁通量变化率 dΦ/dt 决定了感应电动势的大小，即决定了电流计指针偏转的幅度。', importance: 'core' },
           ],
           warnings: [
@@ -274,13 +351,38 @@ export function handleInduction(
           ],
         }
       } else {
-        // ── 进阶模式：双线圈回路 ──
-        const R = params.resistance ?? 50
+        // ── 模式三：双线圈互感 ──
+        const primaryCoilX = params.primaryCoilX ?? 220
+        const primaryCoilSpeed = params.primaryCoilSpeed ?? 0
+        const resistance = params.resistance ?? 50
         const dR_dt = params.dR_dt ?? 0
-        const E_source = 10 // 原回路电源电压
+        const circuitSwitch = params.circuitSwitch ?? 1
+        const hasIronCore = params.hasIronCore ?? 1
+        const coilX = 420
 
-        const { phi, dPhi, theta } = calculateCoilInduction(R, dR_dt, E_source, N)
-        const I1 = E_source / R
+        const ironCoreFactor = hasIronCore ? 1.0 : 0.05
+        const effectiveR = circuitSwitch ? resistance : 99999
+        const M0 = 0.8
+        const alphaCoil = 0.00015
+        const dx = primaryCoilX - coilX
+        const denom = 1 + alphaCoil * dx * dx
+        
+        const M = (M0 / denom) * ironCoreFactor
+        const I1 = circuitSwitch ? 10 / effectiveR : 0
+        const phi = M * I1
+
+        const dM_dx = (-2 * alphaCoil * dx * M0 * ironCoreFactor) / (denom * denom)
+        const dPhi_motion = dM_dx * I1 * primaryCoilSpeed
+
+        let dI1_dt = 0
+        if (circuitSwitch && Math.abs(dR_dt) > 0.01) {
+          dI1_dt = - (10 / (effectiveR * effectiveR)) * dR_dt
+        }
+        const dPhi_transformer = M * dI1_dt
+
+        const dPhi = dPhi_motion + dPhi_transformer
+        const currentI = subCircuitSwitch === 1 ? -0.8 * 10 * dPhi : 0
+        const theta = Math.max(-1, Math.min(1, currentI * 1.5))
 
         let currentDirectionText = '无感应电流'
         if (Math.abs(theta) > 0.05) {
@@ -292,7 +394,7 @@ export function handleInduction(
             ...base,
             { label: '原线圈电流 I₁', value: I1.toFixed(2), unit: 'A', color: PHYSICS_COLORS.electricCurrent },
             { label: '穿过副线圈磁通量 Φ', value: phi.toFixed(3), unit: 'Wb', color: PHYSICS_COLORS.magneticField },
-            { label: '磁通量变化率 dΦ/dt', value: dPhi.toFixed(3), unit: 'Wb/s', color: PHYSICS_COLORS.magneticField, highlight: Math.abs(dPhi) > 0.01 ? 'extreme' : undefined },
+            { label: '磁通量变化率 dΦ/dt', value: dPhi.toFixed(3), unit: 'Wb/s', color: PHYSICS_COLORS.magneticField, highlight: Math.abs(dPhi) > 0.002 ? 'extreme' : 'zero' },
             { label: '电流计指针偏转', value: currentDirectionText, unit: '', color: PHYSICS_COLORS.kineticEnergy, highlight: Math.abs(theta) > 0.05 ? 'extreme' : 'zero' },
           ],
           formulas: [
@@ -300,11 +402,11 @@ export function handleInduction(
             { name: '法拉第电磁感应定律', latex: 'E = -N \\frac{d\\Phi}{dt}', level: 'core' },
           ],
           gaokaoPoints: [
-            { text: '双线圈互感：原回路中电阻变化导致原电流变化，从而改变原线圈磁场，使得副线圈中磁通量发生变化。', importance: 'gaokao' },
-            { text: '只要变阻器停止拖动，即使电阻很小（电流很大），由于电流恒定，磁通量变化率为零，副线圈就没有感应电流。', importance: 'gaokao' },
+            { text: '双线圈互感：原回路中电阻变化或位置移动导致原线圈磁场变化，从而在副线圈中产生感应电流。', importance: 'gaokao' },
+            { text: '只要变阻器停止拖动且原线圈静止，由于电流恒定，磁通量变化率为零，副线圈就没有感应电流。', importance: 'gaokao' },
           ],
           warnings: [
-            { text: '易错防坑：在变阻器滑动过程中，电阻变小导致电流增大，磁场增强，穿过副线圈的磁通量增大；电阻变大则相反。变阻器滑动的快慢（dR/dt）直接决定感应电流的强弱。', level: 'warning' }
+            { text: '易错防坑：在变阻器滑动过程中，电阻变化（dR/dt）决定了电流的变化速度，进而决定了副线圈中的磁通量变化率和电流强弱。', level: 'warning' }
           ],
         }
       }

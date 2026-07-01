@@ -138,55 +138,6 @@ tests/
 ├── stores/                 # Store 测试
 └── utils/                  # 工具函数测试
 ```
-│   │   ├── mechanics-momentum.ts
-│   │   ├── electromagnetism-electrostatics.ts
-│   │   ├── electromagnetism-dc-circuits.ts
-│   │   ├── electromagnetism-magnetism.ts
-│   │   ├── electromagnetism-induction.ts
-│   │   └── electromagnetism-ac.ts
-│   ├── animationRegistry.ts # 薄合并入口（合并所有子注册表）
-│   ├── analysisRegistry.ts
-│   └── physicsQuantities.ts # 物理量懒注册入口
-└── stores/
-    ├── useAnimationStore.ts
-    ├── useAppStore.ts
-    ├── useKnowledgeStore.ts
-    ├── useProblemStore.ts
-    ├── useProgressStore.ts
-    ├── usePracticeStore.ts
-    └── useWrongStore.ts
-
-theme/                      # 设计 token（颜色/间距/圆角/阴影/动效）
-├── colors.ts               # UI 语义色，Tailwind 从此导入
-├── physics/                # 物理主题子模块（推荐入口 @/theme/physics）
-│   ├── colors.ts           # 物理量颜色（~110 token，8 分组）
-│   ├── sceneColors.ts      # 场景器材外观色（磁铁/线圈/灯泡/手势等）
-│   ├── chartColors.ts      # 物理图像配色（v-t/P-V/U-I 等 9 组）
-│   ├── canvasStyle.ts      # SVG/Canvas 绘制规范（线宽/箭头/SVG_ATTR/Marker）
-│   └── index.ts            # 统一导出
-├── spacing.ts              # 间距比例尺 + 布局固定尺寸 + 密度上限 + CANVAS_PRESETS
-├── radius.ts               # 圆角规范
-├── shadow.ts               # 阴影规范
-├── motion.ts               # 动效时长与 easing
-├── animationTokens.ts      # 动画 UI token（ANIM_FONT/SHADOW/PANEL/CHART_PAD）
-└── index.ts                # 统一导出入口（可用，但子模块优先）
-
-electron/                   # Electron 预留目录
-├── main.ts
-└── preload.ts
-
-tests/
-├── setup.ts
-├── features/               # 功能模块单元测试（view model、纯函数）
-├── components/             # 组件测试
-│   ├── Chart/
-│   └── Physics/
-├── data/                   # 数据层测试
-├── math/                   # 数学工具测试
-├── physics/                # 物理计算测试
-├── stores/                 # Store 测试
-└── utils/                  # 工具函数测试
-```
 
 新增规则：
 - 新功能模块 → `src/features/`
@@ -290,7 +241,11 @@ tests/
 | 路径 A（强制） | `useViewport()` | 场景元素的比例定位（**全部组件强制**） | `src/utils/useViewport.ts` |
 | 路径 B（保留） | `computeScale()` | 物理量→像素转换，与 useViewport 共存 | `src/utils/coordinate.ts` |
 
-- **useViewport** → 场景元素的比例定位（**全部 Animation 组件强制使用**）
+- **useViewport** → 所有 Animation 组件**强制引用**；但 `vp.transform` 的使用按 overlay 条件选择：
+  - 无 overlay：选**方式A**（viewBox 绑定固定设计尺寸，`preserveAspectRatio` 自动居中，**不使用 vp.transform**）
+  - 有 overlay（如右侧面板遮挡内容区）：选**方式B**（viewBox 绑定真实容器尺寸 + `<g transform={vp.transform}>`）
+  - 仅需读取可视区布局信息（浮层定位等）而不做二次缩放：选方式A + 只读 `vp.visibleX/W/H`
+  - 详见 `docs/agent-rules/ui/07_CANVAS_SVG_CHART_RULES.md §2.4`
 - **computeScale** → 物理量→像素转换（保留，与 useViewport 可共存）
 - **createSceneScaleFromViewport** → 当组件已使用 useViewport 时，用此替代 `createSceneScale` 构建 SceneScale
 - 所有 Animation 组件**禁止**使用绝对像素定位（如 `groundY = height - N`），必须用 `vp.visibleH * ratio` 或 LAYOUT 具名常量
@@ -488,7 +443,7 @@ Tailwind v4 使用 CSS-first 配置，颜色通过 `src/index.css` 中的 `@them
 
 所有组件中的颜色/间距/动效值必须从 `src/theme/` 子模块引用，禁止硬编码。import 路径详见 `ui/02_UI_RULES.md §2`。
 
-动画组件的 UI token（字体/阴影/面板/图表内边距）从 `src/theme/animationTokens.ts` 引用，画布预设尺寸从 `CANVAS_PRESETS`（`src/theme/spacing.ts`）引用。
+动画组件的 UI token（字体/阴影/面板/图表内边距）从 `src/theme/animationTokens.ts` 引用，画布预设尺寸从 `CANVAS_PRESETS`（`src/theme/spacing.ts`）引用。**新组件只允许使用 `wide`（700×400）/ `tall`（700×450）/ `square`（600×600）三个有效 preset，且 `useViewport` 的 `designWidth/designHeight` 必须与所用 preset 数值完全一致**；`standard/mediumTall/mediumWide/extraWide` 为废弃别名（存量组件可继续使用，禁止新增引用）。
 
 **矢量系统 token**：矢量类型枚举（`VectorType`）、视觉权重（`VECTOR_VISUAL_WEIGHT`）、颜色映射（`VECTOR_COLORS`）从 `src/theme/physics/vectorStyle.ts` 引用；箭头几何规格（`ArrowGeometry`）从 `src/theme/physics/arrowStyle.ts` 引用。两者均通过 `@/theme/physics` 统一入口导出。
 
@@ -503,7 +458,7 @@ Tailwind v4 使用 CSS-first 配置，颜色通过 `src/index.css` 中的 `@them
 ### 12.1 代码组织指南
 
 - **Feature 子目录分组**：`features/mechanics/` 和 `features/electromagnetism/` 下按物理主题分子目录（mechanics: kinematics/dynamics/circular/gravitation/momentum/energy；electromagnetism: electrostatics/dc-circuits/magnetism/induction/shared），新增动画文件放入对应子目录，禁止平铺
-- **大文件拆分**：单文件超过 500 行时应按职责拆分为独立模块，推荐三段式结构：
+- **大文件拆分**：当单文件超过 500 行，或将“物理计算”与 JSX 混写在同一组件内时，任一满足即须按职责拆分为独立模块（注：“物理计算”特指运动学、动力学、电磁学等物理公式的直接计算，如 F=ma、积分更新等；不包含坐标转换、比例尺缩放及布局几何换算）。推荐三段式结构：
   ```
   features/<domain>/<topic>/
   ├── XxxAnimation.tsx          # 薄编排层（store 读取 + 组件组合）
@@ -512,7 +467,7 @@ Tailwind v4 使用 CSS-first 配置，颜色通过 `src/index.css` 中的 `@them
   │   ├── hooks/                # 状态逻辑（零 JSX）
   │   └── components/           # 渲染组件（纯展示）
   ```
-  拆分验收标准：新增可独立运行的单元测试，或物理计算与渲染逻辑解耦，或单文件行数降到 500 以下。
+  拆分验收标准：物理计算与渲染逻辑完全解耦（物理计算逻辑完全抽离到纯函数或专用 hook 中，组件 JSX 内零物理公式），或新增了可独立运行的单元测试，或单文件行数降到 500 以下。
 - **重复逻辑提取**：多处出现的相同计算模式（如轨迹插值）应提取为 `src/utils/` 下的通用工具函数
 
 ```ts

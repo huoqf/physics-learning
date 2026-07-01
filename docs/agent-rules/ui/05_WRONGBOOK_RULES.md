@@ -39,7 +39,7 @@
 
 | 操作 | 行为 |
 |------|------|
-| 悬停卡片 | `translateY(-2px)` + shadow-lg，200ms ease-out |
+| 悬停卡片 | `translateY(-2px)` + shadow-lg，卡片 hover 时长见 `03_MOTION_RULES §2`（反馈类 `duration.normal`，ease-out） |
 | 点击卡片 | 跳转 `/analysis/:id?from=wrongbook`（当前标签页，见 06_NAVIGATION_RULES §4） |
 | 已掌握卡片 | 默认折叠至列表底部，点击"显示已掌握"展开 |
 | 长按/右键 | 显示上下文菜单：标记已掌握 / 删除 / 添加笔记 |

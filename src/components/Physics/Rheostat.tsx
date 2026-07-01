@@ -173,4 +173,4 @@ export const Rheostat: React.FC<RheostatProps> = ({
   )
 }
 
-export default Rheostat
+

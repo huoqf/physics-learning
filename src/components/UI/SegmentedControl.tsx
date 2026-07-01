@@ -1,5 +1,4 @@
 import type { FC } from 'react'
-import { duration, easing } from '@/theme/motion'
 
 interface SegmentedControlOption {
   label: string
@@ -51,17 +50,14 @@ export const SegmentedControl: FC<SegmentedControlProps> = ({
                 if (!disabled && !isActive) onChange(opt.value)
               }}
               disabled={disabled}
-              className={`py-1.5 text-xs font-semibold rounded-md transition-all active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 ${
-                disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-              } ${
+              className={[
+                'py-1.5 text-xs font-semibold rounded-md transition-all duration-fast ease-standard active:scale-[0.98]',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1',
+                disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer',
                 isActive
                   ? 'bg-white text-primary-700 shadow-sm font-bold'
-                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/50'
-              }`}
-              style={{
-                transitionDuration: `${duration.fast}ms`,
-                transitionTimingFunction: easing.standard,
-              }}
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/50',
+              ].filter(Boolean).join(' ')}
             >
               {opt.label}
             </button>

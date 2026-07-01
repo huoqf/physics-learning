@@ -1,5 +1,4 @@
 import React from 'react'
-import { duration, easing } from '@/theme/motion'
 
 interface OptionButtonProps {
   label: string
@@ -52,7 +51,7 @@ export const OptionButton: React.FC<OptionButtonProps> = ({
 
   const disabledStyle = disabled ? 'opacity-40 cursor-not-allowed' : ''
 
-  const transitionStyle = `duration-[${duration.fast}ms] ease-[${easing.standard}]`
+  const transitionStyle = 'duration-fast ease-standard'
 
   const baseClasses = [
     'py-2 text-xs rounded-md font-medium transition-all active:scale-[0.97]',
@@ -73,10 +72,6 @@ export const OptionButton: React.FC<OptionButtonProps> = ({
       disabled={disabled}
       onClick={onClick}
       className={`${baseClasses} ${className}`.trim()}
-      style={{
-        transitionDuration: `${duration.fast}ms`,
-        transitionTimingFunction: easing.standard,
-      }}
     >
       {hasDescription ? (
         <span className="flex justify-between items-center w-full">

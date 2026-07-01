@@ -125,7 +125,7 @@ export const Slider: React.FC<SliderProps> = ({
   const displayValue = formatValue ? formatValue(value) : value.toFixed(step < 1 ? 1 : 0)
 
   return (
-    <div className={['w-full', disabled && 'opacity-40 pointer-events-none'].join(' ')}>
+    <div className={['w-full', disabled && 'opacity-40 pointer-events-none'].filter(Boolean).join(' ')}>
       {(label || unit) && (
         <div className="flex items-center justify-between mb-2">
           {label && <span className="text-sm font-medium text-neutral-700">{label}</span>}
@@ -150,11 +150,11 @@ export const Slider: React.FC<SliderProps> = ({
           className="peer absolute -inset-y-2 left-0 w-full h-6 opacity-0 cursor-pointer z-10"
         />
         <div
-          className="absolute left-0 top-0 h-full bg-primary-500 rounded-full pointer-events-none transition-all duration-150 peer-hover:bg-primary-600"
+          className="absolute left-0 top-0 h-full bg-primary-500 rounded-full pointer-events-none transition-all duration-fast ease-standard peer-hover:bg-primary-600"
           style={{ width: `${percentage}%` }}
         />
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary-500 rounded-full shadow-sm pointer-events-none transition-all duration-150 peer-hover:scale-115 peer-focus-visible:ring-2 peer-focus-visible:ring-primary-300 peer-focus-visible:ring-offset-1 peer-active:scale-95"
+          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary-500 rounded-full shadow-sm pointer-events-none transition-all duration-fast ease-standard peer-hover:scale-115 peer-focus-visible:ring-2 peer-focus-visible:ring-primary-300 peer-focus-visible:ring-offset-1 peer-active:scale-95"
           style={{ left: `calc(${percentage}% - 8px)` }}
         />
       </div>

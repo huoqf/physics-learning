@@ -22,7 +22,7 @@ export interface Finger {
 }
 
 export type HandChirality = 'right' | 'left'
-export type HandPose = 'open' | 'half-fist' | 'fist'
+export type HandPose = 'open' | 'half-fist' | 'fist' | 'ampere'
 
 // 主题色（与 theme/physicsColors 保持语义一致；纯渲染用，不引用 store）
 const SKIN_FILL = SCENE_COLORS.hand.skinLight
@@ -147,10 +147,43 @@ const HALF_FIST_FINGERS: Finger[] = [
   ]},
 ]
 
+const AMPERE_FINGERS: Finger[] = [
+  // 拇指：保持张开（直立）状态
+  { name: 'thumb',  baseX: 26, baseY: 6, bones: [
+    { length: 30, angle: 0 }, 
+    { length: 24, angle: 0 },
+  ]},
+  // 食指：完全卷起
+  { name: 'index',  baseX: 22, baseY: -30, bones: [
+    { length: 30, angle: -90 },
+    { length: 24, angle: -90 },
+    { length: 18, angle: -80 },
+  ]},
+  // 中指：完全卷起
+  { name: 'middle', baseX: 4, baseY: -34, bones: [
+    { length: 34, angle: -90 },
+    { length: 28, angle: -90 },
+    { length: 20, angle: -80 },
+  ]},
+  // 无名指：完全卷起
+  { name: 'ring',   baseX: -12, baseY: -32, bones: [
+    { length: 30, angle: -90 },
+    { length: 24, angle: -90 },
+    { length: 18, angle: -80 },
+  ]},
+  // 小拇指：完全卷起
+  { name: 'little', baseX: -24, baseY: -26, bones: [
+    { length: 24, angle: -90 },
+    { length: 20, angle: -90 },
+    { length: 14, angle: -80 },
+  ]},
+]
+
 const POSE_TABLE: Record<HandPose, Finger[]> = {
   open: OPEN_FINGERS,
   'half-fist': HALF_FIST_FINGERS,
   fist: FIST_FINGERS,
+  ampere: AMPERE_FINGERS,
 }
 
 /** 把右手骨骼数据水平镜像得到左手。
@@ -465,4 +498,4 @@ export function SkeletonHand({
   )
 }
 
-export default SkeletonHand
+

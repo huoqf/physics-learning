@@ -20,7 +20,7 @@
 
 - [ ] 动画调度通过 `src/utils/animation.ts`，未直接调用 `requestAnimationFrame`
 - [ ] Canvas 坐标转换通过 `src/utils/coordinate.ts`，未手写坐标计算
-- [ ] **使用 `useViewport`**：SVG `viewBox` = 真实容器尺寸，场景内容在 `<g transform={vp.transform}>` 内渲染
+- [ ] **使用 `useViewport`**：无 overlay 时选方式A（viewBox 固定设计常量 + `preserveAspectRatio="xMidYMid meet"`，不加 `vp.transform`）；有 overlay 时选方式B（viewBox 绑真实容器尺寸 + `<g transform={vp.transform}>`）；详见 `07_CANVAS_SVG_CHART_RULES.md §2.4`
 - [ ] Canvas 元素 ≤ 7 个（黄金法则）
 - [ ] Canvas 文字标注 ≤ 5 个
 - [ ] 物理量颜色符合 `PHYSICS_COLORS` 语义规范

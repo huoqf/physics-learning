@@ -151,4 +151,4 @@ export const EnergyBars: FC<EnergyBarsProps> = ({
     </div>
   )
 }
-export default EnergyBars
+

@@ -138,4 +138,4 @@ export const LightBulb: FC<LightBulbProps> = ({
   )
 }
 
-export default LightBulb
+

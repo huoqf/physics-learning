@@ -118,4 +118,4 @@ export const SVGSingleBar: FC<SVGSingleBarProps> = ({
   )
 }
 
-export default SVGSingleBar
+

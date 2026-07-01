@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { ChevronDown, Award, AlertTriangle, AlertCircle, Info, BookOpen } from 'lucide-react'
 import { KatexFormula } from './KatexFormula'
 import { colors } from '@/theme/colors'
-import { duration } from '@/theme/motion'
 import { useTimedPulse } from '@/hooks/useTimedPulse'
 
 interface PhysicsQuantity {
@@ -109,12 +108,7 @@ export const PhysicsPanel: React.FC<PhysicsPanelProps> = ({
           {quantities.map((q, index) => (
             <div
               key={index}
-              className="flex items-center justify-between py-1.5 border-b border-neutral-100 last:border-0 transition-all"
-              style={{
-                transitionProperty: 'all',
-                transitionDuration: `${duration.fast}ms`,
-                transitionTimingFunction: 'ease-out',
-              }}
+              className="flex items-center justify-between py-1.5 border-b border-neutral-100 last:border-0 transition-all duration-fast ease-standard"
             >
               <div className="flex items-center gap-1.5 min-w-0">
                 {q.color && (
@@ -167,10 +161,10 @@ export const PhysicsPanel: React.FC<PhysicsPanelProps> = ({
               <BookOpen className="w-3.5 h-3.5 text-primary-500" />
               <span>公式体系</span>
             </div>
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${formulasOpen ? 'rotate-0' : '-rotate-90'}`} />
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-fast ease-standard ${formulasOpen ? 'rotate-0' : '-rotate-90'}`} />
           </button>
           {formulasOpen && (
-            <div className="space-y-2.5 transition-all duration-200">
+            <div className="space-y-2.5 transition-all duration-fast ease-standard">
               {formulas.map((formula, index) => {
                 const levelStyle = formula.level ? FORMULA_LEVEL_STYLES[formula.level] : undefined
                 return (
@@ -219,10 +213,10 @@ export const PhysicsPanel: React.FC<PhysicsPanelProps> = ({
               <AlertTriangle className="w-3.5 h-3.5 text-danger-500" />
               <span>易错警示</span>
             </div>
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${warningsOpen ? 'rotate-0' : '-rotate-90'}`} />
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-fast ease-standard ${warningsOpen ? 'rotate-0' : '-rotate-90'}`} />
           </button>
           {warningsOpen && (
-            <div className="space-y-2 transition-all duration-200">
+            <div className="space-y-2 transition-all duration-fast ease-standard">
               {warnings.map((w, index) => {
                 const style = WARNING_LEVEL_STYLES[w.level] ?? WARNING_LEVEL_STYLES.info
                 const IconComponent = w.level === 'danger' ? AlertCircle : (w.level === 'warning' ? AlertTriangle : Info)
@@ -257,10 +251,10 @@ export const PhysicsPanel: React.FC<PhysicsPanelProps> = ({
               <Award className="w-3.5 h-3.5 text-accent-600" />
               <span>高考要点</span>
             </div>
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${gaokaoOpen ? 'rotate-0' : '-rotate-90'}`} />
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-fast ease-standard ${gaokaoOpen ? 'rotate-0' : '-rotate-90'}`} />
           </button>
           {gaokaoOpen && (
-            <div className="space-y-2 transition-all duration-200">
+            <div className="space-y-2 transition-all duration-fast ease-standard">
               {gaokaoPoints.map((point, index) => {
                 const style = GAOKAO_LEVEL_STYLES[point.importance] ?? GAOKAO_LEVEL_STYLES.basic
                 return (
@@ -304,7 +298,7 @@ export const PhysicsPanel: React.FC<PhysicsPanelProps> = ({
               <span className="text-sm">🗣️</span>
               <span>记忆口诀</span>
             </div>
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${mnemonicOpen ? 'rotate-0' : '-rotate-90'}`} />
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-fast ease-standard ${mnemonicOpen ? 'rotate-0' : '-rotate-90'}`} />
           </button>
           {mnemonicOpen && (
             <div
@@ -330,4 +324,3 @@ export const PhysicsPanel: React.FC<PhysicsPanelProps> = ({
   )
 }
 
-export default PhysicsPanel

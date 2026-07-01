@@ -247,4 +247,4 @@ export const ParametricMagneticField: React.FC<MagneticFieldProps> = ({
   );
 };
 
-export default ParametricMagneticField;
+

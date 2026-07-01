@@ -15,9 +15,9 @@ export const Card: React.FC<CardProps> = ({
     <div
       className={[
         'bg-white rounded-xl shadow-sm border border-neutral-100',
-        hoverable && 'transition-all duration-200 hover:shadow-lg',
+        hoverable && 'transition-all duration-fast ease-standard hover:shadow-lg',
         className,
-      ].join(' ')}
+      ].filter(Boolean).join(' ')}
     >
       {children}
     </div>

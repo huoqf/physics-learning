@@ -65,7 +65,7 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyles = [
-    'relative inline-flex items-center justify-center font-medium rounded-md transition-all duration-200',
+    'relative inline-flex items-center justify-center font-medium rounded-md transition-all duration-fast ease-standard',
     'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
     'active:scale-[0.97]',
   ]
@@ -115,7 +115,7 @@ export const Button: React.FC<ButtonProps> = ({
         sizeStyles[size],
         isDisabled && 'opacity-40 cursor-not-allowed',
         className,
-      ].join(' ')}
+      ].filter(Boolean).join(' ')}
       {...props}
     >
       {loading && (

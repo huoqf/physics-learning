@@ -5,6 +5,25 @@
 
 ---
 
+## ⚠️ 2026-07-01 策略更新：收敛为 3 个 preset
+
+原 7 个 preset 已收敛为 3 个语义化 preset，废弃别名保留过渡：
+
+| 现用 preset | 尺寸 | 废弃别名（→ 迁移至） |
+|---|---|---|
+| **wide** | 700×400 | standard(420)、mediumWide(650×400)、extraWide(800×440) → wide |
+| **tall** | 700×450 | mediumTall(650×450) → tall |
+| **square** | 600×600 | — |
+
+**新组件规则**：
+- `CANVAS_PRESETS` 只允许使用 `wide` / `tall` / `square`
+- `designWidth/designHeight` 必须与所用 preset 数值**完全一致**
+- 废弃别名（standard/mediumTall/mediumWide/extraWide）存量组件可继续使用，但不得新增引用
+
+---
+
+---
+
 ## 现有 preset
 
 | preset | 尺寸 | 说明 |

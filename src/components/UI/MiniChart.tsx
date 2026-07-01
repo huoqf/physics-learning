@@ -218,4 +218,3 @@ export function MiniChart({
   )
 }
 
-export default MiniChart

@@ -203,4 +203,4 @@ export const Solenoid: React.FC<SolenoidProps> = ({
   )
 }
 
-export default Solenoid
+

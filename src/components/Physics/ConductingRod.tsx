@@ -275,4 +275,4 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
   )
 }
 
-export default ConductingRod
+

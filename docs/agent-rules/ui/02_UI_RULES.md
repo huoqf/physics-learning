@@ -44,28 +44,28 @@ Tailwind 配置从 `src/theme/colors.ts` 导入，不在 `tailwind.config.*` 中
 
 ## 3. 物理量颜色语义（不可更改）
 
-Canvas/SVG 中每类物理量有固定颜色，详见 `src/theme/physics/colors.ts`。
+Canvas/SVG 中每类物理量有固定颜色，**权威色值见 `src/theme/physics/colors.ts`**（文档只列 token 名，避免与代码双重维护漂移）。
 核心摘要：
 
-| 物理量 | 颜色语义 | 十六进制值 | 用途与设计规范 |
-|--------|---------|------|------|
-| 速度 v | 经典蓝 `velocity` | `#2563EB` | 速度矢量箭头、v-t/y-t曲线等 |
-| 加速度 a | 警示红 `acceleration` | `#DC2626` | 加速度矢量箭头、a-t曲线 |
-| 合力 F_合 | 动力亮橙 `forceNet` | `#EA580C` | 合力分析主箭头（线宽 3px，粗于分力） |
-| 外力 F_外 | 动力深蓝 `appliedForce` | `#1E3A8A` | 外加/施加力矢量（与合力区分） |
-| 洛伦兹力/安培力 F_L | 洛伦兹紫 `lorentzForce` | `#8B5CF6` | 洛伦兹力/安培力矢量（与合力区分） |
-| 重力 mg | 经典重力绿 `gravity` | `#15803D` | 课本经典的重力绘制颜色（亦可使用 Slate 灰色弱化） |
-| 动能 Ek | 动能青 `kineticEnergy` | `#06B6D4` | 动能柱体、电光青色与势能明确区分 |
-| 势能 Ep | 势能紫 `potentialEnergy` | `#7C3AED` | 势能柱体、重力/弹性势能，高位储存紫色 |
-| 电场 E | 电场黄 `electricField` | `#D97706` | 电场线、电场强度矢量箭头 |
-| 磁场 B | 磁场绿 `magneticField` | `#10B981` | 磁场线、磁感应强度，符合人教版教材绿色磁感线习惯 |
-| 电动势 ε | 电动势橙黄 `emf` | `#D97706` | 电动势标注（注意：与电场同色系但语义不同） |
-| 正电荷 +q | 经典红 `positiveCharge` | `#EF4444` | 正电荷标注 |
-| 负电荷 -q | 经典蓝 `negativeCharge` | `#3B82F6` | 负电荷标注 |
+| 物理量 | 颜色语义（token） | 用途与设计规范 |
+|--------|------|------|
+| 速度 v | `velocity`（经典蓝） | 速度矢量箭头、v-t/y-t曲线等 |
+| 加速度 a | `acceleration`（警示红） | 加速度矢量箭头、a-t曲线 |
+| 合力 F_合 | `forceNet`（动力亮橙） | 合力分析主箭头（线宽 3px，粗于分力） |
+| 外力 F_外 | `appliedForce`（动力深蓝） | 外加/施加力矢量（与合力区分） |
+| 洛伦兹力/安培力 F_L | `lorentzForce`（洛伦兹紫） | 洛伦兹力/安培力矢量（与合力区分） |
+| 重力 mg | `gravity`（经典重力绿） | 课本经典的重力绘制颜色（亦可使用 Slate 灰色弱化） |
+| 动能 Ek | `kineticEnergy`（动能青） | 动能柱体、电光青色与势能明确区分 |
+| 势能 Ep | `potentialEnergy`（势能紫） | 势能柱体、重力/弹性势能，高位储存紫色 |
+| 电场 E | `electricField`（电场黄） | 电场线、电场强度矢量箭头 |
+| 磁场 B | `magneticField`（磁场绿） | 磁场线、磁感应强度，符合人教版教材绿色磁感线习惯 |
+| 电动势 ε | `emf`（电动势橙黄） | 电动势标注（与电场同色系但语义不同） |
+| 正电荷 +q | `positiveCharge`（经典红） | 正电荷标注 |
+| 负电荷 -q | `negativeCharge`（经典蓝） | 负电荷标注 |
 
 **铁律规则**：
 1. 同一画面最多同时展示 5 种物理量颜色。
-2. 历史轨迹固定使用 `#94A3B8`（Track Gray）。
+2. 历史轨迹固定使用 `CANVAS_COLORS.trackHistory`（权威值见 `src/theme/physics/canvasStyle.ts`）。
 3. 场景器材材质（如钢珠、滑轨、底座渐变）必须引用 `SCENE_COLORS.materials.*` 的色标数组进行渐变渲染，**禁止任何 HEX 颜色值的硬编码**。
 4. 同屏多个同类物理量（如三种力）必须通过子 Token（`appliedForce`、`lorentzForce`、`forceNet`）实现色相分流，禁止全部指派同一颜色。
 
@@ -239,6 +239,8 @@ Primary（primary-600）/ Secondary（white + primary边框）/ Ghost（transpar
 | mono（数值）| 14px/400 | neutral-700 |
 
 字体栈：`'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif`
+
+> **⚠️ Tailwind 文字类使用约束**：禁止直接使用 Tailwind 默认字号类（`text-xs` 12px、`text-sm` 14px、`text-base` 16px 等），必须改用上表语义类（`text-body`、`text-body-sm` 等）或明确 `text-[15px]` 等精确值。`text-xs` / `text-sm` 的默认像素值与本规范排版层级不对齐，直接使用将导致字号漂移。
 
 **Canvas/SVG 内字体**：动画组件中的 SVG 文字标注必须使用 `useCanvasSize()` 返回的 `font()` 函数缩放（如 `fontSize={font(11)}`），禁止裸值 `fontSize={11}`。`font()` 内置 clamp(7, 16) 保证可读性。设计基准值参考 `ANIM_FONT`（`@/theme/animationTokens`）。
 

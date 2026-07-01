@@ -34,11 +34,13 @@
 
 ### 2.2 强制方案：useCanvasSize + useViewport（铁律）
 
-所有动画组件**必须**一起使用 `useCanvasSize()` + `useViewport()` 获取画布尺寸，通过 `vp.transform` 实现响应式布局：
+所有动画组件**必须**引用 `useCanvasSize()` + `useViewport()`。根据是否有 overlay 二选一（见 §2.4 判断规则）：
 
 ```tsx
+// CANVAS_PRESETS.wide = { width: 700, height: 400 }（useCanvasSize 的回退默认尺寸）
+// designWidth/designHeight 为 SVG 设计坐标系尺寸，通常与 PRESETS 保持一致
 const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
-const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 480 })
+const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 400 })
 ```
 
 物理比例尺**必须**通过 `computeScale()` 基于物理世界范围计算：
@@ -62,13 +64,13 @@ const physicsScale = computeScale(width, height, WORLD, padding)
 
 画布预设尺寸从 `CANVAS_PRESETS`（`@/theme/spacing`）引用，动画 UI token 从 `@/theme/animationTokens` 引用。
 
-### 2.3 旧段策遗留：viewBox + 比例常量（新组件禁用）
+### 2.3 旧方案遗留：viewBox + 比例常量（新组件禁用）
 
-> ⚠️ **新动画组件禁止使用此方案**。存量测试证明固定 viewBox 在某些屏幕尺寸和三栏布局下存在内容护照跨引问题，且无法支持 overlay 憿让。  
-> 局部去除的旧组件（`ReflectionAnimation`、`ThinLensAnimation`）且如如此使用，待迁移完成后此注将被删除。
+> ⚠️ **新动画组件禁止使用此方案**。存量测试证明固定 viewBox 在某些屏幕尺寸和三栏布局下存在内容裁切问题，且无法支持 overlay 避让。
+> 局部存量旧组件（`ReflectionAnimation`、`ThinLensAnimation`）暂时保留此方案，待迁移完成后此注将被删除。
 
 ```ts
-// ✅ 推荐：使用 viewBox + 比例常量
+// ❌ 旧方案（禁止在新组件中使用，保留供存量迁移参考）
 const VIEW_WIDTH = 800
 const VIEW_HEIGHT = 500
 
@@ -116,9 +118,9 @@ const layout = {
 #### 禁止的做法（反模式）
 
 ```tsx
-// ❌ 严禁：viewBox 绑定容器真实像素 + 同时用 vp.transform 二次缩放
+// ❌ 严禁：viewBox 绑定容器真实像素 + 同时用 vp.transform 二次缩放（双重缩放反模式）
 const { width, height } = canvasSize
-const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 480 })
+const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 400 })
 
 <svg viewBox={`0 0 ${width} ${height}`}>   {/* ← width/height 由 ResizeObserver 动态更新 */}
   <g transform={vp.transform}>              {/* ← 又做了一次缩放，双重缩放！ */}
@@ -132,9 +134,10 @@ const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 480 })
 **方式A（推荐）：viewBox 固定设计尺寸，SVG 自动缩放**
 
 ```tsx
-// ✅ 正确：viewBox 固定为设计坐标系，preserveAspectRatio 负责自适应容器
-const DESIGN_WIDTH = 700
-const DESIGN_HEIGHT = 480
+// ✅ 方式A（推荐）：viewBox 固定为设计常量，preserveAspectRatio 负责自适应容器
+// DESIGN_WIDTH/HEIGHT 必须与所用 CANVAS_PRESETS 完全一致
+const DESIGN_WIDTH = 700   // 对应 CANVAS_PRESETS.wide.width
+const DESIGN_HEIGHT = 400  // 对应 CANVAS_PRESETS.wide.height
 
 <svg
   viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`}  // ← 恒定，不随容器变化
@@ -145,6 +148,12 @@ const DESIGN_HEIGHT = 480
     ...
   </g>
 </svg>
+
+// 若有 overlay（如右侧公式面板），使用 CSS absolute 定位而非 SVG overlay：
+// <div className="relative">
+//   <svg viewBox="0 0 700 400" ...>...</svg>
+//   <div className="absolute right-0 top-0 w-[240px]"><FormulaPanel /></div>
+// </div>
 
 // 指针事件坐标映射：使用 SVG 原生矩阵变换（精确，无需手动计算偏移）
 const clientToDesign = (clientX: number, clientY: number) => {
@@ -159,33 +168,37 @@ const clientToDesign = (clientX: number, clientY: number) => {
 }
 ```
 
-**方式B（合法）：viewBox 固定设计尺寸 + vp.transform（用于 overlay 偏移场景）**
+**方式B（限制使用）：viewBox 绑定真实容器尺寸 + vp.transform**
+
+> ⚠️ **方式B仅在需要 SVG 内部精确 overlay 避让时使用**（如 SVG 内部图表与物理场景共存，且必须精确控制各区块在 SVG 坐标系中的位置）。**首选方式A + CSS absolute overlay**，仅无法用 CSS 解决时才用方式B。
 
 ```tsx
-// ✅ 合法：当需要 overlay 避让（如右侧信息面板遮挡）时，可用 vp.transform
-// 但 viewBox 必须绑定到真实容器尺寸
+// ✅ 方式B（限制场景）：需要 SVG 内精确坐标 overlay 时
 const { width, height } = canvasSize
 const vp = useViewport(canvasSize, {
-  designWidth: 700,
-  designHeight: 480,
-  overlayRight: 240,  // 右侧面板宽度
+  designWidth: 700,    // 必须与 CANVAS_PRESETS 所用 preset 一致
+  designHeight: 400,
+  overlayRight: 240,   // 右侧面板宽度（px），SVG 内内容只出现在可视区域
 })
 
-<svg viewBox={`0 0 ${width} ${height}`}>
-  <g transform={vp.transform}>
-    ...内容仅出现在可视区域内...
+<svg viewBox={`0 0 ${width} ${height}`}>   {/* ← viewBox 绑定真实容器尺寸 */}
+  <g transform={vp.transform}>              {/* ← vp.transform 将设计坐标映射到可视区域 */}
+    ...内容仅出现在可视区域内（左侧 width - 240px 区域）...
   </g>
 </svg>
-// ⚠️ 此方式首帧仍有轻微跳变，非必要优先使用方式A
+// ⚠️ 注意：此方式首帧仍有轻微跳变（useCanvasSize 初始值→ResizeObserver 触发间隔）
+// ⚠️ 注意：viewBox 绑定真实尺寸 + vp.transform 不构成双重缩放（vp已扣除overlay），
+//    但 viewBox 绑定真实尺寸后若 **不加** vp.transform 则失去 overlay 避让效果
 ```
 
 #### 判断规则
 
 | 情况 | 正确做法 |
 |------|----------|
-| 无 overlay，内容全屏居中 | **方式A**：viewBox = 固定设计尺寸，无 vp.transform |
-| 有 overlay（如右侧面板遮挡内容区） | **方式B**：viewBox = 真实容器尺寸 + vp.transform |
-| 只用 `vp.visibleX/W` 定位浮层，不用 `vp.transform` | **方式A** + 保留 `useViewport` 仅读取布局信息 |
+| 无 overlay，内容全屏居中 | **方式A**：viewBox = 固定设计常量，无 vp.transform |
+| 有 overlay 但可用 CSS | **方式A + CSS absolute overlay**（首选，无首帧跳变）|
+| 必须在 SVG 内部精确 overlay 避让 | **方式B**：viewBox = 真实容器尺寸 + vp.transform（限制使用）|
+| 只用 `vp.visibleX/W` 定位浮层 | **方式A** + 保留 `useViewport` 仅读取布局信息 |
 
 #### 指针事件坐标映射对比
 
@@ -213,7 +226,7 @@ const { x, y } = pt.matrixTransform(svg.getScreenCTM()!.inverse())
 | 字体大小 | SVG 内使用 `fontSize={font(N)}`，画布内 HTML 使用 `style={{ fontSize: font(N) }}`，禁止裸值 |
 | 响应式 | 调整浏览器窗口大小时，布局比例保持不变，无视觉跳变 |
 | **指针事件** | **有交互拖拽的 SVG 组件使用 `getScreenCTM().inverse()` 矩阵变换，禁止手动计算 `vp.tx/vp.scale` 偏移** |
-| **useViewport** | **新动画组件必须使用，viewBox = 真实容器尺寸 + `<g transform={vp.transform}>`** |
+| **useViewport** | **新动画组件必须引用；无 overlay 时选方式A（viewBox = 固定设计尺寸，无 vp.transform）；有 overlay 时选方式B（viewBox = 真实容器尺寸 + vp.transform）** |
 
 
 ---
