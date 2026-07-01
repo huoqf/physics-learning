@@ -76,7 +76,7 @@ export type ControlMeta =
   | (ControlCondition & {
       type: 'preset'
       label: string
-      params: Record<string, number>
+      params: Record<string, number> | ((current: Record<string, number>) => Record<string, number>)
       description?: string
       resetOnApply?: boolean
       restartOnApply?: boolean
@@ -86,6 +86,18 @@ export type ControlMeta =
       title?: string
       content: string
       variant?: 'info' | 'primary' | 'warning'
+    })
+  | (ControlCondition & {
+      type: 'action'
+      label: string
+      variant?: 'primary' | 'secondary' | 'danger'
+      action: 'launch' | 'restart' | 'reset' | 'setDirection'
+      directionValue?: 1 | -1
+    })
+  | (ControlCondition & {
+      type: 'storeToggle'
+      label: string
+      storeKey: 'toggleVectors' | 'toggleTimeSlices' | 'toggleDualObjects'
     })
 
 /** 参数控件元数据 */
@@ -144,6 +156,8 @@ export interface SidebarExtraProps {
   showDualObjects?: boolean
   /** 切换双物体对比（仅特定动画使用） */
   toggleDualObjects?: () => void
+  /** 切换受力/速度/加速度矢量显示 */
+  toggleVectors?: () => void
   disabled?: boolean
 }
 

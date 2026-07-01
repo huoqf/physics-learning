@@ -236,7 +236,7 @@ export default function AnimationPage() {
   )
 
   // actions — 稳定引用，不需订阅
-  const { setParams, setTime, setIsPlaying, updateParam, toggleTimeSlices, toggleDualObjects, setDirection } = useAnimationStore.getState()
+  const { setParams, setTime, setIsPlaying, updateParam, toggleTimeSlices, toggleDualObjects, toggleVectors, setDirection } = useAnimationStore.getState()
 
   const { setMode } = useAppStore()
 
@@ -312,6 +312,7 @@ export default function AnimationPage() {
     toggleTimeSlices,
     showDualObjects,
     toggleDualObjects,
+    toggleVectors,
     disabled: isDiscoveryMode,
   }
 
@@ -407,6 +408,10 @@ export default function AnimationPage() {
                 setParams={setParams}
                 resetAnimation={handleReset}
                 restartAnimation={() => { setTime(0); setIsPlaying(true) }}
+                setDirection={(d) => setDirection(d)}
+                toggleVectors={toggleVectors}
+                toggleTimeSlices={toggleTimeSlices}
+                toggleDualObjects={toggleDualObjects}
                 disabled={isDiscoveryMode}
               />
             )}

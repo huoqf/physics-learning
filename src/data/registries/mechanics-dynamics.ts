@@ -110,6 +110,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
           { value: 1, label: '斜面倾角模型' },
         ],
       },
+      { type: 'storeToggle', label: '显示受力分析图', storeKey: 'toggleVectors' },
     ],
     SidebarExtra: lazy(() => import('@/features/mechanics/dynamics/FrictionSidebar')),
     CenterExtra: lazy(() => import('@/features/mechanics/dynamics/FrictionCenterExtra')),

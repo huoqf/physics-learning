@@ -91,6 +91,26 @@ export const mechanicsEnergyAnimations = defineAnimations({
       },
     ],
     SidebarExtra: lazy(() => import('@/features/mechanics/energy/PowerSidebar')),
+    controlMeta: [
+      { type: 'segmented', key: 'mode', label: '起动模型', group: '模型选择', resetOnChange: true,
+        options: [{ value: 0, label: '恒定功率' }, { value: 1, label: '恒定加速度' }] },
+      { type: 'preset', label: '🏎️ 超跑起动', group: '高考经典预设',
+        params: { P: 120000, m: 1500, f: 2000, a: 3.0, carType: 1 },
+        showIf: 'mode', showIfValue: 1 },
+      { type: 'preset', label: '🚛 重卡满载', group: '高考经典预设',
+        params: { P: 160000, m: 8000, f: 4000, a: 0.8, carType: 2 },
+        showIf: 'mode', showIfValue: 1 },
+      { type: 'preset', label: '❄️ 雪地起动', group: '高考经典预设',
+        params: { P: 60000, m: 2000, f: 1000, a: 1.0, carType: 0 },
+        showIf: 'mode', showIfValue: 1 },
+      { type: 'preset', label: '⛰️ 爬坡起动', group: '高考经典预设',
+        params: { P: 80000, m: 2000, f: 5000, a: 1.2, carType: 0 },
+        showIf: 'mode', showIfValue: 1 },
+      { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 0,
+        content: '汽车以额定功率 P 起动，牵引力 F=P/v 随速度增大而减小，加速度逐渐降为零。' },
+      { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 1,
+        content: '先匀加速（F 恒定），当功率达到额定值后切换为恒功率变加速，直至匀速。' },
+    ],
   },
   'anim-kinetic-energy': {
     title: '动能定理',
@@ -142,6 +162,20 @@ export const mechanicsEnergyAnimations = defineAnimations({
       },
     ],
     SidebarExtra: lazy(() => import('@/features/mechanics/energy/KineticEnergySidebar')),
+    controlMeta: [
+      { type: 'segmented', key: 'mode', label: '起动模型', group: '模型选择', resetOnChange: true,
+        options: [{ value: 0, label: '恒力做功' }, { value: 1, label: '变力做功' }] },
+      { type: 'preset', label: '🎢 光滑下滑', group: '高考经典预设',
+        params: { m: 2.0, v0: 0, R: 5.0, mu: 0.00, mode: 1 },
+        showIf: 'mode', showIfValue: 1 },
+      { type: 'preset', label: '🍂 粗糙下滑', group: '高考经典预设',
+        params: { m: 2.0, v0: 0, R: 5.0, mu: 0.35, mode: 1 },
+        showIf: 'mode', showIfValue: 1 },
+      { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 0,
+        content: '恒力做功：水平面光滑，恒力 F 在位移 s 区间内加速物块，随后撤力，物块匀速。' },
+      { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 1,
+        content: '变力做功：滑块沿 1/4 凹型圆弧轨道（碗形内壁）下滑，受重力和变摩擦力作用。' },
+    ],
   },
   'anim-potential-energy': {
     title: '重力势能与弹性势能',
@@ -192,6 +226,30 @@ export const mechanicsEnergyAnimations = defineAnimations({
       },
     ],
     SidebarExtra: lazy(() => import('@/features/mechanics/energy/PotentialEnergySidebar')),
+    controlMeta: [
+      { type: 'segmented', key: 'mode', label: '势能实验场景', group: '模型选择', resetOnChange: true,
+        options: [{ value: 0, label: '重力势能' }, { value: 1, label: '弹性势能' }] },
+      { type: 'preset', label: '🍏 地平参考面', group: '参考面经典预设',
+        params: ((c: Record<string, number>) => c.mode === 1
+          ? { mode: 0, m: 2.0, g: 9.8, y0: 8.0, y_ref: 0.0 }
+          : { m: 2.0, g: 9.8, y0: 8.0, y_ref: 0.0 }) as (c: Record<string, number>) => Record<string, number>,
+        showIf: 'mode', showIfValue: 0 },
+      { type: 'preset', label: '🌌 高台参考面', group: '参考面经典预设',
+        params: ((c: Record<string, number>) => c.mode === 1
+          ? { mode: 0, m: 2.0, g: 9.8, y0: 8.0, y_ref: 5.0 }
+          : { m: 2.0, g: 9.8, y0: 8.0, y_ref: 5.0 }) as (c: Record<string, number>) => Record<string, number>,
+        showIf: 'mode', showIfValue: 0 },
+      { type: 'preset', label: '🏹 强拉伸释放', group: '简谐释放预设',
+        params: ((c: Record<string, number>) => c.mode === 0
+          ? { mode: 1, m: 2.0, k: 150, x0: 2.5 }
+          : { m: 2.0, k: 150, x0: 2.5 }) as (c: Record<string, number>) => Record<string, number>,
+        showIf: 'mode', showIfValue: 1 },
+      { type: 'preset', label: '📦 强压缩释放', group: '简谐释放预设',
+        params: ((c: Record<string, number>) => c.mode === 0
+          ? { mode: 1, m: 2.0, k: 150, x0: -2.5 }
+          : { m: 2.0, k: 150, x0: -2.5 }) as (c: Record<string, number>) => Record<string, number>,
+        showIf: 'mode', showIfValue: 1 },
+    ],
   },
   'anim-energy-conservation': {
     title: '机械能守恒定律',
@@ -233,6 +291,45 @@ export const mechanicsEnergyAnimations = defineAnimations({
       },
     ],
     SidebarExtra: lazy(() => import('@/features/mechanics/energy/EnergyConservationSidebar')),
+    controlMeta: [
+      { type: 'segmented', key: 'mode', label: '演示物理场景', group: '模型选择', resetOnChange: true,
+        options: [{ value: 0, label: '经典单摆' }, { value: 1, label: '山谷滑道' }] },
+      { type: 'preset', label: '🌍 地球经典摆', group: '引力场环境预设',
+        params: ((c: Record<string, number>) => c.mode === 1
+          ? { mode: 0, m: 2.0, g: 9.8, L: 5.0, theta0: 45, hRef: 0 }
+          : { m: 2.0, g: 9.8, L: 5.0, theta0: 45, hRef: 0 }) as (c: Record<string, number>) => Record<string, number>,
+        showIf: 'mode', showIfValue: 0 },
+      { type: 'preset', label: '🌙 月球慢速摆', group: '引力场环境预设',
+        params: ((c: Record<string, number>) => c.mode === 1
+          ? { mode: 0, m: 2.0, g: 1.63, L: 5.0, theta0: 45, hRef: 0 }
+          : { m: 2.0, g: 1.63, L: 5.0, theta0: 45, hRef: 0 }) as (c: Record<string, number>) => Record<string, number>,
+        showIf: 'mode', showIfValue: 0 },
+      { type: 'preset', label: '🔴 火星中速摆', group: '引力场环境预设',
+        params: ((c: Record<string, number>) => c.mode === 1
+          ? { mode: 0, m: 2.0, g: 3.72, L: 5.0, theta0: 45, hRef: 0 }
+          : { m: 2.0, g: 3.72, L: 5.0, theta0: 45, hRef: 0 }) as (c: Record<string, number>) => Record<string, number>,
+        showIf: 'mode', showIfValue: 0 },
+      { type: 'preset', label: '🪐 木星快速摆', group: '引力场环境预设',
+        params: ((c: Record<string, number>) => c.mode === 1
+          ? { mode: 0, m: 2.0, g: 24.79, L: 5.0, theta0: 45, hRef: 0 }
+          : { m: 2.0, g: 24.79, L: 5.0, theta0: 45, hRef: 0 }) as (c: Record<string, number>) => Record<string, number>,
+        showIf: 'mode', showIfValue: 0 },
+      { type: 'preset', label: '✨ 理想光滑山谷', group: '轨道阻尼环境预设',
+        params: ((c: Record<string, number>) => c.mode === 0
+          ? { mode: 1, m: 2.0, g: 9.8, R: 5.0, mu: 0.00, theta0: 55, hRef: 0 }
+          : { m: 2.0, g: 9.8, R: 5.0, mu: 0.00, theta0: 55, hRef: 0 }) as (c: Record<string, number>) => Record<string, number>,
+        showIf: 'mode', showIfValue: 1 },
+      { type: 'preset', label: '🌀 阻尼耗减山谷', group: '轨道阻尼环境预设',
+        params: ((c: Record<string, number>) => c.mode === 0
+          ? { mode: 1, m: 2.0, g: 9.8, R: 5.0, mu: 0.12, theta0: 55, hRef: 0 }
+          : { m: 2.0, g: 9.8, R: 5.0, mu: 0.12, theta0: 55, hRef: 0 }) as (c: Record<string, number>) => Record<string, number>,
+        showIf: 'mode', showIfValue: 1 },
+      { type: 'preset', label: '🌙 月球光滑山谷', group: '轨道阻尼环境预设',
+        params: ((c: Record<string, number>) => c.mode === 0
+          ? { mode: 1, m: 2.0, g: 1.63, R: 5.0, mu: 0.00, theta0: 55, hRef: 0 }
+          : { m: 2.0, g: 1.63, R: 5.0, mu: 0.00, theta0: 55, hRef: 0 }) as (c: Record<string, number>) => Record<string, number>,
+        showIf: 'mode', showIfValue: 1 },
+    ],
   },
   'anim-vertical-spring': {
     title: '竖直弹簧复合模型',
@@ -254,6 +351,10 @@ export const mechanicsEnergyAnimations = defineAnimations({
       },
     ],
     SidebarExtra: lazy(() => import('@/features/mechanics/energy/SpringCompositeSidebar')),
+    controlMeta: [
+      { type: 'toggle', key: 'showVectors', label: '显示物理矢量', group: '辅助分析显示' },
+      { type: 'toggle', key: 'autoPause', label: '平衡位置自动暂停高亮', group: '辅助分析显示' },
+    ],
   },
   'anim-light-rod-rope': {
     title: '轻杆/轻绳连接体',

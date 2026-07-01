@@ -1,21 +1,14 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { SegmentedControl, TipCard, LeftPanelSection } from '@/components/UI'
-import { Slider } from '@/components/UI'
+import { Slider, LeftPanelSection } from '@/components/UI'
 
 export default function GasLawsSidebar({
   params,
   updateParam,
-  animationActions,
   disabled,
 }: SidebarExtraProps) {
   const mode = params.mode ?? 0
   const T = params.T ?? 300
   const V = params.V ?? 5e-3
-
-  const handleModeChange = (value: number | string) => {
-    updateParam('mode', value as number)
-    animationActions.resetAnimation()
-  }
 
   const handleSliderChange = (value: number) => {
     if (mode === 0) {
@@ -27,7 +20,6 @@ export default function GasLawsSidebar({
 
   return (
     <LeftPanelSection bodyClassName="flex flex-col gap-4">
-      {/* 参数控制在上 */}
       {mode === 0 ? (
         <Slider
           label="体积 V"
@@ -52,26 +44,6 @@ export default function GasLawsSidebar({
           disabled={disabled}
         />
       )}
-
-      {/* 模式切换在下 */}
-      <SegmentedControl
-        label="实验定律"
-        options={[
-          { value: 0, label: '等温（玻意耳）' },
-          { value: 1, label: '等压（盖-吕萨克）' },
-          { value: 2, label: '等容（查理）' },
-        ]}
-        value={mode}
-        onChange={handleModeChange}
-        disabled={disabled}
-      />
-
-      {/* 提示信息 */}
-      <TipCard>
-        {mode === 0 && '锁定温度 T，拖动体积 V，观察压强 P 变化'}
-        {mode === 1 && '锁定压强 P（恒定砝码），拖动温度 T，观察体积 V 变化'}
-        {mode === 2 && '锁定体积 V（固定活塞），拖动温度 T，观察压强 P 变化'}
-      </TipCard>
     </LeftPanelSection>
   )
 }

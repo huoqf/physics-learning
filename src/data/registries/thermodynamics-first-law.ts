@@ -19,6 +19,12 @@ export const thermodynamicsFirstLawAnimations = defineAnimations({
         hideIf: 'adiabatic', hideIfValue: 1 },
     ],
     SidebarExtra: lazy(() => import('@/features/thermodynamics/firstLaw/FirstLawSidebar')),
+    controlMeta: [
+      { type: 'segmented', key: 'mode', label: '分析模式', group: '模型选择', resetOnChange: true,
+        options: [{ value: 0, label: '基础模式' }, { value: 1, label: '进阶模式' }] },
+      { type: 'tip', group: '教学提示',
+        content: '拖动 W/Q 滑块，观察能量守恒天平' },
+    ],
     CenterExtra: lazy(() => import('@/features/thermodynamics/firstLaw/FirstLawCenterExtra')),
     centerExtraMode: 'mode',
   },

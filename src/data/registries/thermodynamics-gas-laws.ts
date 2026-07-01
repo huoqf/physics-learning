@@ -17,6 +17,20 @@ export const thermodynamicsGasLawsAnimations = defineAnimations({
       { key: 'V', label: '体积 V', min: 1e-4, max: 1e-2, step: 1e-4, unit: 'm³' },
     ],
     SidebarExtra: lazy(() => import('@/features/thermodynamics/gasLaws/GasLawsSidebar')),
+    controlMeta: [
+      { type: 'segmented', key: 'mode', label: '实验定律', group: '模型选择', resetOnChange: true,
+        options: [
+          { value: 0, label: '等温（玻意耳）' },
+          { value: 1, label: '等压（盖-吕萨克）' },
+          { value: 2, label: '等容（查理）' },
+        ] },
+      { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 0,
+        content: '锁定温度 T，拖动体积 V，观察压强 P 变化' },
+      { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 1,
+        content: '锁定压强 P（恒定砝码），拖动温度 T，观察体积 V 变化' },
+      { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 2,
+        content: '锁定体积 V（固定活塞），拖动温度 T，观察压强 P 变化' },
+    ],
   },
 
   // ===== 热学 · 理想气体状态方程（Clapeyron 方程扩展）=====

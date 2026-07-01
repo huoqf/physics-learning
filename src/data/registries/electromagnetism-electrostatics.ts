@@ -142,5 +142,9 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
       { key: 'qProbe', label: '试探电荷 q', min: -2.0, max: 2.0, step: 0.2, unit: 'μC' },
     ],
     SidebarExtra: lazy(() => import('@/features/electromagnetism/electrostatics/ElectricPotentialSidebar')),
+    controlMeta: [
+      { type: 'segmented', key: 'zeroRef', label: '零势参考', group: '模型选择',
+        options: [{ value: 0, label: '无穷远为0V' }, { value: 1, label: '大地为0V' }] },
+    ],
   },
 })

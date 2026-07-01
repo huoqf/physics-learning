@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 import type { ControlMeta } from '@/data/types'
 import { LeftPanelSection } from './LeftPanel'
 import { OptionButton } from './OptionButton'
+import { Button } from './Button'
 import { SegmentedControl } from './SegmentedControl'
 import { Slider } from './Slider'
 import { TipCard } from './TipCard'
@@ -14,6 +15,10 @@ interface ControlPanelProps {
   setParams: (params: Record<string, number>) => void
   resetAnimation: () => void
   restartAnimation: () => void
+  setDirection?: (d: 1 | -1) => void
+  toggleVectors?: () => void
+  toggleTimeSlices?: () => void
+  toggleDualObjects?: () => void
   disabled?: boolean
 }
 
@@ -42,6 +47,10 @@ function defaultGroup(control: ControlMeta) {
       return '快捷预设'
     case 'tip':
       return '教学提示'
+    case 'action':
+      return '操作'
+    case 'storeToggle':
+      return '显示辅助'
     case 'number':
     default:
       return '核心参数'
@@ -55,6 +64,10 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   setParams,
   resetAnimation,
   restartAnimation,
+  setDirection,
+  toggleVectors,
+  toggleTimeSlices,
+  toggleDualObjects,
   disabled = false,
 }) => {
   const groups = useMemo(() => {
@@ -94,7 +107,8 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   }
 
   const handlePresetApply = (control: Extract<ControlMeta, { type: 'preset' }>) => {
-    setParams({ ...params, ...control.params })
+    const resolved = typeof control.params === 'function' ? control.params(params) : control.params
+    setParams({ ...params, ...resolved })
     if (control.restartOnApply) restartAnimation()
     else if (control.resetOnApply !== false) resetAnimation()
   }
@@ -161,6 +175,48 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             <span>{control.content}</span>
           </TipCard>
         )
+      case 'action':
+        return (
+          <Button
+            key={`${control.type}-${control.label}-${index}`}
+            variant={control.variant ?? 'secondary'}
+            onClick={() => {
+              switch (control.action) {
+                case 'launch':
+                case 'restart':
+                  restartAnimation()
+                  break
+                case 'reset':
+                  resetAnimation()
+                  break
+                case 'setDirection':
+                  setDirection?.(control.directionValue ?? 1)
+                  break
+              }
+            }}
+            disabled={disabled}
+          >
+            {control.label}
+          </Button>
+        )
+      case 'storeToggle': {
+        const storeHandlers: Record<string, (() => void) | undefined> = {
+          toggleVectors,
+          toggleTimeSlices,
+          toggleDualObjects,
+        }
+        const handler = storeHandlers[control.storeKey]
+        return (
+          <div key={`${control.type}-${control.storeKey}-${index}`} className="flex items-center justify-between gap-3">
+            <span className="text-xs font-semibold text-neutral-600 select-none">{control.label}</span>
+            <ToggleSwitch
+              checked={false}
+              onChange={() => handler?.()}
+              disabled={disabled || !handler}
+            />
+          </div>
+        )
+      }
       default:
         return null
     }
