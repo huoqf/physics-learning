@@ -1,5 +1,5 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { SegmentedControl, ToggleSwitch, TipCard } from '@/components/UI'
+import { SegmentedControl, ToggleSwitch, TipCard, LeftPanelSection } from '@/components/UI'
 
 export default function CapacitorSidebar({
   params,
@@ -19,7 +19,7 @@ export default function CapacitorSidebar({
   }
 
   return (
-    <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-neutral-200">
+    <LeftPanelSection bodyClassName="flex flex-col gap-4">
       <SegmentedControl
         label="电路状态"
         options={[
@@ -51,6 +51,6 @@ export default function CapacitorSidebar({
           </p>
         </div>
       </TipCard>
-    </div>
+    </LeftPanelSection>
   )
 }

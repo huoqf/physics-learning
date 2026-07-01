@@ -1,5 +1,5 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { SegmentedControl, ToggleSwitch, Slider, OptionButton } from '@/components/UI'
+import { SegmentedControl, ToggleSwitch, Slider, OptionButton, LeftPanelSection } from '@/components/UI'
 
 const GRAVITY_PRESETS = [
   { label: '🌍 地球', g: 9.8 },
@@ -17,7 +17,7 @@ export default function ProjectileSidebar({
   const isAdvanced = advancedMode === 1
 
   return (
-    <div className="mt-4 pt-4 border-t border-neutral-200">
+    <LeftPanelSection>
       <SegmentedControl
         label="观察模式"
         options={[
@@ -70,6 +70,6 @@ export default function ProjectileSidebar({
           )}
         </div>
       )}
-    </div>
+    </LeftPanelSection>
   )
 }

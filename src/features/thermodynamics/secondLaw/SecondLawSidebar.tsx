@@ -1,5 +1,5 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { Button, SegmentedControl, TipCard } from '@/components/UI'
+import { Button, SegmentedControl, TipCard, LeftPanelSection } from '@/components/UI'
 
 export default function SecondLawSidebar({
   params,
@@ -32,7 +32,7 @@ export default function SecondLawSidebar({
   }
 
   return (
-    <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-neutral-200">
+    <LeftPanelSection bodyClassName="flex flex-col gap-4">
       {/* 操作控件（上方） */}
       <Button
         variant="primary"
@@ -71,6 +71,6 @@ export default function SecondLawSidebar({
           disabled={disabled}
         />
       </div>
-    </div>
+    </LeftPanelSection>
   )
 }

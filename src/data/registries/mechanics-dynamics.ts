@@ -89,7 +89,20 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       { key: 'f2', label: '力 F₂', min: 1, max: 20, step: 0.5, unit: 'N' },
       { key: 'angle', label: '夹角 θ', min: 0, max: 180, step: 5, unit: '°' },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/dynamics/VectorAdditionSidebar')),
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'mode',
+        label: '演示模式',
+        group: '模型选择',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '平行四边形' },
+          { value: 1, label: '三角形' },
+          { value: 2, label: '正交分解' },
+        ],
+      },
+    ],
   },
   'anim-equilibrium': {
     title: '共点力平衡',
@@ -101,7 +114,21 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       { key: 'theta1', label: '左挂绳夹角 θ₁', min: 10, max: 85, step: 1, unit: '°' },
       { key: 'theta2', label: '右挂绳夹角 θ₂', min: 10, max: 85, step: 1, unit: '°' },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/dynamics/EquilibriumSidebar')),
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'mode',
+        label: '演示模式',
+        group: '模型选择',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '基础悬挂' },
+          { value: 1, label: '平行四边形' },
+          { value: 2, label: '正交分解' },
+          { value: 3, label: '封闭三角形' },
+        ],
+      },
+    ],
   },
   'anim-newton-second': {
     title: '牛顿第二定律',

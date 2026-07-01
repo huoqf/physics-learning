@@ -1,5 +1,5 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { SegmentedControl, TipCard } from '@/components/UI'
+import { SegmentedControl, TipCard, LeftPanelSection } from '@/components/UI'
 
 export default function ClapeyronSidebar({
   params,
@@ -15,7 +15,7 @@ export default function ClapeyronSidebar({
   }
 
   return (
-    <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-neutral-200">
+    <LeftPanelSection bodyClassName="flex flex-col gap-4">
       <SegmentedControl
         label="演示模式"
         options={[
@@ -32,6 +32,6 @@ export default function ClapeyronSidebar({
           ? '拖动 T 或 V，观察压强 P 自动约束变化'
           : '拖动 T 或 V，状态点在等温线族间跃迁'}
       </TipCard>
-    </div>
+    </LeftPanelSection>
   )
 }

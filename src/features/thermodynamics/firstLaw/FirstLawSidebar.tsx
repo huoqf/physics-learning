@@ -1,5 +1,5 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { SegmentedControl, ToggleSwitch, TipCard } from '@/components/UI'
+import { SegmentedControl, ToggleSwitch, TipCard, LeftPanelSection } from '@/components/UI'
 
 export default function FirstLawSidebar({
   params,
@@ -23,7 +23,7 @@ export default function FirstLawSidebar({
   }
 
   return (
-    <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-neutral-200">
+    <LeftPanelSection bodyClassName="flex flex-col gap-4">
       <ToggleSwitch
         label="绝热气缸"
         checked={adiabatic === 1}
@@ -49,6 +49,6 @@ export default function FirstLawSidebar({
         onChange={handleModeChange}
         disabled={disabled}
       />
-    </div>
+    </LeftPanelSection>
   )
 }

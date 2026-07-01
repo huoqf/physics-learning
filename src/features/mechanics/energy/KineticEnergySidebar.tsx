@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import { SegmentedControl, Button } from '@/components/UI'
+import { SegmentedControl, Button, LeftPanelSection } from '@/components/UI'
 import type { SidebarExtraProps } from '@/data/types'
 
 interface Preset {
@@ -56,7 +56,7 @@ const KineticEnergySidebar: FC<SidebarExtraProps> = ({
   }
 
   return (
-    <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-neutral-200">
+    <LeftPanelSection bodyClassName="flex flex-col gap-4">
       <SegmentedControl
         label="起动模型"
         options={[
@@ -94,7 +94,7 @@ const KineticEnergySidebar: FC<SidebarExtraProps> = ({
           </div>
         </div>
       )}
-    </div>
+    </LeftPanelSection>
   )
 }
 

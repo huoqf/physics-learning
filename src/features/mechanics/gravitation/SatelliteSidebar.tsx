@@ -1,6 +1,6 @@
 import type { SidebarExtraProps } from '@/data/types'
 import { duration, easing } from '@/theme/motion'
-import { SegmentedControl, OptionButton, ToggleSwitch, TipCard, Button } from '@/components/UI'
+import { SegmentedControl, OptionButton, ToggleSwitch, TipCard, Button, LeftPanelSection } from '@/components/UI'
 
 export default function SatelliteSidebar({ params, updateParam, setParams, animationActions, disabled }: SidebarExtraProps) {
   const mode = params.mode ?? 0
@@ -36,7 +36,7 @@ export default function SatelliteSidebar({ params, updateParam, setParams, anima
   }
 
   return (
-    <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-neutral-200">
+    <LeftPanelSection bodyClassName="flex flex-col gap-4">
       {/* 演示模式选择 */}
       <SegmentedControl
         label="演示模式"
@@ -120,6 +120,6 @@ export default function SatelliteSidebar({ params, updateParam, setParams, anima
         onChange={(checked) => updateParam('showChart', checked ? 1 : 0)}
         label="显示画中画曲线"
       />
-    </div>
+    </LeftPanelSection>
   )
 }

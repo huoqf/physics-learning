@@ -13,6 +13,10 @@ import {
   ParamControl,
   ErrorBoundary,
   DiscoveryGuide,
+  LeftPanel,
+  LeftPanelSection,
+  LeftPanelScrollArea,
+  ControlPanel,
 } from '@/components/UI'
 import { LAYOUT } from '@/theme'
 import { duration, easing } from '@/theme/motion'
@@ -262,6 +266,7 @@ export default function AnimationPage() {
   }
 
   const paramMeta = config.paramMeta || []
+  const controlMeta = config.controlMeta || []
 
   // 构建 ParamControl 需要的参数格式（过滤 showIf / hideIf 条件）
   const paramControlParams = paramMeta
@@ -284,6 +289,13 @@ export default function AnimationPage() {
       ...p,
       value: params[p.key] ?? 0,
     }))
+
+  const handleParamControlChange = (key: string, value: number) => {
+    const shouldReset = paramControlParams.find((p) => p.key === key)?.resetOnChange === true
+    const changed = params[key] !== value
+    updateParam(key, value)
+    if (shouldReset && changed) handleReset()
+  }
 
   // 构建侧边栏扩展 props
   const sidebarExtraProps = {
@@ -339,15 +351,17 @@ export default function AnimationPage() {
       </div>
 
       <ThreePanel
-        left={(paramControlParams.length > 0 || config.SidebarExtra || siblingAnimations.length > 1) ? (
-          <div className="p-4 relative flex flex-col">
+        left={(paramControlParams.length > 0 || controlMeta.length > 0 || config.SidebarExtra || siblingAnimations.length > 1) ? (
+          <LeftPanel>
             {/* 关联模型切换 Tab (高考考点变式切换) */}
             {siblingAnimations.length > 1 && (
-              <div className="bg-neutral-100/80 p-1.5 rounded-xl flex flex-col gap-1 border border-neutral-200/50 mb-3 shrink-0">
-                <div className="text-ui-base font-bold text-neutral-400 px-2 pt-0.5 pb-1">
-                  💡 高考同考点经典模型切换
-                </div>
-                <div className="grid gap-1 p-0.5" style={{ gridTemplateColumns: `repeat(${siblingAnimations.length}, minmax(0, 1fr))` }}>
+              <LeftPanelSection
+                title="💡 高考同考点经典模型切换"
+                compact
+                className="bg-neutral-100/80"
+                bodyClassName="grid gap-1 p-0.5"
+              >
+                <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${siblingAnimations.length}, minmax(0, 1fr))` }}>
                   {siblingAnimations.map((anim) => {
                     const isActive = anim.id === config.id
                     return (
@@ -369,7 +383,7 @@ export default function AnimationPage() {
                     )
                   })}
                 </div>
-              </div>
+              </LeftPanelSection>
             )}
 
             {/* 批量重置（右上角，仅无 ParamControl 时显示） */}
@@ -385,25 +399,37 @@ export default function AnimationPage() {
               </button>
             )}
 
+            {controlMeta.length > 0 && !isDiscoveryMode && (
+              <ControlPanel
+                controls={controlMeta}
+                params={params}
+                updateParam={updateParam}
+                setParams={setParams}
+                resetAnimation={handleReset}
+                restartAnimation={() => { setTime(0); setIsPlaying(true) }}
+                disabled={isDiscoveryMode}
+              />
+            )}
+
             {paramControlParams.length > 0 && (
               <div className="shrink-0">
                 <ParamControl
                   params={paramControlParams}
-                  onParamChange={updateParam}
-                  onReset={handleReset}
+                  onParamChange={handleParamControlChange}
+                  onReset={() => { setParams({ ...config.defaultParams }); handleReset() }}
                   disabled={isDiscoveryMode}
                 />
               </div>
             )}
             {/* 侧边栏扩展：通过 registry 挂载的特异 UI */}
             {config.SidebarExtra && !isDiscoveryMode && (
-              <div className="flex-grow min-h-0 overflow-y-auto">
+              <LeftPanelScrollArea>
                 <Suspense fallback={<div className="w-full h-8 flex items-center justify-center text-neutral-300 text-xs">加载中…</div>}>
                   <config.SidebarExtra {...sidebarExtraProps} />
                 </Suspense>
-              </div>
+              </LeftPanelScrollArea>
             )}
-          </div>
+          </LeftPanel>
         ) : undefined}
         center={
           <div className="flex flex-col h-full p-1.5 gap-2">

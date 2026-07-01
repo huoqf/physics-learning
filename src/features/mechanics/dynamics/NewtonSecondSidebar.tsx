@@ -1,4 +1,4 @@
-import { SegmentedControl, Slider } from '@/components/UI'
+import { SegmentedControl, Slider, LeftPanelSection } from '@/components/UI'
 import type { SidebarExtraProps } from '@/data/types'
 
 export default function NewtonSecondSidebar({
@@ -13,7 +13,7 @@ export default function NewtonSecondSidebar({
   const modelIdx = params.modelIdx ?? 0
 
   return (
-    <div className="mt-4 pt-4 border-t border-neutral-200">
+    <LeftPanelSection>
       <SegmentedControl
         label="观察模式"
         options={[
@@ -89,6 +89,6 @@ export default function NewtonSecondSidebar({
           )}
         </div>
       )}
-    </div>
+    </LeftPanelSection>
   )
 }

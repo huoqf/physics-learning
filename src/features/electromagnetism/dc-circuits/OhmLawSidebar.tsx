@@ -1,4 +1,4 @@
-import { SegmentedControl, ToggleSwitch, Slider } from '@/components/UI'
+import { SegmentedControl, ToggleSwitch, Slider, LeftPanelSection } from '@/components/UI'
 import type { SidebarExtraProps } from '@/data/types'
 
 export default function OhmLawSidebar({
@@ -12,7 +12,7 @@ export default function OhmLawSidebar({
   const isBulb = mode === 1
 
   return (
-    <div className="mt-4 pt-4 border-t border-neutral-200 space-y-4">
+    <LeftPanelSection bodyClassName="space-y-4">
       {/* 电源电压 U 控制 */}
       <Slider
         label="电源电压 U"
@@ -71,6 +71,6 @@ export default function OhmLawSidebar({
           disabled={disabled}
         />
       </div>
-    </div>
+    </LeftPanelSection>
   )
 }

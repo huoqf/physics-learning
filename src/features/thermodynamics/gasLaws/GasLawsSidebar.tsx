@@ -1,5 +1,5 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { SegmentedControl, TipCard } from '@/components/UI'
+import { SegmentedControl, TipCard, LeftPanelSection } from '@/components/UI'
 import { Slider } from '@/components/UI'
 
 export default function GasLawsSidebar({
@@ -26,7 +26,7 @@ export default function GasLawsSidebar({
   }
 
   return (
-    <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-neutral-200">
+    <LeftPanelSection bodyClassName="flex flex-col gap-4">
       {/* 参数控制在上 */}
       {mode === 0 ? (
         <Slider
@@ -72,6 +72,6 @@ export default function GasLawsSidebar({
         {mode === 1 && '锁定压强 P（恒定砝码），拖动温度 T，观察体积 V 变化'}
         {mode === 2 && '锁定体积 V（固定活塞），拖动温度 T，观察压强 P 变化'}
       </TipCard>
-    </div>
+    </LeftPanelSection>
   )
 }

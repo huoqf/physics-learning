@@ -1,5 +1,5 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { SegmentedControl, ToggleSwitch, OptionButton } from '@/components/UI'
+import { SegmentedControl, ToggleSwitch, OptionButton, LeftPanelSection } from '@/components/UI'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 
@@ -26,7 +26,7 @@ export default function FrictionSidebar({ params, updateParam, animationActions,
   }
 
   return (
-    <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-neutral-200">
+    <LeftPanelSection bodyClassName="flex flex-col gap-4">
       <SegmentedControl
         label="演示模式"
         options={[
@@ -60,7 +60,7 @@ export default function FrictionSidebar({ params, updateParam, animationActions,
         <span className="text-xs font-semibold text-neutral-600">显示受力分析图</span>
         <ToggleSwitch checked={showVectors} onChange={toggleVectors} disabled={disabled} />
       </div>
-    </div>
+    </LeftPanelSection>
   )
 }
 

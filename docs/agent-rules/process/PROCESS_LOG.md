@@ -17,6 +17,9 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 07-01 | UI/animation | refactor | controlMeta 第一阶段：新增 ControlMeta 协议与 ControlPanel 渲染器（number/segmented/toggle/preset/tip），AnimationPage 接入声明式控件，库仑定律/力的合成与分解/共点力平衡/恒力做功/开普勒定律等简单 SidebarExtra 迁移为 controlMeta；补 ControlPanel 单测 3 项；build/test/lint/check:architecture 通过 |
+| 07-01 | UI/animation | refactor | ParamMeta 协议扩展：新增 group/description/marks/importance/resetOnChange，ParamControl 支持参数分组、教学说明、关键标记与重要性样式；补单测至 5 项；build/test/lint/check:architecture 通过 |
+| 07-01 | UI/animation | refactor | 左屏容器统一：新增 LeftPanel/LeftPanelSection/LeftPanelScrollArea，AnimationPage 左屏改用统一容器；批量迁移 49 个静态根容器 SidebarExtra 到 LeftPanelSection；build/test/lint/check:architecture 通过 |
 | 07-01 | electromagnetism/magnetism | fix | 安培力 F=BIL 进阶斜面平衡分步修复：锁定 3D 磁场包围盒、2D 图补 +x′ 正方向、主屏状态箭头标为 a、矢量多边形按方案 B 改为 p0→p4 真实 F_合；拆出 drawMagneticFieldGrid 消除 lint warning；build/test/lint/check 通过 |
 | 07-01 | electromagnetism/magnetism | compliance | 安培力 F=BIL 页面规范合规修复：AmpereForce.tsx 补 useViewport（方式B）+ viewBox 改 canvasSize 动态绑定；5 个文件共 10 处 `colors.neutral[]` → `CANVAS_COLORS.*`（InclineForceDiagram/ForcePolygon/UniformMagneticField）；tsc 零错误 |
 | 06-30 | electromagnetism/induction | refactor | Transformer.tsx 拆分：724行→90行，抽取 transformer/model + hooks + components；补 transformerModel 单测 4 项 |

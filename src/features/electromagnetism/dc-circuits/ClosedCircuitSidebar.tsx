@@ -1,4 +1,4 @@
-import { SegmentedControl, ToggleSwitch, Slider } from '@/components/UI'
+import { SegmentedControl, ToggleSwitch, Slider, LeftPanelSection } from '@/components/UI'
 import type { SidebarExtraProps } from '@/data/types'
 
 export default function ClosedCircuitSidebar({
@@ -14,7 +14,7 @@ export default function ClosedCircuitSidebar({
   const highlightLoss = (params.highlightLoss ?? 0) === 1
 
   return (
-    <div className="space-y-5">
+    <LeftPanelSection bodyClassName="space-y-5">
       {/* 参数调节 */}
       <Slider
         label="外电阻 R (滑动变阻器)"
@@ -81,6 +81,6 @@ export default function ClosedCircuitSidebar({
           disabled={disabled}
         />
       </div>
-    </div>
+    </LeftPanelSection>
   )
 }

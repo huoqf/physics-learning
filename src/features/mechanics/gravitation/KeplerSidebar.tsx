@@ -1,5 +1,5 @@
 import { FC } from 'react'
-import { SegmentedControl } from '@/components/UI'
+import { SegmentedControl, LeftPanelSection } from '@/components/UI'
 import type { SidebarExtraProps } from '@/data/types'
 
 export const KeplerSidebar: FC<SidebarExtraProps> = ({
@@ -16,7 +16,7 @@ export const KeplerSidebar: FC<SidebarExtraProps> = ({
   }
 
   return (
-    <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-neutral-200">
+    <LeftPanelSection bodyClassName="flex flex-col gap-4">
       <SegmentedControl
         label="定律模式"
         options={[
@@ -28,7 +28,7 @@ export const KeplerSidebar: FC<SidebarExtraProps> = ({
         onChange={handleModeChange}
         disabled={disabled}
       />
-    </div>
+    </LeftPanelSection>
   )
 }
 

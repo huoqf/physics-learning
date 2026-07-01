@@ -38,7 +38,20 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
       { key: 'a2', label: '外轨半长轴 a₂', min: 6.0, max: 10.0, step: 0.1, unit: '', showIf: 'mode', showIfValue: 2 },
       { key: 'b2', label: '外轨半短轴 b₂', min: 4.5, max: 9.0, step: 0.1, unit: '', showIf: 'mode', showIfValue: 2 },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/gravitation/KeplerSidebar')),
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'mode',
+        label: '定律模式',
+        group: '模型选择',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '第一定律' },
+          { value: 1, label: '第二定律' },
+          { value: 2, label: '第三定律' },
+        ],
+      },
+    ],
   },
   'anim-satellite': {
     title: '人造卫星宇宙速度与入轨演示',

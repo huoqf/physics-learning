@@ -14,6 +14,80 @@ export interface KnowledgeNode {
   parentId?: string
 }
 
+export type ParamImportance = 'core' | 'advanced' | 'display'
+
+export type ParamMarkVariant = 'zero' | 'critical' | 'recommended'
+
+export interface ParamMark {
+  /** 标记对应的参数值 */
+  value: number
+  /** 标记文本；不传则仅显示刻度线 */
+  label?: string
+  /** 标记语义：零点 / 临界值 / 推荐值 */
+  variant?: ParamMarkVariant
+}
+
+export interface ControlCondition {
+  /** 参数分组，例如“模型选择 / 显示辅助 / 教学提示” */
+  group?: string
+  /** 仅当 params[showIf] 为真值时显示此控件 */
+  showIf?: string
+  /** 仅当 params[showIf] 等于此值时显示此控件 */
+  showIfValue?: number
+  /** 当 params[hideIf] 等于此值时隐藏此控件 */
+  hideIf?: string
+  /** 与 hideIf 配合：当 params[hideIf] 等于此值时隐藏 */
+  hideIfValue?: number
+}
+
+export interface ControlOption {
+  value: number
+  label: string
+  description?: string
+}
+
+export type ControlMeta =
+  | (ControlCondition & {
+      type: 'number'
+      key: string
+      label: string
+      min: number
+      max: number
+      step?: number
+      unit?: string
+      description?: string
+      resetOnChange?: boolean
+    })
+  | (ControlCondition & {
+      type: 'segmented'
+      key: string
+      label: string
+      options: ControlOption[]
+      resetOnChange?: boolean
+    })
+  | (ControlCondition & {
+      type: 'toggle'
+      key: string
+      label: string
+      trueValue?: number
+      falseValue?: number
+      resetOnChange?: boolean
+    })
+  | (ControlCondition & {
+      type: 'preset'
+      label: string
+      params: Record<string, number>
+      description?: string
+      resetOnApply?: boolean
+      restartOnApply?: boolean
+    })
+  | (ControlCondition & {
+      type: 'tip'
+      title?: string
+      content: string
+      variant?: 'info' | 'primary' | 'warning'
+    })
+
 /** 参数控件元数据 */
 export interface ParamMeta {
   key: string
@@ -22,6 +96,16 @@ export interface ParamMeta {
   max: number
   step?: number
   unit?: string
+  /** 参数分组，例如“核心参数 / 显示辅助 / 进阶参数” */
+  group?: string
+  /** 参数教学说明，显示在控件标签下方 */
+  description?: string
+  /** 关键标记：零点、临界点、推荐值等 */
+  marks?: ParamMark[]
+  /** 参数重要性，用于左屏视觉层级 */
+  importance?: ParamImportance
+  /** 此参数变化后是否重置动画时间 */
+  resetOnChange?: boolean
   /** 仅当 params[showIf] 为真值时显示此参数 */
   showIf?: string
   /** 仅当 params[showIf] 等于此值时显示此参数 */
@@ -71,6 +155,8 @@ export interface AnimationConfig<P extends Record<string, number> = Record<strin
   defaultParams: P
   /** 参数控件元数据（替代页面层硬编码的 paramConfigs） */
   paramMeta?: ParamMeta[]
+  /** 左屏声明式控件元数据：模式、开关、预设、提示等；用于逐步收敛 SidebarExtra */
+  controlMeta?: ControlMeta[]
   /** 是否支持发现模式 */
   supportsDiscovery?: boolean
   /** 发现模式组件（lazy 加载） */

@@ -1,4 +1,4 @@
-import { SegmentedControl, ToggleSwitch } from '@/components/UI'
+import { SegmentedControl, ToggleSwitch, LeftPanelSection } from '@/components/UI'
 import type { SidebarExtraProps } from '@/data/types'
 
 export default function CurvedSlotSidebar({
@@ -11,7 +11,7 @@ export default function CurvedSlotSidebar({
   const slotShape = params.slotShape ?? 0
 
   return (
-    <div className="mt-4 pt-4 border-t border-neutral-200 flex flex-col gap-4">
+    <LeftPanelSection bodyClassName="flex flex-col gap-4">
       <div className="text-xs text-neutral-500 font-semibold border-b pb-1">高考场景与轨道参数</div>
 
       {/* 轨道状态 */}
@@ -65,6 +65,6 @@ export default function CurvedSlotSidebar({
         }}
         disabled={disabled}
       />
-    </div>
+    </LeftPanelSection>
   )
 }

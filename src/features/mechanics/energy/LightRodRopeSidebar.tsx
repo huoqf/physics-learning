@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import { SegmentedControl, ToggleSwitch } from '@/components/UI'
+import { SegmentedControl, ToggleSwitch, LeftPanelSection } from '@/components/UI'
 import type { SidebarExtraProps } from '@/data/types'
 
 /**
@@ -24,7 +24,7 @@ const LightRodRopeSidebar: FC<SidebarExtraProps> = ({
   }
 
   return (
-    <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-neutral-200">
+    <LeftPanelSection bodyClassName="flex flex-col gap-4">
       <SegmentedControl
         label="连接约束拓扑"
         options={[
@@ -71,7 +71,7 @@ const LightRodRopeSidebar: FC<SidebarExtraProps> = ({
           />
         )}
       </div>
-    </div>
+    </LeftPanelSection>
   )
 }
 

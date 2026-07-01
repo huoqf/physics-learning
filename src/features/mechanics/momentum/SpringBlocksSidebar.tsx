@@ -1,4 +1,4 @@
-import { SegmentedControl, Button } from '@/components/UI'
+import { SegmentedControl, Button, LeftPanelSection } from '@/components/UI'
 import type { SidebarExtraProps } from '@/data/types'
 
 export default function SpringBlocksSidebar({
@@ -11,7 +11,7 @@ export default function SpringBlocksSidebar({
   const connectionMode_spring = params.connectionMode_spring ?? 0
 
   return (
-    <div className="mt-4 pt-4 border-t border-neutral-200 flex flex-col gap-4">
+    <LeftPanelSection bodyClassName="flex flex-col gap-4">
       <div className="text-xs text-neutral-500 font-semibold border-b pb-1">弹簧连接体参数配置</div>
       
       <SegmentedControl
@@ -105,6 +105,6 @@ export default function SpringBlocksSidebar({
           </Button>
         </div>
       </div>
-    </div>
+    </LeftPanelSection>
   )
 }

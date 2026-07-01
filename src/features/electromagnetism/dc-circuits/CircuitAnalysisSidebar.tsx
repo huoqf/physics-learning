@@ -1,5 +1,5 @@
 import React from 'react'
-import { SegmentedControl, ToggleSwitch, TipCard, Slider } from '@/components/UI'
+import { SegmentedControl, ToggleSwitch, TipCard, Slider, LeftPanelSection } from '@/components/UI'
 import type { SidebarExtraProps } from '@/data/types'
 
 export const CircuitAnalysisSidebar: React.FC<SidebarExtraProps> = ({
@@ -14,7 +14,7 @@ export const CircuitAnalysisSidebar: React.FC<SidebarExtraProps> = ({
   const showChart = params.showChart ?? 1
 
   return (
-    <div className="mt-4 pt-4 border-t border-neutral-200 space-y-5">
+    <LeftPanelSection bodyClassName="space-y-5">
       {/* 滑动变阻器 R2 控制 */}
       <Slider
         label="滑动变阻器 R₂"
@@ -86,7 +86,7 @@ export const CircuitAnalysisSidebar: React.FC<SidebarExtraProps> = ({
           disabled={disabled}
         />
       </div>
-    </div>
+    </LeftPanelSection>
   )
 }
 

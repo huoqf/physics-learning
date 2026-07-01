@@ -1,4 +1,4 @@
-import { SegmentedControl, ToggleSwitch } from '@/components/UI'
+import { SegmentedControl, ToggleSwitch, LeftPanelSection } from '@/components/UI'
 import { useAnimationStore } from '@/stores'
 import type { SidebarExtraProps } from '@/data/types'
 
@@ -15,7 +15,7 @@ export default function KinematicsAdvancedSidebar({
   const toggleVectors = useAnimationStore((s) => s.toggleVectors)
 
   return (
-    <div className="mt-4 pt-4 border-t border-neutral-200 space-y-4">
+    <LeftPanelSection bodyClassName="space-y-4">
       <SegmentedControl
         label="函数图象模式切换"
         options={[
@@ -45,6 +45,6 @@ export default function KinematicsAdvancedSidebar({
         onChange={toggleVectors}
         disabled={disabled}
       />
-    </div>
+    </LeftPanelSection>
   )
 }

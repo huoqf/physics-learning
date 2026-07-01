@@ -1,5 +1,5 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { SegmentedControl, ToggleSwitch } from '@/components/UI'
+import { SegmentedControl, ToggleSwitch, LeftPanelSection } from '@/components/UI'
 
 export default function IntermolecularForcesSidebar({
   params,
@@ -16,7 +16,7 @@ export default function IntermolecularForcesSidebar({
   }
 
   return (
-    <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-neutral-200">
+    <LeftPanelSection bodyClassName="flex flex-col gap-4">
       <ToggleSwitch
         label="自动释放动画"
         checked={autoRelease === 1}
@@ -56,6 +56,6 @@ export default function IntermolecularForcesSidebar({
           </p>
         </div>
       )}
-    </div>
+    </LeftPanelSection>
   )
 }

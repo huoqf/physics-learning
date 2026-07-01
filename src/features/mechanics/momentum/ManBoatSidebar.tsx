@@ -1,4 +1,4 @@
-import { SegmentedControl, Slider, Button } from '@/components/UI'
+import { SegmentedControl, Slider, Button, LeftPanelSection } from '@/components/UI'
 import type { SidebarExtraProps } from '@/data/types'
 
 export default function ManBoatSidebar({
@@ -13,7 +13,7 @@ export default function ManBoatSidebar({
   const manBoatMode = params.manBoatMode ?? 0
 
   return (
-    <div className="mt-4 pt-4 border-t border-neutral-200 flex flex-col gap-4">
+    <LeftPanelSection bodyClassName="flex flex-col gap-4">
       <div className="text-xs text-neutral-500 font-semibold border-b pb-1">人船模型参数配置</div>
       
       <SegmentedControl
@@ -158,6 +158,6 @@ export default function ManBoatSidebar({
           <p>请点击主画面使其获取焦点，然后使用键盘 <strong>←（左方向键）</strong> 或 <strong>→（右方向键）</strong> 即可操控小人在船上行走！</p>
         </div>
       )}
-    </div>
+    </LeftPanelSection>
   )
 }

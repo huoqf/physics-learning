@@ -1,5 +1,5 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { SegmentedControl, ToggleSwitch, TipCard } from '@/components/UI'
+import { SegmentedControl, ToggleSwitch, TipCard, LeftPanelSection } from '@/components/UI'
 
 export default function ChargeInBFieldSidebar({
   params,
@@ -30,7 +30,7 @@ export default function ChargeInBFieldSidebar({
   }
 
   return (
-    <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-neutral-200">
+    <LeftPanelSection bodyClassName="flex flex-col gap-4">
       {/* ─── 顶部演示模式选择（参数设置框下方第一项） ─── */}
       <SegmentedControl
         label="演示模式"
@@ -109,6 +109,6 @@ export default function ChargeInBFieldSidebar({
           </>
         )}
       </div>
-    </div>
+    </LeftPanelSection>
   )
 }

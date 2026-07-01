@@ -1,5 +1,5 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { SegmentedControl, ToggleSwitch, TipCard } from '@/components/UI'
+import { SegmentedControl, ToggleSwitch, TipCard, LeftPanelSection } from '@/components/UI'
 
 export default function ChargeInEFieldSidebar({
   params,
@@ -21,7 +21,7 @@ export default function ChargeInEFieldSidebar({
   }
 
   return (
-    <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-neutral-200">
+    <LeftPanelSection bodyClassName="flex flex-col gap-4">
       <SegmentedControl
         label="电场类型"
         options={[
@@ -48,6 +48,6 @@ export default function ChargeInEFieldSidebar({
           ? "在恒定直流电场模式下，粒子在板间做类平抛运动。尝试拖动初速度 v₀ 翻倍，并观察右屏偏转位移 y 是否刚好缩小到 1/4，以验证类平抛位移公式规律。"
           : "在交变模式下，粒子做周期性变向折线运动。💡提示：若交变频率过低（如 10Hz）或初速 v₀ 过快，粒子在电场变向发生前就已经飞出极板，轨迹将退化为单向抛物线。建议调慢初速 v₀，并调大频率 f，即可观察到生动的锯齿折线运动！"}
       </TipCard>
-    </div>
+    </LeftPanelSection>
   )
 }

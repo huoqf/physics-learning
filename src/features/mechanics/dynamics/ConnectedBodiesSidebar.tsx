@@ -1,4 +1,4 @@
-import { SegmentedControl, OptionButton } from '@/components/UI'
+import { SegmentedControl, OptionButton, LeftPanelSection } from '@/components/UI'
 import type { SidebarExtraProps } from '@/data/types'
 
 export default function ConnectedBodiesSidebar({
@@ -29,7 +29,7 @@ export default function ConnectedBodiesSidebar({
   }
 
   return (
-    <div className="mt-4 pt-4 border-t border-neutral-200 flex flex-col gap-4">
+    <LeftPanelSection bodyClassName="flex flex-col gap-4">
       {/* 观察模式切换 */}
       <SegmentedControl
         label="观察模式"
@@ -74,6 +74,6 @@ export default function ConnectedBodiesSidebar({
           ))}
         </div>
       </div>
-    </div>
+    </LeftPanelSection>
   )
 }

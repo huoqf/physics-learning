@@ -1,6 +1,6 @@
 import type { SidebarExtraProps } from '@/data/types'
 import { duration, easing } from '@/theme/motion'
-import { SegmentedControl, OptionButton, ToggleSwitch, TipCard, Slider } from '@/components/UI'
+import { SegmentedControl, OptionButton, ToggleSwitch, TipCard, Slider, LeftPanelSection } from '@/components/UI'
 
 export default function GravityBasicSidebar({ params, updateParam, animationActions, disabled }: SidebarExtraProps) {
   const mode = params.mode ?? 0
@@ -23,7 +23,7 @@ export default function GravityBasicSidebar({ params, updateParam, animationActi
   }
 
   return (
-    <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-neutral-200">
+    <LeftPanelSection bodyClassName="flex flex-col gap-4">
       {/* 演示模式选择 */}
       <SegmentedControl
         label="演示模式"
@@ -104,6 +104,6 @@ export default function GravityBasicSidebar({ params, updateParam, animationActi
           />
         </div>
       )}
-    </div>
+    </LeftPanelSection>
   )
 }

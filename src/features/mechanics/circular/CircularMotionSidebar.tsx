@@ -1,4 +1,4 @@
-import { SegmentedControl, ToggleSwitch } from '@/components/UI'
+import { SegmentedControl, ToggleSwitch, LeftPanelSection } from '@/components/UI'
 import type { SidebarExtraProps } from '@/data/types'
 
 export default function CircularMotionSidebar({
@@ -11,7 +11,7 @@ export default function CircularMotionSidebar({
   const isAdvanced = advancedMode === 1
 
   return (
-    <div className="mt-4 pt-4 border-t border-neutral-200">
+    <LeftPanelSection>
       <SegmentedControl
         label="观察模式"
         options={[
@@ -45,6 +45,6 @@ export default function CircularMotionSidebar({
           />
         </div>
       )}
-    </div>
+    </LeftPanelSection>
   )
 }

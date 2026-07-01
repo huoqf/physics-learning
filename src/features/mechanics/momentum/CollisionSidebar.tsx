@@ -1,4 +1,4 @@
-import { SegmentedControl } from '@/components/UI'
+import { SegmentedControl, LeftPanelSection } from '@/components/UI'
 import type { SidebarExtraProps } from '@/data/types'
 
 export default function CollisionSidebar({
@@ -10,7 +10,7 @@ export default function CollisionSidebar({
   const advancedMode = params.advancedMode ?? 0
 
   return (
-    <div className="mt-4 pt-4 border-t border-neutral-200">
+    <LeftPanelSection>
       <SegmentedControl
         label="观察模式"
         options={[
@@ -42,6 +42,6 @@ export default function CollisionSidebar({
           />
         </div>
       )}
-    </div>
+    </LeftPanelSection>
   )
 }

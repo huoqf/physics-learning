@@ -1,4 +1,4 @@
-import { SegmentedControl } from '@/components/UI'
+import { SegmentedControl, LeftPanelSection } from '@/components/UI'
 import type { SidebarExtraProps } from '@/data/types'
 
 export default function ImpulseSidebar({
@@ -11,7 +11,7 @@ export default function ImpulseSidebar({
   const isAdvanced = advancedMode === 1
 
   return (
-    <div className="mt-4 pt-4 border-t border-neutral-200">
+    <LeftPanelSection>
       <SegmentedControl
         label="观察模式"
         options={[
@@ -43,6 +43,6 @@ export default function ImpulseSidebar({
           />
         </div>
       )}
-    </div>
+    </LeftPanelSection>
   )
 }

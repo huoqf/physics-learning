@@ -1,4 +1,4 @@
-import { SegmentedControl, Slider } from '@/components/UI'
+import { SegmentedControl, Slider, LeftPanelSection } from '@/components/UI'
 import type { SidebarExtraProps } from '@/data/types'
 
 export default function MomentumConservationSidebar({
@@ -12,7 +12,7 @@ export default function MomentumConservationSidebar({
   const e_coefficient = params.e_coefficient ?? 0.5
 
   return (
-    <div className="mt-4 pt-4 border-t border-neutral-200 flex flex-col gap-4">
+    <LeftPanelSection bodyClassName="flex flex-col gap-4">
       <SegmentedControl
         label="观察模式"
         options={[
@@ -58,6 +58,6 @@ export default function MomentumConservationSidebar({
           )}
         </>
       )}
-    </div>
+    </LeftPanelSection>
   )
 }

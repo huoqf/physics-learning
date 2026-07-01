@@ -214,7 +214,28 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 膨胀触发区域：参数过滤（showIf/hideIf）、SidebarExtra props 组装、模式切换、RightPhysicsPanel 计算逻辑。
 如继续增长，优先抽 hook：`useFilteredParams()`、`useSidebarExtraProps()`、`useAnimationMode()`。
 
-### 3.2 其他（P3，暂缓）
+### 3.2 左屏控制台整体优化（P1/P2，暂缓）
+
+> 登记日期：2026-07-01 | 背景：左屏当前由 `paramMeta → ParamControl` 与大量 `SidebarExtra` 手写控件混合组成，视觉层级和交互语义不够统一。
+
+**现状观察**：
+- `ParamControl` 只覆盖 registry 中的标准数值参数；大量页面仍在 `SidebarExtra` 内手写 `Slider / SegmentedControl / ToggleSwitch / OptionButton / TipCard`。
+- 左屏顺序、卡片边框、分组标题、提示卡位置、重置语义在不同页面不完全一致。
+- 物理参数缺少统一的教学语义扩展：零点、临界点、常用角、推荐值、说明文案、参数分组等。
+
+**分阶段方案**：
+1. ✅ **P1：全局增强 `ParamControl`**（2026-07-01 已完成）：精确输入、按 step 格式化、非法值回退、`min<0<max` 自动零点标记、真正恢复默认参数，并补 `ParamControl` 单测。
+2. ✅ **P1：统一左屏容器**（2026-07-01 已完成主体）：新增 `LeftPanel / LeftPanelSection / LeftPanelScrollArea` 并接入 `AnimationPage` 顶层左屏；已批量迁移 49 个静态根容器 SidebarExtra 到 `LeftPanelSection`。剩余 Fragment/动态根容器类复杂 SidebarExtra 后续随 controlMeta 迁移处理。
+3. ✅ **P2：扩展参数协议**（2026-07-01 已完成）：`ParamMeta` 已增加 `group / description / marks / importance / resetOnChange`，`ParamControl` 已支持分组、说明、标记与重要性样式。
+4. ✅ **P2：引入 `controlMeta`**（2026-07-01 第一阶段已完成）：已新增 `ControlMeta` 协议与 `ControlPanel` 渲染器，支持 `number / segmented / toggle / preset / tip`；已迁移库仑定律、力的合成与分解、共点力平衡、恒力做功、开普勒定律等简单 SidebarExtra。
+5. **P2/P3：收敛 SidebarExtra**：继续把简单模式切换、显示开关、预设按钮、提示卡从手写 SidebarExtra 迁移到 `controlMeta`；真正复杂的页面专属控制继续保留。
+
+**验收标准**：
+- 左屏基础结构一致，控件分组明确；默认恢复语义清晰。
+- 简单模式切换、显示开关、提示卡不再需要手写 SidebarExtra。
+- 复杂 SidebarExtra 也必须复用统一左屏 section/card 容器。
+
+### 3.3 其他（P3，暂缓）
 
 | 条目 | 前提条件 |
 |------|---------|

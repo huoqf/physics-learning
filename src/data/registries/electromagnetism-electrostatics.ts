@@ -14,7 +14,28 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
       { key: 'r', label: '间距 r', min: 1, max: 8, step: 0.5, unit: 'cm', showIf: 'mode', showIfValue: 0 },
       { key: 'q3', label: '电量 Q₃', min: -5, max: 5, step: 0.5, unit: 'μC', showIf: 'mode', showIfValue: 1 },
     ],
-    SidebarExtra: lazy(() => import('@/features/electromagnetism/electrostatics/CoulombLawSidebar')),
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'mode',
+        label: '演示模式',
+        group: '模型选择',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '基础' },
+          { value: 1, label: '三电荷平衡' },
+        ],
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        showIf: 'mode',
+        showIfValue: 1,
+        variant: 'warning',
+        title: '💡 拖拽电荷改变位置，观察合力变化',
+        content: '三个点电荷平衡条件：两大夹小、两同夹异、远小近大。',
+      },
+    ],
   },
   'anim-electric-field': {
     title: '电场强度与比值定义法',

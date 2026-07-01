@@ -33,7 +33,33 @@ export const mechanicsEnergyAnimations = defineAnimations({
         showIfValue: 1,
       },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/energy/WorkSidebar')),
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'mode',
+        label: '演示模式',
+        group: '模型选择',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '基础模式 (μ=0)' },
+          { value: 1, label: '进阶模式 (含摩擦)' },
+        ],
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        showIf: 'mode',
+        showIfValue: 0,
+        content: '左图 v-t 速度曲线，右图 F-x 功面积；拖动 θ 观察投影变化。',
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        showIf: 'mode',
+        showIfValue: 1,
+        content: '左图 F-x 多力复合，右图能量柱看板；观察支持力随 θ 变化。',
+      },
+    ],
   },
   'anim-power': {
     title: '功率',
