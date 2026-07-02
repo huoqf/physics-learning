@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 下文"已从待办移出"仅用于避免重复排期；详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-02（SidebarExtra 收敛 P0-P4 推进）
+> 最后更新：2026-07-02（CircuitAnalysis 拆分完成、DCSource 符号模式修复）
 
 ---
 
@@ -59,6 +59,7 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 |------|-----:|---------|---------|
 | `ForceMotionSandbox.tsx` | 758 | → `hooks/useForceMotionSandbox.ts`(253) + 组件(331) | 2026-07-01 |
 | `EquilibriumAnimation.tsx` | 737 | → `hooks/useEquilibriumLayout.ts`(165) + 组件(430) | 2026-07-01 |
+| `CircuitAnalysis.tsx` | 507 | → `physics/dcCircuit.ts`(calculateCircuitAnalysis) + `model/circuitAnalysisLayout.ts` + 组件(~370) | 2026-07-02 |
 
 ### 待处理
 

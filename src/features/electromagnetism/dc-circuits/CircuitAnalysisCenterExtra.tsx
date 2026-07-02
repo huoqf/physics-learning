@@ -1,12 +1,14 @@
 import { FC, useMemo } from 'react'
-import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
+import { SCENE_COLORS } from '@/theme/physics'
 import { useAnimationStore } from '@/stores'
 import { useCanvasSize } from '@/utils'
+import { calculateCircuitAnalysis } from '@/physics'
 import { BarChart3 } from 'lucide-react'
 import { Card } from '@/components/UI'
+import { EnergyBars } from '@/components/Physics'
 
 export const CircuitAnalysisCenterExtra: FC = () => {
-    const params = useAnimationStore((s) => s.params)
+  const params = useAnimationStore((s) => s.params)
   const [, canvasSize] = useCanvasSize({ width: 400, height: 200 })
   const { font } = canvasSize
 
@@ -18,48 +20,24 @@ export const CircuitAnalysisCenterExtra: FC = () => {
   const U = params.U ?? 12
   const showChart = params.showChart ?? 1
 
-  // 物理量实时计算 (与右侧看板和电路一致)
-  const circuitData = useMemo(() => {
-    let Rtotal = 0
-    let Itotal = 0
-    let U1 = 0
-    let U2 = 0
-    let I1 = 0
-    let I2 = 0
-    let I3 = 0
+  // 物理量实时计算（使用共享纯函数）
+  const circuitData = useMemo(
+    () => calculateCircuitAnalysis(mode, subMode, R1, R2, R3, U),
+    [mode, subMode, R1, R2, R3, U]
+  )
 
-    if (mode === 0) {
-      if (subMode === 0) {
-        // 串联电路
-        Rtotal = R1 + R2
-        Itotal = Rtotal > 0 ? U / Rtotal : 0
-        I1 = I2 = Itotal
-        U1 = I1 * R1
-        U2 = I2 * R2
-      } else {
-        // 并联电路
-        const R2_eff = R2 > 0 ? R2 : 0.01
-        Rtotal = (R1 * R2_eff) / (R1 + R2_eff)
-        Itotal = U / Rtotal
-        I1 = U / R1
-        I2 = U / R2_eff
-        U1 = U2 = U
-      }
-    } else {
-      // 混联电路
-      const R2_eff = R2 > 0 ? R2 : 0.001
-      const R_parallel = (R2_eff * R3) / (R2_eff + R3)
-      Rtotal = R1 + R_parallel
-      Itotal = U / Rtotal
-      U1 = Itotal * R1
-      U2 = U - U1
-      I3 = U2 / R3
-      I2 = R2 > 0 ? U2 / R2 : Itotal
-      I1 = Itotal
-    }
+  // 补算功率物理量
+  const extendedData = useMemo(() => {
+    const P1 = circuitData.I1 * circuitData.U1
+    const P2 = circuitData.I2 * circuitData.U2
+    const P3 = circuitData.I3 * circuitData.U2
+    const Ptotal = circuitData.Itotal * U
+    return { P1, P2, P3, Ptotal }
+  }, [circuitData, U])
 
-    return { Rtotal, Itotal, U1, U2, I1, I2, I3 }
-  }, [mode, subMode, R1, R2, R3, U])
+  // 滑动变阻器电功率最值考点检测
+  const R2_target = mode === 1 ? (R1 * R3) / (R1 + R3) : R1
+  const isMaxPowerPoint = Math.abs(R2 - R2_target) <= 1.5
 
   if (showChart === 0) {
     return (
@@ -75,187 +53,80 @@ export const CircuitAnalysisCenterExtra: FC = () => {
     )
   }
 
-  // 柱状图坐标映射
-  // viewBox="0 0 240 100"
-  // 电压轴 (左半边 x: 10~110, y: 15~85)
-  // 电流轴 (右半边 x: 130~230, y: 15~85)
-  const plotH = 65
-  const originY = 82
-  const topY = 17
-
-  const toSvgY_U = (u: number) => originY - (u / 12) * plotH
-  // 电流最大参考值为 1.2 A (并联短路除外，做截断限制)
-  const toSvgY_I = (i: number) => originY - (Math.min(1.2, i) / 1.2) * plotH
-
-  const items = mode === 0 
+  // 电压 BarItems
+  const uItems = mode === 0 
     ? [
-        { label: 'R₁', u: circuitData.U1, i: circuitData.I1, color: SCENE_COLORS.charts.circuitR1 },
-        { label: 'R₂ (变)', u: circuitData.U2, i: circuitData.I2, color: SCENE_COLORS.charts.circuitR2 },
-        { label: '总电路', u: U, i: circuitData.Itotal, color: SCENE_COLORS.charts.circuitTotal },
+        { key: 'r1', label: 'R₁', value: circuitData.U1, color: SCENE_COLORS.charts.circuitR1 },
+        { key: 'r2', label: 'R₂ (变)', value: circuitData.U2, color: SCENE_COLORS.charts.circuitR2 },
+        { key: 'total', label: '总电路', value: U, color: SCENE_COLORS.charts.circuitTotal },
       ]
     : [
-        { label: 'R₁', u: circuitData.U1, i: circuitData.I1, color: SCENE_COLORS.charts.circuitR1 },
-        { label: 'R₂ (变)', u: circuitData.U2, i: circuitData.I2, color: SCENE_COLORS.charts.circuitR2 },
-        { label: 'R₃', u: circuitData.U2, i: circuitData.I3, color: SCENE_COLORS.charts.circuitR3 },
-        { label: '总电路', u: U, i: circuitData.Itotal, color: SCENE_COLORS.charts.circuitTotal },
+        { key: 'r1', label: 'R₁', value: circuitData.U1, color: SCENE_COLORS.charts.circuitR1 },
+        { key: 'r2', label: 'R₂ (变)', value: circuitData.U2, color: SCENE_COLORS.charts.circuitR2 },
+        { key: 'r3', label: 'R₃', value: circuitData.U2, color: SCENE_COLORS.charts.circuitR3 },
+        { key: 'total', label: '总电路', value: U, color: SCENE_COLORS.charts.circuitTotal },
       ]
 
-  const numItems = items.length
-  const colWidth = 12
+  // 电流 BarItems
+  const iItems = mode === 0 
+    ? [
+        { key: 'r1', label: 'R₁', value: circuitData.I1, color: SCENE_COLORS.charts.circuitR1 },
+        { key: 'r2', label: 'R₂ (变)', value: circuitData.I2, color: SCENE_COLORS.charts.circuitR2 },
+        { key: 'total', label: '总电路', value: circuitData.Itotal, color: SCENE_COLORS.charts.circuitTotal },
+      ]
+    : [
+        { key: 'r1', label: 'R₁', value: circuitData.I1, color: SCENE_COLORS.charts.circuitR1 },
+        { key: 'r2', label: 'R₂ (变)', value: circuitData.I2, color: SCENE_COLORS.charts.circuitR2 },
+        { key: 'r3', label: 'R₃', value: circuitData.I3, color: SCENE_COLORS.charts.circuitR3 },
+        { key: 'total', label: '总电路', value: circuitData.Itotal, color: SCENE_COLORS.charts.circuitTotal },
+      ]
 
-  // 柱体 x 坐标计算
-  const getX = (idx: number, side: 'left' | 'right') => {
-    const startX = side === 'left' ? 22 : 142
-    const totalW = 80
-    const dx = totalW / (numItems + 1)
-    return startX + dx * (idx + 1) - colWidth / 2
-  }
+  // 功率 BarItems
+  const pItems = mode === 0 
+    ? [
+        { key: 'r1', label: 'R₁', value: extendedData.P1, color: SCENE_COLORS.charts.circuitR1 },
+        { key: 'r2', label: 'R₂ (变)', value: extendedData.P2, color: SCENE_COLORS.charts.circuitR2 },
+        { key: 'total', label: '总电路', value: extendedData.Ptotal, color: SCENE_COLORS.charts.circuitTotal },
+      ]
+    : [
+        { key: 'r1', label: 'R₁', value: extendedData.P1, color: SCENE_COLORS.charts.circuitR1 },
+        { key: 'r2', label: 'R₂ (变)', value: extendedData.P2, color: SCENE_COLORS.charts.circuitR2 },
+        { key: 'r3', label: 'R₃', value: extendedData.P3, color: SCENE_COLORS.charts.circuitR3 },
+        { key: 'total', label: '总电路', value: extendedData.Ptotal, color: SCENE_COLORS.charts.circuitTotal },
+      ]
 
   return (
-    <div className="w-full h-full flex gap-3 px-1.5 py-1.5 border-b border-neutral-200/60 bg-neutral-50/50">
-      <Card className="flex-1 p-3 flex items-center justify-center min-w-0 relative">
-        <svg viewBox="0 0 240 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
-          {/* ================= 左半部分：电压分配 U (V) ================= */}
-          <text x={22} y={11} fontSize={font(4.5)} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
-            电压分配 U (V) — 串联分压
-          </text>
-          
-          {/* 电压网格线 */}
-          {[3, 6, 9, 12].map((v) => (
-            <g key={`grid-u-${v}`}>
-              <line
-                x1={22}
-                y1={toSvgY_U(v)}
-                x2={102}
-                y2={toSvgY_U(v)}
-                stroke={PHYSICS_COLORS.grid}
-                strokeWidth={0.25}
-                strokeDasharray="1,1"
-              />
-              <text x={18} y={toSvgY_U(v) + 1.2} fontSize={font(3)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end" fontFamily="monospace">
-                {v}
-              </text>
-            </g>
-          ))}
+    <div className="w-full h-full flex flex-col gap-2 p-1.5 border-b border-neutral-200/60 bg-neutral-50/50 min-h-0 select-none">
+      {/* 高考考点高亮提示横幅 */}
+      {isMaxPowerPoint && (
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-semibold shadow-sm border-amber-200 bg-amber-50 text-amber-800 animate-pulse transition-all duration-300">
+          <span className="text-xs">💡</span>
+          <span>
+            【高考高频考点】：当前滑动变阻器 $R_2$ 的功率达到最大值！
+            （串并联最值规律：当滑动变阻器阻值 $R_2$ 等于外电路其它部分等效电阻 {R2_target.toFixed(1)} $\Omega$ 时，其消耗功率最大，当前为 {extendedData.P2.toFixed(2)} W）
+          </span>
+        </div>
+      )}
 
-          {/* 电压轴 */}
-          <line x1={22} y1={originY} x2={104} y2={originY} stroke={PHYSICS_COLORS.labelText} strokeWidth={0.4} />
-          <line x1={22} y1={originY} x2={22} y2={topY} stroke={PHYSICS_COLORS.labelText} strokeWidth={0.4} />
-
-          {/* 电压柱体 */}
-          {items.map((item, idx) => {
-            const x = getX(idx, 'left')
-            const y = toSvgY_U(item.u)
-            const h = Math.max(0, originY - y)
-            return (
-              <g key={`bar-u-${idx}`}>
-                <rect
-                  x={x}
-                  y={y}
-                  width={colWidth}
-                  height={h}
-                  fill={item.color}
-                  fillOpacity={0.8}
-                  stroke={item.color}
-                  strokeWidth={0.3}
-                  rx={1}
-                  style={{ transition: 'height 250ms ease-out, y 250ms ease-out' }}
-                />
-                <text
-                  x={x + colWidth / 2}
-                  y={y - 2}
-                  fontSize={font(3.2)}
-                  fill={PHYSICS_COLORS.labelText}
-                  fontWeight="bold"
-                  textAnchor="middle"
-                  fontFamily="monospace"
-                  style={{ transition: 'y 250ms ease-out' }}
-                >
-                  {item.u.toFixed(1)}V
-                </text>
-                <text x={x + colWidth / 2} y={originY + 4.5} fontSize={font(3.2)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
-                  {item.label}
-                </text>
-              </g>
-            )
-          })}
-
-          {/* ================= 右半部分：电流分配 I (A) ================= */}
-          <text x={142} y={11} fontSize={font(4.5)} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
-            电流分配 I (A) — 并联分流
-          </text>
-          
-          {/* 电流网格线 */}
-          {[0.3, 0.6, 0.9, 1.2].map((i) => (
-            <g key={`grid-i-${i}`}>
-              <line
-                x1={142}
-                y1={toSvgY_I(i)}
-                x2={222}
-                y2={toSvgY_I(i)}
-                stroke={PHYSICS_COLORS.grid}
-                strokeWidth={0.25}
-                strokeDasharray="1,1"
-              />
-              <text x={138} y={toSvgY_I(i) + 1.2} fontSize={font(3)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end" fontFamily="monospace">
-                {i.toFixed(1)}
-              </text>
-            </g>
-          ))}
-
-          {/* 电流轴 */}
-          <line x1={142} y1={originY} x2={224} y2={originY} stroke={PHYSICS_COLORS.labelText} strokeWidth={0.4} />
-          <line x1={142} y1={originY} x2={142} y2={topY} stroke={PHYSICS_COLORS.labelText} strokeWidth={0.4} />
-
-          {/* 电流柱体 */}
-          {items.map((item, idx) => {
-            const x = getX(idx, 'right')
-            const isOver = item.i > 1.2
-            const y = toSvgY_I(item.i)
-            const h = Math.max(0, originY - y)
-            return (
-              <g key={`bar-i-${idx}`}>
-                <rect
-                  x={x}
-                  y={y}
-                  width={colWidth}
-                  height={h}
-                  fill={PHYSICS_COLORS.electricCurrent}
-                  fillOpacity={0.8}
-                  stroke={PHYSICS_COLORS.electricCurrent}
-                  strokeWidth={0.3}
-                  rx={1}
-                  style={{ transition: 'height 250ms ease-out, y 250ms ease-out' }}
-                />
-                {isOver && (
-                  // 溢出指示符（并联短路状态）
-                  <path
-                    d={`M ${x + 2} ${y + 2} L ${x + colWidth / 2} ${y - 1} L ${x + colWidth - 2} ${y + 2}`}
-                    fill="none"
-                    stroke={SCENE_COLORS.materials.edgeHighlightWhite}
-                    strokeWidth={0.6}
-                  />
-                )}
-                <text
-                  x={x + colWidth / 2}
-                  y={y - 2}
-                  fontSize={font(3.2)}
-                  fill={isOver ? PHYSICS_COLORS.electricCurrent : PHYSICS_COLORS.labelText}
-                  fontWeight="bold"
-                  textAnchor="middle"
-                  fontFamily="monospace"
-                  style={{ transition: 'y 250ms ease-out' }}
-                >
-                  {item.i.toFixed(2)}A
-                </text>
-                <text x={x + colWidth / 2} y={originY + 4.5} fontSize={font(3.2)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">
-                  {item.label}
-                </text>
-              </g>
-            )
-          })}
-        </svg>
-      </Card>
+      {/* 并排渲染三维物理分配柱状图 */}
+      <div className="flex-1 flex gap-2 min-h-0">
+        <div className="flex-1 min-w-0 flex items-stretch">
+          <EnergyBars items={uItems} title="电压分配 U (V) — 串联分压" compact font={font} />
+        </div>
+        <div className="flex-1 min-w-0 flex items-stretch">
+          <EnergyBars items={iItems} title="电流分配 I (A) — 并联分流" compact font={font} />
+        </div>
+        <div className="flex-1 min-w-0 flex items-stretch">
+          <EnergyBars 
+            items={pItems} 
+            title="电功率 P (W) — 元件消耗" 
+            compact 
+            font={font} 
+            hasCollision={isMaxPowerPoint}
+            collisionKey="r2"
+          />
+        </div>
+      </div>
     </div>
   )
 }

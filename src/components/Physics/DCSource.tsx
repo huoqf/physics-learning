@@ -396,34 +396,34 @@ export const DCSource: React.FC<DCSourceProps> = ({
     )
   }
 
-  // 3. 渲染：标准原理图符号
-  const isLeftPositive = polarity === 'left-positive'
-  const longLineX = isLeftPositive ? -5 : 5
-  const shortLineX = isLeftPositive ? 5 : -5
+  // 3. 渲染：标准原理图符号（垂直放置，符合电路图规范）
+  // right-positive 时正极在上，left-positive 时正极在下
+  const isTopPositive = polarity === 'right-positive'
 
   return (
     <g
       transform={`translate(${x}, ${y})`}
       className={`${className} ${disabled ? 'opacity-40 pointer-events-none' : ''}`}
     >
-      {/* 引出线 */}
-      <line x1={-20} y1={0} x2={longLineX} y2={0} stroke={c.wire} strokeWidth={2} />
-      <line x1={shortLineX} y1={0} x2={20} y2={0} stroke={c.wire} strokeWidth={2} />
+      {/* 上方引出线 */}
+      <line x1={0} y1={-20} x2={0} y2={isTopPositive ? -12 : -5} stroke={c.wire} strokeWidth={2} />
+      {/* 下方引出线 */}
+      <line x1={0} y1={isTopPositive ? 5 : 12} x2={0} y2={20} stroke={c.wire} strokeWidth={2} />
 
       {/* 正极：长细线 */}
-      <line x1={longLineX} y1={-15} x2={longLineX} y2={15} stroke={c.batteryPos} strokeWidth={1.5} />
-      
+      <line x1={-8} y1={isTopPositive ? -12 : 5} x2={8} y2={isTopPositive ? -12 : 5} stroke={c.batteryPos} strokeWidth={1.5} />
+
       {/* 负极：短粗线 */}
-      <line x1={shortLineX} y1={-8} x2={shortLineX} y2={8} stroke={c.batteryNeg} strokeWidth={4} />
+      <line x1={-5} y1={isTopPositive ? 5 : -5} x2={5} y2={isTopPositive ? 5 : -5} stroke={c.batteryNeg} strokeWidth={4} />
 
       {/* 文本标注 */}
       <text
-        x={0}
-        y={-20}
+        x={15}
+        y={4}
         fill={c.wire}
         fontSize={FONT_BASE.symbol.label}
         fontWeight="bold"
-        textAnchor="middle"
+        textAnchor="start"
         style={{ userSelect: 'none' }}
       >
         {label ?? `${voltage.toFixed(1)} V`}
