@@ -115,7 +115,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
         ],
       },
       // §4 显示辅助
-      { type: 'storeToggle', label: '显示受力分析图', storeKey: 'toggleVectors', group: '显示辅助' },
+      { type: 'storeToggle', label: '显示受力分析图', storeKey: 'toggleVectors', stateKey: 'showVectors', group: '显示辅助' },
       // §5 快捷预设
       { type: 'preset', label: '🌍 地球 g=9.8', group: '快捷预设',
         params: { g: 9.8 }, showIf: 'mode', showIfValue: 0 },

@@ -234,16 +234,19 @@ export default function AnimationPage() {
   }, [config])
 
   // 低频状态：selector 订阅，避免 time 变化触发重渲染
-  const { params, showTimeSlices, showDualObjects } = useAnimationStore(
+  const { params, showTimeSlices, showDualObjects, showVectors } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
       showTimeSlices: s.showTimeSlices,
       showDualObjects: s.showDualObjects,
+      showVectors: s.showVectors,
     }))
   )
 
   // actions — 稳定引用，不需订阅
   const { setParams, setTime, setIsPlaying, updateParam, toggleTimeSlices, toggleDualObjects, toggleVectors, setDirection } = useAnimationStore.getState()
+
+  const storeStates = { showVectors, showTimeSlices, showDualObjects }
 
   const { setMode } = useAppStore()
 
@@ -427,6 +430,7 @@ export default function AnimationPage() {
                 toggleVectors={toggleVectors}
                 toggleTimeSlices={toggleTimeSlices}
                 toggleDualObjects={toggleDualObjects}
+                storeStates={storeStates}
                 disabled={isDiscoveryMode}
               />
             )}
@@ -457,6 +461,7 @@ export default function AnimationPage() {
                 toggleVectors={toggleVectors}
                 toggleTimeSlices={toggleTimeSlices}
                 toggleDualObjects={toggleDualObjects}
+                storeStates={storeStates}
                 disabled={isDiscoveryMode}
               />
             )}

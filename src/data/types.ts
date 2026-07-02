@@ -105,6 +105,7 @@ export type ControlMeta =
       type: 'storeToggle'
       label: string
       storeKey: 'toggleVectors' | 'toggleTimeSlices' | 'toggleDualObjects'
+      stateKey: 'showVectors' | 'showTimeSlices' | 'showDualObjects'
     })
 
 /** 参数控件元数据 */

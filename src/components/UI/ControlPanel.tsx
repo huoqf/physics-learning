@@ -19,6 +19,7 @@ interface ControlPanelProps {
   toggleVectors?: () => void
   toggleTimeSlices?: () => void
   toggleDualObjects?: () => void
+  storeStates?: Record<string, boolean>
   disabled?: boolean
 }
 
@@ -69,6 +70,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   toggleVectors,
   toggleTimeSlices,
   toggleDualObjects,
+  storeStates,
   disabled = false,
 }) => {
   const groups = useMemo(() => {
@@ -226,7 +228,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           <div key={`${control.type}-${control.storeKey}-${index}`} className="flex items-center justify-between gap-3">
             <span className="text-xs font-semibold text-neutral-600 select-none">{control.label}</span>
             <ToggleSwitch
-              checked={false}
+              checked={storeStates?.[control.stateKey] ?? false}
               onChange={() => handler?.()}
               disabled={disabled || !handler}
             />

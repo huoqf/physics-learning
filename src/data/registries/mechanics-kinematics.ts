@@ -162,7 +162,8 @@ export const mechanicsKinematicsAnimations = defineAnimations({
         params: { g: 3.72 }, showIf: 'advancedMode', showIfValue: 0 },
       { type: 'preset', label: '🪐 木星 g=24.79', group: '环境重力场',
         params: { g: 24.79 }, showIf: 'advancedMode', showIfValue: 0 },
-      { type: 'storeToggle', label: '显示 1:3:5:7 时间切片', storeKey: 'toggleTimeSlices' },
+      { type: 'storeToggle', label: '显示 1:3:5:7 时间切片', storeKey: 'toggleTimeSlices', stateKey: 'showTimeSlices',
+        showIf: 'advancedMode', showIfValue: 0 },
       { type: 'tip', group: '教学提示', content: (p) => {
         const pressure = p.pressure ?? 0
         if (pressure <= 0.01) return '当前为真空环境，物体仅受重力，做自由落体运动'
@@ -264,7 +265,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
       { type: 'segmented', key: 'chartMode', label: '函数图象模式切换', resetOnChange: true,
         options: [{ value: 0, label: 'v²-x模式' }, { value: 1, label: 'x/t-t模式' }] },
       { type: 'toggle', key: 'showAux', label: '显示斜率/截距解析辅助线' },
-      { type: 'storeToggle', label: '显示速度与加速度箭头', storeKey: 'toggleVectors' },
+      { type: 'storeToggle', label: '显示速度与加速度箭头', storeKey: 'toggleVectors', stateKey: 'showVectors' },
     ],
   },
 })
