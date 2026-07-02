@@ -99,6 +99,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       },
     },
     controlMeta: [
+      // §1 模型选择
       {
         type: 'segmented',
         key: 'mode',
@@ -110,9 +111,18 @@ export const mechanicsDynamicsAnimations = defineAnimations({
           { value: 1, label: '斜面倾角模型' },
         ],
       },
-      { type: 'storeToggle', label: '显示受力分析图', storeKey: 'toggleVectors' },
+      // §4 显示辅助
+      { type: 'storeToggle', label: '显示受力分析图', storeKey: 'toggleVectors', group: '显示辅助' },
+      // §5 快捷预设
+      { type: 'preset', label: '🌍 地球 g=9.8', group: '快捷预设',
+        params: { g: 9.8 }, showIf: 'mode', showIfValue: 0 },
+      { type: 'preset', label: '🌙 月球 g=1.63', group: '快捷预设',
+        params: { g: 1.63 }, showIf: 'mode', showIfValue: 0 },
+      { type: 'preset', label: '🔴 火星 g=3.72', group: '快捷预设',
+        params: { g: 3.72 }, showIf: 'mode', showIfValue: 0 },
+      { type: 'preset', label: '🪐 木星 g=24.79', group: '快捷预设',
+        params: { g: 24.79 }, showIf: 'mode', showIfValue: 0 },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/dynamics/FrictionSidebar')),
     CenterExtra: lazy(() => import('@/features/mechanics/dynamics/FrictionCenterExtra')),
     centerExtraMode: 'advancedMode',
   },

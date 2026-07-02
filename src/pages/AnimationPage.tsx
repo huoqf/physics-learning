@@ -268,6 +268,12 @@ export default function AnimationPage() {
   const paramMeta = config.paramMeta || []
   const controlMeta = config.controlMeta || []
 
+  // 左屏 0-6 顺序：§1/§2 的 group 名（模型选择、子模式）排在 ParamControl 之前，
+  // 其余 group（显示辅助、快捷预设、教学提示）排在 ParamControl 之后。
+  const MODE_GROUP_NAMES = ['模型选择', '子模式']
+  const modeControls = controlMeta.filter((c) => MODE_GROUP_NAMES.includes(c.group ?? ''))
+  const auxControls = controlMeta.filter((c) => !MODE_GROUP_NAMES.includes(c.group ?? ''))
+
   // 构建 ParamControl 需要的参数格式（过滤 showIf / hideIf 条件）
   const paramControlParams = paramMeta
     .filter((p) => {
@@ -400,10 +406,12 @@ export default function AnimationPage() {
               </button>
             )}
 
-            {controlMeta.length > 0 && !isDiscoveryMode && (
+            {/* §1+§2：模型选择 / 子模式（ParamControl 之前） */}
+            {modeControls.length > 0 && !isDiscoveryMode && (
               <ControlPanel
-                controls={controlMeta}
+                controls={modeControls}
                 params={params}
+                defaultParams={config.defaultParams}
                 updateParam={updateParam}
                 setParams={setParams}
                 resetAnimation={handleReset}
@@ -416,6 +424,7 @@ export default function AnimationPage() {
               />
             )}
 
+            {/* §3：核心参数（paramMeta → ParamControl） */}
             {paramControlParams.length > 0 && (
               <div className="shrink-0">
                 <ParamControl
@@ -425,6 +434,24 @@ export default function AnimationPage() {
                   disabled={isDiscoveryMode}
                 />
               </div>
+            )}
+
+            {/* §4+§5+§6：显示辅助 / 快捷预设 / 教学提示（ParamControl 之后） */}
+            {auxControls.length > 0 && !isDiscoveryMode && (
+              <ControlPanel
+                controls={auxControls}
+                params={params}
+                defaultParams={config.defaultParams}
+                updateParam={updateParam}
+                setParams={setParams}
+                resetAnimation={handleReset}
+                restartAnimation={() => { setTime(0); setIsPlaying(true) }}
+                setDirection={(d) => setDirection(d)}
+                toggleVectors={toggleVectors}
+                toggleTimeSlices={toggleTimeSlices}
+                toggleDualObjects={toggleDualObjects}
+                disabled={isDiscoveryMode}
+              />
             )}
             {/* 侧边栏扩展：通过 registry 挂载的特异 UI */}
             {config.SidebarExtra && !isDiscoveryMode && (

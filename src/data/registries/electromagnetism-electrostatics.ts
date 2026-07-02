@@ -141,10 +141,16 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
       { key: 'baseEField', label: '基准电场', min: 0, max: 300, step: 10, unit: 'V/m' },
       { key: 'qProbe', label: '试探电荷 q', min: -2.0, max: 2.0, step: 0.2, unit: 'μC' },
     ],
-    SidebarExtra: lazy(() => import('@/features/electromagnetism/electrostatics/ElectricPotentialSidebar')),
     controlMeta: [
+      // §1 模型选择
       { type: 'segmented', key: 'zeroRef', label: '零势参考', group: '模型选择',
         options: [{ value: 0, label: '无穷远为0V' }, { value: 1, label: '大地为0V' }] },
+      // §4 显示辅助
+      { type: 'toggle', key: 'drawMode', label: '锁定A-B点并激活自由手绘路径', group: '显示辅助',
+        onChangeSideEffect: { setParams: { runTime: 0 } } },
+      // §6 教学提示
+      { type: 'tip', group: '教学提示', title: '高考考点探究指导',
+        content: '1. 路径无关性验证：开启手写模式，用鼠标在下方的动画区域任意绘制出一条弯曲轨迹。2. 零势选择的相对性：切换零势参考模式，观察 A、B 点的绝对电势发生显著平移。' },
     ],
   },
 })

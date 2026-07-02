@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import type { ControlMeta } from '@/data/types'
+import type { ControlMeta, ControlCondition } from '@/data/types'
 import { LeftPanelSection } from './LeftPanel'
 import { OptionButton } from './OptionButton'
 import { Button } from './Button'
@@ -11,6 +11,7 @@ import { ToggleSwitch } from './ToggleSwitch'
 interface ControlPanelProps {
   controls: ControlMeta[]
   params: Record<string, number>
+  defaultParams?: Record<string, number>
   updateParam: (key: string, value: number) => void
   setParams: (params: Record<string, number>) => void
   resetAnimation: () => void
@@ -60,6 +61,7 @@ function defaultGroup(control: ControlMeta) {
 export const ControlPanel: React.FC<ControlPanelProps> = ({
   controls,
   params,
+  defaultParams = {},
   updateParam,
   setParams,
   resetAnimation,
@@ -95,6 +97,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     const changed = params[control.key] !== value
     updateParam(control.key, value)
     if (changed && control.resetOnChange) resetAnimation()
+    applySideEffect(control)
   }
 
   const handleToggleChange = (control: Extract<ControlMeta, { type: 'toggle' }>, checked: boolean) => {
@@ -104,6 +107,20 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     const changed = params[control.key] !== nextValue
     updateParam(control.key, nextValue)
     if (changed && control.resetOnChange) resetAnimation()
+    applySideEffect(control)
+  }
+
+  const applySideEffect = (control: ControlCondition) => {
+    const side = control.onChangeSideEffect
+    if (!side) return
+    if (side.resetParams) {
+      side.resetParams.forEach((k) => {
+        if (defaultParams[k] != null) updateParam(k, defaultParams[k])
+      })
+    }
+    if (side.setParams) {
+      Object.entries(side.setParams).forEach(([k, v]) => updateParam(k, v))
+    }
   }
 
   const handlePresetApply = (control: Extract<ControlMeta, { type: 'preset' }>) => {

@@ -18,10 +18,14 @@ export const thermodynamicsFirstLawAnimations = defineAnimations({
       { key: 'Q', label: '热源供热量 Q', min: -500, max: 500, step: 10, unit: 'J',
         hideIf: 'adiabatic', hideIfValue: 1 },
     ],
-    SidebarExtra: lazy(() => import('@/features/thermodynamics/firstLaw/FirstLawSidebar')),
     controlMeta: [
+      // §1 模型选择
       { type: 'segmented', key: 'mode', label: '分析模式', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础模式' }, { value: 1, label: '进阶模式' }] },
+      // §4 显示辅助
+      { type: 'toggle', key: 'adiabatic', label: '绝热气缸', group: '显示辅助',
+        onChangeSideEffect: { setParams: { Q: 0 } } },
+      // §6 教学提示
       { type: 'tip', group: '教学提示',
         content: '拖动 W/Q 滑块，观察能量守恒天平' },
     ],

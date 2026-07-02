@@ -28,7 +28,7 @@ export interface ParamMark {
 }
 
 export interface ControlCondition {
-  /** 参数分组，例如“模型选择 / 显示辅助 / 教学提示” */
+  /** 参数分组，例如"模型选择 / 显示辅助 / 教学提示" */
   group?: string
   /** 仅当 params[showIf] 为真值时显示此控件 */
   showIf?: string
@@ -38,6 +38,13 @@ export interface ControlCondition {
   hideIf?: string
   /** 与 hideIf 配合：当 params[hideIf] 等于此值时隐藏 */
   hideIfValue?: number
+  /** 控件值变化后联动：重置指定参数为默认值，或设置指定参数为固定值 */
+  onChangeSideEffect?: {
+    /** 重置为 defaultParams 中的值 */
+    resetParams?: string[]
+    /** 设置为指定值 */
+    setParams?: Record<string, number>
+  }
 }
 
 export interface ControlOption {

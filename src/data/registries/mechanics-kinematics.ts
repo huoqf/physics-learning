@@ -38,22 +38,32 @@ export const mechanicsKinematicsAnimations = defineAnimations({
       { key: 'vA', label: '飞机速度 vₐ', min: 100, max: 300, step: 10, unit: 'm/s', showIf: 'advancedMode', showIfValue: 0 },
       { key: 'aB', label: '跑车加速度 aᵦ', min: 2, max: 10, step: 0.5, unit: 'm/s²', showIf: 'advancedMode', showIfValue: 0 },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/kinematics/AccelerationSidebar')),
     controlMeta: [
-      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+      // §1 模型/演示模式
+      { type: 'segmented', key: 'advancedMode', label: '演示模式', group: '模型选择', resetOnChange: true,
         options: [{ label: '基础', value: 0 }, { label: '进阶', value: 1 }] },
-      { type: 'preset', label: '经典对比：vₐ=300, aᵦ=10', group: '教学快捷操作',
+      // §2 子模式/结构选择
+      { type: 'segmented', key: 'deltaT', label: '观测时间微元 Δt', group: '子模式',
+        options: [
+          { label: '1.0s', value: 1.0 },
+          { label: '0.5s', value: 0.5 },
+          { label: '0.1s', value: 0.1 },
+        ],
+        showIf: 'advancedMode', showIfValue: 0 },
+      // §5 快捷预设
+      { type: 'preset', label: '经典对比：vₐ=300, aᵦ=10', group: '快捷预设',
         params: { vA: 300, aB: 10 }, restartOnApply: true,
         showIf: 'advancedMode', showIfValue: 0 },
-      { type: 'preset', label: '高速追击：vₐ=35, Δx₀=80', group: '教学快捷操作',
+      { type: 'preset', label: '高速追击：vₐ=35, Δx₀=80', group: '快捷预设',
         params: { vA: 35, deltaX0: 80, t0: 1, aB: 6, vMax: 50 }, restartOnApply: true,
         showIf: 'advancedMode', showIfValue: 1 },
-      { type: 'preset', label: '近距离反应：vₐ=20, Δx₀=30', group: '教学快捷操作',
+      { type: 'preset', label: '近距离反应：vₐ=20, Δx₀=30', group: '快捷预设',
         params: { vA: 20, deltaX0: 30, t0: 0.5, aB: 5, vMax: 40 }, restartOnApply: true,
         showIf: 'advancedMode', showIfValue: 1 },
-      { type: 'preset', label: '极限加速：aᵦ=7, vₘₐₓ=55', group: '教学快捷操作',
+      { type: 'preset', label: '极限加速：aᵦ=7, vₘₐₓ=55', group: '快捷预设',
         params: { vA: 35, deltaX0: 80, t0: 2, aB: 7, vMax: 55 }, restartOnApply: true,
         showIf: 'advancedMode', showIfValue: 1 },
+      // §6 教学提示
       { type: 'tip', group: '教学提示', content: '调小 Δt 观察速度变化的精细程度',
         showIf: 'advancedMode', showIfValue: 0 },
       { type: 'tip', group: '教学提示', content: '调整反应时间和加速度，观察共速时刻与最大间距的关系',

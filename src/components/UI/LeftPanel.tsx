@@ -49,7 +49,7 @@ export const LeftPanelSection: React.FC<LeftPanelSectionProps> = ({
   compact = false,
 }) => {
   const padding = compact ? 'p-2' : 'p-4'
-  const headerSpacing = compact ? 'mb-1.5' : 'mb-3'
+  const headerSpacing = compact ? 'mb-1' : 'mb-3'
 
   return (
     <section
@@ -63,7 +63,7 @@ export const LeftPanelSection: React.FC<LeftPanelSectionProps> = ({
         <div className={['flex items-start justify-between gap-2', headerSpacing].filter(Boolean).join(' ')}>
           <div className="min-w-0">
             {title && (
-              <div className="text-xs font-bold text-neutral-600 leading-snug">
+              <div className="text-[12px] font-semibold text-neutral-600 leading-snug">
                 {title}
               </div>
             )}

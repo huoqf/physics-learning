@@ -350,10 +350,17 @@ export const mechanicsEnergyAnimations = defineAnimations({
         showIfValue: 0,
       },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/energy/SpringCompositeSidebar')),
     controlMeta: [
-      { type: 'toggle', key: 'showVectors', label: '显示物理矢量', group: '辅助分析显示' },
-      { type: 'toggle', key: 'autoPause', label: '平衡位置自动暂停高亮', group: '辅助分析显示' },
+      // §1 模型选择
+      { type: 'segmented', key: 'mode', label: '运动模式', group: '模型选择', resetOnChange: true,
+        options: [
+          { value: 0, label: '下落砸弹簧' },
+          { value: 1, label: '原长释放挂球' },
+        ],
+        onChangeSideEffect: { resetParams: ['time'] } },
+      // §4 显示辅助
+      { type: 'toggle', key: 'showVectors', label: '显示物理矢量', group: '显示辅助' },
+      { type: 'toggle', key: 'autoPause', label: '平衡位置自动暂停高亮', group: '显示辅助' },
     ],
   },
   'anim-light-rod-rope': {

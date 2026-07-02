@@ -47,7 +47,6 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
     title: '洛伦兹力 F=qvB',
     knowledgeId: 'electricity-3-2',
     Component: lazy(() => import('@/features/electromagnetism/magnetism/VelocitySelector')),
-    SidebarExtra: lazy(() => import('@/features/electromagnetism/magnetism/VelocitySelectorSidebar')),
     defaultParams: {
       mode: 0,
       q: 1.0,
@@ -67,16 +66,33 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
       { key: 'qOverM', label: '荷质比 q/m', min: 0.2, max: 3.0, step: 0.1, unit: 'C/kg', showIf: 'mode', showIfValue: 1 },
     ],
     controlMeta: [
+      // §1 模型选择
       { type: 'segmented', key: 'mode', label: '演示模式', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础：单粒子偏转' }, { value: 1, label: '进阶：速度选择器' }] },
+      // §2 子模式
+      { type: 'segmented', key: 'q', label: '电荷极性', group: '子模式',
+        options: [
+          { value: 1.0, label: '正电荷 (+q)' },
+          { value: -1.0, label: '负电荷 (-q)' },
+        ],
+        showIf: 'mode', showIfValue: 0 },
+      // §4 显示辅助
       { type: 'toggle', key: 'showHandRule', label: '显示左手定则', group: '显示辅助' },
       { type: 'toggle', key: 'keepTrack', label: '留存历史轨迹', group: '显示辅助',
         showIf: 'mode', showIfValue: 0 },
       { type: 'toggle', key: 'showElectricField', label: '开启平行板电场', group: '显示辅助',
         showIf: 'mode', showIfValue: 1 },
+      // 操作按钮
       { type: 'action', label: '发射粒子', variant: 'primary', action: 'launch',
         showIf: 'mode', showIfValue: 0 },
       { type: 'action', label: '重新筛选粒子束', variant: 'primary', action: 'restart',
+        showIf: 'mode', showIfValue: 1 },
+      // §6 教学提示
+      { type: 'tip', group: '教学提示',
+        content: '调节入射速度 v 或磁场强度 B，观察洛伦兹力大小和轨道半径的变化。利用左手定则判断正/负电荷在向里（⊗）的磁场中的偏转方向。',
+        showIf: 'mode', showIfValue: 0 },
+      { type: 'tip', group: '教学提示',
+        content: '调节电场强度 E 或磁场强度 B，改变滤出速度（v_滤 = E/B）。只有速度刚好等于该值的粒子，才能受力平衡做匀速直线运动穿出极板。',
         showIf: 'mode', showIfValue: 1 },
     ],
   },
