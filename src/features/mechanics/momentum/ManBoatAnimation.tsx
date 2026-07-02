@@ -8,19 +8,22 @@ import { SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { VelocityTimeChart } from '@/components/Chart'
-import { calculateManBoatState, getManBoatAutoMotion } from '@/physics/momentumApplication/manBoat'
+import { calculateManBoatState, getManBoatAutoMotion, calculateManBoatDisplacements } from '@/physics/momentumApplication/manBoat'
 import { SVGSingleBar } from '@/components/Physics/SVGSingleBar'
+import type { SceneScale } from '@/scene/SceneScale'
 
-const GROUND_X = 0
-const GROUND_Y = 130
-const GROUND_WIDTH = 700
-const BOAT_PX_PER_M = 30
-const BOAT_ORIGIN_X = 350
+const CANVAS_DESIGN = { width: 700, height: 180 }
+
+const MAN_BOAT_LAYOUT = {
+  groundYRatio: 0.722,
+  originXRatio: 0.5,
+  pxPerMeter: 30,
+} as const
+
 const BOAT_WALK_DURATION = 2.5
 const BOAT_AUTO_STEPS = 100
 const CM_STAR = { coreRadius: 4, glowRadius: 10, labelOffset: 16 }
 const KEYBOARD_SPEED = 3
-const CANVAS_DESIGN = { width: 700, height: 180 }
 
 export default function ManBoatAnimation() {
   const { params, time } = useAnimationStore(
@@ -32,6 +35,10 @@ export default function ManBoatAnimation() {
 
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_DESIGN)
   const vp = useViewport(canvasSize, { designWidth: CANVAS_DESIGN.width, designHeight: CANVAS_DESIGN.height })
+
+  const groundY = CANVAS_DESIGN.height * MAN_BOAT_LAYOUT.groundYRatio
+  const originX = CANVAS_DESIGN.width * MAN_BOAT_LAYOUT.originXRatio
+  const pxPerMeter = MAN_BOAT_LAYOUT.pxPerMeter
 
   // 参数解析
   const m_person = params.m_person ?? 50
@@ -146,11 +153,11 @@ export default function ManBoatAnimation() {
     }
   }, [boatAutoStates, time])
 
-  const sceneScale = useMemo(() => ({
-    scaleX: BOAT_PX_PER_M, scaleY: BOAT_PX_PER_M, scale: BOAT_PX_PER_M,
-    originX: BOAT_ORIGIN_X, originY: GROUND_Y, maxVectorLength: 40,
+  const sceneScale: SceneScale = useMemo(() => ({
+    scaleX: pxPerMeter, scaleY: pxPerMeter, scale: pxPerMeter,
+    originX, originY: groundY, maxVectorLength: 40,
     refMagnitudes: { velocity: 2.0 }
-  }), [])
+  }), [pxPerMeter, originX, groundY])
 
   const gradIdBoat = useId()
   const gradIdGlowGold = useId()
@@ -262,12 +269,12 @@ export default function ManBoatAnimation() {
 
             {/* 带有刻度尺的水面 */}
             <PhysicsGround
-              x={GROUND_X}
-              y={GROUND_Y}
-              width={GROUND_WIDTH}
+              x={0}
+              y={groundY}
+              width={CANVAS_DESIGN.width}
               isSmooth={true}
               appearance={{ showHatch: false, color: SCENE_COLORS.surface.waterFill }}
-              ruler={{ domain: [-6.667, 6.667], pixelPerUnit: BOAT_PX_PER_M, tickInterval: 1, unit: 'm', position: 'bottom', showAxisLine: true }}
+              ruler={{ domain: [-6.667, 6.667], pixelPerUnit: pxPerMeter, tickInterval: 1, unit: 'm', position: 'bottom', showAxisLine: true }}
             />
             {/* 水面淡波纹 */}
             <g opacity="0.3" stroke={SCENE_COLORS.surface.waterRipple} strokeWidth="1.2" fill="none">
@@ -278,7 +285,7 @@ export default function ManBoatAnimation() {
             </g>
 
             {/* 质心十字星标记 */}
-            <g transform={`translate(${BOAT_ORIGIN_X}, 95)`}>
+            <g transform={`translate(${originX}, 95)`}>
               <circle r={`${CM_STAR.glowRadius}`} fill={`url(#${gradIdGlowGold})`} />
               <circle r={`${CM_STAR.coreRadius}`} fill={CANVAS_COLORS.referencePoint} />
               <line x1={`-${CM_STAR.glowRadius}`} y1="0" x2={`${CM_STAR.glowRadius}`} y2="0" stroke={CANVAS_COLORS.referencePoint} strokeWidth="1.2" />
@@ -288,108 +295,96 @@ export default function ManBoatAnimation() {
 
             {/* 船绘制 */}
             {(() => {
-              const xb_px = BOAT_ORIGIN_X + boatState.x_boat * BOAT_PX_PER_M
-              const wb_px = L_boat * BOAT_PX_PER_M
+              const xb_px = originX + boatState.x_boat * pxPerMeter
+              const wb_px = L_boat * pxPerMeter
               return (
                 <g>
-                  <path d={`M ${xb_px} ${GROUND_Y - 8} L ${xb_px - 10} ${GROUND_Y - 18} L ${xb_px + wb_px + 10} ${GROUND_Y - 18} L ${xb_px + wb_px} ${GROUND_Y - 8} Z`} fill={`url(#${gradIdBoat})`} stroke={SCENE_COLORS.materials.labWoodGrad[3]} strokeWidth="1.5" />
-                  <text x={xb_px + wb_px / 2} y={GROUND_Y - 4} fill={SCENE_COLORS.materials.labWoodGrad[0]} fontSize={canvasSize.font(8)} fontWeight="bold" textAnchor="middle">船 {M_boat}kg</text>
+                  <path d={`M ${xb_px} ${groundY - 8} L ${xb_px - 10} ${groundY - 18} L ${xb_px + wb_px + 10} ${groundY - 18} L ${xb_px + wb_px} ${groundY - 8} Z`} fill={`url(#${gradIdBoat})`} stroke={SCENE_COLORS.materials.labWoodGrad[3]} strokeWidth="1.5" />
+                  <text x={xb_px + wb_px / 2} y={groundY - 4} fill={SCENE_COLORS.materials.labWoodGrad[0]} fontSize={canvasSize.font(8)} fontWeight="bold" textAnchor="middle">船 {M_boat}kg</text>
                 </g>
               )
             })()}
 
             {/* 小人1绘制 */}
             {(() => {
-              const xp_px = BOAT_ORIGIN_X + boatState.x_person1 * BOAT_PX_PER_M
-              const headY = GROUND_Y - 18 - 20
+              const xp_px = originX + boatState.x_person1 * pxPerMeter
+              const headY = groundY - 18 - 20
               const angle = boatState.v1_rel !== 0 ? Math.sin(time * 15) * 6 : 0
               return (
                 <g>
                   <circle cx={xp_px} cy={headY} r="4" fill={colors.primary[500]} stroke={colors.primary[700]} strokeWidth="1" />
-                  <line x1={xp_px} y1={headY + 4} x2={xp_px} y2={GROUND_Y - 18 - 8} stroke={colors.primary[600]} strokeWidth="1.5" />
-                  <line x1={xp_px} y1={headY + 6} x2={xp_px - 6 - angle * 0.1} y2={GROUND_Y - 18 - 12} stroke={colors.primary[600]} strokeWidth="1.2" />
-                  <line x1={xp_px} y1={headY + 6} x2={xp_px + 6 + angle * 0.1} y2={GROUND_Y - 18 - 12} stroke={colors.primary[600]} strokeWidth="1.2" />
-                  <line x1={xp_px} y1={GROUND_Y - 18 - 8} x2={xp_px - 5 - angle * 0.3} y2={GROUND_Y - 18} stroke={colors.primary[600]} strokeWidth="1.5" />
-                  <line x1={xp_px} y1={GROUND_Y - 18 - 8} x2={xp_px + 5 + angle * 0.3} y2={GROUND_Y - 18} stroke={colors.primary[600]} strokeWidth="1.5" />
+                  <line x1={xp_px} y1={headY + 4} x2={xp_px} y2={groundY - 18 - 8} stroke={colors.primary[600]} strokeWidth="1.5" />
+                  <line x1={xp_px} y1={headY + 6} x2={xp_px - 6 - angle * 0.1} y2={groundY - 18 - 12} stroke={colors.primary[600]} strokeWidth="1.2" />
+                  <line x1={xp_px} y1={headY + 6} x2={xp_px + 6 + angle * 0.1} y2={groundY - 18 - 12} stroke={colors.primary[600]} strokeWidth="1.2" />
+                  <line x1={xp_px} y1={groundY - 18 - 8} x2={xp_px - 5 - angle * 0.3} y2={groundY - 18} stroke={colors.primary[600]} strokeWidth="1.5" />
+                  <line x1={xp_px} y1={groundY - 18 - 8} x2={xp_px + 5 + angle * 0.3} y2={groundY - 18} stroke={colors.primary[600]} strokeWidth="1.5" />
                   <text x={xp_px} y={headY - 6} fill={colors.primary[700]} fontSize={canvasSize.font(8)} fontWeight="bold" textAnchor="middle">人1 {m_person}kg</text>
-                  <VectorArrow origin={{ x: boatState.x_person1, y: 0.6 }} vector={{ x: boatState.v_person1, y: 0 }} type="velocity" sceneScale={sceneScale as never} color={colors.primary[500]} />
+                  <VectorArrow origin={{ x: boatState.x_person1, y: 0.6 }} vector={{ x: boatState.v_person1, y: 0 }} type="velocity" sceneScale={sceneScale} color={colors.primary[500]} />
                 </g>
               )
             })()}
 
             {/* 小人2绘制 */}
             {isDouble && (() => {
-              const xp_px = BOAT_ORIGIN_X + boatState.x_person2 * BOAT_PX_PER_M
-              const headY = GROUND_Y - 18 - 20
+              const xp_px = originX + boatState.x_person2 * pxPerMeter
+              const headY = groundY - 18 - 20
               const angle = boatState.v2_rel !== 0 ? Math.sin(time * 15) * 6 : 0
               return (
                 <g>
                   <circle cx={xp_px} cy={headY} r="4" fill={colors.danger[500]} stroke={colors.danger[700]} strokeWidth="1" />
-                  <line x1={xp_px} y1={headY + 4} x2={xp_px} y2={GROUND_Y - 18 - 8} stroke={colors.danger[600]} strokeWidth="1.5" />
-                  <line x1={xp_px} y1={headY + 6} x2={xp_px - 6 - angle * 0.1} y2={GROUND_Y - 18 - 12} stroke={colors.danger[600]} strokeWidth="1.2" />
-                  <line x1={xp_px} y1={headY + 6} x2={xp_px + 6 + angle * 0.1} y2={GROUND_Y - 18 - 12} stroke={colors.danger[600]} strokeWidth="1.2" />
-                  <line x1={xp_px} y1={GROUND_Y - 18 - 8} x2={xp_px - 5 - angle * 0.3} y2={GROUND_Y - 18} stroke={colors.danger[600]} strokeWidth="1.5" />
-                  <line x1={xp_px} y1={GROUND_Y - 18 - 8} x2={xp_px + 5 + angle * 0.3} y2={GROUND_Y - 18} stroke={colors.danger[600]} strokeWidth="1.5" />
+                  <line x1={xp_px} y1={headY + 4} x2={xp_px} y2={groundY - 18 - 8} stroke={colors.danger[600]} strokeWidth="1.5" />
+                  <line x1={xp_px} y1={headY + 6} x2={xp_px - 6 - angle * 0.1} y2={groundY - 18 - 12} stroke={colors.danger[600]} strokeWidth="1.2" />
+                  <line x1={xp_px} y1={headY + 6} x2={xp_px + 6 + angle * 0.1} y2={groundY - 18 - 12} stroke={colors.danger[600]} strokeWidth="1.2" />
+                  <line x1={xp_px} y1={groundY - 18 - 8} x2={xp_px - 5 - angle * 0.3} y2={groundY - 18} stroke={colors.danger[600]} strokeWidth="1.5" />
+                  <line x1={xp_px} y1={groundY - 18 - 8} x2={xp_px + 5 + angle * 0.3} y2={groundY - 18} stroke={colors.danger[600]} strokeWidth="1.5" />
                   <text x={xp_px} y={headY - 6} fill={colors.danger[700]} fontSize={canvasSize.font(8)} fontWeight="bold" textAnchor="middle">人2 {m_person2}kg</text>
-                  <VectorArrow origin={{ x: boatState.x_person2, y: 0.6 }} vector={{ x: boatState.v_person2, y: 0 }} type="velocity" sceneScale={sceneScale as never} color={colors.danger[500]} />
+                  <VectorArrow origin={{ x: boatState.x_person2, y: 0.6 }} vector={{ x: boatState.v_person2, y: 0 }} type="velocity" sceneScale={sceneScale} color={colors.danger[500]} />
                 </g>
               )
             })()}
 
             {/* 船速度箭头 */}
-            <VectorArrow origin={{ x: boatState.x_boat + L_boat * 0.5, y: 0.1 }} vector={{ x: boatState.v_boat, y: 0 }} type="velocity" sceneScale={sceneScale as never} color={colors.warning[600]} />
+            <VectorArrow origin={{ x: boatState.x_boat + L_boat * 0.5, y: 0.1 }} vector={{ x: boatState.v_boat, y: 0 }} type="velocity" sceneScale={sceneScale} color={colors.warning[600]} />
 
             {/* 自动模式下位移双向箭头 */}
             {(() => {
               const isAutoEnd = manBoatControl === 0 && time >= BOAT_WALK_DURATION
               if (!isAutoEnd) return null
 
-              const x0_boat = -(m2 * L_boat + M_boat * L_boat * 0.5) / (m_person + m2 + M_boat)
-              const x0_person1 = x0_boat
-              const x0_person2 = x0_boat + L_boat
+              const { x0, xEnd, disp } = calculateManBoatDisplacements(m_person, m2, M_boat, L_boat, boatState)
 
-              const xEnd_boat = boatState.x_boat
-              const xEnd_person1 = boatState.x_person1
-              const xEnd_person2 = boatState.x_person2
-
-              const disp_boat = xEnd_boat - x0_boat
-              const disp_person1 = xEnd_person1 - x0_person1
-              const disp_person2 = xEnd_person2 - x0_person2
-
-              const xb0_px = BOAT_ORIGIN_X + x0_boat * BOAT_PX_PER_M
-              const xbend_px = BOAT_ORIGIN_X + xEnd_boat * BOAT_PX_PER_M
-
-              const xp1_0_px = BOAT_ORIGIN_X + x0_person1 * BOAT_PX_PER_M
-              const xp1_end_px = BOAT_ORIGIN_X + xEnd_person1 * BOAT_PX_PER_M
-
-              const xp2_0_px = BOAT_ORIGIN_X + x0_person2 * BOAT_PX_PER_M
-              const xp2_end_px = BOAT_ORIGIN_X + xEnd_person2 * BOAT_PX_PER_M
+              const xb0_px = originX + x0.boat * pxPerMeter
+              const xbend_px = originX + xEnd.boat * pxPerMeter
+              const xp1_0_px = originX + x0.person1 * pxPerMeter
+              const xp1_end_px = originX + xEnd.person1 * pxPerMeter
+              const xp2_0_px = originX + x0.person2 * pxPerMeter
+              const xp2_end_px = originX + xEnd.person2 * pxPerMeter
 
               const arrowSize = 4
-              const p1LineY = GROUND_Y - 50
-              const p2LineY = GROUND_Y - 70
-              const boatLineY = GROUND_Y + 18
+              const p1LineY = groundY - 50
+              const p2LineY = groundY - 70
+              const boatLineY = groundY + 18
 
               return (
                 <g>
                   {/* 人1位移 */}
                   <line x1={xp1_0_px} y1={p1LineY} x2={xp1_end_px} y2={p1LineY} stroke={colors.primary[400]} strokeWidth="1.2" strokeDasharray="2 2" />
-                  <polygon points={`${xp1_end_px},${p1LineY} ${xp1_end_px + (disp_person1 < 0 ? arrowSize : -arrowSize)},${p1LineY - 3} ${xp1_end_px + (disp_person1 < 0 ? arrowSize : -arrowSize)},${p1LineY + 3}`} fill={colors.primary[500]} />
-                  <text x={(xp1_0_px + xp1_end_px) / 2} y={p1LineY - 5} fill={colors.primary[600]} fontSize={canvasSize.font(8)} textAnchor="middle" fontWeight="bold">人1位移 s1 = {disp_person1.toFixed(3)}m</text>
+                  <polygon points={`${xp1_end_px},${p1LineY} ${xp1_end_px + (disp.person1 < 0 ? arrowSize : -arrowSize)},${p1LineY - 3} ${xp1_end_px + (disp.person1 < 0 ? arrowSize : -arrowSize)},${p1LineY + 3}`} fill={colors.primary[500]} />
+                  <text x={(xp1_0_px + xp1_end_px) / 2} y={p1LineY - 5} fill={colors.primary[600]} fontSize={canvasSize.font(8)} textAnchor="middle" fontWeight="bold">人1位移 s1 = {disp.person1.toFixed(3)}m</text>
 
                   {/* 人2位移 */}
                   {isDouble && (
                     <g>
                       <line x1={xp2_0_px} y1={p2LineY} x2={xp2_end_px} y2={p2LineY} stroke={colors.danger[400]} strokeWidth="1.2" strokeDasharray="2 2" />
-                      <polygon points={`${xp2_end_px},${p2LineY} ${xp2_end_px + (disp_person2 < 0 ? arrowSize : -arrowSize)},${p2LineY - 3} ${xp2_end_px + (disp_person2 < 0 ? arrowSize : -arrowSize)},${p2LineY + 3}`} fill={colors.danger[500]} />
-                      <text x={(xp2_0_px + xp2_end_px) / 2} y={p2LineY - 5} fill={colors.danger[600]} fontSize={canvasSize.font(8)} textAnchor="middle" fontWeight="bold">人2位移 s2 = {disp_person2.toFixed(3)}m</text>
+                      <polygon points={`${xp2_end_px},${p2LineY} ${xp2_end_px + (disp.person2 < 0 ? arrowSize : -arrowSize)},${p2LineY - 3} ${xp2_end_px + (disp.person2 < 0 ? arrowSize : -arrowSize)},${p2LineY + 3}`} fill={colors.danger[500]} />
+                      <text x={(xp2_0_px + xp2_end_px) / 2} y={p2LineY - 5} fill={colors.danger[600]} fontSize={canvasSize.font(8)} textAnchor="middle" fontWeight="bold">人2位移 s2 = {disp.person2.toFixed(3)}m</text>
                     </g>
                   )}
 
                   {/* 船位移 */}
                   <line x1={xb0_px} y1={boatLineY} x2={xbend_px} y2={boatLineY} stroke={colors.warning[600]} strokeWidth="1.2" strokeDasharray="2 2" />
-                  <polygon points={`${xbend_px},${boatLineY} ${xbend_px + (disp_boat < 0 ? arrowSize : -arrowSize)},${boatLineY - 3} ${xbend_px + (disp_boat < 0 ? arrowSize : -arrowSize)},${boatLineY + 3}`} fill={colors.warning[700]} />
-                  <text x={(xb0_px + xbend_px) / 2} y={boatLineY + 10} fill={colors.warning[700]} fontSize={canvasSize.font(8)} textAnchor="middle" fontWeight="bold">船位移 s_船 = {disp_boat.toFixed(3)}m</text>
+                  <polygon points={`${xbend_px},${boatLineY} ${xbend_px + (disp.boat < 0 ? arrowSize : -arrowSize)},${boatLineY - 3} ${xbend_px + (disp.boat < 0 ? arrowSize : -arrowSize)},${boatLineY + 3}`} fill={colors.warning[700]} />
+                  <text x={(xb0_px + xbend_px) / 2} y={boatLineY + 10} fill={colors.warning[700]} fontSize={canvasSize.font(8)} textAnchor="middle" fontWeight="bold">船位移 s_船 = {disp.boat.toFixed(3)}m</text>
                 </g>
               )
             })()}

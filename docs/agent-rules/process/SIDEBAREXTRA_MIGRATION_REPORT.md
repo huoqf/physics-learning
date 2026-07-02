@@ -8,9 +8,9 @@
 
 | 指标 | 数值 |
 |------|------|
-| SidebarExtra 注册总量 | 22（原始 61，已删除 39） |
+| SidebarExtra 注册总量 | 21（原始 61，已删除 40） |
 | 硬骨头（不可迁移） | 2 |
-| 已精简/合理保留 | 20 |
+| 已精简/合理保留 | 19 |
 
 ---
 
@@ -29,7 +29,6 @@
 | `FreeFallSidebar` | 使用 `showTimeSlices`/`toggleTimeSlices`（非 params 驱动） |
 | `VelocitySidebar` | Δt 档位 OptionButton grid + 运动模型嵌套 |
 | `UniformAccelerationSidebar` | areaMode segmented（复杂 side effect）+ 自定义 range input |
-| `ManBoatSidebar` | 键盘操作提示（动画功能本身） |
 | 其余 14 个 | 力学能量/动力学/运动学/热学/直流电路等，已大幅精简 |
 
 ---

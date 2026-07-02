@@ -161,3 +161,36 @@ export function getManBoatAutoMotion(
 
   return { s1: 0, v1_rel: 0, s2: L, v2_rel: 0 }
 }
+
+/**
+ * 计算人船模型初始状态与末态位移（用于自动演示结束时的位移标注）
+ *
+ * @param m1 人1质量 (kg)
+ * @param m2 人2质量 (kg)，单人模式传 0
+ * @param M 船质量 (kg)
+ * @param L 船长 (m)
+ * @param endState 末态物理状态
+ * @returns 初始位置、末态位置和绝对位移
+ */
+export function calculateManBoatDisplacements(
+  m1: number,
+  m2: number,
+  M: number,
+  L: number,
+  endState: ManBoatState,
+) {
+  const totalM = m1 + m2 + M
+  const x0_boat = -(m2 * L + M * L * 0.5) / totalM
+  const x0_person1 = x0_boat
+  const x0_person2 = x0_boat + L
+
+  return {
+    x0: { boat: x0_boat, person1: x0_person1, person2: x0_person2 },
+    xEnd: { boat: endState.x_boat, person1: endState.x_person1, person2: endState.x_person2 },
+    disp: {
+      boat: endState.x_boat - x0_boat,
+      person1: endState.x_person1 - x0_person1,
+      person2: endState.x_person2 - x0_person2,
+    },
+  }
+}

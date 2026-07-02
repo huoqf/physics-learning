@@ -181,7 +181,6 @@ export const mechanicsMomentumAnimations = defineAnimations({
       { key: 'M_boat', label: '船质量 M', min: 50, max: 300, step: 10, unit: 'kg' },
       { key: 'L_boat', label: '船长 L', min: 3, max: 7, step: 0.2, unit: 'm' },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/momentum/ManBoatSidebar')),
     controlMeta: [
       { type: 'segmented', key: 'manBoatControl', label: '控制方式', group: '模型选择',
         options: [{ label: '自动走动', value: 0 }, { label: '键盘互动', value: 1 }] },
@@ -204,9 +203,11 @@ export const mechanicsMomentumAnimations = defineAnimations({
       { type: 'preset', label: '相向走向中央', group: '高考典型情境一键配置',
         params: { m_person: 50, m_person2: 70, M_boat: 150, L_boat: 4, manBoatMode: 2, manBoatControl: 0 },
         showIf: 'manBoatControl', showIfValue: 0 },
-      { type: 'preset', label: '依次依次运动', group: '高考典型情境一键配置',
+      { type: 'preset', label: '依次运动', group: '高考典型情境一键配置',
         params: { m_person: 50, m_person2: 60, M_boat: 150, L_boat: 4, manBoatMode: 3, manBoatControl: 0 },
         showIf: 'manBoatControl', showIfValue: 0 },
+      { type: 'tip', group: '操作提示', showIf: 'manBoatControl', showIfValue: 1,
+        content: '请点击主画面使其获取焦点，然后使用键盘 ←（左方向键）或 →（右方向键）即可操控小人在船上行走！' },
     ],
   },
 })

@@ -12,4 +12,4 @@ export type { SpringBlocksState } from './springBlocks'
 export { precomputeSpringBlocks, interpolateSpringBlocks } from './springBlocks'
 
 export type { ManBoatState } from './manBoat'
-export { calculateManBoatState, getManBoatAutoMotion } from './manBoat'
+export { calculateManBoatState, getManBoatAutoMotion, calculateManBoatDisplacements } from './manBoat'
