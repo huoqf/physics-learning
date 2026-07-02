@@ -211,12 +211,15 @@ export interface AnimationConfig<P extends Record<string, number> = Record<strin
   /** 场景布局 profile：声明组件如何消费 ViewportInfo，用于 createSceneScaleFromViewport */
   sceneLayout?: SceneLayoutProfile
   /**
-   * 播放控制器渲染模式：
+   * 播放控制器渲染模式（静态或动态）：
    * - `'timed'`（默认）：完整控制栏（播放/暂停 + 速度 + 进度条）
-   * - `'loop'`：精简控制栏（仅速度选择器 + 循环运行中徽章，无暂停/进度）
+   * - `'loop'`：精简控制栏（仅速度选择器 + 循环运行中徽章，无暂停/进度）；加载即自动播放
    * - `'param'`：替换为参数提示信息条（💡 通过左侧参数面板实时调节）
+   *
+   * 也可传入函数 `(params) => mode`，根据当前参数动态决定模式。
+   * 例：进阶竖直圆需要暂停分析 → `(p) => p.advancedMode === 1 ? 'timed' : 'loop'`
    */
-  controlsMode?: 'timed' | 'loop' | 'param'
+  controlsMode?: 'timed' | 'loop' | 'param' | ((params: Record<string, number>) => 'timed' | 'loop' | 'param')
 }
 
 export interface Problem {

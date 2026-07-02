@@ -60,13 +60,14 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 | `ForceMotionSandbox.tsx` | 758 | → `hooks/useForceMotionSandbox.ts`(253) + 组件(331) | 2026-07-01 |
 | `EquilibriumAnimation.tsx` | 737 | → `hooks/useEquilibriumLayout.ts`(165) + 组件(430) | 2026-07-01 |
 | `CircuitAnalysis.tsx` | 507 | → `physics/dcCircuit.ts`(calculateCircuitAnalysis) + `model/circuitAnalysisLayout.ts` + 组件(~370) | 2026-07-02 |
+| `ObliqueThrowAnimation.tsx` | 589 | → `useObliqueThrowLayout.tsx`(150) + 组件(386) | 2026-07-02 |
 
 ### 待处理
 
 | 文件 | 当前行数 | 已有 physics | 拆分方向 | 目标行数 |
 |------|-----:|:---:|---------|-----:|
 
-> 观察：`MomentumConservationAnimation.tsx`(671)、`KeplerAnimation.tsx`(621)、`TIRAnimation.tsx`(564)、`ConnectedBodiesAnimation.tsx`(557)、`ObliqueThrowAnimation.tsx`(589)、`GravityBasicAnimation.tsx`(572)、`FreeFallDripAnimation.tsx`(559)、`CircularMotionAnimation.tsx`(557)、`PowerTransmission.tsx`→`electromagnetism/induction/`(649)、`SpringCompositeAnimation.tsx`→`mechanics/energy/`(639)、`FieldLines.tsx`→`electromagnetism/electrostatics/`(623) 已超过或临近阈值，但职责相对集中，暂不作为首批拆分目标。
+> 观察：`MomentumConservationAnimation.tsx`(671)、`KeplerAnimation.tsx`(621)、`TIRAnimation.tsx`(564)、`ConnectedBodiesAnimation.tsx`(557)、`GravityBasicAnimation.tsx`(572)、`FreeFallDripAnimation.tsx`(559)、`CircularMotionAnimation.tsx`(557)、`PowerTransmission.tsx`→`electromagnetism/induction/`(649)、`SpringCompositeAnimation.tsx`→`mechanics/energy/`(639)、`FieldLines.tsx`→`electromagnetism/electrostatics/`(623) 已超过或临近阈值，但职责相对集中，暂不作为首批拆分目标。
 
 ---
 
@@ -234,14 +235,16 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 - ✅ P1：统一左屏容器（`LeftPanel / LeftPanelSection / LeftPanelScrollArea`）
 - ✅ P2：扩展参数协议（`ParamMeta` 增加 group/description/marks/importance/resetOnChange）
 - ✅ P2：引入 `controlMeta`（支持 segmented/toggle/preset/tip/action/storeToggle）
-- ✅ P2-P4：收敛 SidebarExtra（61→20，41 个已删除，详见 `SIDEBAREXTRA_MIGRATION_REPORT.md`）
+- ✅ P2-P4：收敛 SidebarExtra（61→17，44 个已删除，详见 `SIDEBAREXTRA_MIGRATION_REPORT.md`）
 - ✅ FreeFallSidebar 迁移：模式切换/物体选择/重力场预设/时间切片已迁移至 controlMeta，气压参数迁移至 paramMeta
 - ✅ VelocitySidebar 迁移：观察模式/生活场景/Δt 步进/运动模型/教学提示迁移至 controlMeta，进阶 Δt 滑条迁移至 paramMeta，SidebarExtra 已删除
-- ✅ VerticalThrowSidebar 迁移：观察模式/环境重力场预设迁移至 controlMeta，微元切片密度/空气阻力/目标高度线迁移至 paramMeta（showIf 控制显隐），SidebarExtra 精简为仅保留"对比真空参考轨道"开关（airResistance > 0 条件依赖）
+- ✅ VerticalThrowSidebar 迁移：观察模式/环境重力场预设迁移至 controlMeta，微元切片密度/空气阻力/目标高度线迁移至 paramMeta（showIf 控制显隐），"对比真空参考轨道"开关迁移至 controlMeta（showIf: airResistance），模式切换时 resetParams 重置 airResistance，SidebarExtra 已删除
+- ✅ ProjectileSidebar 迁移：观察模式/环境重力场预设/空气阻力/对比真空参考轨道全部迁移至 controlMeta + paramMeta，SidebarExtra 已删除
+- ✅ ObliqueThrowSidebar 迁移：同 ProjectileSidebar，全部迁移至声明式协议，SidebarExtra 已删除
 
 **待完成**：
 - 扩展 `action` 类型支持自定义回调（解锁 ACValues/PowerTransmission 2 个硬骨头）
-- 剩余 17 个已精简/合理保留的 SidebarExtra 随后续维护逐步清理
+- 剩余 14 个已精简/合理保留的 SidebarExtra 随后续维护逐步清理
 
 ### 3.3 其他（P3，暂缓）
 

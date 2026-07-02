@@ -25,7 +25,8 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     title: '向心加速度与向心力',
     knowledgeId: 'mechanics-5-5',
     Component: lazy(() => import('@/features/mechanics/circular/CentripetalAnimation')),
-    controlsMode: 'loop' as const,
+    // 基础匀速圆周：loop（持续旋转）；进阶竖直圆：timed（可暂停做受力分析）
+    controlsMode: (params) => params.advancedMode === 1 ? 'timed' : 'loop',
     defaultParams: { r: 3, v: 3, v0: 5, m: 1, advancedMode: 0, showWaveform: 1, trackType: 0, showAcceleration: 1 } as const,
     paramMeta: [
       { key: 'r', label: '半径 r', min: 3, max: 5, step: 0.1, unit: 'm' },

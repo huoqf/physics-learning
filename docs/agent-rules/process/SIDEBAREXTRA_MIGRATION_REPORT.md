@@ -8,9 +8,9 @@
 
 | 指标 | 数值 |
 |------|------|
-| SidebarExtra 注册总量 | 20（原始 61，已删除 41） |
+| SidebarExtra 注册总量 | 17（原始 61，已删除 44） |
 | 硬骨头（不可迁移） | 2 |
-| 已精简/合理保留 | 18 |
+| 已精简/合理保留 | 15 |
 
 ---
 
@@ -21,15 +21,14 @@
 | `ACValuesSidebarExtra` | Auto 按钮含 `getEffectiveCurrent()` 计算 + `useState(revealed)` 内部状态 | 扩展 action 类型支持计算回调 |
 | `PowerTransmissionSidebarExtra` | 步进按钮（升/降电压）含计算逻辑 | 扩展 action 类型 |
 
-### 其他保留（4 个，有技术阻塞或合理保留）
+### 其他保留（3 个，有技术阻塞或合理保留）
 
 | SidebarExtra | 原因 |
 |---|---|
 | `FieldLinesSidebar` | segmented 切换时需条件分支重置探针位置 |
 | `UniformAccelerationSidebar` | areaMode segmented（复杂 side effect）+ 自定义 range input |
 | `FreeFallSidebar` | 已精简为纯提示卡片（环境状态 + g 值显示），保留用于动态 tip 内容 |
-| `VerticalThrowSidebar` | 仅保留"对比真空参考轨道"开关，因 controlMeta 无法表达 `airResistance > 0` 的条件依赖 |
-| 其余 13 个 | 力学能量/动力学/运动学/热学/直流电路等，已大幅精简 |
+| 其余 10 个 | 力学能量/动力学/运动学/热学/直流电路等，已大幅精简 |
 
 ---
 

@@ -16,6 +16,8 @@ export interface AnimationLifecycleResult {
   isDiscoveryMode: boolean
   canvasDimmed: boolean
   handleReset: () => void
+  /** 当前实际生效的控制模式（已解析函数形式） */
+  effectiveControlsMode: 'timed' | 'loop' | 'param'
   discoverySteps: DiscoveryStepData[]
   discoveryStep: number
   setDiscoveryStep: (step: number) => void
@@ -81,8 +83,11 @@ function useAnimationConfig() {
       setParams(config.defaultParams)
       setTime(0)
       currentTimeRef.current = 0
-      // loop 型动画自动开始播放；其余类型初始暂停
-      setIsPlaying(config.controlsMode === 'loop')
+      // 解析函数式 controlsMode：初始化时用 defaultParams
+      const initMode = typeof config.controlsMode === 'function'
+        ? config.controlsMode(config.defaultParams as Record<string, number>)
+        : (config.controlsMode ?? 'timed')
+      setIsPlaying(initMode === 'loop')
       setPhysicsState({ position: { x: 0, y: 0 }, velocity: { vx: 0, vy: 0 }, trajectory: [] })
       setMode('animation')
       markAnimationViewed(config.id)
@@ -158,20 +163,38 @@ function usePlaybackLoop(
     }
   }, [time, isPlaying, currentTimeRef])
 
+  // 计算当前生效的 controlsMode（支持函数形式）
+  const effectiveControlsMode: 'timed' | 'loop' | 'param' = typeof config?.controlsMode === 'function'
+    ? config.controlsMode(params)
+    : (config?.controlsMode ?? 'timed')
+
+  const isLoop = effectiveControlsMode === 'loop'
+
   // rAF 时间循环
   useAnimationFrame(
     (deltaTime) => {
       currentTimeRef.current += (deltaTime / 1000) * speed * direction
       if (currentTimeRef.current >= maxTime) {
-        currentTimeRef.current = maxTime
-        setTime(maxTime)
-        setIsPlaying(false)
+        if (isLoop) {
+          // loop 型：到达终点后从头循环
+          currentTimeRef.current = 0
+          setTime(0)
+        } else {
+          currentTimeRef.current = maxTime
+          setTime(maxTime)
+          setIsPlaying(false)
+        }
         return
       }
       if (direction === -1 && currentTimeRef.current <= 0) {
-        currentTimeRef.current = 0
-        setTime(0)
-        setIsPlaying(false)
+        if (isLoop) {
+          currentTimeRef.current = maxTime
+          setTime(maxTime)
+        } else {
+          currentTimeRef.current = 0
+          setTime(0)
+          setIsPlaying(false)
+        }
         return
       }
 
@@ -193,11 +216,12 @@ function usePlaybackLoop(
   const handleReset = () => {
     setTime(0)
     currentTimeRef.current = 0
-    setIsPlaying(false)
+    // loop 型：重置后继续播放（切换模式等触发 reset 不应停播）
+    setIsPlaying(isLoop)
     setPhysicsState({ position: { x: 0, y: 0 }, velocity: { vx: 0, vy: 0 }, trajectory: [] })
   }
 
-  return { canvasDimmed, handleReset }
+  return { canvasDimmed, handleReset, effectiveControlsMode }
 }
 
 /* ─── 主 hook: 组合三个子 hook ─── */

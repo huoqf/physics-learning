@@ -33,11 +33,13 @@ function AnimationCenter({
   isDiscoveryMode,
   canvasDimmed,
   handleReset,
+  effectiveControlsMode,
 }: {
   config: AnimationConfig
   isDiscoveryMode: boolean
   canvasDimmed: boolean
   handleReset: () => void
+  effectiveControlsMode: 'timed' | 'loop' | 'param'
 }) {
   const time = useAnimationStore((s) => s.time)
   const isPlaying = useAnimationStore((s) => s.isPlaying)
@@ -54,8 +56,6 @@ function AnimationCenter({
   const showCenterExtraInBasic = CenterExtraComponent && !centerExtraModeKey
   const maxTime = config.maxTime ?? 30
 
-  const controlsMode = config.controlsMode ?? 'timed'
-
   const controlBar = (wrapperClassName: string) => (
     <div className={wrapperClassName}>
       <AnimationControls
@@ -67,7 +67,7 @@ function AnimationCenter({
         onReset={handleReset}
         onSpeedChange={setSpeed}
         onTimeChange={setTime}
-        controlsMode={controlsMode}
+        controlsMode={effectiveControlsMode}
       />
     </div>
   )
@@ -208,6 +208,7 @@ export default function AnimationPage() {
     isDiscoveryMode,
     canvasDimmed,
     handleReset,
+    effectiveControlsMode,
     discoverySteps,
     discoveryStep,
     setDiscoveryStep,
@@ -471,11 +472,12 @@ export default function AnimationPage() {
         ) : undefined}
         center={
           <div className="flex flex-col h-full p-1.5 gap-2">
-            <AnimationCenter
+          <AnimationCenter
               config={config}
               isDiscoveryMode={isDiscoveryMode}
               canvasDimmed={canvasDimmed}
               handleReset={handleReset}
+              effectiveControlsMode={effectiveControlsMode}
             />
           </div>
         }
