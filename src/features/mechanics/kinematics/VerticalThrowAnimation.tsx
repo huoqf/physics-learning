@@ -8,7 +8,6 @@ import {
   CHART_COLORS,
   STROKE,
   DASH,
-  FONT,
   CANVAS_STYLE,
   withAlpha,
 } from '@/theme/physics'
@@ -186,16 +185,16 @@ export default function VerticalThrowAnimation() {
           appearance={{ color: PHYSICS_COLORS.labelText }}
         />
 
-        <text x={25} y={originY + 4} fontSize={FONT.small} fill={PHYSICS_COLORS.axis} textAnchor="end">
+        <text x={25} y={originY + 4} fontSize={font(10)} fill={PHYSICS_COLORS.axis} textAnchor="end">
           {displayMaxHeight.toFixed(1)}m
         </text>
-        <text x={25} y={groundY + 4} fontSize={FONT.small} fill={PHYSICS_COLORS.axis} textAnchor="end">0</text>
-        <text x={leftBallX + (showDoubleTrack ? -20 : 18)} y={groundY + 14} fontSize={FONT.small} fill={PHYSICS_COLORS.axis}>y=0</text>
+        <text x={25} y={groundY + 4} fontSize={font(10)} fill={PHYSICS_COLORS.axis} textAnchor="end">0</text>
+        <text x={leftBallX + (showDoubleTrack ? -20 : 18)} y={groundY + 14} fontSize={font(10)} fill={PHYSICS_COLORS.axis}>y=0</text>
 
         <line x1={30} y1={originY + (displayMaxHeight - maxHeight) * scale} x2={stageWidth - 20} y2={originY + (displayMaxHeight - maxHeight) * scale}
           stroke={CHART_COLORS.highlight} strokeWidth={STROKE.reference}
           strokeDasharray={DASH.reference.join(' ')} opacity={0.6} />
-        <text x={stageWidth - 18} y={originY + (displayMaxHeight - maxHeight) * scale - 4} fontSize={FONT.small}
+        <text x={stageWidth - 18} y={originY + (displayMaxHeight - maxHeight) * scale - 4} fontSize={font(10)}
           fill={CHART_COLORS.highlight} textAnchor="end" fontWeight="bold">
           最高点 H = {maxHeight.toFixed(2)}m
         </text>
@@ -211,7 +210,7 @@ export default function VerticalThrowAnimation() {
             <text
               x={stageWidth - 18}
               y={originY + (displayMaxHeight - targetHeight) * scale - 4}
-              fontSize={FONT.small} fill={CHART_COLORS.highlight} textAnchor="end" opacity={0.8}
+              fontSize={font(10)} fill={CHART_COLORS.highlight} textAnchor="end" opacity={0.8}
             >
               目标 y = {targetHeight}m
             </text>
@@ -265,7 +264,7 @@ export default function VerticalThrowAnimation() {
             />
             <text
               x={leftBallX + 30} y={currentBallY - vtSceneScale.maxVectorLength * 0.3 + 3}
-              fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontWeight="bold">
+              fontSize={font(10)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">
               v
             </text>
           </g>
@@ -282,7 +281,7 @@ export default function VerticalThrowAnimation() {
             />
             <text
               x={leftBallX - 30} y={currentBallY + vtSceneScale.maxVectorLength * 0.5}
-              fontSize={FONT.small} fill={PHYSICS_COLORS.gravity} fontWeight="bold">
+              fontSize={font(10)} fill={PHYSICS_COLORS.gravity} fontWeight="bold">
               g
             </text>
           </g>
@@ -301,7 +300,7 @@ export default function VerticalThrowAnimation() {
               <animate attributeName="opacity" values="1;0.3;1" dur={`${PULSE_PERIOD}ms`} repeatCount="indefinite" />
             </g>
             <text x={leftBallX - 30} y={currentBallY + vtSceneScale.maxVectorLength * 0.5}
-              fontSize={FONT.small} fill={PHYSICS_COLORS.gravity} fontWeight="bold">
+              fontSize={font(10)} fill={PHYSICS_COLORS.gravity} fontWeight="bold">
               g
               <animate attributeName="opacity" values="1;0.3;1" dur={`${PULSE_PERIOD}ms`} repeatCount="indefinite" />
             </text>
@@ -401,7 +400,7 @@ export default function VerticalThrowAnimation() {
         })()}
 
         {isLanded && (
-          <text x={leftBallX} y={groundY - 30} fontSize={FONT.small} fill={PHYSICS_COLORS.labelText}
+          <text x={leftBallX} y={groundY - 30} fontSize={font(10)} fill={PHYSICS_COLORS.labelText}
             textAnchor="middle" fontWeight="bold">落地</text>
         )}
 

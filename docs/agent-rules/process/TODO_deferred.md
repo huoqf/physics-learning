@@ -237,6 +237,7 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 - ✅ P2-P4：收敛 SidebarExtra（61→20，41 个已删除，详见 `SIDEBAREXTRA_MIGRATION_REPORT.md`）
 - ✅ FreeFallSidebar 迁移：模式切换/物体选择/重力场预设/时间切片已迁移至 controlMeta，气压参数迁移至 paramMeta
 - ✅ VelocitySidebar 迁移：观察模式/生活场景/Δt 步进/运动模型/教学提示迁移至 controlMeta，进阶 Δt 滑条迁移至 paramMeta，SidebarExtra 已删除
+- ✅ VerticalThrowSidebar 迁移：观察模式/环境重力场预设迁移至 controlMeta，微元切片密度/空气阻力/目标高度线迁移至 paramMeta（showIf 控制显隐），SidebarExtra 精简为仅保留"对比真空参考轨道"开关（airResistance > 0 条件依赖）
 
 **待完成**：
 - 扩展 `action` 类型支持自定义回调（解锁 ACValues/PowerTransmission 2 个硬骨头）

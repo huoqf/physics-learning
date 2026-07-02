@@ -31,8 +31,8 @@ export function calculateVerticalThrowWithDrag(
     const nextTime = Math.min(currentTime + dt, t)
     const actualDt = nextTime - currentTime
     if (actualDt <= 0) break
-    // a = -g - k·v（阻力方向始终与速度方向相反）
-    const a = -g - k * currentV
+    // a = -g - k·v·|v|（二次阻力，与 precomputeVerticalThrowTrajectory 一致）
+    const a = -g - k * currentV * Math.abs(currentV)
     currentV += a * actualDt
     currentY += currentV * actualDt
     currentTime = nextTime

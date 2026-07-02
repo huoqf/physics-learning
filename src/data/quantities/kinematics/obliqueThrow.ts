@@ -51,7 +51,7 @@ export function handleObliqueThrow(
     { name: '竖直方向阻力运动', latex: 'a_y = -g - \\frac{k}{m} v v_y', level: 'supplementary', condition: '二次阻力模型' },
   ] : [
     { name: '水平匀速运动', latex: 'x = v_0 \\cos\\theta \\cdot t', level: 'core' },
-    { name: '竖直竖直上抛', latex: 'y = v_0 \\sin\\theta \\cdot t - \\frac{1}{2}gt^2', level: 'core', condition: '忽略空气阻力' },
+    { name: '竖直上抛运动', latex: 'y = v_0 \\sin\\theta \\cdot t - \\frac{1}{2}gt^2', level: 'core', condition: '忽略空气阻力' },
     { name: '速度合成关系', latex: 'v = \\sqrt{v_x^2 + v_y^2}', level: 'important' },
   ]
 

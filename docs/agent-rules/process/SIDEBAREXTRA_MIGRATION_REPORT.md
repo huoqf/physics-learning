@@ -10,7 +10,7 @@
 |------|------|
 | SidebarExtra 注册总量 | 20（原始 61，已删除 41） |
 | 硬骨头（不可迁移） | 2 |
-| 已精简/合理保留 | 19 |
+| 已精简/合理保留 | 18 |
 
 ---
 
@@ -28,7 +28,8 @@
 | `FieldLinesSidebar` | segmented 切换时需条件分支重置探针位置 |
 | `UniformAccelerationSidebar` | areaMode segmented（复杂 side effect）+ 自定义 range input |
 | `FreeFallSidebar` | 已精简为纯提示卡片（环境状态 + g 值显示），保留用于动态 tip 内容 |
-| 其余 14 个 | 力学能量/动力学/运动学/热学/直流电路等，已大幅精简 |
+| `VerticalThrowSidebar` | 仅保留"对比真空参考轨道"开关，因 controlMeta 无法表达 `airResistance > 0` 的条件依赖 |
+| 其余 13 个 | 力学能量/动力学/运动学/热学/直流电路等，已大幅精简 |
 
 ---
 
