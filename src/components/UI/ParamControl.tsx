@@ -57,17 +57,16 @@ const snapToStep = (value: number, param: ParamConfig) => {
   return Number(clamp(snapped, param.min, param.max).toFixed(digits))
 }
 
-const importanceClass: Record<ParamImportance | 'default', string> = {
-  core: 'border-primary-100 bg-primary-50/30',
-  advanced: 'border-amber-100 bg-amber-50/30',
-  display: 'border-sky-100 bg-sky-50/30',
-  default: 'border-neutral-100 bg-neutral-50/60',
-}
-
 const importanceLabel: Record<ParamImportance, string> = {
   core: '核心',
   advanced: '进阶',
   display: '显示',
+}
+
+const importanceBadgeClass: Record<ParamImportance, string> = {
+  core: 'bg-primary-50 text-primary-700 border-primary-200/60',
+  advanced: 'bg-amber-50 text-amber-700 border-amber-200/60',
+  display: 'bg-sky-50 text-sky-700 border-sky-200/60',
 }
 
 const markClass: Record<ParamMarkVariant, string> = {
@@ -104,6 +103,19 @@ export const ParamControl: React.FC<ParamControlProps> = ({
   const [localValues, setLocalValues] = useState<Record<string, string>>({})
   const [editingKey, setEditingKey] = useState<string | null>(null)
   const skipBlurCommitKey = useRef<string | null>(null)
+
+  const inputWidth = useMemo(() => {
+    const maxLen = params.reduce((acc, p) => {
+      const step = p.step ?? 0.1
+      const len = Math.max(
+        formatByStep(p.min, step).length,
+        formatByStep(p.max, step).length
+      )
+      return Math.max(acc, len)
+    }, 3)
+    // 设定安全的最小字符宽度（6.5ch），并为边距与浏览器默认微调框预留足够宽度
+    return `${Math.max(6.5, maxLen + 2.5)}ch`
+  }, [params])
 
   const paramsSignature = useMemo(
     () => params.map((p) => `${p.key}:${p.value}:${p.min}:${p.max}:${p.step ?? 0.1}:${p.unit ?? ''}:${p.group ?? ''}`).join('|'),
@@ -198,22 +210,21 @@ export const ParamControl: React.FC<ParamControlProps> = ({
     const hasZeroMark = Boolean(zeroMark)
     const fillLeft = hasZeroMark ? Math.min(percentage, zeroPercentage) : 0
     const fillWidth = hasZeroMark ? Math.abs(percentage - zeroPercentage) : percentage
-    const cardClass = importanceClass[param.importance ?? 'default']
 
     return (
-      <div key={param.key} className={['rounded-lg border p-3 space-y-2.5', cardClass].join(' ')}>
+      <div key={param.key} className="space-y-2.5 pb-4 border-b border-neutral-100 last:border-0 last:pb-0">
         <div className="flex items-start justify-between gap-2">
           <label className="min-w-0 text-xs font-semibold text-neutral-700 leading-6" htmlFor={`param-${param.key}`}>
             <span className="inline-flex items-center gap-1.5">
-              <span>{param.label}</span>
+              <span>{param.label}{param.unit ? ` (${param.unit})` : ''}</span>
               {param.importance && (
-                <span className="rounded-full bg-white/70 px-1.5 py-0.5 text-ui-sm font-bold text-neutral-400 border border-neutral-200/70">
+                <span className={['rounded-full px-1.5 py-0.5 text-ui-sm font-bold border', importanceBadgeClass[param.importance]].join(' ')}>
                   {importanceLabel[param.importance]}
                 </span>
               )}
             </span>
             {param.description && (
-              <span className="mt-1 block text-ui-base font-normal leading-relaxed text-neutral-400">
+              <span className="mt-0.5 block text-ui-base font-normal leading-relaxed text-neutral-400">
                 {param.description}
               </span>
             )}
@@ -231,70 +242,63 @@ export const ParamControl: React.FC<ParamControlProps> = ({
               max={param.max}
               step={step}
               disabled={disabled}
-              className="w-20 px-2 py-1 text-sm text-right font-mono bg-white border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              style={{ width: inputWidth }}
+              className="px-2 py-1 text-sm text-right font-mono bg-white border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               aria-label={`${param.label}数值`}
             />
-            {param.unit && (
-              <span className="text-xs text-neutral-500 min-w-[20px]">
-                {param.unit}
-              </span>
-            )}
           </div>
         </div>
 
-        <div className="relative h-2 bg-neutral-200 rounded-full flex items-center">
-          {marks.map((mark) => {
-            const markVariant = mark.variant ?? 'recommended'
-            return (
-              <div
-                key={`${param.key}-${mark.value}-${mark.label ?? ''}`}
-                className={['absolute top-1/2 -translate-y-1/2 w-px h-3.5 pointer-events-none z-[1]', markClass[markVariant].split(' ')[0]].join(' ')}
-                style={{ left: `${getMarkPercentage(mark.value, param)}%` }}
-                aria-hidden="true"
-              />
-            )
-          })}
-          <input
-            type="range"
-            min={param.min}
-            max={param.max}
-            step={step}
-            value={safeValue}
-            onChange={(e) =>
-              handleSliderChange(param.key, Number.parseFloat(e.target.value), param)
-            }
-            disabled={disabled}
-            className="peer absolute -inset-y-2 left-0 w-full h-6 opacity-0 cursor-pointer z-10"
-            aria-label={`${param.label}滑块`}
-          />
-          <div
-            className="absolute top-0 h-full bg-primary-500 rounded-full pointer-events-none transition-all duration-fast ease-standard peer-hover:bg-primary-600"
-            style={{
-              left: `${fillLeft}%`,
-              width: `${fillWidth}%`,
-            }}
-          />
-          <div
-            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary-500 rounded-full shadow-sm pointer-events-none transition-all duration-fast ease-standard peer-hover:scale-115 peer-focus-visible:ring-2 peer-focus-visible:ring-primary-300 peer-focus-visible:ring-offset-1 peer-active:scale-95"
-            style={{
-              left: `calc(${percentage}% - 8px)`,
-            }}
-          />
-        </div>
-
-        <div className="flex justify-between text-ui-base text-neutral-500 font-mono">
-          <span>
+        <div className="flex items-center gap-3">
+          <span className="text-ui-base text-neutral-400 font-mono w-8 text-right shrink-0">
             {formatByStep(param.min, step)}
-            {param.unit}
           </span>
-          <span>
+          <div className="relative flex-1 h-2 bg-neutral-200 rounded-full flex items-center">
+            {marks.map((mark) => {
+              const markVariant = mark.variant ?? 'recommended'
+              return (
+                <div
+                  key={`${param.key}-${mark.value}-${mark.label ?? ''}`}
+                  className={['absolute top-1/2 -translate-y-1/2 w-px h-3.5 pointer-events-none z-[1]', markClass[markVariant].split(' ')[0]].join(' ')}
+                  style={{ left: `${getMarkPercentage(mark.value, param)}%` }}
+                  aria-hidden="true"
+                />
+              )
+            })}
+            <input
+              type="range"
+              min={param.min}
+              max={param.max}
+              step={step}
+              value={safeValue}
+              onChange={(e) =>
+                handleSliderChange(param.key, Number.parseFloat(e.target.value), param)
+              }
+              disabled={disabled}
+              className="peer absolute -inset-y-2 left-0 w-full h-6 opacity-0 cursor-pointer z-10"
+              aria-label={`${param.label}滑块`}
+            />
+            <div
+              className="absolute top-0 h-full bg-primary-500 rounded-full pointer-events-none transition-all duration-fast ease-standard peer-hover:bg-primary-600"
+              style={{
+                left: `${fillLeft}%`,
+                width: `${fillWidth}%`,
+              }}
+            />
+            <div
+              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary-500 rounded-full shadow-sm pointer-events-none transition-all duration-fast ease-standard peer-hover:scale-115 peer-focus-visible:ring-2 peer-focus-visible:ring-primary-300 peer-focus-visible:ring-offset-1 peer-active:scale-95"
+              style={{
+                left: `calc(${percentage}% - 8px)`,
+              }}
+            />
+          </div>
+          <span className="text-ui-base text-neutral-400 font-mono w-8 text-left shrink-0">
             {formatByStep(param.max, step)}
-            {param.unit}
           </span>
         </div>
 
         {marks.some((mark) => mark.label) && (
-          <div className="relative h-4 text-ui-sm font-semibold">
+          <div className="relative h-4 text-ui-sm font-semibold w-full" style={{ paddingLeft: '44px', paddingRight: '44px' }}>
             {marks.filter((mark) => mark.label).map((mark) => {
               const markVariant = mark.variant ?? 'recommended'
               const [, textClass] = markClass[markVariant].split(' ')

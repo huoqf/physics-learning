@@ -7,6 +7,7 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
     title: '安培力 F=BIL',
     knowledgeId: 'electricity-3-1',
     Component: lazy(() => import('@/features/electromagnetism/magnetism/AmpereForce')),
+    controlsMode: 'param' as const,
     controlMeta: [
       { type: 'segmented', key: 'mode', label: '演示模式', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础：直交规律' }, { value: 1, label: '进阶：斜面平衡' }] },

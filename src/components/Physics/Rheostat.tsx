@@ -30,6 +30,8 @@ export interface RheostatProps {
   className?: string
   /** 是否启用动画，关闭后不仅停止时间动画，而且停止渲染任何粒子或不需要的动态修饰元素以减轻 DOM 开销 */
   animated?: boolean
+  /** 外观模式：'realistic' (拟物, 默认) | 'symbolic' (电路原理图图例符号) */
+  variant?: 'realistic' | 'symbolic'
 }
 
 // 渲染计算函数
@@ -60,6 +62,7 @@ export const Rheostat: React.FC<RheostatProps> = ({
   disabled = false,
   className = '',
   font = (base: number) => base,
+  variant = 'realistic',
 }) => {
   const c = SCENE_COLORS.circuit
   const layout = getRheostatLayout(width)
@@ -70,6 +73,118 @@ export const Rheostat: React.FC<RheostatProps> = ({
 
   // 游标滑片在 local 坐标系下的位置
   const wiperX = layout.wiperOffset + ratio * layout.wiperRange
+
+  if (variant === 'symbolic') {
+    const boxW = 48 * layout.scale
+    const boxH = 16 * layout.scale
+    const sliderY = -18 * layout.scale
+    const contactY = -8 * layout.scale
+    
+    // 游标 x 坐标限制在电阻框的有效横向区间内
+    const symbolicWiperX = -18 * layout.scale + ratio * 36 * layout.scale
+    
+    return (
+      <g
+        transform={`translate(${x}, ${y})`}
+        className={`${className} ${disabled ? 'opacity-40 pointer-events-none' : ''}`}
+      >
+        {/* 电阻框符号 (标准空心长方形) */}
+        <rect
+          x={-boxW / 2}
+          y={-boxH / 2}
+          width={boxW}
+          height={boxH}
+          fill="#ffffff"
+          stroke={SCENE_COLORS.circuit.resistorStroke}
+          strokeWidth={2 * layout.scale}
+        />
+        
+        {/* 上方水平滑轨导线 */}
+        <line
+          x1={-30 * layout.scale}
+          y1={sliderY}
+          x2={30 * layout.scale}
+          y2={sliderY}
+          stroke={SCENE_COLORS.circuit.resistorStroke}
+          strokeWidth={1.5 * layout.scale}
+        />
+        
+        {/* ── 核心物理连线优化：一上一下接法 (左滑轨入，右电阻出) ── */}
+        {/* 左侧引线：自外部 (-73, 0) 进入，在外侧折弯向上连接至上方滑轨左端 (-30) */}
+        <path
+          d={`M ${-73 * layout.scale} 0 L ${-34 * layout.scale} 0 L ${-34 * layout.scale} ${sliderY} L ${-30 * layout.scale} ${sliderY}`}
+          fill="none"
+          stroke={SCENE_COLORS.circuit.resistorStroke}
+          strokeWidth={1.5 * layout.scale}
+        />
+        
+        {/* 右侧引线：自外部 (73, 0) 进入，水平连入电阻框右侧边缘 (boxW/2) */}
+        <line
+          x1={boxW / 2}
+          y1={0}
+          x2={73 * layout.scale}
+          y2={0}
+          stroke={SCENE_COLORS.circuit.resistorStroke}
+          strokeWidth={1.5 * layout.scale}
+        />
+        
+        {/* 悬空未接入的端点：电阻框左端连出一截小线段至 -30 处，与左侧主导线断开，代表此端口未接线 */}
+        <line
+          x1={-boxW / 2}
+          y1={0}
+          x2={-30 * layout.scale}
+          y2={0}
+          stroke={SCENE_COLORS.circuit.resistorStroke}
+          strokeWidth={1.2 * layout.scale}
+          strokeDasharray="2,2"
+          opacity={0.4}
+        />
+        <circle cx={-30 * layout.scale} cy={0} r={1.5 * layout.scale} fill={PHYSICS_COLORS.labelTextLight} opacity={0.6} />
+        
+        {/* 指向电阻框的红色触片箭头 */}
+        <g>
+          {/* 垂直引线 */}
+          <line
+            x1={symbolicWiperX}
+            y1={sliderY}
+            x2={symbolicWiperX}
+            y2={contactY}
+            stroke={PHYSICS_COLORS.alertRed}
+            strokeWidth={1.5 * layout.scale}
+          />
+          {/* 指向电阻的箭头 */}
+          <polygon
+            points={`
+              ${symbolicWiperX},${contactY}
+              ${symbolicWiperX - 3.5 * layout.scale},${contactY - 6 * layout.scale}
+              ${symbolicWiperX + 3.5 * layout.scale},${contactY - 6 * layout.scale}
+            `}
+            fill={PHYSICS_COLORS.alertRed}
+          />
+        </g>
+        
+        {/* 实心接线圆点，对应原理图接入位置 */}
+        <circle cx={-73 * layout.scale} cy={0} r={2.5 * layout.scale} fill={PHYSICS_COLORS.labelText} />
+        <circle cx={73 * layout.scale} cy={0} r={2.5 * layout.scale} fill={PHYSICS_COLORS.labelText} />
+        <circle cx={-34 * layout.scale} cy={0} r={2.2 * layout.scale} fill={PHYSICS_COLORS.labelText} />
+
+        {/* 可选阻值文本标签 */}
+        {showLabel && (
+          <text
+            x={0}
+            y={24 * layout.scale}
+            fill={PHYSICS_COLORS.labelText}
+            fontSize={font(10.5)}
+            fontWeight="bold"
+            textAnchor="middle"
+            style={{ userSelect: 'none' }}
+          >
+            {label} = {value.toFixed(1)} {unit}
+          </text>
+        )}
+      </g>
+    )
+  }
 
   return (
     <g

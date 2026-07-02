@@ -7,6 +7,7 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
     title: '库仑定律',
     knowledgeId: 'electricity-1-1',
     Component: lazy(() => import('@/features/electromagnetism/electrostatics/CoulombLaw')),
+    controlsMode: 'param' as const,
     defaultParams: { q1: 2, q2: -3, r: 4, mode: 0, q3: 1 } as const,
     paramMeta: [
       { key: 'q1', label: '电量 Q₁', min: -5, max: 5, step: 0.5, unit: 'μC' },
@@ -41,6 +42,7 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
     title: '电场强度与比值定义法',
     knowledgeId: 'electricity-1-2',
     Component: lazy(() => import('@/features/electromagnetism/electrostatics/ElectricField')),
+    controlsMode: 'param' as const,
     defaultParams: { mode: 0, q: 5, chargeConfig: 0, qTest: 1.0, rTest: 3, showFieldLines: 1 } as const,
     paramMeta: [
       { key: 'q', label: '源电电量 Q', min: -10, max: 10, step: 0.5, unit: 'μC', showIf: 'mode', showIfValue: 0 },
@@ -89,6 +91,7 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
     title: '平行板电容器',
     knowledgeId: 'electricity-1-4',
     Component: lazy(() => import('@/features/electromagnetism/electrostatics/Capacitor')),
+    controlsMode: 'param' as const,
     defaultParams: { S: 100, d: 5, epsilon_r: 1, U: 12, connected: 1 } as const,
     paramMeta: [
       { key: 'S', label: '正对面积 S', min: 50, max: 200, step: 10, unit: 'cm²' },
@@ -107,6 +110,7 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
     title: '电场线与等势面关系',
     knowledgeId: 'electricity-1-5',
     Component: lazy(() => import('@/features/electromagnetism/electrostatics/FieldLines')),
+    controlsMode: 'param' as const,
     defaultParams: {
       topology: 2,
       qSource: 5,
@@ -127,6 +131,7 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
     title: '电势与电势差',
     knowledgeId: 'electricity-1-6',
     Component: lazy(() => import('@/features/electromagnetism/electrostatics/ElectricPotential')),
+    controlsMode: 'param' as const,
     defaultParams: {
       baseEField: 150,
       qProbe: 1.0,

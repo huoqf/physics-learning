@@ -373,6 +373,44 @@ export const mechanicsKinematicsAnimations = defineAnimations({
 3. `SidebarExtra` 不得直接访问 store；仍通过 `SidebarExtraProps` 接收 `params/updateParam/setParams/animationActions`。
 4. 左屏具体 UI 结构与验收标准见 `docs/agent-rules/ui/08_THREE_PANEL_RULES.md §2`。
 
+### 8.1.4 底部播放控制器协议（controlsMode）
+
+`AnimationConfig` 的 `controlsMode` 字段声明动画底部控制栏的渲染模式，**新增动画时必须根据下表选择正确模式**：
+
+| 模式 | 字段值 | 底部 UI | 自动播放 | 判断依据 |
+|------|--------|---------|---------|---------|
+| 完整控制栏 | `'timed'`（默认，可省略） | 播放/暂停 + 重置 + 速度 + 进度条 | 否（手动点播） | 动画有明确起点/终点，进度条有教学意义（如碰撞演示、轨迹描绘） |
+| 精简速度栏 | `'loop'` | 「循环运行中」徽章 + 速度选择器 | **是**（加载即自动播放） | 永续循环无终点（圆周运动、行星轨道、分子热运动、交变波形） |
+| 参数提示条 | `'param'` | 💡「通过左侧参数面板实时调节」信息条 | 否（无帧循环） | 画面由参数直接决定，无 `useAnimationFrame` 时间驱动（静态受力图、电路参数计算） |
+
+**典型分类示例**：
+
+```ts
+// ✅ timed — 有起点/终点的过程性演示
+'anim-projectile': { controlsMode: 'timed', ... }   // 默认可省略
+
+// ✅ loop — 永续运行的现象展示
+'anim-circular-motion': { controlsMode: 'loop', ... }
+'anim-brownian-motion': { controlsMode: 'loop', ... }
+'anim-ac-generation':   { controlsMode: 'loop', ... }
+
+// ✅ param — 纯参数驱动、无时间推进
+'anim-spring-force': { controlsMode: 'param', ... }
+'anim-ohm-law':      { controlsMode: 'param', ... }
+'anim-reflection':   { controlsMode: 'param', ... }
+```
+
+**判断流程**：
+1. 动画组件内部是否调用 `useAnimationFrame` / `useSimulationFrame` 且受 `isPlaying` 控制？  
+   → 否：`'param'`
+2. 动画是否有固定终点（时间耗尽/到达限位自动暂停）？  
+   → 是：`'timed'`；否：`'loop'`
+
+**注意事项**：
+- `'loop'` 型动画在 `useAnimationLifecycle` 初始化时自动 `setIsPlaying(true)`，**不得**为其添加"首次加载暂停"逻辑
+- `'param'` 型若有 `useAnimationFrame` 用于拖拽响应（如 `anim-equilibrium`），仍标记为 `'param'`，因为 `isPlaying` 全局开关对主画面无语义
+- `'param'` 型底部控制区高度与其他模式保持一致（信息条高度 ≈ 完整控制栏），不应引起布局跳变
+
 ### 8.2 错题数据流
 
 ```

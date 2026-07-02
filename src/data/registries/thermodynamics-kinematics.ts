@@ -7,6 +7,7 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
     title: '分子热运动与布朗运动',
     knowledgeId: 'thermodynamics-1-1',
     Component: lazy(() => import('@/features/thermodynamics/kinematics/BrownianMotion')),
+    controlsMode: 'loop' as const,
     defaultParams: {
       mode: 0,
       temperature: 300,
@@ -34,6 +35,7 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
     title: '分子间作用力',
     knowledgeId: 'thermodynamics-1-3',
     Component: lazy(() => import('@/features/thermodynamics/kinematics/IntermolecularForcesAnimation')),
+    controlsMode: 'param' as const,
     defaultParams: {
       mode: 0,
       r: 2.0,

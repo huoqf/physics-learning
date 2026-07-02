@@ -7,6 +7,7 @@ export const electromagnetismAcAnimations = defineAnimations({
     title: '交变电流产生与图像',
     knowledgeId: 'electricity-5-1',
     Component: lazy(() => import('@/features/electromagnetism/induction/ACGeneration')),
+    controlsMode: 'loop' as const,
     defaultParams: {
       mode: 0,
       B: 0.5, S: 0.04, omega: 2, N: 100, initialPhase: 0,
@@ -50,6 +51,7 @@ export const electromagnetismAcAnimations = defineAnimations({
     knowledgeId: 'electricity-5-2',
     Component: lazy(() => import('@/features/electromagnetism/induction/ACValues')),
     SidebarExtra: lazy(() => import('@/features/electromagnetism/induction/ACValuesSidebarExtra')),
+    controlsMode: 'loop' as const,
     defaultParams: {
       mode: 0,
       waveform: 0,
@@ -64,6 +66,7 @@ export const electromagnetismAcAnimations = defineAnimations({
     title: '变压器原理',
     knowledgeId: 'electricity-5-3',
     Component: lazy(() => import('@/features/electromagnetism/induction/Transformer')),
+    controlsMode: 'param' as const,
     controlMeta: [
       { type: 'segmented', key: 'mode', label: '实验模式', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础：变压变流' }, { value: 1, label: '进阶：负载因果链' }] },
@@ -85,6 +88,7 @@ export const electromagnetismAcAnimations = defineAnimations({
     knowledgeId: 'electricity-5-4',
     Component: lazy(() => import('@/features/electromagnetism/induction/PowerTransmission')),
     SidebarExtra: lazy(() => import('@/features/electromagnetism/induction/PowerTransmissionSidebarExtra')),
+    controlsMode: 'loop' as const,
     defaultParams: {
       mode: 0,              // 0=基础: 高压输电优越性, 1=进阶: 动态负载与稳压
       scenario: 0,          // 0=跨省大电网, 1=近郊小供电

@@ -55,19 +55,18 @@ export const EnergyBars: FC<EnergyBarsProps> = ({
   const titleFs = compact ? 9 : 10.5
   const valueFs = compact ? 7 : 8
   const labelFs = compact ? 7 : 8
-  const barHeight = compact ? 'h-10' : 'h-12'
   const gapClass = compact ? 'gap-1' : 'gap-2'
 
   const truncateLabel = (label: string) => {
-    if (!compact || label.length <= 3) return label
-    return label.slice(0, 2) + '…'
+    if (!compact || label.length <= 5) return label
+    return label.slice(0, 4) + '…'
   }
 
   return (
-    <div className="flex flex-col p-2 bg-white rounded-lg border border-neutral-200/50 select-none w-full">
+    <div className="flex flex-col p-2 bg-white rounded-lg border border-neutral-200/50 select-none w-full h-full min-h-[110px]">
       {/* 头部标题与数值对齐 */}
       <div 
-        className="font-bold text-neutral-700 mb-2 flex justify-between items-center px-0.5"
+        className="font-bold text-neutral-700 mb-1.5 flex justify-between items-center px-0.5 shrink-0"
         style={{ fontSize: fSize(titleFs) }}
       >
         <span className="tracking-wide">{title}</span>
@@ -78,8 +77,8 @@ export const EnergyBars: FC<EnergyBarsProps> = ({
         )}
       </div>
 
-      {/* 柱形主区域：基础高度提升至 48px，使柱子更加伸展可见 */}
-      <div className={`relative ${barHeight} flex items-end justify-between pt-4 px-1.5 border-b border-neutral-200/80 ${gapClass}`}>
+      {/* 柱形主区域：使用 flex-1 自适应容器高度，预留 pt-5 空间给绝对定位的数值 */}
+      <div className={`relative flex-1 min-h-[55px] flex items-end justify-between pt-5 px-1.5 border-b border-neutral-200/80 ${gapClass}`}>
         {/* 系统总能量参考线：改用更细、更克制的淡灰线 */}
         {initialEtot !== undefined && (
           <div
@@ -93,10 +92,10 @@ export const EnergyBars: FC<EnergyBarsProps> = ({
           const itemColor = isColliding ? PHYSICS_COLORS.alertRed : item.color
 
           return (
-            <div key={item.key} className="flex flex-col items-center flex-1 z-10 min-w-0">
-              {/* 能量槽轨道 */}
+            <div key={item.key} className="flex flex-col items-center flex-1 z-10 min-w-0 h-full justify-end">
+              {/* 能量槽轨道：改用 h-full 实现纵向自适应 */}
               <div 
-                className={`relative w-4.5 bg-transparent rounded-t-[3px] h-12 flex items-end transition-all duration-300 ${
+                className={`relative w-4.5 bg-transparent rounded-t-[3px] h-full min-h-[35px] max-h-[80px] flex items-end transition-all duration-300 ${
                   isColliding 
                     ? 'border border-red-300 bg-red-50/5' 
                     : ''
@@ -123,7 +122,7 @@ export const EnergyBars: FC<EnergyBarsProps> = ({
                 
                 {/* 柱顶数值 */}
                 <span 
-                  className={`absolute -top-4.5 font-semibold font-mono w-full text-center truncate px-0.5 transition-colors duration-300`}
+                  className={`absolute -top-4 font-semibold font-mono w-full text-center truncate px-0.5 transition-colors duration-300`}
                   style={{ 
                     fontSize: fSize(valueFs),
                     color: isColliding ? PHYSICS_COLORS.alertRed : (item.textColor || SCENE_COLORS.materials.structStrokeLight)
@@ -138,7 +137,7 @@ export const EnergyBars: FC<EnergyBarsProps> = ({
               <span 
                 className={`mt-1 font-bold truncate w-full text-center transition-colors duration-300 ${
                   isColliding ? 'text-red-500 font-extrabold' : 'text-neutral-500'
-                }`} 
+                } shrink-0`} 
                 style={{ fontSize: fSize(labelFs) }}
                 title={item.label}
               >

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Play, Pause, RotateCcw } from 'lucide-react'
+import { Play, Pause, RotateCcw, RefreshCw } from 'lucide-react'
 import { colors } from '@/theme/colors'
 import { duration } from '@/theme/motion'
 
@@ -12,6 +12,8 @@ interface AnimationControlsProps {
   onReset: () => void
   onSpeedChange: (speed: number) => void
   onTimeChange: (time: number) => void
+  /** 控制器渲染模式，默认 'timed' */
+  controlsMode?: 'timed' | 'loop' | 'param'
 }
 
 export const AnimationControls: React.FC<AnimationControlsProps> = ({
@@ -23,6 +25,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
   onReset,
   onSpeedChange,
   onTimeChange,
+  controlsMode = 'timed',
 }) => {
   const speedOptions = [0.25, 0.5, 1, 2]
   const percentage = maxTime > 0 ? (time / maxTime) * 100 : 0
@@ -40,6 +43,66 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
     onTimeChange(parseFloat(e.target.value))
   }
 
+  // ── param 型：替换为信息提示条 ──
+  if (controlsMode === 'param') {
+    return (
+      <div
+        className="w-full rounded-lg px-4 py-3 flex items-center gap-2.5"
+        style={{ backgroundColor: `${colors.primary[100]}`, border: `1px solid ${colors.primary[200]}` }}
+      >
+        <span className="text-lg shrink-0">💡</span>
+        <span className="text-sm font-medium" style={{ color: colors.primary[700] }}>
+          通过左侧参数面板实时调节，画面即时响应
+        </span>
+      </div>
+    )
+  }
+
+  // ── loop 型：仅速度选择器 + 徽章 ──
+  if (controlsMode === 'loop') {
+    return (
+      <div className="w-full bg-white rounded-lg shadow-sm border border-neutral-200 px-4 py-3">
+        <div className="flex items-center gap-4">
+          {/* 循环运行中徽章 */}
+          <div
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium shrink-0"
+            style={{ backgroundColor: `${colors.secondary[100]}`, color: colors.secondary[700] }}
+          >
+            <RefreshCw className="w-3 h-3 animate-spin" style={{ animationDuration: '2s' }} />
+            循环运行中
+          </div>
+
+          {/* 速度选择器 */}
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-neutral-600 min-w-[30px]">速度：</span>
+            <div className="flex gap-1">
+              {speedOptions.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => onSpeedChange(s)}
+                  className={[
+                    'px-3 py-1 rounded text-sm font-medium active:scale-[0.97] transition-all',
+                    speed === s
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200',
+                  ].join(' ')}
+                  style={{
+                    transitionProperty: 'all',
+                    transitionDuration: `${duration.fast}ms`,
+                    transitionTimingFunction: 'ease-out',
+                  }}
+                >
+                  {s}x
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── timed 型：完整控制栏（默认）──
   return (
     <div className="w-full bg-white rounded-lg shadow-sm border border-neutral-200 p-4">
       <div className="flex items-center gap-4">
@@ -145,4 +208,3 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
     </div>
   )
 }
-

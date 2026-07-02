@@ -6,6 +6,7 @@ export const opticsReflectionAnimations = defineAnimations({
     title: '光的反射定律',
     knowledgeId: 'optics-1-1',
     Component: lazy(() => import('@/features/optics/reflection/ReflectionAnimation')),
+    controlsMode: 'param' as const,
     defaultParams: {
       theta1: 45,
       advancedMode: 0,

@@ -6,6 +6,7 @@ export const opticsTotalInternalReflectionAnimations = defineAnimations({
     title: '全反射与临界角',
     knowledgeId: 'optics-1-3',
     Component: lazy(() => import('@/features/optics/total-internal-reflection/TIRAnimation')),
+    controlsMode: 'param' as const,
     defaultParams: {
       mode: 0,
       theta1: 30,

@@ -6,6 +6,7 @@ export const opticsThinLensAnimations = defineAnimations({
     title: '薄透镜成像规律',
     knowledgeId: 'optics-2-1',
     Component: lazy(() => import('@/features/optics/thin-lens/ThinLensAnimation')),
+    controlsMode: 'param' as const,
     defaultParams: {
       mode: 0,
       isConcave: 0,

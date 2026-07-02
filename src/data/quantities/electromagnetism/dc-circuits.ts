@@ -141,6 +141,21 @@ export function handleDcCircuits(
         I1 = Itotal
       }
 
+      // 动态推导链 KaTeX 构造
+      const isUp = R2 >= 10
+      const arrow = isUp ? '\\uparrow' : '\\downarrow'
+      const arrowOpp = isUp ? '\\downarrow' : '\\uparrow'
+      let chainLatex = ''
+      if (mode === 0) {
+        if (subMode === 0) {
+          chainLatex = `R_2 ${arrow} \\implies R_{\\text{总}} ${arrow} \\implies I ${arrowOpp} \\implies U_1 ${arrowOpp} \\implies U_2 ${arrow}`
+        } else {
+          chainLatex = `R_2 ${arrow} \\implies R_{\\text{总}} ${arrow} \\implies I_2 ${arrowOpp} \\quad (U_{\\text{外}} = U, I_1 \\text{ 恒定}, I_{\\text{总}} ${arrowOpp})`
+        }
+      } else {
+        chainLatex = `R_2 ${arrow} \\implies R_{\\text{并}} ${arrow} \\implies R_{\\text{总}} ${arrow} \\implies I_{\\text{总}} ${arrowOpp} \\implies U_1 ${arrowOpp} \\implies U_2 ${arrow} \\implies I_3 ${arrow} \\implies I_2 ${arrowOpp}`
+      }
+
       return {
         quantities: [
           ...base,
@@ -172,8 +187,20 @@ export function handleDcCircuits(
           { label: 'R₁ 流经电流', symbol: 'I₁', value: I1, unit: 'A' },
           { label: 'R₂ 流经电流', symbol: 'I₂', value: I2, unit: 'A' },
           ...(mode === 1 ? [{ label: 'R₃ 流经电流', symbol: 'I₃', value: I3, unit: 'A' }] : []),
+          // 注入元件功率与总功率
+          { label: 'R₁ 消耗功率', symbol: 'P₁', value: I1 * U1, unit: 'W' },
+          { label: 'R₂ 消耗功率', symbol: 'P₂', value: I2 * U2, unit: 'W' },
+          ...(mode === 1 ? [{ label: 'R₃ 消耗功率', symbol: 'P₃', value: I3 * U2, unit: 'W' }] : []),
+          { label: '总输出功率', symbol: 'P_总', value: Itotal * U, unit: 'W', highlight: 'extreme' },
         ],
         formulas: [
+          {
+            name: '电路动态因果链 (串反并同)',
+            latex: chainLatex,
+            level: 'derived' as const,
+            condition: isUp ? '滑动变阻器阻值调大' : '滑动变阻器阻值调小',
+            note: '根据"串反并同"口诀：与变阻器串联的元件其电流/电压变化相反；与其并联的相同。',
+          },
           {
             name: '欧姆定律',
             latex: 'I = \\frac{U}{R}',

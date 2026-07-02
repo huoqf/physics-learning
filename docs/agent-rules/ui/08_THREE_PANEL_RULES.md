@@ -1,4 +1,4 @@
-﻿# 08_THREE_PANEL_RULES — 三屏职责与侧屏组件规范
+# 08_THREE_PANEL_RULES — 三屏职责与侧屏组件规范
 
 > 优先级：低于 02_UI_RULES.md，高于章节实现细节
 > AI任务入口：实现或修改左侧屏、右侧屏、CenterExtra 时必须读本文件
@@ -249,6 +249,32 @@ SidebarExtraProps
 
 ---
 
+## 6. 底部播放控制器（AnimationControls）规范
+
+中间屏动画区域底部统一由 `AnimationControls` 组件渲染，行为由 `AnimationConfig.controlsMode` 控制。**不得在动画组件内部自行渲染播放按钮或速度控件**。
+
+### 6.1 三种模式
+
+| 模式 | `controlsMode` | 底部渲染 | 自动播放 |
+|------|--------------|---------|---------|
+| 完整控制栏 | `'timed'`（默认） | 播放/暂停 + 重置 + 速度选择器 + 进度条 | 否 |
+| 精简速度栏 | `'loop'` | 「循环运行中」旋转徽章 + 速度选择器 | **是**（页面加载即播放） |
+| 参数提示条 | `'param'` | 💡「通过左侧参数面板实时调节，画面即时响应」 | 否 |
+
+### 6.2 模式选择规则
+
+1. **`'param'`**：动画组件内部**无** `useAnimationFrame` 时间推进（或仅用于拖拽响应、`isPlaying` 对主画面无控制意义）→ 标记为 `'param'`
+2. **`'loop'`**：动画有时间推进，但**无固定终点**（圆周运动、分子热运动、交变电流波形等永续循环）→ 标记为 `'loop'`
+3. **`'timed'`**（默认）：动画有固定终点（时间到达 `maxTime` 或触发自动暂停）→ 省略字段或显式写 `'timed'`
+
+### 6.3 布局约束
+
+- 三种模式底部控制区的**高度应保持一致**（`param` 信息条的 padding 应与完整控制栏齐高），避免页面切换时产生跳变
+- 控制区只能出现在 `AnimationCenter` 内部，**不得**由 `SidebarExtra` 或动画组件自行渲染额外的播放/暂停控件
+- `'loop'` 型仍可通过速度选择器改变 `speed`，只是隐藏了无意义的暂停按钮
+
+---
+
 ## 7. 扩展预留
 
 当前左侧屏组件体系覆盖了力学和电磁学基础参数类型。后续章节如需以下扩展，应先更新本规范再实现：
@@ -273,3 +299,4 @@ SidebarExtraProps
 | 架构细则 | `core/ARCHITECTURE_RULES.md` |
 | 物理量颜色完整表 | `src/theme/physics/colors.ts` |
 | 动画注册表 | `src/data/animationRegistry.ts` |
+| 底部控制器模式（controlsMode） | `core/ARCHITECTURE_RULES.md §8.1.4` + 本文件 §6 |

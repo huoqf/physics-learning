@@ -81,7 +81,8 @@ function useAnimationConfig() {
       setParams(config.defaultParams)
       setTime(0)
       currentTimeRef.current = 0
-      setIsPlaying(false)
+      // loop 型动画自动开始播放；其余类型初始暂停
+      setIsPlaying(config.controlsMode === 'loop')
       setPhysicsState({ position: { x: 0, y: 0 }, velocity: { vx: 0, vy: 0 }, trajectory: [] })
       setMode('animation')
       markAnimationViewed(config.id)

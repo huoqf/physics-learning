@@ -6,6 +6,7 @@ export const opticsRefractionAnimations = defineAnimations({
     title: '光的折射定律',
     knowledgeId: 'optics-1-2',
     Component: lazy(() => import('@/features/optics/refraction/RefractionAnimation')),
+    controlsMode: 'param' as const,
     defaultParams: {
       theta1: 45,
       n: 1.5,

@@ -7,6 +7,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '弹力演示',
     knowledgeId: 'mechanics-3-2',
     Component: lazy(() => import('@/features/mechanics/dynamics/SpringForceAnimation')),
+    controlsMode: 'param' as const,
     defaultParams: { k: 100, x: 0, m: 1 } as const,
     paramMeta: [
       { key: 'k', label: '劲度系数 k', min: 10, max: 200, step: 5, unit: 'N/m' },
@@ -18,6 +19,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '重力与重心',
     knowledgeId: 'mechanics-3-1',
     Component: lazy(() => import('@/features/mechanics/dynamics/GravityBasicAnimation')),
+    controlsMode: 'param' as const,
     defaultParams: {
       mode: 0,
       latitude: 45,
@@ -65,6 +67,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '摩擦力演示',
     knowledgeId: 'mechanics-3-3',
     Component: lazy(() => import('@/features/mechanics/dynamics/FrictionAnimation')),
+    controlsMode: 'param' as const,
     defaultParams: {
       mode: 0,
       m: 5,
@@ -130,6 +133,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '力的合成与分解',
     knowledgeId: 'mechanics-3-4',
     Component: lazy(() => import('@/features/mechanics/dynamics/VectorAdditionAnimation')),
+    controlsMode: 'param' as const,
     defaultParams: { f1: 10, f2: 8, angle: 60, mode: 0 } as const,
     paramMeta: [
       { key: 'f1', label: '力 F₁ / 待分解力', min: 1, max: 20, step: 0.5, unit: 'N' },
@@ -155,6 +159,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '共点力平衡',
     knowledgeId: 'mechanics-3-5',
     Component: lazy(() => import('@/features/mechanics/dynamics/EquilibriumAnimation')),
+    controlsMode: 'param' as const,
     defaultParams: { m: 2.0, theta1: 45, theta2: 45, mode: 0 } as const,
     paramMeta: [
       { key: 'm', label: '砝码质量 m', min: 0.5, max: 5.0, step: 0.1, unit: 'kg' },
@@ -264,6 +269,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '万有引力定律',
     knowledgeId: 'mechanics-6-2',
     Component: lazy(() => import('@/features/mechanics/dynamics/GravityAnimation')),
+    controlsMode: 'param' as const,
     defaultParams: { m1: 1000, m2: 10, r: 5, mode: 0, preset: 0, showChart: 1 } as const,
     paramMeta: [
       { key: 'm1', label: '质量 m₁', min: 100, max: 5000, step: 100, unit: '', showIf: 'mode', showIfValue: 0 },

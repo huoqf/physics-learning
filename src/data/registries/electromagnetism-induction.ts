@@ -7,6 +7,7 @@ export const electromagnetismInductionAnimations = defineAnimations({
     title: '第一节：电磁感应现象',
     knowledgeId: 'electricity-4-1',
     Component: lazy(() => import('@/features/electromagnetism/induction/InductionPhenomenon')),
+    controlsMode: 'param' as const,
     defaultParams: {
       mode: 0,
       showLines: 1,

@@ -54,6 +54,8 @@ function AnimationCenter({
   const showCenterExtraInBasic = CenterExtraComponent && !centerExtraModeKey
   const maxTime = config.maxTime ?? 30
 
+  const controlsMode = config.controlsMode ?? 'timed'
+
   const controlBar = (wrapperClassName: string) => (
     <div className={wrapperClassName}>
       <AnimationControls
@@ -65,6 +67,7 @@ function AnimationCenter({
         onReset={handleReset}
         onSpeedChange={setSpeed}
         onTimeChange={setTime}
+        controlsMode={controlsMode}
       />
     </div>
   )
@@ -99,18 +102,21 @@ function AnimationCenter({
 
   const standardControlBar = controlBar('px-2 pb-2 pt-1 shrink-0')
 
+  const centerHeightClass = config.centerExtraHeight ?? 'h-1/2'
+  const restHeightClass = config.centerExtraHeight ? 'flex-1' : 'h-1/2'
+
   return (
     <div className="flex flex-col h-full">
       {showCenterExtraInBasic && CenterExtraComponent ? (
         <>
-          <div className="h-1/2 min-h-0">
+          <div className={`${centerHeightClass} shrink-0 min-h-0`}>
             <ErrorBoundary resetKey={config.id}>
               <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400 text-sm">加载动画中…</div>}>
                 <CenterExtraComponent />
               </Suspense>
             </ErrorBoundary>
           </div>
-          <div className="h-1/2 min-h-0 flex flex-col gap-2">
+          <div className={`${restHeightClass} min-h-0 flex flex-col gap-2`}>
             <div
               className="flex-1 min-h-0 w-full bg-white rounded-xl shadow-md overflow-hidden"
               style={{
