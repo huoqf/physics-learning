@@ -107,7 +107,38 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     knowledgeId: 'mechanics-2-2',
     Component: lazy(() => import('@/features/mechanics/kinematics/FreeFallWrapper')),
     defaultParams: { v0: 0, g: GRAVITY, pressure: 0, objectA: 0, objectB: 0, advancedMode: 0, dripPeriod: 0.5, latitude: 45, altitude: 0, t: 0 } as const,
-    paramMeta: [],
+    controlsMode: 'timed',
+    paramMeta: [
+      { key: 'pressure', label: '管内气压', min: 0, max: 1, step: 0.01, unit: 'atm', showIf: 'advancedMode', showIfValue: 0 },
+      { key: 'dripPeriod', label: '滴水周期 T', min: 0.2, max: 2, step: 0.1, unit: 's', showIf: 'advancedMode', showIfValue: 1 },
+      { key: 'latitude', label: '纬度', min: 0, max: 90, step: 1, unit: '°', showIf: 'advancedMode', showIfValue: 1 },
+      { key: 'altitude', label: '海拔', min: 0, max: 10, step: 0.1, unit: 'km', showIf: 'advancedMode', showIfValue: 1 },
+    ],
+    controlMeta: [
+      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+        options: [{ label: '牛顿管实验', value: 0 }, { label: '滴水法测g', value: 1 }] },
+      { type: 'segmented', key: 'objectA', label: '物体A', group: '物体选择',
+        options: [{ label: '铁球', value: 0 }, { label: '硬币', value: 1 }],
+        showIf: 'advancedMode', showIfValue: 0 },
+      { type: 'segmented', key: 'objectB', label: '物体B', group: '物体选择',
+        options: [{ label: '羽毛', value: 0 }, { label: '纸片', value: 1 }],
+        showIf: 'advancedMode', showIfValue: 0 },
+      { type: 'preset', label: '🌍 地球 g=9.8', group: '环境重力场',
+        params: { g: 9.8 }, showIf: 'advancedMode', showIfValue: 0 },
+      { type: 'preset', label: '🌙 月球 g=1.63', group: '环境重力场',
+        params: { g: 1.63 }, showIf: 'advancedMode', showIfValue: 0 },
+      { type: 'preset', label: '🔴 火星 g=3.72', group: '环境重力场',
+        params: { g: 3.72 }, showIf: 'advancedMode', showIfValue: 0 },
+      { type: 'preset', label: '🪐 木星 g=24.79', group: '环境重力场',
+        params: { g: 24.79 }, showIf: 'advancedMode', showIfValue: 0 },
+      { type: 'storeToggle', label: '显示 1:3:5:7 时间切片', storeKey: 'toggleTimeSlices' },
+      { type: 'tip', group: '教学提示', content: (p) => {
+        const pressure = p.pressure ?? 0
+        if (pressure <= 0.01) return '当前为真空环境，物体仅受重力，做自由落体运动'
+        if (pressure <= 0.3) return '空气阻力较小，两物体下落加速度接近 g'
+        return '空气阻力显著，轻质物体下落明显变慢'
+      }, showIf: 'advancedMode', showIfValue: 0 },
+    ],
     SidebarExtra: lazy(() => import('@/features/mechanics/kinematics/FreeFallSidebar')),
   },
   'anim-vertical-throw': {

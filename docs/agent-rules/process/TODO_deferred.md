@@ -235,10 +235,11 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 - ✅ P2：扩展参数协议（`ParamMeta` 增加 group/description/marks/importance/resetOnChange）
 - ✅ P2：引入 `controlMeta`（支持 segmented/toggle/preset/tip/action/storeToggle）
 - ✅ P2-P4：收敛 SidebarExtra（61→21，40 个已删除，详见 `SIDEBAREXTRA_MIGRATION_REPORT.md`）
+- ✅ FreeFallSidebar 迁移：模式切换/物体选择/重力场预设/时间切片已迁移至 controlMeta，气压参数迁移至 paramMeta
 
 **待完成**：
 - 扩展 `action` 类型支持自定义回调（解锁 ACValues/PowerTransmission 2 个硬骨头）
-- 剩余 19 个已精简/合理保留的 SidebarExtra 随后续维护逐步清理
+- 剩余 18 个已精简/合理保留的 SidebarExtra 随后续维护逐步清理
 
 ### 3.3 其他（P3，暂缓）
 
