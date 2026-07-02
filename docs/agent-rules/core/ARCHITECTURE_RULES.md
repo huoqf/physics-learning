@@ -103,24 +103,13 @@ src/
     └── useWrongStore.ts
 
 theme/                      # 设计 token（颜色/间距/圆角/阴影/动效）
-├── colors.ts               # UI 语义色，Tailwind 从此导入
+├── colors.ts               # UI 语义色
 ├── physics/                # 物理主题子模块（推荐入口 @/theme/physics）
-│   ├── colors.ts           # 物理量颜色（~110 token，8 分组）
-│   ├── sceneColors.ts      # 场景器材外观色（磁铁/线圈/灯泡/手势/球体材质/电学器材等）
-│   │                       #   含 ELECTRICAL_APPARATUS_COLORS（LED/五金件）、
-│   │                       #   MECHANICS_APPARATUS_COLORS、ELECTROSTATIC_APPARATUS_COLORS 等
-│   ├── vectorStyle.ts      # VectorType 枚举、视觉权重、颜色映射（矢量系统权威来源）
-│   ├── canvasStyle.ts      # SVG/Canvas 绘制规范（线宽/箭头/SVG_ATTR/Marker）
-│   ├── arrowStyle.ts       # ArrowGeometry 箭头几何规格
-│   ├── firstLawColors.ts   # 热力学第一定律专用颜色
-│   ├── secondLawColors.ts  # 热力学第二定律专用颜色
-│   └── index.ts            # 统一导出（推荐引用路径 @/theme/physics）
+│   ├── colors.ts / sceneColors.ts / vectorStyle.ts / canvasStyle.ts / arrowStyle.ts / firstLawColors.ts / secondLawColors.ts / index.ts
 ├── spacing.ts              # 间距比例尺 + 布局固定尺寸 + 密度上限 + CANVAS_PRESETS
-├── radius.ts               # 圆角规范
-├── shadow.ts               # 阴影规范
-├── motion.ts               # 动效时长与 easing
-├── animationTokens.ts      # 动画 UI token（ANIM_FONT/SHADOW/PANEL/CHART_PAD）
-└── index.ts                # 统一导出入口（可用，但子模块优先）
+├── radius.ts / shadow.ts / motion.ts / animationTokens.ts / index.ts
+
+> 完整 token 文件清单与 import 路径见 `02_UI_RULES.md §2`。
 
 electron/                   # Electron 预留目录
 ├── main.ts
@@ -497,7 +486,7 @@ Tailwind v4 使用 CSS-first 配置，颜色通过 `src/index.css` 中的 `@them
 
 所有组件中的颜色/间距/动效值必须从 `src/theme/` 子模块引用，禁止硬编码。import 路径详见 `ui/02_UI_RULES.md §2`。
 
-动画组件的 UI token（字体/阴影/面板/图表内边距）从 `src/theme/animationTokens.ts` 引用，画布预设尺寸从 `CANVAS_PRESETS`（`src/theme/spacing.ts`）引用。**新组件只允许使用 `wide`（700×400）/ `tall`（700×450）/ `square`（600×600）三个有效 preset，且 `useViewport` 的 `designWidth/designHeight` 必须与所用 preset 数值完全一致**；`standard/mediumTall/mediumWide/extraWide` 为废弃别名（存量组件可继续使用，禁止新增引用）。
+动画组件的 UI token（字体/阴影/面板/图表内边距）从 `src/theme/animationTokens.ts` 引用，画布预设尺寸从 `CANVAS_PRESETS`（`src/theme/spacing.ts`）引用。**新组件只允许使用 `wide`（700×400）/ `tall`（700×450）/ `square`（600×600）三个有效 preset，且 `useViewport` 的 `designWidth/designHeight` 必须与所用 preset 数值完全一致**（上述三个为 `src/theme/spacing.ts` 中唯一定义的预设，无其他预设或别名）。
 
 **矢量系统 token**：矢量类型枚举（`VectorType`）、视觉权重（`VECTOR_VISUAL_WEIGHT`）、颜色映射（`VECTOR_COLORS`）从 `src/theme/physics/vectorStyle.ts` 引用；箭头几何规格（`ArrowGeometry`）从 `src/theme/physics/arrowStyle.ts` 引用。两者均通过 `@/theme/physics` 统一入口导出。
 

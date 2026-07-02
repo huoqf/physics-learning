@@ -11,16 +11,17 @@
 ### 自动加载（无需手动读取）
 
 ```
-docs/agent-rules/core/ARCHITECTURE_RULES.md — 核心规范（架构细则与铁律权威定义）
+.trae/rules/project_rules.md — 全局铁律与规范索引（Trae IDE 自动加载）
 ```
 
-该文件包含：项目目标、技术栈、目录结构、组件分层、全局铁律、状态管理、数据层、坐标系统、动画系统、路由、代码规范、依赖管理、性能测试、构建打包、参数类型安全规范。
+该文件包含：项目目标、技术栈、目录结构、全局铁律、CANVAS_PRESETS、组件复用原则、规范优先级、快速索引与提交 Checklist。
 
 ### 必读（每次任务）
 
 ```
-docs/agent-rules/core/ARCHITECTURE_RULES.md → 当前里程碑 ROADMAP_Mx_*.md
+.trae/rules/project_rules.md → 当前里程碑 ROADMAP_Mx_*.md
 ```
+<!-- 核心细则按需读取，见下方表格 -->
 
 ### 按需读取（触发时才读，否则跳过）
 
@@ -32,10 +33,13 @@ docs/agent-rules/core/ARCHITECTURE_RULES.md → 当前里程碑 ROADMAP_Mx_*.md
 | 实现 AnalysisPage / 解析页布局 | `docs/agent-rules/ui/04_ANALYSIS_PAGE_RULES.md` |
 | 实现 WrongPage / 错题卡片 / 错题状态 | `docs/agent-rules/ui/05_WRONGBOOK_RULES.md` |
 | 涉及跨页面导航 / URL 状态保持 | `docs/agent-rules/ui/06_NAVIGATION_RULES.md` |
+| 实现 Canvas/SVG/图表布局 | `docs/agent-rules/ui/07_CANVAS_SVG_CHART_RULES.md` |
+| 实现左侧/右侧屏组件 | `docs/agent-rules/ui/08_THREE_PANEL_RULES.md` |
 | 查看全局进度 / 选下一个任务 | `docs/agent-rules/roadmap/ROADMAP_PROGRESS.md` |
 | 申报依赖 / 查历史决策 / 追问题 | `docs/agent-rules/process/PROCESS_LOG.md` |
+| 提交前验证 | `docs/agent-rules/process/CHECKLIST.md` |
 
-> **文档优先级**：ARCHITECTURE_RULES > 02_UI > 03~06
+> **文档优先级**：project_rules.md > ARCHITECTURE_RULES > 02_UI > 03~08
 
 ### 无需读文档，直接 import 代码
 

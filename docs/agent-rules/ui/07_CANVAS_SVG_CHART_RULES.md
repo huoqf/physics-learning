@@ -419,6 +419,8 @@ type ChartAreaIntensity = 'subtle' | 'normal' | 'strong'
 
 ## 8. 信息密度与降级策略
 
+> Canvas 数量上限定义于 `02_UI_RULES.md §4`，本文件规定降级触发条件与策略。
+
 ### 8.1 信息优先级
 
 | 层级 | 内容 | 降级策略 |

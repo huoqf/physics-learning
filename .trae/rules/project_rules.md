@@ -81,21 +81,17 @@ theme/            # 设计 token（颜色/间距/圆角/阴影/动效）
 6. **字体缩放** → 必须走 `font()` 函数（内置 clamp 7–16，来自 `useCanvasSize` 返回值）
 7. **SVG viewBox 设计坏标** → 无 overlay 时 viewBox **必须绑定设计常量**（`DESIGN_WIDTH/HEIGHT`），**严禁** `viewBox={\`0 0 ${width} ${height}\`}` 同时配合 `<g transform={vp.transform}>` 的双重缩放组合（会导致首次进入页面时出现"缓缓放大"视觉跳变）
 
-### CANVAS_PRESETS 画布预设规格（7 种）
+### CANVAS_PRESETS 画布预设规格（3 种）
 
-页面主屏为 ThreePanel 固定三栏（左参数 / 中画布 / 右公式），`CANVAS_PRESETS` 定义中间画布的设计比例。
+页面主屏为 ThreePanel 固定三栏（左参数 / 中画布 / 右公式），`CANVAS_PRESETS`（定义于 `src/theme/spacing.ts`）提供以下画布设计比例：
 
-| preset | 尺寸 | 适用布局 |
-|---|---|---|
-| `tall` | 700×450 | 左右分区（动画 + 图表/信息并排） |
-| `standard` | 700×420 | 单场景 + 右侧信息面板 |
-| `mediumTall` | 650×450 | 居中对称构图 |
-| `wide` | 700×400 | 上下分区（图表在上，场景在下）或横向运动 |
-| `mediumWide` | 650×400 | 紧凑场景或子组件 |
-| `square` | 600×600 | 旋转/圆形轨迹 |
-| `extraWide` | 800×440 | 复杂上下分区或多区域并排 |
+| preset | 尺寸 | 适用布局 | 使用量 |
+|---|---|---|---|
+| `wide` | 700×400 | 横向场景（运动学、电磁感应、热力学等），宽高比约 7:4 | 多数场景 |
+| `tall` | 700×450 | 高向场景（动量、静电、竖直运动等），宽高比约 14:9 | 约 15 处 |
+| `square` | 600×600 | 正方形场景（圆周运动、向心力等），1:1 比例 | 约 4 处 |
 
-> 新增动画组件应根据教学内容的布局需求选择合适的 preset。仅当布局有特殊需求（占位符/紧凑子场景/唯一比例）时允许硬编码 `{ width, height }`。
+> **新增动画组件只允许使用以上三个有效 preset**，`useViewport` 的 `designWidth/designHeight` 必须与所选 preset 数值完全一致。仅当布局有特殊需求（占位符/紧凑子场景/唯一比例）时允许硬编码 `{ width, height }`。
 
 ### 铁律 5 展开：组件复用
 
