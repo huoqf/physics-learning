@@ -91,7 +91,7 @@ export type ControlMeta =
   | (ControlCondition & {
       type: 'tip'
       title?: string
-      content: string
+      content: string | ((params: Record<string, number>) => string)
       variant?: 'info' | 'primary' | 'warning'
     })
   | (ControlCondition & {

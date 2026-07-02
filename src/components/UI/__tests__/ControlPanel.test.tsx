@@ -59,6 +59,18 @@ describe('ControlPanel', () => {
     expect(screen.getByText('仅进阶模式显示')).toBeTruthy()
   })
 
+  it('tip 控件支持函数式 content 根据 params 动态渲染', () => {
+    renderControlPanel([
+      {
+        type: 'tip',
+        group: '教学提示',
+        content: (params) => `当前步骤: ${params.step ?? 0}`,
+      },
+    ], { step: 2 })
+
+    expect(screen.getByText('当前步骤: 2')).toBeTruthy()
+  })
+
   it('preset 控件批量写入参数并默认重置动画', () => {
     const { setParams, resetAnimation } = renderControlPanel([
       {

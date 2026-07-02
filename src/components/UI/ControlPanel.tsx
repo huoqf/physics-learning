@@ -185,13 +185,15 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             disabled={disabled}
           />
         )
-      case 'tip':
+      case 'tip': {
+        const resolvedContent = typeof control.content === 'function' ? control.content(params) : control.content
         return (
-          <TipCard key={`${control.type}-${control.content}-${index}`} variant={control.variant ?? 'info'}>
+          <TipCard key={`${control.type}-${index}`} variant={control.variant ?? 'info'}>
             {control.title && <span className="font-semibold block mb-1">{control.title}</span>}
-            <span>{control.content}</span>
+            <span>{resolvedContent}</span>
           </TipCard>
         )
+      }
       case 'action':
         return (
           <Button
