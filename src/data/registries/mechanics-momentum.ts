@@ -69,6 +69,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
       { key: 'm1', label: 'A球质量 m₁', min: 0.5, max: 10, step: 0.5, unit: 'kg', showIf: 'advancedMode', showIfValue: 0 },
       { key: 'v1', label: 'A球速度 v₁', min: -10, max: 10, step: 0.5, unit: 'm/s', showIf: 'advancedMode', showIfValue: 0 },
       { key: 'm2', label: 'B球质量 m₂', min: 0.5, max: 10, step: 0.5, unit: 'kg', showIf: 'advancedMode', showIfValue: 0 },
+      { key: 'v2', label: 'B球速度 v₂', min: -10, max: 10, step: 0.5, unit: 'm/s', showIf: 'advancedMode', showIfValue: 0 },
       { key: 'm_slider', label: '滑块质量 m', min: 0.5, max: 5, step: 0.5, unit: 'kg', showIf: 'advancedMode', showIfValue: 1 },
       { key: 'M_board', label: '木板质量 M', min: 1, max: 10, step: 0.5, unit: 'kg', showIf: 'advancedMode', showIfValue: 1 },
       { key: 'v0', label: '滑块初速度 v₀', min: 1, max: 10, step: 0.5, unit: 'm/s', showIf: 'advancedMode', showIfValue: 1 },

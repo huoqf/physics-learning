@@ -40,6 +40,31 @@ export function calculateSystemMomentum(
   return m1 * v1 + m2 * v2
 }
 
+/**
+ * 计算 1D 碰撞碰后速度（含恢复系数 e）
+ * v₁' = ((m₁ - e·m₂)·v₁ + m₂·(1+e)·v₂) / (m₁+m₂)
+ * v₂' = (m₁·(1+e)·v₁ + (m₂ - e·m₁)·v₂) / (m₁+m₂)
+ *
+ * e = 1 → 完全弹性碰撞
+ * e = 0 → 完全非弹性碰撞（碰后同速）
+ * 0 < e < 1 → 一般非弹性碰撞
+ *
+ * @param m1 物体1质量 (kg)
+ * @param v1 物体1碰前速度 (m/s)
+ * @param m2 物体2质量 (kg)
+ * @param v2 物体2碰前速度 (m/s)
+ * @param e 恢复系数 [0, 1]，默认 1
+ * @returns { v1After, v2After } 碰后速度 (m/s)
+ */
+export function calculateCollisionVelocities(
+  m1: number, v1: number, m2: number, v2: number, e: number = 1
+): { v1After: number; v2After: number } {
+  const totalMass = m1 + m2
+  const v1After = ((m1 - e * m2) * v1 + m2 * (1 + e) * v2) / totalMass
+  const v2After = (m1 * (1 + e) * v1 + (m2 - e * m1) * v2) / totalMass
+  return { v1After, v2After }
+}
+
 // ─── 进阶模式：滑块-木板模型 ──────────────────────────────────────────────
 
 /**

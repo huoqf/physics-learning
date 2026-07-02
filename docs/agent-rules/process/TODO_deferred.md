@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-02（核查项目现状）
+> 最后更新：2026-07-02（完成 KeplerAnimation 拆分）
 
 ---
 
@@ -53,13 +53,20 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 ## 一、超长文件拆分（P2）
 
+### 已完成
+
+| 文件 | 原行数 | 现行数 | 拆分方式 | 验收 |
+|------|------:|------:|---------|:----:|
+| `MomentumConservationAnimation.tsx` | 743 | 356 | 抽 `useMomentumConservationPhysics` hook + 复用 `src/physics/momentumConservation` | JSX 零物理公式 ✓ <br> tsc + 385 tests pass ✓ |
+| `KeplerAnimation.tsx` | 673 | 486 | 抽 `useKeplerPhysics` hook + 复用 `src/physics/celestial` | JSX 零物理公式 ✓ <br> font()/colors 修复 ✓ <br> DESIGN_WIDTH/HEIGHT 常量 ✓ <br> tsc + 385 tests pass ✓ |
+
 ### 待处理
 
 | 文件 | 当前行数 | 已有 physics | 拆分方向 | 目标行数 |
 |------|-----:|:---:|---------|-----:|
 
-> 观察（2026-07-02 核查）：以下文件超过或临近 500 行阈值，但职责相对集中，暂不作为首批拆分目标：
-> - `MomentumConservationAnimation.tsx`(671)、`KeplerAnimation.tsx`(621)、`PowerTransmission.tsx`(594)、`SpringCompositeAnimation.tsx`(585)、`TIRAnimation.tsx`(564)、`FieldLines.tsx`(559)、`ConnectedBodiesAnimation.tsx`(557)、`LenzsLawCanvas.tsx`(553)、`InclineForceDiagram.tsx`(539)、`GravityBasicAnimation.tsx`(519)、`CircularMotionAnimation.tsx`(506)、`FreeFallDripAnimation.tsx`(505)
+> 观察（2026-07-02 核查）：以下文件超过 500 行且仍持续增长，行数以本次核查为准：
+> - `PowerTransmission.tsx`(650)、`SpringCompositeAnimation.tsx`(640)、`FieldLines.tsx`(633)、`TIRAnimation.tsx`(623)、`ConnectedBodiesAnimation.tsx`(610)、`LenzsLawCanvas.tsx`(599)、`InclineForceDiagram.tsx`(579)、`GravityBasicAnimation.tsx`(573)、`FreeFallDripAnimation.tsx`(560)、`CircularMotionAnimation.tsx`(558)
 > - 新增临近阈值：`LightRodRopeScene.tsx`(485)、`SimulationView.tsx`(478)、`WorkFSChart.tsx`(469)、`RefractionAnimation.tsx`(462)、`AccelerationCenterExtra.tsx`(462)、`GravityAnimation.tsx`(459)、`ImpulseAnimation.tsx`(457)、`UniformAccelerationAnimation.tsx`(455)
 
 ---
