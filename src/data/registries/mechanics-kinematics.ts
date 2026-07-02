@@ -7,6 +7,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     title: '速度演示',
     knowledgeId: 'mechanics-1-3',
     Component: lazy(() => import('@/features/mechanics/kinematics/VelocityAnimation')),
+    controlsMode: 'timed',
     defaultParams: {
       v: 8, t: 0, scene: 0, deltaT: 2, totalDuration: 10, advancedMode: 0,
       modelIdx: 0, modelK: 1, modelV0: 0, modelA: 5, modelOmega: 2,
@@ -15,8 +16,38 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     } as const,
     paramMeta: [
       { key: 'v', label: '速度 v', min: 1, max: 20, step: 0.5, unit: 'm/s' },
+      { key: 'deltaT', label: '时间微元 Δt', min: 0.001, max: 1, step: 0.001, unit: 's',
+        showIf: 'advancedMode', showIfValue: 1, group: '进阶参数' },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/kinematics/VelocitySidebar')),
+    controlMeta: [
+      // §1 模型选择
+      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+        options: [{ label: '基础模式', value: 0 }, { label: '进阶模式', value: 1 }] },
+      // §2 子模式
+      { type: 'segmented', key: 'scene', label: '生活场景', group: '子模式',
+        options: [{ label: '公交车进站', value: 0 }, { label: '百米短跑', value: 1 }],
+        showIf: 'advancedMode', showIfValue: 0 },
+      { type: 'segmented', key: 'deltaT', label: '时间间隔 Δt', group: '子模式',
+        options: [
+          { label: '2s', value: 2 },
+          { label: '1s', value: 1 },
+          { label: '0.2s', value: 0.2 },
+          { label: '0.02s', value: 0.02 },
+        ],
+        showIf: 'advancedMode', showIfValue: 0 },
+      { type: 'segmented', key: 'modelIdx', label: '运动模型', group: '子模式',
+        options: [
+          { label: '变加速（F递增）', value: 0 },
+          { label: '简谐振动', value: 1 },
+          { label: '往返多阶段', value: 2 },
+        ],
+        showIf: 'advancedMode', showIfValue: 1 },
+      // §6 教学提示
+      { type: 'tip', group: '教学提示', content: '调小 Δt 观察平均速度如何趋近瞬时速度',
+        showIf: 'advancedMode', showIfValue: 0 },
+      { type: 'tip', group: '教学提示', content: '拖拽 Δt→0 观察割线与切线重合',
+        showIf: 'advancedMode', showIfValue: 1 },
+    ],
     CenterExtra: lazy(() => import('@/features/mechanics/kinematics/VelocityCenterExtra')),
     centerExtraMode: 'advancedMode',
   },

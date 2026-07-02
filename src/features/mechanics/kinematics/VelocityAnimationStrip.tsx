@@ -33,7 +33,7 @@ export default function VelocityAnimationStrip({
     }))
   )
   const deltaT = params.deltaT ?? 0.5
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
 
   // ── 布局参数 ──
   const padding = canvasSize.width * 0.07
@@ -200,16 +200,26 @@ export default function VelocityAnimationStrip({
           strokeDasharray={DASH.guide.join(',')} opacity={0.3}
         />
 
-        {/* ══════════ 简谐振动：统一 3D 螺旋弹簧 ══════════ */}
+        {/* ══════════ 简谐振动：固定支撑 + 螺旋弹簧 ══════════ */}
         {model === 'shm' && (
-          <Spring
-            x1={padding}
-            y1={groundY - objH / 2 - 2}
-            x2={currentX - objW * 0.4}
-            y2={groundY - objH / 2 - 2}
-            coils={16}
-            radius={9}
-          />
+          <>
+            <PhysicsGround
+              x={padding - 8}
+              y={groundY - objH * 1.2}
+              width={8}
+              type="wall"
+              appearance={{ color: PHYSICS_COLORS.labelText }}
+              wall={{ height: objH * 1.2, hatchCount: 5, hatchSide: 'left' }}
+            />
+            <Spring
+              x1={padding}
+              y1={groundY - objH / 2 - 2}
+              x2={currentX - objW * 0.4}
+              y2={groundY - objH / 2 - 2}
+              coils={16}
+              radius={9}
+            />
+          </>
         )}
 
         {/* ══════════ 简谐振动：平衡位置及固定端 ══════════ */}
