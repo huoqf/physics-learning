@@ -322,19 +322,15 @@ export const ParamControl: React.FC<ParamControlProps> = ({
       ].filter(Boolean).join(' ')}
     >
       <div className="flex items-center justify-between mb-3">
-        <div>
-          <h3 className="text-sm font-semibold text-neutral-800">参数设置</h3>
-          <p className="text-ui-base text-neutral-400 mt-0.5">拖动滑块或直接输入精确值</p>
-        </div>
+        <h3 className="text-sm font-semibold text-neutral-800">参数设置</h3>
         {onReset && (
           <button
             type="button"
             onClick={onReset}
-            className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold text-neutral-500 hover:text-primary-700 hover:bg-primary-50 active:scale-[0.97] transition-all duration-instant ease-decelerate"
+            className="p-1.5 rounded-md text-neutral-400 hover:text-primary-700 hover:bg-primary-50 active:scale-[0.97] transition-all duration-instant ease-decelerate"
             aria-label="恢复默认参数"
           >
-            <RotateCcw className="w-3 h-3" />
-            恢复默认
+            <RotateCcw className="w-4 h-4" />
           </button>
         )}
       </div>

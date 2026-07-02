@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react'
 import type { ControlMeta, ControlCondition } from '@/data/types'
-import { LeftPanelSection } from './LeftPanel'
 import { OptionButton } from './OptionButton'
 import { Button } from './Button'
 import { SegmentedControl } from './SegmentedControl'
@@ -146,8 +145,6 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               description={control.description}
               onChange={(nextValue) => handleValueChange(control, nextValue)}
               disabled={disabled}
-              minLabel={`${control.min}${control.unit ?? ''}`}
-              maxLabel={`${control.max}${control.unit ?? ''}`}
             />
           </div>
         )
@@ -243,10 +240,13 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
   return (
     <>
-      {groups.map((group) => (
-        <LeftPanelSection key={group.label} title={group.label} bodyClassName="flex flex-col gap-3">
+      {groups.map((group, i) => (
+        <div
+          key={group.label}
+          className={`flex flex-col gap-3${i > 0 ? ' border-t border-neutral-100 pt-3 mt-3' : ''}`}
+        >
           {group.controls.map(renderControl)}
-        </LeftPanelSection>
+        </div>
       ))}
     </>
   )
