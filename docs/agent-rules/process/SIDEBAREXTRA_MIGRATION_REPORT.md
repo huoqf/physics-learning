@@ -8,18 +8,17 @@
 
 | 指标 | 数值 |
 |------|------|
-| SidebarExtra 注册总量 | 23（原始 61，已删除 38） |
-| 硬骨头（不可迁移） | 3 |
+| SidebarExtra 注册总量 | 22（原始 61，已删除 39） |
+| 硬骨头（不可迁移） | 2 |
 | 已精简/合理保留 | 20 |
 
 ---
 
-## 仍需手写 JSX 的硬骨头（3 个）
+## 仍需手写 JSX 的硬骨头（2 个）
 
 | SidebarExtra | 阻塞原因 | 可能的解锁路径 |
 |---|---|---|
 | `ACValuesSidebarExtra` | Auto 按钮含 `getEffectiveCurrent()` 计算 + `useState(revealed)` 内部状态 | 扩展 action 类型支持计算回调 |
-| `ACGenerationSidebarExtra` | mode 重置逻辑需 `resetAnimation()` + mode-dependent 滑块 | 扩展 onChangeSideEffect 支持 resetAnimation |
 | `PowerTransmissionSidebarExtra` | 步进按钮（升/降电压）含计算逻辑 | 扩展 action 类型 |
 
 ### 其他保留（6 个，有技术阻塞或合理保留）
@@ -83,4 +82,4 @@ action: 'launch' | 'restart' | 'reset' | 'setDirection' | 'custom'
 onAction?: (params: Record<string, number>, setParams: (p: Record<string, number>) => void) => void
 ```
 
-优先级：ACGeneration（最简单，仅需 resetAnimation） > PowerTransmission（步进按钮） > ACValues（计算逻辑最复杂）
+优先级：PowerTransmission（步进按钮） > ACValues（计算逻辑最复杂）

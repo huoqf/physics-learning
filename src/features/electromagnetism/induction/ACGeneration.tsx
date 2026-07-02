@@ -5,11 +5,13 @@
  * 支持基础/进阶模式、速度分解矢量、线圈法线显示
  *
  * @agent-rule 使用 useAnimationFrame 驱动动画
- * @agent-rule 遵循 useCanvasSize + PHYSICS_COLORS theme token
+ * @agent-rule 遵循 useViewport + useCanvasSize + PHYSICS_COLORS theme token
+ * @agent-rule 3D 投影常量定义于 PROJ / LAYOUT 命名对象
  * @agent-rule 中间屏左右分区：左侧 SVG 仿真，右侧 MiniChart 时序曲线
  */
 import { useRef, useMemo, useCallback } from 'react'
 import { useCanvasSize } from '@/utils'
+import { useViewport } from '@/utils/useViewport'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
@@ -23,6 +25,37 @@ import { computeACGenerationState } from '@/physics/acCircuit'
 
 type Point2D = { x: number; y: number }
 
+// ── 3D 投影与布局命名常量 ─────────────────────────────────────────────────
+const PROJ = {
+  /** 3D→2D 缩放因子 */
+  scale: 45,
+  /** 等轴测投影角度 (rad)，30° */
+  zAngle: Math.PI / 6,
+  /** 深度压缩系数 */
+  zScale: 0.55,
+} as const
+
+const LAYOUT = {
+  /** 左侧仿真区占可视宽度比例 */
+  simWidthRatio: 0.48,
+  /** 原点垂直偏移比例（相对可视高度） */
+  originYRatio: 0.42,
+  /** 磁感线 x 方向端点坐标 */
+  fieldLineHalfExtent: 1.55,
+  /** 转轴 z 方向起点（前端） */
+  axisFrontZ: 3.2,
+  /** 转轴 z 方向终点（后端） */
+  axisBackZ: -2.6,
+  /** ω 标注位置 */
+  omegaX: 0.8,
+  omegaY: -0.5,
+  omegaZ: -2.5,
+  /** 线圈法线矢量长度 */
+  normalLength: 1.2,
+  /** 速度矢量最大分量占画布短边比例 */
+  vectorMaxRatio: 0.12,
+} as const
+
 export default function ACGeneration() {
   const { params, isPlaying, speed } = useAnimationStore(
     useShallow((s) => ({
@@ -31,15 +64,19 @@ export default function ACGeneration() {
       speed: s.speed,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const vp = useViewport(canvasSize, {
+    designWidth: CANVAS_PRESETS.wide.width,
+    designHeight: CANVAS_PRESETS.wide.height,
+  })
   const { font } = canvasSize
 
-  const mode = params.mode ?? 0
   const B = params.B ?? 0.5
   const S = params.S ?? 0.04
   const omega = params.omega ?? 2
   const N = params.N ?? 100
-  const initialPhase = params.initialPhase ?? 0
+  const initialPhaseDeg = params.initialPhase ?? 0
+  const initialPhase = (initialPhaseDeg * Math.PI) / 180
   const showVelocityDecomp = params.showVelocityDecomp ?? 0
   const showCoilNormal = params.showCoilNormal ?? 0
 
@@ -56,29 +93,26 @@ export default function ACGeneration() {
     () => computeACGenerationState(B, S, omega, N, initialPhase, t),
     [B, S, omega, N, initialPhase, t]
   )
-  const { phi, e, Em, theta, vTangential, vPerp, vPara, isNeutral, isMaxEmf } = state
+  const { phi, e, Em, theta, vTangential, vPerp, vPara } = state
 
-  // ── Canvas 尺寸 ───────────────────────────────────────────────────────────
-  const W = canvasSize.width
-  const H = canvasSize.height
-  const SIMW = Math.round(W * 0.48)
-  const CHARTL = SIMW + font(12)
-  const CHARTW = W - CHARTL - font(6)
+  // ── Canvas 尺寸（基于 viewport 可视区） ────────────────────────────────────
+  const W = vp.visibleW
+  const H = vp.visibleH
+  const SIMW = Math.round(W * LAYOUT.simWidthRatio)
+  const CHARTL = vp.visibleX + SIMW + font(12)
+  const CHARTW = vp.visibleX + W - CHARTL - font(6)
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 3D 投影系统
   // ═══════════════════════════════════════════════════════════════════════════
-  const SCALE = 45
-  const Z_ANGLE = Math.PI / 6
-  const Z_SCALE = 0.55
-  const OX = SIMW * 0.5
-  const OY = H * 0.42
+  const OX = vp.visibleX + SIMW * 0.5
+  const OY = vp.visibleY + H * LAYOUT.originYRatio
 
   const project3D = useCallback((x: number, y: number, z: number): Point2D => {
-    const sx = x + z * Z_SCALE * Math.cos(Z_ANGLE)
-    const sy = -y - z * Z_SCALE * Math.sin(Z_ANGLE)
-    return { x: OX + sx * SCALE, y: OY + sy * SCALE }
-  }, [OX, OY, SCALE, Z_ANGLE])
+    const sx = x + z * PROJ.zScale * Math.cos(PROJ.zAngle)
+    const sy = -y - z * PROJ.zScale * Math.sin(PROJ.zAngle)
+    return { x: OX + sx * PROJ.scale, y: OY + sy * PROJ.scale }
+  }, [OX, OY])
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 磁感线（立体多排分布）
@@ -92,8 +126,8 @@ export default function ACGeneration() {
     ]
     cfgs.forEach(cfg => {
       lines.push({
-        p1: project3D(-1.55, cfg.y, cfg.z),
-        p2: project3D(1.55, cfg.y, cfg.z)
+        p1: project3D(-LAYOUT.fieldLineHalfExtent, cfg.y, cfg.z),
+        p2: project3D(LAYOUT.fieldLineHalfExtent, cfg.y, cfg.z)
       })
     })
     return lines
@@ -102,26 +136,26 @@ export default function ACGeneration() {
   // ═══════════════════════════════════════════════════════════════════════════
   // 转轴和旋转箭头
   // ═══════════════════════════════════════════════════════════════════════════
-  const axisStart = project3D(0, 0, 3.2)
-  const axisEnd = project3D(0, 0, -2.6)
-  const omegaPos = project3D(0.8, -0.5, -2.5)
+  const axisStart = project3D(0, 0, LAYOUT.axisFrontZ)
+  const axisEnd = project3D(0, 0, LAYOUT.axisBackZ)
+  const omegaPos = project3D(LAYOUT.omegaX, LAYOUT.omegaY, LAYOUT.omegaZ)
 
   const rx = font(22), ry = font(12)
-  const arrowX1 = omegaPos.x - rx * Math.cos(Z_ANGLE)
-  const arrowY1 = omegaPos.y - font(10) + rx * Math.sin(Z_ANGLE)
-  const arrowX2 = omegaPos.x + rx * Math.cos(Z_ANGLE)
-  const arrowY2 = omegaPos.y - font(10) - rx * Math.sin(Z_ANGLE)
-  const rotationArrowPath = `M ${arrowX1} ${arrowY1} A ${rx} ${ry} ${-Z_ANGLE * 180 / Math.PI} 0 1 ${arrowX2} ${arrowY2}`
+  const arrowX1 = omegaPos.x - rx * Math.cos(PROJ.zAngle)
+  const arrowY1 = omegaPos.y - font(10) + rx * Math.sin(PROJ.zAngle)
+  const arrowX2 = omegaPos.x + rx * Math.cos(PROJ.zAngle)
+  const arrowY2 = omegaPos.y - font(10) - rx * Math.sin(PROJ.zAngle)
+  const rotationArrowPath = `M ${arrowX1} ${arrowY1} A ${rx} ${ry} ${-PROJ.zAngle * 180 / Math.PI} 0 1 ${arrowX2} ${arrowY2}`
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 速度分解矢量（进阶可视化）
   // ═══════════════════════════════════════════════════════════════════════════
   const coilRadius = Math.sqrt(S / Math.PI)
   // 目标像素长度：速度矢量最大分量在屏幕上显示约 12% 画布宽度
-  const maxVecPixels = Math.min(W, H) * 0.12
+  const maxVecPixels = Math.min(W, H) * LAYOUT.vectorMaxRatio
   const vTangentialSafe = Math.abs(vTangential) < 1e-6 ? 1 : vTangential
   // 3D 坐标缩放因子：使得 vTangential 对应的屏幕长度 ≈ maxVecPixels
-  const vScale = maxVecPixels / (Math.abs(vTangentialSafe) * SCALE)
+  const vScale = maxVecPixels / (Math.abs(vTangentialSafe) * PROJ.scale)
 
   // 线圈侧边中心点（用于绘制速度矢量起点）
   const sideCenter3D = {
@@ -163,10 +197,9 @@ export default function ACGeneration() {
   // 线圈法线轴显示
   // ═══════════════════════════════════════════════════════════════════════════
   const normalStart = project3D(0, 0, 0)
-  const normalLen = 1.2
   const normalEnd = project3D(
-    Math.sin(theta) * normalLen,
-    Math.cos(theta) * normalLen,
+    Math.sin(theta) * LAYOUT.normalLength,
+    Math.cos(theta) * LAYOUT.normalLength,
     0
   )
 
@@ -197,24 +230,14 @@ export default function ACGeneration() {
   ], [Em, B, S])
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 预计算文本值
-  // ═══════════════════════════════════════════════════════════════════════════
-  const emfTxt = e.toFixed(2)
-  const EmTxt = Em.toFixed(2)
-  const fHz = (omega / (2 * Math.PI)).toFixed(2)
-  const degTxt = ((theta * 180 / Math.PI) % 360).toFixed(0)
-  const statusY = H - font(52)
-  const fmTr = 'translate(' + font(6) + ',' + (H - font(44)).toFixed(0) + ')'
-
-  // ═══════════════════════════════════════════════════════════════════════════
   return (
     <div ref={containerRef} className="w-full h-full">
-      <svg width={W} height={H}
-        className="bg-white rounded-lg shadow-inner select-none"
+      <svg className="w-full h-full bg-white rounded-lg shadow-inner select-none"
         style={{ display: 'block' }}>
 
         {/* 左右分界线 */}
-        <line x1={SIMW} y1={0} x2={SIMW} y2={H} stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} />
+        <line x1={vp.visibleX + SIMW} y1={vp.visibleY} x2={vp.visibleX + SIMW} y2={vp.visibleY + H}
+          stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} />
 
         {/* ═══════════ 左侧仿真区 ═══════════ */}
         <g>
@@ -381,43 +404,11 @@ export default function ACGeneration() {
               fill={SCENE_COLORS.pendulum.axisDecor} />
           </g>
 
-          {/* ── 状态标注 ── */}
-          {isNeutral && (
-            <text x={OX} y={statusY} textAnchor="middle"
-              fontSize={FONT.subtickSize} fill={PHYSICS_COLORS.magnetSouth} fontWeight="bold">
-              中性面：线圈面 ⊥ B，dΦ/dt = 0，e = 0
-            </text>
-          )}
-          {isMaxEmf && (
-            <text x={OX} y={statusY} textAnchor="middle"
-              fontSize={FONT.subtickSize} fill={PHYSICS_COLORS.magnetNorth} fontWeight="bold">
-              线圈面 ∥ B，|dΦ/dt| 最大，|e| = Em
-            </text>
-          )}
-          {!isNeutral && !isMaxEmf && (
-            <text x={OX} y={statusY} textAnchor="middle"
-              fontSize={CANVAS_STYLE.font.smallSize} fill={colors.neutral[500]}>
-              {'线圈切割磁感线，e = ' + emfTxt + ' V'}
-            </text>
-          )}
 
-          {/* ── 底部公式栏 ── */}
-          <g transform={fmTr}>
-            <rect width={SIMW - font(12)} height={font(36)} rx={font(5)}
-              fill={colors.neutral[50]} opacity={0.95} stroke={PHYSICS_COLORS.grid} strokeWidth={1} />
-            <text x={font(8)} y={font(14)} fontSize={CANVAS_STYLE.font.smallSize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
-              {mode === 1
-                ? 'e = NBSω · sin(ωt + θ₀)'
-                : 'e = NBSω · sin(ωt)（中性面 θ=0 时线圈⊥B，e=0）'}
-            </text>
-            <text x={font(8)} y={font(28)} fontSize={font(9.5)} fill={colors.neutral[500]}>
-              {'Em = ' + EmTxt + ' V   f = ' + fHz + ' Hz   θ = ' + degTxt + '°   e = ' + emfTxt + ' V'}
-            </text>
-          </g>
         </g>
 
         {/* ═══════════ 右侧 MiniChart 时序曲线 ════════════ */}
-        <foreignObject x={CHARTL} y={0} width={CHARTW} height={H}>
+        <foreignObject x={CHARTL} y={vp.visibleY} width={CHARTW} height={H}>
           <div style={{ width: '100%', height: '100%', padding: font(8) }}>
             <MiniChart
               title="Φ − t 与 e − t 时序曲线"

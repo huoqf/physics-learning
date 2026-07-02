@@ -7,13 +7,43 @@ export const electromagnetismAcAnimations = defineAnimations({
     title: '交变电流产生与图像',
     knowledgeId: 'electricity-5-1',
     Component: lazy(() => import('@/features/electromagnetism/induction/ACGeneration')),
-    SidebarExtra: lazy(() => import('@/features/electromagnetism/induction/ACGenerationSidebarExtra')),
     defaultParams: {
       mode: 0,
       B: 0.5, S: 0.04, omega: 2, N: 100, initialPhase: 0,
       showVelocityDecomp: 0, showCoilNormal: 0,
     } as const,
-    paramMeta: [],
+    controlMeta: [
+      {
+        type: 'segmented', key: 'mode', label: '实验模式', group: '模型选择', resetOnChange: true,
+        options: [
+          { value: 0, label: '基础：正弦发生' },
+          { value: 1, label: '进阶：任意初相' },
+        ],
+        onChangeSideEffect: {
+          resetParams: ['initialPhase', 'N'],
+        },
+      },
+      {
+        type: 'toggle', key: 'showVelocityDecomp', label: '速度分解矢量', group: '显示辅助',
+      },
+      {
+        type: 'toggle', key: 'showCoilNormal', label: '线圈法线轴', group: '显示辅助',
+      },
+      {
+        type: 'tip', group: '教学提示', variant: 'info', showIf: 'mode', showIfValue: 0,
+        content: '线圈在匀强磁场中匀速旋转，磁通量 Φ = BS·cos(ωt)，感应电动势 e = NBSω·sin(ωt)。',
+      },
+      {
+        type: 'tip', group: '教学提示', variant: 'info', showIf: 'mode', showIfValue: 1,
+        content: '调节初始倾角 θ₀ 改变起始位置：θ₀=0° 为中性面起始（e=0），θ₀=90° 为最大电动势面起始。',
+      },
+    ],
+    paramMeta: [
+      { key: 'B', label: '磁感应强度 B', min: 0.1, max: 2.0, step: 0.1, unit: 'T' },
+      { key: 'omega', label: '角速度 ω', min: 0.5, max: 10, step: 0.5, unit: 'rad/s' },
+      { key: 'initialPhase', label: '初始倾角 θ₀', min: 0, max: 360, step: 15, unit: '°', showIf: 'mode', showIfValue: 1, description: 'θ₀=0° 为中性面起始，θ₀=90° 为最大电动势面起始' },
+      { key: 'N', label: '线圈匝数 N', min: 10, max: 500, step: 10, unit: '匝', showIf: 'mode', showIfValue: 1, description: '匝数影响峰值 Em=NBSω，不影响磁通量 Φ' },
+    ],
   },
   'anim-ac-values': {
     title: '有效值与峰值关系',

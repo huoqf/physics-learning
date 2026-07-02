@@ -31,6 +31,7 @@ import {
   generateMagnetFaradayPoints,
   calculateDoubleBoundaryExit,
   calculateCircularBoundaryExit,
+  computeACGenerationState,
 } from '@/physics'
 
 const k = 9e9
@@ -564,6 +565,96 @@ describe('electromagnetism', () => {
       expect(res.y).toBeCloseTo(10, 5)
       // tan(deltaPhi/2) = Rb/R = 1 => deltaPhi/2 = pi/4 => deltaPhi = pi/2 (90度)
       expect(res.deltaPhi).toBeCloseTo(Math.PI / 2, 5)
+    })
+  })
+
+  // ===== 交变电流产生与图像模块测试 =====
+  describe('交变电流产生 (computeACGenerationState)', () => {
+    const B = 0.5, S = 0.04, omega = 2, N = 100, theta0 = 0
+
+    it('峰值 Em = NBSω', () => {
+      const state = computeACGenerationState(B, S, omega, N, theta0, 0)
+      expect(state.Em).toBeCloseTo(N * B * S * omega, 10)
+    })
+
+    it('t=0 时 θ=0（中性面起始），Φ=BS，e=0', () => {
+      const state = computeACGenerationState(B, S, omega, N, 0, 0)
+      expect(state.theta).toBe(0)
+      expect(state.phi).toBeCloseTo(B * S, 10)
+      expect(state.e).toBeCloseTo(0, 10)
+      expect(state.isNeutral).toBe(true)
+      expect(state.isMaxEmf).toBe(false)
+    })
+
+    it('Φ = BS·cos(θ) 周期性变化', () => {
+      const Em = N * B * S * omega
+      // θ = π/2 时 Φ = 0
+      const t_half = (Math.PI / 2) / omega
+      const state = computeACGenerationState(B, S, omega, N, 0, t_half)
+      expect(state.phi).toBeCloseTo(0, 10)
+      expect(state.e).toBeCloseTo(Em, 6)
+    })
+
+    it('e = NBSω·sin(θ) 峰值出现在 θ=π/2', () => {
+      const Em = N * B * S * omega
+      const t_peak = (Math.PI / 2) / omega
+      const state = computeACGenerationState(B, S, omega, N, 0, t_peak)
+      expect(state.e).toBeCloseTo(Em, 6)
+      expect(state.isMaxEmf).toBe(true)
+      expect(state.isNeutral).toBe(false)
+    })
+
+    it('e = 0 出现在 θ=π（中性面）', () => {
+      const t_neutral = Math.PI / omega
+      const state = computeACGenerationState(B, S, omega, N, 0, t_neutral)
+      expect(state.e).toBeCloseTo(0, 10)
+      expect(state.isNeutral).toBe(true)
+    })
+
+    it('初始相位 θ₀ 偏移波形', () => {
+      const theta0 = Math.PI / 4
+      const state = computeACGenerationState(B, S, omega, N, theta0, 0)
+      // θ = θ₀ = π/4
+      expect(state.theta).toBeCloseTo(theta0, 10)
+      expect(state.phi).toBeCloseTo(B * S * Math.cos(theta0), 10)
+      expect(state.e).toBeCloseTo(N * B * S * omega * Math.sin(theta0), 10)
+    })
+
+    it('速度分解：vPerp² + vPara² = vTangential²', () => {
+      const state = computeACGenerationState(B, S, omega, N, 0, 0.5)
+      const vTotal = Math.sqrt(state.vPerp ** 2 + state.vPara ** 2)
+      expect(vTotal).toBeCloseTo(Math.abs(state.vTangential), 10)
+    })
+
+    it('vPerp 与 e 同相（均正比于 sinθ）', () => {
+      // 在 θ=π/4 时，sinθ 和 cosθ 均非零
+      const t = (Math.PI / 4) / omega
+      const state = computeACGenerationState(B, S, omega, N, 0, t)
+      // e ∝ sinθ，vPerp ∝ sinθ → 同号
+      expect(Math.sign(state.e)).toBe(Math.sign(state.vPerp))
+    })
+
+    it('中性面检测阈值 |sinθ| < 0.09', () => {
+      // θ 非常接近 0 → isNeutral = true
+      const state_near = computeACGenerationState(B, S, omega, N, 0, 0.01)
+      expect(state_near.isNeutral).toBe(true)
+
+      // θ = π/4 → isNeutral = false
+      const t = (Math.PI / 4) / omega
+      const state_mid = computeACGenerationState(B, S, omega, N, 0, t)
+      expect(state_mid.isNeutral).toBe(false)
+    })
+
+    it('最大电动势检测阈值 |cosθ| < 0.09', () => {
+      // θ 接近 π/2 → isMaxEmf = true
+      const t = (Math.PI / 2 - 0.01) / omega
+      const state_near = computeACGenerationState(B, S, omega, N, 0, t)
+      expect(state_near.isMaxEmf).toBe(true)
+
+      // θ = π/4 → isMaxEmf = false
+      const t_mid = (Math.PI / 4) / omega
+      const state_mid = computeACGenerationState(B, S, omega, N, 0, t_mid)
+      expect(state_mid.isMaxEmf).toBe(false)
     })
   })
 })

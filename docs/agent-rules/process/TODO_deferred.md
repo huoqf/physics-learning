@@ -79,7 +79,7 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 **目标**：将剩余 31 个调用废弃 preset 的组件统一改用 `wide` / `tall` / `square`，随后删除 `spacing.ts` 中的 4 个废弃别名。
 
-> 实际待替换 31 处（`standard` 剩 8、`mediumTall` 剩 6、`mediumWide` 剩 7、`extraWide` 剩 10）。
+> 实际待替换 30 处（`standard` 剩 8、`mediumTall` 剩 6、`mediumWide` 剩 7、`extraWide` 剩 9）。
 
 **替换映射**：
 
@@ -88,7 +88,7 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 | `standard` | 700×420 | `wide` | 700×400 | 8 |
 | `mediumTall` | 650×450 | `tall` | 700×450 | 6 |
 | `mediumWide` | 650×400 | `wide` | 700×400 | 7 |
-| `extraWide` | 800×440 | `wide` | 700×400 | 10 |
+| `extraWide` | 800×440 | `wide` | 700×400 | 9 |
 
 > `preserveAspectRatio="xMidYMid meet"` 保证尺寸差异在渲染层自动吸收，无需手动调整布局。  
 > `extraWide` → `wide` 宽度由 800 缩至 700，光学/变压器等宽向场景需验证关键标注不被截断。
@@ -141,13 +141,12 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 </details>
 
 <details>
-<summary>extraWide → wide（10 个，需视觉验证）</summary>
+<summary>extraWide → wide（9 个，需视觉验证）</summary>
 
 | 文件 | 行 | 验证重点 |
 |---|---|---|
 | `electromagnetism/induction/FaradayLaw.tsx` | 25 | 线圈+导轨横向布局 |
 | `electromagnetism/induction/PowerTransmission.tsx` | 54 | 变压器线圈间距 |
-| `electromagnetism/induction/ACGeneration.tsx` | 34 | 旋转线圈 |
 | `mechanics/energy/SpringCompositeAnimation.tsx` | 34 | 弹簧复合动画布局 |
 | `mechanics/kinematics/VelocityAnimationStrip.tsx` | 36 | 频闪条带宽度 |
 | `mechanics/force-motion/ForceMotionTripleChart.tsx` | 254 | 三图并排间距 |
@@ -234,10 +233,10 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 - ✅ P1：统一左屏容器（`LeftPanel / LeftPanelSection / LeftPanelScrollArea`）
 - ✅ P2：扩展参数协议（`ParamMeta` 增加 group/description/marks/importance/resetOnChange）
 - ✅ P2：引入 `controlMeta`（支持 segmented/toggle/preset/tip/action/storeToggle）
-- ✅ P2-P4：收敛 SidebarExtra（61→23，38 个已删除，详见 `SIDEBAREXTRA_MIGRATION_REPORT.md`）
+- ✅ P2-P4：收敛 SidebarExtra（61→22，39 个已删除，详见 `SIDEBAREXTRA_MIGRATION_REPORT.md`）
 
 **待完成**：
-- 扩展 `action` 类型支持自定义回调（解锁 ACValues/ACGeneration/PowerTransmission 3 个硬骨头）
+- 扩展 `action` 类型支持自定义回调（解锁 ACValues/PowerTransmission 2 个硬骨头）
 - 剩余 20 个已精简/合理保留的 SidebarExtra 随后续维护逐步清理
 
 ### 3.3 其他（P3，暂缓）
