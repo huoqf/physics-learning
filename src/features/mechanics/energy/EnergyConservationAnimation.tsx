@@ -37,8 +37,8 @@ export default function EnergyConservationAnimation() {
     setTime: s.setTime,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.standard)
-  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 420 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 400 })
   const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 

@@ -16,8 +16,6 @@ import { lensShape } from './components/lensGeometry'
 import { ThinLensRail } from './components/ThinLensRail'
 import { ThinLensRays } from './components/ThinLensRays'
 
-const VIEW_WIDTH = 800
-const VIEW_HEIGHT = 500
 const RAIL_Y = 200
 const CHART_TOP = 340
 const CHART_H = 130
@@ -27,7 +25,7 @@ export default function ThinLensAnimation() {
   const { params } = useAnimationStore(
     useShallow((s) => ({ params: s.params }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
   const svgRef = useRef<SVGSVGElement>(null)
   const isDraggingRef = useRef<'object' | 'lens' | false>(false)
 
@@ -39,7 +37,7 @@ export default function ThinLensAnimation() {
 
   const { font } = canvasSize
 
-  const cx = VIEW_WIDTH / 2
+  const cx = 400
   const cy = RAIL_Y
 
   const physics = useThinLensPhysics()
@@ -109,7 +107,7 @@ export default function ThinLensAnimation() {
   const { chartData, currentChartPoint, conjugate } = physics
 
   const rays = useThinLensRays({
-    isValid, mode, objSvgX, uCm, fSvgDist, isReal, imgH, isConcave, imgSvgX, lensSvgX, screenSvgX, cy, fCm, candleH, VIEW_WIDTH, SCALE_CM
+    isValid, mode, objSvgX, uCm, fSvgDist, isReal, imgH, isConcave, imgSvgX, lensSvgX, screenSvgX, cy, fCm, candleH, VIEW_WIDTH: 800, SCALE_CM
   })
 
   const chartPoints = chartData
@@ -153,7 +151,7 @@ export default function ThinLensAnimation() {
     >
       <svg
         ref={svgRef}
-        viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
+        viewBox="0 0 800 500"
         preserveAspectRatio="xMidYMid meet"
         className="w-full h-full"
       >
@@ -192,7 +190,7 @@ export default function ThinLensAnimation() {
           </defs>
 
           <g>
-            <ThinLensRail mode={mode} VIEW_WIDTH={VIEW_WIDTH} cy={cy} cx={cx} SCALE_CM={SCALE_CM} font={font} />
+            <ThinLensRail mode={mode} VIEW_WIDTH={800} cy={cy} cx={cx} SCALE_CM={SCALE_CM} font={font} />
 
             {mode === 0 && fCm > 0 && (
               <FocalMarks cx={lensSvgX} cy={cy} fSvgDist={fSvgDist} font={font} />
@@ -354,7 +352,7 @@ export default function ThinLensAnimation() {
             {chartPoints.length >= 2 && (
               <foreignObject
                 x={20} y={CHART_TOP - 20}
-                width={VIEW_WIDTH - 40} height={CHART_H + 50}
+                width={760} height={CHART_H + 50}
               >
                 <div style={{ width: '100%', height: '100%' }}>
                   {mode === 0 ? (

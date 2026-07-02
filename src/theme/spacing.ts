@@ -72,21 +72,6 @@ export const CANVAS_PRESETS = {
    * 1:1 比例，适合旋转/圆形轨迹演示
    */
   square:     { width: 600, height: 600 },
-
-  // ─── 废弃别名（@deprecated）────────────────────────────────────────────
-  // 存量组件过渡期保留，新组件禁止使用。统一迁移至上方 3 个 preset 后删除。
-  // standard   → wide   (700×420 → 700×400，高度差 20px，preserveAspectRatio 自适应无感知)
-  // mediumTall → tall   (650×450 → 700×450，宽度差 50px，比例 < 7%)
-  // mediumWide → wide   (650×400 → 700×400，宽度差 50px)
-  // extraWide  → wide   (800×440 → 700×400，光学/变压器横向布局靠 SVG 自适应)
-  /** @deprecated 迁移至 wide */
-  standard:   { width: 700, height: 420 },
-  /** @deprecated 迁移至 tall */
-  mediumTall: { width: 650, height: 450 },
-  /** @deprecated 迁移至 wide */
-  mediumWide: { width: 650, height: 400 },
-  /** @deprecated 迁移至 wide */
-  extraWide:  { width: 800, height: 440 },
 } as const
 
 // ─── 内容密度上限 ────────────────────────────────────────────────────────

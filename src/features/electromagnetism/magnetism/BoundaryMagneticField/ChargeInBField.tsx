@@ -8,7 +8,7 @@ import { calculateDoubleBoundaryExit, calculateCircularBoundaryExit, calcParticl
 export default function ChargeInBField() {
   const params = useAnimationStore((s) => s.params)
   const mode = params.mode ?? 0 // 0: 基础, 1: 进阶
-  const [sizeRef, size] = useCanvasSize(CANVAS_PRESETS.standard)
+  const [sizeRef, size] = useCanvasSize(CANVAS_PRESETS.wide)
 
   const isWide = size.width > size.height * 1.1
 

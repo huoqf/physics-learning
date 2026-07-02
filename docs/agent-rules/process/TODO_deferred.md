@@ -1,8 +1,8 @@
 # 延后处理待办事项
 
-> **本文档是待完成计划，不是完成记录。** 下文"已从待办移出"仅用于避免重复排期；详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
+> **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-02（CircuitAnalysis 拆分完成、DCSource 符号模式修复）
+> 最后更新：2026-07-02（核查项目现状）
 
 ---
 
@@ -53,144 +53,16 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 ## 一、超长文件拆分（P2）
 
-### 已完成
-
-| 文件 | 原行数 | 拆分结果 | 完成日期 |
-|------|-----:|---------|---------|
-| `ForceMotionSandbox.tsx` | 758 | → `hooks/useForceMotionSandbox.ts`(253) + 组件(331) | 2026-07-01 |
-| `EquilibriumAnimation.tsx` | 737 | → `hooks/useEquilibriumLayout.ts`(165) + 组件(430) | 2026-07-01 |
-| `CircuitAnalysis.tsx` | 507 | → `physics/dcCircuit.ts`(calculateCircuitAnalysis) + `model/circuitAnalysisLayout.ts` + 组件(~370) | 2026-07-02 |
-| `ObliqueThrowAnimation.tsx` | 589 | → `useObliqueThrowLayout.tsx`(150) + 组件(386) | 2026-07-02 |
-
 ### 待处理
 
 | 文件 | 当前行数 | 已有 physics | 拆分方向 | 目标行数 |
 |------|-----:|:---:|---------|-----:|
 
-> 观察：`MomentumConservationAnimation.tsx`(671)、`KeplerAnimation.tsx`(621)、`TIRAnimation.tsx`(564)、`ConnectedBodiesAnimation.tsx`(557)、`GravityBasicAnimation.tsx`(572)、`FreeFallDripAnimation.tsx`(559)、`CircularMotionAnimation.tsx`(557)、`PowerTransmission.tsx`→`electromagnetism/induction/`(649)、`SpringCompositeAnimation.tsx`→`mechanics/energy/`(639)、`FieldLines.tsx`→`electromagnetism/electrostatics/`(623) 已超过或临近阈值，但职责相对集中，暂不作为首批拆分目标。
+> 观察（2026-07-02 核查）：以下文件超过或临近 500 行阈值，但职责相对集中，暂不作为首批拆分目标：
+> - `MomentumConservationAnimation.tsx`(671)、`KeplerAnimation.tsx`(621)、`PowerTransmission.tsx`(594)、`SpringCompositeAnimation.tsx`(585)、`TIRAnimation.tsx`(564)、`FieldLines.tsx`(559)、`ConnectedBodiesAnimation.tsx`(557)、`LenzsLawCanvas.tsx`(553)、`InclineForceDiagram.tsx`(539)、`GravityBasicAnimation.tsx`(519)、`CircularMotionAnimation.tsx`(506)、`FreeFallDripAnimation.tsx`(505)
+> - 新增临近阈值：`LightRodRopeScene.tsx`(485)、`SimulationView.tsx`(478)、`WorkFSChart.tsx`(469)、`RefractionAnimation.tsx`(462)、`AccelerationCenterExtra.tsx`(462)、`GravityAnimation.tsx`(459)、`ImpulseAnimation.tsx`(457)、`UniformAccelerationAnimation.tsx`(455)
 
 ---
-
-## 一.五、CANVAS_PRESETS 废弃别名清理 & 旧方案迁移
-
-> 登记日期：2026-07-01 | 背景：preset 收敛决策（见 `CANVAS_PRESETS_AUDIT.md §2026-07-01`）
-
----
-
-### 1.5.1 删除废弃别名、批量替换组件（P1）
-
-**目标**：将剩余 31 个调用废弃 preset 的组件统一改用 `wide` / `tall` / `square`，随后删除 `spacing.ts` 中的 4 个废弃别名。
-
-> 实际待替换 30 处（`standard` 剩 8、`mediumTall` 剩 6、`mediumWide` 剩 7、`extraWide` 剩 9）。
-
-**替换映射**：
-
-| 废弃 preset | 尺寸 | → 目标 preset | 尺寸 | 剩余组件数 |
-|---|---|---|---|---:|
-| `standard` | 700×420 | `wide` | 700×400 | 8 |
-| `mediumTall` | 650×450 | `tall` | 700×450 | 6 |
-| `mediumWide` | 650×400 | `wide` | 700×400 | 7 |
-| `extraWide` | 800×440 | `wide` | 700×400 | 9 |
-
-> `preserveAspectRatio="xMidYMid meet"` 保证尺寸差异在渲染层自动吸收，无需手动调整布局。  
-> `extraWide` → `wide` 宽度由 800 缩至 700，光学/变压器等宽向场景需验证关键标注不被截断。
-
-**待替换组件清单**（来源：`CANVAS_PRESETS_AUDIT.md`）：
-
-<details>
-<summary>standard → wide（8 个）</summary>
-
-| 文件 | 行 |
-|---|---|
-| `mechanics/energy/EnergyConservationAnimation.tsx` | 40 |
-| `mechanics/energy/PotentialEnergyAnimation.tsx` | 28 |
-| `mechanics/energy/PowerAnimation.tsx` | 35 |
-| `mechanics/energy/KineticEnergyAnimation.tsx` | 32 |
-| `electromagnetism/magnetism/VelocitySelector.tsx` | 21 |
-| `electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField.tsx` | 11 |
-| `electromagnetism/dc-circuits/ClosedCircuit.tsx` | 16 |
-| `thermodynamics/kinematics/IntermolecularForcesAnimation.tsx` | 36 |
-
-</details>
-
-<details>
-<summary>mediumTall → tall（6 个）</summary>
-
-| 文件 | 行 |
-|---|---|
-| `mechanics/dynamics/GravityAnimation.tsx` | 42 |
-| `mechanics/dynamics/GravityBasicAnimation.tsx` | 45 |
-| `mechanics/dynamics/EquilibriumAnimation.tsx` | 29 |
-| `mechanics/gravitation/KeplerAnimation.tsx` | 30 |
-| `mechanics/gravitation/SatelliteAnimation.tsx` | 27 |
-| `mechanics/dynamics/VectorAdditionAnimation.tsx` | 28 |
-
-</details>
-
-<details>
-<summary>mediumWide → wide（7 个）</summary>
-
-| 文件 | 行 |
-|---|---|
-| `electromagnetism/dc-circuits/OhmLaw.tsx` | 11 |
-| `electromagnetism/dc-circuits/CircuitAnalysis.tsx` | 59 |
-| `mechanics/dynamics/SpringForceAnimation.tsx` | 30 |
-| `mechanics/dynamics/SpringForceCenterExtra.tsx` | 13 |
-| `mechanics/dynamics/WeightlessnessCenterExtra.tsx` | 12 |
-| `mechanics/dynamics/NewtonSecondCenterExtra.tsx` | 12 |
-| `mechanics/dynamics/ConnectedBodiesAnimation.tsx` | 56 |
-
-</details>
-
-<details>
-<summary>extraWide → wide（9 个，需视觉验证）</summary>
-
-| 文件 | 行 | 验证重点 |
-|---|---|---|
-| `electromagnetism/induction/FaradayLaw.tsx` | 25 | 线圈+导轨横向布局 |
-| `electromagnetism/induction/PowerTransmission.tsx` | 54 | 变压器线圈间距 |
-| `mechanics/energy/SpringCompositeAnimation.tsx` | 34 | 弹簧复合动画布局 |
-| `mechanics/kinematics/VelocityAnimationStrip.tsx` | 36 | 频闪条带宽度 |
-| `mechanics/force-motion/ForceMotionTripleChart.tsx` | 254 | 三图并排间距 |
-| `optics/thin-lens/ThinLensAnimation.tsx` | 30 | 见 §1.5.2 |
-| `optics/total-internal-reflection/TIRAnimation.tsx` | 39 | 光路长度 |
-| `optics/refraction/RefractionAnimation.tsx` | 43 | 界面+光路 |
-| `optics/reflection/ReflectionAnimation.tsx` | 32 | 见 §1.5.2 |
-
-</details>
-
-**操作步骤**：
-1. 批量替换：`CANVAS_PRESETS.standard` → `CANVAS_PRESETS.wide`（同步更新 `designWidth/Height` 为 `700/400`）
-2. 批量替换：`CANVAS_PRESETS.mediumTall` → `CANVAS_PRESETS.tall`（同步更新 `designWidth/Height` 为 `700/450`）
-3. 批量替换：`CANVAS_PRESETS.mediumWide` → `CANVAS_PRESETS.wide`（同步更新 `designWidth/Height` 为 `700/400`）
-4. 替换 `extraWide` 组件（跳过 §1.5.2 中待迁移的 `ReflectionAnimation`/`ThinLensAnimation`）
-5. 视觉验证 `extraWide` 组件（宽度由 800→700，确认内容无截断）
-6. 删除 `spacing.ts` 中的 4 个废弃别名及注释块
-7. `npx tsc --noEmit` 零错误
-8. 更新本条为已完成
-
----
-
-### 1.5.2 旧方案组件迁移至 useCanvasSize + useViewport（P2）
-
-**目标**：将以下仍沿用固定 `viewBox + 比例常量`（已禁用旧方案，见 `07_CANVAS_SVG_CHART_RULES.md §2.3`）的组件迁移为方式A。
-
-| 组件 | 路径 | 当前 preset | 迁移方案 |
-|---|---|---|---|
-| `ReflectionAnimation` | `optics/reflection/ReflectionAnimation.tsx` | `extraWide`(800×440) | → `wide`(700×400) + 方式A |
-| `ThinLensAnimation` | `optics/thin-lens/ThinLensAnimation.tsx` | `extraWide`(800×440) | → `wide`(700×400) + 方式A |
-
-**迁移标准**：
-- 删除组件内固定 `VIEW_WIDTH / VIEW_HEIGHT` 常量及比例常量对象
-- 改用 `useCanvasSize(CANVAS_PRESETS.wide)` + `useViewport(canvasSize, { designWidth: 700, designHeight: 400 })`
-- SVG 改为方式A：`viewBox="0 0 700 400" preserveAspectRatio="xMidYMid meet"`，删除 `vp.transform`（无 overlay 场景）
-- 验证光路、界面、标注在不同窗口尺寸下无截断
-- 补充 `npx tsc --noEmit` 零错误
-
-**前置条件**：§1.5.1 完成后再处理（避免 preset 变更与方案变更交叉干扰）。
-
----
-
 
 ## 二、响应式与颜色规范
 
@@ -198,17 +70,9 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 | 类别 | 问题 | 规模 | 方案 |
 |:---:|------|------|------|
-| B | 混合文件残留 | 0 处 | 已全部清理 |
-| D | `useCanvasSize({ ... })` 硬编码 | 11 处 | 多数为合理例外，更新 allowlist 文档即可 |
+| D | `useCanvasSize({ ... })` 硬编码 | 12 处 | 多数为合理例外，更新 allowlist 文档即可 |
 
 详见 [`FONT_SIZE_AUDIT.md`](./FONT_SIZE_AUDIT.md)、[`CANVAS_PRESETS_AUDIT.md`](./CANVAS_PRESETS_AUDIT.md)
-
-### 2.2 rgba() 手写与硬编码 fontSize（P3）
-
-| 文件 | 行号 | 问题 | 结论 |
-|------|------|------|------|
-| `PowerTransmission.tsx` | 83,90,97 | 动态 rgba() 颜色计算 | 合理使用：物理驱动的运行时颜色插值（白→黄→暗红），非静态色值硬编码，跳过 |
-| `VectorPlayground.tsx` | 65 | 开发调试文件 | 可忽略，跳过 |
 
 ---
 
@@ -216,35 +80,21 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 ### 3.1 AnimationPage 协调职责监控（P2）
 
-> 当前 436 行。触发拆分条件：行数 > 500，或存在物理计算与 JSX 混写，或职责 > 8 类。
+> 当前 476 行（2026-07-02 核查，较上次 +40 行）。触发拆分条件：行数 > 500，或存在物理计算与 JSX 混写，或职责 > 8 类。
 
 膨胀触发区域：参数过滤（showIf/hideIf）、SidebarExtra props 组装、模式切换、RightPhysicsPanel 计算逻辑。
 如继续增长，优先抽 hook：`useFilteredParams()`、`useSidebarExtraProps()`、`useAnimationMode()`。
 
 ### 3.2 左屏控制台整体优化（P1/P2，暂缓）
 
-> 登记日期：2026-07-01 | 最后更新：2026-07-02
-
 **整体要求**：
 - 左屏基础结构一致，控件分组明确；默认恢复语义清晰
 - 简单模式切换、显示开关、提示卡不再需要手写 SidebarExtra（已通过 controlMeta 实现）
 - 剩余硬骨头需扩展 action 类型后处理
 
-**已完成**：
-- ✅ P1：全局增强 `ParamControl`（精确输入、格式化、零点标记、恢复默认）
-- ✅ P1：统一左屏容器（`LeftPanel / LeftPanelSection / LeftPanelScrollArea`）
-- ✅ P2：扩展参数协议（`ParamMeta` 增加 group/description/marks/importance/resetOnChange）
-- ✅ P2：引入 `controlMeta`（支持 segmented/toggle/preset/tip/action/storeToggle）
-- ✅ P2-P4：收敛 SidebarExtra（61→17，44 个已删除，详见 `SIDEBAREXTRA_MIGRATION_REPORT.md`）
-- ✅ FreeFallSidebar 迁移：模式切换/物体选择/重力场预设/时间切片已迁移至 controlMeta，气压参数迁移至 paramMeta
-- ✅ VelocitySidebar 迁移：观察模式/生活场景/Δt 步进/运动模型/教学提示迁移至 controlMeta，进阶 Δt 滑条迁移至 paramMeta，SidebarExtra 已删除
-- ✅ VerticalThrowSidebar 迁移：观察模式/环境重力场预设迁移至 controlMeta，微元切片密度/空气阻力/目标高度线迁移至 paramMeta（showIf 控制显隐），"对比真空参考轨道"开关迁移至 controlMeta（showIf: airResistance），模式切换时 resetParams 重置 airResistance，SidebarExtra 已删除
-- ✅ ProjectileSidebar 迁移：观察模式/环境重力场预设/空气阻力/对比真空参考轨道全部迁移至 controlMeta + paramMeta，SidebarExtra 已删除
-- ✅ ObliqueThrowSidebar 迁移：同 ProjectileSidebar，全部迁移至声明式协议，SidebarExtra 已删除
-
 **待完成**：
 - 扩展 `action` 类型支持自定义回调（解锁 ACValues/PowerTransmission 2 个硬骨头）
-- 剩余 14 个已精简/合理保留的 SidebarExtra 随后续维护逐步清理
+- 剩余 15 个已精简/合理保留的 SidebarExtra 随后续维护逐步清理（2026-07-02 核查：registry 中共 17 个，扣除 2 个硬骨头）
 
 ### 3.3 其他（P3，暂缓）
 

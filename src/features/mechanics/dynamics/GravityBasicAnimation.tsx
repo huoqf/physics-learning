@@ -42,7 +42,7 @@ export const GravityBasicAnimation: FC = () => {
     isPlaying: s.isPlaying,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumTall)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
   const { font } = canvasSize
 
   const vp = useViewport(canvasSize, {

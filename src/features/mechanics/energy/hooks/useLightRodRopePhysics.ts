@@ -126,7 +126,7 @@ export function useLightRodRopePhysics(): UseLightRodRopePhysicsResult {
     }))
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.standard)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
 
   const vp = useViewport(canvasSize, {
     designWidth: DESIGN_WIDTH,

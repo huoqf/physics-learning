@@ -31,7 +31,7 @@ export default function SpringCompositeAnimation() {
   const svgRef = useRef<SVGSVGElement>(null);
 
   // 1. 画布基准尺寸 (700 x 420)
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide);
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide);
   const { font } = canvasSize;
 
   const DESIGN_WIDTH = 700;

@@ -10,7 +10,7 @@ import { Card } from '@/components/UI'
 export const SpringForceCenterExtra: FC = () => {
     const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumWide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
   const { font } = canvasSize
 
   const k = params.k ?? 100

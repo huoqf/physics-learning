@@ -24,7 +24,7 @@ export default function SatelliteAnimation() {
       time: s.time, isPlaying: s.isPlaying, setIsPlaying: s.setIsPlaying,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumTall)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
   const { font } = canvasSize
   const vp = useViewport(canvasSize, { designWidth: LAYOUT.designWidth, designHeight: LAYOUT.designHeight })
 

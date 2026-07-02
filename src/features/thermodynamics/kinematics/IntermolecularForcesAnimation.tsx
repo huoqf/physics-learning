@@ -33,8 +33,8 @@ export default function IntermolecularForcesAnimation() {
       showVectors: s.showVectors,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.standard)
-  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 420 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 400 })
   const { font } = canvasSize
 
   const mode = params.mode ?? 0

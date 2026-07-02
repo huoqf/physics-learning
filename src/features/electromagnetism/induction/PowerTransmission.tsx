@@ -51,7 +51,7 @@ export default function PowerTransmission() {
       speed: s.speed,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
   const { font, px } = canvasSize
   const [, setFrameTick] = useState(0)
 

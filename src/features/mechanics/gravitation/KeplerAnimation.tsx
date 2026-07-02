@@ -27,11 +27,11 @@ export default function KeplerAnimation() {
     showFormulas: s.showFormulas,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumTall)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
   const { font } = canvasSize
 
   const vp = useViewport(canvasSize, {
-    designWidth: 650,
+    designWidth: 700,
     designHeight: 450,
   })
 

@@ -13,7 +13,7 @@ import InclineModeScene from './friction/InclineModeScene'
 
 const BOX_SIZE = 44
 
-const FRICTION_DESIGN = { width: 800, height: 440 } as const
+const FRICTION_DESIGN = { width: 700, height: 400 } as const
 
 const FRICTION_LAYOUT = {
   groundYRatio_m1: 0.75,
@@ -44,7 +44,7 @@ export default function FrictionAnimation() {
     }))
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
   const { font } = canvasSize
 
   const contextProfile = useAnimationLayout()

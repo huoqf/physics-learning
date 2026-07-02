@@ -17,6 +17,7 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 07-02 | theme | refactor | CANVAS_PRESETS 废弃别名清理：31 个组件从 standard/mediumTall/mediumWide/extraWide 迁移至 wide/tall，spacing.ts 删除 4 个废弃别名；ReflectionAnimation/ThinLensAnimation 旧方案迁移至方式A（静态 viewBox + preserveAspectRatio）；tsc 零错误、385 tests 通过 |
 | 07-01 | UI/animation | refactor | SidebarExtra→controlMeta 收敛：32 个动画迁移（24 完全删除 + 8 部分精简），SidebarExtra 从 61→29；8 批次执行，tsc 零错误；详见 logs/2026-W27.md |
 | 07-01 | docs/rules | docs | 更新左屏控制台项目规范：project_rules 增加"左屏控制台声明式优先"铁律，08_THREE_PANEL/02_UI/ARCHITECTURE 补 LeftPanel、ParamMeta、controlMeta、SidebarExtra 收敛规则 |
 | 07-01 | UI/animation | refactor | controlMeta 第一阶段：新增 ControlMeta 协议与 ControlPanel 渲染器（number/segmented/toggle/preset/tip），AnimationPage 接入声明式控件，库仑定律/力的合成与分解/共点力平衡/恒力做功/开普勒定律等简单 SidebarExtra 迁移为 controlMeta；补 ControlPanel 单测 3 项；build/test/lint/check:architecture 通过 |

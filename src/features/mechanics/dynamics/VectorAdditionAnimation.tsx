@@ -25,8 +25,8 @@ export default function VectorAdditionAnimation() {
     }))
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumTall)
-  const vp = useViewport(canvasSize, { designWidth: 650, designHeight: 450 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
+  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 450 })
   const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 

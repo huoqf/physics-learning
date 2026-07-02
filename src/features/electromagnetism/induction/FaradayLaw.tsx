@@ -22,7 +22,7 @@ export default function FaradayLaw() {
     }))
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
   const { font } = canvasSize
 
   // ── 物理参数提取 ──────────────────────────────────────────────────────

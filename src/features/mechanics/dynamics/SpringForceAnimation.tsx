@@ -27,8 +27,8 @@ export default function SpringForceAnimation() {
     showVectors: s.showVectors,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumWide)
-  const vp = useViewport(canvasSize, { designWidth: 650, designHeight: 400 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 400 })
   const { font } = canvasSize
 
   const { k = 100, m = 1 } = params

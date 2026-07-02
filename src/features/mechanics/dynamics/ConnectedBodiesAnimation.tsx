@@ -53,7 +53,7 @@ export default function ConnectedBodiesAnimation() {
     updateParam: s.updateParam,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.mediumWide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
   const { font } = canvasSize
 
   const vp = useViewport(canvasSize, {

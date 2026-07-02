@@ -1,4 +1,4 @@
-import { useCanvasSize, useViewport } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { OPTICS_COLORS, STROKE, FONT, DASH, CANVAS_COLORS } from '@/theme/physics'
@@ -7,9 +7,6 @@ import { deg2rad, rad2deg } from '@/math/angle'
 import { vectorSub, vectorDot, vectorScale, vectorNormalize } from '@/math/vector'
 import type { Vector2 } from '@/math/vector'
 
-const VIEW_WIDTH = 800
-const VIEW_HEIGHT = 500
-const REFLECTION_DESIGN = { width: VIEW_WIDTH, height: VIEW_HEIGHT } as const
 const RAY_LENGTH = 200
 const MIRROR_HALF = 160
 const NORMAL_LENGTH = 180
@@ -29,20 +26,15 @@ export default function ReflectionAnimation() {
   const { params } = useAnimationStore(
     useShallow((s) => ({ params: s.params }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.extraWide)
-
-  const vp = useViewport(canvasSize, {
-    designWidth: REFLECTION_DESIGN.width,
-    designHeight: REFLECTION_DESIGN.height,
-  })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
 
   const theta1 = params.theta1 ?? 45
   const mirrorRotation = params.mirrorRotation ?? 0
   const showNormal = (params.showNormal ?? 1) === 1
 
   const { font } = canvasSize
-  const cx = VIEW_WIDTH / 2
-  const cy = VIEW_HEIGHT * 0.58
+  const cx = 400
+  const cy = 290
 
   const theta1Rad = deg2rad(theta1)
   const mirrorRad = deg2rad(-mirrorRotation)
@@ -67,11 +59,11 @@ export default function ReflectionAnimation() {
   return (
     <div ref={containerRef} className="w-full h-full">
       <svg
-        width={canvasSize.width}
-        height={canvasSize.height}
+        viewBox="0 0 800 500"
+        preserveAspectRatio="xMidYMid meet"
         className="bg-white rounded-lg shadow-inner"
       >
-        <g transform={vp.transform}>
+        <g>
           {/* Protractor */}
           {showNormal && (
             <g opacity={0.25}>

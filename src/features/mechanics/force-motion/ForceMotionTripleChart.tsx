@@ -251,7 +251,7 @@ export default function ForceMotionTripleChart({
   areaTextV,
   areaTextX,
 }: ForceMotionTripleChartProps) {
-  const [containerRef, size] = useCanvasSize(CANVAS_PRESETS.extraWide)
+  const [containerRef, size] = useCanvasSize(CANVAS_PRESETS.wide)
   const { width, height } = size
 
   const chartWidth = Math.max(1, Math.floor((width - 8) / 3))
