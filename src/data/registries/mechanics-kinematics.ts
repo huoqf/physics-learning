@@ -170,8 +170,17 @@ export const mechanicsKinematicsAnimations = defineAnimations({
         if (pressure <= 0.3) return '空气阻力较小，两物体下落加速度接近 g'
         return '空气阻力显著，轻质物体下落明显变慢'
       }, showIf: 'advancedMode', showIfValue: 0 },
+      { type: 'tip', title: '当前环境', group: '环境状态', content: (p) => {
+        const pressure = p.pressure ?? 0
+        const label = pressure <= 0.01 ? '真空' : pressure >= 0.99 ? '标准大气压' : `${pressure.toFixed(2)} atm`
+        const desc = pressure <= 0.01 ? '物体仅受重力' : '存在空气阻力'
+        return `${label} — ${desc}`
+      }, variant: 'info', showIf: 'advancedMode', showIfValue: 0 },
+      { type: 'tip', title: '重力加速度 g', group: '环境状态', content: (p) => {
+        const g = p.g ?? 9.8
+        return `g = ${g.toFixed(3)} m/s²，由纬度和海拔自动计算`
+      }, variant: 'info', showIf: 'advancedMode', showIfValue: 1 },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/kinematics/FreeFallSidebar')),
   },
   'anim-vertical-throw': {
     title: '竖直上抛运动',

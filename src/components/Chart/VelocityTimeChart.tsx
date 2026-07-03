@@ -128,6 +128,8 @@ type VelocityTimeChartProps = (StaticChartProps | AnimatedChartProps) & {
   stages?: VTStage[]
   /** 额外 className */
   className?: string
+  /** 固定尺寸模式（直接返回 `<g>`，不走 useCanvasSize + foreignObject） */
+  fixedSize?: { width: number; height: number }
 }
 
 /** 渲染单条曲线 + 面积 */
@@ -461,6 +463,7 @@ export function VelocityTimeChart({
   stages,
   className = '',
   mode = 'static',
+  fixedSize,
 }: VelocityTimeChartProps) {
   if (process.env.NODE_ENV !== 'production' && mode === 'animated' && !domainPoints) {
     console.warn(
@@ -495,6 +498,7 @@ export function VelocityTimeChart({
       yBaseline={computedVRange[0] < 0 ? 0 : undefined}
       showGrid={showGrid}
       className={className}
+      fixedSize={fixedSize}
     >
       <VTContent
         points={points}

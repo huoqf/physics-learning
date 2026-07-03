@@ -1,6 +1,6 @@
 import type { PhysicsPanelData, PhysicsQuantity, ParamDefs } from '../types'
 import { normalizeParams } from '../types'
-import { GRAVITY, calculateFreeFall } from '../../../physics'
+import { GRAVITY, calculateFreeFall, calcGByLatitude, calcGByAltitude } from '../../../physics'
 
 interface Params {
   advancedMode: number
@@ -76,23 +76,22 @@ export function handleFreeFall(
     const latitude = p.latitude ?? 45
     const altitude = p.altitude ?? 0
     const dripPeriod = p.dripPeriod ?? 0.5
-    const R_EARTH = 6371e3
-    const gLat = 9.780 * (1 + 0.005302 * Math.sin(latitude * Math.PI / 180) ** 2)
-    const gAlt = gLat * (R_EARTH / (R_EARTH + altitude * 1000)) ** 2
-    const h2T = 0.5 * gAlt * (2 * dripPeriod) ** 2
-    const gMeasured = (2 * h2T) / ((2 * dripPeriod) ** 2)
+
+    // 复用物理引擎函数，保证面板与动画 g 值完全一致
+    const gLocal = calcGByLatitude(latitude)
+    const gFinal = calcGByAltitude(gLocal, altitude * 1000)
+    const h2T = 0.5 * gFinal * (2 * dripPeriod) ** 2
 
     return {
       quantities: [
         ...base,
-        { label: '纬度修正 g', value: gLat, unit: 'm/s²' },
-        { label: '海拔修正 g\'', value: gAlt, unit: 'm/s²' },
+        { label: '当前 g', value: gFinal, unit: 'm/s²', highlight: 'positive' as const },
+        { label: '纬度修正 g', value: gLocal, unit: 'm/s²' },
         { label: '2T内下落 h', value: h2T, unit: 'm' },
-        { label: '测得 g', value: gMeasured, unit: 'm/s²', highlight: 'positive' as const },
       ],
       formulas: [
         { name: '滴水法核心', latex: 'h = \\frac{1}{2}g(2T)^2', level: 'important', condition: '第n滴与第n+2滴时间间隔为2T' },
-        { name: '纬度影响', latex: 'g = 9.780(1 + 0.005302\\sin^2\\phi)', level: 'supplementary' },
+        { name: '纬度影响', latex: 'g = 9.780327(1 + 0.0053024\\sin^2\\phi - 0.0000058\\sin^2 2\\phi)', level: 'supplementary' },
         { name: '海拔影响', latex: "g' = g_0 \\left(\\frac{R}{R+H}\\right)^2", level: 'supplementary' },
         { name: '重力与万有引力', latex: 'mg = G\\frac{Mm}{R^2}', level: 'core', condition: '忽略自转时' },
       ],

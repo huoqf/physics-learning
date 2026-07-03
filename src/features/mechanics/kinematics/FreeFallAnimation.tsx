@@ -1,4 +1,5 @@
 import { useCanvasSize, useViewport } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useEffect, useMemo, useState } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -25,8 +26,9 @@ export default function FreeFallAnimation() {
       showGrid: s.showGrid, showTimeSlices: s.showTimeSlices, setIsPlaying: s.setIsPlaying,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 100, height: 100 })
-  const vp = useViewport(canvasSize, { designWidth: 100, designHeight: 100 })
+  const FF_DESIGN = CANVAS_PRESETS.tall
+  const [containerRef, canvasSize] = useCanvasSize(FF_DESIGN)
+  useViewport(canvasSize, { designWidth: FF_DESIGN.width, designHeight: FF_DESIGN.height })
 
   // 参数
   const pressure = params.pressure ?? 0
@@ -44,7 +46,7 @@ export default function FreeFallAnimation() {
   const [rippleB, setRippleB] = useState<{ x: number; y: number; time: number } | null>(null)
 
   // 布局
-  const layout = useFreeFallLayout({ width: vp.visibleW, height: vp.visibleH })
+  const layout = useFreeFallLayout({ width: FF_DESIGN.width, height: FF_DESIGN.height })
   const { stageWidth, stageHeight, originY, groundY, ballX, featherX } = layout
 
   // 缩放
@@ -126,12 +128,7 @@ export default function FreeFallAnimation() {
     return blocks
   }, [pointsA, groundTimeA, dragKA, showTimeSlices, originY, scale])
 
-  // 标签
-  const envLabel = useMemo(() => {
-    if (pressure <= 0.01) return '趋近自由落体'
-    if (pressure <= 0.3) return '空气阻力较小'
-    return '空气阻力明显'
-  }, [pressure])
+  // 标签（环境说明已移至右侧屏，主屏不再重复）
   const tubeLabel = useMemo(() => {
     if (pressure <= 0.01) return '牛顿管（真空）'
     if (pressure >= 0.99) return '牛顿管（有空气）'
@@ -139,8 +136,6 @@ export default function FreeFallAnimation() {
   }, [pressure])
 
   // v-t 图
-  const vtChartTop = vp.visibleH * 0.03
-  const vtChartHeight = vp.visibleH * 0.62
   const vtXMax = useMemo(() => Math.round(Math.max(Math.min(groundTimeA * 1.2, 8), 2) * 10) / 10, [groundTimeA])
   const vtPointsA = useMemo(() => pointsA.filter(p => p.t <= Math.min(time, vtXMax) + 1e-9).map(p => ({ t: p.t, v: p.v })), [pointsA, time, vtXMax])
   const vtPointsB = useMemo(() => pointsB.filter(p => p.t <= Math.min(time, vtXMax) + 1e-9).map(p => ({ t: p.t, v: p.v })), [pointsB, time, vtXMax])
@@ -154,7 +149,7 @@ export default function FreeFallAnimation() {
   return (
     <div ref={containerRef} className="w-full h-full">
       <FreeFallScene
-        canvasSize={{ width: vp.visibleW, height: vp.visibleH, font: canvasSize.font }} layout={layout}
+        layout={layout}
         objectA={objectA} objectB={objectB} matA={matA} matB={matB}
         pressure={pressure} g={g}
         stateA={stateA} stateB={stateB}
@@ -166,12 +161,12 @@ export default function FreeFallAnimation() {
         trailA={trailA} trailB={trailB}
         flashPointsTableA={flashPointsTableA} flashPointsTableB={flashPointsTableB}
         rippleA={rippleA} rippleB={rippleB} time={time}
-        vtChartTop={vtChartTop} vtChartHeight={vtChartHeight} vtXMax={vtXMax}
+        vtXMax={vtXMax}
         vtPointsA={vtPointsA} vtPointsB={vtPointsB}
         vtDomainPointsA={vtDomainPointsA} vtDomainPointsB={vtDomainPointsB}
         vtAdditionalSeries={vtAdditionalSeries}
         ffSceneScale={ffSceneScale}
-        tubeLabel={tubeLabel} envLabel={envLabel}
+        tubeLabel={tubeLabel}
       />
     </div>
   )

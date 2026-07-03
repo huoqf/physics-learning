@@ -4,7 +4,6 @@ import {
   CHART_COLORS,
   SCENE_COLORS,
   CANVAS_COLORS,
-  VT_CHART_COLORS,
   STROKE,
   OPACITY,
   DASH,
@@ -15,9 +14,9 @@ import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { Ball } from '@/components/Physics/Ball'
-import { VelocityTimeChart } from '@/components/Chart'
+import { VelocityTimeChart, SvgDataTable } from '@/components/Chart'
 import type { ChartDataSeries } from '@/components/Chart'
-import { RIPPLE_DURATION, RIPPLE_MAX_RADIUS } from './freeFallConfig'
+import { RIPPLE_DURATION, RIPPLE_MAX_RADIUS, DATA_LAYOUT } from './freeFallConfig'
 import type { MaterialA, MaterialB } from './freeFallConfig'
 import type { SceneScale } from '@/scene'
 
@@ -35,9 +34,12 @@ function ImpactRipple({ x, y, color, startTime, currentTime }: RippleProps) {
   return <circle cx={x} cy={y} r={radius} fill="none" stroke={color} strokeWidth={STROKE.reference} opacity={opacity * 0.6} />
 }
 
+// ─── 设计常量 ─────────────────────────────────────────────────────────────────
+const DESIGN_WIDTH = 700
+const DESIGN_HEIGHT = 450
+
 // ─── 场景 Props ──────────────────────────────────────────────────────────────
 export interface FreeFallSceneProps {
-  canvasSize: { width: number; height: number; font: (n: number) => number }
   layout: {
     stageWidth: number; dataX: number; dataWidth: number
     tubeLeft: number; tubeRight: number; tubeWidth: number
@@ -68,28 +70,27 @@ export interface FreeFallSceneProps {
   rippleB: { x: number; y: number; time: number } | null
   time: number
   // v-t 图
-  vtChartTop: number; vtChartHeight: number; vtXMax: number
+  vtXMax: number
   vtPointsA: Array<{ t: number; v: number }>; vtPointsB: Array<{ t: number; v: number }>
   vtDomainPointsA: Array<{ t: number; v: number }>; vtDomainPointsB: Array<{ t: number; v: number }>
   vtAdditionalSeries: ChartDataSeries[]
   // 场景缩放
   ffSceneScale: SceneScale
   // 标签
-  tubeLabel: string; envLabel: string
+  tubeLabel: string
 }
 
 export function FreeFallScene({
-  canvasSize, layout, objectA, objectB, matA, matB, pressure, g,
+  layout, objectA, objectB, matA, matB, pressure, g,
   stateA, stateB, effectiveVA, effectiveVB, renderYA, renderYB,
   showVectors,
   timeSliceBlocks, flashPointsRenderA, flashPointsRenderB,
   trailA, trailB, flashPointsTableA, flashPointsTableB,
   rippleA, rippleB, time,
-  vtChartTop, vtChartHeight, vtXMax,
+  vtXMax,
   vtPointsA, vtDomainPointsA,
-  vtAdditionalSeries, ffSceneScale, tubeLabel, envLabel,
+  vtAdditionalSeries, ffSceneScale, tubeLabel,
 }: FreeFallSceneProps) {
-  const { font } = canvasSize
   const {
     tubeLeft, tubeRight, tubeWidth, tubeTop, tubeBottom, tubeHeight,
     originY, groundY, dataX, dataWidth, ballX, featherX,
@@ -98,7 +99,7 @@ export function FreeFallScene({
 
   return (
     <div className="w-full h-full">
-      <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
+      <svg viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`} preserveAspectRatio="xMidYMid meet" className="w-full h-full bg-white rounded-lg shadow-inner">
         <defs>
           <linearGradient id="glass-tube-grad" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0%" stopColor={SCENE_COLORS.materials.glassGrad[0]} stopOpacity="0.25" />
@@ -130,8 +131,8 @@ export function FreeFallScene({
         <text x={tubeLeft + tubeWidth / 2} y={tubeTop - 25} fontSize={FONT.axis}
           fill={pressure <= 0.01 ? CANVAS_COLORS.annotation : PHYSICS_COLORS.labelText}
           textAnchor="middle" fontWeight="600" opacity={0.7}>{tubeLabel}</text>
-        <text x={ballX} y={originY - 18} fontSize={font(9)} fill={PHYSICS_COLORS.velocity} textAnchor="middle" fontWeight="bold">{matA.label}</text>
-        <text x={featherX} y={originY - 18} fontSize={font(9)} fill={CHART_COLORS.compareB} textAnchor="middle" fontWeight="bold">{matB.label}</text>
+        <text x={ballX} y={originY - 18} fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} textAnchor="middle" fontWeight="bold">{matA.label}</text>
+        <text x={featherX} y={originY - 18} fontSize={FONT.small} fill={CHART_COLORS.compareB} textAnchor="middle" fontWeight="bold">{matB.label}</text>
 
         <PhysicsGround x={tubeLeft + 10} y={groundY} width={tubeRight - tubeLeft - 20}
           appearance={{ color: withAlpha(SCENE_COLORS.materials.structFill, 0.5) }} />
@@ -154,7 +155,7 @@ export function FreeFallScene({
                 fontSize={FONT.small} fill={block.color} fontWeight="bold" textAnchor="middle">{block.ratio}</text>
             )}
             <text x={ballX + 32} y={block.y + block.height / 2 + (block.ratio !== null ? 16 : 4)}
-              fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">{block.displacement.toFixed(2)}m</text>
+              fontSize={FONT.small} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">{block.displacement.toFixed(2)}m</text>
           </g>
         ))}
 
@@ -210,7 +211,7 @@ export function FreeFallScene({
               fontSize={FONT.small} fill={PHYSICS_COLORS.gravity} fontWeight="bold">g</text>
             {g > 9.8 && (
               <text x={ballX - 40} y={Math.min(renderYA + ffSceneScale.maxVectorLength * 0.5, groundY - 10) + 10}
-                fontSize={font(7)} fill={PHYSICS_COLORS.gravity} fontWeight="bold" opacity={0.7}>▲max</text>
+                fontSize={FONT.small} fill={PHYSICS_COLORS.gravity} fontWeight="bold" opacity={0.7}>▲max</text>
             )}
           </g>
         )}
@@ -222,7 +223,7 @@ export function FreeFallScene({
               fontSize={FONT.small} fill={PHYSICS_COLORS.gravity} fontWeight="bold">g</text>
             {g > 9.8 && (
               <text x={featherX - 40} y={Math.min(renderYB + ffSceneScale.maxVectorLength * 0.5, groundY - 10) + 10}
-                fontSize={font(7)} fill={PHYSICS_COLORS.gravity} fontWeight="bold" opacity={0.7}>▲max</text>
+                fontSize={FONT.small} fill={PHYSICS_COLORS.gravity} fontWeight="bold" opacity={0.7}>▲max</text>
             )}
           </g>
         )}
@@ -270,68 +271,45 @@ export function FreeFallScene({
         {rippleB && <ImpactRipple x={rippleB.x} y={rippleB.y} color={CHART_COLORS.compareB} startTime={rippleB.time} currentTime={time} />}
 
         {/* 右侧数据区 */}
-        <g transform={`translate(${dataX}, ${vtChartTop})`}>
-          <rect width={dataWidth} height={canvasSize.height * 0.32} fill="white" stroke={CHART_COLORS.gridLine} rx={4} />
-          <text x={dataWidth / 2} y={18} fontSize={FONT.axis} fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">频闪数据记录表</text>
-          <rect y={24} width={dataWidth} height={18} fill={CHART_COLORS.gridLine} opacity={0.15} />
-          <line x1={0} y1={42} x2={dataWidth} y2={42} stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-          <text x={dataWidth * 0.12} y={37} fontSize={FONT.small} fill={CHART_COLORS.labelText} textAnchor="middle" fontWeight="bold">t(s)</text>
-          <text x={dataWidth * 0.38} y={37} fontSize={FONT.small} fill={CHART_COLORS.labelText} textAnchor="middle" fontWeight="bold">v_A(m/s)</text>
-          <text x={dataWidth * 0.62} y={37} fontSize={FONT.small} fill={CHART_COLORS.labelText} textAnchor="middle" fontWeight="bold">v_B(m/s)</text>
-          <text x={dataWidth * 0.85} y={37} fontSize={FONT.small} fill={CHART_COLORS.labelText} textAnchor="middle" fontWeight="bold">y_A(m)</text>
+        <SvgDataTable
+          x={dataX} y={DATA_LAYOUT.tableY}
+          width={dataWidth}
+          title="频闪数据记录表"
+          data={flashPointsTableA}
+          maxRows={5}
+          columns={[
+            { key: 't', label: 't(s)', width: 0.12, format: (r) => r.t.toFixed(1) },
+            { key: 'vA', label: 'v_A(m/s)', width: 0.26,
+              format: (_r, i) => flashPointsTableA[i]?.v.toFixed(2) ?? '-' },
+            { key: 'vB', label: 'v_B(m/s)', width: 0.24,
+              format: (_r, i) => flashPointsTableB[i]?.v.toFixed(2) ?? '-' },
+            { key: 'yA', label: 'y_A(m)', width: 0.23, format: (r) => r.y.toFixed(3) },
+          ]}
+        />
 
-          {flashPointsTableA.map((pt, i) => {
-            const ptB = flashPointsTableB[i]
-            const isCurrent = i === flashPointsTableA.length - 1
-            const availableH = canvasSize.height * 0.32 - 55
-            const maxRows = Math.min(flashPointsTableA.length, Math.floor(availableH / 16))
-            const displayPoints = flashPointsTableA.slice(-maxRows)
-            if (!displayPoints.includes(pt)) return null
-            const idx = displayPoints.indexOf(pt)
-            const rowY = 50 + idx * 16
-            return (
-              <g key={`row-${i}`}>
-                {isCurrent && <rect x={0} y={rowY - 12} width={dataWidth} height={18} fill={VT_CHART_COLORS.areaShade} opacity={0.25} />}
-                <text x={dataWidth * 0.12} y={rowY} fontSize={font(9)} fontFamily="monospace" textAnchor="middle"
-                  fill={isCurrent ? PHYSICS_COLORS.velocity : CHART_COLORS.labelText} fontWeight={isCurrent ? 'bold' : 'normal'}>{pt.t.toFixed(1)}</text>
-                <text x={dataWidth * 0.38} y={rowY} fontSize={font(9)} fontFamily="monospace" textAnchor="middle"
-                  fill={isCurrent ? PHYSICS_COLORS.velocity : CHART_COLORS.labelText} fontWeight={isCurrent ? 'bold' : 'normal'}>{pt.v.toFixed(2)}</text>
-                <text x={dataWidth * 0.62} y={rowY} fontSize={font(9)} fontFamily="monospace" textAnchor="middle"
-                  fill={isCurrent ? CHART_COLORS.compareB : CHART_COLORS.labelText} fontWeight={isCurrent ? 'bold' : 'normal'}>{ptB ? ptB.v.toFixed(2) : '-'}</text>
-                <text x={dataWidth * 0.85} y={rowY} fontSize={font(9)} fontFamily="monospace" textAnchor="middle"
-                  fill={isCurrent ? PHYSICS_COLORS.velocity : CHART_COLORS.labelText} fontWeight={isCurrent ? 'bold' : 'normal'}>{pt.y.toFixed(3)}</text>
-                <line x1={0} y1={rowY + 4} x2={dataWidth} y2={rowY + 4} stroke={CHART_COLORS.gridLine} strokeWidth={STROKE.chartRef} />
-              </g>
-            )
-          })}
+        {/* v-t 图（固定尺寸模式，直接嵌入 SVG <g>） */}
+        <g transform={`translate(${dataX}, ${DATA_LAYOUT.chartY})`}>
+          <VelocityTimeChart
+            fixedSize={{ width: dataWidth, height: DATA_LAYOUT.chartH }}
+            points={vtPointsA} domainPoints={vtDomainPointsA}
+            currentTime={Math.min(time, vtXMax)} tMax={vtXMax}
+            title="速度－时间图像 (v-t 图)" showArea series="primary"
+            additionalSeries={vtAdditionalSeries} showGrid />
         </g>
 
-        {/* v-t 图 */}
-        <foreignObject x={dataX} y={vtChartTop + canvasSize.height * 0.32 + 12} width={dataWidth} height={vtChartHeight}>
-          <div style={{ width: '100%', height: '100%' }}>
-            <VelocityTimeChart points={vtPointsA} domainPoints={vtDomainPointsA}
-              currentTime={Math.min(time, vtXMax)} tMax={vtXMax}
-              title="速度－时间图像 (v-t 图)" showArea series="primary"
-              additionalSeries={vtAdditionalSeries} showGrid />
-          </div>
-        </foreignObject>
-
-        {/* 底部标注 */}
-        <text x={dataX + 8} y={canvasSize.height * 0.97} fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontFamily="monospace" fontWeight="bold">
+        {/* 底部实时标注（环境状态已移至右侧屏，不重复显示） */}
+        <text x={dataX + 8} y={DATA_LAYOUT.labelY} fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontFamily="monospace" fontWeight="bold">
           v{matA.label === '铁球' ? '球' : '币'} = {effectiveVA.toFixed(2)} m/s
         </text>
-        <text x={dataX + dataWidth * 0.35} y={canvasSize.height * 0.97} fontSize={FONT.small} fill={CHART_COLORS.compareB} fontFamily="monospace" fontWeight="bold">
+        <text x={dataX + dataWidth * 0.35} y={DATA_LAYOUT.labelY} fontSize={FONT.small} fill={CHART_COLORS.compareB} fontFamily="monospace" fontWeight="bold">
           v{matB.label === '羽毛' ? '羽' : '纸'} = {effectiveVB.toFixed(2)} m/s
         </text>
-        <text x={dataX + dataWidth * 0.65} y={canvasSize.height * 0.97} fontSize={FONT.small} fill={PHYSICS_COLORS.labelTextLight} fontFamily="monospace">
+        <text x={dataX + dataWidth * 0.65} y={DATA_LAYOUT.labelY} fontSize={FONT.small} fill={PHYSICS_COLORS.labelTextLight} fontFamily="monospace">
           f'_air = {stateB.fDrag.toFixed(4)} N
         </text>
-        <text x={dataX + dataWidth * 0.85} y={canvasSize.height * 0.97} fontSize={FONT.small} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end" fontFamily="monospace">
+        <text x={dataX + dataWidth * 0.85} y={DATA_LAYOUT.labelY} fontSize={FONT.small} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end" fontFamily="monospace">
           t = {time.toFixed(2)} s
         </text>
-        <text x={dataX + dataWidth} y={canvasSize.height * 0.97} fontSize={FONT.small}
-          fill={pressure <= 0.01 ? CANVAS_COLORS.annotation : PHYSICS_COLORS.labelTextLight}
-          textAnchor="end" fontWeight={pressure <= 0.01 ? 'bold' : 'normal'}>{envLabel}</text>
       </svg>
     </div>
   )

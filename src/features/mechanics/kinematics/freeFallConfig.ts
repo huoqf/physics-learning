@@ -38,12 +38,20 @@ export const FREE_FALL_LAYOUT = {
     /** 羽毛/纸片 X 位置占管内宽度比例（从管左壁起） */
     featherXRatio: 0.65,
   },
-  chart: {
-    /** v-t 图顶部距容器顶部比例 */
-    vtChartTopRatio: 0.03,
-    /** v-t 图高度占容器高度比例 */
-    vtChartHeightRatio: 0.62,
-  },
+} as const
+
+/** 右侧数据区固定像素布局（设计坐标系 700×450） */
+export const DATA_LAYOUT = {
+  /** 数据表起始 Y（设计坐标） */
+  tableY: 8,
+  /** 数据表预算高度（px，覆盖 5 行 + 标题 + 表头的最大高度） */
+  tableH: 150,
+  /** v-t 图起始 Y（设计坐标） */
+  chartY: 164,
+  /** v-t 图高度（px） */
+  chartH: 266,
+  /** 底部实时标注基线 Y（设计坐标） */
+  labelY: 442,
 } as const
 
 // ─── 撞击波纹视觉参数 ──────────────────────────────────────────────────

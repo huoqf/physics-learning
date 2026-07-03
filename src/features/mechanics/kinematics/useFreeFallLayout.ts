@@ -2,7 +2,6 @@
  * src/features/mechanics/kinematics/useFreeFallLayout.ts
  * 自由落体动画布局计算 Hook
  */
-import { useCallback } from 'react'
 import { FREE_FALL_LAYOUT } from './freeFallConfig'
 
 export function useFreeFallLayout(canvasSize: { width: number; height: number }) {
@@ -32,36 +31,11 @@ export function useFreeFallLayout(canvasSize: { width: number; height: number })
   const ballX    = tubeLeft + tubeWidth * L.ball.ballXRatio
   const featherX = tubeLeft + tubeWidth * L.ball.featherXRatio
 
-  // ── v-t 图布局 ──
-  const vtChartTop    = canvasSize.height * L.chart.vtChartTopRatio
-  const vtChartHeight = canvasSize.height * L.chart.vtChartHeightRatio
-  const vtInnerPad    = { left: 50, right: 40, top: 35, bottom: 40 } as const
-  const vtInnerW      = dataWidth - vtInnerPad.left - vtInnerPad.right
-  const vtInnerH      = vtChartHeight - vtInnerPad.top - vtInnerPad.bottom
-
-  // ── 坐标变换 ──
-  const vtToX = useCallback(
-    (t: number, xMax: number, innerW: number) =>
-      vtInnerPad.left + (t / xMax) * innerW,
-    [vtInnerPad.left]
-  )
-
-  const vtToY = useCallback(
-    (v: number, vtVMax: number, innerH: number) => {
-      const clampedV = Math.max(0, Math.min(v, vtVMax))
-      return vtInnerPad.top + innerH - (clampedV / vtVMax) * innerH
-    },
-    [vtInnerPad.top]
-  )
-
   return {
     stageWidth, dataX, dataWidth,
     tubeLeft, tubeRight, tubeWidth,
     tubeTop, tubeBottom, tubeHeight,
     originY, groundY, stageHeight,
     ballX, featherX,
-    vtChartTop, vtChartHeight,
-    vtInnerPad, vtInnerW, vtInnerH,
-    vtToX, vtToY,
   }
 }

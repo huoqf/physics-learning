@@ -1,13 +1,13 @@
-import { useCanvasSize, useViewport } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { colors } from '@/theme/colors'
 import {
   PHYSICS_COLORS,
   CHART_COLORS,
   SCENE_COLORS,
-  VT_CHART_COLORS,
   STROKE,
   OPACITY,
   DASH,
@@ -17,13 +17,17 @@ import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { calcGByLatitude, calcGByAltitude, GRAVITY } from '@/physics'
 import { useFreeFallPhysics } from './useFreeFallPhysics'
 import { getPhysicsAtTime } from '@/physics'
+import { DATA_LAYOUT } from './freeFallConfig'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
+import { SvgDataTable } from '@/components/Chart'
 import { VelocityTimeChart } from '@/components/Chart'
 import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 
-const DRIP_DESIGN = { width: 100, height: 100 } as const
+// ─── 设计常量 ────────────────────────────────────────────────────────────────
+const DESIGN_WIDTH = 700
+const DESIGN_HEIGHT = 450
 
 // ─── 物理常量 ────────────────────────────────────────────────────────────────
 /** 管高度 (m) */
@@ -67,22 +71,17 @@ export default function FreeFallDripAnimation() {
     setIsPlaying: s.setIsPlaying,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 100, height: 100 })
-  const { font } = canvasSize
-
-  const vp = useViewport(canvasSize, {
-    designWidth: DRIP_DESIGN.width,
-    designHeight: DRIP_DESIGN.height,
-  })
+  const [containerRef] = useCanvasSize(CANVAS_PRESETS.tall)
 
   // ── 参数 ──────────────────────────────────────────────────────────────────
   const dripPeriod = params.dripPeriod ?? 0.5
   const latitude = params.latitude ?? 45
   const altitude = params.altitude ?? 0
 
-  // ── 计算有效 g (使用下沉后的纯物理函数) ────────────────────────────────────────────
+  // ── 计算有效 g (复用纯物理函数，与右侧面板一致) ─────────────────────────────
+  // 注意：params.altitude 单位为 km，calcGByAltitude 接受 m，需转换
   const g0 = useMemo(() => calcGByLatitude(latitude), [latitude])
-  const g = useMemo(() => calcGByAltitude(g0, altitude), [g0, altitude])
+  const g = useMemo(() => calcGByAltitude(g0, altitude * 1000), [g0, altitude])
 
   // 将计算出的 g 同步回 params，供侧边栏显示
   const updateParam = useAnimationStore((s) => s.updateParam)
@@ -92,28 +91,27 @@ export default function FreeFallDripAnimation() {
     }
   }, [g, params.g, updateParam])
 
-  // ── 布局分区（左动画 + 右数据）────────────────────────────────────────
-  const stageRatio = 0.5
-  const stageWidth = vp.visibleW * stageRatio
-  const gapWidth = vp.visibleW * 0.02
-  const dataX = vp.visibleX + stageWidth + gapWidth
-  const dataWidth = vp.visibleW - stageWidth - gapWidth
+  // ── 布局分区（左动画 + 右数据）── 基于设计坐标系 700×450 ────────────────
+  const stageWidth = DESIGN_WIDTH * 0.5
+  const gapWidth = DESIGN_WIDTH * 0.02
+  const dataX = stageWidth + gapWidth
+  const dataWidth = DESIGN_WIDTH - dataX
 
   // ── 左侧动画舞台布局 ────────────────────────────────────────────────────
-  const tubeCenterX = vp.visibleX + stageWidth * 0.5
+  const tubeCenterX = stageWidth * 0.5
   const tubeWidthPx = Math.min(stageWidth * 0.28, 120)
   const tubeLeft = tubeCenterX - tubeWidthPx / 2
   const tubeRight = tubeCenterX + tubeWidthPx / 2
 
-  const tubeTopY = vp.visibleY + vp.visibleH * 0.15
-  const tubeBottomY = vp.visibleY + vp.visibleH * 0.88
+  const tubeTopY = DESIGN_HEIGHT * 0.15
+  const tubeBottomY = DESIGN_HEIGHT * 0.88
   const tubePixelHeight = tubeBottomY - tubeTopY
 
   // 物理坐标到像素的缩放
   const scale = tubePixelHeight / TUBE_HEIGHT
 
   const dripScene: SceneConfig = {
-    vectorBounds: { x: vp.visibleX, y: vp.visibleY, width: stageWidth, height: vp.visibleH },
+    vectorBounds: { x: 0, y: 0, width: stageWidth, height: DESIGN_HEIGHT },
     originX: 0,
     originY: 0,
     refMagnitudes: {
@@ -213,8 +211,6 @@ export default function FreeFallDripAnimation() {
   }, [nearestDrop, time, points, tubeCenterX, tubeTopY, scale])
 
   // ── v-t 图参数 ────────────────────────────────────────────────────────
-  const vtChartTop = vp.visibleY + vp.visibleH * 0.03
-  const vtChartHeight = vp.visibleH * 0.62
   const vtXMax = useMemo(() => {
     const effectiveXMax = Math.max(Math.min(groundTime * 1.2, 8), 2)
     return Math.round(effectiveXMax * 10) / 10
@@ -233,7 +229,7 @@ export default function FreeFallDripAnimation() {
   // ── 渲染 ──────────────────────────────────────────────────────────────────
   return (
     <div ref={containerRef} className="w-full h-full">
-      <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
+      <svg viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`} preserveAspectRatio="xMidYMid meet" className="w-full h-full bg-white rounded-lg shadow-inner">
 
         {/* ========== defs ========== */}
         <defs>
@@ -454,101 +450,45 @@ export default function FreeFallDripAnimation() {
         {/* ========== 右侧数据/图表区 ========== */}
 
         {/* 频闪数据表格 */}
-        <g transform={`translate(${dataX}, ${vtChartTop})`}>
-          <rect width={dataWidth} height={vp.visibleH * 0.32}
-            fill="white" stroke={CHART_COLORS.gridLine} rx={4} />
-          <text x={dataWidth / 2} y={18} fontSize={FONT.axis}
-            fill={CHART_COLORS.titleText} textAnchor="middle" fontWeight="bold">
-            频闪数据记录表
-          </text>
+        <SvgDataTable
+          x={dataX} y={DATA_LAYOUT.tableY}
+          width={dataWidth}
+          title="频闪数据记录表"
+          data={flashData}
+          maxRows={5}
+          columns={[
+            { key: 't', label: 't(s)', width: 0.15, format: (r) => r.t.toFixed(1) },
+            { key: 'v', label: 'v(m/s)', width: 0.25, format: (r) => r.v.toFixed(2) },
+            { key: 'y', label: 'y(m)', width: 0.25, format: (r) => r.y.toFixed(3) },
+            { key: 'dy', label: 'Δy(m)', width: 0.23,
+              format: (r, i, all) => i > 0 ? (r.y - all[i - 1].y).toFixed(3) : '-' },
+          ]}
+        />
 
-          <rect y={24} width={dataWidth} height={18} fill={CHART_COLORS.gridLine} opacity={0.15} />
-          <line x1={0} y1={42} x2={dataWidth} y2={42}
-            stroke={CHART_COLORS.axisLine} strokeWidth={STROKE.chartMain} />
-          <text x={dataWidth * 0.15} y={37} fontSize={FONT.small}
-            fill={CHART_COLORS.labelText} textAnchor="middle" fontWeight="bold">t(s)</text>
-          <text x={dataWidth * 0.4} y={37} fontSize={FONT.small}
-            fill={CHART_COLORS.labelText} textAnchor="middle" fontWeight="bold">v(m/s)</text>
-          <text x={dataWidth * 0.65} y={37} fontSize={FONT.small}
-            fill={CHART_COLORS.labelText} textAnchor="middle" fontWeight="bold">y(m)</text>
-          <text x={dataWidth * 0.88} y={37} fontSize={FONT.small}
-            fill={CHART_COLORS.labelText} textAnchor="middle" fontWeight="bold">Δy(m)</text>
-
-          {flashData.map((row, i) => {
-            const isCurrent = i === flashData.length - 1
-            const deltaY = i > 0 ? row.y - flashData[i - 1].y : 0
-            const availableH = vp.visibleH * 0.32 - 55
-            const maxRows = Math.min(flashData.length, Math.floor(availableH / 16))
-            const displayRows = flashData.slice(-maxRows)
-            if (!displayRows.includes(row)) return null
-            const idx = displayRows.indexOf(row)
-            const rowY = 50 + idx * 16
-            return (
-              <g key={`row-${i}`}>
-                {isCurrent && (
-                  <rect x={0} y={rowY - 12} width={dataWidth} height={18}
-                    fill={VT_CHART_COLORS.areaShade} opacity={0.25} />
-                )}
-                <text x={dataWidth * 0.15} y={rowY} fontSize={font(9)} fontFamily="monospace"
-                  textAnchor="middle" fill={isCurrent ? PHYSICS_COLORS.velocity : CHART_COLORS.labelText}
-                  fontWeight={isCurrent ? 'bold' : 'normal'}>
-                  {row.t.toFixed(1)}
-                </text>
-                <text x={dataWidth * 0.4} y={rowY} fontSize={font(9)} fontFamily="monospace"
-                  textAnchor="middle" fill={isCurrent ? PHYSICS_COLORS.velocity : CHART_COLORS.labelText}
-                  fontWeight={isCurrent ? 'bold' : 'normal'}>
-                  {row.v.toFixed(2)}
-                </text>
-                <text x={dataWidth * 0.65} y={rowY} fontSize={font(9)} fontFamily="monospace"
-                  textAnchor="middle" fill={isCurrent ? PHYSICS_COLORS.displacement : CHART_COLORS.labelText}
-                  fontWeight={isCurrent ? 'bold' : 'normal'}>
-                  {row.y.toFixed(3)}
-                </text>
-                <text x={dataWidth * 0.88} y={rowY} fontSize={font(9)} fontFamily="monospace"
-                  textAnchor="middle" fill={i > 0 ? CHART_COLORS.compareB : CHART_COLORS.labelText}
-                  fontWeight={isCurrent ? 'bold' : 'normal'}>
-                  {i > 0 ? deltaY.toFixed(3) : '-'}
-                </text>
-                <line x1={0} y1={rowY + 4} x2={dataWidth} y2={rowY + 4}
-                  stroke={CHART_COLORS.gridLine} strokeWidth={STROKE.chartRef} />
-              </g>
-            )
-          })}
+        {/* v-t 图（固定尺寸模式，直接嵌入 SVG <g>） */}
+        <g transform={`translate(${dataX}, ${DATA_LAYOUT.chartY})`}>
+          <VelocityTimeChart
+            fixedSize={{ width: dataWidth, height: DATA_LAYOUT.chartH }}
+            points={vtPoints}
+            domainPoints={vtDomainPoints}
+            currentTime={Math.min(time, vtXMax)}
+            tMax={vtXMax}
+            title="速度－时间图像 (v-t 图)"
+            showArea
+            showGrid
+          />
         </g>
 
-        {/* v-t 图 */}
-        <foreignObject x={dataX} y={vtChartTop + vp.visibleH * 0.32 + 12} width={dataWidth} height={vtChartHeight}>
-          <div style={{ width: '100%', height: '100%' }}>
-            <VelocityTimeChart
-              points={vtPoints}
-              domainPoints={vtDomainPoints}
-              currentTime={Math.min(time, vtXMax)}
-              tMax={vtXMax}
-              title="速度－时间图像 (v-t 图)"
-              showArea
-              showGrid
-            />
-          </div>
-        </foreignObject>
-
-        {/* 底部文字标注（5个） */}
-        <text x={dataX + 8} y={vp.visibleY + vp.visibleH * 0.97} fontSize={FONT.small}
-          fill={PHYSICS_COLORS.velocity} fontFamily="monospace" fontWeight="bold">
-          T = {dripPeriod.toFixed(1)} s
-        </text>
-        <text x={dataX + dataWidth * 0.25} y={vp.visibleY + vp.visibleH * 0.97} fontSize={FONT.small}
+        {/* 底部实时标注（T/g 已移至侧屏，不重复显示） */}
+        <text x={dataX + 8} y={DATA_LAYOUT.labelY} fontSize={FONT.small}
           fill={PHYSICS_COLORS.velocity} fontFamily="monospace" fontWeight="bold">
           v = {nearestPhysics.v.toFixed(2)} m/s
         </text>
-        <text x={dataX + dataWidth * 0.5} y={vp.visibleY + vp.visibleH * 0.97} fontSize={FONT.small}
+        <text x={dataX + dataWidth * 0.5} y={DATA_LAYOUT.labelY} fontSize={FONT.small}
           fill={PHYSICS_COLORS.displacement} fontFamily="monospace" fontWeight="bold">
           h = {nearestPhysics.y.toFixed(3)} m
         </text>
-        <text x={dataX + dataWidth * 0.75} y={vp.visibleY + vp.visibleH * 0.97} fontSize={FONT.small}
-          fill={PHYSICS_COLORS.acceleration} fontFamily="monospace" fontWeight="bold">
-          g = {g.toFixed(3)} m/s²
-        </text>
-        <text x={dataX + dataWidth} y={vp.visibleY + vp.visibleH * 0.97} fontSize={FONT.small}
+        <text x={dataX + dataWidth} y={DATA_LAYOUT.labelY} fontSize={FONT.small}
           fill={PHYSICS_COLORS.labelTextLight} textAnchor="end" fontFamily="monospace">
           φ = {latitude.toFixed(0)}°
         </text>
