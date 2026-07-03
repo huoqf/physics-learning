@@ -19,10 +19,12 @@ import { colors } from '@/theme/colors'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, CANVAS_STYLE, TRANSMISSION_COLORS, CANVAS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_STYLE, TRANSMISSION_COLORS } from '@/theme/physics'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculatePowerTransmission } from '@/physics'
 import { useAnimationFrame } from '@/utils/animation'
+import { LightBulb, TransformerApparatus } from '@/components/Physics'
+
 
 interface PulseBall {
   id: number
@@ -57,6 +59,7 @@ export default function PowerTransmission() {
 
   // ─── 自变量（从 params 读取，单位转换为 SI）──────────────────────────────────
   const mode = params.mode ?? 0
+  const scenario = params.scenario ?? 0
   const P1 = (params.P1 ?? 100) * 1000   // kW → W
   const U2 = (params.U2 ?? 10) * 1000    // kV → V
   const r = params.r ?? 10               // Ω
@@ -65,39 +68,18 @@ export default function PowerTransmission() {
   const showIdeal = (params.showIdeal ?? 0) === 1
 
   // ─── 因变量（纯函数计算）─────────────────────────────────────────────────────
-  const { I_line, deltaU, P_loss, U3, U4, P_user, eta, isOverloaded } = calculatePowerTransmission(
-    P1, U2, r, k
+  const { P1: P1_real, I_line, deltaU, P_loss, U3, U4, P_user, eta, isOverloaded } = calculatePowerTransmission(
+    P1, U2, r, k, mode, N, scenario
   )
 
   // ─── 视觉强度计算 ────────────────────────────────────────────────────────────
-  const lossRatio = P1 === 0 ? 0 : P_loss / P1
+  const lossRatio = P1_real === 0 ? 0 : P_loss / P1_real
+
   const heatIntensity = Math.min(1, lossRatio * 5)
   // 灯泡亮度：基于 U4 相对 220V 额定电压的比例
   const ratedVoltage = 220 // V 用户端额定电压
   const voltageRatio = Math.max(0, Math.min(1, U4 / ratedVoltage))
   const userBrightness = Math.max(0.08, voltageRatio)
-  // 灯泡颜色：220V 纯白 → 180V 橘黄 → 100V 暗红
-  const bulbColor = useMemo(() => {
-    if (voltageRatio > 0.9) {
-      // 正常：纯白
-      return `rgba(255, 255, 240, ${userBrightness})`
-    } else if (voltageRatio > 0.7) {
-      // 偏暗：白→黄过渡
-      const t = (voltageRatio - 0.7) / 0.2
-      const r = 255
-      const g = Math.round(200 + 55 * t)
-      const b = Math.round(100 + 140 * t)
-      return `rgba(${r}, ${g}, ${b}, ${userBrightness})`
-    } else {
-      // 昏暗：橘黄→暗红
-      const t = Math.max(0, (voltageRatio - 0.3) / 0.4)
-      const r = 255
-      const g = Math.round(80 + 120 * t)
-      const b = Math.round(20 + 80 * t)
-      return `rgba(${r}, ${g}, ${b}, ${userBrightness})`
-    }
-  }, [voltageRatio, userBrightness])
-
   // ─── 布局坐标（响应式）───────────────────────────────────────────────────────
   const W = canvasSize.width
   const H = canvasSize.height
@@ -177,21 +159,23 @@ export default function PowerTransmission() {
       .filter(b => b.progress <= 1)
 
     // 熔岩粒子增强：损耗越大，粒子越粗、喷射越快、数量越多
-    const particleSpawnRate = heatIntensity * dt * 20 // 数量倍增
+    const particleSpawnRate = heatIntensity * dt * 20
     if (heatIntensity > 0.02 && Math.random() < particleSpawnRate) {
-      const lineMidX = (lineStartX + lineEndX) / 2
-      const spread = (lineEndX - lineStartX) * 0.5
+      const px_x = lineStartX + Math.random() * (lineEndX - lineStartX)
+      const t_p = (px_x - lineStartX) / (lineEndX - lineStartX)
+      const lineIdx = Math.random() > 0.5 ? 0 : 1
+      const baseLineY = lineIdx === 0 ? nodeY - px(10) : nodeY + px(10)
+      const arcY = baseLineY + 4 * t_p * (1 - t_p) * px(12)
+
       particlesRef.current.push({
         id: nextParticleId.current++,
-        x: lineMidX + (Math.random() - 0.5) * spread,
-        y: nodeY + (Math.random() - 0.5) * px(16),
-        // 喷射速度随损耗增强
-        vy: -(px(20) + Math.random() * px(40) * heatIntensity),
+        x: px_x,
+        y: arcY,
+        vy: -(px(15) + Math.random() * px(30) * heatIntensity),
         opacity: 0.7 + heatIntensity * 0.3,
         life: 0,
-        maxLife: 0.6 + Math.random() * 0.5,
-        // 粒子尺寸随损耗变粗
-        size: px(2.5) + Math.random() * px(5) * heatIntensity,
+        maxLife: 0.8 + Math.random() * 0.6,
+        size: px(1.8) + Math.random() * px(3.5) * heatIntensity,
       })
     }
 
@@ -199,7 +183,7 @@ export default function PowerTransmission() {
       .map(p => ({
         ...p,
         y: p.y + p.vy * dt,
-        x: p.x + (Math.random() - 0.5) * px(8) * dt,
+        x: p.x + (Math.random() - 0.5) * px(12) * dt,
         life: p.life + dt,
         opacity: p.opacity * (1 - p.life / p.maxLife),
       }))
@@ -242,8 +226,9 @@ export default function PowerTransmission() {
     } else if (progress < 0.7) {
       const t = (progress - 0.3) / 0.4
       const lineIdx = Math.floor(t * 2) % 2
-      const lineY = lineIdx === 0 ? nodeY - px(10) : nodeY + px(10)
-      return { x: lineStartX + (lineEndX - lineStartX) * t, y: lineY }
+      const baseLineY = lineIdx === 0 ? nodeY - px(10) : nodeY + px(10)
+      const arcY = baseLineY + 4 * t * (1 - t) * px(12)
+      return { x: lineStartX + (lineEndX - lineStartX) * t, y: arcY }
     } else if (progress < 0.85) {
       const t = (progress - 0.7) / 0.15
       return { x: lineEndX + (stepDownX - px(28) - lineEndX) * t, y: nodeY }
@@ -254,18 +239,19 @@ export default function PowerTransmission() {
   }
 
   // ─── 电压剖面图数据 ──────────────────────────────────────────────────────────
-  // U1 是发电厂输出电压（升压前），假设固定为 10kV（实际由升压变压器决定）
+  // U1 是发电厂输出电压（升压前），假设固定为 10kV
   const U1_display = 10000 // V
   // 视觉夸张：最小可见跌落像素，确保即使 ΔU 很小也能看出下台阶
   const minVisibleDrop = px(30)
-  // 限制 deltaU/U2 的比例在 0-1 范围内，避免 y 坐标超出画布
   const voltageDropRatio = Math.min(1, Math.max(0, deltaU / U2))
   const actualDropPixels = (chartBottom - chartTop) * voltageDropRatio
   const visibleDropPixels = Math.max(actualDropPixels, minVisibleDrop)
   const u3Y = chartTop + visibleDropPixels
-  // U4 相对 U3 的跌落比例（用 k = U4/U3，且以 U2 为基准归一化）
-  const u4DropRatio = Math.min(1, Math.max(0, voltageDropRatio + (1 - voltageDropRatio) * (1 - k)))
-  const u4Y = chartTop + (chartBottom - chartTop) * u4DropRatio
+
+  // U4 视觉折算高度映射（兼顾变比调节与电压跌落视觉成比例位移）
+  const u4Target = 220 * (k / 0.02)
+  const u4Y = chartBottom - (chartBottom - chartTop) * 0.7 * (u4Target === 0 ? 0 : U4 / u4Target)
+  
   const voltagePoints = [
     { x: plantX, y: chartBottom, label: 'U₁', value: U1_display },
     { x: stepUpX, y: chartTop, label: 'U₂', value: U2 },
@@ -273,24 +259,21 @@ export default function PowerTransmission() {
     { x: userX, y: u4Y, label: 'U₄', value: U4 },
   ]
 
-  // 220V 标准电压基准线（在用户端位置绘制）
-  // ratedVoltage 已在视觉强度计算部分定义
-  // 220V 在图中的相对高度：以 U2 为顶部，0V 为底部
-  const ratedRatio = Math.min(1, Math.max(0, ratedVoltage / (U2 * k)))
-  const ratedY = chartTop + (chartBottom - chartTop) * (1 - ratedRatio)
+  // 220V 标准电压基准线（在用户端位置绘制，与 U4 采用同等比例尺以保证对齐）
+  const ratedY = chartBottom - (chartBottom - chartTop) * 0.7 * (u4Target === 0 ? 0 : 220 / u4Target)
 
   // 理想无损耗对比线（无 ΔU 跌落）
   const idealPoints = showIdeal ? [
     { x: plantX, y: chartBottom },
     { x: stepUpX, y: chartTop },
     { x: lineEndX, y: chartTop }, // 无跌落
-    { x: userX, y: chartTop + (chartBottom - chartTop) * 0.05 }, // 理想降压后
+    { x: userX, y: chartBottom - (chartBottom - chartTop) * 0.7 }, // 理想无损用户电压
   ] : []
 
   // ─── 用户端灯泡数量（进阶模式）────────────────────────────────────────────────
   const bulbCount = mode === 1 ? Math.min(20, Math.max(3, Math.ceil(N / 50))) : 3
-  const bulbSpacing = px(30)
-  const bulbsStartX = stepDownX + px(40)
+  const bulbSpacing = px(22)
+  const bulbsStartX = stepDownX + px(35)
 
   return (
     <div ref={containerRef} className="w-full h-full">
@@ -321,6 +304,10 @@ export default function PowerTransmission() {
           <filter id="houseGlow" x="-30%" y="-30%" width="160%" height="160%">
             <feGaussianBlur in="SourceGraphic" stdDeviation={px(1) + userBrightness * px(3)} />
           </filter>
+          <linearGradient id="chartAreaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={TRANSMISSION_COLORS.voltageHigh} stopOpacity="0.25" />
+            <stop offset="100%" stopColor={TRANSMISSION_COLORS.voltageHigh} stopOpacity="0.01" />
+          </linearGradient>
         </defs>
 
         {/* ══════════════════════════════════════════════════════════════════════
@@ -338,6 +325,21 @@ export default function PowerTransmission() {
             stroke={PHYSICS_COLORS.grid} strokeWidth={px(1)} strokeDasharray="4 2" />
           <line x1={plantX} y1={chartBottom} x2={userX + px(20)} y2={chartBottom}
             stroke={PHYSICS_COLORS.grid} strokeWidth={px(1)} />
+
+          {/* 实际电压折线下方面积渐变填充 */}
+          <path
+            d={`M ${plantX} ${chartBottom} L ${plantX} ${chartBottom} L ${stepUpX} ${chartTop} L ${lineEndX} ${u3Y} L ${userX} ${u4Y} L ${userX} ${chartBottom} Z`}
+            fill="url(#chartAreaGrad)"
+          />
+
+          {/* 输电线损耗高亮三角形区域 */}
+          {deltaU > 5 && (
+            <path
+              d={`M ${stepUpX} ${chartTop} L ${lineEndX} ${chartTop} L ${lineEndX} ${u3Y} Z`}
+              fill={TRANSMISSION_COLORS.powerLoss}
+              opacity="0.1"
+            />
+          )}
 
           {/* 理想无损耗对比线 */}
           {showIdeal && idealPoints.length > 0 && (
@@ -359,17 +361,31 @@ export default function PowerTransmission() {
             strokeWidth={px(2.5)}
           />
 
-          {/* 电压节点标注 */}
+          {/* 电压节点标注卡片 */}
           {voltagePoints.map((p, i) => (
             <g key={i}>
+              <circle cx={p.x} cy={p.y} r={px(6)}
+                fill={TRANSMISSION_COLORS.voltageHigh} opacity="0.3" filter="url(#glowFilter)" />
               <circle cx={p.x} cy={p.y} r={px(4)}
                 fill={TRANSMISSION_COLORS.voltageHigh} />
+
+              {/* 数值信息圆角胶囊背景卡片 */}
+              <rect
+                x={p.x - px(24)}
+                y={p.y + px(8)}
+                width={px(48)}
+                height={px(15)}
+                rx={px(4)}
+                fill="rgba(255, 255, 255, 0.85)"
+                stroke={PHYSICS_COLORS.grid}
+                strokeWidth={px(0.8)}
+              />
               <text x={p.x} y={p.y - px(10)} fontSize={font(11)}
                 fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
                 {p.label}
               </text>
-              <text x={p.x} y={p.y + px(16)} fontSize={font(9)}
-                fill={PHYSICS_COLORS.axis} textAnchor="middle">
+              <text x={p.x} y={p.y + px(19)} fontSize={font(8.5)}
+                fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
                 {p.value >= 1000 ? `${(p.value / 1000).toFixed(1)}kV` : `${p.value.toFixed(0)}V`}
               </text>
             </g>
@@ -407,24 +423,40 @@ export default function PowerTransmission() {
           <line x1={lineEndX} y1={nodeY} x2={stepDownX - px(26)} y2={nodeY}
             stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={px(1.5)}
             strokeDasharray="6 3" opacity="0.6" />
-          <line x1={stepDownX + px(26)} y1={nodeY} x2={userX - px(28)} y2={nodeY}
+          <line x1={stepDownX + px(26)} y1={nodeY} x2={userX - px(20)} y2={nodeY}
             stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={px(1.5)}
             strokeDasharray="6 3" opacity="0.6" />
 
-          {/* ─── 输电线（双线 + 热浪效果）────────────────────────────────────── */}
+          {/* ─── 输电线（双线悬垂弧线 + 热浪效果）────────────────────────────── */}
           {heatIntensity > 0.05 && (
             <g filter="url(#heatWave)" opacity={shadowOpacity}>
-              <line x1={lineStartX} y1={nodeY - px(10)} x2={lineEndX} y2={nodeY - px(10)}
-                stroke={TRANSMISSION_COLORS.thermalGlow} strokeWidth={lineWidth + px(6)} />
-              <line x1={lineStartX} y1={nodeY + px(10)} x2={lineEndX} y2={nodeY + px(10)}
-                stroke={TRANSMISSION_COLORS.thermalGlow} strokeWidth={lineWidth + px(6)} />
+              <path
+                d={`M ${lineStartX} ${nodeY - px(10)} Q ${(lineStartX + lineEndX) / 2} ${nodeY - px(10) + px(12)} ${lineEndX} ${nodeY - px(10)}`}
+                fill="none"
+                stroke={TRANSMISSION_COLORS.thermalGlow}
+                strokeWidth={lineWidth + px(6)}
+              />
+              <path
+                d={`M ${lineStartX} ${nodeY + px(10)} Q ${(lineStartX + lineEndX) / 2} ${nodeY + px(10) + px(12)} ${lineEndX} ${nodeY + px(10)}`}
+                fill="none"
+                stroke={TRANSMISSION_COLORS.thermalGlow}
+                strokeWidth={lineWidth + px(6)}
+              />
             </g>
           )}
 
-          <line x1={lineStartX} y1={nodeY - px(10)} x2={lineEndX} y2={nodeY - px(10)}
-            stroke={lineColor} strokeWidth={lineWidth} />
-          <line x1={lineStartX} y1={nodeY + px(10)} x2={lineEndX} y2={nodeY + px(10)}
-            stroke={lineColor} strokeWidth={lineWidth} />
+          <path
+            d={`M ${lineStartX} ${nodeY - px(10)} Q ${(lineStartX + lineEndX) / 2} ${nodeY - px(10) + px(12)} ${lineEndX} ${nodeY - px(10)}`}
+            fill="none"
+            stroke={lineColor}
+            strokeWidth={lineWidth}
+          />
+          <path
+            d={`M ${lineStartX} ${nodeY + px(10)} Q ${(lineStartX + lineEndX) / 2} ${nodeY + px(10) + px(12)} ${lineEndX} ${nodeY + px(10)}`}
+            fill="none"
+            stroke={lineColor}
+            strokeWidth={lineWidth}
+          />
 
           {/* 线路电阻标注 */}
           <text x={(lineStartX + lineEndX) / 2} y={nodeY - px(24)}
@@ -432,61 +464,85 @@ export default function PowerTransmission() {
             textAnchor="middle" fontWeight="bold">
             r = {r} Ω
           </text>
-          <text x={(lineStartX + lineEndX) / 2} y={nodeY + px(30)}
+          <text x={(lineStartX + lineEndX) / 2} y={nodeY + px(32)}
             fontSize={font(10)} fill={TRANSMISSION_COLORS.powerLoss}
             textAnchor="middle">
             ΔP = {(P_loss / 1000).toFixed(1)} kW
           </text>
 
-          {/* 电流方向箭头 */}
-          <polygon
-            points={`${(lineStartX + lineEndX) / 2 + px(10)},${nodeY - px(14)} ${(lineStartX + lineEndX) / 2 + px(16)},${nodeY - px(10)} ${(lineStartX + lineEndX) / 2 + px(10)},${nodeY - px(6)}`}
-            fill={TRANSMISSION_COLORS.currentLine} opacity={0.7} />
-          <polygon
-            points={`${(lineStartX + lineEndX) / 2 - px(10)},${nodeY + px(14)} ${(lineStartX + lineEndX) / 2 - px(16)},${nodeY + px(10)} ${(lineStartX + lineEndX) / 2 - px(10)},${nodeY + px(6)}`}
-            fill={TRANSMISSION_COLORS.currentLine} opacity={0.7} />
-
-          {/* ─── 发电厂 ──────────────────────────────────────────────────────── */}
+          {/* ─── 发电厂（带冷却塔、发电机房和高速汽轮转子） ────────────────────── */}
           <g transform={`translate(${plantX}, ${nodeY})`}>
-            <rect x={-px(24)} y={-px(28)} width={px(48)} height={px(56)} rx={px(6)}
+            {/* 冷却塔 1 */}
+            <path
+              d={`M ${-px(24)} ${px(14)} C ${-px(18)} ${-px(4)}, ${-px(18)} ${-px(12)}, ${-px(20)} ${-px(16)} L ${-px(12)} ${-px(16)} C ${-px(14)} ${-px(12)}, ${-px(14)} ${-px(4)}, ${-px(8)} ${px(14)} Z`}
               fill={PHYSICS_COLORS.objectFill}
               stroke={PHYSICS_COLORS.objectStroke}
-              strokeWidth={px(1.5)} />
-            <g transform={`rotate(${bladeAngle}, 0, 0)`}>
-              <line x1={0} y1={-px(16)} x2={0} y2={-px(4)}
-                stroke={CANVAS_COLORS.objectStroke} strokeWidth={px(2)} strokeLinecap="round" />
-              <line x1={0} y1={px(4)} x2={px(14)} y2={px(12)}
-                stroke={CANVAS_COLORS.objectStroke} strokeWidth={px(2)} strokeLinecap="round" />
-              <line x1={0} y1={px(4)} x2={-px(14)} y2={px(12)}
-                stroke={CANVAS_COLORS.objectStroke} strokeWidth={px(2)} strokeLinecap="round" />
-              <circle cx={0} cy={0} r={px(4)}
-                fill={CANVAS_COLORS.objectStroke} />
+              strokeWidth={px(1)}
+            />
+            {/* 冷却塔 2 */}
+            <path
+              d={`M ${-px(10)} ${px(14)} C ${-px(4)} ${-px(4)}, ${-px(4)} ${-px(12)}, ${-px(6)} ${-px(16)} L ${px(2)} ${-px(16)} C ${px(0)} ${-px(12)}, ${px(0)} ${-px(4)}, ${px(6)} ${px(14)} Z`}
+              fill={PHYSICS_COLORS.objectFill}
+              stroke={PHYSICS_COLORS.objectStroke}
+              strokeWidth={px(1)}
+            />
+            {/* 发电机厂房 */}
+            <rect x={-px(4)} y={-px(2)} width={px(26)} height={px(16)} rx={px(2)}
+              fill={PHYSICS_COLORS.objectFill}
+              stroke={PHYSICS_COLORS.objectStroke}
+              strokeWidth={px(1)} />
+            <polygon points={`${-px(4)},${-px(2)} ${px(9)},${-px(10)} ${px(22)},${-px(2)}`}
+              fill={PHYSICS_COLORS.objectFill}
+              stroke={PHYSICS_COLORS.objectStroke}
+              strokeWidth={px(1)} />
+
+            {/* 汽轮发电机高速转子 */}
+            <g transform={`translate(${px(9)}, ${px(6)})`}>
+              <circle cx={0} cy={0} r={px(8)}
+                fill="none"
+                stroke={PHYSICS_COLORS.grid}
+                strokeWidth={px(0.8)}
+                strokeDasharray="2 2"
+              />
+              <g transform={`rotate(${bladeAngle}, 0, 0)`}>
+                <line x1={0} y1={-px(6)} x2={0} y2={px(6)}
+                  stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={px(1.5)} strokeLinecap="round" />
+                <line x1={-px(6)} y1={0} x2={px(6)} y2={0}
+                  stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={px(1.5)} strokeLinecap="round" />
+                <circle cx={0} cy={0} r={px(2)} fill={PHYSICS_COLORS.electricCurrent} />
+              </g>
             </g>
-            <text x={0} y={px(40)} fontSize={font(12)}
+
+            <text x={0} y={px(32)} fontSize={font(12)}
               fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
               发电厂
             </text>
-            <text x={0} y={px(54)} fontSize={font(9)} fill={PHYSICS_COLORS.axis}
+            <text x={0} y={px(45)} fontSize={font(8.5)} fill={PHYSICS_COLORS.axis}
               textAnchor="middle">
-              P₁={(P1 / 1000).toFixed(0)}kW
+              P₁={(P1_real / 1000).toFixed(1)}kW
             </text>
           </g>
 
-          {/* ─── 升压变压器 ──────────────────────────────────────────────────── */}
+          {/* ─── 升压变压器 ─── */}
           <g transform={`translate(${stepUpX}, ${nodeY})`}>
-            <rect x={-px(22)} y={-px(22)} width={px(44)} height={px(44)} rx={px(4)}
-              fill={PHYSICS_COLORS.objectFill}
-              stroke={PHYSICS_COLORS.magneticField}
-              strokeWidth={px(1.5)} />
-            <circle cx={-px(6)} cy={0} r={px(10)}
-              fill="none" stroke={PHYSICS_COLORS.magneticField} strokeWidth={px(1)} />
-            <circle cx={px(6)} cy={0} r={px(10)}
-              fill="none" stroke={PHYSICS_COLORS.magneticField} strokeWidth={px(1)} />
-            <text x={0} y={px(34)} fontSize={font(12)}
+            <TransformerApparatus
+              x={0}
+              y={0}
+              width={px(40)}
+              height={px(70)}
+              turns1={4}
+              turns2={10}
+              current1={I_line * 1.5}
+              current2={I_line}
+              voltage1={220}
+              animated={isPlaying}
+              px={px}
+            />
+            <text x={0} y={px(48)} fontSize={font(11)}
               fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
-              升压
+              升压变压器
             </text>
-            <text x={0} y={px(48)} fontSize={font(9)} fill={PHYSICS_COLORS.axis}
+            <text x={0} y={px(60)} fontSize={font(8.5)} fill={PHYSICS_COLORS.axis}
               textAnchor="middle">
               U₂={(U2 / 1000).toFixed(0)}kV
             </text>
@@ -512,23 +568,20 @@ export default function PowerTransmission() {
 
           {/* ─── 发热粒子（熔岩渐变：核心亮黄→边缘暗红）────────────────────── */}
           {particles.map(p => {
-            // 粒子生命阶段：初期亮黄 → 中期橙红 → 末期暗红
             const lifeRatio = p.life / p.maxLife
             const particleColor = lifeRatio < 0.3
-              ? colors.accent[400] // 亮黄
+              ? colors.accent[400]
               : lifeRatio < 0.7
-                ? colors.warning[500] // 橙色
-                : TRANSMISSION_COLORS.thermalGlow // 暗红
+                ? colors.warning[500]
+                : TRANSMISSION_COLORS.thermalGlow
             return (
               <g key={p.id}>
-                {/* 外层光晕 */}
                 <circle
                   cx={p.x} cy={p.y}
                   r={p.size * 2}
                   fill={particleColor}
                   opacity={Math.max(0, p.opacity * 0.3)}
                   filter="url(#glowFilter)" />
-                {/* 核心 */}
                 <circle
                   cx={p.x} cy={p.y}
                   r={p.size}
@@ -538,55 +591,49 @@ export default function PowerTransmission() {
             )
           })}
 
-          {/* ─── 降压变压器 ──────────────────────────────────────────────────── */}
+          {/* ─── 降压变压器 ─── */}
           <g transform={`translate(${stepDownX}, ${nodeY})`}>
-            <rect x={-px(22)} y={-px(22)} width={px(44)} height={px(44)} rx={px(4)}
-              fill={PHYSICS_COLORS.objectFill}
-              stroke={PHYSICS_COLORS.magneticField}
-              strokeWidth={px(1.5)} />
-            <circle cx={-px(6)} cy={0} r={px(10)}
-              fill="none" stroke={PHYSICS_COLORS.magneticField} strokeWidth={px(1)} />
-            <circle cx={px(6)} cy={0} r={px(10)}
-              fill="none" stroke={PHYSICS_COLORS.magneticField} strokeWidth={px(1)} />
-            <text x={0} y={px(34)} fontSize={font(12)}
+            <TransformerApparatus
+              x={0}
+              y={0}
+              width={px(40)}
+              height={px(70)}
+              turns1={10}
+              turns2={Math.max(3, Math.round(10 * (k / 0.02)))}
+              current1={I_line}
+              current2={I_line / Math.max(0.01, k)}
+              voltage1={U3 / 100}
+              animated={isPlaying}
+              px={px}
+            />
+            <text x={0} y={px(48)} fontSize={font(11)}
               fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
-              降压
+              降压变压器
             </text>
-            <text x={0} y={px(48)} fontSize={font(9)} fill={PHYSICS_COLORS.axis}
+            <text x={0} y={px(60)} fontSize={font(8.5)} fill={PHYSICS_COLORS.axis}
               textAnchor="middle">
               k={k.toFixed(3)}
             </text>
           </g>
 
-          {/* ─── 用户端灯泡矩阵 ──────────────────────────────────────────────── */}
+          {/* ─── 用户端：采用 LightBulb 既有公共组件矩阵 ───────────────────────── */}
           {Array.from({ length: bulbCount }).map((_, i) => {
             const hx = bulbsStartX + i * bulbSpacing
             const hy = nodeY
+            const singlePower = P_user / bulbCount
+            const visualPower = Math.min(2.5, singlePower / 5000)
 
             return (
-              <g key={i} transform={`translate(${hx}, ${hy})`}>
-                <polygon
-                  points={`${-px(10)},${-px(16)} 0,${-px(24)} ${px(10)},${-px(16)}`}
-                  fill={PHYSICS_COLORS.objectFill}
-                  stroke={PHYSICS_COLORS.objectStroke}
-                  strokeWidth={px(1)} />
-                <rect x={-px(10)} y={-px(16)} width={px(20)} height={px(20)}
-                  fill={PHYSICS_COLORS.objectFill}
-                  stroke={PHYSICS_COLORS.objectStroke}
-                  strokeWidth={px(1)} />
-                <rect x={-px(3)} y={-px(10)} width={px(6)} height={px(12)}
-                  fill={PHYSICS_COLORS.objectFill}
-                  stroke={PHYSICS_COLORS.objectStroke}
-                  strokeWidth={px(0.8)} />
-                <circle cx={0} cy={-px(8)} r={px(3)}
-                  fill={bulbColor}
-                  filter="url(#houseGlow)" />
-                <text x={0} y={px(14)} fontSize={font(7)}
-                  fill={PHYSICS_COLORS.axis}
-                  textAnchor="middle">
-                  {voltageRatio > 0.9 ? '正常' : voltageRatio > 0.7 ? '偏暗' : voltageRatio > 0.3 ? '昏暗' : '停电'}
-                </text>
-              </g>
+              <LightBulb
+                key={i}
+                x={hx}
+                y={hy - px(8)}
+                power={visualPower}
+                time={bladeAngle / 60}
+                scale={px(0.68)}
+                showLabel={false}
+                font={font}
+              />
             )
           })}
 

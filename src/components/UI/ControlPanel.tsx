@@ -6,6 +6,7 @@ import { SegmentedControl } from './SegmentedControl'
 import { Slider } from './Slider'
 import { TipCard } from './TipCard'
 import { ToggleSwitch } from './ToggleSwitch'
+import { LeftPanelSection } from './LeftPanel'
 
 interface ControlPanelProps {
   controls: ControlMeta[]
@@ -242,13 +243,14 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
   return (
     <>
-      {groups.map((group, i) => (
-        <div
+      {groups.map((group) => (
+        <LeftPanelSection
           key={group.label}
-          className={`flex flex-col gap-3${i > 0 ? ' border-t border-neutral-100 pt-3 mt-3' : ''}`}
+          title={group.label}
+          bodyClassName="flex flex-col gap-3"
         >
           {group.controls.map(renderControl)}
-        </div>
+        </LeftPanelSection>
       ))}
     </>
   )

@@ -60,6 +60,8 @@ export { CoupledCoilField } from './CoupledCoilField'
 export { PrimaryCoil } from './PrimaryCoil'
 export { Rails } from './Rails'
 export { RotatingCoil } from './RotatingCoil'
+export { TransformerApparatus } from './TransformerApparatus'
+export type { TransformerApparatusProps } from './TransformerApparatus'
 
 // ============================================================================
 // 电磁学 - 共用组件 (Shared)

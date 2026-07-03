@@ -6,7 +6,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     title: '匀速圆周运动',
     knowledgeId: 'mechanics-5-4',
     Component: lazy(() => import('@/features/mechanics/circular/CircularMotionAnimation')),
-    controlsMode: 'loop' as const,
+    controlsMode: 'timed',
     defaultParams: { r: 5, omega: 1, t: 0, advancedMode: 0, showProjection: 1, showWaveform: 1 } as const,
     paramMeta: [
       { key: 'r', label: '半径 r', min: 5, max: 10, step: 0.1, unit: 'm' },
@@ -49,7 +49,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     title: '开普勒定律',
     knowledgeId: 'mechanics-6-1',
     Component: lazy(() => import('@/features/mechanics/gravitation/KeplerAnimation')),
-    controlsMode: 'loop' as const,
+    controlsMode: 'timed',
     defaultParams: { a: 4.5, b: 3.0, period: 10, mode: 0, a2: 7.5, b2: 6.0 } as const,
     paramMeta: [
       { key: 'a', label: '内轨半长轴 a₁', min: 2.5, max: 5.5, step: 0.1, unit: '' },
@@ -77,7 +77,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     title: '人造卫星宇宙速度与入轨演示',
     knowledgeId: 'mechanics-6-3',
     Component: lazy(() => import('@/features/mechanics/gravitation/SatelliteAnimation')),
-    controlsMode: 'loop' as const,
+    controlsMode: 'timed',
     defaultParams: { r: 7.0, mode: 0, v0: 7.9, isLaunched: 0, showChart: 1, showCompare: 1 } as const,
     paramMeta: [
       { key: 'r', label: '轨道半径 r', min: 6.37, max: 22.0, step: 0.1, unit: '×10⁶ m', showIf: 'mode', showIfValue: 0 },

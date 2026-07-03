@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react'
-import { PHYSICS_COLORS, CANVAS_STYLE, SCENE_COLORS } from '@/theme/physics'
-import { colors } from '@/theme/colors'
+import { PHYSICS_COLORS, CANVAS_STYLE, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { LightBulb } from '@/components/Physics/LightBulb'
 import { tempToColor } from '../utils'
 
@@ -66,8 +65,8 @@ export const HeatingBox = React.memo(function HeatingBox({
         x={0} y={0}
         width={halfW}
         height={chamberH}
-        fill={colors.neutral.white}
-        stroke={isSuccess ? colorSuccess : colors.neutral[200]}
+        fill={CANVAS_COLORS.white}
+        stroke={isSuccess ? colorSuccess : CANVAS_COLORS.grid}
         strokeWidth={isSuccess ? 2 : CANVAS_STYLE.stroke.grid}
         rx={8}
       />
@@ -105,7 +104,7 @@ export const HeatingBox = React.memo(function HeatingBox({
 
         {isAC ? (
           <g transform={`translate(${halfW * 0.05}, ${chamberH * 0.225})`}>
-            <circle r={font(14)} fill={colors.neutral.white} stroke={colorAC} strokeWidth={1.5} />
+            <circle r={font(14)} fill={CANVAS_COLORS.white} stroke={colorAC} strokeWidth={1.5} />
             <path
               d={`M ${-font(8)} 0 Q ${-font(4)} ${-font(5)} 0 0 Q ${font(4)} ${font(5)} ${font(8)} 0`}
               fill="none"
@@ -174,7 +173,7 @@ export const HeatingBox = React.memo(function HeatingBox({
 
       <g style={isSuccess && atPeriodEnd ? flashStyle : undefined}>
         <rect x={slotX} y={slotY} width={slotW} height={slotH}
-          fill={colors.neutral[100]} stroke={colors.neutral[300]}
+          fill={CANVAS_COLORS.gridSubtle} stroke={CANVAS_COLORS.axis}
           strokeWidth={1} rx={font(4)} />
         <clipPath id={`${type}-gauge-clip`}>
           <rect x={slotX} y={slotY} width={slotW} height={slotH} rx={font(4)} />
@@ -188,7 +187,7 @@ export const HeatingBox = React.memo(function HeatingBox({
           <line
             x1={slotX} y1={fillY + ripple}
             x2={slotX + slotW} y2={fillY + ripple}
-            stroke={colors.neutral.white} strokeWidth={2} opacity={0.7}
+            stroke={CANVAS_COLORS.white} strokeWidth={2} opacity={0.7}
           />
         )}
         {!isAC && isSuccess && atPeriodEnd && (
@@ -209,7 +208,7 @@ export const HeatingBox = React.memo(function HeatingBox({
 
       <g transform={`translate(${halfW - font(36)}, ${chamberH * 0.72})`}>
         <rect x={-font(4)} y={0} width={font(8)} height={chamberH * 0.22}
-          fill={colors.neutral[200]} rx={font(3)} />
+          fill={CANVAS_COLORS.grid} rx={font(3)} />
         <rect
           x={-font(4)}
           y={chamberH * 0.22 * (1 - Math.min(1, (temperature - 20) / 60))}

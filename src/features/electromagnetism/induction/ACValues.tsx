@@ -18,6 +18,9 @@ import { useCanvasSize } from '@/utils'
 import { colors } from '@/theme/colors'
 import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { CANVAS_PRESETS } from '@/theme/spacing'
+
+// 设计坐标系常量（与 CANVAS_PRESETS.wide 一致）
+const { width: DESIGN_WIDTH, height: DESIGN_HEIGHT } = CANVAS_PRESETS.wide
 import { useACValuesPhysics } from './hooks/useACValuesPhysics'
 import { ACValuesChartPanel } from './components/ACValuesChartPanel'
 import { HeatingBox } from './components/HeatingBox'
@@ -31,7 +34,10 @@ export default function ACValues() {
     }))
   )
 
-  const [containerRef, { width, height, font }] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef] = useCanvasSize(CANVAS_PRESETS.wide)
+
+  // 设计坐标系下的 font 函数（固定尺寸模式）
+  const font = (size: number) => Math.min(16, Math.max(7, size))
 
   const waveformIdx = params.waveform ?? 0
   const Im = params.Im ?? 5
@@ -73,19 +79,19 @@ export default function ACValues() {
   }, [chartPoints, t, physics.state.Q_ac, physics.state.Q_dc])
 
   const LAYOUT = useMemo(() => {
-    const pad = Math.min(width, height) * 0.02
-    const bottomBarH = font(28)
-    const chartH = height * 0.40
-    const dividerH = font(14)
+    const pad = Math.min(DESIGN_WIDTH, DESIGN_HEIGHT) * 0.02
+    const bottomBarH = 28
+    const chartH = DESIGN_HEIGHT * 0.40
+    const dividerH = 14
     const topChamberH = (chartH - dividerH) * 0.46
     const botChamberH = (chartH - dividerH) * 0.54
     const dividerY = topChamberH
     const botChamberY = dividerY + dividerH
     const chamberY = chartH + pad * 2
-    const chamberH = height - chamberY - pad - bottomBarH
-    const halfW = (width - pad * 3) / 2
+    const chamberH = DESIGN_HEIGHT - chamberY - pad - bottomBarH
+    const halfW = (DESIGN_WIDTH - pad * 3) / 2
     return { pad, chartH, dividerH, topChamberH, botChamberH, dividerY, botChamberY, chamberY, chamberH, halfW, bottomBarH }
-  }, [width, height, font])
+  }, [])
 
   const { pad } = LAYOUT
   const chartMargin = { left: 48, right: 20 }
@@ -114,16 +120,11 @@ export default function ACValues() {
       `}</style>
 
       <svg
-        viewBox={`0 0 ${width} ${height}`}
+        viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`}
         preserveAspectRatio="xMidYMid meet"
         className="w-full h-full select-none"
       >
-        <foreignObject
-          x={chartMargin.left - 4}
-          y={0}
-          width={chartPlotW + 8}
-          height={LAYOUT.chartH}
-        >
+        <g transform={`translate(${chartMargin.left - 4}, 0)`}>
           <ACValuesChartPanel
             wavePoints={physics.wavePoints}
             qPoints={qChartPoints}
@@ -147,8 +148,9 @@ export default function ACValues() {
               period: C_period,
               success: C_success,
             }}
+            fixedSize={{ width: chartPlotW + 8, height: LAYOUT.chartH }}
           />
-        </foreignObject>
+        </g>
 
         <g transform={`translate(0, ${LAYOUT.chamberY})`}>
           <g transform={`translate(${LAYOUT.pad}, 0)`}>
@@ -201,9 +203,9 @@ export default function ACValues() {
         {physics.isSuccess && (
           <g>
             <rect
-              x={width * 0.28}
-              y={height * 0.41}
-              width={width * 0.44}
+              x={DESIGN_WIDTH * 0.28}
+              y={DESIGN_HEIGHT * 0.41}
+              width={DESIGN_WIDTH * 0.44}
               height={font(52)}
               fill={colors.success[50]}
               stroke={C_success}
@@ -212,8 +214,8 @@ export default function ACValues() {
               opacity={0.96}
             />
             <text
-              x={width / 2}
-              y={height * 0.41 + font(22)}
+              x={DESIGN_WIDTH / 2}
+              y={DESIGN_HEIGHT * 0.41 + font(22)}
               fontSize={font(13)}
               fontWeight="bold"
               textAnchor="middle"
@@ -222,8 +224,8 @@ export default function ACValues() {
               ✓ 热效应等效成功！
             </text>
             <text
-              x={width / 2}
-              y={height * 0.41 + font(38)}
+              x={DESIGN_WIDTH / 2}
+              y={DESIGN_HEIGHT * 0.41 + font(38)}
               fontSize={font(10)}
               textAnchor="middle"
               fill={colors.success[600]}
@@ -234,20 +236,20 @@ export default function ACValues() {
         )}
 
         <text
-          x={width / 2}
+          x={DESIGN_WIDTH / 2}
           y={LAYOUT.chamberY + LAYOUT.chamberH + pad + font(12)}
           fontSize={font(9)}
           textAnchor="middle"
-          fill={colors.neutral[400]}
+          fill={CANVAS_COLORS.trackHistory}
         >
           ΔQ = {(physics.state.Q_dc - physics.state.Q_ac).toFixed(2)} J | I_eff = {physics.state.I_eff.toFixed(3)} A | 误差 {Math.abs((Idc - physics.state.I_eff) / Math.max(physics.state.I_eff, 0.01) * 100).toFixed(1)}%
         </text>
         <text
-          x={width / 2}
+          x={DESIGN_WIDTH / 2}
           y={LAYOUT.chamberY + LAYOUT.chamberH + pad + font(22)}
           fontSize={font(8)}
           textAnchor="middle"
-          fill={colors.neutral[400]}
+          fill={CANVAS_COLORS.trackHistory}
           opacity={0.55}
         >
           注：动画为降频可视化模型，微观运动空间与时间尺度已做放大处理。

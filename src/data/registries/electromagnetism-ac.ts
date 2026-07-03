@@ -1,5 +1,7 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
+import { getEffectiveCurrent } from '@/physics/rmsCalculator'
+import type { WaveformType } from '@/physics/rmsCalculator'
 
 // ===== 电磁学 · 交变电流（[M4-1]）=====
 export const electromagnetismAcAnimations = defineAnimations({
@@ -7,7 +9,7 @@ export const electromagnetismAcAnimations = defineAnimations({
     title: '交变电流产生与图像',
     knowledgeId: 'electricity-5-1',
     Component: lazy(() => import('@/features/electromagnetism/induction/ACGeneration')),
-    controlsMode: 'loop' as const,
+    controlsMode: 'timed',
     defaultParams: {
       mode: 0,
       B: 0.5, S: 0.04, omega: 2, N: 100, initialPhase: 0,
@@ -50,8 +52,7 @@ export const electromagnetismAcAnimations = defineAnimations({
     title: '有效值与峰值关系',
     knowledgeId: 'electricity-5-2',
     Component: lazy(() => import('@/features/electromagnetism/induction/ACValues')),
-    SidebarExtra: lazy(() => import('@/features/electromagnetism/induction/ACValuesSidebarExtra')),
-    controlsMode: 'loop' as const,
+    controlsMode: 'timed',
     defaultParams: {
       mode: 0,
       waveform: 0,
@@ -59,8 +60,46 @@ export const electromagnetismAcAnimations = defineAnimations({
       R: 10,
       Idc: 3,
       duty: 0.5,
+      showTheoretical: 0,
     } as const,
-    paramMeta: [],
+    controlMeta: [
+      {
+        type: 'segmented', key: 'mode', label: '实验模式', group: '模型选择', resetOnChange: true,
+        options: [
+          { value: 0, label: '基础：正弦波' },
+          { value: 1, label: '进阶：多波形' },
+        ],
+        onChangeSideEffect: { setParams: { waveform: 0 } },
+      },
+      {
+        type: 'segmented', key: 'waveform', label: '波形类型', group: '子模式', resetOnChange: true,
+        showIf: 'mode', showIfValue: 1,
+        options: [
+          { value: 0, label: '正弦波' },
+          { value: 1, label: '方波' },
+          { value: 2, label: '脉冲波' },
+          { value: 3, label: '半波整流' },
+        ],
+      },
+      {
+        type: 'toggle', key: 'showTheoretical', label: '显示理论有效值', group: '显示辅助',
+      },
+      {
+        type: 'tip', group: '教学提示', variant: 'info', showIf: 'showTheoretical', showIfValue: 1,
+        content: (p) => {
+          const WAVEFORM_MAP: Record<number, WaveformType> = { 0: 'sine', 1: 'square', 2: 'pulse', 3: 'half_sine' }
+          const type = WAVEFORM_MAP[p.waveform ?? 0] ?? 'sine'
+          const I_eff = getEffectiveCurrent({ type, Im: p.Im ?? 5, R: p.R ?? 10, period: 2, dcCurrent: p.Idc ?? 3, duty: p.duty ?? 0.5 })
+          return `理论有效值 I_eff = ${I_eff.toFixed(2)} A`
+        },
+      },
+    ],
+    paramMeta: [
+      { key: 'Im', label: '交流峰值 Im', min: 1, max: 10, step: 0.1, unit: 'A', resetOnChange: true, description: '调节后重置动画，隐藏理论值' },
+      { key: 'R', label: '负载电阻 R', min: 1, max: 20, step: 0.5, unit: 'Ω', resetOnChange: true },
+      { key: 'Idc', label: '直流电流 Idc', min: 0, max: 10, step: 0.01, unit: 'A', description: '调节此滑块使直流热量对齐交流热量' },
+      { key: 'duty', label: '占空比 D', min: 0.1, max: 0.9, step: 0.01, unit: '', showIf: 'waveform', showIfValue: 2, resetOnChange: true },
+    ],
   },
   'anim-transformer': {
     title: '变压器原理',
@@ -87,26 +126,46 @@ export const electromagnetismAcAnimations = defineAnimations({
     title: '远距离输电',
     knowledgeId: 'electricity-5-4',
     Component: lazy(() => import('@/features/electromagnetism/induction/PowerTransmission')),
-    SidebarExtra: lazy(() => import('@/features/electromagnetism/induction/PowerTransmissionSidebarExtra')),
-    controlsMode: 'loop' as const,
+    controlsMode: 'timed',
     defaultParams: {
-      mode: 0,              // 0=基础: 高压输电优越性, 1=进阶: 动态负载与稳压
-      scenario: 0,          // 0=跨省大电网, 1=近郊小供电
-      P1: 100,              // kW 发电功率
-      U2: 11,               // kV 输电电压（配平：U4≈220V）
-      r: 10,                // Ω 线路总电阻
-      k: 0.02,              // 降压变压器变比 k = n4/n3（U4=220V 配平）
-      N: 10,                // 用户并联户数（进阶模式）
-      showIdeal: 0,         // 0/1 显示理想无损耗对比
-      peakLoad: 0,          // 0/1 一键触发傍晚用电高峰
+      mode: 0,
+      P1: 100,
+      U2: 11,
+      r: 10,
+      k: 0.02,
+      N: 10,
+      showIdeal: 0,
+      peakLoad: 0,
     } as const,
+    controlMeta: [
+      {
+        type: 'segmented', key: 'mode', label: '学习模式', group: '模型选择', resetOnChange: true,
+        options: [
+          { value: 0, label: '基础：高压输电优越性' },
+          { value: 1, label: '进阶：动态负载与稳压' },
+        ],
+      },
+      {
+        type: 'preset', label: '一键触发：傍晚用电高峰', group: '快捷预设',
+        showIf: 'mode', showIfValue: 1,
+        params: () => ({ N: 1000, peakLoad: 1 }),
+      },
+      {
+        type: 'toggle', key: 'showIdeal', label: '理想无损对比线', group: '显示辅助',
+      },
+      {
+        type: 'tip', group: '教学提示', variant: 'info', showIf: 'mode', showIfValue: 0,
+        content: '高压输电优越性：提高输电电压 U₂，可以减小输电线电流 I_line，从而大幅减少线路损耗 P_loss = I²r。',
+      },
+      {
+        type: 'tip', group: '教学提示', variant: 'warning', showIf: 'mode', showIfValue: 1,
+        content: '动态负载与稳压：在输电电压 U₂ 恒定时，增加用户户数 N 会使负载总电阻减小，导致输电线电流和线路电压损失 ΔU 增大、用户电压 U₄ 降低（灯泡变暗）。此时需调节变比 k 补偿。',
+      },
+    ],
     paramMeta: [
-      // 基础模式只显示 U2（核心变量）
       { key: 'U2', label: '输电电压 U₂', min: 2, max: 50, step: 1, unit: 'kV' },
-      // 场景预设模式下显示 P1 和 r（近郊小供电）
-      { key: 'P1', label: '发电功率 P₁', min: 100, max: 500, step: 50, unit: 'kW', showIf: 'scenario', showIfValue: 1 },
-      { key: 'r', label: '线路电阻 r', min: 2, max: 50, step: 2, unit: 'Ω', showIf: 'scenario', showIfValue: 1 },
-      // 进阶模式参数
+      { key: 'P1', label: '发电功率 P₁', min: 100, max: 500, step: 50, unit: 'kW' },
+      { key: 'r', label: '线路电阻 r', min: 2, max: 50, step: 2, unit: 'Ω' },
       { key: 'N', label: '用户户数 N', min: 10, max: 1000, step: 10, unit: '户', showIf: 'mode', showIfValue: 1 },
       { key: 'k', label: '降压变比 k=n₄/n₃', min: 0.01, max: 0.1, step: 0.005, unit: '', showIf: 'mode', showIfValue: 1 },
     ],

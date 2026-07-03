@@ -7,7 +7,7 @@ export const thermodynamicsGasLawsAnimations = defineAnimations({
     title: '气体实验三定律',
     knowledgeId: 'thermodynamics-2-1',
     Component: lazy(() => import('@/features/thermodynamics/gasLaws/GasLawsAnimation')),
-    controlsMode: 'loop' as const,
+    controlsMode: 'param',
     defaultParams: {
       mode: 0,
       T: 300,
@@ -42,7 +42,7 @@ export const thermodynamicsGasLawsAnimations = defineAnimations({
     title: '理想气体状态方程',
     knowledgeId: 'thermodynamics-2-2',
     Component: lazy(() => import('@/features/thermodynamics/gasLaws/ClapeyronAnimation')),
-    controlsMode: 'loop' as const,
+    controlsMode: 'param',
     defaultParams: {
       mode: 0,
       V: 5e-3,

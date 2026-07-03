@@ -97,11 +97,10 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 **整体要求**：
 - 左屏基础结构一致，控件分组明确；默认恢复语义清晰
 - 简单模式切换、显示开关、提示卡不再需要手写 SidebarExtra（已通过 controlMeta 实现）
-- 剩余硬骨头需扩展 action 类型后处理
+- ~~剩余硬骨头需扩展 action 类型后处理~~（2026-07-03 已全部解锁）
 
 **待完成**：
-- 扩展 `action` 类型支持自定义回调（解锁 ACValues/PowerTransmission 2 个硬骨头）
-- 剩余 15 个已精简/合理保留的 SidebarExtra 随后续维护逐步清理（2026-07-02 核查：registry 中共 17 个，扣除 2 个硬骨头）
+- 剩余 15 个已精简/合理保留的 SidebarExtra 随后续维护逐步清理（2026-07-03 核查：registry 中共 15 个，硬骨头 0 个）
 
 ### 3.3 其他（P3，暂缓）
 

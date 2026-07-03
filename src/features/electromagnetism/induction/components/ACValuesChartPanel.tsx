@@ -136,6 +136,8 @@ export interface ACValuesChartPanelProps {
     period: string
     success: string
   }
+  /** 固定尺寸模式：传入后返回纯 <g> 而非 <div>+<svg>，用于嵌入主 SVG */
+  fixedSize?: { width: number; height: number }
 }
 
 export const ACValuesChartPanel = React.memo(function ACValuesChartPanel({
@@ -153,6 +155,7 @@ export const ACValuesChartPanel = React.memo(function ACValuesChartPanel({
   qAc,
   qDc,
   colors: chartColors,
+  fixedSize,
 }: ACValuesChartPanelProps) {
   const periodLines = useMemo(() => {
     const count = Math.ceil(maxT / VISUAL_PERIOD)
@@ -168,6 +171,91 @@ export const ACValuesChartPanel = React.memo(function ACValuesChartPanel({
     [qPoints]
   )
 
+  // 固定尺寸模式：每个图表占一半高度
+  const chartW = fixedSize?.width ?? 0
+  const chartH = fixedSize?.height ?? 0
+  const halfH = Math.floor(chartH / 2) - 2 // 减去间距
+
+  if (fixedSize) {
+    // 纯 SVG 模式：直接返回 <g> 元素
+    return (
+      <>
+        <g transform={`translate(0, 0)`}>
+          <VelocityTimeChart
+            points={wavePoints}
+            domainPoints={wavePoints}
+            currentTime={maxT}
+            tMax={maxT}
+            tDomain={[0, maxT]}
+            vRange={[-iAxisRange, iAxisRange]}
+            title="① 电流对比"
+            xLabel="t/s"
+            yLabel="i/A"
+            showCursor={false}
+            showArea={false}
+            series="primary"
+            fixedSize={{ width: chartW, height: halfH }}
+          >
+            <ChartVerticalLines times={periodLines} color={chartColors.period} />
+            <ChartHorizontalLine y={Im} label={`Im=${Im.toFixed(1)}A`} color={chartColors.im} opacity={0.55} />
+            {Idc > 0 && (
+              <ChartHorizontalLine
+                y={Idc}
+                label={`Idc=${Idc.toFixed(2)}A`}
+                color={chartColors.iDC}
+                dash="8,4"
+                opacity={0.85}
+              />
+            )}
+            <ChartCursor
+              x={t}
+              dataPoints={[{ y: iNow, label: 'i', series: 'primary' }]}
+              formatValue={(v) => `${v.toFixed(2)} A`}
+              showLabels
+            />
+          </VelocityTimeChart>
+        </g>
+
+        <g transform={`translate(0, ${halfH + 4})`}>
+          <VelocityTimeChart
+            points={qAcSeries}
+            domainPoints={qAcSeries}
+            currentTime={t}
+            tMax={maxT}
+            tDomain={[0, maxT]}
+            vRange={[0, maxQ]}
+            title="② 热量赛跑"
+            xLabel="t/s"
+            yLabel="Q/J"
+            showCursor={false}
+            showArea={false}
+            series="success"
+            additionalSeries={[{ points: qDcSeries, domainPoints: qDcSeries, label: 'Qdc', series: 'warm' }]}
+            fixedSize={{ width: chartW, height: halfH }}
+          >
+            <ChartVerticalLines
+              times={periodLines}
+              color={chartColors.period}
+              activeTime={isSuccess && atPeriodEnd ? t : undefined}
+              activeColor={chartColors.success}
+            />
+            <ChartCursor
+              x={t}
+              dataPoints={[
+                { y: qAc, label: 'Qac', series: 'success' },
+                { y: qDc, label: 'Qdc', series: 'warm' },
+              ]}
+              formatValue={(v) => `${v.toFixed(1)} J`}
+              showLabels
+            />
+            {isSuccess && atPeriodEnd && <ChartPointPulse x={t} y={qAc} color={chartColors.success} />}
+          </VelocityTimeChart>
+        </g>
+      </>
+    )
+  }
+
+  // HTML 响应式模式（兼容旧用法）
   return (
     <div className="w-full h-full flex flex-col gap-1">
       <div className="flex-1 min-h-0">

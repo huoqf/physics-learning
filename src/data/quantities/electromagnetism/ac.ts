@@ -177,10 +177,13 @@ export function handleAc(
       const U2 = (params.U2 ?? 10) * 1000   // kV → V
       const r = params.r ?? 10              // Ω
       const k = params.k ?? 0.02            // 降压变压器变比 k = n4/n3
+      const mode = params.mode ?? 0
+      const N = params.N ?? 10
+      const scenario = params.scenario ?? 0
 
       // 计算因变量（使用纯函数）
-      const { I_line, deltaU, P_loss, U3, U4, eta } = calculatePowerTransmission(
-        P1, U2, r, k
+      const { P1: P1_real, I_line, deltaU, P_loss, U3, U4, eta } = calculatePowerTransmission(
+        P1, U2, r, k, mode, N, scenario
       )
 
       // 动态高亮链：根据 lastChangedParam 高亮因果链节点
@@ -198,6 +201,7 @@ export function handleAc(
       return {
         quantities: [
           ...base,
+          { label: '实际发电功率 P₁', symbol: 'P_1', value: (P1_real / 1000).toFixed(1), unit: 'kW', color: PHYSICS_COLORS.power, highlight: mode === 1 ? 'extreme' : undefined },
           { label: '线路电流 I', symbol: 'I_{line}', value: I_line.toFixed(2), unit: 'A', color: TRANSMISSION_COLORS.currentLine, highlight: isHighlight('I_line') ? 'extreme' : undefined },
           { label: '电压损失 ΔU', symbol: '\\Delta U', value: deltaU.toFixed(1), unit: 'V', color: TRANSMISSION_COLORS.voltageHigh, highlight: isHighlight('deltaU') ? 'extreme' : undefined },
           { label: '损耗功率 ΔP', symbol: 'P_{loss}', value: (P_loss / 1000).toFixed(2), unit: 'kW', color: TRANSMISSION_COLORS.powerLoss, highlight: isHighlight('P_loss') ? 'extreme' : undefined },
@@ -206,21 +210,21 @@ export function handleAc(
           { label: '输电效率 η', symbol: '\\eta', value: (eta * 100).toFixed(1), unit: '%', color: TRANSMISSION_COLORS.efficiency, highlight: 'extreme' },
         ],
         formulas: [
-          { name: '输电电流 [对应左侧发电功率/输电电压滑块]', latex: 'I_{line} = \\frac{P_1}{U_2}', level: 'core' },
-          { name: '电压损失 [对应中央输电线]', latex: '\\Delta U = I_{line} \\cdot r', level: 'core' },
-          { name: '功率损失 [对应中央线缆红色发热粒子]', latex: 'P_{loss} = I_{line}^2 \\cdot r', level: 'core' },
-          { name: '降压端电压 [对应降压变压器]', latex: 'U_3 = U_2 - \\Delta U', level: 'core' },
-          { name: '用户电压 [对应右侧用户端小房子/灯泡]', latex: 'U_4 = U_3 \\cdot k, \\quad k = \\frac{n_4}{n_3}', level: 'core' },
-          { name: '输电效率 [整体输电性能]', latex: '\\eta = \\frac{P_{user}}{P_1} \\times 100\\%', level: 'core' },
+          { name: '输电线电流', latex: 'I_{line} = \\frac{P_1}{U_2}', level: 'core' },
+          { name: '线路等效折算电阻', latex: 'R_{eq3} = \\frac{R_{load}}{k^2} \\quad (k = \\frac{n_4}{n_3})', level: 'derived' },
+          { name: '电压损失与损耗功率', latex: '\\Delta U = I_{line}r, \\quad P_{loss} = I_{line}^2r', level: 'core' },
+          { name: '降压原副线圈电压', latex: 'U_3 = U_2 - \\Delta U, \\quad U_4 = U_3 \\cdot k', level: 'core' },
+          { name: '输电效率', latex: '\\eta = \\frac{P_{user}}{P_1} = \\frac{U_3}{U_2} = 1 - \\frac{\\Delta U}{U_2}', level: 'core' },
         ],
         gaokaoPoints: [
-          { text: '高压输电优越性：提高 U₂ → 降低 I_line → 大幅减少 P_loss = I²r', importance: 'gaokao' },
-          { text: '动态链分析：N↑ ⇒ R_user↓ ⇒ I_line↑ ⇒ ΔU↑ ⇒ U₃↓ ⇒ U₄↓', importance: 'gaokao' },
-          { text: '稳压补偿：调节 k = n₄/n₃ 可维持 U₄ 恒定', importance: 'hard' },
+          { text: '高压输电优越性：提高 U₂ ⇒ 减小 I_line ⇒ 大幅减少 P_loss = I²r（电压变 n 倍，损耗降为 1/n² ）。', importance: 'gaokao' },
+          { text: '动态负载铁律：用户增加 ⇒ R_load↓ ⇒ 折算电阻 R_eq3↓ ⇒ 总电阻↓ ⇒ I_line↑ ⇒ ΔU↑ ⇒ U₃↓ ⇒ U₄↓（用电器变暗）。', importance: 'gaokao' },
+          { text: '等效电阻秒杀法：将变压器副线圈负载 R_load 折算到原线圈回路，公式为 R_eq = R_load / k²。', importance: 'hard' },
+          { text: '稳压补偿手段：用电高峰时 U₄ 降低，增大 k = n₄/n₃（即增加降压变压器副线圈匝数）可使 U₄ 回升。', importance: 'hard' },
         ],
         warnings: [
-          { text: '严禁使用 P_loss = U₂²/r，真正施加在 r 两端的电压仅为 ΔU', level: 'danger' },
-          { text: '误认为输电电压 U₂ 越高越好。实际上，电压过高会导致绝缘成本增加、电晕损耗等问题', level: 'warning' },
+          { text: '严禁使用 P_loss = U₂²/r 算损耗，真正施加在输电线两端的电压仅为 ΔU = I·r，而非输电电压 U₂！', level: 'danger' },
+          { text: '发电机输出功率 P₁ 不是固定不变的！在动态负载下，P₁ 被动地跟随用户侧负载阻值改变而改变（P₁ = U₂·I_line）。', level: 'warning' },
         ],
       }
     }

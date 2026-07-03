@@ -1,6 +1,6 @@
 # SidebarExtra 收敛状态
 
-> 最后更新：2026-07-02 | 完成记录：[2026-W27.md](./logs/2026-W27.md)
+> 最后更新：2026-07-03 | 完成记录：[2026-W27.md](./logs/2026-W27.md)
 
 ---
 
@@ -8,27 +8,27 @@
 
 | 指标 | 数值 |
 |------|------|
-| SidebarExtra 注册总量 | 17（原始 61，已删除 44） |
-| 硬骨头（不可迁移） | 2 |
+| SidebarExtra 注册总量 | 15（原始 61，已删除 46） |
+| 硬骨头（不可迁移） | 0 |
 | 已精简/合理保留 | 15 |
 
 ---
 
-## 仍需手写 JSX 的硬骨头（2 个）
+## 已解锁的原硬骨头（2 个）
 
-| SidebarExtra | 阻塞原因 | 可能的解锁路径 |
-|---|---|---|
-| `ACValuesSidebarExtra` | Auto 按钮含 `getEffectiveCurrent()` 计算 + `useState(revealed)` 内部状态 | 扩展 action 类型支持计算回调 |
-| `PowerTransmissionSidebarExtra` | 步进按钮（升/降电压）含计算逻辑 | 扩展 action 类型 |
+| SidebarExtra | 解锁方式 |
+|---|---|
+| `ACValuesSidebarExtra` | toggle + tip 动态 content 替代 Auto 按钮 |
+| `PowerTransmissionSidebarExtra` | 删除升/降变比按钮，用已有 k 滑块替代 |
 
-### 其他保留（3 个，有技术阻塞或合理保留）
+### 其他保留（有技术阻塞或合理保留）
 
 | SidebarExtra | 原因 |
 |---|---|
 | `FieldLinesSidebar` | segmented 切换时需条件分支重置探针位置 |
 | `UniformAccelerationSidebar` | areaMode segmented（复杂 side effect）+ 自定义 range input |
 | `FreeFallSidebar` | 已精简为纯提示卡片（环境状态 + g 值显示），保留用于动态 tip 内容 |
-| 其余 10 个 | 力学能量/动力学/运动学/热学/直流电路等，已大幅精简 |
+| 其余 11 个 | 力学能量/动力学/运动学/热学/直流电路等，已大幅精简 |
 
 ---
 
@@ -46,7 +46,6 @@
 
 **仍不支持的能力**：
 - action 按钮附带 params 更新（如 SatelliteSidebar 的 launch 需先 setParams）
-- action 按钮执行计算回调（如 ACValues 的 Auto 等效）
 
 ### 左屏区块顺序约定
 
@@ -69,15 +68,4 @@ controlMeta 数组中 `group` 字段的排列顺序决定渲染顺序：
 
 ## 后续推进
 
-解锁剩余 3 个硬骨头需扩展 `action` 类型：
-
-```ts
-// 目前 action 只支持语义化枚举
-action: 'launch' | 'restart' | 'reset' | 'setDirection'
-
-// 需扩展为支持自定义回调
-action: 'launch' | 'restart' | 'reset' | 'setDirection' | 'custom'
-onAction?: (params: Record<string, number>, setParams: (p: Record<string, number>) => void) => void
-```
-
-优先级：PowerTransmission（步进按钮） > ACValues（计算逻辑最复杂）
+所有硬骨头已解锁，剩余 15 个 SidebarExtra 随后续维护逐步清理。

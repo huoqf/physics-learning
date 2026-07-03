@@ -137,10 +137,13 @@ export function computeACGenerationState(
  *   【降压端】U3 = U2 - ΔU → P3 = P1 - P_loss
  *   【用户端】U4 = U3·k → P_user = P3（理想变压器，k = n4/n3）
  *
- * @param P1 发电功率 (W) — 自变量
+ * @param P1 发电功率 / 额定发电功率 (W) — 自变量
  * @param U2 输电电压，升压变压器副线圈电压 (V) — 自变量
  * @param r  输电线总电阻 (Ω) — 自变量
  * @param k  降压变压器变比 k = n4/n3 — 自变量
+ * @param mode 实验模式：0=基础（高压输电优越性），1=进阶（动态负载与稳压）
+ * @param N 用户并联户数 (户)
+ * @param scenario 场景预设：0=跨省大电网，1=近郊小供电
  * @returns 完整四电压四功率链路（所有中间变量）
  *
  * @category M4
@@ -150,8 +153,11 @@ export function calculatePowerTransmission(
   U2: number,
   r: number,
   k: number,
+  mode: number = 0,
+  N: number = 10,
+  scenario: number = 0,
 ): {
-  /** 发电功率 (W) */
+  /** 发电功率 / 动态发电功率 (W) */
   P1: number
   /** 输电线电流 (A) */
   I_line: number
@@ -172,26 +178,68 @@ export function calculatePowerTransmission(
   /** 参数是否导致线路损耗超过供给或电压跌为负（非物理过载） */
   isOverloaded: boolean
 } {
-  // 【输电线】
-  const I_line = U2 === 0 ? 0 : P1 / U2
-  const deltaU = I_line * r
-  const P_loss = I_line * I_line * r
+  if (mode === 0) {
+    // 基础模式：恒定输入功率模型（保持原样）
+    const I_line = U2 === 0 ? 0 : P1 / U2
+    const deltaU = I_line * r
+    const P_loss = I_line * I_line * r
 
-  // 【降压端】
-  const rawU3 = U2 - deltaU
-  const rawP3 = P1 - P_loss
-  const isOverloaded = rawU3 < 0 || rawP3 < 0
+    const rawU3 = U2 - deltaU
+    const rawP3 = P1 - P_loss
+    const isOverloaded = rawU3 < 0 || rawP3 < 0
 
-  // 非物理过载参数下，用户端不应出现负电压/负功率，钳制为 0 供 UI 告警态使用
-  const U3 = Math.max(0, rawU3)
-  const P3 = Math.max(0, rawP3)
+    const U3 = Math.max(0, rawU3)
+    const P3 = Math.max(0, rawP3)
 
-  // 【用户端】U4 = U3 * k
-  const U4 = U3 * k
-  const P_user = P3
+    const U4 = U3 * k
+    const P_user = P3
 
-  // 【效率】
-  const eta = P1 === 0 ? 0 : Math.max(0, Math.min(1, P_user / P1))
+    const eta = P1 === 0 ? 0 : Math.max(0, Math.min(1, P_user / P1))
 
-  return { P1, I_line, deltaU, P_loss, U3, P3, U4, P_user, eta, isOverloaded }
+    return { P1, I_line, deltaU, P_loss, U3, P3, U4, P_user, eta, isOverloaded }
+  } else {
+    // 进阶模式：动态负载与等效电阻折算模型（满足高考压轴考点）
+    // 1. 自适应真实降压变比 k_real，使得在无损耗且 k=0.02 时用户电压恰为 220V
+    const k_real = U2 === 0 ? 0 : (220 / U2) * (k / 0.02)
+
+    // 2. 确定单户额定功率与电阻。当 N=10、无损、k=0.02 时，用户总功率为 P1_nominal
+    const P1_nominal = scenario === 0 ? 500000 : 100000
+    const R_user = (220 * 220 * 10) / P1_nominal
+
+    // 3. 计算当前户数 N 下的用户总电阻 R_load = R_user / N
+    const R_load = N === 0 ? Infinity : R_user / N
+
+    // 4. 将用户端电阻折算到输电线原线圈端 (等效输入电阻) R_eq3 = R_load / k_real^2
+    const R_eq3 = k_real === 0 ? Infinity : R_load / (k_real * k_real)
+
+    // 5. 输电线路总等效电阻
+    const R_total = r + R_eq3
+
+    // 6. 输电线电流
+    const I_line = U2 === 0 || R_total === Infinity ? 0 : U2 / R_total
+
+    // 7. 发电厂实际输出功率（被动跟随负载）
+    const P1_real = U2 * I_line
+
+    // 8. 线路损耗
+    const deltaU = I_line * r
+    const P_loss = I_line * I_line * r
+
+    // 9. 降压变压器输入端
+    const rawU3 = U2 - deltaU
+    const rawP3 = P1_real - P_loss
+    const isOverloaded = rawU3 < 0 || rawP3 < 0
+
+    const U3 = Math.max(0, rawU3)
+    const P3 = Math.max(0, rawP3)
+
+    // 10. 用户端实际电压与功率
+    const U4 = U3 * k_real
+    const P_user = P3
+
+    // 11. 输电效率
+    const eta = P1_real === 0 ? 0 : Math.max(0, Math.min(1, P_user / P1_real))
+
+    return { P1: P1_real, I_line, deltaU, P_loss, U3, P3, U4, P_user, eta, isOverloaded }
+  }
 }
