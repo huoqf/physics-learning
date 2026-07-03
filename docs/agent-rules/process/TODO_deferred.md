@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-03（核对项目现状，更新行数与 store 数据）
+> 最后更新：2026-07-03（PowerTransmission 拆分完成，更新行数与 store 数据）
 
 ---
 
@@ -59,6 +59,7 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 |------|------:|------:|---------|:----:|
 | `MomentumConservationAnimation.tsx` | 743 | 329 | 抽 `useMomentumConservationPhysics` hook + 复用 `src/physics/momentumConservation` | JSX 零物理公式 ✓ <br> tsc + 385 tests pass ✓ |
 | `KeplerAnimation.tsx` | 673 | 460 | 抽 `useKeplerPhysics` hook + 复用 `src/physics/celestial` | JSX 零物理公式 ✓ <br> font()/colors 修复 ✓ <br> DESIGN_WIDTH/HEIGHT 常量 ✓ <br> tsc + 385 tests pass ✓ |
+| `PowerTransmission.tsx` | 696 | 256 | 抽 `usePowerTransmissionPhysics` hook + `VoltageProfileChart` + `NetworkTopology` + `PowerInfoBar` | JSX 零物理公式 ✓ <br> 物理计算已在 `src/physics/acCircuit.ts` ✓ <br> tsc + 385 tests pass ✓ |
 
 ### 待处理
 
@@ -66,9 +67,9 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 |------|-----:|:---:|---------|-----:|
 
 > 观察（2026-07-03 核对）：以下文件超过 500 行，行数以本次核对为准：
-> - `PowerTransmission.tsx`(634)、`SpringCompositeAnimation.tsx`(585)、`TIRAnimation.tsx`(564)、`FieldLines.tsx`(559)、`ConnectedBodiesAnimation.tsx`(557)、`LenzsLawCanvas.tsx`(542)、`InclineForceDiagram.tsx`(539)、`GravityBasicAnimation.tsx`(519)、`CircularMotionAnimation.tsx`(506)
-> - 临近阈值（450-499）：`LightRodRopeScene.tsx`(485)、`SimulationView.tsx`(478)、`WorkFSChart.tsx`(469)、`RefractionAnimation.tsx`(462)、`AccelerationCenterExtra.tsx`(462)、`KeplerAnimation.tsx`(460)、`GravityAnimation.tsx`(459)、`ImpulseAnimation.tsx`(457)、`UniformAccelerationAnimation.tsx`(455)、`FreeFallDripAnimation.tsx`(448)
-> - 已降至 500 以下：`KeplerAnimation.tsx`(460)、`FreeFallDripAnimation.tsx`(448)
+> - `SpringCompositeAnimation.tsx`(585)、`TIRAnimation.tsx`(564)、`FieldLines.tsx`(559)、`ConnectedBodiesAnimation.tsx`(557)、`LenzsLawCanvas.tsx`(542)、`InclineForceDiagram.tsx`(539)、`GravityBasicAnimation.tsx`(519)、`CircularMotionAnimation.tsx`(506)
+> - 临近阈值（450-499）：`LightRodRopeScene.tsx`(485)、`SimulationView.tsx`(478)、`WorkFSChart.tsx`(469)、`RefractionAnimation.tsx`(462)、`AccelerationCenterExtra.tsx`(462)、`GravityAnimation.tsx`(459)、`ImpulseAnimation.tsx`(457)、`UniformAccelerationAnimation.tsx`(455)
+> - 已拆分：`PowerTransmission.tsx`(696→256)、`KeplerAnimation.tsx`(673→460)、`FreeFallDripAnimation.tsx`(560→448)
 
 ---
 
