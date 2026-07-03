@@ -125,7 +125,21 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
     paramMeta: [
       { key: 'qSource', label: '场源电量 Q', min: 1, max: 10, step: 0.5, unit: 'μC' },
     ],
-    SidebarExtra: lazy(() => import('@/features/electromagnetism/electrostatics/FieldLinesSidebar')),
+    controlMeta: [
+      { type: 'segmented', key: 'topology', label: '拓扑场景', group: '模型选择', resetOnChange: true,
+        options: [
+          { value: 0, label: '单正电荷' },
+          { value: 1, label: '单负电荷' },
+          { value: 2, label: '等量异种' },
+          { value: 3, label: '等量同种' },
+        ],
+        onChangeSideEffect: { setParams: { probeX: 350, probeY: 150, probeStartX: 350, probeStartY: 150 } } },
+      { type: 'toggle', key: 'showFieldLines', label: '黄色电场线', group: '显示辅助' },
+      { type: 'toggle', key: 'showEquipotentials', label: '紫色等势面', group: '显示辅助' },
+      { type: 'tip', group: '教学提示', variant: 'primary',
+        title: '💡 物理探究与测试',
+        content: '1. 等势面不做功验证：拖动探针沿紫色等势面弧形移动，观察做功 W 稳定在 0。2. 沿场线做功最大：沿黄色电场线纵深方向拖动，做功剧烈变化。3. 盲测验证：关闭电场线图层，根据等势面疏密自主判断场强分布。' },
+    ],
   },
   'anim-electric-potential': {
     title: '电势与电势差',

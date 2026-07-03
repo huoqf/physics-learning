@@ -200,6 +200,9 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             key={`${control.type}-${control.label}-${index}`}
             variant={control.variant ?? 'secondary'}
             onClick={() => {
+              if (control.setParams) {
+                Object.entries(control.setParams).forEach(([k, v]) => updateParam(k, v))
+              }
               switch (control.action) {
                 case 'launch':
                 case 'restart':
@@ -210,6 +213,15 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                   break
                 case 'setDirection':
                   setDirection?.(control.directionValue ?? 1)
+                  break
+                case 'setDirectionAndRestart':
+                  setDirection?.(control.directionValue ?? 1)
+                  restartAnimation()
+                  break
+                case 'resetAndRestart':
+                  resetAnimation()
+                  setDirection?.(control.directionValue ?? -1)
+                  restartAnimation()
                   break
               }
             }}
@@ -241,15 +253,40 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     }
   }
 
+  const renderControls = (controls: ControlMeta[]) => {
+    const result: React.ReactNode[] = []
+    let i = 0
+    while (i < controls.length) {
+      // 连续 action 控件并排渲染
+      if (controls[i].type === 'action') {
+        const row: ControlMeta[] = []
+        const startIdx = i
+        while (i < controls.length && controls[i].type === 'action') {
+          row.push(controls[i])
+          i++
+        }
+        result.push(
+          <div key={`action-row-${startIdx}`} className="grid grid-cols-2 gap-2">
+            {row.map((c, j) => renderControl(c, j))}
+          </div>
+        )
+      } else {
+        result.push(renderControl(controls[i], i))
+        i++
+      }
+    }
+    return result
+  }
+
   return (
     <>
       {groups.map((group) => (
         <LeftPanelSection
           key={group.label}
-          title={group.label}
+          title={group.controls.length > 1 ? group.label : undefined}
           bodyClassName="flex flex-col gap-3"
         >
-          {group.controls.map(renderControl)}
+          {renderControls(group.controls)}
         </LeftPanelSection>
       ))}
     </>

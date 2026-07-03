@@ -98,8 +98,10 @@ export type ControlMeta =
       type: 'action'
       label: string
       variant?: 'primary' | 'secondary' | 'danger'
-      action: 'launch' | 'restart' | 'reset' | 'setDirection'
+      action: 'launch' | 'restart' | 'reset' | 'setDirection' | 'setDirectionAndRestart' | 'resetAndRestart'
       directionValue?: 1 | -1
+      /** 动作执行前先设置指定参数 */
+      setParams?: Record<string, number>
     })
   | (ControlCondition & {
       type: 'storeToggle'

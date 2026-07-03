@@ -223,10 +223,17 @@ export const mechanicsEnergyAnimations = defineAnimations({
         showIfValue: 1,
       },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/energy/PotentialEnergySidebar')),
     controlMeta: [
       { type: 'segmented', key: 'mode', label: '势能实验场景', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '重力势能' }, { value: 1, label: '弹性势能' }] },
+      { type: 'preset', label: '🌍 地球 g=9.8', group: '环境重力场', params: { g: 9.8 },
+        showIf: 'mode', showIfValue: 0 },
+      { type: 'preset', label: '🌙 月球 g=1.63', group: '环境重力场', params: { g: 1.63 },
+        showIf: 'mode', showIfValue: 0 },
+      { type: 'preset', label: '🔴 火星 g=3.72', group: '环境重力场', params: { g: 3.72 },
+        showIf: 'mode', showIfValue: 0 },
+      { type: 'preset', label: '🪐 木星 g=24.79', group: '环境重力场', params: { g: 24.79 },
+        showIf: 'mode', showIfValue: 0 },
       { type: 'preset', label: '🍏 地平参考面', group: '参考面经典预设',
         params: ((c: Record<string, number>) => c.mode === 1
           ? { mode: 0, m: 2.0, g: 9.8, y0: 8.0, y_ref: 0.0 }
@@ -369,7 +376,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
     knowledgeId: 'mechanics-7-6-2',
     maxTime: 6,
     Component: lazy(() => import('@/features/mechanics/energy/LightRodRopeAnimation')),
-    defaultParams: { m1: 1.0, m2: 1.0, L: 1.2, constraint: 0, showParticles: 1, theta0: 30, v0: 0.0, showGravity: 1, showTension: 1, showResolution: 1 } as const,
+    defaultParams: { m1: 1.0, m2: 1.0, L: 1.2, constraint: 0, showParticles: 1, theta0: 30, v0: 0.0, showGravity: 1, showTension: 1, showResolution: 1, showVelocityDecomp: 0 } as const,
     paramMeta: [
       { key: 'm1', label: 'A球质量 m₁', min: 0.5, max: 1.5, step: 0.1, unit: 'kg' },
       { key: 'm2', label: 'B球质量 m₂', min: 0.5, max: 1.5, step: 0.1, unit: 'kg' },
@@ -377,6 +384,17 @@ export const mechanicsEnergyAnimations = defineAnimations({
       { key: 'theta0', label: '初始偏角 θ₀', min: 15, max: 90, step: 5, unit: '°' },
       { key: 'v0', label: '初始速度 v₀', min: 0.0, max: 6.0, step: 0.5, unit: 'm/s', hideIf: 'constraint', hideIfValue: 1 },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/energy/LightRodRopeSidebar')),
+    controlMeta: [
+      { type: 'segmented', key: 'constraint', label: '连接约束拓扑', group: '模型选择', resetOnChange: true,
+        options: [{ value: 0, label: '轻杆双球' }, { value: 1, label: '定滑轮绳连' }, { value: 2, label: '双绳串联' }] },
+      { type: 'toggle', key: 'showGravity', label: '显示重力矢量 G', group: '显示辅助' },
+      { type: 'toggle', key: 'showTension', label: '显示杆/绳拉力 F', group: '显示辅助' },
+      { type: 'toggle', key: 'showResolution', label: '显示拉力分解 (径/切)', group: '显示辅助',
+        showIf: 'constraint', showIfValue: 0 },
+      { type: 'toggle', key: 'showParticles', label: '能量流向粒子特效', group: '显示辅助',
+        showIf: 'constraint', showIfValue: 0 },
+      { type: 'toggle', key: 'showVelocityDecomp', label: '显示速度分解三角形', group: '显示辅助',
+        showIf: 'constraint', showIfValue: 2 },
+    ],
   },
 });

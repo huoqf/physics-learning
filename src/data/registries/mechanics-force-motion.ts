@@ -23,6 +23,9 @@ export const mechanicsForceMotionAnimations = defineAnimations({
     // 尾部空白过多。同常量也被 ForceMotionTopic 用于生成图表 domainPoints，
     // 单一来源避免播放上限与图表定标范围不一致。
     maxTime: FORCE_MOTION_MAX_TIME,
+    controlMeta: [
+      { type: 'tip', group: '教学提示', content: '选择模式后调节参数，点击播放观察小球运动、矢量箭头与三图表同步变化。' },
+    ],
     SidebarExtra: lazy(() => import('@/features/mechanics/force-motion/ForceMotionSidebar')),
   },
 })

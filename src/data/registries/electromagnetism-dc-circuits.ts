@@ -24,7 +24,6 @@ export const electromagnetismDcCircuitsAnimations = defineAnimations({
     knowledgeId: 'electricity-2-2',
     Component: lazy(() => import('@/features/electromagnetism/dc-circuits/CircuitAnalysis')),
     CenterExtra: lazy(() => import('@/features/electromagnetism/dc-circuits/CircuitAnalysisCenterExtra')),
-    SidebarExtra: lazy(() => import('@/features/electromagnetism/dc-circuits/CircuitAnalysisSidebar')),
     controlsMode: 'param' as const,
     centerExtraHeight: 'h-2/5',
     paramMeta: [
@@ -40,6 +39,14 @@ export const electromagnetismDcCircuitsAnimations = defineAnimations({
         options: [{ value: 0, label: '串联电路' }, { value: 1, label: '并联电路' }] },
       { type: 'toggle', key: 'showChart', label: '显示分配对比柱状图', group: '显示辅助' },
       { type: 'toggle', key: 'isSymbolic', label: '显示电学原理图 (符号模式)', group: '显示辅助' },
+      { type: 'tip', group: '教学提示', content: (p: Record<string, number>) => {
+        const R2 = p.R2 ?? 10
+        return R2 === 0
+          ? '当前变阻器为 0Ω (短路)。基础并联时电路总电阻趋于 0，干路电流极大；混联时并联部分短路，R₃无电流。'
+          : R2 === 100
+          ? '当前变阻器为 100Ω。观察当 R₂ 增大到极限（断路）时，各电表的读数逼近哪个固定数值。'
+          : '拖动 R₂ 滑块，观察电荷粒子流速及导线亮度的此消彼长。右侧将同步显示"串反并同"的推导链条。'
+      } },
     ],
     defaultParams: { U: 12, R1: 20, R2: 10, R3: 30, mode: 0, subMode: 0, showChart: 1, isSymbolic: 0 } as const,
   },
@@ -48,7 +55,6 @@ export const electromagnetismDcCircuitsAnimations = defineAnimations({
     knowledgeId: 'electricity-2-3',
     Component: lazy(() => import('@/features/electromagnetism/dc-circuits/ClosedCircuit')),
     CenterExtra: lazy(() => import('@/features/electromagnetism/dc-circuits/ClosedCircuitCenterExtra')),
-    SidebarExtra: lazy(() => import('@/features/electromagnetism/dc-circuits/ClosedCircuitSidebar')),
     controlsMode: 'param' as const,
     controlMeta: [
       { type: 'number', key: 'R', label: '外电阻 R (滑动变阻器)', min: 0.1, max: 20, step: 0.1, unit: 'Ω' },

@@ -8,29 +8,52 @@
 
 | 指标 | 数值 |
 |------|------|
-| SidebarExtra 注册总量 | 12（原始 61，已删除 49） |
-| 硬骨头（不可迁移） | 0 |
-| 已精简/合理保留 | 12 |
+| SidebarExtra 注册总量 | 2（原始 61，已删除 59） |
+| 已迁移至 controlMeta | 9 |
+| 保留（技术阻塞） | 2 |
+| 孤立文件已清理 | 13 |
 
 ---
 
-## 已解锁的原硬骨头（2 个）
+## 本次清理成果
 
-| SidebarExtra | 解锁方式 |
+### 已删除（孤立/空壳文件，12 个）
+
+| 文件 | 原因 |
+|------|------|
+| `SpringBlocksSidebar.tsx` | 已空壳（返回 null） |
+| `KinematicsAdvancedSidebar.tsx` | 已空壳（返回 null） |
+| `CoulombLawSidebar.tsx` | 无 registry 引用 |
+| `VectorAdditionSidebar.tsx` | 无 registry 引用 |
+| `EquilibriumSidebar.tsx` | 无 registry 引用 |
+| `EnergyConservationSidebar.tsx` | 无 registry 引用 |
+| `KineticEnergySidebar.tsx` | 无 registry 引用 |
+| `PowerSidebar.tsx` | 无 registry 引用 |
+| `KeplerSidebar.tsx` | 无 registry 引用 |
+| `WorkSidebar.tsx` | 无 registry 引用 |
+| `ACValuesSidebarExtra.tsx` | 无 registry 引用 |
+| `PowerTransmissionSidebarExtra.tsx` | 无 registry 引用 |
+
+### 已迁移至 controlMeta（9 个）
+
+| SidebarExtra | 迁移方式 |
 |---|---|
-| `ACValuesSidebarExtra` | toggle + tip 动态 content 替代 Auto 按钮 |
-| `PowerTransmissionSidebarExtra` | 删除升/降变比按钮，用已有 k 滑块替代 |
+| `SecondLawSidebar` | action: setDirectionAndRestart + resetAndRestart |
+| `CircuitAnalysisSidebar` | tip: 动态 content 函数 |
+| `ClosedCircuitSidebar` | 直接删除（纯展示，paramMeta 已覆盖） |
+| `GravityBasicSidebar` | segmented: suspendPoint 悬挂孔选择 |
+| `GravitySidebar` | segmented: preset 天体系统选择 |
+| `PotentialEnergySidebar` | preset: 4 个重力场预设 |
+| `LightRodRopeSidebar` | segmented + 5 个 toggle |
+| `FieldLinesSidebar` | segmented + 2 toggle + tip（探针重置简化为固定位置） |
+| `SatelliteSidebar` | preset(速度) + action(发射/重置, setParams) + tip |
 
-### 其他保留（有技术阻塞或合理保留）
+### 保留（技术阻塞，2 个）
 
 | SidebarExtra | 原因 |
 |---|---|
-| `FieldLinesSidebar` | segmented 切换时需条件分支重置探针位置 |
-| `UniformAccelerationSidebar` | areaMode segmented（复杂 side effect）+ 自定义 range input |
-| `FreeFallSidebar` | 已精简为纯提示卡片（环境状态 + g 值显示），保留用于动态 tip 内容 |
-| `SatelliteSidebar` | launch 按钮需 setParams + restartAnimation 组合 |
-| `ForceMotionSidebar` | 模式切换需重建整套默认参数 + 环境参数联动 |
-| 其余 7 个 | 动力学/运动学/热学/直流电路等，已大幅精简 |
+| `UniformAccelerationSidebar` | areaMode 为派生复合状态，onChangeSideEffect 不支持条件分支；splitN 使用非线性选项 |
+| `ForceMotionSidebar` | 10 种运动模式各有独立参数集，模式切换需动态重建整套参数（TipCard 已迁移） |
 
 ---
 
@@ -39,15 +62,19 @@
 | controlMeta 类型 | 对应 UI 控件 | 支持的属性 |
 |-----------------|-------------|-----------|
 | `number` | Slider | min/max/step/unit, showIf/hideIf |
-| `segmented` | SegmentedControl | options[], resetOnChange, showIf/hideIf |
+| `segmented` | SegmentedControl | options[], resetOnChange, showIf/hideIf, onChangeSideEffect |
 | `toggle` | ToggleSwitch | trueValue/falseValue, resetOnChange, showIf/hideIf |
 | `preset` | OptionButton(variant=preset) | params{}(支持函数式), resetOnApply/restartOnApply, showIf/hideIf |
 | `tip` | TipCard | title/content(支持函数式), variant, showIf/hideIf |
-| `action` | Button | label, variant, action(launch/restart/reset/setDirection), directionValue, showIf/hideIf |
+| `action` | Button | label, variant, action(launch/restart/reset/setDirection/setDirectionAndRestart/resetAndRestart), directionValue, setParams, showIf/hideIf |
 | `storeToggle` | ToggleSwitch | label, storeKey(toggleVectors/toggleTimeSlices/toggleDualObjects), showIf/hideIf |
 
+**新增 action 类型**：
+- `setDirectionAndRestart`: setDirection + restartAnimation 组合
+- `resetAndRestart`: resetAnimation + setDirection(-1) + restartAnimation 组合
+
 **仍不支持的能力**：
-- action 按钮附带 params 更新（如 SatelliteSidebar 的 launch 需先 setParams）
+- onChangeSideEffect 支持条件分支（根据选中值设置不同参数）
 
 ### 左屏区块顺序约定
 
@@ -70,4 +97,6 @@ controlMeta 数组中 `group` 字段的排列顺序决定渲染顺序：
 
 ## 后续推进
 
-所有硬骨头已解锁，剩余 15 个 SidebarExtra 随后续维护逐步清理。
+剩余 2 个 SidebarExtra 可通过以下方式进一步清理：
+1. 扩展 `onChangeSideEffect` 支持函数式条件分支 → 解锁 `UniformAccelerationSidebar`
+2. 引入动态参数集机制 → 解锁 `ForceMotionSidebar`

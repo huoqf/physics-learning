@@ -60,8 +60,10 @@ export const mechanicsDynamicsAnimations = defineAnimations({
         showIf: 'mode', showIfValue: 1 },
       { type: 'toggle', key: 'showLines', label: '显示悬挂铅垂虚线',
         showIf: 'mode', showIfValue: 1 },
+      { type: 'segmented', key: 'suspendPoint', label: '悬挂孔选择', group: '子模式',
+        showIf: 'mode', showIfValue: 1, resetOnChange: true,
+        options: [{ value: 0, label: 'A1' }, { value: 1, label: 'A2' }, { value: 2, label: 'A3' }] },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/dynamics/GravityBasicSidebar')),
   },
   'anim-friction': {
     title: '摩擦力演示',
@@ -293,7 +295,14 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       { type: 'tip', content: '在真实天体尺度下，系统参数已绑定真实物理数值。',
         showIf: 'mode', showIfValue: 1 },
       { type: 'toggle', key: 'showChart', label: '显示平方反比 F-r 曲线' },
+      { type: 'segmented', key: 'preset', label: '天体系统', group: '子模式',
+        showIf: 'mode', showIfValue: 1, resetOnChange: true,
+        options: [
+          { value: 1, label: '地月系统' },
+          { value: 2, label: '太阳-地球' },
+          { value: 3, label: '同步卫星-地球' },
+          { value: 4, label: '宇航员-空间站' },
+        ] },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/dynamics/GravitySidebar')),
   },
 })

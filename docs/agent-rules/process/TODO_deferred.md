@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-02（完成 KeplerAnimation 拆分）
+> 最后更新：2026-07-03（SidebarExtra 清理至 2 个）
 
 ---
 
@@ -98,9 +98,12 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 - 左屏基础结构一致，控件分组明确；默认恢复语义清晰
 - 简单模式切换、显示开关、提示卡不再需要手写 SidebarExtra（已通过 controlMeta 实现）
 - ~~剩余硬骨头需扩展 action 类型后处理~~（2026-07-03 已全部解锁）
+- action 类型已扩展支持 `setDirectionAndRestart` 和 `resetAndRestart` 组合动作
 
 **待完成**：
-- 剩余 12 个已精简/合理保留的 SidebarExtra 随后续维护逐步清理（2026-07-03 核查：registry 中共 12 个，硬骨头 0 个）
+- 剩余 2 个 SidebarExtra 随后续维护逐步清理（2026-07-03 核查：registry 中共 2 个）
+  - `UniformAccelerationSidebar`：areaMode 为派生复合状态，需扩展 onChangeSideEffect 支持条件分支
+  - `ForceMotionSidebar`：10 种运动模式各有独立参数集，需引入动态参数集机制
 
 ### 3.3 其他（P3，暂缓）
 
