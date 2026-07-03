@@ -1,5 +1,14 @@
 import { DEFAULT_STATIC_FRICTION_RATIO } from '../constants'
 
+/**
+ * 水平拉力摩擦模型：计算滑块在水平面上受外拉力时的摩擦力与加速度。
+ *
+ * @param m 滑块质量 (kg)
+ * @param mu 动摩擦系数
+ * @param F_applied 外拉力 (N)
+ * @param g 重力加速度 (m/s²)
+ * @returns 正压力、摩擦力、加速度及运动状态
+ */
 export function calculateFrictionPullModel(
   m: number,
   mu: number,
@@ -68,8 +77,8 @@ export function calculateDoubleFrictionIncline(params: {
   const { m, M, theta, mu_1, mu_2, g } = params
   const angleRad = (theta * Math.PI) / 180
 
-  // 1.12倍最大静摩擦系数，与基础模式对齐
-  const mu_1_static = 1.12 * mu_1
+  // 静摩擦系数与动摩擦系数之比，与基础模式对齐
+  const mu_1_static = DEFAULT_STATIC_FRICTION_RATIO * mu_1
   const criticalAngleRad = Math.atan(mu_1_static)
   const criticalAngle = (criticalAngleRad * 180) / Math.PI
 
@@ -82,7 +91,7 @@ export function calculateDoubleFrictionIncline(params: {
     const F_drive = 0
     const FN2 = (m + M) * g
     const f2 = 0
-    const f2_max = 1.12 * mu_2 * FN2
+    const f2_max = DEFAULT_STATIC_FRICTION_RATIO * mu_2 * FN2
 
     return {
       isBlockSliding: false,
@@ -107,7 +116,7 @@ export function calculateDoubleFrictionIncline(params: {
   const f1_static = mu_1 * FN1_static
   const F_drive_static = FN1_static * Math.sin(angleRad) - f1_static * Math.cos(angleRad)
   const FN2_static = M * g + FN1_static * Math.cos(angleRad) + f1_static * Math.sin(angleRad)
-  const f2_max = 1.12 * mu_2 * FN2_static
+  const f2_max = DEFAULT_STATIC_FRICTION_RATIO * mu_2 * FN2_static
 
   const isInclineSliding = F_drive_static > f2_max
 
@@ -177,6 +186,15 @@ export function calculateDoubleFrictionIncline(params: {
   }
 }
 
+/**
+ * 单斜面摩擦模型：计算滑块在固定斜面上受重力与摩擦力作用时的运动状态。
+ *
+ * @param m 滑块质量 (kg)
+ * @param mu 动摩擦系数
+ * @param angleDeg 斜面倾角 (度)
+ * @param g 重力加速度 (m/s²)
+ * @returns 正压力、摩擦力、加速度及临界角
+ */
 export function calculateFrictionInclineModel(
   m: number,
   mu: number,

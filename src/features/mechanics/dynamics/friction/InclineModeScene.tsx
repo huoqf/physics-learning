@@ -34,6 +34,7 @@ interface InclineModeSceneProps {
   pivotX: number
   boardLength: number
   vpVisibleX: number
+  vpVisibleY: number
   vpVisibleW: number
   font: (size: number) => number
   frictionSceneScale: SceneScale
@@ -54,6 +55,7 @@ export default function InclineModeScene({
   pivotX,
   boardLength,
   vpVisibleX,
+  vpVisibleY,
   vpVisibleW,
   font,
   frictionSceneScale,
@@ -79,7 +81,7 @@ export default function InclineModeScene({
   return (
     <g>
       {/* 状态看板与教学点拨 */}
-      <g transform={`translate(${vpVisibleX + 30}, ${vpVisibleX + 40})`}>
+      <g transform={`translate(${vpVisibleX + 30}, ${vpVisibleY + 10})`}>
         <rect
           width="360"
           height="75"

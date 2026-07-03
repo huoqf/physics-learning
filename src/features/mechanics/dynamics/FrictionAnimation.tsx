@@ -145,6 +145,7 @@ export default function FrictionAnimation() {
             pivotX={pivotX}
             boardLength={boardLength}
             vpVisibleX={vp.visibleX}
+            vpVisibleY={vp.visibleY}
             vpVisibleW={vp.visibleW}
             font={font}
             frictionSceneScale={frictionSceneScale}

@@ -3,7 +3,7 @@ import { PHYSICS_COLORS, CHART_COLORS } from '@/theme/physics'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateFrictionPullModel, calculateDoubleFrictionIncline } from '@/physics'
-import { GRAVITY } from '@/physics/constants'
+import { GRAVITY, DEFAULT_STATIC_FRICTION_RATIO } from '@/physics/constants'
 import { AnimationControls, Card } from '@/components/UI'
 import { RelationChart } from '@/components/Chart'
 import FrictionAnimation from './FrictionAnimation'
@@ -42,7 +42,7 @@ export const FrictionCenterExtra: FC = () => {
   const pullPoints = useMemo(() => {
     if (mode !== 0) return []
     const data = []
-    const f_max = 1.12 * mu * m * g
+    const f_max = DEFAULT_STATIC_FRICTION_RATIO * mu * m * g
     const f_slip = mu * m * g
     const step = 0.5
     const limit = 45
@@ -64,7 +64,7 @@ export const FrictionCenterExtra: FC = () => {
     const data = []
     const step = 1.0
 
-    const mu_1_static = 1.12 * mu_1
+    const mu_1_static = DEFAULT_STATIC_FRICTION_RATIO * mu_1
     const criticalAngleRad = Math.atan(mu_1_static)
     const criticalAngle = (criticalAngleRad * 180) / Math.PI
 
@@ -84,7 +84,7 @@ export const FrictionCenterExtra: FC = () => {
 
   const yMax = useMemo(() => {
     if (mode === 0) {
-      const f_max = 1.12 * mu * m * g
+      const f_max = DEFAULT_STATIC_FRICTION_RATIO * mu * m * g
       return Math.max(20, Math.ceil(f_max * 1.25))
     } else {
       const maxFVal = Math.max(m * g, M * g)
@@ -156,6 +156,7 @@ export const FrictionCenterExtra: FC = () => {
           onReset={() => setTime(0)}
           onSpeedChange={setSpeed}
           onTimeChange={setTime}
+          controlsMode="param"
         />
       </Card>
     </div>

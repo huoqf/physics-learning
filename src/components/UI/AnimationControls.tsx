@@ -43,19 +43,9 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
     onTimeChange(parseFloat(e.target.value))
   }
 
-  // ── param 型：替换为信息提示条 ──
+  // ── param 型：不渲染底部控制栏 ──
   if (controlsMode === 'param') {
-    return (
-      <div
-        className="w-full rounded-lg px-4 py-3 flex items-center gap-2.5"
-        style={{ backgroundColor: `${colors.primary[100]}`, border: `1px solid ${colors.primary[200]}` }}
-      >
-        <span className="text-lg shrink-0">💡</span>
-        <span className="text-sm font-medium" style={{ color: colors.primary[700] }}>
-          通过左侧参数面板实时调节，画面即时响应
-        </span>
-      </div>
-    )
+    return null
   }
 
   // ── loop 型：仅速度选择器 + 徽章 ──

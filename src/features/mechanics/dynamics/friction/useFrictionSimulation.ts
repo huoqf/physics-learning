@@ -3,7 +3,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useSimulationFrame } from '@/utils/animation'
 import { calculateFrictionPullModel, calculateDoubleFrictionIncline } from '@/physics'
-import { GRAVITY } from '@/physics/constants'
+import { GRAVITY, DEFAULT_STATIC_FRICTION_RATIO } from '@/physics/constants'
 
 export interface FrictionSimState {
   x1: number
@@ -84,7 +84,7 @@ export function useFrictionSimulation(options: FrictionSimulationOptions) {
     const angleRad = (angle * Math.PI) / 180
 
     if (mode === 0) {
-      const f_max = 1.12 * mu * m * g
+      const f_max = DEFAULT_STATIC_FRICTION_RATIO * mu * m * g
       const f_slip = mu * m * g
       let a1 = 0
 
@@ -110,15 +110,25 @@ export function useFrictionSimulation(options: FrictionSimulationOptions) {
     } else {
       let a_rel_frame = 0
       if (prev.v_rel > 0.001) {
+        // Block is moving — kinetic friction applies
         a_rel_frame = g * Math.sin(angleRad) + res_m2.a_M * Math.cos(angleRad) - mu_1 * (g * Math.cos(angleRad) - res_m2.a_M * Math.sin(angleRad))
-      } else if (angle > res_m2.criticalAngle) {
-        a_rel_frame = g * Math.sin(angleRad) + res_m2.a_M * Math.cos(angleRad) - mu_1 * (g * Math.cos(angleRad) - res_m2.a_M * Math.sin(angleRad))
+      } else {
+        // Block at rest — only start sliding if driving force overcomes static friction
+        const normalInAccelFrame = g * Math.cos(angleRad) - res_m2.a_M * Math.sin(angleRad)
+        const driving = g * Math.sin(angleRad) + res_m2.a_M * Math.cos(angleRad)
+        const maxStaticFriction = DEFAULT_STATIC_FRICTION_RATIO * mu_1 * normalInAccelFrame
+        if (driving > maxStaticFriction && normalInAccelFrame > 0) {
+          a_rel_frame = driving - mu_1 * normalInAccelFrame
+        }
+        // else: static friction holds, a_rel_frame stays 0
       }
 
       let a_M_frame = 0
       if (prev.vM > 0.001) {
+        // Incline is moving — kinetic friction with ground
         a_M_frame = res_m2.a_M
-      } else if (res_m2.isInclineSliding) {
+      } else if (res_m2.isInclineSliding && res_m2.F_drive > res_m2.f2_max) {
+        // Incline at rest — only restart if driving force overcomes ground max static friction
         a_M_frame = res_m2.a_M
       }
 

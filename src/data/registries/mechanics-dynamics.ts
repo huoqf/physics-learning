@@ -93,8 +93,8 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     ],
     sceneLayout: {
       mode: 'visibleArea',
-      designWidth: 800,
-      designHeight: 440,
+      designWidth: 700,
+      designHeight: 400,
       refMagnitudes: {
         appliedForce: 40,
         friction: 40,
@@ -127,6 +127,11 @@ export const mechanicsDynamicsAnimations = defineAnimations({
         params: { g: 3.72 }, showIf: 'mode', showIfValue: 0 },
       { type: 'preset', label: '🪐 木星 g=24.79', group: '快捷预设',
         params: { g: 24.79 }, showIf: 'mode', showIfValue: 0 },
+      // §6 斜面摩擦力教学提示
+      { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 1,
+        content: '物块静止或匀速下滑时，水平方向无加速度，地面与斜面体间无摩擦力。' },
+      { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 1,
+        content: '物块加速或减速运动时，水平方向产生加速度，地面摩擦力必定存在，方向与物块水平加速度方向相同。' },
     ],
     CenterExtra: lazy(() => import('@/features/mechanics/dynamics/FrictionCenterExtra')),
     centerExtraMode: 'advancedMode',
