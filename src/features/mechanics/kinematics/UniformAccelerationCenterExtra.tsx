@@ -2,10 +2,9 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useState } from 'react'
 import { useUniformAccelerationPhysics } from './useUniformAccelerationPhysics'
-import { AnimationControls, Card } from '@/components/UI'
+import { AnimationControls, Card, ScrollDataTable } from '@/components/UI'
 import { StroboscopicAnimation } from './StroboscopicAnimation'
 import { VtChartWithArea } from './VtChartWithArea'
-import { FlashDataTable } from './FlashDataTable'
 
 /**
  * 匀变速直线运动 · 进阶模式 CenterExtra
@@ -39,13 +38,29 @@ export default function UniformAccelerationCenterExtra() {
       {/* ── 上半部分：数据表 + v-t图(含公式推导) 并列 ── */}
       <div className="w-full flex-[3] flex flex-row gap-2">
         {/* 左侧：频闪数据表 */}
-        <Card className="w-[35%] overflow-hidden">
-          <FlashDataTable
-            flashPoints={physics.flashPoints}
-            a={a}
-            T={T}
-            hoveredFlashIdx={hoveredFlashIdx}
-            setHoveredFlashIdx={setHoveredFlashIdx}
+        <Card className="w-[35%] h-full overflow-hidden">
+          <ScrollDataTable
+            title="频闪数据记录表"
+            data={physics.flashPoints}
+            columns={[
+              { key: 't', label: 't(s)', width: 0.25, format: (r) => r.time.toFixed(1) },
+              { key: 'v', label: 'v(m/s)', width: 0.25, format: (r) => r.velocity.toFixed(2) },
+              { key: 'x', label: 'x(m)', width: 0.25, format: (r) => r.displacement.toFixed(2) },
+              { key: 'dx', label: 'Δx_k(m)', width: 0.25,
+                format: (r, i, all) => i > 0 ? (r.displacement - all[i - 1].displacement).toFixed(2) : '-' },
+            ]}
+            hoveredIndex={hoveredFlashIdx}
+            onHover={setHoveredFlashIdx}
+            extra={
+              physics.flashPoints.length >= 2 && (
+                <div className="font-semibold">
+                  <p className="text-[9px] text-neutral-400 mb-0.5">理论计算验证</p>
+                  <p className="text-xs font-mono text-neutral-700">
+                    相邻位移差 aT² = <span className="font-bold text-red-600">{(a * T * T).toFixed(3)}</span> m
+                  </p>
+                </div>
+              )
+            }
           />
         </Card>
         {/* 右侧：v-t 图 + 公式推导 */}

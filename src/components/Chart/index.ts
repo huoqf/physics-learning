@@ -46,3 +46,9 @@ export { DisplacementTimeChart } from './DisplacementTimeChart'
 export { AccelerationTimeChart } from './AccelerationTimeChart'
 export { RelationChart } from './RelationChart'
 export type { RelationChartProps, RelationDataSeries, RelationMarker } from './RelationChart'
+
+// ============================================================================
+// 画布辅助元素 (Canvas Helpers)
+// ============================================================================
+export { SvgDataTable } from './SvgDataTable'
+export type { SvgDataTableColumn, SvgDataTableProps } from './SvgDataTable'

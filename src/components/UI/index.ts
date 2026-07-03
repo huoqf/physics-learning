@@ -36,4 +36,6 @@ export type { MiniChartLine, MiniChartStaticLine, MiniChartProps } from './MiniC
 export { LeftPanel, LeftPanelSection, LeftPanelScrollArea } from './LeftPanel'
 export { ControlPanel } from './ControlPanel'
 export { Spring } from './Spring'
+export { ScrollDataTable } from './ScrollDataTable'
+export type { ScrollDataTableColumn, ScrollDataTableProps } from './ScrollDataTable'
 
