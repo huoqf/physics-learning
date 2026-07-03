@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-03（SidebarExtra 清理至 2 个）
+> 最后更新：2026-07-03（核对项目现状，更新行数与 store 数据）
 
 ---
 
@@ -57,17 +57,18 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 | 文件 | 原行数 | 现行数 | 拆分方式 | 验收 |
 |------|------:|------:|---------|:----:|
-| `MomentumConservationAnimation.tsx` | 743 | 356 | 抽 `useMomentumConservationPhysics` hook + 复用 `src/physics/momentumConservation` | JSX 零物理公式 ✓ <br> tsc + 385 tests pass ✓ |
-| `KeplerAnimation.tsx` | 673 | 486 | 抽 `useKeplerPhysics` hook + 复用 `src/physics/celestial` | JSX 零物理公式 ✓ <br> font()/colors 修复 ✓ <br> DESIGN_WIDTH/HEIGHT 常量 ✓ <br> tsc + 385 tests pass ✓ |
+| `MomentumConservationAnimation.tsx` | 743 | 329 | 抽 `useMomentumConservationPhysics` hook + 复用 `src/physics/momentumConservation` | JSX 零物理公式 ✓ <br> tsc + 385 tests pass ✓ |
+| `KeplerAnimation.tsx` | 673 | 460 | 抽 `useKeplerPhysics` hook + 复用 `src/physics/celestial` | JSX 零物理公式 ✓ <br> font()/colors 修复 ✓ <br> DESIGN_WIDTH/HEIGHT 常量 ✓ <br> tsc + 385 tests pass ✓ |
 
 ### 待处理
 
 | 文件 | 当前行数 | 已有 physics | 拆分方向 | 目标行数 |
 |------|-----:|:---:|---------|-----:|
 
-> 观察（2026-07-02 核查）：以下文件超过 500 行且仍持续增长，行数以本次核查为准：
-> - `PowerTransmission.tsx`(650)、`SpringCompositeAnimation.tsx`(640)、`FieldLines.tsx`(633)、`TIRAnimation.tsx`(623)、`ConnectedBodiesAnimation.tsx`(610)、`LenzsLawCanvas.tsx`(599)、`InclineForceDiagram.tsx`(579)、`GravityBasicAnimation.tsx`(573)、`FreeFallDripAnimation.tsx`(560)、`CircularMotionAnimation.tsx`(558)
-> - 新增临近阈值：`LightRodRopeScene.tsx`(485)、`SimulationView.tsx`(478)、`WorkFSChart.tsx`(469)、`RefractionAnimation.tsx`(462)、`AccelerationCenterExtra.tsx`(462)、`GravityAnimation.tsx`(459)、`ImpulseAnimation.tsx`(457)、`UniformAccelerationAnimation.tsx`(455)
+> 观察（2026-07-03 核对）：以下文件超过 500 行，行数以本次核对为准：
+> - `PowerTransmission.tsx`(634)、`SpringCompositeAnimation.tsx`(585)、`TIRAnimation.tsx`(564)、`FieldLines.tsx`(559)、`ConnectedBodiesAnimation.tsx`(557)、`LenzsLawCanvas.tsx`(542)、`InclineForceDiagram.tsx`(539)、`GravityBasicAnimation.tsx`(519)、`CircularMotionAnimation.tsx`(506)
+> - 临近阈值（450-499）：`LightRodRopeScene.tsx`(485)、`SimulationView.tsx`(478)、`WorkFSChart.tsx`(469)、`RefractionAnimation.tsx`(462)、`AccelerationCenterExtra.tsx`(462)、`KeplerAnimation.tsx`(460)、`GravityAnimation.tsx`(459)、`ImpulseAnimation.tsx`(457)、`UniformAccelerationAnimation.tsx`(455)、`FreeFallDripAnimation.tsx`(448)
+> - 已降至 500 以下：`KeplerAnimation.tsx`(460)、`FreeFallDripAnimation.tsx`(448)
 
 ---
 
@@ -87,7 +88,7 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 ### 3.1 AnimationPage 协调职责监控（P2）
 
-> 当前 476 行（2026-07-02 核查，较上次 +40 行）。触发拆分条件：行数 > 500，或存在物理计算与 JSX 混写，或职责 > 8 类。
+> 当前 507 行（2026-07-03 核对，较上次 +31 行，**已超 500 行阈值**）。触发拆分条件：行数 > 500，或存在物理计算与 JSX 混写，或职责 > 8 类。
 
 膨胀触发区域：参数过滤（showIf/hideIf）、SidebarExtra props 组装、模式切换、RightPhysicsPanel 计算逻辑。
 如继续增长，优先抽 hook：`useFilteredParams()`、`useSidebarExtraProps()`、`useAnimationMode()`。
@@ -158,7 +159,7 @@ export interface AnimationModule<P extends AnimationParams> {
 
 ### 4.4 Store selector 优化（P2）
 
-> 审计发现：116 处 useAnimationStore 调用中，~38 处使用精确 selector，~74 处使用解构 selector。
+> 审计发现：~146 处 useAnimationStore 调用中，~38 处使用精确 selector，~108 处使用解构 selector。
 
 建议拆分为：`useAnimationParams()`、`usePlaybackState()`、`useAnimationDisplayOptions()`。
 通过 selector 降低组件不必要重渲染。
