@@ -4,7 +4,6 @@ import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE, withAlpha } from '@/theme/physics'
-import { colors } from '@/theme/colors'
 import { createSceneScale, worldToPixel } from '@/scene'
 import type { SceneConfig } from '@/scene'
 import {
@@ -473,7 +472,7 @@ export function SimulationView() {
       ctx.beginPath()
       ctx.arc(pX, pY, part.isFocus ? CANVAS_STYLE.object.pointMassRadius : CANVAS_STYLE.object.pointMassRadius * 0.7, 0, 2 * Math.PI)
       ctx.fillStyle = part.isFocus ? PHYSICS_COLORS.positiveCharge : withAlpha(PHYSICS_COLORS.negativeCharge, 0.4)
-      ctx.strokeStyle = colors.neutral.white
+      ctx.strokeStyle = PHYSICS_COLORS.white
       ctx.lineWidth = part.isFocus ? 1.5 : 1
       ctx.fill()
       ctx.stroke()

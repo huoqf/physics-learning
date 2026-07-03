@@ -1,9 +1,11 @@
+import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { SimulationView } from './SimulationView'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { VelocityTimeChart } from '@/components/Chart'
-import { calculateDoubleBoundaryExit, calculateCircularBoundaryExit, calcParticlePeriod } from '@/physics'
+import { RelationChart, type RelationMarker } from '@/components/Chart'
+import { calcParticleRadius } from '@/physics'
+import { PHYSICS_COLORS } from '@/theme/physics'
 
 export default function ChargeInBField() {
   const params = useAnimationStore((s) => s.params)
@@ -19,12 +21,9 @@ export default function ChargeInBField() {
           <SimulationView />
         </div>
         <div className={`relative bg-white flex flex-col p-4 shrink-0 min-w-0 min-h-0 ${isWide ? 'w-80 h-full' : 'w-full h-64'}`}>
-          <h3 className="text-sm font-bold text-neutral-700 mb-2">时间-速度 (t-v) 图像</h3>
+          <h3 className="text-sm font-bold text-neutral-700 mb-2">物理量关联曲线</h3>
           <div className="flex-1 min-h-0 relative">
-            <VelocityChart />
-          </div>
-          <div className="mt-4 text-xs text-neutral-500">
-            粒子在匀强磁场中受到的洛伦兹力始终与速度方向垂直，洛伦兹力不做功，只改变速度方向，不改变速度大小。
+            <BoundaryRelationChart />
           </div>
         </div>
       </div>
@@ -38,76 +37,145 @@ export default function ChargeInBField() {
   )
 }
 
-function VelocityChart() {
+function BoundaryRelationChart() {
   const params = useAnimationStore((s) => s.params)
-  const time = useAnimationStore((s) => s.time)
+  const boundaryType = params.boundaryType ?? 0
 
+  if (boundaryType === 0) {
+    return <SingleBoundaryChart params={params} />
+  }
+  if (boundaryType === 1) {
+    return <DoubleBoundaryChart params={params} />
+  }
+  return <CircularBoundaryChart params={params} />
+}
+
+interface ChartProps {
+  params: Record<string, number>
+}
+
+function SingleBoundaryChart({ params }: ChartProps) {
   const q = params.q ?? 1
   const m = params.m ?? 1
   const v = params.v ?? 12
   const B = params.B ?? 1.2
   const theta = params.theta ?? 60
-  const boundaryType = params.boundaryType ?? 0
-  const d = params.magneticWidth ?? 5.0
-  const Rb = params.magneticRadius ?? 4.0
 
-  // 计算磁场中偏转的时间 tOut
-  let tOut = 0
-  if (boundaryType === 0) {
-    const thetaRad = (theta * Math.PI) / 180
-    const sign = (q * B) >= 0 ? -1 : 1
-    const deltaPhi = sign === -1 ? 2 * thetaRad : 2 * (Math.PI - thetaRad)
-    const T = calcParticlePeriod(m, q, B)
-    tOut = T > 0 ? (deltaPhi / (2 * Math.PI)) * T : 0
-  } else if (boundaryType === 1) {
-    const res = calculateDoubleBoundaryExit(q, m, v, B, theta, d)
-    tOut = res.t
-  } else {
-    const res = calculateCircularBoundaryExit(q, m, v, B, Rb)
-    tOut = res.t
-  }
+  const R = calcParticleRadius(m, v, q, B)
 
-  const tSlideIn = 0.5 * tOut
-  const tSlideOut = 1.0 * tOut
-  const tCycle = tSlideIn + tOut + tSlideOut
-
-  const progressTime = time > 0 ? (time % tCycle) - tSlideIn : -tSlideIn
-
-  const domainPoints = [
-    { t: -tSlideIn, v },
-    { t: tOut + tSlideOut, v }
-  ]
-
-  const points = [
-    { t: -tSlideIn, v },
-    { t: progressTime, v }
-  ]
-
-  const stages = [
-    {
-      from: 0,
-      to: tOut,
-      label: '磁场偏转',
-      opacity: 0.1,
-      showDividers: true
+  // 1. 单边界：射出点距离 x_out 与射入夹角 theta 的正弦关系
+  const points = useMemo(() => {
+    const list = []
+    for (let th = 15; th <= 165; th += 2) {
+      const thRad = (th * Math.PI) / 180
+      const xOut = 2 * R * Math.sin(thRad)
+      list.push({ x: th, y: xOut })
     }
-  ]
+    return list
+  }, [R])
 
   return (
     <div className="w-full h-full min-h-0 min-w-0 relative bg-neutral-50 rounded-lg p-2">
-      <VelocityTimeChart
-        mode="animated"
+      <RelationChart
         points={points}
-        domainPoints={domainPoints}
-        currentTime={progressTime}
-        tMax={tOut + tSlideOut}
-        tDomain={[-tSlideIn, tOut + tSlideOut]}
-        vRange={[0, v * 1.4]}
-        showArea={false}
+        xDomain={[15, 165]}
+        xLabel="射入夹角 θ (°)"
+        yLabel="射出距离 x_out (m)"
         title=""
-        xLabel="时间 t (s)"
-        yLabel="速度 v (m/s)"
-        stages={stages}
+        cursorX={theta}
+        cursorLabel={(_x, y) => `${y.toFixed(2)}m`}
+        showZeroLine={false}
+      />
+    </div>
+  )
+}
+
+function DoubleBoundaryChart({ params }: ChartProps) {
+  const q = params.q ?? 1
+  const m = params.m ?? 1
+  const v = params.v ?? 12
+  const B = params.B ?? 1.2
+  const theta = params.theta ?? 60
+  const d = params.magneticWidth ?? 5.0
+
+  const sign = (q * B) >= 0 ? -1 : 1
+  const sign_y = sign === -1 ? 1 : -1
+  const thetaRad = (theta * Math.PI) / 180
+  const R_crit = Math.abs(d / (1 - sign_y * Math.cos(thetaRad)))
+  const v_crit = (Math.abs(q * B) * R_crit) / m
+
+  // 2. 双平行边界：最大偏转高度 y_max 与速度 v 的折线关系
+  const points = useMemo(() => {
+    const list = []
+    for (let vVal = 2.0; vVal <= 20.0; vVal += 0.2) {
+      const R_val = calcParticleRadius(m, vVal, q, B)
+      const yMaxPossible = R_val * (1 - sign_y * Math.cos(thetaRad))
+      const yMax = Math.min(d, yMaxPossible)
+      list.push({ x: vVal, y: yMax })
+    }
+    if (v_crit >= 2.0 && v_crit <= 20.0) {
+      const R_crit_val = calcParticleRadius(m, v_crit, q, B)
+      const yMaxPossible = R_crit_val * (1 - sign_y * Math.cos(thetaRad))
+      const yMax = Math.min(d, yMaxPossible)
+      list.push({ x: v_crit, y: yMax })
+    }
+    return list.sort((a, b) => a.x - b.x)
+  }, [m, q, B, sign_y, thetaRad, d, v_crit])
+
+  const markers: RelationMarker[] = [
+    { y: d, label: `边界 d = ${d.toFixed(1)}m`, color: PHYSICS_COLORS.magneticField },
+  ]
+  if (v_crit >= 2.0 && v_crit <= 20.0) {
+    markers.push({ x: v_crit, label: `临界 v = ${v_crit.toFixed(1)}m/s`, color: PHYSICS_COLORS.appliedForce })
+  }
+
+  return (
+    <div className="w-full h-full min-h-0 min-w-0 relative bg-neutral-50 rounded-lg p-2">
+      <RelationChart
+        points={points}
+        xDomain={[2.0, 20.0]}
+        yDomain={[0, Math.max(d * 1.25, 7.5)]}
+        xLabel="速度 v (m/s)"
+        yLabel="偏转最大高度 y_max (m)"
+        title=""
+        cursorX={v}
+        cursorLabel={(_x, y) => `${y.toFixed(2)}m`}
+        markers={markers}
+      />
+    </div>
+  )
+}
+
+function CircularBoundaryChart({ params }: ChartProps) {
+  const q = params.q ?? 1
+  const m = params.m ?? 1
+  const v = params.v ?? 12
+  const B = params.B ?? 1.2
+  const Rb = params.magneticRadius ?? 4.0
+
+  // 3. 圆形边界：偏转角 Δφ 与速度 v 的非线性递减关系
+  const points = useMemo(() => {
+    const list = []
+    for (let vVal = 2.0; vVal <= 20.0; vVal += 0.2) {
+      const R_val = calcParticleRadius(m, vVal, q, B)
+      const deltaPhi = 2 * Math.atan(Rb / R_val)
+      const deltaPhiDeg = (deltaPhi * 180) / Math.PI
+      list.push({ x: vVal, y: deltaPhiDeg })
+    }
+    return list
+  }, [m, q, B, Rb])
+
+  return (
+    <div className="w-full h-full min-h-0 min-w-0 relative bg-neutral-50 rounded-lg p-2">
+      <RelationChart
+        points={points}
+        xDomain={[2.0, 20.0]}
+        yDomain={[0, 180]}
+        xLabel="速度 v (m/s)"
+        yLabel="偏转角 Δφ (°)"
+        title=""
+        cursorX={v}
+        cursorLabel={(_x, y) => `${y.toFixed(1)}°`}
       />
     </div>
   )

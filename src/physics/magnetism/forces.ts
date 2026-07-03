@@ -151,9 +151,9 @@ export function calculateDoubleBoundaryExit(
   } else {
     // 穿透上边界 y = d
     y = d
-    // 解 (x - xc)^2 + (d - yc)^2 = R^2 => x = xc - sign * sqrt(R^2 - (d - yc)^2)
+    // 解 (x - xc)^2 + (d - yc)^2 = R^2 => x = xc + sign * sqrt(R^2 - (d - yc)^2)
     const sqrtVal = Math.sqrt(Math.max(0, R * R - (d - yc) * (d - yc)))
-    x = xc - sign * sqrtVal
+    x = xc + sign * sqrtVal
 
     // 计算入射极角和出射极角
     // 入射极角 (0,0)
@@ -200,10 +200,10 @@ export function calculateCircularBoundaryExit(
   const sign = (q * B) >= 0 ? -1 : 1
 
   // 根据推导：
-  // x_out = sign * 2 * R * Rb^2 / (R^2 + Rb^2)
+  // x_out = -sign * 2 * R * Rb^2 / (R^2 + Rb^2)
   // y_out = 2 * R^2 * Rb / (R^2 + Rb^2)
   const denom = R * R + Rb * Rb
-  const x = sign * (2 * R * Rb * Rb) / denom
+  const x = -sign * (2 * R * Rb * Rb) / denom
   const y = (2 * R * R * Rb) / denom
 
   // 偏转角 deltaPhi 满足 tan(deltaPhi/2) = Rb / R
