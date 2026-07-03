@@ -90,7 +90,6 @@ export const mechanicsEnergyAnimations = defineAnimations({
         showIfValue: 1,
       },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/energy/PowerSidebar')),
     controlMeta: [
       { type: 'segmented', key: 'mode', label: '起动模型', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '恒定功率' }, { value: 1, label: '恒定加速度' }] },
@@ -161,7 +160,6 @@ export const mechanicsEnergyAnimations = defineAnimations({
         showIfValue: 1,
       },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/energy/KineticEnergySidebar')),
     controlMeta: [
       { type: 'segmented', key: 'mode', label: '起动模型', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '恒力做功' }, { value: 1, label: '变力做功' }] },
@@ -290,10 +288,13 @@ export const mechanicsEnergyAnimations = defineAnimations({
         showIfValue: 1,
       },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/energy/EnergyConservationSidebar')),
     controlMeta: [
       { type: 'segmented', key: 'mode', label: '演示物理场景', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '经典单摆' }, { value: 1, label: '山谷滑道' }] },
+      { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 0,
+        content: '经典单摆：在没有空气阻力时，摆球在摆动过程中重力势能与动能进行无损的往复转化，系统的总机械能保持严格守恒。' },
+      { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 1,
+        content: '山谷滑道：滑块在双向对称凹山谷轨道上阻尼滑行。摩擦做功使机械能不断耗散，但在任何时刻机械能与摩擦产生的内能之总和始终严格守恒。' },
       { type: 'preset', label: '🌍 地球经典摆', group: '引力场环境预设',
         params: ((c: Record<string, number>) => c.mode === 1
           ? { mode: 0, m: 2.0, g: 9.8, L: 5.0, theta0: 45, hRef: 0 }

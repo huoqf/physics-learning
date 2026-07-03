@@ -8,9 +8,9 @@
 
 | 指标 | 数值 |
 |------|------|
-| SidebarExtra 注册总量 | 15（原始 61，已删除 46） |
+| SidebarExtra 注册总量 | 12（原始 61，已删除 49） |
 | 硬骨头（不可迁移） | 0 |
-| 已精简/合理保留 | 15 |
+| 已精简/合理保留 | 12 |
 
 ---
 
@@ -28,7 +28,9 @@
 | `FieldLinesSidebar` | segmented 切换时需条件分支重置探针位置 |
 | `UniformAccelerationSidebar` | areaMode segmented（复杂 side effect）+ 自定义 range input |
 | `FreeFallSidebar` | 已精简为纯提示卡片（环境状态 + g 值显示），保留用于动态 tip 内容 |
-| 其余 11 个 | 力学能量/动力学/运动学/热学/直流电路等，已大幅精简 |
+| `SatelliteSidebar` | launch 按钮需 setParams + restartAnimation 组合 |
+| `ForceMotionSidebar` | 模式切换需重建整套默认参数 + 环境参数联动 |
+| 其余 7 个 | 动力学/运动学/热学/直流电路等，已大幅精简 |
 
 ---
 
