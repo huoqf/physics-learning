@@ -1,7 +1,7 @@
 import React from 'react'
 import { BarMagnet, ParametricMagneticField, VectorArrow } from '@/components/Physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
-import { PHYSICS_COLORS, EM_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
 
 interface InductionMagnetSandboxProps {
   magnetX: number         // 磁铁中心在设计坐标系下的 x 坐标 (80 - 580)
@@ -38,7 +38,7 @@ export const InductionMagnetSandbox: React.FC<InductionMagnetSandboxProps> = ({
     return Math.max(0, 1 - dist / activeRange)
   }, [magnetX, coilX])
 
-  const fieldOpacity = 0.12 + Math.min(1, overlapRatio * 2) * 0.48
+  const fieldOpacity = 0.35 + Math.min(1, overlapRatio * 2) * 0.55
 
   return (
     <g>
@@ -50,7 +50,7 @@ export const InductionMagnetSandbox: React.FC<InductionMagnetSandboxProps> = ({
             h={36}
             pole={magnetPole as 1 | -1}
             canvasHeight={400}
-            lineColor={EM_COLORS.magneticFieldLine}
+            lineColor={withAlpha(PHYSICS_COLORS.magneticField, 0.8)}
           />
         </g>
       )}

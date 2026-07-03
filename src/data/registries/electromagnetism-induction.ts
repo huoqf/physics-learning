@@ -18,7 +18,6 @@ export const electromagnetismInductionAnimations = defineAnimations({
       dR_dt: 0,
       circuitSwitch: 1,
       hasIronCore: 1,
-      subCircuitSwitch: 1,
       primaryCoilX: 220,
       primaryCoilSpeed: 0,
       rodX: 200,
@@ -32,12 +31,12 @@ export const electromagnetismInductionAnimations = defineAnimations({
         group: '模型选择',
         resetOnChange: true,
         onChangeSideEffect: {
-          resetParams: ['rodX', 'rodSpeed', 'magnetX', 'magnetSpeed', 'primaryCoilX', 'primaryCoilSpeed', 'dR_dt', 'resistance', 'circuitSwitch', 'hasIronCore', 'subCircuitSwitch'],
+          resetParams: ['rodX', 'rodSpeed', 'magnetX', 'magnetSpeed', 'primaryCoilX', 'primaryCoilSpeed', 'dR_dt', 'resistance', 'circuitSwitch', 'hasIronCore'],
         },
         options: [
-          { value: 0, label: '一：导体切割' },
-          { value: 1, label: '二：磁铁穿过' },
-          { value: 2, label: '三：双线圈互感' },
+          { value: 0, label: '导体切割' },
+          { value: 1, label: '磁铁穿过' },
+          { value: 2, label: '双线圈互感' },
         ],
       },
       {
@@ -67,12 +66,6 @@ export const electromagnetismInductionAnimations = defineAnimations({
         group: '子模式',
         showIf: 'mode',
         showIfValue: 2,
-      },
-      {
-        type: 'toggle',
-        key: 'subCircuitSwitch',
-        label: '副回路开关 (电流计侧)',
-        group: '显示辅助',
       },
       {
         type: 'toggle',
@@ -121,12 +114,6 @@ export const electromagnetismInductionAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 2,
         content: '原回路闭合时拖动滑阻。拖拽滑动的瞬间磁场变化产生感应电流，滑动越快，感应电流越大；静止时无电流。您也可以手动拖拽原线圈进行插拔。',
-      },
-      {
-        type: 'tip',
-        group: '教学提示',
-        variant: 'info',
-        content: '探究产生感应电流是否必须有"闭合回路"。断开开关后，无论如何运动或磁场如何改变，灵敏电流计都不会发生偏转。',
       },
     ],
     paramMeta: [

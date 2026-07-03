@@ -206,20 +206,6 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
       className="bg-white rounded-lg shadow-inner w-full h-full"
       data-scale={vpScale}
     >
-      <defs>
-        <marker
-          id="arrow-current"
-          viewBox="0 0 10 10"
-          refX="6"
-          refY="5"
-          markerWidth="6"
-          markerHeight="6"
-          orient="auto-start-reverse"
-        >
-          <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill={PHYSICS_COLORS.currentDirection} />
-        </marker>
-      </defs>
-
       {/* --- 1. 灵敏电流计 --- */}
       <g opacity={getOpacity([4])} className="transition-opacity duration-300">
         <path
@@ -416,15 +402,17 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
       {/* --- 7. 电流方向大箭头与指示牌 --- */}
       {lenzResult.fluxChange !== 'stable' && (
         <g opacity={getOpacity([4])} className="transition-opacity duration-300">
-          <path
-            d={lenzResult.inducedCurrentDirection === 'counterclockwise'
-              ? `M ${cx + 35} ${coilY + 80} L ${cx - 35} ${coilY + 80}`
-              : `M ${cx - 35} ${coilY + 80} L ${cx + 35} ${coilY + 80}`
-            }
-            fill="none"
-            stroke={PHYSICS_COLORS.currentDirection}
-            strokeWidth="3.5"
-            markerEnd="url(#arrow-current)"
+          <VectorArrow
+            origin={lenzResult.inducedCurrentDirection === 'counterclockwise'
+              ? { x: cx + 35, y: coilY + 80 }
+              : { x: cx - 35, y: coilY + 80 }}
+            vector={lenzResult.inducedCurrentDirection === 'counterclockwise'
+              ? { x: -1, y: 0 }
+              : { x: 1, y: 0 }}
+            type="currentDirection"
+            sceneScale={IDENTITY_SCENE_SCALE}
+            pixelLength={70}
+            strokeWidth={3.5}
           />
           <g transform={`translate(${cx + 90}, ${coilY + 30})`}>
             <rect width="115" height="30" rx="4" fill={CANVAS_COLORS.dangerBg} stroke={CANVAS_COLORS.alertRed} strokeWidth="1.2" />

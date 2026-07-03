@@ -3,7 +3,7 @@ import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS, CHART_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { useAnimationFrame } from '@/utils/animation'
 import { Solenoid, Galvanometer } from '@/components/Physics'
@@ -62,8 +62,6 @@ export interface InductionParams {
   mode: number
   /** 是否显示磁感线 (0/1) */
   showLines: number
-  /** 副回路开关 (0=断开, 1=闭合) */
-  subCircuitSwitch: number
   // 模式 0 参数
   rodX: number
   rodSpeed: number
@@ -102,7 +100,6 @@ export default function InductionPhenomenon() {
   // 1. 物理参数解析与后备默认值
   const mode = params.mode ?? 0                  // 0=切割, 1=穿过, 2=双线圈
   const showLines = params.showLines ?? 1
-  const subCircuitSwitch = params.subCircuitSwitch ?? 1 // 0=断开, 1=闭合
 
   // 模式 0 参数
   const rodX = params.rodX ?? 200
@@ -141,12 +138,12 @@ export default function InductionPhenomenon() {
 
   // 3. 物理计算层（调用 src/physics/induction.ts 共享纯函数）
   const inductionResult =
-    mode === 0 ? computeInductionMode0(rodX, rodSpeed, subCircuitSwitch) :
-    mode === 1 ? computeInductionMode1(magnetX, magnetSpeed, magnetPole, coilX, subCircuitSwitch) :
+    mode === 0 ? computeInductionMode0(rodX, rodSpeed, 1) :
+    mode === 1 ? computeInductionMode1(magnetX, magnetSpeed, magnetPole, coilX, 1) :
     computeInductionMode2(
       primaryCoilX, resistance, circuitSwitch, hasIronCore,
       primaryCoilSpeed, dR_dt, switchPulse.current,
-      coilX, subCircuitSwitch
+      coilX, 1
     )
 
   const { phi, dPhi, currentI } = inductionResult
@@ -296,21 +293,23 @@ export default function InductionPhenomenon() {
       >
         {/* ================= 右侧接收端回路 (电流计、副螺螺线管、副开关) ================= */}
         
-        {/* 副回路公共连线 (螺线管左端插座 340 到电流表，右端插座 500 到电流表) */}
-        {/* 上导线连线 (含有副回路开关) */}
-        <path
-          d={`M 340 280 L 340 330 L 390 330 L 390 370`}
-          fill="none"
-          stroke={SCENE_COLORS.circuit.wire}
-          strokeWidth="3.5"
-        />
-        {/* 下导线连线 */}
-        <path
-          d={`M 500 280 L 500 370 L 450 370`}
-          fill="none"
-          stroke={SCENE_COLORS.circuit.wire}
-          strokeWidth="3.5"
-        />
+        {/* 副回路公共连线 — 仅模式 1/2 使用（模式 0 的连线由 InductionCutSandbox 绘制） */}
+        {mode !== 0 && (
+          <>
+            <path
+              d={`M 340 280 L 340 330 L 365 330 L 450 330 L 450 370`}
+              fill="none"
+              stroke={SCENE_COLORS.circuit.wire}
+              strokeWidth="3.5"
+            />
+            <path
+              d={`M 500 280 L 500 370 L 390 370`}
+              fill="none"
+              stroke={SCENE_COLORS.circuit.wire}
+              strokeWidth="3.5"
+            />
+          </>
+        )}
 
         {/* 灵敏电流计 (公共接收仪表) */}
         <Galvanometer
@@ -328,30 +327,6 @@ export default function InductionPhenomenon() {
         >
           G 灵敏电流计 (检测感应电流)
         </text>
-
-        {/* 副回路开关 (电流计开关，可直接点击断开以对比闭合条件) */}
-        <g
-          transform="translate(365, 330)"
-          className="cursor-pointer"
-          onClick={() => updateParam('subCircuitSwitch', subCircuitSwitch ? 0 : 1)}
-        >
-          {/* 底座 */}
-          <rect x={-8} y={-4} width={16} height={8} rx={1} fill={CANVAS_COLORS.objectFillNeutral} stroke={CANVAS_COLORS.textMuted} strokeWidth={0.8} />
-          {/* 两侧接脚 */}
-          <circle cx={-6} cy={0} r={2} fill={subCircuitSwitch ? PHYSICS_COLORS.electricCurrent : CANVAS_COLORS.trackHistory} />
-          <circle cx={6} cy={0} r={2} fill={subCircuitSwitch ? PHYSICS_COLORS.electricCurrent : CANVAS_COLORS.trackHistory} />
-          {/* 闸刀 */}
-          <line
-            x1={-6} y1={0}
-            x2={subCircuitSwitch ? 6 : 3}
-            y2={subCircuitSwitch ? 0 : -8}
-            stroke={subCircuitSwitch ? PHYSICS_COLORS.electricCurrent : CANVAS_COLORS.objectStroke}
-            strokeWidth={2}
-          />
-          <text x="0" y="14" fill={CANVAS_COLORS.textMuted} fontSize={font(7)} fontWeight="bold" textAnchor="middle">
-            {subCircuitSwitch ? '闭合' : '断开'}
-          </text>
-        </g>
 
         {/* 模式 1 和模式 2 共享固定在 420 px 处的副螺线管线圈 */}
         {mode !== 0 && (

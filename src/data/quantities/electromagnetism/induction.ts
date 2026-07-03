@@ -270,14 +270,13 @@ export function handleInduction(
     }
     case 'anim-electromagnetic-induction': {
       const mode = params.mode ?? 0 // 0=切割, 1=穿过, 2=双线圈
-      const subCircuitSwitch = params.subCircuitSwitch ?? 1
       const coilX = 420
 
       if (mode === 0) {
         // ── 模式一：导体切割磁感线 ──
         const rodX = params.rodX ?? 200
         const rodSpeed = params.rodSpeed ?? 0
-        const { phi, dPhi, currentI } = computeInductionMode0(rodX, rodSpeed, subCircuitSwitch)
+        const { phi, dPhi, currentI } = computeInductionMode0(rodX, rodSpeed, 1)
         const theta = Math.max(-1, Math.min(1, currentI * 1.5))
 
         let currentDirectionText = '无感应电流'
@@ -311,7 +310,7 @@ export function handleInduction(
         const magnetX = params.magnetX ?? 160
         const magnetSpeed = params.magnetSpeed ?? 0
         const magnetPole = params.magnetPole ?? 1
-        const { phi, dPhi, currentI } = computeInductionMode1(magnetX, magnetSpeed, magnetPole, coilX, subCircuitSwitch)
+        const { phi, dPhi, currentI } = computeInductionMode1(magnetX, magnetSpeed, magnetPole, coilX, 1)
         const theta = Math.max(-1, Math.min(1, currentI * 1.5))
 
         let currentDirectionText = '无感应电流'
@@ -350,7 +349,7 @@ export function handleInduction(
         const hasIronCore = params.hasIronCore ?? 1
         const { phi, dPhi, currentI } = computeInductionMode2(
           primaryCoilX, resistance, circuitSwitch, hasIronCore,
-          primaryCoilSpeed, dR_dt, 0, coilX, subCircuitSwitch
+          primaryCoilSpeed, dR_dt, 0, coilX, 1
         )
         const effectiveR = circuitSwitch ? resistance : 99999
         const I1 = circuitSwitch ? 10 / effectiveR : 0

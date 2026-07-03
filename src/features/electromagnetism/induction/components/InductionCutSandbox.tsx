@@ -1,6 +1,6 @@
 import React from 'react'
-import { ConductingRod, MagneticFieldGrid } from '@/components/Physics'
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { ConductingRod, MagneticFieldGrid, Rails } from '@/components/Physics'
+import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
 
 interface InductionCutSandboxProps {
   rodX: number            // 导体棒在设计坐标系下的 x 坐标 (100 - 300)
@@ -15,9 +15,9 @@ interface InductionCutSandboxProps {
  *
  * 职责：
  * 1. 渲染匀强磁场矩形区域与磁感线 (⊗)
- * 2. 渲染水平金属导轨
+ * 2. 渲染水平金属导轨 (复用 Rails 组件)
  * 3. 渲染拖拽金属导体棒 (复用 ConductingRod)
- * 4. 渲染导轨连接到副回路插座的闭合导线与流光点
+ * 4. 渲染导轨到电流计的曲线连线与流光点
  */
 export const InductionCutSandbox: React.FC<InductionCutSandboxProps> = ({
   rodX,
@@ -37,21 +37,37 @@ export const InductionCutSandbox: React.FC<InductionCutSandboxProps> = ({
   const fieldTop = 100
   const fieldBottom = 220
 
-  // 回路连线导线：从导轨右端(320)延伸到主副线圈固定端点插头 (340, 280) 和 (500, 280)
-  // 上导轨连线：(320, 110) -> (320, 280) -> (340, 280)
-  // 下导轨连线：(320, 210) -> (500, 210) -> (500, 280)
-  const wireUpperPath = `M ${320} ${railY1} L ${320} ${280} L ${340} ${280}`
-  const wireLowerPath = `M ${320} ${railY2} L ${500} ${railY2} L ${500} ${280}`
+  // 导轨中心位置与尺寸
+  const railCx = 200
+  const railCy = 160
+  const railLength = 240
+
+  // 导轨右端 x 坐标
+  const railRightX = 320
+
+  // 电流计接线柱设计坐标 (galvanometer at 420,270; terminals at local ±30,100)
+  const galRightTermX = 450  // 右接线柱 (+)
+  const galRightTermY = 370
+  const galLeftTermX = 390   // 左接线柱 (-)
+  const galLeftTermY = 370
 
   // 判定导体棒的电流指示方向
-  // 磁场向里，向右运动（速度 v > 0，感应电动势方向向上即 S -> N 绕行）。
-  // ConductingRod 水平模式中，y1 在上方，y2 在下方，电流 upward (y2 -> y1) 对应 'out' (出)，向下为 'in' (入)。
   let rodCurrentDir: 'in' | 'out' | 'none' = 'none'
   if (currentI > 0.01) {
-    rodCurrentDir = 'out' // 向上流出导体棒
+    rodCurrentDir = 'out'
   } else if (currentI < -0.01) {
-    rodCurrentDir = 'in' // 向下流入导体棒
+    rodCurrentDir = 'in'
   }
+
+  // 上导轨右端 → 电流计右接线柱(+): 三次贝塞尔，控制点靠右避免交叉
+  const wireUpper = `M ${railRightX} ${railY1} C ${railRightX + 200} ${railY1} ${railRightX + 200} ${galRightTermY} ${galRightTermX} ${galRightTermY}`
+  // 下导轨右端 → 电流计左接线柱(-): 控制点靠左，与上轨路径不交叉
+  const wireLower = `M ${railRightX} ${railY2} C ${railRightX + 80} ${railY2} ${galLeftTermX - 20} ${galLeftTermY} ${galLeftTermX} ${galLeftTermY}`
+  // 两轨右端竖直连线（模式 0 不需要）
+
+  // 流光动画路径（与导线路径一致）
+  const flowUpper = wireUpper
+  const flowLower = wireLower
 
   return (
     <g>
@@ -90,41 +106,22 @@ export const InductionCutSandbox: React.FC<InductionCutSandboxProps> = ({
         radius={5}
       />
 
-      {/* 3. 水平导轨平行线 (金属材质色) */}
-      <line
-        x1="80"
-        y1={railY1}
-        x2="320"
-        y2={railY1}
-        stroke={SCENE_COLORS.circuit.wire}
-        strokeWidth={CANVAS_STYLE.stroke.objectLine}
-        strokeLinecap="round"
-      />
-      <line
-        x1="80"
-        y1={railY2}
-        x2="320"
-        y2={railY2}
-        stroke={SCENE_COLORS.circuit.wire}
-        strokeWidth={CANVAS_STYLE.stroke.objectLine}
-        strokeLinecap="round"
-      />
-      
-      {/* 4. 导轨到主回路固定端口的闭合导线 */}
-      <path
-        d={wireUpperPath}
-        fill="none"
-        stroke={SCENE_COLORS.circuit.wire}
-        strokeWidth={CANVAS_STYLE.stroke.objectThin}
-      />
-      <path
-        d={wireLowerPath}
-        fill="none"
-        stroke={SCENE_COLORS.circuit.wire}
-        strokeWidth={CANVAS_STYLE.stroke.objectThin}
+      {/* 3. 水平导轨 (复用 Rails 组件) */}
+      <Rails
+        type="horizontal"
+        length={railLength}
+        spacing={railSpacing}
+        width={railLength}
+        height={railSpacing + 20}
+        cx={railCx}
+        cy={railCy}
       />
 
-      {/* 5. 导体棒物理组件复用 (ConductingRod, 高度=320, 使得 y1=90, y2=230, 刚好搭在 y=110 和 y=210 导轨上) */}
+      {/* 4. 导轨右端到电流计的曲线连线 */}
+      <path d={wireUpper} fill="none" stroke={SCENE_COLORS.circuit.wire} strokeWidth="3.5" />
+      <path d={wireLower} fill="none" stroke={SCENE_COLORS.circuit.wire} strokeWidth="3.5" />
+
+      {/* 5. 导体棒物理组件 (ConductingRod, 高度=320, 搭在 y=110/210 导轨上) */}
       <g onPointerDown={onPointerDown} className="cursor-grab active:cursor-grabbing">
         <ConductingRod
           type="horizontal"
@@ -138,9 +135,8 @@ export const InductionCutSandbox: React.FC<InductionCutSandboxProps> = ({
       {/* 6. 回路导线上的流光动画 */}
       {Math.abs(currentI) > 0.05 && (
         <g style={{ filter: `drop-shadow(0 0 2px ${PHYSICS_COLORS.electricCurrent})` }}>
-          {/* 上导轨流光：从导体顶端 (rodX, 110) -> (320, 110) -> (320, 280) -> (340, 280) */}
           <path
-            d={`M ${rodX} ${railY1} L 320 ${railY1} L 320 280 L 340 280`}
+            d={flowUpper}
             fill="none"
             stroke={PHYSICS_COLORS.electricCurrent}
             strokeWidth="3.5"
@@ -148,9 +144,8 @@ export const InductionCutSandbox: React.FC<InductionCutSandboxProps> = ({
             strokeDashoffset={currentI > 0 ? -time * 50 : time * 50}
             opacity="0.85"
           />
-          {/* 下导轨流光：从 (340, 280插座，即电流计流出端经过下轨回路) -> (500, 280) -> (500, 210) -> (320, 210) -> (rodX, 210) */}
           <path
-            d={`M 500 280 L 500 ${railY2} L 320 ${railY2} L ${rodX} ${railY2}`}
+            d={flowLower}
             fill="none"
             stroke={PHYSICS_COLORS.electricCurrent}
             strokeWidth="3.5"
