@@ -309,9 +309,10 @@ interface FingerViewProps {
   tipLabel?: string
   tipColor?: string
   font: (base: number) => number
+  rotation: number
 }
 
-function FingerView({ finger, highlight, showTipMarker, tipLabel, tipColor, font }: FingerViewProps) {
+function FingerView({ finger, highlight, showTipMarker, tipLabel, tipColor, font, rotation }: FingerViewProps) {
   // 指尖在 hand 局部坐标系下的真实位置（沿骨链累计旋转），用于在指尖放标签环
   const tip = computeFingerTip(finger)
   return (
@@ -327,16 +328,20 @@ function FingerView({ finger, highlight, showTipMarker, tipLabel, tipColor, font
             stroke="white"
             strokeWidth={2}
           />
-          <text
-            x={0}
-            y={4}
-            textAnchor="middle"
-            fontSize={font(12)}
-            fontWeight="bold"
-            fill={TIP_RING_LABEL}
-          >
-            {tipLabel}
-          </text>
+          <g transform={`translate(0, 4)`}>
+            <g transform={`rotate(${-rotation})`}>
+              <text
+                x={0}
+                y={0}
+                textAnchor="middle"
+                fontSize={font(12)}
+                fontWeight="bold"
+                fill={TIP_RING_LABEL}
+              >
+                {tipLabel}
+              </text>
+            </g>
+          </g>
         </g>
       )}
     </g>
@@ -351,11 +356,11 @@ function FingerView({ finger, highlight, showTipMarker, tipLabel, tipColor, font
 const PALM_W = 64
 const PALM_H = 72
 
-function Palm({ chirality, isBack, font }: { chirality: HandChirality, isBack: boolean, font: (base: number) => number }) {
+function Palm({ chirality, isBack, font, rotation }: { chirality: HandChirality, isBack: boolean, font: (base: number) => number, rotation: number }) {
   // 掌心朝向观察者时标注"掌心"，背向时标注"手背"
   const label = isBack ? "手背" : "掌心"
   const handLabel = chirality === 'left' ? "左手" : "右手"
-  
+
   return (
     <>
       <rect
@@ -369,29 +374,37 @@ function Palm({ chirality, isBack, font }: { chirality: HandChirality, isBack: b
         stroke={SKIN_STROKE}
         strokeWidth={1.4}
       />
-      {/* 明确标注文字，确保清晰 */}
-      <text
-        x={0}
-        y={-5}
-        textAnchor="middle"
-        fontSize={font(14)}
-        fontWeight="bold"
-        fill={SKIN_STROKE}
-        style={{ userSelect: 'none', pointerEvents: 'none' }}
-      >
-        {label}
-      </text>
-      <text
-        x={0}
-        y={22}
-        textAnchor="middle"
-        fontSize={font(16)}
-        fontWeight="bold"
-        fill={SKIN_STROKE}
-        style={{ userSelect: 'none', pointerEvents: 'none' }}
-      >
-        {handLabel}
-      </text>
+      {/* 明确标注文字，确保清晰；用反向旋转抵消父级旋转，保持文字始终正向 */}
+      <g transform={`translate(0, -5)`}>
+        <g transform={`rotate(${-rotation})`}>
+          <text
+            x={0}
+            y={0}
+            textAnchor="middle"
+            fontSize={font(14)}
+            fontWeight="bold"
+            fill={SKIN_STROKE}
+            style={{ userSelect: 'none', pointerEvents: 'none' }}
+          >
+            {label}
+          </text>
+        </g>
+      </g>
+      <g transform={`translate(0, 22)`}>
+        <g transform={`rotate(${-rotation})`}>
+          <text
+            x={0}
+            y={0}
+            textAnchor="middle"
+            fontSize={font(16)}
+            fontWeight="bold"
+            fill={SKIN_STROKE}
+            style={{ userSelect: 'none', pointerEvents: 'none' }}
+          >
+            {handLabel}
+          </text>
+        </g>
+      </g>
       {/* 手腕 */}
       <rect x={-18} y={PALM_H / 2 - 2} width={36} height={12} rx={6} fill={SKIN_FILL} stroke={SKIN_STROKE} strokeWidth={1.2} />
     </>
@@ -482,7 +495,7 @@ export function SkeletonHand({
       onPointerDown={onPointerDown}
       className={className}
     >
-      {showPalm && <Palm chirality={chirality} isBack={isBack} font={font} />}
+      {showPalm && <Palm chirality={chirality} isBack={isBack} font={font} rotation={rotation} />}
       {fingers.map((finger) => (
         <FingerView
           key={finger.name}
@@ -492,6 +505,7 @@ export function SkeletonHand({
           tipLabel={mergedLabels[finger.name]}
           tipColor={mergedColors[finger.name]}
           font={font}
+          rotation={rotation}
         />
       ))}
     </g>

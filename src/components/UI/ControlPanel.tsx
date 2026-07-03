@@ -257,16 +257,16 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     const result: React.ReactNode[] = []
     let i = 0
     while (i < controls.length) {
-      // 连续 action 控件并排渲染
-      if (controls[i].type === 'action') {
+      // 连续 action 或 preset 控件并排渲染
+      if (controls[i].type === 'action' || controls[i].type === 'preset') {
         const row: ControlMeta[] = []
         const startIdx = i
-        while (i < controls.length && controls[i].type === 'action') {
+        while (i < controls.length && controls[i].type === controls[startIdx].type) {
           row.push(controls[i])
           i++
         }
         result.push(
-          <div key={`action-row-${startIdx}`} className="grid grid-cols-2 gap-2">
+          <div key={`${controls[startIdx].type}-row-${startIdx}`} className="grid grid-cols-2 gap-2">
             {row.map((c, j) => renderControl(c, j))}
           </div>
         )
