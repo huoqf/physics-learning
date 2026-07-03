@@ -42,7 +42,7 @@ const DRAG_BOUNDS = {
 /** 动画帧回调中的物理 / 动效常量 */
 const ANIM = {
   /** 指针阻尼缓动系数 (每帧趋近比例) */
-  thetaDamping: 0.15,
+  thetaDamping: 0.35,
   /** 开关脉冲指数衰减速率 */
   pulseDecayRate: 8,
   /** 模式 1 自动播放帧速度倍率 */
@@ -159,7 +159,7 @@ export default function InductionPhenomenon() {
 
     // A. 指针缓动过渡 (轻微阻尼回弹)
     setThetaVisual((prev) => {
-      const target = Math.max(-1, Math.min(1, currentI * 1.5))
+      const target = Math.max(-1, Math.min(1, currentI * 2.5))
       const diff = target - prev
       return prev + diff * ANIM.thetaDamping
     })
