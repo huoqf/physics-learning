@@ -1,10 +1,27 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { calculateClosedCircuit } from '@/physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
-import { colors } from '@/theme/colors'
 import { DialMeter, Rheostat } from '@/components/Physics'
+import { useClosedCircuitScene } from './hooks/useClosedCircuitScene'
+
+// ─── 设计坐标系常量 ───────────────────────────────────────────────
+const DESIGN_W = 700
+const DESIGN_H = 400
+
+/** 场景布局常量 */
+const LAYOUT = {
+  loop: { left: 150, top: 120, width: 400, height: 200 },
+  battery: { x: 240, y: 280, width: 220, height: 80, posX: 255, posY: 320, internalX: 370 },
+  meter: { max: 8, radius: 32 },
+  rheostat: { x: 350, y: 120 },
+} as const
+
+const LOOP_RIGHT = LAYOUT.loop.left + LAYOUT.loop.width
+const LOOP_BOTTOM = LAYOUT.loop.top + LAYOUT.loop.height
+const LOOP_CX = LAYOUT.loop.left + LAYOUT.loop.width / 2
+const LOOP_CY = LAYOUT.loop.top + LAYOUT.loop.height / 2
 
 /**
  * 闭合电路欧姆定律核心电路动画
@@ -14,6 +31,8 @@ export default function ClosedCircuit() {
     const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const vp = useViewport(canvasSize, { designWidth: DESIGN_W, designHeight: DESIGN_H })
+  void vp
   const { font } = canvasSize
 
   const EMF = params.EMF ?? 6
@@ -23,66 +42,13 @@ export default function ClosedCircuit() {
 
   const { I, U_terminal } = calculateClosedCircuit(EMF, r, R)
 
-  // 1. 回路矩形顶点参数定义 (矩形: x从150到550, y从120到320)
-  // 周长 = 100(正极向右) + 200(向右向上) + 400(向左) + 200(向下) + 100(向右连负极) + 200(内电路泵送) = 1200
-  function getLoopPosition(pos: number): { x: number; y: number } {
-    let p = pos % 1200
-    if (p < 0) p += 1200
-
-    // 段 1: 电源右端正极向右到右下角 (450, 320) -> (550, 320) [长度 100]
-    if (p < 100) {
-      return { x: 450 + p, y: 320 }
-    }
-    p -= 100
-
-    // 段 2: 右下角向上到右上角 (550, 320) -> (550, 120) [长度 200]
-    if (p < 200) {
-      return { x: 550, y: 320 - p }
-    }
-    p -= 200
-
-    // 段 3: 右上角向左到左上角 (550, 120) -> (150, 120) [长度 400]
-    if (p < 400) {
-      return { x: 550 - p, y: 120 }
-    }
-    p -= 400
-
-    // 段 4: 左上角向下到左下角 (150, 120) -> (150, 320) [长度 200]
-    if (p < 200) {
-      return { x: 150, y: 120 + p }
-    }
-    p -= 200
-
-    // 段 5: 左下角到电源左端负极 (150, 320) -> (250, 320) [长度 100]
-    if (p < 100) {
-      return { x: 150 + p, y: 320 }
-    }
-    p -= 100
-
-    // 段 6: 电源内部泵送 (250, 320) -> (450, 320) [长度 200]
-    return { x: 250 + p, y: 320 }
-  }
-
-  // 2. 渲染微观电荷粒子 (流速与电流 I 呈正比)
-  const numCharges = 26
-  const chargeParticles = Array.from({ length: numCharges }, (_, idx) => {
-    // 电荷在回路中循环移动。流速乘以 speedFactor。
-    const speedFactor = 120
-    const pos = (idx * (1200 / numCharges) + time * speedFactor * I) % 1200
-    return getLoopPosition(pos)
-  })
-
-
-
-  // 4. 内阻发热红光高亮的实时透明度 (随电流 I 的大小变强)
-  // 当 I = 6A (最大可能) 时，透明度可接近 0.75
-  const heatOpacity = highlightLoss ? Math.min(0.75, I * 0.15) : 0
+  const { chargeParticles, heatOpacity } = useClosedCircuitScene(I, time, highlightLoss)
 
   return (
     <div ref={containerRef} className="w-full h-full flex items-center justify-center p-2">
       <svg
-        viewBox="0 0 700 420"
-        className="w-full h-full bg-white rounded-xl shadow-inner border border-neutral-150"
+        viewBox={`0 0 ${DESIGN_W} ${DESIGN_H}`}
+        className="w-full h-full bg-white rounded-xl"
         preserveAspectRatio="xMidYMid meet"
       >
         <defs>
@@ -94,13 +60,16 @@ export default function ClosedCircuit() {
 
           {/* 内阻发热暗红色系渐变 */}
           <radialGradient id="heat-grad" cx="70%" cy="50%" r="50%">
-            <stop offset="0%" stopColor={colors.danger[600]} stopOpacity="1" />
-            <stop offset="70%" stopColor={colors.danger[900]} stopOpacity="0.8" />
-            <stop offset="100%" stopColor={colors.danger[900]} stopOpacity="0" />
+            <stop offset="0%" stopColor={CANVAS_COLORS.dangerDark} stopOpacity="1" />
+            <stop offset="70%" stopColor={CANVAS_COLORS.dangerGradient} stopOpacity="0.8" />
+            <stop offset="100%" stopColor={CANVAS_COLORS.dangerGradient} stopOpacity="0" />
           </radialGradient>
 
 
         </defs>
+
+        {/* 历史坐标基于 700×420 设计；统一向上平移 20 以适配 700×400 标准 wide preset */}
+        <g transform="translate(0, -20)">
 
         {/* ==================== 1. 主回路导线与并联引线 ==================== */}
         {/* 并联电压表导线 */}
@@ -121,10 +90,10 @@ export default function ClosedCircuit() {
 
         {/* 主回路导线底槽 */}
         <rect
-          x={150}
-          y={120}
-          width={400}
-          height={200}
+          x={LAYOUT.loop.left}
+          y={LAYOUT.loop.top}
+          width={LAYOUT.loop.width}
+          height={LAYOUT.loop.height}
           fill="none"
           stroke={PHYSICS_COLORS.grid}
           strokeWidth={8}
@@ -133,10 +102,10 @@ export default function ClosedCircuit() {
         />
         {/* 主回路铜芯导线 */}
         <rect
-          x={150}
-          y={120}
-          width={400}
-          height={200}
+          x={LAYOUT.loop.left}
+          y={LAYOUT.loop.top}
+          width={LAYOUT.loop.width}
+          height={LAYOUT.loop.height}
           fill="none"
           stroke={PHYSICS_COLORS.trackHistory}
           strokeWidth={3.2}
@@ -145,8 +114,8 @@ export default function ClosedCircuit() {
         />
 
         {/* 并联节点圆点 */}
-        <circle cx={180} cy={320} r={4.5} fill={PHYSICS_COLORS.labelText} />
-        <circle cx={520} cy={320} r={4.5} fill={PHYSICS_COLORS.labelText} />
+        <circle cx={LAYOUT.loop.left + 30} cy={LOOP_BOTTOM} r={4.5} fill={PHYSICS_COLORS.labelText} />
+        <circle cx={LOOP_RIGHT - 30} cy={LOOP_BOTTOM} r={4.5} fill={PHYSICS_COLORS.labelText} />
 
         {/* ==================== 2. 微观电荷流动动画 ==================== */}
         {/* 主回路上流动的带电粒子，流速与电流成正比，电压表并联支路无粒子流动 */}
@@ -165,21 +134,21 @@ export default function ClosedCircuit() {
 
         {/* ==================== 3. 理想电压表与电流表 ==================== */}
         {/* 路端电压表 V (悬浮并联在电源两端) */}
-        <DialMeter type="V" value={U_terminal} max={8} x={350} y={210} r={32} />
+        <DialMeter type="V" value={U_terminal} max={LAYOUT.meter.max} x={LOOP_CX} y={LOOP_CY - 10} r={LAYOUT.meter.radius} />
 
         {/* 干路电流表 A (串联在右侧干路) */}
-        <DialMeter type="A" value={I} max={8} x={550} y={220} r={32} />
+        <DialMeter type="A" value={I} max={LAYOUT.meter.max} x={LOOP_RIGHT} y={LOOP_CY} r={LAYOUT.meter.radius} />
 
         {/* ==================== 4. 滑动变阻器元件 R ==================== */}
-        <Rheostat x={350} y={120} value={R} min={0.1} max={20} label="滑动变阻器 R" />
+        <Rheostat x={LAYOUT.rheostat.x} y={LAYOUT.rheostat.y} value={R} min={0.1} max={20} showLabel={false} />
 
         {/* ==================== 5. 真实电源区域 (虚线框内) ==================== */}
         {/* 真实电源外部虚线外框 */}
         <rect
-          x={240}
-          y={280}
-          width={220}
-          height={80}
+          x={LAYOUT.battery.x}
+          y={LAYOUT.battery.y}
+          width={LAYOUT.battery.width}
+          height={LAYOUT.battery.height}
           fill="none"
           stroke={PHYSICS_COLORS.axis}
           strokeWidth={1.5}
@@ -187,8 +156,8 @@ export default function ClosedCircuit() {
           rx={6}
         />
         <text
-          x={350}
-          y={273}
+          x={LOOP_CX}
+          y={LAYOUT.battery.y - 7}
           fill={PHYSICS_COLORS.labelText}
           fontSize={font(11)}
           fontWeight="bold"
@@ -199,10 +168,10 @@ export default function ClosedCircuit() {
 
         {/* 热焦耳损耗视觉高亮遮罩层 (暗红色系渐变，随着电流 I 的平方发热量加深) */}
         <rect
-          x={241.5}
-          y={281.5}
-          width={217}
-          height={77}
+          x={LAYOUT.battery.x + 1.5}
+          y={LAYOUT.battery.y + 1.5}
+          width={LAYOUT.battery.width - 3}
+          height={LAYOUT.battery.height - 3}
           rx={5}
           fill="url(#heat-grad)"
           opacity={heatOpacity}
@@ -211,7 +180,7 @@ export default function ClosedCircuit() {
         />
 
         {/* A. 理想电源部分 (化学能泵送) */}
-        <g transform="translate(255, 320)">
+        <g transform={`translate(${LAYOUT.battery.posX}, ${LAYOUT.battery.posY})`}>
           {/* 接线端连线 */}
           <line x1={-5} y1={0} x2={20} y2={0} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
           <line x1={30} y1={0} x2={55} y2={0} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
@@ -221,17 +190,14 @@ export default function ClosedCircuit() {
           {/* 正极片 (长细) */}
           <line x1={30} y1={-18} x2={30} y2={18} stroke={SCENE_COLORS.circuit.batteryPos} strokeWidth={2.2} />
 
-          {/* 理想电源标签 */}
-          <text x={25} y={-23} fill={PHYSICS_COLORS.labelText} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
-            E = {EMF} V
-          </text>
+
         </g>
 
         {/* 内部过渡导线 */}
-        <line x1={310} y1={320} x2={370} y2={320} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
+        <line x1={LAYOUT.battery.posX + 55} y1={LAYOUT.battery.posY} x2={LAYOUT.battery.internalX} y2={LAYOUT.battery.posY} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
 
         {/* B. 内阻部分 r */}
-        <g transform="translate(370, 320)">
+        <g transform={`translate(${LAYOUT.battery.internalX}, ${LAYOUT.battery.posY})`}>
           {/* 电阻器符号 (高考标准矩形框) */}
           <rect
             x={0}
@@ -250,10 +216,8 @@ export default function ClosedCircuit() {
           {/* 连接回主干路 */}
           <line x1={36} y1={0} x2={80} y2={0} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
 
-          {/* 内阻标签 */}
-          <text x={18} y={-14} fill={PHYSICS_COLORS.labelText} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
-            r = {r.toFixed(1)} Ω
-          </text>
+
+        </g>
         </g>
       </svg>
     </div>
