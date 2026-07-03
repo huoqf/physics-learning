@@ -28,6 +28,8 @@ export function SimulationView() {
   const m = params.m ?? 1
   const v = params.v ?? 12
   const B = params.B ?? 1.2
+  const bDirection = params.bDirection ?? 1 // 1=向里⊗, -1=向外⊙
+  const effectiveB = B * bDirection // 物理计算和渲染用的实际 B 值（含方向）
   const thetaParam = params.theta ?? 60
   const d = params.magneticWidth ?? 5.0
   const Rb = params.magneticRadius ?? 4.0
@@ -45,22 +47,22 @@ export function SimulationView() {
   // 基础模式可调夹角，圆形磁场强制径向入射
   const activeTheta = activeBoundaryType === 2 ? 90 : thetaParam
 
-  const R = calcParticleRadius(m, v, q, B)
-  const sign = (q * B) >= 0 ? -1 : 1
+  const R = calcParticleRadius(m, v, q, effectiveB)
+  const sign = (q * effectiveB) >= 0 ? -1 : 1
 
   // 计算焦点粒子在磁场中偏转的时间 tOut
   const tOut = useMemo(() => {
     if (activeBoundaryType === 0) {
       const thetaRad = (activeTheta * Math.PI) / 180
       const deltaPhi = sign === -1 ? 2 * thetaRad : 2 * (Math.PI - thetaRad)
-      const T = calcParticlePeriod(m, q, B)
+      const T = calcParticlePeriod(m, q, effectiveB)
       return T > 0 ? (deltaPhi / (2 * Math.PI)) * T : 0
     } else if (activeBoundaryType === 1) {
-      return calculateDoubleBoundaryExit(q, m, v, B, activeTheta, d).t
+      return calculateDoubleBoundaryExit(q, m, v, effectiveB, activeTheta, d).t
     } else {
-      return calculateCircularBoundaryExit(q, m, v, B, Rb).t
+      return calculateCircularBoundaryExit(q, m, v, effectiveB, Rb).t
     }
-  }, [q, m, v, B, activeTheta, activeBoundaryType, d, Rb, sign])
+  }, [q, m, v, effectiveB, activeTheta, activeBoundaryType, d, Rb, sign])
 
   const tSlideIn = 0.5 * tOut
   const tSlideOut = 1.0 * tOut
@@ -69,11 +71,11 @@ export function SimulationView() {
   // 映射时间进度
   const progressTime = time > 0 ? (time % tCycle) - tSlideIn : -tSlideIn
 
-  // 物理配置：自适应 worldWidth 保证画面在不同参数下完全展示
+  // 物理配置：固定比例尺，禁止随参数缩放
   const sceneConfig: SceneConfig = useMemo(() => {
-    // 依据最大半径动态缩放
-    const maxR = Math.max(R, activeBoundaryType === 2 ? Rb : d)
-    const wWidth = Math.max(1.0, maxR * 4.8)
+    // 圆形边界：固定场景宽度，Rb 变化时圆的大小自然变化（符合物理直觉）
+    // 其他边界：以磁场宽度 d 为基准
+    const wWidth = activeBoundaryType === 2 ? 50 : Math.max(1.0, d * 4.8)
     const wHeight = canvasSize.width > 0 ? wWidth * (canvasSize.height / canvasSize.width) : 4.0
 
     return {
@@ -85,9 +87,10 @@ export function SimulationView() {
       refMagnitudes: {
         force: 25,
         velocity: 45,
+        lorentzForce: 25,
       },
     }
-  }, [canvasSize, R, activeBoundaryType, d, Rb])
+  }, [canvasSize, activeBoundaryType, d])
 
   const sceneScale = createSceneScale(sceneConfig)
 
@@ -100,9 +103,9 @@ export function SimulationView() {
     thetaDeg: number = activeTheta
   ) => {
     const thetaRad = (thetaDeg * Math.PI) / 180
-    const signVal = (q * B) >= 0 ? -1 : 1
-    const omega = Math.abs((q * B) / m)
-    const Rp = calcParticleRadius(m, vVal, q, B)
+    const signVal = (q * effectiveB) >= 0 ? -1 : 1
+    const omega = Math.abs((q * effectiveB) / m)
+    const Rp = calcParticleRadius(m, vVal, q, effectiveB)
 
     let tOutVal = 0
     let xOut = 0
@@ -113,7 +116,7 @@ export function SimulationView() {
     if (activeBoundaryType === 0) {
       // 单边界
       const deltaPhi = signVal === -1 ? 2 * thetaRad : 2 * (Math.PI - thetaRad)
-      const T = calcParticlePeriod(m, q, B)
+      const T = calcParticlePeriod(m, q, effectiveB)
       tOutVal = T > 0 ? (deltaPhi / (2 * Math.PI)) * T : 0
 
       const cxAngle = thetaRad + signVal * Math.PI / 2
@@ -124,7 +127,7 @@ export function SimulationView() {
       vyOut = vVal * Math.sin(exitAngle)
     } else if (activeBoundaryType === 1) {
       // 双平行边界
-      const res = calculateDoubleBoundaryExit(q, m, vVal, B, thetaDeg, d)
+      const res = calculateDoubleBoundaryExit(q, m, vVal, effectiveB, thetaDeg, d)
       tOutVal = res.t
       xOut = initX + res.x
       yOut = res.y
@@ -132,7 +135,7 @@ export function SimulationView() {
       vyOut = res.vy
     } else {
       // 圆形边界
-      const res = calculateCircularBoundaryExit(q, m, vVal, B, Rb)
+      const res = calculateCircularBoundaryExit(q, m, vVal, effectiveB, Rb)
       tOutVal = res.t
       xOut = initX + res.x
       yOut = res.y
@@ -169,7 +172,7 @@ export function SimulationView() {
     }
 
     return { px, py, vx, vy, tOut: tOutVal, xOut, yOut, xc, yc, R: Rp }
-  }, [q, m, B, v, activeTheta, activeBoundaryType, d, Rb])
+  }, [q, m, effectiveB, v, activeTheta, activeBoundaryType, d, Rb])
 
   // 进阶模式下，生成多粒子粒子族数据
   const particleFamily = useMemo(() => {
@@ -236,7 +239,7 @@ export function SimulationView() {
       ctx.fillRect(0, 0, canvas.width, bStartY)
       ctx.restore()
 
-      drawMagneticFieldGrid(ctx, { x: 0, y: 0, w: canvas.width, h: bStartY, B })
+      drawMagneticFieldGrid(ctx, { x: 0, y: 0, w: canvas.width, h: bStartY, B: effectiveB })
 
       // 绘制单边界线
       ctx.beginPath()
@@ -258,7 +261,7 @@ export function SimulationView() {
       ctx.fillRect(0, bEndY, canvas.width, bStartY - bEndY)
       ctx.restore()
 
-      drawMagneticFieldGrid(ctx, { x: 0, y: bEndY, w: canvas.width, h: bStartY - bEndY, B })
+      drawMagneticFieldGrid(ctx, { x: 0, y: bEndY, w: canvas.width, h: bStartY - bEndY, B: effectiveB })
 
       // 下边界线
       ctx.beginPath()
@@ -300,7 +303,7 @@ export function SimulationView() {
         y: bcy - rPx,
         w: rPx * 2,
         h: rPx * 2,
-        B
+        B: effectiveB
       })
       ctx.restore()
 
@@ -494,7 +497,7 @@ export function SimulationView() {
     q,
     m,
     v,
-    B,
+    effectiveB,
     activeTheta,
     d,
     Rb,
@@ -516,8 +519,8 @@ export function SimulationView() {
   const focusState = getParticleState(progressTime, 0, 0, v, activeTheta)
   const inField = progressTime >= 0 && progressTime <= focusState.tOut
   const forceVector = {
-    x: q * B * focusState.vy,
-    y: -q * B * focusState.vx
+    x: q * effectiveB * focusState.vy,
+    y: -q * effectiveB * focusState.vx
   }
 
   return (

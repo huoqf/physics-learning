@@ -17,11 +17,11 @@ export function drawMagneticFieldGrid(
     opacity?: number
   },
 ) {
-  const { x, y, w, h, B, spacing = 55, fontSize = 16, opacity = 0.35 } = opts
+  const { x, y, w, h, B, spacing = 50, fontSize = 18, opacity = 0.6 } = opts
 
   if (Math.abs(B) < 1e-4) return
 
-  const isOut = B >= 0
+  const isOut = B < 0
   const symbol = isOut ? '⊙' : '⊗'
 
   ctx.save()

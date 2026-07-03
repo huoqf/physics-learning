@@ -91,7 +91,7 @@ export interface MagneticFieldGridProps {
   radius?: number
   /** 线条粗细（默认 1.2） */
   strokeWidth?: number
-  /** 整体不透明度（默认 0.35） */
+  /** 整体不透明度（默认 0.55） */
   opacity?: number
   /** 颜色覆盖（默认跟随 direction 自动选择主题色） */
   color?: string
@@ -107,7 +107,7 @@ export const MagneticFieldGrid: React.FC<MagneticFieldGridProps> = ({
   cols = 6,
   radius = 6,
   strokeWidth = 1.2,
-  opacity = 0.35,
+  opacity = 0.55,
   color,
 }) => {
   const fillColor = color ?? (direction === 'in' ? PHYSICS_COLORS.magneticFieldCross : PHYSICS_COLORS.magneticFieldDot)
@@ -146,7 +146,7 @@ export interface MagneticFieldSymbolsProps {
   radius?: number
   /** 线条粗细（默认 1.2） */
   strokeWidth?: number
-  /** 整体不透明度（默认 0.35） */
+  /** 整体不透明度（默认 0.55） */
   opacity?: number
   /** 颜色覆盖 */
   color?: string
@@ -161,7 +161,7 @@ export const MagneticFieldSymbols: React.FC<MagneticFieldSymbolsProps> = ({
   direction,
   radius = 6,
   strokeWidth = 1.2,
-  opacity = 0.35,
+  opacity = 0.55,
   color,
 }) => {
   const fillColor = color ?? (direction === 'in' ? PHYSICS_COLORS.magneticFieldCross : PHYSICS_COLORS.magneticFieldDot)
