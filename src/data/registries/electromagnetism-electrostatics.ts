@@ -91,6 +91,8 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
     title: '平行板电容器',
     knowledgeId: 'electricity-1-4',
     Component: lazy(() => import('@/features/electromagnetism/electrostatics/Capacitor')),
+    CenterExtra: lazy(() => import('@/features/electromagnetism/electrostatics/CapacitorChart')),
+    centerExtraHeight: 'h-[35%]',
     controlsMode: 'param' as const,
     defaultParams: { S: 100, d: 5, epsilon_r: 1, U: 12, connected: 1 } as const,
     paramMeta: [
