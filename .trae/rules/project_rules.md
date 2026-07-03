@@ -71,7 +71,7 @@ theme/            # 设计 token（颜色/间距/圆角/阴影/动效）
 | 5 | **组件复用优先**：场景中存在可复用组件时必须直接使用，禁止在 `features/` 中重复手写等效实现（详见下方展开） | 手写地面纹理/球体/滑块/矢量箭头/图表轴等已有组件实现 |
 | 6 | **左屏控制台声明式优先**：左屏必须使用 `LeftPanel` 体系；数值参数优先 `paramMeta → ParamControl`，模式/开关/预设/提示优先 `controlMeta → ControlPanel`；`SidebarExtra` 仅保留复杂自定义控制 | 新页面手写散乱左屏容器、简单模式切换/开关仍写 SidebarExtra、直接手写 `input[type=range]` |
 
-### 铁律 1 展开：统一来源六条约束
+### 铁律 1 展开：统一来源八条约束
 
 1. **颜色/间距/圆角/阴影/动效** → 必须从 `src/theme/` 子模块引用
 2. **坐标转换** → 必须走 `physicsToCanvas()`（`src/utils/coordinate.ts`）
@@ -162,6 +162,7 @@ theme/            # 设计 token（颜色/间距/圆角/阴影/动效）
 - [ ] 图表组件从 `@/components/Chart` barrel import，禁止子路径导入
 - [ ] 布局响应式：`useCanvasSize()` + `computeScale()` + `font()`（铁律 1）
 - [ ] **SVG viewBox：无 overlay 时 `viewBox` 绑定设计常量（`DESIGN_WIDTH/HEIGHT`），严禁 `viewBox={\`0 0 ${width} ${height}\`}` 同时配合 `<g transform={vp.transform}>` 的双重缩放组合（铁律 1-7）**
+- [ ] **缩放路径互斥：同一组件仅用路径 A（SVG viewBox）或路径 B（HTML 响应式），SVG 内未用 `<foreignObject>` 嵌入路径 B 的 React 图表组件（铁律 1-8）**
 - [ ] **SVG 指针事件：有交互拖拽的组件使用 `getScreenCTM().inverse()` 坐标映射，无角坐标计算错误**
 - [ ] 新增 `src/physics/` 函数有 JSDoc + 单位注释，无 DOM 依赖（铁律 2）
 - [ ] 页面组件薄壳，三屏职责不交叉（铁律 3）
