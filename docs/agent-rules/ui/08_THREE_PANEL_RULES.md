@@ -244,7 +244,7 @@ SidebarExtraProps
 
 ---
 
-## 6. 底部播放控制器（AnimationControls）规范
+## 7. 底部播放控制器（AnimationControls）规范
 
 中间屏动画区域底部统一由 `AnimationControls` 组件渲染，行为由 `AnimationConfig.controlsMode` 控制。**不得在动画组件内部自行渲染播放按钮或速度控件**。
 

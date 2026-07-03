@@ -229,6 +229,36 @@ const { x, y } = pt.matrixTransform(svg.getScreenCTM()!.inverse())
 | **useViewport** | **新动画组件必须引用；无 overlay 时选方式A（viewBox = 固定设计尺寸，无 vp.transform）；有 overlay 时选方式B（viewBox = 真实容器尺寸 + vp.transform）** |
 
 
+### 2.7 图表与 SVG 场景并列规范
+
+> 同一组件只能选一条缩放路径（详见 `project_rules.md` 铁律 1-8）。
+
+| | 做法 |
+|---|---|
+| ✅ 正确 | HTML `flex` 容器内，SVG 场景（路径 A）与图表 `div`（路径 B）**平级并列** |
+| ❌ 禁止 | SVG 内用 `<foreignObject>` 包裹图表组件（两套缩放叠加，导致图表裁切/X轴消失） |
+
+```tsx
+// ✅ 正确：HTML flex 分区，SVG 场景与图表平级
+<div className="flex w-full h-full">
+  <svg viewBox="0 0 700 400" className="flex-1">
+    {/* 路径 A：SVG viewBox，内部坐标用设计常量 */}
+  </svg>
+  <div className="w-[240px]">
+    <BasePhysicsChart ... />  {/* 路径 B：HTML 响应式 */}
+  </div>
+</div>
+
+// ❌ 禁止：foreignObject 嵌套导致两套缩放叠加
+<svg viewBox="0 0 700 400">
+  <foreignObject x={460} y={0} width={240} height={400}>
+    <BasePhysicsChart ... />  {/* 两套缩放叠加，图表裁切/X轴消失 */}
+  </foreignObject>
+</svg>
+```
+
+图表区与场景区的宽高比例须统一在对应 `config.ts` 中管理，禁止在 Scene 组件内硬编码魔法数字。
+
 ---
 
 ## 3. 动态布局原则
