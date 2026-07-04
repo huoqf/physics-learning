@@ -13,7 +13,7 @@ interface AnimationControlsProps {
   onSpeedChange: (speed: number) => void
   onTimeChange: (time: number) => void
   /** 控制器渲染模式，默认 'timed' */
-  controlsMode?: 'timed' | 'loop' | 'param'
+  controlsMode?: 'timed' | 'loop' | 'param' | 'pause-only'
 }
 
 export const AnimationControls: React.FC<AnimationControlsProps> = ({
@@ -46,6 +46,38 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
   // ── param 型：不渲染底部控制栏 ──
   if (controlsMode === 'param') {
     return null
+  }
+
+  // ── pause-only 型：仅暂停/继续按钮（无播放启动、无重置、无速度、无进度条）──
+  // 适用场景：动画由左屏开关/交互触发，不需要"播放"启动按钮，但需要暂停分析。
+  // 按钮仅在"动画已激活"（播放中或曾播放过 time>0）时显示，
+  // 避免未触发交互前出现无效的播放按钮。
+  if (controlsMode === 'pause-only') {
+    const hasStarted = isPlaying || time > 0
+    if (!hasStarted) return null
+
+    return (
+      <div className="w-full bg-white rounded-lg shadow-sm border border-neutral-200 px-4 py-3">
+        <div className="flex items-center justify-center">
+          <button
+            onClick={onPlayPause}
+            className="w-10 h-10 rounded-full bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 active:scale-[0.97] flex items-center justify-center transition-all"
+            style={{
+              transitionProperty: 'all',
+              transitionDuration: `${duration.fast}ms`,
+              transitionTimingFunction: 'ease-out',
+            }}
+            aria-label={isPlaying ? '暂停' : '继续播放'}
+          >
+            {isPlaying ? (
+              <Pause className="w-5 h-5" />
+            ) : (
+              <Play className="w-5 h-5 ml-0.5" />
+            )}
+          </button>
+        </div>
+      </div>
+    )
   }
 
   // ── loop 型：仅速度选择器 + 徽章 ──

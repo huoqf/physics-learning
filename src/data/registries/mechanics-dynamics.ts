@@ -7,7 +7,9 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '弹力演示',
     knowledgeId: 'mechanics-3-2',
     Component: lazy(() => import('@/features/mechanics/dynamics/SpringForceAnimation')),
-    controlsMode: 'timed' as const,
+    // mode=0 胡克定律：简谐振动（依赖 time）→ 'timed'（完整控制栏）
+    // mode=1 绳与弹簧瞬时切断：由左屏"剪断细绳"开关触发 → 'pause-only'（仅暂停/继续按钮）
+    controlsMode: (params) => params.mode === 1 ? 'pause-only' : 'timed',
     defaultParams: { k: 100, m: 1, mode: 0, isCut: 0 } as const,
     maxTime: 5,
     paramMeta: [

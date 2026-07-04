@@ -5,7 +5,7 @@
  * 坐标系统：viewBox 固定常量 + 设计坐标（方式 A）
  */
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useCanvasSize } from '@/utils'
@@ -43,6 +43,7 @@ export default function SpringForceCutRopeScene() {
   } = useSpringForceCutRope()
 
   // 剪断后自动播放（最慢速），B 球落地后自动停播并恢复原速
+  // 注意：用户主动按"暂停"后不应被强制重启，因此把"剪断触发"与"落地停止"拆为两个 effect
   const { isPlaying, setIsPlaying, setSpeed } = useAnimationStore(
     useShallow((s) => ({
       isPlaying: s.isPlaying,
@@ -51,12 +52,25 @@ export default function SpringForceCutRopeScene() {
     })),
   )
 
+  // 跟踪上一次 isCut 状态，仅在 0→1 跳变时触发播放，避免暂停后被自动重启
+  const prevIsCutRef = useRef(isCut)
+
+  // 剪断瞬间触发播放（最慢速）；解除剪断时停止并恢复原速
   useEffect(() => {
-    if (isCut === 1) {
-      if (!isPlaying) {
-        setSpeed(0.25)
-        setIsPlaying(true)
-      }
+    if (isCut === 1 && prevIsCutRef.current === 0) {
+      setSpeed(0.25)
+      setIsPlaying(true)
+    }
+    if (isCut === 0 && prevIsCutRef.current === 1) {
+      setSpeed(1)
+      setIsPlaying(false)
+    }
+    prevIsCutRef.current = isCut
+  }, [isCut, setSpeed, setIsPlaying])
+
+  // B 球落地后自动停播并恢复原速（仅在播放中检查，不强制重启用户暂停）
+  useEffect(() => {
+    if (isCut === 1 && isPlaying) {
       const fallTime = calculateBallBFallTime(
         m,
         k,
@@ -68,9 +82,11 @@ export default function SpringForceCutRopeScene() {
         setIsPlaying(false)
       }
     }
-  }, [isCut, isPlaying, tCut, m, k, setIsPlaying, setSpeed])
+  }, [isCut, isPlaying, tCut, m, k, setSpeed, setIsPlaying])
 
-  const { ceilY, xLeft, xRight, dividerX, bracketWidth } = CUT_ROPE_DESIGN
+  const { ceilY, xLeft, xRight, dividerX, bracketWidth, groundY } = CUT_ROPE_DESIGN
+  // 地面分段：左侧系统一、右侧系统二各一段（避开中间分界线）
+  const groundSegmentWidth = (dividerX - 20) - 20
 
   return (
     <svg
@@ -106,6 +122,22 @@ export default function SpringForceCutRopeScene() {
       {/* 天花板支架 */}
       <PhysicsGround x={xLeft - bracketWidth / 2} y={ceilY} width={bracketWidth} type="bracket" />
       <PhysicsGround x={xRight - bracketWidth / 2} y={ceilY} width={bracketWidth} type="bracket" />
+
+      {/* 地面（B 球落地参照物）— 左右各一段，避开中间分界线 */}
+      <PhysicsGround
+        x={20}
+        y={groundY}
+        width={groundSegmentWidth}
+        type="ground"
+        appearance={{ color: PHYSICS_COLORS.axis, showBaseShadow: true }}
+      />
+      <PhysicsGround
+        x={dividerX + 5}
+        y={groundY}
+        width={groundSegmentWidth - 5}
+        type="ground"
+        appearance={{ color: PHYSICS_COLORS.axis, showBaseShadow: true }}
+      />
 
       {/* ── 系统一：弹簧在上，绳在下 ── */}
       <Spring

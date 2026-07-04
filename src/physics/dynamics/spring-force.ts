@@ -126,6 +126,8 @@ export interface CutRopeState {
   forces: CutRopeForces
   /** 剪断后经过的时间 [s]，未剪断时为 0 */
   tCut: number
+  /** B 球是否已落地（落地后位置固定、加速度归零） */
+  isLanded: boolean
 }
 
 /**
@@ -163,6 +165,20 @@ export function calculateCutRopeState(
   let yA = ceilY + Ls1_eq
   let yB = yA + ROPE_NATURAL_LENGTH
 
+  // B 球落地判定：剪断后自由落体到 groundY - BALL_RADIUS
+  let isLanded = false
+  if (isCut === 1) {
+    const yB_start = ceilY + Ls1_eq + ROPE_NATURAL_LENGTH
+    const fallDistance = (groundY - BALL_RADIUS - yB_start) / PIXELS_PER_METER
+    if (fallDistance > 0) {
+      const fallTime = Math.sqrt((2 * fallDistance) / g)
+      isLanded = tCut >= fallTime
+    } else {
+      // 初始位置已在地面或以下：立即视为落地
+      isLanded = true
+    }
+  }
+
   if (isCut === 1) {
     const xs1_eq_new = (m * g) / k
     const xs1_eq_new_px = xs1_eq_new * PIXELS_PER_METER
@@ -171,9 +187,14 @@ export function calculateCutRopeState(
     const ampA = xs1_eq_px - xs1_eq_new_px
     yA = yA_eq_new + ampA * Math.cos(omegaVal * tCut)
 
-    const yB_start = ceilY + Ls1_eq + ROPE_NATURAL_LENGTH
-    const dyB = 0.5 * g * tCut * tCut * PIXELS_PER_METER
-    yB = Math.min(groundY - BALL_RADIUS, yB_start + dyB)
+    // B 球：未落地时自由落体，落地后固定在地面
+    if (isLanded) {
+      yB = groundY - BALL_RADIUS
+    } else {
+      const yB_start = ceilY + Ls1_eq + ROPE_NATURAL_LENGTH
+      const dyB = 0.5 * g * tCut * tCut * PIXELS_PER_METER
+      yB = Math.min(groundY - BALL_RADIUS, yB_start + dyB)
+    }
   }
 
   // ── 系统二：绳在上，弹簧在下 ──
@@ -213,7 +234,8 @@ export function calculateCutRopeState(
 
   const fB_rope = isCut === 1 ? 0 : fRope1_pre
   const fB_grav = -fGravity
-  const a_B = isCut === 1 ? -g : 0
+  // B 球：未落地时自由落体 a=-g；落地后静止 a=0（支持力平衡重力）
+  const a_B = isCut === 1 ? (isLanded ? 0 : -g) : 0
 
   const fSpring2 = isCut === 1 ? m * g * Math.cos(omega_rel * tCut) : fSpring2_pre
 
@@ -246,6 +268,7 @@ export function calculateCutRopeState(
       fSpring2,
     },
     tCut,
+    isLanded,
   }
 }
 

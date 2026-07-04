@@ -141,13 +141,16 @@ function CutRopeAccelerationChart({
 
   const gravity = 9.8
   const maxAccel = gravity * 2.5
-  const unitHeight = 180 / maxAccel
+  const unitHeight = 130 / maxAccel
+  const baseY = 170  // 0 加速度基准线 Y 坐标
 
+  // 带方向的加速度数据：向上为正，向下为负
+  // 物理约定：a>0 表示加速度方向向上，a<0 表示向下（与场景 SVG y 轴向下相反）
   const data = [
-    { label: 'A球', value: Math.abs(state.forces.a_A), color: '#F59E0B' },
-    { label: 'B球', value: Math.abs(state.forces.a_B), color: '#3B82F6' },
-    { label: 'C球', value: Math.abs(state.forces.a_C), color: '#EF4444' },
-    { label: 'D球', value: Math.abs(state.forces.a_D), color: '#10B981' },
+    { label: 'A球', value: state.forces.a_A, color: '#F59E0B' },
+    { label: 'B球', value: state.forces.a_B, color: '#3B82F6' },
+    { label: 'C球', value: state.forces.a_C, color: '#EF4444' },
+    { label: 'D球', value: state.forces.a_D, color: '#10B981' },
   ]
 
   return (
@@ -160,7 +163,7 @@ function CutRopeAccelerationChart({
         </div>
       ) : (
         <div className="text-center text-xs text-gray-500 mb-2">
-          {isCut === 1 ? 'B球已落地，动画停止' : '点击“剪断细绳”观察加速度变化'}
+          {state.isLanded ? 'B球已落地，加速度归零' : '点击“剪断细绳”观察加速度变化'}
         </div>
       )}
 
@@ -169,22 +172,33 @@ function CutRopeAccelerationChart({
           四球加速度对比
         </text>
 
-        {/* 基准线 */}
-        <line x1={35} y1={170} x2={340} y2={170} stroke="#E5E7EB" strokeWidth={1} />
-        <text x={30} y={175} fontSize={font(10)} fill="#9CA3AF" textAnchor="end">0</text>
-        <text x={30} y={40} fontSize={font(10)} fill="#9CA3AF" textAnchor="end">
-          {maxAccel.toFixed(1)}
+        {/* 基准线（0 加速度） */}
+        <line x1={35} y1={baseY} x2={340} y2={baseY} stroke="#9CA3AF" strokeWidth={1.5} />
+        <text x={30} y={baseY + 4} fontSize={font(10)} fill="#9CA3AF" textAnchor="end">0</text>
+        {/* 正向刻度（向上加速度） */}
+        <line x1={33} y1={baseY - 130} x2={37} y2={baseY - 130} stroke="#9CA3AF" strokeWidth={1} />
+        <text x={30} y={baseY - 127} fontSize={font(10)} fill="#9CA3AF" textAnchor="end">
+          +{maxAccel.toFixed(1)}
         </text>
-        <text x={30} y={305} fontSize={font(10)} fill="#9CA3AF" textAnchor="end">
+        {/* 负向刻度（向下加速度） */}
+        <line x1={33} y1={baseY + 130} x2={37} y2={baseY + 130} stroke="#9CA3AF" strokeWidth={1} />
+        <text x={30} y={baseY + 134} fontSize={font(10)} fill="#9CA3AF" textAnchor="end">
           -{maxAccel.toFixed(1)}
         </text>
+        {/* 方向提示 */}
+        <text x={30} y={baseY - 60} fontSize={font(9)} fill="#9CA3AF" textAnchor="end">↑</text>
+        <text x={30} y={baseY + 70} fontSize={font(9)} fill="#9CA3AF" textAnchor="end">↓</text>
 
-        {/* 柱状图 */}
+        {/* 柱状图（带方向：正向上画，负向下画） */}
         {data.map((item, i) => {
           const barX = 65 + i * 72
           const barWidth = 48
-          const barHeight = item.value * unitHeight
-          const barY = 170 - barHeight
+          const isPositive = item.value >= 0
+          const barHeight = Math.abs(item.value) * unitHeight
+          // 正值：从基准线向上画；负值：从基准线向下画
+          const barY = isPositive ? baseY - barHeight : baseY
+          // 数值标签位置：在柱子顶端外侧
+          const labelY = isPositive ? barY - 6 : barY + barHeight + 14
 
           return (
             <g key={item.label}>
@@ -199,7 +213,7 @@ function CutRopeAccelerationChart({
               />
               <text
                 x={barX + barWidth / 2}
-                y={barY - 8}
+                y={labelY}
                 fontSize={font(12)}
                 fontWeight="bold"
                 fill={item.color}
@@ -209,7 +223,7 @@ function CutRopeAccelerationChart({
               </text>
               <text
                 x={barX + barWidth / 2}
-                y={200}
+                y={baseY + 145}
                 fontSize={font(12)}
                 fill="#374151"
                 textAnchor="middle"
@@ -224,11 +238,11 @@ function CutRopeAccelerationChart({
         {/* 理论分析标注 */}
         {isCut === 1 && tCut < 0.5 && (
           <g>
-            <text x={180} y={260} fontSize={font(12)} fill="#6B7280" textAnchor="middle">
+            <text x={180} y={300} fontSize={font(12)} fill="#6B7280" textAnchor="middle">
               理论值 (刚剪断):
             </text>
-            <text x={180} y={280} fontSize={font(11)} fill="#6B7280" textAnchor="middle">
-              aA=g, aB=g, aC=2g, aD=0
+            <text x={180} y={320} fontSize={font(11)} fill="#6B7280" textAnchor="middle">
+              aA=+g, aB=-g, aC=-2g, aD=0
             </text>
           </g>
         )}

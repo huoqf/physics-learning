@@ -17,7 +17,7 @@ export interface AnimationLifecycleResult {
   canvasDimmed: boolean
   handleReset: () => void
   /** 当前实际生效的控制模式（已解析函数形式） */
-  effectiveControlsMode: 'timed' | 'loop' | 'param'
+  effectiveControlsMode: 'timed' | 'loop' | 'param' | 'pause-only'
   discoverySteps: DiscoveryStepData[]
   discoveryStep: number
   setDiscoveryStep: (step: number) => void
@@ -87,6 +87,7 @@ function useAnimationConfig() {
       const initMode = typeof config.controlsMode === 'function'
         ? config.controlsMode(config.defaultParams as Record<string, number>)
         : (config.controlsMode ?? 'timed')
+      // loop 型加载即自动播放；其余型（timed/param/pause-only）初始为暂停
       setIsPlaying(initMode === 'loop')
       setPhysicsState({ position: { x: 0, y: 0 }, velocity: { vx: 0, vy: 0 }, trajectory: [] })
       setMode('animation')
@@ -164,14 +165,14 @@ function usePlaybackLoop(
   }, [time, isPlaying, currentTimeRef])
 
   // 计算当前生效的 controlsMode（支持函数形式）
-  const effectiveControlsMode: 'timed' | 'loop' | 'param' = typeof config?.controlsMode === 'function'
+  const effectiveControlsMode: 'timed' | 'loop' | 'param' | 'pause-only' = typeof config?.controlsMode === 'function'
     ? config.controlsMode(params)
     : (config?.controlsMode ?? 'timed')
 
   const isLoop = effectiveControlsMode === 'loop'
 
   // 动态 controlsMode 切换时同步播放状态：
-  // loop → 自动开始播放；非 loop → 暂停（由用户手动触发）
+  // loop → 自动开始播放；非 loop（timed/param/pause-only）→ 暂停（由用户手动触发或场景触发）
   useEffect(() => {
     setIsPlaying(isLoop)
   }, [isLoop, setIsPlaying])
@@ -186,6 +187,7 @@ function usePlaybackLoop(
           currentTimeRef.current = 0
           setTime(0)
         } else {
+          // timed / pause-only 型：到达终点后停止
           currentTimeRef.current = maxTime
           setTime(maxTime)
           setIsPlaying(false)

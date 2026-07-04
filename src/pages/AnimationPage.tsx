@@ -39,7 +39,7 @@ function AnimationCenter({
   isDiscoveryMode: boolean
   canvasDimmed: boolean
   handleReset: () => void
-  effectiveControlsMode: 'timed' | 'loop' | 'param'
+  effectiveControlsMode: 'timed' | 'loop' | 'param' | 'pause-only'
 }) {
   const time = useAnimationStore((s) => s.time)
   const isPlaying = useAnimationStore((s) => s.isPlaying)
