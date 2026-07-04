@@ -10,10 +10,21 @@ interface UseVectorDragProps {
   visibleW: number
   visibleH: number
   scale: number
+  phi: number
+  mode: number
   updateParam: (key: string, value: number) => void
 }
 
-export function useVectorDrag({ svgRef, visibleW, visibleH, scale, updateParam }: UseVectorDragProps) {
+function normalizeAngle360(deg: number): number {
+  return ((deg % 360) + 360) % 360
+}
+
+function normalizeAngle180(deg: number): number {
+  const a = normalizeAngle360(deg)
+  return a > 180 ? 360 - a : a
+}
+
+export function useVectorDrag({ svgRef, visibleW, visibleH, scale, phi, mode, updateParam }: UseVectorDragProps) {
   const [activeDrag, setActiveDrag] = useState<'f1' | 'f2' | 'f' | null>(null)
 
   const handleDragStart = useCallback(
@@ -31,34 +42,40 @@ export function useVectorDrag({ svgRef, visibleW, visibleH, scale, updateParam }
       const rect = svgRef.current.getBoundingClientRect()
       const { x: px, y: py } = canvasToPhysics(clientX - rect.left, clientY - rect.top, visibleW, visibleH, scale)
 
+      const rawMag = Math.sqrt(px * px + py * py)
+      const rawDir = (Math.atan2(py, px) * 180) / Math.PI
+
+      const roundedMag = Math.round(rawMag * 2) / 2
+      const newMag = Math.max(1, Math.min(20, Math.abs(rawMag - roundedMag) < SNAP_FORCE_THRESHOLD ? roundedMag : rawMag))
+
       if (activeDrag === 'f1') {
-        let newF1 = px
-        const rounded = Math.round(newF1 * 2) / 2
-        if (Math.abs(newF1 - rounded) < SNAP_FORCE_THRESHOLD) newF1 = rounded
-        updateParam('f1', Math.max(1, Math.min(20, newF1)))
-      } else {
-        const raw = Math.sqrt(px * px + py * py)
-        let rawAngle = Math.abs((Math.atan2(py, px) * 180) / Math.PI)
-        rawAngle = Math.max(0, Math.min(180, rawAngle))
-
+        // F1 拖拽：改变大小和方向 phi
+        let newPhi = rawDir
         for (const snapA of SNAP_ANGLES) {
-          if (Math.abs(rawAngle - snapA) < SNAP_ANGLE_THRESHOLD) { rawAngle = snapA; break }
+          if (Math.abs(newPhi - snapA) < SNAP_ANGLE_THRESHOLD) { newPhi = snapA; break }
+          if (Math.abs(newPhi + snapA) < SNAP_ANGLE_THRESHOLD) { newPhi = -snapA; break }
         }
-
-        const rounded = Math.round(raw * 2) / 2
-        const newMag = Math.max(1, Math.min(20, Math.abs(raw - rounded) < SNAP_FORCE_THRESHOLD ? rounded : raw))
-        const newAngle = Math.max(0, Math.min(180, rawAngle))
-
-        if (activeDrag === 'f2') {
-          updateParam('f2', newMag)
-          updateParam('angle', newAngle)
-        } else {
-          updateParam('f1', newMag)
-          updateParam('angle', newAngle)
+        updateParam('f1', newMag)
+        updateParam('phi', Math.max(-180, Math.min(180, newPhi)))
+      } else if (activeDrag === 'f2') {
+        // F2 拖拽（合成模式）：夹角 θ 取最小角 [0, 180]
+        let newAngle = normalizeAngle180(rawDir - phi)
+        for (const snapA of SNAP_ANGLES) {
+          if (Math.abs(newAngle - snapA) < SNAP_ANGLE_THRESHOLD) { newAngle = snapA; break }
         }
+        updateParam('f2', newMag)
+        updateParam('angle', Math.max(0, Math.min(180, newAngle)))
+      } else {
+        // 合力拖拽（正交分解模式）：偏角 0~360
+        let newAngle = normalizeAngle360(rawDir)
+        for (const snapA of SNAP_ANGLES) {
+          if (Math.abs(newAngle - snapA) < SNAP_ANGLE_THRESHOLD) { newAngle = snapA; break }
+        }
+        updateParam('f1', newMag)
+        updateParam('angle', newAngle)
       }
     },
-    [activeDrag, svgRef, visibleW, visibleH, scale, updateParam]
+    [activeDrag, svgRef, visibleW, visibleH, scale, phi, mode, updateParam]
   )
 
   useEffect(() => {

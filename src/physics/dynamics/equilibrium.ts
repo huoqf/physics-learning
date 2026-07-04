@@ -1,15 +1,18 @@
 import { GRAVITY } from '../constants'
 
 /**
- * 计算两个共点力的合成（以 F1 方向为 x 轴正方向）
+ * 计算两个共点力的合成
  * @param f1 力 F1 的大小 (N)，必须 ≥ 0
  * @param f2 力 F2 的大小 (N)，必须 ≥ 0
- * @param angleDeg 两力夹角 θ (度)，范围 [0, 180]
+ * @param thetaDeg 两力夹角 θ (度)，范围 [0, 180]
+ * @param phiDeg F1 与 x 轴正方向的夹角 φ (度)，默认 0
+ * @returns resultAngleDeg 为合力与 F1 的夹角 α (度)，范围 [0, 180]
  */
 export function calculateVectorAddition(
   f1: number,
   f2: number,
-  angleDeg: number
+  thetaDeg: number,
+  phiDeg: number = 0
 ): {
   fResultant: number;
   resultAngleDeg: number;
@@ -20,16 +23,26 @@ export function calculateVectorAddition(
   fx: number;
   fy: number;
 } {
-  const angleRad = (angleDeg * Math.PI) / 180;
-  const fx1 = f1;
-  const fy1 = 0;
-  const fx2 = f2 * Math.cos(angleRad);
-  const fy2 = f2 * Math.sin(angleRad);
+  const phiRad = (phiDeg * Math.PI) / 180;
+  const thetaRad = (thetaDeg * Math.PI) / 180;
+
+  const f1DirX = Math.cos(phiRad);
+  const f1DirY = Math.sin(phiRad);
+
+  const fx1 = f1 * f1DirX;
+  const fy1 = f1 * f1DirY;
+  const fx2 = f2 * Math.cos(phiRad + thetaRad);
+  const fy2 = f2 * Math.sin(phiRad + thetaRad);
+
   const fx = fx1 + fx2;
   const fy = fy1 + fy2;
+
   const fResultant = Math.sqrt(fx * fx + fy * fy);
-  // atan2 返回范围 [-PI, PI]，转换为度 [-180, 180]
-  const resultAngleDeg = (Math.atan2(fy, fx) * 180) / Math.PI;
+
+  // 合力相对于 F1 方向的夹角 α，通过旋转坐标系计算
+  const fxRel = fx * f1DirX + fy * f1DirY;
+  const fyRel = -fx * f1DirY + fy * f1DirX;
+  const resultAngleDeg = (Math.atan2(fyRel, fxRel) * 180) / Math.PI;
 
   return {
     fResultant,

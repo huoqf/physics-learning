@@ -49,7 +49,7 @@ export function VectorFormulaPanel({ mode, f1, f2, angle, physicsData }: VectorF
               合力 F = {fResultant.toFixed(2)} N
             </text>
             <text x={0} y={105} fontSize={CANVAS_STYLE.font.bodySize} fill={PHYSICS_COLORS.forceNet} fontWeight="bold" fontFamily={CANVAS_STYLE.font.family}>
-              合力偏角 α = {resultAngleDeg.toFixed(1)}°
+              合力与 F₁ 夹角 α = {resultAngleDeg.toFixed(1)}°
             </text>
           </>
         )}

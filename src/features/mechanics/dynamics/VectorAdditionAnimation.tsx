@@ -33,6 +33,7 @@ export default function VectorAdditionAnimation() {
   const f1 = params.f1 ?? 10
   const f2 = params.f2 ?? 8
   const angle = params.angle ?? 60
+  const phi = params.phi ?? 0
   const mode = params.mode ?? 0
 
   const WORLD = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 } as const
@@ -45,10 +46,10 @@ export default function VectorAdditionAnimation() {
   const vaSceneScale = createSceneScale(vaScene)
 
   const physicsData = useVectorAdditionPhysics({
-    f1, f2, angle, mode, canvasWidth: vp.visibleW, canvasHeight: vp.visibleH, scale, time, isPlaying,
+    f1, f2, angle, phi, mode, canvasWidth: vp.visibleW, canvasHeight: vp.visibleH, scale, time, isPlaying,
   })
 
-  const { handleDragStart, handleDragMove } = useVectorDrag({ svgRef, visibleW: vp.visibleW, visibleH: vp.visibleH, scale, updateParam })
+  const { handleDragStart, handleDragMove } = useVectorDrag({ svgRef, visibleW: vp.visibleW, visibleH: vp.visibleH, scale, phi, mode, updateParam })
 
   const centerX = vp.visibleW / 2
   const centerY = vp.visibleH / 2

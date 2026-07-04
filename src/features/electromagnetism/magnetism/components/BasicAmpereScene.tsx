@@ -66,6 +66,8 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
       refMagnitudes: {
         force: 2.0,
         velocity: 2.0,
+        currentDirection: 2.5,
+        lorentzForce: 2.0,
       },
     }
   }, [rodX, cy])
@@ -208,18 +210,8 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
                 vector={{ x: 0, y: I > 0 ? 2.5 : -2.5 }}
                 type="currentDirection"
                 sceneScale={localScale}
-                strokeWidth={2}
+                strokeWidth={3}
               />
-              <text
-                x={rodX + 8}
-                y={cy + (I > 0 ? -25 : 25)}
-                fontSize={font(11)}
-                fill={PHYSICS_COLORS.electricCurrent}
-                fontWeight="bold"
-                style={{ userSelect: 'none' }}
-              >
-                I
-              </text>
             </g>
           )}
         </g>

@@ -6,6 +6,7 @@ interface Params {
   f1: number
   f2: number
   angle: number
+  phi: number
   mode: number
 }
 
@@ -13,6 +14,7 @@ const DEFAULTS: ParamDefs<Params> = {
   f1: { default: 10 },
   f2: { default: 8 },
   angle: { default: 60 },
+  phi: { default: 0 },
   mode: { default: 0 },
 }
 
@@ -29,6 +31,7 @@ export function handleVectorAddition(
   const f1 = p.f1 ?? 10
   const f2 = p.f2 ?? 8
   const angle = p.angle ?? 60
+  const phi = p.phi ?? 0
   const mode = p.mode ?? 0
 
   if (mode === 2) {
@@ -38,10 +41,10 @@ export function handleVectorAddition(
       { label: '竖直分量 Fy', value: fy.toFixed(2), unit: 'N' }
     )
   } else {
-    const { fResultant, resultAngleDeg } = calculateVectorAddition(f1, f2, angle)
+    const { fResultant, resultAngleDeg } = calculateVectorAddition(f1, f2, angle, phi)
     quantities.push(
       { label: '合力 F', value: fResultant.toFixed(2), unit: 'N', highlight: 'positive' as const },
-      { label: '合力偏角 α', value: resultAngleDeg.toFixed(1), unit: '°' }
+      { label: '合力与 F₁ 夹角 α', value: resultAngleDeg.toFixed(1), unit: '°' }
     )
   }
 

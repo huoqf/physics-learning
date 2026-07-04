@@ -3,7 +3,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { HandRule } from '@/components/Physics/HandRule'
 import { solveBasicAmpere, solveAdvancedAmpere } from '@/physics'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { CANVAS_COLORS } from '@/theme/physics'
 
@@ -22,9 +22,10 @@ export default function AmpereForce() {
       showVectors: s.showVectors,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full)
   const { font } = canvasSize
-  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 400 })
+  const DESIGN_WIDTH = 700
+  const DESIGN_HEIGHT = 400
 
   // 读取控制参数
   const mode = params.mode ?? 0
@@ -71,10 +72,10 @@ export default function AmpereForce() {
   return (
     <div ref={containerRef} className="w-full h-full p-2 flex items-center justify-center bg-neutral-100/40">
       <svg
-        viewBox={`0 0 ${canvasSize.width} ${canvasSize.height}`}
+        viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`}
+        preserveAspectRatio="xMidYMid meet"
         className="w-full h-full max-h-[90vh] bg-white rounded-2xl shadow-lg select-none"
       >
-        <g transform={vp.transform}>
         {mode === 0 ? (
           // ─── 基础模式：直交规律 (重构布局充分利用空间) ───
           <g>
@@ -216,7 +217,6 @@ export default function AmpereForce() {
             />
           </g>
         )}
-        </g>
       </svg>
     </div>
   )

@@ -1,7 +1,6 @@
 import React, { useId } from 'react'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { useAnimationStore } from '@/stores'
 
 /**
  * 导电棒组件 Props
@@ -60,13 +59,10 @@ const getInclinedLayout = (L: number, theta: number = 30) => {
     midStroke: 11,
     innerStroke: 7,
     highlightStroke: 2,
-    // 端盖
-    capRx: 3.5,
-    capRy: 7.5,
-    // 电流指示
-    currentGlowStroke: 5,
-    currentDashStroke: 3.5,
-  }
+      // 端盖
+      capRx: 3.5,
+      capRy: 7.5,
+    }
 }
 
 export const ConductingRod: React.FC<ConductingRodProps> = ({
@@ -83,7 +79,6 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
   const uniqueId = useId().replace(/:/g, '-')
   const gradientId = `rod-grad-${uniqueId}`
   const radialGradId = `rod-radial-grad-${uniqueId}`
-  const time = useAnimationStore((s) => s.time)
   
   if (type === 'side-view') {
     // 2D 侧视截面：圆形截面，中间画 ⊗ 或 ⊙
@@ -153,7 +148,6 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
       dx, dy,
       outerStroke, midStroke, innerStroke, highlightStroke,
       capRx, capRy,
-      currentGlowStroke, currentDashStroke,
     } = layout
 
     const px1 = r1sx + railDx * k
@@ -178,36 +172,6 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
         {/* 3D 椭圆端面 */}
         <ellipse cx={px1} cy={py1} rx={capRx} ry={capRy} transform={`rotate(${angle}, ${px1}, ${py1})`} fill={SCENE_COLORS.coil.copperLight} stroke={SCENE_COLORS.coil.copperStroke} strokeWidth={CANVAS_STYLE.stroke.tick} />
         <ellipse cx={px2} cy={py2} rx={capRx} ry={capRy} transform={`rotate(${angle}, ${px2}, ${py2})`} fill={SCENE_COLORS.coil.copperBase} stroke={SCENE_COLORS.coil.copperStroke} strokeWidth={CANVAS_STYLE.stroke.tick} />
-
-        {/* 如果有电流，在棒中段加带有荧光发光特效的流向指示线 */}
-        {currentDir !== 'none' && (
-          <g style={{ filter: `drop-shadow(0 0 3px ${PHYSICS_COLORS.electricCurrent})` }}>
-            {/* 电流发光底条 */}
-            <line
-              x1={currentDir === 'in' ? px2 : px1}
-              y1={currentDir === 'in' ? py2 : py1}
-              x2={currentDir === 'in' ? px1 : px2}
-              y2={currentDir === 'in' ? py1 : py2}
-              stroke={PHYSICS_COLORS.electricCurrent}
-              strokeWidth={currentGlowStroke}
-              opacity={CANVAS_STYLE.opacity.glow}
-              strokeLinecap="round"
-            />
-            {/* 动画流光虚线 */}
-            <line
-              x1={currentDir === 'in' ? px2 : px1}
-              y1={currentDir === 'in' ? py2 : py1}
-              x2={currentDir === 'in' ? px1 : px2}
-              y2={currentDir === 'in' ? py1 : py2}
-              stroke={colors.neutral.white} // 在红色荧光背景下使用白色流体更醒目
-              strokeWidth={currentDashStroke}
-              strokeDasharray="6,6"
-              strokeDashoffset={-time * 35}
-              strokeLinecap="round"
-              opacity="0.9"
-            />
-          </g>
-        )}
       </g>
     )
   }
@@ -215,7 +179,6 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
   // 默认：horizontal 平面模式
   const y1 = height / 2 - spacing / 2 - 20
   const y2 = height / 2 + spacing / 2 + 20
-  const showCurrentFlow = currentDir !== 'none'
 
   // 导体棒宽度参数化（基于默认 12px 宽）
   const rodHalfW = 6
@@ -224,7 +187,6 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
   const capRy = 2.5
   const highlightW = 2.5
   const highlightOffsetX = rodHalfW - 2 // 反光条距棒中心的偏移
-  const currentFlowInset = 10 // 流光动画距端点的内缩
 
   return (
     <g>
@@ -250,36 +212,6 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
 
       {/* 金属反光条 */}
       <rect x={x - highlightOffsetX} y={y1 + 4} width={highlightW} height={y2 - y1 - 8} fill={colors.neutral.white} opacity="0.6" rx="1" pointerEvents="none" />
-      
-      {/* 导体棒内部电流流光指示动画 */}
-      {showCurrentFlow && (
-        <g style={{ filter: `drop-shadow(0 0 3px ${PHYSICS_COLORS.electricCurrent})` }}>
-          {/* 流光发光背景层 */}
-          <line
-            x1={x}
-            y1={currentDir === 'in' ? y2 - currentFlowInset : y1 + currentFlowInset}
-            x2={x}
-            y2={currentDir === 'in' ? y1 + currentFlowInset : y2 - currentFlowInset}
-            stroke={PHYSICS_COLORS.electricCurrent}
-            strokeWidth="5"
-            opacity={CANVAS_STYLE.opacity.glow}
-            strokeLinecap="round"
-          />
-          {/* 流光动画线 */}
-          <line
-            x1={x}
-            y1={currentDir === 'in' ? y2 - currentFlowInset : y1 + currentFlowInset}
-            x2={x}
-            y2={currentDir === 'in' ? y1 + currentFlowInset : y2 - currentFlowInset}
-            stroke={colors.neutral.white} // 使用白色线流体，搭配底部的红色发光背景极其清晰且高亮
-            strokeWidth="3"
-            strokeDasharray="6,6"
-            strokeDashoffset={-time * 30}
-            strokeLinecap="round"
-            opacity="0.9"
-          />
-        </g>
-      )}
     </g>
   )
 }
