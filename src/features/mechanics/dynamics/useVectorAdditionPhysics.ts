@@ -6,6 +6,7 @@ interface UseVectorAdditionPhysicsProps {
   f1: number
   f2: number
   angle: number
+  phi: number // F1 与 x 轴正方向的夹角 (°)，合成模式下有效
   mode: number // 0 = 平行四边形, 1 = 三角形, 2 = 正交分解
   canvasWidth: number
   canvasHeight: number
@@ -63,6 +64,7 @@ export function useVectorAdditionPhysics({
   f1,
   f2,
   angle,
+  phi,
   mode,
   canvasWidth,
   canvasHeight,
@@ -72,7 +74,7 @@ export function useVectorAdditionPhysics({
 }: UseVectorAdditionPhysicsProps): VectorAdditionPhysicsData {
   return useMemo(() => {
     // 1. 底层物理计算
-    const addition = calculateVectorAddition(f1, f2, angle)
+    const addition = calculateVectorAddition(f1, f2, angle, phi)
     const decomp = calculateOrthogonalDecomposition(f1, angle) // 正交分解中，f1 充当合力
 
     // 2. 坐标原点
@@ -84,22 +86,23 @@ export function useVectorAdditionPhysics({
     let fResultantEnd = { cx: 0, cy: 0 }
     let f1ToResultant = { x1: 0, y1: 0, x2: 0, y2: 0 }
     let f2ToResultant = { x1: 0, y1: 0, x2: 0, y2: 0 }
-    
+
     let f2ShiftedStart = { cx: 0, cy: 0 }
     let f2ShiftedEnd = { cx: 0, cy: 0 }
-    
+
     let fxEnd = { cx: 0, cy: 0 }
     let fyEnd = { cx: 0, cy: 0 }
     let fxProj = { x1: 0, y1: 0, x2: 0, y2: 0 }
     let fyProj = { x1: 0, y1: 0, x2: 0, y2: 0 }
 
     const angleRad = (angle * Math.PI) / 180
+    const phiRad = (phi * Math.PI) / 180
 
     if (mode === 2) {
       // ===== 正交分解模式 =====
       // 此时 f1 充当合力，angle 充当合力方向角
       fResultantEnd = physicsToCanvas(decomp.fx, decomp.fy, canvasWidth, canvasHeight, scale)
-      
+
       // 分量端点
       fxEnd = physicsToCanvas(decomp.fx, 0, canvasWidth, canvasHeight, scale)
       fyEnd = physicsToCanvas(0, decomp.fy, canvasWidth, canvasHeight, scale)
@@ -153,7 +156,7 @@ export function useVectorAdditionPhysics({
       // 平移后 F2 的起止点：起点从 (0,0) 平移到 F1 的终点 (fx1, fy1)
       const currentShiftX = addition.fx1 * progress
       const currentShiftY = addition.fy1 * progress
-      
+
       f2ShiftedStart = physicsToCanvas(currentShiftX, currentShiftY, canvasWidth, canvasHeight, scale)
       f2ShiftedEnd = physicsToCanvas(
         addition.fx2 + currentShiftX,
@@ -170,7 +173,7 @@ export function useVectorAdditionPhysics({
     const arcRadius = 35
     const textRadius = 50
     let thetaTextPos = { cx: origin.cx + textRadius, cy: origin.cy }
-    
+
     // 合力方向角 α 弧线（仅合成模式下且 theta != 0 时渲染）
     let alphaArcPath = ''
     const alphaArcRadius = 22
@@ -195,31 +198,33 @@ export function useVectorAdditionPhysics({
         }
       }
     } else {
-      // 力的合成：分力夹角 θ
+      // 力的合成：分力夹角 θ，以 F1 方向 phi 为基准线
       if (angle > 0) {
-        const startX = origin.cx + arcRadius
-        const startY = origin.cy
-        const endX = origin.cx + arcRadius * Math.cos(angleRad)
-        const endY = origin.cy - arcRadius * Math.sin(angleRad)
+        // 三角形模式：θ 标注在 F1 末端；平行四边形模式：θ 标注在原点
+        const arcCenter = mode === 1 ? f1End : origin
+        const startX = arcCenter.cx + arcRadius * Math.cos(phiRad)
+        const startY = arcCenter.cy - arcRadius * Math.sin(phiRad)
+        const endX = arcCenter.cx + arcRadius * Math.cos(phiRad + angleRad)
+        const endY = arcCenter.cy - arcRadius * Math.sin(phiRad + angleRad)
         thetaArcPath = `M ${startX} ${startY} A ${arcRadius} ${arcRadius} 0 0 0 ${endX} ${endY}`
 
-        const midTheta = angleRad / 2
+        const midTheta = phiRad + angleRad / 2
         thetaTextPos = {
-          cx: origin.cx + textRadius * Math.cos(midTheta),
-          cy: origin.cy - textRadius * Math.sin(midTheta),
+          cx: arcCenter.cx + textRadius * Math.cos(midTheta),
+          cy: arcCenter.cy - textRadius * Math.sin(midTheta),
         }
       }
 
-      // 合力方向角 α
+      // 合力方向角 α（相对于 F1 方向的夹角）
       const alphaRad = (addition.resultAngleDeg * Math.PI) / 180
-      if (addition.resultAngleDeg > 1 && angle > 0) {
-        const startX = origin.cx + alphaArcRadius
-        const startY = origin.cy
-        const endX = origin.cx + alphaArcRadius * Math.cos(alphaRad)
-        const endY = origin.cy - alphaArcRadius * Math.sin(alphaRad)
+      if (addition.resultAngleDeg > 0.5 && angle > 0) {
+        const startX = origin.cx + alphaArcRadius * Math.cos(phiRad)
+        const startY = origin.cy - alphaArcRadius * Math.sin(phiRad)
+        const endX = origin.cx + alphaArcRadius * Math.cos(phiRad + alphaRad)
+        const endY = origin.cy - alphaArcRadius * Math.sin(phiRad + alphaRad)
         alphaArcPath = `M ${startX} ${startY} A ${alphaArcRadius} ${alphaArcRadius} 0 0 0 ${endX} ${endY}`
 
-        const midAlpha = alphaRad / 2
+        const midAlpha = phiRad + alphaRad / 2
         alphaTextPos = {
           cx: origin.cx + alphaTextRadius * Math.cos(midAlpha),
           cy: origin.cy - alphaTextRadius * Math.sin(midAlpha),
@@ -252,5 +257,5 @@ export function useVectorAdditionPhysics({
       alphaArcPath,
       alphaTextPos,
     }
-  }, [f1, f2, angle, mode, canvasWidth, canvasHeight, scale, time, isPlaying])
+  }, [f1, f2, angle, phi, mode, canvasWidth, canvasHeight, scale, time, isPlaying])
 }

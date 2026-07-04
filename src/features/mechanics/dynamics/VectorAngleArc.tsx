@@ -15,26 +15,27 @@ export function VectorAngleArc({ physicsData, angle, mode, font }: VectorAngleAr
     <>
       {thetaArcPath && (
         <g>
-          <path d={thetaArcPath} fill="none" stroke={PHYSICS_COLORS.labelTextLight}
-            strokeWidth={1.2} strokeDasharray="2,2" />
-          <rect x={thetaTextPos.cx - 16} y={thetaTextPos.cy - 9} width={32} height={16}
-            fill="white" fillOpacity={0.85} rx={3} />
-          <text x={thetaTextPos.cx} y={thetaTextPos.cy + 3} fontSize={CANVAS_STYLE.font.annotation}
+          <path d={thetaArcPath} fill="none" stroke={PHYSICS_COLORS.labelText}
+            strokeWidth={1.8} />
+          <rect x={thetaTextPos.cx - 19} y={thetaTextPos.cy - 9} width={38} height={18}
+            fill="white" fillOpacity={1} rx={3} />
+          <text x={thetaTextPos.cx} y={thetaTextPos.cy + 4} fontSize={CANVAS_STYLE.font.label}
             fontFamily={CANVAS_STYLE.font.family} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
-            {angle.toFixed(0)}°
+            θ {angle.toFixed(0)}°
           </text>
         </g>
       )}
 
-      {mode !== 2 && alphaArcPath && (
+      {mode === 0 && alphaArcPath && (
         <g>
-          <path d={alphaArcPath} fill="none" stroke={PHYSICS_COLORS.forceNet} strokeWidth={1} />
-          <rect x={alphaTextPos.cx - 18} y={alphaTextPos.cy - 9} width={36} height={16}
-            fill="white" fillOpacity={0.85} rx={3} />
-          <text x={alphaTextPos.cx} y={alphaTextPos.cy + 3} fontSize={font(11)}
+          <path d={alphaArcPath} fill="none" stroke={PHYSICS_COLORS.forceNet}
+            strokeWidth={0.8} opacity={0.6} />
+          <rect x={alphaTextPos.cx - 16} y={alphaTextPos.cy - 7} width={32} height={14}
+            fill="white" fillOpacity={0.9} rx={2} />
+          <text x={alphaTextPos.cx} y={alphaTextPos.cy + 3} fontSize={font(10)}
             fontFamily={CANVAS_STYLE.font.family} fill={PHYSICS_COLORS.forceNet}
-            fontWeight="bold" textAnchor="middle">
-            α={resultAngleDeg.toFixed(0)}°
+            textAnchor="middle">
+            α {resultAngleDeg.toFixed(0)}°
           </text>
         </g>
       )}
