@@ -37,7 +37,6 @@ export const mechanicsEnergyAnimations = defineAnimations({
       {
         type: 'segmented',
         key: 'mode',
-        label: '演示模式',
         group: '模型选择',
         resetOnChange: true,
         options: [
@@ -91,7 +90,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
       },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'mode', label: '起动模型', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '恒定功率' }, { value: 1, label: '恒定加速度' }] },
       { type: 'preset', label: '🏎️ 超跑起动', group: '高考经典预设',
         params: { P: 120000, m: 1500, f: 2000, a: 3.0, carType: 1 },
@@ -161,7 +160,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
       },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'mode', label: '起动模型', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '恒力做功' }, { value: 1, label: '变力做功' }] },
       { type: 'preset', label: '🎢 光滑下滑', group: '高考经典预设',
         params: { m: 2.0, v0: 0, R: 5.0, mu: 0.00, mode: 1 },
@@ -224,7 +223,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
       },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'mode', label: '势能实验场景', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '重力势能' }, { value: 1, label: '弹性势能' }] },
       { type: 'preset', label: '🌍 地球 g=9.8', group: '环境重力场', params: { g: 9.8 },
         showIf: 'mode', showIfValue: 0 },
@@ -296,7 +295,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
       },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'mode', label: '演示物理场景', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '经典单摆' }, { value: 1, label: '山谷滑道' }] },
       { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 0,
         content: '经典单摆：在没有空气阻力时，摆球在摆动过程中重力势能与动能进行无损的往复转化，系统的总机械能保持严格守恒。' },
@@ -360,7 +359,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
     ],
     controlMeta: [
       // §1 模型选择
-      { type: 'segmented', key: 'mode', label: '运动模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [
           { value: 0, label: '下落砸弹簧' },
           { value: 1, label: '原长释放挂球' },

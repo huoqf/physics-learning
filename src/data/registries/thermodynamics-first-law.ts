@@ -20,7 +20,7 @@ export const thermodynamicsFirstLawAnimations = defineAnimations({
     ],
     controlMeta: [
       // §1 模型选择
-      { type: 'segmented', key: 'mode', label: '分析模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础模式' }, { value: 1, label: '进阶模式' }] },
       // §4 显示辅助
       { type: 'toggle', key: 'adiabatic', label: '绝热气缸', group: '显示辅助',

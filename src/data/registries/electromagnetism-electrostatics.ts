@@ -19,7 +19,6 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
       {
         type: 'segmented',
         key: 'mode',
-        label: '演示模式',
         group: '模型选择',
         resetOnChange: true,
         options: [
@@ -50,7 +49,7 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
       { key: 'rTest', label: '试探距离 r', min: 1, max: 6, step: 0.1, unit: 'cm' },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'mode', label: '演示模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础单电荷' }, { value: 1, label: '合场强叠加' }] },
       { type: 'segmented', key: 'chargeConfig', label: '电荷配置', group: '模型选择', resetOnChange: true,
         showIf: 'mode', showIfValue: 1,

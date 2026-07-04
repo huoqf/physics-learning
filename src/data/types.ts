@@ -68,7 +68,7 @@ export type ControlMeta =
   | (ControlCondition & {
       type: 'segmented'
       key: string
-      label: string
+      label?: string
       options: ControlOption[]
       resetOnChange?: boolean
     })

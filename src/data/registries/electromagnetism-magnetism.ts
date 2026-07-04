@@ -9,7 +9,7 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
     Component: lazy(() => import('@/features/electromagnetism/magnetism/AmpereForce')),
     controlsMode: 'param' as const,
     controlMeta: [
-      { type: 'segmented', key: 'mode', label: '演示模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础：直交规律' }, { value: 1, label: '进阶：斜面平衡' }] },
       { type: 'toggle', key: 'showLeftHand', label: '显示左手定则', group: '显示辅助',
         hideIf: 'mode', hideIfValue: 1 },
@@ -68,7 +68,7 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
     ],
     controlMeta: [
       // §1 模型选择
-      { type: 'segmented', key: 'mode', label: '演示模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础：单粒子偏转' }, { value: 1, label: '进阶：速度选择器' }] },
       // §2 子模式
       { type: 'segmented', key: 'q', label: '电荷极性', group: '子模式',
@@ -102,12 +102,12 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
     knowledgeId: 'electricity-3-3',
     Component: lazy(() => import('@/features/electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField')),
     controlMeta: [
-      { type: 'segmented', key: 'mode', label: '演示模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础：定性边界偏转' }, { value: 1, label: '进阶：高考动态圆族' }] },
-      { type: 'segmented', key: 'boundaryType', label: '磁场边界类型', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'boundaryType', label: '磁场边界类型', group: '子模式', resetOnChange: true,
         showIf: 'mode', showIfValue: 0,
         options: [{ value: 0, label: '单边界' }, { value: 1, label: '平行双边界' }, { value: 2, label: '圆形边界' }] },
-      { type: 'segmented', key: 'dynamicType', label: '动态圆极值类型', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'dynamicType', label: '动态圆极值类型', group: '子模式', resetOnChange: true,
         showIf: 'mode', showIfValue: 1,
         options: [{ value: 0, label: '旋转圆 (方向变)' }, { value: 1, label: '缩放圆 (大小变)' }, { value: 2, label: '平移圆 (位置变)' }] },
       { type: 'toggle', key: 'showGeometry', label: '显示几何辅助线', group: '显示辅助' },

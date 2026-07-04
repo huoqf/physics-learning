@@ -15,7 +15,7 @@ export const opticsThinLensAnimations = defineAnimations({
       L: 50,
     } as const,
     controlMeta: [
-      { type: 'segmented', key: 'mode', label: '观察模式', resetOnChange: true,
+      { type: 'segmented', key: 'mode', resetOnChange: true,
         options: [{ value: 0, label: '凸透镜基础成像' }, { value: 1, label: '共轭法测焦距' }] },
       { type: 'toggle', key: 'isConcave', label: '凹透镜', showIf: 'mode', showIfValue: 0 },
       { type: 'tip', showIf: 'mode', showIfValue: 0, content: '凹透镜始终成正立缩小虚像' },

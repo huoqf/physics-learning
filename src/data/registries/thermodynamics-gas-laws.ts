@@ -22,7 +22,7 @@ export const thermodynamicsGasLawsAnimations = defineAnimations({
         showIf: 'mode', showIfValue: 0 },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'mode', label: '实验定律', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [
           { value: 0, label: '等温（玻意耳）' },
           { value: 1, label: '等压（盖-吕萨克）' },
@@ -53,7 +53,7 @@ export const thermodynamicsGasLawsAnimations = defineAnimations({
       { key: 'T', label: '温度 T', min: 200, max: 600, step: 1, unit: 'K' },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'mode', label: '演示模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础模式' }, { value: 1, label: '进阶模式' }] },
       { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 0,
         content: '拖动 T 或 V，观察压强 P 自动约束变化' },

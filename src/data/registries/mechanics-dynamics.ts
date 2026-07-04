@@ -20,7 +20,6 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       {
         type: 'segmented',
         key: 'mode',
-        label: '演示模式',
         group: '模型选择',
         resetOnChange: true,
         options: [
@@ -85,7 +84,6 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       {
         type: 'segmented',
         key: 'mode',
-        label: '演示模式',
         group: '模型选择',
         resetOnChange: true,
         options: [
@@ -163,7 +161,6 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       {
         type: 'segmented',
         key: 'mode',
-        label: '演示模式',
         group: '模型选择',
         resetOnChange: true,
         options: [
@@ -218,7 +215,6 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       {
         type: 'segmented',
         key: 'mode',
-        label: '演示模式',
         group: '模型选择',
         resetOnChange: true,
         options: [
@@ -244,7 +240,6 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       {
         type: 'segmented',
         key: 'mode',
-        label: '演示模式',
         group: '模型选择',
         resetOnChange: true,
         options: [
@@ -273,7 +268,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     },
     controlMeta: [
       {
-        type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+        type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础模式' }, { value: 1, label: '进阶模式' }]
       },
       {
@@ -311,7 +306,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     ],
     controlMeta: [
       {
-        type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+        type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础' }, { value: 1, label: '进阶' }]
       },
       {
@@ -339,7 +334,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     ],
     controlMeta: [
       {
-        type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+        type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础' }, { value: 1, label: '进阶' }]
       },
       {
@@ -374,7 +369,6 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       {
         type: 'segmented',
         key: 'mode',
-        label: '演示模式',
         group: '模型选择',
         resetOnChange: true,
         options: [

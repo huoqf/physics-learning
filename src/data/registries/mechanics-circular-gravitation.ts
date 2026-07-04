@@ -13,7 +13,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
       { key: 'omega', label: '角速度 ω', min: 0.1, max: 5, step: 0.1, unit: 'rad/s' },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础' }, { value: 1, label: '进阶' }] },
       { type: 'toggle', key: 'showProjection', label: '简谐运动投影对比', group: '显示辅助',
         showIf: 'advancedMode', showIfValue: 1 },
@@ -35,7 +35,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
       { key: 'm', label: '质量 m', min: 0.5, max: 5, step: 0.1, unit: 'kg' },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础模式 (匀速)' }, { value: 1, label: '进阶模式 (竖直圆)' }] },
       { type: 'toggle', key: 'showAcceleration', label: '显示加速度矢量', group: '显示辅助' },
       { type: 'toggle', key: 'showWaveform', label: '显示 F-a 联动图表', group: '显示辅助',
@@ -84,7 +84,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
       { key: 'v0', label: '发射速度 v₀', min: 5.0, max: 12.5, step: 0.1, unit: 'km/s', showIf: 'mode', showIfValue: 1 },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'mode', label: '演示模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '多圆轨道对比' }, { value: 1, label: '宇宙速度发射' }] },
       { type: 'toggle', key: 'showCompare', label: '同屏显示对比轨道', group: '显示辅助',
         showIf: 'mode', showIfValue: 0 },

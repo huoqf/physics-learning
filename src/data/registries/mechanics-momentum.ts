@@ -16,7 +16,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
       { key: 'vB', label: 'B球速度 v_B', min: -10, max: 10, step: 0.5, unit: 'm/s', showIf: 'advancedMode', showIfValue: 1 },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础' }, { value: 1, label: '进阶' }] },
       { type: 'toggle', key: 'showEkChart', label: '显示 Ek-p 关系图', group: '显示辅助',
         showIf: 'advancedMode', showIfValue: 1 },
@@ -34,7 +34,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
       { key: 't_total', label: '作用总时间 t', min: 1, max: 10, step: 0.5, unit: 's', showIf: 'advancedMode', showIfValue: 1 },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础' }, { value: 1, label: '进阶' }] },
       { type: 'segmented', key: 'forceType', label: '力变化类型', group: '模型选择', resetOnChange: true,
         showIf: 'advancedMode', showIfValue: 1,
@@ -56,7 +56,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
       { key: 'alpha', label: '反弹系数 α', min: 0, max: 1, step: 0.1, unit: '', showIf: 'advancedMode', showIfValue: 1 },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础' }, { value: 1, label: '进阶' }] },
     ],
   },
@@ -77,7 +77,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
       { key: 'L', label: '木板长度 L', min: 0.5, max: 5, step: 0.5, unit: 'm', showIf: 'advancedMode', showIfValue: 1 },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础' }, { value: 1, label: '进阶' }] },
       { type: 'segmented', key: 'collisionType', label: '碰撞类型', group: '模型选择', resetOnChange: true,
         showIf: 'advancedMode', showIfValue: 0,
@@ -101,7 +101,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
       { key: 'kLoss', label: '能量损失系数 k', min: 0, max: 1, step: 0.1, unit: '', showIf: 'advancedMode', showIfValue: 1 },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础' }, { value: 1, label: '进阶' }] },
       { type: 'segmented', key: 'isElastic', label: '碰撞类型', group: '模型选择', resetOnChange: true,
         hideIf: 'advancedMode', hideIfValue: 1,
@@ -185,7 +185,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
     controlMeta: [
       { type: 'segmented', key: 'manBoatControl', label: '控制方式', group: '模型选择',
         options: [{ label: '自动走动', value: 0 }, { label: '键盘互动', value: 1 }] },
-      { type: 'segmented', key: 'manBoatMode', label: '演示模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'manBoatMode', group: '模型选择', resetOnChange: true,
         showIf: 'manBoatControl', showIfValue: 0,
         options: [
           { label: '单人走动', value: 0 },

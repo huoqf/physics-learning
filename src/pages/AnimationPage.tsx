@@ -283,6 +283,18 @@ export default function AnimationPage() {
   // actions — 稳定引用，不需订阅
   const { setParams, setTime, setIsPlaying, updateParam, toggleTimeSlices, toggleDualObjects, toggleVectors, setDirection } = useAnimationStore.getState()
 
+  // 重置参数时保留当前模式，不回到默认模式
+  const MODE_KEYS = ['mode', 'advancedMode', 'manBoatMode']
+  const resetParams = () => {
+    if (!config) return
+    const currentParams = useAnimationStore.getState().params
+    const preserved: Record<string, number> = {}
+    for (const key of MODE_KEYS) {
+      if (currentParams[key] != null) preserved[key] = currentParams[key]
+    }
+    setParams({ ...config.defaultParams, ...preserved })
+  }
+
   const storeStates = { showVectors, showTimeSlices, showDualObjects }
 
   const { setMode } = useAppStore()
@@ -443,7 +455,7 @@ export default function AnimationPage() {
             {/* 批量重置（右上角，仅无 ParamControl 时显示） */}
             {paramControlParams.length === 0 && config.SidebarExtra && !isDiscoveryMode && (
               <button
-                onClick={() => { setParams(config.defaultParams); handleReset() }}
+                onClick={() => { resetParams(); handleReset() }}
                 className="absolute top-3 right-3 flex items-center gap-1 text-xs text-neutral-400 hover:text-primary-600 active:scale-[0.97] transition-all z-10"
                 style={{ transitionDuration: '200ms' }}
                 aria-label="重置参数"
@@ -478,7 +490,7 @@ export default function AnimationPage() {
                 <ParamControl
                   params={paramControlParams}
                   onParamChange={handleParamControlChange}
-                  onReset={() => { setParams({ ...config.defaultParams }); handleReset() }}
+                  onReset={() => { resetParams(); handleReset() }}
                   disabled={isDiscoveryMode}
                 />
               </div>

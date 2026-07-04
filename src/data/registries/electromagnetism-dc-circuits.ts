@@ -14,7 +14,7 @@ export const electromagnetismDcCircuitsAnimations = defineAnimations({
       { type: 'number', key: 'R', label: '定值电阻 R', min: 5, max: 50, step: 1, unit: 'Ω',
         hideIf: 'mode', hideIfValue: 1 },
       { type: 'toggle', key: 'showChart', label: '显示 U-I 实时图表', group: '显示辅助' },
-      { type: 'segmented', key: 'mode', label: '观察模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础：定值电阻' }, { value: 1, label: '进阶：小灯泡伏安特性' }] },
     ],
     defaultParams: { U: 2, R: 10, mode: 0, showChart: 1 } as const,
@@ -33,7 +33,7 @@ export const electromagnetismDcCircuitsAnimations = defineAnimations({
       { key: 'U', label: '电源电压 U', min: 3, max: 15, step: 0.5, unit: 'V', importance: 'display' },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'mode', label: '观察模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础：串/并联分配' }, { value: 1, label: '进阶：混联动态电路' }] },
       { type: 'segmented', key: 'subMode', label: '连接方式', group: '模型选择', resetOnChange: true, showIf: 'mode', showIfValue: 0,
         options: [{ value: 0, label: '串联电路' }, { value: 1, label: '并联电路' }] },
@@ -62,7 +62,7 @@ export const electromagnetismDcCircuitsAnimations = defineAnimations({
       { key: 'r', label: '电源内阻 r', min: 0.5, max: 5, step: 0.1, unit: 'Ω', importance: 'advanced' },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'mode', label: '观察模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础：U-I关系' }, { value: 1, label: '进阶：输出功率与效率' }] },
       { type: 'toggle', key: 'highlightLoss', label: '内能损耗视觉高亮', group: '显示辅助' },
     ],

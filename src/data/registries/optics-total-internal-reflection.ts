@@ -14,7 +14,7 @@ export const opticsTotalInternalReflectionAnimations = defineAnimations({
       n: 1.33,
     } as const,
     controlMeta: [
-      { type: 'segmented', key: 'mode', label: '观察模式', resetOnChange: true,
+      { type: 'segmented', key: 'mode', resetOnChange: true,
         options: [{ value: 0, label: '单光束变角' }, { value: 1, label: '水下点光源' }] },
       { type: 'tip', showIf: 'mode', showIfValue: 0, content: '增大入射角，观察折射光渐暗直至全反射' },
       { type: 'tip', showIf: 'mode', showIfValue: 1, content: '拖动深度，观察俯视图中透光圆面积变化' },

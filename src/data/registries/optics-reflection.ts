@@ -14,7 +14,7 @@ export const opticsReflectionAnimations = defineAnimations({
       showNormal: 1,
     } as const,
     controlMeta: [
-      { type: 'segmented', key: 'advancedMode', label: '观察模式', resetOnChange: true,
+      { type: 'segmented', key: 'advancedMode', resetOnChange: true,
         options: [{ value: 0, label: '基础模式' }, { value: 1, label: '平面镜旋转进阶' }] },
       { type: 'toggle', key: 'showNormal', label: '法线与刻度盘' },
       { type: 'tip', content: '拖动滑块观察反射角始终等于入射角' },

@@ -136,7 +136,6 @@ export const electromagnetismInductionAnimations = defineAnimations({
       {
         type: 'segmented',
         key: 'mode',
-        label: '实验模式',
         group: '模型选择',
         options: [
           { value: 0, label: '基础: 磁铁变速' },
@@ -256,7 +255,6 @@ export const electromagnetismInductionAnimations = defineAnimations({
       {
         type: 'segmented',
         key: 'mode',
-        label: '实验模式',
         group: '模型选择',
         resetOnChange: true,
         options: [

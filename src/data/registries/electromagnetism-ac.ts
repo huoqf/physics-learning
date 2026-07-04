@@ -17,7 +17,7 @@ export const electromagnetismAcAnimations = defineAnimations({
     } as const,
     controlMeta: [
       {
-        type: 'segmented', key: 'mode', label: '实验模式', group: '模型选择', resetOnChange: true,
+        type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [
           { value: 0, label: '基础：正弦发生' },
           { value: 1, label: '进阶：任意初相' },
@@ -64,7 +64,7 @@ export const electromagnetismAcAnimations = defineAnimations({
     } as const,
     controlMeta: [
       {
-        type: 'segmented', key: 'mode', label: '实验模式', group: '模型选择', resetOnChange: true,
+        type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [
           { value: 0, label: '基础：正弦波' },
           { value: 1, label: '进阶：多波形' },
@@ -107,7 +107,7 @@ export const electromagnetismAcAnimations = defineAnimations({
     Component: lazy(() => import('@/features/electromagnetism/induction/Transformer')),
     controlsMode: 'param' as const,
     controlMeta: [
-      { type: 'segmented', key: 'mode', label: '实验模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础：变压变流' }, { value: 1, label: '进阶：负载因果链' }] },
       { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 0,
         content: '调节 U₁、n₁、n₂，观察四只电表读数与变压变流规律 U₂/U₁ = n₂/n₁。' },
@@ -139,7 +139,7 @@ export const electromagnetismAcAnimations = defineAnimations({
     } as const,
     controlMeta: [
       {
-        type: 'segmented', key: 'mode', label: '学习模式', group: '模型选择', resetOnChange: true,
+        type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [
           { value: 0, label: '基础：高压输电优越性' },
           { value: 1, label: '进阶：动态负载与稳压' },

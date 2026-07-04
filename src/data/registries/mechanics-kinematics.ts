@@ -21,7 +21,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     ],
     controlMeta: [
       // §1 模型选择
-      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
         options: [{ label: '基础模式', value: 0 }, { label: '进阶模式', value: 1 }] },
       // §2 子模式
       { type: 'segmented', key: 'scene', label: '生活场景', group: '子模式',
@@ -71,7 +71,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     ],
     controlMeta: [
       // §1 模型/演示模式
-      { type: 'segmented', key: 'advancedMode', label: '演示模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
         options: [{ label: '基础', value: 0 }, { label: '进阶', value: 1 }] },
       // §2 子模式/结构选择
       { type: 'segmented', key: 'deltaT', label: '观测时间微元 Δt', group: '子模式',
@@ -114,7 +114,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     ],
     SidebarExtra: lazy(() => import('@/features/mechanics/kinematics/UniformAccelerationSidebar')),
     controlMeta: [
-      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
         options: [{ label: '基础模式', value: 0 }, { label: '进阶模式', value: 1 }] },
       { type: 'preset', label: '经典逐差验证', group: '教学场景预设',
         params: { v0: 2, a: 2, flashPeriod: 1.0 }, restartOnApply: true,
@@ -146,7 +146,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
       { key: 'altitude', label: '海拔', min: 0, max: 10, step: 0.1, unit: 'km', showIf: 'advancedMode', showIfValue: 1 },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
         options: [{ label: '牛顿管实验', value: 0 }, { label: '滴水法测g', value: 1 }] },
       { type: 'segmented', key: 'objectA', label: '物体A', group: '物体选择',
         options: [{ label: '铁球', value: 0 }, { label: '硬币', value: 1 }],
@@ -198,7 +198,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
         showIf: 'advancedMode', showIfValue: 1 },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
         options: [{ label: '基础', value: 0 }, { label: '进阶', value: 1 }],
         onChangeSideEffect: { resetParams: ['airResistance'] } },
       { type: 'preset', label: '🌍 地球 g=9.8', group: '环境重力场',
@@ -224,7 +224,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
       { key: 'airResistance', label: '空气阻力 k', min: 0, max: 0.2, step: 0.01, unit: 'kg/m', group: '进阶参数', showIf: 'advancedMode', showIfValue: 1 },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
         options: [{ label: '基础', value: 0 }, { label: '进阶', value: 1 }] },
       { type: 'preset', label: '🌍 地球 g=9.8', group: '快捷预设', params: { g: 9.8 } },
       { type: 'preset', label: '🌙 月球 g=1.63', group: '快捷预设', params: { g: 1.63 } },
@@ -245,7 +245,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
       { key: 'airResistance', label: '空气阻力 k', min: 0, max: 0.2, step: 0.01, unit: 'kg/m', group: '进阶参数', showIf: 'advancedMode', showIfValue: 1 },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+      { type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
         options: [{ label: '基础', value: 0 }, { label: '进阶', value: 1 }] },
       { type: 'preset', label: '🌍 地球 g=9.8', group: '快捷预设', params: { g: 9.8 } },
       { type: 'preset', label: '🌙 月球 g=1.63', group: '快捷预设', params: { g: 1.63 } },
