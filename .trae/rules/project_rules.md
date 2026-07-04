@@ -2,6 +2,7 @@
 
 > **Trae IDE 默认加载的项目规范文件。**
 > 详细规范见下方「快速索引」部分。
+> 最后更新：2026-07-04
 
 ---
 
@@ -31,8 +32,6 @@
 | 本地存储 | IndexedDB（主）/ LocalStorage（轻量配置） |
 | 测试 | Vitest + Testing Library |
 | 打包目标 | 浏览器本地运行优先，后期平滑迁移 Electron |
-
-> 技术栈细则与依赖清单见 `docs/agent-rules/core/ARCHITECTURE_RULES.md §1`。
 
 ---
 
@@ -64,7 +63,7 @@ theme/            # 设计 token（颜色/间距/圆角/阴影/动效）
 
 | 序号 | 铁律 | 禁止 |
 |------|------|------|
-| 1 | **统一来源，禁止绕过**（六条约束见下方展开） | 硬编码颜色/魔法数字/裸值 `fontSize={N}`/自造 `<marker>`/直接 `requestAnimationFrame`/写死 `scale = N` |
+| 1 | **统一来源，禁止绕过**（八条约束见下方展开） | 硬编码颜色/魔法数字/裸值 `fontSize={N}`/自造 `<marker>`/直接 `requestAnimationFrame`/写死 `scale = N` |
 | 2 | **物理层纯函数可序列化**：`src/physics/` 无副作用、无 DOM/React/window 依赖、有 JSDoc + 单位注释；所有数据结构可序列化（IndexedDB 持久化兼容） | 在 `physics/` 中访问 DOM/Store；不可序列化的数据结构（Set/Map/Function） |
 | 3 | **组件职责边界**：页面组件薄壳（路由+布局+数据注入）；三屏不交叉（详见 `02_UI_RULES.md §5.1`）；动画状态统一 `useAnimationStore` | 页面塞业务逻辑；右侧屏放参数控件；左侧屏放公式推导；另建 `usePhysicsState` |
 | 4 | **HashRouter only**：禁止 BrowserRouter（Electron `file://` 下路由 404） | BrowserRouter |
@@ -83,7 +82,7 @@ theme/            # 设计 token（颜色/间距/圆角/阴影/动效）
    - **无 overlay（推荐）**：viewBox **必须绑定设计常量**（`DESIGN_WIDTH/HEIGHT`），`preserveAspectRatio="xMidYMid meet"` 自动居中，**不使用 `vp.transform`**
    - **有 overlay（限制使用）**：viewBox 绑定真实容器尺寸 + `<g transform={vp.transform}>`，此组合合法，不属于双重缩放（详见 `07_CANVAS_SVG_CHART_RULES.md §2.4`）
    - **严禁双重缩放反模式**：`viewBox={\`0 0 ${width} ${height}\`}` 同时使用 `vp.transform`，**且不传 overlay 参数** → 导致首次进入时画面"缓缓放大"跳变
-8. **渲染缩放策略互斥**（注意：此处「SVG方式A/B」与 §6 坐标路径含义不同）→ 同一组件只能选一种渲染策略：**SVG方式A（viewBox固定常量）** 内部坐标用设计常量，禁止再乘 `scale` 或引用 `canvasSize.width/height`；**HTML方式B（响应式）** 走 `useCanvasSize()` 返回的 `width/height/font`；**严禁在 SVG 方式A 的 `<svg>` 内用 `<foreignObject>` 嵌入 HTML方式B 的 React 图表组件**；需动画+图表并列时须在 HTML 层 `flex` 分区，两者平级而非嵌套
+8. **渲染缩放策略互斥**（注意：此处「SVG方式A/B」与 `ARCHITECTURE_RULES.md §6` 坐标路径含义不同）→ 同一组件只能选一种渲染策略：**SVG方式A（viewBox固定常量）** 内部坐标用设计常量，禁止再乘 `scale` 或引用 `canvasSize.width/height`；**HTML方式B（响应式）** 走 `useCanvasSize()` 返回的 `width/height/font`；**严禁在 SVG 方式A 的 `<svg>` 内用 `<foreignObject>` 嵌入 HTML方式B 的 React 图表组件**；需动画+图表并列时须在 HTML 层 `flex` 分区，两者平级而非嵌套
 
 ### CANVAS_PRESETS 画布预设规格（4 种）
 
@@ -153,24 +152,12 @@ theme/            # 设计 token（颜色/间距/圆角/阴影/动效）
 
 ## 7. 任务完成摘要 Checklist
 
-> 以下为**铁律最高优先级**验证项，违反则提交无效。完整 35 项验收清单见 [CHECKLIST.md](../docs/agent-rules/process/CHECKLIST.md)。
+> 提交前按 [CHECKLIST.md](../docs/agent-rules/process/CHECKLIST.md) 逐项验收（完整 80+ 项）。
+> 以下为铁律最高优先级核心项，违反则提交无效：
 
-- [ ] 当前里程碑文件对应任务已标记完成
-- [ ] PROCESS_LOG.md 已更新
-- [ ] 新增依赖已申报（如适用）
 - [ ] 无硬编码颜色/间距/动效/魔法数字/裸值 fontSize（铁律 1）
-- [ ] Canvas/SVG 内无 `colors.neutral.*` 裸值，均通过 `CANVAS_COLORS`/`CHART_COLORS` 引用
-- [ ] 无子路径导入（`from '@/theme/physics/colors'` 等），均从 `@/theme/physics` 统一入口引入
-- [ ] SVG `<text>` 全部使用 `font()` 缩放，无裸值 `fontSize={N}`
-- [ ] 新增图表必须使用 `BasePhysicsChart` + 插件体系，禁止手写 `toSvgX/toSvgY` 坐标变换
-- [ ] 图表颜色使用 `ChartReferenceVariant`/`ChartSeriesVariant`/`ChartAreaVariant` 枚举，禁止传入任意字符串颜色
-- [ ] 图表组件从 `@/components/Chart` barrel import，禁止子路径导入
-- [ ] 布局响应式：`useCanvasSize()` + `computeScale()` + `font()`（铁律 1）
-- [ ] **SVG viewBox：无 overlay 时 `viewBox` 绑定设计常量（`DESIGN_WIDTH/HEIGHT`），严禁 `viewBox={\`0 0 ${width} ${height}\`}` 同时配合 `<g transform={vp.transform}>` 的双重缩放组合（铁律 1-7）**
-- [ ] **缩放路径互斥：同一组件仅用路径 A（SVG viewBox）或路径 B（HTML 响应式），SVG 内未用 `<foreignObject>` 嵌入路径 B 的 React 图表组件（铁律 1-8）**
-- [ ] **SVG 指针事件：有交互拖拽的组件使用 `getScreenCTM().inverse()` 坐标映射，无角坐标计算错误**
 - [ ] 新增 `src/physics/` 函数有 JSDoc + 单位注释，无 DOM 依赖（铁律 2）
 - [ ] 页面组件薄壳，三屏职责不交叉（铁律 3）
-- [ ] **场景中的物体/地面/矢量/图表/UI 控件已优先使用 `src/components/` 下已有组件，无在 `features/` 内重复手写等效实现（铁律 5）**
-- [ ] **左屏控制台已使用 `LeftPanel` 体系；数值参数走 `paramMeta`，简单模式/开关/预设/提示走 `controlMeta`，仅复杂控制保留 `SidebarExtra`（铁律 6）**
-- [ ] ROADMAP_PROGRESS.md 已更新（如适用）
+- [ ] 场景中优先使用 `src/components/` 已有组件，禁止 `features/` 内重复手写（铁律 5）
+- [ ] 左屏已使用 `LeftPanel` 体系；数值参数走 `paramMeta`，模式/开关/预设走 `controlMeta`（铁律 6）
+- [ ] PROCESS_LOG.md 已更新

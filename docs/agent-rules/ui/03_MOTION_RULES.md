@@ -63,7 +63,7 @@
 ## 4. Canvas 物理动画规范
 
 - **帧率目标**：60fps，通过 `src/utils/animation.ts` 统一调度
-- **禁止**在组件内直接调用 `requestAnimationFrame`
+- **禁止**在组件内直接调用 `requestAnimationFrame`（详见 `ARCHITECTURE_RULES.md §7`）
 - **慢放**（&lt; 1x）：缩小物理仿真时间步，不降低渲染帧率
 - **deltaTime**：所有物理更新基于实际 RAF 时间差，禁止固定步长
 - **解耦原则**：动画渲染频率与物理计算频率独立

@@ -10,15 +10,13 @@
 
 ## 1. 技术栈声明
 
-| 类别 | 选型 |
-|------|------|
-| 前端框架 | React 19 |
-| 构建工具 | Vite 6，`base: './'` |
-| 语言 | TypeScript 5.5+（strict mode） |
-| CSS 框架 | TailwindCSS 4 |
-| 状态管理 | Zustand |
-| 路由 | react-router-dom（**HashRouter only**） |
-|  ```text
+技术栈完整声明见 `project_rules.md §2`，本文件不再重复。
+
+---
+
+## 2. 目录结构
+
+```text
 src/
 ├── app/                    # 应用壳、路由、全局布局
 ├── components/
@@ -128,6 +126,8 @@ tests/
 └── utils/                  # 工具函数测试
 ```
 
+> 完整组件清单（Physics / Chart / Layout / UI 四个目录）及 barrel import 规则见 `02_UI_RULES.md §7.1`。
+
 新增规则：
 - 新功能模块 → `src/features/`
 - 纯物理计算 → `src/physics/`
@@ -227,12 +227,12 @@ tests/
 
 | 坐标路径 | 入口 | 适用场景 | 来源 |
 |------|------|---------|------|
-| 坐标路径 1（强制） | `useViewport()` | 场景元素的比例定位（**全部 Animation 组件强制调用**） | `src/utils/useViewport.ts` |
+| 坐标路径 1（强制） | `useViewport()` | 场景元素的比例定位（**全部 Animation 组件必须调用，存量须迁移完成**） | `src/utils/useViewport.ts` |
 | 坐标路径 2（保留） | `computeScale()` | 物理量→像素转换，可与 useViewport 共存 | `src/utils/coordinate.ts` |
 
 > ⚠️ 注意：此处「坐标路径 1/2」指坐标体系，与 `project_rules.md` 铁律1-8 的「SVG方式A/B（viewBox绑定策略）」是不同维度的概念，请勿混淆。
 
-- **useViewport** → 所有 Animation 组件**强制引用**；但 `vp.transform` 的使用按 overlay 条件选择：
+- **useViewport** → 所有 Animation 组件**必须引用**（存量须迁移完成）；但 `vp.transform` 的使用按 overlay 条件选择：
   - 无 overlay：选**方式A**（viewBox 绑定固定设计尺寸，`preserveAspectRatio` 自动居中，**不使用 vp.transform**）
   - 有 overlay（如右侧面板遮挡内容区）：选**方式B**（viewBox 绑定真实容器尺寸 + `<g transform={vp.transform}>`）
   - 仅需读取可视区布局信息（浮层定位等）而不做二次缩放：选方式A + 只读 `vp.visibleX/W/H`
@@ -362,7 +362,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
 1. 简单模式切换、开关、提示和预设不得新写 `SidebarExtra`，必须进入 `controlMeta`。
 2. 连续物理参数不得手写 `Slider`，优先进入 `paramMeta`。
 3. `SidebarExtra` 不得直接访问 store；仍通过 `SidebarExtraProps` 接收 `params/updateParam/setParams/animationActions`。
-4. 左屏具体 UI 结构与验收标准见 `docs/agent-rules/ui/08_THREE_PANEL_RULES.md §2`。
+4. 左屏声明式优先级的完整执行规范（含判断标准与组件使用边界）见 `08_THREE_PANEL_RULES.md §2`，本节仅定义数据接口。
 
 ### 8.1.4 底部播放控制器协议（controlsMode）
 

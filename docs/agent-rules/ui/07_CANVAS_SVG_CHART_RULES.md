@@ -34,7 +34,7 @@
 
 ### 2.2 强制方案：useCanvasSize + useViewport（铁律）
 
-所有动画组件**必须**引用 `useCanvasSize()` + `useViewport()`。根据是否有 overlay 二选一（见 §2.4 判断规则）：
+**新动画组件必须**引用 `useCanvasSize()` + `useViewport()`；存量组件须在当前里程碑内迁移完成（见 §2.3）。根据是否有 overlay 二选一（见 §2.4 判断规则）：
 
 ```tsx
 // CANVAS_PRESETS.full = { width: 700, height: 650 }（按布局区域选型，详见 project_rules.md）
@@ -66,7 +66,7 @@ const physicsScale = computeScale(width, height, WORLD, padding)
 
 ### 2.3 旧方案遗留：viewBox + 比例常量（新组件禁用）
 
-> ⚠️ **新动画组件禁止使用此方案**。存量测试证明固定 viewBox 在某些屏幕尺寸和三栏布局下存在内容裁切问题，且无法支持 overlay 避让。所有组件必须迁移至 §2.2 方案（`useCanvasSize` + `useViewport`）。
+> ⚠️ **新动画组件禁止使用此方案**。存量测试证明固定 viewBox 在某些屏幕尺寸和三栏布局下存在内容裁切问题，且无法支持 overlay 避让。**存量组件须迁移至** §2.2 方案（`useCanvasSize` + `useViewport`），维护旧组件时以保持现有功能稳定为优先，但迁移不可跳过。
 
 ```ts
 // ❌ 旧方案（禁止在新组件中使用，保留供存量迁移参考）
@@ -119,7 +119,7 @@ const layout = {
 ```tsx
 // ❌ 严禁：viewBox 绑定容器真实像素 + 同时用 vp.transform 二次缩放（双重缩放反模式）
 const { width, height } = canvasSize
-const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 400 })
+const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 650 })
 
 <svg viewBox={`0 0 ${width} ${height}`}>   {/* ← width/height 由 ResizeObserver 动态更新 */}
   <g transform={vp.transform}>              {/* ← 又做了一次缩放，双重缩放！ */}
@@ -135,8 +135,8 @@ const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 400 })
 ```tsx
 // ✅ 方式A（推荐）：viewBox 固定为设计常量，preserveAspectRatio 负责自适应容器
 // DESIGN_WIDTH/HEIGHT 必须与所用 CANVAS_PRESETS 完全一致
-const DESIGN_WIDTH = 700   // 对应 CANVAS_PRESETS.wide.width
-const DESIGN_HEIGHT = 400  // 对应 CANVAS_PRESETS.wide.height
+const DESIGN_WIDTH = 700   // 对应 CANVAS_PRESETS.full.width
+const DESIGN_HEIGHT = 650  // 对应 CANVAS_PRESETS.full.height
 
 <svg
   viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`}  // ← 恒定，不随容器变化
@@ -150,7 +150,7 @@ const DESIGN_HEIGHT = 400  // 对应 CANVAS_PRESETS.wide.height
 
 // 若有 overlay（如右侧公式面板），使用 CSS absolute 定位而非 SVG overlay：
 // <div className="relative">
-//   <svg viewBox="0 0 700 400" ...>...</svg>
+//   <svg viewBox="0 0 700 650" ...>...</svg>
 //   <div className="absolute right-0 top-0 w-[240px]"><FormulaPanel /></div>
 // </div>
 
@@ -176,7 +176,7 @@ const clientToDesign = (clientX: number, clientY: number) => {
 const { width, height } = canvasSize
 const vp = useViewport(canvasSize, {
   designWidth: 700,    // 必须与 CANVAS_PRESETS 所用 preset 一致
-  designHeight: 400,
+  designHeight: 650,
   overlayRight: 240,   // 右侧面板宽度（px），SVG 内内容只出现在可视区域
 })
 
@@ -225,7 +225,7 @@ const { x, y } = pt.matrixTransform(svg.getScreenCTM()!.inverse())
 | 字体大小 | SVG 内使用 `fontSize={font(N)}`，画布内 HTML 使用 `style={{ fontSize: font(N) }}`，禁止裸值 |
 | 响应式 | 调整浏览器窗口大小时，布局比例保持不变，无视觉跳变 |
 | **指针事件** | **有交互拖拽的 SVG 组件使用 `getScreenCTM().inverse()` 矩阵变换，禁止手动计算 `vp.tx/vp.scale` 偏移** |
-| **useViewport** | **新动画组件必须引用；无 overlay 时选方式A（viewBox = 固定设计尺寸，无 vp.transform）；有 overlay 时选方式B（viewBox = 真实容器尺寸 + vp.transform）** |
+| **useViewport** | **新动画组件必须引用；存量组件须迁移完成；无 overlay 时选方式A（viewBox = 固定设计尺寸，无 vp.transform）；有 overlay 时选方式B（viewBox = 真实容器尺寸 + vp.transform）** |
 
 
 ### 2.7 图表与 SVG 场景并列规范
@@ -240,7 +240,7 @@ const { x, y } = pt.matrixTransform(svg.getScreenCTM()!.inverse())
 ```tsx
 // ✅ 正确：HTML flex 分区，SVG 场景与图表平级
 <div className="flex w-full h-full">
-  <svg viewBox="0 0 700 400" className="flex-1">
+  <svg viewBox="0 0 700 650" className="flex-1">
     {/* 路径 A：SVG viewBox，内部坐标用设计常量 */}
   </svg>
   <div className="w-[240px]">
@@ -249,8 +249,8 @@ const { x, y } = pt.matrixTransform(svg.getScreenCTM()!.inverse())
 </div>
 
 // ❌ 禁止：foreignObject 嵌套导致两套缩放叠加
-<svg viewBox="0 0 700 400">
-  <foreignObject x={460} y={0} width={240} height={400}>
+<svg viewBox="0 0 700 650">
+  <foreignObject x={460} y={0} width={240} height={650}>
     <BasePhysicsChart ... />  {/* 两套缩放叠加，图表裁切/X轴消失 */}
   </foreignObject>
 </svg>
@@ -472,7 +472,7 @@ type ChartAreaIntensity = 'subtle' | 'normal' | 'strong'
 | 禁止做法 | 推荐替代 |
 |----------|----------|
 | 组件内写 HEX 颜色 | 从 `@/theme/colors` 或 `@/theme/physics` 导入 |
-| 组件内写 `requestAnimationFrame` | 使用 `src/utils/animation.ts` |
+| 组件内写 `requestAnimationFrame` | 使用 `src/utils/animation.ts`（详见 `ARCHITECTURE_RULES.md §7`） |
 | 手写 `centerX + x * scale` | 使用 `physicsToCanvas()` |
 | 固定图表 `185px × 120px` | 使用容器比例 + min/max |
 | Canvas 内用 lucide 图标 | 使用 SVG 路径或绘制函数 |
