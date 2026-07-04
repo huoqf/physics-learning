@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-03（PowerTransmission 拆分完成，更新行数与 store 数据）
+> 最后更新：2026-07-04（评估 8 个超 500 行文件拆分方案，归档完成记录）
 
 ---
 
@@ -53,23 +53,22 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 ## 一、超长文件拆分（P2）
 
-### 已完成
-
-| 文件 | 原行数 | 现行数 | 拆分方式 | 验收 |
-|------|------:|------:|---------|:----:|
-| `MomentumConservationAnimation.tsx` | 743 | 329 | 抽 `useMomentumConservationPhysics` hook + 复用 `src/physics/momentumConservation` | JSX 零物理公式 ✓ <br> tsc + 385 tests pass ✓ |
-| `KeplerAnimation.tsx` | 673 | 460 | 抽 `useKeplerPhysics` hook + 复用 `src/physics/celestial` | JSX 零物理公式 ✓ <br> font()/colors 修复 ✓ <br> DESIGN_WIDTH/HEIGHT 常量 ✓ <br> tsc + 385 tests pass ✓ |
-| `PowerTransmission.tsx` | 696 | 256 | 抽 `usePowerTransmissionPhysics` hook + `VoltageProfileChart` + `NetworkTopology` + `PowerInfoBar` | JSX 零物理公式 ✓ <br> 物理计算已在 `src/physics/acCircuit.ts` ✓ <br> tsc + 385 tests pass ✓ |
-
 ### 待处理
 
 | 文件 | 当前行数 | 已有 physics | 拆分方向 | 目标行数 |
 |------|-----:|:---:|---------|-----:|
+| `SpringCompositeAnimation.tsx` | 585 | 无 hook；已用 `src/physics/verticalSpring` | 抽 `useSpringCompositePhysics` hook + `SpringPhysicalScene` 组件 | ~150 |
+| `TIRAnimation.tsx` | 564 | 无 hook；已用 `src/physics/optics`（3 函数） | 抽 `useTIRPhysics` hook + `SingleBeamMode` / `PointSourceMode` 组件；SVG 工具函数去重（`arrowHeadPoints` 与 RefractionAnimation 重复） | ~80 |
+| `FieldLines.tsx` | 559 | 无 hook；**自定义 `electricField`/`potential` 与 `src/physics/electrostatics` 重复** | 纯函数迁入 `src/physics/fieldLines.ts` + 抽 `useFieldLinesPhysics` hook（4 个 useMemo） | ~200 |
+| `ConnectedBodiesAnimation.tsx` | 557 | 无 hook；已用 `src/physics/dynamics/connected-body`（2 函数） | 抽 `useConnectedBodiesPhysics` hook + `MassBlock` / `ConnectionElement` / `ForceVectorGroup` 组件 | ~100 |
+| `LenzsLawCanvas.tsx` | 542 | 已有 `useLenzsLaw` hook | 拆子组件：`GalvanometerWiring` / `FluxChangePanel` / `StatusMonitorPanel` / `HandRulePanel` / `DraggableMagnet`；视觉缩放公式移入 hook | ~120 |
+| `InclineForceDiagram.tsx` | 539 | 无 hook；无 `src/physics` 导入（力分解全部内联） | 抽 `useInclineForceLayout` hook + `InclineSlopeBackground` / `OrthogonalDecompositionOverlay` / `InclineForceVectors` 组件；`projectForce`/`F_max` 提取为共享工具（`ForcePolygon` 重复） | ~120 |
+| `GravityBasicAnimation.tsx` | 519 | 无 hook；`src/physics/dynamics` 有 `calculateEarthGravity` 但**未复用** | 复用 `calculateEarthGravity` + 抽 `useSuspendedPlatePhysics` hook；拆 `EarthGravityScene` / `SuspendedPlateScene` 组件（两个 mode 完全独立） | ~60 |
+| `CircularMotionAnimation.tsx` | 506 | 无 hook；已用 `src/physics/kinematics/formulas`（`calculateCircularMotion`） | 抽 `useCircularMotionPhysics` hook + `CircularMotionScene` / `SHMWaveCard` 组件（对齐 `CentripetalAnimation` 已有架构） | ~40 |
 
-> 观察（2026-07-03 核对）：以下文件超过 500 行，行数以本次核对为准：
-> - `SpringCompositeAnimation.tsx`(585)、`TIRAnimation.tsx`(564)、`FieldLines.tsx`(559)、`ConnectedBodiesAnimation.tsx`(557)、`LenzsLawCanvas.tsx`(542)、`InclineForceDiagram.tsx`(539)、`GravityBasicAnimation.tsx`(519)、`CircularMotionAnimation.tsx`(506)
-> - 临近阈值（450-499）：`LightRodRopeScene.tsx`(485)、`SimulationView.tsx`(478)、`WorkFSChart.tsx`(469)、`RefractionAnimation.tsx`(462)、`AccelerationCenterExtra.tsx`(462)、`GravityAnimation.tsx`(459)、`ImpulseAnimation.tsx`(457)、`UniformAccelerationAnimation.tsx`(455)
-> - 已拆分：`PowerTransmission.tsx`(696→256)、`KeplerAnimation.tsx`(673→460)、`FreeFallDripAnimation.tsx`(560→448)
+> 临近阈值（450-499）：`LightRodRopeScene.tsx`(485)、`SimulationView.tsx`(478)、`WorkFSChart.tsx`(469)、`RefractionAnimation.tsx`(462)、`AccelerationCenterExtra.tsx`(462)、`GravityAnimation.tsx`(459)、`ImpulseAnimation.tsx`(457)、`UniformAccelerationAnimation.tsx`(455)
+>
+> 已拆分：`PowerTransmission.tsx`(696→256)、`KeplerAnimation.tsx`(673→460)、`FreeFallDripAnimation.tsx`(560→448)
 
 ---
 
@@ -89,7 +88,7 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 ### 3.1 AnimationPage 协调职责监控（P2）
 
-> 当前 507 行（2026-07-03 核对，较上次 +31 行，**已超 500 行阈值**）。触发拆分条件：行数 > 500，或存在物理计算与 JSX 混写，或职责 > 8 类。
+> 当前 523 行（2026-07-04 核对，较上次 +16 行，**已超 500 行阈值**）。触发拆分条件：行数 > 500，或存在物理计算与 JSX 混写，或职责 > 8 类。
 
 膨胀触发区域：参数过滤（showIf/hideIf）、SidebarExtra props 组装、模式切换、RightPhysicsPanel 计算逻辑。
 如继续增长，优先抽 hook：`useFilteredParams()`、`useSidebarExtraProps()`、`useAnimationMode()`。
@@ -99,8 +98,6 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 **整体要求**：
 - 左屏基础结构一致，控件分组明确；默认恢复语义清晰
 - 简单模式切换、显示开关、提示卡不再需要手写 SidebarExtra（已通过 controlMeta 实现）
-- ~~剩余硬骨头需扩展 action 类型后处理~~（2026-07-03 已全部解锁）
-- action 类型已扩展支持 `setDirectionAndRestart` 和 `resetAndRestart` 组合动作
 
 **待完成**：
 - 剩余 2 个 SidebarExtra 随后续维护逐步清理（2026-07-03 核查：registry 中共 2 个）
@@ -160,7 +157,7 @@ export interface AnimationModule<P extends AnimationParams> {
 
 ### 4.4 Store selector 优化（P2）
 
-> 审计发现：~146 处 useAnimationStore 调用中，~38 处使用精确 selector，~108 处使用解构 selector。
+> 审计发现：~121 处 useAnimationStore 调用中，~36 处使用精确 selector，~79 处使用解构 selector，~6 处使用 `.getState()`。
 
 建议拆分为：`useAnimationParams()`、`usePlaybackState()`、`useAnimationDisplayOptions()`。
 通过 selector 降低组件不必要重渲染。

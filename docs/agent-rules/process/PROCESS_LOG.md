@@ -17,6 +17,10 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 07-03 | mechanics/momentum | refactor | MomentumConservationAnimation.tsx 拆分：743→329 行，抽 `useMomentumConservationPhysics` hook + 复用 `src/physics/momentumConservation`；JSX 零物理公式；tsc + 385 tests pass |
+| 07-03 | mechanics/gravitation | refactor | KeplerAnimation.tsx 拆分：673→460 行，抽 `useKeplerPhysics` hook + 复用 `src/physics/celestial`；JSX 零物理公式；font()/colors 修复 + DESIGN_WIDTH/HEIGHT 常量；tsc + 385 tests pass |
+| 07-03 | electromagnetism/induction | refactor | PowerTransmission.tsx 拆分：696→256 行，抽 `usePowerTransmissionPhysics` hook + `VoltageProfileChart` + `NetworkTopology` + `PowerInfoBar`；JSX 零物理公式；tsc + 385 tests pass |
+| 07-03 | data/types | feat | action 类型扩展：新增 `setDirectionAndRestart` 和 `resetAndRestart` 组合动作，解锁剩余 SidebarExtra 迁移 |
 | 07-02 | theme | refactor | CANVAS_PRESETS 废弃别名清理：31 个组件从 standard/mediumTall/mediumWide/extraWide 迁移至 wide/tall，spacing.ts 删除 4 个废弃别名；ReflectionAnimation/ThinLensAnimation 旧方案迁移至方式A（静态 viewBox + preserveAspectRatio）；tsc 零错误、385 tests 通过 |
 | 07-01 | UI/animation | refactor | SidebarExtra→controlMeta 收敛：32 个动画迁移（24 完全删除 + 8 部分精简），SidebarExtra 从 61→29；8 批次执行，tsc 零错误；详见 logs/2026-W27.md |
 | 07-01 | docs/rules | docs | 更新左屏控制台项目规范：project_rules 增加"左屏控制台声明式优先"铁律，08_THREE_PANEL/02_UI/ARCHITECTURE 补 LeftPanel、ParamMeta、controlMeta、SidebarExtra 收敛规则 |
