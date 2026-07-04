@@ -174,7 +174,7 @@ SidebarExtraProps
 
 - SidebarExtra **不得**直接访问 animation store 中的 `params`、`time`、`isPlaying` 及其更新方法
 - 所需动画数据和动作必须由 AnimationPage 通过 props 注入
-- 允许读取纯 UI 环境状态（如主题、布局）时必须有明确理由
+- 允许读取**纯 UI 环境状态**（如当前断点/主题），但仅限以下情况：读取 `useBreakpoint()`（响应式布局判断）或读取 `useAppStore` 中的 UI 模式字段（如 `mode`）。**禁止**读取 `useAnimationStore` / `useProgressStore` / `useProblemStore` 等业务 store 的任何字段。
 
 ### 4.4 animationActions 封装
 

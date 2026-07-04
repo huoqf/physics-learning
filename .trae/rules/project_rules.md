@@ -79,24 +79,29 @@ theme/            # 设计 token（颜色/间距/圆角/阴影/动效）
 4. **矢量箭头** → 必须走 `VectorArrow` 组件 + `refMagnitudes` 归一化（`vectorStyle.ts` 为颜色权威）
 5. **画布尺寸** → 必须走 `useCanvasSize(CANVAS_PRESETS.xxx)`（`src/theme/spacing.ts`）
 6. **字体缩放** → 必须走 `font()` 函数（内置 clamp 7–16，来自 `useCanvasSize` 返回值）
-7. **SVG viewBox 设计坏标** → 无 overlay 时 viewBox **必须绑定设计常量**（`DESIGN_WIDTH/HEIGHT`），**严禁** `viewBox={\`0 0 ${width} ${height}\`}` 同时配合 `<g transform={vp.transform}>` 的双重缩放组合（会导致首次进入页面时出现"缓缓放大"视觉跳变）
-8. **缩放路径互斥** → 同一组件只能选一条缩放路径：**路径 A（SVG viewBox）** 内部坐标用设计常量，禁止再乘 `scale` 或引用 `canvasSize.width/height/font`；**路径 B（HTML 响应式）** 走 `useCanvasSize()` 返回的 `width/height/font`；**严禁在路径 A 的 SVG 内用 `<foreignObject>` 嵌入路径 B 的 React 图表组件**；需并列时须在 HTML 层 `flex` 分区，两者平级而非嵌套
+7. **SVG viewBox 绑定策略**：
+   - **无 overlay（推荐）**：viewBox **必须绑定设计常量**（`DESIGN_WIDTH/HEIGHT`），`preserveAspectRatio="xMidYMid meet"` 自动居中，**不使用 `vp.transform`**
+   - **有 overlay（限制使用）**：viewBox 绑定真实容器尺寸 + `<g transform={vp.transform}>`，此组合合法，不属于双重缩放（详见 `07_CANVAS_SVG_CHART_RULES.md §2.4`）
+   - **严禁双重缩放反模式**：`viewBox={\`0 0 ${width} ${height}\`}` 同时使用 `vp.transform`，**且不传 overlay 参数** → 导致首次进入时画面"缓缓放大"跳变
+8. **渲染缩放策略互斥**（注意：此处「SVG方式A/B」与 §6 坐标路径含义不同）→ 同一组件只能选一种渲染策略：**SVG方式A（viewBox固定常量）** 内部坐标用设计常量，禁止再乘 `scale` 或引用 `canvasSize.width/height`；**HTML方式B（响应式）** 走 `useCanvasSize()` 返回的 `width/height/font`；**严禁在 SVG 方式A 的 `<svg>` 内用 `<foreignObject>` 嵌入 HTML方式B 的 React 图表组件**；需动画+图表并列时须在 HTML 层 `flex` 分区，两者平级而非嵌套
 
-### CANVAS_PRESETS 画布预设规格（3 种）
+### CANVAS_PRESETS 画布预设规格（4 种）
 
-页面主屏为 ThreePanel 固定三栏（左参数 / 中画布 / 右公式），`CANVAS_PRESETS`（定义于 `src/theme/spacing.ts`）提供以下画布设计比例：
+页面主屏为 ThreePanel 固定三栏（左参数 / 中画布 / 右公式），`CANVAS_PRESETS`（定义于 `src/theme/spacing.ts`）按**动画在中屏的布局区域**提供以下四种预设：
 
 > ⚠️ 以下为 SVG viewBox **逻辑坐标系尺寸，非屏幕像素**。
 > `useCanvasSize` 在运行时将所选比例等比缩放至物理容器；
 > `useViewport` 的 `designWidth/designHeight` 必须与所选 preset 完全一致。
+> **基准**：1440px 标准桌面下，中屏实际幓 ≈ 840px、可用高 ≈ 650px（扭除顶栏 56px + 控制条 48px）。
 
-| preset | viewBox 设计坐标 | 选用条件（看画面主体几何形状） |
-|--------|----------------|-------------------------------|
-| `wide`   | 700×400 | 主体横向延伸（轨迹、波形、电路），高度占比 < 60% |
-| `tall`   | 700×450 | 主体接近方形但略宽（抛体弧线、力的分解），高度占比 60–85% |
-| `square` | 600×600 | 主体为圆形或旋转对称（圆周运动、向心力），高度占比 ≈ 100%。宽度取 600 而非 700，因高度预算约束；**三个 preset 均为固定值，不可自行调整** |
+| preset | viewBox 设计坐标 | 定义 | 选用条件 |
+|--------|----------------|------|-------------------------------|
+| `full`   | 700×650 | 全区域，AR≈1.08:1 | 动画**独占中屏全区域**，无图表分区 |
+| `splitV` | 700×325 | 上下分区，高度为 full 的一半 | 中屏**上下并列**（上图表+下场景，或反向） |
+| `splitH` | 350×650 | 左右分区，宽度为 full 的一半 | 中屏**左右并列**（左场景+右图表面板） |
+| `square` | 650×650 | 1:1 正方形 | 主体为**圆形或旋转对称**（圆周运动、向心力） |
 
-> **新增动画组件只允许使用以上三个有效 preset**，仅当布局有特殊需求（占位符/紧凑子场景/唯一比例）时允许硬编码 `{ width, height }`。
+> **新增动画组件只允许使用以上四个有效 preset**。如首次开发无法确定布局，默认选 `full`。
 
 ### 铁律 5 展开：组件复用
 

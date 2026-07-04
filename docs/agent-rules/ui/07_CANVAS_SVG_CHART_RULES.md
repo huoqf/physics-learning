@@ -37,10 +37,10 @@
 所有动画组件**必须**引用 `useCanvasSize()` + `useViewport()`。根据是否有 overlay 二选一（见 §2.4 判断规则）：
 
 ```tsx
-// CANVAS_PRESETS.wide = { width: 700, height: 400 }（useCanvasSize 的回退默认尺寸）
-// designWidth/designHeight 为 SVG 设计坐标系尺寸，通常与 PRESETS 保持一致
-const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
-const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 400 })
+// CANVAS_PRESETS.full = { width: 700, height: 650 }（按布局区域选型，详见 project_rules.md）
+// designWidth/designHeight 为 SVG 设计坐标系尺寸，必须与所选 preset 完全一致
+const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full)
+const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 650 })
 ```
 
 物理比例尺**必须**通过 `computeScale()` 基于物理世界范围计算：
@@ -66,8 +66,7 @@ const physicsScale = computeScale(width, height, WORLD, padding)
 
 ### 2.3 旧方案遗留：viewBox + 比例常量（新组件禁用）
 
-> ⚠️ **新动画组件禁止使用此方案**。存量测试证明固定 viewBox 在某些屏幕尺寸和三栏布局下存在内容裁切问题，且无法支持 overlay 避让。
-> 局部存量旧组件（`ReflectionAnimation`、`ThinLensAnimation`）暂时保留此方案，待迁移完成后此注将被删除。
+> ⚠️ **新动画组件禁止使用此方案**。存量测试证明固定 viewBox 在某些屏幕尺寸和三栏布局下存在内容裁切问题，且无法支持 overlay 避让。所有组件必须迁移至 §2.2 方案（`useCanvasSize` + `useViewport`）。
 
 ```ts
 // ❌ 旧方案（禁止在新组件中使用，保留供存量迁移参考）

@@ -55,6 +55,7 @@ function AnimationCenter({
   const isCenterExtraFull = centerExtraModeKey != null && params[centerExtraModeKey] === 1
   const showCenterExtraInBasic = CenterExtraComponent && !centerExtraModeKey
   const maxTime = config.maxTime ?? 30
+  const isSpringForceCutMode = config.id === 'anim-spring-force' && params.mode === 1
 
   const controlBar = (wrapperClassName: string) => (
     <div className={wrapperClassName}>
@@ -104,6 +105,42 @@ function AnimationCenter({
 
   const centerHeightClass = config.centerExtraHeight ?? 'h-1/2'
   const restHeightClass = config.centerExtraHeight ? 'flex-1' : 'h-1/2'
+
+  if (isSpringForceCutMode && CenterExtraComponent) {
+    return (
+      <div className="flex flex-col h-full gap-2">
+        <div className="flex-1 min-h-0 flex flex-row gap-2">
+          {/* 左侧：物理动画 */}
+          <div
+            className="flex-1 min-h-0 bg-white rounded-xl shadow-md overflow-hidden"
+            style={{
+              transition: `opacity ${duration.normal}ms ${easing.standard}`,
+              opacity: canvasDimmed ? 0.9 : 1,
+            }}
+          >
+            <ErrorBoundary resetKey={config.id}>
+              <Suspense
+                fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400">加载动画中…</div>}
+              >
+                <AnimationLayoutContext.Provider value={config.sceneLayout}>
+                  <AnimationComponent />
+                </AnimationLayoutContext.Provider>
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+          {/* 右侧：加速度对比图 */}
+          <div className="w-[360px] shrink-0 min-h-0 bg-white rounded-xl shadow-md overflow-hidden flex flex-col">
+            <ErrorBoundary resetKey={config.id}>
+              <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400 text-sm">加载图表中…</div>}>
+                <CenterExtraComponent />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        </div>
+        {standardControlBar}
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col h-full">

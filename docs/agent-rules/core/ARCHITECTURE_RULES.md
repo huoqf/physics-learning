@@ -18,7 +18,7 @@
 | CSS 框架 | TailwindCSS 4 |
 | 状态管理 | Zustand |
 | 路由 | react-router-dom（**HashRouter only**） |
-| �```text
+|  ```text
 src/
 ├── app/                    # 应用壳、路由、全局布局
 ├── components/
@@ -225,10 +225,12 @@ tests/
 
 项目中存在两条并行的坐标缩放路径，新组件开发者须明确选用：
 
-| 路径 | 入口 | 适用场景 | 来源 |
+| 坐标路径 | 入口 | 适用场景 | 来源 |
 |------|------|---------|------|
-| 路径 A（强制） | `useViewport()` | 场景元素的比例定位（**全部组件强制**） | `src/utils/useViewport.ts` |
-| 路径 B（保留） | `computeScale()` | 物理量→像素转换，与 useViewport 共存 | `src/utils/coordinate.ts` |
+| 坐标路径 1（强制） | `useViewport()` | 场景元素的比例定位（**全部 Animation 组件强制调用**） | `src/utils/useViewport.ts` |
+| 坐标路径 2（保留） | `computeScale()` | 物理量→像素转换，可与 useViewport 共存 | `src/utils/coordinate.ts` |
+
+> ⚠️ 注意：此处「坐标路径 1/2」指坐标体系，与 `project_rules.md` 铁律1-8 的「SVG方式A/B（viewBox绑定策略）」是不同维度的概念，请勿混淆。
 
 - **useViewport** → 所有 Animation 组件**强制引用**；但 `vp.transform` 的使用按 overlay 条件选择：
   - 无 overlay：选**方式A**（viewBox 绑定固定设计尺寸，`preserveAspectRatio` 自动居中，**不使用 vp.transform**）
@@ -352,7 +354,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
 
 | 字段 | 渲染器 | 用途 | 适用内容 |
 |------|--------|------|----------|
-| `paramMeta` | `ParamControl` | 连续数值型物理参数 | 力、速度、角度、质量、电阻等，可声明 `group/description/marks/importance/resetOnChange` |
+| `paramMeta` | `ParamControl` | 连续数值型物理参数 | 力、速度、角度、质量、电阻等，可声明 `group/description/marks/importance/resetOnChange`（`resetOnChange: true` 效果：参数值变化时自动触发 `setTime(0) + setIsPlaying(false)`，即重置到初始静止状态） |
 | `controlMeta` | `ControlPanel` | 非数值或低频控制 | `number / segmented / toggle / preset / tip`，用于模式切换、显示开关、快捷预设、教学提示 |
 | `SidebarExtra` | 自定义 React 组件 | 复杂页面专属控制 | 仅当声明式协议无法表达时保留，内部必须复用 `LeftPanelSection` |
 
@@ -397,7 +399,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
 
 **注意事项**：
 - `'loop'` 型动画在 `useAnimationLifecycle` 初始化时自动 `setIsPlaying(true)`，**不得**为其添加"首次加载暂停"逻辑
-- `'param'` 型若有 `useAnimationFrame` 用于拖拽响应（如 `anim-equilibrium`），仍标记为 `'param'`，因为 `isPlaying` 全局开关对主画面无语义
+- `'param'` 型若有 `useSimulationFrame` 用于拖拽响应（如 `anim-equilibrium`），仍标记为 `'param'`，因为 `isPlaying` 全局开关对主画面无语义（注：拖拽场景应使用 `useSimulationFrame`，其 rAF 始终运行，`active` 控制推进；而非 `useAnimationFrame`）
 - `'param'` 型底部控制区高度与其他模式保持一致（信息条高度 ≈ 完整控制栏），不应引起布局跳变
 
 ### 8.2 错题数据流
@@ -486,7 +488,7 @@ Tailwind v4 使用 CSS-first 配置，颜色通过 `src/index.css` 中的 `@them
 
 所有组件中的颜色/间距/动效值必须从 `src/theme/` 子模块引用，禁止硬编码。import 路径详见 `ui/02_UI_RULES.md §2`。
 
-动画组件的 UI token（字体/阴影/面板/图表内边距）从 `src/theme/animationTokens.ts` 引用，画布预设尺寸从 `CANVAS_PRESETS`（`src/theme/spacing.ts`）引用。**新组件只允许使用 `wide`（700×400）/ `tall`（700×450）/ `square`（600×600）三个有效 preset，且 `useViewport` 的 `designWidth/designHeight` 必须与所用 preset 数值完全一致**（上述三个为 `src/theme/spacing.ts` 中唯一定义的预设，无其他预设或别名）。
+动画组件的 UI token（字体/阴影/面板/图表内边距）从 `src/theme/animationTokens.ts` 引用，画布预设尺寸从 `CANVAS_PRESETS`（`src/theme/spacing.ts`）引用。**新组件按布局区域选择 preset**：`full`（700×650）/ `splitV`（700×325）/ `splitH`（350×650）/ `square`（650×650），`useViewport` 的 `designWidth/designHeight` 必须与所用 preset 数值完全一致。选型规则详见 `project_rules.md CANVAS_PRESETS 画布预设规格`。
 
 **矢量系统 token**：矢量类型枚举（`VectorType`）、视觉权重（`VECTOR_VISUAL_WEIGHT`）、颜色映射（`VECTOR_COLORS`）从 `src/theme/physics/vectorStyle.ts` 引用；箭头几何规格（`ArrowGeometry`）从 `src/theme/physics/arrowStyle.ts` 引用。两者均通过 `@/theme/physics` 统一入口导出。
 
