@@ -1,236 +1,238 @@
-import { FC, useMemo, useCallback } from 'react'
+/**
+ * 弹力演示 — 中屏扩展区域组件
+ *
+ * 职责：
+ *   - mode=0（胡克定律）：上方 F-x 图表与弹性势能面积图
+ *   - mode=1（绳与弹簧）：右侧四球加速度对比柱状图
+ * 约束：调用纯物理函数，零内联公式。
+ */
+
+import { useRef, useMemo } from 'react'
+import { useAnimationStore } from '@/stores'
+import { useShallow } from 'zustand/react/shallow'
 import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { PHYSICS_COLORS } from '@/theme/physics'
-import { colors } from '@/theme/colors'
-import { useAnimationStore } from '@/stores'
-import { VectorDefs } from '@/components/Physics/VectorDefs'
-import { Card } from '@/components/UI'
 
-export const SpringForceCenterExtra: FC = () => {
-    const params = useAnimationStore((s) => s.params)
-  const time = useAnimationStore((s) => s.time)
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
-  const { font } = canvasSize
+import { RelationChart, ChartArea } from '@/components/Chart'
+import {
+  calculateHookeLawState,
+  calculateCutRopeState,
+  calculateBallBFallTime,
+} from '@/physics/dynamics/spring-force'
+import { CUT_ROPE_DESIGN } from './hooks/useSpringForceCutRope'
+
+export default function SpringForceCenterExtra() {
+  const { params, time, mode } = useAnimationStore(
+    useShallow((s) => ({
+      params: s.params,
+      time: s.time,
+      mode: s.params.mode ?? 0,
+    })),
+  )
 
   const k = params.k ?? 100
   const m = params.m ?? 1
-  const omega = Math.sqrt(k / m)
+  const isCut = params.isCut ?? 0
+
+  if (mode === 0) {
+    return <HookeLawChart k={k} m={m} time={time} />
+  }
+
+  return <CutRopeAccelerationChart k={k} m={m} time={time} isCut={isCut} />
+}
+
+// ─── 胡克定律 F-x 图表 ──────────────────────────────────────────────────
+
+function HookeLawChart({ k, m, time }: { k: number; m: number; time: number }) {
+  const state = calculateHookeLawState(k, m, time)
+  const displacement = state.displacement
+  const potentialEnergy = state.potentialEnergy
+
   const amplitude = 0.5
-  const displacement = amplitude * Math.sin(omega * time)
-  const springForce = -k * displacement
-  const ep = 0.5 * k * displacement * displacement
+  const maxForce = k * amplitude
 
-  // ── 布局与坐标定义 ──
-  const margin = { left: 16, right: 12, top: 15, bottom: 15 }
-  const plotW = 100 - margin.left - margin.right // 72
-  const plotH = 100 - margin.top - margin.bottom // 70
+  const hookePoints = useMemo(() => {
+    const pts: { x: number; y: number }[] = []
+    for (let i = 0; i <= 50; i++) {
+      const x = (i / 50) * (2 * amplitude) - amplitude
+      pts.push({ x, y: k * x })
+    }
+    return pts
+  }, [k])
 
-  const cx = margin.left + plotW / 2 // 52
-  const cy = margin.top + plotH / 2  // 50
-
-  // 位移映射范围 x: [-0.6, 0.6]
-  const toSvgX = useCallback((x: number) => cx + (x / 0.6) * (plotW / 2), [cx, plotW])
-  // 弹力映射范围 F: [-110, 110] (当 k=200, x=0.5 时最大力为 100N)
-  const toSvgY = useCallback((F: number) => cy - (F / 110) * (plotH / 2), [cy, plotH])
-
-  // ── 弹性势能三角形面积路径 ──
-  const areaPathD = useMemo(() => {
-    const startX = toSvgX(0)
-    const endX = toSvgX(displacement)
-    const endY = toSvgY(springForce)
-    return `M ${startX},${cy} L ${endX},${cy} L ${endX},${endY} Z`
-  }, [displacement, springForce, cy, toSvgX, toSvgY])
-
-  // ── 计算胡克定律线段端点 ──
-  // 在 x = -0.55 和 x = 0.55 处的值
-  const xLeft = -0.55
-  const fLeft = -k * xLeft
-  const xRight = 0.55
-  const fRight = -k * xRight
-
-  const lineLeftX = toSvgX(xLeft)
-  const lineLeftY = toSvgY(fLeft)
-  const lineRightX = toSvgX(xRight)
-  const lineRightY = toSvgY(fRight)
-
-  // ── SVG 文本排版大小 ──
-  const fs = 3.6
-  const sfs = 2.8
+  const energyAreaPoints = useMemo(() => {
+    const pts: { x: number; y: number }[] = []
+    const end = displacement
+    if (Math.abs(end) < 1e-9) return pts
+    const step = end / 30
+    for (let i = 0; i <= 30; i++) {
+      const x = i * step
+      pts.push({ x, y: 0.5 * k * x * x })
+    }
+    return pts
+  }, [k, displacement])
 
   return (
-    <div ref={containerRef} className="w-full flex justify-center bg-neutral-50 py-1 border-b border-neutral-100 shrink-0">
-      <Card className="w-full max-w-[420px] aspect-[4/3] p-3">
-        <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
-          <defs>
-            {/* 弹性势能面积填充渐变 */}
-            <linearGradient id="ep-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={PHYSICS_COLORS.potentialElastic} stopOpacity="0.25" />
-              <stop offset="100%" stopColor={PHYSICS_COLORS.potentialElastic} stopOpacity="0.05" />
-            </linearGradient>
-            {/* 坐标轴箭头定义 */}
-            <VectorDefs colors={[PHYSICS_COLORS.labelText]} />
-          </defs>
-
-          {/* 图表标题 */}
-          <text x={margin.left} y={margin.top - 7} fontSize={fs} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
-            F - x 物理图像 (胡克定律)
-          </text>
-          <text x={margin.left + 38} y={margin.top - 7} fontSize={sfs} fill={PHYSICS_COLORS.labelTextLight}>
-            斜率 k = {k} N/m
-          </text>
-
-          {/* 1. 网格底图 */}
-          {[-0.5, -0.25, 0.25, 0.5].map((val) => {
-            const x = toSvgX(val)
-            return (
-              <line
-                key={`grid-x-${val}`}
-                x1={x} y1={margin.top} x2={x} y2={margin.top + plotH}
-                stroke={PHYSICS_COLORS.grid}
-                strokeWidth={0.25}
-                strokeDasharray="1,1"
-              />
-            )
-          })}
-          {[-100, -50, 50, 100].map((val) => {
-            const y = toSvgY(val)
-            return (
-              <line
-                key={`grid-y-${val}`}
-                x1={margin.left} y1={y} x2={margin.left + plotW} y2={y}
-                stroke={PHYSICS_COLORS.grid}
-                strokeWidth={0.25}
-                strokeDasharray="1,1"
-              />
-            )
-          })}
-
-          {/* 2. 坐标轴线 */}
-          {/* 横轴 x */}
-          <line
-            x1={margin.left - 2} y1={cy} x2={margin.left + plotW + 3} y2={cy}
-            stroke={PHYSICS_COLORS.labelText}
-            strokeWidth={0.4}
-            markerEnd="url(#arrow-medium-1E293B)"
+    <div className="w-full h-full flex flex-col bg-white rounded-lg shadow-inner p-3 relative">
+      <div className="text-sm font-bold mb-2 flex-shrink-0">F-x 关系图与弹性势能</div>
+      <RelationChart
+        points={hookePoints}
+        xDomain={[-amplitude, amplitude]}
+        yDomain={[-maxForce, maxForce]}
+        xLabel="位移 x (m)"
+        yLabel="弹力 F (N)"
+        cursorX={displacement}
+        cursorLabel={(x, y) => `x=${x.toFixed(2)}m, F=${y.toFixed(1)}N`}
+        showZeroLine
+        underlay={
+          <ChartArea
+            points={energyAreaPoints}
+            xRange={displacement >= 0 ? [0, displacement] : [displacement, 0]}
+            variant="default"
+            intensity="normal"
           />
-          {/* 纵轴 F */}
-          <line
-            x1={cx} y1={margin.top + plotH + 2} x2={cx} y2={margin.top - 3}
-            stroke={PHYSICS_COLORS.labelText}
-            strokeWidth={0.4}
-            markerEnd="url(#arrow-medium-1E293B)"
-          />
-
-          {/* 坐标轴标签 */}
-          <text x={margin.left + plotW + 4} y={cy + 1.2} fontSize={fs} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
-            x (m)
-          </text>
-          <text x={cx - 5} y={margin.top - 4} fontSize={fs} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
-            F (N)
-          </text>
-
-          {/* 3. 刻度值 */}
-          {/* x轴刻度 */}
-          {[-0.5, 0.5].map((val) => {
-            const x = toSvgX(val)
-            return (
-              <g key={`tick-x-${val}`}>
-                <line x1={x} y1={cy} x2={x} y2={cy + 1} stroke={PHYSICS_COLORS.labelText} strokeWidth={0.3} />
-                <text x={x} y={cy + 4.2} fontSize={sfs} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontFamily="monospace">
-                  {val > 0 ? `+${val}` : val}
-                </text>
-              </g>
-            )
-          })}
-          {/* y轴刻度 */}
-          {[-100, 100].map((val) => {
-            const y = toSvgY(val)
-            return (
-              <g key={`tick-y-${val}`}>
-                <line x1={cx - 1} y1={y} x2={cx} y2={y} stroke={PHYSICS_COLORS.labelText} strokeWidth={0.3} />
-                <text x={cx - 2} y={y + 1} fontSize={sfs} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end" fontFamily="monospace">
-                  {val > 0 ? `+${val}` : val}
-                </text>
-              </g>
-            )
-          })}
-          {/* 原点 0 */}
-          <text x={cx - 2} y={cy + 3.5} fontSize={sfs} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">0</text>
-
-          {/* 4. 弹性势能三角形面积填充 (F-x 与 x 轴围成的面积) */}
-          {Math.abs(displacement) > 0.01 && (
-            <path
-              d={areaPathD}
-              fill="url(#ep-grad)"
-              stroke={PHYSICS_COLORS.potentialElastic}
-              strokeWidth={0.3}
-              strokeDasharray="0.5,0.5"
-            />
-          )}
-
-          {/* 5. 胡克定律斜直线 F = -kx */}
-          <line
-            x1={lineLeftX} y1={lineLeftY} x2={lineRightX} y2={lineRightY}
-            stroke={PHYSICS_COLORS.elasticForce}
-            strokeWidth={0.7}
-          />
-
-          {/* 6. 当前状态辅助虚线 */}
-          {Math.abs(displacement) > 0.01 && (
-            <g>
-              <line
-                x1={toSvgX(displacement)} y1={cy}
-                x2={toSvgX(displacement)} y2={toSvgY(springForce)}
-                stroke={PHYSICS_COLORS.displacement}
-                strokeWidth={0.3}
-                strokeDasharray="1,1"
-              />
-              <line
-                x1={cx} y1={toSvgY(springForce)}
-                x2={toSvgX(displacement)} y2={toSvgY(springForce)}
-                stroke={PHYSICS_COLORS.elasticForce}
-                strokeWidth={0.3}
-                strokeDasharray="1,1"
-              />
-            </g>
-          )}
-
-          {/* 7. 动态滑移状态点 (当前形变量与弹力值) */}
-          <g>
-            <circle
-              cx={toSvgX(displacement)}
-              cy={toSvgY(springForce)}
-              r={2.2}
-              fill={PHYSICS_COLORS.elasticForce}
-              opacity={0.25}
-            />
-            <circle
-              cx={toSvgX(displacement)}
-              cy={toSvgY(springForce)}
-              r={1.2}
-              fill={PHYSICS_COLORS.elasticForce}
-              stroke={colors.neutral.white}
-              strokeWidth={0.35}
-            />
-          </g>
-
-          {/* 弹性势能大小实时标注说明 */}
-          {Math.abs(displacement) > 0.05 && (
-            <text
-              x={toSvgX(displacement / 2) + (displacement > 0 ? -12 : 2)}
-              y={cy - (springForce / 2) - 1}
-              fontSize={font(2.5)}
-              fill={PHYSICS_COLORS.potentialElastic}
-              fontWeight="bold"
-            >
-              Ep = {ep.toFixed(2)} J
-            </text>
-          )}
-        </svg>
-      </Card>
+        }
+      />
+      <div className="text-xs text-gray-500 mt-2 flex-shrink-0">
+        蓝色面积 = 弹性势能 Ep = {potentialEnergy.toFixed(2)} J
+      </div>
     </div>
   )
 }
 
-export default SpringForceCenterExtra
+// ─── 绳与弹簧切断加速度对比 ─────────────────────────────────────────────
+
+function CutRopeAccelerationChart({
+  k,
+  m,
+  time,
+  isCut,
+}: {
+  k: number
+  m: number
+  time: number
+  isCut: number
+}) {
+  const [, canvasSize] = useCanvasSize(CANVAS_PRESETS.splitH)
+  const { font } = canvasSize
+
+  // 独立的剪断时间戳管理（与场景组件同步但独立）
+  const tCutStartRef = useRef<number | null>(null)
+  if (isCut === 1) {
+    if (tCutStartRef.current === null || time < tCutStartRef.current) {
+      tCutStartRef.current = time
+    }
+  } else {
+    tCutStartRef.current = null
+  }
+
+  const state = calculateCutRopeState(
+    k,
+    m,
+    time,
+    isCut,
+    tCutStartRef.current,
+    CUT_ROPE_DESIGN.ceilY,
+    CUT_ROPE_DESIGN.groundY,
+  )
+
+  const fallTime = calculateBallBFallTime(m, k, CUT_ROPE_DESIGN.ceilY, CUT_ROPE_DESIGN.groundY)
+  const tCut = state.tCut
+
+  const gravity = 9.8
+  const maxAccel = gravity * 2.5
+  const unitHeight = 180 / maxAccel
+
+  const data = [
+    { label: 'A球', value: Math.abs(state.forces.a_A), color: '#F59E0B' },
+    { label: 'B球', value: Math.abs(state.forces.a_B), color: '#3B82F6' },
+    { label: 'C球', value: Math.abs(state.forces.a_C), color: '#EF4444' },
+    { label: 'D球', value: Math.abs(state.forces.a_D), color: '#10B981' },
+  ]
+
+  return (
+    <div className="w-full h-full flex flex-col bg-white rounded-lg shadow-inner p-4 relative overflow-hidden">
+      <div className="text-base font-bold mb-3">加速度对比 (m/s²)</div>
+
+      {isCut === 1 && tCut < fallTime ? (
+        <div className="text-center text-xs text-gray-500 mb-2">
+          切断后 t = {tCut.toFixed(2)}s
+        </div>
+      ) : (
+        <div className="text-center text-xs text-gray-500 mb-2">
+          {isCut === 1 ? 'B球已落地，动画停止' : '点击“剪断细绳”观察加速度变化'}
+        </div>
+      )}
+
+      <svg width="100%" height="100%" viewBox="0 0 360 340">
+        <text x={180} y={20} fontSize={font(14)} fontWeight="bold" fill="#1F2937" textAnchor="middle">
+          四球加速度对比
+        </text>
+
+        {/* 基准线 */}
+        <line x1={35} y1={170} x2={340} y2={170} stroke="#E5E7EB" strokeWidth={1} />
+        <text x={30} y={175} fontSize={font(10)} fill="#9CA3AF" textAnchor="end">0</text>
+        <text x={30} y={40} fontSize={font(10)} fill="#9CA3AF" textAnchor="end">
+          {maxAccel.toFixed(1)}
+        </text>
+        <text x={30} y={305} fontSize={font(10)} fill="#9CA3AF" textAnchor="end">
+          -{maxAccel.toFixed(1)}
+        </text>
+
+        {/* 柱状图 */}
+        {data.map((item, i) => {
+          const barX = 65 + i * 72
+          const barWidth = 48
+          const barHeight = item.value * unitHeight
+          const barY = 170 - barHeight
+
+          return (
+            <g key={item.label}>
+              <rect
+                x={barX}
+                y={barY}
+                width={barWidth}
+                height={barHeight}
+                fill={item.color}
+                opacity={0.8}
+                rx={4}
+              />
+              <text
+                x={barX + barWidth / 2}
+                y={barY - 8}
+                fontSize={font(12)}
+                fontWeight="bold"
+                fill={item.color}
+                textAnchor="middle"
+              >
+                {item.value.toFixed(1)}
+              </text>
+              <text
+                x={barX + barWidth / 2}
+                y={200}
+                fontSize={font(12)}
+                fill="#374151"
+                textAnchor="middle"
+                fontWeight="bold"
+              >
+                {item.label}
+              </text>
+            </g>
+          )
+        })}
+
+        {/* 理论分析标注 */}
+        {isCut === 1 && tCut < 0.5 && (
+          <g>
+            <text x={180} y={260} fontSize={font(12)} fill="#6B7280" textAnchor="middle">
+              理论值 (刚剪断):
+            </text>
+            <text x={180} y={280} fontSize={font(11)} fill="#6B7280" textAnchor="middle">
+              aA=g, aB=g, aC=2g, aD=0
+            </text>
+          </g>
+        )}
+      </svg>
+    </div>
+  )
+}

@@ -170,6 +170,12 @@ function usePlaybackLoop(
 
   const isLoop = effectiveControlsMode === 'loop'
 
+  // 动态 controlsMode 切换时同步播放状态：
+  // loop → 自动开始播放；非 loop → 暂停（由用户手动触发）
+  useEffect(() => {
+    setIsPlaying(isLoop)
+  }, [isLoop, setIsPlaying])
+
   // rAF 时间循环
   useAnimationFrame(
     (deltaTime) => {

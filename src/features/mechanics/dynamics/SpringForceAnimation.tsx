@@ -1,215 +1,26 @@
-import { useCanvasSize, useViewport } from '@/utils'
-import { CANVAS_PRESETS } from '@/theme/spacing'
-import { computeScale } from '@/utils/coordinate'
+/**
+ * 弹力演示 — 主组件（薄壳）
+ *
+ * 根据 mode 路由到对应场景：
+ *   - mode=0：胡克定律演示（splitV 上下分区）
+ *   - mode=1：绳与弹簧瞬时切断（splitH 左右分区）
+ */
+
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT, DASH } from '@/theme/physics'
-import { Spring } from '@/components/UI'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { VectorDefs } from '@/components/Physics/VectorDefs'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
-
-// ── 布局常量 ──────────────────────────────────────────────────────────
-const SPRING_LAYOUT = {
-  groundYOffset: 30,   // px：地面距画布中心偏移
-  boxSize: 44,         // px：振子方块大小
-  wallRightX: 80,      // px：墙体右侧边缘（弹簧固定端位置）
-} as const
-// ──────────────────────────────────────────────────────────────────────
+import SpringForceHookeLawScene from './components/SpringForceHookeLawScene'
+import SpringForceCutRopeScene from './components/SpringForceCutRopeScene'
 
 export default function SpringForceAnimation() {
-    const {params, time, showVectors} = useAnimationStore(
+  const { mode } = useAnimationStore(
     useShallow((s) => ({
-    params: s.params,
-    time: s.time,
-    showVectors: s.showVectors,
-    }))
+      mode: s.params.mode ?? 0,
+    })),
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
-  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 400 })
-  const { font } = canvasSize
-
-  const { k = 100, m = 1 } = params
-  
-  const omega = Math.sqrt(k / m)
-  const amplitude = 0.5
-  const displacement = amplitude * Math.sin(omega * time)
-  const springForce = -k * displacement
-
-  // ── 科学布局坐标系 ──
-  const eqX = vp.visibleW / 2 // 平衡位置在 Canvas 中心 (325px)
-  const groundY = vp.visibleH / 2 + SPRING_LAYOUT.groundYOffset // 地面 Y 坐标
-  const boxSize = SPRING_LAYOUT.boxSize // 振子方块大小
-  const WORLD = { xMin: -0.6, xMax: 0.6, yMin: -0.3, yMax: 0.3 } as const
-  const scale = computeScale(vp.visibleW, vp.visibleH, WORLD, 80)
-  
-  const currentX = displacement * scale // 当前偏离平衡位置的像素位移
-  const centerX = eqX + currentX         // 振子当前的中心 X 坐标
-  const wallRightX = SPRING_LAYOUT.wallRightX // 墙体右侧边缘，即弹簧固定端位置
-
-  const springScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: vp.visibleW, height: vp.visibleH },
-    originX: 0,
-    originY: 0,
-    refMagnitudes: { force: k * amplitude },
-  }
-  const springSceneScale = createSceneScale(springScene)
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg width={vp.visibleW} height={vp.visibleH} className="bg-white rounded-lg shadow-inner">
-        {/* 1. 精密实验室地面 */}
-        <PhysicsGround
-          x={40} y={groundY} width={vp.visibleW - 80}
-          appearance={{ color: PHYSICS_COLORS.axis, showBaseShadow: true }}
-        />
-
-        {/* 3. 左侧固定墙体 */}
-        <PhysicsGround
-          x={40} y={groundY - 100} width={40}
-          type="wall"
-          wall={{ height: 100, hatchCount: 8, hatchSide: 'right' }}
-          appearance={{ color: PHYSICS_COLORS.axis, fillColor: PHYSICS_COLORS.objectFillNeutral, showHatch: true }}
-        />
-        
-        {/* 4. 动态螺旋弹簧 */}
-        <Spring
-          x1={wallRightX}
-          y1={groundY - boxSize / 2}
-          x2={centerX - boxSize / 2}
-          y2={groundY - boxSize / 2}
-          coils={12}
-          radius={13}
-        />
-
-        {/* 5. 振子滑块 (质量块) */}
-        <rect
-          x={centerX - boxSize / 2}
-          y={groundY - boxSize}
-          width={boxSize}
-          height={boxSize}
-          fill={PHYSICS_COLORS.objectFill}
-          stroke={PHYSICS_COLORS.objectStroke}
-          strokeWidth={CANVAS_STYLE.stroke.objectLine}
-          rx={6}
-        />
-        <text
-          x={centerX}
-          y={groundY - boxSize / 2 + 5}
-          fontSize={FONT.axisSize}
-          fill={PHYSICS_COLORS.objectStroke}
-          textAnchor="middle"
-          fontWeight="bold"
-        >
-          m = {m}kg
-        </text>
-
-        {/* 6. 平衡位置指示虚线 */}
-        <line
-          x1={eqX}
-          y1={groundY - 110}
-          x2={eqX}
-          y2={groundY + 10}
-          stroke={PHYSICS_COLORS.axis}
-          strokeWidth={STROKE.reference}
-          strokeDasharray={DASH.reference.join(' ')}
-        />
-        <text
-          x={eqX}
-          y={groundY - 116}
-          fontSize={FONT.axisSize}
-          fill={PHYSICS_COLORS.labelTextLight}
-          textAnchor="middle"
-          fontWeight="bold"
-        >
-          平衡位置 (x=0)
-        </text>
-
-        {/* 7. 形变量 Δx 尺寸标注线 (仅在非平衡位置时显示) */}
-        {Math.abs(displacement) > 0.01 && (
-          <g>
-            {/* 尺寸辅助延伸虚线 */}
-            <line
-              x1={centerX}
-              y1={groundY - boxSize}
-              x2={centerX}
-              y2={groundY + 28}
-              stroke={PHYSICS_COLORS.displacement}
-              strokeWidth={0.5}
-              strokeDasharray="2,2"
-              opacity={0.6}
-            />
-            <line
-              x1={eqX}
-              y1={groundY}
-              x2={eqX}
-              y2={groundY + 28}
-              stroke={PHYSICS_COLORS.displacement}
-              strokeWidth={0.5}
-              strokeDasharray="2,2"
-              opacity={0.6}
-            />
-            {/* 尺寸双向箭头线 */}
-            <line
-              x1={eqX}
-              y1={groundY + 24}
-              x2={centerX}
-              y2={groundY + 24}
-              stroke={PHYSICS_COLORS.displacement}
-              strokeWidth={1.2}
-              markerStart="url(#arrow-displacement-start)"
-              markerEnd="url(#arrow-displacement-end)"
-            />
-            {/* 形变量数值说明文本 */}
-            <text
-              x={(eqX + centerX) / 2}
-              y={groundY + 36}
-              fontSize={font(11)}
-              fill={PHYSICS_COLORS.displacement}
-              textAnchor="middle"
-              fontWeight="bold"
-            >
-              x = {displacement > 0 ? '+' : ''}{displacement.toFixed(2)}m
-            </text>
-          </g>
-        )}
-
-        {/* 8. 弹力矢量 F_弹 */}
-        {showVectors && Math.abs(springForce) > 0.1 && (
-          <g>
-            <VectorArrow
-              origin={{ x: centerX, y: -(groundY - boxSize - 12) }}
-              vector={{ x: springForce, y: 0 }}
-              type="elasticForce"
-              sceneScale={springSceneScale}
-              strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-              pixelLength={Math.abs(springForce) * 2.2}
-            />
-            <text
-              x={centerX + springForce * 2.2 + (springForce > 0 ? 8 : -20)}
-              y={groundY - boxSize - 8}
-              fontSize={FONT.axisSize}
-              fill={PHYSICS_COLORS.elasticForce}
-              fontWeight="bold"
-            >
-              F弹
-            </text>
-          </g>
-        )}
-
-        <defs>
-          <VectorDefs colors={[PHYSICS_COLORS.elasticForce]} />
-          {/* 尺寸线端点装饰箭头 (双向标注专用)，几何标注非物理矢量，不适用铁律 1d */}
-          <marker id="arrow-displacement-start" markerWidth="6" markerHeight="6" refX="1" refY="3" orient="auto">
-            <polygon points="6 1, 0 3, 6 5" fill={PHYSICS_COLORS.displacement} />
-          </marker>
-          <marker id="arrow-displacement-end" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-            <polygon points="0 1, 6 3, 0 5" fill={PHYSICS_COLORS.displacement} />
-          </marker>
-        </defs>
-      </svg>
+    <div className="w-full h-full">
+      {mode === 0 ? <SpringForceHookeLawScene /> : <SpringForceCutRopeScene />}
     </div>
   )
 }

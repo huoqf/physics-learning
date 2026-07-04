@@ -7,11 +7,52 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '弹力演示',
     knowledgeId: 'mechanics-3-2',
     Component: lazy(() => import('@/features/mechanics/dynamics/SpringForceAnimation')),
-    controlsMode: 'param' as const,
-    defaultParams: { k: 100, x: 0, m: 1 } as const,
+    controlsMode: 'timed' as const,
+    defaultParams: { k: 100, m: 1, mode: 0, isCut: 0 } as const,
+    maxTime: 5,
     paramMeta: [
-      { key: 'k', label: '劲度系数 k', min: 10, max: 200, step: 5, unit: 'N/m' },
-      { key: 'm', label: '质量 m', min: 0.5, max: 5, step: 0.1, unit: 'kg' },
+      { key: 'k', label: '劲度系数 k', min: 10, max: 200, step: 5, unit: 'N/m', showIf: 'mode', showIfValue: 0 },
+      { key: 'm', label: '质量 m', min: 1.0, max: 3.0, step: 0.1, unit: 'kg' },
+    ],
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'mode',
+        label: '演示模式',
+        group: '模型选择',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '胡克定律演示' },
+          { value: 1, label: '绳与弹簧瞬时切断' },
+        ],
+      },
+      {
+        type: 'toggle',
+        key: 'isCut',
+        label: '剪断细绳',
+        group: '操作交互',
+        trueValue: 1,
+        falseValue: 0,
+        showIf: 'mode',
+        showIfValue: 1,
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        showIf: 'mode',
+        showIfValue: 0,
+        content: 'F-x 物理图像的斜率代表弹簧的劲度系数 k。图线与 x 轴围成的三角形面积表示弹性势能 Ep。',
+      },
+      {
+        type: 'tip',
+        group: '受力与加速度分析',
+        showIf: 'mode',
+        showIfValue: 1,
+        content: '【剪断瞬间受力与加速度精炼解析】\n' +
+          '1. 细绳拉力可突变为 0（绳断裂）；弹簧形变无法瞬间恢复，其弹力保持不变。\n' +
+          '2. 左侧悬挂：剪绳瞬时，B球仅受重力，a_B = g ↓；A球受弹簧拉力 2mg↑ 与重力 mg↓，合力为 mg↑，a_A = g ↑。\n' +
+          '3. 右侧悬挂：剪绳瞬时，C球受重力 mg↓ 与弹簧拉力 mg↓，合力为 2mg↓，a_C = 2g ↓；D球受重力 mg↓ 与弹簧拉力 mg↑ 平衡，合力为 0，a_D = 0。',
+      },
     ],
     CenterExtra: lazy(() => import('@/features/mechanics/dynamics/SpringForceCenterExtra')),
   },
@@ -50,19 +91,31 @@ export const mechanicsDynamicsAnimations = defineAnimations({
           { value: 1, label: '悬挂法重心实验' },
         ],
       },
-      { type: 'number', key: 'latitude', label: '纬度 φ', min: 0, max: 90, step: 1, unit: '°',
-        showIf: 'mode', showIfValue: 0 },
-      { type: 'number', key: 'omegaScale', label: '离心力放大倍数', min: 10, max: 300, step: 10, unit: '×',
-        showIf: 'mode', showIfValue: 0 },
-      { type: 'tip', content: '真实地球自转产生的离心力仅为引力的约 0.0034，为便于观察已放大显示。',
-        showIf: 'mode', showIfValue: 0 },
-      { type: 'toggle', key: 'showWeight', label: '启用黄铜配重',
-        showIf: 'mode', showIfValue: 1 },
-      { type: 'toggle', key: 'showLines', label: '显示悬挂铅垂虚线',
-        showIf: 'mode', showIfValue: 1 },
-      { type: 'segmented', key: 'suspendPoint', label: '悬挂孔选择', group: '子模式',
+      {
+        type: 'number', key: 'latitude', label: '纬度 φ', min: 0, max: 90, step: 1, unit: '°',
+        showIf: 'mode', showIfValue: 0
+      },
+      {
+        type: 'number', key: 'omegaScale', label: '离心力放大倍数', min: 10, max: 300, step: 10, unit: '×',
+        showIf: 'mode', showIfValue: 0
+      },
+      {
+        type: 'tip', content: '真实地球自转产生的离心力仅为引力的约 0.0034，为便于观察已放大显示。',
+        showIf: 'mode', showIfValue: 0
+      },
+      {
+        type: 'toggle', key: 'showWeight', label: '启用黄铜配重',
+        showIf: 'mode', showIfValue: 1
+      },
+      {
+        type: 'toggle', key: 'showLines', label: '显示悬挂铅垂虚线',
+        showIf: 'mode', showIfValue: 1
+      },
+      {
+        type: 'segmented', key: 'suspendPoint', label: '悬挂孔选择', group: '子模式',
         showIf: 'mode', showIfValue: 1, resetOnChange: true,
-        options: [{ value: 0, label: 'A1' }, { value: 1, label: 'A2' }, { value: 2, label: 'A3' }] },
+        options: [{ value: 0, label: 'A1' }, { value: 1, label: 'A2' }, { value: 2, label: 'A3' }]
+      },
     ],
   },
   'anim-friction': {
@@ -119,19 +172,31 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       // §4 显示辅助
       { type: 'storeToggle', label: '显示受力分析图', storeKey: 'toggleVectors', stateKey: 'showVectors', group: '显示辅助' },
       // §5 快捷预设
-      { type: 'preset', label: '🌍 地球 g=9.8', group: '快捷预设',
-        params: { g: 9.8 }, showIf: 'mode', showIfValue: 0 },
-      { type: 'preset', label: '🌙 月球 g=1.63', group: '快捷预设',
-        params: { g: 1.63 }, showIf: 'mode', showIfValue: 0 },
-      { type: 'preset', label: '🔴 火星 g=3.72', group: '快捷预设',
-        params: { g: 3.72 }, showIf: 'mode', showIfValue: 0 },
-      { type: 'preset', label: '🪐 木星 g=24.79', group: '快捷预设',
-        params: { g: 24.79 }, showIf: 'mode', showIfValue: 0 },
+      {
+        type: 'preset', label: '🌍 地球 g=9.8', group: '快捷预设',
+        params: { g: 9.8 }, showIf: 'mode', showIfValue: 0
+      },
+      {
+        type: 'preset', label: '🌙 月球 g=1.63', group: '快捷预设',
+        params: { g: 1.63 }, showIf: 'mode', showIfValue: 0
+      },
+      {
+        type: 'preset', label: '🔴 火星 g=3.72', group: '快捷预设',
+        params: { g: 3.72 }, showIf: 'mode', showIfValue: 0
+      },
+      {
+        type: 'preset', label: '🪐 木星 g=24.79', group: '快捷预设',
+        params: { g: 24.79 }, showIf: 'mode', showIfValue: 0
+      },
       // §6 斜面摩擦力教学提示
-      { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 1,
-        content: '物块静止或匀速下滑时，水平方向无加速度，地面与斜面体间无摩擦力。' },
-      { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 1,
-        content: '物块加速或减速运动时，水平方向产生加速度，地面摩擦力必定存在，方向与物块水平加速度方向相同。' },
+      {
+        type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 1,
+        content: '物块静止或匀速下滑时，水平方向无加速度，地面与斜面体间无摩擦力。'
+      },
+      {
+        type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 1,
+        content: '物块加速或减速运动时，水平方向产生加速度，地面摩擦力必定存在，方向与物块水平加速度方向相同。'
+      },
     ],
     CenterExtra: lazy(() => import('@/features/mechanics/dynamics/FrictionCenterExtra')),
     centerExtraMode: 'advancedMode',
@@ -205,20 +270,30 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       designHeight: 400,
     },
     controlMeta: [
-      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
-        options: [{ value: 0, label: '基础模式' }, { value: 1, label: '进阶模式' }] },
-      { type: 'segmented', key: 'modelIdx', label: '变力模型', group: '模型选择', resetOnChange: true,
+      {
+        type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+        options: [{ value: 0, label: '基础模式' }, { value: 1, label: '进阶模式' }]
+      },
+      {
+        type: 'segmented', key: 'modelIdx', label: '变力模型', group: '模型选择', resetOnChange: true,
         showIf: 'advancedMode', showIfValue: 1,
         options: [
           { value: 0, label: '线性递增力 F=k·t' },
           { value: 1, label: '正弦周期力 F=F₀sin(ωt)' },
-        ] },
-      { type: 'number', key: 'k', label: '力增加斜率 k', min: 1, max: 5, step: 0.5, unit: 'N/s',
-        showIf: 'modelIdx', showIfValue: 0 },
-      { type: 'number', key: 'F0', label: '力最大幅值 F₀', min: 5, max: 25, step: 1, unit: 'N',
-        showIf: 'modelIdx', showIfValue: 1 },
-      { type: 'number', key: 'omega', label: '力变化频率 ω', min: 0.5, max: 3, step: 0.1, unit: 'rad/s',
-        showIf: 'modelIdx', showIfValue: 1 },
+        ]
+      },
+      {
+        type: 'number', key: 'k', label: '力增加斜率 k', min: 1, max: 5, step: 0.5, unit: 'N/s',
+        showIf: 'modelIdx', showIfValue: 0
+      },
+      {
+        type: 'number', key: 'F0', label: '力最大幅值 F₀', min: 5, max: 25, step: 1, unit: 'N',
+        showIf: 'modelIdx', showIfValue: 1
+      },
+      {
+        type: 'number', key: 'omega', label: '力变化频率 ω', min: 0.5, max: 3, step: 0.1, unit: 'rad/s',
+        showIf: 'modelIdx', showIfValue: 1
+      },
     ],
     CenterExtra: lazy(() => import('@/features/mechanics/dynamics/NewtonSecondCenterExtra')),
     centerExtraMode: 'advancedMode',
@@ -233,14 +308,18 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       { key: 'm', label: '质量 m', min: 20, max: 100, step: 5, unit: 'kg' },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
-        options: [{ value: 0, label: '基础' }, { value: 1, label: '进阶' }] },
-      { type: 'segmented', key: 'modelIdx', label: '电梯运行情景', group: '模型选择', resetOnChange: true,
+      {
+        type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+        options: [{ value: 0, label: '基础' }, { value: 1, label: '进阶' }]
+      },
+      {
+        type: 'segmented', key: 'modelIdx', label: '电梯运行情景', group: '模型选择', resetOnChange: true,
         showIf: 'advancedMode', showIfValue: 1,
         options: [
           { value: 0, label: '升降变速电梯 (启动-匀速-制动)' },
           { value: 1, label: '钢索突然断裂 (静止-坠落-缓冲)' },
-        ] },
+        ]
+      },
     ],
     CenterExtra: lazy(() => import('@/features/mechanics/dynamics/WeightlessnessCenterExtra')),
     centerExtraMode: 'advancedMode',
@@ -257,17 +336,23 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       { key: 'mu', label: '动摩擦系数 μ', min: 0, max: 0.6, step: 0.05, unit: '' },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
-        options: [{ value: 0, label: '基础' }, { value: 1, label: '进阶' }] },
-      { type: 'segmented', key: 'connectionType', label: '连接传动介质', group: '模型选择', resetOnChange: true,
-        options: [{ value: 0, label: '编制细绳' }, { value: 1, label: '轻质弹簧' }] },
-      { type: 'segmented', key: 'analysisView', label: '受力分析视图', group: '显示辅助',
+      {
+        type: 'segmented', key: 'advancedMode', label: '观察模式', group: '模型选择', resetOnChange: true,
+        options: [{ value: 0, label: '基础' }, { value: 1, label: '进阶' }]
+      },
+      {
+        type: 'segmented', key: 'connectionType', label: '连接传动介质', group: '模型选择', resetOnChange: true,
+        options: [{ value: 0, label: '编制细绳' }, { value: 1, label: '轻质弹簧' }]
+      },
+      {
+        type: 'segmented', key: 'analysisView', label: '受力分析视图', group: '显示辅助',
         options: [
           { value: 0, label: '普通受力视图' },
           { value: 1, label: '整体法分析系统' },
           { value: 2, label: '隔离法分析物体 m₁' },
           { value: 3, label: '隔离法分析物体 m₂' },
-        ] },
+        ]
+      },
     ],
     CenterExtra: lazy(() => import('@/features/mechanics/dynamics/ConnectedBodiesCenterExtra')),
     centerExtraMode: 'advancedMode',
@@ -295,19 +380,25 @@ export const mechanicsDynamicsAnimations = defineAnimations({
           { value: 1, label: '天体探索' },
         ],
       },
-      { type: 'tip', content: '您可以通过左侧参数滑块调节质量与距离，也可以在画面中鼠标拖拽天体实时改变间距。',
-        showIf: 'mode', showIfValue: 0 },
-      { type: 'tip', content: '在真实天体尺度下，系统参数已绑定真实物理数值。',
-        showIf: 'mode', showIfValue: 1 },
+      {
+        type: 'tip', content: '您可以通过左侧参数滑块调节质量与距离，也可以在画面中鼠标拖拽天体实时改变间距。',
+        showIf: 'mode', showIfValue: 0
+      },
+      {
+        type: 'tip', content: '在真实天体尺度下，系统参数已绑定真实物理数值。',
+        showIf: 'mode', showIfValue: 1
+      },
       { type: 'toggle', key: 'showChart', label: '显示平方反比 F-r 曲线' },
-      { type: 'segmented', key: 'preset', label: '天体系统', group: '子模式',
+      {
+        type: 'segmented', key: 'preset', label: '天体系统', group: '子模式',
         showIf: 'mode', showIfValue: 1, resetOnChange: true,
         options: [
           { value: 1, label: '地月系统' },
           { value: 2, label: '太阳-地球' },
           { value: 3, label: '同步卫星-地球' },
           { value: 4, label: '宇航员-空间站' },
-        ] },
+        ]
+      },
     ],
   },
 })
