@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useCanvasSize, useViewport, layoutLabels } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
@@ -10,7 +11,7 @@ import {
 } from '@/physics'
 import { GRAVITY } from '@/physics/constants'
 import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
-import { IDENTITY_SCENE_SCALE } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import type { SceneLayoutProfile } from '@/scene'
 import { Block } from '@/components/Physics/Block'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
@@ -18,7 +19,7 @@ import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { useAnimationLayout } from '@/context/AnimationLayoutContext'
 
 // ── 布局常量 ──────────────────────────────────────────────────────────
-const NEWTON_DESIGN = { width: 700, height: 400 } as const
+const NEWTON_DESIGN = { width: 700, height: 650 } as const
 
 const NEWTON_LAYOUT = {
   groundYRatio: 0.80,        // 比例：地面距画布顶部
@@ -33,6 +34,15 @@ const NEWTON_SCENE_PROFILE: SceneLayoutProfile = {
   mode: 'visibleArea',
   designWidth: NEWTON_DESIGN.width,
   designHeight: NEWTON_DESIGN.height,
+  refMagnitudes: {
+    appliedForce: 40,
+    friction: 40,
+    gravity: 100,
+    normalForce: 100,
+    force: 40,
+    velocity: 20,
+    acceleration: 10,
+  },
 }
 // ──────────────────────────────────────────────────────────────────────
 
@@ -52,7 +62,7 @@ export default function NewtonSecondAnimation() {
     showVectors: s.showVectors,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
 
   const contextProfile = useAnimationLayout()
   const sceneProfile = contextProfile ?? NEWTON_SCENE_PROFILE
@@ -61,6 +71,8 @@ export default function NewtonSecondAnimation() {
     designWidth: sceneProfile.designWidth,
     designHeight: sceneProfile.designHeight,
   })
+
+  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, sceneProfile), [vp, sceneProfile])
 
   const {
     F = 10,
@@ -176,7 +188,7 @@ export default function NewtonSecondAnimation() {
               origin={{ x: cx, y: cy }}
               vector={{ x: 1, y: 0 }}
               type="appliedForce"
-              sceneScale={IDENTITY_SCENE_SCALE}
+              sceneScale={sceneScale}
               pixelLength={Math.max(15, F_applied * NEWTON_ARROW.forceScale)}
             />
             <text
@@ -199,7 +211,7 @@ export default function NewtonSecondAnimation() {
                     origin={{ x: cx, y: cy }}
                     vector={{ x: -1, y: 0 }}
                     type="friction"
-                    sceneScale={IDENTITY_SCENE_SCALE}
+                    sceneScale={sceneScale}
                     pixelLength={Math.max(15, f * NEWTON_ARROW.forceScale)}
                   />
                   <text
@@ -221,7 +233,7 @@ export default function NewtonSecondAnimation() {
               origin={{ x: cx, y: cy }}
               vector={{ x: 0, y: -1 }}
               type="gravity"
-              sceneScale={IDENTITY_SCENE_SCALE}
+              sceneScale={sceneScale}
               pixelLength={NEWTON_ARROW.vertFixedLen}
             />
             <text
@@ -240,7 +252,7 @@ export default function NewtonSecondAnimation() {
               origin={{ x: cx, y: cy }}
               vector={{ x: 0, y: 1 }}
               type="normalForce"
-              sceneScale={IDENTITY_SCENE_SCALE}
+              sceneScale={sceneScale}
               pixelLength={NEWTON_ARROW.vertFixedLen}
             />
             <text
@@ -261,7 +273,7 @@ export default function NewtonSecondAnimation() {
                   origin={{ x: 0, y: 0 }}
                   vector={{ x: 1, y: 0 }}
                   type="force"
-                  sceneScale={IDENTITY_SCENE_SCALE}
+                  sceneScale={sceneScale}
                   pixelLength={Math.max(25, F_net * NEWTON_ARROW.forceScale)}
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain * 1.5}
                 />
@@ -282,7 +294,7 @@ export default function NewtonSecondAnimation() {
               origin={{ x: cx, y: cy }}
               vector={{ x: 1, y: 0 }}
               type="velocity"
-              sceneScale={IDENTITY_SCENE_SCALE}
+              sceneScale={sceneScale}
               pixelLength={Math.max(15, v * NEWTON_ARROW.velScale)}
             />
             <text
@@ -302,7 +314,7 @@ export default function NewtonSecondAnimation() {
                   origin={{ x: cx, y: cy }}
                   vector={{ x: 1, y: 0 }}
                   type="acceleration"
-                  sceneScale={IDENTITY_SCENE_SCALE}
+                  sceneScale={sceneScale}
                   pixelLength={Math.max(15, a * NEWTON_ARROW.accelScale)}
                 />
                 <text

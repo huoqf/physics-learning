@@ -4,7 +4,7 @@
  * 职责：Store 订阅 + 参数提取 + 布局计算 + 组合子组件
  */
 import { useState, useEffect, useRef } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, clientToSvgPoint } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS } from '@/theme/physics'
@@ -90,28 +90,22 @@ export default function ElectricField() {
 
   // 鼠标拖拽事件处理 (将物理屏幕坐标通过 Viewport 转换回设计坐标系)
   const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
-    const svg = svgRef.current
-    if (!svg) return
-    const pt = svg.createSVGPoint()
-    pt.x = e.clientX
-    pt.y = e.clientY
-    const { x, y } = pt.matrixTransform(svg.getScreenCTM()!.inverse())
+    const pt = clientToSvgPoint(e.clientX, e.clientY, svgRef.current)
+    if (!pt) return
+    const { x, y } = pt
 
     const dist = Math.sqrt((x - testX) ** 2 + (y - testY) ** 2)
     if (dist < 24) {
       setIsDragging(true)
-      svg.setPointerCapture(e.pointerId)
+      svgRef.current?.setPointerCapture(e.pointerId)
     }
   }
 
   const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
     if (!isDragging) return
-    const svg = svgRef.current
-    if (!svg) return
-    const pt = svg.createSVGPoint()
-    pt.x = e.clientX
-    pt.y = e.clientY
-    let { x, y } = pt.matrixTransform(svg.getScreenCTM()!.inverse())
+    const pt = clientToSvgPoint(e.clientX, e.clientY, svgRef.current)
+    if (!pt) return
+    let { x, y } = pt
 
     x = Math.max(15, Math.min(w - 15, x))
     y = Math.max(15, Math.min(h - 15, y))

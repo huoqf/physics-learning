@@ -12,8 +12,7 @@ import {
   getECStateAtTime,
 } from '@/physics/energyConservation'
 import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import { PendulumScene } from './PendulumScene'
 import { ValleyScene } from './ValleyScene'
 import { EnergyConservationBarChart } from './EnergyConservationBarChart'
@@ -37,8 +36,8 @@ export default function EnergyConservationAnimation() {
     setTime: s.setTime,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
-  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 400 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 650 })
   const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 
@@ -289,14 +288,7 @@ export default function EnergyConservationAnimation() {
   const arcEndX = animCenterX + R_pix * Math.sin(arcLimitDeg * Math.PI / 180)
   const arcEndY = valleyCenterY + R_pix * Math.cos(arcLimitDeg * Math.PI / 180)
 
-  const sceneConfig = useMemo((): SceneConfig => ({
-    vectorBounds: { x: 0, y: 0, width: vp.visibleW, height: vp.visibleH },
-    originX: 0,
-    originY: 0,
-    worldWidth: vp.visibleW,
-    worldHeight: vp.visibleH,
-  }), [vp.visibleW, vp.visibleH]);
-  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
+  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'visibleArea'), [vp]);
 
   // 动态 Y 范围计算
   const chartYMin = Math.min(0, -E_offset) * 1.1

@@ -90,21 +90,19 @@
 
 ### 决策
 
-> **暂不迁移。**
+> **采用 `{ presetCompensation: 1.2 }` 平滑代偿方案渐进式迁移**
 
-收益仅为规范整洁性，零功能改善。`wide/tall` 当前实际充当"字体放大修正"角色，强迁移需大规模视觉回归，性价比极低。
+自 2026-07-05 规范重构后，底层 `useCanvasSize` 已支持可选参数 `options?: { presetCompensation?: number }`。在将旧预设 `wide`/`tall` 迁移为 standard `full` (700×650) 时，只需传参 `{ presetCompensation: 1.2 }`，即可 0 成本、无视觉缩水地保留原有在标准桌面下的隐性放大视觉效果。
 
-若未来逐组件迁移，正确路径：
-
-```
-迁移一个组件 = 改 preset → 改 designHeight → 把所有 font(N) 的 N 乘 1.2 → 视觉对比验证
-```
-
-不适合批量处理，需逐文件手动校准。
+**首批已验证迁移组件（P2 试点）**：
+- `NewtonSecondAnimation.tsx`（`wide` → `full`，配置 `{ presetCompensation: 1.2 }`）
+- `EnergyConservationAnimation.tsx`（`wide` → `full`，配置 `{ presetCompensation: 1.2 }`）
 
 ---
 
 ## 待办
 
-- [ ] 按需逐组件迁移 `wide/tall` → `full`（低优先级）
-- [ ] 所有组件迁移完成后删除 `spacing.ts` 中 `wide` 和 `tall` 定义
+- [x] 在 `useCanvasSize` 中支持 `presetCompensation` 代偿缩放比参数
+- [x] 完成首批典型复杂动力学/能量动画组件试点（`NewtonSecondAnimation`, `EnergyConservationAnimation`）
+- [ ] 后续按业务模块迭代，渐进式将剩余使用 `wide/tall` 的组件平滑迁移至 `full` + `presetCompensation: 1.2`
+- [ ] 全量迁移完成后删除 `spacing.ts` 中 `wide` 和 `tall` 定义

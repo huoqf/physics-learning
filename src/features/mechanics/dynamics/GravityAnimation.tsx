@@ -8,8 +8,7 @@ import { physicsToCanvas, computeScale } from '@/utils/coordinate'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { RelationChart } from '@/components/Chart'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 
 const R_DOMAIN: [number, number] = [1.5, 18.0]
 
@@ -94,13 +93,7 @@ export default function GravityAnimation() {
     radius2 = Math.min(Math.log(m2 + 1) * 4.8, 28)
   }
 
-  const gravScene: SceneConfig = {
-    vectorBounds: { x: vp.visibleX, y: vp.visibleY, width: vp.visibleW, height: vp.visibleH },
-    originX: 0,
-    originY: 0,
-    refMagnitudes: { gravity: 1 },
-  }
-  const gravSceneScale = createSceneScale(gravScene)
+  const gravSceneScale = createSceneScaleFromViewport(vp, 'visibleArea', { refMagnitudes: { gravity: 1 } })
 
   // ── 拖拽交互状态 ──
   const [dragTarget, setDragTarget] = useState<'none' | 'obj1' | 'obj2'>('none')

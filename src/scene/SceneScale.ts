@@ -1,6 +1,6 @@
 import type { VectorType } from '../theme/physics/vectorStyle';
 import type { SceneConfig } from './SceneConfig';
-import type { SceneLayoutProfile } from './SceneLayoutProfile';
+import type { SceneLayoutProfile, SceneLayoutMode } from './SceneLayoutProfile';
 
 export interface SceneScale {
   scaleX: number;
@@ -79,18 +79,28 @@ export const IDENTITY_SCENE_SCALE: SceneScale = {
  * - mode='visibleArea' : vectorBounds 使用可视区域 (visibleX,visibleY,visibleW,visibleH)
  * - mode='centerScale' : vectorBounds 以 centerX/centerY 为原点
  *
- * @throws 当 profile 为 null/undefined 时抛出明确错误（避免旧组件静默失败）
+ * @throws 当 profile 或 layout mode 为 null/undefined 时抛出明确错误（避免旧组件静默失败）
  */
 export function createSceneScaleFromViewport(
   vp: { visibleX: number; visibleY: number; visibleW: number; visibleH: number; centerX: number; centerY: number },
-  profile: SceneLayoutProfile | undefined,
+  profileOrMode: SceneLayoutProfile | SceneLayoutMode | undefined,
+  options?: { designWidth?: number; designHeight?: number; refMagnitudes?: Partial<Record<VectorType, number>> }
 ): SceneScale {
-  if (!profile) {
+  if (!profileOrMode) {
     throw new Error(
       '[createSceneScaleFromViewport] sceneLayout profile 未定义。' +
-      '请在 AnimationConfig.sceneLayout 中声明，或改用 createSceneScale。'
+      '请在 AnimationConfig.sceneLayout 中声明，或传入布局模式字面量（如 "visibleArea"）。'
     )
   }
+
+  const profile: SceneLayoutProfile = typeof profileOrMode === 'string'
+    ? {
+        mode: profileOrMode,
+        designWidth: options?.designWidth ?? vp.visibleW,
+        designHeight: options?.designHeight ?? vp.visibleH,
+        refMagnitudes: options?.refMagnitudes,
+      }
+    : profileOrMode
 
   const sceneConfig: SceneConfig = (() => {
     switch (profile.mode) {

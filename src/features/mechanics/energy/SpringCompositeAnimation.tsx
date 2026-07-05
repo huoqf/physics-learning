@@ -12,7 +12,7 @@ import { precomputeVerticalSpringTrajectory, getVSStateAtTime } from '@/physics/
 import { BasePhysicsChart } from '@/components/Chart';
 import { SegmentedControl } from '@/components/UI';
 import { GRAVITY } from '@/physics/constants';
-import { useCanvasSize, useViewport } from '@/utils';
+import { useCanvasSize, useViewport, clientToSvgPoint } from '@/utils';
 import { CANVAS_PRESETS } from '@/theme/spacing';
 import { SpringEnergyChartContent } from './SpringEnergyChartContent';
 import { SpringForceChartContent } from './SpringForceChartContent';
@@ -190,15 +190,8 @@ export default function SpringCompositeAnimation() {
   const [isDragging, setIsDragging] = useState(false);
 
   const getSVGCoords = (e: React.MouseEvent<SVGSVGElement> | MouseEvent) => {
-    const svg = svgRef.current;
-    if (!svg) return { x: 0, y: 0 };
-    const rect = svg.getBoundingClientRect();
-    const containerX = e.clientX - rect.left;
-    const containerY = e.clientY - rect.top;
-
-    const x = (containerX - vp.tx) / vp.scale;
-    const y = (containerY - vp.ty) / vp.scale;
-    return { x, y };
+    const pt = clientToSvgPoint(e.clientX, e.clientY, svgRef.current);
+    return pt || { x: 0, y: 0 };
   };
 
   const handleMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {

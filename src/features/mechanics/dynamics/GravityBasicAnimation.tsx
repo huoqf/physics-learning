@@ -9,8 +9,7 @@ import { withAlpha } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 
 const GRAV_BASIC_DESIGN = { width: 650, height: 450 } as const
 
@@ -64,12 +63,7 @@ export const GravityBasicAnimation: FC = () => {
   const cx = vp.centerX
   const cy = vp.centerY
 
-  const gravBasicScene: SceneConfig = {
-    vectorBounds: { x: vp.visibleX, y: vp.visibleY, width: vp.visibleW, height: vp.visibleH },
-    originX: 0,
-    originY: 0,
-  }
-  const gravBasicSceneScale = createSceneScale(gravBasicScene)
+  const gravBasicSceneScale = createSceneScaleFromViewport(vp, 'visibleArea')
 
   // ─── 物理引擎计算 ───
 

@@ -1,5 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
 
+export interface CanvasSizeOptions {
+  /** 缩放比代偿系数（默认为 1.0）。在将旧预设 (wide/tall) 迁移至 full (700×650) 时，传入 1.2 可平滑保留原有在标准桌面下的隐性放大视觉效果。 */
+  presetCompensation?: number
+}
+
 export interface CanvasSize {
   width: number
   height: number
@@ -31,7 +36,8 @@ function clamp(v: number, min: number, max: number) {
  * const labelFs = font(11) // 带 clamp 的字体大小
  */
 export function useCanvasSize(
-  initial: { width: number; height: number }
+  initial: { width: number; height: number },
+  options?: CanvasSizeOptions
 ): [RefObject<HTMLDivElement | null>, CanvasSize] {
   const containerRef = useRef<HTMLDivElement>(null)
   const [raw, setRaw] = useState({ width: initial.width, height: initial.height })
@@ -67,7 +73,9 @@ export function useCanvasSize(
   }, [])
 
   const size: CanvasSize = useMemo(() => {
-    const scale = Math.min(raw.width / initial.width, raw.height / initial.height)
+    const rawScale = Math.min(raw.width / initial.width, raw.height / initial.height)
+    const compensation = options?.presetCompensation ?? 1.0
+    const scale = rawScale * compensation
     return {
       width: raw.width,
       height: raw.height,
@@ -75,7 +83,7 @@ export function useCanvasSize(
       px: (v: number) => v * scale,
       font: (v: number) => clamp(v * scale, 7, 16),
     }
-  }, [raw.width, raw.height, initial.width, initial.height])
+  }, [raw.width, raw.height, initial.width, initial.height, options?.presetCompensation])
 
   return [containerRef, size]
 }

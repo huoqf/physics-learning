@@ -227,19 +227,19 @@ tests/
 
 | 坐标路径 | 入口 | 适用场景 | 来源 |
 |------|------|---------|------|
-| 坐标路径 1（强制） | `useViewport()` | 场景元素的比例定位（**全部 Animation 组件必须调用，存量须迁移完成**） | `src/utils/useViewport.ts` |
+| 坐标路径 1（标准） | `useViewport()` | 场景元素的比例定位与缩放（**按实际布局需求调用，纯方式A无计算需求时豁免调用**） | `src/utils/useViewport.ts` |
 | 坐标路径 2（保留） | `computeScale()` | 物理量→像素转换，可与 useViewport 共存 | `src/utils/coordinate.ts` |
 
-> ⚠️ 注意：此处「坐标路径 1/2」指坐标体系，与 `project_rules.md` 铁律1-8 的「SVG方式A/B（viewBox绑定策略）」是不同维度的概念，请勿混淆。
+> ⚠️ 注意：此处「坐标路径 1/2」指坐标体系，与 `project_rules.md` 铁律1-8 的「SVG方式A/B/C（布局体系）」是不同维度的概念，请勿混淆。
 
-- **useViewport** → 所有 Animation 组件**必须引用**（存量须迁移完成）；但 `vp.transform` 的使用按 overlay 条件选择：
-  - 无 overlay：选**方式A**（viewBox 绑定固定设计尺寸，`preserveAspectRatio` 自动居中，**不使用 vp.transform**）
-  - 有 overlay（如右侧面板遮挡内容区）：选**方式B**（viewBox 绑定真实容器尺寸 + `<g transform={vp.transform}>`）
-  - 仅需读取可视区布局信息（浮层定位等）而不做二次缩放：选方式A + 只读 `vp.visibleX/W/H`
+- **useViewport** → 场景元素的自适应缩放与定位；但使用方式按布局与 overlay 条件选择：
+  - **纯设计坐标型（方式A）**：无 overlay 遮挡，viewBox 绑定固定设计尺寸，`preserveAspectRatio` 自动居中。**豁免此类组件对 `useViewport()` 的强制调用**，彻底消除 `void vp` 等无意义空调用。
+  - **坐标变换型（方式B）**：有 overlay（如右侧面板遮挡内容区），在 `useViewport` 参数中明确声明 `overlayRight` 等参数，使用容器真实 viewBox + `<g transform={vp.transform}>`。
+  - **可视区自适应型（方式C）**：使用 `vp.visibleW/H/X/Y` 在动态 Canvas/SVG 容器可视像素区域内直接计算比例定位与动态布局，对应底层 `SceneLayoutProfile` 中的 `visibleArea` 与 `centerScale` 模式。
   - 详见 `docs/agent-rules/ui/07_CANVAS_SVG_CHART_RULES.md §2.4`
 - **computeScale** → 物理量→像素转换（保留，与 useViewport 可共存）
-- **createSceneScaleFromViewport** → 当组件已使用 useViewport 时，用此替代 `createSceneScale` 构建 SceneScale
-- 所有 Animation 组件**禁止**使用绝对像素定位（如 `groundY = height - N`），必须用 `vp.visibleH * ratio` 或 LAYOUT 具名常量
+- **createSceneScaleFromViewport** → 当组件已结合 useViewport 构建物理场景缩放时，用此替代 `createSceneScale` 构建 SceneScale。支持快捷布局字面量调用（如 `createSceneScaleFromViewport(vp, 'visibleArea', { designWidth: 700, designHeight: 400 })`），无需在注册表中强制注入 `sceneProfile`。
+- 所有 Animation 组件**禁止**使用散落的硬编码绝对像素值（如 `groundY = 380`），应采用设计坐标系常量、LAYOUT 具名常量或基于 `vp.visibleH * ratio` 动态计算
 
 ---
 

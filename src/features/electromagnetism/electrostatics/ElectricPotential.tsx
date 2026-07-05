@@ -1,5 +1,5 @@
 import React, { useRef, useState, useMemo, useEffect } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, clientToContainerPoint } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -110,9 +110,7 @@ export default function ElectricPotential() {
     if (drawMode !== 1 || isPlaying) return
     const svg = animSvgRef.current
     if (!svg) return
-    const rect = svg.getBoundingClientRect()
-    const xc = e.clientX - rect.left
-    const yc = e.clientY - rect.top
+    const { x: xc, y: yc } = clientToContainerPoint(e.clientX, e.clientY, svg.getBoundingClientRect())
     const { xp, yp } = physics.canvasToPhysics(xc, yc)
 
     // 检查是否在 A 锚点附近 (小于 0.45 米)
@@ -128,9 +126,7 @@ export default function ElectricPotential() {
     if (!isDrawing) return
     const svg = animSvgRef.current
     if (!svg) return
-    const rect = svg.getBoundingClientRect()
-    const xc = e.clientX - rect.left
-    const yc = e.clientY - rect.top
+    const { x: xc, y: yc } = clientToContainerPoint(e.clientX, e.clientY, svg.getBoundingClientRect())
     const { xp, yp } = physics.canvasToPhysics(xc, yc)
 
     // 限制在下半屏的合理物理界限内
@@ -167,8 +163,7 @@ export default function ElectricPotential() {
   const handleChartPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const svg = chartSvgRef.current
     if (!svg) return
-    const rect = svg.getBoundingClientRect()
-    const xc = e.clientX - rect.left
+    const { x: xc } = clientToContainerPoint(e.clientX, e.clientY, svg.getBoundingClientRect())
 
     // 计算相对绘图区域的 x 比例
     const relativeX = (xc - physics.chartPadding.left) / physics.chartWidth
