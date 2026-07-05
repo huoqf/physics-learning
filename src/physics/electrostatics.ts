@@ -194,6 +194,7 @@ export function calculateChargeInEFieldTrajectory(options: {
   g: number
   isAC: boolean
   freq: number
+  phi0?: number
   maxTime?: number
   dt?: number
 }): {
@@ -214,6 +215,7 @@ export function calculateChargeInEFieldTrajectory(options: {
     g,
     isAC,
     freq,
+    phi0 = 0,
     maxTime = 1.0,
     dt = 0.0001
   } = options
@@ -239,7 +241,8 @@ export function calculateChargeInEFieldTrajectory(options: {
     let fieldSign = 1
     if (isAC && freq > 0) {
       const T = 1 / freq
-      const phase = (t % T) / T
+      const tStart = phi0 * T
+      const phase = ((t + tStart) % T) / T
       fieldSign = phase < 0.5 ? 1 : -1
     }
 
@@ -292,7 +295,8 @@ export function calculateChargeInEFieldTrajectory(options: {
     let fieldSign = 1
     if (isAC && freq > 0) {
       const T = 1 / freq
-      const phase = (lastPt.t % T) / T
+      const tStart = phi0 * T
+      const phase = ((lastPt.t + tStart) % T) / T
       fieldSign = phase < 0.5 ? 1 : -1
     }
     const E = U / d

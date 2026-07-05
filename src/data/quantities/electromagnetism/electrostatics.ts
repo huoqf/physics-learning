@@ -153,26 +153,29 @@ export function handleElectrostatics(
       }
     }
     case 'anim-charge-in-efield': {
-      const U = params.U ?? 200
-      const v0 = params.v0 ?? 20
-      const q = params.q ?? 5
-      const freq = params.freq ?? 50
+      const U = params.U ?? 150
+      const v0 = params.v0 ?? 15
+      const q = params.q ?? 2
+      const freq = params.freq ?? 30
       const isAC = params.isAC ?? 0
       const useGravity = params.useGravity ?? 0
+      const phi0 = params.phi0 ?? 0
 
       const PLATE_LENGTH = 0.4
       const PLATE_GAP = 0.2
+      const m = 10 * 1e-6 // 10 mg
 
       const simResult = calculateChargeInEFieldTrajectory({
         U,
         d: PLATE_GAP,
         L: PLATE_LENGTH,
         q: q * 1e-6,
-        m: 50 * 1e-6,
+        m,
         v0,
         g: useGravity === 1 ? 9.8 : 0,
         isAC: isAC === 1,
         freq,
+        phi0,
       })
 
       const TIME_SCALE = getChargeInEFieldTimeScale(simResult.tEnd, isAC === 1)
@@ -208,14 +211,50 @@ export function handleElectrostatics(
 
       const vTotal = Math.sqrt(curState.vx * curState.vx + curState.vy * curState.vy)
 
+      const quantitiesList = [
+        ...base,
+        { label: '加速度 ay', value: curState.ay.toFixed(2), unit: 'm/s²', color: PHYSICS_COLORS.acceleration, highlight: 'extreme' as const },
+        { label: '偏转距离 y', value: Math.abs(curState.y * 100).toFixed(2), unit: 'cm' },
+        { label: '竖直速度 vy', value: curState.vy.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocityY },
+        { label: '末速度 v', value: vTotal.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity },
+      ]
+
+      if (isAC === 0) {
+        // 直流类平抛模式：加入偏角比验证
+        const tanTheta = Math.abs(curState.vy) / curState.vx
+        const tanAlpha = curState.x > 0 ? Math.abs(curState.y) / curState.x : 0
+        const ratio = tanAlpha > 0 ? tanTheta / tanAlpha : 2.00
+        quantitiesList.push({
+          label: '偏角比 tanθ/tanα',
+          value: curState.x > 0.01 && Math.abs(curState.vy) > 0.05 ? ratio.toFixed(2) : '2.00',
+          unit: ' (恒为 2)',
+          color: PHYSICS_COLORS.work,
+          highlight: 'extreme' as const
+        })
+      } else {
+        // 交变方形波模式：加入功与动能增量验证
+        const dEk = 0.5 * m * (vTotal * vTotal - v0 * v0) * 1e6 // μJ
+        const W_g = m * (useGravity === 1 ? 9.8 : 0) * curState.y * 1e6 // μJ
+        const W_E = dEk - W_g // W_E + W_g = dEk => W_E = dEk - W_g
+        quantitiesList.push(
+          {
+            label: '电场力功 W_E',
+            value: W_E.toFixed(3),
+            unit: ' μJ',
+            color: PHYSICS_COLORS.electricForce,
+          },
+          {
+            label: '动能变化 ΔEk',
+            value: dEk.toFixed(3),
+            unit: ' μJ',
+            color: PHYSICS_COLORS.kineticEnergy,
+            highlight: 'extreme' as const
+          }
+        )
+      }
+
       return {
-        quantities: [
-          ...base,
-          { label: '加速度 ay', value: curState.ay.toFixed(2), unit: 'm/s²', color: PHYSICS_COLORS.acceleration, highlight: 'extreme' },
-          { label: '偏转距离 y', value: Math.abs(curState.y * 100).toFixed(2), unit: 'cm' },
-          { label: '竖直速度 vy', value: curState.vy.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocityY },
-          { label: '末速度 v', value: vTotal.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity, highlight: 'extreme' },
-        ],
+        quantities: quantitiesList,
         formulas: [
           {
             name: '类平抛偏转位移',

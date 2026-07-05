@@ -17,7 +17,7 @@ import {
   DASH,
 } from '@/theme/physics'
 
-const CIRCULAR_DESIGN = { width: 600, height: 600 } as const
+const CIRCULAR_DESIGN = { width: 650, height: 650 } as const
 
 /** 匀速圆周运动参数范围（滑块边界） */
 const CIRCULAR_MOTION_PARAM_BOUNDS = {

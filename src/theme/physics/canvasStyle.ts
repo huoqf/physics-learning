@@ -100,15 +100,15 @@ export const FONT = {
   labelSize:        14,   // 别名
   labelBold:        16,   // 加粗标签
   labelWeight:      '600', // 标签字体粗细
-  axis:             12,   // 坐标轴标注
-  axisSize:         12,   // 别名
+  axis:             13,   // 坐标轴标注
+  axisSize:         13,   // 别名
   title:            18,   // 图内标题
   annotation:       12,   // 注释
   formula:          16,   // 公式
   formulaSize:      16,   // 别名
   large:            24,   // 大字体（强调）
-  small:            10,   // 小字体
-  smallSize:        10,   // 别名
+  small:            11,   // 小字体
+  smallSize:        11,   // 别名
   subtickSize:      11,   // 副刻度标签（图表次级刻度）
   bodySize:         13,   // 正文字体
 };

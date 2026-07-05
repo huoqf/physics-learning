@@ -143,8 +143,8 @@ export function useCentripetalPhysics(): CentripetalPhysicsResult {
 
   const isLeftShifted = showFaCard || isAdvanced
   const vp = useViewport(canvasSize, {
-    designWidth: 600,
-    designHeight: 600,
+    designWidth: 650,
+    designHeight: 650,
     overlayRight: isLeftShifted ? Math.round(cardWidth) : 0,
   })
 

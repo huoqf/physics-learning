@@ -78,9 +78,9 @@ export const CANVAS_PRESETS = {
   splitH: { width: 350, height: 650 },
   /**
    * square — 圆周/旋转对称场景
-   * 600×600，1:1，适合圆形轨迹/向心力等旋转演示
+   * 650×650，1:1，与 full 高度基准对齐，适合圆形轨迹/向心力等旋转演示
    */
-  square: { width: 600, height: 600 },
+  square: { width: 650, height: 650 },
   // ── 以下为历史预设，迁移完成后删除 ──
   wide:   { width: 700, height: 400 },
   tall:   { width: 700, height: 450 },

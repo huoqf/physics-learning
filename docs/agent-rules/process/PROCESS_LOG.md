@@ -17,6 +17,7 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 07-05 | electromagnetism/electrostatics | refactor | ChargeInEField.tsx 重构与高考优化：主屏重构至 splitV (700x325) 预设与 SVG 方式 A，移除中屏悬浮面板以保证三屏不交叉；收窄限制左屏参数范围，修改质量 m=10 μg，使轨迹偏向达 50px 极度显著；右屏实时计算并高亮验证偏角比 (tanθ/tanα=2) 及交变动能定理功比对；底部图表升级为速度、能量守恒、y-x 空间轨迹切换；tsc + 76 tests pass |
 | 07-05 | electromagnetism/electrostatics | refactor | CoulombLaw.tsx 拆分：708→28+290+288 行，抽 BasicMode/ThreeChargeMode 子组件；物理函数 `findEquilibriumX3` 抽离至 `src/physics/electrostatics.ts`；修复硬编码颜色（`#1e293b`→`CANVAS_COLORS.strokeDark`）及 `colors.neutral.white` 违规（7 处→`CANVAS_COLORS.white`）；补全 JSDoc 文档 |
 | 07-03 | mechanics/momentum | refactor | MomentumConservationAnimation.tsx 拆分：743→329 行，抽 `useMomentumConservationPhysics` hook + 复用 `src/physics/momentumConservation`；JSX 零物理公式；tsc + 385 tests pass |
 | 07-03 | mechanics/gravitation | refactor | KeplerAnimation.tsx 拆分：673→460 行，抽 `useKeplerPhysics` hook + 复用 `src/physics/celestial`；JSX 零物理公式；font()/colors 修复 + DESIGN_WIDTH/HEIGHT 常量；tsc + 385 tests pass |

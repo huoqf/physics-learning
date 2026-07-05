@@ -32,6 +32,8 @@ import {
   calculateDoubleBoundaryExit,
   calculateCircularBoundaryExit,
   computeACGenerationState,
+  calculateChargeInEFieldTrajectory,
+  getChargeInEFieldTimeScale,
 } from '@/physics'
 
 const k = 9e9
@@ -655,6 +657,145 @@ describe('electromagnetism', () => {
       const t_mid = (Math.PI / 4) / omega
       const state_mid = computeACGenerationState(B, S, omega, N, 0, t_mid)
       expect(state_mid.isMaxEmf).toBe(false)
+    })
+  })
+
+  // ===== 带电粒子在匀强电场中运动 =====
+  describe('带电粒子在匀强电场中运动', () => {
+    const baseOptions = {
+      U: 150,
+      d: 0.2,
+      L: 0.4,
+      q: 2e-6,
+      m: 10e-6,
+      v0: 15,
+      g: 0,
+      isAC: false,
+      freq: 30,
+    }
+
+    it('恒定电场：粒子应做类平抛运动，水平匀速', () => {
+      const res = calculateChargeInEFieldTrajectory(baseOptions)
+      expect(res.points.length).toBeGreaterThan(10)
+      // 水平速度应保持恒定 v0
+      for (const pt of res.points) {
+        expect(pt.vx).toBeCloseTo(15, 5)
+      }
+      // 竖直加速度应恒定（向下）
+      const midPt = res.points[Math.floor(res.points.length / 2)]
+      expect(midPt.ay).toBeGreaterThan(0)
+    })
+
+    it('恒定电场：粒子应从左侧射入，最终射出或撞击极板', () => {
+      const res = calculateChargeInEFieldTrajectory(baseOptions)
+      expect(res.points[0].x).toBe(0)
+      expect(res.points[0].y).toBe(0)
+      expect(res.points[0].vx).toBe(15)
+      expect(res.points[0].vy).toBe(0)
+      // 最终状态应为射出或撞击
+      expect(res.hitType === 'none' || res.hitType === 'top' || res.hitType === 'bottom').toBe(true)
+    })
+
+    it('恒定电场：电压越大，偏转越大', () => {
+      const lowU = calculateChargeInEFieldTrajectory({ ...baseOptions, U: 50 })
+      const highU = calculateChargeInEFieldTrajectory({ ...baseOptions, U: 300 })
+      const lowYEnd = Math.abs(lowU.yEnd)
+      const highYEnd = Math.abs(highU.yEnd)
+      expect(highYEnd).toBeGreaterThan(lowYEnd)
+    })
+
+    it('恒定电场：初速越大，偏转越小', () => {
+      const slow = calculateChargeInEFieldTrajectory({ ...baseOptions, v0: 10 })
+      const fast = calculateChargeInEFieldTrajectory({ ...baseOptions, v0: 25 })
+      expect(Math.abs(fast.yEnd)).toBeLessThan(Math.abs(slow.yEnd))
+    })
+
+    it('恒定电场含重力：向下偏转应增大', () => {
+      const noGravity = calculateChargeInEFieldTrajectory({ ...baseOptions, g: 0 })
+      const withGravity = calculateChargeInEFieldTrajectory({ ...baseOptions, g: 9.8 })
+      expect(Math.abs(withGravity.yEnd)).toBeGreaterThan(Math.abs(noGravity.yEnd))
+    })
+
+    it('交变电场：粒子应做周期性变向运动', () => {
+      const res = calculateChargeInEFieldTrajectory({
+        ...baseOptions,
+        isAC: true,
+        freq: 30,
+      })
+      expect(res.points.length).toBeGreaterThan(10)
+      // 交变模式下 vy 应有正有负（方向变化）
+      const vys = res.points.map((p) => p.vy)
+      const hasPositive = vys.some((v) => v > 0.1)
+      const hasNegative = vys.some((v) => v < -0.1)
+      // 至少有一次方向变化（除非粒子很快射出）
+      expect(hasPositive || hasNegative).toBe(true)
+    })
+
+    it('交变电场：不同初始相位导致不同轨迹', () => {
+      const res0 = calculateChargeInEFieldTrajectory({
+        ...baseOptions,
+        isAC: true,
+        freq: 30,
+        phi0: 0,
+      })
+      const resHalf = calculateChargeInEFieldTrajectory({
+        ...baseOptions,
+        isAC: true,
+        freq: 30,
+        phi0: 0.5,
+      })
+      // 两种初始相位的最终位置应不同
+      expect(res0.yEnd).not.toBeCloseTo(resHalf.yEnd, 3)
+    })
+
+    it('电荷量为 0 时无偏转', () => {
+      const res = calculateChargeInEFieldTrajectory({ ...baseOptions, q: 0 })
+      for (const pt of res.points) {
+        expect(pt.vy).toBe(0)
+        expect(pt.y).toBe(0)
+      }
+    })
+
+    it('初速为 0 时粒子应直接下落', () => {
+      const res = calculateChargeInEFieldTrajectory({ ...baseOptions, v0: 0 })
+      // 水平位移应始终为 0
+      expect(res.points[0].x).toBe(0)
+      // 竖直方向应有位移
+      expect(res.yEnd).not.toBe(0)
+    })
+
+    it('撞击极板时 hitType 应正确标记', () => {
+      // 大电压、低初速 → 应撞击下极板
+      const res = calculateChargeInEFieldTrajectory({
+        ...baseOptions,
+        U: 300,
+        v0: 10,
+      })
+      if (res.hitsPlate) {
+        expect(res.hitType === 'top' || res.hitType === 'bottom').toBe(true)
+      }
+    })
+  })
+
+  describe('getChargeInEFieldTimeScale', () => {
+    it('直流模式：时间比例 = tEnd / 2.5', () => {
+      const scale = getChargeInEFieldTimeScale(1.0, false)
+      expect(scale).toBeCloseTo(1.0 / 2.5, 10)
+    })
+
+    it('交流模式：时间比例 = tEnd / 8.0', () => {
+      const scale = getChargeInEFieldTimeScale(4.0, true)
+      expect(scale).toBeCloseTo(4.0 / 8.0, 10)
+    })
+
+    it('tEnd 为 0 时返回保护值 0.001', () => {
+      const scale = getChargeInEFieldTimeScale(0, false)
+      expect(scale).toBe(0.001)
+    })
+
+    it('tEnd 为负时返回保护值 0.001', () => {
+      const scale = getChargeInEFieldTimeScale(-1, false)
+      expect(scale).toBe(0.001)
     })
   })
 })

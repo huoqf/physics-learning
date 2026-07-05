@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -9,37 +9,49 @@ import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { createSceneScale } from '@/scene'
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
-import { VelocityTimeChart } from '@/components/Chart'
+import { VelocityTimeChart, ChartDataSeries } from '@/components/Chart'
 import { Card } from '@/components/UI'
 import {
   calculateChargeInEFieldTrajectory,
   getChargeInEFieldTimeScale,
 } from '@/physics/electromagnetism'
 
+// SVG 设计坐标系常量（对应 CANVAS_PRESETS.splitV）
+const DESIGN_WIDTH = 700
+const DESIGN_HEIGHT = 325
+
+// SVG 几何常量
+const PARTICLE_RADIUS = 10       // 粒子圆半径
+const TERMINAL_CORE_RADIUS = 4   // 发射口圆半径
+const INTERSECTION_DOT_RADIUS = 3 // 交点标记圆半径
+
 export default function ChargeInEField() {
-    const {params, time, showVectors, showGrid, setIsPlaying} = useAnimationStore(
+  const { params, time, showVectors, showGrid, setIsPlaying } = useAnimationStore(
     useShallow((s) => ({
-    params: s.params,
-    time: s.time,
-    showVectors: s.showVectors,
-    showGrid: s.showGrid,
-    setIsPlaying: s.setIsPlaying,
+      params: s.params,
+      time: s.time,
+      showVectors: s.showVectors,
+      showGrid: s.showGrid,
+      setIsPlaying: s.setIsPlaying,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
+  const [, canvasSize] = useCanvasSize(CANVAS_PRESETS.splitV)
+  useViewport(canvasSize, { designWidth: DESIGN_WIDTH, designHeight: DESIGN_HEIGHT })
   const { font } = canvasSize
 
-  const U = params.U ?? 200
-  const v0 = params.v0 ?? 20
-  const q = params.q ?? 5
-  const freq = params.freq ?? 50
+  const U = params.U ?? 150
+  const v0 = params.v0 ?? 15
+  const q = params.q ?? 2
+  const freq = params.freq ?? 30
   const isAC = params.isAC ?? 0
   const useGravity = params.useGravity ?? 0
+  const phi0 = params.phi0 ?? 0
 
   // 物理几何常数 (SI)
   const PLATE_LENGTH = 0.4 // m
   const PLATE_GAP = 0.2 // m
   const HALF_GAP = PLATE_GAP / 2
+  const PARTICLE_MASS = 10 * 1e-6 // 10 mg (10e-6 kg)
 
   // 1. 进行高精度仿真
   const simResult = useMemo(() => {
@@ -48,17 +60,18 @@ export default function ChargeInEField() {
       d: PLATE_GAP,
       L: PLATE_LENGTH,
       q: q * 1e-6,
-      m: 50 * 1e-6, // 50 mg
+      m: PARTICLE_MASS,
       v0,
       g: useGravity === 1 ? 9.8 : 0,
       isAC: isAC === 1,
       freq,
+      phi0,
     })
-  }, [U, v0, q, freq, isAC, useGravity])
+  }, [U, v0, q, freq, isAC, useGravity, phi0])
 
   const { tEnd, points, hitType } = simResult
 
-  // 仿真慢放时间比例：直流下 2.5秒播完，交变下 8秒播完，实现动态映射
+  // 仿真慢放时间比例：实现动态映射
   const TIME_SCALE = getChargeInEFieldTimeScale(tEnd, isAC === 1)
   const tSim = Math.min(time * TIME_SCALE, tEnd)
 
@@ -79,7 +92,7 @@ export default function ChargeInEField() {
     const lastPt = pts[pts.length - 1]
     if (tSim <= 0) return pts[0]
     if (tSim >= lastPt.t) return lastPt
-    
+
     const dt = pts[1].t - pts[0].t || 0.0001
     const idx = Math.floor(tSim / dt)
     const p1 = pts[Math.min(idx, pts.length - 1)]
@@ -97,63 +110,44 @@ export default function ChargeInEField() {
     }
   }, [tSim, points, v0])
 
-  // 4. 铺满式物理舞台尺寸设计
-  // 上下划分：上面为动画区，下面 150px 为 MiniChart 图像区
-  const chartHeight = 150
-  const animHeight = Math.max(200, canvasSize.height - chartHeight - 20)
-  
-  const padX = 80
-  const padTop = 35
-  const region = {
-    left: padX,
-    right: canvasSize.width - 40,
-    top: padTop,
-    bottom: animHeight - 30,
-  }
-  const plateLenPx = region.right - region.left
-  const plateGapPx = region.bottom - region.top
-  const midY = (region.top + region.bottom) / 2
+  // 4. 采用优化后的固定设计尺寸 (方式 A，大尺寸饱满构图，极度削减留白)
+  const midY = 162.5
+  const scale = 1300 // 1m = 1300px，视觉上放大 1.3 倍
+  const startX = 100 // 粒子枪出口移至 100px
 
-  // 双轴自适应等比例缩放
-  const scaleX = plateLenPx / PLATE_LENGTH
-  const scaleY = plateGapPx / PLATE_GAP
-  const scale = Math.min(scaleX, scaleY) // 保证横纵等比例，物理几何不失真
+  const topPlateY = midY - HALF_GAP * scale // 32.5px
+  const bottomPlateY = midY + HALF_GAP * scale // 292.5px
 
-  // 极板的真实像素位置
-  const topPlateY = midY - HALF_GAP * scale
-  const bottomPlateY = midY + HALF_GAP * scale
-
-  // 粒子屏幕坐标（入口中心为物理 (0,0)，y 轴向下为正）
-  const cx = region.left + currentState.x * scale
+  const cx = startX + currentState.x * scale
   const cy = midY + currentState.y * scale
 
   // 5. 极板极性与电场线动态方向
   const curFieldSign = useMemo(() => {
     if (isAC && freq > 0) {
       const T = 1 / freq
-      const phase = (tSim % T) / T
+      const tStart = phi0 * T
+      const phase = ((tSim + tStart) % T) / T
       return phase < 0.5 ? 1 : -1
     }
     return 1
-  }, [tSim, isAC, freq])
+  }, [tSim, isAC, freq, phi0])
 
   // 6. 生成运动历史轨迹
   const historyPathPoints = useMemo(() => {
     const pts: string[] = []
     for (const pt of points) {
       if (pt.t > tSim + 1e-9) break
-      pts.push(`${region.left + pt.x * scale},${midY + pt.y * scale}`)
+      pts.push(`${startX + pt.x * scale},${midY + pt.y * scale}`)
     }
     return pts.join(' ')
-  }, [points, tSim, scale, region.left, midY])
+  }, [points, tSim])
 
   // 7. 矢量工具 sceneScale
   const sceneScale = useMemo(() => {
     const maxVal = Math.max(v0, 10)
-    // 仿真中，引力重力为 9.8，合加速度最大可到约 40 左右
     const maxAcc = Math.max(Math.abs(currentState.ay), 25)
     return createSceneScale({
-      vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: animHeight },
+      vectorBounds: { x: 0, y: 0, width: DESIGN_WIDTH, height: DESIGN_HEIGHT },
       originX: 0,
       originY: 0,
       refMagnitudes: {
@@ -161,10 +155,10 @@ export default function ChargeInEField() {
         acceleration: maxAcc,
         electricField: 10,
         electricForce: maxAcc,
-        gravity: maxAcc // 统一力的尺度，以便重力和电场力可以在视觉上比较大小
-      }
+        gravity: maxAcc,
+      },
     })
-  }, [v0, currentState.ay, canvasSize.width, animHeight])
+  }, [v0, currentState.ay])
 
   // 8. 速度分解虚线框的终点坐标
   const refMag = Math.max(v0, 10)
@@ -172,132 +166,505 @@ export default function ChargeInEField() {
   const vx_px = currentState.vx * velocityScaleFactor
   const vy_px = currentState.vy * velocityScaleFactor
 
-  // 8a. 速度矢量统一缩放，确保平行四边形法则成立
   const vMag = Math.hypot(currentState.vx, currentState.vy)
   const totalPxLen = calculateVectorPixelLength(vMag, 'velocity', sceneScale.maxVectorLength, refMag)
   const vxPxLen = vMag > 0 ? totalPxLen * (Math.abs(currentState.vx) / vMag) : 0
   const vyPxLen = vMag > 0 ? totalPxLen * (Math.abs(currentState.vy) / vMag) : 0
 
-  // 9. 图像自适应量程
+  // 9. 反向延长线、速度偏角和位移偏角的数学计算与可视化绘制
+  const drawAngleArc = (ocx: number, ocy: number, startAngle: number, endAngle: number, radius: number) => {
+    const x1 = ocx + radius * Math.cos(startAngle)
+    const y1 = ocy + radius * Math.sin(startAngle)
+    const x2 = ocx + radius * Math.cos(endAngle)
+    const y2 = ocy + radius * Math.sin(endAngle)
+    const largeArcFlag = Math.abs(endAngle - startAngle) > Math.PI ? 1 : 0
+    const sweepFlag = endAngle > startAngle ? 1 : 0
+    return `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} ${sweepFlag} ${x2} ${y2}`
+  }
+
+  const tangentData = useMemo(() => {
+    if (isAC === 1 || useGravity === 1 || !showVectors) return null
+
+    const vx = currentState.vx
+    const vy = currentState.vy
+    if (Math.abs(vy) < 1e-4) return null
+
+    const k = vy / vx
+    const x = currentState.x
+    const y = currentState.y
+
+    // 速度反向延长线在水平中线 (y=0) 的物理 x 交点
+    const xInter = x - y / k
+    const cInterX = startX + xInter * scale
+
+    // 物理起点 X=0 处的 Y 像素位置（延长线终点）
+    const yStart = y - k * x
+    const pxYStart = midY + yStart * scale
+
+    const theta = Math.atan2(vy, vx)
+    const alpha = Math.atan2(y, x)
+
+    return {
+      xInter,
+      cInterX,
+      pxYStart,
+      theta,
+      alpha,
+    }
+  }, [currentState, isAC, useGravity, showVectors])
+
+  // X/Y 网格线（基于正方形 65px 网格，完美贴合极板，避免计算抖动）
+  const gridLines = useMemo(() => {
+    if (!showGrid) return null
+    const lines = []
+    // 纵向网格 (100px - 620px，共 8 个间隔，每格 65px)
+    for (let i = 0; i <= 8; i++) {
+      const gx = startX + i * 65
+      lines.push(
+        <line
+          key={`gx-${i}`}
+          x1={gx}
+          y1={topPlateY}
+          x2={gx}
+          y2={bottomPlateY}
+          stroke={PHYSICS_COLORS.grid}
+          strokeWidth={CANVAS_STYLE.stroke.grid}
+          strokeDasharray="4,4"
+        />
+      )
+    }
+    // 横向网格 (32.5px - 292.5px，共 4 个间隔，每格 65px)
+    for (let i = 0; i <= 4; i++) {
+      const gy = topPlateY + i * 65
+      lines.push(
+        <line
+          key={`gy-${i}`}
+          x1={startX}
+          y1={gy}
+          x2={startX + 520}
+          y2={gy}
+          stroke={PHYSICS_COLORS.grid}
+          strokeWidth={CANVAS_STYLE.stroke.grid}
+          strokeDasharray="4,4"
+        />
+      )
+    }
+    // 水平中心参考中线
+    lines.push(
+      <line
+        key="mid"
+        x1={startX}
+        y1={midY}
+        x2={700}
+        y2={midY}
+        stroke={PHYSICS_COLORS.grid}
+        strokeWidth={CANVAS_STYLE.stroke.reference}
+        strokeDasharray="2,4"
+      />
+    )
+    return lines
+  }, [showGrid, topPlateY, bottomPlateY])
+
+  // 10. 图表数据映射
+  // (1) 速度图像数据
+  const vtPoints = useMemo(() => {
+    return points.map((p) => ({ t: p.t, v: p.vy }))
+  }, [points])
+
+  const vxSeries = useMemo(() => {
+    return [
+      {
+        points: points.map((p) => ({ t: p.t, v: p.vx })),
+        domainPoints: points.map((p) => ({ t: p.t, v: p.vx })),
+        label: 'vₓ (水平分速度)',
+        series: 'secondary' as const,
+      },
+    ]
+  }, [points])
+
   const chartYBounds = useMemo(() => {
-    const vys = points.map(p => p.vy)
-    const maxV = Math.max(...vys, 5)
+    const vys = points.map((p) => p.vy)
+    const maxV = Math.max(...vys, v0, 5)
     const minV = Math.min(...vys, -5)
     const range = maxV - minV
     return {
       min: minV - range * 0.15 - 1,
-      max: maxV + range * 0.15 + 1
+      max: maxV + range * 0.15 + 1,
     }
-  }, [points])
+  }, [points, v0])
 
-  // 10. 映射图表数据点
-  const vtPoints = useMemo(() => {
-    return points.map(p => ({ t: p.t, v: p.vy }))
-  }, [points])
+  // (2) 能量图像数据 (以毫焦 mJ 为单位)
+  const energyData = useMemo(() => {
+    const T = freq > 0 ? 1 / freq : 0.02
+    const tStart = phi0 * T
 
-  // X 轴网格线
-  const gridLines = useMemo(() => {
-    if (!showGrid) return null
-    const lines = []
-    // 纵向网格
-    for (let i = 0; i <= 8; i++) {
-      const gx = region.left + (i * plateLenPx) / 8
-      lines.push(
-        <line key={`gx-${i}`} x1={gx} y1={topPlateY} x2={gx} y2={bottomPlateY}
-          stroke={PHYSICS_COLORS.grid} strokeWidth={1} strokeDasharray="4,4" />
-      )
+    // 动能
+    const ekPoints = points.map((p) => ({
+      t: p.t,
+      v: 0.5 * PARTICLE_MASS * (p.vx * p.vx + p.vy * p.vy) * 1000,
+    }))
+
+    // 电势能 (以中轴线为零电势参考点)
+    const epPoints = points.map((p) => {
+      const phase = isAC === 1 ? ((p.t + tStart) % T) / T : 0
+      const fieldSign = isAC === 1 ? (phase < 0.5 ? 1 : -1) : 1
+      const Ep = -q * 1e-6 * (U / PLATE_GAP) * fieldSign * p.y * 1000
+      return { t: p.t, v: Ep }
+    })
+
+    // 重力势能 (以中轴线为零势能参考点)
+    const egPoints = points.map((p) => ({
+      t: p.t,
+      v: useGravity === 1 ? -PARTICLE_MASS * 9.8 * p.y * 1000 : 0,
+    }))
+
+    // 总能量
+    const etotPoints = points.map((p, idx) => ({
+      t: p.t,
+      v: ekPoints[idx].v + epPoints[idx].v + egPoints[idx].v,
+    }))
+
+    return { ekPoints, epPoints, egPoints, etotPoints }
+  }, [points, U, q, freq, isAC, phi0, useGravity])
+
+  const energySeries = useMemo(() => {
+    const seriesList: ChartDataSeries[] = [
+      {
+        points: energyData.epPoints,
+        domainPoints: energyData.epPoints,
+        label: '电势能 Eₚ',
+        series: 'secondary' as const,
+      },
+    ]
+
+    if (useGravity === 1) {
+      seriesList.push({
+        points: energyData.egPoints,
+        domainPoints: energyData.egPoints,
+        label: '重力势能 E_g',
+        series: 'success' as const,
+      })
     }
-    // 横向网格
-    for (let i = 0; i <= 4; i++) {
-      const gy = topPlateY + (i * (bottomPlateY - topPlateY)) / 4
-      lines.push(
-        <line key={`gy-${i}`} x1={region.left} y1={gy} x2={region.right} y2={gy}
-          stroke={PHYSICS_COLORS.grid} strokeWidth={1} strokeDasharray="4,4" />
-      )
+
+    seriesList.push({
+      points: energyData.etotPoints,
+      domainPoints: energyData.etotPoints,
+      label: '总能量 E_总',
+      series: 'accent' as const,
+    })
+
+    return seriesList
+  }, [energyData, useGravity])
+
+  const energyYBounds = useMemo(() => {
+    const vals = [
+      ...energyData.ekPoints.map((p) => p.v),
+      ...energyData.epPoints.map((p) => p.v),
+      ...energyData.etotPoints.map((p) => p.v),
+    ]
+    if (useGravity === 1) {
+      vals.push(...energyData.egPoints.map((p) => p.v))
     }
-    // 中线
-    lines.push(
-      <line key="mid" x1={region.left} y1={midY} x2={region.right} y2={midY}
-        stroke={PHYSICS_COLORS.grid} strokeWidth={1.2} strokeDasharray="2,4" />
-    )
-    return lines
-  }, [showGrid, region.left, region.right, topPlateY, bottomPlateY, plateLenPx, midY])
+    const maxVal = Math.max(...vals, 1)
+    const minVal = Math.min(...vals, -1)
+    const range = maxVal - minVal
+    return {
+      min: minVal - range * 0.15 - 0.2,
+      max: maxVal + range * 0.15 + 0.2,
+    }
+  }, [energyData, useGravity])
 
   return (
-    <div ref={containerRef} className="w-full h-full flex flex-col gap-4">
-      {/* 动画反馈区 */}
-      <Card className="flex-1 min-h-0 p-3 relative">
-        <svg width={canvasSize.width - 26} height={animHeight} className="overflow-visible select-none">
+    <div className="w-full h-full flex flex-col gap-4">
+      {/* 图像区 (放上方，占 h-[260px] 左右，并列展示 v-t & E-t，无切换按钮，最大化绘图空间) */}
+      <Card className="h-[260px] p-3 select-none">
+        <div className="w-full h-full flex gap-4">
+          <div className="flex-1 min-w-0 h-full relative">
+            <VelocityTimeChart
+              points={vtPoints}
+              domainPoints={vtPoints}
+              additionalSeries={vxSeries}
+              currentTime={tSim}
+              tMax={simResult.tEnd}
+              vRange={[chartYBounds.min, chartYBounds.max]}
+              title="速度分量 v_y & v_x 随时间变化"
+              showArea
+            />
+          </div>
+          <div className="flex-1 min-w-0 h-full relative">
+            <VelocityTimeChart
+              points={energyData.ekPoints}
+              domainPoints={energyData.ekPoints}
+              additionalSeries={energySeries}
+              currentTime={tSim}
+              tMax={simResult.tEnd}
+              vRange={[energyYBounds.min, energyYBounds.max]}
+              yLabel="E (mJ)"
+              title="能量转换 (动能 E_k, 电势能 E_p, 重力势能 E_g, 总能量 E_总)"
+              series="primary"
+            />
+          </div>
+        </div>
+      </Card>
+
+      {/* 动画反馈区 (放下方，自适应高度填充，viewBox 700x325，大比例构图无留白) */}
+      <Card className="flex-1 min-h-0 p-3 relative flex items-center justify-center overflow-hidden">
+        <svg
+          viewBox="0 0 700 325"
+          preserveAspectRatio="xMidYMid meet"
+          className="w-full h-full select-none"
+        >
           <defs>
-            <VectorDefs colors={[PHYSICS_COLORS.velocity, PHYSICS_COLORS.velocityY, PHYSICS_COLORS.acceleration, PHYSICS_COLORS.electricForce, PHYSICS_COLORS.gravity]} />
+            <VectorDefs
+              colors={[
+                PHYSICS_COLORS.velocity,
+                PHYSICS_COLORS.velocityY,
+                PHYSICS_COLORS.acceleration,
+                PHYSICS_COLORS.electricForce,
+                PHYSICS_COLORS.gravity,
+              ]}
+            />
           </defs>
 
           {/* 网格参考 */}
           {gridLines}
 
           {/* 粒子发射枪 */}
-          <rect x={region.left - 24} y={midY - 8} width={24} height={16} fill={SCENE_COLORS.electricalApparatus.terminalBody} rx={2} stroke={CANVAS_COLORS.labelText} strokeWidth={1.5} />
-          <circle cx={region.left - 24} cy={midY} r={4} fill={SCENE_COLORS.electricalApparatus.terminalCore} />
+          <rect
+            x={startX - 24}
+            y={midY - 8}
+            width={24}
+            height={16}
+            fill={SCENE_COLORS.electricalApparatus.terminalBody}
+            rx={2}
+            stroke={CANVAS_COLORS.labelText}
+            strokeWidth={CANVAS_STYLE.stroke.objectThin}
+          />
+          <circle cx={startX - 24} cy={midY} r={TERMINAL_CORE_RADIUS} fill={SCENE_COLORS.electricalApparatus.terminalCore} />
 
           {/* 上极板 */}
-          <line x1={region.left} y1={topPlateY} x2={region.right} y2={topPlateY}
+          <line
+            x1={startX}
+            y1={topPlateY}
+            x2={startX + 520}
+            y2={topPlateY}
             stroke={curFieldSign > 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
-            strokeWidth={5} strokeLinecap="round" />
-          <text x={region.left - 15} y={topPlateY + 5} fontSize={font(14)} fontWeight="bold" textAnchor="end"
-            fill={curFieldSign > 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}>
+            strokeWidth={CANVAS_STYLE.stroke.groundLine}
+            strokeLinecap="round"
+          />
+          <text
+            x={startX - 15}
+            y={topPlateY + 5}
+            fontSize={font(14)}
+            fontWeight="bold"
+            textAnchor="end"
+            fill={curFieldSign > 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
+          >
             {curFieldSign > 0 ? '＋' : '－'}
           </text>
 
           {/* 下极板 */}
-          <line x1={region.left} y1={bottomPlateY} x2={region.right} y2={bottomPlateY}
+          <line
+            x1={startX}
+            y1={bottomPlateY}
+            x2={startX + 520}
+            y2={bottomPlateY}
             stroke={curFieldSign > 0 ? PHYSICS_COLORS.negativeCharge : PHYSICS_COLORS.positiveCharge}
-            strokeWidth={5} strokeLinecap="round" />
-          <text x={region.left - 15} y={bottomPlateY + 5} fontSize={font(14)} fontWeight="bold" textAnchor="end"
-            fill={curFieldSign > 0 ? PHYSICS_COLORS.negativeCharge : PHYSICS_COLORS.positiveCharge}>
+            strokeWidth={CANVAS_STYLE.stroke.groundLine}
+            strokeLinecap="round"
+          />
+          <text
+            x={startX - 15}
+            y={bottomPlateY + 5}
+            fontSize={font(14)}
+            fontWeight="bold"
+            textAnchor="end"
+            fill={curFieldSign > 0 ? PHYSICS_COLORS.negativeCharge : PHYSICS_COLORS.positiveCharge}
+          >
             {curFieldSign > 0 ? '－' : '＋'}
           </text>
 
           {/* 均匀分布的电场强度指示 */}
-          {showVectors && Array.from({ length: 7 }, (_, i) => {
-            const fx = region.left + 25 + (i * (plateLenPx - 50)) / 6
-            const startY = curFieldSign > 0 ? topPlateY + 6 : bottomPlateY - 6
-            const endY = curFieldSign > 0 ? bottomPlateY - 6 : topPlateY + 6
-            return (
-              <g key={`E-line-${i}`}>
-                <line x1={fx} y1={startY} x2={fx} y2={endY}
-                  stroke={PHYSICS_COLORS.electricField} strokeWidth={1.2} strokeDasharray="5,4" />
-                {/* 随极性反转的电场箭头 */}
-                <path d={curFieldSign > 0 
-                  ? `M ${fx - 4} ${midY - 3} L ${fx} ${midY + 3} L ${fx + 4} ${midY - 3}` 
-                  : `M ${fx - 4} ${midY + 3} L ${fx} ${midY - 3} L ${fx + 4} ${midY + 3}`}
-                  fill="none" stroke={PHYSICS_COLORS.electricField} strokeWidth={1.5} />
-              </g>
-            )
-          })}
+          {showVectors &&
+            Array.from({ length: 7 }, (_, i) => {
+              const fx = startX + 25 + (i * 470) / 6
+              const startY = curFieldSign > 0 ? topPlateY + 6 : bottomPlateY - 6
+              const endY = curFieldSign > 0 ? bottomPlateY - 6 : topPlateY + 6
+              return (
+                <g key={`E-line-${i}`}>
+                  <line
+                    x1={fx}
+                    y1={startY}
+                    x2={fx}
+                    y2={endY}
+                    stroke={PHYSICS_COLORS.electricField}
+                    strokeWidth={CANVAS_STYLE.stroke.fieldLineThin}
+                    strokeDasharray="5,4"
+                  />
+                  {/* 随极性反转的电场箭头 */}
+                  <path
+                    d={
+                      curFieldSign > 0
+                        ? `M ${fx - 4} ${midY - 3} L ${fx} ${midY + 3} L ${fx + 4} ${midY - 3}`
+                        : `M ${fx - 4} ${midY + 3} L ${fx} ${midY - 3} L ${fx + 4} ${midY + 3}`
+                    }
+                    fill="none"
+                    stroke={PHYSICS_COLORS.electricField}
+                    strokeWidth={CANVAS_STYLE.stroke.fieldLine}
+                  />
+                </g>
+              )
+            })}
           {showVectors && (
-            <text x={region.right - 10} y={midY - 10} fontSize={font(11)} fill={PHYSICS_COLORS.electricField} fontWeight="bold" textAnchor="end">
+            <text
+              x={startX + 510}
+              y={midY - 10}
+              fontSize={font(11)}
+              fill={PHYSICS_COLORS.electricField}
+              fontWeight="bold"
+              textAnchor="end"
+            >
               E (匀强电场)
             </text>
           )}
 
           {/* 轨迹线 */}
           {historyPathPoints && (
-            <polyline points={historyPathPoints} fill="none" stroke={PHYSICS_COLORS.trackHistory}
-              strokeWidth={CANVAS_STYLE.stroke.trackHistory} strokeDasharray="3,3" />
+            <polyline
+              points={historyPathPoints}
+              fill="none"
+              stroke={PHYSICS_COLORS.trackHistory}
+              strokeWidth={CANVAS_STYLE.stroke.trackHistory}
+              strokeDasharray="3,3"
+            />
+          )}
+          {/* 速度反向延长线与夹角可视化（平抛几何推论） */}
+          {tangentData && (
+            <g>
+              {/* 1. 速度反向延长虚线 */}
+              <line
+                x1={tangentData.pxYStart > 0 ? startX : tangentData.cInterX} // 裁剪在区域内
+                y1={tangentData.pxYStart}
+                x2={cx}
+                y2={cy}
+                stroke={PHYSICS_COLORS.tangentLine}
+                strokeWidth={CANVAS_STYLE.stroke.tangent}
+                strokeDasharray="3,3"
+              />
+
+              {/* 2. 发射点到粒子的位移虚线 */}
+              <line
+                x1={startX}
+                y1={midY}
+                x2={cx}
+                y2={cy}
+                stroke={PHYSICS_COLORS.displacement}
+                strokeWidth={CANVAS_STYLE.stroke.reference}
+                strokeDasharray="3,3"
+                opacity={0.7}
+              />
+
+              {/* 3. 水平中轴线交点圆圈与标记 */}
+              <circle cx={tangentData.cInterX} cy={midY} r={INTERSECTION_DOT_RADIUS} fill={PHYSICS_COLORS.tangentLine} />
+              <text
+                x={tangentData.cInterX}
+                y={midY - 8}
+                fontSize={font(10)}
+                fill={PHYSICS_COLORS.tangentLine}
+                fontWeight="bold"
+                textAnchor="middle"
+              >
+                {currentState.x < PLATE_LENGTH ? 'x/2' : 'L/2'}
+              </text>
+
+              {/* 4. 速度偏角 θ 弧线与文字标注 */}
+              {Math.abs(tangentData.theta) > 0.02 && (
+                <g>
+                  <path
+                    d={drawAngleArc(tangentData.cInterX, midY, 0, tangentData.theta, 24)}
+                    fill="none"
+                    stroke={PHYSICS_COLORS.tangentLine}
+                    strokeWidth={CANVAS_STYLE.stroke.tangent}
+                  />
+                  <text
+                    x={tangentData.cInterX + 30 * Math.cos(tangentData.theta / 2)}
+                    y={midY + 30 * Math.sin(tangentData.theta / 2) + 4}
+                    fontSize={font(11)}
+                    fill={PHYSICS_COLORS.tangentLine}
+                    fontWeight="bold"
+                    textAnchor="middle"
+                  >
+                    θ
+                  </text>
+                </g>
+              )}
+
+              {/* 5. 位移偏角 α 弧线与文字标注 */}
+              {Math.abs(tangentData.alpha) > 0.02 && (
+                <g>
+                  <path
+                    d={drawAngleArc(startX, midY, 0, tangentData.alpha, 28)}
+                    fill="none"
+                    stroke={PHYSICS_COLORS.displacement}
+                    strokeWidth={CANVAS_STYLE.stroke.tangent}
+                  />
+                  <text
+                    x={startX + 36 * Math.cos(tangentData.alpha / 2)}
+                    y={midY + 36 * Math.sin(tangentData.alpha / 2) + 4}
+                    fontSize={font(11)}
+                    fill={PHYSICS_COLORS.displacement}
+                    fontWeight="bold"
+                    textAnchor="middle"
+                  >
+                    α
+                  </text>
+                </g>
+              )}
+            </g>
           )}
 
           {/* 粒子 */}
-          <circle cx={cx} cy={cy} r={10} fill={PHYSICS_COLORS.positiveCharge} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={2} />
-          <text x={cx} y={cy + 4.5} fontSize={font(13)} fill={CANVAS_COLORS.annotation} textAnchor="middle" fontWeight="bold">+</text>
+          <circle
+            cx={cx}
+            cy={cy}
+            r={PARTICLE_RADIUS}
+            fill={PHYSICS_COLORS.positiveCharge}
+            stroke={PHYSICS_COLORS.objectStroke}
+            strokeWidth={CANVAS_STYLE.stroke.objectLine}
+          />
+          <text
+            x={cx}
+            y={cy + 4.5}
+            fontSize={font(13)}
+            fill={CANVAS_COLORS.annotation}
+            textAnchor="middle"
+            fontWeight="bold"
+          >
+            +
+          </text>
 
           {/* 速度分量与速度分解虚线框 */}
           {showVectors && !ended && (
             <g>
               {/* 矩形分解虚线框 */}
-              <line x1={cx + vx_px} y1={cy} x2={cx + vx_px} y2={cy + vy_px}
-                stroke={PHYSICS_COLORS.axis} strokeWidth={1} strokeDasharray="3,3" />
-              <line x1={cx} y1={cy + vy_px} x2={cx + vx_px} y2={cy + vy_px}
-                stroke={PHYSICS_COLORS.axis} strokeWidth={1} strokeDasharray="3,3" />
+              <line
+                x1={cx + vx_px}
+                y1={cy}
+                x2={cx + vx_px}
+                y2={cy + vy_px}
+                stroke={PHYSICS_COLORS.axis}
+                strokeWidth={CANVAS_STYLE.stroke.reference}
+                strokeDasharray="3,3"
+              />
+              <line
+                x1={cx}
+                y1={cy + vy_px}
+                x2={cx + vx_px}
+                y2={cy + vy_px}
+                stroke={PHYSICS_COLORS.axis}
+                strokeWidth={CANVAS_STYLE.stroke.reference}
+                strokeDasharray="3,3"
+              />
 
               {/* v0 (水平分速度，经典蓝) */}
               <VectorArrow
@@ -308,7 +675,15 @@ export default function ChargeInEField() {
                 strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                 pixelLength={vxPxLen}
               />
-              <text x={cx + vx_px + 8} y={cy + 3} fontSize={font(10)} fill={PHYSICS_COLORS.velocityX} fontWeight="bold">v₀</text>
+              <text
+                x={cx + vx_px + 8}
+                y={cy + 3}
+                fontSize={font(10)}
+                fill={PHYSICS_COLORS.velocityX}
+                fontWeight="bold"
+              >
+                v₀
+              </text>
 
               {/* vy (竖直分速度，浅蓝) */}
               {Math.abs(currentState.vy) > 0.05 && (
@@ -321,7 +696,16 @@ export default function ChargeInEField() {
                   pixelLength={vyPxLen}
                 />
               )}
-              <text x={cx - 3} y={cy + vy_px + (vy_px > 0 ? 12 : -4)} fontSize={font(10)} fill={PHYSICS_COLORS.velocityY} fontWeight="bold" textAnchor="middle">vᵧ</text>
+              <text
+                x={cx - 3}
+                y={cy + vy_px + (vy_px > 0 ? 12 : -4)}
+                fontSize={font(10)}
+                fill={PHYSICS_COLORS.velocityY}
+                fontWeight="bold"
+                textAnchor="middle"
+              >
+                vᵧ
+              </text>
 
               {/* 合速度 v (深蓝) */}
               <VectorArrow
@@ -332,7 +716,15 @@ export default function ChargeInEField() {
                 strokeWidth={CANVAS_STYLE.stroke.vectorMain}
                 pixelLength={totalPxLen}
               />
-              <text x={cx + vx_px + 8} y={cy + vy_px + (vy_px > 0 ? 8 : -4)} fontSize={font(10)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
+              <text
+                x={cx + vx_px + 8}
+                y={cy + vy_px + (vy_px > 0 ? 8 : -4)}
+                fontSize={font(10)}
+                fill={PHYSICS_COLORS.velocity}
+                fontWeight="bold"
+              >
+                v
+              </text>
 
               {/* 电场力 F_E (紫色) */}
               <VectorArrow
@@ -366,18 +758,6 @@ export default function ChargeInEField() {
             </g>
           )}
         </svg>
-      </Card>
-
-      {/* 图像显示区 */}
-      <Card className="h-[150px] p-2">
-        <VelocityTimeChart
-          points={vtPoints}
-          currentTime={tSim}
-          tMax={simResult.tEnd}
-          vRange={[chartYBounds.min, chartYBounds.max]}
-          title="vᵧ - t 图像"
-          showArea
-        />
       </Card>
     </div>
   )
