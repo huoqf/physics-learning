@@ -26,7 +26,7 @@ export default function Transformer() {
     useShallow((s) => ({ params: s.params })),
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const { font, px } = canvasSize
   const params = useMemo(() => normalizeTransformerParams(rawParams), [rawParams])
   const { mode, n1, n2, U1, R } = params

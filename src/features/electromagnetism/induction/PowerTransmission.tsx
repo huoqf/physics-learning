@@ -50,7 +50,7 @@ export default function PowerTransmission() {
       speed: s.speed,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const { width: W, height: H, font, px } = canvasSize
   const [, setFrameTick] = useState(0)
 

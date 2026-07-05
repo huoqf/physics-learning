@@ -169,7 +169,7 @@ export default function ImpulseAnimation() {
       showVectors: s.showVectors,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
 
   const vp = useViewport(canvasSize, {
     designWidth: IMPULSE_DESIGN.width,

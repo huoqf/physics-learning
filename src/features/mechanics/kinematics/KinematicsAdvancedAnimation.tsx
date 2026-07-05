@@ -85,7 +85,7 @@ export default function KinematicsAdvancedAnimation() {
   )
 
   // 使用 wide 预设，适配横向拉长的上下布局
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const { font } = canvasSize
 
   const v0 = params.v0 ?? 4.0

@@ -18,7 +18,7 @@ export default function WeightlessnessAnimation() {
     }))
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 450 })
   const { g = 9.8, m = 50 } = params
 

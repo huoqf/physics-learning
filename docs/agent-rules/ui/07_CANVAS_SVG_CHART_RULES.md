@@ -182,10 +182,17 @@ const vp = useViewport(canvasSize, {
 > ✅ **合法场景**：高频运动、复杂图表表盘、或依赖容器像素尺寸计算物理比例尺的场景（对应 `SceneLayoutProfile` 的 `visibleArea` 与 `centerScale` 模式）。
 
 ```tsx
-// ✅ 方式C：利用可视区属性直接计算自适应坐标
+// ✅ 方式C（普通可视区布局 visibleArea）：利用可视区属性直接计算自适应坐标
 const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 400 })
-// 结合 createSceneScaleFromViewport 快捷字面量生成比例尺
 const sceneScale = createSceneScaleFromViewport(vp, 'visibleArea', { designWidth: 700, designHeight: 400 })
+
+// ✅ 方式C（旋转中心对称/天体轨道 centerScale 场景）：
+// 当物理坐标需以视口中心 (centerX, centerY) 为原点，且有动态计算的物理比例 (scale) 时：
+const centerSceneScale = createSceneScaleFromViewport(vp, 'centerScale', {
+  designWidth: 650, designHeight: 650,
+  worldWidth: (vp.visibleW - padding) / scale,   // ⚠️ 必须声明实际物理世界跨度，确保导出正确 physical scale
+  worldHeight: (vp.visibleH - padding) / scale,
+})
 
 <svg width={canvasSize.width} height={canvasSize.height} className="w-full h-full">
   {/* 直接使用 canvasPos 或 worldToPixel(wx, wy, sceneScale) 计算后的真实像素位置渲染 */}

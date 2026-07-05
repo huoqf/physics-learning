@@ -187,7 +187,7 @@ export default function CuttingEMF() {
     showForceAnalysis = 1,
   } = params
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
 
   const physics = useCuttingEMFPhysics({ mode, B, L, v, R, F_ext, m }, canvasSize, time)
 

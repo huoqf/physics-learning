@@ -25,7 +25,7 @@ export default function PotentialEnergyAnimation() {
       updateParam: s.updateParam, setTime: s.setTime,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 400 })
   const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)

@@ -40,7 +40,7 @@ export const FREE_FALL_LAYOUT = {
   },
 } as const
 
-/** 右侧数据区固定像素布局（设计坐标系 700×450） */
+/** 右侧数据区固定像素布局（设计坐标系 700×650） */
 export const DATA_LAYOUT = {
   /** 数据表起始 Y（设计坐标） */
   tableY: 8,
@@ -49,9 +49,9 @@ export const DATA_LAYOUT = {
   /** v-t 图起始 Y（设计坐标） */
   chartY: 164,
   /** v-t 图高度（px） */
-  chartH: 266,
+  chartH: 460,
   /** 底部实时标注基线 Y（设计坐标） */
-  labelY: 442,
+  labelY: 640,
 } as const
 
 // ─── 撞击波纹视觉参数 ──────────────────────────────────────────────────

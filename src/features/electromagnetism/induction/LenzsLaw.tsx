@@ -4,7 +4,7 @@ import { useLenzsLaw } from './lenzs-law/hooks/useLenzsLaw'
 import { LenzsLawCanvas } from './lenzs-law/components/LenzsLawCanvas'
 
 export default function LenzsLaw() {
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const state = useLenzsLaw()
 
   return (

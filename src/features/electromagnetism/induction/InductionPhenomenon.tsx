@@ -90,7 +90,7 @@ export default function InductionPhenomenon() {
   )
 
   // 使用 wide 预设尺寸 (700 x 400)
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const vp = useViewport(canvasSize, { designWidth: DESIGN_W, designHeight: DESIGN_H })
   void vp // 显式声明以符合无 overlay 模式 A 视口规范
   const { font } = canvasSize

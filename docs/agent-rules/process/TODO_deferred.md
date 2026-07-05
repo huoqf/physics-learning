@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-05（电磁学子组件迁移完成 + centerScale 组件回退，P0 已清零，P1 剩余 7，P2 剩余 53）
+> 最后更新：2026-07-05（centerScale 4 轨道 + 2 子组件 vp + 2 轻量场景迁移完成，DEV + 架构豁免确立，P0 已清零，P1 已清零，P2 已清零（wide/tall 预设已删除））
 
 ---
 
@@ -198,41 +198,31 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 
 > Batch1（ElectricField、SpringComposite）+ Batch2（GravityAnimation、SatelliteAnimation、EnergyConservationAnimation、useVectorDrag、useEquilibriumPhysics、usePEInteraction、CircularMotionAnimation、useCentripetalPhysics、ProjectileAnimation、useObliqueThrowLayout、vtChartUtils）全部完成。全库 `clientX - rect.left` / `vp.tx` 手动算式已归零。
 
-### 5.2 P1 推广：createSceneScaleFromViewport 快捷字面量（~~37~~ → 7 个文件）
+### 5.2 P1 推广：createSceneScaleFromViewport 快捷字面量（~~37~~ → 0 个文件，已清零）
 
 > Batch2 已迁移：`ConnectedBodies`、`WorkAnimation`（2 个）。
 > P1 Continuous Cleanup 已迁移：`ChargeInEField`、`VectorAddition`、`useEquilibriumLayout`、`PotentialEnergy`、`SpringComposite`、`Acceleration`、`FreeFall`、`KinematicsAdvanced`、`ObliqueThrow`、`Projectile`、`UniformAcceleration`、`Velocity`、`VerticalThrow`、`Impulse`、`Momentum`、`MomentumTheorem`、`IntermolecularForces`（17 个）。
 > Easy 批量迁移：`FreeFallDripAnimation`、`VelocityAnimationStrip`、`StroboscopicAnimation`（3 个）。
 > 电磁学子组件迁移：`BasicMode`、`ThreeChargeMode`、`ElectricFieldBasicScene`、`ElectricFieldAdvancedScene`（4 个，父组件透传 vp/sceneScale）。
-> ⚠️ 已回退（不适合快捷 API）：`CircularMotionAnimation`、`useCentripetalPhysics`、`KeplerAnimation`、`SatelliteAnimation`（4 个，worldWidth/worldHeight 必须与实际渲染 scale 对齐，`centerScale` 模式 scale 不匹配）。
+> P1 centerScale worldWidth/worldHeight 补丁已迁移：`CircularMotionAnimation`、`useCentripetalPhysics`、`KeplerAnimation`、`SatelliteAnimation`（4 个）。
+> P1 子组件 vp 透传已迁移：`PowerScene`、`KineticEnergyScene`（2 个，父组件透传 vp）。
+> P1 轻量场景已迁移：`AccelerationCenterExtra`、`useForceMotionSandbox`（2 个，构造 minimal vp）。
 
 将冗长的 `SceneConfig` 对象构造 + `createSceneScale()` 替换为 `createSceneScaleFromViewport(vp, 'visibleArea')` 一行调用。
 
 | # | 文件 | 难度 | 说明 |
 |---|------|------|------|
-| 1 | `mechanics/energy/PowerScene.tsx` | Medium | 子组件无 vp，需父组件传入 |
-| 2 | `mechanics/energy/KineticEnergyScene.tsx` | Medium | 子组件无 vp，6 个动态 refMagnitudes |
-| 3 | `mechanics/kinematics/AccelerationCenterExtra.tsx` | Medium | 用 useState 代替 useCanvasSize，需改架构 |
-| 4 | `mechanics/force-motion/hooks/useForceMotionSandbox.ts` | Medium | Hook 内无 vp，需改函数签名 |
-| 5 | `electromagnetism/magnetism/BoundaryMagneticField/SimulationView.tsx` | Hard | worldWidth/Height 动态计算，originY 条件分支 |
-| 6 | `electromagnetism/magnetism/velocity-selector/model/velocitySelectorModel.ts` | Hard | 纯函数，world 尺寸来自 scaleX/scaleY |
-| 7 | `dev/VectorPlayground.tsx` | — | dev 测试页，建议跳过 |
+| 1 | `electromagnetism/magnetism/BoundaryMagneticField/SimulationView.tsx` | Hard | worldWidth/Height 动态计算，originY 条件分支 |
+| 2 | `electromagnetism/magnetism/velocity-selector/model/velocitySelectorModel.ts` | Hard | 纯函数，world 尺寸来自 scaleX/scaleY |
 
-**不适用快捷 API 的组件**（保持手动 SceneConfig）：
-
-| 文件 | 原因 |
-|------|------|
-| `CircularMotionAnimation.tsx` | `centerScale` 模式，scale 来自 `(minCanvasDim - padding) / (2 * rMax)`，与 `vp.visibleW/designWidth` 不一致 |
-| `useCentripetalPhysics.ts` | 同上 |
-| `KeplerAnimation.tsx` | `centerScale` 模式，scale 来自 `KEPLER_CONFIG.scaleBase * vpScale` |
-| `SatelliteAnimation.tsx` | 同上 |
+> **DEV 豁免**：`src/features/dev/` 目录为内部开发沙箱（如 `VectorPlayground.tsx`），不接入三屏自适应体系，无需实施视口与比例尺整改。
+> **架构豁免**：`SimulationView.tsx`（原生 Canvas 直绘）、`velocitySelectorModel.ts`（纯计算模型）均不走 `useViewport`，合法保留底层 `createSceneScale` 调用，已加固注释护栏。P1 推广实质清零。
 
 **执行策略**：维护到对应组件时顺手替换，逐步精简样板代码。
 
-### 5.3 P2 出清：废弃 Preset 平滑迁移（~~61~~ → 53 个文件）
+### 5.3 P2 出清：废弃 Preset 平滑迁移（~~61~~ → 0 个文件，已清零）
 
-> Batch2 已迁移：`CircuitAnalysis`、`ClosedCircuit`、`OhmLaw`（wide→full）、`Capacitor`、`CoulombLaw`（tall→full）、`ACGeneration`（wide→full + designHeight 修正）共 6 个。
-> P1 Continuous Cleanup 附带迁移：`FreeFallAnimation`（tall→full）、`VelocityAnimation`（wide→full + designHeight 400→650）共 2 个。
+> P2 已全部清零：所有 `wide`/`tall` 引用已迁移至 `full` + `{ presetCompensation: 1.2 }`，`spacing.ts` 中 `wide` 和 `tall` 定义已删除。
 
 将 `CANVAS_PRESETS.wide` (700×400) / `CANVAS_PRESETS.tall` (700×450) 统一迁移为 `CANVAS_PRESETS.full` (700×650) + `{ presetCompensation: 1.2 }`。全库清零后在 `spacing.ts` 中删除 `wide` 和 `tall` 定义。
 

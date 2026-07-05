@@ -26,7 +26,7 @@ export default function CapacitorChart() {
     useShallow((s) => s.params)
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const { font } = canvasSize
 
   const { S = 100, d = 5, epsilon_r = 1, U = 12, connected = 1 } = params

@@ -25,7 +25,7 @@ export default function ThinLensAnimation() {
   const { params } = useAnimationStore(
     useShallow((s) => ({ params: s.params }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const svgRef = useRef<SVGSVGElement>(null)
   const isDraggingRef = useRef<'object' | 'lens' | false>(false)
 

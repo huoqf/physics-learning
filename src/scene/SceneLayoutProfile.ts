@@ -1,4 +1,4 @@
-﻿import type { VectorType } from '@/theme/physics'
+import type { VectorType } from '@/theme/physics'
 
 /**
  * 场景布局模式 — 声明组件如何消费 ViewportInfo
@@ -23,6 +23,10 @@ export interface SceneLayoutProfile {
     top?: number
     bottom?: number
   }
+  /** 物理世界宽度（px），用于覆盖 designWidth 参与 scale 计算 */
+  worldWidth?: number
+  /** 物理世界高度（px），用于覆盖 designHeight 参与 scale 计算 */
+  worldHeight?: number
   /** 矢量参考量级（用于 refMagnitudes 归一化） */
   refMagnitudes?: Partial<Record<VectorType, number>>
 }

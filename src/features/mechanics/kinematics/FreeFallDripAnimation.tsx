@@ -26,7 +26,7 @@ import { createSceneScaleFromViewport } from '@/scene'
 
 // ─── 设计常量 ────────────────────────────────────────────────────────────────
 const DESIGN_WIDTH = 700
-const DESIGN_HEIGHT = 450
+const DESIGN_HEIGHT = 650
 
 // ─── 物理常量 ────────────────────────────────────────────────────────────────
 /** 管高度 (m) */
@@ -70,7 +70,7 @@ export default function FreeFallDripAnimation() {
     setIsPlaying: s.setIsPlaying,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const vp = useViewport(canvasSize, { designWidth: DESIGN_WIDTH, designHeight: DESIGN_HEIGHT })
 
   // ── 参数 ──────────────────────────────────────────────────────────────────

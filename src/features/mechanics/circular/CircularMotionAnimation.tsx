@@ -5,8 +5,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateCircularMotion } from '@/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,
@@ -96,24 +95,16 @@ export default function CircularMotionAnimation() {
 
   const canvasPos = physicsToCanvasWithOrigin(x, y, centerX, centerY, scale)
 
-  const sceneConfig = useMemo((): SceneConfig => ({
-    vectorBounds: {
-      x: vp.visibleX,
-      y: vp.visibleY,
-      width: vp.visibleW - CIRCULAR_MOTION_LAYOUT.canvasPadding,
-      height: vp.visibleH - CIRCULAR_MOTION_LAYOUT.canvasPadding,
-    },
-    originX: centerX,
-    originY: centerY,
-    worldWidth: (vp.visibleW - CIRCULAR_MOTION_LAYOUT.canvasPadding) / scale,
-    worldHeight: (vp.visibleH - CIRCULAR_MOTION_LAYOUT.canvasPadding) / scale,
+  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'centerScale', {
+    designWidth: CIRCULAR_DESIGN.width,
+    designHeight: CIRCULAR_DESIGN.height,
+    worldWidth: vp.visibleW / scale,
+    worldHeight: vp.visibleH / scale,
     refMagnitudes: {
       velocity: CIRCULAR_MOTION_CHART_RANGE.vMax,
       acceleration: CIRCULAR_MOTION_CHART_RANGE.aMax,
     },
-  }), [vp.visibleX, vp.visibleY, vp.visibleW, vp.visibleH, centerX, centerY, scale]);
-
-  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
+  }), [vp, scale])
 
   // ── 矢量安全映射 ─────────────
 

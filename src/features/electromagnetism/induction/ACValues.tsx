@@ -19,8 +19,8 @@ import { colors } from '@/theme/colors'
 import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 
-// 设计坐标系常量（与 CANVAS_PRESETS.wide 一致）
-const { width: DESIGN_WIDTH, height: DESIGN_HEIGHT } = CANVAS_PRESETS.wide
+// 设计坐标系常量（与 CANVAS_PRESETS.full 一致）
+const { width: DESIGN_WIDTH, height: DESIGN_HEIGHT } = CANVAS_PRESETS.full
 import { useACValuesPhysics } from './hooks/useACValuesPhysics'
 import { ACValuesChartPanel } from './components/ACValuesChartPanel'
 import { HeatingBox } from './components/HeatingBox'
@@ -34,7 +34,7 @@ export default function ACValues() {
     }))
   )
 
-  const [containerRef] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
 
   // 设计坐标系下的 font 函数（固定尺寸模式）
   const font = (size: number) => Math.min(16, Math.max(7, size))

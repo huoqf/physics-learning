@@ -3,8 +3,8 @@ import { FONT, PHYSICS_COLORS } from '@/theme/physics'
 import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
 import { useCanvasSize } from '@/utils/useCanvasSize'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig, SceneScale } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
+import type { SceneScale } from '@/scene'
 import type { ForceMotionState } from '@/physics'
 import { useAnimationStore } from '@/stores'
 import {
@@ -129,7 +129,7 @@ export interface ForceMotionSandboxData {
 }
 
 export function useForceMotionSandbox({ state, trajectory, domainTrajectory }: ForceMotionSandboxProps): ForceMotionSandboxData {
-  const [containerRef, size] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, size] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const { width, height, font } = size
   const params = useAnimationStore((s) => s.params)
 
@@ -247,14 +247,14 @@ export function useForceMotionSandbox({ state, trajectory, domainTrajectory }: F
     }
   }, [height, state, trajectory, domainTrajectory, width])
 
-  const sceneConfig = useMemo((): SceneConfig => ({
-    vectorBounds: { x: 0, y: 0, width, height },
-    originX: 0,
-    originY: 0,
-    worldWidth: width,
-    worldHeight: height,
+  const sandboxVp = useMemo(() => ({
+    visibleX: 0, visibleY: 0, visibleW: width, visibleH: height,
+    centerX: 0, centerY: 0,
   }), [width, height])
-  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig])
+  const sceneScale = useMemo(() => createSceneScaleFromViewport(sandboxVp, 'transform', {
+    designWidth: width,
+    designHeight: height,
+  }), [sandboxVp, width, height])
 
   const trackPath = pathFrom(view.track)
 

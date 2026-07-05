@@ -52,7 +52,7 @@ export default function WorkAnimation() {
       showVectors: s.showVectors,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const { font } = canvasSize
 
   const mode = (params.mode ?? 0) as 0 | 1

@@ -3,8 +3,7 @@ import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import type { PowerModelState } from '@/physics/power'
 
 interface PowerSceneProps {
@@ -17,6 +16,7 @@ interface PowerSceneProps {
     mode?: number
   }
   canvasSize: { width: number; height: number; font: (size: number) => number }
+  vp: { visibleX: number; visibleY: number; visibleW: number; visibleH: number; centerX: number; centerY: number }
   showVectors: boolean
   maxV: number
   scale: number
@@ -27,6 +27,7 @@ export function PowerScene({
   state,
   params,
   canvasSize,
+  vp,
   showVectors,
   maxV,
   scale,
@@ -67,14 +68,10 @@ export function PowerScene({
   const EkMax = 0.5 * m * maxV * maxV
   const ekRatio = EkMax > 0 ? Math.min(Ek / EkMax, 1) : 0
 
-  const sceneConfig = useMemo((): SceneConfig => ({
-    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
-    originX: 0,
-    originY: 0,
-    worldWidth: canvasSize.width,
-    worldHeight: canvasSize.height,
-  }), [canvasSize.width, canvasSize.height])
-  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig])
+  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'transform', {
+    designWidth: canvasSize.width,
+    designHeight: canvasSize.height,
+  }), [vp, canvasSize.width, canvasSize.height])
 
   return (
     <svg width={canvasSize.width} height={canvasSize.height} className="bg-transparent">

@@ -26,7 +26,7 @@ export default function ReflectionAnimation() {
   const { params } = useAnimationStore(
     useShallow((s) => ({ params: s.params }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
 
   const theta1 = params.theta1 ?? 45
   const mirrorRotation = params.mirrorRotation ?? 0

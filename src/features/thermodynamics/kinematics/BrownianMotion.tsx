@@ -59,7 +59,7 @@ export default function BrownianMotion() {
     })),
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const { width, height, font } = canvasSize
 
   const mode = params.mode ?? 0

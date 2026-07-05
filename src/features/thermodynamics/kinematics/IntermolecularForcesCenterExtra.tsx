@@ -10,7 +10,7 @@ export default function IntermolecularForcesCenterExtra() {
   )
 
   const r = params.params.r ?? 2.0
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const { font } = canvasSize
 
   const chartWidth = (canvasSize.width - 32) / 2

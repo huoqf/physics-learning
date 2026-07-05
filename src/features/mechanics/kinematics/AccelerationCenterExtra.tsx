@@ -7,8 +7,7 @@ import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { SportsCar } from '@/components/Physics/SportsCar'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { RelationChart, VelocityTimeChart } from '@/components/Chart'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 
 /** 布局常量（语义化命名，比例驱动） */
 const LAYOUT = {
@@ -273,13 +272,15 @@ export default function AccelerationCenterExtra() {
   const policeX = startX + state.xB * scale
 
   // ── 矢量场景配置 ──
-  const chaseScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: containerSize.width, height: animHeight },
-    originX: 0,
-    originY: 0,
+  const chaseVp = useMemo(() => ({
+    visibleX: 0, visibleY: 0, visibleW: containerSize.width, visibleH: animHeight,
+    centerX: 0, centerY: 0,
+  }), [containerSize.width, animHeight])
+  const sceneScale = useMemo(() => createSceneScaleFromViewport(chaseVp, 'transform', {
+    designWidth: containerSize.width,
+    designHeight: animHeight,
     refMagnitudes: { velocity: Math.max(vA, vMax) * 1.3, acceleration: aB * 2 },
-  }
-  const sceneScale = createSceneScale(chaseScene)
+  }), [chaseVp, containerSize.width, animHeight, vA, vMax, aB])
 
 
   return (

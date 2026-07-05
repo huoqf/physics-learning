@@ -36,7 +36,7 @@ export default function TIRAnimation() {
   const { params } = useAnimationStore(
     useShallow((s) => ({ params: s.params }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
 
   const vp = useViewport(canvasSize, {
     designWidth: TIR_DESIGN.width,

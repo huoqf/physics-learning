@@ -30,11 +30,11 @@ export default function SpringCompositeAnimation() {
   const svgRef = useRef<SVGSVGElement>(null);
 
   // 1. 画布基准尺寸 (700 x 420)
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide);
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 });
   const { font } = canvasSize;
 
   const DESIGN_WIDTH = 700;
-  const DESIGN_HEIGHT = 420;
+  const DESIGN_HEIGHT = 650;
 
   const vp = useViewport(canvasSize, {
     designWidth: DESIGN_WIDTH,
@@ -76,10 +76,10 @@ export default function SpringCompositeAnimation() {
   // 小球水平光标与图表游标会出现十几像素的视觉偏差。
   const yPhysMin = -xD_phys; // 最小值（最低点在下，物理高度负值）
   const yPhysMax = mode === 1 ? 0 : h; // 最大值（释放点在上，物理高度正值）
-  const chartHeight = 350;
+  const chartHeight = 550;
   const marginTop = 22;
   const marginBottom = 22;
-  const plotH = chartHeight - marginTop - marginBottom; // 306px
+  const plotH = chartHeight - marginTop - marginBottom; // 506px
 
   // 物理坐标 (向上为正) 转换到图表局部的 Y 像素
   const toLocalSvgY = (physY: number) => {
@@ -95,7 +95,7 @@ export default function SpringCompositeAnimation() {
   const y_C = 25 + toLocalSvgY(-xC_phys);
   const y_D = 25 + toLocalSvgY(-xD_phys);
   const ballY = 25 + toLocalSvgY(-state.x);
-  const y_ground = 380;
+  const y_ground = 600;
 
   // 弹簧在设计画布上的顶底端 Y 坐标计算
   let springTopY: number;
@@ -135,7 +135,7 @@ export default function SpringCompositeAnimation() {
   }, [trajectory]);
   const springSceneScale = createSceneScaleFromViewport(vp, 'transform', {
     designWidth: 170,
-    designHeight: 350,
+    designHeight: 550,
     refMagnitudes: {
       gravity: m * g,
       elasticForce: k * xD_phys,
@@ -516,7 +516,7 @@ export default function SpringCompositeAnimation() {
               xLabel={viewMode === 'E-x' ? 'x (m)' : 'E (J)'}
               yLabel={viewMode === 'E-x' ? 'E (J)' : 'y (m)'}
               title={viewMode === 'E-x' ? '能量 - 位移图像 (E - x)' : '能量 - 高度图像 (E - y)'}
-              fixedSize={{ width: 230, height: 350 }}
+              fixedSize={{ width: 230, height: 550 }}
               showGrid={false}
               gridCount={{ x: 4, y: 5 }}
               formatX={
@@ -555,7 +555,7 @@ export default function SpringCompositeAnimation() {
                   ? '合外力 / 速度 - 位移图像 (向下为正)'
                   : '合外力 - 高度图像 (F合 - y，向下为正)'
               }
-              fixedSize={{ width: 200, height: 350 }}
+              fixedSize={{ width: 200, height: 550 }}
               showGrid={false}
               gridCount={{ x: 4, y: 5 }}
               formatX={

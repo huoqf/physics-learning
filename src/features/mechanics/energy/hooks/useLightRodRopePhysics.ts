@@ -9,7 +9,7 @@ import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 
 const DESIGN_WIDTH = 700
-const DESIGN_HEIGHT = 420
+const DESIGN_HEIGHT = 650
 const T_MAX = 6
 const FORCE_DRAW_SCALE = 2.5
 
@@ -126,7 +126,7 @@ export function useLightRodRopePhysics(): UseLightRodRopePhysicsResult {
     }))
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
 
   const vp = useViewport(canvasSize, {
     designWidth: DESIGN_WIDTH,

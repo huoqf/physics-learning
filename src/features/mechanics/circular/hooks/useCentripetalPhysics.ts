@@ -6,8 +6,7 @@ import type { VerticalCircularMotionPoint } from '@/physics/dynamics/dynamics-ad
 import { useCanvasSize, physicsToCanvasWithOrigin, useViewport, clientToContainerPoint } from '@/utils'
 import type { CanvasSize, ViewportInfo } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 
 export const CENTRIPETAL_PARAM_BOUNDS = {
   rMin: 3, rMax: 5,
@@ -69,8 +68,7 @@ export interface CentripetalPhysicsResult {
   cardInnerPad: typeof CENTRIPETAL_LAYOUT.waveCardPadding
   cardInnerW: number
 
-  sceneConfig: SceneConfig
-  sceneScale: ReturnType<typeof createSceneScale>
+  sceneScale: ReturnType<typeof createSceneScaleFromViewport>
 
   faPoints: Array<{ x: number; y: number }>
 
@@ -152,7 +150,7 @@ export function useCentripetalPhysics(): CentripetalPhysicsResult {
   const centerY = vp.centerY
   const ballPos = physicsToCanvasWithOrigin(x, y, centerX, centerY, scale)
 
-  const sceneConfig = useMemo((): SceneConfig => {
+  const sceneScale = useMemo(() => {
     const basicRefV = Math.max(v * 1.4, 4.0)
     const basicRefA = Math.max(a_c, 4.0)
     const basicRefF = Math.max(F_c, 5.0)
@@ -160,16 +158,11 @@ export function useCentripetalPhysics(): CentripetalPhysicsResult {
     const advRefA = Math.max((v0 * v0) / r, 10.0)
     const advRefF = Math.max(m * GRAVITY + (m * v0 * v0) / r, 15.0)
 
-    return {
-      vectorBounds: {
-        x: 0, y: 0,
-        width: canvasSize.width - CENTRIPETAL_LAYOUT.canvasPadding,
-        height: canvasSize.height - CENTRIPETAL_LAYOUT.canvasPadding,
-      },
-      originX: centerX,
-      originY: centerY,
-      worldWidth: (canvasSize.width - CENTRIPETAL_LAYOUT.canvasPadding) / scale,
-      worldHeight: (canvasSize.height - CENTRIPETAL_LAYOUT.canvasPadding) / scale,
+    return createSceneScaleFromViewport(vp, 'centerScale', {
+      designWidth: 650,
+      designHeight: 650,
+      worldWidth: vp.visibleW / scale,
+      worldHeight: vp.visibleH / scale,
       refMagnitudes: {
         velocity: isAdvanced ? advRefV : basicRefV,
         acceleration: isAdvanced ? advRefA : basicRefA,
@@ -178,13 +171,8 @@ export function useCentripetalPhysics(): CentripetalPhysicsResult {
         normalForce: isAdvanced ? advRefF : basicRefF,
         tension: isAdvanced ? advRefF : basicRefF,
       },
-    }
-  }, [
-    canvasSize.width, canvasSize.height, centerX, centerY, scale,
-    isAdvanced, v, v0, r, m, a_c, F_c,
-  ])
-
-  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig])
+    })
+  }, [vp, scale, isAdvanced, v, v0, r, m, a_c, F_c])
 
   const cardHeight = isAdvanced
     ? Math.max(340, canvasSize.height * 0.55)
@@ -258,7 +246,7 @@ export function useCentripetalPhysics(): CentripetalPhysicsResult {
     vp,
     centerX, centerY, scale, ballPos,
     cardWidth, cardHeight, cardX, cardY, cardInnerPad, cardInnerW,
-    sceneConfig, sceneScale,
+    sceneScale,
     faPoints,
     handleSvgMouseMove, handleSvgMouseUp, handleChartMouseDown,
   }

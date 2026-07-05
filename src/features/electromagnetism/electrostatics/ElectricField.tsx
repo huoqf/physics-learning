@@ -15,7 +15,7 @@ import { ElectricFieldAdvancedScene } from './ElectricFieldAdvancedScene'
 import { createSceneScaleFromViewport } from '@/scene'
 
 const DESIGN_WIDTH = 700
-const DESIGN_HEIGHT = 450
+const DESIGN_HEIGHT = 650
 
 export default function ElectricField() {
   const { params } = useAnimationStore(
@@ -31,7 +31,7 @@ export default function ElectricField() {
   const rTest = params.rTest ?? 3.0
   const showFieldLines = (params.showFieldLines ?? 1) === 1
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const vp = useViewport(canvasSize, { designWidth: DESIGN_WIDTH, designHeight: DESIGN_HEIGHT })
   const svgRef = useRef<SVGSVGElement>(null)
 

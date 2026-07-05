@@ -92,6 +92,7 @@ export function SimulationView() {
     }
   }, [canvasSize, activeBoundaryType, d])
 
+  // ⚠️ [架构豁免] 原生 Canvas 直绘，不走 useViewport，合法保留底层 createSceneScale 调用
   const sceneScale = createSceneScale(sceneConfig)
 
   // 统一的单粒子轨迹及物理状态求解函数

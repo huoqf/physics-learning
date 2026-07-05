@@ -18,7 +18,7 @@ import { VelocitySelectorHandRuleCard } from './velocity-selector/components/Vel
 
 export default function VelocitySelector() {
   const gradId = useId()
-  const [sizeRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [sizeRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const { font } = canvasSize
 
   const { params: rawParams, time, isPlaying, showVectors } = useAnimationStore(

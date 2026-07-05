@@ -29,7 +29,7 @@ export default function KineticEnergyAnimation() {
       showVectors: s.showVectors,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 400 })
   const { font } = canvasSize
   const [showCriticalTip, setShowCriticalTip] = useState(false)
@@ -148,6 +148,7 @@ export default function KineticEnergyAnimation() {
           state={state}
           params={{ m, v0, F: F_pull, s: s_target, R, mu, mode }}
           canvasSize={{ width: vp.visibleW, height: sceneHeight, font }}
+          vp={vp}
           showVectors={showVectors}
           v_c={v_c}
           scale={scale}

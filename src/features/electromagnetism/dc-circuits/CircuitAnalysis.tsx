@@ -14,7 +14,7 @@ import {
 } from './circuit-analysis/model/circuitAnalysisLayout'
 
 const DESIGN_WIDTH = 650
-const DESIGN_HEIGHT = 360
+const DESIGN_HEIGHT = 650
 
 /**
  * 串并联电路及电路动态分析主动画

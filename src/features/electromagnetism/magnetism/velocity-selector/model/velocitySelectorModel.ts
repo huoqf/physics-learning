@@ -113,6 +113,7 @@ export function buildVelocitySelectorLayout(
     xPlatePx: cxIn,
     wPlatePx: plateLength * scaleX,
     gapPlatePx: plateGap * scaleY,
+    // ⚠️ [架构豁免] 纯计算模型，不走 useViewport，合法保留底层 createSceneScale 调用
     sceneScale: createSceneScale(sceneConfig),
   }
 }

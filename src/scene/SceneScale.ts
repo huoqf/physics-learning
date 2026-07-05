@@ -84,7 +84,7 @@ export const IDENTITY_SCENE_SCALE: SceneScale = {
 export function createSceneScaleFromViewport(
   vp: { visibleX: number; visibleY: number; visibleW: number; visibleH: number; centerX: number; centerY: number },
   profileOrMode: SceneLayoutProfile | SceneLayoutMode | undefined,
-  options?: { designWidth?: number; designHeight?: number; refMagnitudes?: Partial<Record<VectorType, number>> }
+  options?: { designWidth?: number; designHeight?: number; worldWidth?: number; worldHeight?: number; refMagnitudes?: Partial<Record<VectorType, number>> }
 ): SceneScale {
   if (!profileOrMode) {
     throw new Error(
@@ -98,6 +98,8 @@ export function createSceneScaleFromViewport(
         mode: profileOrMode,
         designWidth: options?.designWidth ?? vp.visibleW,
         designHeight: options?.designHeight ?? vp.visibleH,
+        worldWidth: options?.worldWidth,
+        worldHeight: options?.worldHeight,
         refMagnitudes: options?.refMagnitudes,
       }
     : profileOrMode
@@ -122,7 +124,8 @@ export function createSceneScaleFromViewport(
         return {
           vectorBounds: { x: vp.visibleX, y: vp.visibleY, width: vp.visibleW, height: vp.visibleH },
           originX: vp.centerX, originY: vp.centerY,
-          worldWidth: profile.designWidth, worldHeight: profile.designHeight,
+          worldWidth: profile.worldWidth ?? profile.designWidth,
+          worldHeight: profile.worldHeight ?? profile.designHeight,
           refMagnitudes: profile.refMagnitudes,
         }
     }

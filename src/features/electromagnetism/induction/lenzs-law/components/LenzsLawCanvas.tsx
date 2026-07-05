@@ -28,8 +28,8 @@ interface LenzsLawCanvasProps {
   vpScale: number
 }
 
-// 设计尺寸与固定布局中心（与 CANVAS_PRESETS.wide 一致）
-const { width: DESIGN_WIDTH, height: DESIGN_HEIGHT } = CANVAS_PRESETS.wide
+// 设计尺寸与固定布局中心（与 CANVAS_PRESETS.full 一致）
+const { width: DESIGN_WIDTH, height: DESIGN_HEIGHT } = CANVAS_PRESETS.full
 const cx = DESIGN_WIDTH / 2
 
 // 灵敏电流计中心坐标

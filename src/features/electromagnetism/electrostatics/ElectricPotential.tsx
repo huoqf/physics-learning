@@ -20,7 +20,7 @@ export default function ElectricPotential() {
   const updateParam = useAnimationStore((s) => s.updateParam)
   const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const { font } = canvasSize
   const animSvgRef = useRef<SVGSVGElement>(null)
   const chartSvgRef = useRef<SVGSVGElement>(null)

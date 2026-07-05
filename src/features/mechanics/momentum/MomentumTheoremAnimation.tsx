@@ -23,7 +23,7 @@ export default function MomentumTheoremAnimation() {
       showVectors: s.showVectors,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
 
   const groundY = canvasSize.height - MT_LAYOUT.groundOffset
   const cardWidth = Math.max(300, canvasSize.width * 0.42)

@@ -5,8 +5,7 @@ import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { SVGSingleBar } from '@/components/Physics/SVGSingleBar'
 import { Block } from '@/components/Physics/Block'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import type { KEModelState } from '@/physics/kineticEnergy'
 import { GRAVITY } from '@/physics/constants'
 
@@ -32,6 +31,7 @@ interface KineticEnergySceneProps {
     mode?: number
   }
   canvasSize: { width: number; height: number; font: (size: number) => number }
+  vp: { visibleX: number; visibleY: number; visibleW: number; visibleH: number; centerX: number; centerY: number }
   showVectors: boolean
   v_c: number
   scale: number
@@ -42,6 +42,7 @@ export function KineticEnergyScene({
   state,
   params,
   canvasSize,
+  vp,
   showVectors,
   v_c,
   scale,
@@ -129,16 +130,12 @@ export function KineticEnergyScene({
     return { x, opacity }
   })
 
-  const sceneConfig = useMemo((): SceneConfig => {
-    // 矢量归一化基准量级（确保同屏矢量比例保真）
-    const refF = mode === 0 ? F_pull : Math.max(m * 9.8 * 1.5, 15) // 力基准
-    const refV = mode === 0 ? Math.sqrt(v0 * v0 + 2 * (F_pull / m) * s_target) : Math.sqrt(v0 * v0 + 2 * 9.8 * R) // 速度基准
-    return {
-      vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
-      originX: 0,
-      originY: 0,
-      worldWidth: canvasSize.width,
-      worldHeight: canvasSize.height,
+  const sceneScale = useMemo(() => {
+    const refF = mode === 0 ? F_pull : Math.max(m * 9.8 * 1.5, 15)
+    const refV = mode === 0 ? Math.sqrt(v0 * v0 + 2 * (F_pull / m) * s_target) : Math.sqrt(v0 * v0 + 2 * 9.8 * R)
+    return createSceneScaleFromViewport(vp, 'transform', {
+      designWidth: canvasSize.width,
+      designHeight: canvasSize.height,
       refMagnitudes: {
         velocity: refV,
         force: refF,
@@ -147,9 +144,8 @@ export function KineticEnergyScene({
         friction: refF,
         appliedForce: refF,
       },
-    }
-  }, [canvasSize.width, canvasSize.height, mode, m, v0, F_pull, s_target, R])
-  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig])
+    })
+  }, [vp, canvasSize.width, canvasSize.height, mode, m, v0, F_pull, s_target, R])
 
   return (
     <svg width={canvasSize.width} height={canvasSize.height} className="bg-transparent">

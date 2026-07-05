@@ -15,7 +15,7 @@ const PROBE_CHARGE = 1e-6 // 探针试探电荷 +1.0 μC
 
 // ⚠️ viewBox 固定为设计坐标系，不随容器变化，避免 ResizeObserver 延迟引起视觉放大跳变
 const DESIGN_WIDTH = 700
-const DESIGN_HEIGHT = 480
+const DESIGN_HEIGHT = 650
 
 interface Charge {
   x: number
@@ -118,7 +118,7 @@ function traceFieldLine(
 export default function FieldLines() {
   const params = useAnimationStore((s) => s.params)
   const updateParam = useAnimationStore((s) => s.updateParam)
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 

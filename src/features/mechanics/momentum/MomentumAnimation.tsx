@@ -46,7 +46,7 @@ export default function MomentumAnimation() {
   const { params, time, showVectors } = useAnimationStore(
     useShallow((s) => ({ params: s.params, time: s.time, showVectors: s.showVectors }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 450 })
 
   const { m = 3, v = 4, mA = 3, vA = 5, mB = 2, vB = -3, advancedMode = 0, showEkChart = 1 } = params

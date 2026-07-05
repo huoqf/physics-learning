@@ -17,9 +17,9 @@ const Q_FIXED = EPS0 * (100 * 1e-4) / (5 * 1e-3) * 12
 const C_MAX = EPS0 * 5 * (200 * 1e-4) / (2 * 1e-3) * 1e12
 const Q_MAX = C_MAX * 12
 
-// SVG 设计坐标系常量（对应 CANVAS_PRESETS.tall）
+// SVG 设计坐标系常量（对应 CANVAS_PRESETS.full）
 const DESIGN_WIDTH = 700
-const DESIGN_HEIGHT = 400
+const DESIGN_HEIGHT = 650
 
 // 布局比例常量
 const LAYOUT = {
