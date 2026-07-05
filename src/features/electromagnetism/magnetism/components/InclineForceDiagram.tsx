@@ -34,33 +34,21 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
   font = (s) => s,
 }) => {
   const thetaRad = (theta * Math.PI) / 180
+  const m = 0.5;
+  const g = GRAVITY;
 
-  // 1. 斜面几何结构计算 (在 w, h 的局部视口内)
+  // 1. 初始斜面几何
   const padX = 25
   const padY = 25
-  const x0 = padX
-  const y0 = h - padY
-
   const slopeW = w - 2 * padX
-  // 斜面高度
   const slopeH = slopeW * Math.tan(thetaRad)
 
-  // 斜坡终点 (右上角)
-  const rightX = x0 + slopeW
-  const topY = y0 - slopeH
-
-  // 2. 导体棒在斜面上的像素位置
-  // 物理坐标范围为 [-1.1, 1.1]
+  // 2. 导体棒在斜面上的物理→像素映射
   const xMin = -1.1
   const xMax = 1.1
   const rodRatio = Math.max(0.08, Math.min(0.92, (physicsResult.x - xMin) / (xMax - xMin)))
 
-  const px = x0 + rodRatio * slopeW
-  const py = y0 - rodRatio * slopeH
-
-  // 3. 矢量箭头绘制的坐标转换，利用最大力进行自适应，防溢出
-  const m = 0.5;
-  const g = GRAVITY;
+  // 3. 力矢量（物理坐标，无缩放）
   const F_max = Math.max(
     m * g,
     Math.abs(physicsResult.F_ampere),
@@ -69,6 +57,48 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
     5.0
   );
   const forceScale = computeScale(w, h, { xMin: -F_max, xMax: F_max, yMin: -F_max, yMax: F_max })
+
+  const G_phys = { x: 0, y: -m * g }
+  const N_phys = {
+    x: -physicsResult.N * Math.sin(thetaRad),
+    y: physicsResult.N * Math.cos(thetaRad),
+  }
+  const Fa_phys = { x: physicsResult.F_ampere_x, y: physicsResult.F_ampere_y }
+  const f_phys = {
+    x: physicsResult.f * Math.cos(thetaRad),
+    y: physicsResult.f * Math.sin(thetaRad),
+  }
+
+  // 4. 先用默认斜面位置算棒的像素坐标，再检测力矢量是否溢出 viewBox。
+  //    若溢出则整体平移斜面（x0/y0），让棒心始终留足力矢量伸展空间。
+  const PAD = 12
+  const rawX0 = padX
+  const rawY0 = h - padY
+  const rawPx = rawX0 + rodRatio * slopeW
+  const rawPy = rawY0 - rodRatio * slopeH
+
+  // 力 tip 在 viewBox 坐标中的位置（以 rawPx, rawPy 为原点）
+  const tipDown = m * g * forceScale
+  const tipUp = Math.max(0, N_phys.y, Fa_phys.y, f_phys.y) * forceScale
+  const tipLeft = Math.max(0, -N_phys.x, -Fa_phys.x, -f_phys.x) * forceScale
+  const tipRight = Math.max(0, N_phys.x, Fa_phys.x, f_phys.x) * forceScale
+
+  // 需要的平移量，使力 tip 不超出 [PAD, edge-PAD]
+  let shiftX = 0
+  let shiftY = 0
+  if (rawPx - tipLeft < PAD) shiftX = PAD - (rawPx - tipLeft)
+  if (rawPx + tipRight > w - PAD) shiftX = Math.min(shiftX, -(rawPx + tipRight - (w - PAD)))
+  if (rawPy - tipUp < PAD) shiftY = PAD - (rawPy - tipUp)
+  if (rawPy + tipDown > h - PAD) shiftY = Math.min(shiftY, -(rawPy + tipDown - (h - PAD)))
+
+  // 应用平移到斜面原点（斜面超出 viewBox 无碍，棒区可见即可）
+  const x0 = rawX0 + shiftX
+  const y0 = rawY0 + shiftY
+  const px = x0 + rodRatio * slopeW
+  const py = y0 - rodRatio * slopeH
+
+  const rightX = x0 + slopeW
+  const topY = y0 - slopeH
 
   const localScale = useMemo<SceneScale>(() => {
     return {
@@ -81,24 +111,6 @@ export const InclineForceDiagram: React.FC<InclineForceDiagramProps> = ({
       refMagnitudes: { force: 2.0 },
     }
   }, [px, py, forceScale])
-
-  // 重力 mg
-  const G_phys = { x: 0, y: -m * g }
-
-  // 支持力 N
-  const N_phys = {
-    x: -physicsResult.N * Math.sin(thetaRad),
-    y: physicsResult.N * Math.cos(thetaRad),
-  }
-
-  // 安培力 F_安，读取自适应物理分量
-  const Fa_phys = { x: physicsResult.F_ampere_x, y: physicsResult.F_ampere_y }
-
-  // 摩擦力 f (沿斜面向上为正，方向为 (cosθ, sinθ)，向下为负)
-  const f_phys = {
-    x: physicsResult.f * Math.cos(thetaRad),
-    y: physicsResult.f * Math.sin(thetaRad),
-  }
 
   // 4. 正交分解坐标轴与投影辅助线
   // 沿斜面坐标轴轴线：从棒心 px, py 沿 (cosθ, -sinθ)

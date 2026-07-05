@@ -39,14 +39,14 @@ const getInclinedLayout = (L: number, theta: number = 30) => {
   // 既保留角度变化趋势，又避免大角度时导轨挤出主视图。
   const displayAngleDeg = Math.max(8, Math.min(25, theta * 0.55 + 2))
   const displayAngleRad = (displayAngleDeg * Math.PI) / 180
-  const railRun = 300
+  const railRun = 420
   const railRise = railRun * Math.tan(displayAngleRad)
 
   return {
     // 导轨1 后侧：低处 → 高处
-    rail1StartX: 120,
+    rail1StartX: 65,
     rail1StartY: 230,
-    rail1EndX: 120 + railRun,
+    rail1EndX: 65 + railRun,
     rail1EndY: 230 - railRise,
     // 导轨1 长度方向跨度
     railDx: railRun,
@@ -59,10 +59,10 @@ const getInclinedLayout = (L: number, theta: number = 30) => {
     midStroke: 11,
     innerStroke: 7,
     highlightStroke: 2,
-      // 端盖
-      capRx: 3.5,
-      capRy: 7.5,
-    }
+    // 端盖
+    capRx: 3.5,
+    capRy: 7.5,
+  }
 }
 
 export const ConductingRod: React.FC<ConductingRodProps> = ({
@@ -137,7 +137,7 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
     const layout = getInclinedLayout(L, theta)
 
     // 计算缩放比例（基于默认 500×300 画布）
-    const scaleX = width / 500
+    const scaleX = width / 600
     const scaleY = height / 300
     const scale = Math.min(scaleX, scaleY)
 

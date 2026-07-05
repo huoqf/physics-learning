@@ -30,11 +30,7 @@ export const ForcePolygon: React.FC<ForcePolygonProps> = ({
   const cosT = Math.cos(thetaRad)
   const sinT = Math.sin(thetaRad)
 
-  // 1. 矢量合成坐标起点 (大约在区域中心偏左下方，预留各矢量伸展空间)
-  const cx = w * 0.4
-  const cy = h * 0.65
-
-  // 物理量到像素缩放，引入自适应 F_max，防溢出
+  // 1. 矢量合成坐标起点，先用初始比例定位，再动态居中并缩放防溢出
   const m = 0.5
   const g = GRAVITY
   const F_max = Math.max(
@@ -44,32 +40,77 @@ export const ForcePolygon: React.FC<ForcePolygonProps> = ({
     Math.abs(physicsResult.N),
     5.0
   )
-  const scale = computeScale(w, h, { xMin: -F_max, xMax: F_max, yMin: -F_max, yMax: F_max })
+  const rawScale = computeScale(w, h, { xMin: -F_max, xMax: F_max, yMin: -F_max, yMax: F_max })
 
-  // 依次生成受力矢量的首尾节点坐标 (像素级)
-  // 矢量 1: 重力 G (竖直向下，像素 y 变大)
+  // 以初始比例计算链条，用于定位起点
+  const initCx = w * 0.4
+  const initCy = h * 0.65
+  const initGLen = m * g * rawScale
+  const initP0 = { x: initCx, y: initCy }
+  const initP1 = { x: initP0.x, y: initP0.y + initGLen }
+  const initP2 = {
+    x: initP1.x + physicsResult.F_ampere_x * rawScale,
+    y: initP1.y - physicsResult.F_ampere_y * rawScale,
+  }
+  const initP3 = {
+    x: initP2.x + physicsResult.f * rawScale * cosT,
+    y: initP2.y - physicsResult.f * rawScale * sinT,
+  }
+  const initP4 = {
+    x: initP3.x - physicsResult.N * rawScale * sinT,
+    y: initP3.y - physicsResult.N * rawScale * cosT,
+  }
+
+  // 计算初始链条包围盒，将起点平移到使链条居中
+  const allPts = [initP0, initP1, initP2, initP3, initP4]
+  let minTX = Infinity, maxTX = -Infinity, minTY = Infinity, maxTY = -Infinity
+  for (const pt of allPts) {
+    if (pt.x < minTX) minTX = pt.x
+    if (pt.x > maxTX) maxTX = pt.x
+    if (pt.y < minTY) minTY = pt.y
+    if (pt.y > maxTY) maxTY = pt.y
+  }
+  const cx = initCx + (w / 2 - (minTX + maxTX) / 2)
+  const cy = initCy + (h / 2 - (minTY + maxTY) / 2)
+
+  // 包围盒检测：计算各点相对起点的位移，缩小缩放比防止溢出
+  const PAD = 12
+  // 各段位移（物理坐标 × rawScale），用于检测可用空间
+  const displacements = [
+    { dx: 0, dy: 0 },
+    { dx: 0, dy: m * g * rawScale },
+    { dx: physicsResult.F_ampere_x * rawScale, dy: -physicsResult.F_ampere_y * rawScale },
+    { dx: physicsResult.f * rawScale * cosT, dy: -physicsResult.f * rawScale * sinT },
+    { dx: -physicsResult.N * rawScale * sinT, dy: -physicsResult.N * rawScale * cosT },
+  ]
+  // 累积位移
+  let cumDx = 0, cumDy = 0
+  let shrink = 1
+  for (const d of displacements) {
+    cumDx += d.dx
+    cumDy += d.dy
+    if (cumDx > 0) shrink = Math.min(shrink, (w - PAD - cx) / cumDx)
+    else if (cumDx < 0) shrink = Math.min(shrink, (cx - PAD) / (-cumDx))
+    if (cumDy > 0) shrink = Math.min(shrink, (h - PAD - cy) / cumDy)
+    else if (cumDy < 0) shrink = Math.min(shrink, (cy - PAD) / (-cumDy))
+  }
+  const scale = rawScale * Math.min(shrink, 1)
+
+  // 最终链条节点坐标
   const gLen = m * g * scale
   const p0 = { x: cx, y: cy }
   const p1 = { x: p0.x, y: p0.y + gLen }
-
-  // 矢量 2: 安培力 F_安，支持多磁场方向物理分量 x & y
   const p2 = {
     x: p1.x + physicsResult.F_ampere_x * scale,
-    y: p1.y - physicsResult.F_ampere_y * scale, // Canvas 向上是 -y
+    y: p1.y - physicsResult.F_ampere_y * scale,
   }
-
-  // 矢量 3: 摩擦力 f (沿斜面向上为正，方向是 (cosθ, -sinθ) 像素坐标)
-  const fLen = physicsResult.f * scale
   const p3 = {
-    x: p2.x + fLen * cosT,
-    y: p2.y - fLen * sinT,
+    x: p2.x + physicsResult.f * scale * cosT,
+    y: p2.y - physicsResult.f * scale * sinT,
   }
-
-  // 矢量 4: 支持力 N (垂直斜面向左上方，方向是 (-sinθ, -cosθ) 像素坐标)
-  const nLen = physicsResult.N * scale
   const p4 = {
-    x: p3.x - nLen * sinT,
-    y: p3.y - nLen * cosT,
+    x: p3.x - physicsResult.N * scale * sinT,
+    y: p3.y - physicsResult.N * scale * cosT,
   }
 
   // 计算真实合外力：从首尾相接多边形的起点 p0 指向终点 p4
