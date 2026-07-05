@@ -2,7 +2,7 @@
 
 ## 当前周期
 
-- 当前日期：2026-W27（07-01）
+- 当前日期：2026-W27（07-05）
 - 当前里程碑：M4 电磁/热/光/原子模块
 - 本周详细日志：[2026-W27.md](./logs/2026-W27.md)
 - 提交流程：[CHECKLIST.md](./CHECKLIST.md)
@@ -17,6 +17,7 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 07-05 | electromagnetism/electrostatics | refactor | CoulombLaw.tsx 拆分：708→28+290+288 行，抽 BasicMode/ThreeChargeMode 子组件；物理函数 `findEquilibriumX3` 抽离至 `src/physics/electrostatics.ts`；修复硬编码颜色（`#1e293b`→`CANVAS_COLORS.strokeDark`）及 `colors.neutral.white` 违规（7 处→`CANVAS_COLORS.white`）；补全 JSDoc 文档 |
 | 07-03 | mechanics/momentum | refactor | MomentumConservationAnimation.tsx 拆分：743→329 行，抽 `useMomentumConservationPhysics` hook + 复用 `src/physics/momentumConservation`；JSX 零物理公式；tsc + 385 tests pass |
 | 07-03 | mechanics/gravitation | refactor | KeplerAnimation.tsx 拆分：673→460 行，抽 `useKeplerPhysics` hook + 复用 `src/physics/celestial`；JSX 零物理公式；font()/colors 修复 + DESIGN_WIDTH/HEIGHT 常量；tsc + 385 tests pass |
 | 07-03 | electromagnetism/induction | refactor | PowerTransmission.tsx 拆分：696→256 行，抽 `usePowerTransmissionPhysics` hook + `VoltageProfileChart` + `NetworkTopology` + `PowerInfoBar`；JSX 零物理公式；tsc + 385 tests pass |

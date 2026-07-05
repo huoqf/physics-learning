@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-04（评估 8 个超 500 行文件拆分方案，归档完成记录）
+> 最后更新：2026-07-05（CoulombLaw.tsx 拆分完成，记录至已拆分列表）
 
 ---
 
@@ -68,7 +68,7 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 > 临近阈值（450-499）：`LightRodRopeScene.tsx`(485)、`SimulationView.tsx`(478)、`WorkFSChart.tsx`(469)、`RefractionAnimation.tsx`(462)、`AccelerationCenterExtra.tsx`(462)、`GravityAnimation.tsx`(459)、`ImpulseAnimation.tsx`(457)、`UniformAccelerationAnimation.tsx`(455)
 >
-> 已拆分：`PowerTransmission.tsx`(696→256)、`KeplerAnimation.tsx`(673→460)、`FreeFallDripAnimation.tsx`(560→448)
+> 已拆分：`PowerTransmission.tsx`(696→256)、`KeplerAnimation.tsx`(673→460)、`FreeFallDripAnimation.tsx`(560→448)、`CoulombLaw.tsx`(708→28+290+288，含物理函数抽离至 `src/physics/electrostatics.ts`)
 
 ---
 

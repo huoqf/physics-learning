@@ -413,3 +413,172 @@ export function calculateNonUniformEField(
 
   return { phi, Ex, Ey, E, isRegularized, rEffective: rClamped }
 }
+
+/**
+ * 两个相同金属小球接触带电后的电荷量分配。
+ * 高考考点：同种电荷平分，异种电荷先中和再平分。
+ * 
+ * 公式：q₁' = q₂' = (q₁ + q₂) / 2
+ *
+ * @param q1 电荷量1 (C)
+ * @param q2 电荷量2 (C)
+ * @returns 接触分配后的电量 { q1New: number, q2New: number }，单位 C
+ */
+export function calculateContactCharges(q1: number, q2: number): { q1New: number; q2New: number } {
+  const qNew = (q1 + q2) / 2
+  return { q1New: qNew, q2New: qNew }
+}
+
+/**
+ * 求解三个共线自由电荷仅在库仑力作用下同时处于平衡的配置。
+ * 高考考点：
+ *   1. 两同夹一异：外侧两电荷极性相同，中间电荷极性相反。
+ *   2. 两大夹一小：外侧电荷量绝对值大于中间电荷量绝对值。
+ *   3. 近小远大：中间电荷靠近绝对值较小的电荷。
+ * 
+ * 物理公式：
+ *   对自由电荷 1、2（距离为 r），若要使引入的电荷 3 在 X 轴上平衡，且使得 1 和 2 也平衡：
+ *   - 若 q1 与 q2 同号：
+ *     - q3 必在 1、2 之间，距离 q1 的比例为：r13 / r23 = sqrt(|q1| / |q2|)
+ *     - q3 电量：q3 = - (q1 * q2) / (sqrt(|q1|) + sqrt(|q2|))^2
+ *   - 若 q1 与 q2 异号（且绝对值不相等）：
+ *     - q3 必在绝对值较小的一侧外侧。
+ *     - 若 |q1| < |q2|，q3 在 q1 外侧。r13 / r23 = sqrt(|q1| / |q2|)，r13 = r * sqrt(|q1|) / (sqrt(|q2|) - sqrt(|q1|))
+ *     - q3 电量：q3 = - (q1 * q2) / (sqrt(|q2|) - sqrt(|q1|))^2
+ *   - 若 q1 与 q2 异号且绝对值相等：
+ *     - 无法实现三体平衡（无解）。
+ *
+ * @param q1 电荷1电量 (C)
+ * @param q2 电荷2电量 (C)
+ * @param r  电荷1与电荷2的间距 (m)
+ * @returns equilibriumConfig 平衡配置，包括：
+ *          q3 达到平衡所需的电量 (C),
+ *          r13 电荷3到电荷1的距离 (m)（电荷3在电荷1右侧为正，左侧为负）,
+ *          r23 电荷3到电荷2的距离 (m),
+ *          valid 是否存在平衡解
+ */
+export function calculateFreeThreeChargeEquilibrium(
+  q1: number,
+  q2: number,
+  r: number
+): {
+  q3: number
+  r13: number
+  r23: number
+  valid: boolean
+} {
+  if (q1 === 0 || q2 === 0) {
+    return { q3: 0, r13: r / 2, r23: r / 2, valid: false }
+  }
+
+  const absQ1 = Math.abs(q1)
+  const absQ2 = Math.abs(q2)
+  const sameSign = q1 * q2 > 0
+
+  if (sameSign) {
+    // 同号：q3 夹在中间
+    const ratio = Math.sqrt(absQ1) / (Math.sqrt(absQ1) + Math.sqrt(absQ2))
+    const r13 = r * ratio
+    const r23 = r - r13
+    const q3 = -(q1 * q2) / Math.pow(Math.sqrt(absQ1) + Math.sqrt(absQ2), 2)
+    return { q3, r13, r23, valid: true }
+  } else {
+    // 异号：q3 在绝对值小的一端的外侧
+    if (Math.abs(absQ1 - absQ2) < 1e-12) {
+      // 绝对值相等，无解
+      return { q3: 0, r13: 0, r23: 0, valid: false }
+    }
+
+    if (absQ1 < absQ2) {
+      // q3 在 q1 外侧（即偏离 q2 一侧）
+      // 设 q1 在左(0)，q2 在右(r)。q3 在 q1 左侧 (-r13)
+      const ratio = Math.sqrt(absQ1) / (Math.sqrt(absQ2) - Math.sqrt(absQ1))
+      const d13 = r * ratio // 实际距离
+      const r13 = -d13 // x 坐标偏移
+      const r23 = r + d13
+      const q3 = -(q1 * q2) / Math.pow(Math.sqrt(absQ2) - Math.sqrt(absQ1), 2)
+      return { q3, r13, r23, valid: true }
+    } else {
+      // q3 在 q2 外侧
+      // 设 q1 在左(0)，q2 在右(r)。q3 在 q2 右侧 (r + d23)
+      const ratio = Math.sqrt(absQ2) / (Math.sqrt(absQ1) - Math.sqrt(absQ2))
+      const d23 = r * ratio
+      const r13 = r + d23
+      const r23 = d23
+      const q3 = -(q1 * q2) / Math.pow(Math.sqrt(absQ1) - Math.sqrt(absQ2), 2)
+      return { q3, r13, r23, valid: true }
+    }
+  }
+}
+
+/**
+ * 计算单个电荷在固定两电荷库仑力作用下的平衡位置。
+ *
+ * 物理模型：两个固定电荷 q1、q2 分别位于 x1、x2（x 轴上），
+ * 求第三个电荷 q3 的平衡位置 x3，使得 q3 所受合力为零。
+ *
+ * 平衡条件：F13 + F23 = 0
+ *   其中 F13 = k·q1·q3 / (x3-x1)²（带符号，排斥为正、吸引为负）
+ *        F23 = k·q2·q3 / (x3-x2)²
+ *
+ * 使用二分法在 [minX, maxX] 区间内搜索零点。
+ *
+ * @param q1  电荷1电量 (μC)，含符号
+ * @param x1  电荷1位置 (m)
+ * @param q2  电荷2电量 (μC)，含符号
+ * @param x2  电荷2位置 (m)
+ * @param q3  待平衡电荷电量 (μC)，含符号
+ * @param minX 搜索区间左边界 (m)
+ * @param maxX 搜索区间右边界 (m)
+ * @returns x 平衡位置 (m), possible 是否存在平衡解
+ *
+ * @category M4
+ */
+export function findEquilibriumX3(
+  q1: number, x1: number,
+  q2: number, x2: number,
+  q3: number,
+  minX: number, maxX: number
+): { x: number; possible: boolean } {
+  const Q1 = q1 * 1e-6
+  const Q2 = q2 * 1e-6
+  const Q3 = q3 * 1e-6
+
+  if (Q3 === 0) return { x: (x1 + x2) / 2, possible: false }
+
+  const f = (x3: number) => {
+    const r13 = x3 - x1
+    const r23 = x3 - x2
+    if (Math.abs(r13) < 1e-9 || Math.abs(r23) < 1e-9) return Infinity
+    const F13 = (Q1 * Q3) / (r13 * Math.abs(r13))
+    const F23 = (Q2 * Q3) / (r23 * Math.abs(r23))
+    return F13 + F23
+  }
+
+  const lo = minX
+  const hi = maxX
+
+  const fLo = f(lo)
+  const fHi = f(hi)
+
+  if (Math.abs(fLo) < 1e-12) return { x: lo, possible: true }
+  if (Math.abs(fHi) < 1e-12) return { x: hi, possible: true }
+  if (fLo * fHi > 0) return { x: (x1 + x2) / 2, possible: false }
+
+  let a = lo
+  let b = hi
+  for (let i = 0; i < 100; i++) {
+    const mid = (a + b) / 2
+    const fm = f(mid)
+    if (Math.abs(fm) < 1e-12) return { x: mid, possible: true }
+    if (f(a) * fm < 0) {
+      b = mid
+    } else {
+      a = mid
+    }
+  }
+  const result = (a + b) / 2
+  if (result < minX || result > maxX) return { x: (x1 + x2) / 2, possible: false }
+  return { x: result, possible: true }
+}
+
