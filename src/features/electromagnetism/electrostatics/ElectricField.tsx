@@ -4,7 +4,7 @@
  * 职责：Store 订阅 + 参数提取 + 布局计算 + 组合子组件
  */
 import { useState, useEffect, useRef } from 'react'
-import { useCanvasSize, clientToSvgPoint } from '@/utils'
+import { useCanvasSize, useViewport, clientToSvgPoint } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS } from '@/theme/physics'
@@ -12,6 +12,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useElectricFieldPhysics } from './hooks/useElectricFieldPhysics'
 import { ElectricFieldBasicScene } from './ElectricFieldBasicScene'
 import { ElectricFieldAdvancedScene } from './ElectricFieldAdvancedScene'
+import { createSceneScaleFromViewport } from '@/scene'
 
 const DESIGN_WIDTH = 700
 const DESIGN_HEIGHT = 450
@@ -30,13 +31,16 @@ export default function ElectricField() {
   const rTest = params.rTest ?? 3.0
   const showFieldLines = (params.showFieldLines ?? 1) === 1
 
-  const [containerRef] = useCanvasSize(CANVAS_PRESETS.tall)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
+  const vp = useViewport(canvasSize, { designWidth: DESIGN_WIDTH, designHeight: DESIGN_HEIGHT })
   const svgRef = useRef<SVGSVGElement>(null)
 
   const w = DESIGN_WIDTH
   const h = DESIGN_HEIGHT
   const centerY = h / 2
   const pxPerCm = w / 20
+
+  const sceneScale = createSceneScaleFromViewport(vp, 'visibleArea')
 
   // 基础模式下的物理区域源电荷中心
   const cx = w * 0.3
@@ -185,14 +189,13 @@ export default function ElectricField() {
               basicPhysics={physics.basicPhysics}
               basicArrows={physics.basicArrows}
               chartProps={physics.chartProps}
+              sceneScale={sceneScale}
             />
           )}
 
           {/* 3. 进阶模式 */}
           {mode === 1 && (
             <ElectricFieldAdvancedScene
-              w={w}
-              h={h}
               cx1={cx1}
               cy1={cy1}
               cx2={cx2}
@@ -204,6 +207,7 @@ export default function ElectricField() {
               testY={testY}
               isDragging={isDragging}
               advancedArrows={physics.advancedArrows}
+              sceneScale={sceneScale}
             />
           )}
 

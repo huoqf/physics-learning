@@ -16,6 +16,7 @@
  */
 import { useState, useEffect, useMemo } from 'react'
 import { type CanvasSize, useAnimationFrame } from '@/utils'
+import type { ViewportInfo } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { calculateCoulombForce, calculateContactCharges } from '@/physics'
 import {
@@ -27,8 +28,7 @@ import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { RelationChart } from '@/components/Chart'
 import { Button } from '@/components/UI'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 
 /** 静电力常量 k = 9×10⁹ N·m²/C² */
 const COULOMB_K = 9e9
@@ -60,11 +60,13 @@ export default function BasicMode({
   params,
   showVectors,
   canvasSize,
+  vp,
 }: {
   params: Record<string, number>
   showVectors: boolean
   showFormulas: boolean
   canvasSize: CanvasSize
+  vp: ViewportInfo
 }) {
   const { q1 = 2, q2 = -3, r: rParam = 4 } = params
   const updateParam = useAnimationStore((s) => s.updateParam)
@@ -150,13 +152,11 @@ export default function BasicMode({
   const leftArrowDir = attractive ? 1 : -1
   const rightArrowDir = attractive ? -1 : 1
 
-  const basicScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: stageWidth, height: stageHeight },
-    originX: 0,
-    originY: 0,
+  const sceneScale = createSceneScaleFromViewport(vp, 'visibleArea', {
+    designWidth: stageWidth,
+    designHeight: stageHeight,
     refMagnitudes: { electricForce: 50 },
-  }
-  const sceneScale = createSceneScale(basicScene)
+  })
 
   // F-r 整段曲线数据
   const frPoints = useMemo(() => {

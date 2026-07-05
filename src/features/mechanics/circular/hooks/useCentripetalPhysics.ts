@@ -6,7 +6,7 @@ import type { VerticalCircularMotionPoint } from '@/physics/dynamics/dynamics-ad
 import { useCanvasSize, physicsToCanvasWithOrigin, useViewport, clientToContainerPoint } from '@/utils'
 import type { CanvasSize, ViewportInfo } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { createSceneScaleFromViewport } from '@/scene'
+import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 
 export const CENTRIPETAL_PARAM_BOUNDS = {
@@ -70,7 +70,7 @@ export interface CentripetalPhysicsResult {
   cardInnerW: number
 
   sceneConfig: SceneConfig
-  sceneScale: ReturnType<typeof createSceneScaleFromViewport>
+  sceneScale: ReturnType<typeof createSceneScale>
 
   faPoints: Array<{ x: number; y: number }>
 
@@ -184,11 +184,7 @@ export function useCentripetalPhysics(): CentripetalPhysicsResult {
     isAdvanced, v, v0, r, m, a_c, F_c,
   ])
 
-  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'centerScale', {
-    designWidth: 650,
-    designHeight: 650,
-    refMagnitudes: sceneConfig.refMagnitudes,
-  }), [vp, sceneConfig.refMagnitudes])
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig])
 
   const cardHeight = isAdvanced
     ? Math.max(340, canvasSize.height * 0.55)

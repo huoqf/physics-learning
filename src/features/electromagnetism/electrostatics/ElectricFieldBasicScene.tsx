@@ -11,8 +11,7 @@ import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { RelationChart } from '@/components/Chart'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import type { SceneScale } from '@/scene'
 
 interface Props {
   w: number
@@ -52,18 +51,13 @@ interface Props {
     fMax: number
     points: { r: number; E: number; F: number }[]
   } | null
+  sceneScale: SceneScale
 }
 
 export function ElectricFieldBasicScene({
   w, h, cx, cy, qSource, qTest, testX, testY, isDragging,
-  basicPhysics, basicArrows, chartProps,
+  basicPhysics, basicArrows, chartProps, sceneScale,
 }: Props) {
-  const basicScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: w, height: h },
-    originX: 0,
-    originY: 0,
-  }
-  const sceneScale = createSceneScale(basicScene)
 
   // 把 chartProps.points 拆成 E-r / F-r 两条曲线
   const ePoints = useMemo(

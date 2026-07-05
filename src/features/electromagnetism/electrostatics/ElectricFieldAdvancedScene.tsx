@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ElectricFieldAdvancedScene.tsx — 进阶模式场景（双电荷 + 试探电荷 + 矢量叠加）
  *
  * 从 ElectricField.tsx 拆分：mode=1 的中间屏渲染。
@@ -6,12 +6,9 @@
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import type { SceneScale } from '@/scene'
 
 interface Props {
-  w: number
-  h: number
   cx1: number
   cy1: number
   cx2: number
@@ -35,18 +32,13 @@ interface Props {
     e2Tip: { x: number; y: number }
     enetTip: { x: number; y: number }
   } | null
+  sceneScale: SceneScale
 }
 
 export function ElectricFieldAdvancedScene({
-  w, h, cx1, cy1, cx2, cy2, q1, q2, qTest, testX, testY, isDragging,
-  advancedArrows,
+  cx1, cy1, cx2, cy2, q1, q2, qTest, testX, testY, isDragging,
+  advancedArrows, sceneScale,
 }: Props) {
-  const basicScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: w, height: h },
-    originX: 0,
-    originY: 0,
-  }
-  const sceneScale = createSceneScale(basicScene)
 
   return (
     <g>

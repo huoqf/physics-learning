@@ -6,7 +6,8 @@ import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CANVAS_STYLE } from '@/the
 import { useMemo } from 'react'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { RelationChart } from '@/components/Chart'
-import { createSceneScaleFromViewport } from '@/scene'
+import { createSceneScale } from '@/scene'
+import type { SceneConfig } from '@/scene'
 import { useKeplerPhysics } from './hooks/useKeplerPhysics'
 
 export default function KeplerAnimation() {
@@ -51,7 +52,15 @@ export default function KeplerAnimation() {
     scale,
   } = kepler
 
-  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'centerScale'), [vp]);
+  const sceneConfig = useMemo((): SceneConfig => ({
+    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    originX: centerX,
+    originY: centerY,
+    worldWidth: canvasSize.width,
+    worldHeight: canvasSize.height,
+  }), [canvasSize.width, canvasSize.height, centerX, centerY]);
+
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
 
   return (
     <div ref={containerRef} className="w-full h-full relative flex items-center justify-center">

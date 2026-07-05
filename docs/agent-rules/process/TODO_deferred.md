@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-05（P1 批量 Easy 迁移完成，P0 已清零，P1 剩余 11，P2 剩余 53）
+> 最后更新：2026-07-05（电磁学子组件迁移完成 + centerScale 组件回退，P0 已清零，P1 剩余 7，P2 剩余 53）
 
 ---
 
@@ -198,11 +198,13 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 
 > Batch1（ElectricField、SpringComposite）+ Batch2（GravityAnimation、SatelliteAnimation、EnergyConservationAnimation、useVectorDrag、useEquilibriumPhysics、usePEInteraction、CircularMotionAnimation、useCentripetalPhysics、ProjectileAnimation、useObliqueThrowLayout、vtChartUtils）全部完成。全库 `clientX - rect.left` / `vp.tx` 手动算式已归零。
 
-### 5.2 P1 推广：createSceneScaleFromViewport 快捷字面量（~~37~~ → 11 个文件）
+### 5.2 P1 推广：createSceneScaleFromViewport 快捷字面量（~~37~~ → 7 个文件）
 
 > Batch2 已迁移：`ConnectedBodies`、`WorkAnimation`（2 个）。
-> P1 Continuous Cleanup 已迁移：`ChargeInEField`、`CircularMotion`、`useCentripetalPhysics`、`VectorAddition`、`useEquilibriumLayout`、`PotentialEnergy`、`SpringComposite`、`Kepler`、`Satellite`、`Acceleration`、`FreeFall`、`KinematicsAdvanced`、`ObliqueThrow`、`Projectile`、`UniformAcceleration`、`Velocity`、`VerticalThrow`、`Impulse`、`Momentum`、`MomentumTheorem`、`IntermolecularForces`（21 个）。
+> P1 Continuous Cleanup 已迁移：`ChargeInEField`、`VectorAddition`、`useEquilibriumLayout`、`PotentialEnergy`、`SpringComposite`、`Acceleration`、`FreeFall`、`KinematicsAdvanced`、`ObliqueThrow`、`Projectile`、`UniformAcceleration`、`Velocity`、`VerticalThrow`、`Impulse`、`Momentum`、`MomentumTheorem`、`IntermolecularForces`（17 个）。
 > Easy 批量迁移：`FreeFallDripAnimation`、`VelocityAnimationStrip`、`StroboscopicAnimation`（3 个）。
+> 电磁学子组件迁移：`BasicMode`、`ThreeChargeMode`、`ElectricFieldBasicScene`、`ElectricFieldAdvancedScene`（4 个，父组件透传 vp/sceneScale）。
+> ⚠️ 已回退（不适合快捷 API）：`CircularMotionAnimation`、`useCentripetalPhysics`、`KeplerAnimation`、`SatelliteAnimation`（4 个，worldWidth/worldHeight 必须与实际渲染 scale 对齐，`centerScale` 模式 scale 不匹配）。
 
 将冗长的 `SceneConfig` 对象构造 + `createSceneScale()` 替换为 `createSceneScaleFromViewport(vp, 'visibleArea')` 一行调用。
 
@@ -212,13 +214,18 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 | 2 | `mechanics/energy/KineticEnergyScene.tsx` | Medium | 子组件无 vp，6 个动态 refMagnitudes |
 | 3 | `mechanics/kinematics/AccelerationCenterExtra.tsx` | Medium | 用 useState 代替 useCanvasSize，需改架构 |
 | 4 | `mechanics/force-motion/hooks/useForceMotionSandbox.ts` | Medium | Hook 内无 vp，需改函数签名 |
-| 5 | `electromagnetism/electrostatics/BasicMode.tsx` | Easy | 子组件，vp 可从父组件透传 |
-| 6 | `electromagnetism/electrostatics/ThreeChargeMode.tsx` | Easy | 同上，refMagnitudes 动态 |
-| 7 | `electromagnetism/electrostatics/ElectricFieldBasicScene.tsx` | Easy | 子组件，无 refMagnitudes |
-| 8 | `electromagnetism/electrostatics/ElectricFieldAdvancedScene.tsx` | Easy | 同上 |
-| 9 | `electromagnetism/magnetism/BoundaryMagneticField/SimulationView.tsx` | Hard | worldWidth/Height 动态计算，originY 条件分支 |
-| 10 | `electromagnetism/magnetism/velocity-selector/model/velocitySelectorModel.ts` | Hard | 纯函数，world 尺寸来自 scaleX/scaleY |
-| 11 | `dev/VectorPlayground.tsx` | — | dev 测试页，建议跳过 |
+| 5 | `electromagnetism/magnetism/BoundaryMagneticField/SimulationView.tsx` | Hard | worldWidth/Height 动态计算，originY 条件分支 |
+| 6 | `electromagnetism/magnetism/velocity-selector/model/velocitySelectorModel.ts` | Hard | 纯函数，world 尺寸来自 scaleX/scaleY |
+| 7 | `dev/VectorPlayground.tsx` | — | dev 测试页，建议跳过 |
+
+**不适用快捷 API 的组件**（保持手动 SceneConfig）：
+
+| 文件 | 原因 |
+|------|------|
+| `CircularMotionAnimation.tsx` | `centerScale` 模式，scale 来自 `(minCanvasDim - padding) / (2 * rMax)`，与 `vp.visibleW/designWidth` 不一致 |
+| `useCentripetalPhysics.ts` | 同上 |
+| `KeplerAnimation.tsx` | `centerScale` 模式，scale 来自 `KEPLER_CONFIG.scaleBase * vpScale` |
+| `SatelliteAnimation.tsx` | 同上 |
 
 **执行策略**：维护到对应组件时顺手替换，逐步精简样板代码。
 

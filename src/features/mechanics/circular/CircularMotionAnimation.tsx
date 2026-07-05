@@ -5,7 +5,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateCircularMotion } from '@/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { createSceneScaleFromViewport } from '@/scene'
+import { createSceneScale } from '@/scene'
 import type { SceneConfig } from '@/scene'
 import {
   PHYSICS_COLORS,
@@ -113,11 +113,7 @@ export default function CircularMotionAnimation() {
     },
   }), [vp.visibleX, vp.visibleY, vp.visibleW, vp.visibleH, centerX, centerY, scale]);
 
-  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'centerScale', {
-    designWidth: CIRCULAR_DESIGN.width,
-    designHeight: CIRCULAR_DESIGN.height,
-    refMagnitudes: sceneConfig.refMagnitudes,
-  }), [vp, sceneConfig.refMagnitudes]);
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
 
   // ── 矢量安全映射 ─────────────
 

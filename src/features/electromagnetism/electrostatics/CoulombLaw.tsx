@@ -13,7 +13,7 @@
  * @category M4
  */
 import { lazy, Suspense } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -35,6 +35,7 @@ export default function CoulombLaw() {
     }))
   )
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 650 })
 
   const mode = params.mode ?? 0
 
@@ -42,8 +43,8 @@ export default function CoulombLaw() {
     <div ref={containerRef} className="w-full h-full">
       <Suspense fallback={null}>
         {mode === 0
-          ? <BasicMode params={params} showVectors={showVectors} showFormulas={showFormulas} canvasSize={canvasSize} />
-          : <ThreeChargeMode params={params} showVectors={showVectors} showFormulas={showFormulas} canvasSize={canvasSize} />
+          ? <BasicMode params={params} showVectors={showVectors} showFormulas={showFormulas} canvasSize={canvasSize} vp={vp} />
+          : <ThreeChargeMode params={params} showVectors={showVectors} showFormulas={showFormulas} canvasSize={canvasSize} vp={vp} />
         }
       </Suspense>
     </div>

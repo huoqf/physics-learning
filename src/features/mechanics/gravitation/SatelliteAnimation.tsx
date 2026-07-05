@@ -8,7 +8,8 @@ import { GRAVITATIONAL_CONSTANT, EARTH_MASS, EARTH_RADIUS } from '@/physics/cons
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { RelationChart, VelocityTimeChart } from '@/components/Chart'
 import type { RelationDataSeries, VTStage } from '@/components/Chart'
-import { createSceneScaleFromViewport } from '@/scene'
+import { createSceneScale } from '@/scene'
+import type { SceneConfig } from '@/scene'
 import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { LAYOUT, VTCARD } from './satelliteLayout'
@@ -36,7 +37,12 @@ export default function SatelliteAnimation() {
   const centerX = vp.centerX
   const centerY = vp.centerY
 
-  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'centerScale'), [vp])
+  const sceneConfig = useMemo((): SceneConfig => ({
+    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
+    originX: centerX, originY: centerY,
+    worldWidth: canvasSize.width, worldHeight: canvasSize.height,
+  }), [canvasSize.width, canvasSize.height, centerX, centerY])
+  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig])
 
   const launchData = useLaunchPhysics({ mode, v0, isLaunched, time })
   const vtSamplePoints = useVtSampling({ mode, v0 })
