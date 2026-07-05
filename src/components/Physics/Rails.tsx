@@ -40,14 +40,14 @@ const getInclinedLayout = (L: number, theta: number = 30) => {
   // 与实际显示的导轨方向保持几何一致，避免切换磁场方向时看起来不真实。
   const displayAngleDeg = Math.max(8, Math.min(25, theta * 0.55 + 2))
   const displayAngleRad = (displayAngleDeg * Math.PI) / 180
-  const railRun = 300
+  const railRun = 420
   const railRise = railRun * Math.tan(displayAngleRad)
 
   return {
     // 导轨1 后侧：低处 → 高处
-    rail1StartX: 120,
+    rail1StartX: 65,
     rail1StartY: 230,
-    rail1EndX: 120 + railRun,
+    rail1EndX: 65 + railRun,
     rail1EndY: 230 - railRise,
     // 导轨1 长度方向跨度
     railDx: railRun,
@@ -57,10 +57,10 @@ const getInclinedLayout = (L: number, theta: number = 30) => {
     dy,
     // 地面线
     groundY: 280,
-    groundX1: 80,
-    groundX2: 520,
+    groundX1: 40,
+    groundX2: 560,
     // 支撑架位置
-    supportX: 420,
+    supportX: 485,
     // 导轨粗细
     outerStroke: 8,
     midStroke: 6,
@@ -195,7 +195,7 @@ export const Rails: React.FC<RailsProps> = ({
     const railMetalGradId = `rail-metal-grad-${uniqueId}`
 
     // 计算缩放比例（基于默认 500×300 画布）
-    const scaleX = width / 500
+    const scaleX = width / 600
     const scaleY = height / 300
     const scale = Math.min(scaleX, scaleY)
 
@@ -250,7 +250,7 @@ export const Rails: React.FC<RailsProps> = ({
         {/* 导轨1透视切面端盖 */}
         <ellipse cx={r1sx} cy={r1sy} rx={capRx} ry={capRy} transform={`rotate(${capRotation}, ${r1sx}, ${r1sy})`} fill={colors.neutral[400]} stroke={colors.neutral[800]} strokeWidth={CANVAS_STYLE.stroke.grid} />
         <ellipse cx={r1ex} cy={r1ey} rx={capRx} ry={capRy} transform={`rotate(${capRotation}, ${r1ex}, ${r1ey})`} fill={colors.neutral[600]} stroke={colors.neutral[800]} strokeWidth={CANVAS_STYLE.stroke.grid} />
-        
+
         {/* 导轨1支撑架（精细金属工艺） */}
         <rect x={supportX - 5} y={groundY - 3} width="10" height="4" fill={colors.neutral[800]} rx="1.5" />
         <line x1={supportX} y1={r1ey} x2={supportX} y2={groundY} stroke={colors.neutral[800]} strokeWidth="5.5" />
@@ -264,7 +264,7 @@ export const Rails: React.FC<RailsProps> = ({
         {/* 导轨2透视切面端盖 */}
         <ellipse cx={r1sx + dx} cy={r1sy + dy} rx={capRx} ry={capRy} transform={`rotate(${capRotation}, ${r1sx + dx}, ${r1sy + dy})`} fill={colors.neutral[400]} stroke={colors.neutral[800]} strokeWidth={CANVAS_STYLE.stroke.grid} />
         <ellipse cx={r1ex + dx} cy={r1ey + dy} rx={capRx} ry={capRy} transform={`rotate(${capRotation}, ${r1ex + dx}, ${r1ey + dy})`} fill={colors.neutral[600]} stroke={colors.neutral[800]} strokeWidth={CANVAS_STYLE.stroke.grid} />
-        
+
         {/* 导轨2支撑架（精细金属工艺） */}
         <rect x={supportX + dx - 5} y={groundY - 3} width="10" height="4" fill={colors.neutral[800]} rx="1.5" />
         <line x1={supportX + dx} y1={r1ey + dy} x2={supportX + dx} y2={groundY} stroke={colors.neutral[800]} strokeWidth="5.5" />
