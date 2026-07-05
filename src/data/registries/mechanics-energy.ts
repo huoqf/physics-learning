@@ -342,7 +342,7 @@ export const mechanicsEnergyAnimations = defineAnimations({
     title: '竖直弹簧复合模型',
     knowledgeId: 'mechanics-7-6-1',
     Component: lazy(() => import('@/features/mechanics/energy/SpringCompositeAnimation')),
-    defaultParams: { m: 0.5, k: 50, h: 0.8, mode: 0, showVectors: 1, autoPause: 0 } as const,
+    defaultParams: { m: 0.5, k: 50, h: 0.8, mode: 0, showVectors: 1, autoPause: 0, viewMode: 1 } as const,
     paramMeta: [
       { key: 'm', label: '质量 m', min: 0.2, max: 0.8, step: 0.1, unit: 'kg' },
       { key: 'k', label: '劲度系数 k', min: 30, max: 80, step: 10, unit: 'N/m' },
@@ -365,6 +365,12 @@ export const mechanicsEnergyAnimations = defineAnimations({
           { value: 1, label: '原长释放挂球' },
         ],
         onChangeSideEffect: { resetParams: ['time'] } },
+      // §2 图像视图
+      { type: 'segmented', key: 'viewMode', group: '图像视图',
+        options: [
+          { value: 0, label: '直观对齐 (y-E)' },
+          { value: 1, label: '高考标准 (E-x)' },
+        ] },
       // §4 显示辅助
       { type: 'toggle', key: 'showVectors', label: '显示物理矢量', group: '显示辅助' },
       { type: 'toggle', key: 'autoPause', label: '平衡位置自动暂停高亮', group: '显示辅助' },
