@@ -1,3 +1,10 @@
+/**
+ * 安培力物理计算纯函数
+ *
+ * @agent-rule 零副作用，不依赖 React/DOM/window
+ * @agent-rule 所有数据结构可序列化（IndexedDB 兼容）
+ * @agent-rule 见 docs/agent-rules/core/ARCHITECTURE_RULES.md §4
+ */
 import { GRAVITY } from '../constants'
 
 /** 基础模式（直交规律）场景参数 */
