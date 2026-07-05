@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-05（Viewport 架构重构三阶段完成后，核对剩余渐进式收尾任务）
+> 最后更新：2026-07-05（P1 批量 Easy 迁移完成，P0 已清零，P1 剩余 11，P2 剩余 53）
 
 ---
 
@@ -194,90 +194,59 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 
 > 基础设施已就绪：`clientToSvgPoint` / `clientToContainerPoint`（P0 工具）、`createSceneScaleFromViewport(vp, 'visibleArea', ...)` 快捷字面量 API（P1 工具）、`useCanvasSize` 的 `{ presetCompensation: 1.2 }` 代偿参数（P2 工具）。以下为各专项剩余组件的渐进式迁移清单。
 
-### 5.1 P0 尾务：坐标映射统一（7 个文件）
+### 5.1 P0 尾务：坐标映射统一 ~~（7 个文件）~~ → ✅ 已清零
 
-将残存的 `clientX - rect.left` / `(containerX - vp.tx) / vp.scale` 手动算式替换为 `clientToSvgPoint` 或 `clientToContainerPoint`，消除嵌套边距或滚动时的坐标漂移隐患。
+> Batch1（ElectricField、SpringComposite）+ Batch2（GravityAnimation、SatelliteAnimation、EnergyConservationAnimation、useVectorDrag、useEquilibriumPhysics、usePEInteraction、CircularMotionAnimation、useCentripetalPhysics、ProjectileAnimation、useObliqueThrowLayout、vtChartUtils）全部完成。全库 `clientX - rect.left` / `vp.tx` 手动算式已归零。
 
-| 文件 | 当前模式 | 目标工具 |
-|------|---------|---------|
-| `mechanics/dynamics/GravityAnimation.tsx` | `e.clientX - rect.left` | `clientToContainerPoint` |
-| `mechanics/energy/EnergyConservationAnimation.tsx` | `clientX - rect.left` + `clientY - rect.top` | `clientToContainerPoint` |
-| `mechanics/dynamics/useVectorDrag.ts` | `clientX - rect.left` + `clientY - rect.top` | `clientToContainerPoint` |
-| `mechanics/gravitation/SatelliteAnimation.tsx` | `clientX - rect.left` + `clientY - rect.top` | `clientToContainerPoint` |
-| `mechanics/dynamics/useEquilibriumPhysics.ts` | `clientX - rect.left` + `clientY - rect.top` | `clientToContainerPoint` |
-| `mechanics/kinematics/vt/vtChartUtils.ts` | `(clientX - rect.left) * (svgWidth / rect.width)` | `clientToSvgPoint` |
-| `mechanics/energy/usePEInteraction.ts` | `clientX - rect.left` + `clientY - rect.top` | `clientToContainerPoint` |
+### 5.2 P1 推广：createSceneScaleFromViewport 快捷字面量（~~37~~ → 11 个文件）
 
-**执行策略**：维护到对应组件时顺手替换，每次替换后跑 `npm run check && npm test` 验证。
-
-### 5.2 P1 推广：createSceneScaleFromViewport 快捷字面量（37 个文件）
+> Batch2 已迁移：`ConnectedBodies`、`WorkAnimation`（2 个）。
+> P1 Continuous Cleanup 已迁移：`ChargeInEField`、`CircularMotion`、`useCentripetalPhysics`、`VectorAddition`、`useEquilibriumLayout`、`PotentialEnergy`、`SpringComposite`、`Kepler`、`Satellite`、`Acceleration`、`FreeFall`、`KinematicsAdvanced`、`ObliqueThrow`、`Projectile`、`UniformAcceleration`、`Velocity`、`VerticalThrow`、`Impulse`、`Momentum`、`MomentumTheorem`、`IntermolecularForces`（21 个）。
+> Easy 批量迁移：`FreeFallDripAnimation`、`VelocityAnimationStrip`、`StroboscopicAnimation`（3 个）。
 
 将冗长的 `SceneConfig` 对象构造 + `createSceneScale()` 替换为 `createSceneScaleFromViewport(vp, 'visibleArea')` 一行调用。
 
-| # | 文件 |
-|---|------|
-| 1 | `mechanics/energy/SpringCompositeAnimation.tsx` |
-| 2 | `mechanics/energy/PotentialEnergyAnimation.tsx` |
-| 3 | `mechanics/energy/PowerScene.tsx` |
-| 4 | `mechanics/energy/KineticEnergyScene.tsx` |
-| 5 | `mechanics/energy/WorkAnimation.tsx` |
-| 6 | `mechanics/kinematics/FreeFallDripAnimation.tsx` |
-| 7 | `mechanics/kinematics/FreeFallAnimation.tsx` |
-| 8 | `mechanics/kinematics/ObliqueThrowAnimation.tsx` |
-| 9 | `mechanics/kinematics/VerticalThrowAnimation.tsx` |
-| 10 | `mechanics/kinematics/VelocityAnimationStrip.tsx` |
-| 11 | `mechanics/kinematics/VelocityAnimation.tsx` |
-| 12 | `mechanics/kinematics/ProjectileAnimation.tsx` |
-| 13 | `mechanics/kinematics/StroboscopicAnimation.tsx` |
-| 14 | `mechanics/kinematics/AccelerationCenterExtra.tsx` |
-| 15 | `mechanics/kinematics/UniformAccelerationAnimation.tsx` |
-| 16 | `mechanics/kinematics/AccelerationAnimation.tsx` |
-| 17 | `mechanics/kinematics/KinematicsAdvancedAnimation.tsx` |
-| 18 | `mechanics/dynamics/VectorAdditionAnimation.tsx` |
-| 19 | `mechanics/dynamics/ConnectedBodiesAnimation.tsx` |
-| 20 | `mechanics/dynamics/hooks/useEquilibriumLayout.ts` |
-| 21 | `mechanics/circular/CircularMotionAnimation.tsx` |
-| 22 | `mechanics/circular/hooks/useCentripetalPhysics.ts` |
-| 23 | `mechanics/gravitation/KeplerAnimation.tsx` |
-| 24 | `mechanics/gravitation/SatelliteAnimation.tsx` |
-| 25 | `mechanics/force-motion/hooks/useForceMotionSandbox.ts` |
-| 26 | `mechanics/momentum/MomentumTheoremAnimation.tsx` |
-| 27 | `mechanics/momentum/ImpulseAnimation.tsx` |
-| 28 | `mechanics/momentum/MomentumAnimation.tsx` |
-| 29 | `electromagnetism/electrostatics/ChargeInEField.tsx` |
-| 30 | `electromagnetism/electrostatics/BasicMode.tsx` |
-| 31 | `electromagnetism/electrostatics/ThreeChargeMode.tsx` |
-| 32 | `electromagnetism/electrostatics/ElectricFieldBasicScene.tsx` |
-| 33 | `electromagnetism/electrostatics/ElectricFieldAdvancedScene.tsx` |
-| 34 | `electromagnetism/magnetism/BoundaryMagneticField/SimulationView.tsx` |
-| 35 | `electromagnetism/magnetism/velocity-selector/model/velocitySelectorModel.ts` |
-| 36 | `thermodynamics/kinematics/IntermolecularForcesAnimation.tsx` |
-| 37 | `dev/VectorPlayground.tsx` |
+| # | 文件 | 难度 | 说明 |
+|---|------|------|------|
+| 1 | `mechanics/energy/PowerScene.tsx` | Medium | 子组件无 vp，需父组件传入 |
+| 2 | `mechanics/energy/KineticEnergyScene.tsx` | Medium | 子组件无 vp，6 个动态 refMagnitudes |
+| 3 | `mechanics/kinematics/AccelerationCenterExtra.tsx` | Medium | 用 useState 代替 useCanvasSize，需改架构 |
+| 4 | `mechanics/force-motion/hooks/useForceMotionSandbox.ts` | Medium | Hook 内无 vp，需改函数签名 |
+| 5 | `electromagnetism/electrostatics/BasicMode.tsx` | Easy | 子组件，vp 可从父组件透传 |
+| 6 | `electromagnetism/electrostatics/ThreeChargeMode.tsx` | Easy | 同上，refMagnitudes 动态 |
+| 7 | `electromagnetism/electrostatics/ElectricFieldBasicScene.tsx` | Easy | 子组件，无 refMagnitudes |
+| 8 | `electromagnetism/electrostatics/ElectricFieldAdvancedScene.tsx` | Easy | 同上 |
+| 9 | `electromagnetism/magnetism/BoundaryMagneticField/SimulationView.tsx` | Hard | worldWidth/Height 动态计算，originY 条件分支 |
+| 10 | `electromagnetism/magnetism/velocity-selector/model/velocitySelectorModel.ts` | Hard | 纯函数，world 尺寸来自 scaleX/scaleY |
+| 11 | `dev/VectorPlayground.tsx` | — | dev 测试页，建议跳过 |
 
 **执行策略**：维护到对应组件时顺手替换，逐步精简样板代码。
 
-### 5.3 P2 出清：废弃 Preset 平滑迁移（61 个文件）
+### 5.3 P2 出清：废弃 Preset 平滑迁移（~~61~~ → 53 个文件）
+
+> Batch2 已迁移：`CircuitAnalysis`、`ClosedCircuit`、`OhmLaw`（wide→full）、`Capacitor`、`CoulombLaw`（tall→full）、`ACGeneration`（wide→full + designHeight 修正）共 6 个。
+> P1 Continuous Cleanup 附带迁移：`FreeFallAnimation`（tall→full）、`VelocityAnimation`（wide→full + designHeight 400→650）共 2 个。
 
 将 `CANVAS_PRESETS.wide` (700×400) / `CANVAS_PRESETS.tall` (700×450) 统一迁移为 `CANVAS_PRESETS.full` (700×650) + `{ presetCompensation: 1.2 }`。全库清零后在 `spacing.ts` 中删除 `wide` 和 `tall` 定义。
 
 **按学科模块分组**：
 
-**力学 — 运动学（10 个）**：`FreeFallDripAnimation`、`FreeFallAnimation`、`KinematicsAdvancedAnimation`、`VelocityAnimationStrip`、`VelocityAnimation`、`UniformAccelerationAnimation`、`AccelerationAnimation`、`SpringCompositeAnimation`、`KineticEnergyAnimation`、`WorkAnimation`
+**力学 — 运动学（6 个）**：`FreeFallDripAnimation`、`KinematicsAdvancedAnimation`、`VelocityAnimationStrip`、`UniformAccelerationAnimation`、`AccelerationAnimation`、`SpringCompositeAnimation`
 
 **力学 — 动力学（10 个）**：`GravityAnimation`、`GravityBasicAnimation`、`VectorAdditionAnimation`、`FrictionAnimation`、`ConnectedBodiesAnimation`、`NewtonSecondCenterExtra`、`WeightlessnessCenterExtra`、`EquilibriumAnimation`、`WeightlessnessAnimation`、`useForceMotionSandbox`
 
 **力学 — 其他（10 个）**：`KeplerAnimation`、`SatelliteAnimation`、`MomentumTheoremAnimation`、`ImpulseAnimation`、`MomentumAnimation`、`PowerAnimation`、`PotentialEnergyAnimation`、`useLightRodRopePhysics`、`ForceMotionTripleChart`、`hooks/useEquilibriumLayout`
 
-**电磁学 — 静电（6 个）**：`ElectricPotential`、`ElectricField`、`CoulombLaw`、`Capacitor`、`CapacitorChart`、`FieldLines`
+**电磁学 — 静电（4 个）**：`ElectricPotential`、`ElectricField`、`CapacitorChart`、`FieldLines`
 
-**电磁学 — 直流电路（3 个）**：`ClosedCircuit`、`CircuitAnalysis`、`OhmLaw`
+**电磁学 — 直流电路**：✅ 已清零
 
-**电磁学 — 电磁感应（8 个）**：`PowerTransmission`、`InductionPhenomenon`、`LenzsLawCanvas`、`ACValues`、`ACGeneration`、`FaradayLaw`、`LenzsLaw`、`Transformer`
+**电磁学 — 电磁感应（7 个）**：`PowerTransmission`、`InductionPhenomenon`、`LenzsLawCanvas`、`ACValues`、`FaradayLaw`、`LenzsLaw`、`Transformer`
 
 **电磁学 — 其他（4 个）**：`CuttingEMF`、`ChargeInBField`、`VelocitySelector`、`BoundaryMagneticField/SimulationView`
 
 **光学（4 个）**：`ThinLensAnimation`、`ReflectionAnimation`、`RefractionAnimation`、`TIRAnimation`
 
-**热学（6 个）**：`IntermolecularForcesAnimation`、`IntermolecularForcesCenterExtra`、`BrownianMotion`、`SecondLawAnimation`、`FirstLawAnimation`、`ClapeyronAnimation`、`ClapeyronCenterExtra`、`GasLawsAnimation`
+**热学（8 个）**：`IntermolecularForcesAnimation`、`IntermolecularForcesCenterExtra`、`BrownianMotion`、`SecondLawAnimation`、`FirstLawAnimation`、`ClapeyronAnimation`、`ClapeyronCenterExtra`、`GasLawsAnimation`
 
 **执行策略**：按学科模块分批处理，每批完成后跑全量检查。全部清零后删除 `spacing.ts` 中 `wide` 和 `tall` 定义。

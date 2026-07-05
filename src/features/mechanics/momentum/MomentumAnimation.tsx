@@ -12,8 +12,7 @@ import {
   generateMomentumEnergyCurve,
   elasticCollision1D,
 } from '@/physics/momentum'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import { MomentumScene } from './MomentumScene'
 
 /** 动量动画参数范围 */
@@ -55,13 +54,9 @@ export default function MomentumAnimation() {
   const groundY = canvasSize.height - MOMENTUM_LAYOUT.groundOffset
   const ballCenterY = groundY - MOMENTUM_LAYOUT.ballAboveGround
 
-  const sceneConfig = useMemo((): SceneConfig => ({
-    vectorBounds: { x: vp.visibleX, y: 0, width: vp.visibleW - MOMENTUM_LAYOUT.canvasPadding * 2, height: canvasSize.height - MOMENTUM_LAYOUT.canvasPadding },
-    originX: vp.visibleX, originY: groundY,
-    worldWidth: vp.visibleW, worldHeight: canvasSize.height,
+  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'visibleArea', {
     refMagnitudes: { velocity: MOMENTUM_PARAM_BOUNDS.vMax, momentum: MOMENTUM_PARAM_BOUNDS.mMax * MOMENTUM_PARAM_BOUNDS.vMax },
-  }), [vp.visibleX, vp.visibleW, canvasSize.height, groundY])
-  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig])
+  }), [vp])
 
   // 基础模式
   const p_basic = calculateMomentumScalar(m, v)

@@ -17,8 +17,7 @@ import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { markerId } from '@/components/Physics/vectorDefsUtils'
 import { selectMarkerTier } from '@/theme/physics'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import { VelocityTimeChart } from '@/components/Chart'
 import { useChartContext } from '@/components/Chart'
 
@@ -75,13 +74,9 @@ export default function UniformAccelerationAnimation() {
   // ── 矢量场景配置 ──
   const maxVel = Math.max(Math.abs(v0) + Math.abs(a) * 8, 10)
   const maxAcc = Math.max(Math.abs(a) * 2, 5)
-  const uaScene: SceneConfig = {
-    vectorBounds: { x: vp.visibleX, y: stageTop, width: vp.visibleW, height: stageHeight },
-    originX: 0,
-    originY: 0,
+  const sceneScale = createSceneScaleFromViewport(vp, 'visibleArea', {
     refMagnitudes: { velocity: maxVel, acceleration: maxAcc },
-  }
-  const sceneScale = createSceneScale(uaScene)
+  })
 
   // ── 物理计算 ──
   const { v, s } = calculateAcceleratedMotion(v0, a, time)

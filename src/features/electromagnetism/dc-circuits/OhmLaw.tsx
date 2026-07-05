@@ -8,7 +8,7 @@ import { LightBulb, DialMeter, DCSource } from '@/components/Physics'
 export default function OhmLaw() {
     const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const { font } = canvasSize
 
   const mode = params.mode ?? 0 // 0=定值电阻, 1=小灯泡

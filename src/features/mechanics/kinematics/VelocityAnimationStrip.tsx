@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -13,8 +13,7 @@ import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { Ball } from '@/components/Physics/Ball'
 import { Block } from '@/components/Physics/Block'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 
 interface VelocityAnimationStripProps {
   model: VariableMotionModel
@@ -34,6 +33,7 @@ export default function VelocityAnimationStrip({
   )
   const deltaT = params.deltaT ?? 0.5
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 400 })
 
   // ── 布局参数 ──
   const padding = canvasSize.width * 0.07
@@ -129,13 +129,9 @@ export default function VelocityAnimationStrip({
     return Math.abs(modelParams.a1 ?? 2) * 1.5
   }, [model, modelParams])
 
-  const stripScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
-    originX: 0,
-    originY: 0,
+  const sceneScale = createSceneScaleFromViewport(vp, 'visibleArea', {
     refMagnitudes: { velocity: maxVel, acceleration: maxAcc },
-  }
-  const sceneScale = createSceneScale(stripScene)
+  })
 
 
   // ── 多阶段：A/B 标志位置 ──

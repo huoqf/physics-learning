@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
@@ -23,11 +23,8 @@ const DESIGN_HEIGHT = 360
 export default function CircuitAnalysis() {
   const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const { font } = canvasSize
-
-  // 调用 useViewport 对齐强制规范（方式 A：无 overlay，内容全屏居中，SVG 自动缩放）
-  useViewport(canvasSize, { designWidth: DESIGN_WIDTH, designHeight: DESIGN_HEIGHT })
 
   // 参数配置
   const mode = params.mode ?? 0 // 0=基础, 1=进阶

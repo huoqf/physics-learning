@@ -1,4 +1,4 @@
-import { useCanvasSize, useViewport, physicsToCanvasWithOrigin } from '@/utils'
+import { useCanvasSize, useViewport, physicsToCanvasWithOrigin, clientToContainerPoint } from '@/utils'
 import React, { useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -16,8 +16,7 @@ import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VelocityTimeChart } from '@/components/Chart'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { Ball } from '@/components/Physics/Ball'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
 
 const PROJ_DESIGN = { width: 100, height: 100 } as const
@@ -121,13 +120,9 @@ export default function ProjectileAnimation() {
   const scaleY = stageHeight / PHYSICS_HEIGHT
   const scale = Math.min(scaleX, scaleY)
 
-  const projScene: SceneConfig = {
-    vectorBounds: { x: vp.visibleX, y: vp.visibleY, width: vp.visibleW, height: stageHeight },
-    originX: 0,
-    originY: 0,
+  const projSceneScale = createSceneScaleFromViewport(vp, 'visibleArea', {
     refMagnitudes: { velocity: Math.max(v0x, 10) },
-  }
-  const projSceneScale = createSceneScale(projScene)
+  })
 
   // 当前播放时刻限制
   const isLanded = time >= groundTime && groundTime > 0
@@ -225,7 +220,8 @@ export default function ProjectileAnimation() {
 
   const handleDragTime = useCallback(
     (clientX: number, svgRect: DOMRect) => {
-      const clickX = clientX - svgRect.left - vtX - 4
+      const { x: containerX } = clientToContainerPoint(clientX, 0, svgRect)
+      const clickX = containerX - vtX - 4
       const tClick = (clickX / (vtWidth - 8)) * vtXMax
       if (tClick >= 0 && tClick <= maxTime) {
         setTime(tClick)

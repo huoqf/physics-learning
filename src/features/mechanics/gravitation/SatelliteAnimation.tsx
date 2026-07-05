@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useCallback, useEffect } from 'react'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useCanvasSize, useViewport, clientToContainerPoint } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -8,8 +8,7 @@ import { GRAVITATIONAL_CONSTANT, EARTH_MASS, EARTH_RADIUS } from '@/physics/cons
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { RelationChart, VelocityTimeChart } from '@/components/Chart'
 import type { RelationDataSeries, VTStage } from '@/components/Chart'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { LAYOUT, VTCARD } from './satelliteLayout'
@@ -37,12 +36,7 @@ export default function SatelliteAnimation() {
   const centerX = vp.centerX
   const centerY = vp.centerY
 
-  const sceneConfig = useMemo((): SceneConfig => ({
-    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
-    originX: centerX, originY: centerY,
-    worldWidth: canvasSize.width, worldHeight: canvasSize.height,
-  }), [canvasSize.width, canvasSize.height, centerX, centerY])
-  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig])
+  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'centerScale'), [vp])
 
   const launchData = useLaunchPhysics({ mode, v0, isLaunched, time })
   const vtSamplePoints = useVtSampling({ mode, v0 })
@@ -106,7 +100,8 @@ export default function SatelliteAnimation() {
   const innerW = cardWidth - padLeft - LAYOUT.card.base.padRight * cardScale
 
   const handleDragChart = useCallback((clientX: number, svgRect: DOMRect) => {
-    const clickX = clientX - svgRect.left - cardX - padLeft
+    const { x: containerX } = clientToContainerPoint(clientX, 0, svgRect)
+    const clickX = containerX - cardX - padLeft
     const rRatio = clickX / innerW
     const targetR = LAYOUT.mode0.rMin + rRatio * (LAYOUT.mode0.rMax - LAYOUT.mode0.rMin)
     updateParam('r', Math.max(LAYOUT.mode0.rMin, Math.min(LAYOUT.mode0.rMax, targetR)))
@@ -116,8 +111,7 @@ export default function SatelliteAnimation() {
     const rect = svgRef.current?.getBoundingClientRect()
     if (!rect) return
     if (dragTarget === 'sat' && mode === 0) {
-      const mouseX = e.clientX - rect.left
-      const mouseY = e.clientY - rect.top
+      const { x: mouseX, y: mouseY } = clientToContainerPoint(e.clientX, e.clientY, rect)
       const distPx = Math.sqrt((mouseX - centerX) ** 2 + (mouseY - centerY) ** 2)
       const distKM = distPx / scale / 1e6
       updateParam('r', Math.max(LAYOUT.mode0.rMin, Math.min(LAYOUT.mode0.rMax, distKM)))

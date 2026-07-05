@@ -10,8 +10,7 @@ import { calculateConnectedBody, calculateConnectedBodyTimeline, GRAVITY } from 
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 
 const CONNECTED_DESIGN = { width: 650, height: 400 } as const
 
@@ -257,13 +256,9 @@ export default function ConnectedBodiesAnimation() {
   const arrowLength = Math.max(15, (F / 30) * 60)
   const dragTargetX = m2X + w2 + arrowLength
 
-  const cbScene: SceneConfig = {
-    vectorBounds: { x: vp.visibleX, y: vp.visibleY, width: vp.visibleW, height: vp.visibleH },
-    originX: 0,
-    originY: 0,
+  const cbSceneScale = createSceneScaleFromViewport(vp, 'visibleArea', {
     refMagnitudes: { force: Math.max(F, 30), friction: Math.max(F, 30), tension: Math.max(F, 30) },
-  }
-  const cbSceneScale = createSceneScale(cbScene)
+  })
 
   const [isDragging, setIsDragging] = useState(false)
   const dragStartRef = useRef({ clientX: 0, startF: 0 })

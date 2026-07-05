@@ -1,11 +1,10 @@
 import type { MouseEvent } from 'react';
+import { clientToSvgPoint } from '@/utils';
 
 export function toSvgLocalX(e: MouseEvent<SVGElement>): number {
   const svg = e.currentTarget.ownerSVGElement;
   if (!svg) return 0;
-  const rect = svg.getBoundingClientRect();
-  const svgWidth = svg.viewBox.baseVal.width || svg.width.baseVal.value || rect.width;
-  return (e.clientX - rect.left) * (svgWidth / Math.max(rect.width, 1));
+  return clientToSvgPoint(e.clientX, e.clientY, svg)?.x ?? 0;
 }
 
 export function buildPath(

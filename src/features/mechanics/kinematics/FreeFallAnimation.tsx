@@ -9,7 +9,7 @@ import {
 } from '@/theme/physics'
 import { useFreeFallPhysics } from './useFreeFallPhysics'
 import { getPhysicsAtTime, GRAVITY } from '@/physics'
-import { createSceneScale } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import { MATERIAL, TUBE_PHYSICAL_HEIGHT } from './freeFallConfig'
 import type { MaterialA, MaterialB } from './freeFallConfig'
 import { useFreeFallLayout } from './useFreeFallLayout'
@@ -26,9 +26,9 @@ export default function FreeFallAnimation() {
       showGrid: s.showGrid, showTimeSlices: s.showTimeSlices, setIsPlaying: s.setIsPlaying,
     }))
   )
-  const FF_DESIGN = CANVAS_PRESETS.tall
-  const [containerRef, canvasSize] = useCanvasSize(FF_DESIGN)
-  useViewport(canvasSize, { designWidth: FF_DESIGN.width, designHeight: FF_DESIGN.height })
+  const FF_DESIGN = CANVAS_PRESETS.full
+  const [containerRef, canvasSize] = useCanvasSize(FF_DESIGN, { presetCompensation: 1.2 })
+  const vp = useViewport(canvasSize, { designWidth: FF_DESIGN.width, designHeight: FF_DESIGN.height })
 
   // 参数
   const pressure = params.pressure ?? 0
@@ -47,17 +47,17 @@ export default function FreeFallAnimation() {
 
   // 布局
   const layout = useFreeFallLayout({ width: FF_DESIGN.width, height: FF_DESIGN.height })
-  const { stageWidth, stageHeight, originY, groundY, ballX, featherX } = layout
+  const { stageHeight, originY, groundY, ballX, featherX } = layout
 
   // 缩放
   const maxFallHeight = TUBE_PHYSICAL_HEIGHT
   const scale = useMemo(() => (maxFallHeight > 0 ? stageHeight / maxFallHeight : 25), [maxFallHeight, stageHeight])
 
-  const ffSceneScale = useMemo(() => createSceneScale({
-    vectorBounds: { x: 0, y: 0, width: stageWidth, height: stageHeight },
-    originX: 0, originY: 0,
+  const ffSceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'transform', {
+    designWidth: FF_DESIGN.width,
+    designHeight: FF_DESIGN.height,
     refMagnitudes: { velocity: Math.sqrt(2 * g * TUBE_PHYSICAL_HEIGHT), acceleration: GRAVITY, gravity: GRAVITY, force: 0.5 },
-  }), [stageWidth, stageHeight, g])
+  }), [vp, g])
 
   // 物理引擎
   const { points: pointsA, groundTime: groundTimeA, currentState: stateA } = useFreeFallPhysics(v0, g, dragKA, matA.mass, maxFallHeight, time)

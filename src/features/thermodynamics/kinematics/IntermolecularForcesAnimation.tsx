@@ -5,8 +5,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { Ball } from '@/components/Physics/Ball'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import {
   CANVAS_STYLE,
   CHART_COLORS,
@@ -57,13 +56,11 @@ export default function IntermolecularForcesAnimation() {
   const fAtt = attractiveForce(rParam)
   const fNet = netMolecularForce(rParam)
 
-  const sceneConfig: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: stageWidth, height: h },
-    originX: 0,
-    originY: 0,
+  const sceneScale = createSceneScaleFromViewport(vp, 'transform', {
+    designWidth: 700,
+    designHeight: 400,
     refMagnitudes: { force: Math.max(fRep, fAtt, fNet, 0.5) * 1.2 },
-  }
-  const sceneScale = createSceneScale(sceneConfig)
+  })
 
   const [dragging, setDragging] = useState(false)
   const [dragR, setDragR] = useState(rParam)

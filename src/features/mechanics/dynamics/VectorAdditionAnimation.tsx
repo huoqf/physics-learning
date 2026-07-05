@@ -14,8 +14,7 @@ import { VectorDecomposition } from './VectorDecomposition'
 import { VectorParallelogram } from './VectorParallelogram'
 import { VectorTriangle } from './VectorTriangle'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 
 export default function VectorAdditionAnimation() {
   const { params, showVectors, showFormulas, showGrid, isPlaying, time, updateParam } = useAnimationStore(
@@ -39,11 +38,7 @@ export default function VectorAdditionAnimation() {
   const WORLD = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 } as const
   const scale = computeScale(vp.visibleW, vp.visibleH, WORLD) * 0.6
 
-  const vaScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: vp.visibleW, height: vp.visibleH },
-    originX: 0, originY: 0,
-  }
-  const vaSceneScale = createSceneScale(vaScene)
+  const vaSceneScale = createSceneScaleFromViewport(vp, 'visibleArea')
 
   const physicsData = useVectorAdditionPhysics({
     f1, f2, angle, phi, mode, canvasWidth: vp.visibleW, canvasHeight: vp.visibleH, scale, time, isPlaying,

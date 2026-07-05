@@ -18,8 +18,7 @@ import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { Ball } from '@/components/Physics/Ball'
 import { VerticalThrowCharts } from './VerticalThrowCharts'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 
 const VT_DESIGN = { width: 100, height: 100 } as const
 
@@ -95,7 +94,6 @@ export default function VerticalThrowAnimation() {
     dataX,
     originY,
     groundY,
-    stageHeight,
     ballX,
     displayMaxHeight,
     scale,
@@ -108,14 +106,11 @@ export default function VerticalThrowAnimation() {
   const leftBallX = ballX
   const rightBallX = showDoubleTrack ? ballX + 40 : ballX
 
-  const vtScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: stageWidth, height: stageHeight },
-    originX: 0,
-    originY: 0,
-    // acceleration 使用固定参考值（对应侧栏 g 最大值），否则 g/ref=g 会让加速度箭头长度恒定
+  const vtSceneScale = createSceneScaleFromViewport(vp, 'transform', {
+    designWidth: VT_DESIGN.width,
+    designHeight: VT_DESIGN.height,
     refMagnitudes: { velocity: v0, acceleration: 15, gravity: 15 },
-  }
-  const vtSceneScale = createSceneScale(vtScene)
+  })
 
   const currentBallY = originY + (displayMaxHeight - clampedY) * scale - 14
   const currentVacuumBallY = originY + (displayMaxHeight - clampedVacuumY) * scale - 13

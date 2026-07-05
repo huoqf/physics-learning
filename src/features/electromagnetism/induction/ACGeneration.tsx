@@ -64,10 +64,10 @@ export default function ACGeneration() {
       speed: s.speed,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const vp = useViewport(canvasSize, {
-    designWidth: CANVAS_PRESETS.wide.width,
-    designHeight: CANVAS_PRESETS.wide.height,
+    designWidth: 700,
+    designHeight: 650,
   })
   const { font } = canvasSize
 

@@ -1,6 +1,7 @@
 import { useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, STROKE, DASH } from '@/theme/physics'
+import { clientToContainerPoint } from '@/utils'
 import type { ObliqueThrowResult } from '@/physics'
 import type React from 'react'
 
@@ -71,7 +72,8 @@ export function useObliqueThrowLayout(
 
   const handleDragTime = useCallback(
     (clientX: number, svgRect: DOMRect) => {
-      const clickX = clientX - svgRect.left - vtX - 4
+      const { x: containerX } = clientToContainerPoint(clientX, 0, svgRect)
+      const clickX = containerX - vtX - 4
       const tClick = (clickX / (vtWidth - 8)) * vtXMax
       if (tClick >= 0 && tClick <= maxTime) {
         setTime(tClick)

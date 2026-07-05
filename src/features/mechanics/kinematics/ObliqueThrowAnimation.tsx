@@ -17,8 +17,7 @@ import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { VelocityTimeChart } from '@/components/Chart'
 import { Ball } from '@/components/Physics/Ball'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
 import { useObliqueThrowLayout } from './useObliqueThrowLayout'
 
@@ -111,13 +110,9 @@ export default function ObliqueThrowAnimation() {
   const scaleY = stageHeight / maxY
   const scale = Math.min(scaleX, scaleY)
 
-  const obliqueScene: SceneConfig = {
-    vectorBounds: { x: vp.visibleX, y: vp.visibleY, width: vp.visibleW, height: stageHeight },
-    originX: 0,
-    originY: 0,
+  const obliqueSceneScale = createSceneScaleFromViewport(vp, 'visibleArea', {
     refMagnitudes: { velocity: Math.max(v0, 10) },
-  }
-  const obliqueSceneScale = createSceneScale(obliqueScene)
+  })
 
   const isLanded = time >= groundTime && groundTime > 0
   const effectiveTime = isLanded ? groundTime : Math.max(time, 0)

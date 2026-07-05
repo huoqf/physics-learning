@@ -7,7 +7,7 @@ import { PHYSICS_COLORS, CANVAS_STYLE, CANVAS_COLORS, SCENE_COLORS } from '@/the
 import { withAlpha } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
-import { createSceneScale } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
 import { VelocityTimeChart, ChartDataSeries } from '@/components/Chart'
 import { Card } from '@/components/UI'
@@ -36,7 +36,7 @@ export default function ChargeInEField() {
     }))
   )
   const [, canvasSize] = useCanvasSize(CANVAS_PRESETS.splitV)
-  useViewport(canvasSize, { designWidth: DESIGN_WIDTH, designHeight: DESIGN_HEIGHT })
+  const vp = useViewport(canvasSize, { designWidth: DESIGN_WIDTH, designHeight: DESIGN_HEIGHT })
   const { font } = canvasSize
 
   const U = params.U ?? 150
@@ -146,10 +146,9 @@ export default function ChargeInEField() {
   const sceneScale = useMemo(() => {
     const maxVal = Math.max(v0, 10)
     const maxAcc = Math.max(Math.abs(currentState.ay), 25)
-    return createSceneScale({
-      vectorBounds: { x: 0, y: 0, width: DESIGN_WIDTH, height: DESIGN_HEIGHT },
-      originX: 0,
-      originY: 0,
+    return createSceneScaleFromViewport(vp, 'transform', {
+      designWidth: DESIGN_WIDTH,
+      designHeight: DESIGN_HEIGHT,
       refMagnitudes: {
         velocity: maxVal,
         acceleration: maxAcc,
@@ -158,7 +157,7 @@ export default function ChargeInEField() {
         gravity: maxAcc,
       },
     })
-  }, [v0, currentState.ay])
+  }, [vp, v0, currentState.ay])
 
   // 8. 速度分解虚线框的终点坐标
   const refMag = Math.max(v0, 10)

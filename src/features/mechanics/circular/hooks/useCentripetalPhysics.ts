@@ -3,10 +3,10 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateCircularMotion, precomputeVerticalCircularMotion, GRAVITY } from '@/physics'
 import type { VerticalCircularMotionPoint } from '@/physics/dynamics/dynamics-advanced'
-import { useCanvasSize, physicsToCanvasWithOrigin, useViewport } from '@/utils'
+import { useCanvasSize, physicsToCanvasWithOrigin, useViewport, clientToContainerPoint } from '@/utils'
 import type { CanvasSize, ViewportInfo } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { createSceneScale } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import type { SceneConfig } from '@/scene'
 
 export const CENTRIPETAL_PARAM_BOUNDS = {
@@ -70,7 +70,7 @@ export interface CentripetalPhysicsResult {
   cardInnerW: number
 
   sceneConfig: SceneConfig
-  sceneScale: ReturnType<typeof createSceneScale>
+  sceneScale: ReturnType<typeof createSceneScaleFromViewport>
 
   faPoints: Array<{ x: number; y: number }>
 
@@ -184,7 +184,11 @@ export function useCentripetalPhysics(): CentripetalPhysicsResult {
     isAdvanced, v, v0, r, m, a_c, F_c,
   ])
 
-  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig])
+  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'centerScale', {
+    designWidth: 650,
+    designHeight: 650,
+    refMagnitudes: sceneConfig.refMagnitudes,
+  }), [vp, sceneConfig.refMagnitudes])
 
   const cardHeight = isAdvanced
     ? Math.max(340, canvasSize.height * 0.55)
@@ -207,7 +211,8 @@ export function useCentripetalPhysics(): CentripetalPhysicsResult {
 
   const handleDragTime = useCallback(
     (clientX: number, svgRect: DOMRect) => {
-      const clickX = clientX - svgRect.left - cardX - cardInnerPad.left
+      const { x: containerX } = clientToContainerPoint(clientX, 0, svgRect)
+      const clickX = containerX - cardX - cardInnerPad.left
       const accClick = (clickX / cardInnerW) * CENTRIPETAL_CHART_RANGE.aMax
       if (accClick >= 0 && accClick <= CENTRIPETAL_CHART_RANGE.aMax) {
         const vTarget = Math.sqrt(accClick * r)

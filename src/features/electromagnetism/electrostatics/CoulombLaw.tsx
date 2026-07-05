@@ -34,7 +34,7 @@ export default function CoulombLaw() {
       showFormulas: s.showFormulas,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
 
   const mode = params.mode ?? 0
 

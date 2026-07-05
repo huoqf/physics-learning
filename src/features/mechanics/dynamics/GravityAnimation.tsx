@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useMemo } from 'react'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useCanvasSize, useViewport, clientToContainerPoint } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -121,7 +121,8 @@ export default function GravityAnimation() {
   // ── 图表反向拖拽调距 ──
   const handleDragChart = useCallback((clientX: number, svgRect: DOMRect) => {
     // foreignObject 占据卡片内部 x=4, w=cardWidth-8，用比例估算 r
-    const clickX = clientX - svgRect.left - cardX - 4
+    const { x: containerX } = clientToContainerPoint(clientX, 0, svgRect)
+    const clickX = containerX - cardX - 4
     const rRatio = clickX / (cardWidth - 8)
     const targetR = R_DOMAIN[0] + rRatio * (R_DOMAIN[1] - R_DOMAIN[0])
     const finalR = Math.max(R_DOMAIN[0], Math.min(R_DOMAIN[1], targetR))
@@ -156,7 +157,7 @@ export default function GravityAnimation() {
 
     if (dragTarget !== 'none') {
       // 1. 处理天体拖拽
-      const mouseX = e.clientX - rect.left
+      const { x: mouseX } = clientToContainerPoint(e.clientX, 0, rect)
       let newR = r
       if (dragTarget === 'obj2') {
         newR = (2 * (mouseX - vp.centerX)) / scale

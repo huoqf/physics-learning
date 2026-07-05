@@ -3,8 +3,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { PHYSICS_COLORS } from '@/theme/physics'
 
@@ -34,24 +33,9 @@ export default function MomentumTheoremAnimation() {
     overlayRight: Math.round(cardWidth + 24),
   })
 
-  const sceneConfig = useMemo((): SceneConfig => ({
-    vectorBounds: {
-      x: vp.visibleX,
-      y: vp.visibleY,
-      width: vp.visibleW,
-      height: vp.visibleH,
-    },
-    originX: 0,
-    originY: groundY,
-    worldWidth: canvasSize.width,
-    worldHeight: canvasSize.height,
-    refMagnitudes: {
-      velocity: 15,
-      force: 200,
-    },
-  }), [vp.visibleX, vp.visibleY, vp.visibleW, vp.visibleH, groundY, canvasSize.width, canvasSize.height])
-
-  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig])
+  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'visibleArea', {
+    refMagnitudes: { velocity: 15, force: 200 },
+  }), [vp])
 
   const layout = useMomentumTheoremLayout({ params, time, vp })
 

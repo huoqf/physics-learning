@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, type RefObject } from 'react'
-import { canvasToPhysics } from '@/utils/coordinate'
+import { canvasToPhysics, clientToContainerPoint } from '@/utils'
 
 const SNAP_ANGLES = [0, 30, 45, 60, 90, 120, 150, 180]
 const SNAP_ANGLE_THRESHOLD = 2.5
@@ -39,8 +39,8 @@ export function useVectorDrag({ svgRef, visibleW, visibleH, scale, phi, mode, up
     (clientX: number, clientY: number) => {
       if (!activeDrag || !svgRef.current || visibleW === 0) return
 
-      const rect = svgRef.current.getBoundingClientRect()
-      const { x: px, y: py } = canvasToPhysics(clientX - rect.left, clientY - rect.top, visibleW, visibleH, scale)
+      const { x: cx, y: cy } = clientToContainerPoint(clientX, clientY, svgRef.current.getBoundingClientRect())
+      const { x: px, y: py } = canvasToPhysics(cx, cy, visibleW, visibleH, scale)
 
       const rawMag = Math.sqrt(px * px + py * py)
       const rawDir = (Math.atan2(py, px) * 180) / Math.PI

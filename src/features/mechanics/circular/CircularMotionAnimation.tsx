@@ -1,11 +1,11 @@
-import { useCanvasSize, useViewport, physicsToCanvasWithOrigin } from '@/utils'
+import { useCanvasSize, useViewport, physicsToCanvasWithOrigin, clientToContainerPoint } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import React, { useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateCircularMotion } from '@/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { createSceneScale } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import type { SceneConfig } from '@/scene'
 import {
   PHYSICS_COLORS,
@@ -113,7 +113,11 @@ export default function CircularMotionAnimation() {
     },
   }), [vp.visibleX, vp.visibleY, vp.visibleW, vp.visibleH, centerX, centerY, scale]);
 
-  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig]);
+  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'centerScale', {
+    designWidth: CIRCULAR_DESIGN.width,
+    designHeight: CIRCULAR_DESIGN.height,
+    refMagnitudes: sceneConfig.refMagnitudes,
+  }), [vp, sceneConfig.refMagnitudes]);
 
   // ── 矢量安全映射 ─────────────
 
@@ -175,7 +179,8 @@ export default function CircularMotionAnimation() {
 
   const handleDragTime = useCallback(
     (clientX: number, svgRect: DOMRect) => {
-      const clickX = clientX - svgRect.left - cardX - cardInnerPad.left
+      const { x: containerX } = clientToContainerPoint(clientX, 0, svgRect)
+      const clickX = containerX - cardX - cardInnerPad.left
       const tClick = (clickX / cardInnerW) * tMax
       const currentPeriodCount = Math.floor(time / tMax)
       if (tClick >= 0 && tClick <= tMax) {

@@ -7,7 +7,7 @@ import { PHYSICS_COLORS, STROKE, CANVAS_COLORS } from '@/theme/physics'
 import { Block } from '@/components/Physics/Block'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
-import { createSceneScale } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import { RelationChart } from '@/components/Chart'
 import { useChartContext } from '@/components/Chart'
 import { Card } from '@/components/UI'
@@ -174,12 +174,11 @@ export default function KinematicsAdvancedAnimation() {
   const blockCenterX = sliderX + BLOCK_W / 2
   const maxVelocity = Math.max(Math.abs(v0) + Math.abs(a) * 10, Math.abs(v), 10)
   const maxAcceleration = Math.max(Math.abs(a) * 2, 5)
-  const vectorSceneScale = useMemo(() => createSceneScale({
-    vectorBounds: { x: 0, y: 0, width: DESIGN_W, height: DESIGN_H },
-    originX: 0,
-    originY: 0,
+  const vectorSceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'transform', {
+    designWidth: DESIGN_W,
+    designHeight: DESIGN_H,
     refMagnitudes: { velocity: maxVelocity, acceleration: maxAcceleration },
-  }), [maxVelocity, maxAcceleration])
+  }), [vp, maxVelocity, maxAcceleration])
   const velocityArrowY = sliderY - 8
   const accelerationArrowY = sliderY - 22
   const velocityArrowLen = calculateVectorPixelLength(

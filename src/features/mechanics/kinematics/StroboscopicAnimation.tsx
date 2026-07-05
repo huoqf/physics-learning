@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { calculateAcceleratedMotion } from '@/physics'
@@ -13,8 +13,7 @@ import { SportsCar } from '@/components/Physics/SportsCar'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 
 /**
  * 频闪虚影 (GhostCar)
@@ -51,6 +50,7 @@ export function StroboscopicAnimation({
   hoveredFlashIdx: number | null
 }) {
   const [containerRef, canvasSize] = useCanvasSize({ width: 400, height: 180 })
+  const vp = useViewport(canvasSize, { designWidth: 400, designHeight: 180 })
   const { font } = canvasSize
 
   const padding = canvasSize.width * 0.08
@@ -61,13 +61,9 @@ export function StroboscopicAnimation({
 
   const maxVel = Math.max(Math.abs(v0) + Math.abs(a) * 8, 10)
   const maxAcc = Math.max(Math.abs(a) * 2, 5)
-  const scene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
-    originX: 0,
-    originY: 0,
+  const sceneScale = createSceneScaleFromViewport(vp, 'visibleArea', {
     refMagnitudes: { velocity: maxVel, acceleration: maxAcc },
-  }
-  const sceneScale = createSceneScale(scene)
+  })
 
   const maxS = useMemo(() => {
     const endS = Math.abs(calculateAcceleratedMotion(v0, a, 8).s)

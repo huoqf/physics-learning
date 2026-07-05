@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useCanvasSize, useViewport, useAnimationFrame } from '@/utils'
+import { useCanvasSize, useAnimationFrame } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -42,9 +42,8 @@ export default function Capacitor() {
     }))
   )
 
-  // 容器尺寸 + viewport 计算（方式A：无 overlay）
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
-  useViewport(canvasSize, { designWidth: DESIGN_WIDTH, designHeight: DESIGN_HEIGHT })
+  // 容器尺寸（方式A：无 overlay）
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const { font } = canvasSize
 
   const { S = 100, d = 5, epsilon_r = 1, U = 12, connected = 1 } = params

@@ -3,7 +3,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { createSceneScale } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { KatexFormula } from '@/components/UI'
 import {
@@ -127,10 +127,7 @@ export default function PotentialEnergyAnimation() {
         { label: 'W弹', value: `${state.W.toFixed(1)} J`, color: PHYSICS_COLORS.work },
       ]
 
-  const sceneScale = useMemo(() => createSceneScale({
-    vectorBounds: { x: 0, y: 0, width: 600, height: 450 },
-    originX: 0, originY: 0, worldWidth: 600, worldHeight: 450,
-  }), [])
+  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'visibleArea'), [vp])
 
   return (
     <div ref={containerRef} className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">

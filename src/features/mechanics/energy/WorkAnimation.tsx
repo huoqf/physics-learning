@@ -15,8 +15,7 @@ import {
 import type { WorkKinematics } from '@/physics/work'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import { WorkVTChart } from './WorkVTChart'
 import { WorkFSChart } from './WorkFSChart'
 import { WorkEnergyBar } from './WorkEnergyBar'
@@ -145,14 +144,7 @@ export default function WorkAnimation() {
   const projEndX = forceDx
   const originX = startX
 
-  const sceneConfig = useMemo((): SceneConfig => ({
-    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
-    originX: 0,
-    originY: 0,
-    worldWidth: canvasSize.width,
-    worldHeight: canvasSize.height,
-  }), [canvasSize.width, canvasSize.height])
-  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig])
+  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'visibleArea'), [vp])
 
   return (
     <div ref={containerRef} className="w-full h-full">

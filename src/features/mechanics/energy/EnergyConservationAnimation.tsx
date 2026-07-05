@@ -1,4 +1,4 @@
-import { useCanvasSize, useViewport } from '@/utils'
+import { useCanvasSize, useViewport, clientToContainerPoint } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useState, useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -143,8 +143,7 @@ export default function EnergyConservationAnimation() {
 
     const rect = svgRef.current?.getBoundingClientRect()
     if (!rect) return
-    const mouseX = e.clientX - rect.left
-    const mouseY = e.clientY - rect.top
+    const { x: mouseX, y: mouseY } = clientToContainerPoint(e.clientX, e.clientY, rect)
 
     // 1. 检查是否点击在零势能面附近
     if (Math.abs(mouseY - yRefLine) <= 8) {
@@ -208,8 +207,7 @@ export default function EnergyConservationAnimation() {
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
     const rect = svgRef.current?.getBoundingClientRect()
     if (!rect) return
-    const mouseX = e.clientX - rect.left
-    const mouseY = e.clientY - rect.top
+    const { x: mouseX, y: mouseY } = clientToContainerPoint(e.clientX, e.clientY, rect)
 
     if (dragRef.current.isDraggingRefLine) {
       const dy = mouseY - dragRef.current.startY

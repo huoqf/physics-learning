@@ -6,8 +6,7 @@ import { Ball } from '@/components/Physics/Ball';
 import { Spring } from '@/components/UI/Spring';
 import { PhysicsGround } from '@/components/Physics/PhysicsGround';
 import { VectorArrow } from '@/components/Physics/VectorArrow';
-import { createSceneScale } from '@/scene/SceneScale';
-import type { SceneConfig } from '@/scene/SceneConfig';
+import { createSceneScaleFromViewport } from '@/scene/SceneScale';
 import { precomputeVerticalSpringTrajectory, getVSStateAtTime } from '@/physics/verticalSpring';
 import { BasePhysicsChart } from '@/components/Chart';
 import { SegmentedControl } from '@/components/UI';
@@ -134,18 +133,16 @@ export default function SpringCompositeAnimation() {
     if (trajectory.length === 0) return 1;
     return Math.max(1e-6, ...trajectory.map((pt) => Math.abs(pt.v)));
   }, [trajectory]);
-  const springSceneConfig: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: 170, height: 350 },
-    originX: 0,
-    originY: 0,
+  const springSceneScale = createSceneScaleFromViewport(vp, 'transform', {
+    designWidth: 170,
+    designHeight: 350,
     refMagnitudes: {
       gravity: m * g,
       elasticForce: k * xD_phys,
       velocity: Math.max(vMax, 1),
       acceleration: g * 2,
     },
-  };
-  const springSceneScale = createSceneScale(springSceneConfig);
+  });
 
   const lastTimeRef = useRef(time);
   const lastCrossTimeRef = useRef(-1);

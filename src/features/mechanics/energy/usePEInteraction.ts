@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback } from 'react'
 import type { MutableRefObject } from 'react'
+import { clientToContainerPoint } from '@/utils'
 
 export interface DragState {
   isDragging: boolean
@@ -71,8 +72,7 @@ export function usePEInteraction({
     if (isPlaying) return
     const rect = svgRef.current?.getBoundingClientRect()
     if (!rect) return
-    const mouseX = e.clientX - rect.left
-    const mouseY = e.clientY - rect.top
+    const { x: mouseX, y: mouseY } = clientToContainerPoint(e.clientX, e.clientY, rect)
     const hit = getHitTarget(mouseX, mouseY)
     if (!hit) return
     const startVal = hit === 'y_ref' ? y_ref : hit === 'y0' ? y0 : x0
@@ -82,8 +82,7 @@ export function usePEInteraction({
   const handleMouseMove = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
     const rect = svgRef.current?.getBoundingClientRect()
     if (!rect) return
-    const mouseX = e.clientX - rect.left
-    const mouseY = e.clientY - rect.top
+    const { x: mouseX, y: mouseY } = clientToContainerPoint(e.clientX, e.clientY, rect)
 
     if (dragRef.current.isDragging && dragRef.current.type) {
       const { type, startY, startX, startVal } = dragRef.current

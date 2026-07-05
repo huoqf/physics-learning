@@ -11,8 +11,7 @@ import {
   type ForceTimeType,
 } from '@/physics/impulse'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,
@@ -191,26 +190,9 @@ export default function ImpulseAnimation() {
 
   const groundY = vp.visibleY + vp.visibleH - IMPULSE_LAYOUT.groundOffset
 
-  const sceneConfig = useMemo(
-    (): SceneConfig => ({
-      vectorBounds: {
-        x: vp.visibleX,
-        y: vp.visibleY,
-        width: vp.visibleW - IMPULSE_LAYOUT.canvasPadding * 2,
-        height: vp.visibleH - IMPULSE_LAYOUT.canvasPadding,
-      },
-      originX: 0,
-      originY: groundY,
-      worldWidth: vp.visibleW,
-      worldHeight: vp.visibleH,
-      refMagnitudes: {
-        force: 200,
-      },
-    }),
-    [vp.visibleX, vp.visibleY, vp.visibleW, vp.visibleH, groundY]
-  )
-
-  const sceneScale = useMemo(() => createSceneScale(sceneConfig), [sceneConfig])
+  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'visibleArea', {
+    refMagnitudes: { force: 200 },
+  }), [vp])
 
   // ── 基础模式：恒力 ──────────────────────────────────────────
   const currentT_basic = Math.min(time, t_duration)

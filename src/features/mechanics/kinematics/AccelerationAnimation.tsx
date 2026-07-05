@@ -9,8 +9,7 @@ import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { SportsCar } from '@/components/Physics/SportsCar'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 
 const ACCEL_DESIGN = { width: 700, height: 400 } as const
 
@@ -74,13 +73,9 @@ export default function AccelerationAnimation() {
   )
 
   // ── 矢量场景配置 ──
-  const accScene: SceneConfig = {
-    vectorBounds: { x: vp.visibleX, y: vp.visibleY, width: vp.visibleW, height: vp.visibleH },
-    originX: 0,
-    originY: 0,
+  const sceneScale = createSceneScaleFromViewport(vp, 'visibleArea', {
     refMagnitudes: { velocity: Math.max(vA, 10) * 1.5, acceleration: aB * 2 },
-  }
-  const sceneScale = createSceneScale(accScene)
+  })
 
   const planeX = startX + result.sA * scale
   const carX = startX + result.sB * scale

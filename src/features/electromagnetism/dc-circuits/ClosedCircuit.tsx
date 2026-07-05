@@ -1,4 +1,4 @@
-import { useCanvasSize, useViewport } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { calculateClosedCircuit } from '@/physics'
@@ -30,9 +30,7 @@ const LOOP_CY = LAYOUT.loop.top + LAYOUT.loop.height / 2
 export default function ClosedCircuit() {
     const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
-  const vp = useViewport(canvasSize, { designWidth: DESIGN_W, designHeight: DESIGN_H })
-  void vp
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const { font } = canvasSize
 
   const EMF = params.EMF ?? 6

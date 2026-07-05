@@ -1,4 +1,4 @@
-import { useCanvasSize } from '@/utils'
+import { useCanvasSize, useViewport } from '@/utils'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -22,8 +22,7 @@ import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { SvgDataTable } from '@/components/Chart'
 import { VelocityTimeChart } from '@/components/Chart'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 
 // ─── 设计常量 ────────────────────────────────────────────────────────────────
 const DESIGN_WIDTH = 700
@@ -71,7 +70,8 @@ export default function FreeFallDripAnimation() {
     setIsPlaying: s.setIsPlaying,
     }))
   )
-  const [containerRef] = useCanvasSize(CANVAS_PRESETS.tall)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.tall)
+  const vp = useViewport(canvasSize, { designWidth: DESIGN_WIDTH, designHeight: DESIGN_HEIGHT })
 
   // ── 参数 ──────────────────────────────────────────────────────────────────
   const dripPeriod = params.dripPeriod ?? 0.5
@@ -110,17 +110,15 @@ export default function FreeFallDripAnimation() {
   // 物理坐标到像素的缩放
   const scale = tubePixelHeight / TUBE_HEIGHT
 
-  const dripScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: stageWidth, height: DESIGN_HEIGHT },
-    originX: 0,
-    originY: 0,
+  const dripSceneScale = createSceneScaleFromViewport(vp, 'transform', {
+    designWidth: stageWidth,
+    designHeight: DESIGN_HEIGHT,
     refMagnitudes: {
       velocity: Math.sqrt(2 * g * TUBE_HEIGHT),
       acceleration: GRAVITY,
       gravity: GRAVITY,
     },
-  }
-  const dripSceneScale = createSceneScale(dripScene)
+  })
 
   // 龙头位置
   const faucetY = tubeTopY - 20

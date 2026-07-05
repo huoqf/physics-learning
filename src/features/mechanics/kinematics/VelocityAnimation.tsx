@@ -9,8 +9,7 @@ import { calculateAverageVelocity } from '@/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { VectorDefs } from '@/components/Physics/VectorDefs'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport } from '@/scene'
 
 /**
  * 速度基础版动画 —— "破除直觉迷思"
@@ -27,11 +26,11 @@ export default function VelocityAnimation() {
     setIsPlaying: s.setIsPlaying,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.wide)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
 
   const vp = useViewport(canvasSize, {
     designWidth: 700,
-    designHeight: 400,
+    designHeight: 650,
   })
 
   const scene = params.scene ?? 0      // 0=公交, 1=短跑
@@ -99,13 +98,9 @@ export default function VelocityAnimation() {
   const objH = scene === 0 ? objW * 0.7 : objW * 0.9
 
   // ── 矢量场景配置 ──
-  const velocityScene: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
-    originX: 0,
-    originY: 0,
+  const sceneScale = createSceneScaleFromViewport(vp, 'visibleArea', {
     refMagnitudes: { velocity: v * 1.5 || 15 },
-  }
-  const sceneScale = createSceneScale(velocityScene)
+  })
 
   return (
     <div ref={containerRef} className="w-full h-full">

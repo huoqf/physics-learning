@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useSimulationFrame } from '@/utils/animation'
+import { clientToContainerPoint } from '@/utils'
 import {
   simulateEquilibriumStep,
   calculateTheoreticalEquilibriumPos,
@@ -212,9 +213,7 @@ export function useEquilibriumPhysics({
   // 6. 手势直接拖拽回调
   const startDrag = useCallback((clientX: number, clientY: number, svgElement: SVGSVGElement | null) => {
     if (!svgElement) return
-    const rect = svgElement.getBoundingClientRect()
-    const cx = clientX - rect.left
-    const cy = clientY - rect.top
+    const { x: cx, y: cy } = clientToContainerPoint(clientX, clientY, svgElement.getBoundingClientRect())
 
     stateRef.current.isDragging = true
     stateRef.current.mouseX = cx
@@ -224,9 +223,7 @@ export function useEquilibriumPhysics({
 
   const updateDragMouse = useCallback((clientX: number, clientY: number, svgElement: SVGSVGElement | null) => {
     if (!stateRef.current.isDragging || !svgElement) return
-    const rect = svgElement.getBoundingClientRect()
-    const cx = clientX - rect.left
-    const cy = clientY - rect.top
+    const { x: cx, y: cy } = clientToContainerPoint(clientX, clientY, svgElement.getBoundingClientRect())
 
     stateRef.current.mouseX = cx
     stateRef.current.mouseY = cy
