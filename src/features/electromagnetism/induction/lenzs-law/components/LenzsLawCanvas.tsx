@@ -32,9 +32,9 @@ interface LenzsLawCanvasProps {
 const { width: DESIGN_WIDTH, height: DESIGN_HEIGHT } = CANVAS_PRESETS.full
 const cx = DESIGN_WIDTH / 2
 
-// 灵敏电流计中心坐标
-const galX = 130
-const galY = 250
+// 灵敏电流计中心坐标 (优化至与线圈水平对齐，舒展构图)
+const galX = 150
+const galY = 410
 
 export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
   magnetY,
@@ -109,7 +109,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
   const labelsToLayout: (LabelSlot & { id: string })[] = []
 
   const hasForceText = forceDirection !== 0 && getOpacity([4]) === 1.0
-  const forceTextY = magnetY + 35 + forceDirection * (forceArrowLength / 2) + 4
+  const forceTextY = magnetY + 50 + forceDirection * (forceArrowLength / 2) + 4
   if (hasForceText) {
     labelsToLayout.push({
       id: 'force',
@@ -127,7 +127,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
     labelsToLayout.push({
       id: 'upperPole',
       x: cx - 20,
-      y: coilY - 61,
+      y: coilY - 81,
       text: `等效${lenzResult.equivalentPole}极`,
       fontSize: labelFontSize,
       anchor: 'end' as const,
@@ -136,7 +136,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
     labelsToLayout.push({
       id: 'lowerPole',
       x: cx - 20,
-      y: coilY + 69,
+      y: coilY + 89,
       text: `等效${lenzResult.equivalentPole === 'N' ? 'S' : 'N'}极`,
       fontSize: labelFontSize,
       anchor: 'end' as const,
@@ -150,8 +150,8 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
   })
 
   let forcePos = { x: cx + 12, y: forceTextY }
-  let upperPoleTextPos = { x: cx - 20, y: coilY - 61 }
-  let lowerPoleTextPos = { x: cx - 20, y: coilY + 69 }
+  let upperPoleTextPos = { x: cx - 20, y: coilY - 81 }
+  let lowerPoleTextPos = { x: cx - 20, y: coilY + 89 }
 
   let layoutIdx = 0
   if (hasForceText) {
@@ -198,6 +198,15 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
     handleDragEnd()
   }
 
+  // 螺线管引脚与电流计接线柱的参数化解算 (充盈 650 视口)
+  const solTopPin = { x: cx - 120, y: coilY - 70 }
+  const solBotPin = { x: cx - 120, y: coilY + 70 }
+  const galLeftTerm = { x: galX - 30, y: galY + 100 }
+  const galRightTerm = { x: galX + 30, y: galY + 100 }
+
+  const wireTopD = `M ${solTopPin.x} ${solTopPin.y} C ${solTopPin.x - 50} ${solTopPin.y}, ${galLeftTerm.x} ${galLeftTerm.y - 70}, ${galLeftTerm.x} ${galLeftTerm.y}`
+  const wireBotD = `M ${solBotPin.x} ${solBotPin.y} C ${solBotPin.x - 40} ${solBotPin.y}, ${galRightTerm.x} ${galRightTerm.y - 30}, ${galRightTerm.x} ${galRightTerm.y}`
+
   return (
     <svg
       ref={svgRef}
@@ -209,13 +218,13 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
       {/* --- 1. 灵敏电流计 --- */}
       <g opacity={getOpacity([4])} className="transition-opacity duration-300">
         <path
-          d={`M 230 190 C 180 190, 105 250, 105 332`}
+          d={wireTopD}
           fill="none"
           stroke={PHYSICS_COLORS.labelTextLight}
           strokeWidth="2.5"
         />
         <path
-          d={`M 230 290 C 180 290, 155 290, 155 332`}
+          d={wireBotD}
           fill="none"
           stroke={PHYSICS_COLORS.labelTextLight}
           strokeWidth="2.5"
@@ -224,7 +233,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
         {lenzResult.fluxChange !== 'stable' && (
           <>
             <path
-              d={`M 230 190 C 180 190, 105 250, 105 332`}
+              d={wireTopD}
               fill="none"
               stroke={PHYSICS_COLORS.electricCurrent}
               strokeWidth="2.5"
@@ -232,7 +241,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
               strokeDashoffset={time * -30}
             />
             <path
-              d={`M 230 290 C 180 290, 155 290, 155 332`}
+              d={wireBotD}
               fill="none"
               stroke={PHYSICS_COLORS.electricCurrent}
               strokeWidth="2.5"
@@ -246,18 +255,18 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
           x={galX}
           y={galY}
           value={velocity === 0 ? 0 : (lenzResult.inducedCurrentDirection === 'counterclockwise' ? 1 : -1) * Math.min(1, Math.abs(velocity) * 0.45)}
-          width={100}
-          height={90}
+          width={120}
+          height={110}
         />
       </g>
 
-      {/* --- 2. 螺线管线圈 (纵向放置) --- */}
+      {/* --- 2. 螺线管线圈 (纵向放置，大尺寸清晰展示) --- */}
       <g transform={`translate(${cx}, ${coilY}) rotate(90)`} opacity={getOpacity([4])} className="transition-opacity duration-300">
         <Solenoid
           x={0}
           y={0}
-          width={100}
-          height={140}
+          width={140}
+          height={160}
           turns={coilN}
           current={velocity === 0 ? 0 : (lenzResult.inducedCurrentDirection === 'counterclockwise' ? -1 : 1) * Math.min(1.5, Math.abs(velocity) * 0.5)}
           time={time}
@@ -266,7 +275,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
         />
         <text
           x={20}
-          y={-60}
+          y={-70}
           transform="rotate(-90)"
           fill={PHYSICS_COLORS.labelText}
           fontWeight={CANVAS_STYLE.font.labelWeight}
@@ -287,17 +296,17 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
       >
         <g transform={`translate(${cx}, ${magnetY}) rotate(90)`}>
           <BarMagnet
-            width={70}
+            width={100}
             height={50}
             pole={magnetPole as 1 | -1}
           />
           {showLines === 1 && (
             <g opacity={getOpacity([1, 2])} className="transition-opacity duration-300">
               <ParametricMagneticField
-                w={70}
+                w={100}
                 h={50}
                 pole={magnetPole as 1 | -1}
-                canvasHeight={400}
+                canvasHeight={DESIGN_HEIGHT}
               />
             </g>
           )}
@@ -307,7 +316,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
         {forceDirection !== 0 && (
           <g opacity={getOpacity([4])} className="transition-opacity duration-300">
             <VectorArrow
-              origin={{ x: cx, y: magnetY + 35 }}
+              origin={{ x: cx, y: magnetY + 50 }}
               vector={{ x: 0, y: forceDirection > 0 ? 1 : -1 }}
               type="lorentzForce"
               sceneScale={IDENTITY_SCENE_SCALE}
@@ -330,11 +339,11 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
       {currentStep === 1 && (
         <g opacity={getOpacity([1])} className="transition-opacity duration-300">
           <VectorArrow
-            origin={{ x: cx, y: isDown ? magnetY + 35 : coilY }}
+            origin={{ x: cx, y: isDown ? magnetY + 50 : coilY }}
             vector={{ x: 0, y: isDown ? -1 : 1 }}
             type="magneticField"
             sceneScale={IDENTITY_SCENE_SCALE}
-            pixelLength={Math.abs(coilY - (magnetY + 35))}
+            pixelLength={Math.abs(coilY - (magnetY + 50))}
             strokeWidth={CANVAS_STYLE.stroke.vectorMain}
             color={PHYSICS_COLORS.magneticField}
             glow={true}
@@ -346,7 +355,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
 
       {/* --- 5. 磁通量变化辅助框 --- */}
       {currentStep === 2 && (
-        <g transform={`translate(${cx + 90}, ${coilY - 80})`} className="animate-fade-in">
+        <g transform={`translate(${cx + 100}, ${coilY - 80})`} className="animate-fade-in">
           <rect
             width="120"
             height="50"
@@ -375,8 +384,8 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
       {/* --- 6. 感应磁场线 B感 --- */}
       {lenzResult.fluxChange !== 'stable' && [-45, 0, 45].map((dx, i) => {
         const isUp = lenzResult.inducedFieldDirection === 'up'
-        const indY1 = isUp ? coilY + 50 : coilY - 50
-        const indY2 = isUp ? coilY - 50 : coilY + 50
+        const indY1 = isUp ? coilY + 70 : coilY - 70
+        const indY2 = isUp ? coilY - 70 : coilY + 70
 
         const baseOpacity = getOpacity([3])
         const finalOpacity = baseOpacity < 0.2 ? baseOpacity : 0.9
@@ -404,8 +413,8 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
         <g opacity={getOpacity([4])} className="transition-opacity duration-300">
           <VectorArrow
             origin={lenzResult.inducedCurrentDirection === 'counterclockwise'
-              ? { x: cx + 35, y: coilY + 80 }
-              : { x: cx - 35, y: coilY + 80 }}
+              ? { x: cx + 45, y: coilY + 95 }
+              : { x: cx - 45, y: coilY + 95 }}
             vector={lenzResult.inducedCurrentDirection === 'counterclockwise'
               ? { x: -1, y: 0 }
               : { x: 1, y: 0 }}
@@ -414,7 +423,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
             pixelLength={70}
             strokeWidth={3.5}
           />
-          <g transform={`translate(${cx + 90}, ${coilY + 30})`}>
+          <g transform={`translate(${cx + 100}, ${coilY + 35})`}>
             <rect width="115" height="30" rx="4" fill={CANVAS_COLORS.dangerBg} stroke={CANVAS_COLORS.alertRed} strokeWidth="1.2" />
             <text x="57" y="19" textAnchor="middle" fill={CANVAS_COLORS.dangerText} fontSize={font(11)} fontWeight="bold">
               {lenzResult.inducedCurrentDirection === 'counterclockwise' ? 'I感: 逆时针 (←)' : 'I感: 顺时针 (→)'}
@@ -429,7 +438,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
           {/* 上等效极 */}
           <circle
             cx={cx}
-            cy={coilY - 65}
+            cy={coilY - 85}
             r="13"
             fill={lenzResult.equivalentPole === 'N' ? PHYSICS_COLORS.magnetNorth : PHYSICS_COLORS.magnetSouth}
             stroke={CANVAS_COLORS.gridSubtle}
@@ -438,7 +447,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
           />
           <text
             x={cx}
-            y={coilY - 61}
+            y={coilY - 81}
             textAnchor="middle"
             fill={CANVAS_COLORS.white}
             fontWeight="bold"
@@ -460,7 +469,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
           {/* 下等效极 */}
           <circle
             cx={cx}
-            cy={coilY + 65}
+            cy={coilY + 85}
             r="13"
             fill={lenzResult.equivalentPole === 'N' ? PHYSICS_COLORS.magnetSouth : PHYSICS_COLORS.magnetNorth}
             stroke={CANVAS_COLORS.gridSubtle}
@@ -469,7 +478,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
           />
           <text
             x={cx}
-            y={coilY + 69}
+            y={coilY + 89}
             textAnchor="middle"
             fill={CANVAS_COLORS.white}
             fontWeight="bold"
@@ -493,7 +502,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
       {/* 磁铁与力分析已移至上方，以解决属性覆盖导致的错位问题 */}
 
       {/* --- 10. 实时状态监控面板 (右上角避让摆放，防止与磁铁磁感应线重叠) --- */}
-      <g transform="translate(500, 30)">
+      <g transform="translate(500, 40)">
         {/* 第一步：当前动作 */}
         <text
           x={resolvedMonitorPos[0].x}
@@ -540,9 +549,9 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
         </text>
       </g>
 
-      {/* --- 9. 右手螺旋定则 (安培定则) 可视化面板 --- */}
+      {/* --- 9. 右手螺旋定则 (安培定则) 可视化面板 (调整至右下区域，平衡左侧电流计) --- */}
       {showHandRule === 1 && lenzResult.fluxChange !== 'stable' && (
-        <g transform="translate(520, 130)" opacity={getOpacity([4])} className="transition-opacity duration-300">
+        <g transform="translate(510, 260)" opacity={getOpacity([4])} className="transition-opacity duration-300">
           <text
             x="75"
             y="18"

@@ -4,9 +4,10 @@ import { useShallow } from 'zustand/react/shallow'
 import { calculateLenzsLaw } from '@/physics'
 import { useAnimationFrame } from '@/utils/animation'
 
-export const y_top = 70
-export const y_coil = 205
-export const coilY = 240
+// 舒展充盈 700×650 视口坐标系下的垂直运动范围与线圈中心
+export const y_top = 130
+export const y_coil = 360
+export const coilY = 410
 
 export function useLenzsLaw() {
   const { params, time, isPlaying, setIsPlaying } = useAnimationStore(
@@ -150,9 +151,11 @@ export function useLenzsLaw() {
   }
   const displayResult = lenzResult.fluxChange === 'stable' ? lastResultRef.current : lenzResult
 
-  // 计算相对距离和磁通量视觉强度的系数 (0.1 ~ 1.0)
+  // 计算相对距离和磁通量视觉强度的系数 (0.1 ~ 1.0，根据拉大后的距离范围参数化自适应)
   const dist = coilY - magnetY
-  const fluxIntensity = Math.max(0.1, Math.min(1.0, 1 - (dist - 35) / 135))
+  const minOffset = coilY - y_coil
+  const travelRange = y_coil - y_top
+  const fluxIntensity = Math.max(0.1, Math.min(1.0, 1 - (dist - minOffset) / travelRange))
 
   return {
     magnetY,

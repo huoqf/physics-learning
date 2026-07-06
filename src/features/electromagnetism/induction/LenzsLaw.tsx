@@ -4,7 +4,8 @@ import { useLenzsLaw } from './lenzs-law/hooks/useLenzsLaw'
 import { LenzsLawCanvas } from './lenzs-law/components/LenzsLawCanvas'
 
 export default function LenzsLaw() {
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  // 迁移使用标准的 full 预设尺寸 (700 x 650)，移除旧版缩水补偿
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full)
   const state = useLenzsLaw()
 
   return (
