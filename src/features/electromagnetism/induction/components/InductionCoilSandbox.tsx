@@ -1,6 +1,7 @@
 import React from 'react'
 import { PrimaryCoil, DCSource, Rheostat, CoupledCoilField } from '@/components/Physics'
 import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
+import { INDUCTION_LAYOUT } from '../utils'
 
 interface InductionCoilSandboxProps {
   primaryCoilX: number     // 原线圈在设计坐标系下的 x 坐标 (220 - 420)
@@ -43,26 +44,29 @@ export const InductionCoilSandbox: React.FC<InductionCoilSandboxProps> = ({
   const ironCoreFactor = hasIronCore ? 1.0 : 0.05
 
   // 导线端点全局坐标 (根据原线圈 x 自适应)
-  // 原线圈引出引脚的坐标在 (x - 55, 280) 与 (x + 55, 280)
+  // 原线圈引出引脚的坐标在 (x - 55, coilY + 120) 与 (x + 55, coilY + 120)
   const leftPinX = primaryCoilX - 55
   const rightPinX = primaryCoilX + 55
-  const pinY = 280
+  const pinY = coilY + 120 // 320
 
-  // 稳压电源正负端点坐标: 左正(58, 352), 右负(102, 352)
-  const batPos = { x: 58, y: 352 }
-  const batNeg = { x: 102, y: 352 }
+  // 底部实验平台高度 (由原来约 330 下移至 520，在 650 视口底部舒展布局)
+  const baseY = 520
 
-  // 开关左触点 (115, 345), 右触点 (135, 345)
-  const swLeft = { x: 115, y: 345 }
-  const swRight = { x: 135, y: 345 }
+  // 稳压电源正负端点坐标: 左正(58, baseY + 22), 右负(102, baseY + 22)
+  const batPos = { x: 58, y: baseY + 22 }
+  const batNeg = { x: 102, y: baseY + 22 }
 
-  // 滑阻左侧接线柱 (150, 340), 右侧滑片接线柱 (290, 340)
-  const rheoLeft = { x: 150, y: 340 }
-  const rheoRight = { x: 290, y: 340 }
+  // 开关左触点 (115, baseY + 15), 右触点 (135, baseY + 15)
+  const swLeft = { x: 115, y: baseY + 15 }
+  const swRight = { x: 135, y: baseY + 15 }
 
-  // 动态引线路径
-  // 左端引线：原线圈左脚 -> 电源正极
-  const wireLeftD = `M ${leftPinX} ${pinY} C ${leftPinX - 40} ${pinY + 30}, 100 ${pinY + 30}, ${batPos.x} ${batPos.y}`
+  // 滑阻左侧接线柱 (150, baseY + 10), 右侧滑片接线柱 (290, baseY + 10)
+  const rheoLeft = { x: 150, y: baseY + 10 }
+  const rheoRight = { x: 290, y: baseY + 10 }
+
+  // 动态引线路径（控制点距离根据纵向高差自适应，防止拉开距离后折弯过硬或反向）
+  const dyLeft = batPos.y - pinY
+  const wireLeftD = `M ${leftPinX} ${pinY} C ${leftPinX - 40} ${pinY + dyLeft * 0.4}, 100 ${pinY + dyLeft * 0.4}, ${batPos.x} ${batPos.y}`
   
   // 电源负极 -> 开关左触点
   const wireBatToSwD = `M ${batNeg.x} ${batNeg.y} C ${batNeg.x + 8} ${batNeg.y - 2}, ${swLeft.x - 8} ${swLeft.y + 4}, ${swLeft.x} ${swLeft.y}`
@@ -71,7 +75,8 @@ export const InductionCoilSandbox: React.FC<InductionCoilSandboxProps> = ({
   const wireSwToRheoD = `M ${swRight.x} ${swRight.y} C ${swRight.x + 8} ${swRight.y - 2}, ${rheoLeft.x - 8} ${rheoLeft.y + 2}, ${rheoLeft.x} ${rheoLeft.y}`
 
   // 右端引线：滑阻滑片右端点 -> 原线圈右脚
-  const wireRightD = `M ${rheoRight.x} ${rheoRight.y} C ${rheoRight.x + 30} ${rheoRight.y - 20}, ${rightPinX + 20} ${pinY + 20}, ${rightPinX} ${pinY}`
+  const dyRight = rheoRight.y - pinY
+  const wireRightD = `M ${rheoRight.x} ${rheoRight.y} C ${rheoRight.x + 40} ${pinY + dyRight * 0.6}, ${rightPinX + 30} ${pinY + dyRight * 0.6}, ${rightPinX} ${pinY}`
 
   // 辅助二次贝塞尔求点函数，用以在动态连线上画流光
   const getBezierPoint = (t: number, p0: { x: number; y: number }, p1: { x: number; y: number }, p2: { x: number; y: number }) => {
@@ -82,13 +87,13 @@ export const InductionCoilSandbox: React.FC<InductionCoilSandboxProps> = ({
     }
   }
 
-  // 贝塞尔控制点估算
+  // 贝塞尔控制点估算 (与 wireLeftD / wireRightD 保持动态同步)
   const pLeft0 = { x: leftPinX, y: pinY }
-  const pLeft1 = { x: leftPinX - 40, y: pinY + 30 }
+  const pLeft1 = { x: leftPinX - 40, y: pinY + dyLeft * 0.4 }
   const pLeft2 = { x: batPos.x, y: batPos.y }
 
   const pRight0 = { x: rheoRight.x, y: rheoRight.y }
-  const pRight1 = { x: rheoRight.x + 30, y: rheoRight.y - 20 }
+  const pRight1 = { x: rheoRight.x + 40, y: pinY + dyRight * 0.6 }
   const pRight2 = { x: rightPinX, y: pinY }
 
   return (
@@ -104,7 +109,7 @@ export const InductionCoilSandbox: React.FC<InductionCoilSandboxProps> = ({
           secondaryH={76}
           y={coilY}
           current={primaryCurrent * ironCoreFactor}
-          canvasHeight={400}
+          canvasHeight={INDUCTION_LAYOUT.DESIGN_H}
           lineColor={EM_COLORS.magneticFieldLine}
         />
       )}
@@ -119,7 +124,7 @@ export const InductionCoilSandbox: React.FC<InductionCoilSandboxProps> = ({
       <DCSource
         type="instrument"
         x={80}
-        y={330}
+        y={baseY}
         width={80}
         height={80}
         voltage={10}
@@ -164,7 +169,7 @@ export const InductionCoilSandbox: React.FC<InductionCoilSandboxProps> = ({
       {/* 5. 滑动变阻器 */}
       <Rheostat
         x={220}
-        y={330}
+        y={baseY}
         value={resistance}
         min={5}
         max={100}

@@ -2,6 +2,7 @@ import React from 'react'
 import { BarMagnet, ParametricMagneticField, VectorArrow } from '@/components/Physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
 import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
+import { INDUCTION_LAYOUT } from '../utils'
 
 interface InductionMagnetSandboxProps {
   magnetX: number         // 磁铁中心在设计坐标系下的 x 坐标 (80 - 580)
@@ -49,7 +50,7 @@ export const InductionMagnetSandbox: React.FC<InductionMagnetSandboxProps> = ({
             w={120}
             h={36}
             pole={magnetPole as 1 | -1}
-            canvasHeight={400}
+            canvasHeight={INDUCTION_LAYOUT.DESIGN_H}
             lineColor={withAlpha(PHYSICS_COLORS.magneticField, 0.8)}
           />
         </g>

@@ -1,6 +1,7 @@
 import React from 'react'
 import { ConductingRod, MagneticFieldGrid, Rails } from '@/components/Physics'
 import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
+import { INDUCTION_LAYOUT } from '../utils'
 
 interface InductionCutSandboxProps {
   rodX: number            // 导体棒在设计坐标系下的 x 坐标 (100 - 300)
@@ -26,30 +27,30 @@ export const InductionCutSandbox: React.FC<InductionCutSandboxProps> = ({
   font,
   onPointerDown,
 }) => {
-  // 轨道与磁场的几何布局设计坐标
-  const railY1 = 110
-  const railY2 = 210
-  const railSpacing = railY2 - railY1 // 100
+  // 轨道与磁场的几何布局设计坐标 (充盈 650 视口，间距拉大至 180)
+  const railY1 = 160
+  const railY2 = 340
+  const railSpacing = railY2 - railY1 // 180
 
-  // 磁场边界: 120 <= x <= 280, 100 <= y <= 220
+  // 磁场边界: 120 <= x <= 280, 140 <= y <= 360
   const fieldLeft = 120
   const fieldRight = 280
-  const fieldTop = 100
-  const fieldBottom = 220
+  const fieldTop = 140
+  const fieldBottom = 360
 
   // 导轨中心位置与尺寸
   const railCx = 200
-  const railCy = 160
+  const railCy = (railY1 + railY2) / 2 // 250
   const railLength = 240
 
   // 导轨右端 x 坐标
   const railRightX = 320
 
-  // 电流计接线柱设计坐标 (galvanometer at 420,270; terminals at local ±30,100)
-  const galRightTermX = 450  // 右接线柱 (+)
-  const galRightTermY = 370
-  const galLeftTermX = 390   // 左接线柱 (-)
-  const galLeftTermY = 370
+  // 电流计接线柱设计坐标 (绑定 INDUCTION_LAYOUT 动态解算)
+  const galRightTermX = INDUCTION_LAYOUT.galvanometerX + 30  // 右接线柱 (+) -> 450
+  const galRightTermY = INDUCTION_LAYOUT.galvanometerY + 100 // 520
+  const galLeftTermX = INDUCTION_LAYOUT.galvanometerX - 30   // 左接线柱 (-) -> 390
+  const galLeftTermY = INDUCTION_LAYOUT.galvanometerY + 100  // 520
 
   // 判定导体棒的电流指示方向
   let rodCurrentDir: 'in' | 'out' | 'none' = 'none'
@@ -121,13 +122,13 @@ export const InductionCutSandbox: React.FC<InductionCutSandboxProps> = ({
       <path d={wireUpper} fill="none" stroke={SCENE_COLORS.circuit.wire} strokeWidth="3.5" />
       <path d={wireLower} fill="none" stroke={SCENE_COLORS.circuit.wire} strokeWidth="3.5" />
 
-      {/* 5. 导体棒物理组件 (ConductingRod, 高度=320, 搭在 y=110/210 导轨上) */}
+      {/* 5. 导体棒物理组件 (ConductingRod, 高度=500, 搭在 180 间距导轨上) */}
       <g onPointerDown={onPointerDown} className="cursor-grab active:cursor-grabbing">
         <ConductingRod
           type="horizontal"
           x={rodX}
           spacing={railSpacing}
-          height={320}
+          height={500}
           currentDir={rodCurrentDir}
         />
       </g>

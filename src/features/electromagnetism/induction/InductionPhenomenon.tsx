@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -8,6 +8,7 @@ import { colors } from '@/theme/colors'
 import { useAnimationFrame } from '@/utils/animation'
 import { Solenoid, Galvanometer } from '@/components/Physics'
 import { computeInductionMode0, computeInductionMode1, computeInductionMode2 } from '@/physics/induction'
+import { INDUCTION_LAYOUT } from './utils'
 
 // 导入重构拆分后的独立功能子组件
 import { InductionCutSandbox } from './components/InductionCutSandbox'
@@ -16,21 +17,7 @@ import { InductionCoilSandbox } from './components/InductionCoilSandbox'
 
 // ─── 设计坐标系与布局常量 ────────────────────────────────────────
 
-/** SVG 画布设计尺寸（方式 A：固定 viewBox，preserveAspectRatio 自动居中） */
-const DESIGN_W = 700
-const DESIGN_H = 400
-
-/** 场景布局常量：副线圈中心、电流计中心 */
-const LAYOUT = {
-  /** 副线圈中心 x (模式 1/2 共享固定位置) */
-  coilX: 420,
-  /** 副线圈中心 y */
-  coilY: 160,
-  /** 灵敏电流计中心 x */
-  galvanometerX: 420,
-  /** 灵敏电流计中心 y */
-  galvanometerY: 270,
-} as const
+const { DESIGN_W, DESIGN_H, coilX, coilY, galvanometerX, galvanometerY } = INDUCTION_LAYOUT
 
 /** 各模式下拖拽坐标的有效范围 [min, max] */
 const DRAG_BOUNDS = {
@@ -89,10 +76,8 @@ export default function InductionPhenomenon() {
     }))
   )
 
-  // 使用 wide 预设尺寸 (700 x 400)
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-  const vp = useViewport(canvasSize, { designWidth: DESIGN_W, designHeight: DESIGN_H })
-  void vp // 显式声明以符合无 overlay 模式 A 视口规范
+  // 使用标准的 full 预设尺寸 (700 x 650)，充盈舒展视口
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full)
   const { font } = canvasSize
 
   const svgRef = useRef<SVGSVGElement | null>(null)
@@ -132,9 +117,6 @@ export default function InductionPhenomenon() {
   const switchPulse = useRef(0) // 记录开关通断瞬间的电动势冲击脉冲 (1.0 到 0)
   const prevR = useRef(resistance)
   const prevTime = useRef(performance.now())
-
-  // 定位常量
-  const { coilX, coilY, galvanometerX, galvanometerY } = LAYOUT
 
   // 3. 物理计算层（调用 src/physics/induction.ts 共享纯函数）
   const inductionResult =
@@ -297,13 +279,13 @@ export default function InductionPhenomenon() {
         {mode !== 0 && (
           <>
             <path
-              d={`M 340 280 L 340 330 L 365 330 L 450 330 L 450 370`}
+              d={`M ${coilX - 80} ${coilY + 120} L ${coilX - 80} ${galvanometerY + 70} L ${galvanometerX + 30} ${galvanometerY + 70} L ${galvanometerX + 30} ${galvanometerY + 100}`}
               fill="none"
               stroke={SCENE_COLORS.circuit.wire}
               strokeWidth="3.5"
             />
             <path
-              d={`M 500 280 L 500 370 L 390 370`}
+              d={`M ${coilX + 80} ${coilY + 120} L ${coilX + 80} ${galvanometerY + 60} L ${galvanometerX - 30} ${galvanometerY + 60} L ${galvanometerX - 30} ${galvanometerY + 100}`}
               fill="none"
               stroke={SCENE_COLORS.circuit.wire}
               strokeWidth="3.5"
@@ -319,7 +301,7 @@ export default function InductionPhenomenon() {
         />
         <text
           x={galvanometerX}
-          y={galvanometerY + 120}
+          y={galvanometerY + 125}
           fill={SCENE_COLORS.labels.panelTextMuted}
           fontSize={font(10)}
           fontWeight="bold"
