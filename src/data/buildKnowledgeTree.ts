@@ -32,7 +32,7 @@ export function buildKnowledgeTree(nodes: KnowledgeNode[]): ChapterGroup[] {
     chapterMap.get(key)!.nodes.push(node)
   })
 
-  const moduleOrder = ['mechanics', 'electricity', 'thermodynamics', 'optics', 'atomic']
+  const moduleOrder = ['mechanics', 'electricity', 'thermodynamics', 'optics', 'modern-physics']
   const getModuleRank = (m: string) => {
     const idx = moduleOrder.indexOf(m)
     return idx === -1 ? 999 : idx

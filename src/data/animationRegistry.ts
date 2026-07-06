@@ -42,6 +42,7 @@ async function loadExtendedRegistry(): Promise<void> {
         { opticsRefractionAnimations: opticsRefraction },
         { opticsTotalInternalReflectionAnimations: opticsTotalInternalReflection },
         { opticsThinLensAnimations: opticsThinLens },
+        { modernPhysicsAnimations: modernPhysics },
       ] = await Promise.all([
         import('./registries/electromagnetism-electrostatics'),
         import('./registries/electromagnetism-dc-circuits'),
@@ -56,6 +57,7 @@ async function loadExtendedRegistry(): Promise<void> {
         import('./registries/optics-refraction'),
         import('./registries/optics-total-internal-reflection'),
         import('./registries/optics-thin-lens'),
+        import('./registries/modern-physics'),
       ])
 
       Object.assign(
@@ -63,6 +65,7 @@ async function loadExtendedRegistry(): Promise<void> {
         emElectrostatics, emDcCircuits, emMagnetism, emInduction, emAc,
         thermoKinematics, thermoGasLaws, thermoFirstLaw, thermoSecondLaw,
         opticsReflection, opticsRefraction, opticsTotalInternalReflection, opticsThinLens,
+        modernPhysics,
       )
       extendedLoaded = true
     })()
@@ -73,7 +76,7 @@ async function loadExtendedRegistry(): Promise<void> {
 // ─── 公共 API ───
 
 /** 静态总动画数，不依赖动态加载 */
-export const ANIMATION_COUNT = 65
+export const ANIMATION_COUNT = 67
 
 /** 同步获取 config（core 动画立即命中，extended 动画未加载时返回 undefined） */
 export function getAnimationConfig(id: string): AnimationConfig | undefined {

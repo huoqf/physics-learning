@@ -29,6 +29,7 @@ type BuilderName =
   | 'buildRefractionQuantities'
   | 'buildTotalReflectionQuantities'
   | 'buildThinLensQuantities'
+  | 'buildModernPhysicsQuantities'
 
 /** 单条注册记录：懒加载器 + 构建器函数名 */
 interface QuantityRegistration {
@@ -126,6 +127,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-refraction':          { loader: () => import('./quantities/refraction'), builderName: 'buildRefractionQuantities' },
   'anim-total-reflection':    { loader: () => import('./quantities/totalReflection'), builderName: 'buildTotalReflectionQuantities' },
   'anim-thin-lens':           { loader: () => import('./quantities/thinLens'), builderName: 'buildThinLensQuantities' },
+  'anim-bohr-theory':         { loader: () => import('./quantities/modernPhysics'), builderName: 'buildModernPhysicsQuantities' },
 }
 
 /** 已加载的构建器缓存（模块级单例） */
