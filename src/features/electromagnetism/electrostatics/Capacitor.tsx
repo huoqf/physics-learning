@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateCapacitor } from '@/physics'
 import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
-import { Card } from '@/components/UI'
+import CapacitorChart from './CapacitorChart'
 
 // 物理常数定义 (SI)
 const EPS0 = 8.854e-12
@@ -17,9 +17,11 @@ const Q_FIXED = EPS0 * (100 * 1e-4) / (5 * 1e-3) * 12
 const C_MAX = EPS0 * 5 * (200 * 1e-4) / (2 * 1e-3) * 1e12
 const Q_MAX = C_MAX * 12
 
-// SVG 设计坐标系常量（对应 CANVAS_PRESETS.full）
+// SVG 设计坐标系常量（对应 CANVAS_PRESETS.splitV）
+// splitV 为上下分区场景预设：700×325
+// 动画区占下方 75%，使用 splitV 使 viewBox 比例与容器匹配
 const DESIGN_WIDTH = 700
-const DESIGN_HEIGHT = 650
+const DESIGN_HEIGHT = 325
 
 // 布局比例常量
 const LAYOUT = {
@@ -42,8 +44,8 @@ export default function Capacitor() {
     }))
   )
 
-  // 容器尺寸（方式A：无 overlay）
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  // 容器尺寸（方式A：无 overlay，使用 splitV 适配上下分区布局）
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.splitV)
   const { font } = canvasSize
 
   const { S = 100, d = 5, epsilon_r = 1, U = 12, connected = 1 } = params
@@ -161,8 +163,13 @@ export default function Capacitor() {
   }
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <Card className="w-full h-full overflow-hidden relative">
+    <div className="w-full h-full flex flex-col">
+      {/* 图表区：上方 25% */}
+      <div className="h-[25%] shrink-0 px-1.5 pt-1.5">
+        <CapacitorChart />
+      </div>
+      {/* 动画区：下方 flex-1 */}
+      <div ref={containerRef} className="flex-1 min-h-0">
         <svg
           viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`}
           preserveAspectRatio="xMidYMid meet"
@@ -207,7 +214,7 @@ export default function Capacitor() {
             <text
               x={plateLeft - (plateW + 40) / 2}
               y={cy + 4}
-              fontSize={font(10)}
+              fontSize={font(12)}
               fontWeight="semibold"
               fill={SCENE_COLORS.circuit.capacitorSt}
               textAnchor="middle"
@@ -222,13 +229,13 @@ export default function Capacitor() {
 
           {/* 上极板 */}
           <rect x={plateLeft} y={topPlateY} width={plateW} height={plateThick} fill={PHYSICS_COLORS.positiveCharge} rx={2} className="shadow-sm" />
-          <text x={plateLeft + 10} y={topPlateY - 6} fontSize={font(12)} fill={PHYSICS_COLORS.positiveCharge} fontWeight="bold" textAnchor="start">
+          <text x={plateLeft + 10} y={topPlateY - 6} fontSize={font(14)} fill={PHYSICS_COLORS.positiveCharge} fontWeight="bold" textAnchor="start">
             上极板 (+Q)
           </text>
 
           {/* 下极板 */}
           <rect x={plateLeft} y={botPlateY} width={plateW} height={plateThick} fill={PHYSICS_COLORS.negativeCharge} rx={2} className="shadow-sm" />
-          <text x={plateLeft + 10} y={botPlateY + plateThick + 16} fontSize={font(12)} fill={PHYSICS_COLORS.negativeCharge} fontWeight="bold" textAnchor="start">
+          <text x={plateLeft + 10} y={botPlateY + plateThick + 16} fontSize={font(14)} fill={PHYSICS_COLORS.negativeCharge} fontWeight="bold" textAnchor="start">
             下极板 (−Q)
           </text>
 
@@ -237,11 +244,11 @@ export default function Capacitor() {
             <g key={`p-particles-${i}`}>
               {/* 正电荷 (+) */}
               <circle cx={px} cy={topPlateY + plateThick + 6} r={4.5} fill={PHYSICS_COLORS.positiveCharge} />
-              <text x={px} y={topPlateY + plateThick + 9} fontSize={font(8)} textAnchor="middle" fill="white" fontWeight="bold">+</text>
+              <text x={px} y={topPlateY + plateThick + 9} fontSize={font(10)} textAnchor="middle" fill="white" fontWeight="bold">+</text>
 
               {/* 负电荷 (-) */}
               <circle cx={px} cy={botPlateY - 6} r={4.5} fill={PHYSICS_COLORS.negativeCharge} />
-              <text x={px} y={botPlateY - 3} fontSize={font(8)} textAnchor="middle" fill="white" fontWeight="bold">-</text>
+              <text x={px} y={botPlateY - 3} fontSize={font(10)} textAnchor="middle" fill="white" fontWeight="bold">-</text>
             </g>
           ))}
 
@@ -256,7 +263,7 @@ export default function Capacitor() {
             markerStart="url(#tick-cap)"
             markerEnd="url(#tick-cap)"
           />
-          <text x={plateRight + 22} y={cy + 4} fontSize={font(11)} fill={PHYSICS_COLORS.labelText} fontWeight="medium">
+          <text x={plateRight + 22} y={cy + 4} fontSize={font(13)} fill={PHYSICS_COLORS.labelText} fontWeight="medium">
             d = {d.toFixed(1)} mm
           </text>
 
@@ -284,10 +291,10 @@ export default function Capacitor() {
                 <line x1={bx} y1={cy - 26} x2={bx} y2={cy - 18} stroke={PHYSICS_COLORS.labelText} strokeWidth={2} />
                 <circle cx={bx} cy={cy - 26} r={2} fill={PHYSICS_COLORS.labelText} />
 
-                <text x={bx - 20} y={cy + 4} fontSize={font(11)} fill={PHYSICS_COLORS.labelText} textAnchor="end" fontWeight="bold">
+                <text x={bx - 20} y={cy + 4} fontSize={font(13)} fill={PHYSICS_COLORS.labelText} textAnchor="end" fontWeight="bold">
                   接通电源
                 </text>
-                <text x={bx - 20} y={cy + 16} fontSize={font(9.5)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">
+                <text x={bx - 20} y={cy + 16} fontSize={font(11)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end">
                   U = 12 V 恒定
                 </text>
               </g>
@@ -300,10 +307,10 @@ export default function Capacitor() {
 
                 <line x1={bx} y1={cy - 14} x2={bx} y2={cy + 14} stroke={PHYSICS_COLORS.grid} strokeWidth={2} strokeDasharray="3,3" />
 
-                <text x={bx - 20} y={cy + 4} fontSize={font(11)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end" fontWeight="bold">
+                <text x={bx - 20} y={cy + 4} fontSize={font(13)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="end" fontWeight="bold">
                   电源断开
                 </text>
-                <text x={bx - 20} y={cy + 16} fontSize={font(9.5)} fill={PHYSICS_COLORS.positiveCharge} textAnchor="end" fontWeight="medium">
+                <text x={bx - 20} y={cy + 16} fontSize={font(11)} fill={PHYSICS_COLORS.positiveCharge} textAnchor="end" fontWeight="medium">
                   Q 锁定守恒
                 </text>
               </g>
@@ -364,15 +371,15 @@ export default function Capacitor() {
             />
             <circle cx={ex} cy={ey} r={4.5} fill={CANVAS_COLORS.labelText} />
 
-            <text x={ex} y={ey - 22} fontSize={font(9.5)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
+            <text x={ex} y={ey - 22} fontSize={font(11)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
               指针式静电计
             </text>
-            <text x={ex} y={ey - 8} fontSize={font(9)} fill={CANVAS_COLORS.textMuted} textAnchor="middle">
+            <text x={ex} y={ey - 8} fontSize={font(11)} fill={CANVAS_COLORS.textMuted} textAnchor="middle">
               (测量板间电势差 U)
             </text>
 
             {/* 电势差数值 */}
-            <text x={ex} y={ey + 20} fontSize={font(11)} fill={EM_COLORS.electricPotential} fontWeight="bold" textAnchor="middle" className="font-mono">
+            <text x={ex} y={ey + 20} fontSize={font(13)} fill={EM_COLORS.electricPotential} fontWeight="bold" textAnchor="middle" className="font-mono">
               U = {voltage.toFixed(1)} V
             </text>
 
@@ -405,7 +412,7 @@ export default function Capacitor() {
             </marker>
           </defs>
         </svg>
-      </Card>
+      </div>
     </div>
   )
 }

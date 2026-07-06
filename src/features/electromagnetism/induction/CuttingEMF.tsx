@@ -64,7 +64,7 @@ function ChartSVGContent({
             strokeWidth={1}
             strokeDasharray="4,4"
           />
-          <text x={toSvgX(T_max) - font(7)} y={toSvgY(v_m) - 4} fontSize={font(7)} fill={CHART_COLORS.tickLabel} textAnchor="end">
+          <text x={toSvgX(T_max) - font(9)} y={toSvgY(v_m) - 4} fontSize={font(9)} fill={CHART_COLORS.tickLabel} textAnchor="end">
             收尾速度 v_m = {v_m.toFixed(2)} m/s
           </text>
         </g>
@@ -154,9 +154,9 @@ function TerminalVelocityReference({ v_m }: { v_m: number }) {
         strokeDasharray="4,4"
       />
       <text
-        x={plotOrigin.x + plotSize.width - font(7)}
+        x={plotOrigin.x + plotSize.width - font(9)}
         y={y - 4}
-        fontSize={font(7)}
+        fontSize={font(9)}
         fill={CHART_COLORS.tickLabel}
         textAnchor="end"
       >
@@ -187,7 +187,7 @@ export default function CuttingEMF() {
     showForceAnalysis = 1,
   } = params
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full)
 
   const physics = useCuttingEMFPhysics({ mode, B, L, v, R, F_ext, m }, canvasSize, time)
 

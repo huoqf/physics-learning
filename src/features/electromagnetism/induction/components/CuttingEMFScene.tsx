@@ -77,7 +77,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
             key={`b-sym-${idx++}`}
             x={sx}
             y={sy}
-            fontSize={font(14)}
+            fontSize={font(17)}
             fill={PHYSICS_COLORS.magneticField}
             opacity={Math.min(0.45, 0.2 + (absB / 3.0) * 0.25)}
             textAnchor="middle"
@@ -131,7 +131,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
         <text
           x={px(20)}
           y={px(20)}
-          fontSize={font(11)}
+          fontSize={font(13)}
           fill={PHYSICS_COLORS.magneticField}
           fontWeight="extrabold"
           alignmentBaseline="middle"
@@ -159,7 +159,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
           <text
             x={railLeftPos.cx - px(16)}
             y={railCy}
-            fontSize={font(11)}
+            fontSize={font(13)}
             fill={CANVAS_COLORS.labelText}
             fontWeight="bold"
             textAnchor="middle"
@@ -171,7 +171,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
           <text
             x={railLeftPos.cx - px(38)}
             y={railCy}
-            fontSize={font(9.5)}
+            fontSize={font(11)}
             fill={PHYSICS_COLORS.labelText}
             textAnchor="end"
             dominantBaseline="middle"
@@ -193,7 +193,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
           <text
             x={rodPos.cx - px(15)}
             y={railCy - px(10)}
-            fontSize={font(9.5)}
+            fontSize={font(11)}
             fill={PHYSICS_COLORS.emf}
             fontWeight="bold"
             textAnchor="end"
@@ -209,7 +209,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
             <text
               x={rodPos.cx + px(10)}
               y={railCy - railSpacing / 2 - px(8)}
-              fontSize={font(12)}
+              fontSize={font(14)}
               fill={EMF_current > 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
               fontWeight="extrabold"
               textAnchor="middle"
@@ -221,7 +221,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
             <text
               x={rodPos.cx + px(10)}
               y={railCy + railSpacing / 2 + px(8)}
-              fontSize={font(12)}
+              fontSize={font(14)}
               fill={EMF_current > 0 ? PHYSICS_COLORS.negativeCharge : PHYSICS_COLORS.positiveCharge}
               fontWeight="extrabold"
               textAnchor="middle"
@@ -281,7 +281,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
               <text
                 x={rodPos.cx + (finalV > 0 ? px(30) : -px(35))}
                 y={railCy - railSpacing / 2 - px(25)}
-                fontSize={font(10)}
+                fontSize={font(12)}
                 fill={PHYSICS_COLORS.velocity}
                 fontWeight="bold"
                 textAnchor="middle"
@@ -302,7 +302,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
               <text
                 x={rodPos.cx + (finalA > 0 ? px(30) : -px(35))}
                 y={railCy - railSpacing / 2 - px(55)}
-                fontSize={font(10)}
+                fontSize={font(12)}
                 fill={PHYSICS_COLORS.acceleration}
                 fontWeight="bold"
                 textAnchor="middle"
@@ -324,7 +324,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
                 <text
                   x={rodPos.cx + (extForceX > 0 ? px(35) : -px(35))}
                   y={railCy - px(20)}
-                  fontSize={font(9.5)}
+                  fontSize={font(11)}
                   fill={PHYSICS_COLORS.appliedForce}
                   fontWeight="bold"
                   textAnchor={extForceX > 0 ? 'start' : 'end'}
@@ -347,7 +347,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
                 <text
                   x={rodPos.cx + (ampForceX > 0 ? px(35) : -px(35))}
                   y={railCy - px(20)}
-                  fontSize={font(9.5)}
+                  fontSize={font(11)}
                   fill={PHYSICS_COLORS.lorentzForce}
                   fontWeight="bold"
                   textAnchor={ampForceX > 0 ? 'start' : 'end'}
@@ -370,7 +370,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
                 <text
                   x={rodPos.cx + (F_ext + ampForceX > 0 ? px(25) : -px(25))}
                   y={railCy + px(20)}
-                  fontSize={font(9.5)}
+                  fontSize={font(11)}
                   fill={PHYSICS_COLORS.forceNet}
                   fontWeight="bold"
                   textAnchor={F_ext + ampForceX > 0 ? 'start' : 'end'}
@@ -385,7 +385,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
               <text
                 x={rodPos.cx - px(25)}
                 y={railCy - railSpacing / 2 - px(8)}
-                fontSize={font(9.5)}
+                fontSize={font(11)}
                 fill={PHYSICS_COLORS.labelText}
                 fontWeight="bold"
                 textAnchor="end"
@@ -412,7 +412,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
             <text
               x={canvasSize.width / 2}
               y={px(27.5)}
-              fontSize={font(10)}
+              fontSize={font(12)}
               fill={PHYSICS_COLORS.forceArrowRed}
               fontWeight="bold"
               textAnchor="middle"
