@@ -9,6 +9,8 @@ export interface EnergyBarItem {
   color: string
   /** 文字高亮颜色，可选 */
   textColor?: string
+  /** 柱顶显示的自定义文本（例如带物理单位的真实值），可选 */
+  displayValue?: string
 }
 
 export interface EnergyBarsProps {
@@ -122,24 +124,27 @@ export const EnergyBars: FC<EnergyBarsProps> = ({
                 
                 {/* 柱顶数值 */}
                 <span 
-                  className={`absolute -top-4 font-semibold font-mono w-full text-center truncate px-0.5 transition-colors duration-300`}
+                  className={`absolute -top-4 font-semibold font-mono whitespace-nowrap left-1/2 -translate-x-1/2 text-center px-0.5 transition-colors duration-300`}
                   style={{ 
                     fontSize: fSize(valueFs),
                     color: isColliding ? PHYSICS_COLORS.alertRed : (item.textColor || SCENE_COLORS.materials.structStrokeLight)
                   }}
-                  title={item.value.toFixed(2)}
+                  title={item.displayValue !== undefined ? item.displayValue : item.value.toFixed(2)}
                 >
-                  {compact ? item.value.toFixed(1) : item.value.toFixed(2)}
+                  {item.displayValue !== undefined ? item.displayValue : (compact ? item.value.toFixed(1) : item.value.toFixed(2))}
                 </span>
               </div>
               
               {/* 柱底物理量标签 */}
               <span 
-                className={`mt-1 font-bold truncate w-full text-center transition-colors duration-300 ${
+                className={`mt-1 font-bold text-center transition-colors duration-300 ${
                   isColliding ? 'text-red-500 font-extrabold' : 'text-neutral-500'
-                } shrink-0`} 
-                style={{ fontSize: fSize(labelFs) }}
-                title={item.label}
+                } shrink-0 w-full whitespace-pre-line leading-tight`} 
+                style={{ 
+                  fontSize: fSize(labelFs),
+                  color: isColliding ? PHYSICS_COLORS.alertRed : (item.textColor || undefined)
+                }}
+                title={item.label.replace('\n', ' ')}
               >
                 {truncateLabel(item.label)}
               </span>

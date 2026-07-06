@@ -45,10 +45,38 @@ export default function CapacitorChart() {
   const normE = Math.max(2, Math.min(100, (field / E_MAX) * 100))
 
   const items: EnergyBarItem[] = [
-    { key: 'C', label: '电容', value: normC, color: PHYSICS_COLORS.electricField },
-    { key: 'Q', label: '电量', value: normQ, color: PHYSICS_COLORS.electricCurrent },
-    { key: 'U', label: '电压', value: normU, color: PHYSICS_COLORS.emf },
-    { key: 'E', label: '场强', value: normE, color: PHYSICS_COLORS.electricPotential },
+    { 
+      key: 'C', 
+      label: "C\n电容", 
+      value: normC, 
+      color: PHYSICS_COLORS.capacitor,
+      textColor: PHYSICS_COLORS.capacitor,
+      displayValue: `${cPF.toFixed(1)} pF`
+    },
+    { 
+      key: 'Q', 
+      label: "Q\n电量", 
+      value: normQ, 
+      color: PHYSICS_COLORS.positiveCharge,
+      textColor: PHYSICS_COLORS.positiveCharge,
+      displayValue: `${qPC.toFixed(1)} pC`
+    },
+    { 
+      key: 'U', 
+      label: "U\n电压", 
+      value: normU, 
+      color: PHYSICS_COLORS.electricPotential,
+      textColor: PHYSICS_COLORS.electricPotential,
+      displayValue: `${voltage.toFixed(1)} V`
+    },
+    { 
+      key: 'E', 
+      label: "E\n场强", 
+      value: normE, 
+      color: PHYSICS_COLORS.electricField,
+      textColor: PHYSICS_COLORS.electricField,
+      displayValue: `${Math.round(field)} V/m`
+    },
   ]
 
   const title = `S = ${S} cm² | d = ${d.toFixed(1)} mm | ${epsilon_r > 1.5 ? '电介质 (εᵣ=5.0)' : '真空环境 (εᵣ=1.0)'}`
