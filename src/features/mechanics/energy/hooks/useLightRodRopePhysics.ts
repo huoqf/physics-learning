@@ -5,11 +5,9 @@ import { useShallow } from 'zustand/react/shallow'
 import { precomputeLightRodRopeTrajectory, getLRRStateAtTime } from '@/physics/lightRodRope'
 import type { LRRModelState } from '@/physics/lightRodRope'
 import { GRAVITY } from '@/physics/constants'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 
-const DESIGN_WIDTH = 700
-const DESIGN_HEIGHT = 650
 const T_MAX = 6
 const FORCE_DRAW_SCALE = 2.5
 
@@ -111,7 +109,6 @@ export interface UseLightRodRopePhysicsResult {
   layout: LightRodRopeLayout
   forceVectors: LightRodRopeForceVectors
   chartsData: LightRodRopeChartData
-  vp: ReturnType<typeof useViewport>
   canvasSize: ReturnType<typeof useCanvasSize>[1]
   containerRef: React.RefObject<HTMLDivElement | null>
 }
@@ -126,12 +123,7 @@ export function useLightRodRopePhysics(): UseLightRodRopePhysicsResult {
     }))
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-
-  const vp = useViewport(canvasSize, {
-    designWidth: DESIGN_WIDTH,
-    designHeight: DESIGN_HEIGHT,
-  })
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full)
 
   // 参数提取
   const m1 = params.m1 ?? 1.0
@@ -172,16 +164,17 @@ export function useLightRodRopePhysics(): UseLightRodRopePhysicsResult {
     }
   }, [time, tEnd, setTime, setIsPlaying])
 
-  // 布局像素计算
+  // 舒展充盈 360×650 视口坐标系下的连接体布局比例与支点中心
+  const SCALE_PIX = 240
   const pivotX = 180
-  const pivotY = 166
-  const L_pix = L * 180
-  const R_p = 12
+  const pivotY = 220
+  const L_pix = L * SCALE_PIX
+  const R_p = 16
 
-  const x_A = constraint === 1 ? pivotX - R_p : pivotX + state.x_A_rel * 180
-  const y_A = pivotY + state.y_A_rel * 180
-  const x_B = pivotX + state.x_B_rel * 180
-  const y_B = pivotY + state.y_B_rel * 180
+  const x_A = constraint === 1 ? pivotX - R_p : pivotX + state.x_A_rel * SCALE_PIX
+  const y_A = pivotY + state.y_A_rel * SCALE_PIX
+  const x_B = pivotX + state.x_B_rel * SCALE_PIX
+  const y_B = pivotY + state.y_B_rel * SCALE_PIX
 
   const thetaB_val = state.thetaB
   const x_start_A = constraint === 1 ? pivotX - R_p : pivotX
@@ -385,7 +378,6 @@ export function useLightRodRopePhysics(): UseLightRodRopePhysicsResult {
       y_B_tan,
     },
     chartsData,
-    vp,
     canvasSize,
     containerRef,
   }

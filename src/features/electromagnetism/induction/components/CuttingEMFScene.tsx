@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo } from 'react'
+import React, { useEffect, useRef, useMemo, useState } from 'react'
 import { PHYSICS_COLORS, EM_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
 import { Rails, ConductorRod, VectorArrow, VectorDefs } from '@/components/Physics'
 import { CuttingEMFHandRule } from '../CuttingEMFHandRule'
@@ -31,6 +31,19 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
 
   const { px, font } = canvasSize
 
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const [actualHeight, setActualHeight] = useState(sceneHeight)
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const ro = new ResizeObserver(([entry]) => {
+      const h = Math.round(entry.contentBoxSize?.[0]?.blockSize ?? entry.contentRect.height)
+      if (h > 0) setActualHeight(h)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   useEffect(() => {
     const canvas = canvasRef.current
@@ -42,13 +55,13 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
     const isReset = time === 0 || !isPlaying
 
     if (isReset || canvas.dataset.prevParams !== prevParamsKey) {
-      ctx.clearRect(0, 0, canvasSize.width, sceneHeight)
+      ctx.clearRect(0, 0, canvasSize.width, actualHeight)
       canvas.dataset.prevParams = prevParamsKey
     }
 
     if (isPlaying && time > 0) {
       ctx.fillStyle = withAlpha(CANVAS_COLORS.objectFill, 0.18)
-      ctx.fillRect(0, 0, canvasSize.width, sceneHeight)
+      ctx.fillRect(0, 0, canvasSize.width, actualHeight)
 
       const rodW = px(6)
       const topY = railCy - railSpacing / 2 - px(6)
@@ -56,7 +69,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
       ctx.fillStyle = withAlpha(PHYSICS_COLORS.velocity, 0.35)
       ctx.fillRect(rodPos.cx - rodW / 2, topY, rodW, bottomY - topY)
     }
-  }, [time, isPlaying, B, L, R, mode, finalX, railSpacing, railCy, rodPos.cx, canvasSize.width, canvasSize.height, px, sceneHeight])
+  }, [time, isPlaying, B, L, R, mode, finalX, railSpacing, railCy, rodPos.cx, canvasSize.width, canvasSize.height, px, actualHeight])
 
   const fieldSymbols = useMemo(() => {
     const symbols = []
@@ -93,17 +106,17 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
   }, [absB, B_out, railLeftPos.cx, railRightPos.cx, railSpacing, railCy, px, font])
 
   return (
-    <div className="w-full relative bg-white rounded-lg border border-neutral-200 overflow-hidden shadow-sm flex-1 min-h-0" style={{ height: sceneHeight }}>
+    <div ref={containerRef} className="w-full relative bg-white rounded-lg border border-neutral-200 overflow-hidden shadow-sm flex-1 min-h-0">
       <canvas
         ref={canvasRef}
         width={canvasSize.width}
-        height={sceneHeight}
+        height={actualHeight}
         className="absolute inset-0 z-0 pointer-events-none"
       />
 
       <svg
         width={canvasSize.width}
-        height={sceneHeight}
+        height={actualHeight}
         className="absolute inset-0 z-10 w-full h-full bg-transparent"
       >
         <defs>
@@ -119,7 +132,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
         <Rails
           type="horizontal"
           width={canvasSize.width}
-          height={sceneHeight}
+          height={actualHeight}
           cx={railCx}
           cy={railCy}
           length={railLength}
@@ -186,7 +199,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
           x={rodPos.cx}
           currentDir={finalI > 1e-4 ? 'in' : finalI < -1e-4 ? 'out' : 'none'}
           spacing={railSpacing}
-          height={sceneHeight}
+          height={actualHeight}
         />
 
         {Math.abs(EMF_current) > 0.01 && (
@@ -271,7 +284,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
         {showForceAnalysis === 1 && (
           <g>
             <VectorArrow
-              origin={{ x: finalX, y: L / 2 + 0.3 }}
+              origin={{ x: finalX, y: L * 0.8 + 0.3 }}
               vector={{ x: finalV, y: 0 }}
               type="velocity"
               sceneScale={localSceneScale}
@@ -292,7 +305,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
             )}
 
             <VectorArrow
-              origin={{ x: finalX, y: L / 2 + 0.7 }}
+              origin={{ x: finalX, y: L * 0.8 + 0.7 }}
               vector={{ x: finalA, y: 0 }}
               type="acceleration"
               sceneScale={localSceneScale}

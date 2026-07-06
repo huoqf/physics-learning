@@ -1,6 +1,5 @@
 import { RelationChart } from '@/components/Chart'
 import { PHYSICS_COLORS } from '@/theme/physics'
-import type { ViewportInfo } from '@/utils'
 
 type ChartPoint = { x: number; y: number }
 
@@ -28,7 +27,6 @@ export interface LightRodRopeChartsData {
 
 interface LightRodRopeChartsProps {
   constraint: number
-  vp: Pick<ViewportInfo, 'tx' | 'ty' | 'scale'>
   chartsData: LightRodRopeChartsData
   tMax: number
   eMax: number
@@ -41,7 +39,6 @@ interface LightRodRopeChartsProps {
 
 export function LightRodRopeCharts({
   constraint,
-  vp,
   chartsData,
   tMax,
   eMax,
@@ -52,13 +49,7 @@ export function LightRodRopeCharts({
   chartMarkers,
 }: LightRodRopeChartsProps) {
   return (
-    <foreignObject
-      x={vp.tx + 370 * vp.scale}
-      y={vp.ty + 10 * vp.scale}
-      width={310 * vp.scale}
-      height={400 * vp.scale}
-    >
-      <div className="w-full h-full flex flex-col" style={{ gap: `${20 * vp.scale}px` }}>
+    <div className="w-full h-full flex flex-col gap-3">
         {constraint === 0 ? (
           // 刚性轻杆模式下：原有双曲线图
           <>
@@ -195,7 +186,6 @@ export function LightRodRopeCharts({
             </div>
           </>
         )}
-      </div>
-    </foreignObject>
+    </div>
   )
 }

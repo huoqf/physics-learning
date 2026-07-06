@@ -198,8 +198,8 @@ export default function CuttingEMF() {
   }, [physics.hasHitLimit, isPlaying, setIsPlaying])
 
   return (
-    <div ref={containerRef} className="w-full h-full flex flex-col bg-neutral-50 p-2 gap-2 relative">
-      <div className="w-full shrink-0 flex items-center justify-between gap-4" style={{ height: physics.chartHeight }}>
+    <div ref={containerRef} className="w-full h-full flex flex-col bg-neutral-50 p-2 relative">
+      <div className="w-full flex-1 flex items-center justify-between gap-4 min-h-0">
         <VelocityTimeChart
           mode="animated"
           points={physics.vtPoints}

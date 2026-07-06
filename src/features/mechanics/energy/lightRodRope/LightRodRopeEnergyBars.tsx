@@ -7,9 +7,8 @@ interface LightRodRopeEnergyBarsProps {
 }
 
 export function LightRodRopeEnergyBars({ physics }: LightRodRopeEnergyBarsProps) {
-  const { params, state, trajectory, hasCollisionRecent, canvasSize } = physics
+  const { params, state, trajectory, hasCollisionRecent } = physics
   const { constraint } = params
-  const font = canvasSize.font
 
   if (constraint !== 1 && constraint !== 2) return null
 
@@ -21,21 +20,20 @@ export function LightRodRopeEnergyBars({ physics }: LightRodRopeEnergyBarsProps)
     { key: 'Etot', label: 'E总', value: state.Etot, color: ENERGY_COLORS.mechanicalEnergy },
   ]
 
-  const minItemWidth = 58
-  const foWidth = Math.min(320, canvasSize.width * 0.45)
-  const needsCompact = foWidth < energyItems.length * minItemWidth || energyItems.length > 3
-  const foHeight = needsCompact ? 75 : 85
-
   return (
-    <foreignObject x={20} y={15} width={foWidth} height={foHeight}>
-      <EnergyBars
-        items={energyItems}
-        initialEtot={trajectory[0]?.Etot ?? 1.0}
-        font={font}
-        hasCollision={hasCollisionRecent}
-        collisionKey="Etot"
-        compact={needsCompact}
-      />
-    </foreignObject>
+    <div
+      className="absolute top-3 left-1/2 z-10 -translate-x-1/2 select-none pointer-events-auto"
+    >
+      <div className="w-[290px] h-[130px] shadow-sm rounded-lg bg-white/95 backdrop-blur-xs border border-neutral-200/60">
+        <EnergyBars
+          items={energyItems}
+          initialEtot={trajectory[0]?.Etot ?? 1.0}
+          font={(s) => s}
+          hasCollision={hasCollisionRecent}
+          collisionKey="Etot"
+          compact={false}
+        />
+      </div>
+    </div>
   )
 }

@@ -65,8 +65,8 @@ export function useCuttingEMFPhysics(
   const B_out = B < 0 ? 1 : 0
   const absB = Math.abs(B)
 
-  const chartHeight = px(190)
-  const sceneHeight = px(234)
+  const chartHeight = px(210)
+  const sceneHeight = Math.floor((canvasSize.height - px(16)) / 2)
 
   const scale = computeScale(canvasSize.width, sceneHeight, WORLD)
 
@@ -123,7 +123,8 @@ export function useCuttingEMFPhysics(
   const railRightPos = toCanvas(X_LIMIT, 0)
   const rodPos = toCanvas(finalX, 0)
 
-  const railSpacing = L * scale
+  // 对轨距进行视觉放大（物理计算 L 保持规范米制不变）
+  const railSpacing = L * scale * 1.2
   const railLength = railRightPos.cx - railLeftPos.cx
   const railCx = (railLeftPos.cx + railRightPos.cx) / 2
   const railCy = railLeftPos.cy

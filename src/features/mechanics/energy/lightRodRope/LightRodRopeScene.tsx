@@ -78,7 +78,7 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
           <circle cx={pivotX} cy={pivotY} r={4} fill={SCENE_COLORS.pendulum.pivotFill} />
         </>
       ) : constraint === 1 ? (
-        <Pulley cx={pivotX} cy={pivotY} r={12} hangerTopY={pivotY - 35} />
+        <Pulley cx={pivotX} cy={pivotY} r={R_p} hangerTopY={pivotY - 45} />
       ) : (
         <>
           <rect x={pivotX - 30} y={pivotY - 14} width={60} height={8} fill={SCENE_COLORS.surface.wallFill} rx={1} />
@@ -481,7 +481,7 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
 
       {/* 终点提示 */}
       {constraint === 1 && time >= tEnd - 0.001 && state.stopReason && (
-        <g transform={`translate(20, 18)`}>
+        <g transform={`translate(20, 580)`}>
           <rect
             width={310}
             height={28}

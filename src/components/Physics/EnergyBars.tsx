@@ -84,7 +84,7 @@ export const EnergyBars: FC<EnergyBarsProps> = ({
         {/* 系统总能量参考线：改用更细、更克制的淡灰线 */}
         {initialEtot !== undefined && (
           <div
-            className="absolute left-0 right-0 border-t border-dashed border-neutral-300 pointer-events-none transition-all duration-300"
+            className="absolute left-0 right-0 border-t border-dashed border-neutral-300 pointer-events-none transition-opacity duration-300"
             style={{ bottom: `${getPercent(initialEtot)}%`, height: '1px' }}
           />
         )}
@@ -97,15 +97,15 @@ export const EnergyBars: FC<EnergyBarsProps> = ({
             <div key={item.key} className="flex flex-col items-center flex-1 z-10 min-w-0 h-full justify-end">
               {/* 能量槽轨道：改用 h-full 实现纵向自适应 */}
               <div 
-                className={`relative w-4.5 bg-transparent rounded-t-[3px] h-full min-h-[35px] max-h-[80px] flex items-end transition-all duration-300 ${
+                className={`relative w-4.5 bg-transparent rounded-t-[3px] h-full min-h-[35px] max-h-[80px] flex items-end transition-colors duration-200 ${
                   isColliding 
                     ? 'border border-red-300 bg-red-50/5' 
                     : ''
                 }`}
               >
-                {/* 动态起伏的能量柱 */}
+                {/* 动态起伏的能量柱：移除 transition-all 防止 requestAnimationFrame 60fps 驱动下发生 300ms 延迟脱节 */}
                 <div
-                  className="w-full rounded-t-[2px] transition-all duration-300 ease-out"
+                  className="w-full rounded-t-[2px] transition-colors duration-200"
                   style={{
                     height: `${getPercent(item.value)}%`,
                     backgroundColor: itemColor,
