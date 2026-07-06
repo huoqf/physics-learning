@@ -63,7 +63,6 @@ export const modernPhysicsAnimations = defineAnimations({
         group: '操作',
         showIf: 'mode',
         showIfValue: 0,
-        variant: 'danger',
         setParams: { clearTrigger: 1 },
       },
       {
@@ -138,7 +137,6 @@ export const modernPhysicsAnimations = defineAnimations({
         group: '操作',
         showIf: 'mode',
         showIfValue: 2,
-        variant: 'danger',
         setParams: { clearTrigger: 1 },
       },
       // 阶段四控制
@@ -229,6 +227,92 @@ export const modernPhysicsAnimations = defineAnimations({
         unit: 'V',
         showIf: 'mode',
         showIfValue: 3,
+      },
+    ],
+  },
+
+  'anim-photoelectric': {
+    title: '光电效应与光的波粒二象性',
+    knowledgeId: 'modern-1-2',
+    Component: lazy(() => import('@/features/modern/photoelectric/PhotoelectricAnimation')),
+    controlsMode: 'param' as const,
+    defaultParams: {
+      frequency: 6.0,        // 入射光频率 (×10^14 Hz)
+      intensity: 50,         // 光源强度 (%)
+      voltage: 0.0,          // 极板电压 (V)
+      mode: 0,               // 0=初学, 1=通关
+      showPhotonModel: 0,    // 0=光束模式, 1=光子微粒模式
+    } as const,
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'mode',
+        group: '学习模式',
+        options: [
+          { value: 0, label: '初学 · 光子激发入门' },
+          { value: 1, label: '通关 · 伏安特性与遏止电压' },
+        ],
+      },
+      {
+        type: 'toggle',
+        key: 'showPhotonModel',
+        label: '光子微粒模型',
+        group: '显示',
+        trueValue: 1,
+        falseValue: 0,
+      },
+      {
+        type: 'tip',
+        content: '频率决定能否产生光电子，光强决定光电流大小',
+        group: '提示',
+        showIf: 'mode',
+        showIfValue: 0,
+      },
+      {
+        type: 'tip',
+        content: '反向电压拦截光电子，刚好使电流归零的电压即遏止电压 Uc',
+        group: '提示',
+        showIf: 'mode',
+        showIfValue: 1,
+      },
+    ],
+    paramMeta: [
+      {
+        key: 'frequency',
+        label: '光源频率 ν',
+        min: 4.0,
+        max: 8.0,
+        step: 0.1,
+        unit: '×10¹⁴ Hz',
+        group: '光源参数',
+        marks: [
+          { value: 5.6, label: '铯截止', variant: 'critical' },
+          { value: 4.0, label: '红光', variant: 'zero' },
+          { value: 7.5, label: '紫外', variant: 'recommended' },
+        ],
+      },
+      {
+        key: 'intensity',
+        label: '光源强度 P',
+        min: 0,
+        max: 100,
+        step: 1,
+        unit: '%',
+        group: '光源参数',
+      },
+      {
+        key: 'voltage',
+        label: '极板电压 U',
+        min: -5.0,
+        max: 5.0,
+        step: 0.1,
+        unit: 'V',
+        group: '电路参数',
+        showIf: 'mode',
+        showIfValue: 1,
+        marks: [
+          { value: 0, label: '零偏', variant: 'zero' },
+        ],
       },
     ],
   },
