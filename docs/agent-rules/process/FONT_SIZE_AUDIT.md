@@ -13,9 +13,9 @@
 |---|---:|---:|---|
 | E. chart 配置对象裸值 | 3 | 3 | ✅ 全部完成 |
 | A. 已迁移（原 A 类，有 useCanvasSize） | 8 | 50 | ✅ 全部完成 |
-| D. 已迁移（遗漏文件） | 11 | 38 | ✅ 全部完成 |
+| D. 已迁移（遗漏文件） | 12 | 47 | ✅ 全部完成 |
 | B. 需引入 font（subcomponent，需加 prop） | 11 | 49 | 待执行 |
-| C. 混合文件（部分已迁移，剩余硬编码） | 2 | 10 | 待补齐 |
+| C. 混合文件（部分已迁移，剩余硬编码） | 1 | 1 | 待补齐 |
 | **合计** | **35** | **150** | — |
 
 ---
@@ -71,14 +71,15 @@ Subcomponent，无 `useCanvasSize`，需在 props 接口加 `font: (v: number) =
 
 ---
 
-## C. 混合文件（2 文件，10 调用点）
+## C. 混合文件（1 文件，1 调用点）
 
 已有部分 `fontSize={font(N)}`，剩余硬编码需补齐。
 
 | # | 文件 | 硬编码数 | 已用 font() 数 |
 |---|---|---:|---:|
-| 1 | mechanics/gravitation/SatelliteAnimation.tsx | 9 | 3 |
-| 2 | electromagnetism/induction/InductionPhenomenon.tsx | 1 | 大部分已迁移 |
+| 1 | electromagnetism/induction/InductionPhenomenon.tsx | 1 | 大部分已迁移 |
+
+> SatelliteAnimation.tsx 已于 2026-07-07 迁移完成（9→0 硬编码），移入 D 类。
 
 ---
 
@@ -108,9 +109,9 @@ Subcomponent，无 `useCanvasSize`，需在 props 接口加 `font: (v: number) =
 
 ### Phase 2: ✅ D 类（已完成）
 
-### Phase 3: C 类混合文件（2 文件）
+### Phase 3: C 类混合文件（1 文件）
 补齐已有 font() 文件中的硬编码残留。
-- SatelliteAnimation(9), InductionPhenomenon(1)
+- InductionPhenomenon(1)
 
 ### Phase 4: B 类 subcomponent（11 文件，49 调用点）
 需改 props 接口 + 父组件传参。影响面较大，建议逐个文件处理。
@@ -144,7 +145,7 @@ Subcomponent，无 `useCanvasSize`，需在 props 接口加 `font: (v: number) =
 | 类别 | 文件数 | 硬编码数 | 理由 |
 |------|--------|---------|------|
 | B 类场景子组件 | 8 | 37 | InclineForceDiagram(11) 等，需改 props 接口 + 逐个父组件传参，改动链长，子组件内部字体与场景布局紧耦合 |
-| C 类混合残留 | 2 | 10 | SatelliteAnimation(9) 轨道标注布局固定，缩放收益有限；InductionPhenomenon(1) 仅 1 处 |
+| C 类混合残留 | 1 | 1 | InductionPhenomenon(1) 仅 1 处 |
 
 ---
 

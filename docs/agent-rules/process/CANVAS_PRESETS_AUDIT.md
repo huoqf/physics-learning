@@ -58,16 +58,21 @@
 | electromagnetism/induction/CuttingEMF.tsx | 203 |
 | mechanics/dynamics/WeightlessnessAnimation.tsx | 48 |
 
-### mediumTall: 650×450（6）
+### mediumTall: 650×450（4）
 
 | 文件 | 行 |
 |---|---|
 | mechanics/dynamics/GravityAnimation.tsx | 23 |
 | mechanics/dynamics/GravityBasicAnimation.tsx | 41 |
 | mechanics/dynamics/EquilibriumAnimation.tsx | 26 |
-| mechanics/gravitation/KeplerAnimation.tsx | 28 |
-| mechanics/gravitation/SatelliteAnimation.tsx | 124 |
 | mechanics/dynamics/VectorAdditionAnimation.tsx | 30 |
+
+### full: 700×650（2）
+
+| 文件 | 行 |
+|---|---|
+| mechanics/gravitation/KeplerAnimation.tsx | 28 |
+| mechanics/gravitation/SatelliteAnimation.tsx | 28 |
 
 ### standard: 700×420（9）
 
@@ -195,5 +200,5 @@ CenterExtra 紧凑画中画，尺寸刻意小，不适用标准 preset。
 - 已迁移从 7 增至 65（新增 58）
 - 硬编码从 70 降至 11（减少 84%）
 - CANVAS_PRESETS 从 6 个增至 7 个（新增 mediumWide）
-- tsc 零错误通过
+- KeplerAnimation/SatelliteAnimation 从 mediumTall(650×450) 迁移至 full(700×650)，designWidth/Height 对齐 preset
 - tsc 零错误通过
