@@ -79,6 +79,10 @@ export const IDENTITY_SCENE_SCALE: SceneScale = {
  * - mode='visibleArea' : vectorBounds 使用可视区域 (visibleX,visibleY,visibleW,visibleH)
  * - mode='centerScale' : vectorBounds 以 centerX/centerY 为原点
  *
+ * 注意：此函数不感知 presetCompensation。若组件同时依赖 vp.scale（含补偿）
+ * 和 SceneScale（纯几何），需在调用侧对齐坐标系（如 Kepler/Satellite 的
+ * worldWidth: vp.visibleW / 物理scale 做法）。
+ *
  * @throws 当 profile 或 layout mode 为 null/undefined 时抛出明确错误（避免旧组件静默失败）
  */
 export function createSceneScaleFromViewport(

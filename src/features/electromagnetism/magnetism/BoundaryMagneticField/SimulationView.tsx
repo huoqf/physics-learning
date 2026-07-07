@@ -6,7 +6,7 @@ import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE, withAlpha } from '@/theme/physics'
 import { createSceneScale, worldToPixel } from '@/scene'
 import type { SceneConfig } from '@/scene'
-import { setupCanvasDPR } from '@/hooks/useCanvasDPR'
+import { setupCanvasDPR, useDevicePixelRatio } from '@/hooks/useCanvasDPR'
 import {
   calcParticleRadius,
   calcParticlePeriod,
@@ -16,6 +16,7 @@ import {
 import { VectorArrow, drawMagneticFieldGrid } from '@/components/Physics'
 
 export function SimulationView() {
+  useDevicePixelRatio()
   const [sizeRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.square)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const params = useAnimationStore((s) => s.params)

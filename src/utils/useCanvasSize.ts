@@ -8,8 +8,10 @@ export interface CanvasSizeOptions {
 export interface CanvasSize {
   width: number
   height: number
-  /** 相对于 initial 设计基准的缩放比（min(width/iw, height/ih)） */
+  /** 相对于 initial 设计基准的缩放比（min(width/iw, height/ih) × presetCompensation） */
   scale: number
+  /** 原始缩放比（不含 presetCompensation），即 min(width/iw, height/ih) */
+  rawScale: number
   /** 像素值缩放：px(80) 在 50% 缩放下返回 40 */
   px: (v: number) => number
   /** 字体缩放（带 7–16 可读性 clamp） */
@@ -57,8 +59,8 @@ export function useCanvasSize(
 
     const resizeObserver = new ResizeObserver((entries) => {
       if (!entries || entries.length === 0) return
-      const rect = element.getBoundingClientRect()
-      setRaw({ width: rect.width, height: rect.height })
+      const { width, height } = entries[0].contentRect
+      setRaw({ width, height })
     })
 
     resizeObserver.observe(element)
@@ -80,6 +82,7 @@ export function useCanvasSize(
       width: raw.width,
       height: raw.height,
       scale,
+      rawScale,
       px: (v: number) => v * scale,
       font: (v: number) => clamp(v * scale, 7, 16),
     }

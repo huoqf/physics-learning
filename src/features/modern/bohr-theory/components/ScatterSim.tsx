@@ -4,7 +4,7 @@ import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { MODERN_COLORS, EM_COLORS, PHYSICS_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics/colors'
 import { colors } from '@/theme/colors'
-import { setupCanvasDPR } from '@/hooks/useCanvasDPR'
+import { setupCanvasDPR, useDevicePixelRatio } from '@/hooks/useCanvasDPR'
 
 interface Particle {
   id: number
@@ -31,6 +31,7 @@ interface ScatterSimProps {
 }
 
 export default function ScatterSim({ isPlaying, time: _time, modelType, impactParameter, autoEmit, keepTrails, launchTrigger, clearTrigger, updateParam }: ScatterSimProps) {
+  useDevicePixelRatio()
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const { font } = canvasSize
   const canvasRef = useRef<HTMLCanvasElement | null>(null)

@@ -3,7 +3,7 @@ import { useCanvasSize } from '@/utils'
 import { useSimulationFrame } from '@/utils/animation'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { MODERN_COLORS, EM_COLORS, PHYSICS_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics/colors'
-import { setupCanvasDPR } from '@/hooks/useCanvasDPR'
+import { setupCanvasDPR, useDevicePixelRatio } from '@/hooks/useCanvasDPR'
 
 interface IncidentParticle {
   x: number
@@ -71,6 +71,7 @@ const ENERGY_MAP: Record<string, { e: number; color: string }> = {
 }
 
 export default function ExcitationSim({ isPlaying: _isPlaying, time, atomQuantity, excitationType, incidentEnergy, launchTrigger, clearTrigger, updateParam }: ExcitationSimProps) {
+  useDevicePixelRatio()
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 

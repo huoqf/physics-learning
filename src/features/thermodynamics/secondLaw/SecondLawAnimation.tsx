@@ -7,7 +7,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { SECOND_LAW_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { STROKE, FONT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { setupCanvasDPR } from '@/hooks/useCanvasDPR'
+import { setupCanvasDPR, useDevicePixelRatio } from '@/hooks/useCanvasDPR'
 import {
   initHeatConductionParticles,
   initDiffusionParticles,
@@ -43,6 +43,7 @@ const LAYOUT = {
 const SNAPSHOT_BUFFER_SIZE = 300
 
 export default function SecondLawAnimation() {
+  useDevicePixelRatio()
   const { params, isPlaying, time, direction } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,

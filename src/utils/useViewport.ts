@@ -10,6 +10,8 @@
  * @agent-rule 不替代 useCanvasSize，而是消费其输出做纯几何计算
  * @agent-rule 不涉及物理坐标转换（physicsToCanvas 职责不变）
  * @agent-rule overlay 单位统一为像素，由调用方转换（如 W * 0.3 → px）
+ * @agent-rule presetCompensation 自动从 CanvasSize 推导（canvas.scale / canvas.rawScale），
+ *           无需调用方重复传参。仅在需要覆盖时显式传入。
  *
  * @example
  * ```tsx
@@ -46,6 +48,12 @@ export interface ViewportOptions {
   overlayTop?: number
   /** 底部遮挡像素（默认 0） */
   overlayBottom?: number
+  /**
+   * 缩放比代偿系数（默认 1.0）。
+   * 与 useCanvasSize 的 presetCompensation 保持一致，
+   * 确保 vp.scale 和 vp.transform 中的缩放比统一应用代偿。
+   */
+  presetCompensation?: number
 }
 
 export interface ViewportInfo {
@@ -63,7 +71,7 @@ export interface ViewportInfo {
   /** 可视区域中心 Y（容器坐标系） */
   centerY: number
 
-  /** contain 缩放比：min(visibleW/designW, visibleH/designH) */
+  /** contain 缩放比：min(visibleW/designW, visibleH/designH) × presetCompensation（与 CanvasSize.scale 语义一致） */
   scale: number
 
   /**
@@ -97,16 +105,21 @@ export function useViewport(
     overlayBottom = 0,
   } = options
 
+  // 从 CanvasSize 自动推导代偿系数，无需调用方重复传参
+  const compensation = options.presetCompensation
+    ?? (canvas.rawScale > 0 ? canvas.scale / canvas.rawScale : 1.0)
+
   return useMemo(() => {
     const visibleX = overlayLeft
     const visibleY = overlayTop
     const visibleW = Math.max(0, canvas.width - overlayLeft - overlayRight)
     const visibleH = Math.max(0, canvas.height - overlayTop - overlayBottom)
 
-    const scale = Math.min(
+    const rawScale = Math.min(
       visibleW / designWidth,
       visibleH / designHeight,
     )
+    const scale = rawScale * compensation
 
     const centerX = visibleX + visibleW / 2
     const centerY = visibleY + visibleH / 2
@@ -138,5 +151,6 @@ export function useViewport(
     overlayRight,
     overlayTop,
     overlayBottom,
+    compensation,
   ])
 }

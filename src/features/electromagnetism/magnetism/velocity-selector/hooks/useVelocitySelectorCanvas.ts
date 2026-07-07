@@ -3,7 +3,7 @@ import { calculateVelocitySelectorTrajectory } from '@/physics'
 import { worldToPixel } from '@/scene'
 import type { SceneScale } from '@/scene'
 import { CANVAS_STYLE, PHYSICS_COLORS } from '@/theme/physics'
-import { setupCanvasDPR } from '@/hooks/useCanvasDPR'
+import { setupCanvasDPR, useDevicePixelRatio } from '@/hooks/useCanvasDPR'
 import {
   VELOCITY_SELECTOR_PHYSICS,
   type ParticleState,
@@ -23,6 +23,7 @@ export function useVelocitySelectorCanvas({
   sceneScale: SceneScale
   canvasSize: { width: number; height: number }
 }) {
+  useDevicePixelRatio()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const particlesRef = useRef<ParticleState[]>([])
   const lastEmitTimeRef = useRef<number>(0)

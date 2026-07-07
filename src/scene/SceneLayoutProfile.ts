@@ -16,13 +16,6 @@ export interface SceneLayoutProfile {
   designWidth: number
   /** 设计基准高（px） */
   designHeight: number
-  /** overlay 遮挡（px），与 DOM panel 同源 */
-  overlay?: {
-    left?: number
-    right?: number
-    top?: number
-    bottom?: number
-  }
   /** 物理世界宽度（px），用于覆盖 designWidth 参与 scale 计算 */
   worldWidth?: number
   /** 物理世界高度（px），用于覆盖 designHeight 参与 scale 计算 */

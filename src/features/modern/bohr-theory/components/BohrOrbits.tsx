@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useSimulationFrame } from '@/utils/animation'
 import { MODERN_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics/colors'
-import { setupCanvasDPR } from '@/hooks/useCanvasDPR'
+import { setupCanvasDPR, useDevicePixelRatio } from '@/hooks/useCanvasDPR'
 
 interface PhotonAnimation {
   x: number
@@ -22,6 +22,7 @@ interface BohrOrbitsProps {
 }
 
 export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: BohrOrbitsProps) {
+  useDevicePixelRatio()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const canvasWRef = useRef(680)
   const canvasHRef = useRef(360)
