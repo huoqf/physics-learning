@@ -156,7 +156,7 @@ tests/
 ```
 
 - `physics/` 与 `math/` **不得**依赖 React、DOM、window、document
-- `physics/` **不得**直接依赖渲染副作用工具（如 `utils/canvas.ts`）
+- `physics/` **不得**直接依赖渲染副作用工具（如 `hooks/useCanvasDPR.ts`）
 - 页面层**不得**反向依赖底层计算实现细节
 
 ---
@@ -209,7 +209,7 @@ tests/
 ## 6. 坐标系统规则
 
 - 所有图形渲染必须通过 `src/utils/coordinate.ts` 做坐标转换
-- 必须使用 `src/utils/canvas.ts` 的 `setupCanvas` 处理 DPR
+- 必须使用 `src/hooks/useCanvasDPR.ts` 的 `setupCanvasDPR` 处理 DPR
 - **禁止**在组件中直接写像素换算逻辑或魔法数字定位
 
 | 坐标系 | 原点 | Y 轴方向 |

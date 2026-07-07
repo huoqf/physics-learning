@@ -7,6 +7,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { SECOND_LAW_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { STROKE, FONT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
+import { setupCanvasDPR } from '@/hooks/useCanvasDPR'
 import {
   initHeatConductionParticles,
   initDiffusionParticles,
@@ -147,15 +148,8 @@ export default function SecondLawAnimation() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
+    const ctx = setupCanvasDPR(canvasRef, canvasSize.width, canvasSize.height)
     if (!ctx) return
-
-    const dpr = window.devicePixelRatio || 1
-    canvas.width = canvasSize.width * dpr
-    canvas.height = canvasSize.height * dpr
-    ctx.scale(dpr, dpr)
 
     ctx.clearRect(0, 0, canvasSize.width, canvasSize.height)
 

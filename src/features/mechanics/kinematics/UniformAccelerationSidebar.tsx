@@ -1,5 +1,5 @@
 import type { SidebarExtraProps } from '@/data/types'
-import { SegmentedControl, TipCard } from '@/components/UI'
+import { SegmentedControl, TipCard, Slider } from '@/components/UI'
 
 export default function UniformAccelerationSidebar({
   params,
@@ -45,25 +45,21 @@ export default function UniformAccelerationSidebar({
           : '合并梯形：以整体梯形面积 S = ½(v₀+v_t)t 直接代表总位移。'}
       </TipCard>
       <div className="pt-2 border-t border-neutral-100">
-        <div className="flex justify-between text-xs mb-1">
-          <span className="text-neutral-600 font-semibold">微元切割份数 N</span>
-          <span className="font-mono text-neutral-700 font-bold">
-            {splitN === 0 ? '连续不分割' : `${splitN} 份`}
-          </span>
-        </div>
-        <input
-          type="range"
+        <Slider
+          label="微元切割份数 N"
+          value={splitNIndex}
           min={0}
           max={splitNOptions.length - 1}
           step={1}
-          value={splitNIndex}
-          onChange={(e) => {
-            const val = splitNOptions[parseInt(e.target.value)]
+          disabled={disabled}
+          onChange={(v) => {
+            const val = splitNOptions[v]
             setParams({ ...params, splitN: val })
           }}
-          disabled={disabled}
-          className="w-full h-1.5 bg-neutral-200 rounded-full appearance-none cursor-pointer accent-primary-600"
         />
+        <div className="text-right font-mono text-xs text-neutral-700 font-bold mt-1">
+          {splitN === 0 ? '连续不分割' : `${splitN} 份`}
+        </div>
       </div>
     </div>
   )

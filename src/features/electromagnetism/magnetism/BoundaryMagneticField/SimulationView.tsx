@@ -6,6 +6,7 @@ import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE, withAlpha } from '@/theme/physics'
 import { createSceneScale, worldToPixel } from '@/scene'
 import type { SceneConfig } from '@/scene'
+import { setupCanvasDPR } from '@/hooks/useCanvasDPR'
 import {
   calcParticleRadius,
   calcParticlePeriod,
@@ -221,12 +222,10 @@ export function SimulationView() {
   }, [mode, dynamicType, v, activeTheta, R])
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
+    const ctx = setupCanvasDPR(canvasRef, canvasSize.width, canvasSize.height)
     if (!ctx) return
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.clearRect(0, 0, canvasSize.width, canvasSize.height)
     const { font } = canvasSize
 
     // 绘制磁场区域底色与符号网格
@@ -237,15 +236,15 @@ export function SimulationView() {
       // 单边界：y > 0 的半平面
       ctx.fillStyle = PHYSICS_COLORS.magneticField
       ctx.globalAlpha = 0.04
-      ctx.fillRect(0, 0, canvas.width, bStartY)
+      ctx.fillRect(0, 0, canvasSize.width, bStartY)
       ctx.restore()
 
-      drawMagneticFieldGrid(ctx, { x: 0, y: 0, w: canvas.width, h: bStartY, B: effectiveB })
+      drawMagneticFieldGrid(ctx, { x: 0, y: 0, w: canvasSize.width, h: bStartY, B: effectiveB })
 
       // 绘制单边界线
       ctx.beginPath()
       ctx.moveTo(0, bStartY)
-      ctx.lineTo(canvas.width, bStartY)
+      ctx.lineTo(canvasSize.width, bStartY)
       ctx.strokeStyle = PHYSICS_COLORS.magneticField
       ctx.lineWidth = 2
       ctx.stroke()
@@ -259,15 +258,15 @@ export function SimulationView() {
       const { py: bEndY } = worldToPixel(0, d, sceneScale)
       ctx.fillStyle = PHYSICS_COLORS.magneticField
       ctx.globalAlpha = 0.04
-      ctx.fillRect(0, bEndY, canvas.width, bStartY - bEndY)
+      ctx.fillRect(0, bEndY, canvasSize.width, bStartY - bEndY)
       ctx.restore()
 
-      drawMagneticFieldGrid(ctx, { x: 0, y: bEndY, w: canvas.width, h: bStartY - bEndY, B: effectiveB })
+      drawMagneticFieldGrid(ctx, { x: 0, y: bEndY, w: canvasSize.width, h: bStartY - bEndY, B: effectiveB })
 
       // 下边界线
       ctx.beginPath()
       ctx.moveTo(0, bStartY)
-      ctx.lineTo(canvas.width, bStartY)
+      ctx.lineTo(canvasSize.width, bStartY)
       ctx.strokeStyle = PHYSICS_COLORS.magneticField
       ctx.lineWidth = 2
       ctx.stroke()
@@ -275,7 +274,7 @@ export function SimulationView() {
       // 上边界线
       ctx.beginPath()
       ctx.moveTo(0, bEndY)
-      ctx.lineTo(canvas.width, bEndY)
+      ctx.lineTo(canvasSize.width, bEndY)
       ctx.strokeStyle = PHYSICS_COLORS.magneticField
       ctx.lineWidth = 2
       ctx.stroke()

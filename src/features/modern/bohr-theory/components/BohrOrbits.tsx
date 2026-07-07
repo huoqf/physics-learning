@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useSimulationFrame } from '@/utils/animation'
 import { MODERN_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics/colors'
+import { setupCanvasDPR } from '@/hooks/useCanvasDPR'
 
 interface PhotonAnimation {
   x: number
@@ -72,9 +73,6 @@ export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: 
     const parent = canvas.parentElement
     if (!parent) return
     const sync = (w: number, h: number) => {
-      const dpr = window.devicePixelRatio || 1
-      canvas.width = w * dpr
-      canvas.height = h * dpr
       canvasWRef.current = w
       canvasHRef.current = h
     }
@@ -90,16 +88,10 @@ export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: 
 
   // 统一仿真帧循环（铁律 1 合规）
   useSimulationFrame(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    const dpr = window.devicePixelRatio || 1
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-
     const W = canvasWRef.current
     const H = canvasHRef.current
+    const ctx = setupCanvasDPR(canvasRef, W, H)
+    if (!ctx) return
     const cx = W > 300 ? W * 0.65 : W / 2
     const cy = H / 2
     const angle = angleRef.current

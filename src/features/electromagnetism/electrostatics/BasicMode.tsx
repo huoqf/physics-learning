@@ -299,7 +299,7 @@ export default function BasicMode({
               <rect x={0} y={0} width={stageWidth - w * 0.04} height={56} rx={6} fill={colors.accent[50]} stroke={colors.accent[400]} strokeWidth={1} />
               {/* 叹号图标 */}
               <circle cx={20} cy={28} r={8} fill={colors.accent[500]} />
-              <text x={20} y={31} fontSize={10} fill="#ffffff" textAnchor="middle" fontWeight="bold">!</text>
+              <text x={20} y={31} fontSize={CANVAS_STYLE.font.small} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">!</text>
               <text x={36} y={22} fontSize={CANVAS_STYLE.font.labelSize} fill={colors.accent[700]} fontWeight="bold">
                 高考考点辨析：点电荷适用条件
               </text>

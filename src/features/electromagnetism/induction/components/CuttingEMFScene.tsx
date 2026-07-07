@@ -15,11 +15,10 @@ interface CuttingEMFSceneProps {
   F_ext: number
   L: number
   R: number
-  B: number
 }
 
 export const CuttingEMFScene = React.memo(function CuttingEMFScene({
-  physics, canvasSize, time, isPlaying, mode, showForceAnalysis, F_ext, L, R, B,
+  physics, canvasSize, time, isPlaying, mode, showForceAnalysis, F_ext, L, R,
 }: CuttingEMFSceneProps) {
   const {
     finalX, finalV, finalA, finalI, EMF_current, hasHitLimit,
@@ -43,33 +42,6 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
-
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    const prevParamsKey = `${B}-${L}-${R}-${mode}-${canvasSize.width}-${canvasSize.height}`
-    const isReset = time === 0 || !isPlaying
-
-    if (isReset || canvas.dataset.prevParams !== prevParamsKey) {
-      ctx.clearRect(0, 0, canvasSize.width, actualHeight)
-      canvas.dataset.prevParams = prevParamsKey
-    }
-
-    if (isPlaying && time > 0) {
-      ctx.fillStyle = withAlpha(CANVAS_COLORS.objectFill, 0.18)
-      ctx.fillRect(0, 0, canvasSize.width, actualHeight)
-
-      const rodW = px(6)
-      const topY = railCy - railSpacing / 2 - px(6)
-      const bottomY = railCy + railSpacing / 2 + px(6)
-      ctx.fillStyle = withAlpha(PHYSICS_COLORS.velocity, 0.35)
-      ctx.fillRect(rodPos.cx - rodW / 2, topY, rodW, bottomY - topY)
-    }
-  }, [time, isPlaying, B, L, R, mode, finalX, railSpacing, railCy, rodPos.cx, canvasSize.width, canvasSize.height, px, actualHeight])
 
   const fieldSymbols = useMemo(() => {
     const symbols = []
@@ -107,13 +79,6 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
 
   return (
     <div ref={containerRef} className="w-full relative bg-white rounded-lg border border-neutral-200 overflow-hidden shadow-sm flex-1 min-h-0">
-      <canvas
-        ref={canvasRef}
-        width={canvasSize.width}
-        height={actualHeight}
-        className="absolute inset-0 z-0 pointer-events-none"
-      />
-
       <svg
         width={canvasSize.width}
         height={actualHeight}
@@ -128,6 +93,29 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
             PHYSICS_COLORS.lorentzForce
           ]} />
         </defs>
+
+        {/* 导体棒扫过区域底色 */}
+        {isPlaying && time > 0 && (
+          <rect
+            x={0} y={0}
+            width={canvasSize.width} height={actualHeight}
+            fill={withAlpha(CANVAS_COLORS.objectFill, 0.18)}
+          />
+        )}
+
+        {/* 导体棒当前位置高亮 */}
+        {isPlaying && time > 0 && (() => {
+          const rodW = px(6)
+          const topY = railCy - railSpacing / 2 - px(6)
+          const bottomY = railCy + railSpacing / 2 + px(6)
+          return (
+            <rect
+              x={rodPos.cx - rodW / 2} y={topY}
+              width={rodW} height={bottomY - topY}
+              fill={withAlpha(PHYSICS_COLORS.velocity, 0.35)}
+            />
+          )
+        })()}
 
         <Rails
           type="horizontal"

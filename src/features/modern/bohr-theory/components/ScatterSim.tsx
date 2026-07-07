@@ -4,6 +4,7 @@ import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { MODERN_COLORS, EM_COLORS, PHYSICS_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics/colors'
 import { colors } from '@/theme/colors'
+import { setupCanvasDPR } from '@/hooks/useCanvasDPR'
 
 interface Particle {
   id: number
@@ -95,15 +96,8 @@ export default function ScatterSim({ isPlaying, time: _time, modelType, impactPa
 
   // 统一仿真帧循环
   useSimulationFrame(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
+    const ctx = setupCanvasDPR(canvasRef, canvasSize.width, canvasSize.height)
     if (!ctx) return
-
-    const dpr = window.devicePixelRatio || 1
-    canvas.width = canvasSize.width * dpr
-    canvas.height = canvasSize.height * dpr
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
     const W = canvasSize.width
     const H = canvasSize.height

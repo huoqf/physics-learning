@@ -14,6 +14,7 @@ import { useCanvasSize } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 
 import { RelationChart, ChartArea } from '@/components/Chart'
+import { PHYSICS_COLORS } from '@/theme/physics'
 import {
   calculateHookeLawState,
   calculateCutRopeState,
@@ -168,26 +169,26 @@ function CutRopeAccelerationChart({
       )}
 
       <svg width="100%" height="100%" viewBox="0 0 360 340">
-        <text x={180} y={20} fontSize={font(14)} fontWeight="bold" fill="#1F2937" textAnchor="middle">
+        <text x={180} y={20} fontSize={font(14)} fontWeight="bold" fill={PHYSICS_COLORS.labelText} textAnchor="middle">
           四球加速度对比
         </text>
 
         {/* 基准线（0 加速度） */}
-        <line x1={35} y1={baseY} x2={340} y2={baseY} stroke="#9CA3AF" strokeWidth={1.5} />
-        <text x={30} y={baseY + 4} fontSize={font(10)} fill="#9CA3AF" textAnchor="end">0</text>
+        <line x1={35} y1={baseY} x2={340} y2={baseY} stroke={PHYSICS_COLORS.axis} strokeWidth={1.5} />
+        <text x={30} y={baseY + 4} fontSize={font(10)} fill={PHYSICS_COLORS.axis} textAnchor="end">0</text>
         {/* 正向刻度（向上加速度） */}
-        <line x1={33} y1={baseY - 130} x2={37} y2={baseY - 130} stroke="#9CA3AF" strokeWidth={1} />
-        <text x={30} y={baseY - 127} fontSize={font(10)} fill="#9CA3AF" textAnchor="end">
+        <line x1={33} y1={baseY - 130} x2={37} y2={baseY - 130} stroke={PHYSICS_COLORS.axis} strokeWidth={1} />
+        <text x={30} y={baseY - 127} fontSize={font(10)} fill={PHYSICS_COLORS.axis} textAnchor="end">
           +{maxAccel.toFixed(1)}
         </text>
         {/* 负向刻度（向下加速度） */}
-        <line x1={33} y1={baseY + 130} x2={37} y2={baseY + 130} stroke="#9CA3AF" strokeWidth={1} />
-        <text x={30} y={baseY + 134} fontSize={font(10)} fill="#9CA3AF" textAnchor="end">
+        <line x1={33} y1={baseY + 130} x2={37} y2={baseY + 130} stroke={PHYSICS_COLORS.axis} strokeWidth={1} />
+        <text x={30} y={baseY + 134} fontSize={font(10)} fill={PHYSICS_COLORS.axis} textAnchor="end">
           -{maxAccel.toFixed(1)}
         </text>
         {/* 方向提示 */}
-        <text x={30} y={baseY - 60} fontSize={font(9)} fill="#9CA3AF" textAnchor="end">↑</text>
-        <text x={30} y={baseY + 70} fontSize={font(9)} fill="#9CA3AF" textAnchor="end">↓</text>
+        <text x={30} y={baseY - 60} fontSize={font(9)} fill={PHYSICS_COLORS.axis} textAnchor="end">↑</text>
+        <text x={30} y={baseY + 70} fontSize={font(9)} fill={PHYSICS_COLORS.axis} textAnchor="end">↓</text>
 
         {/* 柱状图（带方向：正向上画，负向下画） */}
         {data.map((item, i) => {
@@ -225,7 +226,7 @@ function CutRopeAccelerationChart({
                 x={barX + barWidth / 2}
                 y={baseY + 145}
                 fontSize={font(12)}
-                fill="#374151"
+                fill={PHYSICS_COLORS.labelText}
                 textAnchor="middle"
                 fontWeight="bold"
               >
@@ -238,10 +239,10 @@ function CutRopeAccelerationChart({
         {/* 理论分析标注 */}
         {isCut === 1 && tCut < 0.5 && (
           <g>
-            <text x={180} y={300} fontSize={font(12)} fill="#6B7280" textAnchor="middle">
+            <text x={180} y={300} fontSize={font(12)} fill={PHYSICS_COLORS.textMuted} textAnchor="middle">
               理论值 (刚剪断):
             </text>
-            <text x={180} y={320} fontSize={font(11)} fill="#6B7280" textAnchor="middle">
+            <text x={180} y={320} fontSize={font(11)} fill={PHYSICS_COLORS.textMuted} textAnchor="middle">
               aA=+g, aB=-g, aC=-2g, aD=0
             </text>
           </g>

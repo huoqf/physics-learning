@@ -247,7 +247,6 @@ export default function CuttingEMF() {
         F_ext={F_ext}
         L={L}
         R={R}
-        B={B}
       />
     </div>
   )

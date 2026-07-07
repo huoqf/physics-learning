@@ -78,10 +78,14 @@
   // 回调必须接收 deltaTime
   // 动画频率与物理计算频率解耦
   ```
-- [x] `src/utils/canvas.ts` — DPR 处理
+- [x] `src/hooks/useCanvasDPR.ts` — DPR 处理
   ```ts
-  setupCanvas(canvas: HTMLCanvasElement): CanvasRenderingContext2D
-  // 处理 devicePixelRatio，返回已缩放的 ctx
+  setupCanvasDPR(
+    canvasRef: RefObject<HTMLCanvasElement | null>,
+    width: number,
+    height: number,
+  ): CanvasRenderingContext2D | null
+  // 处理 devicePixelRatio，设置物理像素尺寸 + ctx.setTransform，返回已缩放的 ctx
   ```
 - [x] `src/utils/storage.ts` — 存储接口
   ```ts

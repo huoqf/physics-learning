@@ -287,7 +287,7 @@ export default function ThreeChargeMode({
         {isAllThreeBalanced && (
           <g>
             <circle cx={stageWidth / 2} cy={stageHeight * 0.82} r={14} fill={colors.success[500]} opacity={0.9} />
-            <text x={stageWidth / 2} y={stageHeight * 0.82 + 5} fontSize={12} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">✓</text>
+            <text x={stageWidth / 2} y={stageHeight * 0.82 + 5} fontSize={CANVAS_STYLE.font.annotation} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">✓</text>
             <text x={stageWidth / 2} y={stageHeight * 0.82 + 24} fontSize={CANVAS_STYLE.font.labelSize} fill={colors.success[600]} textAnchor="middle" fontWeight="bold">
               自由三电荷完美平衡！
             </text>

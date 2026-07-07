@@ -3,6 +3,7 @@ import { calculateVelocitySelectorTrajectory } from '@/physics'
 import { worldToPixel } from '@/scene'
 import type { SceneScale } from '@/scene'
 import { CANVAS_STYLE, PHYSICS_COLORS } from '@/theme/physics'
+import { setupCanvasDPR } from '@/hooks/useCanvasDPR'
 import {
   VELOCITY_SELECTOR_PHYSICS,
   type ParticleState,
@@ -73,12 +74,10 @@ export function useVelocitySelectorCanvas({
   }, [params.mode, params.q, params.v0, params.B, time, mass, plateLength, plateGap])
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
+    const ctx = setupCanvasDPR(canvasRef, canvasSize.width, canvasSize.height)
     if (!ctx) return
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.clearRect(0, 0, canvasSize.width, canvasSize.height)
 
     if (params.mode === 0 && singleParticle) {
       const { point } = singleParticle
