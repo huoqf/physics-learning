@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 import { clampEndpoint } from '@/utils/coordinate'
 import type { CanvasBounds, CanvasPoint } from '@/utils/coordinate'
 import { createSceneScaleFromViewport } from '@/scene'
@@ -103,8 +103,8 @@ export function useEquilibriumLayout(
   const chartX0 = vp.visibleW - chartW - 20
   const chartY0 = vp.visibleH - 30
 
-  const thetaToX = (thetaVal: number) => chartX0 + ((thetaVal - 10) / 80) * chartW
-  const tToY = (tVal: number) => chartY0 - (tVal / 60) * chartH
+  const thetaToX = useCallback((thetaVal: number) => chartX0 + ((thetaVal - 10) / 80) * chartW, [chartX0, chartW])
+  const tToY = useCallback((tVal: number) => chartY0 - (tVal / 60) * chartH, [chartY0, chartH])
 
   const secantPathD = useMemo(() => {
     if (vp.visibleW <= 0) return ''

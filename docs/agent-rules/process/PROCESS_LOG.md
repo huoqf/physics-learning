@@ -17,6 +17,7 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 07-06 | modern/bohr-theory | refactor | 原子结构与玻尔理论教学与规范化重构：将 controlsMode 改为 timed 以启用底部播放控制；移除 Canvas 内悬浮控制浮层并统一由声明式 controlMeta 承载；新增 α 散射偏角累计直方图与轨迹簇持久化；支持真实 $n^2$ 物理轨道比例与量子跃迁动态公式展示；添加轨道退激路径箭头、碰撞能量传递分配卡与退激光谱公式比对板；绘制实时光电流-电压 $I-U$ 曲线图与红色工作点并高度同步仿真行为 |
 | 07-06 | electromagnetism/induction | refactor | CuttingEMF 页面迁移与优化：去除预设缩水代偿 {presetCompensation: 1.2}；将下半屏场景高度上限大幅提升至 420px，充盈剩余纵向画布空间；对轨距进行 1.6 倍视觉放大；动力学矢量的垂向纵标参数化绑定至轨道切线 |
 | 07-06 | mechanics/energy | refactor | LightRodRopeAnimation 页面合规迁移与优化：将 SVG 内嵌 foreignObject 图表重构为标准 HTML flex 平级并列架构（铁律 8）；移除预设缩水代偿与形式主义 useViewport；纵向支点下移至 y=220 且轻杆比例放大至 240px/m，充盈 650 视口；滑轮半径参数化绑定 |
 | 07-06 | electromagnetism/induction | refactor | InductionPhenomenon 页面布局重构：规范化至 standard full 预设 (700×650)；清理形式主义 useViewport 调用；实施方案二舒展充盈布局，接线柱与曲线控制点参数化绑定，拉开上下垂距保持连线自然 |

@@ -37,6 +37,7 @@ export {
   THERMO_COLORS,
   OPTICS_COLORS,
   WAVE_COLORS,
+  MODERN_COLORS,
   CANVAS_COLORS,
   TRANSMISSION_COLORS,
 } from './colors'
@@ -50,6 +51,7 @@ export type {
   ThermoColorKey,
   OpticsColorKey,
   WaveColorKey,
+  ModernColorKey,
   CanvasColorKey,
 } from './colors'
 

@@ -57,7 +57,7 @@ export default function FreeFallAnimation() {
     designWidth: FF_DESIGN.width,
     designHeight: FF_DESIGN.height,
     refMagnitudes: { velocity: Math.sqrt(2 * g * TUBE_PHYSICAL_HEIGHT), acceleration: GRAVITY, gravity: GRAVITY, force: 0.5 },
-  }), [vp, g])
+  }), [vp, g, FF_DESIGN.width, FF_DESIGN.height])
 
   // 物理引擎
   const { points: pointsA, groundTime: groundTimeA, currentState: stateA } = useFreeFallPhysics(v0, g, dragKA, matA.mass, maxFallHeight, time)

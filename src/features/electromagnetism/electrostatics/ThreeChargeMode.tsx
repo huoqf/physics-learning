@@ -89,7 +89,7 @@ export default function ThreeChargeMode({
   useEffect(() => {
     setQ3X(stageWidth * 0.5)
     setNoEquilibrium(false)
-  }, [w, h, q1, q2, q3])
+  }, [w, h, q1, q2, q3, stageWidth])
 
   const charges = [
     { x: pos1X * 0.01, y: centerY * 0.01, q: q1 * 1e-6 },

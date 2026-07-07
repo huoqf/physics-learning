@@ -1,6 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useSimulationFrame } from '@/utils/animation'
+import { useCanvasSize } from '@/utils'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { MODERN_COLORS, EM_COLORS, PHYSICS_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics/colors'
+import { colors } from '@/theme/colors'
 
 interface Particle {
   id: number
@@ -27,9 +30,9 @@ interface ScatterSimProps {
 }
 
 export default function ScatterSim({ isPlaying, time: _time, modelType, impactParameter, autoEmit, keepTrails, launchTrigger, clearTrigger, updateParam }: ScatterSimProps) {
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const { font } = canvasSize
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const canvasWRef = useRef(680)
-  const canvasHRef = useRef(360)
 
   const modelTypeRef = useRef(modelType)
   const bRef = useRef(impactParameter)
@@ -46,27 +49,27 @@ export default function ScatterSim({ isPlaying, time: _time, modelType, impactPa
   useEffect(() => { autoEmitRef.current = autoEmit }, [autoEmit])
   useEffect(() => { keepTrailsRef.current = keepTrails }, [keepTrails])
 
-  // 发射粒子（操作 ref，不触发重渲染）
-  const emitParticle = (offsetY?: number) => {
+  // 发射粒子
+  const emitParticle = useCallback((offsetY?: number) => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const cy = canvas.height / 2
+    const cy = canvasSize.height / 2
     const targetY = offsetY !== undefined ? cy - offsetY : cy - bRef.current
     particlesRef.current = [
       ...particlesRef.current,
       {
         id: nextIdRef.current++,
         x: 30, y: targetY, vx: 4.5, vy: 0,
-        trail: [], color: '#f97316', active: true,
+        trail: [], color: MODERN_COLORS.photonInfrared, active: true,
       },
     ]
-  }
+  }, [canvasSize.height])
 
   // 清空
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     particlesRef.current = []
     statsRef.current = { straight: 0, deflected: 0, rebounded: 0 }
-  }
+  }, [])
 
   // 监听触发器
   useEffect(() => {
@@ -74,37 +77,21 @@ export default function ScatterSim({ isPlaying, time: _time, modelType, impactPa
       emitParticle()
       updateParam('launchTrigger', 0)
     }
-  }, [launchTrigger])
+  }, [launchTrigger, emitParticle, updateParam])
   useEffect(() => {
     if (clearTrigger === 1) {
       handleClear()
       updateParam('clearTrigger', 0)
     }
-  }, [clearTrigger])
+  }, [clearTrigger, handleClear, updateParam])
 
   // 时钟重置
   useEffect(() => {
     if (_time === 0) handleClear()
-  }, [_time])
+  }, [_time, handleClear])
 
   // 参数 b / 模型类型变化时发射一颗演示粒子
-  useEffect(() => { emitParticle() }, [modelType, impactParameter])
-
-  // Canvas 尺寸适配
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const sync = () => {
-      const rect = canvas.parentElement?.getBoundingClientRect()
-      canvas.width = rect?.width || 680
-      canvas.height = rect?.height || 360
-      canvasWRef.current = canvas.width
-      canvasHRef.current = canvas.height
-    }
-    sync()
-    window.addEventListener('resize', sync)
-    return () => window.removeEventListener('resize', sync)
-  }, [])
+  useEffect(() => { emitParticle() }, [modelType, impactParameter, emitParticle])
 
   // 统一仿真帧循环
   useSimulationFrame(() => {
@@ -113,8 +100,13 @@ export default function ScatterSim({ isPlaying, time: _time, modelType, impactPa
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    const W = canvasWRef.current
-    const H = canvasHRef.current
+    const dpr = window.devicePixelRatio || 1
+    canvas.width = canvasSize.width * dpr
+    canvas.height = canvasSize.height * dpr
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+
+    const W = canvasSize.width
+    const H = canvasSize.height
     const cx = W / 2
     const cy = H / 2
     const b = bRef.current
@@ -143,13 +135,17 @@ export default function ScatterSim({ isPlaying, time: _time, modelType, impactPa
             nextX += p.vx
             nextY += p.vy
           } else {
+            // 库仑斥力: F = k·Z₁·Z₂·e² / r²
+            // α粒子 Z₁=2, 金核 Z₂=79, 缩放到画布单位
             const dx = p.x - cx
             const dy = p.y - cy
             const r2 = dx * dx + dy * dy
             const r = Math.sqrt(r2)
-            const force = 7500 / Math.max(r2, 120)
-            nextVx += force * (dx / r) * 0.15
-            nextVy += force * (dy / r) * 0.15
+            const COULOMB_K = 12000
+            const rMin2 = 80
+            const force = COULOMB_K / Math.max(r2, rMin2)
+            nextVx += force * (dx / r) * 0.12
+            nextVy += force * (dy / r) * 0.12
             nextX += nextVx
             nextY += nextVy
           }
@@ -188,7 +184,7 @@ export default function ScatterSim({ isPlaying, time: _time, modelType, impactPa
       ctx.fill()
       ctx.stroke()
       ctx.fillStyle = withAlpha(EM_COLORS.positiveCharge, 0.4)
-      ctx.font = 'bold 24px sans-serif'
+      ctx.font = `bold ${font(24)}px sans-serif`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText('+', cx - 50, cy - 40)
@@ -207,8 +203,8 @@ export default function ScatterSim({ isPlaying, time: _time, modelType, impactPa
         ctx.arc(elec.x, elec.y, 8, 0, Math.PI * 2)
         ctx.fillStyle = EM_COLORS.negativeCharge
         ctx.fill()
-        ctx.fillStyle = '#ffffff'
-        ctx.font = '12px monospace'
+        ctx.fillStyle = CANVAS_COLORS.white
+        ctx.font = `${font(12)}px monospace`
         ctx.fillText('-', elec.x, elec.y)
       })
       ctx.restore()
@@ -235,8 +231,8 @@ export default function ScatterSim({ isPlaying, time: _time, modelType, impactPa
       ctx.beginPath()
       ctx.arc(cx, cy, 6, 0, Math.PI * 2)
       ctx.fill()
-      ctx.fillStyle = '#ffffff'
-      ctx.font = 'bold 10px sans-serif'
+      ctx.fillStyle = CANVAS_COLORS.white
+      ctx.font = `bold ${font(10)}px sans-serif`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText('Au+', cx, cy - 12)
@@ -274,12 +270,12 @@ export default function ScatterSim({ isPlaying, time: _time, modelType, impactPa
     ctx.lineTo(W, cy - b)
     ctx.stroke()
     ctx.fillStyle = PHYSICS_COLORS.textMuted
-    ctx.font = '11px sans-serif'
+    ctx.font = `${font(11)}px sans-serif`
     ctx.fillText(`b = ${b} px`, 10, cy - b - 6)
     ctx.restore()
 
     // 统计看板
-    drawStatsPanel(ctx, stats, W, H)
+    drawStatsPanel(ctx, stats, W, H, font)
   }, { active: true })
 
   return (
@@ -289,7 +285,7 @@ export default function ScatterSim({ isPlaying, time: _time, modelType, impactPa
           {modelTypeRef.current === 0 ? '汤姆孙"枣糕模型"散射仿真' : '卢瑟福"核式结构"散射仿真'}
         </span>
       </div>
-      <div className="flex-1 w-full min-h-0 bg-neutral-50 rounded-xl overflow-hidden">
+      <div ref={containerRef} className="flex-1 w-full min-h-0 bg-neutral-50 rounded-xl overflow-hidden">
         <canvas ref={canvasRef} className="block w-full h-full" />
       </div>
       <div className="px-4 py-2 border-t border-neutral-100 text-xs text-neutral-500 bg-neutral-50/50 flex justify-between rounded-b-xl">
@@ -300,32 +296,32 @@ export default function ScatterSim({ isPlaying, time: _time, modelType, impactPa
   )
 }
 
-function drawStatsPanel(ctx: CanvasRenderingContext2D, s: { straight: number; deflected: number; rebounded: number }, w: number, h: number) {
+function drawStatsPanel(ctx: CanvasRenderingContext2D, s: { straight: number; deflected: number; rebounded: number }, w: number, h: number, font: (v: number) => number) {
   const px = w - 185, py = h - 145, pw = 170, ph = 85
   ctx.save()
-  ctx.fillStyle = 'rgba(24, 24, 27, 0.85)'
+  ctx.fillStyle = withAlpha(colors.neutral[900], 0.85)
   ctx.beginPath()
   ctx.roundRect(px, py, pw, ph, 8)
   ctx.fill()
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'
+  ctx.strokeStyle = withAlpha(colors.neutral.white, 0.15)
   ctx.lineWidth = 1
   ctx.stroke()
 
-  ctx.fillStyle = '#ffffff'
-  ctx.font = 'bold 10px sans-serif'
+  ctx.fillStyle = colors.neutral.white
+  ctx.font = `bold ${font(10)}px sans-serif`
   ctx.fillText('α 粒子偏角累计统计', px + 10, py + 16)
 
   const total = s.straight + s.deflected + s.rebounded
   const pct = (v: number) => total > 0 ? `${((v / total) * 100).toFixed(1)}%` : '0%'
-  ctx.font = '10px monospace'
-  ctx.fillStyle = '#60a5fa'
+  ctx.font = `${font(10)}px monospace`
+  ctx.fillStyle = colors.primary[400]
   ctx.fillText(`直穿(<5°):   ${s.straight} (${pct(s.straight)})`, px + 10, py + 34)
-  ctx.fillStyle = '#fb923c'
+  ctx.fillStyle = colors.accent[400]
   ctx.fillText(`偏转(5-90°): ${s.deflected} (${pct(s.deflected)})`, px + 10, py + 50)
-  ctx.fillStyle = '#f87171'
+  ctx.fillStyle = colors.danger[400]
   ctx.fillText(`反弹(≥90°):  ${s.rebounded} (${pct(s.rebounded)})`, px + 10, py + 66)
-  ctx.fillStyle = '#e4e4e7'
-  ctx.font = '9px sans-serif'
+  ctx.fillStyle = colors.neutral[200]
+  ctx.font = `${font(9)}px sans-serif`
   ctx.fillText(`总射入粒子数: ${total}`, px + 10, py + 78)
   ctx.restore()
 }

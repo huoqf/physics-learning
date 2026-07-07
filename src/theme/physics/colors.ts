@@ -194,6 +194,17 @@ export const WAVE_COLORS = {
   doppler:            '#F59E0B', // 多普勒效应标注      — amber-500
 } as const
 
+// ─── 近代物理 (Modern Physics) ─────────────────────────────────────────────
+export const MODERN_COLORS = {
+  photon:             '#FBBF24', // 光子（可见光默认色）— amber-400
+  photonUltraviolet:  '#7C3AED', // 紫外光子 — violet-600
+  photonInfrared:     '#EF4444', // 红外光子 — red-500
+  photoelectron:      '#2563EB', // 光电子 — blue-600
+  electronBound:      '#71717A', // 束缚电子（阴极板上）— neutral-500
+  cathodePlate:       '#52525B', // 阴极板 — neutral-600
+  anodePlate:         '#A1A1AA', // 阳极板 — neutral-400
+} as const
+
 // ─── 通用 Canvas 元素 (Canvas Commons) ───────────────────────────────────────
 import { colors } from '../colors'
 
@@ -236,6 +247,7 @@ export const PHYSICS_COLORS = {
   ...THERMO_COLORS,
   ...OPTICS_COLORS,
   ...WAVE_COLORS,
+  ...MODERN_COLORS,
   ...CANVAS_COLORS,
 } as const
 
@@ -247,4 +259,5 @@ export type EMColorKey         = keyof typeof EM_COLORS
 export type ThermoColorKey     = keyof typeof THERMO_COLORS
 export type OpticsColorKey     = keyof typeof OPTICS_COLORS
 export type WaveColorKey       = keyof typeof WAVE_COLORS
+export type ModernColorKey     = keyof typeof MODERN_COLORS
 export type CanvasColorKey     = keyof typeof CANVAS_COLORS

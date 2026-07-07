@@ -24,7 +24,7 @@ function normalizeAngle180(deg: number): number {
   return a > 180 ? 360 - a : a
 }
 
-export function useVectorDrag({ svgRef, visibleW, visibleH, scale, phi, mode, updateParam }: UseVectorDragProps) {
+export function useVectorDrag({ svgRef, visibleW, visibleH, scale, phi, mode: _mode, updateParam }: UseVectorDragProps) {
   const [activeDrag, setActiveDrag] = useState<'f1' | 'f2' | 'f' | null>(null)
 
   const handleDragStart = useCallback(
@@ -75,7 +75,7 @@ export function useVectorDrag({ svgRef, visibleW, visibleH, scale, phi, mode, up
         updateParam('angle', newAngle)
       }
     },
-    [activeDrag, svgRef, visibleW, visibleH, scale, phi, mode, updateParam]
+    [activeDrag, svgRef, visibleW, visibleH, scale, phi, updateParam]
   )
 
   useEffect(() => {

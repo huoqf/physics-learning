@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useSimulationFrame } from '@/utils/animation'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -25,6 +25,13 @@ interface OutgoingPhoton {
   active: boolean
 }
 
+interface CascadeStep {
+  from: number
+  to: number
+  color: string
+  e: number
+}
+
 interface TransitionLine {
   from: number
   to: number
@@ -40,6 +47,8 @@ interface CollisionCard {
   lvl: number
 }
 
+type AtomState = 'orbiting' | 'excited' | 'transitioning' | 'ionized'
+
 interface ExcitationSimProps {
   isPlaying: boolean
   time: number
@@ -51,7 +60,16 @@ interface ExcitationSimProps {
   updateParam: (key: string, value: number) => void
 }
 
-export default function ExcitationSim({ isPlaying, time, atomQuantity, excitationType, incidentEnergy, launchTrigger, clearTrigger, updateParam }: ExcitationSimProps) {
+const ENERGY_MAP: Record<string, { e: number; color: string }> = {
+  '4->3': { e: 0.66, color: MODERN_COLORS.photonInfrared },
+  '4->2': { e: 2.55, color: '#06b6d4' },
+  '4->1': { e: 12.75, color: MODERN_COLORS.photonUltraviolet },
+  '3->2': { e: 1.89, color: MODERN_COLORS.photonInfrared },
+  '3->1': { e: 12.09, color: MODERN_COLORS.photonUltraviolet },
+  '2->1': { e: 10.20, color: MODERN_COLORS.photoelectron },
+}
+
+export default function ExcitationSim({ isPlaying: _isPlaying, time, atomQuantity, excitationType, incidentEnergy, launchTrigger, clearTrigger, updateParam }: ExcitationSimProps) {
   const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
@@ -63,175 +81,216 @@ export default function ExcitationSim({ isPlaying, time, atomQuantity, excitatio
   useEffect(() => { excitationTypeRef.current = excitationType }, [excitationType])
   useEffect(() => { incidentEnergyRef.current = incidentEnergy }, [incidentEnergy])
 
-  // 模拟状态 → ref
-  const particleRef = useRef<IncidentParticle | null>(null)
-  const outPhotonsRef = useRef<OutgoingPhoton[]>([])
-  const atomStateRef = useRef<'ground' | 'excited' | 'ionizing' | 'transitioning'>('ground')
+  // ── 原子态 ──
+  const atomStateRef = useRef<AtomState>('orbiting')
   const atomLevelRef = useRef(1)
+
+  // ── 电子轨道角度（本地帧计数，始终旋转）──
+  const electronAngleRef = useRef(0)
+  const frameRef = useRef(0)
+
+  // ── 入射粒子 ──
+  const particleRef = useRef<IncidentParticle | null>(null)
+
+  // ── 出射光子 ──
+  const outPhotonsRef = useRef<OutgoingPhoton[]>([])
+
+  // ── 级联跃迁队列 ──
+  const cascadeQueueRef = useRef<CascadeStep[]>([])
+  const cascadeTimerRef = useRef(0)
   const activeTransitionsRef = useRef<TransitionLine[]>([])
+
+  // ── 碰撞卡片 ──
   const collisionCardRef = useRef<CollisionCard | null>(null)
-  const isEmittingRef = useRef(false)
 
-  // 需要渲染到 JSX 的状态保留 React state
+  // ── 光谱检测 ──
   const [detectedLines, setDetectedLines] = useState<number[]>([])
-  const [explanationText, setExplanationText] = useState('设置入射能量并点击"发射粒子"按钮开始实验。')
 
-  // 参数变化时复位
+  // ── 参数变化时复位 ──
   useEffect(() => {
     particleRef.current = null
     outPhotonsRef.current = []
-    atomStateRef.current = 'ground'
+    atomStateRef.current = 'orbiting'
     atomLevelRef.current = 1
-    collisionCardRef.current = null
+    cascadeQueueRef.current = []
     activeTransitionsRef.current = []
+    collisionCardRef.current = null
     isEmittingRef.current = false
-    const t = excitationTypeRef.current
-    const e = incidentEnergyRef.current
-    setExplanationText(t === 0
-      ? `准备以 ${e.toFixed(1)} eV 的【光子】照射处于基态的氢原子。`
-      : `准备以 ${e.toFixed(1)} eV 的【实物电子】碰撞处于基态的氢原子。`)
   }, [excitationType, incidentEnergy, atomQuantity])
 
-  // 发射粒子
-  const handleLaunch = () => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    particleRef.current = {
-      x: canvas.width - 50, y: canvas.height / 2,
-      vx: -4.5, vy: 0,
-      energy: incidentEnergyRef.current,
-      type: excitationTypeRef.current === 0 ? 'photon' : 'electron',
-      active: true, hasCollided: false,
-    }
-    outPhotonsRef.current = []
-    atomStateRef.current = 'ground'
-    atomLevelRef.current = 1
-    collisionCardRef.current = null
-    activeTransitionsRef.current = []
-    isEmittingRef.current = true
-    setExplanationText('粒子发射中，正飞向处于基态的氢原子...')
-  }
-
-  // 重置
-  const handleResetExperiment = () => {
-    particleRef.current = null
-    outPhotonsRef.current = []
-    atomStateRef.current = 'ground'
-    atomLevelRef.current = 1
-    collisionCardRef.current = null
-    activeTransitionsRef.current = []
-    isEmittingRef.current = false
-    setDetectedLines([])
-    setExplanationText('已清空已测光谱线，可重新发射粒子进行测试。')
-  }
-
-  // 触发器监听
-  useEffect(() => {
-    if (launchTrigger === 1) { handleLaunch(); updateParam('launchTrigger', 0) }
-  }, [launchTrigger])
-
-  useEffect(() => {
-    if (clearTrigger === 1) { handleResetExperiment(); updateParam('clearTrigger', 0) }
-  }, [clearTrigger])
-
-  // 时钟重置
+  // ── 时钟重置 ──
   useEffect(() => {
     if (time === 0) {
       particleRef.current = null
       outPhotonsRef.current = []
-      atomStateRef.current = 'ground'
+      atomStateRef.current = 'orbiting'
       atomLevelRef.current = 1
-      collisionCardRef.current = null
+      cascadeQueueRef.current = []
       activeTransitionsRef.current = []
+      collisionCardRef.current = null
       isEmittingRef.current = false
       setDetectedLines([])
     }
   }, [time])
 
-  // 级联跃迁（从 setTimeout / rAF 回调中调用）
-  const cascadeTransitions = (startLvl: number, cx: number, cy: number) => {
-    const pathList: { from: number; to: number; e: number; color: string }[] = []
-    const energyMap: Record<string, { e: number; color: string }> = {
-      '4->3': { e: 0.66, color: MODERN_COLORS.photonInfrared },
-      '4->2': { e: 2.55, color: '#06b6d4' },
-      '4->1': { e: 12.75, color: MODERN_COLORS.photonUltraviolet },
-      '3->2': { e: 1.89, color: MODERN_COLORS.photonInfrared },
-      '3->1': { e: 12.09, color: MODERN_COLORS.photonUltraviolet },
-      '2->1': { e: 10.20, color: MODERN_COLORS.photoelectron },
-    }
+  // ── 发射入射粒子 ──
+  const isEmittingRef = useRef(false)
 
+  const handleLaunch = useCallback(() => {
+    if (atomStateRef.current === 'transitioning') return
+    particleRef.current = {
+      x: canvasSize.width - 50,
+      y: canvasSize.height / 2,
+      vx: -4.5, vy: 0,
+      energy: incidentEnergyRef.current,
+      type: excitationTypeRef.current === 0 ? 'photon' : 'electron',
+      active: true, hasCollided: false,
+    }
+    isEmittingRef.current = true
+  }, [canvasSize.width, canvasSize.height])
+
+  // ── 重置实验 ──
+  const handleReset = useCallback(() => {
+    particleRef.current = null
+    outPhotonsRef.current = []
+    atomStateRef.current = 'orbiting'
+    atomLevelRef.current = 1
+    cascadeQueueRef.current = []
+    activeTransitionsRef.current = []
+    collisionCardRef.current = null
+    isEmittingRef.current = false
+    setDetectedLines([])
+  }, [])
+
+  // ── 触发器监听 ──
+  useEffect(() => {
+    if (launchTrigger === 1) { handleLaunch(); updateParam('launchTrigger', 0) }
+  }, [launchTrigger, handleLaunch, updateParam])
+
+  useEffect(() => {
+    if (clearTrigger === 1) { handleReset(); updateParam('clearTrigger', 0) }
+  }, [clearTrigger, handleReset, updateParam])
+
+  // ── 构建级联队列 ──
+  const buildCascadeQueue = (startLvl: number): CascadeStep[] => {
+    const steps: CascadeStep[] = []
     if (atomQuantityRef.current === 0) {
+      // 一群原子：所有可能路径
       if (startLvl === 4) {
-        pathList.push(
-          { from: 4, to: 3, ...energyMap['4->3'] }, { from: 4, to: 2, ...energyMap['4->2'] },
-          { from: 4, to: 1, ...energyMap['4->1'] }, { from: 3, to: 2, ...energyMap['3->2'] },
-          { from: 3, to: 1, ...energyMap['3->1'] }, { from: 2, to: 1, ...energyMap['2->1'] })
+        steps.push(
+          { from: 4, to: 3, ...ENERGY_MAP['4->3'] },
+          { from: 4, to: 2, ...ENERGY_MAP['4->2'] },
+          { from: 4, to: 1, ...ENERGY_MAP['4->1'] },
+          { from: 3, to: 2, ...ENERGY_MAP['3->2'] },
+          { from: 3, to: 1, ...ENERGY_MAP['3->1'] },
+          { from: 2, to: 1, ...ENERGY_MAP['2->1'] },
+        )
       } else if (startLvl === 3) {
-        pathList.push(
-          { from: 3, to: 2, ...energyMap['3->2'] }, { from: 3, to: 1, ...energyMap['3->1'] },
-          { from: 2, to: 1, ...energyMap['2->1'] })
+        steps.push(
+          { from: 3, to: 2, ...ENERGY_MAP['3->2'] },
+          { from: 3, to: 1, ...ENERGY_MAP['3->1'] },
+          { from: 2, to: 1, ...ENERGY_MAP['2->1'] },
+        )
       } else if (startLvl === 2) {
-        pathList.push({ from: 2, to: 1, ...energyMap['2->1'] })
+        steps.push({ from: 2, to: 1, ...ENERGY_MAP['2->1'] })
       }
     } else {
+      // 单个原子：随机一条路径
       let curr = startLvl
       while (curr > 1) {
         const to = 1 + Math.floor(Math.random() * (curr - 1))
-        pathList.push({ from: curr, to, ...energyMap[`${curr}->${to}`] })
+        steps.push({ from: curr, to, ...ENERGY_MAP[`${curr}->${to}`] })
         curr = to
       }
     }
-
-    activeTransitionsRef.current = pathList.map((p) => ({ from: p.from, to: p.to, color: p.color, life: 1.0 }))
-
-    const newPhotons = pathList.map((p, idx) => {
-      const angleOffset = (idx / pathList.length) * Math.PI * 2 + Math.random() * 0.5
-      setDetectedLines((prev) => prev.includes(p.e) ? prev : [...prev, p.e])
-      return { x: cx, y: cy, vx: Math.cos(angleOffset) * 3.5, vy: Math.sin(angleOffset) * 3.5, color: p.color, energy: p.e, active: true }
-    })
-    outPhotonsRef.current = newPhotons
-    atomStateRef.current = 'ground'
-    atomLevelRef.current = 1
+    return steps
   }
 
-  // 统一仿真帧循环
+  // ── 帧循环 ──
   useSimulationFrame(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
+    const dpr = window.devicePixelRatio || 1
+    canvas.width = canvasSize.width * dpr
+    canvas.height = canvasSize.height * dpr
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+
     const W = canvasSize.width
     const H = canvasSize.height
     const cx = W * 0.35
     const cy = H / 2
     const dE2 = 10.20, dE3 = 12.09, dE4 = 12.75, dE_ion = 13.60
+    const dt = 1 / 60
 
-    // 淡出过渡线
-    if (isPlaying) {
-      activeTransitionsRef.current = activeTransitionsRef.current
-        .map((l) => ({ ...l, life: l.life - 0.015 }))
-        .filter((l) => l.life > 0)
+    // ── 0. 本地帧计数（始终递增）──
+    frameRef.current += 1
+    const t = frameRef.current / 60
+    const lvl = atomLevelRef.current
+    electronAngleRef.current += 0.02 * (1.8 / (lvl * lvl * lvl))
+
+    // ── 1. 级联跃迁步进 ──
+    if (atomStateRef.current === 'transitioning' && cascadeQueueRef.current.length > 0) {
+      cascadeTimerRef.current += dt
+      if (cascadeTimerRef.current >= 0.4) {
+        cascadeTimerRef.current = 0
+        const step = cascadeQueueRef.current.shift()!
+        atomLevelRef.current = step.to
+
+        // 添加视觉跃迁箭头
+        activeTransitionsRef.current.push({
+          from: step.from, to: step.to, color: step.color, life: 1.0,
+        })
+
+        // 发射光子
+        const angle = Math.random() * Math.PI * 2
+        outPhotonsRef.current.push({
+          x: cx, y: cy,
+          vx: Math.cos(angle) * 3.5, vy: Math.sin(angle) * 3.5,
+          color: step.color, energy: step.e, active: true,
+        })
+
+        // 记录光谱线
+        setDetectedLines((prev) => prev.includes(step.e) ? prev : [...prev, step.e])
+
+        // 队列空了 → 回到轨道态
+        if (cascadeQueueRef.current.length === 0) {
+          atomStateRef.current = 'orbiting'
+        }
+      }
     }
 
-    // 物理更新
-    if (isPlaying && isEmittingRef.current) {
+    // ── 2. 淡出过渡箭头 ──
+    activeTransitionsRef.current = activeTransitionsRef.current
+      .map((l) => ({ ...l, life: l.life - 0.015 }))
+      .filter((l) => l.life > 0)
+
+    // ── 3. 入射粒子物理更新 ──
+    if (isEmittingRef.current) {
       const p = particleRef.current
       if (p && p.active) {
         const nextX = p.x + p.vx
 
+        // 碰撞检测：粒子到达原子核位置
         if (!p.hasCollided && nextX <= cx) {
           p.hasCollided = true
           const e = p.energy
 
           if (p.type === 'photon') {
             if (e >= dE_ion) {
-              atomStateRef.current = 'ionizing'
+              // ── 光子电离 ──
+              atomStateRef.current = 'ionized'
               atomLevelRef.current = 5
-              setExplanationText(`发生电离！由于光子能量 (${e.toFixed(2)} eV) 大于等于电离能 13.60 eV，光子被完全吸收，电子彻底脱离束缚飞离原子！`)
-              outPhotonsRef.current = [{ x: cx, y: cy, vx: 6, vy: -3.5, color: EM_COLORS.negativeCharge, energy: e - dE_ion, active: true }]
+              outPhotonsRef.current.push({
+                x: cx, y: cy, vx: 6, vy: -3.5,
+                color: EM_COLORS.negativeCharge, energy: e - dE_ion, active: true,
+              })
               p.active = false
+              isEmittingRef.current = false
             } else {
+              // ── 光子激发判定 ──
               const th = 0.05
               let level = 1
               if (Math.abs(e - dE4) < th) level = 4
@@ -239,23 +298,32 @@ export default function ExcitationSim({ isPlaying, time, atomQuantity, excitatio
               else if (Math.abs(e - dE2) < th) level = 2
 
               if (level > 1) {
+                // 激发成功：电子跳到高能级，开始级联回落
                 atomStateRef.current = 'excited'
                 atomLevelRef.current = level
-                setExplanationText(`激发成功！光子能量正好等于能级差，被完全吸收！氢原子跃迁至 n=${level} 能级。`)
                 p.active = false
-                setTimeout(() => cascadeTransitions(level, cx, cy), 800)
-              } else {
-                setExplanationText(`激发失败！光子能量 (${e.toFixed(2)} eV) 不等于任何基态能级差。光子无法被吸收，直接穿过！`)
+                isEmittingRef.current = false
+                setTimeout(() => {
+                  cascadeQueueRef.current = buildCascadeQueue(level)
+                  atomStateRef.current = 'transitioning'
+                  cascadeTimerRef.current = 0.4
+                }, 800)
               }
+              // 激发失败：光子未被吸收，继续穿过原子
             }
           } else {
+            // ── 电子碰撞 ──
             if (e >= dE_ion) {
-              atomStateRef.current = 'ionizing'
+              // 碰撞电离
+              atomStateRef.current = 'ionized'
               atomLevelRef.current = 5
               const remain = e - dE_ion
-              setExplanationText(`碰撞电离！入射电子能量 (${e.toFixed(2)} eV) 大于电离能，原子被电离，碰撞后的电子带着剩余动能 (${remain.toFixed(2)} eV) 继续飞行。`)
               p.vx = -3.5; p.vy = -1.5; p.energy = remain
-              outPhotonsRef.current = [{ x: cx, y: cy, vx: 5, vy: 2.0, color: EM_COLORS.negativeCharge, energy: 0, active: true }]
+              outPhotonsRef.current.push({
+                x: cx, y: cy, vx: 5, vy: 2.0,
+                color: EM_COLORS.negativeCharge, energy: 0, active: true,
+              })
+              isEmittingRef.current = false
             } else {
               let lvl = 1, passedE = 0
               if (e >= dE4) { lvl = 4; passedE = dE4 }
@@ -263,25 +331,33 @@ export default function ExcitationSim({ isPlaying, time, atomQuantity, excitatio
               else if (e >= dE2) { lvl = 2; passedE = dE2 }
 
               if (lvl > 1) {
+                // 碰撞激发成功
                 atomStateRef.current = 'excited'
                 atomLevelRef.current = lvl
                 const remain = e - passedE
-                setExplanationText(`碰撞成功！入射电子将 ${passedE.toFixed(2)} eV 能量传递给氢原子使其跃迁至 n=${lvl}，自身带着剩余 ${remain.toFixed(2)} eV 的能量折射偏转飞出。`)
                 collisionCardRef.current = { show: true, inE: e, absorbed: passedE, remain, lvl }
                 p.vx = -3.5; p.vy = -1.8; p.energy = remain
-                setTimeout(() => cascadeTransitions(lvl, cx, cy), 800)
+                setTimeout(() => {
+                  cascadeQueueRef.current = buildCascadeQueue(lvl)
+                  atomStateRef.current = 'transitioning'
+                  cascadeTimerRef.current = 0.4
+                }, 800)
               } else {
-                setExplanationText(`碰撞失败！入射电子动能 (${e.toFixed(2)} eV) 低于最低激发能 10.2 eV，发生弹性碰撞被弹开，氢原子处于基态未发生激发。`)
-                p.vx = -2.5; p.vy = 2.5
+                // 碰撞失败：弹性散射，电子向右弹回
+                p.vx = 2.5; p.vy = 2.5
               }
             }
           }
         }
 
         p.x += p.vx; p.y += p.vy
-        if (p.x < -40 || p.y < 0 || p.y > H) p.active = false
+        if (p.x < -40 || p.y < 0 || p.y > H) {
+          p.active = false
+          isEmittingRef.current = false
+        }
       }
 
+      // 出射光子更新
       outPhotonsRef.current = outPhotonsRef.current
         .map((op) => {
           if (!op.active) return op
@@ -291,7 +367,7 @@ export default function ExcitationSim({ isPlaying, time, atomQuantity, excitatio
         .filter((op) => op.active)
     }
 
-    // --- 绘制 ---
+    // ── 绘制 ──
     const particle = particleRef.current
     const outPhotons = outPhotonsRef.current
     const atomState = atomStateRef.current
@@ -300,32 +376,34 @@ export default function ExcitationSim({ isPlaying, time, atomQuantity, excitatio
     const collisionCard = collisionCardRef.current
     ctx.clearRect(0, 0, W, H)
 
-    // 氢原子
+    // ── 氢原子核 ──
     ctx.save()
     ctx.fillStyle = CANVAS_COLORS.referencePoint
     ctx.beginPath()
     ctx.arc(cx, cy, 9, 0, Math.PI * 2)
     ctx.fill()
-    ctx.fillStyle = '#ffffff'
+    ctx.fillStyle = CANVAS_COLORS.white
     ctx.font = 'bold 9px sans-serif'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText('P+', cx, cy)
 
+    // ── 轨道环 ──
     const maxLvl = 4, baseR = 25
     for (let n = 1; n <= maxLvl; n++) {
       const r = (n + 0.6) * baseR
-      ctx.strokeStyle = (atomLevel === n && atomState === 'excited') ? withAlpha(MODERN_COLORS.photoelectron, 0.4) : '#e4e4e7'
-      ctx.lineWidth = (atomLevel === n && atomState === 'excited') ? 2 : 0.8
+      const isActive = (atomLevel === n && atomState === 'excited')
+      ctx.strokeStyle = isActive ? withAlpha(MODERN_COLORS.photoelectron, 0.4) : CANVAS_COLORS.grid
+      ctx.lineWidth = isActive ? 2 : 0.8
       ctx.beginPath()
       ctx.arc(cx, cy, r, 0, Math.PI * 2)
       ctx.stroke()
-      ctx.fillStyle = '#a1a1aa'
+      ctx.fillStyle = CANVAS_COLORS.textMuted
       ctx.font = '9px monospace'
       ctx.fillText(`n=${n}`, cx + r - 4, cy + 10)
     }
 
-    // 跃迁箭头
+    // ── 跃迁箭头（视觉辅助）──
     activeTransitions.forEach((t) => {
       const rFrom = (t.from + 0.6) * baseR, rTo = (t.to + 0.6) * baseR
       const a = -Math.PI / 4
@@ -351,11 +429,11 @@ export default function ExcitationSim({ isPlaying, time, atomQuantity, excitatio
       ctx.restore()
     })
 
-    // 轨道电子
-    if (atomState !== 'ionizing') {
-      const lvl = atomState === 'ground' ? 1 : atomLevel
+    // ── 轨道电子（始终旋转）──
+    if (atomState !== 'ionized') {
+      const lvl = atomState === 'orbiting' ? atomLevel : atomLevel
       const r = (lvl + 0.6) * baseR
-      const rotAngle = time * (1.8 / (lvl * lvl))
+      const rotAngle = electronAngleRef.current
       const ex = cx + Math.cos(rotAngle) * r, ey = cy + Math.sin(rotAngle) * r
       ctx.fillStyle = MODERN_COLORS.photoelectron
       ctx.shadowBlur = atomState === 'excited' ? 10 : 0
@@ -363,17 +441,17 @@ export default function ExcitationSim({ isPlaying, time, atomQuantity, excitatio
       ctx.beginPath()
       ctx.arc(ex, ey, 4.5, 0, Math.PI * 2)
       ctx.fill()
-      ctx.fillStyle = '#ffffff'
+      ctx.fillStyle = CANVAS_COLORS.white
       ctx.font = '7px sans-serif'
       ctx.fillText('e-', ex - 2, ey + 2)
     } else {
-      ctx.fillStyle = '#ef4444'
+      ctx.fillStyle = CANVAS_COLORS.alertRed
       ctx.font = 'bold 12px sans-serif'
       ctx.fillText('⚡️ 电离态 (H+ 核)', cx - 45, cy - 25)
     }
     ctx.restore()
 
-    // 入射粒子
+    // ── 入射粒子 ──
     if (particle && particle.active) {
       ctx.save()
       if (particle.type === 'photon') {
@@ -385,7 +463,7 @@ export default function ExcitationSim({ isPlaying, time, atomQuantity, excitatio
         for (let i = 0; i <= 35; i++) {
           const ratio = i / 35
           const amp = Math.sin(ratio * Math.PI) * 7.0
-          const phase = (ratio * 4.0 * Math.PI) - (time * 15)
+          const phase = (ratio * 4.0 * Math.PI) - (t * 15)
           const wx = particle.x - i, wy = particle.y + Math.sin(phase) * amp
           if (i === 0) ctx.moveTo(wx, wy); else ctx.lineTo(wx, wy)
         }
@@ -400,7 +478,7 @@ export default function ExcitationSim({ isPlaying, time, atomQuantity, excitatio
         ctx.beginPath()
         ctx.arc(particle.x, particle.y, 5, 0, Math.PI * 2)
         ctx.fill()
-        ctx.fillStyle = '#ffffff'
+        ctx.fillStyle = CANVAS_COLORS.white
         ctx.font = 'bold 9px monospace'
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
@@ -412,7 +490,7 @@ export default function ExcitationSim({ isPlaying, time, atomQuantity, excitatio
       ctx.restore()
     }
 
-    // 出射光子/电子
+    // ── 出射光子 ──
     outPhotons.forEach((op) => {
       ctx.save()
       ctx.strokeStyle = op.color
@@ -424,7 +502,7 @@ export default function ExcitationSim({ isPlaying, time, atomQuantity, excitatio
         ctx.beginPath()
         ctx.arc(op.x, op.y, 4, 0, Math.PI * 2)
         ctx.fill()
-        ctx.fillStyle = '#ffffff'
+        ctx.fillStyle = CANVAS_COLORS.white
         ctx.font = 'bold 8px monospace'
         ctx.fillText('-', op.x - 2, op.y + 2)
         if (op.energy > 0) {
@@ -438,7 +516,7 @@ export default function ExcitationSim({ isPlaying, time, atomQuantity, excitatio
         for (let i = 0; i <= 28; i++) {
           const ratio = i / 28
           const amp = Math.sin(ratio * Math.PI) * 5.0
-          const phase = (ratio * 3.5 * Math.PI) - (time * 18)
+          const phase = (ratio * 3.5 * Math.PI) - (t * 18)
           const wx = op.x + Math.cos(aTo) * i - Math.sin(aTo) * Math.sin(phase) * amp
           const wy = op.y + Math.sin(aTo) * i + Math.cos(aTo) * Math.sin(phase) * amp
           if (i === 0) ctx.moveTo(wx, wy); else ctx.lineTo(wx, wy)
@@ -452,6 +530,7 @@ export default function ExcitationSim({ isPlaying, time, atomQuantity, excitatio
     })
 
     drawCollisionCard(ctx, collisionCard, W * 0.65, cy)
+    drawEnergyLevels(ctx, W, H, atomLevel, activeTransitions)
     drawSpectrum(ctx, W, H, detectedLines, atomLevel, atomQuantityRef.current)
   }, { active: true })
 
@@ -461,16 +540,7 @@ export default function ExcitationSim({ isPlaying, time, atomQuantity, excitatio
         <span className="text-sm font-medium text-neutral-700">激发与退激辐射物理对比仿真</span>
       </div>
       <div ref={containerRef} className="flex-1 w-full min-h-0 bg-neutral-50 rounded-xl overflow-hidden relative">
-        <canvas ref={canvasRef} width={canvasSize.width} height={canvasSize.height} className="block w-full h-full" />
-        <div className="absolute bottom-[110px] left-6 right-6 pointer-events-none bg-black/5 border border-black/5 rounded-lg p-2 backdrop-blur-sm">
-          <p className="text-xs text-neutral-600 leading-relaxed font-mono">
-            <strong>实验实况</strong>：{explanationText}
-          </p>
-        </div>
-      </div>
-      <div className="px-4 py-2 border-t border-neutral-100 text-xs text-neutral-500 bg-neutral-50/50 flex justify-between rounded-b-xl">
-        <span>最低跃迁能级差 (1→2)：10.20 eV | 电离势：13.60 eV</span>
-        <span>提示：请在左侧参数栏切换"一群"与"一个"，发射 12.75 eV 粒子观察谱线种数差异</span>
+        <canvas ref={canvasRef} className="block w-full h-full" />
       </div>
     </div>
   )
@@ -487,16 +557,108 @@ function drawCollisionCard(ctx: CanvasRenderingContext2D, card: CollisionCard | 
   ctx.strokeStyle = EM_COLORS.negativeCharge
   ctx.lineWidth = 1.5
   ctx.stroke()
-  ctx.fillStyle = '#ffffff'
+  ctx.fillStyle = CANVAS_COLORS.white
   ctx.font = 'bold 10px sans-serif'
   ctx.fillText('电子碰撞能量分配 (能量守恒)', x + 10, y + 15)
   ctx.font = '10px monospace'
-  ctx.fillStyle = '#a1a1aa'
+  ctx.fillStyle = CANVAS_COLORS.textMuted
   ctx.fillText(`入射能量: ${card.inE.toFixed(2)} eV`, x + 10, y + 29)
   ctx.fillStyle = '#34d399'
   ctx.fillText(`跃迁吸收: ${card.absorbed.toFixed(2)} eV (n=${card.lvl})`, x + 10, y + 42)
   ctx.fillStyle = '#60a5fa'
   ctx.fillText(`折射余能: ${card.remain.toFixed(2)} eV`, x + 10, y + 54)
+  ctx.restore()
+}
+
+function drawEnergyLevels(
+  ctx: CanvasRenderingContext2D, W: number, H: number,
+  atomLevel: number,
+  activeTransitions: TransitionLine[],
+) {
+  const lx1 = W * 0.72, lx2 = W * 0.88
+  const levels = [
+    { n: 1, e: -13.60, color: '#f87171' },
+    { n: 2, e: -3.40, color: '#fb923c' },
+    { n: 3, e: -1.51, color: '#facc15' },
+    { n: 4, e: -0.85, color: '#60a5fa' },
+  ]
+  const topY = H * 0.15, botY = H * 0.65
+
+  ctx.save()
+  // 标题
+  ctx.fillStyle = CANVAS_COLORS.textMuted
+  ctx.font = '10px sans-serif'
+  ctx.textAlign = 'center'
+  ctx.fillText('能级图', (lx1 + lx2) / 2, topY - 12)
+
+  levels.forEach((lvl) => {
+    const t = (lvl.e - (-13.6)) / (0 - (-13.6))
+    const y = botY - t * (botY - topY)
+    const isActive = lvl.n === Math.round(atomLevel)
+
+    ctx.strokeStyle = isActive ? withAlpha(MODERN_COLORS.photoelectron, 0.8) : CANVAS_COLORS.grid
+    ctx.lineWidth = isActive ? 2.5 : 1
+    ctx.beginPath()
+    ctx.moveTo(lx1, y); ctx.lineTo(lx2, y)
+    ctx.stroke()
+
+    ctx.fillStyle = isActive ? MODERN_COLORS.photoelectron : CANVAS_COLORS.textMuted
+    ctx.font = isActive ? 'bold 11px sans-serif' : '10px sans-serif'
+    ctx.textAlign = 'right'
+    ctx.fillText(`n=${lvl.n}`, lx1 - 4, y + 4)
+    ctx.textAlign = 'left'
+    ctx.fillText(`${lvl.e.toFixed(2)} eV`, lx2 + 4, y + 4)
+  })
+
+  // 跃迁箭头
+  activeTransitions.forEach((tr) => {
+    const yFrom = botY - (((tr.from === 1 ? -13.6 : tr.from === 2 ? -3.4 : tr.from === 3 ? -1.51 : -0.85) + 13.6) / 13.6) * (botY - topY)
+    const yTo = botY - (((tr.to === 1 ? -13.6 : tr.to === 2 ? -3.4 : tr.to === 3 ? -1.51 : -0.85) + 13.6) / 13.6) * (botY - topY)
+    const mx = (lx1 + lx2) / 2
+    ctx.save()
+    ctx.globalAlpha = tr.life
+    ctx.strokeStyle = tr.color
+    ctx.lineWidth = 2.5
+    ctx.beginPath()
+    ctx.moveTo(mx, yFrom); ctx.lineTo(mx, yTo)
+    ctx.stroke()
+    const arrowSize = 5
+    const dir = yTo < yFrom ? -1 : 1
+    ctx.fillStyle = tr.color
+    ctx.beginPath()
+    ctx.moveTo(mx, yTo)
+    ctx.lineTo(mx - arrowSize, yTo + dir * arrowSize)
+    ctx.lineTo(mx + arrowSize, yTo + dir * arrowSize)
+    ctx.closePath()
+    ctx.fill()
+    ctx.restore()
+  })
+
+  // 当前电子位置指示
+  const curE = atomLevel === 1 ? -13.6 : atomLevel === 2 ? -3.4 : atomLevel === 3 ? -1.51 : -0.85
+  const curY = botY - ((curE + 13.6) / 13.6) * (botY - topY)
+  const mx = (lx1 + lx2) / 2
+  ctx.fillStyle = MODERN_COLORS.photoelectron
+  ctx.shadowBlur = 6
+  ctx.shadowColor = MODERN_COLORS.photoelectron
+  ctx.beginPath()
+  ctx.arc(mx, curY, 4, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.shadowBlur = 0
+
+  // 电离线
+  ctx.strokeStyle = CANVAS_COLORS.textMuted
+  ctx.setLineDash([3, 3])
+  ctx.lineWidth = 0.8
+  ctx.beginPath()
+  ctx.moveTo(lx1, topY - 8); ctx.lineTo(lx2, topY - 8)
+  ctx.stroke()
+  ctx.setLineDash([])
+  ctx.fillStyle = CANVAS_COLORS.textMuted
+  ctx.font = '9px sans-serif'
+  ctx.textAlign = 'center'
+  ctx.fillText('0 eV (电离)', (lx1 + lx2) / 2, topY - 14)
+
   ctx.restore()
 }
 

@@ -782,7 +782,7 @@ export const knowledgeTree: KnowledgeNode[] = [
     chapter: '近代物理初步',
     module: 'modern-physics',
     importance: 'gaokao',
-    animationIds: [],
+    animationIds: ['anim-photoelectric'],
     problemIds: [],
     prerequisites: [],
   },

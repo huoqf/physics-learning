@@ -69,16 +69,23 @@ export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const sync = () => {
-      const rect = canvas.parentElement?.getBoundingClientRect()
-      canvas.width = rect?.width || 680
-      canvas.height = rect?.height || 360
-      canvasWRef.current = canvas.width
-      canvasHRef.current = canvas.height
+    const parent = canvas.parentElement
+    if (!parent) return
+    const sync = (w: number, h: number) => {
+      const dpr = window.devicePixelRatio || 1
+      canvas.width = w * dpr
+      canvas.height = h * dpr
+      canvasWRef.current = w
+      canvasHRef.current = h
     }
-    sync()
-    window.addEventListener('resize', sync)
-    return () => window.removeEventListener('resize', sync)
+    const ro = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect
+      sync(width, height)
+    })
+    ro.observe(parent)
+    const rect = parent.getBoundingClientRect()
+    sync(rect.width, rect.height)
+    return () => ro.disconnect()
   }, [])
 
   // 统一仿真帧循环（铁律 1 合规）
@@ -87,6 +94,9 @@ export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: 
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
+
+    const dpr = window.devicePixelRatio || 1
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
     const W = canvasWRef.current
     const H = canvasHRef.current
@@ -105,7 +115,7 @@ export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: 
 
     // 1. 更新电子角度
     if (isPlaying) {
-      const speedMul = 2.4 / (eLevel * eLevel)
+      const speedMul = 2.4 / (eLevel * eLevel * eLevel)
       angleRef.current = (angle + 0.02 * speedMul) % (Math.PI * 2)
     }
 

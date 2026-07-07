@@ -54,7 +54,7 @@ export default function EquilibriumAnimation() {
   )
 
   const {
-    vp: _vp, font, eqSceneScale,
+    font, eqSceneScale,
     centerX, centerY,
     gDisplayEnd, t1DisplayEnd, t2DisplayEnd, fNetDisplayEnd,
     t1xDisplayEnd, t1yDisplayEnd, t2xDisplayEnd, t2yDisplayEnd,

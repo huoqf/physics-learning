@@ -1,5 +1,7 @@
 import { useEffect, useRef, useMemo } from 'react'
 import { useSimulationFrame } from '@/utils/animation'
+import { useCanvasSize } from '@/utils/useCanvasSize'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { RelationChart } from '@/components/Chart/RelationChart'
 import { MODERN_COLORS, CANVAS_COLORS } from '@/theme/physics/colors'
 
@@ -26,8 +28,7 @@ const PHOTON_ENERGIES = [0.66, 2.55, 12.75, 1.89, 12.09, 10.20]
 
 export default function PhotoelectricSim({ isPlaying, time, radiationPhotonIndex, workFunction, stoppingVoltage }: PhotoelectricSimProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const canvasWRef = useRef(680)
-  const canvasHRef = useRef(360)
+  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.splitV)
 
   const hv = PHOTON_ENERGIES[radiationPhotonIndex]
   const isPhotoelectric = hv >= workFunction
@@ -62,33 +63,19 @@ export default function PhotoelectricSim({ isPlaying, time, radiationPhotonIndex
   useEffect(() => { if (time === 0) electronsRef.current = [] }, [time])
   useEffect(() => { electronsRef.current = [] }, [radiationPhotonIndex, workFunction])
 
-  // Canvas 尺寸适配
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const sync = () => {
-      const rect = canvas.parentElement?.getBoundingClientRect()
-      canvas.width = rect?.width || 680
-      canvas.height = rect?.height || 360
-      canvasWRef.current = canvas.width
-      canvasHRef.current = canvas.height
-    }
-    sync()
-    window.addEventListener('resize', sync)
-    return () => window.removeEventListener('resize', sync)
-  }, [])
-
-  // 发射光电子
+  // 发射光电子（v ∈ [0, vmax] 均匀分布，方向随机）
   const emitPhotoElectron = (kPlateX: number, cy: number) => {
     if (!isPhotoelectricRef.current) return
-    const baseVel = 2.0 + Math.sqrt(EkmRef.current) * 1.15
+    const vmax = Math.sqrt(EkmRef.current) * 2.0
+    const v = Math.random() * vmax
+    const angle = (Math.random() * 0.8 - 0.4)
     const randY = cy - 45 + Math.random() * 90
     electronsRef.current = [
       ...electronsRef.current,
       {
         id: nextIdRef.current++, x: kPlateX + 52, y: randY,
-        vx: baseVel, vy: (Math.random() * 0.8 - 0.4),
-        initVx: baseVel, active: true, hasTurnedAround: false,
+        vx: v, vy: angle,
+        initVx: v, active: true, hasTurnedAround: false,
       },
     ]
   }
@@ -100,8 +87,14 @@ export default function PhotoelectricSim({ isPlaying, time, radiationPhotonIndex
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    const W = canvasWRef.current
-    const H = canvasHRef.current
+    const dpr = window.devicePixelRatio || 1
+    canvas.width = canvasSize.width * dpr
+    canvas.height = canvasSize.height * dpr
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+
+    const W = canvasSize.width
+    const H = canvasSize.height
+    const font = canvasSize.font
     const cx = W / 2, cy = H / 2
     const tubeLeft = cx - 110, tubeRight = cx + 110
     const tubeWidth = tubeRight - tubeLeft
@@ -156,19 +149,19 @@ export default function PhotoelectricSim({ isPlaying, time, radiationPhotonIndex
     const cAngle = circuitAngleRef.current
     ctx.clearRect(0, 0, W, H)
 
-    drawHydrogenAtomTransition(ctx, cx, cy, rIdx, time)
+    drawHydrogenAtomTransition(ctx, cx, cy, rIdx, time, font)
     drawPhotonBeam(ctx, cx, cy, kPlateX, rIdx, time)
 
     // 光电管外壳
     ctx.save()
-    ctx.strokeStyle = 'rgba(212, 212, 216, 0.6)'
+    ctx.strokeStyle = CANVAS_COLORS.textMuted
     ctx.lineWidth = 2.5
-    ctx.fillStyle = 'rgba(244, 244, 245, 0.25)'
+    ctx.fillStyle = CANVAS_COLORS.objectFillNeutral
     ctx.beginPath()
     ctx.roundRect(tubeLeft - 5, cy - 65, tubeWidth + 10, 130, 20)
     ctx.fill()
     ctx.stroke()
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)'
+    ctx.strokeStyle = CANVAS_COLORS.white
     ctx.lineWidth = 1
     ctx.beginPath()
     ctx.moveTo(tubeLeft + 15, cy - 58)
@@ -182,8 +175,8 @@ export default function PhotoelectricSim({ isPlaying, time, radiationPhotonIndex
     ctx.beginPath()
     ctx.roundRect(kPlateX - 5, cy - 50, 8, 100, 2)
     ctx.fill()
-    ctx.fillStyle = '#18181b'
-    ctx.font = 'bold 11px sans-serif'
+    ctx.fillStyle = CANVAS_COLORS.labelText
+    ctx.font = `bold ${font(11)}px sans-serif`
     ctx.fillText('阴极 K (钠)', kPlateX - 25, cy - 56)
     ctx.restore()
 
@@ -193,12 +186,12 @@ export default function PhotoelectricSim({ isPlaying, time, radiationPhotonIndex
     ctx.beginPath()
     ctx.roundRect(aPlateX - 3, cy - 50, 6, 100, 2)
     ctx.fill()
-    ctx.fillStyle = '#18181b'
-    ctx.font = 'bold 11px sans-serif'
+    ctx.fillStyle = CANVAS_COLORS.labelText
+    ctx.font = `bold ${font(11)}px sans-serif`
     ctx.fillText('阳极 A', aPlateX - 10, cy - 56)
     ctx.restore()
 
-    drawCircuit(ctx, cx, cy, kPlateX, aPlateX, sVoltage, hasCur, curRatio, cAngle)
+    drawCircuit(ctx, cx, cy, kPlateX, aPlateX, sVoltage, hasCur, curRatio, cAngle, font)
 
     // 光电子
     electrons.forEach((e) => {
@@ -209,8 +202,8 @@ export default function PhotoelectricSim({ isPlaying, time, radiationPhotonIndex
       ctx.beginPath()
       ctx.arc(e.x, e.y, 4, 0, Math.PI * 2)
       ctx.fill()
-      ctx.fillStyle = '#ffffff'
-      ctx.font = 'bold 8px monospace'
+      ctx.fillStyle = CANVAS_COLORS.white
+      ctx.font = `bold ${font(8)}px monospace`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText('-', e.x, e.y)
@@ -231,26 +224,17 @@ export default function PhotoelectricSim({ isPlaying, time, radiationPhotonIndex
 
   const chartMarkers = useMemo(() => {
     if (isPhotoelectric && Uc > 0) {
-      return [{ x: -Uc, label: `-Uc(${-Uc.toFixed(2)}V)`, color: '#ef4444' }]
+      return [{ x: -Uc, label: `-Uc(${-Uc.toFixed(2)}V)`, color: CANVAS_COLORS.alertRed }]
     }
     return []
   }, [isPhotoelectric, Uc])
 
   return (
     <div className="w-full h-full flex flex-col bg-white rounded-xl shadow-inner relative select-none">
-      <div className="absolute top-3 left-4 right-4 z-10 flex flex-wrap justify-between items-center gap-2 pointer-events-auto bg-white/70 backdrop-blur-md px-3 py-1.5 rounded-lg border border-neutral-100/50 shadow-sm">
-        <span className="text-sm font-medium text-neutral-700">高考综合应用：能级跃迁结合光电效应实验</span>
-        <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${isPhotoelectric ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-          {isPhotoelectric ? '已触发光电效应' : '未触发光电效应'}
-        </span>
-      </div>
       <div className="flex-1 w-full min-h-0 flex flex-col gap-2 p-2 bg-neutral-50 rounded-xl overflow-hidden">
-        <div className="flex-[2.8] min-h-0 relative bg-neutral-50 rounded-lg overflow-hidden">
-          <canvas ref={canvasRef} className="block w-full h-full" />
-        </div>
-        <div className="flex-[1.2] min-h-0 w-full bg-white rounded-lg border border-neutral-100 p-2 overflow-hidden shrink-0">
+        <div className="flex-1 min-h-0 w-full bg-white rounded-lg border border-neutral-100 p-2 overflow-hidden shrink-0">
           <RelationChart
-            title="光电流 I 与极板电压 U 特征关系曲线 (高考图像重点)"
+            title="光电流 I 与极板电压 U 特征关系曲线"
             xDomain={[-4.0, 3.0]}
             yDomain={[0, 15]}
             points={chartPoints}
@@ -259,19 +243,18 @@ export default function PhotoelectricSim({ isPlaying, time, radiationPhotonIndex
             markers={chartMarkers}
           />
         </div>
-      </div>
-      <div className="px-4 py-2 border-t border-neutral-100 text-xs text-neutral-500 bg-neutral-50/50 flex justify-between rounded-b-xl">
-        <span>阴极板逸出功 W₀ 决定发生光电效应的阈值频率</span>
-        <span>提示：如果逸出功调为 4.5 eV，再照射可见光 (4→2) 还能发生光电效应吗？尝试调节反向电压直到电流归零。</span>
+        <div ref={containerRef} className="flex-1 min-h-0 relative bg-neutral-50 rounded-lg overflow-hidden">
+          <canvas ref={canvasRef} className="block w-full h-full" />
+        </div>
       </div>
     </div>
   )
 }
 
-function drawHydrogenAtomTransition(ctx: CanvasRenderingContext2D, cx: number, cy: number, rIdx: number, time: number) {
+function drawHydrogenAtomTransition(ctx: CanvasRenderingContext2D, cx: number, cy: number, rIdx: number, time: number, font: (v: number) => number) {
   const hx = cx - 215, hy = cy
   ctx.save()
-  ctx.strokeStyle = '#e4e4e7'
+  ctx.strokeStyle = CANVAS_COLORS.grid
   ctx.lineWidth = 0.8
   const radii = [14, 28, 42, 56]
   radii.forEach((r) => {
@@ -279,7 +262,7 @@ function drawHydrogenAtomTransition(ctx: CanvasRenderingContext2D, cx: number, c
     ctx.arc(hx, hy, r, 0, Math.PI * 2)
     ctx.stroke()
   })
-    ctx.fillStyle = CANVAS_COLORS.referencePoint
+  ctx.fillStyle = CANVAS_COLORS.referencePoint
   ctx.beginPath()
   ctx.arc(hx, hy, 5, 0, Math.PI * 2)
   ctx.fill()
@@ -304,14 +287,15 @@ function drawHydrogenAtomTransition(ctx: CanvasRenderingContext2D, cx: number, c
   ctx.arc(ex, ey, 3.5, 0, Math.PI * 2)
   ctx.fill()
   if (isEmittingPhoton) {
-    ctx.strokeStyle = '#a855f7'
+    ctx.strokeStyle = MODERN_COLORS.photonUltraviolet
     ctx.lineWidth = 1.5
     ctx.beginPath()
     ctx.arc(hx, hy, r, 0, Math.PI * 2)
     ctx.stroke()
   }
-  ctx.fillStyle = '#71717a'
-  ctx.font = '10px sans-serif'
+
+  ctx.fillStyle = CANVAS_COLORS.labelTextLight
+  ctx.font = `${font(10)}px sans-serif`
   ctx.fillText('一群氢原子能级跃迁', hx - 42, hy + 76)
   ctx.restore()
 }
@@ -320,7 +304,7 @@ function drawPhotonBeam(ctx: CanvasRenderingContext2D, cx: number, cy: number, k
   const hx = cx - 215
   const startX = hx + 40, startY = cy, targetX = kPlateX - 5
   const dist = targetX - startX
-  const colors = [MODERN_COLORS.photonInfrared, '#06b6d4', MODERN_COLORS.photonUltraviolet, MODERN_COLORS.photonInfrared, MODERN_COLORS.photonUltraviolet, MODERN_COLORS.photoelectron]
+  const colors = [MODERN_COLORS.photonInfrared, CANVAS_COLORS.annotation, MODERN_COLORS.photonUltraviolet, MODERN_COLORS.photonInfrared, MODERN_COLORS.photonUltraviolet, MODERN_COLORS.photoelectron]
   const beamColor = colors[rIdx]
   ctx.save()
   ctx.strokeStyle = beamColor
@@ -347,12 +331,13 @@ function drawCircuit(
   ctx: CanvasRenderingContext2D, cx: number, cy: number,
   kPlateX: number, aPlateX: number,
   sVoltage: number, hasCur: boolean, curRatio: number, cAngle: number,
+  font: (v: number) => number,
 ) {
   const kWireY = cy + 50, aWireY = cy + 50
   const bottomCircuitY = cy + 115
 
   ctx.save()
-  ctx.strokeStyle = '#71717a'
+  ctx.strokeStyle = CANVAS_COLORS.labelTextLight
   ctx.lineWidth = 2
 
   ctx.beginPath()
@@ -367,23 +352,23 @@ function drawCircuit(
   ctx.stroke()
 
   const meterY = bottomCircuitY - 15
-  ctx.fillStyle = '#ffffff'
-  ctx.strokeStyle = '#3f3f46'
+  ctx.fillStyle = CANVAS_COLORS.white
+  ctx.strokeStyle = CANVAS_COLORS.strokeDark
   ctx.lineWidth = 1.5
   ctx.beginPath()
   ctx.arc(aPlateX + 1, meterY, 15, 0, Math.PI * 2)
   ctx.fill()
   ctx.stroke()
 
-  ctx.fillStyle = '#18181b'
-  ctx.font = '9px monospace'
+  ctx.fillStyle = CANVAS_COLORS.labelText
+  ctx.font = `${font(9)}px monospace`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   const curTxt = hasCur ? `${(12.8 * curRatio).toFixed(2)}μA` : '0.00μA'
   ctx.fillText(curTxt, aPlateX + 1, meterY + 6)
   ctx.fillText('μA', aPlateX + 1, meterY - 6)
 
-  ctx.strokeStyle = '#ef4444'
+  ctx.strokeStyle = CANVAS_COLORS.alertRed
   ctx.lineWidth = 1.2
   ctx.beginPath()
   ctx.moveTo(aPlateX + 1, meterY)
@@ -391,7 +376,7 @@ function drawCircuit(
   ctx.lineTo(aPlateX + 1 + Math.sin(ptrAngle) * 9, meterY - Math.cos(ptrAngle) * 9)
   ctx.stroke()
 
-  ctx.strokeStyle = '#71717a'
+  ctx.strokeStyle = CANVAS_COLORS.labelTextLight
   ctx.lineWidth = 2
   ctx.beginPath()
   ctx.moveTo(aPlateX + 1, meterY + 15)
@@ -400,7 +385,7 @@ function drawCircuit(
   ctx.stroke()
 
   const powerX = cx - 25, powerY = bottomCircuitY
-  ctx.strokeStyle = '#18181b'
+  ctx.strokeStyle = CANVAS_COLORS.labelText
   ctx.lineWidth = 1
   ctx.beginPath()
   ctx.moveTo(powerX, powerY - 10)
@@ -412,21 +397,21 @@ function drawCircuit(
   ctx.lineTo(powerX + 6, powerY + 6)
   ctx.stroke()
 
-  ctx.fillStyle = '#18181b'
-  ctx.font = 'bold 11px sans-serif'
+  ctx.fillStyle = CANVAS_COLORS.labelText
+  ctx.font = `bold ${font(11)}px sans-serif`
   ctx.fillText('+', powerX - 10, powerY - 6)
   ctx.fillText('-', powerX + 12, powerY - 6)
 
   const resX = cx + 18
-  ctx.strokeStyle = '#27272a'
-  ctx.fillStyle = '#e4e4e7'
+  ctx.strokeStyle = CANVAS_COLORS.labelText
+  ctx.fillStyle = CANVAS_COLORS.grid
   ctx.lineWidth = 1.5
   ctx.beginPath()
   ctx.rect(resX, powerY - 5, 24, 10)
   ctx.fill()
   ctx.stroke()
 
-  ctx.strokeStyle = '#ef4444'
+  ctx.strokeStyle = CANVAS_COLORS.alertRed
   ctx.lineWidth = 1
   ctx.beginPath()
   ctx.moveTo(resX + 12, powerY + 12)
@@ -436,8 +421,8 @@ function drawCircuit(
   ctx.lineTo(resX + 16, powerY + 4)
   ctx.stroke()
 
-  ctx.fillStyle = '#71717a'
-  ctx.font = 'bold 11px sans-serif'
+  ctx.fillStyle = CANVAS_COLORS.labelTextLight
+  ctx.font = `bold ${font(11)}px sans-serif`
   ctx.fillText(`反向电压 U = ${sVoltage.toFixed(1)} V`, cx - 55, bottomCircuitY + 28)
 
   if (hasCur) {

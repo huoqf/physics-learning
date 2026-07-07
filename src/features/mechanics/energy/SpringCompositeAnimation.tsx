@@ -133,7 +133,7 @@ export default function SpringCompositeAnimation() {
           },
         }
       ),
-    [m, g, k, xD_phys, vMax, chartHeight]
+    [m, g, k, xD_phys, vMax, chartHeight, DH]
   );
 
   const lastTimeRef = useRef(time);

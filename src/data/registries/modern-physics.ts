@@ -6,7 +6,7 @@ export const modernPhysicsAnimations = defineAnimations({
     title: '原子结构与玻尔理论',
     knowledgeId: 'modern-1-1',
     Component: lazy(() => import('@/features/modern/bohr-theory/BohrTheoryAnimation')),
-    controlsMode: 'timed' as const,
+    controlsMode: (params) => params.mode === 2 ? 'loop' : 'timed',
     defaultParams: {
       mode: 0,                   // 学习阶段: 0-科学探索历程, 1-玻尔原子模型, 2-跃迁与激发机制, 3-高考综合应用
       modelType: 1,              // 阶段一: 0-汤姆孙枣糕模型, 1-卢瑟福核式结构
@@ -52,6 +52,7 @@ export const modernPhysicsAnimations = defineAnimations({
       {
         type: 'action',
         label: '发射 α 粒子',
+        action: 'launch',
         group: '操作',
         showIf: 'mode',
         showIfValue: 0,
@@ -60,6 +61,7 @@ export const modernPhysicsAnimations = defineAnimations({
       {
         type: 'action',
         label: '清空粒子轨迹',
+        action: 'reset',
         group: '操作',
         showIf: 'mode',
         showIfValue: 0,
@@ -126,6 +128,7 @@ export const modernPhysicsAnimations = defineAnimations({
       {
         type: 'action',
         label: '发射粒子',
+        action: 'launch',
         group: '操作',
         showIf: 'mode',
         showIfValue: 2,
@@ -134,6 +137,7 @@ export const modernPhysicsAnimations = defineAnimations({
       {
         type: 'action',
         label: '重置退激光谱',
+        action: 'reset',
         group: '操作',
         showIf: 'mode',
         showIfValue: 2,

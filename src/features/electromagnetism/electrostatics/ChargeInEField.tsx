@@ -67,7 +67,7 @@ export default function ChargeInEField() {
       freq,
       phi0,
     })
-  }, [U, v0, q, freq, isAC, useGravity, phi0])
+  }, [U, v0, q, freq, isAC, useGravity, phi0, PARTICLE_MASS])
 
   const { tEnd, points, hitType } = simResult
 
@@ -324,7 +324,7 @@ export default function ChargeInEField() {
     }))
 
     return { ekPoints, epPoints, egPoints, etotPoints }
-  }, [points, U, q, freq, isAC, phi0, useGravity])
+  }, [points, U, q, freq, isAC, phi0, useGravity, PARTICLE_MASS])
 
   const energySeries = useMemo(() => {
     const seriesList: ChartDataSeries[] = [
