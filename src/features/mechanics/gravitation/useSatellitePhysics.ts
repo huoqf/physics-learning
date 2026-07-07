@@ -2,6 +2,33 @@ import { useMemo } from 'react'
 import { EARTH_MASS, EARTH_RADIUS, GRAVITATIONAL_CONSTANT } from '@/physics/constants'
 import { LAYOUT } from './satelliteLayout'
 
+// ── 矢量方向计算（纯函数，可独立测试）──
+
+export interface SatelliteVectors {
+  gravDirX: number; gravDirY: number
+  velDirX: number; velDirY: number
+}
+
+/**
+ * 计算卫星场景的速度与引力方向（物理坐标，y↑）。
+ * 约定：返回值直接传给 VectorArrow 的 vector，不含额外 y 翻转。
+ */
+export function computeSatelliteVectors(
+  physX: number, physY: number,
+  earthPhysX: number, earthPhysY: number,
+  velocityDir?: { x: number; y: number },
+): SatelliteVectors {
+  const dx = earthPhysX - physX
+  const dy = earthPhysY - physY
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1
+  return {
+    gravDirX: dx / dist,
+    gravDirY: dy / dist,
+    velDirX: velocityDir?.x ?? 0,
+    velDirY: velocityDir?.y ?? 1,
+  }
+}
+
 interface LaunchResult {
   crashed: boolean
   phase: 'liftoff' | 'gravityTurn' | 'orbit'

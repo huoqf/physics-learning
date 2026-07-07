@@ -1,8 +1,8 @@
 import { EARTH_RADIUS } from '@/physics/constants'
 
 export const LAYOUT = {
-  designWidth: 650,
-  designHeight: 450,
+  designWidth: 700,
+  designHeight: 650,
   earth: { radiusPx: 70 },
   satellite: { size: 24 },
   mode0: {

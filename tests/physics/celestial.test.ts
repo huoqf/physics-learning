@@ -9,6 +9,7 @@ import {
   calculateEscapeSpeed,
   calculateLaunchTrajectory
 } from '@/physics/celestial'
+import { computeKeplerVectors } from '@/features/mechanics/gravitation/hooks/useKeplerPhysics'
 
 describe('Kepler Physics Calculations', () => {
   describe('solveKeplerEquation', () => {
@@ -169,6 +170,71 @@ describe('Kepler Physics Calculations', () => {
       const trajCrash = calculateLaunchTrajectory(0.5 * v_c, M, R, G)
       expect(trajCrash.orbitType).toBe('crash')
       expect(trajCrash.rPeri).toBeLessThan(R)
+    })
+  })
+
+  describe('Vector Direction (useKeplerPhysics coordinate contract)', () => {
+    // 复现 useKeplerPhysics 中矢量计算逻辑（纯函数，无 React 依赖）
+    // 验证：vxA/vyA 是物理坐标（y↑），fxA/fyA 指向太阳
+    const a = 4.5
+    const b = 3.0
+    const period = 10.0
+    const c = Math.sqrt(a * a - b * b) // ≈ 3.354
+    const sunPhysX = c // 太阳在右焦点
+
+    function computeVectors(time: number) {
+      const orbit = calculateKeplerOrbit(a, b, time, period)
+      const { vxA, vyA, fxA, fyA } = computeKeplerVectors(orbit, sunPhysX, 0)
+      return { orbit, vxA, vyA, fxA, fyA }
+    }
+
+    it('velocity at perihelion (t=0): planet at right, moving upward (counterclockwise)', () => {
+      const { vxA, vyA } = computeVectors(0)
+      // 近日点 x=a, y=0 → 逆时针运动：vx≈0, vy>0（向上）
+      expect(vxA).toBeCloseTo(0, 4)
+      expect(vyA).toBeGreaterThan(0)
+    })
+
+    it('velocity at top of orbit (t≈period/4): planet at top, moving left', () => {
+      const { vxA, vyA } = computeVectors(period / 4)
+      // 顶部附近 x≈0, y≈b → 逆时针运动：vx<0（向左）, vy≈0
+      expect(vxA).toBeLessThan(0)
+      expect(Math.abs(vyA)).toBeLessThan(Math.abs(vxA))
+    })
+
+    it('velocity at aphelion (t=period/2): planet at left, moving downward', () => {
+      const { vxA, vyA } = computeVectors(period / 2)
+      // 远日点 x=-a, y=0 → 逆时针运动：vx≈0, vy<0（向下）
+      expect(vxA).toBeCloseTo(0, 4)
+      expect(vyA).toBeLessThan(0)
+    })
+
+    it('force always points toward the sun (rightward when planet is left of sun)', () => {
+      const { fxA } = computeVectors(period / 2)
+      // 远日点 x=-a，太阳在 x=c → 力指向右 fxA > 0
+      expect(fxA).toBeGreaterThan(0)
+    })
+
+    it('force always points toward the sun (leftward when planet is right of sun)', () => {
+      const { fxA } = computeVectors(0)
+      // 近日点 x=a，太阳在 x=c，a>c → 力指向左 fxA < 0
+      expect(fxA).toBeLessThan(0)
+    })
+
+    it('force y-component pulls planet toward y=0 (sun plane)', () => {
+      const { fyA } = computeVectors(period / 4)
+      // 顶部 y>0 → 力向下拉 fyA < 0
+      expect(fyA).toBeLessThan(0)
+    })
+
+    it('velocity and force are perpendicular (v · F ≈ 0) at perihelion/aphelion', () => {
+      const { vxA: vx0, vyA: vy0, fxA: fx0, fyA: fy0 } = computeVectors(0)
+      const dot = vx0 * fx0 + vy0 * fy0
+      expect(Math.abs(dot)).toBeLessThan(0.01)
+
+      const { vxA: vx1, vyA: vy1, fxA: fx1, fyA: fy1 } = computeVectors(period / 2)
+      const dot2 = vx1 * fx1 + vy1 * fy1
+      expect(Math.abs(dot2)).toBeLessThan(0.01)
     })
   })
 })

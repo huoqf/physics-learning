@@ -36,20 +36,21 @@ export default function SatelliteAnimation() {
   const centerX = vp.centerX
   const centerY = vp.centerY
 
+  // ── 物理→画布缩放（米→像素）──
+  const earthRadiusPx = LAYOUT.earth.radiusPx * vp.scale
+  const scale = earthRadiusPx / EARTH_RADIUS
+
   const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'centerScale', {
     designWidth: LAYOUT.designWidth,
     designHeight: LAYOUT.designHeight,
-    worldWidth: canvasSize.width,
-    worldHeight: canvasSize.height,
-  }), [vp, canvasSize.width, canvasSize.height])
+    worldWidth: vp.visibleW / scale,
+    worldHeight: vp.visibleH / scale,
+  }), [vp, scale])
 
   const launchData = useLaunchPhysics({ mode, v0, isLaunched, time })
   const vtSamplePoints = useVtSampling({ mode, v0 })
 
   if (launchData?.crashed && isLaunched === 1) setIsPlaying(false)
-
-  const earthRadiusPx = LAYOUT.earth.radiusPx * vp.scale
-  const scale = earthRadiusPx / EARTH_RADIUS
 
   // Mode 0 轨道坐标
   const r_meters = r * 1e6
@@ -57,36 +58,48 @@ export default function SatelliteAnimation() {
   const { T: T_圆 } = calculateOrbitalSpeed(EARTH_MASS, r_meters, GRAVITATIONAL_CONSTANT)
   const omega_圆 = (2 * Math.PI) / T_圆
   const angle_圆 = omega_圆 * time * LAYOUT.mode0.timeScale
-  const sat0X = centerX + orbitRadiusPx * Math.cos(angle_圆)
-  const sat0Y = centerY - orbitRadiusPx * Math.sin(angle_圆)
+  const sat0PhysX = r_meters * Math.cos(angle_圆)
+  const sat0PhysY = r_meters * Math.sin(angle_圆)
+  const sat0X = centerX + sat0PhysX * scale
+  const sat0Y = centerY - sat0PhysY * scale
 
   const r_近 = LAYOUT.mode0.rNear
   const { T: T_近 } = calculateOrbitalSpeed(EARTH_MASS, r_近, GRAVITATIONAL_CONSTANT)
   const angle_近 = ((2 * Math.PI) / T_近) * time * LAYOUT.mode0.timeScale
-  const sat近X = centerX + r_近 * scale * Math.cos(angle_近)
-  const sat近Y = centerY - r_近 * scale * Math.sin(angle_近)
+  const sat近PhysX = r_近 * Math.cos(angle_近)
+  const sat近PhysY = r_近 * Math.sin(angle_近)
+  const sat近X = centerX + sat近PhysX * scale
+  const sat近Y = centerY - sat近PhysY * scale
 
   const r_中 = LAYOUT.mode0.rMedium
   const { T: T_中 } = calculateOrbitalSpeed(EARTH_MASS, r_中, GRAVITATIONAL_CONSTANT)
   const angle_中 = ((2 * Math.PI) / T_中) * time * LAYOUT.mode0.timeScale
-  const sat中X = centerX + r_中 * scale * Math.cos(angle_中)
-  const sat中Y = centerY - r_中 * scale * Math.sin(angle_中)
+  const sat中PhysX = r_中 * Math.cos(angle_中)
+  const sat中PhysY = r_中 * Math.sin(angle_中)
+  const sat中X = centerX + sat中PhysX * scale
+  const sat中Y = centerY - sat中PhysY * scale
 
   const r_同步 = LAYOUT.mode0.rSync
   const { T: T_同步 } = calculateOrbitalSpeed(EARTH_MASS, r_同步, GRAVITATIONAL_CONSTANT)
   const angle_同步 = ((2 * Math.PI) / T_同步) * time * LAYOUT.mode0.timeScale
-  const sat同步X = centerX + r_同步 * scale * Math.cos(angle_同步)
-  const sat同步Y = centerY - r_同步 * scale * Math.sin(angle_同步)
+  const sat同步PhysX = r_同步 * Math.cos(angle_同步)
+  const sat同步PhysY = r_同步 * Math.sin(angle_同步)
+  const sat同步X = centerX + sat同步PhysX * scale
+  const sat同步Y = centerY - sat同步PhysY * scale
 
   // Mode 1 卫星位置
+  let satLaunchPhysX = 0
+  let satLaunchPhysY = 0
   let satLaunchX = centerX
   let satLaunchY = centerY
   let satAngle = 0
   let isRocket = false
   if (mode === 1 && launchData) {
     const { theta, r_phys, phase } = launchData
-    satLaunchX = centerX + r_phys * scale * Math.cos(theta)
-    satLaunchY = centerY - r_phys * scale * Math.sin(theta)
+    satLaunchPhysX = r_phys * Math.cos(theta)
+    satLaunchPhysY = r_phys * Math.sin(theta)
+    satLaunchX = centerX + satLaunchPhysX * scale
+    satLaunchY = centerY - satLaunchPhysY * scale
     satAngle = launchData.satAngle
     isRocket = phase === 'liftoff' || phase === 'gravityTurn'
   }
@@ -173,11 +186,11 @@ export default function SatelliteAnimation() {
             {showCompare === 1 && (
               <g>
                 <g transform={`translate(${sat近X}, ${sat近Y})`}><SatelliteSvg angleRad={angle_近} /></g>
-                <text x={sat近X} y={sat近Y - 14} fontSize="9" fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">近地</text>
+                <text x={sat近X} y={sat近Y - 14} fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">近地</text>
                 <g transform={`translate(${sat中X}, ${sat中Y})`}><SatelliteSvg angleRad={angle_中} /></g>
-                <text x={sat中X} y={sat中Y - 14} fontSize="9" fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">GPS</text>
+                <text x={sat中X} y={sat中Y - 14} fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">GPS</text>
                 <g transform={`translate(${sat同步X}, ${sat同步Y})`}><SatelliteSvg angleRad={angle_同步} /></g>
-                <text x={sat同步X} y={sat同步Y - 14} fontSize="9" fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">同步</text>
+                <text x={sat同步X} y={sat同步Y - 14} fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">同步</text>
               </g>
             )}
 
@@ -185,14 +198,26 @@ export default function SatelliteAnimation() {
               <SatelliteSvg angleRad={angle_圆} />
               <circle cx={0} cy={0} r={12} fill="none" stroke={PHYSICS_COLORS.velocity} strokeWidth={1} strokeDasharray="2,2" opacity={0.7} />
             </g>
-            <text x={sat0X} y={sat0Y - 18} fontSize="11" fill={PHYSICS_COLORS.velocity} fontWeight="bold" textAnchor="middle">研究星 (r = {r.toFixed(1)})</text>
+            <text x={sat0X} y={sat0Y - 18} fontSize={font(11)} fill={PHYSICS_COLORS.velocity} fontWeight="bold" textAnchor="middle">研究星 (r = {r.toFixed(1)})</text>
 
             {showVectors && (
               <g>
-                <VectorArrow origin={{ x: sat0X - centerX, y: centerY - sat0Y }} vector={{ x: centerX - sat0X, y: sat0Y - centerY }} type="gravity" sceneScale={sceneScale} pixelLength={0.45 * Math.sqrt((sat0X - centerX) ** 2 + (sat0Y - centerY) ** 2)} />
-                <text x={sat0X - (sat0X - centerX) * 0.25 - 12} y={sat0Y - (sat0Y - centerY) * 0.25 - 4} fontSize="10" fill={PHYSICS_COLORS.gravity} fontWeight="bold">F引</text>
-                <VectorArrow origin={{ x: sat0X - centerX, y: centerY - sat0Y }} vector={{ x: sat0Y - centerY, y: sat0X - centerX }} type="velocity" sceneScale={sceneScale} pixelLength={0.45 * Math.sqrt((sat0X - centerX) ** 2 + (sat0Y - centerY) ** 2)} />
-                <text x={sat0X + (sat0Y - centerY) * 0.45 + 5} y={sat0Y - (sat0X - centerX) * 0.45} fontSize="10" fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
+                <VectorArrow
+                  origin={{ x: sat0PhysX, y: sat0PhysY }}
+                  vector={{ x: -sat0PhysX, y: -sat0PhysY }}
+                  type="gravity"
+                  sceneScale={sceneScale}
+                  label="F引"
+                  font={font}
+                />
+                <VectorArrow
+                  origin={{ x: sat0PhysX, y: sat0PhysY }}
+                  vector={{ x: sat0PhysY, y: -sat0PhysX }}
+                  type="velocity"
+                  sceneScale={sceneScale}
+                  label="v"
+                  font={font}
+                />
               </g>
             )}
           </g>
@@ -207,7 +232,7 @@ export default function SatelliteAnimation() {
               <line x1={0} y1={0} x2={0} y2={-15} stroke={CANVAS_COLORS.labelTextLight} strokeWidth={1.2} />
               <circle cx={0} cy={0} r={1.5} fill={CANVAS_COLORS.strokeDark} />
             </g>
-            <text x={centerX + earthRadiusPx + 10} y={centerY + 12} fontSize="9" fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">文昌发射场</text>
+            <text x={centerX + earthRadiusPx + 10} y={centerY + 12} fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">文昌发射场</text>
 
             {(() => {
               const targetOrbitRadiusPx = launchData.r0 * scale
@@ -218,7 +243,7 @@ export default function SatelliteAnimation() {
                 <g>
                   <line x1={centerX} y1={centerY} x2={targetX} y2={targetY} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={0.8} strokeDasharray="2,2" opacity={0.3} />
                   <circle cx={targetX} cy={targetY} r={3.5} fill={CANVAS_COLORS.referencePoint} />
-                  <text x={targetX + 8} y={targetY - 5} fontSize="9" fill={CANVAS_COLORS.referencePoint} fontWeight="bold" textAnchor="start">预定入轨点</text>
+                  <text x={targetX + 8} y={targetY - 5} fontSize={font(9)} fill={CANVAS_COLORS.referencePoint} fontWeight="bold" textAnchor="start">预定入轨点</text>
                 </g>
               )
             })()}
@@ -235,14 +260,28 @@ export default function SatelliteAnimation() {
               <g transform={`translate(${satLaunchX}, ${satLaunchY})`}>
                 <circle cx={0} cy={0} r={12} fill={CHART_COLORS.criticalPt} opacity={0.4} />
                 <circle cx={0} cy={0} r={6} fill={CHART_COLORS.criticalPt} opacity={0.8} />
-                <text x={15} y={15} fontSize="11" fill={CHART_COLORS.criticalPt} fontWeight="bold">撞击坠毁</text>
+                <text x={15} y={15} fontSize={font(11)} fill={CHART_COLORS.criticalPt} fontWeight="bold">撞击坠毁</text>
               </g>
             )}
 
             {showVectors && !launchData.crashed && isLaunched === 1 && !isRocket && (
               <g>
-                <VectorArrow origin={{ x: satLaunchX - centerX, y: centerY - satLaunchY }} vector={{ x: centerX - satLaunchX, y: satLaunchY - centerY }} type="gravity" sceneScale={sceneScale} pixelLength={0.45 * Math.sqrt((satLaunchX - centerX) ** 2 + (satLaunchY - centerY) ** 2)} />
-                <VectorArrow origin={{ x: satLaunchX - centerX, y: centerY - satLaunchY }} vector={launchData.velocityDir ?? { x: 0, y: 1 }} type="velocity" sceneScale={sceneScale} pixelLength={0.45 * Math.sqrt((satLaunchX - centerX) ** 2 + (satLaunchY - centerY) ** 2)} />
+                <VectorArrow
+                  origin={{ x: satLaunchPhysX, y: satLaunchPhysY }}
+                  vector={{ x: -satLaunchPhysX, y: -satLaunchPhysY }}
+                  type="gravity"
+                  sceneScale={sceneScale}
+                  label="F引"
+                  font={font}
+                />
+                <VectorArrow
+                  origin={{ x: satLaunchPhysX, y: satLaunchPhysY }}
+                  vector={launchData.velocityDir ?? { x: 0, y: 1 }}
+                  type="velocity"
+                  sceneScale={sceneScale}
+                  label="v"
+                  font={font}
+                />
               </g>
             )}
           </g>

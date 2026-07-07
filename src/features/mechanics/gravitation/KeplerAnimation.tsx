@@ -2,12 +2,17 @@ import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CANVAS_STYLE } from '@/theme/physics'
-import { useMemo } from 'react'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CANVAS_STYLE, KEPLER_CONFIG, INSET_CHART } from '@/theme/physics'
+import { useMemo, useCallback } from 'react'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { RelationChart } from '@/components/Chart'
 import { createSceneScaleFromViewport } from '@/scene'
+import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
 import { useKeplerPhysics } from './hooks/useKeplerPhysics'
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max)
+}
 
 export default function KeplerAnimation() {
   const DESIGN_WIDTH = 700
@@ -29,7 +34,9 @@ export default function KeplerAnimation() {
     designHeight: DESIGN_HEIGHT,
   })
 
-  const kepler = useKeplerPhysics(params, time, canvasSize, {
+  const orbitScale = KEPLER_CONFIG.scaleBase * vp.scale
+
+  const kepler = useKeplerPhysics(params, time, {
     centerX: vp.centerX,
     centerY: vp.centerY,
     scale: vp.scale,
@@ -38,25 +45,69 @@ export default function KeplerAnimation() {
   const {
     mode, a1, b1, e1, rMin, rMax, T1,
     a2, b2, T2,
-    centerX, centerY, sunX, sunY, foci2X, foci2Y,
-    planetXA, planetYA, orbitA,
-    planetXB, planetYB,
-    trailA,
-    perihelionSector, aphelionSector,
+    sunPhysX, sunPhysY, foci2PhysX, foci2PhysY,
+    planetX, planetY, orbitA,
+    planetBX, planetBY,
+    trail,
+    sectorPoints,
     isInPerihelion, isInAphelion,
     deltaTPercent,
     vxA, vyA, fxA, fyA,
-    chartW, chartH, chartPadding,
     a3_1, t2_1, a3_2, t2_2, maxA3, maxT2,
     scale,
   } = kepler
 
+  // ── 物理坐标 → 画布坐标转换（原点在 vp.centerX/centerY）──
+  const toCanvas = useCallback(
+    (px: number, py: number) =>
+      physicsToCanvasWithOrigin(px, py, vp.centerX, vp.centerY, orbitScale),
+    [vp.centerX, vp.centerY, orbitScale],
+  )
+
+  const { cx: sunCx, cy: sunCy } = toCanvas(sunPhysX, sunPhysY)
+  const { cx: foci2Cx, cy: foci2Cy } = toCanvas(foci2PhysX, foci2PhysY)
+  const { cx: planetCx, cy: planetCy } = toCanvas(planetX, planetY)
+  const { cx: planetBCx, cy: planetBCy } = toCanvas(planetBX, planetBY)
+
+  // ── sceneScale（worldWidth/worldHeight 与轨道 scale 对齐）──
   const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'centerScale', {
     designWidth: DESIGN_WIDTH,
     designHeight: DESIGN_HEIGHT,
-    worldWidth: canvasSize.width,
-    worldHeight: canvasSize.height,
-  }), [vp, canvasSize.width, canvasSize.height])
+    worldWidth: vp.visibleW / orbitScale,
+    worldHeight: vp.visibleH / orbitScale,
+  }), [vp, orbitScale])
+
+  // ── 画中画图表尺寸（从 canvasSize 计算）──
+  const chartW = useMemo(() => clamp(
+    canvasSize.width * INSET_CHART.widthRatio,
+    INSET_CHART.minWidth,
+    canvasSize.width * INSET_CHART.maxWidthRatio,
+  ), [canvasSize.width])
+
+  const chartH = useMemo(() => clamp(
+    canvasSize.height * INSET_CHART.heightRatio,
+    INSET_CHART.minHeight,
+    canvasSize.height * INSET_CHART.maxHeightRatio,
+  ), [canvasSize.height])
+
+  const chartPadding = canvasSize.width * INSET_CHART.paddingRatio
+
+  // ── 扇形 SVG path 构建 ──
+  const perihelionSector = useMemo(() => {
+    const [sun, arcStart, arcEnd] = sectorPoints.perihelion
+    const s0 = toCanvas(sun.x, sun.y)
+    const s1 = toCanvas(arcStart.x, arcStart.y)
+    const s2 = toCanvas(arcEnd.x, arcEnd.y)
+    return `M ${s0.cx} ${s0.cy} L ${s1.cx} ${s1.cy} A ${a1 * orbitScale} ${b1 * orbitScale} 0 0 0 ${s2.cx} ${s2.cy} Z`
+  }, [sectorPoints.perihelion, toCanvas, a1, b1, orbitScale])
+
+  const aphelionSector = useMemo(() => {
+    const [sun, arcStart, arcEnd] = sectorPoints.aphelion
+    const s0 = toCanvas(sun.x, sun.y)
+    const s1 = toCanvas(arcStart.x, arcStart.y)
+    const s2 = toCanvas(arcEnd.x, arcEnd.y)
+    return `M ${s0.cx} ${s0.cy} L ${s1.cx} ${s1.cy} A ${a1 * orbitScale} ${b1 * orbitScale} 0 0 0 ${s2.cx} ${s2.cy} Z`
+  }, [sectorPoints.aphelion, toCanvas, a1, b1, orbitScale])
 
   return (
     <div ref={containerRef} className="w-full h-full relative flex items-center justify-center">
@@ -65,28 +116,24 @@ export default function KeplerAnimation() {
         height={canvasSize.height}
         className="bg-neutral-50 rounded-xl shadow-inner border border-neutral-200"
       >
-        {/* ── 统一材质与渐变定义 (完全去除颜色硬编码) ── */}
+        {/* ── 统一材质与渐变定义 ── */}
         <defs>
-          {/* 恒星(太阳)耀斑径向渐变 */}
           <radialGradient id="sun-glow-grad" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor={SCENE_COLORS.bulb.glowCenter} />
             <stop offset="25%" stopColor={SCENE_COLORS.bulb.glowInner} />
             <stop offset="65%" stopColor={SCENE_COLORS.bulb.glowOuter} />
             <stop offset="100%" stopColor={SCENE_COLORS.bulb.glowFade} />
           </radialGradient>
-          {/* 行星 A (蓝色) 3D球体渐变 */}
           <radialGradient id="planet-a-grad" cx="30%" cy="30%" r="70%">
             <stop offset="0%" stopColor={SCENE_COLORS.sphere.planetCool.gradient[0]} />
             <stop offset="40%" stopColor={SCENE_COLORS.sphere.planetCool.gradient[1]} />
             <stop offset="100%" stopColor={SCENE_COLORS.sphere.planetCool.gradient[3]} />
           </radialGradient>
-          {/* 行星 B (红色) 3D球体渐变 */}
           <radialGradient id="planet-b-grad" cx="30%" cy="30%" r="70%">
             <stop offset="0%" stopColor={SCENE_COLORS.sphere.planetWarm.gradient[0]} />
             <stop offset="40%" stopColor={SCENE_COLORS.sphere.planetWarm.gradient[1]} />
             <stop offset="100%" stopColor={SCENE_COLORS.sphere.planetWarm.gradient[3]} />
           </radialGradient>
-          {/* 虚焦点 3D 渐变 */}
           <radialGradient id="foci-grad" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor={PHYSICS_COLORS.axis} />
             <stop offset="100%" stopColor={PHYSICS_COLORS.axis} stopOpacity={0} />
@@ -96,17 +143,17 @@ export default function KeplerAnimation() {
         {/* ── 辅助坐标轴 ── */}
         <line
           x1={10}
-          y1={centerY}
+          y1={vp.centerY}
           x2={canvasSize.width - 10}
-          y2={centerY}
+          y2={vp.centerY}
           stroke={PHYSICS_COLORS.axis}
           strokeWidth={1}
           strokeDasharray="4,4"
         />
         <line
-          x1={centerX}
+          x1={vp.centerX}
           y1={10}
-          x2={centerX}
+          x2={vp.centerX}
           y2={canvasSize.height - 10}
           stroke={PHYSICS_COLORS.axis}
           strokeWidth={1}
@@ -116,7 +163,6 @@ export default function KeplerAnimation() {
         {/* ── 2. 第二定律扫过面积扇形 (mode === 1) ── */}
         {mode === 1 && (
           <g>
-            {/* 近日点扫过面积 */}
             <path
               d={perihelionSector}
               fill={CANVAS_COLORS.annotation}
@@ -127,8 +173,8 @@ export default function KeplerAnimation() {
               className="transition-all duration-200"
             />
             <text
-              x={centerX + a1 * scale - 25}
-              y={centerY + b1 * scale * 0.32}
+              x={vp.centerX + a1 * scale - 25}
+              y={vp.centerY + b1 * scale * 0.32}
               fill={PHYSICS_COLORS.friction}
               fontSize={font(10)}
               fontWeight="bold"
@@ -137,7 +183,6 @@ export default function KeplerAnimation() {
               近日面积 S₁
             </text>
 
-            {/* 远日点扫过面积 */}
             <path
               d={aphelionSector}
               fill={CANVAS_COLORS.annotation}
@@ -148,8 +193,8 @@ export default function KeplerAnimation() {
               className="transition-all duration-200"
             />
             <text
-              x={centerX - a1 * scale + 5}
-              y={centerY + b1 * scale * 0.32}
+              x={vp.centerX - a1 * scale + 5}
+              y={vp.centerY + b1 * scale * 0.32}
               fill={PHYSICS_COLORS.friction}
               fontSize={font(10)}
               fontWeight="bold"
@@ -161,10 +206,9 @@ export default function KeplerAnimation() {
         )}
 
         {/* ── 3. 轨道线 ── */}
-        {/* 行星 A 轨道线 */}
         <ellipse
-          cx={centerX}
-          cy={centerY}
+          cx={vp.centerX}
+          cy={vp.centerY}
           rx={a1 * scale}
           ry={b1 * scale}
           fill="none"
@@ -173,11 +217,10 @@ export default function KeplerAnimation() {
           strokeWidth={1.5}
         />
 
-        {/* 行星 B 轨道线 (仅 mode === 2 渲染) */}
         {mode === 2 && (
           <ellipse
-            cx={centerX}
-            cy={centerY}
+            cx={vp.centerX}
+            cy={vp.centerY}
             rx={a2 * scale}
             ry={b2 * scale}
             fill="none"
@@ -190,32 +233,29 @@ export default function KeplerAnimation() {
         {/* ── 4. 第一定律两焦点和连线 (mode === 0) ── */}
         {mode === 0 && (
           <g>
-            {/* 行星到主焦点(太阳)连线 r1 */}
             <line
-              x1={planetXA}
-              y1={planetYA}
-              x2={sunX}
-              y2={sunY}
+              x1={planetCx}
+              y1={planetCy}
+              x2={sunCx}
+              y2={sunCy}
               stroke={PHYSICS_COLORS.displacement}
               strokeOpacity={0.65}
               strokeWidth={1.2}
               strokeDasharray="4,4"
             />
-            {/* 行星到副焦点连线 r2 */}
             <line
-              x1={planetXA}
-              y1={planetYA}
-              x2={foci2X}
-              y2={foci2Y}
+              x1={planetCx}
+              y1={planetCy}
+              x2={foci2Cx}
+              y2={foci2Cy}
               stroke={PHYSICS_COLORS.potentialEnergy}
               strokeOpacity={0.65}
               strokeWidth={1.2}
               strokeDasharray="4,4"
             />
-            {/* 标示 r1 */}
             <text
-              x={(planetXA + sunX) / 2 + 10}
-              y={(planetYA + sunY) / 2 - 8}
+              x={(planetCx + sunCx) / 2 + 10}
+              y={(planetCy + sunCy) / 2 - 8}
               fill={PHYSICS_COLORS.displacement}
               fontSize={font(11)}
               fontWeight="bold"
@@ -223,10 +263,9 @@ export default function KeplerAnimation() {
             >
               r₁={orbitA.r.toFixed(2)}
             </text>
-            {/* 标示 r2 */}
             <text
-              x={(planetXA + foci2X) / 2 - 25}
-              y={(planetYA + foci2Y) / 2 - 8}
+              x={(planetCx + foci2Cx) / 2 - 25}
+              y={(planetCy + foci2Cy) / 2 - 8}
               fill={PHYSICS_COLORS.potentialEnergy}
               fontSize={font(11)}
               fontWeight="bold"
@@ -235,8 +274,7 @@ export default function KeplerAnimation() {
               r₂={(2 * a1 - orbitA.r).toFixed(2)}
             </text>
 
-            {/* 副焦点(虚焦点)十字星 */}
-            <g transform={`translate(${foci2X}, ${foci2Y})`}>
+            <g transform={`translate(${foci2Cx}, ${foci2Cy})`}>
               <circle r={10} fill="url(#foci-grad)" opacity={0.7} />
               <line x1={-8} y1={0} x2={8} y2={0} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={1} />
               <line x1={0} y1={-8} x2={0} y2={8} stroke={PHYSICS_COLORS.labelTextLight} strokeWidth={1} />
@@ -245,7 +283,6 @@ export default function KeplerAnimation() {
               </text>
             </g>
 
-            {/* 几何定义底部验证条 */}
             <g transform={`translate(20, ${canvasSize.height - 20})`}>
               <text fill={PHYSICS_COLORS.labelText} fontSize={font(11)} className="font-semibold select-none">
                 第一定律验证 (椭圆定义)：r₁ + r₂ = 2a = {(orbitA.r + (2 * a1 - orbitA.r)).toFixed(1)}（恒定值）
@@ -254,24 +291,27 @@ export default function KeplerAnimation() {
           </g>
         )}
 
-        {/* ── 5. 行星尾迹渐变虚影 (仅 mode !== 2 显示) ── */}
+        {/* ── 5. 行星尾迹渐变虚影 ── */}
         {mode !== 2 &&
-          trailA.map((pt, i) => (
-            <circle
-              key={`trail-${i}`}
-              cx={pt.x}
-              cy={pt.y}
-              r={7 * (1 - i / 10)}
-              fill={PHYSICS_COLORS.velocity}
-              opacity={0.28 * pt.opacity}
-            />
-          ))}
+          trail.map((pt, i) => {
+            const { cx, cy } = toCanvas(pt.x, pt.y)
+            return (
+              <circle
+                key={`trail-${i}`}
+                cx={cx}
+                cy={cy}
+                r={7 * (1 - i / 10)}
+                fill={PHYSICS_COLORS.velocity}
+                opacity={0.28 * pt.opacity}
+              />
+            )
+          })}
 
         {/* ── 6. 行星 A 渲染 ── */}
-        <circle cx={planetXA} cy={planetYA} r={10} fill="url(#planet-a-grad)" />
+        <circle cx={planetCx} cy={planetCy} r={10} fill="url(#planet-a-grad)" />
         <text
-          x={planetXA + 12}
-          y={planetYA - 12}
+          x={planetCx + 12}
+          y={planetCy - 12}
           fill={PHYSICS_COLORS.labelText}
           fontSize={font(11)}
           fontWeight="bold"
@@ -280,13 +320,13 @@ export default function KeplerAnimation() {
           {mode === 2 ? '行星 A' : '行星'}
         </text>
 
-        {/* ── 7. 行星 B 渲染 (仅 mode === 2 渲染) ── */}
+        {/* ── 7. 行星 B 渲染 (仅 mode === 2) ── */}
         {mode === 2 && (
           <g>
-            <circle cx={planetXB} cy={planetYB} r={8} fill="url(#planet-b-grad)" />
+            <circle cx={planetBCx} cy={planetBCy} r={8} fill="url(#planet-b-grad)" />
             <text
-              x={planetXB + 12}
-              y={planetYB - 12}
+              x={planetBCx + 12}
+              y={planetBCy - 12}
               fill={PHYSICS_COLORS.labelText}
               fontSize={font(11)}
               fontWeight="bold"
@@ -298,11 +338,11 @@ export default function KeplerAnimation() {
         )}
 
         {/* ── 8. 恒星(太阳)渲染 ── */}
-        <circle cx={sunX} cy={sunY} r={28} fill="url(#sun-glow-grad)" className="animate-pulse" />
-        <circle cx={sunX} cy={sunY} r={14} fill={SCENE_COLORS.bulb.glowInner} stroke={SCENE_COLORS.bulb.glowOuter} strokeWidth={1} />
+        <circle cx={sunCx} cy={sunCy} r={28} fill="url(#sun-glow-grad)" className="animate-pulse" />
+        <circle cx={sunCx} cy={sunCy} r={14} fill={SCENE_COLORS.bulb.glowInner} stroke={SCENE_COLORS.bulb.glowOuter} strokeWidth={1} />
         <text
-          x={sunX - 11}
-          y={sunY + 32}
+          x={sunCx - 11}
+          y={sunCy + 32}
           fill={PHYSICS_COLORS.labelText}
           fontSize={font(11)}
           fontWeight="bold"
@@ -314,41 +354,23 @@ export default function KeplerAnimation() {
         {/* ── 9. 物理矢量箭头渲染 (showVectors) ── */}
         {showVectors && (
           <g>
-            {/* 行星 A 速度 (经典蓝) */}
             <VectorArrow
-              origin={{ x: planetXA - centerX, y: centerY - planetYA }}
-              vector={{ x: vxA, y: -vyA }}
+              origin={{ x: planetX, y: planetY }}
+              vector={{ x: vxA, y: vyA }}
               type="velocity"
               sceneScale={sceneScale}
+              label="v"
+              font={font}
             />
-            <text
-              x={planetXA + vxA + (vxA >= 0 ? 8 : -14)}
-              y={planetYA + vyA + (vyA >= 0 ? 8 : -8)}
-              fill={PHYSICS_COLORS.velocity}
-              fontSize={font(12)}
-              fontWeight="bold"
-              className="italic select-none"
-            >
-              v
-            </text>
 
-            {/* 行星 A 万有引力 (重力深绿) */}
             <VectorArrow
-              origin={{ x: planetXA - centerX, y: centerY - planetYA }}
-              vector={{ x: fxA, y: -fyA }}
+              origin={{ x: planetX, y: planetY }}
+              vector={{ x: fxA, y: fyA }}
               type="gravity"
               sceneScale={sceneScale}
+              label="F"
+              font={font}
             />
-            <text
-              x={planetXA + fxA + (fxA >= 0 ? 8 : -14)}
-              y={planetYA + fyA + (fyA >= 0 ? 8 : -8)}
-              fill={PHYSICS_COLORS.gravity}
-              fontSize={font(12)}
-              fontWeight="bold"
-              className="italic select-none"
-            >
-              F
-            </text>
           </g>
         )}
 
