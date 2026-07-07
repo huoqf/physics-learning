@@ -6,6 +6,7 @@ import { usePracticeStore, type PracticeMode } from '@/stores'
 import { PracticeSession } from '@/features/practice'
 import { colors } from '@/theme/colors'
 import { MODULE_LABELS, moduleOf, formatDate, toggle, chip } from '@/utils/moduleHelpers'
+import { PageLayout } from '@/components/Layout'
 
 export default function PracticePage() {
   const navigate = useNavigate()
@@ -51,15 +52,17 @@ export default function PracticePage() {
     if (filteredProblems.length === 0) {
       return (
         <div className="min-h-screen bg-neutral-50 p-6">
-          <div className="max-w-3xl mx-auto text-center py-20">
-            <p className="text-neutral-500 mb-4">当前筛选下没有题目</p>
-            <button
-              onClick={exitSession}
-              className="px-5 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-            >
-              返回
-            </button>
-          </div>
+          <PageLayout maxWidth="3xl">
+            <div className="text-center py-20">
+              <p className="text-neutral-500 mb-4">当前筛选下没有题目</p>
+              <button
+                onClick={exitSession}
+                className="px-5 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              >
+                返回
+              </button>
+            </div>
+          </PageLayout>
         </div>
       )
     }
@@ -79,7 +82,7 @@ export default function PracticePage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 p-6">
-      <div className="max-w-5xl mx-auto">
+      <PageLayout>
         <div className="flex items-center gap-3 mb-6">
           <ClipboardList className="w-8 h-8" style={{ color: colors.secondary[600] }} />
           <div>
@@ -206,7 +209,7 @@ export default function PracticePage() {
             ))}
           </div>
         </div>
-      </div>
+      </PageLayout>
     </div>
   )
 }

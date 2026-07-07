@@ -5,6 +5,7 @@ import { knowledgeTree } from '../data/knowledgeTree'
 import { ANIMATION_COUNT } from '../data/animationRegistry'
 import { colors } from '@/theme/colors'
 import { useEffect } from 'react'
+import { PageLayout } from '@/components/Layout'
 
 export default function HomePage() {
   const navigate = useNavigate()
@@ -53,7 +54,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 p-6">
-      <div className="max-w-5xl mx-auto space-y-6">
+      <PageLayout className="space-y-6">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-neutral-900 mb-2">
             高中物理交互动画学习
@@ -161,7 +162,7 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      </div>
+      </PageLayout>
     </div>
   )
 }

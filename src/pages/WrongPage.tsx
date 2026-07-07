@@ -7,6 +7,7 @@ import { colors } from '@/theme/colors'
 import { MODULE_LABELS, moduleOf, toggle, chip } from '@/utils/moduleHelpers'
 import { WrongCard, STATUS_META, useWrongBookFilter } from '@/features/wrongbook'
 import type { WrongStatus } from '@/stores'
+import { PageLayout } from '@/components/Layout'
 
 export default function WrongPage() {
   const navigate = useNavigate()
@@ -53,7 +54,7 @@ export default function WrongPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 p-6">
-      <div className="max-w-5xl mx-auto">
+      <PageLayout>
         <div className="flex items-center gap-3 mb-6">
           <BookOpenCheck className="w-8 h-8" style={{ color: colors.danger[600] }} />
           <div>
@@ -128,7 +129,7 @@ export default function WrongPage() {
             )}
           </>
         )}
-      </div>
+      </PageLayout>
 
       {/* 删除确认 Modal */}
       {confirmDelete && (

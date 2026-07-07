@@ -5,6 +5,7 @@ import { BookOpen } from 'lucide-react'
 import { knowledgeTree } from '@/data/knowledgeTree'
 import { ANIMATION_COUNT } from '@/data/animationRegistry'
 import { useEffect } from 'react'
+import { PageLayout } from '@/components/Layout'
 
 export default function KnowledgePage() {
   const { getProgress, setTotalCounts } = useProgressStore()
@@ -16,7 +17,7 @@ export default function KnowledgePage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 p-6">
-      <div className="max-w-5xl mx-auto">
+      <PageLayout>
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
             <BookOpen className="w-8 h-8" style={{ color: colors.primary[600] }} />
@@ -69,7 +70,7 @@ export default function KnowledgePage() {
         <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
           <KnowledgeTree />
         </div>
-      </div>
+      </PageLayout>
     </div>
   )
 }

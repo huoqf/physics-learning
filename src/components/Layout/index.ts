@@ -17,3 +17,4 @@
  * ```
  */
 export { ThreePanel } from './ThreePanel'
+export { PageLayout } from './PageLayout'

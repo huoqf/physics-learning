@@ -4,6 +4,7 @@ import { ContentWithKatex, StepCard, KnowledgeChain, useAnalysisSteps } from '@/
 import { getKnowledgeNode } from '@/data/knowledgeTree'
 import { Button } from '@/components/UI/Button'
 import { Badge } from '@/components/UI/Badge'
+import { PageLayout } from '@/components/Layout'
 
 const difficultyLabels = ['入门', '基础', '中等', '较难', '困难']
 const difficultyColors: Record<number, string> = {
@@ -41,7 +42,7 @@ export default function AnalysisPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50">
-      <div className="max-w-[900px] mx-auto px-4 py-6">
+      <PageLayout maxWidth="900px" padding={false}>
         <div className="bg-white rounded-lg border border-neutral-200 p-6 mb-6">
           <div className="flex flex-wrap items-center gap-2 mb-4">
             <span className="px-2 py-1 text-xs font-medium bg-neutral-100 text-neutral-600 rounded">
@@ -131,7 +132,7 @@ export default function AnalysisPage() {
             />
           </div>
         </div>
-      </div>
+      </PageLayout>
     </div>
   )
 }
