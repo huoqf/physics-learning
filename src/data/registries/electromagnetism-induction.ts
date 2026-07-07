@@ -278,4 +278,83 @@ export const electromagnetismInductionAnimations = defineAnimations({
       { key: 'm', label: '导体棒质量 m', min: 0.05, max: 1.0, step: 0.05, unit: 'kg', showIf: 'mode', showIfValue: 1 },
     ],
   },
+  'anim-induction-dual-rods': {
+    title: '电磁感应双杆模型',
+    knowledgeId: 'electricity-4-5',
+    Component: lazy(() => import('@/features/electromagnetism/induction/InductionDualRods')),
+    defaultParams: {
+      scenario: 0,
+      massA: 0.2,
+      massB: 0.4,
+      fieldB: 1.0,
+      railL: 0.5,
+      resSum: 1.0,
+      initialV0: 6.0,
+      appliedForce: 2.0,
+    } as const,
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'scenario',
+        label: '联动驱动模式',
+        group: '模型选择',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '自由双杆 (动量守恒)' },
+          { value: 1, label: '恒力驱动 (加速等差)' },
+        ],
+      },
+    ],
+    paramMeta: [
+      { key: 'massA', label: 'a 棒质量 m_a', min: 0.05, max: 1.0, step: 0.05, unit: 'kg', group: '质量与回路' },
+      { key: 'massB', label: 'b 棒质量 m_b', min: 0.05, max: 1.0, step: 0.05, unit: 'kg', group: '质量与回路' },
+      { key: 'fieldB', label: '全域磁场 B', min: 0.5, max: 2.0, step: 0.1, unit: 'T', group: '质量与回路' },
+      { key: 'railL', label: '导轨跨度 L', min: 0.2, max: 1.0, step: 0.1, unit: 'm', group: '质量与回路' },
+      { key: 'resSum', label: '总电阻 R_a+R_b', min: 0.2, max: 3.0, step: 0.1, unit: 'Ω', group: '质量与回路' },
+      { key: 'initialV0', label: 'a 棒初速度 v_0', min: 1.0, max: 10.0, step: 0.5, unit: 'm/s', group: '动力激励', showIf: 'scenario', showIfValue: 0 },
+      { key: 'appliedForce', label: '恒拉外力 F_a', min: 0.5, max: 5.0, step: 0.2, unit: 'N', group: '动力激励', showIf: 'scenario', showIfValue: 1 },
+    ],
+  },
+  'anim-induction-loop-field': {
+    title: '电磁感应线框模型',
+    knowledgeId: 'electricity-4-6',
+    Component: lazy(() => import('@/features/electromagnetism/induction/InductionLoopField')),
+    defaultParams: {
+      dimensionPreset: 0,
+      domainAxis: 0,
+      loopWidth: 4.0,
+      fieldWidth: 8.0,
+      constantSpeed: 1.0,
+      magneticB: 1.0,
+    } as const,
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'dimensionPreset',
+        label: '空间尺寸几何形态',
+        group: '模型选择',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '窄线框 (d < D)' },
+          { value: 1, label: '宽线框 (d > D)' },
+        ],
+      },
+      {
+        type: 'segmented',
+        key: 'domainAxis',
+        label: '自变量横轴切换',
+        group: '图表显示',
+        options: [
+          { value: 0, label: '以位移 x 为横轴' },
+          { value: 1, label: '以时间 t 为横轴' },
+        ],
+      },
+    ],
+    paramMeta: [
+      { key: 'loopWidth', label: '线框水平宽度 d', min: 2.0, max: 10.0, step: 0.5, unit: 'cm', group: '空间尺寸' },
+      { key: 'fieldWidth', label: '条形磁场宽度 D', min: 4.0, max: 12.0, step: 0.5, unit: 'cm', group: '空间尺寸' },
+      { key: 'constantSpeed', label: '线框牵引速度 v', min: 0.5, max: 2.0, step: 0.1, unit: 'm/s', group: '运动与磁场' },
+      { key: 'magneticB', label: '匀强磁场 B', min: 0.5, max: 2.0, step: 0.1, unit: 'T', group: '运动与磁场' },
+    ],
+  },
 })

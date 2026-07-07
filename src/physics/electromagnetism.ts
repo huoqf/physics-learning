@@ -7,6 +7,8 @@ export * from './electrostatics'
 export * from './dcCircuit'
 export * from './magnetism'
 export * from './induction'
+export * from './dualRods'
+export * from './loopPassField'
 export * from './acCircuit'
 
 // 渲染辅助函数已迁出，但为兼容旧 import 路径仍在此 re-export

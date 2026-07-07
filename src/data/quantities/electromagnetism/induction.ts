@@ -6,6 +6,8 @@ import {
   computeInductionMode0,
   computeInductionMode1,
   computeInductionMode2,
+  computeDualRodsStateAtTime,
+  evaluateLoopSegment,
 } from '../../../physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import type { PhysicsPanelData, PhysicsQuantity } from '../types'
@@ -380,6 +382,121 @@ export function handleInduction(
             { text: '易错防坑：在变阻器滑动过程中，电阻变化（dR/dt）决定了电流的变化速度，进而决定了副线圈中的磁通量变化率和电流强弱。', level: 'warning' }
           ],
         }
+      }
+    }
+    case 'anim-induction-dual-rods': {
+      const scenario = params.scenario ?? 0 // 0=自由双杆, 1=恒力驱动
+      const mA = params.massA ?? 0.2
+      const mB = params.massB ?? 0.4
+      const B = params.fieldB ?? 1.0
+      const L = params.railL ?? 0.5
+      const R = params.resSum ?? 1.0
+      const v0 = params.initialV0 ?? 6.0
+      const F_ext = params.appliedForce ?? 2.0
+
+      const state = computeDualRodsStateAtTime(time, scenario, v0, F_ext, B, L, R, mA, mB)
+
+      const quantities = [
+        ...base,
+        { label: 'a 棒速度 v_a', symbol: 'v_a', value: state.vA.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity },
+        { label: 'b 棒速度 v_b', symbol: 'v_b', value: state.vB.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity },
+        { label: '瞬时速度差 Δv', symbol: '\\Delta v', value: Math.abs(state.deltaV).toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity },
+        { label: '回路感应电动势 E', symbol: 'E_{\\text{合}}', value: Math.abs(state.emf).toFixed(2), unit: 'V', color: PHYSICS_COLORS.emf },
+        { label: '回路感应电流 I', symbol: 'I', value: Math.abs(state.currentI).toFixed(2), unit: 'A', color: PHYSICS_COLORS.electricCurrent },
+        { label: '相互安培力 F_安', symbol: 'F_{\\text{安}}', value: state.forceAmpere.toFixed(2), unit: 'N', color: PHYSICS_COLORS.lorentzForce, highlight: 'extreme' as const },
+        { label: '系统总动量 P_总', symbol: 'P_{\\text{总}}', value: state.totalMomentum.toFixed(2), unit: 'kg·m/s', color: PHYSICS_COLORS.momentum },
+      ]
+
+      if (scenario === 0) {
+        return {
+          quantities,
+          formulas: [
+            { name: '差分反电动势', latex: 'E_{\\text{合}} = BL(v_a - v_b)', level: 'core' },
+            { name: '回路感应电流', latex: 'I = \\frac{BL(v_a - v_b)}{R_a + R_b}', level: 'core' },
+            { name: '系统动量守恒铁律', latex: 'm_a v_0 = (m_a + m_b) v_{\\text{共}}', level: 'core', condition: '外力之和为零' },
+          ],
+          gaokaoPoints: [
+            { text: '自由双杆动量守恒：两棒所受的安培力等大反向，系统合外力为零，无论两棒质量或电阻大小，系统动量恒定。', importance: 'gaokao' },
+            { text: '速度收敛与能量耗散：由于速度差 Δv 衰减，安培力减弱，两棒最终共同收尾于同一速度 v_共，动能损失转化为焦耳热。', importance: 'gaokao' },
+          ],
+          warnings: [
+            { text: '易错防坑：安培力随相对速度衰减而指数递减，两棒均做变加速运动，切记不可套用匀加速直线运动公式！', level: 'danger' },
+          ],
+          mnemonic: '安培力为一对系统内力；自由运动共速收尾，动量严格守恒。',
+        }
+      } else {
+        const deltaVInf = (F_ext * R * mB) / (B * B * L * L * (mA + mB))
+        return {
+          quantities: [
+            ...quantities,
+            { label: '稳定收尾速度差 Δv_∞', symbol: '\\Delta v_\\infty', value: deltaVInf.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity },
+            { label: '稳定质心加速度 a_共', symbol: 'a_{\\text{共}}', value: state.aCommon.toFixed(2), unit: 'm/s²', color: PHYSICS_COLORS.acceleration },
+          ],
+          formulas: [
+            { name: '动力学耦合关系', latex: 'm_a a_a = F - F_{\\text{安}}, \\quad m_b a_b = F_{\\text{安}}', level: 'core' },
+            { name: '稳定收尾等加速度', latex: 'a_a = a_b = a_{\\text{共}} = \\frac{F}{m_a + m_b}', level: 'core' },
+            { name: '恒定死锁速度差', latex: '\\Delta v_\\infty = \\frac{F(R_a+R_b)m_b}{B^2 L^2 (m_a+m_b)}', level: 'derived' },
+          ],
+          gaokaoPoints: [
+            { text: '等加恒差死锁警告：当外恒力作用在 a 棒时，两棒最终不会共速！而是收尾于加速度完全相等、维持恒定速度差的加速状态。', importance: 'gaokao' },
+            { text: '解题突破口：将两棒视为整体得 a_共 = F/(mA+mB)，隔离无外力的 b 棒得安培力 F_安 = mB * a_共，再由 F_安 = B^2 L^2 Δv / R 求解 Δv！', importance: 'gaokao' },
+          ],
+          warnings: [
+            { text: '易错警示：切勿想当然认为拉动两棒最终都会速度完全相同！外力驱动下必有恒定速度差才会有安培力给另一棒产生相同的加速度。', level: 'danger' },
+          ],
+          mnemonic: '恒力拉动不共速，稳定等加速度恒速度差；整体隔离求加速度和力。',
+        }
+      }
+    }
+    case 'anim-induction-loop-field': {
+      const loopWidth = params.loopWidth ?? 4.0
+      const fieldWidth = params.fieldWidth ?? 8.0
+      const constantSpeed = params.constantSpeed ?? 1.0
+      const magneticB = params.magneticB ?? 1.0
+
+      const d = loopWidth / 100
+      const D = fieldWidth / 100
+      const v = Math.max(0.1, constantSpeed)
+      const B = magneticB
+      const L = 0.05
+      const R = 0.5
+
+      const xMin = -0.02
+      const totalDist = D + d + 0.04
+      const T_max = totalDist / v
+      const frontX = xMin + v * (time % T_max)
+
+      const res = evaluateLoopSegment(frontX, d, D, B, L, R, v)
+      let stateText = '进场前'
+      if (res.state === 'ENTERING') stateText = '前侧切割进场'
+      else if (res.state === 'TOTALLY_IN') stateText = '完全处于场内'
+      else if (res.state === 'LEAVING') stateText = '后侧切割出场'
+      else if (res.state === 'AFTER') stateText = '已穿出离场'
+
+      return {
+        quantities: [
+          ...base,
+          { label: '线框前端位移 x', symbol: 'x', value: (frontX * 100).toFixed(1), unit: 'cm' },
+          { label: '穿场运动状态', symbol: 'S', value: stateText, unit: '', color: PHYSICS_COLORS.velocity },
+          { label: '瞬时磁通量 Φ', symbol: '\\Phi', value: res.phi.toFixed(4), unit: 'Wb', color: PHYSICS_COLORS.magneticField },
+          { label: '感应电流 I', symbol: 'I', value: res.currentI.toFixed(3), unit: 'A', color: PHYSICS_COLORS.electricCurrent, highlight: Math.abs(res.currentI) > 0 ? 'extreme' : 'zero' },
+          { label: '阻碍安培力 F_A', symbol: 'F_A', value: res.forceAmpere.toFixed(3), unit: 'N', color: PHYSICS_COLORS.lorentzForce, highlight: res.forceAmpere > 0 ? 'extreme' : 'zero' },
+          { label: '焦耳发热功率 P', symbol: 'P_{\\text{热}}', value: res.powerHeat.toFixed(3), unit: 'W', color: PHYSICS_COLORS.heatLoss },
+        ],
+        formulas: [
+          { name: '分段磁通量函数 (窄线框)', latex: '\\Phi(x) = \\begin{cases} BLx & (0 \\le x < d) \\\\ BLd & (d \\le x < D) \\\\ BL(D+d-x) & (D \\le x \\le D+d) \\end{cases}', level: 'core' },
+          { name: '切割电动势与欧姆定律', latex: 'E = BLv, \\quad I = \\frac{BLv}{R}', level: 'core' },
+          { name: '电磁功能转化铁律', latex: 'W_{\\text{外}} = |W_A| = Q_{\\text{焦耳热}} = \\int I^2 R \\, \\text{d}t', level: 'core' },
+          { name: '过线关键临界坐标', latex: 'x_1 = 0, \\quad x_2 = d, \\quad x_3 = D, \\quad x_4 = D+d', level: 'derived' },
+        ],
+        gaokaoPoints: [
+          { text: '四点过线时空状态机：高考波形图突破的命门！线框发生阶跃和折转必定对应边界撞击的四个临界位移坐标点 x₁=0, x₂=d, x₃=D, x₄=D+d！', importance: 'gaokao' },
+          { text: '中央零感应平台解药：完全进入匀强磁场内部 (d ≤ x < D) 时，左右两竖边同时同向以相同速度 v 切割磁感线，感应电动势等大反向完全抵消，无感应电流与安培力！', importance: 'gaokao' },
+        ],
+        warnings: [
+          { text: '易错警示：切不可认为整个穿过过程都有阻力！只在进场阶段（阻碍进）和出场阶段（阻碍出）才受向左的安培阻力，全在场内时不受阻力！', level: 'danger' },
+        ],
+        mnemonic: '进场出场受阻力，电流反向产焦热；完全进入无电动势，匀速穿场零阻力。',
       }
     }
     default:

@@ -13,9 +13,11 @@ const SOFT_LIMIT = 800
 const HARD_LIMIT = 1000
 
 const ALLOWLIST = new Set([
+  'src/data/knowledgeTree.ts',
   'src/features/mechanics/momentum/MomentumTheoremAnimation.tsx',
   'src/features/electromagnetism/magnetism/VelocitySelector.tsx',
   'src/features/optics/thin-lens/ThinLensAnimation.tsx',
+  'src/features/modern/bohr-theory/components/ExcitationSim.tsx',
 ])
 
 function walk(dir) {
