@@ -83,7 +83,7 @@ export default function AccelerationCenterExtra() {
       if (tMeet !== null) return Math.min(Math.ceil(tMeet) + 2, 60)
       return LAYOUT.MAX_TIME
     }
-  }, [chaseMode, vA, vMax, deltaX0, t0, aB_chase, vL, aB_meet, meetState.tMeet])
+  }, [chaseMode, vA, vMax, deltaX0, t0, aB_chase, meetState.tMeet])
 
   const maxTime = Math.max(LAYOUT.MAX_TIME, effectiveMaxTime)
 
@@ -208,7 +208,7 @@ export default function AccelerationCenterExtra() {
       }
     }
     return pts
-  }, [chaseMode, vA, vL, vMax, t0, aB_chase, aB_meet, deltaX0, maxTime])
+  }, [chaseMode, vL, vMax, t0, aB_chase, aB_meet, deltaX0, maxTime])
 
   // ── v-t 图数据 ──
   const vtDataA = useMemo(() => {

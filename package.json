@@ -14,7 +14,8 @@
     "check:font-size": "node scripts/check-font-size.mjs",
     "check:large-files": "node scripts/check-large-files.mjs",
     "check:architecture": "npm run check:font-size && npm run check:large-files",
-    "check": "npm run build && npm test -- --run && npm run audit:deps && npm run check:architecture"
+    "check": "npm run build && npm test -- --run && npm run audit:deps && npm run check:architecture",
+    "prepare": "lefthook install"
   },
   "dependencies": {
     "idb": "^8.0.2",
@@ -44,6 +45,7 @@
     "eslint-plugin-react-refresh": "^0.4.16",
     "globals": "^15.15.0",
     "jsdom": "^26.0.0",
+    "lefthook": "^2.1.9",
     "postcss": "^8.4.49",
     "prettier": "^3.4.2",
     "tailwindcss": "^4.3.0",
