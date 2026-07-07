@@ -1,13 +1,13 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { useAnimationStore } from '@/stores'
-import { calculatePoliceChase } from '@/physics'
-import { PHYSICS_COLORS, STROKE, DASH, FONT } from '@/theme/physics'
-import { AnimationControls, Card } from '@/components/UI'
+import { calculatePoliceChase, calculateMeeting } from '@/physics'
+import { PHYSICS_COLORS, STROKE, DASH } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { SportsCar } from '@/components/Physics/SportsCar'
 import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 import { RelationChart, VelocityTimeChart } from '@/components/Chart'
 import { createSceneScaleFromViewport } from '@/scene'
+import { useCanvasSize } from '@/utils'
 
 /** 布局常量（语义化命名，比例驱动） */
 const LAYOUT = {
@@ -18,100 +18,91 @@ const LAYOUT = {
   VEHICLE_WIDTH: 56,
   VEHICLE_HEIGHT: 26,
   MAX_TIME: 20,
-  XT_X_MAX: 20,
-  VT_X_MAX: 20,
 } as const
 
 /**
- * 加速度进阶版 CenterExtra —— 警车追击问题
+ * 追及相遇模型动画
  *
  * 上层：并列双图表（左 x-t 图 | 右 v-t 图）
- * 下层：真实公路追击动画
+ * 下层：真实公路动画
  *
- * 遵循 project_rules.md 设计规范：比例驱动布局、主题 token 引用、无硬编码像素。
+ * 支持两种模式：
+ * - 追及模式 (chaseMode=0)：警车追击轿车
+ * - 相遇模式 (chaseMode=1)：两车相向而行
  */
 export default function AccelerationCenterExtra() {
   const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
   const isPlaying = useAnimationStore((s) => s.isPlaying)
-  const speed = useAnimationStore((s) => s.speed)
   const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
-  const setTime = useAnimationStore((s) => s.setTime)
-  const setSpeed = useAnimationStore((s) => s.setSpeed)
-  const [showMaxGapWarning, setShowMaxGapWarning] = useState(false)
-  const [showMeetWarning, setShowMeetWarning] = useState(false)
-  const [containerSize, setContainerSize] = useState({ width: 800, height: 600 })
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [showWarning, setShowWarning] = useState(false)
+  const [warningText, setWarningText] = useState('')
+  const [containerRef, canvasSize] = useCanvasSize({ width: 800, height: 600 })
+  const { font } = canvasSize
 
+  const chaseMode = params.chaseMode ?? 0
   const vA = params.vA ?? 30
-  const deltaX0 = params.deltaX0 ?? 50
-  const t0 = params.t0 ?? 1
-  const aB = params.aB ?? 3
   const vMax = params.vMax ?? 40
 
-  // ── 容器尺寸监听 ──
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect
-        setContainerSize({ width, height })
-      }
-    })
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
+  // ── 追及模式参数 ──
+  const deltaX0 = params.deltaX0 ?? 50
+  const t0 = params.t0 ?? 1
+  const aB_chase = params.aB ?? 3
+
+  // ── 相遇模式参数 ──
+  const vL = params.vL ?? 200
+  const aB_meet = params.aB_meet ?? 2
 
   // ── 物理计算 ──
-  const state = useMemo(
-    () => calculatePoliceChase(vA, deltaX0, t0, aB, vMax, time),
-    [vA, deltaX0, t0, aB, vMax, time]
+  const chaseState = useMemo(
+    () => calculatePoliceChase(vA, deltaX0, t0, aB_chase, vMax, time),
+    [vA, deltaX0, t0, aB_chase, vMax, time]
   )
 
-  // ── 动态计算最大时间（确保追击可完成） ──
-  const maxTimeNeeded = useMemo(() => {
-    if (vMax <= vA) return LAYOUT.MAX_TIME
-    const t1 = t0 + vMax / aB
-    const xB_t1 = 0.5 * aB * (vMax / aB) ** 2
-    const gapAtT1 = deltaX0 + vA * t1 - xB_t1
-    if (gapAtT1 <= 0) return t1
-    const tCatchUp = t1 + gapAtT1 / (vMax - vA)
-    return Math.min(Math.ceil(tCatchUp) + 2, 120)
-  }, [vA, deltaX0, t0, aB, vMax])
+  const meetState = useMemo(
+    () => calculateMeeting(vA, vL, aB_meet, time),
+    [vA, vL, aB_meet, time]
+  )
 
-  const effectiveMaxTime = Math.max(LAYOUT.MAX_TIME, maxTimeNeeded)
+  const state = chaseMode === 0 ? chaseState : meetState
 
-  // ── 检测共速时刻（最大间距）单次触发 ──
+  // ── 动态计算最大时间 ──
+  const effectiveMaxTime = useMemo(() => {
+    if (chaseMode === 0) {
+      // 追及模式
+      if (vMax <= vA) return LAYOUT.MAX_TIME
+      const t1 = t0 + vMax / aB_chase
+      const xB_t1 = 0.5 * aB_chase * (vMax / aB_chase) ** 2
+      const gapAtT1 = deltaX0 + vA * t1 - xB_t1
+      if (gapAtT1 <= 0) return t1
+      const tCatchUp = t1 + gapAtT1 / (vMax - vA)
+      return Math.min(Math.ceil(tCatchUp) + 2, 120)
+    } else {
+      // 相遇模式
+      const tMeet = meetState.tMeet
+      if (tMeet !== null) return Math.min(Math.ceil(tMeet) + 2, 60)
+      return LAYOUT.MAX_TIME
+    }
+  }, [chaseMode, vA, vMax, deltaX0, t0, aB_chase, vL, aB_meet, meetState.tMeet])
+
+  const maxTime = Math.max(LAYOUT.MAX_TIME, effectiveMaxTime)
+
+  // ── 自动暂停检测 ──
   const prevTimeRef = useRef(0)
-  const hasShownMaxGapRef = useRef(false)
-  const hasShownMeetRef = useRef(false)
+  const hasShownWarningRef = useRef(false)
   const warningTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const meetTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
-  const clearAutoPauseTimers = useCallback(() => {
+  const clearAutoPauseTimer = useCallback(() => {
     if (warningTimerRef.current) {
       clearTimeout(warningTimerRef.current)
       warningTimerRef.current = undefined
     }
-    if (meetTimerRef.current) {
-      clearTimeout(meetTimerRef.current)
-      meetTimerRef.current = undefined
-    }
-    setShowMaxGapWarning(false)
-    setShowMeetWarning(false)
+    setShowWarning(false)
   }, [])
 
-  const handlePlayPause = useCallback(() => {
-    clearAutoPauseTimers()
-    setIsPlaying(!isPlaying)
-  }, [clearAutoPauseTimers, setIsPlaying, isPlaying])
-
   useEffect(() => {
-    // 重置时清除标记
     if (time === 0) {
-      hasShownMaxGapRef.current = false
-      hasShownMeetRef.current = false
+      hasShownWarningRef.current = false
       prevTimeRef.current = 0
       return
     }
@@ -119,188 +110,211 @@ export default function AccelerationCenterExtra() {
       prevTimeRef.current = time
       return
     }
-    const { tEqual, tMeet } = state
 
-    // 共速时刻（最大间距）暂停 1 秒 — 不重置时间线
-    if (
-      !hasShownMaxGapRef.current &&
-      tEqual > 0 &&
-      tEqual <= effectiveMaxTime &&
-      prevTimeRef.current < tEqual &&
-      time >= tEqual
-    ) {
-      hasShownMaxGapRef.current = true
-      setIsPlaying(false)
-      setShowMaxGapWarning(true)
-      warningTimerRef.current = setTimeout(() => {
-        setShowMaxGapWarning(false)
-        setIsPlaying(true)
-      }, 1000)
-    }
-
-    // 相遇时刻（追上前车）暂停 2 秒
-    if (
-      !hasShownMeetRef.current &&
-      tMeet !== null &&
-      tMeet > 0 &&
-      tMeet <= effectiveMaxTime &&
-      prevTimeRef.current < tMeet &&
-      time >= tMeet
-    ) {
-      hasShownMeetRef.current = true
-      setIsPlaying(false)
-      setShowMeetWarning(true)
-      meetTimerRef.current = setTimeout(() => {
-        setShowMeetWarning(false)
-        setIsPlaying(true)
-      }, 2000)
+    if (chaseMode === 0) {
+      // 追及模式：检测共速时刻和相遇时刻
+      const { tEqual, tMeet } = chaseState
+      if (
+        !hasShownWarningRef.current &&
+        tEqual > 0 && tEqual <= maxTime &&
+        prevTimeRef.current < tEqual && time >= tEqual
+      ) {
+        hasShownWarningRef.current = true
+        setIsPlaying(false)
+        setWarningText(`共速时刻：此时两车距离最大！Δx = ${chaseState.deltaX.toFixed(1)} m`)
+        setShowWarning(true)
+        warningTimerRef.current = setTimeout(() => {
+          setShowWarning(false)
+          setIsPlaying(true)
+        }, 1500)
+      }
+      if (
+        !hasShownWarningRef.current &&
+        tMeet !== null && tMeet > 0 && tMeet <= maxTime &&
+        prevTimeRef.current < tMeet && time >= tMeet
+      ) {
+        hasShownWarningRef.current = true
+        setIsPlaying(false)
+        setWarningText(`警车追上轿车！t = ${tMeet.toFixed(1)} s`)
+        setShowWarning(true)
+        warningTimerRef.current = setTimeout(() => {
+          setShowWarning(false)
+          setIsPlaying(true)
+        }, 2000)
+      }
+    } else {
+      // 相遇模式：检测相遇时刻
+      const { tMeet } = meetState
+      if (
+        !hasShownWarningRef.current &&
+        tMeet !== null && tMeet > 0 && tMeet <= maxTime &&
+        prevTimeRef.current < tMeet && time >= tMeet
+      ) {
+        hasShownWarningRef.current = true
+        setIsPlaying(false)
+        setWarningText(`两车相遇！t = ${tMeet.toFixed(1)} s`)
+        setShowWarning(true)
+        warningTimerRef.current = setTimeout(() => {
+          setShowWarning(false)
+          setIsPlaying(true)
+        }, 2000)
+      }
     }
 
     prevTimeRef.current = time
-  }, [time, isPlaying, state, effectiveMaxTime, setIsPlaying, setTime])
+  }, [time, isPlaying, chaseMode, chaseState, meetState, maxTime, setIsPlaying])
 
-  // 组件卸载时清理 timer
   useEffect(() => {
     return () => {
       if (warningTimerRef.current) clearTimeout(warningTimerRef.current)
-      if (meetTimerRef.current) clearTimeout(meetTimerRef.current)
     }
   }, [])
 
-  // 参数变更时清除待命 timer（防止预设切换后 timer 意外触发）
   const prevParamsRef = useRef(params)
   useEffect(() => {
     if (prevParamsRef.current !== params) {
-      clearAutoPauseTimers()
+      clearAutoPauseTimer()
       prevParamsRef.current = params
     }
-  }, [params, clearAutoPauseTimers])
+  }, [params, clearAutoPauseTimer])
 
   // ── 布局计算 ──
-  const padding = containerSize.width * LAYOUT.CHART_PADDING_RATIO
-  const animHeight = containerSize.height * LAYOUT.ANIMATION_HEIGHT_RATIO
+  const padding = canvasSize.width * LAYOUT.CHART_PADDING_RATIO
+  const animHeight = canvasSize.height * LAYOUT.ANIMATION_HEIGHT_RATIO
 
-  // ── x-t 图数据（原始） ──
-  const xtCarData = useMemo(() => {
+  // ── x-t 图数据 ──
+  const xtDataA = useMemo(() => {
     const pts: { t: number; x: number }[] = []
-    for (let t = 0; t <= effectiveMaxTime; t += 0.1) {
-      pts.push({ t, x: deltaX0 + vA * t })
+    for (let t = 0; t <= maxTime; t += 0.1) {
+      pts.push({ t, x: vA * t })
     }
     return pts
-  }, [vA, deltaX0, effectiveMaxTime])
+  }, [vA, maxTime])
 
-  const xtPoliceData = useMemo(() => {
+  const xtDataB = useMemo(() => {
     const pts: { t: number; x: number }[] = []
-    const t1 = t0 + vMax / aB
-    for (let t = 0; t <= effectiveMaxTime; t += 0.1) {
-      let x: number
-      if (t < t0) { x = 0 }
-      else if (t < t1) { x = 0.5 * aB * (t - t0) * (t - t0) }
-      else { x = 0.5 * aB * (t1 - t0) * (t1 - t0) + vMax * (t - t1) }
-      pts.push({ t, x })
+    if (chaseMode === 0) {
+      const t1 = t0 + vMax / aB_chase
+      for (let t = 0; t <= maxTime; t += 0.1) {
+        let x: number
+        if (t < t0) { x = deltaX0 }
+        else if (t < t1) { x = deltaX0 + 0.5 * aB_chase * (t - t0) * (t - t0) }
+        else { x = deltaX0 + 0.5 * aB_chase * (t1 - t0) * (t1 - t0) + vMax * (t - t1) }
+        pts.push({ t, x })
+      }
+    } else {
+      for (let t = 0; t <= maxTime; t += 0.1) {
+        pts.push({ t, x: vL - 0.5 * aB_meet * t * t })
+      }
     }
     return pts
-  }, [t0, aB, vMax, effectiveMaxTime])
+  }, [chaseMode, vA, vL, vMax, t0, aB_chase, aB_meet, deltaX0, maxTime])
 
-  // ── v-t 图数据（原始） ──
-  const vtCarData = useMemo(() => {
+  // ── v-t 图数据 ──
+  const vtDataA = useMemo(() => {
     const pts: { t: number; v: number }[] = []
-    for (let t = 0; t <= effectiveMaxTime; t += 0.1) { pts.push({ t, v: vA }) }
+    for (let t = 0; t <= maxTime; t += 0.1) { pts.push({ t, v: vA }) }
     return pts
-  }, [vA, effectiveMaxTime])
+  }, [vA, maxTime])
 
-  const vtPoliceData = useMemo(() => {
+  const vtDataB = useMemo(() => {
     const pts: { t: number; v: number }[] = []
-    const t1 = t0 + vMax / aB
-    for (let t = 0; t <= effectiveMaxTime; t += 0.1) {
-      let v: number
-      if (t < t0) { v = 0 }
-      else if (t < t1) { v = aB * (t - t0) }
-      else { v = vMax }
-      pts.push({ t, v })
+    if (chaseMode === 0) {
+      const t1 = t0 + vMax / aB_chase
+      for (let t = 0; t <= maxTime; t += 0.1) {
+        let v: number
+        if (t < t0) { v = 0 }
+        else if (t < t1) { v = aB_chase * (t - t0) }
+        else { v = vMax }
+        pts.push({ t, v })
+      }
+    } else {
+      for (let t = 0; t <= maxTime; t += 0.1) {
+        pts.push({ t, v: aB_meet * t })
+      }
     }
     return pts
-  }, [t0, aB, vMax, effectiveMaxTime])
+  }, [chaseMode, vMax, t0, aB_chase, aB_meet, maxTime])
 
-  // ── x-t 图数据（RelationChart 格式: {x, y}） ──
-  const xtCarPoints = useMemo(
-    () => xtCarData.filter(p => p.t <= time + 0.01).map(p => ({ x: p.t, y: p.x })),
-    [xtCarData, time]
+  // ── 图表数据格式化 ──
+  const xtPointsA = useMemo(
+    () => xtDataA.filter(p => p.t <= time + 0.01).map(p => ({ x: p.t, y: p.x })),
+    [xtDataA, time]
   )
-  const xtPolicePoints = useMemo(
-    () => xtPoliceData.filter(p => p.t <= time + 0.01).map(p => ({ x: p.t, y: p.x })),
-    [xtPoliceData, time]
+  const xtPointsB = useMemo(
+    () => xtDataB.filter(p => p.t <= time + 0.01).map(p => ({ x: p.t, y: p.x })),
+    [xtDataB, time]
   )
 
-  // ── v-t 图数据（VelocityTimeChart 格式） ──
-  const vtCarPoints = useMemo(
-    () => vtCarData.filter(p => p.t <= time + 0.01).map(p => ({ t: p.t, v: p.v })),
-    [vtCarData, time]
+  const vtPointsA = useMemo(
+    () => vtDataA.filter(p => p.t <= time + 0.01).map(p => ({ t: p.t, v: p.v })),
+    [vtDataA, time]
   )
-  const vtCarDomain = useMemo(
-    () => vtCarData.map(p => ({ t: p.t, v: p.v })),
-    [vtCarData]
+  const vtDomainA = useMemo(() => vtDataA.map(p => ({ t: p.t, v: p.v })), [vtDataA])
+  const vtPointsB = useMemo(
+    () => vtDataB.filter(p => p.t <= time + 0.01).map(p => ({ t: p.t, v: p.v })),
+    [vtDataB, time]
   )
-  const vtPolicePoints = useMemo(
-    () => vtPoliceData.filter(p => p.t <= time + 0.01).map(p => ({ t: p.t, v: p.v })),
-    [vtPoliceData, time]
-  )
-  const vtPoliceDomain = useMemo(
-    () => vtPoliceData.map(p => ({ t: p.t, v: p.v })),
-    [vtPoliceData]
-  )
+  const vtDomainB = useMemo(() => vtDataB.map(p => ({ t: p.t, v: p.v })), [vtDataB])
 
   // ── 坐标范围 ──
-  const xtYMax = Math.max(deltaX0 + vA * effectiveMaxTime, deltaX0 + 50)
-  const xtYMin = -10
-  const vtYMax = Math.max(vA, vMax) * 1.2
-  const vtYMin = -2
+  const xtYMax = chaseMode === 0
+    ? Math.max(deltaX0 + vA * maxTime, deltaX0 + 50)
+    : Math.max(vL + 10, vA * maxTime + 10)
+  const vtYMax = chaseMode === 0
+    ? Math.max(vA, vMax) * 1.2
+    : Math.max(vA, aB_meet * maxTime) * 1.2
 
   // ── 公路动画布局 ──
   const roadY = animHeight * LAYOUT.ROAD_Y_RATIO
   const roadPadding = padding * 0.5
   const roadLeft = roadPadding
-  const roadRight = containerSize.width - roadPadding
+  const roadRight = canvasSize.width - roadPadding
   const roadWidth = roadRight - roadLeft
 
-  // 位移缩放：以有效时间内轿车的最大位移为参考
-  const maxDist = deltaX0 + vA * effectiveMaxTime
+  const maxDist = chaseMode === 0
+    ? deltaX0 + vA * maxTime
+    : vL
   const scale = (roadWidth * 0.85) / maxDist
   const startX = roadLeft + roadWidth * 0.05
 
-  const carX = startX + (deltaX0 + state.xA) * scale
-  const policeX = startX + state.xB * scale
+  // 车辆位置
+  const carAX = startX + (chaseMode === 0 ? state.xA : state.xA) * scale
+  const carBX = startX + (chaseMode === 0 ? state.xB : state.xB) * scale
 
   // ── 矢量场景配置 ──
   const chaseVp = useMemo(() => ({
-    visibleX: 0, visibleY: 0, visibleW: containerSize.width, visibleH: animHeight,
+    visibleX: 0, visibleY: 0, visibleW: canvasSize.width, visibleH: animHeight,
     centerX: 0, centerY: 0,
-  }), [containerSize.width, animHeight])
+  }), [canvasSize.width, animHeight])
   const sceneScale = useMemo(() => createSceneScaleFromViewport(chaseVp, 'transform', {
-    designWidth: containerSize.width,
+    designWidth: canvasSize.width,
     designHeight: animHeight,
-    refMagnitudes: { velocity: Math.max(vA, vMax) * 1.3, acceleration: aB * 2 },
-  }), [chaseVp, containerSize.width, animHeight, vA, vMax, aB])
+    refMagnitudes: { velocity: Math.max(vA, vMax) * 1.3, acceleration: (chaseMode === 0 ? aB_chase : aB_meet) * 2 },
+  }), [chaseVp, canvasSize.width, animHeight, vA, vMax, chaseMode, aB_chase, aB_meet])
 
+  const labelB = chaseMode === 0 ? '警车' : '乙车'
+
+  // 乙车加速度（追及模式用 aB_current，相遇模式用 aB）
+  const accelB = chaseMode === 0
+    ? (chaseState.phase === 'accelerating' ? chaseState.aB_current : 0)
+    : meetState.aB
 
   return (
     <div ref={containerRef} className="w-full h-full flex flex-col">
       {/* ══════════ 上层：并列双图表 ══════════ */}
       <div className="flex-1 flex flex-row relative">
-        {/* ── 左：x-t 图象（RelationChart） ── */}
         <div className="w-1/2 h-full p-1">
           <RelationChart
-            points={xtCarPoints}
-            additionalSeries={[
-              {
-                points: xtPolicePoints,
-                label: '警车',
-                series: 'secondary',
-                color: PHYSICS_COLORS.velocity,
-              },
-            ]}
-            xDomain={[0, effectiveMaxTime]}
-            yDomain={[xtYMin, xtYMax]}
+            points={xtPointsA}
+            additionalSeries={[{
+              points: xtPointsB,
+              label: labelB,
+              series: 'secondary',
+              color: PHYSICS_COLORS.velocity,
+            }]}
+            xDomain={[0, maxTime]}
+            yDomain={[-10, xtYMax]}
             xLabel="t / s"
             yLabel="x / m"
             title="位移 - 时间图象 (x-t)"
@@ -310,65 +324,71 @@ export default function AccelerationCenterExtra() {
             showGrid
           />
         </div>
-
-        {/* ── 右：v-t 图象（VelocityTimeChart） ── */}
         <div className="w-1/2 h-full p-1">
           <VelocityTimeChart
             mode="animated"
-            points={vtCarPoints}
-            domainPoints={vtCarDomain}
-            additionalSeries={[
-              {
-                points: vtPolicePoints,
-                domainPoints: vtPoliceDomain,
-                label: '警车',
-                series: 'secondary',
-              },
-            ]}
+            points={vtPointsA}
+            domainPoints={vtDomainA}
+            additionalSeries={[{
+              points: vtPointsB,
+              domainPoints: vtDomainB,
+              label: labelB,
+              series: 'secondary',
+            }]}
             currentTime={time}
-            tMax={effectiveMaxTime}
-            vRange={[vtYMin, vtYMax]}
+            tMax={maxTime}
+            vRange={[-2, vtYMax]}
             title="速度 - 时间图象 (v-t)"
             showCursor={time > 0}
           />
         </div>
       </div>
-      {/* ══════════ 下层：真实公路追击动画 ══════════ */}
+
+      {/* ══════════ 下层：公路动画 ══════════ */}
       <div className="flex-1 relative">
-        <svg width={containerSize.width} height={animHeight} className="absolute inset-0">
-          {/* 公路 */}
+        <svg viewBox={`0 0 ${canvasSize.width} ${animHeight}`} width={canvasSize.width} height={animHeight} className="absolute inset-0">
           <PhysicsGround
             x={roadLeft} y={roadY} width={roadWidth}
             appearance={{ color: PHYSICS_COLORS.labelText }}
             ruler={{
               domain: [0, maxDist],
               pixelPerUnit: scale,
-              tickInterval: 100,
+              tickInterval: chaseMode === 0 ? 100 : Math.ceil(vL / 5),
               unit: 'm',
             }}
           />
 
           {/* 起始参考线 */}
-          <line x1={startX} y1={roadY - 40} x2={startX} y2={roadY + 15} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axisBold} strokeDasharray={DASH.boundary.join(' ')} />
-          <text x={startX} y={roadY + 28} fontSize={FONT.axis} fill={PHYSICS_COLORS.axis} textAnchor="middle" fontWeight="bold">0</text>
+          <line x1={startX} y1={roadY - 40} x2={startX} y2={roadY + 15}
+            stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axisBold} strokeDasharray={DASH.boundary.join(' ')} />
+          <text x={startX} y={roadY + 28} fontSize={font(13)} fill={PHYSICS_COLORS.axis} textAnchor="middle" fontWeight="bold">0</text>
+
+          {/* 相遇模式：终点参考线 */}
+          {chaseMode === 1 && (
+            <>
+              <line x1={startX + vL * scale} y1={roadY - 40} x2={startX + vL * scale} y2={roadY + 15}
+                stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axisBold} strokeDasharray={DASH.boundary.join(' ')} />
+              <text x={startX + vL * scale} y={roadY + 28} fontSize={font(13)} fill={PHYSICS_COLORS.axis} textAnchor="middle" fontWeight="bold">{vL}m</text>
+            </>
+          )}
 
           {/* 动态间距线 */}
           {time > 0 && (
             <g>
               <line
-                x1={policeX + LAYOUT.VEHICLE_WIDTH}
+                x1={carAX + LAYOUT.VEHICLE_WIDTH}
                 y1={roadY - LAYOUT.VEHICLE_HEIGHT * 0.5}
-                x2={carX}
+                x2={carBX}
                 y2={roadY - LAYOUT.VEHICLE_HEIGHT * 0.5}
-                stroke={state.deltaX > deltaX0 ? PHYSICS_COLORS.acceleration : PHYSICS_COLORS.velocity}
+                stroke={state.deltaX > (chaseMode === 0 ? deltaX0 : vL * 0.5) ? PHYSICS_COLORS.acceleration : PHYSICS_COLORS.velocity}
                 strokeWidth={STROKE.reference}
                 strokeDasharray={DASH.reference.join(' ')}
               />
               <text
-                x={(policeX + LAYOUT.VEHICLE_WIDTH + carX) / 2}
+                x={(carAX + LAYOUT.VEHICLE_WIDTH + carBX) / 2}
                 y={roadY - LAYOUT.VEHICLE_HEIGHT * 0.5 - 6}
-                fontSize={FONT.small}
-                fill={state.deltaX > deltaX0 ? PHYSICS_COLORS.acceleration : PHYSICS_COLORS.velocity}
+                fontSize={font(11)}
+                fill={state.deltaX > (chaseMode === 0 ? deltaX0 : vL * 0.5) ? PHYSICS_COLORS.acceleration : PHYSICS_COLORS.velocity}
                 textAnchor="middle"
                 fontWeight="bold"
               >
@@ -377,9 +397,9 @@ export default function AccelerationCenterExtra() {
             </g>
           )}
 
-          {/* 轿车 A */}
+          {/* 甲车 A（向右） */}
           <SportsCar
-            x={carX}
+            x={carAX}
             y={roadY - LAYOUT.VEHICLE_HEIGHT}
             velocity={vA}
             time={time}
@@ -387,27 +407,27 @@ export default function AccelerationCenterExtra() {
             height={LAYOUT.VEHICLE_HEIGHT}
           />
 
-          {/* 警车 B */}
+          {/* 乙车 B */}
           <SportsCar
-            x={policeX}
+            x={carBX}
             y={roadY - LAYOUT.VEHICLE_HEIGHT}
-            police={true}
+            police={chaseMode === 0}
             velocity={state.vB}
             time={time}
             width={LAYOUT.VEHICLE_WIDTH}
             height={LAYOUT.VEHICLE_HEIGHT}
-            fill={PHYSICS_COLORS.objectFill}
+            fill={chaseMode === 1 ? PHYSICS_COLORS.objectFillNeutral : PHYSICS_COLORS.objectFill}
           />
-          
-          {/* 反应期光晕 (特定逻辑) */}
-          {time > 0 && state.phase === 'reaction' && (
-            <circle 
-              cx={policeX + LAYOUT.VEHICLE_WIDTH/2} 
-              cy={roadY - LAYOUT.VEHICLE_HEIGHT/2} 
-              r={LAYOUT.VEHICLE_WIDTH * 0.8} 
-              fill="none" 
-              stroke={PHYSICS_COLORS.referencePoint} 
-              strokeWidth={1} 
+
+          {/* 反应期光晕（追及模式） */}
+          {chaseMode === 0 && time > 0 && 'phase' in state && state.phase === 'reaction' && (
+            <circle
+              cx={carBX + LAYOUT.VEHICLE_WIDTH / 2}
+              cy={roadY - LAYOUT.VEHICLE_HEIGHT / 2}
+              r={LAYOUT.VEHICLE_WIDTH * 0.8}
+              fill="none"
+              stroke={PHYSICS_COLORS.referencePoint}
+              strokeWidth={1}
               opacity={0.4}
             >
               <animate attributeName="r" values={`${LAYOUT.VEHICLE_WIDTH * 0.6};${LAYOUT.VEHICLE_WIDTH * 0.9};${LAYOUT.VEHICLE_WIDTH * 0.6}`} dur="1.5s" repeatCount="indefinite" />
@@ -418,27 +438,29 @@ export default function AccelerationCenterExtra() {
           {/* 速度矢量 */}
           {time > 0 && (
             <g>
-              {/* 轿车速度矢量 */}
               <VectorArrow
-                origin={{ x: carX + LAYOUT.VEHICLE_WIDTH + 4, y: -(roadY - LAYOUT.VEHICLE_HEIGHT * 0.5) }}
+                origin={{ x: carAX + LAYOUT.VEHICLE_WIDTH + 4, y: -(roadY - LAYOUT.VEHICLE_HEIGHT * 0.5) }}
                 vector={{ x: vA, y: 0 }}
                 type="velocity"
                 sceneScale={sceneScale}
                 strokeWidth={STROKE.vectorMain}
               />
-              <text x={carX + LAYOUT.VEHICLE_WIDTH + 8 + sceneScale.maxVectorLength * 0.4} y={roadY - LAYOUT.VEHICLE_HEIGHT * 0.5 + 4} fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v_A</text>
+              <text x={carAX + LAYOUT.VEHICLE_WIDTH + 8 + sceneScale.maxVectorLength * 0.4}
+                y={roadY - LAYOUT.VEHICLE_HEIGHT * 0.5 + 4}
+                fontSize={font(11)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v_A</text>
 
-              {/* 警车速度矢量 */}
               {state.vB > 0.1 && (
                 <g>
                   <VectorArrow
-                    origin={{ x: policeX + LAYOUT.VEHICLE_WIDTH + 4, y: -(roadY - LAYOUT.VEHICLE_HEIGHT * 0.5) }}
+                    origin={{ x: carBX + LAYOUT.VEHICLE_WIDTH + 4, y: -(roadY - LAYOUT.VEHICLE_HEIGHT * 0.5) }}
                     vector={{ x: state.vB, y: 0 }}
                     type="velocity"
                     sceneScale={sceneScale}
                     strokeWidth={STROKE.vectorMain}
                   />
-                  <text x={policeX + LAYOUT.VEHICLE_WIDTH + 8 + sceneScale.maxVectorLength * 0.4} y={roadY - LAYOUT.VEHICLE_HEIGHT * 0.5 + 4} fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v_B</text>
+                  <text x={carBX + LAYOUT.VEHICLE_WIDTH + 8 + sceneScale.maxVectorLength * 0.4}
+                    y={roadY - LAYOUT.VEHICLE_HEIGHT * 0.5 + 4}
+                    fontSize={font(11)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v_B</text>
                 </g>
               )}
             </g>
@@ -446,25 +468,25 @@ export default function AccelerationCenterExtra() {
 
           {/* 信息标注 */}
           <g>
-            <text x={roadLeft + 10} y={30} fontSize={FONT.bodySize} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
+            <text x={roadLeft + 10} y={30} fontSize={font(13)} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
               t = {time.toFixed(1)} s
             </text>
-            <text x={roadLeft + 120} y={30} fontSize={FONT.bodySize} fill={PHYSICS_COLORS.displacement} fontWeight="bold">
+            <text x={roadLeft + 120} y={30} fontSize={font(13)} fill={PHYSICS_COLORS.displacement} fontWeight="bold">
               x_A = {state.xA.toFixed(1)} m
             </text>
-            <text x={roadLeft + 260} y={30} fontSize={FONT.bodySize} fill={PHYSICS_COLORS.velocity} fontWeight="bold">
+            <text x={roadLeft + 260} y={30} fontSize={font(13)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">
               x_B = {state.xB.toFixed(1)} m
             </text>
-            <text x={roadLeft + 400} y={30} fontSize={FONT.bodySize} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">
+            <text x={roadLeft + 400} y={30} fontSize={font(13)} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">
               Δx = {state.deltaX.toFixed(1)} m
             </text>
           </g>
 
-          {/* 警车加速度矢量（加速阶段显示，最高速后同步消失） */}
-          {state.phase === 'accelerating' && state.aB_current > 0.01 && (
+          {/* 乙车加速度矢量 */}
+          {time > 0 && state.vB > 0.1 && accelB > 0.01 && (
             <VectorArrow
-              origin={{ x: policeX + LAYOUT.VEHICLE_WIDTH * 0.5, y: -(roadY - LAYOUT.VEHICLE_HEIGHT - 8) }}
-              vector={{ x: state.aB_current, y: 0 }}
+              origin={{ x: carBX + LAYOUT.VEHICLE_WIDTH * 0.5, y: -(roadY - LAYOUT.VEHICLE_HEIGHT - 8) }}
+              vector={{ x: accelB, y: 0 }}
               type="acceleration"
               sceneScale={sceneScale}
               strokeWidth={STROKE.vectorSub}
@@ -472,34 +494,13 @@ export default function AccelerationCenterExtra() {
           )}
         </svg>
 
-        {/* 最大间距警告气泡 */}
-        {showMaxGapWarning && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 alert-card-warning font-bold text-xs shadow-lg">
-            ℹ️ 共速时刻：此时两车距离最大！Δx = {state.deltaX.toFixed(1)} m
-          </div>
-        )}
-
-        {/* 相遇警告气泡 */}
-        {showMeetWarning && (
+        {/* 警告气泡 */}
+        {showWarning && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 alert-card-info font-bold text-xs shadow-lg">
-            🚔 警车追上轿车！t = {state.tMeet?.toFixed(1)} s
+            {warningText}
           </div>
         )}
       </div>
-
-      {/* ── 动画控制栏 ── */}
-      <Card className="p-2">
-        <AnimationControls
-          isPlaying={isPlaying}
-          speed={speed}
-          time={time}
-          maxTime={effectiveMaxTime}
-          onPlayPause={handlePlayPause}
-          onReset={() => { clearAutoPauseTimers(); setTime(0); setIsPlaying(false) }}
-          onSpeedChange={setSpeed}
-          onTimeChange={setTime}
-        />
-      </Card>
     </div>
   )
 }

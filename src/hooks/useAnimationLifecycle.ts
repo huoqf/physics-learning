@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useLocation } from 'react-router-dom'
 import { useShallow } from 'zustand/react/shallow'
 import { getAnimationConfig, getAnimationConfigAsync } from '@/data/animationRegistry'
 import { preloadQuantityBuilder } from '@/data/physicsQuantities'
@@ -29,6 +29,7 @@ export interface AnimationLifecycleResult {
 
 function useAnimationConfig() {
   const { id } = useParams<{ id: string }>()
+  const location = useLocation()
   const { setParams, setTime, setIsPlaying, setPhysicsState } = useAnimationStore(
     useShallow((s) => ({
       setParams: s.setParams,
@@ -50,6 +51,7 @@ function useAnimationConfig() {
     return id ? !getAnimationConfig(id) : false
   })
   const prevConfigIdRef = useRef<string | undefined>(undefined)
+  const prevSearchRef = useRef<string>('')
 
   // 异步加载 config（extended 动画走此路径）
   useEffect(() => {
@@ -78,9 +80,17 @@ function useAnimationConfig() {
 
   // config 变更时初始化 store
   useEffect(() => {
-    if (config && config.id !== prevConfigIdRef.current) {
+    if (config && (config.id !== prevConfigIdRef.current || location.search !== prevSearchRef.current)) {
       prevConfigIdRef.current = config.id
-      setParams(config.defaultParams)
+      prevSearchRef.current = location.search
+      // 读取 URL search params，覆盖 defaultParams 中的同名参数
+      const searchParams = new URLSearchParams(location.search)
+      const urlOverrides: Record<string, number> = {}
+      searchParams.forEach((value, key) => {
+        const num = Number(value)
+        if (!Number.isNaN(num)) urlOverrides[key] = num
+      })
+      setParams({ ...config.defaultParams, ...urlOverrides })
       setTime(0)
       currentTimeRef.current = 0
       // 解析函数式 controlsMode：初始化时用 defaultParams
@@ -94,7 +104,7 @@ function useAnimationConfig() {
       markAnimationViewed(config.id)
       preloadQuantityBuilder(config.id)
     }
-  }, [config, setParams, setTime, setIsPlaying, setPhysicsState, setMode, markAnimationViewed])
+  }, [config, location.search, setParams, setTime, setIsPlaying, setPhysicsState, setMode, markAnimationViewed])
 
   return { config, configLoading, currentTimeRef }
 }

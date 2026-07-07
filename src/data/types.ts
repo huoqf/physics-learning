@@ -12,6 +12,8 @@ export interface KnowledgeNode {
   problemIds: string[]
   prerequisites: string[]
   parentId?: string
+  /** 跳转动画时注入的参数覆盖，合并到 defaultParams 之上 */
+  animationParams?: Record<string, number>
 }
 
 export type ParamImportance = 'core' | 'advanced' | 'display'

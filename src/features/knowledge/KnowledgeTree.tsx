@@ -58,7 +58,14 @@ const KnowledgeNodeItem: React.FC<{
     if (hasChildren) {
       onToggle(node.id)
     } else if (node.animationIds.length > 0) {
-      navigate(`/animation/${node.animationIds[0]}`)
+      let url = `/animation/${node.animationIds[0]}`
+      if (node.animationParams) {
+        const qs = new URLSearchParams(
+          Object.entries(node.animationParams).map(([k, v]) => [k, String(v)])
+        ).toString()
+        if (qs) url += `?${qs}`
+      }
+      navigate(url)
     }
   }
 

@@ -231,6 +231,67 @@ export function calculatePoliceChase(
 }
 
 /**
+ * 相遇问题计算。
+ *
+ * 情境：甲乙两车从相距 L 的两地同时出发，相向而行。
+ * 甲车以恒定速度 vA 向右运动，乙车从静止以加速度 aB 向左匀加速运动。
+ *
+ * 甲车位置：x_A(t) = vA * t
+ * 乙车位置：x_B(t) = L - 0.5 * aB * t²
+ * 相遇条件：x_A(t) = x_B(t) → 0.5*aB*t² + vA*t - L = 0
+ *
+ * @param vA 甲车速度 (m/s)
+ * @param vL 两地距离 L (m)
+ * @param aB 乙车加速度 (m/s²)
+ * @param time 当前时刻 (s)
+ * @returns 相遇状态
+ */
+export function calculateMeeting(
+  vA: number,
+  vL: number,
+  aB: number,
+  time: number
+): {
+  /** 甲车位置 (m) */
+  xA: number
+  /** 乙车位置 (m) */
+  xB: number
+  /** 甲车速度 (m/s) */
+  vA: number
+  /** 乙车速度 (m/s) */
+  vB: number
+  /** 乙车加速度 (m/s²) */
+  aB: number
+  /** 两车间距 (m) */
+  deltaX: number
+  /** 相遇时刻 (s)，null 表示未相遇 */
+  tMeet: number | null
+  /** 是否已相遇 */
+  isMet: boolean
+} {
+  const xA = vA * time
+  const xB = vL - 0.5 * aB * time * time
+  const vB = aB * time
+  const deltaX = Math.max(xB - xA, 0)
+
+  // 解 0.5*aB*t² + vA*t - L = 0
+  let tMeet: number | null = null
+  if (aB > 1e-9) {
+    const discriminant = vA * vA + 2 * aB * vL
+    if (discriminant >= 0) {
+      const t1 = (-vA + Math.sqrt(discriminant)) / aB
+      if (t1 > 0) tMeet = t1
+    }
+  } else if (vA > 1e-9) {
+    tMeet = vL / vA
+  }
+
+  const isMet = tMeet !== null && time >= tMeet
+
+  return { xA, xB, vA, vB, aB, deltaX, tMeet, isMet }
+}
+
+/**
  * 根据纬度计算重力加速度（Somigliana 近似）
  * @param latitude 纬度 φ (°)
  * @returns g (m/s²)

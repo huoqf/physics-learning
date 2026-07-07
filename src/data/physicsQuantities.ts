@@ -43,6 +43,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   // 运动学
   'anim-velocity':              { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
   'anim-acceleration':          { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
+  'anim-chase-meeting':         { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
   'anim-uniform-acceleration':  { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
   'anim-free-fall':             { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
   'anim-vertical-throw':        { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
