@@ -56,7 +56,8 @@ function AnimationCenter({
   const showCenterExtraInBasic = CenterExtraComponent && !centerExtraModeKey
   const maxTime = config.maxTime ?? 30
   const isSpringForceCutMode = config.id === 'anim-spring-force' && params.mode === 1
-  const isSplitH = config.centerLayout === 'splitH' || isSpringForceCutMode
+  const isLightWeightMutation = config.id === 'anim-light-weight-mutation'
+  const isSplitH = config.centerLayout === 'splitH' || isSpringForceCutMode || isLightWeightMutation
 
   const controlBar = (wrapperClassName: string) => (
     <div className={wrapperClassName}>

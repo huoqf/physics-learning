@@ -243,10 +243,9 @@ export const knowledgeTree: KnowledgeNode[] = [
     chapter: '第4章 牛顿运动定律',
     module: 'mechanics',
     importance: 'hard',
-    animationIds: ['anim-spring-force'],
+    animationIds: ['anim-light-weight-mutation'],
     problemIds: [],
     prerequisites: ['mechanics-4-2', 'mechanics-3-2'],
-    animationParams: { mode: 1 },
   },
   {
     id: 'mechanics-4-method-1',

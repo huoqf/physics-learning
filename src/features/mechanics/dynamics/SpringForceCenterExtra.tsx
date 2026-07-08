@@ -23,11 +23,11 @@ import {
 import { CUT_ROPE_DESIGN } from './hooks/useSpringForceCutRope'
 
 export default function SpringForceCenterExtra() {
-  const { params, time, mode } = useAnimationStore(
+  const { params, time, animationType } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
       time: s.time,
-      mode: s.params.mode ?? 0,
+      animationType: s.animationType,
     })),
   )
 
@@ -35,7 +35,10 @@ export default function SpringForceCenterExtra() {
   const m = params.m ?? 1
   const isCut = params.isCut ?? 0
 
-  if (mode === 0) {
+  // 弹力演示：胡克定律模式；轻质物体突变模型：切断模式
+  const isHookeLaw = animationType === 'anim-spring-force'
+
+  if (isHookeLaw) {
     return <HookeLawChart k={k} m={m} time={time} />
   }
 

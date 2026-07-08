@@ -57,6 +57,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   // 动力学
   'anim-connected-bodies':      { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
   'anim-spring-force':          { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
+  'anim-light-weight-mutation': { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
   'anim-friction':              { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
   'anim-equilibrium':           { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
   'anim-vector-addition':       { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },

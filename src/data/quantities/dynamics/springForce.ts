@@ -21,12 +21,12 @@ export function handleSpringForce(
   time: number,
   base: PhysicsQuantity[],
 ): PhysicsPanelData | null {
-  if (animId !== 'anim-spring-force') return null
+  if (animId !== 'anim-spring-force' && animId !== 'anim-light-weight-mutation') return null
   const p = normalizeParams(params, DEFAULTS)
 
   const k = p.k ?? 100
   const m = p.m ?? 1
-  const mode = p.mode ?? 0
+  const mode = animId === 'anim-light-weight-mutation' ? 1 : (p.mode ?? 0)
   const isCut = p.isCut ?? 0
 
   if (mode === 0) {

@@ -7,26 +7,32 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '弹力演示',
     knowledgeId: 'mechanics-3-2',
     Component: lazy(() => import('@/features/mechanics/dynamics/SpringForceAnimation')),
-    // mode=0 胡克定律：简谐振动（依赖 time）→ 'timed'（完整控制栏）
-    // mode=1 绳与弹簧瞬时切断：由左屏"剪断细绳"开关触发 → 'pause-only'（仅暂停/继续按钮）
-    controlsMode: (params) => params.mode === 1 ? 'pause-only' : 'timed',
-    defaultParams: { k: 100, m: 1, mode: 0, isCut: 0 } as const,
+    controlsMode: 'timed',
+    defaultParams: { k: 100, m: 1 } as const,
     maxTime: 5,
     paramMeta: [
-      { key: 'k', label: '劲度系数 k', min: 10, max: 200, step: 5, unit: 'N/m', showIf: 'mode', showIfValue: 0 },
+      { key: 'k', label: '劲度系数 k', min: 10, max: 200, step: 5, unit: 'N/m' },
       { key: 'm', label: '质量 m', min: 1.0, max: 3.0, step: 0.1, unit: 'kg' },
     ],
     controlMeta: [
       {
-        type: 'segmented',
-        key: 'mode',
-        group: '模型选择',
-        resetOnChange: true,
-        options: [
-          { value: 0, label: '胡克定律演示' },
-          { value: 1, label: '绳与弹簧瞬时切断' },
-        ],
+        type: 'tip',
+        group: '教学提示',
+        content: 'F-x 物理图像的斜率代表弹簧的劲度系数 k。图线与 x 轴围成的三角形面积表示弹性势能 Ep。',
       },
+    ],
+    CenterExtra: lazy(() => import('@/features/mechanics/dynamics/SpringForceCenterExtra')),
+  },
+  'anim-light-weight-mutation': {
+    title: '轻质物体突变模型',
+    knowledgeId: 'mechanics-4-9',
+    Component: lazy(() => import('@/features/mechanics/dynamics/LightWeightMutationAnimation')),
+    controlsMode: 'pause-only',
+    defaultParams: { m: 1, isCut: 0 } as const,
+    paramMeta: [
+      { key: 'm', label: '质量 m', min: 1.0, max: 3.0, step: 0.1, unit: 'kg' },
+    ],
+    controlMeta: [
       {
         type: 'toggle',
         key: 'isCut',
@@ -34,21 +40,10 @@ export const mechanicsDynamicsAnimations = defineAnimations({
         group: '操作交互',
         trueValue: 1,
         falseValue: 0,
-        showIf: 'mode',
-        showIfValue: 1,
-      },
-      {
-        type: 'tip',
-        group: '教学提示',
-        showIf: 'mode',
-        showIfValue: 0,
-        content: 'F-x 物理图像的斜率代表弹簧的劲度系数 k。图线与 x 轴围成的三角形面积表示弹性势能 Ep。',
       },
       {
         type: 'tip',
         group: '受力与加速度分析',
-        showIf: 'mode',
-        showIfValue: 1,
         content: '【剪断瞬间受力与加速度精炼解析】\n' +
           '1. 细绳拉力可突变为 0（绳断裂）；弹簧形变无法瞬间恢复，其弹力保持不变。\n' +
           '2. 左侧悬挂：剪绳瞬时，B球仅受重力，a_B = g ↓；A球受弹簧拉力 2mg↑ 与重力 mg↓，合力为 mg↑，a_A = g ↑。\n' +
