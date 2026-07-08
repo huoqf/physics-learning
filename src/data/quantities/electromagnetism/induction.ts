@@ -8,6 +8,7 @@ import {
   computeInductionMode2,
   computeDualRodsStateAtTime,
   evaluateLoopSegment,
+  getSingleRodState,
 } from '../../../physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import type { PhysicsPanelData, PhysicsQuantity } from '../types'
@@ -382,6 +383,58 @@ export function handleInduction(
             { text: '易错防坑：在变阻器滑动过程中，电阻变化（dR/dt）决定了电流的变化速度，进而决定了副线圈中的磁通量变化率和电流强弱。', level: 'warning' }
           ],
         }
+      }
+    }
+    case 'anim-induction-single-rod': {
+      const mode = (params.startMechanism ?? 0) === 0 ? 'constantForce' : 'initialVelocity'
+      const state = getSingleRodState({
+        mode,
+        driveForce: params.driveForce ?? 1.2,
+        initialVelocity: params.initialVelocity ?? 5,
+        magneticB: params.magneticB ?? 1.2,
+        railSpacing: params.railSpacing ?? 0.8,
+        resistance: params.resistance ?? 1.5,
+        rodMass: params.rodMass ?? 0.2,
+      }, time)
+
+      return {
+        quantities: [
+          ...base,
+          { label: '导体棒速度 v', value: state.v.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity },
+          { label: '感应电动势 E', value: state.emf.toFixed(2), unit: 'V', color: PHYSICS_COLORS.emf },
+          { label: '感应电流 I', value: state.current.toFixed(2), unit: 'A', color: PHYSICS_COLORS.electricCurrent },
+          { label: '安培力 F_A', value: state.ampereForce.toFixed(2), unit: 'N', color: PHYSICS_COLORS.lorentzForce, highlight: 'extreme' as const },
+          { label: '电荷量 q', value: state.charge.toFixed(2), unit: 'C', color: PHYSICS_COLORS.electricCurrent },
+          { label: '焦耳热 Q', value: state.jouleHeat.toFixed(2), unit: 'J', color: PHYSICS_COLORS.heatLoss },
+          ...(mode === 'constantForce'
+            ? [{ label: '收尾速度 v_m', value: state.terminalVelocity.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity }]
+            : []),
+        ],
+        formulas: [
+          { name: '动生电动势', latex: 'E = BLv', level: 'core' },
+          { name: '感应电流', latex: 'I = \\frac{E}{R}', level: 'core' },
+          { name: '安培力阻尼', latex: 'F_A = BIL = \\frac{B^2L^2v}{R}', level: 'core' },
+          ...(mode === 'constantForce'
+            ? [
+                { name: '单杆动力学', latex: 'F - \\frac{B^2L^2v}{R} = ma', level: 'core' as const },
+                { name: '收尾速度', latex: 'v_m = \\frac{FR}{B^2L^2}', level: 'important' as const },
+              ]
+            : [
+                { name: '电磁阻尼释放', latex: '-\\frac{B^2L^2v}{R} = ma', level: 'core' as const },
+                { name: '速度衰减', latex: 'v(t)=v_0 e^{-kt/m},\\quad k=\\frac{B^2L^2}{R}', level: 'important' as const },
+              ]),
+          { name: '电荷量秒杀式', latex: 'q = \\frac{m\\Delta v}{BL}', level: 'important', condition: '由 -BLq = \\Delta p 得出' },
+        ],
+        gaokaoPoints: [
+          { text: '动态链条：v 变化 ⇒ E=BLv 变化 ⇒ I=E/R 变化 ⇒ F_A=BIL 变化。', importance: 'gaokao' },
+          { text: '单杆收尾不是匀变速。恒力启动抓 v_m，初速度释放抓指数衰减。', importance: 'gaokao' },
+          { text: '求电荷量常用动量定理 q=mΔv/(BL)，不必先求完整时间函数。', importance: 'hard' },
+        ],
+        warnings: [
+          { text: '易错点：安培力随速度改变，不能套匀加速直线运动公式。', level: 'danger' },
+          { text: '模型默认导轨光滑、磁场匀强、回路总电阻恒定，忽略自感。', level: 'info' },
+        ],
+        mnemonic: '速度生电，电流生力；力阻速度，恒力收尾。',
       }
     }
     case 'anim-induction-dual-rods': {

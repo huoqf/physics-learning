@@ -17,6 +17,7 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 07-08 | electromagnetism/induction | feat | 新增“电磁感应单杆模型”页面：知识树在双杆模型前插入 electricity-4-5 单杆、双杆/线框顺延至 4-6/4-7；新增纯物理解析函数 singleRod.ts，支持恒力启动收尾与初速度释放指数衰减、电荷量与焦耳热计算；中屏 splitV 上方三图并列 v-t/I-t/能量转化，下方标准 AnimationSvgCanvas 绘制导轨、电阻、磁场×、导体棒、电流粒子、VectorArrow 速度/安培力/外力与电荷积累槽；右看板补 E=BLv、F_A=B²L²v/R、v_m 与 q=mΔv/(BL) 高考公式 |
 | 07-08 | mechanics/dynamics | feat | 新增“传送带模型”页面：知识树 mechanics-4-7 接入 anim-conveyor；新增纯物理函数 conveyor.ts 支持水平/倾斜传送带、相对速度判定、共速分段、左右边界离开、相对位移与摩擦生热；左屏使用 paramMeta/controlMeta 声明 v带/v0/μ/L、模型切换、共速线和划痕开关；中屏 splitV 上方 BasePhysicsChart 显示 v物-t 与 v带 共速/离开标记，下方 AnimationSvgCanvas 绘制履带、转轮、物块、速度/摩擦 VectorArrow 与生热划痕；右看板补高考分段模板与倾斜带 μ≥tanθ 判据 |
 | 07-08 | mechanics/circular | feat | 新增“圆盘与圆锥摆模型”页面：知识树 mechanics-5-7 接入 anim-circular-models；左屏以 paramMeta/controlMeta 声明模型切换、ω、L/r、μ；中屏 splitH 左侧标准 AnimationSvgCanvas 绘制圆锥摆/水平圆盘、速度/重力/向心力来源矢量，右侧 BasePhysicsChart 展示 θ-ω 或 Fn-ω 与静摩擦临界；右看板补圆锥摆与圆盘临界公式体系；新增纯物理函数 circularModels.ts |
 | 07-08 | mechanics/gravitation | compliance | 天体双星/多星模型深度优化：保持 splitH 左右分区，对三星模式启用独立的 scale = 28 放大因子以饱溢画布、减少四周空白；主屏右侧彻底移除与右看板重复的动力学校验数据卡，腾出空间并新增线速度投影-时间图 (v_x-t)，与位置投影-时间图 (x-t) 垂直并列并共享时域滑动游标，极佳呈现实时简谐相位关联；celestial 单测与天体类型检查全数通过 |

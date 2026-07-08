@@ -278,9 +278,56 @@ export const electromagnetismInductionAnimations = defineAnimations({
       { key: 'm', label: '导体棒质量 m', min: 0.05, max: 1.0, step: 0.05, unit: 'kg', showIf: 'mode', showIfValue: 1 },
     ],
   },
+  'anim-induction-single-rod': {
+    title: '电磁感应单杆模型',
+    knowledgeId: 'electricity-4-5',
+    Component: lazy(() => import('@/features/electromagnetism/induction/SingleRodAnimation')),
+    CenterExtra: lazy(() => import('@/features/electromagnetism/induction/SingleRodCharts')),
+    centerExtraHeight: 'h-1/2',
+    controlsMode: 'timed' as const,
+    maxTime: 12,
+    defaultParams: {
+      startMechanism: 0,
+      driveForce: 1.2,
+      initialVelocity: 5.0,
+      magneticB: 1.2,
+      resistance: 1.5,
+      rodMass: 0.2,
+      railSpacing: 0.8,
+      enableChargeSlot: 1,
+    } as const,
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'startMechanism',
+        label: '启动情景',
+        group: '模型选择',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '恒力启动' },
+          { value: 1, label: '初速度释放' },
+        ],
+      },
+      { type: 'toggle', key: 'enableChargeSlot', label: '显示电荷积累槽', group: '显示辅助' },
+      {
+        type: 'tip',
+        group: '教学提示',
+        content: '动力链：v 改变 → E=BLv 改变 → I=E/R 改变 → F_A=BIL 改变。单杆不是匀变速运动，优先抓收尾速度与电荷量公式。',
+        variant: 'primary',
+      },
+    ],
+    paramMeta: [
+      { key: 'driveForce', label: '恒定外力 F', min: 0.2, max: 5.0, step: 0.1, unit: 'N', showIf: 'startMechanism', showIfValue: 0 },
+      { key: 'initialVelocity', label: '初速度 v₀', min: 0.5, max: 8.0, step: 0.1, unit: 'm/s', showIf: 'startMechanism', showIfValue: 1 },
+      { key: 'magneticB', label: '磁感应强度 B', min: 0.5, max: 2.5, step: 0.05, unit: 'T' },
+      { key: 'resistance', label: '回路总电阻 R', min: 0.2, max: 5.0, step: 0.1, unit: 'Ω' },
+      { key: 'rodMass', label: '导体棒质量 m', min: 0.05, max: 1.0, step: 0.01, unit: 'kg' },
+      { key: 'railSpacing', label: '导轨间距 L', min: 0.2, max: 1.5, step: 0.05, unit: 'm' },
+    ],
+  },
   'anim-induction-dual-rods': {
     title: '电磁感应双杆模型',
-    knowledgeId: 'electricity-4-5',
+    knowledgeId: 'electricity-4-6',
     Component: lazy(() => import('@/features/electromagnetism/induction/InductionDualRods')),
     defaultParams: {
       scenario: 0,
@@ -317,7 +364,7 @@ export const electromagnetismInductionAnimations = defineAnimations({
   },
   'anim-induction-loop-field': {
     title: '电磁感应线框模型',
-    knowledgeId: 'electricity-4-6',
+    knowledgeId: 'electricity-4-7',
     Component: lazy(() => import('@/features/electromagnetism/induction/InductionLoopField')),
     defaultParams: {
       dimensionPreset: 0,
