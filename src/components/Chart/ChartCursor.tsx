@@ -21,6 +21,18 @@ interface ChartCursorProps {
   font?: (v: number) => number
 }
 
+/**
+ * 各 series 的固定垂直偏移乘数（正值 = 向下偏移，负值 = 向上偏移）。
+ * 不随数值排序变化，避免动画帧间翻转抖动。
+ */
+const SERIES_VSHIFT_MAP: Record<string, number> = {
+  primary: 0,
+  warm: 1.4,
+  success: -1.4,
+  secondary: 0.7,
+  accent: -0.7,
+}
+
 export function ChartCursor({
   x,
   dataPoints,
@@ -46,6 +58,15 @@ export function ChartCursor({
 
   const cursorX = toSvgX(x)
   const lineColor = REFERENCE_MAP[crosshairVariant]
+  const smallFont = fontFn(FONT.small)
+
+  // ── 左边界渐进偏移：游标靠近左边缘时，标签向右推移避免与 Y 轴刻度重叠 ──
+  const edgeZone = plotSize.width * 0.1
+  const maxEdgeOffset = smallFont * 2.5
+  const distFromLeft = cursorX - plotOrigin.x
+  const edgeOffset = distFromLeft < edgeZone
+    ? maxEdgeOffset * (1 - distFromLeft / edgeZone)
+    : 0
 
   return (
     <g>
@@ -60,15 +81,17 @@ export function ChartCursor({
       {dataPoints.map((pt, idx) => {
         const py = toSvgY(pt.y)
         const color = pt.series ? SERIES_MAP[pt.series] : CHART_COLORS.primary
+        // 固定方向垂直偏移：按 series 确定，不随数值变化
+        const vShift = (SERIES_VSHIFT_MAP[pt.series ?? ''] ?? 0) * smallFont
         return (
           <g key={`cursor-${idx}`}>
-            <circle cx={cursorX} cy={py} r={fontFn(FONT.small) * 0.4} fill={color} opacity={0.3} />
-            <circle cx={cursorX} cy={py} r={fontFn(FONT.small) * 0.25} fill={color} stroke={CHART_COLORS.highlight} strokeWidth={1.5} />
+            <circle cx={cursorX} cy={py} r={smallFont * 0.4} fill={color} opacity={0.3} />
+            <circle cx={cursorX} cy={py} r={smallFont * 0.25} fill={color} stroke={CHART_COLORS.highlight} strokeWidth={1.5} />
             {showLabels && (
               <text
-                x={cursorX + fontFn(FONT.small) * 0.6}
-                y={py - fontFn(FONT.small) * 0.4}
-                fontSize={fontFn(FONT.small)}
+                x={cursorX + smallFont * 0.6 + edgeOffset}
+                y={py + vShift}
+                fontSize={smallFont}
                 fill={color}
                 fontWeight="bold"
               >

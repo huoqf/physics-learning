@@ -1,7 +1,7 @@
 import { useAnimationViewport } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
 import { Ball } from '@/components/Physics/Ball'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { useBinaryStars } from './hooks/useBinaryStars'
@@ -29,13 +29,13 @@ export default function BinaryStarsAnimation() {
   const cx = 175
   const cy = 325
 
-  // 构造适合 VectorArrow 缩放参数，由于我们手动传 pixelLength，所以 sceneScale 设为相对恒定
+  // 构造适合 VectorArrow 缩放参数，使用真实的 state.scale 缩放天体物理坐标到设计像素坐标
   const sceneScale = {
     originX: cx,
     originY: cy,
-    scaleX: 1,
-    scaleY: 1,
-    scale: 1,
+    scaleX: state.scale,
+    scaleY: state.scale,
+    scale: state.scale,
     maxVectorLength: 50,
   }
 
@@ -103,7 +103,7 @@ export default function BinaryStarsAnimation() {
         )}
 
         {/* 2. 质心点标记 */}
-        <g stroke={PHYSICS_COLORS.alertRed} strokeWidth={1.8}>
+        <g stroke={CANVAS_COLORS.referencePoint} strokeWidth={1.8}>
           <line x1={cx - 6} y1={cy} x2={cx + 6} y2={cy} />
           <line x1={cx} y1={cy - 6} x2={cx} y2={cy + 6} />
         </g>
@@ -111,7 +111,7 @@ export default function BinaryStarsAnimation() {
           x={cx + 8}
           y={cy + 12}
           fontSize={font(10)}
-          fill={PHYSICS_COLORS.alertRed}
+          fill={CANVAS_COLORS.referencePoint}
           fontWeight="bold"
         >
           质心 +
@@ -130,7 +130,7 @@ export default function BinaryStarsAnimation() {
                   type="force"
                   sceneScale={sceneScale}
                   color={PHYSICS_COLORS.forceNet}
-                  pixelLength={35}
+                  pixelLength={40}
                   label="F₁₂"
                   font={font}
                 />
@@ -140,7 +140,7 @@ export default function BinaryStarsAnimation() {
                   type="velocity"
                   sceneScale={sceneScale}
                   color={PHYSICS_COLORS.velocity}
-                  pixelLength={Math.max(12, state.v1 * 18)}
+                  pixelLength={Math.max(12, state.v1 * 26)}
                   label="v₁"
                   font={font}
                 />
@@ -152,7 +152,7 @@ export default function BinaryStarsAnimation() {
                   type="force"
                   sceneScale={sceneScale}
                   color={PHYSICS_COLORS.forceNet}
-                  pixelLength={35}
+                  pixelLength={40}
                   label="F₂₁"
                   font={font}
                 />
@@ -162,7 +162,7 @@ export default function BinaryStarsAnimation() {
                   type="velocity"
                   sceneScale={sceneScale}
                   color={PHYSICS_COLORS.velocity}
-                  pixelLength={Math.max(12, state.v2 * 18)}
+                  pixelLength={Math.max(12, state.v2 * 26)}
                   label="v₂"
                   font={font}
                 />
@@ -177,7 +177,7 @@ export default function BinaryStarsAnimation() {
                   type="force"
                   sceneScale={sceneScale}
                   color={PHYSICS_COLORS.forceNet}
-                  pixelLength={35}
+                  pixelLength={40}
                   label="F_合1"
                   font={font}
                 />
@@ -187,7 +187,7 @@ export default function BinaryStarsAnimation() {
                   type="velocity"
                   sceneScale={sceneScale}
                   color={PHYSICS_COLORS.velocity}
-                  pixelLength={Math.max(12, state.v * 18)}
+                  pixelLength={Math.max(12, state.v * 26)}
                   label="v₁"
                   font={font}
                 />
@@ -198,7 +198,7 @@ export default function BinaryStarsAnimation() {
                   type="forceComponent"
                   sceneScale={sceneScale}
                   color={withAlpha(PHYSICS_COLORS.forceNet, 0.5)}
-                  pixelLength={22}
+                  pixelLength={25}
                   dashed
                   font={font}
                 />
@@ -208,7 +208,7 @@ export default function BinaryStarsAnimation() {
                   type="forceComponent"
                   sceneScale={sceneScale}
                   color={withAlpha(PHYSICS_COLORS.forceNet, 0.5)}
-                  pixelLength={22}
+                  pixelLength={25}
                   dashed
                   font={font}
                 />
@@ -220,7 +220,7 @@ export default function BinaryStarsAnimation() {
                   type="force"
                   sceneScale={sceneScale}
                   color={PHYSICS_COLORS.forceNet}
-                  pixelLength={35}
+                  pixelLength={40}
                   label="F_合2"
                   font={font}
                 />
@@ -230,7 +230,7 @@ export default function BinaryStarsAnimation() {
                   type="velocity"
                   sceneScale={sceneScale}
                   color={PHYSICS_COLORS.velocity}
-                  pixelLength={Math.max(12, state.v * 18)}
+                  pixelLength={Math.max(12, state.v * 26)}
                   label="v₂"
                   font={font}
                 />
@@ -242,7 +242,7 @@ export default function BinaryStarsAnimation() {
                   type="force"
                   sceneScale={sceneScale}
                   color={PHYSICS_COLORS.forceNet}
-                  pixelLength={35}
+                  pixelLength={40}
                   label="F_合3"
                   font={font}
                 />
@@ -252,7 +252,7 @@ export default function BinaryStarsAnimation() {
                   type="velocity"
                   sceneScale={sceneScale}
                   color={PHYSICS_COLORS.velocity}
-                  pixelLength={Math.max(12, state.v * 18)}
+                  pixelLength={Math.max(12, state.v * 26)}
                   label="v₃"
                   font={font}
                 />
@@ -277,7 +277,7 @@ export default function BinaryStarsAnimation() {
               y={cy - state.pos1.y * state.scale - (16 + state.m1 * 1.5)}
               fontSize={font(11)}
               fontWeight="bold"
-              fill={PHYSICS_COLORS.forceNetArrow}
+              fill={CANVAS_COLORS.labelText}
               textAnchor="middle"
             >
               m₁ ({state.m1.toFixed(1)})
@@ -295,7 +295,7 @@ export default function BinaryStarsAnimation() {
               y={cy - state.pos2.y * state.scale - (14 + state.m2 * 1.5)}
               fontSize={font(11)}
               fontWeight="bold"
-              fill={PHYSICS_COLORS.objectStroke}
+              fill={CANVAS_COLORS.labelText}
               textAnchor="middle"
             >
               m₂ ({state.m2.toFixed(1)})
@@ -315,10 +315,10 @@ export default function BinaryStarsAnimation() {
               y={cy - state.pos1.y * state.scale - 19}
               fontSize={font(11)}
               fontWeight="bold"
-              fill={PHYSICS_COLORS.objectStroke}
+              fill={CANVAS_COLORS.labelText}
               textAnchor="middle"
             >
-              m (5.0)
+              m ({state.starMass.toFixed(1)})
             </text>
 
             <Ball
@@ -332,10 +332,10 @@ export default function BinaryStarsAnimation() {
               y={cy - state.pos2.y * state.scale - 19}
               fontSize={font(11)}
               fontWeight="bold"
-              fill={PHYSICS_COLORS.objectStroke}
+              fill={CANVAS_COLORS.labelText}
               textAnchor="middle"
             >
-              m (5.0)
+              m ({state.starMass.toFixed(1)})
             </text>
 
             <Ball
@@ -349,10 +349,10 @@ export default function BinaryStarsAnimation() {
               y={cy - state.pos3.y * state.scale - 19}
               fontSize={font(11)}
               fontWeight="bold"
-              fill={PHYSICS_COLORS.objectStroke}
+              fill={CANVAS_COLORS.labelText}
               textAnchor="middle"
             >
-              m (5.0)
+              m ({state.starMass.toFixed(1)})
             </text>
           </>
         )}

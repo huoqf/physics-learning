@@ -28,6 +28,7 @@ export type BinaryStarsState =
   | {
       mode: 1
       L: number
+      starMass: number
       r: number
       rPx: number
       pos1: { x: number; y: number }
@@ -77,7 +78,8 @@ export function useBinaryStars(): BinaryStarsState | null {
 
   // 3. 计算随时间旋转的坐标与矢量
   const animationState = useMemo(() => {
-    const scale = 18 // 物理米到像素的缩放比例
+    // 物理米到像素的缩放比例：双星模式为防偏心轨道溢出保持 18，三星完全对称放大为 28
+    const scale = mode === 0 ? 18 : 28
 
     if (mode === 0 && binaryData) {
       const { m1, m2, r1, r2, v1, v2, omega } = binaryData
@@ -154,6 +156,7 @@ export function useBinaryStars(): BinaryStarsState | null {
       return {
         mode: 1 as const,
         L,
+        starMass,
         r,
         rPx: r * scale,
         pos1,

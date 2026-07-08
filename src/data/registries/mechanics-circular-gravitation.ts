@@ -116,7 +116,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     defaultParams: { L: 8.0, massRatio: 1.0, mode: 0 } as const,
     paramMeta: [
       { key: 'L', label: '天体总距离 L', min: 4.0, max: 10.0, step: 0.1, unit: 'm', resetOnChange: true },
-      { key: 'massRatio', label: '质量比 m₁:m₂', min: 0.2, max: 5.0, step: 0.1, unit: '', showIf: 'mode', showIfValue: 0, resetOnChange: true },
+      { key: 'massRatio', label: '质量比 m₁:m₂', min: 0.2, max: 5.0, step: 0.1, unit: '', showIf: 'mode', showIfValue: 0 },
     ],
     controlMeta: [
       {
@@ -129,6 +129,23 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
           { value: 0, label: '双星系统' },
           { value: 1, label: '三星系统 (等边三角形)' },
         ],
+      },
+      { type: 'storeToggle', label: '显示受力与速度矢量', storeKey: 'toggleVectors', stateKey: 'showVectors', group: '显示辅助' },
+      {
+        type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 0,
+        content: '【双星系统易错点】\n1. 万有引力公式中的距离是双星间距 L，而向心力公式中的半径是各自的轨道半径 r₁ 或 r₂，二者绝不能混淆。\n2. 双星做匀速圆周运动的角速度 ω 和周期 T 绝对相等。\n3. 轨道半径、线速度、向心加速度均与质量成反比：质量大的星轨道半径小、速度慢。'
+      },
+      {
+        type: 'tip', group: '图表解读', showIf: 'mode', showIfValue: 0,
+        content: '【投影规律与相位分析】\n1. 反相位置：两星位移波形相位恒定相反（相差 180°），反映连线恒过质心。\n2. 振幅成反比：位置与速度正弦投影的振幅，均实时与天体质量成反比。\n3. 简谐相位差：位置（余弦）与速度（正弦）有 90° 相位差。位移最大时速度为零，过质心时速度最大。'
+      },
+      {
+        type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 1,
+        content: '【三星系统要点】\n1. 三颗等质量星体位于等边三角形顶点，绕质心做匀速圆周运动。\n2. 每颗星受另外两颗星的引力，其合力指向正三角形中心（质心）。\n3. 三颗星的角速度 ω、周期 T 和轨道半径 r 完全相等。'
+      },
+      {
+        type: 'tip', group: '图表解读', showIf: 'mode', showIfValue: 1,
+        content: '【三星运动与投影规律】\n1. 三相正弦波：三颗天体在 X 轴的位移与速度投影，相位互差 120°，构成稳定的对称运转。\n2. 对称等幅值：由于轨道半径和线速度大小完全恒等，三条波形曲线的幅值完全一致。\n3. 速度极值对齐：当天体经过 X 轴端点（位移极值）时，其 X 方向瞬时速度刚好过零，遵循简谐投影法则。'
       },
     ],
   },

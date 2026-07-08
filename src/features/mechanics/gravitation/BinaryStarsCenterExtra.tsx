@@ -1,9 +1,222 @@
-import { EnergyBars } from '@/components/Physics/EnergyBars'
+import { BasePhysicsChart } from '@/components/Chart/BasePhysicsChart'
+import { ChartCursor } from '@/components/Chart/ChartCursor'
+import { useChartContext } from '@/components/Chart/ChartContext'
 import { useBinaryStars } from './hooks/useBinaryStars'
 import { PHYSICS_COLORS } from '@/theme/physics'
+import { useAnimationStore } from '@/stores'
 
+// ─── 双星模式位置投影曲线 (x-t) ────────────────────────────────────
+function BinaryCurvePaths({
+  r1,
+  r2,
+  omega,
+  T,
+}: {
+  r1: number
+  r2: number
+  omega: number
+  T: number
+}) {
+  const ctx = useChartContext()
+  if (!ctx) return null
+  const { toSvgX, toSvgY } = ctx
+
+  const pointsCount = 80
+  const path1Arr: string[] = []
+  const path2Arr: string[] = []
+
+  for (let i = 0; i < pointsCount; i++) {
+    const t = (T * i) / (pointsCount - 1)
+    const x1 = r1 * Math.cos(omega * t)
+    const x2 = -r2 * Math.cos(omega * t)
+    path1Arr.push(`${toSvgX(t).toFixed(1)},${toSvgY(x1).toFixed(1)}`)
+    path2Arr.push(`${toSvgX(t).toFixed(1)},${toSvgY(x2).toFixed(1)}`)
+  }
+
+  return (
+    <>
+      <path
+        d={`M ${path1Arr.join(' L ')}`}
+        fill="none"
+        stroke={PHYSICS_COLORS.forceNet}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+      <path
+        d={`M ${path2Arr.join(' L ')}`}
+        fill="none"
+        stroke={PHYSICS_COLORS.velocity}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </>
+  )
+}
+
+// ─── 双星模式速度投影曲线 (vx-t) ───────────────────────────────────
+function BinaryVelCurvePaths({
+  v1,
+  v2,
+  omega,
+  T,
+}: {
+  v1: number
+  v2: number
+  omega: number
+  T: number
+}) {
+  const ctx = useChartContext()
+  if (!ctx) return null
+  const { toSvgX, toSvgY } = ctx
+
+  const pointsCount = 80
+  const path1Arr: string[] = []
+  const path2Arr: string[] = []
+
+  for (let i = 0; i < pointsCount; i++) {
+    const t = (T * i) / (pointsCount - 1)
+    const vx1 = -v1 * Math.sin(omega * t)
+    const vx2 = v2 * Math.sin(omega * t)
+    path1Arr.push(`${toSvgX(t).toFixed(1)},${toSvgY(vx1).toFixed(1)}`)
+    path2Arr.push(`${toSvgX(t).toFixed(1)},${toSvgY(vx2).toFixed(1)}`)
+  }
+
+  return (
+    <>
+      <path
+        d={`M ${path1Arr.join(' L ')}`}
+        fill="none"
+        stroke={PHYSICS_COLORS.forceNet}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+      <path
+        d={`M ${path2Arr.join(' L ')}`}
+        fill="none"
+        stroke={PHYSICS_COLORS.velocity}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </>
+  )
+}
+
+// ─── 三星模式位置投影曲线 (x-t) ────────────────────────────────────
+function TripleCurvePaths({
+  r,
+  omega,
+  T,
+}: {
+  r: number
+  omega: number
+  T: number
+}) {
+  const ctx = useChartContext()
+  if (!ctx) return null
+  const { toSvgX, toSvgY } = ctx
+
+  const pointsCount = 80
+  const path1Arr: string[] = []
+  const path2Arr: string[] = []
+  const path3Arr: string[] = []
+
+  for (let i = 0; i < pointsCount; i++) {
+    const t = (T * i) / (pointsCount - 1)
+    const x1 = r * Math.cos(omega * t)
+    const x2 = r * Math.cos(omega * t + (2 * Math.PI) / 3)
+    const x3 = r * Math.cos(omega * t + (4 * Math.PI) / 3)
+    path1Arr.push(`${toSvgX(t).toFixed(1)},${toSvgY(x1).toFixed(1)}`)
+    path2Arr.push(`${toSvgX(t).toFixed(1)},${toSvgY(x2).toFixed(1)}`)
+    path3Arr.push(`${toSvgX(t).toFixed(1)},${toSvgY(x3).toFixed(1)}`)
+  }
+
+  return (
+    <>
+      <path
+        d={`M ${path1Arr.join(' L ')}`}
+        fill="none"
+        stroke={PHYSICS_COLORS.velocity}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+      <path
+        d={`M ${path2Arr.join(' L ')}`}
+        fill="none"
+        stroke={PHYSICS_COLORS.forceNet}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+      <path
+        d={`M ${path3Arr.join(' L ')}`}
+        fill="none"
+        stroke={PHYSICS_COLORS.magneticField}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </>
+  )
+}
+
+// ─── 三星模式速度投影曲线 (vx-t) ───────────────────────────────────
+function TripleVelCurvePaths({
+  v,
+  omega,
+  T,
+}: {
+  v: number
+  omega: number
+  T: number
+}) {
+  const ctx = useChartContext()
+  if (!ctx) return null
+  const { toSvgX, toSvgY } = ctx
+
+  const pointsCount = 80
+  const path1Arr: string[] = []
+  const path2Arr: string[] = []
+  const path3Arr: string[] = []
+
+  for (let i = 0; i < pointsCount; i++) {
+    const t = (T * i) / (pointsCount - 1)
+    const vx1 = -v * Math.sin(omega * t)
+    const vx2 = -v * Math.sin(omega * t + (2 * Math.PI) / 3)
+    const vx3 = -v * Math.sin(omega * t + (4 * Math.PI) / 3)
+    path1Arr.push(`${toSvgX(t).toFixed(1)},${toSvgY(vx1).toFixed(1)}`)
+    path2Arr.push(`${toSvgX(t).toFixed(1)},${toSvgY(vx2).toFixed(1)}`)
+    path3Arr.push(`${toSvgX(t).toFixed(1)},${toSvgY(vx3).toFixed(1)}`)
+  }
+
+  return (
+    <>
+      <path
+        d={`M ${path1Arr.join(' L ')}`}
+        fill="none"
+        stroke={PHYSICS_COLORS.velocity}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+      <path
+        d={`M ${path2Arr.join(' L ')}`}
+        fill="none"
+        stroke={PHYSICS_COLORS.forceNet}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+      <path
+        d={`M ${path3Arr.join(' L ')}`}
+        fill="none"
+        stroke={PHYSICS_COLORS.magneticField}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </>
+  )
+}
+
+// ─── 主组件 ──────────────────────────────────────────────────────────
 export default function BinaryStarsCenterExtra() {
   const state = useBinaryStars()
+  const time = useAnimationStore((s) => s.time)
 
   if (!state) {
     return (
@@ -13,167 +226,127 @@ export default function BinaryStarsCenterExtra() {
     )
   }
 
-  // 1. 双星模式下的图表数据
+  const T = 2 * Math.PI / state.omega
+  const curT = time % T
+
+  // 1. 双星模式下的图表与校验
   if (state.mode === 0) {
-    const { m1, m2, r1, r2, v1, v2, L } = state
+    const { r1, r2, v1, v2 } = state
 
-    
-    // 计算比值
-    const rRatio = r1 / r2
-    const vRatio = v1 / v2
-    const mInverseRatio = m2 / m1 // 质量反比：m2 / m1
-
-    // 计算向心加速度：a = v^2 / r = G * m_other / L^2
-    const a1 = m2 / (L * L) // G = 1.0
-    const a2 = m1 / (L * L)
-    const aRatio = a1 / a2
-
-    // 计算向心力大小：F = G * m1 * m2 / L^2
-    const F_val = (m1 * m2) / (L * L)
-
-    const ratioItems = [
-      {
-        key: 'rRatio',
-        label: '轨道半径比\n(r₁/r₂)',
-        value: rRatio,
-        color: PHYSICS_COLORS.displacement,
-        displayValue: rRatio.toFixed(2),
-      },
-      {
-        key: 'vRatio',
-        label: '线速度比\n(v₁/v₂)',
-        value: vRatio,
-        color: PHYSICS_COLORS.velocity,
-        displayValue: vRatio.toFixed(2),
-      },
-      {
-        key: 'aRatio',
-        label: '向心加速度比\n(a₁/a₂)',
-        value: aRatio,
-        color: PHYSICS_COLORS.acceleration,
-        displayValue: aRatio.toFixed(2),
-      },
+    // 位置投影数据游标点
+    const curX1 = r1 * Math.cos(state.omega * curT)
+    const curX2 = -r2 * Math.cos(state.omega * curT)
+    const dataPointsX = [
+      { y: curX1, label: 'x₁', series: 'warm' as const },
+      { y: curX2, label: 'x₂', series: 'primary' as const },
     ]
 
-    const forceItems = [
-      {
-        key: 'F1',
-        label: '星1向心力\n(F₁)',
-        value: F_val,
-        color: '#EA580C', // 橙色合力色
-        displayValue: F_val.toFixed(2) + ' N',
-      },
-      {
-        key: 'F2',
-        label: '星2向心力\n(F₂)',
-        value: F_val,
-        color: '#EA580C',
-        displayValue: F_val.toFixed(2) + ' N',
-      },
+    // 速度投影数据游标点
+    const curVx1 = -v1 * Math.sin(state.omega * curT)
+    const curVx2 = v2 * Math.sin(state.omega * curT)
+    const dataPointsV = [
+      { y: curVx1, label: 'v₁ₓ', series: 'warm' as const },
+      { y: curVx2, label: 'v₂ₓ', series: 'primary' as const },
     ]
+
+    const yLimit = Math.max(r1, r2) * 1.25
+    const vLimit = Math.max(v1, v2) * 1.25
 
     return (
-      <div className="w-full h-full flex flex-col gap-3 p-3 bg-neutral-50/50 overflow-y-auto">
-        <div className="flex-1 min-h-[220px]">
-          <EnergyBars
-            title="高考考点一：双星“三个反比”校验"
-            items={ratioItems}
-            initialEtot={mInverseRatio} // 借用 initialEtot 属性来绘制质量反比 m2/m1 的虚线参考线
-            compact
-          />
+      <div className="w-full h-full flex flex-col gap-3 p-3 bg-neutral-50/50 overflow-y-auto select-none">
+        {/* 上方图表区：位置投影 */}
+        <div className="flex-1 min-h-0 bg-white rounded-xl border border-neutral-200/50 p-2 shadow-sm">
+          <BasePhysicsChart
+            xDomain={[0, T]}
+            yDomain={[-yLimit, yLimit]}
+            xLabel="时间 t (s)"
+            yLabel="位置投影 x (m)"
+            title="双星空间位置投影 (x-t)"
+            yBaseline={0}
+            variant="mini"
+          >
+            <BinaryCurvePaths r1={r1} r2={r2} omega={state.omega} T={T} />
+            <ChartCursor x={curT} dataPoints={dataPointsX} />
+          </BasePhysicsChart>
         </div>
-        <div className="flex-1 min-h-[170px]">
-          <EnergyBars
-            title="高考考点二：向心力 F₁ 与 F₂ 大小对比 (N)"
-            items={forceItems}
-            compact
-          />
-        </div>
-        {/* 底部文字解说 */}
-        <div className="text-[11px] leading-relaxed text-neutral-500 bg-white rounded-lg p-2.5 border border-neutral-200/50 shadow-sm shrink-0">
-          <span className="font-bold text-neutral-700 block mb-1">💡 实时规律总结：</span>
-          1. <strong>三个反比</strong>：半径比、速度比、加速度比实时相等，且永远顶在“质量反比（虚线）”上。<br />
-          2. <strong>受力相等</strong>：无论质量比滑块如何拉动，F₁ 与 F₂ 永远 1:1 相等，代表万有引力与向心力的守恒关系。
+
+        {/* 下方图表区：速度投影 */}
+        <div className="flex-1 min-h-0 bg-white rounded-xl border border-neutral-200/50 p-2 shadow-sm">
+          <BasePhysicsChart
+            xDomain={[0, T]}
+            yDomain={[-vLimit, vLimit]}
+            xLabel="时间 t (s)"
+            yLabel="速度投影 v_x (m/s)"
+            title="双星速度投影 (v_x-t)"
+            yBaseline={0}
+            variant="mini"
+          >
+            <BinaryVelCurvePaths v1={v1} v2={v2} omega={state.omega} T={T} />
+            <ChartCursor x={curT} dataPoints={dataPointsV} />
+          </BasePhysicsChart>
         </div>
       </div>
     )
   }
 
-  // 2. 三星模式下的图表数据
-  const { r, L } = state
+  // 2. 三星模式下的图表与校验
+  const { r, v } = state
 
-  const starMass = 5.0
-  const fNetVal = Math.sqrt(3) * starMass * starMass / (L * L)
-
-  const tripleRatioItems = [
-    {
-      key: 'r1',
-      label: '轨道半径 r₁\n(m)',
-      value: r,
-      color: PHYSICS_COLORS.displacement,
-      displayValue: r.toFixed(2),
-    },
-    {
-      key: 'r2',
-      label: '轨道半径 r₂\n(m)',
-      value: r,
-      color: PHYSICS_COLORS.displacement,
-      displayValue: r.toFixed(2),
-    },
-    {
-      key: 'r3',
-      label: '轨道半径 r₃\n(m)',
-      value: r,
-      color: PHYSICS_COLORS.displacement,
-      displayValue: r.toFixed(2),
-    },
+  // 位置投影游标点
+  const curX1 = r * Math.cos(state.omega * curT)
+  const curX2 = r * Math.cos(state.omega * curT + (2 * Math.PI) / 3)
+  const curX3 = r * Math.cos(state.omega * curT + (4 * Math.PI) / 3)
+  const dataPointsX = [
+    { y: curX1, label: 'x₁', series: 'primary' as const },
+    { y: curX2, label: 'x₂', series: 'warm' as const },
+    { y: curX3, label: 'x₃', series: 'success' as const },
   ]
 
-  const tripleForceItems = [
-    {
-      key: 'F_net1',
-      label: '星1合外力\n(F_合1)',
-      value: fNetVal,
-      color: '#EA580C',
-      displayValue: fNetVal.toFixed(2) + ' N',
-    },
-    {
-      key: 'F_net2',
-      label: '星2合外力\n(F_合2)',
-      value: fNetVal,
-      color: '#EA580C',
-      displayValue: fNetVal.toFixed(2) + ' N',
-    },
-    {
-      key: 'F_net3',
-      label: '星3合外力\n(F_合3)',
-      value: fNetVal,
-      color: '#EA580C',
-      displayValue: fNetVal.toFixed(2) + ' N',
-    },
+  // 速度投影游标点
+  const curVx1 = -v * Math.sin(state.omega * curT)
+  const curVx2 = -v * Math.sin(state.omega * curT + (2 * Math.PI) / 3)
+  const curVx3 = -v * Math.sin(state.omega * curT + (4 * Math.PI) / 3)
+  const dataPointsV = [
+    { y: curVx1, label: 'v₁ₓ', series: 'primary' as const },
+    { y: curVx2, label: 'v₂ₓ', series: 'warm' as const },
+    { y: curVx3, label: 'v₃ₓ', series: 'success' as const },
   ]
+
+  const yLimit = r * 1.25
+  const vLimit = v * 1.25
 
   return (
-    <div className="w-full h-full flex flex-col gap-3 p-3 bg-neutral-50/50 overflow-y-auto">
-      <div className="flex-1 min-h-[220px]">
-        <EnergyBars
-          title="等边三星：轨道半径对比 (m)"
-          items={tripleRatioItems}
-          compact
-        />
+    <div className="w-full h-full flex flex-col gap-3 p-3 bg-neutral-50/50 overflow-y-auto select-none">
+      {/* 上方图表区：位置投影 */}
+      <div className="flex-1 min-h-0 bg-white rounded-xl border border-neutral-200/50 p-2 shadow-sm">
+        <BasePhysicsChart
+          xDomain={[0, T]}
+          yDomain={[-yLimit, yLimit]}
+          xLabel="时间 t (s)"
+          yLabel="位置投影 x (m)"
+          title="三星空间位置投影 (x-t)"
+          yBaseline={0}
+          variant="mini"
+        >
+          <TripleCurvePaths r={r} omega={state.omega} T={T} />
+          <ChartCursor x={curT} dataPoints={dataPointsX} />
+        </BasePhysicsChart>
       </div>
-      <div className="flex-1 min-h-[170px]">
-        <EnergyBars
-          title="等边三星：合向心力对比 (N)"
-          items={tripleForceItems}
-          compact
-        />
-      </div>
-      {/* 底部文字解说 */}
-      <div className="text-[11px] leading-relaxed text-neutral-500 bg-white rounded-lg p-2.5 border border-neutral-200/50 shadow-sm shrink-0">
-        <span className="font-bold text-neutral-700 block mb-1">💡 三星运行规律：</span>
-        1. 每颗星受另外两颗星引力夹角为 60°，合力实时指向三角形几何中心。<br />
-        2. 三星对称分布，轨道半径与受到的合外力完全相等，保持完全稳定的旋转。
+
+      {/* 下方图表区：速度投影 */}
+      <div className="flex-1 min-h-0 bg-white rounded-xl border border-neutral-200/50 p-2 shadow-sm">
+        <BasePhysicsChart
+          xDomain={[0, T]}
+          yDomain={[-vLimit, vLimit]}
+          xLabel="时间 t (s)"
+          yLabel="速度投影 v_x (m/s)"
+          title="三星速度投影 (v_x-t)"
+          yBaseline={0}
+          variant="mini"
+        >
+          <TripleVelCurvePaths v={v} omega={state.omega} T={T} />
+          <ChartCursor x={curT} dataPoints={dataPointsV} />
+        </BasePhysicsChart>
       </div>
     </div>
   )

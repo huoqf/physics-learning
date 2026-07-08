@@ -231,8 +231,6 @@ export function buildGravitationQuantities(
         // 双星系统
         const { m1, m2, r1, r2, v1, v2, T } = calculateBinaryStars(L, massRatio)
         quantities.push(
-          { label: '双星间距 L', value: L.toFixed(1), unit: 'm' },
-          { label: '质量比 m₁:m₂', value: `${massRatio.toFixed(1)}:1`, unit: '' },
           { label: '轨道半径 r₁ / r₂', value: `${r1.toFixed(2)}m / ${r2.toFixed(2)}m`, unit: '' },
           { label: '线速度 v₁ / v₂', value: `${v1.toFixed(2)}m/s / ${v2.toFixed(2)}m/s`, unit: '' },
           { label: '各自向心力 F₁ / F₂', value: `均为 ${(GRAVITATIONAL_CONSTANT * m1 * m2 / (L * L)).toFixed(2)}`, unit: 'N' },
@@ -257,7 +255,6 @@ export function buildGravitationQuantities(
         const starMass = 5.0
 
         quantities.push(
-          { label: '三星间距 L', value: L.toFixed(1), unit: 'm' },
           { label: '单星质量 m', value: starMass.toFixed(1), unit: 'kg' },
           { label: '轨道半径 r', value: r.toFixed(2), unit: 'm' },
           { label: '线速度 v', value: v.toFixed(2), unit: 'm/s' },
