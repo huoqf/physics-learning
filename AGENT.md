@@ -54,6 +54,10 @@
 | 间距 / 布局 / 断点 | `import { LAYOUT, spacing, BREAKPOINT, PANEL } from '@/theme/spacing'` |
 | 动效 duration / easing | `import { duration, easing, transition } from '@/theme/motion'` |
 | 圆角 / 阴影 | `import { radius } from '@/theme/radius'` / `import { shadow, glowRing } from '@/theme/shadow'` |
+| 动画视口 + SVG 画布 | `import { useAnimationViewport } from '@/hooks'` + `import { AnimationSvgCanvas } from '@/components/Layout'` |
+| 场景物理比例尺 | `import { createSceneScaleFromViewport } from '@/scene'` |
+| SVG 坐标映射 | `import { useViewportPointer } from '@/utils'` |
+| 物理矢量箭头 | `import { VectorArrow } from '@/components/Physics'` |
 
 ### 图表与布局工具
 

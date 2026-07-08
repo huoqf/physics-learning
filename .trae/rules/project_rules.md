@@ -37,23 +37,7 @@
 
 ## 3. 目录结构
 
-```text
-src/
-├── app/          # 应用壳、路由、全局布局
-├── components/   # 公共组件（Layout / Chart / Physics / UI）
-├── hooks/        # 跨页面复用 Hook（useAnimationLifecycle 等）
-├── pages/        # 页面级容器（薄壳，不放复杂业务逻辑）
-├── scene/        # 场景配置与坐标缩放（SceneConfig、SceneScale）
-├── features/     # 按学科/能力拆分的业务模块（mechanics / electromagnetism / …）
-├── physics/      # 纯物理计算（无副作用，不得依赖 React/DOM/window）
-├── math/         # 数学工具（矢量、三角、矩阵、数值求解）
-├── utils/        # 坐标、动画、存储等共享工具
-├── data/         # 类型定义、题库、注册表、物理量构建器
-├── stores/       # Zustand 状态管理
-theme/            # 设计 token（颜色/间距/圆角/阴影/动效）
-```
-
-> 完整目录树（含二级子目录、文件列表）见 `docs/agent-rules/core/ARCHITECTURE_RULES.md §2`。
+关键目录：`app/`（路由壳）| `components/`（公共组件）| `hooks/`（复用 Hook）| `pages/`（页面薄壳）| `features/`（业务模块）| `physics/`（纯物理计算）| `scene/`（场景缩放）| `theme/`（设计 token）。完整目录树见 `docs/agent-rules/core/ARCHITECTURE_RULES.md §2`。
 
 ---
 
@@ -80,40 +64,51 @@ theme/            # 设计 token（颜色/间距/圆角/阴影/动效）
 6. **字体缩放** → 必须走 `font()` 函数（内置 clamp 7–16，来自 `useCanvasSize` 返回值）
 7. **布局缩放与 viewBox 绑定策略**：
    - **【新页面唯一标准路径】**：`useAnimationViewport({ preset })` + `AnimationSvgCanvas`，无 viewBox，SVG 以 CSS 尺寸为视口，`vp.transform` 由组件内部处理；overlay 声明于 `overlayRight/Left/Top/Bottom` 参数（详见 `07_CANVAS_SVG_CHART_RULES.md §2.2`）。
+     ```tsx
+     const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
+     <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+       <Scene font={canvasSize.font} />
+     </AnimationSvgCanvas>
+     ```
    - **【存量遗留，禁止新建】**：历史方式A（固定 viewBox）/ 方式B（动态 viewBox + overlay + vp.transform）/ 方式C（vp.visibleW/H 像素坐标），仅用于维护既有组件，按排期迁移至新标准路径（见 `07_CANVAS_SVG_CHART_RULES.md §2.3`）。
    - **严禁双重缩放反模式**：在**未声明 overlay 参数**时，`viewBox={\`0 0 ${width} ${height}\`}` 同时使用 `vp.transform` → 导致首次进入时画面"缓缓放大"视觉跳变。
-8. **渲染缩放策略互斥**：同一组件只能选一条核心渲染策略：**新标准路径（§2.2）** 内容在设计坐标内，禁止再乘 `scale` 或直接引用 `canvasSize.width/height`；**存量方式B/C** 走 `useCanvasSize` / `useViewport` 返回的尺寸与缩放属性；**严禁在 SVG 内用 `<foreignObject>` 嵌入响应式 React 图表组件**（两套缩放叠加导致图表 X 轴消失）；需动画+图表并列时须在 HTML 层 `flex` 分区，两者平级而非嵌套。
+8. **渲染缩放策略互斥**：同一组件只能选一条核心渲染策略。**严禁在 SVG 内用 `<foreignObject>` 嵌入响应式 React 图表组件**（两套缩放叠加导致图表 X 轴消失）；需动画+图表并列时须在 HTML 层 `flex` 分区，两者平级而非嵌套。
 
 ### CANVAS_PRESETS 画布预设规格（4 种）
 
 页面主屏为 ThreePanel 固定三栏（左参数 / 中画布 / 右公式），`CANVAS_PRESETS`（定义于 `src/theme/spacing.ts`）按**动画在中屏的布局区域**提供以下四种预设：
 
-> ⚠️ 以下为 SVG viewBox **逻辑坐标系尺寸，非屏幕像素**。
-> `useCanvasSize` 在运行时将所选比例等比缩放至物理容器；
-> `useViewport` 的 `designWidth/designHeight` 必须与所选 preset 完全一致。
-> **基准**：1440px 标准桌面下，中屏实际幓 ≈ 840px、可用高 ≈ 650px（扭除顶栏 56px + 控制条 48px）。
-
-| preset | viewBox 设计坐标 | 定义 | 选用条件 |
-|--------|----------------|------|-------------------------------|
-| `full`   | 700×650 | 全区域，AR≈1.08:1 | 动画**独占中屏全区域**，无图表分区 |
-| `splitV` | 700×325 | 上下分区，高度为 full 的一半 | 中屏**上下并列**（上图表+下场景，或反向） |
-| `splitH` | 350×650 | 左右分区，宽度为 full 的一半 | 中屏**左右并列**（左场景+右图表面板） |
-| `square` | 650×650 | 1:1 正方形 | 主体为**圆形或旋转对称**（圆周运动、向心力） |
+| preset | viewBox 设计坐标 | 选用条件 |
+|--------|----------------|----------|
+| `full`   | 700×650 | 动画独占中屏全区域，无图表分区 |
+| `splitV` | 700×325 | 中屏上下并列（上图表+下场景，或反向） |
+| `splitH` | 350×650 | 中屏左右并列（左场景+右图表面板） |
+| `square` | 650×650 | 圆形或旋转对称（圆周运动、向心力） |
 
 > **新增动画组件只允许使用以上四个有效 preset**。如首次开发无法确定布局，默认选 `full`。
-> **存量废弃预设（`wide`/`tall`）平滑迁移指南**：在将存量 `CANVAS_PRESETS.wide` (700×400) 或 `tall` (700×450) 迁移为标准 `full` (700×650) 时，为避免字体和视觉元素缩水 17% 产生跳变，**必须在 `useCanvasSize` 传参中配置 `{ presetCompensation: 1.2 }`**（如 `useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })`），即可低成本平滑保留原有的视觉放大效果。
+> 存量 `wide`/`tall` 迁移时传 `{ presetCompensation: 1.2 }`，详见 `07_CANVAS_SVG_CHART_RULES.md §2.3`。
 
 ### 铁律 5 展开：组件复用
 
 实现动画场景时，**必须优先使用 `src/components/` 下已有组件**，禁止在 `features/` 内重新手写等效逻辑。
 
-左屏控制区是组件复用重点：
-- 顶层统一使用 `LeftPanel` / `LeftPanelSection` / `LeftPanelScrollArea`
-- 数值参数优先放入 registry 的 `paramMeta`，由 `ParamControl` 渲染
-- 模式、开关、预设、提示优先放入 registry 的 `controlMeta`，由 `ControlPanel` 渲染
-- `SidebarExtra` 仅用于复杂自定义控制，内部也必须复用 `LeftPanelSection`
+**核心 API 入口**：
 
-完整组件清单（Physics / Chart / Layout / UI 四个目录）及 barrel import 规则见 `docs/agent-rules/ui/02_UI_RULES.md §7.1`。
+| 需求 | 用什么 | import |
+|------|--------|--------|
+| 动画视口 | `useAnimationViewport` | `@/hooks` |
+| SVG 画布容器 | `AnimationSvgCanvas` | `@/components/Layout` |
+| 三栏页面布局 | `ThreePanel` | `@/components/Layout` |
+| 物理矢量箭头 | `VectorArrow` | `@/components/Physics` |
+| 场景物理比例尺 | `createSceneScaleFromViewport` | `@/scene` |
+| 左屏控制台 | `LeftPanel` / `LeftPanelSection` | `@/components/UI` |
+| 左屏数值参数 | `ParamControl`（通过 `paramMeta` 驱动） | `@/components/UI` |
+| 左屏模式开关 | `ControlPanel`（通过 `controlMeta` 驱动） | `@/components/UI` |
+| SVG 坐标映射 | `useViewportPointer` | `@/utils` |
+| 动画生命周期 | `useAnimationLifecycle` | `@/hooks` |
+| 物理图表基座 | `BasePhysicsChart` | `@/components/Chart` |
+
+完整组件清单及 barrel import 规则见 `docs/agent-rules/ui/02_UI_RULES.md §7.1`。
 
 ### 4.1 流程规范（习惯，非铁律）
 
@@ -151,14 +146,6 @@ theme/            # 设计 token（颜色/间距/圆角/阴影/动效）
 
 ---
 
-## 7. 任务完成摘要 Checklist
+## 7. 提交 Checklist
 
-> 提交前按 [CHECKLIST.md](../docs/agent-rules/process/CHECKLIST.md) 逐项验收（完整 80+ 项）。
-> 以下为铁律最高优先级核心项，违反则提交无效：
-
-- [ ] 无硬编码颜色/间距/动效/魔法数字/裸值 fontSize（铁律 1）
-- [ ] 新增 `src/physics/` 函数有 JSDoc + 单位注释，无 DOM 依赖（铁律 2）
-- [ ] 页面组件薄壳，三屏职责不交叉（铁律 3）
-- [ ] 场景中优先使用 `src/components/` 已有组件，禁止 `features/` 内重复手写（铁律 5）
-- [ ] 左屏已使用 `LeftPanel` 体系；数值参数走 `paramMeta`，模式/开关/预设走 `controlMeta`（铁律 6）
-- [ ] PROCESS_LOG.md 已更新
+提交前按 [CHECKLIST.md](../docs/agent-rules/process/CHECKLIST.md) 逐项验收（80+ 项）。铁律 1–6 违反则提交无效。
