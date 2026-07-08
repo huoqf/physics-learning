@@ -1,10 +1,9 @@
-import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { CANVAS_PRESETS } from '@/theme/spacing'
 import { VelocityTimeChart, RelationChart } from '@/components/Chart'
 import { useDualRodsPhysics } from './dual-rods/hooks/useDualRodsPhysics'
 import { DualRodsScene } from './dual-rods/components/DualRodsScene'
+import { useAnimationViewport } from '@/hooks'
 
 export default function InductionDualRods() {
   const { params, time } = useAnimationStore(
@@ -25,8 +24,10 @@ export default function InductionDualRods() {
     appliedForce = 2.0,
   } = params
 
-  // 1. 调用 splitV 预设尺寸 (700×325)，满足半屏物理仿真布局
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.splitV)
+  // 获取 canvasSize 供 useDualRodsPhysics 使用（计算物理比例尺）
+  const { canvasSize } = useAnimationViewport({
+    preset: { width: 700, height: 325 },
+  })
 
   const physics = useDualRodsPhysics(
     { scenario, massA, massB, fieldB, railL, resSum, initialV0, appliedForce },
@@ -77,12 +78,11 @@ export default function InductionDualRods() {
       </div>
 
       {/* ─── 下半屏：物理视界仿真（高度 50%，逻辑坐标 700×325） ─── */}
-      <div ref={containerRef} className="w-full h-1/2 min-h-0 flex-1">
+      <div className="w-full h-1/2 min-h-0 flex-1">
         <DualRodsScene
           physics={physics}
           scenario={scenario}
           appliedForce={appliedForce}
-          canvasSize={canvasSize}
         />
       </div>
     </div>

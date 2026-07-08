@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { useCanvasSize, useAnimationFrame } from '@/utils'
+import { useAnimationFrame } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -44,8 +46,10 @@ export default function Capacitor() {
     }))
   )
 
-  // 容器尺寸（方式A：无 overlay，使用 splitV 适配上下分区布局）
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.splitV)
+  // 容器尺寸（§2.2 标准路径：useAnimationViewport + AnimationSvgCanvas）
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
+    preset: CANVAS_PRESETS.splitV,
+  })
   const { font } = canvasSize
 
   const { S = 100, d = 5, epsilon_r = 1, U = 12, connected = 1 } = params
@@ -169,12 +173,8 @@ export default function Capacitor() {
         <CapacitorChart />
       </div>
       {/* 动画区：下方 flex-1 */}
-      <div ref={containerRef} className="flex-1 min-h-0">
-        <svg
-          viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`}
-          preserveAspectRatio="xMidYMid meet"
-          className="w-full h-full bg-white select-none"
-        >
+      <div className="flex-1 min-h-0">
+        <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
           {/* 匀强电场线 (密度和根数直接绑定电荷粒子) */}
           {showVectors && particles.map((px, i) => (
             <g key={`E-line-${i}`}>
@@ -411,7 +411,7 @@ export default function Capacitor() {
               <line x1={0} y1={3} x2={6} y2={3} stroke={PHYSICS_COLORS.axis} strokeWidth={1.5} />
             </marker>
           </defs>
-        </svg>
+        </AnimationSvgCanvas>
       </div>
     </div>
   )

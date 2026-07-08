@@ -17,6 +17,7 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 07-08 | viewport migration | refactor | splitV/splitH 标准替换类 8 个文件迁移至 §2.2 标准路径：Capacitor、BinaryStarsAnimation、SpringForceCutRopeScene、SpringForceHookeLawScene 改为自包含模式（useAnimationViewport + AnimationSvgCanvas）；LoopPassFieldScene、DualRodsScene 子组件改为自包含模式，父组件 InductionLoopField/InductionDualRods 移除 viewport 手写；SpringForceCenterExtra 图表组件迁移；PhotoelectricSim Canvas 组件迁移；tsc 与 461 tests 全通过 |
 | 07-08 | electromagnetism/magnetism | refactor | 磁场圆周几何模型分屏与矢量纠偏重构：剥离物理板书至右看板；解耦左动画（Component，splitH预设 350x650 viewBox）与右图表（CenterExtra组件，w-360px）；彻底重算 175 居中物理像素坐标变换；实现动态瞬时速度（蓝）及洛伦兹力向心力（紫）双矢量实时跟随粒子；tsc 与打包成功通过 |
 | 07-08 | vibration | refactor | 简谐运动与单摆重构：物理库 oscillation.ts 新增单摆/竖直振子状态计算；知识树 vibration-1-2 正式关联单摆动画并由 v-osc.ts 分拆为两个独立动画注册；SimpleHarmonicAnimation 新增水平/竖直/能量三模式、沙摆滚动履带绘图及受力分析（重力/弹力/合力）；新建 SimplePendulumAnimation 支持小摆角限制、摆长/g参数调节探究及受力分析与参考圆投影虚线同步；tsc 与 Vite 编译打包完全通过 |
 | 07-08 | mechanics/gravitation | feat | 天体双星/多星模型交互动画：纯物理计算 src/physics/celestial.ts 新增 calculateBinaryStars/calculateTripleStars，AnimationConfig 扩展 centerLayout 支持 splitH 左右分区；主屏 BinaryStarsAnimation 绘制双星及三星轨道、引力（橙）与速度（蓝）矢量，复用 Ball 和 VectorArrow；右侧屏 BinaryStarsCenterExtra 垂直并列反比校验图（半径/速度/加速度比）和受力对比图（力大小恒 1:1），复用 EnergyBars 并联动质量反比虚线；celestial 单元测试全通过；tsc 类型检查与 Vite 打包通过 |

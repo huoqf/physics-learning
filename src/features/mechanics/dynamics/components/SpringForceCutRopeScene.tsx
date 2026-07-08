@@ -8,7 +8,8 @@
 import { useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { useCanvasSize } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
@@ -18,14 +19,15 @@ import { IDENTITY_SCENE_SCALE } from '@/scene'
 import { BALL_RADIUS, calculateBallBFallTime } from '@/physics/dynamics/spring-force'
 import { useSpringForceCutRope, CUT_ROPE_DESIGN } from '../hooks/useSpringForceCutRope'
 
-const DESIGN_WIDTH = CUT_ROPE_DESIGN.width
 const DESIGN_HEIGHT = CUT_ROPE_DESIGN.height
 
 /** 力矢量箭头缩放系数 [px/N] */
 const FORCE_ARROW_SCALE = 3.0
 
 export default function SpringForceCutRopeScene() {
-  const [, canvasSize] = useCanvasSize(CANVAS_PRESETS.splitH)
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
+    preset: CANVAS_PRESETS.splitH,
+  })
   const { font } = canvasSize
 
   const {
@@ -89,13 +91,7 @@ export default function SpringForceCutRopeScene() {
   const groundSegmentWidth = (dividerX - 20) - 20
 
   return (
-    <svg
-      viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`}
-      preserveAspectRatio="xMidYMid meet"
-      width="100%"
-      height="100%"
-      className="bg-white rounded-lg shadow-inner"
-    >
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
       <defs>
         <VectorDefs colors={[PHYSICS_COLORS.elasticForce, PHYSICS_COLORS.gravity, PHYSICS_COLORS.tension]} />
       </defs>
@@ -328,6 +324,6 @@ export default function SpringForceCutRopeScene() {
           )}
         </g>
       )}
-    </svg>
+    </AnimationSvgCanvas>
   )
 }

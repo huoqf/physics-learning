@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-05（centerScale 4 轨道 + 2 子组件 vp + 2 轻量场景迁移完成，DEV + 架构豁免确立，P0 已清零，P1 已清零，P2 已清零（wide/tall 预设已删除））
+> 最后更新：2026-07-08（splitV/splitH 标准替换类 8 个文件迁移完成）
 
 ---
 
@@ -247,3 +247,51 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 **热学（8 个）**：`IntermolecularForcesAnimation`、`IntermolecularForcesCenterExtra`、`BrownianMotion`、`SecondLawAnimation`、`FirstLawAnimation`、`ClapeyronAnimation`、`ClapeyronCenterExtra`、`GasLawsAnimation`
 
 **执行策略**：按学科模块分批处理，每批完成后跑全量检查。全部清零后删除 `spacing.ts` 中 `wide` 和 `tall` 定义。
+
+---
+
+## 六、Viewport 架构存量违规迁移
+
+> 来源：`07_CANVAS_SVG_CHART_RULES.md §2.3` 违规清单。新页面一律使用 §2.2 标准路径。
+> 迁移模式参考：TIRAnimation/RefractionAnimation（2026-07-08 已完成）。
+
+| 文件 | 违规类型 | 优先级 | 迁移要点 |
+|------|---------|-------|---------|
+| `GasLawsAnimation.tsx` | foreignObject 嵌入 RelationChart | 🟠 中 | 将 RelationChart 移至 HTML flex 分区，与 SVG 平级 |
+| `ClapeyronAnimation.tsx` | foreignObject 嵌入 RelationChart | 🟠 中 | 同上 |
+| `ReflectionAnimation.tsx` | 固定 viewBox 800×500（非标准 preset） | 🟡 低 | 替换为 `useAnimationViewport` + `AnimationSvgCanvas`，设计坐标对齐 preset |
+| `ThinLensAnimation.tsx` | 固定 viewBox 800×500（非标准 preset） | 🟡 低 | 同上 |
+| `OhmLaw.tsx` | 固定 viewBox 650×400（非标准 preset） | 🟡 低 | 同上，注意 650×400 非标准 preset，需选定合适 preset 对齐 |
+
+**执行策略**：按优先级逐个迁移，每次迁移后跑全量检查。foreignObject 类（🟠）优先于 fixed viewBox 类（🟡）。
+
+---
+
+## 七、splitV/splitH 分屏页面迁移至 §2.2 标准路径
+
+> 来源：审计发现 14 个使用 `CANVAS_PRESETS.splitV/splitH` 的文件全部用旧式 `useCanvasSize` 直接调用，无一使用 `useAnimationViewport` + `AnimationSvgCanvas`。§2.2 规范已覆盖分屏场景（场景 4），但实现未跟进。
+> 迁移要点：`useCanvasSize(preset)` → `useAnimationViewport({ preset })`，手写 `<div ref> + <svg>` → `<AnimationSvgCanvas>`，外层 HTML flex 分区保持不变。
+
+### splitV — 上下分区（~~8 个~~ → 4 个待处理）
+
+| 文件 | 优先级 | 状态 | 迁移要点 |
+|------|-------|------|---------|
+| `CombinedFieldsAnimation.tsx` | 🟠 中 | 待处理 | 同时修复 foreignObject（§2.3 违规），图表移至 HTML flex 层 |
+| `ChargeInEField.tsx` | 🟠 中 | 待处理 | 同时检查是否有 foreignObject 嵌图表 |
+| `Capacitor.tsx` | 🟡 低 | ✅ 已完成 | 自包含模式：`useAnimationViewport` + `AnimationSvgCanvas` |
+| `InductionLoopField.tsx` | 🟡 低 | ✅ 已完成 | 子组件 `LoopPassFieldScene` 已改为自包含模式 |
+| `InductionDualRods.tsx` | 🟡 低 | ✅ 已完成 | 子组件 `DualRodsScene` 已改为自包含模式 |
+| `PhotoelectricSim.tsx` | 🟡 低 | ✅ 已完成 | Canvas 组件：`useCanvasSize` → `useAnimationViewport`，保留 `<canvas>` 渲染 |
+| `SpringForceHookeLawScene.tsx` | 🟡 低 | ✅ 已完成 | 自包含模式：`useAnimationViewport` + `AnimationSvgCanvas` |
+| `AmpereForce.tsx` | ⚪ 仅引用 | 豁免 | 仅引用 `splitV.height` 作为常量，无需 Hook 迁移 |
+
+### splitH — 左右分区（~~5 个~~ → 3 个待处理）
+
+| 文件 | 优先级 | 状态 | 迁移要点 |
+|------|-------|------|---------|
+| `CircularGeometryModel.tsx` | 🟠 中 | 待处理 | Canvas 直绘组件，需评估是否适合迁移到 SVG 标准路径 |
+| `BinaryStarsAnimation.tsx` | 🟡 低 | ✅ 已完成 | 自包含模式：修复动态 viewBox 反模式 → `AnimationSvgCanvas` |
+| `SpringForceCenterExtra.tsx` | 🟡 低 | ✅ 已完成 | 自包含模式：`useAnimationViewport`（图表组件，保留固定 viewBox） |
+| `SpringForceCutRopeScene.tsx` | 🟡 低 | ✅ 已完成 | 自包含模式：`useAnimationViewport` + `AnimationSvgCanvas` |
+
+**执行策略**：先处理与 §2.3 违规重叠的文件（CombinedFieldsAnimation、ChargeInEField），再批量处理标准替换类。Canvas 直绘组件（CircularGeometryModel）需单独评估迁移可行性。

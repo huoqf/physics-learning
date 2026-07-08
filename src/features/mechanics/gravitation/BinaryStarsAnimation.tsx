@@ -1,4 +1,5 @@
-import { useCanvasSize } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { Ball } from '@/components/Physics/Ball'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
@@ -7,8 +8,10 @@ import { useAnimationStore } from '@/stores'
 
 
 export default function BinaryStarsAnimation() {
-  const [, canvasSize] = useCanvasSize(CANVAS_PRESETS.splitH)
-  const { width, height, font } = canvasSize
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
+    preset: CANVAS_PRESETS.splitH,
+  })
+  const { font } = canvasSize
   
   const showVectors = useAnimationStore((s) => s.showVectors)
   const state = useBinaryStars()
@@ -37,12 +40,7 @@ export default function BinaryStarsAnimation() {
 
   return (
     <div className="w-full h-full relative select-none">
-      <svg
-        width="100%"
-        height="100%"
-        viewBox={`0 0 ${width} ${height}`}
-        style={{ background: '#F8FAFC' }}
-      >
+      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
         {/* 1. 轨道与几何背景 */}
         {state.mode === 0 ? (
           // 双星模式下的两条圆形轨道与连线
@@ -357,7 +355,7 @@ export default function BinaryStarsAnimation() {
             </text>
           </>
         )}
-      </svg>
+      </AnimationSvgCanvas>
     </div>
   )
 }

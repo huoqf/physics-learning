@@ -5,7 +5,8 @@
  * 坐标系统：viewBox 固定常量 + 设计坐标（方式 A）
  */
 
-import { useCanvasSize } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, DASH } from '@/theme/physics'
 import { Spring } from '@/components/UI'
@@ -16,10 +17,11 @@ import { useSpringForceHookeLaw } from '../hooks/useSpringForceHookeLaw'
 import { HOOKE_DESIGN } from '../hooks/useSpringForceCutRope'
 
 const DESIGN_WIDTH = HOOKE_DESIGN.width
-const DESIGN_HEIGHT = HOOKE_DESIGN.height
 
 export default function SpringForceHookeLawScene() {
-  const [, canvasSize] = useCanvasSize(CANVAS_PRESETS.splitV)
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
+    preset: CANVAS_PRESETS.splitV,
+  })
   const { font } = canvasSize
 
   const {
@@ -34,13 +36,7 @@ export default function SpringForceHookeLawScene() {
   const wallHeight = groundY - wallY
 
   return (
-    <svg
-      viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`}
-      preserveAspectRatio="xMidYMid meet"
-      width="100%"
-      height="100%"
-      className="bg-white rounded-lg shadow-inner"
-    >
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
       <defs>
         <VectorDefs colors={[PHYSICS_COLORS.elasticForce, PHYSICS_COLORS.gravity, PHYSICS_COLORS.tension]} />
         <marker id="arrow-displacement-start" markerWidth="6" markerHeight="6" refX="1" refY="3" orient="auto">
@@ -181,6 +177,6 @@ export default function SpringForceHookeLawScene() {
           </text>
         </g>
       )}
-    </svg>
+    </AnimationSvgCanvas>
   )
 }

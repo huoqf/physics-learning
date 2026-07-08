@@ -10,7 +10,7 @@
 import { useRef, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { useCanvasSize } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 
 import { RelationChart, ChartArea } from '@/components/Chart'
@@ -114,7 +114,9 @@ function CutRopeAccelerationChart({
   time: number
   isCut: number
 }) {
-  const [, canvasSize] = useCanvasSize(CANVAS_PRESETS.splitH)
+  const { canvasSize } = useAnimationViewport({
+    preset: CANVAS_PRESETS.splitH,
+  })
   const { font } = canvasSize
 
   // 独立的剪断时间戳管理（与场景组件同步但独立）

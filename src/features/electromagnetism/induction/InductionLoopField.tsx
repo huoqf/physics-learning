@@ -1,7 +1,5 @@
-import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { CANVAS_PRESETS } from '@/theme/spacing'
 import { RelationChart } from '@/components/Chart'
 import { useLoopPassFieldPhysics } from './loop-field/hooks/useLoopPassFieldPhysics'
 import { LoopPassFieldScene } from './loop-field/components/LoopPassFieldScene'
@@ -22,9 +20,6 @@ export default function InductionLoopField() {
     constantSpeed = 1.0,
     magneticB = 1.0,
   } = params
-
-  // 选用标准 splitV (700×325) 预设
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.splitV)
 
   const physics = useLoopPassFieldPhysics(
     { dimensionPreset, domainAxis, loopWidth, fieldWidth, constantSpeed, magneticB },
@@ -87,8 +82,8 @@ export default function InductionLoopField() {
       </div>
 
       {/* ─── 下侧 50%：线框穿场物理视界 (700×325 逻辑分辨率) ─── */}
-      <div ref={containerRef} className="w-full h-1/2 min-h-0 flex-1">
-        <LoopPassFieldScene physics={physics} canvasSize={canvasSize} />
+      <div className="w-full h-1/2 min-h-0 flex-1">
+        <LoopPassFieldScene physics={physics} />
       </div>
     </div>
   )

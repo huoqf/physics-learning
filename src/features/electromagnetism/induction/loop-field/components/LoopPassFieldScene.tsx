@@ -2,20 +2,23 @@ import React, { useMemo } from 'react'
 import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { VectorArrow } from '@/components/Physics'
 import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
-import type { CanvasSize } from '@/utils/useCanvasSize'
+import { useAnimationViewport } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import type { LoopPassFieldPhysicsResult } from '../hooks/useLoopPassFieldPhysics'
 import type { SceneScale } from '@/scene'
 
 interface LoopPassFieldSceneProps {
   physics: LoopPassFieldPhysicsResult
-  canvasSize: CanvasSize
 }
 
 export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
   physics,
-  canvasSize,
 }: LoopPassFieldSceneProps) {
-  const { width, height, font } = canvasSize // 700 × 325 设计基准
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
+    preset: CANVAS_PRESETS.splitV,
+  })
+  const { width, height, font } = canvasSize
 
   const {
     d,
@@ -99,11 +102,7 @@ export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
 
   return (
     <div className="w-full h-full bg-white rounded-xl border border-neutral-200 overflow-hidden relative shadow-sm">
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full"
-      >
+      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
         {/* 1. 条形磁场区域背景及两道高亮边界准线 (x=0 与 x=D) */}
         <rect
           x={magLeftPx}
@@ -248,7 +247,7 @@ export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
             当前位置 x = {(frontX * 100).toFixed(1)} cm | 状态: {state === 'BEFORE' ? '进场前' : state === 'ENTERING' ? '进场切割中' : state === 'TOTALLY_IN' ? '完全处于磁场内' : state === 'LEAVING' ? '出场切割中' : '已离场'}
           </text>
         </g>
-      </svg>
+      </AnimationSvgCanvas>
     </div>
   )
 })

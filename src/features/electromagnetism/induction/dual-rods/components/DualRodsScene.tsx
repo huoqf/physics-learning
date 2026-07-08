@@ -1,7 +1,9 @@
 import React, { useMemo } from 'react'
 import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { Rails, ConductingRod, VectorArrow } from '@/components/Physics'
-import type { CanvasSize } from '@/utils/useCanvasSize'
+import { useAnimationViewport } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import type { DualRodsPhysicsResult } from '../hooks/useDualRodsPhysics'
 import type { SceneScale } from '@/scene'
 
@@ -9,15 +11,16 @@ interface DualRodsSceneProps {
   physics: DualRodsPhysicsResult
   scenario: number
   appliedForce: number
-  canvasSize: CanvasSize
 }
 
 export const DualRodsScene = React.memo(function DualRodsScene({
   physics,
   scenario,
   appliedForce,
-  canvasSize,
 }: DualRodsSceneProps) {
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
+    preset: CANVAS_PRESETS.splitV,
+  })
   const { width, height, font } = canvasSize
   const cy = height / 2
   const railSpacing = 140
@@ -83,11 +86,7 @@ export const DualRodsScene = React.memo(function DualRodsScene({
 
   return (
     <div className="w-full h-full bg-white rounded-xl border border-neutral-200 overflow-hidden relative shadow-sm">
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full"
-      >
+      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
         {/* 1. 导轨背景 */}
         <Rails
           type="horizontal"
@@ -223,7 +222,7 @@ export const DualRodsScene = React.memo(function DualRodsScene({
             速度剪刀差 Δv = {Math.abs(currentVA - currentVB).toFixed(2)} m/s | E = {Math.abs(currentEmf).toFixed(2)} V
           </text>
         </g>
-      </svg>
+      </AnimationSvgCanvas>
     </div>
   )
 })

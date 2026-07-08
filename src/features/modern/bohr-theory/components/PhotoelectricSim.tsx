@@ -1,6 +1,6 @@
 import { useEffect, useRef, useMemo } from 'react'
 import { useSimulationFrame } from '@/utils/animation'
-import { useCanvasSize } from '@/utils/useCanvasSize'
+import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { RelationChart } from '@/components/Chart/RelationChart'
 import { MODERN_COLORS, CANVAS_COLORS } from '@/theme/physics/colors'
@@ -30,7 +30,9 @@ const PHOTON_ENERGIES = [0.66, 2.55, 12.75, 1.89, 12.09, 10.20]
 export default function PhotoelectricSim({ isPlaying, time, radiationPhotonIndex, workFunction, stoppingVoltage }: PhotoelectricSimProps) {
   useDevicePixelRatio()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.splitV)
+  const { containerRef, canvasSize } = useAnimationViewport({
+    preset: CANVAS_PRESETS.splitV,
+  })
 
   const hv = PHOTON_ENERGIES[radiationPhotonIndex]
   const isPhotoelectric = hv >= workFunction
