@@ -73,6 +73,26 @@ export const IDENTITY_SCENE_SCALE: SceneScale = {
 } as const;
 
 /**
+ * 计算默认的 maxVectorLength，感知 layoutMode 以避免 splitH 下矢量过短。
+ *
+ * @param vectorBounds 矢量边界
+ * @param layoutMode 中心区域布局模式（'splitH' | 'splitV' | undefined）
+ * @returns 默认的 maxVectorLength（像素）
+ */
+function getDefaultMaxVectorLength(
+  vectorBounds: { width: number; height: number },
+  layoutMode?: 'splitH' | 'splitV'
+): number {
+  if (layoutMode === 'splitH') {
+    // splitH 下宽度被压缩，使用更宽松的系数避免矢量过短
+    // 宽度系数 0.45，高度系数 0.3，取较小值
+    return Math.min(vectorBounds.width * 0.45, vectorBounds.height * 0.3)
+  }
+  // 默认：使用规范的 min(w,h) × 0.3
+  return Math.min(vectorBounds.width, vectorBounds.height) * 0.3
+}
+
+/**
  * 从 ViewportInfo 构造 SceneScale，确保矢量归一化与可视区域对齐。
  *
  * - mode='transform'   : vectorBounds 使用设计坐标 (0,0,designW,designH)
@@ -88,7 +108,17 @@ export const IDENTITY_SCENE_SCALE: SceneScale = {
 export function createSceneScaleFromViewport(
   vp: { visibleX: number; visibleY: number; visibleW: number; visibleH: number; centerX: number; centerY: number },
   profileOrMode: SceneLayoutProfile | SceneLayoutMode | undefined,
-  options?: { designWidth?: number; designHeight?: number; worldWidth?: number; worldHeight?: number; refMagnitudes?: Partial<Record<VectorType, number>> }
+  options?: {
+    designWidth?: number;
+    designHeight?: number;
+    worldWidth?: number;
+    worldHeight?: number;
+    refMagnitudes?: Partial<Record<VectorType, number>>;
+    /** 覆盖默认的 maxVectorLength 计算（像素）。传入后跳过 layout-aware 默认算法 */
+    maxVectorLength?: number;
+    /** 中心区域布局模式（'splitH' | 'splitV'），用于 layout-aware 默认算法 */
+    centerLayout?: 'splitH' | 'splitV';
+  }
 ): SceneScale {
   if (!profileOrMode) {
     throw new Error(
@@ -134,5 +164,13 @@ export function createSceneScaleFromViewport(
         }
     }
   })()
-  return createSceneScale(sceneConfig)
+
+  // 构造 SceneScale，应用 maxVectorLength 覆盖或 layout-aware 默认算法
+  const base = createSceneScale(sceneConfig)
+  if (options?.maxVectorLength != null) {
+    base.maxVectorLength = options.maxVectorLength
+  } else {
+    base.maxVectorLength = getDefaultMaxVectorLength(sceneConfig.vectorBounds, options?.centerLayout)
+  }
+  return base
 }

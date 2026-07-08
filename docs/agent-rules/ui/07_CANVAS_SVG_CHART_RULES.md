@@ -217,16 +217,6 @@ const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 650, overla
 </svg>
 ```
 
-**存量违规清单**（见 `TODO_deferred.md §五`）：
-
-| 文件 | 违规类型 | 优先级 |
-|------|---------|-------|
-| `GasLawsAnimation.tsx` | foreignObject 嵌入 RelationChart | 🟠 中 |
-| `ClapeyronAnimation.tsx` | foreignObject 嵌入 RelationChart | 🟠 中 |
-| `ReflectionAnimation.tsx` | 固定 viewBox 800×500（非标准 preset） | 🟡 低 |
-| `ThinLensAnimation.tsx` | 固定 viewBox 800×500（非标准 preset） | 🟡 低 |
-| `OhmLaw.tsx` | 固定 viewBox 650×400（非标准 preset） | 🟡 低 |
-
 ---
 
 ### 2.4 🚨 严禁模式
@@ -638,10 +628,29 @@ arrowPixelLength = (mag / refMagnitude) × maxVectorLength × visualWeight
 
 - `mag`：矢量模长（物理单位）
 - `refMagnitude`：场景参考最大值（同量纲）
-- `maxVectorLength`：`min(bounds.width, bounds.height) × 0.3`
+- `maxVectorLength`：默认 `min(bounds.width, bounds.height) × 0.3`（见下方 layout-aware 规则）
 - `visualWeight`：`VECTOR_VISUAL_WEIGHT[type]`（velocity=1.0, force=0.7, magneticField=0.4…）
 
 结果 clamp 到 `[minLength=14, maxVectorLength]`。
+
+**splitH 布局特殊处理**：
+
+当 `centerLayout: 'splitH'` 时，可视区域宽度被压缩（约 175px），导致 `min(w,h) × 0.3` 产生的矢量过短。此时使用更宽松的系数：
+
+| 布局模式 | maxVectorLength 计算 |
+|----------|----------------------|
+| 默认 | `min(w, h) × 0.3` |
+| splitH | `min(w × 0.45, h × 0.3)` |
+
+可通过 `createSceneScaleFromViewport` 的 `maxVectorLength` 参数完全覆盖默认计算：
+
+```typescript
+const sceneScale = createSceneScaleFromViewport(vp, 'centerScale', {
+  // ...
+  centerLayout: 'splitH',        // 启用 layout-aware 默认算法
+  maxVectorLength: 80,           // 或直接覆盖，跳过默认计算
+})
+```
 
 ### 10.5 `VECTOR_DISPLAY` 与 `vectorStyle.ts` 的边界
 
