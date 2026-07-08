@@ -106,4 +106,31 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
         content: '7.9=第一宇宙速度(近圆), 10.0=椭圆轨道, 11.2=第二宇宙速度(逃逸)。发射三阶段：垂直起飞→重力转弯→在轨运行。' },
     ],
   },
+  'anim-binary-stars': {
+    title: '双星与多星系统',
+    knowledgeId: 'mechanics-6-4',
+    Component: lazy(() => import('@/features/mechanics/gravitation/BinaryStarsAnimation')),
+    CenterExtra: lazy(() => import('@/features/mechanics/gravitation/BinaryStarsCenterExtra')),
+    centerLayout: 'splitH',
+    controlsMode: 'timed',
+    defaultParams: { L: 8.0, massRatio: 1.0, mode: 0 } as const,
+    paramMeta: [
+      { key: 'L', label: '天体总距离 L', min: 4.0, max: 10.0, step: 0.1, unit: 'm', resetOnChange: true },
+      { key: 'massRatio', label: '质量比 m₁:m₂', min: 0.2, max: 5.0, step: 0.1, unit: '', showIf: 'mode', showIfValue: 0, resetOnChange: true },
+    ],
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'mode',
+        label: '天体系统模式',
+        group: '模型选择',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '双星系统' },
+          { value: 1, label: '三星系统 (等边三角形)' },
+        ],
+      },
+    ],
+  },
 })
+

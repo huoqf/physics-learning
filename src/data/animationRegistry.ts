@@ -18,7 +18,7 @@ const coreRegistry: Record<string, AnimationConfig> = {
   ...mechanicsMomentumAnimations,
 }
 
-// ─── Extended: 电磁学 5 + 热学 4 + 光学 4（懒加载） ───
+// ─── Extended: 电磁学 5 + 热学 4 + 光学 4 + 振动 1 + 组合场 1（懒加载） ───
 
 let fullRegistry: Record<string, AnimationConfig> = { ...coreRegistry }
 let extendedLoaded = false
@@ -43,6 +43,8 @@ async function loadExtendedRegistry(): Promise<void> {
         { opticsTotalInternalReflectionAnimations: opticsTotalInternalReflection },
         { opticsThinLensAnimations: opticsThinLens },
         { modernPhysicsAnimations: modernPhysics },
+        { vibrationOscillationAnimations: vibrationOsc },
+        { combinedFieldsAnimations: combinedFields },
       ] = await Promise.all([
         import('./registries/electromagnetism-electrostatics'),
         import('./registries/electromagnetism-dc-circuits'),
@@ -58,6 +60,8 @@ async function loadExtendedRegistry(): Promise<void> {
         import('./registries/optics-total-internal-reflection'),
         import('./registries/optics-thin-lens'),
         import('./registries/modern-physics'),
+        import('./registries/vibration-oscillation'),
+        import('./registries/electromagnetism-combined-fields'),
       ])
 
       Object.assign(
@@ -66,6 +70,8 @@ async function loadExtendedRegistry(): Promise<void> {
         thermoKinematics, thermoGasLaws, thermoFirstLaw, thermoSecondLaw,
         opticsReflection, opticsRefraction, opticsTotalInternalReflection, opticsThinLens,
         modernPhysics,
+        vibrationOsc,
+        combinedFields,
       )
       extendedLoaded = true
     })()
@@ -76,7 +82,7 @@ async function loadExtendedRegistry(): Promise<void> {
 // ─── 公共 API ───
 
 /** 静态总动画数，不依赖动态加载 */
-export const ANIMATION_COUNT = 68
+export const ANIMATION_COUNT = 70
 
 /** 同步获取 config（core 动画立即命中，extended 动画未加载时返回 undefined） */
 export function getAnimationConfig(id: string): AnimationConfig | undefined {

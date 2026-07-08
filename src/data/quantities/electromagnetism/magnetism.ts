@@ -380,6 +380,97 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
         }
       }
     }
+    case 'anim-magnetic-circular-geom': {
+      const boundaryType = params.boundaryType ?? 0
+      const particleSign = params.particleSign ?? 1
+      const velocity = params.velocity ?? 3.0
+      const angle = params.angle ?? 60
+      const B = params.magneticB ?? 1.0
+
+      const angleRad = (angle * Math.PI) / 180
+      const R = velocity / B
+      const omega = B
+      
+      const xc = particleSign * R * Math.sin(angleRad)
+      const yc = -particleSign * R * Math.cos(angleRad)
+
+      // 迭代计算 tOut (dt = 1ms)
+      const dt = 0.001
+      const maxT = 12.0
+      let tOut = maxT
+      let t = 0.005
+      const omegaDir = -particleSign * omega
+      const theta0 = angleRad + particleSign * Math.PI / 2
+
+      while (t < maxT) {
+        const curTheta = theta0 + omegaDir * t
+        const curX = xc + R * Math.cos(curTheta)
+        const curY = yc + R * Math.sin(curTheta)
+
+        let inB = false
+        if (boundaryType === 0) {
+          inB = curY >= 0
+        } else if (boundaryType === 1) {
+          inB = curX >= -3.0 && curX <= 3.0 && curY >= 0 && curY <= 4.0
+        } else {
+          inB = curX * curX + (curY - 3.5) * (curY - 3.5) <= 3.5 * 3.5
+        }
+
+        if (!inB) {
+          tOut = t - dt / 2
+          break
+        }
+        t += dt
+      }
+
+      // 计算实时停留时间
+      const curT = time <= tOut ? time : tOut
+
+      // 特征公式及三角形的 LaTeX 信息
+      let triangleFormula = ''
+      let boundaryName = '单边界'
+      if (boundaryType === 0) {
+        boundaryName = '单边界'
+        triangleFormula = '(R - d)^2 + \\left(\\frac{L}{2}\\right)^2 = R^2'
+      } else if (boundaryType === 1) {
+        boundaryName = '矩形边界'
+        // 出射点的坐标
+        const omegaDirExit = -particleSign * omega
+        const thetaExit = theta0 + omegaDirExit * tOut
+        const xOut = xc + R * Math.cos(thetaExit)
+        triangleFormula = `(R - d)^2 + x_{\\text{offset}}^2 = R^2 \\implies (R - 4.0)^2 + (${Math.abs(xOut - xc).toFixed(2)})^2 = R^2`
+      } else {
+        boundaryName = '圆形边界'
+        triangleFormula = '\\Delta\\varphi = 2\\arctan\\left(\\frac{R_b}{R}\\right)'
+      }
+
+      return {
+        quantities: [
+          ...base,
+          { label: '磁场边界类型', value: boundaryName, unit: '' },
+          { label: '电荷电性', value: particleSign > 0 ? '正电荷 (+q)' : '负电荷 (-q)', unit: '', highlight: particleSign > 0 ? 'positive' as const : 'negative' as const },
+          { label: '初速度 v', value: velocity.toFixed(1), unit: 'm/s', color: PHYSICS_COLORS.velocity },
+          { label: '入射角 α', value: `${angle.toFixed(0)}°`, unit: '', color: PHYSICS_COLORS.labelTextLight },
+          { label: '磁场强度 B', value: B.toFixed(1), unit: 'T', color: PHYSICS_COLORS.magneticField },
+          { label: '轨道半径 R', value: R.toFixed(2), unit: 'm', color: PHYSICS_COLORS.lorentzForce, highlight: 'positive' as const },
+          { label: '运动周期 T', value: (2 * Math.PI / omega).toFixed(2), unit: 's', color: PHYSICS_COLORS.period },
+          { label: '停留时间 t', value: curT.toFixed(2), unit: `s (出射时刻: ${tOut.toFixed(2)}s)`, color: PHYSICS_COLORS.heatLoss, highlight: time > tOut ? 'extreme' as const : undefined },
+        ],
+        formulas: [
+          { name: '向心力源泉', latex: 'qvB = m\\frac{v^2}{R} \\implies R = \\frac{mv}{qB}', level: 'core' as const },
+          { name: '偏转周期律', latex: 'T = \\frac{2\\pi m}{qB} \\implies t = \\frac{\\theta}{360^\\circ}T', level: 'core' as const },
+          { name: '几何特征方程', latex: triangleFormula, level: 'important' as const, condition: `${boundaryName}几何三角形` },
+        ],
+        gaokaoPoints: [
+          { text: '【找圆心】：自粒子入射点与任意瞬时位置引速度矢量的法线（垂直于速度），双法线的相交点即为轨道圆心 O。', importance: 'gaokao' as const },
+          { text: '【定三角形】：根据磁场边界物理特征，锁定高亮直角三角形，将几何图形关系转化为代数方程式求解。', importance: 'gaokao' as const },
+          { text: '【周期与时间】：粒子在磁场中偏转的时间仅由偏转圆心角和周期共同决定，与初速度大小无关（若偏转角恒定）。', importance: 'core' as const },
+        ],
+        warnings: [
+          { text: '易错防坑：使用左手定则判定洛伦兹力方向时，务必注意负电荷的四指应当指向速度的相反方向。', level: 'danger' as const },
+        ],
+      }
+    }
     default:
       return null
   }

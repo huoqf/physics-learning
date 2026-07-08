@@ -56,6 +56,7 @@ function AnimationCenter({
   const showCenterExtraInBasic = CenterExtraComponent && !centerExtraModeKey
   const maxTime = config.maxTime ?? 30
   const isSpringForceCutMode = config.id === 'anim-spring-force' && params.mode === 1
+  const isSplitH = config.centerLayout === 'splitH' || isSpringForceCutMode
 
   const controlBar = (wrapperClassName: string) => (
     <div className={wrapperClassName}>
@@ -106,7 +107,7 @@ function AnimationCenter({
   const centerHeightClass = config.centerExtraHeight ?? 'h-1/2'
   const restHeightClass = config.centerExtraHeight ? 'flex-1' : 'h-1/2'
 
-  if (isSpringForceCutMode && CenterExtraComponent) {
+  if (isSplitH && CenterExtraComponent) {
     return (
       <div className="flex flex-col h-full gap-2">
         <div className="flex-1 min-h-0 flex flex-row gap-2">

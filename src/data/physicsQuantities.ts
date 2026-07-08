@@ -72,6 +72,8 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   // 万有引力
   'anim-kepler':                { loader: () => import('./quantities/gravitation'),    builderName: 'buildGravitationQuantities' },
   'anim-satellite':             { loader: () => import('./quantities/gravitation'),    builderName: 'buildGravitationQuantities' },
+  'anim-binary-stars':          { loader: () => import('./quantities/gravitation'),    builderName: 'buildGravitationQuantities' },
+
 
   // 动量
   'anim-momentum':              { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
@@ -97,6 +99,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-ampere-force':          { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-lorentz-force':         { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-charge-in-bfield':      { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-magnetic-circular-geom': { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-faraday-law':           { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-lenzs-law':             { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-cutting-emf':           { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
@@ -107,6 +110,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-ac-values':             { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-transformer':           { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-power-transmission':    { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-combined-fields':       { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
 
   // 能量与功
   'anim-power':                 { loader: () => import('./quantities/energy'),         builderName: 'buildEnergyQuantities' },

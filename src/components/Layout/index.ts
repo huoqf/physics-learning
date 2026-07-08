@@ -18,3 +18,4 @@
  */
 export { ThreePanel } from './ThreePanel'
 export { PageLayout } from './PageLayout'
+export { AnimationSvgCanvas } from './AnimationSvgCanvas'

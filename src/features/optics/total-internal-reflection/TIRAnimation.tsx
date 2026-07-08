@@ -1,4 +1,5 @@
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { OPTICS_COLORS, STROKE, FONT, DASH, CANVAS_COLORS } from '@/theme/physics'
@@ -6,9 +7,9 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { deg2rad } from '@/math/angle'
 import { calculateCriticalAngle, calculateRefraction, calculateIlluminatedRadius } from '@/physics/optics'
 
-const VIEW_WIDTH = 800
-const VIEW_HEIGHT = 500
-const TIR_DESIGN = { width: VIEW_WIDTH, height: VIEW_HEIGHT } as const
+/** 场景设计坐标尺寸（与 CANVAS_PRESETS.full 700×650 对齐） */
+const VIEW_WIDTH = 700
+const VIEW_HEIGHT = 650
 const NORMAL_LENGTH = 160
 const RAY_LEN = 180
 const WATER_SURFACE_Y_RATIO = 0.4
@@ -36,11 +37,9 @@ export default function TIRAnimation() {
   const { params } = useAnimationStore(
     useShallow((s) => ({ params: s.params }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-
-  const vp = useViewport(canvasSize, {
-    designWidth: TIR_DESIGN.width,
-    designHeight: TIR_DESIGN.height,
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
+    preset: CANVAS_PRESETS.full,
+    presetCompensation: 1.2,
   })
 
   const mode = params.mode ?? 0
@@ -57,30 +56,22 @@ export default function TIRAnimation() {
   const cy = VIEW_HEIGHT * WATER_SURFACE_Y_RATIO
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg
-        width={canvasSize.width}
-        height={canvasSize.height}
-        className="bg-white rounded-lg shadow-inner"
-      >
-        <g transform={vp.transform}>
-          {mode === 1 ? (
-            <PointSourceMode
-              depth={depth} n={n} theta_c_deg={theta_c_deg}
-              cx={VIEW_WIDTH * 0.35} cy={cy}
-              font={font}
-            />
-          ) : (
-            <SingleBeamMode
-              theta1={theta1} n={n} theta_c_deg={theta_c_deg}
-              isTotalReflection={isTotalReflection}
-              cx={cx} cy={cy}
-              font={font}
-            />
-          )}
-        </g>
-      </svg>
-    </div>
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+      {mode === 1 ? (
+        <PointSourceMode
+          depth={depth} n={n} theta_c_deg={theta_c_deg}
+          cx={VIEW_WIDTH * 0.35} cy={cy}
+          font={font}
+        />
+      ) : (
+        <SingleBeamMode
+          theta1={theta1} n={n} theta_c_deg={theta_c_deg}
+          isTotalReflection={isTotalReflection}
+          cx={cx} cy={cy}
+          font={font}
+        />
+      )}
+    </AnimationSvgCanvas>
   )
 }
 

@@ -78,12 +78,11 @@ theme/            # 设计 token（颜色/间距/圆角/阴影/动效）
 4. **矢量箭头** → 必须走 `VectorArrow` 组件 + `refMagnitudes` 归一化（`vectorStyle.ts` 为颜色权威）
 5. **画布尺寸** → 必须走 `useCanvasSize(CANVAS_PRESETS.xxx)`（`src/theme/spacing.ts`）
 6. **字体缩放** → 必须走 `font()` 函数（内置 clamp 7–16，来自 `useCanvasSize` 返回值）
-7. **布局缩放与 viewBox 绑定策略（三类合规体系）**：
-   - **纯设计坐标型（方式A，推荐）**：无 overlay 场景，viewBox **必须绑定设计常量**（`DESIGN_WIDTH/HEIGHT`），`preserveAspectRatio="xMidYMid meet"` 原生居中，**不使用 `vp.transform`**（无 JS 裁切计算需求时，豁免对 `useViewport` 的强制调用，消除 `void vp` 等形式主义代码）。
-   - **坐标变换型（方式B，限制使用）**：需 SVG 内精确实时避让 overlay 场景，**必须在 useViewport 声明 overlay 参数**，viewBox 绑定真实容器尺寸 + `<g transform={vp.transform}>`（详见 `07_CANVAS_SVG_CHART_RULES.md §2.4`）。
-   - **可视区自适应型（方式C，合法路径）**：基于 `vp.visibleW/H/X/Y` 与快捷布局字面量 `createSceneScaleFromViewport(vp, 'visibleArea')` 在动态容器像素区做自适应定位，对应底层 `SceneLayoutProfile` 的 `visibleArea`/`centerScale` 架构。
-   - **严禁双重缩放反模式**：在**未声明 overlay 参数**时，`viewBox={\`0 0 ${width} ${height}\`}` 同时使用 `vp.transform` → 导致首次进入时画面出现“缓缓放大”的视觉跳变。
-8. **渲染缩放策略互斥**（注意：此处「SVG方式A/B/C」与 `ARCHITECTURE_RULES.md §6` 坐标路径含义不同）→ 同一组件只能选一条核心渲染策略：**纯设计坐标（方式A）** 内部用设计常量，禁止再乘 `scale` 或引用 `canvasSize.width/height`；**响应式与可视区（方式B/C）** 走 `useCanvasSize` / `useViewport` 返回的尺寸与缩放属性；**严禁在 SVG 方式A 的 `<svg>` 内用 `<foreignObject>` 嵌入响应式 React 图表组件**；需动画+图表并列时须在 HTML 层 `flex` 分区，两者平级而非嵌套
+7. **布局缩放与 viewBox 绑定策略（新页面唯一标准）**：
+      - **新页面唯一标准路径**：必须使用 `useAnimationViewport` 复合 Hook + `AnimationSvgCanvas` 标准容器组件（详见 `07_CANVAS_SVG_CHART_RULES.md §2.2`），以消除 designWidth/designHeight 与 preset 的手动同步偏差，并完全规避双重缩放。
+      - **存量迁移参考**：存量页面旧的三类体系（固定 viewBox 方式 A、动态 viewBox + overlay 方式 B、可视区像素方式 C）仅供重构参考，禁止新建。
+      - **严禁双重缩放反模式**：在未声明 overlay 参数时，`viewBox={\`0 0 ${width} ${height}\`}` 同时使用 `vp.transform` → 导致首帧放大跳变（AnimationSvgCanvas 从架构上消除了此问题）。
+   8. **渲染缩放策略互斥**（注意：此处「SVG方式A/B/C」与 `ARCHITECTURE_RULES.md §6` 坐标路径含义不同）→ 同一组件只能选一条核心渲染策略：**新标准路径** 内部用设计常量，禁止再乘 `scale` 或引用 `canvasSize.width/height`；**响应式与可视区（旧方式B/C）** 走 `useCanvasSize` / `useViewport` 返回的尺寸与缩放属性；**严禁在 SVG 画布内用 `<foreignObject>` 嵌入响应式 React 图表组件**；需动画+图表并列时须在 HTML 层 `flex` 分区，两者平级而非嵌套。
 
 ### CANVAS_PRESETS 画布预设规格（4 种）
 

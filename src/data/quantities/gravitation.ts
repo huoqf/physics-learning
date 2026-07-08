@@ -1,5 +1,6 @@
-import { GRAVITATIONAL_CONSTANT, EARTH_MASS, calculateOrbitalSpeed, calculateKeplerOrbit, calculateLaunchTrajectory } from '../../physics'
+import { GRAVITATIONAL_CONSTANT, EARTH_MASS, calculateOrbitalSpeed, calculateKeplerOrbit, calculateLaunchTrajectory, calculateBinaryStars, calculateTripleStars } from '../../physics'
 import type { PhysicsPanelData, PhysicsQuantity, Formula, GaokaoPoint } from './types'
+
 
 export function buildGravitationQuantities(
   animId: string,
@@ -217,7 +218,73 @@ export function buildGravitationQuantities(
         gaokaoPoints,
       }
     }
+    case 'anim-binary-stars': {
+      const mode = params.mode ?? 0 // 0=双星系统, 1=三星系统
+      const L = params.L ?? 8.0
+      const massRatio = params.massRatio ?? 1.0
+
+      const quantities: PhysicsQuantity[] = []
+      const formulas: Formula[] = []
+      const gaokaoPoints: GaokaoPoint[] = []
+
+      if (mode === 0) {
+        // 双星系统
+        const { m1, m2, r1, r2, v1, v2, T } = calculateBinaryStars(L, massRatio)
+        quantities.push(
+          { label: '双星间距 L', value: L.toFixed(1), unit: 'm' },
+          { label: '质量比 m₁:m₂', value: `${massRatio.toFixed(1)}:1`, unit: '' },
+          { label: '轨道半径 r₁ / r₂', value: `${r1.toFixed(2)}m / ${r2.toFixed(2)}m`, unit: '' },
+          { label: '线速度 v₁ / v₂', value: `${v1.toFixed(2)}m/s / ${v2.toFixed(2)}m/s`, unit: '' },
+          { label: '各自向心力 F₁ / F₂', value: `均为 ${(GRAVITATIONAL_CONSTANT * m1 * m2 / (L * L)).toFixed(2)}`, unit: 'N' },
+          { label: '各自向心加速度 a₁ / a₂', value: `${(GRAVITATIONAL_CONSTANT * m2 / (L * L)).toFixed(2)}m/s² / ${(GRAVITATIONAL_CONSTANT * m1 / (L * L)).toFixed(2)}m/s²`, unit: '' },
+          { label: '运行周期 T', value: T.toFixed(2), unit: 's', highlight: 'positive' as const }
+        )
+
+        formulas.push(
+          { name: '引力提供各自向心力 (星1)', latex: 'G\\frac{m_1 m_2}{L^2} = m_1 \\omega^2 r_1', level: 'important' },
+          { name: '引力提供各自向心力 (星2)', latex: 'G\\frac{m_1 m_2}{L^2} = m_2 \\omega^2 r_2', level: 'important' },
+          { name: '周期与总质量关系', latex: 'T = 2\\pi \\sqrt{\\frac{L^3}{G(m_1 + m_2)}}', level: 'core' }
+        )
+
+        gaokaoPoints.push(
+          { text: '易错陷阱：万有引力公式中的距离是双星间距 L，而向心力公式中的半径是各自的轨道半径 r₁ 或 r₂，二者绝不能混淆。', importance: 'gaokao' as const },
+          { text: '双星做匀速圆周运动的角速度 ω 和周期 T 绝对相等。', importance: 'core' as const },
+          { text: '双星的轨道半径、线速度、向心加速度均与它们的质量成反比。', importance: 'gaokao' as const }
+        )
+      } else {
+        // 三星系统
+        const { r, fNet, v, T } = calculateTripleStars(L)
+        const starMass = 5.0
+
+        quantities.push(
+          { label: '三星间距 L', value: L.toFixed(1), unit: 'm' },
+          { label: '单星质量 m', value: starMass.toFixed(1), unit: 'kg' },
+          { label: '轨道半径 r', value: r.toFixed(2), unit: 'm' },
+          { label: '线速度 v', value: v.toFixed(2), unit: 'm/s' },
+          { label: '星体合力 F_合', value: fNet.toFixed(2), unit: 'N' },
+          { label: '运行周期 T', value: T.toFixed(2), unit: 's', highlight: 'positive' as const }
+        )
+
+        formulas.push(
+          { name: '等边三角形合向心力', latex: 'F_{\\text{合}} = \\sqrt{3} G \\frac{m^2}{L^2} = m \\omega^2 r', level: 'important' },
+          { name: '三星轨道半径关系', latex: 'r = \\frac{L}{\\sqrt{3}}', level: 'core' },
+          { name: '三星运转周期', latex: 'T = 2\\pi \\sqrt{\\frac{L^3}{3Gm}}', level: 'derived' }
+        )
+
+        gaokaoPoints.push(
+          { text: '三星系统的每颗星均受另外两颗星的引力，其合力指向正三角形的中心（质心）。', importance: 'core' as const },
+          { text: '三星做圆周运动的角速度 ω、周期 T 和轨道半径 r 完全相等。', importance: 'gaokao' as const }
+        )
+      }
+
+      return {
+        quantities,
+        formulas,
+        gaokaoPoints,
+      }
+    }
     default:
+
       return null
   }
 }

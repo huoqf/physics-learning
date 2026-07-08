@@ -9,6 +9,7 @@ import { handleDcCircuits } from './dc-circuits'
 import { handleMagnetism } from './magnetism'
 import { handleInduction } from './induction'
 import { handleAc } from './ac'
+import { handleCombinedFields } from './combinedFields'
 
 export function buildElectromagnetismQuantities(
   animId: string,
@@ -24,6 +25,7 @@ export function buildElectromagnetismQuantities(
     handleMagnetism(animId, params, time, base) ??
     handleInduction(animId, params, time, base) ??
     handleAc(animId, params, time, lastChangedParam ?? null, base) ??
+    handleCombinedFields(animId, params, time, base) ??
     null
   )
 }

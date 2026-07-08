@@ -197,6 +197,8 @@ export interface AnimationConfig<P extends Record<string, number> = Record<strin
   centerExtraHeight?: string
   /** 当 params[centerExtraMode] === 1 时，CenterExtra 接管全屏布局（替代页面层 id===硬编码） */
   centerExtraMode?: string
+  /** 中心区域与扩展组件的布局方式，默认为 'splitV' (上下分区) */
+  centerLayout?: 'splitH' | 'splitV'
   /** 可选：有物理状态需要每帧计算的动画才声明（如粒子轨迹） */
   updatePhysics?: (
     params: P,

@@ -7,8 +7,11 @@ import {
   calculateCentralMass,
   calculatePlanetDensity,
   calculateEscapeSpeed,
-  calculateLaunchTrajectory
+  calculateLaunchTrajectory,
+  calculateBinaryStars,
+  calculateTripleStars
 } from '@/physics/celestial'
+
 import { computeKeplerVectors } from '@/features/mechanics/gravitation/hooks/useKeplerPhysics'
 
 describe('Kepler Physics Calculations', () => {
@@ -237,5 +240,49 @@ describe('Kepler Physics Calculations', () => {
       expect(Math.abs(dot2)).toBeLessThan(0.01)
     })
   })
+
+  describe('Binary and Triple Star Systems', () => {
+
+    it('should calculate binary stars correctly (r1 + r2 = L, r1/r2 = m2/m1)', () => {
+      const L = 8.0
+      const massRatio = 3.0 // m1 : m2 = 3 : 1
+      const G = 1.0
+      const totalMass = 10.0
+
+      const { m1, m2, r1, r2, v1, v2 } = calculateBinaryStars(L, massRatio, G, totalMass)
+
+      // 1. 验证质量
+      expect(m1 + m2).toBeCloseTo(totalMass, 5)
+      expect(m1 / m2).toBeCloseTo(massRatio, 5)
+
+      // 2. 验证轨道半径之和等于总间距 L
+      expect(r1 + r2).toBeCloseTo(L, 5)
+
+      // 3. 验证半径与质量成反比 (r1 / r2 = m2 / m1 = 1 / massRatio)
+      expect(r1 / r2).toBeCloseTo(1 / massRatio, 5)
+
+      // 4. 验证线速度之比等于半径之比，且等于质量的反比
+      expect(v1 / v2).toBeCloseTo(r1 / r2, 5)
+      expect(v1 / v2).toBeCloseTo(1 / massRatio, 5)
+    })
+
+    it('should calculate triple stars correctly (equal radii and velocities)', () => {
+      const L = 6.0
+      const G = 1.0
+      const starMass = 5.0
+
+      const { r, v, T, omega } = calculateTripleStars(L, G, starMass)
+
+      // 1. 验证几何半径 r = L / sqrt(3)
+      expect(r).toBeCloseTo(L / Math.sqrt(3), 5)
+
+      // 2. 验证角速度和线速度关系 v = omega * r
+      expect(v).toBeCloseTo(omega * r, 5)
+
+      // 3. 验证周期 T = 2 * pi / omega
+      expect(T).toBeCloseTo((2 * Math.PI) / omega, 5)
+    })
+  })
 })
+
 

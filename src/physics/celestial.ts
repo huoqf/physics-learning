@@ -225,3 +225,78 @@ export function calculateLaunchTrajectory(
   return { orbitType, e, p, rPeri, rApo };
 }
 
+/**
+ * 计算双星系统的质量、轨道半径、线速度和周期
+ * 
+ * @param L 两星总距离 (m)
+ * @param massRatio 质量比 m1/m2
+ * @param G 万有引力常数，默认 1.0 (为动画展示归一化)
+ * @param totalMass 总质量 (m1 + m2)，默认 10.0
+ * @returns 包含各星质量、轨道半径、线速度、角速度和周期的对象
+ */
+export function calculateBinaryStars(
+  L: number,
+  massRatio: number,
+  G: number = 1.0,
+  totalMass: number = 10.0
+): {
+  m1: number;
+  m2: number;
+  r1: number;
+  r2: number;
+  v1: number;
+  v2: number;
+  omega: number;
+  T: number;
+} {
+  const m1 = (totalMass * massRatio) / (1 + massRatio);
+  const m2 = totalMass / (1 + massRatio);
+  
+  // 质心分配半径：r1/r2 = m2/m1 -> r1 + r2 = L
+  const r1 = L / (1 + massRatio);
+  const r2 = (L * massRatio) / (1 + massRatio);
+  
+  // omega^2 = G * (m1 + m2) / L^3
+  const omega = Math.sqrt((G * totalMass) / Math.pow(L, 3));
+  const T = (2 * Math.PI) / omega;
+  
+  const v1 = omega * r1;
+  const v2 = omega * r2;
+  
+  return { m1, m2, r1, r2, v1, v2, omega, T };
+}
+
+/**
+ * 计算等边三角形三星系统的轨道半径、向心力、线速度及周期
+ * 
+ * @param L 三星之间的距离 (等边三角形边长) (m)
+ * @param G 万有引力常数，默认 1.0
+ * @param starMass 单个星体质量，默认 5.0 (三星质量相等)
+ * @returns 包含轨道半径、合向心力、线速度、角速度和周期的对象
+ */
+export function calculateTripleStars(
+  L: number,
+  G: number = 1.0,
+  starMass: number = 5.0
+): {
+  r: number;
+  fNet: number;
+  v: number;
+  omega: number;
+  T: number;
+} {
+  // 轨道半径：r = L / (2 * cos(30°)) = L / √3
+  const r = L / Math.sqrt(3);
+  
+  // 每颗星受另外两颗星的引力合力：F_net = √3 * G * m^2 / L^2
+  const fNet = Math.sqrt(3) * G * starMass * starMass / (L * L);
+  
+  // 合引力等于向心力：F_net = m * omega^2 * r -> omega = √(F_net / (m * r)) = √(3 * G * m / L^3)
+  const omega = Math.sqrt((3 * G * starMass) / Math.pow(L, 3));
+  const T = (2 * Math.PI) / omega;
+  const v = omega * r;
+  
+  return { r, fNet, v, omega, T };
+}
+
+

@@ -1,4 +1,5 @@
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { OPTICS_COLORS, STROKE, FONT, DASH, CANVAS_COLORS } from '@/theme/physics'
@@ -6,9 +7,9 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { deg2rad } from '@/math/angle'
 import { calculateRefraction } from '@/physics/optics'
 
-const VIEW_WIDTH = 800
-const VIEW_HEIGHT = 500
-const REFRACTION_DESIGN = { width: VIEW_WIDTH, height: VIEW_HEIGHT } as const
+/** 场景设计坐标尺寸（与 CANVAS_PRESETS.full 700×650 对齐） */
+const VIEW_WIDTH = 700
+const VIEW_HEIGHT = 650
 const NORMAL_LENGTH = 180
 
 const SEMI_R = 140
@@ -40,11 +41,9 @@ export default function RefractionAnimation() {
   const { params } = useAnimationStore(
     useShallow((s) => ({ params: s.params }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-
-  const vp = useViewport(canvasSize, {
-    designWidth: REFRACTION_DESIGN.width,
-    designHeight: REFRACTION_DESIGN.height,
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
+    preset: CANVAS_PRESETS.full,
+    presetCompensation: 1.2,
   })
 
   const theta1 = params.theta1 ?? 45
@@ -63,30 +62,22 @@ export default function RefractionAnimation() {
   const cy = VIEW_HEIGHT / 2
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg
-        width={canvasSize.width}
-        height={canvasSize.height}
-        className="bg-white rounded-lg shadow-inner"
-      >
-        <g transform={vp.transform}>
-          {isAdvanced ? (
-            <AdvancedMode
-              theta1={theta1} theta1Rad={theta1Rad}
-              theta2_deg={theta2_deg} theta2Rad={theta2Rad}
-              n={n} cx={cx} cy={cy} font={font}
-              rectD={RECT_D}
-            />
-          ) : (
-            <BasicMode
-              theta1={theta1} theta1Rad={theta1Rad}
-              theta2_deg={theta2_deg} theta2Rad={theta2Rad}
-              n={n} cx={cx} cy={cy} font={font}
-            />
-          )}
-        </g>
-      </svg>
-    </div>
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+      {isAdvanced ? (
+        <AdvancedMode
+          theta1={theta1} theta1Rad={theta1Rad}
+          theta2_deg={theta2_deg} theta2Rad={theta2Rad}
+          n={n} cx={cx} cy={cy} font={font}
+          rectD={RECT_D}
+        />
+      ) : (
+        <BasicMode
+          theta1={theta1} theta1Rad={theta1Rad}
+          theta2_deg={theta2_deg} theta2Rad={theta2Rad}
+          n={n} cx={cx} cy={cy} font={font}
+        />
+      )}
+    </AnimationSvgCanvas>
   )
 }
 

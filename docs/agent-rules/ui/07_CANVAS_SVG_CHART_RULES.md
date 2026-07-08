@@ -22,6 +22,8 @@
 
 ## 2. 主屏页面布局规范（铁律）
 
+> 最后更新：2026-07-08
+
 ### 2.1 禁止硬编码像素布局
 
 主屏动画页面（AnimationPage 中间区域）的 SVG 布局**禁止**使用硬编码像素值：
@@ -32,130 +34,221 @@
 <BasicAmpereScene x={20} y={40} w={480} h={400} />
 ```
 
-### 2.2 强制方案：useCanvasSize + useViewport（铁律）
+### 2.2 【新页面唯一标准路径】`useAnimationViewport` + `AnimationSvgCanvas`
 
-**新动画组件必须**引用 `useCanvasSize()` + `useViewport()`；存量组件须在当前里程碑内迁移完成（见 §2.3）。根据是否有 overlay 二选一（见 §2.4 判断规则）：
+> **铁律**：2026-07-08 起，所有新建动画组件必须使用此路径，无例外。
 
-```tsx
-// CANVAS_PRESETS.full = { width: 700, height: 650 }（按布局区域选型，详见 project_rules.md）
-// designWidth/designHeight 为 SVG 设计坐标系尺寸，必须与所选 preset 完全一致
-const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full)
-const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 650 })
-```
+#### 核心工具
 
-物理比例尺**必须**通过 `computeScale()` 基于物理世界范围计算：
+| 工具 | 路径 | 职责 |
+|------|------|------|
+| `useAnimationViewport` | `src/hooks/useAnimationViewport.ts` | 复合 Hook：`useCanvasSize + useViewport` 合并，designWidth/designHeight 严格绑定 preset |
+| `AnimationSvgCanvas` | `src/components/Layout/AnimationSvgCanvas.tsx` | 标准 SVG 容器：封装 `containerRef + w-full h-full svg + g transform` 样板 |
 
-```ts
-import { computeScale } from '@/utils/coordinate'
-
-const WORLD = { xMin: -2, xMax: 6, yMin: -1, yMax: 5 }
-const physicsScale = computeScale(width, height, WORLD, padding)
-```
-
-字体大小**必须**通过 `font()` 函数缩放（内置 clamp(7, 16) 保证可读性）：
+#### 场景 1：SVG 独占中屏（无 overlay）
 
 ```tsx
-// ✅ 正确
-<text fontSize={font(11)} />
+import { useAnimationViewport } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 
-// ❌ 禁止
-<text fontSize={11} />
-```
+export default function MyAnimation() {
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
+    preset: CANVAS_PRESETS.full,  // 700×650
+  })
 
-画布预设尺寸从 `CANVAS_PRESETS`（`@/theme/spacing`）引用，动画 UI token 从 `@/theme/animationTokens` 引用。
-
-### 2.3 旧方案遗留：viewBox + 比例常量（新组件禁用）
-
-> ⚠️ **新动画组件禁止使用此方案**。存量测试证明固定 viewBox 在某些屏幕尺寸和三栏布局下存在内容裁切问题，且无法支持 overlay 避让。**存量组件须迁移至** §2.2 方案（`useCanvasSize` + `useViewport`），维护旧组件时以保持现有功能稳定为优先，但迁移不可跳过。
-
-```ts
-// ❌ 旧方案（禁止在新组件中使用，保留供存量迁移参考）
-const VIEW_WIDTH = 800
-const VIEW_HEIGHT = 500
-
-const LAYOUT = {
-  sceneX: 0.025,         // 20/800
-  sceneY: 0.08,          // 40/500
-  sceneWidthRatio: 0.6,  // 480/800
-  sceneHeightRatio: 0.8, // 400/500
-  panelX: 0.65,          // 520/800
-  panelWidthRatio: 0.325,
-  // ...
-} as const
-
-// 组件内动态计算
-const layout = {
-  scene: {
-    x: VIEW_WIDTH * LAYOUT.sceneX,
-    y: VIEW_HEIGHT * LAYOUT.sceneY,
-    w: VIEW_WIDTH * LAYOUT.sceneWidthRatio,
-    h: VIEW_HEIGHT * LAYOUT.sceneHeightRatio,
-  },
-  // ...
+  return (
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+      {/* <defs> 放 children 首位，在 <g transform> 内声明完全合法 */}
+      <defs>
+        <radialGradient id="ball-grad">...</radialGradient>
+      </defs>
+      {/* 内容使用设计坐标 0..700 / 0..650，不得再乘 scale */}
+      <PhysicsScene font={canvasSize.font} />
+    </AnimationSvgCanvas>
+  )
 }
+```
 
-// SVG 使用 viewBox
-<svg
-  viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
-  preserveAspectRatio="xMidYMid meet"
-  className="w-full h-full"
->
-  <BasicAmpereScene x={layout.scene.x} y={layout.scene.y} w={layout.scene.w} h={layout.scene.h} />
+#### 场景 2：SVG + HTML overlay 浮层（右侧图表卡片）
+
+```tsx
+// overlay 宽度在外部计算，传入 overlayRight 让 vp 自动居中可视区
+const { containerRef, canvasSize, vp } = useAnimationViewport({
+  preset: CANVAS_PRESETS.full,
+  overlayRight: Math.round(Math.max(280, canvasSize.width * 0.38)),
+})
+
+return (
+  <div className="w-full h-full relative">
+    {/* SVG 画布，内容自动避让右侧 overlay */}
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+      <PhysicsScene font={canvasSize.font} />
+    </AnimationSvgCanvas>
+    {/* HTML 浮层，CSS 绝对定位叠加 */}
+    <div className="absolute right-0 top-0 bottom-0 w-[280px]">
+      <ChartPanel />
+    </div>
+  </div>
+)
+```
+
+> ⚠️ **overlay 宽度依赖 `canvasSize.width` 时**：使用 `preset.width`（设计稿初始值）代替第一帧前的 `canvasSize.width` 估算，或通过 `useMemo` 引用上一帧值。两次估算误差在首帧后会立即修正，不产生视觉跳变。
+
+#### 场景 3：SVG + 指针交互（拖拽/点击）
+
+```tsx
+import { useRef } from 'react'
+import { useViewportPointer } from '@/utils'
+
+const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
+const svgRef = useRef<SVGSVGElement>(null)
+const getSvgPoint = useViewportPointer(svgRef)  // 返回设计坐标中的点
+
+return (
+  <AnimationSvgCanvas
+    containerRef={containerRef}
+    transform={vp.transform}
+    svgRef={svgRef}
+    onMouseMove={(e) => {
+      const pt = getSvgPoint(e.clientX, e.clientY)
+      if (pt) handleDrag(pt.x, pt.y)  // pt.x/y 已在设计坐标系内
+    }}
+  >
+    <DraggableScene font={canvasSize.font} />
+  </AnimationSvgCanvas>
+)
+```
+
+#### 场景 4：图表与 SVG 分区并列（上下/左右）
+
+```tsx
+// 上方图表 + 下方 SVG 动画：各自用独立 div，不互相嵌套
+const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.splitV })
+
+return (
+  <div className="w-full h-full flex flex-col">
+    {/* 上方图表区：纯 HTML，不涉及 vp */}
+    <div className="h-[310px] shrink-0">
+      <BasePhysicsChart ... />
+    </div>
+    {/* 下方 SVG 动画区 */}
+    <div className="flex-1 min-h-0">
+      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+        <PhysicsScene font={canvasSize.font} />
+      </AnimationSvgCanvas>
+    </div>
+  </div>
+)
+```
+
+#### 场景 5：依赖可视区物理比例尺（centerScale / visibleArea）
+
+```tsx
+// 圆周运动等需要以中心为原点的场景，先用 useAnimationViewport 拿到 vp，
+// 再用 createSceneScaleFromViewport 建立物理比例尺
+const { containerRef, canvasSize, vp } = useAnimationViewport({
+  preset: CANVAS_PRESETS.square,  // 650×650
+  overlayRight: isAdvanced ? Math.round(cardWidth) : 0,
+})
+
+const scale = (Math.min(vp.visibleW, vp.visibleH) - PADDING) / (2 * rMax)
+
+const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'centerScale', {
+  designWidth: 650,
+  designHeight: 650,
+  worldWidth: vp.visibleW / scale,
+  worldHeight: vp.visibleH / scale,
+  refMagnitudes: { velocity: vMax, force: fMax },
+}), [vp, scale, vMax, fMax])
+
+return (
+  <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+    <CircularScene sceneScale={sceneScale} font={canvasSize.font} />
+  </AnimationSvgCanvas>
+)
+```
+
+#### 核心规则汇总
+
+| 规则 | 说明 |
+|------|------|
+| `preset` 严格绑定 | `designWidth/Height` 由 Hook 内部自动从 `preset` 派生，调用方不得覆盖 |
+| `<defs>` 在 children 首位 | defs 在 `<g transform>` 内完全合法，id 在同一 SVG 文档内有效 |
+| 图表严禁 `<foreignObject>` | 响应式图表组件必须放在 HTML 层（flex 分区或 absolute 浮层），不得嵌入 SVG |
+| `font()` 强制使用 | `fontSize={font(11)}` 而非 `fontSize={11}` |
+| 物理比例尺 | 通过 `computeScale()` 或 `createSceneScaleFromViewport()` 计算，禁止硬编码 |
+| 指针事件 | 传 `svgRef` + `useViewportPointer`，禁止手写 `(clientX - rect.left - vp.tx) / vp.scale` |
+
+---
+
+### 2.3 【存量遗留路径】固定 viewBox（禁止新建，按排期迁移）
+
+> ⚠️ **仅服务于既有页面重构参考，新建页面严禁使用。**
+> 存量组件的维护以保持现有功能稳定为优先，按里程碑排期逐步迁移至 §2.2。
+
+存量组件使用的三种历史写法（均不得新建）：
+
+**历史方式 A（固定 viewBox，无 vp.transform）**
+```tsx
+// ❌ 禁止新建。存量遗留：固定 viewBox = 设计常量，preserveAspectRatio 自适应
+// 问题：无法支持 overlay 精确避让
+<svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet" className="w-full h-full">
+  <g>...</g>
 </svg>
 ```
 
-### 2.4 🚨 SVG viewBox 铁律（禁止双重缩放）
-
-> **违反此条将导致初次进入页面时出现画面"缓缓放大"视觉跳变。**
-
-#### 问题根因
-
-在**未传入 overlay 参数**时，`viewBox` 动态绑定容器真实像素尺寸，同时又通过 `vp.transform` 做缩放，形成**双重缩放反模式**：
-- 首帧：`width/height` = `useCanvasSize` 初始值（设计稿默认尺寸），`vp.scale ≈ 1`
-- ResizeObserver 触发后：`width/height` → 真实容器尺寸，viewBox 扩大，画面出现放大跳变
-
-#### 禁止的做法（反模式）
-
+**历史方式 B（动态 viewBox + overlay + vp.transform）**
 ```tsx
-// ❌ 严禁：在未传入 overlay 参数的情况下，viewBox 绑定容器真实像素 + 同时用 vp.transform（双重缩放反模式）
-const { width, height } = canvasSize
-const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 650 }) // ⚠️ 严禁：未传入 overlay 参数！
-
-<svg viewBox={`0 0 ${width} ${height}`}>   {/* ← width/height 由 ResizeObserver 动态更新 */}
-  <g transform={vp.transform}>              {/* ← 在无 overlay 场景下又做了一次缩放，双重缩放！ */}
-    ...设计坐标内容...
-  </g>
+// ❌ 禁止新建。存量遗留：viewBox 绑定真实容器尺寸 + vp.transform
+// 合法前提：useViewport 必须声明 overlay 参数（否则为双重缩放反模式）
+const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 650, overlayRight: 240 })
+<svg viewBox={`0 0 ${width} ${height}`}>
+  <g transform={vp.transform}>...</g>
 </svg>
 ```
 
-#### 正确做法：三类合规布局体系（原“二选一”修订）
+**历史方式 C（可视区像素坐标，无 g transform）**
+```tsx
+// ❌ 禁止新建。存量遗留：直接用 vp.visibleW/H 计算像素坐标，SVG 无 g transform
+// 适用于依赖真实像素比例尺的动态力学图
+<svg width={canvasSize.width} height={canvasSize.height} className="w-full h-full">
+  {/* 坐标由 physicsToCanvasWithOrigin 在像素空间计算 */}
+</svg>
+```
 
-**方式A（纯设计坐标型，推荐）：viewBox 固定设计尺寸，SVG 自动居中缩放**
+**存量违规清单**（待重构，见 bug tracker）：
+
+| 文件 | 违规类型 | 优先级 | 状态 |
+|------|---------|-------|------|
+| ~~`TIRAnimation.tsx`~~ | ~~双重缩放（无 overlay 参数 + vp.transform + designWidth=800≠preset）~~ | ~~🔴 高（视觉 bug）~~ | ✅ 已迁移 (2026-07-08) |
+| ~~`RefractionAnimation.tsx`~~ | ~~同上~~ | ~~🔴 高（视觉 bug）~~ | ✅ 已迁移 (2026-07-08) |
+| `GasLawsAnimation.tsx` | foreignObject 嵌入 RelationChart | 🟠 中 | 待重构 |
+| `ClapeyronAnimation.tsx` | foreignObject 嵌入 RelationChart | 🟠 中 | 待重构 |
+| `ReflectionAnimation.tsx` | 固定 viewBox 800×500（非标准 preset） | 🟡 低 | 待重构 |
+| `ThinLensAnimation.tsx` | 固定 viewBox 800×500（非标准 preset） | 🟡 低 | 待重构 |
+| `OhmLaw.tsx` | 固定 viewBox 650×400（非标准 preset） | 🟡 低 | 待重构 |
+
+---
+
+### 2.4 🚨 严禁模式
+
+#### 严禁 1：双重缩放反模式（首帧视觉跳变）
 
 ```tsx
-// ✅ 方式A（推荐）：viewBox 固定为设计常量，preserveAspectRatio 负责自适应容器
-// DESIGN_WIDTH/HEIGHT 必须与所用 CANVAS_PRESETS 完全一致
-const DESIGN_WIDTH = 700   // 对应 CANVAS_PRESETS.full.width
-const DESIGN_HEIGHT = 650  // 对应 CANVAS_PRESETS.full.height
+// ❌ 严禁：viewBox 动态绑定容器尺寸 + vp.transform，且未声明 overlay 参数
+const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 650 }) // 无 overlay！
 
-// ⚠️ 注意：采用方式A且无需在 JS 中使用可视区几何裁切或浮层定位时，豁免对此类组件对 useViewport() 的强制调用，可彻底删除 void vp 等空调用！
-
-<svg
-  viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`}  // ← 恒定，不随容器变化
-  preserveAspectRatio="xMidYMid meet"               // ← SVG 原生居中缩放
-  className="w-full h-full"
->
-  <g>  {/* 无 transform，直接用设计坐标 */}
+<svg viewBox={`0 0 ${width} ${height}`}>   {/* width/height ResizeObserver 动态更新 */}
+  <g transform={vp.transform}>              {/* 双重缩放！首帧后触发"放大跳变" */}
     ...
   </g>
 </svg>
-
-// 若有 overlay（如右侧公式面板），首选使用 CSS absolute 定位而非 SVG overlay：
-// <div className="relative">
-//   <svg viewBox="0 0 700 650" ...>...</svg>
-//   <div className="absolute right-0 top-0 w-[240px]"><FormulaPanel /></div>
-// </div>
 ```
+
+**根因**：首帧 `width/height = preset 初始值`，`vp.scale ≈ 1`；ResizeObserver 后 `width/height → 真实像素`，viewBox 扩大，`vp.scale` 重新计算，两次缩放叠加导致画面跳变。
+
+**正确做法**：改用 §2.2 的 `AnimationSvgCanvas`（无 viewBox，SVG 以 CSS 尺寸为视口，无双重缩放）。
 
 **方式B（坐标变换型，限制使用）：viewBox 绑定真实容器尺寸 + vp.transform**
 
