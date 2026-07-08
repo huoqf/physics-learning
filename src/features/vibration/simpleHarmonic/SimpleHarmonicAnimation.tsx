@@ -631,20 +631,23 @@ export default function SimpleHarmonicAnimation() {
         )}
 
         {/* ── 能量柱（能量守恒分析模式 2） ── */}
-        {showEnergy && (
-          <foreignObject x={energyX} y={energyY} width={energyW} height={energyH}>
-            <div style={{ width: '100%', height: '100%' }}>
-              <EnergyBars
-                items={energyItems}
-                initialEtot={energy.total}
-                title="机械能分配与守恒 (J)"
-                font={font}
-                compact
-              />
-            </div>
-          </foreignObject>
-        )}
       </svg>
+
+      {/* 能量柱（HTML 层，无 foreignObject） */}
+      {showEnergy && (
+        <div
+          className="absolute"
+          style={{ left: energyX, top: energyY, width: energyW, height: energyH }}
+        >
+          <EnergyBars
+            items={energyItems}
+            initialEtot={energy.total}
+            title="机械能分配与守恒 (J)"
+            font={font}
+            compact
+          />
+        </div>
+      )}
     </div>
   )
 }

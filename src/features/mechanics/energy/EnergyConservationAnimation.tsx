@@ -73,8 +73,6 @@ export default function EnergyConservationAnimation() {
   // 上半部 52% 为图表，下半部 48% 为动画
   const chartBottom = vp.visibleH * 0.52
   const chartLeft = padding * 1.5
-  const chartRight = vp.visibleW - padding
-  const chartWidth = chartRight - chartLeft
 
   // 动画区地面与中心基准
   const groundY = vp.visibleH * 0.85
@@ -303,6 +301,48 @@ export default function EnergyConservationAnimation() {
       )}
 
 
+      {/* 上半部分：图表区（HTML 层，无 foreignObject） */}
+      <div
+        className="absolute top-0 left-0 right-0"
+        style={{ height: chartBottom + 15, paddingLeft: chartLeft - 30, paddingRight: 30 }}
+      >
+        <RelationChart
+          points={visiblePoints.map(p => ({ x: p.t, y: p.Ep - E_offset }))}
+          additionalSeries={[
+            {
+              points: visiblePoints.map(p => ({ x: p.t, y: p.Ek })),
+              label: 'Ek (动能)',
+              series: 'secondary',
+              color: PHYSICS_COLORS.kineticEnergy,
+            },
+            ...(mode === 1
+              ? [{
+                  points: visiblePoints.map(p => ({ x: p.t, y: p.Q })),
+                  label: 'Q (内能)',
+                  series: 'secondary' as const,
+                  color: ENERGY_COLORS.internalEnergy,
+                }]
+              : []),
+            {
+              points: visiblePoints.map(p => ({ x: p.t, y: p.Etot - E_offset })),
+              label: mode === 0 ? 'E (总机械能)' : 'E总 (总能量)',
+              series: 'secondary' as const,
+              color: colors.neutral[500],
+              strokeDasharray: [4, 2],
+              strokeWidth: 1.2,
+            },
+          ]}
+          xDomain={[0, tMax]}
+          yDomain={dynamicYDomain}
+          xLabel="t (s)"
+          yLabel="E (J)"
+          title={mode === 0 ? 'E-t (单摆动能/重力势能及机械能消长守恒图)' : 'E-t (山谷阻尼动能/势能/内能及总能量守恒图)'}
+          color={PHYSICS_COLORS.potentialEnergy}
+          cursorX={state.t}
+          cursorLabel={() => null}
+        />
+      </div>
+
       {/* 主 SVG 画面 */}
       <svg
         ref={svgRef}
@@ -329,49 +369,6 @@ export default function EnergyConservationAnimation() {
             <stop offset="100%" stopColor={SCENE_COLORS.sphere.pendulumBob.gradient[3]} />
           </radialGradient>
         </defs>
-
-        {/* ══════════════════════════════════════════════ */}
-        {/* 上半部分：图表区（RelationChart） */}
-        {/* ══════════════════════════════════════════════ */}
-        <foreignObject x={chartLeft - 30} y={0} width={chartWidth + 30} height={chartBottom + 15}>
-          <div style={{ width: '100%', height: '100%' }}>
-            <RelationChart
-              points={visiblePoints.map(p => ({ x: p.t, y: p.Ep - E_offset }))}
-              additionalSeries={[
-                {
-                  points: visiblePoints.map(p => ({ x: p.t, y: p.Ek })),
-                  label: 'Ek (动能)',
-                  series: 'secondary',
-                  color: PHYSICS_COLORS.kineticEnergy,
-                },
-                ...(mode === 1
-                  ? [{
-                      points: visiblePoints.map(p => ({ x: p.t, y: p.Q })),
-                      label: 'Q (内能)',
-                      series: 'secondary' as const,
-                      color: ENERGY_COLORS.internalEnergy,
-                    }]
-                  : []),
-                {
-                  points: visiblePoints.map(p => ({ x: p.t, y: p.Etot - E_offset })),
-                  label: mode === 0 ? 'E (总机械能)' : 'E总 (总能量)',
-                  series: 'secondary' as const,
-                  color: colors.neutral[500],
-                  strokeDasharray: [4, 2],
-                  strokeWidth: 1.2,
-                },
-              ]}
-              xDomain={[0, tMax]}
-              yDomain={dynamicYDomain}
-              xLabel="t (s)"
-              yLabel="E (J)"
-              title={mode === 0 ? 'E-t (单摆动能/重力势能及机械能消长守恒图)' : 'E-t (山谷阻尼动能/势能/内能及总能量守恒图)'}
-              color={PHYSICS_COLORS.potentialEnergy}
-              cursorX={state.t}
-              cursorLabel={() => null}
-            />
-          </div>
-        </foreignObject>
 
         {/* ══════════════════════════════════════════════ */}
         {/* 下半部分：动画区 */}

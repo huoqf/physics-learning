@@ -1,4 +1,6 @@
-import { useCanvasSize, useViewport, physicsToCanvasWithOrigin, clientToContainerPoint } from '@/utils'
+import { physicsToCanvasWithOrigin, clientToContainerPoint } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import React, { useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -15,8 +17,6 @@ import {
   FONT,
   DASH,
 } from '@/theme/physics'
-
-const CIRCULAR_DESIGN = { width: 650, height: 650 } as const
 
 /** 匀速圆周运动参数范围（滑块边界） */
 const CIRCULAR_MOTION_PARAM_BOUNDS = {
@@ -67,13 +67,10 @@ export default function CircularMotionAnimation() {
     setTime: s.setTime,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.square)
-  const { font } = canvasSize
-
-  const vp = useViewport(canvasSize, {
-    designWidth: CIRCULAR_DESIGN.width,
-    designHeight: CIRCULAR_DESIGN.height,
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
+    preset: CANVAS_PRESETS.square,
   })
+  const { font } = canvasSize
 
   const {
     r = 2,
@@ -96,8 +93,8 @@ export default function CircularMotionAnimation() {
   const canvasPos = physicsToCanvasWithOrigin(x, y, centerX, centerY, scale)
 
   const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'centerScale', {
-    designWidth: CIRCULAR_DESIGN.width,
-    designHeight: CIRCULAR_DESIGN.height,
+    designWidth: CANVAS_PRESETS.square.width,
+    designHeight: CANVAS_PRESETS.square.height,
     worldWidth: vp.visibleW / scale,
     worldHeight: vp.visibleH / scale,
     refMagnitudes: {
@@ -220,15 +217,13 @@ export default function CircularMotionAnimation() {
   }, [omega, time, r, scale, centerX, centerY])
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg
-        width={canvasSize.width}
-        height={canvasSize.height}
-        className="bg-white rounded-lg shadow-inner"
-        onMouseMove={handleSvgMouseMove}
-        onMouseUp={handleSvgMouseUp}
-        onMouseLeave={handleSvgMouseUp}
-      >
+    <AnimationSvgCanvas
+      containerRef={containerRef}
+      transform={vp.transform}
+      onMouseMove={handleSvgMouseMove}
+      onMouseUp={handleSvgMouseUp}
+      onMouseLeave={handleSvgMouseUp}
+    >
         {/* ========== defs 渐变与材质 ========== */}
         <defs>
           {/* 3D 拟物不锈钢钢珠材质 */}
@@ -543,7 +538,6 @@ export default function CircularMotionAnimation() {
             </g>
           </g>
         )}
-      </svg>
-    </div>
+      </AnimationSvgCanvas>
   )
 }

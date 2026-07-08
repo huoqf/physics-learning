@@ -1,6 +1,7 @@
 import { useAnimationViewport } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
+import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
 import { Ball } from '@/components/Physics/Ball'
 import { VectorArrow } from '@/components/Physics/VectorArrow'
 import { useBinaryStars } from './hooks/useBinaryStars'
@@ -50,7 +51,7 @@ export default function BinaryStarsAnimation() {
               cy={cy}
               r={state.r1Px}
               fill="none"
-              stroke="#E2E8F0"
+              stroke={PHYSICS_COLORS.grid}
               strokeDasharray="4 4"
               strokeWidth={1.5}
             />
@@ -59,7 +60,7 @@ export default function BinaryStarsAnimation() {
               cy={cy}
               r={state.r2Px}
               fill="none"
-              stroke="#E2E8F0"
+              stroke={PHYSICS_COLORS.grid}
               strokeDasharray="4 4"
               strokeWidth={1.5}
             />
@@ -69,7 +70,7 @@ export default function BinaryStarsAnimation() {
               y1={cy - state.pos1.y * state.scale}
               x2={cx + state.pos2.x * state.scale}
               y2={cy - state.pos2.y * state.scale}
-              stroke="#94A3B8"
+              stroke={PHYSICS_COLORS.textMuted}
               strokeDasharray="2 2"
               strokeWidth={1.2}
             />
@@ -82,7 +83,7 @@ export default function BinaryStarsAnimation() {
               cy={cy}
               r={state.rPx}
               fill="none"
-              stroke="#E2E8F0"
+              stroke={PHYSICS_COLORS.grid}
               strokeDasharray="4 4"
               strokeWidth={1.5}
             />
@@ -94,7 +95,7 @@ export default function BinaryStarsAnimation() {
                 ${cx + state.pos3.x * state.scale},${cy - state.pos3.y * state.scale}
               `}
               fill="none"
-              stroke="#CBD5E1"
+              stroke={PHYSICS_COLORS.trackHistory}
               strokeDasharray="2 2"
               strokeWidth={1.2}
             />
@@ -102,7 +103,7 @@ export default function BinaryStarsAnimation() {
         )}
 
         {/* 2. 质心点标记 */}
-        <g stroke="#EF4444" strokeWidth={1.8}>
+        <g stroke={PHYSICS_COLORS.alertRed} strokeWidth={1.8}>
           <line x1={cx - 6} y1={cy} x2={cx + 6} y2={cy} />
           <line x1={cx} y1={cy - 6} x2={cx} y2={cy + 6} />
         </g>
@@ -110,7 +111,7 @@ export default function BinaryStarsAnimation() {
           x={cx + 8}
           y={cy + 12}
           fontSize={font(10)}
-          fill="#EF4444"
+          fill={PHYSICS_COLORS.alertRed}
           fontWeight="bold"
         >
           质心 +
@@ -128,7 +129,7 @@ export default function BinaryStarsAnimation() {
                   vector={state.forceVec1}
                   type="force"
                   sceneScale={sceneScale}
-                  color="#EA580C"
+                  color={PHYSICS_COLORS.forceNet}
                   pixelLength={35}
                   label="F₁₂"
                   font={font}
@@ -138,7 +139,7 @@ export default function BinaryStarsAnimation() {
                   vector={state.velVec1}
                   type="velocity"
                   sceneScale={sceneScale}
-                  color="#2563EB"
+                  color={PHYSICS_COLORS.velocity}
                   pixelLength={Math.max(12, state.v1 * 18)}
                   label="v₁"
                   font={font}
@@ -150,7 +151,7 @@ export default function BinaryStarsAnimation() {
                   vector={state.forceVec2}
                   type="force"
                   sceneScale={sceneScale}
-                  color="#EA580C"
+                  color={PHYSICS_COLORS.forceNet}
                   pixelLength={35}
                   label="F₂₁"
                   font={font}
@@ -160,7 +161,7 @@ export default function BinaryStarsAnimation() {
                   vector={state.velVec2}
                   type="velocity"
                   sceneScale={sceneScale}
-                  color="#2563EB"
+                  color={PHYSICS_COLORS.velocity}
                   pixelLength={Math.max(12, state.v2 * 18)}
                   label="v₂"
                   font={font}
@@ -175,7 +176,7 @@ export default function BinaryStarsAnimation() {
                   vector={state.forceVec1}
                   type="force"
                   sceneScale={sceneScale}
-                  color="#EA580C"
+                  color={PHYSICS_COLORS.forceNet}
                   pixelLength={35}
                   label="F_合1"
                   font={font}
@@ -185,7 +186,7 @@ export default function BinaryStarsAnimation() {
                   vector={state.velVec1}
                   type="velocity"
                   sceneScale={sceneScale}
-                  color="#2563EB"
+                  color={PHYSICS_COLORS.velocity}
                   pixelLength={Math.max(12, state.v * 18)}
                   label="v₁"
                   font={font}
@@ -196,7 +197,7 @@ export default function BinaryStarsAnimation() {
                   vector={state.force12}
                   type="forceComponent"
                   sceneScale={sceneScale}
-                  color="rgba(234, 88, 12, 0.5)"
+                  color={withAlpha(PHYSICS_COLORS.forceNet, 0.5)}
                   pixelLength={22}
                   dashed
                   font={font}
@@ -206,7 +207,7 @@ export default function BinaryStarsAnimation() {
                   vector={state.force13}
                   type="forceComponent"
                   sceneScale={sceneScale}
-                  color="rgba(234, 88, 12, 0.5)"
+                  color={withAlpha(PHYSICS_COLORS.forceNet, 0.5)}
                   pixelLength={22}
                   dashed
                   font={font}
@@ -218,7 +219,7 @@ export default function BinaryStarsAnimation() {
                   vector={state.forceVec2}
                   type="force"
                   sceneScale={sceneScale}
-                  color="#EA580C"
+                  color={PHYSICS_COLORS.forceNet}
                   pixelLength={35}
                   label="F_合2"
                   font={font}
@@ -228,7 +229,7 @@ export default function BinaryStarsAnimation() {
                   vector={state.velVec2}
                   type="velocity"
                   sceneScale={sceneScale}
-                  color="#2563EB"
+                  color={PHYSICS_COLORS.velocity}
                   pixelLength={Math.max(12, state.v * 18)}
                   label="v₂"
                   font={font}
@@ -240,7 +241,7 @@ export default function BinaryStarsAnimation() {
                   vector={state.forceVec3}
                   type="force"
                   sceneScale={sceneScale}
-                  color="#EA580C"
+                  color={PHYSICS_COLORS.forceNet}
                   pixelLength={35}
                   label="F_合3"
                   font={font}
@@ -250,7 +251,7 @@ export default function BinaryStarsAnimation() {
                   vector={state.velVec3}
                   type="velocity"
                   sceneScale={sceneScale}
-                  color="#2563EB"
+                  color={PHYSICS_COLORS.velocity}
                   pixelLength={Math.max(12, state.v * 18)}
                   label="v₃"
                   font={font}
@@ -276,7 +277,7 @@ export default function BinaryStarsAnimation() {
               y={cy - state.pos1.y * state.scale - (16 + state.m1 * 1.5)}
               fontSize={font(11)}
               fontWeight="bold"
-              fill="#C2410C"
+              fill={PHYSICS_COLORS.forceNetArrow}
               textAnchor="middle"
             >
               m₁ ({state.m1.toFixed(1)})
@@ -294,7 +295,7 @@ export default function BinaryStarsAnimation() {
               y={cy - state.pos2.y * state.scale - (14 + state.m2 * 1.5)}
               fontSize={font(11)}
               fontWeight="bold"
-              fill="#1D4ED8"
+              fill={PHYSICS_COLORS.objectStroke}
               textAnchor="middle"
             >
               m₂ ({state.m2.toFixed(1)})
@@ -314,7 +315,7 @@ export default function BinaryStarsAnimation() {
               y={cy - state.pos1.y * state.scale - 19}
               fontSize={font(11)}
               fontWeight="bold"
-              fill="#1D4ED8"
+              fill={PHYSICS_COLORS.objectStroke}
               textAnchor="middle"
             >
               m (5.0)
@@ -331,7 +332,7 @@ export default function BinaryStarsAnimation() {
               y={cy - state.pos2.y * state.scale - 19}
               fontSize={font(11)}
               fontWeight="bold"
-              fill="#1D4ED8"
+              fill={PHYSICS_COLORS.objectStroke}
               textAnchor="middle"
             >
               m (5.0)
@@ -348,7 +349,7 @@ export default function BinaryStarsAnimation() {
               y={cy - state.pos3.y * state.scale - 19}
               fontSize={font(11)}
               fontWeight="bold"
-              fill="#1D4ED8"
+              fill={PHYSICS_COLORS.objectStroke}
               textAnchor="middle"
             >
               m (5.0)

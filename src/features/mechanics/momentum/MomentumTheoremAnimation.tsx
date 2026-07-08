@@ -1,4 +1,5 @@
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -23,15 +24,15 @@ export default function MomentumTheoremAnimation() {
       showVectors: s.showVectors,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-
-  const groundY = canvasSize.height - MT_LAYOUT.groundOffset
-  const cardWidth = Math.max(300, canvasSize.width * 0.42)
-  const vp = useViewport(canvasSize, {
-    designWidth: 600,
-    designHeight: 450,
+  // cardWidth 基于 preset.width 估算（useAnimationViewport 要求在调用前确定 overlay）
+  const cardWidth = Math.max(300, CANVAS_PRESETS.full.width * 0.42)
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
+    preset: CANVAS_PRESETS.full,
+    presetCompensation: 1.2,
     overlayRight: Math.round(cardWidth + 24),
   })
+
+  const groundY = canvasSize.height - MT_LAYOUT.groundOffset
 
   const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'visibleArea', {
     refMagnitudes: { velocity: 15, force: 200 },
@@ -49,11 +50,9 @@ export default function MomentumTheoremAnimation() {
   })
 
   return (
-    <div ref={containerRef} className="w-full h-full relative overflow-hidden bg-neutral-50 rounded-xl">
+    <div className="w-full h-full relative overflow-hidden bg-neutral-50 rounded-xl">
       {/* ========== 左侧物理动画容器 (大 SVG) ========== */}
-      <svg
-        className="absolute inset-0 w-full h-full pointer-events-none select-none"
-      >
+      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
         <MomentumTheoremDefs />
 
         {/* ========== 物理地面 ========== */}
@@ -92,7 +91,7 @@ export default function MomentumTheoremAnimation() {
             groundY={groundY}
           />
         )}
-      </svg>
+      </AnimationSvgCanvas>
 
       {/* ========== 右侧浮动 HTML 面板卡片 (F-t & v-t 图表) ========== */}
       <div

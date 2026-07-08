@@ -208,7 +208,6 @@ export default function BrownianMotion() {
       <svg
         width={width}
         height={height}
-        viewBox={`0 0 ${width} ${height}`}
         className="w-full h-full"
       >
         <defs>
