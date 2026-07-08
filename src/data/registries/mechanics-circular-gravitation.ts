@@ -51,7 +51,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     Component: lazy(() => import('@/features/mechanics/circular/CircularModelsAnimation')),
     CenterExtra: lazy(() => import('@/features/mechanics/circular/CircularModelsChart')),
     centerLayout: 'splitH',
-    controlsMode: 'loop',
+    controlsMode: 'timed',
     defaultParams: { modelMode: 0, omega: 3.0, L: 1.0, r: 0.8, mu: 0.4 } as const,
     paramMeta: [
       { key: 'omega', label: '角速度 ω', min: 0.5, max: 8.0, step: 0.1, unit: 'rad/s', importance: 'core' },

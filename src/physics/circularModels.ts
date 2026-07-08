@@ -127,3 +127,124 @@ export function calculateDiskRotationState(
     frictionRatio,
   }
 }
+
+export interface DiskSlippingState {
+  /** 物理坐标 x (m) */
+  x: number
+  /** 物理坐标 y (m) */
+  y: number
+  /** 物理坐标 z (m) ，向下掉落 */
+  z: number
+  /** 当前半径 (m) */
+  radius: number
+  /** 是否已经飞出圆盘 */
+  isFlownOut: boolean
+  /** 真实的重力大小 (N) */
+  gravity: number
+  /** 真实的支持力大小 (N) */
+  normalForce: number
+  /** 真实的摩擦力大小 (N) */
+  friction: number
+  /** 物体实际透明度 (0~1) */
+  opacity: number
+}
+
+/**
+ * 计算打滑物体的实时位置与受力状态 (含平抛阶段)
+ *
+ * @param tLocal 周期内局部时间 (s)，范围 [0, 1.5]
+ * @param omega 圆盘角速度 (rad/s)
+ * @param r0 初始半径 (m)
+ * @param mu 摩擦系数
+ * @param mass 质量 (kg)
+ * @param diskRadius 圆盘物理半径，设为 2.0 m
+ * @param g 重力加速度 (m/s²)
+ * @returns 实时空间坐标与真实的力大小
+ */
+export function calculateDiskSlippingState(
+  time: number,
+  omega: number,
+  r0: number,
+  mu: number,
+  mass: number,
+  diskRadius = 2.0,
+  g = GRAVITY,
+): DiskSlippingState {
+  const criticalOmega = Math.sqrt((mu * g) / r0)
+  const isSlipping = omega > criticalOmega
+
+  // 若不打滑，做匀速圆周运动
+  if (!isSlipping) {
+    const phi = omega * time
+    const requiredForce = mass * omega * omega * r0
+    return {
+      x: r0 * Math.cos(phi),
+      y: r0 * Math.sin(phi),
+      z: 0,
+      radius: r0,
+      isFlownOut: false,
+      gravity: mass * g,
+      normalForce: mass * g,
+      friction: requiredForce,
+      opacity: 1.0,
+    }
+  }
+
+  // 1. 打滑阶段计算
+  // 径向离心加速度近似：a = omega^2 * r0 - mu * g，若太小则赋予一个视觉合理的极小加速度
+  const aSlip = Math.max(0.1, omega * omega * r0 - mu * g)
+  
+  // 算出飞出圆盘的临界时刻 tFly
+  // r0 + 0.5 * aSlip * tFly^2 = diskRadius
+  const tFly = Math.sqrt(Math.max(0, (2 * (diskRadius - r0)) / aSlip))
+
+  if (time <= tFly) {
+    // 还在圆盘上滑动，不透明度保持 1.0
+    const rCurrent = r0 + 0.5 * aSlip * time * time
+    const phi = omega * time
+    return {
+      x: rCurrent * Math.cos(phi),
+      y: rCurrent * Math.sin(phi),
+      z: 0,
+      radius: rCurrent,
+      isFlownOut: false,
+      gravity: mass * g,
+      normalForce: mass * g,
+      friction: mu * mass * g, // 已经是滑动摩擦力
+      opacity: 1.0,
+    }
+  }
+
+  // 2. 飞出阶段：做切向平抛运动，并在飞出后 1.0s 内逐渐淡出
+  const phiFly = omega * tFly
+  const xFly = diskRadius * Math.cos(phiFly)
+  const yFly = diskRadius * Math.sin(phiFly)
+
+  // 飞出时的速度向量：径向外推速度 + 切向旋转速度
+  const vRadial = aSlip * tFly
+  const vTangential = omega * diskRadius
+
+  const vxFly = vRadial * Math.cos(phiFly) - vTangential * Math.sin(phiFly)
+  const vyFly = vRadial * Math.sin(phiFly) + vTangential * Math.cos(phiFly)
+
+  const dt = time - tFly
+  const xCurrent = xFly + vxFly * dt
+  const yCurrent = yFly + vyFly * dt
+  const zCurrent = -0.5 * g * dt * dt // 自由落体高度下落
+
+  // 飞出后开始淡出
+  const opacity = Math.max(0, 1.0 - dt / 1.0)
+
+  return {
+    x: xCurrent,
+    y: yCurrent,
+    z: zCurrent,
+    radius: Math.hypot(xCurrent, yCurrent),
+    isFlownOut: true,
+    gravity: mass * g,
+    normalForce: 0, // 飞出后无支持力
+    friction: 0,    // 飞出后无摩擦力
+    opacity,
+  }
+}
+

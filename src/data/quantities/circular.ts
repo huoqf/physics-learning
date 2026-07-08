@@ -180,7 +180,6 @@ export function buildCircularQuantities(
         const state = calculateConicalPendulumState(omega, length, mass)
         return {
           quantities: [
-            { label: '角速度 ω', value: omega.toFixed(2), unit: 'rad/s' },
             { label: '摆角 θ', value: state.thetaDeg.toFixed(1), unit: '°' },
             { label: '旋转半径 r', value: state.radius.toFixed(2), unit: 'm' },
             { label: '向心力 Fn', value: state.centripetalForce.toFixed(2), unit: 'N' },
@@ -207,7 +206,6 @@ export function buildCircularQuantities(
       const state = calculateDiskRotationState(omega, radius, mu, mass)
       return {
         quantities: [
-          { label: '角速度 ω', value: omega.toFixed(2), unit: 'rad/s' },
           { label: '所需向心力 Fn', value: state.requiredForce.toFixed(2), unit: 'N' },
           { label: '最大静摩擦力 fmax', value: state.maxStaticFriction.toFixed(2), unit: 'N' },
           { label: '临界角速度 ωcrit', value: state.criticalOmega.toFixed(2), unit: 'rad/s' },

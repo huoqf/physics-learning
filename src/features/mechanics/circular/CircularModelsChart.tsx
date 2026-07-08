@@ -25,10 +25,10 @@ function ChartPolyline({ points, stroke, dashed = false }: { points: Point[]; st
       d={d}
       fill="none"
       stroke={stroke}
-      strokeWidth={3}
+      strokeWidth={2.5}
       strokeLinecap="round"
       strokeLinejoin="round"
-      strokeDasharray={dashed ? '7 6' : undefined}
+      strokeDasharray={dashed ? '5 4' : undefined}
     />
   )
 }
@@ -45,15 +45,15 @@ function ChartPoint({ x, y, color, label }: { x: number; y: number; color: strin
         y1={ctx.plotOrigin.y}
         x2={sx}
         y2={ctx.plotOrigin.y + ctx.plotSize.height}
-        stroke={withAlpha(color, 0.42)}
-        strokeWidth={2}
-        strokeDasharray="4 5"
+        stroke={withAlpha(color, 0.35)}
+        strokeWidth={1.5}
+        strokeDasharray="3 4"
       />
-      <circle cx={sx} cy={sy} r={5} fill={color} stroke={PHYSICS_COLORS.white} strokeWidth={2} />
+      <circle cx={sx} cy={sy} r={4.5} fill={color} stroke={PHYSICS_COLORS.white} strokeWidth={1.8} />
       <text
-        x={sx + ctx.px(8)}
-        y={sy - ctx.px(8)}
-        fontSize={ctx.font(11)}
+        x={sx + ctx.px(6)}
+        y={sy - ctx.px(6)}
+        fontSize={ctx.font(10)}
         fill={color}
         fontWeight="bold"
       >
@@ -75,13 +75,13 @@ function HorizontalReference({ y, color, label }: { y: number; color: string; la
         x2={ctx.plotOrigin.x + ctx.plotSize.width}
         y2={sy}
         stroke={color}
-        strokeWidth={2}
-        strokeDasharray="7 6"
+        strokeWidth={1.5}
+        strokeDasharray="5 5"
       />
       <text
         x={ctx.plotOrigin.x + ctx.plotSize.width - ctx.px(4)}
-        y={sy - ctx.px(6)}
-        fontSize={ctx.font(10)}
+        y={sy - ctx.px(5)}
+        fontSize={ctx.font(9)}
         fill={color}
         textAnchor="end"
         fontWeight="bold"
@@ -110,67 +110,178 @@ export default function CircularModelsChart() {
     [omega, radius, mu],
   )
 
-  if (isConical) {
-    const points = Array.from({ length: CURVE_SAMPLES + 1 }, (_, idx) => {
+  // ─── 圆锥摆双图表 ───
+  const conicalCharts = useMemo(() => {
+    if (!isConical) return null
+
+    // 1. 摆角 theta 随角速度变化曲线
+    const thetaPoints = Array.from({ length: CURVE_SAMPLES + 1 }, (_, idx) => {
       const x = OMEGA_DOMAIN[0] + (OMEGA_DOMAIN[1] - OMEGA_DOMAIN[0]) * idx / CURVE_SAMPLES
       return { x, y: calculateConicalPendulumState(x, length, MASS_KG).thetaDeg }
     })
 
+    // 2. 绳子拉力 FT 随角速度变化曲线
+    const tensionMax = Math.max(20, MASS_KG * OMEGA_DOMAIN[1] * OMEGA_DOMAIN[1] * length * 0.8)
+    const tensionPoints = Array.from({ length: CURVE_SAMPLES + 1 }, (_, idx) => {
+      const x = OMEGA_DOMAIN[0] + (OMEGA_DOMAIN[1] - OMEGA_DOMAIN[0]) * idx / CURVE_SAMPLES
+      return { x, y: calculateConicalPendulumState(x, length, MASS_KG).tension }
+    })
+
+    return { thetaPoints, tensionPoints, tensionMax }
+  }, [isConical, length])
+
+  // ─── 水平圆盘双图表 ───
+  const diskCharts = useMemo(() => {
+    if (isConical) return null
+
+    // 1. 理论所需向心力 Fn 随角速度变化曲线
+    const fnMax = Math.max(10, MASS_KG * OMEGA_DOMAIN[1] * OMEGA_DOMAIN[1] * radius * 1.05)
+    const fnPoints = Array.from({ length: CURVE_SAMPLES + 1 }, (_, idx) => {
+      const x = OMEGA_DOMAIN[0] + (OMEGA_DOMAIN[1] - OMEGA_DOMAIN[0]) * idx / CURVE_SAMPLES
+      return { x, y: MASS_KG * x * x * radius }
+    })
+
+    // 2. 实际摩擦力 f 随角速度变化曲线 (打滑前二次曲线上升，打滑后恒为 mu*m*g)
+    const fMax = Math.max(10, mu * MASS_KG * 9.8 * 1.5)
+    const critOmega = Math.sqrt((mu * 9.8) / radius)
+    const frictionPoints = Array.from({ length: CURVE_SAMPLES + 1 }, (_, idx) => {
+      const x = OMEGA_DOMAIN[0] + (OMEGA_DOMAIN[1] - OMEGA_DOMAIN[0]) * idx / CURVE_SAMPLES
+      const y = x <= critOmega ? MASS_KG * x * x * radius : mu * MASS_KG * 9.8
+      return { x, y }
+    })
+
+    return { fnPoints, frictionPoints, fnMax, fMax, critOmega }
+  }, [isConical, radius, mu])
+
+  if (isConical && conicalCharts) {
     return (
-      <div className="w-full h-full p-3 flex flex-col gap-2">
-        <div className="shrink-0">
-          <h3 className="text-sm font-bold text-neutral-800">摆角—角速度关系</h3>
-          <p className="text-xs text-neutral-500">ω 增大时，cosθ = g/(ω²L) 变小，摆角 θ 增大。</p>
+      <div className="w-full h-full p-3 flex flex-col gap-4 overflow-y-auto">
+        {/* 图表一：摆角 */}
+        <div className="flex-1 min-h-[270px] flex flex-col gap-1.5">
+          <div className="shrink-0">
+            <h3 className="text-xs font-bold text-neutral-800">摆角 — 角速度关系 (几何模型)</h3>
+            <p className="text-[10px] text-neutral-500">
+              当 ω &gt; ω₀ 时，摆球离心飞高，满足 cosθ = g/(ω²L)。
+            </p>
+          </div>
+          <div className="flex-1 min-h-0">
+            <BasePhysicsChart
+              xDomain={OMEGA_DOMAIN}
+              yDomain={[0, 90]}
+              xLabel="ω (rad/s)"
+              yLabel="θ (°)"
+              title="圆锥摆：摆角 θ 随角速度"
+              gridCount={{ x: 4, y: 3 }}
+              formatX={(v) => v.toFixed(0)}
+              formatY={(v) => v.toFixed(0)}
+            >
+              <ChartPolyline points={conicalCharts.thetaPoints} stroke={PHYSICS_COLORS.annotation} />
+              <ChartPoint x={omega} y={conical.thetaDeg} color={PHYSICS_COLORS.annotation} label={`当前: ${conical.thetaDeg.toFixed(0)}°`} />
+              <ChartPoint x={conical.minOmega} y={0} color={PHYSICS_COLORS.dangerDark} label="临界 ω₀" />
+            </BasePhysicsChart>
+          </div>
         </div>
-        <div className="flex-1 min-h-0">
-          <BasePhysicsChart
-            xDomain={OMEGA_DOMAIN}
-            yDomain={[0, 90]}
-            xLabel="ω (rad/s)"
-            yLabel="θ (°)"
-            title="圆锥摆：θ 随 ω 增大"
-            gridCount={{ x: 4, y: 5 }}
-            formatX={(v) => v.toFixed(0)}
-            formatY={(v) => v.toFixed(0)}
-          >
-            <ChartPolyline points={points} stroke={PHYSICS_COLORS.forceNet} />
-            <ChartPoint x={omega} y={conical.thetaDeg} color={PHYSICS_COLORS.forceNet} label="当前 θ" />
-            <ChartPoint x={conical.minOmega} y={0} color={PHYSICS_COLORS.dangerDark} label="ω₀" />
-          </BasePhysicsChart>
+
+        {/* 图表二：拉力 */}
+        <div className="flex-1 min-h-[270px] flex flex-col gap-1.5">
+          <div className="shrink-0">
+            <h3 className="text-xs font-bold text-neutral-800">绳子拉力 — 角速度关系 (受力模型)</h3>
+            <p className="text-[10px] text-neutral-500">
+              未起摆时拉力为 mg；起摆后拉力 FT = mω²L 呈二次方增长，极易拉断。
+            </p>
+          </div>
+          <div className="flex-1 min-h-0">
+            <BasePhysicsChart
+              xDomain={OMEGA_DOMAIN}
+              yDomain={[0, conicalCharts.tensionMax]}
+              xLabel="ω (rad/s)"
+              yLabel="FT (N)"
+              title="圆锥摆：拉力 FT 随角速度"
+              gridCount={{ x: 4, y: 3 }}
+              formatX={(v) => v.toFixed(0)}
+              formatY={(v) => v.toFixed(0)}
+            >
+              <ChartPolyline points={conicalCharts.tensionPoints} stroke={PHYSICS_COLORS.tension} />
+              <HorizontalReference y={MASS_KG * 9.8} color={PHYSICS_COLORS.gravity} label="mg = 9.8N" />
+              <ChartPoint x={omega} y={conical.tension} color={PHYSICS_COLORS.tension} label={`当前: ${conical.tension.toFixed(1)}N`} />
+              <ChartPoint x={conical.minOmega} y={MASS_KG * 9.8} color={PHYSICS_COLORS.dangerDark} label="起摆" />
+            </BasePhysicsChart>
+          </div>
         </div>
       </div>
     )
   }
 
-  const yMax = Math.max(disk.maxStaticFriction * 1.35, MASS_KG * OMEGA_DOMAIN[1] ** 2 * radius * 1.05)
-  const points = Array.from({ length: CURVE_SAMPLES + 1 }, (_, idx) => {
-    const x = OMEGA_DOMAIN[0] + (OMEGA_DOMAIN[1] - OMEGA_DOMAIN[0]) * idx / CURVE_SAMPLES
-    return { x, y: MASS_KG * x * x * radius }
-  })
+  if (!isConical && diskCharts) {
+    const isSlippingNow = disk.slipping
+    const curFriction = omega <= diskCharts.critOmega ? disk.requiredForce : mu * MASS_KG * 9.8
 
-  return (
-    <div className="w-full h-full p-3 flex flex-col gap-2">
-      <div className="shrink-0">
-        <h3 className="text-sm font-bold text-neutral-800">所需向心力—角速度关系</h3>
-        <p className="text-xs text-neutral-500">Fₙ = mω²r 按二次方增长；超过 μmg 后不能保持静止相对圆盘。</p>
+    return (
+      <div className="w-full h-full p-3 flex flex-col gap-4 overflow-y-auto">
+        {/* 图表一：理论所需向心力 */}
+        <div className="flex-1 min-h-[270px] flex flex-col gap-1.5">
+          <div className="shrink-0">
+            <h3 className="text-xs font-bold text-neutral-800">理论所需向心力 (圆周运动要求)</h3>
+            <p className="text-[10px] text-neutral-500">
+              向心力需求 Fn = mω²r 随转速呈二次方无限增长。
+            </p>
+          </div>
+          <div className="flex-1 min-h-0">
+            <BasePhysicsChart
+              xDomain={OMEGA_DOMAIN}
+              yDomain={[0, diskCharts.fnMax]}
+              xLabel="ω (rad/s)"
+              yLabel="Fn (N)"
+              title="理论所需向心力 Fn"
+              gridCount={{ x: 4, y: 3 }}
+              formatX={(v) => v.toFixed(0)}
+              formatY={(v) => v.toFixed(0)}
+            >
+              <ChartPolyline points={diskCharts.fnPoints} stroke={PHYSICS_COLORS.forceNet} />
+              <ChartPoint
+                x={omega}
+                y={disk.requiredForce}
+                color={isSlippingNow ? PHYSICS_COLORS.dangerDark : PHYSICS_COLORS.forceNet}
+                label={`需求: ${disk.requiredForce.toFixed(1)}N`}
+              />
+              <ChartPoint x={diskCharts.critOmega} y={disk.maxStaticFriction} color={PHYSICS_COLORS.dangerDark} label="临界 ωcrit" />
+            </BasePhysicsChart>
+          </div>
+        </div>
+
+        {/* 图表二：实际静摩擦力 */}
+        <div className="flex-1 min-h-[270px] flex flex-col gap-1.5">
+          <div className="shrink-0">
+            <h3 className="text-xs font-bold text-neutral-800">实际静摩擦力 (接触面所能提供)</h3>
+            <p className="text-[10px] text-neutral-500">
+              打滑前静摩擦力提供向心力；打滑后突变为滑动摩擦力，限制在最大值 μmg。
+            </p>
+          </div>
+          <div className="flex-1 min-h-0">
+            <BasePhysicsChart
+              xDomain={OMEGA_DOMAIN}
+              yDomain={[0, diskCharts.fMax]}
+              xLabel="ω (rad/s)"
+              yLabel="f (N)"
+              title="实际静摩擦力 f"
+              gridCount={{ x: 4, y: 3 }}
+              formatX={(v) => v.toFixed(0)}
+              formatY={(v) => v.toFixed(0)}
+            >
+              <ChartPolyline points={diskCharts.frictionPoints} stroke={PHYSICS_COLORS.frictionStatic} />
+              <HorizontalReference y={disk.maxStaticFriction} color={PHYSICS_COLORS.friction} label="fmax = μmg" />
+              <ChartPoint
+                x={omega}
+                y={curFriction}
+                color={isSlippingNow ? PHYSICS_COLORS.dangerDark : PHYSICS_COLORS.frictionStatic}
+                label={isSlippingNow ? `打滑: ${curFriction.toFixed(1)}N` : `当前: ${curFriction.toFixed(1)}N`}
+              />
+            </BasePhysicsChart>
+          </div>
+        </div>
       </div>
-      <div className="flex-1 min-h-0">
-        <BasePhysicsChart
-          xDomain={OMEGA_DOMAIN}
-          yDomain={[0, yMax]}
-          xLabel="ω (rad/s)"
-          yLabel="Fₙ (N)"
-          title="水平圆盘：静摩擦临界"
-          gridCount={{ x: 4, y: 5 }}
-          formatX={(v) => v.toFixed(0)}
-          formatY={(v) => v.toFixed(0)}
-        >
-          <ChartPolyline points={points} stroke={PHYSICS_COLORS.forceNet} />
-          <HorizontalReference y={disk.maxStaticFriction} color={PHYSICS_COLORS.frictionStatic} label="fmax = μmg" />
-          <ChartPoint x={omega} y={disk.requiredForce} color={disk.slipping ? PHYSICS_COLORS.dangerDark : PHYSICS_COLORS.forceNet} label="当前 Fₙ" />
-          <ChartPoint x={disk.criticalOmega} y={disk.maxStaticFriction} color={PHYSICS_COLORS.dangerDark} label="ωcrit" />
-        </BasePhysicsChart>
-      </div>
-    </div>
-  )
+    )
+  }
+
+  return null
 }
