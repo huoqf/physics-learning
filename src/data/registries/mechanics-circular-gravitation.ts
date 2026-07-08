@@ -45,6 +45,40 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
         options: [{ value: 0, label: '单面轨 (绳模型)' }, { value: 1, label: '双面轨 (杆模型)' }] },
     ],
   },
+  'anim-circular-models': {
+    title: '圆盘与圆锥摆模型',
+    knowledgeId: 'mechanics-5-7',
+    Component: lazy(() => import('@/features/mechanics/circular/CircularModelsAnimation')),
+    CenterExtra: lazy(() => import('@/features/mechanics/circular/CircularModelsChart')),
+    centerLayout: 'splitH',
+    controlsMode: 'loop',
+    defaultParams: { modelMode: 0, omega: 3.0, L: 1.0, r: 0.8, mu: 0.4 } as const,
+    paramMeta: [
+      { key: 'omega', label: '角速度 ω', min: 0.5, max: 8.0, step: 0.1, unit: 'rad/s', importance: 'core' },
+      { key: 'L', label: '绳长 L', min: 0.5, max: 2.0, step: 0.1, unit: 'm', showIf: 'modelMode', showIfValue: 0 },
+      { key: 'r', label: '半径 r', min: 0.2, max: 2.0, step: 0.1, unit: 'm', showIf: 'modelMode', showIfValue: 1 },
+      { key: 'mu', label: '最大静摩擦系数 μ', min: 0.1, max: 1.0, step: 0.05, unit: '', showIf: 'modelMode', showIfValue: 1 },
+    ],
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'modelMode',
+        label: '经典模型',
+        group: '模型选择',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '圆锥摆' },
+          { value: 1, label: '水平圆盘' },
+        ],
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        content: '受力分析时不要额外画“向心力”。水平方向的合外力提供向心力：圆锥摆看拉力水平分量，圆盘看静摩擦力。',
+        variant: 'primary',
+      },
+    ],
+  },
   'anim-kepler': {
     title: '开普勒定律',
     knowledgeId: 'mechanics-6-1',

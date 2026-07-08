@@ -82,7 +82,7 @@ async function loadExtendedRegistry(): Promise<void> {
 // ─── 公共 API ───
 
 /** 静态总动画数，不依赖动态加载 */
-export const ANIMATION_COUNT = 70
+export const ANIMATION_COUNT = 72
 
 /** 同步获取 config（core 动画立即命中，extended 动画未加载时返回 undefined） */
 export function getAnimationConfig(id: string): AnimationConfig | undefined {

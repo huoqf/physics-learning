@@ -70,10 +70,12 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-weightlessness':        { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
   'anim-gravity-basic':         { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
   'anim-gravity':               { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
+  'anim-conveyor':              { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
 
   // 圆周运动
   'anim-circular-motion':       { loader: () => import('./quantities/circular'),       builderName: 'buildCircularQuantities' },
   'anim-centripetal':           { loader: () => import('./quantities/circular'),       builderName: 'buildCircularQuantities' },
+  'anim-circular-models':       { loader: () => import('./quantities/circular'),       builderName: 'buildCircularQuantities' },
 
   // 万有引力
   'anim-kepler':                { loader: () => import('./quantities/gravitation'),    builderName: 'buildGravitationQuantities' },

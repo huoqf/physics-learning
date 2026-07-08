@@ -8,6 +8,7 @@ import { handleNewtonSecond } from './newtonSecond'
 import { handleWeightlessness } from './weightlessness'
 import { handleGravityBasic } from './gravityBasic'
 import { handleGravity } from './gravity'
+import { handleConveyor } from './conveyor'
 
 export function buildDynamicsQuantities(
   animId: string,
@@ -26,6 +27,7 @@ export function buildDynamicsQuantities(
     handleWeightlessness(animId, params, time, base) ??
     handleGravityBasic(animId, params, time, base) ??
     handleGravity(animId, params, time, base) ??
+    handleConveyor(animId, params, time, base) ??
     null
   )
 }

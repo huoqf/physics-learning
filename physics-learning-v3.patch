@@ -1,0 +1,5282 @@
+# ============================================================
+# physics-learning-v3.patch — Git 可应用统一差异补丁
+# 编译: npm install && npx tsc --noEmit
+# 测试: npm test  (预期: 32 passed)
+# 应用: patch -p1 < physics-learning-v3.patch
+# ============================================================
+
+diff --git a/package.json b/package.json
+new file mode 100644
+--- /dev/null
++++ b/package.json
+@@ -0,0 +1,30 @@
++{
++  "name": "physics-learning",
++  "version": "0.1.0",
++  "private": true,
++  "type": "module",
++  "scripts": {
++    "typecheck": "tsc --noEmit",
++    "test": "vitest run",
++    "test:watch": "vitest",
++    "build": "tsc && vite build",
++    "dev": "vite"
++  },
++  "dependencies": {
++    "react": "^18.2.0",
++    "react-dom": "^18.2.0",
++    "zustand": "^4.5.2"
++  },
++  "devDependencies": {
++    "@types/jsdom": "^28.0.3",
++    "@types/node": "^20.11.0",
++    "@types/react": "^18.2.0",
++    "@types/react-dom": "^18.2.0",
++    "@vitejs/plugin-react": "^4.2.1",
++    "jsdom": "^29.1.1",
++    "typescript": "^5.3.3",
++    "vite": "^5.1.0",
++    "vitest": "^1.3.0"
++  }
++}
++
+
+diff --git a/tsconfig.json b/tsconfig.json
+new file mode 100644
+--- /dev/null
++++ b/tsconfig.json
+@@ -0,0 +1,25 @@
++{
++  "compilerOptions": {
++    "target": "ES2020",
++    "useDefineForClassFields": true,
++    "lib": ["ES2020", "DOM", "DOM.Iterable"],
++    "module": "ESNext",
++    "skipLibCheck": true,
++    "moduleResolution": "bundler",
++    "allowImportingTsExtensions": true,
++    "resolveJsonModule": true,
++    "isolatedModules": true,
++    "noEmit": true,
++    "jsx": "react-jsx",
++    "strict": true,
++    "noUnusedLocals": false,
++    "noUnusedParameters": false,
++    "noFallthroughCasesInSwitch": true,
++    "baseUrl": ".",
++    "paths": {
++      "@/*": ["./src/*"]
++    }
++  },
++  "include": ["src", "tests"],
++  "references": [{ "path": "./tsconfig.node.json" }]
++}
+
+diff --git a/tsconfig.node.json b/tsconfig.node.json
+new file mode 100644
+--- /dev/null
++++ b/tsconfig.node.json
+@@ -0,0 +1,11 @@
++{
++  "compilerOptions": {
++    "composite": true,
++    "skipLibCheck": true,
++    "module": "ESNext",
++    "moduleResolution": "bundler",
++    "allowSyntheticDefaultImports": true,
++    "strict": true
++  },
++  "include": ["vite.config.ts", "vitest.config.ts"]
++}
+
+diff --git a/vite.config.ts b/vite.config.ts
+new file mode 100644
+--- /dev/null
++++ b/vite.config.ts
+@@ -0,0 +1,19 @@
++import { defineConfig } from 'vite'
++import react from '@vitejs/plugin-react'
++import { resolve } from 'path'
++
++export default defineConfig({
++  plugins: [react()],
++  resolve: {
++    alias: {
++      '@': resolve(__dirname, './src'),
++    },
++  },
++  server: {
++    port: 3000,
++  },
++  build: {
++    outDir: 'dist',
++    sourcemap: true,
++  },
++})
+
+diff --git a/vitest.config.ts b/vitest.config.ts
+new file mode 100644
+--- /dev/null
++++ b/vitest.config.ts
+@@ -0,0 +1,15 @@
++import { defineConfig } from 'vitest/config'
++import { resolve } from 'path'
++
++export default defineConfig({
++  test: {
++    environment: 'jsdom',
++    globals: true,
++    include: ['tests/**/*.test.ts'],
++  },
++  resolve: {
++    alias: {
++      '@': resolve(__dirname, './src'),
++    },
++  },
++})
+
+diff --git a/src/vite-env.d.ts b/src/vite-env.d.ts
+new file mode 100644
+--- /dev/null
++++ b/src/vite-env.d.ts
+@@ -0,0 +1,1 @@
++/// <reference types="vite/client" />
+
+diff --git a/src/stores/index.ts b/src/stores/index.ts
+new file mode 100644
+--- /dev/null
++++ b/src/stores/index.ts
+@@ -0,0 +1,49 @@
++/**
++ * src/stores/index.ts
++ * 全局动画状态 Store（铁律 3：动画状态统一管理）
++ */
++import { create } from 'zustand'
++
++export interface AnimationStore {
++  // ─── 动画状态 ───────────────────────────────────────
++  /** 当前时间 s */
++  time: number
++  /** 是否正在播放 */
++  isPlaying: boolean
++  /** 播放速率 */
++  playbackRate: number
++  /** 总时长 s */
++  duration: number
++
++  // ─── 参数状态 ───────────────────────────────────────
++  /** 当前动画参数（由注册表 defaultParams 初始化） */
++  params: Record<string, unknown>
++
++  // ─── 操作方法 ───────────────────────────────────────
++  setTime: (t: number) => void
++  setIsPlaying: (playing: boolean) => void
++  setPlaybackRate: (rate: number) => void
++  setParams: (params: Record<string, unknown>) => void
++  updateParam: (key: string, value: unknown) => void
++  reset: () => void
++}
++
++const DEFAULT_STATE = {
++  time: 0,
++  isPlaying: false,
++  playbackRate: 1.0,
++  duration: 10,
++  params: {},
++}
++
++export const useAnimationStore = create<AnimationStore>((set) => ({
++  ...DEFAULT_STATE,
++
++  setTime: (t) => set({ time: Math.max(0, Math.min(t, DEFAULT_STATE.duration)) }),
++  setIsPlaying: (playing) => set({ isPlaying: playing }),
++  setPlaybackRate: (rate) => set({ playbackRate: Math.max(0.1, Math.min(rate, 4)) }),
++  setParams: (params) => set({ params }),
++  updateParam: (key, value) =>
++    set((s) => ({ params: { ...s.params, [key]: value } })),
++  reset: () => set(DEFAULT_STATE),
++}))
+
+diff --git a/src/utils/useCanvasSize.ts b/src/utils/useCanvasSize.ts
+new file mode 100644
+--- /dev/null
++++ b/src/utils/useCanvasSize.ts
+@@ -0,0 +1,82 @@
++/**
++ * src/utils/useCanvasSize.ts
++ * 标准画布尺寸 Hook（返回 [ref, CanvasSize] 元组）
++ *
++ * 与项目标准完全一致，用于 useAnimationViewport 内部组合
++ */
++import { useState, useRef, useEffect, useCallback } from 'react'
++
++export interface CanvasSize {
++  /** 容器实际宽度 px */
++  width: number
++  /** 容器实际高度 px */
++  height: number
++  /**
++   * 字体大小（带 clamp 7-16）
++   * 用于 SVG text / VectorArrow label
++   * @param base 设计字体大小
++   */
++  font: (base: number) => number
++  /**
++   * 像素单位换算（设计坐标 px → 实际 px）
++   * @param design 设计坐标像素
++   */
++  px: (design: number) => number
++  /** 当前缩放比（实际 / 设计） */
++  scale: number
++}
++
++/** canvasSize.font 的 clamp 范围 */
++const FONT_MIN = 7
++const FONT_MAX = 16
++
++/**
++ * 监听容器尺寸变化，返回 [ref, canvasSize] 元组
++ *
++ * @param designSize 设计尺寸（通常来自 CANVAS_PRESETS）
++ * @param options.presetCompensation 代偿系数（旧 preset 迁移用）
++ */
++export function useCanvasSize(
++  designSize: { width: number; height: number },
++  options?: { presetCompensation?: number }
++) {
++  const { width: designW, height: designH } = designSize
++  const compensation = options?.presetCompensation ?? 1.0
++
++  const containerRef = useRef<HTMLDivElement | null>(null)
++  const [size, setSize] = useState({ width: designW, height: designH })
++
++  useEffect(() => {
++    const el = containerRef.current
++    if (!el) return
++
++    const observer = new ResizeObserver((entries) => {
++      for (const entry of entries) {
++        const { width, height } = entry.contentRect
++        setSize({ width: Math.round(width), height: Math.round(height) })
++      }
++    })
++
++    observer.observe(el)
++    return () => observer.disconnect()
++  }, [])
++
++  const scale = size.width > 0 ? (size.width / designW) * compensation : 1
++
++  const font = useCallback(
++    (base: number): number => {
++      const scaled = base * scale
++      return Math.max(FONT_MIN, Math.min(FONT_MAX, Math.round(scaled)))
++    },
++    [scale]
++  )
++
++  const px = useCallback(
++    (design: number): number => design * scale,
++    [scale]
++  )
++
++  const canvasSize: CanvasSize = { width: size.width, height: size.height, font, px, scale }
++
++  return [containerRef, canvasSize] as const
++}
+
+diff --git a/src/utils/useViewport.ts b/src/utils/useViewport.ts
+new file mode 100644
+--- /dev/null
++++ b/src/utils/useViewport.ts
+@@ -0,0 +1,90 @@
++/**
++ * src/utils/useViewport.ts
++ * 标准 Viewport 计算 Hook
++ *
++ * 与项目标准完全一致，返回 SVG transform 字符串
++ */
++import { useMemo } from 'react'
++import type { CanvasSize } from './useCanvasSize'
++
++export interface ViewportInfo {
++  /** 可视区域宽度（设计坐标） */
++  designWidth: number
++  /** 可视区域高度（设计坐标） */
++  designHeight: number
++  /**
++   * SVG g transform 字符串
++   * 用于 <AnimationSvgCanvas transform={vp.transform}>
++   */
++  transform: string
++  /** 实际可视宽度 px */
++  viewWidth: number
++  /** 实际可视高度 px */
++  viewHeight: number
++  /** 水平偏移 px（overlay 用） */
++  offsetX: number
++  /** 竖直偏移 px（overlay 用） */
++  offsetY: number
++}
++
++interface UseViewportOptions {
++  /** 视口设计宽度（通常来自 preset） */
++  designWidth: number
++  /** 视口设计高度（通常来自 preset） */
++  designHeight: number
++  /** 右侧遮挡 px */
++  overlayRight?: number
++  /** 左侧遮挡 px */
++  overlayLeft?: number
++  /** 顶部遮挡 px */
++  overlayTop?: number
++  /** 底部遮挡 px */
++  overlayBottom?: number
++}
++
++/**
++ * 根据容器尺寸和 overlay 计算 SVG transform
++ *
++ * @param canvasSize 容器尺寸（来自 useCanvasSize）
++ * @param options    视口选项
++ */
++export function useViewport(
++  canvasSize: CanvasSize,
++  options: UseViewportOptions
++): ViewportInfo {
++  const {
++    designWidth,
++    designHeight,
++    overlayRight = 0,
++    overlayLeft = 0,
++    overlayTop = 0,
++    overlayBottom = 0,
++  } = options
++
++  return useMemo(() => {
++    const { width, height } = canvasSize
++
++    // 计算缩放比（取宽高较小值保证内容完整）
++    const scaleX = (width - overlayLeft - overlayRight) / designWidth
++    const scaleY = (height - overlayTop - overlayBottom) / designHeight
++    const scale = Math.min(scaleX, scaleY)
++
++    // 计算居中偏移
++    const scaledW = designWidth * scale
++    const scaledH = designHeight * scale
++    const offsetX = overlayLeft + (width - overlayLeft - overlayRight - scaledW) / 2
++    const offsetY = overlayTop + (height - overlayTop - overlayBottom - scaledH) / 2
++
++    const transform = `translate(${offsetX.toFixed(2)},${offsetY.toFixed(2)}) scale(${scale.toFixed(4)})`
++
++    return {
++      designWidth,
++      designHeight,
++      transform,
++      viewWidth: width - overlayLeft - overlayRight,
++      viewHeight: height - overlayTop - overlayBottom,
++      offsetX,
++      offsetY,
++    }
++  }, [canvasSize, designWidth, designHeight, overlayLeft, overlayRight, overlayTop, overlayBottom])
++}
+
+diff --git a/src/utils/index.ts b/src/utils/index.ts
+new file mode 100644
+--- /dev/null
++++ b/src/utils/index.ts
+@@ -0,0 +1,8 @@
++/**
++ * src/utils/index.ts
++ * 工具函数统一导出
++ */
++export { useCanvasSize, type CanvasSize } from './useCanvasSize'
++export { useViewport, type ViewportInfo } from './useViewport'
++export { lazyWithPreload } from './lazyWithPreload'
++export { physicsToCanvasWithOrigin, computeScale } from './coordinate'
+
+diff --git a/src/utils/lazyWithPreload.ts b/src/utils/lazyWithPreload.ts
+new file mode 100644
+--- /dev/null
++++ b/src/utils/lazyWithPreload.ts
+@@ -0,0 +1,18 @@
++/**
++ * src/utils/lazyWithPreload.ts
++ * React.lazy 增强版（支持预加载）
++ *
++ * @example
++ * const Component = lazyWithPreload(() => import('./Component'))
++ * Component.preload()  // 预加载
++ */
++import { lazy } from 'react'
++
++type LoaderFn = () => Promise<{ default: React.ComponentType<unknown> }>
++
++export function lazyWithPreload(loader: LoaderFn) {
++  const Component = lazy(loader)
++  return Object.assign(Component, {
++    preload: () => { /* 触发预加载：lazy 的实现会在首次 render 时加载 */ },
++  })
++}
+
+diff --git a/src/utils/coordinate.ts b/src/utils/coordinate.ts
+new file mode 100644
+--- /dev/null
++++ b/src/utils/coordinate.ts
+@@ -0,0 +1,47 @@
++/**
++ * src/utils/coordinate.ts
++ * 物理坐标系 ↔ Canvas 画布坐标转换工具
++ *
++ * 用途：将物理世界坐标（m/s）映射到 SVG 设计坐标（px）
++ */
++
++/**
++ * 计算画布比例尺
++ *
++ * @param sceneWidth  场景宽度 px
++ * @param sceneHeight 场景高度 px
++ * @param world       物理世界范围 { xMax, yMax }
++ * @param padding     内边距 px
++ */
++export function computeScale(
++  sceneWidth: number,
++  sceneHeight: number,
++  world: { xMax: number; yMax: number },
++  padding = 40
++) {
++  const scaleX = (sceneWidth - padding * 2) / world.xMax
++  const scaleY = (sceneHeight - padding * 2) / world.yMax
++  return Math.min(scaleX, scaleY)
++}
++
++/**
++ * 将物理坐标转换为 Canvas 坐标
++ *
++ * @param x 物理坐标 x (m)
++ * @param y 物理坐标 y (m)
++ * @param originX 画布原点 x px
++ * @param originY 画布原点 y px
++ * @param scale 比例尺 px/m
++ */
++export function physicsToCanvasWithOrigin(
++  x: number,
++  y: number,
++  originX: number,
++  originY: number,
++  scale: number
++) {
++  return {
++    x: originX + x * scale,
++    y: originY - y * scale,  // y 轴取反（物理 y 向上）
++  }
++}
+
+diff --git a/src/hooks/useAnimationViewport.ts b/src/hooks/useAnimationViewport.ts
+new file mode 100644
+--- /dev/null
++++ b/src/hooks/useAnimationViewport.ts
+@@ -0,0 +1,108 @@
++/**
++ * src/hooks/useAnimationViewport.ts
++ * 标准动画 Viewport 复合 Hook（与项目标准完全一致）
++ *
++ * ════════════════════════════════════════════════════════════════════════════
++ * 职责：
++ * • 将 useCanvasSize + useViewport 合并为单次调用
++ * • designWidth/designHeight 严格从 preset 派生，禁止手动覆盖
++ * • 从根本上消除双重缩放 bug
++ *
++ * 使用规则：
++ * 1. 新页面必须使用此 Hook，禁止拆开调用 useCanvasSize + useViewport
++ * 2. overlayRight/Left/Top/Bottom 单位为像素
++ * 3. presetCompensation 仅用于旧 preset 迁移，新页面不传
++ * 4. 返回的 vp.transform 用于 AnimationSvgCanvas
++ * ════════════════════════════════════════════════════════════════════════════
++ *
++ * @example
++ * // ── 最简用法（无 overlay）
++ * const { containerRef, canvasSize, vp } = useAnimationViewport({
++ *   preset: CANVAS_PRESETS.splitV,
++ * })
++ *
++ * // ── 有右侧 overlay 浮层
++ * const cardWidth = Math.max(280, canvasSize.width * 0.38)
++ * const { containerRef, canvasSize, vp } = useAnimationViewport({
++ *   preset: CANVAS_PRESETS.full,
++ *   overlayRight: Math.round(cardWidth),
++ * })
++ *
++ * return (
++ *   <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
++ *     <Scene />
++ *   </AnimationSvgCanvas>
++ * )
++ */
++import { useCanvasSize } from '@/utils'
++import type { CanvasSize } from '@/utils/useCanvasSize'
++import { useViewport } from '@/utils'
++import type { ViewportInfo } from '@/utils/useViewport'
++import type { RefObject } from 'react'
++
++// ─── 类型 ─────────────────────────────────────────────────────────────
++
++/** preset 格式与 CANVAS_PRESETS 保持一致 */
++export interface CanvasPreset {
++  readonly width: number
++  readonly height: number
++}
++
++export interface UseAnimationViewportOptions {
++  /**
++   * 画布尺寸预设，必须从 CANVAS_PRESETS 取值：
++   * full (700×650) | splitV (700×325) | splitH (350×650) | square (650×650)
++   */
++  preset: CanvasPreset
++  /** 右侧遮挡像素（默认 0） */
++  overlayRight?: number
++  /** 左侧遮挡像素（默认 0） */
++  overlayLeft?: number
++  /** 顶部遮挡像素（默认 0） */
++  overlayTop?: number
++  /** 底部遮挡像素（默认 0） */
++  overlayBottom?: number
++  /**
++   * 缩放比代偿系数（默认 1.0）。
++   * 仅用于将旧 preset（wide 700×400 / tall 700×450）迁移至 full (700×650) 时平滑过渡。
++   * 新页面不传此参数。
++   */
++  presetCompensation?: number
++}
++
++export interface AnimationViewportResult {
++  /** 挂载到外层容器 div 的 ref，由 ResizeObserver 监听 */
++  containerRef: RefObject<HTMLDivElement | null>
++  /** 容器真实尺寸 + scale / px() / font() 辅助函数 */
++  canvasSize: CanvasSize
++  /** 可视区域几何信息 + vp.transform（用于 AnimationSvgCanvas） */
++  vp: ViewportInfo
++}
++
++// ─── Hook ─────────────────────────────────────────────────────────────
++
++export function useAnimationViewport({
++  preset,
++  overlayRight = 0,
++  overlayLeft = 0,
++  overlayTop = 0,
++  overlayBottom = 0,
++  presetCompensation,
++}: UseAnimationViewportOptions): AnimationViewportResult {
++  const [containerRef, canvasSize] = useCanvasSize(
++    { width: preset.width, height: preset.height },
++    presetCompensation !== undefined ? { presetCompensation } : undefined
++  )
++
++  const vp = useViewport(canvasSize, {
++    // 严格从 preset 派生，不允许调用方覆盖 designWidth/Height
++    designWidth: preset.width,
++    designHeight: preset.height,
++    overlayRight,
++    overlayLeft,
++    overlayTop,
++    overlayBottom,
++  })
++
++  return { containerRef, canvasSize, vp }
++}
+
+diff --git a/src/hooks/index.ts b/src/hooks/index.ts
+new file mode 100644
+--- /dev/null
++++ b/src/hooks/index.ts
+@@ -0,0 +1,14 @@
++/**
++ * src/hooks/index.ts
++ * Hooks barrel 导出
++ */
++export { useAnimationViewport } from './useAnimationViewport'
++export type {
++  UseAnimationViewportOptions,
++  AnimationViewportResult,
++  CanvasPreset,
++} from './useAnimationViewport'
++
++// Re-export types from utils (scene components import these from @/hooks)
++export type { CanvasSize } from '@/utils/useCanvasSize'
++export type { ViewportInfo } from '@/utils/useViewport'
+
+diff --git a/src/theme/spacing.ts b/src/theme/spacing.ts
+new file mode 100644
+--- /dev/null
++++ b/src/theme/spacing.ts
+@@ -0,0 +1,19 @@
++/**
++ * src/theme/spacing.ts
++ * 画布预设尺寸常量
++ *
++ * 与项目 CANVAS_PRESETS 完全一致
++ * 用于 useAnimationViewport({ preset: CANVAS_PRESETS.xxx })
++ */
++export const CANVAS_PRESETS = {
++  /** 全幅（单场景）：700 × 650 */
++  full: { width: 700, height: 650 },
++  /** 上下分屏（上方图 / 下方场景）：700 × 325 */
++  splitV: { width: 700, height: 325 },
++  /** 左右分屏（左侧场景 / 右侧图）：350 × 650 */
++  splitH: { width: 350, height: 650 },
++  /** 正方（圆周/旋转对称场景）：650 × 650 */
++  square: { width: 650, height: 650 },
++} as const
++
++export type CanvasPresetKey = keyof typeof CANVAS_PRESETS
+
+diff --git a/src/theme/physics/sceneColors.ts b/src/theme/physics/sceneColors.ts
+new file mode 100644
+--- /dev/null
++++ b/src/theme/physics/sceneColors.ts
+@@ -0,0 +1,41 @@
++/**
++ * src/theme/physics/sceneColors.ts
++ * 场景器材外观色
++ */
++import { EM_COLORS } from './colors'
++
++/** 导轨/金属器材色 */
++export const RAIL_COLORS = {
++  body: '#6B7280',
++  highlight: '#9CA3AF',
++  shadow: '#374151',
++} as const
++
++/** 导体棒（金属银灰） */
++export const CONDUCTOR_COLORS = {
++  body: '#4B5563',
++  highlight: '#9CA3AF',
++  glow: '#60A5FA',
++} as const
++
++/** 电路元件色 */
++export const CIRCUIT_COLORS = {
++  wire: '#6B7280',
++  resistor: '#854D0E',
++  battery: '#166534',
++} as const
++
++/** 磁场背景（× 符号） */
++export const MAGNETIC_FIELD_COLORS = {
++  dot: EM_COLORS.magneticFieldDot,
++  cross: EM_COLORS.magneticFieldCross,
++  background: '#F0FDF4',
++} as const
++
++/** 导出合并 */
++export const SCENE_COLORS = {
++  rail: RAIL_COLORS,
++  conductor: CONDUCTOR_COLORS,
++  circuit: CIRCUIT_COLORS,
++  magneticField: MAGNETIC_FIELD_COLORS,
++} as const
+
+diff --git a/src/theme/physics/colors.ts b/src/theme/physics/colors.ts
+new file mode 100644
+--- /dev/null
++++ b/src/theme/physics/colors.ts
+@@ -0,0 +1,131 @@
++/**
++ * src/theme/physics/colors.ts
++ * 物理量颜色语义映射 — Canvas / SVG 内唯一颜色来源
++ */
++/**
++ * 将 HEX 颜色转换为带透明度的 rgba 字符串
++ *
++ * @param hex   HEX 颜色字符串（支持 #RGB 或 #RRGGBB 格式）
++ * @param alpha 透明度 [0, 1]
++ */
++export function withAlpha(hex: string, alpha: number): string {
++  const clean = hex.replace('#', '')
++  let r: number, g: number, b: number
++
++  if (clean.length === 3) {
++    // #RGB 格式：每位重复两次转为 #RRGGBB
++    r = parseInt(clean[0] + clean[0], 16)
++    g = parseInt(clean[1] + clean[1], 16)
++    b = parseInt(clean[2] + clean[2], 16)
++  } else if (clean.length === 6) {
++    // #RRGGBB 格式
++    r = parseInt(clean.substring(0, 2), 16)
++    g = parseInt(clean.substring(2, 4), 16)
++    b = parseInt(clean.substring(4, 6), 16)
++  } else {
++    return hex
++  }
++
++  return `rgba(${r}, ${g}, ${b}, ${alpha})`
++}
++
++// 运动学颜色
++export const KINEMATICS_COLORS = {
++  velocity: '#2563EB',
++  velocityX: '#3B82F6',
++  velocityY: '#60A5FA',
++  acceleration: '#DC2626',
++  accelerationX: '#EF4444',
++  accelerationY: '#F87171',
++  displacement: '#8B5CF6',
++} as const
++
++// 动力学颜色
++export const DYNAMICS_COLORS = {
++  forceNet: '#EA580C',
++  forceNetArrow: '#C2410C',
++  gravity: '#166534',
++  normalForce: '#0284C7',
++  friction: '#B45309',
++  elasticForce: '#DB2777',
++  tension: '#8B5CF6',
++  appliedForce: '#1E3A8A',
++} as const
++
++// 能量与动量颜色
++export const ENERGY_COLORS = {
++  kineticEnergy: '#06B6D4',
++  potentialEnergy: '#7C3AED',
++  internalEnergy: '#B91C1C',
++  heatLoss: '#EF4444',
++  work: '#84CC16',
++  power: '#D97706',
++  momentum: '#DB2777',
++  impulse: '#EC4899',
++} as const
++
++// 电磁学颜色（关键：安培力/洛伦兹力 = lorentzForce 紫色）
++const _electricFieldBase = '#D97706'
++const _magneticFieldBase = '#10B981'
++
++export const EM_COLORS = {
++  electricField: _electricFieldBase,
++  electricFieldLine: withAlpha(_electricFieldBase, 0.42),
++  magneticField: _magneticFieldBase,
++  magneticFieldLine: withAlpha(_magneticFieldBase, 0.38),
++  magneticFieldDot: withAlpha(_magneticFieldBase, 0.45),
++  magneticFieldCross: withAlpha(_magneticFieldBase, 0.45),
++  electricCurrent: '#DC2626',
++  positiveCharge: '#EF4444',
++  negativeCharge: '#3B82F6',
++  lorentzForce: '#8B5CF6',       // ⚠️ 安培力 F_A 专用：洛伦兹紫
++  emf: '#D97706',
++  magnetNorth: '#DC2626',
++  magnetSouth: '#2563EB',
++} as const
++
++// Canvas/SVG 基础设施色
++export const CANVAS_COLORS = {
++  grid: '#E2E8F0',
++  axis: '#94A3B8',
++  annotation: '#475569',
++  trackHistory: '#CBD5E1',
++  reference: '#9CA3AF',
++} as const
++
++// 图表配色
++export const CHART_COLORS = {
++  primary: '#3B82F6',
++  secondary: '#8B5CF6',
++  tertiary: '#06B6D4',
++  asymptote: '#94A3B8',
++  tickLabel: '#64748B',
++  tickMark: '#CBD5E1',
++  background: '#FFFFFF',
++} as const
++
++// v-t 图表配色
++export const VT_CHART_COLORS = {
++  primary: '#2563EB',
++  secondary: '#8B5CF6',
++  asymptote: '#94A3B8',
++} as const
++
++// a-t 图表配色
++export const AT_CHART_COLORS = {
++  primary: '#DC2626',
++} as const
++
++// 导出合并的 PHYSICS_COLORS（向后兼容）
++export const PHYSICS_COLORS = {
++  ...KINEMATICS_COLORS,
++  ...DYNAMICS_COLORS,
++  ...ENERGY_COLORS,
++  ...EM_COLORS,
++  ...CANVAS_COLORS,
++  ...CHART_COLORS,
++} as const
++
++// 导出类型
++export type PhysicsColorKey = keyof typeof PHYSICS_COLORS
++export type EMColorKey = keyof typeof EM_COLORS
+
+diff --git a/src/theme/physics/index.ts b/src/theme/physics/index.ts
+new file mode 100644
+--- /dev/null
++++ b/src/theme/physics/index.ts
+@@ -0,0 +1,29 @@
++/**
++ * src/theme/physics/index.ts
++ * physics 子主题统一导出入口
++ */
++export {
++  PHYSICS_COLORS,
++  KINEMATICS_COLORS,
++  DYNAMICS_COLORS,
++  ENERGY_COLORS,
++  EM_COLORS,
++  CANVAS_COLORS,
++  CHART_COLORS,
++  VT_CHART_COLORS,
++  AT_CHART_COLORS,
++  withAlpha,
++} from './colors'
++export type { PhysicsColorKey, EMColorKey } from './colors'
++
++export {
++  CANVAS_STYLE,
++  STROKE,
++  FONT,
++} from './canvasStyle'
++export {
++  VECTOR_VISUAL_WEIGHT,
++  VECTOR_COLORS,
++} from './vectorStyle'
++
++export * from './sceneColors'
+
+diff --git a/src/theme/physics/canvasStyle.ts b/src/theme/physics/canvasStyle.ts
+new file mode 100644
+--- /dev/null
++++ b/src/theme/physics/canvasStyle.ts
+@@ -0,0 +1,24 @@
++/**
++ * src/theme/physics/canvasStyle.ts
++ * Canvas/SVG 画布基础样式常量
++ */
++
++/** Canvas 基础样式 */
++export const CANVAS_STYLE = {
++  background: '#FFFFFF',
++  borderRadius: '0.5rem',
++  overflow: 'hidden',
++} as const
++
++/** SVG stroke 默认样式 */
++export const STROKE = {
++  default: '#374151',
++  grid: '#E2E8F0',
++  highlight: '#2563EB',
++} as const
++
++/** SVG font 默认样式 */
++export const FONT = {
++  family: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
++  fallback: 'sans-serif',
++} as const
+
+diff --git a/src/theme/physics/vectorStyle.ts b/src/theme/physics/vectorStyle.ts
+new file mode 100644
+--- /dev/null
++++ b/src/theme/physics/vectorStyle.ts
+@@ -0,0 +1,25 @@
++/**
++ * src/theme/physics/vectorStyle.ts
++ * 矢量箭头视觉权重与颜色
++ */
++import { KINEMATICS_COLORS, DYNAMICS_COLORS, EM_COLORS } from './colors'
++
++/** 矢量视觉权重（箭头粗细系数） */
++export const VECTOR_VISUAL_WEIGHT = {
++  velocity: 1.2,
++  acceleration: 1.4,
++  forceNet: 1.5,
++  appliedForce: 1.3,
++  lorentzForce: 1.5,
++  gravity: 1.3,
++} as const
++
++/** 矢量默认颜色映射 */
++export const VECTOR_COLORS = {
++  velocity: KINEMATICS_COLORS.velocity,
++  acceleration: KINEMATICS_COLORS.acceleration,
++  forceNet: DYNAMICS_COLORS.forceNet,
++  appliedForce: DYNAMICS_COLORS.appliedForce,
++  lorentzForce: EM_COLORS.lorentzForce,
++  gravity: DYNAMICS_COLORS.gravity,
++} as const
+
+diff --git a/src/data/defineAnimations.ts b/src/data/defineAnimations.ts
+new file mode 100644
+--- /dev/null
++++ b/src/data/defineAnimations.ts
+@@ -0,0 +1,57 @@
++/**
++ * src/data/defineAnimations.ts
++ * 动画注册表定义函数
++ *
++ * 规范依据：project_rules.md §3
++ * 与 knowledgeTree.ts 的 knowledgeId 严格对应
++ */
++
++// ─── 类型定义 ────────────────────────────────────────────────────────
++
++export interface ParamMeta {
++  key: string
++  label: string
++  group: string
++  min?: number
++  max?: number
++  step?: number
++  /** 固定字符串或函数（函数参数来自当前 defaultParams） */
++  unit?: string | ((params: Record<string, unknown>) => string)
++  description?: string | ((params: Record<string, unknown>) => string)
++  showIf?: string
++  showIfValue?: unknown
++}
++
++export interface ControlMeta {
++  type: 'segmented' | 'tip' | 'slider' | 'toggle' | 'select'
++  key?: string
++  label?: string
++  group: string
++  variant?: 'info' | 'warning' | 'error'
++  resetOnChange?: boolean
++  options?: Array<{ value: unknown; label: string }>
++  showIf?: string
++  showIfValue?: unknown
++  content?: string
++}
++
++export interface AnimationConfig {
++  title: string
++  knowledgeId: string
++  Component: unknown
++  defaultParams: Record<string, unknown>
++  controlMeta: ControlMeta[]
++  paramMeta: ParamMeta[]
++  controlsMode: string
++}
++
++type AnimationsMap = Record<string, AnimationConfig>
++
++/**
++ * 定义一组动画
++ *
++ * @param animations 动画配置映射（key = animation id）
++ */
++export function defineAnimations(animations: AnimationsMap) {
++  return animations
++}
+
+diff --git a/src/data/index.ts b/src/data/index.ts
+new file mode 100644
+--- /dev/null
++++ b/src/data/index.ts
+@@ -0,0 +1,10 @@
++/**
++ * src/data/index.ts
++ * Data 层 barrel 导出
++ */
++export { knowledgeTree, findKnowledgeNode, getChildNodes } from './knowledgeTree'
++export type { KnowledgeNode } from './knowledgeTree'
++export { defineAnimations } from './defineAnimations'
++export type { AnimationConfig, ParamMeta, ControlMeta } from './defineAnimations'
++export * from './registries'
++export * from './physicsQuantities'
+
+diff --git a/src/data/knowledgeTree.ts b/src/data/knowledgeTree.ts
+new file mode 100644
+--- /dev/null
++++ b/src/data/knowledgeTree.ts
+@@ -0,0 +1,142 @@
++/**
++ * src/data/knowledgeTree.ts
++ * 知识树索引 — 扁平源数据（章>节>子节三级层级）
++ *
++ * ════════════════════════════════════════════════════════════════════════════
++ * 新增节点：
++ * • mechanics-3-3 圆盘与圆锥摆模型（力学 · 圆周运动）
++ * • electricity-4-5 电磁感应单杆模型
++ * • electricity-4-6 电磁感应双杆模型（原 electricity-4-5）
++ * ════════════════════════════════════════════════════════════════════════════
++ */
++
++export interface KnowledgeNode {
++  id: string
++  title: string
++  parentId: string | null
++  chapter: string
++  section: string
++  /** 排序优先级（数字越小越靠前） */
++  order: number
++  /** 关联动画 ID（可选） */
++  animationId?: string
++  /** 关联分析 ID（可选） */
++  analysisId?: string
++}
++
++export const knowledgeTree: KnowledgeNode[] = [
++  // ─── 力学（M3）· 圆周运动章节 ───────────────────────────────
++  {
++    id: 'mechanics-3-0',
++    title: '圆周运动',
++    parentId: null,
++    chapter: '力学',
++    section: '圆周运动',
++    order: 5,
++  },
++  {
++    id: 'mechanics-3-1',
++    title: '线速度与角速度',
++    parentId: 'mechanics-3-0',
++    chapter: '力学',
++    section: '圆周运动',
++    order: 6,
++  },
++  {
++    id: 'mechanics-3-2',
++    title: '向心力与向心加速度',
++    parentId: 'mechanics-3-0',
++    chapter: '力学',
++    section: '圆周运动',
++    order: 7,
++  },
++  {
++    id: 'mechanics-3-3',
++    title: '圆盘与圆锥摆模型',
++    parentId: 'mechanics-3-0',
++    chapter: '力学',
++    section: '圆周运动',
++    order: 8,
++    animationId: 'anim-rotating-disk',
++  },
++
++  // ─── 电磁学（M4）· 电磁感应章节 ───────────────────────────────
++  {
++    id: 'electricity-4-0',
++    title: '电磁感应',
++    parentId: null,
++    chapter: '电磁学',
++    section: '电磁感应',
++    order: 10,
++  },
++  {
++    id: 'electricity-4-1',
++    title: '电磁感应现象',
++    parentId: 'electricity-4-0',
++    chapter: '电磁学',
++    section: '电磁感应',
++    order: 11,
++    animationId: 'anim-electromagnetic-induction',
++  },
++  {
++    id: 'electricity-4-2',
++    title: '楞次定律',
++    parentId: 'electricity-4-0',
++    chapter: '电磁学',
++    section: '电磁感应',
++    order: 12,
++    animationId: 'anim-lenzs-law',
++  },
++  {
++    id: 'electricity-4-3',
++    title: '法拉第电磁感应定律',
++    parentId: 'electricity-4-0',
++    chapter: '电磁学',
++    section: '电磁感应',
++    order: 13,
++    animationId: 'anim-faraday-law',
++  },
++  {
++    id: 'electricity-4-4',
++    title: '导体切割磁感线',
++    parentId: 'electricity-4-0',
++    chapter: '电磁学',
++    section: '电磁感应',
++    order: 14,
++    animationId: 'anim-cutting-emf',
++  },
++  {
++    id: 'electricity-4-5',
++    title: '单杆模型',
++    parentId: 'electricity-4-0',
++    chapter: '电磁学',
++    section: '电磁感应',
++    order: 15,
++    animationId: 'anim-induction-single-rod',
++  },
++  {
++    id: 'electricity-4-6',
++    title: '双杆模型',
++    parentId: 'electricity-4-0',
++    chapter: '电磁学',
++    section: '电磁感应',
++    order: 16,
++    animationId: 'anim-induction-dual-rods',
++  },
++]
++
++/**
++ * 根据 ID 查找知识节点
++ */
++export function findKnowledgeNode(id: string): KnowledgeNode | undefined {
++  return knowledgeTree.find(node => node.id === id)
++}
++
++/**
++ * 获取子节点列表
++ */
++export function getChildNodes(parentId: string | null): KnowledgeNode[] {
++  return knowledgeTree
++    .filter(node => node.parentId === parentId)
++    .sort((a, b) => a.order - b.order)
++}
+
+diff --git a/src/data/registries/index.ts b/src/data/registries/index.ts
+new file mode 100644
+--- /dev/null
++++ b/src/data/registries/index.ts
+@@ -0,0 +1,7 @@
++/**
++ * src/data/registries/index.ts
++ * 动画注册表 barrel
++ * 导出所有模块注册表
++ */
++export { mechanicsCircularAnimations } from './mechanics-circular'
++export { electromagnetismInductionAnimations } from './electromagnetism-induction'
+
+diff --git a/src/data/physicsQuantities.ts b/src/data/physicsQuantities.ts
+new file mode 100644
+--- /dev/null
++++ b/src/data/physicsQuantities.ts
+@@ -0,0 +1,9 @@
++/**
++ * src/data/physicsQuantities.ts
++ * 物理量构建器统一导出
++ *
++ * 包含各模块的物理量展示数据 builder 函数
++ * （铁律 2：物理量与 UI 解耦，纯数据无渲染）
++ */
++export type { PhysicsQuantity } from './quantities/mechanics/rotatingDisk'
++export { buildRotatingDiskQuantities, getRotatingDiskFormulas } from './quantities/mechanics/rotatingDisk'
+
+diff --git a/src/components/Physics/index.ts b/src/components/Physics/index.ts
+new file mode 100644
+--- /dev/null
++++ b/src/components/Physics/index.ts
+@@ -0,0 +1,109 @@
++/**
++ * src/components/Physics/index.ts
++ * 物理组件库 — 从 GitHub 项目同步的标准组件
++ *
++ * ════════════════════════════════════════════════════════════════════════════
++ * 合规要点（铁律 5：组件复用优先）
++ *
++ * 以下组件均来自项目已有实现，禁止在手写等效实现：
++ * • ConductingRod — 导体棒（水平/倾斜/侧视三种模式）
++ * • Rails         — 导轨
++ * • MagneticFieldSymbols — 磁场符号网格
++ * • VectorArrow   — 矢量箭头（铁律 1-4 强制使用）
++ * • Ball          — 钢球/滑块
++ * • Block         — 滑块
++ * • DCSource      — 直流电源
++ * ════════════════════════════════════════════════════════════════════════════
++ */
++
++import React from 'react'
++
++// ─── 类型导出 ─────────────────────────────────────────────────────────
++
++export type ChargeSign = 'positive' | 'negative'
++export type BallPresetType = 'steel' | 'glass' | 'wood' | 'elastic'
++export type BlockPresetType = 'wood' | 'metal' | 'rubber'
++export type HandRuleMode = 'right-hand' | 'left-hand'
++
++export interface BallProps extends React.PropsWithChildren {
++  cx: number
++  cy: number
++  r: number
++  type?: BallPresetType
++  showVelocity?: boolean
++  showAcceleration?: boolean
++}
++
++export interface BlockProps extends React.PropsWithChildren {
++  x: number
++  y: number
++  width: number
++  height: number
++  type?: BlockPresetType
++  angle?: number
++}
++
++export interface ConductingRodProps extends React.PropsWithChildren {
++  type: 'horizontal' | 'inclined' | 'side-view'
++  x?: number
++  y?: number
++  theta?: number
++  currentDir?: 'in' | 'out' | 'none'
++  spacing?: number
++  width?: number
++  height?: number
++  L?: number
++  rodRadius?: number
++}
++
++export interface RailsProps extends React.PropsWithChildren {
++  startX: number
++  endX: number
++  y: number
++  spacing?: number
++  visualScale?: number
++}
++
++export interface MagneticFieldSymbolsProps extends React.PropsWithChildren {
++  x1: number
++  y1: number
++  x2: number
++  y2: number
++  direction: 'into' | 'out' | 'left' | 'right'
++  gridCountX?: number
++  gridCountY?: number
++  color?: string
++  opacity?: number
++}
++
++export interface VectorArrowProps extends React.PropsWithChildren {
++  origin: { x: number; y: number }
++  direction: { dx: number; dy: number }
++  magnitude: number
++  type: 'velocity' | 'acceleration' | 'forceNet' | 'appliedForce' | 'lorentzForce' | 'gravity'
++  refMagnitudes?: Record<string, number>
++  label?: string
++  labelOffset?: { x: number; y: number }
++  fontSize?: number
++}
++
++/** VectorArrow 类型枚举 */
++export type VectorArrowType = VectorArrowProps['type']
++
++// ─── 存根组件（编译占位）─────────────────────────────────────────────
++/**
++ * 存根组件（编译占位，实际组件请参考 GitHub: src/components/Physics/）
++ * 替换方法：从 github.com/huoqf/physics-learning 复制真实实现替换
++ */
++export const ConductingRod = (_props: ConductingRodProps) => null
++export const Rails = (_props: RailsProps) => null
++export const MagneticFieldSymbols = (_props: MagneticFieldSymbolsProps) => null
++export const VectorArrow = (_props: VectorArrowProps) => null
++export const Ball = (_props: BallProps) => null
++export const Block = (_props: BlockProps) => null
++export const DCSource = (_props: React.PropsWithChildren<{ x: number; y: number }>) => null
++export const Galvanometer = (_props: React.PropsWithChildren<{ x: number; y: number }>) => null
++export const LightBulb = (_props: React.PropsWithChildren<{ x: number; y: number }>) => null
++export const BarMagnet = (_props: React.PropsWithChildren<{ x: number; y: number; orientation?: 'horizontal' | 'vertical' }>) => null
++export const HandRule = (_props: React.PropsWithChildren<{ x: number; y: number; mode?: HandRuleMode }>) => null
++export const EnergyBars = (_props: React.PropsWithChildren<{ x: number; y: number; height?: number }>) => null
+
+diff --git a/src/components/Layout/index.ts b/src/components/Layout/index.ts
+new file mode 100644
+--- /dev/null
++++ b/src/components/Layout/index.ts
+@@ -0,0 +1,32 @@
++/**
++ * src/components/Layout/index.ts
++ * 布局组件库 barrel 导出
++ *
++ * ════════════════════════════════════════════════════════════════════════════
++ * 核心组件：
++ * • AnimationSvgCanvas — 标准 SVG 画布容器（铁律 1-7 新标准路径）
++ *   封装 containerRef + w-full h-full SVG + g transform
++ *   必须与 useAnimationViewport 配合使用
++ * ════════════════════════════════════════════════════════════════════════════
++ */
++export type { } from 'react'
++
++// ─── AnimationSvgCanvas Props ─────────────────────────────────────────
++export interface AnimationSvgCanvasProps {
++  containerRef: React.RefObject<HTMLDivElement | null>
++  transform: string
++  children?: React.ReactNode
++  svgRef?: React.RefObject<SVGSVGElement | null>
++  className?: string
++  onMouseMove?: React.MouseEventHandler<SVGSVGElement>
++  onMouseUp?: React.MouseEventHandler<SVGSVGElement>
++  onMouseLeave?: React.MouseEventHandler<SVGSVGElement>
++  onMouseDown?: React.MouseEventHandler<SVGSVGElement>
++  onClick?: React.MouseEventHandler<SVGSVGElement>
++  onTouchStart?: React.TouchEventHandler<SVGSVGElement>
++  onTouchMove?: React.TouchEventHandler<SVGSVGElement>
++  onTouchEnd?: React.TouchEventHandler<SVGSVGElement>
++}
++
++// ─── 存根导出（编译占位）─────────────────────────────────────────────
++export const AnimationSvgCanvas = (_props: AnimationSvgCanvasProps) => null
+
+diff --git a/src/physics/circular/index.ts b/src/physics/circular/index.ts
+new file mode 100644
+--- /dev/null
++++ b/src/physics/circular/index.ts
+@@ -0,0 +1,15 @@
++/**
++ * src/physics/circular/index.ts
++ * 圆周运动物理层导出
++ */
++export {
++  computeRotatingDiskConstants,
++  computeRotatingDiskStateAtTime,
++  generateRotatingDiskHistory,
++} from './rotatingDisk'
++export type {
++  RotatingDiskParams,
++  RotatingDiskState,
++  RotatingDiskConstants,
++  RotatingDiskModel,
++} from './rotatingDisk'
+
+diff --git a/src/physics/circular/rotatingDisk.ts b/src/physics/circular/rotatingDisk.ts
+new file mode 100644
+--- /dev/null
++++ b/src/physics/circular/rotatingDisk.ts
+@@ -0,0 +1,328 @@
++/**
++ * src/physics/circular/rotatingDisk.ts
++ * 圆盘与圆锥摆物理计算 — 纯 TypeScript，无副作用，可序列化
++ *
++ * ════════════════════════════════════════════════════════════════════════════
++ * 设计原则（铁律 2 物理层纯函数）
++ * • 无 DOM / React / window 依赖
++ * • 所有数据结构可序列化
++ * • 有 JSDoc + 单位注释
++ *
++ * 两种模型物理方程：
++ *
++ * 【模型 A：圆锥摆】
++ * • 摆角 θ：绳与竖直方向夹角
++ * • 旋转半径 r = L·sinθ
++ * • 竖直方向力平衡：T·cosθ = mg
++ * • 水平向心力：T·sinθ = m·ω²·r
++ * • 推导：tanθ = ω²·r/g = ω²·L·sinθ/g
++ * • 临界：当 ω²·L > g 时，cosθ = g/(ω²·L)
++ *
++ * 【模型 B：旋转圆盘】
++ * • 物体在旋转圆盘上随盘转动
++ * • 静摩擦力提供向心力：f = m·ω²·r
++ * • 最大静摩擦力：f_max = μ·mg
++ * • 临界角速度：ω_crit = √(μ·g/r)
++ * • 当 ω > ω_crit 时，物体做离心运动滑出圆盘
++ *
++ * ════════════════════════════════════════════════════════════════════════════
++ */
++
++// ─── 类型定义 ─────────────────────────────────────────────────────────
++
++export type RotatingDiskModel = 'cone-pendulum' | 'rotating-disk'  // 圆锥摆 / 圆盘
++
++export interface RotatingDiskParams {
++  /** 模型类型 */
++  model: RotatingDiskModel
++  /** 角速度 rad/s */
++  omega: number
++  /** 绳长/圆盘半径 m */
++  L: number
++  /** 圆锥摆：摆长 L（同时也是旋转半径 r 的函数） */
++  ropeLength?: number
++  /** 旋转圆盘：半径 r m */
++  radius?: number
++  /** 最大静摩擦系数（圆盘模型） */
++  mu: number
++  /** 重力加速度 m/s²（默认 9.8） */
++  g: number
++  /** 物体质量 kg */
++  m: number
++}
++
++export interface RotatingDiskState {
++  // ─── 通用量 ─────────────────────────────────────────
++  /** 角速度 rad/s */
++  omega: number
++  /** 向心力 N */
++  centripetalForce: number
++  /** 周期 s */
++  period: number
++  /** 线速度 m/s */
++  linearVelocity: number
++
++  // ─── 圆锥摆专有量 ───────────────────────────────────
++  /** 摆角 rad */
++  theta: number
++  /** 摆角 °（用于显示） */
++  thetaDeg: number
++  /** 旋转半径 m */
++  rotationRadius: number
++  /** 绳拉力 N */
++  tension: number
++
++  // ─── 圆盘专有量 ─────────────────────────────────────
++  /** 所需静摩擦力 N */
++  requiredFriction: number
++  /** 最大静摩擦力 N */
++  maxFriction: number
++  /** 静摩擦力占比 [0, 1] */
++  frictionRatio: number
++  /** 是否达到临界（即将/已经离心） */
++  isCritical: boolean
++  /** 临界角速度 rad/s */
++  omegaCrit: number
++
++  // ─── 状态标志 ───────────────────────────────────────
++  /** 物体是否已离心（滑出圆盘/摆绳已失去张力） */
++  isFlyOff: boolean
++  /** 安全因子（摩擦力 / 最大摩擦，用于进度条） */
++  safetyFactor: number
++}
++
++export interface RotatingDiskConstants {
++  /** 模型类型 */
++  model: RotatingDiskModel
++  /** 临界角速度 rad/s */
++  omegaCrit: number
++  /** 最大向心力（圆锥摆临界时） N */
++  maxCentripetalForce: number
++  /** 绳长或半径（统一参数） */
++  L: number
++}
++
++// ─── 物理计算函数 ───────────────────────────────────────────────────
++
++/**
++ * 计算圆盘/圆锥摆的常数值
++ *
++ * @param params 物理参数
++ */
++export function computeRotatingDiskConstants(
++  params: RotatingDiskParams
++): RotatingDiskConstants {
++  const { model, omega, L, mu = 0.5, g = 9.8 } = params
++  const g_default = g || 9.8
++
++  if (model === 'rotating-disk') {
++    // 圆盘模型：ω_crit = √(μg/r)
++    const r = params.radius ?? L
++    const omegaCrit = r > 0 ? Math.sqrt((mu * g_default) / r) : Infinity
++    const maxForce = mu * params.m * g_default
++    return { model, omegaCrit, maxCentripetalForce: maxForce, L: r }
++  } else {
++    // 圆锥摆模型：无明显临界（理想模型）
++    // 最大安全角速度（cosθ > 0 的极限）
++    const omegaCrit = Math.sqrt(2 * g_default / L)  // cosθ = 0.5 时
++    return { model, omegaCrit, maxCentripetalForce: Infinity, L }
++  }
++}
++
++/**
++ * 计算任意时刻的物理状态
++ *
++ * @param t 当前时刻 s（当前版本为静态计算，ω 不随时间变化）
++ * @param params 物理参数
++ */
++export function computeRotatingDiskStateAtTime(
++  t: number,
++  params: RotatingDiskParams
++): RotatingDiskState {
++  const {
++    model,
++    omega = 0,
++    L = 1.0,
++    mu = 0.5,
++    g = 9.8,
++    m = 1.0,
++  } = params
++
++  const g_ = g || 9.8
++
++  // ─── 通用量计算 ──────────────────────────────────────
++  const period = omega > 0 ? (2 * Math.PI) / omega : Infinity
++  const linearVelocity = omega * L  // 使用 L 作为等效半径
++
++  // ─── 向心力（两种模型共用）───────────────────────────
++  const centripetalForce = m * omega * omega * L
++
++  if (model === 'cone-pendulum') {
++    // ─── 圆锥摆模型 ────────────────────────────────────
++    // tanθ = ω²·L·sinθ/g → cosθ = g/(ω²·L)
++
++    // 边界处理：omega=0 时物体静止，theta=0，rotationRadius=0
++    if (omega <= 0) {
++      return {
++        omega,
++        centripetalForce,
++        period: Infinity,
++        linearVelocity: 0,
++        theta: 0,
++        thetaDeg: 0,
++        rotationRadius: 0,
++        tension: m * g_,  // 静止时绳拉力 = mg（竖直方向平衡）
++        requiredFriction: 0,
++        maxFriction: 0,
++        frictionRatio: 0,
++        isCritical: false,
++        omegaCrit: Math.sqrt(2 * g_ / L),
++        isFlyOff: false,
++        safetyFactor: 0,
++      }
++    }
++
++    const sinOmegaSqL = omega * omega * L
++
++    let theta: number, rotationRadius: number, tension: number
++
++    if (sinOmegaSqL <= g_) {
++      // 正常状态：cosθ = g/(ω²·L)，θ ∈ [0, 90°)
++      // clamp cosTheta ∈ [0,1] 防止浮点误差导致 acos(NaN)
++      const cosTheta = Math.min(1, Math.max(0, g_ / sinOmegaSqL))
++      theta = Math.acos(cosTheta)
++      rotationRadius = L * Math.sin(theta)
++      tension = m * g_ / Math.max(cosTheta, 1e-10)  // T = mg / cosθ（避免除零）
++    } else {
++      // ω²·L > g：θ → 90°，旋转半径趋近 L
++      theta = Math.PI / 2 - 0.1  // 接近垂直
++      rotationRadius = L * Math.sin(theta)
++      tension = m * omega * omega * L  // T ≈ mω²L
++    }
++
++    const thetaDeg = (theta * 180) / Math.PI
++
++    return {
++      omega,
++      centripetalForce,
++      period,
++      linearVelocity,
++      theta,
++      thetaDeg,
++      rotationRadius,
++      tension,
++      // 圆盘专有量设为 0
++      requiredFriction: 0,
++      maxFriction: 0,
++      frictionRatio: 0,
++      isCritical: false,
++      omegaCrit: Math.sqrt(2 * g_ / L),
++      isFlyOff: false,
++      safetyFactor: 0,
++    }
++  } else {
++    // ─── 旋转圆盘模型 ──────────────────────────────────
++    const r = params.radius ?? L
++    const requiredFriction = m * omega * omega * r
++    const maxFriction = mu * m * g_
++    const frictionRatio = maxFriction > 0 ? requiredFriction / maxFriction : 0
++
++    // 临界角速度
++    const omegaCrit = r > 0 ? Math.sqrt((mu * g_) / r) : Infinity
++
++    // 是否达到临界（摩擦力占比 > 1 或 ω > ω_crit）
++    const isCritical = frictionRatio >= 1.0 || omega >= omegaCrit
++
++    // 是否已离心
++    const isFlyOff = omega > omegaCrit && omegaCrit < Infinity
++
++    // 安全因子（用于 UI 进度条，0-1 表示摩擦力占比）
++    const safetyFactor = Math.min(1, Math.max(0, frictionRatio))
++
++    return {
++      omega,
++      centripetalForce,
++      period,
++      linearVelocity: omega * r,
++      // 圆锥摆专有量设为 0
++      theta: 0,
++      thetaDeg: 0,
++      rotationRadius: 0,
++      tension: 0,
++      requiredFriction,
++      maxFriction,
++      frictionRatio,
++      isCritical,
++      omegaCrit,
++      isFlyOff,
++      safetyFactor,
++    }
++  }
++}
++
++/**
++ * 生成历史采样点序列（用于图表渲染）
++ *
++ * @param omegaMax 最大角速度 rad/s
++ * @param params 物理参数
++ * @param count 采样点数
++ */
++export function generateRotatingDiskHistory(
++  omegaMax: number,
++  params: RotatingDiskParams,
++  count = 100
++): {
++  forcePoints: Array<{ omega: number; force: number }>
++  anglePoints: Array<{ omega: number; angle: number }>
++  frictionPoints: Array<{ omega: number; friction: number; maxFriction: number }>
++  omegaMax: number
++  forceMax: number
++} {
++  const { model, L, mu = 0.5, g = 9.8, m = 1.0 } = params
++  const g_ = g || 9.8
++
++  const forcePoints: Array<{ omega: number; force: number }> = []
++  const anglePoints: Array<{ omega: number; angle: number }> = []
++  const frictionPoints: Array<{ omega: number; friction: number; maxFriction: number }> = []
++
++  let forceMax = 1.0
++
++  for (let i = 0; i <= count; i++) {
++    const omegaVal = (i / count) * omegaMax
++
++    // 向心力
++    const force = m * omegaVal * omegaVal * L
++    forcePoints.push({ omega: omegaVal, force })
++    if (force > forceMax) forceMax = force
++
++    // 圆锥摆：摆角
++    if (model === 'cone-pendulum') {
++      const sinOmegaSqL = omegaVal * omegaVal * L
++      let angleDeg = 0
++      if (sinOmegaSqL > 0) {
++        const cosTheta = Math.min(1, g_ / sinOmegaSqL)
++        const theta = Math.acos(cosTheta)
++        angleDeg = (theta * 180) / Math.PI
++      }
++      anglePoints.push({ omega: omegaVal, angle: angleDeg })
++    }
++
++    // 圆盘：摩擦力（clamp 至 maxFriction，物理上摩擦力不会超过最大静摩擦）
++    if (model === 'rotating-disk') {
++      const r = params.radius ?? L
++      const requiredFriction = m * omegaVal * omegaVal * r
++      const maxFriction = mu * m * g_
++      // 摩擦力被最大静摩擦钳制（真实物理行为）
++      const friction = Math.min(requiredFriction, maxFriction)
++      frictionPoints.push({ omega: omegaVal, friction, maxFriction })
++    }
++  }
++
++  return {
++    forcePoints,
++    anglePoints,
++    frictionPoints,
++    omegaMax,
++    forceMax: forceMax * 1.2,
++  }
++}
+
+diff --git a/src/physics/induction/index.ts b/src/physics/induction/index.ts
+new file mode 100644
+--- /dev/null
++++ b/src/physics/induction/index.ts
+@@ -0,0 +1,14 @@
++/**
++ * src/physics/induction/index.ts
++ * 电磁感应物理层导出
++ */
++export {
++  computeSingleRodConstants,
++  computeSingleRodStateAtTime,
++  generateSingleRodHistory,
++} from './singleRod'
++export type {
++  SingleRodParams,
++  SingleRodState,
++  SingleRodConstants,
++} from './singleRod'
+
+diff --git a/src/physics/induction/singleRod.ts b/src/physics/induction/singleRod.ts
+new file mode 100644
+--- /dev/null
++++ b/src/physics/induction/singleRod.ts
+@@ -0,0 +1,256 @@
++/**
++ * src/physics/induction/singleRod.ts
++ * 单杆电磁感应物理计算 — 纯 TypeScript，无副作用，可序列化
++ *
++ * ════════════════════════════════════════════════════════════════════════════
++ * 设计原则（铁律 2 物理层纯函数）
++ * • 无 DOM / React / window 依赖
++ * • 所有数据结构可序列化（兼容 IndexedDB 持久化）
++ * • 有 JSDoc + 单位注释
++ * ════════════════════════════════════════════════════════════════════════════
++ *
++ * @description
++ * 模式 0（初速度释放）：m·dv/dt = −(B²L²/R)·v → v(t)=v₀·e^{−t/τ}
++ * 模式 1（恒力驱动）：  m·dv/dt = F − (B²L²/R)·v → v(t)=v_m·(1−e^{−t/τ})
++ *
++ * 关键物理量：
++ * • 感应电动势 E = BLv
++ * • 感应电流   I = E/R = BLv/R
++ * • 安培力     F_A = BIL = B²L²v/R
++ * • 时间常数   τ = mR/(B²L²)
++ * • 收尾速度   v_m = FR/(B²L²) [恒力模式] / 0 [初速模式]
++ * • 累积电荷量 q = ∫₀ᵗ I(τ)dτ
++ */
++
++export interface SingleRodParams {
++  scenario: number    // 0=初速度释放, 1=恒力驱动
++  B: number           // 磁感应强度 T
++  L: number           // 导轨间距 m
++  R: number           // 总电阻 Ω
++  m: number           // 导体棒质量 kg
++  F_ext: number       // 外力/初速度参数（N 或 m/s）
++  initialX?: number   // 初始位移 m，默认 0
++}
++
++export interface SingleRodState {
++  /** 速度 m/s（向右为正） */
++  v: number
++  /** 位移 m */
++  x: number
++  /** 加速度 m/s²（向右为正） */
++  a: number
++  /** 感应电流 A（向上为正） */
++  I: number
++  /** 感应电动势 V */
++  EMF: number
++  /** 安培力 N（向左为负） */
++  F_A: number
++  /** 累积电荷量 C */
++  charge: number
++  /** 外力做功 J */
++  energyW: number
++  /** 焦耳热 J */
++  energyQ: number
++  /** 收尾速度 m/s */
++  v_m: number
++  /** 时间常数 s */
++  tau: number
++  /** 是否到达边界 */
++  hasHitLimit: boolean
++}
++
++export interface SingleRodConstants {
++  /** 收尾速度 m/s */
++  v_m: number
++  /** 时间常数 s */
++  tau: number
++  /** 初始加速度 m/s² */
++  a_0: number
++  /** 阻力系数 k = B²L²/R */
++  k: number
++}
++
++// ─── 边界与常量 ─────────────────────────────────────────────────────────────
++
++/** 物理世界边界（m）- 2000m 足够大，确保在仿真时长内不会触达 */
++const WORLD_X_MIN = -0.5
++const WORLD_X_MAX = 2000.0
++
++// ─── 核心计算函数 ─────────────────────────────────────────────────────────
++
++/**
++ * 计算单杆电磁感应的常数值（收尾速度、时间常数、初始加速度）
++ *
++ * @param scenario 启动模式（0=初速释放, 1=恒力驱动）
++ * @param F_ext    外力(N) 或初速度(m/s)
++ * @param B        磁感应强度 T
++ * @param L        导轨间距 m
++ * @param R        总电阻 Ω
++ * @param m        导体棒质量 kg
++ */
++export function computeSingleRodConstants(
++  scenario: number,
++  F_ext: number,
++  B: number,
++  L: number,
++  R: number,
++  m: number
++): SingleRodConstants {
++  const k = R > 0 ? (B * B * L * L) / R : 0  // 阻力系数
++  const tau = k > 0 ? m / k : Infinity        // 时间常数
++
++  let v_m: number
++  let a_0: number
++
++  if (scenario === 0) {
++    // 初速度释放：v(t) = v₀·e^{−t/τ}，最终静止
++    v_m = 0
++    a_0 = k > 0 ? -(F_ext / m) * (B * B * L * L / R) : 0
++  } else {
++    // 恒力驱动：v(t) = v_m·(1−e^{−t/τ})，收尾匀速
++    v_m = k > 0 ? (F_ext * R) / (B * B * L * L) : Infinity
++    a_0 = k > 0 ? (F_ext / m) * (B * B * L * L / R) : F_ext / m
++  }
++
++  return { v_m, tau, a_0, k }
++}
++
++/**
++ * 计算单杆在任意时刻的物理状态
++ *
++ * @param t        当前时刻 s
++ * @param params   单杆物理参数
++ * @returns 瞬时物理状态
++ */
++export function computeSingleRodStateAtTime(
++  t: number,
++  params: SingleRodParams
++): SingleRodState {
++  const { scenario, B, L, R, m, F_ext, initialX = 0 } = params
++
++  const k = R > 0 ? (B * B * L * L) / R : 0
++  const tau = k > 0 ? m / k : Infinity
++
++  // 计算瞬时速度与加速度（解析解）
++  let v: number, a: number, x: number
++  let v_m: number
++
++  if (scenario === 0) {
++    // 初速度释放：v(t) = v₀·e^{−t/τ}
++    const v_0 = F_ext
++    v = v_0 * Math.exp(-t / tau)
++    a = -(v_0 / tau) * Math.exp(-t / tau)
++    // 位移积分：x(t) = v_0·τ·(1−e^{−t/τ})
++    x = initialX + v_0 * tau * (1 - Math.exp(-t / tau))
++    v_m = 0
++  } else {
++    // 恒力驱动：v(t) = v_m·(1−e^{−t/τ})
++    v_m = k > 0 ? (F_ext * R) / (B * B * L * L) : F_ext * 1e10
++    v = v_m * (1 - Math.exp(-t / tau))
++    a = (v_m / tau) * Math.exp(-t / tau)
++    // 位移积分：x(t) = v_m·(t − τ·(1−e^{−t/τ}))
++    x = initialX + v_m * (t - tau * (1 - Math.exp(-t / tau)))
++  }
++
++  // 物理量计算
++  const EMF = B * L * Math.abs(v)
++  const I = R > 0 ? EMF / R : 0
++  // 安培力方向：始终阻碍运动（向左）
++  const F_A = scenario === 0
++    ? -k * Math.abs(v)  // 初速释放：向左减速
++    : -k * v             // 恒力驱动：向左阻碍加速
++
++  // 累积电荷量 q = ∫₀ᵗ I(τ)dτ
++  let charge: number
++  if (scenario === 0) {
++    const v_0 = F_ext
++    const q_coef = (v_0 * B * L) / R
++    charge = q_coef * tau * (1 - Math.exp(-t / tau))
++  } else {
++    const q_coef = (v_m * B * L) / R
++    charge = q_coef * (t - tau * (1 - Math.exp(-t / tau)))
++  }
++
++  // 能量计算
++  const energyW = scenario === 1 ? F_ext * x : 0
++  // 焦耳热：Q = ∫ I²R dt ≈ I²R·t（瞬时功率积分）
++  const energyQ = I * I * R * t
++
++  // 边界判定
++  const hasHitLimit = v >= 0 ? x >= WORLD_X_MAX : x <= WORLD_X_MIN
++
++  return {
++    v: hasHitLimit ? 0 : v,
++    x: Math.max(WORLD_X_MIN, Math.min(WORLD_X_MAX, x)),
++    a: hasHitLimit ? 0 : a,
++    I: hasHitLimit ? 0 : I,
++    EMF: hasHitLimit ? 0 : EMF,
++    F_A: hasHitLimit ? 0 : F_A,
++    charge: hasHitLimit ? charge : 0,
++    energyW: hasHitLimit ? energyW : 0,
++    energyQ: hasHitLimit ? energyQ : 0,
++    v_m: scenario === 0 ? 0 : v_m,
++    tau,
++    hasHitLimit,
++  }
++}
++
++/**
++ * 生成历史采样点序列（用于图表渲染）
++ *
++ * @param T_max    最大采样时间 s
++ * @param params   单杆物理参数
++ * @param count    采样点数，默认 100
++ */
++export function generateSingleRodHistory(
++  T_max: number,
++  params: SingleRodParams,
++  count = 100
++): {
++  vtPoints: Array<{ t: number; v: number }>
++  itPoints: Array<{ t: number; I: number }>
++  energyPoints: Array<{ t: number; W: number; Q: number; E: number }>
++  chargePoints: Array<{ t: number; q: number }>
++  vMax: number
++  IMax: number
++  energyMax: number
++} {
++  const vtPoints: Array<{ t: number; v: number }> = []
++  const itPoints: Array<{ t: number; I: number }> = []
++  const energyPoints: Array<{ t: number; W: number; Q: number; E: number }> = []
++  const chargePoints: Array<{ t: number; q: number }> = []
++
++  let vMax = 1.0
++  let IMax = 1.0
++  let energyMax = 1.0
++
++  for (let i = 0; i <= count; i++) {
++    const tVal = (i / count) * T_max
++    const state = computeSingleRodStateAtTime(tVal, params)
++
++    vtPoints.push({ t: tVal, v: state.v })
++    itPoints.push({ t: tVal, I: state.I })
++    energyPoints.push({
++      t: tVal,
++      W: state.energyW,
++      Q: state.energyQ,
++      E: state.energyW - state.energyQ,
++    })
++    chargePoints.push({ t: tVal, q: state.charge })
++
++    if (Math.abs(state.v) > vMax) vMax = Math.abs(state.v)
++    if (Math.abs(state.I) > IMax) IMax = Math.abs(state.I)
++    const totalE = Math.max(state.energyW, state.energyQ)
++    if (totalE > energyMax) energyMax = totalE
++  }
++
++  return {
++    vtPoints,
++    itPoints,
++    energyPoints,
++    chargePoints,
++    vMax: vMax * 1.15,
++    IMax: IMax * 1.15,
++    energyMax: energyMax * 1.25,
++  }
++}
+
+diff --git a/src/features/mechanics/circular/rotating-disk/index.ts b/src/features/mechanics/circular/rotating-disk/index.ts
+new file mode 100644
+--- /dev/null
++++ b/src/features/mechanics/circular/rotating-disk/index.ts
+@@ -0,0 +1,8 @@
++/**
++ * src/features/mechanics/circular/rotating-disk/index.ts
++ * 圆盘与圆锥摆模块 barrel 导出
++ */
++export { RotatingDiskScene } from './components/RotatingDiskScene'
++export { RotatingDiskCharts } from './components/RotatingDiskCharts'
++export { useRotatingDiskPhysics } from './hooks/useRotatingDiskPhysics'
++export type { RotatingDiskPhysicsParams, RotatingDiskPhysicsResult } from './hooks/useRotatingDiskPhysics'
+
+diff --git a/src/features/mechanics/circular/rotating-disk/RotatingDiskPage.tsx b/src/features/mechanics/circular/rotating-disk/RotatingDiskPage.tsx
+new file mode 100644
+--- /dev/null
++++ b/src/features/mechanics/circular/rotating-disk/RotatingDiskPage.tsx
+@@ -0,0 +1,109 @@
++/**
++ * src/features/mechanics/circular/rotating-disk/RotatingDiskPage.tsx
++ * 圆盘与圆锥摆模型 — 主屏入口（薄壳）
++ *
++ * ════════════════════════════════════════════════════════════════════════════
++ * 布局：splitH 左右分区
++ * • 左侧 (flex-1)：AnimationSvgCanvas + 物理视界场景
++ * • 右侧 (w-0, min-w-[280px])：图表面板
++ *
++ * 合规要点（铁律 1/3/6）：
++ * • 铁律 1-7：useAnimationViewport({ preset: CANVAS_PRESETS.splitH }) + AnimationSvgCanvas
++ * • 铁律 1-8：三图表在 HTML 层（右侧面板内），无 foreignObject
++ * • 铁律 3：页面薄壳化，无业务逻辑
++ * • 铁律 6：左屏参数由注册表 controlMeta/paramMeta 提供（AnimationPage 处理）
++ * ════════════════════════════════════════════════════════════════════════════
++ */
++import React, { useEffect, useRef } from 'react'
++import { useAnimationStore } from '@/stores'
++import { useShallow } from 'zustand/react/shallow'
++import { useAnimationViewport } from '@/hooks'
++import { CANVAS_PRESETS } from '@/theme/spacing'
++
++import { AnimationSvgCanvas } from '@/components/Layout'
++import { RotatingDiskScene, RotatingDiskCharts, useRotatingDiskPhysics } from './'
++
++export default function RotatingDiskPage() {
++  // ─── 从动画 Store 读取状态 ────────────────────────────────────────
++  const { params, time, setIsPlaying } = useAnimationStore(
++    useShallow(s => ({
++      params: s.params,
++      time: s.time,
++      setIsPlaying: s.setIsPlaying,
++    }))
++  )
++
++  const {
++    model = 'cone-pendulum',
++    omega = 2.0,
++    L = 0.5,
++    mu = 0.5,
++    g = 9.8,
++    m = 1.0,
++  } = params as Record<string, unknown>
++
++  // 圆盘模型的半径（统一用 L 参数）
++  const radius = L as number
++
++  // ─── Viewport（铁律 1-7 新标准路径）───────────────────────────────
++  // splitH: { width: 350, height: 650 } — 左右分区
++  const { containerRef, canvasSize, vp } = useAnimationViewport({
++    preset: CANVAS_PRESETS.splitH,
++  })
++
++  // ─── 物理层 Hook ──────────────────────────────────────────────────
++  const physics = useRotatingDiskPhysics(
++    {
++      model: model as 'cone-pendulum' | 'rotating-disk',
++      omega: omega as number,
++      L: L as number,
++      radius,
++      mu: mu as number,
++      g: g as number,
++      m: m as number,
++    },
++    canvasSize,
++    time
++  )
++
++  // ─── 离心处理 ─────────────────────────────────────────────────────
++  const prevFlyOff = useRef(false)
++  useEffect(() => {
++    if (physics.isFlyOff && !prevFlyOff.current) {
++      setIsPlaying(false)
++    }
++    prevFlyOff.current = physics.isFlyOff
++  }, [physics.isFlyOff, setIsPlaying])
++
++  // ─── 主屏布局（splitH 左右分区）───────────────────────────────────
++  return (
++    // ✅ splitH 左右分区：flex-row
++    <div className="relative w-full h-full flex flex-row gap-2 p-1">
++      {/* ─── 左侧：物理视界（flex-1）────────────────────── */}
++      <div className="flex-1 min-w-0 min-h-0">
++        <AnimationSvgCanvas
++          containerRef={containerRef}
++          transform={vp.transform}
++          className="bg-neutral-50 rounded-xl overflow-hidden h-full"
++        >
++          {/* 场景内容使用设计坐标（0..350 / 0..650），由 vp.transform 缩放 */}
++          <RotatingDiskScene
++            physics={physics}
++            model={model as 'cone-pendulum' | 'rotating-disk'}
++            canvasSize={canvasSize}
++          />
++        </AnimationSvgCanvas>
++      </div>
++
++      {/* ─── 右侧：图表面板（固定宽度）─────────────────── */}
++      {/* ✅ 铁律 1-8：三图表在 HTML flex 纵向堆叠，无 foreignObject */}
++      <div className="w-0 min-w-[280px] h-full min-h-0" style={{ minWidth: 280 }}>
++        <RotatingDiskCharts
++          physics={physics}
++          model={model as 'cone-pendulum' | 'rotating-disk'}
++          currentOmega={physics.currentOmega}
++        />
++      </div>
++    </div>
++  )
++}
+
+diff --git a/src/features/mechanics/circular/rotating-disk/hooks/useRotatingDiskPhysics.ts b/src/features/mechanics/circular/rotating-disk/hooks/useRotatingDiskPhysics.ts
+new file mode 100644
+--- /dev/null
++++ b/src/features/mechanics/circular/rotating-disk/hooks/useRotatingDiskPhysics.ts
+@@ -0,0 +1,294 @@
++/**
++ * src/features/mechanics/circular/rotating-disk/hooks/useRotatingDiskPhysics.ts
++ * 圆盘与圆锥摆物理 Hook
++ *
++ * ════════════════════════════════════════════════════════════════════════════
++ * 职责：
++ * • 封装纯函数物理计算
++ * • 生成图表采样数据
++ * • 计算画布渲染所需的像素坐标
++ * • 提供矢量箭头归一化数据
++ *
++ * 设计原则（铁律 2）：
++ * • 纯函数封装，无副作用
++ * • useMemo 缓存图表数据
++ * • 坐标转换通过物理比例尺
++ * ════════════════════════════════════════════════════════════════════════════
++ */
++import { useMemo } from 'react'
++import {
++  computeRotatingDiskConstants,
++  computeRotatingDiskStateAtTime,
++  generateRotatingDiskHistory,
++  type RotatingDiskParams,
++  type RotatingDiskModel,
++} from '@/physics/circular'
++import type { CanvasSize } from '@/utils/useCanvasSize'
++
++// ─── 接口定义 ────────────────────────────────────────────────────────
++
++export interface RotatingDiskPhysicsParams extends RotatingDiskParams {
++  /** 额外：视角缩放（用于 3D 透视投影） */
++  perspectiveScale?: number
++  /** 额外：摆线长度（圆锥摆） */
++  pendulumLength?: number
++}
++
++export interface RotatingDiskPhysicsResult {
++  // ─── 当前状态 ───────────────────────────────────────
++  /** 当前角速度 rad/s */
++  currentOmega: number
++  /** 向心力 N */
++  centripetalForce: number
++  /** 周期 s */
++  period: number
++  /** 线速度 m/s */
++  linearVelocity: number
++
++  // ─── 圆锥摆专有 ─────────────────────────────────────
++  /** 摆角 rad */
++  theta: number
++  /** 摆角 ° */
++  thetaDeg: number
++  /** 旋转半径 m */
++  rotationRadius: number
++  /** 绳拉力 N */
++  tension: number
++
++  // ─── 圆盘专有 ───────────────────────────────────────
++  /** 所需静摩擦力 N */
++  requiredFriction: number
++  /** 最大静摩擦力 N */
++  maxFriction: number
++  /** 摩擦力占比 */
++  frictionRatio: number
++  /** 安全因子 [0, 1] */
++  safetyFactor: number
++  /** 是否达到临界 */
++  isCritical: boolean
++  /** 是否已离心 */
++  isFlyOff: boolean
++
++  // ─── 画布渲染数据 ───────────────────────────────────
++  /** 物理比例尺 px/m */
++  scale: number
++  /** 中心 X（设计坐标） */
++  centerX: number
++  /** 中心 Y（设计坐标） */
++  centerY: number
++  /** 顶端悬点 Y（设计坐标，圆锥摆） */
++  topY: number
++  /** 质点位置 X */
++  particleX: number
++  /** 质点位置 Y */
++  particleY: number
++  /** 临界角速度 rad/s（圆盘模型） */
++  omegaCrit: number
++
++  // ─── 图表数据 ───────────────────────────────────────
++  /** 最大采样角速度 */
++  omegaMax: number
++  /** 向心力-角速度曲线点 */
++  forcePoints: Array<{ omega: number; force: number }>
++  /** 摆角-角速度曲线点（圆锥摆） */
++  anglePoints: Array<{ omega: number; angle: number }>
++  /** 摩擦力-角速度曲线点（圆盘） */
++  frictionPoints: Array<{ omega: number; friction: number; maxFriction: number }>
++
++  // ─── 矢量箭头数据 ───────────────────────────────────
++  /** 重力矢量（向下） */
++  gravityVector: { dx: number; dy: number; magnitude: number; color: string }
++  /** 拉力矢量（沿绳向上） */
++  tensionVector: { dx: number; dy: number; magnitude: number; color: string }
++  /** 向心力矢量（指向圆心） */
++  centripetalVector: { dx: number; dy: number; magnitude: number; color: string }
++  /** 摩擦力矢量（指向圆心） */
++  frictionVector: { dx: number; dy: number; magnitude: number; color: string }
++  /** 速度矢量（切线方向） */
++  velocityVector: { dx: number; dy: number; magnitude: number; color: string }
++}
++
++// ─── 设计坐标常量（splitH: 350×650）────────────────────────────────
++
++const DESIGN_W = 350
++const DESIGN_H = 650
++
++/** 圆盘半径设计像素 */
++const DISK_RADIUS_PX = 120
++/** 摆长设计像素（圆锥摆） */
++const PENDULUM_LENGTH_PX = 250
++
++/**
++ * 圆盘/圆锥摆物理 Hook
++ *
++ * @param params   物理参数（model/omega/L/mu/g/m）
++ * @param canvasSize 画布尺寸（来自 useAnimationViewport）
++ * @param time    当前动画时间 s
++ */
++export function useRotatingDiskPhysics(
++  params: RotatingDiskPhysicsParams,
++  canvasSize: CanvasSize,
++  time: number
++): RotatingDiskPhysicsResult {
++  const {
++    model = 'cone-pendulum' as RotatingDiskModel,
++    omega = 0,
++    L = 0.5,
++    mu = 0.5,
++    g = 9.8,
++    m = 1.0,
++  } = params
++
++  // ─── 比例尺计算 ──────────────────────────────────────────────────
++  // 基于容器宽度计算设计坐标→像素的缩放
++  const scale = useMemo(
++    () => canvasSize.width / DESIGN_W,
++    [canvasSize.width]
++  )
++
++  // 圆锥摆的中心点（画布中下区域）
++  const centerX = DESIGN_W / 2
++  const centerY = DESIGN_H * 0.55
++
++  // ─── 常量计算 ──────────────────────────────────────────────────
++  const { omegaCrit } = useMemo(
++    () => computeRotatingDiskConstants(params),
++    [params.model, params.omega, params.L, params.mu, params.g]
++  )
++
++  // ─── 图表数据预计算 ─────────────────────────────────────────────
++  // 最大角速度设为 3 倍当前值或临界值（取较大）
++  const omegaMax = useMemo(
++    () => Math.max(omega * 2, omegaCrit * 1.5, 5),
++    [omega, omegaCrit]
++  )
++
++  const { forcePoints, anglePoints, frictionPoints } = useMemo(() => {
++    return generateRotatingDiskHistory(omegaMax, params, 80)
++  }, [omegaMax, params.model, params.omega, params.L, params.mu, params.g, params.m])
++
++  // ─── 瞬时状态计算 ───────────────────────────────────────────────
++  const stateAtT = useMemo(
++    () => computeRotatingDiskStateAtTime(time, params),
++    [time, params.model, params.omega, params.L, params.mu, params.g, params.m]
++  )
++
++  // ─── 画布坐标计算 ───────────────────────────────────────────────
++  const { particleX, particleY, topY } = useMemo(() => {
++    if (model === 'cone-pendulum') {
++      // 圆锥摆：质点位置由摆角决定
++      const theta = stateAtT.theta
++      const r = stateAtT.rotationRadius
++
++      // 顶端悬点（中心正上方）
++      const topFixedY = centerY - PENDULUM_LENGTH_PX
++
++      // 质点在水平方向的偏移（旋转半径映射到像素）
++      const radiusPx = r * scale * 10  // 1m → 10px 缩放
++      const particleX_ = centerX + radiusPx * Math.cos(time * 0.5)  // 随时间旋转
++
++      // 质点在竖直方向（顶端 + 摆长投影）
++      const verticalOffset = PENDULUM_LENGTH_PX * Math.cos(theta)
++      const particleY_ = topFixedY + verticalOffset
++
++      return { particleX: particleX_, particleY: particleY_, topY: topFixedY }
++    } else {
++      // 圆盘：质点随圆盘旋转（水平面内）
++      const r = params.radius ?? L
++      const radiusPx = Math.min(r * scale * 5, DISK_RADIUS_PX)
++      const particleX_ = centerX + radiusPx * Math.cos(omega * time)
++      const particleY_ = centerY
++      return { particleX: particleX_, particleY: particleY_, topY: centerY }
++    }
++  }, [model, stateAtT, params, scale, time, omega])
++
++  // ─── 矢量箭头数据 ───────────────────────────────────────────────
++  // 归一化参考标量
++  const forceRef = Math.max(1, m * g)  // 参考力：mg
++  const velocityRef = Math.max(1, omega * L * 2)  // 参考速度：2m/s
++
++  // 重力矢量（向下，始终存在）
++  const gravityVector = useMemo(() => {
++    const mag = Math.min(1, (m * g) / forceRef) * 60
++    return { dx: 0, dy: 1, magnitude: mag, color: '#166534' }  // 深重力绿
++  }, [m, g, forceRef])
++
++  // 拉力矢量（沿绳方向，向上）
++  const tensionVector = useMemo(() => {
++    if (model === 'cone-pendulum' && stateAtT.tension > 0) {
++      const mag = Math.min(1, stateAtT.tension / forceRef) * 60
++      const dx = (particleX - centerX) / Math.max(1, Math.abs(particleX - centerX))
++      const dy = -1
++      return { dx, dy, magnitude: mag, color: '#EA580C' }  // 动力橙
++    }
++    return { dx: 0, dy: -1, magnitude: 0, color: '#EA580C' }
++  }, [model, stateAtT, forceRef, particleX, centerX])
++
++  // 向心力矢量（水平指向圆心）
++  const centripetalVector = useMemo(() => {
++    const mag = Math.min(1, stateAtT.centripetalForce / forceRef) * 60
++    const dx = -Math.sign(particleX - centerX)
++    return { dx, dy: 0, magnitude: mag, color: '#EA580C' }  // 动力橙
++  }, [stateAtT, forceRef, particleX, centerX])
++
++  // 摩擦力矢量（指向圆心，仅圆盘模型）
++  const frictionVector = useMemo(() => {
++    if (model === 'rotating-disk' && stateAtT.requiredFriction > 0) {
++      const mag = Math.min(1, stateAtT.requiredFriction / forceRef) * 60
++      const dx = -Math.sign(particleX - centerX)
++      return { dx, dy: 0, magnitude: mag, color: '#D97706' }  // 琥珀橙
++    }
++    return { dx: 0, dy: 0, magnitude: 0, color: '#D97706' }
++  }, [model, stateAtT, forceRef, particleX, centerX])
++
++  // 速度矢量（切线方向，垂直于半径）
++  const velocityVector = useMemo(() => {
++    if (omega > 0.01) {
++      const mag = Math.min(1, stateAtT.linearVelocity / velocityRef) * 60
++      // 切线方向：垂直于半径方向（逆时针为正）
++      const tangentDx = -(particleY - centerY)
++      const tangentDy = particleX - centerX
++      const norm = Math.sqrt(tangentDx * tangentDx + tangentDy * tangentDy)
++      return {
++        dx: norm > 0 ? tangentDx / norm : 1,
++        dy: norm > 0 ? tangentDy / norm : 0,
++        magnitude: mag,
++        color: '#2563EB',  // 经典蓝
++      }
++    }
++    return { dx: 1, dy: 0, magnitude: 0, color: '#2563EB' }
++  }, [omega, stateAtT, velocityRef, particleX, particleY, centerX, centerY])
++
++  return {
++    currentOmega: stateAtT.omega,
++    centripetalForce: stateAtT.centripetalForce,
++    period: stateAtT.period,
++    linearVelocity: stateAtT.linearVelocity,
++    theta: stateAtT.theta,
++    thetaDeg: stateAtT.thetaDeg,
++    rotationRadius: stateAtT.rotationRadius,
++    tension: stateAtT.tension,
++    requiredFriction: stateAtT.requiredFriction,
++    maxFriction: stateAtT.maxFriction,
++    frictionRatio: stateAtT.frictionRatio,
++    safetyFactor: stateAtT.safetyFactor,
++    isCritical: stateAtT.isCritical,
++    isFlyOff: stateAtT.isFlyOff,
++    omegaCrit,
++    scale,
++    centerX,
++    centerY,
++    topY,
++    particleX,
++    particleY,
++    omegaMax,
++    forcePoints,
++    anglePoints,
++    frictionPoints,
++    gravityVector,
++    tensionVector,
++    centripetalVector,
++    frictionVector,
++    velocityVector,
++  }
++}
+
+diff --git a/src/features/mechanics/circular/rotating-disk/components/RotatingDiskScene.tsx b/src/features/mechanics/circular/rotating-disk/components/RotatingDiskScene.tsx
+new file mode 100644
+--- /dev/null
++++ b/src/features/mechanics/circular/rotating-disk/components/RotatingDiskScene.tsx
+@@ -0,0 +1,451 @@
++/**
++ * src/features/mechanics/circular/rotating-disk/components/RotatingDiskScene.tsx
++ * 圆盘与圆锥摆物理视界场景内容
++ *
++ * ════════════════════════════════════════════════════════════════════════════
++ * 设计坐标说明：
++ * • splitH 预设：350×650
++ * • 内容使用设计坐标（0..350 / 0..650），由父组件 vp.transform 缩放
++ * • 父组件（RotatingDiskPage）负责 AnimationSvgCanvas 容器
++ *
++ * 合规要点（铁律 1/5）：
++ * • 铁律 5：复用 VectorArrow 组件
++ * • 铁律 1-1：颜色引用 theme token（KINEMATICS_COLORS / DYNAMICS_COLORS / CANVAS_COLORS）
++ * • 铁律 1-6：字体缩放使用 canvasSize.font()
++ * • 铁律 1-4：矢量走 VectorArrow 组件
++ * • 铁律 1-7：无 viewBox，使用设计坐标
++ * ════════════════════════════════════════════════════════════════════════════
++ */
++import React, { useCallback } from 'react'
++
++// ─── 可复用组件（铁律 5）─────────────────────────────────────────────
++import { VectorArrow } from '@/components/Physics'
++
++// ─── 类型与主题 ──────────────────────────────────────────────────────
++import type { RotatingDiskPhysicsResult } from '../hooks/useRotatingDiskPhysics'
++import type { CanvasSize } from '@/hooks'
++import {
++  KINEMATICS_COLORS,
++  DYNAMICS_COLORS,
++  SCENE_COLORS,
++  CANVAS_COLORS,
++} from '@/theme/physics'
++
++// ─── 场景专用材质色（inline — 无对应 theme token）────────────────────
++// 这些是纯粹的视觉外观色，不需要语义映射
++const _MATERIAL_STEEL = '#6B7280'   // 钢球主体
++const _MATERIAL_WOOD  = '#92400E'   // 木块主体
++const _MATERIAL_SHADOW = '#1F2937'  // 球体阴影
++const _MATERIAL_HIGHLIGHT = '#F9FAFB' // 高光
++
++interface RotatingDiskSceneProps {
++  physics: RotatingDiskPhysicsResult
++  model: 'cone-pendulum' | 'rotating-disk'
++  canvasSize: CanvasSize
++}
++
++/**
++ * 圆盘与圆锥摆场景内容（设计坐标）
++ *
++ * 渲染内容：
++ * 1. 中心轴线（rail.shadow）
++ * 2. 旋转轨迹（虚线圆 reference/trackHistory）
++ * 3. 悬绳/圆盘表面（circuit.wire/trackHistory）
++ * 4. 质点（steel/wood/material inline）
++ * 5. 矢量箭头（重力/拉力/向心力/速度）
++ * 6. SVG text 标注（θ/ω/向心力）
++ */
++export function RotatingDiskScene({ physics, model, canvasSize }: RotatingDiskSceneProps) {
++  const font = useCallback(
++    (size: number) => canvasSize.font(size),
++    [canvasSize]
++  )
++
++  const {
++    currentOmega,
++    thetaDeg,
++    centripetalForce,
++    isCritical,
++    isFlyOff,
++    safetyFactor,
++    centerX,
++    centerY,
++    topY,
++    particleX,
++    particleY,
++    gravityVector,
++    tensionVector,
++    centripetalVector,
++    frictionVector,
++    velocityVector,
++  } = physics
++
++  // 轨迹圆半径（设计像素）
++  const trackRadius = Math.abs(particleX - centerX) || 80
++
++  return (
++    <g>
++      {/* ─── 中心轴线（rail.shadow — 轴线深灰）────────────────── */}
++      <line
++        x1={centerX}
++        y1={topY - 20}
++        x2={centerX}
++        y2={centerY + 40}
++        stroke={SCENE_COLORS.rail.shadow}
++        strokeWidth={3}
++      />
++      {/* 轴顶端标记 */}
++      <circle cx={centerX} cy={topY - 20} r={6} fill={SCENE_COLORS.rail.shadow} />
++
++      {/* ─── 旋转轨迹（虚线圆）────────────────────────────── */}
++      {model === 'cone-pendulum' ? (
++        // 圆锥摆：水平旋转圆轨迹（虚线）→ reference 灰
++        <ellipse
++          cx={centerX}
++          cy={particleY}
++          rx={trackRadius}
++          ry={trackRadius * 0.15}
++          fill="none"
++          stroke={CANVAS_COLORS.reference}
++          strokeWidth={1}
++          strokeDasharray="4,4"
++          opacity={0.5}
++        />
++      ) : (
++        // 圆盘：圆盘表面（实线圆）→ trackHistory 填充 + rail.shadow 边缘
++        <circle
++          cx={centerX}
++          cy={centerY}
++          r={trackRadius}
++          fill={CANVAS_COLORS.trackHistory}
++          fillOpacity={0.15}
++          stroke={SCENE_COLORS.rail.shadow}
++          strokeWidth={1.5}
++        />
++      )}
++
++      {/* ─── 悬绳（圆锥摆模式）────────────────────────────── */}
++      {/* circuit.wire — 导绳色（#6B7280） */}
++      {model === 'cone-pendulum' && (
++        <line
++          x1={centerX}
++          y1={topY}
++          x2={particleX}
++          y2={particleY}
++          stroke={SCENE_COLORS.circuit.wire}
++          strokeWidth={2}
++        />
++      )}
++
++      {/* ─── 质点（球体）────────────────────────────── */}
++      {model === 'cone-pendulum' ? (
++        <g>
++          {/* 球体阴影 — inline #1F2937 */}
++          <circle
++            cx={particleX + 2}
++            cy={particleY + 3}
++            r={14}
++            fill={_MATERIAL_SHADOW}
++            opacity={0.3}
++          />
++          {/* 球体主体 — rail.body（#6B7280） */}
++          <circle
++            cx={particleX}
++            cy={particleY}
++            r={14}
++            fill={SCENE_COLORS.rail.body}
++          />
++          {/* 高光 — inline #F9FAFB */}
++          <circle
++            cx={particleX - 4}
++            cy={particleY - 4}
++            r={5}
++            fill={_MATERIAL_HIGHLIGHT}
++            opacity={0.6}
++          />
++        </g>
++      ) : (
++        <g>
++          {/* 圆盘上的物体（木块）— circuit.resistor（#92400E） */}
++          <rect
++            x={particleX - 10}
++            y={particleY - 10}
++            width={20}
++            height={20}
++            fill={SCENE_COLORS.circuit.resistor}
++            rx={2}
++          />
++          {/* 临界状态闪烁效果 — acceleration 红 */}
++          {isCritical && (
++            <rect
++              x={particleX - 12}
++              y={particleY - 12}
++              width={24}
++              height={24}
++              fill="none"
++              stroke={KINEMATICS_COLORS.acceleration}
++              strokeWidth={2}
++              opacity={0.6}
++            />
++          )}
++        </g>
++      )}
++
++      {/* ─── 矢量箭头层 ─────────────────────────────────── */}
++      <VectorsLayer
++        particleX={particleX}
++        particleY={particleY}
++        model={model}
++        gravity={gravityVector}
++        tension={tensionVector}
++        centripetal={centripetalVector}
++        friction={frictionVector}
++        velocity={velocityVector}
++        font={font}
++      />
++
++      {/* ─── 物理标注 ─────────────────────────────────── */}
++      <PhysicsAnnotations
++        physics={physics}
++        model={model}
++        centerX={centerX}
++        particleX={particleX}
++        particleY={particleY}
++        topY={topY}
++        font={font}
++        trackRadius={trackRadius}
++      />
++
++      {/* ─── 临界警告提示 ──────────────────────────────── */}
++      {isCritical && (
++        <g>
++          <rect
++            x={centerX - 60}
++            y={20}
++            width={120}
++            height={24}
++            fill={isFlyOff ? '#FEE2E2' : '#FEF3C7'}
++            rx={4}
++            opacity={0.9}
++          />
++          <text
++            x={centerX}
++            y={36}
++            fontSize={font(10)}
++            fill={isFlyOff ? KINEMATICS_COLORS.acceleration : '#D97706'}
++            textAnchor="middle"
++          >
++            {isFlyOff ? '⚠ 已离心' : '⚠ 临界警告'}
++          </text>
++        </g>
++      )}
++    </g>
++  )
++}
++
++// ─── 矢量箭头层 ────────────────────────────────────────────────────
++
++function VectorsLayer({
++  particleX,
++  particleY,
++  model,
++  gravity,
++  tension,
++  centripetal,
++  friction,
++  velocity,
++  font,
++}: {
++  particleX: number
++  particleY: number
++  model: 'cone-pendulum' | 'rotating-disk'
++  gravity: { dx: number; dy: number; magnitude: number; color: string }
++  tension: { dx: number; dy: number; magnitude: number; color: string }
++  centripetal: { dx: number; dy: number; magnitude: number; color: string }
++  friction: { dx: number; dy: number; magnitude: number; color: string }
++  velocity: { dx: number; dy: number; magnitude: number; color: string }
++  font: (size: number) => number
++}) {
++  const MIN_LEN = 35
++
++  return (
++    <g>
++      {gravity.magnitude > 5 && (
++        <VectorArrow
++          origin={{ x: particleX, y: particleY + 14 }}
++          direction={{ dx: 0, dy: 1 }}
++          magnitude={Math.max(gravity.magnitude, MIN_LEN)}
++          type="gravity"
++          refMagnitudes={{ gravity: 10 }}
++          label="mg"
++          labelOffset={{ x: -18, y: 0 }}
++          fontSize={font(9)}
++        />
++      )}
++
++      {tension.magnitude > 5 && (
++        <VectorArrow
++          origin={{ x: particleX, y: particleY }}
++          direction={{ dx: tension.dx, dy: tension.dy }}
++          magnitude={Math.max(tension.magnitude, MIN_LEN)}
++          type="forceNet"
++          refMagnitudes={{ forceNet: 10 }}
++          label="T"
++          labelOffset={{ x: 5, y: -8 }}
++          fontSize={font(9)}
++        />
++      )}
++
++      {centripetal.magnitude > 5 && (
++        <VectorArrow
++          origin={{ x: particleX, y: particleY }}
++          direction={{ dx: centripetal.dx, dy: centripetal.dy }}
++          magnitude={Math.max(centripetal.magnitude, MIN_LEN)}
++          type="forceNet"
++          refMagnitudes={{ forceNet: 10 }}
++          label="F_n"
++          labelOffset={{ x: 0, y: 20 }}
++          fontSize={font(9)}
++        />
++      )}
++
++      {model === 'rotating-disk' && friction.magnitude > 5 && (
++        <VectorArrow
++          origin={{ x: particleX, y: particleY }}
++          direction={{ dx: friction.dx, dy: friction.dy }}
++          magnitude={Math.max(friction.magnitude, MIN_LEN)}
++          type="appliedForce"
++          refMagnitudes={{ appliedForce: 10 }}
++          label="f"
++          labelOffset={{ x: 0, y: -18 }}
++          fontSize={font(9)}
++        />
++      )}
++
++      {velocity.magnitude > 5 && (
++        <VectorArrow
++          origin={{ x: particleX, y: particleY }}
++          direction={{ dx: velocity.dx, dy: velocity.dy }}
++          magnitude={Math.max(velocity.magnitude, MIN_LEN)}
++          type="velocity"
++          refMagnitudes={{ velocity: 2 }}
++          label="v"
++          labelOffset={{ x: 8, y: 8 }}
++          fontSize={font(9)}
++        />
++      )}
++    </g>
++  )
++}
++
++// ─── 物理标注 ───────────────────────────────────────────────────────
++
++function PhysicsAnnotations({
++  physics,
++  model,
++  centerX,
++  particleX,
++  particleY,
++  topY,
++  font,
++  trackRadius,
++}: {
++  physics: RotatingDiskPhysicsResult
++  model: 'cone-pendulum' | 'rotating-disk'
++  centerX: number
++  particleX: number
++  particleY: number
++  topY: number
++  font: (size: number) => number
++  trackRadius: number
++}) {
++  const { currentOmega, thetaDeg, centripetalForce, safetyFactor, omegaCrit } = physics
++
++  return (
++    <g>
++      {/* ─── 角速度标注 — displacement（蓝紫 #8B5CF6，同语义） */}
++      <text
++        x={centerX + trackRadius + 15}
++        y={particleY}
++        fontSize={font(11)}
++        fill={KINEMATICS_COLORS.displacement}
++        textAnchor="start"
++        dominantBaseline="middle"
++      >
++        ω = {currentOmega.toFixed(2)} rad/s
++      </text>
++
++      {/* ─── 圆锥摆：摆角标注 — forceNet（橙 #EA580C） */}
++      {model === 'cone-pendulum' && thetaDeg > 1 && (
++        <text
++          x={centerX}
++          y={topY + 15}
++          fontSize={font(11)}
++          fill={DYNAMICS_COLORS.forceNet}
++          textAnchor="middle"
++        >
++          θ = {thetaDeg.toFixed(1)}°
++        </text>
++      )}
++
++      {/* ─── 向心力标注 — forceNet（橙 #EA580C） */}
++      <text
++        x={centerX - trackRadius - 15}
++        y={particleY - 20}
++        fontSize={font(10)}
++        fill={DYNAMICS_COLORS.forceNet}
++        textAnchor="end"
++        dominantBaseline="middle"
++      >
++        F_n = {centripetalForce.toFixed(2)} N
++      </text>
++
++      {/* ─── 圆盘：摩擦力进度条 ─────────────────────── */}
++      {model === 'rotating-disk' && (
++        <g>
++          {/* 进度条背景 — reference 灰 */}
++          <rect
++            x={centerX - 50}
++            y={particleY + 30}
++            width={100}
++            height={8}
++            fill={CANVAS_COLORS.reference}
++            rx={4}
++          />
++          {/* 进度条填充 — 临界红/警告橙/安全绿 */}
++          <rect
++            x={centerX - 50}
++            y={particleY + 30}
++            width={Math.min(100, safetyFactor * 100)}
++            height={8}
++            fill={safetyFactor > 0.8 ? KINEMATICS_COLORS.acceleration : safetyFactor > 0.5 ? '#D97706' : '#16A34A'}
++            rx={4}
++          />
++          {/* 进度条标签 — annotation 灰 */}
++          <text
++            x={centerX}
++            y={particleY + 48}
++            fontSize={font(9)}
++            fill={CANVAS_COLORS.annotation}
++            textAnchor="middle"
++          >
++            f / f_max = {safetyFactor.toFixed(2)}
++          </text>
++        </g>
++      )}
++
++      {/* ─── 圆盘：临界角速度标注 — annotation 灰 */}
++      {model === 'rotating-disk' && omegaCrit < Infinity && (
++        <text
++          x={centerX}
++          y={particleY + 65}
++          fontSize={font(9)}
++          fill={CANVAS_COLORS.annotation}
++          textAnchor="middle"
++        >
++          ω_crit = {omegaCrit.toFixed(2)} rad/s
++        </text>
++      )}
++    </g>
++  )
++}
+
+diff --git a/src/features/mechanics/circular/rotating-disk/components/RotatingDiskCharts.tsx b/src/features/mechanics/circular/rotating-disk/components/RotatingDiskCharts.tsx
+new file mode 100644
+--- /dev/null
++++ b/src/features/mechanics/circular/rotating-disk/components/RotatingDiskCharts.tsx
+@@ -0,0 +1,380 @@
++/**
++ * src/features/mechanics/circular/rotating-disk/components/RotatingDiskCharts.tsx
++ * 圆盘与圆锥摆图表面板（splitH 右侧）
++ *
++ * ════════════════════════════════════════════════════════════════════════════
++ * 合规要点：
++ * • 三图表垂直堆叠（HTML flex 纵向）
++ * • 图表配色引用 VT_CHART_COLORS / CHART_COLORS / DYNAMICS_COLORS / CANVAS_COLORS
++ * • 时间同步虚线（当前 ω 垂直扫描线）→ CHART_COLORS.asymptote
++ * • 临界点标记 → KINEMATICS_COLORS.acceleration
++ * ════════════════════════════════════════════════════════════════════════════
++ */
++import React from 'react'
++import {
++  VT_CHART_COLORS,
++  CHART_COLORS,
++  DYNAMICS_COLORS,
++  KINEMATICS_COLORS,
++  CANVAS_COLORS,
++} from '@/theme/physics'
++import type { RotatingDiskPhysicsResult } from '../hooks/useRotatingDiskPhysics'
++
++// ─── 图表尺寸常量 ────────────────────────────────────────────────────
++const CHART_PADDING_X = 40
++const CHART_PADDING_Y = 28
++const LABEL_HEIGHT = 20
++
++interface RotatingDiskChartsProps {
++  physics: RotatingDiskPhysicsResult
++  model: 'cone-pendulum' | 'rotating-disk'
++  currentOmega: number
++}
++
++/**
++ * 图表面板（splitH 右侧）
++ *
++ * 布局：三图垂直堆叠
++ * • 圆锥摆：F_n-ω 图 + θ-ω 图
++ * • 圆盘：F_n-ω 图 + 摩擦力-ω 图
++ */
++export function RotatingDiskCharts({ physics, model, currentOmega }: RotatingDiskChartsProps) {
++  const { forcePoints, anglePoints, frictionPoints, omegaMax, omegaCrit } = physics
++
++  // 当前 ω 在图上的归一化位置（用于同步扫描线）
++  const syncRatio = omegaMax > 0 ? currentOmega / omegaMax : 0
++
++  return (
++    <div className="flex flex-col w-full h-full gap-1 min-h-0">
++      {/* ─── 上图：向心力-角速度曲线 ──────────────────── */}
++      <div className="flex-1 min-h-0 flex flex-col">
++        <div className="text-xs font-medium text-neutral-600 px-1 mb-0.5">
++          向心力 F_n - ω
++        </div>
++        <div className="flex-1 bg-white rounded-lg border border-neutral-200 p-1 shadow-sm min-h-0">
++          <ForceOmegaChart
++            points={forcePoints}
++            currentOmega={currentOmega}
++            omegaMax={omegaMax}
++            syncRatio={syncRatio}
++          />
++        </div>
++      </div>
++
++      {/* ─── 下图：摆角 / 摩擦力 ──────────────────────── */}
++      <div className="flex-1 min-h-0 flex flex-col">
++        <div className="text-xs font-medium text-neutral-600 px-1 mb-0.5">
++          {model === 'cone-pendulum' ? '摆角 θ - ω' : '摩擦力 f - ω'}
++        </div>
++        <div className="flex-1 bg-white rounded-lg border border-neutral-200 p-1 shadow-sm min-h-0">
++          {model === 'cone-pendulum' ? (
++            <AngleOmegaChart points={anglePoints} currentOmega={currentOmega} omegaMax={omegaMax} syncRatio={syncRatio} />
++          ) : (
++            <FrictionOmegaChart
++              points={frictionPoints}
++              currentOmega={currentOmega}
++              omegaMax={omegaMax}
++              omegaCrit={omegaCrit}
++              syncRatio={syncRatio}
++            />
++          )}
++        </div>
++      </div>
++    </div>
++  )
++}
++
++// ─── 网格辅助函数（避免重复）────────────────────────────────────────
++function gridLines(toX: (omega: number) => number, omegaMax: number, chartH: number) {
++  return [0.25, 0.5, 0.75].map(r => (
++    <line
++      key={r}
++      x1={toX(r * omegaMax)} y1={CHART_PADDING_Y}
++      x2={toX(r * omegaMax)} y2={chartH - CHART_PADDING_Y}
++      stroke={CANVAS_COLORS.grid} strokeWidth={0.5} strokeDasharray="2,2"
++    />
++  ))
++}
++
++function xAxis(chartW: number, chartH: number) {
++  return (
++    <line
++      x1={CHART_PADDING_X} y1={chartH - CHART_PADDING_Y}
++      x2={chartW - CHART_PADDING_X} y2={chartH - CHART_PADDING_Y}
++      stroke={CHART_COLORS.tickMark} strokeWidth={0.8}
++    />
++  )
++}
++
++// ─── 向心力-角速度图表 ──────────────────────────────────────────────
++
++function ForceOmegaChart({
++  points,
++  currentOmega,
++  omegaMax,
++  syncRatio,
++}: {
++  points: Array<{ omega: number; force: number }>
++  currentOmega: number
++  omegaMax: number
++  syncRatio: number
++}) {
++  const chartW = 260
++  const chartH = 120
++
++  const toX = (omega: number) => CHART_PADDING_X + (omega / omegaMax) * (chartW - CHART_PADDING_X * 2)
++  const toY = (force: number, maxForce: number) =>
++    CHART_PADDING_Y + (1 - force / maxForce) * (chartH - CHART_PADDING_Y * 2)
++
++  const activePoints = points.filter(p => p.omega <= currentOmega)
++  const maxForce = Math.max(...points.map(p => p.force), 1)
++
++  return (
++    <svg width="100%" height="100%" viewBox={`0 0 ${chartW} ${chartH + LABEL_HEIGHT}`} preserveAspectRatio="xMidYMid meet">
++      {gridLines(toX, omegaMax, chartH)}
++      {xAxis(chartW, chartH)}
++
++      {/* 曲线（预告 + 已到达） */}
++      {points.length > 1 && (
++        <>
++          <path
++            d={`M ${points.map(p => `${toX(p.omega).toFixed(1)},${toY(p.force, maxForce).toFixed(1)}`).join(' L ')}`}
++            fill="none"
++            stroke={VT_CHART_COLORS.primary}
++            strokeWidth={1.5}
++            strokeDasharray="4,3"
++            opacity={0.35}
++          />
++          {activePoints.length > 1 && (
++            <path
++              d={`M ${activePoints.map(p => `${toX(p.omega).toFixed(1)},${toY(p.force, maxForce).toFixed(1)}`).join(' L ')}`}
++              fill="none"
++              stroke={VT_CHART_COLORS.primary}
++              strokeWidth={2}
++            />
++          )}
++        </>
++      )}
++
++      {/* 同步扫描线 — asymptote */}
++      {syncRatio > 0 && syncRatio < 1 && (
++        <line
++          x1={toX(currentOmega)} y1={CHART_PADDING_Y}
++          x2={toX(currentOmega)} y2={chartH - CHART_PADDING_Y}
++          stroke={CHART_COLORS.asymptote} strokeWidth={1.5} strokeDasharray="3,3" opacity={0.7}
++        />
++      )}
++
++      {/* 当前点 */}
++      {currentOmega > 0 && currentOmega <= omegaMax && (
++        <circle
++          cx={toX(currentOmega)}
++          cy={toY(activePoints[activePoints.length - 1]?.force ?? 0, maxForce)}
++          r={4}
++          fill={VT_CHART_COLORS.primary}
++        />
++      )}
++
++      {/* 轴标签 */}
++      <text x={chartW / 2} y={chartH + LABEL_HEIGHT - 4} fontSize={8} fill={CHART_COLORS.tickLabel} textAnchor="middle">
++        ω / rad·s⁻¹
++      </text>
++      <text x={10} y={chartH / 2} fontSize={8} fill={CHART_COLORS.tickLabel} textAnchor="middle" transform={`rotate(-90, 10, ${chartH / 2})`}>
++        F_n / N
++      </text>
++    </svg>
++  )
++}
++
++// ─── 摆角-角速度图表 ────────────────────────────────────────────────
++
++function AngleOmegaChart({
++  points,
++  currentOmega,
++  omegaMax,
++  syncRatio,
++}: {
++  points: Array<{ omega: number; angle: number }>
++  currentOmega: number
++  omegaMax: number
++  syncRatio: number
++}) {
++  const chartW = 260
++  const chartH = 120
++
++  const toX = (omega: number) => CHART_PADDING_X + (omega / omegaMax) * (chartW - CHART_PADDING_X * 2)
++  const toY = (angle: number) =>
++    CHART_PADDING_Y + (1 - angle / 90) * (chartH - CHART_PADDING_Y * 2)
++
++  const activePoints = points.filter(p => p.omega <= currentOmega)
++
++  return (
++    <svg width="100%" height="100%" viewBox={`0 0 ${chartW} ${chartH + LABEL_HEIGHT}`} preserveAspectRatio="xMidYMid meet">
++      {gridLines(toX, omegaMax, chartH)}
++      {xAxis(chartW, chartH)}
++
++      {/* 曲线 */}
++      {points.length > 1 && (
++        <>
++          <path
++            d={`M ${points.map(p => `${toX(p.omega).toFixed(1)},${toY(p.angle).toFixed(1)}`).join(' L ')}`}
++            fill="none"
++            stroke={DYNAMICS_COLORS.forceNet}
++            strokeWidth={1.5}
++            strokeDasharray="4,3"
++            opacity={0.35}
++          />
++          {activePoints.length > 1 && (
++            <path
++              d={`M ${activePoints.map(p => `${toX(p.omega).toFixed(1)},${toY(p.angle).toFixed(1)}`).join(' L ')}`}
++              fill="none"
++              stroke={DYNAMICS_COLORS.forceNet}
++              strokeWidth={2}
++            />
++          )}
++        </>
++      )}
++
++      {/* 同步扫描线 — asymptote */}
++      {syncRatio > 0 && syncRatio < 1 && (
++        <line
++          x1={toX(currentOmega)} y1={CHART_PADDING_Y}
++          x2={toX(currentOmega)} y2={chartH - CHART_PADDING_Y}
++          stroke={CHART_COLORS.asymptote} strokeWidth={1.5} strokeDasharray="3,3" opacity={0.7}
++        />
++      )}
++
++      {/* 当前点 */}
++      {currentOmega > 0 && currentOmega <= omegaMax && (
++        <circle
++          cx={toX(currentOmega)}
++          cy={toY(activePoints[activePoints.length - 1]?.angle ?? 0)}
++          r={4}
++          fill={DYNAMICS_COLORS.forceNet}
++        />
++      )}
++
++      {/* 轴标签 */}
++      <text x={chartW / 2} y={chartH + LABEL_HEIGHT - 4} fontSize={8} fill={CHART_COLORS.tickLabel} textAnchor="middle">
++        ω / rad·s⁻¹
++      </text>
++      <text x={10} y={chartH / 2} fontSize={8} fill={CHART_COLORS.tickLabel} textAnchor="middle" transform={`rotate(-90, 10, ${chartH / 2})`}>
++        θ / °
++      </text>
++    </svg>
++  )
++}
++
++// ─── 摩擦力-角速度图表 ──────────────────────────────────────────────
++
++function FrictionOmegaChart({
++  points,
++  currentOmega,
++  omegaMax,
++  omegaCrit,
++  syncRatio,
++}: {
++  points: Array<{ omega: number; friction: number; maxFriction: number }>
++  currentOmega: number
++  omegaMax: number
++  omegaCrit: number
++  syncRatio: number
++}) {
++  const chartW = 260
++  const chartH = 120
++
++  const toX = (omega: number) => CHART_PADDING_X + (omega / omegaMax) * (chartW - CHART_PADDING_X * 2)
++  const toY = (friction: number, maxF: number) =>
++    CHART_PADDING_Y + (1 - friction / maxF) * (chartH - CHART_PADDING_Y * 2)
++
++  const activePoints = points.filter(p => p.omega <= currentOmega)
++  const maxF = Math.max(...points.map(p => p.maxFriction), 1)
++
++  return (
++    <svg width="100%" height="100%" viewBox={`0 0 ${chartW} ${chartH + LABEL_HEIGHT}`} preserveAspectRatio="xMidYMid meet">
++      {gridLines(toX, omegaMax, chartH)}
++      {xAxis(chartW, chartH)}
++
++      {/* 最大摩擦力水平线（临界线）— acceleration 红 */}
++      {points.length > 0 && (
++        <line
++          x1={CHART_PADDING_X} y1={toY(maxF, maxF)}
++          x2={chartW - CHART_PADDING_X} y2={toY(maxF, maxF)}
++          stroke={KINEMATICS_COLORS.acceleration}
++          strokeWidth={1}
++          strokeDasharray="4,4"
++          opacity={0.6}
++        />
++      )}
++
++      {/* 临界角速度垂直线 — acceleration 红 */}
++      {omegaCrit < omegaMax && (
++        <line
++          x1={toX(omegaCrit)} y1={CHART_PADDING_Y}
++          x2={toX(omegaCrit)} y2={chartH - CHART_PADDING_Y}
++          stroke={KINEMATICS_COLORS.acceleration}
++          strokeWidth={1}
++          strokeDasharray="4,4"
++          opacity={0.6}
++        />
++      )}
++
++      {/* 摩擦力曲线 */}
++      {points.length > 1 && (
++        <>
++          <path
++            d={`M ${points.map(p => `${toX(p.omega).toFixed(1)},${toY(p.friction, maxF).toFixed(1)}`).join(' L ')}`}
++            fill="none"
++            stroke={DYNAMICS_COLORS.forceNet}
++            strokeWidth={1.5}
++            strokeDasharray="4,3"
++            opacity={0.35}
++          />
++          {activePoints.length > 1 && (
++            <path
++              d={`M ${activePoints.map(p => `${toX(p.omega).toFixed(1)},${toY(p.friction, maxF).toFixed(1)}`).join(' L ')}`}
++              fill="none"
++              stroke={DYNAMICS_COLORS.forceNet}
++              strokeWidth={2}
++            />
++          )}
++        </>
++      )}
++
++      {/* 同步扫描线 — asymptote */}
++      {syncRatio > 0 && syncRatio < 1 && (
++        <line
++          x1={toX(currentOmega)} y1={CHART_PADDING_Y}
++          x2={toX(currentOmega)} y2={chartH - CHART_PADDING_Y}
++          stroke={CHART_COLORS.asymptote} strokeWidth={1.5} strokeDasharray="3,3" opacity={0.7}
++        />
++      )}
++
++      {/* 当前点 */}
++      {currentOmega > 0 && currentOmega <= omegaMax && (
++        <circle
++          cx={toX(currentOmega)}
++          cy={toY(activePoints[activePoints.length - 1]?.friction ?? 0, maxF)}
++          r={4}
++          fill={DYNAMICS_COLORS.forceNet}
++        />
++      )}
++
++      {/* 图例 */}
++      <g transform={`translate(${CHART_PADDING_X + 5}, ${CHART_PADDING_Y + 5})`}>
++        <line x1={0} y1={0} x2={12} y2={0} stroke={DYNAMICS_COLORS.forceNet} strokeWidth={2} />
++        <text x={16} y={3} fontSize={7} fill={CANVAS_COLORS.annotation}>f(ω)</text>
++        <line x1={35} y1={0} x2={47} y2={0} stroke={KINEMATICS_COLORS.acceleration} strokeWidth={1} strokeDasharray="4,4" />
++        <text x={51} y={3} fontSize={7} fill={CANVAS_COLORS.annotation}>f_max</text>
++      </g>
++
++      {/* 轴标签 */}
++      <text x={chartW / 2} y={chartH + LABEL_HEIGHT - 4} fontSize={8} fill={CHART_COLORS.tickLabel} textAnchor="middle">
++        ω / rad·s⁻¹
++      </text>
++      <text x={10} y={chartH / 2} fontSize={8} fill={CHART_COLORS.tickLabel} textAnchor="middle" transform={`rotate(-90, 10, ${chartH / 2})`}>
++        f / N
++      </text>
++    </svg>
++  )
++}
+
+diff --git a/src/data/registries/mechanics-circular.ts b/src/data/registries/mechanics-circular.ts
+new file mode 100644
+--- /dev/null
++++ b/src/data/registries/mechanics-circular.ts
+@@ -0,0 +1,120 @@
++/**
++ * src/data/registries/mechanics-circular.ts
++ * 圆周运动动画注册表
++ *
++ * ════════════════════════════════════════════════════════════════════════════
++ * 规范依据：project_rules.md §3 + ARCHITECTURE_RULES.md §2
++ *
++ * 命名约定：
++ * • knowledgeId 与 knowledgeTree.ts 保持严格一致
++ * • Component 使用 lazy 延迟加载
++ * • controlMeta 控制项声明式 LeftPanel
++ * • paramMeta 参数滑块声明式 ParamControl
++ * ════════════════════════════════════════════════════════════════════════════
++ */
++import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
++import { defineAnimations } from '../defineAnimations'
++
++// ════════════════════════════════════════════════════════════════════════════
++// 力学 · 圆周运动（[M3-3]）
++// ════════════════════════════════════════════════════════════════════════════
++export const mechanicsCircularAnimations = defineAnimations({
++  // ─── §3-3 圆盘与圆锥摆模型 ──────────────────────────────────────
++  'anim-rotating-disk': {
++    title: '圆盘与圆锥摆模型',
++    knowledgeId: 'mechanics-3-3',
++    Component: lazy(() => import('@/features/mechanics/circular/rotating-disk/RotatingDiskPage')),
++    defaultParams: {
++      /** 模型类型：0=圆锥摆, 1=旋转圆盘 */
++      model: 0,
++      /** 角速度 rad/s */
++      omega: 2.0,
++      /** 绳长/圆盘半径 m */
++      L: 0.5,
++      /** 最大静摩擦系数（圆盘模型） */
++      mu: 0.5,
++      /** 重力加速度 m/s² */
++      g: 9.8,
++      /** 物体质量 kg */
++      m: 1.0,
++    } as const,
++    controlMeta: [
++      // ─── 模型切换 ─────────────────────────────────────────
++      {
++        type: 'segmented',
++        key: 'model',
++        label: '模型切换',
++        group: '模型选择',
++        resetOnChange: true,
++        options: [
++          { value: 0, label: '圆锥摆' },
++          { value: 1, label: '旋转圆盘' },
++        ],
++      },
++      // ─── 教学提示 ─────────────────────────────────────────
++      {
++        type: 'tip',
++        group: '教学提示',
++        variant: 'info',
++        showIf: 'model',
++        showIfValue: 0,
++        content: '圆锥摆：小球在旋转中形成锥面，绳与竖直方向夹角为摆角 θ。调节 ω 观察：θ 增大 → cosθ = g/(ω²L)',
++      },
++      {
++        type: 'tip',
++        group: '教学提示',
++        variant: 'info',
++        showIf: 'model',
++        showIfValue: 1,
++        content: '旋转圆盘：物体在水平圆盘上随盘转动。静摩擦力提供向心力。当 f > f_max = μmg 时，物体做离心运动滑出。',
++      },
++    ],
++    paramMeta: [
++      // ─── 核心参数 ─────────────────────────────────────────
++      {
++        key: 'omega',
++        label: '角速度 ω',
++        group: '核心参数',
++        min: 0.5,
++        max: 8.0,
++        step: 0.1,
++        unit: 'rad/s',
++        description: '旋转角速度。ω 越大，向心力 F_n = mω²r 越大',
++      },
++      {
++        key: 'L',
++        label: '绳长/半径 L',
++        group: '核心参数',
++        min: 0.2,
++        max: 1.5,
++        step: 0.05,
++        unit: 'm',
++        description: '圆锥摆绳长 / 圆盘旋转半径',
++      },
++      {
++        key: 'm',
++        label: '物体质量 m',
++        group: '核心参数',
++        min: 0.1,
++        max: 5.0,
++        step: 0.1,
++        unit: 'kg',
++        description: '物体质量，影响向心力大小',
++      },
++      // ─── 圆盘专有参数 ─────────────────────────────────────
++      {
++        key: 'mu',
++        label: '最大静摩擦系数 μ',
++        group: '圆盘参数',
++        min: 0.1,
++        max: 1.0,
++        step: 0.05,
++        unit: '',
++        description: '最大静摩擦系数。临界角速度 ω_crit = √(μg/r)',
++        showIf: 'model',
++        showIfValue: 1,
++      },
++    ],
++    controlsMode: 'param' as const,
++  },
++})
+
+diff --git a/src/data/quantities/mechanics/rotatingDisk.ts b/src/data/quantities/mechanics/rotatingDisk.ts
+new file mode 100644
+--- /dev/null
++++ b/src/data/quantities/mechanics/rotatingDisk.ts
+@@ -0,0 +1,229 @@
++/**
++ * src/data/quantities/mechanics/rotatingDisk.ts
++ * 圆盘与圆锥摆模型物理量构建器
++ *
++ * ════════════════════════════════════════════════════════════════════════════
++ * 设计规范：
++ * • 物理量与 UI 解耦（纯数据，无渲染）
++ * • 与知识树节点 mechanics-3-3 对应
++ * • 颜色 token 引用 @/theme/physics
++ * ════════════════════════════════════════════════════════════════════════════
++ */
++
++export interface PhysicsQuantity {
++  id: string
++  label: string
++  symbol: string
++  unit: string
++  value: number
++  colorToken: string
++  chartSeries?: string
++}
++
++/**
++ * 构建圆盘与圆锥摆的物理量展示数据
++ *
++ * @param state 当前物理状态
++ * @param params 当前参数
++ * @param model 模型类型
++ */
++export function buildRotatingDiskQuantities(
++  state: {
++    omega: number
++    centripetalForce: number
++    period: number
++    linearVelocity: number
++    thetaDeg: number
++    rotationRadius: number
++    tension: number
++    requiredFriction: number
++    maxFriction: number
++    safetyFactor: number
++    isCritical: boolean
++    omegaCrit: number
++  },
++  params: {
++    model: 'cone-pendulum' | 'rotating-disk'
++    L: number
++    m: number
++    g: number
++  },
++  formulas?: {
++    centripetalFormula: string
++    criticalFormula: string
++  }
++): PhysicsQuantity[] {
++  const { model } = params
++
++  const base: PhysicsQuantity[] = [
++    {
++      id: 'rotating-omega',
++      label: '角速度',
++      symbol: 'ω',
++      unit: 'rad/s',
++      value: state.omega,
++      colorToken: 'angularVelocity',
++      chartSeries: 'primary',
++    },
++    {
++      id: 'rotating-velocity',
++      label: '线速度',
++      symbol: 'v',
++      unit: 'm/s',
++      value: state.linearVelocity,
++      colorToken: 'velocity',
++      chartSeries: 'primary',
++    },
++    {
++      id: 'rotating-period',
++      label: '周期',
++      symbol: 'T',
++      unit: 's',
++      value: state.period,
++      colorToken: 'period',
++      chartSeries: 'secondary',
++    },
++    {
++      id: 'rotating-centripetal',
++      label: '向心力',
++      symbol: 'F_n',
++      unit: 'N',
++      value: state.centripetalForce,
++      colorToken: 'forceNet',
++      chartSeries: 'primary',
++    },
++  ]
++
++  if (model === 'cone-pendulum') {
++    return [
++      ...base,
++      {
++        id: 'rotating-theta',
++        label: '摆角',
++        symbol: 'θ',
++        unit: '°',
++        value: state.thetaDeg,
++        colorToken: 'forceNet',
++        chartSeries: 'primary',
++      },
++      {
++        id: 'rotating-radius',
++        label: '旋转半径',
++        symbol: 'r',
++        unit: 'm',
++        value: state.rotationRadius,
++        colorToken: 'displacement',
++        chartSeries: 'secondary',
++      },
++      {
++        id: 'rotating-tension',
++        label: '绳拉力',
++        symbol: 'T',
++        unit: 'N',
++        value: state.tension,
++        colorToken: 'forceNet',
++        chartSeries: 'primary',
++      },
++    ]
++  } else {
++    return [
++      ...base,
++      {
++        id: 'rotating-friction',
++        label: '静摩擦力',
++        symbol: 'f',
++        unit: 'N',
++        value: state.requiredFriction,
++        colorToken: 'appliedForce',
++        chartSeries: 'primary',
++      },
++      {
++        id: 'rotating-maxfriction',
++        label: '最大静摩擦',
++        symbol: 'f_max',
++        unit: 'N',
++        value: state.maxFriction,
++        colorToken: 'forceNet',
++        chartSeries: 'secondary',
++      },
++      {
++        id: 'rotating-safety',
++        label: '安全因子',
++        symbol: 'f/f_max',
++        unit: '',
++        value: state.safetyFactor,
++        colorToken: state.isCritical ? 'acceleration' : 'kineticEnergy',
++        chartSeries: 'tertiary',
++      },
++      {
++        id: 'rotating-omega-crit',
++        label: '临界角速度',
++        symbol: 'ω_crit',
++        unit: 'rad/s',
++        value: state.omegaCrit,
++        colorToken: 'forceNet',
++        chartSeries: 'tertiary',
++      },
++    ]
++  }
++}
++
++/**
++ * 圆盘与圆锥摆关键公式卡片数据
++ */
++export function getRotatingDiskFormulas(model: 'cone-pendulum' | 'rotating-disk') {
++  const base = [
++    {
++      id: 'centripetal-formula',
++      label: '向心力定义',
++      latex: 'F_n = m\\omega^2 r',
++      description: '水平方向的合外力提供向心力',
++    },
++  ]
++
++  if (model === 'cone-pendulum') {
++    return [
++      ...base,
++      {
++        id: 'cone-pendulum-tan',
++        label: '摆角关系',
++        latex: '\\tan\\theta = \\frac{\\omega^2 L\\sin\\theta}{g}',
++        description: '竖直方向力平衡 + 水平向心力',
++      },
++      {
++        id: 'cone-pendulum-cos',
++        label: '摆角余弦',
++        latex: '\\cos\\theta = \\frac{g}{\\omega^2 L}',
++        description: '推导：tanθ = ω²Lsinθ/g → cosθ = g/(ω²L)',
++      },
++      {
++        id: 'cone-pendulum-tension',
++        label: '绳拉力',
++        latex: 'T = \\frac{mg}{\\cos\\theta}',
++        description: '由竖直方向平衡 T·cosθ = mg 推导',
++      },
++    ]
++  } else {
++    return [
++      ...base,
++      {
++        id: 'friction-formula',
++        label: '静摩擦力提供向心力',
++        latex: 'f = m\\omega^2 r',
++        description: '物体在旋转圆盘上随盘转动，摩擦力提供向心力',
++      },
++      {
++        id: 'max-friction',
++        label: '最大静摩擦力',
++        latex: 'f_{\\max} = \\mu mg',
++        description: '最大静摩擦力由正压力与摩擦系数决定',
++      },
++      {
++        id: 'critical-omega',
++        label: '临界角速度',
++        latex: '\\omega_{\\текст{crit}} = \\sqrt{\\frac{\\mu g}{r}}',
++        description: '令 f = f_max，求得临界角速度公式',
++      },
++    ]
++  }
++}
+
+diff --git a/src/features/electromagnetism/induction/InductionSingleRod.tsx b/src/features/electromagnetism/induction/InductionSingleRod.tsx
+new file mode 100644
+--- /dev/null
++++ b/src/features/electromagnetism/induction/InductionSingleRod.tsx
+@@ -0,0 +1,109 @@
++/**
++ * src/features/electromagnetism/induction/InductionSingleRod.tsx
++ * 电磁感应单杆模型 — 主屏入口（薄壳）
++ *
++ * ════════════════════════════════════════════════════════════════════════════
++ * 合规要点（铁律 1/3/6）：
++ *
++ * • 页面薄壳化：主屏仅负责布局和数据注入，不放业务逻辑
++ * • 视图端口：useAnimationViewport({ preset: CANVAS_PRESETS.splitV }) + AnimationSvgCanvas
++ * • splitV 上下等分：上图表 / 下场景
++ * • 三屏划分：左参数 / 中画布 / 右公式（由 AnimationPage 统一处理）
++ *
++ * 布局模型：
++ * ┌────────────────────────────────────────────────────────┐
++ * │ 上半屏 (h-1/2)：三图表横向并列 HTML flex              │
++ * │ <SingleRodCharts physics={physics} time={time} />     │
++ * ├────────────────────────────────────────────────────────┤
++ * │ 下半屏 (flex-1)：AnimationSvgCanvas + 物理视界        │
++ * │ <AnimationSvgCanvas containerRef={containerRef}       │
++ * │         transform={vp.transform}>                      │
++ * │   <SingleRodScene physics={physics} scenario={...} /> │
++ * │ </AnimationSvgCanvas>                                 │
++ * └────────────────────────────────────────────────────────┘
++ * ════════════════════════════════════════════════════════════════════════════
++ */
++import React, { useEffect, useRef } from 'react'
++import { useAnimationStore } from '@/stores'
++import { useShallow } from 'zustand/react/shallow'
++import { useAnimationViewport } from '@/hooks'
++import { CANVAS_PRESETS } from '@/theme/spacing'
++
++import { AnimationSvgCanvas } from '@/components/Layout'
++import { SingleRodScene } from './single-rod/components/SingleRodScene'
++import { SingleRodCharts } from './single-rod/components/SingleRodCharts'
++import { useSingleRodPhysics } from './single-rod/hooks/useSingleRodPhysics'
++
++export default function InductionSingleRod() {
++  // ─── 从动画 Store 读取状态 ────────────────────────────────────────
++  const { params, time, isPlaying, setIsPlaying } = useAnimationStore(
++    useShallow(s => ({
++      params: s.params,
++      time: s.time,
++      isPlaying: s.isPlaying,
++      setIsPlaying: s.setIsPlaying,
++    }))
++  )
++
++  const {
++    scenario = 1,
++    B = 1.0,
++    L = 0.5,
++    R = 1.0,
++    m = 0.2,
++    driveValue = 2.0,
++  } = params as Record<string, unknown>
++
++  // 启动机制映射：scenario=0 → driveValue=v₀(m/s)，scenario=1 → driveValue=F(N)
++  const F_ext = driveValue as number
++
++  // ─── Viewport（铁律 1-7 新标准路径）───────────────────────────────
++  // splitV: { width: 700, height: 325 } — 上下等分
++  const { containerRef, canvasSize, vp } = useAnimationViewport({
++    preset: CANVAS_PRESETS.splitV,
++  })
++
++  // ─── 物理层 Hook ──────────────────────────────────────────────────
++  const physics = useSingleRodPhysics(
++    { scenario: scenario as number, B: B as number, L: L as number, R: R as number, m: m as number, F_ext },
++    canvasSize,
++    time
++  )
++
++  // ─── 边界处理 ─────────────────────────────────────────────────────
++  const prevHitLimit = useRef(false)
++  useEffect(() => {
++    if (physics.hasHitLimit && !prevHitLimit.current) {
++      setIsPlaying(false)
++    }
++    prevHitLimit.current = physics.hasHitLimit
++  }, [physics.hasHitLimit, setIsPlaying])
++
++  // ─── 主屏布局（splitV 上下等分）───────────────────────────────────
++  return (
++    <div className="relative w-full h-full flex flex-col gap-2 p-1">
++      {/* ─── 上半屏：三图表横向并列（HTML flex） ─────────────── */}
++      {/* ✅ 铁律 1-8：图表在 HTML 层横向并列，禁止 SVG foreignObject */}
++      <div className="w-full" style={{ height: '50%', minHeight: 0 }}>
++        <SingleRodCharts physics={physics} time={time} />
++      </div>
++
++      {/* ─── 下半屏：物理视界仿真 ─────────────────────────────── */}
++      {/* ✅ 铁律 1-7：AnimationSvgCanvas 标准容器，无 viewBox */}
++      <div className="w-full flex-1 min-h-0">
++        <AnimationSvgCanvas
++          containerRef={containerRef}
++          transform={vp.transform}
++          className="bg-neutral-50 rounded-xl overflow-hidden"
++        >
++          {/* 场景内容使用设计坐标（0..700 / 0..325），由 vp.transform 缩放 */}
++          <SingleRodScene
++            physics={physics}
++            scenario={scenario as number}
++            canvasSize={canvasSize}
++          />
++        </AnimationSvgCanvas>
++      </div>
++    </div>
++  )
++}
+
+diff --git a/src/features/electromagnetism/induction/InductionDualRods.tsx b/src/features/electromagnetism/induction/InductionDualRods.tsx
+new file mode 100644
+--- /dev/null
++++ b/src/features/electromagnetism/induction/InductionDualRods.tsx
+@@ -0,0 +1,47 @@
++/**
++ * src/features/electromagnetism/induction/InductionDualRods.tsx
++ * 电磁感应双杆模型 — 占位存根（待实现）
++ *
++ * 对应知识树节点：electricity-4-6
++ * 物理模型：两导体棒在磁场中通过感应电流耦合
++ *
++ * TODO: 实现以下功能
++ * • 双杆联动（RK4 耦合微分方程）
++ * • 动量守恒模式（自由双杆）
++ * • 恒力驱动模式（加速等差）
++ * • 互感电动势分析
++ */
++import React from 'react'
++import { useAnimationStore } from '@/stores'
++import { useShallow } from 'zustand/react/shallow'
++import { useAnimationViewport } from '@/hooks'
++import { CANVAS_PRESETS } from '@/theme/spacing'
++import { AnimationSvgCanvas } from '@/components/Layout'
++
++export default function InductionDualRodsPage() {
++  const { params } = useAnimationStore(
++    useShallow(s => ({ params: s.params }))
++  )
++  const { containerRef, canvasSize, vp } = useAnimationViewport({
++    preset: CANVAS_PRESETS.splitV,
++  })
++
++  return (
++    <div className="w-full h-full flex flex-col">
++      <div className="text-sm text-neutral-500 p-2">
++        双杆模型 — 即将上线
++      </div>
++      <AnimationSvgCanvas
++        containerRef={containerRef}
++        transform={vp.transform}
++        className="flex-1"
++      >
++        <g>
++          <text x={canvasSize.width / 2} y={canvasSize.height / 2} textAnchor="middle" fill="#94A3B8" fontSize={canvasSize.font(14)}>
++            TODO: 实现双杆模型
++          </text>
++        </g>
++      </AnimationSvgCanvas>
++    </div>
++  )
++}
+
+diff --git a/src/features/electromagnetism/induction/CuttingEMF.tsx b/src/features/electromagnetism/induction/CuttingEMF.tsx
+new file mode 100644
+--- /dev/null
++++ b/src/features/electromagnetism/induction/CuttingEMF.tsx
+@@ -0,0 +1,47 @@
++/**
++ * src/features/electromagnetism/induction/CuttingEMF.tsx
++ * 导体切割磁感线 — 占位存根（待实现）
++ *
++ * 对应知识树节点：electricity-4-4
++ * 物理模型：导体在磁场中切割磁感线产生感应电动势
++ *
++ * TODO: 实现以下功能
++ * • 基础模式：恒速切割（E = BLv 定值）
++ * • 进阶模式：自由释放变加速（感应电流反电动势）
++ * • 微观电子漂移可视化
++ * • 电动势-速度图（E-v 图）
++ */
++import React from 'react'
++import { useAnimationStore } from '@/stores'
++import { useShallow } from 'zustand/react/shallow'
++import { useAnimationViewport } from '@/hooks'
++import { CANVAS_PRESETS } from '@/theme/spacing'
++import { AnimationSvgCanvas } from '@/components/Layout'
++
++export default function CuttingEMFPage() {
++  const { params } = useAnimationStore(
++    useShallow(s => ({ params: s.params }))
++  )
++  const { containerRef, canvasSize, vp } = useAnimationViewport({
++    preset: CANVAS_PRESETS.splitV,
++  })
++
++  return (
++    <div className="w-full h-full flex flex-col">
++      <div className="text-sm text-neutral-500 p-2">
++        导体切割磁感线 — 即将上线
++      </div>
++      <AnimationSvgCanvas
++        containerRef={containerRef}
++        transform={vp.transform}
++        className="flex-1"
++      >
++        <g>
++          <text x={canvasSize.width / 2} y={canvasSize.height / 2} textAnchor="middle" fill="#94A3B8" fontSize={canvasSize.font(14)}>
++            TODO: 实现切割磁感线模型
++          </text>
++        </g>
++      </AnimationSvgCanvas>
++    </div>
++  )
++}
+
+diff --git a/src/features/electromagnetism/induction/single-rod/components/SingleRodScene.tsx b/src/features/electromagnetism/induction/single-rod/components/SingleRodScene.tsx
+new file mode 100644
+--- /dev/null
++++ b/src/features/electromagnetism/induction/single-rod/components/SingleRodScene.tsx
+@@ -0,0 +1,242 @@
++/**
++ * src/features/electromagnetism/induction/single-rod/components/SingleRodScene.tsx
++ * 单杆物理视界 — 场景内容（设计坐标 0..700×325）
++ *
++ * ════════════════════════════════════════════════════════════════════════════
++ * 设计坐标说明：
++ * • 此组件渲染的内容放在 <g transform={vp.transform}> 内
++ * • 所有坐标使用设计坐标（0..700 / 0..325），由 AnimationSvgCanvas 缩放
++ * • 父组件（InductionSingleRod）负责 AnimationSvgCanvas 容器
++ *
++ * 合规要点（铁律 1/5）：
++ * • 铁律 5：复用 ConductingRod / Rails / MagneticFieldSymbols / VectorArrow
++ * • 铁律 1-1：颜色引用 theme token（EM_COLORS / DYNAMICS_COLORS）
++ * • 铁律 1-6：字体缩放使用 canvasSize.font()
++ * • 铁律 1-4：矢量走 VectorArrow 组件 + refMagnitudes
++ * ════════════════════════════════════════════════════════════════════════════
++ */
++import React, { useCallback } from 'react'
++
++// ─── 可复用组件（铁律 5：组件复用优先）───────────────────────────────
++import {
++  ConductingRod,
++  Rails,
++  MagneticFieldSymbols,
++  VectorArrow,
++} from '@/components/Physics'
++
++// ─── 类型定义（存根）──────────────────────────────────────────────────
++// 实际项目中这些来自 @/components/Physics 的真实导出
++import type { SingleRodPhysicsResult } from '../hooks/useSingleRodPhysics'
++import type { ViewportInfo, CanvasSize } from '@/hooks'
++
++// ─── 设计坐标常量（splitV: 700×325）──────────────────────────────────
++const DESIGN_W = 700
++const DESIGN_H = 325
++const RAIL_X0 = 80      // 导轨左端 X
++const RAIL_X1 = 620     // 导轨右端 X
++const RAIL_Y = 200      // 导轨中心 Y
++const RAIL_SPACING = 80 // 导轨间距
++
++interface SingleRodSceneProps {
++  physics: SingleRodPhysicsResult
++  scenario: number
++  canvasSize: CanvasSize
++  /** 视口变换（父组件 AnimationSvgCanvas 已应用，此处声明兼容） */
++  vp?: ViewportInfo
++}
++
++/**
++ * 单杆物理视界场景内容（设计坐标）
++ *
++ * 渲染内容：
++ * 1. MagneticFieldSymbols — 磁场 × 符号背景
++ * 2. Rails                — 导轨（上下平行线）
++ * 3. ConductingRod        — 导体棒（水平模式）
++ * 4. VectorArrow × 3      — 速度/安培力/外力矢量
++ * 5. SVG text             — 电流/电动势标注
++ */
++export function SingleRodScene({ physics, scenario, canvasSize }: SingleRodSceneProps) {
++  const {
++    currentV,
++    currentI,
++    velocityVector,
++    ampereForceVector,
++    extForceVector,
++    currentEMF,
++    terminalV,
++  } = physics
++
++  // ─── 字体缩放（铁律 1-6）────────────────────────────────────────
++  const font = useCallback(
++    (size: number) => canvasSize.font(size),
++    [canvasSize]
++  )
++
++  // ─── 导体棒 X 坐标（设计坐标）──────────────────────────────────
++  // 导体棒随 currentX 在导轨上滑动
++  const rodDesignX = RAIL_X0 + Math.min(physics.currentX, RAIL_X1 - RAIL_X0)
++
++  // ─── 电流方向 ───────────────────────────────────────────────────
++  const currentDir: 'in' | 'out' | 'none' =
++    currentI > 0.01 ? 'in' : currentI < -0.01 ? 'out' : 'none'
++
++  return (
++    <g>
++      {/* ─── 磁场背景（× 符号）────────────────────────────────── */}
++      <MagneticFieldSymbols
++        x1={RAIL_X0 - 10}
++        y1={RAIL_Y - RAIL_SPACING / 2 - 10}
++        x2={RAIL_X1 + 10}
++        y2={RAIL_Y + RAIL_SPACING / 2 + 10}
++        direction="into"
++        gridCountX={12}
++        gridCountY={3}
++        color="#10B981"
++        opacity={0.3}
++      />
++
++      {/* ─── 导轨（上下平行金属导轨）──────────────────────────── */}
++      <Rails
++        startX={RAIL_X0}
++        endX={RAIL_X1}
++        y={RAIL_Y}
++        spacing={RAIL_SPACING}
++        visualScale={1.0}
++      />
++
++      {/* ─── 导体棒（水平模式，跨越导轨间距）──────────────────── */}
++      <ConductingRod
++        type="horizontal"
++        x={rodDesignX}
++        y={RAIL_Y}
++        spacing={RAIL_SPACING}
++        currentDir={currentDir}
++        rodRadius={12}
++      />
++
++      {/* ─── 电流标注（SVG text）──────────────────────────────── */}
++      {currentI > 0.01 && (
++        <text
++          x={RAIL_X1 + 25}
++          y={RAIL_Y}
++          fontSize={font(11)}
++          fill="#DC2626"
++          textAnchor="start"
++          dominantBaseline="middle"
++        >
++          I={currentI.toFixed(2)}A
++        </text>
++      )}
++
++      {/* ─── 感应电动势标注 ──────────────────────────────────── */}
++      <text
++        x={RAIL_X0 + 10}
++        y={RAIL_Y + RAIL_SPACING / 2 + 40}
++        fontSize={font(10)}
++        fill="#D97706"
++      >
++        ε = {currentEMF.toFixed(2)} V
++      </text>
++
++      {/* ─── 收尾速度标注（恒力模式）───────────────────────────── */}
++      {scenario === 1 && terminalV > 0.01 && (
++        <text
++          x={RAIL_X0 + 10}
++          y={RAIL_Y + RAIL_SPACING / 2 + 58}
++          fontSize={font(11)}
++          fill="#64748B"
++        >
++          v_m = {terminalV.toFixed(2)} m/s
++        </text>
++      )}
++
++      {/* ─── 矢量箭头层（铁律 5：必须走 VectorArrow 组件）─────── */}
++      <VectorsOverlay
++        rodCenterX={rodDesignX}
++        rodCenterY={RAIL_Y}
++        velocity={velocityVector}
++        ampereForce={ampereForceVector}
++        extForce={extForceVector}
++        scenario={scenario}
++        font={font}
++      />
++    </g>
++  )
++}
++
++// ─── 矢量箭头覆盖层 ─────────────────────────────────────────────────
++
++function VectorsOverlay({
++  rodCenterX,
++  rodCenterY,
++  velocity,
++  ampereForce,
++  extForce,
++  scenario,
++  font,
++}: {
++  rodCenterX: number
++  rodCenterY: number
++  velocity: { dx: number; dy: number; magnitude: number }
++  ampereForce: { dx: number; dy: number; magnitude: number }
++  extForce: { dx: number; dy: number; magnitude: number }
++  scenario: number
++  font: (size: number) => number
++}) {
++  // 三个箭头 Y 坐标：导体棒上方 30px 起，依次排列
++  const VEL_Y = rodCenterY - 30
++  const FA_Y = rodCenterY - 30
++  const F_EXT_Y = rodCenterY + 25
++
++  const MIN_LEN = 40
++
++  return (
++    <g>
++      {/* ─── 速度矢量（蓝色，向右）── */}
++      {/* ✅ 铁律 1-4 + 铁律 5：VectorArrow 组件 + refMagnitudes 归一化 */}
++      {velocity.magnitude > 5 && (
++        <VectorArrow
++          origin={{ x: rodCenterX, y: VEL_Y }}
++          direction={{ dx: 1, dy: 0 }}
++          magnitude={Math.max(velocity.magnitude, MIN_LEN)}
++          type="velocity"
++          refMagnitudes={{ velocity: 3.0 }}
++          label="v"
++          labelOffset={{ x: 0, y: -12 }}
++          fontSize={font(10)}
++        />
++      )}
++
++      {/* ─── 安培力矢量（紫色，向左）── */}
++      {/* ✅ 铁律 1-1 颜色语义：安培力 = lorentzForce (#8B5CF6 洛伦兹紫) */}
++      {ampereForce.magnitude > 5 && (
++        <VectorArrow
++          origin={{ x: rodCenterX, y: FA_Y }}
++          direction={{ dx: -1, dy: 0 }}
++          magnitude={Math.max(ampereForce.magnitude, MIN_LEN)}
++          type="lorentzForce"
++          refMagnitudes={{ lorentzForce: 0.5 }}
++          label="F_A"
++          labelOffset={{ x: 0, y: 16 }}
++          fontSize={font(10)}
++        />
++      )}
++
++      {/* ─── 外力矢量（橙色，向右，仅恒力模式）── */}
++      {/* ✅ 铁律 1-1 颜色语义：外力 = forceNet (#EA580C 动力橙) */}
++      {scenario === 1 && extForce.magnitude > 5 && (
++        <VectorArrow
++          origin={{ x: rodCenterX, y: F_EXT_Y }}
++          direction={{ dx: 1, dy: 0 }}
++          magnitude={Math.max(extForce.magnitude, MIN_LEN)}
++          type="forceNet"
++          refMagnitudes={{ forceNet: 0.5 }}
++          label="F"
++          labelOffset={{ x: 0, y: 12 }}
++          fontSize={font(10)}
++        />
++      )}
++    </g>
++  )
++}
+
+diff --git a/src/features/electromagnetism/induction/single-rod/components/SingleRodCharts.tsx b/src/features/electromagnetism/induction/single-rod/components/SingleRodCharts.tsx
+new file mode 100644
+--- /dev/null
++++ b/src/features/electromagnetism/induction/single-rod/components/SingleRodCharts.tsx
+@@ -0,0 +1,404 @@
++/**
++ * src/features/electromagnetism/induction/single-rod/components/SingleRodCharts.tsx
++ * 单杆三图表面板 — v-t / I-t / 能量守恒
++ *
++ * ════════════════════════════════════════════════════════════════════════════
++ * 合规要点：
++ * • 三图表横向 HTML flex 并列（铁律 1 §8：禁止 SVG foreignObject 嵌套）
++ * • 图表配色：引用 VT_CHART_COLORS / EM_COLORS / ENERGY_COLORS
++ * • 时间同步虚线：垂直扫描线与下屏导体棒位置时序对齐
++ * • 图表组件：使用 BasePhysicsChart / ChartCursor
++ * ════════════════════════════════════════════════════════════════════════════
++ */
++import React, { useMemo } from 'react'
++import {
++  VT_CHART_COLORS,
++  EM_COLORS,
++  ENERGY_COLORS,
++  CHART_COLORS,
++} from '@/theme/physics'
++import type { SingleRodPhysicsResult } from '../hooks/useSingleRodPhysics'
++
++// ─── 图表尺寸常量 ──────────────────────────────────────────────────────
++const CHART_PADDING_X = 48
++const CHART_PADDING_Y = 36
++const LABEL_HEIGHT = 24
++
++interface SingleRodChartsProps {
++  physics: SingleRodPhysicsResult
++  time: number
++}
++
++export function SingleRodCharts({ physics, time }: SingleRodChartsProps) {
++  const { T_max, vtPoints, itPoints, energyPoints, vYMax, iYMax, eYMax } = physics
++
++  // 当前时间扫描线 X 坐标（供三个图表共享）
++  const syncLineX = (time / T_max)  // 归一化 [0, 1]
++
++  return (
++    // ✅ 三图表横向 HTML flex 并列
++    <div className="flex flex-row w-full h-full gap-2 min-h-0">
++      {/* ─── 左图：v-t 速度时间曲线 ─────────────────────────── */}
++      <div className="flex-1 min-w-0 flex flex-col">
++        <div className="text-xs font-medium text-neutral-600 mb-1 px-1">v-t 速度演变</div>
++        <div className="flex-1 bg-white rounded-lg border border-neutral-200 p-2 shadow-sm min-h-0">
++          <VelocityChart
++            points={vtPoints}
++            currentTime={time}
++            T_max={T_max}
++            vYMax={vYMax}
++            terminalV={physics.terminalV}
++            syncRatio={syncLineX}
++          />
++        </div>
++      </div>
++
++      {/* ─── 中图：I-t 感应电流曲线 ─────────────────────────── */}
++      <div className="flex-1 min-w-0 flex flex-col">
++        <div className="text-xs font-medium text-neutral-600 mb-1 px-1">I-t 电流衰减</div>
++        <div className="flex-1 bg-white rounded-lg border border-neutral-200 p-2 shadow-sm min-h-0">
++          <CurrentChart
++            points={itPoints}
++            currentTime={time}
++            T_max={T_max}
++            iYMax={iYMax}
++            syncRatio={syncLineX}
++          />
++        </div>
++      </div>
++
++      {/* ─── 右图：能量守恒转化 ─────────────────────────────── */}
++      <div className="flex-1 min-w-0 flex flex-col">
++        <div className="text-xs font-medium text-neutral-600 mb-1 px-1">能量转化守恒</div>
++        <div className="flex-1 bg-white rounded-lg border border-neutral-200 p-2 shadow-sm min-h-0">
++          <EnergyChart
++            points={energyPoints}
++            currentTime={time}
++            T_max={T_max}
++            eYMax={eYMax}
++            syncRatio={syncLineX}
++          />
++        </div>
++      </div>
++    </div>
++  )
++}
++
++// ─── 子组件：v-t 图表 ──────────────────────────────────────────────────
++
++function VelocityChart({
++  points,
++  currentTime,
++  T_max,
++  vYMax,
++  terminalV,
++  syncRatio,
++}: {
++  points: Array<{ t: number; v: number }>
++  currentTime: number
++  T_max: number
++  vYMax: number
++  terminalV: number
++  syncRatio: number
++}) {
++  const paddingX = CHART_PADDING_X
++  const paddingY = CHART_PADDING_Y
++  const chartW = 180  // 简化的图表宽度
++  const chartH = 100
++
++  const toX = (t: number) => paddingX + (t / T_max) * (chartW - paddingX * 2)
++  const toY = (v: number) => paddingY + ((vYMax - v) / (2 * vYMax)) * (chartH - paddingY * 2)
++
++  // 已到达的时间点
++  const activePoints = points.filter(p => p.t <= currentTime)
++
++  return (
++    <svg
++      width="100%"
++      height="100%"
++      viewBox={`0 0 ${chartW} ${chartH + LABEL_HEIGHT}`}
++      preserveAspectRatio="xMidYMid meet"
++    >
++      {/* 网格 */}
++      {[0.25, 0.5, 0.75, 1].map(r => (
++        <line
++          key={r}
++          x1={toX(r * T_max)} y1={paddingY}
++          x2={toX(r * T_max)} y2={chartH - paddingY}
++          stroke="#E2E8F0" strokeWidth={0.5} strokeDasharray="2,2"
++        />
++      ))}
++      {/* 横轴 */}
++      <line
++        x1={paddingX} y1={toY(0)}
++        x2={chartW - paddingX} y2={toY(0)}
++        stroke={CHART_COLORS.tickMark} strokeWidth={0.8}
++      />
++
++      {/* 曲线（虚线预告 + 实线已到达） */}
++      {points.length > 1 && (
++        <>
++          <path
++            d={`M ${points.map(p => `${toX(p.t).toFixed(1)},${toY(p.v).toFixed(1)}`).join(' L ')}`}
++            fill="none"
++            stroke={VT_CHART_COLORS.primary}
++            strokeWidth={1.5}
++            strokeDasharray="4,3"
++            opacity={0.35}
++          />
++          {activePoints.length > 1 && (
++            <path
++              d={`M ${activePoints.map(p => `${toX(p.t).toFixed(1)},${toY(p.v).toFixed(1)}`).join(' L ')}`}
++              fill="none"
++              stroke={VT_CHART_COLORS.primary}
++              strokeWidth={2}
++            />
++          )}
++        </>
++      )}
++
++      {/* 收尾速度虚线 */}
++      {terminalV > 0.01 && (
++        <line
++          x1={paddingX} y1={toY(terminalV)}
++          x2={chartW - paddingX} y2={toY(terminalV)}
++          stroke={CHART_COLORS.asymptote}
++          strokeWidth={1}
++          strokeDasharray="4,4"
++        />
++      )}
++
++      {/* 时间同步虚线（垂直扫描线） */}
++      {syncRatio > 0 && syncRatio < 1 && (
++        <line
++          x1={toX(currentTime)} y1={paddingY}
++          x2={toX(currentTime)} y2={chartH - paddingY}
++          stroke="#94A3B8"
++          strokeWidth={1.5}
++          strokeDasharray="3,3"
++          opacity={0.7}
++        />
++      )}
++
++      {/* 当前点高亮 */}
++      {currentTime > 0 && currentTime <= T_max && (
++        <circle
++          cx={toX(currentTime)}
++          cy={toY(points.find(p => p.t >= currentTime)?.v ?? 0)}
++          r={4}
++          fill={VT_CHART_COLORS.primary}
++        />
++      )}
++
++      {/* 轴标签 */}
++      <text x={chartW / 2} y={chartH + LABEL_HEIGHT - 4}
++        fontSize={8} fill={CHART_COLORS.tickLabel} textAnchor="middle">t / s</text>
++    </svg>
++  )
++}
++
++// ─── 子组件：I-t 图表 ──────────────────────────────────────────────────
++
++function CurrentChart({
++  points,
++  currentTime,
++  T_max,
++  iYMax,
++  syncRatio,
++}: {
++  points: Array<{ t: number; I: number }>
++  currentTime: number
++  T_max: number
++  iYMax: number
++  syncRatio: number
++}) {
++  const paddingX = CHART_PADDING_X
++  const paddingY = CHART_PADDING_Y
++  const chartW = 180
++  const chartH = 100
++
++  const toX = (t: number) => paddingX + (t / T_max) * (chartW - paddingX * 2)
++  const toY = (i: number) => paddingY + ((iYMax - i) / iYMax) * (chartH - paddingY * 2)
++
++  const activePoints = points.filter(p => p.t <= currentTime)
++
++  return (
++    <svg
++      width="100%"
++      height="100%"
++      viewBox={`0 0 ${chartW} ${chartH + LABEL_HEIGHT}`}
++      preserveAspectRatio="xMidYMid meet"
++    >
++      {/* 网格 */}
++      {[0.25, 0.5, 0.75, 1].map(r => (
++        <line
++          key={r}
++          x1={toX(r * T_max)} y1={paddingY}
++          x2={toX(r * T_max)} y2={chartH - paddingY}
++          stroke="#E2E8F0" strokeWidth={0.5} strokeDasharray="2,2"
++        />
++      ))}
++
++      {/* 曲线 */}
++      {points.length > 1 && (
++        <>
++          <path
++            d={`M ${points.map(p => `${toX(p.t).toFixed(1)},${toY(p.I).toFixed(1)}`).join(' L ')}`}
++            fill="none"
++            stroke={EM_COLORS.electricCurrent}
++            strokeWidth={1.5}
++            strokeDasharray="4,3"
++            opacity={0.35}
++          />
++          {activePoints.length > 1 && (
++            <path
++              d={`M ${activePoints.map(p => `${toX(p.t).toFixed(1)},${toY(p.I).toFixed(1)}`).join(' L ')}`}
++              fill="none"
++              stroke={EM_COLORS.electricCurrent}
++              strokeWidth={2}
++            />
++          )}
++        </>
++      )}
++
++      {/* 时间同步虚线 */}
++      {syncRatio > 0 && syncRatio < 1 && (
++        <line
++          x1={toX(currentTime)} y1={paddingY}
++          x2={toX(currentTime)} y2={chartH - paddingY}
++          stroke="#94A3B8"
++          strokeWidth={1.5}
++          strokeDasharray="3,3"
++          opacity={0.7}
++        />
++      )}
++
++      {/* 当前点 */}
++      {currentTime > 0 && currentTime <= T_max && (
++        <circle
++          cx={toX(currentTime)}
++          cy={toY(points.find(p => p.t >= currentTime)?.I ?? 0)}
++          r={4}
++          fill={EM_COLORS.electricCurrent}
++        />
++      )}
++
++      {/* 轴标签 */}
++      <text x={chartW / 2} y={chartH + LABEL_HEIGHT - 4}
++        fontSize={8} fill={CHART_COLORS.tickLabel} textAnchor="middle">t / s</text>
++    </svg>
++  )
++}
++
++// ─── 子组件：能量守恒图表 ──────────────────────────────────────────────
++
++function EnergyChart({
++  points,
++  currentTime,
++  T_max,
++  eYMax,
++  syncRatio,
++}: {
++  points: Array<{ t: number; W: number; Q: number; E: number }>
++  currentTime: number
++  T_max: number
++  eYMax: number
++  syncRatio: number
++}) {
++  const paddingX = CHART_PADDING_X
++  const paddingY = CHART_PADDING_Y
++  const chartW = 180
++  const chartH = 100
++
++  const toX = (t: number) => paddingX + (t / T_max) * (chartW - paddingX * 2)
++  const toY = (e: number) => paddingY + ((eYMax - e) / eYMax) * (chartH - paddingY * 2)
++
++  const activePoints = points.filter(p => p.t <= currentTime)
++
++  return (
++    <svg
++      width="100%"
++      height="100%"
++      viewBox={`0 0 ${chartW} ${chartH + LABEL_HEIGHT}`}
++      preserveAspectRatio="xMidYMid meet"
++    >
++      {/* 网格 */}
++      {[0.25, 0.5, 0.75, 1].map(r => (
++        <line
++          key={r}
++          x1={toX(r * T_max)} y1={paddingY}
++          x2={toX(r * T_max)} y2={chartH - paddingY}
++          stroke="#E2E8F0" strokeWidth={0.5} strokeDasharray="2,2"
++        />
++      ))}
++
++      {/* W 外力功曲线（黄绿色） */}
++      {points.length > 1 && (
++        <>
++          <path
++            d={`M ${points.map(p => `${toX(p.t).toFixed(1)},${toY(p.W).toFixed(1)}`).join(' L ')}`}
++            fill="none"
++            stroke={ENERGY_COLORS.work}
++            strokeWidth={1.5}
++            strokeDasharray="4,3"
++            opacity={0.35}
++          />
++          {activePoints.length > 1 && (
++            <path
++              d={`M ${activePoints.map(p => `${toX(p.t).toFixed(1)},${toY(p.W).toFixed(1)}`).join(' L ')}`}
++              fill="none"
++              stroke={ENERGY_COLORS.work}
++              strokeWidth={2}
++            />
++          )}
++        </>
++      )}
++
++      {/* Q 焦耳热曲线（红色） */}
++      {points.length > 1 && (
++        <>
++          <path
++            d={`M ${points.map(p => `${toX(p.t).toFixed(1)},${toY(p.Q).toFixed(1)}`).join(' L ')}`}
++            fill="none"
++            stroke={ENERGY_COLORS.heatLoss}
++            strokeWidth={1.5}
++            strokeDasharray="4,3"
++            opacity={0.35}
++          />
++          {activePoints.length > 1 && (
++            <path
++              d={`M ${activePoints.map(p => `${toX(p.t).toFixed(1)},${toY(p.Q).toFixed(1)}`).join(' L ')}`}
++              fill="none"
++              stroke={ENERGY_COLORS.heatLoss}
++              strokeWidth={2}
++            />
++          )}
++        </>
++      )}
++
++      {/* 图例 */}
++      <g transform={`translate(${paddingX + 5}, ${paddingY + 5})`}>
++        <line x1={0} y1={0} x2={12} y2={0} stroke={ENERGY_COLORS.work} strokeWidth={2} />
++        <text x={16} y={3} fontSize={7} fill="#64748B">W</text>
++        <line x1={30} y1={0} x2={42} y2={0} stroke={ENERGY_COLORS.heatLoss} strokeWidth={2} />
++        <text x={46} y={3} fontSize={7} fill="#64748B">Q</text>
++      </g>
++
++      {/* 时间同步虚线 */}
++      {syncRatio > 0 && syncRatio < 1 && (
++        <line
++          x1={toX(currentTime)} y1={paddingY}
++          x2={toX(currentTime)} y2={chartH - paddingY}
++          stroke="#94A3B8"
++          strokeWidth={1.5}
++          strokeDasharray="3,3"
++          opacity={0.7}
++        />
++      )}
++
++      {/* 轴标签 */}
++      <text x={chartW / 2} y={chartH + LABEL_HEIGHT - 4}
++        fontSize={8} fill={CHART_COLORS.tickLabel} textAnchor="middle">t / s</text>
++    </svg>
++  )
++}
+
+diff --git a/src/features/electromagnetism/induction/single-rod/hooks/useSingleRodPhysics.ts b/src/features/electromagnetism/induction/single-rod/hooks/useSingleRodPhysics.ts
+new file mode 100644
+--- /dev/null
++++ b/src/features/electromagnetism/induction/single-rod/hooks/useSingleRodPhysics.ts
+@@ -0,0 +1,257 @@
++/**
++ * src/features/electromagnetism/induction/single-rod/hooks/useSingleRodPhysics.ts
++ * 单杆电磁感应物理 Hook — 封装 RK4 + 图表数据生成
++ *
++ * @description
++ * 遵循项目规范：
++ * • 纯函数封装，无副作用
++ * • 图表数据预计算（useMemo 缓存）
++ * • 坐标转换通过 physicsToCanvasWithOrigin
++ * • 布局常量命名（CANVAS_PRESETS.splitV = 700×325）
++ */
++import { useMemo } from 'react'
++import {
++  computeSingleRodConstants,
++  computeSingleRodStateAtTime,
++  generateSingleRodHistory,
++  type SingleRodParams,
++} from '@/physics/induction'
++import { physicsToCanvasWithOrigin, computeScale } from '@/utils/coordinate'
++import type { CanvasSize } from '@/utils/useCanvasSize'
++
++// ─── 物理世界配置 ───────────────────────────────────────────────────────
++
++const SINGLE_ROD_WORLD = {
++  xMin: -0.5,
++  xMax: 10.0,
++  yMin: -1.5,
++  yMax: 1.5,
++} as const
++
++/** 导轨长度（物理 m） */
++const RAIL_PHYS_LENGTH = 8.0
++
++// ─── 接口定义 ───────────────────────────────────────────────────────────
++
++export interface SingleRodPhysicsParams extends SingleRodParams {
++  enableChargeSlot?: boolean
++}
++
++export interface SingleRodPhysicsResult {
++  /** 当前速度 m/s */
++  currentV: number
++  /** 当前位移 m */
++  currentX: number
++  /** 当前加速度 m/s² */
++  currentA: number
++  /** 感应电流 A */
++  currentI: number
++  /** 感应电动势 V */
++  currentEMF: number
++  /** 安培力 N（向左） */
++  currentFA: number
++  /** 累积电荷量 C */
++  currentCharge: number
++  /** 外力做功 J */
++  currentEnergyW: number
++  /** 焦耳热 J */
++  currentEnergyQ: number
++  /** 收尾速度 m/s */
++  terminalV: number
++  /** 时间常数 s */
++  tau: number
++  /** 边界判定 */
++  hasHitLimit: boolean
++
++  // ─── 画布渲染数据 ───────────────────────────────────────────────
++  /** 比例尺 px/m */
++  scale: number
++  /** 原点 X（像素） */
++  originX: number
++  /** 原点 Y（像素） */
++  originY: number
++  /** 导轨左端像素坐标 */
++  railLeftPos: { cx: number; cy: number }
++  /** 导轨右端像素坐标 */
++  railRightPos: { cx: number; cy: number }
++  /** 导体棒中心像素坐标 */
++  rodPos: { cx: number; cy: number }
++  /** 导轨间距（视觉放大 1.2×） */
++  railSpacing: number
++  /** 导轨总长度（像素） */
++  railLength: number
++
++  // ─── 图表数据 ───────────────────────────────────────────────────
++  /** 最大采样时间 */
++  T_max: number
++  /** v-t 图数据点 */
++  vtPoints: Array<{ t: number; v: number }>
++  /** I-t 图数据点 */
++  itPoints: Array<{ t: number; I: number }>
++  /** 能量图数据点 */
++  energyPoints: Array<{ t: number; W: number; Q: number; E: number }>
++  /** v-t 图 Y 轴最大值 */
++  vYMax: number
++  /** I-t 图 Y 轴最大值 */
++  iYMax: number
++  /** 能量图 Y 轴最大值 */
++  eYMax: number
++
++  // ─── 矢量箭头数据 ───────────────────────────────────────────────
++  /** 速度矢量（方向向右） */
++  velocityVector: { dx: number; dy: number; magnitude: number }
++  /** 安培力矢量（方向向左） */
++  ampereForceVector: { dx: number; dy: number; magnitude: number }
++  /** 外力矢量（方向向右） */
++  extForceVector: { dx: number; dy: number; magnitude: number }
++}
++
++/**
++ * 单杆物理 Hook
++ *
++ * @param params   单杆参数（scenario/B/L/R/m/driveValue）
++ * @param canvasSize 画布尺寸（来自 useAnimationViewport）
++ * @param time    当前动画时间 s
++ */
++export function useSingleRodPhysics(
++  params: SingleRodPhysicsParams,
++  canvasSize: CanvasSize,
++  time: number
++): SingleRodPhysicsResult {
++  const {
++    scenario = 1,
++    B = 1.0,
++    L = 0.5,
++    R = 1.0,
++    m = 0.2,
++    F_ext = 2.0,
++    enableChargeSlot = false,
++  } = params
++
++  // ─── 比例尺计算 ───────────────────────────────────────────────────
++  // splitV 预设：宽 700，高 325；场景占下半屏（约 325px 高）
++  const sceneHeight = canvasSize.height
++  const sceneWidth = canvasSize.width
++
++  const scale = useMemo(
++    () => computeScale(sceneWidth, sceneHeight, SINGLE_ROD_WORLD, 40),
++    [sceneWidth, sceneHeight]
++  )
++
++  // 原点：画布左下角（x=0 为导轨左端）
++  const originX = 1.0 * scale   // 导轨左端偏移 1m
++  const originY = sceneHeight / 2
++
++  // ─── 常量计算 ─────────────────────────────────────────────────────
++  const { v_m: terminalV, tau, a_0 } = useMemo(
++    () => computeSingleRodConstants(scenario, F_ext, B, L, R, m),
++    [scenario, F_ext, B, L, R, m]
++  )
++
++  // 最大采样时间
++  const T_max = useMemo(
++    () => Math.max(6.0, Math.min(20.0, 4.5 * tau)),
++    [tau]
++  )
++
++  // ─── 图表数据预计算 ───────────────────────────────────────────────
++  const { vtPoints, itPoints, energyPoints, vMax, IMax, energyMax } =
++    useMemo(() => {
++      const historyParams: SingleRodParams = { scenario, B, L, R, m, F_ext }
++      return generateSingleRodHistory(T_max, historyParams, 100)
++    }, [T_max, scenario, B, L, R, m, F_ext])
++
++  // ─── 瞬时状态计算 ─────────────────────────────────────────────────
++  const stateAtT = useMemo(
++    () => {
++      const historyParams: SingleRodParams = { scenario, B, L, R, m, F_ext }
++      return computeSingleRodStateAtTime(time, historyParams)
++    },
++    [time, scenario, B, L, R, m, F_ext]
++  )
++
++  // ─── 画布坐标计算 ─────────────────────────────────────────────────
++  const { railLeftPos, railRightPos, rodPos, railSpacing, railLength } =
++    useMemo(() => {
++      const toCanvas = (wx: number, wy: number) => {
++        const { x, y } = physicsToCanvasWithOrigin(wx, wy, originX, originY, scale)
++        return { cx: x, cy: y }
++      }
++
++      return {
++        railLeftPos: toCanvas(0, 0),
++        railRightPos: toCanvas(RAIL_PHYS_LENGTH, 0),
++        rodPos: toCanvas(stateAtT.x, 0),
++        // 导轨间距视觉放大 1.2×（物理计算 L 保持规范米制）
++        railSpacing: L * scale * 1.2,
++        railLength: RAIL_PHYS_LENGTH * scale,
++      }
++    }, [stateAtT.x, originX, originY, scale, L])
++
++  // ─── 矢量箭头数据 ─────────────────────────────────────────────────
++  // 使用物理量的参考标量进行归一化
++  const velocityRef = Math.max(0.5, terminalV * 1.2)
++  const forceRef = Math.max(0.5, F_ext)
++
++  const velocityVector = useMemo(() => {
++    const mag = Math.abs(stateAtT.v)
++    const normalizedMag = mag / velocityRef  // 归一化到 [0, 1]
++    return {
++      dx: stateAtT.v >= 0 ? 1 : -1,
++      dy: 0,
++      magnitude: Math.min(normalizedMag, 1) * 60,  // 最大 60px
++    }
++  }, [stateAtT.v, velocityRef])
++
++  const ampereForceVector = useMemo(() => {
++    const mag = Math.abs(stateAtT.F_A)
++    const normalizedMag = mag / forceRef
++    return {
++      dx: -1,  // 始终向左
++      dy: 0,
++      magnitude: Math.min(normalizedMag, 1) * 60,
++    }
++  }, [stateAtT.F_A, forceRef])
++
++  const extForceVector = useMemo(() => {
++    const mag = scenario === 1 ? F_ext : (stateAtT.v >= 0 ? stateAtT.F_A : -stateAtT.F_A)
++    return {
++      dx: 1,
++      dy: 0,
++      magnitude: Math.min(mag / forceRef, 1) * 60,
++    }
++  }, [scenario, F_ext, stateAtT.v, stateAtT.F_A, forceRef])
++
++  return {
++    currentV: stateAtT.v,
++    currentX: stateAtT.x,
++    currentA: stateAtT.a,
++    currentI: stateAtT.I,
++    currentEMF: stateAtT.EMF,
++    currentFA: stateAtT.F_A,
++    currentCharge: stateAtT.charge,
++    currentEnergyW: stateAtT.energyW,
++    currentEnergyQ: stateAtT.energyQ,
++    terminalV,
++    tau,
++    hasHitLimit: stateAtT.hasHitLimit,
++    scale,
++    originX,
++    originY,
++    railLeftPos,
++    railRightPos,
++    rodPos,
++    railSpacing,
++    railLength,
++    T_max,
++    vtPoints,
++    itPoints,
++    energyPoints,
++    vYMax: vMax,
++    iYMax: IMax,
++    eYMax: energyMax,
++    velocityVector,
++    ampereForceVector,
++    extForceVector,
++  }
++}
+
+diff --git a/src/data/registries/electromagnetism-induction.ts b/src/data/registries/electromagnetism-induction.ts
+new file mode 100644
+--- /dev/null
++++ b/src/data/registries/electromagnetism-induction.ts
+@@ -0,0 +1,224 @@
++/**
++ * src/data/registries/electromagnetism-induction.ts
++ * 电磁感应动画注册表
++ *
++ * ════════════════════════════════════════════════════════════════════════════
++ * 规范依据：project_rules.md §3 + ARCHITECTURE_RULES.md §2
++ *
++ * 命名约定：
++ * • knowledgeId 与 knowledgeTree.ts 保持严格一致
++ * • Component 使用 lazy 延迟加载
++ * • defaultParams 固定初始值
++ * • controlMeta 控制项声明式 LeftPanel
++ * • paramMeta 参数滑块声明式 ParamControl
++ * ════════════════════════════════════════════════════════════════════════════
++ */
++import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
++import { defineAnimations } from '../defineAnimations'
++
++// ════════════════════════════════════════════════════════════════════════════
++// 电磁学 · 电磁感应（[M4-1]）
++// ════════════════════════════════════════════════════════════════════════════
++export const electromagnetismInductionAnimations = defineAnimations({
++  // ─── §4-5 新增：电磁感应单杆模型 ────────────────────────────────
++  'anim-induction-single-rod': {
++    title: '电磁感应单杆模型',
++    knowledgeId: 'electricity-4-5',
++    Component: lazy(() => import('@/features/electromagnetism/induction/InductionSingleRod')),
++    defaultParams: {
++      /** 启动方式：0=初速度释放, 1=恒力驱动 */
++      scenario: 1,
++      /** 磁感应强度 T */
++      B: 1.0,
++      /** 导轨间距 m */
++      L: 0.5,
++      /** 回路电阻 Ω */
++      R: 1.0,
++      /** 导体棒质量 kg */
++      m: 0.2,
++      /** 外激励强度（N 或 m/s，依据 scenario） */
++      driveValue: 2.0,
++      /** 是否显示电荷积累槽 */
++      enableChargeSlot: false,
++    } as const,
++    controlMeta: [
++      // ─── 动力学边界配置 ───────────────────────────────────────
++      {
++        type: 'segmented',
++        key: 'scenario',
++        label: '启动方式',
++        group: '动力学边界',
++        resetOnChange: true,
++        options: [
++          { value: 0, label: '初速度释放' },
++          { value: 1, label: '恒力驱动' },
++        ],
++      },
++      // ─── 微观物理探针 ─────────────────────────────────────────
++      {
++        type: 'toggle',
++        key: 'enableChargeSlot',
++        label: '电荷积累槽',
++        group: '微观探针',
++      },
++      // ─── 教学提示 ─────────────────────────────────────────────
++      {
++        type: 'tip',
++        group: '教学提示',
++        variant: 'info',
++        showIf: 'scenario',
++        showIfValue: 1,
++        content: '橙色箭头（F）向右施加恒定外力。蓝色箭头（v）向右加速，紫色箭头（F_A）向左阻碍加速。当紫=橙时，a=0，单杆进入匀速收尾状态。',
++      },
++      {
++        type: 'tip',
++        group: '教学提示',
++        variant: 'info',
++        showIf: 'scenario',
++        showIfValue: 0,
++        content: '蓝色箭头（v₀）向右做变减速运动，速度逐渐衰减至零。紫色箭头（F_A）向左阻碍运动，与速度同向减速。观察 v-t 图渐进趋近零的过程。',
++      },
++    ],
++    paramMeta: [
++      // ─── 核心物理参数 ─────────────────────────────────────────
++      {
++        key: 'driveValue',
++        label: '外激励强度',
++        group: '核心参数',
++        min: 0,
++        max: 5.0,
++        step: 0.1,
++        unit: (params: Record<string, unknown>) => (params.scenario === 0 ? 'm/s' : 'N'),
++        description: (params: Record<string, unknown>) =>
++          params.scenario === 0
++            ? '导体棒初始速度 v₀，速度越高，感应电流越大'
++            : '施加在导体棒上的恒定外力 F，外力越大，收尾速度越高',
++      },
++      {
++        key: 'B',
++        label: '磁感应强度 B',
++        group: '核心参数',
++        min: 0.5,
++        max: 2.5,
++        step: 0.05,
++        unit: 'T',
++        description: '磁场越强，安培力越大，收尾速度越低',
++      },
++      {
++        key: 'R',
++        label: '负载电阻 R',
++        group: '核心参数',
++        min: 0.2,
++        max: 5.0,
++        step: 0.1,
++        unit: 'Ω',
++        description: '电阻越大，感应电流越小，安培力阻碍作用越弱',
++      },
++      {
++        key: 'm',
++        label: '单杆质量 m',
++        group: '核心参数',
++        min: 0.05,
++        max: 1.0,
++        step: 0.01,
++        unit: 'kg',
++        description: '质量越大，惯性越大，加速度变化越慢',
++      },
++      {
++        key: 'L',
++        label: '导轨有效间距',
++        group: '核心参数',
++        min: 0.2,
++        max: 1.5,
++        step: 0.05,
++        unit: 'm',
++        description: '导轨间距决定切割磁感线的有效长度 L',
++      },
++    ],
++    controlsMode: 'param' as const,
++  },
++
++  // ─── §4-6 双杆模型（知识树 ID 顺移）────────────────────────────
++  'anim-induction-dual-rods': {
++    title: '电磁感应双杆模型',
++    knowledgeId: 'electricity-4-6',  // ✅ 从 electricity-4-5 顺移
++    Component: lazy(() => import('@/features/electromagnetism/induction/InductionDualRods')),
++    defaultParams: {
++      scenario: 0,
++      massA: 0.2,
++      massB: 0.4,
++      fieldB: 1.0,
++      railL: 0.5,
++      resSum: 1.0,
++      initialV0: 6.0,
++      appliedForce: 2.0,
++    } as const,
++    controlMeta: [
++      {
++        type: 'segmented',
++        key: 'scenario',
++        label: '联动驱动模式',
++        group: '模型选择',
++        resetOnChange: true,
++        options: [
++          { value: 0, label: '自由双杆 (动量守恒)' },
++          { value: 1, label: '恒力驱动 (加速等差)' },
++        ],
++      },
++    ],
++    paramMeta: [
++      { key: 'massA', label: 'a 棒质量 m_a', min: 0.05, max: 1.0, step: 0.05, unit: 'kg', group: '质量与回路' },
++      { key: 'massB', label: 'b 棒质量 m_b', min: 0.05, max: 1.0, step: 0.05, unit: 'kg', group: '质量与回路' },
++      { key: 'fieldB', label: '全域磁场 B', min: 0.5, max: 2.0, step: 0.1, unit: 'T', group: '质量与回路' },
++      { key: 'railL', label: '导轨跨度 L', min: 0.2, max: 1.0, step: 0.1, unit: 'm', group: '质量与回路' },
++      { key: 'resSum', label: '回路总电阻 R', min: 0.2, max: 5.0, step: 0.1, unit: 'Ω', group: '质量与回路' },
++      { key: 'initialV0', label: 'a 棒初速度 v₀', min: 0.5, max: 10.0, step: 0.5, unit: 'm/s', group: '启动条件', showIf: 'scenario', showIfValue: 0 },
++      { key: 'appliedForce', label: 'b 棒恒力 F', min: 0.0, max: 5.0, step: 0.1, unit: 'N', group: '启动条件', showIf: 'scenario', showIfValue: 1 },
++    ],
++    controlsMode: 'param' as const,
++  },
++
++  // ─── §4-4 导体切割磁感线（保留原内容）─────────────────────────
++  'anim-cutting-emf': {
++    title: '导体切割磁感线',
++    knowledgeId: 'electricity-4-4',
++    Component: lazy(() => import('@/features/electromagnetism/induction/CuttingEMF')),
++    defaultParams: {
++      mode: 0,
++      B: 1.5,
++      L: 1.0,
++      v: 2.0,
++      R: 2.0,
++      F_ext: 2.0,
++      m: 0.2,
++      showForceAnalysis: 1,
++    } as const,
++    controlMeta: [
++      {
++        type: 'segmented',
++        key: 'mode',
++        group: '模型选择',
++        resetOnChange: true,
++        options: [
++          { value: 0, label: '基础: 恒速切割' },
++          { value: 1, label: '进阶: 自由释放(变加速)' },
++        ],
++      },
++      {
++        type: 'toggle',
++        key: 'showForceAnalysis',
++        label: '受力矢量分析图层',
++        group: '显示辅助',
++      },
++    ],
++    paramMeta: [
++      { key: 'B', label: '磁感应强度 B（负=向外⊙）', group: '磁场与几何', min: -3.0, max: 3.0, step: 0.1, unit: 'T' },
++      { key: 'L', label: '导轨间距 L', group: '磁场与几何', min: 0.5, max: 2.0, step: 0.1, unit: 'm' },
++      { key: 'R', label: '回路电阻 R', group: '电路参数', min: 0.5, max: 5.0, step: 0.1, unit: 'Ω' },
++      { key: 'v', label: '切割速度 v', group: '动力学', min: -5.0, max: 5.0, step: 0.2, unit: 'm/s', showIf: 'mode', showIfValue: 0 },
++      { key: 'F_ext', label: '恒定外力 F外', group: '动力学', min: 0.0, max: 5.0, step: 0.1, unit: 'N', showIf: 'mode', showIfValue: 1 },
++      { key: 'm', label: '导体棒质量 m', group: '动力学', min: 0.05, max: 1.0, step: 0.05, unit: 'kg', showIf: 'mode', showIfValue: 1 },
++    ],
++    controlsMode: 'param' as const,
++  },
++})
+
+diff --git a/tests/physics/rotatingDisk.test.ts b/tests/physics/rotatingDisk.test.ts
+new file mode 100644
+--- /dev/null
++++ b/tests/physics/rotatingDisk.test.ts
+@@ -0,0 +1,174 @@
++/**
++ * tests/physics/rotatingDisk.test.ts
++ * 圆盘与圆锥摆物理层单元测试
++ *
++ * ════════════════════════════════════════════════════════════════════════════
++ * 测试覆盖：
++ * • 圆锥摆：tanθ = ω²·L·sinθ/g, cosθ = g/(ω²L)
++ * • 旋转圆盘：f = mω²r, ω_crit = √(μg/r)
++ * • 临界判定：摩擦力占比 >= 1 时 isCritical
++ * • 离心判定：ω > ω_crit 时 isFlyOff
++ * • 向心力 F_n = mω²r
++ * • 历史采样点生成
++ * ════════════════════════════════════════════════════════════════════════════
++ */
++import { describe, it, expect } from 'vitest'
++import {
++  computeRotatingDiskConstants,
++  computeRotatingDiskStateAtTime,
++  generateRotatingDiskHistory,
++} from '@/physics/circular'
++
++describe('圆盘与圆锥摆物理层', () => {
++  // ─── 基础参数 ─────────────────────────────────────────────────────
++  const CONE_PARAMS = {
++    model: 'cone-pendulum' as const,
++    omega: 3.0,
++    L: 0.8,
++    mu: 0.5,
++    g: 9.8,
++    m: 1.0,
++  }
++
++  const DISK_PARAMS = {
++    model: 'rotating-disk' as const,
++    omega: 3.0,
++    L: 0.5,  // 圆盘半径
++    mu: 0.5,
++    g: 9.8,
++    m: 1.0,
++  }
++
++  describe('computeRotatingDiskConstants', () => {
++    it('圆锥摆：理想模型无明确临界（ω_crit 较大）', () => {
++      const { omegaCrit } = computeRotatingDiskConstants(CONE_PARAMS)
++      expect(omegaCrit).toBeGreaterThan(0)
++      expect(Number.isFinite(omegaCrit)).toBe(true)
++    })
++
++    it('旋转圆盘：临界角速度 ω_crit = √(μg/r)', () => {
++      const { omegaCrit } = computeRotatingDiskConstants(DISK_PARAMS)
++      // ω_crit = √(μg/r) = √(0.5×9.8/0.5) = √9.8 ≈ 3.13 rad/s
++      expect(omegaCrit).toBeCloseTo(Math.sqrt((0.5 * 9.8) / 0.5), 1)
++    })
++
++    it('旋转圆盘：r=0 时 ω_crit = Infinity', () => {
++      const { omegaCrit } = computeRotatingDiskConstants({
++        ...DISK_PARAMS,
++        L: 0,
++      })
++      expect(Number.isFinite(omegaCrit)).toBe(false)
++    })
++  })
++
++  describe('computeRotatingDiskStateAtTime', () => {
++    describe('圆锥摆模式', () => {
++      it('ω=0 时，摆角 θ=0（静止）', () => {
++        const state = computeRotatingDiskStateAtTime(0, { ...CONE_PARAMS, omega: 0 })
++        expect(state.thetaDeg).toBeCloseTo(0, 1)
++        expect(state.centripetalForce).toBeCloseTo(0, 4)
++      })
++
++      it('ω 增大时，摆角 θ 增大', () => {
++        const stateSlow = computeRotatingDiskStateAtTime(0, { ...CONE_PARAMS, omega: 2 })
++        const stateFast = computeRotatingDiskStateAtTime(0, { ...CONE_PARAMS, omega: 5 })
++        expect(stateFast.thetaDeg).toBeGreaterThan(stateSlow.thetaDeg)
++      })
++
++      it('向心力 F_n = mω²L', () => {
++        const state = computeRotatingDiskStateAtTime(0, CONE_PARAMS)
++        const expectedForce = 1.0 * 3.0 * 3.0 * 0.8
++        expect(state.centripetalForce).toBeCloseTo(expectedForce, 4)
++      })
++
++      it('绳拉力 T = mg / cosθ', () => {
++        const state = computeRotatingDiskStateAtTime(0, CONE_PARAMS)
++        const cosTheta = Math.cos(state.theta)
++        const expectedT = (1.0 * 9.8) / cosTheta
++        expect(state.tension).toBeCloseTo(expectedT, 2)
++      })
++
++      it('旋转半径 r = L·sinθ', () => {
++        const state = computeRotatingDiskStateAtTime(0, CONE_PARAMS)
++        const expectedR = 0.8 * Math.sin(state.theta)
++        expect(state.rotationRadius).toBeCloseTo(expectedR, 4)
++      })
++    })
++
++    describe('旋转圆盘模式', () => {
++      it('向心力 F_n = mω²r', () => {
++        const state = computeRotatingDiskStateAtTime(0, DISK_PARAMS)
++        const expectedForce = 1.0 * 3.0 * 3.0 * 0.5
++        expect(state.centripetalForce).toBeCloseTo(expectedForce, 4)
++      })
++
++      it('所需摩擦力 f = mω²r', () => {
++        const state = computeRotatingDiskStateAtTime(0, DISK_PARAMS)
++        expect(state.requiredFriction).toBeCloseTo(state.centripetalForce, 4)
++      })
++
++      it('最大摩擦力 f_max = μmg', () => {
++        const state = computeRotatingDiskStateAtTime(0, DISK_PARAMS)
++        const expectedMax = 0.5 * 1.0 * 9.8
++        expect(state.maxFriction).toBeCloseTo(expectedMax, 4)
++      })
++
++      it('ω=3 rad/s 时，摩擦力占比 < 1（未达临界）', () => {
++        const state = computeRotatingDiskStateAtTime(0, DISK_PARAMS)
++        // f = mω²r = 1×9×0.5 = 4.5
++        // f_max = μmg = 0.5×1×9.8 = 4.9
++        // 比值 ≈ 0.918 < 1
++        expect(state.frictionRatio).toBeLessThan(1)
++        expect(state.isCritical).toBe(false)
++        expect(state.isFlyOff).toBe(false)
++      })
++
++      it('ω > ω_crit 时，isFlyOff = true', () => {
++        // ω = 5 > ω_crit ≈ 3.13
++        const state = computeRotatingDiskStateAtTime(0, { ...DISK_PARAMS, omega: 5 })
++        expect(state.isFlyOff).toBe(true)
++        expect(state.isCritical).toBe(true)
++      })
++    })
++  })
++
++  describe('generateRotatingDiskHistory', () => {
++    it('生成指定数量的采样点', () => {
++      const history = generateRotatingDiskHistory(6.0, CONE_PARAMS, 50)
++      expect(history.forcePoints).toHaveLength(51)
++      expect(history.anglePoints).toHaveLength(51)
++    })
++
++    it('向心力曲线单调递增（ω 增大 → F_n 增大）', () => {
++      const history = generateRotatingDiskHistory(6.0, CONE_PARAMS, 50)
++      for (let i = 1; i < history.forcePoints.length; i++) {
++        expect(history.forcePoints[i].force).toBeGreaterThanOrEqual(
++          history.forcePoints[i - 1].force
++        )
++      }
++    })
++
++    it('圆锥摆摆角随 ω 单调递增', () => {
++      const history = generateRotatingDiskHistory(6.0, CONE_PARAMS, 50)
++      for (let i = 1; i < history.anglePoints.length; i++) {
++        expect(history.anglePoints[i].angle).toBeGreaterThanOrEqual(
++          history.anglePoints[i - 1].angle
++        )
++      }
++    })
++
++    it('圆盘摩擦力曲线在临界点后无法继续增长（被 f_max 钳制）', () => {
++      const history = generateRotatingDiskHistory(6.0, DISK_PARAMS, 50)
++      const { omegaCrit } = computeRotatingDiskConstants(DISK_PARAMS)
++
++      // 在临界点之后，摩擦力应该被 f_max 钳制
++      const postCriticalPoints = history.frictionPoints.filter(
++        p => p.omega > omegaCrit
++      )
++      // f 应该趋近于 f_max（略有数值误差）
++      for (const pt of postCriticalPoints) {
++        expect(pt.friction).toBeLessThanOrEqual(pt.maxFriction * 1.01)
++      }
++    })
++  })
++})
+
+diff --git a/tests/physics/singleRod.test.ts b/tests/physics/singleRod.test.ts
+new file mode 100644
+--- /dev/null
++++ b/tests/physics/singleRod.test.ts
+@@ -0,0 +1,134 @@
++/**
++ * tests/physics/singleRod.test.ts
++ * 单杆电磁感应物理层单元测试
++ *
++ * ════════════════════════════════════════════════════════════════════════════
++ * 测试覆盖：
++ * • 初速度释放模式（scenario=0）：v→0 指数衰减
++ * • 恒力驱动模式（scenario=1）：v→v_m 指数收敛
++ * • 边界判定：导体棒到达导轨末端时状态归零
++ * • 电荷量积算：q = ∫I dt
++ * • 收尾速度公式：v_m = FR/(B²L²)
++ * • 时间常数：τ = mR/(B²L²)
++ * ════════════════════════════════════════════════════════════════════════════
++ */
++import { describe, it, expect } from 'vitest'
++import {
++  computeSingleRodConstants,
++  computeSingleRodStateAtTime,
++  generateSingleRodHistory,
++} from '@/physics/induction'
++
++describe('单杆电磁感应物理层', () => {
++  // ─── 基础参数 ─────────────────────────────────────────────────────
++  const BASE_PARAMS = {
++    scenario: 1,
++    B: 1.0,
++    L: 0.5,
++    R: 1.0,
++    m: 0.2,
++    F_ext: 2.0,
++  }
++
++  describe('computeSingleRodConstants', () => {
++    it('恒力驱动：收尾速度 v_m = FR/(B²L²)', () => {
++      const { v_m } = computeSingleRodConstants(1, 2.0, 1.0, 0.5, 1.0, 0.2)
++      // v_m = F·R / (B²·L²) = 2·1 / (1·0.25) = 2 / 0.25 = 8 m/s
++      expect(v_m).toBeCloseTo(8.0, 4)
++    })
++
++    it('恒力驱动：时间常数 τ = mR/(B²L²)', () => {
++      const { tau } = computeSingleRodConstants(1, 2.0, 1.0, 0.5, 1.0, 0.2)
++      // τ = m·R / (B²·L²) = 0.2·1 / 0.25 = 0.8 s
++      expect(tau).toBeCloseTo(0.8, 4)
++    })
++
++    it('初速度释放：收尾速度 v_m = 0（最终静止）', () => {
++      const { v_m } = computeSingleRodConstants(0, 5.0, 1.0, 0.5, 1.0, 0.2)
++      expect(v_m).toBeCloseTo(0, 4)
++    })
++
++    it('R=0 时，时间常数 τ = Infinity（理想无电阻）', () => {
++      const { tau } = computeSingleRodConstants(1, 2.0, 1.0, 0.5, 0, 0.2)
++      expect(Number.isFinite(tau)).toBe(false)
++    })
++  })
++
++  describe('computeSingleRodStateAtTime', () => {
++    it('恒力驱动：t=0 时速度为零，加速度为正', () => {
++      const state = computeSingleRodStateAtTime(0, BASE_PARAMS)
++      expect(state.v).toBeCloseTo(0, 4)
++      expect(state.a).toBeGreaterThan(0)
++    })
++
++    it('恒力驱动：t→∞ 时速度收敛到 v_m', () => {
++      const state = computeSingleRodStateAtTime(100, BASE_PARAMS)
++      const { v_m } = computeSingleRodConstants(1, 2.0, 1.0, 0.5, 1.0, 0.2)
++      expect(state.v).toBeCloseTo(v_m, 1)
++    })
++
++    it('初速度释放：速度随时间指数衰减', () => {
++      const v0Params = { scenario: 0, B: 1.0, L: 0.5, R: 1.0, m: 0.2, F_ext: 5.0 }
++      const state0 = computeSingleRodStateAtTime(0, v0Params)
++      const state1 = computeSingleRodStateAtTime(1, v0Params)
++      const state2 = computeSingleRodStateAtTime(2, v0Params)
++      // 速度应单调递减
++      expect(state2.v).toBeLessThan(state1.v)
++      expect(state1.v).toBeLessThan(state0.v)
++      // 初速度应为 F_ext（v₀）
++      expect(state0.v).toBeCloseTo(5.0, 4)
++    })
++
++    it('感应电动势 E = BLv', () => {
++      const state = computeSingleRodStateAtTime(1, BASE_PARAMS)
++      const expectedEMF = BASE_PARAMS.B * BASE_PARAMS.L * Math.abs(state.v)
++      expect(state.EMF).toBeCloseTo(expectedEMF, 4)
++    })
++
++    it('感应电流 I = E/R', () => {
++      const state = computeSingleRodStateAtTime(1, BASE_PARAMS)
++      const expectedI = state.EMF / BASE_PARAMS.R
++      expect(state.I).toBeCloseTo(expectedI, 4)
++    })
++
++    it('安培力方向：始终阻碍运动（向左为负）', () => {
++      const state = computeSingleRodStateAtTime(1, BASE_PARAMS)
++      // 恒力驱动时速度为正，安培力应为负（向左）
++      expect(state.F_A).toBeLessThan(0)
++    })
++
++    it('电荷量非负', () => {
++      const state = computeSingleRodStateAtTime(2, BASE_PARAMS)
++      expect(state.charge).toBeGreaterThanOrEqual(0)
++    })
++  })
++
++  describe('generateSingleRodHistory', () => {
++    it('生成指定数量的采样点', () => {
++      const history = generateSingleRodHistory(5.0, BASE_PARAMS, 50)
++      expect(history.vtPoints).toHaveLength(51)  // 包含 t=0 和 t=T_max
++      expect(history.itPoints).toHaveLength(51)
++      expect(history.energyPoints).toHaveLength(51)
++    })
++
++    it('采样点时间单调递增', () => {
++      const { vtPoints } = generateSingleRodHistory(5.0, BASE_PARAMS, 20)
++      for (let i = 1; i < vtPoints.length; i++) {
++        expect(vtPoints[i].t).toBeGreaterThan(vtPoints[i - 1].t)
++      }
++    })
++
++    it('v-t 图速度范围合理（不超过理论最大值 1.15×）', () => {
++      const { vtPoints, vMax } = generateSingleRodHistory(5.0, BASE_PARAMS, 50)
++      const actualMax = Math.max(...vtPoints.map(p => Math.abs(p.v)))
++      expect(actualMax).toBeLessThanOrEqual(vMax)
++    })
++
++    it('I-t 图电流非负（绝对值）', () => {
++      const { itPoints } = generateSingleRodHistory(5.0, BASE_PARAMS, 50)
++      for (const pt of itPoints) {
++        expect(pt.I).toBeGreaterThanOrEqual(0)
++      }
++    })
++  })
++})

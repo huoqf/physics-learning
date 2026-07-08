@@ -1,4 +1,9 @@
-import { calculateCircularMotion, precomputeVerticalCircularMotion } from '../../physics'
+import {
+  calculateCircularMotion,
+  calculateConicalPendulumState,
+  calculateDiskRotationState,
+  precomputeVerticalCircularMotion,
+} from '../../physics'
 import { GRAVITY } from '../../physics/constants'
 import type { PhysicsPanelData, PhysicsQuantity, Formula, GaokaoPoint } from './types'
 
@@ -160,6 +165,69 @@ export function buildCircularQuantities(
         quantities,
         formulas,
         gaokaoPoints,
+      }
+    }
+    case 'anim-circular-models': {
+      const mode = params.modelMode ?? 0
+      const omega = params.omega ?? 3
+      const length = params.L ?? 1
+      const radius = params.r ?? 0.8
+      const mu = params.mu ?? 0.4
+      const mass = 1
+      const isConical = mode === 0
+
+      if (isConical) {
+        const state = calculateConicalPendulumState(omega, length, mass)
+        return {
+          quantities: [
+            { label: '角速度 ω', value: omega.toFixed(2), unit: 'rad/s' },
+            { label: '摆角 θ', value: state.thetaDeg.toFixed(1), unit: '°' },
+            { label: '旋转半径 r', value: state.radius.toFixed(2), unit: 'm' },
+            { label: '向心力 Fn', value: state.centripetalForce.toFixed(2), unit: 'N' },
+            { label: '最低稳定角速度', value: state.minOmega.toFixed(2), unit: 'rad/s' },
+            { label: '运动状态', value: state.stable ? '稳定圆锥摆' : '转速不足', unit: '' },
+          ],
+          formulas: [
+            { name: '竖直方向平衡', latex: 'T\\cos\\theta = mg', level: 'core' },
+            { name: '水平方向提供向心力', latex: 'T\\sin\\theta = m\\omega^2 r', level: 'core' },
+            { name: '合外力形式', latex: 'F_{\\text{合}} = mg\\tan\\theta = m\\omega^2 r', level: 'core' },
+            { name: '摆角与转速', latex: '\\cos\\theta = \\frac{g}{\\omega^2 L}', condition: '\\omega \\ge \\sqrt{g/L}', level: 'important' },
+          ],
+          gaokaoPoints: [
+            { text: '圆锥摆中，拉力的水平分量提供向心力，竖直分量与重力平衡。', importance: 'core' as const },
+            { text: 'r = Lsinθ，不要把 r 当作与 θ 无关的独立量。', importance: 'gaokao' as const },
+            { text: '受力图中只画重力和拉力，不额外画“向心力”。', importance: 'gaokao' as const },
+          ],
+          warnings: state.stable ? undefined : [
+            { text: '当前 ω 小于 √(g/L)，非零摆角圆锥摆不稳定。', level: 'warning' as const },
+          ],
+        }
+      }
+
+      const state = calculateDiskRotationState(omega, radius, mu, mass)
+      return {
+        quantities: [
+          { label: '角速度 ω', value: omega.toFixed(2), unit: 'rad/s' },
+          { label: '所需向心力 Fn', value: state.requiredForce.toFixed(2), unit: 'N' },
+          { label: '最大静摩擦力 fmax', value: state.maxStaticFriction.toFixed(2), unit: 'N' },
+          { label: '临界角速度 ωcrit', value: state.criticalOmega.toFixed(2), unit: 'rad/s' },
+          { label: '静摩擦利用率', value: `${Math.round(state.frictionRatio * 100)}`, unit: '%' },
+          { label: '运动状态', value: state.slipping ? '相对圆盘滑动' : '随圆盘转动', unit: '' },
+        ],
+        formulas: [
+          { name: '静摩擦力提供向心力', latex: 'f = m\\omega^2 r', level: 'core' },
+          { name: '最大静摩擦力', latex: 'f_{\\max} = \\mu mg', level: 'core' },
+          { name: '临界条件', latex: '\\mu mg = m\\omega_{\\text{crit}}^2 r', level: 'important' },
+          { name: '临界角速度', latex: '\\omega_{\\text{crit}} = \\sqrt{\\frac{\\mu g}{r}}', level: 'core' },
+        ],
+        gaokaoPoints: [
+          { text: '圆盘模型中，指向圆心的静摩擦力提供向心力。', importance: 'core' as const },
+          { text: '超过最大静摩擦力后，在圆盘参考系中表现为向外滑动。', importance: 'gaokao' as const },
+          { text: '临界角速度与质量无关，质量会在方程两边约掉。', importance: 'hard' as const },
+        ],
+        warnings: state.slipping ? [
+          { text: '所需向心力已超过最大静摩擦力，不能继续保持相对圆盘静止。', level: 'danger' as const },
+        ] : undefined,
       }
     }
     default:
