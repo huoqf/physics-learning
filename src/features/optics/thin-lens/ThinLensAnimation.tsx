@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useRef } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
+import { useViewportPointer } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { OPTICS_COLORS, DASH, CANVAS_COLORS, FONT, SCENE_COLORS, STROKE, withAlpha } from '@/theme/physics'
@@ -16,17 +18,21 @@ import { lensShape } from './components/lensGeometry'
 import { ThinLensRail } from './components/ThinLensRail'
 import { ThinLensRays } from './components/ThinLensRays'
 
+/** 场景设计坐标尺寸（与 CANVAS_PRESETS.full 700×650 对齐） */
+const VIEW_WIDTH = 700
 const RAIL_Y = 200
-const CHART_TOP = 340
-const CHART_H = 130
+const CHART_H = 200
 const SCALE_CM = 4.5
 
 export default function ThinLensAnimation() {
   const { params } = useAnimationStore(
     useShallow((s) => ({ params: s.params }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
+    preset: CANVAS_PRESETS.full,
+  })
   const svgRef = useRef<SVGSVGElement>(null)
+  const getSvgPoint = useViewportPointer(svgRef)
   const isDraggingRef = useRef<'object' | 'lens' | false>(false)
 
   const mode = (params.mode ?? 0) as 0 | 1
@@ -37,7 +43,7 @@ export default function ThinLensAnimation() {
 
   const { font } = canvasSize
 
-  const cx = 400
+  const cx = VIEW_WIDTH / 2
   const cy = RAIL_Y
 
   const physics = useThinLensPhysics()
@@ -78,12 +84,9 @@ export default function ThinLensAnimation() {
   }, [])
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDraggingRef.current || !svgRef.current) return
-    const svg = svgRef.current
-    const pt = svg.createSVGPoint()
-    pt.x = e.clientX
-    pt.y = e.clientY
-    const svgPt = pt.matrixTransform(svg.getScreenCTM()!.inverse())
+    if (!isDraggingRef.current) return
+    const svgPt = getSvgPoint(e.clientX, e.clientY)
+    if (!svgPt) return
     const svgX = svgPt.x
 
     if (mode === 0) {
@@ -98,7 +101,7 @@ export default function ThinLensAnimation() {
         useAnimationStore.getState().updateParam('u', uNew)
       }
     }
-  }, [mode, cx, LCm, objSvgX])
+  }, [mode, cx, LCm, objSvgX, getSvgPoint])
 
   const handleMouseUp = useCallback(() => {
     isDraggingRef.current = false
@@ -107,7 +110,7 @@ export default function ThinLensAnimation() {
   const { chartData, currentChartPoint, conjugate } = physics
 
   const rays = useThinLensRays({
-    isValid, mode, objSvgX, uCm, fSvgDist, isReal, imgH, isConcave, imgSvgX, lensSvgX, screenSvgX, cy, fCm, candleH, VIEW_WIDTH: 800, SCALE_CM
+    isValid, mode, objSvgX, uCm, fSvgDist, isReal, imgH, isConcave, imgSvgX, lensSvgX, screenSvgX, cy, fCm, candleH, VIEW_WIDTH, SCALE_CM
   })
 
   const chartPoints = chartData
@@ -146,15 +149,16 @@ export default function ThinLensAnimation() {
   const dashGuide = `${DASH.reference[0]} ${DASH.reference[1]}`
 
   return (
-    <div ref={containerRef} className="w-full h-full touch-none"
+    <div ref={containerRef} className="w-full h-full touch-none flex flex-col"
       onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}
     >
-      <svg
-        ref={svgRef}
-        viewBox="0 0 800 500"
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full"
-      >
+      {/* 上方：SVG 光学场景 */}
+      <div className="flex-1 min-h-0">
+        <AnimationSvgCanvas
+          containerRef={containerRef}
+          transform={vp.transform}
+          svgRef={svgRef}
+        >
           <defs>
             <filter id="optics-glow" x="-20%" y="-20%" width="140%" height="140%">
               <feGaussianBlur stdDeviation="2.5" result="blur" />
@@ -190,7 +194,7 @@ export default function ThinLensAnimation() {
           </defs>
 
           <g>
-            <ThinLensRail mode={mode} VIEW_WIDTH={800} cy={cy} cx={cx} SCALE_CM={SCALE_CM} font={font} />
+            <ThinLensRail mode={mode} VIEW_WIDTH={VIEW_WIDTH} cy={cy} cx={cx} SCALE_CM={SCALE_CM} font={font} />
 
             {mode === 0 && fCm > 0 && (
               <FocalMarks cx={lensSvgX} cy={cy} fSvgDist={fSvgDist} font={font} />
@@ -347,47 +351,43 @@ export default function ThinLensAnimation() {
                 </g>
               )
             })()}
-
-            {/* ── 下方图表区域：通过 foreignObject 嵌入 RelationChart ── */}
-            {chartPoints.length >= 2 && (
-              <foreignObject
-                x={20} y={CHART_TOP - 20}
-                width={760} height={CHART_H + 50}
-              >
-                <div style={{ width: '100%', height: '100%' }}>
-                  {mode === 0 ? (
-                    <RelationChart
-                      points={chartPoints}
-                      xLabel="1/u (cm⁻¹)"
-                      yLabel="1/v (cm⁻¹)"
-                      title="1/v - 1/u 线性图"
-                      xDomain={[0, linearMax]}
-                      yDomain={[0, linearMax]}
-                      cursorX={showCursor ? currentChartPoint.x : undefined}
-                      cursorLabel={(x, y) => `(${x.toFixed(2)}, ${y.toFixed(2)})`}
-                      series="warm"
-                      strokeWidth={2.5}
-                    />
-                  ) : (
-                    <RelationChart
-                      points={chartPoints}
-                      xLabel="u (cm)"
-                      yLabel="v (cm)"
-                      title="v - u 双曲线图"
-                      xDomain={[hyperbolaDomain.uMin, hyperbolaDomain.uMax]}
-                      yDomain={[0, hyperbolaDomain.vMax]}
-                      cursorX={showCursor ? currentChartPoint.x : undefined}
-                      cursorLabel={(x, y) => `u=${x.toFixed(1)}, v=${y.toFixed(1)}`}
-                      markers={hyperbolaMarkers}
-                      series="warm"
-                      strokeWidth={2.5}
-                    />
-                  )}
-                </div>
-              </foreignObject>
-            )}
           </g>
-      </svg>
+        </AnimationSvgCanvas>
+      </div>
+
+      {/* 下方：RelationChart（HTML 层，无 foreignObject） */}
+      {chartPoints.length >= 2 && (
+        <div className="shrink-0 px-2 pb-1" style={{ height: CHART_H }}>
+          {mode === 0 ? (
+            <RelationChart
+              points={chartPoints}
+              xLabel="1/u (cm⁻¹)"
+              yLabel="1/v (cm⁻¹)"
+              title="1/v - 1/u 线性图"
+              xDomain={[0, linearMax]}
+              yDomain={[0, linearMax]}
+              cursorX={showCursor ? currentChartPoint.x : undefined}
+              cursorLabel={(x, y) => `(${x.toFixed(2)}, ${y.toFixed(2)})`}
+              series="warm"
+              strokeWidth={2.5}
+            />
+          ) : (
+            <RelationChart
+              points={chartPoints}
+              xLabel="u (cm)"
+              yLabel="v (cm)"
+              title="v - u 双曲线图"
+              xDomain={[hyperbolaDomain.uMin, hyperbolaDomain.uMax]}
+              yDomain={[0, hyperbolaDomain.vMax]}
+              cursorX={showCursor ? currentChartPoint.x : undefined}
+              cursorLabel={(x, y) => `u=${x.toFixed(1)}, v=${y.toFixed(1)}`}
+              markers={hyperbolaMarkers}
+              series="warm"
+              strokeWidth={2.5}
+            />
+          )}
+        </div>
+      )}
     </div>
   )
 }

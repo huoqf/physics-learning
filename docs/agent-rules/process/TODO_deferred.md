@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-08（splitV/splitH 标准替换类 8 个文件迁移完成）
+> 最后更新：2026-07-08（第六节 Viewport 存量违规 5 个文件全部迁移完成；splitV/splitH 标准替换类 8 个文件迁移完成）
 
 ---
 
@@ -257,11 +257,11 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 
 | 文件 | 违规类型 | 优先级 | 迁移要点 |
 |------|---------|-------|---------|
-| `GasLawsAnimation.tsx` | foreignObject 嵌入 RelationChart | 🟠 中 | 将 RelationChart 移至 HTML flex 分区，与 SVG 平级 |
-| `ClapeyronAnimation.tsx` | foreignObject 嵌入 RelationChart | 🟠 中 | 同上 |
-| `ReflectionAnimation.tsx` | 固定 viewBox 800×500（非标准 preset） | 🟡 低 | 替换为 `useAnimationViewport` + `AnimationSvgCanvas`，设计坐标对齐 preset |
-| `ThinLensAnimation.tsx` | 固定 viewBox 800×500（非标准 preset） | 🟡 低 | 同上 |
-| `OhmLaw.tsx` | 固定 viewBox 650×400（非标准 preset） | 🟡 低 | 同上，注意 650×400 非标准 preset，需选定合适 preset 对齐 |
+| `GasLawsAnimation.tsx` | foreignObject 嵌入 RelationChart | 🟠 中 | ✅ 已完成：RelationChart 移至 HTML flex 分区，与 SVG 平级；`useCanvasSize`+`useViewport` → `useAnimationViewport` |
+| `ClapeyronAnimation.tsx` | foreignObject 嵌入 RelationChart | 🟠 中 | ✅ 已完成：RelationChart + PV/T 标注移至 HTML flex 层；`useCanvasSize`+`useViewport` → `useAnimationViewport` |
+| `ReflectionAnimation.tsx` | 固定 viewBox 800×500（非标准 preset） | 🟡 低 | ✅ 已完成：`useAnimationViewport` + `AnimationSvgCanvas`，设计坐标对齐 `CANVAS_PRESETS.full` |
+| `ThinLensAnimation.tsx` | 固定 viewBox 800×500 + foreignObject | 🟡 低 | ✅ 已完成：`useAnimationViewport` + `AnimationSvgCanvas`，设计坐标对齐 `CANVAS_PRESETS.full`；RelationChart 移至 HTML flex 层；`getScreenCTM().inverse()` → `useViewportPointer` |
+| `OhmLaw.tsx` | 固定 viewBox 650×400（非标准 preset） | 🟡 低 | ✅ 已完成：`useAnimationViewport(splitV)` + `AnimationSvgCanvas`，电路坐标原生重映射至 700×325 设计空间 |
 
 **执行策略**：按优先级逐个迁移，每次迁移后跑全量检查。foreignObject 类（🟠）优先于 fixed viewBox 类（🟡）。
 

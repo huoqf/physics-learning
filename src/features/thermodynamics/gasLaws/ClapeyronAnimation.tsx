@@ -1,5 +1,5 @@
 import { useRef, useCallback, useState, useMemo } from 'react'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
@@ -9,8 +9,6 @@ import { STROKE, FONT } from '@/theme/physics'
 import { solveClapeyron, generateIsothermFamily } from '@/physics/clapeyron'
 import { RelationChart } from '@/components/Chart'
 import type { RelationDataSeries, RelationMarker } from '@/components/Chart'
-
-const CLAPEYRON_DESIGN = { width: 700, height: 400 } as const
 
 // ─── 物理常量 ─────────────────────────────────────────────────────────────
 const N_DEFAULT = 1
@@ -30,10 +28,6 @@ const LAYOUT = {
   sceneTopRatio: 0.08,
   sceneWidthRatio: 0.46,
   sceneHeightRatio: 0.84,
-  chartLeftRatio: 0.54,
-  chartTopRatio: 0.06,
-  chartWidthRatio: 0.44,
-  chartHeightRatio: 0.88,
 } as const
 
 // ─── 粒子类型 ──────────────────────────────────────────────────────────────
@@ -61,13 +55,10 @@ export default function ClapeyronAnimation() {
     })),
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-  const { font } = canvasSize
-
-  const vp = useViewport(canvasSize, {
-    designWidth: CLAPEYRON_DESIGN.width,
-    designHeight: CLAPEYRON_DESIGN.height,
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
+    preset: CANVAS_PRESETS.full,
   })
+  const { font } = canvasSize
 
   const mode = params.mode ?? 0
   const T = params.T ?? 300
@@ -292,12 +283,6 @@ export default function ClapeyronAnimation() {
 
   // ─── 图表渲染 ──────────────────────────────────────────────────────────
   // ── P-V 图：迁移到 RelationChart ──
-  // 图表区位置（保留原 LAYOUT 比例，外层 <foreignObject> 定位）
-  const chartX = vp.visibleX + vp.visibleW * LAYOUT.chartLeftRatio
-  const chartY = vp.visibleY + vp.visibleH * LAYOUT.chartTopRatio
-  const chartW = vp.visibleW * LAYOUT.chartWidthRatio
-  const chartH = vp.visibleH * LAYOUT.chartHeightRatio
-
   // Y 轴上界：取 (V_MIN, T_MAX) 的极端 P 值，让所有等温线族都在视图内
   const pMaxAll = useMemo(
     () => solveClapeyron({ key: 'V', value: V_MIN }, { key: 'T', value: T_MAX }, 'P', N_DEFAULT),
@@ -332,45 +317,44 @@ export default function ClapeyronAnimation() {
   ], [V, P])
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg
-        width={canvasSize.width}
-        height={canvasSize.height}
-        className="bg-white rounded-lg shadow-inner"
+    <div ref={containerRef} className="w-full h-full flex">
+      {/* 左侧：SVG 气缸场景 */}
+      <div
+        className="shrink-0 bg-white rounded-lg shadow-inner"
+        style={{ width: `${(LAYOUT.sceneWidthRatio + LAYOUT.sceneLeftRatio) * 100}%` }}
       >
-        {renderCylinder()}
+        <svg
+          width={canvasSize.width}
+          height={canvasSize.height}
+          className="block"
+        >
+          {renderCylinder()}
+        </svg>
+      </div>
 
-        {/* P-V 图：通过 foreignObject 嵌入 RelationChart */}
-        <foreignObject x={chartX} y={chartY} width={chartW} height={chartH}>
-          <div style={{ width: '100%', height: '100%' }}>
-            <RelationChart
-              points={currentIsothermXY}
-              additionalSeries={isothermSeries}
-              xLabel="V (m³)"
-              yLabel="P (Pa)"
-              title="P-V 图（等温线）"
-              xDomain={[V_MIN, V_MAX]}
-              yDomain={[0, pMaxAll]}
-              markers={markers}
-              color={PV_CHART_COLORS.isotherm}
-              strokeWidth={2}
-              showGrid
-            />
-          </div>
-        </foreignObject>
-
-        {/* PV/T 比值标注（保留为外层 SVG 文字，避开 RelationChart 标题区） */}
-        <text
-          x={chartX + chartW - 8}
-          y={chartY + 16}
-          fontSize={font(9)}
-          fill={CHART_COLORS.labelText}
-          textAnchor="end"
-          fontFamily={FONT.family}
+      {/* 右侧：RelationChart + PV/T 标注（HTML 层，无 foreignObject） */}
+      <div className="flex-1 min-w-0 p-1 relative">
+        <RelationChart
+          points={currentIsothermXY}
+          additionalSeries={isothermSeries}
+          xLabel="V (m³)"
+          yLabel="P (Pa)"
+          title="P-V 图（等温线）"
+          xDomain={[V_MIN, V_MAX]}
+          yDomain={[0, pMaxAll]}
+          markers={markers}
+          color={PV_CHART_COLORS.isotherm}
+          strokeWidth={2}
+          showGrid
+        />
+        {/* PV/T 比值标注 */}
+        <span
+          className="absolute top-1 right-2"
+          style={{ fontSize: font(9), color: CHART_COLORS.labelText, fontFamily: FONT.family }}
         >
           PV/T = {(P * V / T).toFixed(2)} J/K
-        </text>
-      </svg>
+        </span>
+      </div>
     </div>
   )
 }

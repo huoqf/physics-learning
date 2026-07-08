@@ -1,5 +1,5 @@
 import { useRef, useCallback, useState, useMemo } from 'react'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
@@ -17,8 +17,6 @@ import {
 import { RelationChart } from '@/components/Chart'
 import type { RelationMarker } from '@/components/Chart'
 
-const GAS_LAWS_DESIGN = { width: 700, height: 400 } as const
-
 // ─── 物理常量 ─────────────────────────────────────────────────────────────
 const N_DEFAULT = 1
 const T_MIN = 200
@@ -34,10 +32,6 @@ const LAYOUT = {
   sceneTopRatio: 0.08,
   sceneWidthRatio: 0.46,
   sceneHeightRatio: 0.84,
-  chartLeftRatio: 0.54,
-  chartTopRatio: 0.06,
-  chartWidthRatio: 0.44,
-  chartHeightRatio: 0.88,
 } as const
 
 // ─── 粒子类型 ──────────────────────────────────────────────────────────────
@@ -65,13 +59,10 @@ export default function GasLawsAnimation() {
     })),
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-  const { font } = canvasSize
-
-  const vp = useViewport(canvasSize, {
-    designWidth: GAS_LAWS_DESIGN.width,
-    designHeight: GAS_LAWS_DESIGN.height,
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
+    preset: CANVAS_PRESETS.full,
   })
+  const { font } = canvasSize
 
   const mode = params.mode ?? 0
   const T = params.T ?? 300
@@ -374,39 +365,37 @@ export default function GasLawsAnimation() {
     color: PV_CHART_COLORS.statePoint,
   }], [chartConfig.currentX, chartConfig.currentY])
 
-  // 图表布局（保留原 LAYOUT 比例）
-  const chartX = vp.visibleX + vp.visibleW * LAYOUT.chartLeftRatio
-  const chartY = vp.visibleY + vp.visibleH * LAYOUT.chartTopRatio
-  const chartW = vp.visibleW * LAYOUT.chartWidthRatio
-  const chartH = vp.visibleH * LAYOUT.chartHeightRatio
-
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg
-        width={canvasSize.width}
-        height={canvasSize.height}
-        className="bg-white rounded-lg shadow-inner"
+    <div ref={containerRef} className="w-full h-full flex">
+      {/* 左侧：SVG 气缸场景 */}
+      <div
+        className="shrink-0 bg-white rounded-lg shadow-inner"
+        style={{ width: `${(LAYOUT.sceneWidthRatio + LAYOUT.sceneLeftRatio) * 100}%` }}
       >
-        {renderCylinder()}
+        <svg
+          width={canvasSize.width}
+          height={canvasSize.height}
+          className="block"
+        >
+          {renderCylinder()}
+        </svg>
+      </div>
 
-        {/* P-V / V-T / P-T 图：通过 foreignObject 嵌入 RelationChart */}
-        <foreignObject x={chartX} y={chartY} width={chartW} height={chartH}>
-          <div style={{ width: '100%', height: '100%' }}>
-            <RelationChart
-              points={chartConfig.points}
-              xLabel={chartConfig.xLabel}
-              yLabel={chartConfig.yLabel}
-              title={chartConfig.title}
-              xDomain={chartConfig.xDomain}
-              yDomain={chartConfig.yDomain}
-              markers={markers}
-              color={chartConfig.color}
-              strokeWidth={2}
-              showGrid
-            />
-          </div>
-        </foreignObject>
-      </svg>
+      {/* 右侧：RelationChart（HTML 层，无 foreignObject） */}
+      <div className="flex-1 min-w-0 p-1">
+        <RelationChart
+          points={chartConfig.points}
+          xLabel={chartConfig.xLabel}
+          yLabel={chartConfig.yLabel}
+          title={chartConfig.title}
+          xDomain={chartConfig.xDomain}
+          yDomain={chartConfig.yDomain}
+          markers={markers}
+          color={chartConfig.color}
+          strokeWidth={2}
+          showGrid
+        />
+      </div>
     </div>
   )
 }

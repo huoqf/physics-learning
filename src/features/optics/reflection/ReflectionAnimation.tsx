@@ -1,4 +1,5 @@
-import { useCanvasSize } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { OPTICS_COLORS, STROKE, FONT, DASH, CANVAS_COLORS } from '@/theme/physics'
@@ -7,10 +8,13 @@ import { deg2rad, rad2deg } from '@/math/angle'
 import { vectorSub, vectorDot, vectorScale, vectorNormalize } from '@/math/vector'
 import type { Vector2 } from '@/math/vector'
 
-const RAY_LENGTH = 200
-const MIRROR_HALF = 160
-const NORMAL_LENGTH = 180
-const PROTRACTOR_R = 100
+/** 场景设计坐标尺寸（与 CANVAS_PRESETS.full 700×650 对齐） */
+const VIEW_WIDTH = 700
+const VIEW_HEIGHT = 650
+const RAY_LENGTH = 180
+const MIRROR_HALF = 140
+const NORMAL_LENGTH = 160
+const PROTRACTOR_R = 90
 
 function arrowHeadPoints(
   tipX: number, tipY: number,
@@ -26,15 +30,17 @@ export default function ReflectionAnimation() {
   const { params } = useAnimationStore(
     useShallow((s) => ({ params: s.params }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
+    preset: CANVAS_PRESETS.full,
+  })
 
   const theta1 = params.theta1 ?? 45
   const mirrorRotation = params.mirrorRotation ?? 0
   const showNormal = (params.showNormal ?? 1) === 1
 
   const { font } = canvasSize
-  const cx = 400
-  const cy = 290
+  const cx = VIEW_WIDTH / 2
+  const cy = VIEW_HEIGHT * 0.45
 
   const theta1Rad = deg2rad(theta1)
   const mirrorRad = deg2rad(-mirrorRotation)
@@ -57,12 +63,7 @@ export default function ReflectionAnimation() {
   const mDy = Math.sin(mirrorRad)
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg
-        viewBox="0 0 800 500"
-        preserveAspectRatio="xMidYMid meet"
-        className="bg-white rounded-lg shadow-inner"
-      >
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
         <g>
           {/* Protractor */}
           {showNormal && (
@@ -216,7 +217,6 @@ export default function ReflectionAnimation() {
             </text>
           )}
         </g>
-      </svg>
-    </div>
+    </AnimationSvgCanvas>
   )
 }

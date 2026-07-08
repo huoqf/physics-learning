@@ -13,11 +13,10 @@ export const electromagnetismDcCircuitsAnimations = defineAnimations({
       { type: 'number', key: 'U', label: '电源电压 U', min: 0, max: 10, step: 0.1, unit: 'V' },
       { type: 'number', key: 'R', label: '定值电阻 R', min: 5, max: 50, step: 1, unit: 'Ω',
         hideIf: 'mode', hideIfValue: 1 },
-      { type: 'toggle', key: 'showChart', label: '显示 U-I 实时图表', group: '显示辅助' },
       { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础：定值电阻' }, { value: 1, label: '进阶：小灯泡伏安特性' }] },
     ],
-    defaultParams: { U: 2, R: 10, mode: 0, showChart: 1 } as const,
+    defaultParams: { U: 2, R: 10, mode: 0 } as const,
   },
   'anim-circuit-analysis': {
     title: '串并联电路及电路动态分析',
