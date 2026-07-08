@@ -2,7 +2,7 @@
 
 > **Trae IDE 默认加载的项目规范文件。**
 > 详细规范见下方「快速索引」部分。
-> 最后更新：2026-07-04
+> 最后更新：2026-07-08
 
 ---
 
@@ -78,11 +78,11 @@ theme/            # 设计 token（颜色/间距/圆角/阴影/动效）
 4. **矢量箭头** → 必须走 `VectorArrow` 组件 + `refMagnitudes` 归一化（`vectorStyle.ts` 为颜色权威）
 5. **画布尺寸** → 必须走 `useCanvasSize(CANVAS_PRESETS.xxx)`（`src/theme/spacing.ts`）
 6. **字体缩放** → 必须走 `font()` 函数（内置 clamp 7–16，来自 `useCanvasSize` 返回值）
-7. **布局缩放与 viewBox 绑定策略（新页面唯一标准）**：
-      - **新页面唯一标准路径**：必须使用 `useAnimationViewport` 复合 Hook + `AnimationSvgCanvas` 标准容器组件（详见 `07_CANVAS_SVG_CHART_RULES.md §2.2`），以消除 designWidth/designHeight 与 preset 的手动同步偏差，并完全规避双重缩放。
-      - **存量迁移参考**：存量页面旧的三类体系（固定 viewBox 方式 A、动态 viewBox + overlay 方式 B、可视区像素方式 C）仅供重构参考，禁止新建。
-      - **严禁双重缩放反模式**：在未声明 overlay 参数时，`viewBox={\`0 0 ${width} ${height}\`}` 同时使用 `vp.transform` → 导致首帧放大跳变（AnimationSvgCanvas 从架构上消除了此问题）。
-   8. **渲染缩放策略互斥**（注意：此处「SVG方式A/B/C」与 `ARCHITECTURE_RULES.md §6` 坐标路径含义不同）→ 同一组件只能选一条核心渲染策略：**新标准路径** 内部用设计常量，禁止再乘 `scale` 或引用 `canvasSize.width/height`；**响应式与可视区（旧方式B/C）** 走 `useCanvasSize` / `useViewport` 返回的尺寸与缩放属性；**严禁在 SVG 画布内用 `<foreignObject>` 嵌入响应式 React 图表组件**；需动画+图表并列时须在 HTML 层 `flex` 分区，两者平级而非嵌套。
+7. **布局缩放与 viewBox 绑定策略**：
+   - **【新页面唯一标准路径】**：`useAnimationViewport({ preset })` + `AnimationSvgCanvas`，无 viewBox，SVG 以 CSS 尺寸为视口，`vp.transform` 由组件内部处理；overlay 声明于 `overlayRight/Left/Top/Bottom` 参数（详见 `07_CANVAS_SVG_CHART_RULES.md §2.2`）。
+   - **【存量遗留，禁止新建】**：历史方式A（固定 viewBox）/ 方式B（动态 viewBox + overlay + vp.transform）/ 方式C（vp.visibleW/H 像素坐标），仅用于维护既有组件，按排期迁移至新标准路径（见 `07_CANVAS_SVG_CHART_RULES.md §2.3`）。
+   - **严禁双重缩放反模式**：在**未声明 overlay 参数**时，`viewBox={\`0 0 ${width} ${height}\`}` 同时使用 `vp.transform` → 导致首次进入时画面"缓缓放大"视觉跳变。
+8. **渲染缩放策略互斥**：同一组件只能选一条核心渲染策略：**新标准路径（§2.2）** 内容在设计坐标内，禁止再乘 `scale` 或直接引用 `canvasSize.width/height`；**存量方式B/C** 走 `useCanvasSize` / `useViewport` 返回的尺寸与缩放属性；**严禁在 SVG 内用 `<foreignObject>` 嵌入响应式 React 图表组件**（两套缩放叠加导致图表 X 轴消失）；需动画+图表并列时须在 HTML 层 `flex` 分区，两者平级而非嵌套。
 
 ### CANVAS_PRESETS 画布预设规格（4 种）
 

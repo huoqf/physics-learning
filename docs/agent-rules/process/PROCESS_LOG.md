@@ -17,6 +17,7 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 07-08 | mechanics/gravitation | compliance | 天体双星/多星模型深度优化：保持 splitH 左右分区，对三星模式启用独立的 scale = 28 放大因子以饱溢画布、减少四周空白；主屏右侧彻底移除与右看板重复的动力学校验数据卡，腾出空间并新增线速度投影-时间图 (v_x-t)，与位置投影-时间图 (x-t) 垂直并列并共享时域滑动游标，极佳呈现实时简谐相位关联；celestial 单测与天体类型检查全数通过 |
 | 07-08 | viewport migration | refactor | splitV/splitH 标准替换类 8 个文件迁移至 §2.2 标准路径：Capacitor、BinaryStarsAnimation、SpringForceCutRopeScene、SpringForceHookeLawScene 改为自包含模式（useAnimationViewport + AnimationSvgCanvas）；LoopPassFieldScene、DualRodsScene 子组件改为自包含模式，父组件 InductionLoopField/InductionDualRods 移除 viewport 手写；SpringForceCenterExtra 图表组件迁移；PhotoelectricSim Canvas 组件迁移；tsc 与 461 tests 全通过 |
 | 07-08 | electromagnetism/magnetism | refactor | 磁场圆周几何模型分屏与矢量纠偏重构：剥离物理板书至右看板；解耦左动画（Component，splitH预设 350x650 viewBox）与右图表（CenterExtra组件，w-360px）；彻底重算 175 居中物理像素坐标变换；实现动态瞬时速度（蓝）及洛伦兹力向心力（紫）双矢量实时跟随粒子；tsc 与打包成功通过 |
 | 07-08 | vibration | refactor | 简谐运动与单摆重构：物理库 oscillation.ts 新增单摆/竖直振子状态计算；知识树 vibration-1-2 正式关联单摆动画并由 v-osc.ts 分拆为两个独立动画注册；SimpleHarmonicAnimation 新增水平/竖直/能量三模式、沙摆滚动履带绘图及受力分析（重力/弹力/合力）；新建 SimplePendulumAnimation 支持小摆角限制、摆长/g参数调节探究及受力分析与参考圆投影虚线同步；tsc 与 Vite 编译打包完全通过 |

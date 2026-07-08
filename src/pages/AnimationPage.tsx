@@ -114,7 +114,7 @@ function AnimationCenter({
         <div className="flex-1 min-h-0 flex flex-row gap-2">
           {/* 左侧：物理动画 */}
           <div
-            className="flex-1 min-h-0 bg-white rounded-xl shadow-md overflow-hidden"
+            className="flex-1 w-0 min-h-0 bg-white rounded-xl shadow-md overflow-hidden"
             style={{
               transition: `opacity ${duration.normal}ms ${easing.standard}`,
               opacity: canvasDimmed ? 0.9 : 1,
@@ -131,7 +131,7 @@ function AnimationCenter({
             </ErrorBoundary>
           </div>
           {/* 右侧：加速度对比图 */}
-          <div className="w-[360px] shrink-0 min-h-0 bg-white rounded-xl shadow-md overflow-hidden flex flex-col">
+          <div className="flex-1 w-0 min-h-0 bg-white rounded-xl shadow-md overflow-hidden flex flex-col">
             <ErrorBoundary resetKey={config.id}>
               <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-neutral-400 text-sm">加载图表中…</div>}>
                 <CenterExtraComponent />

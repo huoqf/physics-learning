@@ -295,3 +295,15 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 | `SpringForceCutRopeScene.tsx` | 🟡 低 | ✅ 已完成 | 自包含模式：`useAnimationViewport` + `AnimationSvgCanvas` |
 
 **执行策略**：先处理与 §2.3 违规重叠的文件（CombinedFieldsAnimation、ChargeInEField），再批量处理标准替换类。Canvas 直绘组件（CircularGeometryModel）需单独评估迁移可行性。
+
+---
+
+## 八、固定 viewBox 旧方案迁移（光学/电路模块）
+
+> 来源：审计报告——原使用非标准 `viewBox="0 0 800 500"` / `viewBox="0 0 650 400"` 固定尺寸，非 CANVAS_PRESETS 合法值，需迁移至 `useAnimationViewport` + `AnimationSvgCanvas` 标准路径。
+
+| 文件 | 原方案 | 迁移后 preset | 状态 |
+|------|-------|-------------|------|
+| `ReflectionAnimation.tsx` | 固定 viewBox 800×500 | `CANVAS_PRESETS.full` 700×650 | ✅ 已完成 |
+| `ThinLensAnimation.tsx` | 固定 viewBox 800×500 | `CANVAS_PRESETS.full` 700×650 | ✅ 已完成 |
+| `OhmLaw.tsx` | 固定 viewBox 650×400 | `CANVAS_PRESETS.splitV` 700×325 | ✅ 已完成 |

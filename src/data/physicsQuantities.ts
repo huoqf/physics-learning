@@ -12,6 +12,7 @@ export type { PhysicsQuantity, GaokaoPoint, Formula, PhysicsPanelData } from './
 /** 构建器函数名联合类型 — 新增条目时拼错名字会在编译期报错 */
 type BuilderName =
   | 'buildKinematicsQuantities'
+  | 'buildVibrationQuantities'
   | 'buildForceMotionQuantities'
   | 'buildDynamicsQuantities'
   | 'buildCircularQuantities'
@@ -50,6 +51,10 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-kinematics-advanced':   { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
   'anim-projectile':            { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
   'anim-oblique-throw':         { loader: () => import('./quantities/kinematics'),     builderName: 'buildKinematicsQuantities' },
+
+  // 振动与波
+  'anim-simple-pendulum':       { loader: () => import('./quantities/vibration'),      builderName: 'buildVibrationQuantities' },
+  'anim-simple-harmonic':       { loader: () => import('./quantities/vibration'),      builderName: 'buildVibrationQuantities' },
 
   // 力与运动专题
   'anim-force-motion-topic':    { loader: () => import('./quantities/forceMotion'),    builderName: 'buildForceMotionQuantities' },
