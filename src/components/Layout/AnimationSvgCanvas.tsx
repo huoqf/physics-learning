@@ -31,6 +31,13 @@ interface AnimationSvgCanvasProps {
   svgRef?: RefObject<SVGSVGElement | null>
 
   /**
+   * 可选：Canvas ref。传入时在 SVG 前渲染一个 `<canvas>` 元素，
+   * 用于 Canvas+SVG 混合渲染场景（如波场）。
+   * canvas 与 SVG 同为 `absolute inset-0`，canvas 在 SVG 下层。
+   */
+  canvasRef?: RefObject<HTMLCanvasElement | null>
+
+  /**
    * 附加到外层 div 的 CSS 类名。
    * 外层 div 默认类为 `w-full h-full`，此处追加不覆盖。
    */
@@ -134,6 +141,7 @@ export const AnimationSvgCanvas = React.memo<AnimationSvgCanvasProps>(
     transform,
     children,
     svgRef,
+    canvasRef,
     className = '',
     onMouseMove,
     onMouseUp,
@@ -144,11 +152,22 @@ export const AnimationSvgCanvas = React.memo<AnimationSvgCanvasProps>(
     onTouchMove,
     onTouchEnd,
   }) {
+    const hasCanvas = !!canvasRef
     return (
-      <div ref={containerRef} className={`w-full h-full${className ? ` ${className}` : ''}`}>
+      <div
+        ref={containerRef}
+        className={`w-full h-full${hasCanvas ? ' relative' : ''}${className ? ` ${className}` : ''}`}
+      >
+        {hasCanvas && (
+          <canvas
+            ref={canvasRef}
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            aria-hidden
+          />
+        )}
         <svg
           ref={svgRef}
-          className="w-full h-full block select-none"
+          className={`block select-none${hasCanvas ? ' absolute inset-0 pointer-events-none' : ' w-full h-full'}`}
           onMouseMove={onMouseMove}
           onMouseUp={onMouseUp}
           onMouseLeave={onMouseLeave}

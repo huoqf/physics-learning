@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useAnimationViewport } from '@/hooks/useAnimationViewport'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
@@ -146,95 +147,91 @@ export default function WaveInterferenceAnimation() {
   const mid = toDesign(0.6, 0)
 
   return (
-    <div ref={containerRef} className="w-full h-full relative bg-slate-50 rounded-lg shadow-inner overflow-hidden">
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 w-full h-full pointer-events-none"
-        aria-hidden
-      />
-      <svg className="absolute inset-0 w-full h-full block select-none pointer-events-none">
-        <g transform={vp.transform}>
-          <Ball cx={p1.cx} cy={p1.cy} r={8} type="oscillatorMetal" stroke={WAVE_COLORS.waveform} strokeWidth={2} />
-          <Ball cx={p2.cx} cy={p2.cy} r={8} type="oscillatorMetal" stroke={WAVE_COLORS.waveformB} strokeWidth={2} />
-          <text x={p1.cx + 12} y={p1.cy + 4} fill={WAVE_COLORS.waveform} fontSize={font(10)}>
-            S₁
-          </text>
-          <text x={p2.cx + 12} y={p2.cy + 4} fill={WAVE_COLORS.waveformB} fontSize={font(10)}>
-            S₂
-          </text>
+    <AnimationSvgCanvas
+      containerRef={containerRef}
+      transform={vp.transform}
+      canvasRef={canvasRef}
+      className="bg-slate-50 rounded-lg shadow-inner overflow-hidden"
+    >
+      <Ball cx={p1.cx} cy={p1.cy} r={8} type="oscillatorMetal" stroke={WAVE_COLORS.waveform} strokeWidth={2} />
+      <Ball cx={p2.cx} cy={p2.cy} r={8} type="oscillatorMetal" stroke={WAVE_COLORS.waveformB} strokeWidth={2} />
+      <text x={p1.cx + 12} y={p1.cy + 4} fill={WAVE_COLORS.waveform} fontSize={font(10)}>
+        S₁
+      </text>
+      <text x={p2.cx + 12} y={p2.cy + 4} fill={WAVE_COLORS.waveformB} fontSize={font(10)}>
+        S₂
+      </text>
 
-          {showNodes && (
-            <g opacity={0.7}>
-              <line
-                x1={p1.cx}
-                y1={mid.cy}
-                x2={DW - 30}
-                y2={mid.cy}
-                stroke={WAVE_COLORS.antinodePoint}
-                strokeWidth={STROKE.annotation}
-                strokeDasharray="5 4"
-              />
-              <text x={DW - 90} y={mid.cy - 6} fill={WAVE_COLORS.antinodePoint} fontSize={font(9)}>
-                中央加强
-              </text>
-              <line
-                x1={p1.cx}
-                y1={mid.cy - 55}
-                x2={DW - 30}
-                y2={mid.cy - 40}
-                stroke={WAVE_COLORS.nodePoint}
-                strokeWidth={STROKE.annotation}
-                strokeDasharray="3 3"
-                opacity={0.6}
-              />
-              <line
-                x1={p1.cx}
-                y1={mid.cy + 55}
-                x2={DW - 30}
-                y2={mid.cy + 40}
-                stroke={WAVE_COLORS.nodePoint}
-                strokeWidth={STROKE.annotation}
-                strokeDasharray="3 3"
-                opacity={0.6}
-              />
-            </g>
-          )}
-
-          {showDelta && (
-            <text
-              x={DW / 2}
-              y={28}
-              textAnchor="middle"
-              fill={CANVAS_COLORS.labelText}
-              fontSize={font(10)}
-            >
-              {`δ = r₂−r₁ ≈ ${(delta * 100).toFixed(1)} cm  ·  ${
-                cond === 'constructive' ? '加强' : cond === 'destructive' ? '减弱' : '部分'
-              }`}
-            </text>
-          )}
-
-          <text
-            x={DW / 2}
-            y={DH - 16}
-            textAnchor="middle"
-            fill={CANVAS_COLORS.labelTextLight}
-            fontSize={font(10)}
-          >
-            {`a = ${a_cm.toFixed(1)} cm  ·  λ = ${lambda_cm.toFixed(1)} cm`}
-          </text>
-
+      {showNodes && (
+        <g opacity={0.7}>
           <line
-            x1={DW - 36}
-            y1={50}
-            x2={DW - 36}
-            y2={DH - 50}
-            stroke={PHYSICS_COLORS.wavelength}
+            x1={p1.cx}
+            y1={mid.cy}
+            x2={DW - 30}
+            y2={mid.cy}
+            stroke={WAVE_COLORS.antinodePoint}
             strokeWidth={STROKE.annotation}
-            strokeDasharray="4 3"
+            strokeDasharray="5 4"
+          />
+          <text x={DW - 90} y={mid.cy - 6} fill={WAVE_COLORS.antinodePoint} fontSize={font(9)}>
+            中央加强
+          </text>
+          <line
+            x1={p1.cx}
+            y1={mid.cy - 55}
+            x2={DW - 30}
+            y2={mid.cy - 40}
+            stroke={WAVE_COLORS.nodePoint}
+            strokeWidth={STROKE.annotation}
+            strokeDasharray="3 3"
+            opacity={0.6}
+          />
+          <line
+            x1={p1.cx}
+            y1={mid.cy + 55}
+            x2={DW - 30}
+            y2={mid.cy + 40}
+            stroke={WAVE_COLORS.nodePoint}
+            strokeWidth={STROKE.annotation}
+            strokeDasharray="3 3"
+            opacity={0.6}
           />
         </g>
-      </svg>
-    </div>
+      )}
+
+      {showDelta && (
+        <text
+          x={DW / 2}
+          y={28}
+          textAnchor="middle"
+          fill={CANVAS_COLORS.labelText}
+          fontSize={font(10)}
+        >
+          {`δ = r₂−r₁ ≈ ${(delta * 100).toFixed(1)} cm  ·  ${
+            cond === 'constructive' ? '加强' : cond === 'destructive' ? '减弱' : '部分'
+          }`}
+        </text>
+      )}
+
+      <text
+        x={DW / 2}
+        y={DH - 16}
+        textAnchor="middle"
+        fill={CANVAS_COLORS.labelTextLight}
+        fontSize={font(10)}
+      >
+        {`a = ${a_cm.toFixed(1)} cm  ·  λ = ${lambda_cm.toFixed(1)} cm`}
+      </text>
+
+      <line
+        x1={DW - 36}
+        y1={50}
+        x2={DW - 36}
+        y2={DH - 50}
+        stroke={PHYSICS_COLORS.wavelength}
+        strokeWidth={STROKE.annotation}
+        strokeDasharray="4 3"
+      />
+    </AnimationSvgCanvas>
   )
 }

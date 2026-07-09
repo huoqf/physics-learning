@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useAnimationViewport } from '@/hooks/useAnimationViewport'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
@@ -133,83 +134,78 @@ export default function WaveDiffractionAnimation() {
   const barrierFill = SCENE_COLORS.materials.structFill
 
   return (
-    <div ref={containerRef} className="w-full h-full relative bg-slate-50 rounded-lg shadow-inner overflow-hidden">
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 w-full h-full pointer-events-none"
-        aria-hidden
+    <AnimationSvgCanvas
+      containerRef={containerRef}
+      transform={vp.transform}
+      canvasRef={canvasRef}
+      className="bg-slate-50 rounded-lg shadow-inner overflow-hidden"
+    >
+      <rect
+        x={slitDesignX - 8}
+        y={20}
+        width={16}
+        height={Math.max(0, midY - slitHalfPx - 20)}
+        fill={barrierFill}
+        stroke={barrierColor}
+        strokeWidth={STROKE.objectLine}
       />
-      {/* SVG 叠加层：标注与挡板（设计坐标 + vp.transform） */}
-      <svg className="absolute inset-0 w-full h-full block select-none pointer-events-none">
-        <g transform={vp.transform}>
-          <rect
-            x={slitDesignX - 8}
-            y={20}
-            width={16}
-            height={Math.max(0, midY - slitHalfPx - 20)}
-            fill={barrierFill}
-            stroke={barrierColor}
-            strokeWidth={STROKE.objectLine}
-          />
-          <rect
-            x={slitDesignX - 8}
-            y={midY + slitHalfPx}
-            width={16}
-            height={Math.max(0, DH - 20 - (midY + slitHalfPx))}
-            fill={barrierFill}
-            stroke={barrierColor}
-            strokeWidth={STROKE.objectLine}
-          />
+      <rect
+        x={slitDesignX - 8}
+        y={midY + slitHalfPx}
+        width={16}
+        height={Math.max(0, DH - 20 - (midY + slitHalfPx))}
+        fill={barrierFill}
+        stroke={barrierColor}
+        strokeWidth={STROKE.objectLine}
+      />
 
-          <line
-            x1={28}
-            y1={40}
-            x2={28}
-            y2={DH - 40}
-            stroke={WAVE_COLORS.waveform}
-            strokeWidth={STROKE.vectorMain}
-          />
-          <text x={32} y={36} fill={CANVAS_COLORS.labelText} fontSize={font(10)}>
-            入射平面波
-          </text>
+      <line
+        x1={28}
+        y1={40}
+        x2={28}
+        y2={DH - 40}
+        stroke={WAVE_COLORS.waveform}
+        strokeWidth={STROKE.vectorMain}
+      />
+      <text x={32} y={36} fill={CANVAS_COLORS.labelText} fontSize={font(10)}>
+        入射平面波
+      </text>
 
-          <text
-            x={slitDesignX}
-            y={midY - slitHalfPx - 8}
-            textAnchor="middle"
-            fill={CANVAS_COLORS.labelText}
-            fontSize={font(10)}
-          >
-            {`d = ${d_cm.toFixed(1)} cm`}
-          </text>
+      <text
+        x={slitDesignX}
+        y={midY - slitHalfPx - 8}
+        textAnchor="middle"
+        fill={CANVAS_COLORS.labelText}
+        fontSize={font(10)}
+      >
+        {`d = ${d_cm.toFixed(1)} cm`}
+      </text>
 
-          <text x={DW - 70} y={40} fill={WAVE_COLORS.waveform} fontSize={font(10)}>
-            衍射波
-          </text>
+      <text x={DW - 70} y={40} fill={WAVE_COLORS.waveform} fontSize={font(10)}>
+        衍射波
+      </text>
 
-          {showProbe && (
-            <line
-              x1={DW - 36}
-              y1={40}
-              x2={DW - 36}
-              y2={DH - 40}
-              stroke={PHYSICS_COLORS.wavelength}
-              strokeWidth={STROKE.annotation}
-              strokeDasharray="4 3"
-            />
-          )}
+      {showProbe && (
+        <line
+          x1={DW - 36}
+          y1={40}
+          x2={DW - 36}
+          y2={DH - 40}
+          stroke={PHYSICS_COLORS.wavelength}
+          strokeWidth={STROKE.annotation}
+          strokeDasharray="4 3"
+        />
+      )}
 
-          <text
-            x={DW / 2}
-            y={DH - 16}
-            textAnchor="middle"
-            fill={CANVAS_COLORS.labelTextLight}
-            fontSize={font(10)}
-          >
-            {`λ = ${lambda_cm.toFixed(1)} cm  ·  d/λ ≈ ${(d / Math.max(lambda, 1e-9)).toFixed(2)}`}
-          </text>
-        </g>
-      </svg>
-    </div>
+      <text
+        x={DW / 2}
+        y={DH - 16}
+        textAnchor="middle"
+        fill={CANVAS_COLORS.labelTextLight}
+        fontSize={font(10)}
+      >
+        {`λ = ${lambda_cm.toFixed(1)} cm  ·  d/λ ≈ ${(d / Math.max(lambda, 1e-9)).toFixed(2)}`}
+      </text>
+    </AnimationSvgCanvas>
   )
 }
