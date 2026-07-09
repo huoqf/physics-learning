@@ -1,5 +1,18 @@
-import { GRAVITATIONAL_CONSTANT, EARTH_MASS, calculateOrbitalSpeed, calculateKeplerOrbit, calculateLaunchTrajectory, calculateBinaryStars, calculateTripleStars } from '../../physics'
+import {
+  GRAVITATIONAL_CONSTANT,
+  EARTH_MASS,
+  calculateOrbitalSpeed,
+  calculateKeplerOrbit,
+  calculateLaunchTrajectory,
+  calculateBinaryStars,
+  calculateTripleStars,
+  computeHohmannElements,
+  computeTransferState,
+  megaMetersToMeters,
+} from '../../physics'
 import type { PhysicsPanelData, PhysicsQuantity, Formula, GaokaoPoint } from './types'
+import type { OrbitTransferPhase } from '../../physics/orbitTransfer'
+import { PHYSICS_COLORS } from '@/theme/physics'
 
 
 export function buildGravitationQuantities(
@@ -280,6 +293,106 @@ export function buildGravitationQuantities(
         gaokaoPoints,
       }
     }
+    case 'anim-orbit-transfer': {
+      const r1 = megaMetersToMeters(params.r1 ?? 7)
+      const r3 = megaMetersToMeters(Math.max(params.r3 ?? 14, (params.r1 ?? 7) + 0.2))
+      const phase = (params.phase ?? 0) as OrbitTransferPhase
+      const tBurn1 = params.tBurn1 ?? 0
+      const tBurn2 = params.tBurn2 ?? -1
+      const el = computeHohmannElements({ r1, r3 })
+      const st = computeTransferState(
+        { r1, r3 },
+        phase,
+        time,
+        tBurn1,
+        tBurn2 >= 0 ? tBurn2 : null,
+      )
+      const phaseName =
+        phase === 0 ? '低轨巡航' : phase === 1 ? '转移椭圆' : '高轨巡航'
+
+      return {
+        quantities: [
+          { label: '半长轴 a', value: (el.a / 1e6).toFixed(2), unit: '×10⁶ m', color: PHYSICS_COLORS.wavelength },
+          { label: '偏心率 e', value: el.e.toFixed(3), unit: '' },
+          { label: '当前阶段', value: phaseName, unit: '' },
+          {
+            label: '当前速率 v',
+            value: (st.v / 1000).toFixed(2),
+            unit: 'km/s',
+            color: PHYSICS_COLORS.velocity,
+          },
+          {
+            label: '低轨速度 v₁',
+            value: (el.v1 / 1000).toFixed(2),
+            unit: 'km/s',
+            color: PHYSICS_COLORS.velocity,
+          },
+          {
+            label: '高轨速度 v₃',
+            value: (el.v3 / 1000).toFixed(2),
+            unit: 'km/s',
+            color: PHYSICS_COLORS.velocity,
+          },
+          {
+            label: 'Δv₁（近地点）',
+            value: (el.dV1 / 1000).toFixed(3),
+            unit: 'km/s',
+            color: PHYSICS_COLORS.forceNet,
+          },
+          {
+            label: 'Δv₂（远地点）',
+            value: (el.dV2 / 1000).toFixed(3),
+            unit: 'km/s',
+            color: PHYSICS_COLORS.forceNet,
+          },
+          { label: '离心判据 η=v²r/GM', value: st.eta.toFixed(3), unit: '' },
+        ],
+        formulas: [
+          {
+            name: '圆轨速度',
+            latex: 'v=\\\\sqrt{\\\\dfrac{GM}{r}}',
+            level: 'core',
+            note: 'r 越大 v 越小，故 v₃ < v₁',
+          },
+          {
+            name: '霍曼半长轴',
+            latex: 'a=\\\\dfrac{r_1+r_3}{2}',
+            level: 'core',
+          },
+          {
+            name: '近/远地点脉冲',
+            latex:
+              '\\\\Delta v_1=v_p-v_1,\\\\quad \\\\Delta v_2=v_3-v_a',
+            level: 'important',
+            condition: '共面双脉冲抬轨（霍曼）',
+          },
+          {
+            name: '开普勒第三定律',
+            latex: '\\\\dfrac{a^3}{T_2^2}=\\\\dfrac{r_1^3}{T_1^2}=\\\\dfrac{GM}{4\\\\pi^2}',
+            level: 'important',
+          },
+        ],
+        gaokaoPoints: [
+          {
+            text: '【速度比较】抬轨时近地点加速进入椭圆：同一交点上椭圆速度大于内圆轨速度；远地点再加速才能圆化到外圆。高轨稳态速度小于低轨。',
+            importance: 'gaokao',
+          },
+          {
+            text: '【两把火】霍曼抬轨：近地点切向加速、远地点再切向加速；降轨则在远地点先减速进入椭圆，近地点再减速圆化。',
+            importance: 'gaokao',
+          },
+          {
+            text: '【离心与向心】v↑ 使 mv²/r 大于万有引力时做离心运动（轨道抬升趋势）；v↓ 则向心。圆轨上二者相等（η=1）。',
+            importance: 'hard',
+          },
+          {
+            text: '【同步卫星交叉】同步轨道周期约 24 h，半径约 4.2×10⁴ km；可在本页将 r₃ 调大观察 v、T 变化，参考系切换见「人造卫星」多圆对比。',
+            importance: 'core',
+          },
+        ],
+      }
+    }
+
     default:
 
       return null

@@ -10,6 +10,15 @@ import {
   generateRealPendulumTrajectory,
   getPendulumStateFromTrajectory
 } from '@/physics/oscillation'
+import {
+  computeWaveDisplacement,
+  computeWavelength,
+  computeWavePeriod,
+  computeSingleSlitIntensity,
+  DEFAULT_WAVE_CHAIN_LENGTH,
+  DEFAULT_TRACKED_PARTICLE_INDEX,
+  type MechanicalWaveMode,
+} from '@/physics/wave'
 
 // 缓存轨迹，避免重复计算
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -177,6 +186,119 @@ export function buildVibrationQuantities(
           { text: '【受力分析】单摆的回复力是重力切向分力提供的；在最低点，小球合外力不为零（绳子拉力和重力径向分力之合提供向心力）。', importance: 'hard' },
         ],
       }
+    }
+  }
+
+  if (animId === 'anim-mechanical-wave') {
+    const A_cm = params.A ?? 2
+    const A = A_cm / 100
+    const f = params.f ?? 1
+    const v = params.v ?? 2
+    const mode = (params.mode ?? 0) as MechanicalWaveMode
+    const phase0 = ((params.phi0 ?? 0) * Math.PI) / 180
+    const waveParams = { amplitude: A, frequency: f, waveSpeed: v, phase0, mode }
+    const lambda = computeWavelength(f, v)
+    const T = computeWavePeriod(f)
+    const L = DEFAULT_WAVE_CHAIN_LENGTH
+    const xP = (DEFAULT_TRACKED_PARTICLE_INDEX / 24) * L
+    const yS = computeWaveDisplacement(0, time, waveParams) * 100
+    const yP = computeWaveDisplacement(xP, time, waveParams) * 100
+
+    return {
+      quantities: [
+        { label: '波长 λ', value: lambda > 0 ? lambda.toFixed(3) : '—', unit: 'm', color: PHYSICS_COLORS.wavelength },
+        { label: '周期 T', value: T > 0 ? T.toFixed(3) : '—', unit: 's' },
+        { label: '振源位移 y_S', value: yS.toFixed(2), unit: 'cm', color: PHYSICS_COLORS.forceNet },
+        { label: '质点 P 位移 y_P', value: yP.toFixed(2), unit: 'cm', color: PHYSICS_COLORS.amplitude },
+        { label: '质点 P 位置 x_P', value: xP.toFixed(3), unit: 'm', color: PHYSICS_COLORS.amplitude },
+      ],
+      formulas: [
+        {
+          name: '向右传播行波',
+          latex: 'y(x,t)=A\\\\sin\\\\left(2\\\\pi f\\\\left(t-\\\\dfrac{x}{v}\\\\right)+\\\\varphi_0\\\\right)',
+          level: 'core',
+          condition: 't \\\\ge x/v（因果性：扰动未到则为 0）',
+          note: '相位沿传播方向滞后',
+        },
+        {
+          name: '波速与波长',
+          latex: 'v=\\\\lambda f=\\\\dfrac{\\\\lambda}{T}',
+          level: 'core',
+        },
+      ],
+      gaokaoPoints: [
+        {
+          text: '【传波不传质】机械波传播时，介质质点只在平衡位置附近振动，并不随波迁移；波形（相位）沿介质传播。',
+          importance: 'gaokao',
+        },
+        {
+          text: '【波形图 vs 振动图】y–x 图是某时刻各质点位移的空间分布；y–t 图是某固定质点位移随时间的变化。两者不可混淆。',
+          importance: 'gaokao',
+        },
+        {
+          text: '【起振方向】由波的传播方向与邻点带动关系判断：靠近波源一侧的邻点“领先”，可判读某点振动方向。',
+          importance: 'hard',
+        },
+      ],
+    }
+  }
+
+  if (animId === 'anim-wave-diffraction') {
+    const d_cm = params.d ?? 8
+    const lambda_cm = params.lambda ?? 4
+    const d = d_cm / 100
+    const lambda = lambda_cm / 100
+    const ratio = d / Math.max(lambda, 1e-12)
+    const Icenter = computeSingleSlitIntensity(0, d, lambda, 1, 1)
+    const Iside = computeSingleSlitIntensity(0.2, d, lambda, 1, 1)
+
+    return {
+      quantities: [
+        { label: '比值 d/λ', value: ratio.toFixed(2), unit: '' },
+        { label: '中央相对强度', value: Icenter.toFixed(2), unit: '' },
+        { label: '旁侧 y=0.2m 强度', value: Iside.toFixed(3), unit: '' },
+      ],
+      formulas: [
+        {
+          name: '单缝夫琅禾费强度',
+          latex: 'I=I_0\\\\operatorname{sinc}^2\\\\!\\\\left(\\\\dfrac{\\\\pi d\\\\sin\\\\theta}{\\\\lambda}\\\\right)',
+          level: 'important',
+          note: '高中定性：d 与 λ 可比时衍射显著',
+        },
+      ],
+      gaokaoPoints: [
+        {
+          text: '【衍射条件】缝、孔或障碍物的尺寸与波长差不多，甚至比波长更小时，衍射现象明显。',
+          importance: 'gaokao',
+        },
+        {
+          text: '【与直线传播】当 d ≫ λ 时，波近似直线传播，挡板后出现明显“阴影区”。',
+          importance: 'core',
+        },
+      ],
+    }
+  }
+
+  if (animId === 'anim-wave-interference') {
+    return {
+      quantities: [],
+      formulas: [
+        {
+          name: '干涉加强/减弱',
+          latex: '\\\\delta=r_2-r_1=\\begin{cases}n\\\\lambda & \\\\text{加强}\\\\\\\\(n+\\\\tfrac12)\\\\lambda & \\\\text{减弱}\\\\end{cases}',
+          level: 'core',
+        },
+      ],
+      gaokaoPoints: [
+        {
+          text: '【相干条件】两列波频率相同、相位差恒定（且振动方向大体相同）才能产生稳定干涉图样。',
+          importance: 'gaokao',
+        },
+        {
+          text: '【程差判据】到两波源的路程差 δ=nλ 为振动加强；δ=(n+1/2)λ 为振动减弱（反相时结论对调）。',
+          importance: 'gaokao',
+        },
+      ],
     }
   }
 

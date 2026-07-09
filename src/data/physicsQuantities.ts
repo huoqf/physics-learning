@@ -55,6 +55,9 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   // 振动与波
   'anim-simple-pendulum':       { loader: () => import('./quantities/vibration'),      builderName: 'buildVibrationQuantities' },
   'anim-simple-harmonic':       { loader: () => import('./quantities/vibration'),      builderName: 'buildVibrationQuantities' },
+  'anim-mechanical-wave':       { loader: () => import('./quantities/vibration'),      builderName: 'buildVibrationQuantities' },
+  'anim-wave-diffraction':      { loader: () => import('./quantities/vibration'),      builderName: 'buildVibrationQuantities' },
+  'anim-wave-interference':     { loader: () => import('./quantities/vibration'),      builderName: 'buildVibrationQuantities' },
 
   // 力与运动专题
   'anim-force-motion-topic':    { loader: () => import('./quantities/forceMotion'),    builderName: 'buildForceMotionQuantities' },
@@ -81,6 +84,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   // 万有引力
   'anim-kepler':                { loader: () => import('./quantities/gravitation'),    builderName: 'buildGravitationQuantities' },
   'anim-satellite':             { loader: () => import('./quantities/gravitation'),    builderName: 'buildGravitationQuantities' },
+  'anim-orbit-transfer':        { loader: () => import('./quantities/gravitation'),    builderName: 'buildGravitationQuantities' },
   'anim-binary-stars':          { loader: () => import('./quantities/gravitation'),    builderName: 'buildGravitationQuantities' },
 
 
