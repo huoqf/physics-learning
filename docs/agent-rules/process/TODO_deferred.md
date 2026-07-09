@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-08（第六节 Viewport 存量违规 5 个文件全部迁移完成；splitV/splitH 标准替换类 8 个文件迁移完成；审计报告二次审计：11 个缺陷全部清零）
+> 最后更新：2026-07-09（全量 preset 对齐实际容器宽度：full 700→840、splitV 700→840、splitH 350→420；20+ 组件硬编码坐标同步缩放；规范文档全部更新）
 
 ---
 
@@ -224,7 +224,7 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 
 > P2 已全部清零：所有 `wide`/`tall` 引用已迁移至 `full` + `{ presetCompensation: 1.2 }`，`spacing.ts` 中 `wide` 和 `tall` 定义已删除。
 
-将 `CANVAS_PRESETS.wide` (700×400) / `CANVAS_PRESETS.tall` (700×450) 统一迁移为 `CANVAS_PRESETS.full` (700×650) + `{ presetCompensation: 1.2 }`。全库清零后在 `spacing.ts` 中删除 `wide` 和 `tall` 定义。
+将 `CANVAS_PRESETS.wide` (700×400) / `CANVAS_PRESETS.tall` (700×450) 统一迁移为 `CANVAS_PRESETS.full` (840×650) + `{ presetCompensation: 1.2 }`。全库清零后在 `spacing.ts` 中删除 `wide` 和 `tall` 定义。
 
 **按学科模块分组**：
 
@@ -261,7 +261,7 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 | `ClapeyronAnimation.tsx` | foreignObject 嵌入 RelationChart | 🟠 中 | ✅ 已完成：RelationChart + PV/T 标注移至 HTML flex 层；`useCanvasSize`+`useViewport` → `useAnimationViewport` |
 | `ReflectionAnimation.tsx` | 固定 viewBox 800×500（非标准 preset） | 🟡 低 | ✅ 已完成：`useAnimationViewport` + `AnimationSvgCanvas`，设计坐标对齐 `CANVAS_PRESETS.full` |
 | `ThinLensAnimation.tsx` | 固定 viewBox 800×500 + foreignObject | 🟡 低 | ✅ 已完成：`useAnimationViewport` + `AnimationSvgCanvas`，设计坐标对齐 `CANVAS_PRESETS.full`；RelationChart 移至 HTML flex 层；`getScreenCTM().inverse()` → `useViewportPointer` |
-| `OhmLaw.tsx` | 固定 viewBox 650×400（非标准 preset） | 🟡 低 | ✅ 已完成：`useAnimationViewport(splitV)` + `AnimationSvgCanvas`，电路坐标原生重映射至 700×325 设计空间 |
+| `OhmLaw.tsx` | 固定 viewBox 650×400（非标准 preset） | 🟡 低 | ✅ 已完成：`useAnimationViewport(splitV)` + `AnimationSvgCanvas`，电路坐标原生重映射至 840×325 设计空间 |
 
 **执行策略**：按优先级逐个迁移，每次迁移后跑全量检查。foreignObject 类（🟠）优先于 fixed viewBox 类（🟡）。
 
@@ -352,9 +352,9 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 
 | 文件 | 原方案 | 迁移后 preset | 状态 |
 |------|-------|-------------|------|
-| `ReflectionAnimation.tsx` | 固定 viewBox 800×500 | `CANVAS_PRESETS.full` 700×650 | ✅ 已完成 |
-| `ThinLensAnimation.tsx` | 固定 viewBox 800×500 | `CANVAS_PRESETS.full` 700×650 | ✅ 已完成 |
-| `OhmLaw.tsx` | 固定 viewBox 650×400 | `CANVAS_PRESETS.splitV` 700×325 | ✅ 已完成 |
+| `ReflectionAnimation.tsx` | 固定 viewBox 800×500 | `CANVAS_PRESETS.full` 840×650 | ✅ 已完成 |
+| `ThinLensAnimation.tsx` | 固定 viewBox 800×500 | `CANVAS_PRESETS.full` 840×650 | ✅ 已完成 |
+| `OhmLaw.tsx` | 固定 viewBox 650×400 | `CANVAS_PRESETS.splitV` 840×325 | ✅ 已完成 |
 
 ---
 

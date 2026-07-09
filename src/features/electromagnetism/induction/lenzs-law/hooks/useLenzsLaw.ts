@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { calculateLenzsLaw } from '@/physics'
 import { useAnimationFrame } from '@/utils/animation'
 
-// 舒展充盈 700×650 视口坐标系下的垂直运动范围与线圈中心
+// 舒展充盈 840×650 视口坐标系下的垂直运动范围与线圈中心
 export const y_top = 130
 export const y_coil = 360
 export const coilY = 410

@@ -90,6 +90,29 @@ export interface ViewportInfo {
    * 将 0..designWidth / 0..designHeight 的设计坐标居中放入可视区域。
    */
   transform: string
+
+  // ── 设计坐标系中的可视区域（用于 edge-to-edge 元素）──────────────────
+
+  /**
+   * 可视区域在设计坐标系中的宽度 = visibleW / scale。
+   * 用于需要撑满可视区域的元素（如地面），替代固定的 DESIGN.width。
+   */
+  designVisibleW: number
+  /**
+   * 可视区域在设计坐标系中的高度 = visibleH / scale。
+   * 用于需要撑满可视区域的元素。
+   */
+  designVisibleH: number
+  /**
+   * 可视区左边界在设计坐标系中的位置 = -tx / scale。
+   * pillarbox 时为负值，用于 edge-to-edge 元素的起始 x。
+   */
+  designLeft: number
+  /**
+   * 可视区上边界在设计坐标系中的位置 = -ty / scale。
+   * letterbox 时为负值，用于 edge-to-edge 元素的起始 y。
+   */
+  designTop: number
 }
 
 export function useViewport(
@@ -141,6 +164,10 @@ export function useViewport(
       tx,
       ty,
       transform,
+      designVisibleW: visibleW / scale,
+      designVisibleH: visibleH / scale,
+      designLeft: -tx / scale,
+      designTop: -ty / scale,
     }
   }, [
     canvas.width,

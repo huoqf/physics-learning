@@ -81,7 +81,7 @@ export default function InductionLoopField() {
         </div>
       </div>
 
-      {/* ─── 下侧 50%：线框穿场物理视界 (700×325 逻辑分辨率) ─── */}
+      {/* ─── 下侧 50%：线框穿场物理视界 (840×325 逻辑分辨率) ─── */}
       <div className="w-full h-1/2 min-h-0 flex-1">
         <LoopPassFieldScene physics={physics} />
       </div>

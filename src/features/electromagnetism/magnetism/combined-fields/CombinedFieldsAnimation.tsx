@@ -23,7 +23,7 @@ import {
 import type { SceneScale } from '@/scene'
 import type { VectorType } from '@/theme/physics/vectorStyle'
 
-const DESIGN_W = 700
+const DESIGN_W = 840
 const DESIGN_H = 325
 
 const REF_MAGNITUDES = {

@@ -14,7 +14,7 @@ const CHARGE_RADIUS = 22
 const PROBE_CHARGE = 1e-6 // 探针试探电荷 +1.0 μC
 
 // ⚠️ viewBox 固定为设计坐标系，不随容器变化，避免 ResizeObserver 延迟引起视觉放大跳变
-const DESIGN_WIDTH = 700
+const DESIGN_WIDTH = 840
 const DESIGN_HEIGHT = 650
 
 interface Charge {

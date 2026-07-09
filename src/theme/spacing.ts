@@ -60,25 +60,25 @@ export const LAYOUT = {
 export const CANVAS_PRESETS = {
   /**
    * full — 动画独占中屏全区域
-   * 700×650，AR≈1.08:1，贴近 1440px 桌面中屏实际比例
+   * 840×650，AR≈1.29:1，对齐 1440px 桌面中屏实际尺寸
    * 适用：单一物理场景，无图表分区
    */
-  full:   { width: 700, height: 650 },
+  full:   { width: 840, height: 650 },
   /**
    * splitV — 上下分区时动画/图表各占半高
-   * 700×325，AR≈2.15:1（full 高度的一半，宽度不变）
+   * 840×325，AR≈2.58:1（full 高度的一半，宽度对齐中屏实际宽度）
    * 适用：中屏上下各放一个区块（如上方图表 + 下方场景）
    */
-  splitV: { width: 700, height: 325 },
+  splitV: { width: 840, height: 325 },
   /**
    * splitH — 左右分区时动画占左侧
-   * 350×650，AR≈0.54:1（full 宽度的一半，高度不变）
+   * 420×650，AR≈0.65:1（full 宽度的一半，高度不变）
    * 适用：中屏左右并列（如左侧场景 + 右侧图表面板）
    */
-  splitH: { width: 350, height: 650 },
+  splitH: { width: 420, height: 650 },
   /**
    * square — 圆周/旋转对称场景
-   * 650×650，1:1，与 full 高度基准对齐，适合圆形轨迹/向心力等旋转演示
+   * 650×650，1:1，适合圆形轨迹/向心力等旋转演示
    */
   square: { width: 650, height: 650 },
 } as const

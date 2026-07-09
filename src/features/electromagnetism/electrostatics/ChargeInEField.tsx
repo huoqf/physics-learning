@@ -17,7 +17,7 @@ import {
 } from '@/physics/electromagnetism'
 
 // SVG 设计坐标系常量（对应 CANVAS_PRESETS.splitV）
-const DESIGN_WIDTH = 700
+const DESIGN_WIDTH = 840
 const DESIGN_HEIGHT = 325
 
 // SVG 几何常量
@@ -254,7 +254,7 @@ export default function ChargeInEField() {
         key="mid"
         x1={startX}
         y1={midY}
-        x2={700}
+        x2={840}
         y2={midY}
         stroke={PHYSICS_COLORS.grid}
         strokeWidth={CANVAS_STYLE.stroke.reference}
@@ -406,10 +406,10 @@ export default function ChargeInEField() {
         </div>
       </Card>
 
-      {/* 动画反馈区 (放下方，自适应高度填充，viewBox 700x325，大比例构图无留白) */}
+      {/* 动画反馈区 (放下方，自适应高度填充，viewBox 840x325，大比例构图无留白) */}
       <Card className="flex-1 min-h-0 p-3 relative flex items-center justify-center overflow-hidden">
         <svg
-          viewBox="0 0 700 325"
+          viewBox="0 0 840 325"
           preserveAspectRatio="xMidYMid meet"
           className="w-full h-full select-none"
         >

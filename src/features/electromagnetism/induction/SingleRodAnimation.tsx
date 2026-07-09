@@ -12,15 +12,15 @@ const DESIGN = CANVAS_PRESETS.splitV
 
 /** 导轨水平布局常量（与 railSpacing 无关） */
 const RAIL_X = {
-  leftX: 72,
-  rightX: 566,
-  resistorX: 42,
+  leftX: 86,
+  rightX: 679,
+  resistorX: 50,
   viewLengthM: 5,
 } as const
 
 /** 电荷槽布局常量 */
 const CHARGE_SLOT = {
-  x: 632,
+  x: 758,
   baseY: 228,
   width: 34,
 } as const

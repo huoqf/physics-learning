@@ -22,7 +22,7 @@
 - [ ] Canvas 坐标转换通过 `src/utils/coordinate.ts`，未手写坐标计算
 - [ ] **按布局体系选型（方式 A/B/C）**：方式 A（固定 viewBox，无 JS 几何裁切时豁免调用 useViewport）；方式 B（容器 viewBox + `<g transform={vp.transform}>`，必须声明 overlay 参数）；方式 C（基于 `vp.visible*` 与 `createSceneScaleFromViewport` 快捷字面量在像素区自适应定位）；详见 `07_CANVAS_SVG_CHART_RULES.md §2.4`
 - [ ] **交互拖拽坐标转换**：方式 A/B 必须使用 `clientToSvgPoint(clientX, clientY, svg)` 原生矩阵逆变换映射；方式 C 统一使用 `clientToContainerPoint`；严禁在业务层散落 `clientX - rect.left - vp.tx` 等硬算公式
-- [ ] **存量废弃 preset 迁移**：将 `wide/tall` 迁移至 `full` (700×650) 时，在 `useCanvasSize` 调用中配置 `{ presetCompensation: 1.2 }` 平滑代偿缩放比
+- [ ] **存量废弃 preset 迁移**：将 `wide/tall` 迁移至 `full` (840×650) 时，在 `useCanvasSize` 调用中配置 `{ presetCompensation: 1.2 }` 平滑代偿缩放比
 - [ ] Canvas 元素 ≤ 7 个（黄金法则）
 - [ ] Canvas 文字标注 ≤ 5 个
 - [ ] 物理量颜色符合 `PHYSICS_COLORS` 语义规范

@@ -20,9 +20,9 @@ const C_MAX = EPS0 * 5 * (200 * 1e-4) / (2 * 1e-3) * 1e12
 const Q_MAX = C_MAX * 12
 
 // SVG 设计坐标系常量（对应 CANVAS_PRESETS.splitV）
-// splitV 为上下分区场景预设：700×325
+// splitV 为上下分区场景预设：840×325
 // 动画区占下方 75%，使用 splitV 使 viewBox 比例与容器匹配
-const DESIGN_WIDTH = 700
+const DESIGN_WIDTH = 840
 const DESIGN_HEIGHT = 325
 
 // 布局比例常量

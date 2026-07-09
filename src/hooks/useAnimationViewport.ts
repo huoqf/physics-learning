@@ -45,7 +45,7 @@ export interface CanvasPreset {
 export interface UseAnimationViewportOptions {
   /**
    * 画布尺寸预设，必须从 CANVAS_PRESETS 取值：
-   *   full (700×650) | splitV (700×325) | splitH (350×650) | square (650×650)
+   *   full (840×650) | splitV (840×325) | splitH (420×650) | square (650×650)
    */
   preset: CanvasPreset
 
@@ -60,7 +60,7 @@ export interface UseAnimationViewportOptions {
 
   /**
    * 缩放比代偿系数（默认 1.0）。
-   * 仅用于将旧 preset（wide 700×400 / tall 700×450）迁移至 full (700×650) 时平滑过渡。
+   * 仅用于将旧 preset（wide 700×400 / tall 700×450）迁移至 full (840×650) 时平滑过渡。
    * 新页面不传此参数。
    */
   presetCompensation?: number

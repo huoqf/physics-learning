@@ -7,7 +7,7 @@ import { DialMeter, Rheostat } from '@/components/Physics'
 import { useClosedCircuitScene } from './hooks/useClosedCircuitScene'
 
 // ─── 设计坐标系常量 ───────────────────────────────────────────────
-const DESIGN_W = 700
+const DESIGN_W = 840
 const DESIGN_H = 400
 
 /** 场景布局常量 */

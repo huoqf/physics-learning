@@ -13,8 +13,8 @@ const THETA_RAD = Math.PI / 12
 const THETA_DEG = 15
 const DESIGN = CANVAS_PRESETS.splitV
 const SCENE = {
-  leftX: 82,
-  rightX: 618,
+  leftX: 98,
+  rightX: 742,
   baseY: 205,
   rollerRadius: 34,
   beltStroke: 26,

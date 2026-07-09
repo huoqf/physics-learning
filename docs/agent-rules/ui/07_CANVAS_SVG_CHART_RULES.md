@@ -54,7 +54,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 
 export default function MyAnimation() {
   const { containerRef, canvasSize, vp } = useAnimationViewport({
-    preset: CANVAS_PRESETS.full,  // 700×650
+    preset: CANVAS_PRESETS.full,  // 840×650
   })
 
   return (
@@ -142,7 +142,22 @@ return (
 )
 ```
 
-#### 场景 5：依赖可视区物理比例尺（centerScale / visibleArea）
+#### 场景 6：Edge-to-edge 元素（地面撑满可视区域）
+
+```tsx
+// 地面等需要撑满可视区域的元素，使用 vp.designLeft/designVisibleW 而非固定的 DESIGN.width
+// designLeft = -tx / scale（pillarbox 时为负值），designVisibleW = visibleW / scale
+const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.splitV })
+
+return (
+  <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+    {/* 地面：从可视区左边界铺到右边界，不受 pillarbox 影响 */}
+    <PhysicsGround x={vp.designLeft} y={groundY} width={vp.designVisibleW} type="ground" />
+  </AnimationSvgCanvas>
+)
+```
+
+> **规范**：需要撑满可视区域的元素（地面、参考线、轨道等）**必须**使用 `vp.designLeft/designTop/designVisibleW/designVisibleH`，禁止使用固定的 `DESIGN.width/height`。preset 定义的是设计坐标系，不是容器尺寸。
 
 ```tsx
 // 圆周运动等需要以中心为原点的场景，先用 useAnimationViewport 拿到 vp，

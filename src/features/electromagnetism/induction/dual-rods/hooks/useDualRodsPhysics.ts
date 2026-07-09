@@ -44,7 +44,7 @@ export function useDualRodsPhysics(
 ): DualRodsPhysicsResult {
   const { scenario, massA, massB, fieldB, railL, resSum, initialV0, appliedForce } = params
 
-  // 1. 根据画布分辨率 (默认 splitV = 700x325) 和物理世界边界计算标准物理比例尺 scale
+  // 1. 根据画布分辨率 (默认 splitV = 840x325) 和物理世界边界计算标准物理比例尺 scale
   const scale = useMemo(
     () => computeScale(canvasSize.width, canvasSize.height, DUAL_RODS_WORLD, 40),
     [canvasSize.width, canvasSize.height]

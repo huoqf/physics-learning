@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
 
 export interface CanvasSizeOptions {
-  /** 缩放比代偿系数（默认为 1.0）。在将旧预设 (wide/tall) 迁移至 full (700×650) 时，传入 1.2 可平滑保留原有在标准桌面下的隐性放大视觉效果。 */
+  /** 缩放比代偿系数（默认为 1.0）。在将旧预设 (wide/tall) 迁移至 full (840×650) 时，传入 1.2 可平滑保留原有在标准桌面下的隐性放大视觉效果。 */
   presetCompensation?: number
 }
 

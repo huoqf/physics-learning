@@ -12,8 +12,8 @@ import { useCanvasSize, clientToContainerPoint } from '@/utils';
 import { SpringEnergyChartContent } from './SpringEnergyChartContent';
 import { SpringForceChartContent } from './SpringForceChartContent';
 
-// 设计空间常量（基准 700×650，高度按容器宽高比动态缩放）
-const DW = 700;
+// 设计空间常量（基准 840×650，高度按容器宽高比动态缩放）
+const DW = 840;
 const DH_BASE = 650;
 
 export default function SpringCompositeAnimation() {

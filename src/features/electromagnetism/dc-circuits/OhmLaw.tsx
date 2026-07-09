@@ -6,23 +6,23 @@ import { calculateOhmLaw } from '@/physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { LightBulb, DialMeter, DCSource } from '@/components/Physics'
 
-/** ─── 电路设计坐标（700×325，与 CANVAS_PRESETS.splitV 对齐） ─── */
+/** ─── 电路设计坐标（840×325，与 CANVAS_PRESETS.splitV 对齐） ─── */
 /** 以 DC Source 接线柱对齐导线为基准反推所有坐标；回路下移 20px 避免灯泡光晕与电压表重叠 */
 const CIRCUIT = {
   /** 回路矩形 */
-  rect: { x: 140, y: 100, w: 440, h: 160 },
+  rect: { x: 168, y: 100, w: 528, h: 160 },
   /** 顶部中点（元件位置） */
-  top: { x: 360, y: 100 },
+  top: { x: 432, y: 100 },
   /** 底部中点（DC Source 中心，接线柱在 y+22 = 回路底边） */
-  bottom: { x: 360, y: 238 },
+  bottom: { x: 432, y: 238 },
   /** 左侧分流节点 */
-  nodeLeft: { x: 220, y: 100 },
+  nodeLeft: { x: 264, y: 100 },
   /** 右侧分流节点 */
-  nodeRight: { x: 500, y: 100 },
+  nodeRight: { x: 600, y: 100 },
   /** 电压表位置（半径28，中心y=30 → 顶部y=2刚好可见） */
-  voltmeter: { x: 360, y: 30 },
+  voltmeter: { x: 432, y: 30 },
   /** 电流表位置（串联在右侧导线上） */
-  ammeter: { x: 580, y: 180 },
+  ammeter: { x: 696, y: 180 },
 } as const
 
 export default function OhmLaw() {

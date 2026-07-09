@@ -488,7 +488,7 @@ Tailwind v4 使用 CSS-first 配置，颜色通过 `src/index.css` 中的 `@them
 
 所有组件中的颜色/间距/动效值必须从 `src/theme/` 子模块引用，禁止硬编码。import 路径详见 `ui/02_UI_RULES.md §2`。
 
-动画组件的 UI token（字体/阴影/面板/图表内边距）从 `src/theme/animationTokens.ts` 引用，画布预设尺寸从 `CANVAS_PRESETS`（`src/theme/spacing.ts`）引用。**新组件按布局区域选择 preset**：`full`（700×650）/ `splitV`（700×325）/ `splitH`（350×650）/ `square`（650×650），`useViewport` 的 `designWidth/designHeight` 必须与所用 preset 数值完全一致。选型规则详见 `project_rules.md CANVAS_PRESETS 画布预设规格`。
+动画组件的 UI token（字体/阴影/面板/图表内边距）从 `src/theme/animationTokens.ts` 引用，画布预设尺寸从 `CANVAS_PRESETS`（`src/theme/spacing.ts`）引用。**新组件按布局区域选择 preset**：`full`（840×650）/ `splitV`（840×325）/ `splitH`（420×650）/ `square`（650×650），`useViewport` 的 `designWidth/designHeight` 必须与所用 preset 数值完全一致。选型规则详见 `project_rules.md CANVAS_PRESETS 画布预设规格`。
 
 **矢量系统 token**：矢量类型枚举（`VectorType`）、视觉权重（`VECTOR_VISUAL_WEIGHT`）、颜色映射（`VECTOR_COLORS`）从 `src/theme/physics/vectorStyle.ts` 引用；箭头几何规格（`ArrowGeometry`）从 `src/theme/physics/arrowStyle.ts` 引用。两者均通过 `@/theme/physics` 统一入口导出。
 

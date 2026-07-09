@@ -9,8 +9,8 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, WAVE_COLORS, CANVAS_COLORS, STROKE, SCENE_COLORS } from '@/theme/physics'
 import { sampleDiffractionField, type DiffractionFieldParams } from '@/physics/wave'
 
-/** splitH 设计坐标 350×650（与 CANVAS_PRESETS.splitH 一致） */
-const DW = 350
+/** splitH 设计坐标 420×650（与 CANVAS_PRESETS.splitH 一致） */
+const DW = 420
 const DH = 650
 const X_MAX = 1.2
 const Y_MAX = 0.9

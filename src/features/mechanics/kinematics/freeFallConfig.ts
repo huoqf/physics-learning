@@ -40,7 +40,7 @@ export const FREE_FALL_LAYOUT = {
   },
 } as const
 
-/** 右侧数据区固定像素布局（设计坐标系 700×650） */
+/** 右侧数据区固定像素布局（设计坐标系 840×650） */
 export const DATA_LAYOUT = {
   /** 数据表起始 Y（设计坐标） */
   tableY: 8,

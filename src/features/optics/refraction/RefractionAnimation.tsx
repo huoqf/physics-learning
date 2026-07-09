@@ -7,8 +7,8 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { deg2rad } from '@/math/angle'
 import { calculateRefraction } from '@/physics/optics'
 
-/** 场景设计坐标尺寸（与 CANVAS_PRESETS.full 700×650 对齐） */
-const VIEW_WIDTH = 700
+/** 场景设计坐标尺寸（与 CANVAS_PRESETS.full 840×650 对齐） */
+const VIEW_WIDTH = 840
 const VIEW_HEIGHT = 650
 const NORMAL_LENGTH = 180
 

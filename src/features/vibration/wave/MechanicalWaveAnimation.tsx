@@ -18,8 +18,8 @@ import {
   type MechanicalWaveMode,
 } from '@/physics/wave'
 
-/** 设计坐标：splitV 700×325 */
-const DESIGN_W = 700
+/** 设计坐标：splitV 840×325 */
+const DESIGN_W = 840
 const DESIGN_H = 325
 
 /** 振幅 UI 参数单位 cm → 物理 m */

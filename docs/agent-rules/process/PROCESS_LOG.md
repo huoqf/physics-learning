@@ -17,6 +17,8 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 07-09 | utils/viewport | feat | ViewportInfo 新增 designVisibleW/designVisibleH/designLeft/designTop 4 个派生字段，用于 edge-to-edge 元素（地面等）撑满可视区域；BlockBoardAnimation 地面改用 vp.designLeft/designVisibleW；07_CANVAS_SVG_CHART_RULES 新增场景 6 规范；tsc 零错误 |
+| 07-09 | theme | refactor | 全量 preset 对齐实际容器宽度：full 700→840、splitV 700→840、splitH 350→420；20+ 组件硬编码坐标同步缩放（OhmLaw/SingleRod/Conveyor/MechanicalWave/ChargeInEField/Capacitor/SpringForce/CombinedFields/ThinLens/Reflection/Refraction/TIR/WaveDiffraction/MomentumConservation/FreeFall/Kepler/FieldLines/ElectricField/ClosedCircuit/SpringComposite）；规范文档 project_rules/ARCHITECTURE_RULES/viewport_audit_report/TODO_deferred 全部同步；tsc 零错误 |
 | 07-09 | vibration/wave | feat | 机械波三动画落地：physics/wave.ts（行波因果阶跃/单脉冲/单缝强度/双源干涉场，16 单测）；anim-mechanical-wave（splitV+双图 y-x/y-t，Ball/VectorArrow/useAnimationViewport）；anim-wave-diffraction / anim-wave-interference（splitH，Canvas 场+SVG 叠加，setupCanvasDPR，时钟仅 useAnimationFrame）；knowledgeTree vibration-2-1/2-2 接线；quantities 右屏；ANIMATION_COUNT 77；tsc+547 tests+build 通过 |
 | 07-08 | electromagnetism/induction | feat | 新增“电磁感应单杆模型”页面：知识树在双杆模型前插入 electricity-4-5 单杆、双杆/线框顺延至 4-6/4-7；新增纯物理解析函数 singleRod.ts，支持恒力启动收尾与初速度释放指数衰减、电荷量与焦耳热计算；中屏 splitV 上方三图并列 v-t/I-t/能量转化，下方标准 AnimationSvgCanvas 绘制导轨、电阻、磁场×、导体棒、电流粒子、VectorArrow 速度/安培力/外力与电荷积累槽；右看板补 E=BLv、F_A=B²L²v/R、v_m 与 q=mΔv/(BL) 高考公式 |
 | 07-08 | mechanics/dynamics | feat | 新增“传送带模型”页面：知识树 mechanics-4-7 接入 anim-conveyor；新增纯物理函数 conveyor.ts 支持水平/倾斜传送带、相对速度判定、共速分段、左右边界离开、相对位移与摩擦生热；左屏使用 paramMeta/controlMeta 声明 v带/v0/μ/L、模型切换、共速线和划痕开关；中屏 splitV 上方 BasePhysicsChart 显示 v物-t 与 v带 共速/离开标记，下方 AnimationSvgCanvas 绘制履带、转轮、物块、速度/摩擦 VectorArrow 与生热划痕；右看板补高考分段模板与倾斜带 μ≥tanθ 判据 |

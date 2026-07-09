@@ -16,7 +16,7 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 export default function KeplerAnimation() {
-  const DESIGN_WIDTH = 700
+  const DESIGN_WIDTH = 840
   const DESIGN_HEIGHT = 650
 
   const { params, time, showVectors, showFormulas } = useAnimationStore(

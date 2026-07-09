@@ -18,8 +18,8 @@ import { lensShape } from './components/lensGeometry'
 import { ThinLensRail } from './components/ThinLensRail'
 import { ThinLensRays } from './components/ThinLensRays'
 
-/** 场景设计坐标尺寸（与 CANVAS_PRESETS.full 700×650 对齐） */
-const VIEW_WIDTH = 700
+/** 场景设计坐标尺寸（与 CANVAS_PRESETS.full 840×650 对齐） */
+const VIEW_WIDTH = 840
 const RAIL_Y = 200
 const CHART_H = 200
 const SCALE_CM = 4.5

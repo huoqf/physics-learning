@@ -8,8 +8,8 @@ import { deg2rad, rad2deg } from '@/math/angle'
 import { vectorSub, vectorDot, vectorScale, vectorNormalize } from '@/math/vector'
 import type { Vector2 } from '@/math/vector'
 
-/** 场景设计坐标尺寸（与 CANVAS_PRESETS.full 700×650 对齐） */
-const VIEW_WIDTH = 700
+/** 场景设计坐标尺寸（与 CANVAS_PRESETS.full 840×650 对齐） */
+const VIEW_WIDTH = 840
 const VIEW_HEIGHT = 650
 const RAY_LENGTH = 180
 const MIRROR_HALF = 140

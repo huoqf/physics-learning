@@ -24,7 +24,7 @@ import ForcePolygon from './components/ForcePolygon'
 
 const { width: DESIGN_WIDTH, height: DESIGN_HEIGHT } = CANVAS_PRESETS.full
 
-// ─── 布局分区常量（派生自 CANVAS_PRESETS.full 700×650）───
+// ─── 布局分区常量（派生自 CANVAS_PRESETS.full 840×650）───
 const TOP_SECTION_H = 310
 const BOTTOM_SECTION_H = CANVAS_PRESETS.splitV.height // 325
 const CARD_GAP = 15

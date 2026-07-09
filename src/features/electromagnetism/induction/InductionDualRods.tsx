@@ -77,7 +77,7 @@ export default function InductionDualRods() {
         </div>
       </div>
 
-      {/* ─── 下半屏：物理视界仿真（高度 50%，逻辑坐标 700×325） ─── */}
+      {/* ─── 下半屏：物理视界仿真（高度 50%，逻辑坐标 840×325） ─── */}
       <div className="w-full h-1/2 min-h-0 flex-1">
         <DualRodsScene
           physics={physics}

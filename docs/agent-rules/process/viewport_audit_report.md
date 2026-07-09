@@ -44,12 +44,12 @@
 #### ~~缺陷 2：双重缩放反模式——RefractionAnimation~~ ✅ 已修复
 **文件**：`src/features/optics/refraction/RefractionAnimation.tsx`
 
-修复方式：与 TIRAnimation 相同，`useAnimationViewport` + `AnimationSvgCanvas`，设计坐标 700×650 对齐 preset。
+修复方式：与 TIRAnimation 相同，`useAnimationViewport` + `AnimationSvgCanvas`，设计坐标 840×650 对齐 preset。
 
 #### ~~缺陷 3：`designWidth/Height` 与 CANVAS_PRESETS 不一致——MomentumTheoremAnimation~~ ✅ 已修复
 **文件**：`src/features/mechanics/momentum/MomentumTheoremAnimation.tsx`
 
-修复方式：`useCanvasSize` + `useViewport` 拆分迁移至 `useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2, overlayRight: ... })` + `AnimationSvgCanvas`。designWidth/Height 由 hook 内部从 preset 派生（700×650），消除手动不一致。
+修复方式：`useCanvasSize` + `useViewport` 拆分迁移至 `useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2, overlayRight: ... })` + `AnimationSvgCanvas`。designWidth/Height 由 hook 内部从 preset 派生（840×650），消除手动不一致。
 
 #### 缺陷 4：`foreignObject` 嵌入响应式图表 🔴
 
@@ -71,12 +71,12 @@
 - `src/features/optics/reflection/ReflectionAnimation.tsx`
 - `src/features/optics/thin-lens/ThinLensAnimation.tsx`
 
-修复方式：均迁移至 `useAnimationViewport({ preset: CANVAS_PRESETS.full })` + `AnimationSvgCanvas`，设计坐标 700×650。ThinLensAnimation 的 RelationChart 也移至 HTML flex 层。
+修复方式：均迁移至 `useAnimationViewport({ preset: CANVAS_PRESETS.full })` + `AnimationSvgCanvas`，设计坐标 840×650。ThinLensAnimation 的 RelationChart 也移至 HTML flex 层。
 
 #### ~~缺陷 6：非标准 viewBox（650×400）——OhmLaw~~ ✅ 已修复
 **文件**：`src/features/electromagnetism/dc-circuits/OhmLaw.tsx`
 
-修复方式：`useAnimationViewport({ preset: CANVAS_PRESETS.splitV })` + `AnimationSvgCanvas`，设计坐标 700×325。
+修复方式：`useAnimationViewport({ preset: CANVAS_PRESETS.splitV })` + `AnimationSvgCanvas`，设计坐标 840×325。
 
 #### 缺陷 7：硬编码 HEX 颜色——BinaryStarsAnimation ✅ 已修复
 **文件**：`src/features/mechanics/gravitation/BinaryStarsAnimation.tsx`
@@ -132,7 +132,7 @@
 ### 规范漏洞 B：`designWidth/designHeight` 的自由度边界不清晰
 **位置**：`project_rules.md §4 铁律 1-7` + `07规范§2.2`
 
-规范要求"`designWidth/designHeight` 必须与所选 preset 完全一致"，但 `MomentumTheoremAnimation` 用 `CANVAS_PRESETS.full`（700×650）但 `designWidth=600, designHeight=450`。
+规范要求"`designWidth/designHeight` 必须与所选 preset 完全一致"，但 `MomentumTheoremAnimation` 用 `CANVAS_PRESETS.full`（840×650）但 `designWidth=600, designHeight=450`。
 
 规范没有说明：方式B（有 overlay）下 `designWidth` 是否可以不等于 preset？若业务上必须使用不同设计坐标系，规范应补充合法例外场景或迁移路径。
 
@@ -167,9 +167,9 @@
 | foreignObject | SimpleHarmonicAnimation | EnergyBars 移至绝对定位 HTML overlay |
 | foreignObject | EnergyConservationAnimation | RelationChart 移至绝对定位 HTML overlay |
 | 硬编码颜色 | BinaryStarsAnimation | HEX → `PHYSICS_COLORS.*` + `withAlpha` |
-| 旧 viewBox 800×500 | ReflectionAnimation | `useAnimationViewport` + 700×650 |
-| 旧 viewBox 800×500 | ThinLensAnimation | `useAnimationViewport` + 700×650 + RelationChart 移出 |
-| 非标准 viewBox | OhmLaw | `useAnimationViewport(splitV)` + 700×325 |
+| 旧 viewBox 800×500 | ReflectionAnimation | `useAnimationViewport` + 840×650 |
+| 旧 viewBox 800×500 | ThinLensAnimation | `useAnimationViewport` + 840×650 + RelationChart 移出 |
+| 非标准 viewBox | OhmLaw | `useAnimationViewport(splitV)` + 840×325 |
 | 裸值 fontSize | CombinedFieldsAnimation | `font()` 函数调用 |
 | 冗余 viewBox | LoopPassFieldScene | `useAnimationViewport` + `AnimationSvgCanvas` |
 | 旧式拆分模式 | CircularMotionAnimation | `useAnimationViewport(square)` + `AnimationSvgCanvas` |

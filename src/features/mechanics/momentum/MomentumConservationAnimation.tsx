@@ -17,7 +17,7 @@ import {
 
 export default function MomentumConservationAnimation() {
   /** 画布设计尺寸：上方双图表占 310px，本场景仅 180px 高 */
-  const DESIGN_WIDTH = 700
+  const DESIGN_WIDTH = 840
   const DESIGN_HEIGHT = 180
 
   const { params, time, showVectors } = useAnimationStore(

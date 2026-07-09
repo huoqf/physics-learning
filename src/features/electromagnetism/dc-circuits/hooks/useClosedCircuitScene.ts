@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 
-/** 回路几何常量（基于 viewBox 0 0 700 400，与 ClosedCircuit.tsx LAYOUT 保持一致） */
+/** 回路几何常量（基于 viewBox 0 0 840 400，与 ClosedCircuit.tsx LAYOUT 保持一致） */
 const LOOP = {
   left: 150,
   top: 100,

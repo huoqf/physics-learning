@@ -33,7 +33,7 @@ function ImpactRipple({ x, y, color, startTime, currentTime }: RippleProps) {
 }
 
 // ─── 设计常量 ─────────────────────────────────────────────────────────────────
-const DESIGN_WIDTH = 700
+const DESIGN_WIDTH = 840
 const DESIGN_HEIGHT = 650
 
 // ─── 场景 Props ──────────────────────────────────────────────────────────────

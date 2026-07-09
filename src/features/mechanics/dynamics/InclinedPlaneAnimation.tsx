@@ -6,7 +6,7 @@ import { CANVAS_COLORS, SCENE_COLORS } from '@/theme/physics'
 import type { SceneScale } from '@/scene/SceneScale'
 import { useInclinedPlaneSimulation } from './inclined-plane/useInclinedPlaneSimulation'
 
-const DESIGN = CANVAS_PRESETS.splitH // 350 × 650
+const DESIGN = CANVAS_PRESETS.splitH // 420 × 650
 
 /** 布局比例常量 — 所有位置基于 vp.visibleH / vp.visibleW 动态计算，禁止硬编码绝对像素 */
 const LAYOUT = {

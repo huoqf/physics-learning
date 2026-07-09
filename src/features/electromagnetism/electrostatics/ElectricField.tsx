@@ -14,7 +14,7 @@ import { ElectricFieldBasicScene } from './ElectricFieldBasicScene'
 import { ElectricFieldAdvancedScene } from './ElectricFieldAdvancedScene'
 import { createSceneScaleFromViewport } from '@/scene'
 
-const DESIGN_WIDTH = 700
+const DESIGN_WIDTH = 840
 const DESIGN_HEIGHT = 650
 
 export default function ElectricField() {

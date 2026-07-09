@@ -12,26 +12,26 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateCutRopeState } from '@/physics/dynamics/spring-force'
 
-/** 胡克定律模式布局常量（splitV 700×325） */
+/** 胡克定律模式布局常量（splitV 840×325） */
 export const HOOKE_DESIGN = {
-  width: 700,
+  width: 840,
   height: 325,
   groundY: 305,
   wallY: 153,
-  eqX: 350,
-  springLeftX: 70,
+  eqX: 420,
+  springLeftX: 84,
   displaceLabelOffset: 16,
 } as const
 
-/** 绳与弹簧模式布局常量（splitH 350×650） */
+/** 绳与弹簧模式布局常量（splitH 420×650） */
 export const CUT_ROPE_DESIGN = {
-  width: 350,
+  width: 420,
   height: 650,
   ceilY: 39,
   groundY: 610,
-  xLeft: 98,
-  xRight: 287,
-  dividerX: 175,
+  xLeft: 118,
+  xRight: 344,
+  dividerX: 210,
   bracketWidth: 100,
 } as const
 

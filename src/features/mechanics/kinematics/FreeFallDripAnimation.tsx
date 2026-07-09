@@ -25,7 +25,7 @@ import { VelocityTimeChart } from '@/components/Chart'
 import { createSceneScaleFromViewport } from '@/scene'
 
 // ─── 设计常量 ────────────────────────────────────────────────────────────────
-const DESIGN_WIDTH = 700
+const DESIGN_WIDTH = 840
 const DESIGN_HEIGHT = 650
 
 // ─── 物理常量 ────────────────────────────────────────────────────────────────
