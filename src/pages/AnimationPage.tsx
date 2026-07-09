@@ -117,7 +117,7 @@ function AnimationCenter({
             className="flex-1 w-0 min-h-0 bg-white rounded-xl shadow-md overflow-hidden"
             style={{
               transition: `opacity ${duration.normal}ms ${easing.standard}`,
-              opacity: canvasDimmed ? 0.9 : 1,
+              opacity: canvasDimmed ? 0.95 : 1,
             }}
           >
             <ErrorBoundary resetKey={config.id}>
@@ -160,7 +160,7 @@ function AnimationCenter({
               className="flex-1 min-h-0 w-full bg-white rounded-xl shadow-md overflow-hidden"
               style={{
                 transition: `opacity ${duration.normal}ms ${easing.standard}`,
-                opacity: canvasDimmed ? 0.9 : 1,
+                opacity: canvasDimmed ? 0.95 : 1,
               }}
             >
               <ErrorBoundary resetKey={config.id}>
@@ -182,7 +182,7 @@ function AnimationCenter({
             className="w-full flex-1 min-h-0 bg-white rounded-xl shadow-md overflow-hidden"
             style={{
               transition: `opacity ${duration.normal}ms ${easing.standard}`,
-              opacity: canvasDimmed ? 0.9 : 1,
+              opacity: canvasDimmed ? 0.95 : 1,
             }}
           >
             <ErrorBoundary resetKey={config.id}>

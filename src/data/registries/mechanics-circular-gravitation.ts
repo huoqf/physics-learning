@@ -188,10 +188,8 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
     title: '卫星变轨模型（霍曼转移）',
     knowledgeId: 'mechanics-6-5',
     Component: lazy(() => import('@/features/mechanics/gravitation/OrbitTransferAnimation')),
-    CenterExtra: lazy(() => import('@/features/mechanics/gravitation/OrbitTransferCenterExtra')),
-    centerLayout: 'splitH',
     controlsMode: 'timed',
-    maxTime: 200,
+    maxTime: 120,
     defaultParams: {
       r1: 7.0,
       r3: 14.0,
@@ -213,7 +211,6 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
         step: 0.1,
         unit: '×10⁶ m',
         group: '轨道参数',
-        importance: 'core',
         resetOnChange: true,
       },
       {
@@ -224,7 +221,6 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
         step: 0.1,
         unit: '×10⁶ m',
         group: '轨道参数',
-        importance: 'core',
         resetOnChange: true,
         marks: [{ value: 21.0, label: '近同步', variant: 'critical' as const }],
       },
@@ -294,7 +290,7 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
         type: 'tip',
         group: '教学提示',
         content:
-          '霍曼变轨：在近地点点火加速进入椭圆，到达远地点再点火圆化到高轨。注意稳态 $v_3 < v_1$（高轨更慢）。',
+          '霍曼变轨：在近地点点火加速进入椭圆，到达远地点再点火圆化到高轨。注意稳态 v₁ > v₃（高轨更慢）。',
       },
       {
         type: 'tip',

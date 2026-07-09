@@ -350,25 +350,24 @@ export function buildGravitationQuantities(
         formulas: [
           {
             name: '圆轨速度',
-            latex: 'v=\\\\sqrt{\\\\dfrac{GM}{r}}',
+            latex: 'v=\\sqrt{\\dfrac{GM}{r}}',
             level: 'core',
-            note: 'r 越大 v 越小，故 v₃ < v₁',
+            note: 'r↑ → v↓，故 v₁ > v₃（高轨更慢）',
           },
           {
             name: '霍曼半长轴',
-            latex: 'a=\\\\dfrac{r_1+r_3}{2}',
+            latex: 'a=\\dfrac{r_1+r_3}{2}',
             level: 'core',
           },
           {
             name: '近/远地点脉冲',
-            latex:
-              '\\\\Delta v_1=v_p-v_1,\\\\quad \\\\Delta v_2=v_3-v_a',
+            latex: '\\Delta v_1=v_p-v_1,\\quad \\Delta v_2=v_3-v_a',
             level: 'important',
             condition: '共面双脉冲抬轨（霍曼）',
           },
           {
             name: '开普勒第三定律',
-            latex: '\\\\dfrac{a^3}{T_2^2}=\\\\dfrac{r_1^3}{T_1^2}=\\\\dfrac{GM}{4\\\\pi^2}',
+            latex: '\\dfrac{a^3}{T_2^2}=\\dfrac{r_1^3}{T_1^2}=\\dfrac{GM}{4\\pi^2}',
             level: 'important',
           },
         ],
