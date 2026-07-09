@@ -1,12 +1,13 @@
+import { VectorArrow, PhysicsGround, Ball } from '@/components/Physics'
 import { useMemo, useId } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useCanvasSize, useViewport, getPointsUpToTime } from '@/utils'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, CANVAS_COLORS } from '@/theme/physics'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+
 import { VelocityTimeChart } from '@/components/Chart'
-import { Ball } from '@/components/Physics/Ball'
+
 import { precomputeCurvedSlot, interpolateCurvedSlot } from '@/physics/momentumApplication/curvedSlot'
 
 const CANVAS_DESIGN = { width: 700, height: 260 }

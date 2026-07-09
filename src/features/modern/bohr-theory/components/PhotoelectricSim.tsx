@@ -2,7 +2,7 @@ import { useEffect, useRef, useMemo } from 'react'
 import { useSimulationFrame } from '@/utils/animation'
 import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { RelationChart } from '@/components/Chart/RelationChart'
+import { RelationChart } from '@/components/Chart'
 import { MODERN_COLORS, CANVAS_COLORS } from '@/theme/physics/colors'
 import { setupCanvasDPR, useDevicePixelRatio } from '@/hooks/useCanvasDPR'
 

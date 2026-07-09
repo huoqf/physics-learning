@@ -1,8 +1,8 @@
+import { LightBulb } from '@/components/Physics'
 import React, { useMemo } from 'react'
 import { PHYSICS_COLORS, CANVAS_STYLE, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
-import { LightBulb } from '@/components/Physics/LightBulb'
-import { tempToColor } from '../utils'
 
+import { tempToColor } from '../utils'
 
 interface HeatingBoxProps {
   type: 'ac' | 'dc'

@@ -1,7 +1,8 @@
+import { VectorArrow } from '@/components/Physics'
 import React, { useMemo } from 'react'
 import { CANVAS_COLORS, PHYSICS_COLORS } from '@/theme/physics'
 import { GRAVITY } from '@/physics/constants'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import { computeScale } from '@/utils/coordinate'
 import type { AdvancedAmperePhysicsResult } from '../ampereForceModel'
 import type { SceneScale } from '@/scene'

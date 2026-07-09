@@ -1,3 +1,4 @@
+import { VectorArrow, PhysicsGround } from '@/components/Physics'
 import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useMemo } from 'react'
@@ -10,7 +11,7 @@ import {
   calculateImpulseSlices,
   type ForceTimeType,
 } from '@/physics/impulse'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import { createSceneScaleFromViewport } from '@/scene'
 import {
   PHYSICS_COLORS,
@@ -19,7 +20,6 @@ import {
   CHART_COLORS,
 } from '@/theme/physics'
 import { RelationChart, ChartArea, useChartContext } from '@/components/Chart'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
 
 const IMPULSE_DESIGN = { width: 700, height: 450 } as const
 

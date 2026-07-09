@@ -1,5 +1,6 @@
+import { HandRule } from '@/components/Physics'
 import { useRef } from 'react'
-import { HandRule } from '@/components/Physics/HandRule'
+
 import type { HandPoseParams } from '../model/velocitySelectorModel'
 
 export function VelocitySelectorHandRuleCard({

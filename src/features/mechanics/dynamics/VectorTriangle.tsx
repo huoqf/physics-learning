@@ -1,5 +1,6 @@
+import { VectorArrow } from '@/components/Physics'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import type { SceneScale } from '@/scene'
 import type { VectorAdditionPhysicsData } from './useVectorAdditionPhysics'
 

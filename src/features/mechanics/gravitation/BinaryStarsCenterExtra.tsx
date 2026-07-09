@@ -1,6 +1,4 @@
-import { BasePhysicsChart } from '@/components/Chart/BasePhysicsChart'
-import { ChartCursor } from '@/components/Chart/ChartCursor'
-import { useChartContext } from '@/components/Chart/ChartContext'
+import { BasePhysicsChart, ChartCursor, useChartContext } from '@/components/Chart'
 import { useBinaryStars } from './hooks/useBinaryStars'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { useAnimationStore } from '@/stores'

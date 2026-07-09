@@ -1,3 +1,4 @@
+import { VectorArrow, VectorDefs, Ball } from '@/components/Physics'
 import { useCanvasSize, useViewport, physicsToCanvasWithOrigin, clientToContainerPoint } from '@/utils'
 import React, { useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -12,10 +13,9 @@ import {
   FONT,
   CANVAS_STYLE,
 } from '@/theme/physics'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import { VelocityTimeChart } from '@/components/Chart'
-import { VectorDefs } from '@/components/Physics/VectorDefs'
-import { Ball } from '@/components/Physics/Ball'
+
 import { createSceneScaleFromViewport } from '@/scene'
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
 

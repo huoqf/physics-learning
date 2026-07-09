@@ -25,6 +25,7 @@ export { Block } from './Block'
 export { SportsCar } from './SportsCar'
 export { Pulley } from './Pulley'
 export { EnergyBars } from './EnergyBars'
+export type { EnergyBarItem } from './EnergyBars'
 export { SVGSingleBar } from './SVGSingleBar'
 
 // ============================================================================
@@ -55,7 +56,9 @@ export { drawMagneticFieldGrid } from './drawMagneticFieldGrid'
 // ============================================================================
 // 电磁学 - 电磁感应 (Electromagnetic Induction)
 // ============================================================================
-export { ConductingRod, ConductingRod as ConductorRod } from './ConductingRod'
+export { ConductingRod } from './ConductingRod'
+// Backward compatibility. Prefer ConductingRod in new code.
+export { ConductingRod as ConductorRod } from './ConductingRod'
 export { CoupledCoilField } from './CoupledCoilField'
 export { PrimaryCoil } from './PrimaryCoil'
 export { Rails } from './Rails'
@@ -74,6 +77,7 @@ export { SkeletonHand } from './SkeletalHand'
 // ============================================================================
 export { VectorArrow } from './VectorArrow'
 export { VectorDefs } from './VectorDefs'
+export { markerId } from './vectorDefsUtils'
 
 // ============================================================================
 // 类型导出 (Type Exports)

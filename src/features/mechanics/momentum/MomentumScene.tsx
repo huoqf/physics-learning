@@ -1,6 +1,6 @@
+import { VectorArrow, PhysicsGround } from '@/components/Physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_STYLE, withAlpha } from '@/theme/physics'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+
 import { RelationChart } from '@/components/Chart'
 import type { SceneScale } from '@/scene'
 import { MOMENTUM_LAYOUT } from './MomentumAnimation'

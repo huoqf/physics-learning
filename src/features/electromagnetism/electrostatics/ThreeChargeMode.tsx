@@ -16,6 +16,7 @@
  *
  * @category M4
  */
+import { VectorArrow } from '@/components/Physics'
 import { useState, useEffect } from 'react'
 import { type CanvasSize } from '@/utils'
 import type { ViewportInfo } from '@/utils'
@@ -27,7 +28,7 @@ import {
   CANVAS_COLORS,
 } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import { Button } from '@/components/UI'
 import { createSceneScaleFromViewport } from '@/scene'
 

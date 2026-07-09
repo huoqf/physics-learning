@@ -1,10 +1,11 @@
+import { VectorArrow } from '@/components/Physics'
 import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CANVAS_STYLE, KEPLER_CONFIG, INSET_CHART } from '@/theme/physics'
 import { useMemo, useCallback } from 'react'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import { RelationChart } from '@/components/Chart'
 import { createSceneScaleFromViewport } from '@/scene'
 import { physicsToCanvasWithOrigin } from '@/utils/coordinate'

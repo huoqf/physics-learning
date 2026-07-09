@@ -1,7 +1,8 @@
+import { EnergyBars, EnergyBarItem } from '@/components/Physics'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateCapacitor } from '@/physics'
-import { EnergyBars, EnergyBarItem } from '@/components/Physics/EnergyBars'
+
 import { PHYSICS_COLORS } from '@/theme/physics'
 
 // 物理常数定义 (SI)

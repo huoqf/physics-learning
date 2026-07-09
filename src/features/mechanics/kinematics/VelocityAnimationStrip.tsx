@@ -1,3 +1,4 @@
+import { VectorArrow, VectorDefs, PhysicsGround, Ball, Block } from '@/components/Physics'
 import { useCanvasSize, useViewport } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -8,11 +9,7 @@ import { Spring } from '@/components/UI'
 import { calculateInstantaneousVelocity } from '@/physics'
 import type { VariableMotionModel, VariableMotionParams } from '@/physics'
 import { useVelocityPhysics } from './useVelocityPhysics'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { VectorDefs } from '@/components/Physics/VectorDefs'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
-import { Ball } from '@/components/Physics/Ball'
-import { Block } from '@/components/Physics/Block'
+
 import { createSceneScaleFromViewport } from '@/scene'
 
 interface VelocityAnimationStripProps {
@@ -132,7 +129,6 @@ export default function VelocityAnimationStrip({
   const sceneScale = createSceneScaleFromViewport(vp, 'visibleArea', {
     refMagnitudes: { velocity: maxVel, acceleration: maxAcc },
   })
-
 
   // ── 多阶段：A/B 标志位置 ──
   const { pointA, pointB } = useMemo(() => {
@@ -265,7 +261,6 @@ export default function VelocityAnimationStrip({
             />
           </g>
         )}
-
 
         {/* ══════════ 简谐振动：位移标注 ══════════ */}
         {model === 'shm' && Math.abs(state.x) > 0.4 && (

@@ -5,7 +5,7 @@ import { getAnimationConfig, getAnimationConfigAsync } from '@/data/animationReg
 import { preloadQuantityBuilder } from '@/data/physicsQuantities'
 import { useAnimationStore, useProgressStore, type PhysicsState } from '@/stores'
 import { useAppStore } from '@/stores/useAppStore'
-import type { DiscoveryStepData } from '@/components/UI/DiscoveryGuide'
+import type { DiscoveryStepData } from '@/components/UI'
 import { useAnimationFrame } from '@/utils/animation'
 import { duration } from '@/theme/motion'
 import type { AnimationConfig } from '@/data/types'

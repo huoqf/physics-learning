@@ -3,9 +3,10 @@
  *
  * 从 ElectricField.tsx 拆分：mode=1 的中间屏渲染。
  */
+import { VectorArrow } from '@/components/Physics'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import type { SceneScale } from '@/scene'
 
 interface Props {

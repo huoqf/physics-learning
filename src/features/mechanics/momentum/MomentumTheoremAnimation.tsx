@@ -1,3 +1,4 @@
+import { PhysicsGround } from '@/components/Physics'
 import { useAnimationViewport } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -5,7 +6,7 @@ import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { createSceneScaleFromViewport } from '@/scene'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+
 import { PHYSICS_COLORS } from '@/theme/physics'
 
 import { useMomentumTheoremLayout } from './hooks/useMomentumTheoremLayout'

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { RelationChart } from '@/components/Chart/RelationChart'
+import { RelationChart } from '@/components/Chart'
 import { generateIUCurve } from '@/physics/photoelectric'
 import { CHART_COLORS } from '@/theme/physics'
 

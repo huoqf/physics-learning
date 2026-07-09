@@ -1,6 +1,6 @@
+import { VectorArrow } from '@/components/Physics'
 import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
 
 interface ElevatorShaftProps {
   layout: {

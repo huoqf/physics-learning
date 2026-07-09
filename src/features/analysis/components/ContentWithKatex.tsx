@@ -1,5 +1,5 @@
 import React from 'react'
-import { KatexFormula } from '@/components/UI/KatexFormula'
+import { KatexFormula } from '@/components/UI'
 
 export const ContentWithKatex = React.memo(function ContentWithKatex({ content }: { content: string }) {
   const segments = content.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/g)

@@ -1,3 +1,4 @@
+import { VectorArrow, SportsCar, PhysicsGround, VectorDefs, markerId } from '@/components/Physics'
 import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useEffect, useMemo } from 'react'
@@ -11,11 +12,7 @@ import {
   STROKE,
   DASH,
 } from '@/theme/physics'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { SportsCar } from '@/components/Physics/SportsCar'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
-import { VectorDefs } from '@/components/Physics/VectorDefs'
-import { markerId } from '@/components/Physics/vectorDefsUtils'
+
 import { selectMarkerTier } from '@/theme/physics'
 import { createSceneScaleFromViewport } from '@/scene'
 import { VelocityTimeChart } from '@/components/Chart'

@@ -1,9 +1,10 @@
+import { VectorArrow } from '@/components/Physics'
 import React, { type RefObject } from 'react'
 import { PHYSICS_COLORS, EM_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { radius } from '@/theme/radius'
 import { shadow } from '@/theme/shadow'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import { IDENTITY_SCENE_SCALE } from '@/scene'
 import type { ElectricPotentialPhysicsResult, PathPoint } from './hooks/useElectricPotentialPhysics'
 

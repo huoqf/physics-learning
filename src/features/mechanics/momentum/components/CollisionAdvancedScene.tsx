@@ -2,8 +2,8 @@
  * CollisionAdvancedScene.tsx
  * 进阶模式（带能量损失系数）渲染组件
  */
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+
+import { VectorArrow, PhysicsGround } from '@/components/Physics'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,

@@ -1,3 +1,4 @@
+import { VectorDefs } from '@/components/Physics'
 import { useRef } from 'react'
 import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -13,7 +14,7 @@ import { VectorFormulaPanel } from './VectorFormulaPanel'
 import { VectorDecomposition } from './VectorDecomposition'
 import { VectorParallelogram } from './VectorParallelogram'
 import { VectorTriangle } from './VectorTriangle'
-import { VectorDefs } from '@/components/Physics/VectorDefs'
+
 import { createSceneScaleFromViewport } from '@/scene'
 
 export default function VectorAdditionAnimation() {

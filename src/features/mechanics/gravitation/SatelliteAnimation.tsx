@@ -1,3 +1,4 @@
+import { VectorArrow } from '@/components/Physics'
 import { useState, useRef, useMemo, useCallback, useEffect } from 'react'
 import { useCanvasSize, useViewport, clientToContainerPoint } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -5,7 +6,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateOrbitalSpeed } from '@/physics'
 import { GRAVITATIONAL_CONSTANT, EARTH_MASS, EARTH_RADIUS } from '@/physics/constants'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import { RelationChart, VelocityTimeChart } from '@/components/Chart'
 import type { RelationDataSeries, VTStage } from '@/components/Chart'
 import { createSceneScaleFromViewport } from '@/scene'

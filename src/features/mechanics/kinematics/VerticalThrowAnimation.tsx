@@ -1,3 +1,4 @@
+import { PhysicsGround, VectorArrow, VectorDefs, Ball } from '@/components/Physics'
 import { useCanvasSize, useViewport } from '@/utils'
 import { useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -13,10 +14,7 @@ import {
 } from '@/theme/physics'
 import { useVerticalThrowPhysics } from './useVerticalThrowPhysics'
 import { useVerticalThrowChartLayout } from './useVerticalThrowChartLayout'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { VectorDefs } from '@/components/Physics/VectorDefs'
-import { Ball } from '@/components/Physics/Ball'
+
 import { VerticalThrowCharts } from './VerticalThrowCharts'
 import { createSceneScaleFromViewport } from '@/scene'
 
@@ -155,7 +153,6 @@ export default function VerticalThrowAnimation() {
 
         {/* ========== defs ========== */}
         <defs>
-
 
           <filter id="glow-filter-blue" x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur stdDeviation="1.2" result="blur" />

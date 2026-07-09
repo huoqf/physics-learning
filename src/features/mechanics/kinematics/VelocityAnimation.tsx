@@ -1,3 +1,4 @@
+import { VectorArrow, VectorDefs, PhysicsGround } from '@/components/Physics'
 import { useCanvasSize, useViewport } from '@/utils'
 import { useMemo, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -6,9 +7,7 @@ import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OBJECT } from '@/theme/phys
 import { colors } from '@/theme/colors'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateAverageVelocity } from '@/physics'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { VectorDefs } from '@/components/Physics/VectorDefs'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+
 import { createSceneScaleFromViewport } from '@/scene'
 
 /**
@@ -91,8 +90,6 @@ export default function VelocityAnimation() {
   const fontSize = Math.max(10, canvasSize.width * 0.017)
   const smallFont = Math.max(9, fontSize * 0.85)
 
-
-
   // ── 物体尺寸 ──
   const objW = vp.visibleW * 0.06
   const objH = scene === 0 ? objW * 0.7 : objW * 0.9
@@ -133,8 +130,6 @@ export default function VelocityAnimation() {
             unit: 'm',
           }}
         />
-
-
 
         {/* ── 起始线 ── */}
         <line

@@ -1,6 +1,6 @@
+import { PhysicsGround, VectorArrow } from '@/components/Physics'
 import { SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import { ZeroPotentialLine } from './ZeroPotentialLine'
 import type { SceneScale } from '@/scene'
 

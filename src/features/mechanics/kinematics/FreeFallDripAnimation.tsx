@@ -1,3 +1,4 @@
+import { PhysicsGround, VectorArrow, VectorDefs } from '@/components/Physics'
 import { useCanvasSize, useViewport } from '@/utils'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -13,13 +14,12 @@ import {
   DASH,
   FONT,
 } from '@/theme/physics'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+
 import { calcGByLatitude, calcGByAltitude, GRAVITY } from '@/physics'
 import { useFreeFallPhysics } from './useFreeFallPhysics'
 import { getPhysicsAtTime } from '@/physics'
 import { DATA_LAYOUT } from './freeFallConfig'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { VectorDefs } from '@/components/Physics/VectorDefs'
+
 import { SvgDataTable } from '@/components/Chart'
 import { VelocityTimeChart } from '@/components/Chart'
 import { createSceneScaleFromViewport } from '@/scene'

@@ -2,8 +2,8 @@
  * CollisionBasicScene.tsx
  * 基础模式（弹性/非弹性碰撞）渲染组件
  */
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+
+import { VectorArrow, PhysicsGround } from '@/components/Physics'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,

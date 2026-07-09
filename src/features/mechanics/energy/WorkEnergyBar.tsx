@@ -1,6 +1,6 @@
+import { SVGSingleBar } from '@/components/Physics'
 import { useMemo } from 'react'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
-import { SVGSingleBar } from '@/components/Physics/SVGSingleBar'
 
 const ENERGY_BAR_LAYOUT = {
   maxBarHeightRatio: 0.55,

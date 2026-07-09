@@ -1,3 +1,4 @@
+import { VectorArrow, PhysicsGround } from '@/components/Physics'
 import { useCanvasSize, useViewport } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -13,8 +14,7 @@ import {
   computeWorkEnergyBars,
 } from '@/physics/work'
 import type { WorkKinematics } from '@/physics/work'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+
 import { createSceneScaleFromViewport } from '@/scene'
 import { WorkVTChart } from './WorkVTChart'
 import { WorkFSChart } from './WorkFSChart'
@@ -445,7 +445,6 @@ export default function WorkAnimation() {
               </text>
             </g>
           )}
-
 
         </g>
       </svg>

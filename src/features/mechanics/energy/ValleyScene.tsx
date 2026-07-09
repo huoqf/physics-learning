@@ -1,5 +1,6 @@
+import { VectorArrow } from '@/components/Physics'
 import { PHYSICS_COLORS, ENERGY_COLORS, STROKE, SCENE_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import { ZeroPotentialLine } from './ZeroPotentialLine'
 import type { SceneScale } from '@/scene'
 

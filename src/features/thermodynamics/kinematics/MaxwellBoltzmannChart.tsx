@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { MiniChart } from '@/components/UI'
-import type { MiniChartLine, MiniChartStaticLine } from '@/components/UI/MiniChart'
+import type { MiniChartLine, MiniChartStaticLine } from '@/components/UI'
 import { generateMBCurve, averageSpeed } from '@/physics/brownianMotion'
 import { THERMO_COLORS } from '@/theme/physics'
 

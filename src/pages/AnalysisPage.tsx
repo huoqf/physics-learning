@@ -2,8 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { ContentWithKatex, StepCard, KnowledgeChain, useAnalysisSteps } from '@/features/analysis'
 import { getKnowledgeNode } from '@/data/knowledgeTree'
-import { Button } from '@/components/UI/Button'
-import { Badge } from '@/components/UI/Badge'
+import { Button, Badge } from '@/components/UI'
 import { PageLayout } from '@/components/Layout'
 
 const difficultyLabels = ['入门', '基础', '中等', '较难', '困难']

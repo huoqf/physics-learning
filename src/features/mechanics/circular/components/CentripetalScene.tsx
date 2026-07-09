@@ -1,5 +1,6 @@
+import { VectorArrow } from '@/components/Physics'
 import { physicsToCanvasWithOrigin } from '@/utils'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import { RelationChart } from '@/components/Chart'
 import { GRAVITY } from '@/physics'
 import {

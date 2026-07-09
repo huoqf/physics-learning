@@ -264,7 +264,8 @@ Primary（primary-600）/ Secondary（white + primary边框）/ Ghost（transpar
 
 物理实验实体组件（如电学的灯泡，力学的滑块、小车、小球等）统一存放在 `src/components/Physics/` 下。
 
-* **接口文档化**：组件的 API Props、动效和设计意图**必须**在组件代码内通过 TypeScript 接口与 JSDoc 详细注释（自文档化），禁止在 UI 规范文档中列出具体 Props 细节。
+* **接口文档化**：组件完整 API Props、动效和设计意图以组件源码中的 TypeScript 接口与 JSDoc 为准。UI 规范文档不得复制完整 Props 表，但允许提供最小可运行示例、推荐调用模式、常见错误和禁止替代写法。
+* **Registry 优先**：新增或修改动画场景前，必须优先查阅 `COMPONENT_REGISTRY.md`。Registry 中已有等效组件时，**禁止**在 `features/` 中重复手写实现。
 * **复用铁律**：开发新场景前必须先检查该目录。**禁止**在单个页面中重复手绘或重写已有的器材/实体（如小灯泡、小车等）。
 * **新增规范**：若需新增通用物理器材（如滑块等），应将其抽离为 `src/components/Physics/` 下的独立组件，并严格保证所有颜色来自 `SCENE_COLORS`。
 
@@ -340,6 +341,20 @@ Primary（primary-600）/ Secondary（white + primary边框）/ Ghost（transpar
 | `TipCard` | 提示卡片 |
 
 > **barrel import 规则**：所有组件从对应目录的 barrel 入口导入，禁止子路径导入（如 `@/components/Physics/Ball`）。
+>
+> ```ts
+> // 推荐：子目录 barrel
+> import { VectorArrow } from '@/components/Physics'
+> import { Button, ParamControl } from '@/components/UI'
+> import { AnimationSvgCanvas } from '@/components/Layout'
+> import { BasePhysicsChart } from '@/components/Chart'
+>
+> // 页面层可接受：顶层 barrel
+> import { VectorArrow, Button } from '@/components'
+>
+> // 禁止：子路径导入
+> import { VectorArrow } from '@/components/Physics/VectorArrow'
+> ```
 
 ---
 

@@ -1,9 +1,10 @@
+import { VectorArrow } from '@/components/Physics'
 import React from 'react'
 import { colors } from '@/theme/colors'
 import { CANVAS_COLORS, PHYSICS_COLORS } from '@/theme/physics'
 import { GRAVITY } from '@/physics/constants'
 import { computeScale } from '@/utils/coordinate'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import { IDENTITY_SCENE_SCALE } from '@/scene'
 import type { AdvancedAmperePhysicsResult } from '../ampereForceModel'
 

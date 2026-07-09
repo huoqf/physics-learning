@@ -1,3 +1,4 @@
+import { Block, VectorArrow, PhysicsGround } from '@/components/Physics'
 import { useMemo } from 'react'
 import { useCanvasSize, useViewport, layoutLabels } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -13,9 +14,7 @@ import { GRAVITY } from '@/physics/constants'
 import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, FONT } from '@/theme/physics'
 import { createSceneScaleFromViewport } from '@/scene'
 import type { SceneLayoutProfile } from '@/scene'
-import { Block } from '@/components/Physics/Block'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+
 import { useAnimationLayout } from '@/context/AnimationLayoutContext'
 
 // ── 布局常量 ──────────────────────────────────────────────────────────

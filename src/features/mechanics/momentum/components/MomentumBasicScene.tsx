@@ -1,5 +1,6 @@
+import { VectorArrow } from '@/components/Physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import { MT_LAYOUT } from './constants'
 import type { CanvasSize } from '@/utils/useCanvasSize'
 import type { ViewportInfo } from '@/utils/useViewport'

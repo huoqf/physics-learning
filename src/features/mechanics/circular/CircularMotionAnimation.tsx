@@ -1,3 +1,4 @@
+import { VectorArrow } from '@/components/Physics'
 import { physicsToCanvasWithOrigin, clientToContainerPoint } from '@/utils'
 import { useAnimationViewport } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
@@ -6,7 +7,7 @@ import React, { useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateCircularMotion } from '@/physics'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import { createSceneScaleFromViewport } from '@/scene'
 import {
   PHYSICS_COLORS,

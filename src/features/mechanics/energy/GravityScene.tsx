@@ -1,7 +1,7 @@
+import { VectorArrow, PhysicsGround } from '@/components/Physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, STROKE, DASH } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+
 import type { SceneScale } from '@/scene'
 
 interface GravitySceneProps {

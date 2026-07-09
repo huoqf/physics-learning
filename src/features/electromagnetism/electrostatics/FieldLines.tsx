@@ -1,11 +1,11 @@
+import { VectorArrow, EnergyBars } from '@/components/Physics'
 import React, { useRef, useMemo } from 'react'
 import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { EnergyBars } from '@/components/Physics/EnergyBars'
+
 import { IDENTITY_SCENE_SCALE } from '@/scene'
 
 // 物理与绘图常量

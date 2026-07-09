@@ -1,3 +1,4 @@
+import { VectorArrow, PhysicsGround, VectorDefs, Ball } from '@/components/Physics'
 import { colors } from '@/theme/colors'
 import {
   PHYSICS_COLORS,
@@ -10,10 +11,7 @@ import {
   FONT,
   withAlpha,
 } from '@/theme/physics'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
-import { VectorDefs } from '@/components/Physics/VectorDefs'
-import { Ball } from '@/components/Physics/Ball'
+
 import { VelocityTimeChart, SvgDataTable } from '@/components/Chart'
 import type { ChartDataSeries } from '@/components/Chart'
 import { RIPPLE_DURATION, RIPPLE_MAX_RADIUS, DATA_LAYOUT } from './freeFallConfig'

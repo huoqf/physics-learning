@@ -1,4 +1,5 @@
-import { HandRule, type HandRuleMode, type HandRuleProps } from '@/components/Physics/HandRule'
+
+import { HandRule, type HandRuleMode, type HandRuleProps } from '@/components/Physics'
 import type { Vec2 } from '@/physics'
 
 /**

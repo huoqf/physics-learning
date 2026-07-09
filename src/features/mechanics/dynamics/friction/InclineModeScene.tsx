@@ -1,7 +1,6 @@
+import { VectorArrow, Block, PhysicsGround } from '@/components/Physics'
 import { PHYSICS_COLORS, CANVAS_COLORS, FONT, SCENE_COLORS } from '@/theme/physics'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { Block } from '@/components/Physics/Block'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+
 import type { SceneScale } from '@/scene'
 import type { FrictionSimState } from './useFrictionSimulation'
 

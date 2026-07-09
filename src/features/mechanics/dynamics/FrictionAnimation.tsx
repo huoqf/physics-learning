@@ -1,9 +1,10 @@
+import { VectorDefs } from '@/components/Physics'
 import { useCanvasSize, useViewport } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
-import { VectorDefs } from '@/components/Physics/VectorDefs'
+
 import { createSceneScaleFromViewport } from '@/scene'
 import type { SceneLayoutProfile } from '@/scene'
 import { useAnimationLayout } from '@/context/AnimationLayoutContext'

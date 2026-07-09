@@ -3,14 +3,10 @@
  *
  * 从 FaradayLaw.tsx 拆分：基础模式 (mode=0) 的中间屏渲染。
  */
+import { BarMagnet, LightBulb, Galvanometer, Solenoid, ParametricMagneticField, VectorArrow } from '@/components/Physics'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
-import { BarMagnet } from '@/components/Physics/BarMagnet'
-import { LightBulb } from '@/components/Physics/LightBulb'
-import { Galvanometer } from '@/components/Physics/Galvanometer'
-import { Solenoid } from '@/components/Physics/Solenoid'
-import { ParametricMagneticField } from '@/components/Physics/ParametricMagneticField'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import {
   MAGNET_MIN_X, COIL_X, COIL_RX, COIL_RY, MAGNET_LEN, MAGNET_H,
 } from './hooks/useFaradayPhysics'

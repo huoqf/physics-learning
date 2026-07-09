@@ -20,7 +20,7 @@ import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, FONT, withAlpha } from '@/t
 import { colors } from '@/theme/colors'
 import { MagneticPoles, RotatingCoil } from '@/components/Physics'
 import { MiniChart } from '@/components/UI'
-import type { MiniChartLine, MiniChartStaticLine } from '@/components/UI/MiniChart'
+import type { MiniChartLine, MiniChartStaticLine } from '@/components/UI'
 import { computeACGenerationState } from '@/physics/acCircuit'
 
 type Point2D = { x: number; y: number }

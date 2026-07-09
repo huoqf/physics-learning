@@ -1,3 +1,4 @@
+import { VectorArrow, VectorDefs, PhysicsGround } from '@/components/Physics'
 import { useEffect, useRef, useState } from 'react'
 import { useCanvasSize, useViewport, PX_PER_METER } from '@/utils'
 import { useAnimationStore } from '@/stores'
@@ -7,9 +8,7 @@ import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, FONT, CANVAS_COLORS } from 
 import { colors } from '@/theme/colors'
 import { Spring } from '@/components/UI'
 import { calculateConnectedBody, calculateConnectedBodyTimeline, GRAVITY } from '@/physics'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { VectorDefs } from '@/components/Physics/VectorDefs'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+
 import { createSceneScaleFromViewport } from '@/scene'
 
 const CONNECTED_DESIGN = { width: 650, height: 400 } as const
@@ -566,8 +565,6 @@ export default function ConnectedBodiesAnimation() {
             )}
           </g>
         )}
-
-
 
         <defs>
           {/* m1 金属渐变 */}

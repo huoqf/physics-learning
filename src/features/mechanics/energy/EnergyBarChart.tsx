@@ -1,5 +1,5 @@
+import { SVGSingleBar } from '@/components/Physics'
 import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
-import { SVGSingleBar } from '@/components/Physics/SVGSingleBar'
 
 interface EnergyBarChartProps {
   mode: number

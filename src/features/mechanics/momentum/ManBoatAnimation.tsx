@@ -1,15 +1,16 @@
+import { VectorArrow, PhysicsGround, SVGSingleBar } from '@/components/Physics'
 import { useEffect, useRef, useMemo, useId } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useCanvasSize, useViewport, getPointsUpToTime } from '@/utils'
 import { useSimulationFrame } from '@/utils/animation'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import { SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+
 import { VelocityTimeChart } from '@/components/Chart'
 import { calculateManBoatState, getManBoatAutoMotion, calculateManBoatDisplacements } from '@/physics/momentumApplication/manBoat'
-import { SVGSingleBar } from '@/components/Physics/SVGSingleBar'
+
 import type { SceneScale } from '@/scene/SceneScale'
 
 const CANVAS_DESIGN = { width: 700, height: 180 }
@@ -168,8 +169,6 @@ export default function ManBoatAnimation() {
   const p_total = p1 + p2 + pb
 
   const P_MAX = Math.max(120, m_person * 1.5)
-
-
 
   const isDouble = manBoatMode > 0 && manBoatControl === 0
 

@@ -1,3 +1,4 @@
+import { VectorArrow, VectorDefs, SportsCar, PhysicsGround } from '@/components/Physics'
 import { useCanvasSize, useViewport } from '@/utils'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -5,10 +6,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateDualObjectComparison } from '@/physics'
 import { PHYSICS_COLORS, STROKE, DASH, FONT } from '@/theme/physics'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { VectorDefs } from '@/components/Physics/VectorDefs'
-import { SportsCar } from '@/components/Physics/SportsCar'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+
 import { createSceneScaleFromViewport } from '@/scene'
 
 const ACCEL_DESIGN = { width: 700, height: 400 } as const

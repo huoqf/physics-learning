@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { ExternalLink } from 'lucide-react'
 import { getKnowledgeNode } from '@/data/knowledgeTree'
-import { Badge } from '@/components/UI/Badge'
+import { Badge } from '@/components/UI'
 import { glowRing } from '@/theme/shadow'
 import type { KnowledgeNode } from '@/data/types'
 

@@ -1,5 +1,5 @@
 import type { LazyExoticComponent, ComponentType } from 'react'
-import type { DiscoveryStepData } from '@/components/UI/DiscoveryGuide'
+import type { DiscoveryStepData } from '@/components/UI'
 import type { SceneLayoutProfile } from '@/scene'
 
 export interface KnowledgeNode {

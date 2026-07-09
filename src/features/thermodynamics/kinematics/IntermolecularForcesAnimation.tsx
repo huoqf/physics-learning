@@ -1,10 +1,10 @@
+import { Ball, VectorArrow } from '@/components/Physics'
 import { useState, useEffect, useCallback } from 'react'
 import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { Ball } from '@/components/Physics/Ball'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import { createSceneScaleFromViewport } from '@/scene'
 import {
   CANVAS_STYLE,

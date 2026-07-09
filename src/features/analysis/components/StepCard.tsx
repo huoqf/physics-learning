@@ -1,8 +1,7 @@
 import React from 'react'
 import { ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
 import { getKnowledgeNode } from '@/data/knowledgeTree'
-import { Badge } from '@/components/UI/Badge'
-import { KatexFormula } from '@/components/UI/KatexFormula'
+import { Badge, KatexFormula } from '@/components/UI'
 import type { ProblemStep } from '@/data/types'
 
 interface StepCardProps {

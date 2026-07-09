@@ -1,3 +1,4 @@
+import { SportsCar, PhysicsGround, VectorArrow, VectorDefs } from '@/components/Physics'
 import { useCanvasSize, useViewport } from '@/utils'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -9,10 +10,7 @@ import {
   DASH,
 } from '@/theme/physics'
 import { useUniformAccelerationPhysics } from './useUniformAccelerationPhysics'
-import { SportsCar } from '@/components/Physics/SportsCar'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { VectorDefs } from '@/components/Physics/VectorDefs'
+
 import { createSceneScaleFromViewport } from '@/scene'
 
 /**

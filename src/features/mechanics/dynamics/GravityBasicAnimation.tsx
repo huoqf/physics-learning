@@ -1,3 +1,4 @@
+import { VectorArrow, VectorDefs, PhysicsGround } from '@/components/Physics'
 import { FC, useMemo } from 'react'
 import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -6,9 +7,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CANVAS_STYLE, FONT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { withAlpha } from '@/theme/physics'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { VectorDefs } from '@/components/Physics/VectorDefs'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+
 import { createSceneScaleFromViewport } from '@/scene'
 
 const GRAV_BASIC_DESIGN = { width: 650, height: 450 } as const

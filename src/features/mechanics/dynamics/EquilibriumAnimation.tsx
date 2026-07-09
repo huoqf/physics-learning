@@ -1,11 +1,11 @@
+import { VectorArrow, VectorDefs } from '@/components/Physics'
 import { useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE, SCENE_COLORS } from '@/theme/physics'
 import { useEquilibriumPhysics } from './useEquilibriumPhysics'
 import { useEquilibriumLayout } from './hooks/useEquilibriumLayout'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { VectorDefs } from '@/components/Physics/VectorDefs'
+
 import { Button } from '@/components/UI'
 import { useTimedPulse } from '@/hooks/useTimedPulse'
 import { useCanvasSize, useViewport } from '@/utils'

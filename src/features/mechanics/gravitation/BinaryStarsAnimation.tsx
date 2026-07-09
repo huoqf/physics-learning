@@ -1,12 +1,11 @@
+import { Ball, VectorArrow } from '@/components/Physics'
 import { useAnimationViewport } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
-import { Ball } from '@/components/Physics/Ball'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import { useBinaryStars } from './hooks/useBinaryStars'
 import { useAnimationStore } from '@/stores'
-
 
 export default function BinaryStarsAnimation() {
   const { containerRef, canvasSize, vp } = useAnimationViewport({

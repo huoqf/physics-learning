@@ -1,9 +1,9 @@
+import { Rails, ConductingRod, VectorArrow } from '@/components/Physics'
 import React, { useMemo } from 'react'
 import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
-import { Rails } from '@/components/Physics/Rails'
-import { ConductingRod } from '@/components/Physics/ConductingRod'
+
 import type { AdvancedAmperePhysicsResult } from '../ampereForceModel'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import type { SceneScale } from '@/scene'
 
 type Point = { x: number; y: number }
@@ -104,7 +104,6 @@ export const InclinedAmpereScene: React.FC<InclinedAmpereSceneProps> = ({
     if (Math.abs(a) <= 0.05) return 0
     return Math.sqrt(2.2 / Math.abs(a))
   }, [a])
-
 
   // 为了获取稳定变化的抖动，我们直接利用 physicsResult.isLimited 时 time 的溢出
   // 由于 React 外部有全局的 time (useAnimationStore)，我们直接依据 physicsResult 里的 x 来判定

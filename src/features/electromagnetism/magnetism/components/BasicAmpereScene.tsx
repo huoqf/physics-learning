@@ -1,9 +1,7 @@
+import { Rails, ConductingRod, VectorArrow, DCSource } from '@/components/Physics'
 import React, { useMemo } from 'react'
 import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
-import { Rails } from '@/components/Physics/Rails'
-import { ConductingRod } from '@/components/Physics/ConductingRod'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { DCSource } from '@/components/Physics/DCSource'
+
 import { UniformMagneticField } from './UniformMagneticField'
 import type { BasicAmperePhysicsResult } from '../ampereForceModel'
 import type { SceneScale } from '@/scene'

@@ -1,9 +1,7 @@
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { BasePhysicsChart } from '@/components/Chart/BasePhysicsChart'
-import { useChartContext } from '@/components/Chart/ChartContext'
-import { ChartCursor } from '@/components/Chart/ChartCursor'
+import { BasePhysicsChart, useChartContext, ChartCursor } from '@/components/Chart'
 import { PHYSICS_COLORS, ENERGY_COLORS } from '@/theme/physics'
 import {
   computeAngularFrequency,

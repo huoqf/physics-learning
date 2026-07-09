@@ -2,16 +2,16 @@ import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useCanvasSize, useViewport, getPointsUpToTime } from '@/utils'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+import { VectorArrow, PhysicsGround, Block, EnergyBars } from '@/components/Physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+
 import { VelocityTimeChart } from '@/components/Chart'
-import { Block } from '@/components/Physics/Block'
+
 import { Spring } from '@/components/UI'
 import { precomputeSpringBlocks, interpolateSpringBlocks } from '@/physics/momentumApplication/springBlocks'
-import { useChartContext } from '@/components/Chart/ChartContext'
-import { EnergyBars } from '@/components/Physics/EnergyBars'
+import { useChartContext } from '@/components/Chart'
+
 
 const GROUND_X = 0
 const GROUND_Y = 130

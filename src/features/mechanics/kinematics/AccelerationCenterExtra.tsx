@@ -1,10 +1,9 @@
+import { VectorArrow, SportsCar, PhysicsGround } from '@/components/Physics'
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { useAnimationStore } from '@/stores'
 import { calculatePoliceChase, calculateMeeting } from '@/physics'
 import { PHYSICS_COLORS, STROKE, DASH } from '@/theme/physics'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { SportsCar } from '@/components/Physics/SportsCar'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+
 import { RelationChart, VelocityTimeChart } from '@/components/Chart'
 import { createSceneScaleFromViewport } from '@/scene'
 import { useCanvasSize } from '@/utils'

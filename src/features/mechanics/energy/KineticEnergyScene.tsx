@@ -1,10 +1,8 @@
+import { VectorArrow, SVGSingleBar, Block, PhysicsGround } from '@/components/Physics'
 import { useMemo } from 'react'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CANVAS_STYLE, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { SVGSingleBar } from '@/components/Physics/SVGSingleBar'
-import { Block } from '@/components/Physics/Block'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+
 import { createSceneScaleFromViewport } from '@/scene'
 import type { KEModelState } from '@/physics/kineticEnergy'
 import { GRAVITY } from '@/physics/constants'
@@ -107,7 +105,6 @@ export function KineticEnergyScene({
     inwardDirX = 0
     inwardDirY = -1
   }
-
 
   const carX = padding + state.x * scale
 

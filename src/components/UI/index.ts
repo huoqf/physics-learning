@@ -15,27 +15,50 @@
  * </Card>
  * ```
  */
+// ============================================================================
+// 基础控件 (Basic Controls)
+// ============================================================================
 export { Button } from './Button'
 export { Slider } from './Slider'
-export { KatexFormula } from './KatexFormula'
-export { Badge } from './Badge'
-export { Card } from './Card'
-export { AnimationControls } from './AnimationControls'
-export { ParamControl } from './ParamControl'
-export { PhysicsPanel } from './PhysicsPanel'
-export { PageTransition } from './PageTransition'
-export { ErrorBoundary } from './ErrorBoundary'
-export { ScoreReport } from './ScoreReport'
-export { DiscoveryGuide } from './DiscoveryGuide'
-export { SegmentedControl } from './SegmentedControl'
 export { ToggleSwitch } from './ToggleSwitch'
 export { OptionButton } from './OptionButton'
-export { TipCard } from './TipCard'
-export { MiniChart } from './MiniChart'
-export type { MiniChartLine, MiniChartStaticLine, MiniChartProps } from './MiniChart'
-export { LeftPanel, LeftPanelSection, LeftPanelScrollArea } from './LeftPanel'
+export { SegmentedControl } from './SegmentedControl'
+
+// ============================================================================
+// 表单与数据 (Forms & Data)
+// ============================================================================
+export { ParamControl } from './ParamControl'
 export { ControlPanel } from './ControlPanel'
-export { Spring } from './Spring'
 export { ScrollDataTable } from './ScrollDataTable'
 export type { ScrollDataTableColumn, ScrollDataTableProps } from './ScrollDataTable'
 
+// ============================================================================
+// 面板与布局 (Panels & Layout)
+// ============================================================================
+export { LeftPanel, LeftPanelSection, LeftPanelScrollArea } from './LeftPanel'
+export { PhysicsPanel } from './PhysicsPanel'
+export { Card } from './Card'
+
+// ============================================================================
+// 反馈与展示 (Feedback & Display)
+// ============================================================================
+export { Badge } from './Badge'
+export { TipCard } from './TipCard'
+export { MiniChart } from './MiniChart'
+export type { MiniChartLine, MiniChartStaticLine, MiniChartProps } from './MiniChart'
+export { ScoreReport } from './ScoreReport'
+export { DiscoveryGuide } from './DiscoveryGuide'
+export type { DiscoveryStepData } from './DiscoveryGuide'
+export { KatexFormula } from './KatexFormula'
+
+// ============================================================================
+// 动画与过渡 (Animation & Transition)
+// ============================================================================
+export { AnimationControls } from './AnimationControls'
+export { Spring } from './Spring'
+export { PageTransition } from './PageTransition'
+
+// ============================================================================
+// 系统 (System)
+// ============================================================================
+export { ErrorBoundary } from './ErrorBoundary'

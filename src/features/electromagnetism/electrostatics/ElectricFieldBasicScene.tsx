@@ -6,10 +6,11 @@
  * 图表部分已迁移至 RelationChart，由 useElectricFieldPhysics 提供
  * 纯物理数据（points / eMax / fMax），本组件只负责像素布局 + foreignObject 嵌入。
  */
+import { VectorArrow } from '@/components/Physics'
 import { useMemo } from 'react'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
+
 import { RelationChart } from '@/components/Chart'
 import type { SceneScale } from '@/scene'
 

@@ -59,7 +59,7 @@
 1. **颜色/间距/圆角/阴影/动效** → 必须从 `src/theme/` 子模块引用
 2. **坐标转换** → 必须走 `physicsToCanvas()`（`src/utils/coordinate.ts`）
 3. **动画调度** → 必须通过 `src/utils/animation.ts` 的 Hook（禁止直接调用 `requestAnimationFrame`）
-4. **矢量箭头** → 必须走 `VectorArrow` 组件 + `refMagnitudes` 归一化（`vectorStyle.ts` 为颜色权威）
+4. **矢量箭头** → 必须使用 `VectorArrow` 组件；调用方式以 `COMPONENT_REGISTRY.md` 与源码 interface 为准，禁止手写 `<line>` + `<marker>`
 5. **画布尺寸** → 必须走 `useCanvasSize(CANVAS_PRESETS.xxx)`（`src/theme/spacing.ts`）
 6. **字体缩放** → 必须走 `font()` 函数（内置 clamp 7–16，来自 `useCanvasSize` 返回值）
 7. **布局缩放与 viewBox 绑定策略**：
@@ -100,6 +100,9 @@
 | SVG 画布容器 | `AnimationSvgCanvas` | `@/components/Layout` |
 | 三栏页面布局 | `ThreePanel` | `@/components/Layout` |
 | 物理矢量箭头 | `VectorArrow` | `@/components/Physics` |
+| 质点/小球 | `Ball` | `@/components/Physics` |
+| 滑块/木块 | `Block` | `@/components/Physics` |
+| 地面/斜面/参考面 | `PhysicsGround` | `@/components/Physics` |
 | 场景物理比例尺 | `createSceneScaleFromViewport` | `@/scene` |
 | 左屏控制台 | `LeftPanel` / `LeftPanelSection` | `@/components/UI` |
 | 左屏数值参数 | `ParamControl`（通过 `paramMeta` 驱动） | `@/components/UI` |
@@ -109,6 +112,7 @@
 | 物理图表基座 | `BasePhysicsChart` | `@/components/Chart` |
 
 完整组件清单及 barrel import 规则见 `docs/agent-rules/ui/02_UI_RULES.md §7.1`。
+详细调用示例、必需 props、推荐组合与禁止替代写法见 `docs/agent-rules/ui/COMPONENT_REGISTRY.md`；组件完整 API 仍以源码 TypeScript interface / JSDoc 为准。
 
 ### 4.1 流程规范（习惯，非铁律）
 
@@ -132,6 +136,7 @@
 
 | 场景 | 查阅文档 |
 |------|----------|
+| 公共组件用途、import、最小调用示例 | `docs/agent-rules/ui/COMPONENT_REGISTRY.md` |
 | 架构分层、状态管理、数据规则 | `docs/agent-rules/core/ARCHITECTURE_RULES.md` |
 | UI 视觉、token 引用、三屏布局 | `docs/agent-rules/ui/02_UI_RULES.md` |
 | 动效时长、easing、动画编排 | `docs/agent-rules/ui/03_MOTION_RULES.md` |

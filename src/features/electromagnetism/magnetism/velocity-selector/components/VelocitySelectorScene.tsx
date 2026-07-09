@@ -1,7 +1,6 @@
+import { VectorArrow, VectorDefs, CapacitorPlates } from '@/components/Physics'
 import { calculateVelocitySelectorTrajectory } from '@/physics'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { VectorDefs } from '@/components/Physics/VectorDefs'
-import { CapacitorPlates } from '@/components/Physics/CapacitorPlates'
+
 import { ParticleEmitter, MagneticFieldSymbols } from '@/components/Physics'
 import { worldToPixel } from '@/scene'
 import { CANVAS_STYLE, FONT, PHYSICS_COLORS } from '@/theme/physics'

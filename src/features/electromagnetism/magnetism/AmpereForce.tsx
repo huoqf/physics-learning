@@ -5,10 +5,11 @@
  * @agent-rule 遵循 useViewport + useCanvasSize + CANVAS_PRESETS + PHYSICS_COLORS theme token
  * @agent-rule 布局分区常量定义于 TOP_SECTION_H / BOTTOM_SECTION_H / CARD_W
  */
+import { HandRule } from '@/components/Physics'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { HandRule } from '@/components/Physics/HandRule'
+
 import { solveBasicAmpere, solveAdvancedAmpere, AMPERE_BASIC_SCENE } from './ampereForceModel'
 import { useCanvasSize, useViewport } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'

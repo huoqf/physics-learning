@@ -307,3 +307,55 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 | `ReflectionAnimation.tsx` | 固定 viewBox 800×500 | `CANVAS_PRESETS.full` 700×650 | ✅ 已完成 |
 | `ThinLensAnimation.tsx` | 固定 viewBox 800×500 | `CANVAS_PRESETS.full` 700×650 | ✅ 已完成 |
 | `OhmLaw.tsx` | 固定 viewBox 650×400 | `CANVAS_PRESETS.splitV` 700×325 | ✅ 已完成 |
+
+---
+
+## 九、组件索引与文档（P2）
+
+> 来源：组件 barrel 整理（2026-07-09）后，`COMPONENT_REGISTRY.md` 骨架已创建，覆盖 15 个高频组件。部分组件缺少详细调用示例，需逐步补全。
+> 编写铁律：示例必须从源码 interface + `src/features/` 真实调用中提取，不得凭经验手写。
+
+### 9.1 Registry 示例补全
+
+以下组件已有完整示例（用途 + import + 最小 JSX + 禁止写法）：
+
+| 组件 | 状态 |
+|------|------|
+| `VectorArrow` | ✅ 完整（含 origin/vector/type/sceneScale） |
+| `AnimationSvgCanvas` | ✅ 完整（含 containerRef/transform/children） |
+| `PhysicsGround` | ✅ 完整 |
+| `Ball` | ✅ 完整 |
+| `Block` | ✅ 完整 |
+
+以下组件只有用途 + import，缺少最小示例：
+
+| 组件 | 缺少内容 | 提取难度 |
+|------|---------|---------|
+| `VectorDefs` | 最小示例 | 低 — 用法简单，一个 `<VectorDefs />` 即可 |
+| `Spring` | 最小示例 | 低 — 已有真实调用可参考 |
+| `SportsCar` | 最小示例 | 低 — props 少 |
+| `EnergyBars` | 最小示例 + props | 中 — 需确认 energyItems 结构 |
+| `CapacitorPlates` | 最小示例 + props | 中 — 需确认电荷标识用法 |
+| `ConductingRod` | 最小示例 + props | 中 — 需确认长度/角度参数 |
+| `LeftPanel` / `LeftPanelSection` | 最小示例 | 低 — 已有大量真实调用 |
+| `ParamControl` | 示例细化 | 低 — 已有 props 说明，补一个完整 JSX |
+| `ControlPanel` | 示例细化 | 中 — 依赖 ControlMeta 类型 |
+| `BasePhysicsChart` | 示例细化 | 低 — 已有 props，补子组件组合 |
+| `ThreePanel` | 最小示例 | 低 — 用法简单 |
+
+**执行策略**：每次补 3-5 个组件，补完跑 `tsc` 验证。优先补 `LeftPanel` 体系（AI 最常误用的布局组件）。
+
+### 9.2 场景模板（P3，第二阶段）
+
+> 当前无模板。AI 每次新建动画页面需从零拼 ThreePanel + AnimationSvgCanvas + LeftPanel 结构，效率低。
+
+建议新增 `docs/agent-rules/templates/` 目录，先做 2 个最高频模板：
+
+| 模板 | 覆盖场景 | 优先级 |
+|------|---------|-------|
+| `TEMPLATE_FULL_ANIMATION_PAGE.md` | 动画独占中屏（`CANVAS_PRESETS.full`），最常见布局 | 高 |
+| `TEMPLATE_SPLIT_CHART_SCENE.md` | 中屏上下/左右分区（`splitV`/`splitH`），动画+图表并列 | 中 |
+
+模板内容：完整的文件骨架（imports + 组件结构 + 必需 hooks），AI 可直接复制后填充业务逻辑。
+
+**执行前提**：Registry 示例补全（9.1）完成后再做模板，避免模板中引用不完整的组件示例。

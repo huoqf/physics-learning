@@ -1,9 +1,9 @@
+import { VectorArrow, PhysicsGround } from '@/components/Physics'
 import { useCanvasSize, useViewport } from '@/utils'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-import { PhysicsGround } from '@/components/Physics/PhysicsGround'
+
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,

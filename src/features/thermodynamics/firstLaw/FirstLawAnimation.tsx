@@ -1,3 +1,4 @@
+import { SVGSingleBar } from '@/components/Physics'
 import { useRef, useCallback, useState } from 'react'
 import { useCanvasSize, useViewport } from '@/utils'
 import { useAnimationStore } from '@/stores'
@@ -7,7 +8,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { THERMO_COLORS, THERMAL_COLORS } from '@/theme/physics'
 import { FIRST_LAW_COLORS } from '@/theme/physics'
 import { STROKE, FONT, CANVAS_COLORS } from '@/theme/physics'
-import { SVGSingleBar } from '@/components/Physics/SVGSingleBar'
+
 import { calculateInternalEnergy } from '@/physics/thermodynamics'
 import { deltaUtoDeltaT, temperatureToSpeedScale, internalEnergyToColor } from '@/physics/firstLaw'
 

@@ -4,9 +4,7 @@ import type { Problem } from '@/data/types'
 import type { PracticeMode, ScoreRecord } from '@/stores'
 import { useProblemStore, usePracticeStore, useWrongStore } from '@/stores'
 import { moduleOf } from '@/utils/moduleHelpers'
-import { KatexFormula } from '@/components/UI/KatexFormula'
-import { ScoreReport } from '@/components/UI'
-import { Card, Button } from '@/components/UI'
+import { KatexFormula, ScoreReport, Card, Button } from '@/components/UI'
 import { colors } from '@/theme/colors'
 
 interface PracticeSessionProps {
