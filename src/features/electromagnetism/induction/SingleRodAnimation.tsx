@@ -9,17 +9,25 @@ import type { SceneScale } from '@/scene/SceneScale'
 import { getSingleRodState, type SingleRodMode } from '@/physics/singleRod'
 
 const DESIGN = CANVAS_PRESETS.splitV
-const RAIL = {
+
+/** 导轨水平布局常量（与 railSpacing 无关） */
+const RAIL_X = {
   leftX: 72,
   rightX: 566,
-  topY: 112,
-  bottomY: 218,
   resistorX: 42,
   viewLengthM: 5,
-  chargeSlotW: 34,
-  chargeSlotH: 156,
-  particleCount: 18,
 } as const
+
+/** 电荷槽布局常量 */
+const CHARGE_SLOT = {
+  x: 632,
+  baseY: 228,
+  width: 34,
+} as const
+
+/** 默认 railSpacing 对应的视觉间距 (px) */
+const DEFAULT_VISUAL_SPACING = 106
+const DEFAULT_RAIL_SPACING_M = 0.8
 
 const PIXEL_VECTOR_SCALE: SceneScale = {
   originX: 0,
@@ -42,10 +50,6 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
 
-function mod(value: number, divisor: number) {
-  return ((value % divisor) + divisor) % divisor
-}
-
 export default function SingleRodAnimation() {
   const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.splitV })
   const time = useAnimationStore((s) => s.time)
@@ -63,15 +67,22 @@ export default function SingleRodAnimation() {
   }, time), [mode, params.driveForce, params.initialVelocity, params.magneticB, params.railSpacing, params.resistance, params.rodMass, time])
 
   const enableChargeSlot = (params.enableChargeSlot ?? 1) === 1
-  const railW = RAIL.rightX - RAIL.leftX
-  const rodX = RAIL.leftX + clamp(state.x / RAIL.viewLengthM, 0, 1) * railW
-  const rodCenterY = (RAIL.topY + RAIL.bottomY) / 2
-  const currentSpeed = clamp(Math.abs(state.current) * 26, 6, 34)
-  const particleOffset = time * currentSpeed
+  const railSpacingM = params.railSpacing ?? 0.8
+
+  // 导轨视觉间距随物理参数 railSpacing 等比缩放
+  const railVisualSpacing = DEFAULT_VISUAL_SPACING * (railSpacingM / DEFAULT_RAIL_SPACING_M)
+  const railW = RAIL_X.rightX - RAIL_X.leftX
+  const rodX = RAIL_X.leftX + clamp(state.x / RAIL_X.viewLengthM, 0, 1) * railW
+  const rodCenterY = DESIGN.height / 2
+  const railTopY = rodCenterY - railVisualSpacing / 2
+  const railBottomY = rodCenterY + railVisualSpacing / 2
+  const chargeSlotH = railVisualSpacing + 50
+
   const vLength = clamp(state.v * 26, 0, 86)
   const faLength = clamp(state.ampereForce * 34, 0, 82)
   const fLength = clamp(state.externalForce * 34, 0, 82)
   const chargeLevel = clamp(state.charge / Math.max(0.2, state.charge + 0.8), 0, 1)
+  const iLength = clamp(Math.abs(state.current) * 30, 0, 80)
 
   return (
     <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform} className="bg-white rounded-xl">
@@ -91,21 +102,21 @@ export default function SingleRodAnimation() {
 
       <Rails
         type="horizontal"
-        cx={(RAIL.leftX + RAIL.rightX) / 2}
+        cx={(RAIL_X.leftX + RAIL_X.rightX) / 2}
         cy={rodCenterY}
-        length={RAIL.rightX - RAIL.leftX}
-        spacing={RAIL.bottomY - RAIL.topY}
+        length={RAIL_X.rightX - RAIL_X.leftX}
+        spacing={railVisualSpacing}
         width={DESIGN.width}
         height={DESIGN.height}
       />
       <path
-        d={`M ${RAIL.leftX} ${RAIL.topY} L ${RAIL.resistorX} ${RAIL.topY} L ${RAIL.resistorX} ${RAIL.bottomY} L ${RAIL.leftX} ${RAIL.bottomY}`}
+        d={`M ${RAIL_X.leftX} ${railTopY} L ${RAIL_X.resistorX} ${railTopY} L ${RAIL_X.resistorX} ${railBottomY} L ${RAIL_X.leftX} ${railBottomY}`}
         fill="none"
         stroke={PHYSICS_COLORS.strokeDark}
         strokeWidth={3}
       />
       <Rheostat
-        x={RAIL.resistorX}
+        x={RAIL_X.resistorX}
         y={rodCenterY}
         value={params.resistance ?? 1.5}
         min={0.2}
@@ -117,36 +128,27 @@ export default function SingleRodAnimation() {
         font={canvasSize.font}
       />
 
-      {Array.from({ length: RAIL.particleCount }, (_, idx) => {
-        const pathLen = 2 * railW + 2 * (RAIL.bottomY - RAIL.topY)
-        const s = mod(idx * (pathLen / RAIL.particleCount) + particleOffset, pathLen)
-        let x: number = RAIL.leftX
-        let y: number = RAIL.topY
-        if (s < railW) {
-          x = RAIL.leftX + s
-          y = RAIL.topY
-        } else if (s < railW + (RAIL.bottomY - RAIL.topY)) {
-          x = rodX
-          y = RAIL.topY + (s - railW)
-        } else if (s < 2 * railW + (RAIL.bottomY - RAIL.topY)) {
-          x = RAIL.rightX - (s - railW - (RAIL.bottomY - RAIL.topY))
-          y = RAIL.bottomY
-        } else {
-          x = RAIL.leftX
-          y = RAIL.bottomY - (s - 2 * railW - (RAIL.bottomY - RAIL.topY))
-        }
-        return <circle key={idx} cx={x} cy={y} r={3} fill={PHYSICS_COLORS.electricCurrent} opacity={0.35 + 0.5 * Math.abs(state.current) / Math.max(0.1, Math.abs(state.current) + 1)} />
-      })}
+      {Math.abs(state.current) > 0.001 && (
+        <VectorArrow
+          origin={pixelOrigin(rodX - 16, state.current >= 0 ? rodCenterY + iLength / 2 : rodCenterY - iLength / 2)}
+          vector={pixelVector(0, state.current >= 0 ? 1 : -1)}
+          type="currentDirection"
+          sceneScale={PIXEL_VECTOR_SCALE}
+          pixelLength={iLength}
+          label="I"
+          font={canvasSize.font}
+        />
+      )}
 
       <ConductingRod
         type="horizontal"
         x={rodX}
-        spacing={RAIL.bottomY - RAIL.topY - 40}
+        spacing={railVisualSpacing - 40}
         width={DESIGN.width}
         height={DESIGN.height}
         currentDir={state.current > 0.001 ? 'in' : 'none'}
       />
-      <text x={rodX} y={RAIL.topY - 28} fontSize={canvasSize.font(11)} fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
+      <text x={rodX} y={railTopY - 28} fontSize={canvasSize.font(11)} fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
         导体棒
       </text>
 
@@ -181,23 +183,31 @@ export default function SingleRodAnimation() {
       )}
 
       {enableChargeSlot && (
-        <SVGSingleBar
-          x={632}
-          baseY={228}
-          height={RAIL.chargeSlotH * chargeLevel}
-          barWidth={RAIL.chargeSlotW}
-          color={PHYSICS_COLORS.electricCurrent}
-          label="q"
-          valueText={`${state.charge.toFixed(1)}C`}
-          font={canvasSize.font}
-          trackHeight={RAIL.chargeSlotH}
-          rx={5}
-        />
+        <g>
+          <text
+            x={CHARGE_SLOT.x + CHARGE_SLOT.width / 2}
+            y={CHARGE_SLOT.baseY - chargeSlotH - 10}
+            fontSize={canvasSize.font(9)}
+            fill={PHYSICS_COLORS.labelText}
+            textAnchor="middle"
+            fontWeight="bold"
+          >
+            电荷量 q/C
+          </text>
+          <SVGSingleBar
+            x={CHARGE_SLOT.x}
+            baseY={CHARGE_SLOT.baseY}
+            height={chargeSlotH * chargeLevel}
+            barWidth={CHARGE_SLOT.width}
+            color={PHYSICS_COLORS.electricCurrent}
+            label="q"
+            valueText={`${state.charge.toFixed(1)}C`}
+            font={canvasSize.font}
+            trackHeight={chargeSlotH}
+            rx={5}
+          />
+        </g>
       )}
-
-      <text x={22} y={302} fontSize={canvasSize.font(10)} fill={PHYSICS_COLORS.labelTextLight}>
-        绿色 ×：匀强磁场 / 蓝：速度 / 紫：安培力 / 深蓝：外力 / 红：感应电流与电荷量
-      </text>
     </AnimationSvgCanvas>
   )
 }

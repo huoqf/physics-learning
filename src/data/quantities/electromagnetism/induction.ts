@@ -400,11 +400,8 @@ export function handleInduction(
       return {
         quantities: [
           ...base,
-          { label: '导体棒速度 v', value: state.v.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity },
+          // v, I, F_A, q 已在动画中以矢量箭头/柱状图视觉呈现，此处只保留不可见的量
           { label: '感应电动势 E', value: state.emf.toFixed(2), unit: 'V', color: PHYSICS_COLORS.emf },
-          { label: '感应电流 I', value: state.current.toFixed(2), unit: 'A', color: PHYSICS_COLORS.electricCurrent },
-          { label: '安培力 F_A', value: state.ampereForce.toFixed(2), unit: 'N', color: PHYSICS_COLORS.lorentzForce, highlight: 'extreme' as const },
-          { label: '电荷量 q', value: state.charge.toFixed(2), unit: 'C', color: PHYSICS_COLORS.electricCurrent },
           { label: '焦耳热 Q', value: state.jouleHeat.toFixed(2), unit: 'J', color: PHYSICS_COLORS.heatLoss },
           ...(mode === 'constantForce'
             ? [{ label: '收尾速度 v_m', value: state.terminalVelocity.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity }]

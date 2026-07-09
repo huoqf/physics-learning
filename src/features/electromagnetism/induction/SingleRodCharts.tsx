@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
-import { BasePhysicsChart, useChartContext } from '@/components/Chart'
+import { BasePhysicsChart, ChartArea, ChartCursor, ChartLine, useChartContext } from '@/components/Chart'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
+import { PHYSICS_COLORS, SERIES_MAP } from '@/theme/physics'
 import { getSingleRodState, type SingleRodMode } from '@/physics/singleRod'
 
 const T_MAX = 12
@@ -10,56 +10,6 @@ const SAMPLE_COUNT = 120
 interface Point {
   x: number
   y: number
-}
-
-function Line({ points, color }: { points: Point[]; color: string }) {
-  const ctx = useChartContext()
-  if (!ctx || points.length === 0) return null
-  const d = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${ctx.toSvgX(p.x)} ${ctx.toSvgY(p.y)}`).join(' ')
-  return <path d={d} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-}
-
-function Area({ points, color }: { points: Point[]; color: string }) {
-  const ctx = useChartContext()
-  if (!ctx || points.length === 0) return null
-  const baseline = ctx.toSvgY(0)
-  const d = [
-    `M ${ctx.toSvgX(points[0].x)} ${baseline}`,
-    ...points.map((p) => `L ${ctx.toSvgX(p.x)} ${ctx.toSvgY(p.y)}`),
-    `L ${ctx.toSvgX(points[points.length - 1].x)} ${baseline}`,
-    'Z',
-  ].join(' ')
-  return <path d={d} fill={withAlpha(color, 0.18)} stroke="none" />
-}
-
-function Cursor({ x, label }: { x: number; label?: string }) {
-  const ctx = useChartContext()
-  if (!ctx) return null
-  const sx = ctx.toSvgX(x)
-  return (
-    <g>
-      <line
-        x1={sx}
-        y1={ctx.plotOrigin.y}
-        x2={sx}
-        y2={ctx.plotOrigin.y + ctx.plotSize.height}
-        stroke={PHYSICS_COLORS.axis}
-        strokeWidth={2}
-        strokeDasharray="4 5"
-      />
-      {label && (
-        <text x={sx + ctx.px(4)} y={ctx.plotOrigin.y + ctx.px(12)} fontSize={ctx.font(9)} fill={PHYSICS_COLORS.labelTextLight}>
-          {label}
-        </text>
-      )}
-    </g>
-  )
-}
-
-function PointMarker({ x, y, color }: { x: number; y: number; color: string }) {
-  const ctx = useChartContext()
-  if (!ctx) return null
-  return <circle cx={ctx.toSvgX(x)} cy={ctx.toSvgY(y)} r={4} fill={color} stroke={PHYSICS_COLORS.white} strokeWidth={1.5} />
 }
 
 function Legend({ x, y, color, text }: { x: number; y: number; color: string; text: string }) {
@@ -114,6 +64,7 @@ export default function SingleRodCharts() {
 
   return (
     <div className="w-full h-full p-2 flex gap-2">
+      {/* v-t 图表 */}
       <div className="flex-1 min-w-0">
         <BasePhysicsChart
           xDomain={[0, T_MAX]}
@@ -125,12 +76,24 @@ export default function SingleRodCharts() {
           formatX={(v) => v.toFixed(0)}
           formatY={(v) => v.toFixed(1)}
         >
-          <Line points={series.v} color={PHYSICS_COLORS.velocity} />
-          {mode === 'constantForce' && <Line points={[{ x: 0, y: current.terminalVelocity }, { x: T_MAX, y: current.terminalVelocity }]} color={PHYSICS_COLORS.axis} />}
-          <Cursor x={cursorT} label="t" />
-          <PointMarker x={cursorT} y={current.v} color={PHYSICS_COLORS.velocity} />
+          <ChartLine points={series.v} series="primary" />
+          {mode === 'constantForce' && (
+            <ChartLine
+              points={[{ x: 0, y: current.terminalVelocity }, { x: T_MAX, y: current.terminalVelocity }]}
+              color={PHYSICS_COLORS.axis}
+              strokeWidth={1}
+              dash={[4, 4]}
+            />
+          )}
+          <ChartCursor
+            x={cursorT}
+            dataPoints={[{ y: current.v, label: 'v', series: 'primary' }]}
+            formatValue={(v) => `${v.toFixed(2)} m/s`}
+          />
         </BasePhysicsChart>
       </div>
+
+      {/* I-t 图表 */}
       <div className="flex-1 min-w-0">
         <BasePhysicsChart
           xDomain={[0, T_MAX]}
@@ -142,12 +105,22 @@ export default function SingleRodCharts() {
           formatX={(v) => v.toFixed(0)}
           formatY={(v) => v.toFixed(1)}
         >
-          <Area points={series.i.filter((p) => p.x <= cursorT)} color={PHYSICS_COLORS.electricCurrent} />
-          <Line points={series.i} color={PHYSICS_COLORS.electricCurrent} />
-          <Cursor x={cursorT} />
-          <PointMarker x={cursorT} y={current.current} color={PHYSICS_COLORS.electricCurrent} />
+          <ChartArea
+            points={series.i}
+            xRange={[0, cursorT]}
+            variant="default"
+            intensity="normal"
+          />
+          <ChartLine points={series.i} series="warm" />
+          <ChartCursor
+            x={cursorT}
+            dataPoints={[{ y: current.current, label: 'I', series: 'warm' }]}
+            formatValue={(v) => `${v.toFixed(3)} A`}
+          />
         </BasePhysicsChart>
       </div>
+
+      {/* 能量转化图表 */}
       <div className="flex-1 min-w-0">
         <BasePhysicsChart
           xDomain={[0, T_MAX]}
@@ -159,12 +132,21 @@ export default function SingleRodCharts() {
           formatX={(v) => v.toFixed(0)}
           formatY={(v) => v.toFixed(1)}
         >
-          {mode === 'constantForce' && <Line points={series.work} color={PHYSICS_COLORS.appliedForce} />}
-          <Line points={series.heat} color={PHYSICS_COLORS.heatLoss} />
-          <Line points={series.kinetic} color={PHYSICS_COLORS.kineticEnergy} />
-          <Cursor x={cursorT} />
-          <Legend x={74} y={22} color={PHYSICS_COLORS.heatLoss} text="Q" />
-          <Legend x={74} y={36} color={PHYSICS_COLORS.kineticEnergy} text="Ek" />
+          {mode === 'constantForce' && (
+            <ChartLine points={series.work} color={SERIES_MAP.accent} />
+          )}
+          <ChartLine points={series.heat} series="warm" />
+          <ChartLine points={series.kinetic} series="success" />
+          <ChartCursor
+            x={cursorT}
+            dataPoints={[
+              { y: current.jouleHeat, label: 'Q', series: 'warm' },
+              { y: current.kineticEnergy, label: 'Ek', series: 'success' },
+            ]}
+            formatValue={(v) => `${v.toFixed(2)} J`}
+          />
+          <Legend x={74} y={22} color={SERIES_MAP.warm} text="Q" />
+          <Legend x={74} y={36} color={SERIES_MAP.success} text="Ek" />
         </BasePhysicsChart>
       </div>
     </div>

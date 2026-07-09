@@ -33,6 +33,7 @@ export type { ChartContextValue } from './ChartContext'
 // ============================================================================
 export { ChartCursor } from './ChartCursor'
 export { ChartArea } from './ChartArea'
+export { ChartLine } from './ChartLine'
 export { ChartTangent } from './ChartTangent'
 export { ChartSecant } from './ChartSecant'
 export type { ChartSecantProps } from './ChartSecant'
