@@ -249,6 +249,42 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     ],
     controlMeta: [
       {
+        type: 'preset',
+        label: '水平带-放上加速',
+        group: '高考经典场景',
+        params: { conveyorMode: 0, vBelt: 3.0, v0: 0.0, mu: 0.2, L: 6.0 },
+      },
+      {
+        type: 'preset',
+        label: '水平带-减速共速',
+        group: '高考经典场景',
+        params: { conveyorMode: 0, vBelt: 2.0, v0: 5.0, mu: 0.2, L: 6.0 },
+      },
+      {
+        type: 'preset',
+        label: '水平带-反向折返',
+        group: '高考经典场景',
+        params: { conveyorMode: 0, vBelt: -2.0, v0: 4.0, mu: 0.2, L: 6.0 },
+      },
+      {
+        type: 'preset',
+        label: '倾斜带-下滑加速(折点)',
+        group: '高考经典场景',
+        params: { conveyorMode: 1, vBelt: 2.0, v0: 0.0, mu: 0.15, L: 8.0 },
+      },
+      {
+        type: 'preset',
+        label: '倾斜带-下滑同步',
+        group: '高考经典场景',
+        params: { conveyorMode: 1, vBelt: 2.0, v0: 0.0, mu: 0.35, L: 8.0 },
+      },
+      {
+        type: 'preset',
+        label: '倾斜带-上滑加速',
+        group: '高考经典场景',
+        params: { conveyorMode: 1, vBelt: 3.0, v0: 0.0, mu: 0.35, L: 8.0 },
+      },
+      {
         type: 'segmented',
         key: 'conveyorMode',
         group: '模型选择',
