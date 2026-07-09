@@ -271,7 +271,7 @@ export function calculateMeeting(
 } {
   const xA = vA * time
   const xB = vL - 0.5 * aB * time * time
-  const vB = aB * time
+  const vB = -aB * time  // 向左运动，速度为负
   const deltaX = Math.max(xB - xA, 0)
 
   // 解 0.5*aB*t² + vA*t - L = 0

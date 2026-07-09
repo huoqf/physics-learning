@@ -232,7 +232,7 @@ export const knowledgeTree: KnowledgeNode[] = [
     chapter: '第4章 牛顿运动定律',
     module: 'mechanics',
     importance: 'hard',
-    animationIds: [],
+    animationIds: ['anim-block-board'],
     problemIds: [],
     prerequisites: ['mechanics-4-2', 'mechanics-3-3'],
     animationParams: { advancedMode: 1 },

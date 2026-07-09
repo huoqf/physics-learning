@@ -533,4 +533,55 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       },
     ],
   },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 板块模型 — 滑块冲上木板的双体耦合运动
+  // ═══════════════════════════════════════════════════════════════════════════
+  'anim-block-board': {
+    title: '板块模型',
+    knowledgeId: 'mechanics-4-8',
+    Component: lazy(() => import('@/features/mechanics/dynamics/BlockBoardAnimation')),
+    CenterExtra: lazy(() => import('@/features/mechanics/dynamics/BlockBoardChart')),
+    centerLayout: 'splitV',
+    controlsMode: 'timed',
+    maxTime: 8,
+    defaultParams: {
+      m: 1,
+      M: 3,
+      mu1: 0.3,
+      mu2: 0.05,
+      v0: 5,
+      L: 2.5,
+    } as const,
+    paramMeta: [
+      { key: 'm', label: '滑块质量 m', min: 1, max: 3, step: 0.5, unit: 'kg', importance: 'core' },
+      { key: 'M', label: '木板质量 M', min: 2, max: 6, step: 0.5, unit: 'kg', importance: 'core' },
+      {
+        key: 'mu1', label: '板面摩擦因数 μ₁', min: 0.2, max: 0.5, step: 0.05,
+        importance: 'core',
+        marks: [{ value: 0.3, label: '推荐', variant: 'recommended' }],
+      },
+      { key: 'mu2', label: '地面摩擦因数 μ₂', min: 0, max: 0.2, step: 0.02, importance: 'advanced' },
+      { key: 'v0', label: '初速度 v₀', min: 2, max: 8, step: 0.5, unit: 'm/s', importance: 'core' },
+    ],
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'L',
+        label: '木板长度',
+        group: '场景配置',
+        resetOnChange: true,
+        options: [
+          { value: 1.5, label: '短 (1.5m)' },
+          { value: 2.5, label: '中 (2.5m)' },
+          { value: 4.0, label: '长 (4.0m)' },
+        ],
+      },
+      {
+        type: 'tip',
+        group: '高考考点',
+        content: '板块模型是高考力学压轴题的常客。核心在于判断两物体何时达到速度相等（共速），以及在共速前相对位移是否超过木板长度。解题关键：分别求出滑块和木板的加速度 a₁、a₂，利用 v-t 图判断能否共速。',
+      },
+    ],
+  },
 })

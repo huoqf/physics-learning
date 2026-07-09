@@ -75,6 +75,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-gravity-basic':         { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
   'anim-gravity':               { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
   'anim-conveyor':              { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
+  'anim-block-board':           { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
 
   // 圆周运动
   'anim-circular-motion':       { loader: () => import('./quantities/circular'),       builderName: 'buildCircularQuantities' },

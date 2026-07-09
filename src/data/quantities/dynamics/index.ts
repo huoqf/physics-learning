@@ -10,6 +10,7 @@ import { handleWeightlessness } from './weightlessness'
 import { handleGravityBasic } from './gravityBasic'
 import { handleGravity } from './gravity'
 import { handleConveyor } from './conveyor'
+import { handleBlockBoard } from './blockBoard'
 
 export function buildDynamicsQuantities(
   animId: string,
@@ -30,6 +31,7 @@ export function buildDynamicsQuantities(
     handleGravityBasic(animId, params, time, base) ??
     handleGravity(animId, params, time, base) ??
     handleConveyor(animId, params, time, base) ??
+    handleBlockBoard(animId, params, time, base) ??
     null
   )
 }

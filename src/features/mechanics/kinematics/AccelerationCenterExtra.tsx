@@ -229,7 +229,7 @@ export default function AccelerationCenterExtra() {
       }
     } else {
       for (let t = 0; t <= maxTime; t += 0.1) {
-        pts.push({ t, v: aB_meet * t })
+        pts.push({ t, v: -aB_meet * t })  // 向左运动，速度为负
       }
     }
     return pts
@@ -263,6 +263,7 @@ export default function AccelerationCenterExtra() {
   const vtYMax = chaseMode === 0
     ? Math.max(vA, vMax) * 1.2
     : Math.max(vA, aB_meet * maxTime) * 1.2
+  const vtYMin = chaseMode === 0 ? -2 : -aB_meet * maxTime * 1.2  // 相遇模式需要显示乙车负速度
 
   // ── 公路动画布局 ──
   const roadY = animHeight * LAYOUT.ROAD_Y_RATIO
@@ -294,10 +295,10 @@ export default function AccelerationCenterExtra() {
 
   const labelB = chaseMode === 0 ? '警车' : '乙车'
 
-  // 乙车加速度（追及模式用 aB_current，相遇模式用 aB）
+  // 乙车加速度（追及模式用 aB_current，相遇模式用 aB，向左为负）
   const accelB = chaseMode === 0
     ? (chaseState.phase === 'accelerating' ? chaseState.aB_current : 0)
-    : meetState.aB
+    : -meetState.aB  // 向左加速，加速度为负
 
   return (
     <div ref={containerRef} className="w-full h-full flex flex-col">
@@ -336,7 +337,7 @@ export default function AccelerationCenterExtra() {
             }]}
             currentTime={time}
             tMax={maxTime}
-            vRange={[-2, vtYMax]}
+            vRange={[vtYMin, vtYMax]}
             title="速度 - 时间图象 (v-t)"
             showCursor={time > 0}
           />
@@ -448,7 +449,7 @@ export default function AccelerationCenterExtra() {
                 y={roadY - LAYOUT.VEHICLE_HEIGHT * 0.5 + 4}
                 fontSize={font(11)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v_A</text>
 
-              {state.vB > 0.1 && (
+              {Math.abs(state.vB) > 0.1 && (
                 <g>
                   <VectorArrow
                     origin={{ x: carBX + LAYOUT.VEHICLE_WIDTH + 4, y: -(roadY - LAYOUT.VEHICLE_HEIGHT * 0.5) }}
@@ -482,7 +483,7 @@ export default function AccelerationCenterExtra() {
           </g>
 
           {/* 乙车加速度矢量 */}
-          {time > 0 && state.vB > 0.1 && accelB > 0.01 && (
+          {time > 0 && Math.abs(state.vB) > 0.1 && Math.abs(accelB) > 0.01 && (
             <VectorArrow
               origin={{ x: carBX + LAYOUT.VEHICLE_WIDTH * 0.5, y: -(roadY - LAYOUT.VEHICLE_HEIGHT - 8) }}
               vector={{ x: accelB, y: 0 }}

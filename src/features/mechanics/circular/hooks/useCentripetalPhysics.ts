@@ -1,8 +1,7 @@
 import { useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { calculateCircularMotion, precomputeVerticalCircularMotion, GRAVITY } from '@/physics'
-import type { VerticalCircularMotionPoint } from '@/physics/dynamics/dynamics-advanced'
+import { calculateCircularMotion } from '@/physics'
 import { useCanvasSize, physicsToCanvasWithOrigin, useViewport, clientToContainerPoint } from '@/utils'
 import type { CanvasSize, ViewportInfo } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -34,16 +33,13 @@ export const CENTRIPETAL_LAYOUT = {
   axisExtension: 30,
 } as const
 
-const SIMULATION_DT = 0.002
-
 export interface CentripetalPhysicsResult {
   params: {
-    r: number; v: number; v0: number; m: number
-    advancedMode: number; showWaveform: number; trackType: number
-    showAcceleration: number; showVectors: boolean
+    r: number; v: number; m: number
+    showAcceleration: number; showWaveform: number
+    showVectors: boolean
   }
   time: number
-  isAdvanced: boolean
   showFaCard: boolean
 
   omega: number
@@ -51,8 +47,6 @@ export interface CentripetalPhysicsResult {
   F_c: number
   x: number
   y: number
-  currentPoint: VerticalCircularMotionPoint | null
-  activeTrajectory: VerticalCircularMotionPoint[]
 
   containerRef: React.RefObject<HTMLDivElement | null>
   canvasSize: CanvasSize
@@ -92,34 +86,12 @@ export function useCentripetalPhysics(): CentripetalPhysicsResult {
   const {
     r = 3,
     v = 3,
-    v0 = 5,
     m = 1,
-    advancedMode = 0,
     showWaveform = 1,
-    trackType = 0,
     showAcceleration = 1,
   } = params
 
-  const isAdvanced = advancedMode === 1
-  const showFaCard = !isAdvanced && showWaveform === 1
-
-  const { trajectory } = useMemo(() => {
-    return precomputeVerticalCircularMotion(r, v0, m, trackType)
-  }, [r, v0, m, trackType])
-
-  const currentPoint = useMemo(() => {
-    if (!isAdvanced) return null
-    const idx = Math.round(time / SIMULATION_DT)
-    const clamped = Math.max(0, Math.min(trajectory.length - 1, idx))
-    return trajectory[clamped]
-  }, [isAdvanced, trajectory, time])
-
-  const activeTrajectory = useMemo(() => {
-    if (!isAdvanced) return []
-    const idx = Math.round(time / SIMULATION_DT)
-    const clamped = Math.max(0, Math.min(trajectory.length - 1, idx))
-    return trajectory.slice(0, clamped + 1)
-  }, [isAdvanced, trajectory, time])
+  const showFaCard = showWaveform === 1
 
   const omega = v / r
   const a_c = (v * v) / r
@@ -129,21 +101,18 @@ export function useCentripetalPhysics(): CentripetalPhysicsResult {
     return calculateCircularMotion(r, omega, time)
   }, [r, omega, time])
 
-  const x = isAdvanced && currentPoint ? currentPoint.x : basicMotion.x
-  const y = isAdvanced && currentPoint ? currentPoint.y : basicMotion.y
+  const x = basicMotion.x
+  const y = basicMotion.y
 
   const minCanvasDim = Math.min(canvasSize.width, canvasSize.height)
   const scale = (minCanvasDim - CENTRIPETAL_LAYOUT.canvasPadding) / (2 * CENTRIPETAL_LAYOUT.rMax)
 
-  const cardWidth = isAdvanced
-    ? Math.max(290, canvasSize.width * 0.38)
-    : Math.max(CENTRIPETAL_LAYOUT.waveCardMinWidth, canvasSize.width * 0.35)
+  const cardWidth = Math.max(CENTRIPETAL_LAYOUT.waveCardMinWidth, canvasSize.width * 0.35)
 
-  const isLeftShifted = showFaCard || isAdvanced
   const vp = useViewport(canvasSize, {
     designWidth: 650,
     designHeight: 650,
-    overlayRight: isLeftShifted ? Math.round(cardWidth) : 0,
+    overlayRight: showFaCard ? Math.round(cardWidth) : 0,
   })
 
   const centerX = vp.centerX
@@ -154,9 +123,6 @@ export function useCentripetalPhysics(): CentripetalPhysicsResult {
     const basicRefV = Math.max(v * 1.4, 4.0)
     const basicRefA = Math.max(a_c, 4.0)
     const basicRefF = Math.max(F_c, 5.0)
-    const advRefV = Math.max(v0 * 1.4, 6.0)
-    const advRefA = Math.max((v0 * v0) / r, 10.0)
-    const advRefF = Math.max(m * GRAVITY + (m * v0 * v0) / r, 15.0)
 
     return createSceneScaleFromViewport(vp, 'centerScale', {
       designWidth: 650,
@@ -164,19 +130,17 @@ export function useCentripetalPhysics(): CentripetalPhysicsResult {
       worldWidth: vp.visibleW / scale,
       worldHeight: vp.visibleH / scale,
       refMagnitudes: {
-        velocity: isAdvanced ? advRefV : basicRefV,
-        acceleration: isAdvanced ? advRefA : basicRefA,
-        force: isAdvanced ? advRefF : basicRefF,
-        gravity: isAdvanced ? advRefF : basicRefF,
-        normalForce: isAdvanced ? advRefF : basicRefF,
-        tension: isAdvanced ? advRefF : basicRefF,
+        velocity: basicRefV,
+        acceleration: basicRefA,
+        force: basicRefF,
+        gravity: basicRefF,
+        normalForce: basicRefF,
+        tension: basicRefF,
       },
     })
-  }, [vp, scale, isAdvanced, v, v0, r, m, a_c, F_c])
+  }, [vp, scale, v, a_c, F_c])
 
-  const cardHeight = isAdvanced
-    ? Math.max(340, canvasSize.height * 0.55)
-    : Math.max(CENTRIPETAL_LAYOUT.waveCardMinHeight, canvasSize.height * 0.3)
+  const cardHeight = Math.max(CENTRIPETAL_LAYOUT.waveCardMinHeight, canvasSize.height * 0.3)
   const cardX = canvasSize.width - cardWidth - CENTRIPETAL_LAYOUT.waveCardRightOffset
   const cardY = 20
 
@@ -234,13 +198,10 @@ export function useCentripetalPhysics(): CentripetalPhysicsResult {
   )
 
   return {
-    params: { r, v, v0, m, advancedMode, showWaveform, trackType, showAcceleration, showVectors },
+    params: { r, v, m, showAcceleration, showWaveform, showVectors },
     time,
-    isAdvanced,
     showFaCard,
     omega, a_c, F_c, x, y,
-    currentPoint,
-    activeTrajectory,
     containerRef,
     canvasSize,
     vp,
