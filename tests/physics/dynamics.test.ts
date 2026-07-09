@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { computeInclinedPlane } from '../../src/physics/inclined_plane'
 import {
   calculateEarthGravity,
   calculateElasticForce,
@@ -423,6 +424,77 @@ describe('Dynamics physics calculations', () => {
       expect(res.a).toBe(0)
       expect(res.v).toBe(0)
       expect(res.s).toBe(0)
+    })
+  })
+
+  describe('computeInclinedPlane', () => {
+    const g = 9.8
+
+    it('should stay static when theta is below critical angle', () => {
+      // theta = 15, mu = 0.3 (crit ≈ 16.7 deg) -> static
+      const res = computeInclinedPlane({ theta: 15, mu: 0.3, m: 2.0, g })
+      expect(res.isSliding).toBe(false)
+      expect(res.FN).toBeCloseTo(2.0 * g * Math.cos(15 * Math.PI / 180), 5)
+      expect(res.Ff).toBeCloseTo(2.0 * g * Math.sin(15 * Math.PI / 180), 5)
+      expect(res.accel).toBe(0)
+    })
+
+    it('should slide when theta is above critical angle', () => {
+      // theta = 30, mu = 0.3 (crit ≈ 16.7 deg) -> sliding
+      const res = computeInclinedPlane({ theta: 30, mu: 0.3, m: 2.0, g })
+      expect(res.isSliding).toBe(true)
+      const expectedFN = 2.0 * g * Math.cos(30 * Math.PI / 180)
+      expect(res.FN).toBeCloseTo(expectedFN, 5)
+      expect(res.Ff).toBeCloseTo(0.3 * expectedFN, 5)
+      const expectedAccel = g * Math.sin(30 * Math.PI / 180) - 0.3 * g * Math.cos(30 * Math.PI / 180)
+      expect(res.accel).toBeCloseTo(expectedAccel, 5)
+    })
+
+    it('should compute critical angle from mu (tan θ_crit = μ)', () => {
+      const muValues = [0.1, 0.3, 0.5, 0.7, 1.0]
+      for (const mu of muValues) {
+        const res = computeInclinedPlane({ theta: 45, mu, m: 1.0, g })
+        const expectedCrit = (Math.atan(mu) * 180) / Math.PI
+        expect(res.criticalTheta).toBeCloseTo(expectedCrit, 10)
+      }
+    })
+
+    it('should be static at theta = 0 (horizontal surface)', () => {
+      const res = computeInclinedPlane({ theta: 0, mu: 0.3, m: 2.0, g })
+      expect(res.isSliding).toBe(false)
+      expect(res.FN).toBeCloseTo(2.0 * g, 5)
+      expect(res.Ff).toBe(0)
+      expect(res.accel).toBe(0)
+    })
+
+    it('should slide at theta = 90 (vertical wall, no friction)', () => {
+      const res = computeInclinedPlane({ theta: 90, mu: 0.3, m: 2.0, g })
+      expect(res.isSliding).toBe(true)
+      expect(res.FN).toBeCloseTo(0, 10)
+      expect(res.Ff).toBeCloseTo(0, 10)
+      expect(res.accel).toBeCloseTo(g, 5)
+    })
+
+    it('should always slide when mu = 0 (frictionless)', () => {
+      const res = computeInclinedPlane({ theta: 1, mu: 0, m: 2.0, g })
+      expect(res.isSliding).toBe(true)
+      expect(res.criticalTheta).toBe(0)
+      expect(res.Ff).toBe(0)
+      expect(res.accel).toBeCloseTo(g * Math.sin(1 * Math.PI / 180), 5)
+    })
+
+    it('should use default g = 9.8 when not provided', () => {
+      const res = computeInclinedPlane({ theta: 30, mu: 0.3, m: 1.0 })
+      const expectedFN = 1.0 * 9.8 * Math.cos(30 * Math.PI / 180)
+      expect(res.FN).toBeCloseTo(expectedFN, 5)
+    })
+
+    it('should scale linearly with mass', () => {
+      const res1 = computeInclinedPlane({ theta: 30, mu: 0.3, m: 1.0, g })
+      const res2 = computeInclinedPlane({ theta: 30, mu: 0.3, m: 3.0, g })
+      expect(res2.FN).toBeCloseTo(res1.FN * 3, 5)
+      expect(res2.Ff).toBeCloseTo(res1.Ff * 3, 5)
+      expect(res2.accel).toBeCloseTo(res1.accel, 10)
     })
   })
 })

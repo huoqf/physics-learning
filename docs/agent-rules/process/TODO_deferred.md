@@ -296,6 +296,54 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 
 **执行策略**：先处理与 §2.3 违规重叠的文件（CombinedFieldsAnimation、ChargeInEField），再批量处理标准替换类。Canvas 直绘组件（CircularGeometryModel）需单独评估迁移可行性。
 
+### 固定 viewBox 存量遗留（12 个待处理）
+
+> 来源：2026-07-09 审计发现，以下文件使用固定 viewBox 且未使用 `useAnimationViewport`，不属于 §七 splitV/splitH 或 §八 光学/电路范畴。
+
+**力学 — 运动学（3 个）**：
+
+| 文件 | 优先级 | 迁移要点 |
+|------|-------|---------|
+| `FreeFallScene.tsx` | 🟡 低 | 固定 viewBox → `useAnimationViewport(full)` + `AnimationSvgCanvas` |
+| `FreeFallDripAnimation.tsx` | 🟡 低 | 同上 |
+| `AccelerationCenterExtra.tsx` | 🟡 低 | 同上 |
+
+**力学 — 能量（1 个）**：
+
+| 文件 | 优先级 | 迁移要点 |
+|------|-------|---------|
+| `LightRodRopeAnimation.tsx` | 🟡 低 | 固定 viewBox → `useAnimationViewport(full)` + `AnimationSvgCanvas` |
+
+**电磁学 — 静电场（2 个）**：
+
+| 文件 | 优先级 | 迁移要点 |
+|------|-------|---------|
+| `FieldLines.tsx` | 🟠 中 | 固定 viewBox，同时检查是否有 physics 重复实现 |
+| `ElectricField.tsx` | 🟡 低 | 固定 viewBox → 标准路径 |
+
+**电磁学 — 电磁感应（3 个）**：
+
+| 文件 | 优先级 | 迁移要点 |
+|------|-------|---------|
+| `LenzsLawCanvas.tsx` | 🟠 中 | 已有 `useLenzsLaw` hook，拆子组件 + 迁移 viewBox |
+| `InductionPhenomenon.tsx` | 🟡 低 | 固定 viewBox → 标准路径 |
+| `ACValues.tsx` | 🟡 低 | 固定 viewBox → 标准路径 |
+
+**电磁学 — 直流电路（2 个）**：
+
+| 文件 | 优先级 | 迁移要点 |
+|------|-------|---------|
+| `CircuitAnalysis.tsx` | 🟡 低 | 固定 viewBox → 标准路径 |
+| `ClosedCircuit.tsx` | 🟡 低 | 固定 viewBox → 标准路径 |
+
+**热学（1 个）**：
+
+| 文件 | 优先级 | 迁移要点 |
+|------|-------|---------|
+| `ClapeyronCenterExtra.tsx` | 🟡 低 | 图表组件，保留固定 viewBox 或迁移到 `useAnimationViewport` |
+
+**执行策略**：🟠 中优先级文件先处理（FieldLines、LenzsLawCanvas），🟡 低优先级随维护顺手迁移。
+
 ---
 
 ## 八、固定 viewBox 旧方案迁移（光学/电路模块）

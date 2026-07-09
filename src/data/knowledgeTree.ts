@@ -212,7 +212,7 @@ export const knowledgeTree: KnowledgeNode[] = [
     chapter: '第4章 牛顿运动定律',
     module: 'mechanics',
     importance: 'hard',
-    animationIds: [],
+    animationIds: ['anim-inclined-plane'],
     problemIds: [],
     prerequisites: ['mechanics-4-2'],
   },

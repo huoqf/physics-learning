@@ -195,6 +195,44 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     CenterExtra: lazy(() => import('@/features/mechanics/dynamics/FrictionCenterExtra')),
     centerExtraMode: 'advancedMode',
   },
+  'anim-inclined-plane': {
+    title: '斜面模型',
+    knowledgeId: 'mechanics-4-6',
+    Component: lazy(() => import('@/features/mechanics/dynamics/InclinedPlaneAnimation')),
+    CenterExtra: lazy(() => import('@/features/mechanics/dynamics/InclinedPlaneCenterExtra')),
+    centerLayout: 'splitH',
+    controlsMode: 'timed' as const,
+    defaultParams: {
+      theta: 30,
+      mu: 0.3,
+      m: 2.0,
+      showDecomposition: 0,
+      mode: 0,
+    } as const,
+    paramMeta: [
+      { key: 'theta', label: '斜面倾角 θ', min: 0, max: 85, step: 1, unit: '°' },
+      { key: 'mu', label: '动摩擦因数 μ', min: 0.0, max: 1.0, step: 0.05, unit: '' },
+      { key: 'm', label: '滑块质量 m', min: 1.0, max: 5.0, step: 0.5, unit: 'kg' },
+    ],
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'mode',
+        group: '实验模式',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '自由释放分析' },
+          { value: 1, label: '寻找临界极限' },
+        ],
+      },
+      {
+        type: 'toggle',
+        key: 'showDecomposition',
+        label: '正交分解辅助线',
+        group: '显示辅助',
+      },
+    ],
+  },
   'anim-conveyor': {
     title: '传送带模型',
     knowledgeId: 'mechanics-4-7',

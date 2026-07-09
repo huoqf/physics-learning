@@ -64,6 +64,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-spring-force':          { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
   'anim-light-weight-mutation': { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
   'anim-friction':              { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
+  'anim-inclined-plane':        { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
   'anim-equilibrium':           { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
   'anim-vector-addition':       { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
   'anim-newton-second':         { loader: () => import('./quantities/dynamics'),       builderName: 'buildDynamicsQuantities' },
