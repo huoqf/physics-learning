@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
@@ -10,215 +11,149 @@ import {
   buildSeriesLayout,
   buildParallelLayout,
   buildMixedLayout,
-  getPointOnPath,
+  SERIES_PATHS,
+  PARALLEL_PATHS,
+  MIXED_PATHS,
 } from './circuit-analysis/model/circuitAnalysisLayout'
-
-const DESIGN_WIDTH = 650
-const DESIGN_HEIGHT = 650
 
 /**
  * 串并联电路及电路动态分析主动画
  * 支持：基础串联、基础并联、进阶混联
+ *
+ * 使用 CANVAS_PRESETS.splitV (840×325) 适配上下分屏布局。
  */
 export default function CircuitAnalysis() {
   const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
+    preset: CANVAS_PRESETS.splitV,
+  })
   const { font } = canvasSize
 
   // 参数配置
-  const mode = params.mode ?? 0 // 0=基础, 1=进阶
-  const subMode = params.subMode ?? 0 // 0=串联, 1=并联
+  const mode = params.mode ?? 0
+  const subMode = params.subMode ?? 0
   const R1 = params.R1 ?? 20
   const R2 = params.R2 ?? 10
   const R3 = params.R3 ?? 30
   const U = params.U ?? 12
   const isSymbolic = params.isSymbolic === 1
 
-  // 物理计算（使用提取的纯函数）
+  // 物理计算
   const { Itotal, U2, I1, I2, I3 } = useMemo(
     () => calculateCircuitAnalysis(mode, subMode, R1, R2, R3, U),
     [mode, subMode, R1, R2, R3, U]
   )
 
-  // 布局定义（使用提取的纯函数）
+  // 布局定义
   const seriesLayout = useMemo(() => buildSeriesLayout(), [])
   const parallelLayout = useMemo(() => buildParallelLayout(), [])
   const mixedLayout = useMemo(() => buildMixedLayout(), [])
 
-  // ==================== 微观电荷流速与粒子生成 ====================
+  // ==================== 导线样式（参考 OhmLaw：灰色底色 + 铜芯线）====================
 
-  // 粒子流速常数
-  const speedMultiplier = 160
-
-  // 1. 渲染串联粒子
-  const renderSeriesCharges = () => {
-    const numCharges = 24
-    return Array.from({ length: numCharges }, (_, idx) => {
-      const progress = (idx * (1 / numCharges) + time * speedMultiplier * Itotal * 0.08) % 1.0
-      const pt = getPointOnPath(seriesLayout.loopPoints, progress)
-      return (
-        <circle
-          key={`series-charge-${idx}`}
-          cx={pt.x}
-          cy={pt.y}
-          r={3.2}
-          fill={PHYSICS_COLORS.electricCurrent}
-          style={{ filter: `drop-shadow(0 0 1.5px ${PHYSICS_COLORS.electricCurrent})` }}
-        />
-      )
-    })
+  const getWireStyle = (current: number) => {
+    const w = 2 + Math.min(3, current * 2)
+    const factor = Math.min(1, current / 1.0)
+    const color = factor > 0.05 ? PHYSICS_COLORS.trackHistory : PHYSICS_COLORS.grid
+    const pulse = 0.6 + 0.4 * Math.sin(time * 4)
+    const glowRadius = factor > 0.1 ? factor * 3 * pulse : 0
+    return {
+      stroke: color,
+      strokeWidth: w,
+      fill: 'none',
+      strokeLinecap: 'round' as const,
+      strokeLinejoin: 'round' as const,
+      style: {
+        transition: 'stroke 250ms ease, stroke-width 250ms ease',
+        filter: glowRadius > 0.1 ? `drop-shadow(0 0 ${glowRadius}px ${PHYSICS_COLORS.trackHistory})` : 'none',
+      },
+    }
   }
 
-  // 2. 渲染并联粒子
-  const renderParallelCharges = () => {
-    // 干路
-    const mainACharges = Array.from({ length: 8 }, (_, idx) => {
-      const progress = (idx * (1 / 8) + time * speedMultiplier * Itotal * 0.08) % 1.0
-      const pt = getPointOnPath(parallelLayout.mainA, progress)
-      return <circle key={`par-ma-${idx}`} cx={pt.x} cy={pt.y} r={3.2} fill={PHYSICS_COLORS.electricCurrent} />
-    })
-    const mainBCharges = Array.from({ length: 10 }, (_, idx) => {
-      const progress = (idx * (1 / 10) + time * speedMultiplier * Itotal * 0.08) % 1.0
-      const pt = getPointOnPath(parallelLayout.mainB, progress)
-      return <circle key={`par-mb-${idx}`} cx={pt.x} cy={pt.y} r={3.2} fill={PHYSICS_COLORS.electricCurrent} />
-    })
-    // 支路 1 (I1)
-    const branch1Charges = Array.from({ length: 6 }, (_, idx) => {
-      const progress = (idx * (1 / 6) + time * speedMultiplier * I1 * 0.08) % 1.0
-      const pt = getPointOnPath(parallelLayout.branch1, progress)
-      return <circle key={`par-b1-${idx}`} cx={pt.x} cy={pt.y} r={3.2} fill={PHYSICS_COLORS.electricCurrent} />
-    })
-    // 支路 2 (I2)
-    // 限制在最大电流的粒子移动，防止短路时粒子重叠过多
-    const limitedI2 = Math.min(2.5, I2)
-    const branch2Charges = Array.from({ length: 6 }, (_, idx) => {
-      const progress = (idx * (1 / 6) + time * speedMultiplier * limitedI2 * 0.08) % 1.0
-      const pt = getPointOnPath(parallelLayout.branch2, progress)
-      return <circle key={`par-b2-${idx}`} cx={pt.x} cy={pt.y} r={3.2} fill={PHYSICS_COLORS.electricCurrent} />
-    })
-
-    return [...mainACharges, ...branch1Charges, ...branch2Charges, ...mainBCharges]
-  }
-
-  // 3. 渲染混联粒子
-  const renderMixedCharges = () => {
-    // 干路A
-    const mainACharges = Array.from({ length: 12 }, (_, idx) => {
-      const progress = (idx * (1 / 12) + time * speedMultiplier * Itotal * 0.08) % 1.0
-      const pt = getPointOnPath(mixedLayout.mainA, progress)
-      return <circle key={`mix-ma-${idx}`} cx={pt.x} cy={pt.y} r={3.2} fill={PHYSICS_COLORS.electricCurrent} />
-    })
-    // 支路 1 (R2，电流 I2)
-    const limitedI2 = Math.min(2.5, I2)
-    const branch1Charges = Array.from({ length: 6 }, (_, idx) => {
-      const progress = (idx * (1 / 6) + time * speedMultiplier * limitedI2 * 0.08) % 1.0
-      const pt = getPointOnPath(mixedLayout.branch1, progress)
-      return <circle key={`mix-b1-${idx}`} cx={pt.x} cy={pt.y} r={3.2} fill={PHYSICS_COLORS.electricCurrent} />
-    })
-    // 支路 2 (R3，电流 I3)
-    const branch2Charges = Array.from({ length: 6 }, (_, idx) => {
-      const progress = (idx * (1 / 6) + time * speedMultiplier * I3 * 0.08) % 1.0
-      const pt = getPointOnPath(mixedLayout.branch2, progress)
-      return <circle key={`mix-b2-${idx}`} cx={pt.x} cy={pt.y} r={3.2} fill={PHYSICS_COLORS.electricCurrent} />
-    })
-    // 干路B
-    const mainBCharges = Array.from({ length: 8 }, (_, idx) => {
-      const progress = (idx * (1 / 8) + time * speedMultiplier * Itotal * 0.08) % 1.0
-      const pt = getPointOnPath(mixedLayout.mainB, progress)
-      return <circle key={`mix-mb-${idx}`} cx={pt.x} cy={pt.y} r={3.2} fill={PHYSICS_COLORS.electricCurrent} />
-    })
-
-    return [...mainACharges, ...branch1Charges, ...branch2Charges, ...mainBCharges]
+  // 电压表引线样式：实线导线（非虚线），灰色
+  const voltmeterWireStyle = {
+    stroke: PHYSICS_COLORS.trackHistory,
+    strokeWidth: 2,
+    fill: 'none',
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
   }
 
   // ==================== 绘制各物理实体 SVG 子组件 ====================
 
-  // 1. 直流稳压电源
   const renderBattery = (x: number, y: number) => {
+    if (isSymbolic) {
+      // 符号模式：手绘电池符号
+      // 电池中心 (x, y)=(100,125)
+      // 正极长线 x=22, y∈[-10,10]，引线从 y=10 延伸到顶轨 y=40 (local: -85)
+      // 负极短线 x=-22, y∈[-6,6]，引线从 y=6 延伸到底轨 y=290 (local: 165)
+      return (
+        <g transform={`translate(${x}, ${y})`}>
+          {/* 正极引出线：从符号底部 (22,10) 到顶轨 (22,-85) */}
+          <line x1={22} y1={10} x2={22} y2={-85} stroke={PHYSICS_COLORS.labelText} strokeWidth={2} />
+          {/* 正极：长细线 */}
+          <line x1={22} y1={-10} x2={22} y2={10} stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={1.5} />
+          {/* 负极：短粗线 */}
+          <line x1={-22} y1={-6} x2={-22} y2={6} stroke={PHYSICS_COLORS.labelText} strokeWidth={4} />
+          {/* 负极引出线：从符号底部 (-22,6) 到底轨 (-22,165) */}
+          <line x1={-22} y1={6} x2={-22} y2={165} stroke={PHYSICS_COLORS.labelText} strokeWidth={2} />
+          {/* 标注 */}
+          <text x={0} y={-15} fill={PHYSICS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="middle">
+            E, r
+          </text>
+        </g>
+      )
+    }
     return (
-      <DCSource type={isSymbolic ? 'symbol' : 'instrument'} x={x} y={y} voltage={U} label={isSymbolic ? 'E, r' : 'CONSTANT DC'} polarity="right-positive" />
+      <DCSource
+        type="instrument"
+        x={x}
+        y={y}
+        voltage={U}
+        label="CONSTANT DC"
+        polarity="right-positive"
+      />
     )
   }
 
-  // 2. 高考标准电阻器符号
-  const renderResistor = (x: number, y: number, label: string, resistance: number) => {
-    return (
-      <g transform={`translate(${x}, ${y})`}>
-        {/* 电阻器符号 (高考标准矩形框) */}
-        <rect
-          x={-18}
-          y={-9}
-          width={36}
-          height={18}
-          fill={SCENE_COLORS.circuit.resistorFill}
-          stroke={SCENE_COLORS.circuit.resistorStroke}
-          strokeWidth={2}
-        />
-        {/* 电阻标号 R1 / R3 */}
-        <text x={0} y={4} fill={colors.neutral[800]} fontSize={font(9.5)} fontWeight="bold" textAnchor="middle">
-          {label.split(' ')[0]}
-        </text>
-        {/* 下方阻值标注 */}
-        <text x={0} y={22} fill={PHYSICS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="middle">
-          {label} = {resistance}Ω
-        </text>
-      </g>
-    )
-  }
+  const renderResistor = (x: number, y: number, label: string, resistance: number) => (
+    <g transform={`translate(${x}, ${y})`}>
+      <rect
+        x={-18}
+        y={-9}
+        width={36}
+        height={18}
+        fill={SCENE_COLORS.circuit.resistorFill}
+        stroke={SCENE_COLORS.circuit.resistorStroke}
+        strokeWidth={2}
+      />
+      <text x={0} y={4} fill={colors.neutral[800]} fontSize={font(9.5)} fontWeight="bold" textAnchor="middle">
+        {label.split(' ')[0]}
+      </text>
+      <text x={0} y={22} fill={PHYSICS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="middle">
+        {label} = {resistance}Ω
+      </text>
+    </g>
+  )
 
   // ==================== 渲染函数入口 ====================
 
   const renderCircuit = () => {
-    // 根据电流值控制发光线宽与亮度
-    const getWireStyle = (current: number) => {
-      const w = 2.5 + Math.min(3.5, current * 2.5)
-      // 随着电流增大颜色逐渐变红发光
-      const factor = Math.min(1, current / 1.0)
-      const color = factor > 0.05 ? PHYSICS_COLORS.electricCurrent : PHYSICS_COLORS.labelTextLight
-      return {
-        stroke: color,
-        strokeWidth: w,
-        fill: 'none',
-        strokeLinecap: 'round' as const,
-        strokeLinejoin: 'round' as const,
-        style: {
-          transition: 'stroke 250ms ease, stroke-width 250ms ease',
-          filter: factor > 0.1 ? `drop-shadow(0 0 ${factor * 3}px ${PHYSICS_COLORS.electricCurrent})` : 'none',
-        },
-      }
-    }
-
-    const inactiveWireStyle = {
-      stroke: PHYSICS_COLORS.axis,
-      strokeWidth: 1.5,
-      fill: 'none',
-      strokeDasharray: '2,2',
-    }
-
     if (mode === 0) {
       if (subMode === 0) {
         // ── 1. 基础：串联电路 ──
         const l = seriesLayout
         return (
           <g>
-            {/* 导线回路 */}
-            <path d="M 80,180 L 80,80 L 230,80 M 270,80 L 410,80 M 470,80 L 570,80 L 570,180 M 570,180 L 570,280 L 80,280 L 80,180" {...getWireStyle(Itotal)} />
-
-            {/* 电压表并联引线 (无电流) */}
-            <path d="M 390,80 L 390,30 L 412,30 M 468,30 L 490,30 L 490,80" {...inactiveWireStyle} />
-            <circle cx={390} cy={80} r={3} fill={PHYSICS_COLORS.labelText} />
-            <circle cx={490} cy={80} r={3} fill={PHYSICS_COLORS.labelText} />
-
-            {/* 粒子动画 */}
-            {renderSeriesCharges()}
-
-            {/* 电学元件 */}
+            <path d={SERIES_PATHS.mainLoop} {...getWireStyle(Itotal)} />
+            {/* 电压表引线（实线导线） */}
+            <path d={SERIES_PATHS.voltmeterLead} {...voltmeterWireStyle} />
+            <circle cx={437} cy={120} r={3} fill={PHYSICS_COLORS.labelText} />
+            <circle cx={563} cy={120} r={3} fill={PHYSICS_COLORS.labelText} />
             {renderBattery(l.batteryCenter.x, l.batteryCenter.y)}
             {renderResistor(l.r1Center.x, l.r1Center.y, 'R₁', R1)}
             <Rheostat x={l.r2Center.x} y={l.r2Center.y} value={R2} min={0} max={100} label="R₂ (变)" width={120} variant={isSymbolic ? 'symbolic' : 'realistic'} />
-
-            {/* 表盘仪表 */}
             <DialMeter type="V" value={U2} max={12} x={l.voltmeterCenter.x} y={l.voltmeterCenter.y} />
             <DialMeter type="A" value={Itotal} max={1.5} x={l.ammeterCenter.x} y={l.ammeterCenter.y} />
           </g>
@@ -228,73 +163,40 @@ export default function CircuitAnalysis() {
         const l = parallelLayout
         return (
           <g>
-            {/* 导线干路 A */}
-            <path d="M 80,180 L 80,80 L 190,80 M 190,80 L 290,80" {...getWireStyle(Itotal)} />
-            {/* 导线干路 B */}
-            <path d="M 490,80 L 570,80 L 570,280 L 80,280 L 80,180" {...getWireStyle(Itotal)} />
-
-            {/* 支路 1 (R1) */}
-            <path d="M 290,80 L 290,130 L 370,130 M 410,130 L 490,130 L 490,80" {...getWireStyle(I1)} />
-            {/* 支路 2 (R2) */}
-            <path d="M 290,80 L 290,230 L 340,230 M 440,230 L 490,230 L 490,80" {...getWireStyle(I2)} />
-
-            {/* 并联分流节点 */}
-            <circle cx={290} cy={80} r={4.5} fill={PHYSICS_COLORS.labelText} />
-            <circle cx={490} cy={80} r={4.5} fill={PHYSICS_COLORS.labelText} />
-
-            {/* 电压表并联引线 */}
-            <path d="M 340,230 L 340,300 L 362,300 M 418,300 L 440,300 L 440,230" {...inactiveWireStyle} />
-            <circle cx={340} cy={230} r={3} fill={PHYSICS_COLORS.labelText} />
-            <circle cx={440} cy={230} r={3} fill={PHYSICS_COLORS.labelText} />
-
-            {/* 粒子动画 */}
-            {renderParallelCharges()}
-
-            {/* 电学元件 */}
+            <path d={PARALLEL_PATHS.mainA} {...getWireStyle(Itotal)} />
+            <path d={PARALLEL_PATHS.mainB} {...getWireStyle(Itotal)} />
+            <path d={PARALLEL_PATHS.branch1} {...getWireStyle(I1)} />
+            <path d={PARALLEL_PATHS.branch2} {...getWireStyle(I2)} />
+            {/* 分流/汇合节点 */}
+            <circle cx={400} cy={40} r={4.5} fill={PHYSICS_COLORS.labelText} />
+            <circle cx={700} cy={40} r={4.5} fill={PHYSICS_COLORS.labelText} />
+            <circle cx={487} cy={110} r={3} fill={PHYSICS_COLORS.labelText} />
+            <circle cx={613} cy={110} r={3} fill={PHYSICS_COLORS.labelText} />
             {renderBattery(l.batteryCenter.x, l.batteryCenter.y)}
             {renderResistor(l.r1Center.x, l.r1Center.y, 'R₁', R1)}
             <Rheostat x={l.r2Center.x} y={l.r2Center.y} value={R2} min={0} max={100} label="R₂ (变)" width={120} variant={isSymbolic ? 'symbolic' : 'realistic'} />
-
-            {/* 表盘仪表 */}
             <DialMeter type="V" value={U2} max={12} x={l.voltmeterCenter.x} y={l.voltmeterCenter.y} />
             <DialMeter type="A" value={Itotal} max={1.5} x={l.ammeterCenter.x} y={l.ammeterCenter.y} />
           </g>
         )
       }
     } else {
-      // ── 3. 进阶：混联电路 ──
+      // ─ 3. 进阶：混联电路 ─
       const l = mixedLayout
       return (
         <g>
-          {/* 干路 A (含 R1 与 电流表) */}
-          <path d="M 80,180 L 80,80 L 180,80 M 220,80 L 320,80 M 320,80 L 410,80" {...getWireStyle(Itotal)} />
-          {/* 干路 B */}
-          <path d="M 580,80 L 580,280 L 80,280 L 80,180" {...getWireStyle(Itotal)} />
-
-          {/* 支路 1 (R2，变阻器) */}
-          <path d="M 410,80 L 410,130 L 440,130 M 540,130 L 580,130 L 580,80" {...getWireStyle(I2)} />
-          {/* 支路 2 (R3，定值电阻) */}
-          <path d="M 410,80 L 410,240 L 470,240 M 510,240 L 580,240 L 580,80" {...getWireStyle(I3)} />
-
-          {/* 并联分流节点 */}
-          <circle cx={410} cy={80} r={4.5} fill={PHYSICS_COLORS.labelText} />
-          <circle cx={580} cy={80} r={4.5} fill={PHYSICS_COLORS.labelText} />
-
-          {/* 电压表并联引线 */}
-          <path d="M 440,130 L 440,30 L 462,30 M 518,30 L 540,30 L 540,130" {...inactiveWireStyle} />
-          <circle cx={440} cy={130} r={3} fill={PHYSICS_COLORS.labelText} />
-          <circle cx={540} cy={130} r={3} fill={PHYSICS_COLORS.labelText} />
-
-          {/* 粒子动画 */}
-          {renderMixedCharges()}
-
-          {/* 电学元件 */}
+          <path d={MIXED_PATHS.mainA} {...getWireStyle(Itotal)} />
+          <path d={MIXED_PATHS.mainB} {...getWireStyle(Itotal)} />
+          <path d={MIXED_PATHS.branch1} {...getWireStyle(I2)} />
+          <path d={MIXED_PATHS.branch2} {...getWireStyle(I3)} />
+          <circle cx={380} cy={120} r={4.5} fill={PHYSICS_COLORS.labelText} />
+          <circle cx={620} cy={120} r={4.5} fill={PHYSICS_COLORS.labelText} />
+          <circle cx={417} cy={120} r={3} fill={PHYSICS_COLORS.labelText} />
+          <circle cx={543} cy={120} r={3} fill={PHYSICS_COLORS.labelText} />
           {renderBattery(l.batteryCenter.x, l.batteryCenter.y)}
           {renderResistor(l.r1Center.x, l.r1Center.y, 'R₁', R1)}
           <Rheostat x={l.r2Center.x} y={l.r2Center.y} value={R2} min={0} max={100} label="R₂ (变)" width={120} variant={isSymbolic ? 'symbolic' : 'realistic'} />
           {renderResistor(l.r3Center.x, l.r3Center.y, 'R₃', R3)}
-
-          {/* 表盘仪表 */}
           <DialMeter type="V" value={U2} max={12} x={l.voltmeterCenter.x} y={l.voltmeterCenter.y} />
           <DialMeter type="A" value={Itotal} max={1.5} x={l.ammeterCenter.x} y={l.ammeterCenter.y} />
         </g>
@@ -303,15 +205,8 @@ export default function CircuitAnalysis() {
   }
 
   return (
-    <div ref={containerRef} className="w-full h-full flex items-center justify-center p-2 relative">
-      <svg
-        viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`}
-        className="w-full h-full bg-white rounded-xl shadow-inner border border-neutral-100"
-        preserveAspectRatio="xMidYMid meet"
-      >
-        {/* 绘制主体电路 */}
-        {renderCircuit()}
-      </svg>
-    </div>
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+      {renderCircuit()}
+    </AnimationSvgCanvas>
   )
 }

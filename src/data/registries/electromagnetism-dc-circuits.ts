@@ -26,10 +26,10 @@ export const electromagnetismDcCircuitsAnimations = defineAnimations({
     controlsMode: 'param' as const,
     centerExtraHeight: 'h-2/5',
     paramMeta: [
-      { key: 'R2', label: '滑动变阻器 R₂', min: 0, max: 100, step: 1, unit: 'Ω', importance: 'core' },
-      { key: 'R1', label: '定值电阻 R₁', min: 5, max: 50, step: 1, unit: 'Ω', importance: 'advanced' },
-      { key: 'R3', label: '定值电阻 R₃', min: 5, max: 100, step: 1, unit: 'Ω', importance: 'advanced', showIf: 'mode', showIfValue: 1 },
-      { key: 'U', label: '电源电压 U', min: 3, max: 15, step: 0.5, unit: 'V', importance: 'display' },
+      { key: 'R2', label: '滑动变阻器 R₂', min: 0, max: 100, step: 1, unit: 'Ω' },
+      { key: 'R1', label: '定值电阻 R₁', min: 5, max: 50, step: 1, unit: 'Ω' },
+      { key: 'R3', label: '定值电阻 R₃', min: 5, max: 100, step: 1, unit: 'Ω', showIf: 'mode', showIfValue: 1 },
+      { key: 'U', label: '电源电压 U', min: 3, max: 15, step: 0.5, unit: 'V' },
     ],
     controlMeta: [
       { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
