@@ -6,6 +6,7 @@ import { handleCollision } from './collision'
 import { handleCurvedSlot } from './curvedSlot'
 import { handleSpringBlocks } from './springBlocks'
 import { handleManBoat } from './manBoat'
+import { handleBulletBlock } from './bulletBlock'
 
 export function buildMomentumQuantities(
   animId: string,
@@ -22,6 +23,7 @@ export function buildMomentumQuantities(
     handleCurvedSlot(animId, params, time, base) ??
     handleSpringBlocks(animId, params, time, base) ??
     handleManBoat(animId, params, time, base) ??
+    handleBulletBlock(animId, params, time, base) ??
     null
   )
 }

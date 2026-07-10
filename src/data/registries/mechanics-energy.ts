@@ -374,6 +374,11 @@ export const mechanicsEnergyAnimations = defineAnimations({
       // §4 显示辅助
       { type: 'toggle', key: 'showVectors', label: '显示物理矢量', group: '显示辅助' },
       { type: 'toggle', key: 'autoPause', label: '平衡位置自动暂停高亮', group: '显示辅助' },
+      // §6 教学提示
+      { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 0,
+        content: 'A点：释放位置，小球从高度h处自由下落；B点：弹簧原长位置，小球刚接触弹簧；C点：平衡位置（mg=kx），合外力为零，速度与动能最大；D点：最低点，速度为零，弹簧压缩最大。' },
+      { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 1,
+        content: 'B点：弹簧原长位置（释放点）；C点：平衡位置（mg=kx），合外力为零，速度与动能最大；D点：最低点，速度为零，弹簧伸长最大，满足x_D=2mg/k。' },
     ],
   },
   'anim-light-rod-rope': {

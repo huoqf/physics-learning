@@ -17,6 +17,7 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 07-10 | electromagnetism/induction | feat | 电磁感应线框模型高考教学优化与画面美化：将高考解题五阶段时空状态机进度看板嵌入主中屏动画右侧（HTML层Flex分区），实现点击卡片一键定位对应阶段几何中点交互；复用 MagneticFieldGrid 渲染背景磁场与回路感应磁场；复用 VectorArrow 精准绘制线框切割导体棒上电流矢量；在切割棒两端添加高亮发光的 +/- 电势极性判定圆章并修正安培力与外力受力作用点；恢复右侧屏为通用 PhysicsPanel；显式导出 VTPoint 消除 TS 歧义错误；编译与单测全通过 |
 | 07-09 | utils/viewport | feat | ViewportInfo 新增 designVisibleW/designVisibleH/designLeft/designTop 4 个派生字段，用于 edge-to-edge 元素（地面等）撑满可视区域；BlockBoardAnimation 地面改用 vp.designLeft/designVisibleW；07_CANVAS_SVG_CHART_RULES 新增场景 6 规范；tsc 零错误 |
 | 07-09 | theme | refactor | 全量 preset 对齐实际容器宽度：full 700→840、splitV 700→840、splitH 350→420；20+ 组件硬编码坐标同步缩放（OhmLaw/SingleRod/Conveyor/MechanicalWave/ChargeInEField/Capacitor/SpringForce/CombinedFields/ThinLens/Reflection/Refraction/TIR/WaveDiffraction/MomentumConservation/FreeFall/Kepler/FieldLines/ElectricField/ClosedCircuit/SpringComposite）；规范文档 project_rules/ARCHITECTURE_RULES/viewport_audit_report/TODO_deferred 全部同步；tsc 零错误 |
 | 07-09 | vibration/wave | feat | 机械波三动画落地：physics/wave.ts（行波因果阶跃/单脉冲/单缝强度/双源干涉场，16 单测）；anim-mechanical-wave（splitV+双图 y-x/y-t，Ball/VectorArrow/useAnimationViewport）；anim-wave-diffraction / anim-wave-interference（splitH，Canvas 场+SVG 叠加，setupCanvasDPR，时钟仅 useAnimationFrame）；knowledgeTree vibration-2-1/2-2 接线；quantities 右屏；ANIMATION_COUNT 77；tsc+547 tests+build 通过 |

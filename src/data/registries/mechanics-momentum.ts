@@ -165,6 +165,42 @@ export const mechanicsMomentumAnimations = defineAnimations({
         params: { mA_spring: 2, mB_spring: 3, v0_spring: 5, k_spring: 25, connectionMode_spring: 1 } },
     ],
   },
+  'anim-bullet-block': {
+    title: '子弹打木块模型',
+    knowledgeId: 'mechanics-8-7',
+    Component: lazy(() => import('@/features/mechanics/momentum/BulletBlockAnimation')),
+    defaultParams: { m: 0.1, M: 0.4, v0: 30, f: 10, L: 0.5, showDeltaX: 1 } as const,
+    paramMeta: [
+      { key: 'm', label: '子弹质量 m', min: 0.05, max: 0.20, step: 0.01, unit: 'kg' },
+      { key: 'M', label: '木块质量 M', min: 0.2, max: 1.0, step: 0.1, unit: 'kg' },
+      { key: 'v0', label: '子弹初速度 v₀', min: 10, max: 50, step: 1, unit: 'm/s' },
+      { key: 'f', label: '恒定阻力 f', min: 5, max: 25, step: 1, unit: 'N' },
+      { key: 'L', label: '木块厚度 L', min: 0.1, max: 1.0, step: 0.05, unit: 'm' },
+    ],
+    controlMeta: [
+      { type: 'toggle', key: 'showDeltaX', label: '相对位移指示器', group: '显示辅助' },
+      {
+        type: 'preset',
+        label: '留存共速',
+        group: '高考典型情境',
+        params: { m: 0.1, M: 0.4, v0: 8, f: 10, L: 1 }
+      },
+      {
+        type: 'preset',
+        label: '临界穿透',
+        group: '高考典型情境',
+        params: { m: 0.1, M: 0.4, v0: 15, f: 10, L: 1 }
+      },
+      {
+        type: 'preset',
+        label: '完全穿透',
+        group: '高考典型情境',
+        params: { m: 0.1, M: 0.4, v0: 30, f: 10, L: 1 }
+      },
+      { type: 'tip', group: '教学提示',
+        content: '固定参数 m=0.1kg, M=0.4kg, f=10N, L=1m（v_crit≈15.8m/s）。留存共速 v₀=8<v_crit，子弹停在木块内约26%处；临界穿透 v₀=15<v_crit，子弹到达木块约90%处；完全穿透 v₀=30>v_crit，子弹穿出木块后各自匀速。动画在共速/穿出后匀速段展示约1-2秒即停止，实际物理过程中两者会继续匀速运动。' },
+    ],
+  },
   'anim-man-boat': {
     title: '人船模型',
     knowledgeId: 'mechanics-8-6-3',
@@ -212,4 +248,3 @@ export const mechanicsMomentumAnimations = defineAnimations({
     ],
   },
 })
-

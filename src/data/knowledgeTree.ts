@@ -575,10 +575,9 @@ export const knowledgeTree: KnowledgeNode[] = [
     chapter: '第8章 动量',
     module: 'mechanics',
     importance: 'hard',
-    animationIds: ['anim-collision'],
+    animationIds: ['anim-bullet-block'],
     problemIds: [],
     prerequisites: ['mechanics-8-4'],
-    animationParams: { isElastic: 0 },
   },
 
 

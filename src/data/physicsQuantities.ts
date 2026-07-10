@@ -98,6 +98,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-curved-slot':            { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
   'anim-spring-blocks':          { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
   'anim-man-boat':               { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
+  'anim-bullet-block':           { loader: () => import('./quantities/momentum'),       builderName: 'buildMomentumQuantities' },
 
 
   // 电磁学
