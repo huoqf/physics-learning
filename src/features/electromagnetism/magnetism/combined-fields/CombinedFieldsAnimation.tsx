@@ -1,13 +1,13 @@
 import { useCallback, useMemo } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, CANVAS_COLORS, STROKE, CANVAS_STYLE, withAlpha } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { VectorArrow } from '@/components/Physics'
-import { Ball } from '@/components/Physics'
+import { VectorArrow, Ball } from '@/components/Physics'
 import { RelationChart } from '@/components/Chart'
 import {
   PARTICLES,
@@ -22,9 +22,6 @@ import {
 } from './model/combinedFieldsModel'
 import type { SceneScale } from '@/scene'
 import type { VectorType } from '@/theme/physics/vectorStyle'
-
-const DESIGN_W = 840
-const DESIGN_H = 325
 
 const REF_MAGNITUDES = {
   electricForce: 2e-15,
@@ -43,7 +40,9 @@ export default function CombinedFieldsAnimation() {
     })),
   )
 
-  const [, canvasSize] = useCanvasSize(CANVAS_PRESETS.splitV)
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
+    preset: CANVAS_PRESETS.splitV,
+  })
   const { font } = canvasSize
 
   // ── 获取交互参数 ──
@@ -627,15 +626,13 @@ export default function CombinedFieldsAnimation() {
 
       {/* 2. 动画区（在下，自适应） */}
       <div className="flex-1 min-h-0 bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
-        <svg
-          viewBox={`0 0 ${DESIGN_W} ${DESIGN_H}`}
-          preserveAspectRatio="xMidYMid meet"
-          width="100%"
-          height="100%"
+        <AnimationSvgCanvas
+          containerRef={containerRef}
+          transform={vp.transform}
           className="bg-white"
         >
           {activeScene}
-        </svg>
+        </AnimationSvgCanvas>
       </div>
     </div>
   )

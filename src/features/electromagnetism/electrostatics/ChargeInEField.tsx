@@ -1,6 +1,7 @@
 import { VectorArrow, VectorDefs } from '@/components/Physics'
 import { useEffect, useMemo } from 'react'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -15,10 +16,6 @@ import {
   calculateChargeInEFieldTrajectory,
   getChargeInEFieldTimeScale,
 } from '@/physics/electromagnetism'
-
-// SVG 设计坐标系常量（对应 CANVAS_PRESETS.splitV）
-const DESIGN_WIDTH = 840
-const DESIGN_HEIGHT = 325
 
 // SVG 几何常量
 const PARTICLE_RADIUS = 10       // 粒子圆半径
@@ -35,8 +32,9 @@ export default function ChargeInEField() {
       setIsPlaying: s.setIsPlaying,
     }))
   )
-  const [, canvasSize] = useCanvasSize(CANVAS_PRESETS.splitV)
-  const vp = useViewport(canvasSize, { designWidth: DESIGN_WIDTH, designHeight: DESIGN_HEIGHT })
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
+    preset: CANVAS_PRESETS.splitV,
+  })
   const { font } = canvasSize
 
   const U = params.U ?? 150
@@ -147,8 +145,6 @@ export default function ChargeInEField() {
     const maxVal = Math.max(v0, 10)
     const maxAcc = Math.max(Math.abs(currentState.ay), 25)
     return createSceneScaleFromViewport(vp, 'transform', {
-      designWidth: DESIGN_WIDTH,
-      designHeight: DESIGN_HEIGHT,
       refMagnitudes: {
         velocity: maxVal,
         acceleration: maxAcc,
@@ -406,12 +402,12 @@ export default function ChargeInEField() {
         </div>
       </Card>
 
-      {/* 动画反馈区 (放下方，自适应高度填充，viewBox 840x325，大比例构图无留白) */}
-      <Card className="flex-1 min-h-0 p-3 relative flex items-center justify-center overflow-hidden">
-        <svg
-          viewBox="0 0 840 325"
-          preserveAspectRatio="xMidYMid meet"
-          className="w-full h-full select-none"
+      {/* 动画反馈区 (放下方，max 限死 splitV 设计尺寸防止 scale > 1 放大) */}
+      <Card className="flex-1 min-h-0 max-w-[840px] max-h-[325px] p-3 relative flex items-center justify-center overflow-hidden">
+        <AnimationSvgCanvas
+          containerRef={containerRef}
+          transform={vp.transform}
+          className="select-none"
         >
           <defs>
             <VectorDefs
@@ -756,7 +752,7 @@ export default function ChargeInEField() {
               </text>
             </g>
           )}
-        </svg>
+        </AnimationSvgCanvas>
       </Card>
     </div>
   )
