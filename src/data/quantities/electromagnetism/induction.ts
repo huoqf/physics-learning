@@ -499,29 +499,55 @@ export function handleInduction(
       }
     }
     case 'anim-induction-loop-field': {
-      const loopWidth = params.loopWidth ?? 4.0
-      const fieldWidth = params.fieldWidth ?? 8.0
+      const dimensionPreset = params.dimensionPreset ?? 0
+      let loopWidth = params.loopWidth ?? 4.0
+      let fieldWidth = params.fieldWidth ?? 8.0
       const constantSpeed = params.constantSpeed ?? 1.0
       const magneticB = params.magneticB ?? 1.0
 
+      // 与 useLoopPassFieldPhysics 同步：根据 dimensionPreset 适配 d/D
+      if (dimensionPreset === 0 && loopWidth >= fieldWidth) {
+        loopWidth = 4.0
+        fieldWidth = 8.0
+      } else if (dimensionPreset === 1 && loopWidth <= fieldWidth) {
+        loopWidth = 8.0
+        fieldWidth = 4.0
+      }
+
       const d = loopWidth / 100
       const D = fieldWidth / 100
-      const v = Math.max(0.1, constantSpeed)
+      const v_real = Math.max(0.1, constantSpeed)
+      const v_anim = v_real / 50
       const B = magneticB
       const L = 0.05
       const R = 0.5
 
       const xMin = -0.02
-      const totalDist = D + d + 0.04
-      const T_max = totalDist / v
-      const frontX = xMin + v * (time % T_max)
+      const xMax = D + d + 0.02
+      const totalDist = xMax - xMin
+      const T_max = totalDist / v_anim
+      const frontX = xMin + v_anim * (time % T_max)
 
-      const res = evaluateLoopSegment(frontX, d, D, B, L, R, v)
+      const res = evaluateLoopSegment(frontX, d, D, B, L, R, v_real)
+      
+      const isNarrow = d <= D
       let stateText = '进场前'
-      if (res.state === 'ENTERING') stateText = '前侧切割进场'
-      else if (res.state === 'TOTALLY_IN') stateText = '完全处于场内'
-      else if (res.state === 'LEAVING') stateText = '后侧切割出场'
-      else if (res.state === 'AFTER') stateText = '已穿出离场'
+      let activeNote = ''
+      if (res.state === 'ENTERING') {
+        stateText = '前边切割进场'
+        activeNote = isNarrow ? `0 ≤ x < ${loopWidth.toFixed(0)}cm (前边切割，电流逆时针)` : `0 ≤ x < ${fieldWidth.toFixed(0)}cm (前边切割，电流逆时针)`
+      } else if (res.state === 'TOTALLY_IN') {
+        stateText = isNarrow ? '完全处于磁场内' : '磁场完全包围在线框内'
+        activeNote = isNarrow ? `${loopWidth.toFixed(0)}cm ≤ x < ${fieldWidth.toFixed(0)}cm (双边切割电动势抵消，I=0)` : `${fieldWidth.toFixed(0)}cm ≤ x < ${loopWidth.toFixed(0)}cm (无切割，I=0)`
+      } else if (res.state === 'LEAVING') {
+        stateText = '后边切割出场'
+        activeNote = isNarrow ? `${fieldWidth.toFixed(0)}cm ≤ x < ${(fieldWidth + loopWidth).toFixed(0)}cm (后边切割，电流顺时针)` : `${loopWidth.toFixed(0)}cm ≤ x < ${(fieldWidth + loopWidth).toFixed(0)}cm (后边切割，电流顺时针)`
+      } else if (res.state === 'AFTER') {
+        stateText = '已穿出离场'
+        activeNote = `x ≥ ${(fieldWidth + loopWidth).toFixed(0)}cm (无切割，I=0)`
+      }
+
+      const qMax = isNarrow ? (B * L * d) / R : (B * L * D) / R
 
       return {
         quantities: [
@@ -534,19 +560,50 @@ export function handleInduction(
           { label: '焦耳发热功率 P', symbol: 'P_{\\text{热}}', value: res.powerHeat.toFixed(3), unit: 'W', color: PHYSICS_COLORS.heatLoss },
         ],
         formulas: [
-          { name: '分段磁通量函数 (窄线框)', latex: '\\Phi(x) = \\begin{cases} BLx & (0 \\le x < d) \\\\ BLd & (d \\le x < D) \\\\ BL(D+d-x) & (D \\le x \\le D+d) \\end{cases}', level: 'core' },
-          { name: '切割电动势与欧姆定律', latex: 'E = BLv, \\quad I = \\frac{BLv}{R}', level: 'core' },
-          { name: '电磁功能转化铁律', latex: 'W_{\\text{外}} = |W_A| = Q_{\\text{焦耳热}} = \\int I^2 R \\, \\text{d}t', level: 'core' },
-          { name: '过线关键临界坐标', latex: 'x_1 = 0, \\quad x_2 = d, \\quad x_3 = D, \\quad x_4 = D+d', level: 'derived' },
+          {
+            name: isNarrow ? '分段磁通量函数 (窄线框 d ≤ D)' : '分段磁通量函数 (宽线框 d > D)',
+            latex: isNarrow
+              ? '\\Phi(x) = \\begin{cases} BLx & (0 \\le x < d) \\\\ BLd & (d \\le x < D) \\\\ BL(D+d-x) & (D \\le x \\le D+d) \\end{cases}'
+              : '\\Phi(x) = \\begin{cases} BLx & (0 \\le x < D) \\\\ BLD & (D \\le x < d) \\\\ BL(D+d-x) & (d \\le x \\le D+d) \\end{cases}',
+            level: 'core',
+            note: res.state !== 'BEFORE' && res.state !== 'AFTER' ? `当前激活区间: ${activeNote}` : undefined
+          },
+          {
+            name: '切割电动势与欧姆定律',
+            latex: 'E = BLv, \\quad I = \\frac{E}{R} = \\frac{BLv}{R}',
+            level: 'core',
+            note: (res.state === 'ENTERING' || res.state === 'LEAVING') ? '【当前生效】单竖边切割磁感线，产生感应电流' : '【当前抵消/无切割】回路总电动势为零'
+          },
+          {
+            name: '安培力公式',
+            latex: 'F_A = BIL = \\frac{B^2L^2v}{R}',
+            level: 'important',
+            note: (res.state === 'ENTERING' || res.state === 'LEAVING') ? '【当前生效】安培力方向水平向左，阻碍线框相对运动' : '【当前无电流】不受安培力'
+          },
+          {
+            name: '过线关键临界坐标',
+            latex: isNarrow
+              ? 'x_1 = 0, \\ x_2 = d, \\ x_3 = D, \\ x_4 = D+d'
+              : 'x_1 = 0, \\ x_2 = D, \\ x_3 = d, \\ x_4 = D+d',
+            level: 'derived'
+          },
+          {
+            name: '单阶段通过电量 (高考高频)',
+            latex: `q = \\frac{\\Delta \\Phi}{R} = ${isNarrow ? '\\frac{BLd}{R}' : '\\frac{BLD}{R}'} = ${qMax.toFixed(4)}\\text{ C}`,
+            level: 'derived',
+            note: isNarrow ? '窄线框单次进/出电量仅由线框宽 d 决定' : '宽线框单次进/出电量仅由磁场宽 D 决定（易错点！）'
+          }
         ],
         gaokaoPoints: [
-          { text: '四点过线时空状态机：高考波形图突破的命门！线框发生阶跃和折转必定对应边界撞击的四个临界位移坐标点 x₁=0, x₂=d, x₃=D, x₄=D+d！', importance: 'gaokao' },
-          { text: '中央零感应平台解药：完全进入匀强磁场内部 (d ≤ x < D) 时，左右两竖边同时同向以相同速度 v 切割磁感线，感应电动势等大反向完全抵消，无感应电流与安培力！', importance: 'gaokao' },
+          { text: '一法拉第二欧姆三牛顿：高考大题万能解题步法！先求 E = BLv，再算 I = E/R，最后由受力分析（安培力 F_A = BIL）和能量守恒定律（W_外 = Q_焦耳热）解题！', importance: 'gaokao' },
+          { text: '四点过线时空状态机：线框波形图折转必定对应 x₁=0, x₂=d, x₃=D, x₄=D+d 四个临界坐标点！波形选择题只需代入这四个边界点即可秒杀！', importance: 'gaokao' },
+          { text: '零电流平台成因：窄线框完全处于磁场内部 (d ≤ x < D) 或宽线框完全包围磁场 (D ≤ x < d) 时，回路没有磁通量变化，或两侧竖边切割电动势相互抵消，无感应电流和安培力！', importance: 'core' },
         ],
         warnings: [
-          { text: '易错警示：切不可认为整个穿过过程都有阻力！只在进场阶段（阻碍进）和出场阶段（阻碍出）才受向左的安培阻力，全在场内时不受阻力！', level: 'danger' },
+          { text: '避坑提示：拉力做功只在进场阶段 (0 ≤ x < d) 和出场阶段 (D ≤ x < D+d) 才等于焦耳热，因为只有在这两阶段才有安培阻力做负功！全在场内时无安培力，拉力不做功（或做功为零）。', level: 'danger' },
+          { text: '电量易错点：计算通过截面电荷量 q = ΔΦ/R 时，切不可直接代入线框总面积！窄线框进场 ΔΦ = BLd，宽线框进场 ΔΦ = BLD，注意区分公式中的特征长度！', level: 'warning' }
         ],
-        mnemonic: '进场出场受阻力，电流反向产焦热；完全进入无电动势，匀速穿场零阻力。',
+        mnemonic: '进出磁场受阻力，电流反向产焦热；完全进入无电动势，匀速穿场零阻力。',
       }
     }
     default:

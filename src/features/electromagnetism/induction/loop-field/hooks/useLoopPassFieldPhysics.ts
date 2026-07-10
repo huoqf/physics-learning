@@ -68,7 +68,8 @@ export function useLoopPassFieldPhysics(
 
   const d = dCm / 100 // 转为米
   const D = DCm / 100 // 转为米
-  const v = Math.max(0.1, constantSpeed)
+  const v_real = Math.max(0.1, constantSpeed)
+  const v_anim = v_real / 50
   const B = magneticB
   const L = 0.05 // 边长 5cm
   const R = 0.5  // 电阻 0.5Ω
@@ -76,17 +77,18 @@ export function useLoopPassFieldPhysics(
   const xMin = -0.02
   const xMax = D + d + 0.02
   const totalDist = xMax - xMin
-  const T_max = useMemo(() => totalDist / v, [totalDist, v])
+  const T_max = useMemo(() => totalDist / v_anim, [totalDist, v_anim])
 
   // 当前播放时间到当前位移 x 的映射
-  const currentT = time % T_max
-  const frontX = xMin + v * currentT
+  // 到达终点后锁定在最大位置，不再循环重播
+  const currentT = Math.min(time, T_max)
+  const frontX = xMin + v_anim * currentT
   const backX = frontX - d
 
   // 计算瞬时物理量
   const currentResult = useMemo(
-    () => evaluateLoopSegment(frontX, d, D, B, L, R, v),
-    [frontX, d, D, B, L, R, v]
+    () => evaluateLoopSegment(frontX, d, D, B, L, R, v_real),
+    [frontX, d, D, B, L, R, v_real]
   )
 
   // 生成图表采样点序列 (以位移 x 为横轴，并对 0, d, D, D+d 四个突变边界前后进行高密度阶跃采样)
@@ -123,14 +125,14 @@ export function useLoopPassFieldPhysics(
 
     for (const xVal of sortedX) {
       if (xVal < xMin - eps || xVal > xMax + eps) continue
-      const res = evaluateLoopSegment(xVal, d, D, B, L, R, v)
+      const res = evaluateLoopSegment(xVal, d, D, B, L, R, v_real)
       // 位移横轴 (cm)
       const xDisplay = Number((xVal * 100).toFixed(3))
       ptsPhi.push({ x: xDisplay, y: res.phi })
       ptsI.push({ x: xDisplay, y: res.currentI })
       ptsFA.push({ x: xDisplay, y: res.forceAmpere })
       // 时间横轴 (s)
-      const tDisplay = Number(((xVal - xMin) / v).toFixed(4))
+      const tDisplay = Number(((xVal - xMin) / v_anim).toFixed(4))
       ptsPhiT.push({ x: tDisplay, y: res.phi })
       ptsIT.push({ x: tDisplay, y: res.currentI })
       ptsFAT.push({ x: tDisplay, y: res.forceAmpere })
@@ -151,14 +153,14 @@ export function useLoopPassFieldPhysics(
       iMax: iMaxVal * 1.25,
       faMax: fMaxVal * 1.25,
     }
-  }, [xMin, xMax, totalDist, d, D, B, L, R, v])
+  }, [xMin, xMax, totalDist, d, D, B, L, R, v_real, v_anim])
 
   return {
     d,
     D,
     L,
     R,
-    v,
+    v: v_real,
     B,
     frontX,
     backX,

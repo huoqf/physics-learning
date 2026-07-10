@@ -37,7 +37,6 @@ export default function InductionLoopField() {
     <div className="flex flex-col h-full w-full gap-2 p-1">
       {/* ─── 上侧 50%：三图表无缝平齐联动 ─── */}
       <div className="grid grid-cols-3 gap-2 w-full h-1/2 min-h-0">
-        {/* 左图：磁通量 Φ 梯形波 */}
         <div className="bg-white rounded-xl border border-neutral-200 p-2 shadow-sm flex flex-col overflow-hidden min-w-0">
           <RelationChart
             points={isTimeAxis ? physics.phiPointsT : physics.phiPoints}
@@ -51,7 +50,6 @@ export default function InductionLoopField() {
           />
         </div>
 
-        {/* 中图：感应电流 I 阶跃方波 */}
         <div className="bg-white rounded-xl border border-neutral-200 p-2 shadow-sm flex flex-col overflow-hidden min-w-0">
           <RelationChart
             points={isTimeAxis ? physics.iPointsT : physics.iPoints}
@@ -66,7 +64,6 @@ export default function InductionLoopField() {
           />
         </div>
 
-        {/* 右图：安培力 F_A 脉冲方波 */}
         <div className="bg-white rounded-xl border border-neutral-200 p-2 shadow-sm flex flex-col overflow-hidden min-w-0">
           <RelationChart
             points={isTimeAxis ? physics.faPointsT : physics.faPoints}
@@ -81,8 +78,8 @@ export default function InductionLoopField() {
         </div>
       </div>
 
-      {/* ─── 下侧 50%：线框穿场物理视界 (840×325 逻辑分辨率) ─── */}
-      <div className="w-full h-1/2 min-h-0 flex-1">
+      {/* ─── 下侧 50%：线框穿场物理动画（全宽） ─── */}
+      <div className="w-full h-1/2 min-h-0">
         <LoopPassFieldScene physics={physics} />
       </div>
     </div>

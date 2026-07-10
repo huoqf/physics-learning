@@ -1,6 +1,8 @@
 import React, { useState, useRef, useCallback } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useViewportPointer } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS, CHART_COLORS } from '@/theme/physics'
@@ -76,11 +78,14 @@ export default function InductionPhenomenon() {
     }))
   )
 
-  // 使用标准的 full 预设尺寸 (700 x 650)，充盈舒展视口
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full)
+  // 使用标准的 full 预设尺寸，充盈舒展视口
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
+    preset: CANVAS_PRESETS.full,
+  })
   const { font } = canvasSize
 
   const svgRef = useRef<SVGSVGElement | null>(null)
+  const getSvgPoint = useViewportPointer(svgRef)
 
   // 1. 物理参数解析与后备默认值
   const mode = params.mode ?? 0                  // 0=切割, 1=穿过, 2=双线圈
@@ -189,16 +194,9 @@ export default function InductionPhenomenon() {
 
   useAnimationFrame(handleAnimationFrame, { playing: true })
 
-  // 5. 拖拽坐标映射：使用 CTM 逆矩阵，严禁手动偏置换算
+  // 5. 拖拽坐标映射：使用 useViewportPointer 标准 Hook
   const clientToDesign = (clientX: number, clientY: number) => {
-    const svg = svgRef.current
-    if (!svg) return null
-    const pt = svg.createSVGPoint()
-    pt.x = clientX
-    pt.y = clientY
-    const ctm = svg.getScreenCTM()
-    if (!ctm) return null
-    return pt.matrixTransform(ctm.inverse())
+    return getSvgPoint(clientX, clientY)
   }
 
   const handlePointerDown = (e: React.PointerEvent<SVGGElement>, type: 'rod' | 'magnet' | 'coil') => {
@@ -264,13 +262,11 @@ export default function InductionPhenomenon() {
   }
 
   return (
-    <div ref={containerRef} className="w-full h-full flex items-center justify-center p-1 select-none">
-      <svg
-        ref={svgRef}
-        width={canvasSize.width}
-        height={canvasSize.height}
-        viewBox={`0 0 ${DESIGN_W} ${DESIGN_H}`}
-        preserveAspectRatio="xMidYMid meet"
+    <div className="w-full h-full flex items-center justify-center p-1 select-none">
+      <AnimationSvgCanvas
+        containerRef={containerRef}
+        transform={vp.transform}
+        svgRef={svgRef}
         className="bg-white rounded-xl shadow-md overflow-hidden"
       >
         {/* ================= 右侧接收端回路 (电流计、副螺螺线管、副开关) ================= */}
@@ -400,7 +396,7 @@ export default function InductionPhenomenon() {
           />
         )}
 
-      </svg>
+      </AnimationSvgCanvas>
     </div>
   )
 }
