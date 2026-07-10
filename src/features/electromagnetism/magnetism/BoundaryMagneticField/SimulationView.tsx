@@ -1,11 +1,10 @@
 
 import { useEffect, useRef, useMemo, useCallback } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE, withAlpha } from '@/theme/physics'
-import { createSceneScale, worldToPixel } from '@/scene'
-import type { SceneConfig } from '@/scene'
+import { createSceneScaleFromViewport, worldToPixel } from '@/scene'
 import { setupCanvasDPR, useDevicePixelRatio } from '@/hooks/useCanvasDPR'
 import {
   calcParticleRadius,
@@ -17,7 +16,7 @@ import { VectorArrow, drawMagneticFieldGrid } from '@/components/Physics'
 
 export function SimulationView() {
   useDevicePixelRatio()
-  const [sizeRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.square)
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.square })
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
@@ -73,29 +72,24 @@ export function SimulationView() {
   // 映射时间进度
   const progressTime = time > 0 ? (time % tCycle) - tSlideIn : -tSlideIn
 
-  // 物理配置：固定比例尺，禁止随参数缩放
-  const sceneConfig: SceneConfig = useMemo(() => {
-    // 圆形边界：固定场景宽度，Rb 变化时圆的大小自然变化（符合物理直觉）
-    // 其他边界：以磁场宽度 d 为基准
-    const wWidth = activeBoundaryType === 2 ? 50 : Math.max(1.0, d * 4.8)
-    const wHeight = canvasSize.width > 0 ? wWidth * (canvasSize.height / canvasSize.width) : 4.0
+  // ── 标准 VIEWPORT 架构（方式C：Canvas + createSceneScaleFromViewport）──────
+  // 圆形边界：固定场景宽度，Rb 变化时圆的大小自然变化（符合物理直觉）
+  // 其他边界：以磁场宽度 d 为基准
+  const worldWidth = activeBoundaryType === 2 ? 50 : Math.max(1.0, d * 4.8)
 
+  const sceneScale = useMemo(() => {
+    const base = createSceneScaleFromViewport(vp, 'centerScale', {
+      worldWidth,
+      worldHeight: worldWidth * (vp.visibleH / vp.visibleW),
+      refMagnitudes: { force: 25, velocity: 45, lorentzForce: 25 },
+    })
+    // originY 覆盖：粒子从上方入射，边界线在画面中下方（70%/78%），
+    // 而非 centerScale 默认的 50% 正中位置
     return {
-      vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
-      originX: canvasSize.width / 2,
-      originY: activeBoundaryType === 2 ? canvasSize.height * 0.78 : canvasSize.height * 0.70,
-      worldWidth: wWidth,
-      worldHeight: wHeight,
-      refMagnitudes: {
-        force: 25,
-        velocity: 45,
-        lorentzForce: 25,
-      },
+      ...base,
+      originY: activeBoundaryType === 2 ? vp.visibleH * 0.78 : vp.visibleH * 0.70,
     }
-  }, [canvasSize, activeBoundaryType, d])
-
-  // ⚠️ [架构豁免] 原生 Canvas 直绘，不走 useViewport，合法保留底层 createSceneScale 调用
-  const sceneScale = createSceneScale(sceneConfig)
+  }, [vp, worldWidth, activeBoundaryType])
 
   // 统一的单粒子轨迹及物理状态求解函数
   const getParticleState = useCallback((
@@ -525,7 +519,7 @@ export function SimulationView() {
   }
 
   return (
-    <div ref={sizeRef} className="w-full h-full relative">
+    <div ref={containerRef} className="w-full h-full relative">
       <canvas
         ref={canvasRef}
         width={canvasSize.width}

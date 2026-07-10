@@ -1,17 +1,15 @@
 import { useEffect, useRef, useMemo, useCallback } from 'react'
 import { useAnimationStore } from '@/stores'
-import { useCanvasSize } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
-import { createSceneScale } from '@/scene'
+import { createSceneScaleFromViewport, worldToPixel } from '@/scene'
 import { setupCanvasDPR, useDevicePixelRatio } from '@/hooks/useCanvasDPR'
 import { VectorArrow } from '@/components/Physics'
 
-const DESIGN_SIZE = { width: 350, height: 650 } as const
-
 export default function CircularGeometryModel() {
   useDevicePixelRatio()
-  const [sizeRef] = useCanvasSize(CANVAS_PRESETS.splitH)
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.splitH })
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   
   const params = useAnimationStore((s) => s.params)
@@ -125,12 +123,31 @@ export default function CircularGeometryModel() {
     }
   }, [time, tOut, isPlaying, setTime])
 
+  // 5. SVG 顶层辅助参数与 SceneScale 对象（用于 VectorArrow 渲染）
+  const sceneScale = useMemo(() => {
+    const base = createSceneScaleFromViewport(vp, 'centerScale', {
+      worldWidth: 7,
+      worldHeight: 13,
+      refMagnitudes: {
+        force: 20,
+        velocity: 3.0,
+        lorentzForce: 20,
+      },
+    })
+    // originY 覆盖：发射点在画面下方 80%
+    return { ...base, originY: vp.visibleH * 0.8 }
+  }, [vp])
+
+  // 坐标转换辅助函数 xw, yw -> pixel
+  const px = useCallback((xw: number) => worldToPixel(xw, 0, sceneScale).px, [sceneScale])
+  const py = useCallback((yw: number) => worldToPixel(0, yw, sceneScale).py, [sceneScale])
+
   // 4. Canvas 层绘图逻辑（粒子偏转本体与 300ms 拖尾）
   useEffect(() => {
-    const ctx = setupCanvasDPR(canvasRef, 350, 650)
+    const ctx = setupCanvasDPR(canvasRef, canvasSize.width, canvasSize.height)
     if (!ctx) return
 
-    ctx.clearRect(0, 0, 350, 650)
+    ctx.clearRect(0, 0, canvasSize.width, canvasSize.height)
 
     // 绘制 300ms (0.3s) 淡出拖尾轨迹
     const tailSteps = 20
@@ -140,16 +157,16 @@ export default function CircularGeometryModel() {
     for (let i = 1; i <= tailSteps; i++) {
       const t1 = time - tailDuration * (1 - (i - 1) / tailSteps)
       const t2 = time - tailDuration * (1 - i / tailSteps)
-      
+
       // 粒子进入磁场（t >= 0）后开始记录拖尾
       if (t1 >= 0) {
         const s1 = getParticleState(t1)
         const s2 = getParticleState(t2)
-        
+
         ctx.beginPath()
-        ctx.moveTo(175 + s1.px * 50, 520 - s1.py * 50)
-        ctx.lineTo(175 + s2.px * 50, 520 - s2.py * 50)
-        
+        ctx.moveTo(px(s1.px), py(s1.py))
+        ctx.lineTo(px(s2.px), py(s2.py))
+
         const alpha = (i / tailSteps) * 0.8
         ctx.strokeStyle = particleSign > 0
           ? withAlpha(PHYSICS_COLORS.positiveCharge, alpha)
@@ -162,38 +179,15 @@ export default function CircularGeometryModel() {
 
     // 绘制粒子本体圆球
     const curState = getParticleState(time)
-    const px_val = 175 + curState.px * 50
-    const py_val = 520 - curState.py * 50
-    
+
     ctx.beginPath()
-    ctx.arc(px_val, py_val, 7, 0, 2 * Math.PI)
+    ctx.arc(px(curState.px), py(curState.py), 7, 0, 2 * Math.PI)
     ctx.fillStyle = particleSign > 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge
     ctx.strokeStyle = PHYSICS_COLORS.white
     ctx.lineWidth = 2
     ctx.fill()
     ctx.stroke()
-  }, [time, velocity, B, angle, particleSign, boundaryType, xc, yc, R, tOut, exitState, getParticleState])
-
-  // 5. SVG 顶层辅助参数与 SceneScale 对象（用于 VectorArrow 渲染）
-  const sceneScale = useMemo(() => {
-    const config = {
-      vectorBounds: { x: 0, y: 0, width: 350, height: 650 },
-      originX: 175,
-      originY: 520,
-      worldWidth: 7,
-      worldHeight: 13,
-      refMagnitudes: {
-        force: 20,
-        velocity: 3.0,
-        lorentzForce: 20,
-      },
-    }
-    return createSceneScale(config)
-  }, [])
-
-  // 坐标转换辅助函数 xw, yw -> pixel
-  const px = (xw: number) => 175 + xw * 50
-  const py = (yw: number) => 520 - yw * 50
+  }, [time, velocity, B, angle, particleSign, boundaryType, xc, yc, R, tOut, exitState, getParticleState, canvasSize, sceneScale, px, py])
 
   // 6. 特征直角三角形顶点像素坐标计算
   const trianglePoints = useMemo(() => {
@@ -219,19 +213,19 @@ export default function CircularGeometryModel() {
         formula: '\\Delta\\varphi = 2\\arctan\\left(\\frac{R_b}{R}\\right)',
       }
     }
-  }, [boundaryType, xc, yc, exitState])
+  }, [boundaryType, xc, yc, exitState, px, py])
 
   const currentParticleState = getParticleState(time)
 
   return (
-    <div 
-      ref={sizeRef}
+    <div
+      ref={containerRef}
       className="w-full h-full relative select-none overflow-hidden"
     >
       {/* 1. 底层 SVG 渲染磁场边界图形与背景填充 */}
-      <svg 
-        className="absolute top-0 left-0 w-full h-full" 
-        viewBox={`0 0 ${DESIGN_SIZE.width} ${DESIGN_SIZE.height}`}
+      <svg
+        className="absolute top-0 left-0 w-full h-full"
+        viewBox={`0 0 ${canvasSize.width} ${canvasSize.height}`}
         preserveAspectRatio="xMidYMid meet"
       >
         <defs>
@@ -244,45 +238,45 @@ export default function CircularGeometryModel() {
         {/* 边界图形背景填充 */}
         {boundaryType === 0 && (
           <>
-            <rect x="0" y="0" width="350" height="520" fill="rgba(22, 163, 74, 0.05)" />
-            <rect x="0" y="0" width="350" height="520" fill="url(#bfield-pattern)" />
-            <line x1="0" y1="520" x2="350" y2="520" stroke="rgba(22, 163, 74, 0.4)" strokeWidth="3" />
-            <text x="16" y="540" fill="rgba(22, 163, 74, 0.8)" fontSize="12" fontWeight="bold">磁场边界 y = 0</text>
+            <rect x="0" y="0" width={canvasSize.width} height={py(0)} fill="rgba(22, 163, 74, 0.05)" />
+            <rect x="0" y="0" width={canvasSize.width} height={py(0)} fill="url(#bfield-pattern)" />
+            <line x1="0" y1={py(0)} x2={canvasSize.width} y2={py(0)} stroke="rgba(22, 163, 74, 0.4)" strokeWidth="3" />
+            <text x="16" y={py(0) + 20} fill="rgba(22, 163, 74, 0.8)" fontSize="12" fontWeight="bold">磁场边界 y = 0</text>
           </>
         )}
 
         {boundaryType === 1 && (
           <>
-            <rect x="25" y="320" width="300" height="200" fill="rgba(22, 163, 74, 0.05)" />
-            <rect x="25" y="320" width="300" height="200" fill="url(#bfield-pattern)" />
-            <rect x="25" y="320" width="300" height="200" stroke="rgba(22, 163, 74, 0.4)" strokeWidth="3" fill="none" />
-            <text x="30" y="540" fill="rgba(22, 163, 74, 0.8)" fontSize="12" fontWeight="bold">磁场底界 y = 0</text>
-            <text x="30" y="310" fill="rgba(22, 163, 74, 0.8)" fontSize="12" fontWeight="bold">磁场顶界 y = 4.0m</text>
+            <rect x={px(-3)} y={py(4)} width={px(3) - px(-3)} height={py(0) - py(4)} fill="rgba(22, 163, 74, 0.05)" />
+            <rect x={px(-3)} y={py(4)} width={px(3) - px(-3)} height={py(0) - py(4)} fill="url(#bfield-pattern)" />
+            <rect x={px(-3)} y={py(4)} width={px(3) - px(-3)} height={py(0) - py(4)} stroke="rgba(22, 163, 74, 0.4)" strokeWidth="3" fill="none" />
+            <text x={px(-3)} y={py(0) + 20} fill="rgba(22, 163, 74, 0.8)" fontSize="12" fontWeight="bold">磁场底界 y = 0</text>
+            <text x={px(-3)} y={py(4) - 10} fill="rgba(22, 163, 74, 0.8)" fontSize="12" fontWeight="bold">磁场顶界 y = 4.0m</text>
           </>
         )}
 
         {boundaryType === 2 && (
           <>
-            <circle cx="175" cy="345" r="175" fill="rgba(22, 163, 74, 0.05)" />
-            <circle cx="175" cy="345" r="175" fill="url(#bfield-pattern)" />
-            <circle cx="175" cy="345" r="175" stroke="rgba(22, 163, 74, 0.4)" strokeWidth="3" fill="none" />
-            <text x="175" y="155" textAnchor="middle" fill="rgba(22, 163, 74, 0.8)" fontSize="12" fontWeight="bold">圆形磁场边界 R_b = 3.5m</text>
+            <circle cx={px(0)} cy={py(3.5)} r={3.5 * sceneScale.scale} fill="rgba(22, 163, 74, 0.05)" />
+            <circle cx={px(0)} cy={py(3.5)} r={3.5 * sceneScale.scale} fill="url(#bfield-pattern)" />
+            <circle cx={px(0)} cy={py(3.5)} r={3.5 * sceneScale.scale} stroke="rgba(22, 163, 74, 0.4)" strokeWidth="3" fill="none" />
+            <text x={px(0)} y={py(3.5) - 3.5 * sceneScale.scale - 10} textAnchor="middle" fill="rgba(22, 163, 74, 0.8)" fontSize="12" fontWeight="bold">圆形磁场边界 R_b = 3.5m</text>
           </>
         )}
       </svg>
 
       {/* 2. 中层 Canvas 渲染高频粒子及轨迹 */}
-      <canvas 
-        ref={canvasRef} 
-        width={350} 
-        height={650} 
+      <canvas
+        ref={canvasRef}
+        width={canvasSize.width}
+        height={canvasSize.height}
         className="absolute top-0 left-0 w-full h-full object-contain"
       />
 
       {/* 3. 顶层 SVG Overlay 实时几何线及矢量箭头 */}
-      <svg 
-        className="absolute top-0 left-0 w-full h-full pointer-events-none" 
-        viewBox={`0 0 ${DESIGN_SIZE.width} ${DESIGN_SIZE.height}`}
+      <svg
+        className="absolute top-0 left-0 w-full h-full pointer-events-none"
+        viewBox={`0 0 ${canvasSize.width} ${canvasSize.height}`}
         preserveAspectRatio="xMidYMid meet"
       >
         {/* Step 1: 速度垂线 */}

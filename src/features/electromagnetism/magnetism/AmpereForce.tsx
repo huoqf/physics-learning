@@ -2,7 +2,7 @@
  * 安培力 F=BIL 动画组件
  *
  * @agent-rule 物理计算通过 ampereForceModel 代理层消费，禁止直接从 @/physics 引入
- * @agent-rule 遵循 useViewport + useCanvasSize + CANVAS_PRESETS + PHYSICS_COLORS theme token
+ * @agent-rule 遵循 useAnimationViewport + CANVAS_PRESETS + PHYSICS_COLORS theme token
  * @agent-rule 布局分区常量定义于 TOP_SECTION_H / BOTTOM_SECTION_H / CARD_W
  */
 import { HandRule } from '@/components/Physics'
@@ -11,7 +11,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 
 import { solveBasicAmpere, solveAdvancedAmpere, AMPERE_BASIC_SCENE } from './ampereForceModel'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { CANVAS_COLORS } from '@/theme/physics'
 
@@ -38,9 +38,7 @@ export default function AmpereForce() {
       showVectors: s.showVectors,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full)
-  // 方式 A（无 overlay）：viewBox 绑定固定设计尺寸，preserveAspectRatio 自动居中
-  useViewport(canvasSize, { designWidth: DESIGN_WIDTH, designHeight: DESIGN_HEIGHT })
+  const { containerRef, canvasSize } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
 
   // 读取控制参数

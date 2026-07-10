@@ -1,4 +1,4 @@
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useEffect, useMemo, useState } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -27,8 +27,7 @@ export default function FreeFallAnimation() {
     }))
   )
   const FF_DESIGN = CANVAS_PRESETS.full
-  const [containerRef, canvasSize] = useCanvasSize(FF_DESIGN, { presetCompensation: 1.2 })
-  const vp = useViewport(canvasSize, { designWidth: FF_DESIGN.width, designHeight: FF_DESIGN.height })
+  const { containerRef, vp } = useAnimationViewport({ preset: FF_DESIGN })
 
   // 参数
   const pressure = params.pressure ?? 0

@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { SimulationView } from './SimulationView'
-import { useCanvasSize } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { RelationChart, type RelationMarker } from '@/components/Chart'
 import { calcParticleRadius } from '@/physics'
@@ -10,13 +10,15 @@ import { PHYSICS_COLORS } from '@/theme/physics'
 export default function ChargeInBField() {
   const params = useAnimationStore((s) => s.params)
   const mode = params.mode ?? 0 // 0: 基础, 1: 进阶
-  const [sizeRef, size] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const { containerRef, canvasSize } = useAnimationViewport({
+    preset: CANVAS_PRESETS.full,
+  })
 
-  const isWide = size.width > size.height * 1.1
+  const isWide = canvasSize.width > canvasSize.height * 1.1
 
   if (mode === 0) {
     return (
-      <div ref={sizeRef} className={`w-full h-full flex overflow-hidden ${isWide ? 'flex-row' : 'flex-col'}`}>
+      <div ref={containerRef} className={`w-full h-full flex overflow-hidden ${isWide ? 'flex-row' : 'flex-col'}`}>
         <div className="flex-1 relative min-w-0 min-h-0 border-neutral-200" style={{ borderRightWidth: isWide ? 1 : 0, borderBottomWidth: isWide ? 0 : 1 }}>
           <SimulationView />
         </div>
@@ -31,7 +33,7 @@ export default function ChargeInBField() {
   }
 
   return (
-    <div ref={sizeRef} className="w-full h-full relative min-w-0 min-h-0">
+    <div ref={containerRef} className="w-full h-full relative min-w-0 min-h-0">
       <SimulationView />
     </div>
   )

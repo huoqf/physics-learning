@@ -1,5 +1,5 @@
 import { PhysicsGround, VectorArrow, VectorDefs } from '@/components/Physics'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -70,8 +70,7 @@ export default function FreeFallDripAnimation() {
     setIsPlaying: s.setIsPlaying,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-  const vp = useViewport(canvasSize, { designWidth: DESIGN_WIDTH, designHeight: DESIGN_HEIGHT })
+  const { containerRef, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
 
   // ── 参数 ──────────────────────────────────────────────────────────────────
   const dripPeriod = params.dripPeriod ?? 0.5

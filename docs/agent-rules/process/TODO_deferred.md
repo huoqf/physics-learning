@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-09（全量 preset 对齐实际容器宽度：full 700→840、splitV 700→840、splitH 350→420；20+ 组件硬编码坐标同步缩放；规范文档全部更新）
+> 最后更新：2026-07-10（VIEWPORT 迁移同步至 viewport_audit_report.md；清理纯完成记录）
 
 ---
 
@@ -190,180 +190,49 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 
 ---
 
-## 五、Viewport 架构重构收尾（P0/P1/P2 渐进式铺开）
+## 五、Viewport 架构迁移
 
-> 基础设施已就绪：`clientToSvgPoint` / `clientToContainerPoint`（P0 工具）、`createSceneScaleFromViewport(vp, 'visibleArea', ...)` 快捷字面量 API（P1 工具）、`useCanvasSize` 的 `{ presetCompensation: 1.2 }` 代偿参数（P2 工具）。以下为各专项剩余组件的渐进式迁移清单。
+> **详细状态请查看 [`viewport_audit_report.md`](../../viewport_audit_report.md)**
+>
+> 合规标准：使用 `useAnimationViewport` from `@/hooks`
+>
+> 当前进度：COMPLIANT 39 个 / LEGACY 69 个 / EXEMPT ~118 个
 
-### 5.1 P0 尾务：坐标映射统一 ~~（7 个文件）~~ → ✅ 已清零
+### 5.1 待迁移概览
 
-> Batch1（ElectricField、SpringComposite）+ Batch2（GravityAnimation、SatelliteAnimation、EnergyConservationAnimation、useVectorDrag、useEquilibriumPhysics、usePEInteraction、CircularMotionAnimation、useCentripetalPhysics、ProjectileAnimation、useObliqueThrowLayout、vtChartUtils）全部完成。全库 `clientX - rect.left` / `vp.tx` 手动算式已归零。
+| 风险等级 | 数量 | 说明 |
+|----------|------|------|
+| LOW | 2 | 设计尺寸恰好匹配 preset，直接替换即可 |
+| MEDIUM | 1 | 尺寸匹配但有 `vp.scale` 依赖 |
+| HIGH | 38 | 设计尺寸不匹配任何 preset，需重构布局 |
+| 类型导入 | 6 | 父组件迁移后自动兼容 |
 
-### 5.2 P1 推广：createSceneScaleFromViewport 快捷字面量（~~37~~ → 0 个文件，已清零）
+### 5.2 推荐迁移顺序
 
-> Batch2 已迁移：`ConnectedBodies`、`WorkAnimation`（2 个）。
-> P1 Continuous Cleanup 已迁移：`ChargeInEField`、`VectorAddition`、`useEquilibriumLayout`、`PotentialEnergy`、`SpringComposite`、`Acceleration`、`FreeFall`、`KinematicsAdvanced`、`ObliqueThrow`、`Projectile`、`UniformAcceleration`、`Velocity`、`VerticalThrow`、`Impulse`、`Momentum`、`MomentumTheorem`、`IntermolecularForces`（17 个）。
-> Easy 批量迁移：`FreeFallDripAnimation`、`VelocityAnimationStrip`、`StroboscopicAnimation`（3 个）。
-> 电磁学子组件迁移：`BasicMode`、`ThreeChargeMode`、`ElectricFieldBasicScene`、`ElectricFieldAdvancedScene`（4 个，父组件透传 vp/sceneScale）。
-> P1 centerScale worldWidth/worldHeight 补丁已迁移：`CircularMotionAnimation`、`useCentripetalPhysics`、`KeplerAnimation`、`SatelliteAnimation`（4 个）。
-> P1 子组件 vp 透传已迁移：`PowerScene`、`KineticEnergyScene`（2 个，父组件透传 vp）。
-> P1 轻量场景已迁移：`AccelerationCenterExtra`、`useForceMotionSandbox`（2 个，构造 minimal vp）。
+1. **第一批**：LOW 风险 2 个（`useVerticalCircularPhysics.ts`, `useCentripetalPhysics.ts`，square 650×650）
+2. **第二批**：MEDIUM 风险 1 个（KeplerAnimation，验证 vp.scale 依赖）
+3. **第三批**：按模块选代表文件逐模块迁移，每模块先 1 个验证再批量
+4. **最后**：类型导入 6 个（父组件迁移后自动兼容）
 
-将冗长的 `SceneConfig` 对象构造 + `createSceneScale()` 替换为 `createSceneScaleFromViewport(vp, 'visibleArea')` 一行调用。
+### 5.3 特殊迁移项
 
-| # | 文件 | 难度 | 说明 |
-|---|------|------|------|
-| 1 | `electromagnetism/magnetism/BoundaryMagneticField/SimulationView.tsx` | Hard | worldWidth/Height 动态计算，originY 条件分支 |
-| 2 | `electromagnetism/magnetism/velocity-selector/model/velocitySelectorModel.ts` | Hard | 纯函数，world 尺寸来自 scaleX/scaleY |
+| 文件 | 说明 |
+|------|------|
+| `CombinedFieldsAnimation.tsx` | 同时修复 foreignObject 违规（§2.3） |
+| `ChargeInEField.tsx` | 同时修复 foreignObject 违规（§2.3） |
+| `FieldLines.tsx` | 自定义 physics 与 `src/physics/electrostatics` 重复，需一并清理 |
+| `LenzsLawCanvas.tsx` | 已有 hook，拆子组件 + 迁移 viewBox |
 
-> **DEV 豁免**：`src/features/dev/` 目录为内部开发沙箱（如 `VectorPlayground.tsx`），不接入三屏自适应体系，无需实施视口与比例尺整改。
-> **架构豁免**：`SimulationView.tsx`（原生 Canvas 直绘）、`velocitySelectorModel.ts`（纯计算模型）均不走 `useViewport`，合法保留底层 `createSceneScale` 调用，已加固注释护栏。P1 推广实质清零。
-
-**执行策略**：维护到对应组件时顺手替换，逐步精简样板代码。
-
-### 5.3 P2 出清：废弃 Preset 平滑迁移（~~61~~ → 0 个文件，已清零）
-
-> P2 已全部清零：所有 `wide`/`tall` 引用已迁移至 `full` + `{ presetCompensation: 1.2 }`，`spacing.ts` 中 `wide` 和 `tall` 定义已删除。
-
-将 `CANVAS_PRESETS.wide` (700×400) / `CANVAS_PRESETS.tall` (700×450) 统一迁移为 `CANVAS_PRESETS.full` (840×650) + `{ presetCompensation: 1.2 }`。全库清零后在 `spacing.ts` 中删除 `wide` 和 `tall` 定义。
-
-**按学科模块分组**：
-
-**力学 — 运动学（6 个）**：`FreeFallDripAnimation`、`KinematicsAdvancedAnimation`、`VelocityAnimationStrip`、`UniformAccelerationAnimation`、`AccelerationAnimation`、`SpringCompositeAnimation`
-
-**力学 — 动力学（10 个）**：`GravityAnimation`、`GravityBasicAnimation`、`VectorAdditionAnimation`、`FrictionAnimation`、`ConnectedBodiesAnimation`、`NewtonSecondCenterExtra`、`WeightlessnessCenterExtra`、`EquilibriumAnimation`、`WeightlessnessAnimation`、`useForceMotionSandbox`
-
-**力学 — 其他（10 个）**：`KeplerAnimation`、`SatelliteAnimation`、`MomentumTheoremAnimation`、`ImpulseAnimation`、`MomentumAnimation`、`PowerAnimation`、`PotentialEnergyAnimation`、`useLightRodRopePhysics`、`ForceMotionTripleChart`、`hooks/useEquilibriumLayout`
-
-**电磁学 — 静电（4 个）**：`ElectricPotential`、`ElectricField`、`CapacitorChart`、`FieldLines`
-
-**电磁学 — 直流电路**：✅ 已清零
-
-**电磁学 — 电磁感应（7 个）**：`PowerTransmission`、`InductionPhenomenon`、`LenzsLawCanvas`、`ACValues`、`FaradayLaw`、`LenzsLaw`、`Transformer`
-
-**电磁学 — 其他（4 个）**：`CuttingEMF`、`ChargeInBField`、`VelocitySelector`、`BoundaryMagneticField/SimulationView`
-
-**光学（4 个）**：`ThinLensAnimation`、`ReflectionAnimation`、`RefractionAnimation`、`TIRAnimation`
-
-**热学（8 个）**：`IntermolecularForcesAnimation`、`IntermolecularForcesCenterExtra`、`BrownianMotion`、`SecondLawAnimation`、`FirstLawAnimation`、`ClapeyronAnimation`、`ClapeyronCenterExtra`、`GasLawsAnimation`
-
-**执行策略**：按学科模块分批处理，每批完成后跑全量检查。全部清零后删除 `spacing.ts` 中 `wide` 和 `tall` 定义。
+> **DEV 豁免**：`src/features/dev/` 目录为内部开发沙箱，无需迁移。
 
 ---
 
-## 六、Viewport 架构存量违规迁移
-
-> 来源：`07_CANVAS_SVG_CHART_RULES.md §2.3` 违规清单。新页面一律使用 §2.2 标准路径。
-> 迁移模式参考：TIRAnimation/RefractionAnimation（2026-07-08 已完成）。
-
-| 文件 | 违规类型 | 优先级 | 迁移要点 |
-|------|---------|-------|---------|
-| `GasLawsAnimation.tsx` | foreignObject 嵌入 RelationChart | 🟠 中 | ✅ 已完成：RelationChart 移至 HTML flex 分区，与 SVG 平级；`useCanvasSize`+`useViewport` → `useAnimationViewport` |
-| `ClapeyronAnimation.tsx` | foreignObject 嵌入 RelationChart | 🟠 中 | ✅ 已完成：RelationChart + PV/T 标注移至 HTML flex 层；`useCanvasSize`+`useViewport` → `useAnimationViewport` |
-| `ReflectionAnimation.tsx` | 固定 viewBox 800×500（非标准 preset） | 🟡 低 | ✅ 已完成：`useAnimationViewport` + `AnimationSvgCanvas`，设计坐标对齐 `CANVAS_PRESETS.full` |
-| `ThinLensAnimation.tsx` | 固定 viewBox 800×500 + foreignObject | 🟡 低 | ✅ 已完成：`useAnimationViewport` + `AnimationSvgCanvas`，设计坐标对齐 `CANVAS_PRESETS.full`；RelationChart 移至 HTML flex 层；`getScreenCTM().inverse()` → `useViewportPointer` |
-| `OhmLaw.tsx` | 固定 viewBox 650×400（非标准 preset） | 🟡 低 | ✅ 已完成：`useAnimationViewport(splitV)` + `AnimationSvgCanvas`，电路坐标原生重映射至 840×325 设计空间 |
-
-**执行策略**：按优先级逐个迁移，每次迁移后跑全量检查。foreignObject 类（🟠）优先于 fixed viewBox 类（🟡）。
-
----
-
-## 七、splitV/splitH 分屏页面迁移至 §2.2 标准路径
-
-> 来源：审计发现 14 个使用 `CANVAS_PRESETS.splitV/splitH` 的文件全部用旧式 `useCanvasSize` 直接调用，无一使用 `useAnimationViewport` + `AnimationSvgCanvas`。§2.2 规范已覆盖分屏场景（场景 4），但实现未跟进。
-> 迁移要点：`useCanvasSize(preset)` → `useAnimationViewport({ preset })`，手写 `<div ref> + <svg>` → `<AnimationSvgCanvas>`，外层 HTML flex 分区保持不变。
-
-### splitV — 上下分区（~~8 个~~ → 4 个待处理）
-
-| 文件 | 优先级 | 状态 | 迁移要点 |
-|------|-------|------|---------|
-| `CombinedFieldsAnimation.tsx` | 🟠 中 | 待处理 | 同时修复 foreignObject（§2.3 违规），图表移至 HTML flex 层 |
-| `ChargeInEField.tsx` | 🟠 中 | 待处理 | 同时检查是否有 foreignObject 嵌图表 |
-| `Capacitor.tsx` | 🟡 低 | ✅ 已完成 | 自包含模式：`useAnimationViewport` + `AnimationSvgCanvas` |
-| `InductionLoopField.tsx` | 🟡 低 | ✅ 已完成 | 子组件 `LoopPassFieldScene` 已改为自包含模式 |
-| `InductionDualRods.tsx` | 🟡 低 | ✅ 已完成 | 子组件 `DualRodsScene` 已改为自包含模式 |
-| `PhotoelectricSim.tsx` | 🟡 低 | ✅ 已完成 | Canvas 组件：`useCanvasSize` → `useAnimationViewport`，保留 `<canvas>` 渲染 |
-| `SpringForceHookeLawScene.tsx` | 🟡 低 | ✅ 已完成 | 自包含模式：`useAnimationViewport` + `AnimationSvgCanvas` |
-| `AmpereForce.tsx` | ⚪ 仅引用 | 豁免 | 仅引用 `splitV.height` 作为常量，无需 Hook 迁移 |
-
-### splitH — 左右分区（~~5 个~~ → 3 个待处理）
-
-| 文件 | 优先级 | 状态 | 迁移要点 |
-|------|-------|------|---------|
-| `CircularGeometryModel.tsx` | 🟠 中 | 待处理 | Canvas 直绘组件，需评估是否适合迁移到 SVG 标准路径 |
-| `BinaryStarsAnimation.tsx` | 🟡 低 | ✅ 已完成 | 自包含模式：修复动态 viewBox 反模式 → `AnimationSvgCanvas` |
-| `SpringForceCenterExtra.tsx` | 🟡 低 | ✅ 已完成 | 自包含模式：`useAnimationViewport`（图表组件，保留固定 viewBox） |
-| `SpringForceCutRopeScene.tsx` | 🟡 低 | ✅ 已完成 | 自包含模式：`useAnimationViewport` + `AnimationSvgCanvas` |
-
-**执行策略**：先处理与 §2.3 违规重叠的文件（CombinedFieldsAnimation、ChargeInEField），再批量处理标准替换类。Canvas 直绘组件（CircularGeometryModel）需单独评估迁移可行性。
-
-### 固定 viewBox 存量遗留（12 个待处理）
-
-> 来源：2026-07-09 审计发现，以下文件使用固定 viewBox 且未使用 `useAnimationViewport`，不属于 §七 splitV/splitH 或 §八 光学/电路范畴。
-
-**力学 — 运动学（3 个）**：
-
-| 文件 | 优先级 | 迁移要点 |
-|------|-------|---------|
-| `FreeFallScene.tsx` | 🟡 低 | 固定 viewBox → `useAnimationViewport(full)` + `AnimationSvgCanvas` |
-| `FreeFallDripAnimation.tsx` | 🟡 低 | 同上 |
-| `AccelerationCenterExtra.tsx` | 🟡 低 | 同上 |
-
-**力学 — 能量（1 个）**：
-
-| 文件 | 优先级 | 迁移要点 |
-|------|-------|---------|
-| `LightRodRopeAnimation.tsx` | 🟡 低 | 固定 viewBox → `useAnimationViewport(full)` + `AnimationSvgCanvas` |
-
-**电磁学 — 静电场（2 个）**：
-
-| 文件 | 优先级 | 迁移要点 |
-|------|-------|---------|
-| `FieldLines.tsx` | 🟠 中 | 固定 viewBox，同时检查是否有 physics 重复实现 |
-| `ElectricField.tsx` | 🟡 低 | 固定 viewBox → 标准路径 |
-
-**电磁学 — 电磁感应（3 个）**：
-
-| 文件 | 优先级 | 迁移要点 |
-|------|-------|---------|
-| `LenzsLawCanvas.tsx` | 🟠 中 | 已有 `useLenzsLaw` hook，拆子组件 + 迁移 viewBox |
-| `InductionPhenomenon.tsx` | 🟡 低 | 固定 viewBox → 标准路径 |
-| `ACValues.tsx` | 🟡 低 | 固定 viewBox → 标准路径 |
-
-**电磁学 — 直流电路（2 个）**：
-
-| 文件 | 优先级 | 迁移要点 |
-|------|-------|---------|
-| `CircuitAnalysis.tsx` | 🟡 低 | 固定 viewBox → 标准路径 |
-| `ClosedCircuit.tsx` | 🟡 低 | 固定 viewBox → 标准路径 |
-
-**热学（1 个）**：
-
-| 文件 | 优先级 | 迁移要点 |
-|------|-------|---------|
-| `ClapeyronCenterExtra.tsx` | 🟡 低 | 图表组件，保留固定 viewBox 或迁移到 `useAnimationViewport` |
-
-**执行策略**：🟠 中优先级文件先处理（FieldLines、LenzsLawCanvas），🟡 低优先级随维护顺手迁移。
-
----
-
-## 八、固定 viewBox 旧方案迁移（光学/电路模块）
-
-> 来源：审计报告——原使用非标准 `viewBox="0 0 800 500"` / `viewBox="0 0 650 400"` 固定尺寸，非 CANVAS_PRESETS 合法值，需迁移至 `useAnimationViewport` + `AnimationSvgCanvas` 标准路径。
-
-| 文件 | 原方案 | 迁移后 preset | 状态 |
-|------|-------|-------------|------|
-| `ReflectionAnimation.tsx` | 固定 viewBox 800×500 | `CANVAS_PRESETS.full` 840×650 | ✅ 已完成 |
-| `ThinLensAnimation.tsx` | 固定 viewBox 800×500 | `CANVAS_PRESETS.full` 840×650 | ✅ 已完成 |
-| `OhmLaw.tsx` | 固定 viewBox 650×400 | `CANVAS_PRESETS.splitV` 840×325 | ✅ 已完成 |
-
----
-
-## 九、组件索引与文档（P2）
+## 六、组件索引与文档（P2）
 
 > 来源：组件 barrel 整理（2026-07-09）后，`COMPONENT_REGISTRY.md` 骨架已创建，覆盖 15 个高频组件。部分组件缺少详细调用示例，需逐步补全。
 > 编写铁律：示例必须从源码 interface + `src/features/` 真实调用中提取，不得凭经验手写。
 
-### 9.1 Registry 示例补全
+### 6.1 Registry 示例补全
 
 以下组件已有完整示例（用途 + import + 最小 JSX + 禁止写法）：
 
@@ -393,7 +262,7 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 
 **执行策略**：每次补 3-5 个组件，补完跑 `tsc` 验证。优先补 `LeftPanel` 体系（AI 最常误用的布局组件）。
 
-### 9.2 场景模板（P3，第二阶段）
+### 6.2 场景模板（P3，第二阶段）
 
 > 当前无模板。AI 每次新建动画页面需从零拼 ThreePanel + AnimationSvgCanvas + LeftPanel 结构，效率低。
 
@@ -406,4 +275,4 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 
 模板内容：完整的文件骨架（imports + 组件结构 + 必需 hooks），AI 可直接复制后填充业务逻辑。
 
-**执行前提**：Registry 示例补全（9.1）完成后再做模板，避免模板中引用不完整的组件示例。
+**执行前提**：Registry 示例补全（6.1）完成后再做模板，避免模板中引用不完整的组件示例。
