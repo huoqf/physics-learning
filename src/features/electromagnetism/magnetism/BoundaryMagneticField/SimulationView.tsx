@@ -14,7 +14,7 @@ import {
   calculateCircularBoundaryExit,
   lorentzForceDir,
 } from '@/physics'
-import { VectorArrow, drawMagneticFieldGrid } from '@/components/Physics'
+import { VectorArrow, drawMagneticFieldGrid, drawCanvasParticleTrajectory } from '@/components/Physics'
 import { AnimationSvgCanvas } from '@/components/Layout'
 
 export function SimulationView() {
@@ -280,6 +280,32 @@ export function SimulationView() {
   // 速度矢量全程显示（入场前、磁场内、出场后）
   const showVelocityVector = progressTime >= -tSlideIn
 
+  // ── 焦点粒子全程轨迹点集（入场前 + 磁场内偏转 + 出场后，用于 drawCanvasParticleTrajectory）──
+  // 复用 getParticleState 三段式位置计算，统一采样 [tStart, tEnd] 全时间域。
+  const focusArcPredicted = useMemo(() => {
+    const tStart = -tSlideIn
+    const tEnd = focusState.tOut + tSlideIn
+    const steps = 160
+    const points: { x: number; y: number; t: number }[] = []
+    for (let i = 0; i <= steps; i++) {
+      const t = tStart + (i / steps) * (tEnd - tStart)
+      const state = getParticleState(t, 0, 0, v, activeTheta)
+      const { px, py } = worldToPixel(state.px, state.py, canvasSceneScale)
+      points.push({ x: px, y: py, t })
+    }
+    return points
+  }, [focusState.tOut, tSlideIn, v, activeTheta, getParticleState, canvasSceneScale])
+
+  // 历史轨迹：按真实时间过滤全程点集，三阶段连续
+  const focusArcHistory = useMemo(() => {
+    return focusArcPredicted.filter(p => p.t <= progressTime)
+  }, [focusArcPredicted, progressTime])
+
+  const focusArcTail = useMemo(() => {
+    const tailLen = Math.min(20, focusArcHistory.length)
+    return focusArcHistory.slice(-tailLen)
+  }, [focusArcHistory])
+
   useEffect(() => {
     const ctx = setupCanvasDPR(canvasRef, canvasSize.width, canvasSize.height)
     if (!ctx) return
@@ -542,67 +568,63 @@ export function SimulationView() {
       ctx.restore()
     }
 
-    // 绘制焦点粒子的主轨迹圆（辅助线，完整偏转圆周）
-    const { px: fcx, py: fcy } = worldToPixel(focusState.xc, focusState.yc, canvasSceneScale)
-    ctx.beginPath()
-    ctx.arc(fcx, fcy, R * canvasSceneScale.scale, 0, 2 * Math.PI)
-    ctx.strokeStyle = PHYSICS_COLORS.positiveCharge
-    ctx.setLineDash([4, 4])
-    ctx.lineWidth = 1.5
-    ctx.stroke()
-    ctx.setLineDash([])
+    // 绘制焦点粒子轨迹（统一组件：预测虚线 + 历史虚线 + 拖尾 + 本体）
+    const { px: fpx, py: fpy } = worldToPixel(focusState.px, focusState.py, canvasSceneScale)
+    drawCanvasParticleTrajectory({
+      ctx,
+      px: fpx,
+      py: fpy,
+      predictedPoints: focusArcPredicted,
+      historyPoints: focusArcHistory,
+      tailPoints: focusArcTail,
+      isFocus: true,
+      chargeSign: q > 0 ? '+' : '-',
+    })
 
-    // 绘制粒子并渲染彗星拖尾
-    const drawParticle = (part: { initX: number; vVal: number; theta: number; isFocus: boolean }) => {
-      const pState = getParticleState(progressTime, part.initX, 0, part.vVal, part.theta)
-      const { px: pX, py: pY } = worldToPixel(pState.px, pState.py, canvasSceneScale)
+    // 绘制非焦点粒子（进阶模式，保持原有拖尾效果）
+    if (mode === 1) {
+      particleFamily.filter(p => !p.isFocus).forEach(part => {
+        const pState = getParticleState(progressTime, part.initX, 0, part.vVal, part.theta)
+        const { px: pX, py: pY } = worldToPixel(pState.px, pState.py, canvasSceneScale)
 
-      // 拖尾
-      const tailPoints = []
-      const tailDuration = pState.tOut * 0.35
-      const steps = 18
-      for (let i = 0; i <= steps; i++) {
-        const tSample = progressTime - tailDuration * (1 - i / steps)
-        if (tSample >= -tSlideIn) {
-          const tState = getParticleState(tSample, part.initX, 0, part.vVal, part.theta)
-          const { px: sX, py: sY } = worldToPixel(tState.px, tState.py, canvasSceneScale)
-          tailPoints.push({ x: sX, y: sY, alpha: i / steps })
+        // 拖尾
+        const unfocusTail = []
+        const tailDuration = pState.tOut * 0.35
+        const tailSteps = 18
+        for (let i = 0; i <= tailSteps; i++) {
+          const tSample = progressTime - tailDuration * (1 - i / tailSteps)
+          if (tSample >= -tSlideIn) {
+            const tState = getParticleState(tSample, part.initX, 0, part.vVal, part.theta)
+            const { px: sX, py: sY } = worldToPixel(tState.px, tState.py, canvasSceneScale)
+            unfocusTail.push({ x: sX, y: sY, alpha: i / tailSteps })
+          }
         }
-      }
 
-      if (tailPoints.length > 1) {
-        ctx.save()
-        for (let i = 1; i < tailPoints.length; i++) {
-          const p1 = tailPoints[i - 1]
-          const p2 = tailPoints[i]
-          ctx.beginPath()
-          ctx.moveTo(p1.x, p1.y)
-          ctx.lineTo(p2.x, p2.y)
-          ctx.strokeStyle = part.isFocus ? PHYSICS_COLORS.positiveCharge : withAlpha(PHYSICS_COLORS.negativeCharge, 0.3)
-          ctx.globalAlpha = p1.alpha * (part.isFocus ? 0.6 : 0.25)
-          ctx.lineWidth = CANVAS_STYLE.object.pointMassRadius * (part.isFocus ? 0.7 : 0.4) * p1.alpha
-          ctx.stroke()
+        if (unfocusTail.length > 1) {
+          ctx.save()
+          for (let i = 1; i < unfocusTail.length; i++) {
+            const p1 = unfocusTail[i - 1]
+            const p2 = unfocusTail[i]
+            ctx.beginPath()
+            ctx.moveTo(p1.x, p1.y)
+            ctx.lineTo(p2.x, p2.y)
+            ctx.strokeStyle = withAlpha(PHYSICS_COLORS.negativeCharge, 0.3)
+            ctx.globalAlpha = p1.alpha * 0.25
+            ctx.lineWidth = CANVAS_STYLE.object.pointMassRadius * 0.4 * p1.alpha
+            ctx.stroke()
+          }
+          ctx.restore()
         }
-        ctx.restore()
-      }
 
-      // 本体球体
-      ctx.beginPath()
-      ctx.arc(pX, pY, part.isFocus ? CANVAS_STYLE.object.pointMassRadius : CANVAS_STYLE.object.pointMassRadius * 0.7, 0, 2 * Math.PI)
-      ctx.fillStyle = part.isFocus ? PHYSICS_COLORS.positiveCharge : withAlpha(PHYSICS_COLORS.negativeCharge, 0.4)
-      ctx.strokeStyle = PHYSICS_COLORS.white
-      ctx.lineWidth = part.isFocus ? 1.5 : 1
-      ctx.fill()
-      ctx.stroke()
-    }
-
-    if (mode === 0) {
-      // 基础模式绘制单个粒子
-      drawParticle({ initX: 0, vVal: v, theta: activeTheta, isFocus: true })
-    } else {
-      // 进阶模式绘制全粒子族，非焦点粒子先画以减少视觉遮挡
-      particleFamily.filter(p => !p.isFocus).forEach(p => drawParticle(p))
-      particleFamily.filter(p => p.isFocus).forEach(p => drawParticle(p))
+        // 本体球体
+        ctx.beginPath()
+        ctx.arc(pX, pY, CANVAS_STYLE.object.pointMassRadius * 0.7, 0, 2 * Math.PI)
+        ctx.fillStyle = withAlpha(PHYSICS_COLORS.negativeCharge, 0.4)
+        ctx.strokeStyle = PHYSICS_COLORS.white
+        ctx.lineWidth = 1
+        ctx.fill()
+        ctx.stroke()
+      })
     }
 
   }, [
@@ -628,7 +650,10 @@ export function SimulationView() {
     tSlideIn,
     getParticleState,
     particleFamily,
-    focusState
+    focusState,
+    focusArcPredicted,
+    focusArcHistory,
+    focusArcTail
   ])
 
 

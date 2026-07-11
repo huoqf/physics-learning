@@ -366,3 +366,37 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 | `KinematicsAdvancedAnimation.tsx` | 频闪点阵轨迹，非连续线 |
 | `SimplePendulumAnimation.tsx` | 波形图，非空间轨迹 |
 | `SpringCompositeAnimation.tsx` | 参考指示线，非轨迹 |
+
+### 7.5 已知问题（低风险，暂不修复）
+
+#### A. SVG `ParticleTrajectory` 本体球位置滞后（P3）
+
+> 2026-07-11 审查发现。量化验证后确认为低风险，暂不修复。
+
+**现象**：SVG 版 `ParticleTrajectory` 的本体球坐标取自 `historyPoints` 最后一项（采样点），而非精确当前位置。当 `tSim` 落在两个采样点之间时，本体球与矢量箭头（使用插值后的精确位置）不同步。
+
+**根因**：组件 API 只接受 `historyPoints`，无"精确当前位置"入参。调用方（如 `ChargeInEField.tsx`、`ObliqueThrowAnimation.tsx`）已计算插值后的 `currentState`/`cx`/`cy`，但无法传入。
+
+**量化评估**（以 `ChargeInEField.tsx` 默认参数为准）：
+- 物理积分步长 `dt = 0.0001s`，典型 `tEnd ≈ 0.027s`，采样点 ~270 个
+- 默认 `v0=15m/s`，`scale=1300px/m`：最大像素滞后 ≈ 1.95px（边缘可见），平均 ≈ 1px
+- 高速参数 `v0=30m/s`：最大滞后 ≈ 3.9px（可见）
+- 低速参数 `v0=5m/s`：最大滞后 ≈ 0.65px（不可见）
+
+**适用范围**：仅影响 SVG 版 `ParticleTrajectory`；Canvas 版 `drawCanvasParticleTrajectory` 由调用方传入精确 `px/py`，不受影响。
+
+**触发条件**：高速/强场参数 + 稀疏采样 + SVG 渲染路径。
+
+**建议修复方案**（当高速场景确认可见错位时再执行）：
+- 给 `ParticleTrajectoryProps` 增加可选入参 `currentPoint?: { x: number; y: number }`
+- 默认回退 `historyPoints.at(-1)`，保持向后兼容
+- 调用方传入插值后的精确坐标 `cx`/`cy`
+- 不动 Canvas 版（已正确）
+
+#### B. SVG/Canvas 拖尾渐变不一致（P3）
+
+**现象**：Canvas 版拖尾按段渐变（alpha + lineWidth 随 `ratio` 衰减），SVG 版拖尾为单一 path + 均匀 opacity。两者视觉表现差异较大。
+
+**根因**：SVG 单 path 无法表达沿路径的渐变，需改用多段 `<line>` 或 `<linearGradient>`，改造成本较高。
+
+**处理策略**：维持现状，规范未要求 SVG/Canvas 视觉完全一致。
