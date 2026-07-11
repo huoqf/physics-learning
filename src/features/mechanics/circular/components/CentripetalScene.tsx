@@ -1,24 +1,22 @@
 import { VectorArrow } from '@/components/Physics'
-import { RelationChart } from '@/components/Chart'
 import {
-  PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS,
+  PHYSICS_COLORS, SCENE_COLORS,
   CANVAS_STYLE, STROKE, DASH,
 } from '@/theme'
-import { CENTRIPETAL_LAYOUT, CENTRIPETAL_CHART_RANGE } from '../hooks/useCentripetalPhysics'
+import { CENTRIPETAL_LAYOUT } from '../hooks/useCentripetalPhysics'
 import type { CentripetalPhysicsResult } from '../hooks/useCentripetalPhysics'
 
 interface CentripetalSceneProps {
   physics: CentripetalPhysicsResult
+  font: (base: number) => number
 }
 
-export function CentripetalScene({ physics }: CentripetalSceneProps) {
+export function CentripetalScene({ physics, font }: CentripetalSceneProps) {
   const {
-    params, showFaCard,
+    params,
     a_c, F_c, x, y,
-    canvasSize, centerX, centerY, scale, ballPos,
-    cardWidth, cardHeight, cardX, cardY,
-    sceneScale, faPoints,
-    handleChartMouseDown,
+    centerX, centerY, scale, ballPos,
+    sceneScale,
   } = physics
 
   const { r, v, m, showAcceleration, showVectors } = params
@@ -51,9 +49,9 @@ export function CentripetalScene({ physics }: CentripetalSceneProps) {
       />
 
       <text x={centerX + r * scale + 20} y={centerY + 14}
-        fontSize={canvasSize.font(12)} fill={PHYSICS_COLORS.labelText} textAnchor="middle">x</text>
+        fontSize={font(12)} fill={PHYSICS_COLORS.labelText} textAnchor="middle">x</text>
       <text x={centerX + 12} y={centerY - r * scale - 20}
-        fontSize={canvasSize.font(12)} fill={PHYSICS_COLORS.labelText} textAnchor="middle">y</text>
+        fontSize={font(12)} fill={PHYSICS_COLORS.labelText} textAnchor="middle">y</text>
 
       <line
         x1={centerX} y1={centerY} x2={ballPos.cx} y2={ballPos.cy}
@@ -79,31 +77,14 @@ export function CentripetalScene({ physics }: CentripetalSceneProps) {
         </g>
       )}
 
-      {showFaCard && (
-        <g transform={`translate(${cardX}, ${cardY})`}>
-          <rect width={cardWidth} height={cardHeight} fill={SCENE_COLORS.materials.specularWhite}
-            rx={8} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} />
-          <foreignObject x={4} y={4} width={cardWidth - 8} height={cardHeight - 8}
-            style={{ pointerEvents: 'none' }}>
-            <div style={{ width: '100%', height: '100%' }}>
-              <RelationChart
-                points={faPoints}
-                xDomain={[0, CENTRIPETAL_CHART_RANGE.aMax]}
-                yDomain={[0, CENTRIPETAL_CHART_RANGE.fMax]}
-                xLabel="a (m/s²)" yLabel="F (N)"
-                title={`动力学联动 (F_c = m · a_c)  m=${m.toFixed(1)}kg`}
-                color={PHYSICS_COLORS.appliedForce} strokeWidth={1.5}
-                cursorX={a_c}
-                cursorLabel={(_x, f) => `F=${f.toFixed(1)}N`}
-                markers={[]}
-              />
-            </div>
-          </foreignObject>
-          <rect x={0} y={0} width={cardWidth} height={cardHeight}
-            fill="transparent" className="cursor-ew-resize"
-            onMouseDown={handleChartMouseDown} />
-        </g>
-      )}
+      <text
+        x={18}
+        y={650 - 20}
+        fontSize={font(11)}
+        fill={PHYSICS_COLORS.labelTextLight}
+      >
+        蓝：速度 v / 红：向心加速度 a_向 / 橙虚线：向心力 F_向
+      </text>
     </>
   )
 }

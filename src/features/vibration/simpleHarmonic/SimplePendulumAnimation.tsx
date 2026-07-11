@@ -114,6 +114,8 @@ export default function SimplePendulumAnimation() {
       maxVectorLength: 100,  // 显式覆盖：平衡矢量长度与可读性
     })
     // 手动对齐 origin 到摆球悬挂点，与 physicsToCanvasWithOrigin 一致
+    // ⚠️ 仅覆盖 origin，scale 来自 createSceneScaleFromViewport（基于 linePixelLength）。
+    // 若要迁移到 createSceneScaleFromDesignCenter，需同步重构 physicsToCanvasWithOrigin 调用。
     base.originX = pivotX
     base.originY = pivotY
     return base

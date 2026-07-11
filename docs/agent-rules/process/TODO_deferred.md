@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-11（§4.2.1 P1 三文件力方向迁移完成）
+> 最后更新：2026-07-11（§5 OrbitTransferAnimation 迁移完成 + MechanicalWave intentionalNonUniformScale 豁免）
 
 ---
 
@@ -238,25 +238,27 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 >
 > 合规标准：使用 `useAnimationViewport` from `@/hooks`
 >
-> 当前进度（2026-07-11 核对）：COMPLIANT 76 个 / LEGACY 128 个（含 CenterExtra、Chart 等非动画组件）
+> 当前进度（2026-07-11）：COMPLIANT 78 个 / LEGACY 127 个（含 CenterExtra、Chart 等非动画组件）
 >
-> 注：128 个 LEGACY 包含大量 CenterExtra/Chart/Sidebar 组件，实际需迁移的动画页面约 60-70 个。
+> 注：127 个 LEGACY 包含大量 CenterExtra/Chart/Sidebar 组件，实际需迁移的动画页面约 60-70 个。
+> 最新完成：OrbitTransferAnimation（2026-07-11，迁移到 createSceneScaleFromDesignCenter）、CentripetalAnimation（2026-07-11，含 foreignObject 违规修复）
 
 ### 5.1 待迁移概览
 
 | 风险等级 | 数量 | 说明 |
 |----------|------|------|
-| LOW | 2 | 设计尺寸恰好匹配 preset，直接替换即可 |
-| MEDIUM | 1 | 尺寸匹配但有 `vp.scale` 依赖 |
+| LOW | 1 | 设计尺寸恰好匹配 preset，直接替换即可（`useVerticalCircularPhysics.ts`） |
+| MEDIUM | 1 | 尺寸匹配但有 `vp.scale` 依赖（KeplerAnimation） |
 | HIGH | ~60 | 设计尺寸不匹配任何 preset，需重构布局 |
 | 类型导入 | 6 | 父组件迁移后自动兼容 |
 
 ### 5.2 推荐迁移顺序
 
-1. **第一批**：LOW 风险 2 个（`useVerticalCircularPhysics.ts`, `useCentripetalPhysics.ts`，square 650×650）
-2. **第二批**：MEDIUM 风险 1 个（KeplerAnimation，验证 vp.scale 依赖）
-3. **第三批**：按模块选代表文件逐模块迁移，每模块先 1 个验证再批量
-4. **最后**：类型导入 6 个（父组件迁移后自动兼容）
+1. ~~**第一批**：LOW 风险 2 个~~ → ✅ `useCentripetalPhysics.ts` 已完成（2026-07-11，含 foreignObject 修复）
+2. **下一批**：LOW 风险 1 个（`useVerticalCircularPhysics.ts`，square 650×650，同模块可复用模式）
+3. **第二批**：MEDIUM 风险 1 个（KeplerAnimation，验证 vp.scale 依赖）
+4. **第三批**：按模块选代表文件逐模块迁移，每模块先 1 个验证再批量
+5. **最后**：类型导入 6 个（父组件迁移后自动兼容）
 
 ### 5.3 特殊迁移项
 
@@ -266,6 +268,7 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 | `ChargeInEField.tsx` | 同时修复 foreignObject 违规（§2.3） |
 | `FieldLines.tsx` | 自定义 physics 与 `src/physics/electrostatics` 重复，需一并清理 |
 | `LenzsLawCanvas.tsx` | 已有 hook，拆子组件 + 迁移 viewBox |
+| `MechanicalWaveAnimation.tsx` | 非等比缩放（X 映射链长，Y 映射振幅），已设 `intentionalNonUniformScale: true` 豁免 VectorArrow warning，不迁移到 createSceneScaleFromDesignCenter |
 
 > **DEV 豁免**：`src/features/dev/` 目录为内部开发沙箱，无需迁移。
 

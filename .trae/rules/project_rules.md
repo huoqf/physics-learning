@@ -2,7 +2,7 @@
 
 > **Trae IDE 默认加载的项目规范文件。**
 > 详细规范见下方「快速索引」部分。
-> 最后更新：2026-07-11
+> 最后更新：2026-07-11（新增场景缩放约束 + createSceneScaleFromDesignCenter）
 
 ---
 
@@ -47,22 +47,23 @@
 
 | 序号 | 铁律 | 禁止 |
 |------|------|------|
-| 1 | **统一来源，禁止绕过**（八条约束见下方展开） | 硬编码颜色/魔法数字/裸值 `fontSize={N}`/自造 `<marker>`/直接 `requestAnimationFrame`/写死 `scale = N` |
+| 1 | **统一来源，禁止绕过**（十条子约束见下方展开） | 硬编码颜色/魔法数字/裸值 `fontSize={N}`/自造 `<marker>`/直接 `requestAnimationFrame`/写死 `scale = N` |
 | 2 | **物理层纯函数可序列化**：`src/physics/` 无副作用、无 DOM/React/window 依赖、有 JSDoc + 单位注释；所有数据结构可序列化（IndexedDB 持久化兼容） | 在 `physics/` 中访问 DOM/Store；不可序列化的数据结构（Set/Map/Function） |
 | 3 | **组件职责边界**：页面组件薄壳（路由+布局+数据注入）；三屏不交叉（详见 `02_UI_RULES.md §5.1`）；动画状态统一 `useAnimationStore` | 页面塞业务逻辑；右侧屏放参数控件；左侧屏放公式推导；另建 `usePhysicsState` |
 | 4 | **HashRouter only**：禁止 BrowserRouter（Electron `file://` 下路由 404） | BrowserRouter |
 | 5 | **组件复用优先**：场景中存在可复用组件时必须直接使用，禁止在 `features/` 中重复手写等效实现（详见下方展开） | 手写地面纹理/球体/滑块/矢量箭头/图表轴等已有组件实现 |
 | 6 | **左屏控制台声明式优先**：左屏必须使用 `LeftPanel` 体系；数值参数优先 `paramMeta → ParamControl`，模式/开关/预设/提示优先 `controlMeta → ControlPanel`；`SidebarExtra` 仅保留复杂自定义控制 | 新页面手写散乱左屏容器、简单模式切换/开关仍写 SidebarExtra、直接手写 `input[type=range]` |
 
-### 铁律 1 展开：统一来源八条约束
+### 铁律 1 展开：统一来源十条子约束
 
 1. **颜色/间距/圆角/阴影/动效** → 必须从 `src/theme/` 子模块引用
 2. **坐标转换** → 必须走 `physicsToCanvas()`（`src/utils/coordinate.ts`）
-3. **动画调度** → 必须通过 `src/utils/animation.ts` 的 Hook（禁止直接调用 `requestAnimationFrame`）
-4. **矢量箭头** → 必须使用 `VectorArrow` 组件；调用方式以 `COMPONENT_REGISTRY.md` 与源码 interface 为准，禁止手写 `<line>` + `<marker>`
-5. **画布尺寸** → 必须走 `useCanvasSize(CANVAS_PRESETS.xxx)`（`src/theme/spacing.ts`）
-6. **字体缩放** → 必须走 `font()` 函数（内置 clamp 7–16，来自 `useCanvasSize` 返回值）
-7. **布局缩放与 viewBox 绑定策略**：
+3. **场景缩放** → 统一使用 `createSceneScaleFromViewport`（viewport 驱动）或 `createSceneScaleFromDesignCenter`（设计中心驱动）构造 `SceneScale`；后者用于中心对称场景（圆周运动、天体轨道），产出的 sceneScale 与物体坐标（ballPos 等）使用相同公式保证对齐
+4. **动画调度** → 必须通过 `src/utils/animation.ts` 的 Hook（禁止直接调用 `requestAnimationFrame`）
+5. **矢量箭头** → 必须使用 `VectorArrow` 组件；调用方式以 `COMPONENT_REGISTRY.md` 与源码 interface 为准，禁止手写 `<line>` + `<marker>`
+6. **画布尺寸** → 新页面通过 `useAnimationViewport({ preset })` 统一获取（见约束 8）；存量旧组件维护时可用 `useCanvasSize(CANVAS_PRESETS.xxx)`（`src/theme/spacing.ts`），新页面禁止直接调用
+7. **字体缩放** → 必须走 `font()` 函数（内置 clamp 7–16，来自 `useCanvasSize` 返回值）
+8. **布局缩放与 viewBox 绑定策略**：
    - **【新页面唯一标准路径】**：`useAnimationViewport({ preset })` + `AnimationSvgCanvas`，无 viewBox，SVG 以 CSS 尺寸为视口，`vp.transform` 由组件内部处理；overlay 声明于 `overlayRight/Left/Top/Bottom` 参数（详见 `07_CANVAS_SVG_CHART_RULES.md §2.2`）。
      ```tsx
      const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
@@ -72,11 +73,11 @@
      ```
    - **【存量遗留，禁止新建】**：历史方式A（固定 viewBox）/ 方式B（动态 viewBox + overlay + vp.transform）/ 方式C（vp.visibleW/H 像素坐标），仅用于维护既有组件，按排期迁移至新标准路径（见 `07_CANVAS_SVG_CHART_RULES.md §2.3`）。
    - **严禁双重缩放反模式**：在**未声明 overlay 参数**时，`viewBox={\`0 0 ${width} ${height}\`}` 同时使用 `vp.transform` → 导致首次进入时画面"缓缓放大"视觉跳变。
-8. **Canvas+SVG 混合渲染坐标对齐**（含 `canvasRef` 的 `AnimationSvgCanvas`）：
+9. **Canvas+SVG 混合渲染坐标对齐**（约束 3 的混合渲染特例，含 `canvasRef` 的 `AnimationSvgCanvas`）：
    - **禁止**：用 `designW/worldWidth` 为基准的 sceneScale 直接计算 SVG 矢量起点设计坐标 → 宽高比不等于设计比时坐标偏移
    - **必须**：先通过 `canvasSceneScale` 算 canvas 像素坐标，再用 `vp.transform` 逆变换得到设计坐标（`dx = (cpx - vp.tx) / vp.scale`）
    - **`svgSceneScale.maxVectorLength`** 必须用 `canvasSceneScale.maxVectorLength / vp.scale`（详见 `07_CANVAS_SVG_CHART_RULES.md §2.2 场景5`）
-9. **渲染缩放策略互斥**：同一组件只能选一条核心渲染策略。**严禁在 SVG 内用 `<foreignObject>` 嵌入响应式 React 图表组件**（两套缩放叠加导致图表 X 轴消失）；需动画+图表并列时须在 HTML 层 `flex` 分区，两者平级而非嵌套。
+10. **渲染缩放策略互斥**：同一组件只能选一条核心渲染策略。**严禁在 SVG 内用 `<foreignObject>` 嵌入响应式 React 图表组件**（两套缩放叠加导致图表 X 轴消失）；需动画+图表并列时须在 HTML 层 `flex` 分区，两者平级而非嵌套。
 
 
 ### CANVAS_PRESETS 画布预设规格（4 种）
@@ -97,7 +98,7 @@
 
 实现动画场景时，**必须优先使用 `src/components/` 下已有组件**，禁止在 `features/` 内重新手写等效逻辑。
 
-**核心 API 入口**：
+**核心 API 入口**（选用逻辑见铁律 1 子约束 3、8）：
 
 | 需求 | 用什么 | import |
 |------|--------|--------|
@@ -110,6 +111,7 @@
 | 滑块/木块 | `Block` | `@/components/Physics` |
 | 地面/斜面/参考面 | `PhysicsGround` | `@/components/Physics` |
 | 场景物理比例尺 | `createSceneScaleFromViewport` | `@/scene` |
+| 设计中心比例尺 | `createSceneScaleFromDesignCenter` | `@/scene` |
 | 左屏控制台 | `LeftPanel` / `LeftPanelSection` | `@/components/UI` |
 | 左屏数值参数 | `ParamControl`（通过 `paramMeta` 驱动） | `@/components/UI` |
 | 左屏模式开关 | `ControlPanel`（通过 `controlMeta` 驱动） | `@/components/UI` |

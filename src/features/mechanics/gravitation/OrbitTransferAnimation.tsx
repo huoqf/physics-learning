@@ -7,7 +7,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, CANVAS_COLORS, STROKE, DASH, SCENE_COLORS } from '@/theme/physics'
-import { createSceneScaleFromViewport } from '@/scene'
+import { createSceneScaleFromDesignCenter } from '@/scene'
 import { EARTH_RADIUS } from '@/physics/constants'
 import {
   computeHohmannElements,
@@ -169,23 +169,19 @@ export default function OrbitTransferAnimation() {
   const earthPx = Math.max(18, EARTH_RADIUS * scale)
 
   const sceneScale = useMemo(() => {
-    const base = createSceneScaleFromViewport(vp, 'centerScale', {
+    return createSceneScaleFromDesignCenter({
       designWidth: DW,
       designHeight: DH,
-      worldWidth: maxR * 2.4,
-      worldHeight: maxR * 2.4,
+      centerX: cx,
+      centerY: cy,
+      scale,
       refMagnitudes: {
         velocity: hohmann.vp || 8000,
         gravity: 1,
       },
       maxVectorLength: 48,
     })
-    base.originX = cx
-    base.originY = cy
-    base.scaleX = scale
-    base.scaleY = scale
-    return base
-  }, [vp, maxR, scale, hohmann.vp, cx, cy])
+  }, [scale, hohmann.vp, cx, cy])
 
   const satX = cx + state.x * scale
   const satY = cy - state.y * scale

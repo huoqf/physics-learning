@@ -80,6 +80,13 @@ export function VectorArrow({
     );
   }
 
+  if (process.env.NODE_ENV !== 'production' && sceneScale.scaleX !== sceneScale.scaleY && !sceneScale.intentionalNonUniformScale) {
+    console.warn(
+      `[VectorArrow] sceneScale 非等比缩放 (scaleX=${sceneScale.scaleX}, scaleY=${sceneScale.scaleY})，` +
+      '矢量方向可能失真。如需非等比缩放，请确认这是有意为之。'
+    );
+  }
+
   const dir = normalize(vector);
   const refMag = overrideRefMag ?? sceneScale.refMagnitudes?.[type] ?? 0;
   const totalLength =

@@ -10,6 +10,8 @@ export interface SceneScale {
   originY: number;
   maxVectorLength: number;
   refMagnitudes?: Partial<Record<VectorType, number>>;
+  /** 标记非等比缩放是设计需求（如 X 映射链长、Y 映射振幅），VectorArrow 跳过 warning */
+  intentionalNonUniformScale?: boolean;
 }
 
 export function createSceneScale(config: SceneConfig): SceneScale {
@@ -50,6 +52,54 @@ export function worldToPixel(
     px: scene.originX + wx * scene.scaleX,
     py: scene.originY - wy * scene.scaleY,
   };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 设计坐标中心工厂
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 设计坐标中心工厂（对象参数版）
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface DesignCenterSceneScaleOptions {
+  designWidth: number
+  designHeight: number
+  centerX: number
+  centerY: number
+  scale: number
+  refMagnitudes?: Partial<Record<VectorType, number>>
+  /** 覆盖默认 maxVectorLength（默认 min(designW, designH) * 0.3） */
+  maxVectorLength?: number
+}
+
+/**
+ * 从设计坐标中心点与缩放生成 SceneScale。
+ *
+ * 用于场景需要以设计空间某点为物理原点（如圆周运动中心、摆的悬挂点）
+ * 且物体坐标需要从物理单位缩放到设计坐标的场景。
+ *
+ * VectorArrow 的 origin 输出（y↑正方向，与 VectorArrow 内部 y-flip 一致）：
+ *   x1 = centerX + physics.x * scale
+ *   y1 = centerY - physics.y * scale
+ *
+ * 调用方的物体坐标（ballPos 等）必须使用相同公式，保证对齐：
+ *   cx = centerX + physics.x * scale
+ *   cy = centerY - physics.y * scale
+ */
+export function createSceneScaleFromDesignCenter(
+  options: DesignCenterSceneScaleOptions,
+): SceneScale {
+  return {
+    originX: options.centerX,
+    originY: options.centerY,
+    scaleX: options.scale,
+    scaleY: options.scale,
+    scale: options.scale,
+    maxVectorLength: options.maxVectorLength ?? Math.min(options.designWidth, options.designHeight) * 0.3,
+    refMagnitudes: options.refMagnitudes,
+    intentionalNonUniformScale: false,
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -118,6 +168,8 @@ export function createSceneScaleFromViewport(
     maxVectorLength?: number;
     /** 中心区域布局模式（'splitH' | 'splitV'），用于 layout-aware 默认算法 */
     centerLayout?: 'splitH' | 'splitV';
+    /** 标记非等比缩放是设计需求，透传到返回的 SceneScale */
+    intentionalNonUniformScale?: boolean;
   }
 ): SceneScale {
   if (!profileOrMode) {
@@ -171,6 +223,9 @@ export function createSceneScaleFromViewport(
     base.maxVectorLength = options.maxVectorLength
   } else {
     base.maxVectorLength = getDefaultMaxVectorLength(sceneConfig.vectorBounds, options?.centerLayout)
+  }
+  if (options?.intentionalNonUniformScale) {
+    base.intentionalNonUniformScale = true
   }
   return base
 }

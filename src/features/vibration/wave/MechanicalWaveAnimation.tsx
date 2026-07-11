@@ -109,7 +109,9 @@ export default function MechanicalWaveAnimation() {
         velocity: 5,
       },
       maxVectorLength: 90,
+      intentionalNonUniformScale: true,
     })
+    // ⚠️ 非等比缩放：X 方向映射链长，Y 方向映射振幅，无法使用 createSceneScaleFromDesignCenter
     base.originX = originX
     base.originY = originY - 70
     base.scaleX = scaleX
