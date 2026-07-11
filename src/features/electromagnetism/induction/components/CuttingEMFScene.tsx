@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useMemo, useState } from 'react'
 import { PHYSICS_COLORS, EM_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
-import { Rails, ConductorRod, VectorArrow, VectorDefs } from '@/components/Physics'
+import { Rails, ConductorRod, VectorArrow, VectorDefs, MagneticFieldSymbols } from '@/components/Physics'
 import { CuttingEMFHandRule } from '../CuttingEMFHandRule'
 import type { CanvasSize } from '@/utils/useCanvasSize'
 import type { CuttingEMFPhysicsResult } from '../hooks/useCuttingEMFPhysics'
@@ -44,8 +44,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
   }, [])
 
   const fieldSymbols = useMemo(() => {
-    const symbols = []
-    const symbol = B_out === 1 ? '⊙' : '⊗'
+    const points: Array<{ x: number; y: number }> = []
     const stepX = px(30)
     const stepY = px(25)
 
@@ -54,27 +53,21 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
     const yStart = railCy - railSpacing / 2 + px(10)
     const yEnd = railCy + railSpacing / 2 - px(10)
 
-    let idx = 0
     for (let sx = xStart; sx <= xEnd; sx += stepX) {
       for (let sy = yStart; sy <= yEnd; sy += stepY) {
-        symbols.push(
-          <text
-            key={`b-sym-${idx++}`}
-            x={sx}
-            y={sy}
-            fontSize={font(17)}
-            fill={PHYSICS_COLORS.magneticField}
-            opacity={Math.min(0.45, 0.2 + (absB / 3.0) * 0.25)}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            style={{ userSelect: 'none' }}
-          >
-            {symbol}
-          </text>
-        )
+        points.push({ x: sx, y: sy })
       }
     }
-    return symbols
+
+    return (
+      <MagneticFieldSymbols
+        points={points}
+        direction={B_out === 1 ? 'out' : 'in'}
+        radius={font(7)}
+        strokeWidth={1.5}
+        opacity={Math.min(0.75, 0.4 + (absB / 3.0) * 0.25)}
+      />
+    )
   }, [absB, B_out, railLeftPos.cx, railRightPos.cx, railSpacing, railCy, px, font])
 
   return (

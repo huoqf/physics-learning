@@ -1,3 +1,5 @@
+import { lorentzForceDir } from './forces'
+
 export interface VelocitySelectorPoint {
   t: number
   x: number
@@ -148,8 +150,13 @@ export function calculateVelocitySelectorTrajectory(
   }
 
   const isInside = tEffective <= tOut
-  const fx = isInside && Math.abs(B_z) > 0 ? q * B_z * vy : 0
-  const fy = isInside && Math.abs(B_z) > 0 ? -q * B_z * vx : 0
+  const B_dir = B_z > 0 ? 'outOfPage' : 'intoPage' as const
+  const forceDir = isInside && Math.abs(B_z) > 0
+    ? lorentzForceDir({ x: vx, y: vy }, B_dir, q)
+    : { x: 0, y: 0 }
+  const forceMag = isInside ? Math.abs(q) * Math.hypot(vx, vy) * Math.abs(B_z) : 0
+  const fx = forceDir.x * forceMag
+  const fy = forceDir.y * forceMag
   const fEx = 0
   const fEy = isInside && Math.abs(E_y) > 0 ? q * E_y : 0
 

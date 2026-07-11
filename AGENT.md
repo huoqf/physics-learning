@@ -6,6 +6,32 @@
 
 ---
 
+## 📐 codebase-memory 同步策略
+
+codebase-memory 是静态快照，不会自动跟踪文件变更。采用 **检测 + 按需重建** 策略保持一致：
+
+### 会话开始时（必做）
+
+1. 调用 `codebase-memory_index_status` 检查索引状态
+2. 调用 `codebase-memory_detect_changes` 检查是否有未索引的变更
+3. 若 `changed_count > 0`，调用 `codebase-memory_index_repository` 重新索引
+
+### 会话中（按需）
+
+- 新增/删除大量文件后，主动 re-index
+- 重构涉及多文件 import 关系变更时，re-index
+
+### 判断标准
+
+| 场景 | 操作 |
+|------|------|
+| `detect_changes` 返回 0 变更 | 索引一致，直接使用 |
+| `detect_changes` 返回少量变更 (<5) | 可选 re-index，视任务而定 |
+| `detect_changes` 返回较多变更 (≥5) | 建议 re-index |
+| 刚 clone 新项目 | 首次必须 index_repository |
+
+---
+
 ## 🚀 规范加载策略
 
 ### 自动加载（无需手动读取）

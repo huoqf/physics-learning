@@ -134,3 +134,19 @@ export function clampEndpoint(
     cy: origin.cy + dy * tMax,
   }
 }
+
+/**
+ * SVG/画布坐标点 → 物理坐标点（仅 y 轴翻转）。
+ *
+ * SVG 坐标系 y↓为正，物理坐标系 y↑为正。本函数仅翻转 y，
+ * 不涉及平移或缩放，适用于力方向计算等"只需统一坐标系"的场景。
+ *
+ * 与 `canvasToPhysics` 的区别：后者同时做平移+缩放，返回真实物理量；
+ * 本函数保留原始数值，仅统一 y 方向。
+ *
+ * @param p SVG/画布坐标点 { x, y }（y↓正）
+ * @returns 物理坐标点 { x, y }（y↑正）
+ */
+export function svgPointToPhysicsPoint(p: { x: number; y: number }): { x: number; y: number } {
+  return { x: p.x, y: -p.y }
+}

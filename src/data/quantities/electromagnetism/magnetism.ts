@@ -236,7 +236,8 @@ export function handleMagnetism(animId: string, params: Record<string, number>, 
           // 单边界磁场 (y > 0)
           const thetaRad = (theta * Math.PI) / 180
           const sign = (q * B) >= 0 ? -1 : 1
-          const deltaPhi = sign === -1 ? 2 * thetaRad : 2 * (Math.PI - thetaRad)
+          // 偏转角：逆时针( sign=-1 ) π-2θ，顺时针( sign=1 ) 2θ
+          const deltaPhi = sign === -1 ? Math.PI - 2 * thetaRad : 2 * thetaRad
           const timeInB = T > 0 ? (deltaPhi / (2 * Math.PI)) * T : 0
           const exitDistance = 2 * R * Math.sin(thetaRad)
 

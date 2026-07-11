@@ -104,8 +104,8 @@ export const EM_COLORS = {
   electricFieldLine:  withAlpha(electricFieldBase, 0.42), // 电场线（半透明弱化）
   magneticField:      magneticFieldBase, // 磁感应强度 B（物理量主色，保持向下兼容）
   magneticFieldLine:  withAlpha(magneticFieldBase, 0.38), // 背景磁感线（半透明弱化）
-  magneticFieldDot:   withAlpha(magneticFieldBase, 0.45), // 磁场点（出纸面 ·）
-  magneticFieldCross: withAlpha(magneticFieldBase, 0.45), // 磁场叉（入纸面 ×）
+  magneticFieldDot:   magneticFieldBase, // 磁场点（出纸面 ·）
+  magneticFieldCross: magneticFieldBase, // 磁场叉（入纸面 ×）
   electricCurrent:    '#DC2626', // 电流 I             — 电流红 (Red-600，符合教材习惯)
   currentDirection:   '#EF4444', // 电流方向箭头        — red-500
   electricPotential:  '#A16207', // 电势 φ             — 棕黄

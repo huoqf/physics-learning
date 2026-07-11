@@ -113,7 +113,7 @@ export function calculateDoubleBoundaryExit(
   const R = calcParticleRadius(m, v, q, B)
   const omega = Math.abs((q * B) / m)
   const thetaRad = (thetaDeg * Math.PI) / 180
-  const sign = (q * B) >= 0 ? -1 : 1 // -1 为顺时针，1 为逆时针
+  const sign = (q * B) >= 0 ? 1 : -1 // 1 为逆时针（向左），-1 为顺时针（向右）
 
   // 临界半径 R_crit = d / (1 - sign * cos(theta))
   // 当 sign = -1 (右偏) 时，R_crit = d / (1 + cos(theta))，这里需要注意极角方向
@@ -141,11 +141,11 @@ export function calculateDoubleBoundaryExit(
     // 根据对称性，出射点 x_out = 2 * xc
     x = 2 * xc
     y = 0
-    // 偏转角
-    const deltaPhi = sign === -1 ? 2 * thetaRad : 2 * (Math.PI - thetaRad)
+    // 偏转角：逆时针 2π-2θ（长弧），顺时针 2θ（短弧）
+    const deltaPhi = sign === 1 ? 2 * Math.PI - 2 * thetaRad : 2 * thetaRad
     t = deltaPhi / omega
-    // 出射速度
-    const exitAngle = thetaRad + sign * deltaPhi
+    // 出射速度方向统一为 -θ
+    const exitAngle = -thetaRad
     vx = v * Math.cos(exitAngle)
     vy = v * Math.sin(exitAngle)
   } else {
@@ -153,22 +153,19 @@ export function calculateDoubleBoundaryExit(
     y = d
     // 解 (x - xc)^2 + (d - yc)^2 = R^2 => x = xc + sign * sqrt(R^2 - (d - yc)^2)
     const sqrtVal = Math.sqrt(Math.max(0, R * R - (d - yc) * (d - yc)))
-    x = xc - sign * sqrtVal
+    x = xc + sign * sqrtVal
 
-    // 计算入射极角和出射极角
-    // 入射极角 (0,0)
+    // 计算圆心角 deltaPhi（入射极角 → 出射极角）
     const phiIn = Math.atan2(-yc, -xc)
-    // 出射极角 (x, d)
     const phiOut = Math.atan2(d - yc, x - xc)
-
-    // 圆心角 deltaPhi
     let deltaPhi = Math.abs(phiOut - phiIn)
     if (deltaPhi > Math.PI) {
       deltaPhi = 2 * Math.PI - deltaPhi
     }
     t = deltaPhi / omega
 
-    const exitAngle = thetaRad + sign * deltaPhi
+    // 出射速度：切线方向 = phiOut + sign * π/2
+    const exitAngle = phiOut + sign * Math.PI / 2
     vx = v * Math.cos(exitAngle)
     vy = v * Math.sin(exitAngle)
   }
@@ -197,13 +194,13 @@ export function calculateCircularBoundaryExit(
 } {
   const R = calcParticleRadius(m, v, q, B)
   const omega = Math.abs((q * B) / m)
-  const sign = (q * B) >= 0 ? -1 : 1
+  const sign = (q * B) >= 0 ? 1 : -1 // 1 为逆时针（向左），-1 为顺时针（向右）
 
   // 根据推导：
   // x_out = -sign * 2 * R * Rb^2 / (R^2 + Rb^2)
   // y_out = 2 * R^2 * Rb / (R^2 + Rb^2)
   const denom = R * R + Rb * Rb
-  const x = sign * (2 * R * Rb * Rb) / denom
+  const x = -sign * (2 * R * Rb * Rb) / denom
   const y = (2 * R * R * Rb) / denom
 
   // 偏转角 deltaPhi 满足 tan(deltaPhi/2) = Rb / R
@@ -217,5 +214,78 @@ export function calculateCircularBoundaryExit(
   const vy = v * Math.sin(exitAngle)
 
   return { x, y, vx, vy, t, R, deltaPhi }
+}
+
+// ─── 力方向单位向量（物理坐标系 y↑正，可直接传入 VectorArrow） ─────────────
+
+/** 磁场方向：垂直纸面时只有两种取向 */
+export type BDirection = 'outOfPage' | 'intoPage'
+
+/**
+ * 洛伦兹力方向单位向量。F = qv × B，2D 平面内 B 垂直纸面。
+ *
+ * 物理坐标系：x→右为正，y↑为正。
+ * - `'outOfPage'` (⊙)：Bz = +1
+ * - `'intoPage'` (×)：Bz = -1
+ *
+ * 叉积分量：F = q(vy·Bz, -vx·Bz, 0)
+ *
+ * @param velocity 速度向量 {x, y}（物理坐标系，y↑正），仅方向参与计算
+ * @param B_dir 磁场方向
+ * @param q 电荷量（含符号，C）
+ * @returns 物理坐标系下单位方向向量；速度为 0 或 q 为 0 时返回 {0,0}
+ */
+export function lorentzForceDir(
+  velocity: { x: number; y: number },
+  B_dir: BDirection,
+  q: number,
+): { x: number; y: number } {
+  if (q === 0 || (velocity.x === 0 && velocity.y === 0)) return { x: 0, y: 0 }
+  const Bz = B_dir === 'outOfPage' ? 1 : -1
+  const sign = q > 0 ? 1 : -1
+  const fx = velocity.y * Bz
+  const fy = -velocity.x * Bz
+  const mag = Math.sqrt(fx * fx + fy * fy)
+  if (mag === 0) return { x: 0, y: 0 }
+  return { x: (sign * fx) / mag, y: (sign * fy) / mag }
+}
+
+/**
+ * 电场力方向单位向量。F = qE，正电荷与 E 同向，负电荷反向。
+ *
+ * @param E_dir 电场方向 {x, y}（物理坐标系，y↑正），仅方向参与计算
+ * @param q 电荷量（含符号，C）
+ * @returns 物理坐标系下单位方向向量；q 为 0 或 E 为 0 时返回 {0,0}
+ */
+export function electricForceDir(
+  E_dir: { x: number; y: number },
+  q: number,
+): { x: number; y: number } {
+  if (q === 0) return { x: 0, y: 0 }
+  const sign = q > 0 ? 1 : -1
+  const mag = Math.sqrt(E_dir.x * E_dir.x + E_dir.y * E_dir.y)
+  if (mag === 0) return { x: 0, y: 0 }
+  return { x: (sign * E_dir.x) / mag, y: (sign * E_dir.y) / mag }
+}
+
+/**
+ * 向心力方向单位向量，从粒子位置指向圆心。
+ *
+ * 物理坐标系：x→右为正，y↑为正。pos 与 center 必须使用同一坐标系。
+ * 注意：若调用方持有 SVG/设计坐标（y↓正），需先将 y 取反转为物理坐标再传入。
+ *
+ * @param pos 粒子位置 {x, y}（物理坐标系，y↑正）
+ * @param center 圆心位置 {x, y}（物理坐标系，y↑正）
+ * @returns 物理坐标系下单位方向向量；pos 与 center 重合时返回 {0,0}
+ */
+export function centripetalForceDir(
+  pos: { x: number; y: number },
+  center: { x: number; y: number },
+): { x: number; y: number } {
+  const dx = center.x - pos.x
+  const dy = center.y - pos.y
+  const mag = Math.sqrt(dx * dx + dy * dy)
+  if (mag === 0) return { x: 0, y: 0 }
+  return { x: dx / mag, y: dy / mag }
 }
 

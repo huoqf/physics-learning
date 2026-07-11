@@ -1,4 +1,4 @@
-import { VectorArrow, VectorDefs, Ball } from '@/components/Physics'
+import { VectorArrow, VectorDefs, Ball, ParticleTrajectory } from '@/components/Physics'
 import { useCanvasSize, useViewport, physicsToCanvasWithOrigin, clientToContainerPoint } from '@/utils'
 import React, { useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -11,7 +11,6 @@ import {
   STROKE,
   DASH,
   FONT,
-  CANVAS_STYLE,
 } from '@/theme/physics'
 
 import { VelocityTimeChart } from '@/components/Chart'
@@ -173,29 +172,31 @@ export default function ProjectileAnimation() {
 
   // ── 5. 动态轨迹曲线路径生成 ─────────────────────────────
   const activeT = Math.min(effectiveTime, groundTime)
-  const activeTVac = Math.min(effectiveTime, groundTimeVac)
 
-  // 物理演练区实际抛物线路径
-  const physicalPathD = useMemo(() => {
-    const pts: string[] = []
+  // ParticleTrajectory 所需的点集
+  const historyPoints = useMemo(() => {
+    const pts: { x: number; y: number }[] = []
     for (const pt of trajectory.points) {
       if (pt.t > activeT + 1e-5) break
       const { cx, cy } = physicsToCanvasWithOrigin(pt.x, pt.y, originX, originY, scale)
-      pts.push(`${cx},${cy}`)
+      pts.push({ x: cx, y: cy })
     }
-    return pts.length > 1 ? `M ${pts.join(' L ')}` : ''
+    return pts
   }, [trajectory.points, activeT, scale, originX, originY])
 
-  const physicalVacPathD = useMemo(() => {
-    if (!showDoubleTrack) return ''
-    const pts: string[] = []
-    for (const pt of trajectory.vacuumPoints) {
-      if (pt.t > activeTVac + 1e-5) break
+  // 预测轨迹：有阻力时显示真空理想路径，否则显示完整理论抛物线
+  const predictedPoints = useMemo(() => {
+    const src = showDoubleTrack ? trajectory.vacuumPoints : trajectory.points
+    return src.map((pt) => {
       const { cx, cy } = physicsToCanvasWithOrigin(pt.x, pt.y, originX, originY, scale)
-      pts.push(`${cx},${cy}`)
-    }
-    return pts.length > 1 ? `M ${pts.join(' L ')}` : ''
-  }, [trajectory.vacuumPoints, activeTVac, scale, originX, originY, showDoubleTrack])
+      return { x: cx, y: cy }
+    })
+  }, [trajectory, showDoubleTrack, scale, originX, originY])
+
+  const tailPoints = useMemo(() => {
+    const tailLen = Math.min(8, historyPoints.length)
+    return historyPoints.slice(-tailLen)
+  }, [historyPoints])
 
   // v-t 图 VelocityTimeChart 数据
   const vtPointsVx = useMemo(
@@ -329,12 +330,15 @@ export default function ProjectileAnimation() {
         <text x={originX - 10} y={groundY + 4} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="end">y = 0</text>
         <text x={canvasSize.width - 25} y={groundY + 16} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">x</text>
 
-        {/* 运动历史轨迹线 */}
-        {physicalVacPathD && (
-          <path d={physicalVacPathD} fill="none" stroke={PHYSICS_COLORS.trackHistoryAlt} strokeWidth={STROKE.trackHistory} strokeDasharray={DASH.reference.join(' ')} opacity={0.6} />
-        )}
-        {physicalPathD && (
-          <path d={physicalPathD} fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={STROKE.trackHistory} />
+        {/* 粒子轨迹（统一组件：预测虚线 + 历史虚线 + 拖尾 + 本体） */}
+        {historyPoints.length > 0 && (
+          <ParticleTrajectory
+            historyPoints={historyPoints}
+            predictedPoints={predictedPoints}
+            tailPoints={tailPoints}
+            isFocus
+            chargeSign="none"
+          />
         )}
 
         {/* 分方向匀速/落体投影球及虚线 */}
@@ -377,15 +381,6 @@ export default function ProjectileAnimation() {
             strokeWidth={0.8}
           />
         )}
-
-        {/* 实际钢珠小球 (水平飞跃) */}
-        <Ball
-          cx={Math.min(vp.visibleX + vp.visibleW - PROJECTILE_LAYOUT.steelBallRadius, ballCanvas.cx)}
-          cy={Math.min(groundY, ballCanvas.cy)}
-          r={PROJECTILE_LAYOUT.steelBallRadius}
-          type="steel"
-          strokeWidth={CANVAS_STYLE.stroke.objectLine}
-        />
 
         {/* 速度矢量分解箭头 (经典配色) */}
         {showVectors && !isLanded && (

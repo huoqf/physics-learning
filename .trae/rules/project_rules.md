@@ -2,7 +2,7 @@
 
 > **Trae IDE 默认加载的项目规范文件。**
 > 详细规范见下方「快速索引」部分。
-> 最后更新：2026-07-08
+> 最后更新：2026-07-11
 
 ---
 
@@ -72,7 +72,12 @@
      ```
    - **【存量遗留，禁止新建】**：历史方式A（固定 viewBox）/ 方式B（动态 viewBox + overlay + vp.transform）/ 方式C（vp.visibleW/H 像素坐标），仅用于维护既有组件，按排期迁移至新标准路径（见 `07_CANVAS_SVG_CHART_RULES.md §2.3`）。
    - **严禁双重缩放反模式**：在**未声明 overlay 参数**时，`viewBox={\`0 0 ${width} ${height}\`}` 同时使用 `vp.transform` → 导致首次进入时画面"缓缓放大"视觉跳变。
-8. **渲染缩放策略互斥**：同一组件只能选一条核心渲染策略。**严禁在 SVG 内用 `<foreignObject>` 嵌入响应式 React 图表组件**（两套缩放叠加导致图表 X 轴消失）；需动画+图表并列时须在 HTML 层 `flex` 分区，两者平级而非嵌套。
+8. **Canvas+SVG 混合渲染坐标对齐**（含 `canvasRef` 的 `AnimationSvgCanvas`）：
+   - **禁止**：用 `designW/worldWidth` 为基准的 sceneScale 直接计算 SVG 矢量起点设计坐标 → 宽高比不等于设计比时坐标偏移
+   - **必须**：先通过 `canvasSceneScale` 算 canvas 像素坐标，再用 `vp.transform` 逆变换得到设计坐标（`dx = (cpx - vp.tx) / vp.scale`）
+   - **`svgSceneScale.maxVectorLength`** 必须用 `canvasSceneScale.maxVectorLength / vp.scale`（详见 `07_CANVAS_SVG_CHART_RULES.md §2.2 场景5`）
+9. **渲染缩放策略互斥**：同一组件只能选一条核心渲染策略。**严禁在 SVG 内用 `<foreignObject>` 嵌入响应式 React 图表组件**（两套缩放叠加导致图表 X 轴消失）；需动画+图表并列时须在 HTML 层 `flex` 分区，两者平级而非嵌套。
+
 
 ### CANVAS_PRESETS 画布预设规格（4 种）
 
@@ -100,6 +105,7 @@
 | SVG 画布容器 | `AnimationSvgCanvas` | `@/components/Layout` |
 | 三栏页面布局 | `ThreePanel` | `@/components/Layout` |
 | 物理矢量箭头 | `VectorArrow` | `@/components/Physics` |
+| 粒子轨迹（历史+预测+拖尾+本体） | `ParticleTrajectory` | `@/components/Physics` |
 | 质点/小球 | `Ball` | `@/components/Physics` |
 | 滑块/木块 | `Block` | `@/components/Physics` |
 | 地面/斜面/参考面 | `PhysicsGround` | `@/components/Physics` |

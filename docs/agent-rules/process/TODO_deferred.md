@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-10（VIEWPORT 迁移同步至 viewport_audit_report.md；清理纯完成记录）
+> 最后更新：2026-07-11（§4.2.1 P1 三文件力方向迁移完成）
 
 ---
 
@@ -57,14 +57,18 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 | 文件 | 当前行数 | 已有 physics | 拆分方向 | 目标行数 |
 |------|-----:|:---:|---------|-----:|
-| `SpringCompositeAnimation.tsx` | 585 | 无 hook；已用 `src/physics/verticalSpring` | 抽 `useSpringCompositePhysics` hook + `SpringPhysicalScene` 组件 | ~150 |
-| `TIRAnimation.tsx` | 564 | 无 hook；已用 `src/physics/optics`（3 函数） | 抽 `useTIRPhysics` hook + `SingleBeamMode` / `PointSourceMode` 组件；SVG 工具函数去重（`arrowHeadPoints` 与 RefractionAnimation 重复） | ~80 |
-| `FieldLines.tsx` | 559 | 无 hook；**自定义 `electricField`/`potential` 与 `src/physics/electrostatics` 重复** | 纯函数迁入 `src/physics/fieldLines.ts` + 抽 `useFieldLinesPhysics` hook（4 个 useMemo） | ~200 |
-| `ConnectedBodiesAnimation.tsx` | 557 | 无 hook；已用 `src/physics/dynamics/connected-body`（2 函数） | 抽 `useConnectedBodiesPhysics` hook + `MassBlock` / `ConnectionElement` / `ForceVectorGroup` 组件 | ~100 |
-| `LenzsLawCanvas.tsx` | 542 | 已有 `useLenzsLaw` hook | 拆子组件：`GalvanometerWiring` / `FluxChangePanel` / `StatusMonitorPanel` / `HandRulePanel` / `DraggableMagnet`；视觉缩放公式移入 hook | ~120 |
-| `InclineForceDiagram.tsx` | 539 | 无 hook；无 `src/physics` 导入（力分解全部内联） | 抽 `useInclineForceLayout` hook + `InclineSlopeBackground` / `OrthogonalDecompositionOverlay` / `InclineForceVectors` 组件；`projectForce`/`F_max` 提取为共享工具（`ForcePolygon` 重复） | ~120 |
-| `GravityBasicAnimation.tsx` | 519 | 无 hook；`src/physics/dynamics` 有 `calculateEarthGravity` 但**未复用** | 复用 `calculateEarthGravity` + 抽 `useSuspendedPlatePhysics` hook；拆 `EarthGravityScene` / `SuspendedPlateScene` 组件（两个 mode 完全独立） | ~60 |
-| `CircularMotionAnimation.tsx` | 506 | 无 hook；已用 `src/physics/kinematics/formulas`（`calculateCircularMotion`） | 抽 `useCircularMotionPhysics` hook + `CircularMotionScene` / `SHMWaveCard` 组件（对齐 `CentripetalAnimation` 已有架构） | ~40 |
+| `TIRAnimation.tsx` | 556 | 无 hook；已用 `src/physics/optics`（3 函数） | 抽 `useTIRPhysics` hook + `SingleBeamMode` / `PointSourceMode` 组件；SVG 工具函数去重（`arrowHeadPoints` 与 RefractionAnimation 重复） | ~80 |
+| `FieldLines.tsx` | 567 | 无 hook；**自定义 `electricField`/`potential` 与 `src/physics/electrostatics` 重复** | 纯函数迁入 `src/physics/fieldLines.ts` + 抽 `useFieldLinesPhysics` hook（4 个 useMemo） | ~200 |
+| `ConnectedBodiesAnimation.tsx` | 550 | 无 hook；已用 `src/physics/dynamics/connected-body`（2 函数） | 抽 `useConnectedBodiesPhysics` hook + `MassBlock` / `ConnectionElement` / `ForceVectorGroup` 组件 | ~100 |
+| `LenzsLawCanvas.tsx` | 554 | 已有 `useLenzsLaw` hook | 拆子组件：`GalvanometerWiring` / `FluxChangePanel` / `StatusMonitorPanel` / `HandRulePanel` / `DraggableMagnet`；视觉缩放公式移入 hook | ~120 |
+| `InclineForceDiagram.tsx` | 552 | 无 hook；无 `src/physics` 导入（力分解全部内联） | 抽 `useInclineForceLayout` hook + `InclineSlopeBackground` / `OrthogonalDecompositionOverlay` / `InclineForceVectors` 组件；`projectForce`/`F_max` 提取为共享工具（`ForcePolygon` 重复） | ~120 |
+| `GravityBasicAnimation.tsx` | 511 | 无 hook；`src/physics/dynamics` 有 `calculateEarthGravity` 但**未复用** | 复用 `calculateEarthGravity` + 抽 `useSuspendedPlatePhysics` hook；拆 `EarthGravityScene` / `SuspendedPlateScene` 组件（两个 mode 完全独立） | ~60 |
+
+> ~~已降至阈值以下（2026-07-11 核对）~~：`SpringCompositeAnimation.tsx`(322)、`CircularMotionAnimation.tsx`(495)
+>
+> 临近阈值（450-499）：`LightRodRopeScene.tsx`(485)、`WorkFSChart.tsx`(469)、`RefractionAnimation.tsx`(462)、`AccelerationCenterExtra.tsx`(462)、`GravityAnimation.tsx`(459)、`ImpulseAnimation.tsx`(457)、`UniformAccelerationAnimation.tsx`(455)
+>
+> 已拆分：`PowerTransmission.tsx`(696→256)、`KeplerAnimation.tsx`(673→460)、`FreeFallDripAnimation.tsx`(560→448)、`CoulombLaw.tsx`(708→28+290+288，含物理函数抽离至 `src/physics/electrostatics.ts`)
 
 > 临近阈值（450-499）：`LightRodRopeScene.tsx`(485)、`SimulationView.tsx`(478)、`WorkFSChart.tsx`(469)、`RefractionAnimation.tsx`(462)、`AccelerationCenterExtra.tsx`(462)、`GravityAnimation.tsx`(459)、`ImpulseAnimation.tsx`(457)、`UniformAccelerationAnimation.tsx`(455)
 >
@@ -144,6 +148,44 @@ export interface AnimationModule<P extends AnimationParams> {
 - 考虑引入 `PhysicsY`、`SvgY`、`ChartY` 命名约束（至少在复杂模型中用函数名区分）
 - 建立统一坐标约定文档
 
+### 4.2.1 力方向纯函数扩展（P2，进行中）
+
+> 背景：复合场页面因 SVG/物理坐标系混淆导致力方向反转 bug（2026-07-10 修复）。
+> 已在 `src/physics/magnetism/forces.ts` 新增 `lorentzForceDir` / `electricForceDir` / `centripetalForceDir` 三个纯函数 + 21 个单测，统一返回物理坐标系(y↑正)单位向量。
+> combined-fields 三处力箭头已迁移到纯函数调用。
+
+**扩展原则：触发性迁移，不专门为迁移而迁移**
+
+每次修改某动画页面时，顺手把手写坐标差 / 电荷符号三元表达式替换为 helper 调用。新增 helper 按需补单测。
+
+**高优先级目标（按风险排序）**
+
+| 优先级 | 领域 | 文件 | 风险点 | 状态 |
+|:---:|------|------|------|:---:|
+| ~~P1~~ | 电磁学·磁场 | `velocitySelector.ts` | 洛伦兹力方向，与 combined-fields 模式0 同类 | ✅ 2026-07-11 |
+| ~~P1~~ | 电磁学·磁场 | `SimulationView.tsx`（BoundaryMagneticField） | 双边界磁场出射，已有 `calculateDoubleBoundaryExit` 但矢量方向仍手写 | ✅ 2026-07-11 |
+| ~~P1~~ | 电磁学·静电 | `ChargeInEField.tsx` | 电场力方向 | ✅ 2026-07-11 |
+| P2 | 电磁学·感应 | `CuttingEMFScene.tsx` / `SingleRodAnimation.tsx` | 安培力方向，需新增 `ampereForceDir` helper |
+| P2 | 电磁学·静电 | `ElectricFieldAdvancedScene.tsx` / `ThreeChargeMode.tsx` | 多电荷力方向 |
+| P3 | 力学·圆周 | `CentripetalScene.tsx` / `VerticalCircularScene.tsx` | 向心力方向，已有 `centripetalForceDir` 可直接用 |
+
+**helper 扩展清单（按需新增）**
+
+| 函数 | 覆盖场景 | 状态 |
+|------|---------|------|
+| `lorentzForceDir` | 带电粒子磁场偏转 | ✅ 已完成 |
+| `electricForceDir` | 电场对电荷作用力 | ✅ 已完成 |
+| `centripetalForceDir` | 圆周运动向心力 | ✅ 已完成 |
+| `ampereForceDir` | 导体棒安培力 F=BIL | 待新增（迁移 CuttingEMF/SingleRod 时） |
+| `gravityDir` | 重力方向（恒向下） | 低优先级，收益小 |
+
+**迁移检查清单（每次迁移一个页面时执行）**
+
+1. grep 该文件内 `cy - .*\.y` / `\.y - cy` / `q > 0 \?` 模式
+2. 替换为 helper 调用，SVG→物理坐标翻转以 `{ x, y: -y }` 显式内联
+3. 跑 `tsc --noEmit` + 该领域相关测试
+4. 视觉验证：正/负电荷各播放一次，确认箭头方向
+
 ### 4.3 viewModel 单测（P2）
 
 > 当前测试覆盖 physics 和 utils，但视图映射层缺少保护。
@@ -196,7 +238,9 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 >
 > 合规标准：使用 `useAnimationViewport` from `@/hooks`
 >
-> 当前进度：COMPLIANT 39 个 / LEGACY 69 个 / EXEMPT ~118 个
+> 当前进度（2026-07-11 核对）：COMPLIANT 76 个 / LEGACY 128 个（含 CenterExtra、Chart 等非动画组件）
+>
+> 注：128 个 LEGACY 包含大量 CenterExtra/Chart/Sidebar 组件，实际需迁移的动画页面约 60-70 个。
 
 ### 5.1 待迁移概览
 
@@ -204,7 +248,7 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 |----------|------|------|
 | LOW | 2 | 设计尺寸恰好匹配 preset，直接替换即可 |
 | MEDIUM | 1 | 尺寸匹配但有 `vp.scale` 依赖 |
-| HIGH | 38 | 设计尺寸不匹配任何 preset，需重构布局 |
+| HIGH | ~60 | 设计尺寸不匹配任何 preset，需重构布局 |
 | 类型导入 | 6 | 父组件迁移后自动兼容 |
 
 ### 5.2 推荐迁移顺序
@@ -276,3 +320,49 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 模板内容：完整的文件骨架（imports + 组件结构 + 必需 hooks），AI 可直接复制后填充业务逻辑。
 
 **执行前提**：Registry 示例补全（6.1）完成后再做模板，避免模板中引用不完整的组件示例。
+
+---
+
+## 七、粒子轨迹统一渲染迁移（P1）
+
+> 标准组件：`ParticleTrajectory`（SVG）/ `drawCanvasParticleTrajectory`（Canvas）
+> 规范文档：`COMPONENT_REGISTRY.md §ParticleTrajectory`
+> 迁移详情：[`PARTICLE_TRAJECTORY_MIGRATION.md`](./PARTICLE_TRAJECTORY_MIGRATION.md)
+
+### 7.1 已完成
+
+| 文件 | 场景 | 日期 |
+|------|------|------|
+| `CombinedFieldsAnimation.tsx` | 质谱仪/回旋加速器/电偏转+磁偏转 | 2026-07-11 |
+| `ChargeInEField.tsx` | 带电粒子在匀强电场 | 2026-07-11 |
+| `ProjectileAnimation.tsx` | 平抛运动（含阻力对比） | 2026-07-11 |
+| `ObliqueThrowAnimation.tsx` | 斜抛运动（含阻力对比） | 2026-07-11 |
+
+### 7.2 待迁移（高优先级）
+
+| 文件 | 场景 | 说明 | 状态 |
+|------|------|------|------|
+| `FreeFallScene.tsx` | 自由落体（双物体） | 双物体+自定义渲染（硬币渐变、羽毛摆动），不适合标准 Ball | ⏭️ 跳过 |
+| `VerticalCircularScene.tsx` | 竖直圆周运动 | 圆弧轨迹+绳/杆连接，`ParticleTrajectory` 不支持 | ⏭️ 跳过 |
+| `ForceMotionSandbox.tsx` | 牛顿定律综合沙盒 | path 字符串格式+多模式物体，不适合统一迁移 | ⏭️ 跳过 |
+
+### 7.3 待迁移（中优先级）
+
+| 文件 | 场景 | 说明 |
+|------|------|------|
+| `FreeFallDripAnimation.tsx` | 滴水法测 g | trail 可迁移，水滴是自定义椭圆变形 |
+| `BoundaryMagneticField/SimulationView.tsx` | 有界磁场偏转 | **Canvas API**，需 SVG 转换 |
+| `CircularGeometryModel.tsx` | 圆形磁场几何模型 | **Canvas API**，tail + 粒子本体 |
+
+### 7.4 不迁移（静态轨道/非标准场景）
+
+| 文件 | 原因 |
+|------|------|
+| `CentripetalScene.tsx` | 固定轨道圆，非增长历史轨迹 |
+| `CircularModelsAnimation.tsx` | 椭圆轨道，非粒子轨迹 |
+| `SatelliteAnimation.tsx` | 静态轨道几何 |
+| `OrbitTransferAnimation.tsx` | 静态轨道几何 |
+| `BrownianMotion.tsx` | 随机游走，自定义六边形粒子 |
+| `KinematicsAdvancedAnimation.tsx` | 频闪点阵轨迹，非连续线 |
+| `SimplePendulumAnimation.tsx` | 波形图，非空间轨迹 |
+| `SpringCompositeAnimation.tsx` | 参考指示线，非轨迹 |

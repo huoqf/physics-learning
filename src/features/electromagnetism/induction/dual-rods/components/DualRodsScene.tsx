@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
-import { Rails, ConductingRod, VectorArrow } from '@/components/Physics'
+import { Rails, ConductingRod, VectorArrow, MagneticFieldSymbols } from '@/components/Physics'
 import { useAnimationViewport } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -53,7 +53,7 @@ export const DualRodsScene = React.memo(function DualRodsScene({
 
   // 磁场符号网格 (均布向里 ⊗)
   const fieldSymbols = useMemo(() => {
-    const symbols = []
+    const points: Array<{ x: number; y: number }> = []
     const stepX = 50
     const stepY = 35
     const xStart = 30
@@ -61,27 +61,21 @@ export const DualRodsScene = React.memo(function DualRodsScene({
     const yStart = cy - railSpacing / 2 + 15
     const yEnd = cy + railSpacing / 2 - 15
 
-    let idx = 0
     for (let sx = xStart; sx <= xEnd; sx += stepX) {
       for (let sy = yStart; sy <= yEnd; sy += stepY) {
-        symbols.push(
-          <text
-            key={`field-sym-${idx++}`}
-            x={sx}
-            y={sy}
-            fontSize={font(16)}
-            fill={PHYSICS_COLORS.magneticField}
-            opacity={0.35}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            style={{ userSelect: 'none' }}
-          >
-            ⊗
-          </text>
-        )
+        points.push({ x: sx, y: sy })
       }
     }
-    return symbols
+
+    return (
+      <MagneticFieldSymbols
+        points={points}
+        direction="in"
+        radius={font(6.5)}
+        strokeWidth={1.5}
+        opacity={0.55}
+      />
+    )
   }, [width, cy, railSpacing, font])
 
   return (

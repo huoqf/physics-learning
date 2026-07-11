@@ -16,7 +16,7 @@ export function VectorTriangle({ physicsData, sceneScale, isPlaying, onDragStart
 
   return (
     <>
-      <VectorArrow origin={{ x: origin.cx, y: -origin.cy }}
+      <VectorArrow originPixel={{ x: origin.cx, y: -origin.cy }}
         vector={{ x: f1End.cx - origin.cx, y: -(f1End.cy - origin.cy) }}
         type="appliedForce" sceneScale={sceneScale}
         strokeWidth={CANVAS_STYLE.stroke.vectorSub}
@@ -41,7 +41,7 @@ export function VectorTriangle({ physicsData, sceneScale, isPlaying, onDragStart
           stroke="white" strokeWidth={1.5} className="group-hover:scale-125 transition-transform" />
       </g>
 
-      <VectorArrow origin={{ x: f2ShiftedStart.cx, y: -f2ShiftedStart.cy }}
+      <VectorArrow originPixel={{ x: f2ShiftedStart.cx, y: -f2ShiftedStart.cy }}
         vector={{ x: f2ShiftedEnd.cx - f2ShiftedStart.cx, y: -(f2ShiftedEnd.cy - f2ShiftedStart.cy) }}
         type="tension" sceneScale={sceneScale}
         strokeWidth={CANVAS_STYLE.stroke.vectorSub}
@@ -58,7 +58,7 @@ export function VectorTriangle({ physicsData, sceneScale, isPlaying, onDragStart
           strokeDasharray={CANVAS_STYLE.dash.guide.join(',')} />
       )}
 
-      <VectorArrow origin={{ x: origin.cx, y: -origin.cy }}
+      <VectorArrow originPixel={{ x: origin.cx, y: -origin.cy }}
         vector={{ x: fResultantEnd.cx - origin.cx, y: -(fResultantEnd.cy - origin.cy) }}
         type="force" sceneScale={sceneScale}
         strokeWidth={CANVAS_STYLE.stroke.vectorMain}

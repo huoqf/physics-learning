@@ -1,4 +1,4 @@
-import { VectorArrow, VectorDefs } from '@/components/Physics'
+import { VectorArrow, VectorDefs, ParticleTrajectory } from '@/components/Physics'
 import { useEffect, useMemo } from 'react'
 import { useAnimationViewport } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
@@ -16,9 +16,9 @@ import {
   calculateChargeInEFieldTrajectory,
   getChargeInEFieldTimeScale,
 } from '@/physics/electromagnetism'
+import { electricForceDir } from '@/physics/magnetism/forces'
 
 // SVG 几何常量
-const PARTICLE_RADIUS = 10       // 粒子圆半径
 const TERMINAL_CORE_RADIUS = 4   // 发射口圆半径
 const INTERSECTION_DOT_RADIUS = 3 // 交点标记圆半径
 
@@ -130,15 +130,24 @@ export default function ChargeInEField() {
     return 1
   }, [tSim, isAC, freq, phi0])
 
-  // 6. 生成运动历史轨迹
-  const historyPathPoints = useMemo(() => {
-    const pts: string[] = []
+  // 6. ParticleTrajectory 所需的点集
+  const historyPoints = useMemo(() => {
+    const pts: { x: number; y: number }[] = []
     for (const pt of points) {
       if (pt.t > tSim + 1e-9) break
-      pts.push(`${startX + pt.x * scale},${midY + pt.y * scale}`)
+      pts.push({ x: startX + pt.x * scale, y: midY + pt.y * scale })
     }
-    return pts.join(' ')
+    return pts
   }, [points, tSim])
+
+  const predictedPoints = useMemo(() => {
+    return points.map((pt) => ({ x: startX + pt.x * scale, y: midY + pt.y * scale }))
+  }, [points])
+
+  const tailPoints = useMemo(() => {
+    const tailLen = Math.min(8, historyPoints.length)
+    return historyPoints.slice(-tailLen)
+  }, [historyPoints])
 
   // 7. 矢量工具 sceneScale
   const sceneScale = useMemo(() => {
@@ -523,14 +532,14 @@ export default function ChargeInEField() {
             </text>
           )}
 
-          {/* 轨迹线 */}
-          {historyPathPoints && (
-            <polyline
-              points={historyPathPoints}
-              fill="none"
-              stroke={PHYSICS_COLORS.trackHistory}
-              strokeWidth={CANVAS_STYLE.stroke.trackHistory}
-              strokeDasharray="3,3"
+          {/* 粒子轨迹（统一组件：预测虚线 + 历史虚线 + 拖尾 + 本体） */}
+          {historyPoints.length > 0 && (
+            <ParticleTrajectory
+              historyPoints={historyPoints}
+              predictedPoints={predictedPoints}
+              tailPoints={tailPoints}
+              isFocus
+              chargeSign="+"
             />
           )}
           {/* 速度反向延长线与夹角可视化（平抛几何推论） */}
@@ -618,26 +627,6 @@ export default function ChargeInEField() {
             </g>
           )}
 
-          {/* 粒子 */}
-          <circle
-            cx={cx}
-            cy={cy}
-            r={PARTICLE_RADIUS}
-            fill={PHYSICS_COLORS.positiveCharge}
-            stroke={PHYSICS_COLORS.objectStroke}
-            strokeWidth={CANVAS_STYLE.stroke.objectLine}
-          />
-          <text
-            x={cx}
-            y={cy + 4.5}
-            fontSize={font(13)}
-            fill={CANVAS_COLORS.annotation}
-            textAnchor="middle"
-            fontWeight="bold"
-          >
-            +
-          </text>
-
           {/* 速度分量与速度分解虚线框 */}
           {showVectors && !ended && (
             <g>
@@ -722,13 +711,19 @@ export default function ChargeInEField() {
               </text>
 
               {/* 电场力 F_E (紫色) */}
-              <VectorArrow
-                origin={{ x: cx, y: -cy }}
-                vector={{ x: 0, y: -currentState.ay + (useGravity ? 9.8 : 0) }}
-                type="electricForce"
-                sceneScale={sceneScale}
-                strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-              />
+              {(() => {
+                const eDir = electricForceDir({ x: 0, y: -curFieldSign }, q * 1e-6)
+                const electricAccel = (q * 1e-6 * curFieldSign * U / PLATE_GAP) / PARTICLE_MASS
+                return (
+                  <VectorArrow
+                    origin={{ x: cx, y: -cy }}
+                    vector={{ x: eDir.x * electricAccel, y: eDir.y * electricAccel }}
+                    type="electricForce"
+                    sceneScale={sceneScale}
+                    strokeWidth={CANVAS_STYLE.stroke.vectorSub}
+                  />
+                )
+              })()}
 
               {/* 重力 mg (绿色) */}
               {useGravity === 1 && (

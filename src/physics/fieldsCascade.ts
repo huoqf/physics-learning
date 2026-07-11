@@ -128,17 +128,18 @@ export function stepCyclotronSlit(
 /**
  * 计算质谱仪偏转磁场中的圆周半径。
  * 
- * 物理公式：R = m * v / (q * B2)
+ * 物理公式：R = m * v / (|q| * B2)
+ * 注意：返回值始终为正，负电荷在磁场中偏转方向相反（顺时针 vs 逆时针）
  *
  * @param v 粒子进入磁场时的速度，单位：m/s
  * @param B2 偏转磁场的磁感应强度，单位：T
- * @param q 粒子电荷量，单位：C
+ * @param q 粒子电荷量，单位：C（可为负值）
  * @param m 粒子质量，单位：kg
- * @returns 偏转圆周半径，单位：m
+ * @returns 偏转圆周半径（正值），单位：m
  */
 export function computeSpectrometerRadius(v: number, B2: number, q: number, m: number): number {
-  if (q <= 0 || B2 <= 0 || m <= 0 || v <= 0) return 0
-  return (m * v) / (q * B2)
+  if (Math.abs(q) < 1e-30 || B2 <= 0 || m <= 0 || v <= 0) return 0
+  return (m * v) / (Math.abs(q) * B2)
 }
 
 export interface DeflectionOutState {
@@ -182,7 +183,7 @@ export function computeElectricDeflection(
   q: number,
   m: number,
 ): DeflectionOutState {
-  if (m <= 0 || v0 <= 0 || L <= 0 || d <= 0 || q <= 0) {
+  if (m <= 0 || v0 <= 0 || L <= 0 || d <= 0 || Math.abs(q) < 1e-30) {
     return { yOffset: 0, vy: 0, vOut: v0, theta: 0, hitsPlate: false }
   }
   const a = (q * E) / m
@@ -193,6 +194,7 @@ export function computeElectricDeflection(
   const theta = Math.atan2(vy, v0)
   
   // 极板间距为 d，若粒子沿极板中心射入，则偏转位移绝对值超过 d/2 时撞板
+  // 注意：负电荷 (q < 0) 在 E > 0 时会向下偏转 (yOffset < 0)
   const hitsPlate = Math.abs(yOffset) >= d / 2
   return { yOffset, vy, vOut, theta, hitsPlate }
 }

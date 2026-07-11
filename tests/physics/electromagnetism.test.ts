@@ -535,26 +535,61 @@ describe('electromagnetism', () => {
   describe('高考有界磁场计算', () => {
     it('calculateDoubleBoundaryExit: 折回单边界（未穿透）时，出射点应为 2*xc，出射 y 应为 0', () => {
       // q=1, m=1, v=10, B=1 => R=10
-      // 射入角 theta=90（垂直），磁场宽度 d=15 (> R*(1-cos90) = 10)
-      // 顺时针旋转，cxAngle = 90 - 90 = 0 => xc = 10, yc = 0
-      // 粒子不能穿透，折回，出射点 x = 2*xc = 20, y = 0
+      // 射入角 theta=90（垂直），磁场宽度 d=15 (> R*(1+cos90) = 10)
+      // 逆时针旋转（向左偏），cxAngle = 90 + 90 = 180 => xc = -10, yc = 0
+      // 粒子不能穿透，折回，出射点 x = 2*xc = -20, y = 0
       const res = calculateDoubleBoundaryExit(1, 1, 10, 1, 90, 15)
       expect(res.isPenetrated).toBe(false)
-      expect(res.x).toBeCloseTo(20, 5)
+      expect(res.x).toBeCloseTo(-20, 5)
       expect(res.y).toBe(0)
       expect(res.vx).toBeCloseTo(0, 5)
       expect(res.vy).toBeCloseTo(-10, 5)
+    })
+
+    it('calculateDoubleBoundaryExit: 折回单边界 theta=60（CCW）时，扫角应为 2π-2θ，出射速度为 -θ', () => {
+      // q=1, m=1, v=10, B=1 => sign=1 (CCW), R=10
+      // theta=60, d=20 (> R_crit = 20/(1+cos60) = 13.33)
+      // xc = 10*cos(150°) = -8.660, yc = 10*sin(150°) = 5
+      // 折回出射点 x = 2*xc = -17.321, y = 0
+      // deltaPhi = 2π - 2π/3 = 4π/3, omega = 1, t = 4π/3 ≈ 4.189
+      // exitAngle = -60°, vx = 10*cos(-60°) = 5, vy = 10*sin(-60°) = -8.660
+      const res = calculateDoubleBoundaryExit(1, 1, 10, 1, 60, 20)
+      expect(res.isPenetrated).toBe(false)
+      expect(res.x).toBeCloseTo(2 * 10 * Math.cos(5 * Math.PI / 6), 4)
+      expect(res.y).toBe(0)
+      expect(res.vx).toBeCloseTo(5, 5)
+      expect(res.vy).toBeCloseTo(-5 * Math.sqrt(3), 5)
+      expect(res.t).toBeCloseTo(4 * Math.PI / 3, 5)
     })
 
     it('calculateDoubleBoundaryExit: 穿透上边界时，出射 y 应等于 d，isPenetrated 为 true', () => {
       // q=1, m=1, v=10, B=1 => R=10
       // 射入角 theta=90（垂直），磁场宽度 d=5 (< 10)
       // 应该能穿透，出射 y = 5
+      // xc=-10, yc=0, x = xc + sign*sqrt(R²-(d-yc)²) = -10 + sqrt(75) = -1.340
+      // phiOut = atan2(5, 8.660) = 30°, exitAngle = 30° + 90° = 120°
+      // vx = 10*cos(120°) = -5, vy = 10*sin(120°) = 8.660
       const res = calculateDoubleBoundaryExit(1, 1, 10, 1, 90, 5)
       expect(res.isPenetrated).toBe(true)
       expect(res.y).toBe(5)
-      // 几何解：xc=10, yc=0, R=10 => (x-10)^2 + (5-0)^2 = 100 => (x-10)^2 = 75 => x = 10 + sqrt(75) = 10 + 8.660 = 18.660
-      expect(res.x).toBeCloseTo(10 + Math.sqrt(75), 5)
+      expect(res.x).toBeCloseTo(-10 + Math.sqrt(75), 5)
+      expect(res.vx).toBeCloseTo(-5, 5)
+      expect(res.vy).toBeCloseTo(5 * Math.sqrt(3), 5)
+    })
+
+    it('calculateDoubleBoundaryExit: 穿透上边界 theta=60（CCW）时，出射速度应沿切线方向', () => {
+      // q=1, m=1, v=10, B=1 => sign=1 (CCW), R=10
+      // theta=60, d=3 (< R_crit = 3/(1+cos60) = 2)
+      // xc = -8.660, yc = 5, d-yc = -2
+      // x = xc + sqrt(R²-(d-yc)²) = -8.660 + sqrt(96) = 1.138
+      // phiOut = atan2(-2, 9.798) = -11.54°, exitAngle = -11.54° + 90° = 78.46°
+      // vx = 10*cos(78.46°) ≈ 1.99, vy = 10*sin(78.46°) ≈ 9.80
+      const res = calculateDoubleBoundaryExit(1, 1, 10, 1, 60, 3)
+      expect(res.isPenetrated).toBe(true)
+      expect(res.y).toBe(3)
+      expect(res.x).toBeCloseTo(-10 * Math.cos(Math.PI / 6) + Math.sqrt(96), 4)
+      expect(res.vx).toBeCloseTo(10 * Math.cos(Math.atan(-2 / Math.sqrt(96)) + Math.PI / 2), 3)
+      expect(res.vy).toBeCloseTo(10 * Math.sin(Math.atan(-2 / Math.sqrt(96)) + Math.PI / 2), 3)
     })
 
     it('calculateCircularBoundaryExit: 圆形磁场对称偏转计算，出射角及位置正确', () => {

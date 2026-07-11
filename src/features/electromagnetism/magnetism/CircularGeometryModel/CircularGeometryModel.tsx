@@ -231,7 +231,17 @@ export default function CircularGeometryModel() {
         <defs>
           {/* 磁场向里 ⊗ 填充图案 */}
           <pattern id="bfield-pattern" width="40" height="40" patternUnits="userSpaceOnUse">
-            <text x="12" y="26" fill="rgba(22, 163, 74, 0.12)" fontSize="16" fontFamily="sans-serif">⊗</text>
+            <g transform="translate(20, 20)">
+              {/* 底部白色描边保护层 */}
+              <circle cx={0} cy={0} r={6.5} fill="none" stroke={PHYSICS_COLORS.white} strokeWidth={2.4} opacity={0.12} />
+              <line x1={-3.9} y1={-3.9} x2={3.9} y2={3.9} stroke={PHYSICS_COLORS.white} strokeWidth={2.4} opacity={0.12} strokeLinecap="round" />
+              <line x1={3.9} y1={-3.9} x2={-3.9} y2={3.9} stroke={PHYSICS_COLORS.white} strokeWidth={2.4} opacity={0.12} strokeLinecap="round" />
+              
+              {/* 彩色主体 */}
+              <circle cx={0} cy={0} r={6.5} fill="none" stroke={PHYSICS_COLORS.magneticFieldCross} strokeWidth={1.2} opacity={0.22} />
+              <line x1={-3.9} y1={-3.9} x2={3.9} y2={3.9} stroke={PHYSICS_COLORS.magneticFieldCross} strokeWidth={1.2} opacity={0.22} strokeLinecap="round" />
+              <line x1={3.9} y1={-3.9} x2={-3.9} y2={3.9} stroke={PHYSICS_COLORS.magneticFieldCross} strokeWidth={1.2} opacity={0.22} strokeLinecap="round" />
+            </g>
           </pattern>
         </defs>
 

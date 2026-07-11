@@ -1,8 +1,6 @@
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { SimulationView } from './SimulationView'
-import { useAnimationViewport } from '@/hooks'
-import { CANVAS_PRESETS } from '@/theme/spacing'
 import { RelationChart, type RelationMarker } from '@/components/Chart'
 import { calcParticleRadius } from '@/physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
@@ -10,19 +8,14 @@ import { PHYSICS_COLORS } from '@/theme/physics'
 export default function ChargeInBField() {
   const params = useAnimationStore((s) => s.params)
   const mode = params.mode ?? 0 // 0: 基础, 1: 进阶
-  const { containerRef, canvasSize } = useAnimationViewport({
-    preset: CANVAS_PRESETS.full,
-  })
-
-  const isWide = canvasSize.width > canvasSize.height * 1.1
 
   if (mode === 0) {
     return (
-      <div ref={containerRef} className={`w-full h-full flex overflow-hidden ${isWide ? 'flex-row' : 'flex-col'}`}>
-        <div className="flex-1 relative min-w-0 min-h-0 border-neutral-200" style={{ borderRightWidth: isWide ? 1 : 0, borderBottomWidth: isWide ? 0 : 1 }}>
+      <div className="w-full h-full flex flex-col md:flex-row overflow-hidden gap-2">
+        <div className="flex-1 relative min-w-0 min-h-0 bg-white rounded-xl shadow-md overflow-hidden">
           <SimulationView />
         </div>
-        <div className={`relative bg-white flex flex-col p-4 shrink-0 min-w-0 min-h-0 ${isWide ? 'w-80 h-full' : 'w-full h-64'}`}>
+        <div className="relative bg-white rounded-xl shadow-md flex flex-col p-4 shrink-0 min-w-0 min-h-0 md:w-80 w-full md:h-full h-64">
           <h3 className="text-sm font-bold text-neutral-700 mb-2">物理量关联曲线</h3>
           <div className="flex-1 min-h-0 relative">
             <BoundaryRelationChart />
@@ -32,11 +25,7 @@ export default function ChargeInBField() {
     )
   }
 
-  return (
-    <div ref={containerRef} className="w-full h-full relative min-w-0 min-h-0">
-      <SimulationView />
-    </div>
-  )
+  return <SimulationView />
 }
 
 function BoundaryRelationChart() {

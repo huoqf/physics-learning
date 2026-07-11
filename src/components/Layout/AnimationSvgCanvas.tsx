@@ -81,6 +81,22 @@ interface AnimationSvgCanvasProps {
  * 3. `<defs>` 放在 children 第一个位置，在 `<g transform>` 内声明合法
  * 4. 需要指针交互时传入 `svgRef`，配合 `useViewportPointer(svgRef)` 使用
  * 5. 有 overlay 浮层时，在外层 div 用 `relative` + 绝对定位叠加 HTML 元素
+ * 6. **传入 `canvasRef` 时（Canvas+SVG 混合渲染）**：
+ *    - Canvas 绘制物体位置用 `canvasSceneScale`（基于 `vp.visibleW/H` 的容器像素坐标）
+ *    - SVG 矢量箭头起点必须通过 `vp.transform` 的**逆变换**对齐：
+ *      ```ts
+ *      // ✅ 正确：先算 canvas 像素坐标，再逆变换到设计坐标
+ *      const { px: cpx, py: cpy } = worldToPixel(wx, wy, canvasSceneScale)
+ *      const dx = (cpx - vp.tx) / vp.scale  // 设计坐标 x
+ *      const dy = (cpy - vp.ty) / vp.scale  // 设计坐标 y
+ *      // ❌ 错误：用 sceneScale（designW/worldWidth 为基准）直接算设计坐标
+ *      // const { px: dx, py: dy } = worldToPixel(wx, wy, sceneScale)
+ *      // 错误原因：vp.scale = min(visibleW/designW, visibleH/designH)，宽高比不匹配时
+ *      // designW/worldWidth * vp.scale ≠ visibleW/worldWidth（Canvas scale），导致偏移
+ *      ```
+ *    - `VectorArrow` 的 `sceneScale.maxVectorLength` 应使用
+ *      `canvasSceneScale.maxVectorLength / vp.scale`（设计坐标单位），
+ *      保证箭头在屏幕上的实际像素长度与 Canvas 场景比例一致。
  *
  * @example
  * ```tsx
@@ -133,6 +149,37 @@ interface AnimationSvgCanvasProps {
  *     </div>
  *   </div>
  * )
+ *
+ * // ── Canvas+SVG 混合（高频动画 Canvas，矢量箭头 SVG）────────
+ * // Canvas 绘制粒子位置，SVG VectorArrow 显示速度/力矢量。
+ * // 两者坐标系必须通过 vp 逆变换对齐，否则箭头起点偏离粒子。
+ * const canvasRef = useRef<HTMLCanvasElement>(null)
+ * const canvasSceneScale = useMemo(() => {
+ *   const base = createSceneScaleFromViewport(vp, 'centerScale', { worldWidth, ... })
+ *   return { ...base, originY: vp.visibleH * 0.70 }  // 自定义物理原点纵坐标
+ * }, [vp, worldWidth])
+ *
+ * // 物理坐标 → SVG 设计坐标（正确：通过 canvas像素 → vp 逆变换）
+ * const toDesignCoords = useCallback((wx: number, wy: number) => {
+ *   const { px: cpx, py: cpy } = worldToPixel(wx, wy, canvasSceneScale)
+ *   return { dx: (cpx - vp.tx) / vp.scale, dy: (cpy - vp.ty) / vp.scale }
+ * }, [canvasSceneScale, vp.tx, vp.ty, vp.scale])
+ *
+ * const particleDesign = toDesignCoords(particle.x, particle.y)
+ *
+ * return (
+ *   <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform} canvasRef={canvasRef}>
+ *     <VectorArrow
+ *       originPixel={{ x: particleDesign.dx, y: particleDesign.dy }}
+ *       vector={{ x: particle.vx, y: particle.vy }}
+ *       type="velocity"
+ *       sceneScale={{
+ *         ...svgSceneScale,
+ *         maxVectorLength: canvasSceneScale.maxVectorLength / vp.scale,  // 设计坐标单位
+ *       }}
+ *     />
+ *   </AnimationSvgCanvas>
+ * )
  * ```
  */
 export const AnimationSvgCanvas = React.memo<AnimationSvgCanvasProps>(
@@ -167,7 +214,7 @@ export const AnimationSvgCanvas = React.memo<AnimationSvgCanvasProps>(
         )}
         <svg
           ref={svgRef}
-          className={`block select-none${hasCanvas ? ' absolute inset-0 pointer-events-none' : ' w-full h-full'}`}
+          className={`block select-none w-full h-full${hasCanvas ? ' absolute inset-0 pointer-events-none' : ''}`}
           onMouseMove={onMouseMove}
           onMouseUp={onMouseUp}
           onMouseLeave={onMouseLeave}

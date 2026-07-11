@@ -45,11 +45,19 @@ const CrossSymbol: React.FC<{ radius: number; strokeWidth: number }> = ({
   strokeWidth,
 }) => {
   const arm = radius * 0.6
+  const haloColor = PHYSICS_COLORS.white
+  const haloWidth = strokeWidth + 1.2
   return (
     <g>
+      {/* 底部白色 Halo 描边 */}
+      <circle cx={0} cy={0} r={radius} fill="none" stroke={haloColor} strokeWidth={haloWidth} />
+      <line x1={-arm} y1={-arm} x2={arm} y2={arm} stroke={haloColor} strokeWidth={haloWidth} strokeLinecap="round" />
+      <line x1={arm} y1={-arm} x2={-arm} y2={arm} stroke={haloColor} strokeWidth={haloWidth} strokeLinecap="round" />
+      
+      {/* 上层主体 */}
       <circle cx={0} cy={0} r={radius} fill="none" stroke="currentColor" strokeWidth={strokeWidth} />
-      <line x1={-arm} y1={-arm} x2={arm} y2={arm} stroke="currentColor" strokeWidth={strokeWidth} />
-      <line x1={arm} y1={-arm} x2={-arm} y2={arm} stroke="currentColor" strokeWidth={strokeWidth} />
+      <line x1={-arm} y1={-arm} x2={arm} y2={arm} stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" />
+      <line x1={arm} y1={-arm} x2={-arm} y2={arm} stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" />
     </g>
   )
 }
@@ -58,10 +66,18 @@ const DotSymbol: React.FC<{ radius: number; strokeWidth: number }> = ({
   radius,
   strokeWidth,
 }) => {
+  const haloColor = PHYSICS_COLORS.white
+  const haloWidth = strokeWidth + 1.2
+  const dotR = radius * 0.3
   return (
     <g>
+      {/* 底部白色 Halo 描边 */}
+      <circle cx={0} cy={0} r={radius} fill="none" stroke={haloColor} strokeWidth={haloWidth} />
+      <circle cx={0} cy={0} r={dotR} fill={haloColor} stroke={haloColor} strokeWidth={1.2} />
+      
+      {/* 上层主体 */}
       <circle cx={0} cy={0} r={radius} fill="none" stroke="currentColor" strokeWidth={strokeWidth} />
-      <circle cx={0} cy={0} r={radius * 0.3} fill="currentColor" />
+      <circle cx={0} cy={0} r={dotR} fill="currentColor" />
     </g>
   )
 }
@@ -87,11 +103,11 @@ export interface MagneticFieldGridProps {
   rows?: number
   /** 网格列数（默认 6） */
   cols?: number
-  /** 符号圆圈半径（默认 6） */
+  /** 符号圆圈半径（默认 7.5） */
   radius?: number
-  /** 线条粗细（默认 1.2） */
+  /** 线条粗细（默认 1.5） */
   strokeWidth?: number
-  /** 整体不透明度（默认 0.55） */
+  /** 整体不透明度（默认 0.65） */
   opacity?: number
   /** 颜色覆盖（默认跟随 direction 自动选择主题色） */
   color?: string
@@ -105,9 +121,9 @@ export const MagneticFieldGrid: React.FC<MagneticFieldGridProps> = ({
   direction,
   rows = 4,
   cols = 6,
-  radius = 6,
-  strokeWidth = 1.2,
-  opacity = 0.55,
+  radius = 7.5,
+  strokeWidth = 1.5,
+  opacity = 0.65,
   color,
 }) => {
   const fillColor = color ?? (direction === 'in' ? PHYSICS_COLORS.magneticFieldCross : PHYSICS_COLORS.magneticFieldDot)
@@ -142,11 +158,11 @@ export interface MagneticFieldSymbolsProps {
   points: GridPoint[]
   /** 磁场方向 */
   direction: FieldDirection
-  /** 符号圆圈半径（默认 6） */
+  /** 符号圆圈半径（默认 7.5） */
   radius?: number
-  /** 线条粗细（默认 1.2） */
+  /** 线条粗细（默认 1.5） */
   strokeWidth?: number
-  /** 整体不透明度（默认 0.55） */
+  /** 整体不透明度（默认 0.65） */
   opacity?: number
   /** 颜色覆盖 */
   color?: string
@@ -159,9 +175,9 @@ export interface MagneticFieldSymbolsProps {
 export const MagneticFieldSymbols: React.FC<MagneticFieldSymbolsProps> = ({
   points,
   direction,
-  radius = 6,
-  strokeWidth = 1.2,
-  opacity = 0.55,
+  radius = 7.5,
+  strokeWidth = 1.5,
+  opacity = 0.65,
   color,
 }) => {
   const fillColor = color ?? (direction === 'in' ? PHYSICS_COLORS.magneticFieldCross : PHYSICS_COLORS.magneticFieldDot)

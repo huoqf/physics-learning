@@ -1,4 +1,4 @@
-import { VectorArrow, VectorDefs, Ball } from '@/components/Physics'
+import { VectorArrow, VectorDefs, Ball, ParticleTrajectory } from '@/components/Physics'
 import { useCanvasSize, useViewport, physicsToCanvasWithOrigin } from '@/utils'
 import { useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -9,7 +9,6 @@ import {
   SCENE_COLORS,
   CHART_COLORS,
   STROKE,
-  DASH,
   FONT,
   CANVAS_STYLE,
   withAlpha,
@@ -173,30 +172,32 @@ export default function ObliqueThrowAnimation() {
     stageHeight, originX, groundY, showGrid,
   )
 
-  // ── 5. 动态轨迹曲线路径 ──
+  // ── 5. ParticleTrajectory 所需的点集 ──
   const activeT = Math.min(effectiveTime, groundTime)
-  const activeTVac = Math.min(effectiveTime, groundTimeVac)
 
-  const physicalPathD = useMemo(() => {
-    const pts: string[] = []
+  const historyPoints = useMemo(() => {
+    const pts: { x: number; y: number }[] = []
     for (const pt of trajectory.points) {
       if (pt.t > activeT + 1e-5) break
       const { cx, cy } = physicsToCanvasWithOrigin(pt.x, pt.y, originX, groundY, scale)
-      pts.push(`${cx},${cy}`)
+      pts.push({ x: cx, y: cy })
     }
-    return pts.length > 1 ? `M ${pts.join(' L ')}` : ''
+    return pts
   }, [trajectory.points, activeT, scale, originX, groundY])
 
-  const physicalVacPathD = useMemo(() => {
-    if (!showDoubleTrack) return ''
-    const pts: string[] = []
-    for (const pt of trajectory.vacuumPoints) {
-      if (pt.t > activeTVac + 1e-5) break
+  // 预测轨迹：有阻力时显示真空理想路径，否则显示完整理论抛物线
+  const predictedPoints = useMemo(() => {
+    const src = showDoubleTrack ? trajectory.vacuumPoints : trajectory.points
+    return src.map((pt) => {
       const { cx, cy } = physicsToCanvasWithOrigin(pt.x, pt.y, originX, groundY, scale)
-      pts.push(`${cx},${cy}`)
-    }
-    return pts.length > 1 ? `M ${pts.join(' L ')}` : ''
-  }, [trajectory.vacuumPoints, activeTVac, scale, originX, groundY, showDoubleTrack])
+      return { x: cx, y: cy }
+    })
+  }, [trajectory, showDoubleTrack, scale, originX, groundY])
+
+  const tailPoints = useMemo(() => {
+    const tailLen = Math.min(8, historyPoints.length)
+    return historyPoints.slice(-tailLen)
+  }, [historyPoints])
 
   const angleRad = (angle * Math.PI) / 180
 
@@ -260,12 +261,15 @@ export default function ObliqueThrowAnimation() {
           <circle cx={4} cy={0} r={2} fill={PHYSICS_COLORS.velocityY} />
         </g>
 
-        {/* 运动历史轨迹线 */}
-        {physicalVacPathD && (
-          <path d={physicalVacPathD} fill="none" stroke={PHYSICS_COLORS.trackHistoryAlt} strokeWidth={STROKE.trackHistory} strokeDasharray={DASH.reference.join(' ')} opacity={0.6} />
-        )}
-        {physicalPathD && (
-          <path d={physicalPathD} fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={STROKE.trackHistory} />
+        {/* 粒子轨迹（统一组件：预测虚线 + 历史实线 + 拖尾 + 本体） */}
+        {historyPoints.length > 0 && (
+          <ParticleTrajectory
+            historyPoints={historyPoints}
+            predictedPoints={predictedPoints}
+            tailPoints={tailPoints}
+            isFocus
+            chargeSign="none"
+          />
         )}
 
         {/* 分方向投影球及虚线 */}
@@ -299,19 +303,19 @@ export default function ObliqueThrowAnimation() {
         {/* 速度分量矢量箭头 */}
         {showVectors && !isLanded && (
           <g>
-            <VectorArrow origin={{ x: ballCanvas.cx, y: -ballCanvas.cy }} vector={{ x: currentState.vx, y: 0 }}
+            <VectorArrow originPixel={{ x: ballCanvas.cx, y: -ballCanvas.cy }} vector={{ x: currentState.vx, y: 0 }}
               type="velocityX" sceneScale={obliqueSceneScale} strokeWidth={STROKE.vectorSub} pixelLength={vxPxLen} />
             <text x={ballCanvas.cx + obliqueSceneScale.maxVectorLength * 0.3 + 10} y={ballCanvas.cy + 3}
               fontSize={font(9)} fill={PHYSICS_COLORS.velocityX} fontWeight="bold">vₓ</text>
 
             {Math.abs(currentState.vy) > 0.05 && (
-              <VectorArrow origin={{ x: ballCanvas.cx, y: -ballCanvas.cy }} vector={{ x: 0, y: currentState.vy }}
+              <VectorArrow originPixel={{ x: ballCanvas.cx, y: -ballCanvas.cy }} vector={{ x: 0, y: currentState.vy }}
                 type="velocityY" sceneScale={obliqueSceneScale} strokeWidth={STROKE.vectorSub} pixelLength={vyPxLen} />
             )}
             <text x={ballCanvas.cx - 3} y={ballCanvas.cy - obliqueSceneScale.maxVectorLength * 0.3 + (currentState.vy >= 0 ? -6 : 12)}
               fontSize={font(9)} fill={PHYSICS_COLORS.velocityY} fontWeight="bold" textAnchor="middle">vᵧ</text>
 
-            <VectorArrow origin={{ x: ballCanvas.cx, y: -ballCanvas.cy }} vector={{ x: currentState.vx, y: currentState.vy }}
+            <VectorArrow originPixel={{ x: ballCanvas.cx, y: -ballCanvas.cy }} vector={{ x: currentState.vx, y: currentState.vy }}
               type="velocity" sceneScale={obliqueSceneScale} strokeWidth={STROKE.vectorMain} pixelLength={totalPxLen} />
             <text x={ballCanvas.cx + obliqueSceneScale.maxVectorLength * 0.3 + 8} y={ballCanvas.cy - obliqueSceneScale.maxVectorLength * 0.3 - 4}
               fontSize={font(9)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>

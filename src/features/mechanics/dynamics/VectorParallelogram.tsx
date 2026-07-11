@@ -15,7 +15,7 @@ export function VectorParallelogram({ physicsData, sceneScale, onDragStart }: Ve
 
   return (
     <>
-      <VectorArrow origin={{ x: origin.cx, y: -origin.cy }}
+      <VectorArrow originPixel={{ x: origin.cx, y: -origin.cy }}
         vector={{ x: f1End.cx - origin.cx, y: -(f1End.cy - origin.cy) }}
         type="appliedForce" sceneScale={sceneScale}
         strokeWidth={CANVAS_STYLE.stroke.vectorSub}
@@ -32,7 +32,7 @@ export function VectorParallelogram({ physicsData, sceneScale, onDragStart }: Ve
           stroke="white" strokeWidth={1.5} className="group-hover:scale-125 transition-transform" />
       </g>
 
-      <VectorArrow origin={{ x: origin.cx, y: -origin.cy }}
+      <VectorArrow originPixel={{ x: origin.cx, y: -origin.cy }}
         vector={{ x: f2End.cx - origin.cx, y: -(f2End.cy - origin.cy) }}
         type="tension" sceneScale={sceneScale}
         strokeWidth={CANVAS_STYLE.stroke.vectorSub}
@@ -59,7 +59,7 @@ export function VectorParallelogram({ physicsData, sceneScale, onDragStart }: Ve
         opacity={CANVAS_STYLE.opacity.reference}
         strokeDasharray={CANVAS_STYLE.dash.reference.join(',')} />
 
-      <VectorArrow origin={{ x: origin.cx, y: -origin.cy }}
+      <VectorArrow originPixel={{ x: origin.cx, y: -origin.cy }}
         vector={{ x: fResultantEnd.cx - origin.cx, y: -(fResultantEnd.cy - origin.cy) }}
         type="force" sceneScale={sceneScale}
         strokeWidth={CANVAS_STYLE.stroke.vectorMain}

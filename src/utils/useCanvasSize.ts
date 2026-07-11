@@ -60,13 +60,17 @@ export function useCanvasSize(
     const resizeObserver = new ResizeObserver((entries) => {
       if (!entries || entries.length === 0) return
       const { width, height } = entries[0].contentRect
-      setRaw({ width, height })
+      if (width > 0 && height > 0) {
+        setRaw({ width, height })
+      }
     })
 
     resizeObserver.observe(element)
 
     const rect = element.getBoundingClientRect()
-    setRaw({ width: rect.width, height: rect.height })
+    if (rect.width > 0 && rect.height > 0) {
+      setRaw({ width: rect.width, height: rect.height })
+    }
 
     return () => {
       resizeObserver.unobserve(element)

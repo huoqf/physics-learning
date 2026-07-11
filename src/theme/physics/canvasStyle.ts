@@ -37,6 +37,7 @@ export const STROKE = {
 
   // 轨迹与辅助
   trackHistory:     1.5,  // 历史轨迹（配合 OPACITY.trackHistory = 0.4）
+  tailLineWidth:    2.4,  // 短拖尾线宽（运动增强，非完整轨迹）
   reference:        1,    // 参考线、辅助线（配合 dashed）
   guide:            0.75, // 导引线（更细）
   annotation:       1,    // 标注线段
@@ -63,7 +64,8 @@ export const STROKE = {
 export const OPACITY = {
   vectorSub:        0.7,  // 分量矢量
   vectorThin:       0.5,  // 细矢量
-  trackHistory:     0.4,  // 历史轨迹
+  trackHistory:     0.4,  // 焦点粒子完整轨迹
+  unfocusedTrackHistory: 0.15, // 非焦点粒子完整轨迹
   grid:             0.3,  // 场景网格线
   gridChart:        0.5, // 图表网格线
   reference:        0.5,  // 参考线
@@ -120,6 +122,8 @@ export const DASH = {
   projection:       [3, 3],   // 投影线
   boundary:         [8, 4],   // 边界线
   trackHistory:     [2, 2],   // 轨迹点线
+  trajectory:       [5, 4],   // 已走过历史轨迹（标准虚线）
+  predictedTrajectory: [2, 3], // 预测理论轨迹（更细密虚线）
   hatch:            [4, 2],   // 斜线（备用）
   axis:             [6, 4],   // 坐标轴虚线（别名）
   tangent:          [4, 4],   // 切线

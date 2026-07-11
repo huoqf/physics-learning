@@ -1,4 +1,4 @@
-import { useMemo, useCallback, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useCallback, type ReactNode } from 'react';
 import { ChartContext, type ChartContextValue } from './ChartContext';
 import { CHART_COLORS, CHART_LAYOUT, FONT, STROKE, DASH } from '@/theme/physics';
 import { useCanvasSize, smartFormat } from '@/utils';
@@ -133,6 +133,26 @@ export interface BasePhysicsChartProps {
  * </BasePhysicsChart>
  * ```
  */
+function FixedSizeRoot({ children }: { children: ReactNode }) {
+  const gRef = useRef<SVGGElement | null>(null);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production' && gRef.current) {
+      const el = gRef.current;
+      const isSvgContext = el instanceof SVGGElement;
+      if (!isSvgContext) {
+        console.error(
+          '[BasePhysicsChart] fixedSize 模式返回纯 SVG 元素，但当前父容器是 HTML 而非 <svg>。' +
+          '图表将不可见。请去掉 fixedSize 让组件返回 <div>+<svg> 自适应结构，' +
+          '或将图表放入 <svg>/<g> 上下文中。',
+        );
+      }
+    }
+  }, []);
+
+  return <g ref={gRef}>{children}</g>;
+}
+
 export function BasePhysicsChart({
   xDomain,
   yDomain,
@@ -188,8 +208,8 @@ export function BasePhysicsChart({
   const rawBottom = px(marginBottomVal);
   // 左侧：Y 轴刻度文字(textAnchor="end") + Y 轴旋转标签所需空间
   const autoLeft = Math.max(rawLeft, axisFontSize * 3.2 + px(5) + 4 + font(isMini ? 12 : 18));
-  // 底部：X 轴刻度文字高度 + X 轴标签高度 + 间距
-  const autoBottom = Math.max(rawBottom, axisFontSize + px(12) + px(6));
+  // 底部：X 轴刻度文字高度 + 间距 + X 轴标签高度 + 底部留白（防止刻度与标签重叠）
+  const autoBottom = Math.max(rawBottom, 2 * axisFontSize + px(8));
 
   const margin = {
     left: autoLeft,
@@ -418,10 +438,10 @@ export function BasePhysicsChart({
         );
       })}
 
-      {/* X 轴标签 */}
+      {/* X 轴标签（y 偏移需容纳刻度数字高度 + 间距 + 标签自身高度，避免重叠） */}
       <text
         x={margin.left + plotW / 2}
-        y={margin.top + plotH + font(isMini ? FONT.small : FONT.axis) + px(isMini ? 8 : 12)}
+        y={margin.top + plotH + 2 * font(isMini ? FONT.small : FONT.axis) + px(7)}
         fontSize={font(isMini ? FONT.small : FONT.axis)}
         fill={CHART_COLORS.labelText}
         textAnchor='middle'
@@ -505,7 +525,11 @@ export function BasePhysicsChart({
   );
 
   if (useFixed) {
-    return <ChartContext.Provider value={ctx}>{chartContent}</ChartContext.Provider>;
+    return (
+      <ChartContext.Provider value={ctx}>
+        <FixedSizeRoot>{chartContent}</FixedSizeRoot>
+      </ChartContext.Provider>
+    );
   }
 
   return (

@@ -38,10 +38,10 @@ export interface TrajectoryPoint {
 export const SPECTROMETER = {
   xMid: 350,
   y0: 20,
-  y1: 140, // 速度选择器下端孔
+  y1: 130, // 速度选择器下端孔 (修改高度，避免与底片/挡板冲突)
   plateHalf: 37.5, // 极板半间距
   slitR: 3,
-  magneticB2RegionY: 140,
+  magneticB2RegionY: 130,
 } as const
 
 export interface SpectrometerSimulation {
@@ -53,7 +53,11 @@ export interface SpectrometerSimulation {
   finalEk: number
   rPx: number
   ekPoints: { x: number; y: number }[]
-  filmPoints: { x: number; y: number }[] // 质子、氘核等落在底片上的静态参考线
+  /** 连续曲线：固定当前粒子 q，变 m，展示 x = x₀ - 2mv/(qB₂) 线性规律 */
+  filmCurve: { x: number; y: number }[]
+  /** 3 种实际粒子的标记点（m, xHit） */
+  filmMarkers: { x: number; y: number; label: string }[]
+  endTime: number // 实际物理结束时间（秒）
 }
 
 export function buildSpectrometerSimulation(
@@ -123,10 +127,14 @@ export function buildSpectrometerSimulation(
     const vIn = lastSelector.v
     const rPhys = computeSpectrometerRadius(vIn, B2, p.q, p.m)
     rPx = rPhys * SCALE
-    const tHalf = (Math.PI * p.m) / (p.q * B2)
+    // 半圆运动时间 T = πm/(|q|B)，负电荷偏转方向相反但周期相同
+    const tHalf = (Math.PI * p.m) / (Math.abs(p.q) * B2)
 
-    // 半圆圆心在 xC = 350 - rPx, yC = 140
-    const cx = SPECTROMETER.xMid - rPx
+    // 负电荷在磁场中偏转方向相反（逆时针 vs 顺时针）
+    // 正电荷：圆心在左侧，顺时针偏转
+    // 负电荷：圆心在右侧，逆时针偏转
+    const isNegativeCharge = p.q < 0
+    const cx = isNegativeCharge ? SPECTROMETER.xMid + rPx : SPECTROMETER.xMid - rPx
     const cy = SPECTROMETER.y1
 
     const halfSteps = 40
@@ -135,10 +143,9 @@ export function buildSpectrometerSimulation(
     for (let i = 1; i <= halfSteps; i++) {
       const frac = i / halfSteps
       const t = tStart + frac * tHalf
-      // 粒子沿 -y 射入，洛伦兹力向左。做顺时针半圆偏转
-      // 角度 theta 从 0 到 PI 弧度变动
-      // x = cx + rPx * cos(theta), y = cy + rPx * sin(theta)
-      const theta = frac * Math.PI
+      // 正电荷：顺时针偏转，theta 从 0 到 PI
+      // 负电荷：逆时针偏转，theta 从 PI 到 0
+      const theta = isNegativeCharge ? Math.PI - frac * Math.PI : frac * Math.PI
       const x = cx + rPx * Math.cos(theta)
       const y = cy + rPx * Math.sin(theta)
       
@@ -146,37 +153,38 @@ export function buildSpectrometerSimulation(
       trajectory.push({ x, y, t, v: vIn, ek })
     }
     hitReason = 'film'
-    hitPoint = { x: cx - rPx, y: cy } // 落在底片上
+    hitPoint = { x: cx + (isNegativeCharge ? rPx : -rPx), y: cy } // 落在底片上
   }
 
-  // 构建 Ek-t 数据点 (完整时间段 [0, 0.0006s] 用于 RelationChart 展示)
-  // 图表 A：动能-时间 ($E_k - t$)，由于粒子可能在中途撞板终止，我们需要补足到 maxTime
-  const maxTime = 0.0006
+  // 构建 Ek-t 数据点（使用轨迹实际时间，无需填充空白）
+  // 质谱仪动能较低，用 eV 数量级展示（除以 1.602e-19）
   const ekPoints: { x: number; y: number }[] = []
   const lastVal = trajectory[trajectory.length - 1]
-  
+
   trajectory.forEach(pt => {
-    ekPoints.push({ x: pt.t, y: pt.ek / 1.602e-13 }) // J → MeV
+    ekPoints.push({ x: pt.t, y: pt.ek / 1.602e-19 }) // J → eV
   })
-  
-  if (lastVal.t < maxTime) {
-    // 若中途停止，则此后动能为 0 (或保持静止，高考为了直观，撞击后不再变化可以画 0，或者保持撞击时能量。我们设定撞击后在图表上保持恒定，表示已经静止打在底片上)
-    const fillSteps = 10
-    const tStart = lastVal.t
-    for (let i = 1; i <= fillSteps; i++) {
-      const t = tStart + (maxTime - tStart) * (i / fillSteps)
-      ekPoints.push({ x: t, y: hitReason === 'film' ? lastVal.ek / 1.602e-13 : 0 })
-    }
+
+  // 连续曲线：固定当前粒子 q，变 m，展示 x = x₀ - 2mv/(qB₂) 线性规律
+  // m 范围覆盖 3 种粒子 (4 ~ 26 ×10⁻²³ kg)，用当前粒子的 q 计算
+  const filmCurve: { x: number; y: number }[] = []
+  const mMin = 4.0
+  const mMax = 26.0
+  const curveSteps = 40
+  for (let i = 0; i <= curveSteps; i++) {
+    const mVal = mMin + (mMax - mMin) * (i / curveSteps)
+    const mPhys = mVal * 1e-23
+    const rTemp = (mPhys * vParticle) / (p.q * B2)
+    const xHit = SPECTROMETER.xMid - 2 * rTemp * SCALE
+    filmCurve.push({ x: mVal, y: xHit })
   }
 
-  // 静态同位素底片落点参考曲线 (图表 B：x_hit 与质量的关系)
-  // 我们只计算质子 (m=6e-23, R_1=75px), 氘核 (m=12e-23, R_2=150px) 在 vParticle = 1500m/s, B2 = 1.5T 时的理论位置
-  // R = (m * v) / (q * B2)
-  const filmPoints: { x: number; y: number }[] = []
-  for (let mVal = 4.0e-23; mVal <= 26.0e-23; mVal += 0.5e-23) {
-    const rTemp = (mVal * vParticle) / (p.q * B2)
+  // 3 种实际粒子的标记点（各自用真实 q 计算）
+  const filmMarkers: { x: number; y: number; label: string }[] = []
+  for (const [, particle] of Object.entries(PARTICLES)) {
+    const rTemp = (particle.m * vParticle) / (particle.q * B2)
     const xHit = SPECTROMETER.xMid - 2 * rTemp * SCALE
-    filmPoints.push({ x: mVal * 1e23, y: xHit }) // 质量以 1e-23 kg 为单位
+    filmMarkers.push({ x: particle.m * 1e23, y: xHit, label: particle.label })
   }
 
   return {
@@ -188,7 +196,9 @@ export function buildSpectrometerSimulation(
     finalEk: lastVal.ek,
     rPx,
     ekPoints,
-    filmPoints,
+    filmCurve,
+    filmMarkers,
+    endTime: lastVal.t, // 实际物理结束时间（秒）
   }
 }
 
@@ -216,6 +226,7 @@ export interface CyclotronSimulation {
   ekPoints: { x: number; y: number }[] // Ek - t 曲线 (MeV)
   rnPoints: { x: number; y: number }[] // R - n 曲线 (px)
   ekMaxVsUPoints: { x: number; y: number }[] // Ek_max - U 曲线
+  endTime: number // 实际物理结束时间（秒）
 }
 
 export function buildCyclotronSimulation(
@@ -282,23 +293,13 @@ export function buildCyclotronSimulation(
     if (vk <= 0) break
   }
 
-  // 1. Ek - t 曲线 (MeV)
-  const maxTime = 0.0006
+  // 1. Ek - t 曲线（使用轨迹实际时间，无需填充空白）
+  // 用 keV 数量级展示，更细致地展现动态波动
+  const lastVal = trajectory[trajectory.length - 1]
   const ekPoints: { x: number; y: number }[] = []
   trajectory.forEach((pt) => {
-    ekPoints.push({ x: pt.t, y: pt.ek / 1.602e-13 })
+    ekPoints.push({ x: pt.t, y: pt.ek / 1.602e-16 }) // J → keV
   })
-  
-  // 补齐时间段
-  const lastVal = trajectory[trajectory.length - 1]
-  if (lastVal && lastVal.t < maxTime) {
-    const fillSteps = 15
-    const tStart = lastVal.t
-    for (let i = 1; i <= fillSteps; i++) {
-      const currT = tStart + (maxTime - tStart) * (i / fillSteps)
-      ekPoints.push({ x: currT, y: lastVal.ek / 1.602e-13 })
-    }
-  }
 
   // 2. R - n 曲线 (回旋半径 vs 加速次数)
   const rnPoints: { x: number; y: number }[] = []
@@ -306,13 +307,11 @@ export function buildCyclotronSimulation(
     rnPoints.push({ x: idx + 1, y: seg.rPx })
   })
 
-  // 3. 最大动能 - 加速电压 U 曲线 (静态理论曲线，展示无关性，但标出当前 U 点)
-  // EkMax = q^2 * B2^2 * rMax^2 / 2m = 常数
-  // 横轴为加速电压 U (kV)，纵轴为 EkMax (MeV)
+  // 3. 最大动能 - 加速电压 U 曲线 (静态理论曲线)
   const ekMaxVsUPoints: { x: number; y: number }[] = []
-  const constEkMaxMeV = maxEk / 1.602e-13
+  const constEkMaxKeV = maxEk / 1.602e-16
   for (let uKV = 1.0; uKV <= 10.0; uKV += 0.5) {
-    ekMaxVsUPoints.push({ x: uKV, y: constEkMaxMeV })
+    ekMaxVsUPoints.push({ x: uKV, y: constEkMaxKeV })
   }
 
   return {
@@ -325,6 +324,7 @@ export function buildCyclotronSimulation(
     trajectory,
     ekPoints,
     rnPoints,
+    endTime: lastVal ? lastVal.t : 0, // 实际物理结束时间（秒）
     ekMaxVsUPoints,
   }
 }
@@ -353,6 +353,7 @@ export interface DeflectSimulation {
   vOut: number
   vPoints: { x: number; y: number }[] // 速度大小 v - t 曲线 (km/s)
   tanThetaVsEPoints: { x: number; y: number }[] // tan(theta) - E 曲线
+  endTime: number // 实际物理结束时间（秒）
 }
 
 export function buildDeflectSimulation(
@@ -377,9 +378,13 @@ export function buildDeflectSimulation(
   let hitPoint: { x: number; y: number } | null = null
 
   // 1. 模拟电偏转类平抛运动
+  // 电场方向向下（从正极板到负极板）
+  // 正电荷：受力向下，向下偏转（y 增加）
+  // 负电荷：受力向上，向上偏转（y 减少）
   // x(t) = xStart + v0 * t * SCALE
-  // y(t) = yMid - 0.5 * a_y * t^2 * SCALE (E > 0 向上偏转，y坐标减少)
-  const ay = (p.q * E) / p.m
+  // y(t) = yMid + sign(q) * 0.5 * |a_y| * t^2 * SCALE
+  const ay = Math.abs(p.q) * E / p.m // 加速度大小（始终为正）
+  const direction = p.q > 0 ? 1 : -1 // 正电荷向下，负电荷向上
 
   for (let i = 0; i <= steps; i++) {
     const frac = i / steps
@@ -387,14 +392,14 @@ export function buildDeflectSimulation(
     const x = DEFLECT.xStart + vParticle * t * SCALE
     const yOffsetPhys = 0.5 * ay * t * t
     const yOffsetPx = yOffsetPhys * SCALE
-    const y = DEFLECT.yMid - yOffsetPx
+    const y = DEFLECT.yMid + direction * yOffsetPx // 正电荷向下偏转
 
-    const vy = ay * t
+    const vy = direction * ay * t // 竖直分速度（正电荷向下为正）
     const v = Math.sqrt(vParticle * vParticle + vy * vy)
     const ek = 0.5 * p.m * v * v
 
     if (Math.abs(yOffsetPx) >= DEFLECT.plateHalf) {
-      const borderY = DEFLECT.yMid - Math.sign(yOffsetPx) * DEFLECT.plateHalf
+      const borderY = DEFLECT.yMid + direction * DEFLECT.plateHalf
       trajectory.push({ x, y: borderY, t, v, ek })
       hitReason = 'plate'
       hitPoint = { x, y: borderY }
@@ -411,38 +416,51 @@ export function buildDeflectSimulation(
   if (hitReason === 'none') {
     const lastSelector = trajectory[trajectory.length - 1]
     const vIn = lastSelector.v
-    
-    // 磁场偏转物理半径
-    const rPhys = (p.m * vIn) / (p.q * B2)
+
+    // 磁场偏转物理半径 R = mv/(|q|B)，始终为正值
+    const rPhys = (p.m * vIn) / (Math.abs(p.q) * B2)
     rPx = rPhys * SCALE
 
-    // 圆弧的圆心位置
-    // 在 x = 300 处，粒子出电场。速度方向与水平夹角为 theta
-    // 水平速度向右，竖直速度向上 (因为 y 减少)。所以速度向右上方倾斜 theta 弧度
-    // 根据左手定则，正电荷速度向右上方，磁场入纸面，洛伦兹力指向右下方 (与速度垂直)
-    // 圆心坐标：
-    // cx = 300 + rPx * sin(theta)
-    // cy = yOut + rPx * cos(theta)
+    // 粒子出电场时速度方向分析：
+    // 正电荷向下偏转：vx 向右，vy 向下（屏幕坐标 y 增加）
+    // 速度方向：向右下方，与水平夹角 theta（正角度表示向下）
     const theta = out.theta
-    cx = DEFLECT.xEnd + rPx * Math.sin(theta)
-    cy = lastSelector.y + rPx * Math.cos(theta)
+
+    // 洛伦兹力方向（圆心方向），B₂ 入纸面（×）：
+    //   正电荷 → 速度向右下 → 洛伦兹力向右上 → 圆心在右上方
+    //   负电荷 → 速度向右下 → 洛伦兹力向左下 → 圆心在左下方
+    const isNegativeCharge = p.q < 0
+
+    if (isNegativeCharge) {
+      // 负电荷：圆心在左下方
+      cx = DEFLECT.xEnd - rPx * Math.sin(theta)
+      cy = lastSelector.y + rPx * Math.cos(theta)
+    } else {
+      // 正电荷：圆心在右上方
+      cx = DEFLECT.xEnd + rPx * Math.sin(theta)
+      cy = lastSelector.y - rPx * Math.cos(theta)
+    }
 
     const tStart = lastSelector.t
-    const maxCircleTime = 0.0006 - tStart
+    // 磁场偏转时间 = 半圆周期 T/2 = πm/(|q|B)
+    const maxCircleTime = (Math.PI * p.m) / (Math.abs(p.q) * B2)
     const circleSteps = 80
-    const omega = (p.q * B2) / p.m
+    // 角速度 omega = |q|B/m（始终为正）
+    const omega = (Math.abs(p.q) * B2) / p.m
+
+    // B₂ 入纸面：正电荷顺时针（phi 减小），负电荷逆时针（phi 增加）
+    const phi0 = Math.atan2(lastSelector.y - cy, DEFLECT.xEnd - cx)
 
     for (let i = 1; i <= circleSteps; i++) {
       const frac = i / circleSteps
       const t = tStart + frac * maxCircleTime
-      // 粒子作顺时针圆周运动。
-      // 粒子相对于圆心的初始极角为 phi_start = PI + theta (因为粒子在圆心左上方)
-      // 在顺时针回旋中，极角减小：phi(t) = PI + theta - omega * (t - tStart)
-      const phi = Math.PI + theta - omega * (t - tStart)
-      
+      // 正电荷：顺时针（phi 减小）
+      // 负电荷：逆时针（phi 增加）
+      const phi = isNegativeCharge ? phi0 + omega * (t - tStart) : phi0 - omega * (t - tStart)
+
       const x = cx + rPx * Math.cos(phi)
       const y = cy + rPx * Math.sin(phi)
-      
+
       const ek = lastSelector.ek
 
       // 检测是否撞击右侧荧光屏
@@ -465,21 +483,12 @@ export function buildDeflectSimulation(
     }
   }
 
-  // 3. 构建 速度-时间 (v - t) 曲线 (km/s)
-  const maxTime = 0.0006
+  // 3. 构建 速度-时间 (v - t) 曲线（使用轨迹实际时间，无需填充空白）
+  const lastVal = trajectory[trajectory.length - 1]
   const vPoints: { x: number; y: number }[] = []
   trajectory.forEach((pt) => {
     vPoints.push({ x: pt.t, y: pt.v / 1000 }) // m/s → km/s
   })
-  const lastVal = trajectory[trajectory.length - 1]
-  if (lastVal && lastVal.t < maxTime) {
-    const fillSteps = 10
-    const tStart = lastVal.t
-    for (let i = 1; i <= fillSteps; i++) {
-      const t = tStart + (maxTime - tStart) * (i / fillSteps)
-      vPoints.push({ x: t, y: hitReason === 'film' ? lastVal.v / 1000 : 0 })
-    }
-  }
 
   // 4. tan(theta) - 电场强度 E 曲线 (静态理论，展示正比关系)
   // tan(theta) = q * E * L / (m * v0^2)
@@ -501,6 +510,7 @@ export function buildDeflectSimulation(
     vOut: out.vOut,
     vPoints,
     tanThetaVsEPoints,
+    endTime: lastVal ? lastVal.t : 0, // 实际物理结束时间（秒）
   }
 }
 

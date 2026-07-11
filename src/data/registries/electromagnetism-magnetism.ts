@@ -101,6 +101,8 @@ export const electromagnetismMagnetismAnimations = defineAnimations({
     title: '带电粒子在磁场中运动',
     knowledgeId: 'electricity-3-3',
     Component: lazy(() => import('@/features/electromagnetism/magnetism/BoundaryMagneticField/ChargeInBField')),
+    controlsMode: 'timed' as const,
+    maxTime: 8,
     controlMeta: [
       { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础：定性边界偏转' }, { value: 1, label: '进阶：高考动态圆族' }] },

@@ -9,8 +9,12 @@ export const combinedFieldsAnimations = defineAnimations({
     Component: lazy(() =>
       import('@/features/electromagnetism/magnetism/combined-fields/CombinedFieldsAnimation'),
     ),
+    CenterExtra: lazy(() =>
+      import('@/features/electromagnetism/magnetism/combined-fields/CombinedFieldsCenterExtra'),
+    ),
+    centerExtraHeight: 'h-[250px]',
     controlsMode: 'timed' as const,
-    maxTime: 0.0006,
+    maxTime: 10,
     defaultParams: {
       mode: 0,
       electricE: 300,
@@ -21,6 +25,7 @@ export const combinedFieldsAnimations = defineAnimations({
       resonanceLock: 1,
       particleType: 0,
       vParticle: 1500,
+      showAngles: 0,
     } as const,
     paramMeta: [
       // 模式 0: 质谱仪级联参数
@@ -84,6 +89,15 @@ export const combinedFieldsAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 1,
       },
+      // 圆心角标注仅在模式 2 展示
+      {
+        type: 'toggle',
+        key: 'showAngles',
+        label: '显示圆心角与偏向角',
+        group: '显示辅助',
+        showIf: 'mode',
+        showIfValue: 2,
+      },
       {
         type: 'tip',
         group: '教学提示',
@@ -104,6 +118,14 @@ export const combinedFieldsAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 2,
         content: '级联偏转：在电场中进行类平抛偏转（速度变大），随之以切向速度射入磁场做匀速圆周（速度大小不变）。',
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        showIf: 'mode',
+        showIfValue: 2,
+        variant: 'warning',
+        content: '提示：默认参数下粒子偏转半径较小，未撞击荧光屏。调小 B₂ 或调大 E 可增大偏转半径，使粒子击中荧光屏。',
       },
     ],
   },

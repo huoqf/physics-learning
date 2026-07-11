@@ -2,7 +2,7 @@
 
 > 优先级：遵循 `02_UI_RULES.md` 约束
 > AI 任务入口：新增或修改动画场景前必须查阅本文件
-> 最后更新：2026-07-09
+> 最后更新：2026-07-11
 
 ---
 
@@ -69,6 +69,63 @@ import { VectorArrow } from '@/components/Physics'
 
 ---
 
+### ParticleTrajectory
+
+用途：粒子轨迹统一渲染（历史轨迹 + 预测轨迹 + 拖尾 + 本体球）。所有粒子运动页面**必须**使用此组件，禁止手写 `<polyline>` + `<Ball>` 组合。线宽/透明度/虚线 Dash 统一从 `CANVAS_STYLE` 读取。
+
+```ts
+import { ParticleTrajectory } from '@/components/Physics'
+```
+
+必需 props：
+- `historyPoints: { x: number; y: number }[]` — 已走过的历史点集（时间过滤）
+- `predictedPoints: { x: number; y: number }[]` — 完整理论/预测轨迹点集（全局虚线参考）
+- `tailPoints: { x: number; y: number }[]` — 短拖尾点集（运动增强，取最近 8 个点）
+- `isFocus: boolean` — 是否焦点粒子（影响透明度和球体大小）
+- `chargeSign: '+' | '-' | 'none'` — 电荷极性（决定基准色）
+
+常见可选 props：`customBaseColor`（经典力学自定义颜色）
+
+最小示例（来源：`ChargeInEField.tsx`）：
+
+```tsx
+<ParticleTrajectory
+  historyPoints={historyPoints}
+  predictedPoints={predictedPoints}
+  tailPoints={tailPoints}
+  isFocus
+  chargeSign="+"
+/>
+```
+
+派生数据模式：
+
+```tsx
+const historyPoints = useMemo(() => {
+  return trajectory
+    .filter(pt => pt.t <= currentTime)
+    .map(pt => ({ x: pt.x, y: pt.y }))
+}, [trajectory, currentTime])
+
+const predictedPoints = useMemo(() => {
+  return trajectory.map(pt => ({ x: pt.x, y: pt.y }))
+}, [trajectory])
+
+const tailPoints = useMemo(() => {
+  return historyPoints.slice(-8)
+}, [historyPoints])
+```
+
+渲染层级（从底到顶）：
+A. 预测轨迹虚线（`CANVAS_STYLE.dash.predictedTrajectory` [2,3]，更淡更密）
+B. 历史轨迹虚线（`CANVAS_STYLE.dash.trajectory` [5,4]）
+C. 拖尾实线渐变（`CANVAS_STYLE.stroke.tailLineWidth` 2.4）
+D. 粒子本体球（`CANVAS_STYLE.object.pointMassRadius` 6）
+
+禁止：手写 `<polyline>` + `<Ball>` 组合实现粒子轨迹。
+
+---
+
 ### PhysicsGround
 
 用途：绘制地面/斜面/传送带，支持多种纹理和角度。
@@ -91,7 +148,8 @@ import { PhysicsGround } from '@/components/Physics'
 
 ### Ball
 
-用途：质点/小球渲染，含速度拖尾、材质变体（钢珠、摆球、行星等）。禁止手绘 `<circle>` + `<radialGradient>`。
+用途：质点/小球渲染，含材质变体（钢珠、摆球、行星等）。禁止手绘 `<circle>` + `<radialGradient>`。
+> **注意**：带轨迹的粒子运动场景（平抛、斜抛、自由落体、电磁偏转等）应使用 `ParticleTrajectory`，它内部已包含粒子本体渲染。`Ball` 仅用于静态展示的球体或不需要轨迹的场景（如参考对照球、弹簧振子等）。
 
 ```ts
 import { Ball } from '@/components/Physics'

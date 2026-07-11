@@ -7,10 +7,19 @@ import { calculateVectorPixelLength } from '../../utils/vectorLength';
 
 /**
  * 矢量箭头组件 Props
+ *
+ * 【起点坐标】二选一：
+ * - `origin`：物理坐标（米），由 sceneScale 转换为像素坐标。物理 y↑正方向。
+ * - `originPixel`：画布像素坐标，直接使用，跳过 sceneScale 转换。
+ *   遵循 SVG 坐标系（y↓正方向），调用方需自行完成物理→画布的 y 翻转。
+ *
+ * ⚠️ 同时传入两者时，originPixel 优先，origin 被忽略。
  */
 interface VectorArrowProps {
-  /** 矢量起点（物理坐标） */
-  origin: Vector2
+  /** 矢量起点（物理坐标，米，y↑正方向，sceneScale 会将其转换为画布像素坐标） */
+  origin?: Vector2
+  /** 矢量起点（画布像素坐标，y↓正方向，直接使用，跳过 sceneScale 转换） */
+  originPixel?: { x: number; y: number }
   /** 矢量值（物理坐标，y↑正方向） */
   vector: Vector2
   /** 矢量类型（决定默认颜色和参考量级） */
@@ -50,6 +59,7 @@ function perpendicular(v: Vector2): Vector2 {
  */
 export function VectorArrow({
   origin,
+  originPixel,
   vector,
   type,
   sceneScale,
@@ -64,6 +74,12 @@ export function VectorArrow({
 }: VectorArrowProps) {
   if (magnitude(vector) === 0) return null;
 
+  if (origin && originPixel) {
+    console.warn(
+      '[VectorArrow] 同时传入 origin 和 originPixel，origin 将被忽略。请只使用其中一个。'
+    );
+  }
+
   const dir = normalize(vector);
   const refMag = overrideRefMag ?? sceneScale.refMagnitudes?.[type] ?? 0;
   const totalLength =
@@ -74,8 +90,9 @@ export function VectorArrow({
   const lineLen = Math.max(0, totalLength - headLen);
   const headWidth = headLen * 0.6;
 
-  const x1 = sceneScale.originX + origin.x * sceneScale.scaleX;
-  const y1 = sceneScale.originY - origin.y * sceneScale.scaleY;
+  // 支持两种起点：像素坐标（直接使用）或物理坐标（通过 sceneScale 转换）
+  const x1 = originPixel ? originPixel.x : sceneScale.originX + (origin?.x ?? 0) * sceneScale.scaleX;
+  const y1 = originPixel ? originPixel.y : sceneScale.originY - (origin?.y ?? 0) * sceneScale.scaleY;
 
   const lineEndX = x1 + dir.x * lineLen;
   const lineEndY = y1 - dir.y * lineLen;

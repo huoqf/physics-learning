@@ -29,6 +29,12 @@ export type { EnergyBarItem } from './EnergyBars'
 export { SVGSingleBar } from './SVGSingleBar'
 
 // ============================================================================
+// 粒子轨迹渲染 (Particle Trajectory)
+// ============================================================================
+export { ParticleTrajectory } from './ParticleTrajectory'
+export { drawCanvasParticleTrajectory } from './drawCanvasParticleTrajectory'
+
+// ============================================================================
 // 电磁学 - 静电场 (Electrostatics)
 // ============================================================================
 export { CapacitorPlates } from './CapacitorPlates'
@@ -97,4 +103,5 @@ export type { HandRuleProps, HandRuleMode } from './HandRule'
 export type { SkeletonHandProps, HandPose, HandChirality } from './SkeletalHand'
 export type { BallProps, BallPresetType } from './Ball'
 export type { BlockProps, BlockPresetType } from './Block'
+export type { ParticleTrajectoryProps } from './ParticleTrajectory'
 

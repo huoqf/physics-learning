@@ -184,6 +184,74 @@ return (
 )
 ```
 
+#### 场景 5：Canvas+SVG 混合渲染（高频动画 Canvas + 矢量标注 SVG）
+
+> 适用场景：高频粒子/轨迹动画用 Canvas 绘制，速度/力矢量箭头用 SVG `VectorArrow` 叠加。
+
+**坐标对齐是核心难点。Canvas 和 SVG 使用不同坐标系，必须严格对齐否则矢量起点偏离粒子。**
+
+```tsx
+// ── 坐标系说明 ──────────────────────────────────────────────
+// Canvas：容器像素坐标，originY 由 vp.visibleH 决定
+// SVG：设计坐标，经 vp.transform = translate(tx,ty) scale(s) 映射到屏幕
+// 两者 scale 不同：Canvas scale = visibleW/worldWidth；vp.scale = min(visibleW/designW, visibleH/designH)
+// 宽高比不匹配时两者比例不等 → 必须用 vp 逆变换对齐
+
+const canvasRef = useRef<HTMLCanvasElement>(null)
+
+// 1. Canvas 用 canvasSceneScale（基于 vp.visibleW/H 的容器像素坐标）
+const canvasSceneScale = useMemo(() => {
+  const base = createSceneScaleFromViewport(vp, 'centerScale', {
+    worldWidth,
+    worldHeight: worldWidth * (vp.visibleH / vp.visibleW),
+    refMagnitudes: { velocity: 45, lorentzForce: 25 },
+  })
+  return { ...base, originY: vp.visibleH * 0.70 }  // 自定义物理原点纵坐标
+}, [vp, worldWidth])
+
+// 2. ✅ 正确：物理坐标 → SVG 设计坐标（canvas像素 → vp 逆变换）
+//    保证宽高比任意变化时箭头起点始终与 Canvas 粒子重合
+const toDesignCoords = useCallback((wx: number, wy: number) => {
+  const { px: cpx, py: cpy } = worldToPixel(wx, wy, canvasSceneScale)
+  // vp.transform = translate(tx, ty) scale(s)
+  // 逆变换：design = (canvas像素 - translate) / scale
+  return {
+    dx: (cpx - vp.tx) / vp.scale,
+    dy: (cpy - vp.ty) / vp.scale,
+  }
+}, [canvasSceneScale, vp.tx, vp.ty, vp.scale])
+
+// ❌ 错误做法（禁止）：用 sceneScale（designW/worldWidth）直接算设计坐标
+// const toDesignCoords = (wx, wy) => worldToPixel(wx, wy, sceneScale)
+// 原因：vp.scale = min(visibleW/designW, visibleH/designH)，宽高比不匹配时
+//       designW/worldWidth * vp.scale ≠ visibleW/worldWidth（Canvas scale），导致 Y 轴偏移
+
+// 3. VectorArrow 的 maxVectorLength 要用设计坐标单位（除以 vp.scale 转换）
+const svgSceneScale = useMemo(() => ({
+  scale: 1, scaleX: 1, scaleY: 1, originX: 0, originY: 0,
+  maxVectorLength: canvasSceneScale.maxVectorLength / vp.scale,  // ← 设计坐标单位
+  refMagnitudes: { velocity: 45, lorentzForce: 25 },
+}), [canvasSceneScale.maxVectorLength, vp.scale])
+
+const particleDesign = toDesignCoords(particle.x, particle.y)
+
+return (
+  // canvasRef 传入后，SVG 自动设置 w-full h-full absolute inset-0（见 AnimationSvgCanvas 源码）
+  <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform} canvasRef={canvasRef}>
+    <VectorArrow
+      originPixel={{ x: particleDesign.dx, y: particleDesign.dy }}
+      vector={{ x: particle.vx, y: particle.vy }}
+      type="velocity"
+      sceneScale={svgSceneScale}
+    />
+  </AnimationSvgCanvas>
+)
+```
+
+> ⚠️ **已知历史 Bug（2026-07-11 修复）**：`AnimationSvgCanvas` 有 `canvasRef` 时，SVG 原本缺少 `w-full h-full`，导致 SVG 以浏览器默认 300×150px 渲染，所有矢量被裁剪不可见。已修复，无需调用方处理，但需注意不要手动覆盖 SVG className。
+
+---
+
 #### 核心规则汇总
 
 | 规则 | 说明 |
@@ -194,6 +262,8 @@ return (
 | `font()` 强制使用 | `fontSize={font(11)}` 而非 `fontSize={11}` |
 | 物理比例尺 | 通过 `computeScale()` 或 `createSceneScaleFromViewport()` 计算，禁止硬编码 |
 | 指针事件 | 传 `svgRef` + `useViewportPointer`，禁止手写 `(clientX - rect.left - vp.tx) / vp.scale` |
+| **Canvas+SVG 混用坐标对齐** | **SVG 矢量起点必须通过 `canvas像素 → vp 逆变换` 得到设计坐标；禁止直接用 `designW/worldWidth` 为基准的 sceneScale 计算（宽高比不匹配时偏移）** |
+| **Canvas+SVG maxVectorLength 单位** | **`svgSceneScale.maxVectorLength` 必须用 `canvasSceneScale.maxVectorLength / vp.scale`（设计坐标单位），而非 `Math.min(designW, designH) * 0.3`（两者在 letterbox/pillarbox 时不等）** |
 
 ---
 

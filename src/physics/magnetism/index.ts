@@ -9,6 +9,10 @@ export {
   calcParticleArcAngle,
   calculateDoubleBoundaryExit,
   calculateCircularBoundaryExit,
+  lorentzForceDir,
+  electricForceDir,
+  centripetalForceDir,
+  type BDirection,
 } from './forces'
 
 export {
