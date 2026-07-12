@@ -1,5 +1,6 @@
-import { useRef, useEffect } from 'react'
-import { useCanvasSize } from '@/utils/useCanvasSize'
+import { useEffect } from 'react'
+import { useAnimationViewport } from '@/hooks'
+import { useCanvasViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { MODERN_COLORS, EM_COLORS, KINEMATICS_COLORS } from '@/theme/physics'
 import { withAlpha } from '@/theme/physics/colors'
@@ -34,18 +35,14 @@ export default function PhototubeCanvas({
   showPhotonModel,
   frequency,
 }: PhototubeCanvasProps) {
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full)
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
+  const { canvasRef, setupFrame } = useCanvasViewport({ vp, canvasSize, mode: 'raw' })
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
+    const ctx = setupFrame()
     if (!ctx) return
 
     const { width, height } = canvasSize
-    canvas.width = width
-    canvas.height = height
 
     const cx = width / 2
     const cy = height / 2
@@ -54,8 +51,6 @@ export default function PhototubeCanvas({
     const tubeLeft = kPlateX - TUBE_PADDING
     const tubeRight = aPlateX + TUBE_PADDING
     const tubeWidth = tubeRight - tubeLeft
-
-    ctx.clearRect(0, 0, width, height)
 
     // ─── 1. 光电管外壳（玻璃壳） ───
     ctx.save()
@@ -280,7 +275,7 @@ export default function PhototubeCanvas({
       ctx.fillText('ν < ν₀ — 无法产生光电子', cx, cy + PLATE_HALF_H + TUBE_PADDING + 15)
       ctx.restore()
     }
-  }, [canvasSize, photoelectrons, photonParticles, beamColor, isPE, I, voltage, mode, showPhotonModel, frequency])
+  }, [canvasSize, setupFrame, photoelectrons, photonParticles, beamColor, isPE, I, voltage, mode, showPhotonModel, frequency])
 
   return (
     <div ref={containerRef} className="w-full h-full bg-neutral-50 rounded-lg overflow-hidden relative">

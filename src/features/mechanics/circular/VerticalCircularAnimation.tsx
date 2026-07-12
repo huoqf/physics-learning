@@ -1,10 +1,16 @@
-import { useVerticalCircularPhysics } from './hooks/useVerticalCircularPhysics'
+import { useVerticalCircularPhysics, VERTICAL_CIRCULAR_LAYOUT } from './hooks/useVerticalCircularPhysics'
 import { VerticalCircularScene } from './components/VerticalCircularScene'
 import { ForceDecompositionCard } from './components/ForceDecompositionCard'
 
 export default function VerticalCircularAnimation() {
   const physics = useVerticalCircularPhysics()
-  const { containerRef, canvasSize, vp, currentPoint, cardWidth, cardHeight, cardX, cardY, params } = physics
+  const { containerRef, canvasSize, vp, currentPoint, params } = physics
+
+  // Card positions in pixel coordinates (rendered outside <g transform>)
+  const cardWidth = Math.max(VERTICAL_CIRCULAR_LAYOUT.cardMinWidth, canvasSize.width * 0.38)
+  const cardHeight = Math.max(340, canvasSize.height * 0.55)
+  const cardX = canvasSize.width - cardWidth - VERTICAL_CIRCULAR_LAYOUT.cardRightOffset
+  const cardY = 20
 
   return (
     <div ref={containerRef} className="w-full h-full relative">

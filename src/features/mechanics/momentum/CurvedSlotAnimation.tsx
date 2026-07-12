@@ -2,7 +2,11 @@ import { VectorArrow, PhysicsGround, Ball } from '@/components/Physics'
 import { useMemo, useId } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { useCanvasSize, useViewport, getPointsUpToTime } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
+import { useSceneScale } from '@/hooks/useSceneScale'
+import { AnimationSvgCanvas } from '@/components/Layout'
+import { CANVAS_PRESETS } from '@/theme/spacing'
+import { getPointsUpToTime } from '@/utils'
 
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, CANVAS_COLORS } from '@/theme/physics'
 
@@ -10,12 +14,12 @@ import { VelocityTimeChart } from '@/components/Chart'
 
 import { precomputeCurvedSlot, interpolateCurvedSlot } from '@/physics/momentumApplication/curvedSlot'
 
-const CANVAS_DESIGN = { width: 700, height: 260 }
+const DESIGN = CANVAS_PRESETS.splitV // 840×325
+const GROUND_Y = Math.round(DESIGN.height * 0.77) // 250
 const GROUND_X = 0
-const GROUND_Y = Math.round(CANVAS_DESIGN.height * 0.77)
-const GROUND_WIDTH = CANVAS_DESIGN.width
+const GROUND_WIDTH = DESIGN.width
 const SLOT_PX_PER_M = 40
-const SLOT_ORIGIN_X = Math.round(CANVAS_DESIGN.width * 0.5)
+const SLOT_ORIGIN_X = Math.round(DESIGN.width * 0.5)
 const SLOT_EXTRA_WIDTH = 30
 const BALL_RADIUS_PX = 10
 const SLOT_SIM = { duration: 6, dt: 0.002 }
@@ -28,8 +32,7 @@ export default function CurvedSlotAnimation() {
     }))
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_DESIGN)
-  const vp = useViewport(canvasSize, { designWidth: CANVAS_DESIGN.width, designHeight: CANVAS_DESIGN.height })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.splitV })
 
   // 参数解析
   const m_block = params.m_block ?? 2
@@ -43,11 +46,16 @@ export default function CurvedSlotAnimation() {
   const GROUND_GAP = isFixed === 0 ? 3 : 0
   const COMP_GROUND_Y = GROUND_Y - GROUND_GAP
 
-  const sceneScale = useMemo(() => ({
-    scaleX: SLOT_PX_PER_M, scaleY: SLOT_PX_PER_M, scale: SLOT_PX_PER_M,
-    originX: SLOT_ORIGIN_X, originY: COMP_GROUND_Y, maxVectorLength: 45,
-    refMagnitudes: { force: 25, normalForce: 25, appliedForce: 25, forceComponent: 25, velocity: 5 }
-  }), [COMP_GROUND_Y])
+  const sceneScale = useSceneScale({
+    vp, preset,
+    anchor: 'custom',
+    customScaleX: SLOT_PX_PER_M,
+    customScaleY: SLOT_PX_PER_M,
+    customOriginX: SLOT_ORIGIN_X,
+    customOriginY: COMP_GROUND_Y,
+    maxVectorLength: 45,
+    refMagnitudes: { force: 25, normalForce: 25, appliedForce: 25, forceComponent: 25, velocity: 5 },
+  })
 
   // 物理预计算与插值
   const states = useMemo(() => {
@@ -145,14 +153,8 @@ export default function CurvedSlotAnimation() {
       </div>
 
       {/* 下方物理仿真动画区 */}
-      <div
-        ref={containerRef}
-        className="flex-[5] bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[220px]"
-      >
-        <svg
-          className="w-full h-full block"
-        >
-          <g transform={vp.transform}>
+      <div className="flex-[5] bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden min-h-[220px]">
+        <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
             <defs>
               <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor={SCENE_COLORS.materials.aluminumMetalGrad[0]} />
@@ -262,14 +264,14 @@ export default function CurvedSlotAnimation() {
               return (
                 <g>
                   {/* 滑块受支持力 N 与重力 mg，均作用于几何中心 */}
-                  <VectorArrow origin={ballCenterPhy} vector={{ x: -N * Math.sin(theta), y: N * Math.cos(theta) }} type="normalForce" sceneScale={sceneScale as never} label="N" />
-                  <VectorArrow origin={ballCenterPhy} vector={{ x: 0, y: -mgVal }} type="force" sceneScale={sceneScale as never} label="mg" color={PHYSICS_COLORS.gravity} />
+                  <VectorArrow origin={ballCenterPhy} vector={{ x: -N * Math.sin(theta), y: N * Math.cos(theta) }} type="normalForce" sceneScale={sceneScale} label="N" />
+                  <VectorArrow origin={ballCenterPhy} vector={{ x: 0, y: -mgVal }} type="force" sceneScale={sceneScale} label="mg" color={PHYSICS_COLORS.gravity} />
                   
                   {/* 槽受滑块的压力 N' 及水平推力分力 N'x，作用于接触点 */}
                   {!isFixed && (
                     <>
-                      <VectorArrow origin={contactPhy} vector={{ x: N * Math.sin(theta), y: -N * Math.cos(theta) }} type="appliedForce" sceneScale={sceneScale as never} label="N'" color={PHYSICS_COLORS.appliedForce} />
-                      <VectorArrow origin={contactPhy} vector={{ x: N * Math.sin(theta), y: 0 }} type="forceComponent" sceneScale={sceneScale as never} label="N'x" color={PHYSICS_COLORS.forceNet} dashed />
+                      <VectorArrow origin={contactPhy} vector={{ x: N * Math.sin(theta), y: -N * Math.cos(theta) }} type="appliedForce" sceneScale={sceneScale} label="N'" color={PHYSICS_COLORS.appliedForce} />
+                      <VectorArrow origin={contactPhy} vector={{ x: N * Math.sin(theta), y: 0 }} type="forceComponent" sceneScale={sceneScale} label="N'x" color={PHYSICS_COLORS.forceNet} dashed />
                     </>
                   )}
                 </g>
@@ -303,8 +305,7 @@ export default function CurvedSlotAnimation() {
                 )}
               </g>
             )}
-          </g>
-        </svg>
+        </AnimationSvgCanvas>
       </div>
     </div>
   )

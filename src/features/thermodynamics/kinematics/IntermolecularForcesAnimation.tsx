@@ -1,11 +1,12 @@
 import { Ball, VectorArrow } from '@/components/Physics'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { useState, useEffect, useCallback } from 'react'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
+import { useSceneScale } from '@/hooks'
 
-import { createSceneScaleFromViewport } from '@/scene'
 import {
   CANVAS_STYLE,
   CHART_COLORS,
@@ -32,8 +33,7 @@ export default function IntermolecularForcesAnimation() {
       showVectors: s.showVectors,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 400 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
 
   const mode = params.mode ?? 0
@@ -56,9 +56,12 @@ export default function IntermolecularForcesAnimation() {
   const fAtt = attractiveForce(rParam)
   const fNet = netMolecularForce(rParam)
 
-  const sceneScale = createSceneScaleFromViewport(vp, 'transform', {
-    designWidth: 700,
-    designHeight: 400,
+  const sceneScale = useSceneScale({
+    vp, preset,
+    anchor: 'viewport',
+    physicsWidth: w,
+    physicsHeight: h,
+    originSource: 'topLeft',
     refMagnitudes: { force: Math.max(fRep, fAtt, fNet, 0.5) * 1.2 },
   })
 
@@ -96,10 +99,13 @@ export default function IntermolecularForcesAnimation() {
   const chartHeight = h - LAYOUT.chartPadding * 2
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg width={w} height={h} className="bg-white rounded-lg shadow-inner"
-        onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
-
+    <AnimationSvgCanvas
+      containerRef={containerRef}
+      transform={vp.transform}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+    >
         {/* 参考线 */}
         <line x1={20} y1={centerY} x2={stageWidth - 20} y2={centerY}
           stroke={CHART_COLORS.axisLine} strokeWidth={CANVAS_STYLE.stroke.grid} strokeDasharray="4,4" opacity={0.3} />
@@ -124,7 +130,7 @@ export default function IntermolecularForcesAnimation() {
           <g>
             {/* 斥力（红色，向右） */}
             <VectorArrow
-              origin={{ x: movableX, y: -centerY }}
+              originPixel={{ x: movableX, y: centerY }}
               vector={{ x: fRep, y: 0 }}
               type="force"
               color={CHART_COLORS.criticalPt}
@@ -136,7 +142,7 @@ export default function IntermolecularForcesAnimation() {
 
             {/* 引力（蓝色，向左） */}
             <VectorArrow
-              origin={{ x: movableX, y: -centerY }}
+              originPixel={{ x: movableX, y: centerY }}
               vector={{ x: -fAtt, y: 0 }}
               type="force"
               color={CHART_COLORS.primary}
@@ -148,7 +154,7 @@ export default function IntermolecularForcesAnimation() {
 
             {/* 合力（橙色） */}
             <VectorArrow
-              origin={{ x: movableX, y: -(centerY + 20) }}
+              originPixel={{ x: movableX, y: centerY + 20 }}
               vector={{ x: fNet, y: 0 }}
               type="force"
               color={CHART_COLORS.compareC}
@@ -185,7 +191,6 @@ export default function IntermolecularForcesAnimation() {
             font={font}
           />
         </g>
-      </svg>
-    </div>
+    </AnimationSvgCanvas>
   )
 }

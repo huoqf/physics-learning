@@ -61,7 +61,7 @@ describe('velocity selector view model', () => {
       showElectricField: true,
     })
     const layout = buildVelocitySelectorLayout({ width: 1000, height: 600 }, 1)
-    const chartGeometry = buildVelocitySelectorChartGeometry({ height: 600 }, layout)
+    const chartGeometry = buildVelocitySelectorChartGeometry(600, layout)
 
     expect(chartData).not.toBeNull()
     expect(chartData?.points).toHaveLength(81)

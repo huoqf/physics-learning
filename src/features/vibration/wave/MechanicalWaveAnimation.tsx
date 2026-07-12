@@ -8,6 +8,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, CANVAS_COLORS, STROKE } from '@/theme/physics'
 import { Ball, VectorArrow } from '@/components/Physics'
 import { AnimationSvgCanvas } from '@/components/Layout'
+import { worldToDesign } from '@/scene'
 import {
   computeWaveParticleStates,
   computeWavelength,
@@ -235,14 +236,19 @@ export default function MechanicalWaveAnimation() {
       )}
 
       {/* 波速矢量 */}
-      <VectorArrow
-        origin={{ x: DEFAULT_WAVE_CHAIN_LENGTH * 0.35, y: 0.09 }}
-        vector={{ x: v, y: 0 }}
-        type="velocity"
-        sceneScale={sceneScale}
-        label="v"
-        font={font}
-      />
+      {(() => {
+        const { px: vpX, py: vpY } = worldToDesign(DEFAULT_WAVE_CHAIN_LENGTH * 0.35, 0.09, sceneScale)
+        return (
+          <VectorArrow
+            originPixel={{ x: vpX, y: vpY }}
+            vector={{ x: v, y: 0 }}
+            type="velocity"
+            sceneScale={sceneScale}
+            label="v"
+            font={font}
+          />
+        )
+      })()}
 
       {/* 质点链 */}
       {displayParticles.map((p) => {

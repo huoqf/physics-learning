@@ -2,8 +2,9 @@ import { useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateTransformerWithLoad } from '@/physics'
 import { useAnimationStore } from '@/stores'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import {
   buildTransformerChainSteps,
   buildTransformerDerived,
@@ -26,32 +27,31 @@ export default function Transformer() {
     useShallow((s) => ({ params: s.params })),
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-  const { font, px } = canvasSize
   const params = useMemo(() => normalizeTransformerParams(rawParams), [rawParams])
   const { mode, n1, n2, U1, R } = params
 
-  const rightPanelW = mode === 1 ? Math.round(canvasSize.width * 0.30) : 0
-  const vp = useViewport(canvasSize, {
-    designWidth: 380,
-    designHeight: mode === 0 ? 355 : 320,
+  // 估算右侧面板宽度（基于 preset 尺寸比例，与 buildTransformerLayout 一致）
+  const rightPanelW = mode === 1 ? Math.round(CANVAS_PRESETS.full.width * 0.25) : 0
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({
+    preset: CANVAS_PRESETS.full,
     overlayRight: rightPanelW,
   })
+  const { font } = canvasSize
 
   const result = useMemo(
     () => calculateTransformerWithLoad(n1, n2, U1, R),
     [n1, n2, U1, R],
   )
   const layout = useMemo(
-    () => buildTransformerLayout({ width: canvasSize.width, height: canvasSize.height, mode, vp }),
-    [canvasSize.width, canvasSize.height, mode, vp],
+    () => buildTransformerLayout({ width: preset.width, height: preset.height, mode }),
+    [preset.width, preset.height, mode],
   )
   const derived = useMemo(
-    () => buildTransformerDerived({ params, result, layout, scale: vp.scale }),
-    [params, result, layout, vp.scale],
+    () => buildTransformerDerived({ params, result, layout }),
+    [params, result, layout],
   )
 
-  const coilTopInset = px(10)
+  const coilTopInset = 10
   const coilBulge = layout.coilW / 2
   const primaryCoils = useMemo(
     () => generateCoilPaths3D(layout.primaryLeft, layout.primaryRight, layout.coreTop, layout.coreBottom, n1, true, coilTopInset, coilBulge),
@@ -69,18 +69,18 @@ export default function Transformer() {
   const dominoStep = useTransformerDomino({ mode, triggerValue: R, chainSteps })
 
   return (
-    <div ref={containerRef} className="w-full h-full relative">
-      <TransformerScene
-        params={params}
-        result={result}
-        derived={derived}
-        layout={layout}
-        vp={vp}
-        primaryCoils={primaryCoils}
-        secondaryCoils={secondaryCoils}
-        px={px}
-        font={font}
-      />
+    <div className="w-full h-full relative">
+      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+        <TransformerScene
+          params={params}
+          result={result}
+          derived={derived}
+          layout={layout}
+          primaryCoils={primaryCoils}
+          secondaryCoils={secondaryCoils}
+          font={font}
+        />
+      </AnimationSvgCanvas>
 
       {mode === 1 && (
         <TransformerInfoPanel

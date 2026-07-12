@@ -1,5 +1,5 @@
 import { VectorArrow } from '@/components/Physics'
-import { physicsToCanvasWithOrigin, clientToContainerPoint } from '@/utils'
+import { worldToDesign } from '@/scene'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -7,6 +7,7 @@ import React, { useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateCircularMotion } from '@/physics'
+import { useViewportPointer } from '@/utils'
 
 import {
   PHYSICS_COLORS,
@@ -67,10 +68,13 @@ export default function CircularMotionAnimation() {
     setTime: s.setTime,
     }))
   )
-  const { containerRef, canvasSize, vp } = useAnimationViewport({
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({
     preset: CANVAS_PRESETS.square,
   })
   const { font } = canvasSize
+
+  const svgRef = useRef<SVGSVGElement>(null)
+  const getSvgPoint = useViewportPointer(svgRef)
 
   const {
     r = 2,
@@ -83,26 +87,21 @@ export default function CircularMotionAnimation() {
   const { x, y, v, a_c, period } = calculateCircularMotion(r, omega, time)
 
   // ── 1. 自适应等比例尺（防止出界） ──────────────────────────
-  const centerX = vp.centerX
-  const centerY = vp.centerY
-  const rMax = CIRCULAR_MOTION_LAYOUT.rMax
-  const minCanvasDim = Math.min(vp.visibleW, vp.visibleH)
-  // 根据视口较短边和最大半径动态映射，四周留出安全余量
-  const scale = (minCanvasDim - CIRCULAR_MOTION_LAYOUT.canvasPadding) / (2 * rMax)
-
-  const canvasPos = physicsToCanvasWithOrigin(x, y, centerX, centerY, scale)
-
+  // CANVAS_PRESETS.square = 650×650，rMax = 10，canvasPadding = 80
+  // physicsScaleDesign = (650/2 - 80) / (2 * 10) = 12.25
   const sceneScale = useSceneScale({
     vp,
     preset: CANVAS_PRESETS.square,
     anchor: 'center',
-    centerSource: 'viewport',
-    physicsScaleDesign: scale / vp.scale,
+    centerSource: 'design',
+    physicsScaleDesign: (CANVAS_PRESETS.square.width / 2 - CIRCULAR_MOTION_LAYOUT.canvasPadding) / (2 * CIRCULAR_MOTION_LAYOUT.rMax),
     refMagnitudes: {
       velocity: CIRCULAR_MOTION_CHART_RANGE.vMax,
       acceleration: CIRCULAR_MOTION_CHART_RANGE.aMax,
     },
   })
+
+  const { px: dx, py: dy } = worldToDesign(x, y, sceneScale)
 
   // ── 矢量安全映射 ─────────────
 
@@ -111,10 +110,10 @@ export default function CircularMotionAnimation() {
   const showWaveCard = isAdvanced && showWaveform === 1
 
   // ── 2. 右上角悬浮正余弦画中画定位 ─────────────────────────
-  const cardWidth = Math.max(CIRCULAR_MOTION_LAYOUT.waveCardMinWidth, vp.visibleW * 0.35)
-  const cardHeight = Math.max(CIRCULAR_MOTION_LAYOUT.waveCardMinHeight, vp.visibleH * 0.3)
-  const cardX = vp.visibleX + vp.visibleW - cardWidth - CIRCULAR_MOTION_LAYOUT.waveCardRightOffset
-  const cardY = vp.visibleY + 20
+  const cardWidth = Math.max(CIRCULAR_MOTION_LAYOUT.waveCardMinWidth, preset.width * 0.35)
+  const cardHeight = Math.max(CIRCULAR_MOTION_LAYOUT.waveCardMinHeight, preset.height * 0.3)
+  const cardX = preset.width - cardWidth - CIRCULAR_MOTION_LAYOUT.waveCardRightOffset
+  const cardY = 20
 
   const cardInnerPad = CIRCULAR_MOTION_LAYOUT.waveCardPadding
   const cardInnerW = cardWidth - cardInnerPad.left - cardInnerPad.right
@@ -163,9 +162,10 @@ export default function CircularMotionAnimation() {
   const isDraggingRef = useRef(false)
 
   const handleDragTime = useCallback(
-    (clientX: number, svgRect: DOMRect) => {
-      const { x: containerX } = clientToContainerPoint(clientX, 0, svgRect)
-      const clickX = containerX - cardX - cardInnerPad.left
+    (clientX: number) => {
+      const pt = getSvgPoint(clientX, 0)
+      if (!pt) return
+      const clickX = pt.x - cardX - cardInnerPad.left
       const tClick = (clickX / cardInnerW) * tMax
       const currentPeriodCount = Math.floor(time / tMax)
       if (tClick >= 0 && tClick <= tMax) {
@@ -173,15 +173,13 @@ export default function CircularMotionAnimation() {
         setIsPlaying(false)
       }
     },
-    [cardX, cardInnerPad, cardInnerW, tMax, time, setTime, setIsPlaying]
+    [getSvgPoint, cardX, cardInnerPad, cardInnerW, tMax, time, setTime, setIsPlaying]
   )
 
   const handleSvgMouseMove = useCallback(
     (e: React.MouseEvent<SVGElement>) => {
       if (!isDraggingRef.current) return
-      const svg = e.currentTarget
-      const rect = svg.getBoundingClientRect()
-      handleDragTime(e.clientX, rect)
+      handleDragTime(e.clientX)
     },
     [handleDragTime]
   )
@@ -193,10 +191,7 @@ export default function CircularMotionAnimation() {
   const handleChartMouseDown = useCallback(
     (e: React.MouseEvent<SVGElement>) => {
       isDraggingRef.current = true
-      const svg = e.currentTarget.closest('svg')
-      if (!svg) return
-      const rect = svg.getBoundingClientRect()
-      handleDragTime(e.clientX, rect)
+      handleDragTime(e.clientX)
     },
     [handleDragTime]
   )
@@ -207,20 +202,21 @@ export default function CircularMotionAnimation() {
     const currentAngleRad = (omega * time) % (2 * Math.PI)
     if (currentAngleRad <= 0.02) return ''
 
-    const startX = centerX + r * scale
-    const startY = centerY
-    const endPos = physicsToCanvasWithOrigin(r * Math.cos(currentAngleRad), r * Math.sin(currentAngleRad), centerX, centerY, scale)
-    const endX = endPos.cx
-    const endY = endPos.cy
+    const startX = sceneScale.originX + r * sceneScale.scaleX
+    const startY = sceneScale.originY
+    const endPos = worldToDesign(r * Math.cos(currentAngleRad), r * Math.sin(currentAngleRad), sceneScale)
+    const endX = endPos.px
+    const endY = endPos.py
 
     const largeArcFlag = currentAngleRad > Math.PI ? 1 : 0
-    return `M ${centerX} ${centerY} L ${startX} ${startY} A ${r * scale} ${r * scale} 0 ${largeArcFlag} 0 ${endX} ${endY} Z`
-  }, [omega, time, r, scale, centerX, centerY])
+    return `M ${sceneScale.originX} ${sceneScale.originY} L ${startX} ${startY} A ${r * sceneScale.scaleX} ${r * sceneScale.scaleX} 0 ${largeArcFlag} 0 ${endX} ${endY} Z`
+  }, [omega, time, r, sceneScale])
 
   return (
     <AnimationSvgCanvas
       containerRef={containerRef}
       transform={vp.transform}
+      svgRef={svgRef}
       onMouseMove={handleSvgMouseMove}
       onMouseUp={handleSvgMouseUp}
       onMouseLeave={handleSvgMouseUp}
@@ -253,17 +249,17 @@ export default function CircularMotionAnimation() {
 
         {/* 圆周运动轨道环 (轻量、清爽的高级质感) */}
         <circle
-          cx={centerX}
-          cy={centerY}
-          r={r * scale}
+          cx={sceneScale.originX}
+          cy={sceneScale.originY}
+          r={r * sceneScale.scaleX}
           fill="none"
           stroke={PHYSICS_COLORS.trackHistory}
           strokeWidth={STROKE.trackHistory}
         />
         <circle
-          cx={centerX}
-          cy={centerY}
-          r={r * scale}
+          cx={sceneScale.originX}
+          cy={sceneScale.originY}
+          r={r * sceneScale.scaleX}
           fill="none"
           stroke={PHYSICS_COLORS.trackHistory}
           strokeWidth={STROKE.trackHistory + 1.5}
@@ -272,39 +268,39 @@ export default function CircularMotionAnimation() {
 
         {/* 水平与垂直正交坐标轴 */}
         <line
-          x1={centerX - r * scale - CIRCULAR_MOTION_LAYOUT.axisExtension}
-          y1={centerY}
-          x2={centerX + r * scale + CIRCULAR_MOTION_LAYOUT.axisExtension}
-          y2={centerY}
+          x1={sceneScale.originX - r * sceneScale.scaleX - CIRCULAR_MOTION_LAYOUT.axisExtension}
+          y1={sceneScale.originY}
+          x2={sceneScale.originX + r * sceneScale.scaleX + CIRCULAR_MOTION_LAYOUT.axisExtension}
+          y2={sceneScale.originY}
           stroke={PHYSICS_COLORS.axis}
           strokeWidth={STROKE.axis}
         />
         <line
-          x1={centerX}
-          y1={centerY - r * scale - CIRCULAR_MOTION_LAYOUT.axisExtension}
-          x2={centerX}
-          y2={centerY + r * scale + CIRCULAR_MOTION_LAYOUT.axisExtension}
+          x1={sceneScale.originX}
+          y1={sceneScale.originY - r * sceneScale.scaleX - CIRCULAR_MOTION_LAYOUT.axisExtension}
+          x2={sceneScale.originX}
+          y2={sceneScale.originY + r * sceneScale.scaleX + CIRCULAR_MOTION_LAYOUT.axisExtension}
           stroke={PHYSICS_COLORS.axis}
           strokeWidth={STROKE.axis}
         />
 
-        <text x={centerX + r * scale + 20} y={centerY + 14} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">x</text>
-        <text x={centerX + 12} y={centerY - r * scale - 20} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">y</text>
+        <text x={sceneScale.originX + r * sceneScale.scaleX + 20} y={sceneScale.originY + 14} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">x</text>
+        <text x={sceneScale.originX + 12} y={sceneScale.originY - r * sceneScale.scaleX - 20} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">y</text>
 
         {/* 半径参考射线 */}
         <line
-          x1={centerX}
-          y1={centerY}
-          x2={canvasPos.cx}
-          y2={canvasPos.cy}
+          x1={sceneScale.originX}
+          y1={sceneScale.originY}
+          x2={dx}
+          y2={dy}
           stroke={PHYSICS_COLORS.axis}
           strokeWidth={STROKE.reference}
           strokeDasharray={DASH.axis.join(' ')}
         />
         {/* 半径参数文本标注 */}
         <text
-          x={(canvasPos.cx + centerX) / 2}
-          y={(canvasPos.cy + centerY) / 2 - 6}
+          x={(dx + sceneScale.originX) / 2}
+          y={(dy + sceneScale.originY) / 2 - 6}
           fontSize={FONT.bodySize}
           fill={PHYSICS_COLORS.labelTextLight}
           fontWeight="bold"
@@ -317,27 +313,27 @@ export default function CircularMotionAnimation() {
         {showProjBalls && (
           <>
             <line
-              x1={canvasPos.cx}
-              y1={canvasPos.cy}
-              x2={canvasPos.cx}
-              y2={centerY}
+              x1={dx}
+              y1={dy}
+              x2={dx}
+              y2={sceneScale.originY}
               stroke={PHYSICS_COLORS.grid}
               strokeWidth={0.8}
               strokeDasharray="3,3"
             />
             <line
-              x1={canvasPos.cx}
-              y1={canvasPos.cy}
-              x2={centerX}
-              y2={canvasPos.cy}
+              x1={dx}
+              y1={dy}
+              x2={sceneScale.originX}
+              y2={dy}
               stroke={PHYSICS_COLORS.grid}
               strokeWidth={0.8}
               strokeDasharray="3,3"
             />
             {/* 水平 SHM 投影球 */}
             <circle
-              cx={canvasPos.cx}
-              cy={centerY}
+              cx={dx}
+              cy={sceneScale.originY}
               r={CIRCULAR_MOTION_LAYOUT.projectionBallRadius}
               fill="url(#vacuum-sphere-grad)"
               stroke={PHYSICS_COLORS.velocityX}
@@ -345,8 +341,8 @@ export default function CircularMotionAnimation() {
             />
             {/* 竖直 SHM 投影球 */}
             <circle
-              cx={centerX}
-              cy={canvasPos.cy}
+              cx={sceneScale.originX}
+              cy={dy}
               r={CIRCULAR_MOTION_LAYOUT.projectionBallRadius}
               fill="url(#vacuum-sphere-grad)"
               stroke={PHYSICS_COLORS.velocityY}
@@ -357,8 +353,8 @@ export default function CircularMotionAnimation() {
 
         {/* 旋转的主钢珠小球 */}
         <circle
-          cx={canvasPos.cx}
-          cy={canvasPos.cy}
+          cx={dx}
+          cy={dy}
           r={CIRCULAR_MOTION_LAYOUT.steelBallRadius}
           fill="url(#steel-sphere-grad)"
           stroke={SCENE_COLORS.sphere.steel.stroke}
@@ -369,13 +365,13 @@ export default function CircularMotionAnimation() {
         {showVectors && v > 0 && (
           <g>
             <VectorArrow
-              origin={{ x, y }}
+              originPixel={{ x: dx, y: dy }}
               vector={{ x: -y * (v / r), y: x * (v / r) }}
               type="velocity"
               sceneScale={sceneScale}
             />
             <VectorArrow
-              origin={{ x, y }}
+              originPixel={{ x: dx, y: dy }}
               vector={{ x: -x * (a_c / r), y: -y * (a_c / r) }}
               type="acceleration"
               sceneScale={sceneScale}

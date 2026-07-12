@@ -43,7 +43,7 @@ export function MomentumScene({
   ekCurvePointsA, ekCurvePointsB, ekMax,
 }: MomentumSceneProps) {
   return (
-    <svg className="w-full h-full block bg-white rounded-lg shadow-inner">
+    <>
       <defs>
         <radialGradient id="steel-sphere-grad-mom" cx="30%" cy="30%" r="70%">
           <stop offset="0%" stopColor={SCENE_COLORS.materials.steelSphereGrad[0]} />
@@ -78,7 +78,7 @@ export function MomentumScene({
             m = {m.toFixed(1)} kg
           </text>
           {showVectors && v > 0 && (
-            <VectorArrow origin={{ x: basicBallX + R_basic + 4, y: groundY - ballCenterY }}
+            <VectorArrow originPixel={{ x: basicBallX + R_basic + 4, y: ballCenterY }}
               vector={{ x: v, y: 0 }} type="velocity" sceneScale={sceneScale} />
           )}
           <g transform={`translate(${basicBallX + R_basic + mapArrowLen(v) + 30}, ${ballCenterY})`}>
@@ -133,7 +133,7 @@ export function MomentumScene({
           {showVectors && (
             <g>
               {currentVA !== 0 && (
-                <VectorArrow origin={{ x: clampedPosAx, y: groundY - ballCenterY + R_A + 20 }}
+                <VectorArrow originPixel={{ x: clampedPosAx, y: ballCenterY + R_A + 20 }}
                   vector={{ x: currentVA, y: 0 }} type="velocity" sceneScale={sceneScale} />
               )}
               <text x={clampedPosAx + mapArrowLen(currentVA) * Math.sign(currentVA) / 2}
@@ -143,7 +143,7 @@ export function MomentumScene({
               </text>
 
               {currentVB !== 0 && (
-                <VectorArrow origin={{ x: clampedPosBx, y: groundY - ballCenterY + R_B + 20 }}
+                <VectorArrow originPixel={{ x: clampedPosBx, y: ballCenterY + R_B + 20 }}
                   vector={{ x: currentVB, y: 0 }} type="velocity" sceneScale={sceneScale}
                   color={PHYSICS_COLORS.elasticForce} />
               )}
@@ -154,7 +154,7 @@ export function MomentumScene({
               </text>
 
               {pA !== 0 && (
-                <VectorArrow origin={{ x: clampedPosAx, y: 0 }}
+                <VectorArrow originPixel={{ x: clampedPosAx, y: groundY + MOMENTUM_LAYOUT.momentumAxisY }}
                   vector={{ x: pA, y: 0 }} type="momentum" sceneScale={sceneScale} />
               )}
               <text x={clampedPosAx} y={groundY + MOMENTUM_LAYOUT.momentumAxisY - 6}
@@ -163,7 +163,7 @@ export function MomentumScene({
               </text>
 
               {pB !== 0 && (
-                <VectorArrow origin={{ x: clampedPosBx, y: 0 }}
+                <VectorArrow originPixel={{ x: clampedPosBx, y: groundY + MOMENTUM_LAYOUT.momentumAxisY }}
                   vector={{ x: pB, y: 0 }} type="momentum" sceneScale={sceneScale}
                   color={PHYSICS_COLORS.impulse} />
               )}
@@ -173,7 +173,7 @@ export function MomentumScene({
               </text>
 
               {pTotal !== 0 && (
-                <VectorArrow origin={{ x: xCm, y: 0 }}
+                <VectorArrow originPixel={{ x: xCm, y: groundY + MOMENTUM_LAYOUT.totalMomentumAxisY }}
                   vector={{ x: pTotal, y: 0 }} type="momentum" sceneScale={sceneScale} />
               )}
               <text x={xCm} y={groundY + MOMENTUM_LAYOUT.totalMomentumAxisY - 6}
@@ -208,6 +208,6 @@ export function MomentumScene({
           </foreignObject>
         </g>
       )}
-    </svg>
+    </>
   )
 }

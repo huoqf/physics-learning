@@ -1,6 +1,4 @@
 import { calculateVelocitySelectorTrajectory } from '@/physics'
-import { createSceneScale } from '@/scene'
-import type { SceneConfig, SceneScale } from '@/scene'
 
 export interface VelocitySelectorParams {
   mode: number
@@ -29,7 +27,6 @@ export interface VelocitySelectorLayout {
   xPlatePx: number
   wPlatePx: number
   gapPlatePx: number
-  sceneScale: SceneScale
 }
 
 export interface ChartPoint {
@@ -85,25 +82,14 @@ export function normalizeVelocitySelectorParams(params: Record<string, number>):
 }
 
 export function buildVelocitySelectorLayout(
-  canvasSize: { width: number; height: number },
+  preset: { width: number; height: number },
   mode: number,
 ): VelocitySelectorLayout {
   const { plateLength, plateGap } = VELOCITY_SELECTOR_PHYSICS
-  const cxIn = canvasSize.width * 0.20
-  const cy = mode === 0 ? canvasSize.height * 0.50 : canvasSize.height * 0.68
-  const scaleX = (canvasSize.width * 0.65) / plateLength
-  const scaleY = (canvasSize.height * 0.20) / plateGap
-  const sceneConfig: SceneConfig = {
-    vectorBounds: { x: 0, y: 0, width: canvasSize.width, height: canvasSize.height },
-    originX: cxIn,
-    originY: cy,
-    worldWidth: canvasSize.width / scaleX,
-    worldHeight: canvasSize.height / scaleY,
-    refMagnitudes: {
-      force: 20,
-      velocity: 20,
-    },
-  }
+  const cxIn = preset.width * 0.20
+  const cy = mode === 0 ? preset.height * 0.50 : preset.height * 0.68
+  const scaleX = (preset.width * 0.65) / plateLength
+  const scaleY = (preset.height * 0.20) / plateGap
 
   return {
     cxIn,
@@ -113,8 +99,6 @@ export function buildVelocitySelectorLayout(
     xPlatePx: cxIn,
     wPlatePx: plateLength * scaleX,
     gapPlatePx: plateGap * scaleY,
-    // ⚠️ [架构豁免] 纯计算模型，不走 useViewport，合法保留底层 createSceneScale 调用
-    sceneScale: createSceneScale(sceneConfig),
   }
 }
 
@@ -191,13 +175,13 @@ export function buildVelocitySelectorChartData({
 }
 
 export function buildVelocitySelectorChartGeometry(
-  canvasSize: { height: number },
+  presetHeight: number,
   layout: Pick<VelocitySelectorLayout, 'wPlatePx' | 'cxIn'>,
 ): VelocitySelectorChartGeometry {
   const width = layout.wPlatePx
-  const height = canvasSize.height * 0.20
+  const height = presetHeight * 0.20
   const xOffset = layout.cxIn
-  const yOffset = canvasSize.height * 0.08
+  const yOffset = presetHeight * 0.08
   const toChartX = (v: number) => {
     const vMin = 1.0
     const vMax = 25.0
@@ -243,7 +227,7 @@ export function buildMagneticFieldSigns({
   cy,
   gapPlatePx,
   wPlatePx,
-  canvasHeight,
+  presetHeight,
   cxIn,
 }: {
   mode: number
@@ -251,7 +235,7 @@ export function buildMagneticFieldSigns({
   cy: number
   gapPlatePx: number
   wPlatePx: number
-  canvasHeight: number
+  presetHeight: number
   cxIn: number
 }): MagneticFieldSign[] {
   if (B <= 0.01) return []
@@ -261,8 +245,8 @@ export function buildMagneticFieldSigns({
   const startX = cxIn + 15
   const endX = cxIn + wPlatePx - 15
   const stepX = (endX - startX) / Math.max(1, cols - 1)
-  const startY = mode === 0 ? cy - canvasHeight * 0.24 : cy - gapPlatePx / 2 + 15
-  const endY = mode === 0 ? cy + canvasHeight * 0.24 : cy + gapPlatePx / 2 - 15
+  const startY = mode === 0 ? cy - presetHeight * 0.24 : cy - gapPlatePx / 2 + 15
+  const endY = mode === 0 ? cy + presetHeight * 0.24 : cy + gapPlatePx / 2 - 15
   const stepY = (endY - startY) / Math.max(1, rows - 1)
   const signs: MagneticFieldSign[] = []
 

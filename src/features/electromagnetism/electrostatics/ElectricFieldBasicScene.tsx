@@ -109,7 +109,7 @@ export function ElectricFieldBasicScene({
       {basicArrows && (
         <g>
           <VectorArrow
-            origin={{ x: testX, y: -testY }}
+            originPixel={{ x: testX, y: testY }}
             vector={basicArrows.vectorE}
             type="electricField"
             sceneScale={sceneScale}
@@ -130,7 +130,7 @@ export function ElectricFieldBasicScene({
           {qTest !== 0 && (
             <>
               <VectorArrow
-                origin={{ x: testX, y: -testY }}
+                originPixel={{ x: testX, y: testY }}
                 vector={basicArrows.vectorF}
                 type="electricForce"
                 sceneScale={sceneScale}

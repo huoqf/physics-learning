@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { calculateTransformerWithLoad } from '@/physics'
-import type { ViewportInfo } from '@/utils/useViewport'
 import {
   buildTransformerChainSteps,
   buildTransformerDerived,
@@ -9,19 +8,6 @@ import {
   niceMeterMax,
   normalizeTransformerParams,
 } from '@/features/electromagnetism/induction/transformer/model/transformerModel'
-
-const vp: ViewportInfo = {
-  visibleX: 0,
-  visibleY: 0,
-  visibleW: 760,
-  visibleH: 440,
-  centerX: 380,
-  centerY: 220,
-  scale: 1,
-  tx: 0,
-  ty: 0,
-  transform: 'translate(0 0) scale(1)',
-}
 
 describe('transformer view model', () => {
   it('normalizes params and computes nice meter ranges', () => {
@@ -33,14 +19,16 @@ describe('transformer view model', () => {
   })
 
   it('builds stable responsive layout', () => {
-    const layout = buildTransformerLayout({ width: 760, height: 440, mode: 0, vp })
+    const layout = buildTransformerLayout({ width: 760, height: 440, mode: 0 })
 
-    expect(layout.v1X).toBe(325)
-    expect(layout.v2X).toBe(435)
-    expect(layout.coreTop).toBeCloseTo(136.5)
-    expect(layout.coreBottom).toBeCloseTo(291.5)
-    expect(layout.primaryLeft).toBe(313)
-    expect(layout.secondaryRight).toBe(447)
+    // scale = Math.min(760/350, 440/400) = 1.1
+    expect(layout.scale).toBeCloseTo(1.1)
+    expect(layout.v1X).toBeCloseTo(319.5)
+    expect(layout.v2X).toBeCloseTo(440.5)
+    expect(layout.coreTop).toBeCloseTo(134.75)
+    expect(layout.coreBottom).toBeCloseTo(305.25)
+    expect(layout.primaryLeft).toBeCloseTo(306.3)
+    expect(layout.secondaryRight).toBeCloseTo(453.7)
   })
 
   it('generates limited 3D coil paths', () => {
@@ -55,8 +43,8 @@ describe('transformer view model', () => {
   it('builds derived values and causal chain from physics result', () => {
     const params = normalizeTransformerParams({ n1: 100, n2: 200, U1: 220, R: 50 })
     const result = calculateTransformerWithLoad(params.n1, params.n2, params.U1, params.R)
-    const layout = buildTransformerLayout({ width: 760, height: 440, mode: 1, vp })
-    const derived = buildTransformerDerived({ params, result, layout, scale: vp.scale })
+    const layout = buildTransformerLayout({ width: 760, height: 440, mode: 1 })
+    const derived = buildTransformerDerived({ params, result, layout })
 
     expect(derived.displayI1).toBeCloseTo(17.6)
     expect(derived.displayI2).toBeCloseTo(8.8)

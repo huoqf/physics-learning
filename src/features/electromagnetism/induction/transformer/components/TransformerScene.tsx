@@ -1,7 +1,6 @@
 import type { CSSProperties } from 'react'
 import { DialMeter, Rheostat } from '@/components/Physics'
 import { CANVAS_STYLE, FONT, PHYSICS_COLORS } from '@/theme/physics'
-import type { ViewportInfo } from '@/utils/useViewport'
 import type { CoilPaths3D, TransformerDerived, TransformerLayout, TransformerParams } from '../model/transformerModel'
 
 type TransformerResult = {
@@ -19,11 +18,11 @@ function TransformerDefs({ sourceX, cy, scale }: { sourceX: number; cy: number; 
       <style>{`
         @keyframes tf-flux-flow {
           from { stroke-dashoffset: 0 }
-          to { stroke-dashoffset: var(--flux-offset, -24px) }
+          to { stroke-dashoffset: var(--flux-offset, -24) }
         }
         @keyframes tf-electron-flow {
           from { stroke-dashoffset: 0 }
-          to { stroke-dashoffset: var(--electron-offset, -24px) }
+          to { stroke-dashoffset: var(--electron-offset, -24) }
         }
         @keyframes tf-wave-move {
           from { transform: translateX(0); }
@@ -37,7 +36,7 @@ function TransformerDefs({ sourceX, cy, scale }: { sourceX: number; cy: number; 
   )
 }
 
-function TransformerCore({ layout, px }: { layout: TransformerLayout; px: (v: number) => number }) {
+function TransformerCore({ layout }: { layout: TransformerLayout }) {
   return (
     <>
       <rect
@@ -48,8 +47,8 @@ function TransformerCore({ layout, px }: { layout: TransformerLayout; px: (v: nu
         fill={PHYSICS_COLORS.objectFillNeutral}
         stroke={PHYSICS_COLORS.objectStroke}
         strokeWidth={CANVAS_STYLE.stroke.objectLine}
-        rx={px(4)}
-        ry={px(4)}
+        rx={4}
+        ry={4}
       />
       <rect
         x={layout.innerLeft}
@@ -59,27 +58,27 @@ function TransformerCore({ layout, px }: { layout: TransformerLayout; px: (v: nu
         fill="white"
         stroke={PHYSICS_COLORS.objectStroke}
         strokeWidth={CANVAS_STYLE.stroke.objectLine}
-        rx={px(2)}
-        ry={px(2)}
+        rx={2}
+        ry={2}
       />
       {Array.from({ length: 4 }).map((_, i) => (
         <g key={`core-lam-g-${i}`}>
           <line
             x1={layout.coreLeft + (i + 1) * (layout.coreColumnW / 5)}
-            y1={layout.coreTop + px(2)}
+            y1={layout.coreTop + 2}
             x2={layout.coreLeft + (i + 1) * (layout.coreColumnW / 5)}
-            y2={layout.coreBottom - px(2)}
+            y2={layout.coreBottom - 2}
             stroke={PHYSICS_COLORS.grid}
-            strokeWidth={px(0.8)}
+            strokeWidth={0.8}
             opacity={0.45}
           />
           <line
             x1={layout.innerRight + (i + 1) * (layout.coreColumnW / 5)}
-            y1={layout.coreTop + px(2)}
+            y1={layout.coreTop + 2}
             x2={layout.innerRight + (i + 1) * (layout.coreColumnW / 5)}
-            y2={layout.coreBottom - px(2)}
+            y2={layout.coreBottom - 2}
             stroke={PHYSICS_COLORS.grid}
-            strokeWidth={px(0.8)}
+            strokeWidth={0.8}
             opacity={0.45}
           />
         </g>
@@ -88,8 +87,8 @@ function TransformerCore({ layout, px }: { layout: TransformerLayout; px: (v: nu
   )
 }
 
-function FluxRings({ layout, derived, px }: { layout: TransformerLayout; derived: TransformerDerived; px: (v: number) => number }) {
-  const offsets = [-px(4), 0, px(4)]
+function FluxRings({ layout, derived }: { layout: TransformerLayout; derived: TransformerDerived }) {
+  const offsets = [-4, 0, 4]
   return (
     <>
       <rect
@@ -99,9 +98,9 @@ function FluxRings({ layout, derived, px }: { layout: TransformerLayout; derived
         height={layout.coreBottom - layout.coreTop - layout.coreColumnW}
         fill="none"
         stroke={PHYSICS_COLORS.magneticField}
-        strokeWidth={layout.coreColumnW - px(4)}
+        strokeWidth={layout.coreColumnW - 4}
         opacity={0.06}
-        rx={px(6)}
+        rx={6}
       />
       {offsets.map((offset, i) => {
         const rx = layout.v1X + offset
@@ -115,14 +114,14 @@ function FluxRings({ layout, derived, px }: { layout: TransformerLayout; derived
             d={path}
             fill="none"
             stroke={PHYSICS_COLORS.magneticField}
-            strokeWidth={px(1.0 + (3 - i) * 0.3)}
-            strokeDasharray={`${px(4)} ${px(14)}`}
+            strokeWidth={1.0 + (3 - i) * 0.3}
+            strokeDasharray={`${4} ${14}`}
             strokeLinecap="round"
             style={{
               animation: 'tf-flux-flow linear infinite',
               animationDuration: `${derived.fluxFlowDur}s`,
               animationDelay: `${i * -0.25}s`,
-              ['--flux-offset' as string]: `${px(-24)}`,
+              ['--flux-offset' as string]: '-24',
               opacity: 0.85 - i * 0.15,
             } as CSSProperties}
           />
@@ -142,7 +141,6 @@ function CoilFront({
   label,
   labelX,
   labelY,
-  px,
   font,
   reverse = false,
 }: {
@@ -155,7 +153,6 @@ function CoilFront({
   label: string
   labelX: number
   labelY: number
-  px: (v: number) => number
   font: (v: number) => number
   reverse?: boolean
 }) {
@@ -165,7 +162,7 @@ function CoilFront({
         d={coil.frontD}
         fill="none"
         stroke={color}
-        strokeWidth={CANVAS_STYLE.stroke.objectLine + px(3)}
+        strokeWidth={CANVAS_STYLE.stroke.objectLine + 3}
         strokeLinecap="round"
         opacity={glowOpacity * 0.3}
         style={{ filter: `blur(${glowRadius}px)` }}
@@ -176,15 +173,15 @@ function CoilFront({
           d={coil.frontD}
           fill="none"
           stroke={color}
-          strokeWidth={CANVAS_STYLE.stroke.objectLine + px(1)}
-          strokeDasharray={`${px(4)} ${px(20)}`}
+          strokeWidth={CANVAS_STYLE.stroke.objectLine + 1}
+          strokeDasharray={`${4} ${20}`}
           strokeLinecap="round"
           opacity={0.8}
           style={{
             animation: 'tf-electron-flow linear infinite',
             animationDuration: `${flowDuration}s`,
             animationDirection: reverse ? 'reverse' : undefined,
-            ['--electron-offset' as string]: `${px(-24)}`,
+            ['--electron-offset' as string]: '-24',
           }}
         />
       )}
@@ -200,30 +197,27 @@ function CircuitsAndMeters({
   result,
   derived,
   layout,
-  vp,
-  px,
   font,
 }: {
   params: TransformerParams
   result: TransformerResult
   derived: TransformerDerived
   layout: TransformerLayout
-  vp: ViewportInfo
-  px: (v: number) => number
   font: (v: number) => number
 }) {
+  const s = layout.scale
   return (
     <>
       <g>
         <path
-          d={`M ${layout.sourceX} ${layout.cy - 14 * vp.scale} V ${layout.coreTop + px(10)} H ${layout.primaryLeft}`}
+          d={`M ${layout.sourceX} ${layout.cy - 14 * s} V ${layout.coreTop + 10 * s} H ${layout.primaryLeft}`}
           fill="none"
           stroke={PHYSICS_COLORS.electricCurrent}
           strokeWidth={CANVAS_STYLE.stroke.objectLine}
           strokeLinecap="round"
         />
         <path
-          d={`M ${layout.primaryLeft} ${layout.coreBottom - px(10)} H ${layout.sourceX} V ${layout.cy + 14 * vp.scale}`}
+          d={`M ${layout.primaryLeft} ${layout.coreBottom - 10 * s} H ${layout.sourceX} V ${layout.cy + 14 * s}`}
           fill="none"
           stroke={PHYSICS_COLORS.electricCurrent}
           strokeWidth={CANVAS_STYLE.stroke.objectLine}
@@ -232,7 +226,7 @@ function CircuitsAndMeters({
         <circle
           cx={layout.sourceX}
           cy={layout.cy}
-          r={14 * vp.scale}
+          r={14 * s}
           fill={PHYSICS_COLORS.objectFill}
           stroke={PHYSICS_COLORS.electricCurrent}
           strokeWidth={CANVAS_STYLE.stroke.objectThin}
@@ -245,25 +239,25 @@ function CircuitsAndMeters({
             strokeWidth={CANVAS_STYLE.stroke.objectLine}
             style={{
               animation: 'tf-wave-move 1.2s linear infinite',
-              ['--wave-offset' as string]: `${22 * vp.scale}px`,
+              ['--wave-offset' as string]: `${22 * s}px`,
             } as CSSProperties}
           />
         </g>
-        <text x={layout.sourceX} y={layout.cy + 30 * vp.scale} fontSize={font(FONT.smallSize)} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
+        <text x={layout.sourceX} y={layout.cy + 30 * s} fontSize={font(FONT.smallSize)} fill={PHYSICS_COLORS.labelText} textAnchor="middle">
           U₁={params.U1}V
         </text>
       </g>
 
       <g>
         <path
-          d={`M ${layout.secondaryRight} ${layout.coreTop + px(10)} H ${layout.rheostatX} V ${layout.cy - 12.3 * vp.scale}`}
+          d={`M ${layout.secondaryRight} ${layout.coreTop + 10 * s} H ${layout.rheostatX} V ${layout.cy - 12.3 * s}`}
           fill="none"
           stroke={PHYSICS_COLORS.magnetSouth}
           strokeWidth={CANVAS_STYLE.stroke.objectLine}
           strokeLinecap="round"
         />
         <path
-          d={`M ${layout.rheostatX} ${layout.cy + 6.15 * vp.scale} V ${layout.coreBottom - px(10)} H ${layout.secondaryRight}`}
+          d={`M ${layout.rheostatX} ${layout.cy + 6.15 * s} V ${layout.coreBottom - 10 * s} H ${layout.secondaryRight}`}
           fill="none"
           stroke={PHYSICS_COLORS.magnetSouth}
           strokeWidth={CANVAS_STYLE.stroke.objectLine}
@@ -274,13 +268,13 @@ function CircuitsAndMeters({
       <Rheostat x={layout.rheostatX} y={layout.cy} value={params.R} min={5} max={200} width={layout.rheostatW} label="R" unit="Ω" />
 
       <DialMeter type="V" value={params.U1} max={derived.v1Max} x={layout.v1X} y={layout.meterTopY} r={layout.meterR} />
-      <text x={layout.v1X} y={layout.meterTopY - layout.meterR - px(4)} fontSize={font(FONT.smallSize)} fill={PHYSICS_COLORS.emf} textAnchor="middle" fontWeight="bold">V₁</text>
+      <text x={layout.v1X} y={layout.meterTopY - layout.meterR - 4} fontSize={font(FONT.smallSize)} fill={PHYSICS_COLORS.emf} textAnchor="middle" fontWeight="bold">V₁</text>
       <DialMeter type="A" value={derived.displayI1} max={derived.a1Max} x={layout.v1X} y={layout.meterBotY} r={layout.meterR} />
-      <text x={layout.v1X} y={layout.meterBotY + layout.meterR + px(10)} fontSize={font(FONT.smallSize)} fill={PHYSICS_COLORS.electricCurrent} textAnchor="middle" fontWeight="bold">A₁</text>
+      <text x={layout.v1X} y={layout.meterBotY + layout.meterR + 10} fontSize={font(FONT.smallSize)} fill={PHYSICS_COLORS.electricCurrent} textAnchor="middle" fontWeight="bold">A₁</text>
       <DialMeter type="V" value={result.U2} max={derived.v2Max} x={layout.v2X} y={layout.meterTopY} r={layout.meterR} />
-      <text x={layout.v2X} y={layout.meterTopY - layout.meterR - px(4)} fontSize={font(FONT.smallSize)} fill={PHYSICS_COLORS.magnetSouth} textAnchor="middle" fontWeight="bold">V₂</text>
+      <text x={layout.v2X} y={layout.meterTopY - layout.meterR - 4} fontSize={font(FONT.smallSize)} fill={PHYSICS_COLORS.magnetSouth} textAnchor="middle" fontWeight="bold">V₂</text>
       <DialMeter type="A" value={derived.displayI2} max={derived.a2Max} x={layout.v2X} y={layout.meterBotY} r={layout.meterR} />
-      <text x={layout.v2X} y={layout.meterBotY + layout.meterR + px(10)} fontSize={font(FONT.smallSize)} fill={PHYSICS_COLORS.magnetSouth} textAnchor="middle" fontWeight="bold">A₂</text>
+      <text x={layout.v2X} y={layout.meterBotY + layout.meterR + 10} fontSize={font(FONT.smallSize)} fill={PHYSICS_COLORS.magnetSouth} textAnchor="middle" fontWeight="bold">A₂</text>
     </>
   )
 }
@@ -290,78 +284,55 @@ export function TransformerScene({
   result,
   derived,
   layout,
-  vp,
   primaryCoils,
   secondaryCoils,
-  px,
   font,
 }: {
   params: TransformerParams
   result: TransformerResult
   derived: TransformerDerived
   layout: TransformerLayout
-  vp: ViewportInfo
   primaryCoils: CoilPaths3D
   secondaryCoils: CoilPaths3D
-  px: (v: number) => number
   font: (v: number) => number
 }) {
   return (
-    <div className="w-full h-full">
-      <svg width={layout.W} height={layout.H} className="bg-white rounded-lg shadow-inner select-none" style={{ fontFamily: CANVAS_STYLE.font.family }}>
-        <TransformerDefs sourceX={layout.sourceX} cy={layout.cy} scale={vp.scale} />
+    <>
+      <TransformerDefs sourceX={layout.sourceX} cy={layout.cy} scale={layout.scale} />
 
-        <path d={primaryCoils.backD} fill="none" stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={CANVAS_STYLE.stroke.objectLine - px(0.5)} opacity={0.4} strokeLinecap="round" />
-        <path d={secondaryCoils.backD} fill="none" stroke={PHYSICS_COLORS.magnetSouth} strokeWidth={CANVAS_STYLE.stroke.objectLine - px(0.5)} opacity={0.4} strokeLinecap="round" />
+      <path d={primaryCoils.backD} fill="none" stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={CANVAS_STYLE.stroke.objectLine - 0.5} opacity={0.4} strokeLinecap="round" />
+      <path d={secondaryCoils.backD} fill="none" stroke={PHYSICS_COLORS.magnetSouth} strokeWidth={CANVAS_STYLE.stroke.objectLine - 0.5} opacity={0.4} strokeLinecap="round" />
 
-        <TransformerCore layout={layout} px={px} />
-        <FluxRings layout={layout} derived={derived} px={px} />
+      <TransformerCore layout={layout} />
+      <FluxRings layout={layout} derived={derived} />
 
-        <CoilFront
-          coil={primaryCoils}
-          color={PHYSICS_COLORS.electricCurrent}
-          current={result.I1}
-          flowDuration={derived.primaryFlowDur}
-          glowRadius={derived.glowRadius1}
-          glowOpacity={derived.primaryGlowOpacity}
-          label={`原线圈 n₁=${params.n1}`}
-          labelX={layout.v1X}
-          labelY={layout.meterTopY - layout.meterR - px(18)}
-          px={px}
-          font={font}
-        />
-        <CoilFront
-          coil={secondaryCoils}
-          color={PHYSICS_COLORS.magnetSouth}
-          current={result.I2}
-          flowDuration={derived.secondaryFlowDur}
-          glowRadius={derived.glowRadius2}
-          glowOpacity={derived.secondaryGlowOpacity}
-          label={`副线圈 n₂=${params.n2}`}
-          labelX={layout.v2X}
-          labelY={layout.meterTopY - layout.meterR - px(18)}
-          px={px}
-          font={font}
-          reverse
-        />
+      <CoilFront
+        coil={primaryCoils}
+        color={PHYSICS_COLORS.electricCurrent}
+        current={result.I1}
+        flowDuration={derived.primaryFlowDur}
+        glowRadius={derived.glowRadius1}
+        glowOpacity={derived.primaryGlowOpacity}
+        label={`原线圈 n₁=${params.n1}`}
+        labelX={layout.v1X}
+        labelY={layout.meterTopY - layout.meterR - 18}
+        font={font}
+      />
+      <CoilFront
+        coil={secondaryCoils}
+        color={PHYSICS_COLORS.magnetSouth}
+        current={result.I2}
+        flowDuration={derived.secondaryFlowDur}
+        glowRadius={derived.glowRadius2}
+        glowOpacity={derived.secondaryGlowOpacity}
+        label={`副线圈 n₂=${params.n2}`}
+        labelX={layout.v2X}
+        labelY={layout.meterTopY - layout.meterR - 18}
+        font={font}
+        reverse
+      />
 
-        <CircuitsAndMeters params={params} result={result} derived={derived} layout={layout} vp={vp} px={px} font={font} />
-
-        <g transform={`translate(${px(8)}, ${layout.H - px(30)})`}>
-          <rect
-            width={vp.visibleW - px(16)}
-            height={px(24)}
-            rx={px(5)}
-            fill={PHYSICS_COLORS.objectFill}
-            opacity="0.85"
-            stroke={PHYSICS_COLORS.grid}
-            strokeWidth={CANVAS_STYLE.stroke.grid}
-          />
-          <text x={px(10)} y={px(16)} fontSize={font(FONT.axisSize)} fill={PHYSICS_COLORS.labelText} fontWeight="bold">
-            {result.isShortCircuit ? '副边短路：理想模型电流趋于无穷大' : `U₂/U₁ = n₂/n₁ · P_in = P_out${derived.powerBalanced ? ' ✓' : ''}`}
-          </text>
-        </g>
-      </svg>
-    </div>
+      <CircuitsAndMeters params={params} result={result} derived={derived} layout={layout} font={font} />
+    </>
   )
 }

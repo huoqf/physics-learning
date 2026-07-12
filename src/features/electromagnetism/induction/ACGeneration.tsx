@@ -10,14 +10,14 @@
  * @agent-rule 中间屏左右分区：左侧 SVG 仿真，右侧 MiniChart 时序曲线
  */
 import { useRef, useMemo, useCallback } from 'react'
-import { useCanvasSize } from '@/utils'
-import { useViewport } from '@/utils/useViewport'
+import { useAnimationViewport } from '@/hooks'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, FONT, withAlpha } from '@/theme/physics'
 import { colors } from '@/theme/colors'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { MagneticPoles, RotatingCoil } from '@/components/Physics'
 import { MiniChart } from '@/components/UI'
 import type { MiniChartLine, MiniChartStaticLine } from '@/components/UI'
@@ -64,11 +64,7 @@ export default function ACGeneration() {
       speed: s.speed,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-  const vp = useViewport(canvasSize, {
-    designWidth: 700,
-    designHeight: 650,
-  })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
 
   const B = params.B ?? 0.5
@@ -95,18 +91,18 @@ export default function ACGeneration() {
   )
   const { phi, e, Em, theta, vTangential, vPerp, vPara } = state
 
-  // ── Canvas 尺寸（基于 viewport 可视区） ────────────────────────────────────
-  const W = vp.visibleW
-  const H = vp.visibleH
+  // ── 设计坐标系布局（基于 preset 尺寸） ────────────────────────────────────
+  const W = preset.width
+  const H = preset.height
   const SIMW = Math.round(W * LAYOUT.simWidthRatio)
-  const CHARTL = vp.visibleX + SIMW + font(12)
-  const CHARTW = vp.visibleX + W - CHARTL - font(6)
+  const CHARTL = SIMW + font(12)
+  const CHARTW = W - CHARTL - font(6)
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 3D 投影系统
+  // 3D 投影系统（设计坐标系）
   // ═══════════════════════════════════════════════════════════════════════════
-  const OX = vp.visibleX + SIMW * 0.5
-  const OY = vp.visibleY + H * LAYOUT.originYRatio
+  const OX = SIMW * 0.5
+  const OY = H * LAYOUT.originYRatio
 
   const project3D = useCallback((x: number, y: number, z: number): Point2D => {
     const sx = x + z * PROJ.zScale * Math.cos(PROJ.zAngle)
@@ -231,12 +227,10 @@ export default function ACGeneration() {
 
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg className="w-full h-full bg-white rounded-lg shadow-inner select-none"
-        style={{ display: 'block' }}>
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
 
         {/* 左右分界线 */}
-        <line x1={vp.visibleX + SIMW} y1={vp.visibleY} x2={vp.visibleX + SIMW} y2={vp.visibleY + H}
+        <line x1={SIMW} y1={0} x2={SIMW} y2={H}
           stroke={PHYSICS_COLORS.grid} strokeWidth={CANVAS_STYLE.stroke.grid} />
 
         {/* ═══════════ 左侧仿真区 ═══════════ */}
@@ -408,7 +402,7 @@ export default function ACGeneration() {
         </g>
 
         {/* ═══════════ 右侧 MiniChart 时序曲线 ════════════ */}
-        <foreignObject x={CHARTL} y={vp.visibleY} width={CHARTW} height={H}>
+        <foreignObject x={CHARTL} y={0} width={CHARTW} height={H}>
           <div style={{ width: '100%', height: '100%', padding: font(8) }}>
             <MiniChart
               title="Φ − t 与 e − t 时序曲线"
@@ -429,7 +423,6 @@ export default function ACGeneration() {
             />
           </div>
         </foreignObject>
-      </svg>
-    </div>
+    </AnimationSvgCanvas>
   )
 }

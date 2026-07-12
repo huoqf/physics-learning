@@ -2,35 +2,36 @@ import { VectorArrow, VectorDefs, CapacitorPlates } from '@/components/Physics'
 import { calculateVelocitySelectorTrajectory } from '@/physics'
 
 import { ParticleEmitter, MagneticFieldSymbols } from '@/components/Physics'
-import { worldToPixel } from '@/scene'
+import { worldToDesign } from '@/scene'
+import type { SceneScale } from '@/scene'
 import { CANVAS_STYLE, FONT, PHYSICS_COLORS } from '@/theme/physics'
 import type { VelocitySelectorChartData, VelocitySelectorChartGeometry, VelocitySelectorLayout, VelocitySelectorParams, MagneticFieldSign } from '../model/velocitySelectorModel'
 import { VelocitySelectorChart } from './VelocitySelectorChart'
 
 function BasicVectors({
   singleParticle,
-  layout,
+  sceneScale,
 }: {
   singleParticle: ReturnType<typeof calculateVelocitySelectorTrajectory>
-  layout: VelocitySelectorLayout
+  sceneScale: SceneScale
 }) {
   const { point } = singleParticle
-  const { px: pPixelX, py: pPixelY } = worldToPixel(point.x, point.y, layout.sceneScale)
+  const { px: pDesignX, py: pDesignY } = worldToDesign(point.x, point.y, sceneScale)
   const velVec = { x: point.vx, y: point.vy }
   const forceVec = { x: point.fx, y: point.fy }
 
   return (
     <g>
       <VectorArrow
-        origin={{ x: point.x, y: point.y }}
+        originPixel={{ x: pDesignX, y: pDesignY }}
         vector={velVec}
         type="velocity"
-        sceneScale={layout.sceneScale}
+        sceneScale={sceneScale}
         strokeWidth={CANVAS_STYLE.stroke.vectorMain}
       />
       <text
-        x={pPixelX + (point.vx > 0 ? 15 : -25)}
-        y={pPixelY - (point.vy > 0 ? 15 : -15)}
+        x={pDesignX + (point.vx > 0 ? 15 : -25)}
+        y={pDesignY - (point.vy > 0 ? 15 : -15)}
         fontSize={FONT.labelSize}
         fill={PHYSICS_COLORS.velocity}
         fontWeight="bold"
@@ -41,15 +42,15 @@ function BasicVectors({
       {Math.abs(point.fx) > 0.01 || Math.abs(point.fy) > 0.01 ? (
         <g>
           <VectorArrow
-            origin={{ x: point.x, y: point.y }}
+            originPixel={{ x: pDesignX, y: pDesignY }}
             vector={forceVec}
             type="lorentzForce"
-            sceneScale={layout.sceneScale}
+            sceneScale={sceneScale}
             strokeWidth={CANVAS_STYLE.stroke.vectorMain}
           />
           <text
-            x={pPixelX + (point.fx > 0 ? 15 : -25)}
-            y={pPixelY - (point.fy > 0 ? 15 : -15)}
+            x={pDesignX + (point.fx > 0 ? 15 : -25)}
+            y={pDesignY - (point.fy > 0 ? 15 : -15)}
             fontSize={FONT.labelSize}
             fill={PHYSICS_COLORS.lorentzForce}
             fontWeight="bold"
@@ -90,28 +91,26 @@ function ElectricFieldLines({ layout }: { layout: VelocitySelectorLayout }) {
 }
 
 export function VelocitySelectorScene({
-  width,
-  height,
   gradId,
   params,
   isPlaying,
   showVectors,
   singleParticle,
   layout,
+  sceneScale,
   magneticFieldSigns,
   chartData,
   chartGeometry,
   chartCurvePath,
   font,
 }: {
-  width: number
-  height: number
   gradId: string
   params: VelocitySelectorParams
   isPlaying: boolean
   showVectors: boolean
   singleParticle: ReturnType<typeof calculateVelocitySelectorTrajectory> | null
   layout: VelocitySelectorLayout
+  sceneScale: SceneScale
   magneticFieldSigns: MagneticFieldSign[]
   chartData: VelocitySelectorChartData | null
   chartGeometry: VelocitySelectorChartGeometry
@@ -119,11 +118,7 @@ export function VelocitySelectorScene({
   font: (v: number) => number
 }) {
   return (
-    <svg
-      width={width}
-      height={height}
-      className="bg-white rounded-xl shadow-inner absolute top-0 left-0 select-none pointer-events-none"
-    >
+    <>
       <defs>
         <VectorDefs colors={[PHYSICS_COLORS.velocity, PHYSICS_COLORS.lorentzForce, PHYSICS_COLORS.electricForce]} />
       </defs>
@@ -135,7 +130,7 @@ export function VelocitySelectorScene({
       />
 
       {params.mode === 0 && singleParticle && showVectors && (
-        <BasicVectors singleParticle={singleParticle} layout={layout} />
+        <BasicVectors singleParticle={singleParticle} sceneScale={sceneScale} />
       )}
 
       {params.mode === 1 && (
@@ -169,6 +164,6 @@ export function VelocitySelectorScene({
           font={font}
         />
       )}
-    </svg>
+    </>
   )
 }

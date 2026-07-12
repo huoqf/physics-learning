@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { calculateVelocitySelectorTrajectory } from '@/physics'
-import { worldToPixel } from '@/scene'
+import { worldToDesign } from '@/scene'
 import type { SceneScale } from '@/scene'
 import type { CanvasSize } from '@/utils/useCanvasSize'
 import type { ViewportInfo } from '@/utils/useViewport'
@@ -18,30 +18,24 @@ export function useVelocitySelectorCanvas({
   isPlaying,
   sceneScale,
   canvasSize,
+  vp,
 }: {
   params: VelocitySelectorParams
   time: number
   isPlaying: boolean
   sceneScale: SceneScale
   canvasSize: CanvasSize
+  vp: ViewportInfo
 }) {
-  const identityVp = useMemo<ViewportInfo>(() => ({
-    visibleX: 0,
-    visibleY: 0,
-    visibleW: canvasSize.width,
-    visibleH: canvasSize.height,
-    centerX: canvasSize.width / 2,
-    centerY: canvasSize.height / 2,
-    scale: 1,
-    tx: 0,
-    ty: 0,
-    transform: 'translate(0 0) scale(1)',
-    designVisibleW: canvasSize.width,
-    designVisibleH: canvasSize.height,
-    designLeft: 0,
-    designTop: 0,
-  }), [canvasSize.width, canvasSize.height])
-  const { canvasRef, setupFrame } = useCanvasViewport({ vp: identityVp, canvasSize, mode: 'raw' })
+  const { canvasRef, setupFrame, designToPixel } = useCanvasViewport({ vp, canvasSize, mode: 'raw' })
+
+  const toCanvasPixel = useMemo(() => {
+    return (wx: number, wy: number) => {
+      const { px: dx, py: dy } = worldToDesign(wx, wy, sceneScale)
+      return designToPixel(dx, dy)
+    }
+  }, [sceneScale, designToPixel])
+
   const particlesRef = useRef<ParticleState[]>([])
   const lastEmitTimeRef = useRef<number>(0)
   const nextParticleIdRef = useRef<number>(0)
@@ -97,7 +91,7 @@ export function useVelocitySelectorCanvas({
 
     if (params.mode === 0 && singleParticle) {
       const { point } = singleParticle
-      const { px, py } = worldToPixel(point.x, point.y, sceneScale)
+      const { px, py } = toCanvasPixel(point.x, point.y)
 
       if (params.keepTrack && time > 0) {
         ctx.beginPath()
@@ -117,7 +111,7 @@ export function useVelocitySelectorCanvas({
             plateGap * 3,
             sampleTime,
           )
-          const { px: sx, py: sy } = worldToPixel(res.point.x, res.point.y, sceneScale)
+          const { px: sx, py: sy } = toCanvasPixel(res.point.x, res.point.y)
           if (i === 0) ctx.moveTo(sx, sy)
           else ctx.lineTo(sx, sy)
         }
@@ -153,7 +147,7 @@ export function useVelocitySelectorCanvas({
         plateGap,
         particleTime,
       )
-      const { px, py } = worldToPixel(res.point.x, res.point.y, sceneScale)
+      const { px, py } = toCanvasPixel(res.point.x, res.point.y)
 
       const isOutOfScreen = px > canvasSize.width + 100 || py < -100 || py > canvasSize.height + 100
       const isExpiredHit = res.hitsPlate && res.tHit !== null && particleTime > res.tHit + 0.3
@@ -186,7 +180,7 @@ export function useVelocitySelectorCanvas({
           plateGap,
           sampleTime,
         )
-        const { px: sx, py: sy } = worldToPixel(traceRes.point.x, traceRes.point.y, sceneScale)
+        const { px: sx, py: sy } = toCanvasPixel(traceRes.point.x, traceRes.point.y)
         if (i === 0) ctx.moveTo(sx, sy)
         else ctx.lineTo(sx, sy)
       }
@@ -221,7 +215,7 @@ export function useVelocitySelectorCanvas({
     singleParticle,
     time,
     canvasSize,
-    sceneScale,
+    toCanvasPixel,
     mass,
     plateLength,
     plateGap,

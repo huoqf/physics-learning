@@ -5,8 +5,9 @@
  * 职责：Store 订读、useViewport、图表区渲染、组合场景组件
  * 计算逻辑见 collisionHooks.ts，渲染组件见 components/
  */
-import { useCanvasSize, useViewport } from '@/utils'
-import { useMemo } from 'react'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
+import { CANVAS_PRESETS } from '@/theme/spacing'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { VelocityTimeChart } from '@/components/Chart'
@@ -29,15 +30,7 @@ export default function CollisionAnimation() {
     }))
   )
 
-  const [containerRef, canvasSize] = useCanvasSize({
-    width: COL_LAYOUT.designWidth,
-    height: COL_LAYOUT.designHeight,
-  })
-
-  const vp = useViewport(canvasSize, {
-    designWidth: COL_LAYOUT.designWidth,
-    designHeight: COL_LAYOUT.designHeight,
-  })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.splitV })
 
   const {
     m1 = 3, v1 = 5,
@@ -51,15 +44,17 @@ export default function CollisionAnimation() {
   const isAdvanced = advancedMode === 1
   const groundY = COL_LAYOUT.groundY
 
-  const sceneScale = useMemo(() => ({
-    scaleX: 1,
-    scaleY: 1,
-    scale: 1,
-    originX: 0,
-    originY: groundY,
+  const sceneScale = useSceneScale({
+    vp,
+    preset,
+    anchor: 'custom',
+    customOriginX: 0,
+    customOriginY: groundY,
+    customScaleX: 1,
+    customScaleY: 1,
     maxVectorLength: 80,
     refMagnitudes: { velocity: 10 },
-  }), [groundY])
+  })
 
   // 基础模式 view model
   const basic = computeBasicMode({ m1, v1, m2, v2, isElastic }, time)
@@ -147,8 +142,8 @@ export default function CollisionAnimation() {
       </div>
 
       {/* ==================== 下方仿真动画区 ==================== */}
-      <div ref={containerRef} className="flex-1 min-h-[100px] bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden">
-        <svg className="w-full h-full block">
+      <div className="flex-1 min-h-[100px] bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden">
+        <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
           {/* gradients */}
           <defs>
             <radialGradient id="steel-sphere-grad-col" cx="30%" cy="30%" r="70%">
@@ -165,36 +160,33 @@ export default function CollisionAnimation() {
             </radialGradient>
           </defs>
 
-          {/* viewport transform 包裹所有设计空间内容 */}
-          <g transform={vp.transform}>
-            {!isAdvanced ? (
-              <CollisionBasicScene
-                isElastic={isElastic}
-                R_A={basic.R_A} R_B={basic.R_B}
-                posAx={basic.posAx} posBx={basic.posBx}
-                currentV1={basic.currentV1} currentV2={basic.currentV2}
-                hasCollided={basic.hasCollided} collisionTime={basic.collisionTime}
-                EkBefore={basic.EkBefore} EkAfter={basic.EkAfter}
-                time={time} showVectors={showVectors}
-                sceneScale={sceneScale} canvasSize={canvasSize}
-                groundY={groundY}
-              />
-            ) : (
-              <CollisionAdvancedScene
-                vA={vA}
-                R_Adv={advanced.R_Adv} R_Bdv={advanced.R_Bdv}
-                posAAdv={advanced.posAAdv} posBAdv={advanced.posBAdv}
-                curVA={advanced.curVA} curVB={advanced.curVB}
-                hasCollidedAdv={advanced.hasCollidedAdv} colTimeAdv={advanced.colTimeAdv}
-                velocitySwap={advanced.velocitySwap} heavyLight={advanced.heavyLight}
-                lightHeavy={advanced.lightHeavy} xCmAdv={advanced.xCmAdv}
-                time={time} showVectors={showVectors}
-                sceneScale={sceneScale} canvasSize={canvasSize}
-                groundY={groundY}
-              />
-            )}
-          </g>
-        </svg>
+          {!isAdvanced ? (
+            <CollisionBasicScene
+              isElastic={isElastic}
+              R_A={basic.R_A} R_B={basic.R_B}
+              posAx={basic.posAx} posBx={basic.posBx}
+              currentV1={basic.currentV1} currentV2={basic.currentV2}
+              hasCollided={basic.hasCollided} collisionTime={basic.collisionTime}
+              EkBefore={basic.EkBefore} EkAfter={basic.EkAfter}
+              time={time} showVectors={showVectors}
+              sceneScale={sceneScale} canvasSize={canvasSize}
+              groundY={groundY}
+            />
+          ) : (
+            <CollisionAdvancedScene
+              vA={vA}
+              R_Adv={advanced.R_Adv} R_Bdv={advanced.R_Bdv}
+              posAAdv={advanced.posAAdv} posBAdv={advanced.posBAdv}
+              curVA={advanced.curVA} curVB={advanced.curVB}
+              hasCollidedAdv={advanced.hasCollidedAdv} colTimeAdv={advanced.colTimeAdv}
+              velocitySwap={advanced.velocitySwap} heavyLight={advanced.heavyLight}
+              lightHeavy={advanced.lightHeavy} xCmAdv={advanced.xCmAdv}
+              time={time} showVectors={showVectors}
+              sceneScale={sceneScale} canvasSize={canvasSize}
+              groundY={groundY}
+            />
+          )}
+        </AnimationSvgCanvas>
       </div>
     </div>
   )

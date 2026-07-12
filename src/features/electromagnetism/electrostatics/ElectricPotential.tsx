@@ -1,5 +1,5 @@
 import React, { useRef, useState, useMemo, useEffect } from 'react'
-import { useCanvasSize, clientToContainerPoint } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -20,7 +20,7 @@ export default function ElectricPotential() {
   const updateParam = useAnimationStore((s) => s.updateParam)
   const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const { containerRef, canvasSize } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
   const animSvgRef = useRef<SVGSVGElement>(null)
   const chartSvgRef = useRef<SVGSVGElement>(null)
@@ -110,7 +110,7 @@ export default function ElectricPotential() {
     if (drawMode !== 1 || isPlaying) return
     const svg = animSvgRef.current
     if (!svg) return
-    const { x: xc, y: yc } = clientToContainerPoint(e.clientX, e.clientY, svg.getBoundingClientRect())
+    const { x: xc, y: yc } = (() => { const r = svg.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top } })()
     const { xp, yp } = physics.canvasToPhysics(xc, yc)
 
     // 检查是否在 A 锚点附近 (小于 0.45 米)
@@ -126,7 +126,7 @@ export default function ElectricPotential() {
     if (!isDrawing) return
     const svg = animSvgRef.current
     if (!svg) return
-    const { x: xc, y: yc } = clientToContainerPoint(e.clientX, e.clientY, svg.getBoundingClientRect())
+    const { x: xc, y: yc } = (() => { const r = svg.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top } })()
     const { xp, yp } = physics.canvasToPhysics(xc, yc)
 
     // 限制在下半屏的合理物理界限内
@@ -163,7 +163,7 @@ export default function ElectricPotential() {
   const handleChartPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const svg = chartSvgRef.current
     if (!svg) return
-    const { x: xc } = clientToContainerPoint(e.clientX, e.clientY, svg.getBoundingClientRect())
+    const { x: xc } = (() => { const r = svg.getBoundingClientRect(); return { x: e.clientX - r.left } })()
 
     // 计算相对绘图区域的 x 比例
     const relativeX = (xc - physics.chartPadding.left) / physics.chartWidth

@@ -196,7 +196,7 @@ export const AnimationSvgCanvas = React.memo<AnimationSvgCanvasProps>(
     return (
       <div
         ref={containerRef}
-        className={`w-full h-full${hasCanvas ? ' relative' : ''}${className ? ` ${className}` : ''}`}
+        className={`w-full h-full overflow-hidden${hasCanvas ? ' relative' : ''}${className ? ` ${className}` : ''}`}
       >
         {hasCanvas && (
           <canvas

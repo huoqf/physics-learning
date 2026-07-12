@@ -1,20 +1,29 @@
-import { useCanvasSize } from '@/utils'
+import { useRef } from 'react'
+import { useAnimationViewport } from '@/hooks'
+import { useViewportPointer } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { useLenzsLaw } from './lenzs-law/hooks/useLenzsLaw'
 import { LenzsLawCanvas } from './lenzs-law/components/LenzsLawCanvas'
 
 export default function LenzsLaw() {
-  // 迁移使用标准的 full 预设尺寸 (700 x 650)，移除旧版缩水补偿
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full)
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const state = useLenzsLaw()
+  const svgRef = useRef<SVGSVGElement | null>(null)
+  const getSvgPoint = useViewportPointer(svgRef)
 
   return (
-    <div ref={containerRef} className="w-full h-full relative">
+    <AnimationSvgCanvas
+      containerRef={containerRef}
+      transform={vp.transform}
+      svgRef={svgRef}
+      className="bg-white rounded-lg shadow-inner"
+    >
       <LenzsLawCanvas
         {...state}
-        canvasSize={canvasSize}
-        vpScale={canvasSize.scale}
+        font={canvasSize.font}
+        getSvgPoint={getSvgPoint}
       />
-    </div>
+    </AnimationSvgCanvas>
   )
 }

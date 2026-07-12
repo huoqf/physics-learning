@@ -227,14 +227,14 @@ export default function BasicMode({
           {showVectors && contactStep !== 'sharing' && (
             <g>
               <VectorArrow
-                origin={{ x: x1, y: -centerY }}
+                originPixel={{ x: x1, y: centerY }}
                 vector={{ x: leftArrowDir * F, y: 0 }}
                 type="electricForce"
                 sceneScale={sceneScale}
                 strokeWidth={CANVAS_STYLE.stroke.vectorMain}
               />
               <VectorArrow
-                origin={{ x: x2, y: -centerY }}
+                originPixel={{ x: x2, y: centerY }}
                 vector={{ x: rightArrowDir * F, y: 0 }}
                 type="electricForce"
                 sceneScale={sceneScale}

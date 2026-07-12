@@ -3,10 +3,11 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { precomputeVerticalCircularMotion, GRAVITY } from '@/physics'
 import type { VerticalCircularMotionPoint } from '@/physics/dynamics/dynamics-advanced'
-import { useCanvasSize, physicsToCanvasWithOrigin, useViewport } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import type { CanvasSize, ViewportInfo } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useSceneScale } from '@/hooks/useSceneScale'
+import { worldToDesign } from '@/scene'
 import type { SceneScale } from '@/scene'
 
 const SIMULATION_DT = 0.002
@@ -63,7 +64,15 @@ export function useVerticalCircularPhysics(): VerticalCircularPhysicsResult {
       showVectors: s.showVectors,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.square)
+  const cardWidthEstimate = Math.max(
+    VERTICAL_CIRCULAR_LAYOUT.cardMinWidth,
+    CANVAS_PRESETS.square.width * 0.38,
+  )
+
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({
+    preset: CANVAS_PRESETS.square,
+    overlayRight: Math.round(cardWidthEstimate),
+  })
 
   const {
     r = 3,
@@ -92,21 +101,9 @@ export function useVerticalCircularPhysics(): VerticalCircularPhysicsResult {
   const x = currentPoint ? currentPoint.x : 0
   const y = currentPoint ? currentPoint.y : -r
 
-  const minCanvasDim = Math.min(canvasSize.width, canvasSize.height)
-  const scale = (minCanvasDim - VERTICAL_CIRCULAR_LAYOUT.canvasPadding) / (2 * VERTICAL_CIRCULAR_LAYOUT.rMax)
-
-  const cardWidth = Math.max(VERTICAL_CIRCULAR_LAYOUT.cardMinWidth, canvasSize.width * 0.38)
-  const cardHeight = Math.max(340, canvasSize.height * 0.55)
-
-  const vp = useViewport(canvasSize, {
-    designWidth: 650,
-    designHeight: 650,
-    overlayRight: Math.round(cardWidth),
-  })
-
-  const centerX = vp.centerX
-  const centerY = vp.centerY
-  const ballPos = physicsToCanvasWithOrigin(x, y, centerX, centerY, scale)
+  const physicsScaleDesign =
+    (CANVAS_PRESETS.square.width / 2 - VERTICAL_CIRCULAR_LAYOUT.canvasPadding) /
+    (2 * VERTICAL_CIRCULAR_LAYOUT.rMax)
 
   const refV = Math.max(v0 * 1.4, 6.0)
   const refA = Math.max((v0 * v0) / r, 10.0)
@@ -116,8 +113,8 @@ export function useVerticalCircularPhysics(): VerticalCircularPhysicsResult {
     vp,
     preset: CANVAS_PRESETS.square,
     anchor: 'center',
-    centerSource: 'viewport',
-    physicsScaleDesign: scale / vp.scale,
+    centerSource: 'design',
+    physicsScaleDesign,
     refMagnitudes: {
       velocity: refV,
       acceleration: refA,
@@ -128,7 +125,16 @@ export function useVerticalCircularPhysics(): VerticalCircularPhysicsResult {
     },
   })
 
-  const cardX = canvasSize.width - cardWidth - VERTICAL_CIRCULAR_LAYOUT.cardRightOffset
+  const centerX = sceneScale.originX
+  const centerY = sceneScale.originY
+  const scale = sceneScale.scale
+
+  const ballDesign = worldToDesign(x, y, sceneScale)
+  const ballPos = { cx: ballDesign.px, cy: ballDesign.py }
+
+  const cardWidth = Math.max(VERTICAL_CIRCULAR_LAYOUT.cardMinWidth, preset.width * 0.38)
+  const cardHeight = Math.max(340, preset.height * 0.55)
+  const cardX = preset.width - cardWidth - VERTICAL_CIRCULAR_LAYOUT.cardRightOffset
   const cardY = 20
 
   return {

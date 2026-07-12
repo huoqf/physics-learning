@@ -1,5 +1,6 @@
-import { useCanvasSize } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { calculateClosedCircuit } from '@/physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
@@ -7,7 +8,6 @@ import { DialMeter, Rheostat } from '@/components/Physics'
 import { useClosedCircuitScene } from './hooks/useClosedCircuitScene'
 
 // ─── 设计坐标系常量 ───────────────────────────────────────────────
-const DESIGN_W = 840
 const DESIGN_H = 400
 
 /** 场景布局常量 */
@@ -30,7 +30,7 @@ const LOOP_CY = LAYOUT.loop.top + LAYOUT.loop.height / 2
 export default function ClosedCircuit() {
     const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
 
   const EMF = params.EMF ?? 6
@@ -43,12 +43,7 @@ export default function ClosedCircuit() {
   const { chargeParticles, heatOpacity } = useClosedCircuitScene(I, time, highlightLoss)
 
   return (
-    <div ref={containerRef} className="w-full h-full flex items-center justify-center p-2">
-      <svg
-        viewBox={`0 0 ${DESIGN_W} ${DESIGN_H}`}
-        className="w-full h-full bg-white rounded-xl"
-        preserveAspectRatio="xMidYMid meet"
-      >
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform} className="bg-white rounded-xl">
         <defs>
           {/* 电源外壳金属质感渐变 */}
           <linearGradient id="battery-grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -66,8 +61,8 @@ export default function ClosedCircuit() {
 
         </defs>
 
-        {/* 历史坐标基于 700×420 设计；统一向上平移 20 以适配 700×400 标准 wide preset */}
-        <g transform="translate(0, -20)">
+        {/* 垂直居中：内容设计高度 400，画布 preset 高度 650 */}
+        <g transform={`translate(0, ${(preset.height - DESIGN_H) / 2})`}>
 
         {/* ==================== 1. 主回路导线与并联引线 ==================== */}
         {/* 并联电压表导线 */}
@@ -217,7 +212,6 @@ export default function ClosedCircuit() {
 
         </g>
         </g>
-      </svg>
-    </div>
+    </AnimationSvgCanvas>
   )
 }

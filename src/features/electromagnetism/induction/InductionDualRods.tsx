@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { VelocityTimeChart, RelationChart } from '@/components/Chart'
 import { useDualRodsPhysics } from './dual-rods/hooks/useDualRodsPhysics'
 import { DualRodsScene } from './dual-rods/components/DualRodsScene'
-import { useAnimationViewport } from '@/hooks'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 
 export default function InductionDualRods() {
   const { params, time } = useAnimationStore(
@@ -24,14 +24,13 @@ export default function InductionDualRods() {
     appliedForce = 2.0,
   } = params
 
-  // 获取 canvasSize 供 useDualRodsPhysics 使用（计算物理比例尺）
-  const { canvasSize } = useAnimationViewport({
-    preset: { width: 700, height: 325 },
-  })
+  // 使用 CANVAS_PRESETS.splitV 设计尺寸供物理计算
+  const { width: designW, height: designH } = CANVAS_PRESETS.splitV
 
   const physics = useDualRodsPhysics(
     { scenario, massA, massB, fieldB, railL, resSum, initialV0, appliedForce },
-    canvasSize,
+    designW,
+    designH,
     time
   )
 

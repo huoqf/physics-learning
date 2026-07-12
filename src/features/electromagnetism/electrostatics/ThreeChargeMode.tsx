@@ -246,7 +246,7 @@ export default function ThreeChargeMode({
               {showVectors && force.magnitude > 1e-12 && (
                 <g>
                   <VectorArrow
-                    origin={{ x: pos.x, y: -pos.y }}
+                    originPixel={{ x: pos.x, y: pos.y }}
                     vector={{ x: force.fx, y: -force.fy }}
                     type="electricForce"
                     sceneScale={sceneScale}

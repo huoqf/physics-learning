@@ -91,7 +91,7 @@ export function ElectricFieldAdvancedScene({
           {/* 1. 分矢量 E1 (浅黄色虚线) */}
           <g opacity={0.7}>
             <VectorArrow
-              origin={{ x: testX, y: -testY }}
+              originPixel={{ x: testX, y: testY }}
               vector={advancedArrows.vectorE1}
               type="electricField"
               sceneScale={sceneScale}
@@ -108,7 +108,7 @@ export function ElectricFieldAdvancedScene({
           {/* 2. 分矢量 E2 (浅黄色虚线) */}
           <g opacity={0.7}>
             <VectorArrow
-              origin={{ x: testX, y: -testY }}
+              originPixel={{ x: testX, y: testY }}
               vector={advancedArrows.vectorE2}
               type="electricField"
               sceneScale={sceneScale}
@@ -138,7 +138,7 @@ export function ElectricFieldAdvancedScene({
 
           {/* 4. 合场强 E (粗黄色实线) */}
           <VectorArrow
-            origin={{ x: testX, y: -testY }}
+            originPixel={{ x: testX, y: testY }}
             vector={advancedArrows.vectorEnet}
             type="electricField"
             sceneScale={sceneScale}
@@ -160,7 +160,7 @@ export function ElectricFieldAdvancedScene({
           {qTest !== 0 && (
             <>
               <VectorArrow
-                origin={{ x: testX, y: -testY }}
+                originPixel={{ x: testX, y: testY }}
                 vector={advancedArrows.vectorF}
                 type="electricForce"
                 sceneScale={sceneScale}

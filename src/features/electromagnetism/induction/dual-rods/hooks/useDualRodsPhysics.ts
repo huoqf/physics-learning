@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { computeDualRodsStateAtTime } from '@/physics'
 import { computeScale, physicsToCanvasWithOrigin } from '@/utils/coordinate'
-import type { CanvasSize } from '@/utils/useCanvasSize'
 
 const DUAL_RODS_WORLD = { xMin: -3.0, xMax: 3.0, yMin: -1.4, yMax: 1.4 } as const
 
@@ -39,18 +38,19 @@ export interface DualRodsPhysicsResult {
 
 export function useDualRodsPhysics(
   params: DualRodsParams,
-  canvasSize: CanvasSize,
+  width: number,
+  height: number,
   time: number
 ): DualRodsPhysicsResult {
   const { scenario, massA, massB, fieldB, railL, resSum, initialV0, appliedForce } = params
 
-  // 1. 根据画布分辨率 (默认 splitV = 840x325) 和物理世界边界计算标准物理比例尺 scale
+  // 1. 根据设计坐标分辨率和物理世界边界计算标准物理比例尺 scale
   const scale = useMemo(
-    () => computeScale(canvasSize.width, canvasSize.height, DUAL_RODS_WORLD, 40),
-    [canvasSize.width, canvasSize.height]
+    () => computeScale(width, height, DUAL_RODS_WORLD, 40),
+    [width, height]
   )
-  const originX = canvasSize.width / 2
-  const originY = canvasSize.height / 2
+  const originX = width / 2
+  const originY = height / 2
 
   // 阻尼系数 k = (B^2 L^2 / R) * (mA+mB)/(mA*mB)
   const totalMass = massA + massB

@@ -16,13 +16,13 @@ import {
   isHeavyLightCase,
 } from '@/physics/collision'
 
-/** 碰撞动画布局常量 */
+/** 碰撞动画布局常量（基于 CANVAS_PRESETS.splitV 840×325 设计空间） */
 export const COL_LAYOUT = {
   canvasPadding: 50,
   ballBaseRadius: 16,
   massRadiusScale: 2,
   velocityScale: 25,
-  designWidth: 700,
+  designWidth: 840,
   designHeight: 180,
   groundY: 130,
 } as const

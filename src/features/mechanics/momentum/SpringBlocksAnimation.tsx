@@ -1,8 +1,11 @@
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { useCanvasSize, useViewport, getPointsUpToTime } from '@/utils'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
+import { CANVAS_PRESETS } from '@/theme/spacing'
+import { getPointsUpToTime } from '@/utils'
 import { VectorArrow, PhysicsGround, Block, EnergyBars } from '@/components/Physics'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
@@ -14,15 +17,14 @@ import { useChartContext } from '@/components/Chart'
 
 
 const GROUND_X = 0
-const GROUND_Y = 130
-const GROUND_WIDTH = 700
+const GROUND_Y = 235
+const GROUND_WIDTH = 840
 const SPRING_PX_PER_M = 40
-const SPRING_ORIGIN_X = 350
+const SPRING_ORIGIN_X = 420
 const SPRING_NATURAL_LENGTH_PX = 80
 const BLOCK_SIZE = { width: 30, height: 30 }
 const CRITICAL_TIP = { x: -50, y: -10, width: 100, height: 20 }
 const SPRING_SIM = { duration: 3.5, dt: 0.016 }
-const CANVAS_DESIGN = { width: 700, height: 180 }
 
 // 质心速度水平虚线组件
 function CenterOfMassVelocityLine({ vG, font }: { vG: number; font: (base: number) => number }) {
@@ -66,9 +68,8 @@ export default function SpringBlocksAnimation() {
     }))
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_DESIGN)
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.splitV })
   const { font } = canvasSize
-  const vp = useViewport(canvasSize, { designWidth: CANVAS_DESIGN.width, designHeight: CANVAS_DESIGN.height })
 
   // 参数解析
   const mA_spring = params.mA_spring ?? 2
@@ -77,11 +78,16 @@ export default function SpringBlocksAnimation() {
   const k_spring = params.k_spring ?? 20
   const connectionMode_spring = params.connectionMode_spring ?? 0
 
-  const sceneScale = useMemo(() => ({
-    scaleX: SPRING_PX_PER_M, scaleY: SPRING_PX_PER_M, scale: SPRING_PX_PER_M,
-    originX: SPRING_ORIGIN_X, originY: GROUND_Y, maxVectorLength: 40,
-    refMagnitudes: { velocity: 6, elasticForce: 40 }
-  }), [])
+  const sceneScale = useSceneScale({
+    vp, preset,
+    anchor: 'custom',
+    customScaleX: SPRING_PX_PER_M,
+    customScaleY: SPRING_PX_PER_M,
+    customOriginX: SPRING_ORIGIN_X,
+    customOriginY: GROUND_Y,
+    maxVectorLength: 40,
+    refMagnitudes: { velocity: 6, elasticForce: 40 },
+  })
 
   // 物理数据计算
   const states = useMemo(() => {
@@ -279,15 +285,9 @@ export default function SpringBlocksAnimation() {
       </div>
 
       {/* 下方物理仿真动画区 */}
-      <div
-        ref={containerRef}
-        className="flex-[5] min-h-[220px] bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden flex flex-col justify-between"
-      >
-
-        <svg
-          className="w-full h-full block"
-        >
-          <g transform={vp.transform}>
+      <div className="flex-[5] min-h-[220px] bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden flex flex-col">
+        <div className="flex-1 min-h-0">
+          <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
             {/* 地面 (开启 isSmooth 光滑镜面效果) */}
             <PhysicsGround x={GROUND_X} y={GROUND_Y} width={GROUND_WIDTH} isSmooth={true} appearance={{ color: PHYSICS_COLORS.labelText }} />
 
@@ -304,21 +304,21 @@ export default function SpringBlocksAnimation() {
               const xA_center = springState.xA - (BLOCK_SIZE.width / 2) / SPRING_PX_PER_M
               return (
                 <g>
-                  <Block 
-                    x={xA_px - BLOCK_SIZE.width} 
-                    y={GROUND_Y - BLOCK_SIZE.height} 
-                    width={BLOCK_SIZE.width} 
-                    height={BLOCK_SIZE.height} 
-                    type="metal" 
-                    label={`A (${mA_spring}kg)`} 
-                    strokeWidth={CANVAS_STYLE.stroke.objectLine} 
+                  <Block
+                    x={xA_px - BLOCK_SIZE.width}
+                    y={GROUND_Y - BLOCK_SIZE.height}
+                    width={BLOCK_SIZE.width}
+                    height={BLOCK_SIZE.height}
+                    type="metal"
+                    label={`A (${mA_spring}kg)`}
+                    strokeWidth={CANVAS_STYLE.stroke.objectLine}
                     font={canvasSize.font}
                     showCenterOfMass={true}
                     translucent={true}
                   />
                   {/* 矢量箭头起点高度根据车身调整 (速度在车顶 0.65m，弹力在质心 0.375m) */}
-                  <VectorArrow origin={{ x: xA_center, y: 0.65 }} vector={{ x: springState.vA, y: 0 }} type="velocity" sceneScale={sceneScale as never} label={`${springState.vA.toFixed(1)}m/s`} />
-                  <VectorArrow origin={{ x: xA_center, y: 0.375 }} vector={{ x: forceA, y: 0 }} type="elasticForce" sceneScale={sceneScale as never} label={Math.abs(forceA) > 0.05 ? `${Math.abs(forceA).toFixed(1)}N` : undefined} />
+                  <VectorArrow origin={{ x: xA_center, y: 0.65 }} vector={{ x: springState.vA, y: 0 }} type="velocity" sceneScale={sceneScale} label={`${springState.vA.toFixed(1)}m/s`} />
+                  <VectorArrow origin={{ x: xA_center, y: 0.375 }} vector={{ x: forceA, y: 0 }} type="elasticForce" sceneScale={sceneScale} label={Math.abs(forceA) > 0.05 ? `${Math.abs(forceA).toFixed(1)}N` : undefined} />
                 </g>
               )
             })()}
@@ -331,21 +331,21 @@ export default function SpringBlocksAnimation() {
               const xB_center = springState.xB + (BLOCK_SIZE.width / 2) / SPRING_PX_PER_M
               return (
                 <g>
-                  <Block 
-                    x={xB_px} 
-                    y={GROUND_Y - BLOCK_SIZE.height} 
-                    width={BLOCK_SIZE.width} 
-                    height={BLOCK_SIZE.height} 
-                    type="metal" 
-                    label={`B (${mB_spring}kg)`} 
-                    strokeWidth={CANVAS_STYLE.stroke.objectLine} 
+                  <Block
+                    x={xB_px}
+                    y={GROUND_Y - BLOCK_SIZE.height}
+                    width={BLOCK_SIZE.width}
+                    height={BLOCK_SIZE.height}
+                    type="metal"
+                    label={`B (${mB_spring}kg)`}
+                    strokeWidth={CANVAS_STYLE.stroke.objectLine}
                     font={canvasSize.font}
                     showCenterOfMass={true}
                     translucent={true}
                   />
                   {/* 矢量箭头起点高度根据车身调整 (速度在车顶 0.65m，弹力在质心 0.375m) */}
-                  <VectorArrow origin={{ x: xB_center, y: 0.65 }} vector={{ x: springState.vB, y: 0 }} type="velocity" sceneScale={sceneScale as never} label={`${springState.vB.toFixed(1)}m/s`} />
-                  <VectorArrow origin={{ x: xB_center, y: 0.375 }} vector={{ x: forceB, y: 0 }} type="elasticForce" sceneScale={sceneScale as never} label={Math.abs(forceB) > 0.05 ? `${Math.abs(forceB).toFixed(1)}N` : undefined} />
+                  <VectorArrow origin={{ x: xB_center, y: 0.65 }} vector={{ x: springState.vB, y: 0 }} type="velocity" sceneScale={sceneScale} label={`${springState.vB.toFixed(1)}m/s`} />
+                  <VectorArrow origin={{ x: xB_center, y: 0.375 }} vector={{ x: forceB, y: 0 }} type="elasticForce" sceneScale={sceneScale} label={Math.abs(forceB) > 0.05 ? `${Math.abs(forceB).toFixed(1)}N` : undefined} />
                 </g>
               )
             })()}
@@ -356,13 +356,13 @@ export default function SpringBlocksAnimation() {
               const xB_px = SPRING_ORIGIN_X + springState.xB * SPRING_PX_PER_M
               const springRight_px = xB_px
               let springLeft_px = springRight_px - SPRING_NATURAL_LENGTH_PX
-              
+
               if (connectionMode_spring === 1) {
                 springLeft_px = xA_px
               } else {
                 springLeft_px = Math.max(xA_px, springLeft_px)
               }
-              
+
               const isSeparated = connectionMode_spring === 0 && springState.delta === 0 && time > 0.5 && springState.vB > springState.vA
               return <Spring x1={springLeft_px} y1={GROUND_Y - 15} x2={springRight_px} y2={GROUND_Y - 15} coils={10} radius={7} isLightWeight={isSeparated} color={isSeparated ? SCENE_COLORS.charts.referenceLine : undefined} />
             })()}
@@ -373,9 +373,9 @@ export default function SpringBlocksAnimation() {
               const prevState = interpolateSpringBlocks(states, prevT)
               const isEnergyToSpring = springState.Ep > prevState.Ep + 0.1
               const isSpringToEnergy = springState.Ep < prevState.Ep - 0.1
-              
-              if (isEnergyToSpring) return <g transform="translate(325, 48)"><path d="M 50 0 L 0 0 M 8 -4 L 0 0 L 8 4" stroke={PHYSICS_COLORS.kineticEnergy} strokeWidth="2" strokeLinecap="round" /><text x="25" y="-6" fill={PHYSICS_COLORS.kineticEnergy} fontSize={font(8)} fontWeight="bold" textAnchor="middle">动能 &rArr; 弹性能</text></g>
-              if (isSpringToEnergy) return <g transform="translate(325, 48)"><path d="M 0 0 L 50 0 M 42 -4 L 50 0 L 42 4" stroke={PHYSICS_COLORS.potentialElastic} strokeWidth="2" strokeLinecap="round" /><text x="25" y="-6" fill={PHYSICS_COLORS.potentialElastic} fontSize={font(8)} fontWeight="bold" textAnchor="middle">弹性能 &rArr; 动能</text></g>
+
+              if (isEnergyToSpring) return <g transform={`translate(${SPRING_ORIGIN_X - 75}, 87)`}><path d="M 50 0 L 0 0 M 8 -4 L 0 0 L 8 4" stroke={PHYSICS_COLORS.kineticEnergy} strokeWidth="2" strokeLinecap="round" /><text x="25" y="-6" fill={PHYSICS_COLORS.kineticEnergy} fontSize={font(8)} fontWeight="bold" textAnchor="middle">动能 &rArr; 弹性能</text></g>
+              if (isSpringToEnergy) return <g transform={`translate(${SPRING_ORIGIN_X - 75}, 87)`}><path d="M 0 0 L 50 0 M 42 -4 L 50 0 L 42 4" stroke={PHYSICS_COLORS.potentialElastic} strokeWidth="2" strokeLinecap="round" /><text x="25" y="-6" fill={PHYSICS_COLORS.potentialElastic} fontSize={font(8)} fontWeight="bold" textAnchor="middle">弹性能 &rArr; 动能</text></g>
               return null
             })()}
 
@@ -383,24 +383,24 @@ export default function SpringBlocksAnimation() {
             {(() => {
               const maxDeltaPt = states.reduce((max, pt) => (pt.delta > max.delta ? pt : max), { delta: 0, t: 0 })
               const isCompressShortest = Math.abs(time - maxDeltaPt.t) < 0.08
-              
+
               const { tRestore } = criticalTimes
               const isRestoring = Math.abs(time - tRestore) < 0.08
-              
+
               const minDeltaPt = states.reduce((min, pt) => (pt.delta < min.delta ? pt : min), { delta: 0, t: 0 })
               const isStretchLongest = connectionMode_spring === 1 && minDeltaPt.delta < -0.05 && Math.abs(time - minDeltaPt.t) < 0.08
-              
-              if (isCompressShortest) return <g transform={`translate(${SPRING_ORIGIN_X}, 75)`}><rect x={CRITICAL_TIP.x} y={CRITICAL_TIP.y} width={CRITICAL_TIP.width} height={CRITICAL_TIP.height} fill={SCENE_COLORS.safety.safetyYellow} opacity="0.9" rx="3" /><text x="0" y="3" fill={CANVAS_COLORS.labelText} fontSize={canvasSize.font(9)} fontWeight="bold" textAnchor="middle">🔥 压缩最短 (共速点)</text></g>
+
+              if (isCompressShortest) return <g transform={`translate(${SPRING_ORIGIN_X}, 135)`}><rect x={CRITICAL_TIP.x} y={CRITICAL_TIP.y} width={CRITICAL_TIP.width} height={CRITICAL_TIP.height} fill={SCENE_COLORS.safety.safetyYellow} opacity="0.9" rx="3" /><text x="0" y="3" fill={CANVAS_COLORS.labelText} fontSize={canvasSize.font(9)} fontWeight="bold" textAnchor="middle">🔥 压缩最短 (共速点)</text></g>
               if (isRestoring) {
                 const label = connectionMode_spring === 1 ? '⚡️ 恢复原长 (平衡点)' : '⚡️ 恢复原长 (分离点)'
-                return <g transform={`translate(${SPRING_ORIGIN_X}, 75)`}><rect x={CRITICAL_TIP.x} y={CRITICAL_TIP.y} width={CRITICAL_TIP.width} height={CRITICAL_TIP.height} fill={SCENE_COLORS.pendulum.equilibrium} opacity="0.9" rx="3" /><text x="0" y="3" fill={colors.neutral.white} fontSize={canvasSize.font(9)} fontWeight="bold" textAnchor="middle">{label}</text></g>
+                return <g transform={`translate(${SPRING_ORIGIN_X}, 135)`}><rect x={CRITICAL_TIP.x} y={CRITICAL_TIP.y} width={CRITICAL_TIP.width} height={CRITICAL_TIP.height} fill={SCENE_COLORS.pendulum.equilibrium} opacity="0.9" rx="3" /><text x="0" y="3" fill={colors.neutral.white} fontSize={canvasSize.font(9)} fontWeight="bold" textAnchor="middle">{label}</text></g>
               }
-              if (isStretchLongest) return <g transform={`translate(${SPRING_ORIGIN_X}, 75)`}><rect x={CRITICAL_TIP.x} y={CRITICAL_TIP.y} width={CRITICAL_TIP.width} height={CRITICAL_TIP.height} fill={SCENE_COLORS.safety.safetyYellow} opacity="0.9" rx="3" /><text x="0" y="3" fill={CANVAS_COLORS.labelText} fontSize={canvasSize.font(9)} fontWeight="bold" textAnchor="middle">🔥 拉伸最长 (共速点)</text></g>
-              
+              if (isStretchLongest) return <g transform={`translate(${SPRING_ORIGIN_X}, 135)`}><rect x={CRITICAL_TIP.x} y={CRITICAL_TIP.y} width={CRITICAL_TIP.width} height={CRITICAL_TIP.height} fill={SCENE_COLORS.safety.safetyYellow} opacity="0.9" rx="3" /><text x="0" y="3" fill={CANVAS_COLORS.labelText} fontSize={canvasSize.font(9)} fontWeight="bold" textAnchor="middle">🔥 拉伸最长 (共速点)</text></g>
+
               return null
             })()}
-          </g>
-        </svg>
+          </AnimationSvgCanvas>
+        </div>
 
         <div className="p-3 bg-neutral-50 border-t border-neutral-200/80 text-ui-md text-neutral-600 flex items-center justify-between">
           <div>

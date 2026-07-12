@@ -1,5 +1,5 @@
 import { VectorArrow } from '@/components/Physics'
-import { physicsToCanvasWithOrigin } from '@/utils'
+import { worldToDesign } from '@/scene'
 import { GRAVITY } from '@/physics'
 import {
   PHYSICS_COLORS, SCENE_COLORS,
@@ -39,8 +39,8 @@ export function VerticalCircularScene({ physics }: VerticalCircularSceneProps) {
         <path
           d={activeTrajectory
             .map((pt, idx) => {
-              const pos = physicsToCanvasWithOrigin(pt.x, pt.y, centerX, centerY, scale)
-              return `${idx === 0 ? 'M' : 'L'} ${pos.cx} ${pos.cy}`
+              const pos = worldToDesign(pt.x, pt.y, sceneScale)
+              return `${idx === 0 ? 'M' : 'L'} ${pos.px} ${pos.py}`
             })
             .join(' ')}
           fill="none"

@@ -1,6 +1,6 @@
 import { VectorArrow, PhysicsGround } from '@/components/Physics'
-import { useCanvasSize, useViewport } from '@/utils'
-import { useSceneScale } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -21,17 +21,15 @@ import {
 } from '@/theme/physics'
 import { RelationChart, ChartArea, useChartContext } from '@/components/Chart'
 
-const IMPULSE_DESIGN = { width: 700, height: 450 } as const
-
-/** 冲量动画布局常量 */
+/** 冲量动画布局常量（设计坐标） */
 const IMPULSE_LAYOUT = {
-  /** Canvas 安全余量 (px) */
+  /** 安全余量（设计坐标） */
   canvasPadding: 50,
-  /** 地面线 Y 偏移 (px) */
+  /** 地面线距设计底边的偏移（设计坐标） */
   groundOffset: 100,
-  /** 滑块高度 (px) */
+  /** 滑块高度（设计坐标） */
   sliderHeight: 30,
-  /** 滑块宽度 (px) */
+  /** 滑块宽度（设计坐标） */
   sliderWidth: 50,
   /** 微元切割数 */
   nSlices: 16,
@@ -169,12 +167,7 @@ export default function ImpulseAnimation() {
       showVectors: s.showVectors,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-
-  const vp = useViewport(canvasSize, {
-    designWidth: IMPULSE_DESIGN.width,
-    designHeight: IMPULSE_DESIGN.height,
-  })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
 
   const {
     F = 10,
@@ -188,18 +181,19 @@ export default function ImpulseAnimation() {
   const isAdvanced = advancedMode === 1
   const forceTypeStr: ForceTimeType = forceType === 1 ? 'sine' : 'linear'
 
-  const groundY = vp.visibleY + vp.visibleH - IMPULSE_LAYOUT.groundOffset
+  // 地面线 Y（设计坐标，从设计底边向上偏移）
+  const groundY = preset.height - IMPULSE_LAYOUT.groundOffset
 
   const sceneScale = useSceneScale({
     vp,
-    preset: IMPULSE_DESIGN,
+    preset,
     anchor: 'custom',
     customOriginX: 0,
     customOriginY: 0,
     customScaleX: 1,
     customScaleY: 1,
     refMagnitudes: { force: 200 },
-    maxVectorLength: Math.min(vp.visibleW, vp.visibleH) * 0.3,
+    maxVectorLength: Math.min(preset.width, preset.height) * 0.3,
   })
 
   // ── 基础模式：恒力 ──────────────────────────────────────────
@@ -269,7 +263,7 @@ export default function ImpulseAnimation() {
     [advancedFtPointsAll, currentT_advanced]
   )
 
-  // ── 滑块动画位置 ────────────────────────────────────────────
+  // ── 滑块动画位置（设计坐标） ──────────────────────────────────
   const sliderTrackY = groundY - IMPULSE_LAYOUT.sliderHeight / 2
 
   // 基础模式滑块位移
@@ -288,9 +282,9 @@ export default function ImpulseAnimation() {
   const advancedYDomain: [number, number] = [0, DOMAIN_DEFAULTS.FMax_ref * 1.25]
 
   return (
-    <div ref={containerRef} className="w-full h-full flex flex-col bg-neutral-50 gap-2 p-2">
+    <div className="w-full h-full flex flex-col bg-neutral-50 gap-2 p-2">
       {/* ========== F-t 图表区域（顶部） ========== */}
-      <div className="w-full" style={{ height: vp.visibleH * 0.48 }}>
+      <div className="w-full" style={{ height: '48%' }}>
         {!isAdvanced ? (
           /* 基础模式：恒力 F-t */
           <RelationChart
@@ -369,112 +363,108 @@ export default function ImpulseAnimation() {
       </div>
 
       {/* ========== 物理动画区域（底部） ========== */}
-      <div className="flex-1 relative bg-white rounded-lg shadow-inner overflow-hidden">
-        <svg width={canvasSize.width} height={vp.visibleH * 0.52} className="absolute inset-0">
-          {/* 地面线 */}
-          <PhysicsGround
-            x={IMPULSE_LAYOUT.canvasPadding}
-            y={groundY - vp.visibleH * 0.48}
-            width={canvasSize.width - 2 * IMPULSE_LAYOUT.canvasPadding}
-            appearance={{ color: PHYSICS_COLORS.labelText }}
-          />
+      <AnimationSvgCanvas
+        containerRef={containerRef}
+        transform={vp.transform}
+        className="flex-1 rounded-lg shadow-inner overflow-hidden bg-white"
+      >
+        {/* 地面线 */}
+        <PhysicsGround
+          x={IMPULSE_LAYOUT.canvasPadding}
+          y={groundY}
+          width={preset.width - 2 * IMPULSE_LAYOUT.canvasPadding}
+          appearance={{ color: PHYSICS_COLORS.labelText }}
+        />
 
-          {!isAdvanced ? (
-            /* 基础模式滑块 */
-            <g>
-              <rect
-                x={sliderX_basic}
-                y={sliderTrackY - vp.visibleH * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2}
-                width={IMPULSE_LAYOUT.sliderWidth}
-                height={IMPULSE_LAYOUT.sliderHeight}
-                rx={6}
-                fill={SCENE_COLORS.materials.steelSphereGrad[1]}
-                stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
-                strokeWidth={CANVAS_STYLE.stroke.objectLine}
+        {!isAdvanced ? (
+          /* 基础模式滑块 */
+          <g>
+            <rect
+              x={sliderX_basic}
+              y={sliderTrackY - IMPULSE_LAYOUT.sliderHeight / 2}
+              width={IMPULSE_LAYOUT.sliderWidth}
+              height={IMPULSE_LAYOUT.sliderHeight}
+              rx={6}
+              fill={SCENE_COLORS.materials.steelSphereGrad[1]}
+              stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine}
+            />
+            {showVectors && (
+              <VectorArrow
+                originPixel={{ x: sliderX_basic - 5, y: sliderTrackY }}
+                vector={{ x: -F, y: 0 }}
+                type="appliedForce"
+                sceneScale={sceneScale}
               />
-              {showVectors && (
-                <VectorArrow
-                  origin={{
-                    x: sliderX_basic - 5,
-                    y: groundY - sliderTrackY,
-                  }}
-                  vector={{ x: -F, y: 0 }}
-                  type="appliedForce"
-                  sceneScale={sceneScale}
-                />
-              )}
-              {/* 冲量数值标注 */}
-              <text
-                x={sliderX_basic + IMPULSE_LAYOUT.sliderWidth / 2}
-                y={sliderTrackY - vp.visibleH * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2 - 12}
-                fontSize={canvasSize.font(10)}
-                fill={PHYSICS_COLORS.impulse}
-                textAnchor="middle"
-                fontWeight="bold"
-              >
-                I = {currentImpulse_basic.toFixed(1)} N·s
-              </text>
-              <text
-                x={sliderX_basic + IMPULSE_LAYOUT.sliderWidth / 2}
-                y={sliderTrackY - vp.visibleH * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2 + 35}
-                fontSize={canvasSize.font(10)}
-                fill={CHART_COLORS.labelText}
-                textAnchor="middle"
-              >
-                t = {currentT_basic.toFixed(2)} s
-              </text>
-            </g>
-          ) : (
-            /* 进阶模式滑块 */
-            <g>
-              <rect
-                x={sliderX_advanced}
-                y={sliderTrackY - vp.visibleH * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2}
-                width={IMPULSE_LAYOUT.sliderWidth}
-                height={IMPULSE_LAYOUT.sliderHeight}
-                rx={6}
-                fill={SCENE_COLORS.materials.steelSphereGrad[1]}
-                stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
-                strokeWidth={CANVAS_STYLE.stroke.objectLine}
+            )}
+            {/* 冲量数值标注 */}
+            <text
+              x={sliderX_basic + IMPULSE_LAYOUT.sliderWidth / 2}
+              y={sliderTrackY - IMPULSE_LAYOUT.sliderHeight / 2 - 12}
+              fontSize={canvasSize.font(10)}
+              fill={PHYSICS_COLORS.impulse}
+              textAnchor="middle"
+              fontWeight="bold"
+            >
+              I = {currentImpulse_basic.toFixed(1)} N·s
+            </text>
+            <text
+              x={sliderX_basic + IMPULSE_LAYOUT.sliderWidth / 2}
+              y={sliderTrackY - IMPULSE_LAYOUT.sliderHeight / 2 + 35}
+              fontSize={canvasSize.font(10)}
+              fill={CHART_COLORS.labelText}
+              textAnchor="middle"
+            >
+              t = {currentT_basic.toFixed(2)} s
+            </text>
+          </g>
+        ) : (
+          /* 进阶模式滑块 */
+          <g>
+            <rect
+              x={sliderX_advanced}
+              y={sliderTrackY - IMPULSE_LAYOUT.sliderHeight / 2}
+              width={IMPULSE_LAYOUT.sliderWidth}
+              height={IMPULSE_LAYOUT.sliderHeight}
+              rx={6}
+              fill={SCENE_COLORS.materials.steelSphereGrad[1]}
+              stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine}
+            />
+            {showVectors && currentFt > 0 && (
+              <VectorArrow
+                originPixel={{ x: sliderX_advanced - 5, y: sliderTrackY }}
+                vector={{ x: -currentFt * 2, y: 0 }}
+                type="appliedForce"
+                sceneScale={sceneScale}
               />
-              {showVectors && currentFt > 0 && (
-                <VectorArrow
-                  origin={{
-                    x: sliderX_advanced - 5,
-                    y: groundY - sliderTrackY,
-                  }}
-                  vector={{ x: -currentFt * 2, y: 0 }}
-                  type="appliedForce"
-                  sceneScale={sceneScale}
-                />
-              )}
-              {/* 冲量数值标注 */}
-              <text
-                x={sliderX_advanced + IMPULSE_LAYOUT.sliderWidth / 2}
-                y={sliderTrackY - vp.visibleH * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2 - 12}
-                fontSize={canvasSize.font(10)}
-                fill={PHYSICS_COLORS.impulse}
-                textAnchor="middle"
-                fontWeight="bold"
-              >
-                {currentT_advanced >= t_total
-                  ? `I = ${totalImpulse.toFixed(1)}`
-                  : `∑FΔt = ${cumulativeImpulseSlices.toFixed(1)}`}{' '}
-                N·s
-              </text>
-              <text
-                x={sliderX_advanced + IMPULSE_LAYOUT.sliderWidth / 2}
-                y={sliderTrackY - vp.visibleH * 0.48 - IMPULSE_LAYOUT.sliderHeight / 2 + 35}
-                fontSize={canvasSize.font(10)}
-                fill={CHART_COLORS.labelText}
-                textAnchor="middle"
-              >
-                F = {currentFt.toFixed(1)} N · t = {currentT_advanced.toFixed(2)} s
-              </text>
-            </g>
-          )}
-        </svg>
-      </div>
+            )}
+            {/* 冲量数值标注 */}
+            <text
+              x={sliderX_advanced + IMPULSE_LAYOUT.sliderWidth / 2}
+              y={sliderTrackY - IMPULSE_LAYOUT.sliderHeight / 2 - 12}
+              fontSize={canvasSize.font(10)}
+              fill={PHYSICS_COLORS.impulse}
+              textAnchor="middle"
+              fontWeight="bold"
+            >
+              {currentT_advanced >= t_total
+                ? `I = ${totalImpulse.toFixed(1)}`
+                : `∑FΔt = ${cumulativeImpulseSlices.toFixed(1)}`}{' '}
+              N·s
+            </text>
+            <text
+              x={sliderX_advanced + IMPULSE_LAYOUT.sliderWidth / 2}
+              y={sliderTrackY - IMPULSE_LAYOUT.sliderHeight / 2 + 35}
+              fontSize={canvasSize.font(10)}
+              fill={CHART_COLORS.labelText}
+              textAnchor="middle"
+            >
+              F = {currentFt.toFixed(1)} N · t = {currentT_advanced.toFixed(2)} s
+            </text>
+          </g>
+        )}
+      </AnimationSvgCanvas>
     </div>
   )
 }

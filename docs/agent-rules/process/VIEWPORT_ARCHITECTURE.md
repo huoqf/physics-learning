@@ -1,13 +1,8 @@
 # VIEWPORT 架构统一方案
 
 > 编写时间：2026-07-12
-> 状态：**Phase 0-3、Phase A-C、Phase 5 已完成，Phase 4 进行中（37/51）**
+> 状态：**Phase 0-5、Phase A-C、Phase 4.5 已完成**
 > 目标：逐步统一 VIEWPORT 实现组件，覆盖 SVG/Canvas，完成实际分辨率测量、画面映射坐标转化、坐标对齐
-
-**状态标记说明**：
-- ✅ 已实现 — 代码已存在于仓库
-- ⚠️ 待实现 — 设计完成，待编码
-- 🔧 待修改 — 已有代码需调整
 
 ---
 
@@ -25,803 +20,277 @@
 ## 二、架构分层
 
 ```
-CANVAS_PRESETS（设计基准分辨率）                          ✅ 已实现
+CANVAS_PRESETS（设计基准分辨率）
     ↓
-AnimationPage 布局（CSS flex 分区：splitH / splitV / full）  ✅ 已实现
-    ↓
-useAnimationViewport（复合 Hook）                        ✅ 已实现
-    ├── useCanvasSize（Layer 1：容器尺寸测量 + 缩放比）     ✅ 已实现
-    ├── useViewport（Layer 2：可视区域 + vp.transform）    ✅ 已实现
-    └── 返回 { containerRef, canvasSize, vp, preset }     ✅ 已实现（含 preset 字段）
+useAnimationViewport（复合 Hook）
+    ├── useCanvasSize（Layer 1：容器尺寸测量 + 缩放比）
+    ├── useViewport（Layer 2：可视区域 + vp.transform）
+    └── 返回 { containerRef, canvasSize, vp, preset }
     ↓
 渲染层（Layer 3）
-    ├── AnimationSvgCanvas（SVG 路径）                     ✅ 已统一
-    ├── useCanvasViewport（Canvas 路径）                   ✅ 已实现
-    └── 混合路径（Canvas + SVG 强同步）                    ✅ 验证通过（BoundaryMagneticField）
+    ├── AnimationSvgCanvas（SVG 路径）
+    ├── useCanvasViewport（Canvas 路径：transform / raw 两种模式）
+    └── 混合路径（Canvas + SVG 强同步）
     ↓
-useSceneScale（物理坐标 → 设计坐标）                      ✅ 已实现
-    ├── anchor: 'viewport'（可视区域驱动）                  ✅ 已实现
-    ├── anchor: 'center'（物理中心驱动）                    ✅ 已实现
-    ├── anchor: 'design'（设计画布驱动）                    ✅ 已实现
-    └── anchor: 'custom'（调用方完全控制）                  ✅ 已实现
+useSceneScale（物理坐标 → 设计坐标）
+    ├── anchor: 'viewport'（可视区域驱动）
+    ├── anchor: 'center'（物理中心驱动）
+    ├── anchor: 'design'（设计画布驱动）
+    └── anchor: 'custom'（调用方完全控制）
 ```
 
-### 数据流
+### 坐标空间与变换
+
+| 坐标空间 | 来源 | 单位 |
+|----------|------|------|
+| 物理坐标 | physics/ 计算 | m, N, m/s 等 |
+| 设计坐标 | CANVAS_PRESETS 定义 | design-unit (0..preset.width × 0..preset.height) |
+| 容器像素 | ResizeObserver 测量 | px |
 
 ```
-preset → design coordinate system（设计坐标系）
-preset + physics config → SceneScale（物理坐标 → 设计坐标）
-design coordinate system + real container → Viewport（设计坐标 → 屏幕显示）
-Viewport → SVG / Canvas 统一渲染
-```
-
-### 坐标空间定义
-
-| 坐标空间 | 来源 | 单位 | 说明 |
-|----------|------|------|------|
-| 物理坐标 | physics/ 计算 | m, N, m/s 等 | 物理世界的真实值 |
-| 设计坐标 | CANVAS_PRESETS 定义 | design-unit | 0..preset.width × 0..preset.height |
-| 容器像素 | ResizeObserver 测量 | px | 真实容器尺寸 |
-| 屏幕坐标 | 浏览-browser 事件 | px | clientX/clientY |
-
-### 关键坐标变换
-
-```
-物理坐标 → 设计坐标：SceneScale（scaleX/Y + originX/Y）
+物理坐标 → 设计坐标：SceneScale（scaleX/Y + originX/Y），通过 worldToDesign 调用
 设计坐标 → 容器像素：vp.transform（translate(vp.tx, vp.ty) scale(vp.scale)）
 容器像素 → 设计坐标：(px - vp.tx) / vp.scale
-容器像素 → 物理坐标：canvasToPhysics（逆变换）
 ```
 
 ---
 
 ## 三、CANVAS_PRESETS ✅
 
-| preset | 尺寸 | 用途 | 选用规则 |
-|--------|------|------|---------|
-| `full` | 840×650 | 独占中屏，无分区 | 默认选择 |
-| `splitV` | 840×325 | 上下分区 | 上方图表 + 下方场景 |
-| `splitH` | 420×650 | 左右分区 | 左侧场景 + 右侧图表 |
-| `square` | 650×650 | 圆周/旋转对称 | 圆形轨迹、向心力、天体轨道 |
-
-基准依据：1440px 桌面中屏宽≈840px，可用高≈650px（扣除顶栏/控制条）。
+| preset | 尺寸 | 用途 |
+|--------|------|------|
+| `full` | 840×650 | 独占中屏，无分区 |
+| `splitV` | 840×325 | 上下分区（上方图表 + 下方场景） |
+| `splitH` | 420×650 | 左右分区（左侧场景 + 右侧图表） |
+| `square` | 650×650 | 圆周/旋转对称场景 |
 
 ### 特殊尺寸
 
 | 尺寸 | 文件 | 处理策略 |
 |------|------|---------|
-| 100×100 | VerticalThrow/Projectile/ObliqueThrow | ✅ 已迁移到 `useAnimationViewport` + `useSceneScale({ anchor: 'custom' })` |
+| 100×100 | VerticalThrow/Projectile/ObliqueThrow | ✅ 已迁移到 `anchor: 'custom'` |
 | 400×180 | CenterExtra 文件（21 个） | 侧栏图表，不需要 viewport 体系 |
-| 600×160 | KinematicsAdvancedAnimation | ✅ 已迁移到 `splitV(840×325)` |
+| 600×160 | KinematicsAdvancedAnimation | ✅ 已迁移到 `splitV` |
 
 ---
 
-## 四、布局层级 ✅
+## 四、核心规则：SceneScale 输出必须是设计坐标单位
 
-```
-Level 0: ThreePanel（左/中/右三栏，响应式）                ✅
-    ↓
-Level 1: AnimationPage（中屏内部分区）                     ✅
-    ├── config.centerLayout: 'splitH' → flex-row（动画+图表左右）
-    ├── config.centerLayout: 'splitV' → flex-col（图表+动画上下）
-    └── 无 centerLayout → 动画独占
-    ↓
-Level 2: useAnimationViewport(preset)                     ✅
-    ↓
-Level 3: 渲染层（SVG / Canvas / 混合）
-    ├── AnimationSvgCanvas                                ✅
-    ├── useCanvasViewport                                 ✅ 已实现
-    └── 混合路径                                          ✅ 验证通过
-```
+**问题**：`vp.visibleX/Y/W/H`、`vp.centerX/Y` 是容器像素坐标。如果直接传入 SceneScale，在 `<g transform={vp.transform}>` 内使用会导致**二次缩放**。
 
-### preset 与布局的关系
-
-| centerLayout | 典型 preset | 说明 |
-|-------------|-------------|------|
-| `splitH` | `splitH`(420×650) | 动画只占左半区 |
-| `splitV` | `splitV`(840×325) | 动画只占下半区 |
-| 无 | `full`(840×650) | 动画独占 |
-| 无 | `square`(650×650) | 场景需要正方形 |
-
-**preset 是设计坐标系的基准，不是容器物理尺寸的声明** — viewport 会通过 ResizeObserver 自动适配。
-
----
-
-## 五、核心规则：SceneScale 输出必须是设计坐标单位
-
-### 问题
-
-`vp.visibleX/Y/W/H`、`vp.centerX/Y` 是**容器像素坐标**。如果直接传入 SceneScale，输出的 `originX/Y`、`scaleX/Y` 也是容器像素单位。但 `VectorArrow` 位于 `<g transform={vp.transform}>` 内部，该 transform 将**设计坐标**映射到容器像素。因此 SceneScale 输出容器像素会导致**二次缩放**。
-
-### 修复
-
-SceneScale 的所有输出必须是**设计坐标单位**。容器像素值必须先反算：
-
-```ts
-const toDesign = (px: number, py: number) => ({
-  dx: (px - vp.tx) / vp.scale,
-  dy: (py - vp.ty) / vp.scale,
-})
-```
-
-### 与已有 ViewportInfo 设计坐标字段的关系
-
-`ViewportInfo` 已提供设计坐标字段，但语义与 SceneScale 需求**不完全一致**：
-
-| ViewportInfo 字段 | 计算公式 | 语义 | 与 SceneScale 的差异 |
-|-------------------|---------|------|---------------------|
-| `vp.designVisibleW` | `visibleW / scale` | 可视区域在设计坐标中的宽度 | ✅ 等于 `visibleDesign.width` |
-| `vp.designVisibleH` | `visibleH / scale` | 可视区域在设计坐标中的高度 | ✅ 等于 `visibleDesign.height` |
-| `vp.designLeft` | `-tx / scale` | 设计坐标系左边界 | ⚠️ 当 `overlayLeft=0` 时等于 `visibleDesign.x`，有 overlay 时不等 |
-| `vp.designTop` | `-ty / scale` | 设计坐标系上边界 | ⚠️ 同上 |
-
-**关键区别**：`vp.designLeft` 是设计坐标系的原点偏移（`-tx/scale`），而 `visibleDesign.x` 是可视区域左边界在设计坐标中的位置（`(overlayLeft - tx) / scale`）。当 `overlayLeft > 0` 时：
-
-```
-vp.designLeft = -tx / scale
-visibleDesign.x = (overlayLeft - tx) / scale = vp.designLeft + overlayLeft / scale
-```
-
-**结论**：SceneScale 的 `origin` 应使用 `visibleDesign.x/y`（可视区域边界），而非 `vp.designLeft/designTop`（设计坐标系边界）。两者仅在无 overlay 时等价。
+**修复**：SceneScale 的所有输出必须是设计坐标单位。容器像素值先反算：`(px - vp.tx) / vp.scale`。
 
 ### 单位约定
 
-| 字段 | 单位 | 说明 |
-|------|------|------|
-| `SceneScale.originX/Y` | design-unit | 物理原点在设计坐标中的位置 |
-| `SceneScale.scaleX/Y` | design-unit / meter | 物理单位到设计坐标的缩放 |
-| `SceneScale.maxVectorLength` | design-unit | 矢量归一化上限（设计坐标） |
-| `physicsScaleDesign` | design-unit / meter | 传入 useSceneScale 的物理比例 |
-| `physicsScalePx` | px / meter | 容器像素比例（需转换后使用） |
-
-### 转换公式
-
-```ts
-// 从容器像素比例转换为设计坐标比例
-physicsScaleDesign = physicsScalePx / vp.scale
-```
-
-**注意 `presetCompensation` 的影响**：`vp.scale = rawScale × presetCompensation`。旧页面迁移时如果同时移除 `presetCompensation`，`vp.scale` 会变化，导致 `physicsScaleDesign` 计算结果不同。建议迁移分两步：先保持 `presetCompensation` 不变完成 API 迁移，验证视觉一致后再单独移除 `presetCompensation`。
+| 字段 | 单位 |
+|------|------|
+| `SceneScale.originX/Y` | design-unit |
+| `SceneScale.scaleX/Y` | design-unit / meter |
+| `SceneScale.maxVectorLength` | design-unit |
+| `physicsScaleDesign` | design-unit / meter |
+| `physicsScalePx` | px / meter（需 `/ vp.scale` 转换后使用） |
 
 ### `worldToPixel` 函数名说明
 
-`SceneScale.ts` 中的 `worldToPixel(wx, wy, scene)` 输出是**设计坐标**（`originX + wx * scaleX`），不是容器像素。在 `<g transform={vp.transform}>` 内使用时正确（transform 会将设计坐标映射到容器像素）。函数名中的 "pixel" 是历史命名，实际单位为 design-unit。
+`worldToPixel(wx, wy, scene)` 输出是**设计坐标**（函数名中的 "pixel" 是历史命名）。新代码统一使用别名 `worldToDesign`。内部 `py = originY - wy * scaleY` 已处理 y 轴翻转（物理 y↑ → SVG y↓），迁移时直接替换不需要额外处理。
 
-**别名方案**：不改名（避免大 diff），新增导出别名供新代码使用：
+### overlay 下的 `vp.designLeft` vs `visibleDesign.x`
 
-```ts
-/** worldToPixel 的语义别名 — 输出设计坐标，不是容器像素 */
-export const worldToDesign = worldToPixel
-```
+- `vp.designLeft = -tx / scale` — 设计坐标系原点偏移
+- `visibleDesign.x = (overlayLeft - tx) / scale` — 可视区域左边界在设计坐标中的位置
 
-新代码统一使用 `worldToDesign`，旧代码逐步替换。同理 `calculateVectorPixelLength` 后续可新增别名 `calculateVectorDesignLength`。
-
-**y-flip 兼容性**：`worldToPixel` 内部 `py = originY - wy * scaleY` 已处理 y 轴翻转（物理 y↑ → SVG y↓），与 `physicsToCanvasWithOrigin` 的 `cy = originY - y * scale` 行为一致。迁移时直接替换不需要额外处理 y-flip。
+当 `overlayLeft > 0` 时两者不等。SceneScale 应使用 `visibleDesign.x/y`，仅在无 overlay 时等价。
 
 ---
 
-## 六、useSceneScale — 统一入口 ✅ 已实现
+## 五、useSceneScale — 统一入口 ✅
 
-> **状态**：已实现，文件 `src/hooks/useSceneScale.ts` 已创建。
+> 文件：`src/hooks/useSceneScale.ts`，完整 API 见源码 TypeScript interface。
 
-```ts
-// src/hooks/useSceneScale.ts  ✅ 已实现
+### anchor 模式
 
-interface UseSceneScaleOptions {
-  vp: ViewportInfo
-  preset: CanvasPreset
+| anchor | 语义 | scaleX/Y 来源 | origin 来源 |
+|--------|------|--------------|------------|
+| `'viewport'` | 物理世界铺满可视区域 | `visibleDesign / physicsWidth×Height` | `originSource`（默认 bottomLeft） |
+| `'center'` | 中心对称场景 | `physicsScaleDesign`（直接传入） | `centerSource`（默认 viewport） |
+| `'design'` | 物理世界绑定完整画布 | `preset / physicsWidth×Height` | `originSource`（默认 bottomLeft） |
+| `'custom'` | 调用方完全控制 | `customScaleX/Y` | `customOriginX/Y` |
 
-  anchor: 'viewport' | 'center' | 'design' | 'custom'
+### originSource（viewport / design 模式）
 
-  // center 模式
-  physicsScaleDesign?: number         // 设计坐标单位 (design-unit / meter)
-  physicsScaleDesignX?: number        // 非等比缩放时 X 方向（可选）
-  physicsScaleDesignY?: number        // 非等比缩放时 Y 方向（可选）
-  centerSource?: 'viewport' | 'design' | 'custom'
-  centerX?: number                    // 设计坐标
-  centerY?: number                    // 设计坐标
+| originSource | originX | originY | 适用场景 |
+|-------------|---------|---------|---------|
+| `'bottomLeft'`（默认） | 可视区域左/preset 左 | 可视区域底/preset 底 | 抛体、自由落体等 y>0 向上 |
+| `'topLeft'` | 可视区域左/preset 左 | 可视区域顶/preset 顶 | 原点在顶部 |
+| `'center'` | 可视区域中心/preset 中心 | 同左 | 中心对称 |
+| `'custom'` | `originX` 参数 | `originY` 参数 | 精确控制 |
 
-  // viewport / design 模式
-  physicsWidth?: number               // 物理世界宽度（米）
-  physicsHeight?: number              // 物理世界高度（米）
+### centerSource（center 模式）
 
-  // custom 模式（anchor === 'custom' 时必填）
-  customScaleX?: number               // 设计坐标单位 / meter
-  customScaleY?: number               // 设计坐标单位 / meter
-  customOriginX?: number              // 设计坐标
-  customOriginY?: number              // 设计坐标
+| centerSource | centerX/Y | 适用场景 |
+|-------------|-----------|---------|
+| `'design'` | `preset.width/2, preset.height/2` | 无 overlay 的对称场景 |
+| `'viewport'`（默认） | 可视区域中心 | 有 overlay 时物理对象在可视区域中央 |
+| `'custom'` | `centerX/Y` 参数 | 非标准锚点 |
 
-  // viewport / design 模式：物理原点位置
-  originSource?: 'topLeft' | 'bottomLeft' | 'center' | 'custom'  // 默认 'bottomLeft'
-  originX?: number                    // originSource === 'custom' 时指定（设计坐标）
-  originY?: number                    // originSource === 'custom' 时指定（设计坐标）
-
-  // 公共
-  refMagnitudes?: Partial<Record<VectorType, number>>
-  maxVectorLength?: number            // 设计坐标单位
-  centerLayout?: 'splitH' | 'splitV'
-  intentionalNonUniformScale?: boolean
-}
-```
-
-### anchor 与现有 mode 的映射
-
-| 文档 anchor | 现有 `createSceneScaleFromViewport` mode | 等价性 | 关键区别 |
-|------------|----------------------------------------|--------|---------|
-| `viewport` | `'visibleArea'` | 部分等价 | 新版输出设计坐标；旧版输出容器像素 |
-| `design` | `'transform'` | 部分等价 | 新版允许 `physicsWidth ≠ designWidth`；旧版强制相等 |
-| `center` | `'centerScale'` | 不等价 | 新版直接传 `physicsScaleDesign`；旧版需反推 `worldWidth` |
-| `custom` | 无对应 | 新增 | 完全控制所有字段 |
-
-### 各 anchor 模式的语义
-
-#### `anchor: 'viewport'` — 可视区域驱动
-
-物理世界铺满 viewport 可视设计区域。
-
-```ts
-// visibleDesign 完整计算（见实现代码 §六）：
-visibleDesign.x = (vp.visibleX - vp.tx) / vp.scale   // 非 toDesign(vp.visibleX)，因为 visibleX 已包含 overlay 偏移
-visibleDesign.y = (vp.visibleY - vp.ty) / vp.scale
-visibleDesign.width = vp.visibleW / vp.scale            // 可简化为 vp.designVisibleW
-visibleDesign.height = vp.visibleH / vp.scale           // 可简化为 vp.designVisibleH
-
-scaleX = visibleDesign.width / physicsWidth
-scaleY = visibleDesign.height / physicsHeight
-originX = visibleDesign.x  // 可视区域左边界（设计坐标）
-originY = visibleDesign.y + visibleDesign.height  // 默认 bottomLeft：可视区域底部
-```
-
-**origin 语义与 `originSource`**：
-
-物理 y 正方向向上（VectorArrow 内部 `y1 = originY - origin.y * scaleY`，`worldToPixel` 内部 `py = originY - wy * scaleY`，均将物理 y↑ 转换为 SVG y↓）。
-
-| `originSource` | originX | originY | 适用场景 |
-|----------------|---------|---------|---------|
-| `'bottomLeft'`（默认） | `visibleDesign.x` | `visibleDesign.y + visibleDesign.height` | 抛体、自由落体等 y>0 向上的场景 |
-| `'topLeft'` | `visibleDesign.x` | `visibleDesign.y` | 原点在可视区域顶部，物理 y>0 画到上方（可能被裁剪） |
-| `'center'` | `viewportCenterDesign.dx` | `viewportCenterDesign.dy` | 中心对称场景（同 center 模式） |
-| `'custom'` | `customOriginX` | `customOriginY` | 精确控制原点位置 |
-
-**注意**：无论 `originSource` 取何值，`worldToPixel` / `VectorArrow` 的 y 方向始终为 `py = originY - wy * scaleY`（物理 y↑ → SVG y↓）。`topLeft` 只是把物理原点放在可视区域顶部，**不会**改变 y 轴正方向。如果需要 y↓为正的坐标系，需在调用方自行翻转，当前不支持 `yDirection` 参数。
-
-**为什么默认 `bottomLeft` 而非 `topLeft`**：大多数高中物理场景（抛体运动、自由落体、弹簧振子）的物理 y>0 向上。`topLeft` 时 `originY = visibleDesign.y`，物理 y>0 会画到可视区域上方被裁剪；`bottomLeft` 时 `originY = visibleDesign.y + visibleDesign.height`，物理 y>0 画到可视区域内。这与 `physicsToCanvasWithOrigin` 的常见用法（原点在画布底部）一致，减少迁移微调。
-
-**VectorArrow y-flip 兼容性**：VectorArrow 内部公式 `y1 = originY - origin.y * scaleY` 已处理 y 轴翻转。无论 origin 在左上角还是中心，正 y 方向的物理矢量都会向上绘制（SVG 坐标系 y↓）。`originSource: 'center'` 时 `originY = viewportCenterDesign.dy`，VectorArrow 的 y-flip 仍然正确——正 y 矢量从中心向上画。
-
-**`visibleArea` 与 `transform` 模式的边界**：
+### anchor 选用指南
 
 | 场景 | 推荐 anchor | 原因 |
 |------|------------|------|
-| 物理世界铺满可视区域，矢量归一化基于可视区域 | `viewport` | scaleX/Y 由 visibleDesign / physicsWidth 决定 |
-| 物理世界只占设计画布的一部分（如局部放大） | `design` | scaleX/Y 由 preset / physicsWidth 决定 |
-| 中心对称场景 | `center` | origin 在中心，scale 由物理比例决定 |
+| 物理世界铺满可视区域 | `viewport` | scaleX/Y 由 visibleDesign / physicsWidth 决定 |
+| 物理世界只占设计画布一部分 | `design` | scaleX/Y 由 preset / physicsWidth 决定 |
+| 中心对称场景（圆周、天体、电磁场） | `center` | origin 在中心，scale 由物理比例决定 |
+| 非等比缩放 + 自定义原点 | `custom` | 完全控制 scaleX/Y 和 originX/Y |
 
-#### `anchor: 'center'` — 物理中心驱动
+### 与 `createSceneScaleFromViewport` 的映射
 
-中心对称场景（圆周运动、天体轨道、电磁场）。
-
-```ts
-originX = centerSource === 'design' ? preset.width / 2
-        : centerSource === 'viewport' ? viewportCenterDesign.dx
-        : customCX
-
-originY = centerSource === 'design' ? preset.height / 2
-        : centerSource === 'viewport' ? viewportCenterDesign.dy
-        : customCY
-
-scaleX = physicsScaleDesignX ?? physicsScaleDesign
-scaleY = physicsScaleDesignY ?? physicsScaleDesign
-```
-
-**`centerSource` 选择指南**：
-- `'design'`：物理中心绑定 preset 几何中心。适合无 overlay、无 split 的对称场景。
-- `'viewport'`：物理中心绑定可视区域中心。适合有 overlay 或 split 时，物理对象仍在可视区域中央。
-- `'custom'`：调用方指定。适合非标准锚点（如摆的悬挂点、弹簧固定端）。
-
-**`centerSource: 'viewport'` vs `'design'` 差异示例**：
-
-无 overlay 时两者等价（`preset.width/2 = vp.centerX`）。有右侧 overlay 280px 时：
-
-```ts
-// preset: full (840×650), overlayRight: 280
-// vp.visibleW = 840 - 280 = 560
-// vp.centerX = 0 + 560 / 2 = 280
-// vp.tx = (560 - 840 * scale) / 2 ≈ -140（假设 scale ≈ 0.8）
-
-// centerSource: 'viewport'
-viewportCenterDesign.dx = (280 - (-140)) / 0.8 = 525  // 可视区域中心（设计坐标）
-
-// centerSource: 'design'
-preset.width / 2 = 420  // preset 几何中心（设计坐标）
-
-// 差异：525 vs 420，偏移 105 design-unit
-// 选择 'viewport'：圆心在可视区域中央（视觉居中）
-// 选择 'design'：圆心在 preset 中央（可能被 overlay 遮挡）
-```
-
-**非等比缩放**：当 `physicsScaleDesignX ≠ physicsScaleDesignY` 时（如弹簧振子 X 方向映射链长、Y 方向映射振幅），设置 `intentionalNonUniformScale: true` 以跳过 VectorArrow 的等比警告。
-
-#### `anchor: 'design'` — 设计画布驱动
-
-物理世界绑定完整 preset 设计画布。
-
-```ts
-scaleX = preset.width / physicsWidth
-scaleY = preset.height / physicsHeight
-// originSource 同 viewport 模式，默认 bottomLeft
-```
-
-| `originSource` | originX | originY | 适用场景 |
-|----------------|---------|---------|---------|
-| `'bottomLeft'`（默认） | `0` | `preset.height` | 抛体、自由落体等 y>0 向上 |
-| `'topLeft'` | `0` | `0` | 原点在画布顶部，物理 y>0 画到上方（可能被裁剪） |
-| `'center'` | `preset.width / 2` | `preset.height / 2` | 中心对称 |
-| `'custom'` | `customOriginX` | `customOriginY` | 精确控制 |
-
-#### `anchor: 'custom'` — 调用方完全控制
-
-`center` 模式已覆盖大多数场景（`centerSource: 'custom'` 可指定自定义中心点）。`custom` 模式用于 `center` 无法覆盖的场景：**非等比缩放 + 自定义原点 + 非中心锚点**的组合。
-
-典型用例：弹簧振子（X 方向映射链长、Y 方向映射振幅，原点在弹簧固定端而非中心）。
-
-`anchor === 'custom'` 时 `customScaleX/Y`、`customOriginX/Y` 为必填。
-
-### 与 `createSceneScaleFromDesignCenter` 的关系
-
-`custom` 模式**不透传** `createSceneScaleFromDesignCenter`。原因：
-1. `createSceneScaleFromDesignCenter` 不接受 `vectorBounds`，无法感知 vp.visible* 用于 `maxVectorLength` 默认计算
-2. `createSceneScaleFromDesignCenter` 的 `centerX/centerY` 语义不明确（设计坐标 vs 容器像素）
-3. `useSceneScale` 统一在设计坐标空间操作，不需要额外的工厂函数层
-
-### 实现 ✅
-
-```ts
-function useSceneScale(options: UseSceneScaleOptions): SceneScale {
-  const { vp, preset, anchor, physicsScaleDesign,
-          physicsScaleDesignX, physicsScaleDesignY,
-          centerSource = 'viewport', originSource = 'bottomLeft',
-          centerX: customCX, centerY: customCY,
-          customScaleX, customScaleY, customOriginX, customOriginY,
-          originX: modeOriginX, originY: modeOriginY,
-          physicsWidth, physicsHeight, refMagnitudes, maxVectorLength,
-          centerLayout, intentionalNonUniformScale } = options
-
-  // ── 参数校验 ──────────────────────────────────────────
-  if (anchor === 'viewport' || anchor === 'design') {
-    if (physicsWidth == null || physicsHeight == null) {
-      throw new Error(`[useSceneScale] anchor "${anchor}" requires physicsWidth and physicsHeight`)
-    }
-  }
-  if (anchor === 'center' && physicsScaleDesign == null && (physicsScaleDesignX == null || physicsScaleDesignY == null)) {
-    throw new Error('[useSceneScale] anchor "center" requires physicsScaleDesign (or physicsScaleDesignX/Y)')
-  }
-  if (anchor === 'custom' && (customScaleX == null || customScaleY == null || customOriginX == null || customOriginY == null)) {
-    throw new Error('[useSceneScale] anchor "custom" requires customScaleX, customScaleY, customOriginX, customOriginY')
-  }
-  if (originSource === 'custom' && (modeOriginX == null || modeOriginY == null)) {
-    throw new Error('[useSceneScale] originSource "custom" requires originX and originY')
-  }
-
-  // ── 坐标计算 ──────────────────────────────────────────
-  const toDesign = (px: number, py: number) => ({
-    dx: (px - vp.tx) / vp.scale,
-    dy: (py - vp.ty) / vp.scale,
-  })
-
-  const visibleDesign = {
-    x: (vp.visibleX - vp.tx) / vp.scale,
-    y: (vp.visibleY - vp.ty) / vp.scale,
-    width: vp.visibleW / vp.scale,
-    height: vp.visibleH / vp.scale,
-  }
-
-  const viewportCenterDesign = toDesign(vp.centerX, vp.centerY)
-
-  // maxVectorLength 默认值（layout-aware）
-  const getDefaultMaxVL = (w: number, h: number) => {
-    if (centerLayout === 'splitH') return Math.min(w * 0.45, h * 0.3)
-    return Math.min(w, h) * 0.3
-  }
-
-  // ── anchor 分支 ────────────────────────────────────────
-  switch (anchor) {
-    case 'viewport': {
-      const scaleX = visibleDesign.width / physicsWidth!
-      const scaleY = visibleDesign.height / physicsHeight!
-      // origin 由 originSource 控制
-      let ox: number, oy: number
-      if (originSource === 'topLeft') {
-        ox = visibleDesign.x
-        oy = visibleDesign.y
-      } else if (originSource === 'center') {
-        ox = viewportCenterDesign.dx
-        oy = viewportCenterDesign.dy
-      } else if (originSource === 'custom') {
-        ox = modeOriginX!
-        oy = modeOriginY!
-      } else {
-        // bottomLeft（默认）
-        ox = visibleDesign.x
-        oy = visibleDesign.y + visibleDesign.height
-      }
-      return {
-        scaleX, scaleY,
-        scale: Math.min(scaleX, scaleY),
-        originX: ox, originY: oy,
-        maxVectorLength: maxVectorLength ?? getDefaultMaxVL(visibleDesign.width, visibleDesign.height),
-        refMagnitudes,
-        intentionalNonUniformScale,
-      }
-    }
-
-    case 'center': {
-      const resolvedCX = centerSource === 'design'
-        ? preset.width / 2
-        : centerSource === 'custom' ? customCX! : viewportCenterDesign.dx
-      const resolvedCY = centerSource === 'design'
-        ? preset.height / 2
-        : centerSource === 'custom' ? customCY! : viewportCenterDesign.dy
-      const sx = physicsScaleDesignX ?? physicsScaleDesign!
-      const sy = physicsScaleDesignY ?? physicsScaleDesign!
-      const scale = Math.min(sx, sy)
-      return {
-        scaleX: sx, scaleY: sy, scale,
-        originX: resolvedCX, originY: resolvedCY,
-        maxVectorLength: maxVectorLength ?? getDefaultMaxVL(visibleDesign.width, visibleDesign.height),
-        refMagnitudes,
-        intentionalNonUniformScale: intentionalNonUniformScale ?? (sx !== sy),
-      }
-    }
-
-    case 'design': {
-      const scaleX = preset.width / physicsWidth!
-      const scaleY = preset.height / physicsHeight!
-      // origin 由 originSource 控制（同 viewport，但基于 preset 画布）
-      let ox: number, oy: number
-      if (originSource === 'topLeft') {
-        ox = 0; oy = 0
-      } else if (originSource === 'center') {
-        ox = preset.width / 2; oy = preset.height / 2
-      } else if (originSource === 'custom') {
-        ox = modeOriginX!; oy = modeOriginY!
-      } else {
-        // bottomLeft（默认）
-        ox = 0; oy = preset.height
-      }
-      return {
-        scaleX, scaleY,
-        scale: Math.min(scaleX, scaleY),
-        originX: ox, originY: oy,
-        maxVectorLength: maxVectorLength ?? Math.min(preset.width, preset.height) * 0.3,
-        refMagnitudes,
-        intentionalNonUniformScale,
-      }
-    }
-
-    case 'custom': {
-      return {
-        scaleX: customScaleX!,
-        scaleY: customScaleY!,
-        scale: Math.min(customScaleX!, customScaleY!),
-        originX: customOriginX!,
-        originY: customOriginY!,
-        maxVectorLength: maxVectorLength ?? getDefaultMaxVL(visibleDesign.width, visibleDesign.height),
-        refMagnitudes,
-        intentionalNonUniformScale: intentionalNonUniformScale ?? (customScaleX !== customScaleY),
-      }
-    }
-  }
-}
-```
+| 新 anchor | 旧 mode | 关键区别 |
+|-----------|---------|---------|
+| `viewport` | `'visibleArea'` | 新版输出设计坐标；旧版输出容器像素 |
+| `design` | `'transform'` | 新版允许 `physicsWidth ≠ designWidth` |
+| `center` | `'centerScale'` | 新版直接传 `physicsScaleDesign`；旧版需反推 `worldWidth` |
+| `custom` | 无对应 | 新增 |
 
 ---
 
-## 七、useCanvasViewport — Canvas 统一入口 ✅ 已实现
+## 六、useCanvasViewport — Canvas 统一入口 ✅
 
-> **状态**：已实现，文件 `src/hooks/useCanvasViewport.ts` 已创建。
-
-```ts
-// src/hooks/useCanvasViewport.ts  ✅ 已实现
-
-interface UseCanvasViewportOptions {
-  vp: ViewportInfo
-  canvasSize: CanvasSize
-  mode?: 'transform' | 'raw'
-}
-
-interface CanvasViewportResult {
-  canvasRef: RefObject<HTMLCanvasElement | null>
-  setupFrame: () => CanvasRenderingContext2D | null
-  designToPixel: (dx: number, dy: number) => { px: number; py: number }
-  pixelToDesign: (px: number, py: number) => { dx: number; dy: number }
-  clientToDesign: (clientX: number, clientY: number) => { dx: number; dy: number } | null
-}
-```
+> 文件：`src/hooks/useCanvasViewport.ts`
 
 ### 两种模式
 
-| 模式 | ctx transform | 适用场景 | 注意事项 |
-|------|--------------|---------|---------|
-| `transform` | `dpr * vp.scale, ..., dpr * vp.tx, dpr * vp.ty` | 场景内容、物理对象、轨迹、箭头 | stroke/text 也会被缩放，线宽随画面缩放 |
-| `raw` | `dpr, 0, 0, dpr, 0, 0` | 波场、粒子场、固定屏幕字号/线宽 | 线宽和字号保持屏幕固定尺寸 |
+| 模式 | ctx transform | 适用场景 |
+|------|--------------|---------|
+| `transform` | `dpr * vp.scale, ..., dpr * vp.tx, dpr * vp.ty` | 场景内容（stroke/text 随画面缩放） |
+| `raw` | `dpr, 0, 0, dpr, 0, 0` | 波场/粒子场（线宽和字号固定屏幕尺寸） |
 
-### 实现 ✅
+### 返回值
 
-```ts
-function useCanvasViewport({ vp, canvasSize, mode = 'transform' }: options): CanvasViewportResult {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-
-  const setupFrame = useCallback(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return null
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return null
-
-    const dpr = window.devicePixelRatio || 1
-    const w = Math.round(canvasSize.width * dpr)
-    const h = Math.round(canvasSize.height * dpr)
-    if (canvas.width !== w || canvas.height !== h) {
-      canvas.width = w
-      canvas.height = h
-    }
-
-    // 先 reset 再 clear（clearRect 不受 transform 影响）
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-    // 应用 viewport transform
-    if (mode === 'transform') {
-      ctx.setTransform(dpr * vp.scale, 0, 0, dpr * vp.scale, dpr * vp.tx, dpr * vp.ty)
-    } else {
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    }
-
-    return ctx
-  }, [canvasSize.width, canvasSize.height, vp.scale, vp.tx, vp.ty, mode])
-
-  const designToPixel = useCallback((dx: number, dy: number) => ({
-    px: dx * vp.scale + vp.tx,
-    py: dy * vp.scale + vp.ty,
-  }), [vp.scale, vp.tx, vp.ty])
-
-  const pixelToDesign = useCallback((px: number, py: number) => ({
-    dx: (px - vp.tx) / vp.scale,
-    dy: (py - vp.ty) / vp.scale,
-  }), [vp.scale, vp.tx, vp.ty])
-
-  const clientToDesign = useCallback((clientX: number, clientY: number) => {
-    const canvas = canvasRef.current
-    if (!canvas) return null
-    const rect = canvas.getBoundingClientRect()
-    return pixelToDesign(clientX - rect.left, clientY - rect.top)
-  }, [pixelToDesign])
-
-  return { canvasRef, setupFrame, designToPixel, pixelToDesign, clientToDesign }
-}
-```
-
-### 使用示例
-
-```tsx
-// transform 模式：直接用设计坐标绘制
-const { canvasRef, setupFrame } = useCanvasViewport({ vp, canvasSize, mode: 'transform' })
-
-const draw = useCallback(() => {
-  const ctx = setupFrame()
-  if (!ctx) return
-  ctx.beginPath()
-  ctx.arc(ballDesignX, ballDesignY, radiusDesign, 0, Math.PI * 2)
-  ctx.fill()
-  // 不需要手动乘 vp.scale！ctx transform 自动缩放
-}, [setupFrame, ballDesignX, ballDesignY, radiusDesign])
-
-// raw 模式：用像素坐标绘制（波场/粒子场）
-const { canvasRef, setupFrame, designToPixel } = useCanvasViewport({ vp, canvasSize, mode: 'raw' })
-
-const draw = useCallback(() => {
-  const ctx = setupFrame()
-  if (!ctx) return
-  for (const particle of particles) {
-    const { px, py } = designToPixel(particle.dx, particle.dy)
-    ctx.fillRect(px - 1, py - 1, 2, 2)
-  }
-}, [setupFrame, designToPixel, particles])
-```
-
-### 与 `useCanvasDPR` 的关系
-
-| | `useCanvasViewport`（新） | `useCanvasDPR`（旧） |
-|---|---|---|
-| 状态 | ✅ 已实现 | ✅ 存量 |
-| DPR 处理 | 内置（`setupFrame` 自动应用 DPR） | 独立 Hook |
-| viewport 对齐 | 内置（`setupFrame` 自动应用 vp.transform） | 无，调用方手动对齐 |
-| 坐标转换 | 提供 `designToPixel` / `pixelToDesign` / `clientToDesign` | 无 |
-| 新代码 | 统一使用 | 禁止直接调用 |
-| 存量代码 | 逐步迁移 | 保留，迁移后移除 |
-
-**`useCanvasViewport` 内部吸收 DPR 逻辑**，不再需要调用方单独使用 `useCanvasDPR`。迁移时将 `useCanvasDPR + 手动 ctx.setTransform` 替换为 `useCanvasViewport({ vp, canvasSize })` 的 `setupFrame()` 即可。
+| 字段 | 用途 |
+|------|------|
+| `canvasRef` | 挂载到 `<canvas>` |
+| `setupFrame()` | 每帧调用：重置+清除+设置 transform，返回 ctx |
+| `designToPixel(dx, dy)` | 设计坐标 → 容器像素 |
+| `pixelToDesign(px, py)` | 容器像素 → 设计坐标 |
+| `clientToDesign(cx, cy)` | 浏览器事件坐标 → 设计坐标 |
 
 ---
 
-## 八、createSceneScaleFromViewport 处置策略 ✅ 已执行
+## 七、剩余迁移清单
 
-- **`visibleArea`/`centerScale` 模式**：已标记 `@deprecated`，存量文件通过 Phase 4/A/B/C 逐步迁移到 `useSceneScale`
-- **`transform` 模式**：输出设计坐标，保持现状。存量 6 个文件待 Phase 4 后续批次迁移
-- **新代码**：统一使用 `useSceneScale`，禁止直接调用 `createSceneScaleFromViewport`
+### `createSceneScaleFromViewport(..., 'transform')` — 4 个文件
+
+- `FreeFallAnimation.tsx`、`FreeFallDripAnimation.tsx`
+- `AccelerationCenterExtra.tsx`（优先级低）
+- `useForceMotionSandbox.ts`
+
+### `useCanvasSize`（非 CenterExtra）— 13 个文件
+
+- StroboscopicAnimation、SatelliteAnimation、SpringCompositeAnimation
+- PowerTransmission、ACGeneration、useVelocitySelectorCanvas
+- useForceMotionSandbox、ForceMotionTripleChart、useEquilibriumLayout
+- CollisionAdvancedScene、CollisionBasicScene、IntermolecularForceChart、BohrOrbits
+
+### VectorArrow `origin=`（非 `originPixel`）— ~25 个文件
+
+**高优先级**：SpringBlocksAnimation、ManBoatAnimation、CurvedSlotAnimation、BulletBlockScene、FreeFallDripAnimation、BlockBoardAnimation、SatelliteAnimation、BinaryStarsAnimation、CircularModelsAnimation、ForceMotionSandbox、SimplePendulumAnimation
+
+**中优先级**：SingleRodAnimation、DualRodsScene、BasicAmpereScene、InclinedAmpereScene、InclineForceDiagram、ForcePolygon、CombinedFieldsAnimation、CircularGeometryModel
+
+**低优先级**：AccelerationCenterExtra、VectorPlayground
 
 ---
 
-## 九、现有页面迁移指南
+## 八、迁移要点
 
 ### 迁移原则
 
-**从 `visibleArea` 迁移时，不能无脑使用默认 `originSource: 'bottomLeft'`**。旧 `visibleArea` 的 `originX/Y = vp.visibleX/Y` 等价于 `topLeft` 语义。迁移时需根据旧场景的实际原点位置选择：
-- 旧代码用 `physicsToCanvasWithOrigin(x, y, originX, originY, scale)` 且 `originY` 在画布底部 → `originSource: 'bottomLeft'`
-- 旧代码原点在画布顶部 → `originSource: 'topLeft'`
-- 旧代码原点在中心 → 改用 `anchor: 'center'`
+- `visibleArea` 迁移时注意 `originSource`：旧 `originX/Y = vp.visibleX/Y` 等价于 `topLeft`
+- VectorArrow `origin={{ x, y: -y }}` → `originPixel={{ x, y }}`：**去掉 Y 取负**，`vector` 的 Y 取负保留
+- `physicsScaleDesign = physicsScalePx / vp.scale`：容器像素比例必须转换为设计坐标比例
+- `presetCompensation` 迁移分两步：先保持不变完成 API 迁移，验证视觉一致后再移除
 
-选错会导致画面上下翻转或整体下移。
+### 已修复的双重缩放 bug
 
-**VectorArrow `origin` → `originPixel` 迁移注意**：旧 `origin={{ x, y: -y }}` 的 Y 取负是配合 `worldToPixel` 的 `py = originY - y * scaleY` 翻转使用。迁移到 `originPixel` 后**不能保留 Y 取负**——`originPixel` 直接使用坐标值，不经过 `worldToPixel` 转换。正确做法：`originPixel={{ x, y }}`（去掉取负），`vector` prop 的 Y 取负保留（物理 y↑→SVG y↓）。
-
-### 迁移模式
-
-#### 模式 A：legacy → useAnimationViewport + useSceneScale
-
-```ts
-// 之前（legacy）
-import { useCanvasSize, useViewport } from '@/utils'
-const [ref, canvas] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-const vp = useViewport(canvas, { designWidth: 700, designHeight: 450 })
-const sceneScale: SceneScale = createSceneScaleFromViewport(vp, 'visibleArea', { ... })
-
-// 之后（标准路径）
-import { useAnimationViewport } from '@/hooks'
-import { useSceneScale } from '@/hooks/useSceneScale'
-import type { SceneScale } from '@/scene'
-const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
-const sceneScale: SceneScale = useSceneScale({ vp, preset: CANVAS_PRESETS.full, anchor: 'viewport', physicsWidth: ..., physicsHeight: ... })
-```
-
-#### 模式 B：centerScale 反推 → useSceneScale center 模式
-
-```ts
-// 之前（container pixels 反推）
-const scale = (vp.visibleW - padding) / (2 * rMax)
-const sceneScale: SceneScale = createSceneScaleFromViewport(vp, 'centerScale', {
-  worldWidth: vp.visibleW / scale,
-  worldHeight: vp.visibleH / scale,
-})
-
-// 之后（design coordinates）
-const physicsScalePx = (vp.visibleW - padding) / (2 * rMax)
-const physicsScaleDesign = physicsScalePx / vp.scale
-const sceneScale: SceneScale = useSceneScale({
-  vp, preset: CANVAS_PRESETS.square,
-  anchor: 'center',
-  physicsScaleDesign,
-  centerSource: 'viewport',
-  refMagnitudes: { ... },
-})
-```
-
-#### 模式 C：computeScale + physicsToCanvasWithOrigin → useSceneScale + worldToPixel
-
-```ts
-// 之前（legacy 工具）
-const scale = computeScale(width, height, worldBounds)
-const pos = physicsToCanvasWithOrigin(x, y, originX, originY, scale)
-
-// 之后（标准路径）
-const sceneScale: SceneScale = useSceneScale({ vp, preset, anchor: 'viewport', ... })
-const { px, py } = worldToDesign(x, y, sceneScale)  // worldToDesign = worldToPixel 别名，输出设计坐标
-```
-
-### 待修复的潜在 bug 页面
-
-以下页面将容器像素传入 SceneScale，在有 overlay 或非标准容器比例时会产生二次缩放：
-
-| 页面 | 问题 | 修复方式 |
-|------|------|---------|
-| CircularMotionAnimation | `vp.centerX` 直接作 originX | 改用 `useSceneScale` center 模式 |
-| KeplerAnimation | `vp.visibleW / scale` 反推 worldWidth | 改用 `physicsScaleDesign` |
+| 页面 | 问题 | 修复 |
+|------|------|------|
+| CircularMotionAnimation | `vp.centerX` 容器像素作 originX | `centerSource: 'design'` |
+| KeplerAnimation | `vp.visibleW / scale` 反推 worldWidth | `physicsScaleDesign` 纯设计坐标 |
 | useVerticalCircularPhysics | 同上 | 同上 |
-| useCentripetalPhysics | 已用 `createSceneScaleFromDesignCenter`，输出设计坐标 | ✅ 无需改动 |
+
+### 迁移模式速查
+
+| 旧模式 | 新模式 |
+|--------|--------|
+| `useCanvasSize + useViewport` | `useAnimationViewport` |
+| `computeScale + physicsToCanvasWithOrigin` | `useSceneScale + worldToDesign` |
+| `createSceneScaleFromViewport('visibleArea')` | `useSceneScale({ anchor: 'viewport' })` |
+| `createSceneScaleFromViewport('centerScale')` | `useSceneScale({ anchor: 'center', physicsScaleDesign })` |
+| `createSceneScaleFromViewport('transform')` | `useSceneScale({ anchor: 'design' })` |
+| `useCanvasDPR + 手动 ctx.setTransform` | `useCanvasViewport({ mode: 'transform' })` |
 
 ---
 
-## 十、实施计划
+## 九、实施进度
 
-### Phase 0: 文档对齐 ✅
+| Phase | 内容 | 状态 |
+|-------|------|------|
+| 0 | 文档对齐 | ✅ |
+| 1 | useSceneScale 统一入口 | ✅ |
+| 2 | preset 贯穿 + SceneScale 验证 | ✅ |
+| 3 | useCanvasViewport 标准 Hook | ✅ |
+| 4 | legacy 文件分批迁移（7 批 61 文件） | ✅ |
+| 4.5 | 迁移后 bug 修复（10 项） | ✅ |
+| A | 文档对齐 + 遗留检测脚本 | ✅ |
+| B | visibleArea/centerScale 清零 | ✅ |
+| C | Canvas DPR 清零 | ✅ |
+| 5 | 非标准 preset 评估 | ✅ |
 
-### Phase 1: useSceneScale 统一入口 ✅
+### Phase 4.5 bug 修复记录
 
-- 新增 `src/hooks/useSceneScale.ts`，所有 anchor 模式输出设计坐标
-- 新增 `worldToDesign` 别名，标记 `visibleArea`/`centerScale` 为 `@deprecated`
-
-### Phase 2: preset 贯穿 + SceneScale 验证 ✅
-
-- `AnimationViewportResult` 增加 `preset` 字段
-- BoundaryMagneticField SimulationView 全路径迁移验证通过（SVG + Canvas + 混合）
-
-### Phase 3: useCanvasViewport 标准 Hook ✅
-
-- 新增 `src/hooks/useCanvasViewport.ts`，支持 transform/raw 两种模式
-
-### Phase 4: legacy 文件分批迁移 🔄 进行中
-
-| 批次 | 模块 | 文件数 | 状态 |
-|------|------|--------|------|
-| 1 | mechanics/kinematics | 10 | ✅ |
-| 2 | mechanics/dynamics | 12 | ✅ |
-| 3 | mechanics/energy | 9 | ✅ |
-| 4 | mechanics/momentum | 8 | - |
-| 5 | electromagnetism | 13 | - |
-| 6 | thermodynamics | 5 | - |
-| 7 | vibration + modern | 4 | - |
-
-**当前遗留**：`useCanvasSize` 仍 51 个文件（含 CenterExtra），`createSceneScaleFromViewport('transform')` 仍 6 个文件。
-
-每批迁移内容：
-1. `useCanvasSize + useViewport` → `useAnimationViewport`
-2. `computeScale + physicsToCanvasWithOrigin` → `useSceneScale` + `worldToDesign`
-3. `presetCompensation: 1.2` → 验证后移除
-4. VectorArrow `origin` → `originPixel`（去掉 Y 取负）
-
-### Phase A: 文档对齐 + 遗留检测脚本 ✅
-
-- 文档状态已对齐
-- 新增 `scripts/check-viewport-legacy.mjs`，接入 `npm run check:architecture`
-
-### Phase B: visibleArea/centerScale 清零 ✅
-
-- `src/features` 中 `createSceneScaleFromViewport(..., 'visibleArea'/'centerScale')` 已清零
-- 16 个文件迁移到 `useSceneScale`（详见上方 Phase B 已迁移文件表）
-
-### Phase C: Canvas DPR 清零 ✅
-
-- `useCanvasDPR`/`setupCanvasDPR`/`useDevicePixelRatio` 调用已清零
-- 9 个 Canvas 场景迁移到 `useCanvasViewport({ mode: 'raw' })`（详见上方 Phase C 已迁移文件表）
-
-### Phase 5: 非标准 preset 评估 ✅
-
-- 100×100 归一化：3 个文件已迁移到 `useAnimationViewport` + `useSceneScale({ anchor: 'custom' })`
-- 400×180 CenterExtra：不需要 viewport 体系
-- KinematicsAdvancedAnimation：迁移到 `splitV(840×325)`
+| 页面 | 问题 | 修复 |
+|------|------|------|
+| CuttingEMF | 导体滑轨错位 | 移除内部 viewport，改用固定 viewBox SVG；sceneScale 由父级传入 |
+| CuttingEMF | 手规则过大 | 传入 identity font + canvasScale=1.0 |
+| CuttingEMF | 图表消失 | `flex-shrink-0` + `height: 50%` 包裹动画区域 |
+| PowerTransmission | 初次进入跳动放大 | 改用固定 viewBox SVG + identity font |
+| Transformer | 基础模式空白 | 引入 scale 等比缩放因子 |
+| Transformer | 进阶模式部件偏小 | scale 宽度基准 420→350；rightPanelW 30%→25%；删底部标注条 |
+| CircularMotionAnimation | 双重缩放 | `centerSource: 'design'` + 纯设计坐标 physicsScaleDesign |
+| KeplerAnimation | 双重缩放 | 纯设计坐标 physicsScaleDesign |
+| useVerticalCircularPhysics | 双重缩放 | 同上 |
+| AnimationSvgCanvas | 初始跳变溢出 | 外层 div `overflow-hidden` |
 
 ---
 
-## 十一、验收标准
+## 十、验收标准
 
 | 检查项 | 标准 |
 |--------|------|
 | SceneScale 单位 | 所有输出为设计坐标单位，不包含容器像素值 |
 | vp.visible* 使用 | 反算为设计坐标后使用，不直接传入 SceneScale |
 | VectorArrow 坐标 | 在 `<g transform={vp.transform}>` 内，坐标为设计单位 |
-| Canvas transform 模式 | ctx 设置 viewport transform 后，调用方用设计坐标绘制 |
-| Canvas raw 模式 | 仅 DPR 对齐，调用方用像素坐标绘制 |
-| useSceneScale 调用 | 新页面统一使用，不再直接调用 createSceneScaleFrom* 的 visibleArea/centerScale 模式 |
-| useCanvasViewport 调用（Phase 3 验收） | Canvas+SVG 强同步场景使用 useCanvasViewport，不再手动 setupCanvasDPR |
-| useCanvasViewport 调用（长期验收） | 所有 Canvas 场景逐步迁移至 useCanvasViewport，useCanvasDPR 仅 legacy 保留 |
-| presetCompensation | 新页面不传，旧页面迁移后移除（分步执行） |
+| Canvas transform 模式 | ctx 设置 viewport transform 后，用设计坐标绘制 |
+| Canvas raw 模式 | 仅 DPR 对齐，用像素坐标绘制 |
+| useSceneScale 调用 | 新页面统一使用，不再调用 createSceneScaleFrom* 的 visibleArea/centerScale |
+| useCanvasViewport 调用 | Canvas 场景逐步迁移至 useCanvasViewport |
+| presetCompensation | 新页面不传，旧页面迁移后移除 |
+| 固定 viewBox SVG | viewport 初始值跳变时，可用固定 viewBox SVG + identity font 替代 |
+| splitV 图表可见性 | 动画区域用 `flex-shrink-0` + 固定高度，防止图表被压缩 |
 
 ---
 
-## 十二、相关文件
+## 十一、相关文件
 
-| 文件 | 路径 | 状态 | 职责 |
-|------|------|------|------|
-| CANVAS_PRESETS | `src/theme/spacing.ts` | ✅ | 预设设计分辨率定义 |
-| useAnimationViewport | `src/hooks/useAnimationViewport.ts` | ✅ | 复合 Hook：容器测量 + viewport |
-| useViewport | `src/utils/useViewport.ts` | ✅ | 可视区域计算 + vp.transform |
-| useCanvasSize | `src/utils/useCanvasSize.ts` | ✅ | 容器尺寸测量 |
-| AnimationSvgCanvas | `src/components/Layout/AnimationSvgCanvas.tsx` | ✅ | SVG 标准容器 |
-| SceneScale | `src/scene/SceneScale.ts` | 🔧 | 物理→设计坐标缩放（visibleArea/centerScale 已标记 @deprecated） |
-| SceneLayoutProfile | `src/scene/SceneLayoutProfile.ts` | ✅ | 场景布局模式声明 |
-| VectorArrow | `src/components/Physics/VectorArrow.tsx` | ✅ | 矢量箭头渲染 |
-| useCanvasDPR | `src/hooks/useCanvasDPR.ts` | ✅ | Canvas DPR 适配（legacy，新代码用 useCanvasViewport） |
-| coordinate.ts | `src/utils/coordinate.ts` | 🔧 | legacy 坐标工具（逐步淘汰） |
-| worldToDesign | `src/scene/SceneScale.ts` | ✅ | worldToPixel 语义别名，输出设计坐标 |
-| useSceneScale | `src/hooks/useSceneScale.ts` | ✅ | 统一 SceneScale 入口 |
-| useCanvasViewport | `src/hooks/useCanvasViewport.ts` | ✅ | 统一 Canvas viewport 入口 |
+| 文件 | 路径 | 职责 |
+|------|------|------|
+| CANVAS_PRESETS | `src/theme/spacing.ts` | 预设设计分辨率定义 |
+| useAnimationViewport | `src/hooks/useAnimationViewport.ts` | 复合 Hook：容器测量 + viewport |
+| useViewport | `src/utils/useViewport.ts` | 可视区域计算 + vp.transform |
+| useCanvasSize | `src/utils/useCanvasSize.ts` | 容器尺寸测量 |
+| AnimationSvgCanvas | `src/components/Layout/AnimationSvgCanvas.tsx` | SVG 标准容器 |
+| SceneScale | `src/scene/SceneScale.ts` | 物理→设计坐标缩放（visibleArea/centerScale 已 @deprecated） |
+| worldToDesign | `src/scene/SceneScale.ts` | worldToPixel 语义别名 |
+| useSceneScale | `src/hooks/useSceneScale.ts` | 统一 SceneScale 入口 |
+| useCanvasViewport | `src/hooks/useCanvasViewport.ts` | 统一 Canvas viewport 入口 |
+| VectorArrow | `src/components/Physics/VectorArrow.tsx` | 矢量箭头渲染 |

@@ -1,6 +1,7 @@
 import { SVGSingleBar } from '@/components/Physics'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { useRef, useCallback, useState } from 'react'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
@@ -11,8 +12,6 @@ import { STROKE, FONT, CANVAS_COLORS } from '@/theme/physics'
 
 import { calculateInternalEnergy } from '@/physics/thermodynamics'
 import { deltaUtoDeltaT, temperatureToSpeedScale, internalEnergyToColor } from '@/physics/firstLaw'
-
-const FIRST_LAW_DESIGN = { width: 700, height: 400 } as const
 
 // ─── 物理常量 ─────────────────────────────────────────────────────────────
 const N_DEFAULT = 1
@@ -78,13 +77,8 @@ export default function FirstLawAnimation() {
     })),
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
-
-  const vp = useViewport(canvasSize, {
-    designWidth: FIRST_LAW_DESIGN.width,
-    designHeight: FIRST_LAW_DESIGN.height,
-  })
 
   const W_input = params.W ?? 0
   const Q_raw = params.Q ?? 0
@@ -446,15 +440,9 @@ export default function FirstLawAnimation() {
   }
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg
-        width={canvasSize.width}
-        height={canvasSize.height}
-        className="bg-white rounded-lg shadow-inner"
-      >
-        {renderEnergyChart()}
-        {renderCylinder()}
-      </svg>
-    </div>
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+      {renderEnergyChart()}
+      {renderCylinder()}
+    </AnimationSvgCanvas>
   )
 }

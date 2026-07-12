@@ -10,12 +10,11 @@
  * @agent-rule 所有颜色使用 TRANSMISSION_COLORS / PHYSICS_COLORS
  * @agent-rule 所有字体使用 font()，所有像素使用 px()
  */
-import { useRef, useCallback, useState } from 'react'
+import { useRef, useCallback, useState, useMemo } from 'react'
 import { colors } from '@/theme/colors'
-import { useCanvasSize } from '@/utils'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { CANVAS_STYLE, TRANSMISSION_COLORS } from '@/theme/physics'
+import { TRANSMISSION_COLORS } from '@/theme/physics'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationFrame } from '@/utils/animation'
 import { usePowerTransmissionPhysics } from './hooks/usePowerTransmissionPhysics'
@@ -50,12 +49,20 @@ export default function PowerTransmission() {
       speed: s.speed,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-  const { width: W, height: H, font, px } = canvasSize
+  const font = (v: number) => Math.max(7, Math.min(16, v))
   const [, setFrameTick] = useState(0)
 
+  // 设计坐标系 metrics 供物理计算 hook 使用
+  const preset = CANVAS_PRESETS.full
+  const designMetrics = useMemo(() => ({
+    width: preset.width,
+    height: preset.height,
+    px: (v: number) => v,
+    font: (v: number) => v,
+  }), [preset])
+
   // ─── 物理 + 视觉派生计算（纯数据，零 JSX）────────────────────────────────
-  const pt = usePowerTransmissionPhysics(params, canvasSize)
+  const pt = usePowerTransmissionPhysics(params, designMetrics)
   const {
     physics, heatIntensity, currentSpeed, ballVisualRadius, ballSpeed,
     spawnInterval, lineColor, blurStd, shadowOpacity, lineWidth,
@@ -110,18 +117,18 @@ export default function PowerTransmission() {
       const px_x = lineStartX + Math.random() * (lineEndX - lineStartX)
       const t_p = (px_x - lineStartX) / (lineEndX - lineStartX)
       const lineIdx = Math.random() > 0.5 ? 0 : 1
-      const baseLineY = lineIdx === 0 ? nodeY - px(10) : nodeY + px(10)
-      const arcY = baseLineY + 4 * t_p * (1 - t_p) * px(12)
+      const baseLineY = lineIdx === 0 ? nodeY - 10 : nodeY + 10
+      const arcY = baseLineY + 4 * t_p * (1 - t_p) * 12
 
       particlesRef.current.push({
         id: nextParticleId.current++,
         x: px_x,
         y: arcY,
-        vy: -(px(15) + Math.random() * px(30) * heatIntensity),
+        vy: -(15 + Math.random() * 30 * heatIntensity),
         opacity: 0.7 + heatIntensity * 0.3,
         life: 0,
         maxLife: 0.8 + Math.random() * 0.6,
-        size: px(1.8) + Math.random() * px(3.5) * heatIntensity,
+        size: 1.8 + Math.random() * 3.5 * heatIntensity,
       })
     }
 
@@ -129,14 +136,14 @@ export default function PowerTransmission() {
       .map(p => ({
         ...p,
         y: p.y + p.vy * dt,
-        x: p.x + (Math.random() - 0.5) * px(12) * dt,
+        x: p.x + (Math.random() - 0.5) * 12 * dt,
         life: p.life + dt,
         opacity: p.opacity * (1 - p.life / p.maxLife),
       }))
       .filter(p => p.life < p.maxLife)
 
     setFrameTick(t => t + 1)
-  }, [currentSpeed, ballSpeed, ballVisualRadius, spawnInterval, heatIntensity, lineStartX, lineEndX, nodeY, px])
+  }, [currentSpeed, ballSpeed, ballVisualRadius, spawnInterval, heatIntensity, lineStartX, lineEndX, nodeY])
 
   useAnimationFrame(
     (deltaTime) => { updateAnimation(deltaTime) },
@@ -151,36 +158,38 @@ export default function PowerTransmission() {
   const getBallPosition = (progress: number): { x: number; y: number } => {
     if (progress < 0.15) {
       const t = progress / 0.15
-      return { x: plantX + px(28) + (stepUpX - px(28) - plantX) * t, y: nodeY }
+      return { x: plantX + 28 + (stepUpX - 28 - plantX) * t, y: nodeY }
     } else if (progress < 0.3) {
       const t = (progress - 0.15) / 0.15
-      return { x: stepUpX + px(28) + (lineStartX - stepUpX - px(28)) * t, y: nodeY }
+      return { x: stepUpX + 28 + (lineStartX - stepUpX - 28) * t, y: nodeY }
     } else if (progress < 0.7) {
       const t = (progress - 0.3) / 0.4
       const lineIdx = Math.floor(t * 2) % 2
-      const baseLineY = lineIdx === 0 ? nodeY - px(10) : nodeY + px(10)
-      const arcY = baseLineY + 4 * t * (1 - t) * px(12)
+      const baseLineY = lineIdx === 0 ? nodeY - 10 : nodeY + 10
+      const arcY = baseLineY + 4 * t * (1 - t) * 12
       return { x: lineStartX + (lineEndX - lineStartX) * t, y: arcY }
     } else if (progress < 0.85) {
       const t = (progress - 0.7) / 0.15
-      return { x: lineEndX + (stepDownX - px(28) - lineEndX) * t, y: nodeY }
+      return { x: lineEndX + (stepDownX - 28 - lineEndX) * t, y: nodeY }
     } else {
       const t = (progress - 0.85) / 0.15
-      return { x: stepDownX + px(28) + (userX - px(28) - stepDownX - px(28)) * t, y: nodeY }
+      return { x: stepDownX + 28 + (userX - 28 - stepDownX - 28) * t, y: nodeY }
     }
   }
 
+  const W = preset.width
+  const H = preset.height
+
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg
-        width={W} height={H}
-        className="bg-white rounded-lg shadow-inner select-none"
-        style={{ fontFamily: CANVAS_STYLE.font.family }}
-      >
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="w-full h-full"
+      preserveAspectRatio="xMidYMid meet"
+    >
         {isOverloaded && (
           <g>
-            <rect x={px(12)} y={px(10)} width={W - px(24)} height={px(28)} rx={px(6)} fill={colors.danger[100]} stroke={colors.danger[500]} />
-            <text x={W / 2} y={px(29)} textAnchor="middle" fontSize={font(12)} fill={colors.danger[700]} fontWeight="bold">
+            <rect x={12} y={10} width={W - 24} height={28} rx={6} fill={colors.danger[100]} stroke={colors.danger[500]} />
+            <text x={W / 2} y={29} textAnchor="middle" fontSize={font(12)} fill={colors.danger[700]} fontWeight="bold">
               线路过载：损耗超过供电能力，用户端电压/功率已按 0 处理
             </text>
           </g>
@@ -197,7 +206,7 @@ export default function PowerTransmission() {
             </feMerge>
           </filter>
           <filter id="houseGlow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation={px(1) + userBrightness * px(3)} />
+            <feGaussianBlur in="SourceGraphic" stdDeviation={1 + userBrightness * 3} />
           </filter>
           <linearGradient id="chartAreaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor={TRANSMISSION_COLORS.voltageHigh} stopOpacity="0.25" />
@@ -221,7 +230,7 @@ export default function PowerTransmission() {
           stepDownX={stepDownX}
           userX={userX}
           W={W}
-          px={px}
+          px={(v: number) => v}
           font={font}
         />
 
@@ -250,7 +259,7 @@ export default function PowerTransmission() {
           stepDownX={stepDownX}
           userX={userX}
           isPlaying={isPlaying}
-          px={px}
+          px={(v: number) => v}
           font={font}
           getBallPosition={getBallPosition}
           bulbCount={bulbCount}
@@ -267,12 +276,11 @@ export default function PowerTransmission() {
           U4={U4}
           voltageRatio={pt.voltageRatio}
           mode={mode}
-          px={px}
+          px={(v: number) => v}
           font={font}
           W={W}
           H={H}
         />
-      </svg>
-    </div>
+    </svg>
   )
 }

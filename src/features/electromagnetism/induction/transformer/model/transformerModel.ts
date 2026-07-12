@@ -1,5 +1,4 @@
 import { PHYSICS_COLORS } from '@/theme/physics'
-import type { ViewportInfo } from '@/utils/useViewport'
 import type { calculateTransformerWithLoad } from '@/physics'
 
 export const MAX_DISPLAY_TURNS = 20
@@ -48,6 +47,7 @@ export interface TransformerLayout {
   sourceX: number
   rheostatW: number
   rheostatX: number
+  scale: number
 }
 
 export interface TransformerDerived {
@@ -142,20 +142,23 @@ export function buildTransformerLayout({
   width,
   height,
   mode,
-  vp,
 }: {
   width: number
   height: number
   mode: number
-  vp: ViewportInfo
 }): TransformerLayout {
-  const rightPanelW = mode === 1 ? Math.round(width * 0.30) : 0
-  const coreH = 155 * vp.scale
-  const coreColumnW = 18 * vp.scale
-  const coilW = 24 * vp.scale
-  const cx = vp.centerX
-  const cy = vp.centerY - 6 * vp.scale
-  const span = 110 * vp.scale
+  // 设计坐标系：所有坐标和尺寸使用 design-unit
+  const rightPanelW = mode === 1 ? Math.round(width * 0.25) : 0
+  // 可用区域（扣除 overlayRight 后的实际设计宽度）
+  const availW = width - rightPanelW
+  // 高度方向给足空间（底部标注条已删除），宽度方向以 availW 为限
+  const scale = Math.min(availW / 350, height / 400)
+  const coreH = 155 * scale
+  const coreColumnW = 18 * scale
+  const coilW = 24 * scale
+  const cx = availW / 2
+  const cy = height / 2
+  const span = 110 * scale
   const v1X = cx - span / 2
   const v2X = cx + span / 2
   const coreLeft = v1X - coreColumnW / 2
@@ -170,12 +173,12 @@ export function buildTransformerLayout({
   const primaryRight = v1X + coilW / 2
   const secondaryLeft = v2X - coilW / 2
   const secondaryRight = v2X + coilW / 2
-  const meterR = 26 * vp.scale
-  const meterTopY = coreTop - meterR - 16 * vp.scale
-  const meterBotY = coreBottom + meterR + 18 * vp.scale
-  const sourceX = primaryLeft - 34 * vp.scale
-  const rheostatW = 86 * vp.scale
-  const rheostatGap = coilW + 12 * vp.scale
+  const meterR = 26 * scale
+  const meterTopY = coreTop - meterR - 16 * scale
+  const meterBotY = coreBottom + meterR + 18 * scale
+  const sourceX = primaryLeft - 34 * scale
+  const rheostatW = 86 * scale
+  const rheostatGap = coilW + 12 * scale
   const rheostatX = secondaryRight + rheostatGap + rheostatW / 2
 
   return {
@@ -208,6 +211,7 @@ export function buildTransformerLayout({
     sourceX,
     rheostatW,
     rheostatX,
+    scale,
   }
 }
 
@@ -215,19 +219,19 @@ export function buildTransformerDerived({
   params,
   result,
   layout,
-  scale,
 }: {
   params: Pick<TransformerParams, 'U1'>
   result: TransformerResult
-  layout: Pick<TransformerLayout, 'sourceX' | 'cy'>
-  scale: number
+  layout: Pick<TransformerLayout, 'sourceX' | 'cy' | 'scale'>
 }): TransformerDerived {
   const { U1 } = params
   const { U2, I1, I2, P_input, P_output, isShortCircuit } = result
   const displayI1 = Number.isFinite(I1) ? I1 : 999
   const displayI2 = Number.isFinite(I2) ? I2 : 999
-  const waveAmp = Math.max(2.5, Math.min(6, (U1 / 500) * 8)) * scale
-  const waveWl = 22 * scale
+  // 设计坐标系：scale 参数保留用于计算动画时长和发光参数
+  const s = layout.scale
+  const waveAmp = Math.max(2.5, Math.min(6, (U1 / 500) * 8)) * s
+  const waveWl = 22 * s
 
   return {
     displayI1,

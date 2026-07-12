@@ -1,6 +1,6 @@
-import { useCanvasSize, useViewport } from '@/utils'
-import { useSceneScale } from '@/hooks'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -46,8 +46,7 @@ export default function MomentumAnimation() {
   const { params, time, showVectors } = useAnimationStore(
     useShallow((s) => ({ params: s.params, time: s.time, showVectors: s.showVectors }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 450 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
 
   const { m = 3, v = 4, mA = 3, vA = 5, mB = 2, vB = -3, advancedMode = 0, showEkChart = 1 } = params
   const isAdvanced = advancedMode === 1
@@ -56,7 +55,7 @@ export default function MomentumAnimation() {
 
   const sceneScale = useSceneScale({
     vp,
-    preset: { width: 700, height: 450 },
+    preset,
     anchor: 'custom',
     customOriginX: 0,
     customOriginY: 0,
@@ -142,7 +141,7 @@ export default function MomentumAnimation() {
   const mapMomentumBarH = (pVal: number) => (Math.abs(pVal) / (MOMENTUM_PARAM_BOUNDS.mMax * MOMENTUM_PARAM_BOUNDS.vMax)) * MOMENTUM_LAYOUT.momentumBarMaxHeight
 
   return (
-    <div ref={containerRef} className="w-full h-full">
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
       <MomentumScene
         canvasSize={canvasSize} sceneScale={sceneScale}
         isAdvanced={isAdvanced} showVectors={showVectors}
@@ -158,6 +157,6 @@ export default function MomentumAnimation() {
         cardX={cardX} cardY={cardY}
         ekCurvePointsA={ekCurvePointsA} ekCurvePointsB={ekCurvePointsB} ekMax={ekMax}
       />
-    </div>
+    </AnimationSvgCanvas>
   )
 }

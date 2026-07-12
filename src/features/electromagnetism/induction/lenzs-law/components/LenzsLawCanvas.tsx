@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React from 'react'
 import type { calculateLenzsLaw } from '@/physics'
 import { PHYSICS_COLORS, CANVAS_COLORS, CANVAS_STYLE, withAlpha } from '@/theme/physics'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -24,8 +24,8 @@ interface LenzsLawCanvasProps {
   handleDragStart: (yDesign: number) => void
   handleDragMove: (yDesign: number) => void
   handleDragEnd: () => void
-  canvasSize: { width: number; height: number; font: (size: number) => number }
-  vpScale: number
+  font: (size: number) => number
+  getSvgPoint: (clientX: number, clientY: number) => { x: number; y: number } | null
 }
 
 // 设计尺寸与固定布局中心（与 CANVAS_PRESETS.full 一致）
@@ -52,12 +52,9 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
   handleDragStart,
   handleDragMove,
   handleDragEnd,
-  canvasSize,
-  vpScale,
+  font,
+  getSvgPoint,
 }) => {
-  const svgRef = useRef<SVGSVGElement | null>(null)
-  const font = canvasSize.font
-
   const isDown = lenzResult.originalFieldDirection === 'down'
 
   // 受力方向：repulsion (排斥) 则向上推 (-1)，attraction (吸引) 则向下拉 (+1)
@@ -165,28 +162,17 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
     layoutIdx++
   }
 
-  const clientToDesignY = (e: React.PointerEvent) => {
-    const svg = svgRef.current
-    if (!svg) return 0
-    const pt = svg.createSVGPoint()
-    pt.x = e.clientX
-    pt.y = e.clientY
-    const ctm = svg.getScreenCTM()
-    if (!ctm) return 0
-    return pt.matrixTransform(ctm.inverse()).y
-  }
-
   const handlePointerDown = (e: React.PointerEvent<SVGGElement>) => {
     if (isPlaying) return
     e.currentTarget.setPointerCapture(e.pointerId)
-    const yDesign = clientToDesignY(e)
-    handleDragStart(yDesign)
+    const pt = getSvgPoint(e.clientX, e.clientY)
+    if (pt) handleDragStart(pt.y)
   }
 
   const handlePointerMove = (e: React.PointerEvent<SVGGElement>) => {
     if (!isDragging) return
-    const yDesign = clientToDesignY(e)
-    handleDragMove(yDesign)
+    const pt = getSvgPoint(e.clientX, e.clientY)
+    if (pt) handleDragMove(pt.y)
   }
 
   const handlePointerUp = (e: React.PointerEvent<SVGGElement>) => {
@@ -208,13 +194,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
   const wireBotD = `M ${solBotPin.x} ${solBotPin.y} C ${solBotPin.x - 40} ${solBotPin.y}, ${galRightTerm.x} ${galRightTerm.y - 30}, ${galRightTerm.x} ${galRightTerm.y}`
 
   return (
-    <svg
-      ref={svgRef}
-      viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`}
-      preserveAspectRatio="xMidYMid meet"
-      className="bg-white rounded-lg shadow-inner w-full h-full"
-      data-scale={vpScale}
-    >
+    <>
       {/* --- 1. 灵敏电流计 --- */}
       <g opacity={getOpacity([4])} className="transition-opacity duration-300">
         <path
@@ -316,7 +296,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
         {forceDirection !== 0 && (
           <g opacity={getOpacity([4])} className="transition-opacity duration-300">
             <VectorArrow
-              origin={{ x: cx, y: magnetY + 50 }}
+              originPixel={{ x: cx, y: magnetY + 50 }}
               vector={{ x: 0, y: forceDirection > 0 ? 1 : -1 }}
               type="lorentzForce"
               sceneScale={IDENTITY_SCENE_SCALE}
@@ -339,7 +319,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
       {currentStep === 1 && (
         <g opacity={getOpacity([1])} className="transition-opacity duration-300">
           <VectorArrow
-            origin={{ x: cx, y: isDown ? magnetY + 50 : coilY }}
+            originPixel={{ x: cx, y: isDown ? magnetY + 50 : coilY }}
             vector={{ x: 0, y: isDown ? -1 : 1 }}
             type="magneticField"
             sceneScale={IDENTITY_SCENE_SCALE}
@@ -393,7 +373,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
         return (
           <g key={`ind-${i}`} opacity={finalOpacity} className="transition-opacity duration-300">
             <VectorArrow
-              origin={{ x: cx + dx, y: indY1 }}
+              originPixel={{ x: cx + dx, y: indY1 }}
               vector={{ x: 0, y: isUp ? 1 : -1 }}
               type="magneticField"
               color={PHYSICS_COLORS.lorentzForce} // 洛伦兹紫表示感应磁场，增强与原磁场绿色的对比，并符合语义 token 隔离
@@ -412,7 +392,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
       {lenzResult.fluxChange !== 'stable' && (
         <g opacity={getOpacity([4])} className="transition-opacity duration-300">
           <VectorArrow
-            origin={lenzResult.inducedCurrentDirection === 'counterclockwise'
+            originPixel={lenzResult.inducedCurrentDirection === 'counterclockwise'
               ? { x: cx + 45, y: coilY + 95 }
               : { x: cx - 45, y: coilY + 95 }}
             vector={lenzResult.inducedCurrentDirection === 'counterclockwise'
@@ -499,8 +479,6 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
         </g>
       )}
 
-      {/* 磁铁与力分析已移至上方，以解决属性覆盖导致的错位问题 */}
-
       {/* --- 10. 实时状态监控面板 (右上角避让摆放，防止与磁铁磁感应线重叠) --- */}
       <g transform="translate(500, 40)">
         {/* 第一步：当前动作 */}
@@ -563,7 +541,7 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
           >
             右手螺旋定则 (安培定则)
           </text>
-          
+
           <SkeletonHand
             cx={75}
             cy={105}
@@ -590,6 +568,6 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
           </text>
         </g>
       )}
-    </svg>
+    </>
   )
 }

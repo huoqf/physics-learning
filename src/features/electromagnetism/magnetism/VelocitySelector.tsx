@@ -1,7 +1,9 @@
 import { useId, useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationStore } from '@/stores'
-import { useCanvasSize } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
+import { useSceneScale } from '@/hooks/useSceneScale'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import {
   buildMagneticFieldSigns,
@@ -18,7 +20,7 @@ import { VelocitySelectorHandRuleCard } from './velocity-selector/components/Vel
 
 export default function VelocitySelector() {
   const gradId = useId()
-  const [sizeRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
 
   const { params: rawParams, time, isPlaying, showVectors } = useAnimationStore(
@@ -31,14 +33,29 @@ export default function VelocitySelector() {
   )
 
   const params = useMemo(() => normalizeVelocitySelectorParams(rawParams), [rawParams])
-  const layout = useMemo(() => buildVelocitySelectorLayout(canvasSize, params.mode), [canvasSize, params.mode])
+  const layout = useMemo(() => buildVelocitySelectorLayout(preset, params.mode), [preset, params.mode])
+
+  const sceneScale = useSceneScale({
+    vp,
+    preset,
+    anchor: 'custom',
+    customScaleX: layout.scaleX,
+    customScaleY: layout.scaleY,
+    customOriginX: layout.cxIn,
+    customOriginY: layout.cy,
+    refMagnitudes: {
+      force: 20,
+      velocity: 20,
+    },
+  })
 
   const { canvasRef, singleParticle } = useVelocitySelectorCanvas({
     params,
     time,
     isPlaying,
-    sceneScale: layout.sceneScale,
+    sceneScale,
     canvasSize,
+    vp,
   })
 
   const chartData = useMemo(
@@ -46,8 +63,8 @@ export default function VelocitySelector() {
     [params],
   )
   const chartGeometry = useMemo(
-    () => buildVelocitySelectorChartGeometry(canvasSize, layout),
-    [canvasSize, layout],
+    () => buildVelocitySelectorChartGeometry(preset.height, layout),
+    [preset.height, layout],
   )
   const chartCurvePath = useMemo(
     () => (chartData ? buildVelocitySelectorChartPath(chartData, chartGeometry) : ''),
@@ -60,10 +77,10 @@ export default function VelocitySelector() {
       cy: layout.cy,
       gapPlatePx: layout.gapPlatePx,
       wPlatePx: layout.wPlatePx,
-      canvasHeight: canvasSize.height,
+      presetHeight: preset.height,
       cxIn: layout.cxIn,
     }),
-    [params.mode, params.B, layout.cy, layout.gapPlatePx, layout.wPlatePx, layout.cxIn, canvasSize.height],
+    [params.mode, params.B, layout.cy, layout.gapPlatePx, layout.wPlatePx, preset.height, layout.cxIn],
   )
   const handPoseParams = useMemo(
     () => buildVelocitySelectorHandPose({ mode: params.mode, singleParticle, q: params.q, time }),
@@ -71,29 +88,23 @@ export default function VelocitySelector() {
   )
 
   return (
-    <div ref={sizeRef} className="w-full h-full relative">
-      <VelocitySelectorScene
-        width={canvasSize.width}
-        height={canvasSize.height}
-        gradId={gradId}
-        params={params}
-        isPlaying={isPlaying}
-        showVectors={showVectors}
-        singleParticle={singleParticle}
-        layout={layout}
-        magneticFieldSigns={magneticFieldSigns}
-        chartData={chartData}
-        chartGeometry={chartGeometry}
-        chartCurvePath={chartCurvePath}
-        font={font}
-      />
-
-      <canvas
-        ref={canvasRef}
-        width={canvasSize.width}
-        height={canvasSize.height}
-        className="absolute top-0 left-0 w-full h-full pointer-events-none"
-      />
+    <div className="w-full h-full relative">
+      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform} canvasRef={canvasRef}>
+        <VelocitySelectorScene
+          gradId={gradId}
+          params={params}
+          isPlaying={isPlaying}
+          showVectors={showVectors}
+          singleParticle={singleParticle}
+          layout={layout}
+          sceneScale={sceneScale}
+          magneticFieldSigns={magneticFieldSigns}
+          chartData={chartData}
+          chartGeometry={chartGeometry}
+          chartCurvePath={chartCurvePath}
+          font={font}
+        />
+      </AnimationSvgCanvas>
 
       {params.showHandRule && (
         <VelocitySelectorHandRuleCard

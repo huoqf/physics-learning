@@ -77,8 +77,6 @@ export interface KeplerPhysicsResult {
   maxT2: number
   /** 扫过时间占周期比例（第二定律时间卡片） */
   deltaTPercent: number
-  /** 轨道缩放因子（用于 SVG 椭圆 rx/ry 等计算） */
-  scale: number
 }
 
 // ── 工具：扇形物理坐标点（渲染层转 canvas 坐标构建 SVG path）──
@@ -148,17 +146,11 @@ export function computeKeplerVectors(
  *
  * @param params 动画参数
  * @param time 当前时间
- * @param viewport 视口信息（来自 useViewport）：{ centerX, centerY, scale }
  */
 export function useKeplerPhysics(
   params: Record<string, number>,
   time: number,
-  viewport: { centerX: number; centerY: number; scale: number },
 ): KeplerPhysicsResult {
-  const { scale: vpScale } = viewport
-
-  // ── 轨道缩放 ──
-  const scale = KEPLER_CONFIG.scaleBase * vpScale
 
   // ── 轨道参数 ──
   const mode = params.mode ?? 0
@@ -254,6 +246,5 @@ export function useKeplerPhysics(
     M_current, isInPerihelion, isInAphelion,
     vxA, vyA, fxA, fyA,
     a3_1, t2_1, a3_2, t2_2, k_ratio, maxA3, maxT2, deltaTPercent,
-    scale,
   }
 }

@@ -98,7 +98,7 @@ export function ElectricPotentialAnimScene({
             return len > 0.1 ? (
               <VectorArrow
                 key={`ev-${i}`}
-                origin={{ x: v.cx, y: v.cy }}
+                originPixel={{ x: v.cx, y: v.cy }}
                 vector={{ x: v.dx, y: -v.dy }}
                 type="electricField"
                 sceneScale={IDENTITY_SCENE_SCALE}
@@ -232,7 +232,7 @@ export function ElectricPotentialAnimScene({
             />
             {/* 场强指示矢量箭头 */}
             <VectorArrow
-              origin={{ x: hoverIndicator.cx, y: hoverIndicator.cy }}
+              originPixel={{ x: hoverIndicator.cx, y: hoverIndicator.cy }}
               vector={{ x: hoverIndicator.dx, y: -hoverIndicator.dy }}
               type="electricField"
               sceneScale={IDENTITY_SCENE_SCALE}
@@ -260,7 +260,7 @@ export function ElectricPotentialAnimScene({
             {particleForceArrow && (
               <g>
                 <VectorArrow
-                  origin={{ x: particleCanvasPos.cx, y: particleCanvasPos.cy }}
+                  originPixel={{ x: particleCanvasPos.cx, y: particleCanvasPos.cy }}
                   vector={{ x: particleForceArrow.dx, y: -particleForceArrow.dy }}
                   type="electricForce"
                   sceneScale={IDENTITY_SCENE_SCALE}

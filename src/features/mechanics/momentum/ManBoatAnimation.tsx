@@ -2,18 +2,17 @@ import { VectorArrow, PhysicsGround, SVGSingleBar } from '@/components/Physics'
 import { useEffect, useRef, useMemo, useId } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { useCanvasSize, useViewport, getPointsUpToTime } from '@/utils'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useSimulationFrame } from '@/utils/animation'
+import { getPointsUpToTime } from '@/utils'
 
 import { SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
 import { VelocityTimeChart } from '@/components/Chart'
 import { calculateManBoatState, getManBoatAutoMotion, calculateManBoatDisplacements } from '@/physics/momentumApplication/manBoat'
-
-import type { SceneScale } from '@/scene/SceneScale'
-
-const CANVAS_DESIGN = { width: 700, height: 180 }
 
 const MAN_BOAT_LAYOUT = {
   groundYRatio: 0.722,
@@ -34,11 +33,10 @@ export default function ManBoatAnimation() {
     }))
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_DESIGN)
-  const vp = useViewport(canvasSize, { designWidth: CANVAS_DESIGN.width, designHeight: CANVAS_DESIGN.height })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.splitV })
 
-  const groundY = CANVAS_DESIGN.height * MAN_BOAT_LAYOUT.groundYRatio
-  const originX = CANVAS_DESIGN.width * MAN_BOAT_LAYOUT.originXRatio
+  const groundY = Math.round(preset.height * MAN_BOAT_LAYOUT.groundYRatio)
+  const originX = Math.round(preset.width * MAN_BOAT_LAYOUT.originXRatio)
   const pxPerMeter = MAN_BOAT_LAYOUT.pxPerMeter
 
   // 参数解析
@@ -154,11 +152,16 @@ export default function ManBoatAnimation() {
     }
   }, [boatAutoStates, time])
 
-  const sceneScale: SceneScale = useMemo(() => ({
-    scaleX: pxPerMeter, scaleY: pxPerMeter, scale: pxPerMeter,
-    originX, originY: groundY, maxVectorLength: 40,
-    refMagnitudes: { velocity: 2.0 }
-  }), [pxPerMeter, originX, groundY])
+  const sceneScale = useSceneScale({
+    vp, preset,
+    anchor: 'custom',
+    customScaleX: pxPerMeter,
+    customScaleY: pxPerMeter,
+    customOriginX: originX,
+    customOriginY: groundY,
+    maxVectorLength: 40,
+    refMagnitudes: { velocity: 2.0 },
+  })
 
   const gradIdBoat = useId()
   const gradIdGlowGold = useId()
@@ -247,14 +250,8 @@ export default function ManBoatAnimation() {
       </div>
 
       {/* 下方物理仿真动画区 */}
-      <div
-        ref={containerRef}
-        className="flex-[5] min-h-[220px] bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden flex flex-col justify-between"
-      >
-        <svg
-          className="w-full h-full block"
-        >
-          <g transform={vp.transform}>
+      <div className="flex-[5] min-h-[220px] bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden flex flex-col justify-between">
+        <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
             <defs>
               <linearGradient id={gradIdBoat} x1="0%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" stopColor={SCENE_COLORS.materials.labWoodGrad[1]} />
@@ -270,21 +267,21 @@ export default function ManBoatAnimation() {
             <PhysicsGround
               x={0}
               y={groundY}
-              width={CANVAS_DESIGN.width}
+              width={preset.width}
               isSmooth={true}
               appearance={{ showHatch: false, color: SCENE_COLORS.surface.waterFill }}
               ruler={{ domain: [-6.667, 6.667], pixelPerUnit: pxPerMeter, tickInterval: 1, unit: 'm', position: 'bottom', showAxisLine: true }}
             />
             {/* 水面淡波纹 */}
             <g opacity="0.3" stroke={SCENE_COLORS.surface.waterRipple} strokeWidth="1.2" fill="none">
-              <path d="M 50,134 Q 65,132 80,134 T 110,134 T 140,134" strokeDasharray="3 3" />
-              <path d="M 250,135 Q 265,133 280,135 T 310,135 T 340,135" strokeDasharray="3 3" />
-              <path d="M 450,134 Q 465,132 480,134 T 510,134 T 540,134" strokeDasharray="3 3" />
-              <path d="M 600,135 Q 615,133 630,135 T 660,135 T 690,135" strokeDasharray="3 3" />
+              <path d={`M 60,${groundY - 1} Q 78,${groundY - 3} 96,${groundY - 1} T 132,${groundY - 1} T 168,${groundY - 1}`} strokeDasharray="3 3" />
+              <path d={`M 300,${groundY} Q 318,${groundY - 2} 336,${groundY} T 372,${groundY} T 408,${groundY}`} strokeDasharray="3 3" />
+              <path d={`M 540,${groundY - 1} Q 558,${groundY - 3} 576,${groundY - 1} T 612,${groundY - 1} T 648,${groundY - 1}`} strokeDasharray="3 3" />
+              <path d={`M 720,${groundY} Q 738,${groundY - 2} 756,${groundY} T 792,${groundY} T 828,${groundY}`} strokeDasharray="3 3" />
             </g>
 
             {/* 质心十字星标记 */}
-            <g transform={`translate(${originX}, 95)`}>
+            <g transform={`translate(${originX}, ${groundY - 80})`}>
               <circle r={`${CM_STAR.glowRadius}`} fill={`url(#${gradIdGlowGold})`} />
               <circle r={`${CM_STAR.coreRadius}`} fill={CANVAS_COLORS.referencePoint} />
               <line x1={`-${CM_STAR.glowRadius}`} y1="0" x2={`${CM_STAR.glowRadius}`} y2="0" stroke={CANVAS_COLORS.referencePoint} strokeWidth="1.2" />
@@ -387,8 +384,7 @@ export default function ManBoatAnimation() {
                 </g>
               )
             })()}
-          </g>
-        </svg>
+        </AnimationSvgCanvas>
 
         <div className="p-2.5 bg-neutral-50 border-t border-neutral-200/80 text-ui-base text-neutral-500 leading-tight">
           💡 <strong>无外力与质心锁定</strong>：水平面无摩擦，系统水平方向外力为 0，质心十字星完全锁定不动。不论是变速、中途停顿还是先后走动，只要起止时刻静止，系统的总位移仅由初始和末尾位置决定，完美符合动量守恒。

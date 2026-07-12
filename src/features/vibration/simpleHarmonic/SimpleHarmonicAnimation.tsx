@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
@@ -8,12 +8,11 @@ import { PHYSICS_COLORS, ENERGY_COLORS, STROKE, CANVAS_STYLE } from '@/theme/phy
 import { colors } from '@/theme/colors'
 import { Spring } from '@/components/UI'
 import { Block, PhysicsGround, VectorArrow, EnergyBars } from '@/components/Physics'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { computeAngularFrequency, computeSHMState, computeSHMEnergy, computeVerticalSpringForces } from '@/physics/oscillation'
-import type { SceneScale } from '@/scene'
 
 // ─── 物理与设计常量 ──────────────────────────────────────────────────────
 const A_MAX = 0.12 // 振幅上限 (m)，用于固定像素映射比例
-const DESIGN = { width: 700, height: 650 } as const
 const REF_LEN_RATIO = 0.16 // 矢量最大长度占场景宽度的比例
 
 export default function SimpleHarmonicAnimation() {
@@ -28,12 +27,8 @@ export default function SimpleHarmonicAnimation() {
     })),
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-  const { width, height, font } = canvasSize
-  const vp = useViewport(canvasSize, {
-    designWidth: DESIGN.width,
-    designHeight: DESIGN.height,
-  })
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
+  const { font } = canvasSize
 
   // 模式与参数提取
   const mode = params.mode ?? 0 // 0=水平弹簧振子, 1=竖直弹簧振子, 2=能量守恒分析
@@ -78,25 +73,24 @@ export default function SimpleHarmonicAnimation() {
     label?: string,
   ) => {
     if ((vx === 0 && vy === 0) || length <= 1) return null
-    const sceneScale: SceneScale = {
-      scaleX: 1,
-      scaleY: 1,
-      scale: 1,
-      originX: startX,
-      originY: startY,
-      maxVectorLength: length,
-      refMagnitudes: {},
-    }
     const mag = Math.sqrt(vx * vx + vy * vy)
     const dx = vx / mag
     const dy = vy / mag
 
     return (
       <VectorArrow
-        origin={{ x: 0, y: 0 }}
+        originPixel={{ x: startX, y: startY }}
         vector={{ x: dx, y: dy }}
         type={type === 'force' ? 'force' : type}
-        sceneScale={sceneScale}
+        sceneScale={{
+          scaleX: 1,
+          scaleY: 1,
+          scale: 1,
+          originX: startX,
+          originY: startY,
+          maxVectorLength: length,
+          refMagnitudes: {},
+        }}
         color={color}
         pixelLength={length}
         font={font}
@@ -261,8 +255,8 @@ export default function SimpleHarmonicAnimation() {
   const normFs = font(13)
 
   return (
-    <div ref={containerRef} className="w-full h-full relative">
-      <svg width={width} height={height} className="bg-slate-50 rounded-lg shadow-inner">
+    <div className="w-full h-full relative">
+      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform} className="bg-slate-50 rounded-lg shadow-inner">
         {/* ── 渲染分支 A：水平弹簧振子 ── */}
         {!isVertical && (
           <g>
@@ -631,7 +625,7 @@ export default function SimpleHarmonicAnimation() {
         )}
 
         {/* ── 能量柱（能量守恒分析模式 2） ── */}
-      </svg>
+      </AnimationSvgCanvas>
 
       {/* 能量柱（HTML 层，无 foreignObject） */}
       {showEnergy && (

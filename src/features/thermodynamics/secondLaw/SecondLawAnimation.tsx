@@ -1,6 +1,7 @@
 import { useRef, useCallback, useState, useEffect, useMemo } from 'react'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { useCanvasViewport } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
@@ -19,8 +20,6 @@ import {
   type Particle,
   type Scenario,
 } from '@/physics/secondLaw'
-
-const SECOND_LAW_DESIGN = { width: 700, height: 400 } as const
 
 // ─── 常量 ─────────────────────────────────────────────────────────────
 const PARTICLE_COUNT = 160
@@ -52,13 +51,8 @@ export default function SecondLawAnimation() {
     })),
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
-
-  const vp = useViewport(canvasSize, {
-    designWidth: SECOND_LAW_DESIGN.width,
-    designHeight: SECOND_LAW_DESIGN.height,
-  })
 
   const scene = params.scene ?? 0
   const scenario: Scenario = scene === 0 ? 'heat-conduction' : 'gas-diffusion'
@@ -199,177 +193,162 @@ export default function SecondLawAnimation() {
   }, [scenario])
 
   return (
-    <div ref={containerRef} className="w-full h-full relative">
-      {/* Canvas 粒子层 */}
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 w-full h-full"
-        style={{ zIndex: 0 }}
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform} canvasRef={canvasRef}>
+      {/* 场景标题 */}
+      <text
+        x={vp.visibleX + vp.visibleW / 2}
+        y={vp.visibleY + vp.visibleH * LAYOUT.labelTopRatio + 10}
+        fontSize={font(13)}
+        fontWeight="bold"
+        fill={colors.neutral[800]}
+        textAnchor="middle"
+        fontFamily={FONT.family}
+      >
+        {scenario === 'heat-conduction'
+          ? '演示一：热量传导方向（自发过程）'
+          : '演示二：气体自由膨胀（自发过程）'}
+      </text>
+
+      {/* 容器边框 */}
+      <rect
+        x={container.x}
+        y={container.y}
+        width={container.w}
+        height={container.h}
+        fill="none"
+        stroke={SECOND_LAW_COLORS.containerWall}
+        strokeWidth={STROKE.objectLine}
+        rx={4}
       />
 
-      {/* SVG 叠加层：容器边框、隔板、标注、警告框 */}
-      <svg
-        width={canvasSize.width}
-        height={canvasSize.height}
-        className="absolute inset-0"
-        style={{ zIndex: 10 }}
-      >
-        {/* 场景标题 */}
-        <text
-          x={vp.visibleX + vp.visibleW / 2}
-          y={vp.visibleY + vp.visibleH * LAYOUT.labelTopRatio + 10}
-          fontSize={font(13)}
-          fontWeight="bold"
-          fill={colors.neutral[800]}
-          textAnchor="middle"
-          fontFamily={FONT.family}
-        >
-          {scenario === 'heat-conduction'
-            ? '演示一：热量传导方向（自发过程）'
-            : '演示二：气体自由膨胀（自发过程）'}
-        </text>
-
-        {/* 容器边框 */}
-        <rect
-          x={container.x}
-          y={container.y}
-          width={container.w}
-          height={container.h}
-          fill="none"
-          stroke={SECOND_LAW_COLORS.containerWall}
+      {/* 隔板（气体扩散场景） */}
+      {scenario === 'gas-diffusion' && (
+        <line
+          x1={midX}
+          y1={container.y}
+          x2={midX}
+          y2={container.y + container.h}
+          stroke={SECOND_LAW_COLORS.partition}
           strokeWidth={STROKE.objectLine}
-          rx={4}
+          strokeDasharray="6 4"
         />
+      )}
 
-        {/* 隔板（气体扩散场景） */}
-        {scenario === 'gas-diffusion' && (
-          <line
-            x1={midX}
-            y1={container.y}
-            x2={midX}
-            y2={container.y + container.h}
-            stroke={SECOND_LAW_COLORS.partition}
-            strokeWidth={STROKE.objectLine}
-            strokeDasharray="6 4"
+      {/* 热传导隔板 */}
+      {scenario === 'heat-conduction' && (
+        <line
+          x1={midX}
+          y1={container.y}
+          x2={midX}
+          y2={container.y + container.h}
+          stroke={SECOND_LAW_COLORS.partition}
+          strokeWidth={1}
+          opacity={0.4}
+        />
+      )}
+
+      {/* 左右温度/粒子标注 */}
+      {scenario === 'heat-conduction' ? (
+        <>
+          <text
+            x={container.x + container.w * 0.25}
+            y={container.y + container.h + 16}
+            fontSize={font(10)}
+            fill={SECOND_LAW_COLORS.hotParticle}
+            textAnchor="middle"
+            fontFamily={FONT.family}
+          >
+            高温端 (500K)
+          </text>
+          <text
+            x={container.x + container.w * 0.75}
+            y={container.y + container.h + 16}
+            fontSize={font(10)}
+            fill={SECOND_LAW_COLORS.coldParticle}
+            textAnchor="middle"
+            fontFamily={FONT.family}
+          >
+            低温端 (200K)
+          </text>
+        </>
+      ) : (
+        <>
+          <text
+            x={container.x + container.w * 0.25}
+            y={container.y + container.h + 16}
+            fontSize={font(10)}
+            fill={SECOND_LAW_COLORS.coldParticle}
+            textAnchor="middle"
+            fontFamily={FONT.family}
+          >
+            气体（左侧）
+          </text>
+          <text
+            x={container.x + container.w * 0.75}
+            y={container.y + container.h + 16}
+            fontSize={font(10)}
+            fill={colors.neutral[400]}
+            textAnchor="middle"
+            fontFamily={FONT.family}
+          >
+            真空（右侧）
+          </text>
+        </>
+      )}
+
+      {/* 状态标注 */}
+      <text
+        x={vp.visibleX + vp.visibleW / 2}
+        y={vp.visibleY + vp.visibleH * LAYOUT.statusBottomRatio}
+        fontSize={font(11)}
+        fill={isEquilibrium ? SECOND_LAW_COLORS.equilibriumLabel : SCENE_COLORS.materials.structStrokeLight}
+        textAnchor="middle"
+        fontWeight={isEquilibrium ? 'bold' : 'normal'}
+        fontFamily={FONT.family}
+      >
+        {isEquilibrium
+          ? '✓ 已达热平衡 / 均匀分布'
+          : `无序度 S = ${entropy.normalizedEntropy.toFixed(3)}  |  Ω = e^${entropy.lnOmega.toFixed(1)}`}
+      </text>
+
+      {/* 逆向警告框 */}
+      {isReversing && (
+        <g>
+          <rect
+            x={vp.visibleX + vp.visibleW * 0.15}
+            y={vp.visibleY + vp.visibleH * 0.35}
+            width={vp.visibleW * 0.7}
+            height={vp.visibleH * 0.18}
+            fill={SECOND_LAW_COLORS.warningBg}
+            stroke={SECOND_LAW_COLORS.warningBorder}
+            strokeWidth={2}
+            rx={8}
+            opacity={0.92}
           />
-        )}
-
-        {/* 热传导隔板 */}
-        {scenario === 'heat-conduction' && (
-          <line
-            x1={midX}
-            y1={container.y}
-            x2={midX}
-            y2={container.y + container.h}
-            stroke={SECOND_LAW_COLORS.partition}
-            strokeWidth={1}
-            opacity={0.4}
-          />
-        )}
-
-        {/* 左右温度/粒子标注 */}
-        {scenario === 'heat-conduction' ? (
-          <>
-            <text
-              x={container.x + container.w * 0.25}
-              y={container.y + container.h + 16}
-              fontSize={font(10)}
-              fill={SECOND_LAW_COLORS.hotParticle}
-              textAnchor="middle"
-              fontFamily={FONT.family}
-            >
-              高温端 (500K)
-            </text>
-            <text
-              x={container.x + container.w * 0.75}
-              y={container.y + container.h + 16}
-              fontSize={font(10)}
-              fill={SECOND_LAW_COLORS.coldParticle}
-              textAnchor="middle"
-              fontFamily={FONT.family}
-            >
-              低温端 (200K)
-            </text>
-          </>
-        ) : (
-          <>
-            <text
-              x={container.x + container.w * 0.25}
-              y={container.y + container.h + 16}
-              fontSize={font(10)}
-              fill={SECOND_LAW_COLORS.coldParticle}
-              textAnchor="middle"
-              fontFamily={FONT.family}
-            >
-              气体（左侧）
-            </text>
-            <text
-              x={container.x + container.w * 0.75}
-              y={container.y + container.h + 16}
-              fontSize={font(10)}
-              fill={colors.neutral[400]}
-              textAnchor="middle"
-              fontFamily={FONT.family}
-            >
-              真空（右侧）
-            </text>
-          </>
-        )}
-
-        {/* 状态标注 */}
-        <text
-          x={vp.visibleX + vp.visibleW / 2}
-          y={vp.visibleY + vp.visibleH * LAYOUT.statusBottomRatio}
-          fontSize={font(11)}
-          fill={isEquilibrium ? SECOND_LAW_COLORS.equilibriumLabel : SCENE_COLORS.materials.structStrokeLight}
-          textAnchor="middle"
-          fontWeight={isEquilibrium ? 'bold' : 'normal'}
-          fontFamily={FONT.family}
-        >
-          {isEquilibrium
-            ? '✓ 已达热平衡 / 均匀分布'
-            : `无序度 S = ${entropy.normalizedEntropy.toFixed(3)}  |  Ω = e^${entropy.lnOmega.toFixed(1)}`}
-        </text>
-
-        {/* 逆向警告框 */}
-        {isReversing && (
-          <g>
-            <rect
-              x={vp.visibleX + vp.visibleW * 0.15}
-              y={vp.visibleY + vp.visibleH * 0.35}
-              width={vp.visibleW * 0.7}
-              height={vp.visibleH * 0.18}
-              fill={SECOND_LAW_COLORS.warningBg}
-              stroke={SECOND_LAW_COLORS.warningBorder}
-              strokeWidth={2}
-              rx={8}
-              opacity={0.92}
-            />
-            <text
-              x={vp.visibleX + vp.visibleW / 2}
-              y={vp.visibleY + vp.visibleH * 0.42}
-              fontSize={font(15)}
-              fontWeight="bold"
-              fill={SECOND_LAW_COLORS.warningText}
-              textAnchor="middle"
-              fontFamily={FONT.family}
-            >
-              非自发过程：违反热力学第二定律
-            </text>
-            <text
-              x={vp.visibleX + vp.visibleW / 2}
-              y={vp.visibleY + vp.visibleH * 0.48}
-              fontSize={font(11)}
-              fill={SECOND_LAW_COLORS.warningText}
-              textAnchor="middle"
-              fontFamily={FONT.family}
-              opacity={0.8}
-            >
-              在没有外界干预的情况下，热量不会自动从低温传向高温
-            </text>
-          </g>
-        )}
-      </svg>
-    </div>
+          <text
+            x={vp.visibleX + vp.visibleW / 2}
+            y={vp.visibleY + vp.visibleH * 0.42}
+            fontSize={font(15)}
+            fontWeight="bold"
+            fill={SECOND_LAW_COLORS.warningText}
+            textAnchor="middle"
+            fontFamily={FONT.family}
+          >
+            非自发过程：违反热力学第二定律
+          </text>
+          <text
+            x={vp.visibleX + vp.visibleW / 2}
+            y={vp.visibleY + vp.visibleH * 0.48}
+            fontSize={font(11)}
+            fill={SECOND_LAW_COLORS.warningText}
+            textAnchor="middle"
+            fontFamily={FONT.family}
+            opacity={0.8}
+          >
+            在没有外界干预的情况下，热量不会自动从低温传向高温
+          </text>
+        </g>
+      )}
+    </AnimationSvgCanvas>
   )
 }

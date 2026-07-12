@@ -89,7 +89,7 @@ export function CollisionAdvancedScene({
         <g>
           {curVA !== 0 && (
             <VectorArrow
-              origin={{ x: posAAdv, y: groundY - R_Adv * 2 - 10 }}
+              originPixel={{ x: posAAdv, y: R_Adv * 2 + 10 }}
               vector={{ x: curVA, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
@@ -102,7 +102,7 @@ export function CollisionAdvancedScene({
 
           {curVB !== 0 && (
             <VectorArrow
-              origin={{ x: posBAdv, y: groundY - R_Bdv * 2 - 10 }}
+              originPixel={{ x: posBAdv, y: R_Bdv * 2 + 10 }}
               vector={{ x: curVB, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
@@ -118,19 +118,19 @@ export function CollisionAdvancedScene({
 
       {/* 物理特例与极值提示文案 */}
       {velocitySwap && hasCollidedAdv && (
-        <text x={350} y={35} fontSize={font(12)}
+        <text x={COL_LAYOUT.designWidth / 2} y={35} fontSize={font(12)}
           fill={PHYSICS_COLORS.kineticEnergy} fontWeight="bold" textAnchor="middle">
           等质量完全弹性碰撞：速度交换！A静止，B带走全部速度
         </text>
       )}
       {heavyLight && hasCollidedAdv && (
-        <text x={350} y={35} fontSize={font(12)}
+        <text x={COL_LAYOUT.designWidth / 2} y={35} fontSize={font(12)}
           fill={PHYSICS_COLORS.velocity} fontWeight="bold" textAnchor="middle">
           大撞小 ($m_A \gg m_B$)：大球速度几乎不变，小球速度变为 $v_B' \approx 2v_A$ = {(2 * vA).toFixed(1)} m/s
         </text>
       )}
       {lightHeavy && hasCollidedAdv && (
-        <text x={350} y={35} fontSize={font(12)}
+        <text x={COL_LAYOUT.designWidth / 2} y={35} fontSize={font(12)}
           fill={PHYSICS_COLORS.elasticForce} fontWeight="bold" textAnchor="middle">
           小撞大 ($m_A \ll m_B$)：小球原速率反弹，大球近似静止
         </text>

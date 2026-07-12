@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo } from 'react'
-import { useCanvasSize } from '@/utils'
+import React, { useEffect } from 'react'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -32,7 +32,7 @@ function ChartSVGContent({
   const safeToSvgX = ctx?.toSvgX
   const safeToSvgY = ctx?.toSvgY
 
-  const ptsStr = useMemo(() => {
+  const ptsStr = React.useMemo(() => {
     if (!safeToSvgX || !safeToSvgY) return ''
     return samplePoints
       .map((p) => `${safeToSvgX(p.t).toFixed(1)},${safeToSvgY(getVal(p)).toFixed(1)}`)
@@ -40,7 +40,7 @@ function ChartSVGContent({
   }, [samplePoints, getVal, safeToSvgX, safeToSvgY])
 
   const activePts = samplePoints.filter((p) => p.t <= time)
-  const activePtsStr = useMemo(() => {
+  const activePtsStr = React.useMemo(() => {
     if (!safeToSvgX || !safeToSvgY || activePts.length < 2) return ''
     return 'M ' + activePts.map((p) => `${safeToSvgX(p.t).toFixed(1)},${safeToSvgY(getVal(p)).toFixed(1)}`).join(' L ')
   }, [activePts, getVal, safeToSvgX, safeToSvgY])
@@ -187,9 +187,27 @@ export default function CuttingEMF() {
     showForceAnalysis = 1,
   } = params
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full)
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
+  const { font } = canvasSize
 
-  const physics = useCuttingEMFPhysics({ mode, B, L, v, R, F_ext, m }, canvasSize, time)
+  // 场景 sceneScale：基于 splitV 设计空间（CuttingEMFScene 使用固定 viewBox）
+  const sceneScale = useSceneScale({
+    vp, preset: CANVAS_PRESETS.splitV,
+    anchor: 'design',
+    physicsWidth: 12,
+    physicsHeight: 3,
+    originSource: 'custom',
+    originX: 70,
+    originY: 160,
+    refMagnitudes: {
+      velocity: 3.0,
+      acceleration: 10.0,
+      force: 5.0,
+    },
+    intentionalNonUniformScale: true,
+  })
+
+  const physics = useCuttingEMFPhysics({ mode, B, L, v, R, F_ext, m }, sceneScale, preset, font, time)
 
   useEffect(() => {
     if (isPlaying && physics.hasHitLimit) {
@@ -237,17 +255,21 @@ export default function CuttingEMF() {
         />
       </div>
 
-      <CuttingEMFScene
-        physics={physics}
-        canvasSize={canvasSize}
-        time={time}
-        isPlaying={isPlaying}
-        mode={mode}
-        showForceAnalysis={showForceAnalysis}
-        F_ext={F_ext}
-        L={L}
-        R={R}
-      />
+      <div className="w-full flex-shrink-0" style={{ height: '50%' }}>
+        <CuttingEMFScene
+          physics={physics}
+          sceneScale={sceneScale}
+          font={(v: number) => Math.max(7, Math.min(16, v))}
+          canvasScale={1.0}
+          time={time}
+          isPlaying={isPlaying}
+          mode={mode}
+          showForceAnalysis={showForceAnalysis}
+          F_ext={F_ext}
+          L={L}
+          R={R}
+        />
+      </div>
     </div>
   )
 }

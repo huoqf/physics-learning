@@ -1,10 +1,9 @@
 import { useMemo } from 'react'
 import { computeRodConstants, computeRodStateAtTime, calculateCuttingEMF } from '@/physics'
-import { physicsToCanvasWithOrigin, computeScale } from '@/utils/coordinate'
-import type { CanvasSize } from '@/utils/useCanvasSize'
+import { worldToDesign } from '@/scene'
 import type { SceneScale } from '@/scene'
+import type { CanvasPreset } from '@/hooks/useAnimationViewport'
 
-const WORLD = { xMin: -1.0, xMax: 11.0, yMin: -1.5, yMax: 1.5 } as const
 const X_LIMIT = 10.0
 
 export interface CuttingEMFParams {
@@ -32,17 +31,14 @@ export interface CuttingEMFPhysicsResult {
   v_m: number
   tau: number
   a_0: number
-  originX: number
-  originY: number
-  scale: number
-  railLeftPos: { cx: number; cy: number }
-  railRightPos: { cx: number; cy: number }
-  rodPos: { cx: number; cy: number }
+  railLeftPos: { x: number; y: number }
+  railRightPos: { x: number; y: number }
+  rodPos: { x: number; y: number }
   railSpacing: number
   railLength: number
   railCx: number
   railCy: number
-  localSceneScale: SceneScale
+  sceneScale: SceneScale
   T_max: number
   samplePoints: Array<{ t: number; v: number; a: number }>
   vtPoints: Array<{ t: number; v: number }>
@@ -56,19 +52,18 @@ export interface CuttingEMFPhysicsResult {
 
 export function useCuttingEMFPhysics(
   params: CuttingEMFParams,
-  canvasSize: CanvasSize,
+  sceneScale: SceneScale,
+  preset: CanvasPreset,
+  font: (v: number) => number,
   time: number,
 ): CuttingEMFPhysicsResult {
   const { mode, B, L, v, R, F_ext, m } = params
-  const { px } = canvasSize
 
   const B_out = B < 0 ? 1 : 0
   const absB = Math.abs(B)
 
-  const chartHeight = px(210)
-  const sceneHeight = Math.floor((canvasSize.height - px(16)) / 2)
-
-  const scale = computeScale(canvasSize.width, sceneHeight, WORLD)
+  const chartHeight = font(210)
+  const sceneHeight = Math.floor((preset.height - font(16)) / 2)
 
   const { terminalVelocity: v_m, timeConstant: tau, initialAcceleration: a_0 } = useMemo(
     () => computeRodConstants(absB, L, R, m, F_ext),
@@ -115,33 +110,16 @@ export function useCuttingEMFPhysics(
   const ampForceX = finalV > 0 ? -finalFamp : (finalV < 0 ? finalFamp : 0)
   const extForceX = mode === 1 ? F_ext : (finalV > 0 ? finalFamp : (finalV < 0 ? -finalFamp : 0))
 
-  const originX = 1.0 * scale
-  const originY = sceneHeight / 2
-  const toCanvas = (wx: number, wy: number) => physicsToCanvasWithOrigin(wx, wy, originX, originY, scale)
-
-  const railLeftPos = toCanvas(0, 0)
-  const railRightPos = toCanvas(X_LIMIT, 0)
-  const rodPos = toCanvas(finalX, 0)
+  // 使用 worldToDesign 将物理坐标转为设计坐标
+  const railLeftDesign = worldToDesign(0, 0, sceneScale)
+  const railRightDesign = worldToDesign(X_LIMIT, 0, sceneScale)
+  const rodDesign = worldToDesign(finalX, 0, sceneScale)
 
   // 对轨距进行视觉放大（物理计算 L 保持规范米制不变）
-  const railSpacing = L * scale * 1.2
-  const railLength = railRightPos.cx - railLeftPos.cx
-  const railCx = (railLeftPos.cx + railRightPos.cx) / 2
-  const railCy = railLeftPos.cy
-
-  const localSceneScale = useMemo<SceneScale>(() => ({
-    originX,
-    originY,
-    scaleX: scale,
-    scaleY: scale,
-    scale,
-    maxVectorLength: px(60),
-    refMagnitudes: {
-      velocity: 3.0,
-      acceleration: 10.0,
-      force: 5.0,
-    },
-  }), [scale, px, originX, originY])
+  const railSpacing = L * sceneScale.scale * 1.2
+  const railLength = railRightDesign.px - railLeftDesign.px
+  const railCx = (railLeftDesign.px + railRightDesign.px) / 2
+  const railCy = railLeftDesign.py
 
   const T_max = mode === 0 ? 5.0 : Math.max(5.0, Math.min(20.0, 4 * tau))
 
@@ -173,18 +151,19 @@ export function useCuttingEMFPhysics(
   const vYMax = mode === 0 ? Math.max(1.0, Math.abs(v)) * 1.2 : v_m * 1.2
   const aYMax = mode === 0 ? 1.0 : a_0 * 1.2
 
-  const chartW = (canvasSize.width - px(24)) / 2
-  const chartH = chartHeight - px(12)
+  const chartW = (preset.width - font(24)) / 2
+  const chartH = chartHeight - font(12)
 
   return {
     finalX, finalV, finalA, finalFamp, finalI, EMF_current,
     hasHitLimit, B_out, absB,
     ampForceX, extForceX,
     v_m, tau, a_0,
-    originX, originY, scale,
-    railLeftPos, railRightPos, rodPos,
+    railLeftPos: { x: railLeftDesign.px, y: railLeftDesign.py },
+    railRightPos: { x: railRightDesign.px, y: railRightDesign.py },
+    rodPos: { x: rodDesign.px, y: rodDesign.py },
     railSpacing, railLength, railCx, railCy,
-    localSceneScale,
+    sceneScale,
     T_max, samplePoints, vtPoints, vYMax, aYMax,
     chartHeight, sceneHeight, chartW, chartH,
   }

@@ -14,7 +14,8 @@
 import { useRef, useState, useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { useCanvasSize } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { colors } from '@/theme/colors'
 import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -34,10 +35,10 @@ export default function ACValues() {
     }))
   )
 
-  const [containerRef] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
 
-  // 设计坐标系下的 font 函数（固定尺寸模式）
-  const font = (size: number) => Math.min(16, Math.max(7, size))
+  // 设计坐标系下的 font 函数
+  const font = canvasSize.font
 
   const waveformIdx = params.waveform ?? 0
   const Im = params.Im ?? 5
@@ -110,7 +111,7 @@ export default function ACValues() {
     : {}
 
   return (
-    <div ref={containerRef} className="w-full h-full">
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
       <style>{`
         @keyframes gauge-flash {
           0%   { filter: brightness(1); }
@@ -119,11 +120,6 @@ export default function ACValues() {
         }
       `}</style>
 
-      <svg
-        viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`}
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full h-full select-none"
-      >
         <g transform={`translate(${chartMargin.left - 4}, 0)`}>
           <ACValuesChartPanel
             wavePoints={physics.wavePoints}
@@ -254,7 +250,6 @@ export default function ACValues() {
         >
           注：动画为降频可视化模型，微观运动空间与时间尺度已做放大处理。
         </text>
-      </svg>
-    </div>
+    </AnimationSvgCanvas>
   )
 }

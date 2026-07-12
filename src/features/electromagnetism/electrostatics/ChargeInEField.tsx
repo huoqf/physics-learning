@@ -8,7 +8,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, CANVAS_STYLE, CANVAS_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { withAlpha } from '@/theme/physics'
 
-import { createSceneScaleFromViewport } from '@/scene'
+import { useSceneScale } from '@/hooks'
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
 import { VelocityTimeChart, ChartDataSeries } from '@/components/Chart'
 import { Card } from '@/components/UI'
@@ -150,19 +150,22 @@ export default function ChargeInEField() {
   }, [historyPoints])
 
   // 7. 矢量工具 sceneScale
-  const sceneScale = useMemo(() => {
-    const maxVal = Math.max(v0, 10)
-    const maxAcc = Math.max(Math.abs(currentState.ay), 25)
-    return createSceneScaleFromViewport(vp, 'transform', {
-      refMagnitudes: {
-        velocity: maxVal,
-        acceleration: maxAcc,
-        electricField: 10,
-        electricForce: maxAcc,
-        gravity: maxAcc,
-      },
-    })
-  }, [vp, v0, currentState.ay])
+  const sceneScale = useSceneScale({
+    vp,
+    preset: CANVAS_PRESETS.splitV,
+    anchor: 'custom',
+    customOriginX: 0,
+    customOriginY: 0,
+    customScaleX: 1,
+    customScaleY: 1,
+    refMagnitudes: {
+      velocity: Math.max(v0, 10),
+      acceleration: Math.max(Math.abs(currentState.ay), 25),
+      electricField: 10,
+      electricForce: Math.max(Math.abs(currentState.ay), 25),
+      gravity: Math.max(Math.abs(currentState.ay), 25),
+    },
+  })
 
   // 8. 速度分解虚线框的终点坐标
   const refMag = Math.max(v0, 10)
@@ -652,7 +655,7 @@ export default function ChargeInEField() {
 
               {/* v0 (水平分速度，经典蓝) */}
               <VectorArrow
-                origin={{ x: cx, y: -cy }}
+                originPixel={{ x: cx, y: cy }}
                 vector={{ x: currentState.vx, y: 0 }}
                 type="velocityX"
                 sceneScale={sceneScale}
@@ -672,7 +675,7 @@ export default function ChargeInEField() {
               {/* vy (竖直分速度，浅蓝) */}
               {Math.abs(currentState.vy) > 0.05 && (
                 <VectorArrow
-                  origin={{ x: cx, y: -cy }}
+                  originPixel={{ x: cx, y: cy }}
                   vector={{ x: 0, y: -currentState.vy }}
                   type="velocityY"
                   sceneScale={sceneScale}
@@ -693,7 +696,7 @@ export default function ChargeInEField() {
 
               {/* 合速度 v (深蓝) */}
               <VectorArrow
-                origin={{ x: cx, y: -cy }}
+                originPixel={{ x: cx, y: cy }}
                 vector={{ x: currentState.vx, y: -currentState.vy }}
                 type="velocity"
                 sceneScale={sceneScale}
@@ -716,7 +719,7 @@ export default function ChargeInEField() {
                 const electricAccel = (q * 1e-6 * curFieldSign * U / PLATE_GAP) / PARTICLE_MASS
                 return (
                   <VectorArrow
-                    origin={{ x: cx, y: -cy }}
+                    originPixel={{ x: cx, y: cy }}
                     vector={{ x: eDir.x * electricAccel, y: eDir.y * electricAccel }}
                     type="electricForce"
                     sceneScale={sceneScale}
@@ -728,7 +731,7 @@ export default function ChargeInEField() {
               {/* 重力 mg (绿色) */}
               {useGravity === 1 && (
                 <VectorArrow
-                  origin={{ x: cx, y: -cy }}
+                  originPixel={{ x: cx, y: cy }}
                   vector={{ x: 0, y: -9.8 }}
                   type="gravity"
                   sceneScale={sceneScale}

@@ -41,6 +41,7 @@ interface BasicModeParams {
   collisionType: number
   e_coefficient: number
   time: number
+  groundY: number
 }
 
 interface BasicModeResult {
@@ -59,7 +60,7 @@ interface BasicModeResult {
  * 计算基础模式（两球碰撞）的位置与速度状态
  */
 function computeBasicMode(p: BasicModeParams): BasicModeResult {
-  const { m1, v1, m2, v2, collisionType, e_coefficient, time } = p
+  const { m1, v1, m2, v2, collisionType, e_coefficient, time, groundY } = p
 
   const R_A = MC_LAYOUT.ballBaseRadius + m1 * MC_LAYOUT.massRadiusScale
   const R_B = MC_LAYOUT.ballBaseRadius + m2 * MC_LAYOUT.massRadiusScale
@@ -107,7 +108,6 @@ function computeBasicMode(p: BasicModeParams): BasicModeResult {
     currentV2 = v2After
   }
 
-  const groundY = 130
   const { cx: rawPosAx } = physicsToCanvasWithOrigin(xPhysA, 0, initPosAx, groundY, PX_PER_METER)
   const { cx: rawPosBx } = physicsToCanvasWithOrigin(xPhysB, 0, initPosAx, groundY, PX_PER_METER)
 
@@ -128,6 +128,7 @@ interface AdvancedModeParams {
   mu: number
   L: number
   time: number
+  groundY: number
 }
 
 interface AdvancedModeResult {
@@ -156,7 +157,7 @@ interface AdvancedModeResult {
  * 计算进阶模式（滑块-木板）的位置与速度状态
  */
 function computeAdvancedMode(p: AdvancedModeParams): AdvancedModeResult {
-  const { m_slider, M_board, v0, mu, L, time } = p
+  const { m_slider, M_board, v0, mu, L, time, groundY } = p
   const g = MC_LAYOUT.g
 
   const vCommon = calculateCommonVelocity(m_slider, v0, M_board)
@@ -227,7 +228,6 @@ function computeAdvancedMode(p: AdvancedModeParams): AdvancedModeResult {
 
   const currentDeltaX = Math.min(currentXSlider - currentXBoard, L)
 
-  const groundY = 130
   const boardInitX = 700 * 0.25
   const { cx: boardPixelX } = physicsToCanvasWithOrigin(currentXBoard, 0, boardInitX, groundY, PX_PER_METER)
   const { cx: sliderPixelX } = physicsToCanvasWithOrigin(currentXSlider, 0, boardInitX, groundY, PX_PER_METER)
@@ -286,6 +286,7 @@ export interface MomentumConservationPhysics {
 export function useMomentumConservationPhysics(
   params: Record<string, number>,
   time: number,
+  groundY: number,
 ): MomentumConservationPhysics {
   const {
     m1 = 3, v1 = 5,
@@ -300,14 +301,14 @@ export function useMomentumConservationPhysics(
 
   // ── 基础模式计算 ──
   const basic = useMemo(
-    () => computeBasicMode({ m1, v1, m2, v2, collisionType, e_coefficient, time }),
-    [m1, v1, m2, v2, collisionType, e_coefficient, time]
+    () => computeBasicMode({ m1, v1, m2, v2, collisionType, e_coefficient, time, groundY }),
+    [m1, v1, m2, v2, collisionType, e_coefficient, time, groundY]
   )
 
   // ── 进阶模式计算 ──
   const advanced = useMemo(
-    () => computeAdvancedMode({ m_slider, M_board, v0, mu, L, time }),
-    [m_slider, M_board, v0, mu, L, time]
+    () => computeAdvancedMode({ m_slider, M_board, v0, mu, L, time, groundY }),
+    [m_slider, M_board, v0, mu, L, time, groundY]
   )
 
   // ── 图表数据 ──
