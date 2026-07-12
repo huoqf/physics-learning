@@ -11,3 +11,9 @@ export type {
   AnimationViewportResult,
   CanvasPreset,
 } from './useAnimationViewport'
+
+export { useSceneScale } from './useSceneScale'
+export type { UseSceneScaleOptions } from './useSceneScale'
+
+export { useCanvasViewport } from './useCanvasViewport'
+export type { UseCanvasViewportOptions, CanvasViewportResult } from './useCanvasViewport'

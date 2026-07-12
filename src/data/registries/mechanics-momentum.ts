@@ -45,7 +45,9 @@ export const mechanicsMomentumAnimations = defineAnimations({
     title: '动量定理',
     knowledgeId: 'mechanics-8-3',
     Component: lazy(() => import('@/features/mechanics/momentum/MomentumTheoremAnimation')),
-    defaultParams: { m: 2, h: 2, k: 5, rho: 1000, S: 0.01, v_fluid: 5, alpha: 0, advancedMode: 0 } as const,
+    CenterExtra: lazy(() => import('@/features/mechanics/momentum/MomentumTheoremChartsExtra')),
+    centerLayout: 'splitH',
+    defaultParams: { m: 2, h: 2, k: 5, rho: 1000, S: 0.01, v_fluid: 5, alpha: 0, advancedMode: 0, showGravity: 1, showVelocity: 1, showNormalForce: 1 } as const,
     paramMeta: [
       { key: 'm', label: '物体质量 m', min: 0.5, max: 10, step: 0.5, unit: 'kg', showIf: 'advancedMode', showIfValue: 0 },
       { key: 'h', label: '下落高度 h', min: 0.5, max: 5, step: 0.5, unit: 'm', showIf: 'advancedMode', showIfValue: 0 },
@@ -58,6 +60,9 @@ export const mechanicsMomentumAnimations = defineAnimations({
     controlMeta: [
       { type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '基础' }, { value: 1, label: '进阶' }] },
+      { type: 'toggle', key: 'showGravity', label: '重力 mg', group: '矢量显示', showIf: 'advancedMode', showIfValue: 0 },
+      { type: 'toggle', key: 'showVelocity', label: '速度 v', group: '矢量显示', showIf: 'advancedMode', showIfValue: 0 },
+      { type: 'toggle', key: 'showNormalForce', label: '支持力 FN', group: '矢量显示', showIf: 'advancedMode', showIfValue: 0 },
     ],
   },
   'anim-momentum-conservation': {

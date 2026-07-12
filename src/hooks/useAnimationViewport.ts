@@ -73,6 +73,8 @@ export interface AnimationViewportResult {
   canvasSize: CanvasSize
   /** 可视区域几何信息 + vp.transform（用于 AnimationSvgCanvas） */
   vp: ViewportInfo
+  /** 传入的 preset，供 useSceneScale 等下游消费者使用 */
+  preset: CanvasPreset
 }
 
 // ─── Hook ──────────────────────────────────────────────────────────────────
@@ -106,5 +108,5 @@ export function useAnimationViewport({
     overlayBottom,
   })
 
-  return { containerRef, canvasSize, vp }
+  return { containerRef, canvasSize, vp, preset }
 }

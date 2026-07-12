@@ -267,7 +267,7 @@ export function MomentumAdvancedScene({ layout, sceneScale, canvasSize, showVect
       {/* 冲击力矢量箭头 */}
       {showVectors && (
         <VectorArrow
-          origin={{ x: plateX + springCompression, y: nozzleY }}
+          originPixel={{ x: plateX + springCompression, y: nozzleY }}
           vector={{ x: impactForce, y: 0 }}
           type="appliedForce"
           sceneScale={sceneScale}

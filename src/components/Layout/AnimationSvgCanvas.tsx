@@ -152,31 +152,24 @@ interface AnimationSvgCanvasProps {
  *
  * // ── Canvas+SVG 混合（高频动画 Canvas，矢量箭头 SVG）────────
  * // Canvas 绘制粒子位置，SVG VectorArrow 显示速度/力矢量。
- * // 两者坐标系必须通过 vp 逆变换对齐，否则箭头起点偏离粒子。
- * const canvasRef = useRef<HTMLCanvasElement>(null)
- * const canvasSceneScale = useMemo(() => {
- *   const base = createSceneScaleFromViewport(vp, 'centerScale', { worldWidth, ... })
- *   return { ...base, originY: vp.visibleH * 0.70 }  // 自定义物理原点纵坐标
- * }, [vp, worldWidth])
- *
- * // 物理坐标 → SVG 设计坐标（正确：通过 canvas像素 → vp 逆变换）
- * const toDesignCoords = useCallback((wx: number, wy: number) => {
- *   const { px: cpx, py: cpy } = worldToPixel(wx, wy, canvasSceneScale)
- *   return { dx: (cpx - vp.tx) / vp.scale, dy: (cpy - vp.ty) / vp.scale }
- * }, [canvasSceneScale, vp.tx, vp.ty, vp.scale])
- *
- * const particleDesign = toDesignCoords(particle.x, particle.y)
+ * // 使用 useSceneScale + useCanvasViewport 统一坐标对齐。
+ * const { canvasRef, setupFrame, designToPixel } = useCanvasViewport({ vp, canvasSize })
+ * const sceneScale = useSceneScale({
+ *   vp, preset,
+ *   anchor: 'center',
+ *   physicsScaleDesign: ...,
+ *   centerSource: 'viewport',
+ * })
+ * // 物理坐标 → SVG 设计坐标（worldToDesign 输出设计坐标，直接用于 VectorArrow）
+ * const particleDesign = worldToDesign(particle.x, particle.y, sceneScale)
  *
  * return (
  *   <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform} canvasRef={canvasRef}>
  *     <VectorArrow
- *       originPixel={{ x: particleDesign.dx, y: particleDesign.dy }}
+ *       originPixel={{ x: particleDesign.px, y: particleDesign.py }}
  *       vector={{ x: particle.vx, y: particle.vy }}
  *       type="velocity"
- *       sceneScale={{
- *         ...svgSceneScale,
- *         maxVectorLength: canvasSceneScale.maxVectorLength / vp.scale,  // 设计坐标单位
- *       }}
+ *       sceneScale={sceneScale}
  *     />
  *   </AnimationSvgCanvas>
  * )

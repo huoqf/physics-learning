@@ -1,12 +1,10 @@
 
-import { useEffect, useRef, useMemo, useCallback } from 'react'
-import { useAnimationViewport } from '@/hooks'
+import { useEffect, useMemo, useCallback } from 'react'
+import { useAnimationViewport, useSceneScale, useCanvasViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, CANVAS_STYLE, withAlpha } from '@/theme/physics'
-import { createSceneScaleFromViewport, worldToPixel } from '@/scene'
-import type { SceneScale } from '@/scene'
-import { setupCanvasDPR, useDevicePixelRatio } from '@/hooks/useCanvasDPR'
+import { worldToDesign } from '@/scene'
 import {
   calcParticleRadius,
   calcParticlePeriod,
@@ -18,7 +16,6 @@ import { VectorArrow, drawMagneticFieldGrid, drawCanvasParticleTrajectory } from
 import { AnimationSvgCanvas } from '@/components/Layout'
 
 export function SimulationView() {
-  useDevicePixelRatio()
   const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
 
@@ -26,10 +23,10 @@ export function SimulationView() {
   const boundaryType = params.boundaryType ?? 0 // 0: 单边界, 1: 双平行边界, 2: 圆形边界
   const dynamicType = params.dynamicType ?? 0 // 0: 旋转圆, 1: 缩放圆, 2: 平移圆
 
-  const { containerRef, canvasSize, vp } = useAnimationViewport({
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({
     preset: mode === 0 ? CANVAS_PRESETS.splitH : CANVAS_PRESETS.full
   })
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const { canvasRef, setupFrame, designToPixel } = useCanvasViewport({ vp, canvasSize, mode: 'raw' })
 
   const q = params.q ?? 1
   const m = params.m ?? 1
@@ -75,67 +72,29 @@ export function SimulationView() {
   const tSlideIn = 1.5 // 固定 1.5s 飞入，实现全局同步发射
   const progressTime = time - tSlideIn
 
-  // ── 标准 VIEWPORT 架构（双 sceneScale：Canvas 用容器像素，SVG 用设计坐标）──
-  // SVG 设计坐标必须用 preset 的固定尺寸（420×650 或 840×650），与 vp.transform 对齐。
-  // 禁止用 vp.designVisibleW/H（会随容器实际尺寸变化，导致与 vp.transform 不一致）。
+  // ── VIEWPORT 架构 ──
+  // 统一 sceneScale（设计坐标），SVG 和 Canvas 共用
   const worldWidth = activeBoundaryType === 2 ? 50 : Math.max(1.0, d * 4.8)
-  const presetDesign = mode === 0 ? CANVAS_PRESETS.splitH : CANVAS_PRESETS.full
-  const designW = presetDesign.width
-  const designH = presetDesign.height
-
-  // Canvas 用的 sceneScale（容器像素，centerScale 模式）
-  const canvasSceneScale = useMemo(() => {
-    const safeVisibleW = Math.max(1, vp.visibleW)
-    const safeVisibleH = Math.max(1, vp.visibleH)
-    const safeVp = { ...vp, visibleW: safeVisibleW, visibleH: safeVisibleH }
-    const base = createSceneScaleFromViewport(safeVp, 'centerScale', {
-      worldWidth,
-      worldHeight: worldWidth * (safeVisibleH / safeVisibleW),
-      refMagnitudes: { force: 25, velocity: 45, lorentzForce: 25 },
-    })
-    return {
-      ...base,
-      originY: activeBoundaryType === 2 ? safeVisibleH * 0.78 : safeVisibleH * 0.70,
-    }
-  }, [vp, worldWidth, activeBoundaryType])
-
-  // SVG/VectorArrow 用的 sceneScale（设计坐标，与 vp.transform 对齐）
-  // 手动构造：originX/Y 为物理原点在设计坐标中的位置，scaleX/Y 为设计像素/米
-  const designScale = designW / worldWidth // 设计像素/米
-  const sceneScale = useMemo<SceneScale>(() => ({
-    scale: designScale,
-    scaleX: designScale,
-    scaleY: designScale,
-    originX: designW / 2,
-    originY: activeBoundaryType === 2 ? designH * 0.78 : designH * 0.70,
-    maxVectorLength: Math.min(designW, designH) * 0.3,
+  const sceneScale = useSceneScale({
+    vp,
+    preset,
+    anchor: 'center',
+    physicsScaleDesign: preset.width / worldWidth,
+    centerSource: 'custom',
+    centerX: preset.width / 2,
+    centerY: activeBoundaryType === 2 ? preset.height * 0.78 : preset.height * 0.70,
+    maxVectorLength: Math.min(preset.width, preset.height) * 0.3,
     refMagnitudes: { force: 25, velocity: 45, lorentzForce: 25 },
-  }), [designScale, designW, designH, activeBoundaryType])
+  })
 
-  // 物理坐标 → SVG 设计坐标
-  // 正确做法：先用 canvasSceneScale 得到 Canvas 像素坐标，再用 vp.transform 的逆变换得到设计坐标。
-  // 这样矢量起点与 Canvas 粒子位置完全对齐，不受容器宽高比影响。
-  const toDesignCoords = useCallback((wx: number, wy: number) => {
-    const { px: cpx, py: cpy } = worldToPixel(wx, wy, canvasSceneScale)
-    // vp.transform = translate(tx, ty) scale(s)
-    // 逆变换: design = (canvas像素 - translate) / scale
-    const dx = (cpx - vp.tx) / vp.scale
-    const dy = (cpy - vp.ty) / vp.scale
-    return { dx, dy }
-  }, [canvasSceneScale, vp.tx, vp.ty, vp.scale])
+  // Canvas 绘制辅助：物理坐标 → 容器像素（通过 sceneScale + designToPixel）
+  const toCanvasPixel = useCallback((wx: number, wy: number) => {
+    const { px: dx, py: dy } = worldToDesign(wx, wy, sceneScale)
+    return designToPixel(dx, dy)
+  }, [sceneScale, designToPixel])
 
-  // VectorArrow 用的 sceneScale：仅传递 maxVectorLength 和 refMagnitudes
-  // 起点用 originPixel（设计坐标），scaleX/Y 对此路径无效。
-  // maxVectorLength 用 Canvas 像素单位除以 vp.scale 得到设计坐标像素，保证筛头大小在屏幕上合理。
-  const svgSceneScale = useMemo<SceneScale>(() => ({
-    scale: 1,
-    scaleX: 1,
-    scaleY: 1,
-    originX: 0,
-    originY: 0,
-    maxVectorLength: canvasSceneScale.maxVectorLength / vp.scale,
-    refMagnitudes: sceneScale.refMagnitudes,
-  }), [canvasSceneScale.maxVectorLength, sceneScale.refMagnitudes, vp.scale])
+  // Canvas 绘制辅助：物理距离 → 容器像素距离
+  const metersToPixels = sceneScale.scaleX * vp.scale
 
   // 统一的单粒子轨迹及物理状态求解函数
   const getParticleState = useCallback((
@@ -290,11 +249,11 @@ export function SimulationView() {
     for (let i = 0; i <= steps; i++) {
       const t = tStart + (i / steps) * (tEnd - tStart)
       const state = getParticleState(t, 0, 0, v, activeTheta)
-      const { px, py } = worldToPixel(state.px, state.py, canvasSceneScale)
+      const { px, py } = toCanvasPixel(state.px, state.py)
       points.push({ x: px, y: py, t })
     }
     return points
-  }, [focusState.tOut, tSlideIn, v, activeTheta, getParticleState, canvasSceneScale])
+  }, [focusState.tOut, tSlideIn, v, activeTheta, getParticleState, sceneScale])
 
   // 历史轨迹：按真实时间过滤全程点集，三阶段连续
   const focusArcHistory = useMemo(() => {
@@ -307,14 +266,12 @@ export function SimulationView() {
   }, [focusArcHistory])
 
   useEffect(() => {
-    const ctx = setupCanvasDPR(canvasRef, canvasSize.width, canvasSize.height)
+    const ctx = setupFrame()
     if (!ctx) return
-
-    ctx.clearRect(0, 0, canvasSize.width, canvasSize.height)
     const { font } = canvasSize
 
     // 绘制磁场区域底色与符号网格
-    const { py: bStartY } = worldToPixel(0, 0, canvasSceneScale)
+    const { py: bStartY } = toCanvasPixel(0, 0)
 
     ctx.save()
     if (activeBoundaryType === 0) {
@@ -340,7 +297,7 @@ export function SimulationView() {
       ctx.fillText('磁场边界 y = 0', 16, bStartY + 18)
     } else if (activeBoundaryType === 1) {
       // 平行双边界：0 < y < d
-      const { py: bEndY } = worldToPixel(0, d, canvasSceneScale)
+      const { py: bEndY } = toCanvasPixel(0, d)
       ctx.fillStyle = PHYSICS_COLORS.magneticField
       ctx.globalAlpha = 0.04
       ctx.fillRect(0, bEndY, canvasSize.width, bStartY - bEndY)
@@ -370,8 +327,8 @@ export function SimulationView() {
       ctx.fillText(`磁场边界 y = d (${d.toFixed(1)}m)`, 16, bEndY - 8)
     } else {
       // 圆形边界：圆心在 (0, Rb)，半径为 Rb
-      const { px: bcx, py: bcy } = worldToPixel(0, Rb, canvasSceneScale)
-      const rPx = Rb * canvasSceneScale.scale
+      const { px: bcx, py: bcy } = toCanvasPixel(0, Rb)
+      const rPx = Rb * metersToPixels
 
       // 剪切磁场符号与背景
       ctx.save()
@@ -411,8 +368,8 @@ export function SimulationView() {
         
         // 采样画出完整偏转轨迹圆
         const pState = getParticleState(0, part.initX, 0, part.vVal, part.theta)
-        const { px: cx, py: cy } = worldToPixel(pState.xc, pState.yc, canvasSceneScale)
-        const rpPx = pState.R * canvasSceneScale.scale
+        const { px: cx, py: cy } = toCanvasPixel(pState.xc, pState.yc)
+        const rpPx = pState.R * metersToPixels
 
         ctx.beginPath()
         ctx.arc(cx, cy, rpPx, 0, 2 * Math.PI)
@@ -425,16 +382,16 @@ export function SimulationView() {
 
       // 1. 旋转圆特有的包络圆 (当 showEnvelope 开启时)
       if (dynamicType === 0 && showEnvelope) {
-        const { px: ox, py: oy } = worldToPixel(0, 0, canvasSceneScale)
+        const { px: ox, py: oy } = toCanvasPixel(0, 0)
 
         // 包络圆（半径为 2R 的半圆）
         ctx.beginPath()
-        ctx.arc(ox, oy, 2 * R * canvasSceneScale.scale, Math.PI, 2 * Math.PI)
+        ctx.arc(ox, oy, 2 * R * metersToPixels, Math.PI, 2 * Math.PI)
         ctx.fillStyle = withAlpha(PHYSICS_COLORS.appliedForce, 0.04)
         ctx.fill()
 
         ctx.beginPath()
-        ctx.arc(ox, oy, 2 * R * canvasSceneScale.scale, Math.PI, 2 * Math.PI)
+        ctx.arc(ox, oy, 2 * R * metersToPixels, Math.PI, 2 * Math.PI)
         ctx.strokeStyle = PHYSICS_COLORS.appliedForce
         ctx.setLineDash([6, 4])
         ctx.lineWidth = 1.5
@@ -444,26 +401,26 @@ export function SimulationView() {
 
       // 2. 绘制圆心轨迹与各粒子圆心点 (当 showGeometry 开启时)
       if (showGeometry) {
-        const { px: ox, py: oy } = worldToPixel(0, 0, canvasSceneScale)
+        const { px: ox, py: oy } = toCanvasPixel(0, 0)
 
         // 2.1 绘制圆心轨迹参考线
         ctx.save()
         if (dynamicType === 0) {
           // 旋转圆：以原点为圆心，半径为 R 的半圆弧
           ctx.beginPath()
-          ctx.arc(ox, oy, R * canvasSceneScale.scale, Math.PI, 2 * Math.PI)
+          ctx.arc(ox, oy, R * metersToPixels, Math.PI, 2 * Math.PI)
           ctx.strokeStyle = withAlpha(PHYSICS_COLORS.appliedForce, 0.5)
           ctx.setLineDash([3, 3])
           ctx.lineWidth = 1.2
           ctx.stroke()
           ctx.fillStyle = PHYSICS_COLORS.appliedForce
           ctx.font = `${font(9)}px sans-serif`
-          ctx.fillText('圆心轨迹 (r = R)', ox + 8, oy - R * canvasSceneScale.scale - 6)
+          ctx.fillText('圆心轨迹 (r = R)', ox + 8, oy - R * metersToPixels - 6)
         } else if (dynamicType === 1) {
           // 缩放圆：共线水平线（在 x 轴上）
           ctx.beginPath()
-          ctx.moveTo(ox - 3 * R * canvasSceneScale.scale, oy)
-          ctx.lineTo(ox + 3 * R * canvasSceneScale.scale, oy)
+          ctx.moveTo(ox - 3 * R * metersToPixels, oy)
+          ctx.lineTo(ox + 3 * R * metersToPixels, oy)
           ctx.strokeStyle = withAlpha(PHYSICS_COLORS.appliedForce, 0.5)
           ctx.setLineDash([3, 3])
           ctx.lineWidth = 1.2
@@ -473,7 +430,7 @@ export function SimulationView() {
           ctx.fillText('圆心轨迹直线', ox + 16, oy - 6)
         } else {
           // 平移圆：平行于边界的水平线
-          const { py: fcy } = worldToPixel(0, focusState.yc, canvasSceneScale)
+          const { py: fcy } = toCanvasPixel(0, focusState.yc)
           ctx.beginPath()
           ctx.moveTo(0, fcy)
           ctx.lineTo(canvasSize.width, fcy)
@@ -490,7 +447,7 @@ export function SimulationView() {
         // 2.2 绘制各粒子当前对应的圆心点
         particleFamily.forEach((part) => {
           const pState = getParticleState(0, part.initX, 0, part.vVal, part.theta)
-          const { px: cx, py: cy } = worldToPixel(pState.xc, pState.yc, canvasSceneScale)
+          const { px: cx, py: cy } = toCanvasPixel(pState.xc, pState.yc)
           
           ctx.beginPath()
           ctx.arc(cx, cy, part.isFocus ? 4.5 : 3, 0, 2 * Math.PI)
@@ -511,9 +468,9 @@ export function SimulationView() {
 
     // 绘制焦点粒子相关的辅助线（几何定理可视化）
     if (showGeometry && mode === 0) {
-      const { px: ox, py: oy } = worldToPixel(0, 0, canvasSceneScale)
-      const { px: cx, py: cy } = worldToPixel(focusState.xc, focusState.yc, canvasSceneScale)
-      const { px: ex, py: ey } = worldToPixel(focusState.xOut, focusState.yOut, canvasSceneScale)
+      const { px: ox, py: oy } = toCanvasPixel(0, 0)
+      const { px: cx, py: cy } = toCanvasPixel(focusState.xc, focusState.yc)
+      const { px: ex, py: ey } = toCanvasPixel(focusState.xOut, focusState.yOut)
 
       ctx.save()
       ctx.strokeStyle = PHYSICS_COLORS.axis
@@ -559,7 +516,7 @@ export function SimulationView() {
         const thetaRadArc = (activeTheta * Math.PI) / 180
         const deltaPhiVal = sign === 1 ? 2 * Math.PI - 2 * thetaRadArc : 2 * thetaRadArc
         const endAngle = startAngle - sign * deltaPhiVal
-        ctx.arc(cx, cy, R * canvasSceneScale.scale, startAngle, endAngle, sign > 0)
+        ctx.arc(cx, cy, R * metersToPixels, startAngle, endAngle, sign > 0)
         ctx.lineTo(cx, cy)
         ctx.fillStyle = withAlpha(PHYSICS_COLORS.positiveCharge, 0.08)
         ctx.fill()
@@ -569,7 +526,7 @@ export function SimulationView() {
     }
 
     // 绘制焦点粒子轨迹（统一组件：预测虚线 + 历史虚线 + 拖尾 + 本体）
-    const { px: fpx, py: fpy } = worldToPixel(focusState.px, focusState.py, canvasSceneScale)
+    const { px: fpx, py: fpy } = toCanvasPixel(focusState.px, focusState.py)
     drawCanvasParticleTrajectory({
       ctx,
       px: fpx,
@@ -585,7 +542,7 @@ export function SimulationView() {
     if (mode === 1) {
       particleFamily.filter(p => !p.isFocus).forEach(part => {
         const pState = getParticleState(progressTime, part.initX, 0, part.vVal, part.theta)
-        const { px: pX, py: pY } = worldToPixel(pState.px, pState.py, canvasSceneScale)
+        const { px: pX, py: pY } = toCanvasPixel(pState.px, pState.py)
 
         // 拖尾
         const unfocusTail = []
@@ -595,7 +552,7 @@ export function SimulationView() {
           const tSample = progressTime - tailDuration * (1 - i / tailSteps)
           if (tSample >= -tSlideIn) {
             const tState = getParticleState(tSample, part.initX, 0, part.vVal, part.theta)
-            const { px: sX, py: sY } = worldToPixel(tState.px, tState.py, canvasSceneScale)
+            const { px: sX, py: sY } = toCanvasPixel(tState.px, tState.py)
             unfocusTail.push({ x: sX, y: sY, alpha: i / tailSteps })
           }
         }
@@ -642,7 +599,7 @@ export function SimulationView() {
     showArc,
     showEnvelope,
     progressTime,
-    canvasSceneScale,
+    sceneScale,
     canvasSize,
     tOut,
     R,
@@ -658,7 +615,7 @@ export function SimulationView() {
 
 
   // 矢量起点转为设计坐标（<g transform={vp.transform}> 内统一使用设计坐标）
-  const particleDesign = toDesignCoords(focusState.px, focusState.py)
+  const particleDesign = worldToDesign(focusState.px, focusState.py, sceneScale)
 
 
 
@@ -671,19 +628,19 @@ export function SimulationView() {
       {/* 焦点粒子速度矢量（全程显示） */}
       {showVelocityVector && (
         <VectorArrow
-          originPixel={{ x: particleDesign.dx, y: particleDesign.dy }}
+          originPixel={{ x: particleDesign.px, y: particleDesign.py }}
           vector={{ x: focusState.vx, y: focusState.vy }}
           type="velocity"
-          sceneScale={svgSceneScale}
+          sceneScale={sceneScale}
         />
       )}
       {/* 焦点粒子洛伦兹力矢量（仅在磁场偏转区内） */}
       {inField && (
         <VectorArrow
-          originPixel={{ x: particleDesign.dx, y: particleDesign.dy }}
+          originPixel={{ x: particleDesign.px, y: particleDesign.py }}
           vector={forceVector}
           type="lorentzForce"
-          sceneScale={svgSceneScale}
+          sceneScale={sceneScale}
         />
       )}
     </AnimationSvgCanvas>

@@ -1,11 +1,9 @@
 import { PhysicsGround } from '@/components/Physics'
-import { useAnimationViewport } from '@/hooks'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { createSceneScaleFromViewport } from '@/scene'
 
 import { PHYSICS_COLORS } from '@/theme/physics'
 
@@ -14,7 +12,6 @@ import { useParticleSimulation } from './hooks/useParticleSimulation'
 import { MomentumBasicScene } from './components/MomentumBasicScene'
 import { MomentumAdvancedScene } from './components/MomentumAdvancedScene'
 import { MomentumTheoremDefs } from './components/MomentumTheoremDefs'
-import { MomentumTheoremCharts } from './components/MomentumTheoremCharts'
 import { MT_LAYOUT } from './components/constants'
 
 export default function MomentumTheoremAnimation() {
@@ -25,19 +22,27 @@ export default function MomentumTheoremAnimation() {
       showVectors: s.showVectors,
     }))
   )
-  // cardWidth 基于 preset.width 估算（useAnimationViewport 要求在调用前确定 overlay）
-  const cardWidth = Math.max(300, CANVAS_PRESETS.full.width * 0.42)
-  const { containerRef, canvasSize, vp } = useAnimationViewport({
-    preset: CANVAS_PRESETS.full,
-    presetCompensation: 1.2,
-    overlayRight: Math.round(cardWidth + 24),
+
+  const showGravity = params.showGravity === 1
+  const showVelocity = params.showVelocity === 1
+  const showNormalForce = params.showNormalForce === 1
+
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({
+    preset: CANVAS_PRESETS.splitH,
   })
 
-  const groundY = canvasSize.height - MT_LAYOUT.groundOffset
+  // 设计坐标：地面 Y（preset 高度 - 安全余量）
+  const groundDesignY = preset.height - MT_LAYOUT.groundOffset
 
-  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'visibleArea', {
-    refMagnitudes: { velocity: 15, force: 200 },
-  }), [vp])
+  const sceneScale = useSceneScale({
+    vp,
+    preset,
+    anchor: 'viewport',
+    physicsWidth: vp.visibleW / vp.scale,
+    physicsHeight: vp.visibleH / vp.scale,
+    originSource: 'topLeft',
+    refMagnitudes: { velocity: 15, force: 200, gravity: 25, normalForce: 200 },
+  })
 
   const layout = useMomentumTheoremLayout({ params, time, vp })
 
@@ -50,17 +55,20 @@ export default function MomentumTheoremAnimation() {
     springCompression: layout.springCompression
   })
 
+  // 设计坐标：可视区域边界
+  const designVisibleX = (vp.visibleX - vp.tx) / vp.scale
+  const designVisibleW = vp.visibleW / vp.scale
+
   return (
     <div className="w-full h-full relative overflow-hidden bg-neutral-50 rounded-xl">
-      {/* ========== 左侧物理动画容器 (大 SVG) ========== */}
       <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
         <MomentumTheoremDefs />
 
         {/* ========== 物理地面 ========== */}
         <PhysicsGround
-          x={vp.visibleX + 16}
-          y={groundY}
-          width={vp.visibleW - 32}
+          x={designVisibleX + 16}
+          y={groundDesignY}
+          width={designVisibleW - 32}
           type="ground"
           appearance={{
             color: PHYSICS_COLORS.labelText,
@@ -76,8 +84,11 @@ export default function MomentumTheoremAnimation() {
             sceneScale={sceneScale}
             canvasSize={canvasSize}
             showVectors={showVectors}
+            showGravity={showGravity}
+            showVelocity={showVelocity}
+            showNormalForce={showNormalForce}
             vp={vp}
-            groundY={groundY}
+            groundY={groundDesignY}
           />
         )}
 
@@ -89,18 +100,10 @@ export default function MomentumTheoremAnimation() {
             canvasSize={canvasSize}
             showVectors={showVectors}
             particles={particles}
-            groundY={groundY}
+            groundY={groundDesignY}
           />
         )}
       </AnimationSvgCanvas>
-
-      {/* ========== 右侧浮动 HTML 面板卡片 (F-t & v-t 图表) ========== */}
-      <div
-        className="absolute top-4 right-4 bottom-4 bg-white/95 border border-neutral-200/80 rounded-2xl shadow-xl p-4 flex flex-col gap-4 overflow-y-auto"
-        style={{ width: cardWidth }}
-      >
-        <MomentumTheoremCharts layout={layout} />
-      </div>
     </div>
   )
 }

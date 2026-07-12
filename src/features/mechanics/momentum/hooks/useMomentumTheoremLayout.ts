@@ -52,6 +52,8 @@ export function useMomentumTheoremLayout({ params, time, vp }: MomentumLayoutPar
   const R_ball = MT_LAYOUT.ballBaseRadius + m * MT_LAYOUT.massRadiusScale
   const cushionTopY = -MT_LAYOUT.cushionHeight
   const ballRestY = cushionTopY - R_ball
+  // 压缩量上限：球底不穿透地面（cushionTopY + compression + R_ball <= 0）
+  const effectiveMaxCompression = Math.min(MT_LAYOUT.cushionMaxCompression, MT_LAYOUT.cushionHeight)
   let ballY = 0
 
   if (currentT < fallTime) {
@@ -62,13 +64,13 @@ export function useMomentumTheoremLayout({ params, time, vp }: MomentumLayoutPar
     phase = 'compressing'
     const dt = currentT - fallTime
     const ratio = dt / collisionDt
-    cushionCompression = ratio * MT_LAYOUT.cushionMaxCompression
+    cushionCompression = ratio * effectiveMaxCompression
     ballY = ballRestY + cushionCompression
   } else if (currentT < fallTime + collisionDt * 2) {
     phase = 'recovering'
     const dt = currentT - fallTime - collisionDt
     const ratio = 1 - dt / collisionDt
-    cushionCompression = ratio * MT_LAYOUT.cushionMaxCompression
+    cushionCompression = ratio * effectiveMaxCompression
     ballY = ballRestY + cushionCompression
   } else {
     phase = 'done'
@@ -137,8 +139,11 @@ export function useMomentumTheoremLayout({ params, time, vp }: MomentumLayoutPar
   // 进阶模式计算
   const impactForce = calculateFluidImpactForce(rho, S, v_fluid, alpha)
 
-  const plateX = vp.visibleX + vp.visibleW * 0.72
-  const nozzleX = vp.visibleX + vp.visibleW * 0.22
+  // 设计坐标：可视区域边界
+  const designVisibleX = (vp.visibleX - vp.tx) / vp.scale
+  const designVisibleW = vp.visibleW / vp.scale
+  const plateX = designVisibleX + designVisibleW * 0.72
+  const nozzleX = designVisibleX + designVisibleW * 0.22
 
   const maxSpringCompression = 25
   const maxForceRef = rho * 0.05 * 10 * 10 * 2

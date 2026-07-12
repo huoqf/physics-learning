@@ -54,6 +54,14 @@ export function worldToPixel(
   };
 }
 
+/**
+ * worldToPixel 的语义别名 — 输出是设计坐标（design-unit），不是容器像素。
+ * 在 `<g transform={vp.transform}>` 内使用时，viewport transform 会将设计坐标映射到容器像素。
+ *
+ * 新代码统一使用 worldToDesign，旧代码逐步替换。
+ */
+export const worldToDesign = worldToPixel
+
 // ═══════════════════════════════════════════════════════════════════════════
 // 设计坐标中心工厂
 // ═══════════════════════════════════════════════════════════════════════════
@@ -146,8 +154,10 @@ function getDefaultMaxVectorLength(
  * 从 ViewportInfo 构造 SceneScale，确保矢量归一化与可视区域对齐。
  *
  * - mode='transform'   : vectorBounds 使用设计坐标 (0,0,designW,designH)
- * - mode='visibleArea' : vectorBounds 使用可视区域 (visibleX,visibleY,visibleW,visibleH)
- * - mode='centerScale' : vectorBounds 以 centerX/centerY 为原点
+ * - mode='visibleArea' : ⚠️ @deprecated 输出容器像素单位，不适合在 `<g transform={vp.transform}>` 内使用。
+ *   请改用 `useSceneScale({ anchor: 'viewport' })`，输出设计坐标。
+ * - mode='centerScale' : ⚠️ @deprecated 输出容器像素单位，不适合在 `<g transform={vp.transform}>` 内使用。
+ *   请改用 `useSceneScale({ anchor: 'center' })`，输出设计坐标。
  *
  * 注意：此函数不感知 presetCompensation。若组件同时依赖 vp.scale（含补偿）
  * 和 SceneScale（纯几何），需在调用侧对齐坐标系（如 Kepler/Satellite 的

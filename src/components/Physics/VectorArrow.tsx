@@ -10,15 +10,16 @@ import { calculateVectorPixelLength } from '../../utils/vectorLength';
  *
  * 【起点坐标】二选一：
  * - `origin`：物理坐标（米），由 sceneScale 转换为像素坐标。物理 y↑正方向。
- * - `originPixel`：画布像素坐标，直接使用，跳过 sceneScale 转换。
- *   遵循 SVG 坐标系（y↓正方向），调用方需自行完成物理→画布的 y 翻转。
+ * - `originPixel`：设计坐标（design-unit），在 `<g transform={vp.transform}>` 内直接使用，跳过 sceneScale 转换。
+ *   遵循 SVG 坐标系（y↓正方向），调用方需自行完成物理→设计的 y 翻转。
+ *   可通过 `worldToDesign(物理x, 物理y, sceneScale)` 获取。
  *
  * ⚠️ 同时传入两者时，originPixel 优先，origin 被忽略。
  */
 interface VectorArrowProps {
-  /** 矢量起点（物理坐标，米，y↑正方向，sceneScale 会将其转换为画布像素坐标） */
+  /** 矢量起点（物理坐标，米，y↑正方向，sceneScale 会将其转换为设计坐标） */
   origin?: Vector2
-  /** 矢量起点（画布像素坐标，y↓正方向，直接使用，跳过 sceneScale 转换） */
+  /** 矢量起点（设计坐标，y↓正方向，在 `<g transform={vp.transform}>` 内直接使用） */
   originPixel?: { x: number; y: number }
   /** 矢量值（物理坐标，y↑正方向） */
   vector: Vector2

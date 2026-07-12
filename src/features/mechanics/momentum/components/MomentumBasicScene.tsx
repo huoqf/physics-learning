@@ -8,6 +8,7 @@ import type { SceneScale } from '@/scene/SceneScale'
 
 interface MomentumBasicSceneProps {
   layout: {
+    m: number
     h: number
     phase: 'falling' | 'compressing' | 'recovering' | 'done'
     cushionCompression: number
@@ -22,18 +23,22 @@ interface MomentumBasicSceneProps {
   sceneScale: SceneScale
   canvasSize: CanvasSize
   showVectors: boolean
+  showGravity: boolean
+  showVelocity: boolean
+  showNormalForce: boolean
   vp: ViewportInfo
   groundY: number
 }
 
-export function MomentumBasicScene({ layout, sceneScale, canvasSize, showVectors, vp, groundY }: MomentumBasicSceneProps) {
+export function MomentumBasicScene({ layout, sceneScale, canvasSize, showVectors, showGravity, showVelocity, showNormalForce, vp, groundY }: MomentumBasicSceneProps) {
   const {
-    h,
+    m, h,
     phase, cushionCompression, R_ball, cushionTopY, ballRestY, ballY,
     fallV, F_avg, collisionDt
   } = layout
 
-  const ballCenterX = vp.centerX
+  // 设计坐标：可视区域水平中心
+  const ballCenterX = (vp.centerX - vp.tx) / vp.scale
 
   return (
     <g transform={`translate(0, ${groundY})`}>
@@ -90,23 +95,36 @@ export function MomentumBasicScene({ layout, sceneScale, canvasSize, showVectors
         m
       </text>
 
-      {/* 速度矢量箭头 */}
-      {showVectors && phase === 'falling' && fallV > 0 && (
+      {/* 重力矢量 mg（全程显示，从球心向下） */}
+      {showVectors && showGravity && (
         <VectorArrow
-          origin={{ x: ballCenterX, y: ballY - R_ball - 4 }}
-          vector={{ x: 0, y: -fallV }}
-          type="velocity"
+          originPixel={{ x: ballCenterX, y: ballY }}
+          vector={{ x: 0, y: -m * MT_LAYOUT.g }}
+          type="gravity"
           sceneScale={sceneScale}
+          label="mg"
         />
       )}
 
-      {/* 碰撞力条（支持力） */}
-      {showVectors && (phase === 'compressing' || phase === 'recovering') && (
+      {/* 速度矢量 v（下落阶段，从球心向下） */}
+      {showVectors && showVelocity && phase === 'falling' && fallV > 0 && (
         <VectorArrow
-          origin={{ x: ballCenterX, y: ballY + R_ball + 4 }}
+          originPixel={{ x: ballCenterX, y: ballY }}
+          vector={{ x: 0, y: -fallV }}
+          type="velocity"
+          sceneScale={sceneScale}
+          label="v"
+        />
+      )}
+
+      {/* 支持力矢量 F_N（碰撞阶段，从球心向上） */}
+      {showVectors && showNormalForce && (phase === 'compressing' || phase === 'recovering') && (
+        <VectorArrow
+          originPixel={{ x: ballCenterX, y: ballY }}
           vector={{ x: 0, y: F_avg }}
           type="normalForce"
           sceneScale={sceneScale}
+          label="FN"
         />
       )}
 
