@@ -15,7 +15,7 @@ export function VectorDecomposition({ physicsData, sceneScale, onDragStart }: Ve
 
   return (
     <>
-      <VectorArrow originPixel={{ x: origin.cx, y: -origin.cy }}
+      <VectorArrow originPixel={{ x: origin.cx, y: origin.cy }}
         vector={{ x: fxEnd.cx - origin.cx, y: -(fxEnd.cy - origin.cy) }}
         type="forceComponent" sceneScale={sceneScale}
         strokeWidth={CANVAS_STYLE.stroke.vectorSub}
@@ -25,7 +25,7 @@ export function VectorDecomposition({ physicsData, sceneScale, onDragStart }: Ve
         fill={PHYSICS_COLORS.forceComponent} fontWeight="bold"
         textAnchor={fxEnd.cx > origin.cx ? "end" : "start"}>F_x</text>
 
-      <VectorArrow originPixel={{ x: origin.cx, y: -origin.cy }}
+      <VectorArrow originPixel={{ x: origin.cx, y: origin.cy }}
         vector={{ x: fyEnd.cx - origin.cx, y: -(fyEnd.cy - origin.cy) }}
         type="forceComponent" sceneScale={sceneScale}
         strokeWidth={CANVAS_STYLE.stroke.vectorSub}
@@ -41,7 +41,7 @@ export function VectorDecomposition({ physicsData, sceneScale, onDragStart }: Ve
         stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.reference}
         strokeDasharray={CANVAS_STYLE.dash.projection.join(',')} />
 
-      <VectorArrow originPixel={{ x: origin.cx, y: -origin.cy }}
+      <VectorArrow originPixel={{ x: origin.cx, y: origin.cy }}
         vector={{ x: fResultantEnd.cx - origin.cx, y: -(fResultantEnd.cy - origin.cy) }}
         type="force" sceneScale={sceneScale}
         strokeWidth={CANVAS_STYLE.stroke.vectorMain}

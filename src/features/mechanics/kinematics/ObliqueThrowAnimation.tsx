@@ -1,6 +1,6 @@
 import { VectorArrow, VectorDefs, Ball, ParticleTrajectory } from '@/components/Physics'
-import { useSceneScale } from '@/hooks'
-import { useCanvasSize, useViewport, physicsToCanvasWithOrigin } from '@/utils'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
+import { physicsToCanvasWithOrigin } from '@/utils'
 import { useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -46,13 +46,9 @@ export default function ObliqueThrowAnimation() {
       setIsPlaying: s.setIsPlaying,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 100, height: 100 })
+  // 100×100 归一化坐标系：保留原 raw-SVG 坐标语义，仅统一 Viewport Hook 入口
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: OBLIQUE_DESIGN })
   const { font } = canvasSize
-
-  const vp = useViewport(canvasSize, {
-    designWidth: OBLIQUE_DESIGN.width,
-    designHeight: OBLIQUE_DESIGN.height,
-  })
 
   const {
     v0 = 15,
@@ -311,19 +307,19 @@ export default function ObliqueThrowAnimation() {
         {/* 速度分量矢量箭头 */}
         {showVectors && !isLanded && (
           <g>
-            <VectorArrow originPixel={{ x: ballCanvas.cx, y: -ballCanvas.cy }} vector={{ x: currentState.vx, y: 0 }}
+            <VectorArrow originPixel={{ x: ballCanvas.cx, y: ballCanvas.cy }} vector={{ x: currentState.vx, y: 0 }}
               type="velocityX" sceneScale={obliqueSceneScale} strokeWidth={STROKE.vectorSub} pixelLength={vxPxLen} />
             <text x={ballCanvas.cx + obliqueSceneScale.maxVectorLength * 0.3 + 10} y={ballCanvas.cy + 3}
               fontSize={font(9)} fill={PHYSICS_COLORS.velocityX} fontWeight="bold">vₓ</text>
 
             {Math.abs(currentState.vy) > 0.05 && (
-              <VectorArrow originPixel={{ x: ballCanvas.cx, y: -ballCanvas.cy }} vector={{ x: 0, y: currentState.vy }}
+              <VectorArrow originPixel={{ x: ballCanvas.cx, y: ballCanvas.cy }} vector={{ x: 0, y: currentState.vy }}
                 type="velocityY" sceneScale={obliqueSceneScale} strokeWidth={STROKE.vectorSub} pixelLength={vyPxLen} />
             )}
             <text x={ballCanvas.cx - 3} y={ballCanvas.cy - obliqueSceneScale.maxVectorLength * 0.3 + (currentState.vy >= 0 ? -6 : 12)}
               fontSize={font(9)} fill={PHYSICS_COLORS.velocityY} fontWeight="bold" textAnchor="middle">vᵧ</text>
 
-            <VectorArrow originPixel={{ x: ballCanvas.cx, y: -ballCanvas.cy }} vector={{ x: currentState.vx, y: currentState.vy }}
+            <VectorArrow originPixel={{ x: ballCanvas.cx, y: ballCanvas.cy }} vector={{ x: currentState.vx, y: currentState.vy }}
               type="velocity" sceneScale={obliqueSceneScale} strokeWidth={STROKE.vectorMain} pixelLength={totalPxLen} />
             <text x={ballCanvas.cx + obliqueSceneScale.maxVectorLength * 0.3 + 8} y={ballCanvas.cy - obliqueSceneScale.maxVectorLength * 0.3 - 4}
               fontSize={font(9)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>

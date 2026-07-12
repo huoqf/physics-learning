@@ -1,7 +1,7 @@
 # VIEWPORT 架构统一方案
 
 > 编写时间：2026-07-12
-> 状态：**Phase 1-3 已完成，Phase 4 进行中，Phase 5 待评估**
+> 状态：**Phase 0-3、Phase A-C、Phase 5 已完成，Phase 4 进行中（37/51）**
 > 目标：逐步统一 VIEWPORT 实现组件，覆盖 SVG/Canvas，完成实际分辨率测量、画面映射坐标转化、坐标对齐
 
 **状态标记说明**：
@@ -90,10 +90,9 @@ Viewport → SVG / Canvas 统一渲染
 
 | 尺寸 | 文件 | 处理策略 |
 |------|------|---------|
-| 100×100 | VerticalThrow/Projectile/ObliqueThrow | 归一化坐标系，保持现状，不迁移到 preset |
-| 400×180 | StroboscopicAnimation | 条带子场景，评估是否新增 `strip` preset |
-| 700×650 | SpringCompositeAnimation | 旧 full 尺寸，迁移到 full(840×650) |
-| 400×350 等 | CenterExtra 文件 | 侧栏图表，不需要 viewport 体系 |
+| 100×100 | VerticalThrow/Projectile/ObliqueThrow | ✅ 已迁移到 `useAnimationViewport` + `useSceneScale({ anchor: 'custom' })` |
+| 400×180 | CenterExtra 文件（21 个） | 侧栏图表，不需要 viewport 体系 |
+| 600×160 | KinematicsAdvancedAnimation | ✅ 已迁移到 `splitV(840×325)` |
 
 ---
 
@@ -645,26 +644,11 @@ const draw = useCallback(() => {
 
 ---
 
-## 八、createSceneScaleFromViewport 处置策略 🔧
+## 八、createSceneScaleFromViewport 处置策略 ✅ 已执行
 
-**现状**：42 个**业务文件**直接调用 `createSceneScaleFromViewport`（不含 `SceneScale.ts` 定义、`index.ts` 导出、`types.ts` 类型引用），其中：
-- `visibleArea` 模式：**23 个文件**（含 NewtonSecond、Friction 通过 `SceneLayoutProfile` 传入，运行时行为与直接传字符串一致，迁移时同样处理），输出容器像素，需修复
-- `centerScale` 模式：**8 个文件**（含 BoundaryMagneticField），输出容器像素，需修复
-- `transform` 模式：**11 个文件**（含 SpringCompositeAnimation 自构 vp、sandboxVp、chaseVp），输出设计坐标
-
-**`transform` 模式注意事项**：虽然输出是设计坐标（`originX=0, originY=0, scaleX=designWidth/worldWidth`），但当调用方传入 `worldWidth/worldHeight` 时，`scaleX/Y` 语义变为"物理世界不铺满画布"——此时单位仍是设计坐标，但物理世界只占画布的一部分。调用方需确保 `worldWidth` 含义与物理坐标范围一致。
-
-**处置策略**：
-
-1. **不废弃** `createSceneScaleFromViewport`。它是 SceneScale 的底层构造函数，`useSceneScale` 内部仍可使用其 `transform` 模式（该模式输出设计坐标，无 bug）。
-
-2. **标记 `visibleArea` 和 `centerScale` 模式为 `@deprecated`**。新代码应通过 `useSceneScale` 使用，`useSceneScale` 内部将这两个模式的逻辑重写为设计坐标输出。标记时需同时添加：
-   - JSDoc `@deprecated` 注释，明确写"输出容器像素单位，不适合在 `<g transform={vp.transform}>` 内使用，请改用 `useSceneScale`"
-   - ESLint no-restricted-imports 规则或代码审查约束：**新代码禁止使用 `visibleArea`/`centerScale` 模式**，避免 deprecated 注释被忽略
-
-3. **存量 `visibleArea`/`centerScale` 调用逐步迁移**到 `useSceneScale`，随 Phase 4 legacy 迁移批次进行。
-
-4. **`transform` 模式保持现状**。它已经是设计坐标输出，无需修改。
+- **`visibleArea`/`centerScale` 模式**：已标记 `@deprecated`，存量文件通过 Phase 4/A/B/C 逐步迁移到 `useSceneScale`
+- **`transform` 模式**：输出设计坐标，保持现状。存量 6 个文件待 Phase 4 后续批次迁移
+- **新代码**：统一使用 `useSceneScale`，禁止直接调用 `createSceneScaleFromViewport`
 
 ---
 
@@ -679,6 +663,8 @@ const draw = useCallback(() => {
 
 选错会导致画面上下翻转或整体下移。
 
+**VectorArrow `origin` → `originPixel` 迁移注意**：旧 `origin={{ x, y: -y }}` 的 Y 取负是配合 `worldToPixel` 的 `py = originY - y * scaleY` 翻转使用。迁移到 `originPixel` 后**不能保留 Y 取负**——`originPixel` 直接使用坐标值，不经过 `worldToPixel` 转换。正确做法：`originPixel={{ x, y }}`（去掉取负），`vector` prop 的 Y 取负保留（物理 y↑→SVG y↓）。
+
 ### 迁移模式
 
 #### 模式 A：legacy → useAnimationViewport + useSceneScale
@@ -690,7 +676,7 @@ const [ref, canvas] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1
 const vp = useViewport(canvas, { designWidth: 700, designHeight: 450 })
 const sceneScale: SceneScale = createSceneScaleFromViewport(vp, 'visibleArea', { ... })
 
-// 之后（标准路径）⚠️ 待 useSceneScale 实现后可用
+// 之后（标准路径）
 import { useAnimationViewport } from '@/hooks'
 import { useSceneScale } from '@/hooks/useSceneScale'
 import type { SceneScale } from '@/scene'
@@ -708,7 +694,7 @@ const sceneScale: SceneScale = createSceneScaleFromViewport(vp, 'centerScale', {
   worldHeight: vp.visibleH / scale,
 })
 
-// 之后（design coordinates）⚠️ 待 useSceneScale 实现后可用
+// 之后（design coordinates）
 const physicsScalePx = (vp.visibleW - padding) / (2 * rMax)
 const physicsScaleDesign = physicsScalePx / vp.scale
 const sceneScale: SceneScale = useSceneScale({
@@ -727,12 +713,12 @@ const sceneScale: SceneScale = useSceneScale({
 const scale = computeScale(width, height, worldBounds)
 const pos = physicsToCanvasWithOrigin(x, y, originX, originY, scale)
 
-// 之后（标准路径）⚠️ 待 useSceneScale 实现后可用
+// 之后（标准路径）
 const sceneScale: SceneScale = useSceneScale({ vp, preset, anchor: 'viewport', ... })
 const { px, py } = worldToDesign(x, y, sceneScale)  // worldToDesign = worldToPixel 别名，输出设计坐标
 ```
 
-### 需要修复的潜在 bug 页面
+### 待修复的潜在 bug 页面
 
 以下页面将容器像素传入 SceneScale，在有 overlay 或非标准容器比例时会产生二次缩放：
 
@@ -747,120 +733,62 @@ const { px, py } = worldToDesign(x, y, sceneScale)  // worldToDesign = worldToPi
 
 ## 十、实施计划
 
-### Phase 0: 文档对齐（0.5 天）✅
+### Phase 0: 文档对齐 ✅
 
-- 修正 `PHYSICS_ANIMATION_ARCHITECT.md` 中 preset 尺寸（700→840）
-- 新增本文件 `VIEWPORT_ARCHITECTURE.md`
+### Phase 1: useSceneScale 统一入口 ✅
 
-### Phase 1: useSceneScale 统一入口 ✅ 已完成
+- 新增 `src/hooks/useSceneScale.ts`，所有 anchor 模式输出设计坐标
+- 新增 `worldToDesign` 别名，标记 `visibleArea`/`centerScale` 为 `@deprecated`
 
-- 新增 `src/hooks/useSceneScale.ts`
-- 所有 anchor 模式输出设计坐标单位
-- `physicsScaleDesign` 单位约定
-- 新增 `worldToDesign` 别名（= `worldToPixel`），新代码和迁移示例统一使用
-- 标记 `createSceneScaleFromViewport` 的 `visibleArea`/`centerScale` 模式为 `@deprecated`
+### Phase 2: preset 贯穿 + SceneScale 验证 ✅
 
-### Phase 2: preset 贯穿 + SceneScale 验证 ✅ 已完成
+- `AnimationViewportResult` 增加 `preset` 字段
+- BoundaryMagneticField SimulationView 全路径迁移验证通过（SVG + Canvas + 混合）
 
-- `AnimationViewportResult` 增加 `preset` 字段 ✅
-- BoundaryMagneticField SimulationView 迁移验证 ✅
-  - SVG 路径：手动 `sceneScale` → `useSceneScale({ anchor: 'center' })`
-  - SVG 路径：`toDesignCoords` → `worldToDesign`
-  - SVG 路径：`svgSceneScale` → 直接用 `sceneScale`
-  - Canvas 路径：`canvasSceneScale`（centerScale 容器像素）→ `sceneScale` + `designToPixel` ✅
-  - Canvas 路径：`setupCanvasDPR` + `useDevicePixelRatio` → `useCanvasViewport({ mode: 'raw' })` ✅
-  - Canvas 路径：`worldToPixel` → `toCanvasPixel`（= `worldToDesign` + `designToPixel`）✅
+### Phase 3: useCanvasViewport 标准 Hook ✅
 
-> `preset` 归属：`preset` 通过 `useAnimationViewport` 返回，调用方直接传入 `useSceneScale({ vp, preset, ... })`。不在 `SceneLayoutProfile` 中增加 `preset` 字段——`SceneLayoutProfile` 是声明式的布局描述，`preset` 是运行时数据，两者职责不同。
+- 新增 `src/hooks/useCanvasViewport.ts`，支持 transform/raw 两种模式
 
-### Phase 3: useCanvasViewport 标准 Hook ✅ 已完成
-
-- 新增 `src/hooks/useCanvasViewport.ts`
-- 支持 transform/raw 两种模式
-- 内置 DPR 适配 + viewport transform
-- 提供 designToPixel / pixelToDesign / clientToDesign 坐标转换
-
-### Phase 4: 51 个 legacy 文件分批迁移（2-3 周）🔄 进行中
-
-**51 vs 42 的差异说明**：§八统计的 42 个文件是调用 `createSceneScaleFromViewport` 的业务文件。Phase 4 的 51 个文件是使用 `useCanvasSize + useViewport`（而非 `useAnimationViewport`）的 legacy 文件。两者有重叠但不完全相同：
-- 部分 legacy 文件调用 `createSceneScaleFromViewport`（如 VelocityAnimation、FrictionAnimation）
-- 部分 legacy 文件使用 `computeScale + physicsToCanvasWithOrigin` 而不调用 `createSceneScaleFromViewport`（如 BrownianMotion、CoulombLaw）
-- 部分 legacy 文件只用 `useCanvasSize` 不用 `useViewport`（如 FieldLines、ClosedCircuit）
-
-迁移时需同时处理 viewport Hook 替换和 SceneScale 单位修复。
+### Phase 4: legacy 文件分批迁移 🔄 进行中
 
 | 批次 | 模块 | 文件数 | 状态 |
 |------|------|--------|------|
-| 1 | mechanics/kinematics | 10 | ✅ 已完成 |
-| 2 | mechanics/dynamics | 12 | ✅ 已完成 |
-| 3 | mechanics/energy | 9 | ✅ 已完成 |
+| 1 | mechanics/kinematics | 10 | ✅ |
+| 2 | mechanics/dynamics | 12 | ✅ |
+| 3 | mechanics/energy | 9 | ✅ |
 | 4 | mechanics/momentum | 8 | - |
 | 5 | electromagnetism | 13 | - |
 | 6 | thermodynamics | 5 | - |
 | 7 | vibration + modern | 4 | - |
 
+**当前遗留**：`useCanvasSize` 仍 51 个文件（含 CenterExtra），`createSceneScaleFromViewport('transform')` 仍 6 个文件。
+
 每批迁移内容：
 1. `useCanvasSize + useViewport` → `useAnimationViewport`
-2. `computeScale + physicsToCanvasWithOrigin` → `useSceneScale` + `worldToPixel`
-3. `presetCompensation: 1.2` → 验证后移除（建议分两步：先迁 API，再移补偿）
-4. 容器像素 SceneScale → 设计坐标 SceneScale
+2. `computeScale + physicsToCanvasWithOrigin` → `useSceneScale` + `worldToDesign`
+3. `presetCompensation: 1.2` → 验证后移除
+4. VectorArrow `origin` → `originPixel`（去掉 Y 取负）
 
+### Phase A: 文档对齐 + 遗留检测脚本 ✅
 
-### Phase A-B 执行记录（2026-07-12）✅
+- 文档状态已对齐
+- 新增 `scripts/check-viewport-legacy.mjs`，接入 `npm run check:architecture`
 
-- Phase A：文档状态已对齐为 Phase 1-3 已完成、Phase 4 进行中、Phase 5 待评估。
-- Phase A：新增 `scripts/check-viewport-legacy.mjs`，并接入 `npm run check:architecture`。
-- Phase B：`src/features` 中 `createSceneScaleFromViewport(..., 'visibleArea')` / `createSceneScaleFromViewport(..., 'centerScale')` 已清零。
-- 保留项：`createSceneScaleFromViewport(..., 'transform')` 仍作为低风险 legacy 入口保留，后续随 Phase 4 收尾迁移。
-- 保留项：`useCanvasDPR/setupCanvasDPR` 属 Phase C/后续 Canvas 路径迁移，不在本批次强制清零。
+### Phase B: visibleArea/centerScale 清零 ✅
 
-#### Phase B 已迁移文件
+- `src/features` 中 `createSceneScaleFromViewport(..., 'visibleArea'/'centerScale')` 已清零
+- 16 个文件迁移到 `useSceneScale`（详见上方 Phase B 已迁移文件表）
 
-| 模式 | 文件 | 新方案 |
-|------|------|--------|
-| centerScale | `mechanics/circular/CircularMotionAnimation.tsx` | `useSceneScale({ anchor: 'center' })` |
-| centerScale | `mechanics/circular/hooks/useVerticalCircularPhysics.ts` | `useSceneScale({ anchor: 'center' })` |
-| centerScale | `mechanics/gravitation/KeplerAnimation.tsx` | `useSceneScale({ anchor: 'custom' })` |
-| centerScale | `mechanics/gravitation/SatelliteAnimation.tsx` | `useSceneScale({ anchor: 'custom' })` |
-| centerScale | `vibration/simpleHarmonic/SimplePendulumAnimation.tsx` | `useSceneScale({ anchor: 'center', centerSource: 'custom' })` |
-| centerScale | `vibration/wave/MechanicalWaveAnimation.tsx` | `useSceneScale({ anchor: 'custom' })` |
-| centerScale | `electromagnetism/magnetism/CircularGeometryModel/CircularGeometryModel.tsx` | `useSceneScale({ anchor: 'custom' })` |
-| visibleArea | `mechanics/momentum/ImpulseAnimation.tsx` | `useSceneScale({ anchor: 'custom' })` |
-| visibleArea | `mechanics/momentum/MomentumAnimation.tsx` | `useSceneScale({ anchor: 'custom' })` |
-| visibleArea | `mechanics/dynamics/hooks/useEquilibriumLayout.ts` | `useSceneScale({ anchor: 'custom' })` |
-| visibleArea | `electromagnetism/electrostatics/BasicMode.tsx` | `useSceneScale({ anchor: 'custom' })` |
-| visibleArea | `electromagnetism/electrostatics/ElectricField.tsx` | `useSceneScale({ anchor: 'custom' })` |
-| visibleArea | `electromagnetism/electrostatics/ThreeChargeMode.tsx` | `useSceneScale({ anchor: 'custom' })` |
-| visibleArea | `mechanics/kinematics/ObliqueThrowAnimation.tsx` | `useSceneScale({ anchor: 'custom' })` |
-| visibleArea | `mechanics/kinematics/ProjectileAnimation.tsx` | `useSceneScale({ anchor: 'custom' })` |
-| visibleArea | `mechanics/kinematics/StroboscopicAnimation.tsx` | `useSceneScale({ anchor: 'custom' })` |
+### Phase C: Canvas DPR 清零 ✅
 
+- `useCanvasDPR`/`setupCanvasDPR`/`useDevicePixelRatio` 调用已清零
+- 9 个 Canvas 场景迁移到 `useCanvasViewport({ mode: 'raw' })`（详见上方 Phase C 已迁移文件表）
 
-### Phase C 执行记录（2026-07-12）✅
+### Phase 5: 非标准 preset 评估 ✅
 
-- `src/features` 中 `useCanvasDPR` / `setupCanvasDPR` / `useDevicePixelRatio` 调用已清零。
-- Canvas 场景统一迁移到 `useCanvasViewport({ mode: 'raw' })`，保持既有像素坐标绘制语义。
-- 对原本无 `ViewportInfo` 的纯 Canvas 子组件，使用 identity viewport（`scale=1, tx=0, ty=0`）接入 `useCanvasViewport`，仅复用 DPR + frame setup 能力。
-
-#### Phase C 已迁移文件
-
-| 文件 | 新方案 |
-|------|--------|
-| `vibration/wave/WaveDiffractionAnimation.tsx` | `useCanvasViewport({ mode: 'raw' })` |
-| `vibration/wave/WaveInterferenceAnimation.tsx` | `useCanvasViewport({ mode: 'raw' })` |
-| `thermodynamics/secondLaw/SecondLawAnimation.tsx` | `useCanvasViewport({ mode: 'raw' })` |
-| `modern/bohr-theory/components/BohrOrbits.tsx` | identity viewport + `useCanvasViewport({ mode: 'raw' })` |
-| `modern/bohr-theory/components/ExcitationSim.tsx` | `useAnimationViewport` + `useCanvasViewport({ mode: 'raw' })` |
-| `modern/bohr-theory/components/PhotoelectricSim.tsx` | `useCanvasViewport({ mode: 'raw' })` |
-| `modern/bohr-theory/components/ScatterSim.tsx` | `useAnimationViewport` + `useCanvasViewport({ mode: 'raw' })` |
-| `electromagnetism/magnetism/CircularGeometryModel/CircularGeometryModel.tsx` | `useCanvasViewport({ mode: 'raw' })` |
-| `electromagnetism/magnetism/velocity-selector/hooks/useVelocitySelectorCanvas.ts` | identity viewport + `useCanvasViewport({ mode: 'raw' })` |
-
-### Phase 5: 非标准 preset 评估（1 天）⚠️ 待评估
-
-- 100×100 归一化坐标系：保持现状
-- 400×180 条带：评估是否新增 preset
-- CenterExtra 文件：不需要 viewport 体系
+- 100×100 归一化：3 个文件已迁移到 `useAnimationViewport` + `useSceneScale({ anchor: 'custom' })`
+- 400×180 CenterExtra：不需要 viewport 体系
+- KinematicsAdvancedAnimation：迁移到 `splitV(840×325)`
 
 ---
 

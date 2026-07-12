@@ -1,6 +1,6 @@
 import { VectorArrow, VectorDefs, Ball, ParticleTrajectory } from '@/components/Physics'
-import { useSceneScale } from '@/hooks'
-import { useCanvasSize, useViewport, physicsToCanvasWithOrigin, clientToContainerPoint } from '@/utils'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
+import { physicsToCanvasWithOrigin, clientToContainerPoint } from '@/utils'
 import React, { useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -52,13 +52,9 @@ export default function ProjectileAnimation() {
     setTime: s.setTime,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 100, height: 100 })
+  // 100×100 归一化坐标系：保留原 raw-SVG 坐标语义，仅统一 Viewport Hook 入口
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: PROJ_DESIGN })
   const { font } = canvasSize
-
-  const vp = useViewport(canvasSize, {
-    designWidth: PROJ_DESIGN.width,
-    designHeight: PROJ_DESIGN.height,
-  })
 
   const {
     v0x = 10,

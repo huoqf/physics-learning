@@ -1,5 +1,5 @@
 import { PhysicsGround, VectorArrow, VectorDefs, Ball } from '@/components/Physics'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -16,7 +16,6 @@ import { useVerticalThrowPhysics } from './useVerticalThrowPhysics'
 import { useVerticalThrowChartLayout } from './useVerticalThrowChartLayout'
 
 import { VerticalThrowCharts } from './VerticalThrowCharts'
-import { createSceneScaleFromViewport } from '@/scene'
 
 const VT_DESIGN = { width: 100, height: 100 } as const
 
@@ -34,13 +33,9 @@ export default function VerticalThrowAnimation() {
       setTime: s.setTime,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize({ width: 100, height: 100 })
+  // 100×100 归一化坐标系：保留原 raw-SVG 坐标语义，仅统一 Viewport Hook 入口
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: VT_DESIGN })
   const { font } = canvasSize
-
-  const vp = useViewport(canvasSize, {
-    designWidth: VT_DESIGN.width,
-    designHeight: VT_DESIGN.height,
-  })
 
   const { v0 = 15, g = 9.8, advancedMode = 0, sliceDensity = 0, airResistance = 0, targetHeight = 0, showVacuumCompare = 1 } = params
 
@@ -104,10 +99,16 @@ export default function VerticalThrowAnimation() {
   const leftBallX = ballX
   const rightBallX = showDoubleTrack ? ballX + 40 : ballX
 
-  const vtSceneScale = createSceneScaleFromViewport(vp, 'transform', {
-    designWidth: VT_DESIGN.width,
-    designHeight: VT_DESIGN.height,
+  const vtSceneScale = useSceneScale({
+    vp,
+    preset: VT_DESIGN,
+    anchor: 'custom',
+    customOriginX: 0,
+    customOriginY: 0,
+    customScaleX: 1,
+    customScaleY: 1,
     refMagnitudes: { velocity: v0, acceleration: 15, gravity: 15 },
+    maxVectorLength: Math.min(vp.visibleW, vp.visibleH) * 0.3,
   })
 
   const currentBallY = originY + (displayMaxHeight - clampedY) * scale - 14
@@ -248,7 +249,7 @@ export default function VerticalThrowAnimation() {
         {showVectors && effectiveV !== 0 && !isLanded && (
           <g>
             <VectorArrow
-              origin={{ x: leftBallX + 18, y: -currentBallY }}
+              originPixel={{ x: leftBallX + 18, y: currentBallY }}
               vector={{ x: 0, y: effectiveV }}
               type="velocity"
               sceneScale={vtSceneScale}
@@ -265,7 +266,7 @@ export default function VerticalThrowAnimation() {
         {showVectors && !isLanded && (
           <g>
             <VectorArrow
-              origin={{ x: leftBallX - 18, y: -currentBallY }}
+              originPixel={{ x: leftBallX - 18, y: currentBallY }}
               vector={{ x: 0, y: -g }}
               type="gravity"
               sceneScale={vtSceneScale}
@@ -283,7 +284,7 @@ export default function VerticalThrowAnimation() {
           <g>
             <g>
               <VectorArrow
-                origin={{ x: leftBallX - 18, y: -currentBallY }}
+                originPixel={{ x: leftBallX - 18, y: currentBallY }}
                 vector={{ x: 0, y: -g }}
                 type="gravity"
                 sceneScale={vtSceneScale}

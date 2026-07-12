@@ -1,26 +1,26 @@
 import { Block, VectorArrow } from '@/components/Physics'
-import { useEffect, useMemo } from 'react'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useEffect } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme'
 import { PHYSICS_COLORS, STROKE, CANVAS_COLORS } from '@/theme/physics'
 
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
-import { createSceneScaleFromViewport } from '@/scene'
 import { RelationChart } from '@/components/Chart'
 import { useChartContext } from '@/components/Chart'
 import { Card } from '@/components/UI'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
 
-// ── Viewport 布局常量（适配矮胖的横向运动上下布局） ──
-const DESIGN_W = 600
-const DESIGN_H = 160
-const ORIGIN_X = 50   // 物理起点在设计坐标中的 X
-const TRACK_LEN = 500 // 轨道的像素长度（物理长度 30m）
-const GROUND_Y = 100  // 轨道在设计坐标中的 Y
-const SCALE_X = TRACK_LEN / 30 // 16.667 像素/米
-const BLOCK_W = 40
-const BLOCK_H = 20
+// ── Viewport 布局常量（上下分区条带场景，设计坐标绑定 splitV preset） ──
+const DESIGN_W = CANVAS_PRESETS.splitV.width
+const DESIGN_H = CANVAS_PRESETS.splitV.height
+const ORIGIN_X = 70   // 物理起点在设计坐标中的 X
+const TRACK_LEN = 700 // 轨道的设计坐标长度（物理长度 30m）
+const GROUND_Y = 210  // 轨道在设计坐标中的 Y
+const SCALE_X = TRACK_LEN / 30
+const BLOCK_W = 56
+const BLOCK_H = 28
 
 // ── 截距辅助线与解析气泡插件 ──
 function InterceptBubble({ chartMode, v0 }: { chartMode: number; v0: number }) {
@@ -84,8 +84,10 @@ export default function KinematicsAdvancedAnimation() {
     }))
   )
 
-  // 使用 wide 预设，适配横向拉长的上下布局
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  // 标准 Viewport 路径：上下分区中的下方条带场景使用 splitV preset
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({
+    preset: CANVAS_PRESETS.splitV,
+  })
   const { font } = canvasSize
 
   const v0 = params.v0 ?? 4.0
@@ -110,13 +112,7 @@ export default function KinematicsAdvancedAnimation() {
   const x = v0 * tEff + 0.5 * a * tEff * tEff
   const v = v0 + a * tEff
 
-  // 使用 Viewport 架构进行缩放映射
-  const vp = useViewport(canvasSize, {
-    designWidth: DESIGN_W,
-    designHeight: DESIGN_H,
-  })
-
-  // 轨道缩放像素坐标
+  // 轨道缩放设计坐标
   const sliderX = ORIGIN_X + x * SCALE_X
   const sliderY = GROUND_Y - BLOCK_H
 
@@ -174,11 +170,17 @@ export default function KinematicsAdvancedAnimation() {
   const blockCenterX = sliderX + BLOCK_W / 2
   const maxVelocity = Math.max(Math.abs(v0) + Math.abs(a) * 10, Math.abs(v), 10)
   const maxAcceleration = Math.max(Math.abs(a) * 2, 5)
-  const vectorSceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'transform', {
-    designWidth: DESIGN_W,
-    designHeight: DESIGN_H,
+  const vectorSceneScale = useSceneScale({
+    vp,
+    preset,
+    anchor: 'custom',
+    customOriginX: 0,
+    customOriginY: 0,
+    customScaleX: 1,
+    customScaleY: 1,
     refMagnitudes: { velocity: maxVelocity, acceleration: maxAcceleration },
-  }), [vp, maxVelocity, maxAcceleration])
+    maxVectorLength: Math.min(DESIGN_W, DESIGN_H) * 0.25,
+  })
   const velocityArrowY = sliderY - 8
   const accelerationArrowY = sliderY - 22
   const velocityArrowLen = calculateVectorPixelLength(
@@ -254,9 +256,11 @@ export default function KinematicsAdvancedAnimation() {
       {/* 下侧：物理仿真轨道 */}
       <Card className="flex-1 min-h-0 flex flex-col p-3">
         <h3 className="text-xs font-semibold text-neutral-600 mb-1.5 shrink-0">物理仿真轨道</h3>
-        <div ref={containerRef} className="flex-1 min-h-0 w-full bg-white rounded-lg relative overflow-hidden">
-          <svg width={canvasSize.width} height={canvasSize.height} className="w-full h-full">
-            <g transform={vp.transform}>
+        <AnimationSvgCanvas
+          containerRef={containerRef}
+          transform={vp.transform}
+          className="flex-1 min-h-0 w-full bg-white rounded-lg relative overflow-hidden"
+        >
               {/* 起始标志线 */}
               <line
                 x1={ORIGIN_X}
@@ -362,9 +366,7 @@ export default function KinematicsAdvancedAnimation() {
                   </text>
                 </g>
               )}
-            </g>
-          </svg>
-        </div>
+        </AnimationSvgCanvas>
       </Card>
     </div>
   )
