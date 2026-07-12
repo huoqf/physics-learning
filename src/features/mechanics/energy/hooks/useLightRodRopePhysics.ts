@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { precomputeLightRodRopeTrajectory, getLRRStateAtTime } from '@/physics/lightRodRope'
 import type { LRRModelState } from '@/physics/lightRodRope'
 import { GRAVITY } from '@/physics/constants'
-import { useCanvasSize } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 
 const T_MAX = 6
@@ -109,7 +109,7 @@ export interface UseLightRodRopePhysicsResult {
   layout: LightRodRopeLayout
   forceVectors: LightRodRopeForceVectors
   chartsData: LightRodRopeChartData
-  canvasSize: ReturnType<typeof useCanvasSize>[1]
+  canvasSize: ReturnType<typeof useAnimationViewport>['canvasSize']
   containerRef: React.RefObject<HTMLDivElement | null>
 }
 
@@ -123,7 +123,7 @@ export function useLightRodRopePhysics(): UseLightRodRopePhysicsResult {
     }))
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full)
+  const { containerRef, canvasSize } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
 
   // 参数提取
   const m1 = params.m1 ?? 1.0

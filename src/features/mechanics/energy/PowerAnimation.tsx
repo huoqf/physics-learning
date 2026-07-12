@@ -1,4 +1,4 @@
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -32,8 +32,7 @@ export default function PowerAnimation() {
       showVectors: s.showVectors,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 400 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
   const [showCriticalTip, setShowCriticalTip] = useState(false)
   const hasPausedRef = useRef(false)
@@ -185,6 +184,7 @@ export default function PowerAnimation() {
           params={{ P: P_rated, m, f, carType: params.carType, mode }}
           canvasSize={{ width: vp.visibleW, height: sceneHeight, font }}
           vp={vp}
+          preset={preset}
           showVectors={showVectors}
           maxV={maxV}
           scale={scale}

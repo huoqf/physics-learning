@@ -68,7 +68,7 @@ export function ElasticScene({
 
         {showVectors && Math.abs(state.pos) > 0.05 && (
           <VectorArrow
-            origin={{ x: blockCX, y: -(blockCY - blockR - 6) }}
+            originPixel={{ x: blockCX, y: blockCY - blockR - 6 }}
             vector={{ x: state.pos > 0 ? -1 : 1, y: 0 }}
             type="elasticForce"
             sceneScale={sceneScale}
@@ -77,7 +77,7 @@ export function ElasticScene({
         )}
         {showVectors && Math.abs(state.v) > 0.1 && (
           <VectorArrow
-            origin={{ x: blockCX, y: -(blockCY - blockR - 6) }}
+            originPixel={{ x: blockCX, y: blockCY - blockR - 6 }}
             vector={{ x: state.v > 0 ? 1 : -1, y: 0 }}
             type="velocity"
             sceneScale={sceneScale}

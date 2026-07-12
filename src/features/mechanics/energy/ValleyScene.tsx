@@ -18,6 +18,9 @@ interface ValleySceneProps {
   thetaDeg: number
   state: { v: number; phase: number }
   m: number
+  g: number
+  R: number
+  mu: number
   showVectors: boolean
   maxV: number
   sceneScale: SceneScale
@@ -41,6 +44,9 @@ export function ValleyScene({
   thetaDeg,
   state,
   m,
+  g,
+  R,
+  mu,
   showVectors,
   maxV,
   sceneScale,
@@ -95,7 +101,7 @@ export function ValleyScene({
           const arrowPx = Math.max(14, velRatio * sceneScale.maxVectorLength * 0.85)
           return (
             <VectorArrow
-              origin={{ x: objW * 0.5, y: -(objH + 3) }}
+              originPixel={{ x: objW * 0.5, y: objH + 3 }}
               vector={{ x: arrowPx * Math.sign(state.v), y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
@@ -104,6 +110,54 @@ export function ValleyScene({
           )
         })()}
       </g>
+
+      {/* 重力矢量 G — 恒定向下 */}
+      {showVectors && (() => {
+        const G = m * g
+        return (
+          <VectorArrow
+            originPixel={{ x: objPos.x, y: objPos.y - objH * 0.3 }}
+            vector={{ x: 0, y: -1 }}
+            type="gravity"
+            sceneScale={sceneScale}
+            pixelLength={Math.min(G * 2, sceneScale.maxVectorLength * 0.9)}
+            label="G"
+          />
+        )
+      })()}
+
+      {/* 支持力矢量 N — 垂直轨道面指向圆心 */}
+      {showVectors && (() => {
+        const thetaRad = thetaDeg * Math.PI / 180
+        const N = m * g * Math.cos(thetaRad) + m * state.v * state.v / R
+        return (
+          <VectorArrow
+            originPixel={{ x: objPos.x, y: objPos.y - objH * 0.3 }}
+            vector={{ x: -Math.sin(thetaRad), y: Math.cos(thetaRad) }}
+            type="normalForce"
+            sceneScale={sceneScale}
+            pixelLength={Math.min(N * 2, sceneScale.maxVectorLength * 0.9)}
+            label="N"
+          />
+        )
+      })()}
+
+      {/* 摩擦力矢量 f — 沿切线反向 */}
+      {showVectors && mu > 0 && Math.abs(state.v) > 0.1 && (() => {
+        const thetaRad = thetaDeg * Math.PI / 180
+        const N = m * g * Math.cos(thetaRad) + m * state.v * state.v / R
+        const f = mu * Math.max(N, 0)
+        return (
+          <VectorArrow
+            originPixel={{ x: objPos.x, y: objPos.y - objH * 0.3 }}
+            vector={{ x: -Math.cos(thetaRad) * Math.sign(state.v), y: -Math.sin(thetaRad) * Math.sign(state.v) }}
+            type="friction"
+            sceneScale={sceneScale}
+            pixelLength={Math.min(f * 2, sceneScale.maxVectorLength * 0.9)}
+            label="f"
+          />
+        )
+      })()}
 
       {/* 阶段状态指示：卡死停在坡上时闪烁提示 */}
       {state.phase === 1 && (

@@ -3,7 +3,9 @@ import { useMemo } from 'react'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CANVAS_STYLE, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
-import { createSceneScaleFromViewport } from '@/scene'
+import { useSceneScale } from '@/hooks'
+import type { CanvasPreset } from '@/hooks'
+import type { ViewportInfo } from '@/utils/useViewport'
 import type { KEModelState } from '@/physics/kineticEnergy'
 import { GRAVITY } from '@/physics/constants'
 
@@ -29,7 +31,8 @@ interface KineticEnergySceneProps {
     mode?: number
   }
   canvasSize: { width: number; height: number; font: (size: number) => number }
-  vp: { visibleX: number; visibleY: number; visibleW: number; visibleH: number; centerX: number; centerY: number }
+  vp: ViewportInfo
+  preset: CanvasPreset
   showVectors: boolean
   v_c: number
   scale: number
@@ -41,6 +44,7 @@ export function KineticEnergyScene({
   params,
   canvasSize,
   vp,
+  preset,
   showVectors,
   v_c,
   scale,
@@ -127,22 +131,27 @@ export function KineticEnergyScene({
     return { x, opacity }
   })
 
-  const sceneScale = useMemo(() => {
+  const refMagnitudes = useMemo(() => {
     const refF = mode === 0 ? F_pull : Math.max(m * 9.8 * 1.5, 15)
     const refV = mode === 0 ? Math.sqrt(v0 * v0 + 2 * (F_pull / m) * s_target) : Math.sqrt(v0 * v0 + 2 * 9.8 * R)
-    return createSceneScaleFromViewport(vp, 'transform', {
-      designWidth: canvasSize.width,
-      designHeight: canvasSize.height,
-      refMagnitudes: {
-        velocity: refV,
-        force: refF,
-        gravity: refF,
-        normalForce: refF,
-        friction: refF,
-        appliedForce: refF,
-      },
-    })
-  }, [vp, canvasSize.width, canvasSize.height, mode, m, v0, F_pull, s_target, R])
+    return {
+      velocity: refV,
+      force: refF,
+      gravity: refF,
+      normalForce: refF,
+      friction: refF,
+      appliedForce: refF,
+    }
+  }, [mode, m, v0, F_pull, s_target, R])
+
+  const sceneScale = useSceneScale({
+    vp, preset,
+    anchor: 'design',
+    originSource: 'topLeft',
+    physicsWidth: preset.width,
+    physicsHeight: preset.height,
+    refMagnitudes,
+  })
 
   return (
     <svg width={canvasSize.width} height={canvasSize.height} className="bg-transparent">
@@ -275,7 +284,7 @@ export function KineticEnergyScene({
 
           {showVectors && state.F > 0.1 && (
             <VectorArrow
-              origin={{ x: objW, y: objH * 0.5 }}
+              originPixel={{ x: objW, y: objH * 0.5 }}
               vector={{ x: state.F, y: 0 }}
               type="appliedForce"
               sceneScale={sceneScale}
@@ -285,7 +294,7 @@ export function KineticEnergyScene({
 
           {showVectors && state.v > 0.05 && (
             <VectorArrow
-              origin={{ x: objW * 0.5, y: -3.5 }}
+              originPixel={{ x: objW * 0.5, y: 3.5 }}
               vector={{ x: state.v, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
@@ -308,7 +317,7 @@ export function KineticEnergyScene({
             {/* 切向合外力 F_net（驱动 ΔEk 变化的力） */}
             {Math.abs(state.F) > 0.1 && (
               <VectorArrow
-                origin={{ x: ballCX, y: -ballCY }}
+                originPixel={{ x: ballCX, y: ballCY }}
                 vector={{ x: state.F * tangentDirX, y: -state.F * tangentDirY }}
                 type="force"
                 sceneScale={sceneScale}
@@ -328,7 +337,7 @@ export function KineticEnergyScene({
                   {/* 重力 mg：竖直向下 */}
                   {mg > 0.1 && (
                     <VectorArrow
-                      origin={{ x: ballCX, y: -ballCY }}
+                      originPixel={{ x: ballCX, y: ballCY }}
                       vector={{ x: 0, y: -mg }}
                       type="gravity"
                       sceneScale={sceneScale}
@@ -339,7 +348,7 @@ export function KineticEnergyScene({
                   {/* 法向力 N：指向圆心（凹型弧内侧） */}
                   {normalForce > 0.1 && (
                     <VectorArrow
-                      origin={{ x: ballCX, y: -ballCY }}
+                      originPixel={{ x: ballCX, y: ballCY }}
                       vector={{ x: normalForce * inwardDirX, y: -normalForce * inwardDirY }}
                       type="normalForce"
                       sceneScale={sceneScale}
@@ -350,7 +359,7 @@ export function KineticEnergyScene({
                   {/* 摩擦力 f：与运动方向相反（沿切线上坡） */}
                   {fFriction > 0.1 && (
                     <VectorArrow
-                      origin={{ x: ballCX, y: -ballCY }}
+                      originPixel={{ x: ballCX, y: ballCY }}
                       vector={{ x: -fFriction * tangentDirX, y: fFriction * tangentDirY }}
                       type="friction"
                       sceneScale={sceneScale}
@@ -366,7 +375,7 @@ export function KineticEnergyScene({
           {/* 速度 v：沿切线方向（下滑方向） */}
           {showVectors && state.v > 0.05 && (
             <VectorArrow
-              origin={{ x: ballCX, y: -ballCY }}
+              originPixel={{ x: ballCX, y: ballCY }}
               vector={{ x: state.v * tangentDirX, y: -state.v * tangentDirY }}
               type="velocity"
               sceneScale={sceneScale}

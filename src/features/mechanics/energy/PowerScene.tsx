@@ -1,9 +1,10 @@
 import { VectorArrow, PhysicsGround } from '@/components/Physics'
-import { useMemo } from 'react'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
-import { createSceneScaleFromViewport } from '@/scene'
+import { useSceneScale } from '@/hooks'
+import type { CanvasPreset } from '@/hooks'
+import type { ViewportInfo } from '@/utils/useViewport'
 import type { PowerModelState } from '@/physics/power'
 
 interface PowerSceneProps {
@@ -16,7 +17,8 @@ interface PowerSceneProps {
     mode?: number
   }
   canvasSize: { width: number; height: number; font: (size: number) => number }
-  vp: { visibleX: number; visibleY: number; visibleW: number; visibleH: number; centerX: number; centerY: number }
+  vp: ViewportInfo
+  preset: CanvasPreset
   showVectors: boolean
   maxV: number
   scale: number
@@ -28,6 +30,7 @@ export function PowerScene({
   params,
   canvasSize,
   vp,
+  preset,
   showVectors,
   maxV,
   scale,
@@ -68,10 +71,7 @@ export function PowerScene({
   const EkMax = 0.5 * m * maxV * maxV
   const ekRatio = EkMax > 0 ? Math.min(Ek / EkMax, 1) : 0
 
-  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'transform', {
-    designWidth: canvasSize.width,
-    designHeight: canvasSize.height,
-  }), [vp, canvasSize.width, canvasSize.height])
+  const sceneScale = useSceneScale({ vp, preset, anchor: 'design', originSource: 'topLeft', physicsWidth: preset.width, physicsHeight: preset.height })
 
   return (
     <svg width={canvasSize.width} height={canvasSize.height} className="bg-transparent">
@@ -230,7 +230,7 @@ export function PowerScene({
 
       {showVectors && state.F > 0 && (
         <VectorArrow
-          origin={{ x: carX + objW + 2, y: -(groundY - objH * 0.5) }}
+          originPixel={{ x: carX + objW + 2, y: groundY - objH * 0.5 }}
           vector={{ x: Math.min(state.F * 0.008, 60), y: 0 }}
           type="appliedForce"
           sceneScale={sceneScale}
@@ -240,7 +240,7 @@ export function PowerScene({
 
       {showVectors && f > 0 && (
         <VectorArrow
-          origin={{ x: carX - 2, y: -(groundY - objH * 0.4) }}
+          originPixel={{ x: carX - 2, y: groundY - objH * 0.4 }}
           vector={{ x: -Math.min(f * 0.008, 30), y: 0 }}
           type="friction"
           sceneScale={sceneScale}
@@ -250,7 +250,7 @@ export function PowerScene({
 
       {showVectors && state.v > 0.05 && (
         <VectorArrow
-          origin={{ x: carX + objW * 0.5, y: -(groundY + 3.5) }}
+          originPixel={{ x: carX + objW * 0.5, y: groundY + 3.5 }}
           vector={{ x: Math.min(state.v * 3.5, 70), y: 0 }}
           type="velocity"
           sceneScale={sceneScale}

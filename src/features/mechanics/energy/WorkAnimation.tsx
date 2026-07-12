@@ -1,5 +1,5 @@
 import { VectorArrow, PhysicsGround } from '@/components/Physics'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -15,7 +15,6 @@ import {
 } from '@/physics/work'
 import type { WorkKinematics } from '@/physics/work'
 
-import { createSceneScaleFromViewport } from '@/scene'
 import { WorkVTChart } from './WorkVTChart'
 import { WorkFSChart } from './WorkFSChart'
 import { WorkEnergyBar } from './WorkEnergyBar'
@@ -52,15 +51,10 @@ export default function WorkAnimation() {
       showVectors: s.showVectors,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
 
   const mode = (params.mode ?? 0) as 0 | 1
-
-  const vp = useViewport(canvasSize, {
-    designWidth: WORK_LAYOUT.designWidth,
-    designHeight: WORK_LAYOUT.designHeight,
-  })
 
   const F = params.F ?? 10
   const angleDeg = params.angleDeg ?? 30
@@ -144,7 +138,7 @@ export default function WorkAnimation() {
   const projEndX = forceDx
   const originX = startX
 
-  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'visibleArea'), [vp])
+  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height })
 
   return (
     <div ref={containerRef} className="w-full h-full">
@@ -278,7 +272,7 @@ export default function WorkAnimation() {
           {showVectors && F > 0 && (
             <g>
               <VectorArrow
-                origin={{ x: blockX + objW * 0.5, y: -(groundYInScene - objH * 0.5 + floatOffset) }}
+                originPixel={{ x: blockX + objW * 0.5, y: groundYInScene - objH * 0.5 + floatOffset }}
                 vector={{ x: forceDx, y: -forceDy }}
                 type="appliedForce"
                 sceneScale={sceneScale}
@@ -300,7 +294,7 @@ export default function WorkAnimation() {
                     stroke={projectionColor} strokeWidth={STROKE.vectorThin}
                     strokeDasharray={DASH.guide.join(',')} opacity={OPACITY.guide} />
                   <VectorArrow
-                    origin={{ x: blockX + objW * 0.5, y: -(groundYInScene - objH * 0.5 + floatOffset) }}
+                    originPixel={{ x: blockX + objW * 0.5, y: groundYInScene - objH * 0.5 + floatOffset }}
                     vector={{ x: projEndX, y: 0 }}
                     type="velocity"
                     sceneScale={sceneScale}
@@ -349,7 +343,7 @@ export default function WorkAnimation() {
           {mode === 1 && showVectors && (
             <g>
               <VectorArrow
-                origin={{ x: blockX + objW * 0.5, y: -(groundYInScene - objH * 0.5 + floatOffset) }}
+                originPixel={{ x: blockX + objW * 0.5, y: groundYInScene - objH * 0.5 + floatOffset }}
                 vector={{ x: 0, y: -Math.min(advancedResult.weight * 1.5, 50) }}
                 type="gravity"
                 sceneScale={sceneScale}
@@ -365,7 +359,7 @@ export default function WorkAnimation() {
               {!isLiftedOff && advancedResult.F_N > 0 && (
                 <g>
                   <VectorArrow
-                    origin={{ x: blockX + objW * 0.5 + 8, y: -(groundYInScene + floatOffset) }}
+                    originPixel={{ x: blockX + objW * 0.5 + 8, y: groundYInScene + floatOffset }}
                     vector={{ x: 0, y: Math.min(advancedResult.F_N * 1.5, 40) }}
                     type="normalForce"
                     sceneScale={sceneScale}
@@ -383,7 +377,7 @@ export default function WorkAnimation() {
               {!isLiftedOff && advancedResult.f > 0 && (
                 <g>
                   <VectorArrow
-                    origin={{ x: blockX + objW * 0.3, y: -(groundYInScene - objH * 0.15 + floatOffset) }}
+                    originPixel={{ x: blockX + objW * 0.3, y: groundYInScene - objH * 0.15 + floatOffset }}
                     vector={{ x: -Math.min(advancedResult.f * 3, 40), y: 0 }}
                     type="friction"
                     sceneScale={sceneScale}

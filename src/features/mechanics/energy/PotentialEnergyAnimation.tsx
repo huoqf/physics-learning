@@ -1,9 +1,8 @@
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { createSceneScaleFromViewport } from '@/scene'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { KatexFormula } from '@/components/UI'
 import {
@@ -25,8 +24,7 @@ export default function PotentialEnergyAnimation() {
       updateParam: s.updateParam, setTime: s.setTime,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 400 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 
@@ -127,7 +125,7 @@ export default function PotentialEnergyAnimation() {
         { label: 'W弹', value: `${state.W.toFixed(1)} J`, color: PHYSICS_COLORS.work },
       ]
 
-  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'visibleArea'), [vp])
+  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height })
 
   return (
     <div ref={containerRef} className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">

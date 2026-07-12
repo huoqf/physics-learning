@@ -1,4 +1,5 @@
-import { useCanvasSize, useViewport, clientToContainerPoint } from '@/utils'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
+import { clientToContainerPoint } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useState, useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -12,7 +13,6 @@ import {
   getECStateAtTime,
 } from '@/physics/energyConservation'
 import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
-import { createSceneScaleFromViewport } from '@/scene'
 import { PendulumScene } from './PendulumScene'
 import { ValleyScene } from './ValleyScene'
 import { EnergyConservationBarChart } from './EnergyConservationBarChart'
@@ -36,8 +36,7 @@ export default function EnergyConservationAnimation() {
     setTime: s.setTime,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 650 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 
@@ -284,7 +283,7 @@ export default function EnergyConservationAnimation() {
   const arcEndX = animCenterX + R_pix * Math.sin(arcLimitDeg * Math.PI / 180)
   const arcEndY = valleyCenterY + R_pix * Math.cos(arcLimitDeg * Math.PI / 180)
 
-  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'visibleArea'), [vp]);
+  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height })
 
   // 动态 Y 范围计算
   const chartYMin = Math.min(0, -E_offset) * 1.1
@@ -388,6 +387,9 @@ export default function EnergyConservationAnimation() {
             hRef={hRef}
             font={font}
             handleMouseDown={handleMouseDown}
+            m={m}
+            g={g}
+            L={L}
           />
         ) : (
           <ValleyScene
@@ -404,6 +406,9 @@ export default function EnergyConservationAnimation() {
             thetaDeg={thetaDeg}
             state={state}
             m={m}
+            g={g}
+            R={R}
+            mu={mu}
             showVectors={showVectors}
             maxV={maxV}
             sceneScale={sceneScale}
