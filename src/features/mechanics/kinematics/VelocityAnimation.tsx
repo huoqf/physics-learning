@@ -1,5 +1,5 @@
 import { VectorArrow, VectorDefs, PhysicsGround } from '@/components/Physics'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useMemo, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -7,8 +7,6 @@ import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OBJECT } from '@/theme/phys
 import { colors } from '@/theme/colors'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateAverageVelocity } from '@/physics'
-
-import { createSceneScaleFromViewport } from '@/scene'
 
 /**
  * 速度基础版动画 —— "破除直觉迷思"
@@ -25,12 +23,7 @@ export default function VelocityAnimation() {
     setIsPlaying: s.setIsPlaying,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-
-  const vp = useViewport(canvasSize, {
-    designWidth: 700,
-    designHeight: 650,
-  })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
 
   const scene = params.scene ?? 0      // 0=公交, 1=短跑
   const v = params.v ?? 8              // m/s
@@ -95,9 +88,7 @@ export default function VelocityAnimation() {
   const objH = scene === 0 ? objW * 0.7 : objW * 0.9
 
   // ── 矢量场景配置 ──
-  const sceneScale = createSceneScaleFromViewport(vp, 'visibleArea', {
-    refMagnitudes: { velocity: v * 1.5 || 15 },
-  })
+  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes: { velocity: v * 1.5 || 15 } })
 
   return (
     <div ref={containerRef} className="w-full h-full">
@@ -213,7 +204,7 @@ export default function VelocityAnimation() {
         {showVectors && deltaT > 0 && (
           <g>
             <VectorArrow
-              origin={{ x: t1Pos, y: -(groundY - objH * 1.6) }}
+              originPixel={{ x: t1Pos, y: groundY - objH * 1.6 }}
               vector={{ x: deltaX, y: 0 }}
               type="averageVelocity"
               sceneScale={sceneScale}
@@ -236,7 +227,7 @@ export default function VelocityAnimation() {
         {showVectors && (
           <g>
             <VectorArrow
-              origin={{ x: currentX + objW, y: -(groundY - objH * 0.5) }}
+              originPixel={{ x: currentX + objW, y: groundY - objH * 0.5 }}
               vector={{ x: v, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}

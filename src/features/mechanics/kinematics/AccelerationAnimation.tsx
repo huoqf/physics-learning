@@ -1,15 +1,11 @@
 import { VectorArrow, VectorDefs, SportsCar, PhysicsGround } from '@/components/Physics'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateDualObjectComparison } from '@/physics'
 import { PHYSICS_COLORS, STROKE, DASH, FONT } from '@/theme/physics'
-
-import { createSceneScaleFromViewport } from '@/scene'
-
-const ACCEL_DESIGN = { width: 700, height: 400 } as const
 
 /** 布局常量（语义化命名，替代魔法数字） */
 const LAYOUT = {
@@ -39,13 +35,8 @@ export default function AccelerationAnimation() {
     setIsPlaying: s.setIsPlaying,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
   const { font } = canvasSize
-
-  const vp = useViewport(canvasSize, {
-    designWidth: ACCEL_DESIGN.width,
-    designHeight: ACCEL_DESIGN.height,
-  })
 
   const vA = params.vA ?? 200
   const aB = params.aB ?? 5
@@ -71,9 +62,7 @@ export default function AccelerationAnimation() {
   )
 
   // ── 矢量场景配置 ──
-  const sceneScale = createSceneScaleFromViewport(vp, 'visibleArea', {
-    refMagnitudes: { velocity: Math.max(vA, 10) * 1.5, acceleration: aB * 2 },
-  })
+  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes: { velocity: Math.max(vA, 10) * 1.5, acceleration: aB * 2 } })
 
   const planeX = startX + result.sA * scale
   const carX = startX + result.sB * scale
@@ -239,7 +228,7 @@ export default function AccelerationAnimation() {
         {showVectors && (
           <g>
             <VectorArrow
-              origin={{ x: clampedPlaneX + LAYOUT.VEHICLE_WIDTH, y: -(topTrackY - LAYOUT.VEHICLE_PLANE_HEIGHT / 2) }}
+              originPixel={{ x: clampedPlaneX + LAYOUT.VEHICLE_WIDTH, y: topTrackY - LAYOUT.VEHICLE_PLANE_HEIGHT / 2 }}
               vector={{ x: vA, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
@@ -271,7 +260,7 @@ export default function AccelerationAnimation() {
         {showVectors && result.vB > 0 && (
           <g>
             <VectorArrow
-              origin={{ x: clampedCarX + LAYOUT.VEHICLE_WIDTH, y: -(bottomTrackY - LAYOUT.VEHICLE_HEIGHT / 2) }}
+              originPixel={{ x: clampedCarX + LAYOUT.VEHICLE_WIDTH, y: bottomTrackY - LAYOUT.VEHICLE_HEIGHT / 2 }}
               vector={{ x: result.vB, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
@@ -293,9 +282,9 @@ export default function AccelerationAnimation() {
         {showDeltaVArrow && (
           <g>
             <VectorArrow
-              origin={{
+              originPixel={{
                 x: clampedCarX + LAYOUT.VEHICLE_WIDTH + result.vB * 0.15,
-                y: -(bottomTrackY - LAYOUT.VEHICLE_HEIGHT / 2 - 14),
+                y: bottomTrackY - LAYOUT.VEHICLE_HEIGHT / 2 - 14,
               }}
               vector={{ x: result.deltaVB, y: 0 }}
               type="acceleration"

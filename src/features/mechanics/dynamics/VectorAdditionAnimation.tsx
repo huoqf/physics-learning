@@ -1,6 +1,6 @@
 import { VectorDefs } from '@/components/Physics'
 import { useRef } from 'react'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -15,8 +15,6 @@ import { VectorDecomposition } from './VectorDecomposition'
 import { VectorParallelogram } from './VectorParallelogram'
 import { VectorTriangle } from './VectorTriangle'
 
-import { createSceneScaleFromViewport } from '@/scene'
-
 export default function VectorAdditionAnimation() {
   const { params, showVectors, showFormulas, showGrid, isPlaying, time, updateParam } = useAnimationStore(
     useShallow((s) => ({
@@ -25,8 +23,7 @@ export default function VectorAdditionAnimation() {
     }))
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 450 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
   const { font } = canvasSize
   const svgRef = useRef<SVGSVGElement>(null)
 
@@ -39,7 +36,7 @@ export default function VectorAdditionAnimation() {
   const WORLD = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 } as const
   const scale = computeScale(vp.visibleW, vp.visibleH, WORLD) * 0.6
 
-  const vaSceneScale = createSceneScaleFromViewport(vp, 'visibleArea')
+  const vaSceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height })
 
   const physicsData = useVectorAdditionPhysics({
     f1, f2, angle, phi, mode, canvasWidth: vp.visibleW, canvasHeight: vp.visibleH, scale, time, isPlaying,

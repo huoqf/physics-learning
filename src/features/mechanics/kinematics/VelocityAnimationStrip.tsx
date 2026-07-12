@@ -1,5 +1,5 @@
 import { VectorArrow, VectorDefs, PhysicsGround, Ball, Block } from '@/components/Physics'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -9,8 +9,6 @@ import { Spring } from '@/components/UI'
 import { calculateInstantaneousVelocity } from '@/physics'
 import type { VariableMotionModel, VariableMotionParams } from '@/physics'
 import { useVelocityPhysics } from './useVelocityPhysics'
-
-import { createSceneScaleFromViewport } from '@/scene'
 
 interface VelocityAnimationStripProps {
   model: VariableMotionModel
@@ -29,8 +27,7 @@ export default function VelocityAnimationStrip({
     }))
   )
   const deltaT = params.deltaT ?? 0.5
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 400 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
 
   // ── 布局参数 ──
   const padding = canvasSize.width * 0.07
@@ -126,9 +123,7 @@ export default function VelocityAnimationStrip({
     return Math.abs(modelParams.a1 ?? 2) * 1.5
   }, [model, modelParams])
 
-  const sceneScale = createSceneScaleFromViewport(vp, 'visibleArea', {
-    refMagnitudes: { velocity: maxVel, acceleration: maxAcc },
-  })
+  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes: { velocity: maxVel, acceleration: maxAcc } })
 
   // ── 多阶段：A/B 标志位置 ──
   const { pointA, pointB } = useMemo(() => {
@@ -313,7 +308,7 @@ export default function VelocityAnimationStrip({
 
             {/* 位移指示线与箭头 */}
             <VectorArrow
-              origin={{ x: pointA, y: -(groundY - objH - 12) }}
+              originPixel={{ x: pointA, y: groundY - objH - 12 }}
               vector={{ x: state.x, y: 0 }}
               type="displacement"
               sceneScale={sceneScale}
@@ -333,9 +328,9 @@ export default function VelocityAnimationStrip({
         {Math.abs(vInst) > 0.1 && (
           <g>
             <VectorArrow
-              origin={{
+              originPixel={{
                 x: currentX + (vInst > 0 ? objW / 2 + 4 : -objW / 2 - 4),
-                y: -(groundY - objH / 2 - (model === 'shm' ? 2 : 5)),
+                y: groundY - objH / 2 - (model === 'shm' ? 2 : 5),
               }}
               vector={{ x: vInst, y: 0 }}
               type="velocity"
@@ -356,7 +351,7 @@ export default function VelocityAnimationStrip({
         {model === 'force-increasing' && Math.abs(state.a) > 0.05 && (
           <g>
             <VectorArrow
-              origin={{ x: currentX, y: -(groundY - objH - 11) }}
+              originPixel={{ x: currentX, y: groundY - objH - 11 }}
               vector={{ x: state.a, y: 0 }}
               type="acceleration"
               sceneScale={sceneScale}

@@ -780,7 +780,7 @@ const { px, py } = worldToDesign(x, y, sceneScale)  // worldToDesign = worldToPi
 - 内置 DPR 适配 + viewport transform
 - 提供 designToPixel / pixelToDesign / clientToDesign 坐标转换
 
-### Phase 4: 51 个 legacy 文件分批迁移（2-3 周）⚠️ 待实现
+### Phase 4: 51 个 legacy 文件分批迁移（2-3 周）🔄 进行中
 
 **51 vs 42 的差异说明**：§八统计的 42 个文件是调用 `createSceneScaleFromViewport` 的业务文件。Phase 4 的 51 个文件是使用 `useCanvasSize + useViewport`（而非 `useAnimationViewport`）的 legacy 文件。两者有重叠但不完全相同：
 - 部分 legacy 文件调用 `createSceneScaleFromViewport`（如 VelocityAnimation、FrictionAnimation）
@@ -789,15 +789,15 @@ const { px, py } = worldToDesign(x, y, sceneScale)  // worldToDesign = worldToPi
 
 迁移时需同时处理 viewport Hook 替换和 SceneScale 单位修复。
 
-| 批次 | 模块 | 文件数 |
-|------|------|--------|
-| 1 | mechanics/kinematics | 10 |
-| 2 | mechanics/dynamics | 12 |
-| 3 | mechanics/energy | 7 |
-| 4 | mechanics/momentum | 8 |
-| 5 | electromagnetism | 13 |
-| 6 | thermodynamics | 5 |
-| 7 | vibration + modern | 4 |
+| 批次 | 模块 | 文件数 | 状态 |
+|------|------|--------|------|
+| 1 | mechanics/kinematics | 10 | ✅ 已完成 |
+| 2 | mechanics/dynamics | 12 | ✅ 已完成 |
+| 3 | mechanics/energy | 9 | ✅ 已完成 |
+| 4 | mechanics/momentum | 8 | - |
+| 5 | electromagnetism | 13 | - |
+| 6 | thermodynamics | 5 | - |
+| 7 | vibration + modern | 4 | - |
 
 每批迁移内容：
 1. `useCanvasSize + useViewport` → `useAnimationViewport`

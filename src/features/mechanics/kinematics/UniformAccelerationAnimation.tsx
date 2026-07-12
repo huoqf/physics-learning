@@ -1,5 +1,5 @@
 import { VectorArrow, SportsCar, PhysicsGround, VectorDefs, markerId } from '@/components/Physics'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -14,11 +14,8 @@ import {
 } from '@/theme/physics'
 
 import { selectMarkerTier } from '@/theme/physics'
-import { createSceneScaleFromViewport } from '@/scene'
 import { VelocityTimeChart } from '@/components/Chart'
 import { useChartContext } from '@/components/Chart'
-
-const UA_DESIGN = { width: 700, height: 400 } as const
 
 /**
  * 匀变速直线运动 · 基础模式动画（已完成图表迁移）
@@ -37,13 +34,8 @@ export default function UniformAccelerationAnimation() {
       setIsPlaying: s.setIsPlaying,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
   const { font } = canvasSize
-
-  const vp = useViewport(canvasSize, {
-    designWidth: UA_DESIGN.width,
-    designHeight: UA_DESIGN.height,
-  })
 
   const { v0 = 0, a = 1.5, showSplit = 1, splitN = 0, showEquivRect = 0 } = params
 
@@ -71,9 +63,7 @@ export default function UniformAccelerationAnimation() {
   // ── 矢量场景配置 ──
   const maxVel = Math.max(Math.abs(v0) + Math.abs(a) * 8, 10)
   const maxAcc = Math.max(Math.abs(a) * 2, 5)
-  const sceneScale = createSceneScaleFromViewport(vp, 'visibleArea', {
-    refMagnitudes: { velocity: maxVel, acceleration: maxAcc },
-  })
+  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes: { velocity: maxVel, acceleration: maxAcc } })
 
   // ── 物理计算 ──
   const { v, s } = calculateAcceleratedMotion(v0, a, time)
@@ -445,7 +435,7 @@ export default function UniformAccelerationAnimation() {
         {showVectors && !isOffscreen && Math.abs(v) > 0.1 && (
           <g>
             <VectorArrow
-              origin={{ x: currentX + (v > 0 ? objW + 4 : -4), y: -(groundY - objH * 0.5) }}
+              originPixel={{ x: currentX + (v > 0 ? objW + 4 : -4), y: groundY - objH * 0.5 }}
               vector={{ x: v, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
@@ -458,7 +448,7 @@ export default function UniformAccelerationAnimation() {
         {showVectors && !isOffscreen && Math.abs(a) > 0.05 && (
           <g>
             <VectorArrow
-              origin={{ x: currentX + objW * 0.5, y: -(groundY - objH - 6) }}
+              originPixel={{ x: currentX + objW * 0.5, y: groundY - objH - 6 }}
               vector={{ x: a, y: 0 }}
               type="acceleration"
               sceneScale={sceneScale}

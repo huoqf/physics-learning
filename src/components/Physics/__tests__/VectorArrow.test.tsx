@@ -16,6 +16,7 @@ const sceneScale: SceneScale = {
   scale: 10,
   maxVectorLength: 60,
   refMagnitudes: { velocity: 10 },
+  intentionalNonUniformScale: true, // 测试用：故意非等比以验证坐标计算
 }
 
 describe('VectorArrow', () => {

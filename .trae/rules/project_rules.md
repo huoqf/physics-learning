@@ -2,7 +2,7 @@
 
 > **Trae IDE 默认加载的项目规范文件。**
 > 详细规范见下方「快速索引」部分。
-> 最后更新：2026-07-11（新增场景缩放约束 + createSceneScaleFromDesignCenter）
+> 最后更新：2026-07-12（VIEWPORT 架构更新：新增 useSceneScale / useCanvasViewport / worldToDesign，标记 visibleArea/centerScale 为 deprecated）
 
 ---
 
@@ -58,7 +58,7 @@
 
 1. **颜色/间距/圆角/阴影/动效** → 必须从 `src/theme/` 子模块引用
 2. **坐标转换** → 必须走 `physicsToCanvas()`（`src/utils/coordinate.ts`）
-3. **场景缩放** → 统一使用 `createSceneScaleFromViewport`（viewport 驱动）或 `createSceneScaleFromDesignCenter`（设计中心驱动）构造 `SceneScale`；后者用于中心对称场景（圆周运动、天体轨道），产出的 sceneScale 与物体坐标（ballPos 等）使用相同公式保证对齐
+3. **场景缩放** → 新页面统一使用 `useSceneScale`（`src/hooks/useSceneScale.ts`）构造 `SceneScale`，通过 `anchor` 模式选择缩放策略；物理坐标→设计坐标统一使用 `worldToDesign`（`src/scene`，`worldToPixel` 的语义别名）。`createSceneScaleFromViewport` 的 `visibleArea`/`centerScale` 模式已 `@deprecated`（输出容器像素单位，不适合在 `<g transform={vp.transform}>` 内使用），存量迁移逐步替换；`transform` 模式保持可用（输出设计坐标）
 4. **动画调度** → 必须通过 `src/utils/animation.ts` 的 Hook（禁止直接调用 `requestAnimationFrame`）
 5. **矢量箭头** → 必须使用 `VectorArrow` 组件；调用方式以 `COMPONENT_REGISTRY.md` 与源码 interface 为准，禁止手写 `<line>` + `<marker>`
 6. **画布尺寸** → 新页面通过 `useAnimationViewport({ preset })` 统一获取（见约束 8）；存量旧组件维护时可用 `useCanvasSize(CANVAS_PRESETS.xxx)`（`src/theme/spacing.ts`），新页面禁止直接调用
@@ -66,17 +66,19 @@
 8. **布局缩放与 viewBox 绑定策略**：
    - **【新页面唯一标准路径】**：`useAnimationViewport({ preset })` + `AnimationSvgCanvas`，无 viewBox，SVG 以 CSS 尺寸为视口，`vp.transform` 由组件内部处理；overlay 声明于 `overlayRight/Left/Top/Bottom` 参数（详见 `07_CANVAS_SVG_CHART_RULES.md §2.2`）。
      ```tsx
-     const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
+     const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
+     const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: 10, physicsHeight: 8 })
      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
-       <Scene font={canvasSize.font} />
+       <Scene font={canvasSize.font} sceneScale={sceneScale} />
      </AnimationSvgCanvas>
      ```
    - **【存量遗留，禁止新建】**：历史方式A（固定 viewBox）/ 方式B（动态 viewBox + overlay + vp.transform）/ 方式C（vp.visibleW/H 像素坐标），仅用于维护既有组件，按排期迁移至新标准路径（见 `07_CANVAS_SVG_CHART_RULES.md §2.3`）。
    - **严禁双重缩放反模式**：在**未声明 overlay 参数**时，`viewBox={\`0 0 ${width} ${height}\`}` 同时使用 `vp.transform` → 导致首次进入时画面"缓缓放大"视觉跳变。
 9. **Canvas+SVG 混合渲染坐标对齐**（约束 3 的混合渲染特例，含 `canvasRef` 的 `AnimationSvgCanvas`）：
+   - **新页面标准路径**：SVG 路径使用 `useSceneScale` + `worldToDesign`（输出设计坐标）；Canvas 路径使用 `useCanvasViewport({ mode: 'raw' })` + `designToPixel`；物理坐标→Canvas 像素通过 `toCanvasPixel = worldToDesign → designToPixel` 两步转换
    - **禁止**：用 `designW/worldWidth` 为基准的 sceneScale 直接计算 SVG 矢量起点设计坐标 → 宽高比不等于设计比时坐标偏移
-   - **必须**：先通过 `canvasSceneScale` 算 canvas 像素坐标，再用 `vp.transform` 逆变换得到设计坐标（`dx = (cpx - vp.tx) / vp.scale`）
-   - **`svgSceneScale.maxVectorLength`** 必须用 `canvasSceneScale.maxVectorLength / vp.scale`（详见 `07_CANVAS_SVG_CHART_RULES.md §2.2 场景5`）
+   - **禁止**：新代码使用 `createSceneScaleFromViewport` 的 `visibleArea`/`centerScale` 模式构造 Canvas sceneScale（输出容器像素，在 `useCanvasViewport({ mode: 'raw' })` 下需手动转换，改用 `useSceneScale` 统一输出设计坐标）
+   - **`sceneScale.maxVectorLength`** 已为设计坐标单位（`useSceneScale` 内部计算），SVG VectorArrow 可直接使用；Canvas 绘制需 `metersToPixels = sceneScale.scaleX * vp.scale`
 10. **渲染缩放策略互斥**：同一组件只能选一条核心渲染策略。**严禁在 SVG 内用 `<foreignObject>` 嵌入响应式 React 图表组件**（两套缩放叠加导致图表 X 轴消失）；需动画+图表并列时须在 HTML 层 `flex` 分区，两者平级而非嵌套。
 
 
@@ -110,8 +112,9 @@
 | 质点/小球 | `Ball` | `@/components/Physics` |
 | 滑块/木块 | `Block` | `@/components/Physics` |
 | 地面/斜面/参考面 | `PhysicsGround` | `@/components/Physics` |
-| 场景物理比例尺 | `createSceneScaleFromViewport` | `@/scene` |
-| 设计中心比例尺 | `createSceneScaleFromDesignCenter` | `@/scene` |
+| 场景物理比例尺 | `useSceneScale` | `@/hooks` |
+| 物理坐标→设计坐标 | `worldToDesign` | `@/scene` |
+| Canvas 视口 | `useCanvasViewport` | `@/hooks` |
 | 左屏控制台 | `LeftPanel` / `LeftPanelSection` | `@/components/UI` |
 | 左屏数值参数 | `ParamControl`（通过 `paramMeta` 驱动） | `@/components/UI` |
 | 左屏模式开关 | `ControlPanel`（通过 `controlMeta` 驱动） | `@/components/UI` |

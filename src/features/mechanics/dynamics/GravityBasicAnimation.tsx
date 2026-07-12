@@ -1,16 +1,12 @@
 import { VectorArrow, VectorDefs, PhysicsGround } from '@/components/Physics'
 import { FC, useMemo } from 'react'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CANVAS_STYLE, FONT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { withAlpha } from '@/theme/physics'
-
-import { createSceneScaleFromViewport } from '@/scene'
-
-const GRAV_BASIC_DESIGN = { width: 650, height: 450 } as const
 
 // 定义悬挂薄板的本地顶点
 const PLATE_VERTICES = [
@@ -40,13 +36,8 @@ export const GravityBasicAnimation: FC = () => {
     isPlaying: s.isPlaying,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
   const { font } = canvasSize
-
-  const vp = useViewport(canvasSize, {
-    designWidth: GRAV_BASIC_DESIGN.width,
-    designHeight: GRAV_BASIC_DESIGN.height,
-  })
 
   // 参数解析
   const mode = params.mode ?? 0 // 0=地球自转重力分解, 1=悬挂重心实验
@@ -62,7 +53,7 @@ export const GravityBasicAnimation: FC = () => {
   const cx = vp.centerX
   const cy = vp.centerY
 
-  const gravBasicSceneScale = createSceneScaleFromViewport(vp, 'visibleArea')
+  const gravBasicSceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height })
 
   // ─── 物理引擎计算 ───
 
@@ -323,7 +314,7 @@ export const GravityBasicAnimation: FC = () => {
               <g>
                 {/* 1. 万有引力 (指向地心) */}
                 <VectorArrow
-                  origin={{ x: earthData.objX, y: -earthData.objY }}
+                  originPixel={{ x: earthData.objX, y: earthData.objY }}
                   vector={{ x: earthData.Fx_grav, y: earthData.Fy_grav }}
                   type="gravity"
                   sceneScale={gravBasicSceneScale}
@@ -341,7 +332,7 @@ export const GravityBasicAnimation: FC = () => {
                 {/* 2. 离心力 (非惯性系，水平背离自转轴) */}
                 {earthData.F_centrifugal > 1.5 && (
                   <VectorArrow
-                    origin={{ x: earthData.objX, y: -earthData.objY }}
+                    originPixel={{ x: earthData.objX, y: earthData.objY }}
                     vector={{ x: earthData.Fx_centrifugal, y: earthData.Fy_centrifugal }}
                     type="forceComponent"
                     sceneScale={gravBasicSceneScale}
@@ -361,7 +352,7 @@ export const GravityBasicAnimation: FC = () => {
 
                 {/* 3. 重力 (万有引力和自转向心力的矢量差) */}
                 <VectorArrow
-                  origin={{ x: earthData.objX, y: -earthData.objY }}
+                  originPixel={{ x: earthData.objX, y: earthData.objY }}
                   vector={{ x: earthData.Gx, y: earthData.Gy }}
                   type="gravity"
                   sceneScale={gravBasicSceneScale}

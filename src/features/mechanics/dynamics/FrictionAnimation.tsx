@@ -1,11 +1,10 @@
 import { VectorDefs } from '@/components/Physics'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
 
-import { createSceneScaleFromViewport } from '@/scene'
 import type { SceneLayoutProfile } from '@/scene'
 import { useAnimationLayout } from '@/context/AnimationLayoutContext'
 import { useFrictionSimulation } from './friction/useFrictionSimulation'
@@ -45,21 +44,16 @@ export default function FrictionAnimation() {
     }))
   )
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
   const { font } = canvasSize
 
   const contextProfile = useAnimationLayout()
   const sceneProfile = contextProfile ?? FRICTION_SCENE_PROFILE
 
-  const vp = useViewport(canvasSize, {
-    designWidth: sceneProfile.designWidth,
-    designHeight: sceneProfile.designHeight,
-  })
-
   const pullScale = (vp.visibleW * (1 - FRICTION_LAYOUT.boxStartXRatio - FRICTION_LAYOUT.pullScaleRightMargin)) / 5
   const inclineScale = (vp.visibleH * 0.5) / 3.5
 
-  const frictionSceneScale = createSceneScaleFromViewport(vp, sceneProfile)
+  const frictionSceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes: sceneProfile.refMagnitudes })
 
   const groundY_m1 = vp.visibleY + vp.visibleH * FRICTION_LAYOUT.groundYRatio_m1
   const boxStartX_m1 = vp.visibleX + vp.visibleW * FRICTION_LAYOUT.boxStartXRatio

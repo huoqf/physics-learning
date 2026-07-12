@@ -8,7 +8,7 @@ import { useEquilibriumLayout } from './hooks/useEquilibriumLayout'
 
 import { Button } from '@/components/UI'
 import { useTimedPulse } from '@/hooks/useTimedPulse'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 
 export default function EquilibriumAnimation() {
@@ -28,8 +28,7 @@ export default function EquilibriumAnimation() {
   const theta2 = params.theta2 ?? 45
   const mode = params.mode ?? 0
 
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-  const vp = useViewport(canvasSize, { designWidth: 700, designHeight: 450 })
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
   const svgRef = useRef<SVGSVGElement>(null)
 
   const physicsData = useEquilibriumPhysics({

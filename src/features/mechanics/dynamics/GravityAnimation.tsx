@@ -1,6 +1,7 @@
 import { VectorArrow, VectorDefs } from '@/components/Physics'
 import { useState, useRef, useCallback, useMemo } from 'react'
-import { useCanvasSize, useViewport, clientToContainerPoint } from '@/utils'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
+import { clientToContainerPoint } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -8,11 +9,7 @@ import { PHYSICS_COLORS, CANVAS_STYLE, SCENE_COLORS, CHART_COLORS } from '@/them
 import { physicsToCanvas, computeScale } from '@/utils/coordinate'
 
 import { RelationChart } from '@/components/Chart'
-import { createSceneScaleFromViewport } from '@/scene'
-
 const R_DOMAIN: [number, number] = [1.5, 18.0]
-
-const GRAVITY_DESIGN = { width: 650, height: 450 } as const
 
 // ── 布局常量 ──────────────────────────────────────────────────────────
 const GRAVITY_LAYOUT = {
@@ -38,15 +35,10 @@ export default function GravityAnimation() {
     time: s.time,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
   const { font } = canvasSize
 
-  const vp = useViewport(canvasSize, {
-    designWidth: GRAVITY_DESIGN.width,
-    designHeight: GRAVITY_DESIGN.height,
-  })
-
-  const { m1 = 1000, m2 = 10, r = 5, mode = 0, preset = 0, showChart = 1 } = params
+  const { m1 = 1000, m2 = 10, r = 5, mode = 0, preset: presetParam = 0, showChart = 1 } = params
 
   // ── 科学坐标转换 ──
   const WORLD = { xMin: -6, xMax: 6, yMin: -4, yMax: 4 } as const
@@ -66,7 +58,7 @@ export default function GravityAnimation() {
   let radius2 = 18
 
   if (mode === 1) {
-    switch (preset) {
+    switch (presetParam) {
       case 1:
         radius1 = 34
         radius2 = 14
@@ -93,7 +85,7 @@ export default function GravityAnimation() {
     radius2 = Math.min(Math.log(m2 + 1) * 4.8, 28)
   }
 
-  const gravSceneScale = createSceneScaleFromViewport(vp, 'visibleArea', { refMagnitudes: { gravity: 1 } })
+  const gravSceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes: { gravity: 1 } })
 
   // ── 拖拽交互状态 ──
   const [dragTarget, setDragTarget] = useState<'none' | 'obj1' | 'obj2'>('none')
@@ -127,16 +119,16 @@ export default function GravityAnimation() {
     const targetR = R_DOMAIN[0] + rRatio * (R_DOMAIN[1] - R_DOMAIN[0])
     const finalR = Math.max(R_DOMAIN[0], Math.min(R_DOMAIN[1], targetR))
 
-    if (mode === 1 && preset !== 0) {
+    if (mode === 1 && presetParam !== 0) {
       setParams({
         ...params,
         r: finalR,
-        preset: 0
+        preset: presetParam
       })
     } else {
       updateParam('r', finalR)
     }
-  }, [cardX, cardWidth, mode, preset, params, setParams, updateParam])
+  }, [cardX, cardWidth, mode, presetParam, params, setParams, updateParam])
 
   const handleMouseDown = (target: 'obj1' | 'obj2') => {
     if (isDraggingChartRef.current) return
@@ -166,8 +158,8 @@ export default function GravityAnimation() {
       }
       const finalR = Math.max(R_DOMAIN[0], Math.min(R_DOMAIN[1], newR))
 
-      if (mode === 1 && preset !== 0) {
-        setParams({ ...params, r: finalR, preset: 0 })
+      if (mode === 1 && presetParam !== 0) {
+        setParams({ ...params, r: finalR, preset: presetParam })
       } else {
         updateParam('r', finalR)
       }
@@ -237,7 +229,7 @@ export default function GravityAnimation() {
   if (mode === 1) {
     let m1_real = 5.97e24
     let m2_real = 7.35e22
-    switch (preset) {
+    switch (presetParam) {
       case 1: m1_real = 5.97e24; m2_real = 7.35e22; break
       case 2: m1_real = 1.99e30; m2_real = 5.97e24; break
       case 3: m1_real = 5.97e24; m2_real = 1.00e3; break
@@ -353,13 +345,13 @@ export default function GravityAnimation() {
             fontWeight="bold"
           >
             {mode === 1
-              ? preset === 1
+              ? presetParam === 1
                 ? '地球 m₁'
-                : preset === 2
+                : presetParam === 2
                   ? '太阳 m₁'
-                  : preset === 3
+                  : presetParam === 3
                     ? '地球 m₁'
-                    : preset === 4
+                    : presetParam === 4
                       ? '地球 m₁'
                       : '天体 m₁'
               : `m₁ = ${m1}`}
@@ -387,13 +379,13 @@ export default function GravityAnimation() {
             fontWeight="bold"
           >
             {mode === 1
-              ? preset === 1
+              ? presetParam === 1
                 ? '月球 m₂'
-                : preset === 2
+                : presetParam === 2
                   ? '地球 m₂'
-                  : preset === 3
+                  : presetParam === 3
                     ? '卫星 m₂'
-                    : preset === 4
+                    : presetParam === 4
                       ? '宇航员 m₂'
                       : '天体 m₂'
               : `m₂ = ${m2}`}
@@ -404,7 +396,7 @@ export default function GravityAnimation() {
         {showVectors && (
           <g>
             <VectorArrow
-              origin={{ x: obj1X + radius1, y: -obj1Y }}
+              originPixel={{ x: obj1X + radius1, y: obj1Y }}
               vector={{ x: 1, y: 0 }}
               type="gravity"
               sceneScale={gravSceneScale}
@@ -423,7 +415,7 @@ export default function GravityAnimation() {
             </text>
 
             <VectorArrow
-              origin={{ x: obj2X - radius2, y: -obj2Y }}
+              originPixel={{ x: obj2X - radius2, y: obj2Y }}
               vector={{ x: -1, y: 0 }}
               type="gravity"
               sceneScale={gravSceneScale}
