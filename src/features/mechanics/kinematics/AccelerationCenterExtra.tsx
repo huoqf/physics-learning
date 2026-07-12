@@ -88,7 +88,8 @@ export default function AccelerationCenterExtra() {
 
   // ── 自动暂停检测 ──
   const prevTimeRef = useRef(0)
-  const hasShownWarningRef = useRef(false)
+  const hasShownEqualWarningRef = useRef(false)
+  const hasShownMeetWarningRef = useRef(false)
   const warningTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const clearAutoPauseTimer = useCallback(() => {
@@ -101,7 +102,8 @@ export default function AccelerationCenterExtra() {
 
   useEffect(() => {
     if (time === 0) {
-      hasShownWarningRef.current = false
+      hasShownEqualWarningRef.current = false
+      hasShownMeetWarningRef.current = false
       prevTimeRef.current = 0
       return
     }
@@ -114,11 +116,11 @@ export default function AccelerationCenterExtra() {
       // 追及模式：检测共速时刻和相遇时刻
       const { tEqual, tMeet } = chaseState
       if (
-        !hasShownWarningRef.current &&
+        !hasShownEqualWarningRef.current &&
         tEqual > 0 && tEqual <= maxTime &&
         prevTimeRef.current < tEqual && time >= tEqual
       ) {
-        hasShownWarningRef.current = true
+        hasShownEqualWarningRef.current = true
         setIsPlaying(false)
         setWarningText(`共速时刻：此时两车距离最大！Δx = ${chaseState.deltaX.toFixed(1)} m`)
         setShowWarning(true)
@@ -128,11 +130,11 @@ export default function AccelerationCenterExtra() {
         }, 1500)
       }
       if (
-        !hasShownWarningRef.current &&
+        !hasShownMeetWarningRef.current &&
         tMeet !== null && tMeet > 0 && tMeet <= maxTime &&
         prevTimeRef.current < tMeet && time >= tMeet
       ) {
-        hasShownWarningRef.current = true
+        hasShownMeetWarningRef.current = true
         setIsPlaying(false)
         setWarningText(`警车追上轿车！t = ${tMeet.toFixed(1)} s`)
         setShowWarning(true)
@@ -145,11 +147,11 @@ export default function AccelerationCenterExtra() {
       // 相遇模式：检测相遇时刻
       const { tMeet } = meetState
       if (
-        !hasShownWarningRef.current &&
+        !hasShownMeetWarningRef.current &&
         tMeet !== null && tMeet > 0 && tMeet <= maxTime &&
         prevTimeRef.current < tMeet && time >= tMeet
       ) {
-        hasShownWarningRef.current = true
+        hasShownMeetWarningRef.current = true
         setIsPlaying(false)
         setWarningText(`两车相遇！t = ${tMeet.toFixed(1)} s`)
         setShowWarning(true)
@@ -278,8 +280,8 @@ export default function AccelerationCenterExtra() {
   const scale = (roadWidth * 0.85) / maxDist
   const startX = roadLeft + roadWidth * 0.05
 
-  // 车辆位置
-  const carAX = startX + (chaseMode === 0 ? state.xA : state.xA) * scale
+  // 车辆位置（轿车初始在前方 deltaX0 米处）
+  const carAX = startX + (chaseMode === 0 ? deltaX0 + state.xA : state.xA) * scale
   const carBX = startX + (chaseMode === 0 ? state.xB : state.xB) * scale
 
   // ── 矢量场景配置 ──

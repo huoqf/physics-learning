@@ -105,7 +105,7 @@ export default function BasicModeScene({
         <g>
           {/* 外拉力 F (向右) */}
           <VectorArrow
-            origin={{ x: boxX_m1 + boxSize / 2, y: -(groundY - boxSize / 2) }}
+            originPixel={{ x: boxX_m1 + boxSize / 2, y: groundY - boxSize / 2 }}
             vector={{ x: F_applied, y: 0 }}
             type="appliedForce"
             sceneScale={frictionSceneScale}
@@ -171,7 +171,7 @@ export default function BasicModeScene({
           {f_actual_m1 > 0.1 && (
             <>
               <VectorArrow
-                origin={{ x: boxX_m1 - boxSize / 2, y: -groundY }}
+                originPixel={{ x: boxX_m1 - boxSize / 2, y: groundY }}
                 vector={{ x: -f_actual_m1, y: 0 }}
                 type="friction"
                 sceneScale={frictionSceneScale}
@@ -190,7 +190,7 @@ export default function BasicModeScene({
 
           {/* 支持力 F_N (向上) */}
           <VectorArrow
-            origin={{ x: boxX_m1, y: -(groundY - boxSize / 2) }}
+            originPixel={{ x: boxX_m1, y: groundY - boxSize / 2 }}
             vector={{ x: 0, y: F_normal_m1 }}
             type="normalForce"
             sceneScale={frictionSceneScale}
@@ -207,7 +207,7 @@ export default function BasicModeScene({
 
           {/* 重力 G (向下) */}
           <VectorArrow
-            origin={{ x: boxX_m1, y: -(groundY - boxSize / 2) }}
+            originPixel={{ x: boxX_m1, y: groundY - boxSize / 2 }}
             vector={{ x: 0, y: -weight }}
             type="gravity"
             sceneScale={frictionSceneScale}

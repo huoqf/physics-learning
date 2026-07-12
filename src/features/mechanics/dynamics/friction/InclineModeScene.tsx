@@ -165,7 +165,7 @@ export default function InclineModeScene({
           {/* 滑块受力 */}
           {/* 重力 G_m */}
           <VectorArrow
-            origin={{ x: blockWorldX, y: -blockWorldY }}
+            originPixel={{ x: blockWorldX, y: blockWorldY }}
             vector={{ x: 0, y: -weight }}
             type="gravity"
             sceneScale={frictionSceneScale}
@@ -182,7 +182,7 @@ export default function InclineModeScene({
 
           {/* 支持力 FN1 */}
           <VectorArrow
-            origin={{ x: blockWorldX, y: -blockWorldY }}
+            originPixel={{ x: blockWorldX, y: blockWorldY }}
             vector={{ x: res_m2.FN1 * Math.sin(angleRad), y: res_m2.FN1 * Math.cos(angleRad) }}
             type="normalForce"
             sceneScale={frictionSceneScale}
@@ -201,7 +201,7 @@ export default function InclineModeScene({
           {res_m2.f1 > 0.1 && (
             <>
               <VectorArrow
-                origin={{ x: blockWorldX, y: -blockWorldY }}
+                originPixel={{ x: blockWorldX, y: blockWorldY }}
                 vector={{ x: -res_m2.f1 * Math.cos(angleRad), y: res_m2.f1 * Math.sin(angleRad) }}
                 type="friction"
                 sceneScale={frictionSceneScale}
@@ -227,7 +227,7 @@ export default function InclineModeScene({
               <g>
                 {/* 斜面重力 G_M */}
                 <VectorArrow
-                  origin={{ x: inclineCenterWorldX, y: -inclineCenterWorldY }}
+                  originPixel={{ x: inclineCenterWorldX, y: inclineCenterWorldY }}
                   vector={{ x: 0, y: -weight_M }}
                   type="gravity"
                   sceneScale={frictionSceneScale}
@@ -244,7 +244,7 @@ export default function InclineModeScene({
 
                 {/* 地面支持力 FN2 */}
                 <VectorArrow
-                  origin={{ x: inclineCenterWorldX, y: -groundY }}
+                  originPixel={{ x: inclineCenterWorldX, y: groundY }}
                   vector={{ x: 0, y: res_m2.FN2 }}
                   type="normalForce"
                   sceneScale={frictionSceneScale}
@@ -263,7 +263,7 @@ export default function InclineModeScene({
                 {res_m2.f2 > 0.05 ? (
                   <>
                     <VectorArrow
-                      origin={{ x: inclineCenterWorldX, y: -groundY }}
+                      originPixel={{ x: inclineCenterWorldX, y: groundY }}
                       vector={{ x: res_m2.f2, y: 0 }}
                       type="friction"
                       sceneScale={frictionSceneScale}
