@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useSimulationFrame } from '@/utils/animation'
-import { useCanvasSize } from '@/utils'
+import { useAnimationViewport, useCanvasViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { MODERN_COLORS, EM_COLORS, PHYSICS_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics/colors'
 import { colors } from '@/theme/colors'
-import { setupCanvasDPR, useDevicePixelRatio } from '@/hooks/useCanvasDPR'
 
 interface Particle {
   id: number
@@ -31,10 +30,9 @@ interface ScatterSimProps {
 }
 
 export default function ScatterSim({ isPlaying, time: _time, modelType, impactParameter, autoEmit, keepTrails, launchTrigger, clearTrigger, updateParam }: ScatterSimProps) {
-  useDevicePixelRatio()
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
   const { font } = canvasSize
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const { canvasRef, setupFrame } = useCanvasViewport({ vp, canvasSize, mode: 'raw' })
 
   const modelTypeRef = useRef(modelType)
   const bRef = useRef(impactParameter)
@@ -65,7 +63,7 @@ export default function ScatterSim({ isPlaying, time: _time, modelType, impactPa
         trail: [], color: MODERN_COLORS.photonInfrared, active: true,
       },
     ]
-  }, [canvasSize.height])
+  }, [canvasRef, canvasSize.height])
 
   // 清空
   const handleClear = useCallback(() => {
@@ -97,7 +95,7 @@ export default function ScatterSim({ isPlaying, time: _time, modelType, impactPa
 
   // 统一仿真帧循环
   useSimulationFrame(() => {
-    const ctx = setupCanvasDPR(canvasRef, canvasSize.width, canvasSize.height)
+    const ctx = setupFrame()
     if (!ctx) return
 
     const W = canvasSize.width

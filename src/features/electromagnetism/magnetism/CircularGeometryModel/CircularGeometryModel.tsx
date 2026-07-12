@@ -1,16 +1,14 @@
-import { useEffect, useRef, useMemo, useCallback } from 'react'
+import { useEffect, useMemo, useCallback } from 'react'
 import { useAnimationStore } from '@/stores'
-import { useAnimationViewport } from '@/hooks'
+import { useAnimationViewport, useCanvasViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
-import { createSceneScaleFromViewport, worldToPixel } from '@/scene'
-import { setupCanvasDPR, useDevicePixelRatio } from '@/hooks/useCanvasDPR'
+import { worldToPixel } from '@/scene'
 import { VectorArrow } from '@/components/Physics'
 
 export default function CircularGeometryModel() {
-  useDevicePixelRatio()
   const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.splitH })
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const { canvasRef, setupFrame } = useCanvasViewport({ vp, canvasSize, mode: 'raw' })
   
   const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
@@ -124,19 +122,21 @@ export default function CircularGeometryModel() {
   }, [time, tOut, isPlaying, setTime])
 
   // 5. SVG 顶层辅助参数与 SceneScale 对象（用于 VectorArrow 渲染）
-  const sceneScale = useMemo(() => {
-    const base = createSceneScaleFromViewport(vp, 'centerScale', {
-      worldWidth: 7,
-      worldHeight: 13,
-      refMagnitudes: {
-        force: 20,
-        velocity: 3.0,
-        lorentzForce: 20,
-      },
-    })
-    // originY 覆盖：发射点在画面下方 80%
-    return { ...base, originY: vp.visibleH * 0.8 }
-  }, [vp])
+  const sceneScale = useSceneScale({
+    vp,
+    preset: CANVAS_PRESETS.splitH,
+    anchor: 'custom',
+    customOriginX: vp.centerX,
+    customOriginY: vp.visibleH * 0.8,
+    customScaleX: vp.visibleW / 7,
+    customScaleY: vp.visibleH / 13,
+    refMagnitudes: {
+      force: 20,
+      velocity: 3.0,
+      lorentzForce: 20,
+    },
+    intentionalNonUniformScale: true,
+  })
 
   // 坐标转换辅助函数 xw, yw -> pixel
   const px = useCallback((xw: number) => worldToPixel(xw, 0, sceneScale).px, [sceneScale])
@@ -144,10 +144,8 @@ export default function CircularGeometryModel() {
 
   // 4. Canvas 层绘图逻辑（粒子偏转本体与 300ms 拖尾）
   useEffect(() => {
-    const ctx = setupCanvasDPR(canvasRef, canvasSize.width, canvasSize.height)
+    const ctx = setupFrame()
     if (!ctx) return
-
-    ctx.clearRect(0, 0, canvasSize.width, canvasSize.height)
 
     // 绘制 300ms (0.3s) 淡出拖尾轨迹
     const tailSteps = 20
@@ -187,7 +185,7 @@ export default function CircularGeometryModel() {
     ctx.lineWidth = 2
     ctx.fill()
     ctx.stroke()
-  }, [time, velocity, B, angle, particleSign, boundaryType, xc, yc, R, tOut, exitState, getParticleState, canvasSize, sceneScale, px, py])
+  }, [time, velocity, B, angle, particleSign, boundaryType, xc, yc, R, tOut, exitState, getParticleState, sceneScale, px, py, setupFrame])
 
   // 6. 特征直角三角形顶点像素坐标计算
   const trianglePoints = useMemo(() => {

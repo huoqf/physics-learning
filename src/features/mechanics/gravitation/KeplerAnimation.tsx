@@ -1,5 +1,6 @@
 import { VectorArrow } from '@/components/Physics'
 import { useCanvasSize, useViewport } from '@/utils'
+import { useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -7,7 +8,6 @@ import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CANVAS_STYLE, KEPLER_CONFI
 import { useMemo, useCallback } from 'react'
 
 import { RelationChart } from '@/components/Chart'
-import { createSceneScaleFromViewport } from '@/scene'
 import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
 import { useKeplerPhysics } from './hooks/useKeplerPhysics'
 
@@ -70,13 +70,16 @@ export default function KeplerAnimation() {
   const { cx: planetCx, cy: planetCy } = toCanvas(planetX, planetY)
   const { cx: planetBCx, cy: planetBCy } = toCanvas(planetBX, planetBY)
 
-  // ── sceneScale（worldWidth/worldHeight 与轨道 scale 对齐）──
-  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'centerScale', {
-    designWidth: DESIGN_WIDTH,
-    designHeight: DESIGN_HEIGHT,
-    worldWidth: vp.visibleW / orbitScale,
-    worldHeight: vp.visibleH / orbitScale,
-  }), [vp, orbitScale])
+  // ── sceneScale（物理坐标 → 当前 SVG 坐标）──
+  const sceneScale = useSceneScale({
+    vp,
+    preset: CANVAS_PRESETS.full,
+    anchor: 'custom',
+    customOriginX: vp.centerX,
+    customOriginY: vp.centerY,
+    customScaleX: orbitScale,
+    customScaleY: orbitScale,
+  })
 
   // ── 画中画图表尺寸（从 canvasSize 计算）──
   const chartW = useMemo(() => clamp(

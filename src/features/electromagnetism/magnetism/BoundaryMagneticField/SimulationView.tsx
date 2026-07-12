@@ -253,7 +253,7 @@ export function SimulationView() {
       points.push({ x: px, y: py, t })
     }
     return points
-  }, [focusState.tOut, tSlideIn, v, activeTheta, getParticleState, sceneScale])
+  }, [focusState.tOut, tSlideIn, v, activeTheta, getParticleState, toCanvasPixel])
 
   // 历史轨迹：按真实时间过滤全程点集，三阶段连续
   const focusArcHistory = useMemo(() => {
@@ -610,7 +610,10 @@ export function SimulationView() {
     focusState,
     focusArcPredicted,
     focusArcHistory,
-    focusArcTail
+    focusArcTail,
+    metersToPixels,
+    setupFrame,
+    toCanvasPixel
   ])
 
 

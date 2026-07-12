@@ -30,7 +30,7 @@ import {
 import { colors } from '@/theme/colors'
 
 import { Button } from '@/components/UI'
-import { createSceneScaleFromViewport } from '@/scene'
+import { useSceneScale } from '@/hooks'
 
 /** 静电力常量 k = 9×10⁹ N·m²/C² */
 const COULOMB_K = 9e9
@@ -105,10 +105,16 @@ export default function ThreeChargeMode({
   const chargeR = Math.min(stageWidth, stageHeight) * LAYOUT.chargeRadiusRatio
   const maxForce = Math.max(...forces.map((f) => f.magnitude), 1e-10)
 
-  const sceneScale = createSceneScaleFromViewport(vp, 'visibleArea', {
-    designWidth: stageWidth,
-    designHeight: stageHeight,
+  const sceneScale = useSceneScale({
+    vp,
+    preset: { width: stageWidth, height: stageHeight },
+    anchor: 'custom',
+    customOriginX: 0,
+    customOriginY: 0,
+    customScaleX: 1,
+    customScaleY: 1,
     refMagnitudes: { electricForce: maxForce * 1.2 },
+    maxVectorLength: Math.min(stageWidth, stageHeight) * 0.3,
   })
 
   const handleMouseDown = (e: React.MouseEvent) => {

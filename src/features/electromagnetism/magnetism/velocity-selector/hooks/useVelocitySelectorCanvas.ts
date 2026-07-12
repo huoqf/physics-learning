@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef } from 'react'
 import { calculateVelocitySelectorTrajectory } from '@/physics'
 import { worldToPixel } from '@/scene'
 import type { SceneScale } from '@/scene'
+import type { CanvasSize } from '@/utils/useCanvasSize'
+import type { ViewportInfo } from '@/utils/useViewport'
 import { CANVAS_STYLE, PHYSICS_COLORS } from '@/theme/physics'
-import { setupCanvasDPR, useDevicePixelRatio } from '@/hooks/useCanvasDPR'
+import { useCanvasViewport } from '@/hooks/useCanvasViewport'
 import {
   VELOCITY_SELECTOR_PHYSICS,
   type ParticleState,
@@ -21,10 +23,25 @@ export function useVelocitySelectorCanvas({
   time: number
   isPlaying: boolean
   sceneScale: SceneScale
-  canvasSize: { width: number; height: number }
+  canvasSize: CanvasSize
 }) {
-  useDevicePixelRatio()
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const identityVp = useMemo<ViewportInfo>(() => ({
+    visibleX: 0,
+    visibleY: 0,
+    visibleW: canvasSize.width,
+    visibleH: canvasSize.height,
+    centerX: canvasSize.width / 2,
+    centerY: canvasSize.height / 2,
+    scale: 1,
+    tx: 0,
+    ty: 0,
+    transform: 'translate(0 0) scale(1)',
+    designVisibleW: canvasSize.width,
+    designVisibleH: canvasSize.height,
+    designLeft: 0,
+    designTop: 0,
+  }), [canvasSize.width, canvasSize.height])
+  const { canvasRef, setupFrame } = useCanvasViewport({ vp: identityVp, canvasSize, mode: 'raw' })
   const particlesRef = useRef<ParticleState[]>([])
   const lastEmitTimeRef = useRef<number>(0)
   const nextParticleIdRef = useRef<number>(0)
@@ -75,10 +92,8 @@ export function useVelocitySelectorCanvas({
   }, [params.mode, params.q, params.v0, params.B, time, mass, plateLength, plateGap])
 
   useEffect(() => {
-    const ctx = setupCanvasDPR(canvasRef, canvasSize.width, canvasSize.height)
+    const ctx = setupFrame()
     if (!ctx) return
-
-    ctx.clearRect(0, 0, canvasSize.width, canvasSize.height)
 
     if (params.mode === 0 && singleParticle) {
       const { point } = singleParticle
@@ -210,6 +225,7 @@ export function useVelocitySelectorCanvas({
     mass,
     plateLength,
     plateGap,
+    setupFrame,
   ])
 
   return { canvasRef, singleParticle }

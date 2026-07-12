@@ -1,4 +1,5 @@
 import { useCanvasSize, useViewport } from '@/utils'
+import { useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -12,7 +13,6 @@ import {
   generateMomentumEnergyCurve,
   elasticCollision1D,
 } from '@/physics/momentum'
-import { createSceneScaleFromViewport } from '@/scene'
 import { MomentumScene } from './MomentumScene'
 
 /** 动量动画参数范围 */
@@ -54,9 +54,17 @@ export default function MomentumAnimation() {
   const groundY = canvasSize.height - MOMENTUM_LAYOUT.groundOffset
   const ballCenterY = groundY - MOMENTUM_LAYOUT.ballAboveGround
 
-  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'visibleArea', {
+  const sceneScale = useSceneScale({
+    vp,
+    preset: { width: 700, height: 450 },
+    anchor: 'custom',
+    customOriginX: 0,
+    customOriginY: 0,
+    customScaleX: 1,
+    customScaleY: 1,
     refMagnitudes: { velocity: MOMENTUM_PARAM_BOUNDS.vMax, momentum: MOMENTUM_PARAM_BOUNDS.mMax * MOMENTUM_PARAM_BOUNDS.vMax },
-  }), [vp])
+    maxVectorLength: Math.min(vp.visibleW, vp.visibleH) * 0.3,
+  })
 
   // 基础模式
   const p_basic = calculateMomentumScalar(m, v)

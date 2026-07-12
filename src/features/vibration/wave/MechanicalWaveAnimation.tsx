@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { useAnimationViewport } from '@/hooks/useAnimationViewport'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
@@ -8,7 +8,6 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, CANVAS_COLORS, STROKE } from '@/theme/physics'
 import { Ball, VectorArrow } from '@/components/Physics'
 import { AnimationSvgCanvas } from '@/components/Layout'
-import { createSceneScaleFromViewport } from '@/scene'
 import {
   computeWaveParticleStates,
   computeWavelength,
@@ -99,25 +98,18 @@ export default function MechanicalWaveAnimation() {
   // y 像素：振幅映射，最大约 70px
   const scaleY = 70 / Math.max(A, 0.005)
 
-  const sceneScale = useMemo(() => {
-    const base = createSceneScaleFromViewport(vp, 'centerScale', {
-      designWidth: DESIGN_W,
-      designHeight: DESIGN_H,
-      worldWidth: DEFAULT_WAVE_CHAIN_LENGTH * 1.2,
-      worldHeight: 0.2,
-      refMagnitudes: {
-        velocity: 5,
-      },
-      maxVectorLength: 90,
-      intentionalNonUniformScale: true,
-    })
-    // ⚠️ 非等比缩放：X 方向映射链长，Y 方向映射振幅，无法使用 createSceneScaleFromDesignCenter
-    base.originX = originX
-    base.originY = originY - 70
-    base.scaleX = scaleX
-    base.scaleY = scaleY
-    return base
-  }, [vp, originX, originY, scaleX, scaleY])
+  const sceneScale = useSceneScale({
+    vp,
+    preset: CANVAS_PRESETS.splitV,
+    anchor: 'custom',
+    customOriginX: originX,
+    customOriginY: originY - 70,
+    customScaleX: scaleX,
+    customScaleY: scaleY,
+    refMagnitudes: { velocity: 5 },
+    maxVectorLength: 90,
+    intentionalNonUniformScale: true,
+  })
 
   const toCx = useCallback((x: number) => originX + x * scaleX, [originX, scaleX])
   const toCy = useCallback((y: number) => originY - y * scaleY, [originY, scaleY])

@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react'
-import { useAnimationViewport } from '@/hooks/useAnimationViewport'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
@@ -15,7 +15,6 @@ import {
 } from '@/physics/oscillation'
 import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
 import { AnimationSvgCanvas } from '@/components/Layout'
-import { createSceneScaleFromViewport } from '@/scene'
 
 export default function SimplePendulumAnimation() {
   const { params, isPlaying, time, speed, showVectors, showFormulas } = useAnimationStore(
@@ -96,30 +95,24 @@ export default function SimplePendulumAnimation() {
   const linePixelLength = 90
   const rPx = L * linePixelLength
 
-  // ── 建立标准的 SceneScale 物理缩放投影 ──
-  // 使用 createSceneScaleFromViewport 创建，然后手动对齐到物理坐标系
-  const sceneScale = useMemo(() => {
-    const base = createSceneScaleFromViewport(vp, 'centerScale', {
-      designWidth: 350,
-      designHeight: 650,
-      worldWidth: 350 / linePixelLength,  // 物理世界宽度 (m)
-      worldHeight: 650 / linePixelLength, // 物理世界高度 (m)
-      refMagnitudes: {
-        force: 10.0,    // 该场景预期最大力 10N（重力 9.8N 接近最大）
-        gravity: 10.0,  // 重力矢量使用 gravity type
-        tension: 12.0,  // 拉力最大约 12N
-        appliedForce: 10.0,  // 回复力最大约 10N
-        velocity: 3.0,  // 该场景预期最大速度 3 m/s
-      },
-      maxVectorLength: 100,  // 显式覆盖：平衡矢量长度与可读性
-    })
-    // 手动对齐 origin 到摆球悬挂点，与 physicsToCanvasWithOrigin 一致
-    // ⚠️ 仅覆盖 origin，scale 来自 createSceneScaleFromViewport（基于 linePixelLength）。
-    // 若要迁移到 createSceneScaleFromDesignCenter，需同步重构 physicsToCanvasWithOrigin 调用。
-    base.originX = pivotX
-    base.originY = pivotY
-    return base
-  }, [vp, pivotX, pivotY, linePixelLength])
+  // ── 建立标准的 SceneScale 物理缩放投影（输出设计坐标） ──
+  const sceneScale = useSceneScale({
+    vp,
+    preset: CANVAS_PRESETS.splitH,
+    anchor: 'center',
+    centerSource: 'custom',
+    centerX: pivotX,
+    centerY: pivotY,
+    physicsScaleDesign: linePixelLength,
+    refMagnitudes: {
+      force: 10.0,
+      gravity: 10.0,
+      tension: 12.0,
+      appliedForce: 10.0,
+      velocity: 3.0,
+    },
+    maxVectorLength: 100,
+  })
 
   // 摆球物理坐标（y轴向上为正，摆球在挂点下方，所以y为负）
   const ballPhysPos = useMemo(() => ({

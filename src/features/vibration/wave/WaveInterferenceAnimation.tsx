@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { useAnimationViewport } from '@/hooks/useAnimationViewport'
+import { useAnimationViewport, useCanvasViewport } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
-import { setupCanvasDPR } from '@/hooks/useCanvasDPR'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, WAVE_COLORS, CANVAS_COLORS, STROKE } from '@/theme/physics'
 import { Ball } from '@/components/Physics'
@@ -21,14 +20,14 @@ const X_MAX = 1.2
 const Y_MAX = 0.9
 
 function paintInterferenceField(
-  canvasRef: React.RefObject<HTMLCanvasElement | null>,
+  setupFrame: () => CanvasRenderingContext2D | null,
   cssW: number,
   cssH: number,
   fieldParams: TwoSourceParams,
   amplitude: number,
   t: number,
 ) {
-  const ctx = setupCanvasDPR(canvasRef, cssW, cssH)
+  const ctx = setupFrame()
   if (!ctx) return
   ctx.fillStyle = CANVAS_COLORS.objectFill
   ctx.fillRect(0, 0, cssW, cssH)
@@ -78,7 +77,7 @@ export default function WaveInterferenceAnimation() {
     preset: CANVAS_PRESETS.splitH,
   })
   const { font, width: cssW, height: cssH } = canvasSize
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const { canvasRef, setupFrame } = useCanvasViewport({ vp, canvasSize, mode: 'raw' })
 
   const a_cm = params.a ?? 12
   const lambda_cm = params.lambda ?? 5
@@ -109,7 +108,7 @@ export default function WaveInterferenceAnimation() {
   paintRef.current = () => {
     if (cssW <= 0 || cssH <= 0) return
     paintInterferenceField(
-      canvasRef,
+      setupFrame,
       cssW,
       cssH,
       fieldParams,

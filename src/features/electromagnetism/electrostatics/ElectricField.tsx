@@ -12,7 +12,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useElectricFieldPhysics } from './hooks/useElectricFieldPhysics'
 import { ElectricFieldBasicScene } from './ElectricFieldBasicScene'
 import { ElectricFieldAdvancedScene } from './ElectricFieldAdvancedScene'
-import { createSceneScaleFromViewport } from '@/scene'
+import { useSceneScale } from '@/hooks'
 
 const DESIGN_WIDTH = 840
 const DESIGN_HEIGHT = 650
@@ -40,7 +40,16 @@ export default function ElectricField() {
   const centerY = h / 2
   const pxPerCm = w / 20
 
-  const sceneScale = createSceneScaleFromViewport(vp, 'visibleArea')
+  const sceneScale = useSceneScale({
+    vp,
+    preset: CANVAS_PRESETS.full,
+    anchor: 'custom',
+    customOriginX: 0,
+    customOriginY: 0,
+    customScaleX: 1,
+    customScaleY: 1,
+    maxVectorLength: Math.min(w, h) * 0.3,
+  })
 
   // 基础模式下的物理区域源电荷中心
   const cx = w * 0.3

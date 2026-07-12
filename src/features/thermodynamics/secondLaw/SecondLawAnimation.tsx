@@ -1,5 +1,6 @@
 import { useRef, useCallback, useState, useEffect, useMemo } from 'react'
 import { useCanvasSize, useViewport } from '@/utils'
+import { useCanvasViewport } from '@/hooks'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
@@ -7,7 +8,6 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { SECOND_LAW_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { STROKE, FONT } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { setupCanvasDPR, useDevicePixelRatio } from '@/hooks/useCanvasDPR'
 import {
   initHeatConductionParticles,
   initDiffusionParticles,
@@ -43,7 +43,6 @@ const LAYOUT = {
 const SNAPSHOT_BUFFER_SIZE = 300
 
 export default function SecondLawAnimation() {
-  useDevicePixelRatio()
   const { params, isPlaying, time, direction } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
@@ -146,13 +145,11 @@ export default function SecondLawAnimation() {
   const midX = container.x + container.w / 2
 
   // ─── Canvas 渲染 ──────────────────────────────────────────────────
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const { canvasRef, setupFrame } = useCanvasViewport({ vp, canvasSize, mode: 'raw' })
 
   useEffect(() => {
-    const ctx = setupCanvasDPR(canvasRef, canvasSize.width, canvasSize.height)
+    const ctx = setupFrame()
     if (!ctx) return
-
-    ctx.clearRect(0, 0, canvasSize.width, canvasSize.height)
 
     // 绘制容器背景
     if (scenario === 'gas-diffusion') {
@@ -189,7 +186,7 @@ export default function SecondLawAnimation() {
       ctx.fill()
     }
     ctx.globalAlpha = 1
-  }, [canvasSize.width, canvasSize.height, scenario, container, midX, time])
+  }, [scenario, container, midX, time, setupFrame])
 
   // ─── 平衡态检测 ─────────────────────────────────────────────────
   const isEquilibrium = useMemo(() => {

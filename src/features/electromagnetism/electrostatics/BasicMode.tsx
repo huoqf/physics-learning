@@ -29,7 +29,7 @@ import { colors } from '@/theme/colors'
 
 import { RelationChart } from '@/components/Chart'
 import { Button } from '@/components/UI'
-import { createSceneScaleFromViewport } from '@/scene'
+import { useSceneScale } from '@/hooks'
 
 /** 静电力常量 k = 9×10⁹ N·m²/C² */
 const COULOMB_K = 9e9
@@ -153,10 +153,16 @@ export default function BasicMode({
   const leftArrowDir = attractive ? 1 : -1
   const rightArrowDir = attractive ? -1 : 1
 
-  const sceneScale = createSceneScaleFromViewport(vp, 'visibleArea', {
-    designWidth: stageWidth,
-    designHeight: stageHeight,
+  const sceneScale = useSceneScale({
+    vp,
+    preset: { width: stageWidth, height: stageHeight },
+    anchor: 'custom',
+    customOriginX: 0,
+    customOriginY: 0,
+    customScaleX: 1,
+    customScaleY: 1,
     refMagnitudes: { electricForce: 50 },
+    maxVectorLength: Math.min(stageWidth, stageHeight) * 0.3,
   })
 
   // F-r 整段曲线数据

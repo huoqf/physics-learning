@@ -13,9 +13,10 @@
     "audit:deps": "npm audit --audit-level=moderate",
     "check:font-size": "node scripts/check-font-size.mjs",
     "check:large-files": "node scripts/check-large-files.mjs",
-    "check:architecture": "npm run check:font-size && npm run check:large-files",
+    "check:architecture": "npm run check:font-size && npm run check:viewport-legacy && npm run check:large-files",
     "check": "npm run build && npm test -- --run && npm run audit:deps && npm run check:architecture",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install",
+    "check:viewport-legacy": "node scripts/check-viewport-legacy.mjs"
   },
   "dependencies": {
     "idb": "^8.0.2",

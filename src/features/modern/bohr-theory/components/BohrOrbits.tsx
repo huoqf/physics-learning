@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSimulationFrame } from '@/utils/animation'
 import { MODERN_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics/colors'
-import { setupCanvasDPR, useDevicePixelRatio } from '@/hooks/useCanvasDPR'
+import { useCanvasViewport } from '@/hooks/useCanvasViewport'
+import type { CanvasSize } from '@/utils/useCanvasSize'
+import type { ViewportInfo } from '@/utils/useViewport'
 
 interface PhotonAnimation {
   x: number
@@ -22,10 +24,36 @@ interface BohrOrbitsProps {
 }
 
 export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: BohrOrbitsProps) {
-  useDevicePixelRatio()
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const canvasWRef = useRef(680)
-  const canvasHRef = useRef(360)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const [rawSize, setRawSize] = useState({ width: 680, height: 360 })
+
+  const canvasSize = useMemo<CanvasSize>(() => ({
+    width: rawSize.width,
+    height: rawSize.height,
+    scale: 1,
+    rawScale: 1,
+    px: (v: number) => v,
+    font: (v: number) => v,
+  }), [rawSize.width, rawSize.height])
+
+  const identityVp = useMemo<ViewportInfo>(() => ({
+    visibleX: 0,
+    visibleY: 0,
+    visibleW: canvasSize.width,
+    visibleH: canvasSize.height,
+    centerX: canvasSize.width / 2,
+    centerY: canvasSize.height / 2,
+    scale: 1,
+    tx: 0,
+    ty: 0,
+    transform: 'translate(0 0) scale(1)',
+    designVisibleW: canvasSize.width,
+    designVisibleH: canvasSize.height,
+    designLeft: 0,
+    designTop: 0,
+  }), [canvasSize.width, canvasSize.height])
+
+  const { canvasRef, setupFrame } = useCanvasViewport({ vp: identityVp, canvasSize, mode: 'raw' })
 
   // 动画状态全部用 ref，避免 rAF 回调依赖 state 导致循环重启
   const electronLevelRef = useRef(targetLevel)
@@ -69,13 +97,10 @@ export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: 
 
   // Canvas 尺寸适配
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const parent = canvas.parentElement
+    const parent = containerRef.current
     if (!parent) return
     const sync = (w: number, h: number) => {
-      canvasWRef.current = w
-      canvasHRef.current = h
+      if (w > 0 && h > 0) setRawSize({ width: w, height: h })
     }
     const ro = new ResizeObserver((entries) => {
       const { width, height } = entries[0].contentRect
@@ -89,9 +114,9 @@ export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: 
 
   // 统一仿真帧循环（铁律 1 合规）
   useSimulationFrame(() => {
-    const W = canvasWRef.current
-    const H = canvasHRef.current
-    const ctx = setupCanvasDPR(canvasRef, W, H)
+    const W = canvasSize.width
+    const H = canvasSize.height
+    const ctx = setupFrame()
     if (!ctx) return
     const cx = W > 300 ? W * 0.65 : W / 2
     const cy = H / 2
@@ -342,7 +367,7 @@ export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: 
       <div className="absolute top-3 left-4 z-10 bg-white/70 backdrop-blur-md px-3 py-1.5 rounded-lg border border-neutral-100/50 shadow-sm">
         <span className="text-sm font-medium text-neutral-700">氢原子能级阶梯与跃迁轨道</span>
       </div>
-      <div className="flex-1 w-full min-h-0 bg-neutral-50 rounded-xl overflow-hidden">
+      <div ref={containerRef} className="flex-1 w-full min-h-0 bg-neutral-50 rounded-xl overflow-hidden">
         <canvas ref={canvasRef} className="block w-full h-full" />
       </div>
       <div className="px-4 py-2 border-t border-neutral-100 text-xs text-neutral-500 bg-neutral-50/50 flex justify-between rounded-b-xl">

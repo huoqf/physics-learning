@@ -1,7 +1,7 @@
 # VIEWPORT 架构统一方案
 
 > 编写时间：2026-07-12
-> 状态：**Phase 1-2 已完成，Phase 3-4 待执行**
+> 状态：**Phase 1-3 已完成，Phase 4 进行中，Phase 5 待评估**
 > 目标：逐步统一 VIEWPORT 实现组件，覆盖 SVG/Canvas，完成实际分辨率测量、画面映射坐标转化、坐标对齐
 
 **状态标记说明**：
@@ -111,8 +111,8 @@ Level 2: useAnimationViewport(preset)                     ✅
     ↓
 Level 3: 渲染层（SVG / Canvas / 混合）
     ├── AnimationSvgCanvas                                ✅
-    ├── useCanvasViewport                                 ⚠️ 待实现
-    └── 混合路径                                          ⚠️ 待实现
+    ├── useCanvasViewport                                 ✅ 已实现
+    └── 混合路径                                          ✅ 验证通过
 ```
 
 ### preset 与布局的关系
@@ -201,12 +201,12 @@ export const worldToDesign = worldToPixel
 
 ---
 
-## 六、useSceneScale — 统一入口 ⚠️ 待实现
+## 六、useSceneScale — 统一入口 ✅ 已实现
 
-> **状态**：设计完成，文件 `src/hooks/useSceneScale.ts` 尚未创建。
+> **状态**：已实现，文件 `src/hooks/useSceneScale.ts` 已创建。
 
 ```ts
-// src/hooks/useSceneScale.ts  ⚠️ 待实现
+// src/hooks/useSceneScale.ts  ✅ 已实现
 
 interface UseSceneScaleOptions {
   vp: ViewportInfo
@@ -375,7 +375,7 @@ scaleY = preset.height / physicsHeight
 2. `createSceneScaleFromDesignCenter` 的 `centerX/centerY` 语义不明确（设计坐标 vs 容器像素）
 3. `useSceneScale` 统一在设计坐标空间操作，不需要额外的工厂函数层
 
-### 实现 ⚠️
+### 实现 ✅
 
 ```ts
 function useSceneScale(options: UseSceneScaleOptions): SceneScale {
@@ -518,12 +518,12 @@ function useSceneScale(options: UseSceneScaleOptions): SceneScale {
 
 ---
 
-## 七、useCanvasViewport — Canvas 统一入口 ⚠️ 待实现
+## 七、useCanvasViewport — Canvas 统一入口 ✅ 已实现
 
-> **状态**：设计完成，文件 `src/hooks/useCanvasViewport.ts` 尚未创建。
+> **状态**：已实现，文件 `src/hooks/useCanvasViewport.ts` 已创建。
 
 ```ts
-// src/hooks/useCanvasViewport.ts  ⚠️ 待实现
+// src/hooks/useCanvasViewport.ts  ✅ 已实现
 
 interface UseCanvasViewportOptions {
   vp: ViewportInfo
@@ -547,7 +547,7 @@ interface CanvasViewportResult {
 | `transform` | `dpr * vp.scale, ..., dpr * vp.tx, dpr * vp.ty` | 场景内容、物理对象、轨迹、箭头 | stroke/text 也会被缩放，线宽随画面缩放 |
 | `raw` | `dpr, 0, 0, dpr, 0, 0` | 波场、粒子场、固定屏幕字号/线宽 | 线宽和字号保持屏幕固定尺寸 |
 
-### 实现 ⚠️
+### 实现 ✅
 
 ```ts
 function useCanvasViewport({ vp, canvasSize, mode = 'transform' }: options): CanvasViewportResult {
@@ -634,7 +634,7 @@ const draw = useCallback(() => {
 
 | | `useCanvasViewport`（新） | `useCanvasDPR`（旧） |
 |---|---|---|
-| 状态 | ⚠️ 待实现 | ✅ 存量 |
+| 状态 | ✅ 已实现 | ✅ 存量 |
 | DPR 处理 | 内置（`setupFrame` 自动应用 DPR） | 独立 Hook |
 | viewport 对齐 | 内置（`setupFrame` 自动应用 vp.transform） | 无，调用方手动对齐 |
 | 坐标转换 | 提供 `designToPixel` / `pixelToDesign` / `clientToDesign` | 无 |
@@ -804,6 +804,57 @@ const { px, py } = worldToDesign(x, y, sceneScale)  // worldToDesign = worldToPi
 2. `computeScale + physicsToCanvasWithOrigin` → `useSceneScale` + `worldToPixel`
 3. `presetCompensation: 1.2` → 验证后移除（建议分两步：先迁 API，再移补偿）
 4. 容器像素 SceneScale → 设计坐标 SceneScale
+
+
+### Phase A-B 执行记录（2026-07-12）✅
+
+- Phase A：文档状态已对齐为 Phase 1-3 已完成、Phase 4 进行中、Phase 5 待评估。
+- Phase A：新增 `scripts/check-viewport-legacy.mjs`，并接入 `npm run check:architecture`。
+- Phase B：`src/features` 中 `createSceneScaleFromViewport(..., 'visibleArea')` / `createSceneScaleFromViewport(..., 'centerScale')` 已清零。
+- 保留项：`createSceneScaleFromViewport(..., 'transform')` 仍作为低风险 legacy 入口保留，后续随 Phase 4 收尾迁移。
+- 保留项：`useCanvasDPR/setupCanvasDPR` 属 Phase C/后续 Canvas 路径迁移，不在本批次强制清零。
+
+#### Phase B 已迁移文件
+
+| 模式 | 文件 | 新方案 |
+|------|------|--------|
+| centerScale | `mechanics/circular/CircularMotionAnimation.tsx` | `useSceneScale({ anchor: 'center' })` |
+| centerScale | `mechanics/circular/hooks/useVerticalCircularPhysics.ts` | `useSceneScale({ anchor: 'center' })` |
+| centerScale | `mechanics/gravitation/KeplerAnimation.tsx` | `useSceneScale({ anchor: 'custom' })` |
+| centerScale | `mechanics/gravitation/SatelliteAnimation.tsx` | `useSceneScale({ anchor: 'custom' })` |
+| centerScale | `vibration/simpleHarmonic/SimplePendulumAnimation.tsx` | `useSceneScale({ anchor: 'center', centerSource: 'custom' })` |
+| centerScale | `vibration/wave/MechanicalWaveAnimation.tsx` | `useSceneScale({ anchor: 'custom' })` |
+| centerScale | `electromagnetism/magnetism/CircularGeometryModel/CircularGeometryModel.tsx` | `useSceneScale({ anchor: 'custom' })` |
+| visibleArea | `mechanics/momentum/ImpulseAnimation.tsx` | `useSceneScale({ anchor: 'custom' })` |
+| visibleArea | `mechanics/momentum/MomentumAnimation.tsx` | `useSceneScale({ anchor: 'custom' })` |
+| visibleArea | `mechanics/dynamics/hooks/useEquilibriumLayout.ts` | `useSceneScale({ anchor: 'custom' })` |
+| visibleArea | `electromagnetism/electrostatics/BasicMode.tsx` | `useSceneScale({ anchor: 'custom' })` |
+| visibleArea | `electromagnetism/electrostatics/ElectricField.tsx` | `useSceneScale({ anchor: 'custom' })` |
+| visibleArea | `electromagnetism/electrostatics/ThreeChargeMode.tsx` | `useSceneScale({ anchor: 'custom' })` |
+| visibleArea | `mechanics/kinematics/ObliqueThrowAnimation.tsx` | `useSceneScale({ anchor: 'custom' })` |
+| visibleArea | `mechanics/kinematics/ProjectileAnimation.tsx` | `useSceneScale({ anchor: 'custom' })` |
+| visibleArea | `mechanics/kinematics/StroboscopicAnimation.tsx` | `useSceneScale({ anchor: 'custom' })` |
+
+
+### Phase C 执行记录（2026-07-12）✅
+
+- `src/features` 中 `useCanvasDPR` / `setupCanvasDPR` / `useDevicePixelRatio` 调用已清零。
+- Canvas 场景统一迁移到 `useCanvasViewport({ mode: 'raw' })`，保持既有像素坐标绘制语义。
+- 对原本无 `ViewportInfo` 的纯 Canvas 子组件，使用 identity viewport（`scale=1, tx=0, ty=0`）接入 `useCanvasViewport`，仅复用 DPR + frame setup 能力。
+
+#### Phase C 已迁移文件
+
+| 文件 | 新方案 |
+|------|--------|
+| `vibration/wave/WaveDiffractionAnimation.tsx` | `useCanvasViewport({ mode: 'raw' })` |
+| `vibration/wave/WaveInterferenceAnimation.tsx` | `useCanvasViewport({ mode: 'raw' })` |
+| `thermodynamics/secondLaw/SecondLawAnimation.tsx` | `useCanvasViewport({ mode: 'raw' })` |
+| `modern/bohr-theory/components/BohrOrbits.tsx` | identity viewport + `useCanvasViewport({ mode: 'raw' })` |
+| `modern/bohr-theory/components/ExcitationSim.tsx` | `useAnimationViewport` + `useCanvasViewport({ mode: 'raw' })` |
+| `modern/bohr-theory/components/PhotoelectricSim.tsx` | `useCanvasViewport({ mode: 'raw' })` |
+| `modern/bohr-theory/components/ScatterSim.tsx` | `useAnimationViewport` + `useCanvasViewport({ mode: 'raw' })` |
+| `electromagnetism/magnetism/CircularGeometryModel/CircularGeometryModel.tsx` | `useCanvasViewport({ mode: 'raw' })` |
+| `electromagnetism/magnetism/velocity-selector/hooks/useVelocitySelectorCanvas.ts` | identity viewport + `useCanvasViewport({ mode: 'raw' })` |
 
 ### Phase 5: 非标准 preset 评估（1 天）⚠️ 待评估
 

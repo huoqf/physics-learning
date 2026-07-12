@@ -1,10 +1,9 @@
 import { useEffect, useRef, useMemo } from 'react'
 import { useSimulationFrame } from '@/utils/animation'
-import { useAnimationViewport } from '@/hooks'
+import { useAnimationViewport, useCanvasViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { RelationChart } from '@/components/Chart'
 import { MODERN_COLORS, CANVAS_COLORS } from '@/theme/physics/colors'
-import { setupCanvasDPR, useDevicePixelRatio } from '@/hooks/useCanvasDPR'
 
 interface PhotoElectron {
   id: number
@@ -28,11 +27,10 @@ interface PhotoelectricSimProps {
 const PHOTON_ENERGIES = [0.66, 2.55, 12.75, 1.89, 12.09, 10.20]
 
 export default function PhotoelectricSim({ isPlaying, time, radiationPhotonIndex, workFunction, stoppingVoltage }: PhotoelectricSimProps) {
-  useDevicePixelRatio()
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const { containerRef, canvasSize } = useAnimationViewport({
+  const { containerRef, canvasSize, vp } = useAnimationViewport({
     preset: CANVAS_PRESETS.splitV,
   })
+  const { canvasRef, setupFrame } = useCanvasViewport({ vp, canvasSize, mode: 'raw' })
 
   const hv = PHOTON_ENERGIES[radiationPhotonIndex]
   const isPhotoelectric = hv >= workFunction
@@ -86,7 +84,7 @@ export default function PhotoelectricSim({ isPlaying, time, radiationPhotonIndex
 
   // 统一仿真帧循环
   useSimulationFrame(() => {
-    const ctx = setupCanvasDPR(canvasRef, canvasSize.width, canvasSize.height)
+    const ctx = setupFrame()
     if (!ctx) return
 
     const W = canvasSize.width

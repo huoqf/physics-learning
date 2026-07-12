@@ -1,6 +1,6 @@
 import { VectorArrow } from '@/components/Physics'
 import { physicsToCanvasWithOrigin, clientToContainerPoint } from '@/utils'
-import { useAnimationViewport } from '@/hooks'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import React, { useMemo, useCallback, useRef } from 'react'
@@ -8,7 +8,6 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateCircularMotion } from '@/physics'
 
-import { createSceneScaleFromViewport } from '@/scene'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,
@@ -93,16 +92,17 @@ export default function CircularMotionAnimation() {
 
   const canvasPos = physicsToCanvasWithOrigin(x, y, centerX, centerY, scale)
 
-  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'centerScale', {
-    designWidth: CANVAS_PRESETS.square.width,
-    designHeight: CANVAS_PRESETS.square.height,
-    worldWidth: vp.visibleW / scale,
-    worldHeight: vp.visibleH / scale,
+  const sceneScale = useSceneScale({
+    vp,
+    preset: CANVAS_PRESETS.square,
+    anchor: 'center',
+    centerSource: 'viewport',
+    physicsScaleDesign: scale / vp.scale,
     refMagnitudes: {
       velocity: CIRCULAR_MOTION_CHART_RANGE.vMax,
       acceleration: CIRCULAR_MOTION_CHART_RANGE.aMax,
     },
-  }), [vp, scale])
+  })
 
   // ── 矢量安全映射 ─────────────
 

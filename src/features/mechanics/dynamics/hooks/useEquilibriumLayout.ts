@@ -1,7 +1,7 @@
 import { useMemo, useCallback } from 'react'
 import { clampEndpoint } from '@/utils/coordinate'
 import type { CanvasBounds, CanvasPoint } from '@/utils/coordinate'
-import { createSceneScaleFromViewport } from '@/scene'
+import { useSceneScale } from '@/hooks/useSceneScale'
 import type { SceneScale } from '@/scene'
 import { GRAVITY } from '@/physics/constants'
 import type { CanvasSize } from '@/utils/useCanvasSize'
@@ -59,7 +59,16 @@ export function useEquilibriumLayout(
 ): EquilibriumLayoutData {
   const { font } = canvasSize
 
-  const eqSceneScale = createSceneScaleFromViewport(vp, 'visibleArea')
+  const eqSceneScale = useSceneScale({
+    vp,
+    preset: { width: canvasSize.width, height: canvasSize.height },
+    anchor: 'custom',
+    customOriginX: 0,
+    customOriginY: 0,
+    customScaleX: 1,
+    customScaleY: 1,
+    maxVectorLength: Math.min(vp.visibleW, vp.visibleH) * 0.3,
+  })
 
   const centerX = vp.visibleW / 2
   const centerY = vp.visibleH / 2 - 45

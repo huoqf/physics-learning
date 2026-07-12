@@ -6,7 +6,8 @@ import type { VerticalCircularMotionPoint } from '@/physics/dynamics/dynamics-ad
 import { useCanvasSize, physicsToCanvasWithOrigin, useViewport } from '@/utils'
 import type { CanvasSize, ViewportInfo } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { createSceneScaleFromViewport } from '@/scene'
+import { useSceneScale } from '@/hooks/useSceneScale'
+import type { SceneScale } from '@/scene'
 
 const SIMULATION_DT = 0.002
 
@@ -48,7 +49,7 @@ export interface VerticalCircularPhysicsResult {
   cardX: number
   cardY: number
 
-  sceneScale: ReturnType<typeof createSceneScaleFromViewport>
+  sceneScale: SceneScale
 
   handleSvgMouseMove: (e: React.MouseEvent<SVGElement>) => void
   handleSvgMouseUp: () => void
@@ -107,26 +108,25 @@ export function useVerticalCircularPhysics(): VerticalCircularPhysicsResult {
   const centerY = vp.centerY
   const ballPos = physicsToCanvasWithOrigin(x, y, centerX, centerY, scale)
 
-  const sceneScale = useMemo(() => {
-    const refV = Math.max(v0 * 1.4, 6.0)
-    const refA = Math.max((v0 * v0) / r, 10.0)
-    const refF = Math.max(m * GRAVITY + (m * v0 * v0) / r, 15.0)
+  const refV = Math.max(v0 * 1.4, 6.0)
+  const refA = Math.max((v0 * v0) / r, 10.0)
+  const refF = Math.max(m * GRAVITY + (m * v0 * v0) / r, 15.0)
 
-    return createSceneScaleFromViewport(vp, 'centerScale', {
-      designWidth: 650,
-      designHeight: 650,
-      worldWidth: vp.visibleW / scale,
-      worldHeight: vp.visibleH / scale,
-      refMagnitudes: {
-        velocity: refV,
-        acceleration: refA,
-        force: refF,
-        gravity: refF,
-        normalForce: refF,
-        tension: refF,
-      },
-    })
-  }, [vp, scale, v0, r, m])
+  const sceneScale = useSceneScale({
+    vp,
+    preset: CANVAS_PRESETS.square,
+    anchor: 'center',
+    centerSource: 'viewport',
+    physicsScaleDesign: scale / vp.scale,
+    refMagnitudes: {
+      velocity: refV,
+      acceleration: refA,
+      force: refF,
+      gravity: refF,
+      normalForce: refF,
+      tension: refF,
+    },
+  })
 
   const cardX = canvasSize.width - cardWidth - VERTICAL_CIRCULAR_LAYOUT.cardRightOffset
   const cardY = 20

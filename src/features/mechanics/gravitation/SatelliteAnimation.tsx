@@ -1,6 +1,7 @@
 import { VectorArrow } from '@/components/Physics'
 import { useState, useRef, useMemo, useCallback, useEffect } from 'react'
 import { useCanvasSize, useViewport, clientToContainerPoint } from '@/utils'
+import { useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -9,7 +10,6 @@ import { GRAVITATIONAL_CONSTANT, EARTH_MASS, EARTH_RADIUS } from '@/physics/cons
 
 import { RelationChart, VelocityTimeChart } from '@/components/Chart'
 import type { RelationDataSeries, VTStage } from '@/components/Chart'
-import { createSceneScaleFromViewport } from '@/scene'
 import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { LAYOUT, VTCARD } from './satelliteLayout'
@@ -41,12 +41,15 @@ export default function SatelliteAnimation() {
   const earthRadiusPx = LAYOUT.earth.radiusPx * vp.scale
   const scale = earthRadiusPx / EARTH_RADIUS
 
-  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'centerScale', {
-    designWidth: LAYOUT.designWidth,
-    designHeight: LAYOUT.designHeight,
-    worldWidth: vp.visibleW / scale,
-    worldHeight: vp.visibleH / scale,
-  }), [vp, scale])
+  const sceneScale = useSceneScale({
+    vp,
+    preset: CANVAS_PRESETS.full,
+    anchor: 'custom',
+    customOriginX: centerX,
+    customOriginY: centerY,
+    customScaleX: scale,
+    customScaleY: scale,
+  })
 
   const launchData = useLaunchPhysics({ mode, v0, isLaunched, time })
   const vtSamplePoints = useVtSampling({ mode, v0 })

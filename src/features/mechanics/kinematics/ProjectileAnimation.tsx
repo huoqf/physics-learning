@@ -1,4 +1,5 @@
 import { VectorArrow, VectorDefs, Ball, ParticleTrajectory } from '@/components/Physics'
+import { useSceneScale } from '@/hooks'
 import { useCanvasSize, useViewport, physicsToCanvasWithOrigin, clientToContainerPoint } from '@/utils'
 import React, { useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -15,7 +16,6 @@ import {
 
 import { VelocityTimeChart } from '@/components/Chart'
 
-import { createSceneScaleFromViewport } from '@/scene'
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
 
 const PROJ_DESIGN = { width: 100, height: 100 } as const
@@ -119,8 +119,16 @@ export default function ProjectileAnimation() {
   const scaleY = stageHeight / PHYSICS_HEIGHT
   const scale = Math.min(scaleX, scaleY)
 
-  const projSceneScale = createSceneScaleFromViewport(vp, 'visibleArea', {
+  const projSceneScale = useSceneScale({
+    vp,
+    preset: PROJ_DESIGN,
+    anchor: 'custom',
+    customOriginX: 0,
+    customOriginY: 0,
+    customScaleX: 1,
+    customScaleY: 1,
     refMagnitudes: { velocity: Math.max(v0x, 10) },
+    maxVectorLength: Math.min(vp.visibleW, vp.visibleH) * 0.3,
   })
 
   // 当前播放时刻限制

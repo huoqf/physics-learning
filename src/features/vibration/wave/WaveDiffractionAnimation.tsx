@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { useAnimationViewport } from '@/hooks/useAnimationViewport'
+import { useAnimationViewport, useCanvasViewport } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
-import { setupCanvasDPR } from '@/hooks/useCanvasDPR'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, WAVE_COLORS, CANVAS_COLORS, STROKE, SCENE_COLORS } from '@/theme/physics'
 import { sampleDiffractionField, type DiffractionFieldParams } from '@/physics/wave'
@@ -16,14 +15,14 @@ const X_MAX = 1.2
 const Y_MAX = 0.9
 
 function paintDiffractionField(
-  canvasRef: React.RefObject<HTMLCanvasElement | null>,
+  setupFrame: () => CanvasRenderingContext2D | null,
   cssW: number,
   cssH: number,
   fieldParams: DiffractionFieldParams,
   amplitude: number,
   t: number,
 ) {
-  const ctx = setupCanvasDPR(canvasRef, cssW, cssH)
+  const ctx = setupFrame()
   if (!ctx) return
   ctx.fillStyle = CANVAS_COLORS.objectFill
   ctx.fillRect(0, 0, cssW, cssH)
@@ -75,7 +74,7 @@ export default function WaveDiffractionAnimation() {
     preset: CANVAS_PRESETS.splitH,
   })
   const { font, width: cssW, height: cssH } = canvasSize
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const { canvasRef, setupFrame } = useCanvasViewport({ vp, canvasSize, mode: 'raw' })
 
   const d_cm = params.d ?? 8
   const lambda_cm = params.lambda ?? 4
@@ -103,7 +102,7 @@ export default function WaveDiffractionAnimation() {
   paintRef.current = () => {
     if (cssW <= 0 || cssH <= 0) return
     paintDiffractionField(
-      canvasRef,
+      setupFrame,
       cssW,
       cssH,
       fieldParams,

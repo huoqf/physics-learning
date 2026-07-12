@@ -1,5 +1,6 @@
 import { VectorArrow, PhysicsGround } from '@/components/Physics'
 import { useCanvasSize, useViewport } from '@/utils'
+import { useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -12,7 +13,6 @@ import {
   type ForceTimeType,
 } from '@/physics/impulse'
 
-import { createSceneScaleFromViewport } from '@/scene'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,
@@ -190,9 +190,17 @@ export default function ImpulseAnimation() {
 
   const groundY = vp.visibleY + vp.visibleH - IMPULSE_LAYOUT.groundOffset
 
-  const sceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'visibleArea', {
+  const sceneScale = useSceneScale({
+    vp,
+    preset: IMPULSE_DESIGN,
+    anchor: 'custom',
+    customOriginX: 0,
+    customOriginY: 0,
+    customScaleX: 1,
+    customScaleY: 1,
     refMagnitudes: { force: 200 },
-  }), [vp])
+    maxVectorLength: Math.min(vp.visibleW, vp.visibleH) * 0.3,
+  })
 
   // ── 基础模式：恒力 ──────────────────────────────────────────
   const currentT_basic = Math.min(time, t_duration)

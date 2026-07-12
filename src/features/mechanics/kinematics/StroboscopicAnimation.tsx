@@ -1,5 +1,6 @@
 import { SportsCar, PhysicsGround, VectorArrow, VectorDefs } from '@/components/Physics'
 import { useCanvasSize, useViewport } from '@/utils'
+import { useSceneScale } from '@/hooks'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { calculateAcceleratedMotion } from '@/physics'
@@ -11,7 +12,6 @@ import {
 } from '@/theme/physics'
 import { useUniformAccelerationPhysics } from './useUniformAccelerationPhysics'
 
-import { createSceneScaleFromViewport } from '@/scene'
 
 /**
  * 频闪虚影 (GhostCar)
@@ -59,8 +59,16 @@ export function StroboscopicAnimation({
 
   const maxVel = Math.max(Math.abs(v0) + Math.abs(a) * 8, 10)
   const maxAcc = Math.max(Math.abs(a) * 2, 5)
-  const sceneScale = createSceneScaleFromViewport(vp, 'visibleArea', {
+  const sceneScale = useSceneScale({
+    vp,
+    preset: { width: 400, height: 180 },
+    anchor: 'custom',
+    customOriginX: 0,
+    customOriginY: 0,
+    customScaleX: 1,
+    customScaleY: 1,
     refMagnitudes: { velocity: maxVel, acceleration: maxAcc },
+    maxVectorLength: Math.min(vp.visibleW, vp.visibleH) * 0.3,
   })
 
   const maxS = useMemo(() => {

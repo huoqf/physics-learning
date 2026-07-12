@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useCanvasSize } from '@/utils'
+import { useAnimationViewport, useCanvasViewport } from '@/hooks'
 import { useSimulationFrame } from '@/utils/animation'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { MODERN_COLORS, EM_COLORS, PHYSICS_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics/colors'
-import { setupCanvasDPR, useDevicePixelRatio } from '@/hooks/useCanvasDPR'
 
 interface IncidentParticle {
   x: number
@@ -71,9 +70,8 @@ const ENERGY_MAP: Record<string, { e: number; color: string }> = {
 }
 
 export default function ExcitationSim({ isPlaying: _isPlaying, time, atomQuantity, excitationType, incidentEnergy, launchTrigger, clearTrigger, updateParam }: ExcitationSimProps) {
-  useDevicePixelRatio()
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
+  const { canvasRef, setupFrame } = useCanvasViewport({ vp, canvasSize, mode: 'raw' })
 
   const atomQuantityRef = useRef(atomQuantity)
   const excitationTypeRef = useRef(excitationType)
@@ -210,7 +208,7 @@ export default function ExcitationSim({ isPlaying: _isPlaying, time, atomQuantit
 
   // ── 帧循环 ──
   useSimulationFrame(() => {
-    const ctx = setupCanvasDPR(canvasRef, canvasSize.width, canvasSize.height)
+    const ctx = setupFrame()
     if (!ctx) return
 
     const W = canvasSize.width
