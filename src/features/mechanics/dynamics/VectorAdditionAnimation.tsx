@@ -10,15 +10,15 @@ import { useVectorAdditionPhysics } from './useVectorAdditionPhysics'
 import { useVectorDrag } from './useVectorDrag'
 import { VectorGrid } from './VectorGrid'
 import { VectorAngleArc } from './VectorAngleArc'
-import { VectorFormulaPanel } from './VectorFormulaPanel'
 import { VectorDecomposition } from './VectorDecomposition'
 import { VectorParallelogram } from './VectorParallelogram'
 import { VectorTriangle } from './VectorTriangle'
+import { AnimationSvgCanvas } from '@/components/Layout'
 
 export default function VectorAdditionAnimation() {
-  const { params, showVectors, showFormulas, showGrid, isPlaying, time, updateParam } = useAnimationStore(
+  const { params, showVectors, showGrid, isPlaying, time, updateParam } = useAnimationStore(
     useShallow((s) => ({
-      params: s.params, showVectors: s.showVectors, showFormulas: s.showFormulas,
+      params: s.params, showVectors: s.showVectors,
       showGrid: s.showGrid, isPlaying: s.isPlaying, time: s.time, updateParam: s.updateParam,
     }))
   )
@@ -48,41 +48,38 @@ export default function VectorAdditionAnimation() {
   const centerY = vp.visibleH / 2
 
   return (
-    <div ref={containerRef} className="w-full h-full relative select-none">
-      <svg ref={svgRef} width={vp.visibleW} height={vp.visibleH}
-        className="bg-neutral-50 rounded-xl shadow-inner border border-neutral-200"
-        onMouseMove={(e) => handleDragMove(e.clientX, e.clientY)}
-        onTouchMove={(e) => { if (e.touches.length > 0) handleDragMove(e.touches[0].clientX, e.touches[0].clientY) }}>
+    <AnimationSvgCanvas
+      containerRef={containerRef}
+      transform={vp.transform}
+      svgRef={svgRef}
+      onPointerMove={(e) => handleDragMove(e.clientX, e.clientY)}
+    >
+      <VectorGrid centerX={centerX} centerY={centerY} scale={scale}
+        visibleW={vp.visibleW} visibleH={vp.visibleH} showGrid={showGrid} />
 
-        <VectorGrid centerX={centerX} centerY={centerY} scale={scale}
-          visibleW={vp.visibleW} visibleH={vp.visibleH} showGrid={showGrid} />
+      <line x1={20} y1={centerY} x2={vp.visibleW - 20} y2={centerY}
+        stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.axisBold} />
+      <line x1={centerX} y1={20} x2={centerX} y2={vp.visibleH - 20}
+        stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.axisBold} />
 
-        <line x1={20} y1={centerY} x2={vp.visibleW - 20} y2={centerY}
-          stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.axisBold} />
-        <line x1={centerX} y1={20} x2={centerX} y2={vp.visibleH - 20}
-          stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.axisBold} />
+      <circle cx={centerX} cy={centerY} r={CANVAS_STYLE.object.pointMassRadius}
+        fill={PHYSICS_COLORS.labelText} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1.5} />
+      <circle cx={centerX} cy={centerY} r={12} fill="none"
+        stroke={PHYSICS_COLORS.axis} strokeWidth={1} strokeDasharray="2,2" />
 
-        <circle cx={centerX} cy={centerY} r={CANVAS_STYLE.object.pointMassRadius}
-          fill={PHYSICS_COLORS.labelText} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1.5} />
-        <circle cx={centerX} cy={centerY} r={12} fill="none"
-          stroke={PHYSICS_COLORS.axis} strokeWidth={1} strokeDasharray="2,2" />
+      {showVectors && (
+        <g>
+          {mode === 2 && <VectorDecomposition physicsData={physicsData} sceneScale={vaSceneScale} onDragStart={handleDragStart} />}
+          {mode === 0 && <VectorParallelogram physicsData={physicsData} sceneScale={vaSceneScale} onDragStart={handleDragStart} />}
+          {mode === 1 && <VectorTriangle physicsData={physicsData} sceneScale={vaSceneScale} isPlaying={isPlaying} onDragStart={handleDragStart} />}
+        </g>
+      )}
 
-        {showVectors && (
-          <g>
-            {mode === 2 && <VectorDecomposition physicsData={physicsData} sceneScale={vaSceneScale} onDragStart={handleDragStart} />}
-            {mode === 0 && <VectorParallelogram physicsData={physicsData} sceneScale={vaSceneScale} onDragStart={handleDragStart} />}
-            {mode === 1 && <VectorTriangle physicsData={physicsData} sceneScale={vaSceneScale} isPlaying={isPlaying} onDragStart={handleDragStart} />}
-          </g>
-        )}
+      <VectorAngleArc physicsData={physicsData} angle={angle} mode={mode} font={font} />
 
-        <VectorAngleArc physicsData={physicsData} angle={angle} mode={mode} font={font} />
-
-        {showFormulas && <VectorFormulaPanel mode={mode} f1={f1} f2={f2} angle={angle} physicsData={physicsData} />}
-
-        <defs>
-          <VectorDefs colors={[PHYSICS_COLORS.forceNet, PHYSICS_COLORS.appliedForce, PHYSICS_COLORS.tension, PHYSICS_COLORS.forceComponent]} />
-        </defs>
-      </svg>
-    </div>
+      <defs>
+        <VectorDefs colors={[PHYSICS_COLORS.forceNet, PHYSICS_COLORS.appliedForce, PHYSICS_COLORS.tension, PHYSICS_COLORS.forceComponent]} />
+      </defs>
+    </AnimationSvgCanvas>
   )
 }

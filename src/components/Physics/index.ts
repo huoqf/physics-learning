@@ -22,6 +22,7 @@
 export { PhysicsGround } from "./PhysicsGround"
 export { Ball } from './Ball'
 export { Block } from './Block'
+export { Incline } from './Incline'
 export { SportsCar } from './SportsCar'
 export { Pulley } from './Pulley'
 export { EnergyBars } from './EnergyBars'
@@ -83,6 +84,7 @@ export { SkeletonHand } from './SkeletalHand'
 // ============================================================================
 export { VectorArrow } from './VectorArrow'
 export { VectorDefs } from './VectorDefs'
+export { DragHandle } from './DragHandle'
 export { markerId } from './vectorDefsUtils'
 
 // ============================================================================
@@ -103,5 +105,6 @@ export type { HandRuleProps, HandRuleMode } from './HandRule'
 export type { SkeletonHandProps, HandPose, HandChirality } from './SkeletalHand'
 export type { BallProps, BallPresetType } from './Ball'
 export type { BlockProps, BlockPresetType } from './Block'
+export type { InclineProps } from './Incline'
 export type { ParticleTrajectoryProps } from './ParticleTrajectory'
 

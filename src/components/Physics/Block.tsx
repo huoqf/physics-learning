@@ -10,7 +10,7 @@ import type { ChargeSign } from './types';
  * - `woodCart`: 带有滑轮的木质小车（木箱主体，底边叠加一对拟物化不锈钢车轮）。
  * - `metalCart`: 带有滑轮的不锈钢金属小车（金属主体，底边叠加一对拟物化不锈钢车轮）。
  */
-export type BlockPresetType = 'wood' | 'metal' | 'woodCart' | 'metalCart';
+export type BlockPresetType = 'wood' | 'metal' | 'woodCart' | 'metalCart' | 'standard';
 
 /**
  * 物理滑块组件 Props 接口。
@@ -141,7 +141,8 @@ export function Block({
 
   // 1. 材质与颜色参数匹配
   const isWood = type === 'wood' || type === 'woodCart';
-  const fillColor = `url(#${gradientId})`;
+  const isStandard = type === 'standard';
+  const fillColor = isStandard ? 'rgba(186, 230, 253, 0.55)' : `url(#${gradientId})`;
 
   let defaultStroke: string;
   let labelColor: string;
@@ -150,6 +151,10 @@ export function Block({
     // 采用木质的深色边框作为 stroke
     defaultStroke = SCENE_COLORS.materials.woodSphereGrad[1];
     labelColor = 'rgba(67, 20, 7, 0.9)'; // 深木褐色
+  } else if (isStandard) {
+    // 采用高中物理经典的蓝灰色描边和文字颜色
+    defaultStroke = '#0284c7';
+    labelColor = '#0369a1';
   } else {
     // 采用不锈钢深灰色作为 stroke
     defaultStroke = SCENE_COLORS.materials.structFill;
@@ -266,7 +271,7 @@ export function Block({
       )}
 
       {/* 4. 金属受光抛光高光线 (仅适用于金属材质，产生边缘切角白光感) */}
-      {!isWood && (
+      {!isWood && !isStandard && (
         <line
           x1={x + 1.5}
           y1={y + 1}

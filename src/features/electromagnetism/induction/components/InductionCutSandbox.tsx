@@ -1,5 +1,5 @@
 import React from 'react'
-import { ConductingRod, MagneticFieldGrid, Rails } from '@/components/Physics'
+import { ConductingRod, MagneticFieldGrid, Rails, DragHandle } from '@/components/Physics'
 import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { INDUCTION_LAYOUT } from '../utils'
 
@@ -123,15 +123,15 @@ export const InductionCutSandbox: React.FC<InductionCutSandboxProps> = ({
       <path d={wireLower} fill="none" stroke={SCENE_COLORS.circuit.wire} strokeWidth="3.5" />
 
       {/* 5. 导体棒物理组件 (ConductingRod, 高度=500, 搭在 180 间距导轨上) */}
-      <g onPointerDown={onPointerDown} className="cursor-grab active:cursor-grabbing">
-        <ConductingRod
-          type="horizontal"
-          x={rodX}
-          spacing={railSpacing}
-          height={500}
-          currentDir={rodCurrentDir}
-        />
-      </g>
+      <ConductingRod
+        type="horizontal"
+        x={rodX}
+        spacing={railSpacing}
+        height={500}
+        currentDir={rodCurrentDir}
+      />
+      <DragHandle cx={rodX} cy={railCy} color={PHYSICS_COLORS.magneticField}
+        cursor="grab" onPointerDown={onPointerDown} />
 
       {/* 6. 回路导线上的流光动画 */}
       {Math.abs(currentI) > 0.05 && (

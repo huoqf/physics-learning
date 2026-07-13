@@ -1,4 +1,4 @@
-import { VectorArrow, VectorDefs } from '@/components/Physics'
+import { VectorArrow, VectorDefs, DragHandle } from '@/components/Physics'
 import { useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -67,12 +67,12 @@ export default function EquilibriumAnimation() {
   const showBreak2Pulse = useTimedPulse(brokenLine !== 'none' && brokenLine !== 'left', 3000)
 
   useEffect(() => {
-    const handleGlobalMouseUp = () => endDrag()
-    window.addEventListener('mouseup', handleGlobalMouseUp)
-    window.addEventListener('touchend', handleGlobalMouseUp)
+    const handleGlobalPointerUp = () => endDrag()
+    window.addEventListener('pointerup', handleGlobalPointerUp)
+    window.addEventListener('pointercancel', handleGlobalPointerUp)
     return () => {
-      window.removeEventListener('mouseup', handleGlobalMouseUp)
-      window.removeEventListener('touchend', handleGlobalMouseUp)
+      window.removeEventListener('pointerup', handleGlobalPointerUp)
+      window.removeEventListener('pointercancel', handleGlobalPointerUp)
     }
   }, [endDrag])
 
@@ -123,10 +123,7 @@ export default function EquilibriumAnimation() {
 
       <svg ref={svgRef} width={vp.visibleW} height={vp.visibleH}
         className="bg-neutral-50 rounded-xl shadow-inner border border-neutral-200"
-        onMouseMove={(e) => updateDragMouse(e.clientX, e.clientY, svgRef.current)}
-        onTouchMove={(e) => {
-          if (e.touches.length > 0) updateDragMouse(e.touches[0].clientX, e.touches[0].clientY, svgRef.current)
-        }}
+        onPointerMove={(e) => updateDragMouse(e.clientX, e.clientY, svgRef.current)}
       >
         {gridLines}
 
@@ -283,21 +280,16 @@ export default function EquilibriumAnimation() {
           stroke={PHYSICS_COLORS.axis} strokeWidth={1} strokeDasharray="3,3" />
         <line x1={ballCenter.cx} y1={ballCenter.cy - 20} x2={ballCenter.cx} y2={ballCenter.cy + 50}
           stroke={PHYSICS_COLORS.axis} strokeWidth={1} strokeDasharray="3,3" />
-        <g onMouseDown={(e) => startDrag(e.clientX, e.clientY, svgRef.current)}
-          onTouchStart={(e) => {
-            if (e.touches.length > 0) startDrag(e.touches[0].clientX, e.touches[0].clientY, svgRef.current)
-          }}
-          className="group cursor-grab active:cursor-grabbing">
-          <circle cx={ballCenter.cx} cy={ballCenter.cy} r={26} fill="transparent" opacity={0} />
-          <circle cx={ballCenter.cx} cy={ballCenter.cy} r={CANVAS_STYLE.object.ball}
-            fill="url(#steelSphereGradient)" stroke={SCENE_COLORS.sphere.brassWeight.stroke}
-            strokeWidth={CANVAS_STYLE.stroke.objectLine} className="group-hover:scale-105 transition-transform" />
-          <circle cx={ballCenter.cx} cy={ballCenter.cy} r={6} fill="none" stroke={PHYSICS_COLORS.labelText} strokeWidth={1} />
-          <line x1={ballCenter.cx - 10} y1={ballCenter.cy} x2={ballCenter.cx + 10} y2={ballCenter.cy}
-            stroke={PHYSICS_COLORS.labelText} strokeWidth={0.75} opacity={0.6} />
-          <line x1={ballCenter.cx} y1={ballCenter.cy - 10} x2={ballCenter.cx} y2={ballCenter.cy + 10}
-            stroke={PHYSICS_COLORS.labelText} strokeWidth={0.75} opacity={0.6} />
-        </g>
+        <circle cx={ballCenter.cx} cy={ballCenter.cy} r={CANVAS_STYLE.object.ball}
+          fill="url(#steelSphereGradient)" stroke={SCENE_COLORS.sphere.brassWeight.stroke}
+          strokeWidth={CANVAS_STYLE.stroke.objectLine} />
+        <circle cx={ballCenter.cx} cy={ballCenter.cy} r={6} fill="none" stroke={PHYSICS_COLORS.labelText} strokeWidth={1} />
+        <line x1={ballCenter.cx - 10} y1={ballCenter.cy} x2={ballCenter.cx + 10} y2={ballCenter.cy}
+          stroke={PHYSICS_COLORS.labelText} strokeWidth={0.75} opacity={0.6} />
+        <line x1={ballCenter.cx} y1={ballCenter.cy - 10} x2={ballCenter.cx} y2={ballCenter.cy + 10}
+          stroke={PHYSICS_COLORS.labelText} strokeWidth={0.75} opacity={0.6} />
+        <DragHandle cx={ballCenter.cx} cy={ballCenter.cy} color="transparent"
+          cursor="grab" onPointerDown={(e) => { e.preventDefault(); startDrag(e.clientX, e.clientY, svgRef.current) }} />
 
         {/* 模式 3：三力封闭三角形 */}
         {mode === 3 && vp.visibleW > 0 && (

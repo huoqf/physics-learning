@@ -52,6 +52,8 @@ interface AnimationSvgCanvasProps {
   onTouchStart?: React.TouchEventHandler<SVGSVGElement>
   onTouchMove?: React.TouchEventHandler<SVGSVGElement>
   onTouchEnd?: React.TouchEventHandler<SVGSVGElement>
+  onPointerMove?: React.PointerEventHandler<SVGSVGElement>
+  onPointerUp?: React.PointerEventHandler<SVGSVGElement>
 }
 
 // ─── 组件 ──────────────────────────────────────────────────────────────────
@@ -191,6 +193,8 @@ export const AnimationSvgCanvas = React.memo<AnimationSvgCanvasProps>(
     onTouchStart,
     onTouchMove,
     onTouchEnd,
+    onPointerMove,
+    onPointerUp,
   }) {
     const hasCanvas = !!canvasRef
     return (
@@ -216,6 +220,8 @@ export const AnimationSvgCanvas = React.memo<AnimationSvgCanvasProps>(
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
         >
           <g transform={transform}>
             {children}

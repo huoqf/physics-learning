@@ -357,7 +357,111 @@ export const mechanicsDynamicsAnimations = defineAnimations({
         group: '教学提示',
         showIf: 'mode',
         showIfValue: 2,
-        content: '正交分解：θ 为待分解力与 x 轴正方向的偏角，范围 0°~360°。',
+        content: '正交分解：θ 为待分解力与 x 轴正方向 of 偏角，范围 0°~360°。',
+      },
+    ],
+  },
+  'anim-orthogonal-decomposition': {
+    title: '正交分解与建系优化',
+    knowledgeId: 'mechanics-3-method-1',
+    Component: lazy(() => import('@/features/mechanics/dynamics/OrthogonalDecompositionAnimation')),
+    controlsMode: 'param' as const,
+    defaultParams: {
+      mode: 0,
+      f1: 6,
+      theta1: 30,
+      f2: 5,
+      theta2: 120,
+      f3: 4,
+      theta3: 250,
+      axisAngle: 0,
+      theta: 30,
+      m: 1.5,
+      axisSelect: 0,
+    } as const,
+    paramMeta: [
+      { key: 'f1', label: '力 F₁ 大小', min: 1, max: 8, step: 0.5, unit: 'N', showIf: 'mode', showIfValue: 0 },
+      { key: 'theta1', label: 'F₁ 方向角 θ₁', min: 0, max: 360, step: 5, unit: '°', showIf: 'mode', showIfValue: 0 },
+      { key: 'f2', label: '力 F₂ 大小', min: 1, max: 8, step: 0.5, unit: 'N', showIf: 'mode', showIfValue: 0 },
+      { key: 'theta2', label: 'F₂ 方向角 θ₂', min: 0, max: 360, step: 5, unit: '°', showIf: 'mode', showIfValue: 0 },
+      { key: 'f3', label: '力 F₃ 大小', min: 1, max: 8, step: 0.5, unit: 'N', showIf: 'mode', showIfValue: 0 },
+      { key: 'theta3', label: 'F₃ 方向角 θ₃', min: 0, max: 360, step: 5, unit: '°', showIf: 'mode', showIfValue: 0 },
+      { key: 'axisAngle', label: '坐标系旋转角 θ_axis', min: 0, max: 90, step: 5, unit: '°', showIf: 'mode', showIfValue: 0 },
+      { key: 'theta', label: '斜面倾角 θ', min: 15, max: 75, step: 5, unit: '°', showIf: 'mode', showIfValue: 1 },
+      { key: 'm', label: '物块质量 m', min: 0.5, max: 3.0, step: 0.1, unit: 'kg', showIf: 'mode', showIfValue: 1 },
+    ],
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'mode',
+        group: '模型选择',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '多力合成与建系优化' },
+          { value: 1, label: '斜面平衡建系对比' },
+        ],
+      },
+      {
+        type: 'segmented',
+        key: 'axisSelect',
+        label: '直角坐标系方案',
+        group: '建系方案',
+        showIf: 'mode',
+        showIfValue: 1,
+        options: [
+          { value: 0, label: '方案A：沿斜面/垂直斜面建系' },
+          { value: 1, label: '方案B：水平/竖直方向建系' },
+        ],
+      },
+      {
+        type: 'preset',
+        group: '建系优化',
+        label: '对齐 F₁',
+        showIf: 'mode',
+        showIfValue: 0,
+        params: (current) => {
+          const theta1 = current.theta1 ?? 30
+          const bestAxis = Math.round(((theta1 % 90) + 90) % 90)
+          return { axisAngle: bestAxis }
+        },
+      },
+      {
+        type: 'preset',
+        group: '建系优化',
+        label: '对齐 F₂',
+        showIf: 'mode',
+        showIfValue: 0,
+        params: (current) => {
+          const theta2 = current.theta2 ?? 120
+          const bestAxis = Math.round(((theta2 % 90) + 90) % 90)
+          return { axisAngle: bestAxis }
+        },
+      },
+      {
+        type: 'preset',
+        group: '建系优化',
+        label: '对齐 F₃',
+        showIf: 'mode',
+        showIfValue: 0,
+        params: (current) => {
+          const theta3 = current.theta3 ?? 250
+          const bestAxis = Math.round(((theta3 % 90) + 90) % 90)
+          return { axisAngle: bestAxis }
+        },
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        showIf: 'mode',
+        showIfValue: 0,
+        content: '点击"对齐"按钮可自动旋转坐标轴，使选中的力完全落在坐标轴上，另一个轴的投影分量归 0。也可拖动箭头改变力的大小与方向，观察投影分矢量变化。',
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        showIf: 'mode',
+        showIfValue: 1,
+        content: '切换不同的"直角坐标系方案"，观察各力在坐标轴上的投影分解，体验参考坐标系的建立。',
       },
     ],
   },

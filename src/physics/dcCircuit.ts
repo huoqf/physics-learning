@@ -114,3 +114,197 @@ export function calculateCircuitAnalysis(
 
   return { Rtotal, Itotal, U1, U2, I1, I2, I3 }
 }
+
+// ===== 电表改装物理计算 =====
+export interface MeterExpansionResult {
+  I_g_meas: number
+  Rs: number
+  Rp: number
+  ratio: number
+  valid: boolean
+}
+
+export function calculateMeterExpansion(
+  mode: number,
+  U_input: number,
+  R_g: number,
+  I_g: number,
+  R_s: number,
+  R_p: number
+): MeterExpansionResult {
+  if (mode === 1) {
+    const R_V = R_g + R_s
+    if (R_V <= 0) return { I_g_meas: 0, Rs: R_s, Rp: R_p, ratio: 0, valid: false }
+    const I_g_meas = U_input / R_V
+    const ratio = Math.max(0, Math.min(1.2, I_g_meas / I_g))
+    return { I_g_meas, Rs: R_s, Rp: R_p, ratio, valid: true }
+  }
+  if (mode === 2) {
+    if (R_p <= 0 || R_g <= 0) return { I_g_meas: 0, Rs: R_s, Rp: R_p, ratio: 0, valid: false }
+    const I_g_meas = U_input * (R_p / (R_g + R_p))
+    const ratio = Math.max(0, Math.min(1.2, I_g_meas / I_g))
+    return { I_g_meas, Rs: R_s, Rp: R_p, ratio, valid: true }
+  }
+  return { I_g_meas: 0, Rs: R_s, Rp: R_p, ratio: 0, valid: false }
+}
+
+// ===== 欧姆表原理物理计算 =====
+export interface OhmmeterResult {
+  I: number
+  R_internal: number
+  ratio: number
+  isZeroed: boolean
+  valid: boolean
+}
+
+export function calculateOhmmeter(
+  E: number,
+  R_g: number,
+  r: number,
+  R_adjust: number,
+  R_x: number,
+  multiplier: number,
+  I_g: number
+): OhmmeterResult {
+  const R_internal_actual = R_g + r + R_adjust * multiplier
+  const totalR = R_internal_actual + R_x / multiplier
+  if (totalR <= 0) return { I: 0, R_internal: 0, ratio: 0, isZeroed: false, valid: false }
+  
+  const I = E / totalR
+  const ratio = Math.max(0, Math.min(1.2, I / I_g))
+  const I_short = E / R_internal_actual
+  const isZeroed = Math.abs(I_short - I_g) < 0.01 * I_g
+
+  return { I, R_internal: R_internal_actual, ratio, isZeroed, valid: true }
+}
+
+// ===== 测电源电动势与内阻实验误差计算 =====
+export interface ExperimentErResult {
+  I_meas: number
+  U_meas: number
+  I_real: number
+  U_real: number
+  valid: boolean
+}
+
+export function calculateExperimentEr(
+  E_real: number,
+  r_real: number,
+  R_slider: number,
+  wiring: number,
+  R_V: number,
+  R_A: number
+): ExperimentErResult {
+  if (wiring === 0) {
+    // 电路甲（电流表外接法）：电压表并联在路端，电流表与滑动变阻器串联后并联在电压表两端
+    if (R_slider <= 0) return { I_meas: 0, U_meas: 0, I_real: 0, U_real: 0, valid: false }
+    const R_branch = R_slider + R_A
+    const R_parallel = (R_branch * R_V) / (R_branch + R_V)
+    const R_total = r_real + R_parallel
+    
+    const I_total = E_real / R_total // 真实干路总电流
+    const U_meas = E_real - I_total * r_real // 电压表读数（路端电压）
+    const I_meas = U_meas / R_branch // 电流表读数
+    const U_real = I_meas * R_slider // 变阻器真实电压
+    
+    return {
+      I_meas,
+      U_meas,
+      I_real: I_total,
+      U_real,
+      valid: true
+    }
+  }
+  
+  if (wiring === 1) {
+    // 电路乙（电流表内接法）：电流表串联在干路，电压表与滑动变阻器并联
+    if (R_slider <= 0) return { I_meas: 0, U_meas: 0, I_real: 0, U_real: 0, valid: false }
+    const R_parallel = (R_slider * R_V) / (R_slider + R_V)
+    const R_total = r_real + R_A + R_parallel
+    
+    const I_total = E_real / R_total // 真实干路总电流（等于电流表读数）
+    const I_meas = I_total
+    const U_meas = I_total * R_parallel // 电压表读数（变阻器两端电压）
+    const U_real = E_real - I_total * r_real // 电池真实路端电压
+    
+    return {
+      I_meas,
+      U_meas,
+      I_real: I_total,
+      U_real,
+      valid: true
+    }
+  }
+
+  return { I_meas: 0, U_meas: 0, I_real: 0, U_real: 0, valid: false }
+}
+
+// ===== 非纯电阻电动机电路计算 =====
+export interface MotorCircuitResult {
+  I: number
+  U_M: number
+  P_total: number
+  P_heat_M: number
+  P_heat_R: number
+  P_mech: number
+  v_lift: number
+  valid: boolean
+}
+
+export function calculateMotorCircuit(
+  U_source: number,
+  R_protect: number,
+  r_M: number,
+  state: number,
+  E_back: number,
+  m_load: number
+): MotorCircuitResult {
+  const g = 9.8
+  
+  if (state === 0) {
+    const totalR = R_protect + r_M
+    if (totalR <= 0) return { I: 0, U_M: 0, P_total: 0, P_heat_M: 0, P_heat_R: 0, P_mech: 0, v_lift: 0, valid: false }
+    const I = U_source / totalR
+    const U_M = I * r_M
+    const P_total = U_source * I
+    const P_heat_M = I * I * r_M
+    const P_heat_R = I * I * R_protect
+    return {
+      I,
+      U_M,
+      P_total,
+      P_heat_M,
+      P_heat_R,
+      P_mech: 0,
+      v_lift: 0,
+      valid: true
+    }
+  }
+  
+  if (state === 1) {
+    const totalR = R_protect + r_M
+    if (totalR <= 0 || U_source <= E_back) {
+      return { I: 0, U_M: 0, P_total: 0, P_heat_M: 0, P_heat_R: 0, P_mech: 0, v_lift: 0, valid: false }
+    }
+    const I = (U_source - E_back) / totalR
+    const U_M = E_back + I * r_M
+    const P_total = U_source * I
+    const P_heat_M = I * I * r_M
+    const P_heat_R = I * I * R_protect
+    const P_mech = E_back * I
+    const v_lift = m_load > 0 ? P_mech / (m_load * g) : 0
+    
+    return {
+      I,
+      U_M,
+      P_total,
+      P_heat_M,
+      P_heat_R,
+      P_mech,
+      v_lift,
+      valid: true
+    }
+  }
+
+  return { I: 0, U_M: 0, P_total: 0, P_heat_M: 0, P_heat_R: 0, P_mech: 0, v_lift: 0, valid: false }
+}

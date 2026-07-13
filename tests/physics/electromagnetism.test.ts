@@ -34,6 +34,10 @@ import {
   computeACGenerationState,
   calculateChargeInEFieldTrajectory,
   getChargeInEFieldTimeScale,
+  calculateMeterExpansion,
+  calculateOhmmeter,
+  calculateExperimentEr,
+  calculateMotorCircuit,
 } from '@/physics'
 
 const k = 9e9
@@ -831,6 +835,63 @@ describe('electromagnetism', () => {
     it('tEnd 为负时返回保护值 0.001', () => {
       const scale = getChargeInEFieldTimeScale(-1, false)
       expect(scale).toBe(0.001)
+    })
+  })
+
+  describe('Meter Expansion', () => {
+    it('电压表改装：Ig=1mA Rg=100 Rs=1400 U=1.5V -> ratio=1.0', () => {
+      const res = calculateMeterExpansion(1, 1.5, 100, 0.001, 1400, 0.5)
+      expect(res.I_g_meas).toBeCloseTo(0.001, 6)
+      expect(res.ratio).toBeCloseTo(1.0, 6)
+    })
+
+    it('电流表改装：Ig=1mA Rg=100 Rp=0.5 I=201mA -> ratio=1.0', () => {
+      const res = calculateMeterExpansion(2, 0.201, 100, 0.001, 1400, 0.5)
+      expect(res.I_g_meas).toBeCloseTo(0.001, 6)
+      expect(res.ratio).toBeCloseTo(1.0, 6)
+    })
+  })
+
+  describe('Ohmmeter', () => {
+    it('欧姆调零：短接且R_adjust合适时应完成调零', () => {
+      const res = calculateOhmmeter(1.5, 100, 1, 1399, 0, 1, 0.001)
+      expect(res.isZeroed).toBe(true)
+      expect(res.ratio).toBeCloseTo(1.0, 6)
+    })
+
+    it('电阻测量：接入中值电阻 1500Ω 时指针应半偏 (ratio=0.5)', () => {
+      const res = calculateOhmmeter(1.5, 100, 1, 1399, 1500, 1, 0.001)
+      expect(res.ratio).toBeCloseTo(0.5, 6)
+    })
+  })
+
+  describe('ExperimentEr', () => {
+    it('电流表外接法：由于电压表分流，测得的电流值小于真实值；由于电流表分压，电压表读数大于变阻器真实电压', () => {
+      const res = calculateExperimentEr(6, 2, 10, 0, 1000, 0.5)
+      expect(res.I_meas).toBeLessThan(res.I_real)
+      expect(res.U_meas).toBeGreaterThan(res.U_real)
+    })
+
+    it('电流表内接法：由于电流表分压，电压表读数（变阻器电压）小于电源真实路端电压', () => {
+      const res = calculateExperimentEr(6, 2, 10, 1, 1000, 0.5)
+      expect(res.I_meas).toBe(res.I_real)
+      expect(res.U_meas).toBeLessThan(res.U_real)
+    })
+  })
+
+  describe('MotorCircuit', () => {
+    it('卡死状态下电动机为纯电阻电路，无机械功率', () => {
+      const res = calculateMotorCircuit(10, 2, 1, 0, 5, 0.5)
+      expect(res.I).toBeCloseTo(10 / 3, 6)
+      expect(res.P_mech).toBe(0)
+      expect(res.v_lift).toBe(0)
+    })
+
+    it('正常旋转下电动机有机械功率并提升重物', () => {
+      const res = calculateMotorCircuit(10, 2, 1, 1, 5, 0.5)
+      expect(res.I).toBeCloseTo(5 / 3, 6)
+      expect(res.P_mech).toBeCloseTo(25 / 3, 6)
+      expect(res.v_lift).toBeCloseTo((25 / 3) / (0.5 * 9.8), 6)
     })
   })
 })

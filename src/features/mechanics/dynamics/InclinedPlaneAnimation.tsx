@@ -1,6 +1,6 @@
 import { useAnimationViewport } from '@/hooks/useAnimationViewport'
 import { AnimationSvgCanvas } from '@/components/Layout'
-import { VectorArrow, Block, PhysicsGround } from '@/components/Physics'
+import { VectorArrow, Block, PhysicsGround, Incline } from '@/components/Physics'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { CANVAS_COLORS, SCENE_COLORS } from '@/theme/physics'
 import type { SceneScale } from '@/scene/SceneScale'
@@ -99,17 +99,11 @@ export default function InclinedPlaneAnimation() {
         }}
       />
 
-      {/* 斜面基座 */}
-      <polygon
-        points={`
-          ${cornerX},${groundY}
-          ${cornerX + W_px},${groundY}
-          ${cornerX},${groundY - H_px}
-        `}
-        fill={SCENE_COLORS.materials.structFillPale}
-        stroke={SCENE_COLORS.materials.structStrokeMid}
-        strokeWidth={1.5}
-        strokeLinejoin="round"
+      <Incline
+        x0={cornerX}
+        y0={groundY}
+        width={W_px}
+        height={H_px}
       />
 
       {/* 2. 斜面倾角弧度标注 */}

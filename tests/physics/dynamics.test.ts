@@ -14,6 +14,7 @@ import {
   calculateConnectedBodyTimeline,
   calculateGravitation,
 } from '../../src/physics/dynamics'
+import { GRAVITY } from '../../src/physics/constants'
 
 describe('Dynamics physics calculations', () => {
   describe('calculateGravitation', () => {
@@ -216,6 +217,44 @@ describe('Dynamics physics calculations', () => {
       const { fx, fy } = calculateOrthogonalDecomposition(10, 90)
       expect(fx).toBeCloseTo(0, 5)
       expect(fy).toBeCloseTo(10, 5)
+    })
+
+    it('should decompose a horizontal force correctly', () => {
+      const { fx, fy } = calculateOrthogonalDecomposition(10, 0)
+      expect(fx).toBeCloseTo(10, 5)
+      expect(fy).toBeCloseTo(0, 5)
+    })
+
+    it('should decompose a 45-degree force correctly', () => {
+      const { fx, fy } = calculateOrthogonalDecomposition(10, 45)
+      expect(fx).toBeCloseTo(7.071, 2) // 10 * cos(45) ≈ 7.071
+      expect(fy).toBeCloseTo(7.071, 2) // 10 * sin(45) ≈ 7.071
+    })
+
+    it('should decompose a leftward force correctly', () => {
+      const { fx, fy } = calculateOrthogonalDecomposition(10, 180)
+      expect(fx).toBeCloseTo(-10, 5)
+      expect(fy).toBeCloseTo(0, 5)
+    })
+
+    it('should decompose a downward force correctly', () => {
+      const { fx, fy } = calculateOrthogonalDecomposition(10, 270)
+      expect(fx).toBeCloseTo(0, 5)
+      expect(fy).toBeCloseTo(-10, 5)
+    })
+
+    it('should return zero components for zero force', () => {
+      const { fx, fy } = calculateOrthogonalDecomposition(0, 30)
+      expect(fx).toBeCloseTo(0, 5)
+      expect(fy).toBeCloseTo(0, 5)
+    })
+
+    it('should preserve force magnitude after decomposition', () => {
+      const F = 15
+      const angle = 60
+      const { fx, fy } = calculateOrthogonalDecomposition(F, angle)
+      const magnitude = Math.sqrt(fx * fx + fy * fy)
+      expect(magnitude).toBeCloseTo(F, 5)
     })
   })
 
@@ -495,6 +534,89 @@ describe('Dynamics physics calculations', () => {
       expect(res2.FN).toBeCloseTo(res1.FN * 3, 5)
       expect(res2.Ff).toBeCloseTo(res1.Ff * 3, 5)
       expect(res2.accel).toBeCloseTo(res1.accel, 10)
+    })
+  })
+
+  describe('Slope equilibrium with orthogonal decomposition', () => {
+    const m = 2.0
+    const g = GRAVITY
+    const G = m * g
+
+    it('should compute correct force components for 30° slope', () => {
+      const theta = 30
+      const rad = (theta * Math.PI) / 180
+
+      // Method A: decompose along/perpendicular to slope
+      const Gx = G * Math.sin(rad) //沿斜面分量
+      const Gy = G * Math.cos(rad) // 垂直斜面分量
+
+      expect(Gx).toBeCloseTo(G * 0.5, 5) // sin(30°) = 0.5
+      expect(Gy).toBeCloseTo(G * Math.sqrt(3) / 2, 5) // cos(30°) ≈ 0.866
+
+      // Equilibrium: FN = Gy, f = Gx
+      expect(Gy).toBeCloseTo(G * Math.cos(rad), 5)
+      expect(Gx).toBeCloseTo(G * Math.sin(rad), 5)
+    })
+
+    it('should compute correct force components for 45° slope', () => {
+      const theta = 45
+      const rad = (theta * Math.PI) / 180
+
+      const Gx = G * Math.sin(rad)
+      const Gy = G * Math.cos(rad)
+
+      // At 45°, sin = cos = √2/2
+      expect(Gx).toBeCloseTo(Gy, 5)
+      expect(Gx).toBeCloseTo(G * Math.sqrt(2) / 2, 5)
+    })
+
+    it('should have zero slope component at 0° (horizontal)', () => {
+      const theta = 0
+      const rad = (theta * Math.PI) / 180
+
+      const Gx = G * Math.sin(rad)
+      const Gy = G * Math.cos(rad)
+
+      expect(Gx).toBeCloseTo(0, 5)
+      expect(Gy).toBeCloseTo(G, 5)
+    })
+
+    it('should have maximum slope component at 90° (vertical)', () => {
+      const theta = 90
+      const rad = (theta * Math.PI) / 180
+
+      const Gx = G * Math.sin(rad)
+      const Gy = G * Math.cos(rad)
+
+      expect(Gx).toBeCloseTo(G, 5)
+      expect(Gy).toBeCloseTo(0, 5)
+    })
+
+    it('should verify force magnitude is preserved after decomposition', () => {
+      const theta = 35
+      const rad = (theta * Math.PI) / 180
+
+      const Gx = G * Math.sin(rad)
+      const Gy = G * Math.cos(rad)
+
+      const magnitude = Math.sqrt(Gx * Gx + Gy * Gy)
+      expect(magnitude).toBeCloseTo(G, 5)
+    })
+
+    it('should match computeInclinedPlane results for static case', () => {
+      const theta = 30
+      const mu = 0.8 // High friction, ensures static
+
+      const inclinedResult = computeInclinedPlane({ theta, mu, m, g })
+      const rad = (theta * Math.PI) / 180
+
+      // For static case: FN = mg*cosθ, f = mg*sinθ
+      const expectedFN = G * Math.cos(rad)
+      const expectedFf = G * Math.sin(rad)
+
+      expect(inclinedResult.FN).toBeCloseTo(expectedFN, 5)
+      expect(inclinedResult.Ff).toBeCloseTo(expectedFf, 5)
+      expect(inclinedResult.isSliding).toBe(false)
     })
   })
 })

@@ -2,145 +2,201 @@ import { useAnimationViewport } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
-import { calculateOhmLaw } from '@/physics'
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
+import { calculateOhmLaw, calculateMeterExpansion } from '@/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
 import { LightBulb, DialMeter, DCSource } from '@/components/Physics'
-
-/** ─── 电路设计坐标（840×325，与 CANVAS_PRESETS.splitV 对齐） ─── */
-/** 以 DC Source 接线柱对齐导线为基准反推所有坐标；回路下移 20px 避免灯泡光晕与电压表重叠 */
-const CIRCUIT = {
-  /** 回路矩形 */
-  rect: { x: 168, y: 100, w: 528, h: 160 },
-  /** 顶部中点（元件位置） */
-  top: { x: 432, y: 100 },
-  /** 底部中点（DC Source 中心，接线柱在 y+22 = 回路底边） */
-  bottom: { x: 432, y: 238 },
-  /** 左侧分流节点 */
-  nodeLeft: { x: 264, y: 100 },
-  /** 右侧分流节点 */
-  nodeRight: { x: 600, y: 100 },
-  /** 电压表位置（半径28，中心y=30 → 顶部y=2刚好可见） */
-  voltmeter: { x: 432, y: 30 },
-  /** 电流表位置（串联在右侧导线上） */
-  ammeter: { x: 696, y: 180 },
-} as const
+import { colors } from '@/theme/colors'
 
 export default function OhmLaw() {
-    const params = useAnimationStore((s) => s.params)
+  const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
   const { containerRef, canvasSize, vp } = useAnimationViewport({
     preset: CANVAS_PRESETS.splitV,
   })
   const { font } = canvasSize
 
-  const mode = params.mode ?? 0 // 0=定值电阻, 1=小灯泡
+  const mode = params.mode ?? 0 // 0=伏安特性, 1=改装电压表, 2=改装电流表
+  const meterMode = params.meterMode ?? 0 // 0=定值电阻, 1=小灯泡
   const U = params.U ?? 2
   const R = params.R ?? 10
-  const isBulb = mode === 1
+  const Rs = params.Rs ?? 1400
+  const Rp = params.Rp ?? 0.5
+  const Rg = params.Rg ?? 100
+  const Ig = params.Ig ?? 0.001
 
   // 物理计算
   let I = 0
   let P = 0
   let R_eff = R
+  let I_g_meas = 0
 
-  if (!isBulb) {
-    const res = calculateOhmLaw(U, R)
-    I = res.I
-    P = U * I
-    R_eff = R
+  if (mode === 0) {
+    if (meterMode === 0) {
+      const res = calculateOhmLaw(U, R)
+      I = res.I
+      P = U * I
+      R_eff = R
+    } else {
+      R_eff = 5 + 2 * U
+      I = U / R_eff
+      P = U * I
+    }
+  } else if (mode === 1) {
+    const res = calculateMeterExpansion(1, U, Rg, Ig, Rs, Rp)
+    I_g_meas = res.I_g_meas
   } else {
-    R_eff = 5 + 2 * U
-    I = U / R_eff
-    P = U * I
+    const res = calculateMeterExpansion(2, U, Rg, Ig, Rs, Rp)
+    I_g_meas = res.I_g_meas
   }
 
-  const { rect: r, nodeLeft, nodeRight, voltmeter, ammeter } = CIRCUIT
+  // 粒子流动动画控制
+  const particleSpeed = mode === 0 ? I * 10 : (mode === 1 ? I_g_meas * 10000 : U * 5)
+  const particleOffset = (time * particleSpeed) % 40
 
   return (
     <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
       <defs>
-        {/* 表盘金属圈渐变 */}
-        <linearGradient id="dial-ring" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor={CANVAS_COLORS.trackHistory} />
-          <stop offset="100%" stopColor={CANVAS_COLORS.labelTextLight} />
-        </linearGradient>
+        {/* 虚线框阴影 */}
+        <filter id="box-shadow-ohm" x="-10%" y="-10%" width="120%" height="120%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#000" floodOpacity="0.06" />
+        </filter>
       </defs>
 
-      {/* ==================== 1. 导线与并联节点 ==================== */}
-      {/* 闭合回路导线底色线 */}
-      <rect
-        x={r.x}
-        y={r.y}
-        width={r.w}
-        height={r.h}
-        fill="none"
-        stroke={PHYSICS_COLORS.grid}
-        strokeWidth={8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* 内部铜芯线 */}
-      <rect
-        x={r.x}
-        y={r.y}
-        width={r.w}
-        height={r.h}
-        fill="none"
-        stroke={PHYSICS_COLORS.trackHistory}
-        strokeWidth={3}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      {mode === 0 ? (
+        // ==================== 模式0：伏安特性探究 ====================
+        <g>
+          {/* 回路矩形 840x325 视口，回路置于 x: 180, y: 110, w: 480, h: 140 */}
+          <rect x={180} y={110} width={480} height={140} fill="none" stroke={PHYSICS_COLORS.grid} strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" />
+          <rect x={180} y={110} width={480} height={140} fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
 
-      {/* 电压表并联支路导线 */}
-      <path
-        d={`M ${nodeLeft.x} ${nodeLeft.y} L ${nodeLeft.x} ${voltmeter.y} L ${voltmeter.x} ${voltmeter.y}`}
-        fill="none"
-        stroke={PHYSICS_COLORS.trackHistory}
-        strokeWidth={3}
-      />
-      <path
-        d={`M ${nodeRight.x} ${nodeRight.y} L ${nodeRight.x} ${voltmeter.y} L ${voltmeter.x} ${voltmeter.y}`}
-        fill="none"
-        stroke={PHYSICS_COLORS.trackHistory}
-        strokeWidth={3}
-      />
+          {/* 并联电压表导线 */}
+          <path d="M 280 110 L 280 40 L 560 40 L 560 110" fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
+          <circle cx={280} cy={110} r={4.5} fill={PHYSICS_COLORS.labelText} />
+          <circle cx={560} cy={110} r={4.5} fill={PHYSICS_COLORS.labelText} />
 
-      {/* 并联分流节点 */}
-      <circle cx={nodeLeft.x} cy={nodeLeft.y} r={4.5} fill={PHYSICS_COLORS.labelText} />
-      <circle cx={nodeRight.x} cy={nodeRight.y} r={4.5} fill={PHYSICS_COLORS.labelText} />
+          {/* 表盘 */}
+          <DialMeter type="V" value={U} max={10} x={420} y={40} r={30} font={font} />
+          <DialMeter type="A" value={I} max={2} x={660} y={180} r={30} font={font} />
 
-      {/* ==================== 2. 直流稳压电源 ==================== */}
-      <DCSource type="instrument" x={CIRCUIT.bottom.x} y={CIRCUIT.bottom.y} voltage={U} polarity="right-positive" />
+          {/* 理想直流源 */}
+          <DCSource type="instrument" x={420} y={250} voltage={U} polarity="right-positive" />
 
-      {/* ==================== 4. 待测元件区域 ==================== */}
-      {!isBulb ? (
-        /* ----- A. 定值电阻元件 ----- */
-        <g transform={`translate(${CIRCUIT.top.x}, ${CIRCUIT.top.y})`}>
-          <rect
-            x={-20}
-            y={-10}
-            width={40}
-            height={20}
-            fill={SCENE_COLORS.circuit.resistorFill}
-            stroke={SCENE_COLORS.circuit.resistorStroke}
-            strokeWidth={2}
-          />
-          <text x={0} y={4} fill={CANVAS_COLORS.labelText} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
-            R
+          {/* 待测元件 */}
+          {meterMode === 0 ? (
+            <g transform="translate(420, 110)">
+              <rect x={-24} y={-12} width={48} height={24} fill={SCENE_COLORS.circuit.resistorFill} stroke={SCENE_COLORS.circuit.resistorStroke} strokeWidth={2} />
+              <text x={0} y={4} fill={CANVAS_COLORS.labelText} fontSize={font(11)} fontWeight="bold" textAnchor="middle">R</text>
+              <text x={0} y={26} fill={CANVAS_COLORS.labelTextLight} fontSize={font(10)} textAnchor="middle">待测定值电阻</text>
+            </g>
+          ) : (
+            <g transform="translate(0, 110)">
+              <LightBulb x={420} y={0} power={P} time={time} />
+              <text x={420} y={26} fill={CANVAS_COLORS.labelTextLight} fontSize={font(10)} textAnchor="middle">待测小灯泡</text>
+            </g>
+          )}
+
+          {/* 电荷流动粒子 */}
+          {I > 0.01 && (
+            <g>
+              {[0, 80, 160, 240, 320, 400, 480, 560, 640].map((baseOffset) => {
+                const totalDist = 480 * 2 + 140 * 2 // 1240
+                const curPos = (baseOffset + particleOffset) % totalDist
+                let px = 180, py = 110
+                if (curPos < 480) {
+                  px = 180 + curPos
+                  py = 110
+                } else if (curPos < 480 + 140) {
+                  px = 660
+                  py = 110 + (curPos - 480)
+                } else if (curPos < 480 * 2 + 140) {
+                  px = 660 - (curPos - 480 - 140)
+                  py = 250
+                } else {
+                  px = 180
+                  py = 250 - (curPos - 480 * 2 - 140)
+                }
+                if (Math.abs(px - 420) < 40 && Math.abs(py - 110) < 15) return null
+                if (Math.abs(px - 420) < 45 && Math.abs(py - 250) < 15) return null
+                if (Math.abs(px - 660) < 20 && Math.abs(py - 180) < 35) return null
+
+                return (
+                  <circle key={baseOffset} cx={px} cy={py} r={3.5} fill={PHYSICS_COLORS.electricCurrent} />
+                )
+              })}
+            </g>
+          )}
+        </g>
+      ) : mode === 1 ? (
+        // ==================== 模式1：改装为电压表 ====================
+        <g>
+          <rect x={180} y={150} width={480} height={100} fill="none" stroke={PHYSICS_COLORS.grid} strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" />
+          <rect x={180} y={150} width={480} height={100} fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+          <DCSource type="instrument" x={420} y={250} voltage={U} polarity="right-positive" />
+
+          {/* 改装电压表虚线外框 */}
+          <rect x={280} y={80} width={280} height={130} rx={8} fill={withAlpha(colors.neutral[50], 0.4)} stroke={PHYSICS_COLORS.electricPotential} strokeWidth={1.5} strokeDasharray="4,4" filter="url(#box-shadow-ohm)" />
+          <text x={420} y={98} fill={PHYSICS_COLORS.electricPotential} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
+            改装电压表 V (量程 U_m = {(Ig * (Rg + Rs)).toFixed(1)} V)
           </text>
-          <text x={0} y={24} fill={CANVAS_COLORS.labelTextLight} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
-            定值电阻 R
-          </text>
+
+          {/* 敏感表头 G */}
+          <g>
+            <DialMeter type="A" value={I_g_meas} max={Ig} x={350} y={145} r={28} font={font} />
+            <circle cx={350} cy={145 + 18.5} r={8} fill={withAlpha(colors.neutral[100], 0.94)} />
+            <text x={350} y={145 + 21.5} fontSize={font(10)} fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold" textAnchor="middle">G</text>
+            <text x={350} y={193} fontSize={font(9)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle">表头 Rg = {Rg}Ω</text>
+          </g>
+
+          {/* 串联分压电阻 Rs */}
+          <g transform="translate(480, 145)">
+            <rect x={-20} y={-10} width={40} height={20} fill={SCENE_COLORS.circuit.resistorFill} stroke={SCENE_COLORS.circuit.resistorStroke} strokeWidth={2} />
+            <text x={0} y={3} fill={CANVAS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="middle">Rs</text>
+            <text x={0} y={22} fontSize={font(9)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle">分压电阻 Rs = {Rs}Ω</text>
+          </g>
+
+          {/* 内部接线 */}
+          <line x1={280} y1={150} x2={310} y2={150} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
+          <line x1={390} y1={150} x2={460} y2={150} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
+          <line x1={500} y1={150} x2={560} y2={150} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
         </g>
       ) : (
-        /* ----- B. 小灯泡元件 ----- */
-        <LightBulb x={CIRCUIT.top.x} y={CIRCUIT.top.y} power={P} time={time} />
-      )}
+        // ==================== 模式2：改装为电流表 ====================
+        <g>
+          <rect x={180} y={150} width={480} height={100} fill="none" stroke={PHYSICS_COLORS.grid} strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" />
+          <rect x={180} y={150} width={480} height={100} fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+          <DCSource type="instrument" x={420} y={250} voltage={U} polarity="right-positive" />
+          <text x={420} y={292} fill={CANVAS_COLORS.labelTextLight} fontSize={font(10)} textAnchor="middle">调节电压改变干路总电流 I = {U.toFixed(2)} A</text>
 
-      {/* ==================== 5. 理想表盘组件 ==================== */}
-      <DialMeter type="V" value={U} max={10} x={voltmeter.x} y={voltmeter.y} />
-      <DialMeter type="A" value={I} max={2} x={ammeter.x} y={ammeter.y} />
+          {/* 改装电流表虚线外框 */}
+          <rect x={280} y={65} width={280} height={160} rx={8} fill={withAlpha(colors.neutral[50], 0.4)} stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={1.5} strokeDasharray="4,4" filter="url(#box-shadow-ohm)" />
+          <text x={420} y={83} fill={PHYSICS_COLORS.electricCurrent} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
+            改装电流表 A (量程 I_m = {((Ig * Rg) / Rp + Ig).toFixed(3)} A)
+          </text>
+
+          {/* 敏感表头 G */}
+          <g>
+            <DialMeter type="A" value={I_g_meas} max={Ig} x={420} y={110} r={26} font={font} />
+            <circle cx={420} cy={110 + 17.5} r={7.5} fill={withAlpha(colors.neutral[100], 0.94)} />
+            <text x={420} y={110 + 20.5} fontSize={font(9)} fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold" textAnchor="middle">G</text>
+            <text x={420} y={150} fontSize={font(9)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle">表头 Rg = {Rg}Ω</text>
+          </g>
+
+          {/* 并联分流电阻 Rp */}
+          <g transform="translate(420, 185)">
+            <rect x={-20} y={-10} width={40} height={20} fill={SCENE_COLORS.circuit.resistorFill} stroke={SCENE_COLORS.circuit.resistorStroke} strokeWidth={2} />
+            <text x={0} y={3} fill={CANVAS_COLORS.labelText} fontSize={font(9)} fontWeight="bold" textAnchor="middle">Rp</text>
+            <text x={0} y={22} fontSize={font(9)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle">分流电阻 Rp = {Rp}Ω</text>
+          </g>
+
+          <path d="M 280 150 L 320 150 L 320 110 L 380 110" fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
+          <path d="M 320 150 L 320 185 L 400 185" fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
+          <path d="M 560 150 L 520 150 L 520 110 L 460 110" fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
+          <path d="M 520 150 L 520 185 L 440 185" fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
+
+          <circle cx={320} cy={150} r={4} fill={PHYSICS_COLORS.labelText} />
+          <circle cx={520} cy={150} r={4} fill={PHYSICS_COLORS.labelText} />
+        </g>
+      )}
     </AnimationSvgCanvas>
   )
 }

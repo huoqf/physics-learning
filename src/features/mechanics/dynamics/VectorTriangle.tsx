@@ -1,4 +1,4 @@
-import { VectorArrow } from '@/components/Physics'
+import { VectorArrow, DragHandle } from '@/components/Physics'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 
 import type { SceneScale } from '@/scene'
@@ -8,7 +8,7 @@ interface VectorTriangleProps {
   physicsData: VectorAdditionPhysicsData
   sceneScale: SceneScale
   isPlaying: boolean
-  onDragStart: (target: 'f1' | 'f2', e: React.MouseEvent | React.TouchEvent) => void
+  onDragStart: (target: 'f1' | 'f2', e: React.PointerEvent) => void
 }
 
 export function VectorTriangle({ physicsData, sceneScale, isPlaying, onDragStart }: VectorTriangleProps) {
@@ -25,21 +25,11 @@ export function VectorTriangle({ physicsData, sceneScale, isPlaying, onDragStart
         fontFamily={CANVAS_STYLE.font.family} fill={PHYSICS_COLORS.appliedForce}
         fontWeight="bold" textAnchor="middle">F₁</text>
 
-      <g onMouseDown={(e) => onDragStart('f1', e)}
-        onTouchStart={(e) => { if (e.touches.length > 0) onDragStart('f1', e) }}
-        className="group cursor-ew-resize">
-        <circle cx={f1End.cx} cy={f1End.cy} r={16} fill="transparent" opacity={0} />
-        <circle cx={f1End.cx} cy={f1End.cy} r={6} fill={PHYSICS_COLORS.appliedForce}
-          stroke="white" strokeWidth={1.5} className="group-hover:scale-125 transition-transform" />
-      </g>
+      <DragHandle cx={f1End.cx} cy={f1End.cy} color={PHYSICS_COLORS.appliedForce}
+        cursor="ew-resize" onPointerDown={(e) => onDragStart('f1', e)} />
 
-      <g onMouseDown={(e) => onDragStart('f2', e)}
-        onTouchStart={(e) => { if (e.touches.length > 0) onDragStart('f2', e) }}
-        className="group cursor-grab active:cursor-grabbing">
-        <circle cx={f2ShiftedEnd.cx} cy={f2ShiftedEnd.cy} r={16} fill="transparent" opacity={0} />
-        <circle cx={f2ShiftedEnd.cx} cy={f2ShiftedEnd.cy} r={6} fill={PHYSICS_COLORS.tension}
-          stroke="white" strokeWidth={1.5} className="group-hover:scale-125 transition-transform" />
-      </g>
+      <DragHandle cx={f2ShiftedEnd.cx} cy={f2ShiftedEnd.cy} color={PHYSICS_COLORS.tension}
+        cursor="grab" onPointerDown={(e) => onDragStart('f2', e)} />
 
       <VectorArrow originPixel={{ x: f2ShiftedStart.cx, y: f2ShiftedStart.cy }}
         vector={{ x: f2ShiftedEnd.cx - f2ShiftedStart.cx, y: -(f2ShiftedEnd.cy - f2ShiftedStart.cy) }}

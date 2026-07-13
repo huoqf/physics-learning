@@ -1,10 +1,11 @@
-import type { PhysicsPanelData, PhysicsQuantity } from '../types'
+import type { PhysicsQuantity, PhysicsPanelData } from '../types'
 import { handleConnectedBodies } from './connectedBodies'
 import { handleSpringForce } from './springForce'
 import { handleFriction } from './friction'
 import { handleInclinedPlane } from './inclinedPlane'
 import { handleEquilibrium } from './equilibrium'
 import { handleVectorAddition } from './vectorAddition'
+import { handleOrthogonalDecomposition } from './orthogonalDecomposition'
 import { handleNewtonSecond } from './newtonSecond'
 import { handleWeightlessness } from './weightlessness'
 import { handleGravityBasic } from './gravityBasic'
@@ -26,6 +27,7 @@ export function buildDynamicsQuantities(
     handleFriction(animId, params, time, base) ??
     handleEquilibrium(animId, params, time, base) ??
     handleVectorAddition(animId, params, time, base) ??
+    handleOrthogonalDecomposition(animId, params, time, base) ??
     handleNewtonSecond(animId, params, time, base) ??
     handleWeightlessness(animId, params, time, base) ??
     handleGravityBasic(animId, params, time, base) ??

@@ -1,5 +1,5 @@
 import React from 'react'
-import { BarMagnet, ParametricMagneticField, VectorArrow } from '@/components/Physics'
+import { BarMagnet, ParametricMagneticField, VectorArrow, DragHandle } from '@/components/Physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
 import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
 import { INDUCTION_LAYOUT } from '../utils'
@@ -82,18 +82,15 @@ export const InductionMagnetSandbox: React.FC<InductionMagnetSandboxProps> = ({
       )}
 
       {/* 3. 条形磁铁主体 (复用 BarMagnet, 支持鼠标拖动) */}
-      <g
-        onPointerDown={onPointerDown}
-        className="cursor-grab active:cursor-grabbing select-none"
-      >
-        <BarMagnet
-          x={magnetX}
-          y={coilY}
-          width={120}
-          height={36}
-          pole={magnetPole as 1 | -1}
-        />
-      </g>
+      <BarMagnet
+        x={magnetX}
+        y={coilY}
+        width={120}
+        height={36}
+        pole={magnetPole as 1 | -1}
+      />
+      <DragHandle cx={magnetX} cy={coilY} color={PHYSICS_COLORS.magnetNorth}
+        cursor="grab" onPointerDown={onPointerDown} />
     </g>
   )
 }

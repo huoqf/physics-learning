@@ -1,4 +1,4 @@
-import { VectorArrow } from '@/components/Physics'
+import { VectorArrow, DragHandle } from '@/components/Physics'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 
 import type { SceneScale } from '@/scene'
@@ -7,7 +7,7 @@ import type { VectorAdditionPhysicsData } from './useVectorAdditionPhysics'
 interface VectorParallelogramProps {
   physicsData: VectorAdditionPhysicsData
   sceneScale: SceneScale
-  onDragStart: (target: 'f1' | 'f2', e: React.MouseEvent | React.TouchEvent) => void
+  onDragStart: (target: 'f1' | 'f2', e: React.PointerEvent) => void
 }
 
 export function VectorParallelogram({ physicsData, sceneScale, onDragStart }: VectorParallelogramProps) {
@@ -24,13 +24,8 @@ export function VectorParallelogram({ physicsData, sceneScale, onDragStart }: Ve
         fontFamily={CANVAS_STYLE.font.family} fill={PHYSICS_COLORS.appliedForce}
         fontWeight="bold" textAnchor="middle">F₁</text>
 
-      <g onMouseDown={(e) => onDragStart('f1', e)}
-        onTouchStart={(e) => { if (e.touches.length > 0) onDragStart('f1', e) }}
-        className="group cursor-ew-resize">
-        <circle cx={f1End.cx} cy={f1End.cy} r={16} fill="transparent" opacity={0} />
-        <circle cx={f1End.cx} cy={f1End.cy} r={6} fill={PHYSICS_COLORS.appliedForce}
-          stroke="white" strokeWidth={1.5} className="group-hover:scale-125 transition-transform" />
-      </g>
+      <DragHandle cx={f1End.cx} cy={f1End.cy} color={PHYSICS_COLORS.appliedForce}
+        cursor="ew-resize" onPointerDown={(e) => onDragStart('f1', e)} />
 
       <VectorArrow originPixel={{ x: origin.cx, y: origin.cy }}
         vector={{ x: f2End.cx - origin.cx, y: -(f2End.cy - origin.cy) }}
@@ -42,13 +37,8 @@ export function VectorParallelogram({ physicsData, sceneScale, onDragStart }: Ve
         fill={PHYSICS_COLORS.tension} fontWeight="bold"
         textAnchor={f2End.cx > origin.cx ? "start" : "end"}>F₂</text>
 
-      <g onMouseDown={(e) => onDragStart('f2', e)}
-        onTouchStart={(e) => { if (e.touches.length > 0) onDragStart('f2', e) }}
-        className="group cursor-grab active:cursor-grabbing">
-        <circle cx={f2End.cx} cy={f2End.cy} r={16} fill="transparent" opacity={0} />
-        <circle cx={f2End.cx} cy={f2End.cy} r={6} fill={PHYSICS_COLORS.tension}
-          stroke="white" strokeWidth={1.5} className="group-hover:scale-125 transition-transform" />
-      </g>
+      <DragHandle cx={f2End.cx} cy={f2End.cy} color={PHYSICS_COLORS.tension}
+        cursor="grab" onPointerDown={(e) => onDragStart('f2', e)} />
 
       <line x1={f1ToResultant.x1} y1={f1ToResultant.y1} x2={f1ToResultant.x2} y2={f1ToResultant.y2}
         stroke={PHYSICS_COLORS.tension} strokeWidth={CANVAS_STYLE.stroke.reference}

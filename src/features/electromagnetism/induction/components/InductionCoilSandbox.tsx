@@ -1,5 +1,5 @@
 import React from 'react'
-import { PrimaryCoil, DCSource, Rheostat, CoupledCoilField } from '@/components/Physics'
+import { PrimaryCoil, DCSource, Rheostat, CoupledCoilField, DragHandle } from '@/components/Physics'
 import { PHYSICS_COLORS, EM_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { INDUCTION_LAYOUT } from '../utils'
 
@@ -199,21 +199,18 @@ export const InductionCoilSandbox: React.FC<InductionCoilSandboxProps> = ({
       )}
 
       {/* 7. 原线圈物理组件复用 (支持手动水平拖动，包含内置铁芯渲染) */}
-      <g
-        onPointerDown={onDragCoil}
-        className="cursor-grab active:cursor-grabbing select-none"
-      >
-        <PrimaryCoil
-          x={primaryCoilX}
-          y={coilY}
-          width={110}
-          height={62}
-          turns={5}
-          current={primaryCurrent}
-          time={time}
-          showIronCore={!!hasIronCore}
-        />
-      </g>
+      <PrimaryCoil
+        x={primaryCoilX}
+        y={coilY}
+        width={110}
+        height={62}
+        turns={5}
+        current={primaryCurrent}
+        time={time}
+        showIronCore={!!hasIronCore}
+      />
+      <DragHandle cx={primaryCoilX} cy={coilY} color={PHYSICS_COLORS.electricCurrent}
+        cursor="grab" onPointerDown={onDragCoil} />
     </g>
   )
 }

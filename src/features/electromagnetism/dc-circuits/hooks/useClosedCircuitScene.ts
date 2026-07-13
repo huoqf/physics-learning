@@ -2,22 +2,21 @@ import { useMemo } from 'react'
 
 /** 回路几何常量（基于 viewBox 0 0 840 400，与 ClosedCircuit.tsx LAYOUT 保持一致） */
 const LOOP = {
-  left: 150,
-  top: 100,
-  right: 550,
-  bottom: 300,
-  batteryStart: 250,
-  batteryEnd: 450,
-  perimeter: 1200,
+  left: 180,
+  top: 50,
+  right: 620,
+  bottom: 220,
+  batteryStart: 295,
+  batteryEnd: 490,
+  perimeter: 1220,
 } as const
 
-/** 各段长度 */
 const SEG_LEN = {
-  posToCorner: 100,
-  vertical: 200,
-  horizontal: 400,
-  negToCorner: 100,
-  battery: 200,
+  posToCorner: 130, // 490 -> 620
+  vertical: 170,    // 220 -> 50
+  horizontal: 440,  // 620 -> 180
+  negToCorner: 115, // 180 -> 295
+  battery: 195,     // 295 -> 490
 } as const
 
 /** 电荷粒子数量 */
@@ -34,37 +33,37 @@ function getLoopPosition(pos: number): { x: number; y: number } {
   let p = pos % LOOP.perimeter
   if (p < 0) p += LOOP.perimeter
 
-  // 段 1: 电源右端正极向右到右下角 [长度 100]
+  // 段 1: 电源右端正极向右到右下角 [长度 130]
   if (p < SEG_LEN.posToCorner) {
     return { x: LOOP.batteryEnd + p, y: LOOP.bottom }
   }
   p -= SEG_LEN.posToCorner
 
-  // 段 2: 右下角向上到右上角 [长度 200]
+  // 段 2: 右下角向上到右上角 [长度 170]
   if (p < SEG_LEN.vertical) {
     return { x: LOOP.right, y: LOOP.bottom - p }
   }
   p -= SEG_LEN.vertical
 
-  // 段 3: 右上角向左到左上角 [长度 400]
+  // 段 3: 右上角向左到左上角 [长度 440]
   if (p < SEG_LEN.horizontal) {
     return { x: LOOP.right - p, y: LOOP.top }
   }
   p -= SEG_LEN.horizontal
 
-  // 段 4: 左上角向下到左下角 [长度 200]
+  // 段 4: 左上角向下到左下角 [长度 170]
   if (p < SEG_LEN.vertical) {
     return { x: LOOP.left, y: LOOP.top + p }
   }
   p -= SEG_LEN.vertical
 
-  // 段 5: 左下角到电源左端负极 [长度 100]
+  // 段 5: 左下角到电源左端负极 [长度 115]
   if (p < SEG_LEN.negToCorner) {
     return { x: LOOP.left + p, y: LOOP.bottom }
   }
   p -= SEG_LEN.negToCorner
 
-  // 段 6: 电源内部泵送 [长度 200]
+  // 段 6: 电源内部泵送 [长度 195]
   return { x: LOOP.batteryStart + p, y: LOOP.bottom }
 }
 

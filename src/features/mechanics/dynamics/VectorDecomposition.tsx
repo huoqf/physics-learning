@@ -1,4 +1,4 @@
-import { VectorArrow } from '@/components/Physics'
+import { VectorArrow, DragHandle } from '@/components/Physics'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 
 import type { SceneScale } from '@/scene'
@@ -7,7 +7,7 @@ import type { VectorAdditionPhysicsData } from './useVectorAdditionPhysics'
 interface VectorDecompositionProps {
   physicsData: VectorAdditionPhysicsData
   sceneScale: SceneScale
-  onDragStart: (target: 'f', e: React.MouseEvent | React.TouchEvent) => void
+  onDragStart: (target: 'f', e: React.PointerEvent) => void
 }
 
 export function VectorDecomposition({ physicsData, sceneScale, onDragStart }: VectorDecompositionProps) {
@@ -51,17 +51,9 @@ export function VectorDecomposition({ physicsData, sceneScale, onDragStart }: Ve
         fontSize={CANVAS_STYLE.font.labelBold} fontFamily={CANVAS_STYLE.font.family}
         fill={PHYSICS_COLORS.forceNet} fontWeight="bold">F</text>
 
-      <g onMouseDown={(e) => onDragStart('f', e)}
-        onTouchStart={(e) => { if (e.touches.length > 0) onDragStart('f', e) }}
-        className="group cursor-grab active:cursor-grabbing">
-        <circle cx={fResultantEnd.cx} cy={fResultantEnd.cy} r={16} fill="transparent" opacity={0} />
-        <circle cx={fResultantEnd.cx} cy={fResultantEnd.cy} r={6}
-          fill={PHYSICS_COLORS.forceNet} stroke="white" strokeWidth={1.5}
-          className="group-hover:scale-125 transition-transform shadow-md" />
-        <circle cx={fResultantEnd.cx} cy={fResultantEnd.cy} r={10}
-          fill="none" stroke={PHYSICS_COLORS.forceNet} strokeWidth={1}
-          opacity={0.4} className="animate-pulse" />
-      </g>
+      <DragHandle cx={fResultantEnd.cx} cy={fResultantEnd.cy}
+        color={PHYSICS_COLORS.forceNet} cursor="grab" showPulse
+        onPointerDown={(e) => onDragStart('f', e)} />
     </>
   )
 }

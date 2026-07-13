@@ -147,10 +147,9 @@ export const mechanicsKnowledge: KnowledgeNode[] = [
     chapter: '第3章 相互作用——力',
     module: 'mechanics',
     importance: 'gaokao',
-    animationIds: ['anim-vector-addition'],
+    animationIds: ['anim-orthogonal-decomposition'],
     problemIds: [],
     prerequisites: ['mechanics-3-5'],
-    animationParams: { mode: 2 },
   },
   {
     id: 'mechanics-4-1',

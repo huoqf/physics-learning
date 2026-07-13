@@ -1,4 +1,4 @@
-import { VectorArrow, Block, PhysicsGround } from '@/components/Physics'
+import { VectorArrow, Block, PhysicsGround, Incline } from '@/components/Physics'
 import { PHYSICS_COLORS, CANVAS_COLORS, FONT, SCENE_COLORS } from '@/theme/physics'
 
 import type { SceneScale } from '@/scene'
@@ -124,15 +124,11 @@ export default function InclineModeScene({
 
       {/* 三角形斜面体 */}
       <g>
-        <polygon
-          points={`
-            ${pivotX - displacement_M},${groundY}
-            ${pivotX - displacement_M + W},${groundY}
-            ${pivotX - displacement_M},${groundY - H}
-          `}
-          fill={SCENE_COLORS.materials.structFillPale}
-          stroke={SCENE_COLORS.materials.structStrokeMid}
-          strokeWidth={1.5}
+        <Incline
+          x0={pivotX - displacement_M}
+          y0={groundY}
+          width={W}
+          height={H}
         />
         <text
           x={pivotX - displacement_M + W * 0.25}
@@ -152,7 +148,7 @@ export default function InclineModeScene({
           y={-boxSize}
           width={boxSize}
           height={boxSize}
-          type="wood"
+          type="standard"
           label={`m = ${m}kg`}
           stroke={CANVAS_COLORS.objectStroke}
           strokeWidth={1.8}
