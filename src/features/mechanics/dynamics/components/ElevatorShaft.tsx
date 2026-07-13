@@ -154,7 +154,7 @@ export function ElevatorShaft({ layout, m, showVectors }: ElevatorShaftProps) {
         <g>
           {/* 重力 G (深绿) */}
           <VectorArrow
-            origin={{ x: objCx, y: objCy }}
+            originPixel={{ x: objCx, y: objCy }}
             vector={{ x: 0, y: -1 }}
             type="gravity"
             sceneScale={IDENTITY_SCENE_SCALE}
@@ -174,7 +174,7 @@ export function ElevatorShaft({ layout, m, showVectors }: ElevatorShaftProps) {
           {currentN > 0.01 && (
             <>
               <VectorArrow
-                origin={{ x: objCx, y: objCy }}
+                originPixel={{ x: objCx, y: objCy }}
                 vector={{ x: 0, y: 1 }}
                 type="normalForce"
                 sceneScale={IDENTITY_SCENE_SCALE}
@@ -196,7 +196,7 @@ export function ElevatorShaft({ layout, m, showVectors }: ElevatorShaftProps) {
           {Math.abs(actualA) > 0.01 && (
             <g transform={`translate(${centerX - elevatorWidth / 2 - 28}, ${elevatorY + elevatorHeight / 2})`}>
               <VectorArrow
-                origin={{ x: 0, y: 0 }}
+                originPixel={{ x: 0, y: 0 }}
                 vector={{ x: 0, y: actualA > 0 ? 1 : -1 }}
                 type="acceleration"
                 sceneScale={IDENTITY_SCENE_SCALE}
@@ -219,7 +219,7 @@ export function ElevatorShaft({ layout, m, showVectors }: ElevatorShaftProps) {
           {Math.abs(currentV) > 0.01 && (
             <g transform={`translate(${centerX - elevatorWidth / 2 - 42}, ${elevatorY + elevatorHeight / 2})`}>
               <VectorArrow
-                origin={{ x: 0, y: 0 }}
+                originPixel={{ x: 0, y: 0 }}
                 vector={{ x: 0, y: currentV > 0 ? 1 : -1 }}
                 type="velocity"
                 sceneScale={IDENTITY_SCENE_SCALE}

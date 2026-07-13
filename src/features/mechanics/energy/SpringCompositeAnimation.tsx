@@ -8,7 +8,8 @@ import { createSceneScaleFromDesignCenter } from '@/scene/SceneScale';
 import { precomputeVerticalSpringTrajectory, getVSStateAtTime } from '@/physics/verticalSpring';
 import { BasePhysicsChart } from '@/components/Chart';
 import { GRAVITY } from '@/physics/constants';
-import { useCanvasSize, clientToContainerPoint } from '@/utils';
+import { clientToContainerPoint } from '@/utils';
+import { useAnimationViewport } from '@/hooks';
 import { SpringEnergyChartContent } from './SpringEnergyChartContent';
 import { SpringForceChartContent } from './SpringForceChartContent';
 
@@ -28,7 +29,7 @@ export default function SpringCompositeAnimation() {
   );
 
   const svgRef = useRef<SVGSVGElement>(null);
-  const [containerRef, canvasSize] = useCanvasSize({ width: 700, height: 650 });
+  const { containerRef, canvasSize } = useAnimationViewport({ preset: { width: 700, height: 650 } });
   const { font } = canvasSize;
 
   // 动态设计高度：保证 vp.scale 均匀填满容器、零边距

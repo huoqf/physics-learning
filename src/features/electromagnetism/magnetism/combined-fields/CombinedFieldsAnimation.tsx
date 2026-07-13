@@ -183,7 +183,7 @@ export default function CombinedFieldsAnimation() {
     }
     return (
       <VectorArrow
-        origin={{ x: 0, y: 0 }}
+        originPixel={{ x: 0, y: 0 }}
         vector={{ x: dx, y: dy }}
         type={type}
         sceneScale={sceneScale}

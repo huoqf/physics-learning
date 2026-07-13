@@ -29,7 +29,7 @@ const SCENE = {
 } as const
 
 function pixelOrigin(x: number, y: number) {
-  return { x, y: -y }
+  return { x, y }
 }
 
 function pixelVector(dx: number, dy: number) {
@@ -295,7 +295,7 @@ export default function ConveyorAnimation() {
         {/* 规范受力分析图 FBD 绘制（作用点集中在质心） */}
         {/* 8.1 速度矢量 v (在物块上方，速度向右为正) */}
         <VectorArrow
-          origin={pixelOrigin(geometry.blockCenter.x, geometry.blockCenter.y - SCENE.blockH / 2 - 4)}
+          originPixel={pixelOrigin(geometry.blockCenter.x, geometry.blockCenter.y - SCENE.blockH / 2 - 4)}
           vector={pixelVector(geometry.unit.x * velocitySign, geometry.unit.y * velocitySign)}
           type="velocity"
           sceneScale={IDENTITY_SCENE_SCALE}
@@ -308,7 +308,7 @@ export default function ConveyorAnimation() {
         {/* 8.2 摩擦力矢量 f (从质心发出) */}
         {Math.abs(state.friction) > 0.01 && (
           <VectorArrow
-            origin={pixelOrigin(geometry.blockCenter.x, geometry.blockCenter.y)}
+            originPixel={pixelOrigin(geometry.blockCenter.x, geometry.blockCenter.y)}
             vector={pixelVector(geometry.unit.x * frictionSign, geometry.unit.y * frictionSign)}
             type="friction"
             sceneScale={IDENTITY_SCENE_SCALE}
@@ -322,7 +322,7 @@ export default function ConveyorAnimation() {
 
         {/* 8.3 重力 G (从质心发出，垂直向下，物理 dy=1) */}
         <VectorArrow
-          origin={pixelOrigin(geometry.blockCenter.x, geometry.blockCenter.y)}
+          originPixel={pixelOrigin(geometry.blockCenter.x, geometry.blockCenter.y)}
           vector={pixelVector(0, 1)}
           type="gravity"
           sceneScale={IDENTITY_SCENE_SCALE}
@@ -334,7 +334,7 @@ export default function ConveyorAnimation() {
 
         {/* 8.4 支持力 F_N (从质心发出，垂直斜面向上) */}
         <VectorArrow
-          origin={pixelOrigin(geometry.blockCenter.x, geometry.blockCenter.y)}
+          originPixel={pixelOrigin(geometry.blockCenter.x, geometry.blockCenter.y)}
           vector={pixelVector(-geometry.normal.x, -geometry.normal.y)}
           type="normalForce"
           sceneScale={IDENTITY_SCENE_SCALE}
@@ -349,7 +349,7 @@ export default function ConveyorAnimation() {
           <>
             {/* 沿斜面向下的重力分力 Gx = mg sinθ */}
             <VectorArrow
-              origin={pixelOrigin(geometry.blockCenter.x, geometry.blockCenter.y)}
+              originPixel={pixelOrigin(geometry.blockCenter.x, geometry.blockCenter.y)}
               vector={pixelVector(-geometry.unit.x, -geometry.unit.y)}
               type="forceComponent"
               sceneScale={IDENTITY_SCENE_SCALE}
@@ -360,7 +360,7 @@ export default function ConveyorAnimation() {
             />
             {/* 垂直斜面向下的重力分力 Gy = mg cosθ */}
             <VectorArrow
-              origin={pixelOrigin(geometry.blockCenter.x, geometry.blockCenter.y)}
+              originPixel={pixelOrigin(geometry.blockCenter.x, geometry.blockCenter.y)}
               vector={pixelVector(geometry.normal.x, geometry.normal.y)}
               type="forceComponent"
               sceneScale={IDENTITY_SCENE_SCALE}

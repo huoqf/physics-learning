@@ -164,14 +164,14 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
         {showGravity && (!showVelocityDecomp || constraint !== 2) && (
           <>
             <VectorArrow
-              origin={{ x: x_A, y: -y_A }}
+              originPixel={{ x: x_A, y: y_A }}
               vector={{ x: 0, y: -params.m1 * params.g * 5 }}
               type="gravity"
               sceneScale={IDENTITY_SCENE_SCALE}
               label="G_A"
             />
             <VectorArrow
-              origin={{ x: x_B, y: -y_B }}
+              originPixel={{ x: x_B, y: y_B }}
               vector={{ x: 0, y: -params.m2 * params.g * 5 }}
               type="gravity"
               sceneScale={IDENTITY_SCENE_SCALE}
@@ -185,7 +185,7 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
           <>
             {showTension && (
               <VectorArrow
-                origin={{ x: x_A, y: -y_A }}
+                originPixel={{ x: x_A, y: y_A }}
                 vector={state.F_A}
                 pixelLength={forceVectors.mag_F_A * 2.5}
                 type="tension"
@@ -196,7 +196,7 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
             {showResolution && (
               <>
                 <VectorArrow
-                  origin={{ x: x_A, y: -y_A }}
+                  originPixel={{ x: x_A, y: y_A }}
                   vector={forceVectors.F_A_radial}
                   pixelLength={forceVectors.mag_F_A_rad * 2.5}
                   type="forceComponent"
@@ -205,7 +205,7 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
                   dashed={true}
                 />
                 <VectorArrow
-                  origin={{ x: x_A, y: -y_A }}
+                  originPixel={{ x: x_A, y: y_A }}
                   vector={forceVectors.F_A_tangential}
                   pixelLength={forceVectors.mag_F_A_tan * 2.5}
                   type="forceComponent"
@@ -236,7 +236,7 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
 
             {showTension && (
               <VectorArrow
-                origin={{ x: x_B, y: -y_B }}
+                originPixel={{ x: x_B, y: y_B }}
                 vector={state.F_B}
                 pixelLength={forceVectors.mag_F_B * 2.5}
                 type="tension"
@@ -247,7 +247,7 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
             {showResolution && (
               <>
                 <VectorArrow
-                  origin={{ x: x_B, y: -y_B }}
+                  originPixel={{ x: x_B, y: y_B }}
                   vector={forceVectors.F_B_radial}
                   pixelLength={forceVectors.mag_F_B_rad * 2.5}
                   type="forceComponent"
@@ -256,7 +256,7 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
                   dashed={true}
                 />
                 <VectorArrow
-                  origin={{ x: x_B, y: -y_B }}
+                  originPixel={{ x: x_B, y: y_B }}
                   vector={forceVectors.F_B_tangential}
                   pixelLength={forceVectors.mag_F_B_tan * 2.5}
                   type="forceComponent"
@@ -290,14 +290,14 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
             {showTension && (
               <>
                 <VectorArrow
-                  origin={{ x: x_A, y: -y_A }}
+                  originPixel={{ x: x_A, y: y_A }}
                   vector={{ x: state.F_A.x * 2.5, y: state.F_A.y * 2.5 }}
                   type="force"
                   sceneScale={IDENTITY_SCENE_SCALE}
                   label="F_绳A"
                 />
                 <VectorArrow
-                  origin={{ x: x_B, y: -y_B }}
+                  originPixel={{ x: x_B, y: y_B }}
                   vector={{ x: state.F_B.x * 2.5, y: state.F_B.y * 2.5 }}
                   type="force"
                   sceneScale={IDENTITY_SCENE_SCALE}
@@ -311,7 +311,7 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
             {showTension && !showVelocityDecomp && (
               <>
                 <VectorArrow
-                  origin={{ x: x_A, y: -y_A }}
+                  originPixel={{ x: x_A, y: y_A }}
                   vector={state.F_A}
                   pixelLength={state.T_A * 2.5}
                   type="tension"
@@ -331,7 +331,7 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
                   }
                   return (
                     <VectorArrow
-                      origin={{ x: x_A, y: -y_A }}
+                      originPixel={{ x: x_A, y: y_A }}
                       vector={F_A_AB_phys}
                       pixelLength={state.T_B * 2.5}
                       type="tension"
@@ -342,7 +342,7 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
                 })()}
 
                 <VectorArrow
-                  origin={{ x: x_B, y: -y_B }}
+                  originPixel={{ x: x_B, y: y_B }}
                   vector={state.F_B}
                   pixelLength={state.T_B * 2.5}
                   type="tension"
@@ -391,7 +391,7 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
             return (
               <>
                 <VectorArrow
-                  origin={{ x: x_A, y: -y_A }}
+                  originPixel={{ x: x_A, y: y_A }}
                   vector={{ x: state.vAx, y: state.vAy }}
                   pixelLength={state.vA * vScale}
                   type="velocity"
@@ -399,7 +399,7 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
                   label="v_A"
                 />
                 <VectorArrow
-                  origin={{ x: x_A, y: -y_A }}
+                  originPixel={{ x: x_A, y: y_A }}
                   vector={{ x: vAx_para, y: vAy_para }}
                   pixelLength={Math.abs(vA_para) * vScale}
                   type="velocity"
@@ -408,7 +408,7 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
                   label="v_A∥"
                 />
                 <VectorArrow
-                  origin={{ x: x_A, y: -y_A }}
+                  originPixel={{ x: x_A, y: y_A }}
                   vector={{ x: vAx_perp, y: vAy_perp }}
                   pixelLength={Math.sqrt(vAx_perp * vAx_perp + vAy_perp * vAy_perp) * vScale}
                   type="velocity"
@@ -427,7 +427,7 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
                 />
 
                 <VectorArrow
-                  origin={{ x: x_B, y: -y_B }}
+                  originPixel={{ x: x_B, y: y_B }}
                   vector={{ x: state.vBx, y: state.vBy }}
                   pixelLength={state.vB * vScale}
                   type="velocity"
@@ -435,7 +435,7 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
                   label="v_B"
                 />
                 <VectorArrow
-                  origin={{ x: x_B, y: -y_B }}
+                  originPixel={{ x: x_B, y: y_B }}
                   vector={{ x: vBx_para, y: vBy_para }}
                   pixelLength={Math.abs(vB_para) * vScale}
                   type="velocity"
@@ -444,7 +444,7 @@ export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
                   label="v_B∥"
                 />
                 <VectorArrow
-                  origin={{ x: x_B, y: -y_B }}
+                  originPixel={{ x: x_B, y: y_B }}
                   vector={{ x: vBx_perp, y: vBy_perp }}
                   pixelLength={Math.sqrt(vBx_perp * vBx_perp + vBy_perp * vBy_perp) * vScale}
                   type="velocity"

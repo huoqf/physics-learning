@@ -51,7 +51,7 @@ export default function VectorPlayground() {
         {TEST_CASES.map((tc, i) => (
           <VectorArrow
             key={i}
-            origin={{ x: 2 + i * 2.5, y: 0 }}
+            originPixel={{ x: 2 + i * 2.5, y: 0 }}
             vector={tc.vector}
             type={tc.type}
             sceneScale={sceneScale}

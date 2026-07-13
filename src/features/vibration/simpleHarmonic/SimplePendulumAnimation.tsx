@@ -356,7 +356,7 @@ export default function SimplePendulumAnimation() {
         <g>
           {/* 重力 G：竖直向下 */}
           <VectorArrow
-            origin={ballPhysPos}
+            originPixel={ballPhysPos}
             vector={{ x: 0, y: -activeState.gravity }}
             type="gravity"
             sceneScale={sceneScale}
@@ -365,7 +365,7 @@ export default function SimplePendulumAnimation() {
           />
           {/* 绳子拉力 F_拉：沿绳子指向悬挂点 */}
           <VectorArrow
-            origin={ballPhysPos}
+            originPixel={ballPhysPos}
             vector={{ x: -activeState.tension * Math.sin(activeState.angle), y: activeState.tension * Math.cos(activeState.angle) }}
             type="tension"
             sceneScale={sceneScale}
@@ -376,7 +376,7 @@ export default function SimplePendulumAnimation() {
           {/* 回复力大小 = mg*sinθ，方向沿切线指向平衡位置 */}
           {/* 切线方向向量 = (-cosθ, -sinθ)，力 = mg*sinθ * 切线方向 */}
           <VectorArrow
-            origin={ballPhysPos}
+            originPixel={ballPhysPos}
             vector={{
               x: activeState.restoringForce * Math.cos(activeState.angle),  // = -mg*sinθ*cosθ
               y: activeState.restoringForce * Math.sin(activeState.angle)   // = -mg*sin²θ

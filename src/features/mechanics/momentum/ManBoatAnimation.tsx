@@ -315,7 +315,7 @@ export default function ManBoatAnimation() {
                   <line x1={xp_px} y1={groundY - 24 - 10} x2={xp_px - 6 - angle * 0.3} y2={groundY - 24} stroke={colors.primary[600]} strokeWidth="1.5" />
                   <line x1={xp_px} y1={groundY - 24 - 10} x2={xp_px + 6 + angle * 0.3} y2={groundY - 24} stroke={colors.primary[600]} strokeWidth="1.5" />
                   <text x={xp_px} y={headY - 6} fill={colors.primary[700]} fontSize={canvasSize.font(8)} fontWeight="bold" textAnchor="middle">人1 {m_person}kg</text>
-                  <VectorArrow origin={{ x: boatState.x_person1, y: 0.85 }} vector={{ x: boatState.v_person1, y: 0 }} type="velocityX" sceneScale={sceneScale} />
+                  <VectorArrow originPixel={{ x: boatState.x_person1, y: 0.85 }} vector={{ x: boatState.v_person1, y: 0 }} type="velocityX" sceneScale={sceneScale} />
                 </g>
               )
             })()}
@@ -334,13 +334,13 @@ export default function ManBoatAnimation() {
                   <line x1={xp_px} y1={groundY - 24 - 10} x2={xp_px - 6 - angle * 0.3} y2={groundY - 24} stroke={colors.danger[600]} strokeWidth="1.5" />
                   <line x1={xp_px} y1={groundY - 24 - 10} x2={xp_px + 6 + angle * 0.3} y2={groundY - 24} stroke={colors.danger[600]} strokeWidth="1.5" />
                   <text x={xp_px} y={headY - 6} fill={colors.danger[700]} fontSize={canvasSize.font(8)} fontWeight="bold" textAnchor="middle">人2 {m_person2}kg</text>
-                  <VectorArrow origin={{ x: boatState.x_person2, y: 0.85 }} vector={{ x: boatState.v_person2, y: 0 }} type="velocityY" sceneScale={sceneScale} />
+                  <VectorArrow originPixel={{ x: boatState.x_person2, y: 0.85 }} vector={{ x: boatState.v_person2, y: 0 }} type="velocityY" sceneScale={sceneScale} />
                 </g>
               )
             })()}
 
             {/* 船速度箭头 */}
-            <VectorArrow origin={{ x: boatState.x_boat + L_boat * 0.5, y: 0.4 }} vector={{ x: boatState.v_boat, y: 0 }} type="velocity" sceneScale={sceneScale} />
+            <VectorArrow originPixel={{ x: boatState.x_boat + L_boat * 0.5, y: 0.4 }} vector={{ x: boatState.v_boat, y: 0 }} type="velocity" sceneScale={sceneScale} />
 
             {/* 自动模式下位移双向箭头 */}
             {(() => {

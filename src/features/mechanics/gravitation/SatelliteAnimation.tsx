@@ -1,7 +1,7 @@
 import { VectorArrow } from '@/components/Physics'
 import { useState, useRef, useMemo, useCallback, useEffect } from 'react'
-import { useCanvasSize, useViewport, clientToContainerPoint } from '@/utils'
-import { useSceneScale } from '@/hooks'
+import { clientToContainerPoint } from '@/utils'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -24,9 +24,8 @@ export default function SatelliteAnimation() {
       time: s.time, isPlaying: s.isPlaying, setIsPlaying: s.setIsPlaying,
     }))
   )
-  const [containerRef, canvasSize] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
   const { font } = canvasSize
-  const vp = useViewport(canvasSize, { designWidth: LAYOUT.designWidth, designHeight: LAYOUT.designHeight })
 
   const { r = 7.0, mode = 0, v0 = 7.7, isLaunched = 0, showChart = 1, showCompare = 1 } = params
 
@@ -43,7 +42,7 @@ export default function SatelliteAnimation() {
 
   const sceneScale = useSceneScale({
     vp,
-    preset: CANVAS_PRESETS.full,
+    preset,
     anchor: 'custom',
     customOriginX: centerX,
     customOriginY: centerY,
@@ -207,7 +206,7 @@ export default function SatelliteAnimation() {
             {showVectors && (
               <g>
                 <VectorArrow
-                  origin={{ x: sat0PhysX, y: sat0PhysY }}
+                  originPixel={{ x: sat0PhysX, y: sat0PhysY }}
                   vector={{ x: -sat0PhysX, y: -sat0PhysY }}
                   type="gravity"
                   sceneScale={sceneScale}
@@ -215,7 +214,7 @@ export default function SatelliteAnimation() {
                   font={font}
                 />
                 <VectorArrow
-                  origin={{ x: sat0PhysX, y: sat0PhysY }}
+                  originPixel={{ x: sat0PhysX, y: sat0PhysY }}
                   vector={{ x: sat0PhysY, y: -sat0PhysX }}
                   type="velocity"
                   sceneScale={sceneScale}
@@ -271,7 +270,7 @@ export default function SatelliteAnimation() {
             {showVectors && !launchData.crashed && isLaunched === 1 && !isRocket && (
               <g>
                 <VectorArrow
-                  origin={{ x: satLaunchPhysX, y: satLaunchPhysY }}
+                  originPixel={{ x: satLaunchPhysX, y: satLaunchPhysY }}
                   vector={{ x: -satLaunchPhysX, y: -satLaunchPhysY }}
                   type="gravity"
                   sceneScale={sceneScale}
@@ -279,7 +278,7 @@ export default function SatelliteAnimation() {
                   font={font}
                 />
                 <VectorArrow
-                  origin={{ x: satLaunchPhysX, y: satLaunchPhysY }}
+                  originPixel={{ x: satLaunchPhysX, y: satLaunchPhysY }}
                   vector={launchData.velocityDir ?? { x: 0, y: 1 }}
                   type="velocity"
                   sceneScale={sceneScale}

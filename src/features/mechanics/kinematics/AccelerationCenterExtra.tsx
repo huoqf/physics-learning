@@ -5,8 +5,8 @@ import { calculatePoliceChase, calculateMeeting } from '@/physics'
 import { PHYSICS_COLORS, STROKE, DASH } from '@/theme/physics'
 
 import { RelationChart, VelocityTimeChart } from '@/components/Chart'
-import { createSceneScaleFromViewport } from '@/scene'
-import { useCanvasSize } from '@/utils'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 
 /** 布局常量（语义化命名，比例驱动） */
 const LAYOUT = {
@@ -36,8 +36,8 @@ export default function AccelerationCenterExtra() {
   const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
   const [showWarning, setShowWarning] = useState(false)
   const [warningText, setWarningText] = useState('')
-  const [containerRef, canvasSize] = useCanvasSize({ width: 800, height: 600 })
-  const { font } = canvasSize
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
+  const { font, width, height } = canvasSize
 
   const chaseMode = params.chaseMode ?? 0
   const vA = params.vA ?? 30
@@ -180,8 +180,8 @@ export default function AccelerationCenterExtra() {
   }, [params, clearAutoPauseTimer])
 
   // ── 布局计算 ──
-  const padding = canvasSize.width * LAYOUT.CHART_PADDING_RATIO
-  const animHeight = canvasSize.height * LAYOUT.ANIMATION_HEIGHT_RATIO
+  const padding = width * LAYOUT.CHART_PADDING_RATIO
+  const animHeight = height * LAYOUT.ANIMATION_HEIGHT_RATIO
 
   // ── x-t 图数据 ──
   const xtDataA = useMemo(() => {
@@ -271,7 +271,7 @@ export default function AccelerationCenterExtra() {
   const roadY = animHeight * LAYOUT.ROAD_Y_RATIO
   const roadPadding = padding * 0.5
   const roadLeft = roadPadding
-  const roadRight = canvasSize.width - roadPadding
+  const roadRight = width - roadPadding
   const roadWidth = roadRight - roadLeft
 
   const maxDist = chaseMode === 0
@@ -285,15 +285,14 @@ export default function AccelerationCenterExtra() {
   const carBX = startX + (chaseMode === 0 ? state.xB : state.xB) * scale
 
   // ── 矢量场景配置 ──
-  const chaseVp = useMemo(() => ({
-    visibleX: 0, visibleY: 0, visibleW: canvasSize.width, visibleH: animHeight,
-    centerX: 0, centerY: 0,
-  }), [canvasSize.width, animHeight])
-  const sceneScale = useMemo(() => createSceneScaleFromViewport(chaseVp, 'transform', {
-    designWidth: canvasSize.width,
-    designHeight: animHeight,
+  const sceneScale = useSceneScale({
+    vp, preset,
+    anchor: 'design',
+    physicsWidth: preset.width,
+    physicsHeight: preset.height,
+    originSource: 'topLeft',
     refMagnitudes: { velocity: Math.max(vA, vMax) * 1.3, acceleration: (chaseMode === 0 ? aB_chase : aB_meet) * 2 },
-  }), [chaseVp, canvasSize.width, animHeight, vA, vMax, chaseMode, aB_chase, aB_meet])
+  })
 
   const labelB = chaseMode === 0 ? '警车' : '乙车'
 
@@ -348,7 +347,7 @@ export default function AccelerationCenterExtra() {
 
       {/* ══════════ 下层：公路动画 ══════════ */}
       <div className="flex-1 relative">
-        <svg viewBox={`0 0 ${canvasSize.width} ${animHeight}`} width={canvasSize.width} height={animHeight} className="absolute inset-0">
+        <svg viewBox={`0 0 ${width} ${animHeight}`} width={width} height={animHeight} className="absolute inset-0">
           <PhysicsGround
             x={roadLeft} y={roadY} width={roadWidth}
             appearance={{ color: PHYSICS_COLORS.labelText }}
@@ -441,7 +440,7 @@ export default function AccelerationCenterExtra() {
           {time > 0 && (
             <g>
               <VectorArrow
-                origin={{ x: carAX + LAYOUT.VEHICLE_WIDTH + 4, y: -(roadY - LAYOUT.VEHICLE_HEIGHT * 0.5) }}
+                originPixel={{ x: carAX + LAYOUT.VEHICLE_WIDTH + 4, y: roadY - LAYOUT.VEHICLE_HEIGHT * 0.5 }}
                 vector={{ x: vA, y: 0 }}
                 type="velocity"
                 sceneScale={sceneScale}
@@ -454,7 +453,7 @@ export default function AccelerationCenterExtra() {
               {Math.abs(state.vB) > 0.1 && (
                 <g>
                   <VectorArrow
-                    origin={{ x: carBX + LAYOUT.VEHICLE_WIDTH + 4, y: -(roadY - LAYOUT.VEHICLE_HEIGHT * 0.5) }}
+                    originPixel={{ x: carBX + LAYOUT.VEHICLE_WIDTH + 4, y: roadY - LAYOUT.VEHICLE_HEIGHT * 0.5 }}
                     vector={{ x: state.vB, y: 0 }}
                     type="velocity"
                     sceneScale={sceneScale}
@@ -487,7 +486,7 @@ export default function AccelerationCenterExtra() {
           {/* 乙车加速度矢量 */}
           {time > 0 && Math.abs(state.vB) > 0.1 && Math.abs(accelB) > 0.01 && (
             <VectorArrow
-              origin={{ x: carBX + LAYOUT.VEHICLE_WIDTH * 0.5, y: -(roadY - LAYOUT.VEHICLE_HEIGHT - 8) }}
+              originPixel={{ x: carBX + LAYOUT.VEHICLE_WIDTH * 0.5, y: roadY - LAYOUT.VEHICLE_HEIGHT - 8 }}
               vector={{ x: accelB, y: 0 }}
               type="acceleration"
               sceneScale={sceneScale}

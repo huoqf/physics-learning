@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useSimulationFrame } from '@/utils/animation'
 import { MODERN_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics/colors'
-import { useCanvasViewport } from '@/hooks/useCanvasViewport'
-import type { CanvasSize } from '@/utils/useCanvasSize'
-import type { ViewportInfo } from '@/utils/useViewport'
+import { useAnimationViewport } from '@/hooks'
+import { useCanvasViewport } from '@/hooks'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 
 interface PhotonAnimation {
   x: number
@@ -24,36 +24,8 @@ interface BohrOrbitsProps {
 }
 
 export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: BohrOrbitsProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null)
-  const [rawSize, setRawSize] = useState({ width: 680, height: 360 })
-
-  const canvasSize = useMemo<CanvasSize>(() => ({
-    width: rawSize.width,
-    height: rawSize.height,
-    scale: 1,
-    rawScale: 1,
-    px: (v: number) => v,
-    font: (v: number) => v,
-  }), [rawSize.width, rawSize.height])
-
-  const identityVp = useMemo<ViewportInfo>(() => ({
-    visibleX: 0,
-    visibleY: 0,
-    visibleW: canvasSize.width,
-    visibleH: canvasSize.height,
-    centerX: canvasSize.width / 2,
-    centerY: canvasSize.height / 2,
-    scale: 1,
-    tx: 0,
-    ty: 0,
-    transform: 'translate(0 0) scale(1)',
-    designVisibleW: canvasSize.width,
-    designVisibleH: canvasSize.height,
-    designLeft: 0,
-    designTop: 0,
-  }), [canvasSize.width, canvasSize.height])
-
-  const { canvasRef, setupFrame } = useCanvasViewport({ vp: identityVp, canvasSize, mode: 'raw' })
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
+  const { canvasRef, setupFrame } = useCanvasViewport({ vp, canvasSize, mode: 'raw' })
 
   // 动画状态全部用 ref，避免 rAF 回调依赖 state 导致循环重启
   const electronLevelRef = useRef(targetLevel)
@@ -94,23 +66,6 @@ export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: 
     }
     prevLevelRef.current = targetLevel
   }, [targetLevel])
-
-  // Canvas 尺寸适配
-  useEffect(() => {
-    const parent = containerRef.current
-    if (!parent) return
-    const sync = (w: number, h: number) => {
-      if (w > 0 && h > 0) setRawSize({ width: w, height: h })
-    }
-    const ro = new ResizeObserver((entries) => {
-      const { width, height } = entries[0].contentRect
-      sync(width, height)
-    })
-    ro.observe(parent)
-    const rect = parent.getBoundingClientRect()
-    sync(rect.width, rect.height)
-    return () => ro.disconnect()
-  }, [])
 
   // 统一仿真帧循环（铁律 1 合规）
   useSimulationFrame(() => {

@@ -160,7 +160,7 @@ export default function SpringForceHookeLawScene() {
       {showVectors && Math.abs(springForce) > 0.1 && (
         <g>
           <VectorArrow
-            origin={{ x: centerX, y: -(groundY - BOX_SIZE / 2) }}
+            originPixel={{ x: centerX, y: groundY - BOX_SIZE / 2 }}
             vector={{ x: springForce * 0.4, y: 0 }}
             type="elasticForce"
             sceneScale={IDENTITY_SCENE_SCALE}

@@ -138,7 +138,7 @@ export const DualRodsScene = React.memo(function DualRodsScene({
         {Math.abs(currentVB) > 0.05 && (
           <g>
             <VectorArrow
-              origin={{ x: posB, y: cy - railSpacing / 2 - 25 }}
+              originPixel={{ x: posB, y: cy - railSpacing / 2 - 25 }}
               vector={{ x: currentVB * 0.85, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
@@ -153,7 +153,7 @@ export const DualRodsScene = React.memo(function DualRodsScene({
         {Math.abs(forceAmpere) > 0.01 && (
           <g>
             <VectorArrow
-              origin={{ x: posB, y: cy }}
+              originPixel={{ x: posB, y: cy }}
               vector={{ x: forceAmpere * 1.2, y: 0 }}
               type="lorentzForce"
               sceneScale={sceneScale}
@@ -168,7 +168,7 @@ export const DualRodsScene = React.memo(function DualRodsScene({
         {Math.abs(currentVA) > 0.05 && (
           <g>
             <VectorArrow
-              origin={{ x: posA, y: cy - railSpacing / 2 - 25 }}
+              originPixel={{ x: posA, y: cy - railSpacing / 2 - 25 }}
               vector={{ x: currentVA * 0.85, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
@@ -183,7 +183,7 @@ export const DualRodsScene = React.memo(function DualRodsScene({
         {Math.abs(forceAmpere) > 0.01 && (
           <g>
             <VectorArrow
-              origin={{ x: posA, y: cy }}
+              originPixel={{ x: posA, y: cy }}
               vector={{ x: -forceAmpere * 1.2, y: 0 }}
               type="lorentzForce"
               sceneScale={sceneScale}
@@ -198,7 +198,7 @@ export const DualRodsScene = React.memo(function DualRodsScene({
         {scenario === 1 && appliedForce > 0 && (
           <g>
             <VectorArrow
-              origin={{ x: posA, y: cy + 30 }}
+              originPixel={{ x: posA, y: cy + 30 }}
               vector={{ x: appliedForce * 1.2, y: 0 }}
               type="appliedForce"
               sceneScale={sceneScale}

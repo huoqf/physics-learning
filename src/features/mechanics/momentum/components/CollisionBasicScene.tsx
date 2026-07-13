@@ -10,7 +10,7 @@ import {
   CANVAS_STYLE,
 } from '@/theme/physics'
 import { COL_LAYOUT } from '../collisionHooks'
-import type { CanvasSize } from '@/utils/useCanvasSize'
+import type { AnimationViewportResult } from '@/hooks'
 import type { SceneScale } from '@/scene/SceneScale'
 
 interface CollisionBasicSceneProps {
@@ -28,7 +28,7 @@ interface CollisionBasicSceneProps {
   time: number
   showVectors: boolean
   sceneScale: SceneScale
-  canvasSize: CanvasSize
+  canvasSize: AnimationViewportResult['canvasSize']
   groundY: number
 }
 
@@ -88,7 +88,7 @@ export function CollisionBasicScene({
         <g>
           {currentV1 !== 0 && (
             <VectorArrow
-              origin={{ x: posAx, y: R_A * 2 + 10 }}
+              originPixel={{ x: posAx, y: R_A * 2 + 10 }}
               vector={{ x: currentV1, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
@@ -101,7 +101,7 @@ export function CollisionBasicScene({
 
           {currentV2 !== 0 && (
             <VectorArrow
-              origin={{ x: posBx, y: R_B * 2 + 10 }}
+              originPixel={{ x: posBx, y: R_B * 2 + 10 }}
               vector={{ x: currentV2, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}

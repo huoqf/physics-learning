@@ -1,5 +1,5 @@
 import { SportsCar, PhysicsGround, VectorArrow, VectorDefs } from '@/components/Physics'
-import { useCanvasSize, useViewport } from '@/utils'
+import { useAnimationViewport } from '@/hooks'
 import { useSceneScale } from '@/hooks'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -47,8 +47,7 @@ export function StroboscopicAnimation({
   showVectors: boolean
   hoveredFlashIdx: number | null
 }) {
-  const [containerRef, canvasSize] = useCanvasSize({ width: 400, height: 180 })
-  const vp = useViewport(canvasSize, { designWidth: 400, designHeight: 180 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: { width: 400, height: 180 } })
   const { font } = canvasSize
 
   const padding = canvasSize.width * 0.08
@@ -61,7 +60,7 @@ export function StroboscopicAnimation({
   const maxAcc = Math.max(Math.abs(a) * 2, 5)
   const sceneScale = useSceneScale({
     vp,
-    preset: { width: 400, height: 180 },
+    preset,
     anchor: 'custom',
     customOriginX: 0,
     customOriginY: 0,
@@ -270,7 +269,7 @@ export function StroboscopicAnimation({
         {showVectors && Math.abs(physics.v) > 0.1 && (
           <g>
             <VectorArrow
-              origin={{ x: currentX + (physics.v > 0 ? objW + 4 : -4), y: -(groundY - objH * 0.5) }}
+              originPixel={{ x: currentX + (physics.v > 0 ? objW + 4 : -4), y: groundY - objH * 0.5 }}
               vector={{ x: physics.v, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
@@ -284,7 +283,7 @@ export function StroboscopicAnimation({
         {showVectors && Math.abs(a) > 0.05 && (
           <g>
             <VectorArrow
-              origin={{ x: currentX + objW * 0.5, y: -(groundY - objH - 6) }}
+              originPixel={{ x: currentX + objW * 0.5, y: groundY - objH - 6 }}
               vector={{ x: a, y: 0 }}
               type="acceleration"
               sceneScale={sceneScale}

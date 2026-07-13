@@ -285,7 +285,7 @@ export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
           <g>
             {/* 安培力：精准作用在当前发生切割的那条有效竖棒的中心 */}
             <VectorArrow
-              origin={{ x: cuttingRodPx, y: loopCenterY - AMPERE_FORCE_OFFSET_Y }}
+              originPixel={{ x: cuttingRodPx, y: loopCenterY - AMPERE_FORCE_OFFSET_Y }}
               vector={{ x: -forceAmpere, y: 0 }}
               type="lorentzForce"
               sceneScale={pixelVectorScale}
@@ -296,7 +296,7 @@ export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
 
             {/* 外力：作用在前导线竖棒的中心，拉动线框匀速运动 */}
             <VectorArrow
-              origin={{ x: loopFrontPx, y: loopCenterY + AMPERE_FORCE_OFFSET_Y }}
+              originPixel={{ x: loopFrontPx, y: loopCenterY + AMPERE_FORCE_OFFSET_Y }}
               vector={{ x: forceAmpere, y: 0 }}
               type="appliedForce"
               sceneScale={pixelVectorScale}
@@ -312,14 +312,14 @@ export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
           <g>
             {/* 前竖棒电流箭头 */}
             <VectorArrow
-              origin={{ x: loopFrontPx, y: loopCenterY }}
+              originPixel={{ x: loopFrontPx, y: loopCenterY }}
               vector={{ x: 0, y: currentI > 0 ? 0.7 : -0.7 }} // 逆时针为正时，前棒向上(y>0)，顺时针反向
               type="currentDirection"
               sceneScale={pixelVectorScale}
             />
             {/* 后竖棒电流箭头 */}
             <VectorArrow
-              origin={{ x: loopBackPx, y: loopCenterY }}
+              originPixel={{ x: loopBackPx, y: loopCenterY }}
               vector={{ x: 0, y: currentI > 0 ? -0.7 : 0.7 }} // 逆时针为正时，后棒向下(y<0)，顺时针反向
               type="currentDirection"
               sceneScale={pixelVectorScale}

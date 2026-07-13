@@ -124,7 +124,7 @@ export default function BinaryStarsAnimation() {
               <>
                 {/* 恒星 1 (橙红) 矢量 */}
                 <VectorArrow
-                  origin={state.pos1}
+                  originPixel={state.pos1}
                   vector={state.forceVec1}
                   type="force"
                   sceneScale={sceneScale}
@@ -134,7 +134,7 @@ export default function BinaryStarsAnimation() {
                   font={font}
                 />
                 <VectorArrow
-                  origin={state.pos1}
+                  originPixel={state.pos1}
                   vector={state.velVec1}
                   type="velocity"
                   sceneScale={sceneScale}
@@ -146,7 +146,7 @@ export default function BinaryStarsAnimation() {
 
                 {/* 恒星 2 (蓝白) 矢量 */}
                 <VectorArrow
-                  origin={state.pos2}
+                  originPixel={state.pos2}
                   vector={state.forceVec2}
                   type="force"
                   sceneScale={sceneScale}
@@ -156,7 +156,7 @@ export default function BinaryStarsAnimation() {
                   font={font}
                 />
                 <VectorArrow
-                  origin={state.pos2}
+                  originPixel={state.pos2}
                   vector={state.velVec2}
                   type="velocity"
                   sceneScale={sceneScale}
@@ -171,7 +171,7 @@ export default function BinaryStarsAnimation() {
               <>
                 {/* 恒星 1 */}
                 <VectorArrow
-                  origin={state.pos1}
+                  originPixel={state.pos1}
                   vector={state.forceVec1}
                   type="force"
                   sceneScale={sceneScale}
@@ -181,7 +181,7 @@ export default function BinaryStarsAnimation() {
                   font={font}
                 />
                 <VectorArrow
-                  origin={state.pos1}
+                  originPixel={state.pos1}
                   vector={state.velVec1}
                   type="velocity"
                   sceneScale={sceneScale}
@@ -192,7 +192,7 @@ export default function BinaryStarsAnimation() {
                 />
                 {/* 绘制分引力箭头 (细虚橙线) */}
                 <VectorArrow
-                  origin={state.pos1}
+                  originPixel={state.pos1}
                   vector={state.force12}
                   type="forceComponent"
                   sceneScale={sceneScale}
@@ -202,7 +202,7 @@ export default function BinaryStarsAnimation() {
                   font={font}
                 />
                 <VectorArrow
-                  origin={state.pos1}
+                  originPixel={state.pos1}
                   vector={state.force13}
                   type="forceComponent"
                   sceneScale={sceneScale}
@@ -214,7 +214,7 @@ export default function BinaryStarsAnimation() {
 
                 {/* 恒星 2 */}
                 <VectorArrow
-                  origin={state.pos2}
+                  originPixel={state.pos2}
                   vector={state.forceVec2}
                   type="force"
                   sceneScale={sceneScale}
@@ -224,7 +224,7 @@ export default function BinaryStarsAnimation() {
                   font={font}
                 />
                 <VectorArrow
-                  origin={state.pos2}
+                  originPixel={state.pos2}
                   vector={state.velVec2}
                   type="velocity"
                   sceneScale={sceneScale}
@@ -236,7 +236,7 @@ export default function BinaryStarsAnimation() {
 
                 {/* 恒星 3 */}
                 <VectorArrow
-                  origin={state.pos3}
+                  originPixel={state.pos3}
                   vector={state.forceVec3}
                   type="force"
                   sceneScale={sceneScale}
@@ -246,7 +246,7 @@ export default function BinaryStarsAnimation() {
                   font={font}
                 />
                 <VectorArrow
-                  origin={state.pos3}
+                  originPixel={state.pos3}
                   vector={state.velVec3}
                   type="velocity"
                   sceneScale={sceneScale}

@@ -318,8 +318,8 @@ export default function SpringBlocksAnimation() {
                     translucent={true}
                   />
                   {/* 矢量箭头起点高度根据车身调整 (速度在车顶 0.65m，弹力在质心 0.375m) */}
-                  <VectorArrow origin={{ x: xA_center, y: 0.65 }} vector={{ x: springState.vA, y: 0 }} type="velocity" sceneScale={sceneScale} label={`${springState.vA.toFixed(1)}m/s`} />
-                  <VectorArrow origin={{ x: xA_center, y: 0.375 }} vector={{ x: forceA, y: 0 }} type="elasticForce" sceneScale={sceneScale} label={Math.abs(forceA) > 0.05 ? `${Math.abs(forceA).toFixed(1)}N` : undefined} />
+                  <VectorArrow originPixel={{ x: xA_center, y: 0.65 }} vector={{ x: springState.vA, y: 0 }} type="velocity" sceneScale={sceneScale} label={`${springState.vA.toFixed(1)}m/s`} />
+                  <VectorArrow originPixel={{ x: xA_center, y: 0.375 }} vector={{ x: forceA, y: 0 }} type="elasticForce" sceneScale={sceneScale} label={Math.abs(forceA) > 0.05 ? `${Math.abs(forceA).toFixed(1)}N` : undefined} />
                 </g>
               )
             })()}
@@ -345,8 +345,8 @@ export default function SpringBlocksAnimation() {
                     translucent={true}
                   />
                   {/* 矢量箭头起点高度根据车身调整 (速度在车顶 0.65m，弹力在质心 0.375m) */}
-                  <VectorArrow origin={{ x: xB_center, y: 0.65 }} vector={{ x: springState.vB, y: 0 }} type="velocity" sceneScale={sceneScale} label={`${springState.vB.toFixed(1)}m/s`} />
-                  <VectorArrow origin={{ x: xB_center, y: 0.375 }} vector={{ x: forceB, y: 0 }} type="elasticForce" sceneScale={sceneScale} label={Math.abs(forceB) > 0.05 ? `${Math.abs(forceB).toFixed(1)}N` : undefined} />
+                  <VectorArrow originPixel={{ x: xB_center, y: 0.65 }} vector={{ x: springState.vB, y: 0 }} type="velocity" sceneScale={sceneScale} label={`${springState.vB.toFixed(1)}m/s`} />
+                  <VectorArrow originPixel={{ x: xB_center, y: 0.375 }} vector={{ x: forceB, y: 0 }} type="elasticForce" sceneScale={sceneScale} label={Math.abs(forceB) > 0.05 ? `${Math.abs(forceB).toFixed(1)}N` : undefined} />
                 </g>
               )
             })()}

@@ -4,7 +4,7 @@ import { colors } from '@/theme/colors'
 
 import { Spring } from '@/components/UI'
 import { MT_LAYOUT } from './constants'
-import type { CanvasSize } from '@/utils/useCanvasSize'
+import type { AnimationViewportResult } from '@/hooks'
 import type { SceneScale } from '@/scene/SceneScale'
 import type { Particle } from '../hooks/useParticleSimulation'
 
@@ -23,7 +23,7 @@ interface MomentumAdvancedSceneProps {
     fluidHeight: number
   }
   sceneScale: SceneScale
-  canvasSize: CanvasSize
+  canvasSize: AnimationViewportResult['canvasSize']
   showVectors: boolean
   particles: Particle[]
   groundY: number
@@ -267,7 +267,7 @@ export function MomentumAdvancedScene({ layout, sceneScale, canvasSize, showVect
       {/* 冲击力矢量箭头 */}
       {showVectors && (
         <VectorArrow
-          origin={{ x: plateX + springCompression, y: -nozzleY }}
+          originPixel={{ x: plateX + springCompression, y: nozzleY }}
           vector={{ x: impactForce, y: 0 }}
           type="appliedForce"
           sceneScale={sceneScale}

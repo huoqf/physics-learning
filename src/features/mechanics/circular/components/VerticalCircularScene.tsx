@@ -115,23 +115,23 @@ export function VerticalCircularScene({ physics }: VerticalCircularSceneProps) {
 
       {showVectors && currentPoint && (
         <g>
-          <VectorArrow origin={{ x, y }} vector={{ x: currentPoint.vx, y: currentPoint.vy }}
+          <VectorArrow originPixel={{ x, y }} vector={{ x: currentPoint.vx, y: currentPoint.vy }}
             type="velocity" sceneScale={sceneScale} label="v" />
           {showAcceleration === 1 && (currentPoint.state === 'on-track' ? (
-            <VectorArrow origin={{ x, y }}
+            <VectorArrow originPixel={{ x, y }}
               vector={{
                 x: -(currentPoint.N / m) * Math.sin(currentPoint.theta),
                 y: (currentPoint.N / m) * Math.cos(currentPoint.theta) - GRAVITY
               }}
               type="acceleration" sceneScale={sceneScale} label="a_合" />
           ) : (
-            <VectorArrow origin={{ x, y }} vector={{ x: 0, y: -GRAVITY }}
+            <VectorArrow originPixel={{ x, y }} vector={{ x: 0, y: -GRAVITY }}
               type="acceleration" sceneScale={sceneScale} label="a_合" />
           ))}
-          <VectorArrow origin={{ x, y }} vector={{ x: 0, y: -m * GRAVITY }}
+          <VectorArrow originPixel={{ x, y }} vector={{ x: 0, y: -m * GRAVITY }}
             type="gravity" sceneScale={sceneScale} label="G" />
           {currentPoint.state === 'on-track' && (
-            <VectorArrow origin={{ x, y }}
+            <VectorArrow originPixel={{ x, y }}
               vector={{
                 x: -currentPoint.N * Math.sin(currentPoint.theta),
                 y: currentPoint.N * Math.cos(currentPoint.theta)
@@ -139,7 +139,7 @@ export function VerticalCircularScene({ physics }: VerticalCircularSceneProps) {
               type={trackType === 0 ? 'tension' : 'normalForce'}
               sceneScale={sceneScale} label={trackType === 0 ? 'F_T' : 'F_N'} />
           )}
-          <VectorArrow origin={{ x, y }}
+          <VectorArrow originPixel={{ x, y }}
             vector={{
               x: currentPoint.state === 'on-track' ? -currentPoint.N * Math.sin(currentPoint.theta) : 0,
               y: (currentPoint.state === 'on-track' ? currentPoint.N * Math.cos(currentPoint.theta) : 0) - m * GRAVITY

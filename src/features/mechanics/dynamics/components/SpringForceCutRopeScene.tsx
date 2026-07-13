@@ -206,13 +206,13 @@ export default function SpringForceCutRopeScene() {
       {showVectors && (isCut === 0 || tCut < 1.2) && (
         <g>
           {/* A 球受力 */}
-          <VectorArrow origin={{ x: xLeft, y: -yA }} vector={{ x: 0, y: fA_grav * FORCE_ARROW_SCALE }}
+          <VectorArrow originPixel={{ x: xLeft, y: yA }} vector={{ x: 0, y: fA_grav * FORCE_ARROW_SCALE }}
             type="gravity" sceneScale={IDENTITY_SCENE_SCALE} strokeWidth={1.5} />
           <text x={xLeft + 20} y={yA + 32} fontSize={font(11)} fontWeight="bold" fill={PHYSICS_COLORS.gravity}>
             G=mg={(-fA_grav).toFixed(1)}N
           </text>
 
-          <VectorArrow origin={{ x: xLeft, y: -yA }} vector={{ x: 0, y: fA_spring * FORCE_ARROW_SCALE }}
+          <VectorArrow originPixel={{ x: xLeft, y: yA }} vector={{ x: 0, y: fA_spring * FORCE_ARROW_SCALE }}
             type="elasticForce" sceneScale={IDENTITY_SCENE_SCALE} strokeWidth={1.5} />
           <text x={xLeft + 20} y={yA - 28} fontSize={font(11)} fontWeight="bold" fill={PHYSICS_COLORS.elasticForce}>
             {isCut === 1 ? `F弹=${fA_spring.toFixed(1)}N` : `F弹=2mg=${fA_spring.toFixed(1)}N`}
@@ -220,7 +220,7 @@ export default function SpringForceCutRopeScene() {
 
           {isCut === 0 && (
             <g>
-              <VectorArrow origin={{ x: xLeft, y: -yA }} vector={{ x: 0, y: fA_rope * FORCE_ARROW_SCALE }}
+              <VectorArrow originPixel={{ x: xLeft, y: yA }} vector={{ x: 0, y: fA_rope * FORCE_ARROW_SCALE }}
                 type="tension" sceneScale={IDENTITY_SCENE_SCALE} strokeWidth={1.5} />
               <text x={xLeft - 20} y={yA + 18} fontSize={font(11)} fontWeight="bold" fill={PHYSICS_COLORS.tension} textAnchor="end">
                 T绳=mg={(-fA_rope).toFixed(1)}N
@@ -229,7 +229,7 @@ export default function SpringForceCutRopeScene() {
           )}
 
           {isCut === 1 && Math.abs(a_A) > 0.05 && (
-            <VectorArrow origin={{ x: xLeft - 40, y: -yA }} vector={{ x: 0, y: a_A }}
+            <VectorArrow originPixel={{ x: xLeft - 40, y: yA }} vector={{ x: 0, y: a_A }}
               type="acceleration" sceneScale={IDENTITY_SCENE_SCALE}
               pixelLength={Math.abs(a_A) * (30 / 9.8)} label={`aA=${Math.abs(a_A).toFixed(1)}`} />
           )}
@@ -241,7 +241,7 @@ export default function SpringForceCutRopeScene() {
           )}
 
           {/* B 球受力 */}
-          <VectorArrow origin={{ x: xLeft, y: -yB }} vector={{ x: 0, y: fB_grav * FORCE_ARROW_SCALE }}
+          <VectorArrow originPixel={{ x: xLeft, y: yB }} vector={{ x: 0, y: fB_grav * FORCE_ARROW_SCALE }}
             type="gravity" sceneScale={IDENTITY_SCENE_SCALE} strokeWidth={1.5} />
           <text x={xLeft + 20} y={yB + 28} fontSize={font(11)} fontWeight="bold" fill={PHYSICS_COLORS.gravity}>
             G=mg={(-fB_grav).toFixed(1)}N
@@ -249,7 +249,7 @@ export default function SpringForceCutRopeScene() {
 
           {isCut === 0 && (
             <g>
-              <VectorArrow origin={{ x: xLeft, y: -yB }} vector={{ x: 0, y: fB_rope * FORCE_ARROW_SCALE }}
+              <VectorArrow originPixel={{ x: xLeft, y: yB }} vector={{ x: 0, y: fB_rope * FORCE_ARROW_SCALE }}
                 type="tension" sceneScale={IDENTITY_SCENE_SCALE} strokeWidth={1.5} />
               <text x={xLeft - 20} y={yB - 18} fontSize={font(11)} fontWeight="bold" fill={PHYSICS_COLORS.tension} textAnchor="end">
                 T绳=mg={fB_rope.toFixed(1)}N
@@ -258,19 +258,19 @@ export default function SpringForceCutRopeScene() {
           )}
 
           {isCut === 1 && Math.abs(a_B) > 0.05 && (
-            <VectorArrow origin={{ x: xLeft - 40, y: -yB }} vector={{ x: 0, y: a_B }}
+            <VectorArrow originPixel={{ x: xLeft - 40, y: yB }} vector={{ x: 0, y: a_B }}
               type="acceleration" sceneScale={IDENTITY_SCENE_SCALE}
               pixelLength={Math.abs(a_B) * (30 / 9.8)} label={`aB=${Math.abs(a_B).toFixed(1)}`} />
           )}
 
           {/* C 球受力 */}
-          <VectorArrow origin={{ x: xRight, y: -yC }} vector={{ x: 0, y: fC_grav * FORCE_ARROW_SCALE }}
+          <VectorArrow originPixel={{ x: xRight, y: yC }} vector={{ x: 0, y: fC_grav * FORCE_ARROW_SCALE }}
             type="gravity" sceneScale={IDENTITY_SCENE_SCALE} strokeWidth={1.5} />
           <text x={xRight + 20} y={yC + 26} fontSize={font(11)} fontWeight="bold" fill={PHYSICS_COLORS.gravity}>
             G=mg={(-fC_grav).toFixed(1)}N
           </text>
 
-          <VectorArrow origin={{ x: xRight, y: -yC }} vector={{ x: 0, y: fC_spring * FORCE_ARROW_SCALE }}
+          <VectorArrow originPixel={{ x: xRight, y: yC }} vector={{ x: 0, y: fC_spring * FORCE_ARROW_SCALE }}
             type="elasticForce" sceneScale={IDENTITY_SCENE_SCALE} strokeWidth={1.5} />
           <text x={xRight + 20} y={yC + 46} fontSize={font(11)} fontWeight="bold" fill={PHYSICS_COLORS.elasticForce}>
             {isCut === 1 ? `F弹=${Math.abs(fSpring2).toFixed(1)}N` : `F弹=mg=${fSpring2.toFixed(1)}N`}
@@ -278,7 +278,7 @@ export default function SpringForceCutRopeScene() {
 
           {isCut === 0 && (
             <g>
-              <VectorArrow origin={{ x: xRight, y: -yC }} vector={{ x: 0, y: fC_rope * FORCE_ARROW_SCALE }}
+              <VectorArrow originPixel={{ x: xRight, y: yC }} vector={{ x: 0, y: fC_rope * FORCE_ARROW_SCALE }}
                 type="tension" sceneScale={IDENTITY_SCENE_SCALE} strokeWidth={1.5} />
               <text x={xRight - 20} y={yC - 28} fontSize={font(11)} fontWeight="bold" fill={PHYSICS_COLORS.tension} textAnchor="end">
                 T绳=2mg={fC_rope.toFixed(1)}N
@@ -287,7 +287,7 @@ export default function SpringForceCutRopeScene() {
           )}
 
           {isCut === 1 && Math.abs(a_C) > 0.05 && (
-            <VectorArrow origin={{ x: xRight + 40, y: -yC }} vector={{ x: 0, y: a_C }}
+            <VectorArrow originPixel={{ x: xRight + 40, y: yC }} vector={{ x: 0, y: a_C }}
               type="acceleration" sceneScale={IDENTITY_SCENE_SCALE}
               pixelLength={Math.abs(a_C) * (30 / 9.8)} label={`aC=${Math.abs(a_C).toFixed(1)}`} />
           )}
@@ -299,20 +299,20 @@ export default function SpringForceCutRopeScene() {
           )}
 
           {/* D 球受力 */}
-          <VectorArrow origin={{ x: xRight, y: -yD }} vector={{ x: 0, y: fD_grav * FORCE_ARROW_SCALE }}
+          <VectorArrow originPixel={{ x: xRight, y: yD }} vector={{ x: 0, y: fD_grav * FORCE_ARROW_SCALE }}
             type="gravity" sceneScale={IDENTITY_SCENE_SCALE} strokeWidth={1.5} />
           <text x={xRight + 20} y={yD + 28} fontSize={font(11)} fontWeight="bold" fill={PHYSICS_COLORS.gravity}>
             G=mg={(-fD_grav).toFixed(1)}N
           </text>
 
-          <VectorArrow origin={{ x: xRight, y: -yD }} vector={{ x: 0, y: fD_spring * FORCE_ARROW_SCALE }}
+          <VectorArrow originPixel={{ x: xRight, y: yD }} vector={{ x: 0, y: fD_spring * FORCE_ARROW_SCALE }}
             type="elasticForce" sceneScale={IDENTITY_SCENE_SCALE} strokeWidth={1.5} />
           <text x={xRight + 20} y={yD - 28} fontSize={font(11)} fontWeight="bold" fill={PHYSICS_COLORS.elasticForce}>
             {isCut === 1 ? `F弹=${Math.abs(fSpring2).toFixed(1)}N` : `F弹=mg=${fD_spring.toFixed(1)}N`}
           </text>
 
           {isCut === 1 && Math.abs(a_D) > 0.05 && (
-            <VectorArrow origin={{ x: xRight + 40, y: -yD }} vector={{ x: 0, y: a_D }}
+            <VectorArrow originPixel={{ x: xRight + 40, y: yD }} vector={{ x: 0, y: a_D }}
               type="acceleration" sceneScale={IDENTITY_SCENE_SCALE}
               pixelLength={Math.abs(a_D) * (30 / 9.8)} label={`aD=${Math.abs(a_D).toFixed(1)}`} />
           )}

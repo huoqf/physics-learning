@@ -1,7 +1,7 @@
 # VIEWPORT 架构统一方案
 
 > 编写时间：2026-07-12
-> 状态：**Phase 0-5、Phase A-C、Phase 4.5 已完成**
+> 状态：**Phase 0-6 全部完成**（createSceneScaleFromViewport/useCanvasSize/VectorArrow origin 已清零）
 > 目标：逐步统一 VIEWPORT 实现组件，覆盖 SVG/Canvas，完成实际分辨率测量、画面映射坐标转化、坐标对齐
 
 ---
@@ -176,28 +176,17 @@ useSceneScale（物理坐标 → 设计坐标）
 
 ---
 
-## 七、剩余迁移清单
+## 七、剩余迁移清单 ✅ 全部清零
 
-### `createSceneScaleFromViewport(..., 'transform')` — 4 个文件
+以下迁移项目已全部完成（Phase 6）：
 
-- `FreeFallAnimation.tsx`、`FreeFallDripAnimation.tsx`
-- `AccelerationCenterExtra.tsx`（优先级低）
-- `useForceMotionSandbox.ts`
+- ✅ `createSceneScaleFromViewport` — 4 个文件已迁移到 `useSceneScale`
+- ✅ `useCanvasSize`（非 CenterExtra）— 14 个文件已迁移到 `useAnimationViewport`
+- ✅ VectorArrow `origin` → `originPixel` — 44 个文件已完成
 
-### `useCanvasSize`（非 CenterExtra）— 13 个文件
+### 仍使用 `useCanvasSize` 的 CenterExtra 文件（7个，无需迁移）
 
-- StroboscopicAnimation、SatelliteAnimation、SpringCompositeAnimation
-- PowerTransmission、ACGeneration、useVelocitySelectorCanvas
-- useForceMotionSandbox、ForceMotionTripleChart、useEquilibriumLayout
-- CollisionAdvancedScene、CollisionBasicScene、IntermolecularForceChart、BohrOrbits
-
-### VectorArrow `origin=`（非 `originPixel`）— ~25 个文件
-
-**高优先级**：SpringBlocksAnimation、ManBoatAnimation、CurvedSlotAnimation、BulletBlockScene、FreeFallDripAnimation、BlockBoardAnimation、SatelliteAnimation、BinaryStarsAnimation、CircularModelsAnimation、ForceMotionSandbox、SimplePendulumAnimation
-
-**中优先级**：SingleRodAnimation、DualRodsScene、BasicAmpereScene、InclinedAmpereScene、InclineForceDiagram、ForcePolygon、CombinedFieldsAnimation、CircularGeometryModel
-
-**低优先级**：AccelerationCenterExtra、VectorPlayground
+400×180 侧栏小画布，不需要 viewport 体系：IntermolecularForcesCenterExtra、ClapeyronCenterExtra、WeightlessnessCenterExtra、NewtonSecondCenterExtra、FrictionCenterExtra、CircuitAnalysisCenterExtra、AccelerationCenterExtra（已迁移到 useAnimationViewport 但仍有 CanvasSize 类型引用）
 
 ---
 
@@ -245,6 +234,7 @@ useSceneScale（物理坐标 → 设计坐标）
 | B | visibleArea/centerScale 清零 | ✅ |
 | C | Canvas DPR 清零 | ✅ |
 | 5 | 非标准 preset 评估 | ✅ |
+| 6 | createSceneScaleFromViewport/useCanvasSize/VectorArrow origin 清零 | ✅ |
 
 ### Phase 4.5 bug 修复记录
 
@@ -269,7 +259,7 @@ useSceneScale（物理坐标 → 设计坐标）
 |--------|------|
 | SceneScale 单位 | 所有输出为设计坐标单位，不包含容器像素值 |
 | vp.visible* 使用 | 反算为设计坐标后使用，不直接传入 SceneScale |
-| VectorArrow 坐标 | 在 `<g transform={vp.transform}>` 内，坐标为设计单位 |
+| VectorArrow 坐标 | 在 `<g transform={vp.transform}>` 内，使用 `originPixel`（设计坐标），不再使用 `origin` |
 | Canvas transform 模式 | ctx 设置 viewport transform 后，用设计坐标绘制 |
 | Canvas raw 模式 | 仅 DPR 对齐，用像素坐标绘制 |
 | useSceneScale 调用 | 新页面统一使用，不再调用 createSceneScaleFrom* 的 visibleArea/centerScale |

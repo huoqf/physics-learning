@@ -4,8 +4,8 @@ import type { CanvasBounds, CanvasPoint } from '@/utils/coordinate'
 import { useSceneScale } from '@/hooks/useSceneScale'
 import type { SceneScale } from '@/scene'
 import { GRAVITY } from '@/physics/constants'
-import type { CanvasSize } from '@/utils/useCanvasSize'
-import type { ViewportInfo } from '@/utils/useViewport'
+import type { CanvasSize } from '@/utils'
+import type { ViewportInfo } from '@/utils'
 
 export interface EquilibriumLayoutParams {
   m: number

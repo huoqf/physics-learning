@@ -39,10 +39,6 @@ const PIXEL_VECTOR_SCALE: SceneScale = {
   maxVectorLength: 1,
 }
 
-function pixelOrigin(x: number, y: number) {
-  return { x, y: -y }
-}
-
 function pixelVector(dx: number, dy: number) {
   return { x: dx, y: -dy }
 }
@@ -505,7 +501,7 @@ export default function CircularModelsAnimation() {
         <g opacity={projected.opacity}>
           {/* 1. 速度矢量 v (蓝色，沿切线方向) */}
           <VectorArrow
-            origin={pixelOrigin(projected.x, projected.y)}
+            originPixel={{ x: projected.x, y: projected.y }}
             vector={pixelVector(tangent.x / tangentNorm, tangent.y / tangentNorm)}
             type="velocity"
             sceneScale={PIXEL_VECTOR_SCALE}
@@ -516,7 +512,7 @@ export default function CircularModelsAnimation() {
 
           {/* 2. 重力 mg (深绿色，竖直向下) */}
           <VectorArrow
-            origin={pixelOrigin(projected.x, projected.y)}
+            originPixel={{ x: projected.x, y: projected.y }}
             vector={gravityVec}
             type="gravity"
             sceneScale={PIXEL_VECTOR_SCALE}
@@ -530,7 +526,7 @@ export default function CircularModelsAnimation() {
             <g>
               {/* 拉力 F_T (绳索紫，斜向上沿绳) */}
               <VectorArrow
-                origin={pixelOrigin(projected.x, projected.y)}
+                originPixel={{ x: projected.x, y: projected.y }}
                 vector={vecData.tensionVec!}
                 type="tension"
                 sceneScale={PIXEL_VECTOR_SCALE}
@@ -562,7 +558,7 @@ export default function CircularModelsAnimation() {
               {/* 效果向心合力 F_合 (动力亮橙，水平指向旋转轴) */}
               {vecData.centripLength! > 0 && (
                 <VectorArrow
-                  origin={pixelOrigin(projected.x, projected.y)}
+                  originPixel={{ x: projected.x, y: projected.y }}
                   vector={vecData.centripVec!}
                   type="force"
                   sceneScale={PIXEL_VECTOR_SCALE}
@@ -580,7 +576,7 @@ export default function CircularModelsAnimation() {
               {/* 支持力 F_N (支持天蓝，竖直向上) */}
               {vecData.normalLength! > 0 && (
                 <VectorArrow
-                  origin={pixelOrigin(projected.x, projected.y)}
+                  originPixel={{ x: projected.x, y: projected.y }}
                   vector={vecData.normalVec!}
                   type="normalForce"
                   sceneScale={PIXEL_VECTOR_SCALE}
@@ -593,7 +589,7 @@ export default function CircularModelsAnimation() {
               {/* 摩擦力 f (静摩擦黄褐，沿半径指向圆心) */}
               {vecData.frictionLength! > 0 && (
                 <VectorArrow
-                  origin={pixelOrigin(projected.x, projected.y)}
+                  originPixel={{ x: projected.x, y: projected.y }}
                   vector={vecData.frictionVec!}
                   type="friction"
                   sceneScale={PIXEL_VECTOR_SCALE}

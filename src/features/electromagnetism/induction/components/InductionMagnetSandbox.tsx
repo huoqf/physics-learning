@@ -60,7 +60,7 @@ export const InductionMagnetSandbox: React.FC<InductionMagnetSandboxProps> = ({
       {Math.abs(magnetSpeed) > 0.1 && (
         <g>
           <VectorArrow
-            origin={{ x: magnetX, y: -(coilY - 30) }}
+            originPixel={{ x: magnetX, y: coilY - 30 }}
             vector={{ x: magnetSpeed * 15, y: 0 }}
             type="velocity"
             sceneScale={IDENTITY_SCENE_SCALE}

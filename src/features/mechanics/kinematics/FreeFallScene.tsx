@@ -203,7 +203,7 @@ export function FreeFallScene({
         {/* 重力矢量 */}
         {showVectors && !stateA.isLanded && (
           <g>
-            <VectorArrow origin={{ x: ballX - 28, y: -renderYA }} vector={{ x: 0, y: -g }}
+            <VectorArrow originPixel={{ x: ballX - 28, y: renderYA }} vector={{ x: 0, y: -g }}
               type="gravity" sceneScale={ffSceneScale} strokeWidth={STROKE.vectorMain} />
             <text x={ballX - 40} y={Math.min(renderYA + ffSceneScale.maxVectorLength * 0.5, groundY - 10)}
               fontSize={FONT.small} fill={PHYSICS_COLORS.gravity} fontWeight="bold">g</text>
@@ -215,7 +215,7 @@ export function FreeFallScene({
         )}
         {showVectors && !stateB.isLanded && (
           <g transform={`translate(${swayDx}, 0)`}>
-            <VectorArrow origin={{ x: featherX - 28, y: -renderYB }} vector={{ x: 0, y: -g }}
+            <VectorArrow originPixel={{ x: featherX - 28, y: renderYB }} vector={{ x: 0, y: -g }}
               type="gravity" sceneScale={ffSceneScale} strokeWidth={STROKE.vectorMain} />
             <text x={featherX - 40} y={Math.min(renderYB + ffSceneScale.maxVectorLength * 0.5, groundY - 10)}
               fontSize={FONT.small} fill={PHYSICS_COLORS.gravity} fontWeight="bold">g</text>
@@ -229,7 +229,7 @@ export function FreeFallScene({
         {/* 空气阻力矢量 */}
         {showVectors && !stateA.isLanded && stateA.fDrag > 0.001 && (
           <g>
-            <VectorArrow origin={{ x: ballX + 18, y: -renderYA }} vector={{ x: 0, y: stateA.fDrag }}
+            <VectorArrow originPixel={{ x: ballX + 18, y: renderYA }} vector={{ x: 0, y: stateA.fDrag }}
               type="forceComponent" sceneScale={ffSceneScale} strokeWidth={STROKE.vectorSub} />
             <text x={ballX + 28} y={Math.max(renderYA - ffSceneScale.maxVectorLength * 0.2, originY + 5)}
               fontSize={FONT.small} fill={PHYSICS_COLORS.airResistance} fontWeight="bold">f</text>
@@ -237,7 +237,7 @@ export function FreeFallScene({
         )}
         {showVectors && !stateB.isLanded && stateB.fDrag > 0.001 && (
           <g transform={`translate(${swayDx}, 0)`}>
-            <VectorArrow origin={{ x: featherX + 16, y: -renderYB }} vector={{ x: 0, y: stateB.fDrag }}
+            <VectorArrow originPixel={{ x: featherX + 16, y: renderYB }} vector={{ x: 0, y: stateB.fDrag }}
               type="force" sceneScale={ffSceneScale} color={CHART_COLORS.compareB} strokeWidth={STROKE.vectorSub} />
             <text x={featherX + 26} y={Math.max(renderYB - ffSceneScale.maxVectorLength * 0.2, originY + 5)}
               fontSize={FONT.small} fill={CHART_COLORS.compareB} fontWeight="bold">f'</text>
@@ -247,14 +247,14 @@ export function FreeFallScene({
         {/* 速度矢量 */}
         {showVectors && !stateA.isLanded && Math.abs(effectiveVA) > 0.1 && (
           <g>
-            <VectorArrow origin={{ x: ballX + 28, y: -renderYA }} vector={{ x: 0, y: -effectiveVA }}
+            <VectorArrow originPixel={{ x: ballX + 28, y: renderYA }} vector={{ x: 0, y: -effectiveVA }}
               type="velocity" sceneScale={ffSceneScale} strokeWidth={STROKE.vectorMain} />
             <text x={ballX + 38} y={renderYA + 16} fontSize={FONT.small} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
           </g>
         )}
         {showVectors && !stateB.isLanded && Math.abs(effectiveVB) > 0.1 && (
           <g transform={`translate(${swayDx}, 0)`}>
-            <VectorArrow origin={{ x: featherX + 28, y: -renderYB }} vector={{ x: 0, y: -effectiveVB }}
+            <VectorArrow originPixel={{ x: featherX + 28, y: renderYB }} vector={{ x: 0, y: -effectiveVB }}
               type="velocity" sceneScale={ffSceneScale} strokeWidth={STROKE.vectorMain} />
             <text x={featherX + 38} y={renderYB + 16} fontSize={FONT.small} fill={CHART_COLORS.compareB} fontWeight="bold">v'</text>
           </g>

@@ -153,7 +153,7 @@ export default function BlockBoardAnimation() {
           {/* ── 滑块受力 ── */}
           {/* 重力 mg ↓ */}
           <VectorArrow
-            origin={{ x: blkCx, y: -blkCy }}
+            originPixel={{ x: blkCx, y: blkCy }}
             vector={{ x: 0, y: -FgBlock }}
             pixelLength={FgBlock * fs}
             type="gravity" sceneScale={PX_SCALE}
@@ -161,7 +161,7 @@ export default function BlockBoardAnimation() {
           />
           {/* 支持力 FN1 ↑（在板上时向上，跌落后在地面上） */}
           <VectorArrow
-            origin={{ x: blkCx, y: -(blockOnBoard ? boardY : groundY) }}
+            originPixel={{ x: blkCx, y: blockOnBoard ? boardY : groundY }}
             vector={{ x: 0, y: FN1 }}
             pixelLength={FN1 * fs}
             type="normalForce" sceneScale={PX_SCALE}
@@ -170,7 +170,7 @@ export default function BlockBoardAnimation() {
           {/* 摩擦力 Ff1 ←（仅在板上且运动时） */}
           {blockOnBoard && state.vBlock > 0.01 && (
             <VectorArrow
-              origin={{ x: blkCx, y: -(boardY - 2) }}
+              originPixel={{ x: blkCx, y: boardY - 2 }}
               vector={{ x: -Ff1, y: 0 }}
               pixelLength={Ff1 * fs}
               type="friction" sceneScale={PX_SCALE}
@@ -181,7 +181,7 @@ export default function BlockBoardAnimation() {
           {/* ── 木板受力 ── */}
           {/* 重力 Mg ↓ */}
           <VectorArrow
-            origin={{ x: brdCx, y: -brdCy }}
+            originPixel={{ x: brdCx, y: brdCy }}
             vector={{ x: 0, y: -FgBoard }}
             pixelLength={FgBoard * fs}
             type="gravity" sceneScale={PX_SCALE}
@@ -190,7 +190,7 @@ export default function BlockBoardAnimation() {
           {/* 滑块压力 FN1' ↓（仅在板上时存在） */}
           {blockOnBoard && (
             <VectorArrow
-              origin={{ x: blkCx, y: -boardY }}
+              originPixel={{ x: blkCx, y: boardY }}
               vector={{ x: 0, y: -FN1 }}
               pixelLength={FN1 * fs}
               type="normalForce" sceneScale={PX_SCALE}
@@ -199,7 +199,7 @@ export default function BlockBoardAnimation() {
           )}
           {/* 地面支持力 FN2 ↑ */}
           <VectorArrow
-            origin={{ x: brdCx, y: -groundY }}
+            originPixel={{ x: brdCx, y: groundY }}
             vector={{ x: 0, y: FN2 }}
             pixelLength={FN2 * fs}
             type="normalForce" sceneScale={PX_SCALE}
@@ -208,7 +208,7 @@ export default function BlockBoardAnimation() {
           {/* 摩擦力 Ff1' →（作用在板上，仅滑块在板上且运动时） */}
           {blockOnBoard && state.vBlock > 0.01 && (
             <VectorArrow
-              origin={{ x: blkCx, y: -(boardY + 2) }}
+              originPixel={{ x: blkCx, y: boardY + 2 }}
               vector={{ x: Ff1, y: 0 }}
               pixelLength={Ff1 * fs}
               type="appliedForce" sceneScale={PX_SCALE}
@@ -218,7 +218,7 @@ export default function BlockBoardAnimation() {
           {/* 地面摩擦 Ff2 ← */}
           {state.vBoard > 0.01 && (
             <VectorArrow
-              origin={{ x: brdCx, y: -(groundY - 2) }}
+              originPixel={{ x: brdCx, y: groundY - 2 }}
               vector={{ x: -Ff2, y: 0 }}
               pixelLength={Ff2 * fs}
               type="friction" sceneScale={PX_SCALE}

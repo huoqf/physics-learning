@@ -1,4 +1,4 @@
-﻿/**
+/**
  * FaradayMagnetSandbox.tsx — 法拉第电磁感应基础模式场景（磁铁+电路+电子）
  *
  * 从 FaradayLaw.tsx 拆分：基础模式 (mode=0) 的中间屏渲染。
@@ -108,7 +108,7 @@ export function FaradayMagnetSandbox({
         <BarMagnet x={curMagnetX + MAGNET_LEN / 2} y={coilY} width={MAGNET_LEN} height={MAGNET_H} pole={-1} />
         {isPlaying && Math.abs(magnetV) > 0 && (
           <VectorArrow
-            origin={{ x: curMagnetX + MAGNET_LEN / 2, y: coilY - 22 }}
+            originPixel={{ x: curMagnetX + MAGNET_LEN / 2, y: coilY - 22 }}
             vector={{ x: magnetV > 0 ? 1 : -1, y: 0 }}
             type="velocity"
             sceneScale={IDENTITY_SCENE_SCALE}

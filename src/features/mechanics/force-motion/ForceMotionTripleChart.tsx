@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { CHART_COLORS, FX_CHART_COLORS, VT_CHART_COLORS, DASH, FONT, STROKE } from '@/theme/physics'
 import type { ChartAreaVariant } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { useCanvasSize } from '@/utils/useCanvasSize'
+import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { BasePhysicsChart, ChartCursor, ChartArea, useChartContext } from '@/components/Chart'
 
@@ -251,8 +251,8 @@ export default function ForceMotionTripleChart({
   areaTextV,
   areaTextX,
 }: ForceMotionTripleChartProps) {
-  const [containerRef, size] = useCanvasSize(CANVAS_PRESETS.full, { presetCompensation: 1.2 })
-  const { width, height } = size
+  const { containerRef, canvasSize } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
+  const { width, height } = canvasSize
 
   const chartWidth = Math.max(1, Math.floor((width - 8) / 3))
 

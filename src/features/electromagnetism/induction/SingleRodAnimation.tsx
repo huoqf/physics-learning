@@ -38,10 +38,6 @@ const PIXEL_VECTOR_SCALE: SceneScale = {
   maxVectorLength: 1,
 }
 
-function pixelOrigin(x: number, y: number) {
-  return { x, y: -y }
-}
-
 function pixelVector(dx: number, dy: number) {
   return { x: dx, y: -dy }
 }
@@ -130,7 +126,7 @@ export default function SingleRodAnimation() {
 
       {Math.abs(state.current) > 0.001 && (
         <VectorArrow
-          origin={pixelOrigin(rodX - 16, state.current >= 0 ? rodCenterY + iLength / 2 : rodCenterY - iLength / 2)}
+          originPixel={{ x: rodX - 16, y: state.current >= 0 ? rodCenterY + iLength / 2 : rodCenterY - iLength / 2 }}
           vector={pixelVector(0, state.current >= 0 ? 1 : -1)}
           type="currentDirection"
           sceneScale={PIXEL_VECTOR_SCALE}
@@ -153,7 +149,7 @@ export default function SingleRodAnimation() {
       </text>
 
       <VectorArrow
-        origin={pixelOrigin(rodX, rodCenterY - 20)}
+        originPixel={{ x: rodX, y: rodCenterY - 20 }}
         vector={pixelVector(1, 0)}
         type="velocity"
         sceneScale={PIXEL_VECTOR_SCALE}
@@ -162,7 +158,7 @@ export default function SingleRodAnimation() {
         font={canvasSize.font}
       />
       <VectorArrow
-        origin={pixelOrigin(rodX, rodCenterY + 4)}
+        originPixel={{ x: rodX, y: rodCenterY + 4 }}
         vector={pixelVector(-1, 0)}
         type="lorentzForce"
         sceneScale={PIXEL_VECTOR_SCALE}
@@ -172,7 +168,7 @@ export default function SingleRodAnimation() {
       />
       {mode === 'constantForce' && (
         <VectorArrow
-          origin={pixelOrigin(rodX, rodCenterY + 28)}
+          originPixel={{ x: rodX, y: rodCenterY + 28 }}
           vector={pixelVector(1, 0)}
           type="appliedForce"
           sceneScale={PIXEL_VECTOR_SCALE}

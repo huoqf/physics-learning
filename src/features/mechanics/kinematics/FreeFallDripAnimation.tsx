@@ -22,7 +22,7 @@ import { DATA_LAYOUT } from './freeFallConfig'
 
 import { SvgDataTable } from '@/components/Chart'
 import { VelocityTimeChart } from '@/components/Chart'
-import { createSceneScaleFromViewport } from '@/scene'
+import { useSceneScale } from '@/hooks/useSceneScale'
 
 // ─── 设计常量 ────────────────────────────────────────────────────────────────
 const DESIGN_WIDTH = 840
@@ -109,9 +109,13 @@ export default function FreeFallDripAnimation() {
   // 物理坐标到像素的缩放
   const scale = tubePixelHeight / TUBE_HEIGHT
 
-  const dripSceneScale = createSceneScaleFromViewport(vp, 'transform', {
-    designWidth: stageWidth,
-    designHeight: DESIGN_HEIGHT,
+  const dripSceneScale = useSceneScale({
+    vp, preset: CANVAS_PRESETS.full,
+    anchor: 'design',
+    physicsWidth: CANVAS_PRESETS.full.width,
+    physicsHeight: CANVAS_PRESETS.full.height,
+    originSource: 'topLeft',
+    maxVectorLength: Math.min(stageWidth, DESIGN_HEIGHT) * 0.3,
     refMagnitudes: {
       velocity: Math.sqrt(2 * g * TUBE_HEIGHT),
       acceleration: GRAVITY,
@@ -380,7 +384,7 @@ export default function FreeFallDripAnimation() {
           return (
             <g>
               <VectorArrow
-                origin={{ x: tubeCenterX + DROP_RADIUS + 8, y: -pixelY }}
+                originPixel={{ x: tubeCenterX + DROP_RADIUS + 8, y: pixelY }}
                 vector={{ x: 0, y: -state.v }}
                 type="velocity"
                 sceneScale={dripSceneScale}
@@ -401,7 +405,7 @@ export default function FreeFallDripAnimation() {
           return (
             <g>
               <VectorArrow
-                origin={{ x: tubeCenterX - DROP_RADIUS - 8, y: -pixelY }}
+                originPixel={{ x: tubeCenterX - DROP_RADIUS - 8, y: pixelY }}
                 vector={{ x: 0, y: -g }}
                 type="gravity"
                 sceneScale={dripSceneScale}

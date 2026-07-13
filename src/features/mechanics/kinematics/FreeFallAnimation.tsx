@@ -9,7 +9,7 @@ import {
 } from '@/theme/physics'
 import { useFreeFallPhysics } from './useFreeFallPhysics'
 import { getPhysicsAtTime, GRAVITY } from '@/physics'
-import { createSceneScaleFromViewport } from '@/scene'
+import { useSceneScale } from '@/hooks/useSceneScale'
 import { MATERIAL, TUBE_PHYSICAL_HEIGHT } from './freeFallConfig'
 import type { MaterialA, MaterialB } from './freeFallConfig'
 import { useFreeFallLayout } from './useFreeFallLayout'
@@ -52,11 +52,14 @@ export default function FreeFallAnimation() {
   const maxFallHeight = TUBE_PHYSICAL_HEIGHT
   const scale = useMemo(() => (maxFallHeight > 0 ? stageHeight / maxFallHeight : 25), [maxFallHeight, stageHeight])
 
-  const ffSceneScale = useMemo(() => createSceneScaleFromViewport(vp, 'transform', {
-    designWidth: FF_DESIGN.width,
-    designHeight: FF_DESIGN.height,
+  const ffSceneScale = useSceneScale({
+    vp, preset: FF_DESIGN,
+    anchor: 'design',
+    physicsWidth: FF_DESIGN.width,
+    physicsHeight: FF_DESIGN.height,
+    originSource: 'topLeft',
     refMagnitudes: { velocity: Math.sqrt(2 * g * TUBE_PHYSICAL_HEIGHT), acceleration: GRAVITY, gravity: GRAVITY, force: 0.5 },
-  }), [vp, g, FF_DESIGN.width, FF_DESIGN.height])
+  })
 
   // 物理引擎
   const { points: pointsA, groundTime: groundTimeA, currentState: stateA } = useFreeFallPhysics(v0, g, dragKA, matA.mass, maxFallHeight, time)

@@ -305,7 +305,7 @@ export default function ForceMotionSandbox(props: ForceMotionSandboxProps) {
         {/* 合外力矢量 F/分力/合力 （依据物理语义涂色） */}
         {state.mode !== 'balance' && state.mode !== 'terminal-variable-force' && (
           <VectorArrow
-            origin={{ x: view.body.cx, y: -view.body.cy }}
+            originPixel={{ x: view.body.cx, y: view.body.cy }}
             vector={{ x: view.forceVector.x, y: -view.forceVector.y }}
             type="force"
             color={forceArrowColor}
@@ -319,7 +319,7 @@ export default function ForceMotionSandbox(props: ForceMotionSandboxProps) {
           <>
             {/* 1. 驱动外力 F_drive (向下) */}
             <VectorArrow
-              origin={{ x: view.body.cx, y: -view.body.cy }}
+              originPixel={{ x: view.body.cx, y: view.body.cy }}
               vector={{ x: 0, y: -terminalForceVectors.driveLen }}
               type="force"
               color={PHYSICS_COLORS.appliedForce}
@@ -336,7 +336,7 @@ export default function ForceMotionSandbox(props: ForceMotionSandboxProps) {
 
             {/* 2. 阻力 F_resist (向上) */}
             <VectorArrow
-              origin={{ x: view.body.cx, y: -view.body.cy }}
+              originPixel={{ x: view.body.cx, y: view.body.cy }}
               vector={{ x: 0, y: terminalForceVectors.resistLen }}
               type="force"
               color={terminalForceVectors.isPowerMode ? PHYSICS_COLORS.airResistance : PHYSICS_COLORS.lorentzForce}
@@ -353,7 +353,7 @@ export default function ForceMotionSandbox(props: ForceMotionSandboxProps) {
 
             {/* 3. 合力 F_net (向下，右侧偏移渲染) */}
             <VectorArrow
-              origin={{ x: view.body.cx + 25, y: -view.body.cy }}
+              originPixel={{ x: view.body.cx + 25, y: view.body.cy }}
               vector={{ x: 0, y: -terminalForceVectors.netLen }}
               type="force"
               color={PHYSICS_COLORS.forceNet}
@@ -372,7 +372,7 @@ export default function ForceMotionSandbox(props: ForceMotionSandboxProps) {
 
         {/* 速度矢量 v — 蓝色 */}
         <VectorArrow
-          origin={{ x: view.body.cx, y: -view.body.cy }}
+          originPixel={{ x: view.body.cx, y: view.body.cy }}
           vector={{ x: view.speedVector.x, y: -view.speedVector.y }}
           type="velocity"
           sceneScale={sceneScale}

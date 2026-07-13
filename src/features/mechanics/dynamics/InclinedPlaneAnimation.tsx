@@ -215,7 +215,7 @@ export default function InclinedPlaneAnimation() {
       {/* 5. 核心受力分析矢量箭头 (在世界坐标系绘制，通过 pixelLength 固定像素大小) */}
       {/* 重力 G: 物理方向垂直向下 (y 负方向) */}
       <VectorArrow
-        origin={{ x: blockWorldX, y: -blockWorldY }}
+        originPixel={{ x: blockWorldX, y: blockWorldY }}
         vector={{ x: 0, y: -weight }}
         pixelLength={G_px}
         type="gravity"
@@ -227,7 +227,7 @@ export default function InclinedPlaneAnimation() {
 
       {/* 支持力 FN: 物理方向垂直斜面向上 (右上分量) */}
       <VectorArrow
-        origin={{ x: blockWorldX, y: -blockWorldY }}
+        originPixel={{ x: blockWorldX, y: blockWorldY }}
         vector={{
           x: physicsRes.FN * Math.sin(angleRad),
           y: physicsRes.FN * Math.cos(angleRad),
@@ -243,7 +243,7 @@ export default function InclinedPlaneAnimation() {
       {/* 摩擦力 Ff: 物理方向沿斜面向上 (左上分量) */}
       {physicsRes.Ff > 0.1 && (
         <VectorArrow
-          origin={{ x: blockWorldX, y: -blockWorldY }}
+          originPixel={{ x: blockWorldX, y: blockWorldY }}
           vector={{
             x: -physicsRes.Ff * Math.cos(angleRad),
             y: physicsRes.Ff * Math.sin(angleRad),

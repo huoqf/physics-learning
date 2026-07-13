@@ -66,13 +66,13 @@ export function CentripetalScene({ physics, font }: CentripetalSceneProps) {
 
       {showVectors && (
         <g>
-          <VectorArrow origin={{ x, y }} vector={{ x: -y * (v / r), y: x * (v / r) }}
+          <VectorArrow originPixel={{ x, y }} vector={{ x: -y * (v / r), y: x * (v / r) }}
             type="velocity" sceneScale={sceneScale} label="v" />
           {showAcceleration === 1 && (
-            <VectorArrow origin={{ x, y }} vector={{ x: -x * (a_c / r), y: -y * (a_c / r) }}
+            <VectorArrow originPixel={{ x, y }} vector={{ x: -x * (a_c / r), y: -y * (a_c / r) }}
               type="acceleration" sceneScale={sceneScale} label="a_向" />
           )}
-          <VectorArrow origin={{ x, y }} vector={{ x: -x * (F_c / r), y: -y * (F_c / r) }}
+          <VectorArrow originPixel={{ x, y }} vector={{ x: -x * (F_c / r), y: -y * (F_c / r) }}
             type="force" sceneScale={sceneScale} dashed={true} label="F_向 (效果力)" />
         </g>
       )}

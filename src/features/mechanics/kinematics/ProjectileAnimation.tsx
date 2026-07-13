@@ -391,7 +391,7 @@ export default function ProjectileAnimation() {
           <g>
             {/* 水平分速度 vx (Blue-500) */}
             <VectorArrow
-              origin={{ x: ballCanvas.cx, y: -ballCanvas.cy }}
+              originPixel={{ x: ballCanvas.cx, y: ballCanvas.cy }}
               vector={{ x: currentState.vx, y: 0 }}
               type="velocityX"
               sceneScale={projSceneScale}
@@ -403,7 +403,7 @@ export default function ProjectileAnimation() {
             {/* 竖直分速度 vy (Blue-400) */}
             {Math.abs(currentState.vy) > 0.05 && (
               <VectorArrow
-                origin={{ x: ballCanvas.cx, y: -ballCanvas.cy }}
+                originPixel={{ x: ballCanvas.cx, y: ballCanvas.cy }}
                 vector={{ x: 0, y: currentState.vy }}
                 type="velocityY"
                 sceneScale={projSceneScale}
@@ -415,7 +415,7 @@ export default function ProjectileAnimation() {
 
             {/* 合速度 v (Blue-600) */}
             <VectorArrow
-              origin={{ x: ballCanvas.cx, y: -ballCanvas.cy }}
+              originPixel={{ x: ballCanvas.cx, y: ballCanvas.cy }}
               vector={{ x: currentState.vx, y: currentState.vy }}
               type="velocity"
               sceneScale={projSceneScale}

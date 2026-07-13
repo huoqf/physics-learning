@@ -121,7 +121,7 @@ export default function MomentumConservationAnimation() {
               <g>
                 {basic.currentV1 !== 0 && (
                   <VectorArrow
-                    origin={{ x: basic.posAx, y: basic.R_A }}
+                    originPixel={{ x: basic.posAx, y: basic.R_A }}
                     vector={{ x: basic.currentV1, y: 0 }}
                     type="velocity"
                     sceneScale={vectorSceneScale}
@@ -133,7 +133,7 @@ export default function MomentumConservationAnimation() {
 
                 {basic.currentV2 !== 0 && (
                   <VectorArrow
-                    origin={{ x: basic.posBx, y: basic.R_B }}
+                    originPixel={{ x: basic.posBx, y: basic.R_B }}
                     vector={{ x: basic.currentV2, y: 0 }}
                     type="velocity"
                     sceneScale={vectorSceneScale}
@@ -242,7 +242,7 @@ export default function MomentumConservationAnimation() {
               <g>
                 {advanced.currentVSlider > 0 && (
                   <VectorArrow
-                    origin={{ x: advanced.sliderPixelX, y: groundY - advanced.sliderTopY + 14 }}
+                    originPixel={{ x: advanced.sliderPixelX, y: advanced.sliderTopY - 14 }}
                     vector={{ x: advanced.currentVSlider, y: 0 }}
                     type="velocity" sceneScale={vectorSceneScale}
                   />
@@ -257,7 +257,7 @@ export default function MomentumConservationAnimation() {
 
                 {advanced.currentVBoard > 0 && (
                   <VectorArrow
-                    origin={{ x: advanced.boardPixelX + advanced.boardPixelW / 2, y: groundY - advanced.boardTopY - 9 }}
+                    originPixel={{ x: advanced.boardPixelX + advanced.boardPixelW / 2, y: advanced.boardTopY + 9 }}
                     vector={{ x: advanced.currentVBoard, y: 0 }}
                     type="velocity" sceneScale={vectorSceneScale} color={PHYSICS_COLORS.elasticForce}
                   />

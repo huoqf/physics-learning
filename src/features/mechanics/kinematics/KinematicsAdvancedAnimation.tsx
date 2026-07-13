@@ -324,7 +324,7 @@ export default function KinematicsAdvancedAnimation() {
               {showVectors && v > 0 && (
                 <g>
                   <VectorArrow
-                    origin={{ x: blockCenterX, y: -velocityArrowY }}
+                    originPixel={{ x: blockCenterX, y: velocityArrowY }}
                     vector={{ x: v, y: 0 }}
                     type="velocity"
                     sceneScale={vectorSceneScale}
@@ -347,7 +347,7 @@ export default function KinematicsAdvancedAnimation() {
               {showVectors && Math.abs(a) > 0.05 && (
                 <g>
                   <VectorArrow
-                    origin={{ x: blockCenterX, y: -accelerationArrowY }}
+                    originPixel={{ x: blockCenterX, y: accelerationArrowY }}
                     vector={{ x: a, y: 0 }}
                     type="acceleration"
                     sceneScale={vectorSceneScale}
