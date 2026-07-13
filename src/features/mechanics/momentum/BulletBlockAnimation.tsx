@@ -17,7 +17,7 @@ import BulletBlockScene from './BulletBlockScene'
 import BulletBlockCharts from './BulletBlockCharts'
 
 // SVG 设计坐标系常量（CANVAS_PRESETS.splitV）
-const DESIGN_WIDTH = 840
+const DESIGN_WIDTH = CANVAS_PRESETS.splitV.width
 
 export default function BulletBlockAnimation() {
   const { params, time } = useAnimationStore(

@@ -16,13 +16,14 @@ import { precomputeSpringBlocks, interpolateSpringBlocks } from '@/physics/momen
 import { useChartContext } from '@/components/Chart'
 
 
+const DESIGN = CANVAS_PRESETS.splitV // 840×325
 const GROUND_X = 0
-const GROUND_Y = 235
-const GROUND_WIDTH = 840
-const SPRING_PX_PER_M = 40
-const SPRING_ORIGIN_X = 420
-const SPRING_NATURAL_LENGTH_PX = 80
-const BLOCK_SIZE = { width: 30, height: 30 }
+const GROUND_Y = 240
+const GROUND_WIDTH = DESIGN.width
+const SPRING_PX_PER_M = 55
+const SPRING_ORIGIN_X = Math.round(DESIGN.width * 0.5)
+const SPRING_NATURAL_LENGTH_PX = 110
+const BLOCK_SIZE = { width: 42, height: 42 }
 const CRITICAL_TIP = { x: -50, y: -10, width: 100, height: 20 }
 const SPRING_SIM = { duration: 3.5, dt: 0.016 }
 
@@ -85,8 +86,8 @@ export default function SpringBlocksAnimation() {
     customScaleY: SPRING_PX_PER_M,
     customOriginX: SPRING_ORIGIN_X,
     customOriginY: GROUND_Y,
-    maxVectorLength: 40,
-    refMagnitudes: { velocity: 6, elasticForce: 40 },
+    maxVectorLength: 55,
+    refMagnitudes: { velocity: 8, elasticForce: 50 },
   })
 
   // 物理数据计算
@@ -233,7 +234,7 @@ export default function SpringBlocksAnimation() {
   return (
     <div className="w-full h-full flex flex-col gap-2 p-2 box-border bg-neutral-50 overflow-hidden">
       {/* 上方图表与能量柱展示 */}
-      <div className="flex-[4] min-h-[160px] grid grid-cols-3 gap-2">
+      <div className="flex-1 min-h-[160px] grid grid-cols-3 gap-2">
         <div className="bg-white border border-neutral-200/80 rounded-xl p-2.5 shadow-sm relative overflow-hidden flex flex-col">
           <div className="flex-grow min-h-0 relative">
             <VelocityTimeChart
@@ -285,7 +286,7 @@ export default function SpringBlocksAnimation() {
       </div>
 
       {/* 下方物理仿真动画区 */}
-      <div className="flex-[5] min-h-[220px] bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden flex flex-col">
+      <div className="flex-1 min-h-[220px] bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden flex flex-col">
         <div className="flex-1 min-h-0">
           <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
             {/* 地面 (开启 isSmooth 光滑镜面效果) */}
@@ -400,12 +401,6 @@ export default function SpringBlocksAnimation() {
               return null
             })()}
           </AnimationSvgCanvas>
-        </div>
-
-        <div className="p-3 bg-neutral-50 border-t border-neutral-200/80 text-ui-md text-neutral-600 flex items-center justify-between">
-          <div>
-            <p>💡 <strong>弹簧双滑块</strong>：胡克定律的变力让物体做正弦/余弦式的变加速运动。但动量守恒锁定了两条速度曲线波动的"黄色平均中轴线"（即黄色质心参考线），能量守恒则决定了两条曲线的上下波幅。</p>
-          </div>
         </div>
       </div>
     </div>

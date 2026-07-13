@@ -17,12 +17,12 @@ import { calculateManBoatState, getManBoatAutoMotion, calculateManBoatDisplaceme
 const MAN_BOAT_LAYOUT = {
   groundYRatio: 0.722,
   originXRatio: 0.5,
-  pxPerMeter: 30,
+  pxPerMeter: 42,
 } as const
 
 const BOAT_WALK_DURATION = 2.5
 const BOAT_AUTO_STEPS = 100
-const CM_STAR = { coreRadius: 4, glowRadius: 10, labelOffset: 16 }
+const CM_STAR = { coreRadius: 5, glowRadius: 13, labelOffset: 20 }
 const KEYBOARD_SPEED = 3
 
 export default function ManBoatAnimation() {
@@ -159,8 +159,8 @@ export default function ManBoatAnimation() {
     customScaleY: pxPerMeter,
     customOriginX: originX,
     customOriginY: groundY,
-    maxVectorLength: 40,
-    refMagnitudes: { velocity: 2.0 },
+    maxVectorLength: 75,
+    refMagnitudes: { velocity: 3.0, velocityX: 3.5, velocityY: 3.5 },
   })
 
   const gradIdBoat = useId()
@@ -178,7 +178,7 @@ export default function ManBoatAnimation() {
   return (
     <div className="w-full h-full flex flex-col gap-2 p-2 box-border bg-neutral-50 overflow-hidden">
       {/* 上方图表与数据看板 */}
-      <div className="flex-[4] min-h-[160px] grid grid-cols-3 gap-2">
+      <div className="flex-1 min-h-[160px] grid grid-cols-3 gap-2">
         <div className="bg-white border border-neutral-200/80 rounded-xl p-2.5 shadow-sm relative overflow-hidden flex flex-col">
           <div className="flex-grow min-h-0 relative">
             <VelocityTimeChart
@@ -250,7 +250,7 @@ export default function ManBoatAnimation() {
       </div>
 
       {/* 下方物理仿真动画区 */}
-      <div className="flex-[5] min-h-[220px] bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden flex flex-col justify-between">
+      <div className="flex-1 min-h-[220px] bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden flex flex-col justify-between">
         <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
             <defs>
               <linearGradient id={gradIdBoat} x1="0%" y1="0%" x2="0%" y2="100%">
@@ -295,7 +295,7 @@ export default function ManBoatAnimation() {
               const wb_px = L_boat * pxPerMeter
               return (
                 <g>
-                  <path d={`M ${xb_px} ${groundY - 8} L ${xb_px - 10} ${groundY - 18} L ${xb_px + wb_px + 10} ${groundY - 18} L ${xb_px + wb_px} ${groundY - 8} Z`} fill={`url(#${gradIdBoat})`} stroke={SCENE_COLORS.materials.labWoodGrad[3]} strokeWidth="1.5" />
+                  <path d={`M ${xb_px} ${groundY - 10} L ${xb_px - 12} ${groundY - 24} L ${xb_px + wb_px + 12} ${groundY - 24} L ${xb_px + wb_px} ${groundY - 10} Z`} fill={`url(#${gradIdBoat})`} stroke={SCENE_COLORS.materials.labWoodGrad[3]} strokeWidth="1.5" />
                   <text x={xb_px + wb_px / 2} y={groundY - 4} fill={SCENE_COLORS.materials.labWoodGrad[0]} fontSize={canvasSize.font(8)} fontWeight="bold" textAnchor="middle">船 {M_boat}kg</text>
                 </g>
               )
@@ -304,18 +304,18 @@ export default function ManBoatAnimation() {
             {/* 小人1绘制 */}
             {(() => {
               const xp_px = originX + boatState.x_person1 * pxPerMeter
-              const headY = groundY - 18 - 20
+              const headY = groundY - 24 - 24
               const angle = boatState.v1_rel !== 0 ? Math.sin(time * 15) * 6 : 0
               return (
                 <g>
-                  <circle cx={xp_px} cy={headY} r="4" fill={colors.primary[500]} stroke={colors.primary[700]} strokeWidth="1" />
-                  <line x1={xp_px} y1={headY + 4} x2={xp_px} y2={groundY - 18 - 8} stroke={colors.primary[600]} strokeWidth="1.5" />
-                  <line x1={xp_px} y1={headY + 6} x2={xp_px - 6 - angle * 0.1} y2={groundY - 18 - 12} stroke={colors.primary[600]} strokeWidth="1.2" />
-                  <line x1={xp_px} y1={headY + 6} x2={xp_px + 6 + angle * 0.1} y2={groundY - 18 - 12} stroke={colors.primary[600]} strokeWidth="1.2" />
-                  <line x1={xp_px} y1={groundY - 18 - 8} x2={xp_px - 5 - angle * 0.3} y2={groundY - 18} stroke={colors.primary[600]} strokeWidth="1.5" />
-                  <line x1={xp_px} y1={groundY - 18 - 8} x2={xp_px + 5 + angle * 0.3} y2={groundY - 18} stroke={colors.primary[600]} strokeWidth="1.5" />
+                  <circle cx={xp_px} cy={headY} r="5" fill={colors.primary[500]} stroke={colors.primary[700]} strokeWidth="1" />
+                  <line x1={xp_px} y1={headY + 5} x2={xp_px} y2={groundY - 24 - 10} stroke={colors.primary[600]} strokeWidth="1.5" />
+                  <line x1={xp_px} y1={headY + 7} x2={xp_px - 7 - angle * 0.1} y2={groundY - 24 - 14} stroke={colors.primary[600]} strokeWidth="1.2" />
+                  <line x1={xp_px} y1={headY + 7} x2={xp_px + 7 + angle * 0.1} y2={groundY - 24 - 14} stroke={colors.primary[600]} strokeWidth="1.2" />
+                  <line x1={xp_px} y1={groundY - 24 - 10} x2={xp_px - 6 - angle * 0.3} y2={groundY - 24} stroke={colors.primary[600]} strokeWidth="1.5" />
+                  <line x1={xp_px} y1={groundY - 24 - 10} x2={xp_px + 6 + angle * 0.3} y2={groundY - 24} stroke={colors.primary[600]} strokeWidth="1.5" />
                   <text x={xp_px} y={headY - 6} fill={colors.primary[700]} fontSize={canvasSize.font(8)} fontWeight="bold" textAnchor="middle">人1 {m_person}kg</text>
-                  <VectorArrow origin={{ x: boatState.x_person1, y: 0.6 }} vector={{ x: boatState.v_person1, y: 0 }} type="velocity" sceneScale={sceneScale} color={colors.primary[500]} />
+                  <VectorArrow origin={{ x: boatState.x_person1, y: 0.85 }} vector={{ x: boatState.v_person1, y: 0 }} type="velocityX" sceneScale={sceneScale} />
                 </g>
               )
             })()}
@@ -323,24 +323,24 @@ export default function ManBoatAnimation() {
             {/* 小人2绘制 */}
             {isDouble && (() => {
               const xp_px = originX + boatState.x_person2 * pxPerMeter
-              const headY = groundY - 18 - 20
+              const headY = groundY - 24 - 24
               const angle = boatState.v2_rel !== 0 ? Math.sin(time * 15) * 6 : 0
               return (
                 <g>
-                  <circle cx={xp_px} cy={headY} r="4" fill={colors.danger[500]} stroke={colors.danger[700]} strokeWidth="1" />
-                  <line x1={xp_px} y1={headY + 4} x2={xp_px} y2={groundY - 18 - 8} stroke={colors.danger[600]} strokeWidth="1.5" />
-                  <line x1={xp_px} y1={headY + 6} x2={xp_px - 6 - angle * 0.1} y2={groundY - 18 - 12} stroke={colors.danger[600]} strokeWidth="1.2" />
-                  <line x1={xp_px} y1={headY + 6} x2={xp_px + 6 + angle * 0.1} y2={groundY - 18 - 12} stroke={colors.danger[600]} strokeWidth="1.2" />
-                  <line x1={xp_px} y1={groundY - 18 - 8} x2={xp_px - 5 - angle * 0.3} y2={groundY - 18} stroke={colors.danger[600]} strokeWidth="1.5" />
-                  <line x1={xp_px} y1={groundY - 18 - 8} x2={xp_px + 5 + angle * 0.3} y2={groundY - 18} stroke={colors.danger[600]} strokeWidth="1.5" />
+                  <circle cx={xp_px} cy={headY} r="5" fill={colors.danger[500]} stroke={colors.danger[700]} strokeWidth="1" />
+                  <line x1={xp_px} y1={headY + 5} x2={xp_px} y2={groundY - 24 - 10} stroke={colors.danger[600]} strokeWidth="1.5" />
+                  <line x1={xp_px} y1={headY + 7} x2={xp_px - 7 - angle * 0.1} y2={groundY - 24 - 14} stroke={colors.danger[600]} strokeWidth="1.2" />
+                  <line x1={xp_px} y1={headY + 7} x2={xp_px + 7 + angle * 0.1} y2={groundY - 24 - 14} stroke={colors.danger[600]} strokeWidth="1.2" />
+                  <line x1={xp_px} y1={groundY - 24 - 10} x2={xp_px - 6 - angle * 0.3} y2={groundY - 24} stroke={colors.danger[600]} strokeWidth="1.5" />
+                  <line x1={xp_px} y1={groundY - 24 - 10} x2={xp_px + 6 + angle * 0.3} y2={groundY - 24} stroke={colors.danger[600]} strokeWidth="1.5" />
                   <text x={xp_px} y={headY - 6} fill={colors.danger[700]} fontSize={canvasSize.font(8)} fontWeight="bold" textAnchor="middle">人2 {m_person2}kg</text>
-                  <VectorArrow origin={{ x: boatState.x_person2, y: 0.6 }} vector={{ x: boatState.v_person2, y: 0 }} type="velocity" sceneScale={sceneScale} color={colors.danger[500]} />
+                  <VectorArrow origin={{ x: boatState.x_person2, y: 0.85 }} vector={{ x: boatState.v_person2, y: 0 }} type="velocityY" sceneScale={sceneScale} />
                 </g>
               )
             })()}
 
             {/* 船速度箭头 */}
-            <VectorArrow origin={{ x: boatState.x_boat + L_boat * 0.5, y: 0.1 }} vector={{ x: boatState.v_boat, y: 0 }} type="velocity" sceneScale={sceneScale} color={colors.warning[600]} />
+            <VectorArrow origin={{ x: boatState.x_boat + L_boat * 0.5, y: 0.4 }} vector={{ x: boatState.v_boat, y: 0 }} type="velocity" sceneScale={sceneScale} />
 
             {/* 自动模式下位移双向箭头 */}
             {(() => {
@@ -385,10 +385,6 @@ export default function ManBoatAnimation() {
               )
             })()}
         </AnimationSvgCanvas>
-
-        <div className="p-2.5 bg-neutral-50 border-t border-neutral-200/80 text-ui-base text-neutral-500 leading-tight">
-          💡 <strong>无外力与质心锁定</strong>：水平面无摩擦，系统水平方向外力为 0，质心十字星完全锁定不动。不论是变速、中途停顿还是先后走动，只要起止时刻静止，系统的总位移仅由初始和末尾位置决定，完美符合动量守恒。
-        </div>
       </div>
     </div>
   )

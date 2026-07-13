@@ -168,6 +168,8 @@ export const mechanicsMomentumAnimations = defineAnimations({
         params: { mA_spring: 4.5, mB_spring: 1.5, v0_spring: 5, k_spring: 20, connectionMode_spring: 0 } },
       { type: 'preset', label: '固连往复振动', group: '高考典型考境一键配置',
         params: { mA_spring: 2, mB_spring: 3, v0_spring: 5, k_spring: 25, connectionMode_spring: 1 } },
+      { type: 'tip', group: '教学提示',
+        content: '胡克定律的变力让物体做正弦/余弦式的变加速运动。但动量守恒锁定了两条速度曲线波动的"黄色平均中轴线"（即黄色质心参考线），能量守恒则决定了两条曲线的上下波幅。' },
     ],
   },
   'anim-bullet-block': {
@@ -250,6 +252,8 @@ export const mechanicsMomentumAnimations = defineAnimations({
         showIf: 'manBoatControl', showIfValue: 0 },
       { type: 'tip', group: '操作提示', showIf: 'manBoatControl', showIfValue: 1,
         content: '请点击主画面使其获取焦点，然后使用键盘 ←（左方向键）或 →（右方向键）即可操控小人在船上行走！' },
+      { type: 'tip', group: '教学提示',
+        content: '水平面无摩擦，系统水平方向外力为 0，质心十字星完全锁定不动。不论是变速、中途停顿还是先后走动，只要起止时刻静止，系统的总位移仅由初始和末尾位置决定，完美符合动量守恒。' },
     ],
   },
 })

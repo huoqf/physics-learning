@@ -41,7 +41,7 @@ export default function MomentumTheoremAnimation() {
     physicsWidth: vp.visibleW / vp.scale,
     physicsHeight: vp.visibleH / vp.scale,
     originSource: 'topLeft',
-    refMagnitudes: { velocity: 15, force: 200, gravity: 25, normalForce: 200 },
+    refMagnitudes: { velocity: 15, force: 200, gravity: 25, normalForce: 200, appliedForce: 200 },
   })
 
   const layout = useMomentumTheoremLayout({ params, time, vp })

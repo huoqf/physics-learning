@@ -18,10 +18,10 @@ const DESIGN = CANVAS_PRESETS.splitV // 840×325
 const GROUND_Y = Math.round(DESIGN.height * 0.77) // 250
 const GROUND_X = 0
 const GROUND_WIDTH = DESIGN.width
-const SLOT_PX_PER_M = 40
+const SLOT_PX_PER_M = 68
 const SLOT_ORIGIN_X = Math.round(DESIGN.width * 0.5)
-const SLOT_EXTRA_WIDTH = 30
-const BALL_RADIUS_PX = 10
+const SLOT_EXTRA_WIDTH = 45
+const BALL_RADIUS_PX = 16
 const SLOT_SIM = { duration: 6, dt: 0.002 }
 
 export default function CurvedSlotAnimation() {
@@ -53,8 +53,8 @@ export default function CurvedSlotAnimation() {
     customScaleY: SLOT_PX_PER_M,
     customOriginX: SLOT_ORIGIN_X,
     customOriginY: COMP_GROUND_Y,
-    maxVectorLength: 45,
-    refMagnitudes: { force: 25, normalForce: 25, appliedForce: 25, forceComponent: 25, velocity: 5 },
+    maxVectorLength: 75,
+    refMagnitudes: { force: 40, normalForce: 40, appliedForce: 40, forceComponent: 40, velocity: 8 },
   })
 
   // 物理预计算与插值
@@ -117,7 +117,7 @@ export default function CurvedSlotAnimation() {
   return (
     <div className="w-full h-full flex flex-col gap-2 p-2 box-border bg-neutral-50 overflow-hidden">
       {/* 上方三个并列图表区 */}
-      <div className="flex-[4] min-h-[160px] grid grid-cols-3 gap-2">
+      <div className="flex-1 min-h-[160px] grid grid-cols-3 gap-2">
         {/* 速度图表 */}
         <div className="bg-white border border-neutral-200/80 rounded-xl p-2.5 shadow-sm relative overflow-hidden flex flex-col">
           <div className="text-ui-base font-bold text-neutral-800 border-b pb-1 mb-1.5 flex items-center justify-between">
@@ -153,7 +153,7 @@ export default function CurvedSlotAnimation() {
       </div>
 
       {/* 下方物理仿真动画区 */}
-      <div className="flex-[5] bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden min-h-[220px]">
+      <div className="flex-1 bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden min-h-[220px]">
         <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
             <defs>
               <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
