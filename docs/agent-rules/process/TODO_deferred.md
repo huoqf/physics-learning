@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-11（§5 OrbitTransferAnimation 迁移完成 + MechanicalWave intentionalNonUniformScale 豁免）
+> 最后更新：2026-07-13（§7 粒子轨迹迁移全部完成并瘦身 + §5 Viewport 迁移状态更新 + §3.2/§4.2.1 归档）
 
 ---
 
@@ -84,8 +84,6 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 |:---:|------|------|------|
 | D | `useCanvasSize({ ... })` 硬编码 | 12 处 | 多数为合理例外，更新 allowlist 文档即可 |
 
-详见 [`FONT_SIZE_AUDIT.md`](./FONT_SIZE_AUDIT.md)、[`CANVAS_PRESETS_AUDIT.md`](./CANVAS_PRESETS_AUDIT.md)
-
 ---
 
 ## 三、代码质量
@@ -97,14 +95,10 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 膨胀触发区域：参数过滤（showIf/hideIf）、SidebarExtra props 组装、模式切换、RightPhysicsPanel 计算逻辑。
 如继续增长，优先抽 hook：`useFilteredParams()`、`useSidebarExtraProps()`、`useAnimationMode()`。
 
-### 3.2 左屏控制台整体优化（P1/P2，暂缓）
+### 3.2 左屏控制台整体优化 ✅
 
-**整体要求**：
-- 左屏基础结构一致，控件分组明确；默认恢复语义清晰
-- 简单模式切换、显示开关、提示卡不再需要手写 SidebarExtra（已通过 controlMeta 实现）
-
-**待完成**：
-- ~~剩余 1 个 SidebarExtra 随后续维护逐步清理~~ ✅ 全部清理完成（2026-07-13）
+> 已完成（2026-07-13）。SidebarExtra 61→0，全部收敛为声明式 controlMeta。
+> 详细记录见 [2026-W28.md](./logs/2026-W28.md)。
 
 ### 3.3 其他（P3，暂缓）
 
@@ -160,20 +154,20 @@ export interface AnimationModule<P extends AnimationParams> {
 
 | 优先级 | 领域 | 文件 | 风险点 | 状态 |
 |:---:|------|------|------|:---:|
-| ~~P1~~ | 电磁学·磁场 | `velocitySelector.ts` | 洛伦兹力方向，与 combined-fields 模式0 同类 | ✅ 2026-07-11 |
-| ~~P1~~ | 电磁学·磁场 | `SimulationView.tsx`（BoundaryMagneticField） | 双边界磁场出射，已有 `calculateDoubleBoundaryExit` 但矢量方向仍手写 | ✅ 2026-07-11 |
-| ~~P1~~ | 电磁学·静电 | `ChargeInEField.tsx` | 电场力方向 | ✅ 2026-07-11 |
-| P2 | 电磁学·感应 | `CuttingEMFScene.tsx` / `SingleRodAnimation.tsx` | 安培力方向，需新增 `ampereForceDir` helper |
-| P2 | 电磁学·静电 | `ElectricFieldAdvancedScene.tsx` / `ThreeChargeMode.tsx` | 多电荷力方向 |
-| P3 | 力学·圆周 | `CentripetalScene.tsx` / `VerticalCircularScene.tsx` | 向心力方向，已有 `centripetalForceDir` 可直接用 |
+| P2 | 电磁学·感应 | `CuttingEMFScene.tsx` / `SingleRodAnimation.tsx` | 安培力方向，需新增 `ampereForceDir` helper | |
+| P2 | 电磁学·静电 | `ElectricFieldAdvancedScene.tsx` / `ThreeChargeMode.tsx` | 多电荷力方向 | |
+| P3 | 力学·圆周 | `CentripetalScene.tsx` / `VerticalCircularScene.tsx` | 向心力方向，已有 `centripetalForceDir` 可直接用 | |
+
+> P1 已全部完成（2026-07-11）：`velocitySelector.ts`、`SimulationView.tsx`(BoundaryMagneticField)、`ChargeInEField.tsx`。
+> 详见 [2026-W28.md](./logs/2026-W28.md)。
 
 **helper 扩展清单（按需新增）**
 
 | 函数 | 覆盖场景 | 状态 |
 |------|---------|------|
-| `lorentzForceDir` | 带电粒子磁场偏转 | ✅ 已完成 |
-| `electricForceDir` | 电场对电荷作用力 | ✅ 已完成 |
-| `centripetalForceDir` | 圆周运动向心力 | ✅ 已完成 |
+| `lorentzForceDir` | 带电粒子磁场偏转 | ✅ |
+| `electricForceDir` | 电场对电荷作用力 | ✅ |
+| `centripetalForceDir` | 圆周运动向心力 | ✅ |
 | `ampereForceDir` | 导体棒安培力 F=BIL | 待新增（迁移 CuttingEMF/SingleRod 时） |
 | `gravityDir` | 重力方向（恒向下） | 低优先级，收益小 |
 
@@ -232,42 +226,24 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 
 ## 五、Viewport 架构迁移
 
-> **详细状态请查看 [`viewport_audit_report.md`](../../viewport_audit_report.md)**
->
 > 合规标准：使用 `useAnimationViewport` from `@/hooks`
 >
-> 当前进度（2026-07-11）：COMPLIANT 78 个 / LEGACY 127 个（含 CenterExtra、Chart 等非动画组件）
+> 当前进度（2026-07-13）：COMPLIANT ~95 个 / LEGACY 动画页面 3 个（CenterExtra/Chart/子组件不计入）
 >
-> 注：127 个 LEGACY 包含大量 CenterExtra/Chart/Sidebar 组件，实际需迁移的动画页面约 60-70 个。
-> 最新完成：OrbitTransferAnimation（2026-07-11，迁移到 createSceneScaleFromDesignCenter）、CentripetalAnimation（2026-07-11，含 foreignObject 违规修复）
+> 审计缺陷：11/11 已修复
+>
+> 最新完成：OrbitTransferAnimation（2026-07-11）、CentripetalAnimation（2026-07-11，含 foreignObject 修复）
 
 ### 5.1 待迁移概览
 
-| 风险等级 | 数量 | 说明 |
+| 风险等级 | 文件 | 说明 |
 |----------|------|------|
-| LOW | 1 | 设计尺寸恰好匹配 preset，直接替换即可（`useVerticalCircularPhysics.ts`） |
-| MEDIUM | 1 | 尺寸匹配但有 `vp.scale` 依赖（KeplerAnimation） |
-| HIGH | ~60 | 设计尺寸不匹配任何 preset，需重构布局 |
-| 类型导入 | 6 | 父组件迁移后自动兼容 |
+| MEDIUM | `SatelliteAnimation.tsx` | useCanvasSize(CANVAS_PRESETS.full) + useViewport，设计尺寸需对齐 preset |
+| MEDIUM | `SpringCompositeAnimation.tsx` | useCanvasSize({700,650})，需迁移到 useAnimationViewport |
+| LOW | `StroboscopicAnimation.tsx` | useCanvasSize({400,180})，小尺寸自定义 viewBox，可保持现状或迁移 |
 
-### 5.2 推荐迁移顺序
-
-1. ~~**第一批**：LOW 风险 2 个~~ → ✅ `useCentripetalPhysics.ts` 已完成（2026-07-11，含 foreignObject 修复）
-2. **下一批**：LOW 风险 1 个（`useVerticalCircularPhysics.ts`，square 650×650，同模块可复用模式）
-3. **第二批**：MEDIUM 风险 1 个（KeplerAnimation，验证 vp.scale 依赖）
-4. **第三批**：按模块选代表文件逐模块迁移，每模块先 1 个验证再批量
-5. **最后**：类型导入 6 个（父组件迁移后自动兼容）
-
-### 5.3 特殊迁移项
-
-| 文件 | 说明 |
-|------|------|
-| `CombinedFieldsAnimation.tsx` | 同时修复 foreignObject 违规（§2.3） |
-| `ChargeInEField.tsx` | 同时修复 foreignObject 违规（§2.3） |
-| `FieldLines.tsx` | 自定义 physics 与 `src/physics/electrostatics` 重复，需一并清理 |
-| `LenzsLawCanvas.tsx` | 已有 hook，拆子组件 + 迁移 viewBox |
-| `MechanicalWaveAnimation.tsx` | 非等比缩放（X 映射链长，Y 映射振幅），已设 `intentionalNonUniformScale: true` 豁免 VectorArrow warning，不迁移到 createSceneScaleFromDesignCenter |
-
+> **不迁移**：CenterExtra / Chart / Sidebar / 子组件（如 MomentumScene、BohrOrbits 等）使用 useCanvasSize 属正常模式，由父级 useAnimationViewport 提供 vp。
+>
 > **DEV 豁免**：`src/features/dev/` 目录为内部开发沙箱，无需迁移。
 
 ---
@@ -324,80 +300,18 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 
 ---
 
-## 七、粒子轨迹统一渲染迁移（P1）
+## 七、粒子轨迹统一渲染（P1，已完成）
 
-> 标准组件：`ParticleTrajectory`（SVG）/ `drawCanvasParticleTrajectory`（Canvas）
-> 规范文档：`COMPONENT_REGISTRY.md §ParticleTrajectory`
-> 迁移详情：[`PARTICLE_TRAJECTORY_MIGRATION.md`](./PARTICLE_TRAJECTORY_MIGRATION.md)
+> 规范文档：`COMPONENT_REGISTRY.md §ParticleTrajectory / drawCanvasParticleTrajectory`
 
-### 7.1 已完成
+**迁移已完成**（2026-07-13）。所有需要迁移的电磁/电场粒子偏转页面均已使用标准组件。
 
-| 文件 | 场景 | 日期 |
-|------|------|------|
-| `CombinedFieldsAnimation.tsx` | 质谱仪/回旋加速器/电偏转+磁偏转 | 2026-07-11 |
-| `ChargeInEField.tsx` | 带电粒子在匀强电场 | 2026-07-11 |
-| `ProjectileAnimation.tsx` | 平抛运动（含阻力对比） | 2026-07-11 |
-| `ObliqueThrowAnimation.tsx` | 斜抛运动（含阻力对比） | 2026-07-11 |
+**铁律 — 新增页面必须遵守**：
 
-### 7.2 待迁移（高优先级）
+1. **带电粒子在电场/磁场中的偏转运动**（质谱仪、回旋加速器、电偏转、磁偏转、复合场等）→ 必须使用 `ParticleTrajectory`（SVG）或 `drawCanvasParticleTrajectory`（Canvas），禁止手写拖尾 + 球体
+2. **力学直线运动**（自由落体、匀加速、竖直上抛等）→ 不需要轨迹组件，用 `Ball` 即可
+3. **固定轨道几何**（圆周运动轨道、卫星轨道等）→ 不需要轨迹组件
 
-| 文件 | 场景 | 说明 | 状态 |
-|------|------|------|------|
-| `FreeFallScene.tsx` | 自由落体（双物体） | 双物体+自定义渲染（硬币渐变、羽毛摆动），不适合标准 Ball | ⏭️ 跳过 |
-| `VerticalCircularScene.tsx` | 竖直圆周运动 | 圆弧轨迹+绳/杆连接，`ParticleTrajectory` 不支持 | ⏭️ 跳过 |
-| `ForceMotionSandbox.tsx` | 牛顿定律综合沙盒 | path 字符串格式+多模式物体，不适合统一迁移 | ⏭️ 跳过 |
-
-### 7.3 待迁移（中优先级）
-
-| 文件 | 场景 | 说明 |
-|------|------|------|
-| `FreeFallDripAnimation.tsx` | 滴水法测 g | trail 可迁移，水滴是自定义椭圆变形 |
-| `BoundaryMagneticField/SimulationView.tsx` | 有界磁场偏转 | **Canvas API**，需 SVG 转换 |
-| `CircularGeometryModel.tsx` | 圆形磁场几何模型 | **Canvas API**，tail + 粒子本体 |
-
-### 7.4 不迁移（静态轨道/非标准场景）
-
-| 文件 | 原因 |
-|------|------|
-| `CentripetalScene.tsx` | 固定轨道圆，非增长历史轨迹 |
-| `CircularModelsAnimation.tsx` | 椭圆轨道，非粒子轨迹 |
-| `SatelliteAnimation.tsx` | 静态轨道几何 |
-| `OrbitTransferAnimation.tsx` | 静态轨道几何 |
-| `BrownianMotion.tsx` | 随机游走，自定义六边形粒子 |
-| `KinematicsAdvancedAnimation.tsx` | 频闪点阵轨迹，非连续线 |
-| `SimplePendulumAnimation.tsx` | 波形图，非空间轨迹 |
-| `SpringCompositeAnimation.tsx` | 参考指示线，非轨迹 |
-
-### 7.5 已知问题（低风险，暂不修复）
-
-#### A. SVG `ParticleTrajectory` 本体球位置滞后（P3）
-
-> 2026-07-11 审查发现。量化验证后确认为低风险，暂不修复。
-
-**现象**：SVG 版 `ParticleTrajectory` 的本体球坐标取自 `historyPoints` 最后一项（采样点），而非精确当前位置。当 `tSim` 落在两个采样点之间时，本体球与矢量箭头（使用插值后的精确位置）不同步。
-
-**根因**：组件 API 只接受 `historyPoints`，无"精确当前位置"入参。调用方（如 `ChargeInEField.tsx`、`ObliqueThrowAnimation.tsx`）已计算插值后的 `currentState`/`cx`/`cy`，但无法传入。
-
-**量化评估**（以 `ChargeInEField.tsx` 默认参数为准）：
-- 物理积分步长 `dt = 0.0001s`，典型 `tEnd ≈ 0.027s`，采样点 ~270 个
-- 默认 `v0=15m/s`，`scale=1300px/m`：最大像素滞后 ≈ 1.95px（边缘可见），平均 ≈ 1px
-- 高速参数 `v0=30m/s`：最大滞后 ≈ 3.9px（可见）
-- 低速参数 `v0=5m/s`：最大滞后 ≈ 0.65px（不可见）
-
-**适用范围**：仅影响 SVG 版 `ParticleTrajectory`；Canvas 版 `drawCanvasParticleTrajectory` 由调用方传入精确 `px/py`，不受影响。
-
-**触发条件**：高速/强场参数 + 稀疏采样 + SVG 渲染路径。
-
-**建议修复方案**（当高速场景确认可见错位时再执行）：
-- 给 `ParticleTrajectoryProps` 增加可选入参 `currentPoint?: { x: number; y: number }`
-- 默认回退 `historyPoints.at(-1)`，保持向后兼容
-- 调用方传入插值后的精确坐标 `cx`/`cy`
-- 不动 Canvas 版（已正确）
-
-#### B. SVG/Canvas 拖尾渐变不一致（P3）
-
-**现象**：Canvas 版拖尾按段渐变（alpha + lineWidth 随 `ratio` 衰减），SVG 版拖尾为单一 path + 均匀 opacity。两者视觉表现差异较大。
-
-**根因**：SVG 单 path 无法表达沿路径的渐变，需改用多段 `<line>` 或 `<linearGradient>`，改造成本较高。
-
-**处理策略**：维持现状，规范未要求 SVG/Canvas 视觉完全一致。
+**已知低风险问题**（P3，暂不修复）：
+- SVG 版本体球位置有 ~1-4px 滞后（取采样点而非精确插值位置），Canvas 版无此问题
+- SVG/Canvas 拖尾渐变视觉不一致，规范不要求统一

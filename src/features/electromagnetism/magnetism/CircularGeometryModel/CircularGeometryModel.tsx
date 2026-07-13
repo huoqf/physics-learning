@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useCallback } from 'react'
 import { useAnimationStore } from '@/stores'
-import { useAnimationViewport, useCanvasViewport, useSceneScale } from '@/hooks'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
 import { worldToPixel } from '@/scene'
-import { VectorArrow } from '@/components/Physics'
+import { VectorArrow, ParticleTrajectory } from '@/components/Physics'
 
 export default function CircularGeometryModel() {
   const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.splitH })
-  const { canvasRef, setupFrame } = useCanvasViewport({ vp, canvasSize, mode: 'raw' })
   
   const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
@@ -142,50 +141,36 @@ export default function CircularGeometryModel() {
   const px = useCallback((xw: number) => worldToPixel(xw, 0, sceneScale).px, [sceneScale])
   const py = useCallback((yw: number) => worldToPixel(0, yw, sceneScale).py, [sceneScale])
 
-  // 4. Canvas 层绘图逻辑（粒子偏转本体与 300ms 拖尾）
-  useEffect(() => {
-    const ctx = setupFrame()
-    if (!ctx) return
-
-    // 绘制 300ms (0.3s) 淡出拖尾轨迹
-    const tailSteps = 20
-    const tailDuration = 0.3
-    
-    ctx.save()
-    for (let i = 1; i <= tailSteps; i++) {
-      const t1 = time - tailDuration * (1 - (i - 1) / tailSteps)
-      const t2 = time - tailDuration * (1 - i / tailSteps)
-
-      // 粒子进入磁场（t >= 0）后开始记录拖尾
-      if (t1 >= 0) {
-        const s1 = getParticleState(t1)
-        const s2 = getParticleState(t2)
-
-        ctx.beginPath()
-        ctx.moveTo(px(s1.px), py(s1.py))
-        ctx.lineTo(px(s2.px), py(s2.py))
-
-        const alpha = (i / tailSteps) * 0.8
-        ctx.strokeStyle = particleSign > 0
-          ? withAlpha(PHYSICS_COLORS.positiveCharge, alpha)
-          : withAlpha(PHYSICS_COLORS.negativeCharge, alpha)
-        ctx.lineWidth = 3.5 * (i / tailSteps)
-        ctx.stroke()
-      }
+  // 粒子历史轨迹点集（完整路径，用于 ParticleTrajectory 渲染）
+  const historyPoints = useMemo(() => {
+    const pts: { x: number; y: number }[] = []
+    const dt = 0.01
+    const tEnd = Math.max(time, 0)
+    for (let t = 0; t <= tEnd + 1e-9; t += dt) {
+      const s = getParticleState(t)
+      pts.push({ x: px(s.px), y: py(s.py) })
     }
-    ctx.restore()
+    return pts
+  }, [time, getParticleState, px, py])
 
-    // 绘制粒子本体圆球
-    const curState = getParticleState(time)
+  // 短拖尾点集（最近 20 个采样点，用于运动增强拖尾）
+  const tailPoints = useMemo(() => {
+    const tailLen = Math.min(20, historyPoints.length)
+    return historyPoints.slice(-tailLen)
+  }, [historyPoints])
 
-    ctx.beginPath()
-    ctx.arc(px(curState.px), py(curState.py), 7, 0, 2 * Math.PI)
-    ctx.fillStyle = particleSign > 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge
-    ctx.strokeStyle = PHYSICS_COLORS.white
-    ctx.lineWidth = 2
-    ctx.fill()
-    ctx.stroke()
-  }, [time, velocity, B, angle, particleSign, boundaryType, xc, yc, R, tOut, exitState, getParticleState, sceneScale, px, py, setupFrame])
+  // 完整理论预测轨迹（全路径，用于底层虚线参考）
+  const predictedPoints = useMemo(() => {
+    const tEnd = tOut + 2.0
+    const steps = 200
+    const pts: { x: number; y: number }[] = []
+    for (let i = 0; i <= steps; i++) {
+      const t = (i / steps) * tEnd
+      const s = getParticleState(t)
+      pts.push({ x: px(s.px), y: py(s.py) })
+    }
+    return pts
+  }, [tOut, getParticleState, px, py])
 
   // 6. 特征直角三角形顶点像素坐标计算
   const trianglePoints = useMemo(() => {
@@ -273,20 +258,21 @@ export default function CircularGeometryModel() {
         )}
       </svg>
 
-      {/* 2. 中层 Canvas 渲染高频粒子及轨迹 */}
-      <canvas
-        ref={canvasRef}
-        width={canvasSize.width}
-        height={canvasSize.height}
-        className="absolute top-0 left-0 w-full h-full object-contain"
-      />
-
-      {/* 3. 顶层 SVG Overlay 实时几何线及矢量箭头 */}
+      {/* 3. 顶层 SVG Overlay 粒子轨迹 + 实时几何线及矢量箭头 */}
       <svg
         className="absolute top-0 left-0 w-full h-full pointer-events-none"
         viewBox={`0 0 ${canvasSize.width} ${canvasSize.height}`}
         preserveAspectRatio="xMidYMid meet"
       >
+        {/* 粒子轨迹（统一组件：预测虚线 + 历史虚线 + 拖尾 + 本体） */}
+        <ParticleTrajectory
+          historyPoints={historyPoints}
+          predictedPoints={predictedPoints}
+          tailPoints={tailPoints}
+          isFocus={true}
+          chargeSign={particleSign > 0 ? '+' : '-'}
+        />
+
         {/* Step 1: 速度垂线 */}
         {step1_showPerp && (
           <>

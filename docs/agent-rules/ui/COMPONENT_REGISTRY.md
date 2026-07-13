@@ -2,7 +2,7 @@
 
 > 优先级：遵循 `02_UI_RULES.md` 约束
 > AI 任务入口：新增或修改动画场景前必须查阅本文件
-> 最后更新：2026-07-11
+> 最后更新：2026-07-13
 
 ---
 
@@ -69,12 +69,20 @@ import { VectorArrow } from '@/components/Physics'
 
 ---
 
-### ParticleTrajectory
+### ParticleTrajectory / drawCanvasParticleTrajectory
 
-用途：粒子轨迹统一渲染（历史轨迹 + 预测轨迹 + 拖尾 + 本体球）。所有粒子运动页面**必须**使用此组件，禁止手写 `<polyline>` + `<Ball>` 组合。线宽/透明度/虚线 Dash 统一从 `CANVAS_STYLE` 读取。
+用途：粒子轨迹统一渲染（历史轨迹 + 预测轨迹 + 拖尾 + 本体球）。所有带电粒子在电场/磁场中的偏转运动页面**必须**使用此组件，禁止手写 `<polyline>` + `<Ball>` 或自定义 Canvas 拖尾绘制。
+
+**选型规则**：
+- SVG 页面（使用 `AnimationSvgCanvas`）→ `<ParticleTrajectory />`（React 组件）
+- Canvas 页面（使用 `useCanvasViewport`）→ `drawCanvasParticleTrajectory()`（命令式函数）
+- 力学直线运动（自由落体、匀加速等）→ 不需要此组件，用 `Ball` 即可
 
 ```ts
+// SVG 版
 import { ParticleTrajectory } from '@/components/Physics'
+// Canvas 版
+import { drawCanvasParticleTrajectory } from '@/components/Physics'
 ```
 
 必需 props：
@@ -124,7 +132,56 @@ D. 粒子本体球（`CANVAS_STYLE.object.pointMassRadius` 6）
 
 禁止：手写 `<polyline>` + `<Ball>` 组合实现粒子轨迹。
 
----
+#### drawCanvasParticleTrajectory（Canvas 版）
+
+用途：Canvas 2D 粒子轨迹渲染，功能与 SVG `ParticleTrajectory` 对等。适用于使用 `useCanvasViewport` + `setupFrame()` 的 Canvas 渲染页面。
+
+```ts
+import { drawCanvasParticleTrajectory } from '@/components/Physics'
+```
+
+必需参数（`DrawParticleTrajectoryOptions`）：
+- `ctx: CanvasRenderingContext2D` — Canvas 上下文（来自 `setupFrame()`）
+- `px: number` — 粒子当前 X 像素坐标
+- `py: number` — 粒子当前 Y 像素坐标
+- `historyPoints: { x: number; y: number }[]` — 已走过的历史点集
+- `isFocus: boolean` — 是否焦点粒子
+
+常见可选参数：`predictedPoints`、`tailPoints`、`chargeSign`（`'+' | '-' | 'none'`）、`customBaseColor`
+
+最小示例（来源：`CircularGeometryModel.tsx`）：
+
+```tsx
+const historyPoints = useMemo(() => {
+  const pts: { x: number; y: number }[] = []
+  for (let t = 0; t <= time; t += 0.01) {
+    const s = getParticleState(t)
+    pts.push({ x: px(s.px), y: py(s.py) })
+  }
+  return pts
+}, [time, getParticleState, px, py])
+
+const tailPoints = useMemo(() => {
+  return historyPoints.slice(-8)
+}, [historyPoints])
+
+useEffect(() => {
+  const ctx = setupFrame()
+  if (!ctx) return
+  const curState = getParticleState(time)
+  drawCanvasParticleTrajectory({
+    ctx,
+    px: px(curState.px),
+    py: py(curState.py),
+    historyPoints,
+    tailPoints,
+    isFocus: true,
+    chargeSign: q > 0 ? '+' : '-',
+  })
+}, [time, historyPoints, tailPoints, ...])
+```
+
+禁止：手写 `ctx.arc()` + `ctx.globalAlpha` 渐变循环实现粒子拖尾。
 
 ### PhysicsGround
 
@@ -149,7 +206,7 @@ import { PhysicsGround } from '@/components/Physics'
 ### Ball
 
 用途：质点/小球渲染，含材质变体（钢珠、摆球、行星等）。禁止手绘 `<circle>` + `<radialGradient>`。
-> **注意**：带轨迹的粒子运动场景（平抛、斜抛、自由落体、电磁偏转等）应使用 `ParticleTrajectory`，它内部已包含粒子本体渲染。`Ball` 仅用于静态展示的球体或不需要轨迹的场景（如参考对照球、弹簧振子等）。
+> **注意**：带轨迹的粒子运动场景（平抛、斜抛、电磁偏转等）应使用 `ParticleTrajectory`（SVG）或 `drawCanvasParticleTrajectory`（Canvas），它们内部已包含粒子本体渲染。`Ball` 仅用于静态展示的球体或不需要轨迹的场景（如参考对照球、弹簧振子、自由落体等）。
 
 ```ts
 import { Ball } from '@/components/Physics'
