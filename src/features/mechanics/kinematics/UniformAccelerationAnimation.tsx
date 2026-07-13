@@ -37,7 +37,9 @@ export default function UniformAccelerationAnimation() {
   const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
   const { font } = canvasSize
 
-  const { v0 = 0, a = 1.5, showSplit = 1, splitN = 0, showEquivRect = 0 } = params
+  const { v0 = 0, a = 1.5, areaMode = 1, splitN = 0 } = params
+  const showSplit = areaMode === 1 ? 1 : 0
+  const showEquivRect = areaMode === 2 ? 1 : 0
 
   // ── 动态布局 ──
   const padding = vp.visibleW * 0.07

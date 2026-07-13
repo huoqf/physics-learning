@@ -104,9 +104,7 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 - 简单模式切换、显示开关、提示卡不再需要手写 SidebarExtra（已通过 controlMeta 实现）
 
 **待完成**：
-- 剩余 2 个 SidebarExtra 随后续维护逐步清理（2026-07-03 核查：registry 中共 2 个）
-  - `UniformAccelerationSidebar`：areaMode 为派生复合状态，需扩展 onChangeSideEffect 支持条件分支
-  - `ForceMotionSidebar`：10 种运动模式各有独立参数集，需引入动态参数集机制
+- ~~剩余 1 个 SidebarExtra 随后续维护逐步清理~~ ✅ 全部清理完成（2026-07-13）
 
 ### 3.3 其他（P3，暂缓）
 

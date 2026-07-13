@@ -42,6 +42,7 @@ function defaultGroup(control: ControlMeta) {
   if (control.group) return control.group
   switch (control.type) {
     case 'segmented':
+    case 'modeGrid':
       return '模型选择'
     case 'toggle':
       return '显示辅助'
@@ -99,7 +100,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     const changed = params[control.key] !== value
     updateParam(control.key, value)
     if (changed && control.resetOnChange) resetAnimation()
-    applySideEffect(control)
+    applySideEffect(control, value)
   }
 
   const handleToggleChange = (control: Extract<ControlMeta, { type: 'toggle' }>, checked: boolean) => {
@@ -109,11 +110,13 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     const changed = params[control.key] !== nextValue
     updateParam(control.key, nextValue)
     if (changed && control.resetOnChange) resetAnimation()
-    applySideEffect(control)
+    applySideEffect(control, nextValue)
   }
 
-  const applySideEffect = (control: ControlCondition) => {
-    const side = control.onChangeSideEffect
+  const applySideEffect = (control: ControlCondition, value?: number) => {
+    const raw = control.onChangeSideEffect
+    if (!raw) return
+    const side = typeof raw === 'function' ? raw(value ?? 0, params) : raw
     if (!side) return
     if (side.resetParams) {
       side.resetParams.forEach((k) => {
@@ -245,6 +248,38 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               onChange={() => handler?.()}
               disabled={disabled || !handler}
             />
+          </div>
+        )
+      }
+      case 'modeGrid': {
+        const modeValue = Math.round(params[control.key] ?? control.modes[0]?.value ?? 0)
+        const currentMode = control.modes.find((m) => m.value === modeValue)
+        return (
+          <div key={`${control.type}-${control.key}-${index}`} className="space-y-2">
+            {control.label && (
+              <span className="mb-1 block text-xs font-semibold text-neutral-600">{control.label}</span>
+            )}
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${control.cols ?? 2}, minmax(0, 1fr))`, gap: '0.375rem' }}>
+              {control.modes.map((mode) => (
+                <OptionButton
+                  key={mode.value}
+                  label={`${mode.value + 1}. ${mode.label}`}
+                  selected={mode.value === modeValue}
+                  disabled={disabled}
+                  onClick={() => {
+                    if (mode.value === modeValue) return
+                    updateParam(control.key, mode.value)
+                    if (control.resetOnChange) resetAnimation()
+                    applySideEffect(control, mode.value)
+                  }}
+                />
+              ))}
+            </div>
+            {currentMode && (
+              <div className="mt-1 text-ui-md text-neutral-500 pt-2 border-t border-neutral-100">
+                {currentMode.description}
+              </div>
+            )}
           </div>
         )
       }

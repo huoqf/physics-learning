@@ -46,7 +46,10 @@ export interface ControlCondition {
     resetParams?: string[]
     /** 设置为指定值 */
     setParams?: Record<string, number>
-  }
+  } | ((newValue: number, currentParams: Record<string, number>) => {
+    resetParams?: string[]
+    setParams?: Record<string, number>
+  } | undefined)
 }
 
 export interface ControlOption {
@@ -110,6 +113,14 @@ export type ControlMeta =
       label: string
       storeKey: 'toggleVectors' | 'toggleTimeSlices' | 'toggleDualObjects'
       stateKey: 'showVectors' | 'showTimeSlices' | 'showDualObjects'
+    })
+  | (ControlCondition & {
+      type: 'modeGrid'
+      key: string
+      modes: Array<{ value: number; label: string; description: string }>
+      label?: string
+      cols?: number
+      resetOnChange?: boolean
     })
 
 /** 参数控件元数据 */
@@ -181,6 +192,8 @@ export interface AnimationConfig<P extends Record<string, number> = Record<strin
   defaultParams: P
   /** 参数控件元数据（替代页面层硬编码的 paramConfigs） */
   paramMeta?: ParamMeta[]
+  /** 动态参数元数据：根据当前 params 返回 paramMeta（替代 SidebarExtra 中的动态 Slider） */
+  buildParamMeta?: (params: Record<string, number>) => ParamMeta[]
   /** 左屏声明式控件元数据：模式、开关、预设、提示等；用于逐步收敛 SidebarExtra */
   controlMeta?: ControlMeta[]
   /** 是否支持发现模式 */

@@ -133,15 +133,33 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     title: '匀变速直线运动',
     knowledgeId: 'mechanics-2-1',
     Component: lazy(() => import('@/features/mechanics/kinematics/UniformAccelerationAnimation')),
-    defaultParams: { v0: 0, a: 1.5, t: 0, advancedMode: 0, showSplit: 1, flashPeriod: 1, splitN: 0, showEquivRect: 0 } as const,
+    defaultParams: { v0: 0, a: 1.5, t: 0, advancedMode: 0, areaMode: 1, splitN: 0, flashPeriod: 1 } as const,
     paramMeta: [
       { key: 'v0', label: '初速度 v₀', min: 0, max: 20, step: 0.1, unit: 'm/s' },
       { key: 'a', label: '加速度 a', min: -5, max: 5, step: 0.1, unit: 'm/s²' },
     ],
-    SidebarExtra: lazy(() => import('@/features/mechanics/kinematics/UniformAccelerationSidebar')),
     controlMeta: [
       { type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
         options: [{ label: '基础模式', value: 0 }, { label: '进阶模式', value: 1 }] },
+      { type: 'segmented', key: 'areaMode', group: '显示辅助',
+        label: 'v-t 图位移面积展示',
+        options: [
+          { label: '合并梯形', value: 0 },
+          { label: '拆分公式', value: 1 },
+          { label: '等效割补', value: 2 },
+        ],
+        onChangeSideEffect: (v) =>
+          v === 1 ? undefined : { setParams: { splitN: 0 } },
+        showIf: 'advancedMode', showIfValue: 0 },
+      { type: 'segmented', key: 'splitN', label: '微元切割份数', group: '显示辅助',
+        options: [
+          { label: '连续', value: 0 },
+          { label: '4', value: 4 },
+          { label: '8', value: 8 },
+          { label: '16', value: 16 },
+          { label: '32', value: 32 },
+        ],
+        showIf: 'areaMode', showIfValue: 1 },
       { type: 'preset', label: '经典逐差验证', group: '教学场景预设',
         params: { v0: 2, a: 2, flashPeriod: 1.0 }, restartOnApply: true,
         showIf: 'advancedMode', showIfValue: 1 },
@@ -152,7 +170,11 @@ export const mechanicsKinematicsAnimations = defineAnimations({
         params: { v0: 8, a: -2, flashPeriod: 1.0 }, restartOnApply: true,
         showIf: 'advancedMode', showIfValue: 1 },
       { type: 'tip', group: '教学提示', showIf: 'advancedMode', showIfValue: 0,
-        content: '基础理论模式：聚焦 v-t 图物理意义的理论公式推导和几何面积证明。' },
+        content: (p) => {
+          if (p.areaMode === 2) return '等效割补：利用中间时刻速度 v(t/2) 围成的等效矩形替代原梯形面积。'
+          if (p.areaMode === 1) return '拆分公式：将面积拆分为矩形位移 v₀t 与三角形位移 ½at²。'
+          return '合并梯形：以整体梯形面积 S = ½(v₀+v_t)t 直接代表总位移。'
+        } },
       { type: 'tip', group: '教学提示', showIf: 'advancedMode', showIfValue: 1,
         content: '频闪实验模式：聚焦打点计时器频闪现象，三屏联动处理逐差法数据。' },
     ],

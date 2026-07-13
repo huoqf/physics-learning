@@ -303,6 +303,11 @@ export default function AnimationPage() {
 
   const storeStates = { showVectors, showTimeSlices, showDualObjects }
 
+  const paramMeta = useMemo(
+    () => config?.buildParamMeta ? config.buildParamMeta(params) : (config?.paramMeta ?? []),
+    [config, params]
+  )
+
   const { setMode } = useAppStore()
 
   // config 加载中
@@ -330,7 +335,6 @@ export default function AnimationPage() {
     )
   }
 
-  const paramMeta = config.paramMeta || []
   const controlMeta = config.controlMeta || []
 
   // 左屏 0-6 顺序：§1/§2 的 group 名（模型选择、子模式）排在 ParamControl 之前，

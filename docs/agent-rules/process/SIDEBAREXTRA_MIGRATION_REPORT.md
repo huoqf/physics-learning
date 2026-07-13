@@ -8,9 +8,9 @@
 
 | 指标 | 数值 |
 |------|------|
-| SidebarExtra 注册总量 | 2（原始 61，已删除 59） |
-| 已迁移至 controlMeta | 9 |
-| 保留（技术阻塞） | 2 |
+| SidebarExtra 注册总量 | 0（原始 61，已删除 61） |
+| 已迁移至 controlMeta | 11 |
+| 保留（技术阻塞） | 0 |
 | 孤立文件已清理 | 13 |
 
 ---
@@ -48,12 +48,9 @@
 | `FieldLinesSidebar` | segmented + 2 toggle + tip（探针重置简化为固定位置） |
 | `SatelliteSidebar` | preset(速度) + action(发射/重置, setParams) + tip |
 
-### 保留（技术阻塞，2 个）
+### 保留（技术阻塞，0 个）
 
-| SidebarExtra | 原因 |
-|---|---|
-| `UniformAccelerationSidebar` | areaMode 为派生复合状态，onChangeSideEffect 不支持条件分支；splitN 使用非线性选项 |
-| `ForceMotionSidebar` | 10 种运动模式各有独立参数集，模式切换需动态重建整套参数（TipCard 已迁移） |
+（全部清理完成）
 
 ---
 
@@ -74,7 +71,7 @@
 - `resetAndRestart`: resetAnimation + setDirection(-1) + restartAnimation 组合
 
 **仍不支持的能力**：
-- onChangeSideEffect 支持条件分支（根据选中值设置不同参数）
+- ~~onChangeSideEffect 支持条件分支（根据选中值设置不同参数）~~ ✅ 已支持（函数式 onChangeSideEffect，2026-07-13）
 
 ### 左屏区块顺序约定
 
@@ -97,6 +94,7 @@ controlMeta 数组中 `group` 字段的排列顺序决定渲染顺序：
 
 ## 后续推进
 
-剩余 2 个 SidebarExtra 可通过以下方式进一步清理：
-1. 扩展 `onChangeSideEffect` 支持函数式条件分支 → 解锁 `UniformAccelerationSidebar`
-2. 引入动态参数集机制 → 解锁 `ForceMotionSidebar`
+~~剩余 1 个 SidebarExtra 可通过以下方式进一步清理：~~ ✅ 全部完成（2026-07-13）
+
+- `UniformAccelerationSidebar` → 函数式 onChangeSideEffect + areaMode 一等参数
+- `ForceMotionSidebar` → `modeGrid` 控件类型 + `buildParamMeta` 动态参数元数据
