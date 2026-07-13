@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ClipboardList, GraduationCap, Timer, History, Trash2 } from 'lucide-react'
 import { allProblems } from '@/data/problems'
@@ -16,12 +16,7 @@ export default function PracticePage() {
     modeParam === 'practice' || modeParam === 'test' ? modeParam : null
 
   const history = usePracticeStore((s) => s.history)
-  const hydrate = usePracticeStore((s) => s.hydrate)
   const clearHistory = usePracticeStore((s) => s.clearHistory)
-
-  useEffect(() => {
-    void hydrate()
-  }, [hydrate])
 
   // 题目筛选
   const [moduleFilter, setModuleFilter] = useState<Set<string>>(new Set())

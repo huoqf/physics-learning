@@ -41,13 +41,17 @@ function AnimationCenter({
   handleReset: () => void
   effectiveControlsMode: 'timed' | 'loop' | 'param' | 'pause-only'
 }) {
-  const time = useAnimationStore((s) => s.time)
-  const isPlaying = useAnimationStore((s) => s.isPlaying)
-  const speed = useAnimationStore((s) => s.speed)
+  const { time, isPlaying, speed, params } = useAnimationStore(
+    useShallow((s) => ({
+      time: s.time,
+      isPlaying: s.isPlaying,
+      speed: s.speed,
+      params: s.params,
+    }))
+  )
   const setTime = useAnimationStore((s) => s.setTime)
   const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
   const setSpeed = useAnimationStore((s) => s.setSpeed)
-  const params = useAnimationStore((s) => s.params)
 
   const AnimationComponent = config.Component
   const CenterExtraComponent = config.CenterExtra
