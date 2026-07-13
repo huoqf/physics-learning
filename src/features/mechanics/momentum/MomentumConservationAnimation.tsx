@@ -11,11 +11,13 @@ import {
   SCENE_COLORS,
   CANVAS_STYLE,
 } from '@/theme/physics'
-import { VelocityTimeChart } from '@/components/Chart'
 import {
   useMomentumConservationPhysics,
   MC_LAYOUT,
 } from './hooks/useMomentumConservationPhysics'
+import MomentumConservationCharts from './MomentumConservationCharts'
+
+const DESIGN_WIDTH = CANVAS_PRESETS.splitV.width
 
 export default function MomentumConservationAnimation() {
   const { params, time, showVectors } = useAnimationStore(
@@ -28,10 +30,10 @@ export default function MomentumConservationAnimation() {
 
   const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.splitV })
 
-  const groundY = 130
+  const groundY = Math.round(vp.visibleH * 0.55)
   const {
     basic, advanced, isAdvanced, chartData, p1, p2, pTotal, mapArrowLen, mapMomentumBar,
-  } = useMomentumConservationPhysics(params, time, groundY)
+  } = useMomentumConservationPhysics(params, time, groundY, DESIGN_WIDTH)
 
   const vectorSceneScale = useSceneScale({
     vp, preset,
@@ -45,65 +47,16 @@ export default function MomentumConservationAnimation() {
   })
 
   return (
-    <div className="w-full h-full flex flex-col gap-4 p-4 box-border bg-neutral-50 overflow-hidden">
-      {/* ==================== 上方并列图表区 ==================== */}
-      <div className="flex gap-4 h-[310px] shrink-0">
-        <div className="flex-1 bg-white border border-neutral-200/80 rounded-xl p-3 shadow-sm relative overflow-hidden flex flex-col">
-          <div className="flex-1 min-h-0 relative">
-            <VelocityTimeChart
-              mode="animated"
-              points={chartData.currentVtPoints1}
-              domainPoints={chartData.currentDomainVtPoints1}
-              currentTime={time}
-              tMax={10}
-              title="速度-时间图像 (V-T)"
-              xLabel="时间 t (s)"
-              yLabel="速度 v (m/s)"
-              additionalSeries={[
-                {
-                  points: chartData.currentVtPoints2,
-                  domainPoints: chartData.currentDomainVtPoints2,
-                  label: isAdvanced ? '木板' : 'B球',
-                  series: 'secondary',
-                }
-              ]}
-              showArea={false}
-            />
-          </div>
-        </div>
-        <div className="flex-1 bg-white border border-neutral-200/80 rounded-xl p-3 shadow-sm relative overflow-hidden flex flex-col">
-          <div className="flex-1 min-h-0 relative">
-            <VelocityTimeChart
-              mode="animated"
-              points={chartData.currentPtPoints1}
-              domainPoints={chartData.currentDomainPtPoints1}
-              currentTime={time}
-              tMax={10}
-              title="动量-时间图像 (P-T)"
-              xLabel="时间 t (s)"
-              yLabel="动量 p (kg·m/s)"
-              additionalSeries={[
-                {
-                  points: chartData.currentPtPoints2,
-                  domainPoints: chartData.currentDomainPtPoints2,
-                  label: isAdvanced ? '木板' : 'B球',
-                  series: 'secondary',
-                },
-                {
-                  points: chartData.currentPtPointsTotal,
-                  domainPoints: chartData.currentDomainPtPointsTotal,
-                  label: '总动量',
-                  series: 'success',
-                }
-              ]}
-              showArea={false}
-            />
-          </div>
-        </div>
-      </div>
+    <div className="w-full h-full flex flex-col overflow-hidden">
+      {/* ==================== 上方并列图表区（50%） ==================== */}
+      <MomentumConservationCharts
+        chartData={chartData}
+        currentTime={time}
+        isAdvanced={isAdvanced}
+      />
 
-      {/* ==================== 下方仿真动画区 ==================== */}
-      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform} className="flex-1 min-h-[100px] bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden">
+      {/* ==================== 下方仿真动画区（50%） ==================== */}
+      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform} className="flex-1 min-h-0 bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden">
         <defs>
           <radialGradient id="steel-sphere-grad-mc" cx="30%" cy="30%" r="70%">
             <stop offset="0%" stopColor={SCENE_COLORS.materials.steelSphereGrad[0]} />
@@ -127,7 +80,7 @@ export default function MomentumConservationAnimation() {
 
         <PhysicsGround
           x={MC_LAYOUT.canvasPadding} y={groundY}
-          width={700 - 2 * MC_LAYOUT.canvasPadding}
+          width={DESIGN_WIDTH - 2 * MC_LAYOUT.canvasPadding}
           appearance={{ color: PHYSICS_COLORS.labelText }}
         />
 
@@ -280,7 +233,7 @@ export default function MomentumConservationAnimation() {
             {!advanced.isFallen && time >= advanced.tCommon && (
               <line
                 x1={MC_LAYOUT.canvasPadding} y1={advanced.sliderTopY - 5}
-                x2={700 - MC_LAYOUT.canvasPadding} y2={advanced.sliderTopY - 5}
+                x2={DESIGN_WIDTH - MC_LAYOUT.canvasPadding} y2={advanced.sliderTopY - 5}
                 stroke={PHYSICS_COLORS.kineticEnergy} strokeWidth={1} strokeDasharray="6,4" opacity={0.5}
               />
             )}
@@ -319,7 +272,7 @@ export default function MomentumConservationAnimation() {
 
                 {!advanced.isFallen && time >= advanced.tCommon && (
                   <text
-                    x={700 * 0.5} y={advanced.sliderTopY - 12}
+                    x={DESIGN_WIDTH * 0.5} y={advanced.sliderTopY - 12}
                     fontSize={canvasSize.font(10)} fill={PHYSICS_COLORS.kineticEnergy} fontWeight="bold" textAnchor="middle"
                   >
                     v_共 = {advanced.vCommon.toFixed(2)} m/s
@@ -329,7 +282,7 @@ export default function MomentumConservationAnimation() {
             )}
 
             {advanced.sliderOffBoard && (
-              <g transform={`translate(${700 * 0.5}, 25)`}>
+              <g transform={`translate(${DESIGN_WIDTH * 0.5}, 25)`}>
                 <rect x={-180} y={-14} width={360} height={22} rx={6} fill={SCENE_COLORS.labels.glassPanelBg} stroke={PHYSICS_COLORS.forceArrowRed} strokeWidth={1} />
                 <text fontSize={canvasSize.font(10)} fill={PHYSICS_COLORS.forceArrowRed} fontWeight="bold" textAnchor="middle" y={1}>
                   临界：板长 L &lt; 共速位移 Δx，滑块已滑落！

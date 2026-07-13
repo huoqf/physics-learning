@@ -18,13 +18,11 @@ import {
 
 /** 碰撞动画布局常量（基于 CANVAS_PRESETS.splitV 840×325 设计空间） */
 export const COL_LAYOUT = {
-  canvasPadding: 50,
+  canvasPadding: 30,
   ballBaseRadius: 16,
   massRadiusScale: 2,
   velocityScale: 25,
   designWidth: 840,
-  designHeight: 180,
-  groundY: 130,
 } as const
 
 interface BasicModeParams {
@@ -60,8 +58,8 @@ export function computeBasicMode(
   const R_A = COL_LAYOUT.ballBaseRadius + m1 * COL_LAYOUT.massRadiusScale
   const R_B = COL_LAYOUT.ballBaseRadius + m2 * COL_LAYOUT.massRadiusScale
 
-  const initPosAx = COL_LAYOUT.designWidth * 0.25
-  const initPosBx = COL_LAYOUT.designWidth * 0.65
+  const initPosAx = COL_LAYOUT.designWidth * 0.28
+  const initPosBx = COL_LAYOUT.designWidth * 0.58
 
   const gap = initPosBx - R_B - (initPosAx + R_A)
   const approachSpeed = (v1 - v2) * COL_LAYOUT.velocityScale
@@ -172,8 +170,8 @@ export function computeAdvancedMode(
 
   const R_Adv = COL_LAYOUT.ballBaseRadius + mA * COL_LAYOUT.massRadiusScale
   const R_Bdv = COL_LAYOUT.ballBaseRadius + mB * COL_LAYOUT.massRadiusScale
-  const initPosAAdv = COL_LAYOUT.designWidth * 0.25
-  const initPosBAdv = COL_LAYOUT.designWidth * 0.65
+  const initPosAAdv = COL_LAYOUT.designWidth * 0.28
+  const initPosBAdv = COL_LAYOUT.designWidth * 0.58
   const gapAdv = initPosBAdv - R_Bdv - (initPosAAdv + R_Adv)
   const approachAdv = vA * COL_LAYOUT.velocityScale
   let colTimeAdv = Infinity

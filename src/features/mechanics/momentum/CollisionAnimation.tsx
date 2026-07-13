@@ -13,7 +13,6 @@ import { useShallow } from 'zustand/react/shallow'
 import { VelocityTimeChart } from '@/components/Chart'
 import { SCENE_COLORS } from '@/theme/physics'
 import {
-  COL_LAYOUT,
   computeBasicMode,
   computeAdvancedMode,
   useChartData,
@@ -42,7 +41,7 @@ export default function CollisionAnimation() {
   } = params
 
   const isAdvanced = advancedMode === 1
-  const groundY = COL_LAYOUT.groundY
+  const groundY = Math.round(vp.visibleH * 0.55)
 
   const sceneScale = useSceneScale({
     vp,
@@ -81,9 +80,9 @@ export default function CollisionAnimation() {
   })
 
   return (
-    <div className="w-full h-full flex flex-col gap-4 p-4 box-border bg-neutral-50 overflow-hidden">
-      {/* ==================== 上方并列实时物理图像区 ==================== */}
-      <div className="flex gap-4 h-[310px] shrink-0">
+    <div className="w-full h-full flex flex-col overflow-hidden">
+      {/* ==================== 上方并列实时物理图像区（50%） ==================== */}
+      <div className="flex gap-4 flex-1 min-h-0">
         {/* 速度-时间图像 (V-T) */}
         <div className="flex-1 bg-white border border-neutral-200/80 rounded-xl p-3 shadow-sm relative overflow-hidden flex flex-col">
           <div className="flex-1 min-h-0 relative">
@@ -141,8 +140,8 @@ export default function CollisionAnimation() {
         </div>
       </div>
 
-      {/* ==================== 下方仿真动画区 ==================== */}
-      <div className="flex-1 min-h-[100px] bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden">
+      {/* ==================== 下方仿真动画区（50%） ==================== */}
+      <div className="flex-1 min-h-0 bg-white border border-neutral-200/80 rounded-xl shadow-sm relative overflow-hidden">
         <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
           {/* gradients */}
           <defs>

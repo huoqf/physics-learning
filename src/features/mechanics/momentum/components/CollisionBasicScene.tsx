@@ -88,27 +88,27 @@ export function CollisionBasicScene({
         <g>
           {currentV1 !== 0 && (
             <VectorArrow
-              originPixel={{ x: posAx, y: R_A * 2 + 10 }}
+              originPixel={{ x: posAx, y: groundY - R_A * 2 - 10 }}
               vector={{ x: currentV1, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
             />
           )}
-          <text x={posAx} y={groundY - R_A * 2 - 16} fontSize={font(10)}
+          <text x={posAx} y={groundY - R_A * 2 - 24} fontSize={font(10)}
             fill={PHYSICS_COLORS.velocity} textAnchor="middle" fontWeight="bold">
             v₁={currentV1.toFixed(1)}
           </text>
 
           {currentV2 !== 0 && (
             <VectorArrow
-              originPixel={{ x: posBx, y: R_B * 2 + 10 }}
+              originPixel={{ x: posBx, y: groundY - R_B * 2 - 10 }}
               vector={{ x: currentV2, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
               color={PHYSICS_COLORS.elasticForce}
             />
           )}
-          <text x={posBx} y={groundY - R_B * 2 - 16} fontSize={font(10)}
+          <text x={posBx} y={groundY - R_B * 2 - 24} fontSize={font(10)}
             fill={PHYSICS_COLORS.elasticForce} textAnchor="middle" fontWeight="bold">
             v₂={currentV2.toFixed(1)}
           </text>

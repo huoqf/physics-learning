@@ -53,7 +53,7 @@ export function CollisionAdvancedScene({
 
       {/* 特例高亮背景提示 */}
       {velocitySwap && hasCollidedAdv && (
-        <rect x={0} y={0} width={COL_LAYOUT.designWidth} height={COL_LAYOUT.designHeight}
+        <rect x={0} y={0} width={COL_LAYOUT.designWidth} height={COL_LAYOUT.designWidth}
           fill={PHYSICS_COLORS.kineticEnergy} opacity={0.03} />
       )}
 
@@ -89,27 +89,27 @@ export function CollisionAdvancedScene({
         <g>
           {curVA !== 0 && (
             <VectorArrow
-              originPixel={{ x: posAAdv, y: R_Adv * 2 + 10 }}
+              originPixel={{ x: posAAdv, y: groundY - R_Adv * 2 - 10 }}
               vector={{ x: curVA, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
             />
           )}
-          <text x={posAAdv} y={groundY - R_Adv * 2 - 16} fontSize={font(10)}
+          <text x={posAAdv} y={groundY - R_Adv * 2 - 24} fontSize={font(10)}
             fill={PHYSICS_COLORS.velocity} fontWeight="bold" textAnchor="middle">
             v_A' = {curVA.toFixed(2)}
           </text>
 
           {curVB !== 0 && (
             <VectorArrow
-              originPixel={{ x: posBAdv, y: R_Bdv * 2 + 10 }}
+              originPixel={{ x: posBAdv, y: groundY - R_Bdv * 2 - 10 }}
               vector={{ x: curVB, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
               color={PHYSICS_COLORS.elasticForce}
             />
           )}
-          <text x={posBAdv} y={groundY - R_Bdv * 2 - 16} fontSize={font(10)}
+          <text x={posBAdv} y={groundY - R_Bdv * 2 - 24} fontSize={font(10)}
             fill={PHYSICS_COLORS.elasticForce} fontWeight="bold" textAnchor="middle">
             v_B' = {curVB.toFixed(2)}
           </text>

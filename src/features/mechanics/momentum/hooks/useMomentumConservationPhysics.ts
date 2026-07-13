@@ -15,7 +15,7 @@ import {
 
 /** 动量守恒动画布局常量 */
 export const MC_LAYOUT = {
-  canvasPadding: 50,
+  canvasPadding: 30,
   ballBaseRadius: 16,
   massRadiusScale: 2,
   vectorMaxLength: 80,
@@ -42,6 +42,7 @@ interface BasicModeParams {
   e_coefficient: number
   time: number
   groundY: number
+  designWidth: number
 }
 
 interface BasicModeResult {
@@ -60,13 +61,13 @@ interface BasicModeResult {
  * 计算基础模式（两球碰撞）的位置与速度状态
  */
 function computeBasicMode(p: BasicModeParams): BasicModeResult {
-  const { m1, v1, m2, v2, collisionType, e_coefficient, time, groundY } = p
+  const { m1, v1, m2, v2, collisionType, e_coefficient, time, groundY, designWidth } = p
 
   const R_A = MC_LAYOUT.ballBaseRadius + m1 * MC_LAYOUT.massRadiusScale
   const R_B = MC_LAYOUT.ballBaseRadius + m2 * MC_LAYOUT.massRadiusScale
 
-  const initPosAx = 700 * 0.25
-  const initPosBx = 700 * 0.65
+  const initPosAx = designWidth * 0.28
+  const initPosBx = designWidth * 0.58
 
   const rPhysA = R_A / PX_PER_METER
   const rPhysB = R_B / PX_PER_METER
@@ -112,7 +113,7 @@ function computeBasicMode(p: BasicModeParams): BasicModeResult {
   const { cx: rawPosBx } = physicsToCanvasWithOrigin(xPhysB, 0, initPosAx, groundY, PX_PER_METER)
 
   const leftBound = MC_LAYOUT.canvasPadding + R_A
-  const rightBound = 700 - MC_LAYOUT.canvasPadding - R_B
+  const rightBound = designWidth - MC_LAYOUT.canvasPadding - R_B
   const posAx = Math.max(leftBound, Math.min(rightBound + R_B - R_A, rawPosAx))
   const posBx = Math.max(leftBound - R_A + R_B, Math.min(rightBound, rawPosBx))
 
@@ -129,6 +130,7 @@ interface AdvancedModeParams {
   L: number
   time: number
   groundY: number
+  designWidth: number
 }
 
 interface AdvancedModeResult {
@@ -157,7 +159,7 @@ interface AdvancedModeResult {
  * 计算进阶模式（滑块-木板）的位置与速度状态
  */
 function computeAdvancedMode(p: AdvancedModeParams): AdvancedModeResult {
-  const { m_slider, M_board, v0, mu, L, time, groundY } = p
+  const { m_slider, M_board, v0, mu, L, time, groundY, designWidth } = p
   const g = MC_LAYOUT.g
 
   const vCommon = calculateCommonVelocity(m_slider, v0, M_board)
@@ -228,7 +230,7 @@ function computeAdvancedMode(p: AdvancedModeParams): AdvancedModeResult {
 
   const currentDeltaX = Math.min(currentXSlider - currentXBoard, L)
 
-  const boardInitX = 700 * 0.25
+  const boardInitX = designWidth * 0.28
   const { cx: boardPixelX } = physicsToCanvasWithOrigin(currentXBoard, 0, boardInitX, groundY, PX_PER_METER)
   const { cx: sliderPixelX } = physicsToCanvasWithOrigin(currentXSlider, 0, boardInitX, groundY, PX_PER_METER)
   const boardPixelW = L * PX_PER_METER
@@ -287,6 +289,7 @@ export function useMomentumConservationPhysics(
   params: Record<string, number>,
   time: number,
   groundY: number,
+  designWidth: number,
 ): MomentumConservationPhysics {
   const {
     m1 = 3, v1 = 5,
@@ -301,14 +304,14 @@ export function useMomentumConservationPhysics(
 
   // ── 基础模式计算 ──
   const basic = useMemo(
-    () => computeBasicMode({ m1, v1, m2, v2, collisionType, e_coefficient, time, groundY }),
-    [m1, v1, m2, v2, collisionType, e_coefficient, time, groundY]
+    () => computeBasicMode({ m1, v1, m2, v2, collisionType, e_coefficient, time, groundY, designWidth }),
+    [m1, v1, m2, v2, collisionType, e_coefficient, time, groundY, designWidth]
   )
 
   // ── 进阶模式计算 ──
   const advanced = useMemo(
-    () => computeAdvancedMode({ m_slider, M_board, v0, mu, L, time, groundY }),
-    [m_slider, M_board, v0, mu, L, time, groundY]
+    () => computeAdvancedMode({ m_slider, M_board, v0, mu, L, time, groundY, designWidth }),
+    [m_slider, M_board, v0, mu, L, time, groundY, designWidth]
   )
 
   // ── 图表数据 ──
