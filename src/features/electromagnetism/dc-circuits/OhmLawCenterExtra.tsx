@@ -3,7 +3,7 @@ import { RelationChart } from '@/components/Chart'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { useAnimationStore } from '@/stores'
 import { Card } from '@/components/UI'
-import { calculateMeterExpansion } from '@/physics'
+import { calculateMeterExpansion, calculateBulbResistance } from '@/physics'
 
 const OHM_CHART_DOMAIN = {
   uMax: 10,
@@ -33,8 +33,7 @@ export const OhmLawCenterExtra: FC = () => {
     if (meterMode === 0) {
       return R > 0 ? U / R : 0
     }
-    const R_eff = 5 + 2 * U
-    return R_eff > 0 ? U / R_eff : 0
+    return calculateBulbResistance(U).I
   }, [U, R, meterMode])
 
   useEffect(() => {
@@ -60,7 +59,7 @@ export const OhmLawCenterExtra: FC = () => {
       const uVal = (step / steps) * OHM_CHART_DOMAIN.uMax
       const iVal = meterMode === 0
         ? (R > 0 ? uVal / R : 0)
-        : uVal / (5 + 2 * uVal)
+        : calculateBulbResistance(uVal).I
       points.push({ x: uVal, y: iVal })
     }
     return points

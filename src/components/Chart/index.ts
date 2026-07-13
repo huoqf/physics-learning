@@ -41,8 +41,9 @@ export type { ChartSecantProps } from './ChartSecant'
 // ============================================================================
 // 业务预设 (Business Presets)
 // ============================================================================
+export { TimeSeriesChart } from './TimeSeriesChart'
+export type { TimeSeriesChartProps, VTStage, ChartDataSeries, TSPoint } from './TimeSeriesChart'
 export { VelocityTimeChart } from './VelocityTimeChart'
-export type { ChartDataSeries, VTStage } from './VelocityTimeChart'
 export { DisplacementTimeChart } from './DisplacementTimeChart'
 export { AccelerationTimeChart } from './AccelerationTimeChart'
 export { RelationChart } from './RelationChart'

@@ -3,7 +3,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { calculateClosedCircuit } from '@/physics'
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CIRCUIT_COLORS } from '@/theme/physics'
 import { DialMeter, Rheostat } from '@/components/Physics'
 import { useClosedCircuitScene } from './hooks/useClosedCircuitScene'
 
@@ -95,7 +95,7 @@ export default function ClosedCircuit() {
         {chargeParticles.map((pt, idx) => {
           // 判定电荷是否位于化学能电源内部的泵送区间 (x: 295 -> 350) 且在底部线 y: 220 上
           const isPumping = Math.abs(pt.y - 220) < 5 && pt.x >= 295 && pt.x <= 350
-          const particleColor = isPumping ? '#22c55e' : PHYSICS_COLORS.electricCurrent
+          const particleColor = isPumping ? CIRCUIT_COLORS.wireActive : PHYSICS_COLORS.electricCurrent
 
           return (
             <circle
@@ -171,9 +171,9 @@ export default function ClosedCircuit() {
           {/* 非静电力做功泵送绿色向右箭头 */}
           {I > 0.05 && (
             <g transform="translate(18, -25)">
-              <line x1={-8} y1={0} x2={12} y2={0} stroke="#22c55e" strokeWidth={2} />
-              <path d="M 6 -3 L 12 0 L 6 3" fill="none" stroke="#22c55e" strokeWidth={1.5} />
-              <text x={2} y={-4} fill="#22c55e" fontSize={font(9)} fontWeight="bold" textAnchor="middle">F非</text>
+              <line x1={-8} y1={0} x2={12} y2={0} stroke={CIRCUIT_COLORS.wireActive} strokeWidth={2} />
+              <path d="M 6 -3 L 12 0 L 6 3" fill="none" stroke={CIRCUIT_COLORS.wireActive} strokeWidth={1.5} />
+              <text x={2} y={-4} fill={CIRCUIT_COLORS.wireActive} fontSize={font(9)} fontWeight="bold" textAnchor="middle">F非</text>
             </g>
           )}
         </g>

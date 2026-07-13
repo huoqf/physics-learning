@@ -1,5 +1,6 @@
 import React from 'react';
 import { MAGNET_COLORS, PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics';
+import { bezierAt, bezierTangent, FieldArrow } from './magneticFieldUtils';
 
 /**
  * 参数化磁感线组件 Props
@@ -93,18 +94,6 @@ export const ParametricMagneticField: React.FC<MagneticFieldProps> = ({
   const internalDir = pole;       // 磁铁内部中心的场向向量
 
   // 【5. 贝塞尔曲线精确计算】在 t=0.5 处计算曲线点和切线方向
-  // 三次贝塞尔公式: B(t) = (1-t)³P0 + 3(1-t)²tP1 + 3(1-t)t²P2 + t³P3
-  // 切线公式: B'(t) = 3(1-t)²(P1-P0) + 6(1-t)t(P2-P1) + 3t²(P3-P2)
-  const bezierAt = (t: number, p0: number, p1: number, p2: number, p3: number) => {
-    const mt = 1 - t;
-    return mt * mt * mt * p0 + 3 * mt * mt * t * p1 + 3 * mt * t * t * p2 + t * t * t * p3;
-  };
-
-  const bezierTangent = (t: number, p0: number, p1: number, p2: number, p3: number) => {
-    const mt = 1 - t;
-    return 3 * mt * mt * (p1 - p0) + 6 * mt * t * (p2 - p1) + 3 * t * t * (p3 - p2);
-  };
-
   // 使用中间圈（middle）计算上下回路箭头位置
   const midConfig = configs[1]; // middle: yRat=0.45, dxRat=0.55, dyRat=0.55
   const midYVal = midConfig.yRat * halfH;
@@ -182,18 +171,6 @@ export const ParametricMagneticField: React.FC<MagneticFieldProps> = ({
     },
   ];
 
-  // 统一的独立箭头渲染函数：支持任意角度旋转
-  const renderArrow = (cx: number, cy: number, angle: number) => {
-    return (
-      <polygon
-        points="-5,-3.5 5,0 -5,3.5"
-        fill={lineColor}
-        opacity={0.85}
-        transform={`translate(${cx}, ${cy}) rotate(${angle})`}
-      />
-    );
-  };
-
   // 统一的小磁针渲染函数：支持按磁场切线偏转，红端指N，蓝端指S
   const renderCompass = (cx: number, cy: number, angle: number) => {
     const r = 8.5; // 直径 17px
@@ -233,7 +210,7 @@ export const ParametricMagneticField: React.FC<MagneticFieldProps> = ({
       {/* 渲染 5 点高清晰降噪固定箭头系统 (非展示磁针模式下) */}
       {!showCompasses && arrows.map((arrow, idx) => (
         <g key={`arrow-${idx}`} data-role={arrow.role}>
-          {renderArrow(arrow.x, arrow.y, arrow.angle)}
+          <FieldArrow cx={arrow.x} cy={arrow.y} angle={arrow.angle} size={5} color={lineColor} />
         </g>
       ))}
 

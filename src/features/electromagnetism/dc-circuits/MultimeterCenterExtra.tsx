@@ -3,6 +3,7 @@ import { Card } from '@/components/UI'
 import { useAnimationStore } from '@/stores'
 import { calculateOhmmeter } from '@/physics'
 import { duration, easing } from '@/theme/motion'
+import { CIRCUIT_COLORS, CANVAS_COLORS } from '@/theme/physics'
 
 export const MultimeterCenterExtra: FC = () => {
   const params = useAnimationStore((s) => s.params)
@@ -68,8 +69,8 @@ export const MultimeterCenterExtra: FC = () => {
         <svg className="w-full h-full" viewBox="0 0 840 200">
           <defs>
             <radialGradient id="dial-backlight" cx="50%" cy="100%" r="80%">
-              <stop offset="0%" stopColor="rgba(34, 197, 94, 0.15)" />
-              <stop offset="50%" stopColor="rgba(34, 197, 94, 0.03)" />
+              <stop offset="0%" stopColor={CIRCUIT_COLORS.wireActive} stopOpacity="0.15" />
+              <stop offset="50%" stopColor={CIRCUIT_COLORS.wireActive} stopOpacity="0.03" />
               <stop offset="100%" stopColor="rgba(0, 0, 0, 0)" />
             </radialGradient>
             <filter id="pointer-shadow" x="-30%" y="-30%" width="160%" height="160%">
@@ -78,7 +79,7 @@ export const MultimeterCenterExtra: FC = () => {
           </defs>
 
           <rect x={0} y={0} width={840} height={200} fill="url(#dial-backlight)" rx={8} />
-          
+
           <path
             d={`M ${CX - R_arc * Math.cos(Math.PI/6)} ${CY - R_arc * Math.sin(Math.PI/6)} A ${R_arc} ${R_arc} 0 0 1 ${CX + R_arc * Math.cos(Math.PI/6)} ${CY - R_arc * Math.sin(Math.PI/6)}`}
             fill="none"
@@ -92,7 +93,7 @@ export const MultimeterCenterExtra: FC = () => {
               <text
                 x={t.tx}
                 y={t.ty + 3}
-                fill={t.label === '∞' || t.label === '0' ? '#22c55e' : 'rgba(255, 255, 255, 0.7)'}
+                fill={t.label === '∞' || t.label === '0' ? CIRCUIT_COLORS.wireActive : 'rgba(255, 255, 255, 0.7)'}
                 fontSize={t.label.length > 3 ? 8 : 10}
                 fontWeight={t.label === '∞' || t.label === '0' || t.label === R_mid.toFixed(0) ? 'bold' : 'normal'}
                 textAnchor="middle"
@@ -106,12 +107,12 @@ export const MultimeterCenterExtra: FC = () => {
           <text x={CX} y={CY - 40} fill="rgba(255, 255, 255, 0.25)" fontSize={16} fontWeight="bold" textAnchor="middle" letterSpacing="4">
             OHM METER
           </text>
-          <text x={CX} y={CY - 22} fill="#22c55e" fontSize={11} fontWeight="semibold" textAnchor="middle">
+          <text x={CX} y={CY - 22} fill={CIRCUIT_COLORS.wireActive} fontSize={11} fontWeight="semibold" textAnchor="middle">
             中值电阻 R_中 = {R_mid.toFixed(0)} Ω
           </text>
 
-          <circle cx={CX} cy={CY} r={6} fill="#ef4444" />
-          <circle cx={CX} cy={CY} r={2} fill="#fff" />
+          <circle cx={CX} cy={CY} r={6} fill={CIRCUIT_COLORS.meterNeedle} />
+          <circle cx={CX} cy={CY} r={2} fill={CANVAS_COLORS.white} />
 
           <g
             transform={`rotate(${pointerAngle}, ${CX}, ${CY})`}
@@ -126,7 +127,7 @@ export const MultimeterCenterExtra: FC = () => {
               y1={CY}
               x2={CX}
               y2={CY - R_arc - 10}
-              stroke="#ef4444"
+              stroke={CIRCUIT_COLORS.meterNeedle}
               strokeWidth={2}
               strokeLinecap="round"
             />

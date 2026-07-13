@@ -1,4 +1,5 @@
-import { FC, useId } from 'react'
+import { FC } from 'react'
+import { useUniqueSvgId } from '@/hooks'
 import { SCENE_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
 
 /**
@@ -42,7 +43,7 @@ export const LightBulb: FC<LightBulbProps> = ({
   font = (n: number) => n,
 }) => {
   // 动态生成唯一的渐变 ID，防止同屏渲染多个灯泡时渐变冲突
-  const uniqueId = useId().replace(/:/g, '-')
+  const uniqueId = useUniqueSvgId()
   const glowGradientId = `bulb-glow-${uniqueId}`
 
   // 1. 发光外圈半径计算（加入正弦振荡形成呼吸效果）

@@ -1,494 +1,74 @@
-# COMPONENT_REGISTRY — 公共组件调用索引
+# COMPONENT_REGISTRY — 公共组件速查索引
 
-> 优先级：遵循 `02_UI_RULES.md` 约束
-> AI 任务入口：新增或修改动画场景前必须查阅本文件
+> 新增或修改动画场景前必须查阅。示例均来自 `src/features/` 真实调用。
+> 详细说明（禁止写法、派生数据、渲染层级）→ [COMPONENT_GUIDE.md](./COMPONENT_GUIDE.md)
 > 最后更新：2026-07-13
 
 ---
 
-## 编写铁律
+## Physics（`@/components/Physics`）
 
-Registry 中的示例**不得凭经验手写**，必须同时满足：
-
-1. 读取组件源码 interface / type 定义；
-2. 至少参考一个 `src/features/` 中的真实调用；
-3. 示例中的必需 props 不得省略；
-4. 如源码与文档冲突，以源码为准；
-5. 示例应保持"最小可运行"，而不是"伪代码"。
-
----
-
-## Import 规则
-
-```ts
-// 推荐：子目录 barrel
-import { VectorArrow } from '@/components/Physics'
-import { Button, ParamControl } from '@/components/UI'
-import { AnimationSvgCanvas } from '@/components/Layout'
-import { BasePhysicsChart } from '@/components/Chart'
-
-// 页面层可接受：顶层 barrel
-import { VectorArrow, Button } from '@/components'
-
-// 禁止：子路径导入
-import { VectorArrow } from '@/components/Physics/VectorArrow'
-```
-
----
-
-## Physics 组件（`@/components/Physics`）
-
-### VectorArrow
-
-用途：绘制物理矢量箭头（力、速度、加速度、电场等）。所有矢量必须使用此组件，禁止手写 `<line>` + `<marker>`。
-
-```ts
-import { VectorArrow } from '@/components/Physics'
-```
-
-必需 props：
-- `origin: Vector2` — 矢量起点（物理坐标）
-- `vector: Vector2` — 矢量值（物理坐标，y↑正方向）
-- `type: VectorType` — 矢量类型（决定默认颜色和参考量级）
-- `sceneScale: SceneScale` — 场景缩放参数
-
-常见可选 props：`label`、`color`、`dashed`、`glow`、`strokeWidth`、`pixelLength`
-
-最小示例（来源：`ObliqueThrowAnimation.tsx`）：
-
-```tsx
-<VectorArrow
-  origin={{ x: ballCanvas.cx, y: -ballCanvas.cy }}
-  vector={{ x: currentState.vx, y: currentState.vy }}
-  type="velocity"
-  sceneScale={sceneScale}
-/>
-```
-
-禁止：手写 `<line markerEnd="url(#arrow)" />` 实现箭头。
+| 组件 | 用途 | 必需 props | 最小调用 |
+|------|------|-----------|---------|
+| `VectorArrow` | 矢量箭头 | `origin`, `vector`, `type`, `sceneScale` | `<VectorArrow origin={pos} vector={v} type="velocity" sceneScale={ss} />` |
+| `Ball` | 质点/小球 | `cx`, `cy`, `r` | `<Ball cx={x} cy={y} r={14} type="steel" />` |
+| `Block` | 滑块/木块 | `x`, `y`, `width`, `height` | `<Block x={x} y={y} width={48} height={24} type="metal" />` |
+| `PhysicsGround` | 地面/斜面 | `x`, `y`, `width` | `<PhysicsGround x={0} y={groundY} width={dw} fontFamily={font} />` |
+| `Incline` | 斜面体 | `x0`, `y0`, `width`, `height` | `<Incline x0={cx} y0={gy} width={W} height={H} />` |
+| `Pulley` | 定滑轮 | `cx`, `cy` | `<Pulley cx={px} cy={py} r={12} hangerTopY={py - 45} />` |
+| `SportsCar` | 运动小车 | `x`, `y` | `<SportsCar x={carX} y={groundY - 26} width={56} height={26} />` |
+| `Spring` | 弹簧 | `x1`, `y1`, `x2`, `y2` | `<Spring x1={ox} y1={oy} x2={bx} y2={oy} coils={8} amplitude={12} />` |
+| `EnergyBars` | 能量柱状图 | `items` | `<EnergyBars items={[{ key:'Ek', label:'Ek', value:state.Ek, color:COLORS.kineticEnergy }]} />` |
+| `ParticleTrajectory` | 粒子轨迹(SVG) | `historyPoints`, `predictedPoints`, `tailPoints`, `isFocus`, `chargeSign` | `<ParticleTrajectory historyPoints={hp} predictedPoints={pp} tailPoints={tp} isFocus chargeSign="+" />` |
+| `ParticleEmitter` | 粒子发射源 | `x`, `y` | `<ParticleEmitter x={lx} y={ly} active={isPlaying} chargeSign={q} />` |
+| `CapacitorPlates` | 平行板电容器 | `x`, `y`, `width`, `gap` | `<CapacitorPlates x={px} y={cy} width={wp} gap={gp} chargeSign={E > 0.01 ? 1 : 0} />` |
+| `ConductingRod` | 导体棒 | `type` | `<ConductingRod type="horizontal" x={rx} spacing={sp} width={w} height={h} currentDir="in" />` |
+| `DCSource` | 直流电源 | `type` | `<DCSource type="instrument" x={420} y={250} voltage={U} polarity="right-positive" />` |
+| `Galvanometer` | 灵敏电流计（thin wrapper，内部使用 MeterPointer 渲染指针） | `value` | `<Galvanometer x={gx} y={gy} value={emf * 10 / 45} />` |
+| `CoilBase` | 通用线圈基座（Solenoid / PrimaryCoil 共享渲染逻辑） | `x`, `y`, `width`, `height`, `turns` | `<CoilBase x={cx} y={cy} width={160} height={80} turns={5} current={I} time={t} />` |
+| `Solenoid` | 螺线管（thin wrapper，内部使用 CoilBase，铜线样式） | `x`, `y`, `width`, `height`, `turns` | `<Solenoid x={cx} y={cy} width={160} height={80} turns={5} current={I} time={t} />` |
+| `PrimaryCoil` | 原线圈（thin wrapper，内部使用 CoilBase，漆包绿线样式） | `x`, `y`, `width`, `height`, `turns` | `<PrimaryCoil x={cx} y={cy} width={120} height={66} turns={4} current={I} time={t} />` |
+| `MeterPointer` | 仪表指针通用组件（DialMeter / Galvanometer 共享指针渲染） | `angle`, `length`, `color` | `<MeterPointer angle={-30} length={21} color={themeColor} />` |
+| `DialMeter` | 理想电表盘（内部使用 MeterPointer 渲染指针） | `type`, `value`, `x`, `y` | `<DialMeter type="V" value={U} x={dx} y={dy} />` |
+| `BarMagnet` | 条形磁铁 | `pole` | `<BarMagnet x={mx} y={cy} width={120} height={36} pole={-1} />` |
+| `HandRule` | 手指定则 | `mode`, `thumbDir`, `indexDir`, `middleDir`, `cx`, `cy` | `<HandRule mode="left" thumbDir={td} indexDir={id} middleDir={md} cx={171} cy={175} />` |
+| `VectorDefs` | 箭头 marker 定义 | — | `<VectorDefs />`（放在 `<svg>` 内） |
+| `SkeletonHand` | 骨骼手 | `pose` | `<SkeletonHand cx={cx} cy={cy} pose="open" />` |
 
 ---
 
-### ParticleTrajectory / drawCanvasParticleTrajectory
+## Layout（`@/components/Layout`）
 
-用途：粒子轨迹统一渲染（历史轨迹 + 预测轨迹 + 拖尾 + 本体球）。所有带电粒子在电场/磁场中的偏转运动页面**必须**使用此组件，禁止手写 `<polyline>` + `<Ball>` 或自定义 Canvas 拖尾绘制。
-
-**选型规则**：
-- SVG 页面（使用 `AnimationSvgCanvas`）→ `<ParticleTrajectory />`（React 组件）
-- Canvas 页面（使用 `useCanvasViewport`）→ `drawCanvasParticleTrajectory()`（命令式函数）
-- 力学直线运动（自由落体、匀加速等）→ 不需要此组件，用 `Ball` 即可
-
-```ts
-// SVG 版
-import { ParticleTrajectory } from '@/components/Physics'
-// Canvas 版
-import { drawCanvasParticleTrajectory } from '@/components/Physics'
-```
-
-必需 props：
-- `historyPoints: { x: number; y: number }[]` — 已走过的历史点集（时间过滤）
-- `predictedPoints: { x: number; y: number }[]` — 完整理论/预测轨迹点集（全局虚线参考）
-- `tailPoints: { x: number; y: number }[]` — 短拖尾点集（运动增强，取最近 8 个点）
-- `isFocus: boolean` — 是否焦点粒子（影响透明度和球体大小）
-- `chargeSign: '+' | '-' | 'none'` — 电荷极性（决定基准色）
-
-常见可选 props：`customBaseColor`（经典力学自定义颜色）
-
-最小示例（来源：`ChargeInEField.tsx`）：
-
-```tsx
-<ParticleTrajectory
-  historyPoints={historyPoints}
-  predictedPoints={predictedPoints}
-  tailPoints={tailPoints}
-  isFocus
-  chargeSign="+"
-/>
-```
-
-派生数据模式：
-
-```tsx
-const historyPoints = useMemo(() => {
-  return trajectory
-    .filter(pt => pt.t <= currentTime)
-    .map(pt => ({ x: pt.x, y: pt.y }))
-}, [trajectory, currentTime])
-
-const predictedPoints = useMemo(() => {
-  return trajectory.map(pt => ({ x: pt.x, y: pt.y }))
-}, [trajectory])
-
-const tailPoints = useMemo(() => {
-  return historyPoints.slice(-8)
-}, [historyPoints])
-```
-
-渲染层级（从底到顶）：
-A. 预测轨迹虚线（`CANVAS_STYLE.dash.predictedTrajectory` [2,3]，更淡更密）
-B. 历史轨迹虚线（`CANVAS_STYLE.dash.trajectory` [5,4]）
-C. 拖尾实线渐变（`CANVAS_STYLE.stroke.tailLineWidth` 2.4）
-D. 粒子本体球（`CANVAS_STYLE.object.pointMassRadius` 6）
-
-禁止：手写 `<polyline>` + `<Ball>` 组合实现粒子轨迹。
-
-#### drawCanvasParticleTrajectory（Canvas 版）
-
-用途：Canvas 2D 粒子轨迹渲染，功能与 SVG `ParticleTrajectory` 对等。适用于使用 `useCanvasViewport` + `setupFrame()` 的 Canvas 渲染页面。
-
-```ts
-import { drawCanvasParticleTrajectory } from '@/components/Physics'
-```
-
-必需参数（`DrawParticleTrajectoryOptions`）：
-- `ctx: CanvasRenderingContext2D` — Canvas 上下文（来自 `setupFrame()`）
-- `px: number` — 粒子当前 X 像素坐标
-- `py: number` — 粒子当前 Y 像素坐标
-- `historyPoints: { x: number; y: number }[]` — 已走过的历史点集
-- `isFocus: boolean` — 是否焦点粒子
-
-常见可选参数：`predictedPoints`、`tailPoints`、`chargeSign`（`'+' | '-' | 'none'`）、`customBaseColor`
-
-最小示例（来源：`CircularGeometryModel.tsx`）：
-
-```tsx
-const historyPoints = useMemo(() => {
-  const pts: { x: number; y: number }[] = []
-  for (let t = 0; t <= time; t += 0.01) {
-    const s = getParticleState(t)
-    pts.push({ x: px(s.px), y: py(s.py) })
-  }
-  return pts
-}, [time, getParticleState, px, py])
-
-const tailPoints = useMemo(() => {
-  return historyPoints.slice(-8)
-}, [historyPoints])
-
-useEffect(() => {
-  const ctx = setupFrame()
-  if (!ctx) return
-  const curState = getParticleState(time)
-  drawCanvasParticleTrajectory({
-    ctx,
-    px: px(curState.px),
-    py: py(curState.py),
-    historyPoints,
-    tailPoints,
-    isFocus: true,
-    chargeSign: q > 0 ? '+' : '-',
-  })
-}, [time, historyPoints, tailPoints, ...])
-```
-
-禁止：手写 `ctx.arc()` + `ctx.globalAlpha` 渐变循环实现粒子拖尾。
-
-### PhysicsGround
-
-用途：绘制地面/斜面/传送带，支持多种纹理和角度。
-
-```ts
-import { PhysicsGround } from '@/components/Physics'
-```
-
-最小示例（来源：`FreeFallScene.tsx`）：
-
-```tsx
-<PhysicsGround
-  x={0} y={groundY}
-  width={designWidth}
-  fontFamily={font}
-/>
-```
+| 组件 | 用途 | 必需 props | 最小调用 |
+|------|------|-----------|---------|
+| `AnimationSvgCanvas` | SVG 画布容器 | `containerRef`, `transform` | `<AnimationSvgCanvas containerRef={ref} transform={vp.transform}><Scene /></AnimationSvgCanvas>` |
+| `ThreePanel` | 三栏布局 | `left`, `center`, `right` | `<ThreePanel left={<LeftPanel />} center={<Canvas />} right={<Panel />} />` |
 
 ---
 
-### Ball
+## UI（`@/components/UI`）
 
-用途：质点/小球渲染，含材质变体（钢珠、摆球、行星等）。禁止手绘 `<circle>` + `<radialGradient>`。
-> **注意**：带轨迹的粒子运动场景（平抛、斜抛、电磁偏转等）应使用 `ParticleTrajectory`（SVG）或 `drawCanvasParticleTrajectory`（Canvas），它们内部已包含粒子本体渲染。`Ball` 仅用于静态展示的球体或不需要轨迹的场景（如参考对照球、弹簧振子、自由落体等）。
-
-```ts
-import { Ball } from '@/components/Physics'
-```
-
-最小示例（来源：`FreeFallScene.tsx`）：
-
-```tsx
-<Ball
-  cx={ballX}
-  cy={groundY - ballRadius}
-  r={ballRadius}
-  type="steel"
-/>
-```
+| 组件 | 用途 | 必需 props | 最小调用 |
+|------|------|-----------|---------|
+| `LeftPanel` / `LeftPanelSection` | 左屏控制台 | — | `<LeftPanel><LeftPanelScrollArea><LeftPanelSection title="参数">...</LeftPanelSection></LeftPanelScrollArea></LeftPanel>` |
+| `ParamControl` | 参数滑块 | `params`, `onParamChange` | `<ParamControl params={[{ key:'m', label:'质量', value:params.m, min:0.1, max:10, step:0.1, unit:'kg' }]} onParamChange={updateParam} />` |
+| `ControlPanel` | 声明式控件 | `controls`, `params`, `updateParam`, `setParams`, `resetAnimation`, `restartAnimation` | `<ControlPanel controls={mc} params={params} updateParam={updateParam} setParams={setParams} resetAnimation={handleReset} restartAnimation={handleRestart} />` |
+| `PhysicsPanel` | 右屏公式面板 | `quantities` | `<PhysicsPanel quantities={[{ label:'质量', value:params.m, unit:'kg' }]} formulas={[{ name:'F=ma', latex:'F=ma', level:'core' }]} />` |
+| `AnimationControls` | 播放控制条 | `isPlaying`, `speed`, `time`, `maxTime`, `onPlayPause`, `onReset`, `onSpeedChange`, `onTimeChange` | `<AnimationControls isPlaying={p} speed={s} time={t} maxTime={tMax} onPlayPause={toggle} onReset={reset} onSpeedChange={setSpeed} onTimeChange={setTime} />` |
+| `Button` / `SegmentedControl` / `ToggleSwitch` | 基础控件 | — | 详见源码 interface |
+| `Slider` | 数值范围选择 | `value`, `min`, `max`, `onChange` | `<Slider value={v} min={0} max={10} step={0.1} onChange={setV} label="质量" unit="kg" fillAnchor={0} />` |
 
 ---
 
-### Block
-
-用途：滑块/木块/小车渲染，含摩擦面、标注。禁止手绘 `<rect>`。
-
-```ts
-import { Block } from '@/components/Physics'
-```
-
-最小示例（来源：`KinematicsAdvancedAnimation.tsx`）：
-
-```tsx
-<Block
-  x={blockX}
-  y={groundY - blockHeight}
-  width={blockWidth}
-  height={blockHeight}
-  type="metal"
-/>
-```
-
----
-
-### VectorDefs
-
-用途：SVG `<defs>` 箭头 marker 定义，与 VectorArrow 配套使用。
-
-```ts
-import { VectorDefs } from '@/components/Physics'
-```
-
-最小示例：
-
-```tsx
-<svg>
-  <VectorDefs />
-  {/* 使用 VectorArrow 的场景内容 */}
-</svg>
-```
-
----
-
-### Spring
-
-用途：弹簧 SVG 组件（位于 `@/components/UI`）。
-
-```ts
-import { Spring } from '@/components/UI'
-```
-
-最小示例（来源：`SimpleHarmonicAnimation.tsx`）：
-
-```tsx
-<Spring
-  x1={springOriginX}
-  y1={springOriginY}
-  x2={blockCenterX}
-  y2={springOriginY}
-  coils={8}
-  amplitude={12}
-/>
-```
-
----
-
-### SportsCar
-
-用途：流线型运动小车，含车轮旋转和空气尾流线。禁止手绘跑车车身。
-
-```ts
-import { SportsCar } from '@/components/Physics'
-```
-
-最小示例（来源：`AccelerationAnimation.tsx`）：
-
-```tsx
-<SportsCar
-  x={carX}
-  y={groundY - carHeight}
-  width={56}
-  height={26}
-/>
-```
-
----
-
-### EnergyBars
-
-用途：能量柱状条（动能/势能/总能），用于能量守恒等场景。
-
-```ts
-import { EnergyBars } from '@/components/Physics'
-```
-
----
-
-### CapacitorPlates
-
-用途：平行板电容器，支持电荷标识。
-
-```ts
-import { CapacitorPlates } from '@/components/Physics'
-```
-
----
-
-### ConductingRod
-
-用途：导体棒，用于电磁感应场景（切割磁感线等）。
-
-```ts
-import { ConductingRod } from '@/components/Physics'
-```
-
----
-
-## Layout 组件（`@/components/Layout`）
-
-### AnimationSvgCanvas
-
-用途：动画 SVG 画布容器，配合 `useAnimationViewport` 使用。所有新动画页面必须使用此组件。
-
-```ts
-import { AnimationSvgCanvas } from '@/components/Layout'
-```
-
-必需 props：
-- `containerRef: RefObject<HTMLDivElement | null>` — 容器 ref
-- `transform: string` — vp.transform 字符串
-- `children: React.ReactNode` — SVG 场景内容
-
-最小示例（来源：`project_rules.md §4 铁律 1 展开`）：
-
-```tsx
-const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
-
-<AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
-  <Scene font={canvasSize.font} />
-</AnimationSvgCanvas>
-```
-
-禁止：使用固定 `viewBox` + `vp.transform` 双重缩放。
-
----
-
-### ThreePanel
-
-用途：三栏主布局（左参数 / 中画布 / 右公式）。
-
-```ts
-import { ThreePanel } from '@/components/Layout'
-```
-
-最小示例：
-
-```tsx
-<ThreePanel
-  left={<LeftPanel>...</LeftPanel>}
-  center={<AnimationSvgCanvas ...>...</AnimationSvgCanvas>}
-  right={<PhysicsPanel>...</PhysicsPanel>}
-/>
-```
-
----
-
-## UI 组件（`@/components/UI`）
-
-### LeftPanel / LeftPanelSection
-
-用途：左屏控制台顶层容器和分区卡片。左屏必须使用此体系。
-
-```ts
-import { LeftPanel, LeftPanelSection, LeftPanelScrollArea } from '@/components/UI'
-```
-
-最小示例：
-
-```tsx
-<LeftPanel>
-  <LeftPanelScrollArea>
-    <LeftPanelSection title="模型选择">
-      <ControlPanel ... />
-    </LeftPanelSection>
-    <LeftPanelSection title="参数调节">
-      <ParamControl ... />
-    </LeftPanelSection>
-  </LeftPanelScrollArea>
-</LeftPanel>
-```
-
----
-
-### ParamControl
-
-用途：参数滑块控件，由 `paramMeta` 驱动生成左屏数值参数区。
-
-```ts
-import { ParamControl } from '@/components/UI'
-```
-
-必需 props：
-- `params: ParamConfig[]` — 参数配置数组
-- `onParamChange: (key: string, value: number) => void` — 参数变更回调
-
-最小示例：
-
-```tsx
-<ParamControl
-  params={[
-    { key: 'mass', label: '质量 m', value: params.mass, min: 0.1, max: 10, step: 0.1, unit: 'kg' },
-  ]}
-  onParamChange={(key, val) => updateParam(key, val)}
-/>
-```
-
----
-
-### ControlPanel
-
-用途：声明式左屏控件渲染器，由 `controlMeta` 生成模式/开关/预设/提示。
-
-```ts
-import { ControlPanel } from '@/components/UI'
-```
-
-必需 props：
-- `controls: ControlMeta[]` — 控件配置数组（来自 `@/data/types`）
-- `params: Record<string, number>` — 当前参数
-- `updateParam / setParams / resetAnimation / restartAnimation` — 回调函数
-
----
-
-### BasePhysicsChart
-
-用途：所有新图表的原子容器（双轴/网格/刻度/轴标签）。
-
-```ts
-import { BasePhysicsChart } from '@/components/Chart'
-```
-
-必需 props：
-- `xDomain: [number, number]` — X 轴范围
-- `yDomain: [number, number]` — Y 轴范围
-- `xLabel: string` — X 轴标签
-- `yLabel: string` — Y 轴标签
-
-最小示例：
-
-```tsx
-<BasePhysicsChart
-  xDomain={[0, tMax]}
-  yDomain={[yMin, yMax]}
-  xLabel="t / s"
-  yLabel="v / (m·s⁻¹)"
->
-  <ChartCursor x={currentTime} />
-</BasePhysicsChart>
-```
-
----
-
-### Button / Slider / SegmentedControl / ToggleSwitch
-
-用途：基础 UI 控件，详见源码 interface。
-
-```ts
-import { Button, Slider, SegmentedControl, ToggleSwitch } from '@/components/UI'
-```
+## Chart（`@/components/Chart`）
+
+| 组件 | 用途 | 必需 props | 最小调用 |
+|------|------|-----------|---------|
+| `BasePhysicsChart` | 图表原子容器 | `xDomain`, `yDomain`, `xLabel`, `yLabel` | `<BasePhysicsChart xDomain={[0,tMax]} yDomain={[yMin,yMax]} xLabel="t/s" yLabel="v/(m/s)"><ChartCursor x={t} /></BasePhysicsChart>` |
+| `TimeSeriesChart` | 通用时间序列图（v-t / x-t / a-t 共享基座，拥有 VTStage / ChartDataSeries / TSPoint 类型） | `points`, `currentTime`, `tMax` | `<TimeSeriesChart points={vt} currentTime={t} tMax={15} title="v-t" yLabel="v/(m/s)" />` |
+| `VelocityTimeChart` | v-t 图（thin wrapper，内部使用 TimeSeriesChart） | `points` | `<VelocityTimeChart points={vt} currentTime={t} tMax={15} title="v-t" series="primary" />` |
+| `DisplacementTimeChart` | x-t 图（thin wrapper，内部使用 TimeSeriesChart） | `points` | `<DisplacementTimeChart points={xt} currentTime={t} tMax={15} title="x-t" />` |
+| `AccelerationTimeChart` | a-t 图（thin wrapper，内部使用 TimeSeriesChart） | `points` | `<AccelerationTimeChart points={at} currentTime={t} tMax={15} title="a-t" />` |
+| `RelationChart` | 通用关系图 Y=f(X) | `points`, `xDomain`, `yDomain` | `<RelationChart points={pts} xDomain={[0,30]} yDomain={[0,yMax]} title="v²-x" xLabel="x(m)" yLabel="v²(m²/s²)" />` |
+| `ChartCursor` | 游标十字线 | `x`, `dataPoints` | `<ChartCursor x={time} dataPoints={[{ y: v, label: 'v', series: 'primary' }]} />` |
+| `ChartLine` | 折线插件 | `points` | `<ChartLine points={pts} series="primary" />` |

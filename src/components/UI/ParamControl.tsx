@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { RotateCcw } from 'lucide-react'
+import { getStepDigits, formatByStep } from './Slider'
 
 type ParamImportance = 'core' | 'advanced' | 'display'
 type ParamMarkVariant = 'zero' | 'critical' | 'recommended'
@@ -33,21 +34,6 @@ interface ParamControlProps {
 }
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value))
-
-const getStepDigits = (step: number) => {
-  if (!Number.isFinite(step) || step <= 0) return 1
-  const stepText = step.toString()
-  if (stepText.includes('e-')) {
-    const [, exp] = stepText.split('e-')
-    return Number.parseInt(exp, 10)
-  }
-  return stepText.includes('.') ? stepText.split('.')[1].length : 0
-}
-
-const formatByStep = (value: number, step = 0.1) => {
-  const digits = Math.min(4, getStepDigits(step))
-  return value.toFixed(digits)
-}
 
 const snapToStep = (value: number, param: ParamConfig) => {
   const step = param.step ?? 0.1

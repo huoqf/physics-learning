@@ -47,6 +47,7 @@ export { ParticleEmitter } from './ParticleEmitter'
 export { DCSource } from './DCSource'
 export { DialMeter } from './DialMeter'
 export { Galvanometer } from './Galvanometer'
+export { MeterPointer } from './MeterPointer'
 export { LightBulb } from './LightBulb'
 export { Rheostat } from './Rheostat'
 
@@ -57,8 +58,14 @@ export { BarMagnet } from './BarMagnet'
 export { MagneticPoles } from './MagneticPoles'
 export { ParametricMagneticField } from './ParametricMagneticField'
 export { Solenoid } from './Solenoid'
+export { CoilBase } from './CoilBase'
 export { MagneticFieldGrid, MagneticFieldSymbols } from './MagneticFieldGrid'
 export { drawMagneticFieldGrid } from './drawMagneticFieldGrid'
+
+// ============================================================================
+// 磁感线工具 (Magnetic Field Utilities)
+// ============================================================================
+export { bezierAt, bezierTangent, FieldArrow } from './magneticFieldUtils'
 
 // ============================================================================
 // 电磁学 - 电磁感应 (Electromagnetic Induction)
@@ -94,7 +101,9 @@ export type { MagneticPolesProps } from './MagneticPoles'
 export type { RotatingCoilProps } from './RotatingCoil'
 export type { BarMagnetProps } from './BarMagnet'
 export type { SolenoidProps } from './Solenoid'
+export type { CoilBaseProps } from './CoilBase'
 export type { GalvanometerProps } from './Galvanometer'
+export type { MeterPointerProps } from './MeterPointer'
 export type { PrimaryCoilProps } from './PrimaryCoil'
 export type { DCSourceProps } from './DCSource'
 export type { RheostatProps } from './Rheostat'

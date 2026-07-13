@@ -4,7 +4,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { calculateExperimentEr } from '@/physics'
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CIRCUIT_COLORS } from '@/theme/physics'
 import { DialMeter, Rheostat } from '@/components/Physics'
 import { colors } from '@/theme/colors'
 
@@ -120,7 +120,7 @@ export default function ExperimentEr() {
               if (px === 640 && Math.abs(py - 135) < 35) return null
 
               return (
-                <circle key={baseOffset} cx={px} cy={py} r={3} fill="#ffb703" style={{ filter: 'drop-shadow(0px 0px 1px #ffb703)' }} />
+                <circle key={baseOffset} cx={px} cy={py} r={3} fill={PHYSICS_COLORS.referencePoint} style={{ filter: `drop-shadow(0px 0px 1px ${PHYSICS_COLORS.referencePoint})` }} />
               )
             })}
           </g>
@@ -128,17 +128,17 @@ export default function ExperimentEr() {
 
         <g transform="translate(690, 45)" filter="url(#btn-glow)">
           <g className="cursor-pointer" onClick={handleRecord}>
-            <rect x={0} y={0} width={130} height={32} rx={6} fill="#22c55e" />
-            <text x={65} y={20} fill="#fff" fontSize={font(11)} fontWeight="bold" textAnchor="middle">记录当前点 (I, U)</text>
+            <rect x={0} y={0} width={130} height={32} rx={6} fill={CIRCUIT_COLORS.switchClosed} />
+            <text x={65} y={20} fill={CANVAS_COLORS.white} fontSize={font(11)} fontWeight="bold" textAnchor="middle">记录当前点 (I, U)</text>
           </g>
           <g className="cursor-pointer" onClick={handleClear} transform="translate(0, 42)">
-            <rect x={0} y={0} width={130} height={32} rx={6} fill="#ef4444" />
-            <text x={65} y={20} fill="#fff" fontSize={font(11)} fontWeight="bold" textAnchor="middle">清除实验记录</text>
+            <rect x={0} y={0} width={130} height={32} rx={6} fill={CANVAS_COLORS.alertRed} />
+            <text x={65} y={20} fill={CANVAS_COLORS.white} fontSize={font(11)} fontWeight="bold" textAnchor="middle">清除实验记录</text>
           </g>
           <g transform="translate(0, 85)">
             <rect x={0} y={0} width={130} height={40} rx={6} fill={colors.neutral[100]} stroke={colors.neutral[300]} strokeWidth={1} />
             <text x={10} y={16} fill={CANVAS_COLORS.labelTextLight} fontSize={font(9)}>当前已记数据点：</text>
-            <text x={115} y={30} fill="#22c55e" fontSize={font(16)} fontWeight="bold" textAnchor="end">{trajectory.length}</text>
+            <text x={115} y={30} fill={CIRCUIT_COLORS.switchClosed} fontSize={font(16)} fontWeight="bold" textAnchor="end">{trajectory.length}</text>
           </g>
         </g>
       </g>

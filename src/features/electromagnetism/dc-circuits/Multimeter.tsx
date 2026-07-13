@@ -3,7 +3,7 @@ import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { calculateOhmmeter } from '@/physics'
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CIRCUIT_COLORS, ELECTRICAL_APPARATUS_COLORS, withAlpha } from '@/theme/physics'
 import { DialMeter } from '@/components/Physics'
 import { colors } from '@/theme/colors'
 
@@ -82,27 +82,27 @@ export default function Multimeter() {
         <path d="M 450 118 L 450 90 L 140 90 L 140 220" fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
 
         {/* ==================== 2. 表笔引出端 ==================== */}
-        <path d="M 140 180 L 80 180 L 80 280 L 600 280 L 600 250" fill="none" stroke="#ef4444" strokeWidth={2.5} />
-        <path d="M 140 90 L 680 90 L 680 130" fill="none" stroke="#1e293b" strokeWidth={2.5} />
+        <path d="M 140 180 L 80 180 L 80 280 L 600 280 L 600 250" fill="none" stroke={ELECTRICAL_APPARATUS_COLORS.probeRed} strokeWidth={2.5} />
+        <path d="M 140 90 L 680 90 L 680 130" fill="none" stroke={ELECTRICAL_APPARATUS_COLORS.probeBlack} strokeWidth={2.5} />
 
         {/* 红表笔护套 */}
         <g transform="translate(600, 220)">
-          <rect x={-6} y={-20} width={12} height={40} fill="#ef4444" rx={2} />
-          <line x1={0} y1={-20} x2={0} y2={-32} stroke="#cbd5e1" strokeWidth={2.5} />
-          <text x={18} y={4} fill="#ef4444" fontSize={font(10)} fontWeight="bold">红表笔 (-)</text>
+          <rect x={-6} y={-20} width={12} height={40} fill={ELECTRICAL_APPARATUS_COLORS.probeRed} rx={2} />
+          <line x1={0} y1={-20} x2={0} y2={-32} stroke={ELECTRICAL_APPARATUS_COLORS.terminalCore} strokeWidth={2.5} />
+          <text x={18} y={4} fill={ELECTRICAL_APPARATUS_COLORS.probeRed} fontSize={font(10)} fontWeight="bold">红表笔 (-)</text>
         </g>
 
         {/* 黑表笔护套 */}
         {opMode === 0 ? (
           <g transform="translate(600, 180)">
-            <rect x={-6} y={-20} width={12} height={40} fill="#1e293b" rx={2} />
-            <line x1={0} y1={20} x2={0} y2={32} stroke="#cbd5e1" strokeWidth={2.5} />
+            <rect x={-6} y={-20} width={12} height={40} fill={ELECTRICAL_APPARATUS_COLORS.probeBlack} rx={2} />
+            <line x1={0} y1={20} x2={0} y2={32} stroke={ELECTRICAL_APPARATUS_COLORS.terminalCore} strokeWidth={2.5} />
             <text x={18} y={4} fill={CANVAS_COLORS.labelText} fontSize={font(10)} fontWeight="bold">黑表笔 (+)</text>
           </g>
         ) : (
           <g transform="translate(680, 150)">
-            <rect x={-6} y={-20} width={12} height={40} fill="#1e293b" rx={2} />
-            <line x1={0} y1={20} x2={0} y2={32} stroke="#cbd5e1" strokeWidth={2.5} />
+            <rect x={-6} y={-20} width={12} height={40} fill={ELECTRICAL_APPARATUS_COLORS.probeBlack} rx={2} />
+            <line x1={0} y1={20} x2={0} y2={32} stroke={ELECTRICAL_APPARATUS_COLORS.terminalCore} strokeWidth={2.5} />
             <text x={15} y={4} fill={CANVAS_COLORS.labelText} fontSize={font(10)} fontWeight="bold">黑表笔 (+)</text>
           </g>
         )}
@@ -110,18 +110,18 @@ export default function Multimeter() {
         {/* ==================== 3. 外部连接 ==================== */}
         {opMode === 0 ? (
           <g>
-            <circle cx={600} cy={188} r={3} fill="#ffb703" filter="url(#glow-zero)" />
-            <text x={600} y={150} fill="#22c55e" fontSize={font(10)} fontWeight="bold" textAnchor="middle">已短接</text>
+            <circle cx={600} cy={188} r={3} fill={PHYSICS_COLORS.referencePoint} filter="url(#glow-zero)" />
+            <text x={600} y={150} fill={CIRCUIT_COLORS.wireActive} fontSize={font(10)} fontWeight="bold" textAnchor="middle">已短接</text>
             {res.isZeroed && (
-              <text x={600} y={135} fill="#22c55e" fontSize={font(10)} fontWeight="bold" textAnchor="middle" filter="url(#glow-zero)">调零成功！</text>
+              <text x={600} y={135} fill={CIRCUIT_COLORS.wireActive} fontSize={font(10)} fontWeight="bold" textAnchor="middle" filter="url(#glow-zero)">调零成功！</text>
             )}
           </g>
         ) : (
           <g>
-            <path d="M 600 188 L 600 170 L 620 170" fill="none" stroke="#ef4444" strokeWidth={2} />
-            <path d="M 680 182 L 680 170 L 660 170" fill="none" stroke="#1e293b" strokeWidth={2} />
+            <path d="M 600 188 L 600 170 L 620 170" fill="none" stroke={ELECTRICAL_APPARATUS_COLORS.probeRed} strokeWidth={2} />
+            <path d="M 680 182 L 680 170 L 660 170" fill="none" stroke={ELECTRICAL_APPARATUS_COLORS.probeBlack} strokeWidth={2} />
             <g transform="translate(640, 170)">
-              <rect x={-16} y={-8} width={32} height={16} fill="#f59e0b" stroke="#d97706" strokeWidth={1.5} />
+              <rect x={-16} y={-8} width={32} height={16} fill={PHYSICS_COLORS.power} stroke={SCENE_COLORS.circuit.resistorStroke} strokeWidth={1.5} />
               <text x={0} y={3} fill="#fff" fontSize={font(8)} fontWeight="bold" textAnchor="middle">Rx</text>
               <text x={0} y={23} fill={CANVAS_COLORS.labelTextLight} fontSize={font(9)} textAnchor="middle">Rx = {Rx}Ω</text>
             </g>
@@ -152,7 +152,7 @@ export default function Multimeter() {
               if (px === 450 && Math.abs(py - 150) < 35) return null
 
               return (
-                <circle key={baseOffset} cx={px} cy={py} r={3} fill="#22c55e" style={{ filter: 'drop-shadow(0px 0px 1px #22c55e)' }} />
+                <circle key={baseOffset} cx={px} cy={py} r={3} fill={CIRCUIT_COLORS.wireActive} style={{ filter: `drop-shadow(0px 0px 1px ${CIRCUIT_COLORS.wireActive})` }} />
               )
             })}
           </g>

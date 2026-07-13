@@ -1,4 +1,5 @@
-import React, { useId } from 'react'
+import React from 'react'
+import { useUniqueSvgId } from '@/hooks'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
@@ -30,7 +31,7 @@ export const ParticleEmitter: React.FC<ParticleEmitterProps> = ({
   width = 65,
   height = 36,
 }) => {
-  const gradId = useId()
+  const gradId = useUniqueSvgId()
   const indicatorColor = chargeSign > 0 
     ? PHYSICS_COLORS.positiveCharge 
     : (chargeSign < 0 ? PHYSICS_COLORS.negativeCharge : colors.neutral[400])

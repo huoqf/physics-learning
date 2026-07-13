@@ -1,6 +1,7 @@
 import React from 'react'
 import { SCENE_COLORS, withAlpha } from '@/theme/physics'
 import { colors } from '@/theme/colors'
+import { MeterPointer } from './MeterPointer'
 
 /**
  * 灵敏电流计组件 Props
@@ -24,7 +25,7 @@ export interface GalvanometerProps {
  * 灵敏电流计组件
  *
  * 用于电磁感应等场景，显示感应电流的方向与大小。
- * - 指针偏转角度与 value 成正比（最大 ±45°）
+ * - 指针偏转角度与 value 成正比（最大 ±30°）
  * - 包含弧形刻度盘、正负标识、"G" 标识
  * - 红黑接线柱接口
  * - 支持自定义尺寸缩放
@@ -176,35 +177,16 @@ export const Galvanometer: React.FC<GalvanometerProps> = ({
       </text>
 
       {/* 灵敏电流计指针 (带顺滑阻尼偏转过渡) */}
-      <g 
-        transform={`translate(${pivotX}, ${pivotY}) rotate(${angle})`}
-        style={{
-          transition: 'transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-          transformOrigin: '0px 0px',
-        }}
-      >
-        {/* 指针投影 */}
-        <line
-          x1="0.8"
-          y1="0.8"
-          x2="0.8"
-          y2="-51.2"
-          stroke={withAlpha(colors.neutral[900], 0.15)}
-          strokeWidth="1.8"
-          strokeLinecap="round"
+      <g transform={`translate(${pivotX}, ${pivotY})`}>
+        <MeterPointer
+          angle={angle}
+          length={52}
+          color={c.meterNeedle}
+          tipRadius={2.2}
+          shadowColor={withAlpha(colors.neutral[900], 0.15)}
+          transitionMs={300}
+          transitionEasing="cubic-bezier(0.25, 0.46, 0.45, 0.94)"
         />
-        {/* 指针杆 */}
-        <line
-          x1="0"
-          y1="0"
-          x2="0"
-          y2="-52"
-          stroke={c.meterNeedle}
-          strokeWidth="1.8"
-          strokeLinecap="round"
-        />
-        {/* 指针尖端小红圈 */}
-        <circle cx="0" cy="-52" r="2.2" fill={c.meterNeedle} />
       </g>
 
       {/* 指针轴心圆盖 */}
@@ -217,5 +199,3 @@ export const Galvanometer: React.FC<GalvanometerProps> = ({
     </g>
   )
 }
-
-

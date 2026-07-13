@@ -1,4 +1,5 @@
-import React, { useId } from 'react'
+import React from 'react'
+import { useUniqueSvgId } from '@/hooks'
 import { SCENE_COLORS } from '@/theme/physics'
 
 /**
@@ -137,7 +138,7 @@ export const MagneticPoles: React.FC<MagneticPolesProps> = ({
   strokeWidth = 1.2,
   font = (n: number) => n,
 }) => {
-  const uniqueId = useId().replace(/:/g, '-')
+  const uniqueId = useUniqueSvgId()
 
   // 1. 辅助函数：生成内凹曲面圆弧上的离散 3D 点
   const getXYArc = (

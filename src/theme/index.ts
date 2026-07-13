@@ -134,3 +134,7 @@ export {
   transition,
   canvasAnimation,
 }                                               from './motion'
+
+// ─── 字体缩放 ───────────────────────────────────────────────────────────────
+export { identityFontScaler }                    from './fontScaler'
+export type { FontScaler }                       from './fontScaler'

@@ -1,4 +1,5 @@
-import React, { useId } from 'react'
+import React from 'react'
+import { useUniqueSvgId } from '@/hooks'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { ChargeSign } from './types'
@@ -44,7 +45,7 @@ export const CapacitorPlates: React.FC<CapacitorPlatesProps> = ({
   chargeDensity = 10,
   showElectricFieldLines = false,
 }) => {
-  const gradId = useId()
+  const gradId = useUniqueSvgId()
   const halfGap = gap / 2
   const topY = y - halfGap - thickness
   const bottomY = y + halfGap

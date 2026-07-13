@@ -2,7 +2,7 @@ import { FC, useMemo } from 'react'
 import { Card } from '@/components/UI'
 import { RelationChart } from '@/components/Chart'
 import { useAnimationStore } from '@/stores'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 
 export const ExperimentErCenterExtra: FC = () => {
   const params = useAnimationStore((s) => s.params)
@@ -45,7 +45,7 @@ export const ExperimentErCenterExtra: FC = () => {
       axis: 'point' as const,
       x: p.x,
       y: p.y,
-      color: '#ef4444'
+      color: CANVAS_COLORS.alertRed
     }))
   }, [trajectory])
 
@@ -62,7 +62,7 @@ export const ExperimentErCenterExtra: FC = () => {
               {
                 points: measPoints,
                 label: '等效测量图线',
-                color: '#ef4444',
+                color: CANVAS_COLORS.alertRed,
                 strokeWidth: 2
               }
             ]}

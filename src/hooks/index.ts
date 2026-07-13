@@ -17,3 +17,5 @@ export type { UseSceneScaleOptions } from './useSceneScale'
 
 export { useCanvasViewport } from './useCanvasViewport'
 export type { UseCanvasViewportOptions, CanvasViewportResult } from './useCanvasViewport'
+
+export { useUniqueSvgId } from './useUniqueSvgId'

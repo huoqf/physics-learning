@@ -1,109 +1,72 @@
+/* eslint-disable react-refresh/only-export-components */
 import React from 'react'
+import type { FontScaler } from '@/theme/fontScaler'
 
-/**
- * Slider 滑块组件 Props 接口。
- * 用于数值范围选择，支持自定义标签、单位和格式化显示。
- */
+// ── 精度工具（从 ParamControl 迁移） ──
+
+/** 计算 step 的实际小数位数，支持科学计数法 */
+const getStepDigits = (step: number): number => {
+  if (!Number.isFinite(step) || step <= 0) return 1
+  const text = step.toString()
+  if (text.includes('e-')) {
+    const [, exp] = text.split('e-')
+    return Number.parseInt(exp, 10)
+  }
+  return text.includes('.') ? text.split('.')[1].length : 0
+}
+
+/** 按 step 精度格式化数值，最多保留 4 位小数 */
+const formatByStep = (value: number, step: number): string => {
+  const digits = Math.min(4, getStepDigits(step))
+  return value.toFixed(digits)
+}
+
+// ── Props ──
+
 interface SliderProps {
-  /**
-   * 当前滑块值。
-   */
+  /** 当前值 */
   value: number
-  /**
-   * 滑块最小值。
-   */
+  /** 最小值 */
   min: number
-  /**
-   * 滑块最大值。
-   */
+  /** 最大值 */
   max: number
-  /**
-   * 滑块步长。
-   * @default 0.1
-   */
+  /** 步长，默认 0.1 */
   step?: number
-  /**
-   * 数值单位（显示在值后面）。
-   * @default ''
-   */
+  /** 数值单位（显示在值后面） */
   unit?: string
-  /**
-   * 滑块标签（显示在左上方）。
-   */
+  /** 滑块标签（显示在左上方） */
   label?: string
-  /**
-   * 值变化时的回调函数。
-   */
+  /** 值变化回调 */
   onChange: (value: number) => void
-  /**
-   * 是否禁用滑块。
-   * @default false
-   */
+  /** 是否禁用 */
   disabled?: boolean
-  /**
-   * 最小值标签（显示在滑块下方左侧）。
-   */
+  /** 最小值标签（滑块下方左侧） */
   minLabel?: string
-  /**
-   * 最大值标签（显示在滑块下方右侧）。
-   */
+  /** 最大值标签（滑块下方右侧） */
   maxLabel?: string
-  /**
-   * 中间值标签（显示在滑块下方中间）。
-   */
+  /** 中间值标签（滑块下方中间） */
   midLabel?: string
-  /**
-   * 自定义值格式化函数。
-   * 用于控制值的显示格式，如保留小数位数。
-   */
+  /** 自定义值格式化函数，覆盖内置精度逻辑 */
   formatValue?: (v: number) => string
-  /**
-   * 描述文本（显示在滑块下方右侧，灰色小字）。
-   */
+  /** 描述文本（灰色小字） */
   description?: string
+  /** 填充锚点（填充从此值开始），默认 0。超出 [min, max] 时退化为最近边界 */
+  fillAnchor?: number
+  /** ARIA 标签，用于屏幕阅读器 */
+  ariaLabel?: string
+  /** ARIA 值文本，包含物理量名称和单位，例如 "电流，0.05 A" */
+  ariaValueText?: string
+  /** 字体缩放函数 */
+  font?: FontScaler
 }
 
 /**
  * Slider 滑块组件
  *
- * 【设计意图】
- * 1. 提供直观的数值范围选择交互，适用于物理模拟参数调整。
- * 2. 支持自定义标签、单位和格式化显示，满足不同场景需求。
- * 3. 内置禁用状态和响应式设计，在移动端也能良好使用。
- * 4. 可自定义步长和显示格式，适应不同精度要求的参数调整。
- *
- * @example
- * ```tsx
- * // 基础滑块
- * <Slider
- *   value={50}
- *   min={0}
- *   max={100}
- *   onChange={(v) => console.log(v)}
- * />
- *
- * // 带标签和单位的滑块
- * <Slider
- *   value={2.5}
- *   min={0}
- *   max={10}
- *   step={0.1}
- *   unit="m/s"
- *   label="初速度"
- *   onChange={(v) => setVelocity(v)}
- * />
- *
- * // 带自定义格式化的滑块
- * <Slider
- *   value={0.5}
- *   min={0}
- *   max={1}
- *   step={0.01}
- *   label="摩擦系数"
- *   formatValue={(v) => `${(v * 100).toFixed(0)}%`}
- *   onChange={(v) => setFriction(v)}
- * />
- * ```
+ * 通用数值范围选择控件，支持：
+ * - step 感知的精度格式化（含科学计数法）
+ * - 零点穿越填充（fillAnchor）
+ * - ARIA 无障碍属性
  */
 export const Slider: React.FC<SliderProps> = ({
   value,
@@ -119,10 +82,21 @@ export const Slider: React.FC<SliderProps> = ({
   midLabel,
   formatValue,
   description,
+  fillAnchor = 0,
+  ariaLabel,
+  ariaValueText,
 }) => {
+  const safeStep = Number.isFinite(step) && step > 0 ? step : 0.1
   const percentage = ((value - min) / (max - min)) * 100
 
-  const displayValue = formatValue ? formatValue(value) : value.toFixed(step < 1 ? 1 : 0)
+  // 精度格式化
+  const displayValue = formatValue ? formatValue(value) : formatByStep(value, safeStep)
+
+  // 零点穿越填充计算
+  const anchor = Math.max(min, Math.min(max, fillAnchor))
+  const anchorPct = ((anchor - min) / (max - min)) * 100
+  const fillLeft = Math.min(percentage, anchorPct)
+  const fillWidth = Math.abs(percentage - anchorPct)
 
   return (
     <div className={['w-full', disabled && 'opacity-40 pointer-events-none'].filter(Boolean).join(' ')}>
@@ -143,15 +117,20 @@ export const Slider: React.FC<SliderProps> = ({
           type="range"
           min={min}
           max={max}
-          step={step}
+          step={safeStep}
           value={value}
           onChange={(e) => onChange(parseFloat(e.target.value))}
           disabled={disabled}
           className="peer absolute -inset-y-2 left-0 w-full h-6 opacity-0 cursor-pointer z-10"
+          aria-label={ariaLabel ?? label}
+          aria-valuemin={min}
+          aria-valuemax={max}
+          aria-valuenow={value}
+          aria-valuetext={ariaValueText ?? `${displayValue}${unit ? ` ${unit}` : ''}`}
         />
         <div
-          className="absolute left-0 top-0 h-full bg-primary-500 rounded-full pointer-events-none transition-all duration-fast ease-standard peer-hover:bg-primary-600"
-          style={{ width: `${percentage}%` }}
+          className="absolute top-0 h-full bg-primary-500 rounded-full pointer-events-none transition-all duration-fast ease-standard peer-hover:bg-primary-600"
+          style={{ left: `${fillLeft}%`, width: `${fillWidth}%` }}
         />
         <div
           className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-primary-500 rounded-full shadow-sm pointer-events-none transition-all duration-fast ease-standard peer-hover:scale-115 peer-focus-visible:ring-2 peer-focus-visible:ring-primary-300 peer-focus-visible:ring-offset-1 peer-active:scale-95"
@@ -170,3 +149,6 @@ export const Slider: React.FC<SliderProps> = ({
     </div>
   )
 }
+
+// ── 导出精度工具供外部使用 ──
+export { getStepDigits, formatByStep }

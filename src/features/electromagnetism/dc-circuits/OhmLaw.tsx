@@ -2,7 +2,7 @@ import { useAnimationViewport } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
-import { calculateOhmLaw, calculateMeterExpansion } from '@/physics'
+import { calculateOhmLaw, calculateMeterExpansion, calculateBulbResistance } from '@/physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
 import { LightBulb, DialMeter, DCSource } from '@/components/Physics'
 import { colors } from '@/theme/colors'
@@ -27,7 +27,6 @@ export default function OhmLaw() {
   // 物理计算
   let I = 0
   let P = 0
-  let R_eff = R
   let I_g_meas = 0
 
   if (mode === 0) {
@@ -35,11 +34,10 @@ export default function OhmLaw() {
       const res = calculateOhmLaw(U, R)
       I = res.I
       P = U * I
-      R_eff = R
     } else {
-      R_eff = 5 + 2 * U
-      I = U / R_eff
-      P = U * I
+      const bulb = calculateBulbResistance(U)
+      I = bulb.I
+      P = bulb.P
     }
   } else if (mode === 1) {
     const res = calculateMeterExpansion(1, U, Rg, Ig, Rs, Rp)

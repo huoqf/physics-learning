@@ -1,4 +1,5 @@
-import React, { useId } from 'react'
+import React from 'react'
+import { useUniqueSvgId } from '@/hooks'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
@@ -76,7 +77,7 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
   L = 4.0,
   rodRadius = 16,
 }) => {
-  const uniqueId = useId().replace(/:/g, '-')
+  const uniqueId = useUniqueSvgId()
   const gradientId = `rod-grad-${uniqueId}`
   const radialGradId = `rod-radial-grad-${uniqueId}`
   

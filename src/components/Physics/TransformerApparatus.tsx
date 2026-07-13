@@ -1,4 +1,5 @@
-import React, { useId, useMemo, CSSProperties } from 'react'
+import React, { useMemo, CSSProperties } from 'react'
+import { useUniqueSvgId } from '@/hooks'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
 
 export interface TransformerApparatusProps {
@@ -86,7 +87,7 @@ export const TransformerApparatus: React.FC<TransformerApparatusProps> = ({
   animated = true,
   px = (v: number) => v,
 }) => {
-  const uniqueId = useId().replace(/:/g, '-')
+  const uniqueId = useUniqueSvgId()
   const tfFlowId = `tf-flow-${uniqueId}`
 
   // 1. 几何参数定义

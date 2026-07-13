@@ -1,4 +1,5 @@
-import { useId, SVGProps } from 'react';
+import { SVGProps } from 'react';
+import { useUniqueSvgId } from '@/hooks';
 import { SCENE_COLORS, PHYSICS_COLORS } from '@/theme/physics';
 import { colors } from '@/theme/colors';
 import type { ChargeSign } from './types';
@@ -107,7 +108,7 @@ export function Ball({
   ...restProps
 }: BallProps) {
   // 生成独一无二的渐变 ID，防止在多球渲染或多页面跳转时 SVG 渐变 ID 冲突导致的纹理丢失
-  const uniqueId = useId().replace(/:/g, '-');
+  const uniqueId = useUniqueSvgId();
   const gradientId = `ball-radial-grad-${type}-${uniqueId}`;
 
   // 提取预设球体参数

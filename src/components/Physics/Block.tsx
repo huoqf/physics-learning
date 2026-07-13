@@ -1,4 +1,5 @@
-import { useId, SVGProps } from 'react';
+import { SVGProps } from 'react';
+import { useUniqueSvgId } from '@/hooks';
 import { SCENE_COLORS, CANVAS_COLORS, PHYSICS_COLORS } from '@/theme/physics';
 import { colors } from '@/theme/colors';
 import type { ChargeSign } from './types';
@@ -135,7 +136,7 @@ export function Block({
   time = 0,
   ...restProps
 }: BlockProps) {
-  const uniqueId = useId().replace(/:/g, '-');
+  const uniqueId = useUniqueSvgId();
   const gradientId = `block-linear-grad-${type}-${uniqueId}`;
   const wheelGradId = `block-wheel-grad-${uniqueId}`;
 

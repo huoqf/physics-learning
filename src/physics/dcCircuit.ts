@@ -10,6 +10,18 @@ export function calculateOhmLaw(U: number, R: number): { I: number; valid: boole
   return { I: U / R, valid: true, shortCircuit: false }
 }
 
+/**
+ * 小灯泡非线性电阻模型。
+ * 简化模型：R_eff = R0 + k·U，其中 R0 = 5Ω（冷态基础阻值），k = 2Ω/V（温度系数）。
+ * 返回有效电阻 R_eff (Ω)、电流 I (A)、功率 P (W)。
+ */
+export function calculateBulbResistance(U: number): { R_eff: number; I: number; P: number } {
+  const R_eff = 5 + 2 * U
+  const I = R_eff > 0 ? U / R_eff : 0
+  const P = U * I
+  return { R_eff, I, P }
+}
+
 /** 串联电阻 R_total = ΣR（Ω） */
 export function calculateSeriesResistance(Rs: number[]): { R_total: number } {
   return { R_total: Rs.reduce((sum, r) => sum + r, 0) }

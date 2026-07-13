@@ -3,7 +3,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { calculateMotorCircuit } from '@/physics'
-import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, COMMON_MATERIALS } from '@/theme/physics'
 import { DialMeter } from '@/components/Physics'
 import { colors } from '@/theme/colors'
 
@@ -37,9 +37,9 @@ export default function NonPureCircuit() {
     <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform} className="bg-white rounded-xl">
       <defs>
         <radialGradient id="motor-danger-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#ef4444" stopOpacity="0.8" />
-          <stop offset="60%" stopColor="#ef4444" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
+          <stop offset="0%" stopColor={CANVAS_COLORS.alertRed} stopOpacity="0.8" />
+          <stop offset="60%" stopColor={CANVAS_COLORS.alertRed} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={CANVAS_COLORS.alertRed} stopOpacity="0" />
         </radialGradient>
       </defs>
 
@@ -76,23 +76,23 @@ export default function NonPureCircuit() {
         <g transform="translate(440, 50)">
           <circle cx={0} cy={0} r={22} fill={colors.neutral[200]} stroke={colors.neutral[600]} strokeWidth={2.2} />
           <circle cx={0} cy={0} r={10} fill={colors.neutral[400]} />
-          <line x1={0} y1={0} x2={10 * Math.cos((motorAngle * Math.PI) / 180)} y2={10 * Math.sin((motorAngle * Math.PI) / 180)} stroke="#ef4444" strokeWidth={2} />
+          <line x1={0} y1={0} x2={10 * Math.cos((motorAngle * Math.PI) / 180)} y2={10 * Math.sin((motorAngle * Math.PI) / 180)} stroke={CANVAS_COLORS.alertRed} strokeWidth={2} />
           <text x={0} y={-26} fill={PHYSICS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="middle">电动机 (rM=1Ω)</text>
           <text x={0} y={4} fill={colors.neutral[800]} fontSize={font(12)} fontWeight="extrabold" textAnchor="middle">M</text>
 
-          <line x1={10} y1={0} x2={10} y2={weightY - 50} stroke="#475569" strokeWidth={1.5} />
-          
+          <line x1={10} y1={0} x2={10} y2={weightY - 50} stroke={PHYSICS_COLORS.forceComponent} strokeWidth={1.5} />
+
           <g transform={`translate(10, ${weightY - 50})`}>
-            <path d="M 0 0 L 0 6 A 4 4 0 0 0 0 14" fill="none" stroke="#64748b" strokeWidth={1.5} />
+            <path d="M 0 0 L 0 6 A 4 4 0 0 0 0 14" fill="none" stroke={COMMON_MATERIALS.structStrokePale} strokeWidth={1.5} />
             <rect x={-10} y={14} width={20} height={16} fill={colors.neutral[500]} rx={2} stroke={colors.neutral[700]} strokeWidth={1.5} />
-            <text x={0} y={26} fill="#fff" fontSize={font(9)} fontWeight="bold" textAnchor="middle">{mass.toFixed(1)}kg</text>
+            <text x={0} y={26} fill={CANVAS_COLORS.white} fontSize={font(9)} fontWeight="bold" textAnchor="middle">{mass.toFixed(1)}kg</text>
           </g>
         </g>
 
         {motorState === 0 && (
           <g transform="translate(440, 110)">
-            <rect x={-35} y={-8} width={70} height={16} rx={3} fill="#ef4444" />
-            <text x={0} y={4} fill="#fff" fontSize={font(8.5)} fontWeight="bold" textAnchor="middle" className="animate-pulse">电机堵转!</text>
+            <rect x={-35} y={-8} width={70} height={16} rx={3} fill={CANVAS_COLORS.alertRed} />
+            <text x={0} y={4} fill={CANVAS_COLORS.white} fontSize={font(8.5)} fontWeight="bold" textAnchor="middle" className="animate-pulse">电机堵转!</text>
           </g>
         )}
 
@@ -121,7 +121,7 @@ export default function NonPureCircuit() {
               if (px === 560 && Math.abs(py - 140) < 35) return null
 
               return (
-                <circle key={baseOffset} cx={px} cy={py} r={3} fill="#3b82f6" style={{ filter: 'drop-shadow(0px 0px 1px #3b82f6)' }} />
+                <circle key={baseOffset} cx={px} cy={py} r={3} fill={PHYSICS_COLORS.velocityX} style={{ filter: `drop-shadow(0px 0px 1px ${PHYSICS_COLORS.velocityX})` }} />
               )
             })}
           </g>

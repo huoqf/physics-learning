@@ -1,4 +1,5 @@
-import { ReactNode, useId } from 'react';
+import { ReactNode } from 'react';
+import { useUniqueSvgId } from '@/hooks';
 import { CANVAS_STYLE, SCENE_COLORS, CHART_COLORS, PHYSICS_COLORS } from '@/theme/physics';
 import { colors } from '@/theme/colors';
 import { calculateNiceStep } from '@/utils/ruler';
@@ -75,7 +76,7 @@ export function PhysicsGround({
   const thickness = appearance?.thickness || 20;
 
   // 使用 React 18/19 的 useId 生成唯一的 ID，避免同一页面多个组件冲突
-  const uniqueId = useId();
+  const uniqueId = useUniqueSvgId();
   const hatchId = `hatch-${uniqueId.replace(/:/g, '')}`;
 
   // 默认对 ground 和 wall 开启斜线纹理，其他类型需显式指定

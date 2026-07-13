@@ -1,4 +1,5 @@
-import React, { useId } from 'react'
+import React from 'react'
+import { useUniqueSvgId } from '@/hooks'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, withAlpha } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
@@ -83,7 +84,7 @@ export const Rails: React.FC<RailsProps> = ({
   cy,
   L = 4.0,
 }) => {
-  const uniqueId = useId().replace(/:/g, '-')
+  const uniqueId = useUniqueSvgId()
   const gradientId = `rails-grad-${uniqueId}`
 
   if (type === 'side-view') {

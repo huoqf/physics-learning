@@ -1,5 +1,6 @@
 import React from 'react';
 import { PHYSICS_COLORS } from '@/theme/physics';
+import { bezierAt, bezierTangent, FieldArrow } from './magneticFieldUtils';
 
 /**
  * 耦合线圈磁感线组件 Props
@@ -100,17 +101,6 @@ export const CoupledCoilField: React.FC<CoupledCoilFieldProps> = ({
     internalPaths.push(`M ${primaryLeft} ${y + yVal} L ${secondaryRight} ${y + yVal}`);
   });
 
-  // 贝塞尔曲线精确计算：在 t=0.5 处计算曲线点和切线方向
-  const bezierAt = (t: number, p0: number, p1: number, p2: number, p3: number) => {
-    const mt = 1 - t;
-    return mt * mt * mt * p0 + 3 * mt * mt * t * p1 + 3 * mt * t * t * p2 + t * t * t * p3;
-  };
-
-  const bezierTangent = (t: number, p0: number, p1: number, p2: number, p3: number) => {
-    const mt = 1 - t;
-    return 3 * mt * mt * (p1 - p0) + 6 * mt * t * (p2 - p1) + 3 * t * t * (p3 - p2);
-  };
-
   // 使用中间圈（middle）计算上下回路箭头位置
   const midConfig = configs[1]; // middle: yRat=0.50, dxRat=0.55, dyRat=0.45
   const midYVal = midConfig.yRat * halfH;
@@ -160,15 +150,6 @@ export const CoupledCoilField: React.FC<CoupledCoilFieldProps> = ({
     { x: botArrowX, y: botArrowY, angle: botAngle },  // 下方回路，贴线
   ];
 
-  const renderArrow = (cx: number, cy: number, angle: number) => (
-    <polygon
-      points={`${-arrowSize},${-arrowSize * 0.7} ${arrowSize},0 ${-arrowSize},${arrowSize * 0.7}`}
-      fill={lineColor}
-      opacity={0.85}
-      transform={`translate(${cx}, ${cy}) rotate(${angle})`}
-    />
-  );
-
   return (
     <g className="coupled-coil-field-simulation">
       {externalPaths.map((d, i) => (
@@ -179,7 +160,7 @@ export const CoupledCoilField: React.FC<CoupledCoilFieldProps> = ({
       ))}
       {arrows.map((arrow, idx) => (
         <g key={`arrow-${idx}`} opacity={opacity}>
-          {renderArrow(arrow.x, arrow.y, arrow.angle)}
+          <FieldArrow cx={arrow.x} cy={arrow.y} angle={arrow.angle} size={arrowSize} color={lineColor} />
         </g>
       ))}
     </g>

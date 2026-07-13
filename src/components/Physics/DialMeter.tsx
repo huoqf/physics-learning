@@ -1,7 +1,7 @@
 import React from 'react'
 import { PHYSICS_COLORS, CANVAS_COLORS, SCENE_COLORS, withAlpha } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { duration, easing } from '@/theme/motion'
+import { MeterPointer } from './MeterPointer'
 
 export interface DialMeterProps {
   /** 仪表类型：'V' (电压表) 或 'A' (电流表) */
@@ -36,7 +36,7 @@ export const DialMeter: React.FC<DialMeterProps> = ({
 }) => {
   const isVoltage = type === 'V'
   const max = customMax ?? (isVoltage ? 10 : 2)
-  
+
   // 限制读数在 0 到 max 之间
   const clampedValue = Math.min(max, Math.max(0, value))
   // 指针旋转角度从 -60deg (0刻度) 到 60deg (最大刻度)
@@ -96,37 +96,17 @@ export const DialMeter: React.FC<DialMeterProps> = ({
         {type}
       </text>
 
-      {/* 刻度指针与投影（采用带阻尼的过渡动画） */}
-      <g 
-        transform={`rotate(${pointerAngle})`}
-        style={{
-          transition: `transform ${duration.normal}ms ${easing.decelerate}`,
-          transformOrigin: '0px 0px',
-        }}
-      >
-        {/* 指针投影（稍作偏移，带低不透明度） */}
-        <line
-          x1={0}
-          y1={4}
-          x2={0.5}
-          y2={-20.5}
-          stroke="rgba(15, 23, 42, 0.25)"
-          strokeWidth={1.8}
-          strokeLinecap="round"
-          transform="translate(1, 1)"
-        />
-        {/* 指针实体 */}
-        <line
-          x1={0}
-          y1={4}
-          x2={0}
-          y2={-21}
-          stroke={themeColor}
-          strokeWidth={1.8}
-          strokeLinecap="round"
-        />
-      </g>
-      
+      {/* 指针（带阻尼过渡动画） */}
+      <MeterPointer
+        angle={pointerAngle}
+        length={21}
+        color={themeColor}
+        tailOffset={4}
+        shadowDx={1}
+        shadowDy={1}
+        shadowColor="rgba(15, 23, 42, 0.25)"
+      />
+
       {/* 指针轴心 */}
       <circle cx={0} cy={0} r={3} fill={colors.neutral[800]} />
     </g>

@@ -1,164 +1,99 @@
-import { useMemo } from 'react'
-import { BasePhysicsChart } from './BasePhysicsChart'
-import { useChartContext } from './ChartContext'
-import { ChartCursor } from './ChartCursor'
-import { ChartArea } from './ChartArea'
+import { TimeSeriesChart } from './TimeSeriesChart'
+import type { TimeSeriesChartProps } from './TimeSeriesChart'
 import { PHYSICS_COLORS } from '@/theme/physics'
-import type { ChartSeriesVariant, ChartAreaVariant, ChartAreaIntensity } from '@/theme/physics'
+import type { ChartAreaVariant, ChartAreaIntensity, ChartSeriesVariant } from '@/theme/physics'
 
-/** 静态模式：points 既是绘制数据也是定标数据 */
-interface StaticATChartProps {
+type ATPoint = { t: number; a: number }
+
+interface StaticATProps {
   mode?: 'static'
-  /** 主数据点序列（物理坐标）—— 用于绘制 */
-  points: { t: number; a: number }[]
-  /** 用于坐标轴定标的数据点序列（物理坐标）。静态模式可选，不传回退到 points */
-  domainPoints?: { t: number; a: number }[]
+  points: ATPoint[]
+  domainPoints?: ATPoint[]
 }
 
-/** 动画模式：points 截断绘制，domainPoints 必传定标 */
-interface AnimatedATChartProps {
+interface AnimatedATProps {
   mode: 'animated'
-  /** 主数据点序列（物理坐标）—— 用于绘制，可按 currentTime 截断 */
-  points: { t: number; a: number }[]
-  /** 用于坐标轴定标的数据点序列（物理坐标）—— 必传完整轨迹，防止 Y 轴抖动 */
-  domainPoints: { t: number; a: number }[]
+  points: ATPoint[]
+  domainPoints: ATPoint[]
 }
 
-type AccelerationTimeChartProps = (StaticATChartProps | AnimatedATChartProps) & {
+type AccelerationTimeChartProps = (StaticATProps | AnimatedATProps) & {
   currentTime: number
   tMax: number
-  /** 加速度范围（不传则基于 domainPoints / points 自动计算） */
+  tDomain?: [number, number]
   aRange?: [number, number]
   title?: string
+  xLabel?: string
+  yLabel?: string
   showArea?: boolean
   areaRange?: [number, number]
   areaVariant?: ChartAreaVariant
   areaIntensity?: ChartAreaIntensity
   showCursor?: boolean
   series?: ChartSeriesVariant
+  underlay?: React.ReactNode
+  children?: React.ReactNode
   className?: string
 }
 
-function ATContent({
-  points,
-  currentTime,
-  showArea,
-  areaRange,
-  areaVariant,
-  areaIntensity,
-  showCursor,
-  series,
-}: Omit<AccelerationTimeChartProps, 'tMax' | 'aRange' | 'title' | 'className' | 'domainPoints' | 'mode'>) {
-  const ctx = useChartContext()
-
-  const visiblePoints = useMemo(
-    () => points.filter((p) => p.t <= currentTime + 1e-9),
-    [points, currentTime],
-  )
-
-  const curvePath = useMemo(() => {
-    if (!ctx || visiblePoints.length < 2) return ''
-    const { toSvgX, toSvgY } = ctx
-    return (
-      'M ' +
-      visiblePoints
-        .map((p) => `${toSvgX(p.t).toFixed(2)},${toSvgY(p.a).toFixed(2)}`)
-        .join(' L ')
-    )
-  }, [ctx, visiblePoints])
-
-  const curveColor = PHYSICS_COLORS[series === 'secondary' ? 'angularAccel' : 'acceleration']
-
-  if (!ctx) return null
-
-  return (
-    <g>
-      {showArea && visiblePoints.length >= 2 && (
-        <ChartArea
-          points={visiblePoints.map((p) => ({ x: p.t, y: p.a }))}
-          xRange={areaRange ?? [0, currentTime]}
-          baseline={0}
-          variant={areaVariant ?? 'alt'}
-          intensity={areaIntensity ?? 'normal'}
-        />
-      )}
-
-      {curvePath && (
-        <path
-          d={curvePath}
-          fill="none"
-          stroke={curveColor}
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      )}
-
-      {showCursor && visiblePoints.length > 0 && (
-        <ChartCursor
-          x={currentTime}
-          dataPoints={[{ y: visiblePoints[visiblePoints.length - 1].a, label: 'a', series: series ?? 'primary' }]}
-          formatValue={(v) => `${v.toFixed(1)} m/s²`}
-        />
-      )}
-    </g>
-  )
+const curveColorMap: Record<string, string> = {
+  primary: PHYSICS_COLORS.acceleration,
+  secondary: PHYSICS_COLORS.angularAccel,
 }
 
+/**
+ * AccelerationTimeChart — a-t 图像
+ *
+ * 薄包装层，委托 TimeSeriesChart 实现。
+ * 数据点格式 `{ t, a }`，通过 yAccessor 映射。
+ * 同时修复原版缺少 tDomain 下界过滤的 bug。
+ */
 export function AccelerationTimeChart({
   points,
   domainPoints,
   currentTime,
   tMax,
+  tDomain,
   aRange,
   title = 'a-t 图像',
+  xLabel = 't (s)',
+  yLabel = 'a (m/s²)',
   showArea = false,
   areaRange,
   areaVariant,
   areaIntensity,
   showCursor = true,
   series = 'primary',
+  underlay,
+  children,
   className = '',
   mode = 'static',
 }: AccelerationTimeChartProps) {
-  if (process.env.NODE_ENV !== 'production' && mode === 'animated' && !domainPoints) {
-    console.warn(
-      'AccelerationTimeChart: animated mode requires domainPoints to keep axis domain stable.'
-    )
+  const tsProps = {
+    mode,
+    points: points as Array<{ t: number; [key: string]: number }>,
+    domainPoints: domainPoints as Array<{ t: number; [key: string]: number }> | undefined,
+    currentTime,
+    tMax,
+    tDomain,
+    yRange: aRange,
+    title,
+    xLabel,
+    yLabel,
+    showArea,
+    areaRange,
+    areaVariant,
+    areaIntensity,
+    showCursor,
+    series,
+    curveColor: curveColorMap[series] ?? curveColorMap.primary,
+    yAccessor: (p: { t: number; [key: string]: number }) => p.a,
+    cursorLabel: 'a' as const,
+    cursorFormat: (v: number) => `${v.toFixed(1)} m/s²`,
+    underlay,
+    children,
+    className,
   }
 
-  const computedARange = useMemo((): [number, number] => {
-    if (aRange) return aRange
-    // 优先使用 domainPoints 定标，回退到 points
-    const rangeSource = domainPoints ?? points
-    if (rangeSource.length === 0) return [-5, 5]
-    const vals = rangeSource.map((p) => p.a)
-    const lo = Math.min(0, ...vals)
-    const hi = Math.max(0, ...vals)
-    const pad = (hi - lo) * 0.15 || 1
-    return [lo - pad, hi + pad]
-  }, [points, domainPoints, aRange])
-
-  return (
-    <BasePhysicsChart
-      xDomain={[0, tMax]}
-      yDomain={computedARange}
-      xLabel="t (s)"
-      yLabel="a (m/s²)"
-      title={title}
-      yBaseline={computedARange[0] < 0 ? 0 : undefined}
-      className={className}
-    >
-      <ATContent
-        points={points}
-        currentTime={currentTime}
-        showArea={showArea}
-        areaRange={areaRange}
-        areaVariant={areaVariant}
-        areaIntensity={areaIntensity}
-        showCursor={showCursor}
-        series={series}
-      />
-    </BasePhysicsChart>
-  )
+  return <TimeSeriesChart {...(tsProps as TimeSeriesChartProps)} />
 }
