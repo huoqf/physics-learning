@@ -353,7 +353,7 @@ export default function OrbitTransferAnimation() {
           <g>
             {showGravity && (
               <VectorArrow
-                originPixel={{ x: state.x, y: state.y }}
+                origin={{ x: state.x, y: state.y }}
                 vector={{ x: -state.x, y: -state.y }}
                 type="gravity"
                 sceneScale={sceneScale}
@@ -363,7 +363,7 @@ export default function OrbitTransferAnimation() {
             )}
             {showVectors && (
               <VectorArrow
-                originPixel={{ x: state.x, y: state.y }}
+                origin={{ x: state.x, y: state.y }}
                 vector={{ x: state.vx, y: state.vy }}
                 type="velocity"
                 sceneScale={sceneScale}

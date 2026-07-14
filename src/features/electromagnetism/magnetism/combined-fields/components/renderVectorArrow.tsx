@@ -35,7 +35,6 @@ export function renderVectorArrow(
   }
   return (
     <VectorArrow
-      originPixel={{ x: 0, y: 0 }}
       vector={{ x: dx, y: dy }}
       type={type}
       sceneScale={sceneScale}

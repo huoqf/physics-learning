@@ -165,6 +165,7 @@ export default function SpringForceHookeLawScene() {
             type="elasticForce"
             sceneScale={IDENTITY_SCENE_SCALE}
             strokeWidth={CANVAS_STYLE.stroke.vectorMain}
+            pixelLength={Math.abs(springForce * 0.4)}
           />
           <text
             x={centerX + springForce * 0.4 + (springForce > 0 ? 8 : -22)}

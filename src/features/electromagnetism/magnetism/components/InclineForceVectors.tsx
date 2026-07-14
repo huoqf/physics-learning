@@ -66,7 +66,6 @@ export const InclineForceVectors: React.FC<InclineForceVectorsProps> = ({
       {/* 受力矢量箭头 */}
       {/* 重力 G (红色/深灰色) */}
       <VectorArrow
-        originPixel={{ x: 0, y: 0 }}
         vector={G_phys}
         type="gravity"
         sceneScale={localScale}
@@ -86,7 +85,6 @@ export const InclineForceVectors: React.FC<InclineForceVectorsProps> = ({
 
       {/* 支持力 N (蓝色) */}
       <VectorArrow
-        originPixel={{ x: 0, y: 0 }}
         vector={N_phys}
         type="normalForce"
         sceneScale={localScale}
@@ -108,7 +106,6 @@ export const InclineForceVectors: React.FC<InclineForceVectorsProps> = ({
       {Math.abs(physicsResult.F_ampere) > 1e-4 && (
         <g>
           <VectorArrow
-            originPixel={{ x: 0, y: 0 }}
             vector={Fa_phys}
             type="lorentzForce"
             sceneScale={localScale}
@@ -133,7 +130,6 @@ export const InclineForceVectors: React.FC<InclineForceVectorsProps> = ({
       {Math.abs(physicsResult.f) > 1e-4 && (
         <g>
           <VectorArrow
-            originPixel={{ x: 0, y: 0 }}
             vector={f_phys}
             type="friction"
             sceneScale={localScale}
@@ -157,7 +153,6 @@ export const InclineForceVectors: React.FC<InclineForceVectorsProps> = ({
       {Math.abs(physicsResult.a) > 0.05 && (
         <g>
           <VectorArrow
-            originPixel={{ x: 0, y: 3.5 }}
             vector={{
               x: physicsResult.a > 0 ? 2.5 * cosT : -2.5 * cosT,
               y: physicsResult.a > 0 ? 2.5 * sinT : -2.5 * sinT,

@@ -1,17 +1,19 @@
 import { useState, useEffect, useCallback, type RefObject } from 'react'
 import { canvasToPhysics, clientToContainerPoint, snapAngle, snapForce, normalizeAngle180 } from '@/utils'
+import type { ViewportInfo } from '@/utils'
 
 interface UseVectorDragProps {
   svgRef: RefObject<SVGSVGElement | null>
-  visibleW: number
-  visibleH: number
+  vp: ViewportInfo
+  designW: number
+  designH: number
   scale: number
   phi: number
   mode: number
   updateParam: (key: string, value: number) => void
 }
 
-export function useVectorDrag({ svgRef, visibleW, visibleH, scale, phi, mode: _mode, updateParam }: UseVectorDragProps) {
+export function useVectorDrag({ svgRef, vp, designW, designH, scale, phi, mode: _mode, updateParam }: UseVectorDragProps) {
   const [activeDrag, setActiveDrag] = useState<'f1' | 'f2' | 'f' | null>(null)
 
   const handleDragStart = useCallback(
@@ -24,10 +26,13 @@ export function useVectorDrag({ svgRef, visibleW, visibleH, scale, phi, mode: _m
 
   const handleDragMove = useCallback(
     (clientX: number, clientY: number) => {
-      if (!activeDrag || !svgRef.current || visibleW === 0) return
+      if (!activeDrag || !svgRef.current || vp.visibleW === 0 || vp.scale === 0) return
 
       const { x: cx, y: cy } = clientToContainerPoint(clientX, clientY, svgRef.current.getBoundingClientRect())
-      const { x: px, y: py } = canvasToPhysics(cx, cy, visibleW, visibleH, scale)
+      // 容器像素 → 设计坐标
+      const designX = (cx - vp.tx) / vp.scale
+      const designY = (cy - vp.ty) / vp.scale
+      const { x: px, y: py } = canvasToPhysics(designX, designY, designW, designH, scale)
 
       const rawMag = Math.sqrt(px * px + py * py)
       const rawDir = (Math.atan2(py, px) * 180) / Math.PI
@@ -47,7 +52,7 @@ export function useVectorDrag({ svgRef, visibleW, visibleH, scale, phi, mode: _m
         updateParam('angle', snapAngle(rawDir))
       }
     },
-    [activeDrag, svgRef, visibleW, visibleH, scale, phi, updateParam]
+    [activeDrag, svgRef, vp, designW, designH, scale, phi, updateParam]
   )
 
   useEffect(() => {

@@ -45,9 +45,9 @@ export default function OrthogonalDecompositionAnimation() {
   })
   const svgRef = useRef<SVGSVGElement>(null)
 
-  // 2. 标定物理比例尺 (WORLD 物理范围是 [-10, 10]，使用可视区域尺寸确保坐标变换一致)
+  // 2. 标定物理比例尺 (WORLD 物理范围是 [-10, 10]，使用设计尺寸确保坐标变换一致)
   const WORLD = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 } as const
-  const scale = computeScale(vp.visibleW, vp.visibleH, WORLD) * 0.6
+  const scale = computeScale(preset.width, preset.height, WORLD) * 0.6
 
   // 3. 构建标准场景比例尺
   const sceneScale = useSceneScale({
@@ -58,11 +58,11 @@ export default function OrthogonalDecompositionAnimation() {
     physicsHeight: preset.height
   })
 
-  // 4. 计算正交分解物理数据 (使用可视区域尺寸确保坐标变换一致)
+  // 4. 计算正交分解物理数据 (使用设计尺寸确保坐标变换一致)
   const physicsData = useOrthogonalDecompositionPhysics({
     f1, theta1, f2, theta2, f3, theta3, axisAngle,
     theta, m, axisSelect,
-    mode, canvasWidth: vp.visibleW, canvasHeight: vp.visibleH, scale
+    mode, canvasWidth: preset.width, canvasHeight: preset.height, scale
   })
 
   const { origin, forces, netForce, axisAngleRad, slopeGeom, slopeForces } = physicsData
@@ -73,9 +73,12 @@ export default function OrthogonalDecompositionAnimation() {
   const [activeDrag, setActiveDrag] = useState<'f1' | 'f2' | 'f3' | null>(null)
 
   const handleDragMove = useCallback((clientX: number, clientY: number) => {
-    if (!activeDrag || !svgRef.current || vp.visibleW === 0) return
+    if (!activeDrag || !svgRef.current || vp.visibleW === 0 || vp.scale === 0) return
     const { x: cx, y: cy } = clientToContainerPoint(clientX, clientY, svgRef.current.getBoundingClientRect())
-    const { x: px, y: py } = canvasToPhysics(cx, cy, vp.visibleW, vp.visibleH, scale)
+    // 容器像素 → 设计坐标
+    const designX = (cx - vp.tx) / vp.scale
+    const designY = (cy - vp.ty) / vp.scale
+    const { x: px, y: py } = canvasToPhysics(designX, designY, preset.width, preset.height, scale)
 
     const rawMag = Math.sqrt(px * px + py * py)
     const rawDir = (Math.atan2(py, px) * 180) / Math.PI
@@ -93,7 +96,7 @@ export default function OrthogonalDecompositionAnimation() {
       updateParam('f3', finalMag)
       updateParam('theta3', finalAngle)
     }
-  }, [activeDrag, scale, vp.visibleW, vp.visibleH, updateParam])
+  }, [activeDrag, scale, vp.visibleW, vp.scale, vp.tx, vp.ty, preset.width, preset.height, updateParam])
 
   const handlePointerDown = useCallback((target: 'f1' | 'f2' | 'f3', e: React.PointerEvent<SVGGElement>) => {
     e.preventDefault()
@@ -111,9 +114,9 @@ export default function OrthogonalDecompositionAnimation() {
     }
   }, [activeDrag])
 
-  // 可视区域的坐标原点
-  const centerX = vp.visibleW / 2
-  const centerY = vp.visibleH / 2
+  // 可视区域的坐标原点（设计坐标）
+  const centerX = preset.width / 2
+  const centerY = preset.height / 2
 
   // 绘制坐标轴旋转的角度圆弧（设计分辨率下绘制）
   const renderAxisArc = () => {
@@ -150,7 +153,7 @@ export default function OrthogonalDecompositionAnimation() {
       <VectorGrid
         centerX={mode === 0 ? centerX : slopeGeom.blockCenter.cx}
         centerY={mode === 0 ? centerY : slopeGeom.blockCenter.cy}
-        scale={scale} visibleW={vp.visibleW} visibleH={vp.visibleH} showGrid={showGrid}
+        scale={scale} visibleW={preset.width} visibleH={preset.height} showGrid={showGrid}
       />
 
       {/* ========================================================
@@ -164,7 +167,7 @@ export default function OrthogonalDecompositionAnimation() {
             <line x1={-preset.width * 0.45} y1={0} x2={preset.width * 0.45} y2={0}
               stroke={CANVAS_COLORS.axis} strokeWidth={2} strokeDasharray="6,4" />
             <text x={preset.width * 0.42} y={-10} fontSize={12} fill={colors.neutral[700]} fontWeight="bold">x'</text>
-            
+
             {/* y' 轴 */}
             <line x1={0} y1={-preset.height * 0.45} x2={0} y2={preset.height * 0.45}
               stroke={CANVAS_COLORS.axis} strokeWidth={2} strokeDasharray="6,4" />
@@ -268,7 +271,7 @@ export default function OrthogonalDecompositionAnimation() {
         <g>
           {/* 斜面基座 */}
           <Incline x0={slopeGeom.x0} y0={slopeGeom.y0} width={slopeGeom.slideW} height={slopeGeom.slideH} />
-          
+
           {/* 斜面倾角弧线与标注 (在右下角底角顶点处) */}
           <path d={`M ${slopeGeom.x0 + slopeGeom.slideW - 50} ${slopeGeom.y0} A 50 50 0 0 0 ${slopeGeom.x0 + slopeGeom.slideW - 50 * Math.cos((theta * Math.PI) / 180)} ${slopeGeom.y0 - 50 * Math.sin((theta * Math.PI) / 180)}`}
             fill="none" stroke={CANVAS_COLORS.axis} strokeWidth={1} strokeDasharray="3,2" />
@@ -281,7 +284,7 @@ export default function OrthogonalDecompositionAnimation() {
             {/* x 坐标轴 */}
             <line x1={-150} y1={0} x2={150} y2={0} stroke={CANVAS_COLORS.axis} strokeWidth={1.5} strokeDasharray="5,3" />
             <text x={140} y={-10} fontSize={11} fill={colors.neutral[600]} fontWeight="bold">{axisSelect === 0 ? "x'" : "x"}</text>
-            
+
             {/* y 坐标轴 */}
             <line x1={0} y1={-150} x2={0} y2={150} stroke={CANVAS_COLORS.axis} strokeWidth={1.5} strokeDasharray="5,3" />
             <text x={10} y={-135} fontSize={11} fill={colors.neutral[600]} fontWeight="bold">{axisSelect === 0 ? "y'" : "y"}</text>

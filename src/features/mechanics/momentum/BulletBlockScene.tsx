@@ -331,7 +331,7 @@ export default function BulletBlockScene({
       {/* 速度与加速度矢量箭头 */}
       {/* 速度矢量 — 子弹 */}
       <VectorArrow
-        originPixel={{ x: state.bulletX, y: BB_LAYOUT.bulletRadius / sceneScale.scaleY }}
+        originPixel={{ x: bulletCenterX, y: bulletCenterY - BB_LAYOUT.bulletRadius - 2 }}
         vector={{ x: state.bulletV, y: 0 }}
         type="velocity"
         sceneScale={sceneScale}
@@ -340,7 +340,7 @@ export default function BulletBlockScene({
 
       {/* 速度矢量 — 木块 */}
       <VectorArrow
-        originPixel={{ x: state.blockX + param.L / 2, y: BB_LAYOUT.blockHeight / sceneScale.scaleY }}
+        originPixel={{ x: blockLeft + blockWidth / 2, y: blockTop - 2 }}
         vector={{ x: state.blockV, y: 0 }}
         type="velocity"
         sceneScale={sceneScale}
@@ -351,7 +351,7 @@ export default function BulletBlockScene({
       {/* 加速度矢量 — 子弹（仅在穿透滑动阶段） */}
       {inContact && state.bulletA !== 0 && (
         <VectorArrow
-          originPixel={{ x: state.bulletX, y: BB_LAYOUT.bulletRadius / sceneScale.scaleY + 0.02 }}
+          originPixel={{ x: bulletCenterX, y: bulletCenterY - BB_LAYOUT.bulletRadius - 2 - 14 }}
           vector={{ x: state.bulletA, y: 0 }}
           type="acceleration"
           sceneScale={sceneScale}
@@ -362,7 +362,7 @@ export default function BulletBlockScene({
       {/* 加速度矢量 — 木块（仅在穿透滑动阶段） */}
       {inContact && state.blockA !== 0 && (
         <VectorArrow
-          originPixel={{ x: state.blockX + param.L / 2, y: BB_LAYOUT.blockHeight / sceneScale.scaleY + 0.02 }}
+          originPixel={{ x: blockLeft + blockWidth / 2, y: blockTop - 2 - 14 }}
           vector={{ x: state.blockA, y: 0 }}
           type="acceleration"
           sceneScale={sceneScale}

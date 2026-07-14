@@ -34,18 +34,18 @@ export default function VectorAdditionAnimation() {
   const mode = params.mode ?? 0
 
   const WORLD = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 } as const
-  const scale = computeScale(vp.visibleW, vp.visibleH, WORLD) * 0.6
+  const scale = computeScale(preset.width, preset.height, WORLD) * 0.6
 
   const vaSceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height })
 
   const physicsData = useVectorAdditionPhysics({
-    f1, f2, angle, phi, mode, canvasWidth: vp.visibleW, canvasHeight: vp.visibleH, scale, time, isPlaying,
+    f1, f2, angle, phi, mode, canvasWidth: preset.width, canvasHeight: preset.height, scale, time, isPlaying,
   })
 
-  const { handleDragStart, handleDragMove } = useVectorDrag({ svgRef, visibleW: vp.visibleW, visibleH: vp.visibleH, scale, phi, mode, updateParam })
+  const { handleDragStart, handleDragMove } = useVectorDrag({ svgRef, vp, designW: preset.width, designH: preset.height, scale, phi, mode, updateParam })
 
-  const centerX = vp.visibleW / 2
-  const centerY = vp.visibleH / 2
+  const centerX = preset.width / 2
+  const centerY = preset.height / 2
 
   return (
     <AnimationSvgCanvas
@@ -55,11 +55,11 @@ export default function VectorAdditionAnimation() {
       onPointerMove={(e) => handleDragMove(e.clientX, e.clientY)}
     >
       <VectorGrid centerX={centerX} centerY={centerY} scale={scale}
-        visibleW={vp.visibleW} visibleH={vp.visibleH} showGrid={showGrid} />
+        visibleW={preset.width} visibleH={preset.height} showGrid={showGrid} />
 
-      <line x1={20} y1={centerY} x2={vp.visibleW - 20} y2={centerY}
+      <line x1={20} y1={centerY} x2={preset.width - 20} y2={centerY}
         stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.axisBold} />
-      <line x1={centerX} y1={20} x2={centerX} y2={vp.visibleH - 20}
+      <line x1={centerX} y1={20} x2={centerX} y2={preset.height - 20}
         stroke={PHYSICS_COLORS.axis} strokeWidth={CANVAS_STYLE.stroke.axisBold} />
 
       <circle cx={centerX} cy={centerY} r={CANVAS_STYLE.object.pointMassRadius}

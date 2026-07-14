@@ -181,7 +181,6 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
         <g>
           {/* 安培力箭头 (橙色，由棒中心向左或向右) */}
           <VectorArrow
-            originPixel={{ x: 0, y: 0 }}
             vector={{ x: physicsResult.F, y: 0 }}
             type="lorentzForce"
             sceneScale={localScale}
@@ -204,7 +203,6 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
           {hasCurrent && (
             <g>
               <VectorArrow
-                originPixel={{ x: 0, y: I > 0 ? 1.5 : -1.5 }}
                 vector={{ x: 0, y: I > 0 ? 2.5 : -2.5 }}
                 type="currentDirection"
                 sceneScale={localScale}

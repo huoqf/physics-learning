@@ -317,7 +317,6 @@ export default function CircularGeometryModel() {
 
         {/* 入射切线处的速度参考矢量（弱化底色） */}
         <VectorArrow
-          originPixel={{ x: 0, y: 0 }}
           vector={{ x: velocity * Math.cos(angleRad), y: velocity * Math.sin(angleRad) }}
           type="velocity"
           sceneScale={sceneScale}
