@@ -1,4 +1,4 @@
-import { VectorArrow, Block, PhysicsGround } from '@/components/Physics'
+import { PhysicsVectorArrow, Block, PhysicsGround } from '@/components/Physics'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_COLORS, FONT, SCENE_COLORS } from '@/theme/physics'
@@ -104,8 +104,8 @@ export default function BasicModeScene({
       {showVectors && (
         <g>
           {/* 外拉力 F (向右) */}
-          <VectorArrow
-            originPixel={{ x: boxX_m1 + boxSize / 2, y: groundY - boxSize / 2 }}
+          <PhysicsVectorArrow
+            originDesign={{ x: boxX_m1 + boxSize / 2, y: groundY - boxSize / 2 }}
             vector={{ x: F_applied, y: 0 }}
             type="appliedForce"
             sceneScale={frictionSceneScale}
@@ -170,8 +170,8 @@ export default function BasicModeScene({
           {/* 摩擦力 f (向左) */}
           {f_actual_m1 > 0.1 && (
             <>
-              <VectorArrow
-                originPixel={{ x: boxX_m1 - boxSize / 2, y: groundY }}
+              <PhysicsVectorArrow
+                originDesign={{ x: boxX_m1 - boxSize / 2, y: groundY }}
                 vector={{ x: -f_actual_m1, y: 0 }}
                 type="friction"
                 sceneScale={frictionSceneScale}
@@ -189,8 +189,8 @@ export default function BasicModeScene({
           )}
 
           {/* 支持力 F_N (向上) */}
-          <VectorArrow
-            originPixel={{ x: boxX_m1, y: groundY - boxSize / 2 }}
+          <PhysicsVectorArrow
+            originDesign={{ x: boxX_m1, y: groundY - boxSize / 2 }}
             vector={{ x: 0, y: F_normal_m1 }}
             type="normalForce"
             sceneScale={frictionSceneScale}
@@ -206,8 +206,8 @@ export default function BasicModeScene({
           </text>
 
           {/* 重力 G (向下) */}
-          <VectorArrow
-            originPixel={{ x: boxX_m1, y: groundY - boxSize / 2 }}
+          <PhysicsVectorArrow
+            originDesign={{ x: boxX_m1, y: groundY - boxSize / 2 }}
             vector={{ x: 0, y: -weight }}
             type="gravity"
             sceneScale={frictionSceneScale}

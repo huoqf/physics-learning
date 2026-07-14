@@ -1,4 +1,4 @@
-import { VectorArrow } from '@/components/Physics'
+import { PhysicsVectorArrow } from '@/components/Physics'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -335,8 +335,8 @@ export default function KeplerAnimation() {
       {/* ── 9. 物理矢量箭头渲染 (showVectors) ── */}
       {showVectors && (
         <g>
-          <VectorArrow
-            originPixel={{ x: planetDx, y: planetDy }}
+          <PhysicsVectorArrow
+            originDesign={{ x: planetDx, y: planetDy }}
             vector={{ x: vxA, y: vyA }}
             type="velocity"
             sceneScale={sceneScale}
@@ -344,8 +344,8 @@ export default function KeplerAnimation() {
             font={font}
           />
 
-          <VectorArrow
-            originPixel={{ x: planetDx, y: planetDy }}
+          <PhysicsVectorArrow
+            originDesign={{ x: planetDx, y: planetDy }}
             vector={{ x: fxA, y: fyA }}
             type="gravity"
             sceneScale={sceneScale}

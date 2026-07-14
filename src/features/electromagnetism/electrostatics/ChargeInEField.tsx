@@ -1,4 +1,4 @@
-import { VectorArrow, VectorDefs, ParticleTrajectory } from '@/components/Physics'
+import { VectorArrow, PhysicsVectorArrow, VectorDefs, ParticleTrajectory } from '@/components/Physics'
 import { useAnimationViewport } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
@@ -339,9 +339,10 @@ export default function ChargeInEField() {
 
               {/* v0 (水平分速度，经典蓝) */}
               <VectorArrow
-                originPixel={{ x: cx, y: cy }}
+                originDesign={{ x: cx, y: cy }}
                 vector={{ x: currentState.vx, y: 0 }}
                 type="velocityX"
+                arrowType="physical-schematic"
                 sceneScale={sceneScale}
                 strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                 pixelLength={vxPxLen}
@@ -359,9 +360,10 @@ export default function ChargeInEField() {
               {/* vy (竖直分速度，浅蓝) */}
               {Math.abs(currentState.vy) > 0.05 && (
                 <VectorArrow
-                  originPixel={{ x: cx, y: cy }}
+                  originDesign={{ x: cx, y: cy }}
                   vector={{ x: 0, y: -currentState.vy }}
                   type="velocityY"
+                  arrowType="physical-schematic"
                   sceneScale={sceneScale}
                   strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                   pixelLength={vyPxLen}
@@ -380,9 +382,10 @@ export default function ChargeInEField() {
 
               {/* 合速度 v (深蓝) */}
               <VectorArrow
-                originPixel={{ x: cx, y: cy }}
+                originDesign={{ x: cx, y: cy }}
                 vector={{ x: currentState.vx, y: -currentState.vy }}
                 type="velocity"
+                arrowType="physical-schematic"
                 sceneScale={sceneScale}
                 strokeWidth={CANVAS_STYLE.stroke.vectorMain}
                 pixelLength={totalPxLen}
@@ -402,8 +405,8 @@ export default function ChargeInEField() {
                 const eDir = electricForceDir({ x: 0, y: -curFieldSign }, q * 1e-6)
                 const electricAccel = (q * 1e-6 * curFieldSign * U / PLATE_GAP) / PARTICLE_MASS
                 return (
-                  <VectorArrow
-                    originPixel={{ x: cx, y: cy }}
+                  <PhysicsVectorArrow
+                    originDesign={{ x: cx, y: cy }}
                     vector={{ x: eDir.x * electricAccel, y: eDir.y * electricAccel }}
                     type="electricForce"
                     sceneScale={sceneScale}
@@ -414,8 +417,8 @@ export default function ChargeInEField() {
 
               {/* 重力 mg (绿色) */}
               {useGravity === 1 && (
-                <VectorArrow
-                  originPixel={{ x: cx, y: cy }}
+                <PhysicsVectorArrow
+                  originDesign={{ x: cx, y: cy }}
                   vector={{ x: 0, y: -9.8 }}
                   type="gravity"
                   sceneScale={sceneScale}

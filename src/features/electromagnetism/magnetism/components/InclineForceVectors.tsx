@@ -68,6 +68,7 @@ export const InclineForceVectors: React.FC<InclineForceVectorsProps> = ({
       <VectorArrow
         vector={G_phys}
         type="gravity"
+        arrowType="physical-schematic"
         sceneScale={localScale}
         strokeWidth={1.8}
         pixelLength={G_mag}
@@ -87,6 +88,7 @@ export const InclineForceVectors: React.FC<InclineForceVectorsProps> = ({
       <VectorArrow
         vector={N_phys}
         type="normalForce"
+        arrowType="physical-schematic"
         sceneScale={localScale}
         strokeWidth={1.8}
         pixelLength={physicsResult.N * forceScale}
@@ -108,6 +110,7 @@ export const InclineForceVectors: React.FC<InclineForceVectorsProps> = ({
           <VectorArrow
             vector={Fa_phys}
             type="lorentzForce"
+            arrowType="physical-schematic"
             sceneScale={localScale}
             strokeWidth={1.8}
             pixelLength={Math.hypot(Fa_phys.x, Fa_phys.y) * forceScale}
@@ -132,6 +135,7 @@ export const InclineForceVectors: React.FC<InclineForceVectorsProps> = ({
           <VectorArrow
             vector={f_phys}
             type="friction"
+            arrowType="physical-schematic"
             sceneScale={localScale}
             strokeWidth={1.8}
             pixelLength={Math.abs(physicsResult.f * forceScale)}
@@ -158,6 +162,7 @@ export const InclineForceVectors: React.FC<InclineForceVectorsProps> = ({
               y: physicsResult.a > 0 ? 2.5 * sinT : -2.5 * sinT,
             }}
             type="acceleration"
+            arrowType="physical-schematic"
             sceneScale={localScale}
             strokeWidth={2.5}
             pixelLength={2.5 * forceScale}

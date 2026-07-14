@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { AnimationSvgCanvas } from '@/components/Layout'
-import { ConductingRod, MagneticFieldGrid, Rails, Rheostat, SVGSingleBar, VectorArrow } from '@/components/Physics'
+import { ConductingRod, MagneticFieldGrid, Rails, Rheostat, SVGSingleBar, PhysicsVectorArrow } from '@/components/Physics'
 import { useAnimationViewport } from '@/hooks/useAnimationViewport'
 import { useAnimationStore } from '@/stores'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -8,6 +8,7 @@ import { PHYSICS_COLORS } from '@/theme/physics'
 import type { SceneScale } from '@/scene/SceneScale'
 import { getSingleRodState, type SingleRodMode } from '@/physics/singleRod'
 import { ampereForceDir } from '@/physics/magnetism/forces'
+import { calculateVectorPixelLength } from '@/utils/vectorLength'
 
 const DESIGN = CANVAS_PRESETS.splitV
 
@@ -30,17 +31,19 @@ const CHARGE_SLOT = {
 const DEFAULT_VISUAL_SPACING = 106
 const DEFAULT_RAIL_SPACING_M = 0.8
 
-const PIXEL_VECTOR_SCALE: SceneScale = {
+const VECTOR_SCENE_SCALE: SceneScale = {
   originX: 0,
   originY: 0,
   scaleX: 1,
   scaleY: 1,
   scale: 1,
-  maxVectorLength: 1,
-}
-
-function pixelVector(dx: number, dy: number) {
-  return { x: dx, y: -dy }
+  maxVectorLength: 86,
+  refMagnitudes: {
+    velocity: 3.31,
+    currentDirection: 1.43,
+    lorentzForce: 1.52,
+    appliedForce: 1.77,
+  },
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -75,11 +78,17 @@ export default function SingleRodAnimation() {
   const railBottomY = rodCenterY + railVisualSpacing / 2
   const chargeSlotH = railVisualSpacing + 50
 
-  const vLength = clamp(state.v * 26, 0, 86)
-  const faLength = clamp(state.ampereForce * 34, 0, 82)
-  const fLength = clamp(state.externalForce * 34, 0, 82)
   const chargeLevel = clamp(state.charge / Math.max(0.2, state.charge + 0.8), 0, 1)
-  const iLength = clamp(Math.abs(state.current) * 30, 0, 80)
+
+  // 电流方向箭头需要居中，预计算其设计长度用于 origin 偏移
+  const iArrowLength = Math.abs(state.current) > 0.001
+    ? calculateVectorPixelLength(
+        Math.abs(state.current),
+        'currentDirection',
+        VECTOR_SCENE_SCALE.maxVectorLength,
+        VECTOR_SCENE_SCALE.refMagnitudes!.currentDirection!,
+      )
+    : 0
 
   // 安培力方向：电流沿导体棒（竖直），B 入纸面
   const forceDir = ampereForceDir({ x: 0, y: 1 }, 'intoPage', state.current)
@@ -129,12 +138,11 @@ export default function SingleRodAnimation() {
       />
 
       {Math.abs(state.current) > 0.001 && (
-        <VectorArrow
-          originPixel={{ x: rodX - 16, y: state.current >= 0 ? rodCenterY + iLength / 2 : rodCenterY - iLength / 2 }}
-          vector={pixelVector(0, state.current >= 0 ? 1 : -1)}
+        <PhysicsVectorArrow
+          originDesign={{ x: rodX - 16, y: state.current >= 0 ? rodCenterY + iArrowLength / 2 : rodCenterY - iArrowLength / 2 }}
+          vector={{ x: 0, y: state.current }}
           type="currentDirection"
-          sceneScale={PIXEL_VECTOR_SCALE}
-          pixelLength={iLength}
+          sceneScale={VECTOR_SCENE_SCALE}
           label="I"
           font={canvasSize.font}
         />
@@ -152,31 +160,28 @@ export default function SingleRodAnimation() {
         导体棒
       </text>
 
-      <VectorArrow
-        originPixel={{ x: rodX, y: rodCenterY - 20 }}
-        vector={pixelVector(1, 0)}
+      <PhysicsVectorArrow
+        originDesign={{ x: rodX, y: rodCenterY - 20 }}
+        vector={{ x: state.v, y: 0 }}
         type="velocity"
-        sceneScale={PIXEL_VECTOR_SCALE}
-        pixelLength={vLength}
+        sceneScale={VECTOR_SCENE_SCALE}
         label="v"
         font={canvasSize.font}
       />
-      <VectorArrow
-        originPixel={{ x: rodX, y: rodCenterY + 4 }}
-        vector={pixelVector(forceDir.x, forceDir.y)}
+      <PhysicsVectorArrow
+        originDesign={{ x: rodX, y: rodCenterY + 4 }}
+        vector={{ x: state.ampereForce * forceDir.x, y: state.ampereForce * forceDir.y }}
         type="lorentzForce"
-        sceneScale={PIXEL_VECTOR_SCALE}
-        pixelLength={faLength}
+        sceneScale={VECTOR_SCENE_SCALE}
         label="FA"
         font={canvasSize.font}
       />
       {mode === 'constantForce' && (
-        <VectorArrow
-          originPixel={{ x: rodX, y: rodCenterY + 28 }}
-          vector={pixelVector(1, 0)}
+        <PhysicsVectorArrow
+          originDesign={{ x: rodX, y: rodCenterY + 28 }}
+          vector={{ x: state.externalForce, y: 0 }}
           type="appliedForce"
-          sceneScale={PIXEL_VECTOR_SCALE}
-          pixelLength={fLength}
+          sceneScale={VECTOR_SCENE_SCALE}
           label="F"
           font={canvasSize.font}
         />

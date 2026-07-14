@@ -51,9 +51,10 @@ export default function VectorPlayground() {
         {TEST_CASES.map((tc, i) => (
           <VectorArrow
             key={i}
-            originPixel={{ x: 2 + i * 2.5, y: 0 }}
+            originDesign={{ x: 2 + i * 2.5, y: 0 }}
             vector={tc.vector}
             type={tc.type}
+            arrowType="visual-only"
             sceneScale={sceneScale}
           />
         ))}

@@ -14,7 +14,7 @@
  *
  * @category M4
  */
-import { VectorArrow } from '@/components/Physics'
+import { PhysicsVectorArrow } from '@/components/Physics'
 import { useState, useEffect, useMemo } from 'react'
 import { type CanvasSize, useAnimationFrame } from '@/utils'
 import type { ViewportInfo } from '@/utils'
@@ -226,15 +226,15 @@ export default function BasicMode({
 
           {showVectors && contactStep !== 'sharing' && (
             <g>
-              <VectorArrow
-                originPixel={{ x: x1, y: centerY }}
+              <PhysicsVectorArrow
+                originDesign={{ x: x1, y: centerY }}
                 vector={{ x: leftArrowDir * F, y: 0 }}
                 type="electricForce"
                 sceneScale={sceneScale}
                 strokeWidth={CANVAS_STYLE.stroke.vectorMain}
               />
-              <VectorArrow
-                originPixel={{ x: x2, y: centerY }}
+              <PhysicsVectorArrow
+                originDesign={{ x: x2, y: centerY }}
                 vector={{ x: rightArrowDir * F, y: 0 }}
                 type="electricForce"
                 sceneScale={sceneScale}

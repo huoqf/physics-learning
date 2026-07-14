@@ -3,7 +3,7 @@
  * 进阶模式（带能量损失系数）渲染组件
  */
 
-import { VectorArrow, PhysicsGround } from '@/components/Physics'
+import { PhysicsVectorArrow, PhysicsGround } from '@/components/Physics'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,
@@ -88,8 +88,8 @@ export function CollisionAdvancedScene({
       {showVectors && (
         <g>
           {curVA !== 0 && (
-            <VectorArrow
-              originPixel={{ x: posAAdv, y: R_Adv * 2 + 10 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: posAAdv, y: R_Adv * 2 + 10 }}
               vector={{ x: curVA, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
@@ -101,8 +101,8 @@ export function CollisionAdvancedScene({
           </text>
 
           {curVB !== 0 && (
-            <VectorArrow
-              originPixel={{ x: posBAdv, y: R_Bdv * 2 + 10 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: posBAdv, y: R_Bdv * 2 + 10 }}
               vector={{ x: curVB, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}

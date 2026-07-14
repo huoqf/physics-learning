@@ -1,4 +1,4 @@
-import React, { type RefObject } from 'react'
+﻿import React, { type RefObject } from 'react'
 
 // ─── 类型 ──────────────────────────────────────────────────────────────────
 
@@ -168,7 +168,7 @@ interface AnimationSvgCanvasProps {
  * return (
  *   <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform} canvasRef={canvasRef}>
  *     <VectorArrow
- *       originPixel={{ x: particleDesign.px, y: particleDesign.py }}
+ *       originDesign={{ x: particleDesign.px, y: particleDesign.py }}
  *       vector={{ x: particle.vx, y: particle.vy }}
  *       type="velocity"
  *       sceneScale={sceneScale}

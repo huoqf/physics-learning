@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, CANVAS_COLORS } from '@/theme/physics'
-import { VectorArrow, PhysicsGround, Ball } from '@/components/Physics'
+import { PhysicsVectorArrow, PhysicsGround, Ball } from '@/components/Physics'
 import {
   computeAngularFrequency,
   computePendulumState,
@@ -28,23 +28,23 @@ export default function SimplePendulumAnimation() {
     })),
   )
 
-  // 采用标准布局路径：useAnimationViewport 测量视口尺寸，使用 splitH 双栏预设
+  // 采用标准布局路径：useAnimationViewport 测量视口尺寸，使�?splitH 双栏预设
   const { containerRef, vp } = useAnimationViewport({
     preset: CANVAS_PRESETS.splitH,
   })
 
-  // 摆长 L，重力加速度 g，最大摆角 theta0，初相 phiDeg
+  // 摆长 L，重力加速度 g，最大摆�?theta0，初�?phiDeg
   const L = params.L ?? 1.0
   const g = params.g ?? 9.8
-  const theta0Deg = params.theta0 ?? 8 // 放宽到 2~60°
+  const theta0Deg = params.theta0 ?? 8 // 放宽�?2~60°
   const phiDeg = params.phiDeg ?? 0
   const phi = (phiDeg * Math.PI) / 180
-  const mode = params.mode ?? 0 // 0: 简谐运动, 1: 大角对比, 2: 能量守恒
+  const mode = params.mode ?? 0 // 0: 简谐运�? 1: 大角对比, 2: 能量守恒
   const showGraph = params.showGraph ?? 1
 
   const mass = 1.0 // 摆球质量，设定为 1.0 kg 用于受力展示
 
-  // 1. 简谐摆周期与状态计算
+  // 1. 简谐摆周期与状态计�?
   const T0 = useMemo(() => 2 * Math.PI * Math.sqrt(L / g), [L, g])
   const omega0 = useMemo(() => computeAngularFrequency(T0), [T0])
   const phase0 = omega0 * time + phi
@@ -52,7 +52,7 @@ export default function SimplePendulumAnimation() {
     return computePendulumState(mass, L, g, theta0Deg, phase0)
   }, [mass, L, g, theta0Deg, phase0])
 
-  // 2. 真实大角轨迹预计算与状态插值
+  // 2. 真实大角轨迹预计算与状态插�?
   const T_real = useMemo(() => computeRealPendulumPeriod(L, g, theta0Deg), [L, g, theta0Deg])
   const omegaReal = useMemo(() => computeAngularFrequency(T_real), [T_real])
   const realTrajectory = useMemo(() => generateRealPendulumTrajectory(L, g, theta0Deg), [L, g, theta0Deg])
@@ -75,7 +75,7 @@ export default function SimplePendulumAnimation() {
     }
   }, [realTrajectory, T_real, time, phiDeg, omegaReal, L, g])
 
-  // ── 动画时钟：以 store.time 为规范时钟 ──
+  // ── 动画时钟：以 store.time 为规范时�?──
   const handleFrame = useCallback((deltaMs: number) => {
     const dt = deltaMs / 1000
     if (dt <= 0 || dt > 0.1) return
@@ -84,18 +84,18 @@ export default function SimplePendulumAnimation() {
   }, [])
   useAnimationFrame(handleFrame, { playing: isPlaying, speed })
 
-  // 依据当前模式确定要渲染的主状态（简谐或真实大摆）
+  // 依据当前模式确定要渲染的主状态（简谐或真实大摆�?
   const activeState = mode === 0 ? stateSHM : stateReal
 
   // ── 设计坐标系布局参数 (无需乘以 vp.scale) ──
   const pivotX = 175
   const pivotY = 80
 
-  // 摆线长度的像素比例（固定 1 米 = 90 像素，防止 60° 大偏角下摆球晃出 350px 宽的画布）
+  // 摆线长度的像素比例（固定 1 �?= 90 像素，防�?60° 大偏角下摆球晃出 350px 宽的画布�?
   const linePixelLength = 90
   const rPx = L * linePixelLength
 
-  // ── 建立标准的 SceneScale 物理缩放投影（输出设计坐标） ──
+  // ── 建立标准�?SceneScale 物理缩放投影（输出设计坐标） ──
   const sceneScale = useSceneScale({
     vp,
     preset: CANVAS_PRESETS.splitH,
@@ -114,7 +114,7 @@ export default function SimplePendulumAnimation() {
     maxVectorLength: 100,
   })
 
-  // 摆球物理坐标（y轴向上为正，摆球在挂点下方，所以y为负）
+  // 摆球物理坐标（y轴向上为正，摆球在挂点下方，所以y为负�?
   const ballPhysPos = useMemo(() => ({
     x: L * Math.sin(activeState.angle),
     y: -L * Math.cos(activeState.angle),
@@ -125,7 +125,7 @@ export default function SimplePendulumAnimation() {
     return physicsToCanvasWithOrigin(ballPhysPos.x, ballPhysPos.y, pivotX, pivotY, linePixelLength)
   }, [ballPhysPos, pivotX, pivotY, linePixelLength])
 
-  // 简谐近似参考小球坐标 (仅在模式 1 对比下绘制)
+  // 简谐近似参考小球坐�?(仅在模式 1 对比下绘�?
   const ballPhysPos_SHM = useMemo(() => ({
     x: L * Math.sin(stateSHM.angle),
     y: -L * Math.cos(stateSHM.angle),
@@ -166,7 +166,7 @@ export default function SimplePendulumAnimation() {
     return points.join(' ')
   }, [isShowGraph, time, theta0Deg, T0, phi, pivotX, vy, L])
 
-  // 真实非线性轨迹 (模式 1)
+  // 真实非线性轨�?(模式 1)
   const realWavePath = useMemo(() => {
     if (!isShowGraph || mode !== 1) return ''
     const points: string[] = []
@@ -192,7 +192,7 @@ export default function SimplePendulumAnimation() {
         <g>
           <rect x={graphX} y={graphY} width={graphW} height={graphH} rx={12} fill={CANVAS_COLORS.grid} stroke={CANVAS_COLORS.axis} strokeWidth={2} />
           
-          {/* 两侧履带滚动线 */}
+          {/* 两侧履带滚动�?*/}
           <line
             x1={graphX + 8}
             y1={graphY + 6}
@@ -253,7 +253,7 @@ export default function SimplePendulumAnimation() {
             transform={`rotate(${(vy * time * 2) % 360}, ${graphX + graphW - 22}, ${graphY + graphH / 2})`}
           />
           
-          {/* 余弦曲线 - 简谐近似波形 (模式0/1) */}
+          {/* 余弦曲线 - 简谐近似波�?(模式0/1) */}
           <path
             d={shmWavePath}
             fill="none"
@@ -264,7 +264,7 @@ export default function SimplePendulumAnimation() {
             opacity={mode === 1 ? 0.6 : 0.8}
           />
 
-          {/* 真实大偏角轨迹波形 (仅模式1) */}
+          {/* 真实大偏角轨迹波�?(仅模�?) */}
           {mode === 1 && (
             <path
               d={realWavePath}
@@ -306,15 +306,15 @@ export default function SimplePendulumAnimation() {
       )}
 
       {/* ── 单摆实物绘制 ── */}
-      {/* 悬挂天花板 */}
+      {/* 悬挂天花�?*/}
       <PhysicsGround x={pivotX - 50} y={pivotY - 6} width={100} type="platform" appearance={{ thickness: 6 }} />
-      {/* 悬挂销轴 */}
+      {/* 悬挂销�?*/}
       <circle cx={pivotX} cy={pivotY} r={5} fill={SCENE_COLORS.pendulum.rodStroke} stroke={SCENE_COLORS.pendulum.pivotStroke} strokeWidth={1} />
 
       {/* 摆球偏角平衡位置辅助虚线 */}
       <line x1={pivotX} y1={pivotY} x2={pivotX} y2={pivotY + rPx} stroke={CANVAS_COLORS.axis} strokeWidth={1.2} strokeDasharray="4 4" />
 
-      {/* 1. 对比渲染：半透明简谐近似摆 (仅在模式 1 下绘制) */}
+      {/* 1. 对比渲染：半透明简谐近似摆 (仅在模式 1 下绘�? */}
       {mode === 1 && (
         <g opacity={0.4}>
           <line x1={pivotX} y1={pivotY} x2={ballX_SHM} y2={ballY_SHM} stroke={PHYSICS_COLORS.velocityX} strokeWidth={1.8} strokeDasharray="3 2" />
@@ -332,7 +332,7 @@ export default function SimplePendulumAnimation() {
         </g>
       )}
 
-      {/* 2. 主摆渲染：真实运动单摆 */}
+      {/* 2. 主摆渲染：真实运动单�?*/}
       {/* 摆线 */}
       <line x1={pivotX} y1={pivotY} x2={ballX} y2={ballY} stroke={mode === 1 ? PHYSICS_COLORS.accelerationX : SCENE_COLORS.pendulum.rodStroke} strokeWidth={2.4} />
 
@@ -348,15 +348,14 @@ export default function SimplePendulumAnimation() {
 
       {/* 摆角数值和摆线文字 */}
       <text x={ballX} y={ballY - 24} fontSize={13} fontWeight="bold" fill={mode === 1 ? PHYSICS_COLORS.accelerationX : SCENE_COLORS.pendulum.rodStroke} fontFamily={CANVAS_STYLE.FONT.family} textAnchor="middle">
-        {mode === 1 ? '真实摆: ' : ''}θ = {(activeState.angle * 180 / Math.PI).toFixed(1)}°
+        {mode === 1 ? '真实�? ' : ''}θ = {(activeState.angle * 180 / Math.PI).toFixed(1)}°
       </text>
 
-      {/* ── 力的动态矢量分析 ── */}
+      {/* ── 力的动态矢量分�?── */}
       {showVectors && (
         <g>
-          {/* 重力 G：竖直向下 */}
-          <VectorArrow
-            originPixel={ballPhysPos}
+          {/* 重力 G：竖直向�?*/}
+          <PhysicsVectorArrow originDesign={ballPhysPos}
             vector={{ x: 0, y: -activeState.gravity }}
             type="gravity"
             sceneScale={sceneScale}
@@ -364,19 +363,17 @@ export default function SimplePendulumAnimation() {
             glow
           />
           {/* 绳子拉力 F_拉：沿绳子指向悬挂点 */}
-          <VectorArrow
-            originPixel={ballPhysPos}
+          <PhysicsVectorArrow originDesign={ballPhysPos}
             vector={{ x: -activeState.tension * Math.sin(activeState.angle), y: activeState.tension * Math.cos(activeState.angle) }}
             type="tension"
             sceneScale={sceneScale}
-            label={`F_拉 = ${activeState.tension.toFixed(1)}N`}
+            label={`F_�?= ${activeState.tension.toFixed(1)}N`}
             glow
           />
-          {/* 切向回复力 F_回：沿切线指向平衡位置 */}
-          {/* 回复力大小 = mg*sinθ，方向沿切线指向平衡位置 */}
+          {/* 切向回复�?F_回：沿切线指向平衡位�?*/}
+          {/* 回复力大�?= mg*sinθ，方向沿切线指向平衡位置 */}
           {/* 切线方向向量 = (-cosθ, -sinθ)，力 = mg*sinθ * 切线方向 */}
-          <VectorArrow
-            originPixel={ballPhysPos}
+          <PhysicsVectorArrow originDesign={ballPhysPos}
             vector={{
               x: activeState.restoringForce * Math.cos(activeState.angle),  // = -mg*sinθ*cosθ
               y: activeState.restoringForce * Math.sin(activeState.angle)   // = -mg*sin²θ
@@ -384,13 +381,13 @@ export default function SimplePendulumAnimation() {
             type="appliedForce"
             color={PHYSICS_COLORS.accelerationX}
             sceneScale={sceneScale}
-            label={`F_回 = ${Math.abs(activeState.restoringForce).toFixed(1)}N`}
+            label={`F_�?= ${Math.abs(activeState.restoringForce).toFixed(1)}N`}
             glow
           />
         </g>
       )}
 
-      {/* 物理量图例 */}
+      {/* 物理量图�?*/}
       <g fontFamily={CANVAS_STYLE.FONT.family} fontSize={11}>
         <rect x={10} y={10} width={mode === 1 ? 240 : 260} height={26} rx={4} fill={CANVAS_COLORS.objectFillNeutral} stroke={CANVAS_COLORS.grid} strokeWidth={1} />
         
@@ -402,7 +399,7 @@ export default function SimplePendulumAnimation() {
             </text>
             <circle cx={136} cy={23} r={4.5} fill={PHYSICS_COLORS.velocityX} />
             <text x={146} y={27} fill={CANVAS_COLORS.labelTextLight}>
-              简谐近似 (虚线)
+              简谐近�?(虚线)
             </text>
           </>
         ) : (
@@ -417,13 +414,13 @@ export default function SimplePendulumAnimation() {
             </text>
             <circle cx={186} cy={23} r={4.5} fill={PHYSICS_COLORS.acceleration} />
             <text x={196} y={27} fill={CANVAS_COLORS.labelTextLight}>
-              回复力/加速度
+              回复�?加速度
             </text>
           </>
         )}
       </g>
 
-      {/* 动态公式看板 */}
+      {/* 动态公式看�?*/}
       {showFormulas && (
         <text
           x={10}
@@ -432,9 +429,9 @@ export default function SimplePendulumAnimation() {
           fill={CANVAS_COLORS.textMuted}
           fontFamily={CANVAS_STYLE.FONT.family}
         >
-          {mode === 0 && `简谐运动方程: θ = θ₀·cos(ω₀t) | 周期: T₀ = 2π√(L/g) = ${T0.toFixed(2)}s | ω₀ = ${omega0.toFixed(2)} rad/s`}
-          {mode === 1 && `真实周期 (大角修正): T_real = ${T_real.toFixed(2)}s | 简谐等时周期: T₀ = ${T0.toFixed(2)}s | 偏差: +${(((T_real - T0) / T0) * 100).toFixed(1)}%`}
-          {mode === 2 && `势能: Eₚ = mgL(1-cosθ) | 动能: Eₖ = ½mv² | 机械能: E = Eₚ + Eₖ = ${(mass * g * L * (1 - Math.cos((theta0Deg * Math.PI) / 180))).toFixed(3)} J (守恒)`}
+          {mode === 0 && `简谐运动方�? θ = θ₀·cos(ω₀t) | 周期: T₀ = 2π�?L/g) = ${T0.toFixed(2)}s | ω₀ = ${omega0.toFixed(2)} rad/s`}
+          {mode === 1 && `真实周期 (大角修正): T_real = ${T_real.toFixed(2)}s | 简谐等时周�? T₀ = ${T0.toFixed(2)}s | 偏差: +${(((T_real - T0) / T0) * 100).toFixed(1)}%`}
+          {mode === 2 && `势能: E�?= mgL(1-cosθ) | 动能: E�?= ½mv² | 机械�? E = E�?+ E�?= ${(mass * g * L * (1 - Math.cos((theta0Deg * Math.PI) / 180))).toFixed(3)} J (守恒)`}
         </text>
       )}
     </AnimationSvgCanvas>

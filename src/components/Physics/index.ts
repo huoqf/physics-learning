@@ -90,6 +90,8 @@ export { SkeletonHand } from './SkeletalHand'
 // 通用工具组件 (Utilities)
 // ============================================================================
 export { VectorArrow } from './VectorArrow'
+export type { ArrowType } from './VectorArrow'
+export { PhysicsVectorArrow } from './PhysicsVectorArrow'
 export { VectorDefs } from './VectorDefs'
 export { DragHandle } from './DragHandle'
 export { markerId } from './vectorDefsUtils'

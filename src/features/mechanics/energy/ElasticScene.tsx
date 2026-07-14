@@ -68,18 +68,20 @@ export function ElasticScene({
 
         {showVectors && Math.abs(state.pos) > 0.05 && (
           <VectorArrow
-            originPixel={{ x: blockCX, y: blockCY - blockR - 6 }}
+            originDesign={{ x: blockCX, y: blockCY - blockR - 6 }}
             vector={{ x: state.pos > 0 ? -1 : 1, y: 0 }}
             type="elasticForce"
+            arrowType="physical-schematic"
             sceneScale={sceneScale}
             pixelLength={Math.min(Math.abs(state.pos) * 15 + 10, 45)}
           />
         )}
         {showVectors && Math.abs(state.v) > 0.1 && (
           <VectorArrow
-            originPixel={{ x: blockCX, y: blockCY - blockR - 6 }}
+            originDesign={{ x: blockCX, y: blockCY - blockR - 6 }}
             vector={{ x: state.v > 0 ? 1 : -1, y: 0 }}
             type="velocity"
+            arrowType="physical-schematic"
             sceneScale={sceneScale}
             pixelLength={Math.min(Math.abs(state.v) * 5 + 10, 45)}
           />

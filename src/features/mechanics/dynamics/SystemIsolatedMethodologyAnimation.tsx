@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { worldToDesign } from '@/scene'
 import { AnimationSvgCanvas } from '@/components/Layout'
-import { PhysicsGround, Block, Incline, VectorArrow, VectorDefs } from '@/components/Physics'
+import { PhysicsGround, Block, Incline, VectorArrow, PhysicsVectorArrow, VectorDefs } from '@/components/Physics'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { useSystemIsolatedPhysics } from './hooks/useSystemIsolatedPhysics'
@@ -173,7 +173,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                 {isSystemView && (
                   <g>
                     {/* 拉力 F */}
-                    <VectorArrow
+                    <PhysicsVectorArrow
                       origin={model0.ropeRight}
                       vector={{ x: F, y: 0 }}
                       type="appliedForce"
@@ -183,7 +183,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                       glow
                     />
                     {/* 整体重力 (m1+m2)g */}
-                    <VectorArrow
+                    <PhysicsVectorArrow
                       origin={{ x: (model0.m1_pos.x + model0.m2_pos.x + model0.w2) / 2, y: groundY + model0.h1 / 2 }}
                       vector={{ x: 0, y: -(m1 + m2) * g }}
                       type="gravity"
@@ -192,7 +192,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                       font={canvasSize.font}
                     />
                     {/* 整体地面对其的支持力 */}
-                    <VectorArrow
+                    <PhysicsVectorArrow
                       origin={{ x: (model0.m1_pos.x + model0.m2_pos.x + model0.w2) / 2, y: groundY }}
                       vector={{ x: 0, y: (m1 + m2) * g }}
                       type="normalForce"
@@ -201,7 +201,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                       font={canvasSize.font}
                     />
                     {/* 整体地面合摩擦力 */}
-                    <VectorArrow
+                    <PhysicsVectorArrow
                       origin={{ x: (model0.m1_pos.x + model0.m2_pos.x + model0.w2) / 2, y: groundY }}
                       vector={{ x: -(model0.f1 + model0.f2), y: 0 }}
                       type="friction"
@@ -216,7 +216,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                 {isIsolatedView && activeObject === 0 && (
                   <g>
                     {/* 绳子拉力 T */}
-                    <VectorArrow
+                    <PhysicsVectorArrow
                       origin={model0.ropeLeft}
                       vector={{ x: model0.T, y: 0 }}
                       type="tension"
@@ -226,7 +226,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                       glow
                     />
                     {/* m1 重力 */}
-                    <VectorArrow
+                    <PhysicsVectorArrow
                       origin={{ x: model0.m1_pos.x + model0.w1 / 2, y: groundY + model0.h1 / 2 }}
                       vector={{ x: 0, y: -m1 * g }}
                       type="gravity"
@@ -235,7 +235,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                       font={canvasSize.font}
                     />
                     {/* 地面支持力 N1 */}
-                    <VectorArrow
+                    <PhysicsVectorArrow
                       origin={{ x: model0.m1_pos.x + model0.w1 / 2, y: groundY }}
                       vector={{ x: 0, y: m1 * g }}
                       type="normalForce"
@@ -244,7 +244,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                       font={canvasSize.font}
                     />
                     {/* m1 摩擦力 f1 */}
-                    <VectorArrow
+                    <PhysicsVectorArrow
                       origin={{ x: model0.m1_pos.x + model0.w1 / 2, y: groundY }}
                       vector={{ x: -model0.f1, y: 0 }}
                       type="friction"
@@ -259,7 +259,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                 {isIsolatedView && activeObject === 1 && (
                   <g>
                     {/* 外部拉力 F */}
-                    <VectorArrow
+                    <PhysicsVectorArrow
                       origin={{ x: model0.m2_pos.x + model0.w2, y: groundY + model0.h2 / 2 }}
                       vector={{ x: F, y: 0 }}
                       type="appliedForce"
@@ -269,7 +269,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                       glow
                     />
                     {/* 绳子向左拉力 T */}
-                    <VectorArrow
+                    <PhysicsVectorArrow
                       origin={model0.ropeRight}
                       vector={{ x: -model0.T, y: 0 }}
                       type="tension"
@@ -279,7 +279,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                       glow
                     />
                     {/* m2 重力 */}
-                    <VectorArrow
+                    <PhysicsVectorArrow
                       origin={{ x: model0.m2_pos.x + model0.w2 / 2, y: groundY + model0.h2 / 2 }}
                       vector={{ x: 0, y: -m2 * g }}
                       type="gravity"
@@ -288,7 +288,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                       font={canvasSize.font}
                     />
                     {/* 地面支持力 N2 */}
-                    <VectorArrow
+                    <PhysicsVectorArrow
                       origin={{ x: model0.m2_pos.x + model0.w2 / 2, y: groundY }}
                       vector={{ x: 0, y: m2 * g }}
                       type="normalForce"
@@ -297,7 +297,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                       font={canvasSize.font}
                     />
                     {/* m2 摩擦力 f2 */}
-                    <VectorArrow
+                    <PhysicsVectorArrow
                       origin={{ x: model0.m2_pos.x + model0.w2 / 2, y: groundY }}
                       vector={{ x: -model0.f2, y: 0 }}
                       type="friction"
@@ -434,7 +434,7 @@ export default function SystemIsolatedMethodologyAnimation() {
               {isSystemView && (
                 <g>
                   {/* 水平推力 F */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={{ x: model1.slope_left_x - 1.2, y: groundY + 0.3 }}
                     vector={{ x: F, y: 0 }}
                     type="appliedForce"
@@ -444,7 +444,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                     glow
                   />
                   {/* 地面摩擦力 f_地 */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={{ x: model1.slope_left_x + model1.slope_W * 0.4, y: groundY }}
                     vector={{ x: -model1.f_ground, y: 0 }}
                     type="friction"
@@ -453,7 +453,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                     font={canvasSize.font}
                   />
                   {/* 整体重力 (M+m)g */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={{ x: model1.slope_left_x + model1.slope_W * 0.4, y: groundY + model1.slope_H / 3 }}
                     vector={{ x: 0, y: -model1.N_ground }}
                     type="gravity"
@@ -462,7 +462,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                     font={canvasSize.font}
                   />
                   {/* 地面支持力 N_地 */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={{ x: model1.slope_left_x + model1.slope_W * 0.4, y: groundY }}
                     vector={{ x: 0, y: model1.N_ground }}
                     type="normalForce"
@@ -477,7 +477,7 @@ export default function SystemIsolatedMethodologyAnimation() {
               {isIsolatedView && activeObject === 0 && (
                 <g>
                   {/* 重力 mg */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={model1.block_pos}
                     vector={{ x: 0, y: -m1 * g }}
                     type="gravity"
@@ -486,7 +486,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                     font={canvasSize.font}
                   />
                   {/* 支持力 N (向右上) */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={model1.block_pos}
                     vector={{ x: model1.N_slope * Math.sin(thetaRad), y: model1.N_slope * Math.cos(thetaRad) }}
                     type="normalForce"
@@ -496,7 +496,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                     glow
                   />
                   {/* 摩擦力 f (向左上) */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={model1.block_pos}
                     vector={{ x: -model1.f_slope * Math.cos(thetaRad), y: model1.f_slope * Math.sin(thetaRad) }}
                     type="friction"
@@ -512,7 +512,7 @@ export default function SystemIsolatedMethodologyAnimation() {
               {isIsolatedView && activeObject === 1 && (
                 <g>
                   {/* 水平推力 F */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={{ x: model1.slope_left_x - 1.2, y: groundY + 0.3 }}
                     vector={{ x: F, y: 0 }}
                     type="appliedForce"
@@ -522,7 +522,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                     glow
                   />
                   {/* 重力 Mg */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={{ x: model1.slope_left_x + model1.slope_W * 0.4, y: groundY + model1.slope_H * 0.3 }}
                     vector={{ x: 0, y: -m2 * g }}
                     type="gravity"
@@ -531,7 +531,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                     font={canvasSize.font}
                   />
                   {/* 滑块对斜面的压力 N' (向左下) */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={model1.block_pos}
                     vector={{ x: -model1.N_slope * Math.sin(thetaRad), y: -model1.N_slope * Math.cos(thetaRad) }}
                     type="tension"
@@ -540,7 +540,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                     font={canvasSize.font}
                   />
                   {/* 滑块对斜面的摩擦力 f' (向右下) */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={model1.block_pos}
                     vector={{ x: model1.f_slope * Math.cos(thetaRad), y: -model1.f_slope * Math.sin(thetaRad) }}
                     type="friction"
@@ -550,7 +550,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                     font={canvasSize.font}
                   />
                   {/* 地面支持力 N_地 */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={{ x: model1.slope_left_x + model1.slope_W * 0.4, y: groundY }}
                     vector={{ x: 0, y: model1.N_ground }}
                     type="normalForce"
@@ -559,7 +559,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                     font={canvasSize.font}
                   />
                   {/* 地面摩擦力 f_地 */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={{ x: model1.slope_left_x + model1.slope_W * 0.4, y: groundY }}
                     vector={{ x: -model1.f_ground, y: 0 }}
                     type="friction"
@@ -699,7 +699,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                     <g opacity={0.85}>
                       {/* 合加速度 a (向右下) */}
                       <VectorArrow
-                        originPixel={origin_px}
+                        originDesign={origin_px}
                         vector={{ x: model2.a * Math.cos(thetaRad), y: -model2.a * Math.sin(thetaRad) }}
                         type="acceleration"
                         sceneScale={sceneScale}
@@ -708,7 +708,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                       />
                       {/* 水平分加速度 ax (向右) */}
                       <VectorArrow
-                        originPixel={origin_px}
+                        originDesign={origin_px}
                         vector={{ x: model2.ax, y: 0 }}
                         type="acceleration"
                         dashed
@@ -718,7 +718,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                       />
                       {/* 竖直分加速度 ay (向下) */}
                       <VectorArrow
-                        originPixel={origin_px}
+                        originDesign={origin_px}
                         vector={{ x: 0, y: -model2.ay }}
                         type="acceleration"
                         dashed
@@ -738,7 +738,7 @@ export default function SystemIsolatedMethodologyAnimation() {
               {isSystemView && (
                 <g>
                   {/* 整体重力 (M+m)g */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={{ x: model2.slope_left_x + model2.slope_W * 0.4, y: groundY + model2.slope_H * 0.3 }}
                     vector={{ x: 0, y: -(m1 + m2) * g }}
                     type="gravity"
@@ -747,7 +747,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                     font={canvasSize.font}
                   />
                   {/* 系统支持力 N_地 */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={{ x: model2.slope_left_x + model2.slope_W * 0.4, y: groundY }}
                     vector={{ x: 0, y: model2.N_ground }}
                     type="normalForce"
@@ -757,7 +757,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                     glow
                   />
                   {/* 系统地面对斜面的静摩擦力 f_地 (向右) */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={{ x: model2.slope_left_x + model2.slope_W * 0.4, y: groundY }}
                     vector={{ x: model2.f_ground, y: 0 }}
                     type="friction"
@@ -772,7 +772,7 @@ export default function SystemIsolatedMethodologyAnimation() {
               {isIsolatedView && activeObject === 0 && (
                 <g>
                   {/* 重力 mg */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={model2.block_pos}
                     vector={{ x: 0, y: -m1 * g }}
                     type="gravity"
@@ -781,7 +781,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                     font={canvasSize.font}
                   />
                   {/* 支持力 N (向右上) */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={model2.block_pos}
                     vector={{ x: model2.N_slope * Math.sin(thetaRad), y: model2.N_slope * Math.cos(thetaRad) }}
                     type="normalForce"
@@ -791,7 +791,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                     glow
                   />
                   {/* 斜面摩擦力 f (向左上) */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={model2.block_pos}
                     vector={{ x: -model2.f_slope * Math.cos(thetaRad), y: model2.f_slope * Math.sin(thetaRad) }}
                     type="friction"
@@ -806,7 +806,7 @@ export default function SystemIsolatedMethodologyAnimation() {
               {isIsolatedView && activeObject === 1 && (
                 <g>
                   {/* 重力 Mg */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={{ x: model2.slope_left_x + model2.slope_W * 0.4, y: groundY + model2.slope_H * 0.3 }}
                     vector={{ x: 0, y: -m2 * g }}
                     type="gravity"
@@ -815,7 +815,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                     font={canvasSize.font}
                   />
                   {/* 滑块对斜面的压力 N' (向左下) */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={model2.block_pos}
                     vector={{ x: -model2.N_slope * Math.sin(thetaRad), y: -model2.N_slope * Math.cos(thetaRad) }}
                     type="tension"
@@ -824,7 +824,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                     font={canvasSize.font}
                   />
                   {/* 滑块对斜面的滑动摩擦力 f' (向右下) */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={model2.block_pos}
                     vector={{ x: model2.f_slope * Math.cos(thetaRad), y: -model2.f_slope * Math.sin(thetaRad) }}
                     type="friction"
@@ -834,7 +834,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                     font={canvasSize.font}
                   />
                   {/* 地面支持力 N_地 */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={{ x: model2.slope_left_x + model2.slope_W * 0.4, y: groundY }}
                     vector={{ x: 0, y: model2.N_ground }}
                     type="normalForce"
@@ -843,7 +843,7 @@ export default function SystemIsolatedMethodologyAnimation() {
                     font={canvasSize.font}
                   />
                   {/* 地面摩擦力 f_地 (向右) */}
-                  <VectorArrow
+                  <PhysicsVectorArrow
                     origin={{ x: model2.slope_left_x + model2.slope_W * 0.4, y: groundY }}
                     vector={{ x: model2.f_ground, y: 0 }}
                     type="friction"

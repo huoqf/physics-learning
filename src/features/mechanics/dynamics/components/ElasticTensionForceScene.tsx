@@ -100,9 +100,10 @@ export const ElasticTensionForceScene: React.FC = () => {
         <g>
           {/* 重力 G */}
           <VectorArrow
-            originPixel={{ x: blockX, y: blockY + blockH / 2 }}
+            originDesign={{ x: blockX, y: blockY + blockH / 2 }}
             vector={{ x: 0, y: -gravityForce }}
             type="gravity"
+            arrowType="visual-only"
             sceneScale={IDENTITY_SCENE_SCALE}
             strokeWidth={CANVAS_STYLE.stroke.vectorMain}
             pixelLength={F_grav_len}
@@ -111,9 +112,10 @@ export const ElasticTensionForceScene: React.FC = () => {
           />
           {/* 绳子拉力 T */}
           <VectorArrow
-            originPixel={{ x: blockX, y: blockY }}
+            originDesign={{ x: blockX, y: blockY }}
             vector={{ x: 0, y: tensionForce }}
             type="tension"
+            arrowType="visual-only"
             sceneScale={IDENTITY_SCENE_SCALE}
             strokeWidth={CANVAS_STYLE.stroke.vectorMain}
             pixelLength={F_tension_len}

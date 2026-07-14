@@ -4,7 +4,7 @@ import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
 import { worldToPixel } from '@/scene'
-import { VectorArrow, ParticleTrajectory } from '@/components/Physics'
+import { PhysicsVectorArrow, ParticleTrajectory } from '@/components/Physics'
 
 export default function CircularGeometryModel() {
   const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.splitH })
@@ -316,7 +316,7 @@ export default function CircularGeometryModel() {
         )}
 
         {/* 入射切线处的速度参考矢量（弱化底色） */}
-        <VectorArrow
+        <PhysicsVectorArrow
           vector={{ x: velocity * Math.cos(angleRad), y: velocity * Math.sin(angleRad) }}
           type="velocity"
           sceneScale={sceneScale}
@@ -325,8 +325,8 @@ export default function CircularGeometryModel() {
         />
 
         {/* 出射切线处的速度参考矢量（弱化底色） */}
-        <VectorArrow
-          originPixel={{ x: exitState.xOut, y: exitState.yOut }}
+        <PhysicsVectorArrow
+          originDesign={{ x: exitState.xOut, y: exitState.yOut }}
           vector={{ x: exitState.vxOut, y: exitState.vyOut }}
           type="velocity"
           sceneScale={sceneScale}
@@ -335,8 +335,8 @@ export default function CircularGeometryModel() {
         />
 
         {/* 实时粒子上的动态速度矢量 */}
-        <VectorArrow
-          originPixel={{ x: currentParticleState.px, y: currentParticleState.py }}
+        <PhysicsVectorArrow
+          originDesign={{ x: currentParticleState.px, y: currentParticleState.py }}
           vector={{ x: currentParticleState.vx, y: currentParticleState.vy }}
           type="velocity"
           sceneScale={sceneScale}
@@ -346,8 +346,8 @@ export default function CircularGeometryModel() {
 
         {/* 实时粒子上的动态洛伦兹力向心力矢量 */}
         {currentParticleState.inField && (
-          <VectorArrow
-            originPixel={{ x: currentParticleState.px, y: currentParticleState.py }}
+          <PhysicsVectorArrow
+            originDesign={{ x: currentParticleState.px, y: currentParticleState.py }}
             vector={{
               x: ((xc - currentParticleState.px) / R) * (velocity * B),
               y: ((yc - currentParticleState.py) / R) * (velocity * B),

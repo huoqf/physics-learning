@@ -16,9 +16,9 @@ export function VectorTriangle({ physicsData, sceneScale, isPlaying, onDragStart
 
   return (
     <>
-      <VectorArrow originPixel={{ x: origin.cx, y: origin.cy }}
+      <VectorArrow originDesign={{ x: origin.cx, y: origin.cy }}
         vector={{ x: f1End.cx - origin.cx, y: -(f1End.cy - origin.cy) }}
-        type="appliedForce" sceneScale={sceneScale}
+        type="appliedForce" arrowType="physical-schematic" sceneScale={sceneScale}
         strokeWidth={CANVAS_STYLE.stroke.vectorSub}
         pixelLength={Math.hypot(f1End.cx - origin.cx, f1End.cy - origin.cy)} />
       <text x={f1End.cx} y={f1End.cy + 18} fontSize={CANVAS_STYLE.font.label}
@@ -31,9 +31,9 @@ export function VectorTriangle({ physicsData, sceneScale, isPlaying, onDragStart
       <DragHandle cx={f2ShiftedEnd.cx} cy={f2ShiftedEnd.cy} color={PHYSICS_COLORS.tension}
         cursor="grab" onPointerDown={(e) => onDragStart('f2', e)} />
 
-      <VectorArrow originPixel={{ x: f2ShiftedStart.cx, y: f2ShiftedStart.cy }}
+      <VectorArrow originDesign={{ x: f2ShiftedStart.cx, y: f2ShiftedStart.cy }}
         vector={{ x: f2ShiftedEnd.cx - f2ShiftedStart.cx, y: -(f2ShiftedEnd.cy - f2ShiftedStart.cy) }}
-        type="tension" sceneScale={sceneScale}
+        type="tension" arrowType="physical-schematic" sceneScale={sceneScale}
         strokeWidth={CANVAS_STYLE.stroke.vectorSub}
         pixelLength={Math.hypot(f2ShiftedEnd.cx - f2ShiftedStart.cx, f2ShiftedEnd.cy - f2ShiftedStart.cy)} />
       <text x={f2ShiftedEnd.cx + (f2ShiftedEnd.cx > f2ShiftedStart.cx ? 8 : -16)}
@@ -48,9 +48,9 @@ export function VectorTriangle({ physicsData, sceneScale, isPlaying, onDragStart
           strokeDasharray={CANVAS_STYLE.dash.guide.join(',')} />
       )}
 
-      <VectorArrow originPixel={{ x: origin.cx, y: origin.cy }}
+      <VectorArrow originDesign={{ x: origin.cx, y: origin.cy }}
         vector={{ x: fResultantEnd.cx - origin.cx, y: -(fResultantEnd.cy - origin.cy) }}
-        type="force" sceneScale={sceneScale}
+        type="force" arrowType="physical-schematic" sceneScale={sceneScale}
         strokeWidth={CANVAS_STYLE.stroke.vectorMain}
         pixelLength={Math.hypot(fResultantEnd.cx - origin.cx, fResultantEnd.cy - origin.cy)} />
       <text x={fResultantEnd.cx + 8} y={fResultantEnd.cy - 8}

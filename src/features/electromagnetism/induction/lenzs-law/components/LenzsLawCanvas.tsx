@@ -268,9 +268,10 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
         {forceDirection !== 0 && (
           <g opacity={getOpacity([4])} className="transition-opacity duration-300">
             <VectorArrow
-              originPixel={{ x: cx, y: magnetY + 50 }}
+              originDesign={{ x: cx, y: magnetY + 50 }}
               vector={{ x: 0, y: forceDirection > 0 ? 1 : -1 }}
               type="lorentzForce"
+              arrowType="visual-only"
               sceneScale={IDENTITY_SCENE_SCALE}
               pixelLength={forceArrowLength}
             />
@@ -291,9 +292,10 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
       {currentStep === 1 && (
         <g opacity={getOpacity([1])} className="transition-opacity duration-300">
           <VectorArrow
-            originPixel={{ x: cx, y: isDown ? magnetY + 50 : coilY }}
+            originDesign={{ x: cx, y: isDown ? magnetY + 50 : coilY }}
             vector={{ x: 0, y: isDown ? -1 : 1 }}
             type="magneticField"
+            arrowType="visual-only"
             sceneScale={IDENTITY_SCENE_SCALE}
             pixelLength={Math.abs(coilY - (magnetY + 50))}
             strokeWidth={CANVAS_STYLE.stroke.vectorMain}
@@ -345,9 +347,10 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
         return (
           <g key={`ind-${i}`} opacity={finalOpacity} className="transition-opacity duration-300">
             <VectorArrow
-              originPixel={{ x: cx + dx, y: indY1 }}
+              originDesign={{ x: cx + dx, y: indY1 }}
               vector={{ x: 0, y: isUp ? 1 : -1 }}
               type="magneticField"
+              arrowType="visual-only"
               color={PHYSICS_COLORS.lorentzForce} // 洛伦兹紫表示感应磁场，增强与原磁场绿色的对比，并符合语义 token 隔离
               sceneScale={IDENTITY_SCENE_SCALE}
               pixelLength={Math.abs(indY2 - indY1)}
@@ -364,13 +367,14 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
       {lenzResult.fluxChange !== 'stable' && (
         <g opacity={getOpacity([4])} className="transition-opacity duration-300">
           <VectorArrow
-            originPixel={lenzResult.inducedCurrentDirection === 'counterclockwise'
+            originDesign={lenzResult.inducedCurrentDirection === 'counterclockwise'
               ? { x: cx + 45, y: coilY + 95 }
               : { x: cx - 45, y: coilY + 95 }}
             vector={lenzResult.inducedCurrentDirection === 'counterclockwise'
               ? { x: -1, y: 0 }
               : { x: 1, y: 0 }}
             type="currentDirection"
+            arrowType="visual-only"
             sceneScale={IDENTITY_SCENE_SCALE}
             pixelLength={70}
             strokeWidth={3.5}

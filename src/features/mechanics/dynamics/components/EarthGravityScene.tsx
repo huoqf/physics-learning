@@ -128,9 +128,10 @@ export const EarthGravityScene: FC<EarthGravitySceneProps> = ({
         <g>
           {/* 1. 万有引力 (指向地心) */}
           <VectorArrow
-            originPixel={{ x: earthData.objX, y: earthData.objY }}
+            originDesign={{ x: earthData.objX, y: earthData.objY }}
             vector={{ x: earthData.Fx_grav, y: earthData.Fy_grav }}
             type="gravity"
+            arrowType="physical-schematic"
             sceneScale={gravBasicSceneScale}
             strokeWidth={CANVAS_STYLE.stroke.vectorMain}
             pixelLength={Math.hypot(earthData.Fx_grav, earthData.Fy_grav)}
@@ -146,9 +147,10 @@ export const EarthGravityScene: FC<EarthGravitySceneProps> = ({
           {/* 2. 离心力 (非惯性系，水平背离自转轴) */}
           {earthData.F_centrifugal > 1.5 && (
             <VectorArrow
-              originPixel={{ x: earthData.objX, y: earthData.objY }}
+              originDesign={{ x: earthData.objX, y: earthData.objY }}
               vector={{ x: earthData.Fx_centrifugal, y: earthData.Fy_centrifugal }}
               type="forceComponent"
+              arrowType="physical-schematic"
               sceneScale={gravBasicSceneScale}
               strokeWidth={CANVAS_STYLE.stroke.vectorSub}
               pixelLength={Math.hypot(earthData.Fx_centrifugal, earthData.Fy_centrifugal)}
@@ -166,9 +168,10 @@ export const EarthGravityScene: FC<EarthGravitySceneProps> = ({
 
           {/* 3. 重力 (万有引力和自转向心力的矢量差) */}
           <VectorArrow
-            originPixel={{ x: earthData.objX, y: earthData.objY }}
+            originDesign={{ x: earthData.objX, y: earthData.objY }}
             vector={{ x: earthData.Gx, y: earthData.Gy }}
             type="gravity"
+            arrowType="physical-schematic"
             sceneScale={gravBasicSceneScale}
             strokeWidth={CANVAS_STYLE.stroke.vectorMain}
             pixelLength={Math.hypot(earthData.Gx, earthData.Gy)}

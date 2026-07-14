@@ -1,4 +1,4 @@
-import { VectorArrow, PhysicsGround } from '@/components/Physics'
+import { PhysicsVectorArrow, PhysicsGround } from '@/components/Physics'
 import { useAnimationViewport } from '@/hooks'
 import { useSceneScale } from '@/hooks/useSceneScale'
 import { AnimationSvgCanvas } from '@/components/Layout'
@@ -120,8 +120,8 @@ export default function MomentumConservationAnimation() {
             {showVectors && (
               <g>
                 {basic.currentV1 !== 0 && (
-                  <VectorArrow
-                    originPixel={{ x: basic.posAx, y: basic.R_A }}
+                  <PhysicsVectorArrow
+                    originDesign={{ x: basic.posAx, y: basic.R_A }}
                     vector={{ x: basic.currentV1, y: 0 }}
                     type="velocity"
                     sceneScale={vectorSceneScale}
@@ -132,8 +132,8 @@ export default function MomentumConservationAnimation() {
                 </text>
 
                 {basic.currentV2 !== 0 && (
-                  <VectorArrow
-                    originPixel={{ x: basic.posBx, y: basic.R_B }}
+                  <PhysicsVectorArrow
+                    originDesign={{ x: basic.posBx, y: basic.R_B }}
                     vector={{ x: basic.currentV2, y: 0 }}
                     type="velocity"
                     sceneScale={vectorSceneScale}
@@ -241,8 +241,8 @@ export default function MomentumConservationAnimation() {
             {showVectors && (
               <g>
                 {advanced.currentVSlider > 0 && (
-                  <VectorArrow
-                    originPixel={{ x: advanced.sliderPixelX, y: advanced.sliderTopY - 14 }}
+                  <PhysicsVectorArrow
+                    originDesign={{ x: advanced.sliderPixelX, y: advanced.sliderTopY - 14 }}
                     vector={{ x: advanced.currentVSlider, y: 0 }}
                     type="velocity" sceneScale={vectorSceneScale}
                   />
@@ -256,8 +256,8 @@ export default function MomentumConservationAnimation() {
                 </text>
 
                 {advanced.currentVBoard > 0 && (
-                  <VectorArrow
-                    originPixel={{ x: advanced.boardPixelX + advanced.boardPixelW / 2, y: advanced.boardTopY + 9 }}
+                  <PhysicsVectorArrow
+                    originDesign={{ x: advanced.boardPixelX + advanced.boardPixelW / 2, y: advanced.boardTopY + 9 }}
                     vector={{ x: advanced.currentVBoard, y: 0 }}
                     type="velocity" sceneScale={vectorSceneScale} color={PHYSICS_COLORS.elasticForce}
                   />

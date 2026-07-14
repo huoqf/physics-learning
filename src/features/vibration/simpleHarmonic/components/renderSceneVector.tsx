@@ -20,9 +20,10 @@ export function renderSceneVector(
 
   return (
     <VectorArrow
-      originPixel={{ x: startX, y: startY }}
+      originDesign={{ x: startX, y: startY }}
       vector={{ x: dx, y: dy }}
       type={type === 'force' ? 'force' : type}
+      arrowType="physical-schematic"
       sceneScale={{
         scaleX: 1,
         scaleY: 1,

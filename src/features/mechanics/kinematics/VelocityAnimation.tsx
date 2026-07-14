@@ -1,4 +1,4 @@
-import { VectorArrow, VectorDefs, PhysicsGround } from '@/components/Physics'
+import { PhysicsVectorArrow, VectorDefs, PhysicsGround } from '@/components/Physics'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useMemo, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -88,7 +88,7 @@ export default function VelocityAnimation() {
   const objH = scene === 0 ? objW * 0.7 : objW * 0.9
 
   // ── 矢量场景配置 ──
-  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes: { velocity: v * 1.5 || 15 } })
+  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes: { velocity: v * 1.5 || 15, averageVelocity: v * 1.5 || 15 } })
 
   return (
     <div ref={containerRef} className="w-full h-full">
@@ -203,10 +203,11 @@ export default function VelocityAnimation() {
         {/* ── 4. 平均速度粗箭头 ── */}
         {showVectors && deltaT > 0 && (
           <g>
-            <VectorArrow
-              originPixel={{ x: t1Pos, y: groundY - objH * 1.6 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: t1Pos, y: groundY - objH * 1.6 }}
               vector={{ x: deltaX, y: 0 }}
               type="averageVelocity"
+
               sceneScale={sceneScale}
               strokeWidth={STROKE.vectorMain}
             />
@@ -226,10 +227,11 @@ export default function VelocityAnimation() {
         {/* ── 5. 瞬时速度细箭头 ── */}
         {showVectors && (
           <g>
-            <VectorArrow
-              originPixel={{ x: currentX + objW, y: groundY - objH * 0.5 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: currentX + objW, y: groundY - objH * 0.5 }}
               vector={{ x: v, y: 0 }}
               type="velocity"
+
               sceneScale={sceneScale}
               strokeWidth={STROKE.vectorSub}
             />

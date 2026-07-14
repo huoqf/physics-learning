@@ -1,4 +1,4 @@
-import { VectorArrow, PhysicsGround } from '@/components/Physics'
+import { PhysicsVectorArrow, PhysicsGround } from '@/components/Physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, withAlpha } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
@@ -266,8 +266,8 @@ export function MomentumAdvancedScene({ layout, sceneScale, canvasSize, showVect
 
       {/* 冲击力矢量箭头 */}
       {showVectors && (
-        <VectorArrow
-          originPixel={{ x: plateX + springCompression, y: nozzleY }}
+        <PhysicsVectorArrow
+          originDesign={{ x: plateX + springCompression, y: nozzleY }}
           vector={{ x: impactForce, y: 0 }}
           type="appliedForce"
           sceneScale={sceneScale}

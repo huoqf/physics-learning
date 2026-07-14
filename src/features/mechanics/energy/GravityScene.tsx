@@ -57,16 +57,16 @@ export function GravityScene({
         </text>
         {showVectors && Math.abs(state.v) > 0.15 && (
           <VectorArrow
-            originPixel={{ x: animCenterX + ballR + 4, y: toPixelY(state.pos) - ballR }}
+            originDesign={{ x: animCenterX + ballR + 4, y: toPixelY(state.pos) - ballR }}
             vector={{ x: 0, y: state.v > 0 ? 1 : -1 }}
-            type="velocity" sceneScale={sceneScale}
+            type="velocity" arrowType="physical-schematic" sceneScale={sceneScale}
             pixelLength={Math.min(Math.abs(state.v) * 3.5, 45) + 4} />
         )}
         {showVectors && (
           <VectorArrow
-            originPixel={{ x: animCenterX - ballR - 4, y: toPixelY(state.pos) - ballR }}
+            originDesign={{ x: animCenterX - ballR - 4, y: toPixelY(state.pos) - ballR }}
             vector={{ x: 0, y: -1 }}
-            type="gravity" sceneScale={sceneScale}
+            type="gravity" arrowType="physical-schematic" sceneScale={sceneScale}
             pixelLength={Math.min(m * 9.8 * 1.2, 45) + 4}
             label="G" />
         )}

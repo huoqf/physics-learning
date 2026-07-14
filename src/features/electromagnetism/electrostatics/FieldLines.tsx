@@ -42,7 +42,7 @@ export default function FieldLines() {
     h,
   })
 
-  // 场景缩放（用于 VectorArrow 的 originPixel 模式）
+  // 场景缩放（用于 VectorArrow 的 originDesign 模式）
   const sceneScale = useSceneScale({
     vp,
     preset,
@@ -328,9 +328,10 @@ export default function FieldLines() {
           {probePhysics.forceArrow && (
             <g>
               <VectorArrow
-                originPixel={{ x: probeX, y: probeY }}
+                originDesign={{ x: probeX, y: probeY }}
                 vector={{ x: probePhysics.forceArrow[0], y: -probePhysics.forceArrow[1] }}
                 type="electricForce"
+                arrowType="physical-schematic"
                 sceneScale={sceneScale}
                 pixelLength={Math.sqrt(probePhysics.forceArrow[0] ** 2 + probePhysics.forceArrow[1] ** 2)}
                 strokeWidth={3}

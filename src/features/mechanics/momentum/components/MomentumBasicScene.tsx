@@ -1,4 +1,4 @@
-import { VectorArrow } from '@/components/Physics'
+import { PhysicsVectorArrow } from '@/components/Physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
 
 import { MT_LAYOUT } from './constants'
@@ -97,8 +97,8 @@ export function MomentumBasicScene({ layout, sceneScale, canvasSize, showVectors
 
       {/* 重力矢量 mg（全程显示，从球心向下） */}
       {showVectors && showGravity && (
-        <VectorArrow
-          originPixel={{ x: ballCenterX, y: ballY }}
+        <PhysicsVectorArrow
+          originDesign={{ x: ballCenterX, y: ballY }}
           vector={{ x: 0, y: -m * MT_LAYOUT.g }}
           type="gravity"
           sceneScale={sceneScale}
@@ -108,8 +108,8 @@ export function MomentumBasicScene({ layout, sceneScale, canvasSize, showVectors
 
       {/* 速度矢量 v（下落阶段，从球心向下） */}
       {showVectors && showVelocity && phase === 'falling' && fallV > 0 && (
-        <VectorArrow
-          originPixel={{ x: ballCenterX, y: ballY }}
+        <PhysicsVectorArrow
+          originDesign={{ x: ballCenterX, y: ballY }}
           vector={{ x: 0, y: -fallV }}
           type="velocity"
           sceneScale={sceneScale}
@@ -119,8 +119,8 @@ export function MomentumBasicScene({ layout, sceneScale, canvasSize, showVectors
 
       {/* 支持力矢量 F_N（碰撞阶段，从球心向上） */}
       {showVectors && showNormalForce && (phase === 'compressing' || phase === 'recovering') && (
-        <VectorArrow
-          originPixel={{ x: ballCenterX, y: ballY }}
+        <PhysicsVectorArrow
+          originDesign={{ x: ballCenterX, y: ballY }}
           vector={{ x: 0, y: F_avg }}
           type="normalForce"
           sceneScale={sceneScale}

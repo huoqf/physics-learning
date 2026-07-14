@@ -1,9 +1,9 @@
 import { AnimationSvgCanvas } from '@/components/Layout'
-import { VectorArrow, Ball, PhysicsGround } from '@/components/Physics'
+import { PhysicsVectorArrow, Ball, PhysicsGround } from '@/components/Physics'
 import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
 import { COMMON_MATERIALS, SPHERE_COLORS } from '@/theme/physics/scene/materials'
 import { PENDULUM_COLORS, SURFACE_COLORS } from '@/theme/physics/scene/mechanics'
-import { useCircularModelsPhysics, SCENE, PIXEL_VECTOR_SCALE, pixelVector } from './hooks/useCircularModelsPhysics'
+import { useCircularModelsPhysics, SCENE, vectorSceneScale } from './hooks/useCircularModelsPhysics'
 import { CircularModelsDefs } from './components/CircularModelsDefs'
 
 function Label({ x, y, children, font }: { x: number; y: number; children: string; font: (n: number) => number }) {
@@ -26,8 +26,8 @@ export default function CircularModelsAnimation() {
     containerRef, canvasSize, vp,
     isConical, omega, showVectors,
     conical, disk, thetaSmooth, radiusSmooth,
-    projected, tangent, tangentNorm, velocityLength,
-    gForceLength, gravityVec, vecData, diskLines,
+    projected, velocityVec,
+    gravityVec, vecData, diskLines,
   } = useCircularModelsPhysics()
 
   return (
@@ -255,23 +255,21 @@ export default function CircularModelsAnimation() {
       {showVectors && projected.opacity > 0 && (
         <g opacity={projected.opacity}>
           {/* 1. 速度矢量 v (蓝色，沿切线方向) */}
-          <VectorArrow
-            originPixel={{ x: projected.x, y: projected.y }}
-            vector={pixelVector(tangent.x / tangentNorm, tangent.y / tangentNorm)}
+          <PhysicsVectorArrow
+            originDesign={{ x: projected.x, y: projected.y }}
+            vector={velocityVec}
             type="velocity"
-            sceneScale={PIXEL_VECTOR_SCALE}
-            pixelLength={velocityLength}
+            sceneScale={vectorSceneScale}
             label="v"
             font={canvasSize.font}
           />
 
           {/* 2. 重力 mg (深绿色，竖直向下) */}
-          <VectorArrow
-            originPixel={{ x: projected.x, y: projected.y }}
+          <PhysicsVectorArrow
+            originDesign={{ x: projected.x, y: projected.y }}
             vector={gravityVec}
             type="gravity"
-            sceneScale={PIXEL_VECTOR_SCALE}
-            pixelLength={gForceLength}
+            sceneScale={vectorSceneScale}
             label="mg"
             font={canvasSize.font}
           />
@@ -280,12 +278,11 @@ export default function CircularModelsAnimation() {
             // ─── 圆锥摆力合成 ───
             <g>
               {/* 拉力 F_T (绳索紫，斜向上沿绳) */}
-              <VectorArrow
-                originPixel={{ x: projected.x, y: projected.y }}
+              <PhysicsVectorArrow
+                originDesign={{ x: projected.x, y: projected.y }}
                 vector={vecData.tensionVec!}
                 type="tension"
-                sceneScale={PIXEL_VECTOR_SCALE}
-                pixelLength={vecData.tensionLength!}
+                sceneScale={vectorSceneScale}
                 label="FT"
                 font={canvasSize.font}
               />
@@ -293,7 +290,7 @@ export default function CircularModelsAnimation() {
               {/* 平行四边形定则辅助线 */}
               <line
                 x1={projected.x}
-                y1={projected.y + gForceLength}
+                y1={projected.y + (vecData.gForceRenderLength ?? 0)}
                 x2={projected.x + vecData.cOffX!}
                 y2={projected.y}
                 stroke={PHYSICS_COLORS.textMuted}
@@ -311,13 +308,12 @@ export default function CircularModelsAnimation() {
               />
 
               {/* 效果向心合力 F_合 (动力亮橙，水平指向旋转轴) */}
-              {vecData.centripLength! > 0 && (
-                <VectorArrow
-                  originPixel={{ x: projected.x, y: projected.y }}
+              {vecData.centripVec! && Math.hypot(vecData.centripVec!.x, vecData.centripVec!.y) > 0 && (
+                <PhysicsVectorArrow
+                  originDesign={{ x: projected.x, y: projected.y }}
                   vector={vecData.centripVec!}
                   type="force"
-                  sceneScale={PIXEL_VECTOR_SCALE}
-                  pixelLength={vecData.centripLength!}
+                  sceneScale={vectorSceneScale}
                   color={PHYSICS_COLORS.forceNet}
                   label="F合"
                   dashed
@@ -329,26 +325,24 @@ export default function CircularModelsAnimation() {
             // ─── 旋转圆盘受力平衡 ───
             <g>
               {/* 支持力 F_N (支持天蓝，竖直向上) */}
-              {vecData.normalLength! > 0 && (
-                <VectorArrow
-                  originPixel={{ x: projected.x, y: projected.y }}
+              {vecData.normalVec! && Math.hypot(vecData.normalVec!.x, vecData.normalVec!.y) > 0 && (
+                <PhysicsVectorArrow
+                  originDesign={{ x: projected.x, y: projected.y }}
                   vector={vecData.normalVec!}
                   type="normalForce"
-                  sceneScale={PIXEL_VECTOR_SCALE}
-                  pixelLength={vecData.normalLength!}
+                  sceneScale={vectorSceneScale}
                   label="FN"
                   font={canvasSize.font}
                 />
               )}
 
               {/* 摩擦力 f (静摩擦黄褐，沿半径指向圆心) */}
-              {vecData.frictionLength! > 0 && (
-                <VectorArrow
-                  originPixel={{ x: projected.x, y: projected.y }}
+              {vecData.frictionVec! && Math.hypot(vecData.frictionVec!.x, vecData.frictionVec!.y) > 0 && (
+                <PhysicsVectorArrow
+                  originDesign={{ x: projected.x, y: projected.y }}
                   vector={vecData.frictionVec!}
                   type="friction"
-                  sceneScale={PIXEL_VECTOR_SCALE}
-                  pixelLength={vecData.frictionLength!}
+                  sceneScale={vectorSceneScale}
                   color={disk.slipping ? PHYSICS_COLORS.friction : PHYSICS_COLORS.frictionStatic}
                   label={disk.slipping ? "f滑" : "f静"}
                   glow={disk.slipping}

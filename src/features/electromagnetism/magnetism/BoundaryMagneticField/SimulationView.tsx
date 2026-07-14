@@ -11,7 +11,7 @@ import {
   calculateCircularBoundaryExit,
   lorentzForceDir,
 } from '@/physics'
-import { VectorArrow, drawCanvasParticleTrajectory } from '@/components/Physics'
+import { PhysicsVectorArrow, drawCanvasParticleTrajectory } from '@/components/Physics'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { useParticleState } from './hooks/useParticleState'
 import { useParticleFamily } from './hooks/useParticleFamily'
@@ -225,8 +225,8 @@ export function SimulationView() {
     >
       {/* 焦点粒子速度矢量（全程显示） */}
       {showVelocityVector && (
-        <VectorArrow
-          originPixel={{ x: particleDesign.px, y: particleDesign.py }}
+        <PhysicsVectorArrow
+          originDesign={{ x: particleDesign.px, y: particleDesign.py }}
           vector={{ x: focusState.vx, y: focusState.vy }}
           type="velocity"
           sceneScale={sceneScale}
@@ -234,8 +234,8 @@ export function SimulationView() {
       )}
       {/* 焦点粒子洛伦兹力矢量（仅在磁场偏转区内） */}
       {inField && (
-        <VectorArrow
-          originPixel={{ x: particleDesign.px, y: particleDesign.py }}
+        <PhysicsVectorArrow
+          originDesign={{ x: particleDesign.px, y: particleDesign.py }}
           vector={forceVector}
           type="lorentzForce"
           sceneScale={sceneScale}

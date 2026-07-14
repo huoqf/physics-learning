@@ -108,9 +108,10 @@ export function FaradayMagnetSandbox({
         <BarMagnet x={curMagnetX + MAGNET_LEN / 2} y={coilY} width={MAGNET_LEN} height={MAGNET_H} pole={-1} />
         {isPlaying && Math.abs(magnetV) > 0 && (
           <VectorArrow
-            originPixel={{ x: curMagnetX + MAGNET_LEN / 2, y: coilY - 22 }}
+            originDesign={{ x: curMagnetX + MAGNET_LEN / 2, y: coilY - 22 }}
             vector={{ x: magnetV > 0 ? 1 : -1, y: 0 }}
             type="velocity"
+            arrowType="visual-only"
             sceneScale={IDENTITY_SCENE_SCALE}
             pixelLength={30}
             strokeWidth={2.5}

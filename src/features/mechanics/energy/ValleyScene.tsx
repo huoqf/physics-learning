@@ -1,4 +1,4 @@
-import { VectorArrow } from '@/components/Physics'
+import { PhysicsVectorArrow } from '@/components/Physics'
 import { PHYSICS_COLORS, ENERGY_COLORS, STROKE, SCENE_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
 
 import { ZeroPotentialLine } from './ZeroPotentialLine'
@@ -55,6 +55,22 @@ export function ValleyScene({
   font,
   handleMouseDown,
 }: ValleySceneProps) {
+  // 动态参考量级（用于 PhysicsVectorArrow 归一化）
+  const G = m * g
+  const thetaRad = thetaDeg * Math.PI / 180
+  const N = m * g * Math.cos(thetaRad) + m * state.v * state.v / R
+  const f = mu * Math.max(N, 0)
+
+  const vectorSceneScale: SceneScale = {
+    ...sceneScale,
+    refMagnitudes: {
+      velocity: maxV,
+      gravity: G,
+      normalForce: G,
+      friction: mu * G,
+    },
+  }
+
   return (
     <g>
       {/* 凹圆弧轨道线 */}
@@ -96,68 +112,49 @@ export function ValleyScene({
         <circle cx={objW * 0.75} cy={objH - 0.3} r={1.6} fill={CANVAS_COLORS.labelText} />
 
         {/* 切向速度矢量 v */}
-        {showVectors && Math.abs(state.v) > 0.1 && (() => {
-          const velRatio = Math.min(Math.abs(state.v) / maxV, 1)
-          const arrowPx = Math.max(14, velRatio * sceneScale.maxVectorLength * 0.85)
-          return (
-            <VectorArrow
-              originPixel={{ x: objW * 0.5, y: objH + 3 }}
-              vector={{ x: arrowPx * Math.sign(state.v), y: 0 }}
-              type="velocity"
-              sceneScale={sceneScale}
-              pixelLength={arrowPx}
-            />
-          )
-        })()}
+        {showVectors && Math.abs(state.v) > 0.1 && (
+          <PhysicsVectorArrow
+            originDesign={{ x: objW * 0.5, y: objH + 3 }}
+            vector={{ x: state.v, y: 0 }}
+            type="velocity"
+            sceneScale={vectorSceneScale}
+            label="v"
+          />
+        )}
       </g>
 
       {/* 重力矢量 G — 恒定向下 */}
-      {showVectors && (() => {
-        const G = m * g
-        return (
-          <VectorArrow
-            originPixel={{ x: objPos.x, y: objPos.y - objH * 0.3 }}
-            vector={{ x: 0, y: -1 }}
-            type="gravity"
-            sceneScale={sceneScale}
-            pixelLength={Math.min(G * 2, sceneScale.maxVectorLength * 0.9)}
-            label="G"
-          />
-        )
-      })()}
+      {showVectors && (
+        <PhysicsVectorArrow
+          originDesign={{ x: objPos.x, y: objPos.y - objH * 0.3 }}
+          vector={{ x: 0, y: -G }}
+          type="gravity"
+          sceneScale={vectorSceneScale}
+          label="G"
+        />
+      )}
 
       {/* 支持力矢量 N — 垂直轨道面指向圆心 */}
-      {showVectors && (() => {
-        const thetaRad = thetaDeg * Math.PI / 180
-        const N = m * g * Math.cos(thetaRad) + m * state.v * state.v / R
-        return (
-          <VectorArrow
-            originPixel={{ x: objPos.x, y: objPos.y - objH * 0.3 }}
-            vector={{ x: -Math.sin(thetaRad), y: Math.cos(thetaRad) }}
-            type="normalForce"
-            sceneScale={sceneScale}
-            pixelLength={Math.min(N * 2, sceneScale.maxVectorLength * 0.9)}
-            label="N"
-          />
-        )
-      })()}
+      {showVectors && (
+        <PhysicsVectorArrow
+          originDesign={{ x: objPos.x, y: objPos.y - objH * 0.3 }}
+          vector={{ x: -N * Math.sin(thetaRad), y: N * Math.cos(thetaRad) }}
+          type="normalForce"
+          sceneScale={vectorSceneScale}
+          label="N"
+        />
+      )}
 
       {/* 摩擦力矢量 f — 沿切线反向 */}
-      {showVectors && mu > 0 && Math.abs(state.v) > 0.1 && (() => {
-        const thetaRad = thetaDeg * Math.PI / 180
-        const N = m * g * Math.cos(thetaRad) + m * state.v * state.v / R
-        const f = mu * Math.max(N, 0)
-        return (
-          <VectorArrow
-            originPixel={{ x: objPos.x, y: objPos.y - objH * 0.3 }}
-            vector={{ x: -Math.cos(thetaRad) * Math.sign(state.v), y: -Math.sin(thetaRad) * Math.sign(state.v) }}
-            type="friction"
-            sceneScale={sceneScale}
-            pixelLength={Math.min(f * 2, sceneScale.maxVectorLength * 0.9)}
-            label="f"
-          />
-        )
-      })()}
+      {showVectors && mu > 0 && Math.abs(state.v) > 0.1 && (
+        <PhysicsVectorArrow
+          originDesign={{ x: objPos.x, y: objPos.y - objH * 0.3 }}
+          vector={{ x: -f * Math.cos(thetaRad) * Math.sign(state.v), y: -f * Math.sin(thetaRad) * Math.sign(state.v) }}
+          type="friction"
+          sceneScale={vectorSceneScale}
+          label="f"
+        />
+      )}
 
       {/* 阶段状态指示：卡死停在坡上时闪烁提示 */}
       {state.phase === 1 && (

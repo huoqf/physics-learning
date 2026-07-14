@@ -1,4 +1,4 @@
-import { VectorArrow, SportsCar, PhysicsGround } from '@/components/Physics'
+import { PhysicsVectorArrow, SportsCar, PhysicsGround } from '@/components/Physics'
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { useAnimationStore } from '@/stores'
 import { calculatePoliceChase, calculateMeeting } from '@/physics'
@@ -439,10 +439,11 @@ export default function AccelerationCenterExtra() {
           {/* 速度矢量 */}
           {time > 0 && (
             <g>
-              <VectorArrow
-                originPixel={{ x: carAX + LAYOUT.VEHICLE_WIDTH + 4, y: roadY - LAYOUT.VEHICLE_HEIGHT * 0.5 }}
+              <PhysicsVectorArrow
+                originDesign={{ x: carAX + LAYOUT.VEHICLE_WIDTH + 4, y: roadY - LAYOUT.VEHICLE_HEIGHT * 0.5 }}
                 vector={{ x: vA, y: 0 }}
                 type="velocity"
+  
                 sceneScale={sceneScale}
                 strokeWidth={STROKE.vectorMain}
               />
@@ -452,10 +453,11 @@ export default function AccelerationCenterExtra() {
 
               {Math.abs(state.vB) > 0.1 && (
                 <g>
-                  <VectorArrow
-                    originPixel={{ x: carBX + LAYOUT.VEHICLE_WIDTH + 4, y: roadY - LAYOUT.VEHICLE_HEIGHT * 0.5 }}
+                  <PhysicsVectorArrow
+                    originDesign={{ x: carBX + LAYOUT.VEHICLE_WIDTH + 4, y: roadY - LAYOUT.VEHICLE_HEIGHT * 0.5 }}
                     vector={{ x: state.vB, y: 0 }}
                     type="velocity"
+      
                     sceneScale={sceneScale}
                     strokeWidth={STROKE.vectorMain}
                   />
@@ -485,10 +487,11 @@ export default function AccelerationCenterExtra() {
 
           {/* 乙车加速度矢量 */}
           {time > 0 && Math.abs(state.vB) > 0.1 && Math.abs(accelB) > 0.01 && (
-            <VectorArrow
-              originPixel={{ x: carBX + LAYOUT.VEHICLE_WIDTH * 0.5, y: roadY - LAYOUT.VEHICLE_HEIGHT - 8 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: carBX + LAYOUT.VEHICLE_WIDTH * 0.5, y: roadY - LAYOUT.VEHICLE_HEIGHT - 8 }}
               vector={{ x: accelB, y: 0 }}
               type="acceleration"
+
               sceneScale={sceneScale}
               strokeWidth={STROKE.vectorSub}
             />

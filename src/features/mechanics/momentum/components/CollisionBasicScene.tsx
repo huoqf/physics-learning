@@ -3,7 +3,7 @@
  * 基础模式（弹性/非弹性碰撞）渲染组件
  */
 
-import { VectorArrow, PhysicsGround } from '@/components/Physics'
+import { PhysicsVectorArrow, PhysicsGround } from '@/components/Physics'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,
@@ -87,8 +87,8 @@ export function CollisionBasicScene({
       {showVectors && (
         <g>
           {currentV1 !== 0 && (
-            <VectorArrow
-              originPixel={{ x: posAx, y: R_A * 2 + 10 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: posAx, y: R_A * 2 + 10 }}
               vector={{ x: currentV1, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
@@ -100,8 +100,8 @@ export function CollisionBasicScene({
           </text>
 
           {currentV2 !== 0 && (
-            <VectorArrow
-              originPixel={{ x: posBx, y: R_B * 2 + 10 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: posBx, y: R_B * 2 + 10 }}
               vector={{ x: currentV2, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}

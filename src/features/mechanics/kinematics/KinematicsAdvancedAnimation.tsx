@@ -1,4 +1,4 @@
-import { Block, VectorArrow } from '@/components/Physics'
+import { Block, PhysicsVectorArrow } from '@/components/Physics'
 import { useEffect } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -323,10 +323,11 @@ export default function KinematicsAdvancedAnimation() {
           {/* 矢量箭头 */}
           {showVectors && v > 0 && (
             <g>
-              <VectorArrow
-                originPixel={{ x: blockCenterX, y: velocityArrowY }}
+              <PhysicsVectorArrow
+                originDesign={{ x: blockCenterX, y: velocityArrowY }}
                 vector={{ x: v, y: 0 }}
                 type="velocity"
+
                 sceneScale={vectorSceneScale}
                 strokeWidth={STROKE.vectorMain}
               />
@@ -346,10 +347,11 @@ export default function KinematicsAdvancedAnimation() {
 
           {showVectors && Math.abs(a) > 0.05 && (
             <g>
-              <VectorArrow
-                originPixel={{ x: blockCenterX, y: accelerationArrowY }}
+              <PhysicsVectorArrow
+                originDesign={{ x: blockCenterX, y: accelerationArrowY }}
                 vector={{ x: a, y: 0 }}
                 type="acceleration"
+
                 sceneScale={vectorSceneScale}
                 strokeWidth={STROKE.vectorSub}
               />

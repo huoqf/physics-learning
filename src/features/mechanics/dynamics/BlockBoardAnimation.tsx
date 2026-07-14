@@ -6,7 +6,7 @@
  */
 import { useAnimationViewport } from '@/hooks/useAnimationViewport'
 import { AnimationSvgCanvas } from '@/components/Layout'
-import { Block, PhysicsGround, VectorArrow, VectorDefs } from '@/components/Physics'
+import { Block, PhysicsGround, PhysicsVectorArrow, VectorDefs } from '@/components/Physics'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import {
   PHYSICS_COLORS,
@@ -31,17 +31,15 @@ const L = {
   boardH: 24,
   boardStartXRatio: 0.05,
   boardMaxWidthRatio: 0.50,
-  vectorScale: 2.0,
   rulerOffsetY: 8,
   rulerTickH: 10,
 } as const
 
-/** 像素尺度 SceneScale（VectorArrow 需要） */
+/** 恒等 SceneScale 基底（originDesign 模式下仅 maxVectorLength 生效） */
 const PX_SCALE: SceneScale = {
   originX: 0, originY: 0,
   scaleX: 1, scaleY: 1, scale: 1,
   maxVectorLength: 100,
-  refMagnitudes: { gravity: 50, normalForce: 50, friction: 50, appliedForce: 50, force: 50 },
 }
 
 export default function BlockBoardAnimation() {
@@ -81,7 +79,17 @@ export default function BlockBoardAnimation() {
   const FN2 = state.hasFallen ? M * g : (M + m) * g
   const Ff1 = mu1 * m * g
   const Ff2 = state.hasFallen ? mu2 * M * g : mu2 * (M + m) * g
-  const fs = L.vectorScale
+
+  // 动态 refMagnitudes：按类型取最大力值 ×2（ratio ≈ 0.5），保持箭头可见且成比例
+  const vectorSceneScale: SceneScale = {
+    ...PX_SCALE,
+    refMagnitudes: {
+      gravity: Math.max(FgBlock, FgBoard, 5) * 2,
+      normalForce: Math.max(FN1, FN2, 5) * 2,
+      friction: Math.max(Ff1, Ff2, 5) * 2,
+      appliedForce: Math.max(Ff1, 5) * 2,
+    },
+  }
 
   // 箭头中心
   const blkCx = blockX + L.blockW / 2
@@ -152,76 +160,68 @@ export default function BlockBoardAnimation() {
         <g>
           {/* ── 滑块受力 ── */}
           {/* 重力 mg ↓ */}
-          <VectorArrow
-            originPixel={{ x: blkCx, y: blkCy }}
+          <PhysicsVectorArrow
+            originDesign={{ x: blkCx, y: blkCy }}
             vector={{ x: 0, y: -FgBlock }}
-            pixelLength={FgBlock * fs}
-            type="gravity" sceneScale={PX_SCALE}
+            type="gravity" sceneScale={vectorSceneScale}
             label="mg" font={font}
           />
           {/* 支持力 FN1 ↑（在板上时向上，跌落后在地面上） */}
-          <VectorArrow
-            originPixel={{ x: blkCx, y: blockOnBoard ? boardY : groundY }}
+          <PhysicsVectorArrow
+            originDesign={{ x: blkCx, y: blockOnBoard ? boardY : groundY }}
             vector={{ x: 0, y: FN1 }}
-            pixelLength={FN1 * fs}
-            type="normalForce" sceneScale={PX_SCALE}
+            type="normalForce" sceneScale={vectorSceneScale}
             label="FN1" font={font}
           />
           {/* 摩擦力 Ff1 ←（仅在板上且运动时） */}
           {blockOnBoard && state.vBlock > 0.01 && (
-            <VectorArrow
-              originPixel={{ x: blkCx, y: boardY - 2 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: blkCx, y: boardY - 2 }}
               vector={{ x: -Ff1, y: 0 }}
-              pixelLength={Ff1 * fs}
-              type="friction" sceneScale={PX_SCALE}
+              type="friction" sceneScale={vectorSceneScale}
               label="Ff1" font={font}
             />
           )}
 
           {/* ── 木板受力 ── */}
           {/* 重力 Mg ↓ */}
-          <VectorArrow
-            originPixel={{ x: brdCx, y: brdCy }}
+          <PhysicsVectorArrow
+            originDesign={{ x: brdCx, y: brdCy }}
             vector={{ x: 0, y: -FgBoard }}
-            pixelLength={FgBoard * fs}
-            type="gravity" sceneScale={PX_SCALE}
+            type="gravity" sceneScale={vectorSceneScale}
             label="Mg" font={font}
           />
           {/* 滑块压力 FN1' ↓（仅在板上时存在） */}
           {blockOnBoard && (
-            <VectorArrow
-              originPixel={{ x: blkCx, y: boardY }}
+            <PhysicsVectorArrow
+              originDesign={{ x: blkCx, y: boardY }}
               vector={{ x: 0, y: -FN1 }}
-              pixelLength={FN1 * fs}
-              type="normalForce" sceneScale={PX_SCALE}
+              type="normalForce" sceneScale={vectorSceneScale}
               label="FN1'" font={font}
             />
           )}
           {/* 地面支持力 FN2 ↑ */}
-          <VectorArrow
-            originPixel={{ x: brdCx, y: groundY }}
+          <PhysicsVectorArrow
+            originDesign={{ x: brdCx, y: groundY }}
             vector={{ x: 0, y: FN2 }}
-            pixelLength={FN2 * fs}
-            type="normalForce" sceneScale={PX_SCALE}
+            type="normalForce" sceneScale={vectorSceneScale}
             label="FN2" font={font}
           />
           {/* 摩擦力 Ff1' →（作用在板上，仅滑块在板上且运动时） */}
           {blockOnBoard && state.vBlock > 0.01 && (
-            <VectorArrow
-              originPixel={{ x: blkCx, y: boardY + 2 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: blkCx, y: boardY + 2 }}
               vector={{ x: Ff1, y: 0 }}
-              pixelLength={Ff1 * fs}
-              type="appliedForce" sceneScale={PX_SCALE}
+              type="appliedForce" sceneScale={vectorSceneScale}
               label="Ff1'" font={font}
             />
           )}
           {/* 地面摩擦 Ff2 ← */}
           {state.vBoard > 0.01 && (
-            <VectorArrow
-              originPixel={{ x: brdCx, y: groundY - 2 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: brdCx, y: groundY - 2 }}
               vector={{ x: -Ff2, y: 0 }}
-              pixelLength={Ff2 * fs}
-              type="friction" sceneScale={PX_SCALE}
+              type="friction" sceneScale={vectorSceneScale}
               label="Ff2" font={font}
             />
           )}

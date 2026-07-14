@@ -1,4 +1,5 @@
-import { Block, VectorArrow, PhysicsGround } from '@/components/Physics'
+import { useMemo } from 'react'
+import { Block, PhysicsVectorArrow, PhysicsGround } from '@/components/Physics'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { layoutLabels } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -44,14 +45,6 @@ const NEWTON_SCENE_PROFILE: SceneLayoutProfile = {
 }
 // ──────────────────────────────────────────────────────────────────────
 
-const NEWTON_ARROW = {
-  forceScale: 2.5,     // px/N：拉�?摩擦力像素比�?
-  velScale: 5.0,       // px/(m/s)：速度
-  accelScale: 8.0,     // px/(m/s²)：加速度
-  vertFixedLen: 45,    // px：G/FN 固定长度
-} as const
-// ──────────────────────────────────────────────────────────────────────
-
 export default function NewtonSecondAnimation() {
   const { params, time, showVectors } = useAnimationStore(
     useShallow((s) => ({
@@ -64,8 +57,6 @@ export default function NewtonSecondAnimation() {
 
   const contextProfile = useAnimationLayout()
   const sceneProfile = contextProfile ?? NEWTON_SCENE_PROFILE
-
-  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes: sceneProfile.refMagnitudes })
 
   const {
     F = 10,
@@ -111,6 +102,25 @@ export default function NewtonSecondAnimation() {
     s = motionRes.s
   }
 
+  // 动态 refMagnitude：所有矢量随当前值缩放，确保 ratio ≤ 1.0，箭头不溢出
+  const dynamicRefMagnitudes = useMemo(() => ({
+    ...sceneProfile.refMagnitudes,
+    appliedForce: Math.max(F_applied, 5) * 2,
+    friction: Math.max(f, 5) * 2,
+    gravity: Math.max(m * GRAVITY, 5) * 2,
+    normalForce: Math.max(m * GRAVITY, 5) * 2,
+    force: Math.max(F_net, 5) * 2,
+    velocity: Math.max(Math.abs(v), 5) * 2,
+    acceleration: Math.max(Math.abs(a), 5) * 2,
+  }), [sceneProfile.refMagnitudes, F_applied, f, m, F_net, v, a])
+
+  const sceneScale = useSceneScale({
+    vp, preset, anchor: 'viewport',
+    physicsWidth: preset.width, physicsHeight: preset.height,
+    refMagnitudes: dynamicRefMagnitudes,
+    maxVectorLength: 120,
+  })
+
   const groundY = vp.visibleY + vp.visibleH * NEWTON_LAYOUT.groundYRatio
   const originX = vp.visibleX + vp.visibleW * NEWTON_LAYOUT.originXRatio
 
@@ -129,10 +139,13 @@ export default function NewtonSecondAnimation() {
 
   // 标签避让：F_N、v、a 三个标签在物块上方，需自动分离
   const labelFontSize = FONT.axisSize
+  // 速度/加速度标签偏移量：箭头长度已由 refMagnitudes 归一化，最大 ≈ maxVectorLength * 0.5
+  const vLabelOffset = sceneScale.maxVectorLength * 0.5 + 8
+  const aLabelOffset = sceneScale.maxVectorLength * 0.5 + 8
   const positionedLabels = layoutLabels([
     { x: cx, y: cy - 52, text: `F_N=${(m * 9.8).toFixed(1)}N`, fontSize: labelFontSize, anchor: 'middle', priority: 2 },
-    { x: carX + Math.max(15, v * NEWTON_ARROW.velScale) + 8, y: carY - 15, text: `v=${v.toFixed(2)} m/s`, fontSize: labelFontSize, anchor: 'start', priority: 1 },
-    { x: carX + Math.max(15, a * NEWTON_ARROW.accelScale) + 8, y: carY - 32, text: `a=${a.toFixed(2)} m/s²`, fontSize: labelFontSize, anchor: 'start', priority: 0 },
+    { x: carX + vLabelOffset, y: carY - 15, text: `v=${v.toFixed(2)} m/s`, fontSize: labelFontSize, anchor: 'start', priority: 1 },
+    { x: carX + aLabelOffset, y: carY - 32, text: `a=${a.toFixed(2)} m/s²`, fontSize: labelFontSize, anchor: 'start', priority: 0 },
   ], {
     bounds: { left: 0, right: canvasSize.width, top: 0, bottom: groundY },
     padding: 4,
@@ -177,57 +190,57 @@ export default function NewtonSecondAnimation() {
         {showVectors && (
           <g>
             {/* 1. 拉力 F (外力) */}
-            <VectorArrow
-              originPixel={{ x: cx, y: cy }}
-              vector={{ x: 1, y: 0 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: cx, y: cy }}
+              vector={{ x: F_applied, y: 0 }}
               type="appliedForce"
               sceneScale={sceneScale}
-              pixelLength={Math.max(15, F_applied * NEWTON_ARROW.forceScale)}
+              label="F"
             />
             <text
-              x={cx + Math.max(15, F_applied * NEWTON_ARROW.forceScale) + 8}
+              x={cx + sceneScale.maxVectorLength * 0.5 + 8}
               y={cy + 4}
               fontSize={FONT.bodySize}
               fill={PHYSICS_COLORS.appliedForce}
               fontWeight="bold"
             >
-              F={F_applied.toFixed(1)}N
+              ={F_applied.toFixed(1)}N
             </text>
 
-            {/* 2. 摩擦�?f (当存在摩擦力�? */}
+            {/* 2. 摩擦力 f (当存在摩擦力时) */}
             {f > 0.01 && (() => {
               const shouldSeparateFrictionLabel = F_applied > 0.01
               const fLabelY = shouldSeparateFrictionLabel ? cy + 4 + FONT.bodySize * 1.2 : cy + 4
               return (
                 <>
-                  <VectorArrow
-                    originPixel={{ x: cx, y: cy }}
-                    vector={{ x: -1, y: 0 }}
+                  <PhysicsVectorArrow
+                    originDesign={{ x: cx, y: cy }}
+                    vector={{ x: -f, y: 0 }}
                     type="friction"
                     sceneScale={sceneScale}
-                    pixelLength={Math.max(15, f * NEWTON_ARROW.forceScale)}
+                    label="f"
                   />
                   <text
-                    x={cx - Math.max(15, f * NEWTON_ARROW.forceScale) - 8}
+                    x={cx - sceneScale.maxVectorLength * 0.5 - 8}
                     y={fLabelY}
                     fontSize={FONT.axisSize}
                     fill={PHYSICS_COLORS.friction}
                     fontWeight="bold"
                     textAnchor="end"
                   >
-                    f={f.toFixed(1)}N
+                    ={f.toFixed(1)}N
                   </text>
                 </>
               )
             })()}
 
-            {/* 3. 重力 G = mg (向下，深�? */}
-            <VectorArrow
-              originPixel={{ x: cx, y: cy }}
-              vector={{ x: 0, y: -1 }}
+            {/* 3. 重力 G = mg (向下) */}
+            <PhysicsVectorArrow
+              originDesign={{ x: cx, y: cy }}
+              vector={{ x: 0, y: -m * GRAVITY }}
               type="gravity"
               sceneScale={sceneScale}
-              pixelLength={NEWTON_ARROW.vertFixedLen}
+              label="G"
             />
             <text
               x={cx}
@@ -240,13 +253,13 @@ export default function NewtonSecondAnimation() {
               G={(m * 9.8).toFixed(1)}N
             </text>
 
-            {/* 4. 支持�?F_N (向上，青�? */}
-            <VectorArrow
-              originPixel={{ x: cx, y: cy }}
-              vector={{ x: 0, y: 1 }}
+            {/* 4. 支持力 F_N (向上) */}
+            <PhysicsVectorArrow
+              originDesign={{ x: cx, y: cy }}
+              vector={{ x: 0, y: m * GRAVITY }}
               type="normalForce"
               sceneScale={sceneScale}
-              pixelLength={NEWTON_ARROW.vertFixedLen}
+              label="F_N"
             />
             <text
               x={positionedLabels[0].x}
@@ -259,36 +272,35 @@ export default function NewtonSecondAnimation() {
               F_N={(m * 9.8).toFixed(1)}N
             </text>
 
-            {/* 5. 合力 F_�?(亮橙，加粗，画在地面下方) */}
+            {/* 5. 合力 F_net (亮橙，画在地面下方) */}
             {F_net > 0.01 && (
               <g transform={`translate(${cx - 30}, ${groundY + 20})`}>
-                <VectorArrow
-                  originPixel={{ x: 0, y: 0 }}
-                  vector={{ x: 1, y: 0 }}
+                <PhysicsVectorArrow
+                  originDesign={{ x: 0, y: 0 }}
+                  vector={{ x: F_net, y: 0 }}
                   type="force"
                   sceneScale={sceneScale}
-                  pixelLength={Math.max(25, F_net * NEWTON_ARROW.forceScale)}
+                  label="F_合"
                   strokeWidth={CANVAS_STYLE.stroke.vectorMain * 1.5}
                 />
                 <text
-                  x={Math.max(25, F_net * NEWTON_ARROW.forceScale) + 8}
+                  x={sceneScale.maxVectorLength * 0.5 + 8}
                   y={4}
                   fontSize={FONT.bodySize}
                   fill={PHYSICS_COLORS.forceNet}
                   fontWeight="bold"
                 >
-                  F�?{F_net.toFixed(1)}N
+                  ={F_net.toFixed(1)}N
                 </text>
               </g>
             )}
 
             {/* 6. 速度 v 矢量 (经典蓝，画在车顶上方) */}
-            <VectorArrow
-              originPixel={{ x: cx, y: cy }}
+            <PhysicsVectorArrow
+              originDesign={{ x: cx, y: cy }}
               vector={{ x: 1, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
-              pixelLength={Math.max(15, v * NEWTON_ARROW.velScale)}
             />
             <text
               x={positionedLabels[1].x}
@@ -303,12 +315,11 @@ export default function NewtonSecondAnimation() {
             {/* 7. 加速度 a 矢量 (警示红，画在速度上方) */}
             {a > 0.01 && (
               <>
-                <VectorArrow
-                  originPixel={{ x: cx, y: cy }}
+                <PhysicsVectorArrow
+                  originDesign={{ x: cx, y: cy }}
                   vector={{ x: 1, y: 0 }}
                   type="acceleration"
                   sceneScale={sceneScale}
-                  pixelLength={Math.max(15, a * NEWTON_ARROW.accelScale)}
                 />
                 <text
                   x={positionedLabels[2].x}

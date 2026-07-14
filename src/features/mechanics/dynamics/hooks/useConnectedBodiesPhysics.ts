@@ -9,6 +9,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { PX_PER_METER } from '@/utils'
+import { calculateVectorPixelLength } from '@/utils/vectorLength'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateConnectedBody, calculateConnectedBodyTimeline, GRAVITY } from '@/physics'
 
@@ -206,21 +207,33 @@ export function useConnectedBodiesPhysics(): ConnectedBodiesPhysicsResult {
   // 5. 车轮旋转角度
   const wheelRotation = LAYOUT.wheelRadius > 0 ? (dispX / LAYOUT.wheelRadius) * (180 / Math.PI) : 0
 
-  // 6. 外力 F 箭头
-  const arrowLength = Math.max(15, (F / 30) * 60)
-  const dragTargetX = m2X + w2 + arrowLength
+  // 6. 力大小（提前计算，供 refMagnitudes 使用）
+  const f1_val = parseFloat((physicsResult.f1 ?? physicsResult.f1Max).toFixed(1))
+  const f2_val = parseFloat((physicsResult.f2 ?? physicsResult.f2Max).toFixed(1))
+  const T_val = parseFloat(tension.toFixed(1))
 
-  // 7. 场景缩放
+  // 7. 场景缩放（refMagnitudes 键名与 VectorType 一致，值基于实际物理量动态计算）
   const cbSceneScale = useSceneScale({
     vp,
     preset,
     anchor: 'viewport',
     physicsWidth: preset.width,
     physicsHeight: preset.height,
-    refMagnitudes: { force: Math.max(F, 30), friction: Math.max(F, 30), tension: Math.max(F, 30) },
+    maxVectorLength: 85,
+    refMagnitudes: {
+      appliedForce: Math.max(F, 30),
+      friction: Math.max(f1_val, f2_val, 1),
+      tension: Math.max(T_val, 1),
+    },
   })
 
-  // 8. 拖拽交互
+  // 8. 外力 F 拖拽定位（通过 calculateVectorPixelLength 计算，与 PhysicsVectorArrow 渲染长度一致）
+  const arrowLength = F > 0
+    ? calculateVectorPixelLength(F, 'appliedForce', cbSceneScale.maxVectorLength, Math.max(F, 30))
+    : 0
+  const dragTargetX = m2X + w2 + arrowLength
+
+  // 9. 拖拽交互
   const [isDragging, setIsDragging] = useState(false)
   const dragStartRef = useRef({ clientX: 0, startF: 0 })
 
@@ -252,11 +265,6 @@ export function useConnectedBodiesPhysics(): ConnectedBodiesPhysicsResult {
       window.removeEventListener('pointerup', handlePointerUp)
     }
   }, [isDragging, updateParam])
-
-  // 9. 力大小文本
-  const f1_val = parseFloat((physicsResult.f1 ?? physicsResult.f1Max).toFixed(1))
-  const f2_val = parseFloat((physicsResult.f2 ?? physicsResult.f2Max).toFixed(1))
-  const T_val = parseFloat(tension.toFixed(1))
 
   // 10. 分析视图
   const isNormalView = analysisView === 0

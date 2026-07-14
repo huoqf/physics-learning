@@ -1,4 +1,4 @@
-import { VectorArrow, VectorDefs, PhysicsGround, Ball, Block } from '@/components/Physics'
+import { PhysicsVectorArrow, VectorDefs, PhysicsGround, Ball, Block } from '@/components/Physics'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -307,10 +307,11 @@ export default function VelocityAnimationStrip({
             </text>
 
             {/* 位移指示线与箭头 */}
-            <VectorArrow
-              originPixel={{ x: pointA, y: groundY - objH - 12 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: pointA, y: groundY - objH - 12 }}
               vector={{ x: state.x, y: 0 }}
               type="displacement"
+
               sceneScale={sceneScale}
               strokeWidth={STROKE.objectLine}
             />
@@ -327,13 +328,14 @@ export default function VelocityAnimationStrip({
         {/* ── 速度矢量箭头 ── */}
         {Math.abs(vInst) > 0.1 && (
           <g>
-            <VectorArrow
-              originPixel={{
+            <PhysicsVectorArrow
+              originDesign={{
                 x: currentX + (vInst > 0 ? objW / 2 + 4 : -objW / 2 - 4),
                 y: groundY - objH / 2 - (model === 'shm' ? 2 : 5),
               }}
               vector={{ x: vInst, y: 0 }}
               type="velocity"
+
               sceneScale={sceneScale}
               strokeWidth={STROKE.vectorSub}
             />
@@ -350,10 +352,11 @@ export default function VelocityAnimationStrip({
         {/* ── 变加速：加速度矢量箭头 ── */}
         {model === 'force-increasing' && Math.abs(state.a) > 0.05 && (
           <g>
-            <VectorArrow
-              originPixel={{ x: currentX, y: groundY - objH - 11 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: currentX, y: groundY - objH - 11 }}
               vector={{ x: state.a, y: 0 }}
               type="acceleration"
+
               sceneScale={sceneScale}
               strokeWidth={STROKE.vectorSub}
             />

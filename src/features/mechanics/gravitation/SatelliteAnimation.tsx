@@ -1,4 +1,4 @@
-import { VectorArrow } from '@/components/Physics'
+import { PhysicsVectorArrow } from '@/components/Physics'
 import { useState, useRef, useMemo, useCallback, useEffect } from 'react'
 import { clientToContainerPoint } from '@/utils'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
@@ -205,16 +205,16 @@ export default function SatelliteAnimation() {
 
             {showVectors && (
               <g>
-                <VectorArrow
-                  originPixel={{ x: sat0PhysX, y: sat0PhysY }}
+                <PhysicsVectorArrow
+                  originDesign={{ x: sat0PhysX, y: sat0PhysY }}
                   vector={{ x: -sat0PhysX, y: -sat0PhysY }}
                   type="gravity"
                   sceneScale={sceneScale}
                   label="F引"
                   font={font}
                 />
-                <VectorArrow
-                  originPixel={{ x: sat0PhysX, y: sat0PhysY }}
+                <PhysicsVectorArrow
+                  originDesign={{ x: sat0PhysX, y: sat0PhysY }}
                   vector={{ x: sat0PhysY, y: -sat0PhysX }}
                   type="velocity"
                   sceneScale={sceneScale}
@@ -269,16 +269,16 @@ export default function SatelliteAnimation() {
 
             {showVectors && !launchData.crashed && isLaunched === 1 && !isRocket && (
               <g>
-                <VectorArrow
-                  originPixel={{ x: satLaunchPhysX, y: satLaunchPhysY }}
+                <PhysicsVectorArrow
+                  originDesign={{ x: satLaunchPhysX, y: satLaunchPhysY }}
                   vector={{ x: -satLaunchPhysX, y: -satLaunchPhysY }}
                   type="gravity"
                   sceneScale={sceneScale}
                   label="F引"
                   font={font}
                 />
-                <VectorArrow
-                  originPixel={{ x: satLaunchPhysX, y: satLaunchPhysY }}
+                <PhysicsVectorArrow
+                  originDesign={{ x: satLaunchPhysX, y: satLaunchPhysY }}
                   vector={launchData.velocityDir ?? { x: 0, y: 1 }}
                   type="velocity"
                   sceneScale={sceneScale}

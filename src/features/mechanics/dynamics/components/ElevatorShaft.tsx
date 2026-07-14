@@ -154,9 +154,10 @@ export function ElevatorShaft({ layout, m, showVectors }: ElevatorShaftProps) {
         <g>
           {/* 重力 G (深绿) */}
           <VectorArrow
-            originPixel={{ x: objCx, y: objCy }}
+            originDesign={{ x: objCx, y: objCy }}
             vector={{ x: 0, y: -1 }}
             type="gravity"
+            arrowType="visual-only"
             sceneScale={IDENTITY_SCENE_SCALE}
             pixelLength={45}
           />
@@ -174,9 +175,10 @@ export function ElevatorShaft({ layout, m, showVectors }: ElevatorShaftProps) {
           {currentN > 0.01 && (
             <>
               <VectorArrow
-                originPixel={{ x: objCx, y: objCy }}
+                originDesign={{ x: objCx, y: objCy }}
                 vector={{ x: 0, y: 1 }}
                 type="normalForce"
+                arrowType="visual-only"
                 sceneScale={IDENTITY_SCENE_SCALE}
                 pixelLength={45 * (currentN / weight)}
               />
@@ -196,9 +198,10 @@ export function ElevatorShaft({ layout, m, showVectors }: ElevatorShaftProps) {
           {Math.abs(actualA) > 0.01 && (
             <g transform={`translate(${centerX - elevatorWidth / 2 - 28}, ${elevatorY + elevatorHeight / 2})`}>
               <VectorArrow
-                originPixel={{ x: 0, y: 0 }}
+                originDesign={{ x: 0, y: 0 }}
                 vector={{ x: 0, y: actualA > 0 ? 1 : -1 }}
                 type="acceleration"
+                arrowType="visual-only"
                 sceneScale={IDENTITY_SCENE_SCALE}
                 pixelLength={Math.abs(actualA) * 10}
               />
@@ -219,9 +222,10 @@ export function ElevatorShaft({ layout, m, showVectors }: ElevatorShaftProps) {
           {Math.abs(currentV) > 0.01 && (
             <g transform={`translate(${centerX - elevatorWidth / 2 - 42}, ${elevatorY + elevatorHeight / 2})`}>
               <VectorArrow
-                originPixel={{ x: 0, y: 0 }}
+                originDesign={{ x: 0, y: 0 }}
                 vector={{ x: 0, y: currentV > 0 ? 1 : -1 }}
                 type="velocity"
+                arrowType="visual-only"
                 sceneScale={IDENTITY_SCENE_SCALE}
                 pixelLength={Math.abs(currentV) * 6}
               />

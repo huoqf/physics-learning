@@ -1,4 +1,4 @@
-import { VectorArrow, SportsCar, PhysicsGround, VectorDefs, markerId } from '@/components/Physics'
+import { PhysicsVectorArrow, SportsCar, PhysicsGround, VectorDefs, markerId } from '@/components/Physics'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useEffect, useMemo } from 'react'
@@ -436,10 +436,11 @@ export default function UniformAccelerationAnimation() {
         {/* 速度及加速度矢量箭头 */}
         {showVectors && !isOffscreen && Math.abs(v) > 0.1 && (
           <g>
-            <VectorArrow
-              originPixel={{ x: currentX + (v > 0 ? objW + 4 : -4), y: groundY - objH * 0.5 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: currentX + (v > 0 ? objW + 4 : -4), y: groundY - objH * 0.5 }}
               vector={{ x: v, y: 0 }}
               type="velocity"
+
               sceneScale={sceneScale}
               strokeWidth={STROKE.vectorMain}
             />
@@ -449,10 +450,11 @@ export default function UniformAccelerationAnimation() {
 
         {showVectors && !isOffscreen && Math.abs(a) > 0.05 && (
           <g>
-            <VectorArrow
-              originPixel={{ x: currentX + objW * 0.5, y: groundY - objH - 6 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: currentX + objW * 0.5, y: groundY - objH - 6 }}
               vector={{ x: a, y: 0 }}
               type="acceleration"
+
               sceneScale={sceneScale}
               strokeWidth={STROKE.vectorSub}
             />

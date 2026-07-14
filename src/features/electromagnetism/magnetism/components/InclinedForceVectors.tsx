@@ -1,5 +1,5 @@
 import React from 'react'
-import { VectorArrow } from '@/components/Physics'
+import { PhysicsVectorArrow } from '@/components/Physics'
 import type { AdvancedAmperePhysicsResult } from '../ampereForceModel'
 import type { SceneScale } from '@/scene'
 import type { Point } from './inclineSceneUtils'
@@ -56,7 +56,7 @@ export const InclinedForceVectors: React.FC<InclinedForceVectorsProps> = ({
     <>
       {/* 电流矢量 I（绘制在棒中心正上方 15px 处） */}
       {Math.abs(I) > 1e-4 && (
-        <VectorArrow
+        <PhysicsVectorArrow
           vector={I > 0 ? { x: -dx * 0.65, y: dy * 0.65 } : { x: dx * 0.65, y: -dy * 0.65 }}
           type="currentDirection"
           sceneScale={localScale}
@@ -93,7 +93,7 @@ export const InclinedForceVectors: React.FC<InclinedForceVectorsProps> = ({
 
       {/* 安培力 F_安 (默认显示，洛伦兹紫) */}
       {ampereDirection && (
-        <VectorArrow
+        <PhysicsVectorArrow
           vector={{ x: ampereDirection.x * ampereArrowLength, y: -ampereDirection.y * ampereArrowLength }}
           type="lorentzForce"
           sceneScale={localScale}
@@ -106,7 +106,7 @@ export const InclinedForceVectors: React.FC<InclinedForceVectorsProps> = ({
 
       {/* 重力 G (显示矢量时，深绿色) */}
       {showVectors && (
-        <VectorArrow
+        <PhysicsVectorArrow
           vector={{ x: 0, y: -G_len }}
           type="gravity"
           sceneScale={localScale}
@@ -118,7 +118,7 @@ export const InclinedForceVectors: React.FC<InclinedForceVectorsProps> = ({
 
       {/* 支持力 N (显示矢量时，天蓝色) */}
       {showVectors && (
-        <VectorArrow
+        <PhysicsVectorArrow
           vector={{ x: normalUnit.x * N_len, y: -normalUnit.y * N_len }}
           type="normalForce"
           sceneScale={localScale}
@@ -130,7 +130,7 @@ export const InclinedForceVectors: React.FC<InclinedForceVectorsProps> = ({
 
       {/* 摩擦力 f (显示矢量时，黄褐色) */}
       {showVectors && Math.abs(physicsResult.f) > 1e-4 && (
-        <VectorArrow
+        <PhysicsVectorArrow
           vector={{ x: slopeUnit.x * f_sign * f_len, y: -slopeUnit.y * f_sign * f_len }}
           type="friction"
           sceneScale={localScale}
@@ -144,7 +144,7 @@ export const InclinedForceVectors: React.FC<InclinedForceVectorsProps> = ({
 
       {/* 合力 F_合 (显示矢量时且运动加速，动力亮橙) */}
       {showVectors && Math.abs(a) > 0.05 && (
-        <VectorArrow
+        <PhysicsVectorArrow
           vector={{ x: slopeUnit.x * motionSign * Fnet_len, y: -slopeUnit.y * motionSign * Fnet_len }}
           type="force"
           sceneScale={localScale}
@@ -157,7 +157,7 @@ export const InclinedForceVectors: React.FC<InclinedForceVectorsProps> = ({
 
       {/* 速度 v (显示矢量时且运动，经典蓝) */}
       {showVectors && Math.abs(a) > 0.05 && !hasLimit && (
-        <VectorArrow
+        <PhysicsVectorArrow
           vector={{ x: slopeUnit.x * motionSign * 35, y: -slopeUnit.y * motionSign * 35 }}
           type="velocity"
           sceneScale={localScale}
@@ -169,7 +169,7 @@ export const InclinedForceVectors: React.FC<InclinedForceVectorsProps> = ({
 
       {/* 平衡状态下的滑动趋势 (显示矢量时，半透明淡橘色虚线) */}
       {showVectors && physicsResult.state === 'equilibrium' && Math.abs(physicsResult.R_parallel) > 0.02 && (
-        <VectorArrow
+        <PhysicsVectorArrow
           vector={{
             x: slopeUnit.x * Math.sign(physicsResult.R_parallel) * 35,
             y: -slopeUnit.y * Math.sign(physicsResult.R_parallel) * 35,

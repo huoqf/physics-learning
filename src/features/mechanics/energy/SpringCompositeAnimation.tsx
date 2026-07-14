@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useAnimationStore } from '@/stores';
 import { useShallow } from 'zustand/react/shallow';
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics';
-import { Ball, PhysicsGround, VectorArrow } from '@/components/Physics';
+import { Ball, PhysicsGround, PhysicsVectorArrow } from '@/components/Physics';
 import { Spring } from '@/components/UI';
 import { createSceneScaleFromDesignCenter } from '@/scene/SceneScale';
 import { precomputeVerticalSpringTrajectory, getVSStateAtTime } from '@/physics/verticalSpring';
@@ -286,13 +286,13 @@ export default function SpringCompositeAnimation() {
 
             {showVectors && (
               <g>
-                <VectorArrow originPixel={{ x: centerX, y: ballY }} vector={{ x: 0, y: -m * g }} type='gravity' color={PHYSICS_COLORS.gravity} sceneScale={springSceneScale} pixelLength={m * g * 2} label='G' />
+                <PhysicsVectorArrow originDesign={{ x: centerX, y: ballY }} vector={{ x: 0, y: -m * g }} type='gravity' color={PHYSICS_COLORS.gravity} sceneScale={springSceneScale} label='G' />
                 {mode === 1
-                  ? state.x > 0 && <VectorArrow originPixel={{ x: centerX, y: ballY - 14 }} vector={{ x: 0, y: state.F_spring }} type='elasticForce' color={PHYSICS_COLORS.elasticForce} sceneScale={springSceneScale} pixelLength={Math.min(state.F_spring * 2, 60)} label='F弹' />
-                  : state.x >= 0 && <VectorArrow originPixel={{ x: centerX, y: ballY + 14 }} vector={{ x: 0, y: state.F_spring }} type='elasticForce' color={PHYSICS_COLORS.elasticForce} sceneScale={springSceneScale} pixelLength={Math.min(state.F_spring * 2, 60)} label='F弹' />
+                  ? state.x > 0 && <PhysicsVectorArrow originDesign={{ x: centerX, y: ballY - 14 }} vector={{ x: 0, y: state.F_spring }} type='elasticForce' color={PHYSICS_COLORS.elasticForce} sceneScale={springSceneScale} label='F弹' />
+                  : state.x >= 0 && <PhysicsVectorArrow originDesign={{ x: centerX, y: ballY + 14 }} vector={{ x: 0, y: state.F_spring }} type='elasticForce' color={PHYSICS_COLORS.elasticForce} sceneScale={springSceneScale} label='F弹' />
                 }
-                {Math.abs(state.v) > 0.05 && <VectorArrow originPixel={{ x: centerX - 23, y: ballY }} vector={{ x: 0, y: -state.v }} type='velocity' color={PHYSICS_COLORS.velocity} sceneScale={springSceneScale} pixelLength={Math.min(Math.abs(state.v) * 15, 50)} label='v' />}
-                {Math.abs(state.a) > 0.05 && <VectorArrow originPixel={{ x: centerX + 23, y: ballY }} vector={{ x: 0, y: -state.a }} type='acceleration' color={PHYSICS_COLORS.acceleration} sceneScale={springSceneScale} pixelLength={Math.min(Math.abs(state.a) * 10, 50)} label='a' />}
+                {Math.abs(state.v) > 0.05 && <PhysicsVectorArrow originDesign={{ x: centerX - 23, y: ballY }} vector={{ x: 0, y: -state.v }} type='velocity' color={PHYSICS_COLORS.velocity} sceneScale={springSceneScale} label='v' />}
+                {Math.abs(state.a) > 0.05 && <PhysicsVectorArrow originDesign={{ x: centerX + 23, y: ballY }} vector={{ x: 0, y: -state.a }} type='acceleration' color={PHYSICS_COLORS.acceleration} sceneScale={springSceneScale} label='a' />}
               </g>
             )}
 

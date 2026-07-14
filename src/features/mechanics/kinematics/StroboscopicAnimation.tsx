@@ -1,4 +1,4 @@
-import { SportsCar, PhysicsGround, VectorArrow, VectorDefs } from '@/components/Physics'
+import { SportsCar, PhysicsGround, PhysicsVectorArrow, VectorDefs } from '@/components/Physics'
 import { useAnimationViewport } from '@/hooks'
 import { useSceneScale } from '@/hooks'
 import { useEffect, useMemo } from 'react'
@@ -268,10 +268,11 @@ export function StroboscopicAnimation({
         {/* 速度及加速度矢量 */}
         {showVectors && Math.abs(physics.v) > 0.1 && (
           <g>
-            <VectorArrow
-              originPixel={{ x: currentX + (physics.v > 0 ? objW + 4 : -4), y: groundY - objH * 0.5 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: currentX + (physics.v > 0 ? objW + 4 : -4), y: groundY - objH * 0.5 }}
               vector={{ x: physics.v, y: 0 }}
               type="velocity"
+
               sceneScale={sceneScale}
               strokeWidth={STROKE.vectorMain}
             />
@@ -282,10 +283,11 @@ export function StroboscopicAnimation({
         {/* 加速度矢量 */}
         {showVectors && Math.abs(a) > 0.05 && (
           <g>
-            <VectorArrow
-              originPixel={{ x: currentX + objW * 0.5, y: groundY - objH - 6 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: currentX + objW * 0.5, y: groundY - objH - 6 }}
               vector={{ x: a, y: 0 }}
               type="acceleration"
+
               sceneScale={sceneScale}
               strokeWidth={STROKE.vectorSub}
             />

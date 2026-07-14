@@ -16,7 +16,7 @@
  *
  * @category M4
  */
-import { VectorArrow } from '@/components/Physics'
+import { PhysicsVectorArrow } from '@/components/Physics'
 import { useState, useEffect } from 'react'
 import { type CanvasSize } from '@/utils'
 import type { ViewportInfo } from '@/utils'
@@ -245,8 +245,8 @@ export default function ThreeChargeMode({
             <g key={`charge-${idx}`}>
               {showVectors && force.magnitude > 1e-12 && (
                 <g>
-                  <VectorArrow
-                    originPixel={{ x: pos.x, y: pos.y }}
+                  <PhysicsVectorArrow
+                    originDesign={{ x: pos.x, y: pos.y }}
                     vector={{ x: force.fx, y: -force.fy }}
                     type="electricForce"
                     sceneScale={sceneScale}

@@ -1,9 +1,9 @@
-import { useAnimationViewport } from '@/hooks/useAnimationViewport'
+import { useMemo } from 'react'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
-import { VectorArrow, Block, PhysicsGround, Incline } from '@/components/Physics'
+import { PhysicsVectorArrow, Block, PhysicsGround, Incline } from '@/components/Physics'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { CANVAS_COLORS, SCENE_COLORS } from '@/theme/physics'
-import type { SceneScale } from '@/scene/SceneScale'
 import { useInclinedPlaneSimulation } from './inclined-plane/useInclinedPlaneSimulation'
 
 const DESIGN = CANVAS_PRESETS.splitH // 420 × 650
@@ -18,25 +18,8 @@ const LAYOUT = {
   vectorScale: 1.8,       // px/N：力的像素缩放系数
 } as const
 
-// 像素尺度的虚拟 SceneScale，直接透传像素大小
-const PIXEL_SCALE: SceneScale = {
-  originX: 0,
-  originY: 0,
-  scaleX: 1,
-  scaleY: 1,
-  scale: 1,
-  maxVectorLength: 100,
-  refMagnitudes: {
-    gravity: 50,
-    normalForce: 50,
-    friction: 50,
-    appliedForce: 50,
-    force: 50
-  }
-}
-
 export default function InclinedPlaneAnimation() {
-  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: DESIGN })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: DESIGN })
 
   // 物理斜面底边宽 2.4 米
   const {
@@ -73,11 +56,25 @@ export default function InclinedPlaneAnimation() {
   const blockWorldX = pivotX + x_px * Math.cos(angleRad) + (LAYOUT.boxSize / 2) * Math.sin(angleRad)
   const blockWorldY = pivotY + x_px * Math.sin(angleRad) - (LAYOUT.boxSize / 2) * Math.cos(angleRad)
 
-  // 3. 各力大小与矢量长度
+  // 3. 各力大小
   const weight = m * physicsRes.FN / (Math.cos(angleRad) || 1) // mg
-  const G_px = weight * LAYOUT.vectorScale
-  const FN_px = physicsRes.FN * LAYOUT.vectorScale
-  const Ff_px = physicsRes.Ff * LAYOUT.vectorScale
+
+  // 动态 refMagnitudes：确保 ratio ≤ 1.0，箭头不溢出
+  const dynamicRefMagnitudes = useMemo(() => ({
+    gravity: Math.max(weight, 5) * 2,
+    normalForce: Math.max(physicsRes.FN, 5) * 2,
+    friction: Math.max(physicsRes.Ff, 5) * 2,
+    appliedForce: 50,
+    force: 50,
+  }), [weight, physicsRes.FN, physicsRes.Ff])
+
+  const sceneScale = useSceneScale({
+    vp, preset, anchor: 'custom',
+    customScaleX: 1, customScaleY: 1,
+    customOriginX: 0, customOriginY: 0,
+    refMagnitudes: dynamicRefMagnitudes,
+    maxVectorLength: 100,
+  })
 
   // 4. 重力在平行和垂直斜面方向的分解分量像素值
   const G_parallel_px = weight * Math.sin(angleRad) * LAYOUT.vectorScale
@@ -212,29 +209,27 @@ export default function InclinedPlaneAnimation() {
         </g>
       )}
 
-      {/* 5. 核心受力分析矢量箭头 (在世界坐标系绘制，通过 pixelLength 固定像素大小) */}
+      {/* 5. 核心受力分析矢量箭头 (在世界坐标系绘制) */}
       {/* 重力 G: 物理方向垂直向下 (y 负方向) */}
-      <VectorArrow
-        originPixel={{ x: blockWorldX, y: blockWorldY }}
+      <PhysicsVectorArrow
+        originDesign={{ x: blockWorldX, y: blockWorldY }}
         vector={{ x: 0, y: -weight }}
-        pixelLength={G_px}
         type="gravity"
-        sceneScale={PIXEL_SCALE}
+        sceneScale={sceneScale}
         label="G"
         font={canvasSize.font}
         glow
       />
 
       {/* 支持力 FN: 物理方向垂直斜面向上 (右上分量) */}
-      <VectorArrow
-        originPixel={{ x: blockWorldX, y: blockWorldY }}
+      <PhysicsVectorArrow
+        originDesign={{ x: blockWorldX, y: blockWorldY }}
         vector={{
           x: physicsRes.FN * Math.sin(angleRad),
           y: physicsRes.FN * Math.cos(angleRad),
         }}
-        pixelLength={FN_px}
         type="normalForce"
-        sceneScale={PIXEL_SCALE}
+        sceneScale={sceneScale}
         label="FN"
         font={canvasSize.font}
         glow
@@ -242,15 +237,14 @@ export default function InclinedPlaneAnimation() {
 
       {/* 摩擦力 Ff: 物理方向沿斜面向上 (左上分量) */}
       {physicsRes.Ff > 0.1 && (
-        <VectorArrow
-          originPixel={{ x: blockWorldX, y: blockWorldY }}
+        <PhysicsVectorArrow
+          originDesign={{ x: blockWorldX, y: blockWorldY }}
           vector={{
             x: -physicsRes.Ff * Math.cos(angleRad),
             y: physicsRes.Ff * Math.sin(angleRad),
           }}
-          pixelLength={Ff_px}
           type="friction"
-          sceneScale={PIXEL_SCALE}
+          sceneScale={sceneScale}
           label="Ff"
           font={canvasSize.font}
           glow

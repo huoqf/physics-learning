@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-14（维护批次 + 4.2 试点）
+> 最后更新：2026-07-14（VectorArrow 坐标体系清理 + 4.2 试点）
 
 ---
 
@@ -229,6 +229,180 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 **不迁移**：CenterExtra / Chart / Sidebar / 子组件（如 MomentumScene、BohrOrbits 等）使用 useCanvasSize 属正常模式，由父级 useAnimationViewport 提供 vp。
 
 **DEV 豁免**：`src/features/dev/` 目录为内部开发沙箱，无需迁移。
+
+---
+
+## 六、VectorArrow 坐标体系清理
+
+> 背景：Phase 6 迁移后 387 个 VectorArrow 实例全部使用 `originPixel`（设计坐标），但坐标空间语义不明确，导致多轮 bug 修复。根因：`originPixel` 命名误导 + 三套坐标空间无编译时防护。
+
+### 6.1 已完成
+
+| 日期 | 内容 | 状态 |
+|------|------|:----:|
+| 2026-07-14 | NewtonSecondAnimation 溢出修复：移除 velocity/acceleration 的 pixelLength，改用动态 refMagnitudes + maxVectorLength=120 | ✅ |
+| 2026-07-14 | VelocityAnimation 修复：refMagnitudes 添加 averageVelocity | ✅ |
+| 2026-07-14 | Phase 1：originPixel → originDesign 重命名（356 处，保留 deprecated alias） | ✅ |
+| 2026-07-14 | Phase 2：全量箭头分类标注（371 实例：physical-real 182, physical-schematic 124, visual-only 60） | ✅ |
+| 2026-07-14 | Phase 3：PhysicsVectorArrow 组件创建 + 182 个 physical-real 实例迁移 | ✅ |
+| 2026-07-14 | Phase 4：12 个页面约 45 个 physical-schematic 实例迁移到 PhysicsVectorArrow + 动态 refMagnitudes | ✅ |
+
+### 6.1.1 Phase 4 迁移详情
+
+**已迁移的页面**（移除 pixelLength，改用动态 refMagnitudes + PhysicsVectorArrow）：
+
+| 页面 | 模块 | 迁移数 | 模式 |
+|------|------|:------:|------|
+| NewtonSecondAnimation | 力学-动力学 | 5 | B类线性：F/f/G/FN/F_net → 物理矢量 + 动态 refMag |
+| PowerScene | 力学-能量 | 3 | C类夹住上限 |
+| WorkAnimation | 力学-能量 | 5 | C类夹住上限 |
+| ValleyScene | 力学-能量 | 4 | C类夹住上限 |
+| PendulumScene | 力学-能量 | 3 | C类夹住上限 |
+| SpringCompositeAnimation | 力学-能量 | 5 | C类夹住上限 |
+| BlockBoardAnimation | 力学-动力学 | 8 | B类线性 |
+| InclinedPlaneAnimation | 力学-动力学 | 3 | B类线性 |
+| ConnectedBodiesAnimation | 力学-动力学 | 5 | B类+部分A类固定值 |
+| BinaryStarsAnimation | 力学-万有引力 | 5 | B类（velocity）；A类固定值保留 |
+| SingleRodAnimation | 电磁学-感应 | 4 | C类夹住上限 |
+| CircularModelsAnimation | 力学-圆周 | 6 | C类夹住上限 |
+
+**保留 pixelLength 的页面**（合理设计，非技术债）：
+
+| 类别 | 实例数 | 原因 |
+|------|:------:|------|
+| A 固定值 | 14 | 受力分析等长力、方向示意 |
+| D 几何距离 | 42 | 平行四边形/三角形/正交分解图闭合 |
+| E 参数传入 | 2 | 通用渲染函数参数 |
+| F 速度分解 | 9 | vx/vy 须与 v 成比例维持闭合 |
+| GravityAnimation 对数 | 2 | 非线性缩放 |
+
+### 6.2 Phase 1：originPixel → originDesign 重命名（P1，可立即做）
+
+**目标**：消除命名歧义，`originPixel` → `originDesign`，保留 deprecated alias。
+
+**范围**：
+- `VectorArrow.tsx`：接口重命名 + alias
+- 358 处 JSX 调用：批量替换 prop 名
+- `renderVectorArrow.tsx`：同步更新
+- `renderSceneVector.tsx`：同步更新
+
+**风险**：低。纯重命名，不改变运行时行为。
+
+**步骤**：
+1. `VectorArrow.tsx` 接口：`originPixel` → `originDesign`，保留 `/** @deprecated Use originDesign */` alias
+2. 全局搜索替换 `<VectorArrow` 内 `originPixel` → `originDesign`
+3. 更新 `renderVectorArrow.tsx`、`renderSceneVector.tsx` 等辅助函数
+4. `tsc --noEmit` + `npm test`
+
+### 6.3 Phase 2：全量箭头分类（P2）✅
+
+> 已于 2026-07-14 完成。371 个 VectorArrow 实例已标注 `arrowType`。
+
+**分类结果**：
+
+| 类型 | 数量 | 含义 | 迁移方向 |
+|------|:----:|------|---------|
+| `physical-real` | 182 | 物理量矢量，需物理正确 | 保留，后续可迁移到 PhysicsVectorArrow |
+| `physical-schematic` | 124 | 物理量示意箭头，方向正确但长度不严格 | 保留 originDesign，但禁用 pixelLength |
+| `visual-only` | 60 | 纯视觉标注（UI 引导、方向提示） | 保留 originDesign + pixelLength |
+
+**分类标准**：
+- 使用 `origin`（物理坐标）→ `physical-real`（当前仅 2 文件 42 实例）
+- 使用 sceneScale refMagnitudes 自动归一化 → `physical-real` 或 `physical-schematic`
+- 使用 `pixelLength` 手动控制 → `physical-schematic` 或 `visual-only`
+- `IDENTITY_SCENE_SCALE` + pixelLength → 大概率 `visual-only`
+
+### 6.4 Phase 3：PhysicsVectorArrow 组件（P3）
+
+**目标**：为 `physical-real` 类型箭头创建专用组件，强制物理坐标输入。
+
+```tsx
+<PhysicsVectorArrow
+  quantity="force"  // force | velocity | acceleration | current | field
+  originPhysics={...}   // 物理坐标（米）
+  vectorPhysics={...}   // 物理矢量（米/秒、牛顿等）
+  sceneScale={...}      // 物理→设计坐标转换
+/>
+```
+
+**约束**：
+- 禁止 `pixelLength`（长度必须通过 refMagnitudes 归一化）
+- 禁止 `originDesign`（起点必须来自物理模型）
+- 禁止 `IDENTITY_SCENE_SCALE`
+
+**范围**：仅迁移 `physical-real` 类型（~42 个 `origin` 实例 + 部分 refMagnitudes 自动归一化实例）
+
+### 6.5 Phase 4：physical-schematic pixelLength 清理 ✅
+
+> 已于 2026-07-14 完成。详见 6.1.1。
+
+**核心策略**：`pixelLength` → 动态 `refMagnitudes`
+
+`pixelLength` 绕过了 `maxVectorLength` 的上限保护，导致矢量可能溢出动画区域。动态 `refMagnitudes` 通过 `calculateVectorPixelLength` 归一化，确保 `ratio ≤ 1.0`，箭头长度始终在 `maxVectorLength` 内。
+
+**迁移模式**：
+```ts
+// 旧：手动控制长度
+<VectorArrow vector={{ x: 1, y: 0 }} pixelLength={F * 2.5} />
+
+// 新：物理矢量 + 动态 refMagnitudes
+<PhysicsVectorArrow vector={{ x: F, y: 0 }} sceneScale={sceneScale} />
+// sceneScale.refMagnitudes = { appliedForce: Math.max(F, 5) * 2 }
+```
+
+**不可迁移的 69 个实例**（保留 pixelLength 是合理设计，非技术债）：
+- A 固定值 14 个：受力分析等长力
+- D 几何距离 42 个：平行四边形/三角形闭合
+- E 参数传入 2 个：通用渲染函数
+- F 速度分解 9 个：分量须与总量成比例
+- GravityAnimation 对数 2 个：非线性缩放
+
+### 6.6 physical-schematic 优化评估
+
+**错位根因分析**：
+
+| 错位类型 | 根因 | 解决方案 |
+|---------|------|---------|
+| 矢量起点偏移 | originPixel 覆盖 sceneScale.originX/Y | Phase 1 已解决（originDesign 语义明确） |
+| 矢量长度溢出 | pixelLength 绕过 maxVectorLength | Phase 4 已解决（动态 refMagnitudes） |
+| 几何图形不闭合 | D 类 pixelLength 值与端点距离不匹配 | 保持 pixelLength（设计意图） |
+| 速度分解不闭合 | F 类 vx/vy 比例与 refMagnitudes 归一化冲突 | 保持 pixelLength（设计意图） |
+| 双重缩放 | originDesign 在 `<g scale>` 内重复缩放 | Phase 1 代码审查已修复 |
+
+**防错位保障机制**：
+
+1. **PhysicsVectorArrow 禁止 pixelLength**：强制走 refMagnitudes 归一化，从源头消除溢出
+2. **动态 refMagnitudes 模式**：`Math.max(value, min) * 2` 确保 ratio ≈ 0.5，箭头可见且不溢出
+3. **maxVectorLength 上限**：所有 PhysicsVectorArrow 的箭头长度被 `maxVectorLength` 钳位
+4. **sceneScale.originX/Y**：移除 originDesign 覆盖后，sceneScale 的 origin 正确工作
+
+### 6.7 Phase 5：物理箭头单元测试（P3，待完成）
+
+**目标**：为 PhysicsVectorArrow 添加坐标转换、Y 轴方向、长度比例的单元测试。
+
+**测试用例**：
+- 物理坐标 → 设计坐标转换正确（y 翻转）
+- 箭头长度 = min(|vector| / refMagnitude, 1.0) * maxVectorLength * weight
+- 方向向量 normalize 后长度 = 1
+- 零矢量返回 null
+
+### 6.8 Phase 6：截图回归（P4）
+
+**目标**：为物理箭头页面添加视觉回归测试。
+
+**前提**：需要引入 Playwright 或类似工具。当前无任何视觉回归保障。
+
+**优先页面**：NewtonSecondAnimation、SystemIsolatedMethodologyAnimation、OrbitTransferAnimation
+
+### 6.9 已知问题（已修复）
+
+| 日期 | 文件 | 问题 | 修复 |
+|------|------|------|------|
+| 2026-07-14 | NewtonSecondAnimation | velocity/acceleration pixelLength 溢出（最坏 800px） | 移除 pixelLength，改用动态 refMagnitudes |
+| 2026-07-14 | VelocityAnimation | averageVelocity 缺失 refMagnitude，箭头始终 14px | 添加 averageVelocity refMagnitude |
+| 2026-07-14 | BulletBlockScene | originPixel 使用物理坐标 | 改为设计坐标 |
+| 2026-07-14 | OrbitTransferAnimation | originPixel 覆盖 sceneScale origin | 改回 origin（物理坐标） |
+| 2026-07-14 | renderVectorArrow | originPixel={{x:0,y:0}} 覆盖 sceneScale origin | 移除 originPixel |
 
 ---
 

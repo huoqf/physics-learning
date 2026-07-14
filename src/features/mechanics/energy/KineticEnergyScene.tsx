@@ -1,4 +1,4 @@
-import { VectorArrow, SVGSingleBar, Block, PhysicsGround } from '@/components/Physics'
+import { PhysicsVectorArrow, SVGSingleBar, Block, PhysicsGround } from '@/components/Physics'
 import { useMemo } from 'react'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, CANVAS_STYLE, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
@@ -283,20 +283,22 @@ export function KineticEnergyScene({
           />
 
           {showVectors && state.F > 0.1 && (
-            <VectorArrow
-              originPixel={{ x: objW, y: objH * 0.5 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: objW, y: objH * 0.5 }}
               vector={{ x: state.F, y: 0 }}
               type="appliedForce"
+
               sceneScale={sceneScale}
               label="F"
             />
           )}
 
           {showVectors && state.v > 0.05 && (
-            <VectorArrow
-              originPixel={{ x: objW * 0.5, y: 3.5 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: objW * 0.5, y: 3.5 }}
               vector={{ x: state.v, y: 0 }}
               type="velocity"
+
               sceneScale={sceneScale}
               label="v"
             />
@@ -316,10 +318,11 @@ export function KineticEnergyScene({
           <g>
             {/* 切向合外力 F_net（驱动 ΔEk 变化的力） */}
             {Math.abs(state.F) > 0.1 && (
-              <VectorArrow
-                originPixel={{ x: ballCX, y: ballCY }}
+              <PhysicsVectorArrow
+                originDesign={{ x: ballCX, y: ballCY }}
                 vector={{ x: state.F * tangentDirX, y: -state.F * tangentDirY }}
                 type="force"
+  
                 sceneScale={sceneScale}
                 label="F合"
               />
@@ -336,10 +339,11 @@ export function KineticEnergyScene({
                 <g>
                   {/* 重力 mg：竖直向下 */}
                   {mg > 0.1 && (
-                    <VectorArrow
-                      originPixel={{ x: ballCX, y: ballCY }}
+                    <PhysicsVectorArrow
+                      originDesign={{ x: ballCX, y: ballCY }}
                       vector={{ x: 0, y: -mg }}
                       type="gravity"
+        
                       sceneScale={sceneScale}
                       strokeWidth={STROKE.vectorSub}
                       label="mg"
@@ -347,10 +351,11 @@ export function KineticEnergyScene({
                   )}
                   {/* 法向力 N：指向圆心（凹型弧内侧） */}
                   {normalForce > 0.1 && (
-                    <VectorArrow
-                      originPixel={{ x: ballCX, y: ballCY }}
+                    <PhysicsVectorArrow
+                      originDesign={{ x: ballCX, y: ballCY }}
                       vector={{ x: normalForce * inwardDirX, y: -normalForce * inwardDirY }}
                       type="normalForce"
+        
                       sceneScale={sceneScale}
                       strokeWidth={STROKE.vectorSub}
                       label="N"
@@ -358,10 +363,11 @@ export function KineticEnergyScene({
                   )}
                   {/* 摩擦力 f：与运动方向相反（沿切线上坡） */}
                   {fFriction > 0.1 && (
-                    <VectorArrow
-                      originPixel={{ x: ballCX, y: ballCY }}
+                    <PhysicsVectorArrow
+                      originDesign={{ x: ballCX, y: ballCY }}
                       vector={{ x: -fFriction * tangentDirX, y: fFriction * tangentDirY }}
                       type="friction"
+        
                       sceneScale={sceneScale}
                       strokeWidth={STROKE.vectorSub}
                       label="f"
@@ -374,10 +380,11 @@ export function KineticEnergyScene({
 
           {/* 速度 v：沿切线方向（下滑方向） */}
           {showVectors && state.v > 0.05 && (
-            <VectorArrow
-              originPixel={{ x: ballCX, y: ballCY }}
+            <PhysicsVectorArrow
+              originDesign={{ x: ballCX, y: ballCY }}
               vector={{ x: state.v * tangentDirX, y: -state.v * tangentDirY }}
               type="velocity"
+
               sceneScale={sceneScale}
               label="v"
             />

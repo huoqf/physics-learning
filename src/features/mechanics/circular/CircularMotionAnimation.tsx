@@ -1,4 +1,4 @@
-import { VectorArrow } from '@/components/Physics'
+import { PhysicsVectorArrow } from '@/components/Physics'
 import { worldToDesign } from '@/scene'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
@@ -364,14 +364,14 @@ export default function CircularMotionAnimation() {
         {/* 矢量箭头标注 (经典配色，剔除硬编码) */}
         {showVectors && v > 0 && (
           <g>
-            <VectorArrow
-              originPixel={{ x: dx, y: dy }}
+            <PhysicsVectorArrow
+              originDesign={{ x: dx, y: dy }}
               vector={{ x: -y * (v / r), y: x * (v / r) }}
               type="velocity"
               sceneScale={sceneScale}
             />
-            <VectorArrow
-              originPixel={{ x: dx, y: dy }}
+            <PhysicsVectorArrow
+              originDesign={{ x: dx, y: dy }}
               vector={{ x: -x * (a_c / r), y: -y * (a_c / r) }}
               type="acceleration"
               sceneScale={sceneScale}

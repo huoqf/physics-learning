@@ -1,4 +1,4 @@
-import { VectorArrow, VectorDefs, CapacitorPlates } from '@/components/Physics'
+import { PhysicsVectorArrow, VectorDefs, CapacitorPlates } from '@/components/Physics'
 import { calculateVelocitySelectorTrajectory } from '@/physics'
 
 import { ParticleEmitter, MagneticFieldSymbols } from '@/components/Physics'
@@ -22,8 +22,8 @@ function BasicVectors({
 
   return (
     <g>
-      <VectorArrow
-        originPixel={{ x: pDesignX, y: pDesignY }}
+      <PhysicsVectorArrow
+        originDesign={{ x: pDesignX, y: pDesignY }}
         vector={velVec}
         type="velocity"
         sceneScale={sceneScale}
@@ -41,8 +41,8 @@ function BasicVectors({
 
       {Math.abs(point.fx) > 0.01 || Math.abs(point.fy) > 0.01 ? (
         <g>
-          <VectorArrow
-            originPixel={{ x: pDesignX, y: pDesignY }}
+          <PhysicsVectorArrow
+            originDesign={{ x: pDesignX, y: pDesignY }}
             vector={forceVec}
             type="lorentzForce"
             sceneScale={sceneScale}

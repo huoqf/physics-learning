@@ -6,7 +6,7 @@
  * 所有坐标均为设计坐标（SVG 内部），不直接处理物理单位
  */
 import { useMemo, useId } from 'react'
-import { Block, VectorArrow, VectorDefs } from '@/components/Physics'
+import { Block, PhysicsVectorArrow, VectorDefs } from '@/components/Physics'
 import { PhysicsGround } from '@/components/Physics'
 import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { withAlpha } from '@/theme/physics/colors'
@@ -185,19 +185,19 @@ export default function BulletBlockScene({
   }, [showDebris, blockLeft, blockWidth, exitDtAnim])
 
   // 3. 位移拉线起点与终点设计（像素坐标）
-  const originPixelX = BB_LAYOUT.blockInitX // 物理 0 点对应的像素坐标
+  const originDesignX = BB_LAYOUT.blockInitX // 物理 0 点对应的像素坐标
 
   // 当 state.t < -1e-9（飞入阶段）时，不显示位移和深度标注
   const isFlying = state.t < -1e-9
 
   // 子弹位移 s1
-  const s1X1 = originPixelX
-  const s1X2 = isFlying ? originPixelX : bulletCenterX
+  const s1X1 = originDesignX
+  const s1X2 = isFlying ? originDesignX : bulletCenterX
   const s1Text = `${Math.max(0, state.bulletX).toFixed(3)} m`
 
   // 木块位移 s2
-  const s2X1 = originPixelX
-  const s2X2 = isFlying ? originPixelX : blockLeft
+  const s2X1 = originDesignX
+  const s2X2 = isFlying ? originDesignX : blockLeft
   const s2Text = `${state.blockX.toFixed(3)} m`
 
   // 相对位移 deltaX
@@ -234,8 +234,8 @@ export default function BulletBlockScene({
         width={groundWidth}
         ruler={{
           domain: [
-            (groundX - originPixelX) / sceneScale.scaleX,
-            (groundX + groundWidth - originPixelX) / sceneScale.scaleX,
+            (groundX - originDesignX) / sceneScale.scaleX,
+            (groundX + groundWidth - originDesignX) / sceneScale.scaleX,
           ],
           unit: 'm',
           showAxisLine: true,
@@ -330,8 +330,8 @@ export default function BulletBlockScene({
 
       {/* 速度与加速度矢量箭头 */}
       {/* 速度矢量 — 子弹 */}
-      <VectorArrow
-        originPixel={{ x: bulletCenterX, y: bulletCenterY - BB_LAYOUT.bulletRadius - 2 }}
+      <PhysicsVectorArrow
+        originDesign={{ x: bulletCenterX, y: bulletCenterY - BB_LAYOUT.bulletRadius - 2 }}
         vector={{ x: state.bulletV, y: 0 }}
         type="velocity"
         sceneScale={sceneScale}
@@ -339,8 +339,8 @@ export default function BulletBlockScene({
       />
 
       {/* 速度矢量 — 木块 */}
-      <VectorArrow
-        originPixel={{ x: blockLeft + blockWidth / 2, y: blockTop - 2 }}
+      <PhysicsVectorArrow
+        originDesign={{ x: blockLeft + blockWidth / 2, y: blockTop - 2 }}
         vector={{ x: state.blockV, y: 0 }}
         type="velocity"
         sceneScale={sceneScale}
@@ -350,8 +350,8 @@ export default function BulletBlockScene({
 
       {/* 加速度矢量 — 子弹（仅在穿透滑动阶段） */}
       {inContact && state.bulletA !== 0 && (
-        <VectorArrow
-          originPixel={{ x: bulletCenterX, y: bulletCenterY - BB_LAYOUT.bulletRadius - 2 - 14 }}
+        <PhysicsVectorArrow
+          originDesign={{ x: bulletCenterX, y: bulletCenterY - BB_LAYOUT.bulletRadius - 2 - 14 }}
           vector={{ x: state.bulletA, y: 0 }}
           type="acceleration"
           sceneScale={sceneScale}
@@ -361,8 +361,8 @@ export default function BulletBlockScene({
 
       {/* 加速度矢量 — 木块（仅在穿透滑动阶段） */}
       {inContact && state.blockA !== 0 && (
-        <VectorArrow
-          originPixel={{ x: blockLeft + blockWidth / 2, y: blockTop - 2 - 14 }}
+        <PhysicsVectorArrow
+          originDesign={{ x: blockLeft + blockWidth / 2, y: blockTop - 2 - 14 }}
           vector={{ x: state.blockA, y: 0 }}
           type="acceleration"
           sceneScale={sceneScale}

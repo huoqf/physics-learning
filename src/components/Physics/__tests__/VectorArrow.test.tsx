@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+﻿import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render } from '@testing-library/react'
 import React from 'react'
 import { VectorArrow } from '../VectorArrow'
@@ -43,10 +43,10 @@ describe('VectorArrow', () => {
     expect(line?.getAttribute('y1')).toBe('140')
   })
 
-  it('originPixel: 像素坐标直接使用，跳过 sceneScale 转换', () => {
+  it('originDesign: 像素坐标直接使用，跳过 sceneScale 转换', () => {
     const { container } = renderWithSvg(
       <VectorArrow
-        originPixel={{ x: 120, y: -140 }}
+        originDesign={{ x: 120, y: -140 }}
         vector={{ x: 1, y: 0 }}
         type="velocity"
         sceneScale={sceneScale}
@@ -61,13 +61,13 @@ describe('VectorArrow', () => {
     expect(line?.getAttribute('y1')).toBe('-140')
   })
 
-  it('originPixel 优先于 origin，同时传入时忽略 origin', () => {
+  it('originDesign 优先于 origin，同时传入时忽略 origin', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
     const { container } = renderWithSvg(
       <VectorArrow
         origin={{ x: 999, y: 999 }}
-        originPixel={{ x: 120, y: -140 }}
+        originDesign={{ x: 120, y: -140 }}
         vector={{ x: 1, y: 0 }}
         type="velocity"
         sceneScale={sceneScale}
@@ -75,13 +75,13 @@ describe('VectorArrow', () => {
     )
 
     expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('originPixel')
+      expect.stringContaining('originDesign')
     )
 
     const line = container.querySelector('line')
     expect(line).toBeTruthy()
 
-    // 应使用 originPixel，而非 origin
+    // 应使用 originDesign，而非 origin
     expect(line?.getAttribute('x1')).toBe('120')
     expect(line?.getAttribute('y1')).toBe('-140')
 

@@ -1,4 +1,4 @@
-import { Ball, VectorArrow } from '@/components/Physics'
+import { Ball, PhysicsVectorArrow } from '@/components/Physics'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { useState, useEffect, useCallback } from 'react'
 import { useAnimationViewport } from '@/hooks'
@@ -129,8 +129,8 @@ export default function IntermolecularForcesAnimation() {
         {showVectors && (
           <g>
             {/* 斥力（红色，向右） */}
-            <VectorArrow
-              originPixel={{ x: movableX, y: centerY }}
+            <PhysicsVectorArrow
+              originDesign={{ x: movableX, y: centerY }}
               vector={{ x: fRep, y: 0 }}
               type="force"
               color={CHART_COLORS.criticalPt}
@@ -141,8 +141,8 @@ export default function IntermolecularForcesAnimation() {
               fontSize={font(8)} fill={CHART_COLORS.criticalPt} textAnchor="start" fontWeight="bold">F_斥</text>
 
             {/* 引力（蓝色，向左） */}
-            <VectorArrow
-              originPixel={{ x: movableX, y: centerY }}
+            <PhysicsVectorArrow
+              originDesign={{ x: movableX, y: centerY }}
               vector={{ x: -fAtt, y: 0 }}
               type="force"
               color={CHART_COLORS.primary}
@@ -153,8 +153,8 @@ export default function IntermolecularForcesAnimation() {
               fontSize={font(8)} fill={CHART_COLORS.primary} textAnchor="end" fontWeight="bold">F_引</text>
 
             {/* 合力（橙色） */}
-            <VectorArrow
-              originPixel={{ x: movableX, y: centerY + 20 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: movableX, y: centerY + 20 }}
               vector={{ x: fNet, y: 0 }}
               type="force"
               color={CHART_COLORS.compareC}

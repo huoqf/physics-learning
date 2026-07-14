@@ -1,4 +1,4 @@
-import { VectorArrow, VectorDefs, PhysicsGround } from '@/components/Physics'
+import { PhysicsVectorArrow, VectorDefs, PhysicsGround } from '@/components/Physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, FONT, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { Spring } from '@/components/UI'
@@ -101,7 +101,7 @@ export default function ConnectedBodiesAnimation() {
     totalMass, f1_val, f2_val, T_val,
     groundY, w1, h1, w2, h2,
     m1X, m1Y, m2X, m2Y, ropeLeftX, ropeRightX, ropeY,
-    isMoving, wheelRotation, arrowLength, dragTargetX,
+    isMoving, wheelRotation, dragTargetX,
     cbSceneScale, handleDragStart,
     isNormalView, isSystemView, isM1View, isM2View,
   } = p
@@ -201,13 +201,12 @@ export default function ConnectedBodiesAnimation() {
           <g className="transition-all duration-200">
             {/* 外力 F */}
             <g opacity={isM1View ? 0.15 : 1} className="transition-opacity duration-200">
-              <VectorArrow
-                originPixel={{ x: m2X + w2, y: ropeY }}
+              <PhysicsVectorArrow
+                originDesign={{ x: m2X + w2, y: ropeY }}
                 vector={{ x: F, y: 0 }}
                 type="appliedForce"
                 sceneScale={cbSceneScale}
                 strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-                pixelLength={arrowLength}
               />
               <text x={dragTargetX + 8} y={ropeY + 4} fontSize={FONT.bodySize} fill={PHYSICS_COLORS.appliedForce} fontWeight="bold">
                 F = {F}N
@@ -223,13 +222,12 @@ export default function ConnectedBodiesAnimation() {
 
             {/* m1 摩擦力 f1 */}
             <g opacity={isM2View ? 0.15 : 1} className="transition-opacity duration-200">
-              <VectorArrow
-                originPixel={{ x: m1X, y: groundY - 10 }}
+              <PhysicsVectorArrow
+                originDesign={{ x: m1X, y: groundY - 10 }}
                 vector={{ x: -f1_val, y: 0 }}
                 type="friction"
                 sceneScale={cbSceneScale}
                 strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                pixelLength={28}
               />
               <text x={m1X - 32} y={groundY - 14} fontSize={FONT.annotation} fill={PHYSICS_COLORS.friction} fontWeight="bold" textAnchor="end">
                 f₁= {f1_val.toFixed(1)}N
@@ -238,13 +236,12 @@ export default function ConnectedBodiesAnimation() {
 
             {/* m2 摩擦力 f2 */}
             <g opacity={isM1View ? 0.15 : 1} className="transition-opacity duration-200">
-              <VectorArrow
-                originPixel={{ x: m2X, y: groundY - 10 }}
+              <PhysicsVectorArrow
+                originDesign={{ x: m2X, y: groundY - 10 }}
                 vector={{ x: -f2_val, y: 0 }}
                 type="friction"
                 sceneScale={cbSceneScale}
                 strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                pixelLength={28}
               />
               <text x={m2X - 32} y={groundY - 14} fontSize={FONT.annotation} fill={PHYSICS_COLORS.friction} fontWeight="bold" textAnchor="end">
                 f₂= {f2_val.toFixed(1)}N
@@ -256,13 +253,12 @@ export default function ConnectedBodiesAnimation() {
               <g>
                 {(isNormalView || isM1View) && (
                   <g>
-                    <VectorArrow
-                      originPixel={{ x: ropeLeftX, y: ropeY }}
+                    <PhysicsVectorArrow
+                      originDesign={{ x: ropeLeftX, y: ropeY }}
                       vector={{ x: T_val, y: 0 }}
                       type="tension"
                       sceneScale={cbSceneScale}
                       strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                      pixelLength={28}
                     />
                     <text x={ropeLeftX + 10} y={ropeY - 6} fontSize={FONT.annotation} fill={PHYSICS_COLORS.tension} fontWeight="bold">
                       T = {T_val.toFixed(1)}N
@@ -271,13 +267,12 @@ export default function ConnectedBodiesAnimation() {
                 )}
                 {(isNormalView || isM2View) && (
                   <g>
-                    <VectorArrow
-                      originPixel={{ x: ropeRightX, y: ropeY }}
+                    <PhysicsVectorArrow
+                      originDesign={{ x: ropeRightX, y: ropeY }}
                       vector={{ x: -T_val, y: 0 }}
                       type="tension"
                       sceneScale={cbSceneScale}
                       strokeWidth={CANVAS_STYLE.stroke.vectorSub}
-                      pixelLength={28}
                     />
                     <text x={ropeRightX - 38} y={ropeY - 6} fontSize={FONT.annotation} fill={PHYSICS_COLORS.tension} fontWeight="bold" textAnchor="end">
                       T = {T_val.toFixed(1)}N

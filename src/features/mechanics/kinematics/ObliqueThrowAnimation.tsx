@@ -307,20 +307,20 @@ export default function ObliqueThrowAnimation() {
         {/* 速度分量矢量箭头 */}
         {showVectors && !isLanded && (
           <g>
-            <VectorArrow originPixel={{ x: ballCanvas.cx, y: ballCanvas.cy }} vector={{ x: currentState.vx, y: 0 }}
-              type="velocityX" sceneScale={obliqueSceneScale} strokeWidth={STROKE.vectorSub} pixelLength={vxPxLen} />
+            <VectorArrow originDesign={{ x: ballCanvas.cx, y: ballCanvas.cy }} vector={{ x: currentState.vx, y: 0 }}
+              type="velocityX" arrowType="physical-schematic" sceneScale={obliqueSceneScale} strokeWidth={STROKE.vectorSub} pixelLength={vxPxLen} />
             <text x={ballCanvas.cx + obliqueSceneScale.maxVectorLength * 0.3 + 10} y={ballCanvas.cy + 3}
               fontSize={font(9)} fill={PHYSICS_COLORS.velocityX} fontWeight="bold">vₓ</text>
 
             {Math.abs(currentState.vy) > 0.05 && (
-              <VectorArrow originPixel={{ x: ballCanvas.cx, y: ballCanvas.cy }} vector={{ x: 0, y: currentState.vy }}
-                type="velocityY" sceneScale={obliqueSceneScale} strokeWidth={STROKE.vectorSub} pixelLength={vyPxLen} />
+              <VectorArrow originDesign={{ x: ballCanvas.cx, y: ballCanvas.cy }} vector={{ x: 0, y: currentState.vy }}
+                type="velocityY" arrowType="physical-schematic" sceneScale={obliqueSceneScale} strokeWidth={STROKE.vectorSub} pixelLength={vyPxLen} />
             )}
             <text x={ballCanvas.cx - 3} y={ballCanvas.cy - obliqueSceneScale.maxVectorLength * 0.3 + (currentState.vy >= 0 ? -6 : 12)}
               fontSize={font(9)} fill={PHYSICS_COLORS.velocityY} fontWeight="bold" textAnchor="middle">vᵧ</text>
 
-            <VectorArrow originPixel={{ x: ballCanvas.cx, y: ballCanvas.cy }} vector={{ x: currentState.vx, y: currentState.vy }}
-              type="velocity" sceneScale={obliqueSceneScale} strokeWidth={STROKE.vectorMain} pixelLength={totalPxLen} />
+            <VectorArrow originDesign={{ x: ballCanvas.cx, y: ballCanvas.cy }} vector={{ x: currentState.vx, y: currentState.vy }}
+              type="velocity" arrowType="physical-schematic" sceneScale={obliqueSceneScale} strokeWidth={STROKE.vectorMain} pixelLength={totalPxLen} />
             <text x={ballCanvas.cx + obliqueSceneScale.maxVectorLength * 0.3 + 8} y={ballCanvas.cy - obliqueSceneScale.maxVectorLength * 0.3 - 4}
               fontSize={font(9)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
           </g>

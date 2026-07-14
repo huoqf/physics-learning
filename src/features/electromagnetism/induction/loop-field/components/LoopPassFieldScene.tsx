@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
-import { VectorArrow, MagneticFieldGrid } from '@/components/Physics'
+import { PhysicsVectorArrow, MagneticFieldGrid } from '@/components/Physics'
 import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
 import { useAnimationViewport } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
@@ -284,8 +284,8 @@ export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
         {forceAmpere > 1e-4 && (
           <g>
             {/* 安培力：精准作用在当前发生切割的那条有效竖棒的中心 */}
-            <VectorArrow
-              originPixel={{ x: cuttingRodPx, y: loopCenterY - AMPERE_FORCE_OFFSET_Y }}
+            <PhysicsVectorArrow
+              originDesign={{ x: cuttingRodPx, y: loopCenterY - AMPERE_FORCE_OFFSET_Y }}
               vector={{ x: -forceAmpere, y: 0 }}
               type="lorentzForce"
               sceneScale={pixelVectorScale}
@@ -295,8 +295,8 @@ export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
             </text>
 
             {/* 外力：作用在前导线竖棒的中心，拉动线框匀速运动 */}
-            <VectorArrow
-              originPixel={{ x: loopFrontPx, y: loopCenterY + AMPERE_FORCE_OFFSET_Y }}
+            <PhysicsVectorArrow
+              originDesign={{ x: loopFrontPx, y: loopCenterY + AMPERE_FORCE_OFFSET_Y }}
               vector={{ x: forceAmpere, y: 0 }}
               type="appliedForce"
               sceneScale={pixelVectorScale}
@@ -311,15 +311,15 @@ export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
         {Math.abs(currentI) > 1e-4 && (
           <g>
             {/* 前竖棒电流箭头 */}
-            <VectorArrow
-              originPixel={{ x: loopFrontPx, y: loopCenterY }}
+            <PhysicsVectorArrow
+              originDesign={{ x: loopFrontPx, y: loopCenterY }}
               vector={{ x: 0, y: currentI > 0 ? 0.7 : -0.7 }} // 逆时针为正时，前棒向上(y>0)，顺时针反向
               type="currentDirection"
               sceneScale={pixelVectorScale}
             />
             {/* 后竖棒电流箭头 */}
-            <VectorArrow
-              originPixel={{ x: loopBackPx, y: loopCenterY }}
+            <PhysicsVectorArrow
+              originDesign={{ x: loopBackPx, y: loopCenterY }}
               vector={{ x: 0, y: currentI > 0 ? -0.7 : 0.7 }} // 逆时针为正时，后棒向下(y<0)，顺时针反向
               type="currentDirection"
               sceneScale={pixelVectorScale}

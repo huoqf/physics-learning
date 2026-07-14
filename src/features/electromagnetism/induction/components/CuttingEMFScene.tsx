@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { PHYSICS_COLORS, EM_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { Rails, ConductorRod, VectorArrow, VectorDefs, MagneticFieldSymbols } from '@/components/Physics'
+import { Rails, ConductorRod, PhysicsVectorArrow, VectorDefs, MagneticFieldSymbols } from '@/components/Physics'
 import { worldToDesign } from '@/scene'
 import { CuttingEMFHandRule } from '../CuttingEMFHandRule'
 import type { CuttingEMFPhysicsResult } from '../hooks/useCuttingEMFPhysics'
@@ -38,7 +38,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
   const railCy = railLeftDesign.py
   const railLength = railRightDesign.px - railLeftDesign.px
 
-  // 物理坐标→设计坐标转换（用于 VectorArrow originPixel）
+  // 物理坐标→设计坐标转换（用于 VectorArrow originDesign）
   const velArrowOrigin = worldToDesign(finalX, L * 0.8 + 0.3, sceneScale)
   const accelArrowOrigin = worldToDesign(finalX, L * 0.8 + 0.7, sceneScale)
   const forceBelowOrigin = worldToDesign(finalX, -0.15, sceneScale)
@@ -264,8 +264,8 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
 
         {showForceAnalysis === 1 && (
           <g>
-            <VectorArrow
-              originPixel={{ x: velArrowOrigin.px, y: velArrowOrigin.py }}
+            <PhysicsVectorArrow
+              originDesign={{ x: velArrowOrigin.px, y: velArrowOrigin.py }}
               vector={{ x: finalV, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
@@ -285,8 +285,8 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
               </text>
             )}
 
-            <VectorArrow
-              originPixel={{ x: accelArrowOrigin.px, y: accelArrowOrigin.py }}
+            <PhysicsVectorArrow
+              originDesign={{ x: accelArrowOrigin.px, y: accelArrowOrigin.py }}
               vector={{ x: finalA, y: 0 }}
               type="acceleration"
               sceneScale={sceneScale}
@@ -308,8 +308,8 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
 
             {((mode === 1 && F_ext > 0) || (mode === 0 && Math.abs(extForceX) > 0.01)) && (
               <g>
-                <VectorArrow
-                  originPixel={{ x: forceBelowOrigin.px, y: forceBelowOrigin.py }}
+                <PhysicsVectorArrow
+                  originDesign={{ x: forceBelowOrigin.px, y: forceBelowOrigin.py }}
                   vector={{ x: extForceX, y: 0 }}
                   type="appliedForce"
                   sceneScale={sceneScale}
@@ -331,8 +331,8 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
 
             {Math.abs(ampForceX) > 0.01 && (
               <g>
-                <VectorArrow
-                  originPixel={{ x: forceBelowOrigin.px, y: forceBelowOrigin.py }}
+                <PhysicsVectorArrow
+                  originDesign={{ x: forceBelowOrigin.px, y: forceBelowOrigin.py }}
                   vector={{ x: ampForceX, y: 0 }}
                   type="lorentzForce"
                   sceneScale={sceneScale}
@@ -354,8 +354,8 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
 
             {mode === 1 && (
               <g>
-                <VectorArrow
-                  originPixel={{ x: forceAboveOrigin.px, y: forceAboveOrigin.py }}
+                <PhysicsVectorArrow
+                  originDesign={{ x: forceAboveOrigin.px, y: forceAboveOrigin.py }}
                   vector={{ x: F_ext + ampForceX, y: 0 }}
                   type="appliedForce"
                   sceneScale={sceneScale}

@@ -396,9 +396,10 @@ export default function GravityAnimation() {
         {showVectors && (
           <g>
             <VectorArrow
-              originPixel={{ x: obj1X + radius1, y: obj1Y }}
+              originDesign={{ x: obj1X + radius1, y: obj1Y }}
               vector={{ x: 1, y: 0 }}
               type="gravity"
+              arrowType="physical-schematic"
               sceneScale={gravSceneScale}
               strokeWidth={CANVAS_STYLE.stroke.vectorMain}
               pixelLength={arrowLen}
@@ -415,9 +416,10 @@ export default function GravityAnimation() {
             </text>
 
             <VectorArrow
-              originPixel={{ x: obj2X - radius2, y: obj2Y }}
+              originDesign={{ x: obj2X - radius2, y: obj2Y }}
               vector={{ x: -1, y: 0 }}
               type="gravity"
+              arrowType="physical-schematic"
               sceneScale={gravSceneScale}
               strokeWidth={CANVAS_STYLE.stroke.vectorMain}
               pixelLength={arrowLen}

@@ -10,6 +10,7 @@ import {
   calculateDiskSlippingState,
 } from '@/physics/circularModels'
 import type { ConicalPendulumState, DiskRotationState, DiskSlippingState } from '@/physics/circularModels'
+import { calculateVectorPixelLength } from '@/utils/vectorLength'
 
 const MASS_KG = 1
 const DESIGN = CANVAS_PRESETS.splitH
@@ -27,21 +28,27 @@ export const SCENE = {
   axisDash: '4 6',
 } as const
 
-export const PIXEL_VECTOR_SCALE: SceneScale = {
+/** 矢量归一化的参考量级配置 */
+const VECTOR_REF_MAGNITUDES: Partial<Record<string, number>> = {
+  velocity: 8,
+  gravity: 10,
+  tension: 16,
+  force: 10,
+  normalForce: 10,
+  friction: 10,
+}
+
+const MAX_VECTOR_LENGTH = 120
+
+/** 物理矢量场景缩放参数（供 PhysicsVectorArrow 使用） */
+export const vectorSceneScale: SceneScale = {
   originX: 0,
   originY: 0,
   scaleX: 1,
   scaleY: 1,
   scale: 1,
-  maxVectorLength: 1,
-}
-
-export function pixelVector(dx: number, dy: number) {
-  return { x: dx, y: -dy }
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value))
+  maxVectorLength: MAX_VECTOR_LENGTH,
+  refMagnitudes: VECTOR_REF_MAGNITUDES,
 }
 
 export interface ProjectedState {
@@ -57,17 +64,15 @@ export interface ProjectedState {
 export interface VecData {
   // Conical pendulum
   tensionVec?: { x: number; y: number }
-  tensionLength?: number
   centripVec?: { x: number; y: number }
-  centripLength?: number
   tOffX?: number
   tOffY?: number
   cOffX?: number
+  /** 重力箭头渲染长度（设计坐标像素，供平行四边形辅助线使用） */
+  gForceRenderLength?: number
   // Rotating disk
   frictionVec?: { x: number; y: number }
-  frictionLength?: number
   normalVec?: { x: number; y: number }
-  normalLength?: number
 }
 
 export interface CircularModelsPhysicsResult {
@@ -84,8 +89,7 @@ export interface CircularModelsPhysicsResult {
   projected: ProjectedState
   tangent: { x: number; y: number }
   tangentNorm: number
-  velocityLength: number
-  gForceLength: number
+  velocityVec: { x: number; y: number }
   gravityVec: { x: number; y: number }
   vecData: VecData
   diskLines: Array<{ x: number; y: number }>
@@ -180,46 +184,47 @@ export function useCircularModelsPhysics(): CircularModelsPhysicsResult {
   }, [isConical, thetaSmooth, phase, radiusSmooth, omega, mu, time])
 
 
-  // ─── 矢量方向与长度计算（像素空间） ───
+  // ─── 矢量方向与物理量级计算 ───
   const tangent = {
     x: -Math.sin(phase),
     y: -SCENE.projectionDepth * Math.cos(phase),
   }
   const tangentNorm = Math.hypot(tangent.x, tangent.y) || 1
 
-  // 速度矢量：1m/s 对应 15px
+  // 速度矢量：方向沿投影切线，大小为物理速率
   const currentR = isConical ? length * Math.sin(thetaSmooth) : radiusSmooth
   const speedVal = omega * currentR
-  const velocityLength = clamp(speedVal * 15, 28, 86)
+  const velocityVec = { x: (tangent.x / tangentNorm) * speedVal, y: -(tangent.y / tangentNorm) * speedVal }
 
   // ─── 力的合成与分析数据准备 ───
-  // 力 1N 对应 6px 长度
   const gForceVal = MASS_KG * 9.8
-  const gForceLength = gForceVal * 6 // 58.8px
 
-  // 重力在画布上永远竖直向下
-  const gravityVec = pixelVector(0, 1)
+  // 重力：竖直向下，大小为 mg
+  const gravityVec = { x: 0, y: -gForceVal }
 
   // 用于计算矢量引线
   const vecData = useMemo(() => {
     if (isConical) {
-      // 摆线方向
+      // 摆线方向（设计坐标空间）
       const dxLine = SCENE.centerX - projected.x
       const dyLine = SCENE.pivotY - projected.y
       const normLine = Math.hypot(dxLine, dyLine) || 1
-      const tensionVec = pixelVector(dxLine / normLine, dyLine / normLine)
 
       const cosTheta = Math.cos(thetaSmooth)
       const tensionVal = cosTheta > 0.05 ? gForceVal / cosTheta : gForceVal
-      const tensionLength = clamp(tensionVal * 6, 24, 110)
+      // 张力矢量：方向沿绳索向上，大小为物理拉力
+      const tensionVec = { x: (dxLine / normLine) * tensionVal, y: -(dyLine / normLine) * tensionVal }
 
       // 合力（向心力）：水平指向旋转轴
       const dxCentrip = SCENE.centerX - projected.x
-      const centripVec = pixelVector(dxCentrip > 0 ? 1 : -1, 0)
       const centripVal = gForceVal * Math.tan(thetaSmooth)
-      const centripLength = clamp(centripVal * 6, 0, 110)
+      const centripVec = { x: (dxCentrip > 0 ? 1 : -1) * centripVal, y: 0 }
 
-      // 平行四边形辅助点（重力终点和拉力终点）
+      // 平行四边形辅助点：通过 calculateVectorPixelLength 计算渲染长度
+      const tensionLength = calculateVectorPixelLength(tensionVal, 'tension', MAX_VECTOR_LENGTH, VECTOR_REF_MAGNITUDES.tension ?? 0)
+      const centripLength = calculateVectorPixelLength(centripVal, 'force', MAX_VECTOR_LENGTH, VECTOR_REF_MAGNITUDES.force ?? 0)
+      const gForceRenderLength = calculateVectorPixelLength(gForceVal, 'gravity', MAX_VECTOR_LENGTH, VECTOR_REF_MAGNITUDES.gravity ?? 0)
+
       // 拉力的画布偏移
       const tOffX = (dxLine / normLine) * tensionLength
       const tOffY = (dyLine / normLine) * tensionLength
@@ -229,34 +234,31 @@ export function useCircularModelsPhysics(): CircularModelsPhysicsResult {
 
       return {
         tensionVec,
-        tensionLength,
         centripVec,
-        centripLength,
         // 平行四边形虚线端点
         tOffX,
         tOffY,
         cOffX,
+        gForceRenderLength: gForceRenderLength,
       }
     } else {
       // 水平圆盘模式
       const state = projected.slipState
-      const fLength = state ? state.friction * 6 : 0
-      const nLength = state ? state.normalForce * 6 : 0
+      const frictionVal = state ? state.friction : 0
+      const normalVal = state ? state.normalForce : 0
 
-      // 摩擦力指向转轴
+      // 摩擦力指向转轴，大小为物理摩擦力
       const dxCenter = SCENE.centerX - projected.x
       const dyCenter = SCENE.diskCenterY - projected.y
       const normCenter = Math.hypot(dxCenter, dyCenter) || 1
-      const frictionVec = pixelVector(dxCenter / normCenter, dyCenter / normCenter)
+      const frictionVec = { x: (dxCenter / normCenter) * frictionVal, y: -(dyCenter / normCenter) * frictionVal }
 
-      // 支持力竖直向上
-      const normalVec = pixelVector(0, -1)
+      // 支持力竖直向上，大小为物理支持力
+      const normalVec = { x: 0, y: normalVal }
 
       return {
         frictionVec,
-        frictionLength: fLength,
         normalVec,
-        normalLength: nLength,
       }
     }
   }, [isConical, projected, thetaSmooth, gForceVal])
@@ -286,8 +288,7 @@ export function useCircularModelsPhysics(): CircularModelsPhysicsResult {
     projected,
     tangent,
     tangentNorm,
-    velocityLength,
-    gForceLength,
+    velocityVec,
     gravityVec,
     vecData,
     diskLines,

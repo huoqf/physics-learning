@@ -37,6 +37,7 @@ export function renderVectorArrow(
     <VectorArrow
       vector={{ x: dx, y: dy }}
       type={type}
+      arrowType="physical-schematic"
       sceneScale={sceneScale}
       color={color}
       pixelLength={len}

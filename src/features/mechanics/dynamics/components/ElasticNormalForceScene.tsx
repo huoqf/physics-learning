@@ -87,9 +87,10 @@ export const ElasticNormalForceScene: React.FC = () => {
         <g>
           {/* 重力 G */}
           <VectorArrow
-            originPixel={{ x: blockX, y: groundY - blockH / 2 }}
+            originDesign={{ x: blockX, y: groundY - blockH / 2 }}
             vector={{ x: 0, y: -gravityForce }}
             type="gravity"
+            arrowType="visual-only"
             sceneScale={IDENTITY_SCENE_SCALE}
             strokeWidth={CANVAS_STYLE.stroke.vectorMain}
             pixelLength={F_grav_len}
@@ -98,9 +99,10 @@ export const ElasticNormalForceScene: React.FC = () => {
           />
           {/* 支持力 FN */}
           <VectorArrow
-            originPixel={{ x: blockX, y: groundY }}
+            originDesign={{ x: blockX, y: groundY }}
             vector={{ x: 0, y: normalForce }}
             type="normalForce"
+            arrowType="visual-only"
             sceneScale={IDENTITY_SCENE_SCALE}
             strokeWidth={CANVAS_STYLE.stroke.vectorMain}
             pixelLength={F_normal_len}

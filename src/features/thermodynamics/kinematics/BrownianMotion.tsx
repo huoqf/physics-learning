@@ -258,9 +258,10 @@ export default function BrownianMotion() {
       {/* 合力矢量箭头（进阶模式） */}
       {mode === 1 && forceArrowLen > 2 && (
         <VectorArrow
-          originPixel={{ x: px, y: py }}
+          originDesign={{ x: px, y: py }}
           vector={{ x: force.fx, y: force.fy }}
           type="force"
+              arrowType="physical-schematic"
           sceneScale={sceneScale}
           color={THERMO_COLORS.heatAbsorb}
           pixelLength={forceArrowLen}

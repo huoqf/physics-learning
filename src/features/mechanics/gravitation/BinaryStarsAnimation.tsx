@@ -1,4 +1,4 @@
-import { Ball, VectorArrow } from '@/components/Physics'
+import { Ball, VectorArrow, PhysicsVectorArrow } from '@/components/Physics'
 import { useAnimationViewport } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -28,6 +28,8 @@ export default function BinaryStarsAnimation() {
   const cx = 175
   const cy = 325
 
+  // 速度矢量参考量级：以当前场景最大线速度归一化，使速度箭头长度反映相对速率
+  const vRef = state.mode === 0 ? Math.max(state.v1, state.v2) : state.v
   // 构造适合 VectorArrow 缩放参数，使用真实的 state.scale 缩放天体物理坐标到设计像素坐标
   const sceneScale = {
     originX: cx,
@@ -36,6 +38,7 @@ export default function BinaryStarsAnimation() {
     scaleY: state.scale,
     scale: state.scale,
     maxVectorLength: 50,
+    refMagnitudes: { velocity: vRef },
   }
 
   return (
@@ -124,44 +127,44 @@ export default function BinaryStarsAnimation() {
               <>
                 {/* 恒星 1 (橙红) 矢量 */}
                 <VectorArrow
-                  originPixel={state.pos1}
+                  originDesign={state.pos1}
                   vector={state.forceVec1}
                   type="force"
+                  arrowType="physical-schematic"
                   sceneScale={sceneScale}
                   color={PHYSICS_COLORS.forceNet}
                   pixelLength={40}
                   label="F₁₂"
                   font={font}
                 />
-                <VectorArrow
-                  originPixel={state.pos1}
+                <PhysicsVectorArrow
+                  originDesign={state.pos1}
                   vector={state.velVec1}
                   type="velocity"
                   sceneScale={sceneScale}
                   color={PHYSICS_COLORS.velocity}
-                  pixelLength={Math.max(12, state.v1 * 26)}
                   label="v₁"
                   font={font}
                 />
 
                 {/* 恒星 2 (蓝白) 矢量 */}
                 <VectorArrow
-                  originPixel={state.pos2}
+                  originDesign={state.pos2}
                   vector={state.forceVec2}
                   type="force"
+                  arrowType="physical-schematic"
                   sceneScale={sceneScale}
                   color={PHYSICS_COLORS.forceNet}
                   pixelLength={40}
                   label="F₂₁"
                   font={font}
                 />
-                <VectorArrow
-                  originPixel={state.pos2}
+                <PhysicsVectorArrow
+                  originDesign={state.pos2}
                   vector={state.velVec2}
                   type="velocity"
                   sceneScale={sceneScale}
                   color={PHYSICS_COLORS.velocity}
-                  pixelLength={Math.max(12, state.v2 * 26)}
                   label="v₂"
                   font={font}
                 />
@@ -171,30 +174,31 @@ export default function BinaryStarsAnimation() {
               <>
                 {/* 恒星 1 */}
                 <VectorArrow
-                  originPixel={state.pos1}
+                  originDesign={state.pos1}
                   vector={state.forceVec1}
                   type="force"
+                  arrowType="physical-schematic"
                   sceneScale={sceneScale}
                   color={PHYSICS_COLORS.forceNet}
                   pixelLength={40}
                   label="F_合1"
                   font={font}
                 />
-                <VectorArrow
-                  originPixel={state.pos1}
+                <PhysicsVectorArrow
+                  originDesign={state.pos1}
                   vector={state.velVec1}
                   type="velocity"
                   sceneScale={sceneScale}
                   color={PHYSICS_COLORS.velocity}
-                  pixelLength={Math.max(12, state.v * 26)}
                   label="v₁"
                   font={font}
                 />
                 {/* 绘制分引力箭头 (细虚橙线) */}
                 <VectorArrow
-                  originPixel={state.pos1}
+                  originDesign={state.pos1}
                   vector={state.force12}
                   type="forceComponent"
+                  arrowType="physical-schematic"
                   sceneScale={sceneScale}
                   color={withAlpha(PHYSICS_COLORS.forceNet, 0.5)}
                   pixelLength={25}
@@ -202,9 +206,10 @@ export default function BinaryStarsAnimation() {
                   font={font}
                 />
                 <VectorArrow
-                  originPixel={state.pos1}
+                  originDesign={state.pos1}
                   vector={state.force13}
                   type="forceComponent"
+                  arrowType="physical-schematic"
                   sceneScale={sceneScale}
                   color={withAlpha(PHYSICS_COLORS.forceNet, 0.5)}
                   pixelLength={25}
@@ -214,44 +219,44 @@ export default function BinaryStarsAnimation() {
 
                 {/* 恒星 2 */}
                 <VectorArrow
-                  originPixel={state.pos2}
+                  originDesign={state.pos2}
                   vector={state.forceVec2}
                   type="force"
+                  arrowType="physical-schematic"
                   sceneScale={sceneScale}
                   color={PHYSICS_COLORS.forceNet}
                   pixelLength={40}
                   label="F_合2"
                   font={font}
                 />
-                <VectorArrow
-                  originPixel={state.pos2}
+                <PhysicsVectorArrow
+                  originDesign={state.pos2}
                   vector={state.velVec2}
                   type="velocity"
                   sceneScale={sceneScale}
                   color={PHYSICS_COLORS.velocity}
-                  pixelLength={Math.max(12, state.v * 26)}
                   label="v₂"
                   font={font}
                 />
 
                 {/* 恒星 3 */}
                 <VectorArrow
-                  originPixel={state.pos3}
+                  originDesign={state.pos3}
                   vector={state.forceVec3}
                   type="force"
+                  arrowType="physical-schematic"
                   sceneScale={sceneScale}
                   color={PHYSICS_COLORS.forceNet}
                   pixelLength={40}
                   label="F_合3"
                   font={font}
                 />
-                <VectorArrow
-                  originPixel={state.pos3}
+                <PhysicsVectorArrow
+                  originDesign={state.pos3}
                   vector={state.velVec3}
                   type="velocity"
                   sceneScale={sceneScale}
                   color={PHYSICS_COLORS.velocity}
-                  pixelLength={Math.max(12, state.v * 26)}
                   label="v₃"
                   font={font}
                 />

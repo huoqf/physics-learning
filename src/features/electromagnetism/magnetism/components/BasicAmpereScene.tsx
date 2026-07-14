@@ -1,4 +1,4 @@
-import { Rails, ConductingRod, VectorArrow, DCSource } from '@/components/Physics'
+import { Rails, ConductingRod, PhysicsVectorArrow, DCSource } from '@/components/Physics'
 import React, { useMemo } from 'react'
 import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
 
@@ -180,7 +180,7 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
       {showVectors && (
         <g>
           {/* 安培力箭头 (橙色，由棒中心向左或向右) */}
-          <VectorArrow
+          <PhysicsVectorArrow
             vector={{ x: physicsResult.F, y: 0 }}
             type="lorentzForce"
             sceneScale={localScale}
@@ -202,7 +202,7 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
           {/* 电流方向箭头 (红色，在棒上垂直向下或向上) */}
           {hasCurrent && (
             <g>
-              <VectorArrow
+              <PhysicsVectorArrow
                 vector={{ x: 0, y: I > 0 ? 2.5 : -2.5 }}
                 type="currentDirection"
                 sceneScale={localScale}

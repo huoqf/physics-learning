@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useAnimationViewport } from '@/hooks/useAnimationViewport'
 import { AnimationSvgCanvas } from '@/components/Layout'
-import { VectorArrow } from '@/components/Physics'
+import { PhysicsVectorArrow } from '@/components/Physics'
 import { BasePhysicsChart, useChartContext, ChartCursor } from '@/components/Chart'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -352,7 +352,7 @@ export default function OrbitTransferAnimation() {
         {(showVectors || showGravity) && (
           <g>
             {showGravity && (
-              <VectorArrow
+              <PhysicsVectorArrow
                 origin={{ x: state.x, y: state.y }}
                 vector={{ x: -state.x, y: -state.y }}
                 type="gravity"
@@ -362,7 +362,7 @@ export default function OrbitTransferAnimation() {
               />
             )}
             {showVectors && (
-              <VectorArrow
+              <PhysicsVectorArrow
                 origin={{ x: state.x, y: state.y }}
                 vector={{ x: state.vx, y: state.vy }}
                 type="velocity"

@@ -1,6 +1,7 @@
-import { VectorArrow, PhysicsGround } from '@/components/Physics'
+import { PhysicsVectorArrow, PhysicsGround } from '@/components/Physics'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useMemo } from 'react'
+import { calculateVectorPixelLength } from '@/utils/vectorLength'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -131,14 +132,25 @@ export default function WorkAnimation() {
   const sceneFontSize = font(11)
   const sceneSmallFont = font(9)
 
-  const forceArrowLen = Math.min(F * 2.5, 80)
   const angleRad = (angleDeg * Math.PI) / 180
-  const forceDx = forceArrowLen * Math.cos(angleRad)
-  const forceDy = -forceArrowLen * Math.sin(angleRad)
-  const projEndX = forceDx
   const originX = startX
 
-  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height })
+  const refMagnitudes = useMemo(() => ({
+    appliedForce: F,
+    velocity: F,
+    gravity: advancedResult.weight,
+    normalForce: advancedResult.F_N > 0 ? advancedResult.F_N : advancedResult.weight,
+    friction: advancedResult.f > 0 ? advancedResult.f : mu * advancedResult.weight,
+  }), [F, advancedResult.weight, advancedResult.F_N, advancedResult.f, mu])
+
+  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes })
+
+  // 估算箭头设计长度（用于辅助虚线与角度弧定位）
+  const estFArrowLen = calculateVectorPixelLength(F, 'appliedForce', sceneScale.maxVectorLength, F)
+  const estForceDx = estFArrowLen * Math.cos(angleRad)
+  const estForceDy = estFArrowLen * Math.sin(angleRad)
+  const estFxArrowLen = calculateVectorPixelLength(Math.abs(basicResult.Fx), 'velocity', sceneScale.maxVectorLength, F)
+  const estProjEndX = (basicResult.Fx >= 0 ? 1 : -1) * estFxArrowLen
 
   return (
     <div ref={containerRef} className="w-full h-full">
@@ -271,42 +283,32 @@ export default function WorkAnimation() {
 
           {showVectors && F > 0 && (
             <g>
-              <VectorArrow
-                originPixel={{ x: blockX + objW * 0.5, y: groundYInScene - objH * 0.5 + floatOffset }}
-                vector={{ x: forceDx, y: -forceDy }}
+              <PhysicsVectorArrow
+                originDesign={{ x: blockX + objW * 0.5, y: groundYInScene - objH * 0.5 + floatOffset }}
+                vector={{ x: F * Math.cos(angleRad), y: F * Math.sin(angleRad) }}
                 type="appliedForce"
                 sceneScale={sceneScale}
                 strokeWidth={STROKE.vectorMain}
-                pixelLength={Math.sqrt(forceDx ** 2 + forceDy ** 2)}
+                label="F"
               />
-              <text x={blockX + objW * 0.5 + forceDx + sceneFontSize * 0.3}
-                y={groundYInScene - objH * 0.5 + forceDy + floatOffset}
-                fontSize={sceneFontSize} fill={PHYSICS_COLORS.appliedForce} fontWeight="bold">
-                F
-              </text>
 
               {Math.abs(basicResult.Fx) > 0.01 && (
                 <g>
-                  <line x1={blockX + objW * 0.5 + forceDx}
-                    y1={groundYInScene - objH * 0.5 + forceDy + floatOffset}
-                    x2={blockX + objW * 0.5 + projEndX}
+                  <line x1={blockX + objW * 0.5 + estForceDx}
+                    y1={groundYInScene - objH * 0.5 - estForceDy + floatOffset}
+                    x2={blockX + objW * 0.5 + estProjEndX}
                     y2={groundYInScene - objH * 0.5 + floatOffset}
                     stroke={projectionColor} strokeWidth={STROKE.vectorThin}
                     strokeDasharray={DASH.guide.join(',')} opacity={OPACITY.guide} />
-                  <VectorArrow
-                    originPixel={{ x: blockX + objW * 0.5, y: groundYInScene - objH * 0.5 + floatOffset }}
-                    vector={{ x: projEndX, y: 0 }}
+                  <PhysicsVectorArrow
+                    originDesign={{ x: blockX + objW * 0.5, y: groundYInScene - objH * 0.5 + floatOffset }}
+                    vector={{ x: basicResult.Fx, y: 0 }}
                     type="velocity"
                     sceneScale={sceneScale}
                     color={projectionColor}
                     strokeWidth={STROKE.vectorSub}
-                    pixelLength={Math.abs(projEndX)}
+                    label="Fx"
                   />
-                  <text x={blockX + objW * 0.5 + projEndX / 2}
-                    y={groundYInScene - objH * 0.5 - sceneFontSize * 0.5 + floatOffset}
-                    fontSize={sceneSmallFont} fill={projectionColor} fontWeight="bold" textAnchor="middle">
-                    Fx
-                  </text>
                 </g>
               )}
 
@@ -318,7 +320,7 @@ export default function WorkAnimation() {
               {angleDeg > 0 && angleDeg < 180 && (
                 <g>
                   {(() => {
-                    const arcR = Math.min(20, forceArrowLen * 0.4)
+                    const arcR = Math.min(20, estFArrowLen * 0.4)
                     const endAngle = -angleRad
                     const x1 = blockX + objW * 0.5 + arcR
                     const y1 = groundYInScene - objH * 0.5 + floatOffset
@@ -342,53 +344,38 @@ export default function WorkAnimation() {
 
           {mode === 1 && showVectors && (
             <g>
-              <VectorArrow
-                originPixel={{ x: blockX + objW * 0.5, y: groundYInScene - objH * 0.5 + floatOffset }}
-                vector={{ x: 0, y: -Math.min(advancedResult.weight * 1.5, 50) }}
+              <PhysicsVectorArrow
+                originDesign={{ x: blockX + objW * 0.5, y: groundYInScene - objH * 0.5 + floatOffset }}
+                vector={{ x: 0, y: -advancedResult.weight }}
                 type="gravity"
                 sceneScale={sceneScale}
                 strokeWidth={STROKE.vectorSub}
-                pixelLength={Math.min(advancedResult.weight * 1.5, 50)}
+                label="mg"
               />
-              <text x={blockX + objW * 0.5 - sceneFontSize}
-                y={groundYInScene - objH * 0.5 + Math.min(advancedResult.weight * 1.5, 50) + floatOffset}
-                fontSize={sceneSmallFont} fill={PHYSICS_COLORS.gravity} fontWeight="bold">
-                mg
-              </text>
 
               {!isLiftedOff && advancedResult.F_N > 0 && (
                 <g>
-                  <VectorArrow
-                    originPixel={{ x: blockX + objW * 0.5 + 8, y: groundYInScene + floatOffset }}
-                    vector={{ x: 0, y: Math.min(advancedResult.F_N * 1.5, 40) }}
+                  <PhysicsVectorArrow
+                    originDesign={{ x: blockX + objW * 0.5 + 8, y: groundYInScene + floatOffset }}
+                    vector={{ x: 0, y: advancedResult.F_N }}
                     type="normalForce"
                     sceneScale={sceneScale}
                     strokeWidth={STROKE.vectorSub}
-                    pixelLength={Math.min(advancedResult.F_N * 1.5, 40)}
+                    label="FN"
                   />
-                  <text x={blockX + objW * 0.5 + 8 + sceneFontSize * 0.5}
-                    y={groundYInScene - Math.min(advancedResult.F_N * 1.5, 40) + floatOffset}
-                    fontSize={sceneSmallFont} fill={PHYSICS_COLORS.normalForce} fontWeight="bold">
-                    FN
-                  </text>
                 </g>
               )}
 
               {!isLiftedOff && advancedResult.f > 0 && (
                 <g>
-                  <VectorArrow
-                    originPixel={{ x: blockX + objW * 0.3, y: groundYInScene - objH * 0.15 + floatOffset }}
-                    vector={{ x: -Math.min(advancedResult.f * 3, 40), y: 0 }}
+                  <PhysicsVectorArrow
+                    originDesign={{ x: blockX + objW * 0.3, y: groundYInScene - objH * 0.15 + floatOffset }}
+                    vector={{ x: -advancedResult.f, y: 0 }}
                     type="friction"
                     sceneScale={sceneScale}
                     strokeWidth={STROKE.vectorSub}
-                    pixelLength={Math.min(advancedResult.f * 3, 40)}
+                    label="f"
                   />
-                  <text x={blockX + objW * 0.3 - Math.min(advancedResult.f * 3, 40) - sceneFontSize * 0.5}
-                    y={groundYInScene - objH * 0.15 + sceneFontSize * 0.35 + floatOffset}
-                    fontSize={sceneSmallFont} fill={PHYSICS_COLORS.friction} fontWeight="bold">
-                    f
-                  </text>
                 </g>
               )}
             </g>

@@ -1,4 +1,4 @@
-import { VectorArrow, VectorDefs, SportsCar, PhysicsGround } from '@/components/Physics'
+import { PhysicsVectorArrow, VectorDefs, SportsCar, PhysicsGround } from '@/components/Physics'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -227,10 +227,11 @@ export default function AccelerationAnimation() {
         {/* ── 5. 飞机速度矢量 ── */}
         {showVectors && (
           <g>
-            <VectorArrow
-              originPixel={{ x: clampedPlaneX + LAYOUT.VEHICLE_WIDTH, y: topTrackY - LAYOUT.VEHICLE_PLANE_HEIGHT / 2 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: clampedPlaneX + LAYOUT.VEHICLE_WIDTH, y: topTrackY - LAYOUT.VEHICLE_PLANE_HEIGHT / 2 }}
               vector={{ x: vA, y: 0 }}
               type="velocity"
+
               sceneScale={sceneScale}
               strokeWidth={STROKE.vectorMain}
             />
@@ -259,10 +260,11 @@ export default function AccelerationAnimation() {
         {/* ── 7. 跑车速度矢量 ── */}
         {showVectors && result.vB > 0 && (
           <g>
-            <VectorArrow
-              originPixel={{ x: clampedCarX + LAYOUT.VEHICLE_WIDTH, y: bottomTrackY - LAYOUT.VEHICLE_HEIGHT / 2 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: clampedCarX + LAYOUT.VEHICLE_WIDTH, y: bottomTrackY - LAYOUT.VEHICLE_HEIGHT / 2 }}
               vector={{ x: result.vB, y: 0 }}
               type="velocity"
+
               sceneScale={sceneScale}
               strokeWidth={STROKE.vectorMain}
             />
@@ -281,13 +283,14 @@ export default function AccelerationAnimation() {
         {/* ── 8. Δv 虚线箭头（跑车在 deltaT 内的速度增量）── */}
         {showDeltaVArrow && (
           <g>
-            <VectorArrow
-              originPixel={{
+            <PhysicsVectorArrow
+              originDesign={{
                 x: clampedCarX + LAYOUT.VEHICLE_WIDTH + result.vB * 0.15,
                 y: bottomTrackY - LAYOUT.VEHICLE_HEIGHT / 2 - 14,
               }}
               vector={{ x: result.deltaVB, y: 0 }}
               type="acceleration"
+
               sceneScale={sceneScale}
               strokeWidth={STROKE.vectorSub}
             />

@@ -1,4 +1,4 @@
-import { PhysicsGround, VectorArrow } from '@/components/Physics'
+import { PhysicsGround, PhysicsVectorArrow } from '@/components/Physics'
 import { SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 
 import { ZeroPotentialLine } from './ZeroPotentialLine'
@@ -11,7 +11,6 @@ interface PendulumSceneProps {
   objPos: { x: number; y: number }
   state: { theta: number; v: number }
   showVectors: boolean
-  maxV: number
   sceneScale: SceneScale
   yRefLine: number
   hRef: number
@@ -29,7 +28,6 @@ export function PendulumScene({
   objPos,
   state,
   showVectors,
-  maxV,
   sceneScale,
   yRefLine,
   hRef,
@@ -94,42 +92,39 @@ export function PendulumScene({
       
       {/* 重力矢量 G — 恒定向下 */}
       {showVectors && (
-        <VectorArrow
-          originPixel={{ x: objPos.x, y: objPos.y }}
-          vector={{ x: 0, y: -1 }}
+        <PhysicsVectorArrow
+          originDesign={{ x: objPos.x, y: objPos.y }}
+          vector={{ x: 0, y: -m * g }}
           type="gravity"
           sceneScale={sceneScale}
-          pixelLength={Math.min(m * g * 2, sceneScale.maxVectorLength * 0.9)}
           label="G"
         />
       )}
 
       {/* 张力矢量 T — 沿绳指向悬挂点 */}
-      {showVectors && (
-        <VectorArrow
-          originPixel={{ x: objPos.x, y: objPos.y }}
-          vector={{ x: -Math.sin(state.theta), y: Math.cos(state.theta) }}
-          type="tension"
-          sceneScale={sceneScale}
-          pixelLength={Math.min((m * g * Math.cos(state.theta) + m * state.v * state.v / L) * 2, sceneScale.maxVectorLength * 0.9)}
-          label="T"
-        />
-      )}
-
-      {/* 切向速度矢量 v */}
-      {showVectors && Math.abs(state.v) > 0.15 && (() => {
-        const velRatio = Math.min(Math.abs(state.v) / maxV, 1)
-        const arrowPx = Math.max(14, velRatio * sceneScale.maxVectorLength * 0.85)
+      {showVectors && (() => {
+        const T = m * g * Math.cos(state.theta) + m * state.v * state.v / L
         return (
-          <VectorArrow
-            originPixel={{ x: objPos.x, y: objPos.y }}
-            vector={{ x: Math.cos(state.theta) * arrowPx * Math.sign(state.v), y: Math.sin(state.theta) * arrowPx * Math.sign(state.v) }}
-            type="velocity"
+          <PhysicsVectorArrow
+            originDesign={{ x: objPos.x, y: objPos.y }}
+            vector={{ x: -Math.sin(state.theta) * T, y: Math.cos(state.theta) * T }}
+            type="tension"
             sceneScale={sceneScale}
-            pixelLength={arrowPx}
+            label="T"
           />
         )
       })()}
+
+      {/* 切向速度矢量 v */}
+      {showVectors && Math.abs(state.v) > 0.15 && (
+        <PhysicsVectorArrow
+          originDesign={{ x: objPos.x, y: objPos.y }}
+          vector={{ x: Math.cos(state.theta) * state.v, y: Math.sin(state.theta) * state.v }}
+          type="velocity"
+          sceneScale={sceneScale}
+          label="v"
+        />
+      )}
     </g>
   )
 }

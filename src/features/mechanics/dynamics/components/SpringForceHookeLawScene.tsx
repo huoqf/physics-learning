@@ -160,9 +160,10 @@ export default function SpringForceHookeLawScene() {
       {showVectors && Math.abs(springForce) > 0.1 && (
         <g>
           <VectorArrow
-            originPixel={{ x: centerX, y: groundY - BOX_SIZE / 2 }}
+            originDesign={{ x: centerX, y: groundY - BOX_SIZE / 2 }}
             vector={{ x: springForce * 0.4, y: 0 }}
             type="elasticForce"
+            arrowType="visual-only"
             sceneScale={IDENTITY_SCENE_SCALE}
             strokeWidth={CANVAS_STYLE.stroke.vectorMain}
             pixelLength={Math.abs(springForce * 0.4)}

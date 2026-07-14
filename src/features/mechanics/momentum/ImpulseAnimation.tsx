@@ -1,4 +1,4 @@
-import { VectorArrow, PhysicsGround } from '@/components/Physics'
+import { PhysicsVectorArrow, PhysicsGround } from '@/components/Physics'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -390,8 +390,8 @@ export default function ImpulseAnimation() {
               strokeWidth={CANVAS_STYLE.stroke.objectLine}
             />
             {showVectors && (
-              <VectorArrow
-                originPixel={{ x: sliderX_basic - 5, y: sliderTrackY }}
+              <PhysicsVectorArrow
+                originDesign={{ x: sliderX_basic - 5, y: sliderTrackY }}
                 vector={{ x: -F, y: 0 }}
                 type="appliedForce"
                 sceneScale={sceneScale}
@@ -432,8 +432,8 @@ export default function ImpulseAnimation() {
               strokeWidth={CANVAS_STYLE.stroke.objectLine}
             />
             {showVectors && currentFt > 0 && (
-              <VectorArrow
-                originPixel={{ x: sliderX_advanced - 5, y: sliderTrackY }}
+              <PhysicsVectorArrow
+                originDesign={{ x: sliderX_advanced - 5, y: sliderTrackY }}
                 vector={{ x: -currentFt * 2, y: 0 }}
                 type="appliedForce"
                 sceneScale={sceneScale}

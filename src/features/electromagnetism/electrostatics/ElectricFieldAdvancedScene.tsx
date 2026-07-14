@@ -91,9 +91,10 @@ export function ElectricFieldAdvancedScene({
           {/* 1. 分矢量 E1 (浅黄色虚线) */}
           <g opacity={0.7}>
             <VectorArrow
-              originPixel={{ x: testX, y: testY }}
+              originDesign={{ x: testX, y: testY }}
               vector={advancedArrows.vectorE1}
               type="electricField"
+              arrowType="physical-schematic"
               sceneScale={sceneScale}
               pixelLength={advancedArrows.lenE1}
               strokeWidth={2.0}
@@ -108,9 +109,10 @@ export function ElectricFieldAdvancedScene({
           {/* 2. 分矢量 E2 (浅黄色虚线) */}
           <g opacity={0.7}>
             <VectorArrow
-              originPixel={{ x: testX, y: testY }}
+              originDesign={{ x: testX, y: testY }}
               vector={advancedArrows.vectorE2}
               type="electricField"
+              arrowType="physical-schematic"
               sceneScale={sceneScale}
               pixelLength={advancedArrows.lenE2}
               strokeWidth={2.0}
@@ -138,9 +140,10 @@ export function ElectricFieldAdvancedScene({
 
           {/* 4. 合场强 E (粗黄色实线) */}
           <VectorArrow
-            originPixel={{ x: testX, y: testY }}
+            originDesign={{ x: testX, y: testY }}
             vector={advancedArrows.vectorEnet}
             type="electricField"
+            arrowType="physical-schematic"
             sceneScale={sceneScale}
             pixelLength={advancedArrows.lenEnet}
             strokeWidth={CANVAS_STYLE.stroke.vectorMain + 0.8}
@@ -160,9 +163,10 @@ export function ElectricFieldAdvancedScene({
           {qTest !== 0 && (
             <>
               <VectorArrow
-                originPixel={{ x: testX, y: testY }}
+                originDesign={{ x: testX, y: testY }}
                 vector={advancedArrows.vectorF}
                 type="electricForce"
+                arrowType="physical-schematic"
                 sceneScale={sceneScale}
                 pixelLength={advancedArrows.lenF}
                 strokeWidth={CANVAS_STYLE.stroke.vectorMain + 1.2}

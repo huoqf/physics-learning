@@ -189,17 +189,17 @@ export default function OrthogonalDecompositionAnimation() {
               {/* 沿 x' 和 y' 轴的分矢量投影箭头 */}
               {Math.abs(f.fxPrime) > 0.05 && (
                 <g opacity={0.6}>
-                  <VectorArrow originPixel={{ x: origin.cx, y: origin.cy }}
+                  <VectorArrow originDesign={{ x: origin.cx, y: origin.cy }}
                     vector={{ x: f.xProjEnd.cx - origin.cx, y: -(f.xProjEnd.cy - origin.cy) }}
-                    type="forceComponent" sceneScale={sceneScale} color={f.color}
+                    type="forceComponent" arrowType="physical-schematic" sceneScale={sceneScale} color={f.color}
                     strokeWidth={1.5} pixelLength={Math.hypot(f.xProjEnd.cx - origin.cx, f.xProjEnd.cy - origin.cy)} />
                 </g>
               )}
               {Math.abs(f.fyPrime) > 0.05 && (
                 <g opacity={0.6}>
-                  <VectorArrow originPixel={{ x: origin.cx, y: origin.cy }}
+                  <VectorArrow originDesign={{ x: origin.cx, y: origin.cy }}
                     vector={{ x: f.yProjEnd.cx - origin.cx, y: -(f.yProjEnd.cy - origin.cy) }}
-                    type="forceComponent" sceneScale={sceneScale} color={f.color}
+                    type="forceComponent" arrowType="physical-schematic" sceneScale={sceneScale} color={f.color}
                     strokeWidth={1.5} pixelLength={Math.hypot(f.yProjEnd.cx - origin.cx, f.yProjEnd.cy - origin.cy)} />
                 </g>
               )}
@@ -221,9 +221,9 @@ export default function OrthogonalDecompositionAnimation() {
             const target = idx === 0 ? 'f1' : idx === 1 ? 'f2' : 'f3'
             return (
               <g key={`force-${idx}`}>
-                <VectorArrow originPixel={{ x: origin.cx, y: origin.cy }}
+                <VectorArrow originDesign={{ x: origin.cx, y: origin.cy }}
                   vector={{ x: f.end.cx - origin.cx, y: -(f.end.cy - origin.cy) }}
-                  type="force" sceneScale={sceneScale} color={f.color} strokeWidth={3}
+                  type="force" arrowType="physical-schematic" sceneScale={sceneScale} color={f.color} strokeWidth={3}
                   pixelLength={Math.hypot(f.end.cx - origin.cx, f.end.cy - origin.cy)} />
 
                 {/* 力文字标签 */}
@@ -247,9 +247,9 @@ export default function OrthogonalDecompositionAnimation() {
           {/* 绘制最终合成的合力（红粗轴） */}
           {showVectors && (
             <g>
-              <VectorArrow originPixel={{ x: origin.cx, y: origin.cy }}
+              <VectorArrow originDesign={{ x: origin.cx, y: origin.cy }}
                 vector={{ x: netForce.end.cx - origin.cx, y: -(netForce.end.cy - origin.cy) }}
-                type="force" sceneScale={sceneScale} color={CANVAS_COLORS.alertRed} strokeWidth={4.5}
+                type="force" arrowType="physical-schematic" sceneScale={sceneScale} color={CANVAS_COLORS.alertRed} strokeWidth={4.5}
                 pixelLength={Math.hypot(netForce.end.cx - origin.cx, netForce.end.cy - origin.cy)} />
               <text x={netForce.end.cx + (netForce.end.cx > origin.cx ? 8 : -25)}
                 y={netForce.end.cy + (netForce.end.cy > origin.cy ? 15 : -8)}
@@ -316,17 +316,17 @@ export default function OrthogonalDecompositionAnimation() {
                 <>
                   {/* 方案A：绘制重力的沿斜面分量 G_x 和垂直斜面分量 G_y */}
                   <g opacity={0.65}>
-                    <VectorArrow originPixel={{ x: slopeGeom.blockCenter.cx, y: slopeGeom.blockCenter.cy }}
+                    <VectorArrow originDesign={{ x: slopeGeom.blockCenter.cx, y: slopeGeom.blockCenter.cy }}
                       vector={{ x: slopeForces.G.xProjEnd.cx - slopeGeom.blockCenter.cx, y: -(slopeForces.G.xProjEnd.cy - slopeGeom.blockCenter.cy) }}
-                      type="forceComponent" sceneScale={sceneScale} color="#ef4444"
+                      type="forceComponent" arrowType="physical-schematic" sceneScale={sceneScale} color="#ef4444"
                       strokeWidth={1.8} pixelLength={Math.hypot(slopeForces.G.xProjEnd.cx - slopeGeom.blockCenter.cx, slopeForces.G.xProjEnd.cy - slopeGeom.blockCenter.cy)} />
                   </g>
                   <text x={slopeForces.G.xProjEnd.cx - 22} y={slopeForces.G.xProjEnd.cy + 16} fontSize={10} fill="#ef4444" fontWeight="bold">Gx</text>
 
                   <g opacity={0.65}>
-                    <VectorArrow originPixel={{ x: slopeGeom.blockCenter.cx, y: slopeGeom.blockCenter.cy }}
+                    <VectorArrow originDesign={{ x: slopeGeom.blockCenter.cx, y: slopeGeom.blockCenter.cy }}
                       vector={{ x: slopeForces.G.yProjEnd.cx - slopeGeom.blockCenter.cx, y: -(slopeForces.G.yProjEnd.cy - slopeGeom.blockCenter.cy) }}
-                      type="forceComponent" sceneScale={sceneScale} color="#ef4444"
+                      type="forceComponent" arrowType="physical-schematic" sceneScale={sceneScale} color="#ef4444"
                       strokeWidth={1.8} pixelLength={Math.hypot(slopeForces.G.yProjEnd.cx - slopeGeom.blockCenter.cx, slopeForces.G.yProjEnd.cy - slopeGeom.blockCenter.cy)} />
                   </g>
                   <text x={slopeForces.G.yProjEnd.cx - 18} y={slopeForces.G.yProjEnd.cy + 4} fontSize={10} fill="#ef4444" fontWeight="bold">Gy</text>
@@ -343,17 +343,17 @@ export default function OrthogonalDecompositionAnimation() {
                     stroke={CANVAS_COLORS.trackHistory} strokeWidth={1} strokeDasharray="3,3" />
 
                   <g opacity={0.65}>
-                    <VectorArrow originPixel={{ x: slopeGeom.blockCenter.cx, y: slopeGeom.blockCenter.cy }}
+                    <VectorArrow originDesign={{ x: slopeGeom.blockCenter.cx, y: slopeGeom.blockCenter.cy }}
                       vector={{ x: slopeForces.FN.xProjEnd.cx - slopeGeom.blockCenter.cx, y: -(slopeForces.FN.xProjEnd.cy - slopeGeom.blockCenter.cy) }}
-                      type="forceComponent" sceneScale={sceneScale} color="#3b82f6"
+                      type="forceComponent" arrowType="physical-schematic" sceneScale={sceneScale} color="#3b82f6"
                       strokeWidth={1.8} pixelLength={Math.hypot(slopeForces.FN.xProjEnd.cx - slopeGeom.blockCenter.cx, slopeForces.FN.xProjEnd.cy - slopeGeom.blockCenter.cy)} />
                   </g>
                   <text x={slopeForces.FN.xProjEnd.cx - 24} y={slopeForces.FN.xProjEnd.cy - 6} fontSize={10} fill="#3b82f6" fontWeight="bold">FNx</text>
 
                   <g opacity={0.65}>
-                    <VectorArrow originPixel={{ x: slopeGeom.blockCenter.cx, y: slopeGeom.blockCenter.cy }}
+                    <VectorArrow originDesign={{ x: slopeGeom.blockCenter.cx, y: slopeGeom.blockCenter.cy }}
                       vector={{ x: slopeForces.FN.yProjEnd.cx - slopeGeom.blockCenter.cx, y: -(slopeForces.FN.yProjEnd.cy - slopeGeom.blockCenter.cy) }}
-                      type="forceComponent" sceneScale={sceneScale} color="#3b82f6"
+                      type="forceComponent" arrowType="physical-schematic" sceneScale={sceneScale} color="#3b82f6"
                       strokeWidth={1.8} pixelLength={Math.hypot(slopeForces.FN.yProjEnd.cx - slopeGeom.blockCenter.cx, slopeForces.FN.yProjEnd.cy - slopeGeom.blockCenter.cy)} />
                   </g>
                   <text x={slopeForces.FN.yProjEnd.cx + 8} y={slopeForces.FN.yProjEnd.cy + 12} fontSize={10} fill="#3b82f6" fontWeight="bold">FNy</text>
@@ -365,17 +365,17 @@ export default function OrthogonalDecompositionAnimation() {
                     stroke={CANVAS_COLORS.trackHistory} strokeWidth={1} strokeDasharray="3,3" />
 
                   <g opacity={0.65}>
-                    <VectorArrow originPixel={{ x: slopeGeom.blockCenter.cx, y: slopeGeom.blockCenter.cy }}
+                    <VectorArrow originDesign={{ x: slopeGeom.blockCenter.cx, y: slopeGeom.blockCenter.cy }}
                       vector={{ x: slopeForces.f.xProjEnd.cx - slopeGeom.blockCenter.cx, y: -(slopeForces.f.xProjEnd.cy - slopeGeom.blockCenter.cy) }}
-                      type="forceComponent" sceneScale={sceneScale} color="#10b981"
+                      type="forceComponent" arrowType="physical-schematic" sceneScale={sceneScale} color="#10b981"
                       strokeWidth={1.8} pixelLength={Math.hypot(slopeForces.f.xProjEnd.cx - slopeGeom.blockCenter.cx, slopeForces.f.xProjEnd.cy - slopeGeom.blockCenter.cy)} />
                   </g>
                   <text x={slopeForces.f.xProjEnd.cx + 4} y={slopeForces.f.xProjEnd.cy + 14} fontSize={10} fill="#10b981" fontWeight="bold">fx</text>
 
                   <g opacity={0.65}>
-                    <VectorArrow originPixel={{ x: slopeGeom.blockCenter.cx, y: slopeGeom.blockCenter.cy }}
+                    <VectorArrow originDesign={{ x: slopeGeom.blockCenter.cx, y: slopeGeom.blockCenter.cy }}
                       vector={{ x: slopeForces.f.yProjEnd.cx - slopeGeom.blockCenter.cx, y: -(slopeForces.f.yProjEnd.cy - slopeGeom.blockCenter.cy) }}
-                      type="forceComponent" sceneScale={sceneScale} color="#10b981"
+                      type="forceComponent" arrowType="physical-schematic" sceneScale={sceneScale} color="#10b981"
                       strokeWidth={1.8} pixelLength={Math.hypot(slopeForces.f.yProjEnd.cx - slopeGeom.blockCenter.cx, slopeForces.f.yProjEnd.cy - slopeGeom.blockCenter.cy)} />
                   </g>
                   <text x={slopeForces.f.yProjEnd.cx - 16} y={slopeForces.f.yProjEnd.cy - 6} fontSize={10} fill="#10b981" fontWeight="bold">fy</text>
@@ -388,23 +388,23 @@ export default function OrthogonalDecompositionAnimation() {
           {showVectors && (
             <g>
               {/* 重力 G */}
-              <VectorArrow originPixel={{ x: slopeGeom.blockCenter.cx, y: slopeGeom.blockCenter.cy }}
+              <VectorArrow originDesign={{ x: slopeGeom.blockCenter.cx, y: slopeGeom.blockCenter.cy }}
                 vector={{ x: slopeForces.G.end.cx - slopeGeom.blockCenter.cx, y: -(slopeForces.G.end.cy - slopeGeom.blockCenter.cy) }}
-                type="force" sceneScale={sceneScale} color={slopeForces.G.color} strokeWidth={3}
+                type="force" arrowType="physical-schematic" sceneScale={sceneScale} color={slopeForces.G.color} strokeWidth={3}
                 pixelLength={Math.hypot(slopeForces.G.end.cx - slopeGeom.blockCenter.cx, slopeForces.G.end.cy - slopeGeom.blockCenter.cy)} />
               <text x={slopeForces.G.end.cx - 15} y={slopeForces.G.end.cy + 4} fontSize={12} fill={slopeForces.G.color} fontWeight="bold">G</text>
 
               {/* 支持力 FN */}
-              <VectorArrow originPixel={{ x: slopeGeom.blockCenter.cx, y: slopeGeom.blockCenter.cy }}
+              <VectorArrow originDesign={{ x: slopeGeom.blockCenter.cx, y: slopeGeom.blockCenter.cy }}
                 vector={{ x: slopeForces.FN.end.cx - slopeGeom.blockCenter.cx, y: -(slopeForces.FN.end.cy - slopeGeom.blockCenter.cy) }}
-                type="force" sceneScale={sceneScale} color={slopeForces.FN.color} strokeWidth={3}
+                type="force" arrowType="physical-schematic" sceneScale={sceneScale} color={slopeForces.FN.color} strokeWidth={3}
                 pixelLength={Math.hypot(slopeForces.FN.end.cx - slopeGeom.blockCenter.cx, slopeForces.FN.end.cy - slopeGeom.blockCenter.cy)} />
               <text x={slopeForces.FN.end.cx + 8} y={slopeForces.FN.end.cy - 6} fontSize={12} fill={slopeForces.FN.color} fontWeight="bold">FN</text>
 
               {/* 摩擦力 f */}
-              <VectorArrow originPixel={{ x: slopeGeom.blockCenter.cx, y: slopeGeom.blockCenter.cy }}
+              <VectorArrow originDesign={{ x: slopeGeom.blockCenter.cx, y: slopeGeom.blockCenter.cy }}
                 vector={{ x: slopeForces.f.end.cx - slopeGeom.blockCenter.cx, y: -(slopeForces.f.end.cy - slopeGeom.blockCenter.cy) }}
-                type="force" sceneScale={sceneScale} color={slopeForces.f.color} strokeWidth={3}
+                type="force" arrowType="physical-schematic" sceneScale={sceneScale} color={slopeForces.f.color} strokeWidth={3}
                 pixelLength={Math.hypot(slopeForces.f.end.cx - slopeGeom.blockCenter.cx, slopeForces.f.end.cy - slopeGeom.blockCenter.cy)} />
               <text x={slopeForces.f.end.cx - 8} y={slopeForces.f.end.cy - 12} fontSize={12} fill={slopeForces.f.color} fontWeight="bold">f</text>
             </g>

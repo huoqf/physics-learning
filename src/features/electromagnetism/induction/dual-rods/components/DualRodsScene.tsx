@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
-import { Rails, ConductingRod, VectorArrow, MagneticFieldSymbols } from '@/components/Physics'
+import { Rails, ConductingRod, PhysicsVectorArrow, MagneticFieldSymbols } from '@/components/Physics'
 import { useAnimationViewport } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -137,8 +137,8 @@ export const DualRodsScene = React.memo(function DualRodsScene({
         {/* b 棒速度箭头 */}
         {Math.abs(currentVB) > 0.05 && (
           <g>
-            <VectorArrow
-              originPixel={{ x: posB, y: cy - railSpacing / 2 - 25 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: posB, y: cy - railSpacing / 2 - 25 }}
               vector={{ x: currentVB * 0.85, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
@@ -152,8 +152,8 @@ export const DualRodsScene = React.memo(function DualRodsScene({
         {/* b 棒受到的向右安培力 F_Ab */}
         {Math.abs(forceAmpere) > 0.01 && (
           <g>
-            <VectorArrow
-              originPixel={{ x: posB, y: cy }}
+            <PhysicsVectorArrow
+              originDesign={{ x: posB, y: cy }}
               vector={{ x: forceAmpere * 1.2, y: 0 }}
               type="lorentzForce"
               sceneScale={sceneScale}
@@ -167,8 +167,8 @@ export const DualRodsScene = React.memo(function DualRodsScene({
         {/* a 棒速度箭头 */}
         {Math.abs(currentVA) > 0.05 && (
           <g>
-            <VectorArrow
-              originPixel={{ x: posA, y: cy - railSpacing / 2 - 25 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: posA, y: cy - railSpacing / 2 - 25 }}
               vector={{ x: currentVA * 0.85, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
@@ -182,8 +182,8 @@ export const DualRodsScene = React.memo(function DualRodsScene({
         {/* a 棒受到的向左安培力 F_Aa (大小与 F_Ab 绝对相等、反向) */}
         {Math.abs(forceAmpere) > 0.01 && (
           <g>
-            <VectorArrow
-              originPixel={{ x: posA, y: cy }}
+            <PhysicsVectorArrow
+              originDesign={{ x: posA, y: cy }}
               vector={{ x: -forceAmpere * 1.2, y: 0 }}
               type="lorentzForce"
               sceneScale={sceneScale}
@@ -197,8 +197,8 @@ export const DualRodsScene = React.memo(function DualRodsScene({
         {/* 恒力驱动模式下施加在 a 棒上的恒定外拉力 F_外 */}
         {scenario === 1 && appliedForce > 0 && (
           <g>
-            <VectorArrow
-              originPixel={{ x: posA, y: cy + 30 }}
+            <PhysicsVectorArrow
+              originDesign={{ x: posA, y: cy + 30 }}
               vector={{ x: appliedForce * 1.2, y: 0 }}
               type="appliedForce"
               sceneScale={sceneScale}

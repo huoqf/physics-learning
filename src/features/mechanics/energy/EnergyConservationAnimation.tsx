@@ -283,7 +283,17 @@ export default function EnergyConservationAnimation() {
   const arcEndX = animCenterX + R_pix * Math.sin(arcLimitDeg * Math.PI / 180)
   const arcEndY = valleyCenterY + R_pix * Math.cos(arcLimitDeg * Math.PI / 180)
 
-  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height })
+  // 动态 refMagnitudes：为物理矢量箭头归一化提供参考量级
+  const refMagnitudes = useMemo(() => {
+    const refForce = m * g * 1.5
+    return {
+      gravity: refForce,
+      tension: refForce,
+      velocity: maxV,
+    }
+  }, [m, g, maxV])
+
+  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes })
 
   // 动态 Y 范围计算
   const chartYMin = Math.min(0, -E_offset) * 1.1
@@ -381,7 +391,6 @@ export default function EnergyConservationAnimation() {
             objPos={objPos}
             state={state}
             showVectors={showVectors}
-            maxV={maxV}
             sceneScale={sceneScale}
             yRefLine={yRefLine}
             hRef={hRef}

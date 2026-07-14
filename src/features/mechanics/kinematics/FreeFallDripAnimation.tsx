@@ -1,4 +1,4 @@
-import { PhysicsGround, VectorArrow, VectorDefs } from '@/components/Physics'
+import { PhysicsGround, PhysicsVectorArrow, VectorDefs } from '@/components/Physics'
 import { useAnimationViewport } from '@/hooks'
 import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -383,10 +383,11 @@ export default function FreeFallDripAnimation() {
           if (arrowLen < 5) return null
           return (
             <g>
-              <VectorArrow
-                originPixel={{ x: tubeCenterX + DROP_RADIUS + 8, y: pixelY }}
+              <PhysicsVectorArrow
+                originDesign={{ x: tubeCenterX + DROP_RADIUS + 8, y: pixelY }}
                 vector={{ x: 0, y: -state.v }}
                 type="velocity"
+
                 sceneScale={dripSceneScale}
                 strokeWidth={STROKE.vectorMain}
               />
@@ -404,10 +405,11 @@ export default function FreeFallDripAnimation() {
           if (pixelY > tubeBottomY || pixelY < tubeTopY) return null
           return (
             <g>
-              <VectorArrow
-                originPixel={{ x: tubeCenterX - DROP_RADIUS - 8, y: pixelY }}
+              <PhysicsVectorArrow
+                originDesign={{ x: tubeCenterX - DROP_RADIUS - 8, y: pixelY }}
                 vector={{ x: 0, y: -g }}
                 type="gravity"
+
                 sceneScale={dripSceneScale}
                 strokeWidth={STROKE.vectorSub}
               />

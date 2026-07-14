@@ -1,4 +1,5 @@
-import { VectorArrow, PhysicsGround } from '@/components/Physics'
+import { useMemo } from 'react'
+import { PhysicsVectorArrow, PhysicsGround } from '@/components/Physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
@@ -71,7 +72,13 @@ export function PowerScene({
   const EkMax = 0.5 * m * maxV * maxV
   const ekRatio = EkMax > 0 ? Math.min(Ek / EkMax, 1) : 0
 
-  const sceneScale = useSceneScale({ vp, preset, anchor: 'design', originSource: 'topLeft', physicsWidth: preset.width, physicsHeight: preset.height })
+  const refMagnitudes = useMemo(() => ({
+    appliedForce: Math.max(state.F, 5) * 2,
+    friction: Math.max(f, 5) * 2,
+    velocity: Math.max(maxV, 1) * 2,
+  }), [state.F, f, maxV])
+
+  const sceneScale = useSceneScale({ vp, preset, anchor: 'design', originSource: 'topLeft', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes })
 
   return (
     <svg width={canvasSize.width} height={canvasSize.height} className="bg-transparent">
@@ -229,32 +236,32 @@ export function PowerScene({
       </g>
 
       {showVectors && state.F > 0 && (
-        <VectorArrow
-          originPixel={{ x: carX + objW + 2, y: groundY - objH * 0.5 }}
-          vector={{ x: Math.min(state.F * 0.008, 60), y: 0 }}
+        <PhysicsVectorArrow
+          originDesign={{ x: carX + objW + 2, y: groundY - objH * 0.5 }}
+          vector={{ x: state.F, y: 0 }}
           type="appliedForce"
           sceneScale={sceneScale}
-          pixelLength={Math.min(state.F * 0.008, 60)}
+          label="F"
         />
       )}
 
       {showVectors && f > 0 && (
-        <VectorArrow
-          originPixel={{ x: carX - 2, y: groundY - objH * 0.4 }}
-          vector={{ x: -Math.min(f * 0.008, 30), y: 0 }}
+        <PhysicsVectorArrow
+          originDesign={{ x: carX - 2, y: groundY - objH * 0.4 }}
+          vector={{ x: -f, y: 0 }}
           type="friction"
           sceneScale={sceneScale}
-          pixelLength={Math.min(f * 0.008, 30)}
+          label="f"
         />
       )}
 
       {showVectors && state.v > 0.05 && (
-        <VectorArrow
-          originPixel={{ x: carX + objW * 0.5, y: groundY + 3.5 }}
-          vector={{ x: Math.min(state.v * 3.5, 70), y: 0 }}
+        <PhysicsVectorArrow
+          originDesign={{ x: carX + objW * 0.5, y: groundY + 3.5 }}
+          vector={{ x: state.v, y: 0 }}
           type="velocity"
           sceneScale={sceneScale}
-          pixelLength={Math.min(state.v * 3.5, 70)}
+          label="v"
         />
       )}
 

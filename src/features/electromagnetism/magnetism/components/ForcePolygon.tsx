@@ -120,9 +120,9 @@ export const ForcePolygon: React.FC<ForcePolygonProps> = ({
   const hasGap = Math.hypot(resultantX, resultantY) > 0.8
   const isEquilibrium = !hasGap
 
-  // 像素坐标 → VectorArrow 像素坐标：x 不变，y 不取反（originPixel 直接传像素坐标）
+  // 像素坐标 → VectorArrow 像素坐标：x 不变，y 不取反（originDesign 直接传像素坐标）
   const vecBetween = (ax: number, ay: number, bx: number, by: number) => ({
-    originPixel: { x: ax, y: ay },
+    originDesign: { x: ax, y: ay },
     vector: { x: bx - ax, y: -(by - ay) },
     pixelLength: Math.hypot(bx - ax, by - ay),
   })
@@ -163,33 +163,33 @@ export const ForcePolygon: React.FC<ForcePolygonProps> = ({
       </text>
 
       {/* 矢量 1: 重力 G */}
-      {(() => { const v = vecBetween(p0.x, p0.y, p1.x, p1.y); return v.originPixel && (
-        <VectorArrow originPixel={v.originPixel} vector={v.vector} type="gravity" sceneScale={IDENTITY_SCENE_SCALE}
+      {(() => { const v = vecBetween(p0.x, p0.y, p1.x, p1.y); return v.originDesign && (
+        <VectorArrow originDesign={v.originDesign} vector={v.vector} type="gravity" arrowType="visual-only" sceneScale={IDENTITY_SCENE_SCALE}
           pixelLength={v.pixelLength} color={PHYSICS_COLORS.gravity ?? CANVAS_COLORS.labelTextLight} label="G" strokeWidth={1.6} font={font} />
       ) })()}
 
       {/* 矢量 2: 安培力 F_安 */}
-      {(() => { const v = vecBetween(p1.x, p1.y, p2.x, p2.y); return v.originPixel && (
-        <VectorArrow originPixel={v.originPixel} vector={v.vector} type="lorentzForce" sceneScale={IDENTITY_SCENE_SCALE}
+      {(() => { const v = vecBetween(p1.x, p1.y, p2.x, p2.y); return v.originDesign && (
+        <VectorArrow originDesign={v.originDesign} vector={v.vector} type="lorentzForce" arrowType="visual-only" sceneScale={IDENTITY_SCENE_SCALE}
           pixelLength={v.pixelLength} color={PHYSICS_COLORS.lorentzForce} label="F_安" strokeWidth={1.6} font={font} />
       ) })()}
 
       {/* 矢量 3: 摩擦力 f */}
-      {(() => { const v = vecBetween(p2.x, p2.y, p3.x, p3.y); return v.originPixel && (
-        <VectorArrow originPixel={v.originPixel} vector={v.vector} type="friction" sceneScale={IDENTITY_SCENE_SCALE}
+      {(() => { const v = vecBetween(p2.x, p2.y, p3.x, p3.y); return v.originDesign && (
+        <VectorArrow originDesign={v.originDesign} vector={v.vector} type="friction" arrowType="visual-only" sceneScale={IDENTITY_SCENE_SCALE}
           pixelLength={v.pixelLength} color={PHYSICS_COLORS.friction} label="f" strokeWidth={1.6} font={font} />
       ) })()}
 
       {/* 矢量 4: 支持力 N */}
-      {(() => { const v = vecBetween(p3.x, p3.y, p4.x, p4.y); return v.originPixel && (
-        <VectorArrow originPixel={v.originPixel} vector={v.vector} type="normalForce" sceneScale={IDENTITY_SCENE_SCALE}
+      {(() => { const v = vecBetween(p3.x, p3.y, p4.x, p4.y); return v.originDesign && (
+        <VectorArrow originDesign={v.originDesign} vector={v.vector} type="normalForce" arrowType="visual-only" sceneScale={IDENTITY_SCENE_SCALE}
           pixelLength={v.pixelLength} color={PHYSICS_COLORS.normalForce} label="N" strokeWidth={1.6} font={font} />
       ) })()}
 
       {/* 真实合外力：方案 B，箭头从多边形起点指向终点 */}
-      {hasGap && (() => { const v = vecBetween(p0.x, p0.y, p4.x, p4.y); return v.originPixel && (
+      {hasGap && (() => { const v = vecBetween(p0.x, p0.y, p4.x, p4.y); return v.originDesign && (
         <g>
-          <VectorArrow originPixel={v.originPixel} vector={v.vector} type="force" sceneScale={IDENTITY_SCENE_SCALE}
+          <VectorArrow originDesign={v.originDesign} vector={v.vector} type="force" arrowType="visual-only" sceneScale={IDENTITY_SCENE_SCALE}
             pixelLength={v.pixelLength} color={PHYSICS_COLORS.forceNet} label="F_合" strokeWidth={1.5} dashed font={font} />
         </g>
       ) })()}

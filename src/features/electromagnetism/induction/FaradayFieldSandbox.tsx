@@ -71,9 +71,10 @@ export function FaradayFieldSandbox({
       {inducedCurrentDir !== 0 && (
         <g transform={`translate(${sandboxW / 2}, ${coilY - COIL_RY * 1.5 + 10})`}>
           <VectorArrow
-            originPixel={{ x: 0, y: 10 }}
+            originDesign={{ x: 0, y: 10 }}
             vector={{ x: inducedCurrentDir > 0 ? 1 : -1, y: 0 }}
             type="currentDirection"
+            arrowType="visual-only"
             sceneScale={IDENTITY_SCENE_SCALE}
             pixelLength={30}
             strokeWidth={2}

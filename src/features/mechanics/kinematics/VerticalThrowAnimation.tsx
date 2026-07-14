@@ -1,4 +1,4 @@
-import { PhysicsGround, VectorArrow, VectorDefs, Ball } from '@/components/Physics'
+import { PhysicsGround, PhysicsVectorArrow, VectorDefs, Ball } from '@/components/Physics'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
@@ -248,10 +248,11 @@ export default function VerticalThrowAnimation() {
 
         {showVectors && effectiveV !== 0 && !isLanded && (
           <g>
-            <VectorArrow
-              originPixel={{ x: leftBallX + 18, y: currentBallY }}
+            <PhysicsVectorArrow
+              originDesign={{ x: leftBallX + 18, y: currentBallY }}
               vector={{ x: 0, y: effectiveV }}
               type="velocity"
+
               sceneScale={vtSceneScale}
               strokeWidth={STROKE.vectorMain}
             />
@@ -265,10 +266,11 @@ export default function VerticalThrowAnimation() {
 
         {showVectors && !isLanded && (
           <g>
-            <VectorArrow
-              originPixel={{ x: leftBallX - 18, y: currentBallY }}
+            <PhysicsVectorArrow
+              originDesign={{ x: leftBallX - 18, y: currentBallY }}
               vector={{ x: 0, y: -g }}
               type="gravity"
+
               sceneScale={vtSceneScale}
               strokeWidth={STROKE.vectorMain}
             />
@@ -283,10 +285,11 @@ export default function VerticalThrowAnimation() {
         {isAtPeak && (
           <g>
             <g>
-              <VectorArrow
-                originPixel={{ x: leftBallX - 18, y: currentBallY }}
+              <PhysicsVectorArrow
+                originDesign={{ x: leftBallX - 18, y: currentBallY }}
                 vector={{ x: 0, y: -g }}
                 type="gravity"
+  
                 sceneScale={vtSceneScale}
                 strokeWidth={STROKE.vectorMain}
               />
