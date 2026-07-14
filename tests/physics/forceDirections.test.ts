@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { lorentzForceDir, electricForceDir, centripetalForceDir } from '@/physics/magnetism/forces'
+import { lorentzForceDir, electricForceDir, centripetalForceDir, ampereForceDir } from '@/physics/magnetism/forces'
 import { svgPointToPhysicsPoint } from '@/utils/coordinate'
 import { SPECTROMETER } from '@/features/electromagnetism/magnetism/combined-fields/model/combinedFieldsModel'
 
@@ -134,6 +134,70 @@ describe('centripetalForceDir — 向心力方向（指向圆心）', () => {
 
   it('返回值为单位向量', () => {
     const d = centripetalForceDir({ x: 0, y: 0 }, { x: 5, y: 12 })
+    const mag = Math.sqrt(d.x * d.x + d.y * d.y)
+    expect(mag).toBeCloseTo(1)
+  })
+})
+
+describe('ampereForceDir — 安培力方向 F = I L × B', () => {
+  it('电流向上 + B 入纸面(×) → 力向左', () => {
+    // L=(0,1), B_in(Bz=-1), I>0 → F=(1·(-1), -0·(-1))=(-1,0) → 向左
+    const d = ampereForceDir({ x: 0, y: 1 }, 'intoPage', 1.0)
+    expect(d.x).toBeCloseTo(-1)
+    expect(d.y).toBeCloseTo(0)
+  })
+
+  it('电流向上 + B 出纸面(⊙) → 力向右', () => {
+    // L=(0,1), B_out(Bz=+1), I>0 → F=(1·1, -0·1)=(1,0) → 向右
+    const d = ampereForceDir({ x: 0, y: 1 }, 'outOfPage', 1.0)
+    expect(d.x).toBeCloseTo(1)
+    expect(d.y).toBeCloseTo(0)
+  })
+
+  it('电流向下 + B 入纸面(×) → 力向右', () => {
+    // L=(0,-1), B_in(Bz=-1), I>0 → F=((-1)·(-1), -0·(-1))=(1,0) → 向右
+    const d = ampereForceDir({ x: 0, y: -1 }, 'intoPage', 1.0)
+    expect(d.x).toBeCloseTo(1)
+    expect(d.y).toBeCloseTo(0)
+  })
+
+  it('电流向下 + B 出纸面(⊙) → 力向左', () => {
+    // L=(0,-1), B_out(Bz=+1), I>0 → F=((-1)·1, -0·1)=(-1,0) → 向左
+    const d = ampereForceDir({ x: 0, y: -1 }, 'outOfPage', 1.0)
+    expect(d.x).toBeCloseTo(-1)
+    expect(d.y).toBeCloseTo(0)
+  })
+
+  it('电流向右 + B 入纸面(×) → 力向上', () => {
+    // L=(1,0), B_in(Bz=-1), I>0 → F=(0·(-1), -1·(-1))=(0,1) → 向上
+    const d = ampereForceDir({ x: 1, y: 0 }, 'intoPage', 1.0)
+    expect(d.x).toBeCloseTo(0)
+    expect(d.y).toBeCloseTo(1)
+  })
+
+  it('电流向右 + B 出纸面(⊙) → 力向下', () => {
+    // L=(1,0), B_out(Bz=+1), I>0 → F=(0·1, -1·1)=(0,-1) → 向下
+    const d = ampereForceDir({ x: 1, y: 0 }, 'outOfPage', 1.0)
+    expect(d.x).toBeCloseTo(0)
+    expect(d.y).toBeCloseTo(-1)
+  })
+
+  it('负电流反转方向：电流向上 + B 入纸面 + I<0 → 力向右', () => {
+    const d = ampereForceDir({ x: 0, y: 1 }, 'intoPage', -1.0)
+    expect(d.x).toBeCloseTo(1)
+    expect(d.y).toBeCloseTo(0)
+  })
+
+  it('零电流返回零向量', () => {
+    expect(ampereForceDir({ x: 0, y: 1 }, 'intoPage', 0)).toEqual({ x: 0, y: 0 })
+  })
+
+  it('零方向返回零向量', () => {
+    expect(ampereForceDir({ x: 0, y: 0 }, 'intoPage', 1.0)).toEqual({ x: 0, y: 0 })
+  })
+
+  it('返回值为单位向量', () => {
+    const d = ampereForceDir({ x: 3, y: 4 }, 'intoPage', 2)
     const mag = Math.sqrt(d.x * d.x + d.y * d.y)
     expect(mag).toBeCloseTo(1)
   })

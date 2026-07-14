@@ -7,6 +7,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import type { SceneScale } from '@/scene/SceneScale'
 import { getSingleRodState, type SingleRodMode } from '@/physics/singleRod'
+import { ampereForceDir } from '@/physics/magnetism/forces'
 
 const DESIGN = CANVAS_PRESETS.splitV
 
@@ -79,6 +80,9 @@ export default function SingleRodAnimation() {
   const fLength = clamp(state.externalForce * 34, 0, 82)
   const chargeLevel = clamp(state.charge / Math.max(0.2, state.charge + 0.8), 0, 1)
   const iLength = clamp(Math.abs(state.current) * 30, 0, 80)
+
+  // 安培力方向：电流沿导体棒（竖直），B 入纸面
+  const forceDir = ampereForceDir({ x: 0, y: 1 }, 'intoPage', state.current)
 
   return (
     <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform} className="bg-white rounded-xl">
@@ -159,7 +163,7 @@ export default function SingleRodAnimation() {
       />
       <VectorArrow
         originPixel={{ x: rodX, y: rodCenterY + 4 }}
-        vector={pixelVector(-1, 0)}
+        vector={pixelVector(forceDir.x, forceDir.y)}
         type="lorentzForce"
         sceneScale={PIXEL_VECTOR_SCALE}
         pixelLength={faLength}

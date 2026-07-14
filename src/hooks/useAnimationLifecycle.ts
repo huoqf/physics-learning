@@ -30,8 +30,9 @@ export interface AnimationLifecycleResult {
 function useAnimationConfig() {
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
-  const { setParams, setTime, setIsPlaying, setPhysicsState } = useAnimationStore(
+  const { setAnimationType, setParams, setTime, setIsPlaying, setPhysicsState } = useAnimationStore(
     useShallow((s) => ({
+      setAnimationType: s.setAnimationType,
       setParams: s.setParams,
       setTime: s.setTime,
       setIsPlaying: s.setIsPlaying,
@@ -90,6 +91,7 @@ function useAnimationConfig() {
         const num = Number(value)
         if (!Number.isNaN(num)) urlOverrides[key] = num
       })
+      setAnimationType(config.id)
       setParams({ ...config.defaultParams, ...urlOverrides })
       setTime(0)
       currentTimeRef.current = 0
@@ -104,7 +106,7 @@ function useAnimationConfig() {
       markAnimationViewed(config.id)
       preloadQuantityBuilder(config.id)
     }
-  }, [config, location.search, setParams, setTime, setIsPlaying, setPhysicsState, setMode, markAnimationViewed])
+  }, [config, location.search, setAnimationType, setParams, setTime, setIsPlaying, setPhysicsState, setMode, markAnimationViewed])
 
   return { config, configLoading, currentTimeRef }
 }

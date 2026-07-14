@@ -59,7 +59,7 @@ function HookeLawChart({ k, m, time }: { k: number; m: number; time: number }) {
     const pts: { x: number; y: number }[] = []
     for (let i = 0; i <= 50; i++) {
       const x = (i / 50) * (2 * amplitude) - amplitude
-      pts.push({ x, y: k * x })
+      pts.push({ x, y: -k * x })
     }
     return pts
   }, [k])
@@ -71,7 +71,7 @@ function HookeLawChart({ k, m, time }: { k: number; m: number; time: number }) {
     const step = end / 30
     for (let i = 0; i <= 30; i++) {
       const x = i * step
-      pts.push({ x, y: 0.5 * k * x * x })
+      pts.push({ x, y: -k * x })
     }
     return pts
   }, [k, displacement])

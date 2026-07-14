@@ -12,6 +12,7 @@ export {
   lorentzForceDir,
   electricForceDir,
   centripetalForceDir,
+  ampereForceDir,
   type BDirection,
 } from './forces'
 

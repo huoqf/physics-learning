@@ -1,173 +1,59 @@
 import { VectorArrow, VectorDefs, PhysicsGround } from '@/components/Physics'
-import { useEffect, useRef, useState } from 'react'
-import { useAnimationViewport, useSceneScale } from '@/hooks'
-import { PX_PER_METER } from '@/utils'
-import { useAnimationStore } from '@/stores'
-import { useShallow } from 'zustand/react/shallow'
-import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, FONT, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { Spring } from '@/components/UI'
-import { calculateConnectedBody, calculateConnectedBodyTimeline, GRAVITY } from '@/physics'
+import { useAnimationStore } from '@/stores'
 
-/** 连接体场景布局常量 */
-const LAYOUT = {
-  groundOffset: 80,         // 地面距画布底�?(px)
-  blockMaxWidth: 65,        // 质量块最大宽�?(px)
-  blockWidthRatio: 0.11,    // 质量块宽度占画布�?
-  blockMaxHeight: 50,       // 质量块最大高�?(px)
-  blockHeightRatio: 0.13,   // 质量块高度占画布�?
-  wheelRadius: 6,           // 车轮半径 (px)
-  springMaxStretchRatio: 0.7, // 弹簧最大拉伸占绳长�?
-  ropeMinLength: 40,        // 绳最小长�?(px)
-  ropeLengthRatio: 0.12,    // 绳长占画布比
-  startXRatio: 0.15,        // 起始位置占画布比
-  endXRatio: 0.85,          // 终止位置占画布比
-}
+import { useConnectedBodiesPhysics } from './hooks/useConnectedBodiesPhysics'
 
-/** 弹簧视觉动效参数（非严格物理量，仅用于动画表现） */
-const SPRING_VISUAL = {
-  /** 视觉振荡角频�?(rad/s)，调参值非物理推导 */
-  visualOmega: 11.5,
-  /** 视觉阻尼系数，调参值非物理推导 */
-  visualDamping: 1.6,
-  /** 张力到像素拉伸的换算系数 */
-  tensionToStretchScale: 11,
-  /** 弹簧像素拉伸视觉放大系数 */
-  stretchVisualScale: 15,
-}
+/** 车轮半径常量（与 hook 中 LAYOUT.wheelRadius 保持一致） */
+const WHEEL_RADIUS = 6
 
-export default function ConnectedBodiesAnimation() {
-    const {params, time, showVectors, isPlaying, setIsPlaying, updateParam} = useAnimationStore(
-    useShallow((s) => ({
-    params: s.params,
-    time: s.time,
-    showVectors: s.showVectors,
-    isPlaying: s.isPlaying,
-    setIsPlaying: s.setIsPlaying,
-    updateParam: s.updateParam,
-    }))
+/** 绘制带十字辐条的滚动轮子 */
+function RollingWheels({ boxX, boxW, groundY, wheelRotation }: {
+  boxX: number
+  boxW: number
+  groundY: number
+  wheelRotation: number
+}) {
+  const wY = groundY - WHEEL_RADIUS
+  const cx1 = boxX + boxW * 0.22
+  const cx2 = boxX + boxW * 0.78
+  return (
+    <g>
+      <circle cx={cx1} cy={wY} r={WHEEL_RADIUS} fill={colors.neutral[800]} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
+      <circle cx={cx1} cy={wY} r={1.5} fill={colors.neutral.white} />
+      <line x1={cx1 - WHEEL_RADIUS} y1={wY} x2={cx1 + WHEEL_RADIUS} y2={wY} stroke={colors.neutral.white} strokeWidth={0.8} transform={`rotate(${wheelRotation}, ${cx1}, ${wY})`} />
+      <line x1={cx1} y1={wY - WHEEL_RADIUS} x2={cx1} y2={wY + WHEEL_RADIUS} stroke={colors.neutral.white} strokeWidth={0.8} transform={`rotate(${wheelRotation}, ${cx1}, ${wY})`} />
+
+      <circle cx={cx2} cy={wY} r={WHEEL_RADIUS} fill={colors.neutral[800]} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
+      <circle cx={cx2} cy={wY} r={1.5} fill={colors.neutral.white} />
+      <line x1={cx2 - WHEEL_RADIUS} y1={wY} x2={cx2 + WHEEL_RADIUS} y2={wY} stroke={colors.neutral.white} strokeWidth={0.8} transform={`rotate(${wheelRotation}, ${cx2}, ${wY})`} />
+      <line x1={cx2} y1={wY - WHEEL_RADIUS} x2={cx2} y2={wY + WHEEL_RADIUS} stroke={colors.neutral.white} strokeWidth={0.8} transform={`rotate(${wheelRotation}, ${cx2}, ${wY})`} />
+    </g>
   )
-  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
-  const { font } = canvasSize
+}
 
-  const {
-    m1 = 2,
-    m2 = 3,
-    F = 15,
-    mu = 0.1,
-    advancedMode = 0,
-    analysisView = 0, // 0=普�? 1=整体, 2=隔离m1, 3=隔离m2
-    connectionType = 0, // 0=细绳, 1=弹簧
-  } = params
-
-  // 1. 物理计算（单一来源：calculateConnectedBody�?
-  const physicsResult = calculateConnectedBody(m1, m2, F, mu, GRAVITY)
-  const { isMoving: isMovingPhysically, a: acceleration, T: tension } = physicsResult
-  const totalMass = m1 + m2
-
-  // 2. 屏幕自适应布局与行程参数计�?
-  const animWidth = vp.visibleW
-  const animHeight = vp.visibleH
-  const groundY = vp.visibleY + vp.visibleH - LAYOUT.groundOffset
-
-  const startX = vp.visibleX + vp.visibleW * LAYOUT.startXRatio
-  const endX = vp.visibleX + vp.visibleW * LAYOUT.endXRatio
-
-  // 质量块的宽度自适应
-  const w1 = Math.min(LAYOUT.blockMaxWidth, animWidth * LAYOUT.blockWidthRatio)
-  const h1 = Math.min(LAYOUT.blockMaxHeight, animHeight * LAYOUT.blockHeightRatio)
-  const w2 = Math.min(LAYOUT.blockMaxWidth, animWidth * LAYOUT.blockWidthRatio)
-  const h2 = Math.min(LAYOUT.blockMaxHeight, animHeight * LAYOUT.blockHeightRatio)
-
-  const defaultRopeL = Math.max(LAYOUT.ropeMinLength, animWidth * LAYOUT.ropeLengthRatio)
-
-  // 3. 弹簧弹性拉紧与简谐震荡计算（视觉动效，非严格物理模型�?
-  let springDx = 0
-  let effectiveTime = time
-  
-  if (connectionType === 1) {
-    // 简谐震荡公式模拟启动时的收缩拉伸：dx = dx_static * (1 - e^-beta*t * cos(omega*t))
-    if (isPlaying && time > 0 && isMovingPhysically) {
-      const dxStatic = tension / SPRING_VISUAL.tensionToStretchScale
-      springDx = dxStatic * (1 - Math.exp(-SPRING_VISUAL.visualDamping * time) * Math.cos(SPRING_VISUAL.visualOmega * time))
-    } else {
-      springDx = tension / SPRING_VISUAL.tensionToStretchScale
-    }
-  }
-
-  // 加上限幅保护，防止弹簧过度拉伸拉�?
-  const maxSpringDx = defaultRopeL * LAYOUT.springMaxStretchRatio
-  const finalSpringDx = Math.min(maxSpringDx, springDx)
-
-  const currentRopeL = connectionType === 0 ? defaultRopeL : defaultRopeL + finalSpringDx * SPRING_VISUAL.stretchVisualScale
-
-  const totalGroupW = w1 + w2 + currentRopeL
-  const maxTravel = Math.max(10, endX - startX - totalGroupW)
-
-  // 恒加速度模式下，动态推算时间终点以刚好触及边界
-  const maxDisplacementTime = acceleration > 0.01
-    ? Math.sqrt((2 * (maxTravel / PX_PER_METER)) / acceleration)
-    : Infinity
-
-  if (advancedMode === 0) {
-    effectiveTime = maxDisplacementTime !== Infinity && time >= maxDisplacementTime ? maxDisplacementTime : time
-  } else {
-    // 进阶模式下，时间�?4s 强制停止
-    effectiveTime = Math.min(time, 4.0)
-  }
-
-  const isMoving = isPlaying && time > 0 && (advancedMode === 0 ? time < maxDisplacementTime : time < 4.0) && isMovingPhysically
-
-  // 使用 React 副作用安全关闭播�?
-  useEffect(() => {
-    if (!isPlaying) return
-    if (advancedMode === 0) {
-      if (maxDisplacementTime !== Infinity && time >= maxDisplacementTime) {
-        setIsPlaying(false)
-      }
-    } else {
-      if (time >= 4.0) {
-        setIsPlaying(false)
-      }
-    }
-  }, [time, maxDisplacementTime, isPlaying, advancedMode, setIsPlaying])
-
-  // 4. 物理位移（纯物理量，单位 m）→ 像素映射
-  const timeline = calculateConnectedBodyTimeline(m1, m2, F, mu, GRAVITY, effectiveTime)
-  const maxTimeline = calculateConnectedBodyTimeline(m1, m2, F, mu, GRAVITY, advancedMode === 0 ? maxDisplacementTime : 4.0)
-  const dispX = maxTimeline.s > 0.001 ? (timeline.s / maxTimeline.s) * maxTravel : 0
-
-  const m1X = startX + dispX
-  const m1Y = groundY - h1
-  const m2X = m1X + w1 + currentRopeL
-  const m2Y = groundY - h2
-
-  // 5. 传动连接部件绘制数据生成
-  const ropeLeftX = m1X + w1
-  const ropeRightX = m2X
-  const ropeY = groundY - h1 / 2
-
-  let connectionSvgElement = null
+/** 传动连接部件（绳/弹簧） */
+function ConnectionElement({ connectionType, ropeLeftX, ropeRightX, ropeY, isMoving, font }: {
+  connectionType: number
+  ropeLeftX: number
+  ropeRightX: number
+  ropeY: number
+  isMoving: boolean
+  font: (size: number) => number
+}) {
   if (connectionType === 0) {
-    // 细绳：钢丝绳
-    connectionSvgElement = (
+    return (
       <g>
         <line
-          x1={ropeLeftX}
-          y1={ropeY}
-          x2={ropeRightX}
-          y2={ropeY}
+          x1={ropeLeftX} y1={ropeY} x2={ropeRightX} y2={ropeY}
           stroke={SCENE_COLORS.surface.ropeColor}
           strokeWidth={3}
         />
-        {/* 细绳高亮光流束（滑动时流动） */}
         {isMoving && (
           <line
-            x1={ropeLeftX}
-            y1={ropeY}
-            x2={ropeRightX}
-            y2={ropeY}
+            x1={ropeLeftX} y1={ropeY} x2={ropeRightX} y2={ropeY}
             stroke={SCENE_COLORS.surface.ropeActive}
             strokeWidth={3}
             strokeDasharray="6,4"
@@ -176,138 +62,66 @@ export default function ConnectedBodiesAnimation() {
         )}
       </g>
     )
-  } else {
-    // 弹簧：统一�?3D 螺旋轻质弹簧组件
-    connectionSvgElement = (
-      <g>
-        <Spring
-          x1={ropeLeftX}
-          y1={ropeY}
-          x2={ropeRightX}
-          y2={ropeY}
-          coils={12}
-          radius={11}
-          isLightWeight={true}
+  }
+
+  return (
+    <g>
+      <Spring
+        x1={ropeLeftX} y1={ropeY} x2={ropeRightX} y2={ropeY}
+        coils={12} radius={11} isLightWeight={true}
+      />
+      <g transform={`translate(${(ropeLeftX + ropeRightX) / 2}, ${ropeY - 16})`}>
+        <rect
+          x={-38} y={-10} width={76} height={15} rx={3}
+          fill="white" fillOpacity={0.85}
+          stroke={SCENE_COLORS.spring.lightCoilStroke}
+          strokeWidth={0.5}
         />
-        {/* 轻质弹簧文字标注 */}
-        <g transform={`translate(${(ropeLeftX + ropeRightX) / 2}, ${ropeY - 16})`}>
-          <rect
-            x={-38}
-            y={-10}
-            width={76}
-            height={15}
-            rx={3}
-            fill="white"
-            fillOpacity={0.85}
-            stroke={SCENE_COLORS.spring.lightCoilStroke}
-            strokeWidth={0.5}
-          />
-          <text
-            fontSize={font(9)}
-            fill={SCENE_COLORS.spring.lightCoilStroke}
-            textAnchor="middle"
-            fontWeight="bold"
-            y={1}
-          >
-            轻质弹簧 (m �?0)
-          </text>
-        </g>
+        <text
+          fontSize={font(9)}
+          fill={SCENE_COLORS.spring.lightCoilStroke}
+          textAnchor="middle"
+          fontWeight="bold"
+          y={1}
+        >
+          轻质弹簧 (m≈0)
+        </text>
       </g>
-    )
-  }
+    </g>
+  )
+}
 
-  // 6. 车轮滚动旋转角度计算
-  const wheelRadius = LAYOUT.wheelRadius
-  // 滚动弧度 = 位移 / 半径
-  const wheelRotation = wheelRadius > 0 ? (dispX / wheelRadius) * (180 / Math.PI) : 0
+export default function ConnectedBodiesAnimation() {
+  const showVectors = useAnimationStore((s) => s.showVectors)
+  const p = useConnectedBodiesPhysics()
 
-  // 绘制带十字辐条的滚动轮子
-  const renderWheels = (boxX: number, boxW: number) => {
-    const wY = groundY - wheelRadius
-    const cx1 = boxX + boxW * 0.22
-    const cx2 = boxX + boxW * 0.78
-    return (
-      <g>
-        {/* 轮子一 */}
-        <circle cx={cx1} cy={wY} r={wheelRadius} fill={colors.neutral[800]} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-        <circle cx={cx1} cy={wY} r={1.5} fill={colors.neutral.white} />
-        <line x1={cx1 - wheelRadius} y1={wY} x2={cx1 + wheelRadius} y2={wY} stroke={colors.neutral.white} strokeWidth={0.8} transform={`rotate(${wheelRotation}, ${cx1}, ${wY})`} />
-        <line x1={cx1} y1={wY - wheelRadius} x2={cx1} y2={wY + wheelRadius} stroke={colors.neutral.white} strokeWidth={0.8} transform={`rotate(${wheelRotation}, ${cx1}, ${wY})`} />
-
-        {/* 轮子�?*/}
-        <circle cx={cx2} cy={wY} r={wheelRadius} fill={colors.neutral[800]} stroke={PHYSICS_COLORS.objectStroke} strokeWidth={1} />
-        <circle cx={cx2} cy={wY} r={1.5} fill={colors.neutral.white} />
-        <line x1={cx2 - wheelRadius} y1={wY} x2={cx2 + wheelRadius} y2={wY} stroke={colors.neutral.white} strokeWidth={0.8} transform={`rotate(${wheelRotation}, ${cx2}, ${wY})`} />
-        <line x1={cx2} y1={wY - wheelRadius} x2={cx2} y2={wY + wheelRadius} stroke={colors.neutral.white} strokeWidth={0.8} transform={`rotate(${wheelRotation}, ${cx2}, ${wY})`} />
-      </g>
-    )
-  }
-
-  // 7. 外拉�?F 的鼠标拖拽直接操控手�?
-  const arrowLength = Math.max(15, (F / 30) * 60)
-  const dragTargetX = m2X + w2 + arrowLength
-
-  const cbSceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes: { force: Math.max(F, 30), friction: Math.max(F, 30), tension: Math.max(F, 30) } })
-
-  const [isDragging, setIsDragging] = useState(false)
-  const dragStartRef = useRef({ clientX: 0, startF: 0 })
-
-  const handleDragStart = (e: React.MouseEvent) => {
-    e.preventDefault()
-    dragStartRef.current = { clientX: e.clientX, startF: F }
-    setIsDragging(true)
-  }
-
-  useEffect(() => {
-    if (!isDragging) return
-
-    const handlePointerMove = (e: PointerEvent) => {
-      const deltaX = e.clientX - dragStartRef.current.clientX
-      const deltaF = deltaX / 5.5
-      const newF = Math.min(30, Math.max(0, Math.round(dragStartRef.current.startF + deltaF)))
-      updateParam('F', newF)
-    }
-
-    const handlePointerUp = () => {
-      setIsDragging(false)
-    }
-
-    window.addEventListener('pointermove', handlePointerMove)
-    window.addEventListener('pointerup', handlePointerUp)
-
-    return () => {
-      window.removeEventListener('pointermove', handlePointerMove)
-      window.removeEventListener('pointerup', handlePointerUp)
-    }
-  }, [isDragging, updateParam])
-
-  // 8. 四种受力分析模式高亮蒙版与包裹框渲染
-  const isNormalView = analysisView === 0
-  const isSystemView = analysisView === 1
-  const isM1View = analysisView === 2
-  const isM2View = analysisView === 3
-
-  // 力大小文本定�?
-  const f1_val = parseFloat((physicsResult.f1 ?? physicsResult.f1Max).toFixed(1))
-  const f2_val = parseFloat((physicsResult.f2 ?? physicsResult.f2Max).toFixed(1))
-  const T_val = parseFloat(tension.toFixed(1))
+  const {
+    containerRef, font, animWidth, animHeight,
+    m1, m2, F, connectionType,
+    totalMass, f1_val, f2_val, T_val,
+    groundY, w1, h1, w2, h2,
+    m1X, m1Y, m2X, m2Y, ropeLeftX, ropeRightX, ropeY,
+    isMoving, wheelRotation, arrowLength, dragTargetX,
+    cbSceneScale, handleDragStart,
+    isNormalView, isSystemView, isM1View, isM2View,
+  } = p
 
   return (
     <div ref={containerRef} className="w-full h-full relative select-none">
       <svg width={animWidth} height={animHeight} className="bg-white rounded-lg shadow-inner">
-        {/* 粗糙地平�?*/}
+        {/* 粗糙地平面 */}
         <PhysicsGround
           x={20} y={groundY} width={animWidth - 40}
           appearance={{ color: PHYSICS_COLORS.labelText, showHatch: true }}
         />
 
-        {/* ==================== 视图一：整体法分析包裹系统�?==================== */}
+        {/* ==================== 视图一：整体法分析包裹系统 ==================== */}
         {isSystemView && (
           <g>
             <rect
               x={m1X - 12}
               y={m1Y - 18}
-              width={totalGroupW + 24}
+              width={w1 + w2 + p.currentRopeL + 24}
               height={h1 + 32}
               fill={CANVAS_COLORS.objectFillNeutral}
               fillOpacity={0.15}
@@ -316,9 +130,8 @@ export default function ConnectedBodiesAnimation() {
               strokeDasharray="4,3"
               rx={6}
             />
-            {/* 系统信息小标�?*/}
             <rect
-              x={m1X + totalGroupW / 2 - 40}
+              x={m1X + (w1 + w2 + p.currentRopeL) / 2 - 40}
               y={m1Y - 32}
               width={80}
               height={18}
@@ -326,7 +139,7 @@ export default function ConnectedBodiesAnimation() {
               rx={3}
             />
             <text
-              x={m1X + totalGroupW / 2}
+              x={m1X + (w1 + w2 + p.currentRopeL) / 2}
               y={m1Y - 19}
               fontSize={FONT.annotation}
               fill="white"
@@ -338,95 +151,55 @@ export default function ConnectedBodiesAnimation() {
           </g>
         )}
 
-        {/* ==================== 物体 m1 渲染分组 ==================== */}
+        {/* ==================== 物体 m1 ==================== */}
         <g opacity={isM2View ? 0.2 : 1} className="transition-opacity duration-200">
-          {/* 物体 m1 (太空灰拉丝金属渐�? */}
           <rect
-            x={m1X}
-            y={m1Y}
-            width={w1}
-            height={h1 - 6}
+            x={m1X} y={m1Y} width={w1} height={h1 - 6}
             fill="url(#m1-metal-grad)"
             stroke={PHYSICS_COLORS.objectStroke}
             strokeWidth={CANVAS_STYLE.stroke.objectLine}
             rx={4}
           />
-          {/* 车轮 */}
-          {renderWheels(m1X, w1)}
-          {/* 质量文本 */}
-          <text
-            x={m1X + w1 / 2}
-            y={m1Y + h1 / 2}
-            fontSize={FONT.bodySize}
-            fill="white"
-            textAnchor="middle"
-            fontWeight="bold"
-          >
+          <RollingWheels boxX={m1X} boxW={w1} groundY={groundY} wheelRotation={wheelRotation} />
+          <text x={m1X + w1 / 2} y={m1Y + h1 / 2} fontSize={FONT.bodySize} fill="white" textAnchor="middle" fontWeight="bold">
             {m1} kg
           </text>
-          {/* 顶部物标 m1 */}
-          <text
-            x={m1X + w1 / 2}
-            y={m1Y - 6}
-            fontSize={FONT.axisSize}
-            fill={PHYSICS_COLORS.labelText}
-            textAnchor="middle"
-            fontWeight="bold"
-          >
-            m�?
+          <text x={m1X + w1 / 2} y={m1Y - 6} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
+            m₁
           </text>
         </g>
 
-        {/* ==================== 传动连接部件 (�?弹簧) ==================== */}
-        {/* 在整体法中，内力 T 淡化不渲染其高亮箭，只显示淡色的细绳 */}
+        {/* ==================== 传动连接部件 ==================== */}
         <g opacity={isSystemView ? 0.22 : (isM1View || isM2View ? 0.9 : 1)} className="transition-opacity duration-200">
-          {connectionSvgElement}
+          <ConnectionElement
+            connectionType={connectionType}
+            ropeLeftX={ropeLeftX} ropeRightX={ropeRightX} ropeY={ropeY}
+            isMoving={isMoving} font={font}
+          />
         </g>
 
-        {/* ==================== 物体 m2 渲染分组 ==================== */}
+        {/* ==================== 物体 m2 ==================== */}
         <g opacity={isM1View ? 0.2 : 1} className="transition-opacity duration-200">
-          {/* 物体 m2 (琥珀红铜渐变) */}
           <rect
-            x={m2X}
-            y={m2Y}
-            width={w2}
-            height={h2 - 6}
+            x={m2X} y={m2Y} width={w2} height={h2 - 6}
             fill="url(#m2-metal-grad)"
             stroke={PHYSICS_COLORS.objectStroke}
             strokeWidth={CANVAS_STYLE.stroke.objectLine}
             rx={4}
           />
-          {/* 车轮 */}
-          {renderWheels(m2X, w2)}
-          {/* 质量文本 */}
-          <text
-            x={m2X + w2 / 2}
-            y={m2Y + h2 / 2}
-            fontSize={FONT.bodySize}
-            fill="white"
-            textAnchor="middle"
-            fontWeight="bold"
-          >
+          <RollingWheels boxX={m2X} boxW={w2} groundY={groundY} wheelRotation={wheelRotation} />
+          <text x={m2X + w2 / 2} y={m2Y + h2 / 2} fontSize={FONT.bodySize} fill="white" textAnchor="middle" fontWeight="bold">
             {m2} kg
           </text>
-          {/* 顶部物标 m2 */}
-          <text
-            x={m2X + w2 / 2}
-            y={m2Y - 6}
-            fontSize={FONT.axisSize}
-            fill={PHYSICS_COLORS.labelText}
-            textAnchor="middle"
-            fontWeight="bold"
-          >
-            m�?
+          <text x={m2X + w2 / 2} y={m2Y - 6} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
+            m₂
           </text>
         </g>
 
-        {/* ==================== 力学分析矢量箭头�?==================== */}
+        {/* ==================== 力学分析矢量箭头组 ==================== */}
         {showVectors && (
           <g className="transition-all duration-200">
-            {/* --- 外力拉力 F (高亮橙红，作用在 m2 的右�? --- */}
-            {/* 在隔�?m1 视图中，外力 F 作用�?m2，故淡化表现 */}
+            {/* 外力 F */}
             <g opacity={isM1View ? 0.15 : 1} className="transition-opacity duration-200">
               <VectorArrow
                 originPixel={{ x: m2X + w2, y: ropeY }}
@@ -436,20 +209,11 @@ export default function ConnectedBodiesAnimation() {
                 strokeWidth={CANVAS_STYLE.stroke.vectorMain}
                 pixelLength={arrowLength}
               />
-              <text
-                x={dragTargetX + 8}
-                y={ropeY + 4}
-                fontSize={FONT.bodySize}
-                fill={PHYSICS_COLORS.appliedForce}
-                fontWeight="bold"
-              >
+              <text x={dragTargetX + 8} y={ropeY + 4} fontSize={FONT.bodySize} fill={PHYSICS_COLORS.appliedForce} fontWeight="bold">
                 F = {F}N
               </text>
-              {/* 拖拽热区圆圈 */}
               <circle
-                cx={dragTargetX}
-                cy={ropeY}
-                r={12}
+                cx={dragTargetX} cy={ropeY} r={12}
                 fill={PHYSICS_COLORS.appliedForce}
                 opacity={0.0}
                 className="cursor-ew-resize hover:opacity-15 active:opacity-30 transition-opacity duration-150"
@@ -457,7 +221,7 @@ export default function ConnectedBodiesAnimation() {
               />
             </g>
 
-            {/* --- m1 的左侧摩擦力 f1 (作用�?m1 底板偏左) --- */}
+            {/* m1 摩擦力 f1 */}
             <g opacity={isM2View ? 0.15 : 1} className="transition-opacity duration-200">
               <VectorArrow
                 originPixel={{ x: m1X, y: groundY - 10 }}
@@ -467,19 +231,12 @@ export default function ConnectedBodiesAnimation() {
                 strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                 pixelLength={28}
               />
-              <text
-                x={m1X - 32}
-                y={groundY - 14}
-                fontSize={FONT.annotation}
-                fill={PHYSICS_COLORS.friction}
-                fontWeight="bold"
-                textAnchor="end"
-              >
-                f�?= {f1_val.toFixed(1)}N
+              <text x={m1X - 32} y={groundY - 14} fontSize={FONT.annotation} fill={PHYSICS_COLORS.friction} fontWeight="bold" textAnchor="end">
+                f₁= {f1_val.toFixed(1)}N
               </text>
             </g>
 
-            {/* --- m2 的左侧摩擦力 f2 (作用�?m2 底板偏左) --- */}
+            {/* m2 摩擦力 f2 */}
             <g opacity={isM1View ? 0.15 : 1} className="transition-opacity duration-200">
               <VectorArrow
                 originPixel={{ x: m2X, y: groundY - 10 }}
@@ -489,23 +246,14 @@ export default function ConnectedBodiesAnimation() {
                 strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                 pixelLength={28}
               />
-              <text
-                x={m2X - 32}
-                y={groundY - 14}
-                fontSize={FONT.annotation}
-                fill={PHYSICS_COLORS.friction}
-                fontWeight="bold"
-                textAnchor="end"
-              >
-                f�?= {f2_val.toFixed(1)}N
+              <text x={m2X - 32} y={groundY - 14} fontSize={FONT.annotation} fill={PHYSICS_COLORS.friction} fontWeight="bold" textAnchor="end">
+                f₂= {f2_val.toFixed(1)}N
               </text>
             </g>
 
-            {/* --- �?弹簧内力张力 T (在不同视图中呈现不同作用位置) --- */}
-            {/* 整体法不考虑内力，隔离法高亮各侧受力 */}
+            {/* 张力 T */}
             {!isSystemView && (
               <g>
-                {/* m1 右侧的拉�?T （在隔离m1或普通视图时显示�?*/}
                 {(isNormalView || isM1View) && (
                   <g>
                     <VectorArrow
@@ -516,19 +264,11 @@ export default function ConnectedBodiesAnimation() {
                       strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                       pixelLength={28}
                     />
-                    <text
-                      x={ropeLeftX + 10}
-                      y={ropeY - 6}
-                      fontSize={FONT.annotation}
-                      fill={PHYSICS_COLORS.tension}
-                      fontWeight="bold"
-                    >
+                    <text x={ropeLeftX + 10} y={ropeY - 6} fontSize={FONT.annotation} fill={PHYSICS_COLORS.tension} fontWeight="bold">
                       T = {T_val.toFixed(1)}N
                     </text>
                   </g>
                 )}
-
-                {/* m2 左侧的拉�?T （在隔离m2或普通视图时显示，方向向左） */}
                 {(isNormalView || isM2View) && (
                   <g>
                     <VectorArrow
@@ -539,14 +279,7 @@ export default function ConnectedBodiesAnimation() {
                       strokeWidth={CANVAS_STYLE.stroke.vectorSub}
                       pixelLength={28}
                     />
-                    <text
-                      x={ropeRightX - 38}
-                      y={ropeY - 6}
-                      fontSize={FONT.annotation}
-                      fill={PHYSICS_COLORS.tension}
-                      fontWeight="bold"
-                      textAnchor="end"
-                    >
+                    <text x={ropeRightX - 38} y={ropeY - 6} fontSize={FONT.annotation} fill={PHYSICS_COLORS.tension} fontWeight="bold" textAnchor="end">
                       T = {T_val.toFixed(1)}N
                     </text>
                   </g>
@@ -557,7 +290,6 @@ export default function ConnectedBodiesAnimation() {
         )}
 
         <defs>
-          {/* m1 金属渐变 */}
           <linearGradient id="m1-metal-grad" x1="0" y1="0" x2="1" y2="0">
             {SCENE_COLORS.materials.sliderMetalGrad.map((color, idx) => (
               <stop
@@ -567,23 +299,18 @@ export default function ConnectedBodiesAnimation() {
               />
             ))}
           </linearGradient>
-
-          {/* m2 铜材质渐�?*/}
           <linearGradient id="m2-metal-grad" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0%" stopColor={SCENE_COLORS.coil.copperLight} />
             <stop offset="30%" stopColor={SCENE_COLORS.coil.copperBase} />
             <stop offset="70%" stopColor={SCENE_COLORS.coil.copperMid} />
             <stop offset="100%" stopColor={SCENE_COLORS.coil.copperDark} />
           </linearGradient>
-
-          {/* 矢量箭头端点定义 */}
           <VectorDefs colors={[PHYSICS_COLORS.appliedForce, PHYSICS_COLORS.friction, PHYSICS_COLORS.tension]} />
         </defs>
       </svg>
-      {/* 水平拉力直接拖拽控制小标提示 */}
       {showVectors && (
         <div style={{ fontSize: font(9) }} className="absolute right-4 bottom-14 bg-white/80 border border-neutral-100 px-2 py-0.5 rounded text-neutral-400 font-medium pointer-events-none select-none">
-          💡 可用鼠标按住并左右拖拽拉�?F 箭头端点调节大小
+          💡 可用鼠标按住并左右拖拽拉力 F 箭头端点调节大小
         </div>
       )}
     </div>

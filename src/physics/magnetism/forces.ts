@@ -269,6 +269,35 @@ export function electricForceDir(
 }
 
 /**
+ * 安培力方向单位向量。F = I L × B，2D 平面内 B 垂直纸面。
+ *
+ * 物理坐标系：x→右为正，y↑为正。
+ * - `'outOfPage'` (⊙)：Bz = +1
+ * - `'intoPage'` (×)：Bz = -1
+ *
+ * 叉积分量：F = I(Ly·Bz, -Lx·Bz, 0)
+ *
+ * @param current_dir 电流方向 {x, y}（物理坐标系，y↑正），仅方向参与计算
+ * @param B_dir 磁场方向
+ * @param I 电流大小（含符号，A）；正表示电流沿 current_dir 方向，负表示反向
+ * @returns 物理坐标系下单位方向向量；I 为 0 或 current_dir 为零向量时返回 {0,0}
+ */
+export function ampereForceDir(
+  current_dir: { x: number; y: number },
+  B_dir: BDirection,
+  I: number,
+): { x: number; y: number } {
+  if (I === 0 || (current_dir.x === 0 && current_dir.y === 0)) return { x: 0, y: 0 }
+  const Bz = B_dir === 'outOfPage' ? 1 : -1
+  const sign = I > 0 ? 1 : -1
+  const fx = current_dir.y * Bz
+  const fy = -current_dir.x * Bz
+  const mag = Math.sqrt(fx * fx + fy * fy)
+  if (mag === 0) return { x: 0, y: 0 }
+  return { x: (sign * fx) / mag, y: (sign * fy) / mag }
+}
+
+/**
  * 向心力方向单位向量，从粒子位置指向圆心。
  *
  * 物理坐标系：x→右为正，y↑为正。pos 与 center 必须使用同一坐标系。

@@ -2,10 +2,14 @@ import React from 'react'
 import type { calculateLenzsLaw } from '@/physics'
 import { PHYSICS_COLORS, CANVAS_COLORS, CANVAS_STYLE, withAlpha } from '@/theme/physics'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { VectorArrow, Solenoid, Galvanometer, BarMagnet, ParametricMagneticField, SkeletonHand } from '@/components/Physics'
+import { VectorArrow, Solenoid, BarMagnet, ParametricMagneticField } from '@/components/Physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
 import { layoutLabels, type LabelSlot } from '@/utils'
 import { coilY } from '../hooks/useLenzsLaw'
+import { GalvanometerWiring } from './GalvanometerWiring'
+import { StatusMonitorPanel } from './StatusMonitorPanel'
+import { HandRulePanel } from './HandRulePanel'
+import { EquivalentPolesOverlay } from './EquivalentPolesOverlay'
 
 interface LenzsLawCanvasProps {
   magnetY: number
@@ -196,49 +200,17 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
   return (
     <>
       {/* --- 1. 灵敏电流计 --- */}
-      <g opacity={getOpacity([4])} className="transition-opacity duration-300">
-        <path
-          d={wireTopD}
-          fill="none"
-          stroke={PHYSICS_COLORS.labelTextLight}
-          strokeWidth="2.5"
-        />
-        <path
-          d={wireBotD}
-          fill="none"
-          stroke={PHYSICS_COLORS.labelTextLight}
-          strokeWidth="2.5"
-        />
-
-        {lenzResult.fluxChange !== 'stable' && (
-          <>
-            <path
-              d={wireTopD}
-              fill="none"
-              stroke={PHYSICS_COLORS.electricCurrent}
-              strokeWidth="2.5"
-              strokeDasharray="6 6"
-              strokeDashoffset={time * -30}
-            />
-            <path
-              d={wireBotD}
-              fill="none"
-              stroke={PHYSICS_COLORS.electricCurrent}
-              strokeWidth="2.5"
-              strokeDasharray="6 6"
-              strokeDashoffset={time * -30}
-            />
-          </>
-        )}
-
-        <Galvanometer
-          x={galX}
-          y={galY}
-          value={velocity === 0 ? 0 : (lenzResult.inducedCurrentDirection === 'counterclockwise' ? 1 : -1) * Math.min(1, Math.abs(velocity) * 0.45)}
-          width={120}
-          height={110}
-        />
-      </g>
+      <GalvanometerWiring
+        wireTopD={wireTopD}
+        wireBotD={wireBotD}
+        fluxChange={lenzResult.fluxChange}
+        time={time}
+        galX={galX}
+        galY={galY}
+        velocity={velocity}
+        inducedCurrentDirection={lenzResult.inducedCurrentDirection}
+        getOpacity={getOpacity}
+      />
 
       {/* --- 2. 螺线管线圈 (纵向放置，大尺寸清晰展示) --- */}
       <g transform={`translate(${cx}, ${coilY}) rotate(90)`} opacity={getOpacity([4])} className="transition-opacity duration-300">
@@ -413,161 +385,39 @@ export const LenzsLawCanvas: React.FC<LenzsLawCanvasProps> = ({
       )}
 
       {/* --- 8. 等效磁极可视化 (来拒去留) --- */}
-      {showEquivalentPoles === 1 && lenzResult.fluxChange !== 'stable' && lenzResult.equivalentPole && (
-        <g opacity={getOpacity([4])} className="transition-opacity duration-300">
-          {/* 上等效极 */}
-          <circle
-            cx={cx}
-            cy={coilY - 85}
-            r="13"
-            fill={lenzResult.equivalentPole === 'N' ? PHYSICS_COLORS.magnetNorth : PHYSICS_COLORS.magnetSouth}
-            stroke={CANVAS_COLORS.gridSubtle}
-            strokeWidth="1.5"
-            style={{ filter: `drop-shadow(0px 0px 4px ${withAlpha(CANVAS_COLORS.gridSubtle, 0.4)})` }}
-          />
-          <text
-            x={cx}
-            y={coilY - 81}
-            textAnchor="middle"
-            fill={CANVAS_COLORS.white}
-            fontWeight="bold"
-            fontSize={font(12)}
-          >
-            {lenzResult.equivalentPole}
-          </text>
-          <text
-            x={upperPoleTextPos.x}
-            y={upperPoleTextPos.y}
-            textAnchor="end"
-            fill={lenzResult.equivalentPole === 'N' ? PHYSICS_COLORS.magnetNorth : PHYSICS_COLORS.magnetSouth}
-            fontWeight="bold"
-            fontSize={labelFontSize}
-          >
-            等效{lenzResult.equivalentPole}极
-          </text>
-
-          {/* 下等效极 */}
-          <circle
-            cx={cx}
-            cy={coilY + 85}
-            r="13"
-            fill={lenzResult.equivalentPole === 'N' ? PHYSICS_COLORS.magnetSouth : PHYSICS_COLORS.magnetNorth}
-            stroke={CANVAS_COLORS.gridSubtle}
-            strokeWidth="1.5"
-            style={{ filter: `drop-shadow(0px 0px 4px ${withAlpha(CANVAS_COLORS.gridSubtle, 0.4)})` }}
-          />
-          <text
-            x={cx}
-            y={coilY + 89}
-            textAnchor="middle"
-            fill={CANVAS_COLORS.white}
-            fontWeight="bold"
-            fontSize={font(12)}
-          >
-            {lenzResult.equivalentPole === 'N' ? 'S' : 'N'}
-          </text>
-          <text
-            x={lowerPoleTextPos.x}
-            y={lowerPoleTextPos.y}
-            textAnchor="end"
-            fill={lenzResult.equivalentPole === 'N' ? PHYSICS_COLORS.magnetSouth : PHYSICS_COLORS.magnetNorth}
-            fontWeight="bold"
-            fontSize={labelFontSize}
-          >
-            等效{lenzResult.equivalentPole === 'N' ? 'S' : 'N'}极
-          </text>
-        </g>
-      )}
+      <EquivalentPolesOverlay
+        showEquivalentPoles={showEquivalentPoles}
+        fluxChange={lenzResult.fluxChange}
+        equivalentPole={lenzResult.equivalentPole}
+        coilY={coilY}
+        cx={cx}
+        upperPoleTextPos={upperPoleTextPos}
+        lowerPoleTextPos={lowerPoleTextPos}
+        getOpacity={getOpacity}
+        font={font}
+        labelFontSize={labelFontSize}
+      />
 
       {/* --- 10. 实时状态监控面板 (右上角避让摆放，防止与磁铁磁感应线重叠) --- */}
-      <g transform="translate(500, 40)">
-        {/* 第一步：当前动作 */}
-        <text
-          x={resolvedMonitorPos[0].x}
-          y={resolvedMonitorPos[0].y}
-          textAnchor="middle"
-          fill={PHYSICS_COLORS.labelText}
-          fontSize={font(12)}
-          fontWeight="bold"
-          opacity={getOpacity([1])}
-          className="transition-opacity duration-300"
-        >
-          {isDragging
-            ? velocity < 0
-              ? magnetPole > 0 ? 'N极靠近 (拖拽)' : 'S极靠近 (拖拽)'
-              : magnetPole > 0 ? 'N极远离 (拖拽)' : 'S极远离 (拖拽)'
-            : lenzResult.currentAction}
-        </text>
-
-        {/* 第二步：磁通量状态 */}
-        <text
-          x={resolvedMonitorPos[1].x}
-          y={resolvedMonitorPos[1].y}
-          textAnchor="middle"
-          fill={PHYSICS_COLORS.labelText}
-          fontSize={font(11)}
-          opacity={getOpacity([2])}
-          className="transition-opacity duration-300"
-        >
-          磁通量：{lenzResult.fluxChange === 'increasing' ? '正在增加' : (lenzResult.fluxChange === 'decreasing' ? '正在减少' : '保持不变')}
-        </text>
-
-        {/* 第三步：原/感磁场阻碍关系 */}
-        <text
-          x={resolvedMonitorPos[2].x}
-          y={resolvedMonitorPos[2].y}
-          textAnchor="middle"
-          fill={lenzResult.fluxChange !== 'stable' ? PHYSICS_COLORS.magneticField : PHYSICS_COLORS.trackHistory}
-          fontSize={font(11)}
-          fontWeight="bold"
-          opacity={getOpacity([3])}
-          className="transition-opacity duration-300"
-        >
-          原/感磁场：{lenzResult.fluxChange === 'stable' ? '无' : (lenzResult.fluxChange === 'increasing' ? '反向阻碍' : '同向阻碍')}
-        </text>
-      </g>
+      <StatusMonitorPanel
+        resolvedMonitorPos={resolvedMonitorPos}
+        isDragging={isDragging}
+        velocity={velocity}
+        magnetPole={magnetPole}
+        currentAction={lenzResult.currentAction}
+        fluxChange={lenzResult.fluxChange}
+        font={font}
+        getOpacity={getOpacity}
+      />
 
       {/* --- 9. 右手螺旋定则 (安培定则) 可视化面板 (调整至右下区域，平衡左侧电流计) --- */}
-      {showHandRule === 1 && lenzResult.fluxChange !== 'stable' && (
-        <g transform="translate(510, 260)" opacity={getOpacity([4])} className="transition-opacity duration-300">
-          <text
-            x="75"
-            y="18"
-            fontSize={font(10)}
-            fill={CANVAS_COLORS.strokeDark}
-            fontWeight="bold"
-            textAnchor="middle"
-            style={{ userSelect: 'none' }}
-          >
-            右手螺旋定则 (安培定则)
-          </text>
-
-          <SkeletonHand
-            cx={75}
-            cy={105}
-            rotation={lenzResult.inducedFieldDirection === 'up' ? -90 : 90}
-            scale={0.7}
-            chirality="right"
-            pose="ampere"
-            highlight={{ thumb: true, index: true, middle: true, ring: true, little: true }}
-            showTipMarker={{ thumb: true }}
-            tipLabels={{ thumb: 'B感' }}
-            tipColors={{ thumb: PHYSICS_COLORS.lorentzForce }}
-            font={font}
-          />
-
-          <text
-            x="75"
-            y="170"
-            fontSize={font(9)}
-            fill={CANVAS_COLORS.textMuted}
-            textAnchor="middle"
-            style={{ userSelect: 'none' }}
-          >
-            {lenzResult.inducedFieldDirection === 'up' ? '大拇指朝上 (B感)' : '大拇指朝下 (B感)'}
-          </text>
-        </g>
-      )}
+      <HandRulePanel
+        showHandRule={showHandRule}
+        fluxChange={lenzResult.fluxChange}
+        inducedFieldDirection={lenzResult.inducedFieldDirection}
+        getOpacity={getOpacity}
+        font={font}
+      />
     </>
   )
 }
