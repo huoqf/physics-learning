@@ -1,7 +1,7 @@
 # VIEWPORT 架构统一方案
 
 > 编写时间：2026-07-12
-> 状态：**Phase 0-6 全部完成**（createSceneScaleFromViewport/useCanvasSize/VectorArrow origin 已清零）
+> 状态：**Phase 0-6 + VectorArrow 改革 Phase 1-4 全部完成**
 > 目标：逐步统一 VIEWPORT 实现组件，覆盖 SVG/Canvas，完成实际分辨率测量、画面映射坐标转化、坐标对齐
 
 ---
@@ -259,7 +259,7 @@ useSceneScale（物理坐标 → 设计坐标）
 |--------|------|
 | SceneScale 单位 | 所有输出为设计坐标单位，不包含容器像素值 |
 | vp.visible* 使用 | 反算为设计坐标后使用，不直接传入 SceneScale |
-| VectorArrow 坐标 | 在 `<g transform={vp.transform}>` 内，使用 `originPixel`（设计坐标），不再使用 `origin` |
+| VectorArrow 坐标 | 在 `<g transform={vp.transform}>` 内，使用 `originDesign`（设计坐标）；`originPixel` 已 deprecated；物理矢量优先使用 `PhysicsVectorArrow` |
 | Canvas transform 模式 | ctx 设置 viewport transform 后，用设计坐标绘制 |
 | Canvas raw 模式 | 仅 DPR 对齐，用像素坐标绘制 |
 | useSceneScale 调用 | 新页面统一使用，不再调用 createSceneScaleFrom* 的 visibleArea/centerScale |
@@ -283,4 +283,58 @@ useSceneScale（物理坐标 → 设计坐标）
 | worldToDesign | `src/scene/SceneScale.ts` | worldToPixel 语义别名 |
 | useSceneScale | `src/hooks/useSceneScale.ts` | 统一 SceneScale 入口 |
 | useCanvasViewport | `src/hooks/useCanvasViewport.ts` | 统一 Canvas viewport 入口 |
-| VectorArrow | `src/components/Physics/VectorArrow.tsx` | 矢量箭头渲染 |
+| VectorArrow | `src/components/Physics/VectorArrow.tsx` | 通用矢量箭头（接受 originDesign + pixelLength） |
+| PhysicsVectorArrow | `src/components/Physics/PhysicsVectorArrow.tsx` | 物理矢量箭头（禁止 pixelLength，强制 refMagnitudes 归一化） |
+
+---
+
+## 十二、VectorArrow 坐标体系改革（2026-07-14）
+
+> 方案核心：**视觉箭头继续视觉化，物理箭头必须物理正确。**
+
+### 改革成果
+
+| Phase | 内容 | 状态 |
+|-------|------|:----:|
+| 1 | `originPixel` → `originDesign` 重命名 + deprecated alias | ✅ |
+| 2 | 全量箭头分类标注（371 实例：physical-real 182, physical-schematic 124, visual-only 60） | ✅ |
+| 3 | `PhysicsVectorArrow` 组件创建 + 182 个 physical-real 实例迁移 | ✅ |
+| 4 | 12 个页面约 45 个 physical-schematic 实例迁移（移除 pixelLength，改用动态 refMagnitudes） | ✅ |
+| 5 | 物理箭头单元测试 | 待完成 |
+| 6 | 截图回归 | 待完成 |
+
+### 双组件体系
+
+| 组件 | 适用场景 | 接受 pixelLength | 接受 originDesign | 接受 origin |
+|------|---------|:---:|:---:|:---:|
+| `PhysicsVectorArrow` | 力/速度/加速度/电流/电场等需物理正确的矢量 | ❌ | ✅ | ✅ |
+| `VectorArrow` | UI 标注/方向提示/几何图形/等长力示意 | ✅ | ✅ | ✅ |
+
+### 动态 refMagnitudes 模式
+
+```ts
+// PhysicsVectorArrow 长度控制：refMagnitudes 归一化
+const dynamicRefMagnitudes = useMemo(() => ({
+  appliedForce: Math.max(F_applied, 5) * 2,  // ratio ≈ 0.5
+  velocity: Math.max(Math.abs(v), 5) * 2,
+  acceleration: Math.max(Math.abs(a), 5) * 2,
+}), [F_applied, v, a])
+
+const sceneScale = useSceneScale({ ..., refMagnitudes: dynamicRefMagnitudes, maxVectorLength: 120 })
+```
+
+### 保留 pixelLength 的合理场景
+
+| 场景 | 实例数 | 原因 |
+|------|:------:|------|
+| 几何闭合图形（平行四边形/三角形/正交分解） | 42 | 箭头尖端必须落在几何端点 |
+| 受力分析等长力 | 14 | 高中物理教学中力图常用等长表示 |
+| 速度分解 vx/vy | 9 | 分量须与总量成比例维持闭合 |
+| 非线性缩放（对数） | 2 | refMagnitudes 仅支持线性 |
+| 通用渲染函数参数 | 2 | pixelLength 作为接口参数暴露 |
+
+### dev warning 机制
+
+- `originPixel` deprecated 时自动 warning
+- 同时传 `origin` + `originDesign` 时 warning
+- `sceneScale` 非等比缩放且未声明 `intentionalNonUniformScale` 时 warning

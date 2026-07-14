@@ -2,7 +2,7 @@
 
 > **Trae IDE 默认加载的项目规范文件。**
 > 详细规范见下方「快速索引」部分。
-> 最后更新：2026-07-12（VIEWPORT 架构更新：新增 useSceneScale / useCanvasViewport / worldToDesign，标记 visibleArea/centerScale 为 deprecated）
+> 最后更新：2026-07-14（VectorArrow 改革：新增 PhysicsVectorArrow，originPixel→originDesign，物理矢量箭头禁止 pixelLength）
 
 ---
 
@@ -60,7 +60,7 @@
 2. **坐标转换** → 必须走 `physicsToCanvas()`（`src/utils/coordinate.ts`）
 3. **场景缩放** → 新页面统一使用 `useSceneScale`（`src/hooks/useSceneScale.ts`）构造 `SceneScale`，通过 `anchor` 模式选择缩放策略；物理坐标→设计坐标统一使用 `worldToDesign`（`src/scene`，`worldToPixel` 的语义别名）。`createSceneScaleFromViewport` 的 `visibleArea`/`centerScale` 模式已 `@deprecated`（输出容器像素单位，不适合在 `<g transform={vp.transform}>` 内使用），存量迁移逐步替换；`transform` 模式保持可用（输出设计坐标）
 4. **动画调度** → 必须通过 `src/utils/animation.ts` 的 Hook（禁止直接调用 `requestAnimationFrame`）
-5. **矢量箭头** → 必须使用 `VectorArrow` 组件；调用方式以 `COMPONENT_REGISTRY.md` 与源码 interface 为准，禁止手写 `<line>` + `<marker>`
+5. **矢量箭头** → 必须使用 `VectorArrow` 或 `PhysicsVectorArrow` 组件；物理矢量（力/速度/加速度/电流/电场等）优先使用 `PhysicsVectorArrow`（禁止 `pixelLength`，长度通过 `sceneScale.refMagnitudes` 归一化）；视觉标注/几何图形/等长力示意使用 `VectorArrow`；禁止手写 `<line>` + `<marker>`；`originPixel` 已 deprecated，新代码必须使用 `originDesign`
 6. **画布尺寸** → 新页面通过 `useAnimationViewport({ preset })` 统一获取（见约束 8）；存量旧组件维护时可用 `useCanvasSize(CANVAS_PRESETS.xxx)`（`src/theme/spacing.ts`），新页面禁止直接调用
 7. **字体缩放** → 必须走 `font()` 函数（内置 clamp 7–16，来自 `useCanvasSize` 返回值）
 8. **布局缩放与 viewBox 绑定策略**：
@@ -108,7 +108,7 @@
 | 动画视口 | `useAnimationViewport` | `@/hooks` |
 | SVG 画布容器 | `AnimationSvgCanvas` | `@/components/Layout` |
 | 三栏页面布局 | `ThreePanel` | `@/components/Layout` |
-| 物理矢量箭头 | `VectorArrow` | `@/components/Physics` |
+| 物理矢量箭头 | `PhysicsVectorArrow`（物理正确）/ `VectorArrow`（视觉标注） | `@/components/Physics` |
 | 粒子轨迹（历史+预测+拖尾+本体） | `ParticleTrajectory` | `@/components/Physics` |
 | 质点/小球 | `Ball` | `@/components/Physics` |
 | 滑块/木块 | `Block` | `@/components/Physics` |
