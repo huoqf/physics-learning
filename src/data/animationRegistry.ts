@@ -81,8 +81,8 @@ async function loadExtendedRegistry(): Promise<void> {
 
 // ─── 公共 API ───
 
-/** 静态总动画数，不依赖动态加载 */
-export const ANIMATION_COUNT = 78
+/** 静态总动画数（含 core + 懒加载 extended registry），新增/删除动画时需同步更新 */
+export const ANIMATION_COUNT = 93
 
 /** 同步获取 config（core 动画立即命中，extended 动画未加载时返回 undefined） */
 export function getAnimationConfig(id: string): AnimationConfig | undefined {

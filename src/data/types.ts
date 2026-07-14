@@ -151,7 +151,7 @@ export interface ParamMeta {
   hideIfValue?: number
 }
 
-/** 动画控制动作（语义化封装，SidebarExtra 不直接访问 store） */
+/** 动画控制动作（语义化封装） */
 export interface AnimationActions {
   /** 重置时间 + 暂停播放 */
   resetAnimation: () => void
@@ -163,27 +163,6 @@ export interface AnimationActions {
   setDirection: (d: 1 | -1) => void
 }
 
-/** 侧边栏扩展组件 props */
-export interface SidebarExtraProps {
-  params: Record<string, number>
-  updateParam: (key: string, value: number) => void
-  /** 批量更新参数 */
-  setParams: (params: Record<string, number>) => void
-  /** 动画控制动作（语义化封装） */
-  animationActions: AnimationActions
-  /** 是否显示时间切片（仅特定动画使用） */
-  showTimeSlices?: boolean
-  /** 切换时间切片显示（仅特定动画使用） */
-  toggleTimeSlices?: () => void
-  /** 是否显示双物体对比（仅特定动画使用） */
-  showDualObjects?: boolean
-  /** 切换双物体对比（仅特定动画使用） */
-  toggleDualObjects?: () => void
-  /** 切换受力/速度/加速度矢量显示 */
-  toggleVectors?: () => void
-  disabled?: boolean
-}
-
 export interface AnimationConfig<P extends Record<string, number> = Record<string, number>> {
   id: string
   title: string
@@ -192,9 +171,9 @@ export interface AnimationConfig<P extends Record<string, number> = Record<strin
   defaultParams: P
   /** 参数控件元数据（替代页面层硬编码的 paramConfigs） */
   paramMeta?: ParamMeta[]
-  /** 动态参数元数据：根据当前 params 返回 paramMeta（替代 SidebarExtra 中的动态 Slider） */
+  /** 动态参数元数据：根据当前 params 返回 paramMeta */
   buildParamMeta?: (params: Record<string, number>) => ParamMeta[]
-  /** 左屏声明式控件元数据：模式、开关、预设、提示等；用于逐步收敛 SidebarExtra */
+  /** 左屏声明式控件元数据：模式、开关、预设、提示等 */
   controlMeta?: ControlMeta[]
   /** 是否支持发现模式 */
   supportsDiscovery?: boolean
@@ -202,8 +181,6 @@ export interface AnimationConfig<P extends Record<string, number> = Record<strin
   DiscoveryComponent?: LazyExoticComponent<ComponentType>
   /** 发现模式步骤（lazy 加载） */
   discoverySteps?: () => Promise<{ default: DiscoveryStepData[] }>
-  /** 左侧侧边栏扩展组件（环境预设、时间切片等特异 UI） */
-  SidebarExtra?: LazyExoticComponent<ComponentType<SidebarExtraProps>>
   /** 中心区域扩展组件（VT图+公式面板等，动画模式下动画上方的特异布局） */
   CenterExtra?: LazyExoticComponent<ComponentType>
   /** 上下分区布局下，指定上方 CenterExtra 容器的高度类 (如 'h-[175px]')，未指定则默认 'h-1/2' */

@@ -15,16 +15,11 @@ interface LeftPanelSectionProps {
   compact?: boolean
 }
 
-interface LeftPanelScrollAreaProps {
-  children: React.ReactNode
-  className?: string
-}
-
 /**
  * 左屏统一容器。
  *
  * 用于 AnimationPage 的左侧控制台，统一外边距、纵向间距和定位上下文。
- * 内部具体内容仍可由 ParamControl / SidebarExtra 渐进迁移。
+ * 内部具体内容仍可由 ParamControl 渐进迁移。
  */
 export const LeftPanel: React.FC<LeftPanelProps> = ({ children, className = '' }) => {
   return (
@@ -78,14 +73,5 @@ export const LeftPanelSection: React.FC<LeftPanelSectionProps> = ({
       )}
       <div className={bodyClassName}>{children}</div>
     </section>
-  )
-}
-
-/** 左屏可滚动区域，供 SidebarExtra 等长内容使用。 */
-export const LeftPanelScrollArea: React.FC<LeftPanelScrollAreaProps> = ({ children, className = '' }) => {
-  return (
-    <div className={['min-h-0 flex-1 overflow-y-auto', className].filter(Boolean).join(' ')}>
-      {children}
-    </div>
   )
 }

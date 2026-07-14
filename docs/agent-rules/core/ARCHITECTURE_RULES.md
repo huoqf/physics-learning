@@ -152,11 +152,14 @@ tests/
 ```
 页面组件 → 功能组件 → 通用组件 → 工具函数
                               ↗
-                    physics/ & math/
+              viewModel → hooks
+                    ↗
+            physics/ & math/
 ```
 
 - `physics/` 与 `math/` **不得**依赖 React、DOM、window、document
 - `physics/` **不得**直接依赖渲染副作用工具（如 `hooks/useCanvasDPR.ts`）
+- `viewModel` **不得**依赖 `vp.scale`、`vp.transform`、`visibleW`、`visibleH`、`physicsToCanvas` 或任何 SVG/Canvas 坐标
 - 页面层**不得**反向依赖底层计算实现细节
 
 ---
@@ -509,10 +512,11 @@ Tailwind v4 使用 CSS-first 配置，颜色通过 `src/index.css` 中的 `@them
   ├── XxxAnimation.tsx          # 薄编排层（store 读取 + 组件组合）
   ├── <topic>/
   │   ├── model/                # 纯计算函数 + view model（可独立单测）
-  │   ├── hooks/                # 状态逻辑（零 JSX）
+  │   ├── hooks/                # 状态逻辑 + physicsToCanvas 映射（零 JSX）
   │   └── components/           # 渲染组件（纯展示）
   ```
   拆分验收标准：物理计算与渲染逻辑完全解耦（物理计算逻辑完全抽离到纯函数或专用 hook 中，组件 JSX 内零物理公式），或新增了可独立运行的单元测试，或单文件行数降到 500 以下。
+- **viewModel 约束**：`model/viewModel.ts` 只返回物理坐标系（y↑ 正）数据，**禁止**引入 `vp.scale`、`vp.transform`、`visibleW`、`visibleH`、`physicsToCanvas` 或任何 SVG/Canvas 坐标。`physicsToCanvas` 映射保留在 `hooks/useXxxPhysics.ts` 层，使缩放、响应式布局和物理计算可独立演进。依赖方向：`viewModel → hooks`，不允许反向。
 - **重复逻辑提取**：多处出现的相同计算模式（如轨迹插值）应提取为 `src/utils/` 下的通用工具函数
 
 ```ts

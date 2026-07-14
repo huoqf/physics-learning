@@ -1,6 +1,6 @@
 import { Suspense, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, FlaskConical, Play, RotateCcw } from 'lucide-react'
+import { ArrowLeft, FlaskConical, Play } from 'lucide-react'
 import { buildPhysicsQuantities } from '@/data/physicsQuantities'
 import { getAnimationConfig } from '@/data/animationRegistry'
 import { knowledgeTree } from '@/data/knowledgeTree'
@@ -15,7 +15,6 @@ import {
   DiscoveryGuide,
   LeftPanel,
   LeftPanelSection,
-  LeftPanelScrollArea,
   ControlPanel,
 } from '@/components/UI'
 import { LAYOUT } from '@/theme'
@@ -372,25 +371,6 @@ export default function AnimationPage() {
     if (shouldReset && changed) handleReset()
   }
 
-  // 构建侧边栏扩展 props
-  const sidebarExtraProps = {
-    params,
-    updateParam,
-    setParams,
-    animationActions: {
-      resetAnimation: handleReset,
-      pauseAnimation: () => { setIsPlaying(false) },
-      restartAnimation: () => { setTime(0); setIsPlaying(true) },
-      setDirection: (d: 1 | -1) => { setDirection(d) },
-    },
-    showTimeSlices,
-    toggleTimeSlices,
-    showDualObjects,
-    toggleDualObjects,
-    toggleVectors,
-    disabled: isDiscoveryMode,
-  }
-
   return (
     <div className="flex flex-col bg-neutral-50" style={{ height: `calc(100vh - ${LAYOUT.topBarHeight}px)` }}>
       {/* 顶部栏 */}
@@ -427,7 +407,7 @@ export default function AnimationPage() {
       </div>
 
       <ThreePanel
-        left={(paramControlParams.length > 0 || controlMeta.length > 0 || config.SidebarExtra || siblingAnimations.length > 1) ? (
+        left={(paramControlParams.length > 0 || controlMeta.length > 0 || siblingAnimations.length > 1) ? (
           <LeftPanel>
             {/* 关联模型切换 Tab (高考考点变式切换) */}
             {siblingAnimations.length > 1 && (
@@ -460,19 +440,6 @@ export default function AnimationPage() {
                   })}
                 </div>
               </LeftPanelSection>
-            )}
-
-            {/* 批量重置（右上角，仅无 ParamControl 时显示） */}
-            {paramControlParams.length === 0 && config.SidebarExtra && !isDiscoveryMode && (
-              <button
-                onClick={() => { resetParams(); handleReset() }}
-                className="absolute top-3 right-3 flex items-center gap-1 text-xs text-neutral-400 hover:text-primary-600 active:scale-[0.97] transition-all z-10"
-                style={{ transitionDuration: '200ms' }}
-                aria-label="重置参数"
-              >
-                <RotateCcw className="w-3 h-3" />
-                重置
-              </button>
             )}
 
             {/* §1+§2：模型选择 / 子模式（ParamControl 之前） */}
@@ -523,14 +490,6 @@ export default function AnimationPage() {
                 storeStates={storeStates}
                 disabled={isDiscoveryMode}
               />
-            )}
-            {/* 侧边栏扩展：通过 registry 挂载的特异 UI */}
-            {config.SidebarExtra && !isDiscoveryMode && (
-              <LeftPanelScrollArea>
-                <Suspense fallback={<div className="w-full h-8 flex items-center justify-center text-neutral-300 text-xs">加载中…</div>}>
-                  <config.SidebarExtra {...sidebarExtraProps} />
-                </Suspense>
-              </LeftPanelScrollArea>
             )}
           </LeftPanel>
         ) : undefined}

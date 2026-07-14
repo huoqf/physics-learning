@@ -35,7 +35,7 @@ export type { ScrollDataTableColumn, ScrollDataTableProps } from './ScrollDataTa
 // ============================================================================
 // 面板与布局 (Panels & Layout)
 // ============================================================================
-export { LeftPanel, LeftPanelSection, LeftPanelScrollArea } from './LeftPanel'
+export { LeftPanel, LeftPanelSection } from './LeftPanel'
 export { PhysicsPanel } from './PhysicsPanel'
 export { Card } from './Card'
 

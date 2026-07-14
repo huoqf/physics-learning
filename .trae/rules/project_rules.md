@@ -80,6 +80,7 @@
    - **禁止**：新代码使用 `createSceneScaleFromViewport` 的 `visibleArea`/`centerScale` 模式构造 Canvas sceneScale（输出容器像素，在 `useCanvasViewport({ mode: 'raw' })` 下需手动转换，改用 `useSceneScale` 统一输出设计坐标）
    - **`sceneScale.maxVectorLength`** 已为设计坐标单位（`useSceneScale` 内部计算），SVG VectorArrow 可直接使用；Canvas 绘制需 `metersToPixels = sceneScale.scaleX * vp.scale`
 10. **渲染缩放策略互斥**：同一组件只能选一条核心渲染策略。**严禁在 SVG 内用 `<foreignObject>` 嵌入响应式 React 图表组件**（两套缩放叠加导致图表 X 轴消失）；需动画+图表并列时须在 HTML 层 `flex` 分区，两者平级而非嵌套。
+11. **viewModel 纯净性**：`model/viewModel.ts` 只返回物理坐标系（y↑ 正）数据，**禁止**引入 `vp.scale`、`vp.transform`、`visibleW`、`visibleH`、`physicsToCanvas` 或任何 SVG/Canvas 坐标。`physicsToCanvas` 映射保留在 `hooks/useXxxPhysics.ts` 层，使缩放、响应式布局和物理计算可独立演进。
 
 
 ### CANVAS_PRESETS 画布预设规格（4 种）

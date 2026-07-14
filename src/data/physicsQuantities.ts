@@ -81,6 +81,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   // 圆周运动
   'anim-circular-motion':       { loader: () => import('./quantities/circular'),       builderName: 'buildCircularQuantities' },
   'anim-centripetal':           { loader: () => import('./quantities/circular'),       builderName: 'buildCircularQuantities' },
+  'anim-vertical-circular':     { loader: () => import('./quantities/circular'),       builderName: 'buildCircularQuantities' },
   'anim-circular-models':       { loader: () => import('./quantities/circular'),       builderName: 'buildCircularQuantities' },
 
   // 万有引力

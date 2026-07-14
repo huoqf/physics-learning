@@ -15,6 +15,7 @@ import {
   calculateGravitation,
 } from '../../src/physics/dynamics'
 import { GRAVITY } from '../../src/physics/constants'
+import { computeOrthogonalDecomposition } from '../../src/features/mechanics/dynamics/model/orthogonalDecompositionViewModel'
 
 describe('Dynamics physics calculations', () => {
   describe('calculateGravitation', () => {
@@ -617,6 +618,91 @@ describe('Dynamics physics calculations', () => {
       expect(inclinedResult.FN).toBeCloseTo(expectedFN, 5)
       expect(inclinedResult.Ff).toBeCloseTo(expectedFf, 5)
       expect(inclinedResult.isSliding).toBe(false)
+    })
+  })
+})
+
+describe('computeOrthogonalDecomposition (viewModel)', () => {
+  describe('mode 0: multi-force composition', () => {
+    it('should compute force components in standard physics coords (y-up)', () => {
+      const result = computeOrthogonalDecomposition({
+        f1: 10, theta1: 0, f2: 0, theta2: 0, f3: 0, theta3: 0,
+        axisAngle: 0, theta: 0, m: 1, axisSelect: 0, mode: 0,
+      })
+      const F1 = result.forces[0]
+      expect(F1.fx).toBeCloseTo(10, 5)
+      expect(F1.fy).toBeCloseTo(0, 5)
+      expect(F1.val).toBe(10)
+    })
+
+    it('should project force onto rotated axis', () => {
+      // F = 10N at 30°, axis at 30° → fxPrime = 10, fyPrime = 0
+      const result = computeOrthogonalDecomposition({
+        f1: 10, theta1: 30, f2: 0, theta2: 0, f3: 0, theta3: 0,
+        axisAngle: 30, theta: 0, m: 1, axisSelect: 0, mode: 0,
+      })
+      const F1 = result.forces[0]
+      expect(F1.fxPrime).toBeCloseTo(10, 2)
+      expect(F1.fyPrime).toBeCloseTo(0, 2)
+    })
+
+    it('should sum multiple forces for net force', () => {
+      // F1 = 10N at 0°, F2 = 10N at 90° → net = 10√2 at 45°
+      const result = computeOrthogonalDecomposition({
+        f1: 10, theta1: 0, f2: 10, theta2: 90, f3: 0, theta3: 0,
+        axisAngle: 0, theta: 0, m: 1, axisSelect: 0, mode: 0,
+      })
+      expect(result.netForce.val).toBeCloseTo(10 * Math.sqrt(2), 2)
+      expect(result.netForce.angle).toBeCloseTo(45, 1)
+    })
+
+    it('origin should be at (0,0)', () => {
+      const result = computeOrthogonalDecomposition({
+        f1: 10, theta1: 0, f2: 0, theta2: 0, f3: 0, theta3: 0,
+        axisAngle: 0, theta: 0, m: 1, axisSelect: 0, mode: 0,
+      })
+      expect(result.originPhys).toEqual({ x: 0, y: 0 })
+    })
+  })
+
+  describe('mode 1: slope equilibrium', () => {
+    const m = 2
+    const theta = 30
+    const g = 9.8
+
+    it('should compute gravity = mg', () => {
+      const result = computeOrthogonalDecomposition({
+        f1: 0, theta1: 0, f2: 0, theta2: 0, f3: 0, theta3: 0,
+        axisAngle: 0, theta, m, axisSelect: 0, mode: 1,
+      })
+      expect(result.gravityVal).toBeCloseTo(m * g, 5)
+    })
+
+    it('should compute normal force = mg cos(θ)', () => {
+      const result = computeOrthogonalDecomposition({
+        f1: 0, theta1: 0, f2: 0, theta2: 0, f3: 0, theta3: 0,
+        axisAngle: 0, theta, m, axisSelect: 0, mode: 1,
+      })
+      expect(result.normalVal).toBeCloseTo(m * g * Math.cos(theta * Math.PI / 180), 2)
+    })
+
+    it('should compute friction = mg sin(θ)', () => {
+      const result = computeOrthogonalDecomposition({
+        f1: 0, theta1: 0, f2: 0, theta2: 0, f3: 0, theta3: 0,
+        axisAngle: 0, theta, m, axisSelect: 0, mode: 1,
+      })
+      expect(result.frictionVal).toBeCloseTo(m * g * Math.sin(theta * Math.PI / 180), 2)
+    })
+
+    it('slope geometry should have correct physical dimensions', () => {
+      const result = computeOrthogonalDecomposition({
+        f1: 0, theta1: 0, f2: 0, theta2: 0, f3: 0, theta3: 0,
+        axisAngle: 0, theta, m, axisSelect: 0, mode: 1,
+      })
+      const geom = result.slopeGeom
+      expect(geom.inclineLength).toBe(12)
+      expect(geom.slideW).toBeCloseTo(12 * Math.cos(theta * Math.PI / 180), 5)
+      expect(geom.slideH).toBeCloseTo(12 * Math.sin(theta * Math.PI / 180), 5)
     })
   })
 })
