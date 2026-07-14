@@ -53,11 +53,11 @@ const NEWTON_ARROW = {
 // ──────────────────────────────────────────────────────────────────────
 
 export default function NewtonSecondAnimation() {
-    const {params, time, showVectors} = useAnimationStore(
+  const { params, time, showVectors } = useAnimationStore(
     useShallow((s) => ({
-    params: s.params,
-    time: s.time,
-    showVectors: s.showVectors,
+      params: s.params,
+      time: s.time,
+      showVectors: s.showVectors,
     }))
   )
   const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })

@@ -248,10 +248,10 @@ export const mechanicsKnowledge: KnowledgeNode[] = [
     chapter: '第4章 牛顿运动定律',
     module: 'mechanics',
     importance: 'gaokao',
-    animationIds: ['anim-connected-bodies'],
+    animationIds: ['anim-system-isolated'],
     problemIds: [],
     prerequisites: ['mechanics-4-5'],
-    animationParams: { advancedMode: 1, analysisView: 1 },
+    animationParams: { modelType: 0, analysisView: 0 },
   },
   {
     id: 'mechanics-5-1',

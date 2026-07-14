@@ -19,7 +19,7 @@ export const HOOKE_DESIGN = {
   groundY: 305,
   wallY: 153,
   eqX: 420,
-  springLeftX: 84,
+  springLeftX: 60,
   displaceLabelOffset: 16,
 } as const
 

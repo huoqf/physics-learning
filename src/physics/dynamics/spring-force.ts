@@ -297,3 +297,41 @@ export function calculateBallBFallTime(
   if (fallDistance <= 0) return Infinity
   return Math.sqrt((2 * fallDistance) / g)
 }
+
+// ─── 支持力与微观弹性形变 ───────────────────────────────────────────
+
+export interface ElasticNormalForceState {
+  normalForce: number
+  gravityForce: number
+  displacement: number // 桌面微观压缩形变量 (m)
+}
+
+export function calculateElasticNormalForceState(
+  m: number,
+  kAtoms: number,
+  g = GRAVITY
+): ElasticNormalForceState {
+  const gravityForce = m * g
+  const normalForce = gravityForce // 平衡状态下支持力等于重力
+  const displacement = normalForce / kAtoms
+  return { normalForce, gravityForce, displacement }
+}
+
+// ─── 细绳拉力与微观弹性形变 ───────────────────────────────────────────
+
+export interface ElasticTensionState {
+  tensionForce: number
+  gravityForce: number
+  displacement: number // 绳子分子拉伸形变量 (m)
+}
+
+export function calculateElasticTensionState(
+  m: number,
+  kRope: number,
+  g = GRAVITY
+): ElasticTensionState {
+  const gravityForce = m * g
+  const tensionForce = gravityForce // 平衡状态下绳拉力等于重力
+  const displacement = tensionForce / kRope
+  return { tensionForce, gravityForce, displacement }
+}

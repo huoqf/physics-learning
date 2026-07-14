@@ -8,17 +8,46 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     knowledgeId: 'mechanics-3-2',
     Component: lazy(() => import('@/features/mechanics/dynamics/SpringForceAnimation')),
     controlsMode: 'timed',
-    defaultParams: { k: 100, m: 1 } as const,
+    defaultParams: { mode: 0, k: 100, m: 1.5, kAtoms: 120, kRope: 150 } as const,
     maxTime: 5,
     paramMeta: [
-      { key: 'k', label: '劲度系数 k', min: 10, max: 200, step: 5, unit: 'N/m' },
-      { key: 'm', label: '质量 m', min: 1.0, max: 3.0, step: 0.1, unit: 'kg' },
+      { key: 'm', label: '质量 m', min: 0.5, max: 3.0, step: 0.1, unit: 'kg' },
+      { key: 'k', label: '弹簧劲度 k', min: 10, max: 200, step: 5, unit: 'N/m', showIf: 'mode', showIfValue: 0 },
+      { key: 'kAtoms', label: '等效晶格刚度 k_e', min: 50, max: 300, step: 10, unit: 'N/m', showIf: 'mode', showIfValue: 1 },
+      { key: 'kRope', label: '等效细绳刚度 k_e', min: 50, max: 300, step: 10, unit: 'N/m', showIf: 'mode', showIfValue: 2 },
     ],
     controlMeta: [
       {
+        type: 'segmented',
+        key: 'mode',
+        group: '模型选择',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '弹簧与胡克定律' },
+          { value: 1, label: '支持力与桌面形变' },
+          { value: 2, label: '绳子拉力与拉伸量' },
+        ],
+      },
+      {
         type: 'tip',
         group: '教学提示',
-        content: 'F-x 物理图像的斜率代表弹簧的劲度系数 k。图线与 x 轴围成的三角形面积表示弹性势能 Ep。',
+        showIf: 'mode',
+        showIfValue: 0,
+        content: 'F-x 物理图像的斜率负值代表弹簧的回复力系数 -k。图线与 x 轴围成的直角三角形面积表示弹性势能 Ep。',
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        showIf: 'mode',
+        showIfValue: 1,
+        content: '地面对物体的支持力 FN 本质是弹力。当物体放置在桌面上时，桌面发生微小弹性形变，产生垂直于支撑面朝上的弹力 FN = mg。',
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        showIf: 'mode',
+        showIfValue: 2,
+        content: '细绳对物体的拉力 T 本质是弹力。当重物悬挂在绳下时，细绳被拉伸形变，产生沿着绳子收缩方向的拉力 T = mg。',
       },
     ],
     CenterExtra: lazy(() => import('@/features/mechanics/dynamics/SpringForceCenterExtra')),
@@ -592,6 +621,46 @@ export const mechanicsDynamicsAnimations = defineAnimations({
       },
     ],
     CenterExtra: lazy(() => import('@/features/mechanics/dynamics/ConnectedBodiesCenterExtra')),
+    centerExtraMode: 'advancedMode',
+  },
+  'anim-system-isolated': {
+    title: '方法论：整体法与隔离法',
+    knowledgeId: 'mechanics-4-method-1',
+    Component: lazy(() => import('@/features/mechanics/dynamics/SystemIsolatedMethodologyAnimation')),
+    defaultParams: { modelType: 0, analysisView: 0, activeObject: 0, m1: 2, m2: 4, F: 15, theta: 30, mu: 0.15 } as const,
+    paramMeta: [
+      { key: 'm1', label: '质量 m₁/m', min: 1, max: 10, step: 0.5, unit: 'kg' },
+      { key: 'm2', label: '质量 m₂/斜面 M', min: 1, max: 10, step: 0.5, unit: 'kg' },
+      { key: 'F', label: '推拉力 F', min: 0, max: 30, step: 1, unit: 'N' },
+      { key: 'theta', label: '斜面倾角 θ', min: 15, max: 60, step: 5, unit: '°' },
+      { key: 'mu', label: '动摩擦因数 μ', min: 0, max: 0.6, step: 0.05, unit: '' },
+    ],
+    controlMeta: [
+      {
+        type: 'segmented', key: 'modelType', label: '高考物理模型', group: '模型选择', resetOnChange: true,
+        options: [
+          { value: 0, label: '同加速连接体 (拉车)' },
+          { value: 1, label: '叠放静力学平衡 (推斜面)' },
+          { value: 2, label: '系统牛二定律 (斜面下滑)' },
+        ]
+      },
+      {
+        type: 'segmented', key: 'analysisView', label: '受力分析视角', group: '分析视角',
+        options: [
+          { value: 0, label: '整体法分析' },
+          { value: 1, label: '隔离法分析' },
+        ]
+      },
+      {
+        type: 'segmented', key: 'activeObject', label: '隔离研究对象', group: '分析视角',
+        showIf: 'analysisView', showIfValue: 1,
+        options: [
+          { value: 0, label: '滑块 (m₁/m)' },
+          { value: 1, label: '滑块/斜面 (m₂/M)' },
+        ]
+      },
+    ],
+    CenterExtra: lazy(() => import('@/features/mechanics/dynamics/SystemIsolatedMethodologyCenterExtra')),
     centerExtraMode: 'advancedMode',
   },
   'anim-gravity': {

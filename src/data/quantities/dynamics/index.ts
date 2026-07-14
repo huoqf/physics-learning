@@ -1,5 +1,6 @@
 import type { PhysicsQuantity, PhysicsPanelData } from '../types'
 import { handleConnectedBodies } from './connectedBodies'
+import { handleSystemIsolated } from './systemIsolated'
 import { handleSpringForce } from './springForce'
 import { handleFriction } from './friction'
 import { handleInclinedPlane } from './inclinedPlane'
@@ -21,6 +22,7 @@ export function buildDynamicsQuantities(
   const base: PhysicsQuantity[] = []
 
   return (
+    handleSystemIsolated(animId, params, time, base) ??
     handleConnectedBodies(animId, params, time, base) ??
     handleSpringForce(animId, params, time, base) ??
     handleInclinedPlane(animId, params, time, base) ??

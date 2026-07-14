@@ -19,11 +19,11 @@ interface VelocityAnimationStripProps {
 export default function VelocityAnimationStrip({
   model, modelParams, tMax = 6,
 }: VelocityAnimationStripProps) {
-    const {params, time, isPlaying} = useAnimationStore(
+  const { params, time, isPlaying } = useAnimationStore(
     useShallow((s) => ({
-    params: s.params,
-    time: s.time,
-    isPlaying: s.isPlaying,
+      params: s.params,
+      time: s.time,
+      isPlaying: s.isPlaying,
     }))
   )
   const deltaT = params.deltaT ?? 0.5

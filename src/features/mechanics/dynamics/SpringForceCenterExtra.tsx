@@ -19,6 +19,8 @@ import {
   calculateHookeLawState,
   calculateCutRopeState,
   calculateBallBFallTime,
+  calculateElasticNormalForceState,
+  calculateElasticTensionState,
 } from '@/physics/dynamics/spring-force'
 import { CUT_ROPE_DESIGN } from './hooks/useSpringForceCutRope'
 
@@ -37,9 +39,16 @@ export default function SpringForceCenterExtra() {
 
   // 弹力演示：胡克定律模式；轻质物体突变模型：切断模式
   const isHookeLaw = animationType === 'anim-spring-force'
+  const mode = params.mode ?? 0
 
   if (isHookeLaw) {
-    return <HookeLawChart k={k} m={m} time={time} />
+    if (mode === 0) {
+      return <HookeLawChart k={k} m={m} time={time} />
+    } else if (mode === 1) {
+      return <NormalForceChart kAtoms={params.kAtoms ?? 120} m={m} />
+    } else {
+      return <TensionForceChart kRope={params.kRope ?? 150} m={m} />
+    }
   }
 
   return <CutRopeAccelerationChart k={k} m={m} time={time} isCut={isCut} />
@@ -100,6 +109,118 @@ function HookeLawChart({ k, m, time }: { k: number; m: number; time: number }) {
       <div className="text-xs text-gray-500 mt-2 flex-shrink-0">
         蓝色面积 = 弹性势能 Ep = {potentialEnergy.toFixed(2)} J
       </div>
+    </div>
+  )
+}
+
+// ─── 支持力-形变量图表 ─────────────────────────────────────────────────
+
+function NormalForceChart({ kAtoms, m }: { kAtoms: number; m: number }) {
+  const { displacement } = useMemo(() => {
+    return calculateElasticNormalForceState(m, kAtoms)
+  }, [m, kAtoms])
+
+  const xMax = 0.6
+  const yMax = 40
+
+  const normalPoints = useMemo(() => {
+    const pts: { x: number; y: number }[] = []
+    const step = xMax / 30
+    for (let i = 0; i <= 30; i++) {
+      const x = i * step
+      pts.push({ x, y: kAtoms * x })
+    }
+    return pts
+  }, [kAtoms])
+
+  const areaPoints = useMemo(() => {
+    const pts: { x: number; y: number }[] = []
+    const end = displacement
+    if (end < 1e-9) return pts
+    const step = end / 20
+    for (let i = 0; i <= 20; i++) {
+      const x = i * step
+      pts.push({ x, y: kAtoms * x })
+    }
+    return pts
+  }, [kAtoms, displacement])
+
+  return (
+    <div className="w-full h-full flex flex-col bg-white rounded-lg shadow-inner p-3 relative">
+      <div className="text-sm font-bold mb-2 flex-shrink-0">支持力 - 桌面压缩量关系图</div>
+      <RelationChart
+        points={normalPoints}
+        xDomain={[0, xMax]}
+        yDomain={[0, yMax]}
+        xLabel="形变量 x (m)"
+        yLabel="支持力 FN (N)"
+        cursorX={displacement}
+        cursorLabel={(x, y) => `x=${x.toFixed(3)}m, FN=${y.toFixed(1)}N`}
+        underlay={
+          <ChartArea
+            points={areaPoints}
+            xRange={[0, displacement]}
+            variant="default"
+            intensity="normal"
+          />
+        }
+      />
+    </div>
+  )
+}
+
+// ─── 绳拉力-形变量图表 ─────────────────────────────────────────────────
+
+function TensionForceChart({ kRope, m }: { kRope: number; m: number }) {
+  const { displacement } = useMemo(() => {
+    return calculateElasticTensionState(m, kRope)
+  }, [m, kRope])
+
+  const xMax = 0.6
+  const yMax = 40
+
+  const tensionPoints = useMemo(() => {
+    const pts: { x: number; y: number }[] = []
+    const step = xMax / 30
+    for (let i = 0; i <= 30; i++) {
+      const x = i * step
+      pts.push({ x, y: kRope * x })
+    }
+    return pts
+  }, [kRope])
+
+  const areaPoints = useMemo(() => {
+    const pts: { x: number; y: number }[] = []
+    const end = displacement
+    if (end < 1e-9) return pts
+    const step = end / 20
+    for (let i = 0; i <= 20; i++) {
+      const x = i * step
+      pts.push({ x, y: kRope * x })
+    }
+    return pts
+  }, [kRope, displacement])
+
+  return (
+    <div className="w-full h-full flex flex-col bg-white rounded-lg shadow-inner p-3 relative">
+      <div className="text-sm font-bold mb-2 flex-shrink-0">拉力 - 绳子拉伸量关系图</div>
+      <RelationChart
+        points={tensionPoints}
+        xDomain={[0, xMax]}
+        yDomain={[0, yMax]}
+        xLabel="伸长量 Δx (m)"
+        yLabel="拉力 T (N)"
+        cursorX={displacement}
+        cursorLabel={(x, y) => `Δx=${x.toFixed(3)}m, T=${y.toFixed(1)}N`}
+        underlay={
+          <ChartArea
+            points={areaPoints}
+            xRange={[0, displacement]}
+            variant="default"
+            intensity="normal"
+          />
+        }
+      />
     </div>
   )
 }

@@ -261,111 +261,111 @@ export default function KinematicsAdvancedAnimation() {
           transform={vp.transform}
           className="flex-1 min-h-0 w-full bg-white rounded-lg relative overflow-hidden"
         >
-              {/* 起始标志线 */}
-              <line
-                x1={ORIGIN_X}
-                y1={GROUND_Y - 50}
-                x2={ORIGIN_X}
-                y2={GROUND_Y + 6}
-                stroke={PHYSICS_COLORS.acceleration}
-                strokeWidth={1}
-                strokeDasharray="2,2"
-                opacity={0.6}
+          {/* 起始标志线 */}
+          <line
+            x1={ORIGIN_X}
+            y1={GROUND_Y - 50}
+            x2={ORIGIN_X}
+            y2={GROUND_Y + 6}
+            stroke={PHYSICS_COLORS.acceleration}
+            strokeWidth={1}
+            strokeDasharray="2,2"
+            opacity={0.6}
+          />
+          <text
+            x={ORIGIN_X}
+            y={GROUND_Y - 55}
+            fontSize={font(8)}
+            fill={PHYSICS_COLORS.acceleration}
+            textAnchor="middle"
+            className="select-none font-sans font-medium"
+          >
+            起点 (x=0)
+          </text>
+
+          {/* 水平测试轨道 */}
+          <line
+            x1={ORIGIN_X}
+            y1={GROUND_Y}
+            x2={ORIGIN_X + TRACK_LEN}
+            y2={GROUND_Y}
+            stroke={PHYSICS_COLORS.axis}
+            strokeWidth={3}
+            strokeLinecap="round"
+          />
+
+          {/* 刻度尺底线 */}
+          <line
+            x1={ORIGIN_X}
+            y1={GROUND_Y + 6}
+            x2={ORIGIN_X + TRACK_LEN}
+            y2={GROUND_Y + 6}
+            stroke={PHYSICS_COLORS.axis}
+            strokeWidth={1}
+          />
+
+          {/* 刻度线 */}
+          {ticks}
+
+          {/* 历史足迹点 */}
+          {trajectoryPoints}
+
+          {/* 滑块 */}
+          <Block
+            x={sliderX}
+            y={sliderY}
+            width={BLOCK_W}
+            height={BLOCK_H}
+            type="metal"
+            label=""
+          />
+
+          {/* 矢量箭头 */}
+          {showVectors && v > 0 && (
+            <g>
+              <VectorArrow
+                originPixel={{ x: blockCenterX, y: velocityArrowY }}
+                vector={{ x: v, y: 0 }}
+                type="velocity"
+                sceneScale={vectorSceneScale}
+                strokeWidth={STROKE.vectorMain}
               />
               <text
-                x={ORIGIN_X}
-                y={GROUND_Y - 55}
+                x={blockCenterX + velocityArrowLen / 2}
+                y={velocityArrowY - 5}
+                fontSize={font(8)}
+                fill={PHYSICS_COLORS.velocity}
+                fontWeight="bold"
+                textAnchor="middle"
+                className="select-none font-mono"
+              >
+                v = {v.toFixed(1)} m/s
+              </text>
+            </g>
+          )}
+
+          {showVectors && Math.abs(a) > 0.05 && (
+            <g>
+              <VectorArrow
+                originPixel={{ x: blockCenterX, y: accelerationArrowY }}
+                vector={{ x: a, y: 0 }}
+                type="acceleration"
+                sceneScale={vectorSceneScale}
+                strokeWidth={STROKE.vectorSub}
+              />
+              <text
+                x={blockCenterX + (a > 0 ? 1 : -1) * accelerationArrowLen / 2}
+                y={accelerationArrowY - 5}
                 fontSize={font(8)}
                 fill={PHYSICS_COLORS.acceleration}
+                fontWeight="bold"
                 textAnchor="middle"
-                className="select-none font-sans font-medium"
+                className="select-none font-mono"
               >
-                起点 (x=0)
+                a = {a.toFixed(1)} m/s²
               </text>
-
-              {/* 水平测试轨道 */}
-              <line
-                x1={ORIGIN_X}
-                y1={GROUND_Y}
-                x2={ORIGIN_X + TRACK_LEN}
-                y2={GROUND_Y}
-                stroke={PHYSICS_COLORS.axis}
-                strokeWidth={3}
-                strokeLinecap="round"
-              />
-
-              {/* 刻度尺底线 */}
-              <line
-                x1={ORIGIN_X}
-                y1={GROUND_Y + 6}
-                x2={ORIGIN_X + TRACK_LEN}
-                y2={GROUND_Y + 6}
-                stroke={PHYSICS_COLORS.axis}
-                strokeWidth={1}
-              />
-
-              {/* 刻度线 */}
-              {ticks}
-
-              {/* 历史足迹点 */}
-              {trajectoryPoints}
-
-              {/* 滑块 */}
-              <Block
-                x={sliderX}
-                y={sliderY}
-                width={BLOCK_W}
-                height={BLOCK_H}
-                type="metal"
-                label=""
-              />
-
-              {/* 矢量箭头 */}
-              {showVectors && v > 0 && (
-                <g>
-                  <VectorArrow
-                    originPixel={{ x: blockCenterX, y: velocityArrowY }}
-                    vector={{ x: v, y: 0 }}
-                    type="velocity"
-                    sceneScale={vectorSceneScale}
-                    strokeWidth={STROKE.vectorMain}
-                  />
-                  <text
-                    x={blockCenterX + velocityArrowLen / 2}
-                    y={velocityArrowY - 5}
-                    fontSize={font(8)}
-                    fill={PHYSICS_COLORS.velocity}
-                    fontWeight="bold"
-                    textAnchor="middle"
-                    className="select-none font-mono"
-                  >
-                    v = {v.toFixed(1)} m/s
-                  </text>
-                </g>
-              )}
-
-              {showVectors && Math.abs(a) > 0.05 && (
-                <g>
-                  <VectorArrow
-                    originPixel={{ x: blockCenterX, y: accelerationArrowY }}
-                    vector={{ x: a, y: 0 }}
-                    type="acceleration"
-                    sceneScale={vectorSceneScale}
-                    strokeWidth={STROKE.vectorSub}
-                  />
-                  <text
-                    x={blockCenterX + (a > 0 ? 1 : -1) * accelerationArrowLen / 2}
-                    y={accelerationArrowY - 5}
-                    fontSize={font(8)}
-                    fill={PHYSICS_COLORS.acceleration}
-                    fontWeight="bold"
-                    textAnchor="middle"
-                    className="select-none font-mono"
-                  >
-                    a = {a.toFixed(1)} m/s²
-                  </text>
-                </g>
-              )}
+            </g>
+          )}
         </AnimationSvgCanvas>
       </Card>
     </div>

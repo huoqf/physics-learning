@@ -6,7 +6,8 @@ import type { ChargeSign } from './types';
 
 /**
  * 物理物块/滑块预设类型。
- * - `wood`: 经典的物理课本木箱质感（金黄木纹渐变，带木板拼合缝花纹）。
+ * - `standard`: 高中物理经典的标准蓝灰滑块（默认）。符合教材与高考绘图习惯，半透明天蓝色填充，纯色描边，受力分析时不会遮挡质心箭头，优先选用。
+ * - `wood`: 经典的物理课本木箱质感（金黄木纹渐变，带木板拼合缝花纹）。仅用于子弹打木块、板块模型等明确需要木板/木块的特定场景。
  * - `metal`: 精密物理滑轨上的不锈钢滑块（带有金属拉丝反光及顶面抛光高光线）。
  * - `woodCart`: 带有滑轮的木质小车（木箱主体，底边叠加一对拟物化不锈钢车轮）。
  * - `metalCart`: 带有滑轮的不锈钢金属小车（金属主体，底边叠加一对拟物化不锈钢车轮）。
@@ -40,7 +41,7 @@ export interface BlockProps extends Omit<SVGProps<SVGGElement>, 'type'> {
   height: number;
   /**
    * 滑块的材质与渲染类型。
-   * @default 'wood'
+   * @default 'standard'
    */
   type?: BlockPresetType;
   /**
@@ -123,7 +124,7 @@ export function Block({
   y,
   width,
   height,
-  type = 'wood',
+  type = 'standard',
   label,
   stroke,
   strokeWidth = 1.5,

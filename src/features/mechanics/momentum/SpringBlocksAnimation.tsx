@@ -35,7 +35,7 @@ function CenterOfMassVelocityLine({ vG, font }: { vG: number; font: (base: numbe
   const y = toSvgY(vG)
   const x1 = plotOrigin.x
   const x2 = plotOrigin.x + plotSize.width
-  
+
   return (
     <g>
       <line
@@ -103,7 +103,7 @@ export default function SpringBlocksAnimation() {
     let tShortest = 0
     let tRestore = 0
     let maxDelta = 0
-    
+
     for (let i = 0; i < states.length; i++) {
       const pt = states[i]
       if (tTouch === 0 && pt.delta > 0.001) {
@@ -114,19 +114,19 @@ export default function SpringBlocksAnimation() {
         tShortest = pt.t
       }
     }
-    
+
     // 寻找在 tShortest 之后，首次 delta 恢复原长的时刻
     const postShortest = states.filter((pt) => pt.t > tShortest)
     const restorePt = postShortest.find((pt) => pt.delta <= 0.001)
     tRestore = restorePt ? restorePt.t : SPRING_SIM.duration
-    
+
     return { tTouch, tShortest, tRestore }
   }, [states])
 
   // 图表多阶段背景配置
   const stages = useMemo(() => {
     const { tTouch, tShortest, tRestore } = criticalTimes
-    
+
     const list = [
       {
         from: 0,
@@ -173,7 +173,7 @@ export default function SpringBlocksAnimation() {
         showDividers: true,
       })
     }
-    
+
     return list
   }, [criticalTimes, connectionMode_spring])
 

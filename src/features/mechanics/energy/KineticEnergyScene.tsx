@@ -68,9 +68,9 @@ export function KineticEnergyScene({
   const ballR = mode === 0
     ? CANVAS_STYLE.OBJECT.ball
     : Math.max(
-        CANVAS_STYLE.OBJECT.minRadius,
-        Math.min(R * scale * KE_SCENE_LAYOUT.ballToTrackRatio, canvasSize.width * KE_SCENE_LAYOUT.ballMaxWidthRatio)
-      )
+      CANVAS_STYLE.OBJECT.minRadius,
+      Math.min(R * scale * KE_SCENE_LAYOUT.ballToTrackRatio, canvasSize.width * KE_SCENE_LAYOUT.ballMaxWidthRatio)
+    )
 
   let ballCX: number
   let ballCY: number
