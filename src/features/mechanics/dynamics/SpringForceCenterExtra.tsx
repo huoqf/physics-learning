@@ -22,7 +22,7 @@ import {
   calculateElasticNormalForceState,
   calculateElasticTensionState,
 } from '@/physics/dynamics/spring-force'
-import { CUT_ROPE_DESIGN } from './hooks/useSpringForceCutRope'
+import { CUT_ROPE_DESIGN, HOOKE_DESIGN } from './hooks/useSpringForceCutRope'
 
 export default function SpringForceCenterExtra() {
   const { params, time, animationType } = useAnimationStore(
@@ -57,7 +57,7 @@ export default function SpringForceCenterExtra() {
 // ─── 胡克定律 F-x 图表 ──────────────────────────────────────────────────
 
 function HookeLawChart({ k, m, time }: { k: number; m: number; time: number }) {
-  const state = calculateHookeLawState(k, m, time)
+  const state = calculateHookeLawState(k, m, time, 0.5, HOOKE_DESIGN.eqX)
   const displacement = state.displacement
   const potentialEnergy = state.potentialEnergy
 

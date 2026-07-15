@@ -52,7 +52,7 @@ export interface HookeLawState {
  * @param m 振子质量 [kg]
  * @param time 时间 [s]
  * @param amplitude 振幅 [m]，默认 0.5
- * @param equilibriumX 平衡位置设计坐标 [px]，默认 350
+ * @param equilibriumX 平衡位置设计坐标 [px]，调用方应传入 HOOKE_DESIGN.eqX
  * @returns 完整运动与力学状态
  */
 export function calculateHookeLawState(
@@ -60,7 +60,7 @@ export function calculateHookeLawState(
   m: number,
   time: number,
   amplitude = 0.5,
-  equilibriumX = 350,
+  equilibriumX: number,
 ): HookeLawState {
   const omega = Math.sqrt(k / m)
   const displacement = amplitude * Math.sin(omega * time)

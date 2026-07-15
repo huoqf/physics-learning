@@ -10,9 +10,10 @@ import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, CANVAS_STYLE, STROKE, DASH } from '@/theme/physics'
 import { Spring } from '@/components/UI'
-import { Block, PhysicsGround, VectorArrow, VectorDefs } from '@/components/Physics'
+import { Block, PhysicsGround, PhysicsVectorArrow, VectorArrow, VectorDefs } from '@/components/Physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
-import { BOX_SIZE } from '@/physics/dynamics/spring-force'
+import { BOX_SIZE, PIXELS_PER_METER } from '@/physics/dynamics/spring-force'
+import { calculateVectorPixelLength } from '@/utils/vectorLength'
 import { useSpringForceHookeLaw } from '../hooks/useSpringForceHookeLaw'
 import { HOOKE_DESIGN } from '../hooks/useSpringForceCutRope'
 
@@ -35,16 +36,17 @@ export default function SpringForceHookeLawScene() {
   const { groundY, wallY, eqX, springLeftX, displaceLabelOffset } = HOOKE_DESIGN
   const wallHeight = groundY - wallY
 
+  // 矢量场景配置：maxVectorLength 取场景可用宽度的 40%，refMagnitude 覆盖高中弹簧力范围
+  const forceSceneScale = {
+    ...IDENTITY_SCENE_SCALE,
+    maxVectorLength: DESIGN_WIDTH * 0.4,
+    refMagnitudes: { elasticForce: 100 },
+  }
+
   return (
     <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
       <defs>
-        <VectorDefs colors={[PHYSICS_COLORS.elasticForce, PHYSICS_COLORS.gravity, PHYSICS_COLORS.tension]} />
-        <marker id="arrow-displacement-start" markerWidth="6" markerHeight="6" refX="1" refY="3" orient="auto">
-          <polygon points="6 1, 0 3, 6 5" fill={PHYSICS_COLORS.displacement} />
-        </marker>
-        <marker id="arrow-displacement-end" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-          <polygon points="0 1, 6 3, 0 5" fill={PHYSICS_COLORS.displacement} />
-        </marker>
+        <VectorDefs colors={[PHYSICS_COLORS.elasticForce, PHYSICS_COLORS.gravity, PHYSICS_COLORS.tension, PHYSICS_COLORS.displacement]} />
       </defs>
 
       <PhysicsGround
@@ -113,6 +115,7 @@ export default function SpringForceHookeLawScene() {
       {/* 位移标注 */}
       {Math.abs(displacement) > 0.01 && (
         <g>
+          {/* 垂直投影辅助线 */}
           <line
             x1={centerX}
             y1={groundY - BOX_SIZE}
@@ -133,15 +136,15 @@ export default function SpringForceHookeLawScene() {
             strokeDasharray="2,2"
             opacity={0.6}
           />
-          <line
-            x1={eqX}
-            y1={groundY + displaceLabelOffset - 12}
-            x2={centerX}
-            y2={groundY + displaceLabelOffset - 12}
-            stroke={PHYSICS_COLORS.displacement}
+          {/* 位移矢量箭头（从平衡位置指向当前位置，长度 = displacement × PIXELS_PER_METER） */}
+          <VectorArrow
+            originDesign={{ x: eqX, y: groundY + displaceLabelOffset - 12 }}
+            vector={{ x: displacement, y: 0 }}
+            type="displacement"
+            arrowType="visual-only"
+            sceneScale={IDENTITY_SCENE_SCALE}
             strokeWidth={1.2}
-            markerStart="url(#arrow-displacement-start)"
-            markerEnd="url(#arrow-displacement-end)"
+            pixelLength={Math.abs(displacement * PIXELS_PER_METER)}
           />
           <text
             x={(eqX + centerX) / 2}
@@ -159,17 +162,15 @@ export default function SpringForceHookeLawScene() {
       {/* 弹力矢量 */}
       {showVectors && Math.abs(springForce) > 0.1 && (
         <g>
-          <VectorArrow
+          <PhysicsVectorArrow
             originDesign={{ x: centerX, y: groundY - BOX_SIZE / 2 }}
-            vector={{ x: springForce * 0.4, y: 0 }}
+            vector={{ x: springForce, y: 0 }}
             type="elasticForce"
-            arrowType="visual-only"
-            sceneScale={IDENTITY_SCENE_SCALE}
+            sceneScale={forceSceneScale}
             strokeWidth={CANVAS_STYLE.stroke.vectorMain}
-            pixelLength={Math.abs(springForce * 0.4)}
           />
           <text
-            x={centerX + springForce * 0.4 + (springForce > 0 ? 8 : -22)}
+            x={centerX + (springForce > 0 ? 1 : -1) * (calculateVectorPixelLength(Math.abs(springForce), 'elasticForce', forceSceneScale.maxVectorLength, 100) + 8)}
             y={groundY - BOX_SIZE / 2 + 4}
             fontSize={font(10)}
             fill={PHYSICS_COLORS.elasticForce}

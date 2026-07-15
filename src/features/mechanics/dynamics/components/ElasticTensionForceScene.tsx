@@ -2,7 +2,7 @@ import React, { useMemo } from 'react'
 import { useAnimationViewport } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { PHYSICS_COLORS, CANVAS_STYLE, SCENE_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_STYLE, CANVAS_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { Block, PhysicsGround, VectorArrow, VectorDefs } from '@/components/Physics'
 import { Spring } from '@/components/UI'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
@@ -128,25 +128,25 @@ export const ElasticTensionForceScene: React.FC = () => {
       {/* ─── 中间：形变放大指示虚线 ─── */}
       <path
         d={`M ${blockX} ${(ceilY + blockY) / 2} L ${zoomCX - zoomR + 10} ${zoomCY}`}
-        stroke="#94a3b8"
+        stroke={CANVAS_COLORS.grid}
         strokeWidth={1}
         strokeDasharray="4,4"
         opacity={0.8}
       />
-      <circle cx={blockX} cy={(ceilY + blockY) / 2} r={4} fill="#64748b" />
+      <circle cx={blockX} cy={(ceilY + blockY) / 2} r={4} fill={CANVAS_COLORS.textMuted} />
 
       {/* ─── 右侧：微观放大镜场景 ─── */}
       <g clipPath="url(#zoom-clip-rope)">
-        <circle cx={zoomCX} cy={zoomCY} r={zoomR} fill="#f8fafc" />
+        <circle cx={zoomCX} cy={zoomCY} r={zoomR} fill={CANVAS_COLORS.objectFillNeutral} />
 
         {/* 绳子微观分子链：绘制固定在顶部的原子和在拉力下向下移动的原子 */}
         <g>
-          {/* 顶端原子（固定） */}
-          <circle cx={zoomCX} cy={zoomCY - 50} r={10} fill="#64748b" opacity={0.8} stroke="#475569" strokeWidth={1} />
+          {/* 顶端原子（固定 — 深灰金属） */}
+          <circle cx={zoomCX} cy={zoomCY - 50} r={10} fill={SCENE_COLORS.materials.structStrokeMid} opacity={0.8} stroke={SCENE_COLORS.materials.structStroke} strokeWidth={1} />
           <text x={zoomCX} y={zoomCY - 47} fontSize={font(8)} fill="white" fontWeight="bold" textAnchor="middle">悬点</text>
 
-          {/* 底端原子（随拉伸位移） */}
-          <circle cx={zoomCX} cy={zoomCY + 30 + dy} r={10} fill="#f59e0b" opacity={0.8} stroke="#d97706" strokeWidth={1} />
+          {/* 底端原子（随拉伸位移 — 黄铜色） */}
+          <circle cx={zoomCX} cy={zoomCY + 30 + dy} r={10} fill={SCENE_COLORS.materials.pulleyMid} opacity={0.8} stroke={SCENE_COLORS.materials.structStroke} strokeWidth={1} />
           <text x={zoomCX} y={zoomCY + 33 + dy} fontSize={font(8)} fill="white" fontWeight="bold" textAnchor="middle">重物</text>
         </g>
 
@@ -162,10 +162,10 @@ export const ElasticTensionForceScene: React.FC = () => {
         />
 
         {/* 局部受力与位移说明 */}
-        <text x={zoomCX} y={zoomCY - 68} fontSize={font(10)} fill="#475569" fontWeight="bold" textAnchor="middle">
+        <text x={zoomCX} y={zoomCY - 68} fontSize={font(10)} fill={CANVAS_COLORS.labelTextLight} fontWeight="bold" textAnchor="middle">
           微观细绳分子受拉
         </text>
-        <text x={zoomCX} y={zoomCY + 72} fontSize={font(9)} fill="#0284c7" fontWeight="bold" textAnchor="middle">
+        <text x={zoomCX} y={zoomCY + 72} fontSize={font(9)} fill={CANVAS_COLORS.labelText} fontWeight="bold" textAnchor="middle">
           伸长量 Δx = {(displacement * 100).toFixed(2)} cm
         </text>
       </g>
@@ -176,7 +176,7 @@ export const ElasticTensionForceScene: React.FC = () => {
         cy={zoomCY}
         r={zoomR}
         fill="none"
-        stroke="#64748b"
+        stroke={CANVAS_COLORS.textMuted}
         strokeWidth={3}
         filter="drop-shadow(0px 4px 6px rgba(0,0,0,0.15))"
       />
@@ -184,7 +184,7 @@ export const ElasticTensionForceScene: React.FC = () => {
         x={zoomCX}
         y={zoomCY - zoomR - 8}
         fontSize={font(11)}
-        fill="#64748b"
+        fill={CANVAS_COLORS.textMuted}
         fontWeight="bold"
         textAnchor="middle"
       >

@@ -5,6 +5,7 @@ import { useEffect, useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateAcceleratedMotion } from '@/physics'
+import { calculateVectorPixelLength } from '@/utils/vectorLength'
 import {
   PHYSICS_COLORS,
   CHART_COLORS,
@@ -63,14 +64,17 @@ export default function UniformAccelerationAnimation() {
   const maxVisibleX = vp.visibleX + vp.visibleW - padding
 
   // ── 矢量场景配置 ──
-  const maxVel = Math.max(Math.abs(v0) + Math.abs(a) * 8, 10)
-  const maxAcc = Math.max(Math.abs(a) * 2, 5)
-  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes: { velocity: maxVel, acceleration: maxAcc } })
+  // refMagnitude 固定：速度矢量随 v 伸缩（v=25→满长度），加速度矢量随 a 伸缩（a=8→满长度）
+  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes: { velocity: 25, acceleration: 8 } })
 
   // ── 物理计算 ──
   const { v, s } = calculateAcceleratedMotion(v0, a, time)
   const currentX = startX + s * scale
   const isOffscreen = currentX > maxVisibleX + objW || currentX < padding - objW
+
+  // ── 矢量箭头实际像素长度（用于标签精确定位）──
+  const velocityArrowLen = Math.abs(v) > 0.1 ? calculateVectorPixelLength(Math.abs(v), 'velocity', sceneScale.maxVectorLength, 25) : 0
+  const accelerationArrowLen = Math.abs(a) > 0.05 ? calculateVectorPixelLength(Math.abs(a), 'acceleration', sceneScale.maxVectorLength, 8) : 0
 
   // 小车跑出画布后自动暂停
   useEffect(() => {
@@ -376,7 +380,7 @@ export default function UniformAccelerationAnimation() {
           ruler={{
             domain: [0, 100],
             pixelPerUnit: scale,
-            tickInterval: 20,
+            tickInterval: 10,
             unit: 'm',
           }}
         />
@@ -444,7 +448,7 @@ export default function UniformAccelerationAnimation() {
               sceneScale={sceneScale}
               strokeWidth={STROKE.vectorMain}
             />
-            <text x={currentX + (v > 0 ? objW + 8 : -8) + sceneScale.maxVectorLength * 0.35} y={groundY - objH * 0.5 + fontSize * 0.35} fontSize={fontSize} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
+            <text x={currentX + (v > 0 ? objW + 8 : -8) + velocityArrowLen + fontSize} y={groundY - objH * 0.5 + fontSize * 0.35} fontSize={fontSize} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
           </g>
         )}
 
@@ -458,7 +462,7 @@ export default function UniformAccelerationAnimation() {
               sceneScale={sceneScale}
               strokeWidth={STROKE.vectorSub}
             />
-            <text x={currentX + objW * 0.5 + sceneScale.maxVectorLength * 0.35 + 6} y={groundY - objH - 6 + fontSize * 0.35} fontSize={fontSize} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">a</text>
+            <text x={currentX + objW * 0.5 + accelerationArrowLen + fontSize + 6} y={groundY - objH - 6 + fontSize * 0.35} fontSize={fontSize} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">a</text>
           </g>
         )}
 

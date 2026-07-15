@@ -8,6 +8,7 @@
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateHookeLawState } from '@/physics/dynamics/spring-force'
+import { HOOKE_DESIGN } from './useSpringForceCutRope'
 
 export function useSpringForceHookeLaw() {
   const { params, time, showVectors } = useAnimationStore(
@@ -21,7 +22,7 @@ export function useSpringForceHookeLaw() {
   const k = params.k ?? 100
   const m = params.m ?? 1
 
-  const state = calculateHookeLawState(k, m, time)
+  const state = calculateHookeLawState(k, m, time, 0.5, HOOKE_DESIGN.eqX)
 
   return {
     k,

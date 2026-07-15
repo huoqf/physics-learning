@@ -2,7 +2,7 @@ import React, { useMemo } from 'react'
 import { useAnimationViewport } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_STYLE, CANVAS_COLORS, SCENE_COLORS } from '@/theme/physics'
 import { Block, PhysicsGround, VectorArrow, VectorDefs } from '@/components/Physics'
 import { Spring } from '@/components/UI'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
@@ -115,17 +115,17 @@ export const ElasticNormalForceScene: React.FC = () => {
       {/* ─── 中间：形变放大指示虚线 ─── */}
       <path
         d={`M ${blockX + blockW / 2} ${groundY} L ${zoomCX - zoomR + 10} ${zoomCY}`}
-        stroke="#94a3b8"
+        stroke={CANVAS_COLORS.grid}
         strokeWidth={1}
         strokeDasharray="4,4"
         opacity={0.8}
       />
-      <circle cx={blockX + blockW / 2} cy={groundY} r={4} fill="#64748b" />
+      <circle cx={blockX + blockW / 2} cy={groundY} r={4} fill={CANVAS_COLORS.textMuted} />
 
       {/* ─── 右侧：微观放大镜场景 ─── */}
       {/* 放大镜内背景与结构 */}
       <g clipPath="url(#zoom-clip)">
-        <circle cx={zoomCX} cy={zoomCY} r={zoomR} fill="#f8fafc" />
+        <circle cx={zoomCX} cy={zoomCY} r={zoomR} fill={CANVAS_COLORS.objectFillNeutral} />
 
         {/* 微观接触分界线 */}
         <line
@@ -133,26 +133,26 @@ export const ElasticNormalForceScene: React.FC = () => {
           y1={zoomCY + 15}
           x2={zoomCX + zoomR}
           y2={zoomCY + 15}
-          stroke="#cbd5e1"
+          stroke={CANVAS_COLORS.gridSubtle}
           strokeWidth={1.5}
           strokeDasharray="3,3"
         />
 
-        {/* 桌面底层原子（固定蓝原子） */}
+        {/* 桌面底层原子（固定原子 — 浅灰金属） */}
         <g>
           {[zoomCX - 50, zoomCX, zoomCX + 50].map((x, idx) => (
             <g key={`blue-${idx}`}>
-              <circle cx={x} cy={zoomCY + 50} r={10} fill="#3b82f6" opacity={0.8} stroke="#1d4ed8" strokeWidth={1} />
+              <circle cx={x} cy={zoomCY + 50} r={10} fill={SCENE_COLORS.materials.structFillPale} opacity={0.8} stroke={SCENE_COLORS.materials.structStrokeMid} strokeWidth={1} />
               <text x={x} y={zoomCY + 53} fontSize={font(8)} fill="white" fontWeight="bold" textAnchor="middle">基底</text>
             </g>
           ))}
         </g>
 
-        {/* 物体底层原子（随重压向下位移的绿原子） */}
+        {/* 物体底层原子（随重压向下位移 — 深灰金属） */}
         <g>
           {[zoomCX - 50, zoomCX, zoomCX + 50].map((x, idx) => (
             <g key={`green-${idx}`}>
-              <circle cx={x} cy={zoomCY - 30 + dy} r={10} fill="#10b981" opacity={0.8} stroke="#047857" strokeWidth={1} />
+              <circle cx={x} cy={zoomCY - 30 + dy} r={10} fill={SCENE_COLORS.materials.structStrokeMid} opacity={0.8} stroke={SCENE_COLORS.materials.structStroke} strokeWidth={1} />
               <text x={x} y={zoomCY - 27 + dy} fontSize={font(8)} fill="white" fontWeight="bold" textAnchor="middle">物体</text>
             </g>
           ))}
@@ -173,10 +173,10 @@ export const ElasticNormalForceScene: React.FC = () => {
         ))}
 
         {/* 局部受力与位移说明 */}
-        <text x={zoomCX} y={zoomCY - 50} fontSize={font(10)} fill="#475569" fontWeight="bold" textAnchor="middle">
+        <text x={zoomCX} y={zoomCY - 50} fontSize={font(10)} fill={CANVAS_COLORS.labelTextLight} fontWeight="bold" textAnchor="middle">
           微观原子弹簧受压
         </text>
-        <text x={zoomCX} y={zoomCY + 72} fontSize={font(9)} fill="#0284c7" fontWeight="bold" textAnchor="middle">
+        <text x={zoomCX} y={zoomCY + 72} fontSize={font(9)} fill={CANVAS_COLORS.labelText} fontWeight="bold" textAnchor="middle">
           压缩量 x = {(displacement * 100).toFixed(2)} cm
         </text>
       </g>
@@ -187,7 +187,7 @@ export const ElasticNormalForceScene: React.FC = () => {
         cy={zoomCY}
         r={zoomR}
         fill="none"
-        stroke="#64748b"
+        stroke={CANVAS_COLORS.textMuted}
         strokeWidth={3}
         filter="drop-shadow(0px 4px 6px rgba(0,0,0,0.15))"
       />
@@ -195,7 +195,7 @@ export const ElasticNormalForceScene: React.FC = () => {
         x={zoomCX}
         y={zoomCY - zoomR - 8}
         fontSize={font(11)}
-        fill="#64748b"
+        fill={CANVAS_COLORS.textMuted}
         fontWeight="bold"
         textAnchor="middle"
       >
