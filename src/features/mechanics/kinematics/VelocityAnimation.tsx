@@ -7,6 +7,7 @@ import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OBJECT } from '@/theme/phys
 import { colors } from '@/theme/colors'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateAverageVelocity } from '@/physics'
+import { calculateVectorPixelLength } from '@/utils/vectorLength'
 
 /**
  * 速度基础版动画 —— "破除直觉迷思"
@@ -28,12 +29,12 @@ export default function VelocityAnimation() {
   const scene = params.scene ?? 0      // 0=公交, 1=短跑
   const v = params.v ?? 8              // m/s
   const deltaT = params.deltaT ?? 2    // s
-  const totalDuration = params.totalDuration ?? 10 // s
 
-  // ── 动态布局 ──
+  // ── 布局 ──
   const padding = vp.visibleW * 0.07
   const groundY = canvasSize.height * 0.72
-  const scale = (vp.visibleW - 2 * padding) / (v * totalDuration)
+  // 标尺像素比例固定，不受速度影响——速度变化时标尺不缩放，只改变量箭头长度
+  const scale = (vp.visibleW - 2 * padding) / preset.width
   const startX = vp.visibleX + padding
   const maxVisibleX = vp.visibleX + vp.visibleW - padding
 
@@ -88,7 +89,11 @@ export default function VelocityAnimation() {
   const objH = scene === 0 ? objW * 0.7 : objW * 0.9
 
   // ── 矢量场景配置 ──
-  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes: { velocity: v * 1.5 || 15, averageVelocity: v * 1.5 || 15 } })
+  // refMagnitude 固定为 15 m/s：速度矢量长度随 v 变化而伸缩（v=8→箭头约53%，v=16→满长度）
+  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes: { velocity: 15, averageVelocity: 15 } })
+
+  // ── 矢量箭头实际像素长度（用于标签精确定位）──
+  const velocityArrowLen = calculateVectorPixelLength(v, 'velocity', sceneScale.maxVectorLength, 15)
 
   return (
     <div ref={containerRef} className="w-full h-full">
@@ -115,9 +120,9 @@ export default function VelocityAnimation() {
           width={canvasSize.width - padding}
           appearance={{ color: PHYSICS_COLORS.labelText }}
           ruler={{
-            domain: [0, v * totalDuration],
+            domain: [0, preset.width],
             pixelPerUnit: scale,
-            tickInterval: (v * totalDuration) / 5,
+            tickInterval: preset.width / 5,
             unit: 'm',
           }}
         />
@@ -236,7 +241,7 @@ export default function VelocityAnimation() {
               strokeWidth={STROKE.vectorSub}
             />
             <text
-              x={currentX + objW + sceneScale.maxVectorLength * 0.4 + fontSize}
+              x={currentX + objW + velocityArrowLen + fontSize}
               y={groundY - objH * 0.5 + fontSize * 0.35}
               fontSize={fontSize}
               fill={PHYSICS_COLORS.velocity}

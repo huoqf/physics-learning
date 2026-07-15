@@ -5,6 +5,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { calculateDualObjectComparison } from '@/physics'
+import { calculateVectorPixelLength } from '@/utils/vectorLength'
 import { PHYSICS_COLORS, STROKE, DASH, FONT } from '@/theme/physics'
 
 /** 布局常量（语义化命名，替代魔法数字） */
@@ -55,17 +56,24 @@ export default function AccelerationAnimation() {
     [vA, aB, deltaT, time]
   )
 
-  // 位移缩放：以飞机在 10s 内的位移填满赛道
+  // 位移缩放：标尺固定，不受 vA 影响——速度变化时标尺不缩放，只改变量箭头长度
   const scale = useMemo(
-    () => (maxVisibleX - startX) / (vA * 10 || 1),
-    [maxVisibleX, startX, vA]
+    () => (maxVisibleX - startX) / preset.width,
+    [maxVisibleX, startX, preset.width]
   )
 
   // ── 矢量场景配置 ──
-  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes: { velocity: Math.max(vA, 10) * 1.5, acceleration: aB * 2 } })
+  // refMagnitude 固定：速度矢量随 vA 伸缩（vA=100→29%，vA=200→57%，vA=300→86%）
+  // 加速度矢量随 aB 伸缩（aB=2→17%，aB=5→42%，aB=10→83%）
+  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes: { velocity: 350, acceleration: 12 } })
 
   const planeX = startX + result.sA * scale
   const carX = startX + result.sB * scale
+
+  // ── 矢量箭头实际像素长度（用于标签精确定位）──
+  const planeArrowLen = calculateVectorPixelLength(vA, 'velocity', sceneScale.maxVectorLength, 350)
+  const carArrowLen = result.vB > 0 ? calculateVectorPixelLength(result.vB, 'velocity', sceneScale.maxVectorLength, 350) : 0
+  const deltaVArrowLen = result.deltaVB > 0 ? calculateVectorPixelLength(result.deltaVB, 'acceleration', sceneScale.maxVectorLength, 12) : 0
 
   // 边界检测
   const isAtBoundary = planeX >= maxVisibleX || carX >= maxVisibleX
@@ -116,9 +124,9 @@ export default function AccelerationAnimation() {
           width={canvasSize.width - 2 * padding}
           appearance={{ color: PHYSICS_COLORS.labelText }}
           ruler={{
-            domain: [0, vA * 10],
+            domain: [0, preset.width],
             pixelPerUnit: scale,
-            tickInterval: vA * 2,
+            tickInterval: preset.width / 5,
             unit: 'm',
           }}
         />
@@ -236,7 +244,7 @@ export default function AccelerationAnimation() {
               strokeWidth={STROKE.vectorMain}
             />
             <text
-              x={clampedPlaneX + LAYOUT.VEHICLE_WIDTH + sceneScale.maxVectorLength * 0.4 + 8}
+              x={clampedPlaneX + LAYOUT.VEHICLE_WIDTH + planeArrowLen + 8}
               y={topTrackY - LAYOUT.VEHICLE_PLANE_HEIGHT / 2 + 4}
               fontSize={FONT.bodySize}
               fill={PHYSICS_COLORS.velocity}
@@ -269,7 +277,7 @@ export default function AccelerationAnimation() {
               strokeWidth={STROKE.vectorMain}
             />
             <text
-              x={clampedCarX + LAYOUT.VEHICLE_WIDTH + sceneScale.maxVectorLength * 0.4 + 8}
+              x={clampedCarX + LAYOUT.VEHICLE_WIDTH + carArrowLen + 8}
               y={bottomTrackY - LAYOUT.VEHICLE_HEIGHT / 2 + 4}
               fontSize={FONT.bodySize}
               fill={PHYSICS_COLORS.velocity}
@@ -295,7 +303,7 @@ export default function AccelerationAnimation() {
               strokeWidth={STROKE.vectorSub}
             />
             <text
-              x={clampedCarX + LAYOUT.VEHICLE_WIDTH + result.vB * 0.15 + sceneScale.maxVectorLength * 0.35 + 8}
+              x={clampedCarX + LAYOUT.VEHICLE_WIDTH + result.vB * 0.15 + deltaVArrowLen + 8}
               y={bottomTrackY - LAYOUT.VEHICLE_HEIGHT / 2 - 10}
               fontSize={FONT.small}
               fill={PHYSICS_COLORS.acceleration}
@@ -304,7 +312,7 @@ export default function AccelerationAnimation() {
               Δv_B
             </text>
             <text
-              x={clampedCarX + LAYOUT.VEHICLE_WIDTH + result.vB * 0.15 + sceneScale.maxVectorLength * 0.18}
+              x={clampedCarX + LAYOUT.VEHICLE_WIDTH + result.vB * 0.15 + deltaVArrowLen * 0.5}
               y={bottomTrackY - LAYOUT.VEHICLE_HEIGHT / 2 - 20}
               fontSize={FONT.small}
               fill={PHYSICS_COLORS.labelText}
