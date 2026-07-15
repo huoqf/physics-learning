@@ -120,14 +120,6 @@ export default function SatelliteAnimation() {
   const padLeft = LAYOUT.card.base.padLeft * cardScale
   const innerW = cardWidth - padLeft - LAYOUT.card.base.padRight * cardScale
 
-  const handleDragChart = useCallback((clientX: number, svgRect: DOMRect) => {
-    const { x: containerX } = clientToContainerPoint(clientX, 0, svgRect)
-    const clickX = containerX - cardX - padLeft
-    const rRatio = clickX / innerW
-    const targetR = LAYOUT.mode0.rMin + rRatio * (LAYOUT.mode0.rMax - LAYOUT.mode0.rMin)
-    updateParam('r', Math.max(LAYOUT.mode0.rMin, Math.min(LAYOUT.mode0.rMax, targetR)))
-  }, [cardX, padLeft, innerW, updateParam])
-
   const handleSvgMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
     const rect = svgRef.current?.getBoundingClientRect()
     if (!rect) return
@@ -136,19 +128,45 @@ export default function SatelliteAnimation() {
       const distPx = Math.sqrt((mouseX - centerX) ** 2 + (mouseY - centerY) ** 2)
       const distKM = distPx / scale / 1e6
       updateParam('r', Math.max(LAYOUT.mode0.rMin, Math.min(LAYOUT.mode0.rMax, distKM)))
-    } else if (isDraggingChartRef.current && mode === 0) {
-      handleDragChart(e.clientX, rect)
     }
   }
 
-  const handleSvgMouseUp = () => { setDragTarget('none'); isDraggingChartRef.current = false }
+  const handleSvgMouseUp = () => { setDragTarget('none') }
 
-  const handleChartMouseDown = (e: React.MouseEvent<SVGElement>) => {
+  // ── HTML 层图表拖拽 ──
+  const chartDivRef = useRef<HTMLDivElement>(null)
+
+  const handleDragChart = useCallback((clientX: number) => {
+    const div = chartDivRef.current
+    if (!div) return
+    const rect = div.getBoundingClientRect()
+    const clickX = clientX - rect.left - padLeft
+    const rRatio = clickX / innerW
+    const targetR = LAYOUT.mode0.rMin + rRatio * (LAYOUT.mode0.rMax - LAYOUT.mode0.rMin)
+    updateParam('r', Math.max(LAYOUT.mode0.rMin, Math.min(LAYOUT.mode0.rMax, targetR)))
+  }, [padLeft, innerW, updateParam])
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingChartRef.current || mode !== 0) return
+      handleDragChart(e.clientX)
+    }
+    const handleMouseUp = () => {
+      isDraggingChartRef.current = false
+    }
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [handleDragChart, mode])
+
+  const handleChartMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (mode !== 0) return
     isDraggingChartRef.current = true
-    const rect = svgRef.current?.getBoundingClientRect()
-    if (rect) handleDragChart(e.clientX, rect)
-  }
+    handleDragChart(e.clientX)
+  }, [mode, handleDragChart])
 
   const { vrPoints, trPoints } = useOrbitCurves()
   const trSeries: RelationDataSeries[] = useMemo(() => [{ points: trPoints, label: '周期 T(r)', color: CHART_COLORS.compareD, strokeWidth: 1.4 }], [trPoints])
@@ -290,96 +308,120 @@ export default function SatelliteAnimation() {
           </g>
         )}
 
-        {/* Mode 0 PiP chart */}
-        {showChart === 1 && mode === 0 && (
-          <g transform={`translate(${cardX}, ${cardY})`}>
-            <rect width={cardWidth} height={cardHeight} fill={SCENE_COLORS.labels.glassPanelBg} rx={8} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} filter="url(#card-shadow)" />
-            <foreignObject x={4} y={4} width={cardWidth - 8} height={cardHeight - 8} style={{ pointerEvents: 'none' }}>
-              <div style={{ width: '100%', height: '100%' }}>
-                <RelationChart points={vrPoints} additionalSeries={trSeries} xLabel="半径 r" yLabel="v / T (归一化)" title="轨道物理量-半径关系曲线 (v-r / T-r)" xDomain={[LAYOUT.mode0.rMin, LAYOUT.mode0.rMax]} yDomain={[0, 1]} cursorX={r} cursorLabel={(_x, y) => y.toFixed(2)} color={PHYSICS_COLORS.velocity} strokeWidth={1.4} series="primary" />
-              </div>
-            </foreignObject>
-            <rect x={0} y={0} width={cardWidth} height={cardHeight} fill="transparent" className="cursor-ew-resize" onMouseDown={handleChartMouseDown} />
-          </g>
-        )}
-
-        {/* Mode 1 PiP cards */}
+        {/* Mode 1 CAM-01 特写 (纯 SVG，保留在 SVG 内) */}
         {showChart === 1 && mode === 1 && launchData && (
-          <g>
-            {/* CAM-01 特写 */}
-            <g transform={`translate(${canvasSize.width - 240 - 15}, 20)`}>
-              <rect width={240} height={160} fill={SCENE_COLORS.labels.glassPanelBg} rx={8} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} filter="url(#card-shadow)" />
-              <text x={120} y={18} fontSize={font(9)} fill={CANVAS_COLORS.labelText} textAnchor="middle" fontWeight="bold" fontFamily="PingFang SC, sans-serif">CAM-01: 发射与并轨特写监控</text>
-              <g transform="translate(10, 28)">
-                <rect width={220} height={120} fill={SCENE_COLORS.environment.spaceBg} rx={4} />
-                <g style={{ clipPath: 'inset(0px round 4px)' }}>
-                  {(() => {
-                    const zoomLevel = 4.0
-                    const dx = 110 - satLaunchX * zoomLevel
-                    const dy = 60 - satLaunchY * zoomLevel
-                    return (
-                      <g transform={`translate(${dx}, ${dy}) scale(${zoomLevel})`}>
-                        <g transform={`translate(${-centerX}, ${-centerY})`}><EarthSvg centerX={centerX} centerY={centerY} earthRadiusPx={earthRadiusPx} /></g>
-                        <g transform={`translate(${centerX + earthRadiusPx}, ${centerY})`}>
-                          <path d="M 0 0 L 6 -10 L 10 -10 L 4 0 Z" fill="none" stroke={CANVAS_COLORS.axis} strokeWidth={0.8} opacity={0.6} />
-                          <path d="M 4 -10 L 1 -15 L 4 -15 L 7 -10 Z" fill="none" stroke={CANVAS_COLORS.axis} strokeWidth={0.8} opacity={0.6} />
-                          <line x1={0} y1={0} x2={0} y2={-15} stroke={CANVAS_COLORS.axis} strokeWidth={1.0} opacity={0.6} />
-                        </g>
-                        {(() => {
-                          const targetOrbitRadiusPx = launchData.r0 * scale
-                          const targetAngle = LAYOUT.mode1.orbitEndAngle
-                          const targetX = centerX + targetOrbitRadiusPx * Math.cos(targetAngle)
-                          const targetY = centerY - targetOrbitRadiusPx * Math.sin(targetAngle)
-                          return <circle cx={targetX} cy={targetY} r={3.5} fill={colors.success[500]} />
-                        })()}
-                        {launchData.orbitPoints.length > 1 && (
-                          <path d={`M ${launchData.orbitPoints.map(([thetaVal, rPhys]) => `${centerX + rPhys * scale * Math.cos(thetaVal)},${centerY - rPhys * scale * Math.sin(thetaVal)}`).join(' L ')}`} fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={0.6} strokeDasharray="2,2" opacity={0.3} />
-                        )}
-                        <g transform={`translate(${satLaunchX}, ${satLaunchY})`}>
-                          {isRocket ? <RocketSvg angleRad={satAngle} scale={0.6} time={time} /> : <SatelliteSvg angleRad={satAngle} scale={0.6} />}
-                        </g>
-                        {launchData.crashed && <circle cx={satLaunchX} cy={satLaunchY} r={6} fill={CHART_COLORS.criticalPt} opacity={0.6} />}
+          <g transform={`translate(${canvasSize.width - 240 - 15}, 20)`}>
+            <rect width={240} height={160} fill={SCENE_COLORS.labels.glassPanelBg} rx={8} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} filter="url(#card-shadow)" />
+            <text x={120} y={18} fontSize={font(9)} fill={CANVAS_COLORS.labelText} textAnchor="middle" fontWeight="bold" fontFamily="PingFang SC, sans-serif">CAM-01: 发射与并轨特写监控</text>
+            <g transform="translate(10, 28)">
+              <rect width={220} height={120} fill={SCENE_COLORS.environment.spaceBg} rx={4} />
+              <g style={{ clipPath: 'inset(0px round 4px)' }}>
+                {(() => {
+                  const zoomLevel = 4.0
+                  const dx = 110 - satLaunchX * zoomLevel
+                  const dy = 60 - satLaunchY * zoomLevel
+                  return (
+                    <g transform={`translate(${dx}, ${dy}) scale(${zoomLevel})`}>
+                      <g transform={`translate(${-centerX}, ${-centerY})`}><EarthSvg centerX={centerX} centerY={centerY} earthRadiusPx={earthRadiusPx} /></g>
+                      <g transform={`translate(${centerX + earthRadiusPx}, ${centerY})`}>
+                        <path d="M 0 0 L 6 -10 L 10 -10 L 4 0 Z" fill="none" stroke={CANVAS_COLORS.axis} strokeWidth={0.8} opacity={0.6} />
+                        <path d="M 4 -10 L 1 -15 L 4 -15 L 7 -10 Z" fill="none" stroke={CANVAS_COLORS.axis} strokeWidth={0.8} opacity={0.6} />
+                        <line x1={0} y1={0} x2={0} y2={-15} stroke={CANVAS_COLORS.axis} strokeWidth={1.0} opacity={0.6} />
                       </g>
-                    )
-                  })()}
-                </g>
-                <rect width={220} height={120} fill="none" stroke={CANVAS_COLORS.strokeDark} strokeWidth={1} rx={4} pointerEvents="none" />
-                <text x={8} y={14} fontSize={font(6)} fill={CANVAS_COLORS.labelTextLight} fontFamily="monospace" opacity={0.85}>ZOOM: 4.0X</text>
-                <text x={212} y={14} fontSize={font(6)} fill={CANVAS_COLORS.labelTextLight} fontFamily="monospace" textAnchor="end" opacity={0.85}>
-                  {launchData.phase === 'liftoff' ? 'LIFTOFF' : launchData.phase === 'gravityTurn' ? 'G-TURN' : 'IN_ORBIT'}
-                </text>
+                      {(() => {
+                        const targetOrbitRadiusPx = launchData.r0 * scale
+                        const targetAngle = LAYOUT.mode1.orbitEndAngle
+                        const targetX = centerX + targetOrbitRadiusPx * Math.cos(targetAngle)
+                        const targetY = centerY - targetOrbitRadiusPx * Math.sin(targetAngle)
+                        return <circle cx={targetX} cy={targetY} r={3.5} fill={colors.success[500]} />
+                      })()}
+                      {launchData.orbitPoints.length > 1 && (
+                        <path d={`M ${launchData.orbitPoints.map(([thetaVal, rPhys]) => `${centerX + rPhys * scale * Math.cos(thetaVal)},${centerY - rPhys * scale * Math.sin(thetaVal)}`).join(' L ')}`} fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={0.6} strokeDasharray="2,2" opacity={0.3} />
+                      )}
+                      <g transform={`translate(${satLaunchX}, ${satLaunchY})`}>
+                        {isRocket ? <RocketSvg angleRad={satAngle} scale={0.6} time={time} /> : <SatelliteSvg angleRad={satAngle} scale={0.6} />}
+                      </g>
+                      {launchData.crashed && <circle cx={satLaunchX} cy={satLaunchY} r={6} fill={CHART_COLORS.criticalPt} opacity={0.6} />}
+                    </g>
+                  )
+                })()}
               </g>
+              <rect width={220} height={120} fill="none" stroke={CANVAS_COLORS.strokeDark} strokeWidth={1} rx={4} pointerEvents="none" />
+              <text x={8} y={14} fontSize={font(6)} fill={CANVAS_COLORS.labelTextLight} fontFamily="monospace" opacity={0.85}>ZOOM: 4.0X</text>
+              <text x={212} y={14} fontSize={font(6)} fill={CANVAS_COLORS.labelTextLight} fontFamily="monospace" textAnchor="end" opacity={0.85}>
+                {launchData.phase === 'liftoff' ? 'LIFTOFF' : launchData.phase === 'gravityTurn' ? 'G-TURN' : 'IN_ORBIT'}
+              </text>
             </g>
-
-            {/* v-t 速度曲线 */}
-            {(() => {
-              const vtScale = VTCARD.scaleFactor
-              const vtCardWidth = Math.max(VTCARD.base.width * vtScale, canvasSize.width * VTCARD.canvasRatio)
-              const vtCardHeight = Math.max(VTCARD.base.height * vtScale, canvasSize.height * VTCARD.canvasRatioH)
-              const vtCardX = canvasSize.width - vtCardWidth - 15
-              const vtCardY = canvasSize.height - vtCardHeight - 20
-              const vtPoints = vtSamplePoints.map(([t, v]) => ({ t, v }))
-              const launchT = LAYOUT.mode1.launchDuration
-              const entryT = LAYOUT.mode1.orbitEntryTime
-              const stages: VTStage[] = [
-                { from: 0, to: launchT, color: CANVAS_COLORS.grid, opacity: 0.35, label: '发射示意', labelColor: CANVAS_COLORS.labelTextLight },
-                { from: launchT, to: entryT, color: CHART_COLORS.areaFill, opacity: 0.35, label: '转弯示意', labelColor: CHART_COLORS.primary },
-                { from: entryT, to: 15, color: CHART_COLORS.areaFillAlt, opacity: 0.35, label: '轨道运动', labelColor: CHART_COLORS.compareA },
-              ]
-              return (
-                <g transform={`translate(${vtCardX}, ${vtCardY})`}>
-                  <rect width={vtCardWidth} height={vtCardHeight} fill={SCENE_COLORS.labels.glassPanelBg} rx={8} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} filter="url(#card-shadow)" />
-                  <foreignObject x={4} y={4} width={vtCardWidth - 8} height={vtCardHeight - 8}>
-                    <div style={{ width: '100%', height: '100%' }}>
-                      <VelocityTimeChart points={vtPoints} currentTime={isLaunched === 1 ? Math.min(15, time) : 0} tMax={15} title="线速度-时间变化曲线 (v-t)" stages={stages} series="primary" showGrid showCursor={isLaunched === 1} />
-                    </div>
-                  </foreignObject>
-                </g>
-              )
-            })()}
           </g>
         )}
       </svg>
+
+      {/* Mode 0 HTML 层 PiP chart */}
+      {showChart === 1 && mode === 0 && (
+        <div
+          ref={chartDivRef}
+          className="absolute cursor-ew-resize"
+          style={{
+            left: cardX,
+            top: cardY,
+            width: cardWidth,
+            height: cardHeight,
+          }}
+          onMouseDown={handleChartMouseDown}
+        >
+          <div className="w-full h-full rounded-lg overflow-hidden"
+            style={{
+              background: SCENE_COLORS.labels.glassPanelBg,
+              border: `0.8px solid ${CHART_COLORS.axisLine}`,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+              padding: 4,
+            }}
+          >
+            <RelationChart points={vrPoints} additionalSeries={trSeries} xLabel="半径 r" yLabel="v / T (归一化)" title="轨道物理量-半径关系曲线 (v-r / T-r)" xDomain={[LAYOUT.mode0.rMin, LAYOUT.mode0.rMax]} yDomain={[0, 1]} cursorX={r} cursorLabel={(_x, y) => y.toFixed(2)} color={PHYSICS_COLORS.velocity} strokeWidth={1.4} series="primary" />
+          </div>
+        </div>
+      )}
+
+      {/* Mode 1 HTML 层 v-t 速度曲线 */}
+      {showChart === 1 && mode === 1 && launchData && (
+        (() => {
+          const vtScale = VTCARD.scaleFactor
+          const vtCardWidth = Math.max(VTCARD.base.width * vtScale, canvasSize.width * VTCARD.canvasRatio)
+          const vtCardHeight = Math.max(VTCARD.base.height * vtScale, canvasSize.height * VTCARD.canvasRatioH)
+          const vtCardX = canvasSize.width - vtCardWidth - 15
+          const vtCardY = canvasSize.height - vtCardHeight - 20
+          const vtPoints = vtSamplePoints.map(([t, v]) => ({ t, v }))
+          const launchT = LAYOUT.mode1.launchDuration
+          const entryT = LAYOUT.mode1.orbitEntryTime
+          const stages: VTStage[] = [
+            { from: 0, to: launchT, color: CANVAS_COLORS.grid, opacity: 0.35, label: '发射示意', labelColor: CANVAS_COLORS.labelTextLight },
+            { from: launchT, to: entryT, color: CHART_COLORS.areaFill, opacity: 0.35, label: '转弯示意', labelColor: CHART_COLORS.primary },
+            { from: entryT, to: 15, color: CHART_COLORS.areaFillAlt, opacity: 0.35, label: '轨道运动', labelColor: CHART_COLORS.compareA },
+          ]
+          return (
+            <div
+              className="absolute"
+              style={{
+                left: vtCardX,
+                top: vtCardY,
+                width: vtCardWidth,
+                height: vtCardHeight,
+              }}
+            >
+              <div className="w-full h-full rounded-lg overflow-hidden"
+                style={{
+                  background: SCENE_COLORS.labels.glassPanelBg,
+                  border: `0.8px solid ${CHART_COLORS.axisLine}`,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                  padding: 4,
+                }}
+              >
+                <VelocityTimeChart points={vtPoints} currentTime={isLaunched === 1 ? Math.min(15, time) : 0} tMax={15} title="线速度-时间变化曲线 (v-t)" stages={stages} series="primary" showGrid showCursor={isLaunched === 1} />
+              </div>
+            </div>
+          )
+        })()
+      )}
     </div>
   )
 }

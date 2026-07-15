@@ -5,7 +5,6 @@ import { computeVTPoints } from '@/physics/work'
 import type { WorkKinematics } from '@/physics/work'
 
 interface WorkVTChartProps {
-  canvasSize: { width: number; height: number }
   /**
    * 保留旧接口以减少 WorkAnimation 调用面变更。
    * 组件已迁移到公共 VelocityTimeChart，字号由 BasePhysicsChart 自适应管理。
@@ -23,7 +22,6 @@ interface WorkVTChartProps {
  * 现在改为薄适配层：数据语义仍来自 WorkKinematics，渲染统一交给公共 VelocityTimeChart。
  */
 export function WorkVTChart({
-  canvasSize,
   font,
   kinematics,
   currentTime,
@@ -38,39 +36,35 @@ export function WorkVTChart({
   const currentT = isFinite(t_total) && t_total > 0 ? progress * progress * t_total : 0
 
   return (
-    <foreignObject width={canvasSize.width} height={canvasSize.height}>
-      <div style={{ width: canvasSize.width, height: canvasSize.height }}>
-        <VelocityTimeChart
-          mode="animated"
-          points={points}
-          domainPoints={points}
-          referencePoints={points}
-          currentTime={currentT}
-          tMax={tMax}
-          xLabel="t (s)"
-          yLabel="v (m/s)"
-          title="v-t"
-          series="primary"
-          showCursor={currentT > 0}
-          showReferenceLine
-          referenceColor={PHYSICS_COLORS.labelTextLight}
-          referenceOpacity={0.45}
-        />
-        <div
-          style={{
-            position: 'relative',
-            marginTop: -canvasSize.height + 8,
-            marginLeft: Math.max(48, canvasSize.width - 104),
-            fontSize: font(10),
-            lineHeight: '14px',
-            color: PHYSICS_COLORS.labelTextLight,
-            pointerEvents: 'none',
-            fontWeight: 700,
-          }}
-        >
-          v(t)=at<br />a={a.toFixed(2)} m/s²
-        </div>
+    <div className="w-full h-full relative">
+      <VelocityTimeChart
+        mode="animated"
+        points={points}
+        domainPoints={points}
+        referencePoints={points}
+        currentTime={currentT}
+        tMax={tMax}
+        xLabel="t (s)"
+        yLabel="v (m/s)"
+        title="v-t"
+        series="primary"
+        showCursor={currentT > 0}
+        showReferenceLine
+        referenceColor={PHYSICS_COLORS.labelTextLight}
+        referenceOpacity={0.45}
+      />
+      <div
+        className="absolute pointer-events-none font-bold"
+        style={{
+          top: 8,
+          right: 8,
+          fontSize: font(10),
+          lineHeight: '14px',
+          color: PHYSICS_COLORS.labelTextLight,
+        }}
+      >
+        v(t)=at<br />a={a.toFixed(2)} m/s²
       </div>
-    </foreignObject>
+    </div>
   )
 }

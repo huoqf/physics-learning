@@ -145,7 +145,7 @@ export default function VerticalThrowAnimation() {
 
   // ── 渲染 ──
   return (
-    <div ref={containerRef} className="w-full h-full">
+    <div ref={containerRef} className="w-full h-full relative">
       <svg
         width={canvasSize.width}
         height={canvasSize.height}
@@ -400,21 +400,22 @@ export default function VerticalThrowAnimation() {
             textAnchor="middle" fontWeight="bold">落地</text>
         )}
 
-        <VerticalThrowCharts
-          layout={layout}
-          physics={physics}
-          advancedMode={advancedMode}
-          sliceDensity={sliceDensity}
-          airResistance={airResistance}
-          showDoubleTrack={showDoubleTrack}
-          targetHeight={targetHeight}
-          g={g}
-          onTimeChange={(nextTime) => {
-            setTime(nextTime)
-            setIsPlaying(false)
-          }}
-        />
       </svg>
+
+      <VerticalThrowCharts
+        layout={layout}
+        physics={physics}
+        advancedMode={advancedMode}
+        sliceDensity={sliceDensity}
+        airResistance={airResistance}
+        showDoubleTrack={showDoubleTrack}
+        targetHeight={targetHeight}
+        g={g}
+        onTimeChange={(nextTime) => {
+          setTime(nextTime)
+          setIsPlaying(false)
+        }}
+      />
     </div>
   )
 }

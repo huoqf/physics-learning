@@ -33,27 +33,22 @@ export function VerticalThrowCharts({
   } = layout
 
   return (
-    <>
-      <foreignObject x={dataX} y={vtChartTop} width={dataWidth} height={vtChartHeight}>
-        <div className="w-full h-full">
-          <VerticalThrowVTChart
-            layout={layout} physics={physics}
-            advancedMode={advancedMode} sliceDensity={sliceDensity}
-            airResistance={airResistance} showDoubleTrack={showDoubleTrack}
-            g={g} onTimeChange={onTimeChange} />
-        </div>
-      </foreignObject>
-
-      <foreignObject x={dataX} y={ytChartTop} width={dataWidth} height={ytChartHeight}>
-        <div className="w-full h-full">
-          <VerticalThrowYTChart
-            layout={layout} physics={physics}
-            advancedMode={advancedMode} airResistance={airResistance}
-            showDoubleTrack={showDoubleTrack} targetHeight={targetHeight}
-            onTimeChange={onTimeChange} />
-        </div>
-      </foreignObject>
-    </>
+    <div className="absolute" style={{ left: dataX, top: vtChartTop, width: dataWidth, height: ytChartTop + ytChartHeight - vtChartTop }}>
+      <div style={{ width: '100%', height: vtChartHeight }}>
+        <VerticalThrowVTChart
+          layout={layout} physics={physics}
+          advancedMode={advancedMode} sliceDensity={sliceDensity}
+          airResistance={airResistance} showDoubleTrack={showDoubleTrack}
+          g={g} onTimeChange={onTimeChange} />
+      </div>
+      <div style={{ width: '100%', height: ytChartHeight }}>
+        <VerticalThrowYTChart
+          layout={layout} physics={physics}
+          advancedMode={advancedMode} airResistance={airResistance}
+          showDoubleTrack={showDoubleTrack} targetHeight={targetHeight}
+          onTimeChange={onTimeChange} />
+      </div>
+    </div>
   )
 }
 

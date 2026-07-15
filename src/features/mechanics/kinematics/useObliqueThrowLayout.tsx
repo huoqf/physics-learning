@@ -1,7 +1,6 @@
-import { useMemo, useCallback, useRef } from 'react'
+import { useMemo, useCallback, useRef, useEffect } from 'react'
 import { useAnimationStore } from '@/stores'
 import { PHYSICS_COLORS, STROKE, DASH } from '@/theme/physics'
-import { clientToContainerPoint } from '@/utils'
 import type { ObliqueThrowResult } from '@/physics'
 import type React from 'react'
 
@@ -67,46 +66,57 @@ export function useObliqueThrowLayout(
     [trajectory.points]
   )
 
-  // ── 时间游标拖拽 ──
+  // ── 时间游标拖拽（HTML 层图表） ──
   const isDraggingRef = useRef(false)
 
   const handleDragTime = useCallback(
-    (clientX: number, svgRect: DOMRect) => {
-      const { x: containerX } = clientToContainerPoint(clientX, 0, svgRect)
-      const clickX = containerX - vtX - 4
-      const tClick = (clickX / (vtWidth - 8)) * vtXMax
+    (clientX: number, chartRect: DOMRect) => {
+      const clickX = clientX - chartRect.left
+      const tClick = (clickX / chartRect.width) * vtXMax
       if (tClick >= 0 && tClick <= maxTime) {
         setTime(tClick)
         setIsPlaying(false)
       }
     },
-    [vtX, vtWidth, vtXMax, maxTime, setTime, setIsPlaying]
+    [vtXMax, maxTime, setTime, setIsPlaying]
   )
 
-  const handleSvgMouseMove = useCallback(
-    (e: React.MouseEvent<SVGElement>) => {
-      if (!isDraggingRef.current) return
-      const svg = e.currentTarget
-      const rect = svg.getBoundingClientRect()
+  const handleChartMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      isDraggingRef.current = true
+      const rect = e.currentTarget.getBoundingClientRect()
       handleDragTime(e.clientX, rect)
     },
     [handleDragTime]
   )
 
-  const handleSvgMouseUp = useCallback(() => {
+  const handleWindowMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isDraggingRef.current) return
+      // chartDivRef 由调用方维护，这里通过事件目标反查
+      const div = document.elementFromPoint(e.clientX, e.clientY)
+      if (!div) return
+      const chartDiv = div.closest('[data-vt-chart]') as HTMLDivElement | null
+      if (chartDiv) {
+        const rect = chartDiv.getBoundingClientRect()
+        handleDragTime(e.clientX, rect)
+      }
+    },
+    [handleDragTime]
+  )
+
+  const handleWindowMouseUp = useCallback(() => {
     isDraggingRef.current = false
   }, [])
 
-  const handleChartMouseDown = useCallback(
-    (e: React.MouseEvent<SVGElement>) => {
-      isDraggingRef.current = true
-      const svg = e.currentTarget.closest('svg')
-      if (!svg) return
-      const rect = svg.getBoundingClientRect()
-      handleDragTime(e.clientX, rect)
-    },
-    [handleDragTime]
-  )
+  useEffect(() => {
+    window.addEventListener('mousemove', handleWindowMouseMove)
+    window.addEventListener('mouseup', handleWindowMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', handleWindowMouseMove)
+      window.removeEventListener('mouseup', handleWindowMouseUp)
+    }
+  }, [handleWindowMouseMove, handleWindowMouseUp])
 
   // ── 网格线 ──
   const gridLines = useMemo(() => {
@@ -143,8 +153,6 @@ export function useObliqueThrowLayout(
     vtDomainVx,
     vtPointsVy,
     vtDomainVy,
-    handleSvgMouseMove,
-    handleSvgMouseUp,
     handleChartMouseDown,
     gridLines,
   }

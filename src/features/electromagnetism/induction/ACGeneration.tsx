@@ -227,7 +227,8 @@ export default function ACGeneration() {
 
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+    <div ref={containerRef} className="w-full h-full relative">
+      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform} className="select-none">
 
         {/* 左右分界线 */}
         <line x1={SIMW} y1={0} x2={SIMW} y2={H}
@@ -401,28 +402,37 @@ export default function ACGeneration() {
 
         </g>
 
-        {/* ═══════════ 右侧 MiniChart 时序曲线 ════════════ */}
-        <foreignObject x={CHARTL} y={0} width={CHARTW} height={H}>
-          <div style={{ width: '100%', height: '100%', padding: font(8) }}>
-            <MiniChart
-              title="Φ − t 与 e − t 时序曲线"
-              xMin={tMin}
-              xMax={tMax}
-              yMin={-(Em * 1.3 || 1)}
-              yMax={Em * 1.3 || 1}
-              points={hist}
-              lines={chartLines}
-              xKey="t"
-              yLabel="Φ (Wb) / e (V)"
-              xLabel="t / s"
-              currentVals={{ phi, e }}
-              currentXVal={t}
-              staticLines={chartStaticLines}
-              minWidth={200}
-              minHeight={H - 20}
-            />
-          </div>
-        </foreignObject>
     </AnimationSvgCanvas>
+
+    {/* ═══════════ 右侧 HTML 层 MiniChart 时序曲线 ════════════ */}
+    <div
+      className="absolute"
+      style={{
+        left: CHARTL * vp.scale + vp.tx,
+        top: vp.ty,
+        width: CHARTW * vp.scale,
+        height: H * vp.scale,
+        padding: font(8),
+      }}
+    >
+      <MiniChart
+        title="Φ − t 与 e − t 时序曲线"
+        xMin={tMin}
+        xMax={tMax}
+        yMin={-(Em * 1.3 || 1)}
+        yMax={Em * 1.3 || 1}
+        points={hist}
+        lines={chartLines}
+        xKey="t"
+        yLabel="Φ (Wb) / e (V)"
+        xLabel="t / s"
+        currentVals={{ phi, e }}
+        currentXVal={t}
+        staticLines={chartStaticLines}
+        minWidth={200}
+        minHeight={H - 20}
+      />
+    </div>
+    </div>
   )
 }

@@ -112,7 +112,7 @@ export function useDualRodsPhysics(
       posA: originX + physXA * scale,
       posB: originX + physXB * scale,
     }
-  }, [stateAtT.xA, stateAtT.xB, originX, originY, scale])
+  }, [stateAtT.xA, stateAtT.xB, originX, scale])
 
   return {
     currentVA: stateAtT.vA,

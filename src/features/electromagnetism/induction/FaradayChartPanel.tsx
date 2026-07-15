@@ -164,76 +164,77 @@ export function FaradayChartPanel({
   const panelH = Math.max(120, H - panelY - 4)
 
   return (
-    <foreignObject x={dashLeft} y={panelY} width={dashW} height={panelH}>
-      <div
-        style={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 6,
-          boxSizing: 'border-box',
-          padding: '0 2px 2px 2px',
-          background: 'transparent',
-        }}
-      >
-        <TimeBadge t={tNow} font={font} />
+    <div
+      className="absolute"
+      style={{
+        left: dashLeft,
+        top: panelY,
+        width: dashW,
+        height: panelH,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6,
+        boxSizing: 'border-box',
+        padding: '0 2px 2px 2px',
+        background: 'transparent',
+      }}
+    >
+      <TimeBadge t={tNow} font={font} />
 
-        <div style={{ flex: 1, minHeight: 0 }}>
-          <VelocityTimeChart
-            points={phiSeries}
-            domainPoints={phiSeries}
-            currentTime={tNow}
-            tMax={FARADAY_CHART_DURATION}
-            tDomain={[0, FARADAY_CHART_DURATION]}
-            vRange={phiRange}
-            title="Φ − t 图（磁通量）"
-            xLabel="t/s"
-            yLabel="Φ/Wb"
-            showCursor={false}
-            showArea={false}
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <VelocityTimeChart
+          points={phiSeries}
+          domainPoints={phiSeries}
+          currentTime={tNow}
+          tMax={FARADAY_CHART_DURATION}
+          tDomain={[0, FARADAY_CHART_DURATION]}
+          vRange={phiRange}
+          title="Φ − t 图（磁通量）"
+          xLabel="t/s"
+          yLabel="Φ/Wb"
+          showCursor={false}
+          showArea={false}
+          series="primary"
+          className="w-full h-full"
+        >
+          <FaradayCursor
+            t={tNow}
+            y={currentState.phi}
+            label="Φ"
+            unit="Wb"
+            digits={3}
             series="primary"
-            className="w-full h-full"
-          >
-            <FaradayCursor
-              t={tNow}
-              y={currentState.phi}
-              label="Φ"
-              unit="Wb"
-              digits={3}
-              series="primary"
-            />
-          </VelocityTimeChart>
-        </div>
-
-        <div style={{ flex: 1, minHeight: 0 }}>
-          <VelocityTimeChart
-            points={emfSeries}
-            domainPoints={emfSeries}
-            currentTime={tNow}
-            tMax={FARADAY_CHART_DURATION}
-            tDomain={[0, FARADAY_CHART_DURATION]}
-            vRange={emfRange}
-            title="E − t 图（感应电动势）"
-            xLabel="t/s"
-            yLabel="E/V"
-            showCursor={false}
-            showArea={false}
-            series="warm"
-            className="w-full h-full"
-          >
-            {emfIsZero && <ZeroEmfNote />}
-            <FaradayCursor
-              t={tNow}
-              y={currentState.emf}
-              label="E"
-              unit="V"
-              digits={2}
-              series="warm"
-            />
-          </VelocityTimeChart>
-        </div>
+          />
+        </VelocityTimeChart>
       </div>
-    </foreignObject>
+
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <VelocityTimeChart
+          points={emfSeries}
+          domainPoints={emfSeries}
+          currentTime={tNow}
+          tMax={FARADAY_CHART_DURATION}
+          tDomain={[0, FARADAY_CHART_DURATION]}
+          vRange={emfRange}
+          title="E − t 图（感应电动势）"
+          xLabel="t/s"
+          yLabel="E/V"
+          showCursor={false}
+          showArea={false}
+          series="warm"
+          className="w-full h-full"
+        >
+          {emfIsZero && <ZeroEmfNote />}
+          <FaradayCursor
+            t={tNow}
+            y={currentState.emf}
+            label="E"
+            unit="V"
+            digits={2}
+            series="warm"
+          />
+        </VelocityTimeChart>
+      </div>
+    </div>
   )
 }

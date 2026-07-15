@@ -1,6 +1,8 @@
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
+import { SCENE_COLORS, CHART_COLORS, PHYSICS_COLORS } from '@/theme/physics'
 import { AnimationSvgCanvas } from '@/components/Layout'
+import { RelationChart } from '@/components/Chart'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -141,22 +143,51 @@ export default function MomentumAnimation() {
   const mapMomentumBarH = (pVal: number) => (Math.abs(pVal) / (MOMENTUM_PARAM_BOUNDS.mMax * MOMENTUM_PARAM_BOUNDS.vMax)) * MOMENTUM_LAYOUT.momentumBarMaxHeight
 
   return (
-    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
-      <MomentumScene
-        canvasSize={canvasSize} sceneScale={sceneScale}
-        isAdvanced={isAdvanced} showVectors={showVectors}
-        m={m} v={v} p_basic={p_basic} R_basic={R_basic} basicBallX={basicBallX}
-        ballCenterY={ballCenterY} groundY={groundY}
-        mapArrowLen={mapArrowLen} mapMomentumBarH={mapMomentumBarH}
-        mA={mA} mB={mB} R_A={R_A} R_B={R_B}
-        clampedPosAx={clampedPosAx} clampedPosBx={clampedPosBx}
-        currentVA={currentVA} currentVB={currentVB}
-        pA={pA} pB={pB} pTotal={pTotal} EkA={EkA} EkB={EkB}
-        xCm={xCm} hasCollided={hasCollided} collisionTime={collisionTime} time={time}
-        showEkCard={showEkCard} cardWidth={cardWidth} cardHeight={cardHeight}
-        cardX={cardX} cardY={cardY}
-        ekCurvePointsA={ekCurvePointsA} ekCurvePointsB={ekCurvePointsB} ekMax={ekMax}
-      />
-    </AnimationSvgCanvas>
+    <div className="w-full h-full relative">
+      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+        <MomentumScene
+          canvasSize={canvasSize} sceneScale={sceneScale}
+          isAdvanced={isAdvanced} showVectors={showVectors}
+          m={m} v={v} p_basic={p_basic} R_basic={R_basic} basicBallX={basicBallX}
+          ballCenterY={ballCenterY} groundY={groundY}
+          mapArrowLen={mapArrowLen} mapMomentumBarH={mapMomentumBarH}
+          mA={mA} mB={mB} R_A={R_A} R_B={R_B}
+          clampedPosAx={clampedPosAx} clampedPosBx={clampedPosBx}
+          currentVA={currentVA} currentVB={currentVB}
+          pA={pA} pB={pB} pTotal={pTotal}
+          xCm={xCm} hasCollided={hasCollided} collisionTime={collisionTime} time={time}
+        />
+      </AnimationSvgCanvas>
+
+      {/* HTML 层：Ek-p 关系图 */}
+      {showEkCard && (
+        <div
+          className="absolute"
+          style={{
+            left: cardX,
+            top: cardY,
+            width: cardWidth,
+            height: cardHeight,
+            background: SCENE_COLORS.labels.glassPanelBg,
+            borderRadius: 8,
+            border: `0.8px solid ${CHART_COLORS.axisLine}`,
+            boxShadow: `0 4px 12px rgba(0,0,0,0.12)`,
+            padding: 4,
+          }}
+        >
+          <RelationChart
+            points={ekCurvePointsA}
+            additionalSeries={[{ points: ekCurvePointsB, label: 'B球', series: 'secondary', strokeDasharray: [4, 3] }]}
+            xDomain={[0.5, 10]} yDomain={[0, ekMax * 1.15]}
+            xLabel="m (kg)" yLabel="E_k (J)" title="E_k = p²/(2m) 关系图"
+            color={PHYSICS_COLORS.momentum} strokeWidth={1.5} series="primary"
+            markers={[
+              { axis: 'point', x: mA, y: EkA, label: 'A', color: PHYSICS_COLORS.momentum },
+              { axis: 'point', x: mB, y: EkB, label: 'B', color: PHYSICS_COLORS.impulse },
+            ]}
+          />
+        </div>
+      )}
+    </div>
   )
 }

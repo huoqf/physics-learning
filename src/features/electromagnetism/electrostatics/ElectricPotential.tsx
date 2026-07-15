@@ -20,9 +20,8 @@ export default function ElectricPotential() {
   const updateParam = useAnimationStore((s) => s.updateParam)
   const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
 
-  const { containerRef, canvasSize } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
-  const animSvgRef = useRef<SVGSVGElement>(null)
   const chartSvgRef = useRef<SVGSVGElement>(null)
 
   // 读取左侧控制参数
@@ -39,9 +38,8 @@ export default function ElectricPotential() {
   const hChart = hTotal / 2
   const hAnim = hTotal / 2
 
-  // 手绘路径状态（物理坐标）
+  // 手绘路径状态（物理坐标，由动画场景回调更新）
   const [handPath, setHandPath] = useState<PathPoint[]>([])
-  const [isDrawing, setIsDrawing] = useState(false)
 
   // 1. 同步 A、B 点电势到 store
   useEffect(() => {
@@ -87,6 +85,7 @@ export default function ElectricPotential() {
     w,
     hAnim,
     hChart,
+    vp,
   })
 
   // 同步 Hover 切线斜率到 Store
@@ -99,65 +98,11 @@ export default function ElectricPotential() {
     if (handPath.length === 0) return ''
     return handPath
       .map((p, idx) => {
-        const { cx, cy } = physics.physicsToCanvas(p.x, p.y)
+        const { cx, cy } = physics.physicsToDesign(p.x, p.y)
         return `${idx === 0 ? 'M' : 'L'} ${cx.toFixed(1)},${cy.toFixed(1)}`
       })
       .join(' ')
   }, [handPath, physics])
-
-  // 4. 手绘路径绘制事件
-  const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (drawMode !== 1 || isPlaying) return
-    const svg = animSvgRef.current
-    if (!svg) return
-    const { x: xc, y: yc } = (() => { const r = svg.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top } })()
-    const { xp, yp } = physics.canvasToPhysics(xc, yc)
-
-    // 检查是否在 A 锚点附近 (小于 0.45 米)
-    const distToA = Math.hypot(xp - X_A, yp - Y_A)
-    if (distToA < 0.45) {
-      setIsDrawing(true)
-      setHandPath([{ x: X_A, y: Y_A }])
-      svg.setPointerCapture(e.pointerId)
-    }
-  }
-
-  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (!isDrawing) return
-    const svg = animSvgRef.current
-    if (!svg) return
-    const { x: xc, y: yc } = (() => { const r = svg.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top } })()
-    const { xp, yp } = physics.canvasToPhysics(xc, yc)
-
-    // 限制在下半屏的合理物理界限内
-    const xpClamped = Math.max(0.1, Math.min(6.9, xp))
-    const ypClamped = Math.max(0.1, Math.min(3.4, yp))
-
-    const distToQ = Math.hypot(xpClamped - X_Q, ypClamped - Y_Q)
-    if (distToQ < 0.3) return // 防止路径穿过场源中心点
-
-    const lastPt = handPath[handPath.length - 1]
-    const distToLast = Math.hypot(xpClamped - lastPt.x, ypClamped - lastPt.y)
-
-    // 物理距离大于 0.08 米才记录新点
-    if (distToLast > 0.08) {
-      setHandPath((prev) => [...prev, { x: xpClamped, y: ypClamped }])
-    }
-  }
-
-  const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (!isDrawing) return
-    setIsDrawing(false)
-    animSvgRef.current?.releasePointerCapture(e.pointerId)
-
-    if (handPath.length < 3) {
-      setHandPath([])
-      return
-    }
-
-    // 没画到B，强行闭合到 B 保持轨道完整
-    setHandPath((prev) => [...prev, { x: X_B, y: Y_B }])
-  }
 
   // 上半屏图表的 Hover 交互
   const handleChartPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -189,6 +134,7 @@ export default function ElectricPotential() {
       <ElectricPotentialAnimScene
         w={w}
         hAnim={hAnim}
+        vp={vp}
         physics={physics}
         drawMode={drawMode}
         isPlaying={isPlaying}
@@ -196,10 +142,7 @@ export default function ElectricPotential() {
         qProbe={qProbe}
         handPath={handPath}
         handPathD={handPathD}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        animSvgRef={animSvgRef}
+        onHandPathChange={setHandPath}
         font={font}
       />
     </div>

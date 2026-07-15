@@ -1,7 +1,5 @@
 import { PhysicsVectorArrow, PhysicsGround } from '@/components/Physics'
-import { PHYSICS_COLORS, SCENE_COLORS, CHART_COLORS, CANVAS_STYLE, withAlpha } from '@/theme/physics'
-
-import { RelationChart } from '@/components/Chart'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
 import type { SceneScale } from '@/scene'
 import { MOMENTUM_LAYOUT } from './MomentumAnimation'
 
@@ -21,15 +19,8 @@ interface MomentumSceneProps {
   clampedPosAx: number; clampedPosBx: number
   currentVA: number; currentVB: number
   pA: number; pB: number; pTotal: number
-  EkA: number; EkB: number
   xCm: number
   hasCollided: boolean; collisionTime: number; time: number
-  // Ek-p 图
-  showEkCard: boolean
-  cardWidth: number; cardHeight: number; cardX: number; cardY: number
-  ekCurvePointsA: Array<{ x: number; y: number }>
-  ekCurvePointsB: Array<{ x: number; y: number }>
-  ekMax: number
 }
 
 export function MomentumScene({
@@ -37,10 +28,8 @@ export function MomentumScene({
   m, v, p_basic, R_basic, basicBallX, ballCenterY, groundY,
   mapArrowLen, mapMomentumBarH,
   mA, mB, R_A, R_B, clampedPosAx, clampedPosBx,
-  currentVA, currentVB, pA, pB, pTotal, EkA, EkB, xCm,
+  currentVA, currentVB, pA, pB, pTotal, xCm,
   hasCollided, collisionTime, time,
-  showEkCard, cardWidth, cardHeight, cardX, cardY,
-  ekCurvePointsA, ekCurvePointsB, ekMax,
 }: MomentumSceneProps) {
   return (
     <>
@@ -185,29 +174,6 @@ export function MomentumScene({
         </g>
       )}
 
-      {/* Ek-p 关系图 */}
-      {showEkCard && (
-        <g transform={`translate(${cardX}, ${cardY})`}>
-          <rect width={cardWidth} height={cardHeight} fill={SCENE_COLORS.labels.glassPanelBg}
-            rx={8} stroke={CHART_COLORS.axisLine} strokeWidth={0.8}
-            filter={`drop-shadow(0 4px 12px ${withAlpha('#000000', 0.12)})`} />
-          <foreignObject x={4} y={4} width={cardWidth - 8} height={cardHeight - 8}
-            style={{ pointerEvents: 'none' }}>
-            <div style={{ width: '100%', height: '100%' }}>
-              <RelationChart
-                points={ekCurvePointsA}
-                additionalSeries={[{ points: ekCurvePointsB, label: 'B球', series: 'secondary', strokeDasharray: [4, 3] }]}
-                xDomain={[0.5, 10]} yDomain={[0, ekMax * 1.15]}
-                xLabel="m (kg)" yLabel="E_k (J)" title="E_k = p²/(2m) 关系图"
-                color={PHYSICS_COLORS.momentum} strokeWidth={1.5} series="primary"
-                markers={[
-                  { axis: 'point', x: mA, y: EkA, label: 'A', color: PHYSICS_COLORS.momentum },
-                  { axis: 'point', x: mB, y: EkB, label: 'B', color: PHYSICS_COLORS.impulse },
-                ]} />
-            </div>
-          </foreignObject>
-        </g>
-      )}
     </>
   )
 }

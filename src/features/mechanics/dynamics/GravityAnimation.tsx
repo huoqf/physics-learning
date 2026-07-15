@@ -1,5 +1,5 @@
 import { VectorArrow, VectorDefs } from '@/components/Physics'
-import { useState, useRef, useCallback, useMemo } from 'react'
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { clientToContainerPoint } from '@/utils'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -107,37 +107,10 @@ export default function GravityAnimation() {
     return pts
   }, [])
 
-  // ── 图表反向拖拽调距 ──
-  const handleDragChart = useCallback((clientX: number, svgRect: DOMRect) => {
-    // foreignObject 占据卡片内部 x=4, w=cardWidth-8，用比例估算 r
-    const { x: containerX } = clientToContainerPoint(clientX, 0, svgRect)
-    const clickX = containerX - cardX - 4
-    const rRatio = clickX / (cardWidth - 8)
-    const targetR = R_DOMAIN[0] + rRatio * (R_DOMAIN[1] - R_DOMAIN[0])
-    const finalR = Math.max(R_DOMAIN[0], Math.min(R_DOMAIN[1], targetR))
-
-    if (mode === 1 && presetParam !== 0) {
-      setParams({
-        ...params,
-        r: finalR,
-        preset: presetParam
-      })
-    } else {
-      updateParam('r', finalR)
-    }
-  }, [cardX, cardWidth, mode, presetParam, params, setParams, updateParam])
-
+  // ── 天体拖拽 ──
   const handleMouseDown = (target: 'obj1' | 'obj2') => {
     if (isDraggingChartRef.current) return
     setDragTarget(target)
-  }
-
-  const handleChartMouseDown = (e: React.MouseEvent<SVGElement>) => {
-    if (dragTarget !== 'none') return
-    isDraggingChartRef.current = true
-    const rect = svgRef.current?.getBoundingClientRect()
-    if (!rect) return
-    handleDragChart(e.clientX, rect)
   }
 
   const handleSvgMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
@@ -145,7 +118,7 @@ export default function GravityAnimation() {
     if (!rect) return
 
     if (dragTarget !== 'none') {
-      // 1. 处理天体拖拽
+      // 处理天体拖拽
       const { x: mouseX } = clientToContainerPoint(e.clientX, 0, rect)
       let newR = r
       if (dragTarget === 'obj2') {
@@ -160,9 +133,6 @@ export default function GravityAnimation() {
       } else {
         updateParam('r', finalR)
       }
-    } else if (isDraggingChartRef.current) {
-      // 2. 处理画中画拖拽
-      handleDragChart(e.clientX, rect)
     }
   }
 
@@ -170,6 +140,51 @@ export default function GravityAnimation() {
     setDragTarget('none')
     isDraggingChartRef.current = false
   }
+
+  // ── HTML 层图表反向拖拽调距 ──
+  const chartDivRef = useRef<HTMLDivElement>(null)
+
+  const handleDragChart = useCallback((clientX: number) => {
+    const div = chartDivRef.current
+    if (!div) return
+    const rect = div.getBoundingClientRect()
+    const clickX = clientX - rect.left
+    const rRatio = clickX / rect.width
+    const targetR = R_DOMAIN[0] + rRatio * (R_DOMAIN[1] - R_DOMAIN[0])
+    const finalR = Math.max(R_DOMAIN[0], Math.min(R_DOMAIN[1], targetR))
+
+    if (mode === 1 && presetParam !== 0) {
+      setParams({
+        ...params,
+        r: finalR,
+        preset: presetParam
+      })
+    } else {
+      updateParam('r', finalR)
+    }
+  }, [mode, presetParam, params, setParams, updateParam])
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingChartRef.current) return
+      handleDragChart(e.clientX)
+    }
+    const handleMouseUp = () => {
+      isDraggingChartRef.current = false
+    }
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [handleDragChart])
+
+  const handleChartMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (dragTarget !== 'none') return
+    isDraggingChartRef.current = true
+    handleDragChart(e.clientX)
+  }, [dragTarget, handleDragChart])
 
   // ── 辅助网格（已移除）──
   const gridLines = null
@@ -434,56 +449,45 @@ export default function GravityAnimation() {
           </g>
         )}
 
-        {/* 7. 画中画：平方反比 F-r 曲线（RelationChart） */}
-        {showChart === 1 && (
-          <g transform={`translate(${cardX}, ${cardY})`}>
-            {/* 毛玻璃卡片背景 */}
-            <rect
-              width={cardWidth}
-              height={cardHeight}
-              fill={SCENE_COLORS.labels.glassPanelBg}
-              rx={8}
-              stroke={CHART_COLORS.axisLine}
-              strokeWidth={0.8}
-              filter="url(#card-shadow)"
-            />
-
-            {/* RelationChart 主体 */}
-            <foreignObject
-              x={4} y={4}
-              width={cardWidth - 8} height={cardHeight - 8}
-              style={{ pointerEvents: 'none' }}
-            >
-              <div style={{ width: '100%', height: '100%' }}>
-                <RelationChart
-                  points={frPoints}
-                  xDomain={[R_DOMAIN[0], R_DOMAIN[1]]}
-                  yDomain={[0, 1]}
-                  xLabel="间距 r"
-                  yLabel="力 F (归一化)"
-                  title="平方反比律 F - r 关系曲线"
-                  color={PHYSICS_COLORS.gravity}
-                  strokeWidth={1.5}
-                  cursorX={r}
-                  cursorLabel={(_x, y) => `F=${y.toFixed(3)}`}
-                  markers={[]}
-                />
-              </div>
-            </foreignObject>
-
-            {/* 拖动图表热区 */}
-            <rect
-              x={0}
-              y={0}
-              width={cardWidth}
-              height={cardHeight}
-              fill="transparent"
-              className="cursor-ew-resize"
-              onMouseDown={handleChartMouseDown}
-            />
-          </g>
-        )}
       </svg>
+
+      {/* 7. HTML 层画中画：平方反比 F-r 曲线（RelationChart） */}
+      {showChart === 1 && (
+        <div
+          ref={chartDivRef}
+          className="absolute cursor-ew-resize"
+          style={{
+            left: cardX,
+            top: cardY,
+            width: cardWidth,
+            height: cardHeight,
+          }}
+          onMouseDown={handleChartMouseDown}
+        >
+          <div className="w-full h-full rounded-lg overflow-hidden"
+            style={{
+              background: SCENE_COLORS.labels.glassPanelBg,
+              border: `0.8px solid ${CHART_COLORS.axisLine}`,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              padding: 4,
+            }}
+          >
+            <RelationChart
+              points={frPoints}
+              xDomain={[R_DOMAIN[0], R_DOMAIN[1]]}
+              yDomain={[0, 1]}
+              xLabel="间距 r"
+              yLabel="力 F (归一化)"
+              title="平方反比律 F - r 关系曲线"
+              color={PHYSICS_COLORS.gravity}
+              strokeWidth={1.5}
+              cursorX={r}
+              cursorLabel={(_x, y) => `F=${y.toFixed(3)}`}
+              markers={[]}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

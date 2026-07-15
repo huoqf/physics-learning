@@ -1,7 +1,7 @@
 # VIEWPORT 架构统一方案
 
 > 编写时间：2026-07-12
-> 状态：**Phase 0-6 + VectorArrow 改革 Phase 1-4 全部完成**
+> 状态：**Phase 0-7 + VectorArrow 改革 Phase 1-9 全部完成，存量页面已清零**
 > 目标：逐步统一 VIEWPORT 实现组件，覆盖 SVG/Canvas，完成实际分辨率测量、画面映射坐标转化、坐标对齐
 
 ---
@@ -176,17 +176,24 @@ useSceneScale（物理坐标 → 设计坐标）
 
 ---
 
-## 七、剩余迁移清单 ✅ 全部清零
+## 七、剩余迁移清单
 
-以下迁移项目已全部完成（Phase 6）：
+### 已全部清零（Phase 6）
 
 - ✅ `createSceneScaleFromViewport` — 4 个文件已迁移到 `useSceneScale`
 - ✅ `useCanvasSize`（非 CenterExtra）— 14 个文件已迁移到 `useAnimationViewport`
-- ✅ VectorArrow `origin` → `originPixel` — 44 个文件已完成
+- ✅ VectorArrow `origin` → `originPixel` → `originDesign` — 44 个文件已完成
 
 ### 仍使用 `useCanvasSize` 的 CenterExtra 文件（7个，无需迁移）
 
 400×180 侧栏小画布，不需要 viewport 体系：IntermolecularForcesCenterExtra、ClapeyronCenterExtra、WeightlessnessCenterExtra、NewtonSecondCenterExtra、FrictionCenterExtra、CircuitAnalysisCenterExtra、AccelerationCenterExtra（已迁移到 useAnimationViewport 但仍有 CanvasSize 类型引用）
+
+### 未接入标准 VIEWPORT 路径的存量页面（已全部清零）
+
+| 页面 | 迁移内容 | 状态 |
+|------|---------|:----:|
+| `ElectricPotential` | hook 输出设计坐标 + `AnimationSvgCanvas` + `vp.transform` + `useViewportPointer` | ✅ |
+| `ProjectileAnimation` | `AnimationSvgCanvas` + `vp.transform`，移除手动 viewport 计算 | ✅ |
 
 ---
 
@@ -213,6 +220,8 @@ useSceneScale（物理坐标 → 设计坐标）
 |--------|--------|
 | `useCanvasSize + useViewport` | `useAnimationViewport` |
 | `computeScale + physicsToCanvasWithOrigin` | `useSceneScale + worldToDesign` |
+| `physicsToCanvasWithOrigin`（在 `<g transform={vp.transform}>` 内） | `physicsToDesignWithOrigin`（输出设计坐标）或 `useSceneScale + worldToDesign` |
+| `physicsToCanvasWithOrigin`（原始 SVG，无 vp.transform） | 保留（输出容器像素，语义正确） |
 | `createSceneScaleFromViewport('visibleArea')` | `useSceneScale({ anchor: 'viewport' })` |
 | `createSceneScaleFromViewport('centerScale')` | `useSceneScale({ anchor: 'center', physicsScaleDesign })` |
 | `createSceneScaleFromViewport('transform')` | `useSceneScale({ anchor: 'design' })` |
@@ -235,6 +244,8 @@ useSceneScale（物理坐标 → 设计坐标）
 | C | Canvas DPR 清零 | ✅ |
 | 5 | 非标准 preset 评估 | ✅ |
 | 6 | createSceneScaleFromViewport/useCanvasSize/VectorArrow origin 清零 | ✅ |
+| 7 | VectorArrow 坐标体系改革 + physicsToCanvas 迁移 + 项目规范更新 | ✅ |
+| 8 | 存量页面 VIEWPORT 迁移（ElectricPotential + ProjectileAnimation） | ✅ |
 
 ### Phase 4.5 bug 修复记录
 

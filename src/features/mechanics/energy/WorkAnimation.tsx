@@ -153,7 +153,7 @@ export default function WorkAnimation() {
   const estProjEndX = (basicResult.Fx >= 0 ? 1 : -1) * estFxArrowLen
 
   return (
-    <div ref={containerRef} className="w-full h-full">
+    <div ref={containerRef} className="w-full h-full relative">
       <svg width={canvasSize.width} height={canvasSize.height} className="bg-white rounded-lg shadow-inner">
         <defs>
           <linearGradient id="block-body-grad" x1="0" y1="0" x2="1" y2="0">
@@ -169,16 +169,7 @@ export default function WorkAnimation() {
         {/* ═══ 上半部: 图表区（左右并列）═══ */}
         {mode === 0 ? (
           <>
-            {/* 基础模式：左 v-t，右 F-s */}
-            <g transform={`translate(${chartLeft}, ${chartTop})`}>
-              <WorkVTChart
-                canvasSize={{ width: leftChartW, height: chartH }}
-                font={font}
-                kinematics={kinematics}
-                currentTime={time}
-                maxAnimTime={maxAnimTime}
-              />
-            </g>
+            {/* 基础模式：左 v-t (HTML 层)，右 F-s */}
             <line x1={chartMid} y1={chartTop} x2={chartMid} y2={chartBottom}
               stroke={CANVAS_COLORS.grid} strokeWidth={STROKE.groundLine} />
             <g transform={`translate(${chartMid}, ${chartTop})`}>
@@ -429,6 +420,26 @@ export default function WorkAnimation() {
 
         </g>
       </svg>
+
+      {/* HTML 层：基础模式左 v-t 图 */}
+      {mode === 0 && (
+        <div
+          className="absolute"
+          style={{
+            left: chartLeft,
+            top: chartTop,
+            width: leftChartW,
+            height: chartH,
+          }}
+        >
+          <WorkVTChart
+            font={font}
+            kinematics={kinematics}
+            currentTime={time}
+            maxAnimTime={maxAnimTime}
+          />
+        </div>
+      )}
     </div>
   )
 }

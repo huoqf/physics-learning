@@ -188,12 +188,6 @@ export default function PotentialEnergyAnimation() {
           barW_H={barW_H} barDeltaEp_H={barDeltaEp_H} state={state} deltaEp={deltaEp}
           font={font} smallFont={smallFont} />
 
-        {/* 右侧图表 */}
-        <EnergyTimeChart mode={mode} chartLeft={chartLeft} chartWidth={chartWidth}
-          barAreaBottom={barAreaBottom} etAreaBottom={etAreaBottom}
-          visiblePoints={visiblePoints} springCurvePoints={springCurvePoints}
-          tMax={tMax} gravityMaxE={gravityMaxE} springMaxE={springMaxE} state={state} />
-
         {/* 底部标注 */}
         <line x1={padding} y1={bottomY - 6} x2={vp.visibleW - padding} y2={bottomY - 6} stroke={CANVAS_COLORS.grid} strokeWidth={0.5} />
         {bottomLabels.map((item, idx) => {
@@ -207,6 +201,12 @@ export default function PotentialEnergyAnimation() {
           )
         })}
       </svg>
+
+      {/* HTML 层：右侧图表 */}
+      <EnergyTimeChart mode={mode} chartLeft={chartLeft} chartWidth={chartWidth}
+        barAreaBottom={barAreaBottom} etAreaBottom={etAreaBottom}
+        visiblePoints={visiblePoints} springCurvePoints={springCurvePoints}
+        tMax={tMax} gravityMaxE={gravityMaxE} springMaxE={springMaxE} state={state} />
     </div>
   )
 }

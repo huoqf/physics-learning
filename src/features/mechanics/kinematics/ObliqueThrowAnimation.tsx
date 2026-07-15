@@ -173,7 +173,7 @@ export default function ObliqueThrowAnimation() {
   const {
     vtWidth, vtHeight, vtX, vtY, vtXMax, vtVMax,
     vtPointsVx, vtDomainVx, vtPointsVy, vtDomainVy,
-    handleSvgMouseMove, handleSvgMouseUp, handleChartMouseDown,
+    handleChartMouseDown,
   } = useObliqueThrowLayout(
     trajectory, vp,
     { originX: OBLIQUE_THROW_LAYOUT.originX, rightPadding: OBLIQUE_THROW_LAYOUT.rightPadding },
@@ -241,9 +241,6 @@ export default function ObliqueThrowAnimation() {
         width={canvasSize.width}
         height={canvasSize.height}
         className="bg-white rounded-lg shadow-inner"
-        onMouseMove={handleSvgMouseMove}
-        onMouseUp={handleSvgMouseUp}
-        onMouseLeave={handleSvgMouseUp}
       >
         {/* ========== defs 渐变与材质 ========== */}
         <defs>
@@ -390,31 +387,42 @@ export default function ObliqueThrowAnimation() {
         )}
         </g>
 
-        {/* ========== 右上角画中画 v-t 图像 ========== */}
-        <g transform={`translate(${vtX}, ${vtY})`}>
-          <rect width={vtWidth} height={vtHeight} fill={SCENE_COLORS.labels.glassPanelBg} rx={8}
-            stroke={CHART_COLORS.axisLine} strokeWidth={0.8}
-            filter={`drop-shadow(0 4px 12px ${SCENE_COLORS.effects.shadowLight})`} />
-          <foreignObject x={4} y={4} width={vtWidth - 8} height={vtHeight - 8} style={{ pointerEvents: 'none' }}>
-            <div style={{ width: '100%', height: '100%' }}>
-              <VelocityTimeChart
-                mode="animated"
-                points={vtPointsVx}
-                domainPoints={vtDomainVx}
-                additionalSeries={[{ points: vtPointsVy, domainPoints: vtDomainVy, label: 'vᵧ', series: 'secondary' }]}
-                currentTime={effectiveTime}
-                tMax={vtXMax}
-                vRange={[-vtVMax, vtVMax]}
-                title="速度分量-时间 (v-t 图)"
-                showCursor={!isLanded}
-                showGrid={false}
-              />
-            </div>
-          </foreignObject>
-          <rect x={0} y={0} width={vtWidth} height={vtHeight} fill="transparent"
-            className="cursor-ew-resize" onMouseDown={handleChartMouseDown} />
-        </g>
       </svg>
+
+      {/* ========== HTML 层右上角画中画 v-t 图像 ========== */}
+      <div
+        data-vt-chart
+        className="absolute cursor-ew-resize"
+        style={{
+          left: vtX,
+          top: vtY,
+          width: vtWidth,
+          height: vtHeight,
+        }}
+        onMouseDown={handleChartMouseDown}
+      >
+        <div className="w-full h-full rounded-lg overflow-hidden"
+          style={{
+            background: SCENE_COLORS.labels.glassPanelBg,
+            boxShadow: `0 4px 12px ${SCENE_COLORS.effects.shadowLight}`,
+            border: `0.8px solid ${CHART_COLORS.axisLine}`,
+            padding: 4,
+          }}
+        >
+          <VelocityTimeChart
+            mode="animated"
+            points={vtPointsVx}
+            domainPoints={vtDomainVx}
+            additionalSeries={[{ points: vtPointsVy, domainPoints: vtDomainVy, label: 'vᵧ', series: 'secondary' }]}
+            currentTime={effectiveTime}
+            tMax={vtXMax}
+            vRange={[-vtVMax, vtVMax]}
+            title="速度分量-时间 (v-t 图)"
+            showCursor={!isLanded}
+            showGrid={false}
+          />
+        </div>
+      </div>
     </div>
   )
 }

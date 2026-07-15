@@ -1,6 +1,6 @@
 import { VectorArrow, VectorDefs, Ball, ParticleTrajectory } from '@/components/Physics'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
-import { physicsToDesignWithOrigin, clientToContainerPoint } from '@/utils'
 import React, { useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -25,13 +25,13 @@ const PHYSICS_HEIGHT = 10.0
 
 /** 平抛动画布局常量 */
 const PROJECTILE_LAYOUT = {
-  /** 物理原点 X 偏移 (px) */
+  /** 物理原点 X 偏移 (design-unit) */
   originX: 50,
   /** 物理原点 Y 位置占画布高度的比例 */
   originYRatio: 0.15,
   /** 地面 Y 位置占画布高度的比例 */
   groundYRatio: 0.85,
-  /** 右侧留白 (px) */
+  /** 右侧留白 (design-unit) */
   rightPadding: 45,
   /** 速度矢量缩放因子 (px per m/s) */
   velocityVectorScale: 3.5,
@@ -52,7 +52,6 @@ export default function ProjectileAnimation() {
     setTime: s.setTime,
     }))
   )
-  // 100×100 归一化坐标系：保留原 raw-SVG 坐标语义，仅统一 Viewport Hook 入口
   const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: PROJ_DESIGN })
   const { font } = canvasSize
 
@@ -99,13 +98,10 @@ export default function ProjectileAnimation() {
     [trajectory]
   )
 
-  // ── 3. 铺满式物理舞台参数 ─────────────────────────────────
-  const originX = vp.visibleX + PROJECTILE_LAYOUT.originX
-  const originY = vp.visibleY + vp.visibleH * PROJECTILE_LAYOUT.originYRatio
-  const groundY = vp.visibleY + vp.visibleH * PROJECTILE_LAYOUT.groundYRatio
-  const designOriginX = (originX - vp.tx) / vp.scale
-  const designOriginY = (originY - vp.ty) / vp.scale
-  const designGroundY = (groundY - vp.ty) / vp.scale
+  // ── 3. 设计坐标系下的舞台参数 ─────────────────────────────
+  const designOriginX = PROJECTILE_LAYOUT.originX
+  const designOriginY = PROJ_DESIGN.height * PROJECTILE_LAYOUT.originYRatio
+  const designGroundY = PROJ_DESIGN.height * PROJECTILE_LAYOUT.groundYRatio
   const stageHeight = designGroundY - designOriginY
 
   // 获取轨迹的水平最大位移，用以动态解算 scaleX
@@ -113,10 +109,10 @@ export default function ProjectileAnimation() {
   const lastPointVac = trajectory.vacuumPoints[trajectory.vacuumPoints.length - 1]
   const maxX = Math.max(lastPoint.x, lastPointVac.x, 1)
 
-  // 双轴自适应等比例缩放（取最小值以保证水平与竖直方向绝对不出界）
-  const scaleX = (vp.visibleW - PROJECTILE_LAYOUT.originX - PROJECTILE_LAYOUT.rightPadding) / maxX
+  // 双轴自适应等比例缩放
+  const scaleX = (PROJ_DESIGN.width - PROJECTILE_LAYOUT.originX - PROJECTILE_LAYOUT.rightPadding) / maxX
   const scaleY = stageHeight / PHYSICS_HEIGHT
-  const scale = Math.min(scaleX, scaleY) / vp.scale
+  const scale = Math.min(scaleX, scaleY)
 
   const projSceneScale = useSceneScale({
     vp,
@@ -127,7 +123,7 @@ export default function ProjectileAnimation() {
     customScaleX: 1,
     customScaleY: 1,
     refMagnitudes: { velocity: Math.max(v0x, 10) },
-    maxVectorLength: Math.min(vp.visibleW, vp.visibleH) * 0.3,
+    maxVectorLength: Math.min(PROJ_DESIGN.width, PROJ_DESIGN.height) * 0.3,
   })
 
   // 当前播放时刻限制
@@ -159,17 +155,24 @@ export default function ProjectileAnimation() {
     [effectiveTime, trajectory.vacuumPoints, interpolatePoints]
   )
 
-  // 设计坐标转换（通过统一坐标工具，物理 Y 轴向上为正）
-  const ballCanvas = physicsToDesignWithOrigin(currentState.x, currentState.y, designOriginX, designOriginY, scale, vp)
-  const vacBallCanvas = physicsToDesignWithOrigin(vacuumState.x, vacuumState.y, designOriginX, designOriginY, scale, vp)
+  // 设计坐标转换（物理 Y 轴向上为正）
+  const ballDesign = useMemo(() => ({
+    cx: designOriginX + currentState.x * scale,
+    cy: designOriginY - currentState.y * scale,
+  }), [currentState.x, currentState.y, designOriginX, designOriginY, scale])
+
+  const vacBallDesign = useMemo(() => ({
+    cx: designOriginX + vacuumState.x * scale,
+    cy: designOriginY - vacuumState.y * scale,
+  }), [vacuumState.x, vacuumState.y, designOriginX, designOriginY, scale])
 
   const showDoubleTrack = advancedMode === 1 && airResistance > 0 && showVacuumCompare === 1
 
-  // ── 4. 右上角悬浮 v-t 图像尺寸设计 ───────────────────────
-  const vtWidth = Math.max(220, vp.visibleW * 0.35)
-  const vtHeight = Math.max(150, vp.visibleH * 0.34)
-  const vtX = vp.visibleX + vp.visibleW - vtWidth - 20
-  const vtY = 20
+  // ── 4. v-t 图像尺寸与位置（设计坐标） ───────────────────
+  const vtWidth = Math.max(220, PROJ_DESIGN.width * 0.35)
+  const vtHeight = Math.max(150, PROJ_DESIGN.height * 0.34)
+  const vtX = PROJ_DESIGN.width - vtWidth - 5
+  const vtY = 5
 
   const vtXMax = maxTime * 1.15
   const vtVyMin = -g * maxTime * 1.15
@@ -180,25 +183,27 @@ export default function ProjectileAnimation() {
   // ── 5. 动态轨迹曲线路径生成 ─────────────────────────────
   const activeT = Math.min(effectiveTime, groundTime)
 
-  // ParticleTrajectory 所需的点集
+  // ParticleTrajectory 所需的点集（设计坐标）
   const historyPoints = useMemo(() => {
     const pts: { x: number; y: number }[] = []
     for (const pt of trajectory.points) {
       if (pt.t > activeT + 1e-5) break
-      const { cx, cy } = physicsToDesignWithOrigin(pt.x, pt.y, designOriginX, designOriginY, scale, vp)
-      pts.push({ x: cx, y: cy })
+      pts.push({
+        x: designOriginX + pt.x * scale,
+        y: designOriginY - pt.y * scale,
+      })
     }
     return pts
-  }, [trajectory.points, activeT, scale, designOriginX, designOriginY, vp])
+  }, [trajectory.points, activeT, scale, designOriginX, designOriginY])
 
-  // 预测轨迹：有阻力时显示真空理想路径，否则显示完整理论抛物线
+  // 预测轨迹
   const predictedPoints = useMemo(() => {
     const src = showDoubleTrack ? trajectory.vacuumPoints : trajectory.points
-    return src.map((pt) => {
-      const { cx, cy } = physicsToDesignWithOrigin(pt.x, pt.y, designOriginX, designOriginY, scale, vp)
-      return { x: cx, y: cy }
-    })
-  }, [trajectory, showDoubleTrack, scale, designOriginX, designOriginY, vp])
+    return src.map((pt) => ({
+      x: designOriginX + pt.x * scale,
+      y: designOriginY - pt.y * scale,
+    }))
+  }, [trajectory, showDoubleTrack, scale, designOriginX, designOriginY])
 
   const tailPoints = useMemo(() => {
     const tailLen = Math.min(8, historyPoints.length)
@@ -223,43 +228,45 @@ export default function ProjectileAnimation() {
     [trajectory.points]
   )
 
-  // ── 6. 时间游标拖拽手势解算 ─────────────────────────────
+  // ── 6. 时间游标拖拽手势解算（HTML 层图表） ─────────────────
   const isDraggingRef = useRef(false)
+  const chartDivRef = useRef<HTMLDivElement>(null)
 
   const handleDragTime = useCallback(
-    (clientX: number, svgRect: DOMRect) => {
-      const { x: containerX } = clientToContainerPoint(clientX, 0, svgRect)
-      const clickX = containerX - vtX - 4
-      const tClick = (clickX / (vtWidth - 8)) * vtXMax
+    (clientX: number) => {
+      const div = chartDivRef.current
+      if (!div) return
+      const rect = div.getBoundingClientRect()
+      const clickX = clientX - rect.left
+      const tClick = (clickX / rect.width) * vtXMax
       if (tClick >= 0 && tClick <= maxTime) {
         setTime(tClick)
         setIsPlaying(false)
       }
     },
-    [vtX, vtWidth, vtXMax, maxTime, setTime, setIsPlaying]
+    [vtXMax, maxTime, setTime, setIsPlaying]
   )
 
-  const handleSvgMouseMove = useCallback(
-    (e: React.MouseEvent<SVGElement>) => {
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
       if (!isDraggingRef.current) return
-      const svg = e.currentTarget
-      const rect = svg.getBoundingClientRect()
-      handleDragTime(e.clientX, rect)
-    },
-    [handleDragTime]
-  )
-
-  const handleSvgMouseUp = useCallback(() => {
-    isDraggingRef.current = false
-  }, [])
+      handleDragTime(e.clientX)
+    }
+    const handleMouseUp = () => {
+      isDraggingRef.current = false
+    }
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [handleDragTime])
 
   const handleChartMouseDown = useCallback(
-    (e: React.MouseEvent<SVGElement>) => {
+    (e: React.MouseEvent<HTMLDivElement>) => {
       isDraggingRef.current = true
-      const svg = e.currentTarget.closest('svg')
-      if (!svg) return
-      const rect = svg.getBoundingClientRect()
-      handleDragTime(e.clientX, rect)
+      handleDragTime(e.clientX)
     },
     [handleDragTime]
   )
@@ -270,6 +277,7 @@ export default function ProjectileAnimation() {
     const lines: React.ReactElement[] = []
     const gridCols = 12
     const gridRows = 8
+    const stageWidth = PROJ_DESIGN.width - PROJECTILE_LAYOUT.originX - PROJECTILE_LAYOUT.rightPadding
     // 水平网格
     for (let i = 1; i < gridRows; i++) {
       const yPos = designOriginY + (i * stageHeight) / gridRows
@@ -278,7 +286,7 @@ export default function ProjectileAnimation() {
           key={`h-grid-${i}`}
           x1={designOriginX}
           y1={yPos}
-          x2={vp.visibleX + vp.visibleW - 20}
+          x2={PROJ_DESIGN.width - 5}
           y2={yPos}
           stroke={PHYSICS_COLORS.grid}
           strokeWidth={STROKE.grid}
@@ -288,7 +296,7 @@ export default function ProjectileAnimation() {
     }
     // 垂直网格
     for (let i = 1; i < gridCols; i++) {
-      const xPos = designOriginX + (i * (vp.visibleW / vp.scale - PROJECTILE_LAYOUT.originX - PROJECTILE_LAYOUT.rightPadding)) / gridCols
+      const xPos = designOriginX + (i * stageWidth) / gridCols
       lines.push(
         <line
           key={`v-grid-${i}`}
@@ -303,17 +311,14 @@ export default function ProjectileAnimation() {
       )
     }
     return lines
-  }, [showGrid, designOriginY, designGroundY, stageHeight, vp.visibleW, vp.scale, designOriginX, vp.visibleX])
+  }, [showGrid, designOriginY, designGroundY, stageHeight, designOriginX])
 
   return (
     <div ref={containerRef} className="w-full h-full">
-      <svg
-        width={canvasSize.width}
-        height={canvasSize.height}
+      <AnimationSvgCanvas
+        containerRef={containerRef}
+        transform={vp.transform}
         className="bg-white rounded-lg shadow-inner"
-        onMouseMove={handleSvgMouseMove}
-        onMouseUp={handleSvgMouseUp}
-        onMouseLeave={handleSvgMouseUp}
       >
         {/* ========== defs 渐变与材质 ========== */}
         <defs>
@@ -331,13 +336,13 @@ export default function ProjectileAnimation() {
 
         {/* 坐标轴 */}
         <line x1={designOriginX} y1={designOriginY} x2={designOriginX} y2={designGroundY} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axis} />
-        <line x1={designOriginX} y1={designGroundY} x2={canvasSize.width - 15} y2={designGroundY} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axis} />
+        <line x1={designOriginX} y1={designGroundY} x2={PROJ_DESIGN.width - 5} y2={designGroundY} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axis} />
 
         <text x={designOriginX - 10} y={designOriginY + 4} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="end">y = 10m</text>
         <text x={designOriginX - 10} y={designGroundY + 4} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="end">y = 0</text>
-        <text x={canvasSize.width - 25} y={designGroundY + 16} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">x</text>
+        <text x={PROJ_DESIGN.width - 15} y={designGroundY + 16} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">x</text>
 
-        {/* 粒子轨迹（统一组件：预测虚线 + 历史虚线 + 拖尾 + 本体） */}
+        {/* 粒子轨迹 */}
         {historyPoints.length > 0 && (
           <ParticleTrajectory
             historyPoints={historyPoints}
@@ -351,9 +356,8 @@ export default function ProjectileAnimation() {
         {/* 分方向匀速/落体投影球及虚线 */}
         {!isLanded && (
           <>
-            {/* 水平匀速投影球 (Y = designGroundY) */}
             <circle
-              cx={ballCanvas.cx}
+              cx={ballDesign.cx}
               cy={designGroundY}
               r={PROJECTILE_LAYOUT.projectionBallRadius}
               fill="url(#vacuum-sphere-grad)"
@@ -361,27 +365,25 @@ export default function ProjectileAnimation() {
               strokeWidth={0.8}
               strokeDasharray="2,2"
             />
-            {/* 竖直落体投影球 (X = designOriginX) */}
             <circle
               cx={designOriginX}
-              cy={ballCanvas.cy}
+              cy={ballDesign.cy}
               r={PROJECTILE_LAYOUT.projectionBallRadius}
               fill="url(#vacuum-sphere-grad)"
               stroke={PHYSICS_COLORS.velocityY}
               strokeWidth={0.8}
               strokeDasharray="2,2"
             />
-            {/* 主球与投影球之间的参考虚线 */}
-            <line x1={ballCanvas.cx} y1={ballCanvas.cy} x2={ballCanvas.cx} y2={designGroundY} stroke={PHYSICS_COLORS.grid} strokeWidth={0.8} strokeDasharray="3,3" />
-            <line x1={ballCanvas.cx} y1={ballCanvas.cy} x2={designOriginX} y2={ballCanvas.cy} stroke={PHYSICS_COLORS.grid} strokeWidth={0.8} strokeDasharray="3,3" />
+            <line x1={ballDesign.cx} y1={ballDesign.cy} x2={ballDesign.cx} y2={designGroundY} stroke={PHYSICS_COLORS.grid} strokeWidth={0.8} strokeDasharray="3,3" />
+            <line x1={ballDesign.cx} y1={ballDesign.cy} x2={designOriginX} y2={ballDesign.cy} stroke={PHYSICS_COLORS.grid} strokeWidth={0.8} strokeDasharray="3,3" />
           </>
         )}
 
         {/* 真空对照钢球 (进阶模式) */}
         {showDoubleTrack && !isLanded && (
           <Ball
-            cx={vacBallCanvas.cx}
-            cy={vacBallCanvas.cy}
+            cx={vacBallDesign.cx}
+            cy={vacBallDesign.cy}
             r={PROJECTILE_LAYOUT.steelBallRadius}
             type="steelGhost"
             stroke={PHYSICS_COLORS.displacement}
@@ -389,12 +391,11 @@ export default function ProjectileAnimation() {
           />
         )}
 
-        {/* 速度矢量分解箭头 (经典配色) */}
+        {/* 速度矢量分解箭头 */}
         {showVectors && !isLanded && (
           <g>
-            {/* 水平分速度 vx (Blue-500) */}
             <VectorArrow
-              originDesign={{ x: ballCanvas.cx, y: ballCanvas.cy }}
+              originDesign={{ x: ballDesign.cx, y: ballDesign.cy }}
               vector={{ x: currentState.vx, y: 0 }}
               type="velocityX"
               arrowType="physical-schematic"
@@ -402,12 +403,11 @@ export default function ProjectileAnimation() {
               strokeWidth={STROKE.vectorSub}
               pixelLength={vxPxLen}
             />
-            <text x={ballCanvas.cx + projSceneScale.maxVectorLength * 0.3 + 10} y={ballCanvas.cy + 3} fontSize={font(9)} fill={PHYSICS_COLORS.velocityX} fontWeight="bold">vₓ</text>
+            <text x={ballDesign.cx + projSceneScale.maxVectorLength * 0.3 + 10} y={ballDesign.cy + 3} fontSize={font(9)} fill={PHYSICS_COLORS.velocityX} fontWeight="bold">vₓ</text>
 
-            {/* 竖直分速度 vy (Blue-400) */}
             {Math.abs(currentState.vy) > 0.05 && (
               <VectorArrow
-                originDesign={{ x: ballCanvas.cx, y: ballCanvas.cy }}
+                originDesign={{ x: ballDesign.cx, y: ballDesign.cy }}
                 vector={{ x: 0, y: currentState.vy }}
                 type="velocityY"
                 arrowType="physical-schematic"
@@ -416,11 +416,10 @@ export default function ProjectileAnimation() {
                 pixelLength={vyPxLen}
               />
             )}
-            <text x={ballCanvas.cx - 3} y={ballCanvas.cy - projSceneScale.maxVectorLength * 0.3 + 12} fontSize={font(9)} fill={PHYSICS_COLORS.velocityY} fontWeight="bold" textAnchor="middle">vᵧ</text>
+            <text x={ballDesign.cx - 3} y={ballDesign.cy - projSceneScale.maxVectorLength * 0.3 + 12} fontSize={font(9)} fill={PHYSICS_COLORS.velocityY} fontWeight="bold" textAnchor="middle">vᵧ</text>
 
-            {/* 合速度 v (Blue-600) */}
             <VectorArrow
-              originDesign={{ x: ballCanvas.cx, y: ballCanvas.cy }}
+              originDesign={{ x: ballDesign.cx, y: ballDesign.cy }}
               vector={{ x: currentState.vx, y: currentState.vy }}
               type="velocity"
               arrowType="physical-schematic"
@@ -428,60 +427,58 @@ export default function ProjectileAnimation() {
               strokeWidth={STROKE.vectorMain}
               pixelLength={totalPxLen}
             />
-            <text x={ballCanvas.cx + projSceneScale.maxVectorLength * 0.3 + 8} y={ballCanvas.cy - projSceneScale.maxVectorLength * 0.3 + 8} fontSize={font(9)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
+            <text x={ballDesign.cx + projSceneScale.maxVectorLength * 0.3 + 8} y={ballDesign.cy - projSceneScale.maxVectorLength * 0.3 + 8} fontSize={font(9)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
           </g>
         )}
 
         {/* 落地状态 */}
         {isLanded && (
-          <text x={ballCanvas.cx} y={designGroundY - 18} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.displacement} fontWeight="bold" textAnchor="middle">落地</text>
+          <text x={ballDesign.cx} y={designGroundY - 18} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.displacement} fontWeight="bold" textAnchor="middle">落地</text>
         )}
 
-        {/* ========== 右上角：画中画悬浮 v-t 图像（VelocityTimeChart） ========== */}
-        <g transform={`translate(${vtX}, ${vtY})`}>
-          <rect
-            width={vtWidth}
-            height={vtHeight}
-            fill={SCENE_COLORS.labels.glassPanelBg}
-            rx={8}
-            stroke={CHART_COLORS.axisLine}
-            strokeWidth={0.8}
-            filter={`drop-shadow(0 4px 12px ${SCENE_COLORS.effects.shadowLight})`}
-          />
+      </AnimationSvgCanvas>
 
-          <foreignObject x={4} y={4} width={vtWidth - 8} height={vtHeight - 8} style={{ pointerEvents: 'none' }}>
-            <div style={{ width: '100%', height: '100%' }}>
-              <VelocityTimeChart
-                mode="animated"
-                points={vtPointsVx}
-                domainPoints={vtDomainVx}
-                additionalSeries={[
-                  {
-                    points: vtPointsVy,
-                    domainPoints: vtDomainVy,
-                    label: 'vᵧ',
-                    series: 'secondary',
-                  },
-                ]}
-                currentTime={effectiveTime}
-                tMax={vtXMax}
-                vRange={[vtVMin, vtVMax]}
-                title="速度分量-时间 (v-t 图)"
-                showCursor={!isLanded}
-                showGrid={false}
-              />
-            </div>
-          </foreignObject>
-
-          <rect
-            x={0} y={0}
-            width={vtWidth} height={vtHeight}
-            fill="transparent"
-            className="cursor-ew-resize"
-            onMouseDown={handleChartMouseDown}
+      {/* ========== 右上角：HTML 层画中画悬浮 v-t 图像 ========== */}
+      <div
+        ref={chartDivRef}
+        className="absolute cursor-ew-resize"
+        style={{
+          left: vtX * vp.scale + vp.tx,
+          top: vtY * vp.scale + vp.ty,
+          width: vtWidth * vp.scale,
+          height: vtHeight * vp.scale,
+        }}
+        onMouseDown={handleChartMouseDown}
+      >
+        <div className="w-full h-full rounded-lg overflow-hidden"
+          style={{
+            background: SCENE_COLORS.labels.glassPanelBg,
+            boxShadow: `0 4px 12px ${SCENE_COLORS.effects.shadowLight}`,
+            border: `0.8px solid ${CHART_COLORS.axisLine}`,
+            padding: 4,
+          }}
+        >
+          <VelocityTimeChart
+            mode="animated"
+            points={vtPointsVx}
+            domainPoints={vtDomainVx}
+            additionalSeries={[
+              {
+                points: vtPointsVy,
+                domainPoints: vtDomainVy,
+                label: 'vᵧ',
+                series: 'secondary',
+              },
+            ]}
+            currentTime={effectiveTime}
+            tMax={vtXMax}
+            vRange={[vtVMin, vtVMax]}
+            title="速度分量-时间 (v-t 图)"
+            showCursor={!isLanded}
+            showGrid={false}
           />
-        </g>
-      </svg>
+        </div>
+      </div>
     </div>
   )
 }

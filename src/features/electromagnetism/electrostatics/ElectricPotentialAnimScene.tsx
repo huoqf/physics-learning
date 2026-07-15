@@ -1,5 +1,7 @@
 import { VectorArrow } from '@/components/Physics'
-import React, { type RefObject } from 'react'
+import { AnimationSvgCanvas } from '@/components/Layout'
+import { useViewportPointer } from '@/utils'
+import React, { useRef, useState, useCallback } from 'react'
 import { PHYSICS_COLORS, EM_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { radius } from '@/theme/radius'
@@ -7,10 +9,12 @@ import { shadow } from '@/theme/shadow'
 
 import { IDENTITY_SCENE_SCALE } from '@/scene'
 import type { ElectricPotentialPhysicsResult, PathPoint } from './hooks/useElectricPotentialPhysics'
+import { X_A, Y_A, X_Q, Y_Q, X_B, Y_B } from './hooks/useElectricPotentialPhysics'
 
 interface Props {
   w: number
   hAnim: number
+  vp: { tx: number; ty: number; scale: number }
   physics: ElectricPotentialPhysicsResult
   drawMode: number
   isPlaying: boolean
@@ -18,16 +22,30 @@ interface Props {
   qProbe: number
   handPath: PathPoint[]
   handPathD: string
-  onPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void
-  onPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void
-  onPointerUp: (e: React.PointerEvent<SVGSVGElement>) => void
-  animSvgRef: RefObject<SVGSVGElement | null>
+  onHandPathChange: (path: PathPoint[]) => void
   font: (v: number) => number
+}
+
+/** 设计坐标 → 物理坐标（反转 toScenePixel + viewport transform） */
+function designToPhysics(
+  dx: number, dy: number,
+  w: number, hAnim: number,
+  vp: { tx: number; ty: number; scale: number }
+): { xp: number; yp: number } {
+  const sceneCx = dx * vp.scale + vp.tx
+  const sceneCy = dy * vp.scale + vp.ty
+  const scaleX = w / 7.0
+  const scaleY = hAnim / 3.5
+  return {
+    xp: sceneCx / scaleX,
+    yp: (hAnim - sceneCy) / scaleY,
+  }
 }
 
 export function ElectricPotentialAnimScene({
   w,
   hAnim,
+  vp,
   physics,
   drawMode,
   isPlaying,
@@ -35,10 +53,7 @@ export function ElectricPotentialAnimScene({
   qProbe,
   handPath,
   handPathD,
-  onPointerDown,
-  onPointerMove,
-  onPointerUp,
-  animSvgRef,
+  onHandPathChange,
   font,
 }: Props) {
   const {
@@ -52,16 +67,89 @@ export function ElectricPotentialAnimScene({
     particleForceArrow,
   } = physics
 
+  const containerRef = useRef<HTMLDivElement>(null)
+  const svgRef = useRef<SVGSVGElement>(null)
+  const getSvgPoint = useViewportPointer(svgRef)
+
+  // 手绘路径交互状态
+  const [localDrawing, setLocalDrawing] = useState(false)
+  const [localHandPath, setLocalHandPath] = useState<PathPoint[]>([])
+
+  const toPhysics = useCallback(
+    (clientX: number, clientY: number) => {
+      const pt = getSvgPoint(clientX, clientY)
+      if (!pt) return null
+      return designToPhysics(pt.x, pt.y, w, hAnim, vp)
+    },
+    [getSvgPoint, w, hAnim, vp]
+  )
+
+  const handleMouseDown = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    if (drawMode !== 1 || isPlaying) return
+    const phys = toPhysics(e.clientX, e.clientY)
+    if (!phys) return
+
+    const distToA = Math.hypot(phys.xp - X_A, phys.yp - Y_A)
+    if (distToA < 0.45) {
+      setLocalDrawing(true)
+      setLocalHandPath([{ x: X_A, y: Y_A }])
+    }
+  }, [drawMode, isPlaying, toPhysics])
+
+  const handlePointerMove = useCallback((e: React.PointerEvent<SVGSVGElement>) => {
+    if (!localDrawing) return
+    const phys = toPhysics(e.clientX, e.clientY)
+    if (!phys) return
+
+    const xpClamped = Math.max(0.1, Math.min(6.9, phys.xp))
+    const ypClamped = Math.max(0.1, Math.min(3.4, phys.yp))
+
+    const distToQ = Math.hypot(xpClamped - X_Q, ypClamped - Y_Q)
+    if (distToQ < 0.3) return
+
+    const lastPt = localHandPath[localHandPath.length - 1]
+    const distToLast = Math.hypot(xpClamped - lastPt.x, ypClamped - lastPt.y)
+    if (distToLast > 0.08) {
+      setLocalHandPath((prev) => [...prev, { x: xpClamped, y: ypClamped }])
+    }
+  }, [localDrawing, toPhysics, localHandPath])
+
+  const handlePointerUp = useCallback((_e: React.PointerEvent<SVGSVGElement>) => {
+    if (!localDrawing) return
+    setLocalDrawing(false)
+
+    if (localHandPath.length < 3) {
+      setLocalHandPath([])
+      return
+    }
+    const completedPath = [...localHandPath, { x: X_B, y: Y_B }]
+    setLocalHandPath(completedPath)
+    onHandPathChange(completedPath)
+  }, [localDrawing, localHandPath, onHandPathChange])
+
+  // 使用父级传入的 handPath（直线模式或已完成的手绘路径）
+  const activeHandPath = localDrawing ? localHandPath : handPath
+
+  // 计算手绘路径的 SVG Path D
+  const activeHandPathD = activeHandPath.length >= 2
+    ? activeHandPath
+        .map((p, idx) => {
+          const { cx, cy } = physics.physicsToDesign(p.x, p.y)
+          return `${idx === 0 ? 'M' : 'L'} ${cx.toFixed(1)},${cy.toFixed(1)}`
+        })
+        .join(' ')
+    : handPathD
+
   return (
     <div className="w-full flex-1 relative bg-white border-t border-neutral-100">
-      <svg
-        ref={animSvgRef}
-        width={w}
-        height={hAnim}
-        className={`w-full h-full block ${drawMode === 1 && !isPlaying ? 'cursor-crosshair' : 'cursor-default'}`}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
+      <AnimationSvgCanvas
+        containerRef={containerRef}
+        transform={`translate(${vp.tx} ${vp.ty}) scale(${vp.scale})`}
+        svgRef={svgRef}
+        className={drawMode === 1 && !isPlaying ? 'cursor-crosshair' : 'cursor-default'}
+        onMouseDown={handleMouseDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
       >
         {/* 定义箭头和渐变 */}
         <defs>
@@ -79,17 +167,17 @@ export function ElectricPotentialAnimScene({
           </radialGradient>
         </defs>
 
-        {/* 1. 地面 0V 刻画 (地线) */}
+        {/* 1. 地面 0V 刻画 (地线) — designY=0 是动画区域底部 */}
         <line
           x1={0}
-          y1={hAnim}
+          y1={0}
           x2={w}
-          y2={hAnim}
+          y2={0}
           stroke={CANVAS_COLORS.axis}
           strokeWidth={3}
         />
         {/* 接地引脚符号 */}
-        <rect x={w / 2 - 2} y={hAnim - 1} width={4} height={1} fill="none" markerEnd="url(#ground-symbol)" opacity={0.65} />
+        <rect x={w / 2 - 2} y={-1} width={4} height={1} fill="none" markerEnd="url(#ground-symbol)" opacity={0.65} />
 
         {/* 2. 背景非匀强矢量电场箭头网格 */}
         <g opacity={0.85}>
@@ -122,7 +210,7 @@ export function ElectricPotentialAnimScene({
         />
 
         {/* A 锚点 */}
-        {drawMode === 1 && !isPlaying && handPath.length === 0 && (
+        {drawMode === 1 && !isPlaying && activeHandPath.length === 0 && (
           <circle
             cx={posA.cx}
             cy={posA.cy}
@@ -174,7 +262,6 @@ export function ElectricPotentialAnimScene({
         </text>
 
         {/* 5. 轨道路径渲染 */}
-        {/* 如果是直线路径 */}
         {drawMode === 0 && (
           <line
             x1={posA.cx}
@@ -188,10 +275,9 @@ export function ElectricPotentialAnimScene({
           />
         )}
 
-        {/* 如果是手绘路径 */}
-        {drawMode === 1 && handPathD && (
+        {drawMode === 1 && activeHandPathD && (
           <path
-            d={handPathD}
+            d={activeHandPathD}
             fill="none"
             stroke={EM_COLORS.electricPotential}
             strokeWidth={3}
@@ -201,8 +287,7 @@ export function ElectricPotentialAnimScene({
           />
         )}
 
-        {/* 如果开启手绘且还没有画，给出浅灰色连线提示 */}
-        {drawMode === 1 && handPath.length === 0 && (
+        {drawMode === 1 && activeHandPath.length === 0 && (
           <g opacity={0.5}>
             <path
               d={`M ${posA.cx},${posA.cy} C ${(posA.cx + posB.cx)/2},${posA.cy - 120} ${(posA.cx + posB.cx)/2},${posA.cy - 120} ${posB.cx},${posB.cy}`}
@@ -212,7 +297,7 @@ export function ElectricPotentialAnimScene({
               strokeDasharray="4,4"
             />
             <text x={(posA.cx + posB.cx)/2} y={posA.cy - 70} fontSize={font(11)} fill={colors.neutral[500]} textAnchor="middle" fontWeight="bold">
-              ✍️ 按住 A 拖动鼠标绘制自定义轨迹至 B
+              按住 A 拖动鼠标绘制自定义轨迹至 B
             </text>
           </g>
         )}
@@ -220,7 +305,6 @@ export function ElectricPotentialAnimScene({
         {/* 6. Hover 图像时，在动画直线上显示的高亮黄色场强矢量 */}
         {!isPlaying && (
           <g>
-            {/* 垂直指示线虚线段 */}
             <line
               x1={hoverIndicator.cx}
               y1={0}
@@ -231,7 +315,6 @@ export function ElectricPotentialAnimScene({
               strokeDasharray="2,4"
               opacity={0.5}
             />
-            {/* 场强指示矢量箭头 */}
             <VectorArrow
               originDesign={{ x: hoverIndicator.cx, y: hoverIndicator.cy }}
               vector={{ x: hoverIndicator.dx, y: -hoverIndicator.dy }}
@@ -258,7 +341,6 @@ export function ElectricPotentialAnimScene({
         {/* 7. 粒子主体 (带虚线交互外圈) */}
         {(isPlaying || runProgress > 0) && (
           <g>
-            {/* 受力橙色箭头 */}
             {particleForceArrow && (
               <g>
                 <VectorArrow
@@ -284,7 +366,6 @@ export function ElectricPotentialAnimScene({
               </g>
             )}
 
-            {/* 粒子外环 */}
             <circle
               cx={particleCanvasPos.cx}
               cy={particleCanvasPos.cy}
@@ -296,9 +377,7 @@ export function ElectricPotentialAnimScene({
               opacity={0.8}
               className="animate-[spin_8s_linear_infinite]"
             />
-            {/* 粒子白色衬底 */}
             <circle cx={particleCanvasPos.cx} cy={particleCanvasPos.cy} r={10} fill="white" opacity={0.85} />
-            {/* 粒子实体球 */}
             <circle
               cx={particleCanvasPos.cx}
               cy={particleCanvasPos.cy}
@@ -308,7 +387,6 @@ export function ElectricPotentialAnimScene({
               strokeWidth={1.2}
               className="drop-shadow-md"
             />
-            {/* 电性符号 */}
             <text
               x={particleCanvasPos.cx}
               y={particleCanvasPos.cy + 0.2}
@@ -320,7 +398,6 @@ export function ElectricPotentialAnimScene({
             >
               {qProbe >= 0 ? '+' : '−'}
             </text>
-            {/* 粒子标注 */}
             <text
               x={particleCanvasPos.cx}
               y={particleCanvasPos.cy - 18}
@@ -333,7 +410,7 @@ export function ElectricPotentialAnimScene({
             </text>
           </g>
         )}
-      </svg>
+      </AnimationSvgCanvas>
 
       {/* 玻璃拟态卡片：实时能量堆栈槽 */}
       <div
@@ -347,7 +424,6 @@ export function ElectricPotentialAnimScene({
         <span className="font-bold text-neutral-500 mb-2.5" style={{ fontSize: font(10) }}>实时能量变化 (守恒)</span>
         
         <div className="h-28 flex justify-around items-end w-full relative px-2">
-          {/* 中间百分比虚线 */}
           <div className="absolute inset-x-0 top-0 border-t border-dashed border-neutral-200 flex justify-between text-neutral-300 font-mono pointer-events-none" style={{ fontSize: font(7.5) }}>
             <span>总能 E</span>
           </div>
@@ -355,7 +431,6 @@ export function ElectricPotentialAnimScene({
             <span>50%</span>
           </div>
 
-          {/* 动能柱 (青色) */}
           <div className="flex flex-col items-center h-full justify-end w-10">
             <div className="w-4.5 h-full bg-neutral-100/50 border border-neutral-200/30 rounded-full flex items-end overflow-hidden">
               <div
@@ -367,7 +442,6 @@ export function ElectricPotentialAnimScene({
             <span className="font-medium" style={{ fontSize: font(8), color: PHYSICS_COLORS.kineticEnergy }}>动能</span>
           </div>
 
-          {/* 势能柱 (紫色) */}
           <div className="flex flex-col items-center h-full justify-end w-10">
             <div className="w-4.5 h-full bg-neutral-100/50 border border-neutral-200/30 rounded-full flex items-end overflow-hidden">
               <div
@@ -384,9 +458,9 @@ export function ElectricPotentialAnimScene({
       {/* 标题与操作提示 */}
       <div className="absolute left-4 top-2 pointer-events-none bg-white/80 backdrop-blur-sm px-2 py-1 rounded text-xs flex items-center gap-2 border border-neutral-200/50 shadow-sm">
         <span className="font-bold text-neutral-600">非匀强电场物理动画 (匀强场 + 点电荷)</span>
-        {drawMode === 1 && !isPlaying && handPath.length === 0 && (
+        {drawMode === 1 && !isPlaying && activeHandPath.length === 0 && (
           <span className="alert-card-info py-0.5 px-2 font-bold" style={{ fontSize: font(10) }}>
-            ✍️ 请按住 A 点拖拽画线至 B
+            请按住 A 点拖拽画线至 B
           </span>
         )}
       </div>

@@ -18,6 +18,7 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 07-15 | UI/chart | compliance | `<foreignObject>` 规范违规清理完成：11 文件 14 处全部迁移至 HTML 层，TypeScript 0 error + Vitest 701 passed + ESLint 0 warning |
 | 07-13 | UI/animation | compliance | SidebarExtra 全量清理完成（61→0），全部收敛为声明式 controlMeta |
 | 07-13 | viewport | compliance | Viewport 迁移：COMPLIANT ~95 / LEGACY 动画页面仅剩 3 个，审计缺陷 11/11 清零 |
 | 07-11 | electromagnetism/magnetism | refactor | 力方向纯函数扩展 P1：velocitySelector/SimulationView/ChargeInEField 迁移完成，21 单测 |

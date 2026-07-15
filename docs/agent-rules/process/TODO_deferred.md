@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-14（VectorArrow 坐标体系清理 + 4.2 试点）
+> 最后更新：2026-07-15（`<foreignObject>` 规范违规清理完成 + VectorArrow 坐标体系清理 Phase 7-9 完成 + 项目规范同步更新 + 存量页面 VIEWPORT 迁移完成）
 
 ---
 
@@ -15,7 +15,7 @@ features/<domain>/<topic>/
 ├── XxxAnimation.tsx          # 薄编排层：参数读取 + 组合子组件
 ├── components/               # 局部 SVG 场景组件（纯渲染，无物理计算）
 ├── hooks/
-│   └── useXxxPhysics.ts     # 物理计算 + 布局几何 + physicsToCanvas 映射（可独立单测）
+│   └── useXxxPhysics.ts     # 物理计算 + 布局几何 + worldToDesign 映射（可独立单测）
 ├── model/
 │   ├── types.ts
 │   └── viewModel.ts          # 纯物理坐标计算（y↑ 正），不含 SVG/Canvas/Viewport 依赖
@@ -26,7 +26,7 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 依赖方向：`math → physics → viewModel → hooks → components → pages`
 
-**viewModel 约束**：viewModel 只返回物理坐标系（y↑ 正）数据，**禁止**引入 `vp.scale`、`vp.transform`、`visibleW`、`visibleH`、`physicsToCanvas` 或任何 SVG/Canvas 坐标。`physicsToCanvas` 映射保留在 hook 层，使缩放、响应式布局和物理计算可独立演进。
+**viewModel 约束**：viewModel 只返回物理坐标系（y↑ 正）数据，**禁止**引入 `vp.scale`、`vp.transform`、`visibleW`、`visibleH`、`physicsToCanvas` 或任何 SVG/Canvas 坐标。坐标映射保留在 hook 层（`worldToDesign` / `physicsToDesignWithOrigin`），使缩放、响应式布局和物理计算可独立演进。
 
 禁止反向依赖：physics → features、data → pages、components → features
 
@@ -145,12 +145,12 @@ export interface AnimationModule<P extends AnimationParams> {
 
 **viewModel 约束（铁律）**：
 - viewModel 只返回物理坐标系数据，**禁止**引入 `vp.scale`、`vp.transform`、`visibleW`、`visibleH`、`physicsToCanvas` 或任何 SVG/Canvas 坐标
-- `physicsToCanvas` 映射保留在 hook 层（`useXxxPhysics.ts`），使缩放、响应式布局和物理计算可独立演进
+- 坐标映射保留在 hook 层（`worldToDesign` / `physicsToDesignWithOrigin`），使缩放、响应式布局和物理计算可独立演进
 - 依赖方向：`viewModel → hooks`，不允许反向
 
 **试点完成**：`useOrthogonalDecompositionPhysics` 已完成 viewModel 抽象
 - 新建 `model/orthogonalDecompositionViewModel.ts`：纯函数 `computeOrthogonalDecomposition`，返回物理坐标系（y↑ 正）下的力分量、投影、斜面几何，零 React/DOM 依赖
-- hook 层调用 viewModel 纯函数后再通过 `physicsToCanvas` 映射到 Canvas 坐标
+- hook 层调用 viewModel 纯函数后再通过 `toCanvasPoint` 映射到设计坐标
 - 新增 8 个 viewModel 单元测试（模式 0 力分量/投影/合力 + 模式 1 重力/支持力/摩擦力/斜面几何）
 - 组件 `OrthogonalDecompositionAnimation.tsx` 零改动
 
@@ -230,6 +230,10 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 
 **DEV 豁免**：`src/features/dev/` 目录为内部开发沙箱，无需迁移。
 
+**未接入标准路径的存量页面**（已全部清零，2026-07-15）：
+- ~~`ElectricPotential`：hook 内局部 `physicsToCanvas` 命名混淆；渲染原始 `<svg>` 未用 `AnimationSvgCanvas`~~ → ✅ hook 输出设计坐标 + `AnimationSvgCanvas` + `vp.transform` + `useViewportPointer`
+- ~~`ProjectileAnimation`：使用 `physicsToDesignWithOrigin` 但未用 `<g transform={vp.transform}>`~~ → ✅ `AnimationSvgCanvas` + `vp.transform`，移除手动 viewport 计算
+
 ---
 
 ## 六、VectorArrow 坐标体系清理
@@ -246,6 +250,12 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 | 2026-07-14 | Phase 2：全量箭头分类标注（371 实例：physical-real 182, physical-schematic 124, visual-only 60） | ✅ |
 | 2026-07-14 | Phase 3：PhysicsVectorArrow 组件创建 + 182 个 physical-real 实例迁移 | ✅ |
 | 2026-07-14 | Phase 4：12 个页面约 45 个 physical-schematic 实例迁移到 PhysicsVectorArrow + 动态 refMagnitudes | ✅ |
+| 2026-07-14 | Phase 5：物理箭头单元测试（36 个测试） | ✅ |
+| 2026-07-14 | Phase 6：Playwright 截图回归（14 项） | ✅ |
+| 2026-07-14 | Phase 7：Branded Coordinate Types（5 个 branded type + 5 个转换函数） | ✅ |
+| 2026-07-15 | Phase 8：physicsToCanvas 外部导入清理（11 个文件迁移） | ✅ |
+| 2026-07-15 | Phase 9：项目规范同步更新（8 个文件 12 处编辑） | ✅ |
+| 2026-07-15 | Phase 10：存量页面 VIEWPORT 迁移（ElectricPotential + ProjectileAnimation） | ✅ |
 
 ### 6.1.1 Phase 4 迁移详情
 
@@ -432,7 +442,53 @@ npx playwright test
 
 **容差策略**：物理动画有 60fps 动态效果（粒子、游标闪烁），允许约 6% 像素差异（`maxDiffPixels: 50000`）。超过此阈值视为异常（如箭头溢出、位置偏移）。
 
-### 6.9 已知问题（已修复）
+### 6.9 Phase 7：Branded Coordinate Types（P4）✅
+
+**已完成 2026-07-14。**
+
+详见 §6.6.1。
+
+### 6.10 Phase 8：physicsToCanvas 外部导入清理（P1）✅
+
+**已完成 2026-07-15。**
+
+| 内容 | 状态 |
+|------|:----:|
+| `src/features` 中 `physicsToCanvasWithOrigin` 导入清零（11 个文件迁移） | ✅ |
+| `src/components`、`src/pages` 中无 `physicsToCanvas` 导入 | ✅ |
+| `coordinate.ts` 旧函数 `physicsToCanvasWithOrigin` 标记 `@deprecated` | ✅ |
+| 新增 `physicsToDesignWithOrigin`（输出设计坐标，适用于 `<g transform={vp.transform}>`） | ✅ |
+
+**已迁移的文件**：
+
+| 文件 | 迁移方式 |
+|------|---------|
+| `SimplePendulumAnimation` | `originDesign` 误用物理坐标 → 改用 `origin` |
+| `CurvedSlotAnimation` | 同上 |
+| `BlockBoardAnimation` | 移除 `physicsToCanvasWithOrigin`，改为直接计算 |
+| `useMomentumConservationPhysics` + `MomentumConservationAnimation` | 移除旧转换函数，`groundY` 改为设计坐标 |
+| `useDualRodsPhysics` | 移除旧转换函数 |
+| `LoopPassFieldScene` | 移除旧转换函数 |
+| `useForceMotionSandbox` | 移除旧转换函数 |
+| `useVectorAdditionPhysics` | 移除 `physicsToCanvas`，改为内部 `toCanvasPoint` |
+| `useOrthogonalDecompositionPhysics` | 同上 |
+| `GravityAnimation` | 移除 `physicsToCanvas`，改为直接计算 |
+| `EnergyConservationAnimation` / `ObliqueThrowAnimation` / `ProjectileAnimation` | 改用 `physicsToDesignWithOrigin` |
+
+### 6.11 Phase 9：项目规范同步更新（P1）✅
+
+**已完成 2026-07-15。**
+
+| 文件 | 修改内容 |
+|------|---------|
+| `project_rules.md:60` | 铁律 1.2 坐标转换：`physicsToCanvas` → `worldToDesign` 为新标准 |
+| `07_CANVAS_SVG_CHART_RULES.md` | §5.1 坐标分层表、§5.3 推荐做法、§9 禁止项、场景缩放选型、方式C标注、布局策略表、魔法数字表、maxVectorLength 示例 |
+| `ARCHITECTURE_RULES.md:244` | `createSceneScaleFromViewport` 标注 deprecated 模式 |
+| `CHECKLIST.md:22-24` | 提交检查项更新为新标准路径 |
+| `TEMPLATE_FULL_ANIMATION_PAGE.md:168` | `originPixel` → `originDesign` |
+| `analysis_6_1_scene_templates.md:191` | `originPixel` → `originDesign` |
+
+### 6.12 已知问题（已修复）
 
 | 日期 | 文件 | 问题 | 修复 |
 |------|------|------|------|
@@ -441,6 +497,13 @@ npx playwright test
 | 2026-07-14 | BulletBlockScene | originPixel 使用物理坐标 | 改为设计坐标 |
 | 2026-07-14 | OrbitTransferAnimation | originPixel 覆盖 sceneScale origin | 改回 origin（物理坐标） |
 | 2026-07-14 | renderVectorArrow | originPixel={{x:0,y:0}} 覆盖 sceneScale origin | 移除 originPixel |
+
+### 6.13 剩余技术债（已全部清零）
+
+| 页面 | 问题 | 状态 |
+|------|------|:----:|
+| `ElectricPotential` | hook 内局部 `physicsToCanvas` 命名混淆；渲染原始 `<svg>` 未用 `AnimationSvgCanvas` | ✅ |
+| `ProjectileAnimation` | 使用 `physicsToDesignWithOrigin` 但未用 `<g transform={vp.transform}>` | ✅ |
 
 ---
 
@@ -455,3 +518,83 @@ npx playwright test
 **已知低风险问题**（P3，暂不修复）：
 - SVG 版本体球位置有 ~1-4px 滞后（取采样点而非精确插值位置），Canvas 版无此问题
 - SVG/Canvas 拖尾渐变视觉不一致，规范不要求统一
+
+---
+
+## 八、`<foreignObject>` 规范违规清理 ✅
+
+> **已完成 2026-07-15。**
+>
+> 背景：`project_rules.md:82` 铁律 —「严禁在 SVG 内用 `<foreignObject>` 嵌入响应式 React 图表组件（两套缩放叠加导致图表 X 轴消失）；需动画+图表并列时须在 HTML 层 `flex` 分区，两者平级而非嵌套。」
+>
+> 11 个文件共 14 处 `<foreignObject>` 已全部从 SVG 内移除，图表组件迁移至 HTML 层（flex 分区或 absolute 浮层）。
+
+### 规范要求
+
+| 规则 | 来源 |
+|------|------|
+| 图表严禁 `<foreignObject>` | `07_CANVAS_SVG_CHART_RULES.md:263` |
+| 严禁 SVG 内用 `<foreignObject>` 嵌入响应式 React 图表 | `project_rules.md:82` |
+| 正确做法：HTML `flex` 容器内 SVG 场景与图表 `div` **平级并列** | `07_CANVAS_SVG_CHART_RULES.md:423-442` |
+
+### 违规清单（11 个文件，14 处 `<foreignObject>`）
+
+**高优先级 — 标准图表面板（6 个文件）**：
+
+| # | 文件 | 行号 | 嵌入内容 | 迁移方案 |
+|:-:|------|:----:|---------|---------|
+| 1 | `ProjectileAnimation.tsx` | 453 | `VelocityTimeChart` 画中画 | 移到 HTML absolute 浮层，跟随 SVG 容器定位 |
+| 2 | `ObliqueThrowAnimation.tsx` | 398 | `VelocityTimeChart` 画中画 | 同上 |
+| 3 | `GravityAnimation.tsx` | 452 | `RelationChart` 画中画 | 同上 |
+| 4 | `SatelliteAnimation.tsx` | 297, 372 | `RelationChart` + `VelocityTimeChart` | 同上 |
+| 5 | `MomentumScene.tsx` | 194 | `RelationChart` 画中画 | 同上 |
+| 6 | `ACGeneration.tsx` | 405 | 图表面板 | HTML flex 分区或 absolute 浮层 |
+
+**中优先级 — 专用图表面板（4 个文件）**：
+
+| # | 文件 | 行号 | 嵌入内容 | 迁移方案 |
+|:-:|------|:----:|---------|---------|
+| 7 | `WorkVTChart.tsx` | 41 | v-t 图表 | 改为 HTML 层独立组件，父级 flex 布局 |
+| 8 | `VerticalThrowCharts.tsx` | 37, 47 | v-t + y-t 图表 | 同上 |
+| 9 | `EnergyTimeChart.tsx` | 22, 37 | 能量图表 | 同上 |
+| 10 | `FaradayChartPanel.tsx` | 167 | 法拉第图表面板 | 同上 |
+
+**低优先级 — 内容卡片（1 个文件）**：
+
+| # | 文件 | 行号 | 嵌入内容 | 迁移方案 |
+|:-:|------|:----:|---------|---------|
+| 11 | `ForceDecompositionCard.tsx` | 153 | 力分解说明卡片 | 判断：跟随坐标 → SVG 原生；纯说明 → HTML overlay |
+
+### 已合规页面（无需处理）
+
+`EnergyConservationAnimation`、`SimpleHarmonicAnimation`、`ThinLensAnimation`、`ClapeyronAnimation`、`GasLawsAnimation`、`LightRodRopeAnimation` — 注释明确标注"无 foreignObject"，使用 HTML flex 分区或 absolute 浮层。
+
+### 迁移模式
+
+```tsx
+// ❌ 当前：foreignObject 嵌入 SVG
+<svg width={w} height={h}>
+  <g transform={vp.transform}>{/* 场景 */}</g>
+  <foreignObject x={chartX} y={chartY} width={chartW} height={chartH}>
+    <VelocityTimeChart ... />
+  </foreignObject>
+</svg>
+
+// ✅ 目标：HTML 层 absolute 浮层
+<div ref={containerRef} className="w-full h-full relative">
+  <AnimationSvgCanvas transform={vp.transform}>
+    {/* 场景 */}
+  </AnimationSvgCanvas>
+  <div className="absolute right-2 top-2" style={{ width: chartW, height: chartH }}>
+    <VelocityTimeChart ... />
+  </div>
+</div>
+```
+
+### 验收标准
+
+- [x] 所有 `<foreignObject>` 从 SVG 内移除（11 个文件，14 处）
+- [x] 图表组件放在 HTML 层（flex 分区或 absolute 浮层）
+- [x] 图表尺寸由容器 CSS 或 `useCanvasSize` 驱动，不依赖 SVG 坐标
+- [x] TypeScript 0 errors + Vitest 701 tests 全量通过
+- [x] ESLint 0 errors 0 warnings 通过

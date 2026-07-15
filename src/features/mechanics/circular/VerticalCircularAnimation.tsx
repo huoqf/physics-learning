@@ -25,21 +25,23 @@ export default function VerticalCircularAnimation() {
         <g transform={vp.transform}>
           <VerticalCircularScene physics={physics} />
         </g>
-        {currentPoint && (
-          <ForceDecompositionCard
-            currentPoint={currentPoint}
-            cardWidth={cardWidth}
-            cardHeight={cardHeight}
-            cardX={cardX}
-            cardY={cardY}
-            m={params.m}
-            r={params.r}
-            v0={params.v0}
-            trackType={params.trackType}
-            canvasSize={canvasSize}
-          />
-        )}
       </svg>
+
+      {/* HTML 层：受力正交分解卡片 */}
+      {currentPoint && (
+        <ForceDecompositionCard
+          currentPoint={currentPoint}
+          cardWidth={cardWidth}
+          cardHeight={cardHeight}
+          cardX={cardX}
+          cardY={cardY}
+          m={params.m}
+          r={params.r}
+          v0={params.v0}
+          trackType={params.trackType}
+          canvasSize={canvasSize}
+        />
+      )}
     </div>
   )
 }

@@ -50,7 +50,8 @@ export default function FaradayLaw() {
   )
 
   return (
-    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform} className="select-none">
+    <div className="w-full h-full relative">
+      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform} className="select-none">
       <defs>
         <clipPath id="sandboxClip">
           <rect x="0" y="0" width={sandboxW} height={H} />
@@ -108,22 +109,24 @@ export default function FaradayLaw() {
         </g>
       </g>
 
-      {/* 右侧：图像与数据看板 */}
-      <FaradayChartPanel
-        mode={mode}
-        chartPoints={physics.chartPoints}
-        currentState={physics.currentState}
-        dashLeft={dashLeft} dashRight={dashRight} dashW={dashW} H={H}
-        chartPadTop={physics.chartPadTop} chartH={physics.chartH}
-        yPhiMid={physics.yPhiMid} yEmfMid={physics.yEmfMid} chartHalfH={physics.chartHalfH}
-        phiMinVal={physics.phiMinVal} phiMaxVal={physics.phiMaxVal}
-        maxEmfVal={physics.maxEmfVal} emfIsZero={physics.emfIsZero}
-        toPhiY={physics.toPhiY} yPhiZero={physics.yPhiZero}
-        toChartX={physics.toChartX} toEmfY={physics.toEmfY}
-        phiPathD={physics.phiPathD} emfPathD={physics.emfPathD}
-        indicatorX={physics.indicatorX} tNow={physics.tNow}
-        font={font}
-      />
     </AnimationSvgCanvas>
+
+    {/* 右侧：HTML 层图像与数据看板 */}
+    <FaradayChartPanel
+      mode={mode}
+      chartPoints={physics.chartPoints}
+      currentState={physics.currentState}
+      dashLeft={dashLeft} dashRight={dashRight} dashW={dashW} H={H}
+      chartPadTop={physics.chartPadTop} chartH={physics.chartH}
+      yPhiMid={physics.yPhiMid} yEmfMid={physics.yEmfMid} chartHalfH={physics.chartHalfH}
+      phiMinVal={physics.phiMinVal} phiMaxVal={physics.phiMaxVal}
+      maxEmfVal={physics.maxEmfVal} emfIsZero={physics.emfIsZero}
+      toPhiY={physics.toPhiY} yPhiZero={physics.yPhiZero}
+      toChartX={physics.toChartX} toEmfY={physics.toEmfY}
+      phiPathD={physics.phiPathD} emfPathD={physics.emfPathD}
+      indicatorX={physics.indicatorX} tNow={physics.tNow}
+      font={font}
+    />
+    </div>
   )
 }

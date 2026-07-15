@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { calculateNonUniformEField } from '@/physics'
+import { physicsToDesignWithOrigin } from '@/utils/coordinate'
 
 /**
  * 电势与电势能物理计算 hook
@@ -41,6 +42,8 @@ interface UseElectricPotentialPhysicsParams {
   w: number
   hAnim: number
   hChart: number
+  // viewport（用于输出设计坐标）
+  vp: { tx: number; ty: number; scale: number }
 }
 
 export interface ElectricPotentialPhysicsResult {
@@ -94,8 +97,10 @@ export interface ElectricPotentialPhysicsResult {
   // 手绘路径 SVG
   handPathD: string
 
-  // 物理坐标转换
-  physicsToCanvas: (xp: number, yp: number) => { cx: number; cy: number }
+  // 物理坐标转换（scene pixel，仅内部使用）
+  toScenePixel: (xp: number, yp: number) => { cx: number; cy: number }
+  // 物理坐标 → 设计坐标（用于 <g transform={vp.transform}> 内的 SVG 元素）
+  physicsToDesign: (xp: number, yp: number) => { cx: number; cy: number }
   canvasToPhysics: (xc: number, yc: number) => { xp: number; yp: number }
 }
 
@@ -110,11 +115,12 @@ export function useElectricPotentialPhysics({
   w,
   hAnim,
   hChart,
+  vp,
 }: UseElectricPotentialPhysicsParams): ElectricPotentialPhysicsResult {
   const zeroRefStr: 'infinity' | 'ground' = zeroRef === 1 ? 'ground' : 'infinity'
 
-  // 物理坐标转换函数
-  const physicsToCanvas = useMemo(() => {
+  // 物理坐标 → scene pixel（corner-origin，原点在动画区域左下角）
+  const toScenePixel = useMemo(() => {
     const scaleX = w / 7.0
     const scaleY = hAnim / 3.5
     return (xp: number, yp: number) => ({
@@ -122,6 +128,13 @@ export function useElectricPotentialPhysics({
       cy: hAnim - yp * scaleY,
     })
   }, [w, hAnim])
+
+  // 物理坐标 → 设计坐标（用于 <g transform={vp.transform}> 内的 SVG 元素）
+  const physicsToDesign = useMemo(() => {
+    const scaleX = w / 7.0
+    return (xp: number, yp: number) =>
+      physicsToDesignWithOrigin(xp, yp, 0, hAnim, scaleX, vp)
+  }, [w, hAnim, vp])
 
   const canvasToPhysics = useMemo(() => {
     const scaleX = w / 7.0
@@ -132,10 +145,10 @@ export function useElectricPotentialPhysics({
     })
   }, [w, hAnim])
 
-  // A、B、Q 像素坐标
-  const posA = useMemo(() => physicsToCanvas(X_A, Y_A), [physicsToCanvas])
-  const posB = useMemo(() => physicsToCanvas(X_B, Y_B), [physicsToCanvas])
-  const posQ = useMemo(() => physicsToCanvas(X_Q, Y_Q), [physicsToCanvas])
+  // A、B、Q 设计坐标（用于 <g transform={vp.transform}> 内的 SVG 元素）
+  const posA = useMemo(() => physicsToDesign(X_A, Y_A), [physicsToDesign])
+  const posB = useMemo(() => physicsToDesign(X_B, Y_B), [physicsToDesign])
+  const posQ = useMemo(() => physicsToDesign(X_Q, Y_Q), [physicsToDesign])
 
   // 路径距离
   const pathDistances = useMemo(() => {
@@ -296,10 +309,10 @@ export function useElectricPotentialPhysics({
         const arrowLen = Math.max(8, Math.min(22, (eMag / 400) * 14 + 8))
         const opacity = Math.max(0.1, Math.min(0.4, (eMag / 400) * 0.3 + 0.1))
 
-        const canvasPos = physicsToCanvas(xp, yp)
+        const designPos = physicsToDesign(xp, yp)
         vectors.push({
-          cx: canvasPos.cx,
-          cy: canvasPos.cy,
+          cx: designPos.cx,
+          cy: designPos.cy,
           dx: Math.cos(angle) * arrowLen,
           dy: -Math.sin(angle) * arrowLen,
           length: arrowLen,
@@ -308,13 +321,13 @@ export function useElectricPotentialPhysics({
       }
     }
     return vectors
-  }, [baseEField, zeroRefStr, physicsToCanvas])
+  }, [baseEField, zeroRefStr, physicsToDesign])
 
   // Hover 指示器
   const hoverIndicator = useMemo(() => {
     const xp = hoverPhysX
     const yp = Y_A
-    const canvasPos = physicsToCanvas(xp, yp)
+    const designPos = physicsToDesign(xp, yp)
 
     const res = calculateNonUniformEField(
       xp, yp, baseEField, X_Q, Y_Q, Q_SOURCE, zeroRefStr, X_REF, X_GROUND, Y_GROUND
@@ -326,17 +339,17 @@ export function useElectricPotentialPhysics({
     const thickness = Math.max(1.5, Math.min(5.0, (eMag / 400) * 3.5 + 1.5))
 
     return {
-      cx: canvasPos.cx,
-      cy: canvasPos.cy,
+      cx: designPos.cx,
+      cy: designPos.cy,
       dx: Math.cos(angle) * arrowLen,
       dy: -Math.sin(angle) * arrowLen,
       eMag,
       thickness,
     }
-  }, [hoverPhysX, baseEField, zeroRefStr, physicsToCanvas])
+  }, [hoverPhysX, baseEField, zeroRefStr, physicsToDesign])
 
-  // 粒子像素坐标
-  const particleCanvasPos = physicsToCanvas(particlePhysicsPos.x, particlePhysicsPos.y)
+  // 粒子设计坐标
+  const particleCanvasPos = physicsToDesign(particlePhysicsPos.x, particlePhysicsPos.y)
 
   // 粒子受力箭头
   const particleForceArrow = useMemo(() => {
@@ -378,7 +391,8 @@ export function useElectricPotentialPhysics({
     hoverIndicator,
     particleForceArrow,
     handPathD,
-    physicsToCanvas,
+    toScenePixel,
+    physicsToDesign,
     canvasToPhysics,
   }
 }

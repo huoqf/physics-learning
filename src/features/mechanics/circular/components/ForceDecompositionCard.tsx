@@ -94,126 +94,142 @@ export const ForceDecompositionCard = React.memo(function ForceDecompositionCard
     : 0
   const G_val = m * GRAVITY
 
+  const svgH = cardHeight * 0.52
+
   return (
-    <g transform={`translate(${cardX}, ${cardY})`}>
-      <rect
-        width={cardWidth} height={cardHeight}
-        fill={colors.neutral.white} rx={8}
-        stroke={CHART_COLORS.axisLine} strokeWidth={0.8}
-      />
+    <div
+      className="absolute"
+      style={{
+        left: cardX,
+        top: cardY,
+        width: cardWidth,
+        height: cardHeight,
+        background: colors.neutral.white,
+        borderRadius: 8,
+        border: `0.8px solid ${CHART_COLORS.axisLine}`,
+        overflow: 'hidden',
+      }}
+    >
+      <svg width={cardWidth} height={svgH}>
+        <line
+          x1={ballCX - dx_out * 90 * zoom} y1={ballCY - dy_out * 90 * zoom}
+          x2={ballCX + dx_out * 90 * zoom} y2={ballCY + dy_out * 90 * zoom}
+          stroke={PHYSICS_COLORS.axis} strokeWidth={0.8}
+          strokeDasharray="2 2" opacity={0.6}
+        />
+        <text
+          x={ballCX - dx_out * 96 * zoom} y={ballCY - dy_out * 96 * zoom + 3}
+          fontSize={canvasSize.font(Math.max(8, 10 * zoom))}
+          fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle"
+        >n</text>
 
-      <line
-        x1={ballCX - dx_out * 90 * zoom} y1={ballCY - dy_out * 90 * zoom}
-        x2={ballCX + dx_out * 90 * zoom} y2={ballCY + dy_out * 90 * zoom}
-        stroke={PHYSICS_COLORS.axis} strokeWidth={0.8}
-        strokeDasharray="2 2" opacity={0.6}
-      />
-      <text
-        x={ballCX - dx_out * 96 * zoom} y={ballCY - dy_out * 96 * zoom + 3}
-        fontSize={canvasSize.font(Math.max(8, 10 * zoom))}
-        fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle"
-      >n</text>
+        <line
+          x1={ballCX - dx_tangent * 90 * zoom} y1={ballCY - dy_tangent * 90 * zoom}
+          x2={ballCX + dx_tangent * 90 * zoom} y2={ballCY + dy_tangent * 90 * zoom}
+          stroke={PHYSICS_COLORS.axis} strokeWidth={0.8}
+          strokeDasharray="2 2" opacity={0.6}
+        />
+        <text
+          x={ballCX + dx_tangent * 96 * zoom} y={ballCY + dy_tangent * 96 * zoom + 3}
+          fontSize={canvasSize.font(Math.max(8, 10 * zoom))}
+          fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle"
+        >τ</text>
 
-      <line
-        x1={ballCX - dx_tangent * 90 * zoom} y1={ballCY - dy_tangent * 90 * zoom}
-        x2={ballCX + dx_tangent * 90 * zoom} y2={ballCY + dy_tangent * 90 * zoom}
-        stroke={PHYSICS_COLORS.axis} strokeWidth={0.8}
-        strokeDasharray="2 2" opacity={0.6}
-      />
-      <text
-        x={ballCX + dx_tangent * 96 * zoom} y={ballCY + dy_tangent * 96 * zoom + 3}
-        fontSize={canvasSize.font(Math.max(8, 10 * zoom))}
-        fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle"
-      >τ</text>
+        <line
+          x1={ballCX + px_G_n} y1={ballCY + py_G_n}
+          x2={ballCX + px_G_n + px_G_t} y2={ballCY + py_G_n + py_G_t}
+          stroke={PHYSICS_COLORS.gravity} strokeWidth={0.8}
+          strokeDasharray="2 2" opacity={0.4}
+        />
+        <line
+          x1={ballCX + px_G_t} y1={ballCY + py_G_t}
+          x2={ballCX + px_G_t + px_G_n} y2={ballCY + py_G_t + py_G_n}
+          stroke={PHYSICS_COLORS.gravity} strokeWidth={0.8}
+          strokeDasharray="2 2" opacity={0.4}
+        />
 
-      <line
-        x1={ballCX + px_G_n} y1={ballCY + py_G_n}
-        x2={ballCX + px_G_n + px_G_t} y2={ballCY + py_G_n + py_G_t}
-        stroke={PHYSICS_COLORS.gravity} strokeWidth={0.8}
-        strokeDasharray="2 2" opacity={0.4}
-      />
-      <line
-        x1={ballCX + px_G_t} y1={ballCY + py_G_t}
-        x2={ballCX + px_G_t + px_G_n} y2={ballCY + py_G_t + py_G_n}
-        stroke={PHYSICS_COLORS.gravity} strokeWidth={0.8}
-        strokeDasharray="2 2" opacity={0.4}
-      />
+        {renderCloseUpArrow(ballCX, ballCY, ballCX + px_G_n, ballCY + py_G_n, PHYSICS_COLORS.gravity, zoom, true)}
+        {renderCloseUpArrow(ballCX, ballCY, ballCX + px_G_t, ballCY + py_G_t, PHYSICS_COLORS.gravity, zoom, true)}
+        {renderCloseUpArrow(ballCX, ballCY, ballCX + px_N, ballCY + py_N, trackType === 0 ? PHYSICS_COLORS.tension : PHYSICS_COLORS.normalForce, zoom)}
+        {renderCloseUpArrow(ballCX, ballCY, ballCX, ballCY + gLen, PHYSICS_COLORS.gravity, zoom)}
 
-      {renderCloseUpArrow(ballCX, ballCY, ballCX + px_G_n, ballCY + py_G_n, PHYSICS_COLORS.gravity, zoom, true)}
-      {renderCloseUpArrow(ballCX, ballCY, ballCX + px_G_t, ballCY + py_G_t, PHYSICS_COLORS.gravity, zoom, true)}
-      {renderCloseUpArrow(ballCX, ballCY, ballCX + px_N, ballCY + py_N, trackType === 0 ? PHYSICS_COLORS.tension : PHYSICS_COLORS.normalForce, zoom)}
-      {renderCloseUpArrow(ballCX, ballCY, ballCX, ballCY + gLen, PHYSICS_COLORS.gravity, zoom)}
+        <circle
+          cx={ballCX} cy={ballCY} r={12 * zoom}
+          fill="url(#steel-sphere-grad)"
+          stroke={SCENE_COLORS.sphere.steel.stroke} strokeWidth={1}
+        />
+      </svg>
 
-      <circle
-        cx={ballCX} cy={ballCY} r={12 * zoom}
-        fill="url(#steel-sphere-grad)"
-        stroke={SCENE_COLORS.sphere.steel.stroke} strokeWidth={1}
-      />
-
-      <foreignObject x={15} y={cardHeight * 0.52} width={cardWidth - 30} height={cardHeight * 0.44}>
+      <div style={{
+        width: cardWidth - 30,
+        marginLeft: 15,
+        height: cardHeight - svgH - 8,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        fontFamily: 'sans-serif',
+        fontSize: canvasSize.font(10.5),
+        color: CANVAS_COLORS.labelTextLight,
+        lineHeight: '1.4',
+      }}>
         <div style={{
-          width: '100%', height: '100%',
-          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-          fontFamily: 'sans-serif', fontSize: canvasSize.font(10.5),
-          color: CANVAS_COLORS.labelTextLight, lineHeight: '1.4'
+          fontWeight: 'bold',
+          fontSize: canvasSize.font(11),
+          color: CANVAS_COLORS.labelText,
+          borderBottom: '1px solid ' + CANVAS_COLORS.grid,
+          paddingBottom: '4px',
+          display: 'flex',
+          justifyContent: 'space-between',
         }}>
-          <div style={{
-            fontWeight: 'bold', fontSize: canvasSize.font(11),
-            color: CANVAS_COLORS.labelText,
-            borderBottom: '1px solid ' + CANVAS_COLORS.grid,
-            paddingBottom: '4px',
-            display: 'flex', justifyContent: 'space-between'
-          }}>
-            <span>受力正交分解</span>
-            <span>θ = {thetaDeg.toFixed(0)}°</span>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 16px', margin: '5px 0' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>法向 G<sub>n</sub>=mg|cosθ|:</span>
-              <span style={{ fontWeight: 'bold', color: PHYSICS_COLORS.gravity }}>{Gn_val_abs.toFixed(1)} N</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>{trackType === 0 ? '绳拉力 F_T' : '约束力 F_N'}:</span>
-              <span style={{ fontWeight: 'bold', color: trackType === 0 ? PHYSICS_COLORS.tension : PHYSICS_COLORS.normalForce }}>
-                {(trackType === 0 ? Math.max(0, F_constraint_val) : F_constraint_val).toFixed(1)} N
-              </span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>切向 G<sub>t</sub>=mg|sinθ|:</span>
-              <span style={{ fontWeight: 'bold', color: PHYSICS_COLORS.gravity }}>{Gt_val_abs.toFixed(1)} N</span>
-            </div>
-            <div></div>
-          </div>
-
-          {currentPoint.state === 'flying' ? (
-            <div style={{ borderTop: '1px solid ' + CANVAS_COLORS.grid, paddingTop: '4px' }}>
-              <div style={{ fontSize: canvasSize.font(9), color: colors.danger[600], fontWeight: 'bold' }}>绳松弛：抛体运动，绳再次绷紧会消除径向速度:</div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: PHYSICS_COLORS.appliedForce, fontSize: canvasSize.font(11.5), marginTop: '2px' }}>
-                <span>F<sub>合</sub> = G:</span>
-                <span>{G_val.toFixed(1)} N</span>
-              </div>
-            </div>
-          ) : (
-            <div style={{ borderTop: '1px solid ' + CANVAS_COLORS.grid, paddingTop: '4px' }}>
-              <div style={{ fontSize: canvasSize.font(9), color: CANVAS_COLORS.textMuted }}>
-                向心方向合力 (
-                {Math.cos(theta) > 0.001 ? (
-                  <>F<sub>向</sub> = {trackType === 0 ? 'F_T' : 'F_N'} - G<sub>n</sub></>
-                ) : Math.cos(theta) < -0.001 ? (
-                  <>F<sub>向</sub> = {trackType === 0 ? 'F_T' : 'F_N'} + G<sub>n</sub></>
-                ) : (
-                  <>F<sub>向</sub> = {trackType === 0 ? 'F_T' : 'F_N'}</>
-                )}):
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: PHYSICS_COLORS.appliedForce, fontSize: canvasSize.font(11.5), marginTop: '2px' }}>
-                <span>F<sub>向</sub>:</span>
-                <span>{F_xiang_val.toFixed(1)} N</span>
-              </div>
-            </div>
-          )}
+          <span>受力正交分解</span>
+          <span>θ = {thetaDeg.toFixed(0)}°</span>
         </div>
-      </foreignObject>
-    </g>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 16px', margin: '5px 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>法向 G<sub>n</sub>=mg|cosθ|:</span>
+            <span style={{ fontWeight: 'bold', color: PHYSICS_COLORS.gravity }}>{Gn_val_abs.toFixed(1)} N</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>{trackType === 0 ? '绳拉力 F_T' : '约束力 F_N'}:</span>
+            <span style={{ fontWeight: 'bold', color: trackType === 0 ? PHYSICS_COLORS.tension : PHYSICS_COLORS.normalForce }}>
+              {(trackType === 0 ? Math.max(0, F_constraint_val) : F_constraint_val).toFixed(1)} N
+            </span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>切向 G<sub>t</sub>=mg|sinθ|:</span>
+            <span style={{ fontWeight: 'bold', color: PHYSICS_COLORS.gravity }}>{Gt_val_abs.toFixed(1)} N</span>
+          </div>
+          <div></div>
+        </div>
+
+        {currentPoint.state === 'flying' ? (
+          <div style={{ borderTop: '1px solid ' + CANVAS_COLORS.grid, paddingTop: '4px' }}>
+            <div style={{ fontSize: canvasSize.font(9), color: colors.danger[600], fontWeight: 'bold' }}>绳松弛：抛体运动，绳再次绷紧会消除径向速度:</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: PHYSICS_COLORS.appliedForce, fontSize: canvasSize.font(11.5), marginTop: '2px' }}>
+              <span>F<sub>合</sub> = G:</span>
+              <span>{G_val.toFixed(1)} N</span>
+            </div>
+          </div>
+        ) : (
+          <div style={{ borderTop: '1px solid ' + CANVAS_COLORS.grid, paddingTop: '4px' }}>
+            <div style={{ fontSize: canvasSize.font(9), color: CANVAS_COLORS.textMuted }}>
+              向心方向合力 (
+              {Math.cos(theta) > 0.001 ? (
+                <>F<sub>向</sub> = {trackType === 0 ? 'F_T' : 'F_N'} - G<sub>n</sub></>
+              ) : Math.cos(theta) < -0.001 ? (
+                <>F<sub>向</sub> = {trackType === 0 ? 'F_T' : 'F_N'} + G<sub>n</sub></>
+              ) : (
+                <>F<sub>向</sub> = {trackType === 0 ? 'F_T' : 'F_N'}</>
+              )}):
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: PHYSICS_COLORS.appliedForce, fontSize: canvasSize.font(11.5), marginTop: '2px' }}>
+              <span>F<sub>向</sub>:</span>
+              <span>{F_xiang_val.toFixed(1)} N</span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   )
 })
