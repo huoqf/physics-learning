@@ -63,9 +63,9 @@ export default [
     },
   },
 
-  // 3) 测试文件（vitest 全局 + 放宽 any）
+  // 3) 测试文件（vitest / playwright 全局 + 放宽 any）
   {
-    files: ['tests/**/*.{ts,tsx}'],
+    files: ['tests/**/*.{ts,tsx}', 'e2e/**/*.{ts,tsx}'],
     languageOptions: {
       parser: tsParser,
       ecmaVersion: 2020,

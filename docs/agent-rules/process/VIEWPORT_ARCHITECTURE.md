@@ -300,8 +300,8 @@ useSceneScale（物理坐标 → 设计坐标）
 | 2 | 全量箭头分类标注（371 实例：physical-real 182, physical-schematic 124, visual-only 60） | ✅ |
 | 3 | `PhysicsVectorArrow` 组件创建 + 182 个 physical-real 实例迁移 | ✅ |
 | 4 | 12 个页面约 45 个 physical-schematic 实例迁移（移除 pixelLength，改用动态 refMagnitudes） | ✅ |
-| 5 | 物理箭头单元测试 | 待完成 |
-| 6 | 截图回归 | 待完成 |
+| 5 | 物理箭头单元测试 | ✅ |
+| 6 | 截图回归 | ✅ |
 
 ### 双组件体系
 

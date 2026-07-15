@@ -376,23 +376,61 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 3. **maxVectorLength 上限**：所有 PhysicsVectorArrow 的箭头长度被 `maxVectorLength` 钳位
 4. **sceneScale.originX/Y**：移除 originDesign 覆盖后，sceneScale 的 origin 正确工作
 
-### 6.7 Phase 5：物理箭头单元测试（P3，待完成）
+### 6.6.1 Branded Coordinate Types（Phase 7）✅
 
-**目标**：为 PhysicsVectorArrow 添加坐标转换、Y 轴方向、长度比例的单元测试。
+**已完成 2026-07-14。**
 
-**测试用例**：
-- 物理坐标 → 设计坐标转换正确（y 翻转）
-- 箭头长度 = min(|vector| / refMagnitude, 1.0) * maxVectorLength * weight
-- 方向向量 normalize 后长度 = 1
-- 零矢量返回 null
+**文件**：`src/scene/coordinates.ts`
 
-### 6.8 Phase 6：截图回归（P4）
+**Branded Types（5 个）**：
+- `PhysicsCoord` / `DesignCoord` / `ContainerPixelCoord` — 位置点
+- `PhysicsVector` / `DesignVector` — 方向矢量
 
-**目标**：为物理箭头页面添加视觉回归测试。
+**转换函数（5 个纯函数）**：
+- `physicsToDesign` — 物理坐标→设计坐标（含 Y 翻转）
+- `designToContainer` — 设计坐标→容器像素
+- `containerToDesign` — 容器像素→设计坐标
+- `physicsVectorToDesignVector` — 物理矢量→设计矢量
+- `designVectorToPhysicsVector` — 设计矢量→物理矢量
 
-**前提**：需要引入 Playwright 或类似工具。当前无任何视觉回归保障。
+**工厂函数（5 个）**：`asPhysicsCoord`、`asDesignCoord`、`asContainerPixelCoord`、`asPhysicsVector`、`asDesignVector`
 
-**优先页面**：NewtonSecondAnimation、SystemIsolatedMethodologyAnimation、OrbitTransferAnimation
+**使用方式**：编译期类型防护，运行时零开销。现有代码可逐步迁移，不强制立即替换。
+
+### 6.7 Phase 5：物理箭头单元测试（P3）✅
+
+**已完成 2026-07-14。**
+
+| 测试文件 | 覆盖内容 | 测试数 |
+|---------|---------|:------:|
+| `src/utils/__tests__/vectorLength.test.ts` | calculateVectorPixelLength 边界值、比例缩放、权重、溢出保护 | 12 |
+| `src/scene/__tests__/SceneScale.test.ts` | createSceneScale、worldToPixel/Design、createSceneScaleFromDesignCenter | 10 |
+| `src/scene/__tests__/coordinates.test.ts` | branded types 工厂函数、坐标转换、Y 轴翻转、round-trip、pipeline | 14 |
+
+### 6.8 Phase 6：截图回归（P4）✅
+
+**已完成 2026-07-14。**
+
+| 项目 | 状态 |
+|------|:----:|
+| Playwright 安装 | ✅ |
+| 配置 playwright.config.ts | ✅ |
+| 14 个关键页面基准截图 | ✅ |
+| 回归测试通过 | ✅ |
+
+**覆盖页面**（11 个关键动画 + 3 个专项测试）：
+NewtonSecond、Velocity、SystemIsolated、OrbitTransfer、KinematicsAdvanced、Acceleration、SpringForce、Conveyor、InclinedPlane、CircularModels、BinaryStars
+
+**运行方式**：
+```bash
+# 更新基准截图（首次或有意变更时）
+npx playwright test --update-snapshots
+
+# 回归测试（与基准对比）
+npx playwright test
+```
+
+**容差策略**：物理动画有 60fps 动态效果（粒子、游标闪烁），允许约 6% 像素差异（`maxDiffPixels: 50000`）。超过此阈值视为异常（如箭头溢出、位置偏移）。
 
 ### 6.9 已知问题（已修复）
 
