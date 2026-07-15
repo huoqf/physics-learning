@@ -13,7 +13,7 @@ import {
   generateRealPendulumTrajectory,
   getPendulumStateFromTrajectory
 } from '@/physics/oscillation'
-import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
+
 import { AnimationSvgCanvas } from '@/components/Layout'
 
 export default function SimplePendulumAnimation() {
@@ -120,10 +120,9 @@ export default function SimplePendulumAnimation() {
     y: -L * Math.cos(activeState.angle),
   }), [L, activeState.angle])
 
-  // 通过 physicsToCanvasWithOrigin 获得像素坐标
-  const { cx: ballX, cy: ballY } = useMemo(() => {
-    return physicsToCanvasWithOrigin(ballPhysPos.x, ballPhysPos.y, pivotX, pivotY, linePixelLength)
-  }, [ballPhysPos, pivotX, pivotY, linePixelLength])
+  // pivotX/Y 和 linePixelLength 均为设计坐标单位，直接计算摆球设计坐标
+  const ballX = pivotX + ballPhysPos.x * linePixelLength
+  const ballY = pivotY - ballPhysPos.y * linePixelLength
 
   // 简谐近似参考小球坐�?(仅在模式 1 对比下绘�?
   const ballPhysPos_SHM = useMemo(() => ({
@@ -131,9 +130,8 @@ export default function SimplePendulumAnimation() {
     y: -L * Math.cos(stateSHM.angle),
   }), [L, stateSHM.angle])
 
-  const { cx: ballX_SHM, cy: ballY_SHM } = useMemo(() => {
-    return physicsToCanvasWithOrigin(ballPhysPos_SHM.x, ballPhysPos_SHM.y, pivotX, pivotY, linePixelLength)
-  }, [ballPhysPos_SHM, pivotX, pivotY, linePixelLength])
+  const ballX_SHM = pivotX + ballPhysPos_SHM.x * linePixelLength
+  const ballY_SHM = pivotY - ballPhysPos_SHM.y * linePixelLength
 
   // ── 滚动传送带 x-t 描迹（所有模式对齐显示，由全局 showGraph 开关控制，模式 1 强制开启） ──
   const isShowGraph = mode === 1 ? true : showGraph === 1
@@ -355,7 +353,7 @@ export default function SimplePendulumAnimation() {
       {showVectors && (
         <g>
           {/* 重力 G：竖直向�?*/}
-          <PhysicsVectorArrow originDesign={ballPhysPos}
+          <PhysicsVectorArrow origin={ballPhysPos}
             vector={{ x: 0, y: -activeState.gravity }}
             type="gravity"
             sceneScale={sceneScale}
@@ -363,7 +361,7 @@ export default function SimplePendulumAnimation() {
             glow
           />
           {/* 绳子拉力 F_拉：沿绳子指向悬挂点 */}
-          <PhysicsVectorArrow originDesign={ballPhysPos}
+          <PhysicsVectorArrow origin={ballPhysPos}
             vector={{ x: -activeState.tension * Math.sin(activeState.angle), y: activeState.tension * Math.cos(activeState.angle) }}
             type="tension"
             sceneScale={sceneScale}
@@ -373,7 +371,7 @@ export default function SimplePendulumAnimation() {
           {/* 切向回复�?F_回：沿切线指向平衡位�?*/}
           {/* 回复力大�?= mg*sinθ，方向沿切线指向平衡位置 */}
           {/* 切线方向向量 = (-cosθ, -sinθ)，力 = mg*sinθ * 切线方向 */}
-          <PhysicsVectorArrow originDesign={ballPhysPos}
+          <PhysicsVectorArrow origin={ballPhysPos}
             vector={{
               x: activeState.restoringForce * Math.cos(activeState.angle),  // = -mg*sinθ*cosθ
               y: activeState.restoringForce * Math.sin(activeState.angle)   // = -mg*sin²θ

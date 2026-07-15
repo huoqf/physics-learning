@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { FONT, PHYSICS_COLORS } from '@/theme/physics'
-import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
+
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import type { SceneScale } from '@/scene'
@@ -208,10 +208,11 @@ export function useForceMotionSandbox({ state, trajectory, domainTrajectory }: F
     const scaleY = Number.isFinite(maxScaleY) ? maxScaleY : (height * 0.4)
     const scale = Math.max(0.001, Math.min(scaleX, scaleY))
 
-    const body = physicsToCanvasWithOrigin(state.x, -state.y, originX, originY, scale)
-    const track = trajectory.map((point) =>
-      physicsToCanvasWithOrigin(point.x, -point.y, originX, originY, scale)
-    )
+    const body = { cx: originX + state.x * scale, cy: originY + state.y * scale }
+    const track = trajectory.map((point) => ({
+      cx: originX + point.x * scale,
+      cy: originY + point.y * scale,
+    }))
 
     const vectorMax = shortEdge * FORCE_MOTION_VECTOR_MAX_RATIO
 

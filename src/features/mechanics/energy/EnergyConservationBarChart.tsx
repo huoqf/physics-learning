@@ -4,7 +4,7 @@ import { colors } from '@/theme/colors'
 interface EnergyConservationBarChartProps {
   mode: number
   wallX: number
-  vpVisibleH: number
+  panelY: number
   state: { Ek: number; Q: number }
   Ep_adj: number
   Etot_adj: number
@@ -18,7 +18,7 @@ interface EnergyConservationBarChartProps {
 export function EnergyConservationBarChart({
   mode,
   wallX,
-  vpVisibleH,
+  panelY,
   state,
   Ep_adj,
   Etot_adj,
@@ -32,7 +32,7 @@ export function EnergyConservationBarChart({
   const panelX = wallX - (mode === 0 ? 90 : 115)
 
   return (
-    <g transform={`translate(${panelX}, ${vpVisibleH * 0.55})`}>
+    <g transform={`translate(${panelX}, ${panelY})`}>
       {/* 半透明白底毛玻璃 */}
       <rect width={panelWidth} height={105} rx={6} fill={SCENE_COLORS.labels.glassPanelBg} stroke={colors.neutral[200]} strokeWidth={0.8} />
 

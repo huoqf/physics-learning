@@ -188,7 +188,7 @@ export function XxxScene({ physics, showVectors, canvasSize, sceneScale }: XxxSc
       {/* 矢量箭头（条件渲染） */}
       {showVectors && (
         <VectorArrow
-          originPixel={physics.position}
+          originDesign={physics.position}
           vector={{ x: physics.velocity, y: 0 }}
           type="velocity"
           sceneScale={sceneScale}

@@ -165,7 +165,7 @@ export function XxxScene({
       {/* 矢量箭头 */}
       {showVectors && (
         <VectorArrow
-          originPixel={physics.position}
+          originDesign={physics.position}
           vector={{ x: physics.velocity, y: 0 }}
           type="velocity"
           sceneScale={sceneScale}

@@ -1,11 +1,14 @@
 import { useMemo } from 'react'
-import { physicsToCanvas } from '@/utils/coordinate'
 import { PHYSICS_COLORS } from '@/theme/physics'
 import {
   computeOrthogonalDecomposition,
   type ForcePhysicsData,
   type SlopeForcePhysicsData,
 } from './model/orthogonalDecompositionViewModel'
+
+function toCanvasPoint(x: number, y: number, canvasWidth: number, canvasHeight: number, scale: number) {
+  return { cx: canvasWidth / 2 + x * scale, cy: canvasHeight / 2 - y * scale }
+}
 
 interface UseOrthogonalDecompositionPhysicsProps {
   // 模式 0 专用
@@ -104,9 +107,9 @@ function physicsToForceData(
     fy: p.fy,
     fxPrime: p.fxPrime,
     fyPrime: p.fyPrime,
-    end: physicsToCanvas(p.endPhys.x, p.endPhys.y, canvasWidth, canvasHeight, scale),
-    xProjEnd: physicsToCanvas(p.xProjPhys.x, p.xProjPhys.y, canvasWidth, canvasHeight, scale),
-    yProjEnd: physicsToCanvas(p.yProjPhys.x, p.yProjPhys.y, canvasWidth, canvasHeight, scale),
+    end: toCanvasPoint(p.endPhys.x, p.endPhys.y, canvasWidth, canvasHeight, scale),
+    xProjEnd: toCanvasPoint(p.xProjPhys.x, p.xProjPhys.y, canvasWidth, canvasHeight, scale),
+    yProjEnd: toCanvasPoint(p.yProjPhys.x, p.yProjPhys.y, canvasWidth, canvasHeight, scale),
   }
 }
 
@@ -127,9 +130,9 @@ function slopePhysicsToForceData(
     fy: p.fy,
     fxPrime: p.fxPrime,
     fyPrime: p.fyPrime,
-    end: physicsToCanvas(p.endPhysFromBlock.x, p.endPhysFromBlock.y, canvasWidth, canvasHeight, scale),
-    xProjEnd: physicsToCanvas(p.xProjPhysFromBlock.x, p.xProjPhysFromBlock.y, canvasWidth, canvasHeight, scale),
-    yProjEnd: physicsToCanvas(p.yProjPhysFromBlock.x, p.yProjPhysFromBlock.y, canvasWidth, canvasHeight, scale),
+    end: toCanvasPoint(p.endPhysFromBlock.x, p.endPhysFromBlock.y, canvasWidth, canvasHeight, scale),
+    xProjEnd: toCanvasPoint(p.xProjPhysFromBlock.x, p.xProjPhysFromBlock.y, canvasWidth, canvasHeight, scale),
+    yProjEnd: toCanvasPoint(p.yProjPhysFromBlock.x, p.yProjPhysFromBlock.y, canvasWidth, canvasHeight, scale),
   }
 }
 
@@ -148,8 +151,8 @@ export function useOrthogonalDecompositionPhysics({
       mode,
     })
 
-    // 2. 映射到 Canvas 坐标
-    const origin = physicsToCanvas(0, 0, canvasWidth, canvasHeight, scale)
+    // 2. 坐标原点（设计坐标）
+    const origin = toCanvasPoint(0, 0, canvasWidth, canvasHeight, scale)
 
     const forces = physics.forces.map((f, i) =>
       physicsToForceData(f, canvasWidth, canvasHeight, scale, FORCE_COLORS[i]),
@@ -166,19 +169,19 @@ export function useOrthogonalDecompositionPhysics({
       f: slopePhysicsToForceData(physics.slopeForces.f, canvasWidth, canvasHeight, scale, PHYSICS_COLORS.friction),
     }
 
-    const slopeLeft = physicsToCanvas(
+    const slopeLeft = toCanvasPoint(
       physics.slopeGeom.slopeLeftPhys.x, physics.slopeGeom.slopeLeftPhys.y,
       canvasWidth, canvasHeight, scale,
     )
-    const slopeRight = physicsToCanvas(
+    const slopeRight = toCanvasPoint(
       physics.slopeGeom.slopeLeftPhys.x + physics.slopeGeom.slideW, physics.slopeGeom.slopeLeftPhys.y,
       canvasWidth, canvasHeight, scale,
     )
-    const slopeTop = physicsToCanvas(
+    const slopeTop = toCanvasPoint(
       physics.slopeGeom.slopeLeftPhys.x, physics.slopeGeom.slopeLeftPhys.y + physics.slopeGeom.slideH,
       canvasWidth, canvasHeight, scale,
     )
-    const blockCenter = physicsToCanvas(
+    const blockCenter = toCanvasPoint(
       physics.slopeGeom.blockCenterPhys.x, physics.slopeGeom.blockCenterPhys.y,
       canvasWidth, canvasHeight, scale,
     )

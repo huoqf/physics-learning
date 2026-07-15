@@ -1,6 +1,6 @@
 import { VectorArrow, VectorDefs, Ball, ParticleTrajectory } from '@/components/Physics'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
-import { physicsToCanvasWithOrigin, clientToContainerPoint } from '@/utils'
+import { physicsToDesignWithOrigin, clientToContainerPoint } from '@/utils'
 import React, { useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -103,7 +103,10 @@ export default function ProjectileAnimation() {
   const originX = vp.visibleX + PROJECTILE_LAYOUT.originX
   const originY = vp.visibleY + vp.visibleH * PROJECTILE_LAYOUT.originYRatio
   const groundY = vp.visibleY + vp.visibleH * PROJECTILE_LAYOUT.groundYRatio
-  const stageHeight = groundY - originY
+  const designOriginX = (originX - vp.tx) / vp.scale
+  const designOriginY = (originY - vp.ty) / vp.scale
+  const designGroundY = (groundY - vp.ty) / vp.scale
+  const stageHeight = designGroundY - designOriginY
 
   // 获取轨迹的水平最大位移，用以动态解算 scaleX
   const lastPoint = trajectory.points[trajectory.points.length - 1]
@@ -113,7 +116,7 @@ export default function ProjectileAnimation() {
   // 双轴自适应等比例缩放（取最小值以保证水平与竖直方向绝对不出界）
   const scaleX = (vp.visibleW - PROJECTILE_LAYOUT.originX - PROJECTILE_LAYOUT.rightPadding) / maxX
   const scaleY = stageHeight / PHYSICS_HEIGHT
-  const scale = Math.min(scaleX, scaleY)
+  const scale = Math.min(scaleX, scaleY) / vp.scale
 
   const projSceneScale = useSceneScale({
     vp,
@@ -156,9 +159,9 @@ export default function ProjectileAnimation() {
     [effectiveTime, trajectory.vacuumPoints, interpolatePoints]
   )
 
-  // Canvas 坐标转换（通过统一坐标工具，物理 Y 轴向上为正）
-  const ballCanvas = physicsToCanvasWithOrigin(currentState.x, currentState.y, originX, originY, scale)
-  const vacBallCanvas = physicsToCanvasWithOrigin(vacuumState.x, vacuumState.y, originX, originY, scale)
+  // 设计坐标转换（通过统一坐标工具，物理 Y 轴向上为正）
+  const ballCanvas = physicsToDesignWithOrigin(currentState.x, currentState.y, designOriginX, designOriginY, scale, vp)
+  const vacBallCanvas = physicsToDesignWithOrigin(vacuumState.x, vacuumState.y, designOriginX, designOriginY, scale, vp)
 
   const showDoubleTrack = advancedMode === 1 && airResistance > 0 && showVacuumCompare === 1
 
@@ -182,20 +185,20 @@ export default function ProjectileAnimation() {
     const pts: { x: number; y: number }[] = []
     for (const pt of trajectory.points) {
       if (pt.t > activeT + 1e-5) break
-      const { cx, cy } = physicsToCanvasWithOrigin(pt.x, pt.y, originX, originY, scale)
+      const { cx, cy } = physicsToDesignWithOrigin(pt.x, pt.y, designOriginX, designOriginY, scale, vp)
       pts.push({ x: cx, y: cy })
     }
     return pts
-  }, [trajectory.points, activeT, scale, originX, originY])
+  }, [trajectory.points, activeT, scale, designOriginX, designOriginY, vp])
 
   // 预测轨迹：有阻力时显示真空理想路径，否则显示完整理论抛物线
   const predictedPoints = useMemo(() => {
     const src = showDoubleTrack ? trajectory.vacuumPoints : trajectory.points
     return src.map((pt) => {
-      const { cx, cy } = physicsToCanvasWithOrigin(pt.x, pt.y, originX, originY, scale)
+      const { cx, cy } = physicsToDesignWithOrigin(pt.x, pt.y, designOriginX, designOriginY, scale, vp)
       return { x: cx, y: cy }
     })
-  }, [trajectory, showDoubleTrack, scale, originX, originY])
+  }, [trajectory, showDoubleTrack, scale, designOriginX, designOriginY, vp])
 
   const tailPoints = useMemo(() => {
     const tailLen = Math.min(8, historyPoints.length)
@@ -269,11 +272,11 @@ export default function ProjectileAnimation() {
     const gridRows = 8
     // 水平网格
     for (let i = 1; i < gridRows; i++) {
-      const yPos = originY + (i * stageHeight) / gridRows
+      const yPos = designOriginY + (i * stageHeight) / gridRows
       lines.push(
         <line
           key={`h-grid-${i}`}
-          x1={originX}
+          x1={designOriginX}
           y1={yPos}
           x2={vp.visibleX + vp.visibleW - 20}
           y2={yPos}
@@ -285,14 +288,14 @@ export default function ProjectileAnimation() {
     }
     // 垂直网格
     for (let i = 1; i < gridCols; i++) {
-      const xPos = originX + (i * (vp.visibleW - PROJECTILE_LAYOUT.originX - PROJECTILE_LAYOUT.rightPadding)) / gridCols
+      const xPos = designOriginX + (i * (vp.visibleW / vp.scale - PROJECTILE_LAYOUT.originX - PROJECTILE_LAYOUT.rightPadding)) / gridCols
       lines.push(
         <line
           key={`v-grid-${i}`}
           x1={xPos}
-          y1={originY}
+          y1={designOriginY}
           x2={xPos}
-          y2={groundY}
+          y2={designGroundY}
           stroke={PHYSICS_COLORS.grid}
           strokeWidth={STROKE.grid}
           strokeDasharray={DASH.axis.join(' ')}
@@ -300,7 +303,7 @@ export default function ProjectileAnimation() {
       )
     }
     return lines
-  }, [showGrid, originY, groundY, stageHeight, vp.visibleW, originX, vp.visibleX])
+  }, [showGrid, designOriginY, designGroundY, stageHeight, vp.visibleW, vp.scale, designOriginX, vp.visibleX])
 
   return (
     <div ref={containerRef} className="w-full h-full">
@@ -327,12 +330,12 @@ export default function ProjectileAnimation() {
         {gridLines}
 
         {/* 坐标轴 */}
-        <line x1={originX} y1={originY} x2={originX} y2={groundY} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axis} />
-        <line x1={originX} y1={groundY} x2={canvasSize.width - 15} y2={groundY} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axis} />
+        <line x1={designOriginX} y1={designOriginY} x2={designOriginX} y2={designGroundY} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axis} />
+        <line x1={designOriginX} y1={designGroundY} x2={canvasSize.width - 15} y2={designGroundY} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axis} />
 
-        <text x={originX - 10} y={originY + 4} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="end">y = 10m</text>
-        <text x={originX - 10} y={groundY + 4} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="end">y = 0</text>
-        <text x={canvasSize.width - 25} y={groundY + 16} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">x</text>
+        <text x={designOriginX - 10} y={designOriginY + 4} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="end">y = 10m</text>
+        <text x={designOriginX - 10} y={designGroundY + 4} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="end">y = 0</text>
+        <text x={canvasSize.width - 25} y={designGroundY + 16} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">x</text>
 
         {/* 粒子轨迹（统一组件：预测虚线 + 历史虚线 + 拖尾 + 本体） */}
         {historyPoints.length > 0 && (
@@ -348,19 +351,19 @@ export default function ProjectileAnimation() {
         {/* 分方向匀速/落体投影球及虚线 */}
         {!isLanded && (
           <>
-            {/* 水平匀速投影球 (Y = groundY) */}
+            {/* 水平匀速投影球 (Y = designGroundY) */}
             <circle
               cx={ballCanvas.cx}
-              cy={groundY}
+              cy={designGroundY}
               r={PROJECTILE_LAYOUT.projectionBallRadius}
               fill="url(#vacuum-sphere-grad)"
               stroke={PHYSICS_COLORS.velocityX}
               strokeWidth={0.8}
               strokeDasharray="2,2"
             />
-            {/* 竖直落体投影球 (X = originX) */}
+            {/* 竖直落体投影球 (X = designOriginX) */}
             <circle
-              cx={originX}
+              cx={designOriginX}
               cy={ballCanvas.cy}
               r={PROJECTILE_LAYOUT.projectionBallRadius}
               fill="url(#vacuum-sphere-grad)"
@@ -369,8 +372,8 @@ export default function ProjectileAnimation() {
               strokeDasharray="2,2"
             />
             {/* 主球与投影球之间的参考虚线 */}
-            <line x1={ballCanvas.cx} y1={ballCanvas.cy} x2={ballCanvas.cx} y2={groundY} stroke={PHYSICS_COLORS.grid} strokeWidth={0.8} strokeDasharray="3,3" />
-            <line x1={ballCanvas.cx} y1={ballCanvas.cy} x2={originX} y2={ballCanvas.cy} stroke={PHYSICS_COLORS.grid} strokeWidth={0.8} strokeDasharray="3,3" />
+            <line x1={ballCanvas.cx} y1={ballCanvas.cy} x2={ballCanvas.cx} y2={designGroundY} stroke={PHYSICS_COLORS.grid} strokeWidth={0.8} strokeDasharray="3,3" />
+            <line x1={ballCanvas.cx} y1={ballCanvas.cy} x2={designOriginX} y2={ballCanvas.cy} stroke={PHYSICS_COLORS.grid} strokeWidth={0.8} strokeDasharray="3,3" />
           </>
         )}
 
@@ -431,7 +434,7 @@ export default function ProjectileAnimation() {
 
         {/* 落地状态 */}
         {isLanded && (
-          <text x={ballCanvas.cx} y={groundY - 18} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.displacement} fontWeight="bold" textAnchor="middle">落地</text>
+          <text x={ballCanvas.cx} y={designGroundY - 18} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.displacement} fontWeight="bold" textAnchor="middle">落地</text>
         )}
 
         {/* ========== 右上角：画中画悬浮 v-t 图像（VelocityTimeChart） ========== */}

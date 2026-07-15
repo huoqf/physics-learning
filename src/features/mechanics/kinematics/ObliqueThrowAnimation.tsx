@@ -1,6 +1,6 @@
 import { VectorArrow, VectorDefs, Ball, ParticleTrajectory } from '@/components/Physics'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
-import { physicsToCanvasWithOrigin } from '@/utils'
+import { physicsToDesignWithOrigin } from '@/utils'
 import { useEffect, useMemo, useCallback, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
@@ -13,6 +13,7 @@ import {
   FONT,
   CANVAS_STYLE,
   withAlpha,
+  DASH,
 } from '@/theme/physics'
 
 import { VelocityTimeChart } from '@/components/Chart'
@@ -103,7 +104,13 @@ export default function ObliqueThrowAnimation() {
 
   const scaleX = (vp.visibleW - OBLIQUE_THROW_LAYOUT.originX - OBLIQUE_THROW_LAYOUT.rightPadding) / maxX
   const scaleY = stageHeight / maxY
-  const scale = Math.min(scaleX, scaleY)
+  const canvasScale = Math.min(scaleX, scaleY)
+  const scale = canvasScale / vp.scale
+
+  const designOriginX = (originX - vp.tx) / vp.scale
+  const designGroundY = (groundY - vp.ty) / vp.scale
+  const designTopY = (groundY - stageHeight - vp.ty) / vp.scale
+  const designStageHeight = stageHeight / vp.scale
 
   const obliqueSceneScale = useSceneScale({
     vp,
@@ -114,7 +121,6 @@ export default function ObliqueThrowAnimation() {
     customScaleX: 1,
     customScaleY: 1,
     refMagnitudes: { velocity: Math.max(v0, 10) },
-    maxVectorLength: Math.min(vp.visibleW, vp.visibleH) * 0.3,
   })
 
   const isLanded = time >= groundTime && groundTime > 0
@@ -141,8 +147,8 @@ export default function ObliqueThrowAnimation() {
     [effectiveTime, trajectory.vacuumPoints, interpolatePoints]
   )
 
-  const ballCanvas = physicsToCanvasWithOrigin(currentState.x, currentState.y, originX, groundY, scale)
-  const vacBallCanvas = physicsToCanvasWithOrigin(vacuumState.x, vacuumState.y, originX, groundY, scale)
+  const ballCanvas = physicsToDesignWithOrigin(currentState.x, currentState.y, originX, groundY, canvasScale, vp)
+  const vacBallCanvas = physicsToDesignWithOrigin(vacuumState.x, vacuumState.y, originX, groundY, canvasScale, vp)
 
   const showDoubleTrack = advancedMode === 1 && airResistance > 0 && showVacuumCompare === 1
 
@@ -168,7 +174,6 @@ export default function ObliqueThrowAnimation() {
     vtWidth, vtHeight, vtX, vtY, vtXMax, vtVMax,
     vtPointsVx, vtDomainVx, vtPointsVy, vtDomainVy,
     handleSvgMouseMove, handleSvgMouseUp, handleChartMouseDown,
-    gridLines,
   } = useObliqueThrowLayout(
     trajectory, vp,
     { originX: OBLIQUE_THROW_LAYOUT.originX, rightPadding: OBLIQUE_THROW_LAYOUT.rightPadding },
@@ -183,20 +188,44 @@ export default function ObliqueThrowAnimation() {
     const pts: { x: number; y: number }[] = []
     for (const pt of trajectory.points) {
       if (pt.t > activeT + 1e-5) break
-      const { cx, cy } = physicsToCanvasWithOrigin(pt.x, pt.y, originX, groundY, scale)
+      const { cx, cy } = physicsToDesignWithOrigin(pt.x, pt.y, originX, groundY, canvasScale, vp)
       pts.push({ x: cx, y: cy })
     }
     return pts
-  }, [trajectory.points, activeT, scale, originX, groundY])
+  }, [trajectory.points, activeT, canvasScale, originX, groundY, vp])
 
   // 预测轨迹：有阻力时显示真空理想路径，否则显示完整理论抛物线
   const predictedPoints = useMemo(() => {
     const src = showDoubleTrack ? trajectory.vacuumPoints : trajectory.points
     return src.map((pt) => {
-      const { cx, cy } = physicsToCanvasWithOrigin(pt.x, pt.y, originX, groundY, scale)
+      const { cx, cy } = physicsToDesignWithOrigin(pt.x, pt.y, originX, groundY, canvasScale, vp)
       return { x: cx, y: cy }
     })
-  }, [trajectory, showDoubleTrack, scale, originX, groundY])
+  }, [trajectory, showDoubleTrack, canvasScale, originX, groundY, vp])
+
+  const designGridLines = useMemo(() => {
+    if (!showGrid) return []
+    const lines: React.ReactElement[] = []
+    const gridCols = 12
+    const gridRows = 8
+    const gridStageWidth = (vp.visibleW - OBLIQUE_THROW_LAYOUT.originX - OBLIQUE_THROW_LAYOUT.rightPadding) / vp.scale
+    const rightEdge = (vp.visibleX + vp.visibleW - 20 - vp.tx) / vp.scale
+    for (let i = 1; i < gridRows; i++) {
+      const yPos = designGroundY - (i * designStageHeight) / gridRows
+      lines.push(
+        <line key={`h-grid-${i}`} x1={designOriginX} y1={yPos} x2={rightEdge} y2={yPos}
+          stroke={PHYSICS_COLORS.grid} strokeWidth={STROKE.grid} strokeDasharray={DASH.axis.join(' ')} />
+      )
+    }
+    for (let i = 1; i < gridCols; i++) {
+      const xPos = designOriginX + (i * gridStageWidth) / gridCols
+      lines.push(
+        <line key={`v-grid-${i}`} x1={xPos} y1={designTopY} x2={xPos} y2={designGroundY}
+          stroke={PHYSICS_COLORS.grid} strokeWidth={STROKE.grid} strokeDasharray={DASH.axis.join(' ')} />
+      )
+    }
+    return lines
+  }, [showGrid, designGroundY, designStageHeight, designOriginX, designTopY, vp])
 
   const tailPoints = useMemo(() => {
     const tailLen = Math.min(8, historyPoints.length)
@@ -204,6 +233,7 @@ export default function ObliqueThrowAnimation() {
   }, [historyPoints])
 
   const angleRad = (angle * Math.PI) / 180
+  const s = vp.scale
 
   return (
     <div ref={containerRef} className="w-full h-full">
@@ -238,31 +268,32 @@ export default function ObliqueThrowAnimation() {
           <VectorDefs colors={[PHYSICS_COLORS.velocityX, PHYSICS_COLORS.velocityY, PHYSICS_COLORS.velocity]} />
         </defs>
 
-        {gridLines}
+        <g transform={vp.transform}>
+        {designGridLines}
 
         {/* 坐标轴 */}
-        <line x1={originX} y1={groundY - stageHeight} x2={originX} y2={groundY} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axis} />
-        <line x1={originX} y1={groundY} x2={vp.visibleX + vp.visibleW - 15} y2={groundY} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axis} />
-        <text x={originX - 10} y={groundY - maxY * scale + 4} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="end">y = {maxY.toFixed(1)}m</text>
-        <text x={originX - 10} y={groundY + 4} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="end">y = 0</text>
-        <text x={vp.visibleX + vp.visibleW - 25} y={groundY + 16} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">x</text>
+        <line x1={designOriginX} y1={designTopY} x2={designOriginX} y2={designGroundY} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axis} />
+        <line x1={designOriginX} y1={designGroundY} x2={(vp.visibleX + vp.visibleW - 15 - vp.tx) / s} y2={designGroundY} stroke={PHYSICS_COLORS.axis} strokeWidth={STROKE.axis} />
+        <text x={designOriginX - 10 / s} y={designGroundY - maxY * scale + 4 / s} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="end">y = {maxY.toFixed(1)}m</text>
+        <text x={designOriginX - 10 / s} y={designGroundY + 4 / s} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="end">y = 0</text>
+        <text x={(vp.visibleX + vp.visibleW - 25 - vp.tx) / s} y={designGroundY + 16 / s} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.labelText} textAnchor="middle">x</text>
 
         {/* 抛出角度指示盘 */}
         {!isLanded && (
           <path
-            d={`M ${originX} ${groundY} L ${originX + OBLIQUE_THROW_LAYOUT.angleArcRadius} ${groundY} A ${OBLIQUE_THROW_LAYOUT.angleArcRadius} ${OBLIQUE_THROW_LAYOUT.angleArcRadius} 0 0 0 ${originX + OBLIQUE_THROW_LAYOUT.angleArcRadius * Math.cos(angleRad)} ${groundY - OBLIQUE_THROW_LAYOUT.angleArcRadius * Math.sin(angleRad)} Z`}
+            d={`M ${designOriginX} ${designGroundY} L ${designOriginX + OBLIQUE_THROW_LAYOUT.angleArcRadius / s} ${designGroundY} A ${OBLIQUE_THROW_LAYOUT.angleArcRadius / s} ${OBLIQUE_THROW_LAYOUT.angleArcRadius / s} 0 0 0 ${designOriginX + (OBLIQUE_THROW_LAYOUT.angleArcRadius / s) * Math.cos(angleRad)} ${designGroundY - (OBLIQUE_THROW_LAYOUT.angleArcRadius / s) * Math.sin(angleRad)} Z`}
             fill={SCENE_COLORS.effects.sectorFill}
             stroke={PHYSICS_COLORS.velocityX}
-            strokeWidth={0.6}
+            strokeWidth={0.6 / s}
             strokeDasharray="2,2"
           />
         )}
 
         {/* 旋转弹射炮筒 */}
-        <g transform={`translate(${originX}, ${groundY}) rotate(${-angle})`}>
-          <rect x={0} y={-OBLIQUE_THROW_LAYOUT.barrelWidth / 2} width={OBLIQUE_THROW_LAYOUT.barrelLength}
-            height={OBLIQUE_THROW_LAYOUT.barrelWidth} fill="url(#slider-metal)" stroke={PHYSICS_COLORS.labelText} strokeWidth={1} rx={2} />
-          <circle cx={4} cy={0} r={2} fill={PHYSICS_COLORS.velocityY} />
+        <g transform={`translate(${designOriginX}, ${designGroundY}) rotate(${-angle})`}>
+          <rect x={0} y={-(OBLIQUE_THROW_LAYOUT.barrelWidth / s) / 2} width={OBLIQUE_THROW_LAYOUT.barrelLength / s}
+            height={OBLIQUE_THROW_LAYOUT.barrelWidth / s} fill="url(#slider-metal)" stroke={PHYSICS_COLORS.labelText} strokeWidth={1 / s} rx={2 / s} />
+          <circle cx={4 / s} cy={0} r={2 / s} fill={PHYSICS_COLORS.velocityY} />
         </g>
 
         {/* 粒子轨迹（统一组件：预测虚线 + 历史实线 + 拖尾 + 本体） */}
@@ -279,29 +310,29 @@ export default function ObliqueThrowAnimation() {
         {/* 分方向投影球及虚线 */}
         {!isLanded && (
           <>
-            <circle cx={ballCanvas.cx} cy={groundY} r={OBLIQUE_THROW_LAYOUT.projectionBallRadius}
-              fill="url(#vacuum-sphere-grad)" stroke={PHYSICS_COLORS.velocityX} strokeWidth={0.8} strokeDasharray="2,2" />
-            <circle cx={originX} cy={ballCanvas.cy} r={OBLIQUE_THROW_LAYOUT.projectionBallRadius}
-              fill="url(#vacuum-sphere-grad)" stroke={PHYSICS_COLORS.velocityY} strokeWidth={0.8} strokeDasharray="2,2" />
-            <line x1={ballCanvas.cx} y1={ballCanvas.cy} x2={ballCanvas.cx} y2={groundY} stroke={PHYSICS_COLORS.grid} strokeWidth={0.8} strokeDasharray="3,3" />
-            <line x1={ballCanvas.cx} y1={ballCanvas.cy} x2={originX} y2={ballCanvas.cy} stroke={PHYSICS_COLORS.grid} strokeWidth={0.8} strokeDasharray="3,3" />
+            <circle cx={ballCanvas.cx} cy={designGroundY} r={OBLIQUE_THROW_LAYOUT.projectionBallRadius / s}
+              fill="url(#vacuum-sphere-grad)" stroke={PHYSICS_COLORS.velocityX} strokeWidth={0.8 / s} strokeDasharray="2,2" />
+            <circle cx={designOriginX} cy={ballCanvas.cy} r={OBLIQUE_THROW_LAYOUT.projectionBallRadius / s}
+              fill="url(#vacuum-sphere-grad)" stroke={PHYSICS_COLORS.velocityY} strokeWidth={0.8 / s} strokeDasharray="2,2" />
+            <line x1={ballCanvas.cx} y1={ballCanvas.cy} x2={ballCanvas.cx} y2={designGroundY} stroke={PHYSICS_COLORS.grid} strokeWidth={0.8 / s} strokeDasharray="3,3" />
+            <line x1={ballCanvas.cx} y1={ballCanvas.cy} x2={designOriginX} y2={ballCanvas.cy} stroke={PHYSICS_COLORS.grid} strokeWidth={0.8 / s} strokeDasharray="3,3" />
           </>
         )}
 
         {/* 真空对照钢球 */}
         {showDoubleTrack && !isLanded && (
-          <Ball cx={vacBallCanvas.cx} cy={vacBallCanvas.cy} r={OBLIQUE_THROW_LAYOUT.steelBallRadius}
-            type="steelGhost" stroke={PHYSICS_COLORS.displacement} strokeWidth={0.8} />
+          <Ball cx={vacBallCanvas.cx} cy={vacBallCanvas.cy} r={OBLIQUE_THROW_LAYOUT.steelBallRadius / s}
+            type="steelGhost" stroke={PHYSICS_COLORS.displacement} strokeWidth={0.8 / s} />
         )}
 
         {/* 实际钢珠 */}
         <circle
-          cx={Math.min(vp.visibleX + vp.visibleW - OBLIQUE_THROW_LAYOUT.steelBallRadius, ballCanvas.cx)}
-          cy={Math.min(groundY, ballCanvas.cy)}
-          r={OBLIQUE_THROW_LAYOUT.steelBallRadius}
+          cx={Math.min((vp.visibleX + vp.visibleW - OBLIQUE_THROW_LAYOUT.steelBallRadius - vp.tx) / s, ballCanvas.cx)}
+          cy={Math.min(designGroundY, ballCanvas.cy)}
+          r={OBLIQUE_THROW_LAYOUT.steelBallRadius / s}
           fill="url(#steel-sphere-grad)"
           stroke={SCENE_COLORS.sphere.steel.stroke}
-          strokeWidth={CANVAS_STYLE.stroke.objectLine}
+          strokeWidth={CANVAS_STYLE.stroke.objectLine / s}
         />
 
         {/* 速度分量矢量箭头 */}
@@ -309,41 +340,41 @@ export default function ObliqueThrowAnimation() {
           <g>
             <VectorArrow originDesign={{ x: ballCanvas.cx, y: ballCanvas.cy }} vector={{ x: currentState.vx, y: 0 }}
               type="velocityX" arrowType="physical-schematic" sceneScale={obliqueSceneScale} strokeWidth={STROKE.vectorSub} pixelLength={vxPxLen} />
-            <text x={ballCanvas.cx + obliqueSceneScale.maxVectorLength * 0.3 + 10} y={ballCanvas.cy + 3}
+            <text x={ballCanvas.cx + obliqueSceneScale.maxVectorLength * 0.3 + 10 / s} y={ballCanvas.cy + 3 / s}
               fontSize={font(9)} fill={PHYSICS_COLORS.velocityX} fontWeight="bold">vₓ</text>
 
             {Math.abs(currentState.vy) > 0.05 && (
               <VectorArrow originDesign={{ x: ballCanvas.cx, y: ballCanvas.cy }} vector={{ x: 0, y: currentState.vy }}
                 type="velocityY" arrowType="physical-schematic" sceneScale={obliqueSceneScale} strokeWidth={STROKE.vectorSub} pixelLength={vyPxLen} />
             )}
-            <text x={ballCanvas.cx - 3} y={ballCanvas.cy - obliqueSceneScale.maxVectorLength * 0.3 + (currentState.vy >= 0 ? -6 : 12)}
+            <text x={ballCanvas.cx - 3 / s} y={ballCanvas.cy - obliqueSceneScale.maxVectorLength * 0.3 + (currentState.vy >= 0 ? -6 / s : 12 / s)}
               fontSize={font(9)} fill={PHYSICS_COLORS.velocityY} fontWeight="bold" textAnchor="middle">vᵧ</text>
 
             <VectorArrow originDesign={{ x: ballCanvas.cx, y: ballCanvas.cy }} vector={{ x: currentState.vx, y: currentState.vy }}
               type="velocity" arrowType="physical-schematic" sceneScale={obliqueSceneScale} strokeWidth={STROKE.vectorMain} pixelLength={totalPxLen} />
-            <text x={ballCanvas.cx + obliqueSceneScale.maxVectorLength * 0.3 + 8} y={ballCanvas.cy - obliqueSceneScale.maxVectorLength * 0.3 - 4}
+            <text x={ballCanvas.cx + obliqueSceneScale.maxVectorLength * 0.3 + 8 / s} y={ballCanvas.cy - obliqueSceneScale.maxVectorLength * 0.3 - 4 / s}
               fontSize={font(9)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">v</text>
           </g>
         )}
 
         {/* 最高点物理指示 */}
         {isAtPeak && (() => {
-          const peakW = vp.visibleW * 0.16
-          const peakH = vp.visibleH * 0.065
-          const peakGap = vp.visibleH * 0.025
-          const panelAbove = ballCanvas.cy - peakGap - peakH > vp.visibleY
-          const py = panelAbove ? ballCanvas.cy - peakGap - peakH : ballCanvas.cy + vp.visibleH * 0.03
+          const peakW = vp.designVisibleW * 0.16
+          const peakH = vp.designVisibleH * 0.065
+          const peakGap = vp.designVisibleH * 0.025
+          const panelAbove = ballCanvas.cy - peakGap - peakH > (vp.visibleY - vp.ty) / s
+          const py = panelAbove ? ballCanvas.cy - peakGap - peakH : ballCanvas.cy + vp.designVisibleH * 0.03
           const px = ballCanvas.cx - peakW / 2
           return (
             <g transform={`translate(${px}, ${py})`}>
-              <rect width={peakW} height={peakH} fill={SCENE_COLORS.labels.glassPanelBg} rx={6}
-                stroke={CHART_COLORS.axisLine} strokeWidth={0.8}
-                filter={`drop-shadow(0 4px 10px ${withAlpha(SCENE_COLORS.materials.structStrokeDark, 0.1)})`} />
+              <rect width={peakW} height={peakH} fill={SCENE_COLORS.labels.glassPanelBg} rx={6 / s}
+                stroke={CHART_COLORS.axisLine} strokeWidth={0.8 / s}
+                filter={`drop-shadow(0 ${4 / s}px ${10 / s}px ${withAlpha(SCENE_COLORS.materials.structStrokeDark, 0.1)})`} />
               <polygon
                 points={panelAbove
-                  ? `${peakW / 2} ${peakH}, ${peakW / 2 - 5} ${peakH + 5}, ${peakW / 2 + 5} ${peakH}`
-                  : `${peakW / 2} 0, ${peakW / 2 - 5} -5, ${peakW / 2 + 5} 0`}
-                fill={SCENE_COLORS.labels.glassPanelBg} stroke={CHART_COLORS.axisLine} strokeWidth={0.8} />
+                  ? `${peakW / 2} ${peakH}, ${peakW / 2 - 5 / s} ${peakH + 5 / s}, ${peakW / 2 + 5 / s} ${peakH}`
+                  : `${peakW / 2} 0, ${peakW / 2 - 5 / s} ${-5 / s}, ${peakW / 2 + 5 / s} 0`}
+                fill={SCENE_COLORS.labels.glassPanelBg} stroke={CHART_COLORS.axisLine} strokeWidth={0.8 / s} />
               <text x={peakW / 2} y={peakH * 0.38} fontSize={font(9)} fill={CHART_COLORS.labelText} textAnchor="middle" fontWeight="bold">
                 最高点 H = {maxHeight.toFixed(2)}m
               </text>
@@ -355,8 +386,9 @@ export default function ObliqueThrowAnimation() {
         })()}
 
         {isLanded && (
-          <text x={ballCanvas.cx} y={groundY - 18} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.displacement} fontWeight="bold" textAnchor="middle">落地</text>
+          <text x={ballCanvas.cx} y={designGroundY - 18 / s} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.displacement} fontWeight="bold" textAnchor="middle">落地</text>
         )}
+        </g>
 
         {/* ========== 右上角画中画 v-t 图像 ========== */}
         <g transform={`translate(${vtX}, ${vtY})`}>

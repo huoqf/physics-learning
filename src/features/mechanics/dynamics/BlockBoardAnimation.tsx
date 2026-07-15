@@ -18,7 +18,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { getBoardSystemState } from '@/physics/blockBoard'
 import { GRAVITY } from '@/physics/constants'
-import { physicsToCanvasWithOrigin } from '@/utils'
+
 import type { SceneScale } from '@/scene/SceneScale'
 
 const DESIGN = CANVAS_PRESETS.splitV // 840 × 325
@@ -63,14 +63,14 @@ export default function BlockBoardAnimation() {
   const boardStartX = DESIGN.width * L.boardStartXRatio
 
   // 木板 x（设计坐标）
-  const { cx: boardX } = physicsToCanvasWithOrigin(state.xBoard, 0, boardStartX, 0, pxPerMeter)
+  const boardX = boardStartX + state.xBoard * pxPerMeter
 
   // 滑块 y：在板上 vs 跌落到地面
   const blockOnBoard = !state.hasFallen
   const blockY = blockOnBoard ? boardY - L.blockH : groundY - L.blockH
 
   // 滑块 x（设计坐标）
-  const { cx: blockX } = physicsToCanvasWithOrigin(state.xBlock - state.xBoard, 0, boardX, 0, pxPerMeter)
+  const blockX = boardX + (state.xBlock - state.xBoard) * pxPerMeter
 
   // ── 受力 ──
   const FgBlock = m * g

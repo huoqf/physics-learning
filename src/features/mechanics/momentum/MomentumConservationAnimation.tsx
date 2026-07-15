@@ -30,7 +30,7 @@ export default function MomentumConservationAnimation() {
 
   const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.splitV })
 
-  const groundY = Math.round(vp.visibleH * 0.55)
+  const groundY = Math.round(preset.height * 0.55)
   const {
     basic, advanced, isAdvanced, chartData, p1, p2, pTotal, mapArrowLen, mapMomentumBar,
   } = useMomentumConservationPhysics(params, time, groundY, DESIGN_WIDTH)

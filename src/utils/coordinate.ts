@@ -78,6 +78,7 @@ export function canvasToPhysics(
  * @param originY Canvas 中物理原点的 Y 像素位置 (px)
  * @param scale 物理单位到像素的缩放比 (px/m)
  * @returns Canvas 像素坐标 { cx, cy }
+ * @deprecated 若 SVG 在 `<g transform={vp.transform}>` 内，请改用 {@link physicsToDesignWithOrigin}
  */
 export function physicsToCanvasWithOrigin(
   x: number,
@@ -89,6 +90,38 @@ export function physicsToCanvasWithOrigin(
   const cx = originX + x * scale;
   const cy = originY - y * scale;
   return { cx, cy };
+}
+
+/**
+ * 物理坐标 → 设计坐标（自定义原点，含 viewport 转换）
+ *
+ * 与 physicsToCanvasWithOrigin() 的区别：
+ * - physicsToCanvasWithOrigin 输出容器像素（px），适用于原始 SVG（无 vp.transform）
+ * - 本函数输出设计坐标（design-unit），适用于包裹在 `<g transform={vp.transform}>` 内的 SVG
+ *
+ * 转换公式：design = (canvasPx - vp.tx) / vp.scale
+ *
+ * @param x 物理横坐标 (m)
+ * @param y 物理纵坐标 (m)，向上为正
+ * @param originX 容器中物理原点的 X 像素位置 (px)
+ * @param originY 容器中物理原点的 Y 像素位置 (px)
+ * @param scale 物理单位到容器像素的缩放比 (px/m)
+ * @param vp 视口信息 { tx, ty, scale }，用于容器像素 → 设计坐标转换
+ * @returns 设计坐标 { cx, cy }
+ */
+export function physicsToDesignWithOrigin(
+  x: number,
+  y: number,
+  originX: number,
+  originY: number,
+  scale: number,
+  vp: { tx: number; ty: number; scale: number }
+): CanvasPoint {
+  const { cx, cy } = physicsToCanvasWithOrigin(x, y, originX, originY, scale)
+  return {
+    cx: (cx - vp.tx) / vp.scale,
+    cy: (cy - vp.ty) / vp.scale,
+  }
 }
 
 /** 画布矩形边界 */

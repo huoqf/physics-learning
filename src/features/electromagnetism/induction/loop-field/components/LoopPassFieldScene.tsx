@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { PhysicsVectorArrow, MagneticFieldGrid } from '@/components/Physics'
-import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
+
 import { useAnimationViewport } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
@@ -74,7 +74,7 @@ export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
     const magTargetWidth = designWidth * 0.46 // 磁场占用约 46% 的设计坐标宽度
     const scale = magTargetWidth / (D || 0.08)
     const originX = designWidth / 2 - (D / 2) * scale
-    return (physX: number) => physicsToCanvasWithOrigin(physX, 0, originX, 0, scale).cx
+    return (physX: number) => originX + physX * scale
   }, [D])
 
   const magLeftPx = toScreenX(0)

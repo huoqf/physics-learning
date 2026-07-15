@@ -6,7 +6,6 @@
  */
 import { useMemo } from 'react'
 import { getPointsUpToTime, PX_PER_METER } from '@/utils'
-import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
 import {
   calculateCollisionVelocities,
   calculateCommonVelocity,
@@ -41,7 +40,6 @@ interface BasicModeParams {
   collisionType: number
   e_coefficient: number
   time: number
-  groundY: number
   designWidth: number
 }
 
@@ -61,7 +59,7 @@ interface BasicModeResult {
  * 计算基础模式（两球碰撞）的位置与速度状态
  */
 function computeBasicMode(p: BasicModeParams): BasicModeResult {
-  const { m1, v1, m2, v2, collisionType, e_coefficient, time, groundY, designWidth } = p
+  const { m1, v1, m2, v2, collisionType, e_coefficient, time, designWidth } = p
 
   const R_A = MC_LAYOUT.ballBaseRadius + m1 * MC_LAYOUT.massRadiusScale
   const R_B = MC_LAYOUT.ballBaseRadius + m2 * MC_LAYOUT.massRadiusScale
@@ -109,8 +107,8 @@ function computeBasicMode(p: BasicModeParams): BasicModeResult {
     currentV2 = v2After
   }
 
-  const { cx: rawPosAx } = physicsToCanvasWithOrigin(xPhysA, 0, initPosAx, groundY, PX_PER_METER)
-  const { cx: rawPosBx } = physicsToCanvasWithOrigin(xPhysB, 0, initPosAx, groundY, PX_PER_METER)
+  const rawPosAx = initPosAx + xPhysA * PX_PER_METER
+  const rawPosBx = initPosAx + xPhysB * PX_PER_METER
 
   const leftBound = MC_LAYOUT.canvasPadding + R_A
   const rightBound = designWidth - MC_LAYOUT.canvasPadding - R_B
@@ -231,8 +229,8 @@ function computeAdvancedMode(p: AdvancedModeParams): AdvancedModeResult {
   const currentDeltaX = Math.min(currentXSlider - currentXBoard, L)
 
   const boardInitX = designWidth * 0.28
-  const { cx: boardPixelX } = physicsToCanvasWithOrigin(currentXBoard, 0, boardInitX, groundY, PX_PER_METER)
-  const { cx: sliderPixelX } = physicsToCanvasWithOrigin(currentXSlider, 0, boardInitX, groundY, PX_PER_METER)
+  const boardPixelX = boardInitX + currentXBoard * PX_PER_METER
+  const sliderPixelX = boardInitX + currentXSlider * PX_PER_METER
   const boardPixelW = L * PX_PER_METER
 
   const boardTopY = groundY - MC_LAYOUT.boardHeight
@@ -304,8 +302,8 @@ export function useMomentumConservationPhysics(
 
   // ── 基础模式计算 ──
   const basic = useMemo(
-    () => computeBasicMode({ m1, v1, m2, v2, collisionType, e_coefficient, time, groundY, designWidth }),
-    [m1, v1, m2, v2, collisionType, e_coefficient, time, groundY, designWidth]
+    () => computeBasicMode({ m1, v1, m2, v2, collisionType, e_coefficient, time, designWidth }),
+    [m1, v1, m2, v2, collisionType, e_coefficient, time, designWidth]
   )
 
   // ── 进阶模式计算 ──

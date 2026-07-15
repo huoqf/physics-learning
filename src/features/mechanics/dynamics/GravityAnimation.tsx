@@ -6,7 +6,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE, SCENE_COLORS, CHART_COLORS } from '@/theme/physics'
-import { physicsToCanvas, computeScale } from '@/utils/coordinate'
+import { computeScale } from '@/utils/coordinate'
 
 import { RelationChart } from '@/components/Chart'
 const R_DOMAIN: [number, number] = [1.5, 18.0]
@@ -45,13 +45,10 @@ export default function GravityAnimation() {
   const scale = computeScale(vp.visibleW * GRAVITY_LAYOUT.scaleWidthRatio, vp.visibleH, WORLD)
   
   // 天体 1 放置在左侧 -r/2，天体 2 放置在右侧 r/2
-  const pos1 = physicsToCanvas(-r / 2, 0, vp.visibleW, vp.visibleH, scale)
-  const pos2 = physicsToCanvas(r / 2, 0, vp.visibleW, vp.visibleH, scale)
-
-  const obj1X = pos1.cx
-  const obj1Y = pos1.cy
-  const obj2X = pos2.cx
-  const obj2Y = pos2.cy
+  const obj1X = vp.visibleW / 2 + (-r / 2) * scale
+  const obj1Y = vp.visibleH / 2
+  const obj2X = vp.visibleW / 2 + (r / 2) * scale
+  const obj2Y = vp.visibleH / 2
 
   // 天体半径
   let radius1 = 30

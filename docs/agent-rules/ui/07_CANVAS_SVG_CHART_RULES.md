@@ -159,7 +159,7 @@ return (
 
 > **规范**：需要撑满可视区域的元素（地面、参考线、轨道等）**必须**使用 `vp.designLeft/designTop/designVisibleW/designVisibleH`，禁止使用固定的 `DESIGN.width/height`。preset 定义的是设计坐标系，不是容器尺寸。
 
-> **场景缩放选型**：viewport 驱动场景用 `createSceneScaleFromViewport`；中心对称场景（圆周运动、天体轨道）用 `createSceneScaleFromDesignCenter`。两者均为统一组件，禁止在组件内手写坐标变换公式。
+> **场景缩放选型**：新页面统一使用 `useSceneScale`（`src/hooks/useSceneScale.ts`），通过 `anchor` 模式选择缩放策略；中心对称场景也可用 `createSceneScaleFromDesignCenter`。旧组件维护可用 `createSceneScaleFromViewport`（`visibleArea`/`centerScale` 模式已 `@deprecated`）。禁止在组件内手写坐标变换公式。
 
 ```tsx
 // 圆周运动等需要以中心为原点的场景，先用 useAnimationViewport 拿到 vp，
@@ -241,7 +241,7 @@ return (
   // canvasRef 传入后，SVG 自动设置 w-full h-full absolute inset-0（见 AnimationSvgCanvas 源码）
   <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform} canvasRef={canvasRef}>
     <VectorArrow
-      originPixel={{ x: particleDesign.dx, y: particleDesign.dy }}
+      originDesign={{ x: particleDesign.dx, y: particleDesign.dy }}
       vector={{ x: particle.vx, y: particle.vy }}
       type="velocity"
       sceneScale={svgSceneScale}
@@ -262,7 +262,7 @@ return (
 | `<defs>` 在 children 首位 | defs 在 `<g transform>` 内完全合法，id 在同一 SVG 文档内有效 |
 | 图表严禁 `<foreignObject>` | 响应式图表组件必须放在 HTML 层（flex 分区或 absolute 浮层），不得嵌入 SVG |
 | `font()` 强制使用 | `fontSize={font(11)}` 而非 `fontSize={11}` |
-| 物理比例尺 | 通过 `createSceneScaleFromViewport`（viewport 驱动）或 `createSceneScaleFromDesignCenter`（设计中心驱动）计算；存量旧组件可用 `computeScale()`，禁止硬编码 |
+| 物理比例尺 | 通过 `useSceneScale`（新页面）或 `createSceneScaleFromViewport`（`transform` 模式可用，`visibleArea`/`centerScale` 模式已 deprecated）或 `createSceneScaleFromDesignCenter` 计算；存量旧组件可用 `computeScale()`，禁止硬编码 |
 | 指针事件 | 传 `svgRef` + `useViewportPointer`，禁止手写 `(clientX - rect.left - vp.tx) / vp.scale` |
 | **Canvas+SVG 混用坐标对齐** | **SVG 矢量起点必须通过 `canvas像素 → vp 逆变换` 得到设计坐标；禁止直接用 `designW/worldWidth` 为基准的 sceneScale 计算（宽高比不匹配时偏移）** |
 | **Canvas+SVG maxVectorLength 单位** | **`svgSceneScale.maxVectorLength` 必须用 `canvasSceneScale.maxVectorLength / vp.scale`（设计坐标单位），而非 `Math.min(designW, designH) * 0.3`（两者在 letterbox/pillarbox 时不等）** |
@@ -347,7 +347,7 @@ const vp = useViewport(canvasSize, {
 
 **方式C（可视区自适应型，存量维护参考）：基于 vp.visibleW/H/X/Y 像素区域自适应**
 
-> ⚠️ **存量遗留，禁止新建。** 仅用于维护既有方式C 组件。新页面使用 §2.2 的 `useAnimationViewport` + `createSceneScaleFromViewport` 或 `createSceneScaleFromDesignCenter` 实现同等效果。
+> ⚠️ **存量遗留，禁止新建。** 仅用于维护既有方式C 组件。新页面使用 §2.2 的 `useAnimationViewport` + `useSceneScale` 实现同等效果。
 
 ```tsx
 // ✅ 方式C（普通可视区布局 visibleArea）：利用可视区属性直接计算自适应坐标
@@ -377,7 +377,7 @@ const centerSceneScale = createSceneScaleFromViewport(vp, 'centerScale', {
 | 无 overlay，内容全屏居中 | `useAnimationViewport({ preset })` + `AnimationSvgCanvas` |
 | 有 overlay 但可用 CSS 浮层 | `useAnimationViewport({ preset, overlayRight })` + `AnimationSvgCanvas` + HTML absolute 浮层 |
 | 必须在 SVG 内部精确 overlay 避让 | `useAnimationViewport({ preset, overlayRight })` + `AnimationSvgCanvas` |
-| 动态力学图解 / 依赖动态比例尺 / Canvas | `useAnimationViewport({ preset })` + `createSceneScaleFromViewport` |
+| 动态力学图解 / 依赖动态比例尺 / Canvas | `useAnimationViewport({ preset })` + `useSceneScale` |
 | 中心对称场景（圆周运动、天体轨道）/ 设计中心驱动 | `useAnimationViewport({ preset })` + `createSceneScaleFromDesignCenter` |
 
 #### 指针事件坐标映射对比
@@ -407,7 +407,7 @@ const { x: px, y: py } = canvasToPhysics(e.clientX - rect.left, e.clientY - rect
 | **viewBox 值** | **严禁在未传 overlay 参数时，`viewBox={\`0 0 ${width} ${height}\`}` 同时使用 `<g transform={vp.transform}>`（双重缩放）** |
 | **布局模式选择** | **新页面统一使用 `useAnimationViewport` + `AnimationSvgCanvas`（§2.2）；存量方式 B 须在 `useViewport` 声明 overlay 参数；存量方式 C 使用 `vp.visible*` 做可视区像素定位** |
 | 布局坐标 | 使用比例常量计算，禁止散落的无语义像素值 |
-| 物理比例尺 | 使用 `createSceneScaleFromViewport`（viewport 驱动）或 `createSceneScaleFromDesignCenter`（设计中心驱动）计算；存量旧组件可用 `computeScale()`，禁止硬编码恒等缩放绕过归一化 |
+| 物理比例尺 | 使用 `useSceneScale`（新页面）或 `createSceneScaleFromDesignCenter` 计算；存量旧组件可用 `createSceneScaleFromViewport`（`visibleArea`/`centerScale` 模式已 deprecated）或 `computeScale()`，禁止硬编码恒等缩放绕过归一化 |
 | 字体大小 | SVG 内使用 `fontSize={font(N)}`，画布内 HTML 使用 `style={{ fontSize: font(N) }}`，禁止裸值 |
 | 响应式 | 调整浏览器窗口大小时，布局比例保持不变，无视觉跳变 |
 | **指针事件** | **使用 `getScreenCTM().inverse()` 矩阵变换（§2.2 及存量方式B）；存量方式C 统一扣除容器与边距偏移，禁止散落的手动算式** |
@@ -503,7 +503,7 @@ const pointRadius = Math.min(
 | 物理常量 | ✅ 允许 | 来自 `physics/constants.ts`，带 JSDoc |
 | 数学常量（Math.PI, 0.5） | ✅ 允许 | 直接使用，复杂语义需命名 |
 | 视觉尺寸（16px, 180px） | ❌ 禁止 | 从 `@/theme` 或 `canvasStyle.ts` 导入 |
-| 物理比例尺（scale = 160） | ❌ 禁止 | 使用 `createSceneScaleFromViewport` 或 `createSceneScaleFromDesignCenter`（新页面）；存量可用 `computeScale()` |
+| 物理比例尺（scale = 160） | ❌ 禁止 | 使用 `useSceneScale`（新页面）或 `createSceneScaleFromDesignCenter`；存量可用 `computeScale()` |
 | SVG fontSize 裸值（fontSize={7}） | ❌ 禁止 | 使用 `fontSize={font(7)}` |
 | Tailwind text-[Npx]（画布内） | ❌ 禁止 | 使用 `style={{ fontSize: font(N) }}` |
 | 颜色值（#2563EB, rgb()） | ❌ 禁止 | 从 `@/theme/physics` 导入 |
@@ -529,9 +529,11 @@ const { minPointRadius, margin } = CANVAS_STYLE;
 
 | 坐标类型 | 来源 | 转换/计算 | 用途 |
 |----------|------|----------|------|
-| 物理坐标 | `physics/` 计算 | 物理世界的真实值 | 位移、速度、力、轨道半径 |
-| Canvas 坐标 | `coordinate.ts` 转换 | 必须使用 `physicsToCanvas()` | 实际绘制位置 |
-| 布局坐标 | `canvasLayout.ts` 计算 | 图表 inset、图例位置、标注避让 | 非物理元素布局 |
+| 物理坐标 | `physics/` 计算 | 物理世界的真实值（y↑ 正） | 位移、速度、力、轨道半径 |
+| 设计坐标 | `worldToDesign()`（`src/scene`） | 通过 `useSceneScale` 构造的 `SceneScale` 转换 | SVG 场景渲染（在 `<g transform={vp.transform}>` 内） |
+| 容器像素 | `vp.transform` 自动映射 | 设计坐标经 viewport transform 得到 | 最终屏幕显示 |
+
+> **存量**：`physicsToCanvas()`（`src/utils/coordinate.ts`）输出容器像素，仅用于维护旧组件。
 
 ### 5.2 禁止的做法
 
@@ -546,10 +548,18 @@ const canvasX = centerX + physicsX * scale;
 ### 5.3 推荐的做法
 
 ```ts
-// ✅ 推荐：统一使用 coordinate.ts
-import { physicsToCanvas } from '@/utils/coordinate';
+// ✅ 新页面标准：物理坐标 → 设计坐标（通过 useSceneScale + worldToDesign）
+import { worldToDesign } from '@/scene'
 
-const [canvasX, canvasY] = physicsToCanvas(physicsX, physicsY, canvasSize, scale);
+const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: 10, physicsHeight: 8 })
+const designPos = worldToDesign(physicsX, physicsY, sceneScale)
+// designPos 传给 VectorArrow 的 originDesign 或直接用于 SVG 渲染
+```
+
+```ts
+// ⚠️ 存量旧代码：physicsToCanvas 输出容器像素（不经过 vp.transform），仅维护时使用
+import { physicsToCanvas } from '@/utils/coordinate'
+const canvasPos = physicsToCanvas(physicsX, physicsY, canvasWidth, canvasHeight, scale)
 ```
 
 ---
@@ -662,7 +672,7 @@ type ChartAreaIntensity = 'subtle' | 'normal' | 'strong'
 |----------|----------|
 | 组件内写 HEX 颜色 | 从 `@/theme/colors` 或 `@/theme/physics` 导入 |
 | 组件内写 `requestAnimationFrame` | 使用 `src/utils/animation.ts`（详见 `ARCHITECTURE_RULES.md §7`） |
-| 手写 `centerX + x * scale` | 使用 `createSceneScaleFromDesignCenter`（封装对齐保证）或 `physicsToCanvas()` |
+| 手写 `centerX + x * scale` | 使用 `createSceneScaleFromDesignCenter`（封装对齐保证）或 `worldToDesign()`（新页面）/ `physicsToCanvas()`（存量） |
 | 固定图表 `185px × 120px` | 使用容器比例 + min/max |
 | Canvas 内用 lucide 图标 | 使用 SVG 路径或绘制函数 |
 
@@ -733,11 +743,12 @@ arrowPixelLength = (mag / refMagnitude) × maxVectorLength × visualWeight
 | 默认 | `min(w, h) × 0.3` |
 | splitH | `min(w × 0.45, h × 0.3)` |
 
-可通过 `createSceneScaleFromViewport` 的 `maxVectorLength` 参数完全覆盖默认计算：
+可通过 `useSceneScale` 的 `maxVectorLength` 参数完全覆盖默认计算：
 
 ```typescript
-const sceneScale = createSceneScaleFromViewport(vp, 'centerScale', {
-  // ...
+const sceneScale = useSceneScale({
+  vp, preset, anchor: 'center',
+  physicsScaleDesign: 50,
   centerLayout: 'splitH',        // 启用 layout-aware 默认算法
   maxVectorLength: 80,           // 或直接覆盖，跳过默认计算
 })

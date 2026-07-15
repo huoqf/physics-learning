@@ -57,7 +57,7 @@
 ### 铁律 1 展开：统一来源十条子约束
 
 1. **颜色/间距/圆角/阴影/动效** → 必须从 `src/theme/` 子模块引用
-2. **坐标转换** → 必须走 `physicsToCanvas()`（`src/utils/coordinate.ts`）
+2. **坐标转换** → 新页面必须走 `worldToDesign()`（`src/scene`，通过 `useSceneScale` 构造 `SceneScale`）；`physicsToCanvas()`（`src/utils/coordinate.ts`）仅用于维护旧组件存量代码（输出容器像素，不经过 `vp.transform`）
 3. **场景缩放** → 新页面统一使用 `useSceneScale`（`src/hooks/useSceneScale.ts`）构造 `SceneScale`，通过 `anchor` 模式选择缩放策略；物理坐标→设计坐标统一使用 `worldToDesign`（`src/scene`，`worldToPixel` 的语义别名）。`createSceneScaleFromViewport` 的 `visibleArea`/`centerScale` 模式已 `@deprecated`（输出容器像素单位，不适合在 `<g transform={vp.transform}>` 内使用），存量迁移逐步替换；`transform` 模式保持可用（输出设计坐标）
 4. **动画调度** → 必须通过 `src/utils/animation.ts` 的 Hook（禁止直接调用 `requestAnimationFrame`）
 5. **矢量箭头** → 必须使用 `VectorArrow` 或 `PhysicsVectorArrow` 组件；物理矢量（力/速度/加速度/电流/电场等）优先使用 `PhysicsVectorArrow`（禁止 `pixelLength`，长度通过 `sceneScale.refMagnitudes` 归一化）；视觉标注/几何图形/等长力示意使用 `VectorArrow`；禁止手写 `<line>` + `<marker>`；`originPixel` 已 deprecated，新代码必须使用 `originDesign`

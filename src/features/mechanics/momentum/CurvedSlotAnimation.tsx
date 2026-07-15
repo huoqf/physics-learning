@@ -264,14 +264,14 @@ export default function CurvedSlotAnimation() {
               return (
                 <g>
                   {/* 滑块受支持力 N 与重力 mg，均作用于几何中心 */}
-                  <PhysicsVectorArrow originDesign={ballCenterPhy} vector={{ x: -N * Math.sin(theta), y: N * Math.cos(theta) }} type="normalForce" sceneScale={sceneScale} label="N" />
-                  <PhysicsVectorArrow originDesign={ballCenterPhy} vector={{ x: 0, y: -mgVal }} type="force" sceneScale={sceneScale} label="mg" color={PHYSICS_COLORS.gravity} />
-                  
+                  <PhysicsVectorArrow origin={ballCenterPhy} vector={{ x: -N * Math.sin(theta), y: N * Math.cos(theta) }} type="normalForce" sceneScale={sceneScale} label="N" />
+                  <PhysicsVectorArrow origin={ballCenterPhy} vector={{ x: 0, y: -mgVal }} type="force" sceneScale={sceneScale} label="mg" color={PHYSICS_COLORS.gravity} />
+
                   {/* 槽受滑块的压力 N' 及水平推力分力 N'x，作用于接触点 */}
                   {!isFixed && (
                     <>
-                      <PhysicsVectorArrow originDesign={contactPhy} vector={{ x: N * Math.sin(theta), y: -N * Math.cos(theta) }} type="appliedForce" sceneScale={sceneScale} label="N'" color={PHYSICS_COLORS.appliedForce} />
-                      <PhysicsVectorArrow originDesign={contactPhy} vector={{ x: N * Math.sin(theta), y: 0 }} type="forceComponent" sceneScale={sceneScale} label="N'x" color={PHYSICS_COLORS.forceNet} dashed />
+                      <PhysicsVectorArrow origin={contactPhy} vector={{ x: N * Math.sin(theta), y: -N * Math.cos(theta) }} type="appliedForce" sceneScale={sceneScale} label="N'" color={PHYSICS_COLORS.appliedForce} />
+                      <PhysicsVectorArrow origin={contactPhy} vector={{ x: N * Math.sin(theta), y: 0 }} type="forceComponent" sceneScale={sceneScale} label="N'x" color={PHYSICS_COLORS.forceNet} dashed />
                     </>
                   )}
                 </g>

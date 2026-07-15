@@ -241,7 +241,7 @@ tests/
   - **可视区自适应型（方式C）**：使用 `vp.visibleW/H/X/Y` 在动态 Canvas/SVG 容器可视像素区域内直接计算比例定位与动态布局，对应底层 `SceneLayoutProfile` 中的 `visibleArea` 与 `centerScale` 模式。
   - 详见 `docs/agent-rules/ui/07_CANVAS_SVG_CHART_RULES.md §2.4`
 - **computeScale** → 物理量→像素转换（保留，与 useViewport 可共存）
-- **createSceneScaleFromViewport** → 当组件已结合 useViewport 构建物理场景缩放时，用此替代 `createSceneScale` 构建 SceneScale。支持快捷布局字面量调用（如 `createSceneScaleFromViewport(vp, 'visibleArea', { designWidth: 700, designHeight: 400 })`）；**针对圆周/天体轨道运动等中心对称场景（`centerScale`）**，若存在动态计算的物理比例（如将几米轨道映射至屏幕像素），**必须在 options 中显式声明 `worldWidth` 与 `worldHeight`**（如 `worldWidth: (vp.visibleW - padding) / scale`），确保导出的 `sceneScale.scale` 与物理实际比例一致。
+- **createSceneScaleFromViewport** → 旧组件维护时可用。`visibleArea`/`centerScale` 模式已 `@deprecated`（输出容器像素单位），新页面改用 `useSceneScale`（`src/hooks/useSceneScale.ts`）统一输出设计坐标。`transform` 模式仍可用（输出设计坐标）。
 - 所有 Animation 组件**禁止**使用散落的硬编码绝对像素值（如 `groundY = 380`），应采用设计坐标系常量、LAYOUT 具名常量或基于 `vp.visibleH * ratio` 动态计算
 
 ---

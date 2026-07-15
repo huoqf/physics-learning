@@ -12,7 +12,8 @@ import {
   precomputeValleyTrajectory,
   getECStateAtTime,
 } from '@/physics/energyConservation'
-import { physicsToCanvasWithOrigin } from '@/utils/coordinate'
+import { physicsToDesignWithOrigin } from '@/utils/coordinate'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { PendulumScene } from './PendulumScene'
 import { ValleyScene } from './ValleyScene'
 import { EnergyConservationBarChart } from './EnergyConservationBarChart'
@@ -103,11 +104,22 @@ export default function EnergyConservationAnimation() {
   const pivotX = animCenterX               // 物理原点 X (px)
   const pivotY = mode === 0 ? hangY : valleyCenterY // 物理原点 Y (px)
 
-  // 摆球或滑块像素坐标（通过 physicsToCanvasWithOrigin 转换，符合铁律 1.2）
+  // ── 设计坐标（用于 <g transform={vp.transform}> 内的 SVG）──
+  const designGroundY = (groundY - vp.ty) / vp.scale
+  const designHangY = (hangY - vp.ty) / vp.scale
+  const designPhysScale = physScale / vp.scale
+  const designR_pix = R_pix / vp.scale
+  const designAnimCenterX = (animCenterX - vp.tx) / vp.scale
+  const designWallX = (wallX - vp.tx) / vp.scale
+  const designObjW = objW / vp.scale
+  const designObjH = objH / vp.scale
+  const designValleyCenterY = (valleyCenterY - vp.ty) / vp.scale
+
+  // 摆球或滑块设计坐标（通过 physicsToDesignWithOrigin 转换）
   const getObjectPixelPos = (thetaRad: number) => {
     const physX = R_model * Math.sin(thetaRad)
     const physY = -R_model * Math.cos(thetaRad)
-    const { cx, cy } = physicsToCanvasWithOrigin(physX, physY, pivotX, pivotY, physScale)
+    const { cx, cy } = physicsToDesignWithOrigin(physX, physY, pivotX, pivotY, physScale, vp)
     return { x: cx, y: cy }
   }
 
@@ -131,8 +143,8 @@ export default function EnergyConservationAnimation() {
   const Ep_adj = state.Ep - E_offset
   const Etot_adj = state.Etot - E_offset
 
-  const lowestY = mode === 0 ? hangY + R_pix : groundY
-  const yRefLine = lowestY - hRef * physScale
+  const designLowestY = mode === 0 ? designHangY + designR_pix : designGroundY
+  const yRefLine = designLowestY - hRef * designPhysScale
 
   // ── 拖拽响应事件 ──
   const handleMouseDown = (e: React.MouseEvent<SVGElement>) => {
@@ -141,14 +153,16 @@ export default function EnergyConservationAnimation() {
     const rect = svgRef.current?.getBoundingClientRect()
     if (!rect) return
     const { x: mouseX, y: mouseY } = clientToContainerPoint(e.clientX, e.clientY, rect)
+    const designMouseX = (mouseX - vp.tx) / vp.scale
+    const designMouseY = (mouseY - vp.ty) / vp.scale
 
     // 1. 检查是否点击在零势能面附近
-    if (Math.abs(mouseY - yRefLine) <= 8) {
+    if (Math.abs(designMouseY - yRefLine) <= 8 / vp.scale) {
       dragRef.current = {
         isDraggingObj: false,
         isDraggingRefLine: true,
-        startY: mouseY,
-        startX: mouseX,
+        startY: designMouseY,
+        startX: designMouseX,
         startVal: hRef,
       }
       setCursorType('ns-resize')
@@ -159,43 +173,43 @@ export default function EnergyConservationAnimation() {
     const pos = getObjectPixelPos(state.theta)
     const isOverObj =
       mode === 0
-        ? Math.hypot(mouseX - pos.x, mouseY - pos.y) <= 18
-        : mouseX >= pos.x - objW * 0.6 &&
-          mouseX <= pos.x + objW * 0.6 &&
-          mouseY >= pos.y - objH - 5 &&
-          mouseY <= pos.y + 10
+        ? Math.hypot(designMouseX - pos.x, designMouseY - pos.y) <= 18 / vp.scale
+        : designMouseX >= pos.x - designObjW * 0.6 &&
+          designMouseX <= pos.x + designObjW * 0.6 &&
+          designMouseY >= pos.y - designObjH - 5 / vp.scale &&
+          designMouseY <= pos.y + 10 / vp.scale
 
     if (isOverObj) {
       dragRef.current = {
         isDraggingObj: true,
         isDraggingRefLine: false,
-        startY: mouseY,
-        startX: mouseX,
+        startY: designMouseY,
+        startX: designMouseX,
         startVal: theta0,
       }
       setCursorType('grabbing')
     }
   }
 
-  const getCursorType = (mouseX: number, mouseY: number, hRefVal: number): 'default' | 'grab' | 'grabbing' | 'ns-resize' => {
+  const getCursorType = (designMouseX: number, designMouseY: number, hRefVal: number): 'default' | 'grab' | 'grabbing' | 'ns-resize' => {
     if (isPlaying) return 'default'
     if (dragRef.current.isDraggingRefLine) return 'ns-resize'
     if (dragRef.current.isDraggingObj) return 'grabbing'
 
-    const curLowestY = mode === 0 ? hangY + R_pix : groundY
-    const curYRefLine = curLowestY - hRefVal * physScale
-    if (Math.abs(mouseY - curYRefLine) <= 8) {
+    const curLowestY = mode === 0 ? designHangY + designR_pix : designGroundY
+    const curYRefLine = curLowestY - hRefVal * designPhysScale
+    if (Math.abs(designMouseY - curYRefLine) <= 8 / vp.scale) {
       return 'ns-resize'
     }
 
     const pos = getObjectPixelPos(state.theta)
     const isOverObj =
       mode === 0
-        ? Math.hypot(mouseX - pos.x, mouseY - pos.y) <= 18
-        : mouseX >= pos.x - objW * 0.6 &&
-          mouseX <= pos.x + objW * 0.6 &&
-          mouseY >= pos.y - objH - 5 &&
-          mouseY <= pos.y + 10
+        ? Math.hypot(designMouseX - pos.x, designMouseY - pos.y) <= 18 / vp.scale
+        : designMouseX >= pos.x - designObjW * 0.6 &&
+          designMouseX <= pos.x + designObjW * 0.6 &&
+          designMouseY >= pos.y - designObjH - 5 / vp.scale &&
+          designMouseY <= pos.y + 10 / vp.scale
 
     if (isOverObj) return 'grab'
     return 'default'
@@ -205,10 +219,12 @@ export default function EnergyConservationAnimation() {
     const rect = svgRef.current?.getBoundingClientRect()
     if (!rect) return
     const { x: mouseX, y: mouseY } = clientToContainerPoint(e.clientX, e.clientY, rect)
+    const designMouseX = (mouseX - vp.tx) / vp.scale
+    const designMouseY = (mouseY - vp.ty) / vp.scale
 
     if (dragRef.current.isDraggingRefLine) {
-      const dy = mouseY - dragRef.current.startY
-      let nextHRef = dragRef.current.startVal - dy / physScale
+      const dy = designMouseY - dragRef.current.startY
+      let nextHRef = dragRef.current.startVal - dy / designPhysScale
       const maxHRef = R_model * 1.2
       nextHRef = Math.max(-2.0, Math.min(maxHRef, nextHRef))
       updateParam('hRef', nextHRef)
@@ -217,9 +233,9 @@ export default function EnergyConservationAnimation() {
     }
 
     if (dragRef.current.isDraggingObj) {
-      const centerY = mode === 0 ? hangY : valleyCenterY
-      const dx = mouseX - animCenterX
-      const dy = mouseY - centerY
+      const centerY = mode === 0 ? designHangY : designValleyCenterY
+      const dx = designMouseX - designAnimCenterX
+      const dy = designMouseY - centerY
       
       // 计算拖拉对应的偏角 (rad -> deg)
       const thetaRad = Math.atan2(dx, dy)
@@ -236,7 +252,7 @@ export default function EnergyConservationAnimation() {
       return
     }
 
-    setCursorType(getCursorType(mouseX, mouseY, hRef))
+    setCursorType(getCursorType(designMouseX, designMouseY, hRef))
   }
 
   const handleMouseUpOrLeave = () => {
@@ -276,12 +292,12 @@ export default function EnergyConservationAnimation() {
 
 
 
-  // 绘制山谷 150° 对称轨道线
+  // 绘制山谷 150° 对称轨道线（设计坐标）
   const arcLimitDeg = 72
-  const arcStartX = animCenterX - R_pix * Math.sin(arcLimitDeg * Math.PI / 180)
-  const arcStartY = valleyCenterY + R_pix * Math.cos(arcLimitDeg * Math.PI / 180)
-  const arcEndX = animCenterX + R_pix * Math.sin(arcLimitDeg * Math.PI / 180)
-  const arcEndY = valleyCenterY + R_pix * Math.cos(arcLimitDeg * Math.PI / 180)
+  const designArcStartX = designAnimCenterX - designR_pix * Math.sin(arcLimitDeg * Math.PI / 180)
+  const designArcStartY = designValleyCenterY + designR_pix * Math.cos(arcLimitDeg * Math.PI / 180)
+  const designArcEndX = designAnimCenterX + designR_pix * Math.sin(arcLimitDeg * Math.PI / 180)
+  const designArcEndY = designValleyCenterY + designR_pix * Math.cos(arcLimitDeg * Math.PI / 180)
 
   // 动态 refMagnitudes：为物理矢量箭头归一化提供参考量级
   const refMagnitudes = useMemo(() => {
@@ -301,7 +317,7 @@ export default function EnergyConservationAnimation() {
   const dynamicYDomain: [number, number] = [chartYMin, Math.max(chartYMax, 10)]
 
   return (
-    <div ref={containerRef} className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">
+    <div className="relative w-full h-full bg-white rounded-lg shadow-inner overflow-hidden">
       {/* 拖拽交互提示气泡 */}
       {!isPlaying && (
         <div className="absolute top-3 right-4 alert-card-neutral py-1 px-2.5 font-semibold pointer-events-none z-10" style={{ fontSize: font(9) }}>
@@ -353,17 +369,17 @@ export default function EnergyConservationAnimation() {
       </div>
 
       {/* 主 SVG 画面 */}
-      <svg
-        ref={svgRef}
-        width={vp.visibleW}
-        height={vp.visibleH}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUpOrLeave}
-        onMouseLeave={handleMouseUpOrLeave}
-        style={{ cursor: cursorType }}
-        className="bg-transparent"
-      >
+      <div style={{ cursor: cursorType }} className="w-full h-full">
+        <AnimationSvgCanvas
+          containerRef={containerRef}
+          transform={vp.transform}
+          svgRef={svgRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUpOrLeave}
+          onMouseLeave={handleMouseUpOrLeave}
+          className="bg-transparent"
+        >
         <defs>
           {/* 小车材质 */}
           <linearGradient id="block-grad" x1="0" y1="0" x2="1" y2="0">
@@ -385,9 +401,9 @@ export default function EnergyConservationAnimation() {
 
         {mode === 0 ? (
           <PendulumScene
-            animCenterX={animCenterX}
-            hangY={hangY}
-            R_pix={R_pix}
+            animCenterX={designAnimCenterX}
+            hangY={designHangY}
+            R_pix={designR_pix}
             objPos={objPos}
             state={state}
             showVectors={showVectors}
@@ -402,16 +418,16 @@ export default function EnergyConservationAnimation() {
           />
         ) : (
           <ValleyScene
-            animCenterX={animCenterX}
-            groundY={groundY}
-            R_pix={R_pix}
-            arcStartX={arcStartX}
-            arcStartY={arcStartY}
-            arcEndX={arcEndX}
-            arcEndY={arcEndY}
+            animCenterX={designAnimCenterX}
+            groundY={designGroundY}
+            R_pix={designR_pix}
+            arcStartX={designArcStartX}
+            arcStartY={designArcStartY}
+            arcEndX={designArcEndX}
+            arcEndY={designArcEndY}
             objPos={objPos}
-            objW={objW}
-            objH={objH}
+            objW={designObjW}
+            objH={designObjH}
             thetaDeg={thetaDeg}
             state={state}
             m={m}
@@ -431,8 +447,8 @@ export default function EnergyConservationAnimation() {
         {/* ── 三柱/四柱能量守恒验证面板卡片 ── */}
         <EnergyConservationBarChart
           mode={mode}
-          wallX={wallX}
-          vpVisibleH={vp.visibleH}
+          wallX={designWallX}
+          panelY={(vp.visibleH * 0.55 - vp.ty) / vp.scale}
           state={state}
           Ep_adj={Ep_adj}
           Etot_adj={Etot_adj}
@@ -442,7 +458,8 @@ export default function EnergyConservationAnimation() {
           barTot_H={barTot_H}
           font={font}
         />
-      </svg>
+      </AnimationSvgCanvas>
+      </div>
     </div>
   )
 }

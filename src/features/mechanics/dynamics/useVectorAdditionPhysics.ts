@@ -1,6 +1,9 @@
 import { useMemo } from 'react'
 import { calculateVectorAddition, calculateOrthogonalDecomposition } from '@/physics'
-import { physicsToCanvas } from '@/utils/coordinate'
+
+function toCanvasPoint(x: number, y: number, canvasWidth: number, canvasHeight: number, scale: number) {
+  return { cx: canvasWidth / 2 + x * scale, cy: canvasHeight / 2 - y * scale }
+}
 
 interface UseVectorAdditionPhysicsProps {
   f1: number
@@ -78,7 +81,7 @@ export function useVectorAdditionPhysics({
     const decomp = calculateOrthogonalDecomposition(f1, angle) // 正交分解中，f1 充当合力
 
     // 2. 坐标原点
-    const origin = physicsToCanvas(0, 0, canvasWidth, canvasHeight, scale)
+    const origin = toCanvasPoint(0, 0, canvasWidth, canvasHeight, scale)
 
     // 3. 计算各矢量及辅助点坐标
     let f1End = { cx: 0, cy: 0 }
@@ -101,11 +104,11 @@ export function useVectorAdditionPhysics({
     if (mode === 2) {
       // ===== 正交分解模式 =====
       // 此时 f1 充当合力，angle 充当合力方向角
-      fResultantEnd = physicsToCanvas(decomp.fx, decomp.fy, canvasWidth, canvasHeight, scale)
+      fResultantEnd = toCanvasPoint(decomp.fx, decomp.fy, canvasWidth, canvasHeight, scale)
 
       // 分量端点
-      fxEnd = physicsToCanvas(decomp.fx, 0, canvasWidth, canvasHeight, scale)
-      fyEnd = physicsToCanvas(0, decomp.fy, canvasWidth, canvasHeight, scale)
+      fxEnd = toCanvasPoint(decomp.fx, 0, canvasWidth, canvasHeight, scale)
+      fyEnd = toCanvasPoint(0, decomp.fy, canvasWidth, canvasHeight, scale)
 
       // 投影虚线
       fxProj = {
@@ -122,9 +125,9 @@ export function useVectorAdditionPhysics({
       }
     } else {
       // ===== 力的合成模式（平行四边形 / 三角形）=====
-      f1End = physicsToCanvas(addition.fx1, addition.fy1, canvasWidth, canvasHeight, scale)
-      f2End = physicsToCanvas(addition.fx2, addition.fy2, canvasWidth, canvasHeight, scale)
-      fResultantEnd = physicsToCanvas(addition.fx, addition.fy, canvasWidth, canvasHeight, scale)
+      f1End = toCanvasPoint(addition.fx1, addition.fy1, canvasWidth, canvasHeight, scale)
+      f2End = toCanvasPoint(addition.fx2, addition.fy2, canvasWidth, canvasHeight, scale)
+      fResultantEnd = toCanvasPoint(addition.fx, addition.fy, canvasWidth, canvasHeight, scale)
 
       // 平行四边形辅助线
       f1ToResultant = {
@@ -157,8 +160,8 @@ export function useVectorAdditionPhysics({
       const currentShiftX = addition.fx1 * progress
       const currentShiftY = addition.fy1 * progress
 
-      f2ShiftedStart = physicsToCanvas(currentShiftX, currentShiftY, canvasWidth, canvasHeight, scale)
-      f2ShiftedEnd = physicsToCanvas(
+      f2ShiftedStart = toCanvasPoint(currentShiftX, currentShiftY, canvasWidth, canvasHeight, scale)
+      f2ShiftedEnd = toCanvasPoint(
         addition.fx2 + currentShiftX,
         addition.fy2 + currentShiftY,
         canvasWidth,

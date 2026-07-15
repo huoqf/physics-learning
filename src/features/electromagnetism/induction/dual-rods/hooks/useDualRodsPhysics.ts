@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { computeDualRodsStateAtTime } from '@/physics'
-import { computeScale, physicsToCanvasWithOrigin } from '@/utils/coordinate'
+import { computeScale } from '@/utils/coordinate'
 
 const DUAL_RODS_WORLD = { xMin: -3.0, xMax: 3.0, yMin: -1.4, yMax: 1.4 } as const
 
@@ -108,11 +108,9 @@ export function useDualRodsPhysics(
     const physXA = halfGap
     const physXB = -halfGap
 
-    const ptA = physicsToCanvasWithOrigin(physXA, 0, originX, originY, scale)
-    const ptB = physicsToCanvasWithOrigin(physXB, 0, originX, originY, scale)
     return {
-      posA: ptA.cx,
-      posB: ptB.cx,
+      posA: originX + physXA * scale,
+      posB: originX + physXB * scale,
     }
   }, [stateAtT.xA, stateAtT.xB, originX, originY, scale])
 
