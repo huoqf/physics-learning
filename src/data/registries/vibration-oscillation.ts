@@ -244,7 +244,7 @@ export const vibrationOscillationAnimations = defineAnimations({
     Component: lazy(() => import('@/features/vibration/wave/WaveDiffractionAnimation')),
     CenterExtra: lazy(() => import('@/features/vibration/wave/WaveDiffractionCenterExtra')),
     centerLayout: 'splitH',
-    controlsMode: 'loop' as const,
+    controlsMode: 'timed' as const,
     maxTime: 60,
     defaultParams: {
       d: 8,
@@ -309,7 +309,7 @@ export const vibrationOscillationAnimations = defineAnimations({
     Component: lazy(() => import('@/features/vibration/wave/WaveInterferenceAnimation')),
     CenterExtra: lazy(() => import('@/features/vibration/wave/WaveInterferenceCenterExtra')),
     centerLayout: 'splitH',
-    controlsMode: 'loop' as const,
+    controlsMode: 'timed' as const,
     maxTime: 60,
     defaultParams: {
       a: 12,

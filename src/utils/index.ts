@@ -9,3 +9,4 @@ export * from './chartData';
 export * from './formatNumber';
 export * from './layoutLabels';
 export * from './snap';
+export * from './color';
