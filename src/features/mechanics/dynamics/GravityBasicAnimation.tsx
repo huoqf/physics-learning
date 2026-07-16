@@ -1,5 +1,5 @@
 import { VectorDefs } from '@/components/Physics'
-import { FC, useMemo } from 'react'
+import { FC, useEffect, useMemo, useRef } from 'react'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
@@ -18,6 +18,7 @@ export const GravityBasicAnimation: FC = () => {
     isPlaying: s.isPlaying,
     }))
   )
+  const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
   const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
   const { font } = canvasSize
 
@@ -31,6 +32,15 @@ export const GravityBasicAnimation: FC = () => {
   const weightY = params.weightY ?? 25 // 配重本地 Y 坐标 (-40 ~ 40)
   const weightMass = params.weightMass ?? 1.2 // 配重相对质量 (0.2 ~ 2.0)
   const showLines = params.showLines ?? 1 // 是否显示悬挂垂线
+
+  // 悬挂法模式下切换悬挂孔时自动播放摆动动画
+  const prevHoleRef = useRef(activeHoleIdx)
+  useEffect(() => {
+    if (mode === 1 && prevHoleRef.current !== activeHoleIdx) {
+      setIsPlaying(true)
+    }
+    prevHoleRef.current = activeHoleIdx
+  }, [mode, activeHoleIdx, setIsPlaying])
 
   const cx = vp.centerX
   const cy = vp.centerY

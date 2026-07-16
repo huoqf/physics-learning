@@ -41,12 +41,15 @@ export const SuspendedPlateScene: FC<SuspendedPlateSceneProps> = ({
 }) => {
   return (
     <g>
-      {/* 绘制背景物理支架/黑板刻度 */}
-      <PhysicsGround
-        x={cx - 150} y={plateData.pinY - 40} width={300}
-        type="bracket"
-        appearance={{ color: PHYSICS_COLORS.axis }}
+      {/* 绘制不规则薄板 (金属拉丝渐变) — 先绘制，在支架下方 */}
+      <polygon
+        points={plateData.canvasVertices.map((v) => `${v.cx},${v.cy}`).join(' ')}
+        fill="url(#plate-grad)"
+        stroke={PHYSICS_COLORS.labelText}
+        strokeWidth={1.8}
+        filter={`drop-shadow(2px 4px 6px ${withAlpha(SCENE_COLORS.materials.structStrokeDark, 0.15)})`}
       />
+
       {/* 悬挂钉子 (固定点) */}
       <circle
         cx={plateData.pinX} cy={plateData.pinY} r={5}
@@ -55,13 +58,11 @@ export const SuspendedPlateScene: FC<SuspendedPlateSceneProps> = ({
         strokeWidth={1.5}
       />
 
-      {/* 绘制不规则薄板 (金属拉丝渐变) */}
-      <polygon
-        points={plateData.canvasVertices.map((v) => `${v.cx},${v.cy}`).join(' ')}
-        fill="url(#plate-grad)"
-        stroke={PHYSICS_COLORS.labelText}
-        strokeWidth={1.8}
-        filter={`drop-shadow(2px 4px 6px ${withAlpha(SCENE_COLORS.materials.structStrokeDark, 0.15)})`}
+      {/* 绘制背景物理支架 — 最后绘制，在最顶层作为悬挂支撑结构 */}
+      <PhysicsGround
+        x={cx - 150} y={plateData.pinY - 40} width={300}
+        type="bracket"
+        appearance={{ color: PHYSICS_COLORS.axis }}
       />
 
       {/* 绘制已经画出的重力铅垂线 (对应 3 个悬挂孔) */}
