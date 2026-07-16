@@ -94,9 +94,9 @@ node scripts/gen-annotations.mjs
 | 动效 duration / easing | `import { duration, easing, transition } from '@/theme/motion'` |
 | 圆角 / 阴影 | `import { radius } from '@/theme/radius'` / `import { shadow, glowRing } from '@/theme/shadow'` |
 | 动画视口 + SVG 画布 | `import { useAnimationViewport } from '@/hooks'` + `import { AnimationSvgCanvas } from '@/components/Layout'` |
-| 场景物理比例尺 | `import { createSceneScaleFromViewport } from '@/scene'` |
+| 场景物理比例尺 | `import { useSceneScale } from '@/hooks'` |
 | SVG 坐标映射 | `import { useViewportPointer } from '@/utils'` |
-| 物理矢量箭头 | `import { VectorArrow } from '@/components/Physics'` |
+| 物理矢量箭头 | `import { PhysicsVectorArrow } from '@/components/Physics'`（物理正确）/ `import { VectorArrow } from '@/components/Physics'`（视觉标注） |
 
 ### 图表与布局工具
 
@@ -137,4 +137,4 @@ node scripts/gen-annotations.mjs
 
 ---
 
-*最后更新：2026-06-28 | 核心规范位于 docs/agent-rules/core/ARCHITECTURE_RULES.md，本文件保留按需加载索引*
+*最后更新：2026-07-15 | 核心规范位于 docs/agent-rules/core/ARCHITECTURE_RULES.md，本文件保留按需加载索引*

@@ -211,7 +211,8 @@ tests/
 
 ## 6. 坐标系统规则
 
-- 所有图形渲染必须通过 `src/utils/coordinate.ts` 做坐标转换
+- **新页面**：物理坐标→设计坐标通过 `worldToDesign()`（`src/scene`）+ `useSceneScale`（`src/hooks/useSceneScale.ts`）；Canvas 路径使用 `useCanvasViewport` + `designToPixel`
+- **存量旧代码维护**：可通过 `computeScale()` / `physicsToCanvas()`（`src/utils/coordinate.ts`）做坐标转换，新页面禁止使用
 - 必须使用 `src/hooks/useCanvasDPR.ts` 的 `setupCanvasDPR` 处理 DPR
 - **禁止**在组件中直接写像素换算逻辑或魔法数字定位
 
@@ -222,26 +223,24 @@ tests/
 
 转换函数必须双向可逆，且在测试中覆盖边界情况。
 
-物理比例尺**必须**通过 `computeScale()`（`src/utils/coordinate.ts`）基于画布尺寸和物理世界范围计算，禁止在组件内写 `scale = N` 等硬编码比例尺。
+物理比例尺**新页面必须**通过 `useSceneScale`（`src/hooks/useSceneScale.ts`）基于 preset 和物理世界范围计算；存量旧组件可用 `computeScale()`（`src/utils/coordinate.ts`）。禁止在组件内写 `scale = N` 等硬编码比例尺。
 
-### 6.1 两条坐标路径适用场景
+### 6.1 坐标路径适用场景
 
-项目中存在两条并行的坐标缩放路径，新组件开发者须明确选用：
+> **新页面唯一标准路径**：`useAnimationViewport` + `useSceneScale` + `worldToDesign`（见 `project_rules.md §4.8`）。以下两条路径为历史体系，仅用于维护存量代码。
+
+项目中存在两条并行的坐标缩放路径：
 
 | 坐标路径 | 入口 | 适用场景 | 来源 |
 |------|------|---------|------|
-| 坐标路径 1（标准） | `useViewport()` | 场景元素的比例定位与缩放（**按实际布局需求调用，纯方式A无计算需求时豁免调用**） | `src/utils/useViewport.ts` |
-| 坐标路径 2（保留） | `computeScale()` | 物理量→像素转换，可与 useViewport 共存 | `src/utils/coordinate.ts` |
+| 路径 1（存量，新页面禁止单独使用） | `useViewport()` | 场景元素的比例定位与缩放（**按实际布局需求调用，纯方式A无计算需求时豁免调用**） | `src/utils/useViewport.ts` |
+| 路径 2（保留） | `computeScale()` | 物理量→像素转换，可与 useViewport 共存 | `src/utils/coordinate.ts` |
 
 > ⚠️ 注意：此处「坐标路径 1/2」指坐标体系，与 `project_rules.md` 铁律1-8 的「SVG方式A/B/C（布局体系）」是不同维度的概念，请勿混淆。
 
-- **useViewport** → 场景元素的自适应缩放与定位；但使用方式按布局与 overlay 条件选择：
-  - **纯设计坐标型（方式A）**：无 overlay 遮挡，viewBox 绑定固定设计尺寸，`preserveAspectRatio` 自动居中。**豁免此类组件对 `useViewport()` 的强制调用**，彻底消除 `void vp` 等无意义空调用。
-  - **坐标变换型（方式B）**：有 overlay（如右侧面板遮挡内容区），在 `useViewport` 参数中明确声明 `overlayRight` 等参数，使用容器真实 viewBox + `<g transform={vp.transform}>`。
-  - **可视区自适应型（方式C）**：使用 `vp.visibleW/H/X/Y` 在动态 Canvas/SVG 容器可视像素区域内直接计算比例定位与动态布局，对应底层 `SceneLayoutProfile` 中的 `visibleArea` 与 `centerScale` 模式。
-  - 详见 `docs/agent-rules/ui/07_CANVAS_SVG_CHART_RULES.md §2.4`
-- **computeScale** → 物理量→像素转换（保留，与 useViewport 可共存）
-- **createSceneScaleFromViewport** → 旧组件维护时可用。`visibleArea`/`centerScale` 模式已 `@deprecated`（输出容器像素单位），新页面改用 `useSceneScale`（`src/hooks/useSceneScale.ts`）统一输出设计坐标。`transform` 模式仍可用（输出设计坐标）。
+- **useViewport** → 存量旧组件维护用，新页面通过 `useAnimationViewport` 统一调用。方式A/B/C 的详细适用条件与代码示例见 `07_CANVAS_SVG_CHART_RULES.md §2.3`。
+- **computeScale** → 存量旧组件维护用（物理量→像素转换），新页面使用 `useSceneScale` + `worldToDesign`。
+- **createSceneScaleFromViewport** → 存量旧组件维护用。`visibleArea`/`centerScale` 模式已 `@deprecated`，新页面改用 `useSceneScale` 或 `createSceneScaleFromDesignCenter`。`transform` 模式仍可用（输出设计坐标）。
 - 所有 Animation 组件**禁止**使用散落的硬编码绝对像素值（如 `groundY = 380`），应采用设计坐标系常量、LAYOUT 具名常量或基于 `vp.visibleH * ratio` 动态计算
 
 ---
@@ -491,7 +490,7 @@ Tailwind v4 使用 CSS-first 配置，颜色通过 `src/index.css` 中的 `@them
 
 所有组件中的颜色/间距/动效值必须从 `src/theme/` 子模块引用，禁止硬编码。import 路径详见 `ui/02_UI_RULES.md §2`。
 
-动画组件的 UI token（字体/阴影/面板/图表内边距）从 `src/theme/animationTokens.ts` 引用，画布预设尺寸从 `CANVAS_PRESETS`（`src/theme/spacing.ts`）引用。**新组件按布局区域选择 preset**：`full`（840×650）/ `splitV`（840×325）/ `splitH`（420×650）/ `square`（650×650），`useViewport` 的 `designWidth/designHeight` 必须与所用 preset 数值完全一致。选型规则详见 `project_rules.md CANVAS_PRESETS 画布预设规格`。
+动画组件的 UI token（字体/阴影/面板/图表内边距）从 `src/theme/animationTokens.ts` 引用，画布预设尺寸从 `CANVAS_PRESETS`（`src/theme/spacing.ts`）引用。**新组件按布局区域选择 preset**：`full`（840×650）/ `splitV`（840×325）/ `splitH`（420×650）/ `square`（650×650），`useViewport` 的 `designWidth/designHeight` 必须与所用 preset 数值完全一致。选型规则详见 `project_rules.md CANVAS_PRESETS 画布预设规格`。**新页面禁止直接调用 `useCanvasSize(CANVAS_PRESETS.xxx)`**，必须通过 `useAnimationViewport({ preset })` 统一获取（见 `project_rules.md §4 铁律1-子约束6`）。
 
 **矢量系统 token**：矢量类型枚举（`VectorType`）、视觉权重（`VECTOR_VISUAL_WEIGHT`）、颜色映射（`VECTOR_COLORS`）从 `src/theme/physics/vectorStyle.ts` 引用；箭头几何规格（`ArrowGeometry`）从 `src/theme/physics/arrowStyle.ts` 引用。两者均通过 `@/theme/physics` 统一入口导出。
 

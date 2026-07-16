@@ -159,11 +159,34 @@ return (
 
 > **规范**：需要撑满可视区域的元素（地面、参考线、轨道等）**必须**使用 `vp.designLeft/designTop/designVisibleW/designVisibleH`，禁止使用固定的 `DESIGN.width/height`。preset 定义的是设计坐标系，不是容器尺寸。
 
-> **场景缩放选型**：新页面统一使用 `useSceneScale`（`src/hooks/useSceneScale.ts`），通过 `anchor` 模式选择缩放策略；中心对称场景也可用 `createSceneScaleFromDesignCenter`。旧组件维护可用 `createSceneScaleFromViewport`（`visibleArea`/`centerScale` 模式已 `@deprecated`）。禁止在组件内手写坐标变换公式。
+> **场景缩放选型**：新页面统一使用 `useSceneScale`（`src/hooks/useSceneScale.ts`），通过 `anchor` 模式选择缩放策略；中心对称场景也可用 `createSceneScaleFromDesignCenter`（`src/scene`）。旧组件维护可用 `createSceneScaleFromViewport`（`visibleArea`/`centerScale` 模式已 `@deprecated`）。禁止在组件内手写坐标变换公式。
 
 ```tsx
-// 圆周运动等需要以中心为原点的场景，先用 useAnimationViewport 拿到 vp，
-// 再用 createSceneScaleFromViewport 建立物理比例尺
+// ── 新页面标准：圆周运动等中心对称场景 ──────────────────────────────
+// 使用 createSceneScaleFromDesignCenter，以设计坐标系中心为物理原点
+const { containerRef, canvasSize, vp } = useAnimationViewport({
+  preset: CANVAS_PRESETS.square,  // 650×650
+  overlayRight: isAdvanced ? Math.round(cardWidth) : 0,
+})
+
+const sceneScale = useMemo(() => createSceneScaleFromDesignCenter({
+  designWidth: 650,
+  designHeight: 650,
+  worldWidth: rMax * 2.4,
+  worldHeight: rMax * 2.4,
+  refMagnitudes: { velocity: vMax, force: fMax },
+}), [rMax, vMax, fMax])
+
+return (
+  <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+    <CircularScene sceneScale={sceneScale} font={canvasSize.font} />
+  </AnimationSvgCanvas>
+)
+```
+
+```tsx
+// ── 存量维护参考：旧写法（centerScale 已 deprecated）──────────────────
+// ⚠️ 仅用于维护既有组件，新页面禁止使用。请改用上方 createSceneScaleFromDesignCenter。
 const { containerRef, canvasSize, vp } = useAnimationViewport({
   preset: CANVAS_PRESETS.square,  // 650×650
   overlayRight: isAdvanced ? Math.round(cardWidth) : 0,
@@ -202,6 +225,9 @@ return (
 const canvasRef = useRef<HTMLCanvasElement>(null)
 
 // 1. Canvas 用 canvasSceneScale（基于 vp.visibleW/H 的容器像素坐标）
+// ⚠️ 注意：createSceneScaleFromViewport + 'centerScale' 已 deprecated（输出容器像素单位）。
+// 新页面应使用 useSceneScale({ anchor: 'viewport' }) + designToPixel 替代。
+// 以下为存量 Canvas+SVG 混合渲染的维护参考。
 const canvasSceneScale = useMemo(() => {
   const base = createSceneScaleFromViewport(vp, 'centerScale', {
     worldWidth,
@@ -262,7 +288,7 @@ return (
 | `<defs>` 在 children 首位 | defs 在 `<g transform>` 内完全合法，id 在同一 SVG 文档内有效 |
 | 图表严禁 `<foreignObject>` | 响应式图表组件必须放在 HTML 层（flex 分区或 absolute 浮层），不得嵌入 SVG |
 | `font()` 强制使用 | `fontSize={font(11)}` 而非 `fontSize={11}` |
-| 物理比例尺 | 通过 `useSceneScale`（新页面）或 `createSceneScaleFromViewport`（`transform` 模式可用，`visibleArea`/`centerScale` 模式已 deprecated）或 `createSceneScaleFromDesignCenter` 计算；存量旧组件可用 `computeScale()`，禁止硬编码 |
+| 物理比例尺 | **新页面**通过 `useSceneScale`（`src/hooks/useSceneScale.ts`）计算；存量可用 `createSceneScaleFromViewport`（`transform` 模式可用，`visibleArea`/`centerScale` 模式已 deprecated）或 `computeScale()`；禁止硬编码 |
 | 指针事件 | 传 `svgRef` + `useViewportPointer`，禁止手写 `(clientX - rect.left - vp.tx) / vp.scale` |
 | **Canvas+SVG 混用坐标对齐** | **SVG 矢量起点必须通过 `canvas像素 → vp 逆变换` 得到设计坐标；禁止直接用 `designW/worldWidth` 为基准的 sceneScale 计算（宽高比不匹配时偏移）** |
 | **Canvas+SVG maxVectorLength 单位** | **`svgSceneScale.maxVectorLength` 必须用 `canvasSceneScale.maxVectorLength / vp.scale`（设计坐标单位），而非 `Math.min(designW, designH) * 0.3`（两者在 letterbox/pillarbox 时不等）** |

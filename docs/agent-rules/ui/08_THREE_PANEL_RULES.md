@@ -28,6 +28,8 @@ LeftPanel                         ← AnimationPage 左屏唯一顶层容器
 
 **布局顺序**：同考点模型切换 → `controlMeta` 声明式控件 → `paramMeta` 数值参数 → 复杂 `SidebarExtra`。
 
+> ⚠️ 注意：**布局顺序**（§2.1，从上到下排列）与 **声明式优先级**（§2.2，paramMeta 优先于 controlMeta）是两个不同维度。实现新页面时以 §2.2 优先级为准（先实现 paramMeta，再补充 controlMeta），最终视觉排列遵循本节布局顺序。
+
 不是每章都必须全部出现，但出现时必须使用统一组件和统一样式。新页面不得重新手写左屏外层 `p-4 / border-t / rounded-xl` 容器。
 
 ### 2.2 声明式优先级（执行规范权威来源）

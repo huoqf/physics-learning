@@ -276,12 +276,13 @@ Primary（primary-600）/ Secondary（white + primary边框）/ Ghost（transpar
 | `Ball` | 质点/小球（含速度拖尾、材质变体） |
 | `Block` | 滑块/木块（含摩擦面、标注） |
 | `PhysicsGround` | 地面/斜面/传送带（支持多种纹理和角度） |
-| `VectorArrow` | 力/速度/加速度等矢量箭头 |
+| `VectorArrow` | 视觉标注/几何图形/等长力示意矢量箭头 |
+| `PhysicsVectorArrow` | 物理矢量箭头（力/速度/加速度等，禁止 pixelLength，通过 refMagnitudes 归一化） |
 | `VectorDefs` | SVG `<defs>` 箭头 marker（与 VectorArrow 配套） |
 | `SportsCar` | 流线型运动小车 |
 | `Pulley` | 滑轮 |
 | `HandRule` | 左/右手定则手势示意 |
-| `SkeletalHand` | 骨骼手势（精细版左右手定则） |
+| `SkeletonHand` | 骨骼手势（精细版左右手定则） |
 | `EnergyBars` | 能量柱状条（动能/势能/总能） |
 | `BarMagnet` | 条形磁铁（N/S 极） |
 | `MagneticPoles` | 磁极对场景 |

@@ -299,7 +299,53 @@ useSceneScale（物理坐标 → 设计坐标）
 
 ---
 
-## 十二、VectorArrow 坐标体系改革（2026-07-14）
+## 十二、`computeScale` / `coordinate.ts` 存量页面清单
+
+> 更新时间：2026-07-15
+> 状态：**待迁移**。以下页面仍从 `@/utils/coordinate` 导入旧坐标函数。
+
+### 使用 `computeScale` 的页面（6 处）
+
+| 文件 | 导入函数 | 用途 | 迁移方案 |
+|------|---------|------|---------|
+| `features/mechanics/dynamics/GravityAnimation.tsx:9,45` | `computeScale` | 物理→像素比例尺 | 改用 `useSceneScale({ anchor: 'viewport' })` + `worldToDesign` |
+| `features/mechanics/dynamics/OrthogonalDecompositionAnimation.tsx:9,50` | `computeScale`, `canvasToPhysics` | 斜面正交分解比例尺 + 像素→物理反算 | `useSceneScale` + `worldToDesign`；`canvasToPhysics` 改用 `pixelToDesign` |
+| `features/mechanics/dynamics/VectorAdditionAnimation.tsx:8,37` | `computeScale` | 力合成平行四边形比例尺 | `useSceneScale` + `worldToDesign` |
+| `features/electromagnetism/induction/dual-rods/hooks/useDualRodsPhysics.ts:3,49` | `computeScale` | 双棒模型 Canvas 像素比例尺 | Canvas 路径改用 `useCanvasViewport({ mode: 'raw' })` + `designToPixel` |
+| `features/electromagnetism/magnetism/components/ForcePolygon.tsx:6,44` | `computeScale` | 安培力矢量多边形比例尺 | `useSceneScale` + `worldToDesign` |
+| `features/electromagnetism/magnetism/hooks/useInclineForceLayout.ts:2,105` | `computeScale` | 斜面安培力布局比例尺 | `useSceneScale` + `worldToDesign` |
+
+### 使用其他 `coordinate.ts` 函数的页面（6 处）
+
+| 文件 | 导入函数 | 用途 | 迁移方案 |
+|------|---------|------|---------|
+| `features/electromagnetism/electrostatics/hooks/useElectricPotentialPhysics.ts:3` | `physicsToDesignWithOrigin` | 电势等势线设计坐标 | 改用 `useSceneScale` + `worldToDesign` |
+| `features/mechanics/energy/EnergyConservationAnimation.tsx:15` | `physicsToDesignWithOrigin` | 机械能守恒场景坐标 | 改用 `useSceneScale` + `worldToDesign` |
+| `features/electromagnetism/magnetism/combined-fields/components/DeflectScene.tsx:6` | `svgPointToPhysicsPoint` | SVG 点→物理坐标反算 | 改用 `pixelToDesign` + `designToWorld` |
+| `features/electromagnetism/magnetism/combined-fields/components/SpectrometerScene.tsx:6` | `svgPointToPhysicsPoint` | 同上 | 同上 |
+| `features/mechanics/dynamics/hooks/useEquilibriumLayout.ts:2-3` | `clampEndpoint`, `CanvasBounds`, `CanvasPoint` | 三力平衡端点约束 | 类型可保留，`clampEndpoint` 逻辑迁移至设计坐标 |
+| `src/physics/brownianMotion.ts:4` | 注释引用 | 仅注释中提及 computeScale，无实际导入 | 无需迁移 |
+
+### 汇总
+
+| 类别 | 文件数 | 优先级 |
+|------|:------:|--------|
+| `computeScale` 直接调用 | 6 | P1（新页面规范冲突） |
+| `physicsToDesignWithOrigin` / `svgPointToPhysicsPoint` | 4 | P2（功能正确但不符合新标准路径） |
+| 类型导入 + 工具函数 | 1 | P3（低风险） |
+| 仅注释引用 | 1 | 无需处理 |
+| **合计** | **12** | — |
+
+### 迁移注意事项
+
+1. `OrthogonalDecompositionAnimation` 同时使用 `computeScale` + `canvasToPhysics`，需整体迁移到 `useSceneScale` + `worldToDesign` + `designToWorld`
+2. `useDualRodsPhysics` 是 Canvas 路径，需改用 `useCanvasViewport({ mode: 'raw' })` + `designToPixel`，不走 `useSceneScale`
+3. `useEquilibriumLayout` 的 `clampEndpoint` / `CanvasBounds` 是纯工具函数，可保留类型定义，仅迁移坐标计算逻辑
+4. `physicsToDesignWithOrigin` 在新标准路径下等价于 `useSceneScale` + `worldToDesign`，迁移时直接替换
+
+---
+
+## 十三、VectorArrow 坐标体系改革（2026-07-14）
 
 > 方案核心：**视觉箭头继续视觉化，物理箭头必须物理正确。**
 

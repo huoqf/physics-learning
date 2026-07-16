@@ -2,7 +2,7 @@
 
 > 新增或修改动画场景前必须查阅。示例均来自 `src/features/` 真实调用。
 > 详细说明（禁止写法、派生数据、渲染层级）→ [COMPONENT_GUIDE.md](./COMPONENT_GUIDE.md)
-> 最后更新：2026-07-13
+> 最后更新：2026-07-15（修复 VectorArrow/PhysicsVectorArrow props 描述，对齐源码 origin + originDesign 双模式）
 
 ---
 
@@ -10,7 +10,8 @@
 
 | 组件 | 用途 | 必需 props | 最小调用 |
 |------|------|-----------|---------|
-| `VectorArrow` | 矢量箭头 | `origin`, `vector`, `type`, `sceneScale` | `<VectorArrow origin={pos} vector={v} type="velocity" sceneScale={ss} />` |
+| `VectorArrow` | 矢量箭头（视觉标注/几何图形/等长力示意） | `originDesign`（推荐）或 `origin`（存量）, `vector`, `type`, `sceneScale` | `<VectorArrow originDesign={pos} vector={v} type="velocity" sceneScale={ss} />` |
+| `PhysicsVectorArrow` | 物理矢量箭头（力/速度/加速度等，禁止 `pixelLength`，长度通过 `refMagnitudes` 归一化） | `originDesign`, `vector`, `type`, `sceneScale` | `<PhysicsVectorArrow originDesign={pos} vector={v} type="forceNet" sceneScale={ss} />` |
 | `Ball` | 质点/小球 | `cx`, `cy`, `r` | `<Ball cx={x} cy={y} r={14} type="steel" />` |
 | `Block` | 滑块/木块 | `x`, `y`, `width`, `height` | `<Block x={x} y={y} width={48} height={24} type="metal" />` |
 | `PhysicsGround` | 地面/斜面 | `x`, `y`, `width` | `<PhysicsGround x={0} y={groundY} width={dw} fontFamily={font} />` |
