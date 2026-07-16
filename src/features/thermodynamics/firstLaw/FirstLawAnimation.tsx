@@ -1,448 +1,452 @@
-import { SVGSingleBar } from '@/components/Physics'
-import { AnimationSvgCanvas } from '@/components/Layout'
 import { useRef, useCallback, useState } from 'react'
-import { useAnimationViewport } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { THERMO_COLORS, THERMAL_COLORS } from '@/theme/physics'
-import { FIRST_LAW_COLORS } from '@/theme/physics'
-import { STROKE, FONT, CANVAS_COLORS } from '@/theme/physics'
-
-import { calculateInternalEnergy } from '@/physics/thermodynamics'
-import { deltaUtoDeltaT, temperatureToSpeedScale, internalEnergyToColor } from '@/physics/firstLaw'
+import { FIRST_LAW_COLORS, SCENE_COLORS, ENERGY_COLORS, THERMO_COLORS } from '@/theme/physics'
+import { STROKE, FONT, withAlpha } from '@/theme/physics'
+import { PhysicsVectorArrow } from '@/components/Physics'
+import { calculateSandboxState, calculateCycleState } from '@/physics/firstLaw'
+import { worldToDesign } from '@/scene'
 
 // ─── 物理常量 ─────────────────────────────────────────────────────────────
-const N_DEFAULT = 1
-const CV_DEFAULT = 12.47
-const T_MIN = 200
-const T_MAX = 600
-const PARTICLE_COUNT = 24
-const BASE_SPEED = 2.5
-const MAX_ABS_DU = 500
-
-// ─── 布局比例常量 ──────────────────────────────────────────────────────────
-const LAYOUT = {
-  chartLeftRatio:   0.05,
-  chartTopRatio:    0.06,
-  chartWidthRatio:  0.90,
-  chartHeightRatio: 0.34,
-  sceneLeftRatio:   0.03,
-  sceneTopRatio:    0.44,
-  sceneWidthRatio:  0.94,
-  sceneHeightRatio: 0.52,
-} as const
+const PARTICLE_COUNT = 32
+const BASE_SPEED = 1.8 // 基础分子物理运动速度 (m/s)
 
 // ─── 粒子类型 ──────────────────────────────────────────────────────────────
 interface GasParticle {
-  x: number
-  y: number
-  vx: number
-  vy: number
+  x: number // 物理坐标 x (米)
+  y: number // 物理坐标 y (米)
+  vx: number // 物理速度 vx (m/s)
+  vy: number // 物理速度 vy (m/s)
 }
 
 interface HeatParticle {
-  x: number
-  y: number
-  vy: number
-  life: number
-  maxLife: number
+  x: number  // 物理坐标 x
+  y: number  // 物理坐标 y
+  vy: number // 向上浮动速度
+  life: number // 生命周期 (0-1)
 }
 
 function initParticles(count: number): GasParticle[] {
-  return Array.from({ length: count }, () => ({
-    x: Math.random(),
-    y: Math.random(),
-    vx: (Math.random() - 0.5) * 2,
-    vy: (Math.random() - 0.5) * 2,
-  }))
-}
-
-function initHeatParticle(): HeatParticle {
-  return {
-    x: 0.2 + Math.random() * 0.6,
-    y: 1.0,
-    vy: -(0.3 + Math.random() * 0.4),
-    life: 1.0,
-    maxLife: 2.0 + Math.random() * 1.0,
-  }
+  return Array.from({ length: count }, () => {
+    const angle = Math.random() * Math.PI * 2
+    return {
+      x: (Math.random() - 0.5) * 1.6, // x 限制在 [-0.8, 0.8]
+      y: 0.8 + Math.random() * 1.5,   // y 限制在 [0.8, 2.3]
+      vx: Math.cos(angle) * BASE_SPEED,
+      vy: Math.sin(angle) * BASE_SPEED,
+    }
+  })
 }
 
 export default function FirstLawAnimation() {
-  const { params, isPlaying } = useAnimationStore(
+  const { params, isPlaying, time } = useAnimationStore(
     useShallow((s) => ({
       params: s.params,
       isPlaying: s.isPlaying,
+      time: s.time,
     })),
   )
 
-  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
+  // 1. 初始化标准 splitH 视口 (420x650)
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({
+    preset: CANVAS_PRESETS.splitH,
+  })
   const { font } = canvasSize
 
+  // 2. 构造物理坐标系：宽度 3.0 m, 高度 6.0 m
+  // x 范围 [-1.5, 1.5], y 范围 [0.0, 6.0]，y↑ 正方向，原点设为视口底部水平中央
+  const visibleWidth = vp.visibleW / vp.scale
+  const visibleHeight = vp.visibleH / vp.scale
+  const visibleX = (vp.visibleX - vp.tx) / vp.scale
+  const visibleY = (vp.visibleY - vp.ty) / vp.scale
+
+  const sceneScale = useSceneScale({
+    vp,
+    preset,
+    anchor: 'viewport',
+    physicsWidth: 3.0,
+    physicsHeight: 6.0,
+    originSource: 'custom',
+    originX: visibleX + visibleWidth / 2,
+    originY: visibleY + visibleHeight,
+  })
+
+  const mode = params.mode ?? 0
   const W_input = params.W ?? 0
-  const Q_raw = params.Q ?? 0
+  const Q_input = params.Q ?? 0
   const adiabatic = params.adiabatic ?? 0
-  const T_input = params.T ?? 300
 
-  const effectiveQ = adiabatic ? 0 : Q_raw
-  const { deltaU } = calculateInternalEnergy(effectiveQ, W_input)
-  const deltaT = deltaUtoDeltaT(deltaU, N_DEFAULT, CV_DEFAULT)
-  const currentT = Math.max(T_MIN, Math.min(T_MAX, T_input + deltaT))
-  const speedScale = temperatureToSpeedScale(currentT, T_input)
+  // 3. 获取实时状态物理量
+  const state = mode === 1
+    ? calculateCycleState(time)
+    : calculateSandboxState(W_input, Q_input, adiabatic === 1)
 
-  // ─── 场景区域 ──────────────────────────────────────────────────────────
-  const scene = {
-    x: vp.visibleX + vp.visibleW * LAYOUT.sceneLeftRatio,
-    y: vp.visibleY + vp.visibleH * LAYOUT.sceneTopRatio,
-    w: vp.visibleW * LAYOUT.sceneWidthRatio,
-    h: vp.visibleH * LAYOUT.sceneHeightRatio,
+  const { V, T, W, Q, deltaU, currentStepIndex } = state
+
+  // 4. 根据物理状态算出活塞高度
+  // 气缸底部在 y = 0.6 m，气缸开口在 y = 5.2 m
+  // 活塞的高度范围在 y = 1.7 m (最小体积) ~ 4.7 m (最大体积)
+  let pistonY = 3.2
+  if (mode === 1) {
+    pistonY = 3.2 + ((V - 1.0e-3) / 1.0e-3) * 1.5
+  } else {
+    pistonY = 3.2 - (W_input / 500) * 1.5
   }
+  // 限制越界保护
+  pistonY = Math.max(1.5, Math.min(4.9, pistonY))
 
-  const cylinderMargin = scene.w * 0.15
-  const cylinderLeft = scene.x + cylinderMargin
-  const cylinderRight = scene.x + scene.w - cylinderMargin
-  const cylinderWidth = cylinderRight - cylinderLeft
-  const cylinderTop = scene.y + scene.h * 0.08
-  const cylinderBottom = scene.y + scene.h * 0.88
-  const cylinderHeight = cylinderBottom - cylinderTop
+  // 温度缩放因子 (用于粒子速度)
+  const T_ref = 300
+  const speedScale = Math.sqrt(Math.max(0.1, T) / T_ref)
 
-  // 活塞位置：W > 0 外界做功 → 活塞下压 → 气体空间变小
-  const workOffset = (W_input / MAX_ABS_DU) * cylinderHeight * 0.3
-  const pistonY = cylinderBottom - cylinderHeight * 0.45 + workOffset
-
-  // ─── 粒子状态 ──────────────────────────────────────────────────────────
+  // ─── 粒子状态管理 ────────────────────────────────────────────────────────
   const particlesRef = useRef<GasParticle[]>(initParticles(PARTICLE_COUNT))
   const heatParticlesRef = useRef<HeatParticle[]>([])
   const [, setTick] = useState(0)
 
-  // ─── 动画帧回调 ────────────────────────────────────────────────────────
+  // ─── 动画帧更新逻辑 ──────────────────────────────────────────────────────
   const handleFrame = useCallback(
     (deltaMs: number) => {
       const dt = deltaMs / 1000
       if (dt <= 0 || dt > 0.1) return
 
-      const topBound = (pistonY - cylinderTop) / cylinderHeight
+      // 气体内壁碰撞范围 (米)
+      const xMin = -0.85
+      const xMax = 0.85
+      const yMin = 0.65
+      const yMax = pistonY - 0.15
 
-      // 基础粒子更新
+      // 更新基础分子运动
       for (const p of particlesRef.current) {
-        p.x += p.vx * BASE_SPEED * speedScale * dt
-        p.y += p.vy * BASE_SPEED * speedScale * dt
+        // 分子碰撞反弹
+        p.x += p.vx * speedScale * dt
+        p.y += p.vy * speedScale * dt
 
-        if (p.x < 0) { p.x = 0; p.vx = Math.abs(p.vx) }
-        if (p.x > 1) { p.x = 1; p.vx = -Math.abs(p.vx) }
-        if (p.y < 0) { p.y = 0; p.vy = Math.abs(p.vy) }
-        if (p.y > topBound) { p.y = topBound; p.vy = -Math.abs(p.vy) }
+        // 碰撞检测与位置约束 (防穿透)
+        if (p.x < xMin) {
+          p.x = xMin
+          p.vx = Math.abs(p.vx)
+        } else if (p.x > xMax) {
+          p.x = xMax
+          p.vx = -Math.abs(p.vx)
+        }
 
-        p.vx += (Math.random() - 0.5) * 0.3 * dt
-        p.vy += (Math.random() - 0.5) * 0.3 * dt
+        if (p.y < yMin) {
+          p.y = yMin
+          p.vy = Math.abs(p.vy)
+        } else if (p.y > yMax) {
+          p.y = yMax
+          p.vy = -Math.abs(p.vy)
+        }
 
+        // 微小的无规则抖动
+        p.vx += (Math.random() - 0.5) * 0.1 * dt
+        p.vy += (Math.random() - 0.5) * 0.1 * dt
+
+        // 保持速度幅值基本稳定 (受温度调节)
         const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy)
-        const maxSpeed = BASE_SPEED * speedScale * 1.5
-        if (speed > maxSpeed) {
-          p.vx = (p.vx / speed) * maxSpeed
-          p.vy = (p.vy / speed) * maxSpeed
+        const targetSpeed = BASE_SPEED * speedScale
+        if (speed > 0) {
+          p.vx = (p.vx / speed) * targetSpeed
+          p.vy = (p.vy / speed) * targetSpeed
         }
       }
 
-      // 热流粒子更新
-      if (effectiveQ > 0 && Math.random() < 0.3) {
-        heatParticlesRef.current.push(initHeatParticle())
+      // 更新热流粒子效果
+      // 沙箱下 Q_input > 0，或循环下 Q > 0 (吸热时底部冒粉红小球)
+      if (Q > 0 && Math.random() < 0.35) {
+        heatParticlesRef.current.push({
+          x: (Math.random() - 0.5) * 1.5,
+          y: 0.6,
+          vy: 0.8 + Math.random() * 0.8,
+          life: 1.0,
+        })
       }
+      // 循环或沙箱下 Q < 0 (放热时侧壁散发蓝色小球)
+      if (Q < 0 && Math.random() < 0.35) {
+        heatParticlesRef.current.push({
+          x: (Math.random() - 0.5) * 1.6,
+          y: 0.6 + Math.random() * (pistonY - 0.8),
+          vy: -0.5 - Math.random() * 0.5,
+          life: 1.0,
+        })
+      }
+
       for (const hp of heatParticlesRef.current) {
-        hp.y += hp.vy * dt
-        hp.life -= dt / hp.maxLife
+        if (Q > 0) {
+          hp.y += hp.vy * dt
+          hp.life -= dt * 0.8 // 逐渐消失
+        } else {
+          // 放热：向下浮沉并向两侧偏转
+          hp.y += hp.vy * dt
+          hp.x += (hp.x > 0 ? 0.3 : -0.3) * dt
+          hp.life -= dt * 1.2
+        }
       }
+
+      // 滤除失效粒子
       heatParticlesRef.current = heatParticlesRef.current.filter(
-        (hp) => hp.life > 0 && hp.y > topBound,
+        (hp) => hp.life > 0 && hp.y >= 0.5 && hp.y <= pistonY,
       )
 
       setTick((t) => t + 1)
     },
-    [pistonY, cylinderTop, cylinderHeight, speedScale, effectiveQ],
+    [pistonY, speedScale, Q],
   )
 
   useAnimationFrame(handleFrame, { playing: isPlaying })
 
-  const tNorm = (currentT - T_MIN) / (T_MAX - T_MIN)
+  // ─── 坐标计算与渲染 ──────────────────────────────────────────────────────
+  // 气缸外边界：x ∈ [-0.9, 0.9], y ∈ [0.5, 5.2]
+  const cylLeftTop = worldToDesign(-0.9, 5.2, sceneScale)
+  const cylWidth = 1.8 * sceneScale.scaleX
+  const cylHeight = 4.7 * sceneScale.scaleY
 
-  // ─── 气缸渲染 ──────────────────────────────────────────────────────────
-  const renderCylinder = () => {
-    const wallStroke = STROKE.objectLine
-    const gasHeight = pistonY - cylinderTop
-    const bgColor = internalEnergyToColor(deltaU, MAX_ABS_DU)
+  // 气体边界背景
+  const gasLeftTop = worldToDesign(-0.87, pistonY, sceneScale)
+  const gasWidth = 1.74 * sceneScale.scaleX
+  const gasHeight = (pistonY - 0.6) * sceneScale.scaleY
 
-    return (
-      <g>
-        {/* 气缸壁 */}
-        <rect
-          x={cylinderLeft}
-          y={cylinderTop}
-          width={cylinderWidth}
-          height={cylinderHeight}
-          fill={THERMAL_COLORS.gasChamberFill}
-          stroke={adiabatic ? FIRST_LAW_COLORS.adiabaticWall : THERMAL_COLORS.gasChamberSt}
-          strokeWidth={wallStroke}
-          strokeDasharray={adiabatic === 1 ? '6 3' : undefined}
-          rx={4}
-        />
+  // 活塞
+  const pistonLeftTop = worldToDesign(-0.89, pistonY + 0.1, sceneScale)
+  const pistonWidth = 1.78 * sceneScale.scaleX
+  const pistonHeight = 0.2 * sceneScale.scaleY
 
-        {/* 气体区域背景（ΔU 变色） */}
-        <defs>
-          <linearGradient id="firstlaw-gas-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={bgColor} stopOpacity={0.25} />
-            <stop offset="100%" stopColor={bgColor} stopOpacity={0.08} />
-          </linearGradient>
-        </defs>
-        <rect
-          x={cylinderLeft + 1}
-          y={cylinderTop + 1}
-          width={cylinderWidth - 2}
-          height={Math.max(0, gasHeight - 1)}
-          fill="url(#firstlaw-gas-grad)"
-        />
-
-        {/* 基础气体粒子 */}
-        {particlesRef.current.filter((p) => {
-          const py = cylinderTop + p.y * gasHeight
-          return py <= pistonY && py >= cylinderTop
-        }).map((p, i) => {
-          const px = cylinderLeft + p.x * cylinderWidth
-          const py = cylinderTop + p.y * gasHeight
-          const particleColor = adiabatic && W_input > 0
-            ? `hsl(220, ${70 + tNorm * 30}%, ${45 - tNorm * 15}%)`
-            : THERMAL_COLORS.gasChamberSt
-          return (
-            <circle
-              key={i}
-              cx={px}
-              cy={py}
-              r={3}
-              fill={particleColor}
-              opacity={0.8}
-            />
-          )
-        })}
-
-        {/* 热流粒子（Q > 0） */}
-        {heatParticlesRef.current.map((hp, i) => {
-          const px = cylinderLeft + hp.x * cylinderWidth
-          const py = cylinderTop + hp.y * gasHeight
-          return (
-            <circle
-              key={`heat-${i}`}
-              cx={px}
-              cy={py}
-              r={2.5}
-              fill={FIRST_LAW_COLORS.heat}
-              opacity={hp.life * 0.7}
-            />
-          )
-        })}
-
-        {/* 活塞 */}
-        <rect
-          x={cylinderLeft - 2}
-          y={pistonY}
-          width={cylinderWidth + 4}
-          height={12}
-          fill={THERMO_COLORS.volume}
-          stroke={THERMO_COLORS.volume}
-          strokeWidth={STROKE.objectThin}
-          rx={2}
-          opacity={0.9}
-        />
-
-        {/* 做功箭头（W > 0） */}
-        {W_input > 0 ? (() => {
-          const arrowCount = Math.min(5, Math.max(1, Math.floor(Math.abs(W_input) / 100)))
-          const arrows: React.JSX.Element[] = []
-          for (let i = 0; i < arrowCount; i++) {
-            const ax = cylinderLeft + cylinderWidth * (0.25 + (0.5 * i) / Math.max(1, arrowCount - 1))
-            const ay = pistonY - 15
-            arrows.push(
-              <g key={`arrow-${i}`}>
-                <line
-                  x1={ax} y1={ay} x2={ax} y2={ay - 14}
-                  stroke={FIRST_LAW_COLORS.work}
-                  strokeWidth={STROKE.objectLine}
-                  strokeLinecap="round"
-                />
-                <polygon
-                  points={`${ax},${ay - 20} ${ax - 5},${ay - 12} ${ax + 5},${ay - 12}`}
-                  fill={FIRST_LAW_COLORS.work}
-                />
-              </g>,
-            )
-          }
-          return <g>{arrows}</g>
-        })() : null}
-
-        {/* 放热标识（Q < 0） */}
-        {effectiveQ < 0 && (
-          <text
-            x={cylinderLeft + cylinderWidth * 0.5}
-            y={cylinderBottom + 16}
-            fontSize={font(9)}
-            fill={FIRST_LAW_COLORS.heatRelease}
-            textAnchor="middle"
-            fontFamily={FONT.family}
-          >
-            放热 Q &lt; 0
-          </text>
-        )}
-
-        {/* 加热丝（导热模式 + Q > 0） */}
-        {adiabatic === 0 && effectiveQ > 0 && (
-          <g>
-            <rect
-              x={cylinderLeft + cylinderWidth * 0.2}
-              y={cylinderBottom - 6}
-              width={cylinderWidth * 0.6}
-              height={4}
-              fill={THERMAL_COLORS.heaterOn}
-              rx={2}
-              opacity={0.8}
-            />
-            <text
-              x={cylinderLeft + cylinderWidth * 0.5}
-              y={cylinderBottom + 14}
-              fontSize={font(9)}
-              fill={THERMAL_COLORS.heaterOn}
-              textAnchor="middle"
-              fontFamily={FONT.family}
-            >
-              加热丝
-            </text>
-          </g>
-        )}
-
-        {/* 温度标注 */}
-        <text
-          x={cylinderLeft + cylinderWidth + 8}
-          y={cylinderTop + 20}
-          fontSize={font(11)}
-          fill={THERMO_COLORS.temperature}
-          fontFamily={FONT.family}
-        >
-          T = {currentT.toFixed(0)} K
-        </text>
-
-        {/* 压强标注 */}
-        <text
-          x={cylinderLeft + 4}
-          y={cylinderTop - 6}
-          fontSize={font(10)}
-          fill={THERMO_COLORS.pressure}
-          fontFamily={FONT.family}
-        >
-          {adiabatic ? '绝热' : '导热'} | ΔU = {deltaU.toFixed(0)} J
-        </text>
-      </g>
-    )
+  // 内能色度背景 (冷蓝 -> 浅灰 -> 紫红)
+  const normU = Math.max(-1, Math.min(1, deltaU / 500)) // 归一化内能
+  // 插值获取背景色
+  let gasBgColor = withAlpha(SCENE_COLORS.thermoChamber.gasVolumeBase, 0.4)
+  if (normU > 0) {
+    gasBgColor = withAlpha(THERMO_COLORS.heatAbsorb, 0.04 + normU * 0.16) // 用 heatAbsorb Token
+  } else if (normU < 0) {
+    gasBgColor = withAlpha(THERMO_COLORS.heatRelease, 0.04 + Math.abs(normU) * 0.16) // 用 heatRelease Token
   }
 
-  // ─── 能量天平柱状图渲染（上方） ────────────────────────────────────────
-  const renderEnergyChart = () => {
-    const chartX = vp.visibleX + vp.visibleW * LAYOUT.chartLeftRatio
-    const chartY = vp.visibleY + vp.visibleH * LAYOUT.chartTopRatio
-    const chartW = vp.visibleW * LAYOUT.chartWidthRatio
-    const chartH = vp.visibleH * LAYOUT.chartHeightRatio
 
-    const margin = { left: 48, right: 24, top: 20, bottom: 28 }
-    const plotX = chartX + margin.left
-    const plotY = chartY + margin.top
-    const plotW = chartW - margin.left - margin.right
-    const plotH = chartH - margin.top - margin.bottom
-
-    const zeroY = plotY + plotH / 2
-    const barWidth = plotW / 7
-    const maxBarH = plotH / 2 * 0.85
-
-    const bars = [
-      { label: 'W', value: W_input, color: FIRST_LAW_COLORS.work },
-      { label: 'Q', value: effectiveQ, color: FIRST_LAW_COLORS.heat },
-      { label: 'ΔU', value: deltaU, color: FIRST_LAW_COLORS.internalEnergy },
-    ]
-
-    return (
-      <g>
-        {/* 图表标题 */}
-        <text
-          x={plotX}
-          y={chartY + 12}
-          fontSize={font(11)}
-          fontWeight="bold"
-          fill={CANVAS_COLORS.labelText}
-          fontFamily={FONT.family}
-        >
-          实时能量收支天平
-        </text>
-
-        {/* 零线 */}
-        <line
-          x1={plotX}
-          y1={zeroY}
-          x2={plotX + plotW}
-          y2={zeroY}
-          stroke={CANVAS_COLORS.axis}
-          strokeWidth={STROKE.reference}
-          strokeDasharray="4 2"
-        />
-        <text
-          x={plotX - 6}
-          y={zeroY + 3}
-          fontSize={font(9)}
-          fill={CANVAS_COLORS.axis}
-          textAnchor="end"
-          fontFamily={FONT.family}
-        >
-          0
-        </text>
-
-        {/* 柱体 */}
-        {bars.map((bar, i) => {
-          const cx = plotX + plotW * (0.18 + i * 0.32)
-          const barH = (bar.value / MAX_ABS_DU) * maxBarH
-          const displayVal = Math.abs(bar.value) > 1000
-            ? (bar.value / 1000).toFixed(1) + 'k'
-            : bar.value.toFixed(0)
-
-          return (
-            <SVGSingleBar
-              key={bar.label}
-              x={cx - barWidth / 2}
-              baseY={zeroY}
-              height={-barH}
-              barWidth={barWidth}
-              color={bar.color}
-              label={bar.label}
-              valueText={`${displayVal} J`}
-              font={font}
-              showTrack={false}
-            />
-          )
-        })}
-
-        {/* 守恒等式 */}
-        <text
-          x={plotX + plotW}
-          y={chartY + 12}
-          fontSize={font(9)}
-          fill={CANVAS_COLORS.labelTextLight}
-          textAnchor="end"
-          fontFamily={FONT.family}
-        >
-          {W_input.toFixed(0)} + {effectiveQ.toFixed(0)} = {deltaU.toFixed(0)}
-        </text>
-      </g>
-    )
+  // 做功外力矢量的物理量：
+  // 力的方向：外界做功 W > 0 箭头向下 (F_y = -), W < 0 箭头向上 (F_y = +)
+  // 力的物理大小与 W 成正比 (映射为 1 到 2 米的物理大小)
+  const isWorkApplied = W !== 0
+  const forceVector = {
+    x: 0,
+    y: W > 0 ? -1.5 : W < 0 ? 1.5 : 0,
+  }
+  // 力的作用起点
+  const forceOrigin = {
+    x: 0,
+    // 做功向上时从活塞面出发，向下时从活塞上方出发指向活塞
+    y: W > 0 ? pistonY + 1.8 : pistonY,
   }
 
   return (
     <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
-      {renderEnergyChart()}
-      {renderCylinder()}
+      {/* 1. 加热/冷却源视觉表现 */}
+      {Q > 0 && (
+        <g>
+          {/* 红色发热丝 */}
+          <path
+            d={`M ${worldToDesign(-0.7, 0.5, sceneScale).px} ${worldToDesign(0, 0.5, sceneScale).py}
+               Q ${worldToDesign(-0.35, 0.45, sceneScale).px} ${worldToDesign(0, 0.45, sceneScale).py} ${worldToDesign(0, 0.5, sceneScale).px} ${worldToDesign(0, 0.5, sceneScale).py}
+               T ${worldToDesign(0.7, 0.5, sceneScale).px} ${worldToDesign(0, 0.5, sceneScale).py}`}
+            fill="none"
+            stroke={SCENE_COLORS.thermal.heaterOn}
+            strokeWidth={3}
+            strokeLinecap="round"
+            opacity={0.8}
+          />
+          <text
+            x={worldToDesign(0, 0.35, sceneScale).px}
+            y={worldToDesign(0, 0.35, sceneScale).py}
+            fontSize={font(9)}
+            fill={SCENE_COLORS.thermal.heaterOn}
+            textAnchor="middle"
+            fontFamily={FONT.family}
+            fontWeight="bold"
+          >
+            热源供热 Q &gt; 0
+          </text>
+        </g>
+      )}
+
+      {Q < 0 && (
+        <g>
+          {/* 蓝色冷却冰条 */}
+          <rect
+            x={worldToDesign(-0.7, 0.55, sceneScale).px}
+            y={worldToDesign(-0.7, 0.55, sceneScale).py}
+            width={1.4 * sceneScale.scaleX}
+            height={0.15 * sceneScale.scaleY}
+            fill={withAlpha(THERMO_COLORS.heatRelease, 0.4)}
+            rx={2}
+            opacity={0.7}
+          />
+          <text
+            x={worldToDesign(0, 0.35, sceneScale).px}
+            y={worldToDesign(0, 0.35, sceneScale).py}
+            fontSize={font(9)}
+            fill={THERMO_COLORS.heatRelease}
+            textAnchor="middle"
+            fontFamily={FONT.family}
+            fontWeight="bold"
+          >
+            热源吸热 Q &lt; 0 (系统放热)
+          </text>
+        </g>
+      )}
+
+      {/* 绝热气缸侧壁线条标记 */}
+      {adiabatic === 1 && mode === 0 && (
+        <text
+          x={worldToDesign(0, 0.35, sceneScale).px}
+          y={worldToDesign(0, 0.35, sceneScale).py}
+          fontSize={font(9)}
+          fill={FIRST_LAW_COLORS.adiabaticWall}
+          textAnchor="middle"
+          fontFamily={FONT.family}
+          fontWeight="bold"
+        >
+          绝热气缸 Q ＝ 0
+        </text>
+      )}
+
+      {/* 2. 气缸底色背景 */}
+      <rect
+        x={gasLeftTop.px}
+        y={gasLeftTop.py}
+        width={gasWidth}
+        height={gasHeight}
+        fill={gasBgColor}
+        stroke="none"
+      />
+
+      {/* 3. 热流上升/发散视觉粒子 */}
+      {heatParticlesRef.current.map((hp, i) => {
+        const dPos = worldToDesign(hp.x, hp.y, sceneScale)
+        const pColor = Q > 0 ? THERMO_COLORS.heatAbsorb : THERMO_COLORS.heatRelease
+        return (
+          <circle
+            key={`heat-${i}`}
+            cx={dPos.px}
+            cy={dPos.py}
+            r={2.5}
+            fill={pColor}
+            opacity={hp.life * 0.7}
+          />
+        )
+      })}
+
+      {/* 4. 气缸实体框线 */}
+      <rect
+        x={cylLeftTop.px}
+        y={cylLeftTop.py}
+        width={cylWidth}
+        height={cylHeight}
+        fill="none"
+        stroke={adiabatic && mode === 0 ? FIRST_LAW_COLORS.adiabaticWall : SCENE_COLORS.thermal.gasChamberSt}
+        strokeWidth={STROKE.objectLine}
+        strokeDasharray={adiabatic === 1 && mode === 0 ? '6 3' : undefined}
+        rx={6}
+      />
+
+      {/* 5. 气体分子粒子 */}
+      {particlesRef.current.map((p, i) => {
+        // 如果分子偶然漂移到活塞上方，则不渲染（或 clamp）
+        if (p.y > pistonY - 0.1) return null
+        const dPos = worldToDesign(p.x, p.y, sceneScale)
+        // 粒子的颜色随温度变化而微微改变（高温偏红，低温偏蓝）
+        const tempRatio = Math.max(0, Math.min(1, (T - 300) / 900))
+        // 从 THERMO_COLORS.temperatureLow (#3B82F6 -> 59, 130, 246) 插值到 THERMO_COLORS.temperatureHigh (#EF4444 -> 239, 68, 68)
+        const r = Math.round(59 + tempRatio * (239 - 59))
+        const g = Math.round(130 + tempRatio * (68 - 130))
+        const b = Math.round(246 + tempRatio * (68 - 246))
+        const pColor = `rgb(${r}, ${g}, ${b})`
+        return (
+          <circle
+            key={`gas-${i}`}
+            cx={dPos.px}
+            cy={dPos.py}
+            r={3}
+            fill={pColor}
+            opacity={0.85}
+          />
+        )
+      })}
+
+      {/* 6. 活塞组件 */}
+      <rect
+        x={pistonLeftTop.px}
+        y={pistonLeftTop.py}
+        width={pistonWidth}
+        height={pistonHeight}
+        fill={SCENE_COLORS.thermoChamber.pistonBody}
+        stroke={SCENE_COLORS.materials.structStroke}
+        strokeWidth={STROKE.objectThin}
+        rx={3}
+      />
+      {/* 活塞把手 */}
+      <rect
+        x={worldToDesign(-0.15, pistonY + 1.2, sceneScale).px}
+        y={worldToDesign(-0.15, pistonY + 1.2, sceneScale).py}
+        width={0.3 * sceneScale.scaleX}
+        height={1.0 * sceneScale.scaleY}
+        fill={SCENE_COLORS.thermoChamber.pistonBody}
+        stroke={SCENE_COLORS.materials.structStroke}
+        strokeWidth={STROKE.objectThin}
+        opacity={0.8}
+      />
+
+      {/* 7. 外界受力矢量箭头 (PhysicsVectorArrow) */}
+      {isWorkApplied && (
+        <PhysicsVectorArrow
+          origin={forceOrigin}
+          vector={forceVector}
+          type="force"
+          sceneScale={sceneScale}
+          color={ENERGY_COLORS.work}
+          label={W > 0 ? 'F_外' : 'F_气'}
+          font={font}
+          glow
+        />
+      )}
+
+      {/* 8. 实时文字状态标注 (物理位置: 气缸右上方) */}
+      <g>
+        <rect
+          x={worldToDesign(-1.3, 5.8, sceneScale).px}
+          y={worldToDesign(-1.3, 5.8, sceneScale).py}
+          width={2.6 * sceneScale.scaleX}
+          height={0.5 * sceneScale.scaleY}
+          fill={withAlpha(SCENE_COLORS.materials.structBgLight, 0.95)}
+          stroke={SCENE_COLORS.materials.structStrokePale}
+          strokeWidth={1}
+          rx={4}
+        />
+        <text
+          x={worldToDesign(0, 5.6, sceneScale).px}
+          y={worldToDesign(0, 5.6, sceneScale).py}
+          fontSize={font(10)}
+          fill={SCENE_COLORS.charts.labelText}
+          textAnchor="middle"
+          fontWeight="bold"
+          fontFamily={FONT.family}
+        >
+          {mode === 1 ? `循环步骤: ${['①等压膨胀', '②等容加热', '③等压压缩', '④等容冷却'][currentStepIndex ?? 0]}` : '沙箱自由模拟'}
+        </text>
+        <text
+          x={worldToDesign(0, 5.4, sceneScale).px}
+          y={worldToDesign(0, 5.4, sceneScale).py}
+          fontSize={font(9)}
+          fill={ENERGY_COLORS.internalEnergy}
+          textAnchor="middle"
+          fontFamily={FONT.family}
+        >
+          T = {T.toFixed(0)} K | ΔU = {deltaU.toFixed(0)} J
+        </text>
+      </g>
     </AnimationSvgCanvas>
   )
 }

@@ -99,3 +99,113 @@ export function calculateAdiabaticWork(
   const T2 = T1 * Math.pow(V1 / V2, gamma - 1)
   return { W, T2 }
 }
+
+/**
+ * 联动的物理状态数据结构。
+ */
+export interface FirstLawPhysicsState {
+  P: number     // 压强 (Pa)
+  V: number     // 体积 (m³)
+  T: number     // 温度 (K)
+  W: number     // 外界做功的累计量 (J)
+  Q: number     // 吸收热量的累计量 (J)
+  deltaU: number // 内能变化的累计量 (J)
+  currentStepIndex?: number // 仅循环模式：当前处于哪一步 (0-3)
+  stepProgress?: number     // 仅循环模式：当前步进度 (0-1)
+}
+
+/**
+ * 沙箱模式下的物理状态求解。
+ * 输入滑块参数 W 和 Q，以及绝热开关，求解对应的 P, V, T 等。
+ */
+export function calculateSandboxState(
+  W: number,
+  Q: number,
+  adiabatic: boolean,
+): FirstLawPhysicsState {
+  const effectiveQ = adiabatic ? 0 : Q
+  const deltaU = effectiveQ + W
+  // 系统热容 C_sys = n * Cv = 0.5 J/K (其中 nR = 1/3 J/K, Cv = 1.5R)
+  const deltaT = deltaU / 0.5
+  const T = 300 + deltaT
+
+  // 体积：线性映射做功，W = 0 时 V = 1.0e-3 m³
+  // W 增加，体积缩小；W 减小，体积增大。
+  const V = 1.0e-3 - 1.0e-6 * W
+
+  // 压强：P = nRT/V = T / (3 * V)
+  const P = V > 0 ? T / (3 * V) : 0
+
+  return {
+    P,
+    V,
+    T,
+    W,
+    Q: effectiveQ,
+    deltaU,
+  }
+}
+
+/**
+ * 循环模式下的物理状态求解（时间插值）。
+ * 周期 20 秒，4步循环各占 5秒。
+ */
+export function calculateCycleState(time: number): FirstLawPhysicsState {
+  const cycle = 20
+  const t = ((time % cycle) + cycle) % cycle // 保证正数
+  const stepIndex = Math.min(3, Math.floor(t / 5))
+  const stepProgress = (t % 5) / 5
+
+  let P = 1.0e5
+  let V = 1.0e-3
+  let T = 300
+  let W = 0
+  let Q = 0
+  let deltaU = 0
+
+  if (stepIndex === 0) {
+    // 1. A -> B: 等压膨胀 (0 <= t < 5)
+    P = 1.0e5
+    V = 1.0e-3 + stepProgress * 1.0e-3
+    T = 300 + stepProgress * 300
+    deltaU = 150 * stepProgress
+    W = -100 * stepProgress
+    Q = 250 * stepProgress
+  } else if (stepIndex === 1) {
+    // 2. B -> C: 等容加热 (5 <= t < 10)
+    V = 2.0e-3
+    P = 1.0e5 + stepProgress * 1.0e5
+    T = 600 + stepProgress * 600
+    deltaU = 150 + 300 * stepProgress
+    W = -100
+    Q = 250 + 300 * stepProgress
+  } else if (stepIndex === 2) {
+    // 3. C -> D: 等压压缩 (10 <= t < 15)
+    P = 2.0e5
+    V = 2.0e-3 - stepProgress * 1.0e-3
+    T = 1200 - stepProgress * 600
+    deltaU = 450 - 300 * stepProgress
+    W = -100 + 200 * stepProgress
+    Q = 550 - 500 * stepProgress
+  } else {
+    // 4. D -> A: 等容冷却 (15 <= t < 20)
+    V = 1.0e-3
+    P = 2.0e5 - stepProgress * 1.0e5
+    T = 600 - stepProgress * 300
+    deltaU = 150 - 150 * stepProgress
+    W = 100
+    Q = 50 - 150 * stepProgress
+  }
+
+  return {
+    P,
+    V,
+    T,
+    W,
+    Q,
+    deltaU,
+    currentStepIndex: stepIndex,
+    stepProgress,
+  }
+}
+

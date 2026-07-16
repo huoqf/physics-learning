@@ -140,6 +140,25 @@ export const SPHERE_COLORS = {
     cloud: 'rgba(255, 255, 255, 0.28)',
     specular: 'rgba(255, 255, 255, 0.40)',
   },
+
+  // ── 布朗运动：花粉微粒 ──
+  pollen: {
+    gradient: ['#FED7AA', '#F97316', '#EA580C', '#7C2D12'] as const,
+    stroke: '#7C2D12',
+    shadow: 'rgba(124, 45, 18, 0.18)',
+    glow: 'rgba(249, 115, 22, 0.15)',
+    specular: 'rgba(255, 255, 255, 0.60)',
+  },
+
+  // ── 布朗运动：液体分子 ──
+  liquidMolecule: {
+    gradient: ['#E0F2FE', '#38BDF8', '#0284C7', '#1E3A8A'] as const,
+    opacity: [0.95, 0.70, 0.40, 0.15] as const,
+    stroke: '#0284C7',
+    shadow: 'rgba(2, 132, 199, 0.10)',
+    glow: 'rgba(56, 189, 248, 0.12)',
+    specular: 'rgba(255, 255, 255, 0.70)',
+  },
 } as const
 
 // ─── 实验环境与腔体 (Environment & Chambers) ──────────────────────────────────

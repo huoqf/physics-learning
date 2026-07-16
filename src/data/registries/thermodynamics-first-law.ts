@@ -14,22 +14,26 @@ export const thermodynamicsFirstLawAnimations = defineAnimations({
       T: 300,
     } as const,
     paramMeta: [
-      { key: 'W', label: '外界做功 W', min: -500, max: 500, step: 10, unit: 'J' },
+      { key: 'W', label: '外界做功 W', min: -500, max: 500, step: 10, unit: 'J',
+        hideIf: 'mode', hideIfValue: 1 },
       { key: 'Q', label: '热源供热量 Q', min: -500, max: 500, step: 10, unit: 'J',
-        hideIf: 'adiabatic', hideIfValue: 1 },
+        hideIf: 'mode', hideIfValue: 1 },
     ],
     controlMeta: [
       // §1 模型选择
       { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
-        options: [{ value: 0, label: '基础模式' }, { value: 1, label: '进阶模式' }] },
+        options: [{ value: 0, label: '沙箱探索' }, { value: 1, label: '循环热机' }] },
       // §4 显示辅助
       { type: 'toggle', key: 'adiabatic', label: '绝热气缸', group: '显示辅助',
+        hideIf: 'mode', hideIfValue: 1,
         onChangeSideEffect: { setParams: { Q: 0 } } },
       // §6 教学提示
       { type: 'tip', group: '教学提示',
-        content: '拖动 W/Q 滑块，观察能量守恒天平' },
+        content: '沙箱探索：手动调节 W/Q 观察气缸与能量变化。绝热气缸下 Q 恒为 0。' },
+      { type: 'tip', group: '教学提示',
+        content: '循环热机：点击下方播放，自动运行等压膨胀→等容加热→等压压缩→等容冷却循环。' },
     ],
+    centerLayout: 'splitH',
     CenterExtra: lazy(() => import('@/features/thermodynamics/firstLaw/FirstLawCenterExtra')),
-    centerExtraMode: 'mode',
   },
 })

@@ -1,56 +1,10 @@
-import { VectorArrow } from '@/components/Physics'
 import { AnimationSvgCanvas } from '@/components/Layout'
-import { useRef, useCallback, useState, useEffect } from 'react'
-import { useAnimationViewport } from '@/hooks'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { useSceneScale } from '@/hooks'
-import { worldToDesign } from '@/scene'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { useAnimationFrame } from '@/utils/animation'
-import { stepBrownianMotion } from '@/physics/brownianMotion'
-import { THERMO_COLORS, SCENE_COLORS, CANVAS_STYLE } from '@/theme/physics'
-import { THERMAL_COLORS } from '@/theme/physics'
-import { colors } from '@/theme/colors'
-
-interface ParticleState {
-  x: number
-  y: number
-  vx: number
-  vy: number
-}
-
-interface MoleculeState {
-  x: number
-  y: number
-  vx: number
-  vy: number
-}
-
-const MOLECULE_COUNT = 40
-const MAX_TRAJECTORY = 600
-
-// 物理世界边界（模拟单位）
-const WORLD_WIDTH = 100
-const WORLD_HEIGHT = 60
-
-function generateHexagon(cx: number, cy: number, r: number): string {
-  const points: string[] = []
-  for (let i = 0; i < 6; i++) {
-    const angle = (Math.PI / 3) * i - Math.PI / 2
-    points.push(`${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`)
-  }
-  return points.join(' ')
-}
-
-function initMolecules(): MoleculeState[] {
-  return Array.from({ length: MOLECULE_COUNT }, () => ({
-    x: Math.random() * WORLD_WIDTH,
-    y: Math.random() * WORLD_HEIGHT,
-    vx: (Math.random() - 0.5) * 3,
-    vy: (Math.random() - 0.5) * 3,
-  }))
-}
+import { useBrownianPhysics, WORLD_WIDTH, WORLD_HEIGHT } from './hooks/useBrownianPhysics'
+import { BrownianScene } from './components/BrownianScene'
 
 export default function BrownianMotion() {
   const { params, isPlaying } = useAnimationStore(
@@ -60,7 +14,7 @@ export default function BrownianMotion() {
     })),
   )
 
-  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.splitH })
   const { font } = canvasSize
 
   const mode = params.mode ?? 0
@@ -69,215 +23,42 @@ export default function BrownianMotion() {
   const showTrajectory = params.showTrajectory ?? 1
   const showMolecules = params.showMolecules ?? 1
 
-  // 计算场景缩放
   const sceneScale = useSceneScale({
     vp, preset,
     anchor: 'viewport',
     physicsWidth: WORLD_WIDTH,
     physicsHeight: WORLD_HEIGHT,
-    originSource: 'center',
+    originSource: 'bottomLeft',
+    refMagnitudes: { force: 2.5 },
   })
 
-  // 花粉视觉半径（通过 sceneScale 缩放）
-  const pollenRadius = Math.max(8, particleD * sceneScale.scaleX * 0.15)
-
-  // 粒子状态（模拟单位坐标）
-  const particleRef = useRef<ParticleState>({
-    x: WORLD_WIDTH / 2,
-    y: WORLD_HEIGHT / 2,
-    vx: 0,
-    vy: 0,
+  const {
+    particleWorld, force, trajectory, molecules, collisions,
+    pollenRadius, molRadius, vTarget,
+  } = useBrownianPhysics({
+    mode, temperature, particleD, isPlaying, sceneScale,
   })
-
-  // 轨迹点（模拟单位坐标）
-  const trajectoryRef = useRef<{ x: number; y: number }[]>([])
-
-  // 分子状态（模拟单位坐标）
-  const moleculesRef = useRef<MoleculeState[]>([])
-
-  // 合力（用于渲染箭头）
-  const forceRef = useRef<{ fx: number; fy: number }>({ fx: 0, fy: 0 })
-
-  // 触发重绘
-  const [, setTick] = useState(0)
-
-  // 初始化分子（仅进阶模式）
-  useEffect(() => {
-    if (mode === 1 && moleculesRef.current.length === 0) {
-      moleculesRef.current = initMolecules()
-    }
-  }, [mode])
-
-  // 重置粒子位置
-  useEffect(() => {
-    particleRef.current = { x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2, vx: 0, vy: 0 }
-    trajectoryRef.current = []
-    forceRef.current = { fx: 0, fy: 0 }
-  }, [])
-
-  // 动画帧回调
-  const handleFrame = useCallback(
-    (deltaMs: number) => {
-      const dt = deltaMs / 1000
-      if (dt <= 0 || dt > 0.1) return
-
-      // 更新花粉粒子（模拟单位）
-      const result = stepBrownianMotion(particleRef.current, {
-        temperature,
-        particleDiameter: particleD,
-        dt,
-      }, { width: WORLD_WIDTH, height: WORLD_HEIGHT })
-
-      // 边界反弹（模拟单位）
-      const r = pollenRadius / sceneScale.scaleX
-      let { x, y, vx, vy } = result
-      if (x < r) { x = r; vx = Math.abs(vx) * 0.8 }
-      if (x > WORLD_WIDTH - r) { x = WORLD_WIDTH - r; vx = -Math.abs(vx) * 0.8 }
-      if (y < r) { y = r; vy = Math.abs(vy) * 0.8 }
-      if (y > WORLD_HEIGHT - r) { y = WORLD_HEIGHT - r; vy = -Math.abs(vy) * 0.8 }
-
-      particleRef.current = { x, y, vx, vy }
-      forceRef.current = { fx: result.FnetX, fy: result.FnetY }
-
-      // 记录轨迹
-      trajectoryRef.current.push({ x, y })
-      if (trajectoryRef.current.length > MAX_TRAJECTORY) {
-        trajectoryRef.current.shift()
-      }
-
-      // 更新分子（模拟单位）
-      if (mode === 1 && showMolecules) {
-        const maxMolSpeed = 2 + temperature * 0.005
-        for (const mol of moleculesRef.current) {
-          mol.x += mol.vx * dt * 60
-          mol.y += mol.vy * dt * 60
-          mol.vx += (Math.random() - 0.5) * 0.5 * dt * 60
-          mol.vy += (Math.random() - 0.5) * 0.5 * dt * 60
-          const speed = Math.sqrt(mol.vx * mol.vx + mol.vy * mol.vy)
-          if (speed > maxMolSpeed) {
-            mol.vx = (mol.vx / speed) * maxMolSpeed
-            mol.vy = (mol.vy / speed) * maxMolSpeed
-          }
-          if (mol.x < 1) { mol.x = 1; mol.vx = Math.abs(mol.vx) }
-          if (mol.x > WORLD_WIDTH - 1) { mol.x = WORLD_WIDTH - 1; mol.vx = -Math.abs(mol.vx) }
-          if (mol.y < 1) { mol.y = 1; mol.vy = Math.abs(mol.vy) }
-          if (mol.y > WORLD_HEIGHT - 1) { mol.y = WORLD_HEIGHT - 1; mol.vy = -Math.abs(mol.vy) }
-        }
-      }
-
-      setTick((t) => t + 1)
-    },
-    [temperature, particleD, mode, showMolecules, sceneScale.scaleX, pollenRadius],
-  )
-
-  useAnimationFrame(handleFrame, { playing: isPlaying })
-
-  // 物理坐标 → 设计坐标
-  const { px, py } = worldToDesign(particleRef.current.x, particleRef.current.y, sceneScale)
-
-  // 轨迹 polyline 点字符串
-  const trajectoryPoints = showTrajectory === 1
-    ? trajectoryRef.current.map((p) => {
-        const { px: tx, py: ty } = worldToDesign(p.x, p.y, sceneScale)
-        return `${tx},${ty}`
-      }).join(' ')
-    : ''
-
-  // 合力箭头（转换到设计坐标）
-  const force = forceRef.current
-  const forceMagnitude = Math.sqrt(force.fx * force.fx + force.fy * force.fy)
-  const forceArrowLen = Math.min(forceMagnitude * sceneScale.scaleX * 8, sceneScale.maxVectorLength)
-
-  // 分子像素坐标
-  const moleculeDesign = mode === 1 && showMolecules === 1
-    ? moleculesRef.current.map((mol) => worldToDesign(mol.x, mol.y, sceneScale))
-    : []
 
   return (
-    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
-      <defs>
-        <linearGradient id="liquid-bg" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor={THERMAL_COLORS.beakerFill} stopOpacity={0.3} />
-          <stop offset="100%" stopColor={THERMAL_COLORS.beakerFill} stopOpacity={0.6} />
-        </linearGradient>
-        <radialGradient id="pollen-grad" cx="40%" cy="35%">
-          <stop offset="0%" stopColor={THERMO_COLORS.temperatureHigh} stopOpacity={0.6} />
-          <stop offset="60%" stopColor={THERMO_COLORS.heatAbsorb} stopOpacity={0.8} />
-          <stop offset="100%" stopColor={THERMO_COLORS.heatAbsorb} />
-        </radialGradient>
-        <filter id={CANVAS_STYLE.SVG_FILTER.glow.id}>
-          <feGaussianBlur stdDeviation={CANVAS_STYLE.SVG_FILTER.glow.stdDeviation} result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-
-      {/* 液体环境背景 */}
-      <rect
-        x={vp.visibleX} y={vp.visibleY}
-        width={vp.visibleW} height={vp.visibleH}
-        fill="url(#liquid-bg)"
-        rx={8}
-      />
-
-      {/* 轨迹折线 */}
-      {showTrajectory === 1 && trajectoryPoints && (
-        <polyline
-          points={trajectoryPoints}
-          fill="none"
-          stroke={THERMO_COLORS.heatAbsorb}
-          strokeWidth={1.5}
-          strokeOpacity={0.6}
-          strokeLinejoin="round"
-        />
-      )}
-
-      {/* 分子粒子（进阶模式） */}
-      {moleculeDesign.map((mol, i) => (
-        <circle
-          key={i}
-          cx={mol.px}
-          cy={mol.py}
-          r={Math.max(2, sceneScale.scaleX * 0.3)}
-          fill={SCENE_COLORS.materials.sliderMetalGrad[2]}
-          opacity={0.7}
-        />
-      ))}
-
-      {/* 花粉微粒 */}
-      <polygon
-        points={generateHexagon(px, py, pollenRadius)}
-        fill="url(#pollen-grad)"
-        stroke={SCENE_COLORS.circuit.meterFrame}
-        strokeWidth={1.5}
-        filter="url(#glow)"
-      />
-
-      {/* 合力矢量箭头（进阶模式） */}
-      {mode === 1 && forceArrowLen > 2 && (
-        <VectorArrow
-          originDesign={{ x: px, y: py }}
-          vector={{ x: force.fx, y: force.fy }}
-          type="force"
-              arrowType="physical-schematic"
+    <div ref={containerRef} className="w-full h-full">
+      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+        <BrownianScene
+          particleWorld={particleWorld}
+          force={force}
+          trajectory={trajectory}
+          molecules={molecules}
+          collisions={collisions}
+          pollenRadius={pollenRadius}
+          molRadius={molRadius}
+          vTarget={vTarget}
+          temperature={temperature}
+          mode={mode}
+          showTrajectory={showTrajectory}
+          showMolecules={showMolecules}
           sceneScale={sceneScale}
-          color={THERMO_COLORS.heatAbsorb}
-          pixelLength={forceArrowLen}
+          font={font}
         />
-      )}
-
-      {/* 温度标签 */}
-      <text
-        x={vp.visibleX + 12}
-        y={vp.visibleY + 24}
-        fill={colors.neutral[600]}
-        fontSize={font(CANVAS_STYLE.FONT.label)}
-        fontFamily={CANVAS_STYLE.FONT.family}
-      >
-        T = {temperature} K
-      </text>
-    </AnimationSvgCanvas>
+      </AnimationSvgCanvas>
+    </div>
   )
 }

@@ -15,6 +15,7 @@ export interface MiniChartLine {
   strokeWidth?: number
   strokeDasharray?: string
   name: string
+  showValueInLegend?: boolean
 }
 
 /** 静态参考水平线 */
@@ -23,6 +24,7 @@ export interface MiniChartStaticLine {
   color: string
   strokeDasharray?: string
   name: string
+  showValueInLegend?: boolean
 }
 
 export interface MiniChartProps {
@@ -144,23 +146,27 @@ function MiniChartContent({
       <g transform={`translate(${plotOrigin.x + font(12)}, ${plotOrigin.y + font(4)})`}>
         {lines.map((line, idx) => {
           const currentVal = currentVals[line.key] ?? 0
+          const showVal = line.showValueInLegend ?? true
           return (
             <g key={`legend-${line.key}`} transform={`translate(0, ${idx * font(11)})`}>
               <line x1={0} y1={-3} x2={10} y2={-3} stroke={line.color} strokeWidth={1.5} strokeDasharray={line.strokeDasharray} />
               <text x={14} y={1} fontSize={font(FONT.small)} fill={CHART_COLORS.tickLabel} fontWeight="600" className="select-none">
-                {line.name}: {currentVal.toFixed(1)}
+                {line.name}{showVal ? `: ${currentVal.toFixed(1)}` : ''}
               </text>
             </g>
           )
         })}
-        {staticLines.map((sLine, idx) => (
-          <g key={`legend-s-${idx}`} transform={`translate(0, ${(lines.length + idx) * font(11)})`}>
-            <line x1={0} y1={-3} x2={10} y2={-3} stroke={sLine.color} strokeWidth={1.2} strokeDasharray={sLine.strokeDasharray} />
-            <text x={14} y={1} fontSize={font(FONT.small)} fill={CHART_COLORS.tickLabel} fontWeight="600" className="select-none">
-              {sLine.name}: {sLine.value.toFixed(1)}
-            </text>
-          </g>
-        ))}
+        {staticLines.map((sLine, idx) => {
+          const showVal = sLine.showValueInLegend ?? true
+          return (
+            <g key={`legend-s-${idx}`} transform={`translate(0, ${(lines.length + idx) * font(11)})`}>
+              <line x1={0} y1={-3} x2={10} y2={-3} stroke={sLine.color} strokeWidth={1.2} strokeDasharray={sLine.strokeDasharray} />
+              <text x={14} y={1} fontSize={font(FONT.small)} fill={CHART_COLORS.tickLabel} fontWeight="600" className="select-none">
+                {sLine.name}{showVal ? `: ${sLine.value.toFixed(1)}` : ''}
+              </text>
+            </g>
+          )
+        })}
       </g>
     </g>
   )

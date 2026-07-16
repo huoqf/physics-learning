@@ -1,3 +1,25 @@
+## 🚨 AI 速查违禁行为表（读此文件必先扫此表）
+
+> 以下行为一旦出现，视为规范违反，必须回滚。
+
+| ❌ 禁止行为 | ✅ 正确替代 | 关联铁律 |
+|------------|-----------|---------|
+| `fill="#..."` / `stroke="red"` 等硬编码颜色 | `PHYSICS_COLORS.*` / `SCENE_COLORS.*` / `CHART_COLORS.*` | 铁律1-1 |
+| `fontSize={14}` 直接写死字号 | `font(14)`（来自 `canvasSize.font`） | 铁律1-1 |
+| `requestAnimationFrame(cb)` 裸调用 | `useAnimationLifecycle` / `src/utils/animation.ts` | 铁律1-4 |
+| 手写 `<line>` + `<marker>` 矢量箭头 | `VectorArrow` / `PhysicsVectorArrow` | 铁律1-5 |
+| `viewBox={...}` 与 `vp.transform` 同时使用 | 移除 `viewBox`，仅用 `AnimationSvgCanvas` | 铁律1-8 |
+| `createSceneScaleFromViewport({ mode: 'visibleArea' })` | `useSceneScale({ vp, preset, anchor })` | 铁律1-3 |
+| 手写 `x * scaleX + offsetX` 坐标计算 | `worldToDesign({ x, y }, sceneScale)` | 铁律1-2 |
+| `originPixel` prop | `originDesign` prop | 铁律1-5 |
+| 新页面手写 `<input type="range">` / 散乱左屏容器 | `paramMeta` → `ParamControl` / `controlMeta` → `ControlPanel` | 铁律6 |
+| `<foreignObject>` 内嵌 React 图表 | HTML 层 flex 分区，图表与 SVG 平级 | 铁律1-10 |
+| `CANVAS_PRESETS.wide` / `CANVAS_PRESETS.tall` 新建 | 仅 `full` / `splitV` / `splitH` / `square` 四种 | §CANVAS_PRESETS |
+| `BrowserRouter` | `HashRouter` only | 铁律4 |
+| `src/physics/` 中 import React / DOM / window | 物理层纯函数，零副作用 | 铁律2 |
+
+---
+
 # 项目规范 — 高中物理交互动画学习系统
 
 > **Trae IDE 默认加载的项目规范文件。**

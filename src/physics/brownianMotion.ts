@@ -1,7 +1,7 @@
 /**
  * 布朗运动纯函数库。
  * 无副作用，不依赖 React/DOM/window。
- * 物理引擎使用模拟单位，通过 computeScale 映射到画布像素。
+ * 物理引擎使用模拟单位，通过 useSceneScale + worldToDesign 映射到设计坐标。
  */
 
 const K_B = 1.38e-23      // 玻尔兹曼常数 J/K（用于 MB 分布图表）
@@ -165,3 +165,97 @@ export function mostProbableSpeed(T: number, d: number): number {
 export function averageKineticEnergy(T: number): number {
   return 1.5 * K_B * T
 }
+
+// ─── 估算与解题预设（阿伏伽德罗常数微观估算模型） ───────────────────────────
+
+export interface SubstancePreset {
+  name: string
+  symbol: string
+  molMass: number    // 摩尔质量 (kg/mol)，例如水为 0.018 kg/mol
+  density: number    // 密度 (kg/m³)，例如水为 1000 kg/m³
+  model: 'sphere' | 'cube' // 微观模型：球形（液体/固体）或立方体（气体/理想固体）
+  unitName: string   // 微观实体称呼 (如"分子"、"原子")
+}
+
+export const SUBSTANCE_PRESETS: SubstancePreset[] = [
+  { name: '水', symbol: 'H₂O', molMass: 0.018, density: 1000, model: 'sphere', unitName: '分子' },
+  { name: '金', symbol: 'Au', molMass: 0.197, density: 19300, model: 'sphere', unitName: '原子' },
+  { name: '铁', symbol: 'Fe', molMass: 0.056, density: 7800, model: 'sphere', unitName: '原子' },
+  { name: '铜', symbol: 'Cu', molMass: 0.064, density: 8900, model: 'sphere', unitName: '原子' },
+  { name: '标况气体', symbol: 'O₂等', molMass: 0.032, density: 1.429, model: 'cube', unitName: '分子分子间距' },
+]
+
+export const N_A = 6.022e23 // 阿伏伽德罗常数 mol⁻¹
+
+export interface MicroEstimationResult {
+  V_mol: number    // 摩尔体积 (m³/mol)
+  mass: number     // 物质质量 (kg)
+  volume: number   // 物质体积 (m³)
+  n: number        // 物质的量 (mol)
+  N: number        // 分子/原子总数 (个)
+  m0: number       // 单个分子/原子质量 (kg)
+  V0: number       // 单个分子/原子占据体积 (m³)
+  size: number     // 直径或平均距离 (m)
+}
+
+/**
+ * 根据输入的宏观量估算微观物理参数
+ *
+ * @param substance 选中的物质预设
+ * @param inputMode 输入模式：'mass' (质量，单位为 g) 或 'volume' (体积，单位为 cm³)
+ * @param value 输入的数值（对应 inputMode 的单位）
+ */
+export function estimateMicroQuantities(
+  substance: SubstancePreset,
+  inputMode: 'mass' | 'volume',
+  value: number,
+): MicroEstimationResult {
+  const M = substance.molMass
+  const rho = substance.density
+
+  // 1. 摩尔体积 (m³/mol)
+  const V_mol = M / rho
+
+  // 转换输入单位到 SI 标准单位
+  let mass = 0
+  let volume = 0
+  if (inputMode === 'mass') {
+    mass = value * 1e-3 // g -> kg
+    volume = mass / rho
+  } else {
+    volume = value * 1e-6 // cm³ -> m³
+    mass = volume * rho
+  }
+
+  // 2. 物质的量 n (mol) 和总数 N
+  const n = mass / M
+  const N = n * N_A
+
+  // 3. 单个分子质量 m0 (kg)
+  const m0 = M / N_A
+
+  // 4. 单个分子体积 / 占据空间 V0 (m³)
+  const V0 = V_mol / N_A
+
+  // 5. 分子直径 d (球体模型) 或分子间距 L (立方体模型) (m)
+  let size = 0
+  if (substance.model === 'sphere') {
+    // V0 = (4/3)*pi*r³ = (1/6)*pi*d³ => d = (6*V0/pi)^(1/3)
+    size = Math.pow((6 * V0) / Math.PI, 1 / 3)
+  } else {
+    // V0 = L³ => L = V0^(1/3)
+    size = Math.pow(V0, 1 / 3)
+  }
+
+  return {
+    V_mol,
+    mass,
+    volume,
+    n,
+    N,
+    m0,
+    V0,
+    size,
+  }
+}
+

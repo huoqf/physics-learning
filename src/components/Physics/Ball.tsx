@@ -15,7 +15,9 @@ export type BallPresetType =
   | 'brassWeight'
   | 'pendulumBob'
   | 'planetCool'
-  | 'planetWarm';
+  | 'planetWarm'
+  | 'pollen'
+  | 'liquidMolecule';
 
 /**
  * 物理小球组件 Props 接口。
@@ -76,6 +78,8 @@ const PRES_GRADIENT_OFFSETS: Record<BallPresetType, readonly number[]> = {
   pendulumBob: [0, 40, 80, 100],
   planetCool: [0, 40, 80, 100],
   planetWarm: [0, 40, 80, 100],
+  pollen: [0, 40, 80, 100],
+  liquidMolecule: [0, 40, 80, 100],
 } as const;
 
 /**
