@@ -1,10 +1,11 @@
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { SCENE_COLORS, ENERGY_COLORS, THERMO_COLORS, withAlpha } from '@/theme/physics'
+import { SCENE_COLORS, ENERGY_COLORS, THERMO_COLORS, STROKE, withAlpha } from '@/theme/physics'
 import { RelationChart } from '@/components/Chart'
 import type { RelationDataSeries, RelationMarker } from '@/components/Chart'
 import { calculateSandboxState, calculateCycleState } from '@/physics/firstLaw'
+import { Card } from '@/components/UI'
 
 // 物理参考量：
 // nR = 1/3, T0 = 300 K
@@ -185,8 +186,8 @@ export default function FirstLawCenterExtra() {
   }, [mode, V_L, P_kPa, deltaU])
 
   return (
-    <div className="w-full h-full bg-white flex flex-col p-3 overflow-hidden select-none">
-      
+    <Card className="w-full h-full flex flex-col p-3 overflow-hidden select-none">
+
       {/* 1. 顶部：能量守恒柱状收支天平 */}
       <div className="shrink-0 h-[215px] pb-2 flex flex-col w-full">
         <div className="flex flex-col p-2 bg-white rounded-lg border border-neutral-200/50 select-none w-full h-full">
@@ -204,7 +205,7 @@ export default function FirstLawCenterExtra() {
               {/* 零刻度虚线 */}
               <line
                 x1="20" y1={zeroY} x2="360" y2={zeroY}
-                stroke={SCENE_COLORS.charts.gridLine} strokeWidth={1} strokeDasharray="3 2"
+                stroke={SCENE_COLORS.charts.gridLine} strokeWidth={STROKE.grid} strokeDasharray="3 2"
               />
               <text x="15" y={zeroY + 3} fontSize={8} fill={SCENE_COLORS.charts.tickLabel} textAnchor="end">0</text>
               <text x="15" y={zeroY - maxBarHeight + 3} fontSize={8} fill={SCENE_COLORS.charts.tickLabel} textAnchor="end">+500J</text>
@@ -301,6 +302,6 @@ export default function FirstLawCenterExtra() {
         </div>
       </div>
 
-    </div>
+    </Card>
   )
 }
