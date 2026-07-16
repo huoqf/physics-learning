@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { computeScale } from '@/utils/coordinate'
+// computeScale 已内联：根据画布尺寸和物理世界范围计算缩放比
 import { GRAVITY } from '@/physics/constants'
 import type { AdvancedAmperePhysicsResult } from '../ampereForceModel'
 import type { SceneScale } from '@/scene'
@@ -102,7 +102,7 @@ export const useInclineForceLayout = (params: UseInclineForceLayoutParams): Incl
     Math.abs(physicsResult.N),
     5.0,
   )
-  const forceScale = computeScale(w, h, { xMin: -F_max, xMax: F_max, yMin: -F_max, yMax: F_max })
+  const forceScale = Math.min(w, h) / (2 * F_max)
 
   const G_phys = { x: 0, y: -m * g }
   const N_phys = {

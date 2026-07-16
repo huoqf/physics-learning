@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { computeDualRodsStateAtTime } from '@/physics'
-import { computeScale } from '@/utils/coordinate'
+// computeScale 已内联：根据画布尺寸和物理世界范围计算缩放比
 
-const DUAL_RODS_WORLD = { xMin: -3.0, xMax: 3.0, yMin: -1.4, yMax: 1.4 } as const
+// DUAL_RODS_WORLD: 物理世界边界已内联到 scale 计算中
 
 export interface DualRodsParams {
   scenario: number
@@ -46,7 +46,7 @@ export function useDualRodsPhysics(
 
   // 1. 根据设计坐标分辨率和物理世界边界计算标准物理比例尺 scale
   const scale = useMemo(
-    () => computeScale(width, height, DUAL_RODS_WORLD, 40),
+    () => Math.min((width - 80) / 6.0, (height - 80) / 2.8),
     [width, height]
   )
   const originX = width / 2

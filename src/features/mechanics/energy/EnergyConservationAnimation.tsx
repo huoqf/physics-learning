@@ -12,7 +12,7 @@ import {
   precomputeValleyTrajectory,
   getECStateAtTime,
 } from '@/physics/energyConservation'
-import { physicsToDesignWithOrigin } from '@/utils/coordinate'
+// physicsToDesignWithOrigin 已内联：物理坐标 → 设计坐标转换
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { PendulumScene } from './PendulumScene'
 import { ValleyScene } from './ValleyScene'
@@ -115,12 +115,13 @@ export default function EnergyConservationAnimation() {
   const designObjH = objH / vp.scale
   const designValleyCenterY = (valleyCenterY - vp.ty) / vp.scale
 
-  // 摆球或滑块设计坐标（通过 physicsToDesignWithOrigin 转换）
+  // 摆球或滑块设计坐标（物理坐标 → 设计坐标）
   const getObjectPixelPos = (thetaRad: number) => {
     const physX = R_model * Math.sin(thetaRad)
     const physY = -R_model * Math.cos(thetaRad)
-    const { cx, cy } = physicsToDesignWithOrigin(physX, physY, pivotX, pivotY, physScale, vp)
-    return { x: cx, y: cy }
+    const cx = pivotX + physX * physScale
+    const cy = pivotY - physY * physScale
+    return { x: (cx - vp.tx) / vp.scale, y: (cy - vp.ty) / vp.scale }
   }
 
   // ── 预计算物理轨迹与插值 ──

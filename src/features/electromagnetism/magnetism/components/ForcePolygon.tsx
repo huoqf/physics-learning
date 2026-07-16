@@ -3,7 +3,7 @@ import React from 'react'
 import { colors } from '@/theme/colors'
 import { CANVAS_COLORS, PHYSICS_COLORS } from '@/theme/physics'
 import { GRAVITY } from '@/physics/constants'
-import { computeScale } from '@/utils/coordinate'
+// computeScale 已内联：根据画布尺寸和物理世界范围计算缩放比
 
 import { IDENTITY_SCENE_SCALE } from '@/scene'
 import type { AdvancedAmperePhysicsResult } from '../ampereForceModel'
@@ -41,7 +41,7 @@ export const ForcePolygon: React.FC<ForcePolygonProps> = ({
     Math.abs(physicsResult.N),
     5.0
   )
-  const rawScale = computeScale(w, h, { xMin: -F_max, xMax: F_max, yMin: -F_max, yMax: F_max })
+  const rawScale = Math.min(w, h) / (2 * F_max)
 
   // 以初始比例计算链条，用于定位起点
   const initCx = w * 0.4

@@ -6,7 +6,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { computeScale, canvasToPhysics } from '@/utils/coordinate'
+// computeScale / canvasToPhysics 已内联：根据画布尺寸和物理世界范围计算缩放比
 import { clientToContainerPoint, snapAngle, snapForce } from '@/utils'
 import { useOrthogonalDecompositionPhysics } from './useOrthogonalDecompositionPhysics'
 import { VectorGrid } from './VectorGrid'
@@ -46,8 +46,7 @@ export default function OrthogonalDecompositionAnimation() {
   const svgRef = useRef<SVGSVGElement>(null)
 
   // 2. 标定物理比例尺 (WORLD 物理范围是 [-10, 10]，使用设计尺寸确保坐标变换一致)
-  const WORLD = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 } as const
-  const scale = computeScale(preset.width, preset.height, WORLD) * 0.6
+  const scale = Math.min(preset.width / 20, preset.height / 20) * 0.6
 
   // 3. 构建标准场景比例尺
   const sceneScale = useSceneScale({
@@ -78,7 +77,9 @@ export default function OrthogonalDecompositionAnimation() {
     // 容器像素 → 设计坐标
     const designX = (cx - vp.tx) / vp.scale
     const designY = (cy - vp.ty) / vp.scale
-    const { x: px, y: py } = canvasToPhysics(designX, designY, preset.width, preset.height, scale)
+    // canvasToPhysics 内联：设计坐标 → 物理坐标（原点在画布中心）
+    const px = (designX - preset.width / 2) / scale
+    const py = (preset.height / 2 - designY) / scale
 
     const rawMag = Math.sqrt(px * px + py * py)
     const rawDir = (Math.atan2(py, px) * 180) / Math.PI

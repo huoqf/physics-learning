@@ -3,7 +3,7 @@ import { colors } from '@/theme/colors'
 import { ParticleTrajectory, MagneticFieldSymbols } from '@/components/Physics'
 import type { GridPoint } from '@/components/Physics/MagneticFieldGrid'
 import { centripetalForceDir, electricForceDir } from '@/physics/magnetism/forces'
-import { svgPointToPhysicsPoint } from '@/utils/coordinate'
+// svgPointToPhysicsPoint 已内联：SVG 坐标 (y↓正) → 物理坐标 (y↑正)
 import { DEFLECT } from '../model/combinedFieldsModel'
 import type { DeflectSimulation, TrajectoryPoint, ParticleConstants } from '../model/combinedFieldsModel'
 import { renderVectorArrow, REF_MAGNITUDES } from './renderVectorArrow'
@@ -120,10 +120,10 @@ export function DeflectScene({
         <g>
           {/* 洛伦兹力 = 向心力，指向圆心 */}
           {(() => {
-            // SVG→物理坐标转换后调用纯函数
+            // SVG→物理坐标转换后调用纯函数（y 轴取反）
             const dir = centripetalForceDir(
-              svgPointToPhysicsPoint({ x: pos.x, y: pos.y }),
-              svgPointToPhysicsPoint({ x: deflect.cx, y: deflect.cy }),
+              { x: pos.x, y: -pos.y },
+              { x: deflect.cx, y: -deflect.cy },
             )
             return renderVectorArrow(
               pos.x,

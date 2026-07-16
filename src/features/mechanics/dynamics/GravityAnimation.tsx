@@ -6,7 +6,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE, SCENE_COLORS, CHART_COLORS } from '@/theme/physics'
-import { computeScale } from '@/utils/coordinate'
+// computeScale 已内联：根据画布尺寸和物理世界范围计算缩放比
 
 import { RelationChart } from '@/components/Chart'
 const R_DOMAIN: [number, number] = [1.5, 18.0]
@@ -42,7 +42,10 @@ export default function GravityAnimation() {
 
   // ── 科学坐标转换 ──
   const WORLD = { xMin: -6, xMax: 6, yMin: -4, yMax: 4 } as const
-  const scale = computeScale(vp.visibleW * GRAVITY_LAYOUT.scaleWidthRatio, vp.visibleH, WORLD)
+  const scale = Math.min(
+    (vp.visibleW * GRAVITY_LAYOUT.scaleWidthRatio) / (WORLD.xMax - WORLD.xMin),
+    vp.visibleH / (WORLD.yMax - WORLD.yMin)
+  )
   
   // 天体 1 放置在左侧 -r/2，天体 2 放置在右侧 r/2
   const obj1X = vp.visibleW / 2 + (-r / 2) * scale

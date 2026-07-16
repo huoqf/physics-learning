@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { calculateNonUniformEField } from '@/physics'
-import { physicsToDesignWithOrigin } from '@/utils/coordinate'
+// physicsToDesignWithOrigin 已内联：物理坐标 → 设计坐标转换
 
 /**
  * 电势与电势能物理计算 hook
@@ -132,8 +132,14 @@ export function useElectricPotentialPhysics({
   // 物理坐标 → 设计坐标（用于 <g transform={vp.transform}> 内的 SVG 元素）
   const physicsToDesign = useMemo(() => {
     const scaleX = w / 7.0
-    return (xp: number, yp: number) =>
-      physicsToDesignWithOrigin(xp, yp, 0, hAnim, scaleX, vp)
+    return (xp: number, yp: number) => {
+      const cx = xp * scaleX
+      const cy = hAnim - yp * scaleX
+      return {
+        cx: (cx - vp.tx) / vp.scale,
+        cy: (cy - vp.ty) / vp.scale,
+      }
+    }
   }, [w, hAnim, vp])
 
   const canvasToPhysics = useMemo(() => {

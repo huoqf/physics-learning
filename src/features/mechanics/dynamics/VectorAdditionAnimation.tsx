@@ -5,7 +5,7 @@ import { CANVAS_PRESETS } from '@/theme/spacing'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, CANVAS_STYLE } from '@/theme/physics'
-import { computeScale } from '@/utils/coordinate'
+// computeScale 已内联：根据画布尺寸和物理世界范围计算缩放比
 import { useVectorAdditionPhysics } from './useVectorAdditionPhysics'
 import { useVectorDrag } from './useVectorDrag'
 import { VectorGrid } from './VectorGrid'
@@ -33,8 +33,7 @@ export default function VectorAdditionAnimation() {
   const phi = params.phi ?? 0
   const mode = params.mode ?? 0
 
-  const WORLD = { xMin: -10, xMax: 10, yMin: -10, yMax: 10 } as const
-  const scale = computeScale(preset.width, preset.height, WORLD) * 0.6
+  const scale = Math.min(preset.width / 20, preset.height / 20) * 0.6
 
   const vaSceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height })
 

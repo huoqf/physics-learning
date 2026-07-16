@@ -301,8 +301,8 @@ useSceneScale（物理坐标 → 设计坐标）
 
 ## 十二、`computeScale` / `coordinate.ts` 存量页面清单
 
-> 更新时间：2026-07-15
-> 状态：**待迁移**。以下页面仍从 `@/utils/coordinate` 导入旧坐标函数。
+> 更新时间：2026-07-16
+> 状态：**✅ 已完成**。所有旧坐标函数导入已清零，仅 `useEquilibriumLayout.ts` 保留类型导入 `CanvasBounds` / `CanvasPoint`。
 
 ### 使用 `computeScale` 的页面（6 处）
 

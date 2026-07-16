@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, type RefObject } from 'react'
-import { canvasToPhysics, clientToContainerPoint, snapAngle, snapForce, normalizeAngle180 } from '@/utils'
+import { clientToContainerPoint, snapAngle, snapForce, normalizeAngle180 } from '@/utils'
 import type { ViewportInfo } from '@/utils'
 
 interface UseVectorDragProps {
@@ -32,7 +32,9 @@ export function useVectorDrag({ svgRef, vp, designW, designH, scale, phi, mode: 
       // 容器像素 → 设计坐标
       const designX = (cx - vp.tx) / vp.scale
       const designY = (cy - vp.ty) / vp.scale
-      const { x: px, y: py } = canvasToPhysics(designX, designY, designW, designH, scale)
+      // canvasToPhysics 内联：设计坐标 → 物理坐标（原点在画布中心）
+      const px = (designX - designW / 2) / scale
+      const py = (designH / 2 - designY) / scale
 
       const rawMag = Math.sqrt(px * px + py * py)
       const rawDir = (Math.atan2(py, px) * 180) / Math.PI

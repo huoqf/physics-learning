@@ -1,6 +1,25 @@
 import { useMemo, useCallback } from 'react'
-import { clampEndpoint } from '@/utils/coordinate'
 import type { CanvasBounds, CanvasPoint } from '@/utils/coordinate'
+
+/** 沿向量方向等比例缩短端点，使其不超出画布边界（已内联自 @/utils/coordinate） */
+function clampEndpoint(raw: CanvasPoint, origin: CanvasPoint, bounds: CanvasBounds): CanvasPoint {
+  const dx = raw.cx - origin.cx
+  const dy = raw.cy - origin.cy
+  if (dx === 0 && dy === 0) return raw
+
+  let tMax = Infinity
+  if (dx > 0) tMax = Math.min(tMax, (bounds.right - origin.cx) / dx)
+  else if (dx < 0) tMax = Math.min(tMax, (bounds.left - origin.cx) / dx)
+  if (dy > 0) tMax = Math.min(tMax, (bounds.bottom - origin.cy) / dy)
+  else if (dy < 0) tMax = Math.min(tMax, (bounds.top - origin.cy) / dy)
+
+  if (tMax >= 1) return raw
+
+  return {
+    cx: origin.cx + dx * tMax,
+    cy: origin.cy + dy * tMax,
+  }
+}
 import { useSceneScale } from '@/hooks/useSceneScale'
 import type { SceneScale } from '@/scene'
 import { GRAVITY } from '@/physics/constants'

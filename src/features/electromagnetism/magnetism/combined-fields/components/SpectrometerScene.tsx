@@ -3,7 +3,7 @@ import { colors } from '@/theme/colors'
 import { ParticleTrajectory, MagneticFieldSymbols } from '@/components/Physics'
 import type { GridPoint } from '@/components/Physics/MagneticFieldGrid'
 import { centripetalForceDir } from '@/physics/magnetism/forces'
-import { svgPointToPhysicsPoint } from '@/utils/coordinate'
+// svgPointToPhysicsPoint 已内联：SVG 坐标 (y↓正) → 物理坐标 (y↑正)
 import { SPECTROMETER, SCALE } from '../model/combinedFieldsModel'
 import type { SpectrometerSimulation, TrajectoryPoint, ParticleConstants } from '../model/combinedFieldsModel'
 import { renderVectorArrow, REF_MAGNITUDES } from './renderVectorArrow'
@@ -211,8 +211,8 @@ export function SpectrometerScene({
                 const cy = SPECTROMETER.y1
                 // SVG→物理坐标转换后调用纯函数（VectorArrow 使用物理坐标系 y↑正）
                 const dir = centripetalForceDir(
-                  svgPointToPhysicsPoint({ x: pos.x, y: pos.y }),
-                  svgPointToPhysicsPoint({ x: cx, y: cy }),
+                  { x: pos.x, y: -pos.y },
+                  { x: cx, y: -cy },
                 )
                 return renderArrow(
                   pos.x,
