@@ -35,6 +35,10 @@ export const thermodynamicsGasLawsAnimations = defineAnimations({
       { type: 'tip', group: '教学提示', showIf: 'mode', showIfValue: 2,
         content: '锁定体积 V（固定活塞），拖动温度 T，观察压强 P 变化' },
     ],
+    supportsDiscovery: true,
+    discoverySteps: () => import('@/features/thermodynamics/gasLaws/discoverySteps'),
+    CenterExtra: lazy(() => import('@/features/thermodynamics/gasLaws/GasLawsCenterExtra')),
+    centerLayout: 'splitH',
   },
 
   // ===== 热学 · 理想气体状态方程（Clapeyron 方程扩展）=====
@@ -61,6 +65,6 @@ export const thermodynamicsGasLawsAnimations = defineAnimations({
         content: '拖动 T 或 V，状态点在等温线族间跃迁' },
     ],
     CenterExtra: lazy(() => import('@/features/thermodynamics/gasLaws/ClapeyronCenterExtra')),
-    centerExtraMode: 'mode',
+    centerLayout: 'splitH',
   },
 })
