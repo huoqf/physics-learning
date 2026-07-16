@@ -1,7 +1,6 @@
 import type { KnowledgeNode } from '../types'
 
 export const waveOpticsKnowledge: KnowledgeNode[] = [
-  // ── 占位：波动光学（预留后续开发） ─────────────────────────────────────────
   {
     id: 'wave-optics-1-1',
     title: '光的干涉',
@@ -10,7 +9,7 @@ export const waveOpticsKnowledge: KnowledgeNode[] = [
     importance: 'gaokao',
     animationIds: [],
     problemIds: [],
-    prerequisites: [],
+    prerequisites: ['optics-1-2'], // 依赖光的折射定律
   },
   {
     id: 'wave-optics-1-2',
@@ -21,5 +20,25 @@ export const waveOpticsKnowledge: KnowledgeNode[] = [
     animationIds: [],
     problemIds: [],
     prerequisites: ['wave-optics-1-1'],
+  },
+  {
+    id: 'wave-optics-1-3',
+    title: '光的偏振',
+    chapter: '波动光学',
+    module: 'wave-optics',
+    importance: 'gaokao',
+    animationIds: [],
+    problemIds: [],
+    prerequisites: ['wave-optics-1-2'],
+  },
+  {
+    id: 'wave-optics-1-4',
+    title: '激光的特性与应用',
+    chapter: '波动光学',
+    module: 'wave-optics',
+    importance: 'gaokao',
+    animationIds: [],
+    problemIds: [],
+    prerequisites: ['wave-optics-1-3'],
   },
 ]

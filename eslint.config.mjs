@@ -37,6 +37,20 @@ export default [
     },
   },
 
+  // 1-b) physics/ 纯函数层：禁止 React/DOM 依赖（铁律2）
+  {
+    files: ['src/physics/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        paths: [
+          { name: 'react', message: 'physics/ 禁止依赖 React（铁律2：纯函数可序列化）' },
+          { name: 'react-dom', message: 'physics/ 禁止依赖 DOM（铁律2：纯函数可序列化）' },
+          { name: 'react-dom/server', message: 'physics/ 禁止依赖 DOM（铁律2：纯函数可序列化）' },
+        ],
+      }],
+    },
+  },
+
   // 2) 构建/工具配置文件（Node 环境）
   {
     files: ['*.config.{ts,js,mjs}', 'vite.config.ts', 'vitest.config.ts'],

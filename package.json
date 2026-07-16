@@ -13,7 +13,9 @@
     "audit:deps": "npm audit --audit-level=moderate",
     "check:font-size": "node scripts/check-font-size.mjs",
     "check:large-files": "node scripts/check-large-files.mjs",
-    "check:architecture": "npm run check:font-size && npm run check:viewport-legacy && npm run check:large-files",
+    "check:no-raf": "node scripts/check-no-raf.mjs",
+    "check:no-marker": "node scripts/check-no-marker.mjs",
+    "check:architecture": "npm run check:font-size && npm run check:viewport-legacy && npm run check:large-files && npm run check:no-raf && npm run check:no-marker",
     "check": "npm run build && npm test -- --run && npm run audit:deps && npm run check:architecture",
     "prepare": "lefthook install",
     "check:viewport-legacy": "node scripts/check-viewport-legacy.mjs"

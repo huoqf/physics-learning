@@ -1,0 +1,21 @@
+{
+  "_comment": "check-no-marker.mjs 白名单。每项记录文件路径、原因和预期清除日期。",
+  "_format": { "file": "相对项目根的路径", "reason": "为何豁免", "targetDate": "计划迁移截止日（YYYY-MM-DD）" },
+  "entries": [
+    {
+      "file": "src/features/electromagnetism/electrostatics/ElectricPotentialAnimScene.tsx",
+      "reason": "ground-symbol marker，非矢量箭头，需独立 marker 定义",
+      "targetDate": "2026-08-31"
+    },
+    {
+      "file": "src/features/electromagnetism/electrostatics/ElectricField.tsx",
+      "reason": "电场线 arrowhead marker，早于 VectorDefs 体系创建",
+      "targetDate": "2026-08-31"
+    },
+    {
+      "file": "src/features/electromagnetism/electrostatics/Capacitor.tsx",
+      "reason": "电容器箭头 + 刻度 marker，早于 VectorDefs 体系创建",
+      "targetDate": "2026-08-31"
+    }
+  ]
+}

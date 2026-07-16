@@ -4,7 +4,7 @@ import { defineAnimations } from '../defineAnimations'
 export const modernPhysicsAnimations = defineAnimations({
   'anim-bohr-theory': {
     title: '原子结构与玻尔理论',
-    knowledgeId: 'modern-1-1',
+    knowledgeId: 'modern-1-4',
     Component: lazy(() => import('@/features/modern/bohr-theory/BohrTheoryAnimation')),
     controlsMode: (params) => params.mode === 2 ? 'loop' : 'timed',
     defaultParams: {
