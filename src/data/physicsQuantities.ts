@@ -34,6 +34,7 @@ type BuilderName =
   | 'buildPhotoelectricQuantities'
   | 'buildNuclearDecayQuantities'
   | 'buildNuclearHalfLifeQuantities'
+  | 'buildNuclearReactionQuantities'
   | 'buildDoubleSlitInterferenceQuantities'
   | 'buildDiffractionQuantities'
   | 'buildPolarizationQuantities'
@@ -167,6 +168,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-photoelectric':       { loader: () => import('./quantities/photoelectric'), builderName: 'buildPhotoelectricQuantities' },
   'anim-nuclear-decay':       { loader: () => import('./quantities/nuclearDecay'),     builderName: 'buildNuclearDecayQuantities' },
   'anim-nuclear-half-life':   { loader: () => import('./quantities/nuclearHalfLife'),  builderName: 'buildNuclearHalfLifeQuantities' },
+  'anim-nuclear-reaction':    { loader: () => import('./quantities/nuclearReaction'),  builderName: 'buildNuclearReactionQuantities' },
   'anim-double-slit-interference': { loader: () => import('./quantities/doubleSlitInterference'), builderName: 'buildDoubleSlitInterferenceQuantities' },
   'anim-diffraction': { loader: () => import('./quantities/diffraction'), builderName: 'buildDiffractionQuantities' },
   'anim-polarization': { loader: () => import('./quantities/polarization'), builderName: 'buildPolarizationQuantities' },

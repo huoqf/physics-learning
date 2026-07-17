@@ -525,5 +525,88 @@ export const modernPhysicsAnimations = defineAnimations({
       },
     ],
   },
+
+  'anim-nuclear-reaction': {
+    title: '核反应、结合能与质量亏损',
+    knowledgeId: 'nuclear-1-3',
+    Component: lazy(() => import('@/features/modern/nuclear-reaction/NuclearReactionAnimation')),
+    controlsMode: 'timed' as const,
+    defaultParams: {
+      mode: 0,                   // 0: 结合能与质量亏损, 1: 核反应过程
+      nuclide: 3,                // 0:氕(¹H), 1:氘(²H), 2:氚(³H), 3:氦核(⁴He), 4:碳-12(¹²C), 5:铁-56(⁵⁶Fe), 6:铀-238(²³⁸U)
+      showMassDefectWeight: 0,   // 0: 不放置砝码, 1: 放置Δm砝码
+      reactionType: 0,           // 0: 轻核聚变, 1: 重核单次裂变, 2: 铀核链式反应
+    } as const,
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'mode',
+        group: '学习模式',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '① 结合能与质量亏损' },
+          { value: 1, label: '② 聚变与裂变反应' },
+        ],
+      },
+      // 模式0控制
+      {
+        type: 'segmented',
+        key: 'nuclide',
+        label: '选择核种',
+        group: '原子核选择',
+        showIf: 'mode',
+        showIfValue: 0,
+        options: [
+          { value: 0, label: '氕 (¹₁H)' },
+          { value: 1, label: '氘 (²₁H)' },
+          { value: 2, label: '氚 (³₁H)' },
+          { value: 3, label: '氦核 (⁴₂He)' },
+          { value: 4, label: '碳-12 (¹²₆C)' },
+          { value: 5, label: '铁-56 (⁵⁶₂₆Fe)' },
+          { value: 6, label: '铀-238 (²³⁸₉₂U)' },
+        ],
+      },
+      {
+        type: 'toggle',
+        key: 'showMassDefectWeight',
+        label: '添加等效质量砝码',
+        group: '天平交互',
+        showIf: 'mode',
+        showIfValue: 0,
+        trueValue: 1,
+        falseValue: 0,
+      },
+      // 模式1控制
+      {
+        type: 'segmented',
+        key: 'reactionType',
+        label: '反应类型',
+        group: '核反应选择',
+        showIf: 'mode',
+        showIfValue: 1,
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '轻核聚变 (²H+³H)' },
+          { value: 1, label: '单次裂变 (n+²³⁵U)' },
+          { value: 2, label: '铀核链式反应' },
+        ],
+      },
+      {
+        type: 'tip',
+        content: '质量亏损 Δm 对应的能量以光子或粒子动能的形式释放。在右盘放入 Δm 砝码可使天平重新平衡。',
+        group: '教学提示',
+        showIf: 'mode',
+        showIfValue: 0,
+      },
+      {
+        type: 'tip',
+        content: '轻核聚变与重核裂变都是向着比结合能更大（即更加稳定）的方向发生反应，从而释放巨大能量。',
+        group: '教学提示',
+        showIf: 'mode',
+        showIfValue: 1,
+      },
+    ],
+    paramMeta: [],
+  },
 })
 

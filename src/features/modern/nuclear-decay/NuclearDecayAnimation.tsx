@@ -12,18 +12,18 @@ import { NuclearDecayScene } from './components/NuclearDecayScene'
 // 模式1专属：三种放射线穿透与电离本领的对比柱状图组件
 const IonizationPenetrationChart: React.FC<{ font: (size: number) => number }> = ({ font }) => {
   return (
-    <div className="w-full h-full flex items-center justify-around bg-slate-900/40 rounded-lg border border-slate-700/50 p-4">
+    <div className="w-full h-full flex items-center justify-around bg-neutral-50 rounded-lg border border-neutral-200/60 p-4">
       {/* 1. 电离本领柱状图 */}
       <div className="flex flex-col items-center w-[45%] h-full">
-        <div className="text-slate-300 fontSize-[13px] font-bold mb-2">⚡ 相对电离能力 (α &gt; β &gt; γ)</div>
+        <div className="text-neutral-700 fontSize-[13px] font-bold mb-2">⚡ 相对电离能力 (α &gt; β &gt; γ)</div>
         <svg className="w-full flex-1" viewBox="0 0 300 180">
-          <line x1={30} y1={20} x2={290} y2={20} stroke="#475569" strokeWidth={0.5} strokeDasharray="3,3" />
-          <line x1={30} y1={80} x2={290} y2={80} stroke="#475569" strokeWidth={0.5} strokeDasharray="3,3" />
-          <line x1={30} y1={140} x2={290} y2={140} stroke="#475569" strokeWidth={0.5} strokeDasharray="3,3" />
+          <line x1={30} y1={20} x2={290} y2={20} stroke="#E2E8F0" strokeWidth={0.5} strokeDasharray="3,3" />
+          <line x1={30} y1={80} x2={290} y2={80} stroke="#E2E8F0" strokeWidth={0.5} strokeDasharray="3,3" />
+          <line x1={30} y1={140} x2={290} y2={140} stroke="#E2E8F0" strokeWidth={0.5} strokeDasharray="3,3" />
           
-          <text x={24} y={24} fill="#94A3B8" fontSize={font(9)} textAnchor="end">极强</text>
-          <text x={24} y={84} fill="#94A3B8" fontSize={font(9)} textAnchor="end">中等</text>
-          <text x={24} y={144} fill="#94A3B8" fontSize={font(9)} textAnchor="end">极弱</text>
+          <text x={24} y={24} fill="#64748B" fontSize={font(9)} textAnchor="end">极强</text>
+          <text x={24} y={84} fill="#64748B" fontSize={font(9)} textAnchor="end">中等</text>
+          <text x={24} y={144} fill="#64748B" fontSize={font(9)} textAnchor="end">极弱</text>
 
           <rect x={55} y={20} width={36} height={130} fill="url(#alphaBarGrad)" rx={4} />
           <text x={73} y={15} fill={PHYSICS_COLORS.white} fontSize={font(10)} textAnchor="middle" fontWeight="bold">α (约10⁴)</text>
@@ -35,25 +35,25 @@ const IonizationPenetrationChart: React.FC<{ font: (size: number) => number }> =
           <text x={233} y={137} fill={PHYSICS_COLORS.white} fontSize={font(10)} textAnchor="middle" fontWeight="bold">γ (1)</text>
 
           <line x1={30} y1={150} x2={290} y2={150} stroke="#94A3B8" strokeWidth={1} />
-          <text x={73} y={166} fill="#CBD5E1" fontSize={font(10)} textAnchor="middle">α 射线</text>
-          <text x={153} y={166} fill="#CBD5E1" fontSize={font(10)} textAnchor="middle">β 射线</text>
-          <text x={233} y={166} fill="#CBD5E1" fontSize={font(10)} textAnchor="middle">γ 射线</text>
+          <text x={73} y={166} fill="#475569" fontSize={font(10)} textAnchor="middle">α 射线</text>
+          <text x={153} y={166} fill="#475569" fontSize={font(10)} textAnchor="middle">β 射线</text>
+          <text x={233} y={166} fill="#475569" fontSize={font(10)} textAnchor="middle">γ 射线</text>
         </svg>
       </div>
 
-      <div className="h-[80%] w-[1px] bg-slate-700/50" />
+      <div className="h-[80%] w-[1px] bg-neutral-200" />
 
       {/* 2. 穿透本领柱状图 */}
       <div className="flex flex-col items-center w-[45%] h-full">
-        <div className="text-slate-300 fontSize-[13px] font-bold mb-2">🛡️ 相对穿透能力 (γ &gt; β &gt; α)</div>
+        <div className="text-neutral-700 fontSize-[13px] font-bold mb-2">🛡️ 相对穿透能力 (γ &gt; β &gt; α)</div>
         <svg className="w-full flex-1" viewBox="0 0 300 180">
-          <line x1={30} y1={20} x2={290} y2={20} stroke="#475569" strokeWidth={0.5} strokeDasharray="3,3" />
-          <line x1={30} y1={80} x2={290} y2={80} stroke="#475569" strokeWidth={0.5} strokeDasharray="3,3" />
-          <line x1={30} y1={140} x2={290} y2={140} stroke="#475569" strokeWidth={0.5} strokeDasharray="3,3" />
+          <line x1={30} y1={20} x2={290} y2={20} stroke="#E2E8F0" strokeWidth={0.5} strokeDasharray="3,3" />
+          <line x1={30} y1={80} x2={290} y2={80} stroke="#E2E8F0" strokeWidth={0.5} strokeDasharray="3,3" />
+          <line x1={30} y1={140} x2={290} y2={140} stroke="#E2E8F0" strokeWidth={0.5} strokeDasharray="3,3" />
 
-          <text x={24} y={24} fill="#94A3B8" fontSize={font(9)} textAnchor="end">极强</text>
-          <text x={24} y={84} fill="#94A3B8" fontSize={font(9)} textAnchor="end">中等</text>
-          <text x={24} y={144} fill="#94A3B8" fontSize={font(9)} textAnchor="end">极弱</text>
+          <text x={24} y={24} fill="#64748B" fontSize={font(9)} textAnchor="end">极强</text>
+          <text x={24} y={84} fill="#64748B" fontSize={font(9)} textAnchor="end">中等</text>
+          <text x={24} y={144} fill="#64748B" fontSize={font(9)} textAnchor="end">极弱</text>
 
           <rect x={55} y={146} width={36} height={4} fill="url(#alphaBarGrad)" rx={1} />
           <text x={73} y={141} fill={PHYSICS_COLORS.white} fontSize={font(10)} textAnchor="middle" fontWeight="bold">一张纸</text>
@@ -65,9 +65,9 @@ const IonizationPenetrationChart: React.FC<{ font: (size: number) => number }> =
           <text x={233} y={15} fill={PHYSICS_COLORS.white} fontSize={font(10)} textAnchor="middle" fontWeight="bold">数厘米铅板</text>
 
           <line x1={30} y1={150} x2={290} y2={150} stroke="#94A3B8" strokeWidth={1} />
-          <text x={73} y={166} fill="#CBD5E1" fontSize={font(10)} textAnchor="middle">α 射线</text>
-          <text x={153} y={166} fill="#CBD5E1" fontSize={font(10)} textAnchor="middle">β 射线</text>
-          <text x={233} y={166} fill="#CBD5E1" fontSize={font(10)} textAnchor="middle">γ 射线</text>
+          <text x={73} y={166} fill="#475569" fontSize={font(10)} textAnchor="middle">α 射线</text>
+          <text x={153} y={166} fill="#475569" fontSize={font(10)} textAnchor="middle">β 射线</text>
+          <text x={233} y={166} fill="#475569" fontSize={font(10)} textAnchor="middle">γ 射线</text>
 
           <defs>
             <linearGradient id="alphaBarGrad" x1="0" y1="0" x2="0" y2="1">
@@ -175,7 +175,7 @@ export default function NuclearDecayAnimation() {
       </div>
 
       {/* 下半屏：动画画布区 */}
-      <div className="flex-1 min-h-0 bg-slate-950/65 rounded-lg border border-slate-800/80 overflow-hidden relative">
+      <div className="flex-1 min-h-0 bg-white rounded-lg border border-neutral-200/60 overflow-hidden relative">
         {/* 电磁场参数标签浮层 (仅在偏转模式下) */}
         {mode === 1 && fieldType !== 2 && (
           <div className="absolute top-2 left-2 z-10 bg-slate-900/90 text-slate-200 fontSize-[11px] px-2 py-1 rounded border border-slate-700/80 font-mono shadow">

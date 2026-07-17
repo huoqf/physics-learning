@@ -87,12 +87,12 @@ export default function NuclearHalfLifeAnimation() {
       </div>
 
       {/* 下半屏：动画画布区 */}
-      <div className="flex-1 min-h-0 bg-slate-950/65 rounded-lg border border-slate-800/80 overflow-hidden relative">
+      <div className="flex-1 min-h-0 bg-white rounded-lg border border-neutral-200/60 overflow-hidden relative">
         {/* 半衰期核数标签浮层 */}
-        <div className="absolute top-2 left-2 z-10 bg-slate-900/90 text-slate-200 fontSize-[11px] px-2 py-1 rounded border border-slate-700/80 font-mono shadow flex gap-4">
-          <span>初始核数 N₀ = <span className="text-blue-400 font-bold">{initCount}</span></span>
-          <span>当前剩余 N = <span className="text-orange-400 font-bold">{physics.remainingCount}</span></span>
-          <span>已衰变比例 = <span className="text-emerald-400 font-bold">{((1 - physics.remainingCount / initCount) * 100).toFixed(0)}%</span></span>
+        <div className="absolute top-2 left-2 z-10 bg-white/95 text-neutral-700 fontSize-[11px] px-2 py-1 rounded border border-neutral-200 font-mono shadow flex gap-4">
+          <span>初始核数 N₀ = <span className="text-blue-600 font-bold">{initCount}</span></span>
+          <span>当前剩余 N = <span className="text-orange-600 font-bold">{physics.remainingCount}</span></span>
+          <span>已衰变比例 = <span className="text-emerald-600 font-bold">{((1 - physics.remainingCount / initCount) * 100).toFixed(0)}%</span></span>
         </div>
 
         <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>

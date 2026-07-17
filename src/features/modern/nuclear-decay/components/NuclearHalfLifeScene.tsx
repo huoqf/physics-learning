@@ -48,7 +48,24 @@ export const NuclearHalfLifeScene: React.FC<NuclearHalfLifeSceneProps> = ({
       </defs>
 
       {/* 背景轻网格线 */}
-      <rect x={40} y={15} width={760} height={295} fill={withAlpha(CANVAS_COLORS.labelText, 0.02)} stroke={CANVAS_COLORS.grid} strokeWidth={1} rx={8} />
+      {(() => {
+        const topLeft = worldToDesign(-4.5, 1.5, sceneScale)
+        const bottomRight = worldToDesign(4.5, -1.5, sceneScale)
+        const bgW = bottomRight.px - topLeft.px
+        const bgH = bottomRight.py - topLeft.py
+        return (
+          <rect
+            x={topLeft.px}
+            y={topLeft.py}
+            width={bgW}
+            height={bgH}
+            fill={withAlpha(CANVAS_COLORS.labelText, 0.02)}
+            stroke={CANVAS_COLORS.grid}
+            strokeWidth={1}
+            rx={8}
+          />
+        )
+      })()}
 
       {/* 绘制 100 个原子核格点 */}
       {nuclides.map((n) => {

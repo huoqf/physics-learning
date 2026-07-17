@@ -199,15 +199,18 @@ export const NuclearDecayScene: React.FC<NuclearDecaySceneProps> = ({
 
     return (
       <g>
-        {nucleons.length > 1 && (
-          <circle
-            cx={420}
-            cy={162.5}
-            r={nucleons.length * 9 + 40}
-            fill="url(#strongForceGlow)"
-            opacity={Math.max(0.1, 0.7 * (1.0 - (nucleonDistance - 0.8) / 2.0))}
-          />
-        )}
+        {nucleons.length > 1 && (() => {
+          const glowCenter = worldToDesign(0, 0, sceneScale)
+          return (
+            <circle
+              cx={glowCenter.px}
+              cy={glowCenter.py}
+              r={nucleons.length * 9 + 40}
+              fill="url(#strongForceGlow)"
+              opacity={Math.max(0.1, 0.7 * (1.0 - (nucleonDistance - 0.8) / 2.0))}
+            />
+          )
+        })()}
 
         {renderConnectionsAndForce()}
 
@@ -404,7 +407,7 @@ export const NuclearDecayScene: React.FC<NuclearDecaySceneProps> = ({
           <path d={getPathD(bPathDesign)} fill="none" stroke={PHYSICS_COLORS.negativeCharge} strokeWidth={1.8} opacity={0.8} strokeDasharray="3,2" />
         )}
         {gPathDesign.length > 1 && (
-          <path d={getPathD(gPathDesign)} fill="none" stroke={MODERN_COLORS.photon} strokeWidth={1.6} opacity={0.8} />
+          <path d={getPathD(gPathDesign)} fill="none" stroke={MODERN_COLORS.photonUltraviolet} strokeWidth={1.6} opacity={0.8} />
         )}
 
         {(() => {
@@ -428,7 +431,7 @@ export const NuclearDecayScene: React.FC<NuclearDecaySceneProps> = ({
                 d={`M ${leadBoxPos.px} ${leadBoxPos.py + 16}
                    L ${leadBoxPos.px - 10} ${leadBoxPos.py + 32}
                    L ${leadBoxPos.px + 10} ${leadBoxPos.py + 32} Z`}
-                fill={MODERN_COLORS.photon}
+                fill={MODERN_COLORS.photonUltraviolet}
                 stroke={CANVAS_COLORS.labelText}
                 strokeWidth={1}
               />
