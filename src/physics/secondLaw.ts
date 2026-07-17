@@ -60,18 +60,24 @@ const DG_SPEED = 1.0
  */
 export function initHeatConductionParticles(
   count: number,
+  xMin: number,
+  xMax: number,
+  yMin: number,
+  yMax: number,
   hotRatio: number = 0.5,
   seed: number = 42,
 ): Particle[] {
   const rng = mulberry32(seed)
   const particles: Particle[] = []
+  const width = xMax - xMin
+  const height = yMax - yMin
   for (let i = 0; i < count; i++) {
     const isHot = i < count * hotRatio
     particles.push({
-      x: isHot ? rng() * 0.48 : 0.52 + rng() * 0.48,
-      y: rng(),
-      vx: (rng() - 0.5) * 2 * TH_SPEED,
-      vy: (rng() - 0.5) * 2 * TH_SPEED,
+      x: isHot ? xMin + rng() * width * 0.48 : xMin + width * 0.52 + rng() * width * 0.48,
+      y: yMin + rng() * height,
+      vx: (rng() - 0.5) * 2 * TH_SPEED * width,
+      vy: (rng() - 0.5) * 2 * TH_SPEED * height,
       temperature: isHot ? TH_T_HOT : TH_T_COLD,
     })
   }
@@ -87,16 +93,22 @@ export function initHeatConductionParticles(
  */
 export function initDiffusionParticles(
   count: number,
+  xMin: number,
+  xMax: number,
+  yMin: number,
+  yMax: number,
   seed: number = 123,
 ): Particle[] {
   const rng = mulberry32(seed)
   const particles: Particle[] = []
+  const width = xMax - xMin
+  const height = yMax - yMin
   for (let i = 0; i < count; i++) {
     particles.push({
-      x: rng() * 0.48,
-      y: rng(),
-      vx: (rng() - 0.5) * 2 * DG_SPEED,
-      vy: (rng() - 0.5) * 2 * DG_SPEED,
+      x: xMin + rng() * width * 0.48,
+      y: yMin + rng() * height,
+      vx: (rng() - 0.5) * 2 * DG_SPEED * width,
+      vy: (rng() - 0.5) * 2 * DG_SPEED * height,
       temperature: 300,
     })
   }
@@ -120,40 +132,58 @@ export function stepParticles(
   particles: Particle[],
   dt: number,
   scenario: Scenario,
-  partitionOpen: boolean = true,
+  xMin: number,
+  xMax: number,
+  yMin: number,
+  yMax: number,
+  partitionProgress: number = 0, // 0 = 全关，1 = 全开
   temperatureDiffusionRate: number = 0.02,
 ): void {
+  const width = xMax - xMin
+  const height = yMax - yMin
+  const borderX = xMin + width * 0.48
+  const borderXRight = xMin + width * 0.52
+
   for (const p of particles) {
     p.x += p.vx * dt
     p.y += p.vy * dt
 
     // 壁面弹性反射
-    if (p.x < 0) { p.x = 0; p.vx = Math.abs(p.vx) }
-    if (p.x > 1) { p.x = 1; p.vx = -Math.abs(p.vx) }
-    if (p.y < 0) { p.y = 0; p.vy = Math.abs(p.vy) }
-    if (p.y > 1) { p.y = 1; p.vy = -Math.abs(p.vy) }
+    if (p.x < xMin) { p.x = xMin; p.vx = Math.abs(p.vx) }
+    if (p.x > xMax) { p.x = xMax; p.vx = -Math.abs(p.vx) }
+    // y 轴向上为正 (yMin 为底，yMax 为顶)
+    if (p.y < yMin) { p.y = yMin; p.vy = Math.abs(p.vy) }
+    if (p.y > yMax) { p.y = yMax; p.vy = -Math.abs(p.vy) }
 
-    // 气体扩散：隔板未打开时，粒子限制在左半区
-    if (scenario === 'gas-diffusion' && !partitionOpen) {
-      if (p.x > 0.48) { p.x = 0.48; p.vx = -Math.abs(p.vx) }
+    // 气体扩散：隔板根据实时抽取进度 partitionProgress 阻挡粒子
+    if (scenario === 'gas-diffusion') {
+      if (partitionProgress < 1.0) {
+        const barrierTop = yMin + height * (1 - partitionProgress)
+        // y 坐标小于 barrierTop 代表处于未抽走的隔板段中（物理坐标系中 yMin 为底部）
+        if (p.x > borderX && p.y < barrierTop) {
+          p.x = borderX
+          p.vx = -Math.abs(p.vx)
+        }
+      }
     }
 
-    // 热传导：隔板处反射
+    // 热传导：隔栅反射
     if (scenario === 'heat-conduction') {
-      if (p.x > 0.48 && p.x < 0.52) {
+      if (p.x > borderX && p.x < borderXRight) {
         p.vx = p.vx > 0 ? -Math.abs(p.vx) : Math.abs(p.vx)
       }
     }
   }
 
-  // 热传导：温度混合（简化傅里叶热传导）
+  // 热传导：温度混合（物理半径基于宽度自适应）
   if (scenario === 'heat-conduction') {
+    const mixRadius = 0.08 * width
     for (let i = 0; i < particles.length; i++) {
       for (let j = i + 1; j < particles.length; j++) {
         const dx = particles[i].x - particles[j].x
         const dy = particles[i].y - particles[j].y
         const dist = Math.sqrt(dx * dx + dy * dy)
-        if (dist < 0.08) {
+        if (dist < mixRadius) {
           const avgT = (particles[i].temperature + particles[j].temperature) / 2
           const mix = temperatureDiffusionRate * dt * 10
           particles[i].temperature += (avgT - particles[i].temperature) * mix
@@ -171,21 +201,34 @@ export function stepParticles(
  * 用 Stirling 近似计算 ln Ω = ln(N!) - Σ ln(n_i!)
  *
  * @param particles 粒子数组
+ * @param xMin 物理边界左
+ * @param xMax 物理边界右
+ * @param yMin 物理边界下
+ * @param yMax 物理边界上
  * @param numBins 空间分格数（默认 8）
  * @returns lnOmega（对数值）和归一化无序度 0-1
  */
 export function computeMicrostates(
   particles: Particle[],
+  xMin: number,
+  xMax: number,
+  yMin: number,
+  yMax: number,
   numBins: number = 8,
 ): { lnOmega: number; normalizedEntropy: number } {
   const N = particles.length
   if (N === 0) return { lnOmega: 0, normalizedEntropy: 0 }
 
+  const width = xMax - xMin
+  const height = yMax - yMin
+
   // 统计每个格子的粒子数
   const bins = new Array(numBins * numBins).fill(0)
   for (const p of particles) {
-    const bx = Math.min(numBins - 1, Math.floor(p.x * numBins))
-    const by = Math.min(numBins - 1, Math.floor(p.y * numBins))
+    const rx = (p.x - xMin) / width
+    const ry = (p.y - yMin) / height
+    const bx = Math.max(0, Math.min(numBins - 1, Math.floor(rx * numBins)))
+    const by = Math.max(0, Math.min(numBins - 1, Math.floor(ry * numBins)))
     bins[by * numBins + bx]++
   }
 
@@ -249,18 +292,25 @@ export function temperatureToColor(
  * 计算两侧平均温度差（热传导场景）。
  *
  * @param particles 粒子数组
+ * @param xMin 物理边界左
+ * @param xMax 物理边界右
  * @returns { hotAvg, coldAvg, deltaT }
  */
-export function computeTemperatureDiff(particles: Particle[]): {
+export function computeTemperatureDiff(
+  particles: Particle[],
+  xMin: number,
+  xMax: number,
+): {
   hotAvg: number
   coldAvg: number
   deltaT: number
 } {
   let hotSum = 0, hotCount = 0
   let coldSum = 0, coldCount = 0
+  const midX = xMin + (xMax - xMin) / 2
 
   for (const p of particles) {
-    if (p.x < 0.5) {
+    if (p.x < midX) {
       hotSum += p.temperature
       hotCount++
     } else {
@@ -278,18 +328,25 @@ export function computeTemperatureDiff(particles: Particle[]): {
  * 计算左右粒子数比（气体扩散场景）。
  *
  * @param particles 粒子数组
+ * @param xMin 物理边界左
+ * @param xMax 物理边界右
  * @returns { leftCount, rightCount, ratio }
  */
-export function computeParticleDistribution(particles: Particle[]): {
+export function computeParticleDistribution(
+  particles: Particle[],
+  xMin: number,
+  xMax: number,
+): {
   leftCount: number
   rightCount: number
   ratio: number
 } {
   let leftCount = 0
   let rightCount = 0
+  const midX = xMin + (xMax - xMin) / 2
 
   for (const p of particles) {
-    if (p.x < 0.5) {
+    if (p.x < midX) {
       leftCount++
     } else {
       rightCount++

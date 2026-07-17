@@ -1,23 +1,22 @@
-﻿/**
+/**
  * 热力学第二定律物理量看板数据构建。
  */
 import { SECOND_LAW_COLORS } from '@/theme/physics'
+import { secondLawSharedState } from '@/features/thermodynamics/secondLaw/sharedState'
 import type { PhysicsPanelData } from './types'
 
 export function buildSecondLawQuantities(
   animId: string,
   params: Record<string, number>,
-  time: number,
+  _time: number,
 ): PhysicsPanelData | null {
   if (animId !== 'anim-second-law') return null
 
   const scene = params.scene ?? 0
 
-  // 基于时间的逻辑斯蒂增长模型估算熵值
-  const k = scene === 0 ? 0.8 : 1.2
-  const t0 = scene === 0 ? 8 : 5
-  const S = Math.max(0, Math.min(1, 1 / (1 + Math.exp(-k * (time - t0)))))
-  const omega = Math.exp(S * 8)
+  const S = secondLawSharedState.currentS
+  const lnOmega = secondLawSharedState.lnOmega
+  const omega = Math.exp(lnOmega)
 
   return {
     quantities: [
@@ -51,14 +50,10 @@ export function buildSecondLawQuantities(
         condition: '微观态等概率假设',
       },
       {
-        name: '克劳修斯表述',
-        latex: '热量不能自发地从低温物体传到高温物体',
-        level: 'important',
-      },
-      {
-        name: '开尔文表述',
-        latex: '不可能从单一热源吸收热量并全部用来做功，\\ 而不引起其他变化',
-        level: 'important',
+        name: '热力学第二定律（孤立系统熵增）',
+        latex: '\\Delta S \\ge 0',
+        level: 'core',
+        condition: '自发过程',
       },
     ],
     gaokaoPoints: [
