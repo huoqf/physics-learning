@@ -32,6 +32,12 @@ type BuilderName =
   | 'buildThinLensQuantities'
   | 'buildModernPhysicsQuantities'
   | 'buildPhotoelectricQuantities'
+  | 'buildNuclearDecayQuantities'
+  | 'buildNuclearHalfLifeQuantities'
+  | 'buildDoubleSlitInterferenceQuantities'
+  | 'buildDiffractionQuantities'
+  | 'buildPolarizationQuantities'
+  | 'buildLaserQuantities'
 
 /** 单条注册记录：懒加载器 + 构建器函数名 */
 interface QuantityRegistration {
@@ -159,6 +165,12 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-thin-lens':           { loader: () => import('./quantities/thinLens'), builderName: 'buildThinLensQuantities' },
   'anim-bohr-theory':         { loader: () => import('./quantities/modernPhysics'), builderName: 'buildModernPhysicsQuantities' },
   'anim-photoelectric':       { loader: () => import('./quantities/photoelectric'), builderName: 'buildPhotoelectricQuantities' },
+  'anim-nuclear-decay':       { loader: () => import('./quantities/nuclearDecay'),     builderName: 'buildNuclearDecayQuantities' },
+  'anim-nuclear-half-life':   { loader: () => import('./quantities/nuclearHalfLife'),  builderName: 'buildNuclearHalfLifeQuantities' },
+  'anim-double-slit-interference': { loader: () => import('./quantities/doubleSlitInterference'), builderName: 'buildDoubleSlitInterferenceQuantities' },
+  'anim-diffraction': { loader: () => import('./quantities/diffraction'), builderName: 'buildDiffractionQuantities' },
+  'anim-polarization': { loader: () => import('./quantities/polarization'), builderName: 'buildPolarizationQuantities' },
+  'anim-laser': { loader: () => import('./quantities/laser'), builderName: 'buildLaserQuantities' },
 }
 
 /** 已加载的构建器缓存（模块级单例） */

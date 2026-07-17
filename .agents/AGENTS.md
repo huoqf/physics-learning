@@ -5,7 +5,38 @@
 
 ---
 
-## ⚡ 铁律速查（违反则任务无效）
+## ⚡ 三屏内容分配铁律（设计前必读）
+
+```
+左屏（LeftPanel）         中屏（AnimationSvgCanvas）        右屏（PhysicsPanel）
+──────────────────        ──────────────────────────        ──────────────────────
+• paramMeta 数值参数      • 动画场景（SVG 主体）            • QuantitySection（物理量）
+• controlMeta 模式开关    • CenterExtra 图表（可选）         • FormulaSection（公式+条件）
+• SidebarExtra（复杂）    ❌ 禁止大段教学文字              • ExamPointSection（高考要点）
+                          ❌ 禁止完整公式推导               ❌ 禁止动画控制控件
+                          ❌ 禁止高考考点总结
+```
+
+**主屏文字约束**：SVG 内只允许出现物理量数值标注（`v = 3.2 m/s`）和坐标轴标签，禁止教学解释段落。
+
+## ⚡ 布局 preset 选择铁律（分屏是主流，按动画方向选）
+
+> 动画配合图表更能帮助学生理解物理过程，**`splitV`/`splitH` 是大多数页面的首选**。
+
+| preset | 设计尺寸 | 选用条件 |
+|--------|---------|---------|
+| `CANVAS_PRESETS.splitV` | 840×325 | **水平运动**（追及、碰撞、平抛）或**多图表并列**（v-t + x-t + a-t） |
+| `CANVAS_PRESETS.splitH` | 420×650 | **垂直/斜向运动**（自由落体、斜抛、弹簧振子） |
+| `CANVAS_PRESETS.full` | 840×650 | 无需配套图表的纯场景（光学、磁场分布等） |
+| `CANVAS_PRESETS.square` | 650×650 | 圆形/旋转对称（圆周运动、向心力） |
+
+**决策直觉**：水平运动 → `splitV`；竖直运动 → `splitH`；多图表并列 → `splitV`；无图表 → `full`
+
+> ❌ 严禁 `wide` / `tall` 等废弃 preset；严禁手写 `width={900}` 固定像素。
+
+---
+
+## ⚡ 其他铁律速查（违反则任务无效）
 
 ### 铁律 1：统一来源，禁止硬编码
 
@@ -60,7 +91,36 @@ controlMeta → 由 registry 驱动 ControlPanel（模式/开关/提示）
 | 视觉标注箭头 | `VectorArrow` | `@/components/Physics` |
 | 粒子轨迹 | `ParticleTrajectory` | `@/components/Physics` |
 | 物理图表基座 | `BasePhysicsChart` | `@/components/Chart` |
+| 实时时序图 | `MiniChart` | `@/components/UI` |
 | 左屏容器 | `LeftPanel` / `LeftPanelSection` | `@/components/UI` |
+
+**图表约束**：禁止手写 `toSvgX / toSvgY` 坐标轴；禁止 `<foreignObject>` 内嵌 React 图表；需图表时必须在现有组件基础上扩展或组合。
+
+| 图表需求 | 必须使用 | import |
+|---------|---------|--------|
+| v-t 图 | `VelocityTimeChart` | `@/components/Chart` |
+| x-t 图 | `DisplacementTimeChart` | `@/components/Chart` |
+| a-t 图 | `AccelerationTimeChart` | `@/components/Chart` |
+| 自定义关系图 | `BasePhysicsChart` + 插件 | `@/components/Chart` |
+| 轻量实时图 | `MiniChart` | `@/components/UI` |
+
+### 铁律 4B：颜色语义层级隔离（混用即违规）
+
+| 语义层级 | 来源 | 适用场景 | ❌ 禁止 |
+|---------|------|---------|--------|
+| 物理量 | `PHYSICS_COLORS.*` | 力/速度/加速度矢量标注 | 用 `colors.primary` 表示速度 |
+| 场景器材 | `SCENE_COLORS.*` | 磁铁/线圈/球体材质 | 用 `PHYSICS_COLORS` 表示器材 |
+| Canvas 基础设施 | `CANVAS_COLORS.*` | 网格线/坐标轴/参考线 | 用 `colors.neutral[200]` 直接 |
+| 图表 | `CHART_COLORS.*` / `VT_CHART_COLORS.*` | 图表曲线 | 混用 PHYSICS_COLORS |
+| 透明度变体 | `withAlpha(token, 0.3)` | 任意半透明色 | 手拼 `rgba(...)` |
+
+```ts
+// ✅ 正确 import（统一入口，禁止子路径）
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, CHART_COLORS, withAlpha } from '@/theme/physics'
+
+// ❌ 禁止子路径导入
+import { withAlpha } from '@/theme/physics/colors'
+```
 
 ### 铁律 5：HashRouter Only
 
@@ -72,13 +132,15 @@ controlMeta → 由 registry 驱动 ControlPanel（模式/开关/提示）
 
 ---
 
-## 📋 新建页面前必须确认的 5 件事
+## 📋 新建页面前必须确认的 7 件事
 
-1. **选择 preset**：`full` / `splitV` / `splitH` / `square`（见 `project_rules.md §CANVAS_PRESETS`）
-2. **分层结构**：`XxxAnimation.tsx`（编排）+ `hooks/useXxxPhysics.ts`（物理）+ `components/XxxScene.tsx`（渲染）
-3. **颜色来源**：物理量用 `PHYSICS_COLORS`，场景器材用 `SCENE_COLORS`，图表用 `CHART_COLORS`
-4. **坐标系统**：`worldToDesign()` 转换，`useSceneScale` 比例尺，禁止手写 `x * scale + offset`
-5. **Registry 注册**：`data/registries/<domain>.ts` 中的 `paramMeta` / `controlMeta` 驱动左屏控件
+1. **选择 preset**：`full` / `splitV` / `splitH` / `square`（根据是否有图表分区、是否圆形对称决定）
+2. **选择 controlsMode**：高中物理**默认 `timed`**（有起点/终点的过程动画）；静态参数展示用 `param`；圆周/热运动等永续循环才用 `loop`
+3. **分层结构**：`XxxAnimation.tsx`（编排）+ `hooks/useXxxPhysics.ts`（物理）+ `components/XxxScene.tsx`（渲染）
+4. **颜色来源（按语义隔离）**：物理量 → `PHYSICS_COLORS`；场景器材 → `SCENE_COLORS`；图表 → `CHART_COLORS`；Canvas 基础设施 → `CANVAS_COLORS`；透明度变体 → `withAlpha()`
+5. **坐标系统**：`worldToDesign()` 转换，`useSceneScale` 比例尺，禁止手写 `x * scale + offset`；SVG 字体必须 `font(N)` 包裹
+6. **Registry 注册（5 个文件全部完成）**：`data/registries/<domain>.ts`（`paramMeta`/`controlMeta`/`defaultParams as const`）+ `data/quantities/<domain>/<topic>.ts`（物理量构建器）+ `data/physicsQuantities.ts`（注册构建器）+ `data/knowledgeTree.ts`（确认知识点）
+7. **组件复用检查**：新增场景前必须查阅 `COMPONENT_REGISTRY.md`，有现成组件时禁止手写等效实现
 
 ---
 

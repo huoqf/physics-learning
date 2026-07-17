@@ -235,3 +235,60 @@ export function calculateConjugatePositions(
 
   return { u1, v1, u2, v2, valid: true }
 }
+
+/**
+ * 马吕斯定律计算：I = I₀ · cos²θ
+ * 
+ * @param theta_deg 两个偏振片的透振方向夹角 (°)
+ * @returns intensityRatio 透射光强占最大入射光强的比例，范围 [0, 1]
+ */
+export function calculateMalusLaw(theta_deg: number): number {
+  const rad = (theta_deg * Math.PI) / 180
+  return Math.pow(Math.cos(rad), 2)
+}
+
+/**
+ * 计算 3D 偏振眼镜的透射比例和串扰（漏光）比例。
+ *
+ * 物理模型：
+ *   左画面光偏振角为 +45°，右画面光偏振角为 -45°。
+ *   左镜片透振方向为 +45° + α，右镜片透振方向为 -45° + α。
+ *   其中 α 是眼镜的倾斜角（由于转头导致）。
+ *
+ * @param glassesAngle_deg 眼镜整体倾斜角 (°)
+ * @returns 各通道光强比例 (0~1)
+ */
+export function calculate3DGlassesTransmission(glassesAngle_deg: number): {
+  intensityMain: number
+  intensityLeak: number
+} {
+  const alphaRad = (glassesAngle_deg * Math.PI) / 180
+  // 正确通道 (L镜片过L光，R镜片过R光) 的光强比例
+  const intensityMain = Math.pow(Math.cos(alphaRad), 2)
+  // 错误通道 (L镜片过R光，R镜片过L光) 的漏光比例
+  const intensityLeak = Math.pow(Math.sin(alphaRad), 2)
+  return { intensityMain, intensityLeak }
+}
+
+/**
+ * 计算经过偏振滤镜后的反射眩光与小鱼发出自然光的透射比例。
+ *
+ * 物理模型：
+ *   水面反射的眩光为水平偏振光 (偏振角为 0°)。
+ *   小鱼散发的是非偏振的自然光，各个偏振分量均匀分布。
+ *   偏振滤镜（起偏镜）的透振方向为 θ (相对于水平方向的夹角，θ=90° 时透振方向为竖直)。
+ *
+ * @param filterAngle_deg 偏振滤镜透振方向夹角 (°)
+ * @returns intensityRef 反射光透过比例 (0~1)，intensityFish 鱼光透过比例 (恒为 0.5)
+ */
+export function calculateReflectionPolarization(filterAngle_deg: number): {
+  intensityRef: number
+  intensityFish: number
+} {
+  const thetaRad = (filterAngle_deg * Math.PI) / 180
+  // 水平偏振反射眩光透过滤镜
+  const intensityRef = Math.pow(Math.cos(thetaRad), 2)
+  // 自然光透过率恒为 50%
+  const intensityFish = 0.5
+  return { intensityRef, intensityFish }
+}

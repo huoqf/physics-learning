@@ -42,6 +42,10 @@ async function loadExtendedRegistry(): Promise<void> {
         { opticsRefractionAnimations: opticsRefraction },
         { opticsTotalInternalReflectionAnimations: opticsTotalInternalReflection },
         { opticsThinLensAnimations: opticsThinLens },
+        { opticsInterferenceAnimations: opticsInterference },
+        { opticsDiffractionAnimations: opticsDiffraction },
+        { opticsPolarizationAnimations: opticsPolarization },
+        { opticsLaserAnimations: opticsLaser },
         { modernPhysicsAnimations: modernPhysics },
         { vibrationOscillationAnimations: vibrationOsc },
         { combinedFieldsAnimations: combinedFields },
@@ -59,6 +63,10 @@ async function loadExtendedRegistry(): Promise<void> {
         import('./registries/optics-refraction'),
         import('./registries/optics-total-internal-reflection'),
         import('./registries/optics-thin-lens'),
+        import('./registries/optics-interference'),
+        import('./registries/optics-diffraction'),
+        import('./registries/optics-polarization'),
+        import('./registries/optics-laser'),
         import('./registries/modern-physics'),
         import('./registries/vibration-oscillation'),
         import('./registries/electromagnetism-combined-fields'),
@@ -68,7 +76,8 @@ async function loadExtendedRegistry(): Promise<void> {
         fullRegistry,
         emElectrostatics, emDcCircuits, emMagnetism, emInduction, emAc,
         thermoKinematics, thermoGasLaws, thermoFirstLaw, thermoSecondLaw,
-        opticsReflection, opticsRefraction, opticsTotalInternalReflection, opticsThinLens,
+        opticsReflection, opticsRefraction, opticsTotalInternalReflection, opticsThinLens, opticsInterference,
+        opticsDiffraction, opticsPolarization, opticsLaser,
         modernPhysics,
         vibrationOsc,
         combinedFields,
@@ -82,7 +91,7 @@ async function loadExtendedRegistry(): Promise<void> {
 // ─── 公共 API ───
 
 /** 静态总动画数（含 core + 懒加载 extended registry），新增/删除动画时需同步更新 */
-export const ANIMATION_COUNT = 93
+export const ANIMATION_COUNT = 97
 
 /** 同步获取 config（core 动画立即命中，extended 动画未加载时返回 undefined） */
 export function getAnimationConfig(id: string): AnimationConfig | undefined {

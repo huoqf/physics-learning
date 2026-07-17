@@ -320,4 +320,210 @@ export const modernPhysicsAnimations = defineAnimations({
       },
     ],
   },
+
+  'anim-nuclear-decay': {
+    title: '原子核的组成与天然放射',
+    knowledgeId: 'nuclear-1-1',
+    Component: lazy(() => import('@/features/modern/nuclear-decay/NuclearDecayAnimation')),
+    controlsMode: (params) => params.mode === 0 ? 'param' as const : 'timed' as const,
+    defaultParams: {
+      mode: 0,                // 0: 原子核的组成, 1: 天然放射线偏转
+      nuclide: 3,             // 默认 3: He-4 (alpha粒子). 0:H-1, 1:H-2, 2:H-3, 3:He-4, 4:C-12, 5:C-14, 6:U-238
+      nucleonDistance: 1.2,   // 核子平均间距 (fm)
+      fieldType: 0,           // 偏转介质: 0: 磁场, 1: 电场, 2: 无场
+      bField: 1.5,            // 磁感应强度 (T)
+      eField: 5.0,            // 电场强度 (kV/m)
+      initVelocity: 4.0,      // 粒子初速度
+      showObstacles: 0,       // 0: 关闭挡板, 1: 开启挡板
+    } as const,
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'mode',
+        group: '学习模式',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '① 组成与核力' },
+          { value: 1, label: '② 放射线偏转' },
+        ],
+      },
+      // 模式0专属控制
+      {
+        type: 'segmented',
+        key: 'nuclide',
+        label: '选择核种',
+        group: '核种选择',
+        showIf: 'mode',
+        showIfValue: 0,
+        options: [
+          { value: 0, label: '氕 (¹₁H)' },
+          { value: 1, label: '氘 (²₁H)' },
+          { value: 2, label: '氚 (³₁H)' },
+          { value: 3, label: '氦核 (⁴₂He)' },
+          { value: 4, label: '碳-12 (¹²₆C)' },
+          { value: 5, label: '碳-14 (¹⁴₆C)' },
+          { value: 6, label: '铀-238 (²³⁸₉₂U)' },
+        ],
+      },
+      // 模式1专属控制
+      {
+        type: 'segmented',
+        key: 'fieldType',
+        label: '外加场类型',
+        group: '物理环境',
+        showIf: 'mode',
+        showIfValue: 1,
+        options: [
+          { value: 0, label: '均匀磁场 (B)' },
+          { value: 1, label: '均匀电场 (E)' },
+          { value: 2, label: '无外加场' },
+        ],
+      },
+      {
+        type: 'toggle',
+        key: 'showObstacles',
+        label: '放置障碍挡板',
+        group: '物理环境',
+        showIf: 'mode',
+        showIfValue: 1,
+        trueValue: 1,
+        falseValue: 0,
+      },
+      {
+        type: 'tip',
+        content: '强核力是短程引力，在 0.8~2.0 fm 表现为引力，更小表现为斥力，超出则极速归零。',
+        group: '教学提示',
+        showIf: 'mode',
+        showIfValue: 0,
+      },
+      {
+        type: 'tip',
+        content: '由左手定则判断洛伦兹力方向。不同射线的电离与穿透本领呈反比。',
+        group: '教学提示',
+        showIf: 'mode',
+        showIfValue: 1,
+      },
+    ],
+    paramMeta: [
+      // 模式0参数
+      {
+        key: 'nucleonDistance',
+        label: '核子间距 r',
+        min: 0.6,
+        max: 3.5,
+        step: 0.05,
+        unit: 'fm',
+        showIf: 'mode',
+        showIfValue: 0,
+        marks: [
+          { value: 0.8, label: '平衡点', variant: 'zero' },
+          { value: 1.5, label: '强吸引', variant: 'recommended' },
+          { value: 2.5, label: '极微弱', variant: 'critical' },
+        ],
+      },
+      // 模式1参数
+      {
+        key: 'bField',
+        label: '磁场强度 B',
+        min: -3.0,
+        max: 3.0,
+        step: 0.1,
+        unit: 'T',
+        showIf: 'fieldType',
+        showIfValue: 0,
+        marks: [
+          { value: 0, label: '无磁场', variant: 'zero' },
+        ],
+      },
+      {
+        key: 'eField',
+        label: '电场强度 E',
+        min: -10.0,
+        max: 10.0,
+        step: 0.5,
+        unit: 'kV/m',
+        showIf: 'fieldType',
+        showIfValue: 1,
+        marks: [
+          { value: 0, label: '无电场', variant: 'zero' },
+        ],
+      },
+      {
+        key: 'initVelocity',
+        label: '出射初速度 v₀',
+        min: 2.0,
+        max: 8.0,
+        step: 0.2,
+        unit: 'c/10',
+        showIf: 'mode',
+        showIfValue: 1,
+      },
+    ],
+  },
+
+  'anim-nuclear-half-life': {
+    title: '原子核衰变与半衰期',
+    knowledgeId: 'nuclear-1-2',
+    Component: lazy(() => import('@/features/modern/nuclear-decay/NuclearHalfLifeAnimation')),
+    controlsMode: 'timed' as const,
+    defaultParams: {
+      halfLife: 4.0,          // 半衰期 (s)
+      initCount: 100,         // 初始原子核个数: 50, 100, 200
+      temperature: 20,        // 温度 (℃)
+      pressure: 1.0,          // 压强 (atm)
+      resetTrigger: 0,        // 重置触发计数器
+    } as const,
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'initCount',
+        label: '初始核数 N₀',
+        group: '模拟参数',
+        options: [
+          { value: 50, label: '50 个 (波动大)' },
+          { value: 100, label: '100 个 (适中)' },
+          { value: 200, label: '200 个 (较平滑)' },
+        ],
+      },
+      {
+        type: 'action',
+        label: '重新实验 (随机衰变)',
+        action: 'reset',
+        group: '操作',
+        setParams: { resetTrigger: 1 },
+      },
+      {
+        type: 'tip',
+        content: '改变温度或压强，衰变速度完全不变！半衰期是由核内部性质决定的统计规律。',
+        group: '教学提示',
+      },
+    ],
+    paramMeta: [
+      {
+        key: 'halfLife',
+        label: '半衰期 T',
+        min: 2.0,
+        max: 8.0,
+        step: 0.5,
+        unit: 's',
+      },
+      {
+        key: 'temperature',
+        label: '环境温度 t',
+        min: 0,
+        max: 100,
+        step: 5,
+        unit: '℃',
+      },
+      {
+        key: 'pressure',
+        label: '环境压强 p',
+        min: 0.5,
+        max: 5.0,
+        step: 0.1,
+        unit: 'atm',
+      },
+    ],
+  },
 })
+

@@ -7,7 +7,7 @@ export const nuclearKnowledge: KnowledgeNode[] = [
     chapter: '核物理',
     module: 'nuclear',
     importance: 'gaokao',
-    animationIds: [],
+    animationIds: ['anim-nuclear-decay'],
     problemIds: [],
     prerequisites: ['modern-1-3'], // 依赖原子的核式结构模型
   },
@@ -17,7 +17,7 @@ export const nuclearKnowledge: KnowledgeNode[] = [
     chapter: '核物理',
     module: 'nuclear',
     importance: 'gaokao',
-    animationIds: [],
+    animationIds: ['anim-nuclear-half-life'],
     problemIds: [],
     prerequisites: ['nuclear-1-1'],
   },
