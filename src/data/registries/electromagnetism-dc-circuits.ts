@@ -83,12 +83,27 @@ export const electromagnetismDcCircuitsAnimations = defineAnimations({
         options: [{ value: 0, label: '表笔短接 (欧姆调零)' }, { value: 1, label: '接入测量 (阻值测量)' }] },
       { type: 'segmented', key: 'multiplier', group: '挡位选择', resetOnChange: true,
         options: [{ value: 1, label: '×1 挡' }, { value: 10, label: '×10 挡' }, { value: 100, label: '×100 挡' }] },
+      { type: 'preset', label: '一键调零', group: '操作',
+        params: (p) => ({ R_adjust: Math.round(1399 / (p.multiplier ?? 1)) }),
+        showIf: 'opMode', showIfValue: 0, resetOnApply: true },
+      { type: 'tip', group: '教学提示',
+        showIf: 'opMode', showIfValue: 1,
+        content: (p) => {
+          const m = p.multiplier ?? 1
+          if (m === 1) return ''
+          return `当前为 ×${m} 挡，若指针未归零，请先切换到"表笔短接"模式调零。`
+        } },
     ],
-    paramMeta: [
-      { key: 'R_adjust', label: '调零电阻 R_Ω', min: 0, max: 2000, step: 1, unit: 'Ω' },
-      { key: 'Rx', label: '待测外接电阻 Rx', min: 0, max: 5000, step: 10, unit: 'Ω', showIf: 'opMode', showIfValue: 1 },
-    ],
-    defaultParams: { opMode: 0, multiplier: 1, R_adjust: 199, Rx: 1500 } as const,
+    buildParamMeta: (params) => {
+      const multiplier = Math.round(params.multiplier ?? 1)
+      const rxMax = 5000 * multiplier
+      const rxStep = multiplier >= 100 ? 1000 : multiplier >= 10 ? 100 : 10
+      return [
+        { key: 'R_adjust', label: '调零电阻 R_Ω', min: 0, max: 2000, step: 1, unit: 'Ω' },
+        { key: 'Rx', label: '待测外接电阻 Rx', min: 0, max: rxMax, step: rxStep, unit: 'Ω', showIf: 'opMode', showIfValue: 1 },
+      ]
+    },
+    defaultParams: { opMode: 0, multiplier: 1, R_adjust: 1399, Rx: 1500 } as const,
   },
   'anim-experiment-er': {
     title: '高考实验：测定电源电动势与内阻',
