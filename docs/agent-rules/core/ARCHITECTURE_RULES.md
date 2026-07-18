@@ -211,10 +211,17 @@ tests/
 
 ## 6. 坐标系统规则
 
-- **新页面**：物理坐标→设计坐标通过 `worldToDesign()`（`src/scene`）+ `useSceneScale`（`src/hooks/useSceneScale.ts`）；Canvas 路径使用 `useCanvasViewport` + `designToPixel`
-- **存量旧代码维护**：可通过 `computeScale()` / `physicsToCanvas()`（`src/utils/coordinate.ts`）做坐标转换，新页面禁止使用
+> **新页面唯一标准路径**：`useAnimationViewport` + `useSceneScale` + `worldToDesign`（见 `project_rules.md §4.8`）。以下为存量代码维护用。
+
+| 坐标路径 | 适用场景 | 状态 |
+|---------|---------|------|
+| `useAnimationViewport` + `useSceneScale` + `worldToDesign` | 新页面标准路径 | ✅ 必须 |
+| `computeScale()` / `physicsToCanvas()` | 存量旧代码维护 | ⚠️ 禁止新页面使用 |
+| `createSceneScaleFromViewport` | 存量旧代码维护 | ⚠️ `visibleArea`/`centerScale` 模式已 deprecated |
+
 - 必须使用 `src/hooks/useCanvasDPR.ts` 的 `setupCanvasDPR` 处理 DPR
 - **禁止**在组件中直接写像素换算逻辑或魔法数字定位
+- 所有 Animation 组件**禁止**使用散落的硬编码绝对像素值（如 `groundY = 380`），应采用设计坐标系常量、LAYOUT 具名常量或基于 `vp.visibleH * ratio` 动态计算
 
 | 坐标系 | 原点 | Y 轴方向 |
 |--------|------|---------|
@@ -222,26 +229,6 @@ tests/
 | Canvas 坐标系 | 左上角 | 向下 |
 
 转换函数必须双向可逆，且在测试中覆盖边界情况。
-
-物理比例尺**新页面必须**通过 `useSceneScale`（`src/hooks/useSceneScale.ts`）基于 preset 和物理世界范围计算；存量旧组件可用 `computeScale()`（`src/utils/coordinate.ts`）。禁止在组件内写 `scale = N` 等硬编码比例尺。
-
-### 6.1 坐标路径适用场景
-
-> **新页面唯一标准路径**：`useAnimationViewport` + `useSceneScale` + `worldToDesign`（见 `project_rules.md §4.8`）。以下两条路径为历史体系，仅用于维护存量代码。
-
-项目中存在两条并行的坐标缩放路径：
-
-| 坐标路径 | 入口 | 适用场景 | 来源 |
-|------|------|---------|------|
-| 路径 1（存量，新页面禁止单独使用） | `useViewport()` | 场景元素的比例定位与缩放（**按实际布局需求调用，纯方式A无计算需求时豁免调用**） | `src/utils/useViewport.ts` |
-| 路径 2（保留） | `computeScale()` | 物理量→像素转换，可与 useViewport 共存 | `src/utils/coordinate.ts` |
-
-> ⚠️ 注意：此处「坐标路径 1/2」指坐标体系，与 `project_rules.md` 铁律1-8 的「SVG方式A/B/C（布局体系）」是不同维度的概念，请勿混淆。
-
-- **useViewport** → 存量旧组件维护用，新页面通过 `useAnimationViewport` 统一调用。方式A/B/C 的详细适用条件与代码示例见 `07_CANVAS_SVG_CHART_RULES.md §2.3`。
-- **computeScale** → 存量旧组件维护用（物理量→像素转换），新页面使用 `useSceneScale` + `worldToDesign`。
-- **createSceneScaleFromViewport** → 存量旧组件维护用。`visibleArea`/`centerScale` 模式已 `@deprecated`，新页面改用 `useSceneScale` 或 `createSceneScaleFromDesignCenter`。`transform` 模式仍可用（输出设计坐标）。
-- 所有 Animation 组件**禁止**使用散落的硬编码绝对像素值（如 `groundY = 380`），应采用设计坐标系常量、LAYOUT 具名常量或基于 `vp.visibleH * ratio` 动态计算
 
 ---
 
@@ -284,13 +271,7 @@ tests/
 
 新增动画的物理量构建逻辑必须：
 1. 在 `src/data/quantities/` 对应子模块中实现构建函数（或添加 case 分支）
-2. 在 `src/data/physicsQuantities.ts` 的 `quantityRegistry` 中添加一条记录：
-   ```ts
-   'anim-xxx': {
-     loader: () => import('./quantities/<模块名>'),
-     builderName: '<BuilderName>',  // 必须是 BuilderName 联合类型中的合法值，拼错编译期报错
-   },
-   ```
+2. 在 `src/data/physicsQuantities.ts` 的 `quantityRegistry` 中添加一条记录，`builderName` 必须是 `BuilderName` 联合类型中的合法值
 3. 若新增了新的构建器函数名，同步将其加入文件顶部的 `BuilderName` 联合类型
 4. 动画页进入时通过 `preloadQuantityBuilder()` 预加载（AnimationPage 已统一调用，无需手动触发）
 
@@ -298,57 +279,9 @@ tests/
 
 ### 8.1.2 参数类型安全规范
 
-**构建器参数归一化**：构建器文件应定义具名接口 + 默认值映射，通过 `normalizeParams()` 将 `Record<string, number>` 归一化为类型安全的具名接口。
-
-```ts
-// quantities/kinematics/velocity.ts 示例
-import { normalizeParams, type ParamDefs } from './types'
-
-interface KinematicsParams {
-  v0: number
-  a: number
-  g: number
-  // ...
-}
-
-const KINEMATICS_DEFAULTS: ParamDefs<KinematicsParams> = {
-  v0: { default: 0 },
-  a: { default: 1.5 },
-  g: { default: 9.8 },
-  // ...
-}
-
-export function buildKinematicsQuantities(
-  animId: string,
-  params: Record<string, number>,  // 外部签名不变
-  time: number,
-): PhysicsPanelData | null {
-  const p = normalizeParams(params, KINEMATICS_DEFAULTS)  // 内部类型安全
-  // 使用 p.v0, p.a, p.g 而非 params.v0, params.a, params.g
-}
-```
-
-**AnimationConfig 泛型联动**：`AnimationConfig<P>` 已泛型化，registry 文件的 `defaultParams` 必须添加 `as const` 以获得编译期字面量类型校验。
-
-```ts
-// registries/mechanics-kinematics.ts 示例
-export const mechanicsKinematicsAnimations = defineAnimations({
-  'anim-velocity': {
-    title: '速度演示',
-    knowledgeId: 'mechanics-1-3',
-    Component: lazy(() => import('...')),
-    defaultParams: {
-      v: 8, t: 0, scene: 0,
-    } as const,  // 必须添加 as const
-    // ...
-  },
-})
-```
-
-**新增动画时的类型安全检查清单**：
-1. 构建器文件：定义具名接口 + 默认值映射 + `normalizeParams` 调用
-2. Registry 文件：`defaultParams` 添加 `as const`
-3. 验证：`npx tsc --noEmit` 零错误
+- **构建器参数归一化**：构建器文件应定义具名接口 + 默认值映射，通过 `normalizeParams()` 将 `Record<string, number>` 归一化为类型安全的具名接口
+- **AnimationConfig 泛型联动**：`AnimationConfig<P>` 已泛型化，registry 文件的 `defaultParams` 必须添加 `as const` 以获得编译期字面量类型校验
+- **新增动画类型安全检查清单**：构建器文件定义具名接口 + 默认值映射 + `normalizeParams` 调用 → Registry 文件 `defaultParams` 添加 `as const` → `npx tsc --noEmit` 零错误
 
 ### 8.1.3 左屏控制数据协议
 
@@ -381,10 +314,10 @@ export const mechanicsKinematicsAnimations = defineAnimations({
 ```ts
 // ✅ timed — 有起点/终点的过程性演示
 'anim-projectile': { controlsMode: 'timed', ... }   // 默认可省略
+'anim-brownian-motion': { controlsMode: 'timed', ... }  // 热力学平衡过程，到顶暂停
 
 // ✅ loop — 永续运行的现象展示
 'anim-circular-motion': { controlsMode: 'loop', ... }
-'anim-brownian-motion': { controlsMode: 'loop', ... }
 'anim-ac-generation':   { controlsMode: 'loop', ... }
 
 // ✅ param — 纯参数驱动、无时间推进
@@ -486,13 +419,7 @@ IndexedDB 体积上限：**200MB**，超限时提示用户清理。
 
 ### 11.3 主题 Token 约定
 
-Tailwind v4 使用 CSS-first 配置，颜色通过 `src/index.css` 中的 `@theme` 块定义。`src/theme/colors.ts` 供组件内 JS 引用，禁止在组件内硬编码颜色值。
-
-所有组件中的颜色/间距/动效值必须从 `src/theme/` 子模块引用，禁止硬编码。import 路径详见 `ui/02_UI_RULES.md §2`。
-
-动画组件的 UI token（字体/阴影/面板/图表内边距）从 `src/theme/animationTokens.ts` 引用，画布预设尺寸从 `CANVAS_PRESETS`（`src/theme/spacing.ts`）引用。**新组件按布局区域选择 preset**：`full`（840×650）/ `splitV`（840×325）/ `splitH`（420×650）/ `square`（650×650），`useViewport` 的 `designWidth/designHeight` 必须与所用 preset 数值完全一致。选型规则详见 `project_rules.md CANVAS_PRESETS 画布预设规格`。**新页面禁止直接调用 `useCanvasSize(CANVAS_PRESETS.xxx)`**，必须通过 `useAnimationViewport({ preset })` 统一获取（见 `project_rules.md §4 铁律1-子约束6`）。
-
-**矢量系统 token**：矢量类型枚举（`VectorType`）、视觉权重（`VECTOR_VISUAL_WEIGHT`）、颜色映射（`VECTOR_COLORS`）从 `src/theme/physics/vectorStyle.ts` 引用；箭头几何规格（`ArrowGeometry`）从 `src/theme/physics/arrowStyle.ts` 引用。两者均通过 `@/theme/physics` 统一入口导出。
+颜色/间距/动效值必须从 `src/theme/` 引用，禁止硬编码。import 路径详见 `02_UI_RULES.md §2`。
 
 ---
 
@@ -504,19 +431,10 @@ Tailwind v4 使用 CSS-first 配置，颜色通过 `src/index.css` 中的 `@them
 
 ### 12.1 代码组织指南
 
-- **Feature 子目录分组**：`features/mechanics/` 和 `features/electromagnetism/` 下按物理主题分子目录（mechanics: kinematics/dynamics/circular/gravitation/momentum/energy；electromagnetism: electrostatics/dc-circuits/magnetism/induction/shared），新增动画文件放入对应子目录，禁止平铺
-- **大文件拆分**：当单文件超过 500 行，或将“物理计算”与 JSX 混写在同一组件内时，任一满足即须按职责拆分为独立模块（注：“物理计算”特指运动学、动力学、电磁学等物理公式的直接计算，如 F=ma、积分更新等；不包含坐标转换、比例尺缩放及布局几何换算）。推荐三段式结构：
-  ```
-  features/<domain>/<topic>/
-  ├── XxxAnimation.tsx          # 薄编排层（store 读取 + 组件组合）
-  ├── <topic>/
-  │   ├── model/                # 纯计算函数 + view model（可独立单测）
-  │   ├── hooks/                # 状态逻辑 + physicsToCanvas 映射（零 JSX）
-  │   └── components/           # 渲染组件（纯展示）
-  ```
-  拆分验收标准：物理计算与渲染逻辑完全解耦（物理计算逻辑完全抽离到纯函数或专用 hook 中，组件 JSX 内零物理公式），或新增了可独立运行的单元测试，或单文件行数降到 500 以下。
-- **viewModel 约束**：`model/viewModel.ts` 只返回物理坐标系（y↑ 正）数据，**禁止**引入 `vp.scale`、`vp.transform`、`visibleW`、`visibleH`、`physicsToCanvas` 或任何 SVG/Canvas 坐标。`physicsToCanvas` 映射保留在 `hooks/useXxxPhysics.ts` 层，使缩放、响应式布局和物理计算可独立演进。依赖方向：`viewModel → hooks`，不允许反向。
-- **重复逻辑提取**：多处出现的相同计算模式（如轨迹插值）应提取为 `src/utils/` 下的通用工具函数
+- **Feature 子目录分组**：按物理主题分子目录（详见 §2），新增动画放入对应子目录，禁止平铺
+- **大文件拆分**：单文件 >500 行或物理计算与 JSX 混写时须拆分，验收标准见 `TODO_deferred.md §0`
+- **viewModel 约束**：见 §3.2
+- **重复逻辑提取**：多处相同计算模式应提取为 `src/utils/` 通用工具
 
 ```ts
 // vitest.config.ts
