@@ -509,8 +509,8 @@ export function handleDcCircuits(
       const R_slider = params.R_slider ?? 10
       const E_real = 6.0
       const r_real = 2.0
-      const RV = 1000.0
-      const RA = 0.5
+      const RV = 10.0
+      const RA = 1.5
 
       const res = calculateExperimentEr(E_real, r_real, R_slider, wiring, RV, RA)
       const E_meas = wiring === 0 ? E_real / (1 + r_real / RV) : E_real
