@@ -2,11 +2,11 @@ import React, { useMemo } from 'react'
 import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { PhysicsVectorArrow, MagneticFieldGrid } from '@/components/Physics'
 
-import { useAnimationViewport } from '@/hooks'
+import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { CANVAS_PRESETS } from '@/theme/spacing'
+import { worldToDesign } from '@/scene'
 import type { LoopPassFieldPhysicsResult } from '../hooks/useLoopPassFieldPhysics'
-import type { SceneScale } from '@/scene'
 
 // ─── 布局常量（消除魔法数字）────────────────────────────────────────────────
 
@@ -66,16 +66,31 @@ export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
     currentI,
   } = physics
 
-  // 物理坐标 (m) 到设计坐标 (px) 的居中对称映射
-  // 注意：必须使用设计坐标宽度（splitV.width=840），不能用实际容器宽度
-  // 因为 AnimationSvgCanvas 内部用 vp.transform 将设计坐标映射到可视区域
+  // 场景缩放：通过 useSceneScale 计算固定比例尺，禁止硬编码 scale
+  // physicsWidth=0.24m 覆盖最大显示范围（含边距），使 D 与 d 变化时画面不缩放
+  const sceneScale = useSceneScale({
+    vp,
+    preset: CANVAS_PRESETS.splitV,
+    anchor: 'design',
+    physicsWidth: 0.24,
+    physicsHeight: 1.0,
+    originSource: 'custom',
+    originX: 80,
+    originY: 0,
+    maxVectorLength: 65,
+    refMagnitudes: {
+      velocity: 2.0,
+      lorentzForce: 0.15,
+      appliedForce: 0.15,
+      currentDirection: 1.0,
+    },
+    intentionalNonUniformScale: true,
+  })
+
+  // 物理坐标 (m) 到设计坐标 (px) 的统一转换
   const toScreenX = useMemo(() => {
-    const designWidth = CANVAS_PRESETS.splitV.width
-    const magTargetWidth = designWidth * 0.46 // 磁场占用约 46% 的设计坐标宽度
-    const scale = magTargetWidth / (D || 0.08)
-    const originX = designWidth / 2 - (D / 2) * scale
-    return (physX: number) => originX + physX * scale
-  }, [D])
+    return (physX: number) => worldToDesign(physX, 0, sceneScale).px
+  }, [sceneScale])
 
   const magLeftPx = toScreenX(0)
   const magRightPx = toScreenX(D)
@@ -88,22 +103,6 @@ export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
 
   const loopHeightPx = LOOP_BOTTOM_Y - LOOP_TOP_Y
   const loopCenterY = (LOOP_TOP_Y + LOOP_BOTTOM_Y) / 2
-
-  // 构造传递给 VectorArrow 的 scale (支持像素坐标绘制，scaleX=1, scaleY=-1)
-  const pixelVectorScale: SceneScale = useMemo(() => ({
-    scale: 1,
-    scaleX: 1,
-    scaleY: -1, // 抵消 VectorArrow 内部的 y 轴反转，支持像素直接传入
-    originX: 0,
-    originY: 0,
-    maxVectorLength: 65,
-    refMagnitudes: {
-      velocity: 2.0,
-      lorentzForce: 0.15,
-      appliedForce: 0.15,
-      currentDirection: 1.0,
-    },
-  }), [])
 
   // 切割状态判定与切割边 X 坐标
   const isCutting = state === 'ENTERING' || state === 'LEAVING'
@@ -288,7 +287,7 @@ export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
               originDesign={{ x: cuttingRodPx, y: loopCenterY - AMPERE_FORCE_OFFSET_Y }}
               vector={{ x: -forceAmpere, y: 0 }}
               type="lorentzForce"
-              sceneScale={pixelVectorScale}
+              sceneScale={sceneScale}
             />
             <text x={cuttingRodPx - AMPERE_LABEL_OFFSET_X} y={loopCenterY - AMPERE_LABEL_OFFSET_Y} fontSize={font(11)} fontWeight="bold" fill={PHYSICS_COLORS.lorentzForce}>
               F_安 = {forceAmpere.toFixed(3)} N
@@ -299,7 +298,7 @@ export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
               originDesign={{ x: loopFrontPx, y: loopCenterY + AMPERE_FORCE_OFFSET_Y }}
               vector={{ x: forceAmpere, y: 0 }}
               type="appliedForce"
-              sceneScale={pixelVectorScale}
+              sceneScale={sceneScale}
             />
             <text x={loopFrontPx + AMPERE_LABEL_OFFSET_X} y={loopCenterY + AMPERE_LABEL_OFFSET_Y} fontSize={font(11)} fontWeight="bold" fill={PHYSICS_COLORS.appliedForce} textAnchor="end">
               F_外 = {forceAmpere.toFixed(3)} N
@@ -315,14 +314,14 @@ export const LoopPassFieldScene = React.memo(function LoopPassFieldScene({
               originDesign={{ x: loopFrontPx, y: loopCenterY }}
               vector={{ x: 0, y: currentI > 0 ? 0.7 : -0.7 }} // 逆时针为正时，前棒向上(y>0)，顺时针反向
               type="currentDirection"
-              sceneScale={pixelVectorScale}
+              sceneScale={sceneScale}
             />
             {/* 后竖棒电流箭头 */}
             <PhysicsVectorArrow
               originDesign={{ x: loopBackPx, y: loopCenterY }}
               vector={{ x: 0, y: currentI > 0 ? -0.7 : 0.7 }} // 逆时针为正时，后棒向下(y<0)，顺时针反向
               type="currentDirection"
-              sceneScale={pixelVectorScale}
+              sceneScale={sceneScale}
             />
           </g>
         )}

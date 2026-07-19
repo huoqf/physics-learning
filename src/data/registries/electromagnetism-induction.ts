@@ -398,8 +398,8 @@ export const electromagnetismInductionAnimations = defineAnimations({
       },
     ],
     paramMeta: [
-      { key: 'loopWidth', label: '线框水平宽度 d', min: 2.0, max: 10.0, step: 0.5, unit: 'cm', group: '空间尺寸' },
-      { key: 'fieldWidth', label: '条形磁场宽度 D', min: 4.0, max: 12.0, step: 0.5, unit: 'cm', group: '空间尺寸' },
+      { key: 'loopWidth', label: '线框水平宽度 d', min: 2.0, max: 8.0, step: 0.5, unit: 'cm', group: '空间尺寸' },
+      { key: 'fieldWidth', label: '条形磁场宽度 D', min: 4.0, max: 10.0, step: 0.5, unit: 'cm', group: '空间尺寸' },
       { key: 'constantSpeed', label: '线框牵引速度 v', min: 0.5, max: 2.0, step: 0.1, unit: 'm/s', group: '运动与磁场' },
       { key: 'magneticB', label: '匀强磁场 B', min: 0.5, max: 2.0, step: 0.1, unit: 'T', group: '运动与磁场' },
     ],
