@@ -1,7 +1,7 @@
 # VIEWPORT 架构统一方案
 
 > 编写时间：2026-07-12
-> 状态：**Phase 0-7 + VectorArrow 改革 Phase 1-9 + originDesign 误用修复 Phase 10 已完成（9 文件修复并验证），API 互斥化经重新评估后判定为暂不执行**
+> 状态：架构方案已定，API 互斥化经评估后判定为暂不执行
 > 目标：逐步统一 VIEWPORT 实现组件，覆盖 SVG/Canvas，完成实际分辨率测量、画面映射坐标转化、坐标对齐
 
 ---
@@ -55,7 +55,7 @@ useSceneScale（物理坐标 → 设计坐标）
 
 ---
 
-## 三、CANVAS_PRESETS ✅
+## 三、CANVAS_PRESETS
 
 | preset | 尺寸 | 用途 |
 |--------|------|------|
@@ -68,9 +68,9 @@ useSceneScale（物理坐标 → 设计坐标）
 
 | 尺寸 | 文件 | 处理策略 |
 |------|------|---------|
-| 100×100 | VerticalThrow/Projectile/ObliqueThrow | ✅ 已迁移到 `anchor: 'custom'` |
+| 100×100 | VerticalThrow/Projectile/ObliqueThrow | 使用 `anchor: 'custom'` |
 | 400×180 | CenterExtra 文件（21 个） | 侧栏图表，不需要 viewport 体系 |
-| 600×160 | KinematicsAdvancedAnimation | ✅ 已迁移到 `splitV` |
+| 600×160 | KinematicsAdvancedAnimation | 使用 `splitV` |
 
 ---
 
@@ -103,7 +103,7 @@ useSceneScale（物理坐标 → 设计坐标）
 
 ---
 
-## 五、useSceneScale — 统一入口 ✅
+## 五、useSceneScale — 统一入口
 
 > 文件：`src/hooks/useSceneScale.ts`，完整 API 见源码 TypeScript interface。
 
@@ -153,7 +153,7 @@ useSceneScale（物理坐标 → 设计坐标）
 
 ---
 
-## 六、useCanvasViewport — Canvas 统一入口 ✅
+## 六、useCanvasViewport — Canvas 统一入口
 
 > 文件：`src/hooks/useCanvasViewport.ts`
 
@@ -176,45 +176,7 @@ useSceneScale（物理坐标 → 设计坐标）
 
 ---
 
-## 七、剩余迁移清单
-
-### 已全部清零（Phase 6）
-
-- ✅ `createSceneScaleFromViewport` — 4 个文件已迁移到 `useSceneScale`
-- ✅ `useCanvasSize`（非 CenterExtra）— 14 个文件已迁移到 `useAnimationViewport`
-- ✅ VectorArrow `origin` → `originPixel` → `originDesign` — 44 个文件已完成
-
-### 仍使用 `useCanvasSize` 的 CenterExtra 文件（7个，无需迁移）
-
-400×180 侧栏小画布，不需要 viewport 体系：IntermolecularForcesCenterExtra、ClapeyronCenterExtra、WeightlessnessCenterExtra、NewtonSecondCenterExtra、FrictionCenterExtra、CircuitAnalysisCenterExtra、AccelerationCenterExtra（已迁移到 useAnimationViewport 但仍有 CanvasSize 类型引用）
-
-### 未接入标准 VIEWPORT 路径的存量页面（已全部清零）
-
-| 页面 | 迁移内容 | 状态 |
-|------|---------|:----:|
-| `ElectricPotential` | hook 输出设计坐标 + `AnimationSvgCanvas` + `vp.transform` + `useViewportPointer` | ✅ |
-| `ProjectileAnimation` | `AnimationSvgCanvas` + `vp.transform`，移除手动 viewport 计算 | ✅ |
-
----
-
-## 八、迁移要点
-
-### 迁移原则
-
-- `visibleArea` 迁移时注意 `originSource`：旧 `originX/Y = vp.visibleX/Y` 等价于 `topLeft`
-- VectorArrow `origin={{ x, y: -y }}` → `originPixel={{ x, y }}`：**去掉 Y 取负**，`vector` 的 Y 取负保留
-- `physicsScaleDesign = physicsScalePx / vp.scale`：容器像素比例必须转换为设计坐标比例
-- `presetCompensation` 迁移分两步：先保持不变完成 API 迁移，验证视觉一致后再移除
-
-### 已修复的双重缩放 bug
-
-| 页面 | 问题 | 修复 |
-|------|------|------|
-| CircularMotionAnimation | `vp.centerX` 容器像素作 originX | `centerSource: 'design'` |
-| KeplerAnimation | `vp.visibleW / scale` 反推 worldWidth | `physicsScaleDesign` 纯设计坐标 |
-| useVerticalCircularPhysics | 同上 | 同上 |
-
-### 迁移模式速查
+## 七、迁移模式速查
 
 | 旧模式 | 新模式 |
 |--------|--------|
@@ -229,40 +191,24 @@ useSceneScale（物理坐标 → 设计坐标）
 
 ---
 
-## 九、实施进度
+## 八、迁移要点
 
-| Phase | 内容 | 状态 |
-|-------|------|------|
-| 0 | 文档对齐 | ✅ |
-| 1 | useSceneScale 统一入口 | ✅ |
-| 2 | preset 贯穿 + SceneScale 验证 | ✅ |
-| 3 | useCanvasViewport 标准 Hook | ✅ |
-| 4 | legacy 文件分批迁移（7 批 61 文件） | ✅ |
-| 4.5 | 迁移后 bug 修复（10 项） | ✅ |
-| A | 文档对齐 + 遗留检测脚本 | ✅ |
-| B | visibleArea/centerScale 清零 | ✅ |
-| C | Canvas DPR 清零 | ✅ |
-| 5 | 非标准 preset 评估 | ✅ |
-| 6 | createSceneScaleFromViewport/useCanvasSize/VectorArrow origin 清零 | ✅ |
-| 7 | VectorArrow 坐标体系改革 + physicsToCanvas 迁移 + 项目规范更新 | ✅ |
-| 8 | 存量页面 VIEWPORT 迁移（ElectricPotential + ProjectileAnimation） | ✅ |
-| 9 | `originDesign` 物理坐标误用全面扫描 + 修复（9 文件） | ✅ |
-| 10 | VectorArrow / PhysicsVectorArrow API 互斥化评估 | ✅ |
+### 迁移原则
 
-### Phase 4.5 bug 修复记录
+- `visibleArea` 迁移时注意 `originSource`：旧 `originX/Y = vp.visibleX/Y` 等价于 `topLeft`
+- VectorArrow `origin={{ x, y: -y }}` → `originPixel={{ x, y }}`：**去掉 Y 取负**，`vector` 的 Y 取负保留
+- `physicsScaleDesign = physicsScalePx / vp.scale`：容器像素比例必须转换为设计坐标比例
+- `presetCompensation` 迁移分两步：先保持不变完成 API 迁移，验证视觉一致后再移除
 
-| 页面 | 问题 | 修复 |
-|------|------|------|
-| CuttingEMF | 导体滑轨错位 | 移除内部 viewport，改用固定 viewBox SVG；sceneScale 由父级传入 |
-| CuttingEMF | 手规则过大 | 传入 identity font + canvasScale=1.0 |
-| CuttingEMF | 图表消失 | `flex-shrink-0` + `height: 50%` 包裹动画区域 |
-| PowerTransmission | 初次进入跳动放大 | 改用固定 viewBox SVG + identity font |
-| Transformer | 基础模式空白 | 引入 scale 等比缩放因子 |
-| Transformer | 进阶模式部件偏小 | scale 宽度基准 420→350；rightPanelW 30%→25%；删底部标注条 |
-| CircularMotionAnimation | 双重缩放 | `centerSource: 'design'` + 纯设计坐标 physicsScaleDesign |
-| KeplerAnimation | 双重缩放 | 纯设计坐标 physicsScaleDesign |
-| useVerticalCircularPhysics | 双重缩放 | 同上 |
-| AnimationSvgCanvas | 初始跳变溢出 | 外层 div `overflow-hidden` |
+### 已知的双重缩放风险点
+
+| 页面 | 问题 | 修复要点 |
+|------|------|---------|
+| CircularMotionAnimation | `vp.centerX` 容器像素作 originX | `centerSource: 'design'` |
+| KeplerAnimation | `vp.visibleW / scale` 反推 worldWidth | `physicsScaleDesign` 纯设计坐标 |
+| useVerticalCircularPhysics | 同上 | 同上 |
+
+---
 
 ---
 
@@ -301,66 +247,11 @@ useSceneScale（物理坐标 → 设计坐标）
 
 ---
 
-## 十二、`computeScale` / `coordinate.ts` 存量页面清单
-
-> 更新时间：2026-07-16
-> 状态：**✅ 已完成**。所有旧坐标函数导入已清零，仅 `useEquilibriumLayout.ts` 保留类型导入 `CanvasBounds` / `CanvasPoint`。
-
-### 使用 `computeScale` 的页面（6 处）
-
-| 文件 | 导入函数 | 用途 | 迁移方案 |
-|------|---------|------|---------|
-| `features/mechanics/dynamics/GravityAnimation.tsx:9,45` | `computeScale` | 物理→像素比例尺 | 改用 `useSceneScale({ anchor: 'viewport' })` + `worldToDesign` |
-| `features/mechanics/dynamics/OrthogonalDecompositionAnimation.tsx:9,50` | `computeScale`, `canvasToPhysics` | 斜面正交分解比例尺 + 像素→物理反算 | `useSceneScale` + `worldToDesign`；`canvasToPhysics` 改用 `pixelToDesign` |
-| `features/mechanics/dynamics/VectorAdditionAnimation.tsx:8,37` | `computeScale` | 力合成平行四边形比例尺 | `useSceneScale` + `worldToDesign` |
-| `features/electromagnetism/induction/dual-rods/hooks/useDualRodsPhysics.ts:3,49` | `computeScale` | 双棒模型 Canvas 像素比例尺 | Canvas 路径改用 `useCanvasViewport({ mode: 'raw' })` + `designToPixel` |
-| `features/electromagnetism/magnetism/components/ForcePolygon.tsx:6,44` | `computeScale` | 安培力矢量多边形比例尺 | `useSceneScale` + `worldToDesign` |
-| `features/electromagnetism/magnetism/hooks/useInclineForceLayout.ts:2,105` | `computeScale` | 斜面安培力布局比例尺 | `useSceneScale` + `worldToDesign` |
-
-### 使用其他 `coordinate.ts` 函数的页面（6 处）
-
-| 文件 | 导入函数 | 用途 | 迁移方案 |
-|------|---------|------|---------|
-| `features/electromagnetism/electrostatics/hooks/useElectricPotentialPhysics.ts:3` | `physicsToDesignWithOrigin` | 电势等势线设计坐标 | 改用 `useSceneScale` + `worldToDesign` |
-| `features/mechanics/energy/EnergyConservationAnimation.tsx:15` | `physicsToDesignWithOrigin` | 机械能守恒场景坐标 | 改用 `useSceneScale` + `worldToDesign` |
-| `features/electromagnetism/magnetism/combined-fields/components/DeflectScene.tsx:6` | `svgPointToPhysicsPoint` | SVG 点→物理坐标反算 | 改用 `pixelToDesign` + `designToWorld` |
-| `features/electromagnetism/magnetism/combined-fields/components/SpectrometerScene.tsx:6` | `svgPointToPhysicsPoint` | 同上 | 同上 |
-| `features/mechanics/dynamics/hooks/useEquilibriumLayout.ts:2-3` | `clampEndpoint`, `CanvasBounds`, `CanvasPoint` | 三力平衡端点约束 | 类型可保留，`clampEndpoint` 逻辑迁移至设计坐标 |
-| `src/physics/brownianMotion.ts:4` | 注释引用 | 仅注释中提及 computeScale，无实际导入 | 无需迁移 |
-
-### 汇总
-
-| 类别 | 文件数 | 优先级 |
-|------|:------:|--------|
-| `computeScale` 直接调用 | 6 | P1（新页面规范冲突） |
-| `physicsToDesignWithOrigin` / `svgPointToPhysicsPoint` | 4 | P2（功能正确但不符合新标准路径） |
-| 类型导入 + 工具函数 | 1 | P3（低风险） |
-| 仅注释引用 | 1 | 无需处理 |
-| **合计** | **12** | — |
-
-### 迁移注意事项
-
-1. `OrthogonalDecompositionAnimation` 同时使用 `computeScale` + `canvasToPhysics`，需整体迁移到 `useSceneScale` + `worldToDesign` + `designToWorld`
-2. `useDualRodsPhysics` 是 Canvas 路径，需改用 `useCanvasViewport({ mode: 'raw' })` + `designToPixel`，不走 `useSceneScale`
-3. `useEquilibriumLayout` 的 `clampEndpoint` / `CanvasBounds` 是纯工具函数，可保留类型定义，仅迁移坐标计算逻辑
-4. `physicsToDesignWithOrigin` 在新标准路径下等价于 `useSceneScale` + `worldToDesign`，迁移时直接替换
-
 ---
 
 ## 十三、VectorArrow 坐标体系改革（2026-07-14）
 
 > 方案核心：**视觉箭头继续视觉化，物理箭头必须物理正确。**
-
-### 改革成果
-
-| Phase | 内容 | 状态 |
-|-------|------|:----:|
-| 1 | `originPixel` → `originDesign` 重命名 + deprecated alias | ✅ |
-| 2 | 全量箭头分类标注（371 实例：physical-real 182, physical-schematic 124, visual-only 60） | ✅ |
-| 3 | `PhysicsVectorArrow` 组件创建 + 182 个 physical-real 实例迁移 | ✅ |
-| 4 | 12 个页面约 45 个 physical-schematic 实例迁移（移除 pixelLength，改用动态 refMagnitudes） | ✅ |
-| 5 | 物理箭头单元测试 | ✅ |
-| 6 | 截图回归 | ✅ |
 
 ### 双组件体系
 
@@ -404,41 +295,13 @@ const sceneScale = useSceneScale({ ..., refMagnitudes: dynamicRefMagnitudes, max
 
 > 背景：`VectorArrow` / `PhysicsVectorArrow` 均同时暴露 `origin`（物理坐标）和 `originDesign`（设计坐标）两个互斥 prop，导致开发者频繁将物理坐标误传给 `originDesign`，引发矢量箭头起点严重偏离标注物体的 bug。
 
-### 14.1 修复概述
+### 14.1 问题根因与修复原则
 
 **问题根因**：`originDesign` 语义为"设计坐标"（design-unit），在 `<g transform={vp.transform}>` 内直接使用；但大量调用方将其理解为"设计场景用的 origin"，把物理坐标（米）直接传入。
 
-**修复文件（9 个）**：
-
-| 文件 | 问题 | 修复方式 |
-|------|------|---------|
-| `BinaryStarsAnimation.tsx` | 双星/三星力/速度矢量的 `originDesign` 传入物理坐标 `state.pos1/pos2/pos3` | `originDesign` → `origin` |
-| `SatelliteAnimation.tsx` | 卫星引力/速度矢量的 `originDesign` 传入物理坐标 `sat0PhysX/Y` | `originDesign` → `origin` |
-| `ManBoatAnimation.tsx` | 人船速度矢量的 `originDesign` 传入物理坐标 `boatState.x_person1` 和 `0.85` | `originDesign` → `origin` |
-| `SpringBlocksAnimation.tsx` | 滑块速度/弹力矢量的 `originDesign` 传入物理坐标 `xA_center` 和 `0.65` | `originDesign` → `origin` |
-| `MomentumConservationAnimation.tsx`（基础模式） | 碰撞球速度矢量的 `originDesign` y 坐标错误（`R_A * 2 + 10`，球体上方） | `originDesign` → 修正为 `originDesign={{ y: groundY - R_A }}`（球心设计坐标） |
-| `CollisionBasicScene.tsx` | 碰撞球速度矢量的 `originDesign` y 坐标错误（`R_A * 2 + 10`，球体上方） | `originDesign` → 修正为 `originDesign={{ y: groundY - R_A }}`（球心设计坐标） |
-| `CollisionAdvancedScene.tsx` | 同上 | `originDesign` → 修正为 `originDesign={{ y: groundY - R_A }}`（球心设计坐标） |
-| `VerticalCircularScene.tsx` | 圆周运动各矢量的 `originDesign` 传入物理坐标 `x, y` | `originDesign` → `origin` |
-| `CentripetalScene.tsx` | 向心力各矢量的 `originDesign` 传入物理坐标 `x, y` | `originDesign` → `origin` |
-
-**验证结果**：TypeScript 编译零错误 / Vitest 807 passed / Playwright 截图测试 8 passed。
-
-**逐文件坐标转换验证**（确保修复未引入新 bug）：
-
-| 文件 | sceneScale 配置 | 修复前问题 | 修复后坐标验证 | 结论 |
-|------|----------------|-----------|--------------|------|
-| `BinaryStarsAnimation.tsx` | `anchor: 'center'`, `scaleX = state.scale` | `originDesign` 传入物理坐标 `state.pos1/2/3` | `origin={state.pos1}` → `x1 = 175 + pos1.x * scale`，与星体 `cx={175 + pos1.x * scale}` 一致 | ✅ 完全正确 |
-| `SatelliteAnimation.tsx` | `anchor: 'custom'`, `customScaleX = scale` | `originDesign` 传入物理坐标 `sat0PhysX/Y` | `origin={sat0PhysX/Y}` → `x1 = centerX + sat0PhysX * scale = sat0X`，与卫星渲染位置一致 | ✅ 完全正确 |
-| `ManBoatAnimation.tsx` | `anchor: 'custom'`, `customScaleX = pxPerMeter` | `originDesign` 传入物理坐标 `x_person1` | `origin={x_person1, 0.85}` → `x1 = originX + x_person1 * pxPerMeter = xp_px`，与人物头部一致 | ✅ 完全正确 |
-| `SpringBlocksAnimation.tsx` | `anchor: 'custom'`, `customScaleX = SPRING_PX_PER_M` | `originDesign` 传入物理坐标 `xA_center` | `origin={xA_center, 0.65}` → 转换后与滑块中心一致 | ✅ 完全正确 |
-| `MomentumConservationAnimation.tsx`（基础模式） | `anchor: 'custom'`, `customScaleX = 1` | `originDesign` y 坐标为 `R_A * 2 + 10`（球体上方） | `originDesign={{ x: basic.posAx, y: groundY - basic.R_A }}`，直接使用球心设计坐标 | ✅ 完全正确 |
-| `CollisionBasicScene.tsx` | `anchor: 'custom'`, `customScaleX = 1` | `originDesign` y 坐标为 `R_A * 2 + 10` | `originDesign={{ x: posAx, y: groundY - R_A }}`，直接使用球心设计坐标 | ✅ 完全正确 |
-| `CollisionAdvancedScene.tsx` | 同基础碰撞 | 同基础碰撞 | `originDesign={{ x: posAAdv, y: groundY - R_Adv }}`，直接使用球心设计坐标 | ✅ 完全正确 |
-| `VerticalCircularScene.tsx` | `anchor: 'center'` | `originDesign` 传入物理坐标 `x, y` | `origin={{ x, y }}` → `x1 = originX + x * scaleX`, `y1 = originY - y * scaleY`，与 `ballPos = worldToDesign(x, y)` 一致 | ✅ 完全正确 |
-| `CentripetalScene.tsx` | `createSceneScaleFromDesignCenter` | `originDesign` 传入物理坐标 `x, y` | `origin={{ x, y }}` → `x1 = DESIGN_CX + x * designScale`, `y1 = DESIGN_CY - y * designScale`，与 `ballPos` 一致 | ✅ 完全正确 |
-
-> **修复后全部 9 个文件均已验证通过**：6 个物理坐标模式文件使用 `origin` + 物理坐标，经 `sceneScale` 转换后与物体渲染位置完全一致；3 个设计坐标模式文件使用 `originDesign` + 正确的设计坐标值（球心位置），直接对应 SVG 坐标，语义和结果均正确。
+**修复原则**：
+- 物理坐标模式页面（物体位置用米计算，经 `sceneScale` 转换）→ 使用 `origin` + 物理坐标
+- 设计坐标模式页面（物体位置直接用像素计算，`scale` 通常为 1）→ 使用 `originDesign` + 正确的设计坐标值
 
 ### 14.2 API 互斥化评估（修正版）
 
@@ -485,9 +348,8 @@ const sceneScale = useSceneScale({ ..., refMagnitudes: dynamicRefMagnitudes, max
    - 成本：需重构 ~20+ 个文件的渲染逻辑，建立物理坐标系，工作量大且极易引入新 bug
    - 性价比：**不适合当前项目状态**
 
-**修正后的执行状态**：
-- **已完成** `originDesign` 物理坐标误用修复（9 文件，其中 6 个完全正确，3 个语义不纯但在当前 scale=1 配置下结果正确）
-- **API 互斥化暂不执行**。原因：`PhysicsVectorArrow` 的 `originDesign` 被 ~55+ 个实例正确使用（设计坐标模式页面没有物理坐标可传），强行禁用会导致大规模重构。
+**评估结论**：
+- **API 互斥化暂不执行**。原因：`PhysicsVectorArrow` 的 `originDesign` 被 ~55+ 个实例正确使用（设计坐标模式页面没有物理坐标可传），强行禁用会导致 ~20+ 个文件的核心渲染逻辑重构，工作量大且极易引入新 bug。
 - **建议策略**：
   1. **保留现状**：`PhysicsVectorArrow` 同时支持 `origin` 和 `originDesign`，`VectorArrow` 同时支持两者
   2. **新页面规范**：新页面优先采用物理坐标模式，使用 `PhysicsVectorArrow` + `origin`

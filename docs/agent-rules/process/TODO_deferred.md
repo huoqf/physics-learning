@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-19（`originDesign` 物理坐标误用修复 9 文件 + API 互斥化重新评估判定暂不执行 + `<foreignObject>` 规范违规清理完成 + VectorArrow 坐标体系清理 Phase 7-9 完成 + 项目规范同步更新 + 存量页面 VIEWPORT 迁移完成）
+> 最后更新：2026-07-19
 
 ---
 
@@ -231,8 +231,7 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 **DEV 豁免**：`src/features/dev/` 目录为内部开发沙箱，无需迁移。
 
 **未接入标准路径的存量页面**（已全部清零，2026-07-15）：
-- ~~`ElectricPotential`：hook 内局部 `physicsToCanvas` 命名混淆；渲染原始 `<svg>` 未用 `AnimationSvgCanvas`~~ → ✅ hook 输出设计坐标 + `AnimationSvgCanvas` + `vp.transform` + `useViewportPointer`
-- ~~`ProjectileAnimation`：使用 `physicsToDesignWithOrigin` 但未用 `<g transform={vp.transform}>`~~ → ✅ `AnimationSvgCanvas` + `vp.transform`，移除手动 viewport 计算
+
 
 ---
 
@@ -240,53 +239,23 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 
 > 背景：Phase 6 迁移后 387 个 VectorArrow 实例全部使用 `originPixel`（设计坐标），但坐标空间语义不明确，导致多轮 bug 修复。根因：`originPixel` 命名误导 + 三套坐标空间无编译时防护。
 
-### 6.1 已完成
+### 6.1 箭头分类规范
 
-| 日期 | 内容 | 状态 |
-|------|------|:----:|
-| 2026-07-14 | NewtonSecondAnimation 溢出修复：移除 velocity/acceleration 的 pixelLength，改用动态 refMagnitudes + maxVectorLength=120 | ✅ |
-| 2026-07-14 | VelocityAnimation 修复：refMagnitudes 添加 averageVelocity | ✅ |
-| 2026-07-14 | Phase 1：originPixel → originDesign 重命名（356 处，保留 deprecated alias） | ✅ |
-| 2026-07-14 | Phase 2：全量箭头分类标注（371 实例：physical-real 182, physical-schematic 124, visual-only 60） | ✅ |
-| 2026-07-14 | Phase 3：PhysicsVectorArrow 组件创建 + 182 个 physical-real 实例迁移 | ✅ |
-| 2026-07-14 | Phase 4：12 个页面约 45 个 physical-schematic 实例迁移到 PhysicsVectorArrow + 动态 refMagnitudes | ✅ |
-| 2026-07-14 | Phase 5：物理箭头单元测试（36 个测试） | ✅ |
-| 2026-07-14 | Phase 6：Playwright 截图回归（14 项） | ✅ |
-| 2026-07-14 | Phase 7：Branded Coordinate Types（5 个 branded type + 5 个转换函数） | ✅ |
-| 2026-07-15 | Phase 8：physicsToCanvas 外部导入清理（11 个文件迁移） | ✅ |
-| 2026-07-15 | Phase 9：项目规范同步更新（8 个文件 12 处编辑） | ✅ |
-| 2026-07-15 | Phase 10：存量页面 VIEWPORT 迁移（ElectricPotential + ProjectileAnimation） | ✅ |
+**分类标准**：
 
-### 6.1.1 Phase 4 迁移详情
+| 类型 | 含义 | 使用方式 |
+|------|------|---------|
+| `physical-real` | 物理量矢量，需物理正确 | 优先使用 `PhysicsVectorArrow` + `origin` |
+| `physical-schematic` | 物理量示意箭头，方向正确但长度不严格 | 保留 `originDesign`，禁用 `pixelLength` |
+| `visual-only` | 纯视觉标注（UI 引导、方向提示） | 保留 `originDesign` + `pixelLength` |
 
-**已迁移的页面**（移除 pixelLength，改用动态 refMagnitudes + PhysicsVectorArrow）：
+**判定标准**：
+- 使用 `origin`（物理坐标）→ `physical-real`
+- 使用 sceneScale `refMagnitudes` 自动归一化 → `physical-real` 或 `physical-schematic`
+- 使用 `pixelLength` 手动控制 → `physical-schematic` 或 `visual-only`
+- `IDENTITY_SCENE_SCALE` + pixelLength → 大概率 `visual-only`
 
-| 页面 | 模块 | 迁移数 | 模式 |
-|------|------|:------:|------|
-| NewtonSecondAnimation | 力学-动力学 | 5 | B类线性：F/f/G/FN/F_net → 物理矢量 + 动态 refMag |
-| PowerScene | 力学-能量 | 3 | C类夹住上限 |
-| WorkAnimation | 力学-能量 | 5 | C类夹住上限 |
-| ValleyScene | 力学-能量 | 4 | C类夹住上限 |
-| PendulumScene | 力学-能量 | 3 | C类夹住上限 |
-| SpringCompositeAnimation | 力学-能量 | 5 | C类夹住上限 |
-| BlockBoardAnimation | 力学-动力学 | 8 | B类线性 |
-| InclinedPlaneAnimation | 力学-动力学 | 3 | B类线性 |
-| ConnectedBodiesAnimation | 力学-动力学 | 5 | B类+部分A类固定值 |
-| BinaryStarsAnimation | 力学-万有引力 | 5 | B类（velocity）；A类固定值保留 |
-| SingleRodAnimation | 电磁学-感应 | 4 | C类夹住上限 |
-| CircularModelsAnimation | 力学-圆周 | 6 | C类夹住上限 |
-
-**保留 pixelLength 的页面**（合理设计，非技术债）：
-
-| 类别 | 实例数 | 原因 |
-|------|:------:|------|
-| A 固定值 | 14 | 受力分析等长力、方向示意 |
-| D 几何距离 | 42 | 平行四边形/三角形/正交分解图闭合 |
-| E 参数传入 | 2 | 通用渲染函数参数 |
-| F 速度分解 | 9 | vx/vy 须与 v 成比例维持闭合 |
-| GravityAnimation 对数 | 2 | 非线性缩放 |
-
-### 6.2 Phase 1：originPixel → originDesign 重命名（P1，可立即做）
+### 6.2 `originPixel` → `originDesign` 重命名规范
 
 **目标**：消除命名歧义，`originPixel` → `originDesign`，保留 deprecated alias。
 
@@ -304,51 +273,25 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 3. 更新 `renderVectorArrow.tsx`、`renderSceneVector.tsx` 等辅助函数
 4. `tsc --noEmit` + `npm test`
 
-### 6.3 Phase 2：全量箭头分类（P2）✅
-
-> 已于 2026-07-14 完成。371 个 VectorArrow 实例已标注 `arrowType`。
-
-**分类结果**：
-
-| 类型 | 数量 | 含义 | 迁移方向 |
-|------|:----:|------|---------|
-| `physical-real` | 182 | 物理量矢量，需物理正确 | 保留，后续可迁移到 PhysicsVectorArrow |
-| `physical-schematic` | 124 | 物理量示意箭头，方向正确但长度不严格 | 保留 originDesign，但禁用 pixelLength |
-| `visual-only` | 60 | 纯视觉标注（UI 引导、方向提示） | 保留 originDesign + pixelLength |
-
-**分类标准**：
-- 使用 `origin`（物理坐标）→ `physical-real`（当前仅 2 文件 42 实例）
-- 使用 sceneScale refMagnitudes 自动归一化 → `physical-real` 或 `physical-schematic`
-- 使用 `pixelLength` 手动控制 → `physical-schematic` 或 `visual-only`
-- `IDENTITY_SCENE_SCALE` + pixelLength → 大概率 `visual-only`
-
-### 6.4 Phase 3：PhysicsVectorArrow 组件（P3）
+### 6.3 `PhysicsVectorArrow` 组件规范
 
 **目标**：为 `physical-real` 类型箭头创建专用组件，强制物理坐标输入。
 
 ```tsx
 <PhysicsVectorArrow
-  quantity="force"  // force | velocity | acceleration | current | field
-  originPhysics={...}   // 物理坐标（米）
-  vectorPhysics={...}   // 物理矢量（米/秒、牛顿等）
-  sceneScale={...}      // 物理→设计坐标转换
+  origin={{ x: 物理坐标米, y: 物理坐标米 }}   // 物理坐标
+  vector={{ x: 物理矢量, y: 物理矢量 }}         // 物理量（米/秒、牛顿等）
+  sceneScale={...}                              // 物理→设计坐标转换
 />
 ```
 
 **约束**：
 - 禁止 `pixelLength`（长度必须通过 refMagnitudes 归一化）
-- 禁止 `originDesign`（起点必须来自物理模型）
 - 禁止 `IDENTITY_SCENE_SCALE`
 
-**范围**：仅迁移 `physical-real` 类型（~42 个 `origin` 实例 + 部分 refMagnitudes 自动归一化实例）
+### 6.4 `pixelLength` → 动态 `refMagnitudes` 迁移规范
 
-### 6.5 Phase 4：physical-schematic pixelLength 清理 ✅
-
-> 已于 2026-07-14 完成。详见 6.1.1。
-
-**核心策略**：`pixelLength` → 动态 `refMagnitudes`
-
-`pixelLength` 绕过了 `maxVectorLength` 的上限保护，导致矢量可能溢出动画区域。动态 `refMagnitudes` 通过 `calculateVectorPixelLength` 归一化，确保 `ratio ≤ 1.0`，箭头长度始终在 `maxVectorLength` 内。
+**核心策略**：`pixelLength` 绕过了 `maxVectorLength` 的上限保护，导致矢量可能溢出动画区域。动态 `refMagnitudes` 通过 `calculateVectorPixelLength` 归一化，确保 `ratio ≤ 1.0`。
 
 **迁移模式**：
 ```ts
@@ -360,35 +303,20 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 // sceneScale.refMagnitudes = { appliedForce: Math.max(F, 5) * 2 }
 ```
 
-**不可迁移的 69 个实例**（保留 pixelLength 是合理设计，非技术债）：
-- A 固定值 14 个：受力分析等长力
-- D 几何距离 42 个：平行四边形/三角形闭合
-- E 参数传入 2 个：通用渲染函数
-- F 速度分解 9 个：分量须与总量成比例
-- GravityAnimation 对数 2 个：非线性缩放
+**保留 `pixelLength` 的合理场景**（非技术债）：
+- 几何闭合图形（平行四边形/三角形/正交分解）：箭头尖端必须落在几何端点
+- 受力分析等长力：高中物理教学中力图常用等长表示
+- 速度分解 vx/vy：分量须与总量成比例维持闭合
+- 非线性缩放（对数）：refMagnitudes 仅支持线性
 
-### 6.6 physical-schematic 优化评估
-
-**错位根因分析**：
-
-| 错位类型 | 根因 | 解决方案 |
-|---------|------|---------|
-| 矢量起点偏移 | originPixel 覆盖 sceneScale.originX/Y | Phase 1 已解决（originDesign 语义明确） |
-| 矢量长度溢出 | pixelLength 绕过 maxVectorLength | Phase 4 已解决（动态 refMagnitudes） |
-| 几何图形不闭合 | D 类 pixelLength 值与端点距离不匹配 | 保持 pixelLength（设计意图） |
-| 速度分解不闭合 | F 类 vx/vy 比例与 refMagnitudes 归一化冲突 | 保持 pixelLength（设计意图） |
-| 双重缩放 | originDesign 在 `<g scale>` 内重复缩放 | Phase 1 代码审查已修复 |
-
-**防错位保障机制**：
+### 6.5 防错位保障机制
 
 1. **PhysicsVectorArrow 禁止 pixelLength**：强制走 refMagnitudes 归一化，从源头消除溢出
 2. **动态 refMagnitudes 模式**：`Math.max(value, min) * 2` 确保 ratio ≈ 0.5，箭头可见且不溢出
 3. **maxVectorLength 上限**：所有 PhysicsVectorArrow 的箭头长度被 `maxVectorLength` 钳位
 4. **sceneScale.originX/Y**：移除 originDesign 覆盖后，sceneScale 的 origin 正确工作
 
-### 6.6.1 Branded Coordinate Types（Phase 7）✅
-
-**已完成 2026-07-14。**
+### 6.6 Branded Coordinate Types
 
 **文件**：`src/scene/coordinates.ts`
 
@@ -407,28 +335,17 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 
 **使用方式**：编译期类型防护，运行时零开销。现有代码可逐步迁移，不强制立即替换。
 
-### 6.7 Phase 5：物理箭头单元测试（P3）✅
+### 6.7 物理箭头单元测试覆盖要求
 
-**已完成 2026-07-14。**
+| 测试文件 | 覆盖内容 |
+|---------|---------|
+| `src/utils/__tests__/vectorLength.test.ts` | calculateVectorPixelLength 边界值、比例缩放、权重、溢出保护 |
+| `src/scene/__tests__/SceneScale.test.ts` | createSceneScale、worldToPixel/Design、createSceneScaleFromDesignCenter |
+| `src/scene/__tests__/coordinates.test.ts` | branded types 工厂函数、坐标转换、Y 轴翻转、round-trip、pipeline |
 
-| 测试文件 | 覆盖内容 | 测试数 |
-|---------|---------|:------:|
-| `src/utils/__tests__/vectorLength.test.ts` | calculateVectorPixelLength 边界值、比例缩放、权重、溢出保护 | 12 |
-| `src/scene/__tests__/SceneScale.test.ts` | createSceneScale、worldToPixel/Design、createSceneScaleFromDesignCenter | 10 |
-| `src/scene/__tests__/coordinates.test.ts` | branded types 工厂函数、坐标转换、Y 轴翻转、round-trip、pipeline | 14 |
+### 6.8 截图回归规范
 
-### 6.8 Phase 6：截图回归（P4）✅
-
-**已完成 2026-07-14。**
-
-| 项目 | 状态 |
-|------|:----:|
-| Playwright 安装 | ✅ |
-| 配置 playwright.config.ts | ✅ |
-| 14 个关键页面基准截图 | ✅ |
-| 回归测试通过 | ✅ |
-
-**覆盖页面**（11 个关键动画 + 3 个专项测试）：
+**覆盖页面**（关键动画 + 专项测试）：
 NewtonSecond、Velocity、SystemIsolated、OrbitTransfer、KinematicsAdvanced、Acceleration、SpringForce、Conveyor、InclinedPlane、CircularModels、BinaryStars
 
 **运行方式**：
@@ -442,70 +359,7 @@ npx playwright test
 
 **容差策略**：物理动画有 60fps 动态效果（粒子、游标闪烁），允许约 6% 像素差异（`maxDiffPixels: 50000`）。超过此阈值视为异常（如箭头溢出、位置偏移）。
 
-### 6.9 Phase 7：Branded Coordinate Types（P4）✅
-
-**已完成 2026-07-14。**
-
-详见 §6.6.1。
-
-### 6.10 Phase 8：physicsToCanvas 外部导入清理（P1）✅
-
-**已完成 2026-07-15。**
-
-| 内容 | 状态 |
-|------|:----:|
-| `src/features` 中 `physicsToCanvasWithOrigin` 导入清零（11 个文件迁移） | ✅ |
-| `src/components`、`src/pages` 中无 `physicsToCanvas` 导入 | ✅ |
-| `coordinate.ts` 旧函数 `physicsToCanvasWithOrigin` 标记 `@deprecated` | ✅ |
-| 新增 `physicsToDesignWithOrigin`（输出设计坐标，适用于 `<g transform={vp.transform}>`） | ✅ |
-
-**已迁移的文件**：
-
-| 文件 | 迁移方式 |
-|------|---------|
-| `SimplePendulumAnimation` | `originDesign` 误用物理坐标 → 改用 `origin` |
-| `CurvedSlotAnimation` | 同上 |
-| `BlockBoardAnimation` | 移除 `physicsToCanvasWithOrigin`，改为直接计算 |
-| `useMomentumConservationPhysics` + `MomentumConservationAnimation` | 移除旧转换函数，`groundY` 改为设计坐标 |
-| `useDualRodsPhysics` | 移除旧转换函数 |
-| `LoopPassFieldScene` | 移除旧转换函数 |
-| `useForceMotionSandbox` | 移除旧转换函数 |
-| `useVectorAdditionPhysics` | 移除 `physicsToCanvas`，改为内部 `toCanvasPoint` |
-| `useOrthogonalDecompositionPhysics` | 同上 |
-| `GravityAnimation` | 移除 `physicsToCanvas`，改为直接计算 |
-| `EnergyConservationAnimation` / `ObliqueThrowAnimation` / `ProjectileAnimation` | 改用 `physicsToDesignWithOrigin` |
-
-### 6.11 Phase 9：项目规范同步更新（P1）✅
-
-**已完成 2026-07-15。**
-
-| 文件 | 修改内容 |
-|------|---------|
-| `project_rules.md:60` | 铁律 1.2 坐标转换：`physicsToCanvas` → `worldToDesign` 为新标准 |
-| `07_CANVAS_SVG_CHART_RULES.md` | §5.1 坐标分层表、§5.3 推荐做法、§9 禁止项、场景缩放选型、方式C标注、布局策略表、魔法数字表、maxVectorLength 示例 |
-| `ARCHITECTURE_RULES.md:244` | `createSceneScaleFromViewport` 标注 deprecated 模式 |
-| `CHECKLIST.md:22-24` | 提交检查项更新为新标准路径 |
-| `TEMPLATE_FULL_ANIMATION_PAGE.md:168` | `originPixel` → `originDesign` |
-| `analysis_6_1_scene_templates.md:191` | `originPixel` → `originDesign` |
-
-### 6.12 已知问题（已修复）
-
-| 日期 | 文件 | 问题 | 修复 |
-|------|------|------|------|
-| 2026-07-14 | NewtonSecondAnimation | velocity/acceleration pixelLength 溢出（最坏 800px） | 移除 pixelLength，改用动态 refMagnitudes |
-| 2026-07-14 | VelocityAnimation | averageVelocity 缺失 refMagnitude，箭头始终 14px | 添加 averageVelocity refMagnitude |
-| 2026-07-14 | BulletBlockScene | originPixel 使用物理坐标 | 改为设计坐标 |
-| 2026-07-14 | OrbitTransferAnimation | originPixel 覆盖 sceneScale origin | 改回 origin（物理坐标） |
-| 2026-07-14 | renderVectorArrow | originPixel={{x:0,y:0}} 覆盖 sceneScale origin | 移除 originPixel |
-| 2026-07-19 | `BinaryStarsAnimation` / `SatelliteAnimation` / `ManBoatAnimation` / `SpringBlocksAnimation` / `VerticalCircularScene` / `CentripetalScene` | `originDesign` 误传入物理坐标，矢量起点严重偏离物体 | `originDesign` → `origin`，经 sceneScale 转换后与物体位置一致 |
-| 2026-07-19 | `MomentumConservationAnimation`（基础模式）/ `CollisionBasicScene` / `CollisionAdvancedScene` | `originDesign` y 坐标错误（`R_A * 2 + 10`，球体上方），矢量起点偏离球心 | `originDesign` 修正为正确设计坐标值 `groundY - R_A`，指向球心 |
-
-### 6.13 剩余技术债（已全部清零）
-
-| 页面 | 问题 | 状态 |
-|------|------|:----:|
-| `ElectricPotential` | hook 内局部 `physicsToCanvas` 命名混淆；渲染原始 `<svg>` 未用 `AnimationSvgCanvas` | ✅ |
-| `ProjectileAnimation` | 使用 `physicsToDesignWithOrigin` 但未用 `<g transform={vp.transform}>` | ✅ |
+---
 
 ---
 
@@ -523,13 +377,7 @@ npx playwright test
 
 ---
 
-## 八、`<foreignObject>` 规范违规清理 ✅
-
-> **已完成 2026-07-15。**
->
-> 背景：`project_rules.md:82` 铁律 —「严禁在 SVG 内用 `<foreignObject>` 嵌入响应式 React 图表组件（两套缩放叠加导致图表 X 轴消失）；需动画+图表并列时须在 HTML 层 `flex` 分区，两者平级而非嵌套。」
->
-> 11 个文件共 14 处 `<foreignObject>` 已全部从 SVG 内移除，图表组件迁移至 HTML 层（flex 分区或 absolute 浮层）。
+## 八、`<foreignObject>` 规范要求
 
 ### 规范要求
 
@@ -595,8 +443,8 @@ npx playwright test
 
 ### 验收标准
 
-- [x] 所有 `<foreignObject>` 从 SVG 内移除（11 个文件，14 处）
-- [x] 图表组件放在 HTML 层（flex 分区或 absolute 浮层）
-- [x] 图表尺寸由容器 CSS 或 `useCanvasSize` 驱动，不依赖 SVG 坐标
-- [x] TypeScript 0 errors + Vitest 701 tests 全量通过
-- [x] ESLint 0 errors 0 warnings 通过
+- [ ] 所有 `<foreignObject>` 从 SVG 内移除（11 个文件，14 处）
+- [ ] 图表组件放在 HTML 层（flex 分区或 absolute 浮层）
+- [ ] 图表尺寸由容器 CSS 或 `useCanvasSize` 驱动，不依赖 SVG 坐标
+- [ ] TypeScript 0 errors + Vitest 701 tests 全量通过
+- [ ] ESLint 0 errors 0 warnings 通过
