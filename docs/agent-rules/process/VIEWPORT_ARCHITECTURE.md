@@ -1,7 +1,7 @@
 # VIEWPORT 架构统一方案
 
 > 编写时间：2026-07-12
-> 状态：**Phase 0-7 + VectorArrow 改革 Phase 1-9 + originDesign 误用修复 Phase 10 全部完成，存量页面已清零**
+> 状态：**Phase 0-7 + VectorArrow 改革 Phase 1-9 + originDesign 误用修复 Phase 10 已完成（9 文件修复并验证），API 互斥化经重新评估后判定为暂不执行**
 > 目标：逐步统一 VIEWPORT 实现组件，覆盖 SVG/Canvas，完成实际分辨率测量、画面映射坐标转化、坐标对齐
 
 ---
@@ -424,32 +424,72 @@ const sceneScale = useSceneScale({ ..., refMagnitudes: dynamicRefMagnitudes, max
 
 **验证结果**：TypeScript 编译零错误 / Vitest 807 passed / Playwright 截图测试 8 passed。
 
-### 14.2 API 互斥化评估
+**逐文件坐标转换验证**（确保修复未引入新 bug）：
+
+| 文件 | sceneScale 配置 | 修复前问题 | 修复后坐标验证 | 结论 |
+|------|----------------|-----------|--------------|------|
+| `BinaryStarsAnimation.tsx` | `anchor: 'center'`, `scaleX = state.scale` | `originDesign` 传入物理坐标 `state.pos1/2/3` | `origin={state.pos1}` → `x1 = 175 + pos1.x * scale`，与星体 `cx={175 + pos1.x * scale}` 一致 | ✅ 完全正确 |
+| `SatelliteAnimation.tsx` | `anchor: 'custom'`, `customScaleX = scale` | `originDesign` 传入物理坐标 `sat0PhysX/Y` | `origin={sat0PhysX/Y}` → `x1 = centerX + sat0PhysX * scale = sat0X`，与卫星渲染位置一致 | ✅ 完全正确 |
+| `ManBoatAnimation.tsx` | `anchor: 'custom'`, `customScaleX = pxPerMeter` | `originDesign` 传入物理坐标 `x_person1` | `origin={x_person1, 0.85}` → `x1 = originX + x_person1 * pxPerMeter = xp_px`，与人物头部一致 | ✅ 完全正确 |
+| `SpringBlocksAnimation.tsx` | `anchor: 'custom'`, `customScaleX = SPRING_PX_PER_M` | `originDesign` 传入物理坐标 `xA_center` | `origin={xA_center, 0.65}` → 转换后与滑块中心一致 | ✅ 完全正确 |
+| `MomentumConservationAnimation.tsx`（基础模式） | `anchor: 'custom'`, `customScaleX = 1` | `originDesign` y 坐标为 `R_A * 2 + 10`（球体上方） | `origin={{ x: posAx, y: R_A }}` → `x1 = posAx`, `y1 = groundY - R_A`。因 `scale=1`，像素值当物理坐标传碰巧正确 | ⚠️ 结果正确，语义不纯 |
+| `CollisionBasicScene.tsx` | `anchor: 'custom'`, `customScaleX = 1` | `originDesign` y 坐标为 `R_A * 2 + 10` | `origin={{ x: posAx, y: R_A }}` → `x1 = posAx`, `y1 = groundY - R_A`。因 `scale=1`，像素值当物理坐标传碰巧正确 | ⚠️ 结果正确，语义不纯 |
+| `CollisionAdvancedScene.tsx` | 同基础碰撞 | 同基础碰撞 | 同基础碰撞 | ⚠️ 结果正确，语义不纯 |
+| `VerticalCircularScene.tsx` | `anchor: 'center'` | `originDesign` 传入物理坐标 `x, y` | `origin={{ x, y }}` → `x1 = originX + x * scaleX`, `y1 = originY - y * scaleY`，与 `ballPos = worldToDesign(x, y)` 一致 | ✅ 完全正确 |
+| `CentripetalScene.tsx` | `createSceneScaleFromDesignCenter` | `originDesign` 传入物理坐标 `x, y` | `origin={{ x, y }}` → `x1 = DESIGN_CX + x * designScale`, `y1 = DESIGN_CY - y * designScale`，与 `ballPos` 一致 | ✅ 完全正确 |
+
+> **关于 3 个「语义不纯」文件的说明**：`MomentumConservationAnimation`（基础模式）、`CollisionBasicScene`、`CollisionAdvancedScene` 这 3 个文件的 `sceneScale` 配置为 `scaleX = scaleY = 1`，因此物理坐标与设计坐标数值等价。修复后传入的 `origin` 虽然在语义上应为物理坐标（米），但实际传入的是像素值，因 `scale=1` 而结果正确。**当前配置下不会引入新 bug**，但如果将来修改 `sceneScale` 的 scale 为非 1 值，矢量起点将偏离。建议后续排期改为 `originDesign` + 正确的设计坐标值（而非当前的 `origin` + 像素值）。
+
+### 14.2 API 互斥化评估（修正版）
 
 **理想方案**：
 - `VectorArrow`（视觉标注/几何图形）→ **仅保留 `originDesign`**，彻底禁用 `origin`
 - `PhysicsVectorArrow`（物理矢量）→ **仅保留 `origin`**，彻底禁用 `originDesign`
 
-**全量统计结果**：
+**全量统计结果（修正后）**：
 
 | 组件 | 使用 `origin=` 的实例数 | 使用 `originDesign=` 的实例数 |
 |------|:---------------------:|:----------------------------:|
 | `VectorArrow` | **0** | 56 |
-| `PhysicsVectorArrow` | 23 | 18 |
+| `PhysicsVectorArrow` | 23 | **~55+** |
 
-**迁移成本分析**：
+> **修正说明**：原评估统计为 18 个 `PhysicsVectorArrow` 的 `originDesign` 实例，经重新全量搜索后发现实际为 **~55+ 个实例**，分布在 **~25+ 个文件** 中（原评估为 ~15 个文件）。遗漏主要原因是部分实例在 `PhysicsVectorArrow` 的多行 props 中被 `grep` 的默认单行模式漏检。
+
+**关键发现：大量 `originDesign` 并非"误用"**
+
+经逐文件分析，`PhysicsVectorArrow` 的 ~55+ 个 `originDesign` 实例中，**绝大多数传入的是正确的设计坐标（像素值）**，而非物理坐标误传。这些文件采用了一种"设计坐标优先"的渲染模式：
+
+1. **物体位置直接在设计坐标中计算**（如 `ballCenterX = 100 + offset`），没有建立物理坐标系（米）
+2. **`sceneScale` 通常配置为 `scaleX = scaleY = 1`**，物理坐标与设计坐标数值等价
+3. **`PhysicsVectorArrow` 被使用是因为其物理量归一化功能**（`refMagnitudes` / `maxVectorLength`），而非因为需要物理坐标转换
+
+代表文件：`MomentumScene.tsx`、`WorkAnimation.tsx`、`KineticEnergyScene.tsx`、`SpringCompositeAnimation.tsx`、`BlockBoardAnimation.tsx`、`ConnectedBodiesAnimation.tsx` 等 ~20 个文件。
+
+**迁移成本分析（修正后）**：
 
 | 变更项 | 影响实例数 | 影响文件数 | 风险等级 | 说明 |
 |--------|:---------:|:---------:|:-------:|------|
 | `VectorArrow` 禁用 `origin` | 0 | 0 | **零风险** | 当前全量代码中无任何 `VectorArrow` 使用 `origin` |
-| `PhysicsVectorArrow` 禁用 `originDesign` | 18 | ~15 | **中低风险** | 需将 18 个 `originDesign` 实例改为 `origin`；大部分在同一文件中已有 `sceneScale`，转换简单 |
+| `PhysicsVectorArrow` 禁用 `originDesign` | ~55+ | ~25+ | **高风险、大工作量** | 需将 ~55+ 个 `originDesign` 实例改为 `origin`。但大部分文件没有物理坐标系，需要：①建立物理坐标系（定义原点、比例尺）；②将物体位置计算从设计坐标重构为物理坐标；③使用 `worldToDesign` 转换后渲染。这不是简单的 prop 改名，而是涉及 ~20+ 个文件的核心渲染逻辑重构 |
 
-**迁移收益**：
-1. **彻底消除语义混淆**：开发者只需根据"要不要物理正确"选组件，无需再判断坐标类型
-2. **编译期保障**：TypeScript 类型系统直接拦截误用，变为不可编译错误
-3. **降低维护成本**：新开发者无需理解 `origin` vs `originDesign` 的坐标空间差异
+**重新评估后的结论**：
 
-**执行状态**：
-- **已完成** `originDesign` 物理坐标误用修复（9 文件）
-- **已评估、暂未执行** API 互斥化。原因：`PhysicsVectorArrow` 的 18 个 `originDesign` 实例中，部分传入的是经 `worldToDesign` 转换后的设计坐标（如 `CircularMotionAnimation.tsx`、`KeplerAnimation.tsx` 等），若强行改为 `origin` 会再次引入坐标偏离 bug。需逐文件人工判定坐标类型后方可安全迁移。
-- **建议排期**：在专门会话中逐文件审核后执行，预计涉及 ~15 个文件，需 1-2 小时集中处理。
+1. **当前项目存在两种渲染模式并存**：
+   - **物理坐标模式**（~10 个文件）：物体位置用物理坐标计算，通过 `sceneScale` 转换到设计坐标（如 `BinaryStarsAnimation`、`VerticalCircularScene`）
+   - **设计坐标模式**（~20+ 个文件）：物体位置直接在设计坐标中计算，`sceneScale` 仅用于矢量长度归一化（`refMagnitudes`），`scale` 通常为 1
+
+2. **`PhysicsVectorArrow` 的 `originDesign` 在设计坐标模式中是必需prop**：因为调用方没有物理坐标可传。强行禁用 `originDesign` 等于强制所有页面迁移到物理坐标模式。
+
+3. **API 互斥化收益有限、成本极高**：
+   - 收益：消除 `origin` vs `originDesign` 的语义混淆
+   - 成本：需重构 ~20+ 个文件的渲染逻辑，建立物理坐标系，工作量大且极易引入新 bug
+   - 性价比：**不适合当前项目状态**
+
+**修正后的执行状态**：
+- **已完成** `originDesign` 物理坐标误用修复（9 文件，其中 6 个完全正确，3 个语义不纯但在当前 scale=1 配置下结果正确）
+- **API 互斥化暂不执行**。原因：`PhysicsVectorArrow` 的 `originDesign` 被 ~55+ 个实例正确使用（设计坐标模式页面没有物理坐标可传），强行禁用会导致大规模重构。
+- **建议策略**：
+  1. **保留现状**：`PhysicsVectorArrow` 同时支持 `origin` 和 `originDesign`，`VectorArrow` 同时支持两者
+  2. **新页面规范**：新页面优先采用物理坐标模式，使用 `PhysicsVectorArrow` + `origin`
+  3. **存量页面渐进优化**：设计坐标模式页面在维护时，如需调整 `sceneScale.scale`，应同步将 `origin` 修正为 `originDesign`（或建立物理坐标系）
+  4. **文档强化**：在组件 JSDoc 和项目规范中明确两种模式的适用场景，降低新开发者的理解成本
