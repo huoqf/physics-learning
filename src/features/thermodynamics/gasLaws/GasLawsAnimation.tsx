@@ -115,10 +115,10 @@ export default function GasLawsAnimation() {
   const heatParticlesRef = useRef<HeatParticle[]>([])
   const [, setTick] = useState(0)
 
-  // 初始化粒子
+  // 初始化粒子（仅挂载时执行，pistonY 变化由下方 effect 处理）
   useEffect(() => {
     particlesRef.current = initParticles(PARTICLE_COUNT, pistonY)
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 拖动体积使活塞高度突然变小后，当代偿防止粒子“跑缸”
   useEffect(() => {

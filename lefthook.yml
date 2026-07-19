@@ -3,8 +3,7 @@ pre-commit:
   commands:
     lint:
       glob: "*.{js,ts,jsx,tsx,mjs,cjs}"
-      run: npx eslint {staged_files} --report-unused-disable-directives --max-warnings 0
-      stage_fixed: true
+      run: npx eslint . --report-unused-disable-directives --max-warnings 0
     typecheck:
       glob: "*.{ts,tsx}"
       run: npx tsc --noEmit
