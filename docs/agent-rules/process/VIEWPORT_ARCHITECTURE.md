@@ -1,7 +1,7 @@
 # VIEWPORT 架构统一方案
 
 > 编写时间：2026-07-12
-> 状态：**Phase 0-7 + VectorArrow 改革 Phase 1-9 全部完成，存量页面已清零**
+> 状态：**Phase 0-7 + VectorArrow 改革 Phase 1-9 + originDesign 误用修复 Phase 10 全部完成，存量页面已清零**
 > 目标：逐步统一 VIEWPORT 实现组件，覆盖 SVG/Canvas，完成实际分辨率测量、画面映射坐标转化、坐标对齐
 
 ---
@@ -246,6 +246,8 @@ useSceneScale（物理坐标 → 设计坐标）
 | 6 | createSceneScaleFromViewport/useCanvasSize/VectorArrow origin 清零 | ✅ |
 | 7 | VectorArrow 坐标体系改革 + physicsToCanvas 迁移 + 项目规范更新 | ✅ |
 | 8 | 存量页面 VIEWPORT 迁移（ElectricPotential + ProjectileAnimation） | ✅ |
+| 9 | `originDesign` 物理坐标误用全面扫描 + 修复（9 文件） | ✅ |
+| 10 | VectorArrow / PhysicsVectorArrow API 互斥化评估 | ✅ |
 
 ### Phase 4.5 bug 修复记录
 
@@ -395,3 +397,59 @@ const sceneScale = useSceneScale({ ..., refMagnitudes: dynamicRefMagnitudes, max
 - `originPixel` deprecated 时自动 warning
 - 同时传 `origin` + `originDesign` 时 warning
 - `sceneScale` 非等比缩放且未声明 `intentionalNonUniformScale` 时 warning
+
+---
+
+## 十四、`originDesign` 物理坐标误用修复与 API 互斥化评估（2026-07-19）
+
+> 背景：`VectorArrow` / `PhysicsVectorArrow` 均同时暴露 `origin`（物理坐标）和 `originDesign`（设计坐标）两个互斥 prop，导致开发者频繁将物理坐标误传给 `originDesign`，引发矢量箭头起点严重偏离标注物体的 bug。
+
+### 14.1 修复概述
+
+**问题根因**：`originDesign` 语义为"设计坐标"（design-unit），在 `<g transform={vp.transform}>` 内直接使用；但大量调用方将其理解为"设计场景用的 origin"，把物理坐标（米）直接传入。
+
+**修复文件（9 个）**：
+
+| 文件 | 问题 | 修复方式 |
+|------|------|---------|
+| `BinaryStarsAnimation.tsx` | 双星/三星力/速度矢量的 `originDesign` 传入物理坐标 `state.pos1/pos2/pos3` | `originDesign` → `origin` |
+| `SatelliteAnimation.tsx` | 卫星引力/速度矢量的 `originDesign` 传入物理坐标 `sat0PhysX/Y` | `originDesign` → `origin` |
+| `ManBoatAnimation.tsx` | 人船速度矢量的 `originDesign` 传入物理坐标 `boatState.x_person1` 和 `0.85` | `originDesign` → `origin` |
+| `SpringBlocksAnimation.tsx` | 滑块速度/弹力矢量的 `originDesign` 传入物理坐标 `xA_center` 和 `0.65` | `originDesign` → `origin` |
+| `MomentumConservationAnimation.tsx` | 碰撞球速度矢量的 `originDesign` y 坐标错误（`basic.R_A` 而非 `groundY - R_A`） | `originDesign` → `origin` |
+| `CollisionBasicScene.tsx` | 碰撞球速度矢量的 `originDesign` y 坐标错误（`R_A * 2 + 10`） | `originDesign` → `origin` |
+| `CollisionAdvancedScene.tsx` | 同上 | `originDesign` → `origin` |
+| `VerticalCircularScene.tsx` | 圆周运动各矢量的 `originDesign` 传入物理坐标 `x, y` | `originDesign` → `origin` |
+| `CentripetalScene.tsx` | 向心力各矢量的 `originDesign` 传入物理坐标 `x, y` | `originDesign` → `origin` |
+
+**验证结果**：TypeScript 编译零错误 / Vitest 807 passed / Playwright 截图测试 8 passed。
+
+### 14.2 API 互斥化评估
+
+**理想方案**：
+- `VectorArrow`（视觉标注/几何图形）→ **仅保留 `originDesign`**，彻底禁用 `origin`
+- `PhysicsVectorArrow`（物理矢量）→ **仅保留 `origin`**，彻底禁用 `originDesign`
+
+**全量统计结果**：
+
+| 组件 | 使用 `origin=` 的实例数 | 使用 `originDesign=` 的实例数 |
+|------|:---------------------:|:----------------------------:|
+| `VectorArrow` | **0** | 56 |
+| `PhysicsVectorArrow` | 23 | 18 |
+
+**迁移成本分析**：
+
+| 变更项 | 影响实例数 | 影响文件数 | 风险等级 | 说明 |
+|--------|:---------:|:---------:|:-------:|------|
+| `VectorArrow` 禁用 `origin` | 0 | 0 | **零风险** | 当前全量代码中无任何 `VectorArrow` 使用 `origin` |
+| `PhysicsVectorArrow` 禁用 `originDesign` | 18 | ~15 | **中低风险** | 需将 18 个 `originDesign` 实例改为 `origin`；大部分在同一文件中已有 `sceneScale`，转换简单 |
+
+**迁移收益**：
+1. **彻底消除语义混淆**：开发者只需根据"要不要物理正确"选组件，无需再判断坐标类型
+2. **编译期保障**：TypeScript 类型系统直接拦截误用，变为不可编译错误
+3. **降低维护成本**：新开发者无需理解 `origin` vs `originDesign` 的坐标空间差异
+
+**建议**：
+- **立即执行** `VectorArrow` 移除 `origin` prop（零成本，零风险）
+- **排期执行** `PhysicsVectorArrow` 移除 `originDesign` prop（需修改 ~15 个文件，18 个实例，预计 1-2 小时）
+- 同步更新 `project_rules.md` 速查表和 `COMPONENT_REGISTRY.md` 的 API 说明

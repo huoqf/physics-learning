@@ -115,23 +115,23 @@ export function VerticalCircularScene({ physics }: VerticalCircularSceneProps) {
 
       {showVectors && currentPoint && (
         <g>
-          <PhysicsVectorArrow originDesign={{ x, y }} vector={{ x: currentPoint.vx, y: currentPoint.vy }}
+          <PhysicsVectorArrow origin={{ x, y }} vector={{ x: currentPoint.vx, y: currentPoint.vy }}
             type="velocity" sceneScale={sceneScale} label="v" />
           {showAcceleration === 1 && (currentPoint.state === 'on-track' ? (
-            <PhysicsVectorArrow originDesign={{ x, y }}
+            <PhysicsVectorArrow origin={{ x, y }}
               vector={{
                 x: -(currentPoint.N / m) * Math.sin(currentPoint.theta),
                 y: (currentPoint.N / m) * Math.cos(currentPoint.theta) - GRAVITY
               }}
               type="acceleration" sceneScale={sceneScale} label="a_合" />
           ) : (
-            <PhysicsVectorArrow originDesign={{ x, y }} vector={{ x: 0, y: -GRAVITY }}
+            <PhysicsVectorArrow origin={{ x, y }} vector={{ x: 0, y: -GRAVITY }}
               type="acceleration" sceneScale={sceneScale} label="a_合" />
           ))}
-          <PhysicsVectorArrow originDesign={{ x, y }} vector={{ x: 0, y: -m * GRAVITY }}
+          <PhysicsVectorArrow origin={{ x, y }} vector={{ x: 0, y: -m * GRAVITY }}
             type="gravity" sceneScale={sceneScale} label="G" />
           {currentPoint.state === 'on-track' && (
-            <PhysicsVectorArrow originDesign={{ x, y }}
+            <PhysicsVectorArrow origin={{ x, y }}
               vector={{
                 x: -currentPoint.N * Math.sin(currentPoint.theta),
                 y: currentPoint.N * Math.cos(currentPoint.theta)
@@ -139,7 +139,7 @@ export function VerticalCircularScene({ physics }: VerticalCircularSceneProps) {
               type={trackType === 0 ? 'tension' : 'normalForce'}
               sceneScale={sceneScale} label={trackType === 0 ? 'F_T' : 'F_N'} />
           )}
-          <PhysicsVectorArrow originDesign={{ x, y }}
+          <PhysicsVectorArrow origin={{ x, y }}
             vector={{
               x: currentPoint.state === 'on-track' ? -currentPoint.N * Math.sin(currentPoint.theta) : 0,
               y: (currentPoint.state === 'on-track' ? currentPoint.N * Math.cos(currentPoint.theta) : 0) - m * GRAVITY

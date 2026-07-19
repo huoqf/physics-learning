@@ -89,7 +89,7 @@ export function CollisionAdvancedScene({
         <g>
           {curVA !== 0 && (
             <PhysicsVectorArrow
-              originDesign={{ x: posAAdv, y: R_Adv * 2 + 10 }}
+              origin={{ x: posAAdv, y: R_Adv }}
               vector={{ x: curVA, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
@@ -102,7 +102,7 @@ export function CollisionAdvancedScene({
 
           {curVB !== 0 && (
             <PhysicsVectorArrow
-              originDesign={{ x: posBAdv, y: R_Bdv * 2 + 10 }}
+              origin={{ x: posBAdv, y: R_Bdv }}
               vector={{ x: curVB, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}

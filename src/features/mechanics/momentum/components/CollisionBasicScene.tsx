@@ -88,7 +88,7 @@ export function CollisionBasicScene({
         <g>
           {currentV1 !== 0 && (
             <PhysicsVectorArrow
-              originDesign={{ x: posAx, y: R_A * 2 + 10 }}
+              origin={{ x: posAx, y: R_A }}
               vector={{ x: currentV1, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}
@@ -101,7 +101,7 @@ export function CollisionBasicScene({
 
           {currentV2 !== 0 && (
             <PhysicsVectorArrow
-              originDesign={{ x: posBx, y: R_B * 2 + 10 }}
+              origin={{ x: posBx, y: R_B }}
               vector={{ x: currentV2, y: 0 }}
               type="velocity"
               sceneScale={sceneScale}

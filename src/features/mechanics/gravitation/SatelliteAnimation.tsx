@@ -224,7 +224,7 @@ export default function SatelliteAnimation() {
             {showVectors && (
               <g>
                 <PhysicsVectorArrow
-                  originDesign={{ x: sat0PhysX, y: sat0PhysY }}
+                  origin={{ x: sat0PhysX, y: sat0PhysY }}
                   vector={{ x: -sat0PhysX, y: -sat0PhysY }}
                   type="gravity"
                   sceneScale={sceneScale}
@@ -232,7 +232,7 @@ export default function SatelliteAnimation() {
                   font={font}
                 />
                 <PhysicsVectorArrow
-                  originDesign={{ x: sat0PhysX, y: sat0PhysY }}
+                  origin={{ x: sat0PhysX, y: sat0PhysY }}
                   vector={{ x: sat0PhysY, y: -sat0PhysX }}
                   type="velocity"
                   sceneScale={sceneScale}
@@ -288,7 +288,7 @@ export default function SatelliteAnimation() {
             {showVectors && !launchData.crashed && isLaunched === 1 && !isRocket && (
               <g>
                 <PhysicsVectorArrow
-                  originDesign={{ x: satLaunchPhysX, y: satLaunchPhysY }}
+                  origin={{ x: satLaunchPhysX, y: satLaunchPhysY }}
                   vector={{ x: -satLaunchPhysX, y: -satLaunchPhysY }}
                   type="gravity"
                   sceneScale={sceneScale}
@@ -296,7 +296,7 @@ export default function SatelliteAnimation() {
                   font={font}
                 />
                 <PhysicsVectorArrow
-                  originDesign={{ x: satLaunchPhysX, y: satLaunchPhysY }}
+                  origin={{ x: satLaunchPhysX, y: satLaunchPhysY }}
                   vector={launchData.velocityDir ?? { x: 0, y: 1 }}
                   type="velocity"
                   sceneScale={sceneScale}

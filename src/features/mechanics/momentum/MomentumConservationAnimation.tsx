@@ -121,7 +121,7 @@ export default function MomentumConservationAnimation() {
               <g>
                 {basic.currentV1 !== 0 && (
                   <PhysicsVectorArrow
-                    originDesign={{ x: basic.posAx, y: basic.R_A }}
+                    origin={{ x: basic.posAx, y: basic.R_A }}
                     vector={{ x: basic.currentV1, y: 0 }}
                     type="velocity"
                     sceneScale={vectorSceneScale}
@@ -133,7 +133,7 @@ export default function MomentumConservationAnimation() {
 
                 {basic.currentV2 !== 0 && (
                   <PhysicsVectorArrow
-                    originDesign={{ x: basic.posBx, y: basic.R_B }}
+                    origin={{ x: basic.posBx, y: basic.R_B }}
                     vector={{ x: basic.currentV2, y: 0 }}
                     type="velocity"
                     sceneScale={vectorSceneScale}
