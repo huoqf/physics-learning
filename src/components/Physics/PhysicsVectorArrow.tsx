@@ -8,34 +8,11 @@ import { VectorArrow } from './VectorArrow'
  *
  * 为需要物理正确标注的力、速度、加速度等矢量设计。
  * 禁止视觉捷径：不接受 pixelLength，长度必须通过 sceneScale.refMagnitudes 归一化。
- *
- * 起点坐标二选一：
- * - `origin`：物理坐标（米），由 sceneScale 转换为设计坐标
- * - `originDesign`：设计坐标（design-unit），直接使用
- *
- * @example
- * ```tsx
- * // 物理坐标（推荐）
- * <PhysicsVectorArrow
- *   origin={{ x: 0, y: 0 }}
- *   vector={{ x: 10, y: 0 }}
- *   type="force"
- *   sceneScale={sceneScale}
- * />
- *
- * // 设计坐标（兼容现有代码）
- * <PhysicsVectorArrow
- *   originDesign={{ x: 420, y: 325 }}
- *   vector={{ x: 10, y: 0 }}
- *   type="force"
- *   sceneScale={sceneScale}
- * />
- * ```
  */
 interface PhysicsVectorArrowProps {
   /** 矢量起点（物理坐标，米，y↑正方向，sceneScale 会将其转换为设计坐标） */
   origin?: Vector2
-  /** 矢量起点（设计坐标，y↓正方向，在 `<g transform={vp.transform}>` 内直接使用） */
+  /** 矢量起点（设计坐标，y↓正方向，在 <g transform={vp.transform}> 内直接使用） */
   originDesign?: { x: number; y: number }
   /** 矢量值（物理坐标，y↑正方向，单位取决于 type） */
   vector: Vector2
@@ -64,7 +41,6 @@ interface PhysicsVectorArrowProps {
  *
  * 与 VectorArrow 的区别：
  * - 不接受 pixelLength，长度必须通过 sceneScale.refMagnitudes 归一化
- * - 不接受 originPixel（deprecated alias）
  * - 适用场景：需要物理正确标注的力、速度、加速度等矢量
  */
 export function PhysicsVectorArrow({

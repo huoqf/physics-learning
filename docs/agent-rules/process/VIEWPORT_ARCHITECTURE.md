@@ -449,7 +449,7 @@ const sceneScale = useSceneScale({ ..., refMagnitudes: dynamicRefMagnitudes, max
 2. **编译期保障**：TypeScript 类型系统直接拦截误用，变为不可编译错误
 3. **降低维护成本**：新开发者无需理解 `origin` vs `originDesign` 的坐标空间差异
 
-**建议**：
-- **立即执行** `VectorArrow` 移除 `origin` prop（零成本，零风险）
-- **排期执行** `PhysicsVectorArrow` 移除 `originDesign` prop（需修改 ~15 个文件，18 个实例，预计 1-2 小时）
-- 同步更新 `project_rules.md` 速查表和 `COMPONENT_REGISTRY.md` 的 API 说明
+**执行状态**：
+- **已完成** `originDesign` 物理坐标误用修复（9 文件）
+- **已评估、暂未执行** API 互斥化。原因：`PhysicsVectorArrow` 的 18 个 `originDesign` 实例中，部分传入的是经 `worldToDesign` 转换后的设计坐标（如 `CircularMotionAnimation.tsx`、`KeplerAnimation.tsx` 等），若强行改为 `origin` 会再次引入坐标偏离 bug。需逐文件人工判定坐标类型后方可安全迁移。
+- **建议排期**：在专门会话中逐文件审核后执行，预计涉及 ~15 个文件，需 1-2 小时集中处理。

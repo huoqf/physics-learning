@@ -17,7 +17,7 @@ export type ArrowType = 'physical-real' | 'physical-schematic' | 'visual-only'
 /**
  * 矢量箭头组件 Props
  *
- * 【起点坐标】二选一：
+ * 【起点坐标】二选一（物理坐标请优先使用 PhysicsVectorArrow）：
  * - `origin`：物理坐标（米），由 sceneScale 转换为设计坐标。物理 y↑正方向。
  * - `originDesign`：设计坐标（design-unit），在 `<g transform={vp.transform}>` 内直接使用，跳过 sceneScale 转换。
  *   遵循 SVG 坐标系（y↓正方向），调用方需自行完成物理→设计的 y 翻转。
