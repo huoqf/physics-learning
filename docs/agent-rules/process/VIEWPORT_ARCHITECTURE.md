@@ -416,9 +416,9 @@ const sceneScale = useSceneScale({ ..., refMagnitudes: dynamicRefMagnitudes, max
 | `SatelliteAnimation.tsx` | 卫星引力/速度矢量的 `originDesign` 传入物理坐标 `sat0PhysX/Y` | `originDesign` → `origin` |
 | `ManBoatAnimation.tsx` | 人船速度矢量的 `originDesign` 传入物理坐标 `boatState.x_person1` 和 `0.85` | `originDesign` → `origin` |
 | `SpringBlocksAnimation.tsx` | 滑块速度/弹力矢量的 `originDesign` 传入物理坐标 `xA_center` 和 `0.65` | `originDesign` → `origin` |
-| `MomentumConservationAnimation.tsx` | 碰撞球速度矢量的 `originDesign` y 坐标错误（`basic.R_A` 而非 `groundY - R_A`） | `originDesign` → `origin` |
-| `CollisionBasicScene.tsx` | 碰撞球速度矢量的 `originDesign` y 坐标错误（`R_A * 2 + 10`） | `originDesign` → `origin` |
-| `CollisionAdvancedScene.tsx` | 同上 | `originDesign` → `origin` |
+| `MomentumConservationAnimation.tsx`（基础模式） | 碰撞球速度矢量的 `originDesign` y 坐标错误（`R_A * 2 + 10`，球体上方） | `originDesign` → 修正为 `originDesign={{ y: groundY - R_A }}`（球心设计坐标） |
+| `CollisionBasicScene.tsx` | 碰撞球速度矢量的 `originDesign` y 坐标错误（`R_A * 2 + 10`，球体上方） | `originDesign` → 修正为 `originDesign={{ y: groundY - R_A }}`（球心设计坐标） |
+| `CollisionAdvancedScene.tsx` | 同上 | `originDesign` → 修正为 `originDesign={{ y: groundY - R_A }}`（球心设计坐标） |
 | `VerticalCircularScene.tsx` | 圆周运动各矢量的 `originDesign` 传入物理坐标 `x, y` | `originDesign` → `origin` |
 | `CentripetalScene.tsx` | 向心力各矢量的 `originDesign` 传入物理坐标 `x, y` | `originDesign` → `origin` |
 
@@ -432,13 +432,13 @@ const sceneScale = useSceneScale({ ..., refMagnitudes: dynamicRefMagnitudes, max
 | `SatelliteAnimation.tsx` | `anchor: 'custom'`, `customScaleX = scale` | `originDesign` 传入物理坐标 `sat0PhysX/Y` | `origin={sat0PhysX/Y}` → `x1 = centerX + sat0PhysX * scale = sat0X`，与卫星渲染位置一致 | ✅ 完全正确 |
 | `ManBoatAnimation.tsx` | `anchor: 'custom'`, `customScaleX = pxPerMeter` | `originDesign` 传入物理坐标 `x_person1` | `origin={x_person1, 0.85}` → `x1 = originX + x_person1 * pxPerMeter = xp_px`，与人物头部一致 | ✅ 完全正确 |
 | `SpringBlocksAnimation.tsx` | `anchor: 'custom'`, `customScaleX = SPRING_PX_PER_M` | `originDesign` 传入物理坐标 `xA_center` | `origin={xA_center, 0.65}` → 转换后与滑块中心一致 | ✅ 完全正确 |
-| `MomentumConservationAnimation.tsx`（基础模式） | `anchor: 'custom'`, `customScaleX = 1` | `originDesign` y 坐标为 `R_A * 2 + 10`（球体上方） | `origin={{ x: posAx, y: R_A }}` → `x1 = posAx`, `y1 = groundY - R_A`。因 `scale=1`，像素值当物理坐标传碰巧正确 | ⚠️ 结果正确，语义不纯 |
-| `CollisionBasicScene.tsx` | `anchor: 'custom'`, `customScaleX = 1` | `originDesign` y 坐标为 `R_A * 2 + 10` | `origin={{ x: posAx, y: R_A }}` → `x1 = posAx`, `y1 = groundY - R_A`。因 `scale=1`，像素值当物理坐标传碰巧正确 | ⚠️ 结果正确，语义不纯 |
-| `CollisionAdvancedScene.tsx` | 同基础碰撞 | 同基础碰撞 | 同基础碰撞 | ⚠️ 结果正确，语义不纯 |
+| `MomentumConservationAnimation.tsx`（基础模式） | `anchor: 'custom'`, `customScaleX = 1` | `originDesign` y 坐标为 `R_A * 2 + 10`（球体上方） | `originDesign={{ x: basic.posAx, y: groundY - basic.R_A }}`，直接使用球心设计坐标 | ✅ 完全正确 |
+| `CollisionBasicScene.tsx` | `anchor: 'custom'`, `customScaleX = 1` | `originDesign` y 坐标为 `R_A * 2 + 10` | `originDesign={{ x: posAx, y: groundY - R_A }}`，直接使用球心设计坐标 | ✅ 完全正确 |
+| `CollisionAdvancedScene.tsx` | 同基础碰撞 | 同基础碰撞 | `originDesign={{ x: posAAdv, y: groundY - R_Adv }}`，直接使用球心设计坐标 | ✅ 完全正确 |
 | `VerticalCircularScene.tsx` | `anchor: 'center'` | `originDesign` 传入物理坐标 `x, y` | `origin={{ x, y }}` → `x1 = originX + x * scaleX`, `y1 = originY - y * scaleY`，与 `ballPos = worldToDesign(x, y)` 一致 | ✅ 完全正确 |
 | `CentripetalScene.tsx` | `createSceneScaleFromDesignCenter` | `originDesign` 传入物理坐标 `x, y` | `origin={{ x, y }}` → `x1 = DESIGN_CX + x * designScale`, `y1 = DESIGN_CY - y * designScale`，与 `ballPos` 一致 | ✅ 完全正确 |
 
-> **关于 3 个「语义不纯」文件的说明**：`MomentumConservationAnimation`（基础模式）、`CollisionBasicScene`、`CollisionAdvancedScene` 这 3 个文件的 `sceneScale` 配置为 `scaleX = scaleY = 1`，因此物理坐标与设计坐标数值等价。修复后传入的 `origin` 虽然在语义上应为物理坐标（米），但实际传入的是像素值，因 `scale=1` 而结果正确。**当前配置下不会引入新 bug**，但如果将来修改 `sceneScale` 的 scale 为非 1 值，矢量起点将偏离。建议后续排期改为 `originDesign` + 正确的设计坐标值（而非当前的 `origin` + 像素值）。
+> **修复后全部 9 个文件均已验证通过**：6 个物理坐标模式文件使用 `origin` + 物理坐标，经 `sceneScale` 转换后与物体渲染位置完全一致；3 个设计坐标模式文件使用 `originDesign` + 正确的设计坐标值（球心位置），直接对应 SVG 坐标，语义和结果均正确。
 
 ### 14.2 API 互斥化评估（修正版）
 

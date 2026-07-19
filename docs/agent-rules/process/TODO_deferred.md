@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-15（`<foreignObject>` 规范违规清理完成 + VectorArrow 坐标体系清理 Phase 7-9 完成 + 项目规范同步更新 + 存量页面 VIEWPORT 迁移完成）
+> 最后更新：2026-07-19（`originDesign` 物理坐标误用修复 9 文件 + API 互斥化重新评估判定暂不执行 + `<foreignObject>` 规范违规清理完成 + VectorArrow 坐标体系清理 Phase 7-9 完成 + 项目规范同步更新 + 存量页面 VIEWPORT 迁移完成）
 
 ---
 
@@ -497,6 +497,8 @@ npx playwright test
 | 2026-07-14 | BulletBlockScene | originPixel 使用物理坐标 | 改为设计坐标 |
 | 2026-07-14 | OrbitTransferAnimation | originPixel 覆盖 sceneScale origin | 改回 origin（物理坐标） |
 | 2026-07-14 | renderVectorArrow | originPixel={{x:0,y:0}} 覆盖 sceneScale origin | 移除 originPixel |
+| 2026-07-19 | `BinaryStarsAnimation` / `SatelliteAnimation` / `ManBoatAnimation` / `SpringBlocksAnimation` / `VerticalCircularScene` / `CentripetalScene` | `originDesign` 误传入物理坐标，矢量起点严重偏离物体 | `originDesign` → `origin`，经 sceneScale 转换后与物体位置一致 |
+| 2026-07-19 | `MomentumConservationAnimation`（基础模式）/ `CollisionBasicScene` / `CollisionAdvancedScene` | `originDesign` y 坐标错误（`R_A * 2 + 10`，球体上方），矢量起点偏离球心 | `originDesign` 修正为正确设计坐标值 `groundY - R_A`，指向球心 |
 
 ### 6.13 剩余技术债（已全部清零）
 
