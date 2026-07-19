@@ -97,7 +97,6 @@ describe('ParamControl', () => {
 
     expect(screen.getByText('进阶参数')).toBeTruthy()
     expect(screen.getByText('倾角越大，重力沿斜面分力越大')).toBeTruthy()
-    expect(screen.getByText('进阶')).toBeTruthy()
     expect(screen.getByText('常用37°')).toBeTruthy()
   })
 

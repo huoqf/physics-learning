@@ -43,18 +43,6 @@ const snapToStep = (value: number, param: ParamConfig) => {
   return Number(clamp(snapped, param.min, param.max).toFixed(digits))
 }
 
-const importanceLabel: Record<ParamImportance, string> = {
-  core: '核心',
-  advanced: '进阶',
-  display: '显示',
-}
-
-const importanceBadgeClass: Record<ParamImportance, string> = {
-  core: 'bg-primary-50 text-primary-700 border-primary-200/60',
-  advanced: 'bg-amber-50 text-amber-700 border-amber-200/60',
-  display: 'bg-sky-50 text-sky-700 border-sky-200/60',
-}
-
 const markClass: Record<ParamMarkVariant, string> = {
   zero: 'bg-neutral-400/70 text-neutral-400',
   critical: 'bg-danger-500/80 text-danger-600',
@@ -203,11 +191,6 @@ export const ParamControl: React.FC<ParamControlProps> = ({
           <label className="min-w-0 text-xs font-semibold text-neutral-700 leading-6" htmlFor={`param-${param.key}`}>
             <span className="inline-flex items-center gap-1.5">
               <span>{param.label}{param.unit ? ` (${param.unit})` : ''}</span>
-              {param.importance && (
-                <span className={['rounded-full px-1.5 py-0.5 text-ui-sm font-bold border', importanceBadgeClass[param.importance]].join(' ')}>
-                  {importanceLabel[param.importance]}
-                </span>
-              )}
             </span>
             {param.description && (
               <span className="mt-0.5 block text-ui-base font-normal leading-relaxed text-neutral-400">
