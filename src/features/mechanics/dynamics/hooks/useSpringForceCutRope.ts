@@ -2,15 +2,18 @@
  * 绳与弹簧瞬时切断 — 物理状态 Hook
  *
  * 职责：
- *   - 管理剪断时间戳
+ *   - 预计算剪断后轨迹（用于拖拽扫查）
  *   - 调用纯物理函数计算四球位置、受力、加速度
- * 约束：零 JSX，仅返回纯数据。自动播放逻辑由场景组件自行处理。
+ * 约束：零 JSX，仅返回纯数据。
  */
 
-import { useRef } from 'react'
+import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { calculateCutRopeState } from '@/physics/dynamics/spring-force'
+import {
+  precomputeCutRopeTrajectory,
+  getCutRopeStateAtTime,
+} from '@/physics/dynamics/spring-force'
 
 /** 胡克定律模式布局常量（splitV 840×325） */
 export const HOOKE_DESIGN = {
@@ -35,6 +38,11 @@ export const CUT_ROPE_DESIGN = {
   bracketWidth: 100,
 } as const
 
+/** 轨迹最大模拟时间 [s] */
+const TRAJECTORY_MAX_TIME = 3
+/** 轨迹时间步长 [s] */
+const TRAJECTORY_DT = 0.01
+
 export function useSpringForceCutRope() {
   const { params, time, showVectors } = useAnimationStore(
     useShallow((s) => ({
@@ -46,34 +54,32 @@ export function useSpringForceCutRope() {
 
   const k = params.k ?? 100
   const m = params.m ?? 1
-  const isCut = params.isCut ?? 0
 
-  // 剪绳时间戳
-  const tCutStartRef = useRef<number | null>(null)
-  if (isCut === 1) {
-    if (tCutStartRef.current === null || time < tCutStartRef.current) {
-      tCutStartRef.current = time
-    }
-  } else {
-    tCutStartRef.current = null
-  }
+  // 预计算剪断后轨迹（用于拖拽扫查与插值）
+  const trajectory = useMemo(() => {
+    return precomputeCutRopeTrajectory(
+      k,
+      m,
+      TRAJECTORY_MAX_TIME,
+      TRAJECTORY_DT,
+      CUT_ROPE_DESIGN.ceilY,
+      CUT_ROPE_DESIGN.groundY,
+    )
+  }, [k, m])
 
-  const state = calculateCutRopeState(
-    k,
-    m,
-    time,
-    isCut,
-    tCutStartRef.current,
-    CUT_ROPE_DESIGN.ceilY,
-    CUT_ROPE_DESIGN.groundY,
-  )
+  // 线性插值取得当前时刻状态
+  const state = useMemo(() => {
+    return getCutRopeStateAtTime(trajectory, time)
+  }, [trajectory, time])
 
   return {
     k,
     m,
-    isCut,
     showVectors,
-    tCutStart: tCutStartRef.current,
-    ...state,
+    trajectory,
+    tCut: state.t,
+    positions: state.positions,
+    forces: state.forces,
+    isLanded: state.isLanded,
   }
 }

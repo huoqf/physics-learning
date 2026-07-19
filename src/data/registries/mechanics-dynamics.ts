@@ -56,27 +56,25 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     title: '轻质物体突变模型',
     knowledgeId: 'mechanics-4-9',
     Component: lazy(() => import('@/features/mechanics/dynamics/LightWeightMutationAnimation')),
-    controlsMode: 'pause-only',
-    defaultParams: { m: 1, isCut: 0 } as const,
+    controlsMode: 'timed',
+    maxTime: 3,
+    defaultParams: { m: 1 } as const,
     paramMeta: [
       { key: 'm', label: '质量 m', min: 1.0, max: 3.0, step: 0.1, unit: 'kg' },
     ],
     controlMeta: [
       {
-        type: 'toggle',
-        key: 'isCut',
-        label: '剪断细绳',
-        group: '操作交互',
-        trueValue: 1,
-        falseValue: 0,
-      },
-      {
         type: 'tip',
-        group: '受力与加速度分析',
+        group: '核心结论',
         content: '【剪断瞬间受力与加速度精炼解析】\n' +
           '1. 细绳拉力可突变为 0（绳断裂）；弹簧形变无法瞬间恢复，其弹力保持不变。\n' +
           '2. 左侧悬挂：剪绳瞬时，B球仅受重力，a_B = g ↓；A球受弹簧拉力 2mg↑ 与重力 mg↓，合力为 mg↑，a_A = g ↑。\n' +
           '3. 右侧悬挂：剪绳瞬时，C球受重力 mg↓ 与弹簧拉力 mg↓，合力为 2mg↓，a_C = 2g ↓；D球受重力 mg↓ 与弹簧拉力 mg↑ 平衡，合力为 0，a_D = 0。',
+      },
+      {
+        type: 'tip',
+        group: '操作说明',
+        content: '动画默认展示剪断后的运动过程。可点击播放/暂停按钮控制动画，也可按住场景中的小球拖拽，手动扫查不同时刻的受力与加速度状态。右侧屏实时同步加速度对比图。',
       },
     ],
     CenterExtra: lazy(() => import('@/features/mechanics/dynamics/SpringForceCenterExtra')),

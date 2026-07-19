@@ -298,6 +298,118 @@ export function calculateBallBFallTime(
   return Math.sqrt((2 * fallDistance) / g)
 }
 
+// ─── 轨迹预计算（用于拖拽扫查）──────────────────────────────────────────
+
+export interface CutRopeTrajectoryPoint {
+  t: number
+  positions: CutRopePositions
+  forces: CutRopeForces
+  isLanded: boolean
+}
+
+/**
+ * 预计算绳与弹簧瞬时切断模型的轨迹
+ *
+ * @param k 劲度系数 [N/m]
+ * @param m 单球质量 [kg]
+ * @param maxTime 最大模拟时间 [s]
+ * @param dt 时间步长 [s]
+ * @param ceilY 天花板 Y 设计坐标 [px]
+ * @param groundY 地面 Y 设计坐标 [px]
+ * @returns 按时间升序排列的轨迹点数组
+ */
+export function precomputeCutRopeTrajectory(
+  k: number,
+  m: number,
+  maxTime: number,
+  dt: number,
+  ceilY: number,
+  groundY: number,
+): CutRopeTrajectoryPoint[] {
+  const pts: CutRopeTrajectoryPoint[] = []
+  for (let t = 0; t <= maxTime + dt * 0.5; t += dt) {
+    const state = calculateCutRopeState(k, m, t, 1, 0, ceilY, groundY)
+    pts.push({
+      t: Math.min(t, maxTime),
+      positions: state.positions,
+      forces: state.forces,
+      isLanded: state.isLanded,
+    })
+  }
+  return pts
+}
+
+/**
+ * 线性插值取得指定时刻的轨迹状态
+ *
+ * @param trajectory 预计算的轨迹点数组（按时间升序）
+ * @param time 目标时间 [s]
+ * @returns 该时刻的插值状态
+ */
+export function getCutRopeStateAtTime(
+  trajectory: CutRopeTrajectoryPoint[],
+  time: number,
+): CutRopeTrajectoryPoint {
+  if (trajectory.length === 0) {
+    return {
+      t: 0,
+      positions: { yA: 0, yB: 0, yC: 0, yD: 0 },
+      forces: {
+        fA_spring: 0, fA_rope: 0, fA_grav: 0, a_A: 0,
+        fB_rope: 0, fB_grav: 0, a_B: 0,
+        fC_rope: 0, fC_spring: 0, fC_grav: 0, a_C: 0,
+        fD_spring: 0, fD_grav: 0, a_D: 0,
+        fSpring2: 0,
+      },
+      isLanded: false,
+    }
+  }
+  if (time <= trajectory[0].t) return { ...trajectory[0] }
+  if (time >= trajectory[trajectory.length - 1].t) {
+    return { ...trajectory[trajectory.length - 1] }
+  }
+
+  let lo = 0
+  let hi = trajectory.length - 1
+  while (lo < hi - 1) {
+    const mid = (lo + hi) >> 1
+    if (trajectory[mid].t <= time) lo = mid
+    else hi = mid
+  }
+
+  const p0 = trajectory[lo]
+  const p1 = trajectory[hi]
+  const ratio = (time - p0.t) / (p1.t - p0.t)
+
+  return {
+    t: time,
+    positions: {
+      yA: p0.positions.yA + (p1.positions.yA - p0.positions.yA) * ratio,
+      yB: p0.positions.yB + (p1.positions.yB - p0.positions.yB) * ratio,
+      yC: p0.positions.yC + (p1.positions.yC - p0.positions.yC) * ratio,
+      yD: p0.positions.yD + (p1.positions.yD - p0.positions.yD) * ratio,
+    },
+    forces: {
+      fA_spring: p0.forces.fA_spring + (p1.forces.fA_spring - p0.forces.fA_spring) * ratio,
+      fA_rope: p0.forces.fA_rope + (p1.forces.fA_rope - p0.forces.fA_rope) * ratio,
+      fA_grav: p0.forces.fA_grav + (p1.forces.fA_grav - p0.forces.fA_grav) * ratio,
+      a_A: p0.forces.a_A + (p1.forces.a_A - p0.forces.a_A) * ratio,
+      fB_rope: p0.forces.fB_rope + (p1.forces.fB_rope - p0.forces.fB_rope) * ratio,
+      fB_grav: p0.forces.fB_grav + (p1.forces.fB_grav - p0.forces.fB_grav) * ratio,
+      a_B: p0.forces.a_B + (p1.forces.a_B - p0.forces.a_B) * ratio,
+      fC_rope: p0.forces.fC_rope + (p1.forces.fC_rope - p0.forces.fC_rope) * ratio,
+      fC_spring: p0.forces.fC_spring + (p1.forces.fC_spring - p0.forces.fC_spring) * ratio,
+      fC_grav: p0.forces.fC_grav + (p1.forces.fC_grav - p0.forces.fC_grav) * ratio,
+      a_C: p0.forces.a_C + (p1.forces.a_C - p0.forces.a_C) * ratio,
+      fD_spring: p0.forces.fD_spring + (p1.forces.fD_spring - p0.forces.fD_spring) * ratio,
+      fD_grav: p0.forces.fD_grav + (p1.forces.fD_grav - p0.forces.fD_grav) * ratio,
+      a_D: p0.forces.a_D + (p1.forces.a_D - p0.forces.a_D) * ratio,
+      fSpring2: p0.forces.fSpring2 + (p1.forces.fSpring2 - p0.forces.fSpring2) * ratio,
+    },
+    isLanded: p0.isLanded,
+  }
+}
+
 // ─── 支持力与微观弹性形变 ───────────────────────────────────────────
 
 export interface ElasticNormalForceState {

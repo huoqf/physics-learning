@@ -7,7 +7,7 @@
  * 约束：调用纯物理函数，零内联公式。
  */
 
-import { useRef, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationViewport } from '@/hooks'
@@ -35,7 +35,6 @@ export default function SpringForceCenterExtra() {
 
   const k = params.k ?? 100
   const m = params.m ?? 1
-  const isCut = params.isCut ?? 0
 
   // 弹力演示：胡克定律模式；轻质物体突变模型：切断模式
   const isHookeLaw = animationType === 'anim-spring-force'
@@ -51,7 +50,7 @@ export default function SpringForceCenterExtra() {
     }
   }
 
-  return <CutRopeAccelerationChart k={k} m={m} time={time} isCut={isCut} />
+  return <CutRopeAccelerationChart k={k} m={m} time={time} />
 }
 
 // ─── 胡克定律 F-x 图表 ──────────────────────────────────────────────────
@@ -231,34 +230,23 @@ function CutRopeAccelerationChart({
   k,
   m,
   time,
-  isCut,
 }: {
   k: number
   m: number
   time: number
-  isCut: number
 }) {
   const { canvasSize } = useAnimationViewport({
     preset: CANVAS_PRESETS.splitH,
   })
   const { font } = canvasSize
 
-  // 独立的剪断时间戳管理（与场景组件同步但独立）
-  const tCutStartRef = useRef<number | null>(null)
-  if (isCut === 1) {
-    if (tCutStartRef.current === null || time < tCutStartRef.current) {
-      tCutStartRef.current = time
-    }
-  } else {
-    tCutStartRef.current = null
-  }
-
+  // 始终按剪断状态计算
   const state = calculateCutRopeState(
     k,
     m,
     time,
-    isCut,
-    tCutStartRef.current,
+    1,
+    0,
     CUT_ROPE_DESIGN.ceilY,
     CUT_ROPE_DESIGN.groundY,
   )
@@ -284,13 +272,13 @@ function CutRopeAccelerationChart({
     <div className="w-full h-full flex flex-col bg-white rounded-lg shadow-inner p-4 relative overflow-hidden">
       <div className="text-base font-bold mb-3">加速度对比 (m/s²)</div>
 
-      {isCut === 1 && tCut < fallTime ? (
+      {tCut < fallTime ? (
         <div className="text-center text-xs text-gray-500 mb-2">
           切断后 t = {tCut.toFixed(2)}s
         </div>
       ) : (
         <div className="text-center text-xs text-gray-500 mb-2">
-          {state.isLanded ? 'B球已落地，加速度归零' : '点击“剪断细绳”观察加速度变化'}
+          {state.isLanded ? 'B球已落地，加速度归零' : '播放动画观察加速度变化'}
         </div>
       )}
 
@@ -363,7 +351,7 @@ function CutRopeAccelerationChart({
         })}
 
         {/* 理论分析标注 */}
-        {isCut === 1 && tCut < 0.5 && (
+        {tCut < 0.5 && (
           <g>
             <text x={180} y={300} fontSize={font(12)} fill={PHYSICS_COLORS.textMuted} textAnchor="middle">
               理论值 (刚剪断):
