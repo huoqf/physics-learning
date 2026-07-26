@@ -36,9 +36,6 @@ export function handleInclinedPlane(
   return {
     quantities: [
       ...base,
-      { label: '倾角 θ', value: `${theta.toFixed(0)}`, unit: '°' },
-      { label: '动摩擦因数 μ', value: `${mu.toFixed(2)}`, unit: '' },
-      { label: '质量 m', value: `${m.toFixed(1)}`, unit: 'kg' },
       { label: '运动状态', value: res.isSliding ? '下滑加速' : '静止平衡', unit: '', highlight: res.isSliding ? ('positive' as const) : ('zero' as const) },
       { label: '正压力 F_N', value: `${res.FN.toFixed(2)}`, unit: 'N', highlight: 'positive' as const },
       { label: '摩擦力 F_f', value: `${res.Ff.toFixed(2)}`, unit: 'N', highlight: res.Ff > 0.05 ? ('positive' as const) : ('zero' as const) },

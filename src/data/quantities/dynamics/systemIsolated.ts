@@ -65,7 +65,6 @@ export function handleSystemIsolated(
     if (analysisView === 0) {
       quantities.push(
         { label: '系统加速度 a', value: currentA.toFixed(2), unit: 'm/s²', highlight: currentA > 0 ? 'positive' : undefined },
-        { label: '整体受外拉力 F', value: F.toFixed(0), unit: 'N' },
         { label: '整体合摩擦力 f_合', value: (f1Max + f2Max).toFixed(1), unit: 'N' }
       )
       formulas.push({ name: '① 整体牛二定律', latex: 'F - (f_1 + f_2) = (m_1 + m_2)a', level: 'core' })
@@ -81,8 +80,7 @@ export function handleSystemIsolated(
         quantities.push(
           { label: '系统加速度 a', value: currentA.toFixed(2), unit: 'm/s²', highlight: currentA > 0 ? 'positive' : undefined },
           { label: 'm₂ 受到绳拉力 T', value: currentT.toFixed(1), unit: 'N', highlight: 'positive' },
-          { label: 'm₂ 摩擦力 f₂', value: f2Max.toFixed(1), unit: 'N' },
-          { label: '外拉力 F', value: F.toFixed(0), unit: 'N' }
+          { label: 'm₂ 摩擦力 f₂', value: f2Max.toFixed(1), unit: 'N' }
         )
         formulas.push({ name: '① 隔离 m₂ 方程', latex: 'F - T - f_2 = m_2 a', level: 'core' })
       }

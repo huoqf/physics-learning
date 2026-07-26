@@ -64,7 +64,6 @@ export function handleWeightlessness(
   return {
     quantities: [
       ...base,
-      { label: '电梯加速度 a', value: a.toFixed(2), unit: 'm/s²', highlight: a > 0.05 ? 'positive' as const : a < -0.05 ? 'negative' as const : 'zero' as const },
       { label: '支持力/视重 N', value: N.toFixed(1), unit: 'N', highlight: N > m * g + 0.1 ? 'positive' as const : N < 0.1 ? 'zero' as const : N < m * g - 0.1 ? 'negative' as const : undefined },
       { label: '真实重力 G', value: (m * g).toFixed(1), unit: 'N' },
       { label: '电梯速度 v', value: v.toFixed(2), unit: 'm/s' },

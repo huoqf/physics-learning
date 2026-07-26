@@ -153,7 +153,6 @@ export function buildVibrationQuantities(
       // ─── 模式 0: 基础简谐运动 ───
       return {
         quantities: [
-          { label: '摆角 θ', value: `${(stateSHM.angle * 180 / Math.PI).toFixed(1)}°`, unit: '' },
           { label: '水平位移 x', value: (L * Math.sin(stateSHM.angle)).toFixed(3), unit: 'm', color: PHYSICS_COLORS.displacement },
           { label: '切向速度 v', value: stateSHM.velocity.toFixed(3), unit: 'm/s', color: PHYSICS_COLORS.velocity },
           { label: '切向加速度 a_t', value: stateSHM.acceleration.toFixed(3), unit: 'm/s²', color: PHYSICS_COLORS.acceleration },

@@ -142,7 +142,6 @@ export function buildCircularQuantities(
 
         quantities = [
           ...base,
-          { label: '线速度 v', value: v.toFixed(2), unit: 'm/s' },
           { label: '角速度 ω', value: omega.toFixed(2), unit: 'rad/s' },
           { label: '向心加速度 a_向', value: a_c.toFixed(2), unit: 'm/s²' },
           { label: '向心力 F_向', value: F_c.toFixed(2), unit: 'N' },
