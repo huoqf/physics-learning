@@ -1,5 +1,5 @@
-import { Suspense, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Suspense, useEffect, useMemo } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, FlaskConical, Play } from 'lucide-react'
 import { buildPhysicsQuantities } from '@/data/physicsQuantities'
 import { getAnimationConfig } from '@/data/animationRegistry'
@@ -243,6 +243,8 @@ function RightPhysicsPanel({
 
 export default function AnimationPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const customParamsStr = searchParams.get('params')
 
   const {
     config,
@@ -257,6 +259,20 @@ export default function AnimationPage() {
     nextDiscoveryStep,
     prevDiscoveryStep,
   } = useAnimationLifecycle()
+
+  // 当 URL 带有真题预设参数时，自动注入当前动画的 params Store 中
+  useEffect(() => {
+    if (customParamsStr && config) {
+      try {
+        const parsed = JSON.parse(decodeURIComponent(customParamsStr))
+        if (parsed && typeof parsed === 'object') {
+          useAnimationStore.getState().setParams({ ...config.defaultParams, ...parsed })
+        }
+      } catch (e) {
+        console.error('Failed to parse preset params from URL', e)
+      }
+    }
+  }, [customParamsStr, config])
 
   // 查找同属一个知识点的关联动画列表 (高考同考点经典模型切换)
   const siblingAnimations = useMemo(() => {

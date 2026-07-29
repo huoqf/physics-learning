@@ -12,6 +12,7 @@ interface PracticeSessionProps {
   problems: Problem[]
   onExit: () => void
   onReviewKnowledge?: (animId: string) => void
+  onLaunchAnimation?: (animId: string, params?: Record<string, number>) => void
 }
 
 /** 渲染含 $...$ / $$...$$ 的文本 */
@@ -30,7 +31,7 @@ function RichText({ text }: { text: string }) {
   )
 }
 
-export function PracticeSession({ mode, problems, onExit, onReviewKnowledge }: PracticeSessionProps) {
+export function PracticeSession({ mode, problems, onExit, onReviewKnowledge, onLaunchAnimation }: PracticeSessionProps) {
   const isTest = mode === 'test'
 
   // useProblemStore：当前作答会话状态（激活此前未接线的 store）
@@ -197,16 +198,60 @@ export function PracticeSession({ mode, problems, onExit, onReviewKnowledge }: P
       {/* 题干 */}
       <Card className="p-6 mb-4">
         <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <span className="text-xs px-2 py-0.5 rounded bg-primary-50 text-primary-700">{problem.year}</span>
+          <span className="text-xs px-2 py-0.5 rounded bg-primary-50 text-primary-700 font-medium">{problem.year}</span>
           <span className="text-xs px-2 py-0.5 rounded bg-neutral-100 text-neutral-600">{problem.province}</span>
-          <span className="text-xs" style={{ color: colors.accent[500] }}>{'★'.repeat(problem.difficulty)}</span>
+          {problem.tags?.map((t) => (
+            <span key={t} className="text-xs px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+              {t}
+            </span>
+          ))}
+          <span className="text-xs ml-auto" style={{ color: colors.accent[500] }}>{'★'.repeat(problem.difficulty)}</span>
         </div>
+        {problem.source && (
+          <p className="text-xs text-neutral-400 mb-2 font-mono">来源: {problem.source}</p>
+        )}
         <h2 className="font-semibold text-neutral-800 mb-3">{problem.title}</h2>
         <div className="text-[15px] leading-7 text-neutral-700">
           {problem.content.split('\\n').map((line, i) => (
             <p key={i} className="mb-1.5"><RichText text={line} /></p>
           ))}
         </div>
+
+        {/* 题干初始纯净配图 (方案 B 静态高清图，零解答辅助线/透题矢) */}
+        {problem.images && problem.images.length > 0 && (
+          <div className="my-4 flex flex-wrap gap-3">
+            {problem.images.map((imgUrl, idx) => (
+              <img
+                key={idx}
+                src={imgUrl}
+                alt={`真题原图 ${idx + 1}`}
+                className="max-w-full max-h-[260px] object-contain rounded-lg border border-neutral-200 bg-neutral-50"
+              />
+            ))}
+          </div>
+        )}
+
+        {/* 真题-动画双向联动入口 */}
+        {problem.targetAnimation && onLaunchAnimation && (
+          <div className="mt-4 p-3 bg-primary-50 rounded-xl border border-primary-100 flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🎥</span>
+              <div>
+                <p className="text-xs font-semibold text-primary-900">真题-仿真动画双向联动</p>
+                <p className="text-xs text-primary-700">
+                  {problem.targetAnimation.presetDescription || '一键将高考真题物理参数载入 3D/SVG 仿真模型'}
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => onLaunchAnimation(problem.targetAnimation!.animId, problem.targetAnimation!.presetParams)}
+              className="bg-primary-600 hover:bg-primary-700 text-white font-medium"
+            >
+              载入真题参数并运行仿真 ➔
+            </Button>
+          </div>
+        )}
 
         {/* 练习模式：提示按钮（展示首步描述作为思路提示） */}
         {!isTest && !revealed && problem.steps[0] && (
@@ -240,13 +285,28 @@ export function PracticeSession({ mode, problems, onExit, onReviewKnowledge }: P
         </Button>
       ) : (
         <Card className="p-6">
-          <h3 className="text-sm font-semibold text-neutral-800 mb-3">分步解析</h3>
+          <h3 className="text-sm font-semibold text-neutral-800 mb-3">分步解析与高考采分点</h3>
           <ol className="space-y-4">
             {problem.steps.map((step, i) => (
               <li key={step.id} className="border-l-2 border-primary-200 pl-3">
-                <p className="text-sm font-medium text-neutral-700 mb-1">
-                  {i + 1}. {step.description}
-                </p>
+                <div className="flex items-center justify-between flex-wrap gap-1 mb-1">
+                  <p className="text-sm font-medium text-neutral-700">
+                    {i + 1}. {step.description}
+                  </p>
+                  {step.scorePoints != null && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
+                      采分点 +{step.scorePoints}分
+                    </span>
+                  )}
+                </div>
+
+                {/* 关键突破条件 */}
+                {step.keyCondition && (
+                  <div className="my-1.5 p-2 rounded bg-amber-50/70 border-l-2 border-amber-400 text-xs text-amber-900">
+                    <span className="font-semibold">⚡ Key 突破条件：</span>{step.keyCondition}
+                  </div>
+                )}
+
                 {step.formula && <KatexFormula formula={step.formula.replace(/^\$\$|\$\$$/g, '').trim()} mode="block" />}
                 <p className="text-sm text-neutral-500 mt-1"><RichText text={step.explanation} /></p>
               </li>

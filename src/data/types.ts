@@ -14,6 +14,10 @@ export interface KnowledgeNode {
   parentId?: string
   /** 跳转动画时注入的参数覆盖，合并到 defaultParams 之上 */
   animationParams?: Record<string, number>
+  /** 高考考频勋章，如 '5年12考' / '高考压轴' */
+  gaokaoFrequency?: string
+  /** 关联的高考 18 大 Master 模型 ID */
+  masterModelId?: string
 }
 
 export type ParamImportance = 'core' | 'advanced' | 'display'
@@ -223,21 +227,43 @@ export interface AnimationConfig<P extends Record<string, number> = Record<strin
   controlsMode?: 'timed' | 'loop' | 'param' | 'pause-only' | ((params: Record<string, number>) => 'timed' | 'loop' | 'param' | 'pause-only')
 }
 
+export interface TargetAnimationPreset {
+  animId: string
+  presetParams: Record<string, number>
+  presetDescription?: string
+}
+
 export interface Problem {
   id: string
   year: number
   province: string
+  source?: string
   title: string
   content: string
   difficulty: 1 | 2 | 3 | 4 | 5
   knowledgeIds: string[]
+  /** 题干配图路径（方案 B 静态高清图或 SVG 绝对路径，绝对纯净无解题辅助线） */
+  images?: string[]
+  /** 题干矢量 SVG 标记（方案 A 纯净题干示意图） */
+  svgContent?: string
+  /** 关联的高考 18 大 Master 模型 ID */
+  masterModelId?: string
+  /** 标签 (高考压轴、板块模型等) */
+  tags?: string[]
+  /** 绑定的物理仿真动画及真题参数预设 */
+  targetAnimation?: TargetAnimationPreset
   steps: ProblemStep[]
 }
 
 export interface ProblemStep {
   id: string
   description: string
+  /** 核心突破条件与切入点说明 */
+  keyCondition?: string
+  /** 高考采分点分值 */
+  scorePoints?: number
   formula?: string
+  /** 解析步骤配图（可包含受力分解矢量箭头、轨迹与辅助线） */
   svgContent?: string
   explanation: string
   knowledgeId?: string

@@ -68,6 +68,10 @@ export default function PracticePage() {
           problems={filteredProblems}
           onExit={exitSession}
           onReviewKnowledge={(animId) => navigate(`/animation/${animId}`)}
+          onLaunchAnimation={(animId, presetParams) => {
+            const query = presetParams ? `?params=${encodeURIComponent(JSON.stringify(presetParams))}` : ''
+            navigate(`/animation/${animId}${query}`)
+          }}
         />
       </div>
     )

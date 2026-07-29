@@ -733,9 +733,28 @@ export const mechanicsDynamicsAnimations = defineAnimations({
         marks: [{ value: 0.3, label: '推荐', variant: 'recommended' }],
       },
       { key: 'mu2', label: '地面摩擦因数 μ₂', min: 0, max: 0.2, step: 0.02, importance: 'advanced' },
-      { key: 'v0', label: '初速度 v₀', min: 2, max: 8, step: 0.5, unit: 'm/s', importance: 'core' },
+      {
+        key: 'v0',
+        label: '初速度 v₀',
+        min: 2,
+        max: 8,
+        step: 0.5,
+        unit: 'm/s',
+        importance: 'core',
+        marks: [
+          { value: 4.8, label: '临界: 恰滑至右端', variant: 'critical' },
+          { value: 5, label: '推荐', variant: 'recommended' },
+        ],
+      },
     ],
     controlMeta: [
+      {
+        type: 'preset',
+        label: '📋 2024全国新课标卷（板块滑动）',
+        description: 'm=1kg, M=3kg, μ₁=0.3, μ₂=0.05, v₀=5m/s',
+        params: { m: 1, M: 3, mu1: 0.3, mu2: 0.05, v0: 5, L: 2.5 },
+        restartOnApply: true,
+      },
       {
         type: 'segmented',
         key: 'L',

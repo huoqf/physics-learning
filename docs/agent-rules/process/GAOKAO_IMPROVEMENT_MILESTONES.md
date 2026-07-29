@@ -65,10 +65,10 @@
 ```
 
 ### 里程碑 1 (M1)：真题数据升级与真题-动画双向联动引擎
-- [ ] **M1.1 数据结构扩展**：更新 `src/data/types.ts` 中的 `Problem`、`ProblemStep` 及 `KnowledgeNode` 接口，支持图片路径、真题预设与标签。
-- [ ] **M1.2 真题图片渲染器**：在 `PracticeSession.tsx` 中增加真题图片渲染支持（支持内联 SVG 和 `public/images/problems/` 存储路径）。
-- [ ] **M1.3 真题预设套件 (Exam Presets)**：为首批高考常考模型（板块模型、传送带、竖直圆、双杆切割）配置 `controlMeta` 中的真题预设参数。
-- [ ] **M1.4 基础真题与动画双向跳转**：实现练习题中点击“🎥 一键装载真题参数并运行动画”直达三屏页面。
+- [x] **M1.1 数据结构扩展**：更新 `src/data/types.ts` 中的 `Problem`、`ProblemStep` 及 `KnowledgeNode` 接口，支持图片路径、真题预设与标签。
+- [x] **M1.2 真题图片渲染器**：在 `PracticeSession.tsx` 中增加真题图片渲染支持（支持内联 SVG 和 `public/images/problems/` 存储路径）。
+- [x] **M1.3 真题预设套件 (Exam Presets)**：为首批高考常考模型（板块模型、传送带、竖直圆、双杆切割）配置 `controlMeta` 中的真题预设参数。
+- [x] **M1.4 基础真题与动画双向跳转**：实现练习题中点击“🎥 一键装载真题参数并运行动画”直达三屏页面。
 
 ### 里程碑 2 (M2)：高考 18 大 Master 压轴模型专区与导航重构
 - [ ] **M2.1 知识树高考属性增强**：在 `knowledgeTree.ts` 中标注 `gaokaoFrequency`（考频勋章）与真题关联数，更新 `KnowledgePage.tsx` 卡片。
