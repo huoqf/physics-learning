@@ -1,7 +1,8 @@
 import React from 'react'
 import { ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
 import { getKnowledgeNode } from '@/data/knowledgeTree'
-import { Badge, KatexFormula } from '@/components/UI'
+import { Badge } from '@/components/UI'
+import { ContentWithKatex } from './ContentWithKatex'
 import type { ProblemStep } from '@/data/types'
 
 interface StepCardProps {
@@ -101,10 +102,12 @@ export const StepCard: React.FC<StepCardProps> = ({
           )}
           {step.formula && (
             <div className="mb-4">
-              <KatexFormula formula={step.formula} mode="block" />
+              <ContentWithKatex content={step.formula} />
             </div>
           )}
-          <p className="text-sm text-neutral-600 leading-relaxed mb-3">{step.explanation}</p>
+          <div className="text-sm text-neutral-600 leading-relaxed mb-3">
+            <ContentWithKatex content={step.explanation} />
+          </div>
           {knowledgeNode && animId && (
             <div className="flex items-center gap-2">
               <Badge variant={knowledgeNode.importance as 'basic' | 'core' | 'gaokao' | 'hard' | 'extend'}>
