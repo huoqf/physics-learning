@@ -27,6 +27,7 @@ export const Prob2024Quanguo21Diagram: React.FC<DiagramProps> = ({ showAnalysis 
     vp,
     preset: CANVAS_PRESETS.splitV,
     anchor: 'center',
+    physicsScaleDesign: 50,
   })
 
   // 地面坐标
