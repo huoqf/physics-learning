@@ -2,7 +2,7 @@
 
 > 新增或修改动画场景前必须查阅。示例均来自 `src/features/` 真实调用。
 > 详细说明（禁止写法、派生数据、渲染层级）→ [COMPONENT_GUIDE.md](./COMPONENT_GUIDE.md)
-> 最后更新：2026-07-15（修复 VectorArrow/PhysicsVectorArrow props 描述，对齐源码 origin + originDesign 双模式）
+> 最后更新：2026-07-29（更新 AnimationControls 支持 criticalTimes 临界点定格与微步逐帧分析）
 
 ---
 
@@ -55,7 +55,7 @@
 | `ParamControl` | 参数滑块 | `params`, `onParamChange` | `<ParamControl params={[{ key:'m', label:'质量', value:params.m, min:0.1, max:10, step:0.1, unit:'kg' }]} onParamChange={updateParam} />` |
 | `ControlPanel` | 声明式控件 | `controls`, `params`, `updateParam`, `setParams`, `resetAnimation`, `restartAnimation` | `<ControlPanel controls={mc} params={params} updateParam={updateParam} setParams={setParams} resetAnimation={handleReset} restartAnimation={handleRestart} />` |
 | `PhysicsPanel` | 右屏公式面板 | `quantities` | `<PhysicsPanel quantities={[{ label:'质量', value:params.m, unit:'kg' }]} formulas={[{ name:'F=ma', latex:'F=ma', level:'core' }]} />` |
-| `AnimationControls` | 播放控制条 | `isPlaying`, `speed`, `time`, `maxTime`, `onPlayPause`, `onReset`, `onSpeedChange`, `onTimeChange` | `<AnimationControls isPlaying={p} speed={s} time={t} maxTime={tMax} onPlayPause={toggle} onReset={reset} onSpeedChange={setSpeed} onTimeChange={setTime} />` |
+| `AnimationControls` | 播放控制条（支持微步逐帧 ±0.05s 与 criticalTimes 高考临界吸附定格） | `isPlaying`, `speed`, `time`, `maxTime`, `onPlayPause`, `onReset`, `onSpeedChange`, `onTimeChange` | `<AnimationControls isPlaying={p} speed={s} time={t} maxTime={tMax} onPlayPause={toggle} onReset={reset} onSpeedChange={setSpeed} onTimeChange={setTime} criticalTimes={cts} />` |
 | `Button` / `SegmentedControl` / `ToggleSwitch` | 基础控件 | — | 详见源码 interface |
 | `Slider` | 数值范围选择 | `value`, `min`, `max`, `onChange` | `<Slider value={v} min={0} max={10} step={0.1} onChange={setV} label="质量" unit="kg" fillAnchor={0} />` |
 
