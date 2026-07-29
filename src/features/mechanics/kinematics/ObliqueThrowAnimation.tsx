@@ -11,7 +11,6 @@ import {
   CHART_COLORS,
   STROKE,
   FONT,
-  CANVAS_STYLE,
   withAlpha,
   DASH,
 } from '@/theme/physics'
@@ -322,15 +321,15 @@ export default function ObliqueThrowAnimation() {
             type="steelGhost" stroke={PHYSICS_COLORS.displacement} strokeWidth={0.8 / s} />
         )}
 
-        {/* 实际钢珠 */}
-        <circle
-          cx={Math.min((vp.visibleX + vp.visibleW - OBLIQUE_THROW_LAYOUT.steelBallRadius - vp.tx) / s, ballCanvas.cx)}
-          cy={Math.min(designGroundY, ballCanvas.cy)}
-          r={OBLIQUE_THROW_LAYOUT.steelBallRadius / s}
-          fill="url(#steel-sphere-grad)"
-          stroke={SCENE_COLORS.sphere.steel.stroke}
-          strokeWidth={CANVAS_STYLE.stroke.objectLine / s}
-        />
+        {/* 实际斜抛主钢珠 */}
+        {!isLanded && (
+          <Ball
+            cx={ballCanvas.cx}
+            cy={ballCanvas.cy}
+            r={OBLIQUE_THROW_LAYOUT.steelBallRadius}
+            type="steel"
+          />
+        )}
 
         {/* 速度分量矢量箭头 */}
         {showVectors && !isLanded && (

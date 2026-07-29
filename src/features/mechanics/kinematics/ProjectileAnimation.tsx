@@ -433,6 +433,16 @@ export default function ProjectileAnimation() {
           </g>
         )}
 
+        {/* 实际平抛主钢珠小球 */}
+        {!isLanded && (
+          <Ball
+            cx={ballDesign.cx}
+            cy={ballDesign.cy}
+            r={PROJECTILE_LAYOUT.steelBallRadius}
+            type="steel"
+          />
+        )}
+
         {/* 落地状态 */}
         {isLanded && (
           <text x={ballDesign.cx} y={designGroundY - 18} fontSize={FONT.axisSize} fill={PHYSICS_COLORS.displacement} fontWeight="bold" textAnchor="middle">落地</text>
