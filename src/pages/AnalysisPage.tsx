@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { ContentWithKatex, StepCard, KnowledgeChain, useAnalysisSteps } from '@/features/analysis'
 import { getKnowledgeNode } from '@/data/knowledgeTree'
+import { getProblemDiagram } from '@/components/Physics/ProblemDiagrams'
 import { Button, Badge } from '@/components/UI'
 import { PageLayout } from '@/components/Layout'
 
@@ -78,11 +79,21 @@ export default function AnalysisPage() {
               </Button>
             )}
           </div>
-          <div className="text-base leading-[1.7] text-neutral-700">
+          <div className="text-base leading-[1.7] text-neutral-700 mb-4">
             {problem.content.split('\n').map((line, i) => (
               <p key={i} className="mb-2"><ContentWithKatex content={line} /></p>
             ))}
           </div>
+
+          {/* 若该真题配置有标准矢量示意图，渲染题干纯净模式示意图 (Skill 0A 绝对纯净无解题线) */}
+          {(() => {
+            const DiagramComp = getProblemDiagram(problem.id)
+            return DiagramComp ? (
+              <div className="mt-4 mb-2">
+                <DiagramComp showAnalysis={false} />
+              </div>
+            ) : null
+          })()}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">

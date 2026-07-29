@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, ChevronDown, CheckCircle2, Circle } from 'lucide-react'
+import { ChevronRight, ChevronDown, CheckCircle2, Circle, Trophy } from 'lucide-react'
 import { knowledgeTree } from '@/data/knowledgeTree'
 import { buildKnowledgeTree, countDescendants } from '@/data/buildKnowledgeTree'
 import { getAnimationConfigAsync } from '@/data/animationRegistry'
+import { getMasterModelByKnowledgeId } from '@/data/masterModels'
 import { useProgressStore } from '@/stores'
 import { colors } from '@/theme/colors'
 import { duration } from '@/theme/motion'
@@ -77,6 +78,7 @@ const KnowledgeNodeItem: React.FC<{
   }, [node.animationIds])
 
   const { mastered: childMastered } = useMemo(() => countDescendants(node), [node])
+  const masterModel = getMasterModelByKnowledgeId(node.id)
 
   return (
     <div>
@@ -116,6 +118,21 @@ const KnowledgeNodeItem: React.FC<{
         >
           {node.title}
         </span>
+        {/* 若知识节点包含高考 Master 模型，渲染勋章直接与 Master 专区反向闭环联动 */}
+        {masterModel && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              navigate('/master-models')
+            }}
+            className="text-xs px-2 py-0.5 rounded-full flex items-center gap-1 border border-amber-500/40 hover:scale-105 transition-transform"
+            style={{ backgroundColor: colors.warning[100], color: colors.warning[700] }}
+            title={`点击查看高考 Master 模型: ${masterModel.title}`}
+          >
+            <Trophy className="w-3 h-3 text-amber-600 fill-amber-500" />
+            <span className="font-semibold">Master压轴</span>
+          </button>
+        )}
         {hasChildren && (
           <span className="text-xs text-neutral-400">
             {childMastered}/{countDescendants(node).total}

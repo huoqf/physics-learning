@@ -21,10 +21,10 @@ export default function HomePage() {
     {
       title: '🏆 高考18大模型',
       description: '压轴模型、秒杀公式与仿真',
-      icon: <Trophy className="w-6 h-6 text-amber-500" />,
+      icon: <Trophy className="w-6 h-6" style={{ color: colors.warning[600] }} />,
       route: '/master-models',
-      color: '#D97706',
-      bg: '#FEF3C7',
+      color: colors.warning[600],
+      bg: colors.warning[100],
     },
     {
       title: '知识树',

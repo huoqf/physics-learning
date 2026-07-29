@@ -3,7 +3,7 @@ import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { Block, PhysicsGround, PhysicsVectorArrow } from '@/components/Physics'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { worldToDesign } from '@/scene'
 
 interface DiagramProps {
@@ -85,7 +85,7 @@ export const Prob2024Quanguo21Diagram: React.FC<DiagramProps> = ({ showAnalysis 
         <text
           x={canvasSize.width / 2}
           y={groundY - 10}
-          fill="#94A3B8"
+          fill={CANVAS_COLORS.labelTextLight}
           fontSize={font(13)}
           textAnchor="middle"
         >

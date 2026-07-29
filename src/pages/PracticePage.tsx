@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ClipboardList, GraduationCap, Timer, History, Trash2 } from 'lucide-react'
+import { ClipboardList, GraduationCap, Timer, History, Trash2, Trophy } from 'lucide-react'
 import { allProblems } from '@/data/problems'
 import { usePracticeStore, type PracticeMode } from '@/stores'
 import { PracticeSession } from '@/features/practice'
@@ -82,12 +82,21 @@ export default function PracticePage() {
   return (
     <div className="min-h-screen bg-neutral-50 p-6">
       <PageLayout>
-        <div className="flex items-center gap-3 mb-6">
-          <ClipboardList className="w-8 h-8" style={{ color: colors.secondary[600] }} />
-          <div>
-            <h1 className="text-3xl font-bold text-neutral-900">真题练习</h1>
-            <p className="text-neutral-600">选择模式开始练习，或浏览全部真题解析</p>
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <div className="flex items-center gap-3">
+            <ClipboardList className="w-8 h-8" style={{ color: colors.secondary[600] }} />
+            <div>
+              <h1 className="text-3xl font-bold text-neutral-900">真题练习</h1>
+              <p className="text-neutral-600">选择模式开始练习，或浏览全部真题解析</p>
+            </div>
           </div>
+          <button
+            onClick={() => navigate('/master-models')}
+            className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl shadow-md transition-all active:scale-[0.98] text-xs md:text-sm shrink-0"
+          >
+            <Trophy className="w-4 h-4 fill-slate-950" />
+            <span>高考18大模型专区</span>
+          </button>
         </div>
 
         {/* 题目筛选 */}
