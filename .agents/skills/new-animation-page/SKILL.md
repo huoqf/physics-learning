@@ -1,6 +1,6 @@
 ---
 name: new-animation-page
-description: 新建动画页面 / 创建新的物理动画组件 / 新增动画场景 / 添加新的 feature 动画 / 实现新动画
+description: 新建动画页面 / 创建新的物理动画组件 / 新增动画场景 / 添加新的 feature 动画 / 实现新动画 / 新建高考模型页面 / 创建高考压轴模型组件
 ---
 
 # 新建动画页面 Skill

@@ -1,6 +1,6 @@
 ---
 name: refactor-animation-page
-description: 重构动画页面 / 重构已有组件 / 迁移旧动画 / 修复动画规范违规 / 优化现有动画页面 / 迁移 wide/tall preset
+description: 重构动画页面 / 重构已有组件 / 迁移旧动画 / 修复动画规范违规 / 优化现有动画页面 / 迁移 wide/tall preset / 为已有动画增加高考真题预设 / 扩展高考临界刻度 / 升级动画高考考点 / 动画高考提分改造
 ---
 
 # 重构动画页面 Skill

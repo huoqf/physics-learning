@@ -18,7 +18,29 @@
     "check:architecture": "npm run check:font-size && npm run check:viewport-legacy && npm run check:large-files && npm run check:no-raf && npm run check:no-marker",
     "check": "npm run build && npm test -- --run && npm run audit:deps && npm run check:architecture",
     "prepare": "lefthook install",
-    "check:viewport-legacy": "node scripts/check-viewport-legacy.mjs"
+    "check:viewport-legacy": "node scripts/check-viewport-legacy.mjs",
+    "electron:dev": "node scripts/electron-dev.mjs",
+    "electron:build:win": "vite build && tsc -p tsconfig.electron.json && electron-builder --win"
+  },
+  "main": "electron-dist/main.js",
+  "build": {
+    "appId": "com.physics-learning.app",
+    "productName": "物理学习",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron-dist/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    }
   },
   "dependencies": {
     "idb": "^8.0.2",
@@ -44,6 +66,8 @@
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/coverage-v8": "^3.2.6",
     "autoprefixer": "^10.4.20",
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
     "eslint": "^9.20.1",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.16",
@@ -53,6 +77,7 @@
     "postcss": "^8.4.49",
     "prettier": "^3.4.2",
     "tailwindcss": "^4.3.0",
+    "tsx": "^4.23.1",
     "typescript": "^5.7.2",
     "vite": "^6.4.3",
     "vitest": "^3.2.6"
