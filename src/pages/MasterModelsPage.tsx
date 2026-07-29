@@ -11,6 +11,7 @@ const CATEGORY_TABS = [
   { key: 'electromagnetism', label: '电磁学模型' },
   { key: 'thermodynamics', label: '热学模型' },
   { key: 'optics', label: '光学模型' },
+  { key: 'modern', label: '近代物理模型' },
 ]
 
 export default function MasterModelsPage() {

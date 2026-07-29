@@ -74,9 +74,9 @@ export const OptionButton: React.FC<OptionButtonProps> = ({
       className={`${baseClasses} ${className}`.trim()}
     >
       {hasDescription ? (
-        <span className="flex justify-between items-center w-full">
-          <span>{label}</span>
-          <span className="font-mono text-ui-sm text-neutral-400">
+        <span className="flex flex-col items-start w-full gap-0.5">
+          <span className="text-neutral-800 leading-tight">{label}</span>
+          <span className="font-mono text-ui-sm text-neutral-400 font-normal leading-tight">
             {description}
           </span>
         </span>

@@ -2,8 +2,7 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Play, FileText, AlertTriangle, Zap, ArrowRight } from 'lucide-react'
 import type { MasterModel } from '@/data/masterModels'
-import { ContentWithKatex } from '@/features/analysis'
-import { Button } from '@/components/UI'
+import { Button, KatexFormula } from '@/components/UI'
 import { getProblemById } from '@/data/problems'
 import { colors } from '@/theme/colors'
 
@@ -57,8 +56,8 @@ export const MasterModelCard: React.FC<MasterModelCardProps> = ({ model }) => {
           <div className="flex items-center gap-1.5 text-xs font-semibold text-primary-700 mb-2">
             <span>⚡ 秒杀公式与速算口诀：{model.quickFormula.title}</span>
           </div>
-          <div className="text-neutral-800 font-mono text-sm mb-2 overflow-x-auto py-1">
-            <ContentWithKatex content={model.quickFormula.latex} />
+          <div className="text-neutral-800 text-sm mb-2 overflow-x-auto py-1">
+            <KatexFormula formula={model.quickFormula.latex} mode="block" />
           </div>
           <p className="text-xs text-neutral-500 leading-normal">{model.quickFormula.explanation}</p>
         </div>

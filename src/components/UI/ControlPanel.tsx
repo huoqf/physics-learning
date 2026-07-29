@@ -292,21 +292,31 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     const result: React.ReactNode[] = []
     let i = 0
     while (i < controls.length) {
-      // 连续 action 或 preset 控件并排渲染
-      if (controls[i].type === 'action' || controls[i].type === 'preset') {
+      const current = controls[i]
+      // 只有简短且无 description 的 action / preset 才可以两两并排
+      const canPair = (c: ControlMeta) =>
+        (c.type === 'action' || c.type === 'preset') &&
+        !('description' in c && (c as { description?: string }).description) &&
+        c.label.length <= 8
+
+      if (canPair(current)) {
         const row: ControlMeta[] = []
         const startIdx = i
-        while (i < controls.length && controls[i].type === controls[startIdx].type) {
+        while (i < controls.length && canPair(controls[i]) && row.length < 2) {
           row.push(controls[i])
           i++
         }
-        result.push(
-          <div key={`${controls[startIdx].type}-row-${startIdx}`} className="grid grid-cols-2 gap-2">
-            {row.map((c, j) => renderControl(c, j))}
-          </div>
-        )
+        if (row.length === 2) {
+          result.push(
+            <div key={`pair-row-${startIdx}`} className="grid grid-cols-2 gap-2">
+              {row.map((c, j) => renderControl(c, j))}
+            </div>
+          )
+        } else {
+          result.push(renderControl(row[0], startIdx))
+        }
       } else {
-        result.push(renderControl(controls[i], i))
+        result.push(renderControl(current, i))
         i++
       }
     }

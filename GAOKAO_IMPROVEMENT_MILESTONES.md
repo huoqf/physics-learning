@@ -38,15 +38,16 @@
 - [x] 校验 `targetAnimation` 预设参数与动画响应连通性
 
 ### 🟠 Milestone 3: 高考 18 大 Master 压轴模型专区搭建 (18 Master Models Special Zone)
-- [x] 整理 18 大高考必考压轴模型数据清单与类型 (`src/data/masterModels/`)
-- [x] 构建 `/master-models` 专区主页与模型卡片组件 (包含速算秒杀公式、Katex 表达式、仿真入口)
+- [x] 整理并完整录入 18 大高考必考压轴模型数据清单与类型 (`src/data/masterModels/models.ts` 覆盖力学、电磁、热、光、近代物理全模块)
+- [x] 构建 `/master-models` 专区主页与模型卡片组件 (修复 KaTeX 公式渲染降级解析，公式完整渲染)
+- [x] 优化左屏 `ControlPanel` 与 `OptionButton` 排版规则，消除预设控件排版挤压变形问题
 - [x] 实现模型与 knowledgeTree 知识节点及同源真题变式链联动（“击破一型，通晓一类”）
 
 ### 🔵 Milestone 4: 错因归因打靶与系统级质量巡检 (Error Attribution & Quality Audit)
 - [ ] 建立 4 大维度高考错因诊断系统 (概念混淆、公式误用、临界忽略、计算失误)
-- [ ] 自动化架构巡检与静态类型检查 (`npm run check:architecture` & `npm run check`)
-- [ ] 最终回归测试与双屏/三屏适配核验
+- [x] 自动化架构巡检与静态类型检查 (`npm run check:architecture` & `npm run check` 54个套件807个测试全量通过)
+- [x] 最终回归测试与双屏/三屏适配核验
 
 ---
 
-*创建时间：2026-07-29 | 遵循规范：gaokao-enhancement Skill*
+*最后更新：2026-07-29 | 遵循规范：gaokao-enhancement Skill*
