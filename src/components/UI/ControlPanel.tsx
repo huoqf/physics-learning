@@ -293,28 +293,23 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     let i = 0
     while (i < controls.length) {
       const current = controls[i]
-      // 只有简短且无 description 的 action / preset 才可以两两并排
+      // 无 description 的连续 action / preset 可以两两并排，保持原有网格排版
       const canPair = (c: ControlMeta) =>
         (c.type === 'action' || c.type === 'preset') &&
-        !('description' in c && (c as { description?: string }).description) &&
-        c.label.length <= 8
+        !('description' in c && Boolean((c as { description?: string }).description))
 
       if (canPair(current)) {
         const row: ControlMeta[] = []
         const startIdx = i
-        while (i < controls.length && canPair(controls[i]) && row.length < 2) {
+        while (i < controls.length && canPair(controls[i])) {
           row.push(controls[i])
           i++
         }
-        if (row.length === 2) {
-          result.push(
-            <div key={`pair-row-${startIdx}`} className="grid grid-cols-2 gap-2">
-              {row.map((c, j) => renderControl(c, j))}
-            </div>
-          )
-        } else {
-          result.push(renderControl(row[0], startIdx))
-        }
+        result.push(
+          <div key={`pair-row-${startIdx}`} className="grid grid-cols-2 gap-2">
+            {row.map((c, j) => renderControl(c, j))}
+          </div>
+        )
       } else {
         result.push(renderControl(current, i))
         i++
