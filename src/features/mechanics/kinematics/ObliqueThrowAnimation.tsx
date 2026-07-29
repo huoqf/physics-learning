@@ -17,20 +17,20 @@ import {
 } from '@/theme/physics'
 
 import { VelocityTimeChart } from '@/components/Chart'
-
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
 import { useObliqueThrowLayout } from './useObliqueThrowLayout'
+import { CANVAS_PRESETS } from '@/theme/spacing'
 
-const OBLIQUE_DESIGN = { width: 100, height: 100 } as const
+const OBLIQUE_DESIGN = CANVAS_PRESETS.splitH
 
 /** 斜抛动画布局常量 */
 const OBLIQUE_THROW_LAYOUT = {
-  originX: 50,
+  originX: 80,
   groundYRatio: 0.85,
-  topPadding: 40,
-  rightPadding: 45,
-  projectionBallRadius: 9,
-  steelBallRadius: 12,
+  topPadding: 60,
+  rightPadding: 80,
+  projectionBallRadius: 7,
+  steelBallRadius: 10,
   barrelLength: 28,
   barrelWidth: 10,
   angleArcRadius: 35,

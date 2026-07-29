@@ -18,7 +18,9 @@ import { VelocityTimeChart } from '@/components/Chart'
 
 import { calculateVectorPixelLength } from '@/utils/vectorLength'
 
-const PROJ_DESIGN = { width: 100, height: 100 } as const
+import { CANVAS_PRESETS } from '@/theme/spacing'
+
+const PROJ_DESIGN = CANVAS_PRESETS.splitV
 
 /** 物理常数：最大抛出高度 (m) */
 const PHYSICS_HEIGHT = 10.0
@@ -26,19 +28,19 @@ const PHYSICS_HEIGHT = 10.0
 /** 平抛动画布局常量 */
 const PROJECTILE_LAYOUT = {
   /** 物理原点 X 偏移 (design-unit) */
-  originX: 50,
+  originX: 80,
   /** 物理原点 Y 位置占画布高度的比例 */
-  originYRatio: 0.15,
+  originYRatio: 0.12,
   /** 地面 Y 位置占画布高度的比例 */
   groundYRatio: 0.85,
   /** 右侧留白 (design-unit) */
-  rightPadding: 45,
+  rightPadding: 80,
   /** 速度矢量缩放因子 (px per m/s) */
   velocityVectorScale: 3.5,
   /** 投影球半径 (px) */
-  projectionBallRadius: 9,
+  projectionBallRadius: 7,
   /** 钢珠半径 (px) */
-  steelBallRadius: 12,
+  steelBallRadius: 10,
 } as const
 
 export default function ProjectileAnimation() {
