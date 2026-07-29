@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { BookOpen, Play, BookOpenCheck, ClipboardList } from 'lucide-react'
+import { BookOpen, BookOpenCheck, ClipboardList, Trophy } from 'lucide-react'
 import { useProgressStore } from '../stores'
 import { knowledgeTree } from '../data/knowledgeTree'
 import { ANIMATION_COUNT } from '../data/animationRegistry'
@@ -10,7 +10,7 @@ import { PageLayout } from '@/components/Layout'
 export default function HomePage() {
   const navigate = useNavigate()
   const { 
-    getProgress, lastVisited, setTotalCounts, viewedAnimations, masteredKnowledge } = useProgressStore()
+    getProgress, setTotalCounts, viewedAnimations, masteredKnowledge } = useProgressStore()
   const { animationProgress, knowledgeProgress } = getProgress()
 
   useEffect(() => {
@@ -19,20 +19,20 @@ export default function HomePage() {
 
   const quickActions = [
     {
+      title: '🏆 高考18大模型',
+      description: '压轴模型、秒杀公式与仿真',
+      icon: <Trophy className="w-6 h-6 text-amber-500" />,
+      route: '/master-models',
+      color: '#D97706',
+      bg: '#FEF3C7',
+    },
+    {
       title: '知识树',
       description: '浏览完整物理知识点',
       icon: <BookOpen className="w-6 h-6" />,
       route: '/knowledge',
       color: colors.primary[600],
       bg: colors.primary[50],
-    },
-    {
-      title: '继续学习',
-      description: '回到上次学习的地方',
-      icon: <Play className="w-6 h-6" />,
-      route: lastVisited || '/knowledge',
-      color: colors.accent[600],
-      bg: colors.accent[50],
     },
     {
       title: '真题练习',
