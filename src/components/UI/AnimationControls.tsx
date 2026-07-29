@@ -34,7 +34,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
   onTimeChange,
   controlsMode = 'timed',
   criticalTimes,
-  enableFrameStep = true,
+  enableFrameStep = false,
   stepSize = 0.05,
 }) => {
   const speedOptions = [0.25, 0.5, 1, 2]
