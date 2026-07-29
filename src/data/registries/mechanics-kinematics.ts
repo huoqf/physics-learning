@@ -266,19 +266,111 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     knowledgeId: 'mechanics-5-2',
     Component: lazy(() => import('@/features/mechanics/kinematics/ProjectileAnimation')),
     controlsMode: 'timed',
-    defaultParams: { v0x: 10, g: GRAVITY, t: 0, advancedMode: 0, airResistance: 0, showVacuumCompare: 1 } as const,
+    defaultParams: {
+      v0x: 10,
+      g: GRAVITY,
+      t: 0,
+      modelMode: 0,
+      inclineAngle: 30,
+      airResistance: 0,
+      showProjections: 1,
+      showTangentMidpoint: 1,
+    } as const,
     paramMeta: [
-      { key: 'v0x', label: '初速度 v₀', min: 2, max: 20, step: 0.1, unit: 'm/s' },
-      { key: 'airResistance', label: '空气阻力 k', min: 0, max: 0.2, step: 0.01, unit: 'kg/m', group: '进阶参数', showIf: 'advancedMode', showIfValue: 1 },
+      {
+        key: 'v0x',
+        label: '初速度 v₀',
+        min: 2,
+        max: 25,
+        step: 0.5,
+        unit: 'm/s',
+        marks: [
+          { value: 5, label: '5' },
+          { value: 10, label: '推荐', variant: 'recommended' },
+          { value: 17.3, label: '临界: θ=60°', variant: 'critical' },
+        ],
+      },
+      {
+        key: 'inclineAngle',
+        label: '斜面倾角 φ',
+        min: 15,
+        max: 60,
+        step: 1,
+        unit: '°',
+        showIf: 'modelMode',
+        showIfValue: 2,
+        marks: [
+          { value: 30, label: '30°' },
+          { value: 37, label: '37°高考常考', variant: 'critical' },
+          { value: 45, label: '45°' },
+        ],
+      },
+      {
+        key: 'airResistance',
+        label: '空气阻力 k',
+        min: 0,
+        max: 0.2,
+        step: 0.01,
+        unit: 'kg/m',
+        group: '进阶参数',
+        showIf: 'modelMode',
+        showIfValue: 0,
+      },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
-        options: [{ label: '基础', value: 0 }, { label: '进阶', value: 1 }] },
-      { type: 'preset', label: '🌍 地球 g=9.8', group: '快捷预设', params: { g: 9.8 } },
-      { type: 'preset', label: '🌙 月球 g=1.63', group: '快捷预设', params: { g: 1.63 } },
-      { type: 'preset', label: '🔴 火星 g=3.72', group: '快捷预设', params: { g: 3.72 } },
-      { type: 'preset', label: '🪐 木星 g=24.79', group: '快捷预设', params: { g: 24.79 } },
-      { type: 'toggle', key: 'showVacuumCompare', label: '对比真空参考轨道', group: '显示辅助', showIf: 'airResistance' },
+      {
+        type: 'segmented',
+        key: 'modelMode',
+        group: '高考场景模型',
+        resetOnChange: true,
+        options: [
+          { label: '基础平抛', value: 0 },
+          { label: '偏角推论 (tanθ=2tanα)', value: 1 },
+          { label: '斜面平抛模型', value: 2 },
+        ],
+      },
+      {
+        type: 'preset',
+        label: '📋 2023高考新课标：落地速度偏角 60°',
+        description: 'v₀=10m/s, 探究落地时刻 vy = √3 v₀',
+        params: { v0x: 10, modelMode: 1, showTangentMidpoint: 1 },
+        restartOnApply: true,
+      },
+      {
+        type: 'preset',
+        label: '📋 高考压轴：垂直击中 37° 斜面',
+        description: 'φ=37°, v0=10m/s, 探究垂直落点时刻与位移',
+        params: { v0x: 10, modelMode: 2, inclineAngle: 37 },
+        restartOnApply: true,
+      },
+      {
+        type: 'toggle',
+        key: 'showProjections',
+        label: '显示分运动投影球 (vₓ/vᵧ)',
+        group: '视觉辅助',
+      },
+      {
+        type: 'toggle',
+        key: 'showTangentMidpoint',
+        label: '显示速度反向延长线过中点',
+        group: '视觉辅助',
+        showIf: 'modelMode',
+        showIfValue: 1,
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        title: '💡 高考考点与二级结论提示',
+        content: (p) => {
+          if (p.modelMode === 1) {
+            return '【中点定理与偏角倍数】速度偏角的正切值恒等于位移偏角正切值的 2 倍 (tanθ = 2tanα)！将速度矢量反向延长，必交于水平位移的中点 (x/2, 0)。'
+          }
+          if (p.modelMode === 2) {
+            return '【斜面平抛临界】① 物体落到斜面上时，位移偏角等于斜面倾角 (tanα = tanφ)；② 当速度方向与斜面平行时，物体距离斜面最远；③ 垂直击中斜面时，vy/vx = cotφ。'
+          }
+          return '【独立性与等时性】平抛运动在水平方向做匀速直线运动，竖直方向做自由落体运动。飞行时间仅由竖直高度决定 (t = √(2h/g))，水平射程等于 v₀t。'
+        },
+      },
     ],
   },
   'anim-oblique-throw': {

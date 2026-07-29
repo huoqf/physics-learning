@@ -357,7 +357,8 @@ export default function AnimationPage() {
     )
   }
 
-  const controlMeta = config.controlMeta || []
+  const normalControlMeta = (config?.controlMeta || []).filter((c) => c.type !== 'tip')
+  const tipControlMeta = (config?.controlMeta || []).filter((c) => c.type === 'tip')
 
   // 构建 ParamControl 需要的参数格式（过滤 showIf / hideIf 条件）
   const paramControlParams = paramMeta
@@ -424,9 +425,9 @@ export default function AnimationPage() {
       </div>
 
       <ThreePanel
-        left={(paramControlParams.length > 0 || controlMeta.length > 0 || siblingAnimations.length > 1) ? (
+        left={(paramControlParams.length > 0 || (config?.controlMeta || []).length > 0 || siblingAnimations.length > 1) ? (
           <LeftPanel>
-            {/* 关联模型切换 Tab (高考考点变式切换) */}
+            {/* 1. 关联模型切换 Tab (高考考点变式切换) */}
             {siblingAnimations.length > 1 && (
               <LeftPanelSection
                 title="💡 高考同考点经典模型切换"
@@ -459,10 +460,10 @@ export default function AnimationPage() {
               </LeftPanelSection>
             )}
 
-            {/* 声明式控制组 (ControlPanel) */}
-            {controlMeta.length > 0 && !isDiscoveryMode && (
+            {/* 2. 声明式控制组：模式选择、快捷预设、辅助开关 (ControlPanel) */}
+            {normalControlMeta.length > 0 && !isDiscoveryMode && (
               <ControlPanel
-                controls={controlMeta}
+                controls={normalControlMeta}
                 params={params}
                 defaultParams={config.defaultParams}
                 updateParam={updateParam}
@@ -478,7 +479,7 @@ export default function AnimationPage() {
               />
             )}
 
-            {/* 核心数值参数 (ParamControl) */}
+            {/* 3. 核心数值参数 (ParamControl) */}
             {paramControlParams.length > 0 && (
               <div className="shrink-0">
                 <ParamControl
@@ -488,6 +489,25 @@ export default function AnimationPage() {
                   disabled={isDiscoveryMode}
                 />
               </div>
+            )}
+
+            {/* 4. 左屏最底部：教学提示 / TipCard 卡片 */}
+            {tipControlMeta.length > 0 && !isDiscoveryMode && (
+              <ControlPanel
+                controls={tipControlMeta}
+                params={params}
+                defaultParams={config.defaultParams}
+                updateParam={updateParam}
+                setParams={setParams}
+                resetAnimation={handleReset}
+                restartAnimation={() => { setTime(0); setIsPlaying(true) }}
+                setDirection={(d) => setDirection(d)}
+                toggleVectors={toggleVectors}
+                toggleTimeSlices={toggleTimeSlices}
+                toggleDualObjects={toggleDualObjects}
+                storeStates={storeStates}
+                disabled={isDiscoveryMode}
+              />
             )}
           </LeftPanel>
         ) : undefined}

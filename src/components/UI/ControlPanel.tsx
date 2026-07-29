@@ -91,6 +91,15 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
       }
     })
 
+    // 规范：包含“提示”的分组始终置于 ControlPanel 的最底部
+    grouped.sort((a, b) => {
+      const isTipA = a.label.includes('提示') || a.label.includes('Tip')
+      const isTipB = b.label.includes('提示') || b.label.includes('Tip')
+      if (isTipA && !isTipB) return 1
+      if (!isTipA && isTipB) return -1
+      return 0
+    })
+
     return grouped
   }, [controls, params])
 

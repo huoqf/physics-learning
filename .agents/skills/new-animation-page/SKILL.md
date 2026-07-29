@@ -34,13 +34,13 @@ description: 新建动画页面 / 创建新的物理动画组件 / 新增动画�
 ### 0B：三屏内容分配（铁律）
 
 ```
-左屏（LeftPanel）         中屏（AnimationSvgCanvas）         右屏（由框架渲染）
-─────────────────         ─────────────────────────         ─────────────────────
-paramMeta → 数值参数      动画场景 SVG 主体                  QuantitySection 物理量
-controlMeta → 模式开关    可选：CenterExtra 图表              FormulaSection 公式+条件
-SidebarExtra（仅复杂）    ❌ 禁止大段教学文字                ExamPointSection 高考要点
-                          ❌ 禁止完整公式推导                ❌ 禁止参数控件
-                          ❌ 禁止高考考点总结
+左屏（LeftPanel）                      中屏（AnimationSvgCanvas）        右屏（由框架渲染）
+─────────────────────────────         ─────────────────────────        ─────────────────────
+controlMeta → 模式开关/预设按钮       动画场景 SVG 主体                 QuantitySection 物理量
+paramMeta → 数值参数滑块              可选：CenterExtra 图表             FormulaSection 公式+条件
+TipCard → 教学提示（绝对底部）        ❌ 禁止大段教学文字               ExamPointSection 高考要点
+SidebarExtra（仅复杂自定义）          ❌ 禁止完整公式推导               ❌ 禁止参数控件
+                                      ❌ 禁止高考考点总结
 ```
 
 **主屏 SVG 文字约束**：只允许出现物理量数值标注（`v = 3.2 m/s`）和坐标轴标签。禁止教学说明段落。

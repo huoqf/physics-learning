@@ -10,6 +10,11 @@ export const projectileProblems: Problem[] = [
       '一物体从高度 $h = 20\\,\\text{m}$ 处以水平初速度 $v_0 = 10\\,\\text{m/s}$ 做平抛运动。求：\n(1) 物体落地时间；\n(2) 水平射程；\n(3) 落地时速度的大小和方向。（$g = 10\\,\\text{m/s}^2$）',
     difficulty: 2,
     knowledgeIds: ['mechanics-5-2', 'mechanics-2-1'],
+    targetAnimation: {
+      animId: 'anim-projectile',
+      presetParams: { v0x: 10, modelMode: 1 },
+      presetDescription: '载入2023全国甲卷真题参数 (v₀=10m/s, 偏角验证)',
+    },
     steps: [
       {
         id: 'prob-m5-1-step-1',
