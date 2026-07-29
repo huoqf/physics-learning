@@ -46,7 +46,7 @@ export const Prob2024Quanguo21Diagram: React.FC<DiagramProps> = ({ showAnalysis 
   }
 
   return (
-    <div ref={containerRef} className="w-full h-[220px] bg-slate-900/60 rounded-xl border border-slate-700/50 p-2 overflow-hidden">
+    <div ref={containerRef} className="w-full h-[220px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm">
       <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
         {/* 地面 */}
         <PhysicsGround x={0} y={groundY} width={canvasSize.width} />
