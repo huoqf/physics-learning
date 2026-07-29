@@ -38,9 +38,9 @@
 - [x] 校验 `targetAnimation` 预设参数与动画响应连通性
 
 ### 🟠 Milestone 3: 高考 18 大 Master 压轴模型专区搭建 (18 Master Models Special Zone)
-- [ ] 整理 18 大高考必考压轴模型数据清单 (`src/data/masterModels/`)
-- [ ] 构建 `/master-models` 专区主页与模型卡片组件 (包含速算秒杀公式、Katex 表达式、仿真入口)
-- [ ] 实现模型同源真题变式链联动（“击破一型，通晓一类”）
+- [x] 整理 18 大高考必考压轴模型数据清单与类型 (`src/data/masterModels/`)
+- [x] 构建 `/master-models` 专区主页与模型卡片组件 (包含速算秒杀公式、Katex 表达式、仿真入口)
+- [x] 实现模型与 knowledgeTree 知识节点及同源真题变式链联动（“击破一型，通晓一类”）
 
 ### 🔵 Milestone 4: 错因归因打靶与系统级质量巡检 (Error Attribution & Quality Audit)
 - [ ] 建立 4 大维度高考错因诊断系统 (概念混淆、公式误用、临界忽略、计算失误)

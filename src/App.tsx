@@ -9,6 +9,7 @@ const AnalysisPage = lazy(() => import('./pages/AnalysisPage'));
 const PracticePage = lazy(() => import('./pages/PracticePage'));
 const WrongPage = lazy(() => import('./pages/WrongPage'));
 const KnowledgePage = lazy(() => import('./pages/KnowledgePage'));
+const MasterModelsPage = lazy(() => import('./pages/MasterModelsPage'));
 const VectorPlayground = lazy(() => import('./features/dev/VectorPlayground'));
 
 function RouteFallback() {
@@ -31,6 +32,7 @@ export default function App() {
             <Route path="/practice" element={<PracticePage />} />
             <Route path="/wrong" element={<WrongPage />} />
             <Route path="/knowledge" element={<KnowledgePage />} />
+            <Route path="/master-models" element={<MasterModelsPage />} />
           </Route>
         </Route>
         <Route

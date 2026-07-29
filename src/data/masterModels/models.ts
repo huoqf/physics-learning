@@ -1,0 +1,118 @@
+import type { MasterModel } from './types'
+
+export const masterModels: MasterModel[] = [
+  {
+    id: 'model-block-board',
+    title: '板块模型与临界相对滑动',
+    category: 'mechanics',
+    frequencyBadge: '高考5年14考 / 压轴大题',
+    summary: '滑块在木板上滑动时的双体耦合运动。核心突破点：分别求出滑块与木板的加速度 a1、a2，抓住“共速”临界时刻判断是否发生相对滑脱。',
+    knowledgeId: 'mechanics-4-8',
+    animId: 'anim-block-board',
+    presetParams: { m: 1, M: 3, mu1: 0.3, mu2: 0.05, v0: 5, L: 2.5 },
+    quickFormula: {
+      title: '临界共速时间与相对位移',
+      latex: 't_{\\text{共}} = \\frac{v_0}{a_1 + a_2}, \\quad \\Delta x = \\frac{v_0}{2} t_{\\text{共}}',
+      explanation: '当相对位移 Δx > L 时发生滑脱；若 Δx ≤ L，两者共速后将保持相对静止一起运动。',
+    },
+    examTips: [
+      '注意地面是否有摩擦 μ2；若 μ2 ≠ 0，木板受滑动摩擦力向左为 f2 = μ2(m+M)g',
+      '共速后必须重新受力分析，判断静摩擦力是否超过最大静摩擦力',
+    ],
+    relatedProblemIds: ['prob-2024-quanguo-21', 'prob-m4-1'],
+  },
+  {
+    id: 'model-induction-single-rod',
+    title: '电磁感应单杆与收尾速度',
+    category: 'electromagnetism',
+    frequencyBadge: '高考5年12考 / 经典必考',
+    summary: '导体棒切割磁感线产生感应电动势与安培阻尼力。核心动力学链：v 变化 → E=BLv 变化 → I=E/R 变化 → 安培力 F_A=B²L²v/R 变化。',
+    knowledgeId: 'electricity-4-5',
+    animId: 'anim-induction-single-rod',
+    presetParams: { startMechanism: 0, driveForce: 1.2, magneticB: 1.0, resistance: 1.5, rodMass: 0.2, railSpacing: 0.8 },
+    quickFormula: {
+      title: '恒力收尾速度与通过电荷量',
+      latex: 'v_m = \\frac{F R}{B^2 L^2}, \\quad q = \\frac{\\Delta \\Phi}{R} = \\frac{B L x}{R}',
+      explanation: '恒力启动到达收尾速度时 a=0，拉力 F 与安培力 F_A 平衡；感应电荷量只与磁通量改变量及总电阻有关，与加速度无关！',
+    },
+    examTips: [
+      '求解电量 q 必须牢记 q = ΔΦ/R = BLx/R，切勿误用 q = It (由于非匀变速运动 I 随时间变化)',
+      '焦耳热 Q 可利用能量守恒 Q = W_外 - ΔE_k 进行求解',
+    ],
+    relatedProblemIds: [],
+  },
+  {
+    id: 'model-induction-dual-rods',
+    title: '电磁感应双杆与动量守恒',
+    category: 'electromagnetism',
+    frequencyBadge: '高考5年9考 / 压轴双体',
+    summary: '两导体棒在轨道上同向或反向切割。自由双杆两棒所受安培力大小相等、方向相反，系统动量守恒！',
+    knowledgeId: 'electricity-4-6',
+    animId: 'anim-induction-dual-rods',
+    presetParams: { scenario: 0, massA: 0.2, massB: 0.4, fieldB: 1.0, railL: 0.5, resSum: 1.0, initialV0: 6.0 },
+    quickFormula: {
+      title: '自由双杆稳定共同速度',
+      latex: 'm_a v_0 = (m_a + m_b) v_{\\text{共}} \\implies v_{\\text{共}} = \\frac{m_a v_0}{m_a + m_b}',
+      explanation: '两棒相对速度为零时回路感应电流降为零，安培力消失，系统以共同速度做匀速直线运动。',
+    },
+    examTips: [
+      '恒力驱动双杆时，最终两棒加速度相等，速度差恒定 (E_感 恒定，电流恒定)',
+    ],
+    relatedProblemIds: [],
+  },
+  {
+    id: 'model-combined-fields',
+    title: '复合场与组合场模型',
+    category: 'electromagnetism',
+    frequencyBadge: '高考5年15考 / 大题必考',
+    summary: '带电粒子在电场、磁场、重力场中的偏转与圆周运动。核心在于划分场区，分段应用类平抛与磁场圆周几何模型。',
+    knowledgeId: 'electricity-3-4',
+    animId: 'anim-combined-fields',
+    quickFormula: {
+      title: '速度选择器与磁偏转半径',
+      latex: 'v = \\frac{E}{B}, \\quad R = \\frac{m v}{q B}, \\quad T = \\frac{2\\pi m}{q B}',
+      explanation: '匀速直线通过电磁复合场时 qE = qvB；进入单一磁场区后做匀速圆周运动，旋转周期与速度大小无关。',
+    },
+    examTips: [
+      '寻找圆心技巧：两切线垂直线交点，或弦的中垂线与速度垂直线的交点',
+      '注意带电粒子的重力是否忽略（微观粒子如电子、质子忽略重力；宏观带电液滴、小球必须计重力）',
+    ],
+    relatedProblemIds: [],
+  },
+  {
+    id: 'model-vertical-spring',
+    title: '竖直弹簧与机械能守恒复合模型',
+    category: 'mechanics',
+    frequencyBadge: '高考5年11考 / 动能定理',
+    summary: '物块下落碰撞竖直弹簧的非匀变速运动。包含“刚接触”、“受力平衡(速度最大)”、“压缩至最低点(加速度最大)”等经典临界点。',
+    knowledgeId: 'mechanics-6-3',
+    animId: 'anim-vertical-spring',
+    quickFormula: {
+      title: '最大速度临界位置',
+      latex: 'k x_0 = m g \\implies x_0 = \\frac{m g}{k}',
+      explanation: '刚接触弹簧时物块继续做加速运动；当弹力等于重力时速度达到最大；超过平衡位置后才开始做减速运动。',
+    },
+    examTips: [
+      '切勿误认为“刚接触弹簧时速度最大”或“刚接触弹簧就减速”！平衡位置 kx=mg 才是速度极大值点',
+    ],
+    relatedProblemIds: [],
+  },
+  {
+    id: 'model-curved-slot',
+    title: '弧形槽与滑块（动量守恒）',
+    category: 'mechanics',
+    frequencyBadge: '高考5年8考 / 动量与能量',
+    summary: '小球从光滑弧形槽下滑，弧形槽可自由移动。水平方向不受外力，水平动量守恒；机械能守恒。',
+    knowledgeId: 'mechanics-7-4',
+    animId: 'anim-curved-slot',
+    quickFormula: {
+      title: '分离速度方程组',
+      latex: 'm v_1 - M v_2 = 0, \\quad m g R = \\frac{1}{2} m v_1^2 + \\frac{1}{2} M v_2^2',
+      explanation: '小球滑至槽底脱离时，小球与弧形槽在水平方向速度反向，能量全部转化为两者的动能。',
+    },
+    examTips: [
+      '竖直方向受重力和支持力，竖直方向动量不守恒！仅水平方向系统不受外力动量守恒。',
+    ],
+    relatedProblemIds: [],
+  },
+]
