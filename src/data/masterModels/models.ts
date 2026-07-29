@@ -8,8 +8,8 @@ export const masterModels: MasterModel[] = [
     frequencyBadge: '高考5年14考 / 压轴大题',
     summary: '滑块在木板上滑动时的双体耦合运动。核心突破点：分别求出滑块与木板的加速度 a1、a2，抓住“共速”临界时刻判断是否发生相对滑脱。',
     knowledgeId: 'mechanics-4-8',
-    animId: 'anim-block-board',
-    presetParams: { m: 1, M: 3, mu1: 0.3, mu2: 0.05, v0: 5, L: 2.5 },
+    animId: 'anim-conveyor',
+    presetParams: { conveyorMode: 2, m: 1, M: 3, mu1: 0.3, mu2: 0.05, v0: 5, L: 2.5 },
     quickFormula: {
       title: '临界共速时间与相对位移',
       latex: 't_{\\text{共}} = \\frac{v_0}{a_1 + a_2}, \\quad \\Delta x = \\frac{v_0}{2} t_{\\text{共}}',
@@ -28,7 +28,7 @@ export const masterModels: MasterModel[] = [
     frequencyBadge: '高考5年12考 / 经典必考',
     summary: '导体棒切割磁感线产生感应电动势与安培阻尼力。核心动力学链：v 变化 → E=BLv 变化 → I=E/R 变化 → 安培力 F_A=B²L²v/R 变化。',
     knowledgeId: 'electricity-4-5',
-    animId: 'anim-induction-single-rod',
+    animId: 'anim-single-rod',
     presetParams: { startMechanism: 0, driveForce: 1.2, magneticB: 1.0, resistance: 1.5, rodMass: 0.2, railSpacing: 0.8 },
     quickFormula: {
       title: '恒力收尾速度与通过电荷量',
@@ -48,7 +48,7 @@ export const masterModels: MasterModel[] = [
     frequencyBadge: '高考5年9考 / 压轴双体',
     summary: '两导体棒在轨道上同向或反向切割。自由双杆两棒所受安培力大小相等、方向相反，系统动量守恒！',
     knowledgeId: 'electricity-4-6',
-    animId: 'anim-induction-dual-rods',
+    animId: 'anim-dual-rods',
     presetParams: { scenario: 0, massA: 0.2, massB: 0.4, fieldB: 1.0, railL: 0.5, resSum: 1.0, initialV0: 6.0 },
     quickFormula: {
       title: '自由双杆稳定共同速度',
@@ -68,7 +68,7 @@ export const masterModels: MasterModel[] = [
     summary: '带电粒子在电场、磁场、重力场中的偏转与圆周运动。核心在于划分场区，分段应用类平抛与磁场圆周几何模型。',
     knowledgeId: 'electricity-3-4',
     animId: 'anim-combined-fields',
-    presetParams: { scenario: 0, magneticB: 1.0, electricE: 300 },
+    presetParams: { mode: 0, electricE: 300, magneticB1: 0.2, magneticB2: 1.5, vParticle: 1500 },
     quickFormula: {
       title: '速度选择器与磁偏转半径',
       latex: 'v = \\frac{E}{B}, \\quad R = \\frac{m v}{q B}, \\quad T = \\frac{2\\pi m}{q B}',
@@ -106,7 +106,7 @@ export const masterModels: MasterModel[] = [
     frequencyBadge: '高考5年8考 / 动量与能量',
     summary: '小球从光滑弧形槽下滑，弧形槽可自由移动。水平方向不受外力，水平动量守恒；机械能守恒。',
     knowledgeId: 'mechanics-7-4',
-    animId: 'anim-curved-slot',
+    animId: 'anim-man-boat',
     presetParams: { ballMass: 0.5, slotMass: 1.5, radius: 2.0 },
     quickFormula: {
       title: '分离速度方程组',
@@ -145,7 +145,7 @@ export const masterModels: MasterModel[] = [
     summary: '平抛运动在斜面落点、斜抛最远射程模型。核心思想：沿水平/竖直正交分解或沿斜面/垂直斜面正交分解。',
     knowledgeId: 'mechanics-5-2',
     animId: 'anim-projectile',
-    presetParams: { v0: 10, angle: 0, height: 5.0 },
+    presetParams: { v0x: 10, g: 9.8, airResistance: 0 },
     quickFormula: {
       title: '斜面平抛落点与垂直击中条件',
       latex: '\\tan \\theta = \\frac{\\frac{1}{2} g t^2}{v_0 t} = \\frac{g t}{2 v_0} \\implies t = \\frac{2 v_0 \\tan \\theta}{g}',
