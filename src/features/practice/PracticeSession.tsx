@@ -307,7 +307,11 @@ export function PracticeSession({ mode, problems, onExit, onReviewKnowledge, onL
                   </div>
                 )}
 
-                {step.formula && <KatexFormula formula={step.formula.replace(/^\$\$|\$\$$/g, '').trim()} mode="block" />}
+                {step.formula && (
+                  <div className="my-2 p-2 bg-primary-50/60 rounded-md border border-primary-100/80">
+                    <RichText text={step.formula} />
+                  </div>
+                )}
                 <p className="text-sm text-neutral-500 mt-1"><RichText text={step.explanation} /></p>
               </li>
             ))}
