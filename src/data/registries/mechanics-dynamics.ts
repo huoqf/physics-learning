@@ -716,6 +716,16 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     centerLayout: 'splitV',
     controlsMode: 'timed',
     maxTime: 8,
+    criticalTimes: (p) => {
+      const g = 9.8
+      const a1 = p.mu1 * g
+      const a2 = (p.mu1 * p.m * g - p.mu2 * (p.m + p.M) * g) / p.M
+      const effA2 = a2 > 0 ? a2 : 0
+      const tCo = p.v0 / (a1 + effA2)
+      return [
+        { time: Number(tCo.toFixed(2)), label: '恰好滑动共速', variant: 'critical', autoPause: true },
+      ]
+    },
     defaultParams: {
       m: 1,
       M: 3,

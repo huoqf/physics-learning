@@ -1,7 +1,8 @@
 import React from 'react'
-import { Play, Pause, RotateCcw, RefreshCw } from 'lucide-react'
+import { Play, Pause, RotateCcw, RefreshCw, StepBack, StepForward } from 'lucide-react'
 import { colors } from '@/theme/colors'
 import { duration } from '@/theme/motion'
+import type { CriticalTimePoint } from '@/data/types'
 
 interface AnimationControlsProps {
   isPlaying: boolean
@@ -14,6 +15,12 @@ interface AnimationControlsProps {
   onTimeChange: (time: number) => void
   /** 控制器渲染模式，默认 'timed' */
   controlsMode?: 'timed' | 'loop' | 'param' | 'pause-only'
+  /** 高考临界时刻点配置，用于进度条标注与点击精准吸附定格 */
+  criticalTimes?: CriticalTimePoint[]
+  /** 是否开启微步逐帧分析按钮，默认 true */
+  enableFrameStep?: boolean
+  /** 微步步进大小（秒），默认 0.05s */
+  stepSize?: number
 }
 
 export const AnimationControls: React.FC<AnimationControlsProps> = ({
@@ -26,6 +33,9 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
   onSpeedChange,
   onTimeChange,
   controlsMode = 'timed',
+  criticalTimes,
+  enableFrameStep = true,
+  stepSize = 0.05,
 }) => {
   const speedOptions = [0.25, 0.5, 1, 2]
   const percentage = maxTime > 0 ? (time / maxTime) * 100 : 0
@@ -124,11 +134,27 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
     )
   }
 
+  const handleStep = (direction: -1 | 1) => {
+    if (isPlaying) onPlayPause()
+    const nextTime = Math.min(maxTime, Math.max(0, time + direction * stepSize))
+    onTimeChange(Number(nextTime.toFixed(3)))
+  }
+
   // ── timed 型：完整控制栏（默认）──
   return (
     <div className="w-full bg-white rounded-lg shadow-sm border border-neutral-200 p-4">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
+          {enableFrameStep && (
+            <button
+              onClick={() => handleStep(-1)}
+              title={`后退 ${stepSize}s (微步逐帧)`}
+              className="w-8 h-8 rounded-full bg-neutral-100 text-neutral-700 hover:bg-neutral-200 active:scale-[0.95] flex items-center justify-center transition-all"
+            >
+              <StepBack className="w-4 h-4" />
+            </button>
+          )}
+
           <button
             onClick={onPlayPause}
             className="w-10 h-10 rounded-full bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 active:scale-[0.97] flex items-center justify-center transition-all"
@@ -146,6 +172,16 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
             )}
           </button>
 
+          {enableFrameStep && (
+            <button
+              onClick={() => handleStep(1)}
+              title={`前进 ${stepSize}s (微步逐帧)`}
+              className="w-8 h-8 rounded-full bg-neutral-100 text-neutral-700 hover:bg-neutral-200 active:scale-[0.95] flex items-center justify-center transition-all"
+            >
+              <StepForward className="w-4 h-4" />
+            </button>
+          )}
+
           <button
             onClick={onReset}
             className="w-10 h-10 rounded-full bg-neutral-100 text-neutral-700 hover:bg-neutral-200 active:bg-neutral-300 active:scale-[0.97] flex items-center justify-center transition-all"
@@ -161,14 +197,14 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
         </div>
 
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-neutral-600 min-w-[60px]">速度：</span>
+          <span className="text-neutral-600 min-w-[50px]">速度：</span>
           <div className="flex gap-1">
             {speedOptions.map((s) => (
               <button
                 key={s}
                 onClick={() => onSpeedChange(s)}
                 className={[
-                  'px-3 py-1 rounded text-sm font-medium active:scale-[0.97] transition-all',
+                  'px-2.5 py-1 rounded text-xs font-medium active:scale-[0.97] transition-all',
                   speed === s
                     ? 'bg-primary-600 text-white'
                     : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200',
@@ -192,15 +228,37 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
           }}>
             {speed}x
           </span>
-          <span className="text-sm text-neutral-600 min-w-[40px]">
-            {time.toFixed(1)}s
+          <span className="text-sm font-mono text-neutral-700 min-w-[45px]">
+            {time.toFixed(2)}s
           </span>
           <div className="flex-1 relative h-2 bg-neutral-200 rounded-full flex items-center">
+            {/* 临界时刻刻度标记 */}
+            {criticalTimes && criticalTimes.length > 0 && (
+              <div className="absolute inset-x-0 -top-2.5 h-2 pointer-events-none z-20">
+                {criticalTimes.map((ct, idx) => {
+                  const pct = Math.min(100, Math.max(0, (ct.time / maxTime) * 100))
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      title={`⚡ 临界点: ${ct.label} (${ct.time.toFixed(2)}s)`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (isPlaying) onPlayPause()
+                        onTimeChange(ct.time)
+                      }}
+                      style={{ left: `${pct}%` }}
+                      className="pointer-events-auto absolute top-0 -translate-x-1/2 w-3 h-3 rounded-full bg-amber-500 hover:bg-amber-600 hover:scale-125 border-2 border-white shadow transition-all cursor-pointer"
+                    />
+                  )
+                })}
+              </div>
+            )}
             <input
               type="range"
               min={0}
               max={maxTime}
-              step={0.1}
+              step={0.01}
               value={time}
               onChange={handleSliderChange}
               className="peer absolute -inset-y-2 left-0 w-full h-6 opacity-0 cursor-pointer z-10"
@@ -222,7 +280,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
               }}
             />
           </div>
-          <span className="text-sm text-neutral-600 min-w-[40px]">
+          <span className="text-sm font-mono text-neutral-500 min-w-[40px]">
             {maxTime.toFixed(1)}s
           </span>
         </div>

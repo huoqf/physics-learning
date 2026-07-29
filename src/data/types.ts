@@ -225,6 +225,22 @@ export interface AnimationConfig<P extends Record<string, number> = Record<strin
    * 例：绳与弹簧切断模式 → `(p) => p.mode === 1 ? 'pause-only' : 'param'`
    */
   controlsMode?: 'timed' | 'loop' | 'param' | 'pause-only' | ((params: Record<string, number>) => 'timed' | 'loop' | 'param' | 'pause-only')
+  /** 可选：临界时刻标记列表，用于进度条展示与一键吸附定格 */
+  criticalTimes?: CriticalTimePoint[] | ((params: Record<string, number>) => CriticalTimePoint[])
+  /** 可选：是否开启逐帧/微步控制，默认开启 */
+  enableFrameStep?: boolean
+}
+
+/** 高考物理关键临界时刻点数据 */
+export interface CriticalTimePoint {
+  /** 临界发生时刻（秒） */
+  time: number
+  /** 临界状态说明，如 '恰好共速' / '脱离轨道' */
+  label: string
+  /** 标记语义级别 */
+  variant?: 'critical' | 'warning' | 'info'
+  /** 播放到此时刻是否自动暂停 */
+  autoPause?: boolean
 }
 
 export interface TargetAnimationPreset {

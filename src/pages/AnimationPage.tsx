@@ -62,6 +62,11 @@ function AnimationCenter({
   const isLightWeightMutation = config.id === 'anim-light-weight-mutation'
   const isSplitH = config.centerLayout === 'splitH' || isSpringForceCutMode || isLightWeightMutation
 
+  const criticalTimes = useMemo(() => {
+    if (!config.criticalTimes) return undefined
+    return typeof config.criticalTimes === 'function' ? config.criticalTimes(params) : config.criticalTimes
+  }, [config, params])
+
   const controlBar = (wrapperClassName: string) => (
     <div className={wrapperClassName}>
       <AnimationControls
@@ -74,6 +79,8 @@ function AnimationCenter({
         onSpeedChange={setSpeed}
         onTimeChange={setTime}
         controlsMode={effectiveControlsMode}
+        criticalTimes={criticalTimes}
+        enableFrameStep={config.enableFrameStep}
       />
     </div>
   )
