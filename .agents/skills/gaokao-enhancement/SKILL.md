@@ -61,7 +61,7 @@ description: 高考提分扩展 / 高考真题系统开发 / 增强现有页面�
 ### 0E：VIEWPORT & 坐标变换铁律（直接调用现成体系）
 在开发真题示意图或动画场景时，**直接调用项目现有的 Viewport 与组件体系**，无需手写繁琐的比例计算：
 1. **直接调用 Hook 与容器**：直接使用 `useAnimationViewport({ preset })` + `useSceneScale(...)` + `<AnimationSvgCanvas transform={vp.transform}>`，容器会自动处理好响应式缩放。
-2. **坐标转换唯一路径**：物理坐标转换统一通过 `worldToDesign({ x, y }, sceneScale)` 转换，**严禁手写 `x * scale + offset` 或 `x * (width / physicsWidth)` 物理比例计算**。
+2. **坐标转换唯一路径**：物理坐标转换统一通过 `worldToDesign(x, y, sceneScale)` 转换（返回 `{ px, py }`），**严禁手写 `x * scale + offset` 或 `x * (width / physicsWidth)` 物理比例计算**。
 3. **禁止双重缩放**：有了 `AnimationSvgCanvas`，**严禁在同一个元素上同时使用 `viewBox` 与 `vp.transform`**。
 4. **Preset 使用约束**：必须使用标准的 `CANVAS_PRESETS.splitV` / `splitH` / `full` / `square`，**严禁使用 `wide`/`tall` 废弃 preset**，严禁手写 `width={840}` 等固定像素。
 5. **动态字号控制**：SVG 文本字号必须包裹 `font(N)`（如 `fontSize={font(14)}`）。
