@@ -22,10 +22,16 @@ export interface MasterModel {
   summary: string
   /** 关联的知识树节点 ID (与 knowledgeTree 零冗余整合) */
   knowledgeId: string
+  /** 扩展关联的多个知识树节点 ID 列表 */
+  knowledgeIds?: string[]
   /** 对应的仿真动画 ID (直接调起 animationRegistry) */
   animId: string
+  /** 辅助关联的第二个仿真动画 ID (如斜抛运动) */
+  secondaryAnimId?: string
   /** 一键装载参数 */
   presetParams?: Record<string, number>
+  /** 辅助动画一键装载参数 */
+  secondaryPresetParams?: Record<string, number>
   /** 秒杀速算公式与点拨 */
   quickFormula: MasterModelQuickFormula
   /** 高考易错踩坑点 */

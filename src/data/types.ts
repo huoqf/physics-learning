@@ -208,7 +208,7 @@ export interface AnimationConfig<P extends Record<string, number> = Record<strin
    *
    * 默认值在 useAnimationLifecycle 内：`config?.maxTime ?? 30`。
    */
-  maxTime?: number
+  maxTime?: number | ((params: Record<string, number>) => number)
   /** 场景布局 profile：声明组件如何消费 ViewportInfo，用于 createSceneScaleFromViewport */
   sceneLayout?: SceneLayoutProfile
   /**

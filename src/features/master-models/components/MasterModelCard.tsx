@@ -25,6 +25,19 @@ export const MasterModelCard: React.FC<MasterModelCardProps> = ({ model }) => {
     }
   }
 
+  const handleGoSecondaryAnimation = (usePreset = false) => {
+    if (!model.secondaryAnimId) return
+    if (usePreset && model.secondaryPresetParams) {
+      const searchParams = new URLSearchParams()
+      Object.entries(model.secondaryPresetParams).forEach(([k, v]) => {
+        searchParams.set(k, String(v))
+      })
+      navigate(`/animation/${model.secondaryAnimId}?${searchParams.toString()}`)
+    } else {
+      navigate(`/animation/${model.secondaryAnimId}`)
+    }
+  }
+
   const handleGoAnalysis = (probId: string) => {
     navigate(`/analysis/${probId}`)
   }
@@ -102,25 +115,50 @@ export const MasterModelCard: React.FC<MasterModelCardProps> = ({ model }) => {
       </div>
 
       {/* 底部动作按钮 (全量复用 @/components/UI 的 Button 标准变体) */}
-      <div className="flex items-center gap-3 pt-3 border-t border-neutral-100">
-        <Button
-          variant="primary"
-          size="sm"
-          className="flex-1 flex items-center justify-center gap-1.5"
-          onClick={() => handleGoAnimation(true)}
-        >
-          <Zap className="w-3.5 h-3.5" />
-          <span>📋 真题一键装载</span>
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          className="flex-1 flex items-center justify-center gap-1.5"
-          onClick={() => handleGoAnimation(false)}
-        >
-          <Play className="w-3.5 h-3.5 text-primary-600" />
-          <span>🎥 物理仿真</span>
-        </Button>
+      <div className="flex flex-col gap-2 pt-3 border-t border-neutral-100">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="primary"
+            size="sm"
+            className="flex-1 flex items-center justify-center gap-1 text-xs"
+            onClick={() => handleGoAnimation(true)}
+          >
+            <Zap className="w-3 h-3" />
+            <span>📋 平抛真题预设</span>
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="flex-1 flex items-center justify-center gap-1 text-xs"
+            onClick={() => handleGoAnimation(false)}
+          >
+            <Play className="w-3 h-3 text-primary-600" />
+            <span>🎥 平抛仿真</span>
+          </Button>
+        </div>
+
+        {model.secondaryAnimId && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              className="flex-1 flex items-center justify-center gap-1 text-xs"
+              onClick={() => handleGoSecondaryAnimation(true)}
+            >
+              <Zap className="w-3 h-3" />
+              <span>📋 斜抛真题预设</span>
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="flex-1 flex items-center justify-center gap-1 text-xs"
+              onClick={() => handleGoSecondaryAnimation(false)}
+            >
+              <Play className="w-3 h-3 text-primary-600" />
+              <span>🚀 斜抛仿真</span>
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )

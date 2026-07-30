@@ -374,24 +374,116 @@ export const mechanicsKinematicsAnimations = defineAnimations({
     ],
   },
   'anim-oblique-throw': {
-    title: '斜抛运动',
+    title: '斜抛运动（高考压轴模型）',
     knowledgeId: 'mechanics-5-3',
-    Component: lazy(() => import('@/features/mechanics/kinematics/ObliqueThrowAnimation')),
+    Component: lazy(() => import('@/features/mechanics/oblique-throw/ObliqueThrowAnimation')),
     controlsMode: 'timed',
-    defaultParams: { v0: 15, angle: 45, g: GRAVITY, t: 0, advancedMode: 0, airResistance: 0, showVacuumCompare: 1 } as const,
+    enableFrameStep: true,
+    maxTime: (p) => {
+      const v0 = p.v0 ?? 20
+      const angle = p.angle ?? 45
+      const g = p.g ?? 9.8
+      const v0y = v0 * Math.sin((angle * Math.PI) / 180)
+      const groundTime = g > 0 ? (2 * v0y) / g : 0
+      return Math.max(1, Number((groundTime * 1.15).toFixed(2)))
+    },
+    criticalTimes: (p) => {
+      const v0 = p.v0 ?? 20
+      const angle = p.angle ?? 45
+      const g = p.g ?? 9.8
+      const angleRad = (angle * Math.PI) / 180
+      const v0y = v0 * Math.sin(angleRad)
+      const topTime = g > 0 ? v0y / g : 0
+      const groundTime = g > 0 ? (2 * v0y) / g : 0
+      return [
+        { time: Number(topTime.toFixed(2)), label: '⚡ 最高点: vy=0', variant: 'critical' },
+        { time: Number(groundTime.toFixed(2)), label: '🎯 落地时刻: y=0', variant: 'info' },
+      ]
+    },
+    defaultParams: { v0: 20, angle: 45, g: GRAVITY, t: 0, advancedMode: 0, viewMode: 0, showPrevTrajectory: 1, airResistance: 0, showVacuumCompare: 1 } as const,
     paramMeta: [
-      { key: 'v0', label: '初速度 v₀', min: 5, max: 30, step: 0.1, unit: 'm/s' },
-      { key: 'angle', label: '抛射角 θ', min: 10, max: 80, step: 1, unit: '°' },
+      { key: 'v0', label: '初速度 v₀', min: 5, max: 40, step: 0.5, unit: 'm/s', group: '运动参数' },
+      {
+        key: 'angle',
+        label: '抛射角 θ',
+        min: 10,
+        max: 80,
+        step: 1,
+        unit: '°',
+        group: '运动参数',
+        marks: [
+          { value: 30, label: '30°(互余)' },
+          { value: 37, label: '37°(高考)' },
+          { value: 45, label: '45°(最大射程)', variant: 'critical' },
+          { value: 53, label: '53°(高考)' },
+          { value: 60, label: '60°(互余)' },
+        ],
+      },
       { key: 'airResistance', label: '空气阻力 k', min: 0, max: 0.2, step: 0.01, unit: 'kg/m', group: '进阶参数', showIf: 'advancedMode', showIfValue: 1 },
     ],
     controlMeta: [
-      { type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,
-        options: [{ label: '基础', value: 0 }, { label: '进阶', value: 1 }] },
-      { type: 'preset', label: '🌍 地球 g=9.8', group: '快捷预设', params: { g: 9.8 } },
-      { type: 'preset', label: '🌙 月球 g=1.63', group: '快捷预设', params: { g: 1.63 } },
-      { type: 'preset', label: '🔴 火星 g=3.72', group: '快捷预设', params: { g: 3.72 } },
-      { type: 'preset', label: '🪐 木星 g=24.79', group: '快捷预设', params: { g: 24.79 } },
-      { type: 'toggle', key: 'showVacuumCompare', label: '对比真空参考轨道', group: '显示辅助', showIf: 'airResistance' },
+      {
+        type: 'segmented',
+        key: 'advancedMode',
+        group: '模型选择',
+        resetOnChange: true,
+        options: [{ label: '基础真空模型', value: 0 }, { label: '阻力对比模式', value: 1 }],
+      },
+      {
+        type: 'segmented',
+        key: 'viewMode',
+        group: '视口缩放模式',
+        options: [{ label: '动态数值刻度', value: 0 }, { label: '固定 100m 量程对比', value: 1 }],
+      },
+      { type: 'toggle', key: 'showPrevTrajectory', label: '保留上一轨迹留痕对比', group: '显示辅助' },
+      {
+        type: 'preset',
+        label: '🏆 45° 最大射程模型',
+        description: 'v₀ = 20m/s, θ = 45°',
+        params: { v0: 20, angle: 45, g: 9.8, advancedMode: 0 },
+        restartOnApply: true,
+      },
+      {
+        type: 'preset',
+        label: '⚖️ 30° 互余角射程模型',
+        description: '与 60° 抛射水平射程相等',
+        params: { v0: 20, angle: 30, g: 9.8, advancedMode: 0 },
+        restartOnApply: true,
+      },
+      {
+        type: 'preset',
+        label: '🎯 2023新课标真题模型',
+        description: 'v₀ = 15m/s, θ = 37°',
+        params: { v0: 15, angle: 37, g: 9.8, advancedMode: 0 },
+        restartOnApply: true,
+      },
+      {
+        type: 'preset',
+        label: '📏 固定 100m 量程对比模式',
+        description: '初速度改变时显示真实几何拉伸差异',
+        params: { v0: 25, angle: 45, g: 9.8, advancedMode: 0, viewMode: 1 },
+        restartOnApply: true,
+      },
+      {
+        type: 'preset',
+        label: '🌙 月球低重力斜抛',
+        description: 'g = 1.63m/s², 射程显著提升',
+        params: { v0: 15, angle: 45, g: 1.63, advancedMode: 0 },
+        restartOnApply: true,
+      },
+      {
+        type: 'preset',
+        label: '💨 空气阻力下落对比',
+        description: '观察空气阻力导致的非对称轨迹',
+        params: { v0: 25, angle: 45, g: 9.8, advancedMode: 1, airResistance: 0.08, showVacuumCompare: 1 },
+        restartOnApply: true,
+      },
+      { type: 'toggle', key: 'showVacuumCompare', label: '对比真空参考轨迹', group: '显示辅助', showIf: 'advancedMode', showIfValue: 1 },
+      {
+        type: 'tip',
+        group: '高考秒杀要点',
+        content: '💡 高考秒杀结论：抛射角 θ = 45° 时水平射程最大；互余角（如 30° 与 60°）射程相等；速度偏角正切值恒等于位移偏角正切值的 2 倍 (tanθ = 2tanα)！',
+      },
     ],
   },
   'anim-kinematics-advanced': {

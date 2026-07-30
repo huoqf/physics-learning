@@ -57,7 +57,12 @@ function AnimationCenter({
   const centerExtraModeKey = config.centerExtraMode
   const isCenterExtraFull = centerExtraModeKey != null && params[centerExtraModeKey] === 1
   const showCenterExtraInBasic = CenterExtraComponent && !centerExtraModeKey
-  const maxTime = config.maxTime ?? 30
+  const maxTime = useMemo(() => {
+    if (typeof config.maxTime === 'function') {
+      return config.maxTime(params)
+    }
+    return config.maxTime ?? 30
+  }, [config, params])
   const isSpringForceCutMode = config.id === 'anim-spring-force' && params.mode === 1
   const isLightWeightMutation = config.id === 'anim-light-weight-mutation'
   const isSplitH = config.centerLayout === 'splitH' || isSpringForceCutMode || isLightWeightMutation

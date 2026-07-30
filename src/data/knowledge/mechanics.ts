@@ -275,10 +275,10 @@ export const mechanicsKnowledge: KnowledgeNode[] = [
   },
   {
     id: 'mechanics-5-3',
-    title: '斜抛运动',
+    title: '斜抛运动（高考压轴模型）',
     chapter: '第5章 曲线运动与万有引力',
     module: 'mechanics',
-    importance: 'hard',
+    importance: 'gaokao',
     animationIds: ['anim-oblique-throw'],
     problemIds: [],
     prerequisites: ['mechanics-5-2'],

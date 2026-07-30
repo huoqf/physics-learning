@@ -19,5 +19,5 @@ export function getMasterModelsByCategory(category: string): MasterModel[] {
 }
 
 export function getMasterModelByKnowledgeId(knowledgeId: string): MasterModel | undefined {
-  return masterModels.find((m) => m.knowledgeId === knowledgeId)
+  return masterModels.find((m) => m.knowledgeId === knowledgeId || m.knowledgeIds?.includes(knowledgeId))
 }
