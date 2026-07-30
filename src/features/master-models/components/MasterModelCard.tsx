@@ -124,7 +124,7 @@ export const MasterModelCard: React.FC<MasterModelCardProps> = ({ model }) => {
             onClick={() => handleGoAnimation(true)}
           >
             <Zap className="w-3 h-3" />
-            <span>📋 平抛真题预设</span>
+            <span>📋 真题预设</span>
           </Button>
           <Button
             variant="secondary"
@@ -133,7 +133,7 @@ export const MasterModelCard: React.FC<MasterModelCardProps> = ({ model }) => {
             onClick={() => handleGoAnimation(false)}
           >
             <Play className="w-3 h-3 text-primary-600" />
-            <span>🎥 平抛仿真</span>
+            <span>🎥 展开仿真</span>
           </Button>
         </div>
 
@@ -146,7 +146,7 @@ export const MasterModelCard: React.FC<MasterModelCardProps> = ({ model }) => {
               onClick={() => handleGoSecondaryAnimation(true)}
             >
               <Zap className="w-3 h-3" />
-              <span>📋 斜抛真题预设</span>
+              <span>📋 变式预设</span>
             </Button>
             <Button
               variant="secondary"
@@ -155,7 +155,7 @@ export const MasterModelCard: React.FC<MasterModelCardProps> = ({ model }) => {
               onClick={() => handleGoSecondaryAnimation(false)}
             >
               <Play className="w-3 h-3 text-primary-600" />
-              <span>🚀 斜抛仿真</span>
+              <span>🚀 变式仿真</span>
             </Button>
           </div>
         )}

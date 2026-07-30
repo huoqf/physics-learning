@@ -8,8 +8,8 @@ export const masterModels: MasterModel[] = [
     frequencyBadge: '高考5年14考 / 压轴大题',
     summary: '滑块在木板上滑动时的双体耦合运动。核心突破点：分别求出滑块与木板的加速度 a1、a2，抓住“共速”临界时刻判断是否发生相对滑脱。',
     knowledgeId: 'mechanics-4-8',
-    animId: 'anim-conveyor',
-    presetParams: { conveyorMode: 2, m: 1, M: 3, mu1: 0.3, mu2: 0.05, v0: 5, L: 2.5 },
+    animId: 'anim-block-board',
+    presetParams: { m: 1, M: 3, mu1: 0.3, mu2: 0.05, v0: 5, L: 2.5 },
     quickFormula: {
       title: '临界共速时间与相对位移',
       latex: 't_{\\text{共}} = \\frac{v_0}{a_1 + a_2}, \\quad \\Delta x = \\frac{v_0}{2} t_{\\text{共}}',
@@ -28,7 +28,7 @@ export const masterModels: MasterModel[] = [
     frequencyBadge: '高考5年12考 / 经典必考',
     summary: '导体棒切割磁感线产生感应电动势与安培阻尼力。核心动力学链：v 变化 → E=BLv 变化 → I=E/R 变化 → 安培力 F_A=B²L²v/R 变化。',
     knowledgeId: 'electricity-4-5',
-    animId: 'anim-single-rod',
+    animId: 'anim-induction-single-rod',
     presetParams: { startMechanism: 0, driveForce: 1.2, magneticB: 1.0, resistance: 1.5, rodMass: 0.2, railSpacing: 0.8 },
     quickFormula: {
       title: '恒力收尾速度与通过电荷量',
@@ -48,7 +48,7 @@ export const masterModels: MasterModel[] = [
     frequencyBadge: '高考5年9考 / 压轴双体',
     summary: '两导体棒在轨道上同向或反向切割。自由双杆两棒所受安培力大小相等、方向相反，系统动量守恒！',
     knowledgeId: 'electricity-4-6',
-    animId: 'anim-dual-rods',
+    animId: 'anim-induction-dual-rods',
     presetParams: { scenario: 0, massA: 0.2, massB: 0.4, fieldB: 1.0, railL: 0.5, resSum: 1.0, initialV0: 6.0 },
     quickFormula: {
       title: '自由双杆稳定共同速度',
@@ -106,7 +106,7 @@ export const masterModels: MasterModel[] = [
     frequencyBadge: '高考5年8考 / 动量与能量',
     summary: '小球从光滑弧形槽下滑，弧形槽可自由移动。水平方向不受外力，水平动量守恒；机械能守恒。',
     knowledgeId: 'mechanics-7-4',
-    animId: 'anim-man-boat',
+    animId: 'anim-curved-slot',
     presetParams: { ballMass: 0.5, slotMass: 1.5, radius: 2.0 },
     quickFormula: {
       title: '分离速度方程组',
@@ -206,7 +206,9 @@ export const masterModels: MasterModel[] = [
     summary: '完全弹性碰撞、完全非弹性碰撞及子弹打木块。动量守恒，根据能量损失判定碰撞类型与损失比例。',
     knowledgeId: 'mechanics-7-2',
     animId: 'anim-collision',
+    secondaryAnimId: 'anim-bullet-block',
     presetParams: { m1: 1.0, m2: 2.0, v1: 6.0, v2: 0, e: 1.0 },
+    secondaryPresetParams: { v0: 400, m: 0.01, M: 1.0, f: 500 },
     quickFormula: {
       title: '完全弹性碰撞末速度公式',
       latex: 'v_1\' = \\frac{m_1 - m_2}{m_1 + m_2} v_1, \\quad v_2\' = \\frac{2 m_1}{m_1 + m_2} v_1',
@@ -224,8 +226,8 @@ export const masterModels: MasterModel[] = [
     frequencyBadge: '高考5年7考 / 压轴选择与大题',
     summary: '带电粒子在匀强电场中的偏转运动与加速度分析。绘制 v-t 图象分析位移与分段轨迹。',
     knowledgeId: 'electricity-1-2',
-    animId: 'anim-electric-field',
-    presetParams: { charge: 1, mass: 1, v0: 5, E: 200 },
+    animId: 'anim-charge-in-efield',
+    presetParams: { U: 150, v0: 15, q: 2, isAC: 0 },
     quickFormula: {
       title: '电场最大偏转位移',
       latex: 'a = \\frac{q E}{m}, \\quad y = \\frac{1}{2} a t^2 = \\frac{q E L^2}{2 m v_0^2}',
@@ -243,8 +245,10 @@ export const masterModels: MasterModel[] = [
     frequencyBadge: '高考5年9考 / 前沿科技模型',
     summary: '利用高频交变电场加速、匀强磁场偏转。粒子在 D 形盒内做圆周运动，半圆半径递增但周期不变。',
     knowledgeId: 'electricity-3-3',
-    animId: 'anim-cyclotron',
-    presetParams: { B: 1.0, U: 100, R_max: 0.8 },
+    animId: 'anim-combined-fields',
+    secondaryAnimId: 'anim-charge-in-bfield',
+    presetParams: { mode: 1, magneticB2: 1.0, acFrequency: 24, acVoltage: 5 },
+    secondaryPresetParams: { mode: 0, boundaryType: 2, v: 12, B: 1.2 },
     quickFormula: {
       title: '回旋加速器最大动能与加速次数',
       latex: 'E_{km} = \\frac{q^2 B^2 R^2}{2 m}, \\quad N = \\frac{E_{km}}{2 q U}',
@@ -282,7 +286,9 @@ export const masterModels: MasterModel[] = [
     summary: '简谐运动与横波传播。核心突破点：“一图看质点（y-t），一图看波形（y-x）”，抓住波的多解性。',
     knowledgeId: 'wave-1-3',
     animId: 'anim-wave-interference',
+    secondaryAnimId: 'anim-mechanical-wave',
     presetParams: { lambda: 2, T: 1 },
+    secondaryPresetParams: { A: 2, lambda: 4, T: 2 },
     quickFormula: {
       title: '波速公式与干涉加强减弱条件',
       latex: 'v = \\frac{\\lambda}{T} = \\lambda f, \\quad \\Delta r = k \\lambda \\implies \\text{加强点}',
@@ -339,7 +345,9 @@ export const masterModels: MasterModel[] = [
     summary: '爱因斯坦光电效应方程、遏止电压及 α/β/γ 衰变方程。质量亏损与爱因斯坦质能方程 ΔE = Δm c²。',
     knowledgeId: 'modern-1-1',
     animId: 'anim-photoelectric',
+    secondaryAnimId: 'anim-nuclear-decay',
     presetParams: { W0: 2.2, nu: 3.5 },
+    secondaryPresetParams: { decayType: 0, halfLife: 5 },
     quickFormula: {
       title: '光电效应方程与最大初动能',
       latex: 'E_{km} = h \\nu - W_0 = e U_c, \\quad \\Delta E = \\Delta m c^2',
