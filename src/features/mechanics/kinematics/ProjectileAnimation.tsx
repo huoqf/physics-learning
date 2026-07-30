@@ -46,14 +46,16 @@ export default function ProjectileAnimation() {
     airResistance,
   })
 
-  // 4. SceneScale 建立物理到设计的比例尺转换 (消灭上下无用空白，地面落在 285px)
+  // 4. SceneScale 建立物理到设计的比例尺转换
+  // 原点 (70, 35) 为抛出点设计坐标，1m=25px 等比缩放（确保合速度方向准确）
+  // 地面 y=-10m → designY = 35 + 10×25 = 285px
   const sceneScale = useSceneScale({
     vp,
     preset: CANVAS_PRESETS.splitV,
     anchor: 'custom',
     customOriginX: 70,
     customOriginY: 35,
-    customScaleX: 35,
+    customScaleX: 25,
     customScaleY: 25,
     refMagnitudes: { velocity: Math.max(v0x, 10) },
   })
@@ -125,6 +127,7 @@ export default function ProjectileAnimation() {
             physics={physics}
             canvasSize={canvasSize}
             sceneScale={sceneScale}
+            vp={vp}
             showVectors={showVectors}
             showGrid={showGrid}
             showTangentMidpoint={Boolean(showTangentMidpoint)}

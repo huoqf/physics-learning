@@ -6,18 +6,18 @@
  *
  * @example
  * ```tsx
- * import { Ball, DCSource, Galvanometer } from '@/components/Physics'
+ * import { Ball, TickerTimer, PaperTape, Photogate } from '@/components/Physics'
  *
  * // 使用物理组件
  * <g>
  *   <Ball cx={100} cy={200} r={14} type="steel" />
- *   <DCSource x={200} y={200} voltage={12.0} type="instrument" />
- *   <Galvanometer x={300} y={200} />
+ *   <TickerTimer x={200} y={150} isVibrating />
+ *   <PaperTape x={200} y={200} width={200} dots={[10, 30, 60, 100, 150]} />
  * </g>
  * ```
  */
 // ============================================================================
-// 力学组件 (Mechanics)
+// 力学基础组件 (Mechanics Basics)
 // ============================================================================
 export { PhysicsGround } from "./PhysicsGround"
 export { Ball } from './Ball'
@@ -28,6 +28,19 @@ export { Pulley } from './Pulley'
 export { EnergyBars } from './EnergyBars'
 export type { EnergyBarItem } from './EnergyBars'
 export { SVGSingleBar } from './SVGSingleBar'
+
+// ============================================================================
+// 力学实验专属器材 (Mechanics Lab Apparatus)
+// ============================================================================
+export { PaperTape } from './PaperTape'
+export { TickerTimer } from './TickerTimer'
+export { Photogate } from './Photogate'
+export { TimerDisplay } from './TimerDisplay'
+export { LabRuler } from './LabRuler'
+export { VernierCaliper } from './VernierCaliper'
+export { Micrometer } from './Micrometer'
+export { SpringBalance } from './SpringBalance'
+export { LabStand } from './LabStand'
 
 // ============================================================================
 // 粒子轨迹渲染 (Particle Trajectory)
@@ -71,7 +84,6 @@ export { bezierAt, bezierTangent, FieldArrow } from './magneticFieldUtils'
 // 电磁学 - 电磁感应 (Electromagnetic Induction)
 // ============================================================================
 export { ConductingRod } from './ConductingRod'
-// Backward compatibility. Prefer ConductingRod in new code.
 export { ConductingRod as ConductorRod } from './ConductingRod'
 export { CoupledCoilField } from './CoupledCoilField'
 export { PrimaryCoil } from './PrimaryCoil'
@@ -99,6 +111,16 @@ export { markerId } from './vectorDefsUtils'
 // ============================================================================
 // 类型导出 (Type Exports)
 // ============================================================================
+export type { PaperTapeProps } from './PaperTape'
+export type { TickerTimerProps } from './TickerTimer'
+export type { PhotogateProps } from './Photogate'
+export type { TimerDisplayProps } from './TimerDisplay'
+export type { LabRulerProps } from './LabRuler'
+export type { VernierCaliperProps } from './VernierCaliper'
+export type { MicrometerProps } from './Micrometer'
+export type { SpringBalanceProps } from './SpringBalance'
+export type { LabStandProps } from './LabStand'
+
 export type { MagneticPolesProps } from './MagneticPoles'
 export type { RotatingCoilProps } from './RotatingCoil'
 export type { BarMagnetProps } from './BarMagnet'
@@ -118,4 +140,3 @@ export type { BallProps, BallPresetType } from './Ball'
 export type { BlockProps, BlockPresetType } from './Block'
 export type { InclineProps } from './Incline'
 export type { ParticleTrajectoryProps } from './ParticleTrajectory'
-

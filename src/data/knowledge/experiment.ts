@@ -8,7 +8,7 @@ export const experimentKnowledge: KnowledgeNode[] = [
     chapter: '实验专题',
     module: 'experiment',
     importance: 'gaokao',
-    animationIds: [],
+    animationIds: ['anim-mechanics-experiment-base'],
     problemIds: [],
     prerequisites: [],
   },

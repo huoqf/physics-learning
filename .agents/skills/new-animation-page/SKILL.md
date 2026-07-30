@@ -16,7 +16,7 @@ description: 新建动画页面 / 创建新的物理动画组件 / 新增动画�
 > **分屏是主流**：动画配合物理图表更能帮助学生理解过程和解题，大量页面使用 `splitV` 或 `splitH`。`full` 适合无需图表的纯场景演示。
 
 | preset | 设计尺寸 | 选用条件 |
-|--------|---------|---------|
+|--------|---------|---------| 
 | `CANVAS_PRESETS.splitV` | 840×325 | **水平运动**场景（追及、碰撞、平抛水平分量）：动画横向展开，图表放上方；或多图表并列展示（v-t + x-t + a-t）|
 | `CANVAS_PRESETS.splitH` | 420×650 | **垂直/斜向运动**场景（自由落体、斜抛、弹簧振子）：动画纵向展开，图表放右侧 |
 | `CANVAS_PRESETS.full` | 840×650 | 无需配套图表的纯动画演示（光的折射/反射、磁场分布、静电场分布等） |
@@ -51,9 +51,9 @@ SidebarExtra（仅复杂自定义）          ❌ 禁止完整公式推导      
 **高中物理动画默认选 `timed`。**
 
 | 模式 | 值 | 典型场景 |
-|------|---|---------|
+|------|---|---------| 
 | 完整控制栏 | `'timed'`（**默认**，可省略） | 自由落体、碰撞、投射、气体、光学 — **绝大多数** |
-| 参数提示条 | `'param'` | 静态受力图、平衡条件、娜娜、欧姆嵌套 |
+| 参数提示条 | `'param'` | 静态受力图、平衡条件、欧姆嵌套 |
 | 循环速度栏 | `'loop'` | 圆周运动、分子热运动、交变波形 — 少数 |
 
 判断顺序：
@@ -62,13 +62,83 @@ SidebarExtra（仅复杂自定义）          ❌ 禁止完整公式推导      
 3. 永续循环无终点？→ `'loop'`
 
 
-### 0D：其余参数
+### 0D：SceneScale anchor 选择（关键决策）
+
+**anchor 决定物理坐标原点位置和比例尺的计算方式，必须根据场景类型正确选择。**
+
+| anchor | 必填参数 | 物理原点位置 | 适用场景 |
+|--------|---------|------------|---------|
+| `'viewport'` | `physicsWidth`, `physicsHeight` | 画布左下角（y↑正） | 纯粒子运动、无固定器材、全视野充满 |
+| `'center'` | `physicsScaleDesign` | 画布中心（可调） | 圆周运动、对称场景、有固定器材但坐标原点在中心 |
+| `'design'` | `physicsWidth`, `physicsHeight` | 画布左上角（y↓正，SVG 方向） | SVG 坐标系与物理一致的特殊场景 |
+| `'custom'` | `customOriginX/Y`, `customScaleX/Y` | 任意指定设计坐标 | 特殊原点位置（平抛等非标准场景） |
+
+#### anchor: 'viewport'（最常用）
+
+```ts
+// 适用：粒子/小球在整个视野内运动，无固定器材
+// physicsWidth/Height = 真实物理世界尺度（米），决定场景的视野范围
+// 例：physicsWidth: 20 表示视野宽 20 米，画布设计宽度分成 20 份
+const sceneScale = useSceneScale({
+  vp, preset: CANVAS_PRESETS.full,
+  anchor: 'viewport',
+  physicsWidth: 20,   // ← 物理视野宽 20m（真实物理量，非像素）
+  physicsHeight: 15,  // ← 物理视野高 15m（真实物理量，非像素）
+})
+
+// ❌ 严禁以下错误用法：
+// physicsWidth: 1.2    ← 1.2m 视野？光学场景不可能
+// physicsWidth: 0.9    ← 0.9m 视野？画面装不下任何元素
+// physicsWidth: preset.width    ← 840m 视野？把像素当物理量！
+// physicsWidth: 840    ← 同上，把设计像素当物理量是严重错误
+```
+
+#### anchor: 'center'（圆周/对称场景）
+
+```ts
+// 适用：圆周运动、向心力、对称场景，物理原点在视口中心
+// physicsScaleDesign = 1m 对应多少设计像素
+const sceneScale = useSceneScale({
+  vp, preset: CANVAS_PRESETS.square,
+  anchor: 'center',
+  physicsScaleDesign: 50,  // ← 1m = 50 设计像素
+  centerSource: 'viewport',  // 原点在视口中心（默认）
+  refMagnitudes: { velocity: 10 },
+})
+```
+
+#### anchor: 'custom'（非标准原点）
+
+```ts
+// 适用：原点不在画布左下/中心的特殊场景（如平抛：原点在左上角某处，y↓为落下）
+// 必须保证 customScaleX === customScaleY（等比缩放），否则合速度方向失真
+const sceneScale = useSceneScale({
+  vp, preset: CANVAS_PRESETS.splitV,
+  anchor: 'custom',
+  customOriginX: 70,   // 设计坐标 x（像素）
+  customOriginY: 35,   // 设计坐标 y（像素）
+  customScaleX: 25,    // 1m = 25 设计像素
+  customScaleY: 25,    // ← 必须与 customScaleX 相等！非等比 = 矢量方向失真
+  refMagnitudes: { velocity: 10 },
+})
+```
+
+#### 无 sceneScale 的场景
+
+```ts
+// 适用：场景内全部使用固定设计坐标，不需要物理坐标转换
+// 例：光学干涉/衍射/折射场景，坐标直接写设计像素值
+// 这时不调用 useSceneScale，也不在 Scene 组件中传 sceneScale
+const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
+// 直接渲染，坐标写固定值 (slitX=240, screenX=580...)
+```
+
+#### 其他事项
 
 | 项 | 说明 |
 |----|------|
-| `anchor` | `'center'`（大多数）/ `'viewport'`（充满型）/ `'bottom'`（落地型） |
-| `physicsWidth / physicsHeight` | 场景真实物理尺寸（米） |
 | 是否需要 `CenterExtra` | 需要实时图表时才加 |
+| ❌ `presetCompensation` | **新建页面严禁传此参数**。该参数仅用于旧 wide/tall preset 迁移至 full 时的临时平滑过渡，已稳定迁移的页面也应删除。遇到视觉偏差应检查 anchor 选型或 physicsScaleDesign 值，而不是加补偿系数。 |
 
 ---
 
@@ -110,6 +180,7 @@ export default function <Topic>Animation() {
   )
 
   // ── 2. Viewport（新页面唯一标准路径）──
+  // ⚠️ 严禁传 presetCompensation：新建页面无论如何都不需要此参数
   const { containerRef, canvasSize, vp } = useAnimationViewport({
     preset: CANVAS_PRESETS.full,   // ← Step 0A 决策结果
   })
@@ -121,12 +192,16 @@ export default function <Topic>Animation() {
   const physics = use<Topic>Physics({ v0, a, time })
 
   // ── 5. SceneScale（禁止手写 x * scale + offset）──
+  // 按 Step 0D 选择 anchor：
+  // anchor:'viewport' → physicsWidth/Height 填真实物理视野范围（米）
+  // anchor:'center'   → physicsScaleDesign 填 1m 对应多少设计像素
+  // anchor:'custom'   → customOriginX/Y、customScaleX/Y（X=Y，等比）
   const sceneScale = useSceneScale({
     vp,
-    preset: CANVAS_PRESETS.full,   // ← 与上方一致
-    anchor: 'center',               // ← Step 0D
-    physicsWidth: 10,               // ← Step 0D（米）
-    physicsHeight: 8,
+    preset: CANVAS_PRESETS.full,   // ← Step 0A 决策结果
+    anchor: 'viewport',
+    physicsWidth: 20,              // ← 真实物理视野宽（米），非像素
+    physicsHeight: 15,             // ← 真实物理视野高（米），非像素
   })
 
   // ── 6. 渲染 ──
@@ -140,21 +215,23 @@ export default function <Topic>Animation() {
 }
 ```
 
-> **splitV/splitH 布局模式**（图表+动画分区）：
+> **splitV/splitH 布局模式**（图表+动画分区），两个区域都用 `flex-1` 自适应高度：
 > ```tsx
-> // splitV：上图表 + 下动画，flex-col，各自独立 div，禁止互相嵌套
+> // splitV：上图表 + 下动画，flex-col，两区各 flex-1 自适应
 > return (
->   <div className="w-full h-full flex flex-col">
->     <div className="h-[310px] shrink-0">
+>   <div className="w-full h-full flex flex-col gap-2 p-2 bg-slate-50 rounded-lg">
+>     <div className="flex-1 min-h-0 bg-white rounded-lg p-2 border border-slate-200 shadow-sm flex flex-col">
 >       <VelocityTimeChart points={vtPoints} currentTime={time} tMax={10} title="v-t" />
 >     </div>
->     <div className="flex-1 min-h-0">
+>     <div ref={containerRef} className="flex-1 min-h-0 relative">
 >       <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
 >         <<Topic>Scene ... />
 >       </AnimationSvgCanvas>
 >     </div>
 >   </div>
 > )
+> // ❌ 禁止：h-[270px] 写死图表高度 → 在小屏下会侵占动画区
+> // ❌ 禁止：h-[310px] 写死图表高度 → 同上
 > ```
 
 ### `hooks/use<Topic>Physics.ts`
@@ -198,31 +275,34 @@ import { Ball, PhysicsGround, VectorArrow } from '@/components/Physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { worldToDesign } from '@/scene'
 import type { SceneScale } from '@/scene'
+import type { ViewportInfo } from '@/utils/useViewport'
 import type { <Topic>PhysicsResult } from '../hooks/use<Topic>Physics'
 
 interface <Topic>SceneProps {
   physics: <Topic>PhysicsResult
   canvasSize: { font: (size: number) => number }
   sceneScale: SceneScale
+  vp: ViewportInfo   // ← 用于撑满地面/网格线（vp.designLeft, vp.designVisibleW）
 }
 
-export function <Topic>Scene({ physics, canvasSize, sceneScale }: <Topic>SceneProps) {
+export function <Topic>Scene({ physics, canvasSize, sceneScale, vp }: <Topic>SceneProps) {
   const { font } = canvasSize
 
   // 物理坐标 → 设计坐标（唯一合法路径）
-  const ballPos = worldToDesign({ x: physics.x, y: physics.y }, sceneScale)
+  // 注意 API：worldToDesign(x, y, sceneScale) 返回 { px, py }
+  const ballPos = worldToDesign(physics.x, physics.y, sceneScale)
 
   return (
     <g>
-      {/* 场景器材：用现有组件，禁止手写 SVG 基础图形替代 */}
-      <PhysicsGround x={40} y={560} width={760} type="ground" fontFamily={font} />
+      {/* 地面：x 从可视区左边缘到右边缘，不写死宽度 */}
+      <PhysicsGround x={vp.designLeft} y={500} width={vp.designVisibleW} type="ground" />
 
       {/* 物体：用 Ball/Block/SportsCar 等，禁止手画 circle/rect */}
-      <Ball cx={ballPos.x} cy={ballPos.y} r={20} type="steel" />
+      <Ball cx={ballPos.px} cy={ballPos.py} r={20} type="steel" />
 
       {/* 矢量箭头：禁止手写 <line>+<marker> */}
       <VectorArrow
-        originDesign={ballPos}
+        originDesign={{ x: ballPos.px, y: ballPos.py }}
         vector={{ x: physics.v, y: 0 }}
         type="velocity"
         sceneScale={sceneScale}
@@ -232,8 +312,8 @@ export function <Topic>Scene({ physics, canvasSize, sceneScale }: <Topic>ScenePr
 
       {/* SVG 文字：只标注物理量数值，font() 包裹，禁止裸 fontSize={N} */}
       <text
-        x={ballPos.x}
-        y={ballPos.y - 30}
+        x={ballPos.px}
+        y={ballPos.py - 30}
         fontSize={font(11)}
         fill={PHYSICS_COLORS.velocity}
         textAnchor="middle"
@@ -247,6 +327,30 @@ export function <Topic>Scene({ physics, canvasSize, sceneScale }: <Topic>ScenePr
   )
 }
 ```
+
+> **worldToDesign API 说明**：
+> ```ts
+> // ✅ 正确（当前代码库实际 API）
+> const pos = worldToDesign(physics.x, physics.y, sceneScale)
+> // 返回：{ px: number, py: number }（设计坐标）
+>
+> // ❌ 错误写法（旧 API / SKILL 历史错误）
+> const pos = worldToDesign({ x: physics.x, y: physics.y }, sceneScale)
+> // 返回：{ x, y }（此写法在当前代码库中不存在）
+> ```
+
+> **地面/网格线宽度**：禁止写死像素，必须用 vp：
+> ```tsx
+> // ✅ 正确：地面撑满可视区
+> <PhysicsGround x={vp.designLeft} y={groundY} width={vp.designVisibleW} type="ground" />
+>
+> // ✅ 正确：网格线延伸到可视区边缘
+> <line x1={vp.designLeft} y1={originY} x2={vp.designLeft + vp.designVisibleW} y2={originY} />
+>
+> // ❌ 禁止：
+> <PhysicsGround x={0} y={groundY} width={1000} type="ground" />  // 1000 是魔法数字
+> <line x1={0} y1={originY} x2={840} y2={originY} />              // 840 是写死的设计宽度
+> ```
 
 ---
 
@@ -373,10 +477,10 @@ fill={withAlpha(PHYSICS_COLORS.velocity, 0.3)}  // 从 @/theme/physics 统一入
 ### Physics 组件（`@/components/Physics`，barrel import）
 
 | 需求 | 组件 | 最小调用 |
-|------|------|---------|
+|------|------|---------| 
 | 质点/钢珠/摆球 | `Ball` | `<Ball cx={x} cy={y} r={14} type="steel" />` |
 | 滑块/木箱/小车 | `Block` | `<Block x={x} y={y} width={48} height={24} type="metal" />` |
-| 地面/斜面/传送带 | `PhysicsGround` | `<PhysicsGround x={0} y={gy} width={dw} type="ground" fontFamily={font} />` |
+| 地面/斜面/传送带 | `PhysicsGround` | `<PhysicsGround x={vp.designLeft} y={gy} width={vp.designVisibleW} type="ground" />` |
 | 斜面体 | `Incline` | `<Incline x0={cx} y0={gy} width={W} height={H} />` |
 | 定滑轮 | `Pulley` | `<Pulley cx={px} cy={py} r={12} hangerTopY={py-45} />` |
 | 流线跑车 | `SportsCar` | `<SportsCar x={cx} y={gy-26} width={56} height={26} />` |
@@ -423,11 +527,12 @@ import { withAlpha } from '@/theme/physics/colors'
 ---
 
 ## 执行前 Checklist（全部 ✅ 才能提交）
-## 执行前 Checklist
 
 - [ ] **三屏**：主屏无教学文字；左屏参数走 `paramMeta`/模式走 `controlMeta`；右屏由框架渲染
-- [ ] **布局**：preset 正确（full/splitV/splitH/square）；无 `viewBox`+`vp.transform` 双重缩放；坐标走 `worldToDesign`
+- [ ] **布局**：preset 正确（full/splitV/splitH/square）；无 `presetCompensation`；图表区用 `flex-1`，不写死 h-[Npx]
+- [ ] **SceneScale**：anchor 选型正确；`physicsWidth/Height` 是真实物理米数（非像素、非 preset.width）；等比缩放（customScaleX === customScaleY）；无 `worldToDesign({ x,y }, sceneScale)` 旧 API
+- [ ] **地面/网格**：`x={vp.designLeft} width={vp.designVisibleW}` 撑满可视区，无 `width={1000}` 魔法数字
 - [ ] **组件**：矢量箭头用 `VectorArrow`/`PhysicsVectorArrow`；图表用 `BasePhysicsChart`/`VelocityTimeChart` 等；球/块/地面用现有组件
-- [ ] **颜色**：无 hex 硬编码；物理量用 `PHYSICS_COLORS`，器材用 `SCENE_COLORS`，网格/轴线用 `CANVAS_COLORS`；SVG 字号用 `font(N)`
+- [ ] **颜色**：无 hex 硬编码；物理量用 `PHYSICS_COLORS`，器材用 `SCENE_COLORS`，网格/轴线用 `CANVAS_COLORS`；SVG 字号用 `font(N)`，无裸 `fontSize={N}`
 - [ ] **Registry**：动画表已注册（`defaultParams as const`，`controlsMode` 正确）；物理量构建器已实现并注册；知识点已确认
 - [ ] **代码**：物理 hook 无副作用；barrel import；`tsc --noEmit` 通过

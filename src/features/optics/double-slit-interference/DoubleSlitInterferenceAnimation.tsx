@@ -1,5 +1,5 @@
 import { useShallow } from 'zustand/react/shallow'
-import { useAnimationViewport, useSceneScale } from '@/hooks'
+import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
@@ -30,16 +30,8 @@ export default function DoubleSlitInterferenceAnimation() {
     time,
   })
 
-  // ── 5. 比例尺设置 (符合规范) ──
-  const sceneScale = useSceneScale({
-    vp,
-    preset: CANVAS_PRESETS.full,
-    anchor: 'viewport',
-    physicsWidth: 1.2,
-    physicsHeight: 0.9,
-  })
+  // ── 5. 场景坐标全部基于固定设计坐标系（840×650），无需 SceneScale
 
-  // ── 6. 渲染 ──
   return (
     <div ref={containerRef} className="w-full h-full">
       <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
@@ -49,7 +41,6 @@ export default function DoubleSlitInterferenceAnimation() {
           wavelength={wavelength}
           slitDistance={slitDistance}
           screenDistance={screenDistance}
-          sceneScale={sceneScale}
         />
       </AnimationSvgCanvas>
     </div>

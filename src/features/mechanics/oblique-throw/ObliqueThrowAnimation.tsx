@@ -71,7 +71,7 @@ export default function ObliqueThrowAnimation() {
   return (
     <div className="w-full h-full flex flex-col gap-2 p-2 bg-slate-50 rounded-lg">
       {/* ── 1. 上平级分区：v-t 图表 ── */}
-      <div className="h-[270px] shrink-0 bg-white rounded-lg p-2 border border-slate-200 shadow-sm flex flex-col">
+      <div className="flex-1 min-h-0 bg-white rounded-lg p-2 border border-slate-200 shadow-sm flex flex-col">
         <VelocityTimeChart
           mode="animated"
           points={physics.vtChartData.pointsVx}
@@ -104,6 +104,7 @@ export default function ObliqueThrowAnimation() {
             physics={physics}
             canvasSize={canvasSize}
             sceneScale={sceneScale}
+            vp={vp}
             angle={angle}
             showVectors={showVectors}
             showGrid={showGrid}

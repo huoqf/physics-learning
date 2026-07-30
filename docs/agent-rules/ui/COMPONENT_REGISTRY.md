@@ -35,6 +35,15 @@
 | `HandRule` | 手指定则 | `mode`, `thumbDir`, `indexDir`, `middleDir`, `cx`, `cy` | `<HandRule mode="left" thumbDir={td} indexDir={id} middleDir={md} cx={171} cy={175} />` |
 | `VectorDefs` | 箭头 marker 定义 | — | `<VectorDefs />`（放在 `<svg>` 内） |
 | `SkeletonHand` | 骨骼手 | `pose` | `<SkeletonHand cx={cx} cy={cy} pose="open" />` |
+| `PaperTape` | 打点纸带 | `x`, `y`, `width`, `dots` | `<PaperTape x={10} y={10} width={200} dots={[10, 30, 60, 100]} />` |
+| `TickerTimer` | 打点计时器（电磁/电火花） | `x`, `y` | `<TickerTimer x={50} y={50} type="electromagnetic" isVibrating />` |
+| `Photogate` | 光电门传感器 | `x`, `y` | `<Photogate x={100} y={100} isBlocked beamVisible label="光电门 A" />` |
+| `TimerDisplay` | 数字毫秒/秒计时器显示屏 | `x`, `y`, `timeMs` | `<TimerDisplay x={10} y={10} timeMs={12.34} channel="CH A" />` |
+| `LabRuler` | 实验室毫米刻度尺 | `x`, `y`, `length` | `<LabRuler x={0} y={0} length={200} showMagnifier magnifierPos={100} />` |
+| `VernierCaliper` | 游标卡尺（10/20/50分度） | `x`, `y`, `measuredValue` | `<VernierCaliper x={0} y={0} measuredValue={23.45} division={20} showMagnifier />` |
+| `Micrometer` | 螺旋测微器（千分尺） | `x`, `y`, `measuredValue` | `<Micrometer x={0} y={0} measuredValue={5.382} showMagnifier />` |
+| `SpringBalance` | 弹簧测力计 | `x`, `y`, `force` | `<SpringBalance x={50} y={50} force={3.5} maxForce={5} />` |
+| `LabStand` | 铁架台支架 | `x`, `y` | `<LabStand x={100} y={200} attachment="clamp" />` |
 
 ---
 

@@ -8,6 +8,7 @@ import { mechanicsCircularGravitationAnimations } from './registries/mechanics-c
 import { mechanicsForceMotionAnimations } from './registries/mechanics-force-motion'
 import { mechanicsEnergyAnimations } from './registries/mechanics-energy'
 import { mechanicsMomentumAnimations } from './registries/mechanics-momentum'
+import { mechanicsExperimentAnimations } from './registries/mechanics-experiment'
 
 const coreRegistry: Record<string, AnimationConfig> = {
   ...mechanicsKinematicsAnimations,
@@ -16,6 +17,7 @@ const coreRegistry: Record<string, AnimationConfig> = {
   ...mechanicsForceMotionAnimations,
   ...mechanicsEnergyAnimations,
   ...mechanicsMomentumAnimations,
+  ...mechanicsExperimentAnimations,
 }
 
 // ─── Extended: 电磁学 5 + 热学 4 + 光学 4 + 振动 1 + 组合场 1（懒加载） ───

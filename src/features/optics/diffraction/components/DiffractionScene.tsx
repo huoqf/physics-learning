@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { OPTICS_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
 import { hexToRgb } from '@/utils'
-import type { SceneScale } from '@/scene'
 import type { DiffractionPhysicsResult } from '../hooks/useDiffractionPhysics'
 
 /** 暗色光屏背景 */
@@ -18,7 +17,6 @@ interface DiffractionSceneProps {
   wavelength: number
   obstacleSize: number
   screenDistance: number
-  sceneScale: SceneScale
 }
 
 /**

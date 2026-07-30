@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { PHYSICS_COLORS, OPTICS_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
 import { hexToRgb } from '@/utils'
-import type { SceneScale } from '@/scene'
 import type { DoubleSlitInterferencePhysicsResult } from '../hooks/useDoubleSlitInterferencePhysics'
 
 /** 暗色光屏背景 */
@@ -17,7 +16,6 @@ interface DoubleSlitInterferenceSceneProps {
   wavelength: number
   slitDistance: number
   screenDistance: number
-  sceneScale: SceneScale
 }
 
 export function DoubleSlitInterferenceScene({

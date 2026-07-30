@@ -3,12 +3,14 @@ import { Ball, PhysicsGround, PhysicsVectorArrow, ParticleTrajectory } from '@/c
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, STROKE, DASH } from '@/theme/physics'
 import { worldToDesign } from '@/scene'
 import type { SceneScale } from '@/scene'
+import type { ViewportInfo } from '@/utils/useViewport'
 import type { ObliqueThrowPhysicsResult } from '../hooks/useObliqueThrowPhysics'
 
 export interface ObliqueThrowSceneProps {
   physics: ObliqueThrowPhysicsResult
   canvasSize: { font: (size: number) => number }
   sceneScale: SceneScale
+  vp: ViewportInfo
   angle: number
   showVectors?: boolean
   showGrid?: boolean
@@ -35,6 +37,7 @@ export function ObliqueThrowScene({
   physics,
   canvasSize,
   sceneScale,
+  vp,
   angle,
   showVectors = true,
   showGrid = true,
@@ -115,34 +118,34 @@ export function ObliqueThrowScene({
       {/* ── 0. 动态物理网格线与数值刻度 ── */}
       {showGrid && (
         <g stroke={CANVAS_COLORS.grid} strokeWidth={STROKE.grid} strokeDasharray={DASH.axis.join(' ')}>
-          {/* 动态水平网格 */}
+          {/* 动态水平网格：从原点撤满可视区 */}
           {ticksData.yTicks.map(({ yVal, pos }) => (
             <g key={`y-grid-${yVal}`}>
-              <line x1={originPos.px} y1={pos.py} x2={originPos.px + 820} y2={pos.py} />
+              <line x1={vp.designLeft} y1={pos.py} x2={vp.designLeft + vp.designVisibleW} y2={pos.py} />
             </g>
           ))}
-          {/* 动态竖直网格 */}
+          {/* 动态竖直网格：从顶部到地面 */}
           {ticksData.xTicks.map(({ xVal, pos }) => (
             <g key={`x-grid-${xVal}`}>
-              <line x1={pos.px} y1={originPos.py - 300} x2={pos.px} y2={originPos.py} />
+              <line x1={pos.px} y1={0} x2={pos.px} y2={originPos.py} />
             </g>
           ))}
         </g>
       )}
 
       {/* ── 1. 物理基座与坐标轴刻度数字 ── */}
-      <PhysicsGround x={originPos.px - 40} y={originPos.py} width={900} type="ground" />
+      <PhysicsGround x={vp.designLeft} y={originPos.py} width={vp.designVisibleW} type="ground" />
 
-      {/* 坐标轴线 */}
+      {/* 坐标轴线：从地面延伸到顶部 */}
       <line
         x1={originPos.px}
-        y1={originPos.py - 290}
+        y1={0}
         x2={originPos.px}
         y2={originPos.py}
         stroke={CANVAS_COLORS.axis}
         strokeWidth={STROKE.axis}
       />
-      <text x={originPos.px - 10} y={originPos.py - 290} fontSize={font(11)} fill={PHYSICS_COLORS.labelText} textAnchor="end" fontWeight="bold">
+      <text x={originPos.px - 10} y={16} fontSize={font(11)} fill={PHYSICS_COLORS.labelText} textAnchor="end" fontWeight="bold">
         y / m
       </text>
 
@@ -166,7 +169,7 @@ export function ObliqueThrowScene({
         </g>
       ))}
 
-      <text x={originPos.px + 820} y={originPos.py + 18} fontSize={font(11)} fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
+      <text x={vp.designLeft + vp.designVisibleW - 20} y={originPos.py + 18} fontSize={font(11)} fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
         x / m
       </text>
 

@@ -14,12 +14,14 @@ import {
   withAlpha,
 } from '@/theme/physics'
 import { worldToDesign, type SceneScale } from '@/scene'
+import type { ViewportInfo } from '@/utils/useViewport'
 import type { ProjectilePhysicsResult } from '../hooks/useProjectilePhysics'
 
 interface ProjectileSceneProps {
   physics: ProjectilePhysicsResult
   canvasSize: { font: (size: number) => number }
   sceneScale: SceneScale
+  vp: ViewportInfo
   showVectors?: boolean
   showGrid?: boolean
   showTangentMidpoint?: boolean
@@ -32,6 +34,7 @@ export function ProjectileScene({
   physics,
   canvasSize,
   sceneScale,
+  vp,
   showVectors = true,
   showGrid = true,
   showTangentMidpoint = true,
@@ -112,9 +115,12 @@ export function ProjectileScene({
       {/* 1. 网格参考线 */}
       {showGrid && (
         <g stroke={CANVAS_COLORS.grid} strokeWidth={STROKE.grid} strokeDasharray={DASH.axis.join(' ')}>
-          <line x1={0} y1={originPos.cy} x2={1000} y2={originPos.cy} />
-          <line x1={originPos.cx} y1={0} x2={originPos.cx} y2={800} />
-          <line x1={0} y1={groundLevelPos.cy} x2={1000} y2={groundLevelPos.cy} opacity={0.5} />
+          {/* 水平参考线（抛出高度层） */}
+          <line x1={vp.designLeft} y1={originPos.cy} x2={vp.designLeft + vp.designVisibleW} y2={originPos.cy} />
+          {/* 竖直参考线（初始水平位置） */}
+          <line x1={originPos.cx} y1={0} x2={originPos.cx} y2={groundLevelPos.cy} />
+          {/* 地面高度参考线 */}
+          <line x1={vp.designLeft} y1={groundLevelPos.cy} x2={vp.designLeft + vp.designVisibleW} y2={groundLevelPos.cy} opacity={0.5} />
         </g>
       )}
 
@@ -163,9 +169,9 @@ export function ProjectileScene({
         </g>
       ) : (
         <PhysicsGround
-          x={0}
+          x={vp.designLeft}
           y={groundLevelPos.cy}
-          width={1000}
+          width={vp.designVisibleW}
           type="ground"
         />
       )}
