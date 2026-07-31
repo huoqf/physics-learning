@@ -5,6 +5,7 @@ import type { PracticeMode, ScoreRecord } from '@/stores'
 import { useProblemStore, usePracticeStore, useWrongStore } from '@/stores'
 import { moduleOf } from '@/utils/moduleHelpers'
 import { KatexFormula, ScoreReport, Card, Button } from '@/components/UI'
+import { OptionVisualizer } from './components/OptionVisualizer'
 import { colors } from '@/theme/colors'
 
 interface PracticeSessionProps {
@@ -252,6 +253,9 @@ export function PracticeSession({ mode, problems, onExit, onReviewKnowledge, onL
             </Button>
           </div>
         )}
+
+        {/* 选项可视化演练与推断 (M3.2 OptionVisualizer) */}
+        <OptionVisualizer problem={problem} onLaunchAnimation={onLaunchAnimation} />
 
         {/* 练习模式：提示按钮（展示首步描述作为思路提示） */}
         {!isTest && !revealed && problem.steps[0] && (

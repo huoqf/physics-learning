@@ -19,7 +19,7 @@ export default function HomePage() {
 
   const quickActions = [
     {
-      title: '🏆 高考18大模型',
+      title: '高考18大模型',
       description: '压轴模型、秒杀公式与仿真',
       icon: <Trophy className="w-6 h-6" style={{ color: colors.warning[600] }} />,
       route: '/master-models',

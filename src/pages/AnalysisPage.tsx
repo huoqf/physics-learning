@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { ContentWithKatex, StepCard, KnowledgeChain, useAnalysisSteps } from '@/features/analysis'
+import { ContentWithKatex, StepCard, KnowledgeChain, ProblemDeconstruction, useAnalysisSteps } from '@/features/analysis'
 import { getKnowledgeNode } from '@/data/knowledgeTree'
 import { getProblemDiagram } from '@/components/Physics/ProblemDiagrams'
 import { Button, Badge } from '@/components/UI'
@@ -95,6 +95,25 @@ export default function AnalysisPage() {
             ) : null
           })()}
         </div>
+
+        {/* 高考大题三步破题拆解流卡片 (M3.1 核心组件) */}
+        <ProblemDeconstruction
+          problem={problem}
+          currentStepIndex={currentStepIndex}
+          onStepChange={(idx) => {
+            if (idx > currentStepIndex) goToNextStep()
+            else if (idx < currentStepIndex) goToPrevStep()
+          }}
+          onLaunchAnimation={(animId, params) => {
+            if (params) {
+              const searchParams = new URLSearchParams()
+              Object.entries(params).forEach(([k, v]) => searchParams.set(k, String(v)))
+              navigate(`/animation/${animId}?${searchParams.toString()}`)
+            } else {
+              navigate(`/animation/${animId}`)
+            }
+          }}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           <div className="lg:col-span-3 bg-white rounded-lg border border-neutral-200 p-6">

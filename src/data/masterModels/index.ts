@@ -3,6 +3,7 @@ import type { MasterModel } from './types'
 
 export type { MasterModel, MasterModelQuickFormula } from './types'
 export { masterModels } from './models'
+export { getModelsByKnowledgeId, getModelsByProblem, getProblemMasterModel } from './mapping'
 
 export const masterModelIndex: Record<string, MasterModel> = {}
 masterModels.forEach((m) => {

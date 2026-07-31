@@ -10,7 +10,7 @@ export default function Layout() {
   const navItems = [
     { path: '/', label: '首页', icon: <Home className="w-4 h-4" /> },
     { path: '/knowledge', label: '知识树', icon: <BookOpen className="w-4 h-4" /> },
-    { path: '/master-models', label: '🏆 高考18大模型', icon: <Trophy className="w-4 h-4 text-amber-400" /> },
+    { path: '/master-models', label: '高考18大模型', icon: <Trophy className="w-4 h-4 text-amber-400" /> },
     { path: '/practice', label: '真题练习', icon: <ClipboardList className="w-4 h-4" /> },
     { path: '/wrong', label: '错题本', icon: <BookOpenCheck className="w-4 h-4" /> },
   ];

@@ -1,0 +1,11 @@
+{
+    "schema_version": 2,
+    "commit": "404f043d3818c7d469a8f6ba539eb2b5ea1b1e15",
+    "indexed_at": "2026-07-31T00:15:29Z",
+    "project": "D-code-physic-physics-learning",
+    "nodes": 6097,
+    "edges": 17239,
+    "original_size": 18284544,
+    "compressed_size": 3741519,
+    "compression_level": 3
+}

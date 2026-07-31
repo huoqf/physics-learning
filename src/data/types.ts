@@ -268,6 +268,14 @@ export interface Problem {
   tags?: string[]
   /** 绑定的物理仿真动画及真题参数预设 */
   targetAnimation?: TargetAnimationPreset
+  /** 选择题选项演练解析（M3.2 选项可视化演练扩展） */
+  optionExplanations?: Record<string, {
+    label: string
+    isCorrect: boolean
+    explanation: string
+    visualHint?: string
+    animParams?: Record<string, number>
+  }>
   steps: ProblemStep[]
 }
 
@@ -283,4 +291,10 @@ export interface ProblemStep {
   svgContent?: string
   explanation: string
   knowledgeId?: string
+  /** 临界时刻剖析（M3 大题三步破题扩展） */
+  criticalMoment?: {
+    timestamp?: number
+    description: string
+    highlightedForces?: string[]
+  }
 }
