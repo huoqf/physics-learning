@@ -5,10 +5,10 @@
  *   上半区（40%）：电压剖面图（U₁ → U₂ → U₃跌落 → U₄）
  *   下半区（60%）：实体网络拓扑（发电厂→升压→输电线→降压→用户灯泡矩阵）
  *
- * @agent-rule 遵循 useCanvasSize + CANVAS_PRESETS + theme token
+ * @agent-rule 遵循 VIEWPORT 标准架构（useAnimationViewport + AnimationSvgCanvas）
  * @agent-rule 使用 useAnimationFrame 驱动动画，禁止裸调 requestAnimationFrame
  * @agent-rule 所有颜色使用 TRANSMISSION_COLORS / PHYSICS_COLORS
- * @agent-rule 所有字体使用 font()，所有像素使用 px()
+ * @agent-rule 所有字体使用 font()（设计坐标，由 vp.transform 统一缩放）
  */
 import { useRef, useCallback, useState, useMemo } from 'react'
 import { colors } from '@/theme/colors'
@@ -16,6 +16,8 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { TRANSMISSION_COLORS } from '@/theme/physics'
 import { CANVAS_PRESETS } from '@/theme/spacing'
+import { useAnimationViewport } from '@/hooks'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationFrame } from '@/utils/animation'
 import { usePowerTransmissionPhysics } from './hooks/usePowerTransmissionPhysics'
 import { VoltageProfileChart } from './components/VoltageProfileChart'
@@ -49,10 +51,15 @@ export default function PowerTransmission() {
       speed: s.speed,
     }))
   )
-  const font = (v: number) => Math.max(7, Math.min(16, v))
   const [, setFrameTick] = useState(0)
 
-  // 设计坐标系 metrics 供物理计算 hook 使用
+  // ─── VIEWPORT 标准架构（full 840×650）────────────────────────────────────
+  const { containerRef, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
+  // 设计坐标系内 font/px 保持 identity（vp.transform 负责统一缩放）
+  const font = (v: number) => Math.max(7, Math.min(16, v))
+  const px = (v: number) => v
+
+  // 设计坐标系 metrics 供物理计算 hook 使用（固定 preset 尺寸，与设计坐标一致）
   const preset = CANVAS_PRESETS.full
   const designMetrics = useMemo(() => ({
     width: preset.width,
@@ -181,11 +188,7 @@ export default function PowerTransmission() {
   const H = preset.height
 
   return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      className="w-full h-full"
-      preserveAspectRatio="xMidYMid meet"
-    >
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
         {isOverloaded && (
           <g>
             <rect x={12} y={10} width={W - 24} height={28} rx={6} fill={colors.danger[100]} stroke={colors.danger[500]} />
@@ -230,7 +233,7 @@ export default function PowerTransmission() {
           stepDownX={stepDownX}
           userX={userX}
           W={W}
-          px={(v: number) => v}
+          px={px}
           font={font}
         />
 
@@ -259,7 +262,7 @@ export default function PowerTransmission() {
           stepDownX={stepDownX}
           userX={userX}
           isPlaying={isPlaying}
-          px={(v: number) => v}
+          px={px}
           font={font}
           getBallPosition={getBallPosition}
           bulbCount={bulbCount}
@@ -276,11 +279,11 @@ export default function PowerTransmission() {
           U4={U4}
           voltageRatio={pt.voltageRatio}
           mode={mode}
-          px={(v: number) => v}
+          px={px}
           font={font}
           W={W}
           H={H}
         />
-    </svg>
+    </AnimationSvgCanvas>
   )
 }

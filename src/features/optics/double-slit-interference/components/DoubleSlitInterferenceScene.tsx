@@ -99,7 +99,7 @@ export function DoubleSlitInterferenceScene({
       })
     }
     return lines
-  }, [sideFringeSpacingPx])
+  }, [sideFringeSpacingPx, centerY])
 
   return (
     <g>

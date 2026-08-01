@@ -37,6 +37,8 @@ function clamp(v: number, min: number, max: number) {
  * const carW = px(80)   // 等比缩放后的像素值
  * const labelFs = font(11) // 带 clamp 的字体大小
  */
+import { flushSync } from 'react-dom'
+
 export function useCanvasSize(
   initial: { width: number; height: number },
   options?: CanvasSizeOptions
@@ -47,10 +49,19 @@ export function useCanvasSize(
   useLayoutEffect(() => {
     const element = containerRef.current
     if (!element) return
-    const rect = element.getBoundingClientRect()
-    if (rect.width > 0 && rect.height > 0) {
-      setRaw({ width: rect.width, height: rect.height })
-    }
+
+    // 延迟一帧测量，避开 Suspense fallback→真实组件切换期间的过渡尺寸。
+    // 直接测量可能得到异常偏小的中间值（如 412×201），导致画面先缩小再放大。
+    const rafId = requestAnimationFrame(() => {
+      const rect = element.getBoundingClientRect()
+      if (rect.width > 0 && rect.height > 0) {
+        flushSync(() => {
+          setRaw({ width: rect.width, height: rect.height })
+        })
+      }
+    })
+
+    return () => cancelAnimationFrame(rafId)
   }, [])
 
   useEffect(() => {
@@ -61,16 +72,15 @@ export function useCanvasSize(
       if (!entries || entries.length === 0) return
       const { width, height } = entries[0].contentRect
       if (width > 0 && height > 0) {
-        setRaw({ width, height })
+        // flushSync 强制同步更新，避免 React 18 自动批处理将低优先级更新
+        // 延迟到下次高优先级交互（如点击播放）才刷新，导致画面"点击后才放大"。
+        flushSync(() => {
+          setRaw({ width, height })
+        })
       }
     })
 
     resizeObserver.observe(element)
-
-    const rect = element.getBoundingClientRect()
-    if (rect.width > 0 && rect.height > 0) {
-      setRaw({ width: rect.width, height: rect.height })
-    }
 
     return () => {
       resizeObserver.unobserve(element)
