@@ -3,7 +3,7 @@
 > 以下行为一旦出现，视为规范违反，必须回滚。
 
 | ❌ 禁止行为 | ✅ 正确替代 | 关联铁律 |
-|------------|-----------|---------|
+|------------|-----------|---------| 
 | `fill="#..."` / `stroke="red"` 等硬编码颜色 | `PHYSICS_COLORS.*` / `SCENE_COLORS.*` / `CHART_COLORS.*` | 铁律1-1 |
 | `fontSize={14}` 直接写死字号 | `font(14)`（来自 `canvasSize.font`） | 铁律1-1 |
 | `requestAnimationFrame(cb)` 裸调用 | `useAnimationLifecycle` / `src/utils/animation.ts` | 铁律1-4 |
@@ -24,7 +24,7 @@
 
 > **Trae IDE 默认加载的项目规范文件。**
 > 详细规范见下方「快速索引」部分。
-> 最后更新：2026-07-14（VectorArrow 改革：新增 PhysicsVectorArrow，originPixel→originDesign，物理矢量箭头禁止 pixelLength）
+> 最后更新：2026-08-01（修正铁律1-9 Canvas+SVG混合路径描述；CANVAS_PRESETS表头"viewBox设计坐标"→"设计尺寸"）
 
 ---
 
@@ -97,10 +97,10 @@
    - **【存量遗留，禁止新建】**：历史方式A（固定 viewBox）/ 方式B（动态 viewBox + overlay + vp.transform）/ 方式C（vp.visibleW/H 像素坐标），仅用于维护既有组件，按排期迁移至新标准路径（见 `07_CANVAS_SVG_CHART_RULES.md §2.3`）。
    - **严禁双重缩放反模式**：在**未声明 overlay 参数**时，`viewBox={\`0 0 ${width} ${height}\`}` 同时使用 `vp.transform` → 导致首次进入时画面"缓缓放大"视觉跳变。
 9. **Canvas+SVG 混合渲染坐标对齐**（约束 3 的混合渲染特例，含 `canvasRef` 的 `AnimationSvgCanvas`）：
-   - **新页面标准路径**：SVG 路径使用 `useSceneScale` + `worldToDesign`（输出设计坐标）；Canvas 路径使用 `useCanvasViewport({ mode: 'raw' })` + `designToPixel`；物理坐标→Canvas 像素通过 `toCanvasPixel = worldToDesign → designToPixel` 两步转换
+   - **新页面标准路径**：Canvas 和 SVG 统一用设计坐标。`useCanvasViewport({ vp, canvasSize })`（默认 `mode='transform'`）下 `setupFrame()` 返回的 ctx 已应用 vp.transform，调用方直接用设计坐标绘制；SVG 侧用 `useSceneScale` + `worldToDesign` 输出设计坐标传给 `VectorArrow`
    - **禁止**：用 `designW/worldWidth` 为基准的 sceneScale 直接计算 SVG 矢量起点设计坐标 → 宽高比不等于设计比时坐标偏移
-   - **禁止**：新代码使用 `createSceneScaleFromViewport` 的 `visibleArea`/`centerScale` 模式构造 Canvas sceneScale（输出容器像素，在 `useCanvasViewport({ mode: 'raw' })` 下需手动转换，改用 `useSceneScale` 统一输出设计坐标）
-   - **`sceneScale.maxVectorLength`** 已为设计坐标单位（`useSceneScale` 内部计算），SVG VectorArrow 可直接使用；Canvas 绘制需 `metersToPixels = sceneScale.scaleX * vp.scale`
+   - **禁止**：新代码使用 `createSceneScaleFromViewport` 的 `visibleArea`/`centerScale` 模式构造 Canvas sceneScale（输出容器像素，不经过 vp.transform，改用 `useSceneScale` 统一输出设计坐标）
+   - **`sceneScale.maxVectorLength`** 已为设计坐标单位（`useSceneScale` 内部计算），SVG VectorArrow 可直接使用；Canvas 绘制（`mode='transform'`）直接用设计坐标尺寸，无需额外换算
 10. **渲染缩放策略互斥**：同一组件只能选一条核心渲染策略。**严禁在 SVG 内用 `<foreignObject>` 嵌入响应式 React 图表组件**（两套缩放叠加导致图表 X 轴消失）；需动画+图表并列时须在 HTML 层 `flex` 分区，两者平级而非嵌套。
 11. **viewModel 纯净性**：`model/viewModel.ts` 只返回物理坐标系（y↑ 正）数据，**禁止**引入 `vp.scale`、`vp.transform`、`visibleW`、`visibleH`、`physicsToCanvas` 或任何 SVG/Canvas 坐标。`physicsToCanvas` 映射保留在 `hooks/useXxxPhysics.ts` 层，使缩放、响应式布局和物理计算可独立演进。
 
@@ -109,8 +109,8 @@
 
 页面主屏为 ThreePanel 固定三栏（左参数 / 中画布 / 右公式），`CANVAS_PRESETS`（定义于 `src/theme/spacing.ts`）按**动画在中屏的布局区域**提供以下四种预设：
 
-| preset | viewBox 设计坐标 | 选用条件 |
-|--------|----------------|----------|
+| preset | 设计尺寸 | 选用条件 |
+|--------|---------|----------|
 | `full`   | 840×650 | 动画独占中屏全区域，无图表分区 |
 | `splitV` | 840×325 | 中屏上下并列（上图表+下场景，或反向） |
 | `splitH` | 420×650 | 中屏左右并列（左场景+右图表面板） |

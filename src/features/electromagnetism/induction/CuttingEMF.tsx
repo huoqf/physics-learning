@@ -3,8 +3,11 @@ import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
+import { PHYSICS_COLORS } from '@/theme/physics'
 import { VT_CHART_COLORS, AT_CHART_COLORS, CHART_COLORS } from '@/theme/physics'
 import { VelocityTimeChart, BasePhysicsChart, useChartContext } from '@/components/Chart'
+import { VectorDefs } from '@/components/Physics'
+import { AnimationSvgCanvas } from '@/components/Layout'
 import { useCuttingEMFPhysics } from './hooks/useCuttingEMFPhysics'
 import { CuttingEMFScene } from './components/CuttingEMFScene'
 
@@ -187,12 +190,15 @@ export default function CuttingEMF() {
     showForceAnalysis = 1,
   } = params
 
-  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
+  const { containerRef, canvasSize, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
 
-  // 场景 sceneScale：基于 splitV 设计空间（CuttingEMFScene 使用固定 viewBox）
+  // 场景独立的 viewport（基于 splitV 设计空间）
+  const { containerRef: sceneRef, vp: sceneVp } = useAnimationViewport({ preset: CANVAS_PRESETS.splitV })
+
+  // 场景 sceneScale
   const sceneScale = useSceneScale({
-    vp, preset: CANVAS_PRESETS.splitV,
+    vp: sceneVp, preset: CANVAS_PRESETS.splitV,
     anchor: 'design',
     physicsWidth: 12,
     physicsHeight: 3,
@@ -256,19 +262,30 @@ export default function CuttingEMF() {
       </div>
 
       <div className="w-full flex-shrink-0" style={{ height: '50%' }}>
-        <CuttingEMFScene
-          physics={physics}
-          sceneScale={sceneScale}
-          font={(v: number) => Math.max(7, Math.min(16, v))}
-          canvasScale={1.0}
-          time={time}
-          isPlaying={isPlaying}
-          mode={mode}
-          showForceAnalysis={showForceAnalysis}
-          F_ext={F_ext}
-          L={L}
-          R={R}
-        />
+        <AnimationSvgCanvas containerRef={sceneRef} transform={sceneVp.transform}>
+          <defs>
+            <VectorDefs colors={[
+              PHYSICS_COLORS.velocity,
+              PHYSICS_COLORS.acceleration,
+              PHYSICS_COLORS.forceNet,
+              PHYSICS_COLORS.appliedForce,
+              PHYSICS_COLORS.lorentzForce
+            ]} />
+          </defs>
+          <CuttingEMFScene
+            physics={physics}
+            sceneScale={sceneScale}
+            font={(v: number) => Math.max(7, Math.min(16, v))}
+            vpScale={sceneVp.scale}
+            time={time}
+            isPlaying={isPlaying}
+            mode={mode}
+            showForceAnalysis={showForceAnalysis}
+            F_ext={F_ext}
+            L={L}
+            R={R}
+          />
+        </AnimationSvgCanvas>
       </div>
     </div>
   )

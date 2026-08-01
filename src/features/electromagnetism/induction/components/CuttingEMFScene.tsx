@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { PHYSICS_COLORS, EM_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { Rails, ConductorRod, PhysicsVectorArrow, VectorDefs, MagneticFieldSymbols } from '@/components/Physics'
+import { Rails, ConductorRod, PhysicsVectorArrow, MagneticFieldSymbols } from '@/components/Physics'
 import { worldToDesign } from '@/scene'
 import { CuttingEMFHandRule } from '../CuttingEMFHandRule'
 import type { CuttingEMFPhysicsResult } from '../hooks/useCuttingEMFPhysics'
@@ -11,7 +11,7 @@ interface CuttingEMFSceneProps {
   physics: CuttingEMFPhysicsResult
   sceneScale: SceneScale
   font: (v: number) => number
-  canvasScale: number
+  vpScale: number
   time: number
   isPlaying: boolean
   mode: number
@@ -22,7 +22,7 @@ interface CuttingEMFSceneProps {
 }
 
 export const CuttingEMFScene = React.memo(function CuttingEMFScene({
-  physics, sceneScale, font, canvasScale, time, isPlaying, mode, showForceAnalysis, F_ext, L, R,
+  physics, sceneScale, font, vpScale, time, isPlaying, mode, showForceAnalysis, F_ext, L, R,
 }: CuttingEMFSceneProps) {
   const {
     finalX, finalV, finalA, finalI, EMF_current, hasHitLimit,
@@ -72,21 +72,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
   }, [absB, B_out, railLeftDesign.px, railRightDesign.px, railSpacing, railCy, font])
 
   return (
-    <svg
-      viewBox={`0 0 ${CANVAS_PRESETS.splitV.width} ${CANVAS_PRESETS.splitV.height}`}
-      className="w-full h-full"
-      preserveAspectRatio="xMidYMid meet"
-    >
-        <defs>
-          <VectorDefs colors={[
-            PHYSICS_COLORS.velocity,
-            PHYSICS_COLORS.acceleration,
-            PHYSICS_COLORS.forceNet,
-            PHYSICS_COLORS.appliedForce,
-            PHYSICS_COLORS.lorentzForce
-          ]} />
-        </defs>
-
+    <g>
         {/* 导体棒扫过区域底色 */}
         {isPlaying && time > 0 && (
           <rect
@@ -256,7 +242,7 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
               fist={false}
               cx={rodDesign.px}
               cy={railCy + railSpacing / 2 + 45}
-              scale={canvasScale * 0.42}
+              scale={vpScale * 0.42}
               draggable={false}
             />
           </g>
@@ -416,6 +402,6 @@ export const CuttingEMFScene = React.memo(function CuttingEMFScene({
             </text>
           </g>
         )}
-      </svg>
+      </g>
   )
 })

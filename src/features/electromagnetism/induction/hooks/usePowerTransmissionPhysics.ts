@@ -109,7 +109,7 @@ export function usePowerTransmissionPhysics(
   const voltageRatio = Math.max(0, Math.min(1, U4 / ratedVoltage))
   const userBrightness = Math.max(0.08, voltageRatio)
 
-  // ─── 布局坐标（响应式）───────────────────────────────────────────────────────
+  // ─── 布局坐标（基于 full 840×650 设计空间，比例分配）────────────────────────
   const chartTop = H * 0.06
   const chartBottom = H * 0.36
   const networkTop = H * 0.44

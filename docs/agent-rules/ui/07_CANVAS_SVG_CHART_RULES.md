@@ -128,8 +128,8 @@ const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_P
 
 return (
   <div className="w-full h-full flex flex-col">
-    {/* 上方图表区：纯 HTML，不涉及 vp */}
-    <div className="h-[310px] shrink-0">
+    {/* 上方图表区：纯 HTML，不涉及 vp，用 flex-1 自适应 */}
+    <div className="flex-1 min-h-0">
       <BasePhysicsChart ... />
     </div>
     {/* 下方 SVG 动画区 */}
@@ -169,13 +169,21 @@ const { containerRef, canvasSize, vp } = useAnimationViewport({
   overlayRight: isAdvanced ? Math.round(cardWidth) : 0,
 })
 
+// 先算 scale：让最大半径 rMax 占设计区域 80%
+// createSceneScaleFromDesignCenter 接受 centerX/Y/scale，不接受 worldWidth/worldHeight
+const scale = useMemo(
+  () => Math.min((650 * 0.8) / (rMax * 2), (650 * 0.8) / (rMax * 2)),
+  [rMax]
+)
+
 const sceneScale = useMemo(() => createSceneScaleFromDesignCenter({
   designWidth: 650,
   designHeight: 650,
-  worldWidth: rMax * 2.4,
-  worldHeight: rMax * 2.4,
+  centerX: 325,    // preset.width / 2，设计坐标中心 X
+  centerY: 325,    // preset.height / 2，设计坐标中心 Y
+  scale,           // design-unit / meter（1m = scale 个设计单位）
   refMagnitudes: { velocity: vMax, force: fMax },
-}), [rMax, vMax, fMax])
+}), [scale, vMax, fMax])
 
 return (
   <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
@@ -413,10 +421,17 @@ const centerSceneScale = createSceneScaleFromViewport(vp, 'centerScale', {
 const x = (e.clientX - rect.left - vp.tx) / vp.scale
 const y = (e.clientY - rect.top - vp.ty) / vp.scale
 
-// ✅ 推荐做法（SVG 原生矩阵变换，精确可靠，适用于新标准路径及方式B）
+// ✅ AnimationSvgCanvas（无 viewBox）场景：getScreenCTM 返回容器像素坐标，需再逆变换
+// 步骤 1：getSvgPoint() 返回容器像素坐标（≠ 设计坐标）
 const pt = svg.createSVGPoint()
 pt.x = e.clientX; pt.y = e.clientY
-const { x, y } = pt.matrixTransform(svg.getScreenCTM()!.inverse())
+const svgPt = pt.matrixTransform(svg.getScreenCTM()!.inverse())  // 容器像素
+// 步骤 2：转换为设计坐标（用于拖拽计算物体位置）
+const x = (svgPt.x - vp.tx) / vp.scale  // 设计坐标 x
+const y = (svgPt.y - vp.ty) / vp.scale  // 设计坐标 y
+
+// ✅ 固定 viewBox 场景（存量方式 B）：getScreenCTM 直接返回设计坐标，无需额外步骤
+const { x, y } = pt.matrixTransform(svg.getScreenCTM()!.inverse())  // 已是设计坐标
 
 // ✅ 方式C 推荐做法：通过容器 bounding rect 与物理比例尺反算
 const { x: px, y: py } = canvasToPhysics(e.clientX - rect.left, e.clientY - rect.top, visibleW, visibleH, scale)

@@ -23,6 +23,7 @@ import { DATA_LAYOUT } from './freeFallConfig'
 import { SvgDataTable } from '@/components/Chart'
 import { VelocityTimeChart } from '@/components/Chart'
 import { useSceneScale } from '@/hooks/useSceneScale'
+import { AnimationSvgCanvas } from '@/components/Layout'
 
 // ─── 设计常量 ────────────────────────────────────────────────────────────────
 const DESIGN_WIDTH = 840
@@ -229,8 +230,8 @@ export default function FreeFallDripAnimation() {
 
   // ── 渲染 ──────────────────────────────────────────────────────────────────
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg viewBox={`0 0 ${DESIGN_WIDTH} ${DESIGN_HEIGHT}`} preserveAspectRatio="xMidYMid meet" className="w-full h-full bg-white rounded-lg shadow-inner">
+    <div className="w-full h-full">
+      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
 
         {/* ========== defs ========== */}
         <defs>
@@ -496,7 +497,7 @@ export default function FreeFallDripAnimation() {
           φ = {latitude.toFixed(0)}°
         </text>
 
-      </svg>
+      </AnimationSvgCanvas>
     </div>
   )
 }

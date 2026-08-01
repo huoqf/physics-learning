@@ -15,14 +15,15 @@ import {
 } from '@/theme/physics'
 
 import { selectMarkerTier } from '@/theme/physics'
-import { VelocityTimeChart } from '@/components/Chart'
+import { VelocityTimeChart, DisplacementTimeChart } from '@/components/Chart'
 import { useChartContext } from '@/components/Chart'
+import { AnimationSvgCanvas } from '@/components/Layout'
 
 /**
- * 匀变速直线运动 · 基础模式动画（已完成图表迁移）
+ * 匀变速直线运动 · 基础模式动画
  *
- * 上半部分：使用 VelocityTimeChart 标准预设 + 自定义 area 插件层
- * 下半部分：运动舞台（线框小车 + 轮轴旋转滚动 + 分段位移投影带）
+ * 上半部分（50%）：V-T 图（左）+ X-T 图（右），左右并列
+ * 下半部分（50%）：运动舞台（线框小车 + 轮轴旋转滚动 + 分段位移投影带）
  *
  * 保留4种教学面积模式（微元/等效割补/拆分公式/合并梯形），通过 underlay/children 实现。
  */
@@ -35,37 +36,35 @@ export default function UniformAccelerationAnimation() {
       setIsPlaying: s.setIsPlaying,
     }))
   )
-  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
-  const { font } = canvasSize
+  // ── 动画舞台独立视口（splitV 840×325，同 CuttingEMF / AmpereForce 模式）──
+  const { containerRef: sceneRef, canvasSize: sceneCanvasSize, vp: sceneVp, preset: scenePreset } = useAnimationViewport({ preset: CANVAS_PRESETS.splitV })
+  const { font } = sceneCanvasSize
 
   const { v0 = 0, a = 1.5, areaMode = 1, splitN = 0 } = params
   const showSplit = areaMode === 1 ? 1 : 0
   const showEquivRect = areaMode === 2 ? 1 : 0
 
-  // ── 动态布局 ──
-  const padding = vp.visibleW * 0.07
-  const fontSize = Math.max(10, vp.visibleW * 0.017)
-  const smallFont = Math.max(9, fontSize * 0.85)
+  // ── 动态布局（设计坐标）──
+  const DESIGN_W = scenePreset.width   // 840
+  const DESIGN_H = scenePreset.height  // 325
+  const padding = DESIGN_W * 0.07
+  const fontSize = font(14)
+  const smallFont = font(12)
 
-  // 上半部分：v-t 图（60%）
-  const chartSectionHeight = vp.visibleH * 0.6
-
-  // 下半部分：动画舞台（40%）
-  const stageTop = chartSectionHeight + 4
-  const stageHeight = vp.visibleH - stageTop
-  const groundY = stageTop + stageHeight * 0.72
-  const objW = vp.visibleW * 0.06
+  // 下半部分：动画舞台填满整个 splitV 设计空间
+  const groundY = DESIGN_H * 0.78
+  const objW = DESIGN_W * 0.06
   const objH = objW * 0.7
 
   // 物理位移坐标缩放
-  const baseScale = vp.visibleW * 0.03
+  const baseScale = DESIGN_W * 0.03
   const scale = baseScale
   const startX = padding
-  const maxVisibleX = vp.visibleX + vp.visibleW - padding
+  const maxVisibleX = DESIGN_W - padding
 
   // ── 矢量场景配置 ──
   // refMagnitude 固定：速度矢量随 v 伸缩（v=25→满长度），加速度矢量随 a 伸缩（a=8→满长度）
-  const sceneScale = useSceneScale({ vp, preset, anchor: 'viewport', physicsWidth: preset.width, physicsHeight: preset.height, refMagnitudes: { velocity: 25, acceleration: 8 } })
+  const sceneScale = useSceneScale({ vp: sceneVp, preset: CANVAS_PRESETS.splitV, anchor: 'viewport', physicsWidth: CANVAS_PRESETS.splitV.width, physicsHeight: CANVAS_PRESETS.splitV.height, refMagnitudes: { velocity: 25, acceleration: 8 } })
 
   // ── 物理计算 ──
   const { v, s } = calculateAcceleratedMotion(v0, a, time)
@@ -174,6 +173,30 @@ export default function UniformAccelerationAnimation() {
     const { v: vHalf } = calculateAcceleratedMotion(v0, a, halfT)
     return { t0: 0, tHalf: halfT, tEnd: time, v0, vHalf, vEnd: v }
   }, [showEquivRect, time, v0, a, v])
+
+  // ── X-T 位移-时间图数据 ──
+  const xtDomainPoints = useMemo(() => {
+    const dt = 0.05
+    const pts: { t: number; x: number }[] = []
+    for (let t = 0; t <= VT_X_MAX + 0.001; t += dt) {
+      const { s: disp } = calculateAcceleratedMotion(v0, a, t)
+      pts.push({ t, x: disp })
+    }
+    return pts
+  }, [v0, a])
+
+  const xtActivePoints = useMemo(
+    () => xtDomainPoints.filter(p => p.t <= time + 0.01),
+    [xtDomainPoints, time]
+  )
+
+  const xtYRange = useMemo((): [number, number] => {
+    const vals = xtDomainPoints.map(p => p.x)
+    const lo = Math.min(0, ...vals)
+    const hi = Math.max(0, ...vals)
+    const pad = (hi - lo) * 0.1 || 1
+    return [lo - pad, hi + pad]
+  }, [xtDomainPoints])
 
   // 自定义面积插件层（4种模式）—— 全部使用 chart context 坐标系
   const AreaUnderlay = () => {
@@ -343,39 +366,50 @@ export default function UniformAccelerationAnimation() {
   }
 
   return (
-    <div ref={containerRef} className="w-full h-full flex flex-col">
-      {/* ══════════ 上半部分：v-t 图（使用 VelocityTimeChart 标准组件） ══════════ */}
-      <div style={{ height: chartSectionHeight }}>
-        <VelocityTimeChart
-          mode="animated"
-          points={vtActivePoints}
-          domainPoints={vtDomainPoints}
-          currentTime={time}
-          tMax={VT_X_MAX}
-          vRange={[vtYMin, vtYMax]}
-          title="匀变速直线运动 v-t 图象"
-          xLabel="t / s"
-          yLabel="v / (m/s)"
-          showArea={false}
-          showCursor={time > 0 && time <= VT_X_MAX}
-          showGrid
-          underlay={<AreaUnderlay />}
-        />
+    <div className="w-full h-full flex flex-col">
+      {/* ══════════ 上半部分（50%）：V-T 图（左）+ X-T 图（右） ══════════ */}
+      <div className="flex-1 flex flex-row min-h-0">
+        <div className="flex-1 min-w-0">
+          <VelocityTimeChart
+            mode="animated"
+            points={vtActivePoints}
+            domainPoints={vtDomainPoints}
+            currentTime={time}
+            tMax={VT_X_MAX}
+            vRange={[vtYMin, vtYMax]}
+            title="v-t 图象"
+            xLabel="t / s"
+            yLabel="v / (m/s)"
+            showArea={false}
+            showCursor={time > 0 && time <= VT_X_MAX}
+            showGrid
+            underlay={<AreaUnderlay />}
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <DisplacementTimeChart
+            mode="animated"
+            points={xtActivePoints}
+            domainPoints={xtDomainPoints}
+            currentTime={time}
+            tMax={VT_X_MAX}
+            xRange={xtYRange}
+            title="x-t 图象"
+            xLabel="t / s"
+            yLabel="x / m"
+            showCursor={time > 0 && time <= VT_X_MAX}
+          />
+        </div>
       </div>
 
-      {/* 分隔线 */}
-      <svg width={canvasSize.width} height={1} className="flex-shrink-0">
-        <line x1={vp.visibleX + padding} y1={0} x2={vp.visibleX + vp.visibleW - padding} y2={0} stroke={CHART_COLORS.gridLine} strokeWidth={1} />
-      </svg>
-
-      {/* ══════════ 下半部分：动画舞台 ══════════ */}
-      <div className="flex-1 relative">
-        <svg viewBox={`0 ${chartSectionHeight} ${canvasSize.width} ${canvasSize.height - chartSectionHeight}`} preserveAspectRatio="xMidYMid meet" className="absolute inset-0 w-full h-full">
+      {/* ══════════ 下半部分（50%）：动画舞台（AnimationSvgCanvas） ═══════════ */}
+      <div className="flex-1 relative overflow-hidden">
+        <AnimationSvgCanvas containerRef={sceneRef} transform={sceneVp.transform}>
 
         {/* 地面精密厘米直尺跑道 */}
         <PhysicsGround
-          x={vp.visibleX + padding * 0.5} y={groundY}
-          width={vp.visibleW - padding}
+          x={padding * 0.5} y={groundY}
+          width={DESIGN_W - padding}
           appearance={{ color: PHYSICS_COLORS.labelText }}
           ruler={{
             domain: [0, 100],
@@ -466,14 +500,14 @@ export default function UniformAccelerationAnimation() {
           </g>
         )}
 
-        {/* 5 个文字标注 */}
+        {/* 5 个文字标注（位于 splitV 设计空间顶部） */}
         {!isOffscreen && (
           <g>
-            <text x={padding} y={stageTop + fontSize + 4} fontSize={smallFont} fill={PHYSICS_COLORS.velocity} fontWeight="bold">速度 v = {v.toFixed(2)} m/s</text>
-            <text x={padding + 120} y={stageTop + fontSize + 4} fontSize={smallFont} fill={PHYSICS_COLORS.displacement} fontWeight="bold">位移 x = {s.toFixed(2)} m</text>
-            <text x={padding + 240} y={stageTop + fontSize + 4} fontSize={smallFont} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">加速度 a = {a.toFixed(1)} m/s²</text>
-            <text x={padding + 370} y={stageTop + fontSize + 4} fontSize={smallFont} fill={PHYSICS_COLORS.labelText} fontWeight="bold">时间 t = {time.toFixed(2)} s</text>
-            <text x={padding + 480} y={stageTop + fontSize + 4} fontSize={smallFont} fill={CHART_COLORS.labelText} fontWeight="bold">
+            <text x={padding} y={fontSize + 4} fontSize={smallFont} fill={PHYSICS_COLORS.velocity} fontWeight="bold">速度 v = {v.toFixed(2)} m/s</text>
+            <text x={padding + 120} y={fontSize + 4} fontSize={smallFont} fill={PHYSICS_COLORS.displacement} fontWeight="bold">位移 x = {s.toFixed(2)} m</text>
+            <text x={padding + 240} y={fontSize + 4} fontSize={smallFont} fill={PHYSICS_COLORS.acceleration} fontWeight="bold">加速度 a = {a.toFixed(1)} m/s²</text>
+            <text x={padding + 370} y={fontSize + 4} fontSize={smallFont} fill={PHYSICS_COLORS.labelText} fontWeight="bold">时间 t = {time.toFixed(2)} s</text>
+            <text x={padding + 480} y={fontSize + 4} fontSize={smallFont} fill={CHART_COLORS.labelText} fontWeight="bold">
               {splitN > 0 ? '积分和 ≈ 位移' : (showEquivRect === 1 ? '平均速度矩形面积 = 位移' : '面积 = 位移')}
             </text>
           </g>
@@ -481,7 +515,7 @@ export default function UniformAccelerationAnimation() {
 
         {/* 箭头标记定义 */}
         <VectorDefs colors={[PHYSICS_COLORS.velocity, PHYSICS_COLORS.acceleration, PHYSICS_COLORS.referencePoint]} />
-      </svg>
+      </AnimationSvgCanvas>
       </div>
     </div>
   )

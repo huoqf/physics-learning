@@ -14,6 +14,7 @@ import { solveBasicAmpere, solveAdvancedAmpere, AMPERE_BASIC_SCENE } from './amp
 import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { CANVAS_COLORS } from '@/theme/physics'
+import { AnimationSvgCanvas } from '@/components/Layout'
 
 // 子组件导入
 import BasicAmpereScene from './components/BasicAmpereScene'
@@ -40,6 +41,9 @@ export default function AmpereForce() {
   )
   const { containerRef, canvasSize } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
+
+  // 场景独立 viewport（基于 splitV 设计空间）
+  const { containerRef: sceneRef, vp: sceneVp } = useAnimationViewport({ preset: CANVAS_PRESETS.splitV })
 
   // 读取控制参数
   const mode = params.mode ?? 0
@@ -182,12 +186,7 @@ export default function AmpereForce() {
             </div>
 
             {/* 2. 下半区: 3D 导轨与安培力演示场景 SVG */}
-            <svg
-              viewBox={`0 0 ${DESIGN_WIDTH} ${BOTTOM_SECTION_H}`}
-              preserveAspectRatio="xMidYMid meet"
-              className="w-full bg-white rounded-2xl shadow-lg border border-neutral-100"
-              style={{ height: BOTTOM_SECTION_H }}
-            >
+            <AnimationSvgCanvas containerRef={sceneRef} transform={sceneVp.transform} className="rounded-2xl shadow-lg border border-neutral-100">
               <BasicAmpereScene
                 x={0}
                 y={0}
@@ -202,7 +201,7 @@ export default function AmpereForce() {
                 isLimited={basicResult.isLimited}
                 font={font}
               />
-            </svg>
+            </AnimationSvgCanvas>
           </>
         ) : (
           // ─── 进阶模式：斜面受力平衡 (图表在上，动画在下) ───
@@ -258,12 +257,7 @@ export default function AmpereForce() {
             </div>
 
             {/* 2. 下半区: 3D 导轨斜坡场景 SVG */}
-            <svg
-              viewBox={`0 0 ${DESIGN_WIDTH} ${BOTTOM_SECTION_H}`}
-              preserveAspectRatio="xMidYMid meet"
-              className="w-full bg-white rounded-2xl shadow-lg border border-neutral-100"
-              style={{ height: BOTTOM_SECTION_H }}
-            >
+            <AnimationSvgCanvas containerRef={sceneRef} transform={sceneVp.transform} className="rounded-2xl shadow-lg border border-neutral-100">
               <InclinedAmpereScene
                 x={0}
                 y={0}
@@ -278,7 +272,7 @@ export default function AmpereForce() {
                 showVectors={showVectors}
                 font={font}
               />
-            </svg>
+            </AnimationSvgCanvas>
           </>
         )}
       </div>

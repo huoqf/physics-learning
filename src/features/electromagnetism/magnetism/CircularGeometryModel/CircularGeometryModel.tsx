@@ -3,11 +3,12 @@ import { useAnimationStore } from '@/stores'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
-import { worldToPixel } from '@/scene'
+import { worldToDesign } from '@/scene'
 import { PhysicsVectorArrow, ParticleTrajectory } from '@/components/Physics'
+import { AnimationSvgCanvas } from '@/components/Layout'
 
 export default function CircularGeometryModel() {
-  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.splitH })
+  const { containerRef, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.splitH })
   
   const params = useAnimationStore((s) => s.params)
   const time = useAnimationStore((s) => s.time)
@@ -120,15 +121,17 @@ export default function CircularGeometryModel() {
     }
   }, [time, tOut, isPlaying, setTime])
 
-  // 5. SVG 顶层辅助参数与 SceneScale 对象（用于 VectorArrow 渲染）
+  // 5. SVG 顶层辅助参数与 SceneScale 对象（设计坐标单位）
+  const DESIGN_W = preset.width
+  const DESIGN_H = preset.height
   const sceneScale = useSceneScale({
     vp,
     preset: CANVAS_PRESETS.splitH,
     anchor: 'custom',
-    customOriginX: vp.centerX,
-    customOriginY: vp.visibleH * 0.8,
-    customScaleX: vp.visibleW / 7,
-    customScaleY: vp.visibleH / 13,
+    customOriginX: DESIGN_W / 2,
+    customOriginY: DESIGN_H * 0.8,
+    customScaleX: DESIGN_W / 7,
+    customScaleY: DESIGN_H / 13,
     refMagnitudes: {
       force: 20,
       velocity: 3.0,
@@ -137,9 +140,9 @@ export default function CircularGeometryModel() {
     intentionalNonUniformScale: true,
   })
 
-  // 坐标转换辅助函数 xw, yw -> pixel
-  const px = useCallback((xw: number) => worldToPixel(xw, 0, sceneScale).px, [sceneScale])
-  const py = useCallback((yw: number) => worldToPixel(0, yw, sceneScale).py, [sceneScale])
+  // 坐标转换辅助函数: xw, yw -> 设计坐标
+  const dx = useCallback((xw: number) => worldToDesign(xw, 0, sceneScale).px, [sceneScale])
+  const dy = useCallback((yw: number) => worldToDesign(0, yw, sceneScale).py, [sceneScale])
 
   // 粒子历史轨迹点集（完整路径，用于 ParticleTrajectory 渲染）
   const historyPoints = useMemo(() => {
@@ -148,10 +151,10 @@ export default function CircularGeometryModel() {
     const tEnd = Math.max(time, 0)
     for (let t = 0; t <= tEnd + 1e-9; t += dt) {
       const s = getParticleState(t)
-      pts.push({ x: px(s.px), y: py(s.py) })
+      pts.push({ x: dx(s.px), y: dy(s.py) })
     }
     return pts
-  }, [time, getParticleState, px, py])
+  }, [time, getParticleState, dx, dy])
 
   // 短拖尾点集（最近 20 个采样点，用于运动增强拖尾）
   const tailPoints = useMemo(() => {
@@ -167,50 +170,42 @@ export default function CircularGeometryModel() {
     for (let i = 0; i <= steps; i++) {
       const t = (i / steps) * tEnd
       const s = getParticleState(t)
-      pts.push({ x: px(s.px), y: py(s.py) })
+      pts.push({ x: dx(s.px), y: dy(s.py) })
     }
     return pts
-  }, [tOut, getParticleState, px, py])
+  }, [tOut, getParticleState, dx, dy])
 
-  // 6. 特征直角三角形顶点像素坐标计算
+  // 6. 特征直角三角形顶点设计坐标计算
   const trianglePoints = useMemo(() => {
     if (boundaryType === 0) {
       return {
-        p1: `${px(xc)},${py(yc)}`,
-        p2: `${px(0)},${py(0)}`,
-        p3: `${px(exitState.xOut / 2)},${py(0)}`,
+        p1: `${dx(xc)},${dy(yc)}`,
+        p2: `${dx(0)},${dy(0)}`,
+        p3: `${dx(exitState.xOut / 2)},${dy(0)}`,
         formula: '(R - d)^2 + \\left(\\frac{L}{2}\\right)^2 = R^2 \\implies R^2\\cos^2\\alpha + R^2\\sin^2\\alpha = R^2',
       }
     } else if (boundaryType === 1) {
       return {
-        p1: `${px(xc)},${py(yc)}`,
-        p2: `${px(exitState.xOut)},${py(exitState.yOut)}`,
-        p3: `${px(exitState.xOut)},${py(yc)}`,
+        p1: `${dx(xc)},${dy(yc)}`,
+        p2: `${dx(exitState.xOut)},${dy(exitState.yOut)}`,
+        p3: `${dx(exitState.xOut)},${dy(yc)}`,
         formula: `(R - d)^2 + x_{\\text{offset}}^2 = R^2 \\implies (R - 4.0)^2 + (${Math.abs(exitState.xOut - xc).toFixed(2)})^2 = R^2`,
       }
     } else {
       return {
-        p1: `${px(xc)},${py(yc)}`,
-        p2: `${px(0)},${py(3.5)}`,
-        p3: `${px(exitState.xOut)},${py(exitState.yOut)}`,
+        p1: `${dx(xc)},${dy(yc)}`,
+        p2: `${dx(0)},${dy(3.5)}`,
+        p3: `${dx(exitState.xOut)},${dy(exitState.yOut)}`,
         formula: '\\Delta\\varphi = 2\\arctan\\left(\\frac{R_b}{R}\\right)',
       }
     }
-  }, [boundaryType, xc, yc, exitState, px, py])
+  }, [boundaryType, xc, yc, exitState, dx, dy])
 
   const currentParticleState = getParticleState(time)
 
   return (
-    <div
-      ref={containerRef}
-      className="w-full h-full relative select-none overflow-hidden"
-    >
-      {/* 1. 底层 SVG 渲染磁场边界图形与背景填充 */}
-      <svg
-        className="absolute top-0 left-0 w-full h-full"
-        viewBox={`0 0 ${canvasSize.width} ${canvasSize.height}`}
-        preserveAspectRatio="xMidYMid meet"
-      >
+    <div className="w-full h-full relative select-none overflow-hidden">
+      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform} className="relative">
         <defs>
           {/* 磁场向里 ⊗ 填充图案 */}
           <pattern id="bfield-pattern" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -228,137 +223,133 @@ export default function CircularGeometryModel() {
           </pattern>
         </defs>
 
-        {/* 边界图形背景填充 */}
+        {/* 1. 磁场边界图形与背景填充 */}
         {boundaryType === 0 && (
           <>
-            <rect x="0" y="0" width={canvasSize.width} height={py(0)} fill="rgba(22, 163, 74, 0.05)" />
-            <rect x="0" y="0" width={canvasSize.width} height={py(0)} fill="url(#bfield-pattern)" />
-            <line x1="0" y1={py(0)} x2={canvasSize.width} y2={py(0)} stroke="rgba(22, 163, 74, 0.4)" strokeWidth="3" />
-            <text x="16" y={py(0) + 20} fill="rgba(22, 163, 74, 0.8)" fontSize="12" fontWeight="bold">磁场边界 y = 0</text>
+            <rect x="0" y="0" width={DESIGN_W} height={dy(0)} fill="rgba(22, 163, 74, 0.05)" />
+            <rect x="0" y="0" width={DESIGN_W} height={dy(0)} fill="url(#bfield-pattern)" />
+            <line x1="0" y1={dy(0)} x2={DESIGN_W} y2={dy(0)} stroke="rgba(22, 163, 74, 0.4)" strokeWidth="3" />
+            <text x="16" y={dy(0) + 20} fill="rgba(22, 163, 74, 0.8)" fontSize="12" fontWeight="bold">磁场边界 y = 0</text>
           </>
         )}
 
         {boundaryType === 1 && (
           <>
-            <rect x={px(-3)} y={py(4)} width={px(3) - px(-3)} height={py(0) - py(4)} fill="rgba(22, 163, 74, 0.05)" />
-            <rect x={px(-3)} y={py(4)} width={px(3) - px(-3)} height={py(0) - py(4)} fill="url(#bfield-pattern)" />
-            <rect x={px(-3)} y={py(4)} width={px(3) - px(-3)} height={py(0) - py(4)} stroke="rgba(22, 163, 74, 0.4)" strokeWidth="3" fill="none" />
-            <text x={px(-3)} y={py(0) + 20} fill="rgba(22, 163, 74, 0.8)" fontSize="12" fontWeight="bold">磁场底界 y = 0</text>
-            <text x={px(-3)} y={py(4) - 10} fill="rgba(22, 163, 74, 0.8)" fontSize="12" fontWeight="bold">磁场顶界 y = 4.0m</text>
+            <rect x={dx(-3)} y={dy(4)} width={dx(3) - dx(-3)} height={dy(0) - dy(4)} fill="rgba(22, 163, 74, 0.05)" />
+            <rect x={dx(-3)} y={dy(4)} width={dx(3) - dx(-3)} height={dy(0) - dy(4)} fill="url(#bfield-pattern)" />
+            <rect x={dx(-3)} y={dy(4)} width={dx(3) - dx(-3)} height={dy(0) - dy(4)} stroke="rgba(22, 163, 74, 0.4)" strokeWidth="3" fill="none" />
+            <text x={dx(-3)} y={dy(0) + 20} fill="rgba(22, 163, 74, 0.8)" fontSize="12" fontWeight="bold">磁场底界 y = 0</text>
+            <text x={dx(-3)} y={dy(4) - 10} fill="rgba(22, 163, 74, 0.8)" fontSize="12" fontWeight="bold">磁场顶界 y = 4.0m</text>
           </>
         )}
 
         {boundaryType === 2 && (
           <>
-            <circle cx={px(0)} cy={py(3.5)} r={3.5 * sceneScale.scale} fill="rgba(22, 163, 74, 0.05)" />
-            <circle cx={px(0)} cy={py(3.5)} r={3.5 * sceneScale.scale} fill="url(#bfield-pattern)" />
-            <circle cx={px(0)} cy={py(3.5)} r={3.5 * sceneScale.scale} stroke="rgba(22, 163, 74, 0.4)" strokeWidth="3" fill="none" />
-            <text x={px(0)} y={py(3.5) - 3.5 * sceneScale.scale - 10} textAnchor="middle" fill="rgba(22, 163, 74, 0.8)" fontSize="12" fontWeight="bold">圆形磁场边界 R_b = 3.5m</text>
+            <circle cx={dx(0)} cy={dy(3.5)} r={3.5 * sceneScale.scale} fill="rgba(22, 163, 74, 0.05)" />
+            <circle cx={dx(0)} cy={dy(3.5)} r={3.5 * sceneScale.scale} fill="url(#bfield-pattern)" />
+            <circle cx={dx(0)} cy={dy(3.5)} r={3.5 * sceneScale.scale} stroke="rgba(22, 163, 74, 0.4)" strokeWidth="3" fill="none" />
+            <text x={dx(0)} y={dy(3.5) - 3.5 * sceneScale.scale - 10} textAnchor="middle" fill="rgba(22, 163, 74, 0.8)" fontSize="12" fontWeight="bold">圆形磁场边界 R_b = 3.5m</text>
           </>
         )}
-      </svg>
 
-      {/* 3. 顶层 SVG Overlay 粒子轨迹 + 实时几何线及矢量箭头 */}
-      <svg
-        className="absolute top-0 left-0 w-full h-full pointer-events-none"
-        viewBox={`0 0 ${canvasSize.width} ${canvasSize.height}`}
-        preserveAspectRatio="xMidYMid meet"
-      >
-        {/* 粒子轨迹（统一组件：预测虚线 + 历史虚线 + 拖尾 + 本体） */}
-        <ParticleTrajectory
-          historyPoints={historyPoints}
-          predictedPoints={predictedPoints}
-          tailPoints={tailPoints}
-          isFocus={true}
-          chargeSign={particleSign > 0 ? '+' : '-'}
-        />
+        {/* 2. 粒子轨迹 + 实时几何线及矢量箭头 */}
+        <g>
+          {/* 粒子轨迹（统一组件：预测虚线 + 历史虚线 + 拖尾 + 本体） */}
+          <ParticleTrajectory
+            historyPoints={historyPoints}
+            predictedPoints={predictedPoints}
+            tailPoints={tailPoints}
+            isFocus={true}
+            chargeSign={particleSign > 0 ? '+' : '-'}
+          />
 
-        {/* Step 1: 速度垂线 */}
-        {step1_showPerp && (
-          <>
-            <line 
-              x1={px(0)} y1={py(0)} 
-              x2={px(xc)} y2={py(yc)} 
-              stroke={PHYSICS_COLORS.annotation} strokeWidth="1.5" strokeDasharray="4 4" 
-            />
-            {time > 0 && (
+          {/* Step 1: 速度垂线 */}
+          {step1_showPerp && (
+            <>
               <line 
-                x1={px(time <= tOut ? currentParticleState.px : exitState.xOut)} 
-                y1={py(time <= tOut ? currentParticleState.py : exitState.yOut)} 
-                x2={px(xc)} y2={py(yc)} 
+                x1={dx(0)} y1={dy(0)} 
+                x2={dx(xc)} y2={dy(yc)} 
                 stroke={PHYSICS_COLORS.annotation} strokeWidth="1.5" strokeDasharray="4 4" 
               />
-            )}
-          </>
-        )}
+              {time > 0 && (
+                <line 
+                  x1={dx(time <= tOut ? currentParticleState.px : exitState.xOut)} 
+                  y1={dy(time <= tOut ? currentParticleState.py : exitState.yOut)} 
+                  x2={dx(xc)} y2={dy(yc)} 
+                  stroke={PHYSICS_COLORS.annotation} strokeWidth="1.5" strokeDasharray="4 4" 
+                />
+              )}
+            </>
+          )}
 
-        {/* Step 2: 锁定圆心 O 及半径 R */}
-        {step2_showCenter && (
-          <>
-            <circle cx={px(xc)} cy={py(yc)} r="4" fill={PHYSICS_COLORS.annotation} />
-            <text x={px(xc) + 8} y={py(yc) + 4} fill={PHYSICS_COLORS.annotation} fontSize="13" fontWeight="bold">O</text>
-            
-            <line x1={px(xc)} y1={py(yc)} x2={px(0)} y2={py(0)} stroke={PHYSICS_COLORS.annotation} strokeWidth="1" strokeDasharray="2 2" />
-            <line x1={px(xc)} y1={py(yc)} x2={px(exitState.xOut)} y2={py(exitState.yOut)} stroke={PHYSICS_COLORS.annotation} strokeWidth="1" strokeDasharray="2 2" />
-            
-            <text x={(px(xc) + px(0)) / 2 + 10} y={(py(yc) + py(0)) / 2 + 5} fill={PHYSICS_COLORS.annotation} fontSize="11" fontStyle="italic">R={R.toFixed(2)}m</text>
-          </>
-        )}
+          {/* Step 2: 锁定圆心 O 及半径 R */}
+          {step2_showCenter && (
+            <>
+              <circle cx={dx(xc)} cy={dy(yc)} r="4" fill={PHYSICS_COLORS.annotation} />
+              <text x={dx(xc) + 8} y={dy(yc) + 4} fill={PHYSICS_COLORS.annotation} fontSize="13" fontWeight="bold">O</text>
+              
+              <line x1={dx(xc)} y1={dy(yc)} x2={dx(0)} y2={dy(0)} stroke={PHYSICS_COLORS.annotation} strokeWidth="1" strokeDasharray="2 2" />
+              <line x1={dx(xc)} y1={dy(yc)} x2={dx(exitState.xOut)} y2={dy(exitState.yOut)} stroke={PHYSICS_COLORS.annotation} strokeWidth="1" strokeDasharray="2 2" />
+              
+              <text x={(dx(xc) + dx(0)) / 2 + 10} y={(dy(yc) + dy(0)) / 2 + 5} fill={PHYSICS_COLORS.annotation} fontSize="11" fontStyle="italic">R={R.toFixed(2)}m</text>
+            </>
+          )}
 
-        {/* Step 3: 高亮特征三角形 */}
-        {step3_lockTriangle && (
-          <polygon 
-            points={trianglePoints.p1 + ' ' + trianglePoints.p2 + ' ' + trianglePoints.p3}
-            fill={withAlpha(PHYSICS_COLORS.annotation, 0.15)}
-            stroke={PHYSICS_COLORS.annotation}
-            strokeWidth="2"
+          {/* Step 3: 高亮特征三角形 */}
+          {step3_lockTriangle && (
+            <polygon 
+              points={trianglePoints.p1 + ' ' + trianglePoints.p2 + ' ' + trianglePoints.p3}
+              fill={withAlpha(PHYSICS_COLORS.annotation, 0.15)}
+              stroke={PHYSICS_COLORS.annotation}
+              strokeWidth="2"
+            />
+          )}
+
+          {/* 入射切线处的速度参考矢量（弱化底色） */}
+          <PhysicsVectorArrow
+            vector={{ x: velocity * Math.cos(angleRad), y: velocity * Math.sin(angleRad) }}
+            type="velocity"
+            sceneScale={sceneScale}
+            color={withAlpha(PHYSICS_COLORS.velocity, 0.35)}
+            label="v0"
           />
-        )}
 
-        {/* 入射切线处的速度参考矢量（弱化底色） */}
-        <PhysicsVectorArrow
-          vector={{ x: velocity * Math.cos(angleRad), y: velocity * Math.sin(angleRad) }}
-          type="velocity"
-          sceneScale={sceneScale}
-          color={withAlpha(PHYSICS_COLORS.velocity, 0.35)}
-          label="v0"
-        />
+          {/* 出射切线处的速度参考矢量（弱化底色） */}
+          <PhysicsVectorArrow
+            originDesign={{ x: exitState.xOut, y: exitState.yOut }}
+            vector={{ x: exitState.vxOut, y: exitState.vyOut }}
+            type="velocity"
+            sceneScale={sceneScale}
+            color={withAlpha(PHYSICS_COLORS.velocity, 0.35)}
+            label="vt"
+          />
 
-        {/* 出射切线处的速度参考矢量（弱化底色） */}
-        <PhysicsVectorArrow
-          originDesign={{ x: exitState.xOut, y: exitState.yOut }}
-          vector={{ x: exitState.vxOut, y: exitState.vyOut }}
-          type="velocity"
-          sceneScale={sceneScale}
-          color={withAlpha(PHYSICS_COLORS.velocity, 0.35)}
-          label="vt"
-        />
-
-        {/* 实时粒子上的动态速度矢量 */}
-        <PhysicsVectorArrow
-          originDesign={{ x: currentParticleState.px, y: currentParticleState.py }}
-          vector={{ x: currentParticleState.vx, y: currentParticleState.vy }}
-          type="velocity"
-          sceneScale={sceneScale}
-          color={PHYSICS_COLORS.velocity}
-          label="v"
-        />
-
-        {/* 实时粒子上的动态洛伦兹力向心力矢量 */}
-        {currentParticleState.inField && (
+          {/* 实时粒子上的动态速度矢量 */}
           <PhysicsVectorArrow
             originDesign={{ x: currentParticleState.px, y: currentParticleState.py }}
-            vector={{
-              x: ((xc - currentParticleState.px) / R) * (velocity * B),
-              y: ((yc - currentParticleState.py) / R) * (velocity * B),
-            }}
-            type="lorentzForce"
+            vector={{ x: currentParticleState.vx, y: currentParticleState.vy }}
+            type="velocity"
             sceneScale={sceneScale}
-            color={PHYSICS_COLORS.lorentzForce}
-            label="F_L"
+            color={PHYSICS_COLORS.velocity}
+            label="v"
           />
-        )}
-      </svg>
+
+          {/* 实时粒子上的动态洛伦兹力向心力矢量 */}
+          {currentParticleState.inField && (
+            <PhysicsVectorArrow
+              originDesign={{ x: currentParticleState.px, y: currentParticleState.py }}
+              vector={{
+                x: ((xc - currentParticleState.px) / R) * (velocity * B),
+                y: ((yc - currentParticleState.py) / R) * (velocity * B),
+              }}
+              type="lorentzForce"
+              sceneScale={sceneScale}
+              color={PHYSICS_COLORS.lorentzForce}
+              label="F_L"
+            />
+          )}
+        </g>
+      </AnimationSvgCanvas>
     </div>
   )
 }

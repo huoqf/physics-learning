@@ -6,11 +6,12 @@ import type { UseLightRodRopePhysicsResult } from '../hooks/useLightRodRopePhysi
 
 interface LightRodRopeSceneProps {
   physics: UseLightRodRopePhysicsResult
+  font?: (v: number) => number
 }
 
-export function LightRodRopeScene({ physics }: LightRodRopeSceneProps) {
+export function LightRodRopeScene({ physics, font: fontProp }: LightRodRopeSceneProps) {
   const { params, state, layout, forceVectors, particles, tEnd, time, canvasSize } = physics
-  const { font } = canvasSize
+  const font = fontProp ?? canvasSize.font
   const { constraint, showGravity, showTension, showResolution, showVelocityDecomp } = params
   const {
     pivotX,

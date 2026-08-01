@@ -87,11 +87,10 @@ export default function <Topic>Animation() {
   })
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
-        <<Topic>Scene physics={physics} canvasSize={canvasSize} sceneScale={sceneScale} vp={vp} />
-      </AnimationSvgCanvas>
-    </div>
+    // AnimationSvgCanvas 内部已包含 ref={containerRef} 的 div，禁止再套外层 div
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+      <<Topic>Scene physics={physics} canvasSize={canvasSize} sceneScale={sceneScale} vp={vp} />
+    </AnimationSvgCanvas>
   )
 }
 ```
@@ -122,11 +121,12 @@ import { PHYSICS_COLORS, CANVAS_COLORS, STROKE } from '@/theme/physics'
 import { worldToDesign } from '@/scene'
 import type { SceneScale } from '@/scene'
 import type { ViewportInfo } from '@/utils/useViewport'
+import type { CanvasSize } from '@/utils'
 import type { <Topic>PhysicsResult } from '../hooks/use<Topic>Physics'
 
 interface <Topic>SceneProps {
   physics: <Topic>PhysicsResult
-  canvasSize: { font: (size: number) => number }
+  canvasSize: CanvasSize  // 含 font() / px() / width / height / scale，勿缩窄类型
   sceneScale: SceneScale
   vp: ViewportInfo  // 用于 vp.designLeft / vp.designVisibleW 撑满地面/网格线
 }

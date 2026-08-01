@@ -164,9 +164,9 @@ export function useLightRodRopePhysics(): UseLightRodRopePhysicsResult {
     }
   }, [time, tEnd, setTime, setIsPlaying])
 
-  // 舒展充盈 360×650 视口坐标系下的连接体布局比例与支点中心
+  // 舒展充盈 420×650 视口坐标系下的连接体布局比例与支点中心
   const SCALE_PIX = 240
-  const pivotX = 180
+  const pivotX = 210
   const pivotY = 220
   const L_pix = L * SCALE_PIX
   const R_p = 16

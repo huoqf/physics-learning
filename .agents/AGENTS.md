@@ -61,6 +61,28 @@ const sceneScale = useSceneScale({ vp, preset: CANVAS_PRESETS.full, anchor: 'cen
 ```
 
 ```tsx
+// ✅ 圆周/旋转对称场景（square preset）— 两条等效路径，任选其一：
+// 路径 A：useSceneScale({ anchor: 'center' }) — 中心跟随可视区，适合有 overlay 时
+const sceneScale = useSceneScale({
+  vp, preset: CANVAS_PRESETS.square,
+  anchor: 'center',
+  physicsScaleDesign: scale, // 1m = scale 设计单位
+  centerSource: 'viewport',  // 以可视区中心为物理原点
+  refMagnitudes: { velocity: vMax, force: fMax },
+})
+
+// 路径 B：createSceneScaleFromDesignCenter() — 中心固定在设计坐标系，适合无 overlay
+// ⚠️ 接口必填 centerX/Y/scale，禁止传 worldWidth/worldHeight（不在接口定义内）
+const scale = Math.min((650 * 0.8) / (rMax * 2), (650 * 0.8) / (rMax * 2))
+const sceneScale = useMemo(() => createSceneScaleFromDesignCenter({
+  designWidth: 650, designHeight: 650,
+  centerX: 325, centerY: 325,   // preset 中心
+  scale,                         // design-unit / meter
+  refMagnitudes: { velocity: vMax, force: fMax },
+}), [scale, vMax, fMax])
+```
+
+```tsx
 // ❌ 禁止（存量遗留，新建页面严禁使用）
 viewBox={`0 0 ${width} ${height}`}           // 历史方式A（固定 viewBox）
 createSceneScaleFromViewport({ mode: 'visibleArea' })  // deprecated
