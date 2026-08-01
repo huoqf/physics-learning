@@ -82,7 +82,10 @@ export const ThreePanel: React.FC<ThreePanelProps> = ({
   const rightW = tier === 'standard' ? PANEL.right.standard : PANEL.right.compact
 
   return (
-    <div className={`relative flex h-full ${rightBelow ? 'flex-col' : ''} ${className}`}>
+    // flex-1 min-h-0：在页面壳（定高 flex 列）中精确填满顶栏之外的剩余空间。
+    // 不用 h-full（height:100% 会与顶栏叠加超售，靠 flex-shrink 消化，
+    // 收缩量随面板内容 min-height 漂移，导致画布尺寸不稳定/页面溢出）。
+    <div className={`relative flex flex-1 min-h-0 ${rightBelow ? 'flex-col' : ''} ${className}`}>
       {/* ── 左侧面板 ──────────────────────────────────────────────── */}
       {left && (
         leftDrawer ? (

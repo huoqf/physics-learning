@@ -67,11 +67,11 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
     if (!hasStarted) return null
 
     return (
-      <div className="w-full bg-white rounded-lg shadow-sm border border-neutral-200 px-4 py-3">
+      <div className="w-full bg-white rounded-lg shadow-sm border border-neutral-200 px-4 py-2">
         <div className="flex items-center justify-center">
           <button
             onClick={onPlayPause}
-            className="w-10 h-10 rounded-full bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 active:scale-[0.97] flex items-center justify-center transition-all"
+            className="w-9 h-9 rounded-full bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 active:scale-[0.97] flex items-center justify-center transition-all"
             style={{
               transitionProperty: 'all',
               transitionDuration: `${duration.fast}ms`,
@@ -93,7 +93,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
   // ── loop 型：仅速度选择器 + 徽章 ──
   if (controlsMode === 'loop') {
     return (
-      <div className="w-full bg-white rounded-lg shadow-sm border border-neutral-200 px-4 py-3">
+      <div className="w-full bg-white rounded-lg shadow-sm border border-neutral-200 px-4 py-2">
         <div className="flex items-center gap-4">
           {/* 循环运行中徽章 */}
           <div
@@ -142,7 +142,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
 
   // ── timed 型：完整控制栏（默认）──
   return (
-    <div className="w-full bg-white rounded-lg shadow-sm border border-neutral-200 p-4">
+    <div className="w-full bg-white rounded-lg shadow-sm border border-neutral-200 px-4 py-2">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           {enableFrameStep && (
@@ -157,7 +157,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
 
           <button
             onClick={onPlayPause}
-            className="w-10 h-10 rounded-full bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 active:scale-[0.97] flex items-center justify-center transition-all"
+            className="w-9 h-9 rounded-full bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 active:scale-[0.97] flex items-center justify-center transition-all"
             style={{
               transitionProperty: 'all',
               transitionDuration: `${duration.fast}ms`,
@@ -184,7 +184,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
 
           <button
             onClick={onReset}
-            className="w-10 h-10 rounded-full bg-neutral-100 text-neutral-700 hover:bg-neutral-200 active:bg-neutral-300 active:scale-[0.97] flex items-center justify-center transition-all"
+            className="w-9 h-9 rounded-full bg-neutral-100 text-neutral-700 hover:bg-neutral-200 active:bg-neutral-300 active:scale-[0.97] flex items-center justify-center transition-all"
             style={{
               transitionProperty: 'all',
               transitionDuration: `${duration.fast}ms`,

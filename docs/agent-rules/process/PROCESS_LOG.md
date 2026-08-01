@@ -2,9 +2,9 @@
 
 ## 当前周期
 
-- 当前日期：2026-W28（07-07）
+- 当前日期：2026-W31（08-02）
 - 当前里程碑：M4 电磁/热/光/原子模块
-- 本周详细日志：[2026-W28.md](./logs/2026-W28.md)
+- 本周详细日志：[2026-W31.md](./logs/2026-W31.md)
 - 提交流程：[CHECKLIST.md](./CHECKLIST.md)
 
 ## 历史归档（按 ISO 周）
@@ -30,6 +30,7 @@
 | 07-08 | vibration | refactor | 简谐运动与单摆重构：oscillation.ts + 三模式 + 沙摆 |
 | 07-08 | mechanics/gravitation | feat | 天体双星/多星模型交互动画 + celestial.ts |
 | 07-08 | electromagnetism/combined-fields | feat | 复合场组合场模型：fieldsCascade.ts + resonanceLock |
+| 08-02 | UI/layout | fix | 页面壳布局跳变修复：AnimationPage/ThreePanel/AnimationControls 三文件，零动画组件改动，根除所有动画页"初始偏小→播放跳变"通病 |
 | 07-06 | modern/bohr-theory | refactor | 原子结构与玻尔理论教学规范化重构 |
 | 07-05 | electromagnetism/electrostatics | refactor | ChargeInEField 高考优化 + CoulombLaw 拆分（708→28+290+288） |
 | 07-03 | various | refactor | 超长文件拆分：MomentumConservation(743→329)、Kepler(673→460)、PowerTransmission(696→256) |

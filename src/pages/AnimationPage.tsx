@@ -1,7 +1,7 @@
-import { Suspense, useEffect, useMemo } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, FlaskConical, Play } from 'lucide-react'
-import { buildPhysicsQuantities } from '@/data/physicsQuantities'
+import { buildPhysicsQuantities, preloadQuantityBuilder } from '@/data/physicsQuantities'
 import { getAnimationConfig } from '@/data/animationRegistry'
 import { knowledgeTree } from '@/data/knowledgeTree'
 import { useAnimationStore } from '@/stores'
@@ -118,7 +118,7 @@ function AnimationCenter({
     )
   }
 
-  const standardControlBar = controlBar('px-2 pb-2 pt-1 shrink-0')
+  const standardControlBar = controlBar('px-2 pb-1 pt-1 shrink-0')
 
   const centerHeightClass = config.centerExtraHeight ?? 'h-1/2'
   const restHeightClass = config.centerExtraHeight ? 'flex-1' : 'h-1/2'
@@ -229,11 +229,23 @@ function RightPhysicsPanel({
   const time = useAnimationStore((s) => s.time)
   const isPlaying = useAnimationStore((s) => s.isPlaying)
   const lastChangedParam = useAnimationStore((s) => s.lastChangedParam)
+  // 物理量构建器懒加载：预载完成后触发一次重渲染，
+  // 避免右面板长期停留在兜底参数列表、直到首次交互才跳变为完整物理量
+  const [builderReady, setBuilderReady] = useState(false)
+  useEffect(() => {
+    let alive = true
+    setBuilderReady(false)
+    preloadQuantityBuilder(animId).then(() => { if (alive) setBuilderReady(true) })
+    return () => { alive = false }
+  }, [animId])
   // 播放时用 0.1s 精度减少重算，拖动时用精确时间保持响应
   const effectiveTime = isPlaying ? Math.round(time * 10) / 10 : time
   const physicsQuantities = useMemo(
-    () => buildPhysicsQuantities(animId, params, effectiveTime, lastChangedParam),
-    [animId, params, effectiveTime, lastChangedParam]
+    () => {
+      void builderReady // 引用就绪标记：构建器预载完成翻转时触发重算，从兜底数据切换为真实物理量
+      return buildPhysicsQuantities(animId, params, effectiveTime, lastChangedParam)
+    },
+    [animId, params, effectiveTime, lastChangedParam, builderReady]
   )
 
   return (
@@ -396,8 +408,8 @@ export default function AnimationPage() {
 
   return (
     <div className="flex flex-col bg-neutral-50" style={{ height: `calc(100vh - ${LAYOUT.topBarHeight}px)` }}>
-      {/* 顶部栏 */}
-      <div className="flex items-center gap-4 px-6 h-14 bg-primary-800 shadow-sm border-b border-neutral-200">
+      {/* 顶部栏：shrink-0 防止被 flex 压缩（页面壳高度恒定，ThreePanel 以 flex-1 填满剩余空间）；h-11 紧凑化为中屏画布回收竖向空间 */}
+      <div className="flex items-center gap-4 px-6 h-11 shrink-0 bg-primary-800 shadow-sm border-b border-neutral-200">
         <button
           onClick={() => navigate('/knowledge')}
           className="flex items-center gap-2 text-white/80 hover:text-white active:scale-[0.97]"
