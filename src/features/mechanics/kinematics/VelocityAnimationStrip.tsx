@@ -27,7 +27,7 @@ export default function VelocityAnimationStrip({
     }))
   )
   const deltaT = params.deltaT ?? 0.5
-  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
 
   // ── 布局参数 ──
   const padding = canvasSize.width * 0.07

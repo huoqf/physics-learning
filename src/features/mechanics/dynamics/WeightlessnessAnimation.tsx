@@ -18,7 +18,7 @@ export default function WeightlessnessAnimation() {
     }))
   )
 
-  const { containerRef, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
+  const { containerRef, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { g = 9.8, m = 50 } = params
 
   const layout = useWeightlessnessLayout(vp, params, time, isPlaying, setIsPlaying)

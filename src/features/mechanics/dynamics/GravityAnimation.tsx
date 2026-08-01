@@ -35,7 +35,7 @@ export default function GravityAnimation() {
     time: s.time,
     }))
   )
-  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
 
   const { m1 = 1000, m2 = 10, r = 5, mode = 0, preset: presetParam = 0, showChart = 1 } = params

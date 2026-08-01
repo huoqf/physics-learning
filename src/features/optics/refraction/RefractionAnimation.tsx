@@ -41,10 +41,7 @@ export default function RefractionAnimation() {
   const { params } = useAnimationStore(
     useShallow((s) => ({ params: s.params }))
   )
-  const { containerRef, canvasSize, vp } = useAnimationViewport({
-    preset: CANVAS_PRESETS.full,
-    presetCompensation: 1.2,
-  })
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
 
   const theta1 = params.theta1 ?? 45
   const n = params.n ?? 1.5

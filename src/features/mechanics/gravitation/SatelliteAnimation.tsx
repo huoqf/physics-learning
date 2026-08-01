@@ -24,7 +24,7 @@ export default function SatelliteAnimation() {
       time: s.time, isPlaying: s.isPlaying, setIsPlaying: s.setIsPlaying,
     }))
   )
-  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
 
   const { r = 7.0, mode = 0, v0 = 7.7, isLaunched = 0, showChart = 1, showCompare = 1 } = params

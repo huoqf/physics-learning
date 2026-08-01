@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { PHYSICS_COLORS, OPTICS_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
 import { hexToRgb } from '@/utils'
 import type { DoubleSlitInterferencePhysicsResult } from '../hooks/useDoubleSlitInterferencePhysics'
+import type { CanvasPreset } from '@/hooks/useAnimationViewport'
 
 /** 暗色光屏背景 */
 const DARK_SCREEN_BG = '#000000'
@@ -13,6 +14,7 @@ interface DoubleSlitInterferenceSceneProps {
     width: number
     height: number
   }
+  preset: CanvasPreset
   wavelength: number
   slitDistance: number
   screenDistance: number
@@ -21,6 +23,7 @@ interface DoubleSlitInterferenceSceneProps {
 export function DoubleSlitInterferenceScene({
   physics,
   canvasSize,
+  preset,
   wavelength,
   slitDistance,
   screenDistance,
@@ -28,10 +31,17 @@ export function DoubleSlitInterferenceScene({
   const { font } = canvasSize
   const { wavelengthColor, wavefronts, intensityPath } = physics
 
-  // 1. 视觉缩放常数
-  const centerY = 200 // 光路部分的 Y 轴中心
-  const slitX = 240   // 双缝板的 X 坐标
-  const screenX = 580 // 光屏侧视的 X 坐标
+  // 1. 布局常数 — 全部基于设计坐标系 (preset.width × preset.height = 840×650)
+  //    AnimationSvgCanvas 通过 vp.transform 自动缩放适配不同分辨率
+  const DESIGN_W = preset.width   // 840
+  const DESIGN_H = preset.height  // 650
+  const centerY = DESIGN_H / 2    // 325，光路部分在设计空间正中心
+  const slitX = DESIGN_W * 0.286  // ≈ 240，双缝板的 X 坐标
+  const screenX = DESIGN_W * 0.69 // ≈ 580，光屏侧视的 X 坐标
+  // 光屏/挡板垂直范围：相对 centerY 对称，高 240px
+  const screenHalf = 120
+  const screenTop = centerY - screenHalf    // 205
+  const screenBottom = centerY + screenHalf // 445
   
   // 视觉缝距 (0.1mm - 0.5mm 映射到 12px - 50px)
   const d_vis = slitDistance * 100
@@ -106,10 +116,10 @@ export function DoubleSlitInterferenceScene({
       <line x1={115} y1={centerY} x2={slitX} y2={centerY} stroke={CANVAS_COLORS.white} strokeWidth={1} opacity={0.6} />
       <text x={70} y={centerY + 40} fontSize={font(12)} fill={CANVAS_COLORS.labelText} textAnchor="middle">光源</text>
 
-      {/* ─── 2. 双缝挡板 (中部) ─── */}
+      {/* 双缝挡板 (中部) ─── */}
       {/* 挡板主体 */}
-      <line x1={slitX} y1={80} x2={slitX} y2={centerY - d_vis / 2} stroke={OPTICS_COLORS.mirrorStroke} strokeWidth={6} strokeLinecap="round" />
-      <line x1={slitX} y1={centerY + d_vis / 2} x2={slitX} y2={320} stroke={OPTICS_COLORS.mirrorStroke} strokeWidth={6} strokeLinecap="round" />
+      <line x1={slitX} y1={screenTop} x2={slitX} y2={centerY - d_vis / 2} stroke={OPTICS_COLORS.mirrorStroke} strokeWidth={6} strokeLinecap="round" />
+      <line x1={slitX} y1={centerY + d_vis / 2} x2={slitX} y2={screenBottom} stroke={OPTICS_COLORS.mirrorStroke} strokeWidth={6} strokeLinecap="round" />
       {/* 遮光板中央连接部分 */}
       {d_vis > 12 && (
         <line x1={slitX} y1={centerY - d_vis / 2 + 3} x2={slitX} y2={centerY + d_vis / 2 - 3} stroke={OPTICS_COLORS.mirrorStroke} strokeWidth={4} />
@@ -122,7 +132,7 @@ export function DoubleSlitInterferenceScene({
       {/* 狭缝标注 */}
       <text x={slitX - 15} y={centerY - d_vis / 2 - 5} fontSize={font(11)} fill={wavelengthColor} textAnchor="end">S₁</text>
       <text x={slitX - 15} y={centerY + d_vis / 2 + 12} fontSize={font(11)} fill={wavelengthColor} textAnchor="end">S₂</text>
-      <text x={slitX - 10} y={340} fontSize={font(12)} fill={CANVAS_COLORS.labelText} textAnchor="middle">双缝板</text>
+      <text x={slitX - 10} y={screenBottom + 20} fontSize={font(12)} fill={CANVAS_COLORS.labelText} textAnchor="middle">双缝板</text>
 
       {/* 缝距 d 尺寸标注 */}
       <g opacity={0.85}>
@@ -241,8 +251,8 @@ export function DoubleSlitInterferenceScene({
       </g>
 
       {/* ─── 6. 侧视光屏 (右侧) ─── */}
-      <line x1={screenX} y1={80} x2={screenX} y2={320} stroke={OPTICS_COLORS.mirrorStroke} strokeWidth={4} />
-      <text x={screenX} y={340} fontSize={font(12)} fill={CANVAS_COLORS.labelText} textAnchor="middle">光屏 (侧视)</text>
+      <line x1={screenX} y1={screenTop} x2={screenX} y2={screenBottom} stroke={OPTICS_COLORS.mirrorStroke} strokeWidth={4} />
+      <text x={screenX} y={screenBottom + 20} fontSize={font(12)} fill={CANVAS_COLORS.labelText} textAnchor="middle">光屏 (侧视)</text>
 
       {/* ─── 7. 屏幕正面图与光强曲线分割线 ─── */}
       <line x1={605} y1={80} x2={605} y2={560} stroke={CANVAS_COLORS.grid} strokeWidth={1} strokeDasharray="3 3" />

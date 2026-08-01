@@ -41,7 +41,6 @@ export default function OrthogonalDecompositionAnimation() {
   // 1. 使用标准视口 Hook (设计尺寸满屏预设)
   const { containerRef, vp, preset } = useAnimationViewport({
     preset: CANVAS_PRESETS.full,
-    presetCompensation: 1.2
   })
   const svgRef = useRef<SVGSVGElement>(null)
 

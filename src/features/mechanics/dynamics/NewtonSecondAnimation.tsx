@@ -53,7 +53,7 @@ export default function NewtonSecondAnimation() {
       showVectors: s.showVectors,
     }))
   )
-  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
 
   const contextProfile = useAnimationLayout()
   const sceneProfile = contextProfile ?? NEWTON_SCENE_PROFILE

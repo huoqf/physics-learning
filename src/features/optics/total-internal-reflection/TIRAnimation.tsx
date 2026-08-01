@@ -16,10 +16,7 @@ export default function TIRAnimation() {
   const { params } = useAnimationStore(
     useShallow((s) => ({ params: s.params }))
   )
-  const { containerRef, canvasSize, vp } = useAnimationViewport({
-    preset: CANVAS_PRESETS.full,
-    presetCompensation: 1.2,
-  })
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
 
   const mode = params.mode ?? 0
   const theta1 = params.theta1 ?? 30

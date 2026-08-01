@@ -28,7 +28,7 @@ export default function EquilibriumAnimation() {
   const theta2 = params.theta2 ?? 45
   const mode = params.mode ?? 0
 
-  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const svgRef = useRef<SVGSVGElement>(null)
 
   const physicsData = useEquilibriumPhysics({

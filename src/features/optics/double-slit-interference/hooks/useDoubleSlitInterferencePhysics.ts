@@ -114,14 +114,14 @@ export function useDoubleSlitInterferencePhysics({
     const waveOffset = (time * visSpeed) % visWavelength
 
     // 计算双缝到光屏之间的扩散波前半径
-    // 双缝在 x = 240，光屏在 x = 640，物理传播距离视觉上为 400px
-    const maxRadius = 400
+    // 双缝在 x = 240，光屏在 x = 640，物理传播距离视觉上为 300px
+    // maxRadius=300 确保波前圆弧不超出设计空间高度 (650px)
+    const maxRadius = 300
     const wavefronts: number[] = []
-    let r = waveOffset
+    // 从第一个有效波前开始（r=0 时无视觉效果，略过以避免首次播放时波前从无到有的跳变）
+    let r = waveOffset > 0 ? waveOffset : visWavelength
     while (r < maxRadius) {
-      if (r > 0) {
-        wavefronts.push(r)
-      }
+      wavefronts.push(r)
       r += visWavelength
     }
 

@@ -24,7 +24,7 @@ export default function VelocityAnimation() {
     setIsPlaying: s.setIsPlaying,
     }))
   )
-  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
 
   const scene = params.scene ?? 0      // 0=公交, 1=短跑
   const v = params.v ?? 8              // m/s

@@ -35,7 +35,7 @@ export default function UniformAccelerationAnimation() {
       setIsPlaying: s.setIsPlaying,
     }))
   )
-  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
 
   const { v0 = 0, a = 1.5, areaMode = 1, splitN = 0 } = params

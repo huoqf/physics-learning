@@ -13,7 +13,7 @@ export default function DoubleSlitInterferenceAnimation() {
   )
 
   // ── 2. Viewport 视口设置 ──
-  const { containerRef, canvasSize, vp } = useAnimationViewport({
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({
     preset: CANVAS_PRESETS.full,
   })
 
@@ -30,19 +30,19 @@ export default function DoubleSlitInterferenceAnimation() {
     time,
   })
 
-  // ── 5. 场景坐标全部基于固定设计坐标系（840×650），无需 SceneScale
+  // ── 5. 场景坐标全部基于设计坐标系（preset.width × preset.height = 840×650）
+  //    AnimationSvgCanvas 通过 vp.transform 自动缩放适配不同分辨率
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
-        <DoubleSlitInterferenceScene
-          physics={physics}
-          canvasSize={canvasSize}
-          wavelength={wavelength}
-          slitDistance={slitDistance}
-          screenDistance={screenDistance}
-        />
-      </AnimationSvgCanvas>
-    </div>
+    <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
+      <DoubleSlitInterferenceScene
+        physics={physics}
+        canvasSize={canvasSize}
+        preset={preset}
+        wavelength={wavelength}
+        slitDistance={slitDistance}
+        screenDistance={screenDistance}
+      />
+    </AnimationSvgCanvas>
   )
 }

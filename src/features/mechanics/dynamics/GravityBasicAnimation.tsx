@@ -19,7 +19,7 @@ export const GravityBasicAnimation: FC = () => {
     }))
   )
   const setIsPlaying = useAnimationStore((s) => s.setIsPlaying)
-  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
 
   // 参数解析

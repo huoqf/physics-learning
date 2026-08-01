@@ -44,7 +44,7 @@ export default function FrictionAnimation() {
     }))
   )
 
-  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
 
   const contextProfile = useAnimationLayout()

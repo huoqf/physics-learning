@@ -30,7 +30,7 @@ interface ScatterSimProps {
 }
 
 export default function ScatterSim({ isPlaying, time: _time, modelType, impactParameter, autoEmit, keepTrails, launchTrigger, clearTrigger, updateParam }: ScatterSimProps) {
-  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { font } = canvasSize
   const { canvasRef, setupFrame } = useCanvasViewport({ vp, canvasSize, mode: 'raw' })
 

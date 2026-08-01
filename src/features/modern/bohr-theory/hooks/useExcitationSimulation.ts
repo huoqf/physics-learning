@@ -28,7 +28,7 @@ export function useExcitationSimulation({
   clearTrigger,
   updateParam,
 }: UseExcitationSimulationParams) {
-  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full, presetCompensation: 1.2 })
+  const { containerRef, canvasSize, vp } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
   const { canvasRef, setupFrame } = useCanvasViewport({ vp, canvasSize, mode: 'raw' })
 
   const atomQuantityRef = useRef(atomQuantity)
