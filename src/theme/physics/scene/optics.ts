@@ -6,10 +6,11 @@
 // ─── 光学器具外观 (Optical Apparatus) ────────────────────────────────────────
 export const OPTICAL_COLORS = {
   // 光屏
-  screenFill:    '#FAFAFA', // 正面
-  screenBack:    '#E5E7EB', // 背面
-  screenStroke:  '#6B7280', // 外框
-  screenFoot:    '#374151', // 支架
+  screenFill:     '#FAFAFA', // 正面（亮色）
+  screenDarkFill: '#000000', // 正面（暗色背景，用于干涉/衍射/偏振条纹显影）
+  screenBack:     '#E5E7EB', // 背面
+  screenStroke:   '#6B7280', // 外框
+  screenFoot:     '#374151', // 支架
 
   // 光源
   sourceBody:    '#374151', // 外壳

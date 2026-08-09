@@ -1,11 +1,12 @@
-import { OPTICS_COLORS, PHYSICS_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
+import { OPTICS_COLORS, PHYSICS_COLORS, CANVAS_COLORS, SCENE_COLORS, withAlpha } from '@/theme/physics'
 import type { SceneScale } from '@/scene'
 import type { LaserPhysicsResult } from '../hooks/useLaserPhysics'
 
-/** 暗色面板背景 (模拟接收屏/干涉屏暗室) */
-const DARK_PANEL_BG = '#0B0F19'
-const DARK_PANEL_STROKE = '#1E293B'
-const DARK_SCREEN_BG = '#020617'
+/** 科学实验室清爽明亮面板调色 (引自统一 Theme Token) */
+const PANEL_BG = CANVAS_COLORS.gridSubtle
+const PANEL_STROKE = CANVAS_COLORS.axis
+const PLOT_BG = CANVAS_COLORS.white
+const STRIPE_DARK_BOX = CANVAS_COLORS.strokeDark
 
 interface LaserSceneProps {
   physics: LaserPhysicsResult
@@ -17,12 +18,14 @@ interface LaserSceneProps {
   sceneScale: SceneScale
   mode: number
   propagationDistance: number
+  divergenceAngleNormal: number
   wavelength: number
   slitDistance: number
   screenDist: number
   laserPower: number
   focusDiameter: number
   material: number
+  time: number
 }
 
 export function LaserScene({
@@ -30,17 +33,211 @@ export function LaserScene({
   canvasSize,
   mode,
   propagationDistance,
+  divergenceAngleNormal,
   slitDistance,
   screenDist,
   focusDiameter,
   material,
+  time,
 }: LaserSceneProps) {
   const { font } = canvasSize
+
+  const modeVal = Number(mode ?? 0)
+  const materialVal = Number(material ?? 0)
 
   // 1. 基准参考线和坐标
   const centerY = 162.5 // splitV 画布高度 325 的中线
   const normalY = 75    // 模式 0/1 的普通光通道中心
   const laserY = 250    // 模式 0/1 的激光通道中心
+  // ==========================================
+  // 矢量 Mini-Plot 图表卡片 (嵌入 840 × 325 矢量坐标)
+  // ==========================================
+  const renderMiniPlotMode0 = () => {
+    const boxX = 570
+    const boxY = 15
+    const boxW = 250
+    const boxH = 140
+    
+    const plotX = boxX + 35
+    const plotY = boxY + 28
+    const plotW = 200
+    const plotH = 88
+
+    const pts = physics.divergenceChartPoints
+    const laserDPath = pts.map((pt, idx) => {
+      const px = plotX + (pt.x / 100) * plotW
+      const py = plotY + plotH - Math.min(1.0, pt.y / 25) * plotH
+      return `${idx === 0 ? 'M' : 'L'} ${px.toFixed(1)} ${py.toFixed(1)}`
+    }).join(' ')
+
+    const normalPath = Array.from({ length: 20 }).map((_, idx) => {
+      const d = (idx / 19) * 100
+      const r0 = 1.0
+      const thetaNorm = (divergenceAngleNormal * Math.PI / 180) / 2
+      const rN = (r0 + d * Math.tan(thetaNorm) * 1000)
+      const px = plotX + (d / 100) * plotW
+      const py = plotY + plotH - Math.min(1.0, rN / 25) * plotH
+      return `${idx === 0 ? 'M' : 'L'} ${px.toFixed(1)} ${py.toFixed(1)}`
+    }).join(' ')
+
+    const curX = plotX + (propagationDistance / 100) * plotW
+    const curR_Laser = physics.laserSpotRadius * 1000 // mm
+    const curY = plotY + plotH - Math.min(1.0, curR_Laser / 25) * plotH
+
+    return (
+      <g>
+        <rect x={boxX} y={boxY} width={boxW} height={boxH} rx={6} fill={PLOT_BG} stroke={PANEL_STROKE} strokeWidth={1} />
+        <text x={boxX + 10} y={boxY + 18} fontSize={font(11)} fill={CANVAS_COLORS.labelText} fontWeight="bold">光斑半径 R - 传播距离 d 关系</text>
+
+        <line x1={plotX} y1={plotY} x2={plotX} y2={plotY + plotH} stroke={CANVAS_COLORS.textMuted} strokeWidth={1} />
+        <line x1={plotX} y1={plotY + plotH} x2={plotX + plotW} y2={plotY + plotH} stroke={CANVAS_COLORS.textMuted} strokeWidth={1} />
+
+        <text x={plotX - 4} y={plotY + 8} fontSize={font(8)} fill={CANVAS_COLORS.textMuted} textAnchor="end">R(mm)</text>
+        <text x={plotX + plotW} y={plotY + plotH + 10} fontSize={font(8)} fill={CANVAS_COLORS.textMuted} textAnchor="end">d(m)</text>
+
+        <path d={normalPath} fill="none" stroke={OPTICS_COLORS.lightRayRefracted} strokeWidth={1.5} strokeDasharray="3 3" />
+        <path d={laserDPath} fill="none" stroke={PHYSICS_COLORS.velocity} strokeWidth={2} />
+
+        <circle cx={curX} cy={curY} r={3.5} fill={CANVAS_COLORS.white} stroke={PHYSICS_COLORS.velocity} strokeWidth={2} />
+        <line x1={curX} y1={plotY} x2={curX} y2={plotY + plotH} stroke={CANVAS_COLORS.textMuted} strokeDasharray="2 2" opacity={0.6} />
+
+        {/* 图例 */}
+        <line x1={boxX + 160} y1={boxY + 15} x2={boxX + 175} y2={boxY + 15} stroke={PHYSICS_COLORS.velocity} strokeWidth={2} />
+        <text x={boxX + 180} y={boxY + 18} fontSize={font(8)} fill={CANVAS_COLORS.textMuted}>激光</text>
+        <line x1={boxX + 205} y1={boxY + 15} x2={boxX + 220} y2={boxY + 15} stroke={OPTICS_COLORS.lightRayRefracted} strokeWidth={1.5} strokeDasharray="2 2" />
+        <text x={boxX + 225} y={boxY + 18} fontSize={font(8)} fill={CANVAS_COLORS.textMuted}>普通光</text>
+      </g>
+    )
+  }
+
+  const renderMiniPlotMode1 = () => {
+    const boxX = 570
+    const boxY = 15
+    const boxW = 250
+    const boxH = 140
+    
+    const plotX = boxX + 35
+    const plotY = boxY + 28
+    const plotW = 200
+    const plotH = 88
+
+    const laserPath = physics.laserInterferencePoints.map((pt, idx) => {
+      const px = plotX + ((pt.x + 5) / 10) * plotW
+      const py = plotY + plotH - Math.min(1.0, pt.y / 2.2) * plotH
+      return `${idx === 0 ? 'M' : 'L'} ${px.toFixed(1)} ${py.toFixed(1)}`
+    }).join(' ')
+
+    const normalPath = physics.normalInterferencePoints.map((pt, idx) => {
+      const px = plotX + ((pt.x + 5) / 10) * plotW
+      const py = plotY + plotH - Math.min(1.0, pt.y / 2.2) * plotH
+      return `${idx === 0 ? 'M' : 'L'} ${px.toFixed(1)} ${py.toFixed(1)}`
+    }).join(' ')
+
+    return (
+      <g>
+        <rect x={boxX} y={boxY} width={boxW} height={boxH} rx={6} fill={PLOT_BG} stroke={PANEL_STROKE} strokeWidth={1} />
+        <text x={boxX + 10} y={boxY + 18} fontSize={font(11)} fill={CANVAS_COLORS.labelText} fontWeight="bold">双缝干涉相对光强分布 I(y)</text>
+
+        <line x1={plotX} y1={plotY} x2={plotX} y2={plotY + plotH} stroke={CANVAS_COLORS.textMuted} strokeWidth={1} />
+        <line x1={plotX} y1={plotY + plotH} x2={plotX + plotW} y2={plotY + plotH} stroke={CANVAS_COLORS.textMuted} strokeWidth={1} />
+
+        <text x={plotX - 4} y={plotY + 8} fontSize={font(8)} fill={CANVAS_COLORS.textMuted} textAnchor="end">I</text>
+        <text x={plotX + plotW} y={plotY + plotH + 10} fontSize={font(8)} fill={CANVAS_COLORS.textMuted} textAnchor="end">y(mm)</text>
+
+        <path d={normalPath} fill="none" stroke={OPTICS_COLORS.lightRayRefracted} strokeWidth={1.5} strokeDasharray="3 3" />
+        <path d={laserPath} fill="none" stroke={OPTICS_COLORS.wavelengthRed} strokeWidth={2} />
+      </g>
+    )
+  }
+
+  const renderMiniPlotMode2 = () => {
+    const boxX = 570
+    const boxY = 15
+    const boxW = 250
+    const boxH = 295
+    
+    const plotX = boxX + 40
+    const plotY = boxY + 35
+    const plotW = 195
+    const plotH = 235
+
+    const maxT = Math.max(400, physics.boilingPoint + 300)
+    const pts = physics.tempChartPoints
+
+    const tPath = pts.map((pt, idx) => {
+      const px = plotX + (pt.x / 10) * plotW
+      const py = plotY + plotH - Math.min(1.0, pt.y / maxT) * plotH
+      return `${idx === 0 ? 'M' : 'L'} ${px.toFixed(1)} ${py.toFixed(1)}`
+    }).join(' ')
+
+    const curX = plotX + Math.min(1.0, time / 10) * plotW
+    const curY = plotY + plotH - Math.min(1.0, physics.temp / maxT) * plotH
+
+    return (
+      <g>
+        <rect x={boxX} y={boxY} width={boxW} height={boxH} rx={8} fill={PLOT_BG} stroke={PANEL_STROKE} strokeWidth={1.5} />
+        <text x={boxX + 12} y={boxY + 22} fontSize={font(12)} fill={CANVAS_COLORS.labelText} fontWeight="bold">焦点区域温度 T(t) 变化曲线</text>
+
+        <line x1={plotX} y1={plotY} x2={plotX} y2={plotY + plotH} stroke={CANVAS_COLORS.textMuted} strokeWidth={1} />
+        <line x1={plotX} y1={plotY + plotH} x2={plotX + plotW} y2={plotY + plotH} stroke={CANVAS_COLORS.textMuted} strokeWidth={1} />
+
+        <text x={plotX - 4} y={plotY + 8} fontSize={font(9)} fill={CANVAS_COLORS.textMuted} textAnchor="end">T(°C)</text>
+        <text x={plotX + plotW} y={plotY + plotH + 12} fontSize={font(9)} fill={CANVAS_COLORS.textMuted} textAnchor="end">t(s)</text>
+
+        {/* 熔点线 */}
+        {physics.meltingPoint > 0 && (
+          <g>
+            <line
+              x1={plotX}
+              y1={plotY + plotH - (physics.meltingPoint / maxT) * plotH}
+              x2={plotX + plotW}
+              y2={plotY + plotH - (physics.meltingPoint / maxT) * plotH}
+              stroke={OPTICS_COLORS.wavelengthBlue}
+              strokeDasharray="3 3"
+              strokeWidth={1}
+            />
+            <text
+              x={plotX + 5}
+              y={plotY + plotH - (physics.meltingPoint / maxT) * plotH - 3}
+              fontSize={font(8)}
+              fill={OPTICS_COLORS.wavelengthBlue}
+            >
+              {`熔点: ${physics.meltingPoint}°C`}
+            </text>
+          </g>
+        )}
+
+        {/* 沸点线 */}
+        {physics.boilingPoint > 0 && (
+          <g>
+            <line
+              x1={plotX}
+              y1={plotY + plotH - (physics.boilingPoint / maxT) * plotH}
+              x2={plotX + plotW}
+              y2={plotY + plotH - (physics.boilingPoint / maxT) * plotH}
+              stroke={OPTICS_COLORS.wavelengthRed}
+              strokeDasharray="3 3"
+              strokeWidth={1}
+            />
+            <text
+              x={plotX + 5}
+              y={plotY + plotH - (physics.boilingPoint / maxT) * plotH - 3}
+              fontSize={font(8)}
+              fill={OPTICS_COLORS.wavelengthRed}
+            >
+              {`${materialVal === 2 ? '沸点' : '热分解/汽化点'}: ${physics.boilingPoint}°C`}
+            </text>
+          </g>
+        )}
+
+        {/* T-t 温度曲线 */}
+        <path d={tPath} fill="none" stroke={PHYSICS_COLORS.velocity} strokeWidth={2} />
+
+        {/* 实时游标指示 */}
+        <circle cx={curX} cy={curY} r={4} fill={CANVAS_COLORS.white} stroke={OPTICS_COLORS.criticalAngle} strokeWidth={2} />
+      </g>
+    )
+  }
 
   // ==========================================
   // Mode 0: 平行性对比 (Directionality)
@@ -49,10 +246,8 @@ export function LaserScene({
     const startX = 60
     const screenX = 540 // 侧视接收屏位置
 
-    // 根据传播距离线性映射光斑的位置和尺寸
-    // 虽然物理上是 0~100m，在视觉上我们从左边传播到右边的屏幕
-    const maxR_laser = physics.laserSpotRadius * 1500  // 放大视觉效果
-    const maxR_normal = physics.normalSpotRadius * 2.8 // 普通光发散极快，做折线缩放防止溢出
+    const maxR_laser = physics.laserSpotRadius * 1500
+    const maxR_normal = physics.normalSpotRadius * 2.8
 
     const r0_laser = 5
     const r0_normal = 8
@@ -60,16 +255,12 @@ export function LaserScene({
     const rEnd_laser = Math.min(25, r0_laser + maxR_laser)
     const rEnd_normal = Math.min(100, r0_normal + maxR_normal)
 
-    // 光斑正视投影的坐标
-    const projX = 680
-    const projNormalY = 85
-    const projLaserY = 240
+    const projX = 690
+    const projNormalY = 205
+    const projLaserY = 265
 
-    // 计算激光在正视图中的圆半径
-    // 物理半径是 laserSpotRadius / normalSpotRadius
-    // 激光束 1mm 到几 cm，普通光束 1mm 到十几米。我们使用 logarithmic 或者是合适的比例显示
-    const projRadiusLaser = Math.max(3, Math.min(40, physics.laserSpotRadius * 800))
-    const projRadiusNormal = Math.max(10, Math.min(75, physics.normalSpotRadius * 8))
+    const projRadiusLaser = Math.max(3, Math.min(25, physics.laserSpotRadius * 500))
+    const projRadiusNormal = Math.max(10, Math.min(45, physics.normalSpotRadius * 5))
 
     return (
       <g>
@@ -78,11 +269,9 @@ export function LaserScene({
 
         {/* ── 普通光路 ── */}
         <text x={startX} y={normalY - 45} fontSize={font(12)} fill={OPTICS_COLORS.lightRayNormal} fontWeight="bold">普通光源 (手电筒)</text>
-        {/* 普通光发射器 */}
         <rect x={startX - 30} y={normalY - 20} width={30} height={40} rx={3} fill={OPTICS_COLORS.mirrorStroke} stroke={CANVAS_COLORS.strokeDark} strokeWidth={2} />
         <path d={`M ${startX} ${normalY - 12} L ${startX + 8} ${normalY - 18} L ${startX + 8} ${normalY + 18} L ${startX} ${normalY + 12} Z`} fill={CANVAS_COLORS.textMuted} />
         
-        {/* 普通发散光束 */}
         <polygon
           points={`${startX + 8},${normalY - r0_normal} ${screenX},${normalY - rEnd_normal} ${screenX},${normalY + rEnd_normal} ${startX + 8},${normalY + r0_normal}`}
           fill={withAlpha(OPTICS_COLORS.lightRay, 0.12)}
@@ -92,11 +281,9 @@ export function LaserScene({
 
         {/* ── 激光光路 ── */}
         <text x={startX} y={laserY - 45} fontSize={font(12)} fill={PHYSICS_COLORS.velocity} fontWeight="bold">相干激光器</text>
-        {/* 激光器结构 */}
         <rect x={startX - 40} y={laserY - 15} width={40} height={30} rx={2} fill={CANVAS_COLORS.strokeDark} stroke={CANVAS_COLORS.strokeDark} strokeWidth={2} />
         <rect x={startX} y={laserY - 8} width={8} height={16} fill={CANVAS_COLORS.textMuted} />
         
-        {/* 激光平行光束 */}
         <polygon
           points={`${startX + 8},${laserY - r0_laser} ${screenX},${laserY - rEnd_laser} ${screenX},${laserY + rEnd_laser} ${startX + 8},${laserY + r0_laser}`}
           fill={withAlpha(OPTICS_COLORS.wavelengthRed, 0.35)}
@@ -108,27 +295,24 @@ export function LaserScene({
         <line x1={screenX} y1={10} x2={screenX} y2={centerY - 10} stroke={CANVAS_COLORS.textMuted} strokeWidth={3} />
         <line x1={screenX} y1={centerY + 10} x2={screenX} y2={315} stroke={CANVAS_COLORS.textMuted} strokeWidth={3} />
 
-        {/* ── 右侧光斑投影正视图 ── */}
-        <rect x={projX - 90} y={15} width={180} height={295} rx={8} fill={DARK_PANEL_BG} stroke={DARK_PANEL_STROKE} strokeWidth={2} />
-        <text x={projX} y={35} fontSize={font(13)} fill={OPTICS_COLORS.mirror} textAnchor="middle" fontWeight="bold">接收屏光斑正视图</text>
+        {/* ── 右上：矢量 R-d 关系曲线 Mini-Plot ── */}
+        {renderMiniPlotMode0()}
 
-        {/* 普通光斑投影 */}
-        <circle cx={projX} cy={projNormalY} r={projRadiusNormal} fill={withAlpha(OPTICS_COLORS.lightRay, 0.4)} stroke={OPTICS_COLORS.lightRay} strokeWidth={2} />
-        <text x={projX} y={projNormalY + 5} fontSize={font(11)} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">
+        {/* ── 右下：光斑投影正视图 ── */}
+        <rect x={projX - 120} y={165} width={250} height={140} rx={6} fill={PANEL_BG} stroke={PANEL_STROKE} strokeWidth={1.5} />
+        <text x={projX + 5} y={183} fontSize={font(11)} fill={OPTICS_COLORS.mirror} textAnchor="middle" fontWeight="bold">接收屏光斑正视图</text>
+
+        <circle cx={projX - 45} cy={projNormalY + 30} r={projRadiusNormal} fill={withAlpha(OPTICS_COLORS.lightRay, 0.4)} stroke={OPTICS_COLORS.lightRay} strokeWidth={1.5} />
+        <text x={projX - 45} y={projNormalY + 34} fontSize={font(9)} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">
           {physics.normalSpotRadius >= 1.0 ? `${(physics.normalSpotRadius * 2).toFixed(1)} m` : `${(physics.normalSpotRadius * 200).toFixed(1)} cm`}
         </text>
-        <text x={projX - 80} y={projNormalY} fontSize={font(11)} fill={CANVAS_COLORS.textMuted} dominantBaseline="middle">普通光</text>
 
-        <line x1={projX - 80} y1={155} x2={projX + 80} y2={155} stroke={DARK_PANEL_STROKE} strokeWidth={1} />
-
-        {/* 激光光斑投影 */}
-        <circle cx={projX} cy={projLaserY} r={projRadiusLaser} fill={withAlpha(OPTICS_COLORS.wavelengthRed, 0.85)} stroke={withAlpha(OPTICS_COLORS.wavelengthRed, 0.6)} strokeWidth={1.5} />
-        <text x={projX} y={projLaserY + 4} fontSize={font(10)} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">
+        <circle cx={projX + 55} cy={projLaserY - 30} r={projRadiusLaser} fill={withAlpha(OPTICS_COLORS.wavelengthRed, 0.85)} stroke={withAlpha(OPTICS_COLORS.wavelengthRed, 0.6)} strokeWidth={1.5} />
+        <text x={projX + 55} y={projLaserY - 26} fontSize={font(9)} fill={CANVAS_COLORS.white} textAnchor="middle" fontWeight="bold">
           {`${(physics.laserSpotRadius * 2000).toFixed(1)} mm`}
         </text>
-        <text x={projX - 80} y={projLaserY} fontSize={font(11)} fill={PHYSICS_COLORS.velocity} dominantBaseline="middle">激光</text>
 
-        {/* 标注当前传播距离 */}
+        {/* 标注传播距离 */}
         <text x={screenX - 10} y={centerY - 8} fontSize={font(11)} fill={CANVAS_COLORS.textMuted} textAnchor="end">
           {`传播距离: ${propagationDistance.toFixed(1)} m`}
         </text>
@@ -192,57 +376,41 @@ export function LaserScene({
         <line x1={screenX} y1={10} x2={screenX} y2={centerY - 10} stroke={CANVAS_COLORS.textMuted} strokeWidth={3} />
         <line x1={screenX} y1={centerY + 10} x2={screenX} y2={315} stroke={CANVAS_COLORS.textMuted} strokeWidth={3} />
 
-        {/* ── 右侧正面干涉图样 ── */}
-        <rect x={stripeX - 60} y={15} width={130} height={295} rx={8} fill={DARK_SCREEN_BG} stroke={DARK_PANEL_STROKE} strokeWidth={2} />
-        <text x={stripeX} y={35} fontSize={font(13)} fill={OPTICS_COLORS.mirror} textAnchor="middle" fontWeight="bold">干涉屏正面图样</text>
-        
-        {/* 普通红光干涉条纹 (平坦无条纹或极弱模糊) */}
+        {/* ── 右上：矢量 I-y 干涉光强分布 Mini-Plot ── */}
+        {renderMiniPlotMode1()}
+
+        {/* ── 右下：正面干涉图样面板 ── */}
+        <rect x={stripeX - 80} y={165} width={250} height={140} rx={6} fill={PANEL_BG} stroke={PANEL_STROKE} strokeWidth={1.5} />
+        <text x={stripeX + 45} y={183} fontSize={font(11)} fill={OPTICS_COLORS.mirror} textAnchor="middle" fontWeight="bold">干涉屏正面图样</text>
+
+        {/* 普通红光干涉条纹 (微弱) */}
         <g>
-          <text x={stripeX} y={55} fontSize={font(10)} fill={CANVAS_COLORS.textMuted} textAnchor="middle">普通红光 (相干性差)</text>
-          <rect x={stripeX - 40} y={65} width={80} height={75} fill={DARK_SCREEN_BG} stroke={DARK_PANEL_STROKE} />
+          <text x={stripeX - 35} y={200} fontSize={font(9)} fill={CANVAS_COLORS.textMuted} textAnchor="middle">普通红光</text>
+          <rect x={stripeX - 70} y={208} width={70} height={85} fill={STRIPE_DARK_BOX} stroke={PANEL_STROKE} />
           {Array.from({ length: lineCount }).map((_, idx) => {
-            const h = 75 / lineCount
-            const yOffset = 65 + idx * h
-            // 将 [0, lineCount] 映射到物理量点的索引
+            const h = 85 / lineCount
+            const yOffset = 208 + idx * h
             const ptIdx = Math.floor((idx / lineCount) * (physics.normalInterferencePoints.length - 1))
             const pt = physics.normalInterferencePoints[ptIdx]
             const intensity = pt ? pt.y : 1.0
-            
             return (
-              <rect
-                key={`norm-${idx}`}
-                x={stripeX - 40}
-                y={yOffset}
-                width={80}
-                height={h + 0.5}
-                fill={OPTICS_COLORS.wavelengthRed}
-                opacity={Math.max(0, Math.min(1, intensity * 0.45))} // 普通光强基底亮度
-              />
+              <rect key={`norm-${idx}`} x={stripeX - 70} y={yOffset} width={70} height={h + 0.5} fill={OPTICS_COLORS.wavelengthRed} opacity={Math.max(0, Math.min(1, intensity * 0.45))} />
             )
           })}
         </g>
 
-        {/* 激光相干干涉条纹 (清晰红黑交替) */}
+        {/* 激光相干干涉条纹 */}
         <g>
-          <text x={stripeX} y={170} fontSize={font(10)} fill={PHYSICS_COLORS.velocity} textAnchor="middle">相干激光 (相干性好)</text>
-          <rect x={stripeX - 40} y={180} width={80} height={110} fill={DARK_SCREEN_BG} stroke={DARK_PANEL_STROKE} />
+          <text x={stripeX + 45} y={200} fontSize={font(9)} fill={PHYSICS_COLORS.velocity} textAnchor="middle">相干激光</text>
+          <rect x={stripeX + 10} y={208} width={70} height={85} fill={STRIPE_DARK_BOX} stroke={PANEL_STROKE} />
           {Array.from({ length: lineCount }).map((_, idx) => {
-            const h = 110 / lineCount
-            const yOffset = 180 + idx * h
+            const h = 85 / lineCount
+            const yOffset = 208 + idx * h
             const ptIdx = Math.floor((idx / lineCount) * (physics.laserInterferencePoints.length - 1))
             const pt = physics.laserInterferencePoints[ptIdx]
             const intensity = pt ? pt.y : 1.0
-            
             return (
-              <rect
-                key={`laser-${idx}`}
-                x={stripeX - 40}
-                y={yOffset}
-                width={80}
-                height={h + 0.5}
-                fill={OPTICS_COLORS.wavelengthRed}
-                opacity={Math.max(0, Math.min(1, intensity * 0.5))} // 激光干涉明暗对比极大
-              />
+              <rect key={`laser-${idx}`} x={stripeX + 10} y={yOffset} width={70} height={85 / lineCount + 0.5} fill={OPTICS_COLORS.wavelengthRed} opacity={Math.max(0, Math.min(1, intensity * 0.5))} />
             )
           })}
         </g>
@@ -252,7 +420,7 @@ export function LaserScene({
           {`缝宽间距 d: ${slitDistance.toFixed(2)} mm`}
         </text>
         <text x={screenX - 10} y={centerY - 8} fontSize={font(10)} fill={CANVAS_COLORS.textMuted} textAnchor="end">
-          {`双缝-屏距 L: ${screenDist.toFixed(1)} m`}
+          {`缝屏距离 L: ${screenDist.toFixed(1)} m`}
         </text>
       </g>
     )
@@ -262,25 +430,17 @@ export function LaserScene({
   // Mode 2: 高能量应用 (High Intensity - 激光切割)
   // ==========================================
   const renderHighIntensity = () => {
-    const startX = 60
-    const lensX = 320
-    const targetX = 540 // 靶材前表面位置
+    const startX = 50
+    const lensX = 260
+    const targetX = 440 // 靶材前表面位置
 
-    // 靶材参数配置用于视觉渲染
     const materialLabels = ['纸张', '木板', '铁板']
-    // 靶材外观材质色 (场景器材，非物理量)
-    const materialColors = ['#FEF3C7', '#D97706', '#94A3B8'] as const
-    const materialStroke = [OPTICS_COLORS.criticalAngle, '#B45309', OPTICS_COLORS.mirrorStroke] as const
+    const materialFills = ['url(#materialPaperGrad)', 'url(#materialWoodGrad)', 'url(#materialIronGrad)'] as const
+    const materialStrokes = [OPTICS_COLORS.criticalAngle, SCENE_COLORS.materials.labWoodGrad[3], CANVAS_COLORS.strokeDark] as const
 
-    // 聚焦光束绘制
-    // 透镜的 Y 范围 [centerY - 60, centerY + 60]
-    // 普通聚焦光与激光聚焦对比
     const rLens = 55
-    const laserSpotRadVis = Math.max(1.5, focusDiameter / 100 * 8) // 激光焦斑视觉半径
-
-    // 切割深度的视觉映射 (meltDepth 单位: mm，最大约 30mm)
-    // 映射到设计坐标 0 ~ 80px 凹陷
-    const visDepth = Math.min(80, physics.meltDepth * 3)
+    const laserSpotRadVis = Math.max(1.5, focusDiameter / 100 * 8)
+    const visDepth = Math.min(60, physics.meltDepth * 2.5)
 
     // 靶材的 path。如果在被烧蚀，左侧边界会向右收缩
     // 靶材高度: 140, 顶 centerY - 70, 底 centerY + 70
@@ -310,6 +470,41 @@ export function LaserScene({
 
     return (
       <g>
+        {/* ── 材质渐变与特效定义 ── */}
+        <defs>
+          {/* 0: 纸张材质 (柔和纸色) */}
+          <linearGradient id="materialPaperGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFF7ED" />
+            <stop offset="100%" stopColor="#FEF3C7" />
+          </linearGradient>
+
+          {/* 1: 木板材质 (自然木纹，引用 SCENE_COLORS.materials.labWoodGrad) */}
+          <linearGradient id="materialWoodGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.labWoodGrad[0]} />
+            <stop offset="35%" stopColor={SCENE_COLORS.materials.labWoodGrad[1]} />
+            <stop offset="70%" stopColor={SCENE_COLORS.materials.labWoodGrad[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.labWoodGrad[3]} />
+          </linearGradient>
+
+          {/* 2: 铁板材质 (金属重色，引用 SCENE_COLORS.materials.castIronGrad) */}
+          <linearGradient id="materialIronGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={SCENE_COLORS.materials.castIronGrad[0]} />
+            <stop offset="40%" stopColor={SCENE_COLORS.materials.castIronGrad[1]} />
+            <stop offset="75%" stopColor={SCENE_COLORS.materials.castIronGrad[2]} />
+            <stop offset="100%" stopColor={SCENE_COLORS.materials.castIronGrad[3]} />
+          </linearGradient>
+
+          <radialGradient id={`glowGrad-${glowColor.replace('#', '')}`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor={glowColor} stopOpacity="1" />
+            <stop offset="50%" stopColor={glowColor} stopOpacity="0.5" />
+            <stop offset="100%" stopColor={glowColor} stopOpacity="0" />
+          </radialGradient>
+          <filter id="glowFilter" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+
         {/* ── 光轴 ── */}
         <line x1={0} y1={centerY} x2={targetX} y2={centerY} stroke={OPTICS_COLORS.opticalAxis} strokeWidth={1} strokeDasharray="4 4" />
 
@@ -341,12 +536,12 @@ export function LaserScene({
         {/* ── 4. 靶材块 ── */}
         <path
           d={targetPath}
-          fill={materialColors[material]}
-          stroke={materialStroke[material]}
+          fill={materialFills[materialVal]}
+          stroke={materialStrokes[materialVal]}
           strokeWidth={3}
         />
-        <text x={targetX + 60} y={centerY + 95} fontSize={font(12)} fill={OPTICS_COLORS.mirrorStroke} textAnchor="middle" fontWeight="bold">
-          {`靶材: ${materialLabels[material]}`}
+        <text x={targetX + 60} y={centerY + 95} fontSize={font(12)} fill={CANVAS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
+          {`靶材: ${materialLabels[materialVal]}`}
         </text>
 
         {/* ── 5. 焦点热力学视觉特效 ── */}
@@ -394,18 +589,8 @@ export function LaserScene({
           )
         })}
 
-        {/* 定义渐变和滤镜 */}
-        <defs>
-          <radialGradient id={`glowGrad-${glowColor.replace('#', '')}`} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor={glowColor} stopOpacity="1" />
-            <stop offset="50%" stopColor={glowColor} stopOpacity="0.5" />
-            <stop offset="100%" stopColor={glowColor} stopOpacity="0" />
-          </radialGradient>
-          <filter id="glowFilter" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
-        </defs>
+        {/* ── 右侧：矢量 T-t 温度变化曲线 Mini-Plot ── */}
+        {renderMiniPlotMode2()}
 
         {/* 标注 */}
         <text x={targetX - 10} y={centerY - 80} fontSize={font(11)} fill={CANVAS_COLORS.dangerText} textAnchor="end" fontWeight="bold">
@@ -425,9 +610,12 @@ export function LaserScene({
   // ==========================================
   return (
     <g>
-      {mode === 0 && renderDirectionality()}
-      {mode === 1 && renderCoherence()}
-      {mode === 2 && renderHighIntensity()}
+      {/* 充满 840 x 325 splitV 视口的纯白底盘 */}
+      <rect x={0} y={0} width={840} height={325} fill="#FFFFFF" rx={8} />
+
+      {modeVal === 0 && renderDirectionality()}
+      {modeVal === 1 && renderCoherence()}
+      {modeVal === 2 && renderHighIntensity()}
     </g>
   )
 }

@@ -62,10 +62,14 @@ export function useLaserPhysics({
   slitDistance,
   screenDist,
   laserPower,
+  focusDiameter,
   material,
   time,
 }: UseLaserPhysicsParams): LaserPhysicsResult {
   return useMemo(() => {
+    const modeVal = Number(mode ?? 0)
+    const materialVal = Number(material ?? 0)
+
     // ─── 默认/初始值 ───
     let laserSpotRadius = 0.001
     let normalSpotRadius = 0.001
@@ -91,7 +95,7 @@ export function useLaserPhysics({
     // ==========================================
     // 1. 模式 0：平行性对比 (Directionality)
     // ==========================================
-    if (mode === 0) {
+    if (modeVal === 0) {
       const thetaLaserRad = (divergenceAngleLaser / 1000) / 2 // 半发散角 (rad)
       const thetaNormalRad = (divergenceAngleNormal * Math.PI / 180) / 2 // 半发散角 (rad)
 
@@ -115,7 +119,7 @@ export function useLaserPhysics({
     // ==========================================
     // 2. 模式 1：相干性对比 (Coherence)
     // ==========================================
-    if (mode === 1) {
+    if (modeVal === 1) {
       // 双缝干涉条纹间距: Δx = L/d * λ
       // L 单位: m, d_slit 单位: mm, λ 单位: nm
       // Δx = L * λ / d_slit * 1e-3 (mm)
@@ -150,7 +154,7 @@ export function useLaserPhysics({
     // ==========================================
     // 3. 模式 2：高能量应用 (High Intensity)
     // ==========================================
-    if (mode === 2) {
+    if (modeVal === 2) {
       // 靶材热物理常数配置
       interface MaterialConfig {
         name: string
@@ -163,18 +167,23 @@ export function useLaserPhysics({
       }
 
       const configMap: Record<number, MaterialConfig> = {
-        0: { name: '纸张', T_m: 100, T_b: 250, Cv: 0.008, E_melt: 0, E_vap: 0.8, kloss: 0.0006 },
-        1: { name: '木板', T_m: 150, T_b: 360, Cv: 0.025, E_melt: 0, E_vap: 2.2, kloss: 0.0012 },
+        0: { name: '纸张', T_m: 0, T_b: 250, Cv: 0.008, E_melt: 0, E_vap: 0.8, kloss: 0.0006 },
+        1: { name: '木板', T_m: 0, T_b: 360, Cv: 0.025, E_melt: 0, E_vap: 2.2, kloss: 0.0012 },
         2: { name: '铁板', T_m: 1538, T_b: 2750, Cv: 0.16, E_melt: 3.5, E_vap: 15.0, kloss: 0.006 },
       }
 
-      const mat = configMap[material] || configMap[0]
+      const mat = configMap[materialVal] || configMap[0]
       meltingPoint = mat.T_m
       boilingPoint = mat.T_b
 
       const T0 = 20 // 初始温度 20°C
       const dt = 0.01 // 模拟步长 (s)
       const maxSimTime = 10.0 // 最大模拟时间
+
+      // 焦斑能量密度调节因子：基准焦斑直径为 30μm
+      // 焦斑直径 D 越小，能量密度越爆表 (与 1/D^2 成正比)，升温与汽化剧烈增加
+      const focusDiameterClamped = Math.max(5, focusDiameter)
+      const energyDensityScale = (30 / focusDiameterClamped) ** 1.5
 
       // 辅助模拟函数：模拟到时间 t 时的温度和切割深度
       const runSimTo = (targetTime: number) => {
@@ -187,7 +196,7 @@ export function useLaserPhysics({
         const stepsNeeded = Math.floor(targetTime / dt)
         for (let step = 0; step < stepsNeeded; step++) {
           const loss = mat.kloss * (simT - T0)
-          const netPower = Math.max(0, laserPower * 0.85 - loss)
+          const netPower = Math.max(0, (laserPower * 0.85 * energyDensityScale) - loss)
 
           if (!simMelted && mat.T_m > 0 && simT >= mat.T_m) {
             // 熔化阶段（保持熔点，吸收潜热）
@@ -282,6 +291,7 @@ export function useLaserPhysics({
     slitDistance,
     screenDist,
     laserPower,
+    focusDiameter,
     material,
     time,
   ])

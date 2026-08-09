@@ -6,15 +6,15 @@ export const opticsInterferenceAnimations = defineAnimations({
     title: '光的双缝干涉',
     knowledgeId: 'wave-optics-1-1',
     Component: lazy(() => import('@/features/optics/double-slit-interference/DoubleSlitInterferenceAnimation')),
-    controlsMode: 'timed' as const,
+    controlsMode: 'loop' as const,
     defaultParams: {
       wavelength: 650,
       slitDistance: 0.2,
       screenDistance: 1.0,
     } as const,
     controlMeta: [
-      { type: 'tip', content: '拖动滑块观察波长、双缝间距、缝屏距离对条纹宽度的影响。' },
-      { type: 'tip', content: '条纹间距与波长 λ、缝屏距离 L 成正比，与双缝间距 d 成反比。' },
+      { type: 'tip', content: '拖动滑块观察波长 λ、双缝间距 d、缝屏距离 L 对干涉条纹宽度的影响。' },
+      { type: 'tip', content: '条纹间距 Δx = (L/d)λ，增大 L、减小 d 或换用长波长光可使条纹变宽。' },
     ],
     paramMeta: [
       {

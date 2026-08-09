@@ -35,7 +35,8 @@ export function buildLaserQuantities(
   if (animId !== 'anim-laser') return null
 
   const p = normalizeParams(params, DEFAULTS)
-  const modeVal = p.mode
+  const modeVal = Number(p.mode ?? 0)
+  const materialVal = Number(p.material ?? 0)
 
   const quantities: PhysicsPanelData['quantities'] = []
   let formulas: PhysicsPanelData['formulas'] = []
@@ -122,12 +123,12 @@ export function buildLaserQuantities(
       kloss: number
     }
     const configMap: Record<number, MaterialConfig> = {
-      0: { T_m: 100, T_b: 250, Cv: 0.008, E_melt: 0, E_vap: 0.8, kloss: 0.0006 },
-      1: { T_m: 150, T_b: 360, Cv: 0.025, E_melt: 0, E_vap: 2.2, kloss: 0.0012 },
+      0: { T_m: 0, T_b: 250, Cv: 0.008, E_melt: 0, E_vap: 0.8, kloss: 0.0006 },
+      1: { T_m: 0, T_b: 360, Cv: 0.025, E_melt: 0, E_vap: 2.2, kloss: 0.0012 },
       2: { T_m: 1538, T_b: 2750, Cv: 0.16, E_melt: 3.5, E_vap: 15.0, kloss: 0.006 },
     }
 
-    const mat = configMap[p.material] || configMap[0]
+    const mat = configMap[materialVal] || configMap[0]
 
     // 运行同 useLaserPhysics.ts 中的热动力数值计算，求得当前 time 下的焦点温度和切割深度
     const T0 = 20
@@ -138,9 +139,12 @@ export function buildLaserQuantities(
     let simMeltAccum = 0
     let simMelted = false
 
+    const focusDiameterClamped = Math.max(5, p.focusDiameter)
+    const energyDensityScale = (30 / focusDiameterClamped) ** 1.5
+
     for (let step = 0; step < stepsNeeded; step++) {
       const loss = mat.kloss * (simT - T0)
-      const netPower = Math.max(0, p.laserPower * 0.85 - loss)
+      const netPower = Math.max(0, (p.laserPower * 0.85 * energyDensityScale) - loss)
 
       if (!simMelted && mat.T_m > 0 && simT >= mat.T_m) {
         simT = mat.T_m
@@ -158,7 +162,7 @@ export function buildLaserQuantities(
     }
 
     // 物理焦点光斑面积 S = pi * (D/2)^2
-    const focusRadM = (p.focusDiameter * 1e-6) / 2
+    const focusRadM = (focusDiameterClamped * 1e-6) / 2
     const area = Math.PI * (focusRadM ** 2)
     const energyDensity = p.laserPower / area // W/m2
 
@@ -185,7 +189,7 @@ export function buildLaserQuantities(
 
     gaokaoPoints = [
       { text: '激光亮度/能量密度极高：激光能在极小的空间与极短的时间内集中极大的能量。将激光通过透镜聚焦到微米级尺寸，可在焦点处获得极高的能量密度。', importance: 'gaokao' },
-      { text: '高能量激光切割原理：照射区域的材料吸收激光能量后瞬间加热，迅速达到熔点与沸点并剧烈汽化，被辅助气体吹走，从而实现精密打孔或无接触式切割。', importance: 'gaokao' },
+      { text: '高能量激光切割原理：照射区域的材料吸收激光能量后瞬间加热，金属材料迅速达到熔点与沸点剧烈汽化；木板与纸张等有机材料则迅速达到热分解点并剧烈汽化碳化，从而实现无接触式精密切割。', importance: 'gaokao' },
       { text: '激光高亮度/高能量的应用：工业切割、激光焊接、受控热核反应（利用激光均匀加热氘氚燃料球触发核聚变）、激光武器、医疗手术（如视网膜剥离光凝焊接）。', importance: 'gaokao' },
     ]
   }

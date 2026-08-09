@@ -292,3 +292,54 @@ export function calculateReflectionPolarization(filterAngle_deg: number): {
   const intensityFish = 0.5
   return { intensityRef, intensityFish }
 }
+
+/**
+ * 波长 (nm) → HEX 颜色映射 (380nm ~ 780nm)。
+ * 边缘波长 (380~420nm, 700~780nm) 有强度衰减。
+ */
+export function wavelengthToHex(wl: number): string {
+  let r = 0, g = 0, b = 0
+  if (wl >= 380 && wl < 440) {
+    r = -(wl - 440) / (440 - 380)
+    g = 0
+    b = 1.0
+  } else if (wl >= 440 && wl < 490) {
+    r = 0
+    g = (wl - 440) / (490 - 440)
+    b = 1.0
+  } else if (wl >= 490 && wl < 510) {
+    r = 0
+    g = 1.0
+    b = -(wl - 510) / (510 - 490)
+  } else if (wl >= 510 && wl < 580) {
+    r = (wl - 510) / (580 - 510)
+    g = 1.0
+    b = 0
+  } else if (wl >= 580 && wl < 645) {
+    r = 1.0
+    g = -(wl - 645) / (645 - 580)
+    b = 0
+  } else if (wl >= 645 && wl <= 780) {
+    r = 1.0
+    g = 0
+    b = 0
+  } else {
+    r = 1.0
+    g = 1.0
+    b = 1.0
+  }
+
+  // 边缘波长强度衰减
+  let factor = 1.0
+  if (wl >= 380 && wl < 420) {
+    factor = 0.3 + 0.7 * (wl - 380) / (420 - 380)
+  } else if (wl >= 700 && wl <= 780) {
+    factor = 0.3 + 0.7 * (780 - wl) / (780 - 700)
+  }
+
+  const to255 = (val: number) => Math.round(Math.min(255, Math.max(0, val * factor * 255)))
+  const hexR = to255(r).toString(16).padStart(2, '0')
+  const hexG = to255(g).toString(16).padStart(2, '0')
+  const hexB = to255(b).toString(16).padStart(2, '0')
+  return `#${hexR}${hexG}${hexB}`
+}

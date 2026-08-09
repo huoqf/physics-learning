@@ -227,6 +227,7 @@ export const CANVAS_COLORS = {
   originMark:         colors.neutral[800], // 坐标原点标记
   vectorTip:          colors.neutral[800], // 箭头尖端描边
   white:              colors.neutral.white, // 纯白（用于彩色背景上的文字/高光）
+  black:              '#000000',            // 纯黑（用于深色 Canvas 底座/暗场）
 
   // 警示危险场景配色
   alertRed:           '#EF4444',

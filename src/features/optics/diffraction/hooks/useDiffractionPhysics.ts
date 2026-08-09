@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { wavelengthToHex } from '@/physics/optics'
 
 export interface DiffractionPhysicsResult {
   wavelengthColor: string // 波长对应的 HEX 颜色
@@ -13,57 +14,6 @@ interface UseDiffractionPhysicsParams {
   obstacleSize: number    // 缝宽/孔径/圆板直径 mm (0.04 ~ 0.25)
   screenDistance: number  // 缝屏距离 m (0.5 ~ 2.0)
   time: number            // 动画时间 s
-}
-
-/**
- * 简易光谱波长到 RGB hex 的物理映射 (400nm - 700nm)
- * @param wl 波长 (nm)
- */
-function wavelengthToHex(wl: number): string {
-  let r = 0, g = 0, b = 0
-  if (wl >= 380 && wl < 440) {
-    r = -(wl - 440) / (440 - 380)
-    g = 0
-    b = 1.0
-  } else if (wl >= 440 && wl < 490) {
-    r = 0
-    g = (wl - 440) / (490 - 440)
-    b = 1.0
-  } else if (wl >= 490 && wl < 510) {
-    r = 0
-    g = 1.0
-    b = -(wl - 510) / (510 - 490)
-  } else if (wl >= 510 && wl < 580) {
-    r = (wl - 510) / (580 - 510)
-    g = 1.0
-    b = 0
-  } else if (wl >= 580 && wl < 645) {
-    r = 1.0
-    g = -(wl - 645) / (645 - 580)
-    b = 0
-  } else if (wl >= 645 && wl <= 780) {
-    r = 1.0
-    g = 0
-    b = 0
-  } else {
-    r = 1.0
-    g = 1.0
-    b = 1.0
-  }
-
-  // 边缘波长强度衰减
-  let factor = 1.0
-  if (wl >= 380 && wl < 420) {
-    factor = 0.3 + 0.7 * (wl - 380) / (420 - 380)
-  } else if (wl >= 700 && wl <= 780) {
-    factor = 0.3 + 0.7 * (780 - wl) / (780 - 700)
-  }
-
-  const to255 = (val: number) => Math.round(Math.min(255, Math.max(0, val * factor * 255)))
-  const hexR = to255(r).toString(16).padStart(2, '0')
-  const hexG = to255(g).toString(16).padStart(2, '0')
-  const hexB = to255(b).toString(16).padStart(2, '0')
-  return `#${hexR}${hexG}${hexB}`
 }
 
 /**
@@ -104,12 +54,12 @@ export function useDiffractionPhysics({
     // 条纹间距范围限制，防止图形渲染溢出或畸变
     const spacingPx = Math.max(8, Math.min(300, specSpacingPx))
 
-    // 3. 计算光强分布曲线 (在 Y: 120 ~ 530，中心 325 之间采样)
+    // 3. 计算光强分布曲线 (在 Y: 85 ~ 565，中心 325 之间采样，总高度 480px)
     const centerY = 325
-    const startY = 120
-    const endY = 530
-    const intensityMaxX = 70 // 光强曲线最大突出宽度（像素）
-    const curveBaseX = 730  // 光强曲线 Y 轴基线 X 坐标
+    const startY = 85
+    const endY = 565
+    const intensityMaxX = 90 // 光强曲线最大突出宽度（像素）
+    const curveBaseX = 690  // 光强曲线 Y 轴基线 X 坐标
     const points: string[] = []
 
     for (let y = startY; y <= endY; y += 1) {
@@ -170,26 +120,27 @@ export function useDiffractionPhysics({
     const visSpeed = 40 // 40 像素/秒
     const waveOffset = (time * visSpeed) % visWavelength
 
-    const maxRadius = 400
+    // 缝 (x=220) 到侧视屏 (screenX = 220 + 200 + (screenDistance - 0.5) * 120) 的物理距离
+    const dynamicScreenDist = 200 + (screenDistance - 0.5) * 120
+    const maxRadius = dynamicScreenDist
     const wavefronts: number[][] = []
 
     if (mode === 'poisson') {
-      // 泊松亮斑波前：光波绕过圆盘边缘（即从圆盘上、下边缘 y1, y2 出射）在几何阴影内外交相干涉
-      // 障碍物在 x = 240，中心 y = 200。阻挡盘直径 d_vis
+      // 泊松亮斑波前：光波绕过圆盘边缘（即从圆盘上、下边缘出射）在几何阴影内外交相干涉
+      // 障碍物在 x = 220，中心 y = 325。阻挡盘直径 d_vis
       const d_vis = (obstacleSize / 0.15) * 40
 
       let r = waveOffset
       while (r < maxRadius) {
         if (r > 0) {
-          // 存储格式：[半径, y 轴偏移量 (相对于中心 200)]
-          // 从上边缘 (0, -d_vis/2) 和下边缘 (0, d_vis/2) 射出
+          // 存储格式：[半径, y 轴偏移量 (相对于中心 325)]
           wavefronts.push([r, -d_vis / 2])
           wavefronts.push([r, d_vis / 2])
         }
         r += visWavelength
       }
     } else {
-      // 单缝或圆孔：从缝中心 (x = 240, y = 200) 出射圆弧波前
+      // 单缝或圆孔：从缝中心 (x = 220, y = 325) 出射圆弧波前
       let r = waveOffset
       while (r < maxRadius) {
         if (r > 0) {

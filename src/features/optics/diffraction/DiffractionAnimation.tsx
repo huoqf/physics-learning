@@ -17,14 +17,14 @@ export default function DiffractionAnimation() {
     preset: CANVAS_PRESETS.full,
   })
 
-  // ── 3. 提取左侧调节与模式参数 ──
+  // ── 4. 提取左侧调节与模式参数 ──
   const modeVal = params.mode ?? 0
   const mode = modeVal === 0 ? 'single-slit' : modeVal === 1 ? 'circular' : 'poisson'
   const wavelength = params.wavelength ?? 650       // nm
-  const obstacleSize = params.obstacleSize ?? 0.1   // mm (可以是缝宽、孔径、圆盘直径)
+  const obstacleSize = params.obstacleSize ?? 0.1   // mm (缝宽、孔径、圆盘直径)
   const screenDistance = params.screenDistance ?? 1.0 // m
 
-  // ── 4. 物理计算 ──
+  // ── 5. 物理计算 ──
   const physics = useDiffractionPhysics({
     mode,
     wavelength,
@@ -32,8 +32,6 @@ export default function DiffractionAnimation() {
     screenDistance,
     time,
   })
-
-  // ── 5. 场景坐标全部基于固定设计坐标系（840×650），无需 SceneScale
 
   return (
     <div ref={containerRef} className="w-full h-full">

@@ -22,16 +22,16 @@ export default function DoubleSlitInterferenceAnimation() {
   const slitDistance = params.slitDistance ?? 0.2  // mm
   const screenDistance = params.screenDistance ?? 1.0  // m
 
-  // ── 4. 物理计算 ──
+  // ── 4. 物理计算（纯物理量，不含视觉布局） ──
   const physics = useDoubleSlitInterferencePhysics({
     wavelength,
     slitDistance,
     screenDistance,
-    time,
   })
 
   // ── 5. 场景坐标全部基于设计坐标系（preset.width × preset.height = 840×650）
   //    AnimationSvgCanvas 通过 vp.transform 自动缩放适配不同分辨率
+  //    视觉映射（fringeSpacingPx, wavefronts, intensityPath 等）在 Scene 内部完成
 
   return (
     <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform}>
@@ -42,6 +42,7 @@ export default function DoubleSlitInterferenceAnimation() {
         wavelength={wavelength}
         slitDistance={slitDistance}
         screenDistance={screenDistance}
+        time={time}
       />
     </AnimationSvgCanvas>
   )
