@@ -6,9 +6,11 @@ import { momentumProblems } from './mechanics/momentum-sample'
 import { projectileProblems } from './mechanics/projectile-sample'
 import { celestialProblems } from './mechanics/celestial-sample'
 import { prob2024Quanguo21 } from './mechanics/prob-2024-quanguo-21'
+import { masterModelProblems } from './masterProblems'
 
 export const allProblems: Problem[] = [
   prob2024Quanguo21,
+  ...masterModelProblems,
   ...kinematicsProblems,
   ...dynamicsProblems,
   ...energyProblems,

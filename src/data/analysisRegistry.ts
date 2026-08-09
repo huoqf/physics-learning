@@ -25,7 +25,21 @@ allProblems.forEach(problem => {
 export { getProblemById }
 
 export function getAnalysisEntry(id: string): AnalysisEntry | undefined {
-  return analysisRegistry[id]
+  if (analysisRegistry[id]) return analysisRegistry[id]
+  const prob = getProblemById(id)
+  if (prob) {
+    const entry: AnalysisEntry = {
+      id: prob.id,
+      title: prob.title,
+      year: prob.year,
+      province: prob.province,
+      difficulty: prob.difficulty,
+      knowledgeIds: prob.knowledgeIds,
+    }
+    analysisRegistry[prob.id] = entry
+    return entry
+  }
+  return undefined
 }
 
 export function getAllAnalysisEntries(): AnalysisEntry[] {

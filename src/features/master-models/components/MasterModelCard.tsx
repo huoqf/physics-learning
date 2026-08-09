@@ -93,20 +93,42 @@ export const MasterModelCard: React.FC<MasterModelCardProps> = ({ model }) => {
         {/* 关联同源真题变式链 */}
         {model.relatedProblemIds.length > 0 && (
           <div className="mb-5 pt-3 border-t border-neutral-100">
-            <span className="text-xs font-semibold text-neutral-500 block mb-2">🔗 同源高考真题变式链：</span>
-            <div className="flex flex-wrap gap-2">
+            <span className="text-xs font-semibold text-neutral-500 block mb-2 flex items-center justify-between">
+              <span>🔗 绑定高考真题与原卷原图：</span>
+            </span>
+            <div className="space-y-2">
               {model.relatedProblemIds.map((probId) => {
                 const prob = getProblemById(probId)
                 return (
-                  <button
+                  <div
                     key={probId}
                     onClick={() => handleGoAnalysis(probId)}
-                    className="text-xs px-2.5 py-1 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-md border border-neutral-200 transition-colors flex items-center gap-1"
+                    className="p-3 bg-neutral-50 hover:bg-primary-50/40 rounded-lg border border-neutral-200 transition-all cursor-pointer group"
                   >
-                    <FileText className="w-3 h-3 text-primary-600" />
-                    <span>{prob ? prob.title : probId}</span>
-                    <ArrowRight className="w-3 h-3 text-neutral-400" />
-                  </button>
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-neutral-800 group-hover:text-primary-700">
+                        <FileText className="w-3.5 h-3.5 text-primary-600 shrink-0" />
+                        <span>{prob ? prob.title : probId}</span>
+                      </div>
+                      <span className="text-[11px] px-2 py-0.5 rounded bg-primary-100/60 text-primary-700 shrink-0">
+                        {prob?.source || '高考真题'}
+                      </span>
+                    </div>
+
+                    {prob && (
+                      <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed mb-2">
+                        {prob.content.replace(/\$\$[\s\S]*?\$\$|\$[\s\S]*?\$|\\\[[\s\S]*?\\\]/g, ' [公式] ')}
+                      </p>
+                    )}
+
+                    <div className="flex items-center justify-between text-xs text-primary-600 font-medium">
+                      <span>📄 考场模式 (纯净原图·初始无解析)</span>
+                      <div className="flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
+                        <span>真题考场进入</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </div>
+                    </div>
+                  </div>
                 )
               })}
             </div>

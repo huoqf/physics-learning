@@ -19,7 +19,7 @@ export const masterModels: MasterModel[] = [
       '注意地面是否有摩擦 μ2；若 μ2 ≠ 0，木板受滑动摩擦力向左为 f2 = μ2(m+M)g',
       '共速后必须重新受力分析，判断静摩擦力是否超过最大静摩擦力',
     ],
-    relatedProblemIds: ['prob-2024-quanguo-21', 'prob-m4-1'],
+    relatedProblemIds: ['prob-2024-quanguo-21'],
   },
   {
     id: 'model-induction-single-rod',
@@ -39,7 +39,7 @@ export const masterModels: MasterModel[] = [
       '求解电量 q 必须牢记 q = ΔΦ/R = BLx/R，切勿误用 q = It (由于非匀变速运动 I 随时间变化)',
       '焦耳热 Q 可利用能量守恒 Q = W_外 - ΔE_k 进行求解',
     ],
-    relatedProblemIds: [],
+    relatedProblemIds: ['prob-2023-quanguo-19'],
   },
   {
     id: 'model-induction-dual-rods',
@@ -58,7 +58,7 @@ export const masterModels: MasterModel[] = [
     examTips: [
       '恒力驱动双杆时，最终两棒加速度相等，速度差恒定 (E_感 恒定，电流恒定)',
     ],
-    relatedProblemIds: [],
+    relatedProblemIds: ['prob-2022-quanguo-21'],
   },
   {
     id: 'model-combined-fields',
@@ -78,7 +78,7 @@ export const masterModels: MasterModel[] = [
       '寻找圆心技巧：两切线垂直线交点，或弦的中垂线与速度垂直线的交点',
       '注意带电粒子的重力是否忽略（微观粒子如电子、质子忽略重力；宏观带电液滴、小球必须计重力）',
     ],
-    relatedProblemIds: [],
+    relatedProblemIds: ['prob-2023-hubei-15'],
   },
   {
     id: 'model-vertical-spring',
@@ -97,7 +97,7 @@ export const masterModels: MasterModel[] = [
     examTips: [
       '切勿误认为“刚接触弹簧时速度最大”或“刚接触弹簧就减速”！平衡位置 kx=mg 才是速度极大值点',
     ],
-    relatedProblemIds: [],
+    relatedProblemIds: ['prob-2022-hunan-14'],
   },
   {
     id: 'model-curved-slot',
@@ -116,7 +116,7 @@ export const masterModels: MasterModel[] = [
     examTips: [
       '竖直方向受重力和支持力，竖直方向动量不守恒！仅水平方向系统不受外力动量守恒。',
     ],
-    relatedProblemIds: [],
+    relatedProblemIds: ['prob-2024-guangdong-13'],
   },
   {
     id: 'model-conveyor-belt',
@@ -135,7 +135,7 @@ export const masterModels: MasterModel[] = [
     examTips: [
       '倾斜传送带需比较 tanθ 与 μ 大小：若 μ < tanθ，共速后仍下滑；若 μ ≥ tanθ，共速后随传送带匀速运动。',
     ],
-    relatedProblemIds: [],
+    relatedProblemIds: ['prob-2023-jiangsu-14'],
   },
   {
     id: 'model-projectile-motion',
@@ -158,7 +158,7 @@ export const masterModels: MasterModel[] = [
       '平抛在斜面上：当速度方向与斜面平行时，小球距离斜面最远；垂直击中斜面时 vy/vx = cotφ。',
       '斜抛最高点：最高点竖直速度为 0，但合速度等于水平分速度 v₀ cosθ ≠ 0。',
     ],
-    relatedProblemIds: [],
+    relatedProblemIds: ['prob-2024-shandong-12'],
   },
   {
     id: 'model-circular-critical',
@@ -177,7 +177,7 @@ export const masterModels: MasterModel[] = [
     examTips: [
       '轻杆模型最高点速度可以为 0，弹力可为拉力、支持力或零，需根据 v 与 √(gR) 的大小关系判定。',
     ],
-    relatedProblemIds: [],
+    relatedProblemIds: ['prob-2023-zhejiang-18'],
   },
   {
     id: 'model-gravitational-orbit',
@@ -196,7 +196,7 @@ export const masterModels: MasterModel[] = [
     examTips: [
       '变轨问题：近地点喷火加速切入椭圆轨道（v > v_圆）；远地点喷火加速切入大圆轨道。',
     ],
-    relatedProblemIds: [],
+    relatedProblemIds: ['prob-2024-quanguo-14'],
   },
   {
     id: 'model-momentum-collision',
@@ -217,7 +217,7 @@ export const masterModels: MasterModel[] = [
     examTips: [
       '碰撞三原则：动量守恒原则、动能不增加原则、前后位置关系不穿透原则。',
     ],
-    relatedProblemIds: [],
+    relatedProblemIds: ['prob-2022-quanguo-16'],
   },
   {
     id: 'model-alternating-field',
@@ -236,7 +236,7 @@ export const masterModels: MasterModel[] = [
     examTips: [
       '粒子进入电场的时刻不同，运动轨迹与离开电场时的速度方向截然不同，需分类讨论。',
     ],
-    relatedProblemIds: [],
+    relatedProblemIds: ['prob-2023-quanguo-20'],
   },
   {
     id: 'model-cyclotron-magnetic',
@@ -257,7 +257,7 @@ export const masterModels: MasterModel[] = [
     examTips: [
       '交变电场周期必须等于粒子在磁场中运动的圆周周期：T_电 = T_磁 = 2πm / (qB)。',
     ],
-    relatedProblemIds: [],
+    relatedProblemIds: ['prob-2022-beijing-14'],
   },
   {
     id: 'model-transformer-transmission',
@@ -276,7 +276,7 @@ export const masterModels: MasterModel[] = [
     examTips: [
       '注意有效值与峰值关系：正弦交变电流 E_m = NBSω，有效值 E = E_m / √2。计算功率和电表读数均用有效值！',
     ],
-    relatedProblemIds: [],
+    relatedProblemIds: ['prob-2024-guangdong-8'],
   },
   {
     id: 'model-harmonic-wave',
@@ -297,7 +297,7 @@ export const masterModels: MasterModel[] = [
     examTips: [
       '机械波传播存在空间周期性（Δx = nλ + x0）与时间周期性（Δt = nT + t0），求解波速需注意多解性。',
     ],
-    relatedProblemIds: [],
+    relatedProblemIds: ['prob-2023-hunan-7'],
   },
   {
     id: 'model-optics-refraction',
@@ -316,7 +316,7 @@ export const masterModels: MasterModel[] = [
     examTips: [
       '在玻璃砖/三棱镜中，频率更高的紫光折射率 n 更大，临界角 C 更小，传播速度 v 更慢！',
     ],
-    relatedProblemIds: [],
+    relatedProblemIds: ['prob-2024-hubei-10'],
   },
   {
     id: 'model-gas-thermodynamics',
@@ -335,7 +335,7 @@ export const masterModels: MasterModel[] = [
     examTips: [
       '注意正负号规定：外界对系统做功 W>0，系统吸热 Q>0，内能增加 ΔU>0。活塞封闭气体压强需通过受力平衡求解。',
     ],
-    relatedProblemIds: [],
+    relatedProblemIds: ['prob-2023-shandong-13'],
   },
   {
     id: 'model-photoelectric-decay',
@@ -356,6 +356,6 @@ export const masterModels: MasterModel[] = [
     examTips: [
       '光子能量 hν 决定是否发生光电效应；入射光强度决定单位时间内逸出的光电子数量（光电流饱和值）。',
     ],
-    relatedProblemIds: [],
+    relatedProblemIds: ['prob-2024-zhejiang-6'],
   },
 ]
