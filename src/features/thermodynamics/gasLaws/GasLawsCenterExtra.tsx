@@ -27,18 +27,17 @@ export default function GasLawsCenterExtra() {
   const T = params.T ?? 300
   const V = params.V ?? 5e-3
 
+  const P_ISOBAR = computeBoylePressure(5e-3, 300, N_DEFAULT)
+  const effectiveV = mode === 1 ? computeGayLussacVolume(T, P_ISOBAR, N_DEFAULT) : V
+
   // 计算当前的状态参量
   const P = mode === 0
     ? computeBoylePressure(V, T, N_DEFAULT)
     : mode === 1
-      ? (params.P ?? computeBoylePressure(V, T, N_DEFAULT))
+      ? P_ISOBAR
       : computeCharlesPressure(T, V, N_DEFAULT)
 
-  const displayP = mode === 1
-    ? P
-    : mode === 0
-      ? computeBoylePressure(V, T, N_DEFAULT)
-      : computeCharlesPressure(T, V, N_DEFAULT)
+  const displayP = P
 
   // 根据当前实验模式生成图表配置
   const chartConfig = useMemo(() => {
@@ -70,8 +69,8 @@ export default function GasLawsCenterExtra() {
         color: PV_CHART_COLORS.isobar,
         points: data.map((d) => ({ x: d.t, y: d.v })),
         currentX: T,
-        currentY: computeGayLussacVolume(T, displayP, N_DEFAULT),
-        constantLabel: `V/T = ${(V / T).toExponential(3)} m³/K`,
+        currentY: effectiveV,
+        constantLabel: `V/T = ${(effectiveV / T).toExponential(3)} m³/K`,
       }
     } else {
       // 等容变化：P-T 图（正比例直线，过外推原点）
@@ -90,7 +89,7 @@ export default function GasLawsCenterExtra() {
         constantLabel: `P/T = ${(displayP / T).toFixed(1)} Pa/K`,
       }
     }
-  }, [mode, T, V, displayP])
+  }, [mode, T, V, displayP, effectiveV])
 
   // 当前状态点标记
   const markers: RelationMarker[] = useMemo(() => [

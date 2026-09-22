@@ -56,7 +56,7 @@ export const GalvanometerWiring: React.FC<GalvanometerWiringProps> = ({
             stroke={PHYSICS_COLORS.electricCurrent}
             strokeWidth="2.5"
             strokeDasharray="6 6"
-            strokeDashoffset={time * -30}
+            strokeDashoffset={time * 30}
           />
         </>
       )}

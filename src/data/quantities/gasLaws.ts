@@ -1,7 +1,7 @@
 /**
  * 气体实验三定律物理量看板数据构建。
  */
-import { computeBoylePressure, computeCharlesPressure } from '../../physics/gasLaws'
+import { computeBoylePressure, computeCharlesPressure, computeGayLussacVolume } from '../../physics/gasLaws'
 import { THERMO_COLORS } from '@/theme/physics'
 import type { PhysicsPanelData } from './types'
 
@@ -18,16 +18,19 @@ export function buildGasLawsQuantities(
   const T = params.T ?? 300
   const V = params.V ?? 5e-3
 
+  const P_ISOBAR = computeBoylePressure(5e-3, 300, N_DEFAULT)
   let P: number
+  let displayV = V
   if (mode === 0) {
     P = computeBoylePressure(V, T, N_DEFAULT)
   } else if (mode === 1) {
-    P = computeBoylePressure(V, T, N_DEFAULT)
+    P = P_ISOBAR
+    displayV = computeGayLussacVolume(T, P_ISOBAR, N_DEFAULT)
   } else {
     P = computeCharlesPressure(T, V, N_DEFAULT)
   }
 
-  const PV = P * V
+  const PV = P * displayV
 
   const lawName = mode === 0 ? '玻意耳定律' : mode === 1 ? '盖-吕萨克定律' : '查理定律'
   const lawFormula = mode === 0
@@ -39,7 +42,7 @@ export function buildGasLawsQuantities(
   return {
     quantities: [
       { label: '压强 P', value: P > 1000 ? (P / 1000).toFixed(1) : P.toFixed(0), unit: P > 1000 ? 'kPa' : 'Pa', color: THERMO_COLORS.pressure },
-      { label: '体积 V', value: (V * 1000).toFixed(1), unit: 'L', color: THERMO_COLORS.volume },
+      { label: '体积 V', value: (displayV * 1000).toFixed(1), unit: 'L', color: THERMO_COLORS.volume },
       { label: '温度 T', value: T.toFixed(0), unit: 'K', color: THERMO_COLORS.temperature },
       { label: '物质的量 n', value: N_DEFAULT.toFixed(1), unit: 'mol' },
       { label: 'PV 乘积', value: PV > 1000 ? (PV / 1000).toFixed(1) : PV.toFixed(0), unit: PV > 1000 ? 'kJ' : 'J' },

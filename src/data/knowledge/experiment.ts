@@ -14,11 +14,11 @@ export const experimentKnowledge: KnowledgeNode[] = [
   },
   {
     id: 'experiment-1-2',
-    title: '电学实验基础',
+    title: '电学实验基础（测定电源电动势与内阻）',
     chapter: '实验专题',
     module: 'experiment',
     importance: 'gaokao',
-    animationIds: [],
+    animationIds: ['anim-experiment-er'],
     problemIds: [],
     prerequisites: [],
   },

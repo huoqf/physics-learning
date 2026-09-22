@@ -109,7 +109,10 @@ export function handleImpulse(
         if (phase === 'falling') {
           return -(m * fallV * (currentT / fallTime))
         }
-        if (phase === 'compressing' || phase === 'recovering') {
+        if (phase === 'compressing') {
+          return -(m * fallV * (1 - cushionCompression / cushionMaxCompression))
+        }
+        if (phase === 'recovering') {
           return m * fallV * (1 - cushionCompression / cushionMaxCompression)
         }
         return 0

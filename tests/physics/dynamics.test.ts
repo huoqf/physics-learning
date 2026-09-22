@@ -112,8 +112,8 @@ describe('Dynamics physics calculations', () => {
     })
 
     it('should treat critical point (F = f_max) as static', () => {
-      // f_max = mu_static * m * g = 0.3 * 1.12 * 5 * 9.8 = 16.464 N
-      const F_applied = 0.3 * 1.12 * 5 * 9.8
+      // f_max = mu_static * m * g = 0.3 * 5 * 9.8 = 14.7 N
+      const F_applied = 0.3 * 5 * 9.8
       const res = calculateFrictionPullModel(m, mu, F_applied, g)
       expect(res.isSliding).toBe(false)
       expect(res.f_actual).toBeCloseTo(F_applied, 2)
@@ -128,9 +128,9 @@ describe('Dynamics physics calculations', () => {
       expect(res.a).toBeCloseTo(F_applied / m, 2)
     })
 
-    it('should return muStatic using DEFAULT_STATIC_FRICTION_RATIO', () => {
+    it('should return muStatic equal to mu (gaokao standard)', () => {
       const res = calculateFrictionPullModel(m, mu, 10, g)
-      expect(res.muStatic).toBeCloseTo(mu * 1.12, 5)
+      expect(res.muStatic).toBeCloseTo(mu, 5)
     })
   })
 

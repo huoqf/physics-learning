@@ -358,7 +358,7 @@ export function useExcitationSimulation({
 
     // ── 跃迁箭头（视觉辅助）──
     activeTransitions.forEach((tr) => {
-      const rFrom = (tr.from + 0.6) * baseR, rTo = (tr.to + 0.6) * baseR
+      const rFrom = tr.from * tr.from * baseR, rTo = tr.to * tr.to * baseR
       const a = -Math.PI / 4
       const fx = cx + Math.cos(a) * rFrom, fy = cy + Math.sin(a) * rFrom
       const tx = cx + Math.cos(a) * rTo, ty = cy + Math.sin(a) * rTo

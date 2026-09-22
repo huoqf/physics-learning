@@ -230,31 +230,6 @@ export function deltaUBgToken(
 }
 
 // ─── 绝热过程计算 ──────────────────────────────────────────────────────────
-/**
- * 计算绝热过程功（泊松方程）。
- * PV^γ = const, W = (P1V1 - P2V2)/(γ-1)
- *
- * @param P1 初始压强 (Pa)
- * @param V1 初始体积 (m³)
- * @param V2 末态体积 (m³)
- * @param gamma 绝热指数，默认单原子 5/3 ≈ 1.667
- * @returns { W: 功 (J), T2: 末态温度 (K) }
- */
-export function calculateAdiabaticWork(
-  P1: number,
-  V1: number,
-  V2: number,
-  gamma: number = 5 / 3,
-): { W: number; T2: number } {
-  if (V1 <= 0 || V2 <= 0 || P1 <= 0) {
-    return { W: 0, T2: 0 }
-  }
-  const P2 = P1 * Math.pow(V1 / V2, gamma)
-  const W = (P1 * V1 - P2 * V2) / (gamma - 1)
-  const T1 = (P1 * V1) / (1 * 8.314) // n=1
-  const T2 = T1 * Math.pow(V1 / V2, gamma - 1)
-  return { W, T2 }
-}
 
 // ─── 状态求解 ──────────────────────────────────────────────────────────────
 /** 联动的物理状态数据结构 */

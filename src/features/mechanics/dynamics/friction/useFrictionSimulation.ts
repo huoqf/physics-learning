@@ -3,7 +3,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useSimulationFrame } from '@/utils/animation'
 import { calculateFrictionPullModel, calculateDoubleFrictionIncline } from '@/physics'
-import { GRAVITY, DEFAULT_STATIC_FRICTION_RATIO } from '@/physics/constants'
+import { GRAVITY } from '@/physics/constants'
 
 export interface FrictionSimState {
   x1: number
@@ -84,7 +84,7 @@ export function useFrictionSimulation(options: FrictionSimulationOptions) {
     const angleRad = (angle * Math.PI) / 180
 
     if (mode === 0) {
-      const f_max = DEFAULT_STATIC_FRICTION_RATIO * mu * m * g
+      const f_max = mu * m * g
       const f_slip = mu * m * g
       let a1 = 0
 

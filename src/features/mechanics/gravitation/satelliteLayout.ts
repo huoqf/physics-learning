@@ -9,7 +9,13 @@ export const LAYOUT = {
     rMin: 6.37,
     rMax: 22.0,
     rNear: EARTH_RADIUS,
+    /** 中轨卫星对比示例半径 (13,000 km) */
+    rMediumExample: 13.0e6,
+    /** 高轨卫星对比示例半径 (21,000 km，画布比例示例，非 42,164 km 真实同步轨道) */
+    rHighExample: 21.0e6,
+    /** @deprecated 兼容别名，请使用 rMediumExample */
     rMedium: 13.0e6,
+    /** @deprecated 兼容别名，请使用 rHighExample */
     rSync: 21.0e6,
     timeScale: 500,
   },

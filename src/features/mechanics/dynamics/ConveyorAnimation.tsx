@@ -88,13 +88,12 @@ export default function ConveyorAnimation() {
   const isSliding = state.phase === 'sliding'
 
   // 1. 物理跟随皮带平移及截断划痕计算 (沿皮带表面 Y = center - R - 3px 绘制)
-  const x1_phy = vBelt * time
-  const x2_phy = state.xObj
-  const xMin_phy = Math.min(x1_phy, x2_phy)
-  const xMax_phy = Math.max(x1_phy, x2_phy)
-  const xLeft_phy = clamp(xMin_phy, 0, length)
-  const xRight_phy = clamp(xMax_phy, 0, length)
-  const scratchActive = showScratch && (xRight_phy - xLeft_phy > 0.05) && (state.phase !== 'exitLeft' && state.phase !== 'exitRight' || state.relativeDistanceAbs > 0.05)
+  // 真实划痕几何长度以物理划过区间 scratchLength 为准（反向滑动时为包络区间，避免虚长）
+  const scratchLen = state.scratchLength ?? state.relativeDistanceAbs
+  const isSlowerThanBelt = state.xObj <= vBelt * time
+  const xLeft_phy = clamp(isSlowerThanBelt ? state.xObj : state.xObj - scratchLen, 0, length)
+  const xRight_phy = clamp(isSlowerThanBelt ? state.xObj + scratchLen : state.xObj, 0, length)
+  const scratchActive = showScratch && (scratchLen > 0.05) && (state.phase !== 'exitLeft' && state.phase !== 'exitRight' || state.relativeDistanceAbs > 0.05)
 
   const getSvgPos = (xPhy: number, offsetNormal = SCENE.rollerRadius + 3) => {
     const ratio = xPhy / length

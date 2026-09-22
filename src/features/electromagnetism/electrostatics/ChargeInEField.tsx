@@ -404,10 +404,11 @@ export default function ChargeInEField() {
               {(() => {
                 const eDir = electricForceDir({ x: 0, y: -curFieldSign }, q * 1e-6)
                 const electricAccel = (q * 1e-6 * curFieldSign * U / PLATE_GAP) / PARTICLE_MASS
+                const accelMag = Math.abs(electricAccel)
                 return (
                   <PhysicsVectorArrow
                     originDesign={{ x: cx, y: cy }}
-                    vector={{ x: eDir.x * electricAccel, y: eDir.y * electricAccel }}
+                    vector={{ x: eDir.x * accelMag, y: eDir.y * accelMag }}
                     type="electricForce"
                     sceneScale={sceneScale}
                     strokeWidth={CANVAS_STYLE.stroke.vectorSub}

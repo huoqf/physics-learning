@@ -99,7 +99,7 @@ export const electromagnetismElectrostaticsAnimations = defineAnimations({
     knowledgeId: 'electricity-1-4',
     Component: lazy(() => import('@/features/electromagnetism/electrostatics/Capacitor')),
     controlsMode: 'param' as const,
-    defaultParams: { S: 100, d: 5, epsilon_r: 1, U: 12, connected: 1 } as const,
+    defaultParams: { S: 100, d: 5, epsilon_r: 1, U: 12, connected: 1, savedQ: 2.12496e-10 } as const,
     paramMeta: [
       { key: 'S', label: '正对面积 S', min: 50, max: 200, step: 10, unit: 'cm²' },
       { key: 'd', label: '板间距 d', min: 2, max: 10, step: 0.5, unit: 'mm' },

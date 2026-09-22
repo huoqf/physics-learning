@@ -93,7 +93,7 @@ function buildSectorPoints(
   const E_end = solveKeplerEquation(M_end, e1)
 
   return [
-    { x: 0, y: 0 },
+    { x: a1 * e1, y: 0 },
     {
       x: a1 * Math.cos(E_start),
       y: b1 * Math.sin(E_start),

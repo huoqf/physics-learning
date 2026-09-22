@@ -147,7 +147,7 @@ export const electromagnetismInductionAnimations = defineAnimations({
       { key: 'N', label: '线圈匝数 n', min: 1, max: 100, step: 1, unit: '匝', description: '匝数越多，单位磁通量变化产生的感应电动势越大。' },
       { key: 'B', label: '磁铁强度 B', min: 0.2, max: 2.0, step: 0.1, unit: 'T', showIf: 'mode', showIfValue: 0 },
       { key: 'magnetV', label: '磁铁运动速度 v', min: 0, max: 300, step: 10, unit: 'px/s', showIf: 'mode', showIfValue: 0, description: '磁铁相对线圈移动的速度。速度越快，穿过线圈的磁通量变化越剧烈，感应电动势峰值越高。' },
-      { key: 'dBdt', label: '磁场变化率 k = ΔB/Δt', min: -1.5, max: 1.5, step: 0.1, unit: 'T/s', showIf: 'mode', showIfValue: 1, description: 'k > 0：B 从 0 线性增强（产生逆时针感应电流）；k < 0：B 从 0 线性减弱（产生顺时针感应电流）；k = 0：无感应电动势。' },
+      { key: 'dBdt', label: '磁场变化率 k = ΔB/Δt', min: -1.5, max: 1.5, step: 0.1, unit: 'T/s', showIf: 'mode', showIfValue: 1, description: 'k > 0：向里磁场从 0 线性增强（产生逆时针感应电流）；k < 0：反向磁场（向外）线性增强（产生顺时针感应电流）；k = 0：无感应电动势。' },
     ],
   },
   'anim-lenzs-law': {

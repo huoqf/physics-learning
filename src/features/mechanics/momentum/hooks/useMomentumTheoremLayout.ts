@@ -74,7 +74,11 @@ export function useMomentumTheoremLayout({ params, time, vp }: MomentumLayoutPar
     ballY = ballRestY + cushionCompression
   } else {
     phase = 'done'
-    ballY = ballRestY
+    const tAfter = currentT - (fallTime + collisionDt * 2)
+    const tFlight = (2 * fallV) / MT_LAYOUT.g
+    const hasLanded = tAfter >= tFlight
+    const dy = hasLanded ? 0 : Math.max(0, fallV * tAfter - 0.5 * MT_LAYOUT.g * tAfter * tAfter)
+    ballY = ballRestY - dy * MT_LAYOUT.fallScale
     cushionCompression = 0
   }
 
@@ -128,13 +132,21 @@ export function useMomentumTheoremLayout({ params, time, vp }: MomentumLayoutPar
       pts.push({ x: fallTime, y: -fallV })
       pts.push({ x: currentT, y: curV })
     } else {
+      const tAfterCollision = currentT - (fallTime + collisionDt * 2)
+      const tFlight = (2 * fallV) / MT_LAYOUT.g
+      const hasLanded = tAfterCollision >= tFlight
+      const curV = hasLanded ? 0 : fallV - MT_LAYOUT.g * tAfterCollision
       pts.push({ x: 0, y: 0 })
       pts.push({ x: fallTime, y: -fallV })
       pts.push({ x: fallTime + collisionDt * 2, y: fallV })
-      pts.push({ x: Math.min(currentT, totalTime), y: fallV })
+      if (hasLanded) {
+        pts.push({ x: fallTime + collisionDt * 2 + tFlight, y: -fallV })
+        pts.push({ x: fallTime + collisionDt * 2 + tFlight + 0.001, y: 0 })
+      }
+      pts.push({ x: currentT, y: curV })
     }
     return pts
-  }, [fallTime, collisionDt, fallV, currentT, totalTime])
+  }, [fallTime, collisionDt, fallV, currentT])
 
   // 进阶模式计算
   const impactForce = calculateFluidImpactForce(rho, S, v_fluid, alpha)

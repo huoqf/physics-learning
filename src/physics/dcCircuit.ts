@@ -153,7 +153,9 @@ export function calculateMeterExpansion(
   }
   if (mode === 2) {
     if (R_p <= 0 || R_g <= 0) return { I_g_meas: 0, Rs: R_s, Rp: R_p, ratio: 0, valid: false }
-    const I_g_meas = U_input * (R_p / (R_g + R_p))
+    const R_A = (R_g * R_p) / (R_g + R_p)
+    const I_total = U_input / R_A
+    const I_g_meas = I_total * (R_p / (R_g + R_p))
     const ratio = Math.max(0, Math.min(1.2, I_g_meas / I_g))
     return { I_g_meas, Rs: R_s, Rp: R_p, ratio, valid: true }
   }

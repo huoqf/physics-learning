@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import { buildPhysicsQuantities, preloadQuantityBuilder } from '@/data/physicsQuantities'
+import { calculateCapacitor } from '@/physics'
+
+const EPS0 = 8.85e-12
 
 function find(qs: ReturnType<typeof buildPhysicsQuantities>, label: string) {
   return qs.quantities.find((q) => q.label.startsWith(label))?.value
@@ -70,6 +73,16 @@ describe('buildPhysicsQuantities', () => {
     const b = buildPhysicsQuantities('anim-capacitor', { S: 100, d: 10, epsilon_r: 1, U: 12, connected: 0 }, 0)
     expect(find(b, '电势差') as number).toBeCloseTo(24, 4)
     expect(find(b, '板间场强') as number).toBeCloseTo(2400, 2)
+  })
+
+  it('电容器先改参数充入高电荷后断开：savedQ 精确守恒，不回退默认几何', () => {
+    // 假设在接通下 S=200, d=2 充入的电荷量
+    const c0 = calculateCapacitor(EPS0, 200 * 1e-4, 2 * 1e-3).C
+    const customQ = c0 * 12
+    // 断开电源，且板间距 d 从 2 变为 4（电容减半，电压翻倍到 24V）
+    const res = buildPhysicsQuantities('anim-capacitor', { S: 200, d: 4, epsilon_r: 1, U: 12, connected: 0, savedQ: customQ }, 0)
+    expect(find(res, '电荷量') as number).toBeCloseTo(customQ * 1e12, 4)
+    expect(find(res, '电势差') as number).toBeCloseTo(24, 4)
   })
 
   // ===== 电磁学 · 恒定电流（M4-1）=====

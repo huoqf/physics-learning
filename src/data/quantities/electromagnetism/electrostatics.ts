@@ -297,11 +297,12 @@ export function handleElectrostatics(
       const U = params.U ?? 12
       const isConnected = (params.connected ?? 1) >= 0.5
 
-      const Q_FIXED = VACUUM_PERMITTIVITY * (100 * 1e-4) / (5 * 1e-3) * 12
       const { C } = calculateCapacitor(VACUUM_PERMITTIVITY * epsilon_r, S * 1e-4, d * 1e-3)
-
-      const voltage = isConnected ? U : Q_FIXED / C
-      const charge = isConnected ? C * voltage : Q_FIXED
+      const currentQ = C * U
+      const defaultQ = calculateCapacitor(VACUUM_PERMITTIVITY, 100 * 1e-4, 5 * 1e-3).C * 12
+      // 断开电源时 Q 不变，以 store 中的 savedQ 为单真源（无 savedQ 独立调用时回退到默认基准电荷）
+      const charge = isConnected ? currentQ : (params.savedQ ?? defaultQ)
+      const voltage = isConnected ? U : (C > 0 ? charge / C : 0)
       const field = voltage / (d * 1e-3)
 
       return {

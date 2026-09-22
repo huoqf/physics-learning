@@ -845,8 +845,8 @@ describe('electromagnetism', () => {
       expect(res.ratio).toBeCloseTo(1.0, 6)
     })
 
-    it('电流表改装：Ig=1mA Rg=100 Rp=0.5 I=201mA -> ratio=1.0', () => {
-      const res = calculateMeterExpansion(2, 0.201, 100, 0.001, 1400, 0.5)
+    it('电流表改装：Ig=1mA Rg=100 Rp=0.5 U=0.1V(对应I=201mA) -> ratio=1.0', () => {
+      const res = calculateMeterExpansion(2, 0.1, 100, 0.001, 1400, 0.5)
       expect(res.I_g_meas).toBeCloseTo(0.001, 6)
       expect(res.ratio).toBeCloseTo(1.0, 6)
     })

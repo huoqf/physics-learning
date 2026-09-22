@@ -58,7 +58,7 @@ export interface ExcitationSimProps {
 
 export const ENERGY_MAP: Record<string, { e: number; color: string }> = {
   '4->3': { e: 0.66, color: MODERN_COLORS.photonInfrared },   // 1879 nm 红外
-  '4->2': { e: 2.55, color: '#06b6d4' },                      // 486 nm 可见（青）
+  '4->2': { e: 2.55, color: MODERN_COLORS.photonVisibleCyan }, // 486 nm 可见（青）
   '4->1': { e: 12.75, color: MODERN_COLORS.photonUltraviolet },
   '3->2': { e: 1.89, color: MODERN_COLORS.photonVisibleRed }, // 656 nm 可见红光 H-α
   '3->1': { e: 12.09, color: MODERN_COLORS.photonUltraviolet },

@@ -255,6 +255,29 @@ describe('getConveyorFrame — 生热与相对位移', () => {
       expect(frameLater.heat).toBeCloseTo(frameSync.heat, 1)
     }
   })
+
+  it('倾斜传送带反向相对滑动时：scratchLength 为包络区间且小于累计路程 relativeDistanceAbs', () => {
+    // 倾斜传送带：theta=30°, tan30° ≈ 0.577, 设 mu=0.2 < tan30°
+    // 初速度 v0 = 4 > vBelt = 2，物块先向上相对皮带减速滑行直至共速
+    // 共速后因为 mu < tan theta，合力向下，物块开始相对传送带反向下滑
+    const param: ConveyorParam = {
+      vBelt: 2,
+      v0: 4,
+      mu: 0.2,
+      thetaRad: Math.PI / 6,
+      L: 20,
+      mode: 'inclined',
+    }
+    const frameAtSync = getConveyorFrame(param, 0.4)
+    const frameLater = getConveyorFrame(param, 1.2)
+    // 累计相对路程随时间单调增加
+    expect(frameLater.relativeDistanceAbs).toBeGreaterThan(frameAtSync.relativeDistanceAbs)
+    // 生热 Q 严格与累计相对路程成正比
+    const normalForce = 1 * 9.8 * Math.cos(Math.PI / 6)
+    expect(frameLater.heat).toBeCloseTo(0.2 * normalForce * frameLater.relativeDistanceAbs, 1)
+    // 在反向阶段，几何划痕覆盖区间 scratchLength 必须小于累计相对路程
+    expect(frameLater.scratchLength).toBeLessThan(frameLater.relativeDistanceAbs)
+  })
 })
 
 // ── getConveyorFrame — 边界条件 ─────────────────────────────────────────

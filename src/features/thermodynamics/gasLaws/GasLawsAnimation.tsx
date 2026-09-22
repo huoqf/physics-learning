@@ -10,6 +10,7 @@ import { AnimationSvgCanvas } from '@/components/Layout'
 import { worldToDesign } from '@/scene'
 import {
   computeBoylePressure,
+  computeGayLussacVolume,
   computeCharlesPressure,
 } from '@/physics/gasLaws'
 
@@ -105,8 +106,12 @@ export default function GasLawsAnimation() {
     originY: visibleY + visibleHeight * 0.9,
   })
 
+  // 等压基准压强 (在 T0=300K, V0=5e-3 下对应的平衡压强)
+  const P_ISOBAR = computeBoylePressure(5e-3, 300, N_DEFAULT)
+  const effectiveV = mode === 1 ? computeGayLussacVolume(T, P_ISOBAR, N_DEFAULT) : V
+
   // 活塞物理高度 (y): 气缸底物理 y=0.5，活塞 y 随体积在 [0.5, 3.7] 区间变化
-  const volumeRatio = (V - V_MIN) / (V_MAX - V_MIN)
+  const volumeRatio = (effectiveV - V_MIN) / (V_MAX - V_MIN)
   const pistonY = 0.5 + volumeRatio * 3.2
 
   // 状态变量引用
@@ -220,14 +225,10 @@ export default function GasLawsAnimation() {
   const P = mode === 0
     ? computeBoylePressure(V, T, N_DEFAULT)
     : mode === 1
-      ? (params.P ?? computeBoylePressure(V, T, N_DEFAULT))
+      ? P_ISOBAR
       : computeCharlesPressure(T, V, N_DEFAULT)
 
-  const displayP = mode === 1
-    ? P
-    : mode === 0
-      ? computeBoylePressure(V, T, N_DEFAULT)
-      : computeCharlesPressure(T, V, N_DEFAULT)
+  const displayP = P
 
   // ─── 绘制场景组件 ────────────────────────────────────────────────────────
   const wallStroke = STROKE.objectLine

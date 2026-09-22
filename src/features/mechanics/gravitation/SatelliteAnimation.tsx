@@ -74,7 +74,7 @@ export default function SatelliteAnimation() {
   const sat近X = centerX + sat近PhysX * scale
   const sat近Y = centerY - sat近PhysY * scale
 
-  const r_中 = LAYOUT.mode0.rMedium
+  const r_中 = LAYOUT.mode0.rMediumExample
   const { T: T_中 } = calculateOrbitalSpeed(EARTH_MASS, r_中, GRAVITATIONAL_CONSTANT)
   const angle_中 = ((2 * Math.PI) / T_中) * time * LAYOUT.mode0.timeScale
   const sat中PhysX = r_中 * Math.cos(angle_中)
@@ -82,13 +82,13 @@ export default function SatelliteAnimation() {
   const sat中X = centerX + sat中PhysX * scale
   const sat中Y = centerY - sat中PhysY * scale
 
-  const r_同步 = LAYOUT.mode0.rSync
-  const { T: T_同步 } = calculateOrbitalSpeed(EARTH_MASS, r_同步, GRAVITATIONAL_CONSTANT)
-  const angle_同步 = ((2 * Math.PI) / T_同步) * time * LAYOUT.mode0.timeScale
-  const sat同步PhysX = r_同步 * Math.cos(angle_同步)
-  const sat同步PhysY = r_同步 * Math.sin(angle_同步)
-  const sat同步X = centerX + sat同步PhysX * scale
-  const sat同步Y = centerY - sat同步PhysY * scale
+  const r_高 = LAYOUT.mode0.rHighExample
+  const { T: T_高 } = calculateOrbitalSpeed(EARTH_MASS, r_高, GRAVITATIONAL_CONSTANT)
+  const angle_高 = ((2 * Math.PI) / T_高) * time * LAYOUT.mode0.timeScale
+  const sat高PhysX = r_高 * Math.cos(angle_高)
+  const sat高PhysY = r_高 * Math.sin(angle_高)
+  const sat高X = centerX + sat高PhysX * scale
+  const sat高Y = centerY - sat高PhysY * scale
 
   // Mode 1 卫星位置
   let satLaunchPhysX = 0
@@ -199,7 +199,7 @@ export default function SatelliteAnimation() {
               <g>
                 <circle cx={centerX} cy={centerY} r={r_近 * scale} fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={LAYOUT.orbit.background.strokeWidth} strokeDasharray={LAYOUT.orbit.background.strokeDasharray} opacity={LAYOUT.orbit.background.opacity} />
                 <circle cx={centerX} cy={centerY} r={r_中 * scale} fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={LAYOUT.orbit.background.strokeWidth} strokeDasharray={LAYOUT.orbit.background.strokeDasharray} opacity={LAYOUT.orbit.background.opacity} />
-                <circle cx={centerX} cy={centerY} r={r_同步 * scale} fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={LAYOUT.orbit.background.strokeWidth} strokeDasharray={LAYOUT.orbit.background.strokeDasharray} opacity={LAYOUT.orbit.background.opacity} />
+                <circle cx={centerX} cy={centerY} r={r_高 * scale} fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={LAYOUT.orbit.background.strokeWidth} strokeDasharray={LAYOUT.orbit.background.strokeDasharray} opacity={LAYOUT.orbit.background.opacity} />
               </g>
             )}
             <circle cx={centerX} cy={centerY} r={orbitRadiusPx} fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={LAYOUT.orbit.active.strokeWidth} strokeDasharray={LAYOUT.orbit.active.strokeDasharray} opacity={LAYOUT.orbit.active.opacity} />
@@ -209,9 +209,9 @@ export default function SatelliteAnimation() {
                 <g transform={`translate(${sat近X}, ${sat近Y})`}><SatelliteSvg angleRad={angle_近} /></g>
                 <text x={sat近X} y={sat近Y - 14} fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">近地</text>
                 <g transform={`translate(${sat中X}, ${sat中Y})`}><SatelliteSvg angleRad={angle_中} /></g>
-                <text x={sat中X} y={sat中Y - 14} fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">GPS</text>
-                <g transform={`translate(${sat同步X}, ${sat同步Y})`}><SatelliteSvg angleRad={angle_同步} /></g>
-                <text x={sat同步X} y={sat同步Y - 14} fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">同步</text>
+                <text x={sat中X} y={sat中Y - 14} fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">中轨示例</text>
+                <g transform={`translate(${sat高X}, ${sat高Y})`}><SatelliteSvg angleRad={angle_高} /></g>
+                <text x={sat高X} y={sat高Y - 14} fontSize={font(9)} fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle">高轨示例</text>
               </g>
             )}
 
@@ -233,7 +233,7 @@ export default function SatelliteAnimation() {
                 />
                 <PhysicsVectorArrow
                   origin={{ x: sat0PhysX, y: sat0PhysY }}
-                  vector={{ x: sat0PhysY, y: -sat0PhysX }}
+                  vector={{ x: -sat0PhysY, y: sat0PhysX }}
                   type="velocity"
                   sceneScale={sceneScale}
                   label="v"

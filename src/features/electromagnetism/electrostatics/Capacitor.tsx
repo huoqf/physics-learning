@@ -12,9 +12,6 @@ import CapacitorChart from './CapacitorChart'
 // 物理常数定义 (SI)
 const EPS0 = 8.854e-12
 
-// 断开电源时保持的电荷基准（默认状态 S=100cm² d=5mm εᵣ=1 U=12V 充电后的电荷量）
-const Q_FIXED = EPS0 * (100 * 1e-4) / (5 * 1e-3) * 12
-
 // 粒子分布参考最大值
 const C_MAX = EPS0 * 5 * (200 * 1e-4) / (2 * 1e-3) * 1e12
 const Q_MAX = C_MAX * 12
@@ -46,20 +43,33 @@ export default function Capacitor() {
     }))
   )
 
+  const updateParam = useAnimationStore((s) => s.updateParam)
+
   // 容器尺寸（§2.2 标准路径：useAnimationViewport + AnimationSvgCanvas）
   const { containerRef, canvasSize, vp } = useAnimationViewport({
     preset: CANVAS_PRESETS.splitV,
   })
   const { font } = canvasSize
 
-  const { S = 100, d = 5, epsilon_r = 1, U = 12, connected = 1 } = params
+  const { S = 100, d = 5, epsilon_r = 1, U = 12, connected = 1, savedQ } = params
   const isConnected = connected >= 0.5
   const hasDielectric = epsilon_r > 1.5
 
   // ---- 物理计算 ----
   const { C } = calculateCapacitor(EPS0 * epsilon_r, S * 1e-4, d * 1e-3)
-  const voltage = isConnected ? U : Q_FIXED / C
-  const charge = isConnected ? C * voltage : Q_FIXED
+  const currentQ = C * U
+
+  // 接通电源时，实时同步断开瞬间应保持的基准电荷量 savedQ 到全局 store
+  useEffect(() => {
+    if (isConnected && Math.abs((savedQ ?? 0) - currentQ) > 1e-15) {
+      updateParam('savedQ', currentQ)
+    }
+  }, [isConnected, currentQ, savedQ, updateParam])
+
+  const defaultQ = calculateCapacitor(EPS0, 100 * 1e-4, 5 * 1e-3).C * 12
+  // 断开电源时 Q 不变，以 store 中的 savedQ 为单真源（无 savedQ 首次或独立环境回退到 defaultQ）
+  const charge = isConnected ? currentQ : (savedQ ?? defaultQ)
+  const voltage = isConnected ? U : (C > 0 ? charge / C : 0)
 
   // 转换成 pC
   const qPC = charge * 1e12

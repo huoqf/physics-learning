@@ -13,6 +13,16 @@ export const thermodynamicsKnowledge: KnowledgeNode[] = [
     prerequisites: [],
   },
   {
+    id: 'thermodynamics-1-2',
+    title: '分子动能、分子势能与内能',
+    chapter: '热学 第1章 分子动理论',
+    module: 'thermodynamics',
+    importance: 'gaokao',
+    animationIds: [],
+    problemIds: [],
+    prerequisites: ['thermodynamics-1-1'],
+  },
+  {
     id: 'thermodynamics-1-3',
     title: '分子间作用力',
     chapter: '热学 第1章 分子动理论',

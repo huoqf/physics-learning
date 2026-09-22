@@ -1,5 +1,3 @@
-import { DEFAULT_STATIC_FRICTION_RATIO } from '../constants'
-
 /**
  * 水平拉力摩擦模型：计算滑块在水平面上受外拉力时的摩擦力与加速度。
  *
@@ -26,10 +24,10 @@ export function calculateFrictionPullModel(
 } {
   const weight = m * g;
   const F_normal = weight;
-  const muStatic = mu * DEFAULT_STATIC_FRICTION_RATIO;
+  const muStatic = mu;
   const f_max = muStatic * F_normal;
   const f_slip = mu * F_normal;
-  const isSliding = F_applied > f_max;
+  const isSliding = F_applied - f_max > 1e-9;
   const f_actual = isSliding ? f_slip : F_applied;
   const a = isSliding ? (F_applied - f_slip) / m : 0;
   const F_net = F_applied - f_actual;
@@ -92,7 +90,7 @@ export function calculateDoubleFrictionIncline(params: {
     const F_drive = 0
     const FN2 = (m + M) * g
     const f2 = 0
-    const f2_max = DEFAULT_STATIC_FRICTION_RATIO * mu_2 * FN2
+    const f2_max = mu_2 * FN2
 
     return {
       isBlockSliding: false,

@@ -173,13 +173,21 @@ export default function BlockBoardAnimation() {
             type="normalForce" sceneScale={vectorSceneScale}
             label="FN1" font={font}
           />
-          {/* 摩擦力 Ff1 ←（仅在板上且运动时） */}
+          {/* 摩擦力 Ff1 ←（在板上时）或地面摩擦力 Ff地 ←（跌落至地面时） */}
           {blockOnBoard && state.vBlock > 0.01 && (
             <PhysicsVectorArrow
               originDesign={{ x: blkCx, y: boardY - 2 }}
               vector={{ x: -Ff1, y: 0 }}
               type="friction" sceneScale={vectorSceneScale}
               label="Ff1" font={font}
+            />
+          )}
+          {!blockOnBoard && state.vBlock > 0.01 && (
+            <PhysicsVectorArrow
+              originDesign={{ x: blkCx, y: groundY - 2 }}
+              vector={{ x: -(mu2 * m * g), y: 0 }}
+              type="friction" sceneScale={vectorSceneScale}
+              label="Ff地" font={font}
             />
           )}
 

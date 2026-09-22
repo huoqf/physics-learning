@@ -50,6 +50,8 @@ export interface ConveyorFrameState {
   relativeDistanceAbs: number
   /** 摩擦生热，单位：J */
   heat: number
+  /** 皮带划痕几何包络长度（真实划过区间 max(x_rel) - min(x_rel)），单位：m */
+  scratchLength: number
   /** 当前阶段 */
   phase: ConveyorPhase
   /** 是否已经达到过共速点 */
@@ -117,6 +119,8 @@ export function getConveyorFrame(
   let phase: ConveyorPhase = 'sliding'
   let relativeDistanceAbs = 0
   let heat = 0
+  let minRelDisp = 0
+  let maxRelDisp = 0
   let hasSynced = Math.abs(param.v0 - param.vBelt) < EPS_RELATIVE_V
   let tSync: number | null = hasSynced ? 0 : null
   let tExit: number | null = null
@@ -160,6 +164,10 @@ export function getConveyorFrame(
         hasSynced = true
         tSync = tSync ?? elapsed
 
+        const xRelSync = xObj - param.vBelt * elapsed
+        if (xRelSync < minRelDisp) minRelDisp = xRelSync
+        if (xRelSync > maxRelDisp) maxRelDisp = xRelSync
+
         const remaining = dt - dtSync
         if (canStaticSync) {
           phase = param.mode === 'horizontal' ? 'synchronous' : 'staticOnIncline'
@@ -178,6 +186,10 @@ export function getConveyorFrame(
         elapsed += dt
       }
     }
+
+    const xRel = xObj - param.vBelt * elapsed
+    if (xRel < minRelDisp) minRelDisp = xRel
+    if (xRel > maxRelDisp) maxRelDisp = xRel
 
     if (xObj <= 0 && elapsed > EPS_TIME && vObj < 0) {
       xObj = 0
@@ -202,6 +214,7 @@ export function getConveyorFrame(
     normalForce,
     relativeVelocity: vObj - param.vBelt,
     relativeDistanceAbs,
+    scratchLength: maxRelDisp - minRelDisp,
     heat,
     phase,
     hasSynced,

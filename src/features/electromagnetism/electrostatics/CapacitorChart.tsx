@@ -2,14 +2,10 @@ import { EnergyBars, EnergyBarItem } from '@/components/Physics'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { calculateCapacitor } from '@/physics'
-
 import { PHYSICS_COLORS } from '@/theme/physics'
 
 // 物理常数定义 (SI)
 const EPS0 = 8.854e-12
-
-// 断开电源时保持的电荷基准
-const Q_FIXED = EPS0 * (100 * 1e-4) / (5 * 1e-3) * 12
 
 // 联动柱状图的最大参考值（用于折算 0% - 100% 柱高）
 const C_MAX = EPS0 * 5 * (200 * 1e-4) / (2 * 1e-3) * 1e12  // 约 442.7 pF
@@ -26,13 +22,15 @@ export default function CapacitorChart() {
     useShallow((s) => s.params)
   )
 
-  const { S = 100, d = 5, epsilon_r = 1, U = 12, connected = 1 } = params
+  const { S = 100, d = 5, epsilon_r = 1, U = 12, connected = 1, savedQ } = params
   const isConnected = connected >= 0.5
 
   // 物理计算
   const { C } = calculateCapacitor(EPS0 * epsilon_r, S * 1e-4, d * 1e-3)
-  const voltage = isConnected ? U : Q_FIXED / C
-  const charge = isConnected ? C * voltage : Q_FIXED
+  const currentQ = C * U
+  const defaultQ = calculateCapacitor(EPS0, 100 * 1e-4, 5 * 1e-3).C * 12
+  const charge = isConnected ? currentQ : (savedQ ?? defaultQ)
+  const voltage = isConnected ? U : (C > 0 ? charge / C : 0)
   const field = voltage / (d * 1e-3)
 
   // 转换成 pF, pC

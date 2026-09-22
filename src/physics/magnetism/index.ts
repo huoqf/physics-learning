@@ -5,8 +5,6 @@ export {
   calculateLorentzTrajectory,
   calcParticleRadius,
   calcParticlePeriod,
-  calcTrajectoryCenter,
-  calcParticleArcAngle,
   calculateDoubleBoundaryExit,
   calculateCircularBoundaryExit,
   lorentzForceDir,

@@ -53,14 +53,14 @@ export function handleFriction(
         { label: '加速度 a', value: a.toFixed(2), unit: 'm/s²', highlight: a > 0.05 ? 'positive' as const : 'zero' as const },
       ],
       formulas: [
-        { name: '最大静摩擦力', latex: 'f_{\\text{max}} = \\mu_s F_N = 1.12\\mu mg', level: 'important', note: '1.12为静动摩擦系数比' },
+        { name: '最大静摩擦力', latex: 'f_{\\text{max}} = \\mu_s F_N = \\mu mg', level: 'core', note: '高考通常按最大静摩擦力等于滑动摩擦力处理' },
         { name: '滑动摩擦力', latex: 'f_{\\text{slip}} = \\mu F_N = \\mu mg', level: 'core', condition: '水平面上' },
         { name: '滑动状态', latex: 'f = f_{\\text{slip}},\\quad a = \\frac{F - f_{\\text{slip}}}{m}', level: 'core' }
       ],
       gaokaoPoints: [
         { text: '静摩擦力是被动力，范围为 0 至最大静摩擦力。', importance: 'core' as const },
         { text: '滑动摩擦力仅取决于正压力和动摩擦因数，与速度、接触面积均无关。', importance: 'core' as const },
-        { text: '最大静摩擦力略大于滑动摩擦力（1.12 倍），临界时摩擦力会突跳。', importance: 'gaokao' as const },
+        { text: '最大静摩擦力通常略大于滑动摩擦力，但在无特别说明的高考题中，通常按二者相等计算。', importance: 'core' as const },
         { text: '解答摩擦力问题必须先判定：静摩擦还是滑动摩擦。', importance: 'gaokao' as const }
       ]
     }

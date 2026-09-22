@@ -163,7 +163,7 @@ export function getBoardSystemState(param: BlockBoardParam, t: number): BoardSys
     } else {
       // 跌落后：滑块在地面独立减速
       const dt = t - tFall
-      const aBlockGround = -mu1 * g // 地面摩擦（假设地面 μ 与板面相同）
+      const aBlockGround = -mu2 * g // 地面摩擦（地面动摩擦因数 mu2）
 
       // 滑块：速度 clamp 到 0，位置 clamp 到停止时最大值
       const tStopBlock = aBlockGround < -1e-9 ? -vBlkAtFall / aBlockGround : Infinity

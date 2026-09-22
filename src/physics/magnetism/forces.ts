@@ -74,20 +74,6 @@ export const calcParticlePeriod = (m: number, q: number, B: number): number => {
   return (2 * Math.PI * m) / (Math.abs(q) * Math.abs(B))
 }
 
-/** 计算动态圆圆心物理坐标 (xc, yc) */
-export const calcTrajectoryCenter = (entryAngle: number, R: number, q: number = 1, B: number = 1) => {
-  const sign = (q * B) >= 0 ? -1 : 1
-  const cxAngle = entryAngle + sign * Math.PI / 2
-  return {
-    xc: R * Math.cos(cxAngle),
-    yc: R * Math.sin(cxAngle)
-  }
-}
-
-/** 计算粒子运动的圆心角 */
-export const calcParticleArcAngle = (entryAngle: number, _q: number, _B: number): number => {
-  return 2 * entryAngle
-}
 
 /**
  * 双平行边界磁场 [0, d] 的出射计算

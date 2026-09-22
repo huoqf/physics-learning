@@ -366,7 +366,7 @@ export const mechanicsKinematicsAnimations = defineAnimations({
             return '【中点定理与偏角倍数】速度偏角的正切值恒等于位移偏角正切值的 2 倍 (tanθ = 2tanα)！将速度矢量反向延长，必交于水平位移的中点 (x/2, 0)。'
           }
           if (p.modelMode === 2) {
-            return '【斜面平抛临界】① 物体落到斜面上时，位移偏角等于斜面倾角 (tanα = tanφ)；② 当速度方向与斜面平行时，物体距离斜面最远；③ 垂直击中斜面时，vy/vx = cotφ。'
+            return '【斜面平抛临界】① 物体落到斜面上时，位移偏角等于斜面倾角 (tanα = tanφ)；② 当瞬时速度方向与斜面平行时，物体距离斜面最远 (此时 vy/vx = tanφ，t = v₀tanφ/g)。'
           }
           return '【独立性与等时性】平抛运动在水平方向做匀速直线运动，竖直方向做自由落体运动。飞行时间仅由竖直高度决定 (t = √(2h/g))，水平射程等于 v₀t。'
         },
