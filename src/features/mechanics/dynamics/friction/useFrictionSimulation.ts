@@ -116,7 +116,8 @@ export function useFrictionSimulation(options: FrictionSimulationOptions) {
         // Block at rest — only start sliding if driving force overcomes static friction
         const normalInAccelFrame = g * Math.cos(angleRad) - res_m2.a_M * Math.sin(angleRad)
         const driving = g * Math.sin(angleRad) + res_m2.a_M * Math.cos(angleRad)
-        const maxStaticFriction = DEFAULT_STATIC_FRICTION_RATIO * mu_1 * normalInAccelFrame
+        // 斜面滑动判据与物理模块一致：最大静摩擦力取 μ₁N（临界 tan θ_c = μ₁）
+        const maxStaticFriction = mu_1 * normalInAccelFrame
         if (driving > maxStaticFriction && normalInAccelFrame > 0) {
           a_rel_frame = driving - mu_1 * normalInAccelFrame
         }

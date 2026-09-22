@@ -64,8 +64,8 @@ export const FrictionCenterExtra: FC = () => {
     const data = []
     const step = 1.0
 
-    const mu_1_static = DEFAULT_STATIC_FRICTION_RATIO * mu_1
-    const criticalAngleRad = Math.atan(mu_1_static)
+    // 斜面模式临界下滑角：tan θ_c = μ₁（与物理模块一致）
+    const criticalAngleRad = Math.atan(mu_1)
     const criticalAngle = (criticalAngleRad * 180) / Math.PI
 
     for (let theta = 0; theta <= 90; theta += step) {

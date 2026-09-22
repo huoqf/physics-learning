@@ -38,6 +38,7 @@ function clamp(v: number, min: number, max: number) {
  * const labelFs = font(11) // 带 clamp 的字体大小
  */
 import { flushSync } from 'react-dom'
+import { scheduleFrame } from './animation'
 
 export function useCanvasSize(
   initial: { width: number; height: number },
@@ -52,7 +53,8 @@ export function useCanvasSize(
 
     // 延迟一帧测量，避开 Suspense fallback→真实组件切换期间的过渡尺寸。
     // 直接测量可能得到异常偏小的中间值（如 412×201），导致画面先缩小再放大。
-    const rafId = requestAnimationFrame(() => {
+    // 经 scheduleFrame 统一调度，遵循「禁止组件自行调用 rAF」铁律 1-4。
+    return scheduleFrame(() => {
       const rect = element.getBoundingClientRect()
       if (rect.width > 0 && rect.height > 0) {
         flushSync(() => {
@@ -60,8 +62,6 @@ export function useCanvasSize(
         })
       }
     })
-
-    return () => cancelAnimationFrame(rafId)
   }, [])
 
   useEffect(() => {

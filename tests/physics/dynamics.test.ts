@@ -158,9 +158,9 @@ describe('Dynamics physics calculations', () => {
       expect(res.a).toBeCloseTo(2.35, 2)
     })
 
-    it('should treat critical angle as static', () => {
-      // criticalAngle = arctan(mu_static) = arctan(0.336) ≈ 18.57°
-      const res = calculateFrictionInclineModel(m, mu, 18.57, g)
+    it('should treat critical angle as static (tan θ_c = μ)', () => {
+      // criticalAngle = arctan(0.3) ≈ 16.70°，取略小于临界角 → 仍静止
+      const res = calculateFrictionInclineModel(m, mu, 16.5, g)
       expect(res.isSliding).toBe(false)
     })
 
@@ -180,10 +180,18 @@ describe('Dynamics physics calculations', () => {
       expect(res.f_actual).toBeLessThan(1)
     })
 
-    it('should return muStatic and f_slip fields', () => {
+    it('should return muStatic and f_slip fields (single friction factor)', () => {
       const res = calculateFrictionInclineModel(m, mu, 30, g)
-      expect(res.muStatic).toBeCloseTo(mu * 1.12, 5)
+      expect(res.muStatic).toBeCloseTo(mu, 5)
       expect(res.f_slip).toBeCloseTo(mu * m * g * Math.cos(30 * Math.PI / 180), 2)
+    })
+
+    it('should compute critical angle from mu (tan θ_c = μ), consistent with computeInclinedPlane', () => {
+      const res = calculateFrictionInclineModel(m, mu, 30, g)
+      const expectedCrit = (Math.atan(mu) * 180) / Math.PI
+      expect(res.criticalAngle).toBeCloseTo(expectedCrit, 6)
+      // 回归守卫：不得再被静态/动态摩擦比 1.12 放大（0.3 → 18.6°，偏离高考判据）
+      expect(res.criticalAngle).not.toBeCloseTo((Math.atan(1.12 * mu) * 180) / Math.PI, 1)
     })
   })
 

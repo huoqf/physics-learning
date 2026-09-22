@@ -54,7 +54,8 @@ export default function FirstLawAnimation() {
 
   const { V, T, W, Q, deltaU, currentStepIndex } = state
 
-  const pistonY = calculatePistonY(mode, V, W_input)
+  // 活塞高度由体积唯一确定（沙箱/循环共用同一条映射）
+  const pistonY = calculatePistonY(V)
   const speedScale = temperatureToSpeedScale(T)
   const { isWorkApplied, forceVector, forceOrigin } = calculateForceVector(W, pistonY)
 

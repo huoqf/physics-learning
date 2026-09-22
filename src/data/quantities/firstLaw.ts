@@ -138,6 +138,12 @@ export function buildFirstLawQuantities(
       level: 'important',
       condition: '定容热容下温度与内能呈线性关系'
     })
+    formulas.push({
+      name: '沙箱过程分解',
+      latex: '\\Delta U_1 = Q\\ (\\text{等容传热}),\\quad \\Delta U_2 = W\\ (\\text{绝热做功})',
+      level: 'derived',
+      condition: 'W、Q 先按等容换热、再按绝热做功依次施加，合计 ΔU = Q + W'
+    })
 
     if (adiabatic === 1) {
       formulas.push({

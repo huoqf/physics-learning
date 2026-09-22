@@ -68,9 +68,9 @@ export function buildRefractionQuantities(
     )
   }
 
-  const warnings: PhysicsPanelData['warnings'] = isNaN(theta2_deg)
-    ? [{ text: '全反射：入射角超过临界角，光线无法折射进入玻璃', level: 'warning' }]
-    : []
+  // 本动画光路恒为 空气(1) → 玻璃(n>1)，sinθ₂ = sinθ₁/n 必小于 1，
+  // 不存在全反射，故不再挂"全反射"告警（原分支为不可达死代码）。
+  const warnings: PhysicsPanelData['warnings'] = []
 
   return { quantities, formulas, gaokaoPoints, warnings }
 }

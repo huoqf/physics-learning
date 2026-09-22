@@ -73,8 +73,8 @@ export function buildThinLensQuantities(
     )
   } else {
     gaokaoPoints.push(
-      { text: '共轭法测焦距：固定 L > 4f，移动透镜找两个成像位置', importance: 'gaokao' },
-      { text: 'L_min = 4f（当 u = v = 2f 时取得）', importance: 'gaokao' },
+      { text: '共轭法测焦距：固定 L > 4f，移动透镜找两个成像位置', importance: 'extend' },
+      { text: 'L_min = 4f（恰好 4f 时两次成像重合，故实用条件为 L > 4f）', importance: 'extend' },
     )
   }
 

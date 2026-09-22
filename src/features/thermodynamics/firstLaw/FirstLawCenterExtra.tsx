@@ -38,7 +38,9 @@ export default function FirstLawCenterExtra() {
   const P_kPa = P / 1000    // 转为 kPa 展示
 
   // ─── 上半部分：能量收支柱状图数据 ──────────────────────────────────────────
-  const maxAbsVal = 500
+  // 循环模式单步能量可达 ±550 J；沙箱模式（|W|、|Q| ≤ 50 J）最大 |ΔU| = 100 J。
+  // 量程随模式切换，保证两组数据都清晰可读。
+  const maxAbsVal = mode === 1 ? 600 : 100
   const zeroY = 90
   const maxBarHeight = 65
 
@@ -53,8 +55,8 @@ export default function FirstLawCenterExtra() {
   // 生成等温线上的点序列
   const generateIsotherm = (temp: number) => {
     const points = []
-    // 体积范围 0.4 L 到 2.4 L
-    for (let v = 0.4; v <= 2.4; v += 0.05) {
+    // 体积范围 0.4 L 到 3.0 L（覆盖沙箱 ±50 J 可达的 0.54–2.83 L 与循环 1–2 L）
+    for (let v = 0.4; v <= 3.0; v += 0.05) {
       // P = nRT/V = (temp / 3) / V
       const p = (temp / 3) / v
       points.push({ x: v, y: p })
@@ -208,8 +210,8 @@ export default function FirstLawCenterExtra() {
                 stroke={SCENE_COLORS.charts.gridLine} strokeWidth={STROKE.grid} strokeDasharray="3 2"
               />
               <text x="15" y={zeroY + 3} fontSize={8} fill={SCENE_COLORS.charts.tickLabel} textAnchor="end">0</text>
-              <text x="15" y={zeroY - maxBarHeight + 3} fontSize={8} fill={SCENE_COLORS.charts.tickLabel} textAnchor="end">+500J</text>
-              <text x="15" y={zeroY + maxBarHeight + 3} fontSize={8} fill={SCENE_COLORS.charts.tickLabel} textAnchor="end">-500J</text>
+              <text x="15" y={zeroY - maxBarHeight + 3} fontSize={8} fill={SCENE_COLORS.charts.tickLabel} textAnchor="end">+{maxAbsVal}J</text>
+              <text x="15" y={zeroY + maxBarHeight + 3} fontSize={8} fill={SCENE_COLORS.charts.tickLabel} textAnchor="end">-{maxAbsVal}J</text>
 
               {/* 渲染能量柱 */}
               {barData.map((bar, i) => {
@@ -292,8 +294,8 @@ export default function FirstLawCenterExtra() {
             xLabel="体积 V (L)"
             yLabel="压强 p (kPa)"
             title=""
-            xDomain={[0.4, 2.4]}
-            yDomain={[30, 310]}
+            xDomain={[0.4, 3.0]}
+            yDomain={[0, 250]}
             markers={markers}
             color={mode === 1 ? SCENE_COLORS.charts.gridLine : 'transparent'} // 循环背景主线灰度
             strokeWidth={1}

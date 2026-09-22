@@ -77,9 +77,10 @@ export function calculateDoubleFrictionIncline(params: {
   const { m, M, theta, mu_1, mu_2, g } = params
   const angleRad = (theta * Math.PI) / 180
 
-  // 静摩擦系数与动摩擦系数之比，与基础模式对齐
-  const mu_1_static = DEFAULT_STATIC_FRICTION_RATIO * mu_1
-  const criticalAngleRad = Math.atan(mu_1_static)
+  // 临界下滑角由 tan θ_c = μ₁ 给出（教材约定：最大静摩擦力与滑动摩擦力取同一因数）。
+  // 不可用 DEFAULT_STATIC_FRICTION_RATIO 放大，否则会与 inclined_plane.ts 的
+  // atan(μ) 结论冲突，并偏离高考判据 tan θ_c = μ。
+  const criticalAngleRad = Math.atan(mu_1)
   const criticalAngle = (criticalAngleRad * 180) / Math.PI
 
   // 判断滑块是否相对斜面下滑
@@ -116,7 +117,7 @@ export function calculateDoubleFrictionIncline(params: {
   const f1_static = mu_1 * FN1_static
   const F_drive_static = FN1_static * Math.sin(angleRad) - f1_static * Math.cos(angleRad)
   const FN2_static = M * g + FN1_static * Math.cos(angleRad) + f1_static * Math.sin(angleRad)
-  const f2_max = DEFAULT_STATIC_FRICTION_RATIO * mu_2 * FN2_static
+  const f2_max = mu_2 * FN2_static
 
   const isInclineSliding = F_drive_static > f2_max
 
@@ -213,7 +214,8 @@ export function calculateFrictionInclineModel(
 } {
   const weight = m * g;
   const angleRad = (angleDeg * Math.PI) / 180;
-  const muStatic = mu * DEFAULT_STATIC_FRICTION_RATIO;
+  // 教材约定：最大静摩擦力与滑动摩擦力取同一因数 μ（临界判据 tan θ_c = μ）。
+  const muStatic = mu;
   const criticalAngleRad = Math.atan(muStatic);
   const criticalAngle = (criticalAngleRad * 180) / Math.PI;
   const isSliding = angleDeg > criticalAngle;

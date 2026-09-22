@@ -97,7 +97,7 @@ export const mechanicsDynamicsAnimations = defineAnimations({
     } as const,
     paramMeta: [
       { key: 'latitude', label: '地理纬度 φ', min: 0, max: 90, step: 1, unit: '°', showIf: 'mode', showIfValue: 0 },
-      { key: 'omegaScale', label: '自转向心力放大', min: 1, max: 150, step: 5, unit: '倍', showIf: 'mode', showIfValue: 0 },
+      { key: 'omegaScale', label: '自转向心力放大倍数', min: 1, max: 150, step: 5, unit: '×', showIf: 'mode', showIfValue: 0 },
       { key: 'weightMass', label: '配重相对质量 M', min: 0.2, max: 2.0, step: 0.1, unit: '倍', showIf: 'showWeight', showIfValue: 1 },
       { key: 'weightX', label: '配重位置 X', min: -55, max: 55, step: 2, unit: '', showIf: 'showWeight', showIfValue: 1 },
       { key: 'weightY', label: '配重位置 Y', min: -40, max: 40, step: 2, unit: '', showIf: 'showWeight', showIfValue: 1 },
@@ -117,12 +117,10 @@ export const mechanicsDynamicsAnimations = defineAnimations({
         type: 'number', key: 'latitude', label: '纬度 φ', min: 0, max: 90, step: 1, unit: '°',
         showIf: 'mode', showIfValue: 0
       },
+      // omegaScale 的唯一真源在 paramMeta（自转向心力放大倍数 1–150×），
+      // 此处不再重复声明，避免同一参数出现两个量程不一致的滑块。
       {
-        type: 'number', key: 'omegaScale', label: '离心力放大倍数', min: 10, max: 300, step: 10, unit: '×',
-        showIf: 'mode', showIfValue: 0
-      },
-      {
-        type: 'tip', content: '真实地球自转产生的离心力仅为引力的约 0.0034，为便于观察已放大显示。',
+        type: 'tip', content: '真实地球自转所需的向心力约为万有引力的 0.0034 倍（赤道处最大），为便于观察已放大显示。',
         showIf: 'mode', showIfValue: 0
       },
       {

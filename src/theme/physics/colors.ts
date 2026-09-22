@@ -197,8 +197,9 @@ export const WAVE_COLORS = {
 // ─── 近代物理 (Modern Physics) ─────────────────────────────────────────────
 export const MODERN_COLORS = {
   photon:             '#FBBF24', // 光子（可见光默认色）— amber-400
-  photonUltraviolet:  '#7C3AED', // 紫外光子 — violet-600
-  photonInfrared:     '#EF4444', // 红外光子 — red-500
+  photonUltraviolet:  '#7C3AED', // 紫外光子（>3.10 eV）— violet-600
+  photonInfrared:     '#B91C1C', // 红外光子（不可见，示意为暗红）— red-700
+  photonVisibleRed:   '#EF4444', // 可见红光（H-α 1.89 eV / 656 nm）— red-500
   photoelectron:      '#2563EB', // 光电子 — blue-600
   electronBound:      '#71717A', // 束缚电子（阴极板上）— neutral-500
   cathodePlate:       '#52525B', // 阴极板 — neutral-600

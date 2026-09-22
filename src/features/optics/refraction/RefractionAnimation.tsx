@@ -96,16 +96,18 @@ function BasicMode({
   const isTotalReflection = isNaN(theta2_deg)
 
   // 入射方向（从左上射向圆心）
-  const incDirX = Math.sin(theta1Rad)
-  const incDirY = Math.cos(theta1Rad)
+  // 界面为竖直直径、法线为水平线，故入射角 θ₁ 以「法线（水平）」为基准：
+  // 入射光线与法线夹角即为 θ₁（方向向量取 (cosθ₁, sinθ₁)）。
+  const incDirX = Math.cos(theta1Rad)
+  const incDirY = Math.sin(theta1Rad)
 
   // 入射光线起点
   const srcX = cx - rayLen * incDirX
   const srcY = cy - rayLen * incDirY
 
-  // 折射方向（向右下，在玻璃内）
-  const refDirX = Math.sin(theta2Rad)
-  const refDirY = Math.cos(theta2Rad)
+  // 折射方向（向右下，在玻璃内，仍以水平法线为基准）
+  const refDirX = Math.cos(theta2Rad)
+  const refDirY = Math.sin(theta2Rad)
 
   // 折射光线终点（到达半圆弧）
   const refEndX = cx + R * refDirX
@@ -180,11 +182,11 @@ function BasicMode({
 
       {/* 角度标注 */}
       {!isTotalReflection && theta1 > 0 && (() => {
-        // θ₁ 弧线（法线与入射光线之间，在法线左侧）
-        const incStart = 0
-        const incEnd = -theta1
+        // θ₁ 弧线：法线（指向左，180°）与入射光线之间的夹角，位于入射侧（左上方）
+        const incStart = 180
+        const incEnd = 180 + theta1
 
-        // θ₂ 弧线（法线与折射光线之间，在法线右侧）
+        // θ₂ 弧线：法线（指向右，0°）与折射光线之间，位于法线右下方
         const refStart = 0
         const refEnd = theta2_deg
 
@@ -196,7 +198,7 @@ function BasicMode({
           <g>
             {/* θ₁ 弧 */}
             <path
-              d={arcPath(cx, cy, arcR, incEnd, incStart)}
+              d={arcPath(cx, cy, arcR, incStart, incEnd)}
               fill="none"
               stroke={CANVAS_COLORS.annotation}
               strokeWidth={STROKE.annotation}
@@ -427,8 +429,9 @@ function AdvancedMode({
 
       {/* 角度标注：入射角 θ₁ */}
       {!isTotalReflection && theta1 > 0 && (() => {
-        const incStart = -90
-        const incEnd = -90 + theta1
+        // 法线竖直向上为 -90°；入射光来自左上方，故夹角弧位于法线左侧
+        const incStart = -90 - theta1
+        const incEnd = -90
 
         const midInc = deg2rad((incStart + incEnd) / 2)
         const labelR = arcR + 14
@@ -459,8 +462,9 @@ function AdvancedMode({
 
       {/* 角度标注：折射角 θ₂ */}
       {!isTotalReflection && theta2_deg > 0 && (() => {
-        const refStart = -90
-        const refEnd = -90 + theta2_deg
+        // 玻璃内折射光位于下方，法线竖直向下为 +90°，夹角弧位于法线右下方
+        const refStart = 90 - theta2_deg
+        const refEnd = 90
 
         const midRef = deg2rad((refStart + refEnd) / 2)
         const labelR = arcR + 14

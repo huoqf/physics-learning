@@ -103,7 +103,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
       { key: 'mA', label: 'A球质量 m_A', min: 0.5, max: 10, step: 0.5, unit: 'kg', showIf: 'advancedMode', showIfValue: 1 },
       { key: 'mB', label: 'B球质量 m_B', min: 0.5, max: 10, step: 0.5, unit: 'kg', showIf: 'advancedMode', showIfValue: 1 },
       { key: 'vA', label: 'A球初速度 v_A', min: 1, max: 10, step: 0.5, unit: 'm/s', showIf: 'advancedMode', showIfValue: 1 },
-      { key: 'kLoss', label: '能量损失系数 k', min: 0, max: 1, step: 0.1, unit: '', showIf: 'advancedMode', showIfValue: 1 },
+      { key: 'kLoss', label: '非弹性程度 k', min: 0, max: 1, step: 0.1, unit: '', showIf: 'advancedMode', showIfValue: 1 },
     ],
     controlMeta: [
       { type: 'segmented', key: 'advancedMode', group: '模型选择', resetOnChange: true,

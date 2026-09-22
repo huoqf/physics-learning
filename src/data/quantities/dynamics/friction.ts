@@ -100,7 +100,7 @@ export function handleFriction(
         { name: '斜面动力学', latex: 'F_{N1}\\sin\\theta - f_1\\cos\\theta - f_2 = Ma_M', level: 'important', condition: '斜面沿x轴' }
       ],
       gaokaoPoints: [
-        { text: '临界条件 tan θ_c = 1.12 μ₁，超过后滑块在斜面上滑动并突跳减小。', importance: 'gaokao' as const },
+        { text: '临界条件 tan θ_c = μ₁，超过后滑块在斜面上滑动并突跳减小。', importance: 'gaokao' as const },
         { text: '当滑块给斜面的水平推力大于地面最大静摩擦力时，斜面体同步向左加速运动（反冲运动）。', importance: 'hard' as const },
         { text: '解答摩擦力多体系统必须建立地面系惯性参考坐标系进行正交分解。', importance: 'core' as const }
       ]

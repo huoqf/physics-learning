@@ -15,6 +15,29 @@ export const BASE_SPEED = 1.8
 export const T_REF = 300
 /** 系统热容 C_sys = n * Cv (J/K)，其中 nR = 1/3, Cv = 1.5R */
 export const C_SYS = 0.5
+/** 绝热指数 γ = Cp/Cv（单原子理想气体 5/3） */
+export const GAMMA = 5 / 3
+/** 沙箱初始温度 (K) */
+export const SANDBOX_T0 = 300
+/** 沙箱初始体积 (m³)，对应 p₀ = nRT₀/V₀ = 1.0×10⁵ Pa */
+export const SANDBOX_V0 = 1.0e-3
+/**
+ * 沙箱模式 W、Q 滑块的物理可行上限 (J)。
+ *
+ * 由 nCv = C_SYS = 0.5 J/K、起始温度 300 K 决定：ΔT = (Q + W)/C_SYS。
+ * 取 |W|、|Q| ≤ 50 J，可保证任意组合下末态 T ∈ [100, 500] K（恒 > 0），
+ * 且绝热膨胀比 V/V₀ ≤ 2.83 始终落在气缸行程窗口内——全程无需截断，
+ * 标称做功与 p–V 图面积严格相等。
+ */
+export const SANDBOX_ENERGY_LIMIT = 50
+/** 温度数值下限 (K)，仅作除零/开方的防线（限幅参数下实际最低 100 K） */
+const T_MIN = 1
+/** 气缸底部 y=0.6m、开口 y=5.2m，活塞允许行程 [1.5, 4.9] */
+const PISTON_Y_BOTTOM = 1.5
+const PISTON_Y_TOP = 4.9
+/** 活塞行程对应的气体体积窗口 (m³)：覆盖沙箱 ±50 J 与循环模式的全部可达体积 */
+const PISTON_V_MIN = 5.0e-4
+const PISTON_V_MAX = 3.0e-3
 
 // ─── 粒子数据结构 ──────────────────────────────────────────────────────────
 /** 气体分子粒子 */
@@ -52,26 +75,21 @@ export function initGasParticles(count: number): GasParticle[] {
 
 // ─── 活塞与矢量计算 ───────────────────────────────────────────────────────
 /**
- * 根据物理状态计算活塞像素高度。
- * 气缸底部 y=0.6m，开口 y=5.2m，活塞范围 [1.5, 4.9]。
+ * 气缸内气体体积 → 活塞高度（物理坐标，米）。
  *
- * @param mode 0=沙箱, 1=循环
+ * 活塞行程 [1.5, 4.9] 与气体体积窗口 [PISTON_V_MIN, PISTON_V_MAX] 线性对应。
+ * 沙箱模式（±50 J）与循环模式的全部可达体积都落在该窗口内，clamp 仅作最后防线。
+ * 两种模式共用同一条映射，避免"同一体积两套活塞高度"。
+ *
  * @param V 当前体积 (m³)
- * @param W_input 外界做功输入 (J)，沙箱模式下使用
  * @returns 活塞 y 坐标 (物理坐标，米)
  */
 export function calculatePistonY(
-  mode: number,
   V: number,
-  W_input: number,
 ): number {
-  let pistonY = 3.2
-  if (mode === 1) {
-    pistonY = 3.2 + ((V - 1.0e-3) / 1.0e-3) * 1.5
-  } else {
-    pistonY = 3.2 - (W_input / 500) * 1.5
-  }
-  return Math.max(1.5, Math.min(4.9, pistonY))
+  const t = (V - PISTON_V_MIN) / (PISTON_V_MAX - PISTON_V_MIN)
+  const pistonY = PISTON_Y_BOTTOM + t * (PISTON_Y_TOP - PISTON_Y_BOTTOM)
+  return Math.max(PISTON_Y_BOTTOM, Math.min(PISTON_Y_TOP, pistonY))
 }
 
 /**
@@ -252,8 +270,18 @@ export interface FirstLawPhysicsState {
 }
 
 /**
- * 沙箱模式下的物理状态求解。
- * 输入滑块参数 W 和 Q，以及绝热开关，求解对应的 P, V, T 等。
+ * 沙箱模式下的物理状态求解（等容传热 + 绝热做功）。
+ *
+ * 把 (Q, W) 分解为两个先后进行的子过程，二者都严格满足热力学第一定律
+ * ΔU = Q + W，且"做功"与 p–V 图面积相等：
+ *
+ *   ① 等容传热：V 不变、W = 0，Q 全部转为内能 → ΔU₁ = Q，T₁ = T₀ + Q/nCv
+ *   ② 绝热做功：Q = 0、pV^γ = const  → ΔU₂ = W，T₂ = T₁ + W/nCv
+ *      由 T₁V₁^(γ−1) = T₂V₂^(γ−1) 反解体积 V₂ = V₁·(T₁/T₂)^(1/(γ−1))
+ *
+ * 注意：体积不再由 W 线性"贴"出来，而是由绝热关系唯一确定，因此
+ * 压强恒为 P = nRT/V（nR = 1/3），活塞高度也由 V 唯一给出。
+ * W、Q 已由 {@link SANDBOX_ENERGY_LIMIT} 限幅，末态温度恒大于 0。
  */
 export function calculateSandboxState(
   W: number,
@@ -261,14 +289,19 @@ export function calculateSandboxState(
   adiabatic: boolean,
 ): FirstLawPhysicsState {
   const effectiveQ = adiabatic ? 0 : Q
+
+  // ① 等容传热：T₁ 由吸热量决定（V 保持 V₀）
+  const T1 = SANDBOX_T0 + effectiveQ / C_SYS
+
+  // ② 绝热做功：ΔU = W（W > 0 外界对气体做功，T 升高、V 减小）
   const deltaU = effectiveQ + W
-  const deltaT = deltaU / C_SYS
-  const T = 300 + deltaT
+  const T = SANDBOX_T0 + deltaU / C_SYS
 
-  // 体积：线性映射做功，W = 0 时 V = 1.0e-3 m³
-  const V = 1.0e-3 - 1.0e-6 * W
+  // 绝热关系 T·V^(γ−1) = const → 由 T₁/T₂ 反解 V₂
+  const exponent = 1 / (GAMMA - 1)
+  const V = SANDBOX_V0 * Math.pow(Math.max(T1, T_MIN) / Math.max(T, T_MIN), exponent)
 
-  // 压强：P = nRT/V = T / (3 * V)
+  // 压强：理想气体状态方程 pV = nRT（nR = 1/3）
   const P = V > 0 ? T / (3 * V) : 0
 
   return { P, V, T, W, Q: effectiveQ, deltaU }

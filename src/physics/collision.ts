@@ -81,9 +81,13 @@ export function calculateFinalKineticEnergy(
 // ─── 进阶模式 ──────────────────────────────────────────────────────────
 
 /**
- * 计算带能量损失系数的碰撞后速度
- * 能量损失系数 k_loss: 0=完全弹性, 1=完全非弹性
- * 恢复系数 e = 1 - k_loss
+ * 计算带非弹性程度的碰撞后速度
+ *
+ * `kLoss` 是**非弹性程度**（= 1 − 恢复系数 e），不是"能量损失的比例"：
+ *   - kLoss = 0 → e = 1 → 完全弹性碰撞
+ *   - kLoss = 1 → e = 0 → 完全非弹性碰撞（碰后共速）
+ * 机械能损失率与 kLoss 之间是非线性关系，因此界面文案统一称"非弹性程度"，
+ * 避免误读为能量损失率。
  *
  * 使用恢复系数法：
  * e = -(v₁'-v₂') / (v₁-v₂)
@@ -92,7 +96,7 @@ export function calculateFinalKineticEnergy(
  * @param mA A球质量 (kg)
  * @param vA A球碰前速度 (m/s)
  * @param mB B球质量 (kg)，碰前静止 vB=0
- * @param kLoss 能量损失系数 (0~1)
+ * @param kLoss 非弹性程度 k = 1 − e (0~1)
  * @returns [vA_after, vB_after] 碰后速度 (m/s)
  */
 export function collisionWithEnergyLoss(
@@ -145,7 +149,7 @@ export function calculateMaxEnergyLoss(
  *
  * @param mA A球质量 (kg)
  * @param mB B球质量 (kg)
- * @param kLoss 能量损失系数
+ * @param kLoss 非弹性程度 k = 1 − e
  * @returns isSpecialCase 是否为速度交换特例
  */
 export function isVelocitySwapCase(

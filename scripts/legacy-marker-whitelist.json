@@ -1,21 +1,22 @@
 {
   "_comment": "check-no-marker.mjs 白名单。每项记录文件路径、原因和预期清除日期。",
   "_format": { "file": "相对项目根的路径", "reason": "为何豁免", "targetDate": "计划迁移截止日（YYYY-MM-DD）" },
+  "_reviewNote": "2026-09-22 复核：三项手写 <marker> 均仍在使用，尚未迁移。VectorDefs 目前只按颜色批量生成「箭头类」marker，无法覆盖 ground-symbol（接地符号）与 tick（刻度短线）等非箭头 marker；彻底迁移需先扩展 VectorDefs 的 marker 类型（另行立项）。故本次按白名单机制复核后顺延 targetDate。",
   "entries": [
     {
       "file": "src/features/electromagnetism/electrostatics/ElectricPotentialAnimScene.tsx",
-      "reason": "ground-symbol marker，非矢量箭头，需独立 marker 定义",
-      "targetDate": "2026-08-31"
+      "reason": "ground-symbol marker（接地符号），非矢量箭头；VectorDefs 只覆盖箭头类 marker，需先扩展其 marker 类型",
+      "targetDate": "2026-12-31"
     },
     {
       "file": "src/features/electromagnetism/electrostatics/ElectricField.tsx",
-      "reason": "电场线 arrowhead marker，早于 VectorDefs 体系创建",
-      "targetDate": "2026-08-31"
+      "reason": "电场线 arrowhead marker，早于 VectorDefs 体系创建（迁移需先确认与 VectorDefs 箭头几何的视觉一致性）",
+      "targetDate": "2026-12-31"
     },
     {
       "file": "src/features/electromagnetism/electrostatics/Capacitor.tsx",
-      "reason": "电容器箭头 + 刻度 marker，早于 VectorDefs 体系创建",
-      "targetDate": "2026-08-31"
+      "reason": "电容器箭头 + tick 刻度 marker；tick 为非箭头 marker，VectorDefs 未覆盖",
+      "targetDate": "2026-12-31"
     }
   ]
 }

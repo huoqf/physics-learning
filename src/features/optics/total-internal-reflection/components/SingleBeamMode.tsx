@@ -32,8 +32,9 @@ export default function SingleBeamMode({
 
   const refractOpacity = isTotalReflection ? 0 : Math.max(0, 1 - (theta1 / theta_c_deg))
 
-  const reflectedDirX = -Math.sin(theta1Rad)
-  const reflectedDirY = incidentDirY
+  // 反射光线：水平界面镜面反射 → 保持 x 分量、翻转 y 分量（射向水中右下方）
+  const reflectedDirX = incidentDirX
+  const reflectedDirY = -incidentDirY
   const reflectOpacity = isTotalReflection ? 1 : Math.min(1, 0.3 + 0.7 * (theta1 / theta_c_deg))
   const reflectLen = rayLen * (isTotalReflection ? 0.8 : 0.6)
   const refEndX = cx + reflectLen * reflectedDirX
@@ -47,7 +48,8 @@ export default function SingleBeamMode({
     const { theta2_deg } = calculateRefraction(theta1, n, 1)
     const theta2Rad = deg2rad(theta2_deg)
     refrDirX = Math.sin(theta2Rad)
-    refrDirY = Math.cos(theta2Rad)
+    // 折射光射出水面进入上方空气，y 分量必须为负（向上）
+    refrDirY = -Math.cos(theta2Rad)
     refrEndX = cx + rayLen * refrDirX
     refrEndY = cy + rayLen * refrDirY
   }
@@ -80,7 +82,7 @@ export default function SingleBeamMode({
 
       {/* 入射光线（水下→水面） */}
       <line
-        x1={srcX} y1={cy + Math.abs(srcY - cy)}
+        x1={srcX} y1={srcY}
         x2={cx} y2={cy}
         stroke={OPTICS_COLORS.lightRay}
         strokeWidth={STROKE.vectorMain}
@@ -135,19 +137,19 @@ export default function SingleBeamMode({
         </text>
       )}
 
-      {/* 入射角弧标注 */}
+      {/* 入射角弧标注（法线竖直，弧线在下方水中、入射光一侧） */}
       {theta1 > 0 && (
         <g>
           <path
-            d={arcPath(cx, cy, arcR, -90, -90 + theta1)}
+            d={arcPath(cx, cy, arcR, 90, 90 + theta1)}
             fill="none"
             stroke={CANVAS_COLORS.annotation}
             strokeWidth={STROKE.annotation}
             opacity={0.7}
           />
           <text
-            x={cx + (arcR + 14) * Math.cos(deg2rad(-90 + theta1 / 2))}
-            y={cy + (arcR + 14) * Math.sin(deg2rad(-90 + theta1 / 2))}
+            x={cx + (arcR + 14) * Math.cos(deg2rad(90 + theta1 / 2))}
+            y={cy + (arcR + 14) * Math.sin(deg2rad(90 + theta1 / 2))}
             textAnchor="middle"
             dominantBaseline="middle"
             fill={CANVAS_COLORS.annotation}
@@ -159,19 +161,19 @@ export default function SingleBeamMode({
         </g>
       )}
 
-      {/* 临界角标注 */}
+      {/* 临界角标注（同样自下方法线起量，位于水中一侧） */}
       {!isTotalReflection && (
         <g opacity={0.5}>
           <path
-            d={arcPath(cx, cy, arcR * 0.7, -90, -90 + theta_c_deg)}
+            d={arcPath(cx, cy, arcR * 0.7, 90, 90 + theta_c_deg)}
             fill="none"
             stroke={OPTICS_COLORS.criticalAngle}
             strokeWidth={STROKE.annotation}
             strokeDasharray={`${DASH.reference[0]} ${DASH.reference[1]}`}
           />
           <text
-            x={cx + (arcR * 0.7 + 14) * Math.cos(deg2rad(-90 + theta_c_deg / 2))}
-            y={cy + (arcR * 0.7 + 14) * Math.sin(deg2rad(-90 + theta_c_deg / 2))}
+            x={cx + (arcR * 0.7 + 14) * Math.cos(deg2rad(90 + theta_c_deg / 2))}
+            y={cy + (arcR * 0.7 + 14) * Math.sin(deg2rad(90 + theta_c_deg / 2))}
             textAnchor="middle"
             dominantBaseline="middle"
             fill={OPTICS_COLORS.criticalAngle}

@@ -339,10 +339,12 @@ export function useExcitationSimulation({
     ctx.textBaseline = 'middle'
     ctx.fillText('P+', cx, cy)
 
-    // ── 轨道环 ──
-    const maxLvl = 4, baseR = 25
+    // ── 轨道环（玻尔半径 r_n ∝ n²）──
+    // baseR 取到「最外层轨道恰好铺满可用半径」：r_max = 4²·baseR
+    const maxLvl = 4
+    const baseR = (Math.min(cx, cy) * 0.86) / (maxLvl * maxLvl)
     for (let n = 1; n <= maxLvl; n++) {
-      const r = (n + 0.6) * baseR
+      const r = n * n * baseR
       const isActive = (atomLevel === n && atomState === 'excited')
       ctx.strokeStyle = isActive ? withAlpha(MODERN_COLORS.photoelectron, 0.4) : CANVAS_COLORS.grid
       ctx.lineWidth = isActive ? 2 : 0.8
@@ -383,7 +385,7 @@ export function useExcitationSimulation({
     // ── 轨道电子（始终旋转）──
     if (atomState !== 'ionized') {
       const lvl = atomState === 'orbiting' ? atomLevel : atomLevel
-      const r = (lvl + 0.6) * baseR
+      const r = lvl * lvl * baseR
       const rotAngle = electronAngleRef.current
       const ex = cx + Math.cos(rotAngle) * r, ey = cy + Math.sin(rotAngle) * r
       ctx.fillStyle = MODERN_COLORS.photoelectron

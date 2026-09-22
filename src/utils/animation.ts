@@ -14,6 +14,21 @@ export interface UseAnimationFrameOptions {
 }
 
 /**
+ * 一次性延迟到下一帧执行（统一 rAF 入口，遵循「禁止组件自行调用 rAF」铁律 1-4）。
+ *
+ * 用于"需等宿主布局稳定后再执行"的一次性任务，例如 ResizeObserver 生效前的
+ * 首帧尺寸测量（避开 Suspense fallback → 真实组件切换期的过渡尺寸）。
+ * 与 `useAnimationFrame` 不同，它是**一次性调度**，不建立循环。
+ *
+ * @param callback 下一帧回调，入参为 rAF 时间戳（毫秒）
+ * @returns 取消函数；组件卸载或依赖变化时应调用
+ */
+export function scheduleFrame(callback: (time: number) => void): () => void {
+  const frameId = requestAnimationFrame(callback);
+  return () => cancelAnimationFrame(frameId);
+}
+
+/**
  * 按组件实例运行的动画帧 Hook（统一动画控制入口，遵循「禁止组件自行调用 rAF」铁律）。
  *
  * - 每个调用方持有独立 rAF 循环，支持多动画同屏 / 对比；

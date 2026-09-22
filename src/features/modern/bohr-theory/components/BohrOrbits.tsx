@@ -47,9 +47,9 @@ export default function BohrOrbits({ isPlaying, time, targetLevel, realScale }: 
 
       let photonColor: string = MODERN_COLORS.photonUltraviolet
       if (diff > 12.0) photonColor = MODERN_COLORS.photonUltraviolet
-      else if (diff > 10.0) photonColor = MODERN_COLORS.photoelectron
+      else if (diff > 10.0) photonColor = MODERN_COLORS.photonUltraviolet
       else if (diff > 2.0) photonColor = '#06b6d4'
-      else if (diff > 1.5) photonColor = MODERN_COLORS.photonInfrared
+      else if (diff > 1.5) photonColor = MODERN_COLORS.photonVisibleRed
       else photonColor = MODERN_COLORS.photonInfrared
 
       if (targetLevel > prev) {
