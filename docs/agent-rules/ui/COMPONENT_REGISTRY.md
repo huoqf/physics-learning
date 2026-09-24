@@ -28,13 +28,24 @@
 | `Galvanometer` | 灵敏电流计（thin wrapper，内部使用 MeterPointer 渲染指针） | `value` | `<Galvanometer x={gx} y={gy} value={emf * 10 / 45} />` |
 | `CoilBase` | 通用线圈基座（Solenoid / PrimaryCoil 共享渲染逻辑） | `x`, `y`, `width`, `height`, `turns` | `<CoilBase x={cx} y={cy} width={160} height={80} turns={5} current={I} time={t} />` |
 | `Solenoid` | 螺线管（thin wrapper，内部使用 CoilBase，铜线样式） | `x`, `y`, `width`, `height`, `turns` | `<Solenoid x={cx} y={cy} width={160} height={80} turns={5} current={I} time={t} />` |
+| `SolenoidFieldLines` | 螺线管磁感线分布（支持内部平行场线、两端发散曲线与方向微箭头） | `cx`, `cy`, `width`, `height`, `current` | `<SolenoidFieldLines cx={cx} cy={cy} width={180} height={70} current={I} />` |
 | `PrimaryCoil` | 原线圈（thin wrapper，内部使用 CoilBase，漆包绿线样式） | `x`, `y`, `width`, `height`, `turns` | `<PrimaryCoil x={cx} y={cy} width={120} height={66} turns={4} current={I} time={t} />` |
 | `MeterPointer` | 仪表指针通用组件（DialMeter / Galvanometer 共享指针渲染） | `angle`, `length`, `color` | `<MeterPointer angle={-30} length={21} color={themeColor} />` |
 | `DialMeter` | 理想电表盘（内部使用 MeterPointer 渲染指针） | `type`, `value`, `x`, `y` | `<DialMeter type="V" value={U} x={dx} y={dy} />` |
 | `BarMagnet` | 条形磁铁 | `pole` | `<BarMagnet x={mx} y={cy} width={120} height={36} pole={-1} />` |
-| `HandRule` | 手指定则 | `mode`, `thumbDir`, `indexDir`, `middleDir`, `cx`, `cy` | `<HandRule mode="left" thumbDir={td} indexDir={id} middleDir={md} cx={171} cy={175} />` |
+| `CoupledCoilField` | 耦合线圈互感磁感线 | `cx`, `cy`, `innerCurrent`, `outerCurrent` | `<CoupledCoilField cx={cx} cy={cy} innerCurrent={I1} outerCurrent={I2} />` |
+| `MagneticPoles` | 磁极标注（N/S 极标签与颜色块） | `x`, `y`, `width`, `height`, `pole` | `<MagneticPoles x={x} y={y} width={w} height={h} pole="N" />` |
+| `MagneticFieldGrid` | 磁场网格符号阵列（点/叉） | `bounds`, `fieldStrength` | `<MagneticFieldGrid bounds={b} fieldStrength={B} />` |
+| `ParametricMagneticField` | 参数化空间磁场分布 | `bounds`, `bMax` | `<ParametricMagneticField bounds={b} bMax={B} />` |
+| `Rails` | 导轨轨道 | `x`, `y`, `length`, `spacing` | `<Rails x={x} y={y} length={L} spacing={d} />` |
+| `LightBulb` | 实验小灯泡 | `x`, `y`, `brightness` | `<LightBulb x={x} y={y} brightness={P} />` |
+| `Rheostat` | 滑动变阻器器材 | `x`, `y`, `resistanceFraction` | `<Rheostat x={x} y={y} resistanceFraction={0.5} />` |
+| `RotatingCoil` | 发电机旋转线框 | `cx`, `cy`, `angle` | `<RotatingCoil cx={cx} cy={cy} angle={theta} />` |
+| `TransformerApparatus` | 变压器原副线圈与铁芯装置 | `x`, `y`, `u1`, `u2` | `<TransformerApparatus x={x} y={y} u1={U1} u2={U2} />` |
+| `DragHandle` | SVG 可拖拽控制手柄 | `x`, `y`, `onDrag` | `<DragHandle x={x} y={y} onDrag={handleDrag} />` |
+| `HandRule` | 手指定则（左手/右手定则三维手势） | `mode`, `thumbDir`, `indexDir`, `middleDir`, `cx`, `cy` | `<HandRule mode="left" thumbDir={td} indexDir={id} middleDir={md} cx={171} cy={175} />` |
 | `VectorDefs` | 箭头 marker 定义 | — | `<VectorDefs />`（放在 `<svg>` 内） |
-| `SkeletonHand` | 骨骼手 | `pose` | `<SkeletonHand cx={cx} cy={cy} pose="open" />` |
+| `SkeletonHand` / `SkeletalHand` | 骨骼手（右手/左手定则手势渲染） | `pose` | `<SkeletonHand cx={cx} cy={cy} pose="open" />` |
 | `PaperTape` | 打点纸带 | `x`, `y`, `width`, `dots` | `<PaperTape x={10} y={10} width={200} dots={[10, 30, 60, 100]} />` |
 | `TickerTimer` | 打点计时器（电磁/电火花） | `x`, `y` | `<TickerTimer x={50} y={50} type="electromagnetic" isVibrating />` |
 | `Photogate` | 光电门传感器 | `x`, `y` | `<Photogate x={100} y={100} isBlocked beamVisible label="光电门 A" />` |
