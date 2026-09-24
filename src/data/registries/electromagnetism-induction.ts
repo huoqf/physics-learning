@@ -466,4 +466,101 @@ export const electromagnetismInductionAnimations = defineAnimations({
       { key: 'magneticB', label: '匀强磁场 B', min: 0.5, max: 2.0, step: 0.1, unit: 'T', group: '运动与磁场' },
     ],
   },
+  'anim-self-induction-eddy': {
+    title: '自感、互感与电磁阻尼',
+    knowledgeId: 'electricity-4-8',
+    Component: lazy(() => import('@/features/electromagnetism/induction/self-induction/SelfInductionAnimation')),
+    CenterExtra: lazy(() => import('@/features/electromagnetism/induction/self-induction/SelfInductionCenterExtra')),
+    centerExtraHeight: 'h-1/2',
+    controlsMode: 'timed' as const,
+    maxTime: 6,
+    defaultParams: {
+      mode: 0,
+      E: 12,
+      L: 2.0,
+      RL: 2.0,
+      RA: 6.0,
+      B: 1.5,
+      isSlotted: 0,
+      switchState: 1,
+    } as const,
+    controlMeta: [
+      {
+        type: 'preset',
+        label: '📋 2022全国卷（断电闪亮探究）',
+        description: 'RL=2Ω < RA=8Ω, 断开电键瞬时高亮闪烁',
+        params: { mode: 1, E: 12, RL: 2.0, RA: 8.0, L: 3.0, switchState: 1 },
+        restartOnApply: true,
+      },
+      {
+        type: 'preset',
+        label: '📋 高考临界（恰好不闪亮）',
+        description: 'RL=6Ω = RA=6Ω, 断开电键逐渐变暗熄灭',
+        params: { mode: 1, E: 12, RL: 6.0, RA: 6.0, L: 2.0, switchState: 1 },
+        restartOnApply: true,
+      },
+      {
+        type: 'segmented',
+        key: 'mode',
+        label: '实验模型',
+        group: '模型选择',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '通电自感 (延时发光)' },
+          { value: 1, label: '断电自感 (闪亮探究)' },
+          { value: 2, label: '电磁阻尼 (摆动减幅)' },
+        ],
+      },
+      {
+        type: 'toggle',
+        key: 'switchState',
+        label: '电路电键闭合',
+        group: '电路控制',
+        hideIf: 'mode',
+        hideIfValue: 2,
+      },
+      {
+        type: 'toggle',
+        key: 'isSlotted',
+        label: '梳齿开缝金属板',
+        group: '阻尼实验',
+        showIf: 'mode',
+        showIfValue: 2,
+      },
+      {
+        type: 'tip',
+        group: '高考要点',
+        variant: 'primary',
+        content: (p) => {
+          if (p.mode === 1) {
+            return '【高考核心考点】：断开瞬间流过灯泡的电流初值等于线圈断开前的稳态电流 IL=E/RL。若 RL < RA，灯泡电流突增必发生【闪亮】；若 RL ≥ RA 则仅渐暗熄灭。'
+          }
+          if (p.mode === 2) {
+            return '【电磁阻尼考点】：穿过强磁场时导体内部产生闭合涡流，安培力阻碍相对运动（来拒去留）。梳齿开缝切断大涡流回路，阻尼效果大幅减弱。'
+          }
+          return '【通电自感考点】：闭合瞬间自感反电动势阻碍电流增加，线圈支路灯泡缓慢变亮；纯电阻支路灯泡立即发光。'
+        },
+      },
+    ],
+    paramMeta: [
+      { key: 'L', label: '自感系数 L', min: 0.5, max: 5.0, step: 0.5, unit: 'H', hideIf: 'mode', hideIfValue: 2 },
+      { key: 'RL', label: '线圈内阻 RL', min: 1.0, max: 10.0, step: 0.5, unit: 'Ω', hideIf: 'mode', hideIfValue: 2 },
+      {
+        key: 'RA',
+        label: '灯泡电阻 RA',
+        min: 2.0,
+        max: 12.0,
+        step: 0.5,
+        unit: 'Ω',
+        hideIf: 'mode',
+        hideIfValue: 2,
+        marks: [
+          { value: 2.0, label: 'RL=RA (临界)', variant: 'critical' },
+          { value: 6.0, label: '推荐 6Ω', variant: 'recommended' },
+        ],
+      },
+      { key: 'B', label: '匀强磁场 B', min: 0.2, max: 3.0, step: 0.1, unit: 'T', showIf: 'mode', showIfValue: 2 },
+    ],
+  },
 })
+

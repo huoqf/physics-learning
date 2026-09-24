@@ -93,3 +93,4 @@
 | `RelationChart` | 通用关系图 Y=f(X) | `points`, `xDomain`, `yDomain` | `<RelationChart points={pts} xDomain={[0,30]} yDomain={[0,yMax]} title="v²-x" xLabel="x(m)" yLabel="v²(m²/s²)" />` |
 | `ChartCursor` | 游标十字线 | `x`, `dataPoints` | `<ChartCursor x={time} dataPoints={[{ y: v, label: 'v', series: 'primary' }]} />` |
 | `ChartLine` | 折线插件 | `points` | `<ChartLine points={pts} series="primary" />` |
+| `CharacteristicCurve` | 通用特性曲线（支持工作点游标/阈值门限线/传感器特性） | `points` | `<CharacteristicCurve points={pts} currentX={xVal} xLabel="T/℃" yLabel="R/Ω" />` |

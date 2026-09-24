@@ -466,10 +466,10 @@ npx playwright test
 | 3 | P0-1 | `electricity-6-3` | 电磁波谱与无线电波的发射与接收 | `useEMSpectrumLayout` | [x] 已完成 |
 | 4 | **P0-5** | `electricity-5-5` | 电感与电容对交变电流的作用（感抗与容抗） | `CapacitorPlates` `CoilBase` `RotatingCoil` `DialMeter` `LightBulb` | [x] 已完成 |
 | 5 | **P0-4** | `vibration-2-3` | 多普勒效应 | `vibration-oscillation` 波形绘制 + `VectorArrow` | [x] 已完成 |
-| 6 | P1-1 | `electricity-4-8` | 自感与互感 | 并入自感动画 mode（禁止新起组件目录） | [ ] 未开工 |
-| 7 | P1-1 | `electricity-4-9` | 涡流、电磁阻尼与电磁驱动 | 并入 `electricity-4-8` 动画的 mode | [ ] 未开工 |
-| 8 | **P0-2** | `electricity-7-1` | 常见传感器及其工作原理（光敏/热敏/霍尔） | `Rheostat` `DialMeter` `Galvanometer` `LightBulb` `DCSource` + `dc-circuits` 拓扑 | [ ] 未开工（**整章缺失**） |
-| 9 | **P0-2** | `electricity-7-2` | 传感器的应用与自动控制 | 同上 | [ ] 未开工 |
+| 6 | P1-1 | `electricity-4-8` | 自感与互感 | 并入自感动画 mode（禁止新起组件目录） | [x] 已完成 |
+| 7 | P1-1 | `electricity-4-9` | 涡流、电磁阻尼与电磁驱动 | 并入 `electricity-4-8` 动画的 mode | [x] 已完成 |
+| 8 | **P0-2** | `electricity-7-1` | 常见传感器及其工作原理（光敏/热敏/霍尔） | `Rheostat` `DialMeter` `Galvanometer` `LightBulb` `DCSource` + `dc-circuits` 拓扑 | [x] 已完成 |
+| 9 | **P0-2** | `electricity-7-2` | 传感器的应用与自动控制 | 同上 | [x] 已完成 |
 | 10 | **P0-3** | `vibration-1-3` | 受迫振动与共振 | 简谐运动骨架 + `VectorArrow` | [ ] 未开工 |
 | 11 | P1-2 | `thermodynamics-2-3` | 固体与液体（晶体/液晶/表面张力/浸润/毛细） | 分子粒子池 | [ ] 未开工 |
 | 12 | P1-3 | `thermodynamics-2-4` | 饱和汽与湿度 | `thermodynamics-kinematics` 粒子池 | [ ] 未开工 |
@@ -498,7 +498,7 @@ done
 
 | # | 基座 | 服务对象 | 现状 | 状态 |
 |:-:|------|---------|------|:----:|
-| 1 | `CharacteristicCurve`（通用特性曲线屏） | 传感器 R-光照/R-T、共振曲线、伏安特性曲线、`X_L(f)`/`X_C(f)`、LC 振荡曲线 | 项目内**不存在**（同类曲线被各动画重复手写） | [ ] 未开工 |
+| 1 | `CharacteristicCurve`（通用特性曲线屏） | 传感器 R-光照/R-T、共振曲线、伏安特性曲线、`X_L(f)`/`X_C(f)`、LC 振荡曲线 | 已在 `src/components/Chart/` 实现并登记 | [x] 已完成 |
 | 2 | `EnergyFlowBars`（能量转换柱扩展） | LC 振荡、电磁阻尼、热力学第一定律；由现有 `EnergyBars` 扩出「两库互相转换」模式 | 目前仅单组柱 `EnergyBars` | [ ] 未开工 |
 | 3 | `ChainCircuitBuilder`（电路拓扑构建） | 传感器、感抗容抗、实验电路共用同一套拓扑描述 | 项目内**不存在** | [ ] 未开工 |
 

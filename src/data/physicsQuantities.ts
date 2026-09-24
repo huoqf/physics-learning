@@ -43,6 +43,8 @@ type BuilderName =
   | 'buildEmOscillationQuantities'
   | 'buildACImpedanceQuantities'
   | 'buildDopplerQuantities'
+  | 'buildSelfInductionQuantities'
+  | 'buildSensorQuantities'
 
 /** 单条注册记录：懒加载器 + 构建器函数名 */
 interface QuantityRegistration {
@@ -150,6 +152,8 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-em-wave':               { loader: () => import('./quantities/emOscillation'), builderName: 'buildEmOscillationQuantities' },
   'anim-em-spectrum':           { loader: () => import('./quantities/emOscillation'), builderName: 'buildEmOscillationQuantities' },
   'anim-ac-lc-impedance':       { loader: () => import('./quantities/electromagnetism/acImpedance'), builderName: 'buildACImpedanceQuantities' },
+  'anim-self-induction-eddy':   { loader: () => import('./quantities/electromagnetism/selfInduction'), builderName: 'buildSelfInductionQuantities' },
+  'anim-sensors':               { loader: () => import('./quantities/electromagnetism/sensors'), builderName: 'buildSensorQuantities' },
 
   // 能量与功
   'anim-power':                 { loader: () => import('./quantities/energy'),         builderName: 'buildEnergyQuantities' },
