@@ -23,7 +23,7 @@ export function calcPhotoresistorResistance(
   gamma: number = 0.8,
 ): number {
   const lux = Math.max(0.1, illuminance)
-  // R = rDark / (1 + (lux / 10)^gamma)
+  // R = rDark / (1 + (lux / 5)^gamma)
   const r = rDark / (1 + Math.pow(lux / 5, gamma))
   return Math.max(100, r)
 }

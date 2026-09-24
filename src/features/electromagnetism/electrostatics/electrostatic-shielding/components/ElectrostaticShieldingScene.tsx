@@ -1,4 +1,4 @@
-import { PhysicsGround, PhysicsVectorArrow } from '@/components/Physics'
+import { PhysicsGround, PhysicsVectorArrow, VectorArrow } from '@/components/Physics'
 import {
   EM_COLORS,
   DYNAMICS_COLORS,
@@ -53,17 +53,33 @@ export function ElectrostaticShieldingScene({
         <g>
           {/* 背景外电场线 E0 */}
           {showFieldLines === 1 && (
-            <g stroke={EM_COLORS.electricFieldLine} strokeWidth={1.5}>
+            <g>
               {physics.fieldLineOffsets.map((offset, i) => {
                 const y = centerY + offset
                 return (
                   <g key={i}>
-                    {/* 左侧进入电场线 */}
-                    <line x1={80} y1={y} x2={270} y2={y} />
-                    <polygon points={`265,${y - 4} 273,${y} 265,${y + 4}`} fill={EM_COLORS.electricField} />
-                    {/* 右侧发出电场线 */}
-                    <line x1={570} y1={y} x2={760} y2={y} />
-                    <polygon points={`750,${y - 4} 758,${y} 750,${y + 4}`} fill={EM_COLORS.electricField} />
+                    {/* 左侧进入电场线（指向导体左表面，终止于负感应电荷） */}
+                    <VectorArrow
+                      originDesign={{ x: 80, y }}
+                      vector={{ x: 1, y: 0 }}
+                      type="electricField"
+                      arrowType="visual-only"
+                      sceneScale={sceneScale}
+                      pixelLength={190}
+                      strokeWidth={STROKE.vectorThin}
+                      color={EM_COLORS.electricField}
+                    />
+                    {/* 右侧发出电场线（由导体右表面正感应电荷发出） */}
+                    <VectorArrow
+                      originDesign={{ x: 570, y }}
+                      vector={{ x: 1, y: 0 }}
+                      type="electricField"
+                      arrowType="visual-only"
+                      sceneScale={sceneScale}
+                      pixelLength={190}
+                      strokeWidth={STROKE.vectorThin}
+                      color={EM_COLORS.electricField}
+                    />
                   </g>
                 )
               })}
@@ -96,7 +112,7 @@ export function ElectrostaticShieldingScene({
           {[-100, -50, 0, 50, 100].map((dy, idx) => (
             <g key={`neg-${idx}`} transform={`translate(295, ${centerY + dy})`}>
               <circle cx={0} cy={0} r={9} fill={EM_COLORS.negativeCharge} />
-              <text x={0} y={4} fontSize={font(12)} fontWeight="bold" fill="#fff" textAnchor="middle">-</text>
+              <text x={0} y={4} fontSize={font(12)} fontWeight="bold" fill={CANVAS_COLORS.white} textAnchor="middle">-</text>
             </g>
           ))}
 
@@ -104,7 +120,7 @@ export function ElectrostaticShieldingScene({
           {[-100, -50, 0, 50, 100].map((dy, idx) => (
             <g key={`pos-${idx}`} transform={`translate(545, ${centerY + dy})`}>
               <circle cx={0} cy={0} r={9} fill={EM_COLORS.positiveCharge} />
-              <text x={0} y={4} fontSize={font(12)} fontWeight="bold" fill="#fff" textAnchor="middle">+</text>
+              <text x={0} y={4} fontSize={font(12)} fontWeight="bold" fill={CANVAS_COLORS.white} textAnchor="middle">+</text>
             </g>
           ))}
 
@@ -113,8 +129,8 @@ export function ElectrostaticShieldingScene({
             {/* 外电场矢量 E0 (向右) */}
             <PhysicsVectorArrow
               originDesign={{ x: 0, y: -25 }}
-              vector={{ x: 30, y: 0 }}
-              type="force"
+              vector={{ x: physics.shielding.E0, y: 0 }}
+              type="electricField"
               sceneScale={sceneScale}
               strokeWidth={STROKE.vectorMain}
             />
@@ -125,8 +141,8 @@ export function ElectrostaticShieldingScene({
             {/* 感应电荷电场 E' (向左) */}
             <PhysicsVectorArrow
               originDesign={{ x: 0, y: 15 }}
-              vector={{ x: -30, y: 0 }}
-              type="force"
+              vector={{ x: -physics.shielding.EPrime, y: 0 }}
+              type="electricField"
               sceneScale={sceneScale}
               strokeWidth={STROKE.vectorMain}
             />
@@ -167,7 +183,7 @@ export function ElectrostaticShieldingScene({
           {[230, 260, 300].map((x, i) => (
             <g key={`blunt-${i}`} transform={`translate(${x}, 220)`}>
               <circle cx={0} cy={0} r={8} fill={EM_COLORS.positiveCharge} />
-              <text x={0} y={3.5} fontSize={font(11)} fontWeight="bold" fill="#fff" textAnchor="middle">+</text>
+              <text x={0} y={3.5} fontSize={font(11)} fontWeight="bold" fill={CANVAS_COLORS.white} textAnchor="middle">+</text>
             </g>
           ))}
 
@@ -175,7 +191,7 @@ export function ElectrostaticShieldingScene({
           {[550, 575, 595, 612].map((x, i) => (
             <g key={`sharp-${i}`} transform={`translate(${x}, 310)`}>
               <circle cx={0} cy={0} r={6} fill={EM_COLORS.positiveCharge} />
-              <text x={0} y={3} fontSize={font(9)} fontWeight="bold" fill="#fff" textAnchor="middle">+</text>
+              <text x={0} y={3} fontSize={font(9)} fontWeight="bold" fill={CANVAS_COLORS.white} textAnchor="middle">+</text>
             </g>
           ))}
 
@@ -206,7 +222,7 @@ export function ElectrostaticShieldingScene({
             • 尖端曲率半径: R = {tipRadius} mm
           </text>
           <text x={170} y={168} fontSize={font(12)} fill={CANVAS_COLORS.labelText}>
-            • 尖端电荷面密度: σ = {physics.shielding.tipChargeDensity} μC/m²
+            • 尖端电荷面密度指数: σ = {physics.shielding.tipChargeDensity} (相对值)
           </text>
         </g>
       )}

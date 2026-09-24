@@ -56,6 +56,7 @@ export default function DopplerAnimation() {
           sourceWaveform={physics.sourceWaveform}
           frontWaveform={physics.frontWaveform}
           backWaveform={physics.backWaveform}
+          isSupersonic={physics.isSupersonic}
         />
       </div>
 

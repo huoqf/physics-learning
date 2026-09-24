@@ -8,7 +8,14 @@ import {
   MagneticFieldGrid,
   PhysicsVectorArrow,
 } from '@/components/Physics'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import {
+  PHYSICS_COLORS,
+  SCENE_COLORS,
+  CANVAS_COLORS,
+  EM_COLORS,
+  DYNAMICS_COLORS,
+  withAlpha,
+} from '@/theme/physics'
 import type { SensorPhysicsResult } from '../hooks/useSensorPhysics'
 
 export interface SensorSceneProps {
@@ -44,8 +51,8 @@ export function SensorScene({
         y={20}
         width={320}
         height={285}
-        fill="#f8fafc"
-        stroke="#e2e8f0"
+        fill={SCENE_COLORS.materials.structBgLight}
+        stroke={SCENE_COLORS.materials.structFillPale}
         strokeWidth={1.5}
         rx={6}
       />
@@ -54,7 +61,7 @@ export function SensorScene({
         y={45}
         fontSize={font(12)}
         fontWeight={700}
-        fill="#1e293b"
+        fill={CANVAS_COLORS.labelText}
       >
         {sensorType === 0
           ? '【光敏电阻特写】光生载流子'
@@ -66,21 +73,21 @@ export function SensorScene({
       {sensorType === 0 && (
         <g transform="translate(190, 160)">
           {/* 光敏电极 */}
-          <rect x={-50} y={-40} width={100} height={80} fill="#fef3c7" stroke="#d97706" strokeWidth={2} rx={4} />
+          <rect x={-50} y={-40} width={100} height={80} fill={withAlpha(PHYSICS_COLORS.referencePoint, 0.2)} stroke={EM_COLORS.electricField} strokeWidth={2} rx={4} />
           {/* 蛇形栅格 */}
           <path
             d="M -35 -25 L 35 -25 L 35 -10 L -35 -10 L -35 5 L 35 5 L 35 20 L -35 20"
             fill="none"
-            stroke="#b45309"
+            stroke={DYNAMICS_COLORS.friction}
             strokeWidth={3}
           />
           {/* 照射光线 */}
-          <g stroke="#f59e0b" strokeWidth={2} strokeDasharray="4 2">
+          <g stroke={CANVAS_COLORS.referencePoint} strokeWidth={2} strokeDasharray="4 2">
             <line x1={-80} y1={-80} x2={-30} y2={-30} />
             <line x1={-50} y1={-90} x2={0} y2={-40} />
             <line x1={-20} y1={-90} x2={30} y2={-40} />
           </g>
-          <text x={0} y={60} textAnchor="middle" fontSize={font(11)} fill="#64748b">
+          <text x={0} y={60} textAnchor="middle" fontSize={font(11)} fill={CANVAS_COLORS.textMuted}>
             {`实时光敏阻值 R = ${(rSensor / 1000).toFixed(1)} kΩ`}
           </text>
         </g>
@@ -89,14 +96,14 @@ export function SensorScene({
       {sensorType === 1 && (
         <g transform="translate(190, 160)">
           {/* NTC 陶瓷热敏圆片 */}
-          <circle cx={0} cy={0} r={42} fill="#1e293b" stroke="#64748b" strokeWidth={3} />
-          <text x={0} y={4} textAnchor="middle" fontSize={font(11)} fill="#ffffff" fontWeight={600}>
+          <circle cx={0} cy={0} r={42} fill={SCENE_COLORS.materials.structStroke} stroke={CANVAS_COLORS.textMuted} strokeWidth={3} />
+          <text x={0} y={4} textAnchor="middle" fontSize={font(11)} fill={CANVAS_COLORS.white} fontWeight={600}>
             NTC 10k
           </text>
           {/* 晶格引脚 */}
-          <line x1={-15} y1={42} x2={-15} y2={80} stroke="#94a3b8" strokeWidth={2.5} />
-          <line x1={15} y1={42} x2={15} y2={80} stroke="#94a3b8" strokeWidth={2.5} />
-          <text x={0} y={105} textAnchor="middle" fontSize={font(11)} fill="#64748b">
+          <line x1={-15} y1={42} x2={-15} y2={80} stroke={CANVAS_COLORS.trackHistory} strokeWidth={2.5} />
+          <line x1={15} y1={42} x2={15} y2={80} stroke={CANVAS_COLORS.trackHistory} strokeWidth={2.5} />
+          <text x={0} y={105} textAnchor="middle" fontSize={font(11)} fill={CANVAS_COLORS.textMuted}>
             {`实时热敏阻值 R = ${(rSensor / 1000).toFixed(1)} kΩ`}
           </text>
         </g>
@@ -107,29 +114,29 @@ export function SensorScene({
           {/* 磁场背景 */}
           <MagneticFieldGrid x={-70} y={-50} w={140} h={100} direction="in" />
           {/* 霍尔半导体薄片 */}
-          <rect x={-55} y={-35} width={110} height={70} fill="rgba(56, 189, 248, 0.25)" stroke="#0284c7" strokeWidth={2} rx={3} />
+          <rect x={-55} y={-35} width={110} height={70} fill={withAlpha(PHYSICS_COLORS.capacitor, 0.25)} stroke={EM_COLORS.capacitor} strokeWidth={2} rx={3} />
 
           {/* 表面极性与积累电荷渲染 */}
           <g transform="translate(0, -35)">
             {[-40, -20, 0, 20, 40].map((xPos, idx) => (
-              <text key={idx} x={xPos} y={-3} textAnchor="middle" fontSize={font(10)} fontWeight={700} fill={topPolarity === '+' ? '#ef4444' : '#3b82f6'}>
+              <text key={idx} x={xPos} y={-3} textAnchor="middle" fontSize={font(10)} fontWeight={700} fill={topPolarity === '+' ? EM_COLORS.positiveCharge : EM_COLORS.negativeCharge}>
                 {topPolarity}
               </text>
             ))}
           </g>
           <g transform="translate(0, 35)">
             {[-40, -20, 0, 20, 40].map((xPos, idx) => (
-              <text key={idx} x={xPos} y={11} textAnchor="middle" fontSize={font(10)} fontWeight={700} fill={bottomPolarity === '+' ? '#ef4444' : '#3b82f6'}>
+              <text key={idx} x={xPos} y={11} textAnchor="middle" fontSize={font(10)} fontWeight={700} fill={bottomPolarity === '+' ? EM_COLORS.positiveCharge : EM_COLORS.negativeCharge}>
                 {bottomPolarity}
               </text>
             ))}
           </g>
 
           {/* 表面极性文字 */}
-          <text x={0} y={-46} textAnchor="middle" fontSize={font(12)} fontWeight={700} fill={topPolarity === '+' ? '#ef4444' : '#3b82f6'}>
+          <text x={0} y={-46} textAnchor="middle" fontSize={font(12)} fontWeight={700} fill={topPolarity === '+' ? EM_COLORS.positiveCharge : EM_COLORS.negativeCharge}>
             {`上表面 (${topPolarity}) 极`}
           </text>
-          <text x={0} y={58} textAnchor="middle" fontSize={font(12)} fontWeight={700} fill={bottomPolarity === '+' ? '#ef4444' : '#3b82f6'}>
+          <text x={0} y={58} textAnchor="middle" fontSize={font(12)} fontWeight={700} fill={bottomPolarity === '+' ? EM_COLORS.positiveCharge : EM_COLORS.negativeCharge}>
             {`下表面 (${bottomPolarity}) 极`}
           </text>
 
@@ -145,13 +152,13 @@ export function SensorScene({
 
             return (
               <g key={i} transform={`translate(${clampedX}, ${curveY})`}>
-                <circle cx={0} cy={0} r={6} fill={isElectron ? '#3b82f6' : '#ef4444'} opacity={0.85} />
-                <text x={0} y={3.5} textAnchor="middle" fontSize={font(9)} fill="#ffffff" fontWeight={700}>
+                <circle cx={0} cy={0} r={6} fill={isElectron ? EM_COLORS.negativeCharge : EM_COLORS.positiveCharge} opacity={0.85} />
+                <text x={0} y={3.5} textAnchor="middle" fontSize={font(9)} fill={CANVAS_COLORS.white} fontWeight={700}>
                   {isElectron ? 'e⁻' : 'h⁺'}
                 </text>
                 {/* 洛伦兹力向上微箭头 */}
-                <line x1={0} y1={-6} x2={0} y2={-14} stroke="#f59e0b" strokeWidth={1.5} />
-                <polygon points="0,-16 -3,-13 3,-13" fill="#f59e0b" />
+                <line x1={0} y1={-6} x2={0} y2={-14} stroke={CANVAS_COLORS.referencePoint} strokeWidth={1.5} />
+                <polygon points="0,-16 -3,-13 3,-13" fill={CANVAS_COLORS.referencePoint} />
               </g>
             )
           })}
@@ -175,8 +182,8 @@ export function SensorScene({
         y={20}
         width={440}
         height={285}
-        fill="#ffffff"
-        stroke="#cbd5e1"
+        fill={CANVAS_COLORS.white}
+        stroke={SCENE_COLORS.materials.structStrokePale}
         strokeWidth={1.5}
         rx={6}
       />
@@ -185,13 +192,13 @@ export function SensorScene({
         y={45}
         fontSize={font(12)}
         fontWeight={700}
-        fill="#1e293b"
+        fill={CANVAS_COLORS.labelText}
       >
         【自动控制应用电路】电磁继电器 / 阈值触发
       </text>
 
       {/* 控制回路导线 */}
-      <g stroke="#94a3b8" strokeWidth={2.5} fill="none">
+      <g stroke={CANVAS_COLORS.trackHistory} strokeWidth={2.5} fill="none">
         <path d="M 430 240 L 400 240 L 400 90 L 520 90" />
         <path d="M 520 90 L 520 120" />
         <path d="M 520 180 L 520 240 L 470 240" />
@@ -209,29 +216,29 @@ export function SensorScene({
 
       {/* 分压变阻器 Rheostat 与传感器符号 */}
       <Rheostat x={490} y={85} value={5} min={1} max={10} />
-      <rect x={495} y={135} width={50} height={30} fill="#f1f5f9" stroke="#475569" strokeWidth={1.5} rx={2} />
-      <text x={520} y={154} textAnchor="middle" fontSize={font(10)} fill="#334155" fontWeight={600}>
+      <rect x={495} y={135} width={50} height={30} fill={CANVAS_COLORS.objectFillNeutral} stroke={SCENE_COLORS.materials.structStrokeMid} strokeWidth={1.5} rx={2} />
+      <text x={520} y={154} textAnchor="middle" fontSize={font(10)} fill={CANVAS_COLORS.strokeDark} fontWeight={600}>
         传感器
       </text>
 
       {/* 电磁继电器 / 触点开关 */}
       <g transform="translate(640, 150)">
-        <rect x={-25} y={-25} width={50} height={50} fill="#f8fafc" stroke="#64748b" strokeWidth={1.5} rx={3} />
-        <text x={0} y={-30} textAnchor="middle" fontSize={font(10)} fill="#64748b">
+        <rect x={-25} y={-25} width={50} height={50} fill={SCENE_COLORS.materials.structBgLight} stroke={CANVAS_COLORS.textMuted} strokeWidth={1.5} rx={3} />
+        <text x={0} y={-30} textAnchor="middle" fontSize={font(10)} fill={CANVAS_COLORS.textMuted}>
           继电器
         </text>
         {/* 动触点吸合状态 */}
-        <circle cx={-12} cy={0} r={3} fill="#475569" />
-        <circle cx={12} cy={0} r={3} fill="#475569" />
+        <circle cx={-12} cy={0} r={3} fill={SCENE_COLORS.materials.structStrokeMid} />
+        <circle cx={12} cy={0} r={3} fill={SCENE_COLORS.materials.structStrokeMid} />
         {isTriggered ? (
-          <line x1={-12} y1={0} x2={12} y2={0} stroke="#16a34a" strokeWidth={3} />
+          <line x1={-12} y1={0} x2={12} y2={0} stroke={SCENE_COLORS.circuit.switchClosed} strokeWidth={3} />
         ) : (
-          <line x1={-12} y1={0} x2={8} y2={-15} stroke="#ef4444" strokeWidth={3} />
+          <line x1={-12} y1={0} x2={8} y2={-15} stroke={SCENE_COLORS.circuit.switchOpen} strokeWidth={3} />
         )}
       </g>
 
       {/* 被控工作回路与受控路灯/警铃 */}
-      <g stroke="#cbd5e1" strokeWidth={2} fill="none">
+      <g stroke={SCENE_COLORS.materials.structStrokePale} strokeWidth={2} fill="none">
         <path d="M 652 150 L 730 150 L 730 200" />
         <path d="M 628 150 L 600 150 L 600 240 L 730 240 L 730 230" />
       </g>
@@ -241,7 +248,7 @@ export function SensorScene({
         power={isTriggered ? 1.0 : 0}
         time={time}
       />
-      <text x={730} y={245} textAnchor="middle" fontSize={font(11)} fill="#64748b">
+      <text x={730} y={245} textAnchor="middle" fontSize={font(11)} fill={CANVAS_COLORS.textMuted}>
         受控路灯 / 报警器
       </text>
 
@@ -255,7 +262,7 @@ export function SensorScene({
           y={0}
           fontSize={font(11)}
           fontWeight={700}
-          fill={isTriggered ? '#16a34a' : '#94a3b8'}
+          fill={isTriggered ? SCENE_COLORS.circuit.switchClosed : CANVAS_COLORS.trackHistory}
         >
           {isTriggered ? '● 继电器导通 (工作中)' : '○ 继电器断开 (静止)'}
         </text>

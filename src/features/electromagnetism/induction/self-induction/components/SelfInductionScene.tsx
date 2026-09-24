@@ -9,7 +9,12 @@ import {
   MagneticFieldGrid,
   PhysicsVectorArrow,
 } from '@/components/Physics'
-import { PHYSICS_COLORS } from '@/theme/physics'
+import {
+  PHYSICS_COLORS,
+  SCENE_COLORS,
+  CANVAS_COLORS,
+  withAlpha,
+} from '@/theme/physics'
 import type { SelfInductionPhysicsResult } from '../hooks/useSelfInductionPhysics'
 
 export interface SelfInductionSceneProps {
@@ -57,7 +62,7 @@ export function SelfInductionScene({
           y={170}
           width={120}
           height={90}
-          fill="rgba(59, 130, 246, 0.08)"
+          fill={withAlpha(PHYSICS_COLORS.negativeCharge, 0.08)}
           stroke={PHYSICS_COLORS.magneticField}
           strokeWidth={1.5}
           strokeDasharray="4 4"
@@ -75,13 +80,13 @@ export function SelfInductionScene({
         </text>
 
         {/* 摆杆与悬挂支架 */}
-        <circle cx={pivotX} cy={pivotY} r={5} fill="#475569" />
+        <circle cx={pivotX} cy={pivotY} r={5} fill={SCENE_COLORS.materials.structStrokeMid} />
         <line
           x1={pivotX}
           x2={bobX}
           y1={pivotY}
           y2={bobY}
-          stroke="#64748b"
+          stroke={CANVAS_COLORS.textMuted}
           strokeWidth={2.5}
         />
 
@@ -92,14 +97,14 @@ export function SelfInductionScene({
             y={-plateHeight / 2}
             width={plateWidth}
             height={plateHeight}
-            fill="#cbd5e1"
-            stroke="#475569"
+            fill={SCENE_COLORS.materials.structStrokePale}
+            stroke={SCENE_COLORS.materials.structStrokeMid}
             strokeWidth={1.8}
             rx={2}
           />
           {/* 梳齿开缝纹理 */}
           {isSlottedBool && (
-            <g stroke="#ffffff" strokeWidth={2}>
+            <g stroke={CANVAS_COLORS.white} strokeWidth={2}>
               <line x1={-18} y1={-plateHeight / 2} x2={-18} y2={10} />
               <line x1={-6} y1={-plateHeight / 2} x2={-6} y2={10} />
               <line x1={6} y1={-plateHeight / 2} x2={6} y2={10} />
@@ -136,7 +141,7 @@ export function SelfInductionScene({
         <text
           x={140}
           y={60}
-          fill="#475569"
+          fill={CANVAS_COLORS.labelTextLight}
           fontSize={font(12)}
         >
           {isSlottedBool ? '【梳齿片】：切断大涡流回路，阻尼微弱' : '【完整铜片】：感应强涡流，安培力强阻尼'}
@@ -152,7 +157,7 @@ export function SelfInductionScene({
         <text
           x={140}
           y={105}
-          fill={isInMagneticField ? '#16a34a' : '#94a3b8'}
+          fill={isInMagneticField ? SCENE_COLORS.coil.activeGlow : CANVAS_COLORS.trackHistory}
           fontSize={font(11)}
         >
           {isInMagneticField ? '● 处于磁场切割区：受阻尼安培力' : '○ 离开磁场：仅受重力与拉力，安培力为零'}
@@ -165,16 +170,16 @@ export function SelfInductionScene({
   return (
     <g>
       {/* 电路导线基座 */}
-      <g stroke="#94a3b8" strokeWidth={2.5} fill="none">
+      <g stroke={CANVAS_COLORS.trackHistory} strokeWidth={2.5} fill="none">
         {/* 左侧主干路 */}
         <path d="M 230 250 L 140 250 L 140 100 L 260 100" />
         {/* 单刀电键 */}
-        <circle cx={260} cy={100} r={4} fill="#64748b" />
-        <circle cx={320} cy={100} r={4} fill="#64748b" />
+        <circle cx={260} cy={100} r={4} fill={CANVAS_COLORS.textMuted} />
+        <circle cx={320} cy={100} r={4} fill={CANVAS_COLORS.textMuted} />
         {switchClosed ? (
-          <line x1={260} y1={100} x2={320} y2={100} stroke="#3b82f6" strokeWidth={3} />
+          <line x1={260} y1={100} x2={320} y2={100} stroke={SCENE_COLORS.circuit.switchClosed} strokeWidth={3} />
         ) : (
-          <line x1={260} y1={100} x2={305} y2={75} stroke="#ef4444" strokeWidth={3} />
+          <line x1={260} y1={100} x2={305} y2={75} stroke={SCENE_COLORS.circuit.switchOpen} strokeWidth={3} />
         )}
 
         {/* 上支路导线 */}
@@ -198,11 +203,11 @@ export function SelfInductionScene({
         <>
           <Rheostat x={400} y={120} value={10} min={0} max={20} />
           <LightBulb x={580} y={120} power={powerLamp1} time={time} />
-          <text x={630} y={145} fontSize={font(11)} fill="#64748b">A1 灯 (纯阻支路·瞬时亮)</text>
+          <text x={630} y={145} fontSize={font(11)} fill={CANVAS_COLORS.textMuted}>A1 灯 (纯阻支路·瞬时亮)</text>
 
           <CoilBase x={400} y={170} width={100} height={50} turns={5} current={iCoil} time={time} />
           <LightBulb x={580} y={180} power={powerLamp2} time={time} />
-          <text x={630} y={205} fontSize={font(11)} fill="#64748b">A2 灯 (电感支路·渐变亮)</text>
+          <text x={630} y={205} fontSize={font(11)} fill={CANVAS_COLORS.textMuted}>A2 灯 (电感支路·渐变亮)</text>
 
           {/* 电流动态指示箭头 */}
           {switchClosed && iLamp1 > 0.05 && (
@@ -229,7 +234,7 @@ export function SelfInductionScene({
           <text x={440} y={105} fontSize={font(11)} fill={PHYSICS_COLORS.magneticField}>电感线圈 L (内阻 RL)</text>
 
           <LightBulb x={480} y={180} power={powerLamp1} time={time} />
-          <text x={530} y={205} fontSize={font(11)} fill="#64748b">小灯泡 A (阻值 RA)</text>
+          <text x={530} y={205} fontSize={font(11)} fill={CANVAS_COLORS.textMuted}>小灯泡 A (阻值 RA)</text>
 
           {/* 断开后局部放电反向电流箭头 (由线圈向灯泡反向流动) */}
           {iLamp1 > 0.05 && (
@@ -242,8 +247,8 @@ export function SelfInductionScene({
           )}
           {physics.willFlash && powerLamp1 > 1.2 && (
             <g transform="translate(480, 160)">
-              <circle cx={0} cy={0} r={28} fill="none" stroke="#f59e0b" strokeWidth={2} strokeDasharray="4 2" />
-              <text x={0} y={-10} fontSize={font(12)} fill="#f59e0b" fontWeight={700} textAnchor="middle">
+              <circle cx={0} cy={0} r={28} fill="none" stroke={CANVAS_COLORS.referencePoint} strokeWidth={2} strokeDasharray="4 2" />
+              <text x={0} y={-10} fontSize={font(12)} fill={CANVAS_COLORS.referencePoint} fontWeight={700} textAnchor="middle">
                 ⚡ 瞬态闪亮！
               </text>
             </g>
@@ -253,7 +258,7 @@ export function SelfInductionScene({
 
       {/* 实时参数标注文本 */}
       <g transform="translate(40, 40)">
-        <text x={0} y={0} fontSize={font(12)} fill="#1e293b" fontWeight={600}>
+        <text x={0} y={0} fontSize={font(12)} fill={CANVAS_COLORS.labelText} fontWeight={600}>
           {mode === 0 ? '通电自感演示' : '断电自感演示'}
         </text>
         <text x={0} y={20} fontSize={font(11)} fill={PHYSICS_COLORS.electricCurrent}>

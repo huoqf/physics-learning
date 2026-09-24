@@ -36,7 +36,8 @@ export default function ElectrostaticShieldingAnimation() {
     physicsWidth: 10,
     physicsHeight: 8,
     refMagnitudes: {
-      force: 40,
+      // 参考量级取参数上限 E0 = 500 V/m，使箭头长度随外加场强线性变化
+      electricField: 500,
     },
   })
 

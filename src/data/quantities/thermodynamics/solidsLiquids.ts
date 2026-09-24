@@ -2,6 +2,9 @@ import type { PhysicsPanelData, PhysicsQuantity, Formula, GaokaoPoint } from '..
 import {
   calculateSurfaceTensionForce,
   calculateCapillaryRise,
+  LIQUID_SURFACE_TENSION,
+  LIQUID_CONTACT_ANGLE,
+  LIQUID_DENSITY,
 } from '@/physics/thermodynamics/solidsLiquids'
 
 export function buildSolidsLiquidsQuantities(
@@ -66,13 +69,20 @@ export function buildSolidsLiquidsQuantities(
       },
     )
   } else {
-    const theta = isMercury === 1 ? (140 * Math.PI) / 180 : 0
-    const rho = isMercury === 1 ? 13600 : 1000
+    const liquidKey = isMercury === 1 ? 'mercury' : 'water'
+    const liquidGamma = LIQUID_SURFACE_TENSION[liquidKey]
     const rMeters = capillaryRadius / 1000
-    const rise = calculateCapillaryRise(gamma, theta, rMeters, rho, 9.8)
+    const rise = calculateCapillaryRise(
+      liquidGamma,
+      LIQUID_CONTACT_ANGLE[liquidKey],
+      rMeters,
+      LIQUID_DENSITY[liquidKey],
+      9.8,
+    )
 
     quantities.push(
       { label: '毛细管内径半径', symbol: 'r', value: capillaryRadius, unit: 'mm' },
+      { label: '液体表面张力系数', symbol: '\\gamma', value: liquidGamma, unit: 'N/m' },
       { label: '毛细液面高度差', symbol: 'h', value: +(rise.h * 1000).toFixed(1), unit: 'mm' },
       { label: '弯月液面形态', symbol: '液面', value: rise.meniscusType === 'concave' ? '凹液面' : '凸液面', unit: '' },
     )

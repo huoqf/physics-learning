@@ -14,6 +14,42 @@ export function calculateSaturatedVaporPressure(tempCelsius: number): number {
 }
 
 /**
+ * 等温改变体积时水蒸气实际分压的计算（含饱和锁定）
+ *
+ * 模型分两段，恰好对应高考两个考点：
+ *   ① 未饱和区间（p_ideal < ps）：水蒸气可视为理想气体，等温下 p ∝ 1/V（玻意耳定律）
+ *      p_ideal = p_ref / V，其中 p_ref 为 V = 1 时的分压，正比于水蒸气物质的量
+ *   ② 饱和区间（p_ideal ≥ ps）：过量水蒸气液化，分压锁定在 ps(T)，**与体积无关**
+ *
+ * @param referencePressure V = 1 时的水蒸气分压基准值 (Pa)，正比于水蒸气物质的量
+ * @param volumeRatio 气缸容积标量 (V = 1 为基准容积，无量纲)
+ * @param tempCelsius 温度 (℃)
+ * @returns 实际分压 p (Pa)、饱和汽压 ps (Pa)、未受饱和限制的理想分压 pIdeal (Pa)、
+ *          是否已达饱和、仍处于气相的蒸汽质量占比 vaporFraction (0 ~ 1)
+ */
+export function calculateVaporPressureWithVolume(
+  referencePressure: number,
+  volumeRatio: number,
+  tempCelsius: number
+): {
+  p: number // 实际水蒸气分压 (Pa)
+  ps: number // 当前温度下的饱和汽压 (Pa)
+  pIdeal: number // 若全部蒸汽保持气态时的分压 (Pa)
+  isSaturated: boolean // 是否已达饱和（有蒸汽液化）
+  vaporFraction: number // 气相中剩余蒸汽占比 (0 ~ 1)
+} {
+  const ps = calculateSaturatedVaporPressure(tempCelsius)
+  const safeV = Math.max(0.05, volumeRatio)
+  const pIdeal = Math.max(0, referencePressure) / safeV
+  const isSaturated = pIdeal > ps
+  const p = Math.min(pIdeal, ps)
+  // 饱和时按 pV = nRT 反推仍留在气相的物质的量占比：n_gas / n_total = ps / pIdeal
+  const vaporFraction = pIdeal > 0 ? Math.min(1, ps / pIdeal) : 1
+
+  return { p, ps, pIdeal, isSaturated, vaporFraction }
+}
+
+/**
  * 计算空气相对湿度 RH (%)
  * RH = (p / ps) * 100%
  * @param actualPressure 实际水蒸气分压 (Pa)

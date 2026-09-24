@@ -22,7 +22,6 @@ export default function SolidsLiquidsAnimation() {
   })
 
   const physics = useSolidsLiquidsPhysics({
-    mode,
     solidType,
     gamma,
     capillaryRadius,

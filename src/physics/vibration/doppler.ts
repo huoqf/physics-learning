@@ -32,11 +32,15 @@ export function calculateDopplerWavelength(
  * 计算观察者接收到的视在频率 f'
  * 公式：f' = f0 * (v ± vo) / (v ∓ vs)
  *
+ * ⚠️ 公式仅适用于亚音速（v - vs > 0）。当 vs ≥ v 时波源已追上自己发出的波前，
+ * 前方不再有规则波列而出现马赫锥（激波），多普勒频率公式失效，此时返回值仅为
+ * 供波形绘制使用的示意保护值，调用方必须通过 `isSupersonic` 判定并改用激波表述。
+ *
  * @param f0 波源固有频率 (Hz)
  * @param v 介质波速 (m/s)
  * @param vs 波源向观察者运动的速度 (m/s)，向观察者靠近取正，远离取负
  * @param vo 观察者向波源运动的速度 (m/s)，向波源靠近取正，远离取负
- * @returns 视在频率 f' (Hz)
+ * @returns 视在频率 f' (Hz)；超音速时返回示意保护值，不代表真实接收频率
  */
 export function calculateDopplerFrequency(
   f0: number,
@@ -48,7 +52,7 @@ export function calculateDopplerFrequency(
   const numerator = v + vo
   const denominator = v - vs
   if (denominator <= 0) {
-    // 超音速或音障奇点时截断保护
+    // 超音速/音障奇点：多普勒公式失效，返回示意保护值（仅用于波形绘制，UI 需按激波表述）
     return f0 * 10
   }
   return f0 * (numerator / denominator)

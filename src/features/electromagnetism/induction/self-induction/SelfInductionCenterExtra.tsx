@@ -1,6 +1,7 @@
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CharacteristicCurve } from '@/components/Chart'
+import { CHART_COLORS } from '@/theme/physics'
 import { useSelfInductionPhysics } from './hooks/useSelfInductionPhysics'
 
 export default function SelfInductionCenterExtra() {
@@ -74,7 +75,7 @@ export default function SelfInductionCenterExtra() {
                 {
                   y: E / RA,
                   label: '断开前灯泡正常电流 IA',
-                  color: '#94a3b8',
+                  color: CHART_COLORS.reference,
                 },
               ]
             : undefined

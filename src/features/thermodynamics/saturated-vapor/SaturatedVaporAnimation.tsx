@@ -7,12 +7,12 @@ import { useSaturatedVaporPhysics } from './hooks/useSaturatedVaporPhysics'
 import { SaturatedVaporScene } from './components/SaturatedVaporScene'
 
 export default function SaturatedVaporAnimation() {
-  const { params, time } = useAnimationStore(
-    useShallow((s) => ({ params: s.params, time: s.time }))
+  const { params } = useAnimationStore(
+    useShallow((s) => ({ params: s.params }))
   )
 
   const tempCelsius = params.tempCelsius ?? 25
-  const vaporPressure = params.vaporPressure ?? 1580
+  const referencePressure = params.referencePressure ?? 1580
   const pistonVolume = params.pistonVolume ?? 1.0
 
   const { containerRef, canvasSize, vp } = useAnimationViewport({
@@ -21,9 +21,8 @@ export default function SaturatedVaporAnimation() {
 
   const physics = useSaturatedVaporPhysics({
     tempCelsius,
-    vaporPressure,
+    referencePressure,
     pistonVolume,
-    time,
   })
 
   const sceneScale = useSceneScale({
@@ -45,7 +44,6 @@ export default function SaturatedVaporAnimation() {
         sceneScale={sceneScale}
         vp={vp}
         tempCelsius={tempCelsius}
-        vaporPressure={vaporPressure}
       />
     </AnimationSvgCanvas>
   )

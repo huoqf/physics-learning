@@ -1,60 +1,58 @@
 import { useMemo } from 'react'
 import {
-  calculateSaturatedVaporPressure,
   calculateRelativeHumidity,
   calculatePhaseFlux,
+  calculateVaporPressureWithVolume,
 } from '@/physics/thermodynamics/saturatedVapor'
 
 export interface UseSaturatedVaporPhysicsOptions {
   tempCelsius: number // 温度 (℃)
-  vaporPressure: number // 蒸汽分压 (Pa)
-  pistonVolume: number // 气缸相对体积标量 (0.5 ~ 2.0)
-  time: number
+  referencePressure: number // V = 1 时的水蒸气分压基准值 (Pa)，正比于水蒸气物质的量
+  pistonVolume: number // 气缸容积标量 (0.5 ~ 2.0)
 }
 
 export interface SaturatedVaporPhysicsResult {
-  ps: number
+  vaporPressure: number // 实际水蒸气分压 p (Pa)
+  ps: number // 当前温度饱和汽压 (Pa)
+  isSaturated: boolean // 是否已达饱和（继续压缩将导致蒸汽液化）
+  vaporFraction: number // 气相中剩余蒸汽占比 (0 ~ 1)
   rh: number
-  status: 'unsaturated' | 'saturated' | 'supersaturated'
   dewPoint: number
   evapFlux: number
   condFlux: number
-  isBalanced: boolean
   pistonHeight: number // 活塞设计高度 (px)
-  curvePoints: { x: number; y: number }[]
 }
 
 export function useSaturatedVaporPhysics({
   tempCelsius,
-  vaporPressure,
+  referencePressure,
   pistonVolume,
 }: UseSaturatedVaporPhysicsOptions): SaturatedVaporPhysicsResult {
   return useMemo(() => {
-    const humidity = calculateRelativeHumidity(vaporPressure, tempCelsius)
-    const flux = calculatePhaseFlux(vaporPressure, tempCelsius)
+    // 1. 等温 p-V 关系：未饱和时遵循玻意耳定律，达到 ps 后压强锁定
+    const state = calculateVaporPressureWithVolume(
+      referencePressure,
+      pistonVolume,
+      tempCelsius,
+    )
 
-    // 生成 ps - T 特性曲线 (0℃ ~ 60℃)
-    const curvePoints: { x: number; y: number }[] = []
-    for (let t = 0; t <= 60; t += 2) {
-      curvePoints.push({
-        x: t,
-        y: +(calculateSaturatedVaporPressure(t) / 1000).toFixed(2), // 单位 kPa
-      })
-    }
+    // 2. 以真实分压 p 计算相对湿度与相变通量
+    const humidity = calculateRelativeHumidity(state.p, tempCelsius)
+    const flux = calculatePhaseFlux(state.p, tempCelsius)
 
-    // 活塞高度映射
+    // 活塞高度与气体体积成正比（气缸截面积恒定）
     const pistonHeight = 80 + pistonVolume * 70
 
     return {
-      ps: humidity.ps,
+      vaporPressure: state.p,
+      ps: state.ps,
+      isSaturated: state.isSaturated,
+      vaporFraction: state.vaporFraction,
       rh: humidity.rh,
-      status: humidity.status,
       dewPoint: humidity.dewPoint,
       evapFlux: flux.evapFlux,
       condFlux: flux.condFlux,
-      isBalanced: flux.isBalanced,
       pistonHeight,
-      curvePoints,
     }
-  }, [tempCelsius, vaporPressure, pistonVolume])
+  }, [tempCelsius, referencePressure, pistonVolume])
 }

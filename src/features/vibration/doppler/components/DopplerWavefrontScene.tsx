@@ -39,6 +39,7 @@ export const DopplerWavefrontScene: FC<DopplerWavefrontSceneProps> = ({
     fBack,
     wavefronts,
     mode,
+    isSupersonic,
   } = physics
 
   // 波源在设计画布中的中心位置
@@ -117,12 +118,20 @@ export const DopplerWavefrontScene: FC<DopplerWavefrontSceneProps> = ({
         <text x={0} y={30} textAnchor="middle" fontSize={font(11)} fill={CANVAS_COLORS.labelText} fontWeight="bold">
           观察者 A (前方)
         </text>
-        <text x={0} y={44} textAnchor="middle" fontSize={font(10)} fill={CANVAS_COLORS.labelText}>
-          {`λ' = ${lambdaFront.toFixed(2)} m`}
-        </text>
-        <text x={0} y={57} textAnchor="middle" fontSize={font(10)} fill={CANVAS_COLORS.labelTextLight}>
-          {`听觉音调尖锐 (f'=${fFront.toFixed(0)}Hz)`}
-        </text>
+        {isSupersonic ? (
+          <text x={0} y={44} textAnchor="middle" fontSize={font(10)} fill={WAVE_COLORS.waveformB} fontWeight="bold">
+            激波波前 (马赫锥)
+          </text>
+        ) : (
+          <>
+            <text x={0} y={44} textAnchor="middle" fontSize={font(10)} fill={CANVAS_COLORS.labelText}>
+              {`λ' = ${lambdaFront.toFixed(2)} m`}
+            </text>
+            <text x={0} y={57} textAnchor="middle" fontSize={font(10)} fill={CANVAS_COLORS.labelTextLight}>
+              {`听觉音调尖锐 (f'=${fFront.toFixed(0)}Hz)`}
+            </text>
+          </>
+        )}
       </g>
 
       {/* ── 5. 运动波源主体 ── */}

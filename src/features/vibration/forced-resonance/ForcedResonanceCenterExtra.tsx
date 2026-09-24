@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CharacteristicCurve } from '@/components/Chart/CharacteristicCurve'
+import { CHART_COLORS } from '@/theme/physics'
 import {
   calculateSteadyStateResonance,
   generateResonanceCurvePoints,
@@ -35,13 +36,13 @@ export default function ForcedResonanceCenterExtra() {
         {
           points: weakPoints,
           label: '弱阻尼 (γ=0.2)',
-          color: '#10B981',
+          series: 'success' as const,
           strokeWidth: 2,
         },
         {
           points: strongPoints,
           label: '强阻尼 (γ=1.2)',
-          color: '#F59E0B',
+          series: 'warm' as const,
           strokeWidth: 2,
           strokeDasharray: [4, 4],
         },
@@ -55,7 +56,7 @@ export default function ForcedResonanceCenterExtra() {
       {
         y: steady.maxAmplitude,
         label: `共振峰 (${steady.f0.toFixed(2)} Hz)`,
-        color: '#EF4444',
+        color: CHART_COLORS.criticalPt,
         dasharray: '4 4',
       },
     ]

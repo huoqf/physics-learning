@@ -22,13 +22,14 @@ export function buildElectrostaticShieldingQuantities(
     { label: '外加电场强度', symbol: 'E_0', value: E0, unit: 'V/m' },
     { label: '感应电荷电场', symbol: "E'", value: res.EPrime, unit: 'V/m' },
     { label: '内部合场强', symbol: 'E_{\\text{内}}', value: res.ENet, unit: 'V/m' },
-    { label: '导体等势电势', symbol: '\\varphi', value: res.potential, unit: 'V' },
+    { label: '导体等势电势（示意）', symbol: '\\varphi', value: res.potential, unit: 'V' },
   ]
 
   if (mode === 1) {
     quantities.push(
       { label: '尖端曲率半径', symbol: 'R', value: tipRadius, unit: 'mm' },
-      { label: '尖端电荷面密度', symbol: '\\sigma', value: res.tipChargeDensity, unit: 'μC/m²' },
+      // 相对指数（无量纲）：真实 σ 需由边界条件求解，此处仅用于比较尖端与圆钝端
+      { label: '尖端电荷面密度指数', symbol: '\\sigma', value: res.tipChargeDensity, unit: '' },
       { label: '空气放电状态', symbol: '放电', value: res.isAirBreakdown ? '击穿放电' : '维持绝缘', unit: '' },
     )
   }

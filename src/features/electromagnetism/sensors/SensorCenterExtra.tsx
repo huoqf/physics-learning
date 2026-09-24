@@ -1,6 +1,7 @@
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CharacteristicCurve } from '@/components/Chart'
+import { CHART_COLORS } from '@/theme/physics'
 import { useSensorPhysics } from './hooks/useSensorPhysics'
 
 export default function SensorCenterExtra() {
@@ -44,7 +45,7 @@ export default function SensorCenterExtra() {
                 {
                   y: physics.thresholdLineY,
                   label: '动作触发阈值',
-                  color: '#ef4444',
+                  color: CHART_COLORS.criticalPt,
                 },
               ]
             : undefined

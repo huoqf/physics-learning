@@ -9,6 +9,32 @@ export interface CrystalLatticeNode {
 }
 
 /**
+ * 常见液体在 20℃ 下的表面张力系数 γ (N/m)
+ * 水 ≈ 0.0728；水银 ≈ 0.465（约为水的 6.4 倍）
+ */
+export const LIQUID_SURFACE_TENSION = {
+  water: 0.0728,
+  mercury: 0.465,
+} as const
+
+/**
+ * 常见液体在 20℃ 下与玻璃的接触角 θ (rad)
+ * 水浸润（近似取 0）；水银不浸润（≈ 140°）
+ */
+export const LIQUID_CONTACT_ANGLE = {
+  water: 0,
+  mercury: (140 * Math.PI) / 180,
+} as const
+
+/**
+ * 常见液体的密度 ρ (kg/m³)
+ */
+export const LIQUID_DENSITY = {
+  water: 1000,
+  mercury: 13600,
+} as const
+
+/**
  * 生成晶体（单晶规则点阵）与非晶体（无序结构）的二维截面分子坐标
  */
 export function generateLatticeNodes(

@@ -37,6 +37,8 @@ export interface DopplerPhysicsResult {
   sourceWaveform: WaveformPoint[]
   frontWaveform: WaveformPoint[]
   backWaveform: WaveformPoint[]
+  /** 是否处于超音速（vs ≥ v）状态：此时前方无规则波列，多普勒频率公式失效，应表述为激波/马赫锥 */
+  isSupersonic: boolean
 }
 
 export function useDopplerPhysics(params: DopplerParams): DopplerPhysicsResult {
@@ -131,6 +133,7 @@ export function useDopplerPhysics(params: DopplerParams): DopplerPhysicsResult {
       sourceWaveform,
       frontWaveform,
       backWaveform,
+      isSupersonic: vs >= waveSpeed,
     }
   }, [waveSpeed, sourceSpeed, frequency, observerSpeed, mode, time])
 }
