@@ -1,0 +1,252 @@
+{
+  "src/components/Chart/CharacteristicCurve.tsx": {
+    "no-restricted-syntax": {
+      "count": 9
+    }
+  },
+  "src/components/Physics/Block.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "src/components/Physics/LabRuler.tsx": {
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "src/components/Physics/LabStand.tsx": {
+    "no-restricted-syntax": {
+      "count": 15
+    }
+  },
+  "src/components/Physics/Micrometer.tsx": {
+    "no-restricted-syntax": {
+      "count": 22
+    }
+  },
+  "src/components/Physics/PaperTape.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "src/components/Physics/ParametricMagneticField.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/components/Physics/Photogate.tsx": {
+    "no-restricted-syntax": {
+      "count": 10
+    }
+  },
+  "src/components/Physics/PhysicsGround.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "src/components/Physics/ProblemDiagrams/MasterProblemDiagrams.tsx": {
+    "no-restricted-syntax": {
+      "count": 172
+    }
+  },
+  "src/components/Physics/Rheostat.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/components/Physics/SpringBalance.tsx": {
+    "no-restricted-syntax": {
+      "count": 7
+    }
+  },
+  "src/components/Physics/TickerTimer.tsx": {
+    "no-restricted-syntax": {
+      "count": 17
+    }
+  },
+  "src/components/Physics/TimerDisplay.tsx": {
+    "no-restricted-syntax": {
+      "count": 15
+    }
+  },
+  "src/components/Physics/TransformerApparatus.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/components/Physics/VernierCaliper.tsx": {
+    "no-restricted-syntax": {
+      "count": 20
+    }
+  },
+  "src/components/UI/PhysicsPanel.tsx": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "src/features/dev/VectorPlayground.tsx": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "src/features/electromagnetism/dc-circuits/OhmLaw.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/features/electromagnetism/induction/loop-field/components/LoopPassFieldScene.tsx": {
+    "no-restricted-syntax": {
+      "count": 12
+    }
+  },
+  "src/features/electromagnetism/magnetism/combined-fields/components/DeflectScene.tsx": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "src/features/electromagnetism/magnetism/combined-fields/components/SpectrometerScene.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "src/features/electromagnetism/magnetism/components/InclinedAmpereScene.tsx": {
+    "no-restricted-syntax": {
+      "count": 9
+    }
+  },
+  "src/features/electromagnetism/magnetism/components/InclinedForceVectors.tsx": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "src/features/mechanics/dynamics/ConveyorAnimation.tsx": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
+  "src/features/mechanics/dynamics/ConveyorChart.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "src/features/mechanics/dynamics/OrthogonalDecompositionAnimation.tsx": {
+    "no-restricted-syntax": {
+      "count": 15
+    }
+  },
+  "src/features/mechanics/dynamics/SpringForceCenterExtra.tsx": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "src/features/mechanics/dynamics/SystemIsolatedMethodologyAnimation.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/features/mechanics/dynamics/components/Model1InclineEquilibrium.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/features/mechanics/dynamics/components/Model2InclineSliding.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/features/mechanics/dynamics/components/SystemViewBox.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "src/features/mechanics/energy/SpringCompositeAnimation.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "src/features/mechanics/experiment/components/MechanicsExperimentScene.tsx": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "src/features/modern/bohr-theory/components/BohrOrbits.tsx": {
+    "no-restricted-syntax": {
+      "count": 15
+    }
+  },
+  "src/features/modern/bohr-theory/components/drawExcitation.ts": {
+    "no-restricted-syntax": {
+      "count": 17
+    }
+  },
+  "src/features/modern/bohr-theory/hooks/useExcitationSimulation.ts": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "src/features/modern/nuclear-decay/NuclearDecayAnimation.tsx": {
+    "no-restricted-syntax": {
+      "count": 28
+    }
+  },
+  "src/features/modern/nuclear-decay/components/NuclearDecayScene.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/features/modern/nuclear-decay/components/NuclearHalfLifeScene.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/features/modern/photoelectric/components/PhototubeCanvas.tsx": {
+    "no-restricted-syntax": {
+      "count": 16
+    }
+  },
+  "src/features/optics/diffraction/components/DiffractionScene.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/features/optics/laser/components/LaserScene.tsx": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "src/features/optics/polarization/components/PolarizationScene.tsx": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "src/features/optics/thin-lens/ThinLensAnimation.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/features/thermodynamics/secondLaw/SecondLawCenterExtra.tsx": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "src/features/vibration/simpleHarmonic/SimpleHarmonicAnimation.tsx": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "src/features/vibration/simpleHarmonic/components/HorizontalSpringScene.tsx": {
+    "no-restricted-syntax": {
+      "count": 13
+    }
+  },
+  "src/features/vibration/simpleHarmonic/components/VerticalSpringScene.tsx": {
+    "no-restricted-syntax": {
+      "count": 16
+    }
+  },
+  "src/features/vibration/wave/WaveDiffractionAnimation.tsx": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  }
+}

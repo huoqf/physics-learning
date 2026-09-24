@@ -12,3 +12,8 @@ pre-commit:
       run: npx tsc --noEmit
     test:
       run: npx vitest --run
+    guards:
+      # 6 个守门脚本（字号 / 大文件 / rAF / marker / 组件复用 / viewport 遗留），
+      # 全仓扫描、不接受文件参数，实测约 4.5s。改动源码时触发。
+      glob: "{**/,}*.{ts,tsx}"
+      run: npm run check:architecture

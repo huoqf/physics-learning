@@ -51,6 +51,19 @@ export default [
     },
   },
 
+  // 1-c) 禁止硬编码颜色（铁律1-1）
+  // 作用域仅限页面/组件层；src/theme/ 是颜色 token 的 SSOT，其字面量 hex 属合法定义。
+  // 存量违规由 .eslint-suppressions.json 冻结（B1 基线抑制），新增违规立即报错。
+  {
+    files: ['src/features/**/*.{ts,tsx}', 'src/components/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': ['error', {
+        selector: 'Literal[value=/^#[0-9A-Fa-f]{3,8}$/]',
+        message: '禁止硬编码颜色，请改用主题 token（PHYSICS_COLORS / SCENE_COLORS / CHART_COLORS）',
+      }],
+    },
+  },
+
   // 2) 构建/工具配置文件（Node 环境）
   {
     files: ['*.config.{ts,js,mjs}', 'vite.config.ts', 'vitest.config.ts'],
