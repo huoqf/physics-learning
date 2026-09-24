@@ -92,8 +92,8 @@ describe('emWave · formatFrequency（回归锁）', () => {
   it('7 个谱段的代表性频率都产出规范读数', () => {
     expect(formatFrequency(frequencyFromWavelength(100))).toBe('3.00 MHz') // 无线电波 100 m
     expect(formatFrequency(frequencyFromWavelength(1e-2))).toBe('30.0 GHz') // 微波 1 cm
-    expect(formatFrequency(frequencyFromWavelength(1e-5))).toBe('30.0 THz') // 红外 10 μm
-    expect(formatFrequency(frequencyFromWavelength(550e-9))).toBe('545 THz') // 可见光 550 nm
+    expect(formatFrequency(frequencyFromWavelength(1e-5))).toBe('3.00 × 10¹³ Hz') // 红外 10 μm (课标采用科学记数法)
+    expect(formatFrequency(frequencyFromWavelength(550e-9))).toBe('5.45 × 10¹⁴ Hz') // 可见光 550 nm (课标采用科学记数法)
     expect(formatFrequency(frequencyFromWavelength(200e-9))).toBe('1.50 × 10¹⁵ Hz') // 紫外 200 nm
     expect(formatFrequency(frequencyFromWavelength(1e-9))).toBe('3.00 × 10¹⁷ Hz') // X 射线 1 nm
     expect(formatFrequency(frequencyFromWavelength(1e-12))).toBe('3.00 × 10²⁰ Hz') // γ 射线 1 pm
@@ -110,7 +110,7 @@ describe('emWave · formatFrequency（回归锁）', () => {
     expect(formatFrequency(1e3)).toBe('1.00 kHz')
     expect(formatFrequency(1e6)).toBe('1.00 MHz')
     expect(formatFrequency(1e9)).toBe('1.00 GHz')
-    expect(formatFrequency(1e12)).toBe('1.00 THz')
+    expect(formatFrequency(1e12)).toBe('1.00 × 10¹² Hz')
     expect(formatFrequency(1e15)).toBe('1.00 × 10¹⁵ Hz')
   })
 
@@ -118,7 +118,7 @@ describe('emWave · formatFrequency（回归锁）', () => {
     expect(formatFrequency(999.9)).toBe('1.00 kHz')
     expect(formatFrequency(999900)).toBe('1.00 MHz')
     expect(formatFrequency(999.9e6)).toBe('1.00 GHz')
-    expect(formatFrequency(999.9e9)).toBe('1.00 THz')
+    expect(formatFrequency(999.9e9)).toBe('1.00 × 10¹² Hz')
     expect(formatWavelength(0.9999e-6)).toBe('1.00 μm')
     expect(formatWavelength(999.9)).toBe('1.00 km')
   })

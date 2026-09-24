@@ -171,9 +171,10 @@ function toSuperscript(num: number): string {
 }
 
 /**
- * 把频率格式化为便于阅读的字符串（自动选择 Hz / kHz / MHz / GHz / THz 或标准科学记数法）。
+ * 把频率格式化为便于阅读的字符串（自动选择 Hz / kHz / MHz / GHz 或高中标准科学记数法）。
  *
- * 采用 999.5 升档阈值与 Unicode 上标科学记数法，杜绝 "1.00e+3" 或 "3.00e+8 GHz" 等失范表示。
+ * 采用 999.5 升档阈值与 Unicode 上标科学记数法，杜绝 "1.00e+3" 或 "3.00e+8 GHz" 等失范表示；
+ * 严禁向高中生呈现课标外单位 THz，≥ 999.5 GHz 统一采用标准科学记数法（如 5.45 × 10¹⁴ Hz）。
  *
  * @param f 频率 (Hz)
  */
@@ -183,9 +184,7 @@ export function formatFrequency(f: number): string {
   if (f < 999.5e3) return `${(f / 1e3).toPrecision(3)} kHz`
   if (f < 999.5e6) return `${(f / 1e6).toPrecision(3)} MHz`
   if (f < 999.5e9) return `${(f / 1e9).toPrecision(3)} GHz`
-  // 10¹² ~ 10¹⁵ Hz：红外/可见光频段，高中常用 THz
-  if (f < 999.5e12) return `${(f / 1e12).toPrecision(3)} THz`
-  // ≥ 10¹⁵ Hz（紫外、X 射线、γ 射线）：高中统一使用标准科学记数法（如 3.00 × 10¹⁸ Hz）
+  // ≥ 999.5 GHz（红外、可见光、紫外、X 射线、γ 射线）：高中统一使用标准科学记数法（如 5.45 × 10¹⁴ Hz）
   const [mantissaStr, expStr] = f.toExponential(2).split('e')
   const expNum = parseInt(expStr, 10)
   return `${mantissaStr} × 10${toSuperscript(expNum)} Hz`

@@ -8,6 +8,7 @@ import {
   sampleLCWaveform,
   lcDampingAmplitude,
   DAMPING_TAU_PERIODS,
+  formatLCEnergy,
   type LCParams,
 } from '@/physics/lcOscillation'
 
@@ -283,3 +284,32 @@ describe('lcOscillation · 阻尼（damped: true）全链路同源', () => {
     }
   })
 })
+
+describe('lcOscillation · 能量格式化单一来源 formatLCEnergy', () => {
+  it('极小残差或绝对零严格归一为 0.00，杜绝科学记数法泄漏', () => {
+    expect(formatLCEnergy(0)).toBe('0.00')
+    expect(formatLCEnergy(-0)).toBe('0.00')
+    expect(formatLCEnergy(1e-15)).toBe('0.00')
+    expect(formatLCEnergy(9.9e-5)).toBe('0.00')
+    expect(formatLCEnergy(-9.9e-5)).toBe('0.00')
+  })
+
+  it('微小有效值（1e-4 ~ 1 J）统一保留 3 位小数，杜绝小数位跳变', () => {
+    expect(formatLCEnergy(1e-4)).toBe('0.000')
+    expect(formatLCEnergy(0.042)).toBe('0.042')
+    expect(formatLCEnergy(0.5)).toBe('0.500')
+    expect(formatLCEnergy(0.999)).toBe('0.999')
+  })
+
+  it('中等值（1 ~ 100 J）保留 2 位小数', () => {
+    expect(formatLCEnergy(1.0)).toBe('1.00')
+    expect(formatLCEnergy(2.345)).toBe('2.35')
+    expect(formatLCEnergy(99.99)).toBe('99.99')
+  })
+
+  it('大数值（>= 100 J）保留 1 位小数', () => {
+    expect(formatLCEnergy(100.0)).toBe('100.0')
+    expect(formatLCEnergy(250.67)).toBe('250.7')
+  })
+})
+

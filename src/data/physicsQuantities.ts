@@ -225,10 +225,43 @@ export function buildPhysicsQuantities(
     if (result) return result
   }
 
-  // 兜底：构建器未加载或不匹配时，返回参数列表
+/**
+ * 常见物理参数英文键名 → 规范中文标签映射。
+ *
+ * 仅用于构建器异步加载的首帧短暂兜底，杜绝向用户吐出裸英文键名。
+ */
+const COMMON_PARAM_LABELS: Record<string, string> = {
+  // 电磁学
+  L: '电感 L',
+  C: '电容 C',
+  Q0: '初始电荷量 Q₀',
+  showDamping: '阻尼衰减',
+  fEM: '频率 f',
+  scene: '演示场次',
+  band: '电磁波谱段',
+  B: '磁感应强度 B',
+  E: '电场强度 E',
+  U: '电压 U',
+  I: '电流 I',
+  R: '电阻 R',
+  r: '内阻 r',
+  // 力学与通用
+  m: '质量 m',
+  v0: '初速度 v₀',
+  v: '速度 v',
+  a: '加速度 a',
+  theta: '倾角 θ',
+  mu: '动摩擦因数 μ',
+  k: '劲度系数 k',
+  h: '高度 h',
+  x: '位移 x',
+  t: '时间 t',
+}
+
+  // 兜底：构建器未加载或不匹配时，返回参数列表（映射为规范中文标签）
   return {
     quantities: Object.entries(params).map(([key, value]) => ({
-      label: key,
+      label: COMMON_PARAM_LABELS[key] ?? key,
       value,
       unit: '',
     })),

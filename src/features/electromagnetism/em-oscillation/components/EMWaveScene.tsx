@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import {
   CANVAS_COLORS,
   EM_OSCILLATION_COLORS,
@@ -93,10 +94,30 @@ export function EMWaveScene({ physics, font }: EMWaveSceneProps) {
       ? `${bPath} L ${PLOT.x + wave[wave.length - 1].x * PLOT.width} ${AXIS_Y} L ${PLOT.x} ${AXIS_Y} Z`
       : ''
 
+  // 密集梳齿填充：波长数较少时渲染，高频过密时关闭
   const combs =
     wavelengthCount <= COMB_MAX_WAVELENGTHS
       ? wave.filter((_, i) => i % COMB_STEP === 0)
       : []
+
+  // 同相特征截面（与梳齿解耦）：提取波峰与波谷，全频段（100~1000 MHz）恒定保证 E 与 B 具有显式贯通投影虚线
+  const peakSamples = useMemo(() => {
+    const rawPeaks: typeof wave = []
+    for (let i = 1; i < wave.length - 1; i++) {
+      const prev = wave[i - 1].y
+      const curr = wave[i].y
+      const next = wave[i + 1].y
+      const isLocalMax = curr > prev && curr >= next && curr > 0.75
+      const isLocalMin = curr < prev && curr <= next && curr < -0.75
+      if (isLocalMax || isLocalMin) {
+        rawPeaks.push(wave[i])
+      }
+    }
+    // 超过 10 个特征点时隔一个采样，避免 1000 MHz 下连线过密
+    return rawPeaks.length > 10
+      ? rawPeaks.filter((_, idx) => idx % 2 === 0)
+      : rawPeaks
+  }, [wave])
 
   return (
     <>
@@ -206,35 +227,18 @@ export function EMWaveScene({ physics, font }: EMWaveSceneProps) {
         />
       </g>
 
-      {/* ── 4. 正交微矢量群与波峰同相竖直辅助线（锚定空间同一截面 x）── */}
+      {/* ── 4. 梳齿连线（低频背景辅助）与同相特征截面贯穿虚线（全频段恒定生效）── */}
       <g>
+        {/* 4.1 低频梳齿背景细线 */}
         {combs.map((s, i) => {
           const off = bOffset(s.y)
           const px = PLOT.x + s.x * PLOT.width
           const tipBX = px + off.x
           const tipBY = AXIS_Y + off.y
           const tipEY = eY(s.y)
-          const isLarge = Math.abs(s.y) > 0.4
-          const isPeak = Math.abs(s.y) > 0.88
-          const bAngle = Math.atan2(off.y, off.x)
 
           return (
-            <g key={`comb-pair-${i}`}>
-              {/* 同一空间截面的 E/B 对应虚线（波峰处贯通标识，明确两场同相） */}
-              {isPeak && (
-                <line
-                  x1={px}
-                  y1={tipEY}
-                  x2={tipBX}
-                  y2={tipBY}
-                  stroke={CANVAS_COLORS.labelTextLight}
-                  strokeWidth={STROKE.fieldLineThin}
-                  strokeDasharray="2,3"
-                  opacity={0.55}
-                />
-              )}
-
-              {/* 电场梳齿连线 */}
+            <g key={`comb-bg-${i}`}>
               <line
                 x1={px}
                 y1={AXIS_Y}
@@ -242,18 +246,8 @@ export function EMWaveScene({ physics, font }: EMWaveSceneProps) {
                 y2={tipEY}
                 stroke={EM_OSCILLATION_COLORS.eFieldWave}
                 strokeWidth={STROKE.fieldLineThin}
-                opacity={0.35}
+                opacity={0.25}
               />
-              {/* 电场微箭头 */}
-              {isLarge && (
-                <polygon
-                  points={`${px},${tipEY} ${px - 3},${tipEY + (s.y > 0 ? 5 : -5)} ${px + 3},${tipEY + (s.y > 0 ? 5 : -5)}`}
-                  fill={EM_OSCILLATION_COLORS.eFieldWave}
-                  opacity={0.85}
-                />
-              )}
-
-              {/* 磁场梳齿连线 */}
               <line
                 x1={px}
                 y1={AXIS_Y}
@@ -261,27 +255,75 @@ export function EMWaveScene({ physics, font }: EMWaveSceneProps) {
                 y2={tipBY}
                 stroke={EM_OSCILLATION_COLORS.bFieldWave}
                 strokeWidth={STROKE.fieldLineThin}
-                opacity={0.35}
+                opacity={0.25}
               />
-              {/* 磁场微箭头 */}
-              {isLarge && (
-                <polygon
-                  points={`${tipBX},${tipBY} ${tipBX - 5 * Math.cos(bAngle - 0.45)},${tipBY - 5 * Math.sin(bAngle - 0.45)} ${tipBX - 5 * Math.cos(bAngle + 0.45)},${tipBY - 5 * Math.sin(bAngle + 0.45)}`}
-                  fill={EM_OSCILLATION_COLORS.bFieldWave}
-                  opacity={0.85}
-                />
-              )}
+            </g>
+          )
+        })}
 
-              {/* 中轴共点锚点：表明 E 与 B 源自空间同一位置 x */}
-              {isPeak && (
-                <circle
-                  cx={px}
-                  cy={AXIS_Y}
-                  r={1.8}
-                  fill={CANVAS_COLORS.axis}
-                  opacity={0.75}
-                />
-              )}
+        {/* 4.2 同相特征截面贯通虚线与正交峰值微矢量（全频段 100~1000 MHz 均保持渲染，彻底锚定同相几何） */}
+        {peakSamples.map((s, i) => {
+          const off = bOffset(s.y)
+          const px = PLOT.x + s.x * PLOT.width
+          const tipBX = px + off.x
+          const tipBY = AXIS_Y + off.y
+          const tipEY = eY(s.y)
+          const bAngle = Math.atan2(off.y, off.x)
+
+          return (
+            <g key={`peak-inphase-${i}`}>
+              {/* E 峰与 B 峰之间的同截面贯穿虚线：直观证明两者源自同一空间位置 x，消除横向视差 */}
+              <line
+                x1={px}
+                y1={tipEY}
+                x2={tipBX}
+                y2={tipBY}
+                stroke={CANVAS_COLORS.labelTextLight}
+                strokeWidth={STROKE.annotation}
+                strokeDasharray="3,3"
+                opacity={0.8}
+              />
+
+              {/* 中轴公共锚点：表明两场源自空间同一位置 x */}
+              <circle
+                cx={px}
+                cy={AXIS_Y}
+                r={2.2}
+                fill={CANVAS_COLORS.axis}
+                opacity={0.9}
+              />
+
+              {/* 电场主矢量线与尖端微箭头 */}
+              <line
+                x1={px}
+                y1={AXIS_Y}
+                x2={px}
+                y2={tipEY}
+                stroke={EM_OSCILLATION_COLORS.eFieldWave}
+                strokeWidth={STROKE.axis}
+                opacity={0.7}
+              />
+              <polygon
+                points={`${px},${tipEY} ${px - 3.5},${tipEY + (s.y > 0 ? 6 : -6)} ${px + 3.5},${tipEY + (s.y > 0 ? 6 : -6)}`}
+                fill={EM_OSCILLATION_COLORS.eFieldWave}
+                opacity={0.9}
+              />
+
+              {/* 磁场主矢量线与斜向尖端微箭头 */}
+              <line
+                x1={px}
+                y1={AXIS_Y}
+                x2={tipBX}
+                y2={tipBY}
+                stroke={EM_OSCILLATION_COLORS.bFieldWave}
+                strokeWidth={STROKE.axis}
+                opacity={0.7}
+              />
+              <polygon
+                points={`${tipBX},${tipBY} ${tipBX - 6 * Math.cos(bAngle - 0.45)},${tipBY - 6 * Math.sin(bAngle - 0.45)} ${tipBX - 6 * Math.cos(bAngle + 0.45)},${tipBY - 6 * Math.sin(bAngle + 0.45)}`}
+                fill={EM_OSCILLATION_COLORS.bFieldWave}
+                opacity={0.9}
+              />
             </g>
           )
         })}
