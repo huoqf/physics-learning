@@ -24,7 +24,13 @@ describe('animationRegistry · ANIMATION_COUNT 一致性守卫', () => {
 
   it('新增的三个电磁振荡/电磁波动画均已注册', async () => {
     const { getAnimationConfigAsync } = await import('@/data/animationRegistry')
-    const ids = ['anim-lc-oscillation', 'anim-em-wave', 'anim-em-spectrum']
+    const ids = [
+      'anim-lc-oscillation',
+      'anim-em-wave',
+      'anim-em-spectrum',
+      'anim-ac-lc-impedance',
+      'anim-doppler-effect',
+    ]
     for (const id of ids) {
       const config = await getAnimationConfigAsync(id)
       expect(config, `${id} 未注册`).toBeDefined()

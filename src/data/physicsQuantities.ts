@@ -41,6 +41,8 @@ type BuilderName =
   | 'buildPolarizationQuantities'
   | 'buildLaserQuantities'
   | 'buildEmOscillationQuantities'
+  | 'buildACImpedanceQuantities'
+  | 'buildDopplerQuantities'
 
 /** 单条注册记录：懒加载器 + 构建器函数名 */
 interface QuantityRegistration {
@@ -68,6 +70,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-mechanical-wave':       { loader: () => import('./quantities/vibration'),      builderName: 'buildVibrationQuantities' },
   'anim-wave-diffraction':      { loader: () => import('./quantities/vibration'),      builderName: 'buildVibrationQuantities' },
   'anim-wave-interference':     { loader: () => import('./quantities/vibration'),      builderName: 'buildVibrationQuantities' },
+  'anim-doppler-effect':        { loader: () => import('./quantities/vibration/doppler'), builderName: 'buildDopplerQuantities' },
 
   // 力与运动专题
   'anim-force-motion-topic':    { loader: () => import('./quantities/forceMotion'),    builderName: 'buildForceMotionQuantities' },
@@ -146,6 +149,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-lc-oscillation':        { loader: () => import('./quantities/emOscillation'), builderName: 'buildEmOscillationQuantities' },
   'anim-em-wave':               { loader: () => import('./quantities/emOscillation'), builderName: 'buildEmOscillationQuantities' },
   'anim-em-spectrum':           { loader: () => import('./quantities/emOscillation'), builderName: 'buildEmOscillationQuantities' },
+  'anim-ac-lc-impedance':       { loader: () => import('./quantities/electromagnetism/acImpedance'), builderName: 'buildACImpedanceQuantities' },
 
   // 能量与功
   'anim-power':                 { loader: () => import('./quantities/energy'),         builderName: 'buildEnergyQuantities' },

@@ -38,7 +38,12 @@
 - **架构完善**：AnimationPage 规范合规重构（773→275行，registry 驱动）✅ · 项目规范整合至 .trae/rules/project_rules.md ✅ · 矢量箭头统一架构（VectorArrow + refMagnitude 归一化 + SceneConfig refMagnitudes + 项目规范同步）✅
 - **力学增强**：竖直上抛运动三屏联动重构 + 进阶模式 ✅ · 速度动画进阶版重构（基础版+进阶版双模式，含变加速/简谐振动/往返多阶段3种模型）✅ · 力的合成与分解手势拖拽重构与三模式教学改进 ✅ · 共点力平衡双绳悬挂手势拖拽重构与封闭三角形演示 ✅
 - **图表迁移**：KineticEnergyAnimation（995→157行）✅ · PowerAnimation（841→192行）✅
-- **下一步**：[M4-2] 热学组件——BrownianMotion / MolecularForce / GasLaws / IdealGasState / FirstLawThermo / SecondLawThermo
+- **章节扩展（2026-09-24）**：**电磁振荡与电磁波** `electricity-6-1/6-2/6-3` ✅ · **批次 1** `electricity-5-5`（感抗与容抗）与 `vibration-2-3`（多普勒效应）✅ · 组件复用守门脚本 `check-component-reuse` ✅（架构门禁 5 → 6 条）· 组件登记表 14 行 props 校正 + `Spring` 组件归位 ✅
+- **下一步**：按 [`process/TODO_deferred.md`](../process/TODO_deferred.md) 施工 ——
+  ① **横向基座先行**：`CharacteristicCurve` / `EnergyFlowBars` / `ChainCircuitBuilder`（§9.2）；
+  ② 批次 2：`electricity-4-8/4-9` 自感互感与涡流阻尼、`electricity-7-1/7-2` 传感器专题（§9.1）；
+  ③ 实验专题：`experiment-3-1` 测量金属丝电阻率（`Micrometer` 组件现成闲置，性价比最高，§9.3）。
+  遗留技术债见同文件**第十章**（E/B 相位差、双实现抽取、阈值统一、门禁粒度升级）。
 
 ---
 

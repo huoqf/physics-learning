@@ -375,4 +375,48 @@ export const vibrationOscillationAnimations = defineAnimations({
       },
     ],
   },
+  'anim-doppler-effect': {
+    title: '多普勒效应',
+    knowledgeId: 'vibration-2-3',
+    Component: lazy(() => import('@/features/vibration/doppler')),
+    controlsMode: 'timed',
+    defaultParams: {
+      mode: 0,
+      waveSpeed: 340,
+      sourceSpeed: 100,
+      frequency: 10,
+      observerSpeed: 0,
+    } as const,
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'mode',
+        group: '相对运动模型',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '波源运动 (观察者静止)' },
+          { value: 1, label: '观察者运动 (波源静止)' },
+          { value: 2, label: '超音速激波 (拓展)' },
+        ],
+      },
+      {
+        type: 'preset',
+        label: '📋 高考真题预设：鸣笛列车高速呼啸驶过',
+        group: '快捷预设',
+        params: () => ({ mode: 0, waveSpeed: 340, sourceSpeed: 120, frequency: 10, observerSpeed: 0 }),
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        variant: 'info',
+        content: '波源朝观察者靠近时，波前被挤压密集，接收频率升高（音调尖锐）；波源背离观察者远去时，波前被拉伸稀疏，接收频率降低（音调低沉）。',
+      },
+    ],
+    paramMeta: [
+      { key: 'sourceSpeed', label: '波源速度 vs', min: 0, max: 300, step: 20, unit: 'm/s', showIf: 'mode', showIfValue: 0 },
+      { key: 'waveSpeed', label: '介质波速 v', min: 200, max: 400, step: 20, unit: 'm/s' },
+      { key: 'frequency', label: '波源固有频率 f₀', min: 5, max: 20, step: 1, unit: 'Hz' },
+      { key: 'observerSpeed', label: '观察者速度 vo', min: -100, max: 100, step: 10, unit: 'm/s', showIf: 'mode', showIfValue: 1 },
+    ],
+  },
 })

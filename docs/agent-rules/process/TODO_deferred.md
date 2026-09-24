@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-07-19
+> 最后更新：2026-09-24（新增第九、十章：内容补全待办、页面审查遗留技术债）
 
 ---
 
@@ -448,3 +448,144 @@ npx playwright test
 - [ ] 图表尺寸由容器 CSS 或 `useCanvasSize` 驱动，不依赖 SVG 坐标
 - [ ] TypeScript 0 errors + Vitest 701 tests 全量通过
 - [ ] ESLint 0 errors 0 warnings 通过
+
+---
+
+## 九、内容补全待办（章节扩展 / 横向基座 / 实验专题 / 题库）
+
+> **来源**：`physics-learning-内容补全建议-2026-09-22.md`（缺口基线）+ 2026-09-24 逐轮实测核对。
+> **性质**：本章是**待完成计划**，不是完成记录。每完成一项把状态改为 `[x]`，并在 `PROCESS_LOG.md` / `logs/2026-Wxx.md` 写完成记录（含验证命令）。
+> **总账（2026-09-24）**：16 个缺口考点**已完成 5 项**（P0-1×3, P0-4, P0-5），P0 剩余 2 项未开工。
+
+### 9.1 缺口考点清单（16 项）
+
+| # | 优先级 | 节点 ID | 建议标题 | 复用资产 | 状态 |
+|:-:|:------:|---------|---------|---------|:----:|
+| 1 | P0-1 | `electricity-6-1` | 电磁振荡（LC 振荡电路） | `CapacitorPlates` `CoilBase` `DialMeter` `EnergyBars` | [x] 已完成 |
+| 2 | P0-1 | `electricity-6-2` | 麦克斯韦电磁场理论与电磁波 | 同上 + `VectorArrow` | [x] 已完成 |
+| 3 | P0-1 | `electricity-6-3` | 电磁波谱与无线电波的发射与接收 | `useEMSpectrumLayout` | [x] 已完成 |
+| 4 | **P0-5** | `electricity-5-5` | 电感与电容对交变电流的作用（感抗与容抗） | `CapacitorPlates` `CoilBase` `RotatingCoil` `DialMeter` `LightBulb` | [x] 已完成 |
+| 5 | **P0-4** | `vibration-2-3` | 多普勒效应 | `vibration-oscillation` 波形绘制 + `VectorArrow` | [x] 已完成 |
+| 6 | P1-1 | `electricity-4-8` | 自感与互感 | 并入自感动画 mode（禁止新起组件目录） | [ ] 未开工 |
+| 7 | P1-1 | `electricity-4-9` | 涡流、电磁阻尼与电磁驱动 | 并入 `electricity-4-8` 动画的 mode | [ ] 未开工 |
+| 8 | **P0-2** | `electricity-7-1` | 常见传感器及其工作原理（光敏/热敏/霍尔） | `Rheostat` `DialMeter` `Galvanometer` `LightBulb` `DCSource` + `dc-circuits` 拓扑 | [ ] 未开工（**整章缺失**） |
+| 9 | **P0-2** | `electricity-7-2` | 传感器的应用与自动控制 | 同上 | [ ] 未开工 |
+| 10 | **P0-3** | `vibration-1-3` | 受迫振动与共振 | 简谐运动骨架 + `VectorArrow` | [ ] 未开工 |
+| 11 | P1-2 | `thermodynamics-2-3` | 固体与液体（晶体/液晶/表面张力/浸润/毛细） | 分子粒子池 | [ ] 未开工 |
+| 12 | P1-3 | `thermodynamics-2-4` | 饱和汽与湿度 | `thermodynamics-kinematics` 粒子池 | [ ] 未开工 |
+| 13 | P1-5 | `electricity-1-8` | 静电的防止与利用（静电感应/尖端放电/静电屏蔽） | `VectorArrow` + 场线基座 | [ ] 未开工 |
+| 14 | P1-4 | `wave-optics-1-5` | 薄膜干涉与增透膜 | `wave-optics-1-1` 干涉骨架 | [ ] 未开工 |
+| 15 | P2 | `mechanics-6-6` | 相对论时空观与牛顿力学的局限性 | 轻量版单 mode | [ ] 未开工 |
+| 16 | P2 | `thermodynamics-3-3` | 能量守恒定律与能源 | 非计算章节 | [ ] 未开工 |
+| — | P2 | `modern-1-2` 内扩 mode | 康普顿效应 | 作为光电效应动画的一个 mode，**不单列节点** | [ ] 未开工 |
+| — | P2 | `electricity-1-6` 内补 | 电势能 | 先确认是否已被现有 1-6 覆盖（未确认前不新建） | [ ] 待确认 |
+
+**现状核对命令**（输出 `0` 即该节点尚不存在）：
+
+```bash
+for id in electricity-5-5 electricity-7-1 electricity-7-2 vibration-1-3 vibration-2-3 \
+          electricity-4-8 electricity-4-9 thermodynamics-2-3 thermodynamics-2-4 \
+          electricity-1-8 wave-optics-1-5 mechanics-6-6 thermodynamics-3-3; do
+  printf "%-24s %s\n" "$id" "$(grep -rl "'$id'" src/data/knowledge/ | wc -l)"
+done
+```
+
+**开放问题（动工前需定）**：① 固体与液体/饱和汽湿度是新起「热学 第4章」还是把现有「第2章 气体实验定律」改名；② 是否接受「一动画多节点」（`electricity-4-8/4-9` 共 mode）；③ 新增定性章节做到「现象演示级」还是「高考计算级」；④ 先补章节还是先补 2025 真题。
+
+### 9.2 横向基座（P1，**必须先于节点铺开**）
+
+> **缘由**：若先铺 20 个新节点再补基座，会得到 20 套互相不一致的实现，届时只能靠补丁互凑。建议**基座先行**。
+
+| # | 基座 | 服务对象 | 现状 | 状态 |
+|:-:|------|---------|------|:----:|
+| 1 | `CharacteristicCurve`（通用特性曲线屏） | 传感器 R-光照/R-T、共振曲线、伏安特性曲线、`X_L(f)`/`X_C(f)`、LC 振荡曲线 | 项目内**不存在**（同类曲线被各动画重复手写） | [ ] 未开工 |
+| 2 | `EnergyFlowBars`（能量转换柱扩展） | LC 振荡、电磁阻尼、热力学第一定律；由现有 `EnergyBars` 扩出「两库互相转换」模式 | 目前仅单组柱 `EnergyBars` | [ ] 未开工 |
+| 3 | `ChainCircuitBuilder`（电路拓扑构建） | 传感器、感抗容抗、实验电路共用同一套拓扑描述 | 项目内**不存在** | [ ] 未开工 |
+
+> **落地约束**：三者需从 `src/components/Physics/index.ts`（或 `Chart/`）导出，并在 `COMPONENT_REGISTRY.md` 登记**与源码一致的完整 props 签名**（见 §10.6）。
+> **核对命令**：`grep -rl "CharacteristicCurve\|EnergyFlowBars\|ChainCircuitBuilder" src/components src/features`（当前 0 命中）
+
+### 9.3 实验专题扩展（9 个节点，P1）
+
+现状：`src/data/knowledge/experiment.ts` 仅 `experiment-1-1` / `experiment-1-2`；其中 `experiment-1-2` 与 `electricity-2-5` **共用** `anim-experiment-er`（一动画挂两节点）。
+
+| 建议节点 ID | 实验 | 复用资产 | 状态 |
+|---|---|---|---|
+| `experiment-2-1` | 探究加速度与力、质量的关系 | `anim-mechanics-experiment-base` 纸带分析 mode | [ ] 未开工 |
+| `experiment-2-2` | 验证机械能守恒定律 | `TickerTimer` `PaperTape` | [ ] 未开工 |
+| `experiment-2-3` | 验证动量守恒定律 | `Rails` `Photogate` `Block` | [ ] 未开工 |
+| `experiment-2-4` | 用单摆测重力加速度 | `anim-simple-pendulum` 骨架 + `LabRuler` | [ ] 未开工 |
+| **`experiment-3-1`** | **测量金属丝的电阻率** | **`Micrometer`（螺旋测微器，组件现成但当前闲置）** + `VernierCaliper` | [ ] 未开工 ★**性价比最高** |
+| `experiment-3-2` | 描绘小灯泡的伏安特性曲线 | `Rheostat` `DialMeter` `LightBulb` | [ ] 未开工 |
+| `experiment-3-3` | 测定玻璃的折射率 | `optics-refraction` 骨架 | [ ] 未开工 |
+| `experiment-3-4` | 用双缝干涉测光的波长 | `optics-interference` 骨架 | [ ] 未开工 |
+| `experiment-3-5` | 多用电表的使用 | `electricity-2-4` + `DialMeter` | [ ] 未开工 |
+
+> **教学有效性硬要求**：每个实验动画必须带「**数据分析屏**」（图像斜率/截距 ↔ 物理量的对应关系）。实验动画的价值在**误差来源 + 数据处理 + 电路选择**三个决策点，而非演示操作流程。
+
+### 9.4 题库时效性（P1）
+
+- 现有题库年份仅 **2021–2024**（`grep -rho "year: 202[0-9]" src/data/problems/` → 2021:6 / 2022:14 / 2023:24 / 2024:13，共 57 题）；`year: 2025` **0 条**。
+- [ ] 补 2025 年真题 8–15 道，**优先覆盖本次新增章节**（LC 振荡 / 传感器 / 多普勒 / 受迫振动），避免"有动画没题"。
+- [ ] 补 2025 年代表性模拟题（河南/湖南/江苏/云南等卷）中上述章节的选择题。
+
+### 9.5 施工批次建议
+
+| 批次 | 内容 | 理由 |
+|---|---|---|
+| 批次 1（剩余） | `electricity-5-5`、`vibration-2-3` | 考点最热 + 复用度最高 + 无既有语义冲突 |
+| 批次 2 | `electricity-4-8/4-9`、`electricity-7-1/7-2` | 需先确认与既有 induction 动画控制项不冲突 |
+| 批次 3 | `vibration-1-3`、`thermodynamics-2-3/2-4`、`electricity-1-8` | 需新组件，工作量中等 |
+| 批次 4 | `wave-optics-1-5`、`mechanics-6-6`、实验专题扩展、2025 真题 | 低频或需先去重确认 |
+
+**每批次收尾必跑**：`tsc -b` / `eslint . --max-warnings 0` / `vitest run` / 6 个守门脚本（`npm run check:architecture`）/ 知识树↔注册表一致性（0 悬空 0 孤儿）。
+**每个新动画必须带**：≥1 个带数值断言的单测（方向/符号类错误只有数值断言能拦）。
+
+---
+
+## 十、页面审查遗留技术债（`em-oscillation` 模块）
+
+> **来源**：2026-09-24 六轮审查（报告《physics-learning-页面优化高中物理符合性审查-2026-09-24》§1–§14）尚未闭环项。
+> **已闭环、不再列入**：P0-A/P0-B、P1-4/P1-6/P1-7、P2-5~P2-10、P3-6/P3-8/P3-11/P3-13、组件登记表 14 行 props 校正、`Spring` 组件归位、第 6 条守门脚本 `check-component-reuse`。
+
+### 10.1 E/B 表观相位差仍正比于频率（P1）
+
+- **位置**：`src/features/electromagnetism/em-oscillation/components/EMWaveScene.tsx:32/75-78`
+- **现象**：`B_AXIS = { dx: -0.36, dy: 0.54 }` × `B_AMPLITUDE = 50` ⇒ 水平位移**恒为 18 px（屏幕常量）**；λ_px 随频率反比缩小 ⇒ 表观相位差 ∝ f：100 MHz `10.5°` → 500 MHz `52.3°` → **1000 MHz `104.1°`**。
+- **已解决的部分**：投影角塌缩（上轮 1000 MHz 偏竖直 2.8°）已消除；同相贯通虚线已全频段生效（实测虚线数 2/4/6/10/7/10）。
+- **矛盾本质**：「固定投影角」与「表观相位不随频率漂移」在单一几何下**不可兼得**。
+- [ ] **(a)** `EM_WAVE_FREQ_MAX_MHZ` 1000 → 500（`hooks/useEMWavePhysics.ts:15`，一行改动，Δφ 上限压到 52°）
+- [ ] **(b)** 或维持现状，在左屏 `controlMeta` 提示「B 轴为斜投影，波峰水平错位系透视效果」
+- [ ] **(c)** 或改上下面板（E、B 各一张共用 x 轴）——属重新设计，需单独立项
+
+### 10.2 双实现与判据分裂（P1/P2）
+
+| # | 问题 | 位置 | 状态 |
+|:-:|------|------|:----:|
+| 1 | `SolenoidFieldLines`（158 行）与 `CoupledCoilField`（170 行）是**两套独立实现**（各自内联 `bezierAt`/`bezierTangent`/`FieldArrow` 与透明度随电流逻辑；前者用绝对像素几何 36/58/86、后者用比例值 + 自适应 scale） | `src/components/Physics/SolenoidFieldLines.tsx` / `CoupledCoilField.tsx` | [ ] 未抽取 `CoilFieldLineBase` 共享基座 |
+| 2 | 右手定则 N/S 判据**双实现**：`CoilBase` 5 处 `current > 0` vs `SolenoidFieldLines:50` 的 `isLeftNorth = current > 0`；**无门禁守** | `CoilBase.tsx:249/313/315/325/327`、`SolenoidFieldLines.tsx:50` | [ ] 未收敛为单一导出（建议 `isLeftNorthOf(current)`） |
+
+### 10.3 物理层零截断阈值不统一（P3）
+
+- **位置**：`src/physics/lcOscillation.ts:123/139/149/151/161/163`
+- **现象**：仍为绝对阈值 `1e-12` / `1e-14`；而 `formatLCEnergy`（同文件）用的是 `1e-4`。**两套阈值并存**，且 `1e-12` 对 UI 无实际意义（比显示精度低 8 个数量级）。
+- [ ] 统一到 `1e-4`（与 `formatLCEnergy` 及 `GAOKAO_STANDARDS.md §2` 一致）
+
+### 10.4 LC 默认参数偏慢（P3）
+
+- **位置**：`src/data/quantities/emOscillation.ts:42` — `LC_DEFAULTS = { L: 1, C: 1, Q0: 1 }`
+- **现象**：`T = 2π√(LC) = 6.28 s`、`f = 0.16 Hz`，逐帧观察需等 6 秒完成一个周期，教学节奏偏慢。
+- [ ] 调整默认 L/C（保持 `T = 2π√(LC)` 与 registry `lcMaxTime` 同步）
+
+### 10.5 守门脚本粒度不足（P1，规范层）
+
+- **现象**：`scripts/check-component-reuse.mjs:82` 对 `COMPONENT_REGISTRY.md` 只做**名字存在性**校验（`registryContent.includes('`' + compName + '`')`），**不校验 props 签名**。
+- **实证代价**：2026-09-24 一次性新增的 11 条登记，props 列 **11/11 全部与源码不符**（如 `MagneticPoles` 漏必需的 `project3D`/`layer`、`Rails` 漏 `type`），门禁全程绿灯，只能靠人工发现。
+- [ ] 升级为「**签名级**」校验：用 TS Compiler API / `ts-morph` 抽 `XxxProps` 的必需字段名，断言 registry 对应行同时出现这些字段名
+- [ ] 附带：`SolenoidFieldLines`/`CoupledCoilField` 的重复实现、右手定则判据重复，**现有门禁均无法发现**（只查重名/导出/登记），需评估是否新增检查项
+
+### 10.6 组件登记表 props 漂移风险（P1，规范层）
+
+- 2026-09-24 已修正 14 行（11 条 props + `BarMagnet`/`SkeletonHand`/`Spring` 示例），当前与源码一致。
+- **风险未除**：`COMPONENT_REGISTRY.md` 是「新写动画场景前必须先查」的 SSOT，但**没有机制阻止它再次漂移**（同 §10.5）。
+- [ ] 与 §10.5 的门禁升级一并解决；升级前，每次改动组件 props 需**手工同步**登记表

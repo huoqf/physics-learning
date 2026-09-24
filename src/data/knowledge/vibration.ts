@@ -42,4 +42,14 @@ export const vibrationKnowledge: KnowledgeNode[] = [
     problemIds: [],
     prerequisites: ['vibration-2-1'],
   },
+  {
+    id: 'vibration-2-3',
+    title: '多普勒效应',
+    chapter: '机械振动与波 第2章 机械波',
+    module: 'vibration',
+    importance: 'gaokao',
+    animationIds: ['anim-doppler-effect'],
+    problemIds: [],
+    prerequisites: ['vibration-2-1'],
+  },
 ]

@@ -2,7 +2,7 @@
 
 ## 当前周期
 
-- 当前日期：2026-W39（09-22）
+- 当前日期：2026-W39（09-24）
 - 当前里程碑：M4 电磁/热/光/原子模块
 - 本周详细日志：[2026-W39.md](./logs/2026-W39.md)
 - 提交流程：[CHECKLIST.md](./CHECKLIST.md)
@@ -20,11 +20,18 @@
 ## 相关文档
 
 - 审查报告（修正版 v4）：[../reports/physics-learning-审查报告-2026-09-22.md](../reports/physics-learning-审查报告-2026-09-22.md)
+- **待完成项登记簿**：[TODO_deferred.md](./TODO_deferred.md) —— 第九章（内容补全待办：章节扩展 / 横向基座 / 实验专题 / 题库）、第十章（页面审查遗留技术债）
+- 页面符合性审查报告（2026-09-24，§1–§14）：**待归档至 `docs/reports/`**（当前存于外部会话工作区）
 
 ## 最近变更摘要
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 09-24 | batch-1 (ac-impedance & doppler) | feat | **批次 1 上线**：`electricity-5-5`（感抗与容抗）+ `vibration-2-3`（多普勒效应）；纯物理函数与单测；splitV 上图表下场景；人教版控制变量与声速比保真波前；动画总数 105→107，901 单测与 6 守门全绿 |
+| 09-24 | electromagnetism/em-oscillation | feat | **新增章节「电磁振荡与电磁波」**：`electricity-6-1`（LC 振荡）/`6-2`（麦克斯韦电磁场理论与电磁波）/`6-3`（电磁波谱）三节点 + `LCOscillationScene`/`EMWaveScene`/`EMSpectrumScene` + `physics/lcOscillation.ts`·`emWave.ts`。**阻尼定性**（仅衰减包络 + 文案，不解二阶 RLC 方程），组件全复用（`CapacitorPlates`/`CoilBase`/`EnergyBars`/`DialMeter`…），0 悬空 0 孤儿 |
+| 09-24 | scripts + skills | compliance | 新增**第 6 条守门脚本** `scripts/check-component-reuse.mjs`（151 行：unexported / unindexed / shadowed 三类检查，已实测能拦）；SKILL 新增 G 节 + 按需 reference `PHYSICAL_RULES.md`、`GAOKAO_STANDARDS.md`；`COMPONENT_REGISTRY.md` 补登记 11 个组件 |
+| 09-24 | electromagnetism/em-oscillation | fix | `fada08f`：同相贯通虚线从 `combs` 门禁**解耦**（全频段生效，实测 100~1000 MHz → 2/4/6/10/7/10 条，修复前 f≥500 MHz 为 **0** 条）；`formatFrequency` **删除 THz 课标外单位**（可见光改 `5.45 × 10¹⁴ Hz`）；`formatLCEnergy` 补 30 行边界单测 |
+| 09-24 | docs + components | fix | `810c009`：组件登记表 **14 行 props 校正**（其中新增 11 条原为 **11/11 全错**，如 `MagneticPoles` 漏必需 `project3D`/`layer`、`Rails` 漏 `type`）；`Spring` 组件由 `UI/` **归位** `Physics/`（13 处调用点 + 双向 barrel + `02_UI_RULES.md` 四者一致，消除双导入路径）|
 | 09-22 | various | fix | 审查报告 P0 批次：**F1–F7 七条物理错误**修复（折射/全反射方向反、玻尔 r∝n²、摩擦 1.12、热力学沙箱重写为等容传热+绝热做功、H-α 谱线改可见红光）|
 | 09-22 | data/quantities | docs | R1/R3/R5/R6 归类与文案：共轭法→`extend`、布儒斯特角→`extend`、碰撞"能量损失系数"→"非弹性程度"、删除空气→玻璃不可达全反射分支（**R2 复核后撤回**）|
 | 09-22 | data/registries | docs | R4：统一"自转向心力放大倍数"标签，删除重复的"离心力放大倍数" controlMeta，tip 改向心力口径 |
@@ -45,6 +52,9 @@
 | 08-02 | UI/layout | fix | 页面壳布局跳变修复：AnimationPage/ThreePanel/AnimationControls 三文件，零动画组件改动，根除所有动画页"初始偏小→播放跳变"通病 |
 
 > 更早摘要（07-01 ~ 07-06）已归档：[2026-W27.md](./logs/2026-W27.md) / [2026-W26.md](./logs/2026-06.md)
+>
+> ⚠️ **超出「最近 10-20 条」约定（当前 22 条，未能裁剪）**：`07-08` ~ `07-10` 共 7 条在 `logs/2026-W28.md`、`logs/2026-W27.md` 中**均无对应章节**，删除即丢失唯一记录。
+> 处理建议：下一次归档时把这 7 条**先补写为 W28 的正式章节**，再从本表移除；`08-02` 一条同理（应归入 W31）。
 
 ## 日志记录规范
 

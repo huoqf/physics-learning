@@ -291,6 +291,16 @@ export const electricityKnowledge: KnowledgeNode[] = [
     problemIds: [],
     prerequisites: ['electricity-5-3'],
   },
+  {
+    id: 'electricity-5-5',
+    title: '电感与电容对交变电流的作用',
+    chapter: '电磁学 第5章 交变电流',
+    module: 'electricity',
+    importance: 'gaokao',
+    animationIds: ['anim-ac-lc-impedance'],
+    problemIds: [],
+    prerequisites: ['electricity-5-1'],
+  },
   // ── 第6章 电磁振荡与电磁波（人教版选择性必修第二册 第4章）──────────────
   {
     id: 'electricity-6-1',
