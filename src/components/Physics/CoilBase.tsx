@@ -1,6 +1,6 @@
 import React from 'react'
 import { useUniqueSvgId } from '@/hooks'
-import { SCENE_COLORS } from '@/theme/physics'
+import { SCENE_COLORS, PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
 /**
@@ -45,9 +45,14 @@ export interface CoilBaseProps {
   animated?: boolean
   /** 自定义 CSS 类名 */
   className?: string
+  /** 引线出线模式：'down' 向下弯曲接检流计（默认，兼容现有页面）| 'horizontal' 水平左右引出接电路 | 'none' 无引线 */
+  leadType?: 'down' | 'horizontal' | 'none'
+  /** 是否根据电流方向显示两端磁极性 (N/S 极) 提示，默认 false */
+  showPolarity?: boolean
+  /** 是否在正面绕组上标出电流环绕方向箭头（符合高中物理右手螺旋定则教学习惯），默认 false */
+  showWindingArrows?: boolean
 
   // ── 定制 prop（Solenoid / PrimaryCoil 差异覆盖） ──
-
   /** 后半圈描边色，默认 SCENE_COLORS.coil.copperDark */
   backStrokeColor?: string
   /** 前半圈描边色，默认 SCENE_COLORS.coil.copperBase */
@@ -86,6 +91,9 @@ export const CoilBase: React.FC<CoilBaseProps> = ({
   showIronCore = true,
   animated = true,
   className = '',
+  leadType = 'down',
+  showPolarity = false,
+  showWindingArrows = false,
 
   backStrokeColor,
   frontStrokeColor,
@@ -176,40 +184,80 @@ export const CoilBase: React.FC<CoilBaseProps> = ({
       ))}
 
       {/* 3. 引出导线 */}
-      <path
-        d={`M ${turnCenters[0]} ${ry} C ${turnCenters[0] - 20} ${ry + 30}, ${-width / 2} ${ry + 50}, ${-width / 2} 120`}
-        fill="none"
-        stroke={leadStroke}
-        strokeWidth={leadStrokeWidth}
-      />
-      <path
-        d={`M ${turnCenters[turnCenters.length - 1]} ${-ry} C ${turnCenters[turnCenters.length - 1] + 30} ${-ry - 10}, ${width / 2} ${ry + 50}, ${width / 2} 120`}
-        fill="none"
-        stroke={leadStroke}
-        strokeWidth={leadStrokeWidth}
-      />
+      {leadType === 'down' && (
+        <>
+          <path
+            d={`M ${turnCenters[0]} ${ry} C ${turnCenters[0] - 20} ${ry + 30}, ${-width / 2} ${ry + 50}, ${-width / 2} 120`}
+            fill="none"
+            stroke={leadStroke}
+            strokeWidth={leadStrokeWidth}
+          />
+          <path
+            d={`M ${turnCenters[turnCenters.length - 1]} ${-ry} C ${turnCenters[turnCenters.length - 1] + 30} ${-ry - 10}, ${width / 2} ${ry + 50}, ${width / 2} 120`}
+            fill="none"
+            stroke={leadStroke}
+            strokeWidth={leadStrokeWidth}
+          />
+        </>
+      )}
+      {leadType === 'horizontal' && (
+        <>
+          <path
+            d={`M ${turnCenters[0]} ${ry} C ${turnCenters[0] - 18} ${ry}, ${-width / 2 + 10} 0, ${-width / 2} 0`}
+            fill="none"
+            stroke={leadStroke}
+            strokeWidth={leadStrokeWidth}
+          />
+          <path
+            d={`M ${turnCenters[turnCenters.length - 1]} ${-ry} C ${turnCenters[turnCenters.length - 1] + 18} ${-ry}, ${width / 2 - 10} 0, ${width / 2} 0`}
+            fill="none"
+            stroke={leadStroke}
+            strokeWidth={leadStrokeWidth}
+          />
+        </>
+      )}
 
       {/* 4. 前半部分绕线 */}
-      {turnCenters.map((cx, idx) => (
-        <g key={`front-group-${idx}`}>
-          <path
-            d={`M ${cx} ${ry} A ${rx} ${ry} 0 0 0 ${cx} ${-ry}`}
-            fill="none"
-            stroke={frontStroke}
-            strokeWidth={strokeW}
-            strokeLinecap="round"
-          />
-          {/* 铜线受光面高光 */}
-          <path
-            d={`M ${cx - 1} ${ry - 2} A ${rx - 1} ${ry - 2} 0 0 0 ${cx - 1} ${-ry + 2}`}
-            fill="none"
-            stroke={SCENE_COLORS.materials.specularWhite}
-            strokeWidth={highlightW}
-            strokeLinecap="round"
-            opacity="0.6"
-          />
-        </g>
-      ))}
+      {turnCenters.map((cx, idx) => {
+        const isMidTurn =
+          idx === Math.floor(displayTurns / 2) ||
+          (displayTurns > 3 && idx === Math.floor(displayTurns / 2) - 1)
+        const showArrowOnTurn = showWindingArrows && hasCurrent && isMidTurn
+
+        return (
+          <g key={`front-group-${idx}`}>
+            <path
+              d={`M ${cx} ${ry} A ${rx} ${ry} 0 0 0 ${cx} ${-ry}`}
+              fill="none"
+              stroke={frontStroke}
+              strokeWidth={strokeW}
+              strokeLinecap="round"
+            />
+            {/* 铜线受光面高光 */}
+            <path
+              d={`M ${cx - 1} ${ry - 2} A ${rx - 1} ${ry - 2} 0 0 0 ${cx - 1} ${-ry + 2}`}
+              fill="none"
+              stroke={SCENE_COLORS.materials.specularWhite}
+              strokeWidth={highlightW}
+              strokeLinecap="round"
+              opacity="0.6"
+            />
+            {/* 正面绕组电流绕向指示微箭头（符合人教版教材右手螺旋定则判定直觉，落于正面半环 cx+rx） */}
+            {showArrowOnTurn && (
+              <polygon
+                points={
+                  current > 0
+                    ? `${cx + rx},${-5} ${cx + rx - 3.5},${4} ${cx + rx + 3.5},${4}`
+                    : `${cx + rx},${5} ${cx + rx - 3.5},${-4} ${cx + rx + 3.5},${-4}`
+                }
+                fill={colors.danger[600]}
+                stroke={CANVAS_COLORS.white}
+                strokeWidth={0.8}
+              />
+            )}
+          </g>
+        )
+      })}
 
       {/* 5. 流光粒子 */}
       {showParticles &&
@@ -237,9 +285,49 @@ export const CoilBase: React.FC<CoilBaseProps> = ({
           })
         })}
 
-      {/* 导线连接点 */}
-      <circle cx={-width / 2} cy="120" r={leadEndpointRadius} fill={colors.neutral[800]} />
-      <circle cx={width / 2} cy="120" r={leadEndpointRadius} fill={colors.neutral[800]} />
+      {/* 导线连接点端子 */}
+      {leadType === 'down' && (
+        <>
+          <circle cx={-width / 2} cy="120" r={leadEndpointRadius} fill={colors.neutral[800]} />
+          <circle cx={width / 2} cy="120" r={leadEndpointRadius} fill={colors.neutral[800]} />
+        </>
+      )}
+      {leadType === 'horizontal' && (
+        <>
+          <circle cx={-width / 2} cy={0} r={leadEndpointRadius} fill={colors.neutral[800]} />
+          <circle cx={width / 2} cy={0} r={leadEndpointRadius} fill={colors.neutral[800]} />
+        </>
+      )}
+
+      {/* 6. 轴向磁极指示 (N/S 极标签，安培定则) */}
+      {showPolarity && hasCurrent && (
+        <g pointerEvents="none" fontSize={11} fontWeight="bold" textAnchor="middle" dominantBaseline="central">
+          {/* 左极 */}
+          <g transform={`translate(${-width / 2 - 16}, ${-ry - 12})`}>
+            <rect
+              x={-10}
+              y={-9}
+              width={20}
+              height={18}
+              rx={4}
+              fill={current > 0 ? PHYSICS_COLORS.magnetNorth : PHYSICS_COLORS.magnetSouth}
+            />
+            <text fill={CANVAS_COLORS.white}>{current > 0 ? 'N' : 'S'}</text>
+          </g>
+          {/* 右极 */}
+          <g transform={`translate(${width / 2 + 16}, ${-ry - 12})`}>
+            <rect
+              x={-10}
+              y={-9}
+              width={20}
+              height={18}
+              rx={4}
+              fill={current > 0 ? PHYSICS_COLORS.magnetSouth : PHYSICS_COLORS.magnetNorth}
+            />
+            <text fill={CANVAS_COLORS.white}>{current > 0 ? 'S' : 'N'}</text>
+          </g>
+        </g>
+      )}
     </g>
   )
 }

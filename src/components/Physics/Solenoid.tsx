@@ -29,6 +29,12 @@ export interface SolenoidProps {
   showIronCore?: boolean
   /** 是否启用流光粒子动画，默认为 true */
   animated?: boolean
+  /** 引线出线模式：'down' 向下弯曲接检流计（默认）| 'horizontal' 水平左右引出接电路 | 'none' 无引线 */
+  leadType?: 'down' | 'horizontal' | 'none'
+  /** 是否根据电流方向显示两端磁极性 (N/S 极) 提示，默认 false */
+  showPolarity?: boolean
+  /** 是否在正面绕组上标出电流环绕方向箭头（符合高中物理右手螺旋定则教学习惯），默认 false */
+  showWindingArrows?: boolean
 }
 
 /**

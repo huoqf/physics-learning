@@ -31,7 +31,13 @@ interface AnimationDataState {
 
 export interface AnimationState extends AnimationDataState {
   setAnimationType: (type: string | null) => void
+  /**
+   * ⚠️ 全量覆写参数对象（仅供页面初始化、卸载重置或全局 preset 切换使用）。
+   * 业务组件修改单一或部分参数请使用 updateParam 或 patchParams，严禁裸调本方法！
+   */
   setParams: (params: AnimationParams) => void
+  /** 局部批量浅合并（推荐用于同时更新多个参数，绝不会抹除未声明字段） */
+  patchParams: (partial: Partial<AnimationParams>) => void
   updateParam: (key: AnimationParamKey, value: AnimationParamValue) => void
   setTime: (time: number) => void
   setIsPlaying: (isPlaying: boolean) => void
@@ -70,6 +76,15 @@ export const useAnimationStore = create<AnimationState>((set) => ({
   ...initialState,
   setAnimationType: (type) => set({ animationType: type }),
   setParams: (params) => set({ params }),
+  patchParams: (partial) => set((state) => {
+    const nextParams = { ...state.params }
+    for (const [k, v] of Object.entries(partial)) {
+      if (typeof v === 'number' && !Number.isNaN(v)) {
+        nextParams[k] = v
+      }
+    }
+    return { params: nextParams }
+  }),
   updateParam: (key, value) => set((state) => ({
     params: { ...state.params, [key]: value },
     lastChangedParam: key,

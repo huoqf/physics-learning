@@ -18,3 +18,11 @@ export const EARTH_RADIUS = 6.37e6
 /** 理想气体常量 R (J/(mol·K)) */
 export const GAS_CONSTANT = 8.314
 
+/**
+ * 真空中的光速 c (m/s)。
+ *
+ * 高中物理教材取近似值 3.0×10⁸ m/s（精确值 299792458 m/s）。
+ * 电磁波在真空中同样以 c 传播，故本常量同时用于光学与电磁波计算。
+ */
+export const SPEED_OF_LIGHT = 3.0e8
+

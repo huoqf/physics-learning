@@ -5,14 +5,13 @@
  * 所有函数使用 SI 单位，能量单位为 eV（与高中物理教材一致）。
  */
 
+import { SPEED_OF_LIGHT } from './constants'
+
 /** 普朗克常数 h (eV·s) */
 export const PLANCK_CONSTANT_EV = 4.135667696e-15
 
 /** 铯 (Cs) 逸出功 W₀ (eV) — 默认阴极板材料 */
 export const CESIUM_WORK_FUNCTION = 2.14
-
-/** 光速 c (m/s) */
-export const SPEED_OF_LIGHT = 3.0e8
 
 /**
  * 计算截止频率 ν₀

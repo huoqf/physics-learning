@@ -1,5 +1,5 @@
 import { FC } from 'react'
-import { PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
 
 export interface EnergyBarItem {
   key: string
@@ -18,6 +18,26 @@ export interface EnergyBarsProps {
   items: EnergyBarItem[]
   /** 初始总能量参考值（绘制系统总能量虚线），可选 */
   initialEtot?: number
+  /**
+   * 归一化基准：决定「柱子满高」对应的数值。可选。
+   *
+   * ⚠️ 不传时的历史行为是 `Math.max(initialEtot ?? 1.0, ...values, 1e-3)`，
+   * 其中 `1.0` 下限意味着**能量量级远小于 1 J 时所有柱子会被压扁**。
+   * 例如 LC 振荡的电场能/磁场能在 1e-10 ~ 1e-6 J 量级，
+   * 此时必须显式传入 `normalizeMax`（如 `Q0²/(2C)`）才能得到可读的柱高。
+   *
+   * 传值后 `initialEtot` 仅作为参考虚线，不再参与归一化（消除双重语义）。
+   */
+  normalizeMax?: number
+  /**
+   * 是否显示「总和」读数。可选，默认 false。
+   *
+   * 用于「能量守恒 / 能量转换」类场景：多柱之和应恒等于常数，
+   * 例如 LC 振荡的电场能 ⇄ 磁场能、机械能 ⇄ 内能。
+   */
+  showConservationTotal?: boolean
+  /** 「总和」读数格式化函数，默认保留 2 位小数 */
+  conservationFormat?: (total: number) => string
   /** 面板标题，默认"系统机械能实时分配 (J)" */
   title?: string
   /** 响应式字体缩放函数，可选 */
@@ -36,6 +56,9 @@ export interface EnergyBarsProps {
 export const EnergyBars: FC<EnergyBarsProps> = ({
   items,
   initialEtot,
+  normalizeMax,
+  showConservationTotal = false,
+  conservationFormat,
   title = '系统机械能实时分配 (J)',
   font,
   hasCollision = false,
@@ -43,11 +66,17 @@ export const EnergyBars: FC<EnergyBarsProps> = ({
   compact = false,
 }) => {
   const values = items.map((item) => item.value)
-  const maxVal = Math.max(
-    initialEtot ?? 1.0,
-    ...values,
-    1e-3
-  )
+  // 归一化基准：显式 normalizeMax 优先；未传时保持历史行为（既有消费方零变化）
+  const maxVal =
+    normalizeMax !== undefined && normalizeMax > 0
+      ? normalizeMax
+      : Math.max(
+          initialEtot ?? 1.0,
+          ...values,
+          1e-3
+        )
+
+  const conservationTotal = items.reduce((sum, item) => sum + item.value, 0)
 
   const getPercent = (val: number) => {
     return Math.min(100, Math.max(0, (val / maxVal) * 100))
@@ -64,6 +93,21 @@ export const EnergyBars: FC<EnergyBarsProps> = ({
     return label.slice(0, 4) + '…'
   }
 
+  const initialNode = initialEtot !== undefined && (
+    <span className="text-neutral-400 font-medium font-mono" style={{ fontSize: fSize(9) }}>
+      初始: {compact ? initialEtot.toFixed(1) : initialEtot.toFixed(2)} J
+    </span>
+  )
+
+  const totalNode = showConservationTotal && (
+    <span
+      className="font-semibold font-mono"
+      style={{ fontSize: fSize(9), color: CANVAS_COLORS.labelText }}
+    >
+      总和: {(conservationFormat ?? ((v: number) => v.toFixed(2)))(conservationTotal)}
+    </span>
+  )
+
   return (
     <div className="flex flex-col p-2 bg-white rounded-lg border border-neutral-200/50 select-none w-full h-full min-h-[110px]">
       {/* 头部标题与数值对齐 */}
@@ -72,10 +116,13 @@ export const EnergyBars: FC<EnergyBarsProps> = ({
         style={{ fontSize: fSize(titleFs) }}
       >
         <span className="tracking-wide">{title}</span>
-        {initialEtot !== undefined && (
-          <span className="text-neutral-400 font-medium font-mono" style={{ fontSize: fSize(9) }}>
-            初始: {compact ? initialEtot.toFixed(1) : initialEtot.toFixed(2)} J
+        {totalNode ? (
+          <span className="inline-flex items-center gap-2 shrink-0">
+            {totalNode}
+            {initialNode}
           </span>
+        ) : (
+          initialNode
         )}
       </div>
 
@@ -105,6 +152,7 @@ export const EnergyBars: FC<EnergyBarsProps> = ({
               >
                 {/* 动态起伏的能量柱：移除 transition-all 防止 requestAnimationFrame 60fps 驱动下发生 300ms 延迟脱节 */}
                 <div
+                  data-testid={`energy-bar-${item.key}`}
                   className="w-full rounded-t-[2px] transition-colors duration-200"
                   style={{
                     height: `${getPercent(item.value)}%`,

@@ -9,18 +9,25 @@
 | anim-mechanical-wave | 机械波的形成与传播 | MechanicalWaveAnimation | — | wave | MechanicalWaveCenterExtra |
 | anim-wave-diffraction | 波的衍射 | WaveDiffractionAnimation | — | wave | WaveDiffractionCenterExtra |
 | anim-wave-interference | 波的干涉 | WaveInterferenceAnimation | — | wave | WaveInterferenceCenterExtra |
-| anim-second-law | 热力学第二定律（方向性与熵增） | SecondLawAnimation | — | secondLaw | SecondLawCenterExtra |
-| anim-brownian-motion | 分子热运动与布朗运动 | BrownianMotion | — | brownianMotion | BrownianMotionCenterExtra |
+| anim-second-law | 热力学第二定律（方向性与熵增） | SecondLawAnimation | SecondLawScene | secondLaw | SecondLawCenterExtra |
+| anim-brownian-motion | 分子热运动与布朗运动 | BrownianMotion | BrownianScene | — | BrownianMotionCenterExtra |
 | anim-intermolecular-forces | 分子间作用力 | IntermolecularForcesAnimation | — | intermolecularForces | IntermolecularForcesCenterExtra |
-| anim-gas-laws | 气体实验三定律 | GasLawsAnimation | — | gasLaws | — |
+| anim-gas-laws | 气体实验三定律 | GasLawsAnimation | — | gasLaws | GasLawsCenterExtra |
 | anim-clapeyron | 理想气体状态方程 | ClapeyronAnimation | — | clapeyron | ClapeyronCenterExtra |
-| anim-first-law | 热力学第一定律（能量守恒） | FirstLawAnimation | — | thermodynamics | FirstLawCenterExtra |
+| anim-first-law | 热力学第一定律（能量守恒） | FirstLawAnimation | FirstLawScene | firstLaw | FirstLawCenterExtra |
 | anim-total-reflection | 全反射与临界角 | TIRAnimation | — | optics | — |
 | anim-thin-lens | 薄透镜成像规律 | ThinLensAnimation | — | optics | — |
 | anim-refraction | 光的折射定律 | RefractionAnimation | — | optics | — |
 | anim-reflection | 光的反射定律 | ReflectionAnimation | — | — | — |
+| anim-polarization | 光的偏振 | PolarizationAnimation | PolarizationScene | — | — |
+| anim-laser | 激光的特性与应用 | LaserAnimation | LaserScene | — | — |
+| anim-double-slit-interference | 光的双缝干涉 | DoubleSlitInterferenceAnimation | DoubleSlitInterferenceScene | — | — |
+| anim-diffraction | 光的衍射与泊松亮斑 | DiffractionAnimation | DiffractionScene | — | — |
 | anim-bohr-theory | 原子结构与玻尔理论 | BohrTheoryAnimation | — | — | — |
 | anim-photoelectric | 光电效应与光的波粒二象性 | PhotoelectricAnimation | — | — | — |
+| anim-nuclear-decay | 原子核的组成与天然放射 | NuclearDecayAnimation | NuclearDecayScene | — | — |
+| anim-nuclear-half-life | 原子核衰变与半衰期 | NuclearHalfLifeAnimation | NuclearHalfLifeScene | — | — |
+| anim-nuclear-reaction | 核反应、结合能与质量亏损 | NuclearReactionAnimation | NuclearReactionScene | — | — |
 | anim-momentum | 动量 | MomentumAnimation | MomentumScene | momentum | — |
 | anim-impulse-concept | 冲量 | ImpulseAnimation | — | impulse | — |
 | anim-impulse | 动量定理 | MomentumTheoremAnimation | MomentumBasicScene | — | MomentumTheoremChartsExtra |
@@ -36,10 +43,11 @@
 | anim-uniform-acceleration | 匀变速直线运动 | UniformAccelerationAnimation | — | physics | UniformAccelerationCenterExtra |
 | anim-free-fall | 自由落体运动 | FreeFallWrapper | — | — | — |
 | anim-vertical-throw | 竖直上抛运动 | VerticalThrowAnimation | — | — | — |
-| anim-projectile | 平抛运动 | ProjectileAnimation | — | physics | — |
-| anim-oblique-throw | 斜抛运动 | ObliqueThrowAnimation | — | physics | — |
+| anim-projectile | 平抛运动 | ProjectileAnimation | ProjectileScene | — | — |
+| anim-oblique-throw | 斜抛运动（高考压轴模型） | ObliqueThrowAnimation | ObliqueThrowScene | — | — |
 | anim-kinematics-advanced | 运动学图像扩展 | KinematicsAdvancedAnimation | — | — | — |
 | anim-force-motion-topic | 力与运动专题 | ForceMotionTopic | — | physics | — |
+| anim-mechanics-experiment-base | 高考力学实验基础与纸带/光电门分析 | MechanicsExperimentAnimation | MechanicsExperimentScene | — | — |
 | anim-work | 恒力做功 | WorkAnimation | — | work | — |
 | anim-power | 功率 | PowerAnimation | PowerScene | power | — |
 | anim-kinetic-energy | 动能定理 | KineticEnergyAnimation | KineticEnergyScene | constants | — |
@@ -59,6 +67,7 @@
 | anim-newton-second | 牛顿第二定律 | NewtonSecondAnimation | — | constants | — |
 | anim-weightlessness | 超重与失重 | WeightlessnessAnimation | — | — | — |
 | anim-connected-bodies | 连接体问题 | ConnectedBodiesAnimation | — | — | — |
+| anim-system-isolated | 方法论：整体法与隔离法 | SystemIsolatedMethodologyAnimation | — | — | — |
 | anim-gravity | 万有引力定律 | GravityAnimation | — | — | — |
 | anim-block-board | 板块模型 | BlockBoardAnimation | — | blockBoard | BlockBoardChart |
 | anim-circular-motion | 匀速圆周运动 | CircularMotionAnimation | — | physics | — |
@@ -80,6 +89,9 @@
 | anim-induction-single-rod | 电磁感应单杆模型 | SingleRodAnimation | — | singleRod | SingleRodCharts |
 | anim-induction-dual-rods | 电磁感应双杆模型 | InductionDualRods | DualRodsScene | — | — |
 | anim-induction-loop-field | 电磁感应线框模型 | InductionLoopField | LoopPassFieldScene | — | — |
+| anim-lc-oscillation | 电磁振荡（LC 振荡电路） | EMOscillationAnimation | LCOscillationScene | — | — |
+| anim-em-wave | 麦克斯韦电磁场理论与电磁波 | EMOscillationAnimation | EMWaveScene | — | — |
+| anim-em-spectrum | 电磁波谱与无线电波的发射与接收 | EMOscillationAnimation | EMSpectrumScene | — | — |
 | anim-coulomb-law | 库仑定律 | CoulombLaw | — | — | — |
 | anim-electric-field | 电场强度与比值定义法 | ElectricField | ElectricFieldBasicScene | — | — |
 | anim-charge-in-efield | 带电粒子在匀强电场中运动 | ChargeInEField | — | magnetism/forces | — |
@@ -98,4 +110,4 @@
 | anim-transformer | 变压器原理 | Transformer | TransformerScene | physics | — |
 | anim-power-transmission | 远距离输电 | PowerTransmission | — | — | — |
 
-共 93 个动画条目。
+共 105 个动画条目。

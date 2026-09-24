@@ -40,6 +40,7 @@ type BuilderName =
   | 'buildDiffractionQuantities'
   | 'buildPolarizationQuantities'
   | 'buildLaserQuantities'
+  | 'buildEmOscillationQuantities'
 
 /** 单条注册记录：懒加载器 + 构建器函数名 */
 interface QuantityRegistration {
@@ -142,6 +143,9 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-transformer':           { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-power-transmission':    { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-combined-fields':       { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-lc-oscillation':        { loader: () => import('./quantities/emOscillation'), builderName: 'buildEmOscillationQuantities' },
+  'anim-em-wave':               { loader: () => import('./quantities/emOscillation'), builderName: 'buildEmOscillationQuantities' },
+  'anim-em-spectrum':           { loader: () => import('./quantities/emOscillation'), builderName: 'buildEmOscillationQuantities' },
 
   // 能量与功
   'anim-power':                 { loader: () => import('./quantities/energy'),         builderName: 'buildEnergyQuantities' },

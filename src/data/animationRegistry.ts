@@ -36,6 +36,7 @@ async function loadExtendedRegistry(): Promise<void> {
         { electromagnetismMagnetismAnimations: emMagnetism },
         { electromagnetismInductionAnimations: emInduction },
         { electromagnetismAcAnimations: emAc },
+        { electromagnetismEmOscillationAnimations: emEmOscillation },
         { thermodynamicsKinematicsAnimations: thermoKinematics },
         { thermodynamicsGasLawsAnimations: thermoGasLaws },
         { thermodynamicsFirstLawAnimations: thermoFirstLaw },
@@ -57,6 +58,7 @@ async function loadExtendedRegistry(): Promise<void> {
         import('./registries/electromagnetism-magnetism'),
         import('./registries/electromagnetism-induction'),
         import('./registries/electromagnetism-ac'),
+        import('./registries/electromagnetism-em-oscillation'),
         import('./registries/thermodynamics-kinematics'),
         import('./registries/thermodynamics-gas-laws'),
         import('./registries/thermodynamics-first-law'),
@@ -77,6 +79,7 @@ async function loadExtendedRegistry(): Promise<void> {
       Object.assign(
         fullRegistry,
         emElectrostatics, emDcCircuits, emMagnetism, emInduction, emAc,
+        emEmOscillation,
         thermoKinematics, thermoGasLaws, thermoFirstLaw, thermoSecondLaw,
         opticsReflection, opticsRefraction, opticsTotalInternalReflection, opticsThinLens, opticsInterference,
         opticsDiffraction, opticsPolarization, opticsLaser,
@@ -92,8 +95,14 @@ async function loadExtendedRegistry(): Promise<void> {
 
 // ─── 公共 API ───
 
-/** 静态总动画数（含 core + 懒加载 extended registry），新增/删除动画时需同步更新 */
-export const ANIMATION_COUNT = 98
+/**
+ * 静态总动画数（含 core + 懒加载 extended registry），新增/删除动画时需同步更新。
+ *
+ * ⚠️ 本值为人工维护，与 src/data/registries/*.ts 的真实条目数没有强制校验，
+ * 历史上曾出现漂移（本次修正前为 98，真实值为 102）。
+ * `tests/data/animationCount.test.ts` 已加入守卫，二者不一致时测试失败。
+ */
+export const ANIMATION_COUNT = 105
 
 /** 同步获取 config（core 动画立即命中，extended 动画未加载时返回 undefined） */
 export function getAnimationConfig(id: string): AnimationConfig | undefined {
@@ -113,6 +122,25 @@ export function preloadExtendedRegistry(): void {
   if (!extendedLoaded && !extendedPromise) {
     extendedPromise = loadExtendedRegistry()
   }
+}
+
+/**
+ * 等待 extended registry 加载完成。
+ *
+ * 仅供测试与调试使用（生产路径用同步的 `getAnimationConfig`）。
+ */
+export async function ensureExtendedRegistry(): Promise<void> {
+  await loadExtendedRegistry()
+}
+
+/**
+ * 当前已加载的动画条目数。
+ *
+ * 仅供测试与调试使用：与 `ANIMATION_COUNT` 比对可发现「新增动画后忘记同步计数」
+ * 这类无强制校验导致的漂移（见 tests/data/animationCount.test.ts）。
+ */
+export function getLoadedAnimationCount(): number {
+  return Object.keys(fullRegistry).length
 }
 
 export { defineAnimations } from './defineAnimations'

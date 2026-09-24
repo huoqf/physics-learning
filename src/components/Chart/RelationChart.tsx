@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useId } from 'react'
 import { BasePhysicsChart } from './BasePhysicsChart'
 import { useChartContext } from './ChartContext'
 import { interpolateY } from './interpolation'
@@ -169,6 +169,7 @@ function RCContent({
   underlay,
   children,
 }: RelationChartProps) {
+  const plotClipId = useId()
   const ctx = useChartContext()
   const mainColor = color ?? SERIES_MAP[series ?? 'primary']
 
@@ -214,36 +215,51 @@ function RCContent({
 
   return (
     <g>
-      {/* 插件底层（面积/背景增强） */}
-      {underlay}
+      {/* 绘图盒裁剪边界（保护曲线永不溢出坐标轴绘图区） */}
+      <defs>
+        <clipPath id={plotClipId}>
+          <rect
+            x={plotOrigin.x}
+            y={plotOrigin.y}
+            width={plotSize.width}
+            height={plotSize.height}
+          />
+        </clipPath>
+      </defs>
 
-      {/* 额外曲线（先画，主曲线压在上面） */}
-      {extraPaths.map((p, i) =>
-        p.d ? (
+      {/* 曲线内容区（受 clipPath 严格约束） */}
+      <g clipPath={`url(#${plotClipId})`}>
+        {/* 插件底层（面积/背景增强） */}
+        {underlay}
+
+        {/* 额外曲线（先画，主曲线压在上面） */}
+        {extraPaths.map((p, i) =>
+          p.d ? (
+            <path
+              key={`extra-${i}`}
+              d={p.d}
+              fill="none"
+              stroke={p.color}
+              strokeWidth={p.strokeWidth}
+              strokeDasharray={p.strokeDasharray?.join(' ')}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          ) : null,
+        )}
+
+        {/* 主曲线 */}
+        {mainPath && (
           <path
-            key={`extra-${i}`}
-            d={p.d}
+            d={mainPath}
             fill="none"
-            stroke={p.color}
-            strokeWidth={p.strokeWidth}
-            strokeDasharray={p.strokeDasharray?.join(' ')}
+            stroke={mainColor}
+            strokeWidth={strokeWidth ?? 2}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-        ) : null,
-      )}
-
-      {/* 主曲线 */}
-      {mainPath && (
-        <path
-          d={mainPath}
-          fill="none"
-          stroke={mainColor}
-          strokeWidth={strokeWidth ?? 2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      )}
+        )}
+      </g>
 
       {/* 标记点 / 参考线（底层参考） */}
       {markers?.map((m, i) => {
@@ -369,16 +385,18 @@ function RCContent({
         </g>
       )}
 
-      {/* 主曲线（画在辅助线上方，确保实线不被遮盖） */}
+      {/* 主曲线（画在辅助线上方，确保实线不被遮盖；带绘图盒裁剪） */}
       {mainPath && (
-        <path
-          d={mainPath}
-          fill="none"
-          stroke={mainColor}
-          strokeWidth={strokeWidth ?? 2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        <g clipPath={`url(#${plotClipId})`}>
+          <path
+            d={mainPath}
+            fill="none"
+            stroke={mainColor}
+            strokeWidth={strokeWidth ?? 2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </g>
       )}
 
       {/* 游标圆点 + 数值标签（画在主曲线上方） */}

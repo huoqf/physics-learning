@@ -21,6 +21,9 @@ const TEST_ANIM_IDS = [
   'anim-oblique-throw',
   'anim-circular-motion',
   'anim-centripetal',
+  'anim-lc-oscillation',
+  'anim-em-wave',
+  'anim-em-spectrum',
 ]
 
 describe('buildPhysicsQuantities', () => {
@@ -126,5 +129,26 @@ describe('buildPhysicsQuantities', () => {
     const qs = buildPhysicsQuantities('anim-centripetal', { r: 2, v: 4, m: 3, advancedMode: 0 }, 1)
     expect(find(qs, '向心加速度') as number).toBeCloseTo(8, 5)
     expect(find(qs, '向心力') as number).toBeCloseTo(24, 5)
+  })
+
+  // ===== 电磁学 · 电磁振荡与电磁波 =====
+  it('LC 振荡：包含物理量、公式与高考要点', () => {
+    const qs = buildPhysicsQuantities('anim-lc-oscillation', { scene: 0, L: 1, C: 1, Q0: 1 }, 0)
+    expect(find(qs, '电容器电荷量')).toBeDefined()
+    expect(qs.formulas && qs.formulas.length > 0).toBe(true)
+    expect(qs.gaokaoPoints && qs.gaokaoPoints.length > 0).toBe(true)
+  })
+
+  it('电磁波：包含波速公式与麦克斯韦理论高考要点', () => {
+    const qs = buildPhysicsQuantities('anim-em-wave', { scene: 1, fEM: 100 }, 0)
+    expect(find(qs, '电磁波频率')).toBeDefined()
+    expect(qs.formulas?.some((f) => f.name.includes('波速'))).toBe(true)
+    expect(qs.gaokaoPoints?.some((g) => g.text.includes('麦克斯韦'))).toBe(true)
+  })
+
+  it('电磁波谱：包含波谱顺序高考要点与典型应用', () => {
+    const qs = buildPhysicsQuantities('anim-em-spectrum', { scene: 2, band: 3 }, 0)
+    expect(find(qs, '谱段')).toBe('可见光')
+    expect(qs.gaokaoPoints?.some((g) => g.text.includes('电磁波谱顺序'))).toBe(true)
   })
 })

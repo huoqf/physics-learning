@@ -377,6 +377,16 @@ export type {
   SecondLawColorKey,
 } from './secondLawColors'
 
+// ─── 电磁振荡与电磁波专用颜色 ─────────────────────────────────────────
+export {
+  EM_OSCILLATION_COLORS,
+  VISIBLE_SPECTRUM_COLORS,
+} from './emOscillationColors'
+
+export type {
+  EmOscillationColorKey,
+} from './emOscillationColors'
+
 export type {
   VectorType,
   MarkerTier,
