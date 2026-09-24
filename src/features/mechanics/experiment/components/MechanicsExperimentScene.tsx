@@ -9,8 +9,9 @@ import {
   LabStand,
   PhysicsVectorArrow,
   Ball,
+  Spring,
 } from '@/components/Physics'
-import { Spring } from '@/components/UI'
+
 import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { worldToDesign, type SceneScale } from '@/scene'
 import type { MechanicsExperimentPhysicsResult } from '../hooks/useMechanicsExperimentPhysics'

@@ -1,8 +1,8 @@
-import { VectorArrow, PhysicsGround } from '@/components/Physics'
+import { VectorArrow, PhysicsGround, Spring } from '@/components/Physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, STROKE, CHART_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
-import { Spring } from '@/components/UI'
+
 import type { SceneScale } from '@/scene'
 
 interface ElasticSceneProps {

@@ -1,8 +1,8 @@
-import { PhysicsVectorArrow, PhysicsGround } from '@/components/Physics'
+import { PhysicsVectorArrow, PhysicsGround, Spring } from '@/components/Physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, withAlpha } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
-import { Spring } from '@/components/UI'
+
 import { MT_LAYOUT } from './constants'
 import type { AnimationViewportResult } from '@/hooks'
 import type { SceneScale } from '@/scene/SceneScale'

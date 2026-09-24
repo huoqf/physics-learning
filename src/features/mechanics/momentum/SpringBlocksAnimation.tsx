@@ -4,14 +4,13 @@ import { useShallow } from 'zustand/react/shallow'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { getPointsUpToTime } from '@/utils'
-import { PhysicsVectorArrow, PhysicsGround, Block, EnergyBars } from '@/components/Physics'
+import { PhysicsVectorArrow, PhysicsGround, Block, EnergyBars, Spring } from '@/components/Physics'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 
 import { VelocityTimeChart } from '@/components/Chart'
 
-import { Spring } from '@/components/UI'
 import { precomputeSpringBlocks, interpolateSpringBlocks } from '@/physics/momentumApplication/springBlocks'
 import { useChartContext } from '@/components/Chart'
 

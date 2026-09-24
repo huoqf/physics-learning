@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { SCENE_COLORS } from '@/theme/physics'
 
-interface SpringProps {
+export interface SpringProps {
   x1: number
   y1: number
   x2: number

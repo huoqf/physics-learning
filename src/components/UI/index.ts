@@ -55,7 +55,6 @@ export { KatexFormula } from './KatexFormula'
 // 动画与过渡 (Animation & Transition)
 // ============================================================================
 export { AnimationControls } from './AnimationControls'
-export { Spring } from './Spring'
 export { PageTransition } from './PageTransition'
 
 // ============================================================================

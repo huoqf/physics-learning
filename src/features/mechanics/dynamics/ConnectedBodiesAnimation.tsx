@@ -1,7 +1,7 @@
-import { PhysicsVectorArrow, VectorDefs, PhysicsGround } from '@/components/Physics'
+import { PhysicsVectorArrow, VectorDefs, PhysicsGround, Spring } from '@/components/Physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_STYLE, FONT, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
-import { Spring } from '@/components/UI'
+
 import { useAnimationStore } from '@/stores'
 
 import { useConnectedBodiesPhysics } from './hooks/useConnectedBodiesPhysics'

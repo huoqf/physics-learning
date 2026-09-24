@@ -2,8 +2,8 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useAnimationStore } from '@/stores';
 import { useShallow } from 'zustand/react/shallow';
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics';
-import { Ball, PhysicsGround, PhysicsVectorArrow } from '@/components/Physics';
-import { Spring } from '@/components/UI';
+import { Ball, PhysicsGround, PhysicsVectorArrow, Spring } from '@/components/Physics';
+
 import { createSceneScaleFromDesignCenter } from '@/scene/SceneScale';
 import { precomputeVerticalSpringTrajectory, getVSStateAtTime } from '@/physics/verticalSpring';
 import { BasePhysicsChart } from '@/components/Chart';

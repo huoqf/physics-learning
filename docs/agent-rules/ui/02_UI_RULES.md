@@ -281,6 +281,7 @@ Primary（primary-600）/ Secondary（white + primary边框）/ Ghost（transpar
 | `VectorDefs` | SVG `<defs>` 箭头 marker（与 VectorArrow 配套） |
 | `SportsCar` | 流线型运动小车 |
 | `Pulley` | 滑轮 |
+| `Spring` | 弹簧（三层拟物螺旋线圈） |
 | `HandRule` | 左/右手定则手势示意 |
 | `SkeletonHand` | 骨骼手势（精细版左右手定则） |
 | `EnergyBars` | 能量柱状条（动能/势能/总能） |
@@ -338,7 +339,6 @@ Primary（primary-600）/ Secondary（white + primary边框）/ Ghost（transpar
 | `Button` | 通用按钮 |
 | `KatexFormula` | KaTeX 公式渲染 |
 | `MiniChart` | 小型内嵌图表（信息面板内） |
-| `Spring` | 弹簧 SVG 组件 |
 | `TipCard` | 提示卡片 |
 
 > **barrel import 规则**：所有组件从对应目录的 barrel 入口导入，禁止子路径导入（如 `@/components/Physics/Ball`）。

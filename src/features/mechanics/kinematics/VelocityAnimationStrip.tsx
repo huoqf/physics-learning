@@ -1,11 +1,11 @@
-import { PhysicsVectorArrow, VectorDefs, PhysicsGround, Ball, Block } from '@/components/Physics'
+import { PhysicsVectorArrow, VectorDefs, PhysicsGround, Ball, Block, Spring } from '@/components/Physics'
 import { useAnimationViewport, useSceneScale } from '@/hooks'
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { PHYSICS_COLORS, SCENE_COLORS, STROKE, DASH, OBJECT } from '@/theme/physics'
-import { Spring } from '@/components/UI'
+
 import { calculateInstantaneousVelocity } from '@/physics'
 import type { VariableMotionModel, VariableMotionParams } from '@/physics'
 import { useVelocityPhysics } from './useVelocityPhysics'
