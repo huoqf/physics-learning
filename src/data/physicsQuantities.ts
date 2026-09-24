@@ -45,6 +45,10 @@ type BuilderName =
   | 'buildDopplerQuantities'
   | 'buildSelfInductionQuantities'
   | 'buildSensorQuantities'
+  | 'buildForcedResonanceQuantities'
+  | 'buildSolidsLiquidsQuantities'
+  | 'buildSaturatedVaporQuantities'
+  | 'buildElectrostaticShieldingQuantities'
 
 /** 单条注册记录：懒加载器 + 构建器函数名 */
 interface QuantityRegistration {
@@ -73,6 +77,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-wave-diffraction':      { loader: () => import('./quantities/vibration'),      builderName: 'buildVibrationQuantities' },
   'anim-wave-interference':     { loader: () => import('./quantities/vibration'),      builderName: 'buildVibrationQuantities' },
   'anim-doppler-effect':        { loader: () => import('./quantities/vibration/doppler'), builderName: 'buildDopplerQuantities' },
+  'anim-forced-resonance':      { loader: () => import('./quantities/vibration/forcedResonance'), builderName: 'buildForcedResonanceQuantities' },
 
   // 力与运动专题
   'anim-force-motion-topic':    { loader: () => import('./quantities/forceMotion'),    builderName: 'buildForceMotionQuantities' },
@@ -126,6 +131,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-capacitor':             { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-field-lines':           { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-electric-potential':    { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
+  'anim-electrostatic-shielding': { loader: () => import('./quantities/electromagnetism/electrostaticShielding'), builderName: 'buildElectrostaticShieldingQuantities' },
   'anim-ohm-law':               { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-circuit-analysis':      { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
   'anim-closed-circuit':        { loader: () => import('./quantities/electromagnetism'), builderName: 'buildElectromagnetismQuantities' },
@@ -172,6 +178,8 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-clapeyron':           { loader: () => import('./quantities/clapeyron'), builderName: 'buildClapeyronQuantities' },
   'anim-first-law':           { loader: () => import('./quantities/firstLaw'), builderName: 'buildFirstLawQuantities' },
   'anim-second-law':          { loader: () => import('./quantities/secondLaw'), builderName: 'buildSecondLawQuantities' },
+  'anim-solids-liquids':      { loader: () => import('./quantities/thermodynamics/solidsLiquids'), builderName: 'buildSolidsLiquidsQuantities' },
+  'anim-saturated-vapor':     { loader: () => import('./quantities/thermodynamics/saturatedVapor'), builderName: 'buildSaturatedVaporQuantities' },
 
   // 光学
   'anim-reflection':          { loader: () => import('./quantities/reflection'), builderName: 'buildReflectionQuantities' },

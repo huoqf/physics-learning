@@ -23,6 +23,16 @@ export const vibrationKnowledge: KnowledgeNode[] = [
     prerequisites: ['vibration-1-1'],
   },
   {
+    id: 'vibration-1-3',
+    title: '受迫振动与共振',
+    chapter: '机械振动与波 第1章 机械振动',
+    module: 'vibration',
+    importance: 'gaokao',
+    animationIds: ['anim-forced-resonance'],
+    problemIds: [],
+    prerequisites: ['vibration-1-1'],
+  },
+  {
     id: 'vibration-2-1',
     title: '机械波的形成与传播',
     chapter: '机械振动与波 第2章 机械波',

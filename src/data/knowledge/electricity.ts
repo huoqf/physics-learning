@@ -72,6 +72,16 @@ export const electricityKnowledge: KnowledgeNode[] = [
     prerequisites: ['electricity-1-5'],
   },
   {
+    id: 'electricity-1-8',
+    title: '静电的防止与利用（静电平衡与静电屏蔽）',
+    chapter: '电磁学 第1章 静电场',
+    module: 'electricity',
+    importance: 'gaokao',
+    animationIds: ['anim-electrostatic-shielding'],
+    problemIds: [],
+    prerequisites: ['electricity-1-2'],
+  },
+  {
     id: 'electricity-2-1',
     title: '部分电路欧姆定律与电表改装',
     chapter: '电磁学 第2章 恒定电流',

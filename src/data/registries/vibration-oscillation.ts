@@ -419,4 +419,71 @@ export const vibrationOscillationAnimations = defineAnimations({
       { key: 'observerSpeed', label: '观察者速度 vo', min: -100, max: 100, step: 10, unit: 'm/s', showIf: 'mode', showIfValue: 1 },
     ],
   },
+  'anim-forced-resonance': {
+    title: '受迫振动与共振',
+    knowledgeId: 'vibration-1-3',
+    Component: lazy(() => import('@/features/vibration/forced-resonance')),
+    CenterExtra: lazy(() => import('@/features/vibration/forced-resonance/ForcedResonanceCenterExtra')),
+    controlsMode: 'timed',
+    maxTime: 20,
+    defaultParams: {
+      mode: 1,
+      m: 1.0,
+      k: 39.5,
+      gamma: 0.5,
+      F0: 2.0,
+      f: 1.0,
+    } as const,
+    controlMeta: [
+      {
+        type: 'preset',
+        label: '📋 高考真题：共振筛最高工作效率 (f=f0)',
+        group: '快捷预设',
+        params: () => ({ mode: 1, m: 1.0, k: 39.5, gamma: 0.4, F0: 2.5, f: 1.0 }),
+      },
+      {
+        type: 'preset',
+        label: '📋 避开共振区：机器底座减震隔离 (f >> f0)',
+        group: '快捷预设',
+        params: () => ({ mode: 1, m: 1.0, k: 39.5, gamma: 0.8, F0: 2.0, f: 2.2 }),
+      },
+      {
+        type: 'segmented',
+        key: 'mode',
+        label: '探究主题',
+        group: '模型选择',
+        resetOnChange: true,
+        options: [
+          { value: 0, label: '初态过渡过程' },
+          { value: 1, label: '共振峰响应探究' },
+          { value: 2, label: '阻尼尖锐度对比' },
+        ],
+      },
+      {
+        type: 'tip',
+        group: '考点要领',
+        variant: 'primary',
+        content: '【高考核心考点】：做受迫振动的物体稳定振动频率恒等于驱动力频率（f受迫 = f驱）；当驱动频率接近系统固有频率时发生共振，振幅达极大值。',
+      },
+    ],
+    paramMeta: [
+      {
+        key: 'f',
+        label: '驱动频率 f',
+        min: 0.2,
+        max: 2.4,
+        step: 0.05,
+        unit: 'Hz',
+        marks: [
+          { value: 1.0, label: 'f0: 共振点', variant: 'critical' },
+          { value: 2.0, label: '高频区' },
+        ],
+      },
+      { key: 'F0', label: '驱动力幅值 F0', min: 0.5, max: 5.0, step: 0.5, unit: 'N' },
+      { key: 'k', label: '弹簧劲度 k', min: 10, max: 80, step: 5, unit: 'N/m' },
+      { key: 'm', label: '振子质量 m', min: 0.5, max: 2.5, step: 0.1, unit: 'kg' },
+      { key: 'gamma', label: '介质阻尼 γ', min: 0.1, max: 1.5, step: 0.1, unit: 'N·s/m' },
+    ],
+  },
 })
+

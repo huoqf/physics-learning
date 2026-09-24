@@ -455,7 +455,7 @@ npx playwright test
 
 > **来源**：`physics-learning-内容补全建议-2026-09-22.md`（缺口基线）+ 2026-09-24 逐轮实测核对。
 > **性质**：本章是**待完成计划**，不是完成记录。每完成一项把状态改为 `[x]`，并在 `PROCESS_LOG.md` / `logs/2026-Wxx.md` 写完成记录（含验证命令）。
-> **总账（2026-09-24）**：16 个缺口考点**已完成 5 项**（P0-1×3, P0-4, P0-5），P0 剩余 2 项未开工。
+> **总账（2026-09-24）**：16 个缺口考点**已完成 13 项**（批次 1、2、3 均闭环完成，动画数增至 113），P0 已全部完成。
 
 ### 9.1 缺口考点清单（16 项）
 
@@ -470,10 +470,10 @@ npx playwright test
 | 7 | P1-1 | `electricity-4-9` | 涡流、电磁阻尼与电磁驱动 | 并入 `electricity-4-8` 动画的 mode | [x] 已完成 |
 | 8 | **P0-2** | `electricity-7-1` | 常见传感器及其工作原理（光敏/热敏/霍尔） | `Rheostat` `DialMeter` `Galvanometer` `LightBulb` `DCSource` + `dc-circuits` 拓扑 | [x] 已完成 |
 | 9 | **P0-2** | `electricity-7-2` | 传感器的应用与自动控制 | 同上 | [x] 已完成 |
-| 10 | **P0-3** | `vibration-1-3` | 受迫振动与共振 | 简谐运动骨架 + `VectorArrow` | [ ] 未开工 |
-| 11 | P1-2 | `thermodynamics-2-3` | 固体与液体（晶体/液晶/表面张力/浸润/毛细） | 分子粒子池 | [ ] 未开工 |
-| 12 | P1-3 | `thermodynamics-2-4` | 饱和汽与湿度 | `thermodynamics-kinematics` 粒子池 | [ ] 未开工 |
-| 13 | P1-5 | `electricity-1-8` | 静电的防止与利用（静电感应/尖端放电/静电屏蔽） | `VectorArrow` + 场线基座 | [ ] 未开工 |
+| 10 | **P0-3** | `vibration-1-3` | 受迫振动与共振 | `CharacteristicCurve` + `Spring` + `Ball` | [x] 已完成 |
+| 11 | P1-2 | `thermodynamics-2-3` | 固体与液体（晶体/液晶/表面张力/浸润/毛细） | 分子点阵池 + `PhysicsVectorArrow` | [x] 已完成 |
+| 12 | P1-3 | `thermodynamics-2-4` | 饱和汽与湿度 | `CharacteristicCurve` + 气液动态平衡两相池 | [x] 已完成 |
+| 13 | P1-5 | `electricity-1-8` | 静电的防止与利用（静电感应/尖端放电/静电屏蔽） | `PhysicsVectorArrow` + 场线基座 | [x] 已完成 |
 | 14 | P1-4 | `wave-optics-1-5` | 薄膜干涉与增透膜 | `wave-optics-1-1` 干涉骨架 | [ ] 未开工 |
 | 15 | P2 | `mechanics-6-6` | 相对论时空观与牛顿力学的局限性 | 轻量版单 mode | [ ] 未开工 |
 | 16 | P2 | `thermodynamics-3-3` | 能量守恒定律与能源 | 非计算章节 | [ ] 未开工 |
@@ -533,10 +533,10 @@ done
 
 | 批次 | 内容 | 理由 |
 |---|---|---|
-| 批次 1（剩余） | `electricity-5-5`、`vibration-2-3` | 考点最热 + 复用度最高 + 无既有语义冲突 |
-| 批次 2 | `electricity-4-8/4-9`、`electricity-7-1/7-2` | 需先确认与既有 induction 动画控制项不冲突 |
-| 批次 3 | `vibration-1-3`、`thermodynamics-2-3/2-4`、`electricity-1-8` | 需新组件，工作量中等 |
-| 批次 4 | `wave-optics-1-5`、`mechanics-6-6`、实验专题扩展、2025 真题 | 低频或需先去重确认 |
+| 批次 1（剩余） | `electricity-5-5`、`vibration-2-3` | 考点最热 + 复用度最高 + 无既有语义冲突 | [x] 已完成 |
+| 批次 2 | `electricity-4-8/4-9`、`electricity-7-1/7-2` | 需先确认与既有 induction 动画控制项不冲突 | [x] 已完成 |
+| 批次 3 | `vibration-1-3`、`thermodynamics-2-3/2-4`、`electricity-1-8` | 需新组件，工作量中等 | [x] 已完成 |
+| 批次 4 | `wave-optics-1-5`、`mechanics-6-6`、实验专题扩展、2025 真题 | 低频或需先去重确认 | [ ] 待规划 |
 
 **每批次收尾必跑**：`tsc -b` / `eslint . --max-warnings 0` / `vitest run` / 6 个守门脚本（`npm run check:architecture`）/ 知识树↔注册表一致性（0 悬空 0 孤儿）。
 **每个新动画必须带**：≥1 个带数值断言的单测（方向/符号类错误只有数值断言能拦）。
