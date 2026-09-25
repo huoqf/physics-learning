@@ -244,8 +244,9 @@ export const modernPhysicsAnimations = defineAnimations({
       frequency: 6.0,        // 入射光频率 (×10^14 Hz)
       intensity: 50,         // 光源强度 (%)
       voltage: 0.0,          // 极板电压 (V)
-      mode: 0,               // 0=初学, 1=通关
+      mode: 0,               // 0=初学, 1=通关, 2=康普顿散射
       showPhotonModel: 0,    // 0=光束模式, 1=光子微粒模式
+      theta: 60,             // 康普顿散射角 (度)
     } as const,
     controlMeta: [
       {
@@ -255,6 +256,7 @@ export const modernPhysicsAnimations = defineAnimations({
         options: [
           { value: 0, label: '初学 · 光子激发入门' },
           { value: 1, label: '通关 · 伏安特性与遏止电压' },
+          { value: 2, label: '进阶 · 康普顿效应与光子动量' },
         ],
       },
       {
@@ -264,6 +266,8 @@ export const modernPhysicsAnimations = defineAnimations({
         group: '显示',
         trueValue: 1,
         falseValue: 0,
+        hideIf: 'mode',
+        hideIfValue: 2,
       },
       {
         type: 'tip',
@@ -279,8 +283,26 @@ export const modernPhysicsAnimations = defineAnimations({
         showIf: 'mode',
         showIfValue: 1,
       },
+      {
+        type: 'tip',
+        content: '康普顿散射证实光子具有动量 p = h/λ，散射后波长变长 Δλ = λc(1 - cos θ)',
+        group: '提示',
+        showIf: 'mode',
+        showIfValue: 2,
+      },
     ],
     paramMeta: [
+      {
+        key: 'theta',
+        label: '散射角 θ',
+        min: 0,
+        max: 180,
+        step: 5,
+        unit: '°',
+        group: '康普顿散射参数',
+        showIf: 'mode',
+        showIfValue: 2,
+      },
       {
         key: 'frequency',
         label: '光源频率 ν',

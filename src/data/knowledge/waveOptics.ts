@@ -41,4 +41,14 @@ export const waveOpticsKnowledge: KnowledgeNode[] = [
     problemIds: [],
     prerequisites: ['wave-optics-1-3'],
   },
+  {
+    id: 'wave-optics-1-5',
+    title: '薄膜干涉与增透膜',
+    chapter: '波动光学',
+    module: 'wave-optics',
+    importance: 'gaokao',
+    animationIds: ['anim-thin-film-interference'],
+    problemIds: ['prob-2021-shandong-07'],
+    prerequisites: ['wave-optics-1-1'],
+  },
 ]

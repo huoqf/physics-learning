@@ -313,5 +313,89 @@ export const mechanicsCircularGravitationAnimations = defineAnimations({
       },
     ],
   },
+  'anim-relativity': {
+    title: '相对论时空观与牛顿力学的局限性',
+    knowledgeId: 'mechanics-6-6',
+    Component: lazy(() => import('@/features/modern/relativity/RelativityAnimation')),
+    controlsMode: 'loop',
+    defaultParams: {
+      beta: 0.6,
+      m0: 1.0,
+      mode: 0,
+      showGeometry: 1,
+    } as const,
+    paramMeta: [
+      {
+        key: 'beta',
+        label: '航速比 β = v/c',
+        min: 0.1,
+        max: 0.95,
+        step: 0.05,
+        unit: '',
+        description: '飞船相对于地面的运动速度与光速的比值',
+      },
+      {
+        key: 'm0',
+        label: '静止质量 m₀',
+        min: 0.5,
+        max: 5.0,
+        step: 0.5,
+        unit: 'kg',
+        description: '物体的固有静止质量',
+      },
+    ],
+    controlMeta: [
+      {
+        type: 'segmented',
+        key: 'mode',
+        label: '相对论效应',
+        group: '观测效应',
+        resetOnChange: false,
+        options: [
+          { value: 0, label: '光钟与动钟变慢' },
+          { value: 1, label: '动尺收缩效应' },
+          { value: 2, label: '质能关系与质速' },
+        ],
+      },
+      {
+        type: 'toggle',
+        key: 'showGeometry',
+        label: '显示勾股定理直角三角形',
+        group: '推导辅助',
+        showIf: 'mode',
+        showIfValue: 0,
+      },
+      {
+        type: 'preset',
+        label: '教材典例 (β = 0.60, γ = 1.25)',
+        group: '高考经典考境预设',
+        params: { beta: 0.6, m0: 1.0, mode: 0, showGeometry: 1 },
+      },
+      {
+        type: 'preset',
+        label: '高速航行 (β = 0.80, γ = 1.67)',
+        group: '高考经典考境预设',
+        params: { beta: 0.8, m0: 1.0, mode: 0, showGeometry: 1 },
+      },
+      {
+        type: 'preset',
+        label: '尺缩效应直观对比 (β = 0.866, γ = 2.00)',
+        group: '高考经典考境预设',
+        params: { beta: 0.866, m0: 1.0, mode: 1, showGeometry: 0 },
+      },
+      {
+        type: 'preset',
+        label: '质能关系与动能构成 (β = 0.80)',
+        group: '高考经典考境预设',
+        params: { beta: 0.8, m0: 1.0, mode: 2, showGeometry: 0 },
+      },
+      {
+        type: 'tip',
+        group: '高考核心结论',
+        content:
+          '固有时间最短（两事件同地发生的参考系测得时间最小）；尺缩仅发生在运动速度平行方向，垂直方向几何尺寸完全不变。',
+      },
+    ],
+  },
 })
 

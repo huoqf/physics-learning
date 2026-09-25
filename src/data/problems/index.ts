@@ -7,10 +7,20 @@ import { projectileProblems } from './mechanics/projectile-sample'
 import { celestialProblems } from './mechanics/celestial-sample'
 import { prob2024Quanguo21 } from './mechanics/prob-2024-quanguo-21'
 import { masterModelProblems } from './masterProblems'
+import { opticsGaokaoProblems } from './optics'
+import { electromagnetismGaokaoProblems } from './electromagnetism'
+import { vibrationGaokaoProblems } from './vibration'
+import { experimentProblems } from './experiment'
+import { inductionProblems } from './induction'
 
 export const allProblems: Problem[] = [
   prob2024Quanguo21,
   ...masterModelProblems,
+  ...opticsGaokaoProblems,
+  ...electromagnetismGaokaoProblems,
+  ...vibrationGaokaoProblems,
+  ...experimentProblems,
+  ...inductionProblems,
   ...kinematicsProblems,
   ...dynamicsProblems,
   ...energyProblems,

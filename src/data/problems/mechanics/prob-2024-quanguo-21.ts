@@ -1,10 +1,12 @@
 import type { Problem } from '../../types'
 
 export const prob2024Quanguo21: Problem = {
-  id: 'prob-2024-quanguo-21',
+  id: 'prob-block-board-model',
   year: 2024,
-  province: '全国新课标卷',
-  source: '2024年高考全国新课标卷第21题',
+  province: '全国卷模型',
+  source: '高考压轴经典母题（板块相对滑动临界模型）',
+  questionType: 'calculation',
+  verified: false,
   title: '板块模型与临界相对滑动分析',
   content:
     '如图所示，质量 $M = 3\\,\\text{kg}$ 的长木板置于水平面上，与地面间的动摩擦因数 $\\mu_2 = 0.05$。一质量 $m = 1\\,\\text{kg}$ 的小滑块以初速度 $v_0 = 5\\,\\text{m/s}$ 从左端冲上木板。已知滑块与木板间的动摩擦因数 $\\mu_1 = 0.3$，木板长度 $L = 2.5\\,\\text{m}$，重力加速度 $g = 10\\,\\text{m/s}^2$。\n试求：\n(1) 滑块在木板上滑动时的加速度大小；\n(2) 滑块与木板达到共同速度所需的时间及共速时的速度；\n(3) 判断滑块是否会从木板右端滑落。',

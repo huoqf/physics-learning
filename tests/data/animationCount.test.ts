@@ -30,6 +30,7 @@ describe('animationRegistry · ANIMATION_COUNT 一致性守卫', () => {
       'anim-em-spectrum',
       'anim-ac-lc-impedance',
       'anim-doppler-effect',
+      'anim-thin-film-interference',
     ]
     for (const id of ids) {
       const config = await getAnimationConfigAsync(id)

@@ -455,7 +455,7 @@ npx playwright test
 
 > **来源**：`physics-learning-内容补全建议-2026-09-22.md`（缺口基线）+ 2026-09-24 逐轮实测核对。
 > **性质**：本章是**待完成计划**，不是完成记录。每完成一项把状态改为 `[x]`，并在 `PROCESS_LOG.md` / `logs/2026-Wxx.md` 写完成记录（含验证命令）。
-> **总账（2026-09-24）**：16 个缺口考点**已完成 13 项**（批次 1、2、3 均闭环完成，动画数增至 113），P0 已全部完成。
+> **总账（2026-09-25）**：16 个缺口考点**已完成 15 项**（批次 1、2、3 均闭环完成，批次 4 完成薄膜干涉与相对论时空观，动画数增至 115），P0 已全部完成。
 
 ### 9.1 缺口考点清单（16 项）
 
@@ -474,10 +474,10 @@ npx playwright test
 | 11 | P1-2 | `thermodynamics-2-3` | 固体与液体（晶体/液晶/表面张力/浸润/毛细） | 分子点阵池 + `PhysicsVectorArrow` | [x] 已完成 |
 | 12 | P1-3 | `thermodynamics-2-4` | 饱和汽与湿度 | `CharacteristicCurve` + 气液动态平衡两相池 | [x] 已完成 |
 | 13 | P1-5 | `electricity-1-8` | 静电的防止与利用（静电感应/尖端放电/静电屏蔽） | `PhysicsVectorArrow` + 场线基座 | [x] 已完成 |
-| 14 | P1-4 | `wave-optics-1-5` | 薄膜干涉与增透膜 | `wave-optics-1-1` 干涉骨架 | [ ] 未开工 |
-| 15 | P2 | `mechanics-6-6` | 相对论时空观与牛顿力学的局限性 | 轻量版单 mode | [ ] 未开工 |
+| 14 | P1-4 | `wave-optics-1-5` | 薄膜干涉与增透膜 | `wave-optics-1-1` 干涉骨架 | [x] 已完成 |
+| 15 | P2 | `mechanics-6-6` | 相对论时空观与牛顿力学的局限性 | 双参考系光钟与动钟尺缩几何 | [x] 已完成 |
 | 16 | P2 | `thermodynamics-3-3` | 能量守恒定律与能源 | 非计算章节 | [ ] 未开工 |
-| — | P2 | `modern-1-2` 内扩 mode | 康普顿效应 | 作为光电效应动画的一个 mode，**不单列节点** | [ ] 未开工 |
+| — | P2 | `modern-1-2` 内扩 mode | 康普顿效应 | 作为光电效应动画的一个 mode，**不单列节点** | [x] 已完成 |
 | — | P2 | `electricity-1-6` 内补 | 电势能 | 先确认是否已被现有 1-6 覆盖（未确认前不新建） | [ ] 待确认 |
 
 **现状核对命令**（输出 `0` 即该节点尚不存在）：
@@ -515,7 +515,7 @@ done
 | `experiment-2-2` | 验证机械能守恒定律 | `TickerTimer` `PaperTape` | [ ] 未开工 |
 | `experiment-2-3` | 验证动量守恒定律 | `Rails` `Photogate` `Block` | [ ] 未开工 |
 | `experiment-2-4` | 用单摆测重力加速度 | `anim-simple-pendulum` 骨架 + `LabRuler` | [ ] 未开工 |
-| **`experiment-3-1`** | **测量金属丝的电阻率** | **`Micrometer`（螺旋测微器，组件现成但当前闲置）** + `VernierCaliper` | [ ] 未开工 ★**性价比最高** |
+| **`experiment-3-1`** | **测量金属丝的电阻率** | **`Micrometer`（螺旋测微器，组件现成但当前闲置）** + `VernierCaliper` | [x] 已完成 ★**性价比最高** |
 | `experiment-3-2` | 描绘小灯泡的伏安特性曲线 | `Rheostat` `DialMeter` `LightBulb` | [ ] 未开工 |
 | `experiment-3-3` | 测定玻璃的折射率 | `optics-refraction` 骨架 | [ ] 未开工 |
 | `experiment-3-4` | 用双缝干涉测光的波长 | `optics-interference` 骨架 | [ ] 未开工 |

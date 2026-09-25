@@ -258,6 +258,10 @@ export interface Problem {
   content: string
   difficulty: 1 | 2 | 3 | 4 | 5
   knowledgeIds: string[]
+  /** 题目类型：choice=选择题, calculation=计算解答题, experiment=实验探究题 */
+  questionType?: 'choice' | 'calculation' | 'experiment'
+  /** 是否经过官方正式原卷逐字核验 (true: 官方原卷 100% 原文, false: 模型演练母题) */
+  verified?: boolean
   /** 题干配图路径（方案 B 静态高清图或 SVG 绝对路径，绝对纯净无解题辅助线） */
   images?: string[]
   /** 题干矢量 SVG 标记（方案 A 纯净题干示意图） */

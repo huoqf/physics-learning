@@ -174,3 +174,27 @@ export function generateIUCurve(
   }
   return points
 }
+
+/** 电子康普顿波长 λ_c = h / (m_e * c) ≈ 0.00242631 nm */
+export const COMPTON_WAVELENGTH_NM = 0.00242631
+
+/**
+ * 计算康普顿散射波长偏移 Δλ (nm)
+ * Δλ = λ' - λ = λ_c * (1 - cos θ)
+ * @param thetaDeg 散射角 (角度，度)
+ * @returns 波长改变量 Δλ (nm)
+ */
+export function calculateComptonWavelengthShift(thetaDeg: number): number {
+  const rad = (thetaDeg * Math.PI) / 180
+  return COMPTON_WAVELENGTH_NM * (1 - Math.cos(rad))
+}
+
+/**
+ * 计算康普顿散射后的波长 λ' (nm)
+ * @param lambda0Nm 入射光子波长 (nm)
+ * @param thetaDeg 散射角 (度)
+ * @returns 散射光子波长 λ' (nm)
+ */
+export function calculateComptonScatteredWavelength(lambda0Nm: number, thetaDeg: number): number {
+  return lambda0Nm + calculateComptonWavelengthShift(thetaDeg)
+}

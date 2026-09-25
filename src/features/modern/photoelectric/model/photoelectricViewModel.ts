@@ -6,6 +6,7 @@ import {
   intensityToSaturationCurrent,
   calculatePhotocurrent,
   frequencyToColor,
+  calculateComptonWavelengthShift,
 } from '@/physics/photoelectric'
 
 /** 铯逸出功 (eV) */
@@ -18,6 +19,7 @@ export interface PhotoelectricState {
   mode: number
   showPhotonModel: number
   workFunction?: number
+  theta?: number
 }
 
 export interface PhotoelectricDerived {
@@ -39,6 +41,12 @@ export interface PhotoelectricDerived {
   cutoffFreq: number
   /** 逸出功 (eV) */
   W0: number
+  /** 康普顿散射角 θ (度) */
+  thetaDeg: number
+  /** 康普顿波长改变量 Δλ (nm) */
+  deltaLambdaNm: number
+  /** 电子反冲角 φ (度) */
+  recoilAngleDeg: number
 }
 
 /**
@@ -58,6 +66,13 @@ export function computePhotoelectricDerived(
   const beamColor = frequencyToColor(params.frequency)
   const cutoffFreq = W0 / (4.135667696e-15 * 1e14) // ×10¹⁴ Hz
 
+  const thetaDeg = params.theta ?? 60
+  const deltaLambdaNm = calculateComptonWavelengthShift(thetaDeg)
+  // 简化的弹性动量守恒反冲角推导示意
+  const rad = (thetaDeg * Math.PI) / 180
+  const recoilAngleRad = Math.atan2(Math.sin(rad), 2 - Math.cos(rad))
+  const recoilAngleDeg = (recoilAngleRad * 180) / Math.PI
+
   return {
     hv,
     isPE,
@@ -68,5 +83,8 @@ export function computePhotoelectricDerived(
     beamColor,
     cutoffFreq,
     W0,
+    thetaDeg,
+    deltaLambdaNm,
+    recoilAngleDeg,
   }
 }

@@ -22,4 +22,14 @@ export const experimentKnowledge: KnowledgeNode[] = [
     problemIds: [],
     prerequisites: [],
   },
+  {
+    id: 'experiment-3-1',
+    title: '测量金属丝的电阻率',
+    chapter: '实验专题',
+    module: 'experiment',
+    importance: 'gaokao',
+    animationIds: ['anim-experiment-resistivity'],
+    problemIds: ['prob-2023-quanguo-23'],
+    prerequisites: ['experiment-1-2'],
+  },
 ]

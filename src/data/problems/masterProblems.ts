@@ -9,21 +9,23 @@ export const masterModelProblems: Problem[] = [
 
   // 2. 电磁感应单杆与收尾速度
   {
-    id: 'prob-2023-quanguo-19',
+    id: 'prob-model-single-rod',
     year: 2023,
-    province: '全国乙卷',
-    source: '2023年高考全国乙卷理综第19题',
+    province: '全国卷模型',
+    source: '高考经典母题演练（单杆恒力启动收尾速度模型）',
+    questionType: 'calculation',
+    verified: false,
     title: '电磁感应单杆切割与最大收尾速度分析',
     content:
       '如图所示，水平面内放置两条平行的光滑长直金属导轨，间距为 $L$，导轨左端连接阻值为 $R$ 的电阻。一质量为 $m$、电阻为 $r$ 的导体棒垂直跨放在导轨上。磁感应强度为 $B$ 的匀强磁场垂直于导轨平面向下。现对导体棒施加一水平向右的恒力 $F_0$，使其由静止开始运动。已知导轨电阻不计，重力加速度为 $g$。\n试求：\n(1) 当导体棒速度为 $v$ 时，回路中的感应电动势 $E$ 与感应电流 $I$ 大小；\n(2) 导体棒运动过程中的加速度 $a$ 与速度 $v$ 的关系式；\n(3) 导体棒最终能达到的最大收尾速度 $v_m$。',
     difficulty: 3,
     knowledgeIds: ['electricity-4-5', 'electricity-4-1', 'mechanics-4-2'],
     masterModelId: 'model-induction-single-rod',
-    tags: ['高考真题', '电磁感应', '单杆切割', '收尾速度'],
+    tags: ['压轴母题', '电磁感应', '单杆切割', '收尾速度'],
     targetAnimation: {
       animId: 'anim-induction-single-rod',
       presetParams: { startMechanism: 0, driveForce: 1.2, magneticB: 1.0, resistance: 1.5, rodMass: 0.2, railSpacing: 0.8 },
-      presetDescription: '载入 2023 高考全国乙卷第 19 题真题参数',
+      presetDescription: '载入单杆恒力启动收尾速度经典模型参数',
     },
     steps: [
       {
@@ -55,10 +57,12 @@ export const masterModelProblems: Problem[] = [
 
   // 3. 电磁感应双杆与动量守恒
   {
-    id: 'prob-2022-quanguo-21',
+    id: 'prob-model-dual-rods',
     year: 2022,
-    province: '全国乙卷',
-    source: '2022年高考全国乙卷理综第21题',
+    province: '全国卷模型',
+    source: '高考经典母题演练（双杆初速度滑动动量守恒模型）',
+    questionType: 'calculation',
+    verified: false,
     title: '磁场中双导体棒同向切割与系统动量守恒',
     content:
       '两根足够长的光滑平行金属导轨水平固定放置，间距为 $L$，整个装置处于磁感应强度为 $B$、方向垂直导轨平面向下的匀强磁场中。质量均为 $m$ 的导体棒 a 和 b 垂直跨放在导轨上。现给导体棒 a 一水平向右的初速度 $v_0$，导体棒 b 初始静止。已知两棒电阻均为 $R$，导轨电阻不计。\n试求：\n(1) 棒 a 刚获得初速度瞬间，回路中的感应电流大小；\n(2) 运动过程中两棒组成的系统在水平方向动量是否守恒，并求两棒达到的最终共同速度 $v_{\\text{共}}$；\n(3) 从开始运动到达到共同速度的全过程中，系统产生的焦耳热 $Q$。',

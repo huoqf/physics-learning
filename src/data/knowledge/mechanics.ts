@@ -384,6 +384,16 @@ export const mechanicsKnowledge: KnowledgeNode[] = [
     prerequisites: ['mechanics-6-3'],
   },
   {
+    id: 'mechanics-6-6',
+    title: '相对论时空观与牛顿力学的局限性',
+    chapter: '第6章 天体物理',
+    module: 'mechanics',
+    importance: 'gaokao',
+    animationIds: ['anim-relativity'],
+    problemIds: [],
+    prerequisites: ['mechanics-6-1'],
+  },
+  {
     id: 'mechanics-7-1',
     title: '功',
     chapter: '第7章 机械能',

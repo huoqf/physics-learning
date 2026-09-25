@@ -278,7 +278,7 @@ export const electricityKnowledge: KnowledgeNode[] = [
     module: 'electricity',
     importance: 'gaokao',
     animationIds: ['anim-self-induction-eddy'],
-    problemIds: [],
+    problemIds: ['prob-2024-hubei-01'],
     prerequisites: ['electricity-4-8'],
   },
   {
@@ -339,7 +339,7 @@ export const electricityKnowledge: KnowledgeNode[] = [
     module: 'electricity',
     importance: 'gaokao',
     animationIds: ['anim-lc-oscillation'],
-    problemIds: [],
+    problemIds: ['prob-2022-quanguo-34-1'],
     prerequisites: ['electricity-1-4', 'electricity-4-2'],
   },
   {

@@ -3,6 +3,7 @@ import { usePhotoelectricSimulation } from './hooks/usePhotoelectricSimulation'
 import { computePhotoelectricDerived } from './model/photoelectricViewModel'
 import PhototubeCanvas from './components/PhototubeCanvas'
 import IUCurveChart from './components/IUCurveChart'
+import { ComptonScatteringScene } from './components/ComptonScatteringScene'
 
 export default function PhotoelectricAnimation() {
   const params = useAnimationStore((s) => s.params)
@@ -12,6 +13,7 @@ export default function PhotoelectricAnimation() {
   const voltage = params.voltage ?? 0
   const mode = params.mode ?? 0
   const showPhotonModel = params.showPhotonModel ?? 0
+  const theta = params.theta ?? 60
 
   const derived = computePhotoelectricDerived({
     frequency,
@@ -19,6 +21,7 @@ export default function PhotoelectricAnimation() {
     voltage,
     mode,
     showPhotonModel,
+    theta,
   })
 
   // Canvas 尺寸 (使用 full preset，中屏独占)
@@ -30,6 +33,14 @@ export default function PhotoelectricAnimation() {
     canvasWidth,
     canvasHeight,
   )
+
+  if (mode === 2) {
+    return (
+      <div className="flex-1 w-full min-h-0 flex flex-col p-2 bg-neutral-50 rounded-xl overflow-hidden">
+        <ComptonScatteringScene derived={derived} />
+      </div>
+    )
+  }
 
   return (
     <div className="flex-1 w-full min-h-0 flex flex-col gap-2 p-2 bg-neutral-50 rounded-xl overflow-hidden">
@@ -62,3 +73,4 @@ export default function PhotoelectricAnimation() {
     </div>
   )
 }
+

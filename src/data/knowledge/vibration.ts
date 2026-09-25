@@ -59,7 +59,7 @@ export const vibrationKnowledge: KnowledgeNode[] = [
     module: 'vibration',
     importance: 'gaokao',
     animationIds: ['anim-doppler-effect'],
-    problemIds: [],
+    problemIds: ['prob-2023-quanguo-14'],
     prerequisites: ['vibration-2-1'],
   },
 ]
