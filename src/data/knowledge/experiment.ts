@@ -32,4 +32,14 @@ export const experimentKnowledge: KnowledgeNode[] = [
     problemIds: ['prob-2023-quanguo-23'],
     prerequisites: ['experiment-1-2'],
   },
+  {
+    id: 'experiment-3-5',
+    title: '多用电表的使用与内部原理',
+    chapter: '实验专题',
+    module: 'experiment',
+    importance: 'gaokao',
+    animationIds: ['anim-multimeter'],
+    problemIds: ['prob-2024-quanguo-exp-multimeter'],
+    prerequisites: ['experiment-1-2'],
+  },
 ]

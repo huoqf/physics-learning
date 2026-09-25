@@ -52,6 +52,7 @@ type BuilderName =
   | 'buildThinFilmInterferenceQuantities'
   | 'buildRelativityQuantities'
   | 'buildExperimentResistivityQuantities'
+  | 'buildExperimentMultimeterQuantities'
 
 /** 单条注册记录：懒加载器 + 构建器函数名 */
 interface QuantityRegistration {
@@ -201,6 +202,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-thin-film-interference': { loader: () => import('./quantities/thinFilmInterference'), builderName: 'buildThinFilmInterferenceQuantities' },
   'anim-relativity': { loader: () => import('./quantities/relativity'), builderName: 'buildRelativityQuantities' },
   'anim-experiment-resistivity': { loader: () => import('./quantities/experimentResistivity'), builderName: 'buildExperimentResistivityQuantities' },
+  'anim-multimeter': { loader: () => import('./quantities/experimentMultimeter'), builderName: 'buildExperimentMultimeterQuantities' },
 }
 
 /** 已加载的构建器缓存（模块级单例） */

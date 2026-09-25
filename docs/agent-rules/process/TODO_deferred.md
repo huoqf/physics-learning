@@ -519,7 +519,7 @@ done
 | `experiment-3-2` | 描绘小灯泡的伏安特性曲线 | `Rheostat` `DialMeter` `LightBulb` | [ ] 未开工 |
 | `experiment-3-3` | 测定玻璃的折射率 | `optics-refraction` 骨架 | [ ] 未开工 |
 | `experiment-3-4` | 用双缝干涉测光的波长 | `optics-interference` 骨架 | [ ] 未开工 |
-| `experiment-3-5` | 多用电表的使用 | `electricity-2-4` + `DialMeter` | [ ] 未开工 |
+| `experiment-3-5` | 多用电表的使用与内部原理 | `DialMeter`、大表盘、元器件台 Overlay | [x] 已完成 |
 
 > **教学有效性硬要求**：每个实验动画必须带「**数据分析屏**」（图像斜率/截距 ↔ 物理量的对应关系）。实验动画的价值在**误差来源 + 数据处理 + 电路选择**三个决策点，而非演示操作流程。
 

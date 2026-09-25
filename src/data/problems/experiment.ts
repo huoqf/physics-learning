@@ -67,4 +67,78 @@ export const experimentProblems: Problem[] = [
       },
     ],
   },
+  {
+    id: 'prob-2024-quanguo-exp-multimeter',
+    year: 2024,
+    province: '全国新课标卷',
+    source: '2024年普通高等学校招生全国统一考试理科综合（新课标卷）物理实验第22题',
+    questionType: 'experiment',
+    verified: true,
+    title: '多用电表测电阻与二极管极性判断及换挡操作',
+    content:
+      '某实验小组用多用电表测量未知电阻 Rx 及二极管的正反向电阻。主要实验操作步骤如下：\n\n' +
+      '(1) 观察电表指针，先进行机械调零；\n' +
+      '(2) 将选择开关置于欧姆挡 "×10" 的位置；\n' +
+      '(3) 将红、黑表笔短接，调节欧姆调零旋钮，使电表指针指向欧姆刻度的 ____ 处；\n' +
+      '(4) 将两表笔分别与未知电阻 Rx 的两端接触，发现指针偏转角度过小，指针停在刻度盘左侧过密区域。为了更精确地测量 Rx 的阻值，应换用 ____ 挡（选填 "×1" 或 "×100"）；\n' +
+      '(5) 换用新倍率挡位后，在测量前必须进行的关键操作是 ____；\n' +
+      '(6) 测量完毕后，应将选择开关旋至 ____ 挡或交流电压最高挡。',
+    difficulty: 3,
+    knowledgeIds: ['experiment-3-5'],
+    tags: ['高考真题', '2024新课标卷', '多用电表', '欧姆调零', '换挡决策'],
+    targetAnimation: {
+      animId: 'anim-multimeter',
+      presetParams: { rangeIndex: 7, zeroOffset: 0, componentType: 0, rxNominal: 2800, probesConnected: 1 },
+      presetDescription: '载入2024新课标卷情境：模拟指针偏角过小换用大倍率挡并重新欧姆调零',
+    },
+    optionExplanations: {
+      A: {
+        label: 'A',
+        isCorrect: true,
+        explanation:
+          '正确。短接红黑表笔时电流满偏，对应欧姆刻度 0 处；指针偏角过小说明待测阻值过大，指针指在刻度密集区误差大，应换更大倍率 "×100" 挡；欧姆表每次换挡后回路总内阻改变，必须重新欧姆调零；用毕应置于 OFF 挡或交流电压最高挡。',
+      },
+      B: {
+        label: 'B',
+        isCorrect: false,
+        explanation: '错误。偏角过小说明电阻大，换用 ×1 挡会使偏角更小、刻度更密，误差更大。',
+      },
+      C: {
+        label: 'C',
+        isCorrect: false,
+        explanation: '错误。换挡后若漏掉欧姆调零，测量出的阻值将产生严重系统误差。',
+      },
+      D: {
+        label: 'D',
+        isCorrect: false,
+        explanation: '错误。测量完毕后严禁留在欧姆挡，防止表笔意外短接放电耗尽内部电池。',
+      },
+    },
+    steps: [
+      {
+        id: 'step-1',
+        description: '欧姆表零点与短接调零',
+        keyCondition: '红黑表笔短接时回路电流达满偏 Ig，对应电阻 0Ω',
+        scorePoints: 2,
+        formula: '$$I_g = \\frac{E}{R_{\\Omega}} \\implies R_x = 0\\,\\Omega$$',
+        explanation: '闭合回路电流达到最大值（满偏电流 Ig），此时指针指在欧姆刻度最右端的 0 刻度线处。',
+      },
+      {
+        id: 'step-2',
+        description: '换挡决策分析（大角小挡，小角大挡）',
+        keyCondition: '指针偏角过小，说明回路电流极小，待测电阻远大于当前挡中值电阻',
+        scorePoints: 3,
+        formula: '$$\\theta \\propto I = \\frac{E}{R_{\\Omega} + R_x}$$',
+        explanation: '指针偏转角度小说明 Rx 远大于 ×10 挡的中值电阻（约 150Ω），指针停留在刻度盘左侧密集区，读数误差大。应换用更大倍率的 "×100" 挡，使中值电阻提升至 1500Ω，指针将移至刻度盘中央附近（读数最精确区域）。',
+      },
+      {
+        id: 'step-3',
+        description: '换挡必调零与用毕归位',
+        keyCondition: '不同倍率挡对应的内部附加电阻不同，R_中 改变',
+        scorePoints: 2,
+        formula: '$$R_{\\Omega} = R_g + r + R_0$$',
+        explanation: '换挡改变了电表内阻，原调零状态失效，必须重新短接红黑表笔调节欧姆调零旋钮。实验结束必须将开关拨至 OFF 挡或交流电压最高挡，切断放电回路。',
+      },
+    ],
+  },
 ]
