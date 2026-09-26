@@ -64,6 +64,10 @@ export { Galvanometer } from './Galvanometer'
 export { MeterPointer } from './MeterPointer'
 export { LightBulb } from './LightBulb'
 export { Rheostat } from './Rheostat'
+export { CircuitSwitch } from './CircuitSwitch'
+export type { CircuitSwitchProps } from './CircuitSwitch'
+export { ChainCircuitBuilder } from './ChainCircuitBuilder'
+export type { ChainCircuitBuilderProps } from './ChainCircuitBuilder'
 
 // ============================================================================
 // 电磁学 - 磁场 (Magnetism)

@@ -53,6 +53,7 @@ type BuilderName =
   | 'buildRelativityQuantities'
   | 'buildExperimentResistivityQuantities'
   | 'buildExperimentMultimeterQuantities'
+  | 'buildBulbVAQuantities'
 
 /** 单条注册记录：懒加载器 + 构建器函数名 */
 interface QuantityRegistration {
@@ -203,6 +204,7 @@ const quantityRegistry: Record<string, QuantityRegistration> = {
   'anim-relativity': { loader: () => import('./quantities/relativity'), builderName: 'buildRelativityQuantities' },
   'anim-experiment-resistivity': { loader: () => import('./quantities/experimentResistivity'), builderName: 'buildExperimentResistivityQuantities' },
   'anim-multimeter': { loader: () => import('./quantities/experimentMultimeter'), builderName: 'buildExperimentMultimeterQuantities' },
+  'anim-experiment-bulb-va': { loader: () => import('./quantities/experiment/bulbVA'), builderName: 'buildBulbVAQuantities' },
 }
 
 /** 已加载的构建器缓存（模块级单例） */

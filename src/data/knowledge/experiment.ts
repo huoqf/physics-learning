@@ -42,4 +42,14 @@ export const experimentKnowledge: KnowledgeNode[] = [
     problemIds: ['prob-2024-quanguo-exp-multimeter'],
     prerequisites: ['experiment-1-2'],
   },
+  {
+    id: 'experiment-3-2',
+    title: '描绘小灯泡的伏安特性曲线',
+    chapter: '实验专题',
+    module: 'experiment',
+    importance: 'gaokao',
+    animationIds: ['anim-experiment-bulb-va'],
+    problemIds: [],
+    prerequisites: ['experiment-1-2'],
+  },
 ]

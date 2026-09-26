@@ -55,6 +55,8 @@
 | `Micrometer` | 螺旋测微器（千分尺） | `x`, `y`, `measuredValue` | `<Micrometer x={0} y={0} measuredValue={5.382} showMagnifier />` |
 | `SpringBalance` | 弹簧测力计 | `x`, `y`, `force` | `<SpringBalance x={50} y={50} force={3.5} maxForce={5} />` |
 | `LabStand` | 铁架台支架 | `x`, `y` | `<LabStand x={100} y={200} attachment="clamp" />` |
+| `CircuitSwitch` | 实验单刀单掷电键（开关 S，支持开合状态） | `x`, `y` | `<CircuitSwitch x={200} y={260} closed={true} />` |
+| `ChainCircuitBuilder` | 电路拓扑构建器（分压/限流回路与内外接拓扑，支持元件插槽与导线网络） | `circuitType`, `meterWiring`, `sliderRatio` | `<ChainCircuitBuilder circuitType="voltage-divider" meterWiring="external" sliderRatio={0.5} />` |
 
 ---
 

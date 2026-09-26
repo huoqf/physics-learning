@@ -322,3 +322,161 @@ export function calculateMotorCircuit(
 
   return { I: 0, U_M: 0, P_total: 0, P_heat_M: 0, P_heat_R: 0, P_mech: 0, v_lift: 0, valid: false }
 }
+
+export type CircuitType = 'voltage-divider' | 'current-limiting'
+export type MeterWiring = 'external' | 'internal'
+
+export interface CircuitStateOptions {
+  circuitType: CircuitType
+  meterWiring: MeterWiring
+  sliderRatio: number
+  E?: number
+  r?: number
+  R_slider_max?: number
+  Rx?: number
+  RV?: number
+  RA?: number
+  closed?: boolean
+}
+
+export interface CircuitStateResult {
+  U_meas: number
+  I_meas: number
+  U_real: number
+  I_real: number
+  R_meas: number
+  R_branch: number
+  circuitType: CircuitType
+  meterWiring: MeterWiring
+}
+
+/**
+ * 闭合电路实验参量计算（分压式 vs 限流式，外接法 vs 内接法）。
+ * 严格按照闭合电路欧姆定律与混联电阻公式计算。
+ */
+export function calculateCircuitState(options: CircuitStateOptions): CircuitStateResult {
+  const {
+    circuitType,
+    meterWiring,
+    sliderRatio,
+    E = 6.0,
+    r = 0.5,
+    R_slider_max = 20,
+    Rx = 5.0,
+    RV = 3000,
+    RA = 0.5,
+    closed = true,
+  } = options
+
+  if (!closed) {
+    return {
+      U_meas: 0,
+      I_meas: 0,
+      U_real: 0,
+      I_real: 0,
+      R_meas: 0,
+      R_branch: 0,
+      circuitType,
+      meterWiring,
+    }
+  }
+
+  const ratio = Math.max(0.0001, Math.min(0.9999, sliderRatio))
+
+  if (circuitType === 'voltage-divider') {
+    const Rp = R_slider_max * ratio
+    const Rs = R_slider_max * (1 - ratio)
+
+    let R_branch = 0
+    if (meterWiring === 'external') {
+      const R_x_parallel_V = (Rx * RV) / (Rx + RV)
+      R_branch = R_x_parallel_V + RA
+    } else {
+      const R_x_series_A = Rx + RA
+      R_branch = (R_x_series_A * RV) / (R_x_series_A + RV)
+    }
+
+    const R_parallel = (Rp * R_branch) / (Rp + R_branch)
+    const R_total = r + Rs + R_parallel
+    const I_main = E / R_total
+    const U_out = I_main * R_parallel
+
+    let U_meas = 0
+    let I_meas = 0
+    let U_real = 0
+    let I_real = 0
+
+    if (meterWiring === 'external') {
+      I_meas = U_out / R_branch
+      const R_x_parallel_V = (Rx * RV) / (Rx + RV)
+      U_meas = I_meas * R_x_parallel_V
+      U_real = U_meas
+      I_real = U_real / Rx
+    } else {
+      U_meas = U_out
+      const R_x_series_A = Rx + RA
+      I_meas = U_out / R_x_series_A
+      I_real = I_meas
+      U_real = I_real * Rx
+    }
+
+    const R_meas = I_meas > 0 ? U_meas / I_meas : 0
+
+    return {
+      U_meas,
+      I_meas,
+      U_real,
+      I_real,
+      R_meas,
+      R_branch,
+      circuitType,
+      meterWiring,
+    }
+  } else {
+    const R_slider = R_slider_max * (1 - ratio)
+
+    let R_branch = 0
+    if (meterWiring === 'external') {
+      const R_x_parallel_V = (Rx * RV) / (Rx + RV)
+      R_branch = R_x_parallel_V + RA
+    } else {
+      const R_x_series_A = Rx + RA
+      R_branch = (R_x_series_A * RV) / (R_x_series_A + RV)
+    }
+
+    const R_total = r + R_slider + R_branch
+    const I_total = E / R_total
+
+    let U_meas = 0
+    let I_meas = 0
+    let U_real = 0
+    let I_real = 0
+
+    if (meterWiring === 'external') {
+      I_meas = I_total
+      const R_x_parallel_V = (Rx * RV) / (Rx + RV)
+      U_meas = I_meas * R_x_parallel_V
+      U_real = U_meas
+      I_real = U_real / Rx
+    } else {
+      const R_x_series_A = Rx + RA
+      I_meas = (I_total * RV) / (R_x_series_A + RV)
+      U_meas = I_total * R_branch
+      I_real = I_meas
+      U_real = I_real * Rx
+    }
+
+    const R_meas = I_meas > 0 ? U_meas / I_meas : 0
+
+    return {
+      U_meas,
+      I_meas,
+      U_real,
+      I_real,
+      R_meas,
+      R_branch,
+      circuitType,
+      meterWiring,
+    }
+  }
+}

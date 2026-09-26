@@ -38,4 +38,7 @@ export * from './inclined_plane'
 export * from './blockBoard'
 export * from './lcOscillation'
 export * from './emWave'
-export * from './thinFilm'
+export * from './thinFilm'
+export * from './dcCircuit'
+
+

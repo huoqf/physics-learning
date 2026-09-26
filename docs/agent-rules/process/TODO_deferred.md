@@ -61,9 +61,9 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 | # | 文件 | 当前行数 | 消费者 | 测试 | 拆分方案 | 风险 |
 |:-:|------|-----:|--------|:---:|---------|:---:|
-| 1 | `RotatingCoil.tsx` | 506 | 1（`ACGeneration.tsx`） | 无 | `render3DSlipRing`/`render3DBrush`/`renderBrushWires` → `rotatingCoilParts.tsx`；主组件保留顶点计算 + 深度排序 + 组装 | 低 |
-| 2 | `AnimationPage.tsx` | 526 | 1（`App.tsx` 路由） | 无 | 抽 `useFilteredParams()`（showIf/hideIf 过滤）、`useAnimationMode()`（resetParams 逻辑）。无埋点/监控/URL 同步。SidebarExtra 已删除，行数从 566 降至 526 | 低 |
-| 3 | `RelationChart.tsx` | 516 | **30+（132 处）** | 无 | **仅做类型整理**：`RelationDataSeries`/`RelationMarker`/`RelationChartProps` → `RelationChart.types.ts`。`RCContent` 依赖 `ChartContext`，保留在组件文件中 | 低（仅类型迁移） |
+| 1 | `RotatingCoil.tsx` (`src/components/Physics/`) | 619 | 1（`ACGeneration.tsx`） | 无 | `render3DSlipRing`/`render3DBrush`/`renderBrushWires` → `rotatingCoilParts.tsx`；主组件保留顶点计算 + 深度排序 + 组装 | 低 |
+| 2 | `AnimationPage.tsx` | 527 | 1（`App.tsx` 路由） | 无 | 抽 `useFilteredParams()`（showIf/hideIf 过滤）、`useAnimationMode()`（resetParams 逻辑）。无埋点/监控/URL 同步。SidebarExtra 已删除 | 低 |
+| 3 | `RelationChart.tsx` | 533 | **30+（132 处）** | 无 | **仅做类型整理**：`RelationDataSeries`/`RelationMarker`/`RelationChartProps` → `RelationChart.types.ts`。`RCContent` 依赖 `ChartContext`，保留在组件文件中 | 低（仅类型迁移） |
 
 **补充信息**：
 
@@ -254,24 +254,9 @@ Phase 3 目标：registry.defaultParams、quantities builder params、AnimationP
 - 使用 sceneScale `refMagnitudes` 自动归一化 → `physical-real` 或 `physical-schematic`
 - 使用 `pixelLength` 手动控制 → `physical-schematic` 或 `visual-only`
 - `IDENTITY_SCENE_SCALE` + pixelLength → 大概率 `visual-only`
+### 6.2 `originPixel` → `originDesign` 重命名规范（[x] 已完成闭环）
 
-### 6.2 `originPixel` → `originDesign` 重命名规范
-
-**目标**：消除命名歧义，`originPixel` → `originDesign`，保留 deprecated alias。
-
-**范围**：
-- `VectorArrow.tsx`：接口重命名 + alias
-- 358 处 JSX 调用：批量替换 prop 名
-- `renderVectorArrow.tsx`：同步更新
-- `renderSceneVector.tsx`：同步更新
-
-**风险**：低。纯重命名，不改变运行时行为。
-
-**步骤**：
-1. `VectorArrow.tsx` 接口：`originPixel` → `originDesign`，保留 `/** @deprecated Use originDesign */` alias
-2. 全局搜索替换 `<VectorArrow` 内 `originPixel` → `originDesign`
-3. 更新 `renderVectorArrow.tsx`、`renderSceneVector.tsx` 等辅助函数
-4. `tsc --noEmit` + `npm test`
+> **状态**：**已闭环（2026-09-26 实测）**。全仓存量 JSX 调用已全部迁移至 `originDesign`（0 处遗留），仅剩 `VectorArrow.tsx` 内部接口定义及 `@deprecated` alias，无需进一步迁移。
 
 ### 6.3 `PhysicsVectorArrow` 组件规范
 
@@ -377,77 +362,17 @@ npx playwright test
 
 ---
 
-## 八、`<foreignObject>` 规范要求
+## 八、`<foreignObject>` 规范要求（[x] 已完成闭环）
 
-### 规范要求
-
-| 规则 | 来源 |
-|------|------|
-| 图表严禁 `<foreignObject>` | `07_CANVAS_SVG_CHART_RULES.md:263` |
-| 严禁 SVG 内用 `<foreignObject>` 嵌入响应式 React 图表 | `project_rules.md:82` |
-| 正确做法：HTML `flex` 容器内 SVG 场景与图表 `div` **平级并列** | `07_CANVAS_SVG_CHART_RULES.md:423-442` |
-
-### 违规清单（11 个文件，14 处 `<foreignObject>`）
-
-**高优先级 — 标准图表面板（6 个文件）**：
-
-| # | 文件 | 行号 | 嵌入内容 | 迁移方案 |
-|:-:|------|:----:|---------|---------|
-| 1 | `ProjectileAnimation.tsx` | 453 | `VelocityTimeChart` 画中画 | 移到 HTML absolute 浮层，跟随 SVG 容器定位 |
-| 2 | `ObliqueThrowAnimation.tsx` | 398 | `VelocityTimeChart` 画中画 | 同上 |
-| 3 | `GravityAnimation.tsx` | 452 | `RelationChart` 画中画 | 同上 |
-| 4 | `SatelliteAnimation.tsx` | 297, 372 | `RelationChart` + `VelocityTimeChart` | 同上 |
-| 5 | `MomentumScene.tsx` | 194 | `RelationChart` 画中画 | 同上 |
-| 6 | `ACGeneration.tsx` | 405 | 图表面板 | HTML flex 分区或 absolute 浮层 |
-
-**中优先级 — 专用图表面板（4 个文件）**：
-
-| # | 文件 | 行号 | 嵌入内容 | 迁移方案 |
-|:-:|------|:----:|---------|---------|
-| 7 | `WorkVTChart.tsx` | 41 | v-t 图表 | 改为 HTML 层独立组件，父级 flex 布局 |
-| 8 | `VerticalThrowCharts.tsx` | 37, 47 | v-t + y-t 图表 | 同上 |
-| 9 | `EnergyTimeChart.tsx` | 22, 37 | 能量图表 | 同上 |
-| 10 | `FaradayChartPanel.tsx` | 167 | 法拉第图表面板 | 同上 |
-
-**低优先级 — 内容卡片（1 个文件）**：
-
-| # | 文件 | 行号 | 嵌入内容 | 迁移方案 |
-|:-:|------|:----:|---------|---------|
-| 11 | `ForceDecompositionCard.tsx` | 153 | 力分解说明卡片 | 判断：跟随坐标 → SVG 原生；纯说明 → HTML overlay |
-
-### 已合规页面（无需处理）
-
-`EnergyConservationAnimation`、`SimpleHarmonicAnimation`、`ThinLensAnimation`、`ClapeyronAnimation`、`GasLawsAnimation`、`LightRodRopeAnimation` — 注释明确标注"无 foreignObject"，使用 HTML flex 分区或 absolute 浮层。
-
-### 迁移模式
-
-```tsx
-// ❌ 当前：foreignObject 嵌入 SVG
-<svg width={w} height={h}>
-  <g transform={vp.transform}>{/* 场景 */}</g>
-  <foreignObject x={chartX} y={chartY} width={chartW} height={chartH}>
-    <VelocityTimeChart ... />
-  </foreignObject>
-</svg>
-
-// ✅ 目标：HTML 层 absolute 浮层
-<div ref={containerRef} className="w-full h-full relative">
-  <AnimationSvgCanvas transform={vp.transform}>
-    {/* 场景 */}
-  </AnimationSvgCanvas>
-  <div className="absolute right-2 top-2" style={{ width: chartW, height: chartH }}>
-    <VelocityTimeChart ... />
-  </div>
-</div>
-```
+> **状态**：**已闭环（2026-09-26 实测）**。全仓存量组件中 `<foreignObject>` 的实际 JSX 使用已全部清零（0 处存在），存量 11 个涉及画中画的动画已全部重构为 HTML flex 平级分区或 absolute 浮层架构，无需进一步修改。
 
 ### 验收标准
 
-- [ ] 所有 `<foreignObject>` 从 SVG 内移除（11 个文件，14 处）
-- [ ] 图表组件放在 HTML 层（flex 分区或 absolute 浮层）
-- [ ] 图表尺寸由容器 CSS 或 `useCanvasSize` 驱动，不依赖 SVG 坐标
-- [ ] TypeScript 0 errors + Vitest 701 tests 全量通过
-- [ ] ESLint 0 errors 0 warnings 通过
+- [x] 所有 `<foreignObject>` 从 SVG 内移除（存量 11 个文件已全部合规）
+- [x] 图表组件放在 HTML 层（flex 分区或 absolute 浮层）
+- [x] 图表尺寸由容器 CSS 或 `useCanvasSize` 驱动，不依赖 SVG 坐标
+- [x] TypeScript 0 errors + Vitest 全量通过
+- [x] ESLint 0 errors 0 warnings 通过
 
 ---
 
@@ -478,7 +403,7 @@ npx playwright test
 | 15 | P2 | `mechanics-6-6` | 相对论时空观与牛顿力学的局限性 | 双参考系光钟与动钟尺缩几何 | [x] 已完成 |
 | 16 | P2 | `thermodynamics-3-3` | 能量守恒定律与能源 | 非计算章节 | [ ] 未开工 |
 | — | P2 | `modern-1-2` 内扩 mode | 康普顿效应 | 作为光电效应动画的一个 mode，**不单列节点** | [x] 已完成 |
-| — | P2 | `electricity-1-6` 内补 | 电势能 | 先确认是否已被现有 1-6 覆盖（未确认前不新建） | [ ] 待确认 |
+| — | P2 | `electricity-1-6` 内补 | 电势能 | 已在 `anim-electric-potential` 完整覆盖（含 $U_{AB}$、$\Delta E_p$、做功与路径无关） | [x] 已确认覆盖 |
 
 **现状核对命令**（输出 `0` 即该节点尚不存在）：
 
@@ -500,7 +425,7 @@ done
 |:-:|------|---------|------|:----:|
 | 1 | `CharacteristicCurve`（通用特性曲线屏） | 传感器 R-光照/R-T、共振曲线、伏安特性曲线、`X_L(f)`/`X_C(f)`、LC 振荡曲线 | 已在 `src/components/Chart/` 实现并登记 | [x] 已完成 |
 | 2 | `EnergyFlowBars`（能量转换柱扩展） | LC 振荡、电磁阻尼、热力学第一定律；由现有 `EnergyBars` 扩出「两库互相转换」模式 | 目前仅单组柱 `EnergyBars` | [ ] 未开工 |
-| 3 | `ChainCircuitBuilder`（电路拓扑构建） | 传感器、感抗容抗、实验电路共用同一套拓扑描述 | 项目内**不存在** | [ ] 未开工 |
+| 3 | `ChainCircuitBuilder`（电路拓扑构建） | 传感器、感抗容抗、实验电路（**小灯泡伏安特性 `experiment-3-2` 前置核心依赖**） | 已在 `src/components/Physics/` 实现并登记 | [x] 已完成 |
 
 > **落地约束**：三者需从 `src/components/Physics/index.ts`（或 `Chart/`）导出，并在 `COMPONENT_REGISTRY.md` 登记**与源码一致的完整 props 签名**（见 §10.6）。
 > **核对命令**：`grep -rl "CharacteristicCurve\|EnergyFlowBars\|ChainCircuitBuilder" src/components src/features`（当前 0 命中）
@@ -516,7 +441,7 @@ done
 | `experiment-2-3` | 验证动量守恒定律 | `Rails` `Photogate` `Block` | [ ] 未开工 |
 | `experiment-2-4` | 用单摆测重力加速度 | `anim-simple-pendulum` 骨架 + `LabRuler` | [ ] 未开工 |
 | **`experiment-3-1`** | **测量金属丝的电阻率** | **`Micrometer`（螺旋测微器，组件现成但当前闲置）** + `VernierCaliper` | [x] 已完成 ★**性价比最高** |
-| `experiment-3-2` | 描绘小灯泡的伏安特性曲线 | `Rheostat` `DialMeter` `LightBulb` | [ ] 未开工 |
+| `experiment-3-2` | 描绘小灯泡的伏安特性曲线 | `ChainCircuitBuilder`（前置）+ `Rheostat` `DialMeter` `LightBulb` | [x] 已完成 |
 | `experiment-3-3` | 测定玻璃的折射率 | `optics-refraction` 骨架 | [ ] 未开工 |
 | `experiment-3-4` | 用双缝干涉测光的波长 | `optics-interference` 骨架 | [ ] 未开工 |
 | `experiment-3-5` | 多用电表的使用与内部原理 | `DialMeter`、大表盘、元器件台 Overlay | [x] 已完成 |
@@ -525,8 +450,8 @@ done
 
 ### 9.4 题库时效性（P1）
 
-- 现有题库年份仅 **2021–2024**（`grep -rho "year: 202[0-9]" src/data/problems/` → 2021:6 / 2022:14 / 2023:24 / 2024:13，共 57 题）；`year: 2025` **0 条**。
-- [ ] 补 2025 年真题 8–15 道，**优先覆盖本次新增章节**（LC 振荡 / 传感器 / 多普勒 / 受迫振动），避免"有动画没题"。
+- 现有题库带 `year:` 的真题共 **46** 题（实测：2021:7 / 2022:11 / 2023:19 / 2024:9）；`year: 2025` **0 条**。
+- [ ] 补 2025 年真题 8–15 道，**优先覆盖本次新增章节**（LC 振荡 / 传感器 / 多普勒 / 受迫振动 / 实验专题），避免"有动画没题"。
 - [ ] 补 2025 年代表性模拟题（河南/湖南/江苏/云南等卷）中上述章节的选择题。
 
 ### 9.5 施工批次建议
