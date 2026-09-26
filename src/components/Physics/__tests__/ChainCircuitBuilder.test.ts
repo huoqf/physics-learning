@@ -38,11 +38,23 @@ describe('ChainCircuitBuilder: calculateCircuitState', () => {
     expect(res.I_meas).toBeGreaterThan(0.5)
   })
 
-  it('限流式接法：最小电压不能调至 0V', () => {
-    const res = calculateCircuitState({
+  it('限流式接法：最小电压不能调至 0V，且滑片在左端接入最大阻值实现开机限流保护', () => {
+    const resProtect = calculateCircuitState({
       circuitType: 'current-limiting',
       meterWiring: 'external',
-      sliderRatio: 0.001, // 变阻器全阻值接入
+      sliderRatio: 0.001, // 变阻器接入全部阻值 (一上一下，B 端至最左滑片)
+      E: 6.0,
+      r: 0.5,
+      R_slider_max: 20,
+      Rx: 5.0,
+      RV: 3000,
+      RA: 0.5,
+    })
+
+    const resMax = calculateCircuitState({
+      circuitType: 'current-limiting',
+      meterWiring: 'external',
+      sliderRatio: 0.999, // 滑片滑至右端 B，变阻器接入阻值趋近 0
       E: 6.0,
       r: 0.5,
       R_slider_max: 20,
@@ -52,7 +64,10 @@ describe('ChainCircuitBuilder: calculateCircuitState', () => {
     })
 
     // 限流接法无法将电压降到 0
-    expect(res.U_meas).toBeGreaterThan(0.8)
+    expect(resProtect.U_meas).toBeGreaterThan(0.8)
+    // 左端开机保护：电流处于最小值，显著小于右端满流状态
+    expect(resProtect.I_meas).toBeLessThan(resMax.I_meas)
+    expect(resMax.I_meas).toBeGreaterThan(0.8)
   })
 
   it('外接法测量小电阻：测得电阻值略小于真实值（电压表分流），但远优于内接法', () => {

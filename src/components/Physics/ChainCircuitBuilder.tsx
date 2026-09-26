@@ -144,35 +144,52 @@ export const ChainCircuitBuilder: React.FC<ChainCircuitBuilderProps> = ({
     if (circuitType === 'voltage-divider') {
       // ── 分压式接法（高中物理规范）：
       // 变阻器两下端 A、B 跨接电源全电压；
-      // 输出高电位端取自滑杆左上 C 接线柱 termC；
-      // 输出低电位参考端取自左下 A 接线柱 termA 并联引出；
-      // 滑片在最左侧时，滑片接触 A 端，U_out = 0V！
+      // 1. 电源负极 -> 负极母线 -> 变阻器左下接线柱 A (0V 零电位基准端)
+      wires.push({ from: sourceMinus, to: { x: 45, y: sourcePos.y } })
+      wires.push({ from: { x: 45, y: sourcePos.y }, to: { x: 45, y: termA.y } })
+      wires.push({ from: { x: 45, y: termA.y }, to: termA })
 
-      // 高电位输出线 (termC -> 测量支路入口 x=420, y=95)
+      // 2. 电源正极 -> 电键 S -> 变阻器右下接线柱 B (高电位端)
+      wires.push({ from: sourcePlus, to: switchLeft })
+      wires.push({ from: switchRight, to: { x: 335, y: switchPos.y } })
+      wires.push({ from: { x: 335, y: switchPos.y }, to: { x: 335, y: termB.y } })
+      wires.push({ from: { x: 335, y: termB.y }, to: termB })
+
+      // 3. 高电位输出线 (滑杆左上 C 接线柱 termC -> 测量支路入口 x=420, y=95)
       wires.push({ from: termC, to: { x: termC.x, y: 65 } })
       wires.push({ from: { x: termC.x, y: 65 }, to: { x: 420, y: 65 } })
       wires.push({ from: { x: 420, y: 65 }, to: { x: 420, y: 95 } })
 
-      // 低电位返回线 (测量支路出口 x=730, y=95 -> 返回负极母线)
+      // 4. 低电位返回线 (测量支路出口 x=730, y=95 -> 返回负极母线)
       wires.push({ from: { x: 730, y: 95 }, to: { x: 755, y: 95 } })
       wires.push({ from: { x: 755, y: 95 }, to: { x: 755, y: 285 } })
       wires.push({ from: { x: 755, y: 285 }, to: { x: 45, y: 285 } })
       wires.push({ from: { x: 45, y: 285 }, to: { x: 45, y: sourcePos.y } })
     } else {
-      // ── 限流式接法（高中物理“一上一下”规范）：
-      // 变阻器一上一下接入：右下接线柱 B 不接线；
-      // 电键出线经滑杆右上端 D 接入，左下端 A 出线引向待测负载；
+      // ── 限流式接法（高中物理规范“一上一下”串联）：
+      // 变阻器接入右下接线柱 B 与左上接线柱 C；左下 A 端悬空不接线！
+      // 滑片在最左端时，整根电阻丝接入（阻值最大），起开机限流保护作用；
+      // 1. 电源正极 -> 电键 S
+      wires.push({ from: sourcePlus, to: switchLeft })
+
+      // 2. 电键 S -> 变阻器右下接线柱 B
+      wires.push({ from: switchRight, to: { x: 335, y: switchPos.y } })
+      wires.push({ from: { x: 335, y: switchPos.y }, to: { x: 335, y: termB.y } })
+      wires.push({ from: { x: 335, y: termB.y }, to: termB })
+
+      // 3. 变阻器滑杆左上接线柱 C -> 测量支路入口 (420, 95)
       wires.push({ from: termC, to: { x: termC.x, y: 95 } })
       wires.push({ from: { x: termC.x, y: 95 }, to: { x: 420, y: 95 } })
 
-      // 限流返回线
+      // 4. 测量支路出口 (730, 95) -> 经底座返回线直接回电源负极（不连变阻器任何接线柱！）
       wires.push({ from: { x: 730, y: 95 }, to: { x: 755, y: 95 } })
       wires.push({ from: { x: 755, y: 95 }, to: { x: 755, y: 285 } })
       wires.push({ from: { x: 755, y: 285 }, to: { x: 45, y: 285 } })
       wires.push({ from: { x: 45, y: 285 }, to: { x: 45, y: sourcePos.y } })
+      wires.push({ from: { x: 45, y: sourcePos.y }, to: sourceMinus })
     }
 
-    // 4. 测量支路 (外接法 vs 内接法)
+    // 测量支路 (外接法 vs 内接法)
     if (meterWiring === 'external') {
       // 外接法：测量入口 (420, 95) -> 电流表 (500) -> 节点A (565) -> 负载 (640) -> 节点B (730)
       wires.push({ from: { x: 420, y: 95 }, to: { x: ammeterPos.x - 28, y: 95 } })
@@ -199,6 +216,18 @@ export const ChainCircuitBuilder: React.FC<ChainCircuitBuilderProps> = ({
       wires.push({ from: { x: 730, y: voltmeterPos.y }, to: { x: 730, y: 95 } })
     }
 
+    // 动态生成关键并联节点小圆点（只在真实有分流汇流的交叉点渲染）
+    const nodes: Array<{ x: number; y: number }> = []
+    if (circuitType === 'voltage-divider') {
+      nodes.push({ x: 45, y: sourcePos.y }) // 负极母线汇流点
+    }
+    if (meterWiring === 'external') {
+      nodes.push({ x: 565, y: 95 }) // 外接法电压表前端分流点
+    } else {
+      nodes.push({ x: 450, y: 95 }) // 内接法电压表前端分流点
+    }
+    nodes.push({ x: 730, y: 95 }) // 测量支路出口电压表汇流点
+
     return {
       sourcePos,
       switchPos,
@@ -207,6 +236,7 @@ export const ChainCircuitBuilder: React.FC<ChainCircuitBuilderProps> = ({
       loadPos,
       voltmeterPos,
       wires,
+      nodes,
     }
   }, [circuitType, meterWiring])
 
@@ -228,12 +258,7 @@ export const ChainCircuitBuilder: React.FC<ChainCircuitBuilderProps> = ({
         ))}
 
         {/* 关键并联节点小圆点 */}
-        {[
-          { x: 45, y: 150 },
-          { x: 565, y: 95 },
-          { x: 450, y: 95 },
-          { x: 730, y: 95 },
-        ].map((pt, i) => (
+        {layout.nodes.map((pt, i) => (
           <circle
             key={`node-point-${i}`}
             cx={pt.x}
