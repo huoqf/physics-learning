@@ -18,12 +18,16 @@ export interface DialMeterProps {
   r?: number
   /** 字体缩放函数（由父组件 useCanvasSize 提供） */
   font?: (base: number) => number
+  /** 外观模式：'realistic' (拟物表盘带指针, 默认) | 'symbolic' (电路原理图图例符号) */
+  variant?: 'realistic' | 'symbolic'
+  /** 是否在下方显示读数文本标签（symbolic 模式下默认 true） */
+  showLabel?: boolean
 }
 
 /**
- * 理想电学表盘组件（电压表 V / 电流表 A）
- * 包含金属外壳渐变、弧形刻度、标志字母和动态偏转的指针。
- * 已完成美化：增加立体阴影、玻璃拟态质感、指针阴影和阻尼转动动画。
+ * 理想电学表盘与原理图符号组件（电压表 V / 电流表 A）
+ * - realistic 模式：拟物表盘、金属质感渐变、弧形刻度、动态阻尼转动指针。
+ * - symbolic 模式：符合高中物理教科书标准电路图符号（圆圈 + 标志字母 A/V + 可选实时读数），零多余伪端子。
  */
 export const DialMeter: React.FC<DialMeterProps> = ({
   type,
@@ -33,17 +37,67 @@ export const DialMeter: React.FC<DialMeterProps> = ({
   y,
   r = 28,
   font = (n: number) => n,
+  variant = 'realistic',
+  showLabel = true,
 }) => {
   const isVoltage = type === 'V'
   const max = customMax ?? (isVoltage ? 10 : 2)
 
+  // 颜色配置
+  const themeColor = isVoltage ? PHYSICS_COLORS.electricPotential : PHYSICS_COLORS.electricCurrent
+
+  // 1. 标准原理图符号模式 (高中物理教科书纯净符号)
+  if (variant === 'symbolic') {
+    const unit = isVoltage ? 'V' : 'A'
+    return (
+      <g transform={`translate(${x}, ${y})`}>
+        {/* 表头标准外圈（白底、正圆、清晰边框） */}
+        <circle
+          cx={0}
+          cy={0}
+          r={r}
+          fill={CANVAS_COLORS.white}
+          stroke={isVoltage ? PHYSICS_COLORS.velocity : SCENE_COLORS.circuit.resistorStroke}
+          strokeWidth={2.5}
+        />
+        {/* 仪表类型大写字母 "A" 或 "V" */}
+        <text
+          x={0}
+          y={r * 0.35}
+          fontSize={font(r * 0.8)}
+          fill={isVoltage ? PHYSICS_COLORS.velocity : SCENE_COLORS.circuit.resistorStroke}
+          fontWeight="bold"
+          textAnchor="middle"
+          style={{ userSelect: 'none' }}
+        >
+          {type}
+        </text>
+
+        {/* 读数标签 */}
+        {showLabel && (
+          <text
+            x={0}
+            y={r + 16}
+            fontSize={font(11)}
+            fill={themeColor}
+            fontWeight="bold"
+            textAnchor="middle"
+            style={{ userSelect: 'none' }}
+          >
+            {value.toFixed(2)} {unit}
+          </text>
+        )}
+      </g>
+    )
+  }
+
+  // 2. 拟物真实表盘模式
   // 限制读数在 0 到 max 之间
   const clampedValue = Math.min(max, Math.max(0, value))
   // 指针旋转角度从 -60deg (0刻度) 到 60deg (最大刻度)
   const pointerAngle = -60 + (clampedValue / max) * 120
 
   // 颜色配置
-  const themeColor = isVoltage ? PHYSICS_COLORS.electricPotential : PHYSICS_COLORS.electricCurrent
   const textLight = PHYSICS_COLORS.labelTextLight
 
   // 刻度显示文本

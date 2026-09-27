@@ -53,6 +53,7 @@ description: 重构动画页面 / 重构已有组件 / 迁移旧动画 / 修复�
 | 与既有组件渲染逻辑重叠（如已有 Solenoid 却私写线圈） | → 复用既有组件，或参数化扩展 / 抽取共享基座 |
 | 新增公共组件未登记索引 | → 补齐 `index.ts` 导出并在 `COMPONENT_REGISTRY.md` 登记 |
 | 同一物理判据出现第二份实现（如多处各写能量格式化/阻尼） | → 统一下沉收敛至 `src/physics/` 纯函数导出（SSOT） |
+| 手写电表/开关/变阻器原理图或通线假遮罩 | → 复用 `DialMeter`/`CircuitSwitch`/`Rheostat`（`variant="symbolic"`），参考 `skills/new-animation-page/resources/circuit-components-cheatsheet.md` |
 
 ### E. 颜色 / 字体违规
 

@@ -519,13 +519,13 @@ export function handleDcCircuits(
       return {
         quantities: [
           ...base,
-          { label: '真实电动势 E_真', symbol: 'E_真', value: E_real.toFixed(1), unit: 'V', color: PHYSICS_COLORS.emf },
-          { label: '真实内阻 r_真', symbol: 'r_真', value: r_real.toFixed(1), unit: 'Ω' },
-          { label: '电压表读数 U', symbol: 'U', value: res.U_meas.toFixed(3), unit: 'V', color: PHYSICS_COLORS.electricPotential },
-          { label: '电流表读数 I', symbol: 'I', value: res.I_meas.toFixed(3), unit: 'A', color: PHYSICS_COLORS.electricCurrent, highlight: 'extreme' },
-          { label: '外阻阻值 R', symbol: 'R', value: R_slider.toFixed(1), unit: 'Ω', color: PHYSICS_COLORS.appliedForce },
-          { label: '等效测得电动势 E_测', symbol: 'E_测', value: E_meas.toFixed(3), unit: 'V', color: PHYSICS_COLORS.emf },
-          { label: '等效测得内阻 r_测', symbol: 'r_测', value: r_meas.toFixed(3), unit: 'Ω', highlight: 'extreme' }
+          { label: '真实电动势', symbol: 'E(真)', value: E_real.toFixed(1), unit: 'V', color: PHYSICS_COLORS.emf },
+          { label: '真实内阻', symbol: 'r(真)', value: r_real.toFixed(1), unit: 'Ω' },
+          { label: '电压表读数', symbol: 'U', value: res.U_meas.toFixed(3), unit: 'V', color: PHYSICS_COLORS.electricPotential },
+          { label: '电流表读数', symbol: 'I', value: res.I_meas.toFixed(3), unit: 'A', color: PHYSICS_COLORS.electricCurrent, highlight: 'extreme' },
+          { label: '滑动变阻器阻值', symbol: 'R', value: R_slider.toFixed(1), unit: 'Ω', color: PHYSICS_COLORS.appliedForce },
+          { label: '等效测得电动势', symbol: 'E(测)', value: E_meas.toFixed(3), unit: 'V', color: PHYSICS_COLORS.emf },
+          { label: '等效测得内阻', symbol: 'r(测)', value: r_meas.toFixed(3), unit: 'Ω', highlight: 'extreme' }
         ],
         formulas: [
           ...(wiring === 0 ? [
@@ -534,6 +534,12 @@ export function handleDcCircuits(
               latex: 'E_{\\text{测}} = \\frac{E}{1 + r/R_V} < E, \\quad r_{\\text{测}} = \\frac{r}{1 + r/R_V} < r',
               level: 'core' as const,
               condition: '电压表分流产生系统误差',
+            },
+            {
+              name: '戴维南等效电源模型（电路甲）',
+              latex: 'E\' = E \\cdot \\frac{R_V}{R_V + r}, \\quad r\' = \\frac{r R_V}{r + R_V}',
+              level: 'derived' as const,
+              condition: '电源与电压表并联等效为一个新电源',
             }
           ] : [
             {
@@ -541,16 +547,26 @@ export function handleDcCircuits(
               latex: 'E_{\\text{测}} = E, \\quad r_{\\text{测}} = r + R_A > r',
               level: 'core' as const,
               condition: '电流表分压产生系统误差',
+            },
+            {
+              name: '等效电源模型（电路乙）',
+              latex: 'E\' = E, \\quad r\' = r + R_A',
+              level: 'derived' as const,
+              condition: '电源与电流表串联等效为一个新电源',
             }
           ])
         ],
         gaokaoPoints: [
           {
-            text: '【电路甲误差特点】采用电流表外接法，电压表分流。U-I 图线中，纵截距（E_测）与斜率绝对值（r_测）均小于真实值。在高考误差分析中极常考。',
+            text: '【电路甲误差特点】采用电流表外接法，电压表分流。U-I 图线中，纵截距（E_测）与斜率绝对值（r_测）均小于真实值，两线相交于横轴短路电流点。在高考误差分析中极常考。',
             importance: 'gaokao',
           },
           {
             text: '【电路乙误差特点】采用电流表内接法，电流表分压。U-I 图线中，纵截距（E_测）等于真实值，但斜率绝对值（r_测）偏大（测得内阻包含了电流表内阻）。',
+            importance: 'gaokao',
+          },
+          {
+            text: '【等效电源法神器】电路甲可将电源与电压表并联等效为一个新电源；电路乙可将电源与电流表串联等效为一个新电源。等效后直接应用 U=E\'-Ir\' 迎刃而解！',
             importance: 'gaokao',
           }
         ],
@@ -558,6 +574,10 @@ export function handleDcCircuits(
           {
             text: '【实验选型铁律】由于电源内阻一般很小（通常小于 2Ω），若用电流表内接法，电流表的分压压降占比极大，误差严重；而电压表阻值很大（数千欧），分流影响极小。因此，测定电源E与r实验中，必须选用电路甲（电流表外接法）！',
             level: 'danger',
+          },
+          {
+            text: '【坐标轴非原点陷阱】高考题中 U-I 图像纵轴往往不从 0 开始（截断坐标），此时横截距绝不是短路电流！求内阻严禁套用 r = E / I_截，必须使用斜率绝对值 r = |ΔU / ΔI| 计算！',
+            level: 'warning',
           }
         ]
       }

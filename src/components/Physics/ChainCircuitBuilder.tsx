@@ -128,19 +128,6 @@ export const ChainCircuitBuilder: React.FC<ChainCircuitBuilderProps> = ({
 
     const wires: CircuitBranchWire[] = []
 
-    // 1. 电源负极 -> 变阻器左下接线柱 A (0V 零电位基准线)
-    wires.push({ from: sourceMinus, to: { x: 45, y: sourcePos.y } })
-    wires.push({ from: { x: 45, y: sourcePos.y }, to: { x: 45, y: termA.y } })
-    wires.push({ from: { x: 45, y: termA.y }, to: termA })
-
-    // 2. 电源正极 -> 电键 S
-    wires.push({ from: sourcePlus, to: switchLeft })
-
-    // 3. 电键 S -> 变阻器高电位端
-    wires.push({ from: switchRight, to: { x: 335, y: switchPos.y } })
-    wires.push({ from: { x: 335, y: switchPos.y }, to: { x: 335, y: termB.y } })
-    wires.push({ from: { x: 335, y: termB.y }, to: termB })
-
     if (circuitType === 'voltage-divider') {
       // ── 分压式接法（高中物理规范）：
       // 变阻器两下端 A、B 跨接电源全电压；

@@ -27,7 +27,9 @@ export const mechanicsExperimentAnimations = defineAnimations({
         max: 5,
         step: 0.1,
         unit: 'm/s',
-        group: '基础运动参数',
+        group: '运动学参数',
+        hideIf: 'mode',
+        hideIfValue: 2,
       },
       {
         key: 'a',
@@ -36,7 +38,9 @@ export const mechanicsExperimentAnimations = defineAnimations({
         max: 8,
         step: 0.1,
         unit: 'm/s²',
-        group: '基础运动参数',
+        group: '运动学参数',
+        hideIf: 'mode',
+        hideIfValue: 2,
       },
       {
         key: 'freq',
@@ -46,6 +50,8 @@ export const mechanicsExperimentAnimations = defineAnimations({
         step: 5,
         unit: 'Hz',
         group: '打点计时器',
+        showIf: 'mode',
+        showIfValue: 0,
         marks: [
           { value: 50, label: '高考标准 50Hz', variant: 'critical' },
         ],
@@ -58,6 +64,8 @@ export const mechanicsExperimentAnimations = defineAnimations({
         step: 0.005,
         unit: 'm',
         group: '光电门参数',
+        showIf: 'mode',
+        showIfValue: 1,
         marks: [
           { value: 0.01, label: '标准 1cm', variant: 'critical' },
         ],
@@ -70,6 +78,8 @@ export const mechanicsExperimentAnimations = defineAnimations({
         step: 10,
         unit: 'N/m',
         group: '胡克定律',
+        showIf: 'mode',
+        showIfValue: 2,
       },
       {
         key: 'm',
@@ -79,6 +89,8 @@ export const mechanicsExperimentAnimations = defineAnimations({
         step: 0.05,
         unit: 'kg',
         group: '胡克定律',
+        showIf: 'mode',
+        showIfValue: 2,
       },
     ],
     controlMeta: [

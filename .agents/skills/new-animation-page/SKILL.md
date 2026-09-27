@@ -36,6 +36,15 @@ description: 新建动画页面 / 创建新的物理动画组件 / 新增动画�
 
 ---
 
+### 🔌 电学实验 / 电路图专项路由（按需调用）
+
+若任务涉及**电学实验、直流电路、电表改装、伏安特性**等电路图场景，**严禁套用力学小球/运动模板**，请按需直接调用专用资源包：
+- **元件规范与引脚字典**：查阅 `resources/circuit-components-cheatsheet.md`
+- **电路场景骨架代码**：参考 `resources/CircuitSceneTemplate.tsx`（端子正交直连，规范 T 接点）
+- **电路物理 Hook 骨架**：参考 `resources/useCircuitPhysicsTemplate.ts`（开关通断状态机、欧姆定律）
+
+---
+
 ## Step 1：文件结构
 
 ```

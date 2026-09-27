@@ -30,13 +30,16 @@ export const ExperimentErCenterExtra: FC = () => {
     ]
   }, [])
 
-  // 2. 等效测量 U-I 直线数据点
+  // 2. 等效测量 U-I 直线数据点（严格依据物理截距与斜率计算，避免被截断导致斜率失真）
   const measPoints = useMemo(() => {
     const E_meas = wiring === 0 ? E_real / (1 + r_real / RV) : E_real
     const r_meas = wiring === 0 ? r_real / (1 + r_real / RV) : r_real + RA
+    const xIntercept = E_meas / r_meas
+    const xEnd = Math.min(3.0, xIntercept)
+    const yEnd = Math.max(0, E_meas - xEnd * r_meas)
     return [
       { x: 0, y: E_meas },
-      { x: 3.0, y: Math.max(0, E_meas - 3.0 * r_meas) }
+      { x: xEnd, y: yEnd }
     ]
   }, [wiring])
 
@@ -101,57 +104,58 @@ export const ExperimentErCenterExtra: FC = () => {
             cursorX={res.I_meas}
             cursorLabel={(x, y) => `当前: I=${x.toFixed(2)}A, U=${y.toFixed(2)}V`}
           />
-          {/* 图例浮层 */}
-          <div className="absolute top-3 right-4 flex gap-4 text-[10px] text-neutral-500 bg-white/80 px-2.5 py-1 rounded border border-neutral-100 shadow-sm select-none">
-            {showReal === 1 && (
-              <div className="flex items-center gap-1.5">
-                <span className="w-3 h-0.5 border-t border-dashed border-neutral-400 inline-block"></span>
-                <span>真实 U-I</span>
-              </div>
-            )}
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-0.5 bg-red-500 inline-block"></span>
-              <span>测量 U-I</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span>
-              <span>已记录测量点</span>
-            </div>
-          </div>
         </div>
       </Card>
 
       {/* 右侧：分析卡片与交互操作台 */}
       <Card className="flex-[2] p-3 flex flex-col justify-between min-w-0 bg-white border border-neutral-200/50">
         <div>
-          <span className="text-xs font-bold text-neutral-700 block mb-2">
-            系统误差分析：{wiring === 0 ? '电路甲 (外接法)' : '电路乙 (内接法)'}
-          </span>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs font-bold text-neutral-800">
+              系统误差分析：{wiring === 0 ? '电路甲 (外接法)' : '电路乙 (内接法)'}
+            </span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+              教学误差放大模式 (Rv=10Ω, Ra=1.5Ω)
+            </span>
+          </div>
+
           <div className="text-[11px] text-neutral-600 space-y-1.5 leading-relaxed">
             {wiring === 0 ? (
               <>
                 <p>
-                  <strong className="text-red-500">① 误差本质</strong>
-                  {"：电压表的分分流作用导致电流表测得的电流 I_测 小于干路真实总电流 I_真。"}
+                  <strong className="text-blue-600">① 误差本质</strong>
+                  {"：电压表分流导致电流表读数 I_测 小于干路总电流 I_真 (I_真 = I_测 + U/Rv)。"}
                 </p>
-                <p>{"② 数量关系：在任一电压下，都有 I_真 = I_测 + U / Rv。"}</p>
-                <p>{"③ 几何性质：测量线与真实线在横轴相交于短路电流点，即 E/r 相同。"}</p>
                 <p>
-                  <strong className="text-red-600">④ 测量结论</strong>
-                  {"：测得的电动势偏小 (E_测 < E_真)，测得电源内阻也偏小 (r_测 < r_真)。"}
+                  <strong className="text-purple-600">② 等效电源</strong>
+                  {"：视电池与电压表为一个等效电源，E_测 = E·Rv/(Rv+r) < E，r_测 = r·Rv/(Rv+r) < r。"}
+                </p>
+                <p>
+                  <strong className="text-emerald-600">③ 几何交点</strong>
+                  {"：测量线与真实线交于横轴短路电流点 (E/r)，短路时端电压为0，电压表无分流。"}
+                </p>
+                <p>
+                  <strong className="text-red-600">④ 高考避坑</strong>
+                  {"：若纵轴不从 0 开始，横截距绝不是短路电流！必须用斜率绝对值 |ΔU/ΔI| 计算内阻。"}
                 </p>
               </>
             ) : (
               <>
                 <p>
-                  <strong className="text-red-500">① 误差本质</strong>
-                  {"：电流表的分压作用导致电压表测得的电压 U_测 小于电源真实的端电压 U_真。"}
+                  <strong className="text-blue-600">① 误差本质</strong>
+                  {"：电流表分压导致电压表读数 U_测 小于真实路端电压 U_真 (U_真 = U_测 + I·Ra)。"}
                 </p>
-                <p>{"② 数量关系：在任一电流下，都有 U_真 = U_测 + I * Ra。"}</p>
-                <p>{"③ 几何性质：测量线与真实线在纵轴相交于真实电动势点，但斜率变陡。"}</p>
                 <p>
-                  <strong className="text-red-600">④ 测量结论</strong>
-                  {"：测得的电动势等于真实值 (E_测 = E_真)，但测得的内阻偏大 (r_测 = r_真 + Ra > r_真)。"}
+                  <strong className="text-purple-600">② 等效电源</strong>
+                  {"：视电池与电流表为一个等效电源，E_测 = E_真，r_测 = r_真 + Ra > r_真。"}
+                </p>
+                <p>
+                  <strong className="text-emerald-600">③ 几何交点</strong>
+                  {"：测量线与真实线交于纵轴电动势点 (0, E)，断路时无电流，电流表无分压。"}
+                </p>
+                <p>
+                  <strong className="text-red-600">④ 选型铁律</strong>
+                  {"：因普通电源内阻极小 (r<1Ω)，内接法误差极严重，故高考测干电池必选电路甲！"}
                 </p>
               </>
             )}

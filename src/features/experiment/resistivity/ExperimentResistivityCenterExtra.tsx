@@ -86,6 +86,7 @@ export const ExperimentResistivityCenterExtra: React.FC = () => {
             xDomain={[0, 0.85]}
             yDomain={[0, Math.ceil(physics.Rx_meas * 1.5) || 5]}
             points={measPoints}
+            mainLabel="测量 R-L 实测拟合线"
             color={PHYSICS_COLORS.velocity}
             additionalSeries={additionalSeries}
             markers={markers}

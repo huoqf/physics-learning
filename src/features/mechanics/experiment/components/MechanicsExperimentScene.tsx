@@ -12,7 +12,7 @@ import {
   Spring,
 } from '@/components/Physics'
 
-import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
 import { worldToDesign, type SceneScale } from '@/scene'
 import type { MechanicsExperimentPhysicsResult } from '../hooks/useMechanicsExperimentPhysics'
 
@@ -82,7 +82,7 @@ export function MechanicsExperimentScene({
             dots={physics.tapeDots || []}
             showLabels
             highlightInterval={[0, 6]}
-            highlightLabel={`逐差法 a = ${safeA} m/s²`}
+            highlightLabel={`逐差法 a = ${safeA.toFixed(2)} m/s²`}
             fontFamily="sans-serif"
           />
 
@@ -157,35 +157,53 @@ export function MechanicsExperimentScene({
             <rect x={23} y={-16} width={10} height={16} fill="#0F172A" stroke="#38BDF8" strokeWidth={1} rx={1} />
           </g>
 
-          {/* 双通道毫秒数字计时器 */}
+          {/* 双通道毫秒数字计时器 (上移至 y=18，避免遮挡光电门主体) */}
           <TimerDisplay
-            x={50}
-            y={30}
+            x={45}
+            y={18}
             timeMs={safeDt1}
-            channel="CH A (v1)"
-            title="光电门 A 遮光时间"
+            channel="CH A"
+            title="光电门 A 遮光时间 Δt1"
             fontFamily="monospace"
           />
           <TimerDisplay
-            x={180}
-            y={30}
+            x={175}
+            y={18}
             timeMs={safeDt2}
-            channel="CH B (v2)"
-            title="光电门 B 遮光时间"
+            channel="CH B"
+            title="光电门 B 遮光时间 Δt2"
             fontFamily="monospace"
           />
 
           {/* 瞬时速度计算标注 */}
-          <text
-            x={gate1Px}
-            y={groundY - 90}
-            fill={PHYSICS_COLORS.velocity}
-            fontSize={font(11)}
-            fontFamily="monospace"
-            textAnchor="middle"
-          >
-            {`v1 = (d/Δt1) = ${safeDt1 > 0 ? (0.01 / (safeDt1 / 1000)).toFixed(2) : '0.00'} m/s`}
-          </text>
+          <g transform={`translate(${gate1Px}, ${groundY - 85})`}>
+            <rect x={-65} y={-14} width={130} height={20} rx={4} fill={withAlpha(CANVAS_COLORS.white, 0.9)} stroke={CANVAS_COLORS.axis} strokeWidth={0.8} />
+            <text
+              x={0}
+              y={0}
+              fill={PHYSICS_COLORS.velocity}
+              fontSize={font(10)}
+              fontFamily="monospace"
+              textAnchor="middle"
+              dominantBaseline="middle"
+            >
+              {`vA = d/Δt1 = ${safeDt1 > 0 ? (0.01 / (safeDt1 / 1000)).toFixed(2) : '0.00'} m/s`}
+            </text>
+          </g>
+          <g transform={`translate(${gate2Px}, ${groundY - 85})`}>
+            <rect x={-65} y={-14} width={130} height={20} rx={4} fill={withAlpha(CANVAS_COLORS.white, 0.9)} stroke={CANVAS_COLORS.axis} strokeWidth={0.8} />
+            <text
+              x={0}
+              y={0}
+              fill={PHYSICS_COLORS.velocity}
+              fontSize={font(10)}
+              fontFamily="monospace"
+              textAnchor="middle"
+              dominantBaseline="middle"
+            >
+              {`vB = d/Δt2 = ${safeDt2 > 0 ? (0.01 / (safeDt2 / 1000)).toFixed(2) : '0.00'} m/s`}
+            </text>
+          </g>
         </g>
       )}
 
