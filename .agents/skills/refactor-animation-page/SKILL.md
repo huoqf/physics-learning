@@ -48,12 +48,8 @@ description: 重构动画页面 / 重构已有组件 / 迁移旧动画 / 修复�
 | `<foreignObject>` 内嵌图表 | → HTML 层 flex 分区，图表与 SVG Canvas 平级 |
 | 手写 `toSvgX / toSvgY` 坐标轴 | → `BasePhysicsChart` / `VelocityTimeChart` |
 | 手写 `<circle>` 渐变球 / `<rect>` 滑块 | → `Ball` / `Block` |
-| 手写地面纹理 | → `PhysicsGround` |
-| 子路径导入 `@/components/Physics/Ball` | → `@/components/Physics`（barrel） |
-| 与既有组件渲染逻辑重叠（如已有 Solenoid 却私写线圈） | → 复用既有组件，或参数化扩展 / 抽取共享基座 |
-| 新增公共组件未登记索引 | → 补齐 `index.ts` 导出并在 `COMPONENT_REGISTRY.md` 登记 |
-| 同一物理判据出现第二份实现（如多处各写能量格式化/阻尼） | → 统一下沉收敛至 `src/physics/` 纯函数导出（SSOT） |
-| 手写电表/开关/变阻器原理图或通线假遮罩 | → 复用 `DialMeter`/`CircuitSwitch`/`Rheostat`（`variant="symbolic"`），参考 `skills/new-animation-page/resources/circuit-components-cheatsheet.md` |
+| 手写刻度尺/标尺/卡尺刻度与循环 | → 强制复用 `@/components/Physics`（`LabRuler`、`VernierCaliper`、`Micrometer`），严禁手写刻度 line/text 循环 |
+| 手写电表/开关/变阻器/电源原理图或通线假遮罩 | → 强制复用 `@/components/Physics`（`DialMeter`、`Rheostat`、`CircuitSwitch`、`DCSource`），统一声明 `variant="symbolic"`，严格遵循高中物理教科书标准画法（横平竖直、端子对准、红进黑出、外接/内接标准拓扑），参考 [CIRCUIT_RULES.md](file:///d:/code/physic/physics-learning/.agents/skills/refactor-animation-page/references/CIRCUIT_RULES.md) |
 
 ### E. 颜色 / 字体违规
 
@@ -79,6 +75,7 @@ fontSize={11}           → fontSize={font(11)}
 
 | 涉及领域 | 核心风险 | 权威参考文档 |
 |---------|---------|-------------|
+| **电学实验与电路原理图** | 伪造连线、假白块遮罩、手写电表开关、红黑极性反接、组件与文字撞车 | [CIRCUIT_RULES.md](file:///d:/code/physic/physics-learning/.agents/skills/refactor-animation-page/references/CIRCUIT_RULES.md) |
 | **矢量与场仿真** | 矢量颠倒、环流不闭合、右手定则反向、三维投影塌缩、单真源分裂 | [PHYSICAL_RULES.md](file:///d:/code/physic/physics-learning/.agents/skills/refactor-animation-page/references/PHYSICAL_RULES.md) |
 | **计量与看板规范** | 课标外单位（THz）、裸科学记数法（1.00e+3）、小数跳变、残差负零 | [GAOKAO_STANDARDS.md](file:///d:/code/physic/physics-learning/.agents/skills/refactor-animation-page/references/GAOKAO_STANDARDS.md) |
 
@@ -154,6 +151,9 @@ useSceneScale({ vp, preset, anchor: 'custom',
 | 质点/球 | `Ball` | `@/components/Physics` |
 | 滑块/箱 | `Block` | `@/components/Physics` |
 | 地面/斜面 | `PhysicsGround` | `@/components/Physics` |
+| 刻度尺/游标卡尺/测微器 | `LabRuler` / `VernierCaliper` / `Micrometer` | `@/components/Physics` |
+| 电表 (V/A) | `DialMeter`（统一 `variant="symbolic"`） | `@/components/Physics` |
+| 滑动变阻器/开关/电源 | `Rheostat` / `CircuitSwitch` / `DCSource` | `@/components/Physics` |
 | 物理矢量 | `PhysicsVectorArrow` | `@/components/Physics` |
 | 示意矢量 | `VectorArrow` | `@/components/Physics` |
 | 粒子轨迹 | `ParticleTrajectory` | `@/components/Physics` |
@@ -172,5 +172,6 @@ useSceneScale({ vp, preset, anchor: 'custom',
 - [ ] 公共组件在 barrel `index.ts` 导出并在 `COMPONENT_REGISTRY.md` 登记
 - [ ] 物理计算遵循单一可信源（SSOT），数值与单位符合高考课标（已核对对应 references）
 - [ ] 字号 `font(N)`，颜色 PHYSICS/SCENE/CANVAS_COLORS 按语义
+- [ ] 涉及电路时遵循 `CIRCUIT_RULES.md`：组件复用 `variant="symbolic"`、端子直角接合、红进黑出、零文本/元件撞车
 - [ ] `tsc --noEmit` 通过，动画播放/暂停/重置正常
 - [ ] 未改动本次任务无关文件

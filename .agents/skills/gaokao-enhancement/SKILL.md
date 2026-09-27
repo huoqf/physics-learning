@@ -41,7 +41,7 @@ description: 高考提分扩展 / 高考真题系统开发 / 增强现有页面�
 ### 0B：真题图片复现选型
 | 复现方式 | 适用场景 | 技术路径 | 规范要求 |
 |---------|---------|---------|---------|
-| **方案 A：内联 React-SVG 矢量图**（首选） | 受力图、电路图、轨迹图、板块/传送带示意图 | `src/components/Physics/ProblemDiagrams/<ProblemId>Diagram.tsx` | 调用物理组件库（`PhysicsVectorArrow`/`Ball`/`Block`等），文本用 `font(14)` |
+| **方案 A：内联 React-SVG 矢量图**（首选） | 受力图、电路图、轨迹图、板块/传送带示意图 | `src/components/Physics/ProblemDiagrams/<ProblemId>Diagram.tsx` | 调用物理组件库（`PhysicsVectorArrow`/`Ball`/`Block`等），电路图严格遵守 [CIRCUIT_RULES.md](file:///d:/code/physic/physics-learning/.agents/skills/refactor-animation-page/references/CIRCUIT_RULES.md)，文本用 `font(14)` |
 | **方案 B：静态高清图片** | 复杂实物仪器图、历史物理实验照 | 存放于 `public/images/problems/` 下 | 使用 WebP 或 SVG 格式，响应式适配卡片宽度 |
 
 ### 0C：真题-动画双向联动规范
@@ -61,7 +61,7 @@ description: 高考提分扩展 / 高考真题系统开发 / 增强现有页面�
 ### 0E：VIEWPORT & 坐标变换铁律（直接调用现成体系）
 在开发真题示意图或动画场景时，**直接调用项目现有的 Viewport 与组件体系**，无需手写繁琐的比例计算：
 1. **直接调用 Hook 与容器**：直接使用 `useAnimationViewport({ preset })` + `useSceneScale(...)` + `<AnimationSvgCanvas transform={vp.transform}>`，容器会自动处理好响应式缩放。
-2. **坐标转换唯一路径**：物理坐标转换统一通过 `worldToDesign(x, y, sceneScale)` 转换（返回 `{ px, py }`），**严禁手写 `x * scale + offset` 或 `x * (width / physicsWidth)` 物理比例计算**。
+2. **坐标转换唯一路径**：物理坐标转换统一通过 `worldToDesign(wx, wy, sceneScale)` 转换（返回 `{ px, py }`），**严禁手写 `x * scale + offset` 或 `x * (width / physicsWidth)` 物理比例计算**，严禁传对象参数。
 3. **禁止双重缩放**：有了 `AnimationSvgCanvas`，**严禁在同一个元素上同时使用 `viewBox` 与 `vp.transform`**。
 4. **Preset 使用约束**：必须使用标准的 `CANVAS_PRESETS.splitV` / `splitH` / `full` / `square`，**严禁使用 `wide`/`tall` 废弃 preset**，严禁手写 `width={840}` 等固定像素。
 5. **动态字号控制**：SVG 文本字号必须包裹 `font(N)`（如 `fontSize={font(14)}`）。
@@ -172,7 +172,8 @@ export const mechanicsGaokaoProblems: Problem[] = [
 - [ ] 运行 `npm run check:architecture` 无报错（Viewport、Font-size、No-Marker、No-RAF 等规则）。
 - [ ] 运行 `npm run check` 测试与构建全部通过。
 - [ ] **真题题干初始配图纯净性校验**：确认 `Problem.images` / `Problem.svgContent` 无任何解题辅助线、受力分解矢量或解答提示，与高考原卷 100% 一致。
-- [ ] 坐标转换统一通过 `worldToDesign({ x, y }, sceneScale)`，零手写比例与魔法数字。
+- [ ] 坐标转换统一通过 `worldToDesign(x, y, sceneScale)` → `{ px, py }`，零手写比例与魔法数字。
+- [ ] 地面与标尺使用 `x={vp.designLeft} width={vp.designVisibleW}` 撑满可视区。
 - [ ] 严格复用物理组件（小球使用 `Ball`、滑块使用 `Block`、矢量使用 `PhysicsVectorArrow`/`VectorArrow`、轨迹使用 `ParticleTrajectory`、电表使用 `DialMeter` 等），无违规手写原生 SVG 替代。
 - [ ] 真题描述与 LaTeX 公式无渲染错乱或格式混淆。
 - [ ] 按钮与色调符合 `colors.primary` / `PHYSICS_COLORS` 规范。

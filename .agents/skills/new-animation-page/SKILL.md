@@ -38,7 +38,8 @@ description: 新建动画页面 / 创建新的物理动画组件 / 新增动画�
 
 ### 🔌 电学实验 / 电路图专项路由（按需调用）
 
-若任务涉及**电学实验、直流电路、电表改装、伏安特性**等电路图场景，**严禁套用力学小球/运动模板**，请按需直接调用专用资源包：
+若任务涉及**电学实验、直流电路、电表改装、伏安特性**等电路图场景，**严禁套用力学小球/运动模板**，请按需直接调用专用资源包与通用标准：
+- **通用权威画法规范**：严格遵守 [CIRCUIT_RULES.md](file:///d:/code/physic/physics-learning/.agents/skills/refactor-animation-page/references/CIRCUIT_RULES.md)（矩形回路骨架、红进黑出、外接/内接拓扑、零文字元件撞车）
 - **元件规范与引脚字典**：查阅 `resources/circuit-components-cheatsheet.md`
 - **电路场景骨架代码**：参考 `resources/CircuitSceneTemplate.tsx`（端子正交直连，规范 T 接点）
 - **电路物理 Hook 骨架**：参考 `resources/useCircuitPhysicsTemplate.ts`（开关通断状态机、欧姆定律）
@@ -268,6 +269,9 @@ export function build<Topic>Quantities(
 | 质点/球 | `Ball` | `cx cy r type="steel"` |
 | 滑块/箱 | `Block` | `x y width height type="metal"` |
 | 地面/斜面 | `PhysicsGround` | `x={vp.designLeft} y width={vp.designVisibleW} type="ground"` |
+| 刻度尺/游标卡尺/测微器 | `LabRuler` / `VernierCaliper` / `Micrometer` | 测量实验强制复用，严禁手写刻度循环 |
+| 电表 (V/A/G) | `DialMeter` / `Galvanometer` | 统一 `variant="symbolic"`，标注红正黑负极性 |
+| 滑动变阻器/电键/直流电源 | `Rheostat` / `CircuitSwitch` / `DCSource` | 统一 `variant="symbolic"`，端子直角直连 |
 | 斜面体 | `Incline` | `x0 y0 width height` |
 | 弹簧 | `Spring` | `x1 y1 x2 y2 coils amplitude` |
 | 物理矢量（带自动缩放） | `PhysicsVectorArrow` | `originDesign vector type sceneScale` |

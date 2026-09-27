@@ -120,21 +120,47 @@ import { CircuitSwitch } from '@/components/Physics'
 
 ---
 
-### 4. 直流电源符号标准实现
+### 4. 直流电源组件 (`DCSource`)
 
-SVG 中标准电池符号（长正短负）：
 ```tsx
-// 居中于 (cx, cy)
-<g>
-  {/* 正极：较长、细线 */}
-  <line x1={cx - 6} y1={cy - 20} x2={cx - 6} y2={cy + 20} stroke="#0F172A" strokeWidth={1.5} />
-  {/* 负极：较短、稍粗 */}
-  <line x1={cx + 6} y1={cy - 12} x2={cx + 6} y2={cy + 12} stroke="#0F172A" strokeWidth={3.5} />
-  {/* 标注 */}
-  <text x={cx} y={cy - 26} fill={CANVAS_COLORS.label} fontSize={font(12)} textAnchor="middle" fontWeight="bold">
-    E, r
-  </text>
-</g>
+import { DCSource, getDCSourceTerminals, DC_SOURCE_SYMBOL_OFFSET } from '@/components/Physics'
+
+// 原理图符号（垂直干路标准接入：长正极在上，短粗负极在下）
+const dcTerms = getDCSourceTerminals(pos.dc.x, pos.dc.y, 'right-positive')
+
+<DCSource
+  x={pos.dc.x}
+  y={pos.dc.y}
+  voltage={E}
+  type="symbol"
+  polarity="right-positive"
+  label={`E=${E}V, r=${r}Ω`}
+/>
 ```
-- 左接线点（正极）：`{ x: cx - 6, y: cy }`
-- 右接线点（负极）：`{ x: cx + 6, y: cy }`
+- **真实入参**：
+  - `type`: `'symbol'`（标准原理图长正短负符号）或 `'battery'`（拟物干电池外观）
+  - `voltage`: 电压标称值
+  - `polarity`: `'right-positive'`（垂直放置时正极在上）或 `'left-positive'`
+  - `label`: 标注文本
+- **端子锚点计算**（统一调用 `getDCSourceTerminals`，严禁外部私自硬编码）：
+  - 导出辅助函数：`const { posTerm, negTerm } = getDCSourceTerminals(x, y, polarity)`
+  - 导出偏移常量：`DC_SOURCE_SYMBOL_OFFSET = 20`（上下引脚延伸值）
+  - 外部导线由 `posTerm` / `negTerm` 直接正交接入，组件内部与外部引脚强绑定，杜绝因组件尺寸改动导致的飞线断连。
+
+---
+
+## ⚡ 高中物理电路图绘制关键铁律（适用于所有页面）
+
+1. **红进黑出（电表正负接线柱规约）**：
+   - 电流由电源正极流出，沿顺时针或指定闭合回路流动；
+   - 电流表、电压表不是电源（无正负极之说），只有**正接线柱（红表笔，标 `+`）**与**负接线柱（黑表笔，标 `-`）**；
+   - 电流必须由电表的**正接线柱（`+`）流入**，由**负接线柱（`-`）流出**；
+   - `DialMeter` 外层自定义读数标签时，建议显式设置 `showLabel={false}`，彻底杜绝外层文字与组件内部文字在同坐标重叠。
+2. **横平竖直矩形骨架**：
+   - 任何电路图主回路必须以清晰的矩形框架布线，导线横平竖直，拐角为 90° 直角；
+   - 严禁斜向飞线，严禁元件与导线交叉穿插；
+   - 严禁“一条通线穿到底 + 元件背后垫白色假矩形遮挡”，必须端子到端子分段连接；
+   - 任何 T 型并联分流或汇流节点，必须绘制实心圆点（`r = 3.5`，`fill={CIRCUIT_COLORS.node}`）。
+3. **外接法与内接法标准拓扑**：
+   - **外接法**（测小电阻）：电压表仅跨接在待测负载两端，电流表串联在测量区外部干路上；
+   - **内接法**（测大电阻）：电流表与待测负载直接紧密串联，电压表跨接在“电流表 + 待测负载”串联总段两端。

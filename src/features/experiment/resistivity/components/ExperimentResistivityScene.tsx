@@ -1,6 +1,20 @@
 import React from 'react'
-import { PHYSICS_COLORS, CANVAS_COLORS, SCENE_COLORS, CIRCUIT_COLORS, withAlpha } from '@/theme/physics'
-import { DialMeter, Rheostat, Micrometer } from '@/components/Physics'
+import {
+  PHYSICS_COLORS,
+  CANVAS_COLORS,
+  SCENE_COLORS,
+  CIRCUIT_COLORS,
+  withAlpha,
+} from '@/theme/physics'
+import {
+  DialMeter,
+  Rheostat,
+  CircuitSwitch,
+  DCSource,
+  getDCSourceTerminals,
+  LabRuler,
+  Micrometer,
+} from '@/components/Physics'
 import { useExperimentResistivityPhysics } from '../hooks/useExperimentResistivityPhysics'
 
 interface ExperimentResistivitySceneProps {
@@ -18,446 +32,382 @@ export const ExperimentResistivityScene: React.FC<ExperimentResistivitySceneProp
     wiring,
     R_slider,
     Rx_real,
-    Rx_meas,
     currentA,
     voltageV,
   } = physics
 
-  // 金属丝总跨度：物理长度 0.8m 映射到设计像素 380px
-  // 刻度基座左端 x=60, 右端 x=440, y=70
-  const wireStartX = 70
-  const wireEndX = 430
-  const wireY = 70
-  const wireLengthPx = wireEndX - wireStartX // 360 px 代表 0.8m
-  const clipX = wireStartX + (L / 0.8) * wireLengthPx
+  // ────────────────── 左半区：标准伏安法电路原理图 ──────────────────
+  // 矩形干路骨架：左竖干线 x=65，右竖干线 x=425，顶横干线 y=95，底横干线 y=255
+  const busLeft = 65
+  const busRight = 425
+  const busTop = 95
+  const busBottom = 255
+
+  // 1. 电源 DCSource（垂直放置于左竖干线，长正极在上，短粗负极在下）
+  const posDC = { x: busLeft, y: 175 }
+  const dcTerms = getDCSourceTerminals(posDC.x, posDC.y, 'right-positive')
+  const dcTopTerm = dcTerms.posTerm // 正极引线端子（顶端）
+  const dcBottomTerm = dcTerms.negTerm // 负极引线端子（底端）
+
+  // 2. 开关 CircuitSwitch（置于底横干线左段）
+  const posSW = { x: 160, y: busBottom }
+  const swLeftTerm = { x: posSW.x - 18, y: busBottom }
+  const swRightTerm = { x: posSW.x + 18, y: busBottom }
+
+  // 3. 滑动变阻器 Rheostat（限流式置于底横干线右段，水平连接）
+  const posRh = { x: 310, y: busBottom, w: 110 }
+  const rhScale = posRh.w / 140
+  const rhLeftTerm = { x: posRh.x - 73 * rhScale, y: busBottom } // 约 252.6
+  const rhRightTerm = { x: posRh.x + 73 * rhScale, y: busBottom } // 约 367.4
+
+  // 4. 测量支路元器件（顶横干线与中间电压表）
+  const vmY = 175
+  const vmR = 26
 
   return (
-    <g className="experiment-resistivity-scene">
-      {/* ────────────────── 左半区：金属丝导轨与伏安法电路 ────────────────── */}
-      <g className="left-apparatus-area">
-        {/* 区域背景框 */}
+    <g className="experiment-resistivity-scene select-none">
+      {/* ────────────────── 左半区：标准伏安法电路原理图工位 ────────────────── */}
+      <g className="left-circuit-area">
+        {/* 底盘背景卡片 */}
         <rect
-          x={30}
-          y={20}
-          width={450}
-          height={285}
+          x={15}
+          y={12}
+          width={470}
+          height={302}
           rx={8}
-          fill={withAlpha(CANVAS_COLORS.axis, 0.04)}
+          fill={withAlpha(CANVAS_COLORS.axis, 0.03)}
           stroke={CANVAS_COLORS.axis}
           strokeWidth={1}
         />
         {/* 区域标题 */}
         <text
-          x={45}
-          y={40}
+          x={28}
+          y={34}
           fill={CANVAS_COLORS.labelText}
-          fontSize={font(11)}
+          fontSize={font(12)}
           fontWeight="bold"
         >
-          实验装置台（有效长度与伏安测量）
+          伏安法测电阻标准电路原理图
         </text>
 
-        {/* 接法徽章（右移并紧凑化） */}
-        <g transform="translate(290, 26)">
+        {/* 接法指示徽章（与标题间距充足） */}
+        <g transform="translate(305, 18)">
           <rect
             x={0}
             y={0}
-            width={175}
-            height={20}
+            width={165}
+            height={22}
             rx={4}
-            fill={withAlpha(wiring === 0 ? PHYSICS_COLORS.velocity : PHYSICS_COLORS.acceleration, 0.15)}
-            stroke={wiring === 0 ? PHYSICS_COLORS.velocity : PHYSICS_COLORS.acceleration}
+            fill={withAlpha(CIRCUIT_COLORS.wire, 0.08)}
+            stroke={CIRCUIT_COLORS.wire}
             strokeWidth={1}
           />
           <text
-            x={87}
-            y={14}
+            x={82.5}
+            y={15}
             textAnchor="middle"
-            fill={wiring === 0 ? PHYSICS_COLORS.velocity : PHYSICS_COLORS.acceleration}
+            fill={CANVAS_COLORS.labelText}
             fontSize={font(10)}
             fontWeight="bold"
           >
-            {wiring === 0 ? '电流表外接法 (测小电阻推荐)' : '电流表内接法 (分压误差)'}
+            {wiring === 0 ? '电流表外接法 (测小电阻推荐)' : '电流表内接法 (电表分压)'}
           </text>
         </g>
 
-        {/* 金属丝安装基座与直尺 (y=80) */}
-        <rect
-          x={wireStartX - 10}
-          y={wireY - 10}
-          width={wireLengthPx + 20}
-          height={32}
-          rx={4}
-          fill={withAlpha(SCENE_COLORS.surface.groundStroke, 0.15)}
-          stroke={SCENE_COLORS.surface.groundStroke}
-          strokeWidth={1}
+        {/* ── 核心供电回路导线（横平竖直） ── */}
+        {/* 1. 电源负极 -> 左下拐角 (65, 255) -> 开关 S 左端 */}
+        <path
+          d={`M ${dcBottomTerm.x} ${dcBottomTerm.y} L ${busLeft} ${busBottom} L ${swLeftTerm.x} ${busBottom}`}
+          fill="none"
+          stroke={CIRCUIT_COLORS.wire}
+          strokeWidth={2.2}
+          strokeLinejoin="round"
         />
-        {/* 毫米刻度线（步进 10cm 一大格） */}
-        {[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8].map((val) => {
-          const tickX = wireStartX + (val / 0.8) * wireLengthPx
-          return (
-            <g key={val}>
-              <line
-                x1={tickX}
-                y1={wireY + 8}
-                x2={tickX}
-                y2={wireY + 16}
-                stroke={CANVAS_COLORS.axis}
-                strokeWidth={1}
-              />
-              <text
-                x={tickX}
-                y={wireY + 28}
-                textAnchor="middle"
-                fill={CANVAS_COLORS.textMuted}
-                fontSize={font(9)}
-              >
-                {Math.round(val * 100)}
-              </text>
-            </g>
-          )
-        })}
 
-        {/* 待测金属丝（电阻丝） */}
+        {/* 2. 开关 S 右端 -> 滑动变阻器滑杆输入端 */}
         <line
-          x1={wireStartX}
-          y1={wireY}
-          x2={wireEndX}
-          y2={wireY}
-          stroke={SCENE_COLORS.modernPhysics.activeCoating}
-          strokeWidth={3}
+          x1={swRightTerm.x}
+          y1={busBottom}
+          x2={rhLeftTerm.x}
+          y2={busBottom}
+          stroke={CIRCUIT_COLORS.wire}
+          strokeWidth={2.2}
         />
-        {/* 接入电路的有效通电段高亮 */}
+
+        {/* 3. 滑动变阻器电阻输出端 -> 右下拐角 (425, 255) -> 右上拐角 (425, 95) */}
+        <path
+          d={`M ${rhRightTerm.x} ${busBottom} L ${busRight} ${busBottom} L ${busRight} ${busTop}`}
+          fill="none"
+          stroke={CIRCUIT_COLORS.wire}
+          strokeWidth={2.2}
+          strokeLinejoin="round"
+        />
+
+        {/* 4. 电源正极 -> 左上拐角 (65, 95) */}
         <line
-          x1={wireStartX}
-          y1={wireY}
-          x2={clipX}
-          y2={wireY}
-          stroke={PHYSICS_COLORS.emf}
-          strokeWidth={3.5}
-        />
-
-        {/* 左接线端子 A */}
-        <circle cx={wireStartX} cy={wireY} r={5} fill={PHYSICS_COLORS.electricField} />
-        <text
-          x={wireStartX}
-          y={wireY - 14}
-          textAnchor="middle"
-          fill={CANVAS_COLORS.labelText}
-          fontSize={font(10)}
-          fontWeight="bold"
-        >
-          端点 A
-        </text>
-
-        {/* 右滑动夹头 B (指示有效长度 L，坐标标签上移至 y=-18，加背景避免遮挡) */}
-        <g transform={`translate(${clipX}, ${wireY})`}>
-          <polygon
-            points="0,-10 -6,-20 6,-20"
-            fill={PHYSICS_COLORS.emf}
-            stroke={PHYSICS_COLORS.emf}
-            strokeWidth={1}
-          />
-          <circle cx={0} cy={0} r={5} fill={PHYSICS_COLORS.electricField} />
-          <g transform="translate(0, -28)">
-            <rect x={-45} y={-11} width={90} height={15} rx={3} fill={withAlpha(CANVAS_COLORS.white, 0.88)} stroke={PHYSICS_COLORS.emf} strokeWidth={0.8} />
-            <text
-              x={0}
-              y={0}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fill={PHYSICS_COLORS.emf}
-              fontSize={font(9.5)}
-              fontWeight="bold"
-            >
-              夹头 B ({L.toFixed(2)}m)
-            </text>
-          </g>
-        </g>
-
-        {/* ── 实验导线网络（绘制真实连线，彻底告别悬空） ── */}
-        {/* 1. 主回路：电源负极(80, 275) -> 端点A(70, 70) */}
-        <path
-          d={`M 80 275 L 50 275 L 50 70 L ${wireStartX} 70`}
-          fill="none"
+          x1={dcTopTerm.x}
+          y1={dcTopTerm.y}
+          x2={busLeft}
+          y2={busTop}
           stroke={CIRCUIT_COLORS.wire}
-          strokeWidth={2}
-          strokeLinejoin="round"
+          strokeWidth={2.2}
         />
 
-        {/* 2. 主回路：电源正极(130, 275) -> 开关S(150, 275) */}
-        <line x1={130} y1={275} x2={145} y2={275} stroke={CIRCUIT_COLORS.wire} strokeWidth={2} />
-
-        {/* 开关 S (闭合) */}
-        <g transform="translate(155, 275)">
-          <circle cx={-8} cy={0} r={2.5} fill={CIRCUIT_COLORS.node} />
-          <circle cx={8} cy={0} r={2.5} fill={CIRCUIT_COLORS.node} />
-          <line x1={-8} y1={0} x2={8} y2={0} stroke={CIRCUIT_COLORS.switchClosed} strokeWidth={2.5} />
-          <text x={0} y={-8} fill={CANVAS_COLORS.labelText} fontSize={font(9)} fontWeight="bold" textAnchor="middle">S</text>
-        </g>
-
-        {/* 3. 开关S右端(163, 275) -> 滑动变阻器一上一下限流接入(385, 185) */}
-        <path
-          d="M 163 275 L 430 275 L 430 185"
-          fill="none"
-          stroke={CIRCUIT_COLORS.wire}
-          strokeWidth={2}
-          strokeLinejoin="round"
+        {/* ── 电源组件 DCSource（垂直标准长正短负符号） ── */}
+        <DCSource
+          x={posDC.x}
+          y={posDC.y}
+          voltage={4.0}
+          type="symbol"
+          label="E=4V, r=0.5Ω"
+          polarity="right-positive"
         />
 
-        {/* 4. 滑动变阻器滑杆引出(340, 150) -> 电流表(275, 170) */}
-        <path
-          d="M 340 150 L 300 150 L 300 170 L 276 170"
-          fill="none"
-          stroke={CIRCUIT_COLORS.wire}
-          strokeWidth={2}
-          strokeLinejoin="round"
-        />
-
-        {/* 5. 电流表与金属丝连接（区分外接法与内接法） */}
-        {wiring === 0 ? (
-          // 外接法：电流表直接连到夹头 B，电压表并联在金属丝 A-B 两端
-          <g>
-            {/* 电流表(224, 170) -> 夹头 B */}
-            <path
-              d={`M 224 170 L 224 125 L ${clipX} 125 L ${clipX} ${wireY}`}
-              fill="none"
-              stroke={CIRCUIT_COLORS.wire}
-              strokeWidth={2}
-              strokeLinejoin="round"
-            />
-            {/* 电压表跨接在 A 与 B 之间 */}
-            <path
-              d={`M ${wireStartX} ${wireY} L ${wireStartX} 140 L 115 140 L 115 170`}
-              fill="none"
-              stroke={PHYSICS_COLORS.electricPotential}
-              strokeWidth={1.8}
-              strokeDasharray="3,2"
-              strokeLinejoin="round"
-            />
-            <path
-              d={`M 165 170 L 180 170 L 180 115 L ${clipX} 115 L ${clipX} ${wireY}`}
-              fill="none"
-              stroke={PHYSICS_COLORS.electricPotential}
-              strokeWidth={1.8}
-              strokeDasharray="3,2"
-              strokeLinejoin="round"
-            />
-          </g>
-        ) : (
-          // 内接法：电流表串联在金属丝与变阻器之间，电压表跨接在电流表+金属丝两端
-          <g>
-            <path
-              d={`M 224 170 L 224 125 L ${clipX} 125 L ${clipX} ${wireY}`}
-              fill="none"
-              stroke={CIRCUIT_COLORS.wire}
-              strokeWidth={2}
-              strokeLinejoin="round"
-            />
-            {/* 电压表跨接在 A 与 变阻器出线端(300, 150) */}
-            <path
-              d={`M ${wireStartX} ${wireY} L ${wireStartX} 140 L 115 140 L 115 170`}
-              fill="none"
-              stroke={PHYSICS_COLORS.electricPotential}
-              strokeWidth={1.8}
-              strokeDasharray="3,2"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M 165 170 L 180 170 L 180 140 L 300 140 L 300 150"
-              fill="none"
-              stroke={PHYSICS_COLORS.electricPotential}
-              strokeWidth={1.8}
-              strokeDasharray="3,2"
-              strokeLinejoin="round"
-            />
-          </g>
-        )}
-
-        {/* 电压表 V */}
-        <DialMeter
-          type="V"
-          value={voltageV}
-          max={4}
-          x={140}
-          y={170}
-          r={25}
+        {/* ── 开关组件 CircuitSwitch ── */}
+        <CircuitSwitch
+          x={posSW.x}
+          y={posSW.y}
+          closed={true}
+          variant="symbolic"
           font={font}
+          label="S"
         />
-        <text
-          x={140}
-          y={206}
-          textAnchor="middle"
-          fill={CANVAS_COLORS.labelText}
-          fontSize={font(10)}
-        >
-          U = {voltageV.toFixed(2)} V
-        </text>
 
-        {/* 电流表 A */}
-        <DialMeter
-          type="A"
-          value={currentA}
-          max={1.5}
-          x={250}
-          y={170}
-          r={25}
-          font={font}
-        />
-        <text
-          x={250}
-          y={206}
-          textAnchor="middle"
-          fill={CANVAS_COLORS.labelText}
-          fontSize={font(10)}
-        >
-          I = {currentA.toFixed(3)} A
-        </text>
-
-        {/* 滑动变阻器 Rheostat */}
+        {/* ── 滑动变阻器组件 Rheostat ── */}
         <Rheostat
-          x={385}
-          y={170}
+          x={posRh.x}
+          y={posRh.y}
+          width={posRh.w}
           value={R_slider}
           min={5}
           max={50}
-          width={90}
-          label="变阻器 R"
+          variant="symbolic"
           font={font}
+          label="变阻器 R"
+          showLabel
         />
 
-        {/* 直流电源示意 */}
-        <g transform="translate(60, 260)">
-          <rect
-            x={0}
-            y={0}
-            width={75}
-            height={26}
-            rx={4}
-            fill={withAlpha(PHYSICS_COLORS.potentialEnergy, 0.15)}
-            stroke={PHYSICS_COLORS.potentialEnergy}
-            strokeWidth={1}
-          />
-          <text
-            x={37}
-            y={17}
-            textAnchor="middle"
-            fill={PHYSICS_COLORS.potentialEnergy}
-            fontSize={font(10)}
-            fontWeight="bold"
-          >
-            电源 4V
-          </text>
-          {/* 正负极端子 */}
-          <circle cx={70} cy={13} r={2.5} fill={PHYSICS_COLORS.acceleration} />
-          <circle cx={5} cy={13} r={2.5} fill={PHYSICS_COLORS.velocity} />
-          <text x={70} y={9} fill={PHYSICS_COLORS.acceleration} fontSize={font(8)} fontWeight="bold">+</text>
-          <text x={5} y={9} fill={PHYSICS_COLORS.velocity} fontSize={font(8)} fontWeight="bold">-</text>
-        </g>
+        {/* ── 顶层测量拓扑（外接法 vs 内接法） ── */}
+        {wiring === 0 ? (
+          /* ──────── 外接法（标准教科书电路） ────────
+             干路：左上拐角 (65, 95) -> 电流表 A -> 节点 1 (205, 95) -> 待测电阻 Rx (275, 95) -> 节点 2 (345, 95) -> 右上拐角 (425, 95)
+             电压表并联跨接在 节点 1 与 节点 2 之间
+          */
+          <g className="wiring-outer-standard">
+            {/* 左上拐角 -> 电流表 A 左端 */}
+            <line x1={busLeft} y1={busTop} x2={110} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
 
-        {/* 电阻读数即时指示卡 */}
-        <rect
-          x={180}
-          y={245}
-          width={280}
-          height={48}
-          rx={6}
-          fill={CANVAS_COLORS.white}
-          stroke={CANVAS_COLORS.axis}
-          strokeWidth={1}
-        />
-        <text
-          x={195}
-          y={265}
-          fill={CANVAS_COLORS.labelText}
-          fontSize={font(11)}
-        >
-          真实电阻 Rx: <tspan fill={PHYSICS_COLORS.velocity} fontWeight="bold">{Rx_real.toFixed(3)} Ω</tspan>
-        </text>
-        <text
-          x={195}
-          y={282}
-          fill={CANVAS_COLORS.labelText}
-          fontSize={font(11)}
-        >
-          伏安测量 Rx(测): <tspan fill={PHYSICS_COLORS.acceleration} fontWeight="bold">{Rx_meas.toFixed(3)} Ω</tspan>
-          <tspan fill={CANVAS_COLORS.textMuted} fontSize={font(10)}>
-            {wiring === 0 ? ' (外接偏小)' : ' (内接偏大)'}
-          </tspan>
-        </text>
+            {/* 电流表 A (中心 x=140, y=95) */}
+            <DialMeter type="A" variant="symbolic" value={currentA} max={1.5} x={140} y={busTop} r={vmR} font={font} showLabel={false} />
+            <text x={140} y={busTop - vmR - 6} textAnchor="middle" fill={PHYSICS_COLORS.electricCurrent} fontSize={font(10.5)} fontWeight="bold">
+              I = {currentA.toFixed(3)} A
+            </text>
+            <text x={140 - vmR - 6} y={busTop - 4} fill={PHYSICS_COLORS.acceleration} fontSize={font(9)} fontWeight="bold">+</text>
+            <text x={140 + vmR + 6} y={busTop - 4} fill={CANVAS_COLORS.textMuted} fontSize={font(9)} fontWeight="bold">-</text>
+
+            {/* 电流表 A 右端 -> 节点 1 (205, 95) */}
+            <line x1={170} y1={busTop} x2={205} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
+            <circle cx={205} cy={busTop} r={3.5} fill={CIRCUIT_COLORS.node} />
+
+            {/* 节点 1 -> 待测电阻 Rx 左端 (245, 95) */}
+            <line x1={205} y1={busTop} x2={245} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
+
+            {/* 待测金属丝电阻框符号 (中心 x=275, y=95, 宽 60, 高 22) */}
+            <rect x={245} y={busTop - 11} width={60} height={22} fill={CANVAS_COLORS.white} stroke={PHYSICS_COLORS.emf} strokeWidth={2.2} />
+            <text x={275} y={busTop - 16} textAnchor="middle" fill={PHYSICS_COLORS.emf} fontSize={font(10.5)} fontWeight="bold">
+              金属丝 Rx (L={L.toFixed(2)}m)
+            </text>
+            <text x={275} y={busTop + 5} textAnchor="middle" fill={CANVAS_COLORS.labelText} fontSize={font(9.5)} fontWeight="bold">
+              Rx(真)={Rx_real.toFixed(2)}Ω
+            </text>
+
+            {/* 待测电阻 Rx 右端 (305, 95) -> 节点 2 (345, 95) -> 右上拐角 */}
+            <line x1={305} y1={busTop} x2={345} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
+            <circle cx={345} cy={busTop} r={3.5} fill={CIRCUIT_COLORS.node} />
+            <line x1={345} y1={busTop} x2={busRight} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
+
+            {/* 电压表支路：节点 1 (205, 95) -> 电压表 V -> 节点 2 (345, 95) */}
+            <path
+              d={`M 205 ${busTop} L 205 ${vmY} L ${275 - vmR} ${vmY}`}
+              fill="none"
+              stroke={PHYSICS_COLORS.electricPotential}
+              strokeWidth={1.8}
+              strokeDasharray="4,3"
+              strokeLinejoin="round"
+            />
+            <path
+              d={`M ${275 + vmR} ${vmY} L 345 ${vmY} L 345 ${busTop}`}
+              fill="none"
+              stroke={PHYSICS_COLORS.electricPotential}
+              strokeWidth={1.8}
+              strokeDasharray="4,3"
+              strokeLinejoin="round"
+            />
+
+            {/* 电压表 V (中心 x=275, y=175) */}
+            <DialMeter type="V" variant="symbolic" value={voltageV} max={4} x={275} y={vmY} r={vmR} font={font} showLabel={false} />
+            <text x={275} y={vmY + vmR + 15} textAnchor="middle" fill={PHYSICS_COLORS.electricPotential} fontSize={font(10.5)} fontWeight="bold">
+              U = {voltageV.toFixed(2)} V
+            </text>
+            <text x={275 - vmR - 6} y={vmY - 4} fill={PHYSICS_COLORS.acceleration} fontSize={font(9)} fontWeight="bold">+</text>
+            <text x={275 + vmR + 6} y={vmY - 4} fill={CANVAS_COLORS.textMuted} fontSize={font(9)} fontWeight="bold">-</text>
+          </g>
+        ) : (
+          /* ──────── 内接法（标准教科书电路） ────────
+             干路：左上拐角 (65, 95) -> 节点 1 (115, 95) -> 电流表 A (160) -> 待测电阻 Rx (275) -> 节点 2 (365, 95) -> 右上拐角
+             电压表并联跨接在 节点 1 与 节点 2 两端 (把电流表与 Rx 整体包入)
+          */
+          <g className="wiring-inner-standard">
+            {/* 左上拐角 -> 节点 1 (115, 95) */}
+            <line x1={busLeft} y1={busTop} x2={115} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
+            <circle cx={115} cy={busTop} r={3.5} fill={CIRCUIT_COLORS.node} />
+
+            {/* 节点 1 -> 电流表 A 左端 (135, 95) */}
+            <line x1={115} y1={busTop} x2={135} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
+
+            {/* 电流表 A (中心 x=165, y=95) */}
+            <DialMeter type="A" variant="symbolic" value={currentA} max={1.5} x={165} y={busTop} r={vmR} font={font} showLabel={false} />
+            <text x={165} y={busTop - vmR - 6} textAnchor="middle" fill={PHYSICS_COLORS.electricCurrent} fontSize={font(10.5)} fontWeight="bold">
+              I = {currentA.toFixed(3)} A
+            </text>
+            <text x={165 - vmR - 6} y={busTop - 4} fill={PHYSICS_COLORS.acceleration} fontSize={font(9)} fontWeight="bold">+</text>
+            <text x={165 + vmR + 6} y={busTop - 4} fill={CANVAS_COLORS.textMuted} fontSize={font(9)} fontWeight="bold">-</text>
+
+            {/* 电流表 A 右端 -> 待测电阻 Rx 左端 (245, 95) */}
+            <line x1={195} y1={busTop} x2={245} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
+
+            {/* 待测金属丝电阻框符号 (中心 x=275, y=95, 宽 60, 高 22) */}
+            <rect x={245} y={busTop - 11} width={60} height={22} fill={CANVAS_COLORS.white} stroke={PHYSICS_COLORS.emf} strokeWidth={2.2} />
+            <text x={275} y={busTop - 16} textAnchor="middle" fill={PHYSICS_COLORS.emf} fontSize={font(10.5)} fontWeight="bold">
+              金属丝 Rx (L={L.toFixed(2)}m)
+            </text>
+            <text x={275} y={busTop + 5} textAnchor="middle" fill={CANVAS_COLORS.labelText} fontSize={font(9.5)} fontWeight="bold">
+              Rx(真)={Rx_real.toFixed(2)}Ω
+            </text>
+
+            {/* 待测电阻 Rx 右端 (305, 95) -> 节点 2 (365, 95) -> 右上拐角 */}
+            <line x1={305} y1={busTop} x2={365} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
+            <circle cx={365} cy={busTop} r={3.5} fill={CIRCUIT_COLORS.node} />
+            <line x1={365} y1={busTop} x2={busRight} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
+
+            {/* 电压表支路：跨接在 节点 1 (115, 95) 与 节点 2 (365, 95) 两端 */}
+            <path
+              d={`M 115 ${busTop} L 115 ${vmY} L ${240 - vmR} ${vmY}`}
+              fill="none"
+              stroke={PHYSICS_COLORS.electricPotential}
+              strokeWidth={1.8}
+              strokeDasharray="4,3"
+              strokeLinejoin="round"
+            />
+            <path
+              d={`M ${240 + vmR} ${vmY} L 365 ${vmY} L 365 ${busTop}`}
+              fill="none"
+              stroke={PHYSICS_COLORS.electricPotential}
+              strokeWidth={1.8}
+              strokeDasharray="4,3"
+              strokeLinejoin="round"
+            />
+
+            {/* 电压表 V (中心 x=240, y=175) */}
+            <DialMeter type="V" variant="symbolic" value={voltageV} max={4} x={240} y={vmY} r={vmR} font={font} showLabel={false} />
+            <text x={240} y={vmY + vmR + 15} textAnchor="middle" fill={PHYSICS_COLORS.electricPotential} fontSize={font(10.5)} fontWeight="bold">
+              U = {voltageV.toFixed(2)} V
+            </text>
+            <text x={240 - vmR - 6} y={vmY - 4} fill={PHYSICS_COLORS.acceleration} fontSize={font(9)} fontWeight="bold">+</text>
+            <text x={240 + vmR + 6} y={vmY - 4} fill={CANVAS_COLORS.textMuted} fontSize={font(9)} fontWeight="bold">-</text>
+          </g>
+        )}
       </g>
 
-      {/* ────────────────── 右半区：螺旋测微器直径精确测量台 ────────────────── */}
-      <g className="right-apparatus-area" transform="translate(500, 20)">
-        {/* 背景框 */}
+      {/* ────────────────── 右半区：核心测量工具真实工位 ────────────────── */}
+      <g className="right-tools-area" transform="translate(500, 12)">
+        {/* 背景托盘卡片 */}
         <rect
           x={0}
           y={0}
-          width={310}
-          height={285}
+          width={325}
+          height={302}
           rx={8}
-          fill={withAlpha(CANVAS_COLORS.axis, 0.04)}
+          fill={withAlpha(CANVAS_COLORS.axis, 0.03)}
           stroke={CANVAS_COLORS.axis}
           strokeWidth={1}
         />
-        {/* 标题 */}
-        <text
-          x={16}
-          y={24}
-          fill={CANVAS_COLORS.labelText}
-          fontSize={font(12)}
-          fontWeight="bold"
-        >
-          螺旋测微器（测量金属丝直径 d）
-        </text>
 
-        {/* 挂载 Micrometer 精密物理组件 */}
-        <g transform="translate(20, 60)">
-          <Micrometer
-            x={10}
-            y={20}
-            measuredValue={d_mm}
-            scale={0.88}
-            showMagnifier={true}
-          />
+        {/* ── 环节 1：刻度尺测量金属丝有效长度 L ── */}
+        <g className="ruler-station" transform="translate(15, 14)">
+          <text x={0} y={14} fill={CANVAS_COLORS.labelText} fontSize={font(11)} fontWeight="bold">
+            ① 毫米刻度尺：测金属丝接入有效长度 L
+          </text>
+
+          {/* 金属丝导轨与刻度尺 */}
+          <g transform="translate(15, 30)">
+            {/* 金属丝安装底座 */}
+            <line x1={0} y1={-4} x2={260} y2={-4} stroke={SCENE_COLORS.surface.groundStroke} strokeWidth={2.5} strokeLinecap="round" />
+            {/* 有效接入导电段高亮 */}
+            <line x1={0} y1={-4} x2={(L / 0.8) * 260} y2={-4} stroke={PHYSICS_COLORS.emf} strokeWidth={3.5} strokeLinecap="round" />
+
+            {/* 端点 A 固定接线夹 */}
+            <circle cx={0} cy={-4} r={4.5} fill={CIRCUIT_COLORS.node} />
+            <text x={0} y={-10} textAnchor="middle" fill={CANVAS_COLORS.labelText} fontSize={font(9)} fontWeight="bold">
+              A
+            </text>
+
+            {/* 滑动接线夹 B */}
+            <g transform={`translate(${(L / 0.8) * 260}, -4)`}>
+              <polygon points="0,-4 -4,-12 4,-12" fill={PHYSICS_COLORS.emf} />
+              <circle cx={0} cy={0} r={4.5} fill={PHYSICS_COLORS.emf} />
+              <text x={0} y={-16} textAnchor="middle" fill={PHYSICS_COLORS.emf} fontSize={font(9.5)} fontWeight="bold">
+                B ({L.toFixed(2)}m)
+              </text>
+            </g>
+
+            {/* 复用标准 LabRuler 刻度尺组件 */}
+            <LabRuler x={0} y={4} length={260} height={24} domain={[0, 80]} styleType="steel" />
+          </g>
         </g>
 
-        {/* 读数说明与方法 */}
-        <rect
-          x={16}
-          y={195}
-          width={278}
-          height={75}
-          rx={6}
-          fill={CANVAS_COLORS.white}
-          stroke={CANVAS_COLORS.axis}
-          strokeWidth={1}
-        />
-        <text
-          x={26}
-          y={215}
-          fill={PHYSICS_COLORS.wavelengthGreen}
-          fontSize={font(12)}
-          fontWeight="bold"
-        >
-          直径读数 d = {d_mm.toFixed(3)} mm
-        </text>
-        <text
-          x={26}
-          y={234}
-          fill={CANVAS_COLORS.textMuted}
-          fontSize={font(10)}
-        >
-          固定刻度: {Math.floor(d_mm)} mm + 半刻度 {d_mm % 1 >= 0.5 ? '0.5' : '0.0'} mm
-        </text>
-        <text
-          x={26}
-          y={252}
-          fill={CANVAS_COLORS.textMuted}
-          fontSize={font(10)}
-        >
-          可动刻度: {((d_mm % 0.5) / 0.01).toFixed(1)} × 0.01 mm（需估读一位）
-        </text>
+        {/* 分割线 */}
+        <line x1={15} y1={120} x2={310} y2={120} stroke={CANVAS_COLORS.axis} strokeWidth={1} strokeDasharray="4,4" opacity={0.5} />
+
+        {/* ── 环节 2：螺旋测微器精确测量金属丝直径 d ── */}
+        <g className="micrometer-station" transform="translate(15, 132)">
+          <text x={0} y={14} fill={CANVAS_COLORS.labelText} fontSize={font(11)} fontWeight="bold">
+            ② 螺旋测微器：测金属丝直径 d
+          </text>
+
+          {/* 纵向穿过测微螺杆与测砧之间的金属丝样本 */}
+          <line
+            x1={48}
+            y1={28}
+            x2={48}
+            y2={110}
+            stroke={SCENE_COLORS.surface.groundStroke}
+            strokeWidth={Math.max(2.5, d_mm * 4)}
+            strokeLinecap="round"
+          />
+
+          {/* 复用标准 Micrometer 组件（带读数放大镜特写） */}
+          <g transform="translate(22, 68)">
+            <Micrometer
+              x={10}
+              y={0}
+              measuredValue={d_mm}
+              scale={0.78}
+              showMagnifier={true}
+            />
+          </g>
+
+          {/* 极简读数示数牌 */}
+          <g transform="translate(0, 126)">
+            <rect x={0} y={0} width={295} height={32} rx={4} fill={CANVAS_COLORS.white} stroke={CANVAS_COLORS.axis} strokeWidth={1} />
+            <text x={12} y={20} fill={PHYSICS_COLORS.displacement} fontSize={font(11.5)} fontWeight="bold">
+              直径 d = {d_mm.toFixed(3)} mm
+            </text>
+            <text x={145} y={20} fill={CANVAS_COLORS.textMuted} fontSize={font(9.5)}>
+              固定 {Math.floor(d_mm)}mm + 半刻度 + 可动估读
+            </text>
+          </g>
+        </g>
       </g>
     </g>
   )

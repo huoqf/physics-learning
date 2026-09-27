@@ -58,7 +58,7 @@ export { ParticleEmitter } from './ParticleEmitter'
 // ============================================================================
 // 电磁学 - 恒定电流 (DC Circuits)
 // ============================================================================
-export { DCSource } from './DCSource'
+export { DCSource, DC_SOURCE_SYMBOL_OFFSET, getDCSourceTerminals } from './DCSource'
 export { DialMeter } from './DialMeter'
 export { Galvanometer } from './Galvanometer'
 export { MeterPointer } from './MeterPointer'

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React from 'react'
 import { SCENE_COLORS, withAlpha } from '@/theme/physics'
 import { colors } from '@/theme/colors'
@@ -113,6 +114,31 @@ const getBatteryLayout = (width: number, height: number) => {
     baseW: width,
     baseH: height,
     cornerRadius: 4 * Math.min(scaleX, scaleY),
+  }
+}
+
+/**
+ * 原理图符号模式下的引线端子偏移常量（自中心点向上/向下延伸像素值）
+ */
+export const DC_SOURCE_SYMBOL_OFFSET = 20
+
+/**
+ * 获取 DCSource 在 symbol 模式下的精确接线端子坐标
+ * @param x 电源中心 X
+ * @param y 电源中心 Y
+ * @param polarity 极性朝向（'right-positive' 正极在顶端，'left-positive' 负极在顶端）
+ */
+export function getDCSourceTerminals(
+  x: number,
+  y: number,
+  polarity: 'left-positive' | 'right-positive' = 'right-positive'
+) {
+  const isTopPositive = polarity === 'right-positive'
+  return {
+    top: { x, y: y - DC_SOURCE_SYMBOL_OFFSET },
+    bottom: { x, y: y + DC_SOURCE_SYMBOL_OFFSET },
+    posTerm: isTopPositive ? { x, y: y - DC_SOURCE_SYMBOL_OFFSET } : { x, y: y + DC_SOURCE_SYMBOL_OFFSET },
+    negTerm: isTopPositive ? { x, y: y + DC_SOURCE_SYMBOL_OFFSET } : { x, y: y - DC_SOURCE_SYMBOL_OFFSET },
   }
 }
 
@@ -406,9 +432,9 @@ export const DCSource: React.FC<DCSourceProps> = ({
       className={`${className} ${disabled ? 'opacity-40 pointer-events-none' : ''}`}
     >
       {/* 上方引出线 */}
-      <line x1={0} y1={-20} x2={0} y2={isTopPositive ? -12 : -5} stroke={c.wire} strokeWidth={2} />
+      <line x1={0} y1={-DC_SOURCE_SYMBOL_OFFSET} x2={0} y2={isTopPositive ? -12 : -5} stroke={c.wire} strokeWidth={2} />
       {/* 下方引出线 */}
-      <line x1={0} y1={isTopPositive ? 5 : 12} x2={0} y2={20} stroke={c.wire} strokeWidth={2} />
+      <line x1={0} y1={isTopPositive ? 5 : 12} x2={0} y2={DC_SOURCE_SYMBOL_OFFSET} stroke={c.wire} strokeWidth={2} />
 
       {/* 正极：长细线 */}
       <line x1={-8} y1={isTopPositive ? -12 : 5} x2={8} y2={isTopPositive ? -12 : 5} stroke={c.batteryPos} strokeWidth={1.5} />
