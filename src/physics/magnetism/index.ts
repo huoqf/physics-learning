@@ -25,3 +25,6 @@ export type { BasicAmperePhysicsResult, AdvancedAmperePhysicsResult } from './am
 
 export { calculateVelocitySelectorTrajectory } from './velocitySelector'
 export type { VelocitySelectorPoint } from './velocitySelector'
+
+export { getCoilPolarity } from './polarity'
+export type { CoilPolarity } from './polarity'

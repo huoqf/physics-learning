@@ -17,6 +17,8 @@ import {
   wavelengthFromFrequency,
   formatWavelength,
   formatLCEnergy,
+  LC_DEFAULT_PARAMS,
+  LC_DISPLAY_ENERGY_EPSILON,
 } from '@/physics'
 import { useLCPhysics } from './hooks/useLCPhysics'
 import {
@@ -25,8 +27,8 @@ import {
 } from './hooks/useEMWavePhysics'
 import { DampingEnvelopeOverlay } from './components/DampingEnvelopeOverlay'
 
-/** 默认参数（与 registry / 薄壳保持一致） */
-const LC_DEFAULTS = { L: 1, C: 1, Q0: 1 } as const
+/** 默认参数（收敛至 physics 层的 LC_DEFAULT_PARAMS） */
+const LC_DEFAULTS = LC_DEFAULT_PARAMS
 
 /**
  * 中屏上半屏图表区（splitV）。
@@ -93,8 +95,8 @@ function LCPanel() {
     [T],
   )
 
-  const safeElectric = Math.abs(eElectric) < 1e-4 ? 0 : eElectric
-  const safeMagnetic = Math.abs(eMagnetic) < 1e-4 ? 0 : eMagnetic
+  const safeElectric = Math.abs(eElectric) < LC_DISPLAY_ENERGY_EPSILON ? 0 : eElectric
+  const safeMagnetic = Math.abs(eMagnetic) < LC_DISPLAY_ENERGY_EPSILON ? 0 : eMagnetic
 
   const barItems: EnergyBarItem[] = [
     {

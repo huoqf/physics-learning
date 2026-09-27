@@ -1,6 +1,6 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
-import { calculateLCConstants } from '@/physics'
+import { calculateLCConstants, LC_DEFAULT_PARAMS } from '@/physics'
 
 /**
  * 电磁振荡与电磁波 — 动画注册表
@@ -13,9 +13,9 @@ import { calculateLCConstants } from '@/physics'
  * 又避免为 3 个场次各写一个重复的编排层，同时把单文件行数控制在铁律之内。
  */
 
-/** 场次 0 默认参数（与 quantities/emOscillation.ts 的 LC_DEFAULTS 保持一致） */
-const LC_L_DEFAULT = 1
-const LC_C_DEFAULT = 1
+/** 场次 0 默认参数（收敛至 physics 层的 LC_DEFAULT_PARAMS） */
+const LC_L_DEFAULT = LC_DEFAULT_PARAMS.L
+const LC_C_DEFAULT = LC_DEFAULT_PARAMS.C
 
 /**
  * 循环上限 = 2 个完整振荡周期。
@@ -98,7 +98,7 @@ const sharedControlMeta = [
   { type: 'tip' as const, showIf: 'scene', showIfValue: 0,
     content: '观察电容器电荷量与回路电流的相位关系：电荷最大时电流为零，电流最大时电荷为零。打开阻尼开关可看到实际回路中振幅逐次减小。' },
   { type: 'tip' as const, showIf: 'scene', showIfValue: 1,
-    content: '电磁波是横波：电场 E、磁场 B 相互垂直，且都垂直于传播方向。' },
+    content: '电磁波是横波：E、B 在空间上相互垂直，且都垂直于传播方向；真空中平面波的 E 与 B 同相位。图中 B 轴为斜投影透视，B 波峰相对 E 波峰的水平错位是投影效果，不是相位差。' },
   { type: 'tip' as const, showIf: 'scene', showIfValue: 2,
     content: '按波长由长到短记忆谱段顺序，并对照各谱段的典型应用。' },
 ]

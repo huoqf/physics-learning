@@ -2,6 +2,7 @@ import React from 'react'
 import { useUniqueSvgId } from '@/hooks'
 import { SCENE_COLORS, PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 import { colors } from '@/theme/colors'
+import { getCoilPolarity } from '@/physics'
 
 /**
  * CoilBase — 通用线圈基座
@@ -135,8 +136,9 @@ export const CoilBase: React.FC<CoilBaseProps> = ({
   const highlightW = Math.max(0.5, 1.5 * Math.min(1, 6 / displayTurns))
   const backStrokeW = Math.max(1.0, 3.5 * Math.min(1, 6 / displayTurns))
 
-  // 流光粒子
-  const hasCurrent = Math.abs(current) > currentThreshold
+  // 流光粒子与极性
+  const polarity = getCoilPolarity(current, currentThreshold)
+  const hasCurrent = polarity.hasCurrent
   const flowSpeed = current * flowSpeedMultiplier
   const stepInterval = maxParticleTurns != null
     ? Math.max(1, Math.ceil(displayTurns / maxParticleTurns))
@@ -246,7 +248,7 @@ export const CoilBase: React.FC<CoilBaseProps> = ({
             {showArrowOnTurn && (
               <polygon
                 points={
-                  current > 0
+                  polarity.isLeftNorth
                     ? `${cx + rx},${-5} ${cx + rx - 3.5},${4} ${cx + rx + 3.5},${4}`
                     : `${cx + rx},${5} ${cx + rx - 3.5},${-4} ${cx + rx + 3.5},${-4}`
                 }
@@ -310,9 +312,9 @@ export const CoilBase: React.FC<CoilBaseProps> = ({
               width={20}
               height={18}
               rx={4}
-              fill={current > 0 ? PHYSICS_COLORS.magnetNorth : PHYSICS_COLORS.magnetSouth}
+              fill={polarity.leftPole === 'N' ? PHYSICS_COLORS.magnetNorth : PHYSICS_COLORS.magnetSouth}
             />
-            <text fill={CANVAS_COLORS.white}>{current > 0 ? 'N' : 'S'}</text>
+            <text fill={CANVAS_COLORS.white}>{polarity.leftPole}</text>
           </g>
           {/* 右极 */}
           <g transform={`translate(${width / 2 + 16}, ${-ry - 12})`}>
@@ -322,9 +324,9 @@ export const CoilBase: React.FC<CoilBaseProps> = ({
               width={20}
               height={18}
               rx={4}
-              fill={current > 0 ? PHYSICS_COLORS.magnetSouth : PHYSICS_COLORS.magnetNorth}
+              fill={polarity.rightPole === 'N' ? PHYSICS_COLORS.magnetNorth : PHYSICS_COLORS.magnetSouth}
             />
-            <text fill={CANVAS_COLORS.white}>{current > 0 ? 'S' : 'N'}</text>
+            <text fill={CANVAS_COLORS.white}>{polarity.rightPole}</text>
           </g>
         </g>
       )}

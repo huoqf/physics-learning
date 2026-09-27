@@ -28,6 +28,9 @@ import {
   formatWavelength,
   formatFrequency,
   formatLCEnergy,
+  LC_DEFAULT_PARAMS,
+  LC_PHYSICS_EPSILON,
+  LC_DISPLAY_ENERGY_EPSILON,
 } from '@/physics'
 import { EM_OSCILLATION_COLORS } from '@/theme/physics'
 import type {
@@ -38,8 +41,8 @@ import type {
   WarningItem,
 } from './types'
 
-/** LC 场次的默认参数（与 registry defaultParams 保持一致） */
-const LC_DEFAULTS = { L: 1, C: 1, Q0: 1 } as const
+/** LC 场次的默认参数（收敛至 physics 层的 LC_DEFAULT_PARAMS） */
+const LC_DEFAULTS = LC_DEFAULT_PARAMS
 
 /** 相对误差判据：用于判断是否处于极值状态 */
 const EXTREME_EPS = 1e-6
@@ -104,8 +107,8 @@ function buildLCPanel(params: Record<string, number>, time: number): PhysicsPane
   const atChargeExtreme = Math.abs(Math.abs(q) - qPeak) < qPeak * EXTREME_EPS
   const atCurrentExtreme = Math.abs(Math.abs(i) - iPeak) < iPeak * EXTREME_EPS
 
-  const safeElectric = Math.abs(eElectric) < 1e-4 ? 0 : eElectric
-  const safeMagnetic = Math.abs(eMagnetic) < 1e-4 ? 0 : eMagnetic
+  const safeElectric = Math.abs(eElectric) < LC_DISPLAY_ENERGY_EPSILON ? 0 : eElectric
+  const safeMagnetic = Math.abs(eMagnetic) < LC_DISPLAY_ENERGY_EPSILON ? 0 : eMagnetic
   const safeTotal = safeElectric + safeMagnetic
 
   // 面板渲染规则为「label + symbol」，故 label 只放中文名，符号统一放 symbol，
@@ -221,7 +224,7 @@ function buildLCPanel(params: Record<string, number>, time: number): PhysicsPane
     })
   }
 
-  if (Math.abs(omega) < 1e-12 || !Number.isFinite(T)) {
+  if (Math.abs(omega) < LC_PHYSICS_EPSILON || !Number.isFinite(T)) {
     warnings.push({
       text: '参数异常：请检查 L 与 C 是否为正数，否则回路无法振荡。',
       level: 'warning' as const,

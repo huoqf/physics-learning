@@ -1,5 +1,6 @@
 import React from 'react'
 import { PHYSICS_COLORS } from '@/theme/physics'
+import { getCoilPolarity } from '@/physics'
 import { bezierAt, bezierTangent, FieldArrow } from './magneticFieldUtils'
 
 export interface SolenoidFieldLinesProps {
@@ -45,9 +46,10 @@ export const SolenoidFieldLines: React.FC<SolenoidFieldLinesProps> = ({
   className = '',
 }) => {
   const level = intensity !== undefined ? intensity : Math.min(1, Math.abs(current))
-  if (level < 0.03 || Math.abs(current) < 1e-4) return null
+  const polarity = getCoilPolarity(current)
+  if (level < 0.03 || !polarity.hasCurrent) return null
 
-  const isLeftNorth = current > 0
+  const isLeftNorth = polarity.isLeftNorth
   const ry = height / 2
   const xLeft = x - width / 2
   const xRight = x + width / 2

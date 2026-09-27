@@ -7,6 +7,7 @@ import {
   lcMagneticEnergy,
   lcDampingAmplitude,
   sampleLCWaveform,
+  LC_DEFAULT_PARAMS,
 } from '@/physics'
 
 /** 曲线采样点数（一个周期的采样密度，足够平滑） */
@@ -80,9 +81,9 @@ export function useLCPhysics({
   showDamping,
 }: UseLCPhysicsOptions): LCPhysicsResult {
   return useMemo(() => {
-    const safeL = L > 0 ? L : 1
-    const safeC = C > 0 ? C : 1
-    const safeQ0 = Q0 > 0 ? Q0 : 1
+    const safeL = L > 0 ? L : LC_DEFAULT_PARAMS.L
+    const safeC = C > 0 ? C : LC_DEFAULT_PARAMS.C
+    const safeQ0 = Q0 > 0 ? Q0 : LC_DEFAULT_PARAMS.Q0
 
     const lc = { L: safeL, C: safeC, Q0: safeQ0, damped: showDamping }
     const { omega, T, f, eTotal, iMax } = calculateLCConstants(lc)

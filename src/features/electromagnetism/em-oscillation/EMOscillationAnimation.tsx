@@ -9,16 +9,17 @@ import { useEMSpectrumLayout } from './hooks/useEMSpectrumLayout'
 import { LCOscillationScene } from './components/LCOscillationScene'
 import { EMWaveScene } from './components/EMWaveScene'
 import { EMSpectrumScene } from './components/EMSpectrumScene'
+import { LC_DEFAULT_PARAMS } from '@/physics'
 
 /** 场次索引（与 registry 的 defaultParams.scene 一一对应） */
 const SCENE_LC = 0
 const SCENE_WAVE = 1
 const SCENE_SPECTRUM = 2
 
-/** 默认参数（与 registry 的 defaultParams 保持一致） */
-const LC_L_DEFAULT = 1
-const LC_C_DEFAULT = 1
-const LC_Q0_DEFAULT = 1
+/** 默认参数（收敛至 physics 层的 LC_DEFAULT_PARAMS） */
+const LC_L_DEFAULT = LC_DEFAULT_PARAMS.L
+const LC_C_DEFAULT = LC_DEFAULT_PARAMS.C
+const LC_Q0_DEFAULT = LC_DEFAULT_PARAMS.Q0
 
 type FontFn = (size: number) => number
 

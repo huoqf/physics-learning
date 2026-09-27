@@ -2,7 +2,7 @@
 
 > **本文档是待完成计划，不是完成记录。** 详细完成记录以 `PROCESS_LOG.md` 和 git commit 为准。
 >
-> 最后更新：2026-09-24（新增第九、十章：内容补全待办、页面审查遗留技术债）
+> 最后更新：2026-09-27（核对更新全仓数据、行数、已清理项与批次进展）
 
 ---
 
@@ -55,15 +55,15 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 ## 一、超长文件拆分（P2）
 
-### 待处理（2026-07-14 核对）
+### 待处理（2026-09-27 核对）
 
 **执行优先级**：RotatingCoil → AnimationPage → RelationChart（仅类型整理）
 
 | # | 文件 | 当前行数 | 消费者 | 测试 | 拆分方案 | 风险 |
 |:-:|------|-----:|--------|:---:|---------|:---:|
-| 1 | `RotatingCoil.tsx` (`src/components/Physics/`) | 619 | 1（`ACGeneration.tsx`） | 无 | `render3DSlipRing`/`render3DBrush`/`renderBrushWires` → `rotatingCoilParts.tsx`；主组件保留顶点计算 + 深度排序 + 组装 | 低 |
-| 2 | `AnimationPage.tsx` | 527 | 1（`App.tsx` 路由） | 无 | 抽 `useFilteredParams()`（showIf/hideIf 过滤）、`useAnimationMode()`（resetParams 逻辑）。无埋点/监控/URL 同步。SidebarExtra 已删除 | 低 |
-| 3 | `RelationChart.tsx` | 533 | **30+（132 处）** | 无 | **仅做类型整理**：`RelationDataSeries`/`RelationMarker`/`RelationChartProps` → `RelationChart.types.ts`。`RCContent` 依赖 `ChartContext`，保留在组件文件中 | 低（仅类型迁移） |
+| 1 | `RotatingCoil.tsx` (`src/components/Physics/`) | 618 | 1（`ACGeneration.tsx`） | 无 | `render3DSlipRing`/`render3DBrush`/`renderBrushWires` → `rotatingCoilParts.tsx`；主组件保留顶点计算 + 深度排序 + 组装 | 低 |
+| 2 | `AnimationPage.tsx` | 560 | 1（`App.tsx` 路由） | 无 | 抽 `useFilteredParams()`（showIf/hideIf 过滤）、`useAnimationMode()`（resetParams 逻辑）。无埋点/监控/URL 同步。SidebarExtra 已删除 | 低 |
+| 3 | `RelationChart.tsx` | 561 | **30+（132 处）** | 无 | **仅做类型整理**：`RelationDataSeries`/`RelationMarker`/`RelationChartProps` → `RelationChart.types.ts`。`RCContent` 依赖 `ChartContext`，保留在组件文件中 | 低（仅类型迁移） |
 
 **补充信息**：
 
@@ -89,7 +89,7 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 | 类别 | 问题 | 规模 | 方案 |
 |:---:|------|------|------|
-| D | `useCanvasSize({ ... })` 硬编码 | 12 处 | 多数为合理例外，更新 allowlist 文档即可 |
+| D | `useCanvasSize({ ... })` 硬编码 | 5 处 | 业务组件 3 处，工具默认值 2 处，均为合理例外 |
 
 ---
 
@@ -97,19 +97,19 @@ src/physics/<domain>/<model>.ts  # 纯计算函数，无 React/DOM 依赖
 
 ### 3.1 AnimationPage 协调职责监控（P2）
 
-> 当前 526 行（2026-07-14 核对，SidebarExtra 删除后从 566 降至 526，仍超 500 行阈值）。触发拆分条件：行数 > 500，或存在物理计算与 JSX 混写，或职责 > 8 类。
+> 当前 560 行（2026-09-27 核对，仍超 500 行阈值）。触发拆分条件：行数 > 500，或存在物理计算与 JSX 混写，或职责 > 8 类。
 
 膨胀触发区域：参数过滤（showIf/hideIf）、模式切换、RightPhysicsPanel 计算逻辑。
 如继续增长，优先抽 hook：`useFilteredParams()`、`useAnimationMode()`。
 
 ### 3.2 其他（P3，暂缓）
 
-| 条目 | 前提条件 |
+| 条目 | 前提条件 / 现状 |
 |------|---------|
-| `expandedNodes: string[]` → `Record<string, true>` | 当前 72 节点，远未达 500+ 阈值 |
+| `expandedNodes: string[]` → `Record<string, true>` | 当前 132 节点（组件内部已用 Set，Store 仍为 string[]，暂无性能瓶颈） |
 | `WrongPage.renderCard` 提取 `React.memo` | `menuFor` 状态只影响单张卡，收益有限 |
 | `RightPhysicsPanel` 计算逻辑抽取 | 可抽取独立 hook，优先级低 |
-| `VectorFormulaPanel.tsx` 删除 | 已无任何导入引用（孤儿组件），候选删除 |
+| `VectorFormulaPanel.tsx` 删除 | [x] 已彻底删除 |
 
 ---
 
@@ -132,7 +132,7 @@ export interface AnimationModule<P extends AnimationParams> {
 ```
 
 目标：将组件、参数、面板、公式、测试聚合到同一 feature 模块附近，减少跨目录跳转。
-注：`anim-vertical-circular` quantities 已补齐（复用 `precomputeVerticalCircularMotion`），当前 93/93 动画均有 quantities 注册。
+注：`anim-vertical-circular` quantities 已补齐（复用 `precomputeVerticalCircularMotion`），当前 118/118 动画均有 quantities 注册。
 
 ### 4.2 viewModel 层 + 坐标类型（P2/P3）
 
@@ -169,8 +169,8 @@ export interface AnimationModule<P extends AnimationParams> {
 
 | 优先级 | 领域 | 文件 | 风险点 |
 |:---:|------|------|------|
-| P2 | 电磁学·静电 | `ElectricFieldAdvancedScene.tsx` / `ThreeChargeMode.tsx` | 多电荷力方向 |
-| P3 | 力学·圆周 | `CentripetalScene.tsx` / `VerticalCircularScene.tsx` | 向心力方向，已有 `centripetalForceDir` 可直接用 |
+| P2 | 电磁学·静电 | `src/features/electromagnetism/electrostatics/` (`ElectricFieldAdvancedScene.tsx` / `ThreeChargeMode.tsx`) | 多电荷力方向 |
+| P3 | 力学·圆周 | `src/features/mechanics/circular/components/` (`CentripetalScene.tsx` / `VerticalCircularScene.tsx`) | 向心力方向，已有 `centripetalForceDir` 可直接用 |
 | P3 | 通用 | `gravityDir` | 重力方向（恒向下），收益小 |
 
 **迁移检查清单（每次迁移一个页面时执行）**
@@ -380,7 +380,7 @@ npx playwright test
 
 > **来源**：`physics-learning-内容补全建议-2026-09-22.md`（缺口基线）+ 2026-09-24 逐轮实测核对。
 > **性质**：本章是**待完成计划**，不是完成记录。每完成一项把状态改为 `[x]`，并在 `PROCESS_LOG.md` / `logs/2026-Wxx.md` 写完成记录（含验证命令）。
-> **总账（2026-09-25）**：16 个缺口考点**已完成 15 项**（批次 1、2、3 均闭环完成，批次 4 完成薄膜干涉与相对论时空观，动画数增至 115），P0 已全部完成。
+> **总账（2026-09-27）**：16 个缺口考点**已完成 15 项**（批次 1、2、3 均闭环完成，批次 4 已完成薄膜干涉、相对论时空观及部分实验专题，动画数增至 118），P0 已全部完成。
 
 ### 9.1 缺口考点清单（16 项）
 
@@ -461,7 +461,7 @@ done
 | 批次 1（剩余） | `electricity-5-5`、`vibration-2-3` | 考点最热 + 复用度最高 + 无既有语义冲突 | [x] 已完成 |
 | 批次 2 | `electricity-4-8/4-9`、`electricity-7-1/7-2` | 需先确认与既有 induction 动画控制项不冲突 | [x] 已完成 |
 | 批次 3 | `vibration-1-3`、`thermodynamics-2-3/2-4`、`electricity-1-8` | 需新组件，工作量中等 | [x] 已完成 |
-| 批次 4 | `wave-optics-1-5`、`mechanics-6-6`、实验专题扩展、2025 真题 | 低频或需先去重确认 | [ ] 待规划 |
+| 批次 4 | `wave-optics-1-5`、`mechanics-6-6`、实验专题扩展、2025 真题 | `wave-optics-1-5`、`mechanics-6-6` 与实验 `3-1/3-2/3-5` 已完成，待补 2025 真题与其余实验专题 | [进行中] 部分完成 |
 
 **每批次收尾必跑**：`tsc -b` / `eslint . --max-warnings 0` / `vitest run` / 6 个守门脚本（`npm run check:architecture`）/ 知识树↔注册表一致性（0 悬空 0 孤儿）。
 **每个新动画必须带**：≥1 个带数值断言的单测（方向/符号类错误只有数值断言能拦）。
@@ -473,44 +473,39 @@ done
 > **来源**：2026-09-24 六轮审查（报告《physics-learning-页面优化高中物理符合性审查-2026-09-24》§1–§14）尚未闭环项。
 > **已闭环、不再列入**：P0-A/P0-B、P1-4/P1-6/P1-7、P2-5~P2-10、P3-6/P3-8/P3-11/P3-13、组件登记表 14 行 props 校正、`Spring` 组件归位、第 6 条守门脚本 `check-component-reuse`。
 
-### 10.1 E/B 表观相位差仍正比于频率（P1）
+### 10.1 E/B 表观相位差仍正比于频率（P1，[x] 已闭环）
 
-- **位置**：`src/features/electromagnetism/em-oscillation/components/EMWaveScene.tsx:32/75-78`
-- **现象**：`B_AXIS = { dx: -0.36, dy: 0.54 }` × `B_AMPLITUDE = 50` ⇒ 水平位移**恒为 18 px（屏幕常量）**；λ_px 随频率反比缩小 ⇒ 表观相位差 ∝ f：100 MHz `10.5°` → 500 MHz `52.3°` → **1000 MHz `104.1°`**。
-- **已解决的部分**：投影角塌缩（上轮 1000 MHz 偏竖直 2.8°）已消除；同相贯通虚线已全频段生效（实测虚线数 2/4/6/10/7/10）。
-- **矛盾本质**：「固定投影角」与「表观相位不随频率漂移」在单一几何下**不可兼得**。
-- [ ] **(a)** `EM_WAVE_FREQ_MAX_MHZ` 1000 → 500（`hooks/useEMWavePhysics.ts:15`，一行改动，Δφ 上限压到 52°）
-- [ ] **(b)** 或维持现状，在左屏 `controlMeta` 提示「B 轴为斜投影，波峰水平错位系透视效果」
-- [ ] **(c)** 或改上下面板（E、B 各一张共用 x 轴）——属重新设计，需单独立项
+- **位置**：`src/features/electromagnetism/em-oscillation/components/EMWaveScene.tsx`
+- **解决方案**：采纳 (b) 方案：保留经典教材三维斜投影透视几何（$B$ 轴倾角约 124° 恒定，绝不人工缩减 $\Delta x$ 导致 $B$ 轴向竖直塌缩而破坏垂直正交表达）；修复原点 B 轴标签与轴线尖端完全对齐；保留 100~1000 MHz 完整探索频段；通过中轴公共锚点、波峰波谷贯通虚线与左屏教学提示（说明 B 波峰相对 E 波峰的水平错位系斜投影透视效果，虚线贯通指示空间同一波阵面截面），客观自洽闭环。
+- [x] **已完成闭环（2026-09-27）**
 
 ### 10.2 双实现与判据分裂（P1/P2）
 
 | # | 问题 | 位置 | 状态 |
 |:-:|------|------|:----:|
-| 1 | `SolenoidFieldLines`（158 行）与 `CoupledCoilField`（170 行）是**两套独立实现**（各自内联 `bezierAt`/`bezierTangent`/`FieldArrow` 与透明度随电流逻辑；前者用绝对像素几何 36/58/86、后者用比例值 + 自适应 scale） | `src/components/Physics/SolenoidFieldLines.tsx` / `CoupledCoilField.tsx` | [ ] 未抽取 `CoilFieldLineBase` 共享基座 |
-| 2 | 右手定则 N/S 判据**双实现**：`CoilBase` 5 处 `current > 0` vs `SolenoidFieldLines:50` 的 `isLeftNorth = current > 0`；**无门禁守** | `CoilBase.tsx:249/313/315/325/327`、`SolenoidFieldLines.tsx:50` | [ ] 未收敛为单一导出（建议 `isLeftNorthOf(current)`） |
+| 1 | `SolenoidFieldLines` 与 `CoupledCoilField` 贝塞尔磁感线与衰减逻辑独立实现 | `src/components/Physics/SolenoidFieldLines.tsx` / `CoupledCoilField.tsx` | [ ] 待后续视需要抽取基座 |
+| 2 | 右手定则 N/S 判据双实现 | `CoilBase.tsx`、`SolenoidFieldLines.tsx` | [x] **已闭环**：抽取纯函数 `getCoilPolarity` 并点明线圈绕向约定，统一收敛并补齐单测 |
 
-### 10.3 物理层零截断阈值不统一（P3）
+### 10.3 物理层零截断阈值不统一（P3，[x] 已闭环）
 
-- **位置**：`src/physics/lcOscillation.ts:123/139/149/151/161/163`
-- **现象**：仍为绝对阈值 `1e-12` / `1e-14`；而 `formatLCEnergy`（同文件）用的是 `1e-4`。**两套阈值并存**，且 `1e-12` 对 UI 无实际意义（比显示精度低 8 个数量级）。
-- [ ] 统一到 `1e-4`（与 `formatLCEnergy` 及 `GAOKAO_STANDARDS.md §2` 一致）
+- **位置**：`src/physics/lcOscillation.ts`、`quantities/emOscillation.ts`、`EMOscillationCenterExtra.tsx`
+- **解决方案**：分层定义导出常量：`LC_PHYSICS_EPSILON = 1e-12`（物理计算浮点残差截断，兼容微库仑/微法量级）、`LC_ENERGY_EPSILON = 1e-14`（二次项能量截断）、`LC_DISPLAY_ENERGY_EPSILON = 1e-4`（高中测量精度能量显示截断）。全链路阈值字面量 12 处（`lcOscillation.ts` 7 处、`quantities/emOscillation.ts` 3 处、`EMOscillationCenterExtra.tsx` 2 处）以及 `useLCPhysics.ts` 3 处默认值兜底，均已改为引用上述导出常量或 `LC_DEFAULT_PARAMS`；余下仅 JSDoc 注释中的数值说明。
+- [x] **已完成闭环（2026-09-27）**
 
-### 10.4 LC 默认参数偏慢（P3）
+### 10.4 LC 默认参数偏慢（P3，[x] 已闭环）
 
-- **位置**：`src/data/quantities/emOscillation.ts:42` — `LC_DEFAULTS = { L: 1, C: 1, Q0: 1 }`
-- **现象**：`T = 2π√(LC) = 6.28 s`、`f = 0.16 Hz`，逐帧观察需等 6 秒完成一个周期，教学节奏偏慢。
-- [ ] 调整默认 L/C（保持 `T = 2π√(LC)` 与 registry `lcMaxTime` 同步）
+- **位置**：`src/physics/lcOscillation.ts`（导出 `LC_DEFAULT_PARAMS` 单一真源）
+- **解决方案**：将默认参数调优为 $L = 0.4\text{ H}, C = 0.4\text{ F} \implies T \approx 2.51\text{ s}$；registry、quantities、Animation 薄壳、CenterExtra 全部收敛引用 `LC_DEFAULT_PARAMS`，4 份拷贝完全收敛。
+- [x] **已完成闭环（2026-09-27）**
 
-### 10.5 守门脚本粒度不足（P1，规范层）
+### 10.5 守门脚本粒度不足（P1，规范层，[x] 已闭环）
 
-- **现象**：`scripts/check-component-reuse.mjs:82` 对 `COMPONENT_REGISTRY.md` 只做**名字存在性**校验（`registryContent.includes('`' + compName + '`')`），**不校验 props 签名**。
-- **实证代价**：2026-09-24 一次性新增的 11 条登记，props 列 **11/11 全部与源码不符**（如 `MagneticPoles` 漏必需的 `project3D`/`layer`、`Rails` 漏 `type`），门禁全程绿灯，只能靠人工发现。
-- [ ] 升级为「**签名级**」校验：用 TS Compiler API / `ts-morph` 抽 `XxxProps` 的必需字段名，断言 registry 对应行同时出现这些字段名
-- [ ] 附带：`SolenoidFieldLines`/`CoupledCoilField` 的重复实现、右手定则判据重复，**现有门禁均无法发现**（只查重名/导出/登记），需评估是否新增检查项
+- **现象**：原先仅做组件名字符串匹配，无法防止 props 漂移；且正则跳过了 `extends` 接口。
+- **解决方案**：在 `scripts/check-component-reuse.mjs` 中实现支持 `extends`、interface 别名、复合登记行与大括号嵌套消解的深度双向 Props 校验算法。覆盖率实测：`src/components/Physics` 下 47 个具名组件全部进入校验流程，其中 44 个解析到接口签名并逐字段比对（0 跳过），另 3 行以 `—` 标注为无必填 props 免检；正向校验必填属性是否登记，反向校验 registry 是否登记了源码不存在的属性（幽灵属性）。
+- [x] **已完成闭环（2026-09-27）**
 
-### 10.6 组件登记表 props 漂移风险（P1，规范层）
+### 10.6 组件登记表 props 漂移风险（P1，规范层，[x] 已闭环）
 
-- 2026-09-24 已修正 14 行（11 条 props + `BarMagnet`/`SkeletonHand`/`Spring` 示例），当前与源码一致。
-- **风险未除**：`COMPONENT_REGISTRY.md` 是「新写动画场景前必须先查」的 SSOT，但**没有机制阻止它再次漂移**（同 §10.5）。
-- [ ] 与 §10.5 的门禁升级一并解决；升级前，每次改动组件 props 需**手工同步**登记表
+- **状态**：已由 §10.5 守门脚本自动拦截保障，与 CI 门禁彻底闭环。
+- [x] **已完成闭环（2026-09-27）**
+

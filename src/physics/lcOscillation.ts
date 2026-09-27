@@ -61,6 +61,17 @@ export interface LCParams {
   damped?: boolean
 }
 
+/**
+ * LC 振荡演示默认参数（与 registry、quantities、组件全链路统一）。
+ *
+ * L = 0.4 H, C = 0.4 F, Q0 = 1 C => T = 2π√(LC) ≈ 2.51 s，单周期约 2.5 秒，兼顾观察平滑度与课堂节奏。
+ */
+export const LC_DEFAULT_PARAMS: Readonly<Required<Omit<LCParams, 'damped'>>> = {
+  L: 0.4,
+  C: 0.4,
+  Q0: 1,
+} as const
+
 /** LC 回路的固有量（与时间无关，**不受 `damped` 影响**） */
 export interface LCConstants {
   /** 固有角频率 ω = 1/√(LC) (rad/s) */
@@ -108,6 +119,21 @@ export function calculateLCConstants(params: LCParams): LCConstants {
 }
 
 /**
+ * 物理计算层浮点近零截断（规避三角函数与除法的浮点残差，兼容微库仑/微法级别真实工况）。
+ */
+export const LC_PHYSICS_EPSILON = 1e-12
+
+/**
+ * 能量二次项物理计算截断阈值 (J)。
+ */
+export const LC_ENERGY_EPSILON = 1e-14
+
+/**
+ * 能量显示格式化微小残差截断阈值（高中物理测量精度基准 0.00 J）。
+ */
+export const LC_DISPLAY_ENERGY_EPSILON = 1e-4
+
+/**
  * 电容器电荷量 q(t) = Q₀·cos(ωt)。
  *
  * `params.damped` 为真时再乘上阻尼振幅系数（见模块头「阻尼的定性约定」）：
@@ -120,7 +146,7 @@ export function lcChargeAt(params: LCParams, t: number): number {
   const { omega, T } = calculateLCConstants(params)
   const amp = params.damped ? lcDampingAmplitude(t, T) : 1
   const raw = params.Q0 * Math.cos(omega * t) * amp
-  return Math.abs(raw) < 1e-12 ? 0 : raw
+  return Math.abs(raw) < LC_PHYSICS_EPSILON ? 0 : raw
 }
 
 /**
@@ -136,7 +162,7 @@ export function lcCurrentAt(params: LCParams, t: number): number {
   const { omega, T } = calculateLCConstants(params)
   const amp = params.damped ? lcDampingAmplitude(t, T) : 1
   const raw = -omega * params.Q0 * Math.sin(omega * t) * amp
-  return Math.abs(raw) < 1e-12 ? 0 : raw
+  return Math.abs(raw) < LC_PHYSICS_EPSILON ? 0 : raw
 }
 
 /**
@@ -146,9 +172,9 @@ export function lcCurrentAt(params: LCParams, t: number): number {
  * @param C 电容 (F)
  */
 export function lcElectricEnergy(q: number, C: number): number {
-  if (Math.abs(q) < 1e-12) return 0
+  if (Math.abs(q) < LC_PHYSICS_EPSILON) return 0
   const ee = (q * q) / (2 * C)
-  return ee < 1e-14 ? 0 : ee
+  return ee < LC_ENERGY_EPSILON ? 0 : ee
 }
 
 /**
@@ -158,9 +184,9 @@ export function lcElectricEnergy(q: number, C: number): number {
  * @param L 电感 (H)
  */
 export function lcMagneticEnergy(i: number, L: number): number {
-  if (Math.abs(i) < 1e-12) return 0
+  if (Math.abs(i) < LC_PHYSICS_EPSILON) return 0
   const em = 0.5 * L * i * i
-  return em < 1e-14 ? 0 : em
+  return em < LC_ENERGY_EPSILON ? 0 : em
 }
 
 /**
@@ -245,7 +271,7 @@ export function lcDampingAmplitude(t: number, period: number): number {
  * @param val 能量值 (J)
  */
 export function formatLCEnergy(val: number): string {
-  if (Math.abs(val) < 1e-4) return '0.00'
+  if (Math.abs(val) < LC_DISPLAY_ENERGY_EPSILON) return '0.00'
   if (val >= 100) return val.toFixed(1)
   if (val >= 1) return val.toFixed(2)
   return val.toFixed(3)

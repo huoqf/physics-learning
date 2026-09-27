@@ -71,7 +71,8 @@ export function EMWaveScene({ physics, font }: EMWaveSceneProps) {
   const lambdaPx = PLOT.width / Math.max(wavelengthCount, 1e-6)
 
   const eY = (y: number) => AXIS_Y - y * E_AMPLITUDE
-  // 采用固定斜向投影偏移，消除频率漂移与角度塌缩，配合竖直辅助线锚定同相截面
+  // 采用固定斜向投影偏移，保持三维正交空间视角恒定（约 124°），绝不随波长压缩而塌缩为竖直共线；
+  // 配合贯穿同相特征截面虚线与中轴公共锚点，直观呈现空间同一截面上的正交电磁场
   const bOffset = (y: number) => ({
     x: y * B_AMPLITUDE * B_AXIS.dx,
     y: y * B_AMPLITUDE * B_AXIS.dy,
