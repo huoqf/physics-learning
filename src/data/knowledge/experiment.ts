@@ -1,10 +1,10 @@
 import type { KnowledgeNode } from '../types'
 
 export const experimentKnowledge: KnowledgeNode[] = [
-  // ── 占位：实验专题（预留后续开发） ─────────────────────────────────────────
+  // ── 力学实验专题 ─────────────────────────────────────────────────────────────
   {
     id: 'experiment-1-1',
-    title: '力学实验基础',
+    title: '力学实验基础与纸带/光电门分析',
     chapter: '实验专题',
     module: 'experiment',
     importance: 'gaokao',
@@ -12,6 +12,48 @@ export const experimentKnowledge: KnowledgeNode[] = [
     problemIds: [],
     prerequisites: [],
   },
+  {
+    id: 'experiment-2-1',
+    title: '探究加速度与力、质量的关系',
+    chapter: '实验专题',
+    module: 'experiment',
+    importance: 'gaokao',
+    animationIds: ['anim-mechanics-experiment-base'],
+    problemIds: ['prob-2024-quanguo-exp-tape'],
+    prerequisites: ['experiment-1-1'],
+  },
+  {
+    id: 'experiment-2-2',
+    title: '验证机械能守恒定律',
+    chapter: '实验专题',
+    module: 'experiment',
+    importance: 'gaokao',
+    animationIds: ['anim-mechanics-experiment-base', 'anim-free-fall'],
+    problemIds: [],
+    prerequisites: ['experiment-1-1'],
+  },
+  {
+    id: 'experiment-2-3',
+    title: '验证动量守恒定律',
+    chapter: '实验专题',
+    module: 'experiment',
+    importance: 'gaokao',
+    animationIds: ['anim-momentum-conservation'],
+    problemIds: [],
+    prerequisites: ['experiment-1-1'],
+  },
+  {
+    id: 'experiment-2-4',
+    title: '用单摆测重力加速度',
+    chapter: '实验专题',
+    module: 'experiment',
+    importance: 'gaokao',
+    animationIds: ['anim-simple-pendulum'],
+    problemIds: [],
+    prerequisites: ['experiment-1-1'],
+  },
+
+  // ── 电学实验专题 ─────────────────────────────────────────────────────────────
   {
     id: 'experiment-1-2',
     title: '电学实验基础（测定电源电动势与内阻）',
@@ -33,16 +75,6 @@ export const experimentKnowledge: KnowledgeNode[] = [
     prerequisites: ['experiment-1-2'],
   },
   {
-    id: 'experiment-3-5',
-    title: '多用电表的使用与内部原理',
-    chapter: '实验专题',
-    module: 'experiment',
-    importance: 'gaokao',
-    animationIds: ['anim-multimeter'],
-    problemIds: ['prob-2024-quanguo-exp-multimeter'],
-    prerequisites: ['experiment-1-2'],
-  },
-  {
     id: 'experiment-3-2',
     title: '描绘小灯泡的伏安特性曲线',
     chapter: '实验专题',
@@ -52,4 +84,37 @@ export const experimentKnowledge: KnowledgeNode[] = [
     problemIds: [],
     prerequisites: ['experiment-1-2'],
   },
+  {
+    id: 'experiment-3-5',
+    title: '多用电表的使用与内部原理',
+    chapter: '实验专题',
+    module: 'experiment',
+    importance: 'gaokao',
+    animationIds: ['anim-multimeter'],
+    problemIds: ['prob-2024-quanguo-exp-multimeter'],
+    prerequisites: ['experiment-1-2'],
+  },
+
+  // ── 光学实验专题 ─────────────────────────────────────────────────────────────
+  {
+    id: 'experiment-3-3',
+    title: '测定玻璃的折射率',
+    chapter: '实验专题',
+    module: 'experiment',
+    importance: 'gaokao',
+    animationIds: ['anim-refraction'],
+    problemIds: [],
+    prerequisites: [],
+  },
+  {
+    id: 'experiment-3-4',
+    title: '用双缝干涉测光的波长',
+    chapter: '实验专题',
+    module: 'experiment',
+    importance: 'gaokao',
+    animationIds: ['anim-double-slit-interference'],
+    problemIds: ['prob-2023-quanguo-exp-doubleslit'],
+    prerequisites: [],
+  },
 ]
+

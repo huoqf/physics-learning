@@ -114,6 +114,20 @@ export const mechanicsExperimentAnimations = defineAnimations({
       },
       {
         type: 'preset',
+        label: '📋 探究牛顿第二定律：平衡摩擦力与 a-F 图像',
+        description: '装载平衡摩擦力合格条件下的纸带匀加速运动 (a=1.2m/s², f=50Hz)',
+        params: { mode: 0, v0: 0.2, a: 1.2, freq: 50 },
+        restartOnApply: true,
+      },
+      {
+        type: 'preset',
+        label: '📋 验证机械能守恒：重物下落打点纸带',
+        description: '装载自由落体初速度为零打点纸带验证 mgh = mv²/2 (a=9.8m/s², v0=0)',
+        params: { mode: 0, v0: 0, a: 9.8, freq: 50 },
+        restartOnApply: true,
+      },
+      {
+        type: 'preset',
         label: '📋 2023全国甲卷：光电门瞬时速度测定',
         description: '装载光电门遮光测速真题参数 (d=0.01m, a=1.5m/s²)',
         params: { mode: 1, v0: 0.8, a: 1.5, d: 0.01 },
@@ -129,7 +143,7 @@ export const mechanicsExperimentAnimations = defineAnimations({
       {
         type: 'tip',
         group: '高考要点提示',
-        content: '打点纸带逐差法公式：a = [(x6-x3)-(x3-x0)] / 9T²（或位移段 [(s4+s5+s6)-(s1+s2+s3)] / 9T²）；光电门用极短遮光时间内的平均速度替代瞬时速度：v = d/Δt。',
+        content: '① 打点纸带逐差法公式：a = [(x6-x3)-(x3-x0)] / 9T²（或位移段 [(s4+s5+s6)-(s1+s2+s3)] / 9T²）；② 探究 a 与 F 关系必须平衡摩擦力（轻推小车匀速穿过打点计时器）；③ 验证机械能守恒需选第 1、2 点间距约为 2mm（即 0.5·g·T² ≈ 1.96mm）的纸带。',
       },
     ],
   },

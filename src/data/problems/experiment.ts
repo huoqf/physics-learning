@@ -141,4 +141,147 @@ export const experimentProblems: Problem[] = [
       },
     ],
   },
+  {
+    id: 'prob-2024-quanguo-exp-tape',
+    year: 2024,
+    province: '全国新课标卷',
+    source: '2024年普通高等学校招生全国统一考试理科综合（新课标卷）物理实验第21题',
+    questionType: 'experiment',
+    verified: true,
+    title: '探究匀变速直线运动打点纸带分析与逐差法求加速度',
+    content:
+      '某实验小组用打点计时器测量小车做匀加速直线运动的加速度。打点计时器的工作频率为 50 Hz。如图所示为打出的一条清晰纸带，纸带上每 5 个点取 1 个计数点，依次标为 0, 1, 2, 3, 4, 5, 6。测得各计数点到 0 点的距离分别为 x₁=1.40 cm, x₂=3.20 cm, x₃=5.40 cm, x₄=8.00 cm, x₅=11.00 cm, x₆=14.40 cm。\n\n' +
+      '(1) 相邻两计数点间的时间间隔 T = ____ s；\n' +
+      '(2) 打点计时器打下计数点 3 时小车的瞬时速度 v₃ = ____ m/s（保留三位有效数字）；\n' +
+      '(3) 采用逐差法计算小车的加速度 a = ____ m/s²（保留三位有效数字）。',
+    difficulty: 3,
+    knowledgeIds: ['experiment-2-1', 'experiment-1-1'],
+    tags: ['高考真题', '2024新课标卷', '打点计时器', '逐差法', '纸带分析'],
+    targetAnimation: {
+      animId: 'anim-mechanics-experiment-base',
+      presetParams: { mode: 0, v0: 0.1, a: 0.4, freq: 50 },
+      presetDescription: '载入2024高考力学纸带打点分析情境：利用每5点取一计数点逐差求加速度',
+    },
+    optionExplanations: {
+      A: {
+        label: 'A',
+        isCorrect: true,
+        explanation:
+          '正确。打点周期 f=50Hz 对应打点间隔 0.02s，每5个点取1个计数点，故 T = 5 × 0.02s = 0.10s；v₃ 等于 2 到 4 段的平均速度 v₃ = (x₄ - x₂) / (2T) = (8.00 - 3.20)×10⁻² / 0.20 = 0.240 m/s；逐差法 a = [(x₆ - x₃) - (x₃ - 0)] / (9T²) = [(14.40 - 5.40) - 5.40]×10⁻² / (9 × 0.01) = 0.400 m/s²。',
+      },
+      B: {
+        label: 'B',
+        isCorrect: false,
+        explanation: '错误。时间间隔 T 错算成打点周期 0.02s，未计入 5 倍间隔。',
+      },
+      C: {
+        label: 'C',
+        isCorrect: false,
+        explanation: '错误。加速度公式分母错写为 3T² 或 6T²，未采用规范的 9T² 逐差权重。',
+      },
+      D: {
+        label: 'D',
+        isCorrect: false,
+        explanation: '错误。瞬时速度未采用中间时刻瞬时速度等于该段平均速度的准则。',
+      },
+    },
+    steps: [
+      {
+        id: 'step-1',
+        description: '确定计数点时间间隔 T',
+        keyCondition: '打点频率 f = 50Hz，每 5 个点取 1 个计数点',
+        scorePoints: 2,
+        formula: '$$T = 5 \\times \\frac{1}{f} = 5 \\times 0.02\\,\\text{s} = 0.10\\,\\text{s}$$',
+        explanation: '打点计时器每隔 0.02s 打一个点，每 5 个点取 1 个计数点意味着两计数点间包含 5 个打点周期，故相邻计数点时间间隔 T = 0.10s。',
+      },
+      {
+        id: 'step-2',
+        description: '匀变速直线运动中间时刻瞬时速度',
+        keyCondition: '做匀变速运动的物体在某段时间内的平均速度等于中间时刻的瞬时速度',
+        scorePoints: 3,
+        formula: '$$v_3 = \\frac{x_4 - x_2}{2T} = \\frac{(8.00 - 3.20) \\times 10^{-2}\\,\\text{m}}{0.20\\,\\text{s}} = 0.240\\,\\text{m/s}$$',
+        explanation: '计数点 3 是计数点 2 到计数点 4 对应时间段的中间时刻，因此 v₃ 等于该段的位移差除以时间 2T。',
+      },
+      {
+        id: 'step-3',
+        description: '六段逐差法精确求解加速度 a',
+        keyCondition: '逐差对称配对 (x₆ - x₃) 与 (x₃ - 0)，充分减小偶然测量误差',
+        scorePoints: 3,
+        formula: '$$a = \\frac{(x_6 - x_3) - (x_3 - 0)}{9T^2} = \\frac{(9.00 - 5.40) \\times 10^{-2}\\,\\text{m}}{9 \\times (0.10\\,\\text{s})^2} = 0.400\\,\\text{m/s}^2$$',
+        explanation: '利用六段位移分为前后两组 (s₄+s₅+s₆) - (s₁+s₂+s₃) = 9 a T²，代入数据计算得 a = 0.400 m/s²。',
+      },
+    ],
+  },
+  {
+    id: 'prob-2023-quanguo-exp-doubleslit',
+    year: 2023,
+    province: '全国甲卷',
+    source: '2023年普通高等学校招生全国统一考试理科综合（全国甲卷）物理实验第22题',
+    questionType: 'experiment',
+    verified: true,
+    title: '用双缝干涉测光的波长与条纹间距读数',
+    content:
+      '在“用双缝干涉测光的波长”实验中，实验装置如图所示。已知双缝间距 d = 0.20 mm，双缝到毛玻璃光屏的距离 L = 700 mm。\n\n' +
+      '(1) 实验装置中单缝和双缝均平行放置，单缝的作用是产生 ____，双缝的作用是产生 ____；\n' +
+      '(2) 旋转测量头的手轮，分划板中心刻线对准第 1 条亮条纹中心时，手轮读数 x₁ = 2.190 mm；继续转动手轮，对准第 6 条亮条纹中心时，手轮读数 x₂ = 11.290 mm。则相邻条纹间距 Δx = ____ mm；\n' +
+      '(3) 测得该单色光的波长 λ = ____ nm（保留三位有效数字）。',
+    difficulty: 3,
+    knowledgeIds: ['experiment-3-4'],
+    tags: ['高考真题', '2023全国甲卷', '双缝干涉', '波长测量', '条纹间距'],
+    targetAnimation: {
+      animId: 'anim-double-slit-interference',
+      presetParams: { wavelength: 650, slitDistance: 0.2, screenDistance: 0.7 },
+      presetDescription: '载入2023全国甲卷双缝干涉情境：双缝间距d=0.2mm，L=0.7m，验证条纹间距与波长关系',
+    },
+    optionExplanations: {
+      A: {
+        label: 'A',
+        isCorrect: true,
+        explanation:
+          '正确。单缝产生线光源，双缝产生相干光源；条纹间距 Δx = (x₂ - x₁) / (6 - 1) = (11.290 - 2.190) / 5 = 1.820 mm；由 Δx = (L/d)λ 得 λ = d·Δx / L = 0.20×10⁻³ × 1.820×10⁻³ / 0.700 ≈ 5.20×10⁻⁷ m = 520 nm。',
+      },
+      B: {
+        label: 'B',
+        isCorrect: false,
+        explanation: '错误。计算条纹间距时分母错除以 6，两亮条纹 1 至 6 之间只有 5 个条纹间距 (n - 1)。',
+      },
+      C: {
+        label: 'C',
+        isCorrect: false,
+        explanation: '错误。波长单位换算错误，未换算为纳米 nm（10⁻⁹ m）。',
+      },
+      D: {
+        label: 'D',
+        isCorrect: false,
+        explanation: '错误。公式倒置为 λ = L·Δx / d。',
+      },
+    },
+    steps: [
+      {
+        id: 'step-1',
+        description: '单缝与双缝的物理作用',
+        keyCondition: '获得频率相同、相位差恒定的相干光源',
+        scorePoints: 2,
+        formula: '$$\\text{相干条件}: \\nu_1 = \\nu_2, \\quad \\Delta \\varphi = \\text{const}$$',
+        explanation: '单缝将光源转变为线光源，保证双缝处光波震动同相；双缝将同一列波分为两列相干波，在光屏上发生叠加产生明暗相间的干涉条纹。',
+      },
+      {
+        id: 'step-2',
+        description: '多条纹累积测量求条纹间距 Δx',
+        keyCondition: '第 1 条至第 6 条亮纹包含 5 个完整条纹间距',
+        scorePoints: 3,
+        formula: '$$\\Delta x = \\frac{x_2 - x_1}{n - 1} = \\frac{11.290 - 2.190}{6 - 1} = 1.820\\,\\text{mm}$$',
+        explanation: '为了减小偶然误差，采用测出多个条纹的总距离求平均条纹间距的方法，注意 1 至 6 条纹间隔数是 5。',
+      },
+      {
+        id: 'step-3',
+        description: '双缝干涉波长计算公式与单位换算',
+        keyCondition: '公式 Δx = (L/d)λ，注意全部化为国际单位米',
+        scorePoints: 3,
+        formula: '$$\\lambda = \\frac{d}{L} \\Delta x = \\frac{0.20 \\times 10^{-3} \\times 1.820 \\times 10^{-3}}{0.700} \\approx 5.20 \\times 10^{-7}\\,\\text{m} = 520\\,\\text{nm}$$',
+        explanation: '将已知量统一代入双缝干涉条纹间距公式，解出光的波长 λ = 520 nm。',
+      },
+    ],
+  },
 ]
+

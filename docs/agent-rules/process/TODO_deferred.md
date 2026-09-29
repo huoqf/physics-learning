@@ -430,23 +430,25 @@ done
 > **落地约束**：三者需从 `src/components/Physics/index.ts`（或 `Chart/`）导出，并在 `COMPONENT_REGISTRY.md` 登记**与源码一致的完整 props 签名**（见 §10.6）。
 > **核对命令**：`grep -rl "CharacteristicCurve\|EnergyFlowBars\|ChainCircuitBuilder" src/components src/features`（当前 0 命中）
 
-### 9.3 实验专题扩展（9 个节点，P1）
+### 9.3 实验专题扩展（9 个节点，P1，[x] 已全量闭环）
 
-现状：`src/data/knowledge/experiment.ts` 仅 `experiment-1-1` / `experiment-1-2`；其中 `experiment-1-2` 与 `electricity-2-5` **共用** `anim-experiment-er`（一动画挂两节点）。
+现状：`src/data/knowledge/experiment.ts` 已经构建完整的力学、电学、光学 11 个实验节点体系，严格复用既有高质量物理动画底座并补充打点纸带逐差法、光电门、测微目镜与伏安法电路决策。
 
 | 建议节点 ID | 实验 | 复用资产 | 状态 |
-|---|---|---|---|
-| `experiment-2-1` | 探究加速度与力、质量的关系 | `anim-mechanics-experiment-base` 纸带分析 mode | [ ] 未开工 |
-| `experiment-2-2` | 验证机械能守恒定律 | `TickerTimer` `PaperTape` | [ ] 未开工 |
-| `experiment-2-3` | 验证动量守恒定律 | `Rails` `Photogate` `Block` | [ ] 未开工 |
-| `experiment-2-4` | 用单摆测重力加速度 | `anim-simple-pendulum` 骨架 + `LabRuler` | [ ] 未开工 |
-| **`experiment-3-1`** | **测量金属丝的电阻率** | **`Micrometer`（螺旋测微器，组件现成但当前闲置）** + `VernierCaliper` | [x] 已完成 ★**性价比最高** |
-| `experiment-3-2` | 描绘小灯泡的伏安特性曲线 | `ChainCircuitBuilder`（前置）+ `Rheostat` `DialMeter` `LightBulb` | [x] 已完成 |
-| `experiment-3-3` | 测定玻璃的折射率 | `optics-refraction` 骨架 | [ ] 未开工 |
-| `experiment-3-4` | 用双缝干涉测光的波长 | `optics-interference` 骨架 | [ ] 未开工 |
+|---|---|---|:---:|
+| `experiment-1-1` | 力学实验基础与纸带/光电门分析 | `anim-mechanics-experiment-base` | [x] 已完成 |
+| `experiment-2-1` | 探究加速度与力、质量的关系 | `anim-mechanics-experiment-base` 纸带逐差法与 a-F 图像 | [x] 已完成 |
+| `experiment-2-2` | 验证机械能守恒定律 | `anim-mechanics-experiment-base` 自由落体打点纸带 + `anim-free-fall` | [x] 已完成 |
+| `experiment-2-3` | 验证动量守恒定律 | `anim-momentum-conservation` | [x] 已完成 |
+| `experiment-2-4` | 用单摆测重力加速度 | `anim-simple-pendulum` 骨架 + `LabRuler` | [x] 已完成 |
+| `experiment-1-2` | 电学实验基础（测定电源电动势与内阻） | `anim-experiment-er` | [x] 已完成 |
+| **`experiment-3-1`** | **测量金属丝的电阻率** | **`Micrometer`（螺旋测微器）** + `VernierCaliper` | [x] 已完成 |
+| `experiment-3-2` | 描绘小灯泡的伏安特性曲线 | `ChainCircuitBuilder` + `Rheostat` `DialMeter` `LightBulb` | [x] 已完成 |
 | `experiment-3-5` | 多用电表的使用与内部原理 | `DialMeter`、大表盘、元器件台 Overlay | [x] 已完成 |
+| `experiment-3-3` | 测定玻璃的折射率 | `anim-refraction` 双界面并进与侧移插针法 | [x] 已完成 |
+| `experiment-3-4` | 用双缝干涉测光的波长 | `anim-double-slit-interference` 条纹间距 Δx=(L/d)λ 测微目镜 | [x] 已完成 |
 
-> **教学有效性硬要求**：每个实验动画必须带「**数据分析屏**」（图像斜率/截距 ↔ 物理量的对应关系）。实验动画的价值在**误差来源 + 数据处理 + 电路选择**三个决策点，而非演示操作流程。
+> **教学有效性硬要求**：每个实验动画均带「**数据分析屏**」（图像斜率/截距 ↔ 物理量的对应关系），紧扣高考**误差来源 + 数据处理 + 电路/仪器决策**核心考点。
 
 ### 9.4 题库时效性（P1）
 
@@ -461,7 +463,7 @@ done
 | 批次 1（剩余） | `electricity-5-5`、`vibration-2-3` | 考点最热 + 复用度最高 + 无既有语义冲突 | [x] 已完成 |
 | 批次 2 | `electricity-4-8/4-9`、`electricity-7-1/7-2` | 需先确认与既有 induction 动画控制项不冲突 | [x] 已完成 |
 | 批次 3 | `vibration-1-3`、`thermodynamics-2-3/2-4`、`electricity-1-8` | 需新组件，工作量中等 | [x] 已完成 |
-| 批次 4 | `wave-optics-1-5`、`mechanics-6-6`、实验专题扩展、2025 真题 | `wave-optics-1-5`、`mechanics-6-6` 与实验 `3-1/3-2/3-5` 已完成，待补 2025 真题与其余实验专题 | [进行中] 部分完成 |
+| 批次 4 | `wave-optics-1-5`、`mechanics-6-6`、实验专题扩展、2025 真题 | `wave-optics-1-5`、`mechanics-6-6` 与实验专题 11 个节点已全量闭环，余 2025 真题 | [进行中] 实验已全量完成 |
 
 **每批次收尾必跑**：`tsc -b` / `eslint . --max-warnings 0` / `vitest run` / 6 个守门脚本（`npm run check:architecture`）/ 知识树↔注册表一致性（0 悬空 0 孤儿）。
 **每个新动画必须带**：≥1 个带数值断言的单测（方向/符号类错误只有数值断言能拦）。
