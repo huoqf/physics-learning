@@ -1,7 +1,5 @@
 import { SVGProps } from 'react';
-import { useUniqueSvgId } from '@/hooks';
-import { SCENE_COLORS, CANVAS_COLORS, PHYSICS_COLORS } from '@/theme/physics';
-import { colors } from '@/theme/colors';
+import { CANVAS_COLORS, PHYSICS_COLORS, SCENE_COLORS } from '@/theme/physics';
 import type { ChargeSign } from './types';
 
 /**
@@ -137,161 +135,86 @@ export function Block({
   time = 0,
   ...restProps
 }: BlockProps) {
-  const uniqueId = useUniqueSvgId();
-  const gradientId = `block-linear-grad-${type}-${uniqueId}`;
-  const wheelGradId = `block-wheel-grad-${uniqueId}`;
-
-  // 1. 材质与颜色参数匹配
+  // 1. 材质与颜色匹配（严格贴合高中物理教科书标准色阶，清爽不遮挡受力分析）
   const isWood = type === 'wood' || type === 'woodCart';
   const isStandard = type === 'standard';
-  const fillColor = isStandard ? 'rgba(186, 230, 253, 0.55)' : `url(#${gradientId})`;
+  const hasWheels = type === 'woodCart' || type === 'metalCart';
 
+  let fillColor: string;
   let defaultStroke: string;
   let labelColor: string;
 
   if (isWood) {
-    // 采用木质的深色边框作为 stroke
-    defaultStroke = SCENE_COLORS.materials.woodSphereGrad[1];
-    labelColor = 'rgba(67, 20, 7, 0.9)'; // 深木褐色
+    fillColor = SCENE_COLORS.materials.labWoodGrad[0]; // 教材木块淡黄 — 粗糙木板渐变首色
+    defaultStroke = SCENE_COLORS.materials.woodSphereGrad[1]; // 细棕色边框 — 木质深色阶
+    labelColor = SCENE_COLORS.materials.labWoodGrad[3]; // 深木褐色文字
   } else if (isStandard) {
-    // 采用高中物理经典的蓝灰色描边和文字颜色
-    defaultStroke = '#0284c7';
-    labelColor = '#0369a1';
+    fillColor = SCENE_COLORS.materials.structBgPale; // 教材标准淡天蓝填充
+    defaultStroke = SCENE_COLORS.materials.structStrokeMid; // 柔和石墨深灰边框（避免与支持力 FN / 速度 v 的天蓝色撞色争夺）
+    labelColor = SCENE_COLORS.materials.structFill;
   } else {
-    // 采用不锈钢深灰色作为 stroke
-    defaultStroke = SCENE_COLORS.materials.structFill;
-    labelColor = SCENE_COLORS.materials.structStroke; // 经典 neutral-800
+    fillColor = SCENE_COLORS.materials.sliderMetalGrad[0]; // 金属浅灰 — 不锈钢滑块材质首色
+    defaultStroke = SCENE_COLORS.materials.structStrokeMid; // 深灰边框
+    labelColor = SCENE_COLORS.materials.structStroke;
   }
 
-  // 2. 车轮位置及大小参数（仅用于 woodCart / metalCart 小车）
-  const hasWheels = type === 'woodCart' || type === 'metalCart';
-  const wheelR = Math.max(3.5, height * 0.14); // 轮子半径自适应
-  const wheelY = y + height - 1.5; // 车轮中心置于底盘边缘微偏上，嵌入车身一部分
-  const wheelX1 = x + width * 0.22;
-  const wheelX2 = x + width * 0.78;
-
-  // 轮子旋转角度计算：根据速度和时间决定
+  // 2. 教材简图车轮（仅用于 woodCart / metalCart 小车）
+  const wheelR = Math.max(3.5, Math.min(8, height * 0.2));
+  const wheelY = y + height;
+  const wheelX1 = x + Math.min(18, width * 0.22);
+  const wheelX2 = x + Math.max(width - 18, width * 0.78);
   const rotation = (velocity * time * 35) % 360;
 
-  // 滑块内部木纹的 X 轴偏移
-  const woodLinesX = [width * 0.28, width * 0.5, width * 0.72];
+  // 自适应字号（防止细长滑块溢出）
+  const maxFontSize = Math.max(7, Math.min(font(11), height * 0.45, (width * 0.8) / Math.max(1, (label?.length ?? 1) * 0.6)));
+
+  // 当显示质心十字准心时，文字向上微移，避免压盖力的起始作用点
+  const textCenterY = showCenterOfMass && height > 28
+    ? y + height * 0.3
+    : y + height / 2 + maxFontSize * 0.35;
 
   return (
     <g opacity={opacity} {...restProps}>
-      <defs>
-        {/* 滑块主渐变 */}
-        {isWood ? (
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.woodSphereGrad[0]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.woodSphereGrad[1]} />
-          </linearGradient>
-        ) : (
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[0]} />
-            <stop offset="40%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[1]} />
-            <stop offset="85%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[2]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[3]} />
-          </linearGradient>
-        )}
-
-        {/* 车轮金属渐变 */}
-        {hasWheels && (
-          <radialGradient id={wheelGradId} cx="35%" cy="35%" r="65%">
-            <stop offset="0%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[0]} />
-            <stop offset="50%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[1]} />
-            <stop offset="100%" stopColor={SCENE_COLORS.materials.sliderMetalGrad[3]} />
-          </radialGradient>
-        )}
-      </defs>
-
-      {/* 1. 车轮渲染 (在车身底层绘制，遮挡住车身内测部分) */}
+      {/* 1. 教材风格小车车轮 */}
       {hasWheels && (
         <g pointerEvents="none">
-          {/* 左侧车轮 */}
-          <circle
-            cx={wheelX1}
-            cy={wheelY}
-            r={wheelR}
-            fill={`url(#${wheelGradId})`}
-            stroke={colors.neutral[800]}
-            strokeWidth={0.8}
-          />
-          {/* 左轮辐，带动态旋转 */}
+          {/* 左轮 */}
+          <circle cx={wheelX1} cy={wheelY} r={wheelR} fill={SCENE_COLORS.materials.structStrokePale} stroke={SCENE_COLORS.materials.structStrokeMid} strokeWidth={0.9} />
           <g transform={`translate(${wheelX1}, ${wheelY}) rotate(${rotation})`}>
-            <line x1={-wheelR} y1={0} x2={wheelR} y2={0} stroke={colors.neutral[800]} strokeWidth={0.6} />
-            <line x1={0} y1={-wheelR} x2={0} y2={wheelR} stroke={colors.neutral[800]} strokeWidth={0.6} />
+            <line x1={-wheelR + 1} y1={0} x2={wheelR - 1} y2={0} stroke={SCENE_COLORS.materials.structStrokeMid} strokeWidth={0.8} />
+            <line x1={0} y1={-wheelR + 1} x2={0} y2={wheelR - 1} stroke={SCENE_COLORS.materials.structStrokeMid} strokeWidth={0.8} />
           </g>
-          <circle cx={wheelX1} cy={wheelY} r={wheelR * 0.3} fill={CANVAS_COLORS.labelTextLight} stroke={colors.neutral[800]} strokeWidth={0.5} />
+          <circle cx={wheelX1} cy={wheelY} r={1.5} fill={SCENE_COLORS.materials.structStrokeDark} />
 
-          {/* 右侧车轮 */}
-          <circle
-            cx={wheelX2}
-            cy={wheelY}
-            r={wheelR}
-            fill={`url(#${wheelGradId})`}
-            stroke={colors.neutral[800]}
-            strokeWidth={0.8}
-          />
-          {/* 右轮辐，带动态旋转 */}
+          {/* 右轮 */}
+          <circle cx={wheelX2} cy={wheelY} r={wheelR} fill={SCENE_COLORS.materials.structStrokePale} stroke={SCENE_COLORS.materials.structStrokeMid} strokeWidth={0.9} />
           <g transform={`translate(${wheelX2}, ${wheelY}) rotate(${rotation})`}>
-            <line x1={-wheelR} y1={0} x2={wheelR} y2={0} stroke={colors.neutral[800]} strokeWidth={0.6} />
-            <line x1={0} y1={-wheelR} x2={0} y2={wheelR} stroke={colors.neutral[800]} strokeWidth={0.6} />
+            <line x1={-wheelR + 1} y1={0} x2={wheelR - 1} y2={0} stroke={SCENE_COLORS.materials.structStrokeMid} strokeWidth={0.8} />
+            <line x1={0} y1={-wheelR + 1} x2={0} y2={wheelR - 1} stroke={SCENE_COLORS.materials.structStrokeMid} strokeWidth={0.8} />
           </g>
-          <circle cx={wheelX2} cy={wheelY} r={wheelR * 0.3} fill={CANVAS_COLORS.labelTextLight} stroke={colors.neutral[800]} strokeWidth={0.5} />
+          <circle cx={wheelX2} cy={wheelY} r={1.5} fill={SCENE_COLORS.materials.structStrokeDark} />
         </g>
       )}
 
-      {/* 2. 滑块主体外壳 */}
+      {/* 2. 滑块主体（半透明清爽填充，确保受力分析箭头、支持力、重力矢量清晰穿透可见） */}
       <rect
         x={x}
         y={y}
         width={width}
-        height={height - (hasWheels ? 1 : 0)} // 略微收缩底边以契合轮子
+        height={height}
         fill={fillColor}
-        fillOpacity={translucent ? 0.4 : undefined}
+        fillOpacity={translucent ? 0.2 : 0.45}
         stroke={stroke ?? defaultStroke}
-        strokeWidth={strokeWidth}
-        rx={isWood ? 4.5 : 3.5}
+        strokeWidth={strokeWidth ?? 1.2}
+        rx={3}
       />
 
-      {/* 3. 木质花纹纹路 (仅适用于木质材质，弱化不透明度和线宽以呈现逼真自然的木板拼合感) */}
-      {isWood && (
-        <g pointerEvents="none" opacity={0.07}>
-          {woodLinesX.map((lx, idx) => (
-            <line
-              key={`wood-line-${idx}`}
-              x1={x + lx}
-              y1={y + 1.5}
-              x2={x + lx}
-              y2={y + height - (hasWheels ? 2.5 : 1.5)}
-              stroke={colors.neutral[900]}
-              strokeWidth={0.6}
-              strokeDasharray="4 3"
-            />
-          ))}
-        </g>
-      )}
-
-      {/* 4. 金属受光抛光高光线 (仅适用于金属材质，产生边缘切角白光感) */}
-      {!isWood && !isStandard && (
-        <line
-          x1={x + 1.5}
-          y1={y + 1}
-          x2={x + width - 1.5}
-          y2={y + 1}
-          stroke={colors.neutral.white}
-          strokeWidth={0.8}
-          opacity={translucent ? 0.25 : 0.5}
-          pointerEvents="none"
-        />
-      )}
-
-      {/* 5. 标注文本 */}
+      {/* 3. 标注文本（避让质心与受力点） */}
       {label && (
         <text
           x={x + width / 2}
-          y={y + height / 2 + 3.5 - (hasWheels ? 1 : 0)}
-          fontSize={font(10)}
+          y={textCenterY}
+          fontSize={maxFontSize}
           fill={labelColor}
           textAnchor="middle"
           fontWeight="bold"
@@ -302,31 +225,31 @@ export function Block({
         </text>
       )}
 
-      {/* 6. 质心标点（辅助力学受力分析，明确力的起点作用点） */}
+      {/* 4. 质心标点（受力分析十字准心） */}
       {showCenterOfMass && (
-        <g transform={`translate(${x + width / 2}, ${y + (height - (hasWheels ? 1 : 0)) / 2})`} pointerEvents="none">
-          <line x1={-5} y1={0} x2={5} y2={0} stroke={CANVAS_COLORS.referencePoint} strokeWidth={1.2} />
-          <line x1={0} y1={-5} x2={0} y2={5} stroke={CANVAS_COLORS.referencePoint} strokeWidth={1.2} />
+        <g transform={`translate(${x + width / 2}, ${y + height / 2})`} pointerEvents="none">
+          <line x1={-4} y1={0} x2={4} y2={0} stroke={CANVAS_COLORS.referencePoint} strokeWidth={1.2} />
+          <line x1={0} y1={-4} x2={0} y2={4} stroke={CANVAS_COLORS.referencePoint} strokeWidth={1.2} />
           <circle cx={0} cy={0} r={1.5} fill={CANVAS_COLORS.referencePoint} />
         </g>
       )}
 
-      {/* 7. 带电性标识 (右上角悬浮徽章，符合电场/磁场带电物体偏转教学) */}
+      {/* 5. 带电性标识 (右上角微徽章) */}
       {chargeSign && chargeSign !== 'none' && (
-        <g transform={`translate(${x + width - 10}, ${y + 10})`} pointerEvents="none">
+        <g transform={`translate(${x + width - Math.min(8, width * 0.18)}, ${y + Math.min(8, height * 0.22)})`} pointerEvents="none">
           <circle
             cx={0}
             cy={0}
-            r={6.5}
+            r={Math.min(5.5, height * 0.24)}
             fill={chargeSign === '+' ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
-            stroke={colors.neutral.white}
-            strokeWidth={1}
+            stroke={CANVAS_COLORS.white}
+            strokeWidth={0.8}
           />
           <text
             x={0}
-            y={2.5}
-            fill={colors.neutral.white}
-            fontSize={font(8)}
+            y={2}
+            fill={CANVAS_COLORS.white}
+            fontSize={Math.min(8, height * 0.3)}
             fontWeight="bold"
             textAnchor="middle"
             fontFamily="monospace"

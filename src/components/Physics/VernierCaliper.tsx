@@ -1,4 +1,5 @@
 import React from 'react'
+import { SCENE_COLORS, CANVAS_COLORS, PHYSICS_COLORS, withAlpha } from '@/theme/physics'
 
 export interface VernierCaliperProps {
   /** 游标卡尺外壳左上角 X 坐标 */
@@ -43,6 +44,11 @@ export const VernierCaliper: React.FC<VernierCaliperProps> = ({
   const pxPerMm = 3.5
   const vernierOffsetPx = measuredValue * pxPerMm
 
+  const caliperBody = SCENE_COLORS.materials.structStrokePale
+  const caliperBorder = SCENE_COLORS.materials.structStrokeMid
+  const caliperJaw = SCENE_COLORS.materials.structStrokeLight
+  const caliperVernier = SCENE_COLORS.materials.structFillPale
+
   return (
     <g
       className="vernier-caliper"
@@ -55,22 +61,22 @@ export const VernierCaliper: React.FC<VernierCaliperProps> = ({
           y={0}
           width={320}
           height={32}
-          fill="#CBD5E1"
-          stroke="#475569"
+          fill={caliperBody}
+          stroke={caliperBorder}
           strokeWidth={1.2}
           rx={2}
         />
         {/* 内/外测量外爪静态部分 */}
         <path
           d="M 0 32 L 0 90 L 15 90 L 30 32 Z"
-          fill="#94A3B8"
-          stroke="#475569"
+          fill={caliperJaw}
+          stroke={caliperBorder}
           strokeWidth={1}
         />
         <path
           d="M 0 0 L 0 -40 L 12 -40 L 25 0 Z"
-          fill="#94A3B8"
-          stroke="#475569"
+          fill={caliperJaw}
+          stroke={caliperBorder}
           strokeWidth={1}
         />
 
@@ -87,14 +93,14 @@ export const VernierCaliper: React.FC<VernierCaliperProps> = ({
                 y1={32}
                 x2={posX}
                 y2={32 - (isCm ? 14 : is5mm ? 10 : 6)}
-                stroke="#1E293B"
+                stroke={CANVAS_COLORS.strokeDark}
                 strokeWidth={isCm ? 1.2 : 0.8}
               />
               {isCm && (
                 <text
                   x={posX}
                   y={12}
-                  fill="#0F172A"
+                  fill={CANVAS_COLORS.labelText}
                   fontSize={9}
                   fontFamily={fontFamily}
                   textAnchor="middle"
@@ -112,8 +118,8 @@ export const VernierCaliper: React.FC<VernierCaliperProps> = ({
         {/* 游标卡尺动爪 */}
         <path
           d="M 0 32 L 0 90 L -15 90 L -2 32 Z"
-          fill="#64748B"
-          stroke="#334155"
+          fill={caliperJaw}
+          stroke={caliperBorder}
           strokeWidth={1}
         />
         {/* 游标框 */}
@@ -122,13 +128,13 @@ export const VernierCaliper: React.FC<VernierCaliperProps> = ({
           y={26}
           width={130}
           height={38}
-          fill="#E2E8F0"
-          stroke="#475569"
+          fill={caliperVernier}
+          stroke={caliperBorder}
           strokeWidth={1.2}
           rx={3}
         />
         {/* 紧固螺钉 */}
-        <circle cx={40} cy={18} r={5} fill="#475569" stroke="#1E293B" />
+        <circle cx={40} cy={18} r={5} fill={caliperBorder} stroke={CANVAS_COLORS.strokeDark} />
 
         {/* 游标刻度线 (根据 10/20/50 分度绘制) */}
         {Array.from({ length: division + 1 }).map((_, i) => {
@@ -144,14 +150,14 @@ export const VernierCaliper: React.FC<VernierCaliperProps> = ({
                 y1={32}
                 x2={lineX}
                 y2={32 + (i % 5 === 0 ? 12 : 7)}
-                stroke={isAligned ? '#DC2626' : '#0F172A'}
+                stroke={isAligned ? PHYSICS_COLORS.alertRed : CANVAS_COLORS.labelText}
                 strokeWidth={isAligned ? 1.8 : 0.8}
               />
               {i % 5 === 0 && (
                 <text
                   x={lineX}
                   y={54}
-                  fill={isAligned ? '#DC2626' : '#334155'}
+                  fill={isAligned ? PHYSICS_COLORS.alertRed : CANVAS_COLORS.labelTextLight}
                   fontSize={8}
                   fontWeight={isAligned ? 'bold' : 'normal'}
                   fontFamily={fontFamily}
@@ -168,8 +174,17 @@ export const VernierCaliper: React.FC<VernierCaliperProps> = ({
       {/* 读数结果特写与对齐线 */}
       {showMagnifier && (
         <g className="vernier-alignment-highlight" transform="translate(160, -45)">
-          <rect x={-45} y={-16} width={90} height={26} rx={4} fill="#0F172A" opacity={0.9} />
-          <text x={0} y={1} fill="#38BDF8" fontSize={11} fontWeight="bold" textAnchor="middle" fontFamily={fontFamily}>
+          <rect
+            x={-45}
+            y={-16}
+            width={90}
+            height={26}
+            rx={4}
+            fill={withAlpha(CANVAS_COLORS.labelText, 0.92)}
+            stroke={PHYSICS_COLORS.velocity}
+            strokeWidth={1}
+          />
+          <text x={0} y={1} fill={PHYSICS_COLORS.velocity} fontSize={11} fontWeight="bold" textAnchor="middle" fontFamily={fontFamily}>
             {measuredValue.toFixed(2)} mm
           </text>
         </g>

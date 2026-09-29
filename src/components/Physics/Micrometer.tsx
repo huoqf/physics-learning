@@ -1,4 +1,5 @@
 import React from 'react'
+import { SCENE_COLORS, CANVAS_COLORS, PHYSICS_COLORS, withAlpha } from '@/theme/physics'
 
 export interface MicrometerProps {
   /** 螺旋测微器中心左侧 X 坐标 */
@@ -34,6 +35,11 @@ export const Micrometer: React.FC<MicrometerProps> = ({
   // 可动微分筒 50 等分估读格数 (0~50)
   const thimbleValue = (measuredValue % 0.5) / 0.01
 
+  const micrometerFrame = SCENE_COLORS.materials.structStrokeMid
+  const micrometerSleeve = SCENE_COLORS.materials.structStrokePale
+  const micrometerThimble = SCENE_COLORS.materials.structStrokeLight
+  const micrometerSpindle = SCENE_COLORS.materials.structFillPale
+
   return (
     <g
       className="micrometer"
@@ -42,12 +48,12 @@ export const Micrometer: React.FC<MicrometerProps> = ({
       {/* 弓形 U 型框架 (Frame) */}
       <path
         d="M 20 -40 C -50 -40, -50 40, 20 40 L 40 40 C -30 35, -30 -35, 40 -35 Z"
-        fill="#475569"
-        stroke="#1E293B"
+        fill={micrometerFrame}
+        stroke={CANVAS_COLORS.strokeDark}
         strokeWidth={1.5}
       />
       {/* 测砧 (Anvil) */}
-      <rect x={20} y={-8} width={12} height={16} fill="#CBD5E1" stroke="#475569" />
+      <rect x={20} y={-8} width={12} height={16} fill={micrometerSleeve} stroke={micrometerFrame} />
 
       {/* 测微螺杆 (Spindle, 伸缩显示) */}
       <rect
@@ -55,29 +61,29 @@ export const Micrometer: React.FC<MicrometerProps> = ({
         y={-8}
         width={Math.max(2, 40 - measuredValue * 4)}
         height={16}
-        fill="#E2E8F0"
-        stroke="#475569"
+        fill={micrometerSpindle}
+        stroke={micrometerFrame}
       />
 
       {/* 固定套管 (Sleeve, 包含 0.5mm 刻度线) */}
       <g className="sleeve" transform="translate(80, 0)">
-        <rect x={0} y={-14} width={70} height={28} fill="#CBD5E1" stroke="#334155" strokeWidth={1} />
+        <rect x={0} y={-14} width={70} height={28} fill={micrometerSleeve} stroke={CANVAS_COLORS.strokeDark} strokeWidth={1} />
         {/* 基准线 */}
-        <line x1={0} y1={0} x2={65} y2={0} stroke="#0F172A" strokeWidth={1.2} />
+        <line x1={0} y1={0} x2={65} y2={0} stroke={CANVAS_COLORS.labelText} strokeWidth={1.2} />
 
         {/* 1mm 与 0.5mm 刻度线 */}
         {Array.from({ length: 11 }).map((_, mm) => (
           <g key={mm}>
             {/* 上侧 1mm 刻度 */}
-            <line x1={mm * 5} y1={0} x2={mm * 5} y2={-8} stroke="#0F172A" strokeWidth={1} />
+            <line x1={mm * 5} y1={0} x2={mm * 5} y2={-8} stroke={CANVAS_COLORS.labelText} strokeWidth={1} />
             {mm % 5 === 0 && (
-              <text x={mm * 5} y={-10} fill="#0F172A" fontSize={8} textAnchor="middle" fontFamily={fontFamily}>
+              <text x={mm * 5} y={-10} fill={CANVAS_COLORS.labelText} fontSize={8} textAnchor="middle" fontFamily={fontFamily}>
                 {mm}
               </text>
             )}
             {/* 下侧 0.5mm 刻度 */}
             {mm < 10 && (
-              <line x1={mm * 5 + 2.5} y1={0} x2={mm * 5 + 2.5} y2={7} stroke="#0F172A" strokeWidth={0.8} />
+              <line x1={mm * 5 + 2.5} y1={0} x2={mm * 5 + 2.5} y2={7} stroke={CANVAS_COLORS.labelText} strokeWidth={0.8} />
             )}
           </g>
         ))}
@@ -85,9 +91,9 @@ export const Micrometer: React.FC<MicrometerProps> = ({
 
       {/* 可动微分筒 (Thimble) */}
       <g className="thimble" transform={`translate(${110 + fixedMm * 5 + (hasHalfMm ? 2.5 : 0)}, 0)`}>
-        <rect x={0} y={-18} width={50} height={36} rx={2} fill="#94A3B8" stroke="#1E293B" strokeWidth={1.2} />
+        <rect x={0} y={-18} width={50} height={36} rx={2} fill={micrometerThimble} stroke={CANVAS_COLORS.strokeDark} strokeWidth={1.2} />
         {/* 棘轮旋钮 (Ratchet) */}
-        <rect x={50} y={-12} width={20} height={24} fill="#475569" stroke="#1E293B" />
+        <rect x={50} y={-12} width={20} height={24} fill={micrometerFrame} stroke={CANVAS_COLORS.strokeDark} />
 
         {/* 可动微分筒 50 等分刻度线 */}
         {[-2, -1, 0, 1, 2].map((offset) => {
@@ -101,13 +107,13 @@ export const Micrometer: React.FC<MicrometerProps> = ({
                 y1={posY}
                 x2={12}
                 y2={posY}
-                stroke={offset === 0 ? '#DC2626' : '#0F172A'}
+                stroke={offset === 0 ? PHYSICS_COLORS.alertRed : CANVAS_COLORS.labelText}
                 strokeWidth={offset === 0 ? 1.5 : 0.8}
               />
               <text
                 x={15}
                 y={posY + 3}
-                fill={offset === 0 ? '#DC2626' : '#1E293B'}
+                fill={offset === 0 ? PHYSICS_COLORS.alertRed : CANVAS_COLORS.labelTextLight}
                 fontSize={8}
                 fontWeight={offset === 0 ? 'bold' : 'normal'}
                 fontFamily={fontFamily}
@@ -122,8 +128,17 @@ export const Micrometer: React.FC<MicrometerProps> = ({
       {/* 读数特写放大标注 */}
       {showMagnifier && (
         <g className="micrometer-readout" transform="translate(100, -50)">
-          <rect x={-50} y={-16} width={100} height={26} rx={4} fill="#0F172A" opacity={0.9} />
-          <text x={0} y={1} fill="#F59E0B" fontSize={11} fontWeight="bold" textAnchor="middle" fontFamily={fontFamily}>
+          <rect
+            x={-50}
+            y={-16}
+            width={100}
+            height={26}
+            rx={4}
+            fill={withAlpha(CANVAS_COLORS.labelText, 0.92)}
+            stroke={PHYSICS_COLORS.elasticForce}
+            strokeWidth={1}
+          />
+          <text x={0} y={1} fill={PHYSICS_COLORS.elasticForce} fontSize={11} fontWeight="bold" textAnchor="middle" fontFamily={fontFamily}>
             {measuredValue.toFixed(3)} mm
           </text>
         </g>

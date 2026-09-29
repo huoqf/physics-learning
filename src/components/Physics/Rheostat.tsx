@@ -1,5 +1,5 @@
 import React from 'react'
-import { SCENE_COLORS, PHYSICS_COLORS } from '@/theme/physics'
+import { SCENE_COLORS, PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
 
 const ELECTRICAL = SCENE_COLORS.electricalApparatus
 
@@ -30,6 +30,8 @@ export interface RheostatProps {
   className?: string
   /** 是否启用动画，关闭后不仅停止时间动画，而且停止渲染任何粒子或不需要的动态修饰元素以减轻 DOM 开销 */
   animated?: boolean
+  /** 电路接法模式：'current-limiting' (限流式, 默认) | 'voltage-divider' (分压式, 三端全接入) */
+  wiringMode?: 'current-limiting' | 'voltage-divider'
   /** 外观模式：'realistic' (拟物, 默认) | 'symbolic' (电路原理图图例符号) */
   variant?: 'realistic' | 'symbolic'
 }
@@ -62,6 +64,7 @@ export const Rheostat: React.FC<RheostatProps> = ({
   disabled = false,
   className = '',
   font = (base: number) => base,
+  wiringMode = 'current-limiting',
   variant = 'realistic',
 }) => {
   const c = SCENE_COLORS.circuit
@@ -79,6 +82,7 @@ export const Rheostat: React.FC<RheostatProps> = ({
     const boxH = 16 * layout.scale
     const sliderY = -18 * layout.scale
     const contactY = -8 * layout.scale
+    const isDivider = wiringMode === 'voltage-divider'
     
     // 游标 x 坐标限制在电阻框的有效横向区间内
     const symbolicWiperX = -18 * layout.scale + ratio * 36 * layout.scale
@@ -94,7 +98,7 @@ export const Rheostat: React.FC<RheostatProps> = ({
           y={-boxH / 2}
           width={boxW}
           height={boxH}
-          fill="#ffffff"
+          fill={CANVAS_COLORS.white}
           stroke={SCENE_COLORS.circuit.resistorStroke}
           strokeWidth={2 * layout.scale}
         />
@@ -109,37 +113,72 @@ export const Rheostat: React.FC<RheostatProps> = ({
           strokeWidth={1.5 * layout.scale}
         />
         
-        {/* ── 核心物理连线优化：一上一下接法 (左滑轨入，右电阻出) ── */}
-        {/* 左侧引线：自外部 (-73, 0) 进入，在外侧折弯向上连接至上方滑轨左端 (-30) */}
-        <path
-          d={`M ${-73 * layout.scale} 0 L ${-34 * layout.scale} 0 L ${-34 * layout.scale} ${sliderY} L ${-30 * layout.scale} ${sliderY}`}
-          fill="none"
-          stroke={SCENE_COLORS.circuit.resistorStroke}
-          strokeWidth={1.5 * layout.scale}
-        />
-        
-        {/* 右侧引线：自外部 (73, 0) 进入，水平连入电阻框右侧边缘 (boxW/2) */}
-        <line
-          x1={boxW / 2}
-          y1={0}
-          x2={73 * layout.scale}
-          y2={0}
-          stroke={SCENE_COLORS.circuit.resistorStroke}
-          strokeWidth={1.5 * layout.scale}
-        />
-        
-        {/* 悬空未接入的端点：电阻框左端连出一截小线段至 -30 处，与左侧主导线断开，代表此端口未接线 */}
-        <line
-          x1={-boxW / 2}
-          y1={0}
-          x2={-30 * layout.scale}
-          y2={0}
-          stroke={SCENE_COLORS.circuit.resistorStroke}
-          strokeWidth={1.2 * layout.scale}
-          strokeDasharray="2,2"
-          opacity={0.4}
-        />
-        <circle cx={-30 * layout.scale} cy={0} r={1.5 * layout.scale} fill={PHYSICS_COLORS.labelTextLight} opacity={0.6} />
+        {/* ── 核心物理连线：限流式 vs 分压式 ── */}
+        {isDivider ? (
+          /* 分压式接法：两下全通，上一引出 */
+          <>
+            {/* 左下引线：自外部 (-73, 0) 直通连入电阻框左侧 (-boxW / 2, 0) */}
+            <line
+              x1={-73 * layout.scale}
+              y1={0}
+              x2={-boxW / 2}
+              y2={0}
+              stroke={SCENE_COLORS.circuit.resistorStroke}
+              strokeWidth={1.5 * layout.scale}
+            />
+            {/* 右下引线：自外部 (73, 0) 直通连入电阻框右侧 (boxW / 2, 0) */}
+            <line
+              x1={boxW / 2}
+              y1={0}
+              x2={73 * layout.scale}
+              y2={0}
+              stroke={SCENE_COLORS.circuit.resistorStroke}
+              strokeWidth={1.5 * layout.scale}
+            />
+            {/* 上侧分压输出引线：自滑轨左端引出折弯至外部 (-73, -18) 或向上引出 */}
+            <path
+              d={`M ${-30 * layout.scale} ${sliderY} L ${-65 * layout.scale} ${sliderY} L ${-65 * layout.scale} ${sliderY - 10 * layout.scale}`}
+              fill="none"
+              stroke={SCENE_COLORS.circuit.resistorStroke}
+              strokeWidth={1.5 * layout.scale}
+            />
+            <circle cx={-65 * layout.scale} cy={sliderY - 10 * layout.scale} r={2.5 * layout.scale} fill={PHYSICS_COLORS.labelText} />
+          </>
+        ) : (
+          /* 限流式接法：一上一下 (左滑轨入，右电阻出) */
+          <>
+            {/* 左侧引线：自外部 (-73, 0) 进入，在外侧折弯向上连接至上方滑轨左端 (-30) */}
+            <path
+              d={`M ${-73 * layout.scale} 0 L ${-34 * layout.scale} 0 L ${-34 * layout.scale} ${sliderY} L ${-30 * layout.scale} ${sliderY}`}
+              fill="none"
+              stroke={SCENE_COLORS.circuit.resistorStroke}
+              strokeWidth={1.5 * layout.scale}
+            />
+            
+            {/* 右侧引线：自外部 (73, 0) 进入，水平连入电阻框右侧边缘 (boxW/2) */}
+            <line
+              x1={boxW / 2}
+              y1={0}
+              x2={73 * layout.scale}
+              y2={0}
+              stroke={SCENE_COLORS.circuit.resistorStroke}
+              strokeWidth={1.5 * layout.scale}
+            />
+            
+            {/* 悬空未接入的端点：电阻框左端连出一截小虚线，代表此端口未接线 */}
+            <line
+              x1={-boxW / 2}
+              y1={0}
+              x2={-30 * layout.scale}
+              y2={0}
+              stroke={SCENE_COLORS.circuit.resistorStroke}
+              strokeWidth={1.2 * layout.scale}
+              strokeDasharray="2,2"
+              opacity={0.4}
+            />
+            <circle cx={-30 * layout.scale} cy={0} r={1.5 * layout.scale} fill={PHYSICS_COLORS.labelTextLight} opacity={0.6} />
+          </>
+        )}
         
         {/* 指向电阻框的红色触片箭头 */}
         <g>
@@ -166,7 +205,7 @@ export const Rheostat: React.FC<RheostatProps> = ({
         {/* 实心接线圆点，对应原理图接入位置 */}
         <circle cx={-73 * layout.scale} cy={0} r={2.5 * layout.scale} fill={PHYSICS_COLORS.labelText} />
         <circle cx={73 * layout.scale} cy={0} r={2.5 * layout.scale} fill={PHYSICS_COLORS.labelText} />
-        <circle cx={-34 * layout.scale} cy={0} r={2.2 * layout.scale} fill={PHYSICS_COLORS.labelText} />
+        {!isDivider && <circle cx={-34 * layout.scale} cy={0} r={2.2 * layout.scale} fill={PHYSICS_COLORS.labelText} />}
 
         {/* 可选阻值文本标签 */}
         {showLabel && (

@@ -13,8 +13,10 @@ interface ConductingRodProps {
   x?: number
   /** 倾角 (°)，inclined 模式使用 */
   theta?: number
-  /** 电流方向：'in' = 流入（⊗），'out' = 流出（⊙），'none' = 无电流 */
-  currentDir?: 'in' | 'out' | 'none'
+  /** 电流方向：'in' = 流入/向下，'out' = 流出/向上，'up' = 向上，'down' = 向下，'none' = 无电流 */
+  currentDir?: 'in' | 'out' | 'up' | 'down' | 'none'
+  /** 是否显示两端等效电源正负极性标记（+ / -），默认 false */
+  showPolarity?: boolean
   /** 水平导轨间距 (px) */
   spacing?: number
   /** 画布宽度 (px)，inclined 模式使用 */
@@ -71,6 +73,7 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
   x = 250,
   theta = 30,
   currentDir = 'in',
+  showPolarity = false,
   spacing = 100,
   width = 500,
   height = 300,
@@ -180,6 +183,7 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
   // 默认：horizontal 平面模式
   const y1 = height / 2 - spacing / 2 - 20
   const y2 = height / 2 + spacing / 2 + 20
+  const midY = (y1 + y2) / 2
 
   // 导体棒宽度参数化（基于默认 12px 宽）
   const rodHalfW = 6
@@ -188,6 +192,11 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
   const capRy = 2.5
   const highlightW = 2.5
   const highlightOffsetX = rodHalfW - 2 // 反光条距棒中心的偏移
+
+  // 电流方向与极性解析 (up: 向上流, 对应流向顶端; down: 向下流)
+  const isUp = currentDir === 'out' || currentDir === 'up'
+  const isDown = currentDir === 'in' || currentDir === 'down'
+  const hasCurrent = currentDir !== 'none' && (isUp || isDown)
 
   return (
     <g>
@@ -213,6 +222,45 @@ export const ConductingRod: React.FC<ConductingRodProps> = ({
 
       {/* 金属反光条 */}
       <rect x={x - highlightOffsetX} y={y1 + 4} width={highlightW} height={y2 - y1 - 8} fill={colors.neutral.white} opacity="0.6" rx="1" pointerEvents="none" />
+
+      {/* 电流流动发光指示箭头 */}
+      {hasCurrent && (
+        <g pointerEvents="none">
+          <line
+            x1={x}
+            y1={isUp ? midY + 14 : midY - 14}
+            x2={x}
+            y2={isUp ? midY - 14 : midY + 14}
+            stroke={PHYSICS_COLORS.electricCurrent}
+            strokeWidth={2.4}
+            strokeLinecap="round"
+          />
+          <polygon
+            points={
+              isUp
+                ? `${x},${midY - 18} ${x - 4},${midY - 11} ${x + 4},${midY - 11}`
+                : `${x},${midY + 18} ${x - 4},${midY + 11} ${x + 4},${midY + 11}`
+            }
+            fill={PHYSICS_COLORS.electricCurrent}
+          />
+        </g>
+      )}
+
+      {/* 等效电源高低电势标记（电源内部电流从负极流向正极） */}
+      {showPolarity && hasCurrent && (
+        <g pointerEvents="none" fontSize={10} fontWeight="bold" textAnchor="middle">
+          {/* 顶端电势标记 */}
+          <circle cx={x + 14} cy={y1 + 8} r={6} fill={colors.neutral.white} stroke={PHYSICS_COLORS.labelText} strokeWidth={1} />
+          <text x={x + 14} y={y1 + 11} fill={isUp ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}>
+            {isUp ? '+' : '−'}
+          </text>
+          {/* 底端电势标记 */}
+          <circle cx={x + 14} cy={y2 - 8} r={6} fill={colors.neutral.white} stroke={PHYSICS_COLORS.labelText} strokeWidth={1} />
+          <text x={x + 14} y={y2 - 5} fill={isUp ? PHYSICS_COLORS.negativeCharge : PHYSICS_COLORS.positiveCharge}>
+            {isUp ? '−' : '+'}
+          </text>
+        </g>
+      )}
     </g>
   )
 }

@@ -15,7 +15,7 @@
 | `Ball` | 质点/小球 | `cx`, `cy`, `r` | `<Ball cx={x} cy={y} r={14} type="steel" />` |
 | `Block` | 滑块/木块 | `x`, `y`, `width`, `height` | `<Block x={x} y={y} width={48} height={24} type="metal" />` |
 | `PhysicsGround` | 地面/斜面 | `x`, `y`, `width` | `<PhysicsGround x={0} y={groundY} width={dw} fontFamily={font} />` |
-| `Incline` | 斜面体 | `x0`, `y0`, `width`, `height` | `<Incline x0={cx} y0={gy} width={W} height={H} />` |
+| `Incline` | 斜面体（支持 direction 左右倾角、showAngleArc 角度标注及底部剖面阴影） | `x0`, `y0`, `width`, `height` | `<Incline x0={cx} y0={gy} width={W} height={H} direction="left" showAngleArc />` |
 | `Pulley` | 定滑轮 | `cx`, `cy` | `<Pulley cx={px} cy={py} r={12} hangerTopY={py - 45} />` |
 | `SportsCar` | 运动小车 | `x`, `y` | `<SportsCar x={carX} y={groundY - 26} width={56} height={26} />` |
 | `Spring` | 弹簧 | `x1`, `y1`, `x2`, `y2` | `<Spring x1={ox} y1={oy} x2={bx} y2={oy} coils={8} radius={12} />` |
@@ -23,7 +23,7 @@
 | `ParticleTrajectory` | 粒子轨迹(SVG) | `historyPoints`, `predictedPoints`, `tailPoints`, `isFocus`, `chargeSign` | `<ParticleTrajectory historyPoints={hp} predictedPoints={pp} tailPoints={tp} isFocus chargeSign="+" />` |
 | `ParticleEmitter` | 粒子发射源 | `x`, `y` | `<ParticleEmitter x={lx} y={ly} active={isPlaying} chargeSign={q} />` |
 | `CapacitorPlates` | 平行板电容器 | `x`, `y`, `width`, `gap` | `<CapacitorPlates x={px} y={cy} width={wp} gap={gp} chargeSign={E > 0.01 ? 1 : 0} />` |
-| `ConductingRod` | 导体棒 | `type` | `<ConductingRod type="horizontal" x={rx} spacing={sp} width={w} height={h} currentDir="in" />` |
+| `ConductingRod` | 导体棒（支持水平切割感应电流流向 currentDir 与等效电源正负极性 showPolarity） | `type` | `<ConductingRod type="horizontal" x={rx} spacing={sp} width={w} height={h} currentDir="up" showPolarity />` |
 | `DCSource` | 直流电源（支持 instrument/battery/symbol 三种模式，symbol 模式提供 `getDCSourceTerminals` 辅助函数及 `DC_SOURCE_SYMBOL_OFFSET=20` 常量，防止外部硬编码） | `type` | `<DCSource type="symbol" x={420} y={250} voltage={U} polarity="right-positive" />` |
 | `Galvanometer` | 灵敏电流计（thin wrapper，内部使用 MeterPointer 渲染指针） | `value` | `<Galvanometer x={gx} y={gy} value={emf * 10 / 45} />` |
 | `CoilBase` | 通用线圈基座（Solenoid / PrimaryCoil 共享渲染逻辑） | `x`, `y`, `width`, `height`, `turns` | `<CoilBase x={cx} y={cy} width={160} height={80} turns={5} current={I} time={t} />` |
@@ -31,7 +31,7 @@
 | `SolenoidFieldLines` | 螺线管磁感线分布（支持内部平行场线、两端发散曲线与方向微箭头） | `x`, `y`, `width`, `height`, `current` | `<SolenoidFieldLines x={cx} y={cy} width={180} height={70} current={I} />` |
 | `PrimaryCoil` | 原线圈（thin wrapper，内部使用 CoilBase，漆包绿线样式） | `x`, `y`, `width`, `height`, `turns` | `<PrimaryCoil x={cx} y={cy} width={120} height={66} turns={4} current={I} time={t} />` |
 | `MeterPointer` | 仪表指针通用组件（DialMeter / Galvanometer 共享指针渲染） | `angle`, `length`, `color` | `<MeterPointer angle={-30} length={21} color={themeColor} />` |
-| `DialMeter` | 理想电表盘（内部使用 MeterPointer 渲染指针） | `type`, `value`, `x`, `y` | `<DialMeter type="V" value={U} x={dx} y={dy} />` |
+| `DialMeter` | 理想电表盘（内部使用 MeterPointer 渲染指针，已接入 useUniqueSvgId 防冲突） | `type`, `value`, `x`, `y` | `<DialMeter type="V" value={U} x={dx} y={dy} />` |
 | `BarMagnet` | 条形磁铁（3D阴影底衬与极性标注） | —（均可选，常用 `x`, `y`, `width`, `height`, `pole`） | `<BarMagnet x={mx} y={cy} width={120} height={36} pole={1} />` |
 | `CoupledCoilField` | 耦合线圈互感磁感线 | `primaryX`, `primaryW`, `primaryH`, `secondaryX`, `secondaryW`, `secondaryH`, `y`, `current`, `canvasHeight` | `<CoupledCoilField primaryX={180} primaryW={80} primaryH={60} secondaryX={320} secondaryW={80} secondaryH={60} y={150} current={I} canvasHeight={325} />` |
 | `MagneticPoles` | 发电机三维磁极表面与极性渲染 | `project3D`, `layer` | `<MagneticPoles project3D={project3D} layer="all" />` |
@@ -39,7 +39,7 @@
 | `ParametricMagneticField` | 参数化空间磁场分布 | `w`, `h`, `pole`, `canvasHeight` | `<ParametricMagneticField w={120} h={36} pole={1} canvasHeight={325} />` |
 | `Rails` | 导轨轨道（水平/倾斜/侧视） | `type` | `<Rails type="horizontal" cx={250} cy={150} length={400} spacing={100} />` |
 | `LightBulb` | 实验小灯泡（呼吸光晕与发热模拟） | `x`, `y`, `power`, `time` | `<LightBulb x={100} y={150} power={P} time={time} />` |
-| `Rheostat` | 滑动变阻器器材 | —（均可选，常用 `x`, `y`, `value`, `min`, `max`） | `<Rheostat x={100} y={150} value={R} min={0} max={20} />` |
+| `Rheostat` | 滑动变阻器器材（支持限流式 current-limiting 与分压式 voltage-divider 原理图模式） | —（均可选，常用 `x`, `y`, `value`, `min`, `max`） | `<Rheostat x={100} y={150} value={R} wiringMode="voltage-divider" variant="symbolic" />` |
 | `RotatingCoil` | 发电机旋转线框（3D 透视投影） | `project3D`, `theta` | `<RotatingCoil project3D={project3D} theta={theta} />` |
 | `TransformerApparatus` | 变压器原副线圈与铁芯装置 | `x`, `y`, `turns1`, `turns2`, `current1`, `current2` | `<TransformerApparatus x={200} y={150} turns1={100} turns2={200} current1={0.5} current2={0.25} />` |
 | `DragHandle` | SVG 可拖拽控制手柄 | `cx`, `cy`, `color`, `onPointerDown` | `<DragHandle cx={100} cy={200} color="#3b82f6" onPointerDown={handleDown} />` |
@@ -47,13 +47,13 @@
 | `VectorDefs` | 箭头 marker 定义 | — | `<VectorDefs />`（放在 `<svg>` 内） |
 | `SkeletonHand` / `SkeletalHand` | 骨骼手（右手/左手定则手势渲染） | `cx`, `cy`, `rotation`, `pose` | `<SkeletonHand cx={cx} cy={cy} rotation={0} pose="open" />` |
 | `PaperTape` | 打点纸带 | `x`, `y`, `width`, `dots` | `<PaperTape x={10} y={10} width={200} dots={[10, 30, 60, 100]} />` |
-| `TickerTimer` | 打点计时器（电磁/电火花） | `x`, `y` | `<TickerTimer x={50} y={50} type="electromagnetic" isVibrating />` |
+| `TickerTimer` | 打点计时器（电磁/电火花，已接入标准主题 token） | `x`, `y` | `<TickerTimer x={50} y={50} type="electromagnetic" isVibrating />` |
 | `Photogate` | 光电门传感器 | `x`, `y` | `<Photogate x={100} y={100} isBlocked beamVisible label="光电门 A" />` |
 | `TimerDisplay` | 数字毫秒/秒计时器显示屏 | `x`, `y`, `timeMs` | `<TimerDisplay x={10} y={10} timeMs={12.34} channel="CH A" />` |
 | `LabRuler` | 实验室毫米刻度尺 | `x`, `y`, `length` | `<LabRuler x={0} y={0} length={200} showMagnifier magnifierPos={100} />` |
-| `VernierCaliper` | 游标卡尺（10/20/50分度） | `x`, `y`, `measuredValue` | `<VernierCaliper x={0} y={0} measuredValue={23.45} division={20} showMagnifier />` |
-| `Micrometer` | 螺旋测微器（千分尺） | `x`, `y`, `measuredValue` | `<Micrometer x={0} y={0} measuredValue={5.382} showMagnifier />` |
-| `SpringBalance` | 弹簧测力计 | `x`, `y`, `force` | `<SpringBalance x={50} y={50} force={3.5} maxForce={5} />` |
+| `VernierCaliper` | 游标卡尺（10/20/50分度，已接入标准主题 token） | `x`, `y`, `measuredValue` | `<VernierCaliper x={0} y={0} measuredValue={23.45} division={20} showMagnifier />` |
+| `Micrometer` | 螺旋测微器（千分尺，已接入标准主题 token） | `x`, `y`, `measuredValue` | `<Micrometer x={0} y={0} measuredValue={5.382} showMagnifier />` |
+| `SpringBalance` | 弹簧测力计（真实拉伸螺旋弹簧，支持任意角度旋转与以 hook 为锚点） | `x`, `y`, `force` | `<SpringBalance x={50} y={50} force={3.5} angle={30} anchor="hook" />` |
 | `LabStand` | 铁架台支架 | `x`, `y` | `<LabStand x={100} y={200} attachment="clamp" />` |
 | `CircuitSwitch` | 实验单刀单掷电键（开关 S，支持开合状态） | `x`, `y` | `<CircuitSwitch x={200} y={260} closed={true} />` |
 | `ChainCircuitBuilder` | 电路拓扑构建器（分压/限流回路与内外接拓扑，支持元件插槽与导线网络） | `circuitType`, `meterWiring`, `sliderRatio` | `<ChainCircuitBuilder circuitType="voltage-divider" meterWiring="external" sliderRatio={0.5} />` |

@@ -4,11 +4,6 @@
       "count": 9
     }
   },
-  "src/components/Physics/Block.tsx": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
   "src/components/Physics/LabRuler.tsx": {
     "no-restricted-syntax": {
       "count": 7
@@ -17,11 +12,6 @@
   "src/components/Physics/LabStand.tsx": {
     "no-restricted-syntax": {
       "count": 15
-    }
-  },
-  "src/components/Physics/Micrometer.tsx": {
-    "no-restricted-syntax": {
-      "count": 22
     }
   },
   "src/components/Physics/PaperTape.tsx": {
@@ -49,21 +39,6 @@
       "count": 172
     }
   },
-  "src/components/Physics/Rheostat.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "src/components/Physics/SpringBalance.tsx": {
-    "no-restricted-syntax": {
-      "count": 7
-    }
-  },
-  "src/components/Physics/TickerTimer.tsx": {
-    "no-restricted-syntax": {
-      "count": 17
-    }
-  },
   "src/components/Physics/TimerDisplay.tsx": {
     "no-restricted-syntax": {
       "count": 15
@@ -72,11 +47,6 @@
   "src/components/Physics/TransformerApparatus.tsx": {
     "no-restricted-syntax": {
       "count": 1
-    }
-  },
-  "src/components/Physics/VernierCaliper.tsx": {
-    "no-restricted-syntax": {
-      "count": 20
     }
   },
   "src/components/UI/PhysicsPanel.tsx": {

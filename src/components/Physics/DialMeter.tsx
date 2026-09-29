@@ -1,4 +1,5 @@
 import React from 'react'
+import { useUniqueSvgId } from '@/hooks'
 import { PHYSICS_COLORS, CANVAS_COLORS, SCENE_COLORS, withAlpha } from '@/theme/physics'
 import { colors } from '@/theme/colors'
 import { MeterPointer } from './MeterPointer'
@@ -40,6 +41,10 @@ export const DialMeter: React.FC<DialMeterProps> = ({
   variant = 'realistic',
   showLabel = true,
 }) => {
+  const uniqueId = useUniqueSvgId()
+  const ringGradId = `dial-ring-${type}-${uniqueId}`
+  const shadowFilterId = `dial-shadow-${type}-${uniqueId}`
+
   const isVoltage = type === 'V'
   const max = customMax ?? (isVoltage ? 10 : 2)
 
@@ -109,19 +114,19 @@ export const DialMeter: React.FC<DialMeterProps> = ({
     <g transform={`translate(${x}, ${y}) scale(${r / 28})`}>
       <defs>
         {/* 表盘金属外圈渐变 */}
-        <linearGradient id={`dial-ring-${type}`} x1="0%" y1="0%" x2="0%" y2="100%">
+        <linearGradient id={ringGradId} x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor={colors.neutral[300]} />
           <stop offset="50%" stopColor={colors.neutral[400]} />
           <stop offset="100%" stopColor={colors.neutral[600]} />
         </linearGradient>
         {/* 表盘外阴影，模拟立体悬浮 */}
-        <filter id={`dial-shadow-${type}`} x="-25%" y="-25%" width="150%" height="150%">
+        <filter id={shadowFilterId} x="-25%" y="-25%" width="150%" height="150%">
           <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor={SCENE_COLORS.materials.structStrokeDark} floodOpacity="0.12" />
         </filter>
       </defs>
 
       {/* 外圈金属边框（带立体投影） */}
-      <circle cx={0} cy={0} r={28} fill={`url(#dial-ring-${type})`} filter={`url(#dial-shadow-${type})`} />
+      <circle cx={0} cy={0} r={28} fill={`url(#${ringGradId})`} filter={`url(#${shadowFilterId})`} />
       {/* 表盘底色 (毛玻璃透明质感) */}
       <circle cx={0} cy={0} r={25} fill={withAlpha(SCENE_COLORS.materials.structBgLight, 0.94)} stroke={SCENE_COLORS.materials.structStrokeMid} strokeWidth={1.0} />
 
@@ -158,11 +163,11 @@ export const DialMeter: React.FC<DialMeterProps> = ({
         tailOffset={4}
         shadowDx={1}
         shadowDy={1}
-        shadowColor="rgba(15, 23, 42, 0.25)"
+        shadowColor={withAlpha(SCENE_COLORS.materials.structStrokeDark, 0.25)}
       />
 
       {/* 指针轴心 */}
-      <circle cx={0} cy={0} r={3} fill={colors.neutral[800]} />
+      <circle cx={0} cy={0} r={3} fill={SCENE_COLORS.materials.structStrokeDark} />
     </g>
   )
 }
