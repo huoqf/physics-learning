@@ -197,14 +197,6 @@ export function SensorScene({
         【自动控制应用电路】电磁继电器 / 阈值触发
       </text>
 
-      {/* 控制回路导线 */}
-      <g stroke={CANVAS_COLORS.trackHistory} strokeWidth={2.5} fill="none">
-        <path d="M 430 240 L 400 240 L 400 90 L 520 90" />
-        <path d="M 520 90 L 520 120" />
-        <path d="M 520 180 L 520 240 L 470 240" />
-        <path d="M 520 150 L 610 150" />
-      </g>
-
       {/* 控制电源 DCSource */}
       <DCSource
         type="instrument"
@@ -214,8 +206,25 @@ export function SensorScene({
         polarity="right-positive"
       />
 
+      {/* 控制回路导线：instrument 模式接线柱在 ±22px 处，terminalY=+22px
+          电源 x=450, y=225 → 负极(428,247)、正极(472,247) */}
+      {(() => {
+        // instrument 模式（默认 width=height=80）接线柱绝对坐标
+        const negX = 450 - 22  // = 428
+        const posX = 450 + 22  // = 472
+        const termY = 225 + 22 // = 247
+        return (
+          <g stroke={CANVAS_COLORS.trackHistory} strokeWidth={2.5} fill="none">
+            <path d={`M ${negX} ${termY} L 400 ${termY} L 400 90 L 520 90`} />
+            <path d="M 520 90 L 520 120" />
+            <path d={`M 520 180 L 520 ${termY} L ${posX} ${termY}`} />
+            <path d="M 520 150 L 610 150" />
+          </g>
+        )
+      })()}
+
       {/* 分压变阻器 Rheostat 与传感器符号 */}
-      <Rheostat x={490} y={85} value={5} min={1} max={10} />
+      <Rheostat x={490} y={85} value={5} min={1} max={10} font={font} />
       <rect x={495} y={135} width={50} height={30} fill={CANVAS_COLORS.objectFillNeutral} stroke={SCENE_COLORS.materials.structStrokeMid} strokeWidth={1.5} rx={2} />
       <text x={520} y={154} textAnchor="middle" fontSize={font(10)} fill={CANVAS_COLORS.strokeDark} fontWeight={600}>
         传感器

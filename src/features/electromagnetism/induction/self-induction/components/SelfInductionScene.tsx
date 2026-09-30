@@ -7,6 +7,7 @@ import {
   LightBulb,
   Rheostat,
   MagneticFieldGrid,
+  CircuitSwitch,
   PhysicsVectorArrow,
 } from '@/components/Physics'
 import {
@@ -35,7 +36,6 @@ export function SelfInductionScene({
   const {
     mode,
     iCoil,
-    iLamp1,
     powerLamp1,
     powerLamp2,
     switchClosed,
@@ -171,22 +171,37 @@ export function SelfInductionScene({
     <g>
       {/* 电路导线基座 */}
       <g stroke={CANVAS_COLORS.trackHistory} strokeWidth={2.5} fill="none">
-        {/* 左侧主干路 */}
-        <path d="M 230 250 L 140 250 L 140 100 L 260 100" />
-        {/* 单刀电键 */}
-        <circle cx={260} cy={100} r={4} fill={CANVAS_COLORS.textMuted} />
-        <circle cx={320} cy={100} r={4} fill={CANVAS_COLORS.textMuted} />
-        {switchClosed ? (
-          <line x1={260} y1={100} x2={320} y2={100} stroke={SCENE_COLORS.circuit.switchClosed} strokeWidth={3} />
-        ) : (
-          <line x1={260} y1={100} x2={305} y2={75} stroke={SCENE_COLORS.circuit.switchOpen} strokeWidth={3} />
-        )}
+        {/* 左侧主干路：电源负极(248,257) -> 拐角 -> 开关左端(232,100)
+             instrument 模式 negTerminal: x=270-22=248, y=235+22=257 */}
+        <path d="M 248 257 L 140 257 L 140 100 L 232 100" />
 
-        {/* 上支路导线 */}
-        <path d="M 320 100 L 370 100 L 370 140 L 680 140 L 680 250 L 370 250" />
-        {/* 下支路导线 */}
-        <path d="M 370 100 L 370 200 L 680 200" />
+        {/* 主干路开关右端(268,100) -> 分流节点(340,100) */}
+        <path d="M 268 100 L 340 100" />
+
+        {/* 上支路导线(y=140) */}
+        <path d="M 340 100 L 340 140 L 660 140" />
+
+        {/* 下支路导线(y=200) */}
+        <path d="M 340 100 L 340 200 L 660 200" />
+
+        {/* 汇流右竖线 -> 电源正极(292,257)
+             instrument 模式 posTerminal: x=270+22=292, y=235+22=257 */}
+        <path d="M 660 140 L 660 257 L 292 257" />
       </g>
+
+      {/* 并联节点圆点 */}
+      <circle cx={340} cy={100} r={3.5} fill={PHYSICS_COLORS.labelText} />
+      <circle cx={660} cy={140} r={3.5} fill={PHYSICS_COLORS.labelText} />
+      <circle cx={660} cy={200} r={3.5} fill={PHYSICS_COLORS.labelText} />
+
+      {/* 标准电键开关 S */}
+      <CircuitSwitch
+        x={250}
+        y={100}
+        closed={switchClosed}
+        label="S"
+        font={font}
+      />
 
       {/* 直流电源 DCSource */}
       <DCSource
@@ -201,52 +216,25 @@ export function SelfInductionScene({
       {mode === 0 ? (
         // Mode 0: 通电自感（并联双灯延时变亮对比）
         <>
-          <Rheostat x={400} y={120} value={10} min={0} max={20} />
-          <LightBulb x={580} y={120} power={powerLamp1} time={time} />
-          <text x={630} y={145} fontSize={font(11)} fill={CANVAS_COLORS.textMuted}>A1 灯 (纯阻支路·瞬时亮)</text>
+          <Rheostat x={400} y={130} value={10} min={0} max={20} font={font} />
+          <LightBulb x={560} y={140} power={powerLamp1} time={time} />
+          <text x={560} y={105} fontSize={font(11)} fill={CANVAS_COLORS.textMuted} textAnchor="middle">A1 灯 (纯阻支路·瞬时亮)</text>
 
-          <CoilBase x={400} y={170} width={100} height={50} turns={5} current={iCoil} time={time} />
-          <LightBulb x={580} y={180} power={powerLamp2} time={time} />
-          <text x={630} y={205} fontSize={font(11)} fill={CANVAS_COLORS.textMuted}>A2 灯 (电感支路·渐变亮)</text>
-
-          {/* 电流动态指示箭头 */}
-          {switchClosed && iLamp1 > 0.05 && (
-            <PhysicsVectorArrow
-              originDesign={{ x: 530, y: 140 }}
-              vector={{ x: 1, y: 0 }}
-              type="currentDirection"
-              sceneScale={sceneScale}
-            />
-          )}
-          {switchClosed && iCoil > 0.05 && (
-            <PhysicsVectorArrow
-              originDesign={{ x: 530, y: 200 }}
-              vector={{ x: 1, y: 0 }}
-              type="currentDirection"
-              sceneScale={sceneScale}
-            />
-          )}
+          <CoilBase x={400} y={175} width={100} height={50} turns={5} current={iCoil} time={time} />
+          <LightBulb x={560} y={200} power={powerLamp2} time={time} />
+          <text x={560} y={235} fontSize={font(11)} fill={CANVAS_COLORS.textMuted} textAnchor="middle">A2 灯 (电感支路·渐变亮)</text>
         </>
       ) : (
         // Mode 1: 断电自感（灯泡闪亮物理演示）
         <>
           <CoilBase x={440} y={115} width={120} height={50} turns={6} current={iCoil} time={time} />
-          <text x={440} y={105} fontSize={font(11)} fill={PHYSICS_COLORS.magneticField}>电感线圈 L (内阻 RL)</text>
+          <text x={440} y={100} fontSize={font(11)} fill={PHYSICS_COLORS.magneticField} textAnchor="middle">电感线圈 L (内阻 RL)</text>
 
-          <LightBulb x={480} y={180} power={powerLamp1} time={time} />
-          <text x={530} y={205} fontSize={font(11)} fill={CANVAS_COLORS.textMuted}>小灯泡 A (阻值 RA)</text>
+          <LightBulb x={500} y={200} power={powerLamp1} time={time} />
+          <text x={500} y={235} fontSize={font(11)} fill={CANVAS_COLORS.textMuted} textAnchor="middle">小灯泡 A (阻值 RA)</text>
 
-          {/* 断开后局部放电反向电流箭头 (由线圈向灯泡反向流动) */}
-          {iLamp1 > 0.05 && (
-            <PhysicsVectorArrow
-              originDesign={{ x: 580, y: 180 }}
-              vector={{ x: -1, y: 0 }}
-              type="currentDirection"
-              sceneScale={sceneScale}
-            />
-          )}
           {physics.willFlash && powerLamp1 > 1.2 && (
-            <g transform="translate(480, 160)">
+            <g transform="translate(500, 160)">
               <circle cx={0} cy={0} r={28} fill="none" stroke={CANVAS_COLORS.referencePoint} strokeWidth={2} strokeDasharray="4 2" />
               <text x={0} y={-10} fontSize={font(12)} fill={CANVAS_COLORS.referencePoint} fontWeight={700} textAnchor="middle">
                 ⚡ 瞬态闪亮！

@@ -248,24 +248,34 @@ function CircuitsAndMeters({
         </text>
       </g>
 
-      <g>
-        <path
-          d={`M ${layout.secondaryRight} ${layout.coreTop + 10 * s} H ${layout.rheostatX} V ${layout.cy - 12.3 * s}`}
-          fill="none"
-          stroke={PHYSICS_COLORS.magnetSouth}
-          strokeWidth={CANVAS_STYLE.stroke.objectLine}
-          strokeLinecap="round"
-        />
-        <path
-          d={`M ${layout.rheostatX} ${layout.cy + 6.15 * s} V ${layout.coreBottom - 10 * s} H ${layout.secondaryRight}`}
-          fill="none"
-          stroke={PHYSICS_COLORS.magnetSouth}
-          strokeWidth={CANVAS_STYLE.stroke.objectLine}
-          strokeLinecap="round"
-        />
-      </g>
+      {/* 副线圈输出回路导线：横平竖直精准对接变阻器左上端子与右下端子 */}
+      {(() => {
+        const rhScale = layout.rheostatW / 140
+        const termInX = layout.rheostatX - 73 * rhScale
+        const termInY = layout.cy - 20 * rhScale
+        const termOutX = layout.rheostatX + 73 * rhScale
+        const termOutY = layout.cy + 10 * rhScale
+        return (
+          <g>
+            <path
+              d={`M ${layout.secondaryRight} ${layout.coreTop + 10 * s} H ${termInX} V ${termInY}`}
+              fill="none"
+              stroke={PHYSICS_COLORS.magnetSouth}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine}
+              strokeLinecap="round"
+            />
+            <path
+              d={`M ${termOutX} ${termOutY} V ${layout.coreBottom - 10 * s} H ${layout.secondaryRight}`}
+              fill="none"
+              stroke={PHYSICS_COLORS.magnetSouth}
+              strokeWidth={CANVAS_STYLE.stroke.objectLine}
+              strokeLinecap="round"
+            />
+          </g>
+        )
+      })()}
 
-      <Rheostat x={layout.rheostatX} y={layout.cy} value={params.R} min={5} max={200} width={layout.rheostatW} label="R" unit="Ω" />
+      <Rheostat x={layout.rheostatX} y={layout.cy} value={params.R} min={5} max={200} width={layout.rheostatW} label="R" unit="Ω" font={font} />
 
       <DialMeter type="V" value={params.U1} max={derived.v1Max} x={layout.v1X} y={layout.meterTopY} r={layout.meterR} />
       <text x={layout.v1X} y={layout.meterTopY - layout.meterR - 4} fontSize={font(FONT.smallSize)} fill={PHYSICS_COLORS.emf} textAnchor="middle" fontWeight="bold">V₁</text>

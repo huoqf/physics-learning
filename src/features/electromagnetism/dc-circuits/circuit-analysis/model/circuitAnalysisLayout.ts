@@ -20,19 +20,19 @@ export interface Point {
 
 /** 串联电路导线路径 */
 export const SERIES_PATHS = {
-  /** 主回路：电源正极→R1(±18)→R2变阻器(±63)→电流表→电源负极 */
+  /** 主回路：电源正极(70,145)→R1(±18)→R2变阻器(±63)→电流表→电源负极(70,185) */
   mainLoop:
-    'M 70,165 L 70,120 L 282,120 M 318,120 L 437,120 M 563,120 L 660,120 L 660,165 M 660,165 L 660,210 L 70,210 L 70,165',
+    'M 70,145 L 70,120 L 282,120 M 318,120 L 437,120 M 563,120 L 660,120 L 660,165 M 660,165 L 660,210 L 70,210 L 70,185',
   /** 电压表引线：从 R2 两端向上到 y=60，横向连接，形成 U 形 */
   voltmeterLead: 'M 437,120 L 437,60 L 563,60 L 563,120',
 } as const
 
 /** 并联电路导线路径 */
 export const PARALLEL_PATHS = {
-  /** 干路 A：电源正极(122,147)→向上到顶轨 y=40→电流表→分流节点/R1 (y=40 同高直线) */
-  mainA: 'M 122,147 L 122,40 L 272,40 M 328,40 L 400,40',
-  /** 干路 B：汇合节点 x=700→右侧回路 x=780→底部回路 y=290→电源负极(78,147) */
-  mainB: 'M 700,40 L 780,40 L 780,290 L 78,290 L 78,147',
+  /** 干路 A：电源正极(100,145)→向上到顶轨 y=40→电流表→分流节点/R1 (y=40 同高直线) */
+  mainA: 'M 100,145 L 100,40 L 272,40 M 328,40 L 400,40',
+  /** 干路 B：汇合节点 x=700→右侧回路 x=780→底部回路 y=290→电源负极(100,185) */
+  mainB: 'M 700,40 L 780,40 L 780,290 L 100,290 L 100,185',
   /** 支路 1 (R1) — 上支路 y=40，导线直连电阻边缘 (550±18) */
   branch1: 'M 400,40 L 532,40 M 568,40 L 700,40',
   /** 支路 2 (R2) — 下支路，延长 R2 两端竖向导线到电压表顶部 y=147，再横向连到电压表 (x=550) */
@@ -41,10 +41,10 @@ export const PARALLEL_PATHS = {
 
 /** 混联电路导线路径 */
 export const MIXED_PATHS = {
-  /** 干路 A：电源→R1(±18)→电流表(±28)→分流节点 (y=120) */
-  mainA: 'M 70,165 L 70,120 L 162,120 M 198,120 L 272,120 M 328,120 L 380,120',
-  /** 干路 B：汇合节点→回路→电源负极 */
-  mainB: 'M 620,120 L 660,120 L 660,210 L 70,210 L 70,165',
+  /** 干路 A：电源(70,145)→R1(±18)→电流表(±28)→分流节点 (y=120) */
+  mainA: 'M 70,145 L 70,120 L 162,120 M 198,120 L 272,120 M 328,120 L 380,120',
+  /** 干路 B：汇合节点→回路→电源负极(70,185) */
+  mainB: 'M 620,120 L 660,120 L 660,210 L 70,210 L 70,185',
   /** 支路 1 (R2 变阻器) — y=120 与主轨同高，延长两端竖向导线到电压表底部 y=88，再横向连到电压表 (x=480) */
   branch1: 'M 380,120 L 417,120 L 417,88 L 480,88 M 480,88 L 543,88 L 543,120 L 620,120',
   /** 支路 2 (R3 定值电阻) — y=190 下支路，从分流节点向下 */
@@ -114,7 +114,7 @@ export function buildSeriesLayout(): SeriesLayout {
 
   // 完整的电荷闭合回路路径
   const loopPoints: Point[] = [
-    { x: 70, y: 130 },   // 电源正极
+    { x: 70, y: 145 },   // 电源正极端子
     { x: 70, y: 120 },
     { x: 262, y: 120 },  // R1 左侧
     { x: 338, y: 120 },  // R1 右侧
@@ -125,8 +125,8 @@ export function buildSeriesLayout(): SeriesLayout {
     { x: 660, y: 190 },  // 电流表底端
     { x: 660, y: 210 },
     { x: 70, y: 210 },
-    { x: 70, y: 185 },   // 电源负极
-    { x: 70, y: 130 },   // 回到起点
+    { x: 70, y: 185 },   // 电源负极端子
+    { x: 70, y: 145 },   // 回到起点
   ]
 
   return { batteryCenter, r1Center, r2Center, ammeterCenter, voltmeterCenter, loopPoints }
@@ -141,14 +141,14 @@ export function buildSeriesLayout(): SeriesLayout {
  *   E                  (回路撑满画布)
  */
 export function buildParallelLayout(): ParallelLayout {
-  const batteryCenter = { x: 100, y: 125 }
+  const batteryCenter = { x: 100, y: 165 }
   const ammeterCenter = { x: 300, y: 40 }   // 串在干路
   const r1Center = { x: 550, y: 40 }        // 支路1 (上，与顶轨同高)
   const r2Center = { x: 550, y: 110 }       // 支路2 (下)
   const voltmeterCenter = { x: 550, y: 175 } // R2 正下方 (上移，减少间距)
 
   const mainA: Point[] = [
-    { x: 100, y: 90 },    // 电源正极
+    { x: 100, y: 145 },   // 电源正极端子
     { x: 100, y: 40 },
     { x: 272, y: 40 },    // 电流表左
     { x: 328, y: 40 },    // 电流表右
@@ -172,8 +172,8 @@ export function buildParallelLayout(): ParallelLayout {
     { x: 700, y: 40 },    // 右汇合节点
     { x: 780, y: 40 },
     { x: 780, y: 290 },
-    { x: 78, y: 290 },
-    { x: 78, y: 147 },    // 电源负极接线柱
+    { x: 100, y: 290 },
+    { x: 100, y: 185 },   // 电源负极端子
   ]
 
   return { batteryCenter, ammeterCenter, r1Center, r2Center, voltmeterCenter, mainA, branch1, branch2, mainB }
@@ -196,7 +196,7 @@ export function buildMixedLayout(): MixedLayout {
   const voltmeterCenter = { x: 480, y: 60 } // 跨接在 R2 两端
 
   const mainA: Point[] = [
-    { x: 70, y: 130 },   // 电源正极
+    { x: 70, y: 145 },   // 电源正极端子
     { x: 70, y: 120 },
     { x: 162, y: 120 },  // R1 左 (180-18)
     { x: 198, y: 120 },  // R1 右 (180+18)
@@ -223,8 +223,8 @@ export function buildMixedLayout(): MixedLayout {
     { x: 660, y: 120 },
     { x: 660, y: 210 },
     { x: 70, y: 210 },
-    { x: 70, y: 185 },   // 电源负极
-    { x: 70, y: 130 },
+    { x: 70, y: 185 },   // 电源负极端子
+    { x: 70, y: 145 },
   ]
 
   return { batteryCenter, r1Center, ammeterCenter, r2Center, r3Center, voltmeterCenter, mainA, branch1, branch2, mainB }

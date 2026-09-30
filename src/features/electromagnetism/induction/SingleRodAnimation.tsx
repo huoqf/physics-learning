@@ -118,8 +118,15 @@ export default function SingleRodAnimation() {
         width={DESIGN.width}
         height={DESIGN.height}
       />
+      {/* 变阻器闭合回路：顶轨 -> 左端子(9.3, rodCenterY)，右端子(90.7, rodCenterY) -> 底轨，严禁穿心 */}
       <path
-        d={`M ${RAIL_X.leftX} ${railTopY} L ${RAIL_X.resistorX} ${railTopY} L ${RAIL_X.resistorX} ${railBottomY} L ${RAIL_X.leftX} ${railBottomY}`}
+        d={`M ${RAIL_X.leftX} ${railTopY} L 9.3 ${railTopY} L 9.3 ${rodCenterY}`}
+        fill="none"
+        stroke={PHYSICS_COLORS.strokeDark}
+        strokeWidth={3}
+      />
+      <path
+        d={`M 90.7 ${rodCenterY} L 90.7 ${railBottomY} L ${RAIL_X.leftX} ${railBottomY}`}
         fill="none"
         stroke={PHYSICS_COLORS.strokeDark}
         strokeWidth={3}
@@ -151,7 +158,7 @@ export default function SingleRodAnimation() {
       <ConductingRod
         type="horizontal"
         x={rodX}
-        spacing={railVisualSpacing - 40}
+        spacing={railVisualSpacing}
         width={DESIGN.width}
         height={DESIGN.height}
         currentDir={state.current > 0.001 ? 'in' : 'none'}

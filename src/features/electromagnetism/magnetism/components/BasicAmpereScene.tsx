@@ -1,4 +1,4 @@
-import { Rails, ConductingRod, PhysicsVectorArrow, DCSource } from '@/components/Physics'
+import { Rails, ConductingRod, PhysicsVectorArrow, DCSource, getDCSourceTerminals } from '@/components/Physics'
 import React, { useMemo } from 'react'
 import { PHYSICS_COLORS, withAlpha } from '@/theme/physics'
 
@@ -70,14 +70,12 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
     }
   }, [rodX, cy])
 
-  // 3. 电源位置与连接导线 (自适应 railH 间距)
-  const powerX = cx - railW / 2 - 55
-  const powerY = cy - 25
-  const powerW = 30
-  const powerH = 50
-
-  const wire1Path = `M ${powerX + powerW} ${powerY + 12} L ${cx - railW / 2} ${cy - railH / 2}`
-  const wire2Path = `M ${powerX + powerW} ${powerY + 38} L ${cx - railW / 2} ${cy + railH / 2}`
+  // 3. 电源位置与连接导线 (标准垂直长正短负符号)
+  const posDC = { x: 45, y: cy }
+  const polarity = I >= 0 ? 'right-positive' : 'left-positive'
+  const dcTerms = getDCSourceTerminals(posDC.x, posDC.y, polarity)
+  const wire1Path = `M ${dcTerms.top.x} ${dcTerms.top.y} L ${dcTerms.top.x} ${cy - railH / 2} L ${cx - railW / 2} ${cy - railH / 2}`
+  const wire2Path = `M ${dcTerms.bottom.x} ${dcTerms.bottom.y} L ${dcTerms.bottom.x} ${cy + railH / 2} L ${cx - railW / 2} ${cy + railH / 2}`
 
   const hasCurrent = Math.abs(I) > 1e-4
 
@@ -149,15 +147,13 @@ export const BasicAmpereScene: React.FC<BasicAmpereSceneProps> = ({
         </g>
       )}
 
-      {/* 电源盒子 */}
+      {/* 电源 DCSource (标准符号模式，消除挤压变形) */}
       <DCSource 
-        x={powerX + powerW / 2} 
-        y={powerY + powerH / 2} 
-        type="instrument" 
-        width={powerW} 
-        height={powerH} 
-        polarity={I > 0 ? 'left-positive' : 'right-positive'}
-        label="电源"
+        x={posDC.x} 
+        y={posDC.y} 
+        type="symbol" 
+        polarity={polarity}
+        label="电源 E"
         voltage={Math.abs(I) * 5}
       />
 

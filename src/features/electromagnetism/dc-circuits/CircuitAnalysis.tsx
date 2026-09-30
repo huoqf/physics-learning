@@ -83,35 +83,13 @@ export default function CircuitAnalysis() {
   // ==================== 绘制各物理实体 SVG 子组件 ====================
 
   const renderBattery = (x: number, y: number) => {
-    if (isSymbolic) {
-      // 符号模式：手绘电池符号
-      // 电池中心 (x, y)=(100,125)
-      // 正极长线 x=22, y∈[-10,10]，引线从 y=10 延伸到顶轨 y=40 (local: -85)
-      // 负极短线 x=-22, y∈[-6,6]，引线从 y=6 延伸到底轨 y=290 (local: 165)
-      return (
-        <g transform={`translate(${x}, ${y})`}>
-          {/* 正极引出线：从符号底部 (22,10) 到顶轨 (22,-85) */}
-          <line x1={22} y1={10} x2={22} y2={-85} stroke={PHYSICS_COLORS.labelText} strokeWidth={2} />
-          {/* 正极：长细线 */}
-          <line x1={22} y1={-10} x2={22} y2={10} stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={1.5} />
-          {/* 负极：短粗线 */}
-          <line x1={-22} y1={-6} x2={-22} y2={6} stroke={PHYSICS_COLORS.labelText} strokeWidth={4} />
-          {/* 负极引出线：从符号底部 (-22,6) 到底轨 (-22,165) */}
-          <line x1={-22} y1={6} x2={-22} y2={165} stroke={PHYSICS_COLORS.labelText} strokeWidth={2} />
-          {/* 标注 */}
-          <text x={0} y={-15} fill={PHYSICS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="middle">
-            E, r
-          </text>
-        </g>
-      )
-    }
     return (
       <DCSource
-        type="instrument"
+        type={isSymbolic ? 'symbol' : 'instrument'}
         x={x}
         y={y}
         voltage={U}
-        label="CONSTANT DC"
+        label="E, r"
         polarity="right-positive"
       />
     )
@@ -153,9 +131,9 @@ export default function CircuitAnalysis() {
             <circle cx={563} cy={120} r={3} fill={PHYSICS_COLORS.labelText} />
             {renderBattery(l.batteryCenter.x, l.batteryCenter.y)}
             {renderResistor(l.r1Center.x, l.r1Center.y, 'R₁', R1)}
-            <Rheostat x={l.r2Center.x} y={l.r2Center.y} value={R2} min={0} max={100} label="R₂ (变)" width={120} variant={isSymbolic ? 'symbolic' : 'realistic'} />
-            <DialMeter type="V" value={U2} max={12} x={l.voltmeterCenter.x} y={l.voltmeterCenter.y} />
-            <DialMeter type="A" value={Itotal} max={1.5} x={l.ammeterCenter.x} y={l.ammeterCenter.y} />
+            <Rheostat x={l.r2Center.x} y={l.r2Center.y} value={R2} min={0} max={100} label="R₂ (变)" width={120} variant={isSymbolic ? 'symbolic' : 'realistic'} font={font} />
+            <DialMeter type="V" variant={isSymbolic ? 'symbolic' : 'realistic'} value={U2} max={12} x={l.voltmeterCenter.x} y={l.voltmeterCenter.y} font={font} />
+            <DialMeter type="A" variant={isSymbolic ? 'symbolic' : 'realistic'} value={Itotal} max={1.5} x={l.ammeterCenter.x} y={l.ammeterCenter.y} font={font} />
           </g>
         )
       } else {
@@ -174,9 +152,9 @@ export default function CircuitAnalysis() {
             <circle cx={613} cy={110} r={3} fill={PHYSICS_COLORS.labelText} />
             {renderBattery(l.batteryCenter.x, l.batteryCenter.y)}
             {renderResistor(l.r1Center.x, l.r1Center.y, 'R₁', R1)}
-            <Rheostat x={l.r2Center.x} y={l.r2Center.y} value={R2} min={0} max={100} label="R₂ (变)" width={120} variant={isSymbolic ? 'symbolic' : 'realistic'} />
-            <DialMeter type="V" value={U2} max={12} x={l.voltmeterCenter.x} y={l.voltmeterCenter.y} />
-            <DialMeter type="A" value={Itotal} max={1.5} x={l.ammeterCenter.x} y={l.ammeterCenter.y} />
+            <Rheostat x={l.r2Center.x} y={l.r2Center.y} value={R2} min={0} max={100} label="R₂ (变)" width={120} variant={isSymbolic ? 'symbolic' : 'realistic'} font={font} />
+            <DialMeter type="V" variant={isSymbolic ? 'symbolic' : 'realistic'} value={U2} max={12} x={l.voltmeterCenter.x} y={l.voltmeterCenter.y} font={font} />
+            <DialMeter type="A" variant={isSymbolic ? 'symbolic' : 'realistic'} value={Itotal} max={1.5} x={l.ammeterCenter.x} y={l.ammeterCenter.y} font={font} />
           </g>
         )
       }
@@ -195,10 +173,10 @@ export default function CircuitAnalysis() {
           <circle cx={543} cy={120} r={3} fill={PHYSICS_COLORS.labelText} />
           {renderBattery(l.batteryCenter.x, l.batteryCenter.y)}
           {renderResistor(l.r1Center.x, l.r1Center.y, 'R₁', R1)}
-          <Rheostat x={l.r2Center.x} y={l.r2Center.y} value={R2} min={0} max={100} label="R₂ (变)" width={120} variant={isSymbolic ? 'symbolic' : 'realistic'} />
+          <Rheostat x={l.r2Center.x} y={l.r2Center.y} value={R2} min={0} max={100} label="R₂ (变)" width={120} variant={isSymbolic ? 'symbolic' : 'realistic'} font={font} />
           {renderResistor(l.r3Center.x, l.r3Center.y, 'R₃', R3)}
-          <DialMeter type="V" value={U2} max={12} x={l.voltmeterCenter.x} y={l.voltmeterCenter.y} />
-          <DialMeter type="A" value={Itotal} max={1.5} x={l.ammeterCenter.x} y={l.ammeterCenter.y} />
+          <DialMeter type="V" variant={isSymbolic ? 'symbolic' : 'realistic'} value={U2} max={12} x={l.voltmeterCenter.x} y={l.voltmeterCenter.y} font={font} />
+          <DialMeter type="A" variant={isSymbolic ? 'symbolic' : 'realistic'} value={Itotal} max={1.5} x={l.ammeterCenter.x} y={l.ammeterCenter.y} font={font} />
         </g>
       )
     }
