@@ -45,17 +45,26 @@ export default function ClosedCircuit() {
 
       {/* 垂直居中 */}
       <g>
-        {/* ==================== 1. 主回路导线与并联引线 ==================== */}
-        {/* 并联电压表导线 */}
+        {/* ──── 1. 主回路导线与并联引线 ──── */}
+        {/*
+          布局说明：loop.left=180, top=50, width=440, height=170
+          LOOP_BOTTOM = 220, LOOP_RIGHT = 620
+          电源虚线框：x=280～y=180～w=240～h=70，左边x=280，右边x=520
+          等效路端电压 = 电源两端电压 = 从虚线框左左边(x=210=连接物质引线处)到右边(x=590)
+          P1修复：引线与底部导线的交点应是局部可识别的节点——
+          等效路端电压 = 电源正极与负极之间的电压，
+          连接地点就是底部导线上电源虚线框的左边界 x=280 和右边界 x=520
+        */}
+        {/* 并联电压表导线：从底部导线电源虹线框左右边界节点引出 */}
         <path
-          d="M 210 220 L 210 135 L 366 135"
+          d="M 280 220 L 280 135 L 366 135"
           fill="none"
           stroke={PHYSICS_COLORS.axis}
           strokeWidth={2.5}
           strokeLinecap="round"
         />
         <path
-          d="M 590 220 L 590 135 L 434 135"
+          d="M 520 220 L 520 135 L 434 135"
           fill="none"
           stroke={PHYSICS_COLORS.axis}
           strokeWidth={2.5}
@@ -87,9 +96,9 @@ export default function ClosedCircuit() {
           strokeLinejoin="round"
         />
 
-        {/* 并联节点圆点 */}
-        <circle cx={210} cy={LOOP_BOTTOM} r={4.5} fill={PHYSICS_COLORS.labelText} />
-        <circle cx={590} cy={LOOP_BOTTOM} r={4.5} fill={PHYSICS_COLORS.labelText} />
+        {/* 并联节点圆点：移到电源虚线框左右边界，这才是真实分流/汇流点 */}
+        <circle cx={280} cy={LOOP_BOTTOM} r={4.5} fill={PHYSICS_COLORS.labelText} />
+        <circle cx={520} cy={LOOP_BOTTOM} r={4.5} fill={PHYSICS_COLORS.labelText} />
 
         {/* ==================== 2. 微观电荷流动与能量泵送动画 ==================== */}
         {chargeParticles.map((pt, idx) => {

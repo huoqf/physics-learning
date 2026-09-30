@@ -35,8 +35,10 @@ export const PARALLEL_PATHS = {
   mainB: 'M 700,40 L 780,40 L 780,290 L 100,290 L 100,185',
   /** 支路 1 (R1) — 上支路 y=40，导线直连电阻边缘 (550±18) */
   branch1: 'M 400,40 L 532,40 M 568,40 L 700,40',
-  /** 支路 2 (R2) — 下支路，延长 R2 两端竖向导线到电压表顶部 y=147，再横向连到电压表 (x=550) */
-  branch2: 'M 400,40 L 400,110 L 487,110 L 487,147 L 550,147 M 550,147 L 613,147 L 613,110 L 700,110 L 700,40',
+  /** 支路 2 (R2 变阻器) — 下支路 y=110，连接变阻器两端接线柱 (487,110 与 613,110) */
+  branch2: 'M 400,40 L 400,110 L 487,110 M 613,110 L 700,110 L 700,40',
+  /** 电压表引线：从 R2 两端接线柱向下到 y=185，并联至电压表两侧 */
+  voltmeterLead: 'M 487,110 L 487,185 L 522,185 M 578,185 L 613,185 L 613,110',
 } as const
 
 /** 混联电路导线路径 */
@@ -145,7 +147,7 @@ export function buildParallelLayout(): ParallelLayout {
   const ammeterCenter = { x: 300, y: 40 }   // 串在干路
   const r1Center = { x: 550, y: 40 }        // 支路1 (上，与顶轨同高)
   const r2Center = { x: 550, y: 110 }       // 支路2 (下)
-  const voltmeterCenter = { x: 550, y: 175 } // R2 正下方 (上移，减少间距)
+  const voltmeterCenter = { x: 550, y: 185 } // R2 正下方独立并联测量
 
   const mainA: Point[] = [
     { x: 100, y: 145 },   // 电源正极端子
@@ -162,7 +164,7 @@ export function buildParallelLayout(): ParallelLayout {
   ]
   const branch2: Point[] = [
     { x: 400, y: 40 },    // 左分流节点
-    { x: 400, y: 110 },
+    { x: 400, y: 110 },   // P2修复：一次竖折到 R2 高度
     { x: 487, y: 110 },   // R2 左接线柱 (550-63)
     { x: 613, y: 110 },   // R2 右接线柱 (550+63)
     { x: 700, y: 110 },

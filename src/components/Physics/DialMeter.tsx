@@ -168,6 +168,16 @@ export const DialMeter: React.FC<DialMeterProps> = ({
 
       {/* 指针轴心 */}
       <circle cx={0} cy={0} r={3} fill={SCENE_COLORS.materials.structStrokeDark} />
+
+      {/* 正负接线柱端子（高中规范：电流从+进−出，内嵌于表盘下方） */}
+      {/* 正极接线柱 "+" — 右侧 */}
+      <circle cx={r * 0.45} cy={r * 0.62} r={r * 0.11} fill={SCENE_COLORS.circuit.batteryPos} stroke={SCENE_COLORS.circuit.batteryPos} strokeWidth={1} />
+      <circle cx={r * 0.45} cy={r * 0.62} r={r * 0.04} fill={SCENE_COLORS.circuit.meterScale} />
+      <text x={r * 0.45} y={r * 0.44} fontSize={font(7.5)} fill={SCENE_COLORS.circuit.batteryPos} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>+</text>
+      {/* 负极接线柱 "−" — 左侧 */}
+      <circle cx={-r * 0.45} cy={r * 0.62} r={r * 0.11} fill={SCENE_COLORS.circuit.batteryNeg} stroke={SCENE_COLORS.circuit.batteryNeg} strokeWidth={1} />
+      <circle cx={-r * 0.45} cy={r * 0.62} r={r * 0.04} fill={SCENE_COLORS.circuit.meterScale} />
+      <text x={-r * 0.45} y={r * 0.44} fontSize={font(7.5)} fill={SCENE_COLORS.circuit.batteryNeg} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>−</text>
     </g>
   )
 }

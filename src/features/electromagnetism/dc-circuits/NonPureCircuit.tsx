@@ -4,7 +4,8 @@ import { AnimationSvgCanvas } from '@/components/Layout'
 import { useAnimationStore } from '@/stores'
 import { calculateMotorCircuit } from '@/physics'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, COMMON_MATERIALS } from '@/theme/physics'
-import { DialMeter } from '@/components/Physics'
+import { DialMeter, DCSource, VectorArrow } from '@/components/Physics'
+import { IDENTITY_SCENE_SCALE } from '@/scene'
 import { colors } from '@/theme/colors'
 
 export default function NonPureCircuit() {
@@ -30,9 +31,6 @@ export default function NonPureCircuit() {
   const liftDistance = motorState === 1 ? (time * res.v_lift * 60) % 90 : 0
   const weightY = 220 - liftDistance
 
-  const particleSpeed = res.I * 100
-  const particleOffset = (time * particleSpeed) % 40
-
   return (
     <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform} className="bg-white rounded-xl">
       <defs>
@@ -44,31 +42,51 @@ export default function NonPureCircuit() {
       </defs>
 
       <g>
-        <rect x={160} y={50} width={400} height={180} fill="none" stroke={PHYSICS_COLORS.grid} strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" />
-        <rect x={160} y={50} width={400} height={180} fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round" />
+        {/* ── 1. 主回路导线：左竖、顶横、右竖及底横（电源处留空） ── */}
+        {/* 底槽粗线 */}
+        <line x1={160} y1={50} x2={160} y2={230} stroke={PHYSICS_COLORS.grid} strokeWidth={8} strokeLinecap="round" />
+        <line x1={160} y1={50} x2={560} y2={50} stroke={PHYSICS_COLORS.grid} strokeWidth={8} strokeLinecap="round" />
+        <line x1={560} y1={50} x2={560} y2={230} stroke={PHYSICS_COLORS.grid} strokeWidth={8} strokeLinecap="round" />
+        <line x1={160} y1={230} x2={340} y2={230} stroke={PHYSICS_COLORS.grid} strokeWidth={8} strokeLinecap="round" />
+        <line x1={380} y1={230} x2={560} y2={230} stroke={PHYSICS_COLORS.grid} strokeWidth={8} strokeLinecap="round" />
 
-        <g transform="translate(360, 230)">
-          <line x1={-30} y1={0} x2={0} y2={0} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
-          <line x1={10} y1={0} x2={40} y2={0} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
-          <line x1={0} y1={-12} x2={0} y2={12} stroke={CANVAS_COLORS.labelText} strokeWidth={4} />
-          <line x1={10} y1={-20} x2={10} y2={20} stroke={SCENE_COLORS.circuit.batteryPos} strokeWidth={2.5} />
-          <text x={5} y={-25} fill={CANVAS_COLORS.labelText} fontSize={font(10)} textAnchor="middle">电源 U = {U.toFixed(1)}V</text>
-        </g>
+        {/* 铜芯导线主体 */}
+        <line x1={160} y1={50} x2={160} y2={230} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3.2} strokeLinecap="round" />
+        <line x1={160} y1={50} x2={560} y2={50} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3.2} strokeLinecap="round" />
+        <line x1={560} y1={50} x2={560} y2={230} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3.2} strokeLinecap="round" />
+        <line x1={160} y1={230} x2={340} y2={230} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3.2} strokeLinecap="round" />
+        <line x1={380} y1={230} x2={560} y2={230} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3.2} strokeLinecap="round" />
 
+        {/* ── 2. 直流稳压电源（水平标准原理图符号：长细为正、短粗为负，正极在左，顺时针供电） ── */}
+        <DCSource
+          type="symbol"
+          orientation="horizontal"
+          x={360}
+          y={230}
+          voltage={U}
+          label={`电源 U = ${U.toFixed(1)}V`}
+          polarity="left-positive"
+        />
+
+        {/* ── 3. 保护电阻 R保 ── */}
         <g transform="translate(240, 50)">
           <rect x={-20} y={-10} width={40} height={20} fill={SCENE_COLORS.circuit.resistorFill} stroke={SCENE_COLORS.circuit.resistorStroke} strokeWidth={2} />
           <text x={0} y={3} fill={CANVAS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="middle">R保</text>
           <text x={0} y={22} fill={CANVAS_COLORS.labelTextLight} fontSize={font(9)} textAnchor="middle">{R_protect}Ω</text>
         </g>
 
+        {/* ── 4. 电表与并联测量分支 ── */}
+        {/* 干路电流表 A（右竖边串联） */}
         <DialMeter type="A" value={res.I} max={5} x={560} y={140} r={28} font={font} />
 
+        {/* 电动机两端并联电压表引线与节点 */}
         <path d="M 400 50 L 400 130 L 420 130" fill="none" stroke={PHYSICS_COLORS.axis} strokeWidth={2.5} />
         <path d="M 480 50 L 480 130 L 440 130" fill="none" stroke={PHYSICS_COLORS.axis} strokeWidth={2.5} />
         <circle cx={400} cy={50} r={4} fill={PHYSICS_COLORS.labelText} />
         <circle cx={480} cy={50} r={4} fill={PHYSICS_COLORS.labelText} />
         <DialMeter type="V" value={res.U_M} max={15} x={440} y={130} r={28} font={font} />
 
+        {/* ── 5. 电动机及重物提升机构 ── */}
         {motorState === 0 && (
           <circle cx={440} cy={50} r={40} fill="url(#motor-danger-glow)" className="animate-pulse" />
         )}
@@ -96,34 +114,40 @@ export default function NonPureCircuit() {
           </g>
         )}
 
+        {/* ── 6. 高中物理标准电流方向箭头指示（复用 VectorArrow，顺时针外电路） ── */}
         {res.I > 0.01 && (
           <g>
-            {[0, 80, 160, 240, 320, 400, 480, 560, 640].map((baseOffset) => {
-              const totalDist = 400 * 2 + 180 * 2
-              const curPos = (baseOffset + particleOffset) % totalDist
-              let px = 160, py = 50
-              if (curPos < 400) {
-                px = 160 + curPos
-                py = 50
-              } else if (curPos < 400 + 180) {
-                px = 560
-                py = 50 + (curPos - 400)
-              } else if (curPos < 400 * 2 + 180) {
-                px = 560 - (curPos - 400 - 180)
-                py = 230
-              } else {
-                px = 160
-                py = 230 - (curPos - 400 * 2 - 180)
-              }
-              if (Math.abs(px - 240) < 30 && py === 50) return null
-              if (Math.abs(px - 440) < 30 && py === 50) return null
-              if (Math.abs(px - 360) < 40 && py === 230) return null
-              if (px === 560 && Math.abs(py - 140) < 35) return null
-
-              return (
-                <circle key={baseOffset} cx={px} cy={py} r={3} fill={PHYSICS_COLORS.velocityX} style={{ filter: `drop-shadow(0px 0px 1px ${PHYSICS_COLORS.velocityX})` }} />
-              )
-            })}
+            {/* 顶横导线电流箭头（向右） */}
+            <VectorArrow
+              originDesign={{ x: 320, y: 50 }}
+              vector={{ x: 1, y: 0 }}
+              type="currentDirection"
+              arrowType="visual-only"
+              sceneScale={IDENTITY_SCENE_SCALE}
+              pixelLength={26}
+              label={`I = ${res.I.toFixed(2)}A`}
+              font={font}
+            />
+            {/* 左竖导线电流箭头（向上） */}
+            <VectorArrow
+              originDesign={{ x: 160, y: 155 }}
+              vector={{ x: 0, y: 1 }}
+              type="currentDirection"
+              arrowType="visual-only"
+              sceneScale={IDENTITY_SCENE_SCALE}
+              pixelLength={20}
+              font={font}
+            />
+            {/* 右竖导线电流箭头（向下） */}
+            <VectorArrow
+              originDesign={{ x: 560, y: 195 }}
+              vector={{ x: 0, y: -1 }}
+              type="currentDirection"
+              arrowType="visual-only"
+              sceneScale={IDENTITY_SCENE_SCALE}
+              pixelLength={20}
+              font={font}
+            />
           </g>
         )}
       </g>

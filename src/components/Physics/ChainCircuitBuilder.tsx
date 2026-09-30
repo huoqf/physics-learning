@@ -294,6 +294,28 @@ export const ChainCircuitBuilder: React.FC<ChainCircuitBuilderProps> = ({
         />
       )}
 
+      {/* P2修复：限流式接法 realistic 模式下，左下 A 端悬空可视标注 */}
+      {/* termA = { x: 230-73=157, y: 140+10=150 }，向左延伸虚线 + 叉号提示学生不接线 */}
+      {circuitType === 'current-limiting' && !renderRheostat && (
+        <g opacity={0.7}>
+          {/* 悬空引脚短虚线：从 A 端向左 */}
+          <line
+            x1={157} y1={150} x2={128} y2={150}
+            stroke={withAlpha(CIRCUIT_COLORS.wire, 0.55)}
+            strokeWidth={1.5}
+            strokeDasharray="3,3"
+            strokeLinecap="round"
+          />
+          {/* 叉号 × 表示此端未接线 */}
+          <line x1={120} y1={145} x2={128} y2={155} stroke={CIRCUIT_COLORS.wire} strokeWidth={1.5} strokeLinecap="round" />
+          <line x1={120} y1={155} x2={128} y2={145} stroke={CIRCUIT_COLORS.wire} strokeWidth={1.5} strokeLinecap="round" />
+          {/* 文字说明 */}
+          <text x={114} y={143} fontSize={font(8.5)} fill={withAlpha(CIRCUIT_COLORS.wire, 0.7)} textAnchor="end" style={{ userSelect: 'none' }}>
+            A 端悬空
+          </text>
+        </g>
+      )}
+
       {/* 5. 待测负载插槽 (默认为未知电阻 Rx) */}
       {renderLoad ? (
         renderLoad(layout.loadPos)

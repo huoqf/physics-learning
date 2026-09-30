@@ -145,6 +145,8 @@ export default function CircuitAnalysis() {
             <path d={PARALLEL_PATHS.mainB} {...getWireStyle(Itotal)} />
             <path d={PARALLEL_PATHS.branch1} {...getWireStyle(I1)} />
             <path d={PARALLEL_PATHS.branch2} {...getWireStyle(I2)} />
+            {/* 电压表并联引线（实线导线） */}
+            <path d={PARALLEL_PATHS.voltmeterLead} {...voltmeterWireStyle} />
             {/* 分流/汇合节点 */}
             <circle cx={400} cy={40} r={4.5} fill={PHYSICS_COLORS.labelText} />
             <circle cx={700} cy={40} r={4.5} fill={PHYSICS_COLORS.labelText} />

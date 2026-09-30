@@ -73,6 +73,13 @@ export interface DCSourceProps {
    */
   polarity?: 'left-positive' | 'right-positive'
   /**
+   * 符号朝向（主要用于 type="symbol" 原理图模式）。
+   * - 'vertical': 垂直导线放置（极板水平，上下引出线）
+   * - 'horizontal': 水平导线放置（极板垂直，左右引出线）
+   * @default 'vertical'
+   */
+  orientation?: 'vertical' | 'horizontal'
+  /**
    * 是否禁用/不工作。
    * 为 true 时会降低透明度并禁用交互。
    * @default false
@@ -190,6 +197,7 @@ export const DCSource: React.FC<DCSourceProps> = ({
   height = type === 'instrument' ? 80 : 30,
   label,
   polarity = 'left-positive',
+  orientation = 'vertical',
   disabled = false,
   className = '',
 }) => {
@@ -422,8 +430,44 @@ export const DCSource: React.FC<DCSourceProps> = ({
     )
   }
 
-  // 3. 渲染：标准原理图符号（垂直放置，符合电路图规范）
-  // right-positive 时正极在上，left-positive 时正极在下
+  // 3. 渲染：标准原理图符号
+  // orientation === 'horizontal': 水平导线放置（极板垂直，引线向左右延伸）
+  // orientation === 'vertical': 垂直导线放置（极板水平，引线向上下延伸）
+  if (orientation === 'horizontal') {
+    const isRightPositive = polarity === 'right-positive'
+    return (
+      <g
+        transform={`translate(${x}, ${y})`}
+        className={`${className} ${disabled ? 'opacity-40 pointer-events-none' : ''}`}
+      >
+        {/* 左引出线 */}
+        <line x1={-DC_SOURCE_SYMBOL_OFFSET} y1={0} x2={isRightPositive ? -6 : -10} stroke={c.wire} strokeWidth={2} />
+        {/* 右引出线 */}
+        <line x1={isRightPositive ? 10 : 6} y1={0} x2={DC_SOURCE_SYMBOL_OFFSET} stroke={c.wire} strokeWidth={2} />
+
+        {/* 正极：长细线（垂直线） */}
+        <line x1={isRightPositive ? 6 : -6} y1={-16} x2={isRightPositive ? 6 : -6} y2={16} stroke={c.batteryPos} strokeWidth={1.8} />
+
+        {/* 负极：短粗线（垂直线） */}
+        <line x1={isRightPositive ? -6 : 6} y1={-9} x2={isRightPositive ? -6 : 6} y2={9} stroke={c.batteryNeg} strokeWidth={3.8} />
+
+        {/* 电压标签文字 */}
+        <text
+          x={0}
+          y={-22}
+          fill={c.wire}
+          fontSize={FONT_BASE.symbol.label}
+          fontWeight="bold"
+          textAnchor="middle"
+          style={{ userSelect: 'none' }}
+        >
+          {label ?? `${voltage.toFixed(1)} V`}
+        </text>
+      </g>
+    )
+  }
+
+  // 垂直放置模式（right-positive 时正极在上，left-positive 时正极在下）
   const isTopPositive = polarity === 'right-positive'
 
   return (
