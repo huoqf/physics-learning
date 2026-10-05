@@ -7,16 +7,16 @@ import type { ForceMotionModeOption, ForceMotionParamConfig } from './ForceMotio
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const FORCE_MOTION_MODES: ForceMotionModeOption[] = [
-  { value: 0, label: '平衡状态', description: 'F合=0，a=0，v恒定', category: 'basic' },
-  { value: 1, label: '匀加速直线', description: '恒力，a恒定，v-t直线', category: 'basic' },
-  { value: 2, label: '匀减速直线', description: '恒力反向，刹车陷阱', category: 'basic' },
-  { value: 3, label: '匀变速曲线', description: '定角力，如斜抛', category: 'curve' },
-  { value: 4, label: '恒力偏转运动', description: 'θ=90°时为类平抛', category: 'curve' },
-  { value: 5, label: '匀速圆周运动', description: '向心力，v大小不变', category: 'circular' },
-  { value: 6, label: '变速圆周运动', description: '竖直面内，绳/杆模型', category: 'circular' },
-  { value: 7, label: '简谐运动', description: 'F=-kx，弹簧振子', category: 'variable' },
-  { value: 8, label: '线性变力运动', description: 'F=κt，动量定理', category: 'variable' },
-  { value: 9, label: '收尾变力运动', description: 'P/v或kv，收尾速度', category: 'terminal' },
+  { value: 0, label: '平衡状态', description: 'F合=0，a=0，匀速或静止', category: 'basic' },
+  { value: 1, label: '匀加速直线', description: '恒力同向，a恒定，v-t倾斜直线', category: 'basic' },
+  { value: 2, label: '匀减速直线', description: '恒力反向，刹车死区陷阱', category: 'basic' },
+  { value: 3, label: '斜抛曲线运动', description: '定角重力，斜上抛抛物线', category: 'curve' },
+  { value: 4, label: '类平抛偏转', description: '正交恒力偏转，偏转电场', category: 'curve' },
+  { value: 5, label: '匀速圆周运动', description: '向心力垂直，速率不变只变向', category: 'circular' },
+  { value: 6, label: '变速圆周运动', description: '竖直面内，轻绳/轻杆临界', category: 'circular' },
+  { value: 7, label: '简谐运动', description: 'F=-kx，平衡位置动能最大', category: 'variable' },
+  { value: 8, label: '线性变力运动', description: 'F=κt，动量定理F-t求冲量', category: 'variable' },
+  { value: 9, label: '收尾变力运动', description: '机车恒功率 / 电磁单杆收尾', category: 'terminal' },
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -48,10 +48,9 @@ export const FORCE_MOTION_PARAM_CONFIGS: Record<number, ForceMotionParamConfig[]
     { key: 'env1', label: '重力加速度 g', min: 1, max: 20, step: 0.1, unit: 'm/s²', defaultValue: GRAVITY },
   ],
   4: [
-    { key: 'v0', label: '初速度 v₀', min: 0, max: 10, step: 0.5, unit: 'm/s', defaultValue: 5 },
-    { key: 'theta', label: '力与初速度夹角 θ', min: 0, max: 180, step: 1, unit: '°', defaultValue: 90 },
+    { key: 'v0', label: '水平初速度 v₀', min: 1, max: 10, step: 0.5, unit: 'm/s', defaultValue: 5 },
     { key: 'm', label: '质量 m', min: 0.5, max: 20, step: 0.5, unit: 'kg', defaultValue: 2 },
-    { key: 'env1', label: '电场力 F', min: 1, max: 50, step: 1, unit: 'N', defaultValue: 10 },
+    { key: 'env1', label: '偏转电场力 F', min: 1, max: 50, step: 1, unit: 'N', defaultValue: 10 },
   ],
   5: [
     { key: 'v0', label: '线速度 v', min: 1, max: 10, step: 0.5, unit: 'm/s', defaultValue: 5 },

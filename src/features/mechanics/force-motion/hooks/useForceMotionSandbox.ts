@@ -116,6 +116,12 @@ export interface ForceMotionSandboxData {
   forceArrowColor: string
   forceLabel: string
   terminalForceVectors: { driveLen: number; resistLen: number; netLen: number; isPowerMode: boolean } | null
+  dynamicsBadge: { text: string; color: string; thetaDeg: number | null }
+  angleArc: { path: string; labelX: number; labelY: number; text: string } | null
+  decomposition: {
+    Ft: { x: number; y: number; len: number; label: string }
+    Fn: { x: number; y: number; len: number; label: string }
+  } | null
   groundY: number
   xWall: number
   springPath: string
@@ -128,7 +134,7 @@ export interface ForceMotionSandboxData {
 }
 
 export function useForceMotionSandbox({ state, trajectory, domainTrajectory }: ForceMotionSandboxProps): ForceMotionSandboxData {
-  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
+  const { containerRef, canvasSize, vp, preset } = useAnimationViewport({ preset: CANVAS_PRESETS.splitV })
   const { width, height, font } = canvasSize
   const params = useAnimationStore((s) => s.params)
 
@@ -170,10 +176,12 @@ export function useForceMotionSandbox({ state, trajectory, domainTrajectory }: F
     // 定标用完整窗口轨迹（按 observationTime 提前算好的整段），回退到实时 trajectory
     const rangeSource = domainTrajectory ?? trajectory
     const xValues = rangeSource.map((point) => point.x)
-    const yValues = rangeSource.map((point) => -point.y)
+    const yValues = rangeSource.map((point) => point.y)
     // 当前状态也纳入（防止 currentTime 超出 observationTime 时物体瞬间越界）
     xValues.push(state.x)
-    yValues.push(-state.y)
+    yValues.push(state.y)
+
+    const isYDown = state.mode === 'terminal-variable-force'
 
     // 精确的轨迹边界自适应缩放（防止超出偏置后的原点和可用 Canvas 边界）
     let maxScaleX = Infinity
@@ -194,12 +202,20 @@ export function useForceMotionSandbox({ state, trajectory, domainTrajectory }: F
     const topMargin = 0.12
     const bottomMargin = 0.88
     yValues.forEach((y) => {
-      if (y > 0.01) {
-        const allowed = ((bottomMargin - originYRatio) * height) / y
-        if (allowed < maxScaleY) maxScaleY = allowed
-      } else if (y < -0.01) {
-        const allowed = ((originYRatio - topMargin) * height) / Math.abs(y)
-        if (allowed < maxScaleY) maxScaleY = allowed
+      if (isYDown) {
+        if (y > 0.01) {
+          const allowed = ((bottomMargin - originYRatio) * height) / y
+          if (allowed < maxScaleY) maxScaleY = allowed
+        }
+      } else {
+        // 常规模式：物理 y > 0 向上占用原点上方高度；物理 y < 0 向下占用原点下方高度
+        if (y > 0.01) {
+          const allowed = ((originYRatio - topMargin) * height) / y
+          if (allowed < maxScaleY) maxScaleY = allowed
+        } else if (y < -0.01) {
+          const allowed = ((bottomMargin - originYRatio) * height) / Math.abs(y)
+          if (allowed < maxScaleY) maxScaleY = allowed
+        }
       }
     })
 
@@ -208,15 +224,18 @@ export function useForceMotionSandbox({ state, trajectory, domainTrajectory }: F
     const scaleY = Number.isFinite(maxScaleY) ? maxScaleY : (height * 0.4)
     const scale = Math.max(0.001, Math.min(scaleX, scaleY))
 
-    const body = { cx: originX + state.x * scale, cy: originY + state.y * scale }
+    const body = {
+      cx: originX + state.x * scale,
+      cy: isYDown ? originY + state.y * scale : originY - state.y * scale,
+    }
     const track = trajectory.map((point) => ({
       cx: originX + point.x * scale,
-      cy: originY + point.y * scale,
+      cy: isYDown ? originY + point.y * scale : originY - point.y * scale,
     }))
 
     const vectorMax = shortEdge * FORCE_MOTION_VECTOR_MAX_RATIO
 
-    // 三个矢量箭头（F合、v、a）
+    // 三个矢量端点分量（按数学坐标系定义：x向右，y向上）
     const forceVector = vectorEnd(
       Math.min(vectorMax, Math.max(FONT.labelBold, Math.abs(state.F) * scale * 0.02)),
       state.Fx,
@@ -387,6 +406,114 @@ export function useForceMotionSandbox({ state, trajectory, domainTrajectory }: F
     return 50
   }, [spanX])
 
+  const dynamicsBadge = useMemo(() => {
+    if (state.mode === 'balance' || state.F < 0.05) {
+      return { text: '合外力为零 · 匀速直线或静止 (牛顿第一定律)', color: PHYSICS_COLORS.textMuted, thetaDeg: null }
+    }
+    if (state.v < 0.05) {
+      return { text: '初速度为零 · 沿合外力方向由静止加速', color: PHYSICS_COLORS.amplitude, thetaDeg: 0 }
+    }
+
+    const dot = state.Fx * state.vx + state.Fy * state.vy
+    const cosTheta = Math.max(-1, Math.min(1, dot / (state.F * state.v)))
+    const thetaRad = Math.acos(cosTheta)
+    const thetaDeg = Math.round((thetaRad * 180) / Math.PI)
+
+    if (thetaDeg <= 4) {
+      return { text: 'θ ≈ 0° 同向 · 匀/变加速直线运动 (速率增大)', color: PHYSICS_COLORS.amplitude, thetaDeg }
+    }
+    if (thetaDeg >= 176) {
+      return { text: 'θ ≈ 180° 反向 · 减速直线运动 (刹车陷阱)', color: PHYSICS_COLORS.alertRed, thetaDeg }
+    }
+    if (Math.abs(thetaDeg - 90) <= 2) {
+      return { text: 'θ ≈ 90° 垂直 · 速率不变只改变方向 (向心力)', color: PHYSICS_COLORS.buoyancy, thetaDeg }
+    }
+    if (thetaDeg < 90) {
+      return { text: `θ = ${thetaDeg}° 锐角 · 加速曲线运动 (轨迹向合力侧弯曲)`, color: PHYSICS_COLORS.referencePoint, thetaDeg }
+    }
+    return { text: `θ = ${thetaDeg}° 钝角 · 减速曲线运动 (轨迹向合力侧弯曲)`, color: PHYSICS_COLORS.tension, thetaDeg }
+  }, [state.mode, state.F, state.v, state.Fx, state.Fy, state.vx, state.vy])
+
+  // 夹角圆弧 (在小球周围绘制从速度方向到合外力方向的圆弧)
+  const angleArc = useMemo(() => {
+    if (state.F < 0.05 || state.v < 0.05) return null
+    const dot = state.Fx * state.vx + state.Fy * state.vy
+    const cosTheta = Math.max(-1, Math.min(1, dot / (state.F * state.v)))
+    const thetaRad = Math.acos(cosTheta)
+    const thetaDeg = Math.round((thetaRad * 180) / Math.PI)
+
+    if (thetaDeg <= 6 || thetaDeg >= 174) return null
+
+    // 屏幕角度 (SVG y 向下为正，数学 y 向上为正)
+    const vAngle = Math.atan2(-view.speedVector.y, view.speedVector.x)
+    const fAngle = Math.atan2(-view.forceVector.y, view.forceVector.x)
+
+    const r = Math.max(18, view.objectSize * 0.75)
+    let diff = fAngle - vAngle
+    while (diff > Math.PI) diff -= 2 * Math.PI
+    while (diff < -Math.PI) diff += 2 * Math.PI
+
+    const sweepFlag = diff > 0 ? 1 : 0
+    const startX = view.body.cx + r * Math.cos(vAngle)
+    const startY = view.body.cy + r * Math.sin(vAngle)
+    const endX = view.body.cx + r * Math.cos(fAngle)
+    const endY = view.body.cy + r * Math.sin(fAngle)
+
+    const path = `M ${startX.toFixed(1)} ${startY.toFixed(1)} A ${r} ${r} 0 0 ${sweepFlag} ${endX.toFixed(1)} ${endY.toFixed(1)}`
+
+    const midAngle = vAngle + diff * 0.5
+    const labelR = r + 14
+    const labelX = view.body.cx + labelR * Math.cos(midAngle)
+    const labelY = view.body.cy + labelR * Math.sin(midAngle)
+
+    return {
+      path,
+      labelX,
+      labelY,
+      text: `${thetaDeg}°`,
+    }
+  }, [state.F, state.v, state.Fx, state.Fy, state.vx, state.vy, view.speedVector, view.forceVector, view.body, view.objectSize])
+
+  // 切向分力 Ft 与法向分力 Fn (当开启分解时)
+  const decomposition = useMemo(() => {
+    if (!params.showDecomposition || state.v < 0.1 || state.F < 0.1) return null
+    if (state.mode === 'balance' || state.mode === 'uniform-accel-line' || state.mode === 'uniform-decel-line' || state.mode === 'terminal-variable-force') {
+      return null
+    }
+
+    const utx = state.vx / state.v
+    const uty = state.vy / state.v
+
+    const FtMag = state.Fx * utx + state.Fy * uty
+    const Ftx = FtMag * utx
+    const Fty = FtMag * uty
+
+    const Fnx = state.Fx - Ftx
+    const Fny = state.Fy - Fty
+    const FnMag = Math.hypot(Fnx, Fny)
+
+    const scaleFactor = view.scale * 0.02
+    const vectorMax = view.shortEdge * FORCE_MOTION_VECTOR_MAX_RATIO
+
+    const FtLen = Math.min(vectorMax, Math.max(FONT.label, Math.abs(FtMag) * scaleFactor))
+    const FnLen = Math.min(vectorMax, Math.max(FONT.label, FnMag * scaleFactor))
+
+    return {
+      Ft: {
+        x: vectorEnd(FtLen, Ftx, Fty).x,
+        y: vectorEnd(FtLen, Ftx, Fty).y,
+        len: FtLen,
+        label: `Ft (${FtMag >= 0 ? '+' : ''}${FtMag.toFixed(1)}N 变速)`,
+      },
+      Fn: {
+        x: vectorEnd(FnLen, Fnx, Fny).x,
+        y: vectorEnd(FnLen, Fnx, Fny).y,
+        len: FnLen,
+        label: `Fn (${FnMag.toFixed(1)}N 变向)`,
+      },
+    }
+  }, [params.showDecomposition, state.v, state.F, state.mode, state.vx, state.vy, state.Fx, state.Fy, view.scale, view.shortEdge])
+
   return {
     containerRef,
     width,
@@ -398,6 +525,9 @@ export function useForceMotionSandbox({ state, trajectory, domainTrajectory }: F
     forceArrowColor,
     forceLabel,
     terminalForceVectors,
+    dynamicsBadge,
+    angleArc,
+    decomposition,
     groundY,
     xWall,
     springPath,

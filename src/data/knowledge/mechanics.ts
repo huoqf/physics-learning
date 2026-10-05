@@ -330,7 +330,7 @@ export const mechanicsKnowledge: KnowledgeNode[] = [
     module: 'mechanics',
     importance: 'gaokao',
     animationIds: ['anim-force-motion-topic'],
-    problemIds: [],
+    problemIds: ['prob-m5x-1'],
     prerequisites: ['mechanics-4-2', 'mechanics-5-5'],
   },
   {
@@ -341,7 +341,7 @@ export const mechanicsKnowledge: KnowledgeNode[] = [
     importance: 'gaokao',
     animationIds: ['anim-kepler'],
     problemIds: [],
-    prerequisites: ['mechanics-5x-1'],
+    prerequisites: ['mechanics-5-5'],
   },
   {
     id: 'mechanics-6-2',

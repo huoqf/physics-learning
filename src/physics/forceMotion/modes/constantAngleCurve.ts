@@ -10,10 +10,34 @@ export function calcConstantAngleCurve(
   g: number
 ): ModeResult {
   const rad = degToRad(theta)
-  const vx = v0 * Math.cos(rad)
-  const vy = v0 * Math.sin(rad) - g * t
+  const vy0 = v0 * Math.sin(rad)
+  const vx0 = v0 * Math.cos(rad)
+
+  if (vy0 > 1e-4) {
+    const tLand = (2 * vy0) / g
+    if (t >= tLand) {
+      const xLand = vx0 * tLand
+      return {
+        x: xLand,
+        y: 0,
+        vx: 0,
+        vy: 0,
+        ax: 0,
+        ay: 0,
+        Fx: 0,
+        Fy: 0,
+        work: 0,
+        impulse: m * g * tLand,
+        isTerminal: true,
+        pauseReason: 'terminal',
+      }
+    }
+  }
+
+  const vx = vx0
+  const vy = vy0 - g * t
   const x = vx * t
-  const y = v0 * Math.sin(rad) * t - 0.5 * g * t * t
+  const y = vy0 * t - 0.5 * g * t * t
   const Fx = 0
   const Fy = -m * g
   return {

@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { CHART_COLORS, FX_CHART_COLORS, VT_CHART_COLORS, DASH, FONT, STROKE } from '@/theme/physics'
 import type { ChartAreaVariant } from '@/theme/physics'
-import { colors } from '@/theme/colors'
 import { useAnimationViewport } from '@/hooks'
 import { CANVAS_PRESETS } from '@/theme/spacing'
 import { BasePhysicsChart, ChartCursor, ChartArea, useChartContext } from '@/components/Chart'
@@ -251,20 +250,30 @@ export default function ForceMotionTripleChart({
   areaTextV,
   areaTextX,
 }: ForceMotionTripleChartProps) {
-  const { containerRef, canvasSize } = useAnimationViewport({ preset: CANVAS_PRESETS.full })
+  const { containerRef, canvasSize } = useAnimationViewport({ preset: CANVAS_PRESETS.splitV })
   const { width, height } = canvasSize
 
   const chartWidth = Math.max(1, Math.floor((width - 8) / 3))
 
   // 实时绘制数据（按 currentTime 截断）
+  const calcDisplacement = (p: ChartPoint) => {
+    // 若 y 极小（一维直线或简谐振动），直接保留有符号位移 x；二维曲线采用距离原点位移
+    return Math.abs(p.y) < 1e-4 ? p.x : Math.hypot(p.x, p.y)
+  }
+
   const fPoints = useMemo(() => points.map((p) => ({ t: p.t, value: p.F })), [points])
   const vPoints = useMemo(() => points.map((p) => ({ t: p.t, value: p.v })), [points])
-  const xPoints = useMemo(() => points.map((p) => ({ t: p.t, value: Math.hypot(p.x, p.y) })), [points])
+  const xPoints = useMemo(() => points.map((p) => ({ t: p.t, value: calcDisplacement(p) })), [points])
 
   // 定标数据：完整观察窗口的全量轨迹（仅随 params 变化，不每帧重算）
   const fDomain = useMemo(() => domainPoints?.map((p) => ({ t: p.t, value: p.F })), [domainPoints])
   const vDomain = useMemo(() => domainPoints?.map((p) => ({ t: p.t, value: p.v })), [domainPoints])
-  const xDomain = useMemo(() => domainPoints?.map((p) => ({ t: p.t, value: Math.hypot(p.x, p.y) })), [domainPoints])
+  const xDomain = useMemo(() => domainPoints?.map((p) => ({ t: p.t, value: calcDisplacement(p) })), [domainPoints])
+
+  // 是否零基准（存在负位移时自动关闭 zeroBased，确保简谐振动位移波形平滑对称）
+  const hasNegativeX = useMemo(() => {
+    return xPoints.some((p) => p.value < -1e-4) || (xDomain?.some((p) => p.value < -1e-4) ?? false)
+  }, [xPoints, xDomain])
 
   return (
     <div ref={containerRef} className="w-full h-full grid grid-cols-3 gap-1">
@@ -303,7 +312,7 @@ export default function ForceMotionTripleChart({
         />
       </div>
 
-      {/* x-t 图 — 灰色（位移轨迹本身就是积分结果，不画面积避免重复） */}
+      {/* x-t 图 — 紫色位移（位移轨迹本身就是积分结果，不画面积避免重复） */}
       <div className="bg-white rounded-lg border border-neutral-100 overflow-hidden">
         <SingleChart
           width={chartWidth}
@@ -312,10 +321,10 @@ export default function ForceMotionTripleChart({
           domainPoints={xDomain}
           currentTime={currentTime}
           currentValue={currentValueX}
-          color={colors.neutral[500]}
+          color={CHART_COLORS.compareD}
           yLabel="x/m"
           areaText={areaTextX}
-          zeroBased={true}
+          zeroBased={!hasNegativeX}
         />
       </div>
     </div>

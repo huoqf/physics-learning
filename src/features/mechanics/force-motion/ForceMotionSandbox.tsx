@@ -1,4 +1,4 @@
-﻿import { DASH, FONT, OPACITY, PHYSICS_COLORS, STROKE, SCENE_COLORS } from '@/theme/physics'
+import { DASH, FONT, OPACITY, PHYSICS_COLORS, STROKE, SCENE_COLORS } from '@/theme/physics'
 import { VectorArrow, Ball, Block, SportsCar, ConductingRod, PhysicsGround, CapacitorPlates, MagneticFieldSymbols } from '@/components/Physics'
 import { useForceMotionSandbox, getSpringPath } from './hooks/useForceMotionSandbox'
 import type { ForceMotionSandboxProps } from './hooks/useForceMotionSandbox'
@@ -10,6 +10,7 @@ export default function ForceMotionSandbox(props: ForceMotionSandboxProps) {
     containerRef, width, height, font,
     view, sceneScale, trackPath,
     forceArrowColor, forceLabel, terminalForceVectors,
+    dynamicsBadge, angleArc, decomposition,
     groundY, xWall, springPath,
     electricFieldLines, circularRadius, magneticGrid,
     showGround, tickInterval, params,
@@ -17,9 +18,12 @@ export default function ForceMotionSandbox(props: ForceMotionSandboxProps) {
   const { state } = props
 
   return (
-    <div ref={containerRef} className="w-full h-full bg-white rounded-xl border border-neutral-100 overflow-hidden">
+    <div ref={containerRef} className="w-full h-full bg-white rounded-xl border border-neutral-100 overflow-hidden relative">
       <svg width={width} height={height} className="w-full h-full select-none" role="img" aria-label="力与运动探究沙箱">
         <defs>
+          <filter id="badge-shadow" x="-10%" y="-10%" width="120%" height="130%">
+            <feDropShadow dx="0" dy="1.5" stdDeviation="2" floodColor={PHYSICS_COLORS.black} floodOpacity="0.08" />
+          </filter>
         </defs>
 
         {/* 坐标网格 */}
@@ -306,7 +310,7 @@ export default function ForceMotionSandbox(props: ForceMotionSandboxProps) {
         {state.mode !== 'balance' && state.mode !== 'terminal-variable-force' && (
           <VectorArrow
             originDesign={{ x: view.body.cx, y: view.body.cy }}
-            vector={{ x: view.forceVector.x, y: -view.forceVector.y }}
+            vector={{ x: view.forceVector.x, y: view.forceVector.y }}
             type="force"
             color={forceArrowColor}
             sceneScale={sceneScale}
@@ -373,7 +377,7 @@ export default function ForceMotionSandbox(props: ForceMotionSandboxProps) {
         {/* 速度矢量 v — 蓝色 */}
         <VectorArrow
           originDesign={{ x: view.body.cx, y: view.body.cy }}
-          vector={{ x: view.speedVector.x, y: -view.speedVector.y }}
+          vector={{ x: view.speedVector.x, y: view.speedVector.y }}
           type="velocity"
           sceneScale={sceneScale}
           pixelLength={Math.sqrt(view.speedVector.x ** 2 + view.speedVector.y ** 2)}
@@ -383,25 +387,32 @@ export default function ForceMotionSandbox(props: ForceMotionSandboxProps) {
           const offset = fontSize * 1.5
           const clampY = (y: number) => Math.max(fontSize, Math.min(height - fontSize, y))
 
-          const vLabelX = state.v < 0.1
-            ? view.body.cx + view.objectSize
-            : view.body.cx + view.speedVector.x + offset
-          const vLabelY = state.v < 0.1
-            ? view.body.cy
-            : view.body.cy + view.speedVector.y
+          // 尖端在屏幕坐标系中的位置 (数学 y 向上为正，屏幕 y 向下为正，因此尖端屏幕 y = body.cy - vector.y)
+          const vTipX = view.body.cx + view.speedVector.x
+          const vTipY = view.body.cy - view.speedVector.y
 
-          const aLabelX = view.body.cx + view.accelVector.x + offset
-          const aLabelRawY = view.body.cy + view.accelVector.y
+          const aTipX = view.body.cx + view.accelVector.x
+          const aTipY = view.body.cy - view.accelVector.y
+
+          const fTipX = view.body.cx + view.forceVector.x
+          const fTipY = view.body.cy - view.forceVector.y
+
+          const vLabelX = state.v < 0.1 ? view.body.cx + view.objectSize : vTipX + offset
+          const vLabelY = state.v < 0.1 ? view.body.cy : clampY(vTipY)
+
+          const aLabelX = aTipX + offset
+          const aLabelRawY = clampY(aTipY)
           const aLabelY = Math.abs(aLabelRawY - vLabelY) < fontSize * 1.5
-            ? clampY(Math.max(aLabelRawY, vLabelY) + fontSize * 1.5)
+            ? clampY(aLabelRawY > vLabelY ? aLabelRawY + fontSize * 1.5 : aLabelRawY - fontSize * 1.5)
             : aLabelRawY
 
-          const forceLabelRawY = view.body.cy + view.forceVector.y
-          const tooCloseToV = Math.abs(forceLabelRawY - vLabelY) < fontSize * 1.5
-          const tooCloseToA = Math.abs(forceLabelRawY - aLabelY) < fontSize * 1.5
+          const fLabelX = fTipX + FONT.small
+          const fLabelRawY = clampY(fTipY)
+          const tooCloseToV = Math.abs(fLabelRawY - vLabelY) < fontSize * 1.5
+          const tooCloseToA = Math.abs(fLabelRawY - aLabelY) < fontSize * 1.5
           const forceLabelY = (tooCloseToV || tooCloseToA)
-            ? clampY(forceLabelRawY + fontSize * 1.5)
-            : forceLabelRawY
+            ? clampY(fLabelRawY > vLabelY ? fLabelRawY + fontSize * 1.5 : fLabelRawY - fontSize * 1.5)
+            : fLabelRawY
 
           return (
             <>
@@ -410,6 +421,10 @@ export default function ForceMotionSandbox(props: ForceMotionSandboxProps) {
                 y={vLabelY}
                 fill={PHYSICS_COLORS.velocity}
                 fontSize={fontSize}
+                paintOrder="stroke"
+                stroke={PHYSICS_COLORS.white}
+                strokeWidth={3}
+                strokeLinejoin="round"
               >v</text>
 
               <text
@@ -417,19 +432,148 @@ export default function ForceMotionSandbox(props: ForceMotionSandboxProps) {
                 y={aLabelY}
                 fill={PHYSICS_COLORS.acceleration}
                 fontSize={fontSize}
+                paintOrder="stroke"
+                stroke={PHYSICS_COLORS.white}
+                strokeWidth={3}
+                strokeLinejoin="round"
               >a</text>
 
-              {/* forceLabel 在 v/a 渲染之后再定位，但需要提前计算 y */}
+              {/* forceLabel 渲染 */}
               <text
-                x={view.body.cx + view.forceVector.x + FONT.small}
+                x={fLabelX}
                 y={forceLabelY}
                 fill={forceArrowColor}
                 fontSize={fontSize}
                 fontWeight="bold"
+                paintOrder="stroke"
+                stroke={PHYSICS_COLORS.white}
+                strokeWidth={3}
+                strokeLinejoin="round"
               >{forceLabel}</text>
             </>
           )
         })()}
+
+        {/* 速度与合外力夹角 θ 圆弧及读数 */}
+        {angleArc && (
+          <g opacity={0.9}>
+            <path
+              d={angleArc.path}
+              fill="none"
+              stroke={PHYSICS_COLORS.referencePoint}
+              strokeWidth={1.5}
+              strokeDasharray="2 2"
+            />
+            <text
+              x={angleArc.labelX}
+              y={angleArc.labelY}
+              fill={PHYSICS_COLORS.power}
+              fontSize={font(FONT.annotation)}
+              fontWeight="bold"
+              textAnchor="middle"
+              dominantBaseline="central"
+            >
+              {angleArc.text}
+            </text>
+          </g>
+        )}
+
+        {/* 切向分力 Ft 与法向分力 Fn 矢量分解 */}
+        {decomposition && (() => {
+          const ftLen = Math.max(1, decomposition.Ft.len)
+          const fnLen = Math.max(1, decomposition.Fn.len)
+          const ftTipX = view.body.cx + decomposition.Ft.x
+          const ftTipY = view.body.cy - decomposition.Ft.y
+          const fnTipX = view.body.cx + decomposition.Fn.x
+          const fnTipY = view.body.cy - decomposition.Fn.y
+
+          // 沿各自分力方向外延 8px 放置标注文字，避免和小球重叠
+          const ftLabelX = ftTipX + (decomposition.Ft.x / ftLen) * 8
+          const ftLabelY = ftTipY - (decomposition.Ft.y / ftLen) * 8
+          const fnLabelX = fnTipX + (decomposition.Fn.x / fnLen) * 8
+          const fnLabelY = fnTipY - (decomposition.Fn.y / fnLen) * 8
+
+          return (
+            <g opacity={0.92}>
+              {/* 切向分力 Ft (沿速度方向，改变速率大小) */}
+              <VectorArrow
+                originDesign={{ x: view.body.cx, y: view.body.cy }}
+                vector={{ x: decomposition.Ft.x, y: decomposition.Ft.y }}
+                type="force"
+                color={PHYSICS_COLORS.amplitude}
+                sceneScale={sceneScale}
+                pixelLength={decomposition.Ft.len}
+                dashed={true}
+              />
+              <text
+                x={ftLabelX}
+                y={ftLabelY}
+                fill={PHYSICS_COLORS.amplitude}
+                fontSize={font(FONT.annotation)}
+                fontWeight="bold"
+                textAnchor={decomposition.Ft.x >= 0 ? 'start' : 'end'}
+                dominantBaseline="central"
+                paintOrder="stroke"
+                stroke={PHYSICS_COLORS.white}
+                strokeWidth={3}
+                strokeLinejoin="round"
+              >
+                {decomposition.Ft.label}
+              </text>
+
+              {/* 法向分力 Fn (垂直速度方向，改变运动方向) */}
+              <VectorArrow
+                originDesign={{ x: view.body.cx, y: view.body.cy }}
+                vector={{ x: decomposition.Fn.x, y: decomposition.Fn.y }}
+                type="force"
+                color={PHYSICS_COLORS.buoyancy}
+                sceneScale={sceneScale}
+                pixelLength={decomposition.Fn.len}
+                dashed={true}
+              />
+              <text
+                x={fnLabelX}
+                y={fnLabelY}
+                fill={PHYSICS_COLORS.buoyancy}
+                fontSize={font(FONT.annotation)}
+                fontWeight="bold"
+                textAnchor={decomposition.Fn.x >= 0 ? 'start' : 'end'}
+                dominantBaseline="central"
+                paintOrder="stroke"
+                stroke={PHYSICS_COLORS.white}
+                strokeWidth={3}
+                strokeLinejoin="round"
+              >
+                {decomposition.Fn.label}
+              </text>
+            </g>
+          )
+        })()}
+
+        {/* 动力学因果状态徽标胶囊 (置于最顶层 HUD，确保绝不被网格线或物理器材遮挡) */}
+        <g transform="translate(14, 14)" filter="url(#badge-shadow)">
+          <rect
+            x={0}
+            y={0}
+            width={Math.min(width - 28, font(dynamicsBadge.text.length * 12 + 32))}
+            height={28}
+            rx={14}
+            fill={PHYSICS_COLORS.white}
+            stroke={dynamicsBadge.color}
+            strokeWidth={1.5}
+            opacity={0.96}
+          />
+          <circle cx={14} cy={14} r={4.5} fill={dynamicsBadge.color} />
+          <text
+            x={26}
+            y={18.5}
+            fill={PHYSICS_COLORS.labelText}
+            fontSize={font(FONT.small)}
+            fontWeight="bold"
+          >
+            {dynamicsBadge.text}
+          </text>
+        </g>
       </svg>
     </div>
   )

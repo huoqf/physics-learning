@@ -25,6 +25,7 @@ export interface ForceMotionState {
   Fy: number
   F: number
   p: number
+  Ek: number
   work: number
   impulse: number
   chartValueF: number

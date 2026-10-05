@@ -154,5 +154,43 @@ export const dynamicsProblems: Problem[] = [
         knowledgeId: 'mechanics-4-4'
       }
     ]
-  }
+  },
+  {
+    id: 'prob-m5x-1',
+    year: 2024,
+    province: '新课标卷',
+    title: '力与运动综合 — 恒定功率启动与收尾速度及位移分析',
+    content:
+      '一质量为 $m = 2.0\\,\\text{kg}$ 的智能模型小车在水平平直轨道上由静止以恒定额定功率 $P = 120\\,\\text{W}$ 启动，小车运动过程中受到的阻力恒为 $f = 15\\,\\text{N}$。已知小车从初速度 $v_0 = 2.0\\,\\text{m/s}$ 开始经历时间 $t = 4.0\\,\\text{s}$ 恰好达到最大收尾速度 $v_m$。\n求：\n(1) 小车能达到的最大收尾速度 $v_m$；\n(2) 当小车速度为 $v = 4.0\\,\\text{m/s}$ 时，小车的加速度 $a$ 大小；\n(3) 小车在达到最大速度前 $4.0\\,\\text{s}$ 内沿水平轨道滑行的位移 $x$。',
+    difficulty: 4,
+    knowledgeIds: ['mechanics-5x-1', 'mechanics-4-2', 'mechanics-7-2'],
+    targetAnimation: {
+      animId: 'anim-force-motion-topic',
+      presetParams: { mode: 9, v0: 2, m: 2, env1: 120, env2: 15, env3: 0 },
+      presetDescription: '载入机车恒功率启动与收尾速度模型参数',
+    },
+    steps: [
+      {
+        id: 'prob-m5x-1-step-1',
+        description: '收尾平衡条件与最大速度求解',
+        formula: '$$a = 0 \\implies F = f \\implies v_m = \\frac{P}{f} = \\frac{120}{15} = 8.0\\,\\text{m/s}$$',
+        explanation: '当牵引力等于阻力时，合外力为零，加速度为零，小车速度达到最大值。',
+        knowledgeId: 'mechanics-5x-1',
+      },
+      {
+        id: 'prob-m5x-1-step-2',
+        description: '某一瞬时牵引力与牛顿第二定律加速度分析',
+        formula: '$$F = \\frac{P}{v} = \\frac{120}{4.0} = 30\\,\\text{N}$$\n$$a = \\frac{F - f}{m} = \\frac{30 - 15}{2.0} = 7.5\\,\\text{m/s}^2$$',
+        explanation: '恒功率启动过程中，牵引力随速度增大而减小，合力减小，加速度减小，做加速度减小的变加速直线运动。',
+        knowledgeId: 'mechanics-4-2',
+      },
+      {
+        id: 'prob-m5x-1-step-3',
+        description: '变力做功与全程动能定理求位移',
+        formula: '$$Pt - fx = \\frac{1}{2}mv_m^2 - \\frac{1}{2}mv_0^2$$\n$$120 \\times 4.0 - 15x = \\frac{1}{2} \\times 2.0 \\times (8.0^2 - 2.0^2)$$\n$$480 - 15x = 60 \\implies 15x = 420 \\implies x = 28.0\\,\\text{m}$$',
+        explanation: '变力牵引过程中严禁使用匀变速直线运动规律，必须使用力的空间累积效应——动能定理求解位移。',
+        knowledgeId: 'mechanics-5x-1',
+      },
+    ],
+  },
 ]

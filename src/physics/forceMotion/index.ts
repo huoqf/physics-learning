@@ -107,7 +107,10 @@ export function calculateForceMotionState(
   const a = vecHypot(result.ax, result.ay)
   const F = vecHypot(result.Fx, result.Fy)
   const p = m * v
-  const displacement = vecHypot(result.x, result.y)
+  const Ek = 0.5 * m * v * v
+  // 一维运动（如简谐振动、直线运动）保持位移有符号标量；二维平面曲线运动取位移模长
+  const isOneD = mode === 'simple-harmonic' || mode === 'uniform-accel-line' || mode === 'uniform-decel-line' || mode === 'linear-variable-force'
+  const displacement = isOneD ? result.x : (mode === 'terminal-variable-force' ? result.y : vecHypot(result.x, result.y))
 
   return {
     mode,
@@ -124,6 +127,7 @@ export function calculateForceMotionState(
     Fy: result.Fy,
     F,
     p,
+    Ek,
     work: result.work,
     impulse: result.impulse,
     chartValueF: F,
