@@ -10,9 +10,8 @@ interface MomentumSceneProps {
   showVectors: boolean
   // 基础模式
   m: number; v: number; p_basic: number; R_basic: number; basicBallX: number
-  ballCenterY: number; groundY: number
+  basicBallCenterY: number; ballCenterY_A: number; ballCenterY_B: number; groundY: number
   mapArrowLen: (val: number) => number
-  mapMomentumBarH: (pVal: number) => number
   // 进阶模式
   mA: number; mB: number
   R_A: number; R_B: number
@@ -25,8 +24,8 @@ interface MomentumSceneProps {
 
 export function MomentumScene({
   canvasSize, sceneScale, isAdvanced, showVectors,
-  m, v, p_basic, R_basic, basicBallX, ballCenterY, groundY,
-  mapArrowLen, mapMomentumBarH,
+  m, v, p_basic, R_basic, basicBallX, basicBallCenterY, ballCenterY_A, ballCenterY_B, groundY,
+  mapArrowLen,
   mA, mB, R_A, R_B, clampedPosAx, clampedPosBx,
   currentVA, currentVB, pA, pB, pTotal, xCm,
   hasCollided, collisionTime, time,
@@ -59,26 +58,35 @@ export function MomentumScene({
       {/* 基础模式 */}
       {!isAdvanced && (
         <g>
-          <circle cx={basicBallX} cy={ballCenterY} r={R_basic}
+          <circle cx={basicBallX} cy={basicBallCenterY} r={R_basic}
             fill="url(#steel-sphere-grad-mom)" stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
             strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-          <text x={basicBallX} y={ballCenterY - R_basic - 8} fontSize={canvasSize.font(13)}
+          <text x={basicBallX} y={basicBallCenterY - R_basic - 8} fontSize={canvasSize.font(13)}
             fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
             m = {m.toFixed(1)} kg
           </text>
           {showVectors && v > 0 && (
-            <PhysicsVectorArrow originDesign={{ x: basicBallX + R_basic + 4, y: ballCenterY }}
-              vector={{ x: v, y: 0 }} type="velocity" sceneScale={sceneScale} />
+            <>
+              {/* 速度矢量箭头 */}
+              <PhysicsVectorArrow
+                originDesign={{ x: basicBallX + R_basic + 4, y: basicBallCenterY - 10 }}
+                vector={{ x: v, y: 0 }}
+                type="velocity"
+                sceneScale={sceneScale}
+                label={`v = ${v.toFixed(1)} m/s`}
+                font={canvasSize.font}
+              />
+              {/* 动量矢量箭头（与速度同向，体现矢量性 p = mv） */}
+              <PhysicsVectorArrow
+                originDesign={{ x: basicBallX + R_basic + 4, y: basicBallCenterY + 10 }}
+                vector={{ x: p_basic, y: 0 }}
+                type="momentum"
+                sceneScale={sceneScale}
+                label={`p = ${p_basic.toFixed(1)} kg·m/s`}
+                font={canvasSize.font}
+              />
+            </>
           )}
-          <g transform={`translate(${basicBallX + R_basic + mapArrowLen(v) + 30}, ${ballCenterY})`}>
-            <rect x={-MOMENTUM_LAYOUT.momentumBarWidth / 2} y={p_basic >= 0 ? -mapMomentumBarH(p_basic) : 0}
-              width={MOMENTUM_LAYOUT.momentumBarWidth} height={mapMomentumBarH(p_basic)}
-              fill={PHYSICS_COLORS.momentum} opacity={0.7} rx={3} />
-            <text x={0} y={p_basic >= 0 ? -mapMomentumBarH(p_basic) - 6 : mapMomentumBarH(p_basic) + 14}
-              fontSize={canvasSize.font(10)} fill={PHYSICS_COLORS.momentum} fontWeight="bold" textAnchor="middle">
-              p = {p_basic.toFixed(1)}
-            </text>
-          </g>
         </g>
       )}
 
@@ -86,34 +94,34 @@ export function MomentumScene({
       {isAdvanced && (
         <g>
           {/* A球 */}
-          <circle cx={clampedPosAx} cy={ballCenterY} r={R_A}
+          <circle cx={clampedPosAx} cy={ballCenterY_A} r={R_A}
             fill="url(#steel-sphere-grad-mom)" stroke={SCENE_COLORS.materials.steelSphereGrad[2]}
             strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-          <text x={clampedPosAx} y={ballCenterY + 4} fontSize={canvasSize.font(10)} fill="white" textAnchor="middle" fontWeight="bold">A</text>
-          <text x={clampedPosAx} y={ballCenterY - R_A - 8} fontSize={canvasSize.font(12)}
+          <text x={clampedPosAx} y={ballCenterY_A + 4} fontSize={canvasSize.font(10)} fill="white" textAnchor="middle" fontWeight="bold">A</text>
+          <text x={clampedPosAx} y={ballCenterY_A - R_A - 8} fontSize={canvasSize.font(12)}
             fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
             m_A = {mA.toFixed(1)} kg
           </text>
 
           {/* B球 */}
-          <circle cx={clampedPosBx} cy={ballCenterY} r={R_B}
+          <circle cx={clampedPosBx} cy={ballCenterY_B} r={R_B}
             fill="url(#steel-sphere-grad-mom-b)" stroke={SCENE_COLORS.materials.vacuumSphereGrad[2]}
             strokeWidth={CANVAS_STYLE.stroke.objectLine} />
-          <text x={clampedPosBx} y={ballCenterY + 4} fontSize={canvasSize.font(10)} fill="white" textAnchor="middle" fontWeight="bold">B</text>
-          <text x={clampedPosBx} y={ballCenterY - R_B - 8} fontSize={canvasSize.font(12)}
+          <text x={clampedPosBx} y={ballCenterY_B + 4} fontSize={canvasSize.font(10)} fill="white" textAnchor="middle" fontWeight="bold">B</text>
+          <text x={clampedPosBx} y={ballCenterY_B - R_B - 8} fontSize={canvasSize.font(12)}
             fill={PHYSICS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
             m_B = {mB.toFixed(1)} kg
           </text>
 
           {/* 质心 */}
-          <circle cx={xCm} cy={ballCenterY} r={4} fill={PHYSICS_COLORS.referencePoint}
+          <circle cx={xCm} cy={groundY - Math.min(R_A, R_B) * 0.8} r={4} fill={PHYSICS_COLORS.referencePoint}
             stroke={PHYSICS_COLORS.referencePoint} strokeWidth={1} />
-          <text x={xCm} y={ballCenterY + 18} fontSize={canvasSize.font(10)}
+          <text x={xCm} y={groundY + 14} fontSize={canvasSize.font(10)}
             fill={PHYSICS_COLORS.referencePoint} textAnchor="middle">质心</text>
 
           {/* 碰撞闪光 */}
           {hasCollided && Math.abs(time - collisionTime) < 0.3 && (
-            <circle cx={(clampedPosAx + clampedPosBx) / 2} cy={ballCenterY}
+            <circle cx={(clampedPosAx + clampedPosBx) / 2} cy={groundY - Math.max(R_A, R_B)}
               r={8 + (0.3 - Math.abs(time - collisionTime)) * 30}
               fill={PHYSICS_COLORS.kineticEnergy} opacity={0.3} />
           )}
@@ -122,22 +130,22 @@ export function MomentumScene({
           {showVectors && (
             <g>
               {currentVA !== 0 && (
-                <PhysicsVectorArrow originDesign={{ x: clampedPosAx, y: ballCenterY + R_A + 20 }}
+                <PhysicsVectorArrow originDesign={{ x: clampedPosAx, y: groundY - R_A }}
                   vector={{ x: currentVA, y: 0 }} type="velocity" sceneScale={sceneScale} />
               )}
               <text x={clampedPosAx + mapArrowLen(currentVA) * Math.sign(currentVA) / 2}
-                y={ballCenterY - R_A - 26} fontSize={canvasSize.font(10)}
+                y={ballCenterY_A - R_A - 12} fontSize={canvasSize.font(10)}
                 fill={PHYSICS_COLORS.velocity} fontWeight="bold" textAnchor="middle">
                 v_A = {currentVA > 0 ? '+' : ''}{currentVA.toFixed(1)}
               </text>
 
               {currentVB !== 0 && (
-                <PhysicsVectorArrow originDesign={{ x: clampedPosBx, y: ballCenterY + R_B + 20 }}
+                <PhysicsVectorArrow originDesign={{ x: clampedPosBx, y: groundY - R_B }}
                   vector={{ x: currentVB, y: 0 }} type="velocity" sceneScale={sceneScale}
                   color={PHYSICS_COLORS.elasticForce} />
               )}
               <text x={clampedPosBx + mapArrowLen(currentVB) * Math.sign(currentVB) / 2}
-                y={ballCenterY - R_B - 26} fontSize={canvasSize.font(10)}
+                y={ballCenterY_B - R_B - 12} fontSize={canvasSize.font(10)}
                 fill={PHYSICS_COLORS.elasticForce} fontWeight="bold" textAnchor="middle">
                 v_B = {currentVB > 0 ? '+' : ''}{currentVB.toFixed(1)}
               </text>

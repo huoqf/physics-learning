@@ -24,6 +24,7 @@ const TEST_ANIM_IDS = [
   'anim-lc-oscillation',
   'anim-em-wave',
   'anim-em-spectrum',
+  'anim-bullet-block',
 ]
 
 describe('buildPhysicsQuantities', () => {
@@ -150,5 +151,25 @@ describe('buildPhysicsQuantities', () => {
     const qs = buildPhysicsQuantities('anim-em-spectrum', { scene: 2, band: 3 }, 0)
     expect(find(qs, '谱段')).toBe('可见光')
     expect(qs.gaokaoPoints?.some((g) => g.text.includes('电磁波谱顺序'))).toBe(true)
+  })
+
+  // ===== 动量 · 子弹打木块自动模式联动校验 =====
+  it('子弹打木块：初速低于临界时自动判定为留存模式并计算共速', () => {
+    // m=0.1, M=0.4, v0=8, f=10, L=1 -> vCrit≈15.8m/s -> 留存
+    const qs = buildPhysicsQuantities('anim-bullet-block', { m: 0.1, M: 0.4, v0: 8, f: 10, L: 1 }, 0)
+    expect(find(qs, '运动模式')).toBe('留存模式')
+    expect(find(qs, '共速速度')).toBe('1.60') // v = 0.1*8 / 0.5 = 1.6
+    expect(find(qs, '相对位移 Δx')).toBeDefined()
+    expect(qs.formulas?.some((f) => f.name.includes('动量守恒'))).toBe(true)
+  })
+
+  it('子弹打木块：初速高于临界时自动判定为穿透模式并计算穿出速度', () => {
+    // m=0.1, M=0.4, v0=30, f=10, L=1 -> vCrit≈15.8m/s -> 穿透
+    const qs = buildPhysicsQuantities('anim-bullet-block', { m: 0.1, M: 0.4, v0: 30, f: 10, L: 1 }, 0)
+    expect(find(qs, '运动模式')).toBe('穿透模式')
+    expect(find(qs, '穿出子弹速度')).toBeDefined()
+    expect(find(qs, '穿出木块速度')).toBeDefined()
+    expect(find(qs, '摩擦生热 Q')).toBe('10.0') // Q = f * L = 10 * 1 = 10 J
+    expect(qs.formulas?.some((f) => f.latex.includes('m v_1 + M v_2'))).toBe(true)
   })
 })

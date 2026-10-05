@@ -53,7 +53,6 @@ export default function MomentumAnimation() {
   const { m = 3, v = 4, mA = 3, vA = 5, mB = 2, vB = -3, advancedMode = 0, showEkChart = 1 } = params
   const isAdvanced = advancedMode === 1
   const groundY = canvasSize.height - MOMENTUM_LAYOUT.groundOffset
-  const ballCenterY = groundY - MOMENTUM_LAYOUT.ballAboveGround
 
   const sceneScale = useSceneScale({
     vp,
@@ -67,14 +66,23 @@ export default function MomentumAnimation() {
     maxVectorLength: Math.min(vp.visibleW, vp.visibleH) * 0.3,
   })
 
-  // 基础模式
+  // 基础模式：小球在地面上做匀速直线运动，平滑循环滑行
   const p_basic = calculateMomentumScalar(m, v)
   const R_basic = MOMENTUM_LAYOUT.steelBallBaseRadius + m * MOMENTUM_LAYOUT.massRadiusScale
-  const basicBallX = vp.visibleX + vp.visibleW * 0.35
+  const basicTrackLeft = MOMENTUM_LAYOUT.canvasPadding + R_basic + 20
+  const basicTrackRight = preset.width - MOMENTUM_LAYOUT.canvasPadding - R_basic - 60
+  const basicTrackLength = Math.max(100, basicTrackRight - basicTrackLeft)
+  const basicSpeedPx = Math.max(1, v) * 45 // 像素速度
+  const basicCycleDuration = basicTrackLength / basicSpeedPx
+  const basicCycleT = time % basicCycleDuration
+  const basicBallX = basicTrackLeft + basicCycleT * basicSpeedPx
+  const basicBallCenterY = groundY - R_basic
 
   // 进阶模式
   const R_A = MOMENTUM_LAYOUT.steelBallBaseRadius + mA * MOMENTUM_LAYOUT.massRadiusScale
   const R_B = MOMENTUM_LAYOUT.steelBallBaseRadius + mB * MOMENTUM_LAYOUT.massRadiusScale
+  const ballCenterY_A = groundY - R_A
+  const ballCenterY_B = groundY - R_B
   const leftBound = vp.visibleX + MOMENTUM_LAYOUT.canvasPadding + R_A
   const rightBound = vp.visibleX + vp.visibleW - MOMENTUM_LAYOUT.canvasPadding - R_B
   const initPosAx = vp.visibleX + vp.visibleW * 0.25
@@ -140,7 +148,6 @@ export default function MomentumAnimation() {
   // 矢量映射
   const vMaxRef = MOMENTUM_PARAM_BOUNDS.vMax
   const mapArrowLen = (val: number) => (Math.abs(val) / vMaxRef) * MOMENTUM_LAYOUT.vectorMaxLength
-  const mapMomentumBarH = (pVal: number) => (Math.abs(pVal) / (MOMENTUM_PARAM_BOUNDS.mMax * MOMENTUM_PARAM_BOUNDS.vMax)) * MOMENTUM_LAYOUT.momentumBarMaxHeight
 
   return (
     <div className="w-full h-full relative">
@@ -149,8 +156,8 @@ export default function MomentumAnimation() {
           canvasSize={canvasSize} sceneScale={sceneScale}
           isAdvanced={isAdvanced} showVectors={showVectors}
           m={m} v={v} p_basic={p_basic} R_basic={R_basic} basicBallX={basicBallX}
-          ballCenterY={ballCenterY} groundY={groundY}
-          mapArrowLen={mapArrowLen} mapMomentumBarH={mapMomentumBarH}
+          basicBallCenterY={basicBallCenterY} ballCenterY_A={ballCenterY_A} ballCenterY_B={ballCenterY_B} groundY={groundY}
+          mapArrowLen={mapArrowLen}
           mA={mA} mB={mB} R_A={R_A} R_B={R_B}
           clampedPosAx={clampedPosAx} clampedPosBx={clampedPosBx}
           currentVA={currentVA} currentVB={currentVB}

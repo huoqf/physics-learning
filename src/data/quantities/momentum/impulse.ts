@@ -137,6 +137,7 @@ export function handleImpulse(
         gaokaoPoints: [
           { text: '动量定理公式为 F_合Δt = Δp，必须使用合外力', importance: 'core' as const },
           { text: 'F-t 图线下方的面积等于对应的冲量', importance: 'gaokao' as const },
+          { text: '反弹与停下的区别：弹性反弹时 Δp = mv - (-mv) = 2mv；若物体落入海绵等吸能停下，则 Δp = 0 - (-mv) = mv。本模型为完全弹性反弹模型', importance: 'gaokao' as const },
         ],
       }
     } else {

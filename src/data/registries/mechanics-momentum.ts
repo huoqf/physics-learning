@@ -51,7 +51,7 @@ export const mechanicsMomentumAnimations = defineAnimations({
     paramMeta: [
       { key: 'm', label: '物体质量 m', min: 0.5, max: 10, step: 0.5, unit: 'kg', showIf: 'advancedMode', showIfValue: 0 },
       { key: 'h', label: '下落高度 h', min: 0.5, max: 5, step: 0.5, unit: 'm', showIf: 'advancedMode', showIfValue: 0 },
-      { key: 'k', label: '缓冲垫软硬 k', min: 1, max: 20, step: 1, unit: 'N/m', showIf: 'advancedMode', showIfValue: 0 },
+      { key: 'k', label: '弹性缓冲垫刚度 k', min: 1, max: 20, step: 1, unit: 'N/m', showIf: 'advancedMode', showIfValue: 0 },
       { key: 'rho', label: '流体密度 ρ', min: 500, max: 5000, step: 100, unit: 'kg/m³', showIf: 'advancedMode', showIfValue: 1 },
       { key: 'S', label: '截面积 S', min: 0.005, max: 0.02, step: 0.001, unit: 'm²', showIf: 'advancedMode', showIfValue: 1 },
       { key: 'v_fluid', label: '流速 v', min: 1, max: 10, step: 0.5, unit: 'm/s', showIf: 'advancedMode', showIfValue: 1 },
@@ -63,6 +63,8 @@ export const mechanicsMomentumAnimations = defineAnimations({
       { type: 'toggle', key: 'showGravity', label: '重力 mg', group: '矢量显示', showIf: 'advancedMode', showIfValue: 0 },
       { type: 'toggle', key: 'showVelocity', label: '速度 v', group: '矢量显示', showIf: 'advancedMode', showIfValue: 0 },
       { type: 'toggle', key: 'showNormalForce', label: '支持力 FN', group: '矢量显示', showIf: 'advancedMode', showIfValue: 0 },
+      { type: 'tip', group: '教学提示', showIf: 'advancedMode', showIfValue: 0,
+        content: '本基础模型为小球落入弹性垫完全弹性反弹情境（碰后原速反弹），动量变化量为 Δp = 2mv。由动量定理 (F_avg - mg)Δt = 2mv，垫子越软（k 越小），缓冲时间 Δt 越长，平均冲击力越小。' },
     ],
   },
   'anim-momentum-conservation': {
