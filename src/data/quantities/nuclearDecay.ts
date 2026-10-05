@@ -10,6 +10,7 @@ interface NuclearDecayParams {
   eField: number
   initVelocity: number
   showObstacles: number
+  decayType: number
 }
 
 const DEFAULTS: ParamDefs<NuclearDecayParams> = {
@@ -21,6 +22,7 @@ const DEFAULTS: ParamDefs<NuclearDecayParams> = {
   eField: { default: 5.0 },
   initVelocity: { default: 4.0 },
   showObstacles: { default: 0 },
+  decayType: { default: 0 },
 }
 
 // 同位素定义
@@ -94,7 +96,7 @@ export function buildNuclearDecayQuantities(
       gaokaoPoints,
       mnemonic: '质子中子称核子，质量数是二者和；强力短程超紧密，出了射程成路人。',
     }
-  } else {
+  } else if (p.mode === 1) {
     // 模式二：天然放射线在电磁场中偏转
     const isB = p.fieldType === 0
     const isE = p.fieldType === 1
@@ -130,6 +132,39 @@ export function buildNuclearDecayQuantities(
       formulas,
       gaokaoPoints,
       mnemonic: '阿尔法氦核正电重，贝塔电子负电轻；伽马光子不带电，左手定则定偏行。',
+    }
+  } else {
+    // 模式三：静止核在磁场中衰变径迹 (内切/外切圆高考模型)
+    const isAlpha = p.decayType === 0
+
+    const quantities = [
+      { label: '衰变模型', value: isAlpha ? 'α 衰变 (外切圆)' : 'β 衰变 (内切圆)', unit: '', highlight: 'positive' as const },
+      { label: '磁感应强度 B', value: p.bField.toFixed(1), unit: 'T' },
+      { label: '两粒子动量比 p₁:p₂', value: '1 : 1', unit: '(动量守恒)', highlight: 'extreme' as const },
+      { label: '轨道半径比 R_微粒:R_新核', value: isAlpha ? '45 : 1 (90:2)' : '7 : 1 (7:1)', unit: '' },
+      { label: '动能分配比 E_k微粒:E_k新核', value: isAlpha ? '58.5 : 1 (234:4)' : '≈ 25000 : 1', unit: '', highlight: 'positive' as const },
+      { label: '轨迹几何形态', value: isAlpha ? '外切圆 (圆心异侧)' : '内切圆 (圆心同侧)', unit: '', highlight: isAlpha ? 'positive' as const : 'negative' as const },
+    ]
+
+    const formulas = [
+      { name: '静止核衰变动量守恒', latex: '0 = \\vec{p}_1 + \\vec{p}_2 \\implies p_1 = p_2', level: 'core' as const },
+      { name: '磁场轨道半径公式', latex: 'R = \\frac{m v}{q B} = \\frac{p}{|q| B} \\implies \\frac{R_1}{R_2} = \\frac{|q_2|}{|q_1|}', level: 'core' as const },
+      { name: '动能分配反比公式', latex: 'E_k = \\frac{p^2}{2m} \\implies \\frac{E_{k1}}{E_{k2}} = \\frac{m_2}{m_1}', level: 'core' as const },
+      { name: isAlpha ? '铀-238 α 衰变方程' : '碳-14 β 衰变方程', latex: isAlpha ? '{}^{238}_{92}\\text{U} \\rightarrow {}^{234}_{90}\\text{Th} + {}^4_2\\text{He}' : '{}^{14}_6\\text{C} \\rightarrow {}^{14}_7\\text{N} + {}^0_{-1}\\text{e}', level: 'important' as const },
+    ]
+
+    const gaokaoPoints = [
+      { text: '动量守恒核心：静止核自发衰变不受外力，反冲新核与衰变微粒初动量大小必相等、方向必相反（p₁ = p₂）。', importance: 'core' as const },
+      { text: '半径与电荷反比：由 R = p/(|q|B)，由于动量 p 与磁场 B 相同，轨迹半径完全由粒子电荷量绝对值决定，电荷越小半径越大！', importance: 'gaokao' as const },
+      { text: '切向特征必背口诀：同种电荷受力相反向两侧弯，成“外切圆”；异种电荷受力相同向同侧弯，成“内切圆”！', importance: 'gaokao' as const },
+      { text: '动能反比分配：微粒质量远小于新核（m_α << m_Th，m_e << m_N），故衰变释放的核能绝大部分转化为微粒的动能。', importance: 'hard' as const },
+    ]
+
+    return {
+      quantities,
+      formulas,
+      gaokaoPoints,
+      mnemonic: '静止衰变动量等，半径反比电荷行；同电外切反侧转，异电内切同侧行。',
     }
   }
 }

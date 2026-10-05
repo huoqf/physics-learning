@@ -154,16 +154,6 @@
       "count": 2
     }
   },
-  "src/features/modern/nuclear-decay/NuclearDecayAnimation.tsx": {
-    "no-restricted-syntax": {
-      "count": 28
-    }
-  },
-  "src/features/modern/nuclear-decay/components/NuclearDecayScene.tsx": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "src/features/modern/nuclear-decay/components/NuclearHalfLifeScene.tsx": {
     "no-restricted-syntax": {
       "count": 1

@@ -349,7 +349,7 @@ export const modernPhysicsAnimations = defineAnimations({
     Component: lazy(() => import('@/features/modern/nuclear-decay/NuclearDecayAnimation')),
     controlsMode: (params) => params.mode === 0 ? 'param' as const : 'timed' as const,
     defaultParams: {
-      mode: 0,                // 0: 原子核的组成, 1: 天然放射线偏转
+      mode: 0,                // 0: 原子核的组成, 1: 天然放射线偏转, 2: 静止核衰变磁场径迹(高考模型)
       nuclide: 3,             // 默认 3: He-4 (alpha粒子). 0:H-1, 1:H-2, 2:H-3, 3:He-4, 4:C-12, 5:C-14, 6:U-238
       nucleonDistance: 1.2,   // 核子平均间距 (fm)
       fieldType: 0,           // 偏转介质: 0: 磁场, 1: 电场, 2: 无场
@@ -357,6 +357,7 @@ export const modernPhysicsAnimations = defineAnimations({
       eField: 5.0,            // 电场强度 (kV/m)
       initVelocity: 4.0,      // 粒子初速度
       showObstacles: 0,       // 0: 关闭挡板, 1: 开启挡板
+      decayType: 0,           // 模式2专属: 0: α 衰变 (外切圆), 1: β 衰变 (内切圆)
     } as const,
     controlMeta: [
       {
@@ -367,6 +368,7 @@ export const modernPhysicsAnimations = defineAnimations({
         options: [
           { value: 0, label: '① 组成与核力' },
           { value: 1, label: '② 放射线偏转' },
+          { value: 2, label: '③ 磁场衰变径迹' },
         ],
       },
       // 模式0专属控制
@@ -411,6 +413,20 @@ export const modernPhysicsAnimations = defineAnimations({
         trueValue: 1,
         falseValue: 0,
       },
+      // 模式2专属控制
+      {
+        type: 'segmented',
+        key: 'decayType',
+        label: '衰变模型',
+        group: '高考压轴模型',
+        showIf: 'mode',
+        showIfValue: 2,
+        resetOnChange: true,
+        options: [
+          { value: 0, label: 'α 衰变 (外切圆)' },
+          { value: 1, label: 'β 衰变 (内切圆)' },
+        ],
+      },
       {
         type: 'tip',
         content: '强核力是短程引力，在 0.8~2.0 fm 表现为引力，更小表现为斥力，超出则极速归零。',
@@ -424,6 +440,13 @@ export const modernPhysicsAnimations = defineAnimations({
         group: '教学提示',
         showIf: 'mode',
         showIfValue: 1,
+      },
+      {
+        type: 'tip',
+        content: '静止核衰变动量守恒 p₁=p₂。半径 R = p/(qB) ∝ 1/q。α 衰变同种正电荷向相反侧弯曲成外切圆；β 衰变异种电荷向同侧弯曲成内切圆。',
+        group: '教学提示',
+        showIf: 'mode',
+        showIfValue: 2,
       },
     ],
     paramMeta: [
@@ -443,7 +466,20 @@ export const modernPhysicsAnimations = defineAnimations({
           { value: 2.5, label: '极微弱', variant: 'critical' },
         ],
       },
-      // 模式1参数
+      // 模式1/2参数
+      {
+        key: 'bField',
+        label: '磁场强度 B',
+        min: 0.5,
+        max: 3.0,
+        step: 0.1,
+        unit: 'T',
+        showIf: 'mode',
+        showIfValue: 2,
+        marks: [
+          { value: 1.5, label: '标准场强', variant: 'recommended' },
+        ],
+      },
       {
         key: 'bField',
         label: '磁场强度 B',

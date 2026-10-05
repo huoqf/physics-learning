@@ -12,10 +12,12 @@ import { electromagnetismGaokaoProblems } from './electromagnetism'
 import { vibrationGaokaoProblems } from './vibration'
 import { experimentProblems } from './experiment'
 import { inductionProblems } from './induction'
+import { nuclearGaokaoProblems } from './nuclear'
 
 export const allProblems: Problem[] = [
   prob2024Quanguo21,
   ...masterModelProblems,
+  ...nuclearGaokaoProblems,
   ...opticsGaokaoProblems,
   ...electromagnetismGaokaoProblems,
   ...vibrationGaokaoProblems,

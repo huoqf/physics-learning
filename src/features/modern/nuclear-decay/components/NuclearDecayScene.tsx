@@ -3,7 +3,7 @@ import { PHYSICS_COLORS, CANVAS_COLORS, MODERN_COLORS, withAlpha } from '@/theme
 import { VectorArrow } from '@/components/Physics'
 import { worldToDesign } from '@/scene'
 import type { SceneScale } from '@/scene'
-import type { Nucleon, ParticlePoint } from '../hooks/useNuclearDecayPhysics'
+import type { Nucleon, ParticlePoint, MagneticDecayModeData } from '../hooks/useNuclearDecayPhysics'
 
 interface NuclearDecaySceneProps {
   mode: number
@@ -25,6 +25,7 @@ interface NuclearDecaySceneProps {
     alphaHit: boolean
     betaHit: boolean
     gammaHit: boolean
+    decayData?: MagneticDecayModeData
   }
   canvasSize: {
     width: number
@@ -461,6 +462,220 @@ export const NuclearDecayScene: React.FC<NuclearDecaySceneProps> = ({
     )
   }
 
+  // 3. 绘制模式2：静止核在匀强磁场中衰变径迹 (外切圆 / 内切圆)
+  const renderMode2 = () => {
+    const { decayData } = physics
+    if (!decayData) return null
+
+    const origin = worldToDesign(0, 0, sceneScale)
+    const pCenter = worldToDesign(decayData.particleCenter.x, decayData.particleCenter.y, sceneScale)
+    const dCenter = worldToDesign(decayData.daughterCenter.x, decayData.daughterCenter.y, sceneScale)
+
+    const pPos = worldToDesign(decayData.particlePos.x, decayData.particlePos.y, sceneScale)
+    const dPos = worldToDesign(decayData.daughterPos.x, decayData.daughterPos.y, sceneScale)
+
+    // 半径像素值
+    const pRadiusPx = Math.abs(pCenter.py - origin.py) || 120
+    const dRadiusPx = Math.abs(dCenter.py - origin.py) || 45
+
+    // 绘制磁场十字网格
+    const markers = []
+    for (let x = origin.px - 360; x <= origin.px + 360; x += 60) {
+      for (let y = origin.py - 160; y <= origin.py + 160; y += 45) {
+        markers.push(
+          <text
+            key={`decay-b-${x}-${y}`}
+            x={x}
+            y={y}
+            fill={PHYSICS_COLORS.magneticFieldCross}
+            fontSize={font(15)}
+            textAnchor="middle"
+            fontWeight="bold"
+            opacity={0.2}
+          >
+            ×
+          </text>
+        )
+      }
+    }
+
+    return (
+      <g>
+        {/* 背景磁场标识 */}
+        <rect
+          x={origin.px - 390}
+          y={origin.py - 170}
+          width={780}
+          height={340}
+          fill={withAlpha(PHYSICS_COLORS.magneticField, 0.04)}
+          stroke={withAlpha(PHYSICS_COLORS.magneticField, 0.4)}
+          strokeWidth={1}
+          strokeDasharray="4,4"
+          rx={8}
+        />
+        {markers}
+
+        {/* 磁场说明 */}
+        <text
+          x={origin.px - 375}
+          y={origin.py - 150}
+          fill={PHYSICS_COLORS.magneticField}
+          fontSize={font(11)}
+          fontWeight="bold"
+        >
+          匀强磁场 B (垂直纸面向里)
+        </text>
+
+        {/* 水平公切线 */}
+        <line
+          x1={origin.px - 260}
+          y1={origin.py}
+          x2={origin.px + 260}
+          y2={origin.py}
+          stroke={CANVAS_COLORS.axis}
+          strokeWidth={1}
+          strokeDasharray="3,3"
+          opacity={0.7}
+        />
+        <text
+          x={origin.px + 265}
+          y={origin.py + 3}
+          fill={CANVAS_COLORS.labelTextLight}
+          fontSize={font(9)}
+          textAnchor="start"
+        >
+          切线方向 (初始出射速度轴)
+        </text>
+
+        {/* 粒子轨迹圆周 */}
+        {decayData.hasDecayed && (
+          <g>
+            {/* 放射微粒大圆 (α 或 β) */}
+            <circle
+              cx={pCenter.px}
+              cy={pCenter.py}
+              r={pRadiusPx}
+              fill="none"
+              stroke={decayData.decayType === 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
+              strokeWidth={1.8}
+              strokeDasharray="5,3"
+              opacity={0.85}
+            />
+            {/* 放射微粒圆心 */}
+            <circle cx={pCenter.px} cy={pCenter.py} r={3} fill={decayData.decayType === 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge} />
+            <text
+              x={pCenter.px + 8}
+              y={pCenter.py + 3}
+              fill={decayData.decayType === 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
+              fontSize={font(9)}
+              fontWeight="bold"
+            >
+              {decayData.decayType === 0 ? 'O_α' : 'O_β'}
+            </text>
+
+            {/* 新核小圆 */}
+            <circle
+              cx={dCenter.px}
+              cy={dCenter.py}
+              r={dRadiusPx}
+              fill="none"
+              stroke={PHYSICS_COLORS.appliedForce}
+              strokeWidth={1.8}
+              strokeDasharray="5,3"
+              opacity={0.85}
+            />
+            {/* 新核圆心 */}
+            <circle cx={dCenter.px} cy={dCenter.py} r={3} fill={PHYSICS_COLORS.appliedForce} />
+            <text
+              x={dCenter.px + 8}
+              y={dCenter.py + 3}
+              fill={PHYSICS_COLORS.appliedForce}
+              fontSize={font(9)}
+              fontWeight="bold"
+            >
+              O_新核
+            </text>
+
+            {/* 半径引线与标注 */}
+            <line x1={pCenter.px} y1={pCenter.py} x2={origin.px} y2={origin.py} stroke={decayData.decayType === 0 ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge} strokeWidth={1} strokeDasharray="2,2" opacity={0.6} />
+            <line x1={dCenter.px} y1={dCenter.py} x2={origin.px} y2={origin.py} stroke={PHYSICS_COLORS.appliedForce} strokeWidth={1} strokeDasharray="2,2" opacity={0.6} />
+
+            {/* 切向关系文字指示 */}
+            <text
+              x={origin.px - 140}
+              y={origin.py + (decayData.isTangentialOuter ? -dRadiusPx - 10 : dRadiusPx + 20)}
+              fill={decayData.isTangentialOuter ? PHYSICS_COLORS.referencePoint : PHYSICS_COLORS.velocity}
+              fontSize={font(11)}
+              fontWeight="bold"
+            >
+              {decayData.isTangentialOuter ? '外切圆：同种正电荷，受力反向' : '内切圆：一正一负，受力同向'}
+            </text>
+          </g>
+        )}
+
+        {/* 衰变起始点 (原点) */}
+        <circle cx={origin.px} cy={origin.py} r={5} fill={CANVAS_COLORS.referencePoint} />
+        <text x={origin.px} y={origin.py + (decayData.decayType === 0 ? 16 : -8)} fill={CANVAS_COLORS.labelText} fontSize={font(9)} textAnchor="middle" fontWeight="bold">
+          静止衰变原点 (0, 0)
+        </text>
+
+        {/* 衰变前静止母核 */}
+        {!decayData.hasDecayed && (
+          <g filter="url(#sphereShadow)">
+            <circle cx={origin.px} cy={origin.py} r={16} fill="url(#protonGrad)" stroke={PHYSICS_COLORS.forceArrowRed} strokeWidth={2} />
+            <text x={origin.px} y={origin.py + 4} fill={PHYSICS_COLORS.white} fontSize={font(10)} fontWeight="bold" textAnchor="middle">
+              {decayData.decayType === 0 ? '²³⁸U' : '¹⁴C'}
+            </text>
+            <text x={origin.px} y={origin.py - 22} fill={PHYSICS_COLORS.alertRed} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
+              静止母核即将自发衰变...
+            </text>
+          </g>
+        )}
+
+        {/* 衰变后的两个运动粒子 */}
+        {decayData.hasDecayed && (
+          <g>
+            {/* 1. 放射微粒 */}
+            <g filter="url(#sphereShadow)">
+              <circle
+                cx={pPos.px}
+                cy={pPos.py}
+                r={decayData.decayType === 0 ? 9 : 6}
+                fill={decayData.decayType === 0 ? 'url(#protonGrad)' : 'url(#neutronGrad)'}
+                stroke={decayData.decayType === 0 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.negativeCharge}
+                strokeWidth={1.5}
+              />
+              <text x={pPos.px} y={pPos.py + 3.5} fill={PHYSICS_COLORS.white} fontSize={font(8)} fontWeight="bold" textAnchor="middle">
+                {decayData.decayType === 0 ? 'α' : 'β'}
+              </text>
+              <text x={pPos.px} y={pPos.py - 12} fill={decayData.decayType === 0 ? PHYSICS_COLORS.forceArrowRed : PHYSICS_COLORS.negativeCharge} fontSize={font(10)} fontWeight="bold" textAnchor="middle">
+                {decayData.particleName}
+              </text>
+            </g>
+
+            {/* 2. 反冲新核 */}
+            <g filter="url(#sphereShadow)">
+              <circle
+                cx={dPos.px}
+                cy={dPos.py}
+                r={13}
+                fill="url(#neutronGrad)"
+                stroke={PHYSICS_COLORS.appliedForce}
+                strokeWidth={1.5}
+              />
+              <text x={dPos.px} y={dPos.py + 4} fill={PHYSICS_COLORS.white} fontSize={font(9)} fontWeight="bold" textAnchor="middle">
+                {decayData.decayType === 0 ? 'Th' : 'N'}
+              </text>
+              <text x={dPos.px} y={dPos.py + 25} fill={PHYSICS_COLORS.appliedForce} fontSize={font(10)} fontWeight="bold" textAnchor="middle">
+                {decayData.daughterName} (大质量反冲)
+              </text>
+            </g>
+          </g>
+        )}
+      </g>
+    )
+  }
+
   return (
     <g>
       <defs>
@@ -485,12 +700,13 @@ export const NuclearDecayScene: React.FC<NuclearDecaySceneProps> = ({
         </radialGradient>
 
         <filter id="sphereShadow" x="-20%" y="-20%" width="150%" height="150%">
-          <feDropShadow dx="1" dy="2" stdDeviation="1.5" floodColor="#000000" floodOpacity="0.3" />
+          <feDropShadow dx="1" dy="2" stdDeviation="1.5" floodColor={CANVAS_COLORS.black} floodOpacity="0.3" />
         </filter>
       </defs>
 
       {mode === 0 && renderMode0()}
       {mode === 1 && renderMode1()}
+      {mode === 2 && renderMode2()}
     </g>
   )
 }
