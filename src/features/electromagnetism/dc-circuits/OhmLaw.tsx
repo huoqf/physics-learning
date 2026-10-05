@@ -6,7 +6,6 @@ import { calculateOhmLaw, calculateMeterExpansion, calculateBulbResistance } fro
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS, withAlpha } from '@/theme/physics'
 import { LightBulb, DialMeter, DCSource, VectorArrow } from '@/components/Physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
-import { colors } from '@/theme/colors'
 
 export default function OhmLaw() {
   const params = useAnimationStore((s) => s.params)
@@ -60,74 +59,58 @@ export default function OhmLaw() {
 
       {mode === 0 ? (
         // ==================== 模式0：伏安特性探究 ====================
-        // 布局说明（splitV 840×325）：
-        //   主回路：左竖边 x=180, 上导线 y=110, 右竖边 x=660, 下导线 y=250
-        //   电源 (instrument) 中心 (420, 250)，正极 x+22=442, 负极 x-22=398，均在 y≈272
-        //   → 下导线 y=250 处接电源顶面接线柱即可（instrument 高 80，中心 y=250，接线柱在 y=250+22=272）
-        //   电流表 A 串联在上导线右段：导线从 R 右端节点(540,110) → 电流表左(630,110) → 断开 → 电流表右(690,110) → 右竖边 x=760
-        //   待测元件 R 放上导线中段：中心(420,110)，左端 x=396, 右端 x=444（宽48）
-        //   电压表 V 并联：从待测元件左端节点(396,110) 向上 → (396,48) → (444,48) → 待测元件右端节点(444,110)
+        // 规范布局（splitV 840×325）：
+        //   主回路：左竖边 x=180, 上导线 y=110, 右竖边 x=680, 下导线 y=245
+        //   待测元件 R 放上导线中偏左：中心(380, 110)，左端 355，右端 405
+        //   电压表 V 并联跨接在待测元件两端：中心(380, 52)，节点在 330 和 430
+        //   电流表 A 串联在上导线右段居中：中心(540, 110)，远离拐角 140px，消灭“拐角画表”
+        //   直流电源：底导线中央 (430, 245)，标准原理图符号
         <g>
-          {/* ── 主回路导线（分段，电流表断开处留空）── */}
+          {/* ── 1. 主回路导线：统一 2.5px 规范线宽 ── */}
           {/* 左竖边 */}
-          <line x1={180} y1={110} x2={180} y2={250} stroke={PHYSICS_COLORS.grid} strokeWidth={8} strokeLinecap="round" />
-          <line x1={180} y1={110} x2={180} y2={250} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} strokeLinecap="round" />
-          {/* 上导线左段：左竖顶(180,110) → 待测元件左端节点(396,110) */}
-          <line x1={180} y1={110} x2={396} y2={110} stroke={PHYSICS_COLORS.grid} strokeWidth={8} strokeLinecap="round" />
-          <line x1={180} y1={110} x2={396} y2={110} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} strokeLinecap="round" />
-          {/* 上导线中段：待测元件右端节点(444,110) → 电流表左端(600,110) */}
-          <line x1={444} y1={110} x2={600} y2={110} stroke={PHYSICS_COLORS.grid} strokeWidth={8} strokeLinecap="round" />
-          <line x1={444} y1={110} x2={600} y2={110} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} strokeLinecap="round" />
-          {/* 上导线右段：电流表右端(660,110) → 右竖顶(760,110) */}
-          <line x1={660} y1={110} x2={760} y2={110} stroke={PHYSICS_COLORS.grid} strokeWidth={8} strokeLinecap="round" />
-          <line x1={660} y1={110} x2={760} y2={110} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} strokeLinecap="round" />
+          <line x1={180} y1={110} x2={180} y2={245} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+          {/* 上导线左段：左竖顶(180, 110) → 电压表左节点(330, 110) → 待测元件左端(355, 110) */}
+          <line x1={180} y1={110} x2={355} y2={110} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+          {/* 上导线中段：待测元件右端(405, 110) → 电压表右节点(430, 110) → 电流表左端子(516, 110) */}
+          <line x1={405} y1={110} x2={516} y2={110} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+          {/* 上导线右段：电流表右端子(564, 110) → 右竖顶(680, 110) */}
+          <line x1={564} y1={110} x2={680} y2={110} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
           {/* 右竖边 */}
-          <line x1={760} y1={110} x2={760} y2={250} stroke={PHYSICS_COLORS.grid} strokeWidth={8} strokeLinecap="round" />
-          <line x1={760} y1={110} x2={760} y2={250} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} strokeLinecap="round" />
-          {/* 下导线左段：左竖底(180,250) → 电源负极(398,250) */}
-          <line x1={180} y1={250} x2={398} y2={250} stroke={PHYSICS_COLORS.grid} strokeWidth={8} strokeLinecap="round" />
-          <line x1={180} y1={250} x2={398} y2={250} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} strokeLinecap="round" />
-          {/* 下导线右段：电源正极(442,250) → 右竖底(760,250) */}
-          <line x1={442} y1={250} x2={760} y2={250} stroke={PHYSICS_COLORS.grid} strokeWidth={8} strokeLinecap="round" />
-          <line x1={442} y1={250} x2={760} y2={250} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} strokeLinecap="round" />
+          <line x1={680} y1={110} x2={680} y2={245} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+          {/* 底导线左段：左竖底(180, 245) → 电源负极(410, 245) */}
+          <line x1={180} y1={245} x2={410} y2={245} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+          {/* 底导线右段：电源正极(450, 245) → 右竖底(680, 245) */}
+          <line x1={450} y1={245} x2={680} y2={245} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
 
-          {/* ── 电压表并联引线：从待测元件两端节点引出 ── */}
-          {/* 左端引线：(396,110) → (396,48) */}
-          <line x1={396} y1={110} x2={396} y2={48} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={2.5} strokeLinecap="round" />
-          {/* 顶部横线：(396,48) → (444,48) */}
-          <line x1={396} y1={48} x2={444} y2={48} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={2.5} strokeLinecap="round" />
-          {/* 右端引线：(444,48) → (444,110) */}
-          <line x1={444} y1={48} x2={444} y2={110} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={2.5} strokeLinecap="round" />
-          {/* 并联节点圆点 */}
-          <circle cx={396} cy={110} r={4.5} fill={PHYSICS_COLORS.labelText} />
-          <circle cx={444} cy={110} r={4.5} fill={PHYSICS_COLORS.labelText} />
+          {/* ── 2. 电压表并联跨接引线（内收端正，节点规范） ── */}
+          <path d="M 330 110 L 330 52 L 356 52" fill="none" stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} />
+          <path d="M 404 52 L 430 52 L 430 110" fill="none" stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} />
+          <circle cx={330} cy={110} r={3.5} fill={SCENE_COLORS.circuit.wire} />
+          <circle cx={430} cy={110} r={3.5} fill={SCENE_COLORS.circuit.wire} />
 
-          {/* ── 电表 ── */}
-          {/* 电压表 V：上方引线中点 x=(396+444)/2=420, y=48 */}
-          <DialMeter type="V" value={U} max={10} x={420} y={48} r={28} font={font} />
-          {/* 电流表 A：串联在上导线右段，中心 (630, 110) */}
-          <DialMeter type="A" value={I} max={2} x={630} y={110} r={28} font={font} />
+          {/* ── 3. 电表：标准原理图符号 ── */}
+          <DialMeter type="V" variant="symbolic" value={U} max={10} x={380} y={52} r={24} font={font} labelPosition="top" />
+          <DialMeter type="A" variant="symbolic" value={I} max={2} x={540} y={110} r={24} font={font} labelPosition="top" />
 
-          {/* ── 理想直流源（instrument 类型，正极右侧 polarity='right-positive'） ── */}
-          <DCSource type="instrument" x={420} y={250} voltage={U} polarity="right-positive" />
+          {/* ── 4. 标准直流电源 ── */}
+          <DCSource type="symbol" orientation="horizontal" x={430} y={245} voltage={U} label={`电源 U = ${U.toFixed(1)}V`} polarity="right-positive" />
 
-          {/* ── 待测元件（上导线中央，中心 x=420, y=110） ── */}
+          {/* ── 5. 待测元件（中心 x=380, y=110） ── */}
           {meterMode === 0 ? (
-            <g transform="translate(420, 110)">
-              <rect x={-24} y={-12} width={48} height={24} fill={SCENE_COLORS.circuit.resistorFill} stroke={SCENE_COLORS.circuit.resistorStroke} strokeWidth={2} />
-              <text x={0} y={4} fill={CANVAS_COLORS.labelText} fontSize={font(11)} fontWeight="bold" textAnchor="middle">R</text>
-              <text x={0} y={28} fill={CANVAS_COLORS.labelTextLight} fontSize={font(10)} textAnchor="middle">待测定值电阻</text>
+            <g transform="translate(380, 110)">
+              <rect x={-25} y={-11} width={50} height={22} fill={SCENE_COLORS.circuit.resistorFill} stroke={SCENE_COLORS.circuit.resistorStroke} strokeWidth={2} />
+              <text x={0} y={3} fill={CANVAS_COLORS.labelText} fontSize={font(10.5)} fontWeight="bold" textAnchor="middle">R</text>
+              <text x={0} y={25} fill={CANVAS_COLORS.labelTextLight} fontSize={font(9.5)} textAnchor="middle">待测电阻 ({R}Ω)</text>
             </g>
           ) : (
-            <LightBulb x={420} y={110} power={P} time={time} />
+            <LightBulb x={380} y={110} power={P} time={time} />
           )}
 
-          {/* ── 高中物理规范电流方向矢量指示（逆时针外电路：正极向右出，经外电路上导线向左流经表头与电阻，流回负极）── */}
+          {/* ── 6. 电流方向矢量（避让导线，杜绝压线） ── */}
           {I > 0.01 && (
             <g>
-              {/* 下导线正极流出段（向右） */}
               <VectorArrow
-                originDesign={{ x: 500, y: 250 }}
+                originDesign={{ x: 540, y: 245 }}
                 vector={{ x: 1, y: 0 }}
                 type="currentDirection"
                 arrowType="visual-only"
@@ -135,31 +118,27 @@ export default function OhmLaw() {
                 pixelLength={22}
                 font={font}
               />
-              {/* 右竖边向上流动 */}
               <VectorArrow
-                originDesign={{ x: 760, y: 200 }}
-                vector={{ x: 0, y: 1 }}
+                originDesign={{ x: 680, y: 180 }}
+                vector={{ x: 0, y: -1 }}
                 type="currentDirection"
                 arrowType="visual-only"
                 sceneScale={IDENTITY_SCENE_SCALE}
                 pixelLength={22}
                 font={font}
               />
-              {/* 上导线中段（由右向左流经电流表和待测元件） */}
               <VectorArrow
-                originDesign={{ x: 540, y: 110 }}
+                originDesign={{ x: 480, y: 110 }}
                 vector={{ x: -1, y: 0 }}
                 type="currentDirection"
                 arrowType="visual-only"
                 sceneScale={IDENTITY_SCENE_SCALE}
-                pixelLength={26}
-                label={`I = ${I.toFixed(2)}A`}
+                pixelLength={22}
                 font={font}
               />
-              {/* 左竖边向下流回电源负极 */}
               <VectorArrow
-                originDesign={{ x: 180, y: 160 }}
-                vector={{ x: 0, y: -1 }}
+                originDesign={{ x: 180, y: 180 }}
+                vector={{ x: 0, y: 1 }}
                 type="currentDirection"
                 arrowType="visual-only"
                 sceneScale={IDENTITY_SCENE_SCALE}
@@ -171,76 +150,194 @@ export default function OhmLaw() {
         </g>
       ) : mode === 1 ? (
         // ==================== 模式1：改装为电压表 ====================
+        // 串联分压原理：U_m = Ig * (Rg + Rs)
+        // 布局：左竖边 x=180, 右竖边 x=660, 顶导线 y=135, 底导线 y=255
+        // 改装大虚线框：x: 260 ~ 580, y: 65 ~ 205
         <g>
-          <rect x={180} y={150} width={480} height={100} fill="none" stroke={PHYSICS_COLORS.grid} strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" />
-          <rect x={180} y={150} width={480} height={100} fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
-          <DCSource type="instrument" x={420} y={250} voltage={U} polarity="right-positive" />
+          {/* ── 1. 外围供电主回路导线：统一 2.5px ── */}
+          <line x1={180} y1={135} x2={180} y2={255} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+          <line x1={660} y1={135} x2={660} y2={255} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+          <line x1={180} y1={255} x2={400} y2={255} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+          <line x1={440} y1={255} x2={660} y2={255} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
 
-          {/* 改装电压表虚线外框 */}
-          <rect x={280} y={80} width={280} height={130} rx={8} fill={withAlpha(colors.neutral[50], 0.4)} stroke={PHYSICS_COLORS.electricPotential} strokeWidth={1.5} strokeDasharray="4,4" filter="url(#box-shadow-ohm)" />
-          <text x={420} y={98} fill={PHYSICS_COLORS.electricPotential} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
+          {/* 顶导线两端引线 */}
+          <line x1={180} y1={135} x2={260} y2={135} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+          <line x1={580} y1={135} x2={660} y2={135} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+
+          {/* 电源组件：标准直流电源符号 */}
+          <DCSource type="symbol" orientation="horizontal" x={420} y={255} voltage={U} label={`电源 U = ${U.toFixed(1)}V`} polarity="right-positive" />
+
+          {/* ── 2. 改装电压表整体封装（高中物理标准虚线大框） ── */}
+          <rect
+            x={260}
+            y={65}
+            width={320}
+            height={140}
+            rx={6}
+            fill={withAlpha(PHYSICS_COLORS.electricPotential, 0.04)}
+            stroke={PHYSICS_COLORS.electricPotential}
+            strokeWidth={1.8}
+            strokeDasharray="6,4"
+          />
+          <text x={420} y={88} fill={PHYSICS_COLORS.electricPotential} fontSize={font(11.5)} fontWeight="bold" textAnchor="middle">
             改装电压表 V (量程 U_m = {(Ig * (Rg + Rs)).toFixed(1)} V)
           </text>
 
+          {/* 改装电表接线柱标示 */}
+          <circle cx={260} cy={135} r={3.5} fill={SCENE_COLORS.circuit.wire} />
+          <text x={260} y={122} fill={PHYSICS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="middle">-</text>
+          <circle cx={580} cy={135} r={3.5} fill={SCENE_COLORS.circuit.wire} />
+          <text x={580} y={122} fill={PHYSICS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="middle">+</text>
+
+          {/* ── 3. 内部串联元件与点对点导线 ── */}
+          <line x1={260} y1={135} x2={326} y2={135} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+          <line x1={374} y1={135} x2={452} y2={135} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+          <line x1={508} y1={135} x2={580} y2={135} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+
           {/* 敏感表头 G */}
-          <g>
-            <DialMeter type="A" value={I_g_meas} max={Ig} x={350} y={145} r={28} font={font} />
-            <circle cx={350} cy={145 + 18.5} r={8} fill={withAlpha(colors.neutral[100], 0.94)} />
-            <text x={350} y={145 + 21.5} fontSize={font(10)} fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold" textAnchor="middle">G</text>
-            <text x={350} y={193} fontSize={font(9)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle">表头 Rg = {Rg}Ω</text>
+          <g transform="translate(350, 135)">
+            <circle cx={0} cy={0} r={24} fill={CANVAS_COLORS.white} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} />
+            <text x={0} y={6.5} fontSize={font(16)} fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
+              G
+            </text>
+            <text x={0} y={38} fontSize={font(9.5)} fill={CANVAS_COLORS.labelText} fontWeight="bold" textAnchor="middle">
+              表头 Rg = {Rg}Ω
+            </text>
+            <text x={0} y={51} fontSize={font(9)} fill={PHYSICS_COLORS.electricCurrent} textAnchor="middle">
+              Ig = {(Ig * 1000).toFixed(0)}mA (当前 {(I_g_meas * 1000).toFixed(2)}mA)
+            </text>
           </g>
 
           {/* 串联分压电阻 Rs */}
-          <g transform="translate(480, 145)">
-            <rect x={-20} y={-10} width={40} height={20} fill={SCENE_COLORS.circuit.resistorFill} stroke={SCENE_COLORS.circuit.resistorStroke} strokeWidth={2} />
-            <text x={0} y={3} fill={CANVAS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="middle">Rs</text>
-            <text x={0} y={22} fontSize={font(9)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle">分压电阻 Rs = {Rs}Ω</text>
+          <g transform="translate(480, 135)">
+            <rect x={-28} y={-12} width={56} height={24} fill={SCENE_COLORS.circuit.resistorFill} stroke={SCENE_COLORS.circuit.resistorStroke} strokeWidth={2} rx={2} />
+            <text x={0} y={3.5} fill={CANVAS_COLORS.labelText} fontSize={font(11)} fontWeight="bold" textAnchor="middle">Rs</text>
+            <text x={0} y={36} fontSize={font(9.5)} fill={CANVAS_COLORS.labelText} fontWeight="bold" textAnchor="middle">
+              分压电阻 Rs = {Rs}Ω
+            </text>
+            <text x={0} y={49} fontSize={font(9)} fill={PHYSICS_COLORS.electricPotential} textAnchor="middle">
+              分压 Us = {(I_g_meas * Rs).toFixed(2)}V
+            </text>
           </g>
 
-          {/* 内部接线 */}
-          <line x1={280} y1={150} x2={310} y2={150} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
-          <line x1={390} y1={150} x2={460} y2={150} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
-          <line x1={500} y1={150} x2={560} y2={150} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
+          {/* ── 4. 高中物理规范电流方向矢量（避让导线） ── */}
+          {I_g_meas > 0.00001 && (
+            <g>
+              <VectorArrow originDesign={{ x: 500, y: 255 }} vector={{ x: 1, y: 0 }} type="currentDirection" arrowType="visual-only" sceneScale={IDENTITY_SCENE_SCALE} pixelLength={22} font={font} />
+              <VectorArrow originDesign={{ x: 660, y: 195 }} vector={{ x: 0, y: -1 }} type="currentDirection" arrowType="visual-only" sceneScale={IDENTITY_SCENE_SCALE} pixelLength={22} font={font} />
+              <VectorArrow originDesign={{ x: 620, y: 135 }} vector={{ x: -1, y: 0 }} type="currentDirection" arrowType="visual-only" sceneScale={IDENTITY_SCENE_SCALE} pixelLength={22} font={font} />
+              <text x={620} y={118} fill={PHYSICS_COLORS.electricCurrent} fontSize={font(9.5)} fontWeight="bold" textAnchor="middle">
+                I = {(I_g_meas * 1000).toFixed(2)} mA
+              </text>
+              <VectorArrow originDesign={{ x: 180, y: 195 }} vector={{ x: 0, y: 1 }} type="currentDirection" arrowType="visual-only" sceneScale={IDENTITY_SCENE_SCALE} pixelLength={22} font={font} />
+            </g>
+          )}
         </g>
       ) : (
         // ==================== 模式2：改装为电流表 ====================
+        // 并联分流原理：I_m = Ig + (Ig * Rg) / Rp
+        // 纵向拉大：顶导线 y=120, 底导线 y=265 (纵向跨度 145px)
+        // 改装大虚线框：x: 260 ~ 580, y: 48 ~ 212
+        // 表头 G 位于 y=95，分流电阻 Rp 位于 y=165，底导线电源位于 y=265
         <g>
-          <rect x={180} y={150} width={480} height={100} fill="none" stroke={PHYSICS_COLORS.grid} strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" />
-          <rect x={180} y={150} width={480} height={100} fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
-          <DCSource type="instrument" x={420} y={250} voltage={U} polarity="right-positive" />
-          {/* P1修复：原文将电压值U误当电流量纲输出；此处计算实际总电流 I = U/(Rg*Rp/(Rg+Rp)) 近似，用已计算 I_g_meas 换算 */}
-          <text x={420} y={292} fill={CANVAS_COLORS.labelTextLight} fontSize={font(10)} textAnchor="middle">
-            调节电压改变干路总电流 I = {(I_g_meas * (1 + Rg / Rp)).toFixed(3)} A
+          {/* ── 1. 外围供电主回路导线：统一 2.5px ── */}
+          <line x1={180} y1={120} x2={180} y2={265} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+          <line x1={660} y1={120} x2={660} y2={265} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+          <line x1={180} y1={265} x2={400} y2={265} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+          <line x1={440} y1={265} x2={660} y2={265} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+
+          {/* 顶导线两端引线 */}
+          <line x1={180} y1={120} x2={260} y2={120} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+          <line x1={580} y1={120} x2={660} y2={120} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+
+          {/* 电源组件：标准直流电源符号 */}
+          <DCSource type="symbol" orientation="horizontal" x={420} y={265} voltage={U} label={`电源 U = ${U.toFixed(1)}V`} polarity="right-positive" />
+          <text x={420} y={298} fill={CANVAS_COLORS.labelTextLight} fontSize={font(9.5)} textAnchor="middle">
+            干路总电流 I = {(I_g_meas * (1 + Rg / Rp)).toFixed(3)} A
           </text>
 
-          {/* 改装电流表虚线外框 */}
-          <rect x={280} y={65} width={280} height={160} rx={8} fill={withAlpha(colors.neutral[50], 0.4)} stroke={PHYSICS_COLORS.electricCurrent} strokeWidth={1.5} strokeDasharray="4,4" filter="url(#box-shadow-ohm)" />
-          <text x={420} y={83} fill={PHYSICS_COLORS.electricCurrent} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
+          {/* ── 2. 改装电流表整体封装（高中物理标准虚线大框） ── */}
+          <rect
+            x={260}
+            y={42}
+            width={320}
+            height={170}
+            rx={6}
+            fill={withAlpha(PHYSICS_COLORS.electricCurrent, 0.04)}
+            stroke={PHYSICS_COLORS.electricCurrent}
+            strokeWidth={1.8}
+            strokeDasharray="6,4"
+          />
+          <text x={420} y={60} fill={PHYSICS_COLORS.electricCurrent} fontSize={font(11.5)} fontWeight="bold" textAnchor="middle">
             改装电流表 A (量程 I_m = {((Ig * Rg) / Rp + Ig).toFixed(3)} A)
           </text>
 
-          {/* 敏感表头 G */}
-          <g>
-            <DialMeter type="A" value={I_g_meas} max={Ig} x={420} y={110} r={26} font={font} />
-            <circle cx={420} cy={110 + 17.5} r={7.5} fill={withAlpha(colors.neutral[100], 0.94)} />
-            <text x={420} y={110 + 20.5} fontSize={font(9)} fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold" textAnchor="middle">G</text>
-            <text x={420} y={150} fontSize={font(9)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle">表头 Rg = {Rg}Ω</text>
+          {/* 改装电表接线柱标示 */}
+          <circle cx={260} cy={120} r={3.5} fill={SCENE_COLORS.circuit.wire} />
+          <text x={260} y={108} fill={PHYSICS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="middle">-</text>
+          <circle cx={580} cy={120} r={3.5} fill={SCENE_COLORS.circuit.wire} />
+          <text x={580} y={108} fill={PHYSICS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="middle">+</text>
+
+          {/* ── 3. 内部并联分流拓扑导线 ── */}
+          {/* 左侧汇流总线：汇流节点(300, 120)连接负接线柱(260, 120) */}
+          <line x1={260} y1={120} x2={300} y2={120} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+          {/* 右侧分流总线：分流节点(540, 120)连接正接线柱(580, 120) */}
+          <line x1={540} y1={120} x2={580} y2={120} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} strokeLinecap="round" />
+
+          {/* 上支路（表头 G，高度 y=105）：
+              分流节点(540, 120)向上折至(540, 105) → 表头右端子(442, 105)
+              表头左端子(398, 105)向左至(300, 105) → 向下折至汇流节点(300, 120) */}
+          <path d="M 540 120 L 540 105 L 442 105" fill="none" stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} />
+          <path d="M 398 105 L 300 105 L 300 120" fill="none" stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} />
+
+          {/* 下支路（分流电阻 Rp，高度 y=160）：
+              分流节点(540, 120)向下折至(540, 160) → 电阻右端子(448, 160)
+              电阻左端子(392, 160)向左至(300, 160) → 向上折至汇流节点(300, 120) */}
+          <path d="M 540 120 L 540 160 L 448 160" fill="none" stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} />
+          <path d="M 392 160 L 300 160 L 300 120" fill="none" stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} />
+
+          {/* 分流/汇流关键节点小圆点 */}
+          <circle cx={300} cy={120} r={3.5} fill={SCENE_COLORS.circuit.wire} />
+          <circle cx={540} cy={120} r={3.5} fill={SCENE_COLORS.circuit.wire} />
+
+          {/* 上支路：敏感表头 G */}
+          <g transform="translate(420, 105)">
+            <circle cx={0} cy={0} r={22} fill={CANVAS_COLORS.white} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} />
+            <text x={0} y={6.5} fontSize={font(16)} fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold" textAnchor="middle" style={{ userSelect: 'none' }}>
+              G
+            </text>
+            <text x={0} y={-27} fontSize={font(9)} fill={CANVAS_COLORS.labelText} fontWeight="bold" textAnchor="middle">
+              表头 Rg = {Rg}Ω (Ig = {(I_g_meas * 1000).toFixed(2)} mA)
+            </text>
           </g>
 
-          {/* 并联分流电阻 Rp */}
-          <g transform="translate(420, 185)">
-            <rect x={-20} y={-10} width={40} height={20} fill={SCENE_COLORS.circuit.resistorFill} stroke={SCENE_COLORS.circuit.resistorStroke} strokeWidth={2} />
-            <text x={0} y={3} fill={CANVAS_COLORS.labelText} fontSize={font(9)} fontWeight="bold" textAnchor="middle">Rp</text>
-            <text x={0} y={22} fontSize={font(9)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle">分流电阻 Rp = {Rp}Ω</text>
+          {/* 下支路：并联分流电阻 Rp */}
+          <g transform="translate(420, 160)">
+            <rect x={-28} y={-11} width={56} height={22} fill={SCENE_COLORS.circuit.resistorFill} stroke={SCENE_COLORS.circuit.resistorStroke} strokeWidth={2} rx={2} />
+            <text x={0} y={3.5} fill={CANVAS_COLORS.labelText} fontSize={font(10.5)} fontWeight="bold" textAnchor="middle">Rp</text>
+            <text x={0} y={23} fontSize={font(9)} fill={CANVAS_COLORS.labelText} fontWeight="bold" textAnchor="middle">
+              分流电阻 Rp = {Rp}Ω
+            </text>
+            <text x={0} y={35} fontSize={font(9)} fill={PHYSICS_COLORS.electricCurrent} textAnchor="middle">
+              Ip = {(I_g_meas * Rg / Rp).toFixed(3)} A
+            </text>
           </g>
 
-          <path d="M 280 150 L 320 150 L 320 110 L 380 110" fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
-          <path d="M 320 150 L 320 185 L 400 185" fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
-          <path d="M 560 150 L 520 150 L 520 110 L 460 110" fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
-          <path d="M 520 150 L 520 185 L 440 185" fill="none" stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
-
-          <circle cx={320} cy={150} r={4} fill={PHYSICS_COLORS.labelText} />
-          <circle cx={520} cy={150} r={4} fill={PHYSICS_COLORS.labelText} />
+          {/* ── 4. 高中物理规范电流方向矢量 ── */}
+          {I_g_meas > 0.00001 && (
+            <g>
+              <VectorArrow originDesign={{ x: 500, y: 265 }} vector={{ x: 1, y: 0 }} type="currentDirection" arrowType="visual-only" sceneScale={IDENTITY_SCENE_SCALE} pixelLength={22} font={font} />
+              <VectorArrow originDesign={{ x: 660, y: 195 }} vector={{ x: 0, y: -1 }} type="currentDirection" arrowType="visual-only" sceneScale={IDENTITY_SCENE_SCALE} pixelLength={22} font={font} />
+              <VectorArrow originDesign={{ x: 620, y: 120 }} vector={{ x: -1, y: 0 }} type="currentDirection" arrowType="visual-only" sceneScale={IDENTITY_SCENE_SCALE} pixelLength={22} font={font} />
+              <text x={620} y={105} fill={PHYSICS_COLORS.electricCurrent} fontSize={font(9.5)} fontWeight="bold" textAnchor="middle">
+                I总 = {(I_g_meas * (1 + Rg / Rp)).toFixed(3)} A
+              </text>
+              <VectorArrow originDesign={{ x: 485, y: 95 }} vector={{ x: -1, y: 0 }} type="currentDirection" arrowType="visual-only" sceneScale={IDENTITY_SCENE_SCALE} pixelLength={18} label="Ig" font={font} />
+              <VectorArrow originDesign={{ x: 485, y: 160 }} vector={{ x: -1, y: 0 }} type="currentDirection" arrowType="visual-only" sceneScale={IDENTITY_SCENE_SCALE} pixelLength={18} label="Ip" font={font} />
+              <VectorArrow originDesign={{ x: 220, y: 120 }} vector={{ x: -1, y: 0 }} type="currentDirection" arrowType="visual-only" sceneScale={IDENTITY_SCENE_SCALE} pixelLength={22} font={font} />
+              <VectorArrow originDesign={{ x: 180, y: 195 }} vector={{ x: 0, y: 1 }} type="currentDirection" arrowType="visual-only" sceneScale={IDENTITY_SCENE_SCALE} pixelLength={22} font={font} />
+            </g>
+          )}
         </g>
       )}
     </AnimationSvgCanvas>

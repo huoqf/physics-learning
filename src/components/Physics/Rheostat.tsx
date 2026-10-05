@@ -103,19 +103,22 @@ export const Rheostat: React.FC<RheostatProps> = ({
           strokeWidth={2 * layout.scale}
         />
         
-        {/* 上方水平滑轨导线 */}
+        {/* 上方水平滑轨导线（与主回路导线完全统一配色与线宽） */}
         <line
-          x1={-30 * layout.scale}
+          x1={-36 * layout.scale}
           y1={sliderY}
-          x2={30 * layout.scale}
+          x2={36 * layout.scale}
           y2={sliderY}
-          stroke={SCENE_COLORS.circuit.resistorStroke}
-          strokeWidth={1.5 * layout.scale}
+          stroke={SCENE_COLORS.circuit.wire}
+          strokeWidth={2.5 * layout.scale}
         />
+        {/* 滑轨两端接线柱端子圆点 */}
+        <circle cx={-36 * layout.scale} cy={sliderY} r={2.2 * layout.scale} fill={SCENE_COLORS.circuit.wire} />
+        <circle cx={36 * layout.scale} cy={sliderY} r={2.2 * layout.scale} fill={SCENE_COLORS.circuit.wire} />
         
-        {/* ── 核心物理连线：限流式 vs 分压式 ── */}
+        {/* ── 核心物理连线：限流式 vs 分压式（高中物理教科书标准画法） ── */}
         {isDivider ? (
-          /* 分压式接法：两下全通，上一引出 */
+          /* 分压式接法：两下端连接电阻框两端，上端滑轨引出 */
           <>
             {/* 左下引线：自外部 (-73, 0) 直通连入电阻框左侧 (-boxW / 2, 0) */}
             <line
@@ -123,75 +126,67 @@ export const Rheostat: React.FC<RheostatProps> = ({
               y1={0}
               x2={-boxW / 2}
               y2={0}
-              stroke={SCENE_COLORS.circuit.resistorStroke}
-              strokeWidth={1.5 * layout.scale}
+              stroke={SCENE_COLORS.circuit.wire}
+              strokeWidth={2.5 * layout.scale}
             />
-            {/* 右下引线：自外部 (73, 0) 直通连入电阻框右侧 (boxW / 2, 0) */}
+            <circle cx={-boxW / 2} cy={0} r={2.2 * layout.scale} fill={SCENE_COLORS.circuit.wire} />
+            {/* 右下引线：自电阻框右侧 (boxW / 2, 0) 直通连至外部 (73, 0) */}
             <line
               x1={boxW / 2}
               y1={0}
               x2={73 * layout.scale}
               y2={0}
-              stroke={SCENE_COLORS.circuit.resistorStroke}
-              strokeWidth={1.5 * layout.scale}
+              stroke={SCENE_COLORS.circuit.wire}
+              strokeWidth={2.5 * layout.scale}
             />
-            {/* 上侧分压输出引线：自滑轨左端引出折弯至外部 (-73, -18) 或向上引出 */}
-            <path
-              d={`M ${-30 * layout.scale} ${sliderY} L ${-65 * layout.scale} ${sliderY} L ${-65 * layout.scale} ${sliderY - 10 * layout.scale}`}
-              fill="none"
-              stroke={SCENE_COLORS.circuit.resistorStroke}
-              strokeWidth={1.5 * layout.scale}
+            <circle cx={boxW / 2} cy={0} r={2.2 * layout.scale} fill={SCENE_COLORS.circuit.wire} />
+            {/* 上侧分压输出引线：滑轨向左平直接出至外部 (-73, sliderY) */}
+            <line
+              x1={-36 * layout.scale}
+              y1={sliderY}
+              x2={-73 * layout.scale}
+              y2={sliderY}
+              stroke={SCENE_COLORS.circuit.wire}
+              strokeWidth={2.5 * layout.scale}
             />
-            <circle cx={-65 * layout.scale} cy={sliderY - 10 * layout.scale} r={2.5 * layout.scale} fill={PHYSICS_COLORS.labelText} />
           </>
         ) : (
-          /* 限流式接法：一上一下 (左滑轨入，右电阻出) */
+          /* 限流式接法：一上一下（自外部水平端子 (-73, 0) 直角正交折弯平顺连入上方滑杆，电阻框左端完全留空，右端平直引出） */
           <>
-            {/* 左侧引线：自外部 (-73, 0) 进入，在外侧折弯向上连接至上方滑轨左端 (-30) */}
+            {/* 左侧输入回路：外部导线平直连至 (-42, 0)，90°垂直向上折入滑杆左端 (-36, sliderY) */}
             <path
-              d={`M ${-73 * layout.scale} 0 L ${-34 * layout.scale} 0 L ${-34 * layout.scale} ${sliderY} L ${-30 * layout.scale} ${sliderY}`}
+              d={`M ${-73 * layout.scale} 0 L ${-42 * layout.scale} 0 L ${-42 * layout.scale} ${sliderY} L ${-36 * layout.scale} ${sliderY}`}
               fill="none"
-              stroke={SCENE_COLORS.circuit.resistorStroke}
-              strokeWidth={1.5 * layout.scale}
+              stroke={SCENE_COLORS.circuit.wire}
+              strokeWidth={2.5 * layout.scale}
+              strokeLinecap="round"
+              strokeLinejoin="round"
             />
-            
-            {/* 右侧引线：自外部 (73, 0) 进入，水平连入电阻框右侧边缘 (boxW/2) */}
+            {/* 右侧输出回路：电阻框右端平直引出至外部端子 (73, 0) */}
             <line
               x1={boxW / 2}
               y1={0}
               x2={73 * layout.scale}
               y2={0}
-              stroke={SCENE_COLORS.circuit.resistorStroke}
-              strokeWidth={1.5 * layout.scale}
+              stroke={SCENE_COLORS.circuit.wire}
+              strokeWidth={2.5 * layout.scale}
             />
-            
-            {/* 悬空未接入的端点：电阻框左端连出一截小虚线，代表此端口未接线 */}
-            <line
-              x1={-boxW / 2}
-              y1={0}
-              x2={-30 * layout.scale}
-              y2={0}
-              stroke={SCENE_COLORS.circuit.resistorStroke}
-              strokeWidth={1.2 * layout.scale}
-              strokeDasharray="2,2"
-              opacity={0.4}
-            />
-            <circle cx={-30 * layout.scale} cy={0} r={1.5 * layout.scale} fill={PHYSICS_COLORS.labelTextLight} opacity={0.6} />
+            <circle cx={boxW / 2} cy={0} r={2.2 * layout.scale} fill={SCENE_COLORS.circuit.wire} />
           </>
         )}
         
-        {/* 指向电阻框的红色触片箭头 */}
+        {/* 指向电阻框的滑动触头箭头（滑片 P） */}
         <g>
-          {/* 垂直引线 */}
+          {/* 触点垂直引线 */}
           <line
             x1={symbolicWiperX}
             y1={sliderY}
             x2={symbolicWiperX}
             y2={contactY}
             stroke={PHYSICS_COLORS.alertRed}
-            strokeWidth={1.5 * layout.scale}
+            strokeWidth={1.8 * layout.scale}
           />
-          {/* 指向电阻的箭头 */}
+          {/* 指向电阻框的箭头 */}
           <polygon
             points={`
               ${symbolicWiperX},${contactY}
@@ -202,10 +197,18 @@ export const Rheostat: React.FC<RheostatProps> = ({
           />
         </g>
         
-        {/* 实心接线圆点，对应原理图接入位置 */}
-        <circle cx={-73 * layout.scale} cy={0} r={2.5 * layout.scale} fill={PHYSICS_COLORS.labelText} />
-        <circle cx={73 * layout.scale} cy={0} r={2.5 * layout.scale} fill={PHYSICS_COLORS.labelText} />
-        {!isDivider && <circle cx={-34 * layout.scale} cy={0} r={2.2 * layout.scale} fill={PHYSICS_COLORS.labelText} />}
+        {/* 滑片触头符号标注 P */}
+        <text
+          x={symbolicWiperX}
+          y={sliderY - 6 * layout.scale}
+          fill={PHYSICS_COLORS.alertRed}
+          fontSize={font(9)}
+          fontWeight="bold"
+          textAnchor="middle"
+          style={{ userSelect: 'none' }}
+        >
+          P
+        </text>
 
         {/* 可选阻值文本标签 */}
         {showLabel && (

@@ -37,173 +37,244 @@ export default function Multimeter() {
         </filter>
       </defs>
 
-      {/* ==================== 1. 内部等效电路 (矩形框) ==================== */}
+      {/* ==================== 1. 内部等效电路 (欧姆表外壳) ==================== */}
       <g>
         {/* 欧姆表内部虚线框（代表表壳） */}
         <rect
-          x={140}
-          y={110}
-          width={400}
-          height={150}
+          x={110}
+          y={80}
+          width={420}
+          height={185}
           rx={12}
-          fill={withAlpha(colors.neutral[50], 0.25)}
-          stroke={PHYSICS_COLORS.axis}
-          strokeWidth={2}
+          fill={withAlpha(colors.neutral[50], 0.35)}
+          stroke={SCENE_COLORS.circuit.wire}
+          strokeWidth={1.8}
           strokeDasharray="6,4"
         />
         
-        {/* 电路线框 (内部导线) */}
-        {/* 左路：电池上下连线 */}
-        <line x1={180} y1={110} x2={180} y2={155} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
-        <line x1={180} y1={205} x2={180} y2={250} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
-        {/* 底路：连线至调零电阻 */}
-        <line x1={180} y1={250} x2={320} y2={250} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
-        <line x1={360} y1={250} x2={500} y2={250} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
-        {/* 右路：连线至表头 */}
-        <line x1={500} y1={250} x2={500} y2={212} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
-        <line x1={500} y1={148} x2={500} y2={110} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
-
-        <text x={340} y={135} fill={PHYSICS_COLORS.labelText} fontSize={font(12)} fontWeight="bold" textAnchor="middle">
+        {/* 表头标题 */}
+        <text x={320} y={105} fill={CANVAS_COLORS.labelText} fontSize={font(12)} fontWeight="bold" textAnchor="middle">
           欧姆表内部等效电路 (挡位: ×{multiplier})
         </text>
 
-        {/* A. 内部干电池 (1.5V) */}
-        <g transform="translate(180, 180)">
-          {/* 正极：长细线 */}
-          <line x1={-15} y1={-12} x2={15} y2={-12} stroke={SCENE_COLORS.circuit.batteryPos} strokeWidth={2.5} />
-          {/* 负极：短粗线 */}
-          <line x1={-8} y1={12} x2={8} y2={12} stroke={CANVAS_COLORS.labelText} strokeWidth={4} />
-          {/* 内部连接线 */}
-          <line x1={0} y1={-25} x2={0} y2={-12} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
-          <line x1={0} y1={12} x2={0} y2={25} stroke={PHYSICS_COLORS.trackHistory} strokeWidth={3} />
+        {/* 内部主回路导线 (2.5px 标准墨线) */}
+        {/* 左路：负插孔 -> 电池正极 (160, 80) -> (160, 145) */}
+        <line x1={160} y1={80} x2={160} y2={145} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} />
+        {/* 左路：电池负极 -> 左下角 (160, 195) -> (160, 240) */}
+        <line x1={160} y1={195} x2={160} y2={240} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} />
+        {/* 底路：左下角 -> 调零电阻 -> 右下角 */}
+        <line x1={160} y1={240} x2={285} y2={240} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} />
+        <line x1={335} y1={240} x2={470} y2={240} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} />
+        {/* 右路：右下角 -> 表头底端 (470, 240) -> (470, 205) */}
+        <line x1={470} y1={240} x2={470} y2={205} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} />
+        {/* 右路：表头顶端 -> 正插孔 (470, 135) -> (470, 80) */}
+        <line x1={470} y1={135} x2={470} y2={80} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} />
+
+        {/* A. 内部干电池 (1.5V)：正极朝上连负插孔(高考核心考点！) */}
+        <g transform="translate(160, 170)">
+          {/* 正极：长细红线 (上) */}
+          <line x1={-16} y1={-12} x2={16} y2={-12} stroke={SCENE_COLORS.circuit.batteryPos} strokeWidth={2.5} />
+          <text x={20} y={-10} fill={SCENE_COLORS.circuit.batteryPos} fontSize={font(10)} fontWeight="bold">+</text>
+          {/* 负极：短粗黑线 (下) */}
+          <line x1={-9} y1={12} x2={9} y2={12} stroke={CANVAS_COLORS.labelText} strokeWidth={4.5} />
+          <text x={16} y={15} fill={CANVAS_COLORS.labelText} fontSize={font(10)} fontWeight="bold">-</text>
+          {/* 内部极板连接柱 */}
+          <line x1={0} y1={-25} x2={0} y2={-12} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} />
+          <line x1={0} y1={12} x2={0} y2={25} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} />
           
-          <text x={24} y={-2} fill={CANVAS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="start">
+          <text x={-24} y={-2} fill={CANVAS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="end">
             E = 1.5V
           </text>
-          <text x={24} y={10} fill={CANVAS_COLORS.labelTextLight} fontSize={font(9)} textAnchor="start">
-            r = 1Ω
+          <text x={-24} y={12} fill={CANVAS_COLORS.labelTextLight} fontSize={font(9)} textAnchor="end">
+            r = 1.0Ω
           </text>
         </g>
 
         {/* B. 调零可变电阻 R_adjust */}
-        <g transform="translate(340, 250)">
-          <rect x={-20} y={-10} width={40} height={20} fill={SCENE_COLORS.circuit.resistorFill} stroke={SCENE_COLORS.circuit.resistorStroke} strokeWidth={2} />
-          <line x1={-15} y1={12} x2={15} y2={-12} stroke={PHYSICS_COLORS.labelText} strokeWidth={2} />
-          <path d="M 10 -12 L 15 -12 L 15 -7" fill="none" stroke={PHYSICS_COLORS.labelText} strokeWidth={1.5} />
-          <text x={0} y={-22} fill={CANVAS_COLORS.labelText} fontSize={font(10)} textAnchor="middle" fontWeight="bold">
+        <g transform="translate(310, 240)">
+          <rect x={-25} y={-10} width={50} height={20} fill={SCENE_COLORS.circuit.resistorFill} stroke={SCENE_COLORS.circuit.resistorStroke} strokeWidth={2} />
+          {/* 调节箭头斜穿 */}
+          <line x1={-18} y1={14} x2={18} y2={-14} stroke={PHYSICS_COLORS.alertRed} strokeWidth={1.8} />
+          <polygon
+            points="18,-14 12,-16 15,-10"
+            fill={PHYSICS_COLORS.alertRed}
+          />
+          <text x={0} y={-16} fill={CANVAS_COLORS.labelText} fontSize={font(10)} textAnchor="middle" fontWeight="bold">
             调零电阻 R_Ω
           </text>
-          <text x={0} y={-11} fill={PHYSICS_COLORS.resistance} fontSize={font(9)} textAnchor="middle">
+          <text x={0} y={24} fill={PHYSICS_COLORS.resistance} fontSize={font(10)} textAnchor="middle" fontWeight="bold">
             {R_adjust.toFixed(0)} Ω
           </text>
         </g>
 
-        {/* C. 敏感表头 G */}
+        {/* C. 灵敏电流表头 G */}
         <g>
-          <DialMeter type="A" value={res.I} max={Ig} x={500} y={180} r={32} font={font} />
-          <circle cx={500} cy={180 + 21} r={9} fill={withAlpha(colors.neutral[100], 0.94)} />
-          <text x={500} y={180 + 24} fontSize={font(11)} fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold" textAnchor="middle">
+          <DialMeter type="A" value={res.I} max={Ig} x={470} y={170} r={32} font={font} />
+          <circle cx={470} cy={170 + 21} r={9} fill={withAlpha(colors.neutral[100], 0.94)} />
+          <text x={470} y={170 + 24} fontSize={font(11)} fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold" textAnchor="middle">
             G
           </text>
-          <text x={500} y={230} fontSize={font(9)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
+          <text x={470} y={218} fontSize={font(9)} fill={CANVAS_COLORS.labelTextLight} textAnchor="middle" fontWeight="bold">
             Rg = 100Ω
           </text>
         </g>
 
-        {/* D. 接线插孔 */}
-        {/* 黑表笔插孔 (+) */}
+        {/* D. 接线插孔（高考核心规范：红正黑负，内部电源正极接负插孔） */}
+        {/* 左侧：负插孔 (-) 黑色，接黑表笔 */}
         <g>
-          <circle cx={180} cy={110} r={7} fill={colors.neutral[800]} stroke={colors.neutral[400]} strokeWidth={1.5} />
-          <circle cx={180} cy={110} r={2} fill={colors.neutral[900]} />
-          <text x={180} y={97} fill={CANVAS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="middle">
-            + 插孔
+          <circle cx={160} cy={80} r={7} fill={CANVAS_COLORS.labelText} stroke={colors.neutral[400]} strokeWidth={1.5} />
+          <circle cx={160} cy={80} r={2.5} fill={CANVAS_COLORS.white} />
+          {/* 文字放置在插孔正下方内部，彻底避开上方引线 */}
+          <text x={160} y={100} fill={CANVAS_COLORS.labelText} fontSize={font(10.5)} fontWeight="bold" textAnchor="middle">
+            － 插孔 (黑)
+          </text>
+          <text x={160} y={114} fill={colors.neutral[500]} fontSize={font(8.5)} textAnchor="middle">
+            内接电源正极
           </text>
         </g>
-        {/* 红表笔插孔 (-) */}
+        {/* 右侧：正插孔 (+) 红色，接红表笔 */}
         <g>
-          <circle cx={500} cy={110} r={7} fill={ELECTRICAL_APPARATUS_COLORS.probeRed} stroke={withAlpha(ELECTRICAL_APPARATUS_COLORS.probeRed, 0.2)} strokeWidth={1.5} />
-          <circle cx={500} cy={110} r={2} fill={colors.neutral[900]} />
-          <text x={500} y={97} fill={ELECTRICAL_APPARATUS_COLORS.probeRed} fontSize={font(10)} fontWeight="bold" textAnchor="middle">
-            - 插孔
+          <circle cx={470} cy={80} r={7} fill={PHYSICS_COLORS.alertRed} stroke={colors.neutral[400]} strokeWidth={1.5} />
+          <circle cx={470} cy={80} r={2.5} fill={CANVAS_COLORS.white} />
+          {/* 文字放置在插孔正下方内部，彻底避开上方引线 */}
+          <text x={470} y={100} fill={PHYSICS_COLORS.alertRed} fontSize={font(10.5)} fontWeight="bold" textAnchor="middle">
+            ＋ 插孔 (红)
+          </text>
+          <text x={470} y={114} fill={colors.neutral[500]} fontSize={font(8.5)} textAnchor="middle">
+            内接表头正端
           </text>
         </g>
       </g>
 
-      {/* ==================== 2. 外部表笔与连线 ==================== */}
-      {/* 黑表笔引线 (黑导线，从左侧插孔引出绕行到右侧黑表笔) */}
+      {/* ==================== 2. 外部表笔与外电路 (彻底杜绝穿心) ==================== */}
+      {/* 黑表笔高空导线：从负插孔 (160, 80) -> 上升至 y=40 -> 水平拉伸至右侧 -> 下折进黑表笔 */}
       {opMode === 0 ? (
-        <path d="M 180 110 L 180 75 L 600 75 L 600 150" fill="none" stroke={ELECTRICAL_APPARATUS_COLORS.probeBlack} strokeWidth={2.5} />
-      ) : (
-        <path d="M 180 110 L 180 75 L 680 75 L 680 120" fill="none" stroke={ELECTRICAL_APPARATUS_COLORS.probeBlack} strokeWidth={2.5} />
-      )}
+        /* 短接模式：黑表笔从上向下，红表笔从下向上相抵在 (660, 170) */
+        <>
+          {/* 黑表笔外引线 (黑色) */}
+          <path
+            d="M 160 80 L 160 38 L 660 38 L 660 100"
+            fill="none"
+            stroke={ELECTRICAL_APPARATUS_COLORS.probeBlack}
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* 红表笔外引线 (红色) */}
+          <path
+            d="M 470 80 L 470 290 L 660 290 L 660 235"
+            fill="none"
+            stroke={ELECTRICAL_APPARATUS_COLORS.probeRed}
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
 
-      {/* 红表笔引线 (红导线，从右侧插孔引出绕行到右侧红表笔) */}
-      {opMode === 0 ? (
-        <path d="M 500 110 L 560 110 L 560 230 L 600 230" fill="none" stroke={ELECTRICAL_APPARATUS_COLORS.probeRed} strokeWidth={2.5} />
-      ) : (
-        <path d="M 500 110 L 560 110 L 560 240 L 600 240" fill="none" stroke={ELECTRICAL_APPARATUS_COLORS.probeRed} strokeWidth={2.5} />
-      )}
-
-      {/* 红表笔护套 */}
-      {opMode === 0 ? (
-        <g transform="translate(600, 210)">
-          <rect x={-6} y={-20} width={12} height={40} fill={ELECTRICAL_APPARATUS_COLORS.probeRed} rx={2} />
-          <line x1={0} y1={-20} x2={0} y2={-32} stroke={ELECTRICAL_APPARATUS_COLORS.terminalCore} strokeWidth={2.5} />
-          <text x={18} y={4} fill={ELECTRICAL_APPARATUS_COLORS.probeRed} fontSize={font(10)} fontWeight="bold">红表笔 (-)</text>
-        </g>
-      ) : (
-        <g transform="translate(600, 220)">
-          <rect x={-6} y={-20} width={12} height={40} fill={ELECTRICAL_APPARATUS_COLORS.probeRed} rx={2} />
-          <line x1={0} y1={-20} x2={0} y2={-40} stroke={ELECTRICAL_APPARATUS_COLORS.terminalCore} strokeWidth={2.5} />
-          <text x={18} y={4} fill={ELECTRICAL_APPARATUS_COLORS.probeRed} fontSize={font(10)} fontWeight="bold">红表笔 (-)</text>
-        </g>
-      )}
-
-      {/* 黑表笔护套 */}
-      {opMode === 0 ? (
-        <g transform="translate(600, 170)">
-          <rect x={-6} y={-20} width={12} height={40} fill={ELECTRICAL_APPARATUS_COLORS.probeBlack} rx={2} />
-          <line x1={0} y1={20} x2={0} y2={32} stroke={ELECTRICAL_APPARATUS_COLORS.terminalCore} strokeWidth={2.5} />
-          <text x={18} y={0} fill={CANVAS_COLORS.labelText} fontSize={font(10)} fontWeight="bold">黑表笔 (+)</text>
-        </g>
-      ) : (
-        <g transform="translate(680, 140)">
-          <rect x={-6} y={-20} width={12} height={40} fill={ELECTRICAL_APPARATUS_COLORS.probeBlack} rx={2} />
-          <line x1={0} y1={20} x2={0} y2={40} stroke={ELECTRICAL_APPARATUS_COLORS.terminalCore} strokeWidth={2.5} />
-          <text x={18} y={0} fill={CANVAS_COLORS.labelText} fontSize={font(10)} fontWeight="bold">黑表笔 (+)</text>
-        </g>
-      )}
-
-      {/* ==================== 3. 外部状态或待测电阻 ==================== */}
-      {opMode === 0 ? (
-        <g>
-          <circle cx={600} cy={190} r={4} fill={PHYSICS_COLORS.referencePoint} filter="url(#glow-zero)" />
-          <text x={600} y={135} fill={colors.success[600]} fontSize={font(11)} fontWeight="bold" textAnchor="middle">
-            表笔已短接
-          </text>
-          {res.isZeroed ? (
-            <text x={600} y={118} fill={colors.success[600]} fontSize={font(11)} fontWeight="bold" textAnchor="middle" filter="url(#glow-zero)">
-              欧姆调零成功！
-            </text>
-          ) : (
-            <text x={600} y={118} fill={colors.warning[500]} fontSize={font(10)} fontWeight="bold" textAnchor="middle">
-              请调节左侧电阻以调零
-            </text>
-          )}
-        </g>
-      ) : (
-        <g>
-          {/* Rx 外部连接线 */}
-          <path d="M 600 180 L 620 180" fill="none" stroke={ELECTRICAL_APPARATUS_COLORS.probeRed} strokeWidth={2} />
-          <path d="M 680 180 L 660 180" fill="none" stroke={ELECTRICAL_APPARATUS_COLORS.probeBlack} strokeWidth={2} />
-          <g transform="translate(640, 180)">
-            <rect x={-20} y={-10} width={40} height={20} fill={PHYSICS_COLORS.power} stroke={SCENE_COLORS.circuit.resistorStroke} strokeWidth={1.5} />
-            <text x={0} y={3} fill={CANVAS_COLORS.white} fontSize={font(9)} fontWeight="bold" textAnchor="middle">Rx</text>
-            <text x={0} y={23} fill={CANVAS_COLORS.labelTextLight} fontSize={font(9)} textAnchor="middle">
-              Rx = {Rx}Ω
+          {/* 上方黑表笔 */}
+          <g transform="translate(660, 120)">
+            <rect x={-6} y={-20} width={12} height={38} fill={ELECTRICAL_APPARATUS_COLORS.probeBlack} rx={2} />
+            <line x1={0} y1={18} x2={0} y2={45} stroke={ELECTRICAL_APPARATUS_COLORS.terminalCore} strokeWidth={2.5} />
+            <text x={-14} y={-4} fill={CANVAS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="end">
+              黑表笔 (－)
             </text>
           </g>
-        </g>
+
+          {/* 下方红表笔 */}
+          <g transform="translate(660, 215)">
+            <rect x={-6} y={-18} width={12} height={38} fill={ELECTRICAL_APPARATUS_COLORS.probeRed} rx={2} />
+            <line x1={0} y1={-18} x2={0} y2={-45} stroke={ELECTRICAL_APPARATUS_COLORS.terminalCore} strokeWidth={2.5} />
+            <text x={-14} y={10} fill={ELECTRICAL_APPARATUS_COLORS.probeRed} fontSize={font(10)} fontWeight="bold" textAnchor="end">
+              红表笔 (＋)
+            </text>
+          </g>
+
+          {/* 表笔金黄色接触点 */}
+          <circle cx={660} cy={168} r={4.5} fill={PHYSICS_COLORS.referencePoint} filter="url(#glow-zero)" />
+
+          {/* 状态与教学提示独立区域（彻底避开任何导线） */}
+          <g transform="translate(710, 145)">
+            <rect
+              x={0}
+              y={-15}
+              width={115}
+              height={55}
+              rx={6}
+              fill={res.isZeroed ? withAlpha(colors.success[50], 0.9) : withAlpha(colors.warning[50], 0.9)}
+              stroke={res.isZeroed ? colors.success[400] : colors.warning[400]}
+              strokeWidth={1.5}
+            />
+            <text x={57.5} y={5} fill={colors.neutral[800]} fontSize={font(10.5)} fontWeight="bold" textAnchor="middle">
+              表笔已短接
+            </text>
+            {res.isZeroed ? (
+              <text x={57.5} y={25} fill={colors.success[600]} fontSize={font(10.5)} fontWeight="bold" textAnchor="middle">
+                ✓ 欧姆调零成功
+              </text>
+            ) : (
+              <text x={57.5} y={25} fill={colors.warning[600]} fontSize={font(10)} fontWeight="bold" textAnchor="middle">
+                未满偏，请调R_Ω
+              </text>
+            )}
+          </g>
+        </>
+      ) : (
+        /* 测量模式：黑表笔抵在 Rx 左端，红表笔抵在 Rx 右端，整体右移拉开呼吸感 */
+        <>
+          {/* 黑表笔外引线 (黑色) */}
+          <path
+            d="M 160 80 L 160 38 L 610 38 L 610 120"
+            fill="none"
+            stroke={ELECTRICAL_APPARATUS_COLORS.probeBlack}
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* 红表笔外引线 (红色) */}
+          <path
+            d="M 470 80 L 470 290 L 760 290 L 760 215"
+            fill="none"
+            stroke={ELECTRICAL_APPARATUS_COLORS.probeRed}
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
+          {/* 左侧黑表笔 (探头向右下) */}
+          <g transform="translate(610, 140)">
+            <rect x={-6} y={-20} width={12} height={38} fill={ELECTRICAL_APPARATUS_COLORS.probeBlack} rx={2} />
+            {/* 金属针弯向 Rx 左端 */}
+            <path d="M 0 18 L 0 30 L 40 30" fill="none" stroke={ELECTRICAL_APPARATUS_COLORS.terminalCore} strokeWidth={2.5} />
+            <text x={-14} y={0} fill={CANVAS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="end">
+              黑表笔 (－)
+            </text>
+          </g>
+
+          {/* 右侧红表笔 (探头向左上) */}
+          <g transform="translate(760, 195)">
+            <rect x={-6} y={-18} width={12} height={38} fill={ELECTRICAL_APPARATUS_COLORS.probeRed} rx={2} />
+            {/* 金属针弯向 Rx 右端 */}
+            <path d="M 0 -18 L 0 -25 L -40 -25" fill="none" stroke={ELECTRICAL_APPARATUS_COLORS.terminalCore} strokeWidth={2.5} />
+            <text x={14} y={5} fill={ELECTRICAL_APPARATUS_COLORS.probeRed} fontSize={font(10)} fontWeight="bold" textAnchor="start">
+              红表笔 (＋)
+            </text>
+          </g>
+
+          {/* 中间待测电阻 Rx */}
+          <g transform="translate(685, 170)">
+            {/* 端子小圆点 */}
+            <circle cx={-32} cy={0} r={2.5} fill={SCENE_COLORS.circuit.wire} />
+            <circle cx={32} cy={0} r={2.5} fill={SCENE_COLORS.circuit.wire} />
+            <line x1={-32} y1={0} x2={-22} y2={0} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} />
+            <line x1={22} y1={0} x2={32} y2={0} stroke={SCENE_COLORS.circuit.wire} strokeWidth={2.5} />
+            <rect x={-22} y={-10} width={44} height={20} fill={SCENE_COLORS.circuit.resistorFill} stroke={SCENE_COLORS.circuit.resistorStroke} strokeWidth={2} />
+            <text x={0} y={4} fill={CANVAS_COLORS.labelText} fontSize={font(10)} fontWeight="bold" textAnchor="middle">
+              Rx
+            </text>
+            <text x={0} y={26} fill={PHYSICS_COLORS.resistance} fontSize={font(10.5)} fontWeight="bold" textAnchor="middle">
+              Rx = {Rx} Ω
+            </text>
+          </g>
+        </>
       )}
     </AnimationSvgCanvas>
   )

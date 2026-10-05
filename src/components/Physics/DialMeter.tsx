@@ -21,8 +21,10 @@ export interface DialMeterProps {
   font?: (base: number) => number
   /** 外观模式：'realistic' (拟物表盘带指针, 默认) | 'symbolic' (电路原理图图例符号) */
   variant?: 'realistic' | 'symbolic'
-  /** 是否在下方显示读数文本标签（symbolic 模式下默认 true） */
+  /** 是否显示读数文本标签（默认 true） */
   showLabel?: boolean
+  /** 读数文本标签位置：'bottom' (默认下方) | 'top' (表盘上方) | 'right' (表盘右侧) | 'left' (表盘左侧) | 'none' (不显示) */
+  labelPosition?: 'top' | 'bottom' | 'right' | 'left' | 'none'
 }
 
 /**
@@ -40,6 +42,7 @@ export const DialMeter: React.FC<DialMeterProps> = ({
   font = (n: number) => n,
   variant = 'realistic',
   showLabel = true,
+  labelPosition = 'bottom',
 }) => {
   const uniqueId = useUniqueSvgId()
   const ringGradId = `dial-ring-${type}-${uniqueId}`
@@ -54,15 +57,23 @@ export const DialMeter: React.FC<DialMeterProps> = ({
   // 1. 标准原理图符号模式 (高中物理教科书纯净符号)
   if (variant === 'symbolic') {
     const unit = isVoltage ? 'V' : 'A'
+    const shouldShow = showLabel && labelPosition !== 'none'
+    const isTop = labelPosition === 'top'
+    const isRight = labelPosition === 'right'
+    const isLeft = labelPosition === 'left'
+
+    const labelX = isRight ? r + 32 : isLeft ? -(r + 32) : 0
+    const labelY = isTop ? -(r + 14) : (isRight || isLeft) ? 4 : r + 16
+
     return (
       <g transform={`translate(${x}, ${y})`}>
-        {/* 表头标准外圈（白底、正圆、清晰边框） */}
+        {/* 表头标准外圈（白底、正圆、统一 2.5px 纯净原理图导线描边） */}
         <circle
           cx={0}
           cy={0}
           r={r}
           fill={CANVAS_COLORS.white}
-          stroke={isVoltage ? PHYSICS_COLORS.velocity : SCENE_COLORS.circuit.resistorStroke}
+          stroke={SCENE_COLORS.circuit.wire}
           strokeWidth={2.5}
         />
         {/* 仪表类型大写字母 "A" 或 "V" */}
@@ -78,19 +89,29 @@ export const DialMeter: React.FC<DialMeterProps> = ({
           {type}
         </text>
 
-        {/* 读数标签 */}
-        {showLabel && (
-          <text
-            x={0}
-            y={r + 16}
-            fontSize={font(11)}
-            fill={themeColor}
-            fontWeight="bold"
-            textAnchor="middle"
-            style={{ userSelect: 'none' }}
-          >
-            {value.toFixed(2)} {unit}
-          </text>
+        {/* 读数标签（支持置于上方、下方或右侧） */}
+        {shouldShow && (
+          <g>
+            <rect
+              x={labelX - 34}
+              y={labelY - 11}
+              width={68}
+              height={15}
+              rx={3}
+              fill={withAlpha(CANVAS_COLORS.white, 0.9)}
+            />
+            <text
+              x={labelX}
+              y={labelY}
+              fontSize={font(11)}
+              fill={themeColor}
+              fontWeight="bold"
+              textAnchor="middle"
+              style={{ userSelect: 'none' }}
+            >
+              {value.toFixed(2)} {unit}
+            </text>
+          </g>
         )}
       </g>
     )

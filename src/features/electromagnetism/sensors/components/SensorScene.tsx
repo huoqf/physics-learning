@@ -3,11 +3,13 @@ import type { ViewportInfo } from '@/utils/useViewport'
 import type { SceneScale } from '@/scene'
 import {
   DCSource,
-  Rheostat,
   LightBulb,
   MagneticFieldGrid,
   PhysicsVectorArrow,
+  VectorArrow,
 } from '@/components/Physics'
+import { IDENTITY_SCENE_SCALE } from '@/scene'
+import { colors } from '@/theme/colors'
 import {
   PHYSICS_COLORS,
   SCENE_COLORS,
@@ -176,7 +178,7 @@ export function SensorScene({
         </g>
       )}
 
-      {/* ── 右半区：宏观自动控制电路 ─────────────────────────────── */}
+      {/* ── 右半区：宏观自动控制电路（电磁继电器弱电控制强电） ─────────────────────────────── */}
       <rect
         x={370}
         y={20}
@@ -194,86 +196,222 @@ export function SensorScene({
         fontWeight={700}
         fill={CANVAS_COLORS.labelText}
       >
-        【自动控制应用电路】电磁继电器 / 阈值触发
+        【自动控制应用电路】电磁继电器 / 弱电控制强电
       </text>
 
-      {/* 控制电源 DCSource */}
+      {/* ── 1. 低压控制回路（DC 5V 控制侧） ── */}
+      {/* 控制电源 DCSource（标准原理图长正短负符号，水平导线放置） */}
       <DCSource
-        type="instrument"
-        x={450}
-        y={225}
+        type="symbol"
+        orientation="horizontal"
+        x={440}
+        y={235}
         voltage={5}
         polarity="right-positive"
+        label="E₁ = 5V"
       />
 
-      {/* 控制回路导线：instrument 模式接线柱在 ±22px 处，terminalY=+22px
-          电源 x=450, y=225 → 负极(428,247)、正极(472,247) */}
+      {/* 控制回路导线走线（端子级闭合回路） */}
       {(() => {
-        // instrument 模式（默认 width=height=80）接线柱绝对坐标
-        const negX = 450 - 22  // = 428
-        const posX = 450 + 22  // = 472
-        const termY = 225 + 22 // = 247
+        const wireY = 235
+        const negX = 440 - 25
+        const posX = 440 + 25
         return (
-          <g stroke={CANVAS_COLORS.trackHistory} strokeWidth={2.5} fill="none">
-            <path d={`M ${negX} ${termY} L 400 ${termY} L 400 90 L 520 90`} />
-            <path d="M 520 90 L 520 120" />
-            <path d={`M 520 180 L 520 ${termY} L ${posX} ${termY}`} />
-            <path d="M 520 150 L 610 150" />
+          <g stroke={CANVAS_COLORS.trackHistory} strokeWidth={2.4} fill="none" strokeLinecap="round" strokeLinejoin="round">
+            {/* 负极 -> 左下拐角(395,235) -> 左侧直上至变阻器左端(395,85) */}
+            <path d={`M ${negX} ${wireY} L 395 ${wireY} L 395 85 L 430 85`} />
+            {/* 变阻器右端(470,85) -> 传感器左端(485,85) */}
+            <path d="M 470 85 L 485 85" />
+            {/* 传感器右端(535,85) -> 拐角(550,85) -> 电磁铁上线圈端子(550,130) */}
+            <path d="M 535 85 L 550 85 L 550 130" />
+            {/* 电磁铁下线圈端子(550,180) -> 拐角(550,235) -> 正极(465,235) */}
+            <path d={`M 550 180 L 550 ${wireY} L ${posX} ${wireY}`} />
           </g>
         )
       })()}
 
-      {/* 分压变阻器 Rheostat 与传感器符号 */}
-      <Rheostat x={490} y={85} value={5} min={1} max={10} font={font} />
-      <rect x={495} y={135} width={50} height={30} fill={CANVAS_COLORS.objectFillNeutral} stroke={SCENE_COLORS.materials.structStrokeMid} strokeWidth={1.5} rx={2} />
-      <text x={520} y={154} textAnchor="middle" fontSize={font(10)} fill={CANVAS_COLORS.strokeDark} fontWeight={600}>
-        传感器
+      {/* 可调分压/限流变阻器 R0 */}
+      <g transform="translate(450, 85)">
+        <rect x={-20} y={-10} width={40} height={20} fill={SCENE_COLORS.circuit.resistorFill} stroke={SCENE_COLORS.circuit.resistorStroke} strokeWidth={1.8} rx={2} />
+        <line x1={-15} y1={12} x2={15} y2={-12} stroke={PHYSICS_COLORS.labelText} strokeWidth={1.5} />
+        <path d="M 11 -12 L 15 -12 L 15 -8" fill="none" stroke={PHYSICS_COLORS.labelText} strokeWidth={1.2} />
+        <text x={0} y={-14} textAnchor="middle" fontSize={font(9.5)} fill={CANVAS_COLORS.labelText} fontWeight={600}>
+          变阻器 R₀
+        </text>
+      </g>
+
+      {/* 传感器符号元件 */}
+      <g transform="translate(510, 85)">
+        <rect x={-25} y={-12} width={50} height={24} fill={CANVAS_COLORS.objectFillNeutral} stroke={PHYSICS_COLORS.emf} strokeWidth={1.8} rx={2} />
+        <text x={0} y={4} textAnchor="middle" fontSize={font(10)} fill={PHYSICS_COLORS.emf} fontWeight={700}>
+          {sensorType === 0 ? '光敏 RG' : sensorType === 1 ? '热敏 RT' : '霍尔 UH'}
+        </text>
+        <text x={0} y={-16} textAnchor="middle" fontSize={font(9)} fill={CANVAS_COLORS.labelTextLight}>
+          传感器
+        </text>
+      </g>
+
+      {/* 控制回路电流方向指示（箭头居中在导线，文字在左侧净空区） */}
+      {vOut > 0.1 && (
+        <g fill={PHYSICS_COLORS.electricCurrent}>
+          <polygon points="395,165 391,155 399,155" />
+          <text x={382} y={162} fontSize={font(9.5)} fill={PHYSICS_COLORS.electricCurrent} fontWeight="bold" textAnchor="end">
+            I控
+          </text>
+        </g>
+      )}
+
+      {/* ── 2. 电磁继电器整体机构（标准虚线隔离框） ── */}
+      <rect
+        x={535}
+        y={105}
+        width={105}
+        height={105}
+        rx={6}
+        fill={withAlpha(colors.neutral[100], 0.35)}
+        stroke={PHYSICS_COLORS.axis}
+        strokeWidth={1.5}
+        strokeDasharray="4,4"
+      />
+      <text x={587} y={120} textAnchor="middle" fontSize={font(10)} fill={PHYSICS_COLORS.axis} fontWeight="bold">
+        电磁继电器 J
       </text>
 
-      {/* 电磁继电器 / 触点开关 */}
-      <g transform="translate(640, 150)">
-        <rect x={-25} y={-25} width={50} height={50} fill={SCENE_COLORS.materials.structBgLight} stroke={CANVAS_COLORS.textMuted} strokeWidth={1.5} rx={3} />
-        <text x={0} y={-30} textAnchor="middle" fontSize={font(10)} fill={CANVAS_COLORS.textMuted}>
-          继电器
-        </text>
-        {/* 动触点吸合状态 */}
-        <circle cx={-12} cy={0} r={3} fill={SCENE_COLORS.materials.structStrokeMid} />
-        <circle cx={12} cy={0} r={3} fill={SCENE_COLORS.materials.structStrokeMid} />
-        {isTriggered ? (
-          <line x1={-12} y1={0} x2={12} y2={0} stroke={SCENE_COLORS.circuit.switchClosed} strokeWidth={3} />
-        ) : (
-          <line x1={-12} y1={0} x2={8} y2={-15} stroke={SCENE_COLORS.circuit.switchOpen} strokeWidth={3} />
+      {/* 电磁铁铁芯与线圈绕组 */}
+      <g transform="translate(550, 155)">
+        {/* 铁芯（软铁） */}
+        <rect x={-8} y={-22} width={16} height={44} fill={colors.neutral[400]} stroke={colors.neutral[700]} strokeWidth={1.5} rx={2} />
+        {/* 线圈立体绕组 */}
+        {[-14, -7, 0, 7, 14].map((offsetY, idx) => (
+          <ellipse
+            key={idx}
+            cx={0}
+            cy={offsetY}
+            rx={11}
+            ry={3.5}
+            fill="none"
+            stroke={PHYSICS_COLORS.magnetSouth}
+            strokeWidth={2}
+          />
+        ))}
+        {/* 电磁吸力发光效果 */}
+        {isTriggered && (
+          <rect
+            x={-10}
+            y={-24}
+            width={20}
+            height={48}
+            fill="none"
+            stroke={CANVAS_COLORS.alertRed}
+            strokeWidth={1.5}
+            strokeDasharray="2,2"
+            opacity={0.8}
+            rx={3}
+          />
         )}
       </g>
 
-      {/* 被控工作回路与受控路灯/警铃 */}
-      <g stroke={SCENE_COLORS.materials.structStrokePale} strokeWidth={2} fill="none">
-        <path d="M 652 150 L 730 150 L 730 200" />
-        <path d="M 628 150 L 600 150 L 600 240 L 730 240 L 730 230" />
+      {/* 衔铁、回位弹簧与绝缘触点机械联动 */}
+      {(() => {
+        // 衔铁水平位移：吸合时向左靠拢 5px
+        const armatureX = isTriggered ? 578 : 584
+        return (
+          <g>
+            {/* 回位弹簧 */}
+            <path
+              d={`M ${armatureX} 135 L 598 135`}
+              stroke={CANVAS_COLORS.textMuted}
+              strokeWidth={1.5}
+              strokeDasharray="2,2"
+            />
+            {/* 衔铁（动铁片） */}
+            <rect
+              x={armatureX}
+              y={130}
+              width={5}
+              height={50}
+              fill={colors.neutral[600]}
+              stroke={colors.neutral[800]}
+              strokeWidth={1}
+              rx={1}
+            />
+            {/* 绝缘推杆 */}
+            <line x1={armatureX + 5} y1={155} x2={armatureX + 16} y2={155} stroke={colors.neutral[400]} strokeWidth={2} />
+
+            {/* 常开触点开关 S：动触点与静触点 */}
+            {/* 静触点端子 */}
+            <circle cx={625} cy={145} r={3} fill={SCENE_COLORS.materials.structStrokeMid} />
+            <circle cx={625} cy={165} r={3} fill={SCENE_COLORS.materials.structStrokeMid} />
+            {/* 动触点簧片 */}
+            {isTriggered ? (
+              <line x1={625} y1={145} x2={625} y2={165} stroke={SCENE_COLORS.circuit.switchClosed} strokeWidth={2.8} strokeLinecap="round" />
+            ) : (
+              <line x1={625} y1={165} x2={616} y2={148} stroke={SCENE_COLORS.circuit.switchOpen} strokeWidth={2.5} strokeLinecap="round" />
+            )}
+          </g>
+        )
+      })()}
+
+      {/* ── 3. 高压强电工作回路（220V 强电受控侧，完全电气隔离） ── */}
+      <g stroke={SCENE_COLORS.materials.structStrokeDark} strokeWidth={2.4} fill="none" strokeLinecap="round" strokeLinejoin="round">
+        {/* 触点上端子(625,145) -> 拐角(655,145) -> 顶线(655,85) -> 路灯上端子(740,85) -> (740,115) */}
+        <path d="M 625 145 L 655 145 L 655 85 L 740 85 L 740 120" />
+        {/* 路灯下端子(740,175) -> 拐角(740,247) -> 220V电源右端子(705,247) */}
+        <path d="M 740 170 L 740 247 L 705 247" />
+        {/* 220V电源左端子(655,247) -> 拐角(640,247) -> (640,165) -> 触点下端子(625,165) */}
+        <path d="M 655 247 L 640 247 L 640 165 L 625 165" />
       </g>
+
+      {/* 受控高压工作电源（220V 交流正弦符号） */}
+      <g transform="translate(680, 247)">
+        <circle cx={0} cy={0} r={18} fill={CANVAS_COLORS.white} stroke={SCENE_COLORS.materials.structStrokeDark} strokeWidth={2} />
+        <path d="M -8 0 Q -4 -6, 0 0 T 8 0" fill="none" stroke={SCENE_COLORS.materials.structStrokeDark} strokeWidth={2} strokeLinecap="round" />
+        <text x={0} y={26} textAnchor="middle" fontSize={font(9.5)} fill={CANVAS_COLORS.labelTextLight} fontWeight={600}>
+          高压工作电源 ~220V
+        </text>
+      </g>
+
+      {/* 受控路灯 / 报警器 */}
       <LightBulb
-        x={730}
-        y={190}
+        x={740}
+        y={145}
         power={isTriggered ? 1.0 : 0}
         time={time}
+        scale={0.9}
+        label="路灯 L"
+        font={font}
       />
-      <text x={730} y={245} textAnchor="middle" fontSize={font(11)} fill={CANVAS_COLORS.textMuted}>
-        受控路灯 / 报警器
+      <text x={740} y={192} textAnchor="middle" fontSize={font(10.5)} fill={isTriggered ? CANVAS_COLORS.alertRed : CANVAS_COLORS.textMuted} fontWeight={600}>
+        {isTriggered ? '● 路灯点亮工作' : '○ 路灯熄灭'}
       </text>
 
-      {/* 控制输出状态判定框 */}
-      <g transform="translate(390, 275)">
-        <text x={0} y={0} fontSize={font(11)} fill={PHYSICS_COLORS.electricPotential}>
+      {/* 工作回路导通时的电流方向矢量指示 */}
+      {isTriggered && (
+        <VectorArrow
+          originDesign={{ x: 740, y: 100 }}
+          vector={{ x: 0, y: -1 }}
+          type="currentDirection"
+          arrowType="visual-only"
+          sceneScale={IDENTITY_SCENE_SCALE}
+          pixelLength={20}
+          label="I工"
+          font={font}
+        />
+      )}
+
+      {/* ── 4. 控制状态与动作阈值底部状态栏 ── */}
+      <g transform="translate(390, 282)">
+        <text x={0} y={0} fontSize={font(10.5)} fill={PHYSICS_COLORS.electricPotential} fontWeight={600}>
           {`控制输出端电压 Vout = ${vOut.toFixed(2)} V (动作阈值 Vth = 2.50 V)`}
         </text>
         <text
           x={330}
           y={0}
-          fontSize={font(11)}
+          fontSize={font(10.5)}
           fontWeight={700}
           fill={isTriggered ? SCENE_COLORS.circuit.switchClosed : CANVAS_COLORS.trackHistory}
         >
-          {isTriggered ? '● 继电器导通 (工作中)' : '○ 继电器断开 (静止)'}
+          {isTriggered ? '● 磁吸动作 (触点闭合)' : '○ 磁力不足 (触点断开)'}
         </text>
       </g>
     </g>

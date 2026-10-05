@@ -57,12 +57,12 @@ export const CircuitAnalysisCenterExtra: FC = () => {
   const uItems = mode === 0 
     ? [
         { key: 'r1', label: 'R₁', value: circuitData.U1, color: SCENE_COLORS.charts.circuitR1 },
-        { key: 'r2', label: 'R₂ (变)', value: circuitData.U2, color: SCENE_COLORS.charts.circuitR2 },
+        { key: 'r2', label: 'R₂', value: circuitData.U2, color: SCENE_COLORS.charts.circuitR2 },
         { key: 'total', label: '总电路', value: U, color: SCENE_COLORS.charts.circuitTotal },
       ]
     : [
         { key: 'r1', label: 'R₁', value: circuitData.U1, color: SCENE_COLORS.charts.circuitR1 },
-        { key: 'r2', label: 'R₂ (变)', value: circuitData.U2, color: SCENE_COLORS.charts.circuitR2 },
+        { key: 'r2', label: 'R₂', value: circuitData.U2, color: SCENE_COLORS.charts.circuitR2 },
         { key: 'r3', label: 'R₃', value: circuitData.U2, color: SCENE_COLORS.charts.circuitR3 },
         { key: 'total', label: '总电路', value: U, color: SCENE_COLORS.charts.circuitTotal },
       ]
@@ -71,12 +71,12 @@ export const CircuitAnalysisCenterExtra: FC = () => {
   const iItems = mode === 0 
     ? [
         { key: 'r1', label: 'R₁', value: circuitData.I1, color: SCENE_COLORS.charts.circuitR1 },
-        { key: 'r2', label: 'R₂ (变)', value: circuitData.I2, color: SCENE_COLORS.charts.circuitR2 },
+        { key: 'r2', label: 'R₂', value: circuitData.I2, color: SCENE_COLORS.charts.circuitR2 },
         { key: 'total', label: '总电路', value: circuitData.Itotal, color: SCENE_COLORS.charts.circuitTotal },
       ]
     : [
         { key: 'r1', label: 'R₁', value: circuitData.I1, color: SCENE_COLORS.charts.circuitR1 },
-        { key: 'r2', label: 'R₂ (变)', value: circuitData.I2, color: SCENE_COLORS.charts.circuitR2 },
+        { key: 'r2', label: 'R₂', value: circuitData.I2, color: SCENE_COLORS.charts.circuitR2 },
         { key: 'r3', label: 'R₃', value: circuitData.I3, color: SCENE_COLORS.charts.circuitR3 },
         { key: 'total', label: '总电路', value: circuitData.Itotal, color: SCENE_COLORS.charts.circuitTotal },
       ]
@@ -85,12 +85,12 @@ export const CircuitAnalysisCenterExtra: FC = () => {
   const pItems = mode === 0 
     ? [
         { key: 'r1', label: 'R₁', value: extendedData.P1, color: SCENE_COLORS.charts.circuitR1 },
-        { key: 'r2', label: 'R₂ (变)', value: extendedData.P2, color: SCENE_COLORS.charts.circuitR2 },
+        { key: 'r2', label: 'R₂', value: extendedData.P2, color: SCENE_COLORS.charts.circuitR2 },
         { key: 'total', label: '总电路', value: extendedData.Ptotal, color: SCENE_COLORS.charts.circuitTotal },
       ]
     : [
         { key: 'r1', label: 'R₁', value: extendedData.P1, color: SCENE_COLORS.charts.circuitR1 },
-        { key: 'r2', label: 'R₂ (变)', value: extendedData.P2, color: SCENE_COLORS.charts.circuitR2 },
+        { key: 'r2', label: 'R₂', value: extendedData.P2, color: SCENE_COLORS.charts.circuitR2 },
         { key: 'r3', label: 'R₃', value: extendedData.P3, color: SCENE_COLORS.charts.circuitR3 },
         { key: 'total', label: '总电路', value: extendedData.Ptotal, color: SCENE_COLORS.charts.circuitTotal },
       ]

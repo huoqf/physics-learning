@@ -55,6 +55,7 @@ import { DialMeter } from '@/components/Physics'
   - `r`: 表盘外圈半径（默认 28）
   - `value`: 当前读数值
   - `variant`: `'symbolic'`
+  - `labelPosition`: `'bottom'`（默认下方）| `'top'`（表盘上方）| `'none'`（不显示，用于外层统一定义）。**当跨接在被测元件上方时，必须设置 `labelPosition="top"` 彻底避免示数与下方元件滑轨碰撞**。
 - **端子锚点**：
   - 左端子：`{ x: x - r, y: y }`
   - 右端子：`{ x: x + r, y: y }`

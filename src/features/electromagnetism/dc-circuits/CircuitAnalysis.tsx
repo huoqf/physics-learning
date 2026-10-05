@@ -53,9 +53,18 @@ export default function CircuitAnalysis() {
   // ==================== 导线样式（参考 OhmLaw：灰色底色 + 铜芯线）====================
 
   const getWireStyle = (current: number) => {
-    const w = 2 + Math.min(3, current * 2)
+    if (isSymbolic) {
+      return {
+        stroke: SCENE_COLORS.circuit.wire,
+        strokeWidth: 2.5,
+        fill: 'none',
+        strokeLinecap: 'round' as const,
+        strokeLinejoin: 'round' as const,
+      }
+    }
+    const w = 2.5 + Math.min(2.5, current * 1.5)
     const factor = Math.min(1, current / 1.0)
-    const color = factor > 0.05 ? PHYSICS_COLORS.trackHistory : PHYSICS_COLORS.grid
+    const color = factor > 0.05 ? SCENE_COLORS.circuit.wire : PHYSICS_COLORS.grid
     const pulse = 0.6 + 0.4 * Math.sin(time * 4)
     const glowRadius = factor > 0.1 ? factor * 3 * pulse : 0
     return {
@@ -71,10 +80,10 @@ export default function CircuitAnalysis() {
     }
   }
 
-  // 电压表引线样式：实线导线（非虚线），灰色
+  // 电压表引线样式：实线导线，统一标准导线色
   const voltmeterWireStyle = {
-    stroke: PHYSICS_COLORS.trackHistory,
-    strokeWidth: 2,
+    stroke: SCENE_COLORS.circuit.wire,
+    strokeWidth: 2.5,
     fill: 'none',
     strokeLinecap: 'round' as const,
     strokeLinejoin: 'round' as const,
@@ -127,13 +136,13 @@ export default function CircuitAnalysis() {
             <path d={SERIES_PATHS.mainLoop} {...getWireStyle(Itotal)} />
             {/* 电压表引线（实线导线） */}
             <path d={SERIES_PATHS.voltmeterLead} {...voltmeterWireStyle} />
-            <circle cx={437} cy={120} r={3} fill={PHYSICS_COLORS.labelText} />
-            <circle cx={563} cy={120} r={3} fill={PHYSICS_COLORS.labelText} />
+            <circle cx={437} cy={120} r={3.5} fill={SCENE_COLORS.circuit.wire} />
+            <circle cx={563} cy={120} r={3.5} fill={SCENE_COLORS.circuit.wire} />
             {renderBattery(l.batteryCenter.x, l.batteryCenter.y)}
             {renderResistor(l.r1Center.x, l.r1Center.y, 'R₁', R1)}
             <Rheostat x={l.r2Center.x} y={l.r2Center.y} value={R2} min={0} max={100} label="R₂ (变)" width={120} variant={isSymbolic ? 'symbolic' : 'realistic'} font={font} />
-            <DialMeter type="V" variant={isSymbolic ? 'symbolic' : 'realistic'} value={U2} max={12} x={l.voltmeterCenter.x} y={l.voltmeterCenter.y} font={font} />
-            <DialMeter type="A" variant={isSymbolic ? 'symbolic' : 'realistic'} value={Itotal} max={1.5} x={l.ammeterCenter.x} y={l.ammeterCenter.y} font={font} />
+            <DialMeter type="V" variant={isSymbolic ? 'symbolic' : 'realistic'} value={U2} max={12} x={l.voltmeterCenter.x} y={l.voltmeterCenter.y} font={font} labelPosition="top" />
+            <DialMeter type="A" variant={isSymbolic ? 'symbolic' : 'realistic'} value={Itotal} max={1.5} x={l.ammeterCenter.x} y={l.ammeterCenter.y} r={24} font={font} labelPosition={isSymbolic ? 'right' : 'bottom'} />
           </g>
         )
       } else {
@@ -148,15 +157,15 @@ export default function CircuitAnalysis() {
             {/* 电压表并联引线（实线导线） */}
             <path d={PARALLEL_PATHS.voltmeterLead} {...voltmeterWireStyle} />
             {/* 分流/汇合节点 */}
-            <circle cx={400} cy={40} r={4.5} fill={PHYSICS_COLORS.labelText} />
-            <circle cx={700} cy={40} r={4.5} fill={PHYSICS_COLORS.labelText} />
-            <circle cx={487} cy={110} r={3} fill={PHYSICS_COLORS.labelText} />
-            <circle cx={613} cy={110} r={3} fill={PHYSICS_COLORS.labelText} />
+            <circle cx={350} cy={75} r={4.5} fill={SCENE_COLORS.circuit.wire} />
+            <circle cx={690} cy={75} r={4.5} fill={SCENE_COLORS.circuit.wire} />
+            <circle cx={457} cy={150} r={3.5} fill={SCENE_COLORS.circuit.wire} />
+            <circle cx={583} cy={150} r={3.5} fill={SCENE_COLORS.circuit.wire} />
             {renderBattery(l.batteryCenter.x, l.batteryCenter.y)}
             {renderResistor(l.r1Center.x, l.r1Center.y, 'R₁', R1)}
             <Rheostat x={l.r2Center.x} y={l.r2Center.y} value={R2} min={0} max={100} label="R₂ (变)" width={120} variant={isSymbolic ? 'symbolic' : 'realistic'} font={font} />
-            <DialMeter type="V" variant={isSymbolic ? 'symbolic' : 'realistic'} value={U2} max={12} x={l.voltmeterCenter.x} y={l.voltmeterCenter.y} font={font} />
-            <DialMeter type="A" variant={isSymbolic ? 'symbolic' : 'realistic'} value={Itotal} max={1.5} x={l.ammeterCenter.x} y={l.ammeterCenter.y} font={font} />
+            <DialMeter type="V" variant={isSymbolic ? 'symbolic' : 'realistic'} value={U2} max={12} x={l.voltmeterCenter.x} y={l.voltmeterCenter.y} r={24} font={font} labelPosition="bottom" />
+            <DialMeter type="A" variant={isSymbolic ? 'symbolic' : 'realistic'} value={Itotal} max={1.5} x={l.ammeterCenter.x} y={l.ammeterCenter.y} r={24} font={font} labelPosition="bottom" />
           </g>
         )
       }
@@ -169,16 +178,18 @@ export default function CircuitAnalysis() {
           <path d={MIXED_PATHS.mainB} {...getWireStyle(Itotal)} />
           <path d={MIXED_PATHS.branch1} {...getWireStyle(I2)} />
           <path d={MIXED_PATHS.branch2} {...getWireStyle(I3)} />
-          <circle cx={380} cy={120} r={4.5} fill={PHYSICS_COLORS.labelText} />
-          <circle cx={620} cy={120} r={4.5} fill={PHYSICS_COLORS.labelText} />
-          <circle cx={417} cy={120} r={3} fill={PHYSICS_COLORS.labelText} />
-          <circle cx={543} cy={120} r={3} fill={PHYSICS_COLORS.labelText} />
+          {/* 电压表并联引线（实线导线） */}
+          <path d={MIXED_PATHS.voltmeterLead} {...voltmeterWireStyle} />
+          <circle cx={380} cy={120} r={4.5} fill={SCENE_COLORS.circuit.wire} />
+          <circle cx={620} cy={120} r={4.5} fill={SCENE_COLORS.circuit.wire} />
+          <circle cx={417} cy={120} r={3.5} fill={SCENE_COLORS.circuit.wire} />
+          <circle cx={543} cy={120} r={3.5} fill={SCENE_COLORS.circuit.wire} />
           {renderBattery(l.batteryCenter.x, l.batteryCenter.y)}
           {renderResistor(l.r1Center.x, l.r1Center.y, 'R₁', R1)}
           <Rheostat x={l.r2Center.x} y={l.r2Center.y} value={R2} min={0} max={100} label="R₂ (变)" width={120} variant={isSymbolic ? 'symbolic' : 'realistic'} font={font} />
           {renderResistor(l.r3Center.x, l.r3Center.y, 'R₃', R3)}
-          <DialMeter type="V" variant={isSymbolic ? 'symbolic' : 'realistic'} value={U2} max={12} x={l.voltmeterCenter.x} y={l.voltmeterCenter.y} font={font} />
-          <DialMeter type="A" variant={isSymbolic ? 'symbolic' : 'realistic'} value={Itotal} max={1.5} x={l.ammeterCenter.x} y={l.ammeterCenter.y} font={font} />
+          <DialMeter type="V" variant={isSymbolic ? 'symbolic' : 'realistic'} value={U2} max={12} x={l.voltmeterCenter.x} y={l.voltmeterCenter.y} font={font} labelPosition="top" />
+          <DialMeter type="A" variant={isSymbolic ? 'symbolic' : 'realistic'} value={Itotal} max={1.5} x={l.ammeterCenter.x} y={l.ammeterCenter.y} r={24} font={font} labelPosition="bottom" />
         </g>
       )
     }

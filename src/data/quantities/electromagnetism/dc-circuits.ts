@@ -445,23 +445,23 @@ export function handleDcCircuits(
 
       let quantitiesList: PhysicsQuantity[] = [
         ...base,
-        { label: '电源电动势 E', symbol: 'E', value: E.toFixed(1), unit: 'V', color: PHYSICS_COLORS.emf },
-        { label: '表头满偏电流 Ig', symbol: 'Ig', value: (Ig * 1000).toFixed(1), unit: 'mA', color: PHYSICS_COLORS.electricCurrent },
-        { label: '表头内阻 Rg', symbol: 'Rg', value: Rg.toFixed(0), unit: 'Ω' },
+        { label: '电源电动势', symbol: 'E', value: E.toFixed(1), unit: 'V', color: PHYSICS_COLORS.emf },
+        { label: '表头满偏电流', symbol: 'Ig', value: (Ig * 1000).toFixed(1), unit: 'mA', color: PHYSICS_COLORS.electricCurrent },
+        { label: '表头内阻', symbol: 'Rg', value: Rg.toFixed(0), unit: 'Ω' },
         { label: '当前挡位倍率', value: `×${multiplier}`, unit: '' },
-        { label: '调零变阻器阻值 R_Ω', symbol: 'R_Ω', value: R_adjust.toFixed(0), unit: 'Ω', color: PHYSICS_COLORS.appliedForce },
-        { label: '欧姆表总内阻 R_内', symbol: 'R_内', value: R_internal.toFixed(0), unit: 'Ω' }
+        { label: '调零变阻器阻值', symbol: 'R_Ω', value: R_adjust.toFixed(0), unit: 'Ω', color: PHYSICS_COLORS.appliedForce },
+        { label: '欧姆表总内阻', symbol: 'R_内', value: R_internal.toFixed(0), unit: 'Ω' }
       ]
 
       if (opMode === 1) {
         quantitiesList.push(
-          { label: '待测电阻 Rx', symbol: 'R_x', value: Rx.toFixed(0), unit: 'Ω', color: PHYSICS_COLORS.appliedForce, highlight: 'extreme' },
-          { label: '表头测量电流 I', symbol: 'I', value: I_mA.toFixed(3), unit: 'mA', color: PHYSICS_COLORS.electricCurrent },
+          { label: '待测外接电阻', symbol: 'Rx', value: Rx.toFixed(0), unit: 'Ω', color: PHYSICS_COLORS.appliedForce, highlight: 'extreme' },
+          { label: '表头测量电流', symbol: 'I', value: I_mA.toFixed(3), unit: 'mA', color: PHYSICS_COLORS.electricCurrent },
           { label: '指针偏转百分比', value: deviationPct.toFixed(1), unit: '%', color: PHYSICS_COLORS.work, highlight: 'extreme' }
         )
       } else {
         quantitiesList.push(
-          { label: '表头短路电流 I_短', symbol: 'I_短', value: I_mA.toFixed(3), unit: 'mA', color: PHYSICS_COLORS.electricCurrent, highlight: res.isZeroed ? 'extreme' : undefined },
+          { label: '表头短路电流', symbol: 'I_短', value: I_mA.toFixed(3), unit: 'mA', color: PHYSICS_COLORS.electricCurrent, highlight: res.isZeroed ? 'extreme' : undefined },
           { label: '欧姆调零状态', value: res.isZeroed ? '已满偏 (调零成功)' : '未满偏 (需调节R_Ω)', unit: '', color: res.isZeroed ? PHYSICS_COLORS.work : PHYSICS_COLORS.electricCurrent }
         )
       }

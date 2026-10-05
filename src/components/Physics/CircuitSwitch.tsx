@@ -77,7 +77,7 @@ export const CircuitSwitch: React.FC<CircuitSwitchProps> = ({
         {/* 状态文本标签 */}
         <text
           x={0}
-          y={closed ? -10 : -20}
+          y={closed ? -15 : -22}
           textAnchor="middle"
           fontSize={font(10.5)}
           fontWeight="bold"

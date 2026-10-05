@@ -48,6 +48,12 @@ export interface TransformerLayout {
   rheostatW: number
   rheostatX: number
   scale: number
+  wireYTop: number
+  wireYBot: number
+  meterV1X: number
+  meterA1X: number
+  meterV2X: number
+  meterA2X: number
 }
 
 export interface TransformerDerived {
@@ -151,7 +157,7 @@ export function buildTransformerLayout({
   const rightPanelW = mode === 1 ? Math.round(width * 0.25) : 0
   // 可用区域（扣除 overlayRight 后的实际设计宽度）
   const availW = width - rightPanelW
-  // 高度方向给足空间（底部标注条已删除），宽度方向以 availW 为限
+  // 铁芯与线圈基础比例：高度方向给足空间，宽度方向以 availW 为限
   const scale = Math.min(availW / 350, height / 400)
   const coreH = 155 * scale
   const coreColumnW = 18 * scale
@@ -173,13 +179,26 @@ export function buildTransformerLayout({
   const primaryRight = v1X + coilW / 2
   const secondaryLeft = v2X - coilW / 2
   const secondaryRight = v2X + coilW / 2
-  const meterR = 26 * scale
+
+  const wireYTop = coreTop + 10 * scale
+  const wireYBot = coreBottom - 10 * scale
+  const meterR = 21 * scale // 电表半径
+
+  // 左侧（原边）空间分配：电源 -> V1(并联) -> A1(串联) -> 原线圈
+  const sourceX = Math.max(32 * scale, primaryLeft - 135 * scale)
+  const meterV1X = sourceX + (primaryLeft - sourceX) * 0.40
+  const meterA1X = sourceX + (primaryLeft - sourceX) * 0.76
+
+  // 右侧（副边）空间分配：副线圈 -> V2(并联) -> A2(串联) -> 变阻器
+  const rheostatW = 76 * scale
+  const rheostatX = availW - 20 * scale - rheostatW / 2
+  const termInX = rheostatX - 73 * (rheostatW / 140)
+  const meterV2X = secondaryRight + (termInX - secondaryRight) * 0.35
+  const meterA2X = secondaryRight + (termInX - secondaryRight) * 0.72
+
+  // 兼容旧字段
   const meterTopY = coreTop - meterR - 16 * scale
   const meterBotY = coreBottom + meterR + 18 * scale
-  const sourceX = primaryLeft - 34 * scale
-  const rheostatW = 86 * scale
-  const rheostatGap = coilW + 12 * scale
-  const rheostatX = secondaryRight + rheostatGap + rheostatW / 2
 
   return {
     W: width,
@@ -212,6 +231,12 @@ export function buildTransformerLayout({
     rheostatW,
     rheostatX,
     scale,
+    wireYTop,
+    wireYBot,
+    meterV1X,
+    meterA1X,
+    meterV2X,
+    meterA2X,
   }
 }
 

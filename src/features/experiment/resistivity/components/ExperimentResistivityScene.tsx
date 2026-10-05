@@ -202,45 +202,47 @@ export const ExperimentResistivityScene: React.FC<ExperimentResistivitySceneProp
             <text x={140} y={busTop - vmR - 6} textAnchor="middle" fill={PHYSICS_COLORS.electricCurrent} fontSize={font(10.5)} fontWeight="bold">
               I = {currentA.toFixed(3)} A
             </text>
-            <text x={140 - vmR - 6} y={busTop - 4} fill={PHYSICS_COLORS.acceleration} fontSize={font(9)} fontWeight="bold">+</text>
-            <text x={140 + vmR + 6} y={busTop - 4} fill={CANVAS_COLORS.textMuted} fontSize={font(9)} fontWeight="bold">-</text>
 
             {/* 电流表 A 右端 -> 节点 1 (205, 95) */}
-            <line x1={170} y1={busTop} x2={205} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
+            <line x1={140 + vmR} y1={busTop} x2={205} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
             <circle cx={205} cy={busTop} r={3.5} fill={CIRCUIT_COLORS.node} />
 
-            {/* 节点 1 -> 待测电阻 Rx 左端 (245, 95) */}
-            <line x1={205} y1={busTop} x2={245} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
+            {/* 节点 1 -> 待测电阻 Rx 左端 (240, 95) */}
+            <line x1={205} y1={busTop} x2={240} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
 
-            {/* 待测金属丝电阻框符号 (中心 x=275, y=95, 宽 60, 高 22) */}
-            <rect x={245} y={busTop - 11} width={60} height={22} fill={CANVAS_COLORS.white} stroke={PHYSICS_COLORS.emf} strokeWidth={2.2} />
-            <text x={275} y={busTop - 16} textAnchor="middle" fill={PHYSICS_COLORS.emf} fontSize={font(10.5)} fontWeight="bold">
+            {/* 待测金属丝电阻框符号 (标准空心框 + 框内Rx + 上方阻值与长度) */}
+            <rect x={240} y={busTop - 11} width={70} height={22} fill={CANVAS_COLORS.white} stroke={PHYSICS_COLORS.emf} strokeWidth={2.2} />
+            <text x={275} y={busTop - 16} textAnchor="middle" fill={PHYSICS_COLORS.emf} fontSize={font(9.5)} fontWeight="bold">
               金属丝 Rx (L={L.toFixed(2)}m)
             </text>
-            <text x={275} y={busTop + 5} textAnchor="middle" fill={CANVAS_COLORS.labelText} fontSize={font(9.5)} fontWeight="bold">
-              Rx(真)={Rx_real.toFixed(2)}Ω
+            <text x={275} y={busTop + 4} textAnchor="middle" fill={CANVAS_COLORS.labelText} fontSize={font(10)} fontWeight="bold">
+              Rx = {Rx_real.toFixed(2)}Ω
             </text>
 
-            {/* 待测电阻 Rx 右端 (305, 95) -> 节点 2 (345, 95) -> 右上拐角 */}
-            <line x1={305} y1={busTop} x2={345} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
+            {/* 待测电阻 Rx 右端 (310, 95) -> 节点 2 (345, 95) -> 右上拐角 */}
+            <line x1={310} y1={busTop} x2={345} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
             <circle cx={345} cy={busTop} r={3.5} fill={CIRCUIT_COLORS.node} />
             <line x1={345} y1={busTop} x2={busRight} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
 
-            {/* 电压表支路：节点 1 (205, 95) -> 电压表 V -> 节点 2 (345, 95) */}
+            {/* 顶层干路电流流向指示矢量箭头（高中物理规范标准：自左向右流经电流表与金属丝） */}
+            <polygon
+              points={`${(140 + vmR + 205) / 2 + 4},${busTop} ${(140 + vmR + 205) / 2 - 4},${busTop - 3.5} ${(140 + vmR + 205) / 2 - 4},${busTop + 3.5}`}
+              fill={PHYSICS_COLORS.electricCurrent}
+            />
+
+            {/* 电压表支路（标准实线导线精准跨接）：节点 1 (205, 95) -> 电压表 V -> 节点 2 (345, 95) */}
             <path
               d={`M 205 ${busTop} L 205 ${vmY} L ${275 - vmR} ${vmY}`}
               fill="none"
-              stroke={PHYSICS_COLORS.electricPotential}
-              strokeWidth={1.8}
-              strokeDasharray="4,3"
+              stroke={CIRCUIT_COLORS.wire}
+              strokeWidth={2.0}
               strokeLinejoin="round"
             />
             <path
               d={`M ${275 + vmR} ${vmY} L 345 ${vmY} L 345 ${busTop}`}
               fill="none"
-              stroke={PHYSICS_COLORS.electricPotential}
-              strokeWidth={1.8}
-              strokeDasharray="4,3"
+              stroke={CIRCUIT_COLORS.wire}
+              strokeWidth={2.0}
               strokeLinejoin="round"
             />
 
@@ -249,8 +251,6 @@ export const ExperimentResistivityScene: React.FC<ExperimentResistivitySceneProp
             <text x={275} y={vmY + vmR + 15} textAnchor="middle" fill={PHYSICS_COLORS.electricPotential} fontSize={font(10.5)} fontWeight="bold">
               U = {voltageV.toFixed(2)} V
             </text>
-            <text x={275 - vmR - 6} y={vmY - 4} fill={PHYSICS_COLORS.acceleration} fontSize={font(9)} fontWeight="bold">+</text>
-            <text x={275 + vmR + 6} y={vmY - 4} fill={CANVAS_COLORS.textMuted} fontSize={font(9)} fontWeight="bold">-</text>
           </g>
         ) : (
           /* ──────── 内接法（标准教科书电路） ────────
@@ -262,49 +262,51 @@ export const ExperimentResistivityScene: React.FC<ExperimentResistivitySceneProp
             <line x1={busLeft} y1={busTop} x2={115} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
             <circle cx={115} cy={busTop} r={3.5} fill={CIRCUIT_COLORS.node} />
 
-            {/* 节点 1 -> 电流表 A 左端 (135, 95) */}
-            <line x1={115} y1={busTop} x2={135} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
+            {/* 节点 1 -> 电流表 A 左端 (140, 95) */}
+            <line x1={115} y1={busTop} x2={165 - vmR} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
 
             {/* 电流表 A (中心 x=165, y=95) */}
             <DialMeter type="A" variant="symbolic" value={currentA} max={1.5} x={165} y={busTop} r={vmR} font={font} showLabel={false} />
             <text x={165} y={busTop - vmR - 6} textAnchor="middle" fill={PHYSICS_COLORS.electricCurrent} fontSize={font(10.5)} fontWeight="bold">
               I = {currentA.toFixed(3)} A
             </text>
-            <text x={165 - vmR - 6} y={busTop - 4} fill={PHYSICS_COLORS.acceleration} fontSize={font(9)} fontWeight="bold">+</text>
-            <text x={165 + vmR + 6} y={busTop - 4} fill={CANVAS_COLORS.textMuted} fontSize={font(9)} fontWeight="bold">-</text>
 
-            {/* 电流表 A 右端 -> 待测电阻 Rx 左端 (245, 95) */}
-            <line x1={195} y1={busTop} x2={245} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
+            {/* 电流表 A 右端 -> 待测电阻 Rx 左端 (240, 95) */}
+            <line x1={165 + vmR} y1={busTop} x2={240} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
 
-            {/* 待测金属丝电阻框符号 (中心 x=275, y=95, 宽 60, 高 22) */}
-            <rect x={245} y={busTop - 11} width={60} height={22} fill={CANVAS_COLORS.white} stroke={PHYSICS_COLORS.emf} strokeWidth={2.2} />
-            <text x={275} y={busTop - 16} textAnchor="middle" fill={PHYSICS_COLORS.emf} fontSize={font(10.5)} fontWeight="bold">
+            {/* 待测金属丝电阻框符号 */}
+            <rect x={240} y={busTop - 11} width={70} height={22} fill={CANVAS_COLORS.white} stroke={PHYSICS_COLORS.emf} strokeWidth={2.2} />
+            <text x={275} y={busTop - 16} textAnchor="middle" fill={PHYSICS_COLORS.emf} fontSize={font(9.5)} fontWeight="bold">
               金属丝 Rx (L={L.toFixed(2)}m)
             </text>
-            <text x={275} y={busTop + 5} textAnchor="middle" fill={CANVAS_COLORS.labelText} fontSize={font(9.5)} fontWeight="bold">
-              Rx(真)={Rx_real.toFixed(2)}Ω
+            <text x={275} y={busTop + 4} textAnchor="middle" fill={CANVAS_COLORS.labelText} fontSize={font(10)} fontWeight="bold">
+              Rx = {Rx_real.toFixed(2)}Ω
             </text>
 
-            {/* 待测电阻 Rx 右端 (305, 95) -> 节点 2 (365, 95) -> 右上拐角 */}
-            <line x1={305} y1={busTop} x2={365} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
+            {/* 待测电阻 Rx 右端 (310, 95) -> 节点 2 (365, 95) -> 右上拐角 */}
+            <line x1={310} y1={busTop} x2={365} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
             <circle cx={365} cy={busTop} r={3.5} fill={CIRCUIT_COLORS.node} />
             <line x1={365} y1={busTop} x2={busRight} y2={busTop} stroke={CIRCUIT_COLORS.wire} strokeWidth={2.2} />
 
-            {/* 电压表支路：跨接在 节点 1 (115, 95) 与 节点 2 (365, 95) 两端 */}
+            {/* 顶层干路电流流向指示矢量箭头（高中物理规范标准：自左向右流经节点与电流表） */}
+            <polygon
+              points={`${(115 + 165 - vmR) / 2 + 4},${busTop} ${(115 + 165 - vmR) / 2 - 4},${busTop - 3.5} ${(115 + 165 - vmR) / 2 - 4},${busTop + 3.5}`}
+              fill={PHYSICS_COLORS.electricCurrent}
+            />
+
+            {/* 电压表支路（标准实线导线精准跨接）：跨接在 节点 1 (115, 95) 与 节点 2 (365, 95) 两端 */}
             <path
               d={`M 115 ${busTop} L 115 ${vmY} L ${240 - vmR} ${vmY}`}
               fill="none"
-              stroke={PHYSICS_COLORS.electricPotential}
-              strokeWidth={1.8}
-              strokeDasharray="4,3"
+              stroke={CIRCUIT_COLORS.wire}
+              strokeWidth={2.0}
               strokeLinejoin="round"
             />
             <path
               d={`M ${240 + vmR} ${vmY} L 365 ${vmY} L 365 ${busTop}`}
               fill="none"
-              stroke={PHYSICS_COLORS.electricPotential}
-              strokeWidth={1.8}
-              strokeDasharray="4,3"
+              stroke={CIRCUIT_COLORS.wire}
+              strokeWidth={2.0}
               strokeLinejoin="round"
             />
 
@@ -313,8 +315,6 @@ export const ExperimentResistivityScene: React.FC<ExperimentResistivitySceneProp
             <text x={240} y={vmY + vmR + 15} textAnchor="middle" fill={PHYSICS_COLORS.electricPotential} fontSize={font(10.5)} fontWeight="bold">
               U = {voltageV.toFixed(2)} V
             </text>
-            <text x={240 - vmR - 6} y={vmY - 4} fill={PHYSICS_COLORS.acceleration} fontSize={font(9)} fontWeight="bold">+</text>
-            <text x={240 + vmR + 6} y={vmY - 4} fill={CANVAS_COLORS.textMuted} fontSize={font(9)} fontWeight="bold">-</text>
           </g>
         )}
       </g>
@@ -334,13 +334,13 @@ export const ExperimentResistivityScene: React.FC<ExperimentResistivitySceneProp
         />
 
         {/* ── 环节 1：刻度尺测量金属丝有效长度 L ── */}
-        <g className="ruler-station" transform="translate(15, 14)">
+        <g className="ruler-station" transform="translate(15, 12)">
           <text x={0} y={14} fill={CANVAS_COLORS.labelText} fontSize={font(11)} fontWeight="bold">
             ① 毫米刻度尺：测金属丝接入有效长度 L
           </text>
 
-          {/* 金属丝导轨与刻度尺 */}
-          <g transform="translate(15, 30)">
+          {/* 金属丝导轨与刻度尺（下移至 y=46，给接线夹 B 标签留出充裕的呼吸空间） */}
+          <g transform="translate(15, 46)">
             {/* 金属丝安装底座 */}
             <line x1={0} y1={-4} x2={260} y2={-4} stroke={SCENE_COLORS.surface.groundStroke} strokeWidth={2.5} strokeLinecap="round" />
             {/* 有效接入导电段高亮 */}

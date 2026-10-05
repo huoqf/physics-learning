@@ -52,7 +52,7 @@ export const electromagnetismDcCircuitsAnimations = defineAnimations({
           : '拖动 R₂ 滑块，观察电荷粒子流速及导线亮度的此消彼长。右侧将同步显示"串反并同"的推导链条。'
       } },
     ],
-    defaultParams: { U: 12, R1: 20, R2: 10, R3: 30, mode: 0, subMode: 0, showChart: 1, isSymbolic: 0 } as const,
+    defaultParams: { U: 12, R1: 20, R2: 10, R3: 30, mode: 0, subMode: 0, showChart: 1, isSymbolic: 1 } as const,
   },
   'anim-closed-circuit': {
     title: '闭合电路欧姆定律与能量分析',
@@ -99,8 +99,8 @@ export const electromagnetismDcCircuitsAnimations = defineAnimations({
       const rxMax = 5000 * multiplier
       const rxStep = multiplier >= 100 ? 1000 : multiplier >= 10 ? 100 : 10
       return [
-        { key: 'R_adjust', label: '调零电阻 R_Ω', min: 0, max: 2000, step: 1, unit: 'Ω' },
-        { key: 'Rx', label: '待测外接电阻 Rx', min: 0, max: rxMax, step: rxStep, unit: 'Ω', showIf: 'opMode', showIfValue: 1 },
+        { key: 'R_adjust', label: '调零电阻', min: 0, max: 2000, step: 1, unit: 'Ω' },
+        { key: 'Rx', label: '待测外接电阻', min: 0, max: rxMax, step: rxStep, unit: 'Ω', showIf: 'opMode', showIfValue: 1 },
       ]
     },
     defaultParams: { opMode: 0, multiplier: 1, R_adjust: 1399, Rx: 1500 } as const,

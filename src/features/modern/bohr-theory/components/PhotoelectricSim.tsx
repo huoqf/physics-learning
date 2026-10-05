@@ -141,7 +141,6 @@ export default function PhotoelectricSim({ isPlaying, time, radiationPhotonIndex
 
     // --- 绘制 ---
     const electrons = electronsRef.current
-    const cAngle = circuitAngleRef.current
     ctx.clearRect(0, 0, W, H)
 
     drawHydrogenAtomTransition(ctx, cx, cy, rIdx, time, font)
@@ -186,7 +185,7 @@ export default function PhotoelectricSim({ isPlaying, time, radiationPhotonIndex
     ctx.fillText('阳极 A', aPlateX - 10, cy - 56)
     ctx.restore()
 
-    drawCircuit(ctx, cx, cy, kPlateX, aPlateX, sVoltage, hasCur, curRatio, cAngle, font)
+    drawCircuit(ctx, cx, cy, kPlateX, aPlateX, sVoltage, hasCur, curRatio, font)
 
     // 光电子
     electrons.forEach((e) => {
@@ -323,115 +322,220 @@ function drawPhotonBeam(ctx: CanvasRenderingContext2D, cx: number, cy: number, k
 }
 
 function drawCircuit(
-  ctx: CanvasRenderingContext2D, cx: number, cy: number,
-  kPlateX: number, aPlateX: number,
-  sVoltage: number, hasCur: boolean, curRatio: number, cAngle: number,
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  kPlateX: number,
+  aPlateX: number,
+  sVoltage: number,
+  hasCur: boolean,
+  curRatio: number,
   font: (v: number) => number,
 ) {
-  const kWireY = cy + 50, aWireY = cy + 50
-  const bottomCircuitY = cy + 115
+  const kWireY = cy + 45
+  const aWireY = cy + 45
+  const bottomY = cy + 100
+  const midY = cy + 72
 
   ctx.save()
-  ctx.strokeStyle = CANVAS_COLORS.labelTextLight
-  ctx.lineWidth = 2
+  ctx.strokeStyle = CANVAS_COLORS.strokeDark
+  ctx.lineWidth = 1.8
 
+  // 1. 阴极 K (左侧) 引线：自 K 板底垂直向下至 bottomY 并横接变阻器左端
   ctx.beginPath()
   ctx.moveTo(kPlateX - 1, kWireY)
-  ctx.lineTo(kPlateX - 1, bottomCircuitY)
-  ctx.lineTo(cx - 50, bottomCircuitY)
+  ctx.lineTo(kPlateX - 1, bottomY)
+  ctx.lineTo(cx - 45, bottomY)
   ctx.stroke()
 
-  ctx.beginPath()
-  ctx.moveTo(aPlateX + 1, aWireY)
-  ctx.lineTo(aPlateX + 1, bottomCircuitY - 30)
-  ctx.stroke()
-
-  const meterY = bottomCircuitY - 15
+  // 2. 滑动变阻器 R (分压式接法)：置于底部中央 [cx - 45, cx + 45]
+  const rheoLeft = cx - 45
+  const rheoRight = cx + 45
+  const rheoW = rheoRight - rheoLeft
+  const rheoH = 10
   ctx.fillStyle = CANVAS_COLORS.white
   ctx.strokeStyle = CANVAS_COLORS.strokeDark
   ctx.lineWidth = 1.5
   ctx.beginPath()
-  ctx.arc(aPlateX + 1, meterY, 15, 0, Math.PI * 2)
+  ctx.rect(rheoLeft, bottomY - rheoH / 2, rheoW, rheoH)
   ctx.fill()
   ctx.stroke()
 
+  // 电阻丝细密刻线
+  ctx.lineWidth = 0.8
+  ctx.strokeStyle = CANVAS_COLORS.textMuted
+  for (let lx = rheoLeft + 6; lx < rheoRight - 4; lx += 6) {
+    ctx.beginPath()
+    ctx.moveTo(lx, bottomY - rheoH / 2 + 1)
+    ctx.lineTo(lx, bottomY + rheoH / 2 - 1)
+    ctx.stroke()
+  }
+
+  // 3. 直流电源 (并联在变阻器两端构成基准分压源)：位于 bottomY + 20
+  const pY = bottomY + 20
+  ctx.strokeStyle = CANVAS_COLORS.strokeDark
+  ctx.lineWidth = 1.5
+  // 左引线
+  ctx.beginPath()
+  ctx.moveTo(rheoLeft, bottomY + rheoH / 2)
+  ctx.lineTo(rheoLeft, pY)
+  ctx.lineTo(cx - 15, pY)
+  ctx.stroke()
+  // 右引线
+  ctx.beginPath()
+  ctx.moveTo(rheoRight, bottomY + rheoH / 2)
+  ctx.lineTo(rheoRight, pY)
+  ctx.lineTo(cx + 15, pY)
+  ctx.stroke()
+
+  // 电源正极 (长细线)
+  ctx.lineWidth = 1.2
+  ctx.beginPath()
+  ctx.moveTo(cx - 15, pY - 7)
+  ctx.lineTo(cx - 15, pY + 7)
+  ctx.stroke()
+  // 电源负极 (短粗线)
+  ctx.lineWidth = 2.8
+  ctx.beginPath()
+  ctx.moveTo(cx - 7, pY - 4)
+  ctx.lineTo(cx - 7, pY + 4)
+  ctx.stroke()
+
+  // 电极标注
   ctx.fillStyle = CANVAS_COLORS.labelText
-  ctx.font = `${font(9)}px monospace`
+  ctx.font = `bold ${font(9)}px sans-serif`
+  ctx.textAlign = 'center'
+  ctx.fillText('+', cx - 22, pY)
+  ctx.fillText('-', cx, pY)
+  ctx.font = `${font(9)}px sans-serif`
+  ctx.fillText('E (直流电源)', cx + 45, pY + 3)
+
+  // 4. 滑动触片 P：位置随反向电压比例动态滑动 [0, 4V]
+  const sliderRatio = Math.max(0, Math.min(1, sVoltage / 4.0))
+  const sliderX = rheoLeft + sliderRatio * rheoW
+
+  // 触片引线：从 sliderX 垂直向上至 midY，向右折接入微安表下端
+  ctx.lineWidth = 1.8
+  ctx.strokeStyle = CANVAS_COLORS.strokeDark
+  ctx.beginPath()
+  ctx.moveTo(sliderX, bottomY - rheoH / 2)
+  ctx.lineTo(sliderX, midY)
+  ctx.lineTo(aPlateX + 1, midY)
+  ctx.lineTo(aPlateX + 1, midY + 14) // 接微安表下端
+  ctx.stroke()
+
+  // 触头红色小三角指示
+  ctx.fillStyle = CANVAS_COLORS.alertRed
+  ctx.beginPath()
+  ctx.moveTo(sliderX, bottomY - rheoH / 2)
+  ctx.lineTo(sliderX - 3.5, bottomY - rheoH / 2 - 6)
+  ctx.lineTo(sliderX + 3.5, bottomY - rheoH / 2 - 6)
+  ctx.closePath()
+  ctx.fill()
+
+  // 5. 阳极 A (右侧) 引线与微安表
+  ctx.beginPath()
+  ctx.moveTo(aPlateX + 1, aWireY)
+  ctx.lineTo(aPlateX + 1, midY - 14)
+  ctx.stroke()
+
+  // 微安表 (表盘)
+  const meterR = 14
+  ctx.fillStyle = CANVAS_COLORS.white
+  ctx.strokeStyle = CANVAS_COLORS.strokeDark
+  ctx.lineWidth = 1.5
+  ctx.beginPath()
+  ctx.arc(aPlateX + 1, midY, meterR, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+
+  // 微安表指针与文字
+  ctx.fillStyle = CANVAS_COLORS.labelText
+  ctx.font = `bold ${font(8)}px monospace`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  const curTxt = hasCur ? `${(12.8 * curRatio).toFixed(2)}μA` : '0.00μA'
-  ctx.fillText(curTxt, aPlateX + 1, meterY + 6)
-  ctx.fillText('μA', aPlateX + 1, meterY - 6)
+  ctx.fillText('μA', aPlateX + 1, midY - 5)
+  const curTxt = hasCur ? `${(12.8 * curRatio).toFixed(1)}` : '0.0'
+  ctx.fillText(curTxt, aPlateX + 1, midY + 5)
 
+  // 指针
   ctx.strokeStyle = CANVAS_COLORS.alertRed
   ctx.lineWidth = 1.2
   ctx.beginPath()
-  ctx.moveTo(aPlateX + 1, meterY)
+  ctx.moveTo(aPlateX + 1, midY)
   const ptrAngle = hasCur ? Math.PI * 0.25 * curRatio : 0
-  ctx.lineTo(aPlateX + 1 + Math.sin(ptrAngle) * 9, meterY - Math.cos(ptrAngle) * 9)
+  ctx.lineTo(aPlateX + 1 + Math.sin(ptrAngle) * 8, midY - Math.cos(ptrAngle) * 8)
   ctx.stroke()
 
-  ctx.strokeStyle = CANVAS_COLORS.labelTextLight
-  ctx.lineWidth = 2
+  // 6. 电压表 V (并联测量极板电压)：跨接在 K 板线 (kPlateX - 1) 与触头引线 (sliderX) 之间
+  const voltX = (kPlateX - 1 + cx - 20) / 2
+  const voltY = midY
+  // 电压表支路导线
+  ctx.strokeStyle = CANVAS_COLORS.strokeDark
+  ctx.lineWidth = 1.2
+  // 左侧连接 K 板干路
   ctx.beginPath()
-  ctx.moveTo(aPlateX + 1, meterY + 15)
-  ctx.lineTo(aPlateX + 1, bottomCircuitY)
-  ctx.lineTo(cx + 50, bottomCircuitY)
+  ctx.moveTo(kPlateX - 1, voltY)
+  ctx.lineTo(voltX - 12, voltY)
   ctx.stroke()
-
-  const powerX = cx - 25, powerY = bottomCircuitY
-  ctx.strokeStyle = CANVAS_COLORS.labelText
-  ctx.lineWidth = 1
+  // 右侧连接触头引线
   ctx.beginPath()
-  ctx.moveTo(powerX, powerY - 10)
-  ctx.lineTo(powerX, powerY + 10)
+  ctx.moveTo(voltX + 12, voltY)
+  ctx.lineTo(Math.max(sliderX, voltX + 12), voltY)
   ctx.stroke()
-  ctx.lineWidth = 3
+
+  // 交叉节点圆点
+  ctx.fillStyle = CANVAS_COLORS.strokeDark
   ctx.beginPath()
-  ctx.moveTo(powerX + 6, powerY - 6)
-  ctx.lineTo(powerX + 6, powerY + 6)
-  ctx.stroke()
+  ctx.arc(kPlateX - 1, voltY, 2.5, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.beginPath()
+  ctx.arc(sliderX, voltY, 2.5, 0, Math.PI * 2)
+  ctx.fill()
 
-  ctx.fillStyle = CANVAS_COLORS.labelText
-  ctx.font = `bold ${font(11)}px sans-serif`
-  ctx.fillText('+', powerX - 10, powerY - 6)
-  ctx.fillText('-', powerX + 12, powerY - 6)
-
-  const resX = cx + 18
-  ctx.strokeStyle = CANVAS_COLORS.labelText
-  ctx.fillStyle = CANVAS_COLORS.grid
+  // 电压表表盘
+  ctx.fillStyle = CANVAS_COLORS.white
+  ctx.strokeStyle = CANVAS_COLORS.strokeDark
   ctx.lineWidth = 1.5
   ctx.beginPath()
-  ctx.rect(resX, powerY - 5, 24, 10)
+  ctx.arc(voltX, voltY, 12, 0, Math.PI * 2)
   ctx.fill()
   ctx.stroke()
 
-  ctx.strokeStyle = CANVAS_COLORS.alertRed
-  ctx.lineWidth = 1
-  ctx.beginPath()
-  ctx.moveTo(resX + 12, powerY + 12)
-  ctx.lineTo(resX + 12, powerY)
-  ctx.lineTo(resX + 8, powerY + 4)
-  ctx.moveTo(resX + 12, powerY)
-  ctx.lineTo(resX + 16, powerY + 4)
-  ctx.stroke()
+  ctx.fillStyle = MODERN_COLORS.cathodePlate
+  ctx.font = `bold ${font(9)}px sans-serif`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText('V', voltX, voltY - 3)
+  ctx.font = `bold ${font(8)}px monospace`
+  ctx.fillText(`${sVoltage.toFixed(1)}V`, voltX, voltY + 5)
 
-  ctx.fillStyle = CANVAS_COLORS.labelTextLight
-  ctx.font = `bold ${font(11)}px sans-serif`
-  ctx.fillText(`反向电压 U = ${sVoltage.toFixed(1)} V`, cx - 55, bottomCircuitY + 28)
-
+  // 7. 高中物理规范电流矢量指示 (替代粒子跳跃流动)
   if (hasCur) {
-    ctx.fillStyle = MODERN_COLORS.photoelectron
-    const points = [
-      { x: kPlateX - 1, y: cy + 50 + (bottomCircuitY - (cy + 50)) * (cAngle / (Math.PI * 2)) },
-      { x: (cx - 50) + 100 * (cAngle / (Math.PI * 2)), y: bottomCircuitY },
-      { x: aPlateX + 1, y: bottomCircuitY - (bottomCircuitY - (cy + 50)) * (cAngle / (Math.PI * 2)) },
-    ]
-    points.forEach((pt) => {
-      ctx.beginPath()
-      ctx.arc(pt.x, pt.y, 2.5, 0, Math.PI * 2)
-      ctx.fill()
-    })
+    const arrowColor = MODERN_COLORS.photoelectron
+    ctx.fillStyle = arrowColor
+
+    // K 极外回路向下电流箭头 (从 K 极流出向变阻器)
+    const arrowDownY = (kWireY + midY) / 2
+    ctx.beginPath()
+    ctx.moveTo(kPlateX - 1, arrowDownY + 4)
+    ctx.lineTo(kPlateX - 1 - 3.5, arrowDownY - 3)
+    ctx.lineTo(kPlateX - 1 + 3.5, arrowDownY - 3)
+    ctx.closePath()
+    ctx.fill()
+
+    // 阳极 A 线上向上电流箭头 (流向阳极 A)
+    const arrowUpY = (midY - 14 + aWireY) / 2
+    ctx.beginPath()
+    ctx.moveTo(aPlateX + 1, arrowUpY - 4)
+    ctx.lineTo(aPlateX + 1 - 3.5, arrowUpY + 3)
+    ctx.lineTo(aPlateX + 1 + 3.5, arrowUpY + 3)
+    ctx.closePath()
+    ctx.fill()
+
+    ctx.font = `bold ${font(9)}px sans-serif`
+    ctx.fillText('光电流 I', aPlateX + 30, arrowUpY)
   }
+
   ctx.restore()
 }

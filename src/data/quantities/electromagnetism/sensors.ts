@@ -33,8 +33,8 @@ export function buildSensorQuantities(
     quantities.push(
       { label: '光照度', symbol: 'E', value: illuminance, unit: 'lx' },
       { label: '光敏电阻阻值', symbol: 'R', value: +(rSensor / 1000).toFixed(2), unit: 'kΩ' },
-      { label: '控制端输出电压', symbol: 'V_{\\text{out}}', value: +circuit.vOut.toFixed(2), unit: 'V' },
-      { label: '继电器吸合阈值', symbol: 'V_{\\text{th}}', value: vThreshold, unit: 'V' },
+      { label: '控制端输出电压', symbol: 'V_out', value: +circuit.vOut.toFixed(2), unit: 'V' },
+      { label: '继电器吸合阈值', symbol: 'V_th', value: vThreshold, unit: 'V' },
     )
 
     formulas.push(
@@ -58,7 +58,7 @@ export function buildSensorQuantities(
     quantities.push(
       { label: '环境温度', symbol: 'T', value: temperature, unit: '℃' },
       { label: 'NTC 热敏阻值', symbol: 'R_T', value: +(rSensor / 1000).toFixed(2), unit: 'kΩ' },
-      { label: '控制端输出电压', symbol: 'V_{\\text{out}}', value: +circuit.vOut.toFixed(2), unit: 'V' },
+      { label: '控制端输出电压', symbol: 'V_out', value: +circuit.vOut.toFixed(2), unit: 'V' },
       { label: '继电器动作状态', symbol: '状态', value: circuit.isTriggered ? 1 : 0, unit: circuit.isTriggered ? '导通' : '断开' },
     )
 
