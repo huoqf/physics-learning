@@ -5,18 +5,22 @@ import { colors } from '@/theme/colors'
 import { ChargeSign } from './types'
 
 interface CapacitorPlatesProps {
-  /** 极板左侧 X 像素坐标 */
+  /** 极板中心/起始 X 像素坐标（horizontal 模式下为极板左端 X；vertical 模式下为两极板水平中心 X） */
   x: number
-  /** 两极板垂直中心 Y 像素坐标 */
+  /** 两极板中心 Y 像素坐标 */
   y: number
-  /** 极板像素宽度 */
-  width: number
-  /** 极板像素间距 */
+  /** 极板长度（horizontal 模式下为极板宽度；vertical 模式下为极板竖直高度，默认 80） */
+  width?: number
+  /** vertical 模式下极板竖直高度（若未传则使用 width 或默认 80） */
+  height?: number
+  /** 极板像素间距（horizontal 模式为垂直间距；vertical 模式为水平间距） */
   gap: number
+  /** 极板排列朝向：'horizontal'（默认水平两板）| 'vertical'（垂直两板，符合教材 LC 振荡回路标准） */
+  orientation?: 'horizontal' | 'vertical'
   /**
    * 是否带电。
    * - 支持新版 ChargeSign ('+' | '-' | 'none')
-   * - 兼容旧版 number: >0表示上正下负，<0表示上负下正，0表示不带电
+   * - 兼容旧版 number: >0表示正极在上/左，<0表示正极在下/右，0表示不带电
    */
   chargeSign?: ChargeSign | number
   /** 是否开启电荷符号绘制（若为 false 则不绘制电荷符号，默认 true） */
@@ -32,13 +36,16 @@ interface CapacitorPlatesProps {
 /**
  * 平行金属板电容器组件。
  * 
- * 绘制高质感的上下金属极板，并支持在带电时动态分布正负电荷标记与电场线。
+ * 绘制高质感的金属极板，支持水平放置（上/下极板）与垂直放置（左/右极板），
+ * 并动态分布正负电荷标记与匀强电场线箭头。
  */
 export const CapacitorPlates: React.FC<CapacitorPlatesProps> = ({
   x,
   y,
-  width,
+  width = 120,
+  height,
   gap,
+  orientation = 'horizontal',
   chargeSign = 'none' as ChargeSign,
   showField = true,
   thickness = 10,
@@ -47,8 +54,6 @@ export const CapacitorPlates: React.FC<CapacitorPlatesProps> = ({
 }) => {
   const gradId = useUniqueSvgId()
   const halfGap = gap / 2
-  const topY = y - halfGap - thickness
-  const bottomY = y + halfGap
 
   // 解析电性
   let sign: ChargeSign = 'none'
@@ -59,15 +64,143 @@ export const CapacitorPlates: React.FC<CapacitorPlatesProps> = ({
     sign = chargeSign
   }
 
-  const isTopPositive = sign === '+'
+  const isPositiveFirst = sign === '+'
   const isCharged = sign !== 'none'
 
   // 单侧极板电荷符号数量 clamp 在 [2, 15] 之间
   const density = Math.max(2, Math.min(15, chargeDensity))
-  const chargeSpacing = width / (density + 1)
-
-  // 匀强电场线数量
   const fieldLineCount = 5
+
+  if (orientation === 'vertical') {
+    // ─── 垂直两板（左极板 A、右极板 B），符合人教版教材 LC 回路标准画法 ───
+    const plateH = height ?? width
+    const leftPlateRightX = x - halfGap
+    const leftPlateLeftX = leftPlateRightX - thickness
+    const rightPlateLeftX = x + halfGap
+    const plateTopY = y - plateH / 2
+    const chargeSpacing = plateH / (density + 1)
+    const fieldLineSpacing = plateH / (fieldLineCount + 1)
+
+    return (
+      <g className="select-none">
+        <defs>
+          {/* 金属拉丝渐变（水平向右渐变） */}
+          <linearGradient id={`metal-plate-v-${gradId}`} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor={colors.neutral[500]} />
+            <stop offset="30%" stopColor={colors.neutral[300]} />
+            <stop offset="50%" stopColor={colors.neutral[100]} />
+            <stop offset="70%" stopColor={colors.neutral[300]} />
+            <stop offset="100%" stopColor={colors.neutral[600]} />
+          </linearGradient>
+
+          {/* 电场线箭头 */}
+          {isCharged && (
+            <marker
+              id={`electric-field-arrow-v-${gradId}`}
+              viewBox="0 0 10 10"
+              refX="6"
+              refY="5"
+              markerWidth="5"
+              markerHeight="5"
+              orient="auto-start-reverse"
+            >
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill={PHYSICS_COLORS.electricField} />
+            </marker>
+          )}
+        </defs>
+
+        {/* 极板间水平匀强电场线 */}
+        {showElectricFieldLines && isCharged && (
+          <g>
+            {Array.from({ length: fieldLineCount }).map((_, i) => {
+              const flY = plateTopY + (i + 1) * fieldLineSpacing
+              // 电场方向：从正极板指向负极板
+              const xStart = isPositiveFirst ? leftPlateRightX + 2 : rightPlateLeftX - 2
+              const xEnd = isPositiveFirst ? rightPlateLeftX - 2 : leftPlateRightX + 2
+              return (
+                <line
+                  key={`field-line-v-${i}`}
+                  x1={xStart}
+                  y1={flY}
+                  x2={xEnd}
+                  y2={flY}
+                  stroke={PHYSICS_COLORS.electricFieldLine}
+                  strokeWidth={1.5}
+                  markerEnd={`url(#electric-field-arrow-v-${gradId})`}
+                />
+              )
+            })}
+          </g>
+        )}
+
+        {/* 左极板 (A) */}
+        <rect
+          x={leftPlateLeftX}
+          y={plateTopY}
+          width={thickness}
+          height={plateH}
+          rx={3}
+          fill={`url(#metal-plate-v-${gradId})`}
+          stroke={colors.neutral[600]}
+          strokeWidth={1.5}
+        />
+
+        {/* 右极板 (B) */}
+        <rect
+          x={rightPlateLeftX}
+          y={plateTopY}
+          width={thickness}
+          height={plateH}
+          rx={3}
+          fill={`url(#metal-plate-v-${gradId})`}
+          stroke={colors.neutral[600]}
+          strokeWidth={1.5}
+        />
+
+        {/* 电荷分布标记（贴于极板内表面） */}
+        {showField && isCharged && (
+          <g>
+            {Array.from({ length: density }).map((_, i) => {
+              const chargeY = plateTopY + (i + 1) * chargeSpacing
+
+              return (
+                <g key={`charge-v-${i}`}>
+                  {/* 左极板电荷 */}
+                  <text
+                    x={leftPlateRightX + 9}
+                    y={chargeY + 4}
+                    fontSize="12"
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    fill={isPositiveFirst ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
+                  >
+                    {isPositiveFirst ? '+' : '−'}
+                  </text>
+                  {/* 右极板电荷 */}
+                  <text
+                    x={rightPlateLeftX - 9}
+                    y={chargeY + 4}
+                    fontSize="12"
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    fill={isPositiveFirst ? PHYSICS_COLORS.negativeCharge : PHYSICS_COLORS.positiveCharge}
+                  >
+                    {isPositiveFirst ? '−' : '+'}
+                  </text>
+                </g>
+              )
+            })}
+          </g>
+        )}
+      </g>
+    )
+  }
+
+  // ─── 水平两板（默认模式）───
+  const topY = y - halfGap - thickness
+  const bottomY = y + halfGap
+  const isTopPositive = isPositiveFirst
+  const chargeSpacing = width / (density + 1)
   const fieldLineSpacing = width / (fieldLineCount + 1)
 
   return (

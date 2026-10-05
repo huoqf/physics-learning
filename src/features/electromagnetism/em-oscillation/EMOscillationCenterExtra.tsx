@@ -17,6 +17,7 @@ import {
   wavelengthFromFrequency,
   formatWavelength,
   formatLCEnergy,
+  calculateRadioResonance,
   LC_DEFAULT_PARAMS,
   LC_DISPLAY_ENERGY_EPSILON,
 } from '@/physics'
@@ -39,10 +40,17 @@ const LC_DEFAULTS = LC_DEFAULT_PARAMS
  *   - 电磁波谱：等宽谱段顺序条（补足对数轴上被压窄的谱段）
  */
 export default function EMOscillationCenterExtra() {
-  const scene = useAnimationStore((s) => s.params.scene ?? 0)
+  const { scene, radioMode } = useAnimationStore(
+    useShallow((s) => ({
+      scene: s.params.scene ?? 0,
+      radioMode: s.params.radioMode ?? 0,
+    })),
+  )
 
   if (scene === 1) return <EMWavePanel />
-  if (scene === 2) return <EMSpectrumPanel />
+  if (scene === 2) {
+    return radioMode === 1 ? <RadioTuningPanel /> : <EMSpectrumPanel />
+  }
   return <LCPanel />
 }
 
@@ -58,6 +66,7 @@ function LCPanel() {
   const physics = useLCPhysics({
     L: params.L ?? LC_DEFAULTS.L,
     C: params.C ?? LC_DEFAULTS.C,
+    dRatio: params.dRatio ?? 1.0,
     Q0: params.Q0 ?? LC_DEFAULTS.Q0,
     time,
     showDamping,
@@ -337,6 +346,75 @@ function EMSpectrumPanel() {
             </button>
           )
         })}
+      </div>
+    </div>
+  )
+}
+
+// ─── 场次 2 子模式：无线电接收回路电谐振共振曲线 ───────────────────────────
+
+function RadioTuningPanel() {
+  const cRx = useAnimationStore((s) => s.params.cRx ?? 1.0)
+  const fTx = 100e6 // 100 MHz
+  const fRx = fTx / Math.sqrt(Math.max(0.2, cRx))
+  const { isTuned } = useMemo(
+    () => calculateRadioResonance(fTx, fRx, 14),
+    [fTx, fRx],
+  )
+
+  // 构建 I / I0 与可变电容 C_rx 的共振响应曲线
+  const resonanceCurve = useMemo(() => {
+    const pts: { x: number; y: number }[] = []
+    for (let c = 0.25; c <= 2.5; c += 0.02) {
+      const fr = fTx / Math.sqrt(c)
+      const res = calculateRadioResonance(fTx, fr, 14).response
+      pts.push({ x: Number(c.toFixed(2)), y: Number(res.toFixed(3)) })
+    }
+    return pts
+  }, [fTx])
+
+  const currentFrMHz = (fRx / 1e6).toFixed(1)
+
+  return (
+    <div className="w-full h-full flex flex-col p-2 bg-white rounded-xl border border-neutral-100 shadow-sm">
+      <div className="shrink-0 flex justify-between items-center mb-0.5 px-0.5">
+        <span className="text-xs font-bold text-neutral-800">
+          接收回路电谐振共振特性（调谐选台曲线）
+        </span>
+        <span className="text-[10px] font-mono">
+          目标电台 <span className="font-bold text-amber-600">100.0 MHz</span> ｜ 当前固有频率{' '}
+          <span className={`font-bold ${isTuned ? 'text-emerald-600' : 'text-neutral-500'}`}>
+            {currentFrMHz} MHz
+          </span>
+        </span>
+      </div>
+      <div className="flex-1 min-h-0">
+        <RelationChart
+          points={resonanceCurve}
+          xLabel="调谐电容 C (μF)"
+          yLabel="感应电流相对响应 I / I₀"
+          xDomain={[0.2, 2.55]}
+          yDomain={[0, 1.05]}
+          cursorX={cRx}
+          cursorLabel={(_x, y) => `响应 ${(y * 100).toFixed(0)}%`}
+          showGrid
+          color={isTuned ? EM_OSCILLATION_COLORS.current : CANVAS_COLORS.axis}
+          strokeWidth={2.4}
+        />
+      </div>
+      <div className="shrink-0 mt-0.5 px-1 py-1 rounded bg-neutral-50 border border-neutral-100 flex items-center justify-between text-[10px]">
+        <span className="text-neutral-600">
+          高考题眼：调节可变电容器使 <span className="font-mono font-bold">f₀ = 1/(2π√(LC))</span> 与电台频率相等，发生电谐振。
+        </span>
+        <span
+          className={`px-1.5 py-0.5 rounded font-bold ${
+            isTuned
+              ? 'bg-emerald-100 text-emerald-700'
+              : 'bg-neutral-200 text-neutral-600'
+          }`}
+        >
+          {isTuned ? '✓ 调谐选台成功（发生电谐振）' : '未对准频率（调节电容至 1.0 μF）'}
+        </span>
       </div>
     </div>
   )

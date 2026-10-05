@@ -277,3 +277,54 @@ export function formatLCEnergy(val: number): string {
   return val.toFixed(3)
 }
 
+/**
+ * 平行板电容器间距变化对电容的物理影响（高中物理教材公式 C ∝ εrS/d）。
+ *
+ * @param baseC 初始基准电容 (F)
+ * @param dRatio 相对间距因子（基准为 1.0，增大表示极板拉开，减小表示极板靠近）
+ * @returns 实际有效电容 (F)
+ */
+export function calculateCapacitanceWithGap(baseC: number, dRatio: number): number {
+  const safeDRatio = Math.max(0.1, dRatio)
+  return baseC / safeDRatio
+}
+
+/**
+ * 无线电接收回路固有频率 f = 1 / (2π√(LC))。
+ *
+ * @param L 回路电感 (H)
+ * @param C 回路电容 (F)
+ * @returns 固有频率 (Hz)
+ */
+export function calculateLCFrequency(L: number, C: number): number {
+  if (!(L > 0) || !(C > 0)) return 0
+  return 1 / (2 * Math.PI * Math.sqrt(L * C))
+}
+
+/**
+ * 无线电接收回路电谐振响应计算（归一化共振曲线）。
+ *
+ * 当接收回路固有频率 f0 接近电台发射频率 fTx 时发生电谐振，
+ * 回路感应电流大幅度增加（调谐选台）。
+ *
+ * @param fTx 发射信号频率 (Hz)
+ * @param fRx 接收回路固有频率 (Hz)
+ * @param Q 回路品质因数（默认 16，决定共振曲线尖锐程度/选择性）
+ * @returns 响应幅度 (0~1] 及是否达到谐振阈值
+ */
+export function calculateRadioResonance(
+  fTx: number,
+  fRx: number,
+  Q: number = 16,
+): { response: number; isTuned: boolean } {
+  if (!(fTx > 0) || !(fRx > 0)) {
+    return { response: 0, isTuned: false }
+  }
+  const ratio = fRx / fTx
+  const detuning = ratio - 1 / ratio
+  const response = 1 / Math.sqrt(1 + Q * Q * detuning * detuning)
+  const isTuned = response >= 0.85 // 85% 响应以上视为选台成功
+
+  return { response, isTuned }
+}
+

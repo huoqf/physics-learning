@@ -35,6 +35,8 @@ export interface SolenoidProps {
   showPolarity?: boolean
   /** 是否在正面绕组上标出电流环绕方向箭头（符合高中物理右手螺旋定则教学习惯），默认 false */
   showWindingArrows?: boolean
+  /** 引线端点圆点半径，传 0 可隐藏焊点黑点，默认 3 */
+  leadEndpointRadius?: number
 }
 
 /**
@@ -55,7 +57,7 @@ export const Solenoid: React.FC<SolenoidProps> = (props) => {
     currentThreshold: 0.05,
     flowSpeedMultiplier: 5,
     maxParticleTurns: 5,
-    leadEndpointRadius: 3,
+    leadEndpointRadius: props.leadEndpointRadius ?? 3,
   }
   return <CoilBase {...baseProps} />
 }

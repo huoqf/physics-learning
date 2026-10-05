@@ -18,6 +18,8 @@ interface UseLCPhysicsOptions {
   L: number
   /** 电容 C (F) */
   C: number
+  /** 极板间距比例因子 dRatio（基准为 1.0，C_eff = C / dRatio） */
+  dRatio?: number
   /** 初始电荷量 Q₀ (C) */
   Q0: number
   /** 当前时刻 (s) */
@@ -39,6 +41,10 @@ export interface LCPhysicsResult {
   f: number
   eTotal: number
   iMax: number
+  /** 实际有效电容 (F) */
+  effectiveC: number
+  /** 间距比例因子 */
+  dRatio: number
 
   /** 瞬时状态 */
   q: number
@@ -76,21 +82,24 @@ export interface LCPhysicsResult {
 export function useLCPhysics({
   L,
   C,
+  dRatio = 1.0,
   Q0,
   time,
   showDamping,
 }: UseLCPhysicsOptions): LCPhysicsResult {
   return useMemo(() => {
     const safeL = L > 0 ? L : LC_DEFAULT_PARAMS.L
-    const safeC = C > 0 ? C : LC_DEFAULT_PARAMS.C
+    const baseC = C > 0 ? C : LC_DEFAULT_PARAMS.C
+    const safeDRatio = Math.max(0.1, dRatio > 0 ? dRatio : 1.0)
+    const effectiveC = baseC / safeDRatio
     const safeQ0 = Q0 > 0 ? Q0 : LC_DEFAULT_PARAMS.Q0
 
-    const lc = { L: safeL, C: safeC, Q0: safeQ0, damped: showDamping }
+    const lc = { L: safeL, C: effectiveC, Q0: safeQ0, damped: showDamping }
     const { omega, T, f, eTotal, iMax } = calculateLCConstants(lc)
 
     const q = lcChargeAt(lc, time)
     const i = lcCurrentAt(lc, time)
-    const eElectric = lcElectricEnergy(q, safeC)
+    const eElectric = lcElectricEnergy(q, effectiveC)
     const eMagnetic = lcMagneticEnergy(i, safeL)
 
     // 归一化波形覆盖 2 个周期：q/Q₀ = cos(ωt)·A(t)，i/(ωQ₀) = −sin(ωt)·A(t)。
@@ -113,6 +122,8 @@ export function useLCPhysics({
       f,
       eTotal,
       iMax,
+      effectiveC,
+      dRatio: safeDRatio,
       q,
       i,
       time,
@@ -124,5 +135,5 @@ export function useLCPhysics({
       dampingCurve,
       curveSpan,
     }
-  }, [L, C, Q0, time, showDamping])
+  }, [L, C, dRatio, Q0, time, showDamping])
 }

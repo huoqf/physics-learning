@@ -17,14 +17,20 @@ interface LCOscillationSceneProps {
   font: (size: number) => number
 }
 
-// ─── 回路几何（设计坐标，画布 840×325）─────────────────────────────────────
-const LOOP = { left: 170, right: 670, top: 60, bottom: 256 } as const
-const CAP = { cx: LOOP.right, cy: 158, width: 140, gap: 38, thickness: 10 } as const
-const CAP_TOP_Y = CAP.cy - CAP.gap / 2 - CAP.thickness
-const CAP_BOTTOM_Y = CAP.cy + CAP.gap / 2
+// ─── 人教版教材与高考标准几何（画布 840×325）─────────────────────────────────
+const LOOP_LEFT = 200
+const LOOP_RIGHT = 640
+const TOP_Y = 88
+const BOTTOM_Y = 248
 
-// 立体螺线管电感：6 匝，水平跨度对齐回路导线
-const COIL = { cx: 420, cy: LOOP.bottom, turns: 6, rx: 13, ry: 22 } as const
+// 电容器：居中位于顶部中央 (420, TOP_Y)，两块垂直极板（极板 A、极板 B）
+const CAP_CENTER_X = 420
+const CAP_BASE_GAP = 52
+const CAP_PLATE_HEIGHT = 72
+const CAP_PLATE_THICKNESS = 10
+
+// 螺线管电感：居中位于底部中央 (420, BOTTOM_Y)，水平轴向
+const COIL = { cx: 420, cy: BOTTOM_Y, turns: 6, rx: 13, ry: 22 } as const
 const COIL_TOTAL_WIDTH = 180
 const COIL_LEFT = COIL.cx - COIL_TOTAL_WIDTH / 2
 const COIL_RIGHT = COIL.cx + COIL_TOTAL_WIDTH / 2
@@ -33,34 +39,41 @@ const COIL_RIGHT = COIL.cx + COIL_TOTAL_WIDTH / 2
 const NEUTRAL_THRESHOLD = 0.02
 
 /**
- * LC 振荡回路场景（画布仅呈现物理装置，严格遵循高中物理教科书规范）。
+ * LC 振荡回路场景（严格遵循人教版选择性必修第二册第四章第一节 图4.1-2及高考标准题图）。
  *
- * 定量可视化约定：
- *   1. 上下极板的电荷符号数量 ∝ |q|，正负由物理引擎严格决定；
- *   2. 回路导线与线圈绕组使用清晰的物理电流矢量箭头（i）指示瞬时方向与大小；
- *   3. 线圈内部为匀强密集平行磁感线，外部为发散闭合磁感线，带矢量方向箭头；
- *   4. 不采用混乱模糊的动态杂点粒子，完全回归教材严谨的宏观物理图像。
+ * 权威规范：
+ *   1. 矩形回路左右绝对对称、上下平齐：
+ *      - 顶部中央为垂直平行金属极板电容器（左极板 A、右极板 B），板间为水平匀强电场；
+ *      - 底部中央为水平横置通电螺线管电感 L，线圈内为水平磁感线；
+ *      - 导线全周横平竖直闭合，绝无任何反向折弯、高低肩或虚线电源；
+ *   2. 极板间距动态响应：板间距离 d 沿水平轴左右对称展开，电场线动态缩放；
+ *   3. 环流矢量完整自洽：四边电流矢量 i 随充放电时相同步换向流转，右手螺旋定则与磁极 N/S 严丝合缝。
  */
 export function LCOscillationScene({ physics, font }: LCOscillationSceneProps) {
-  const { q, i, iMax, chargeRatio } = physics
+  const { q, i, iMax, chargeRatio, dRatio = 1.0 } = physics
 
-  // 极板电荷：数量与正负都来自物理引擎
+  // 极板间距动态响应（拉开极板间距使电容减小，C ∝ 1/d）
+  const capGap = Math.round(CAP_BASE_GAP * dRatio)
+  const leftPlateOuterX = CAP_CENTER_X - capGap / 2 - CAP_PLATE_THICKNESS
+  const rightPlateOuterX = CAP_CENTER_X + capGap / 2 + CAP_PLATE_THICKNESS
+
+  // 极板电荷：极性与正负来自物理引擎（q > 0 表示极板 A 带正电、极板 B 带负电）
   const chargeMagnitude = Math.abs(chargeRatio)
   const isNeutral = chargeMagnitude < NEUTRAL_THRESHOLD
   const chargeSign: ChargeSign = isNeutral ? 'none' : q > 0 ? '+' : '-'
-  // 上限取 9：极板宽 140 px，符号间距 140/10 = 14 px，可容纳 12 px 字号的『+ / −』而不叠字
-  const chargeDensity = 2 + Math.round(7 * Math.min(1, chargeMagnitude))
+  const chargeDensity = 2 + Math.round(6 * Math.min(1, chargeMagnitude))
 
-  // 电流相对强度（驱动磁场光泽与方向箭头）
+  // 电流相对强度（驱动磁场能与流转矢量）
   const currentLevel = iMax > 0 ? Math.min(1, Math.abs(i) / iMax) : 0
-  const currentRightward = -i > 0
+  // -i > 0 时正电荷由极板 A 流出（逆时针放电）
+  const isCounterClockwise = -i > 0
 
   return (
     <>
-      {/* ── 0. 空间闭合磁场能云与物理磁感线（随电流大小动态呈现）── */}
+      {/* ── 0. 螺线管磁场能辉光与闭合磁感线（随电流强度动态呈现）── */}
       {currentLevel > 0.03 && (
         <g pointerEvents="none">
-          {/* 外层柔和磁场能辉光（呈现电磁能量空间分布） */}
+          {/* 磁场能柔和辉光云 */}
           <ellipse
             cx={COIL.cx}
             cy={COIL.cy}
@@ -69,7 +82,7 @@ export function LCOscillationScene({ physics, font }: LCOscillationSceneProps) {
             fill={withAlpha(EM_OSCILLATION_COLORS.magneticEnergy, 0.14 * currentLevel)}
           />
 
-          {/* 规范通电螺线管磁感线：内部匀强密集线 + 外部闭合线 + 场向矢量箭头 */}
+          {/* 规范通电螺线管磁感线：水平穿过线圈内部并在外部闭合 */}
           <SolenoidFieldLines
             x={COIL.cx}
             y={COIL.cy}
@@ -85,51 +98,36 @@ export function LCOscillationScene({ physics, font }: LCOscillationSceneProps) {
       {/* ── 1. 电容器极板间电场能辉光（随电荷量强弱变化）── */}
       {!isNeutral && (
         <rect
-          x={CAP.cx - CAP.width / 2 + 6}
-          y={CAP_TOP_Y + CAP.thickness}
-          width={CAP.width - 12}
-          height={CAP.gap}
-          rx={4}
+          x={CAP_CENTER_X - capGap / 2}
+          y={TOP_Y - CAP_PLATE_HEIGHT / 2 + 6}
+          width={capGap}
+          height={CAP_PLATE_HEIGHT - 12}
+          rx={3}
           fill={withAlpha(EM_OSCILLATION_COLORS.electricEnergy, 0.28 * Math.min(1, chargeMagnitude))}
           pointerEvents="none"
         />
       )}
 
-      {/* ── 2. 回路导线与金属接线端子 ── */}
+      {/* ── 2. 闭合主回路导线（横平竖直、绝对对称、标准闭合回路）── */}
       <g
         fill="none"
         stroke={CIRCUIT_COLORS.wire}
         strokeWidth={STROKE.objectLine}
         strokeLinecap="round"
+        strokeLinejoin="round"
       >
-        {/* 上边 */}
-        <line x1={LOOP.left} y1={LOOP.top} x2={LOOP.right} y2={LOOP.top} />
-        {/* 左边 */}
-        <line x1={LOOP.left} y1={LOOP.top} x2={LOOP.left} y2={LOOP.bottom} />
-        {/* 下边（绕开线圈） */}
-        <line x1={LOOP.left} y1={LOOP.bottom} x2={COIL_LEFT} y2={LOOP.bottom} />
-        <line x1={COIL_RIGHT} y1={LOOP.bottom} x2={LOOP.right} y2={LOOP.bottom} />
-        {/* 右边：上极板引线 + 下极板引线 */}
-        <line x1={CAP.cx} y1={LOOP.top} x2={CAP.cx} y2={CAP_TOP_Y} />
-        <line x1={CAP.cx} y1={CAP_BOTTOM_Y} x2={CAP.cx} y2={LOOP.bottom} />
+        {/* 左半周回路：左极板 A 背面 -> 左上角 -> 左竖直导线 -> 左下角 -> 螺线管左端 */}
+        <path
+          d={`M ${leftPlateOuterX} ${TOP_Y} L ${LOOP_LEFT} ${TOP_Y} L ${LOOP_LEFT} ${BOTTOM_Y} L ${COIL_LEFT} ${BOTTOM_Y}`}
+        />
+
+        {/* 右半周回路：右极板 B 背面 -> 右上角 -> 右竖直导线 -> 右下角 -> 螺线管右端 */}
+        <path
+          d={`M ${rightPlateOuterX} ${TOP_Y} L ${LOOP_RIGHT} ${TOP_Y} L ${LOOP_RIGHT} ${BOTTOM_Y} L ${COIL_RIGHT} ${BOTTOM_Y}`}
+        />
       </g>
 
-      {/* 导线转角端子接头 */}
-      <g>
-        {[
-          [LOOP.left, LOOP.top],
-          [LOOP.right, LOOP.top],
-          [LOOP.left, LOOP.bottom],
-          [LOOP.right, LOOP.bottom],
-        ].map(([px, py], idx) => (
-          <g key={`terminal-${idx}`}>
-            <circle cx={px} cy={py} r={4.5} fill={CIRCUIT_COLORS.node} stroke={CANVAS_COLORS.white} strokeWidth={1.5} />
-            <circle cx={px} cy={py} r={1.5} fill={CANVAS_COLORS.white} />
-          </g>
-        ))}
-      </g>
-
-      {/* ── 3. 铜线螺线管电感（水平串联电感模式，左右水平引线对接回路，显示 N/S 磁极）── */}
+      {/* ── 3. 铜线螺线管电感（底部中央，水平轴向串联，显示 N/S 磁极与电流绕向）── */}
       <Solenoid
         x={COIL.cx}
         y={COIL.cy}
@@ -138,93 +136,159 @@ export function LCOscillationScene({ physics, font }: LCOscillationSceneProps) {
         turns={COIL.turns}
         current={-i}
         leadType="horizontal"
+        leadEndpointRadius={0}
         showPolarity
         showWindingArrows
         showIronCore={false}
         animated={false}
       />
 
-      {/* ── 4. 电容器极板 ── */}
+      {/* ── 4. 平行金属板电容器（人教版规范：顶部中央垂直极板）── */}
       <CapacitorPlates
-        x={CAP.cx - CAP.width / 2}
-        y={CAP.cy}
-        width={CAP.width}
-        gap={CAP.gap}
-        thickness={CAP.thickness}
+        x={CAP_CENTER_X}
+        y={TOP_Y}
+        height={CAP_PLATE_HEIGHT}
+        gap={capGap}
+        thickness={CAP_PLATE_THICKNESS}
+        orientation="vertical"
         chargeSign={chargeSign}
         chargeDensity={chargeDensity}
         showElectricFieldLines={!isNeutral}
       />
 
-      {/* ── 5. 元件符号标注 ── */}
+      {/* ── 5. 元件符号与极板 A/B 标注（教材与高考规范标注）── */}
       <g
         fontFamily={FONT.family}
-        fontStyle="italic"
         fontWeight="bold"
         fill={CANVAS_COLORS.labelText}
-        textAnchor="middle"
       >
-        <text x={CAP.cx + CAP.width / 2 + 20} y={CAP.cy + 5} fontSize={font(FONT.label)}>
+        {/* 极板 A 标注（左极板正上方，随间距动态居中） */}
+        <text
+          x={CAP_CENTER_X - capGap / 2 - CAP_PLATE_THICKNESS / 2}
+          y={TOP_Y - CAP_PLATE_HEIGHT / 2 - 12}
+          fontSize={font(FONT.small)}
+          textAnchor="middle"
+        >
+          极板 A
+        </text>
+
+        {/* 极板 B 标注（右极板正上方，随间距动态居中） */}
+        <text
+          x={CAP_CENTER_X + capGap / 2 + CAP_PLATE_THICKNESS / 2}
+          y={TOP_Y - CAP_PLATE_HEIGHT / 2 - 12}
+          fontSize={font(FONT.small)}
+          textAnchor="middle"
+        >
+          极板 B
+        </text>
+
+        {/* 电容 C 符号（置于顶边右半段上方开阔位置） */}
+        <text
+          x={(rightPlateOuterX + LOOP_RIGHT) / 2}
+          y={TOP_Y - 14}
+          fontSize={font(FONT.label)}
+          textAnchor="middle"
+          fontStyle="italic"
+        >
           C
         </text>
-        <text x={COIL.cx} y={LOOP.bottom + 42} fontSize={font(FONT.label)}>
+
+        {/* 电感 L 符号（严格居中于螺线管正下方） */}
+        <text
+          x={COIL.cx}
+          y={BOTTOM_Y + 36}
+          fontSize={font(FONT.label)}
+          textAnchor="middle"
+          fontStyle="italic"
+        >
           L
         </text>
       </g>
 
-      {/* ── 6. 回路瞬时电流矢量体系（复用官方 VectorArrow 规范组件，带物理量符号 i）── */}
+      {/* ── 6. 闭合回路瞬时电流矢量系统（四边对称分布、环流物理对齐）── */}
       {currentLevel > 0.03 && (
-        <g opacity={0.35 + 0.65 * currentLevel}>
-          {/* 下边导线瞬时电流矢量 */}
+        <g opacity={0.4 + 0.6 * currentLevel}>
+          {/* 顶边左段导线电流：逆时针放电时由极板 A 向左流向左上角 */}
           <VectorArrow
             originDesign={{
-              x: currentRightward ? 210 : 270,
-              y: LOOP.bottom,
+              x: (LOOP_LEFT + leftPlateOuterX) / 2,
+              y: TOP_Y,
             }}
-            vector={{ x: currentRightward ? 1 : -1, y: 0 }}
+            vector={{ x: isCounterClockwise ? -1 : 1, y: 0 }}
             type="currentDirection"
             arrowType="visual-only"
             sceneScale={IDENTITY_SCENE_SCALE}
-            pixelLength={36 + 24 * currentLevel}
+            pixelLength={30 + 18 * currentLevel}
             strokeWidth={STROKE.vectorSub}
             label="i"
             font={font}
           />
 
-          {/* 左边导线瞬时电流矢量（顺时针向下、逆时针向上，形成完整闭合环流） */}
+          {/* 左侧竖直导线电流：逆时针放电时向下流动（物理 -y 为屏幕向下） */}
           <VectorArrow
             originDesign={{
-              x: LOOP.left,
-              y: (LOOP.top + LOOP.bottom) / 2 + (currentRightward ? -20 : 20),
+              x: LOOP_LEFT,
+              y: (TOP_Y + BOTTOM_Y) / 2,
             }}
-            vector={{ x: 0, y: currentRightward ? -1 : 1 }}
+            vector={{ x: 0, y: isCounterClockwise ? -1 : 1 }}
             type="currentDirection"
             arrowType="visual-only"
             sceneScale={IDENTITY_SCENE_SCALE}
-            pixelLength={36 + 24 * currentLevel}
+            pixelLength={30 + 18 * currentLevel}
             strokeWidth={STROKE.vectorSub}
             label="i"
             font={font}
           />
 
-          {/* 顶边导线瞬时电流矢量 */}
+          {/* 底边螺线管右侧导线电流：逆时针放电时向右流动 */}
           <VectorArrow
             originDesign={{
-              x: currentRightward ? 450 : 390,
-              y: LOOP.top,
+              x: (COIL_RIGHT + LOOP_RIGHT) / 2,
+              y: BOTTOM_Y,
             }}
-            vector={{ x: currentRightward ? -1 : 1, y: 0 }}
+            vector={{ x: isCounterClockwise ? 1 : -1, y: 0 }}
             type="currentDirection"
             arrowType="visual-only"
             sceneScale={IDENTITY_SCENE_SCALE}
-            pixelLength={36 + 24 * currentLevel}
+            pixelLength={30 + 18 * currentLevel}
+            strokeWidth={STROKE.vectorSub}
+            label="i"
+            font={font}
+          />
+
+          {/* 右侧竖直导线电流：逆时针放电时向上流动（物理 +y 为屏幕向上） */}
+          <VectorArrow
+            originDesign={{
+              x: LOOP_RIGHT,
+              y: (TOP_Y + BOTTOM_Y) / 2,
+            }}
+            vector={{ x: 0, y: isCounterClockwise ? 1 : -1 }}
+            type="currentDirection"
+            arrowType="visual-only"
+            sceneScale={IDENTITY_SCENE_SCALE}
+            pixelLength={30 + 18 * currentLevel}
+            strokeWidth={STROKE.vectorSub}
+            label="i"
+            font={font}
+          />
+
+          {/* 顶边右段导线电流：逆时针放电时由右上角向左流入极板 B */}
+          <VectorArrow
+            originDesign={{
+              x: (rightPlateOuterX + LOOP_RIGHT) / 2,
+              y: TOP_Y,
+            }}
+            vector={{ x: isCounterClockwise ? -1 : 1, y: 0 }}
+            type="currentDirection"
+            arrowType="visual-only"
+            sceneScale={IDENTITY_SCENE_SCALE}
+            pixelLength={30 + 18 * currentLevel}
             strokeWidth={STROKE.vectorSub}
             label="i"
             font={font}
           />
         </g>
       )}
-
     </>
   )
 }

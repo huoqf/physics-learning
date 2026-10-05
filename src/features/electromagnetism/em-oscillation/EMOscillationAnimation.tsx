@@ -9,6 +9,7 @@ import { useEMSpectrumLayout } from './hooks/useEMSpectrumLayout'
 import { LCOscillationScene } from './components/LCOscillationScene'
 import { EMWaveScene } from './components/EMWaveScene'
 import { EMSpectrumScene } from './components/EMSpectrumScene'
+import { RadioTuningScene } from './components/RadioTuningScene'
 import { LC_DEFAULT_PARAMS } from '@/physics'
 
 /** 场次索引（与 registry 的 defaultParams.scene 一一对应） */
@@ -26,8 +27,8 @@ type FontFn = (size: number) => number
 /**
  * 电磁振荡与电磁波 — 编排层薄壳。
  *
- * 3 个知识节点（LC 振荡 / 电磁波 / 电磁波谱）共用本薄壳，
- * 由 `params.scene` 分派到 3 个独立场景组件；每个场次各自持有自己的
+ * 3 个知识节点（LC 振荡 / 电磁波 / 电磁波谱与无线电）共用本薄壳，
+ * 由 `params.scene` 分派到独立场景组件；每个场次各自持有自己的
  * 物理 Hook，避免"未使用场次仍消耗逐帧计算"。
  *
  * 画布统一使用 CANVAS_PRESETS.splitV（840×325）：
@@ -66,6 +67,7 @@ function LCStage({ font }: { font: FontFn }) {
   const physics = useLCPhysics({
     L: params.L ?? LC_L_DEFAULT,
     C: params.C ?? LC_C_DEFAULT,
+    dRatio: params.dRatio ?? 1.0,
     Q0: params.Q0 ?? LC_Q0_DEFAULT,
     time,
     showDamping: (params.showDamping ?? 0) === 1,
@@ -86,11 +88,23 @@ function EMWaveStage({ font }: { font: FontFn }) {
   return <EMWaveScene physics={physics} font={font} />
 }
 
-// ─── 场次 2：电磁波谱 ─────────────────────────────────────────────────────
+// ─── 场次 2：电磁波谱与无线电调谐 ─────────────────────────────────────────
 
 function EMSpectrumStage({ font }: { font: FontFn }) {
-  const band = useAnimationStore((s) => s.params.band ?? 0)
+  const { radioMode, band, cRx, time } = useAnimationStore(
+    useShallow((s) => ({
+      radioMode: s.params.radioMode ?? 0,
+      band: s.params.band ?? 0,
+      cRx: s.params.cRx ?? 1.0,
+      time: s.time,
+    })),
+  )
+
   const layout = useEMSpectrumLayout(band)
+
+  if (radioMode === 1) {
+    return <RadioTuningScene cRx={cRx} time={time} font={font} />
+  }
 
   return <EMSpectrumScene layout={layout} font={font} />
 }

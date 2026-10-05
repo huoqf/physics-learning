@@ -349,7 +349,7 @@ export const electricityKnowledge: KnowledgeNode[] = [
     module: 'electricity',
     importance: 'core',
     animationIds: ['anim-em-wave'],
-    problemIds: [],
+    problemIds: ['prob-2021-zhejiang-02'],
     prerequisites: ['electricity-6-1'],
   },
   {
@@ -359,7 +359,7 @@ export const electricityKnowledge: KnowledgeNode[] = [
     module: 'electricity',
     importance: 'gaokao',
     animationIds: ['anim-em-spectrum'],
-    problemIds: [],
+    problemIds: ['prob-2020-zhejiang-03'],
     prerequisites: ['electricity-6-2'],
   },
   // ── 第7章 传感器（人教版选择性必修第二册 第3章）──────────────

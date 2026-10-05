@@ -32,7 +32,7 @@ import {
   LC_PHYSICS_EPSILON,
   LC_DISPLAY_ENERGY_EPSILON,
 } from '@/physics'
-import { EM_OSCILLATION_COLORS } from '@/theme/physics'
+import { CANVAS_COLORS, EM_OSCILLATION_COLORS } from '@/theme/physics'
 import type {
   Formula,
   GaokaoPoint,
@@ -83,18 +83,20 @@ export function buildEmOscillationQuantities(
 
 function buildLCPanel(params: Record<string, number>, time: number): PhysicsPanelData {
   const L = params.L ?? LC_DEFAULTS.L
-  const C = params.C ?? LC_DEFAULTS.C
+  const baseC = params.C ?? LC_DEFAULTS.C
+  const dRatio = params.dRatio ?? 1.0
+  const effectiveC = baseC / Math.max(0.1, dRatio)
   const Q0 = params.Q0 ?? LC_DEFAULTS.Q0
   const showDamping = (params.showDamping ?? 0) === 1
 
   // damped 标志交给 physics 层：q、i 与画布/波形曲线消费的是同一份取值，
   // 杜绝"画布画了衰减、右屏却仍是理想值"的双真源。
-  const lc = { L, C, Q0, damped: showDamping }
+  const lc = { L, C: effectiveC, Q0, damped: showDamping }
   const { omega, T, f, iMax } = calculateLCConstants(lc)
 
   const q = lcChargeAt(lc, time)
   const i = lcCurrentAt(lc, time)
-  const eElectric = lcElectricEnergy(q, C)
+  const eElectric = lcElectricEnergy(q, effectiveC)
   const eMagnetic = lcMagneticEnergy(i, L)
 
   // 有阻尼时实际峰值 = 理想峰值 × 振幅系数（唯一入口）；
@@ -156,6 +158,7 @@ function buildLCPanel(params: Record<string, number>, time: number): PhysicsPane
     },
     { label: '振荡周期', symbol: 'T', value: T, unit: 's' },
     { label: '振荡频率', symbol: 'f', value: f, unit: 'Hz' },
+    { label: '有效电容', symbol: 'C_eff', value: effectiveC, unit: 'F' },
   ]
 
   const formulas: Formula[] = [
@@ -165,6 +168,12 @@ function buildLCPanel(params: Record<string, number>, time: number): PhysicsPane
       condition: '无阻尼理想 LC 回路（回路电阻 R = 0）',
       note: '周期只由 L、C 决定（固有角频率 ω = 1/√(LC)），与初始电荷量 Q₀ 无关。',
       level: 'core' as const,
+    },
+    {
+      name: '平行板电容器电容决定式',
+      latex: 'C = \\frac{\\varepsilon_r S}{4\\pi k d}',
+      condition: '改变极板间距 d 时电容反比变化（C ∝ 1/d），进而改变周期 T',
+      level: 'important' as const,
     },
     {
       name: '瞬时电荷与电流关系',
@@ -272,6 +281,10 @@ function buildEMWavePanel(params: Record<string, number>): PhysicsPanelData {
       importance: 'gaokao' as const,
     },
     {
+      text: '变化的磁场激发感生电场（涡旋电场）：其电场线是闭合曲线，闭合回路上遵循安培/楞次右手螺旋规律。',
+      importance: 'gaokao' as const,
+    },
+    {
       text: '电磁波是横波：电场 E 与磁场 B 相互垂直，且都垂直于传播方向。',
       importance: 'gaokao' as const,
     },
@@ -290,6 +303,10 @@ function buildEMWavePanel(params: Record<string, number>): PhysicsPanelData {
       text: '易错提醒：均匀变化的磁场产生稳定的电场（不再激发变化的电场），只有周期性变化的场才能形成持续传播的电磁波。',
       level: 'warning' as const,
     },
+    {
+      text: '物理学史考点：麦克斯韦建立了电磁场理论并预言电磁波，赫兹通过火花放电实验首次证实了电磁波的存在。',
+      level: 'info' as const,
+    },
   ]
 
   return { quantities, formulas, gaokaoPoints, warnings }
@@ -298,6 +315,74 @@ function buildEMWavePanel(params: Record<string, number>): PhysicsPanelData {
 // ─── 场次 2：电磁波谱与无线电波的发射与接收 ───────────────────────────────
 
 function buildSpectrumPanel(params: Record<string, number>): PhysicsPanelData {
+  if (params.radioMode === 1) {
+    // ── 无线电发射与接收（调谐）子模式 ──
+    const cRx = params.cRx ?? 1.0
+    const fTxMHz = 100
+    const fRxMHz = fTxMHz / Math.sqrt(Math.max(0.2, cRx))
+    const isTuned = Math.abs(fRxMHz - fTxMHz) < 8 // 调谐窗口
+
+    const quantities: PhysicsQuantity[] = [
+      { label: '电台发射频率', symbol: 'f_Tx', value: fTxMHz, unit: 'MHz', color: EM_OSCILLATION_COLORS.propagation },
+      {
+        label: '接收固有频率',
+        symbol: 'f_0',
+        value: Number(fRxMHz.toFixed(1)),
+        unit: 'MHz',
+        color: isTuned ? EM_OSCILLATION_COLORS.current : CANVAS_COLORS.labelText,
+        highlight: isTuned ? 'extreme' : undefined,
+      },
+      { label: '调谐电容', symbol: 'C_rx', value: cRx, unit: 'μF', color: EM_OSCILLATION_COLORS.charge },
+      {
+        label: '调谐状态',
+        value: isTuned ? '电谐振·选台成功' : '失谐无信号',
+        unit: '',
+        highlight: isTuned ? 'positive' : undefined,
+      },
+    ]
+
+    const formulas: Formula[] = [
+      {
+        name: '电谐振调谐条件',
+        latex: 'f_0 = \\frac{1}{2\\pi\\sqrt{LC}} = f_{\\text{发射}}',
+        condition: '接收回路固有频率等于所要接收电磁波的频率时发生电谐振',
+        note: '感应电流达到最大值，实现从空中众多电波中选出目标电台。',
+        level: 'core' as const,
+      },
+      {
+        name: '可变电容器调节与选台规律',
+        latex: 'C = \\frac{\\varepsilon_r S}{4\\pi k d} \\implies f_0 \\propto \\frac{1}{\\sqrt{C}}',
+        condition: '接收较低频率电台时需减小 f₀，即应增大电容 C（增大极板面积 S、减小间距 d）',
+        level: 'important' as const,
+      },
+    ]
+
+    const gaokaoPoints: GaokaoPoint[] = [
+      {
+        text: '选台原理（电谐振）：旋转可变电容器改变 C，使接收回路固有频率与目标电台频率相同。',
+        importance: 'gaokao' as const,
+      },
+      {
+        text: '高考高频题眼：由接收高频电台转为低频电台，需使固有频率减小，方法是增大 C（增大正对面积 S、减小间距 d）或增大 L（插入铁芯、增加匝数）。',
+        importance: 'gaokao' as const,
+      },
+      {
+        text: '无线电三步过程：调制（信号装载到高频载波）→ 发射（开放天线）→ 调谐（电谐振选台）→ 解调/检波（还原原始信号）。',
+        importance: 'core' as const,
+      },
+    ]
+
+    const warnings: WarningItem[] = [
+      {
+        text: '高考易混淆术语：调制是发送端将低频信号加到高频波上；调谐是接收端通过电谐振选择电台；解调（检波）是从高频载波中还原声音信号。',
+        level: 'danger' as const,
+      },
+    ]
+
+    return { quantities, formulas, gaokaoPoints, warnings }
+  }
+
+  // ── 默认：电磁波谱全景 ──
   const band = getSpectrumBand(params.band ?? 0)
   const lambda = band.representativeLambda
   const f = frequencyFromWavelength(lambda)
@@ -339,10 +424,6 @@ function buildSpectrumPanel(params: Record<string, number>): PhysicsPanelData {
 
   const gaokaoPoints: GaokaoPoint[] = [
     {
-      // 教材（人教版）的谱系是 6 段；微波按定义属于无线电波的高频段。
-      // 但本页中屏 / 左屏都把微波当作独立谱段（7 段），若此处只列 6 段，
-      // 就会与同一面板自动生成的「谱段定位：比它波长短的是微波」自相矛盾，
-      // 故显式说明"图中单列"的约定，两边口径才能对齐。
       text: '电磁波谱顺序（波长由长到短）：无线电波 → 红外线 → 可见光 → 紫外线 → X 射线 → γ 射线。微波属于无线电波的高频段；图中为便于对照，把它单独列为一个谱段。',
       importance: 'gaokao' as const,
     },
@@ -351,7 +432,6 @@ function buildSpectrumPanel(params: Record<string, number>): PhysicsPanelData {
       importance: 'gaokao' as const,
     },
     {
-      // 各谱段的典型应用只以文字承载（中屏画布仅呈现名称与位置，不放叙述性内容）
       text: `${band.label}的典型应用：${band.typicalApplications.join('、')}。`,
       importance: 'core' as const,
     },
