@@ -451,7 +451,7 @@ export const vibrationOscillationAnimations = defineAnimations({
       mode: 1,
       m: 1.0,
       k: 39.5,
-      gamma: 0.5,
+      gamma: 0.85,
       F0: 2.0,
       f: 1.0,
       showForces: 1,
@@ -483,7 +483,7 @@ export const vibrationOscillationAnimations = defineAnimations({
         label: '⚡ 强烈共振 (f = f₀ = 1.0Hz)',
         group: '典型物理情境',
         restartOnApply: true,
-        params: () => ({ mode: 1, m: 1.0, k: 39.5, gamma: 0.4, F0: 2.0, f: 1.0, showForces: 1 }),
+        params: () => ({ mode: 1, m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 1.0, showForces: 1 }),
       },
       {
         type: 'preset',
@@ -531,7 +531,7 @@ export const vibrationOscillationAnimations = defineAnimations({
       { key: 'F0', label: '驱动力幅值 F0', min: 0.5, max: 5.0, step: 0.5, unit: 'N' },
       { key: 'm', label: '振子质量 m', description: '增大 m 将降低固有频率 f₀', min: 0.5, max: 2.5, step: 0.1, unit: 'kg' },
       { key: 'k', label: '弹簧劲度 k', min: 10, max: 80, step: 5, unit: 'N/m' },
-      { key: 'gamma', label: '介质阻力系数 γ', description: '阻力越小共振峰越尖锐；阻力越大共振峰越平缓', min: 0.1, max: 1.5, step: 0.1, unit: 'N·s/m' },
+      { key: 'gamma', label: '介质阻力系数 γ', description: '阻力越小共振峰越尖锐；阻力越大共振峰越平缓', min: 0.1, max: 1.5, step: 0.05, unit: 'N·s/m' },
     ],
   },
 })

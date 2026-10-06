@@ -17,7 +17,7 @@ export default function ForcedResonanceCenterExtra() {
 
   const m = params.m ?? 1.0
   const k = params.k ?? 39.5
-  const gamma = params.gamma ?? 0.5
+  const gamma = params.gamma ?? 0.85
   const F0 = params.F0 ?? 2.0
   const f = params.f ?? 1.0
   const mode = params.mode ?? 1

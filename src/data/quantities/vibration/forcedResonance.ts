@@ -1,7 +1,10 @@
-import type { PhysicsPanelData, PhysicsQuantity, Formula, GaokaoPoint } from '../types'
+import type { PhysicsPanelData, PhysicsQuantity, Formula, GaokaoPoint, WarningItem } from '../types'
 import {
   calculateSteadyStateResonance,
   calculateForcedVibrationState,
+  calculateCrankEccentricity,
+  calculateDamperGeometry,
+  calculateStageAmplitudeCapacity,
 } from '@/physics/vibration/forcedResonance'
 
 export function buildForcedResonanceQuantities(
@@ -11,7 +14,7 @@ export function buildForcedResonanceQuantities(
 ): PhysicsPanelData | null {
   const m = params.m ?? 1.0
   const k = params.k ?? 39.5
-  const gamma = params.gamma ?? 0.5
+  const gamma = params.gamma ?? 0.85
   const F0 = params.F0 ?? 2.0
   const f = params.f ?? 1.0
   const mode = params.mode ?? 1
@@ -89,9 +92,43 @@ export function buildForcedResonanceQuantities(
     },
   ]
 
+  // ── 几何限幅与舞台容量告警（让不可见的失真变成用户可见的明确告知）────────
+  const warnings: WarningItem[] = []
+  const crank = calculateCrankEccentricity(F0, k)
+  if (crank.clampType !== 'none') {
+    // ⚠️ 上下限的物理含义相反：下限侧画面偏心距**大于**真值，上限侧**小于**真值。
+    // 此前统一写"已达几何显示上限"，而实测 78.9% 的限幅发生在下限侧，
+    // 文案方向颠倒、归因（轮盘尺寸）也错（下限是"最小可辨度"约束）。
+    const isMinSide = crank.clampType === 'min'
+    const headline = isMinSide ? '偏心距低于最小可辨值，已放大显示' : '偏心距已达几何显示上限，已缩小显示'
+    const reason = isMinSide
+      ? '偏心距过小时曲柄销几乎看不出转动，故按最小可辨偏心距放大绘制'
+      : '受曲柄臂长与轮盘几何约束，按最大可用偏心距缩小绘制'
+    warnings.push({
+      level: 'warning',
+      text: `${headline}：物理真值 e = F₀/k = ${(crank.ideal * 100).toFixed(1)} cm，画面按 ${(crank.e * 100).toFixed(1)} cm 显示（${reason}）。此时画面曲柄行程与小球振幅不再严格成比例，请以右屏物理量读数为准。`,
+    })
+  }
+
+  // 舞台容量告警：与场景几何共用同一真源（calculateDamperGeometry().fitsStage），
+  // 杜绝阈值漂移与静默窗口。
+  // ⚠️ 判据只用**小球自身**的稳态振幅峰值：mode 2 图表上的对比阻尼曲线
+  // （γ=0.2 / 1.2）小球从不按其运动，并入会产生与画面不符的告警
+  // （实测默认工况下槽体会被撑高 3.3 倍，18% 的参数组合被误报）。
+  const damper = calculateDamperGeometry(steady.maxAmplitude)
+
+  if (!damper.fitsStage) {
+    const capacity = calculateStageAmplitudeCapacity()
+    warnings.push({
+      level: 'warning',
+      text: `当前参数下位移振幅达 ${(steady.maxAmplitude * 100).toFixed(0)} cm，超过演示舞台可容纳的 ${(capacity * 100).toFixed(0)} cm，阻尼叶片将无法全程浸没于介质。这是低阻尼、高驱动力的真实物理结果——建议减小 F₀ 或增大 γ、k 后再观察。`,
+    })
+  }
+
   return {
     quantities,
     formulas,
     gaokaoPoints,
+    warnings: warnings.length > 0 ? warnings : undefined,
   }
 }

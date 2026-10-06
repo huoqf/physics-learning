@@ -2,7 +2,8 @@ import { useMemo } from 'react'
 import {
   calculateSteadyStateResonance,
   calculateForcedVibrationState,
-  generateResonanceCurvePoints,
+  calculateCrankEccentricity,
+  calculateDamperGeometry,
   type SteadyStateResonanceResult,
 } from '@/physics/vibration/forcedResonance'
 
@@ -52,12 +53,6 @@ export interface ForcedResonancePhysicsResult {
     potentialEnergy: number
     powerAbsorbed: number
   }
-  /** 主共振曲线点集 (A-f) */
-  curvePoints: { x: number; y: number }[]
-  /** 弱阻尼对比曲线 */
-  weakDampingPoints: { x: number; y: number }[]
-  /** 强阻尼对比曲线 */
-  strongDampingPoints: { x: number; y: number }[]
 }
 
 export function useForcedResonancePhysics({
@@ -81,9 +76,16 @@ export function useForcedResonancePhysics({
     const wheelDiskRadius = 0.28 // 电机转盘视觉半径 (米)
     const rodLength = 0.58 // 曲柄连杆长度 (米)
 
-    // 严密物理对应：曲柄销的偏心距必须严格等于物理基底驱动振幅 e = F0 / k！
-    // 使得低频极限下，小球位移振幅与滑块位移振幅 100% 相同 (A -> F0/k = e_crank)！
-    const crankEccentricity = Math.min(0.20, Math.max(0.04, F0 / Math.max(1, k)))
+    // 曲柄偏心距：物理真值 e = F0/k，经物理层唯一入口派生（含几何限幅与限幅标记）。
+    // ⚠️ 严禁在消费点自行夹取 —— 那会造成「改k 时小球振幅与曲柄行程不同步」的破绽。
+    const crank = calculateCrankEccentricity(F0, k)
+    const crankEccentricity = crank.e
+
+    // 阻尼槽几何：按**小球自身**的稳态振幅峰值反推，保证叶片全程浸没。
+    // ⚠️ 不得并入 mode 2 的对比阻尼曲线（γ=0.2 / 1.2）：那两条只是图表曲线，
+    // 小球从不按它们运动。并入会让默认工况的槽体被撑高 3.3 倍（3.48 m vs 1.05 m），
+    // 并让 18% 的参数组合弹出与小球实际运动不符的告警。
+    const damper = calculateDamperGeometry(steady.maxAmplitude)
 
     // 偏心轮旋转角度 theta = 2*pi*f*t
     const rotAngle = 2 * Math.PI * f * time
@@ -101,22 +103,16 @@ export function useForcedResonancePhysics({
     // 振子小球位置 (物理平衡位置 + 真实受迫位移 x)
     const ballY = eqY + state.x
 
-    // 阻尼介质槽 (固定在基座底盘上，高度 0.5m ~ 2.2m，深度充足)
+    // 阻尼介质槽（固定在基座底盘上，尺寸由最大振幅反推，见 calculateDamperGeometry）
     const damperTankPhys = {
       x: centerX,
-      y: 0.5, // 槽底高度 (米)
+      y: damper.tankBottom,
       width: 1.1,
-      height: 1.7, // 槽口与液面高度在 2.2m (米)
+      height: damper.tankHeight,
     }
 
-    // 严密物理约束：阻尼叶片必须全程 100% 稳定浸没在介质内部，绝不露头跳水、绝不触底
-    // 平衡位置在 3.2 - 1.85 = 1.35m，正处于槽体正中心深度 (上下各留 0.4m 裕度覆盖最大共振振幅)
-    const damperBladeY = ballY - 1.85
-
-    // 采样共振曲线
-    const curvePoints = generateResonanceCurvePoints(m, k, gamma, F0, 2.5, 70)
-    const weakDampingPoints = generateResonanceCurvePoints(m, k, 0.2, F0, 2.5, 70)
-    const strongDampingPoints = generateResonanceCurvePoints(m, k, 1.2, F0, 2.5, 70)
+    // 阻尼叶片中心：随振子同步运动，垂距固定（浸没性由槽体尺寸保证）
+    const damperBladeY = ballY - damper.bladeDrop
 
     return {
       steady,
@@ -131,9 +127,6 @@ export function useForcedResonancePhysics({
       wheelRadius: wheelDiskRadius,
       rodLength,
       state,
-      curvePoints,
-      weakDampingPoints,
-      strongDampingPoints,
     }
   }, [m, k, gamma, F0, f, mode, time])
 }
