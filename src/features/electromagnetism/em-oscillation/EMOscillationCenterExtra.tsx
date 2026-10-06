@@ -17,7 +17,7 @@ import {
   wavelengthFromFrequency,
   formatWavelength,
   formatLCEnergy,
-  calculateRadioResonance,
+  calculateRadioTuning,
   LC_DEFAULT_PARAMS,
   LC_DISPLAY_ENERGY_EPSILON,
 } from '@/physics'
@@ -356,18 +356,18 @@ function EMSpectrumPanel() {
 function RadioTuningPanel() {
   const cRx = useAnimationStore((s) => s.params.cRx ?? 1.0)
   const fTx = 100e6 // 100 MHz
-  const fRx = fTx / Math.sqrt(Math.max(0.2, cRx))
-  const { isTuned } = useMemo(
-    () => calculateRadioResonance(fTx, fRx, 14),
-    [fTx, fRx],
+  const currentTuning = useMemo(
+    // Q 不传，统一取 physics 层 DEFAULT_RADIO_TUNING_Q，与中屏场景判定口径同源
+    () => calculateRadioTuning(fTx, cRx),
+    [fTx, cRx],
   )
+  const { isTuned, fRx } = currentTuning
 
-  // 构建 I / I0 与可变电容 C_rx 的共振响应曲线
+  // 构建 I / I0 与可变电容 C_rx 的共振响应曲线（完全基于 calculateRadioTuning 同源采样）
   const resonanceCurve = useMemo(() => {
     const pts: { x: number; y: number }[] = []
     for (let c = 0.25; c <= 2.5; c += 0.02) {
-      const fr = fTx / Math.sqrt(c)
-      const res = calculateRadioResonance(fTx, fr, 14).response
+      const res = calculateRadioTuning(fTx, c).response
       pts.push({ x: Number(c.toFixed(2)), y: Number(res.toFixed(3)) })
     }
     return pts
@@ -391,7 +391,7 @@ function RadioTuningPanel() {
       <div className="flex-1 min-h-0">
         <RelationChart
           points={resonanceCurve}
-          xLabel="调谐电容 C (μF)"
+          xLabel="调谐电容 C (C₀)"
           yLabel="感应电流相对响应 I / I₀"
           xDomain={[0.2, 2.55]}
           yDomain={[0, 1.05]}
@@ -413,7 +413,7 @@ function RadioTuningPanel() {
               : 'bg-neutral-200 text-neutral-600'
           }`}
         >
-          {isTuned ? '✓ 调谐选台成功（发生电谐振）' : '未对准频率（调节电容至 1.0 μF）'}
+          {isTuned ? '✓ 调谐选台成功（发生电谐振）' : '未对准频率（调节电容至 1.0 C₀）'}
         </span>
       </div>
     </div>

@@ -42,10 +42,14 @@ export default function AnalysisPage() {
     )
   }
 
+  // 溯源口径：`verified: true` 才是 100% 官方原卷逐字核验的真题；
+  // 其余为改编自高考考法的模型演练题，页面文案不得再冠以「真题原卷」。
+  const isVerifiedProblem = problem.verified === true
+
   return (
     <div className="min-h-screen bg-neutral-50 py-6">
       <PageLayout maxWidth="900px" padding={false}>
-        {/* 顶部真题原卷卡片 (试题来源、严谨题干原文与原卷纯净配图) */}
+        {/* 顶部题目卡片 (试题来源、题干原文与纯净示意图) */}
         <div className="bg-white rounded-lg border border-neutral-200 p-6 mb-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-neutral-100">
             <div className="flex flex-wrap items-center gap-2">
@@ -100,23 +104,25 @@ export default function AnalysisPage() {
 
           <h1 className="text-lg font-semibold text-neutral-900 mb-3">{analysisEntry.title}</h1>
           
-          {/* 真题题干原文（100% 严格引用高考原卷原文） */}
+          {/* 题干原文（verified 真题为 100% 高考原卷原文，模型演练题为改编题干） */}
           <div className="text-base leading-[1.8] text-neutral-800 mb-4 bg-neutral-50/50 p-4 rounded-lg border border-neutral-100">
             <div className="text-xs font-semibold text-neutral-500 mb-2 flex items-center gap-1">
-              <span>📄 高考真题试题原文：</span>
+              <span>{isVerifiedProblem ? '📄 高考真题试题原文：' : '📄 题目原文（模型演练题）：'}</span>
             </div>
             {problem.content.split('\n').map((line, i) => (
               <p key={i} className="mb-2 last:mb-0"><ContentWithKatex content={line} /></p>
             ))}
           </div>
 
-          {/* 若该真题配置有标准矢量示意图，渲染题干纯净模式示意图 (Skill 0A 绝对纯净无解题线) */}
+          {/* 若该题配置有标准矢量示意图，渲染题干纯净模式示意图 (Skill 0A 绝对纯净无解题线) */}
           {(() => {
             const DiagramComp = getProblemDiagram(problem.id)
             if (DiagramComp) {
               return (
                 <div className="mt-4 mb-3">
-                  <div className="text-xs font-semibold text-neutral-500 mb-1">📷 真题原卷附图：</div>
+                  <div className="text-xs font-semibold text-neutral-500 mb-1">
+                    {isVerifiedProblem ? '📷 真题原卷附图：' : '📷 题干示意图：'}
+                  </div>
                   <DiagramComp showAnalysis={false} />
                 </div>
               )
@@ -143,7 +149,9 @@ export default function AnalysisPage() {
                 <span>考场独立思考模式 (初始防透题)</span>
               </div>
               <p className="text-xs text-neutral-600 mb-4 max-w-lg mx-auto leading-relaxed">
-                上方已为您呈现 100% 还原考场原貌的真题题干与纯净图像（不含任何受力分析箭头与解答提示）。请先独立思考并尝试推导，求解完成后点击下方按钮展开破题拆解流。
+                {isVerifiedProblem
+                  ? '上方已为您呈现 100% 还原考场原貌的真题题干与纯净图像（不含任何受力分析箭头与解答提示）。请先独立思考并尝试推导，求解完成后点击下方按钮展开破题拆解流。'
+                  : '上方已为您呈现完整题干与纯净示意图（不含任何受力分析箭头与解答提示）。请先独立思考并尝试推导，求解完成后点击下方按钮展开破题拆解流。'}
               </p>
               <Button
                 variant="primary"

@@ -19,7 +19,7 @@ export const masterModels: MasterModel[] = [
       '注意地面是否有摩擦 μ2；若 μ2 ≠ 0，木板受滑动摩擦力向左为 f2 = μ2(m+M)g',
       '共速后必须重新受力分析，判断静摩擦力是否超过最大静摩擦力',
     ],
-    relatedProblemIds: ['prob-2024-quanguo-21'],
+    relatedProblemIds: ['prob-block-board-model'],
   },
   {
     id: 'model-induction-single-rod',
@@ -39,7 +39,7 @@ export const masterModels: MasterModel[] = [
       '求解电量 q 必须牢记 q = ΔΦ/R = BLx/R，切勿误用 q = It (由于非匀变速运动 I 随时间变化)',
       '焦耳热 Q 可利用能量守恒 Q = W_外 - ΔE_k 进行求解',
     ],
-    relatedProblemIds: ['prob-2023-quanguo-19'],
+    relatedProblemIds: ['prob-model-single-rod'],
   },
   {
     id: 'model-induction-dual-rods',
@@ -58,7 +58,7 @@ export const masterModels: MasterModel[] = [
     examTips: [
       '恒力驱动双杆时，最终两棒加速度相等，速度差恒定 (E_感 恒定，电流恒定)',
     ],
-    relatedProblemIds: ['prob-2022-quanguo-21'],
+    relatedProblemIds: ['prob-model-dual-rods'],
   },
   {
     id: 'model-combined-fields',

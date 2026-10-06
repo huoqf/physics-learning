@@ -1,6 +1,6 @@
 import type { Problem } from '../../types'
 
-export const prob2024Quanguo21: Problem = {
+export const probBlockBoardModel: Problem = {
   id: 'prob-block-board-model',
   year: 2024,
   province: '全国卷模型',
@@ -49,3 +49,6 @@ export const prob2024Quanguo21: Problem = {
     },
   ],
 }
+
+/** 兼容旧代码/外部静态引用的别名导出 */
+export const prob2024Quanguo21 = probBlockBoardModel

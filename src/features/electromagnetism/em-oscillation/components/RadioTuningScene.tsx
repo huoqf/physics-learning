@@ -10,7 +10,7 @@ import {
 } from '@/theme/physics'
 import { Solenoid, VectorArrow } from '@/components/Physics'
 import { IDENTITY_SCENE_SCALE } from '@/scene'
-import { calculateRadioResonance } from '@/physics'
+import { calculateRadioTuning } from '@/physics'
 
 interface RadioTuningSceneProps {
   cRx: number
@@ -32,13 +32,12 @@ const RX_LC = { left: 560, right: 670, top: 100, bottom: 230 } as const
  * 3. 接收端通过旋转可变电容器改变回路固有频率，当 f₀ = f_发射 时发生电谐振（选台）。
  */
 export function RadioTuningScene({ cRx, time, font }: RadioTuningSceneProps) {
-  // 假定目标发射电台频率为 100 MHz（基准调谐点对应 cRx = 1.0 μF）
-  // 固有频率 f₀ ∝ 1 / √C，故 fRx / fTx = 1 / √cRx
+  // 目标发射电台频率为 100 MHz（基准调谐点对应 cRx = 1.0），物理量与判定收口单一可信源
   const fTx = 100e6
-  const fRx = fTx / Math.sqrt(Math.max(0.2, cRx))
   const { response, isTuned } = useMemo(
-    () => calculateRadioResonance(fTx, fRx, 14),
-    [fTx, fRx],
+    // Q 不传，统一取 physics 层 DEFAULT_RADIO_TUNING_Q，避免场景与右屏看板两套尖锐度
+    () => calculateRadioTuning(fTx, cRx),
+    [fTx, cRx],
   )
 
   // 空间行进波前（向右推移）
@@ -170,37 +169,54 @@ export function RadioTuningScene({ cRx, time, font }: RadioTuningSceneProps) {
           Rx 接收天线
         </text>
 
-        {/* 接收回路导线 */}
+        {/* 接收回路导线：顶母线、底母线、电感支路导线、电容支路导线与接地符号 */}
         <g fill="none" stroke={CIRCUIT_COLORS.wire} strokeWidth={STROKE.objectLine} strokeLinecap="round">
-          {/* 天线引入调谐回路顶端 */}
-          <line x1={RX.x} y1={RX_LC.top} x2={RX_LC.right} y2={RX_LC.top} />
-          {/* 回路顶边 */}
-          <line x1={RX_LC.right} y1={RX_LC.top} x2={RX_LC.left} y2={RX_LC.top} />
-          {/* 回路左边（含电感） */}
-          <line x1={RX_LC.left} y1={RX_LC.top} x2={RX_LC.left} y2={RX_LC.bottom} />
-          {/* 回路底边 */}
-          <line x1={RX_LC.left} y1={RX_LC.bottom} x2={RX_LC.right} y2={RX_LC.bottom} />
-          {/* 回路右边引入天线地线端 */}
-          <line x1={RX_LC.right} y1={RX_LC.bottom} x2={RX.x} y2={RX_LC.bottom} />
+          {/* 天线顶端引入回路顶母线 (710, 100) -> (560, 100) */}
+          <line x1={RX.x} y1={RX_LC.top} x2={RX_LC.left} y2={RX_LC.top} />
+          {/* 天线底端引入回路底母线 (710, 230) -> (560, 230) */}
+          <line x1={RX.x} y1={RX_LC.bottom} x2={RX_LC.left} y2={RX_LC.bottom} />
+
+          {/* 电感支路垂直连接线：顶母线到线圈上端引线(125)，线圈下端引线(205)到底母线 */}
+          <line x1={RX_LC.left} y1={RX_LC.top} x2={RX_LC.left} y2={125} />
+          <line x1={RX_LC.left} y1={205} x2={RX_LC.left} y2={RX_LC.bottom} />
+
+          {/* 可变电容支路垂直连接线：顶母线到电容上引线(140)，电容下引线(190)到底母线 */}
+          <line x1={RX_LC.right} y1={RX_LC.top} x2={RX_LC.right} y2={140} />
+          <line x1={RX_LC.right} y1={190} x2={RX_LC.right} y2={RX_LC.bottom} />
+
+          {/* 节点焊点（并联分支连接点） */}
+          <circle cx={RX_LC.right} cy={RX_LC.top} r={2.5} fill={CIRCUIT_COLORS.wire} />
+          <circle cx={RX_LC.right} cy={RX_LC.bottom} r={2.5} fill={CIRCUIT_COLORS.wire} />
+          <circle cx={RX_LC.left} cy={RX_LC.top} r={2.5} fill={CIRCUIT_COLORS.wire} />
+          <circle cx={RX_LC.left} cy={RX_LC.bottom} r={2.5} fill={CIRCUIT_COLORS.wire} />
+          <circle cx={RX.x} cy={RX_LC.top} r={2.5} fill={CIRCUIT_COLORS.wire} />
+          <circle cx={RX.x} cy={RX_LC.bottom} r={2.5} fill={CIRCUIT_COLORS.wire} />
+
+          {/* 天线地线符号（大地 Ground：三条渐短水平线） */}
+          <line x1={RX.x - 10} y1={RX.antennaBottom} x2={RX.x + 10} y2={RX.antennaBottom} />
+          <line x1={RX.x - 6} y1={RX.antennaBottom + 4} x2={RX.x + 6} y2={RX.antennaBottom + 4} />
+          <line x1={RX.x - 2} y1={RX.antennaBottom + 8} x2={RX.x + 2} y2={RX.antennaBottom + 8} />
         </g>
       </g>
 
       {/* ── 3. 调谐回路元件：电感线圈 L 与 可变电容器 C ── */}
       <g>
-        {/* 左侧接收电感线圈 */}
-        <Solenoid
-          x={RX_LC.left}
-          y={(RX_LC.top + RX_LC.bottom) / 2}
-          width={80}
-          height={32}
-          turns={5}
-          current={response * Math.sin(time * 12)}
-          leadType="horizontal"
-          showPolarity={false}
-          showWindingArrows={false}
-          showIronCore={false}
-          animated={false}
-        />
+        {/* 左侧接收电感线圈（垂直轴向旋转90°，左右引线转为上下引线，端点精确吻合 125 与 205） */}
+        <g transform={`rotate(90, ${RX_LC.left}, ${(RX_LC.top + RX_LC.bottom) / 2})`}>
+          <Solenoid
+            x={RX_LC.left}
+            y={(RX_LC.top + RX_LC.bottom) / 2}
+            width={80}
+            height={32}
+            turns={5}
+            current={response * Math.sin(time * 12)}
+            leadType="horizontal"
+            showPolarity={false}
+            showWindingArrows={false}
+            showIronCore={false}
+            animated={false}
+          />
+        </g>
         <text
           x={RX_LC.left - 26}
           y={(RX_LC.top + RX_LC.bottom) / 2 + 5}
@@ -219,7 +235,7 @@ export function RadioTuningScene({ cRx, time, font }: RadioTuningSceneProps) {
           {/* 两个电容平行极板 */}
           <line x1={-18} y1={-7} x2={18} y2={-7} stroke={CIRCUIT_COLORS.wire} strokeWidth={STROKE.objectLine + 1} />
           <line x1={-18} y1={7} x2={18} y2={7} stroke={CIRCUIT_COLORS.wire} strokeWidth={STROKE.objectLine + 1} />
-          {/* 引线 */}
+          {/* 引线（端点在 y=-25 和 y=25，即全局 y=140 与 y=190） */}
           <line x1={0} y1={-25} x2={0} y2={-7} stroke={CIRCUIT_COLORS.wire} strokeWidth={STROKE.objectLine} />
           <line x1={0} y1={7} x2={0} y2={25} stroke={CIRCUIT_COLORS.wire} strokeWidth={STROKE.objectLine} />
           {/* 可变电容贯穿箭头 */}
@@ -246,7 +262,7 @@ export function RadioTuningScene({ cRx, time, font }: RadioTuningSceneProps) {
             fontFamily={FONT.family}
             fontStyle="italic"
           >
-            C
+            C_rx
           </text>
         </g>
       </g>

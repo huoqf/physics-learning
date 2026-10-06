@@ -339,7 +339,7 @@ export const electricityKnowledge: KnowledgeNode[] = [
     module: 'electricity',
     importance: 'gaokao',
     animationIds: ['anim-lc-oscillation'],
-    problemIds: ['prob-2022-quanguo-34-1'],
+    problemIds: ['prob-lc-oscillation-model'],
     prerequisites: ['electricity-1-4', 'electricity-4-2'],
   },
   {
@@ -349,7 +349,7 @@ export const electricityKnowledge: KnowledgeNode[] = [
     module: 'electricity',
     importance: 'core',
     animationIds: ['anim-em-wave'],
-    problemIds: ['prob-2021-zhejiang-02'],
+    problemIds: ['prob-maxwell-em-wave-model'],
     prerequisites: ['electricity-6-1'],
   },
   {
@@ -359,7 +359,7 @@ export const electricityKnowledge: KnowledgeNode[] = [
     module: 'electricity',
     importance: 'gaokao',
     animationIds: ['anim-em-spectrum'],
-    problemIds: ['prob-2020-zhejiang-03'],
+    problemIds: ['prob-lc-tuning-model'],
     prerequisites: ['electricity-6-2'],
   },
   // ── 第7章 传感器（人教版选择性必修第二册 第3章）──────────────

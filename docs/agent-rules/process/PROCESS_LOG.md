@@ -2,13 +2,14 @@
 
 ## 当前周期
 
-- 当前日期：2026-W39（09-24）
+- 当前日期：2026-W40（10-05 ~ 10-11）
 - 当前里程碑：M4 电磁/热/光/原子模块
-- 本周详细日志：[2026-W39.md](./logs/2026-W39.md)
+- 本周详细日志：[2026-W40.md](./logs/2026-W40.md)
 - 提交流程：[CHECKLIST.md](./CHECKLIST.md)
 
 ## 历史归档（按 ISO 周）
 
+- [2026-W39.md](./logs/2026-W39.md)（09-20 ~ 09-30）
 - [2026-W31.md](./logs/2026-W31.md)（07-28 ~ 08-02）
 - [2026-W28.md](./logs/2026-W28.md)（07-07 ~ ）
 - [2026-W27.md](./logs/2026-W27.md)（07-01 ~ 07-06）
@@ -27,6 +28,13 @@
 
 | 日期 | 模块 | 类型 | 变更 |
 |------|------|------|------|
+| 10-06 | master-models + ProblemDiagrams | fix | **Master 模型 ⇄ 题目 ⇄ 题干示意图 三方数据链路贯通**：前 3 号 Master 模型（板块 / 单杆 / 双杆）因题目按 provenance 铁律改名后未全链路同步，出现三重断裂——① `models.ts` 反向引用仍指向已不存在的旧 id `prob-2024-quanguo-21`/`prob-2023-quanguo-19`/`prob-2022-quanguo-21`，致 `MasterModelCard` 的 `getProblemById` 返回 undefined，卡片标题退化为裸 id、来源退化为「高考真题」、题干摘要消失、点击跳空路由；② `problemDiagramRegistry` 主键为旧 id，而 `AnalysisPage` 按 `problem.id`（新 id）查询，致 3 张题干图永不渲染；③ 3 个图组件沦为「注册表有、永远查不到」的孤儿。修复：`models.ts` 三处 `relatedProblemIds` 改指新 id（`prob-block-board-model`/`prob-model-single-rod`/`prob-model-dual-rods`）；`ProblemDiagrams/index.ts` 增加 3 个主键，**旧 3 键降级为兼容别名保留**（组件不删除，旧书签/外链仍可命中）；同步 `masterProblems.ts` 注释中的失效 id。`prob-2023-quanguo-14`（2023 全国甲卷第14题，纯文字多普勒单选、原卷无图）**保持不补图**，遵守「100% 官方原卷原貌」。验证：`tsc -b` 0 error + 81 文件/979 单测全绿 + ESLint 0 warning + 6 项架构守卫全绿 + 一次性断言（18 模型零悬空 / 注册表零孤儿主键 / 正反向指针闭环 / 别名与主键同构 / 第14题确认无图）13/13 通过 |
+| 10-06 | em-oscillation | fix | **复审残留 6 项（N1~N6）全部清零**：① **N1 题库溯源诚信**——模块头「100% 官方原卷逐字核验」改为「经典模型演练题库」并写入 provenance 铁律，三题 `province` 改 `全国卷模型`/`浙江卷模型`、`id` 改 `prob-<模型名>-model`（对齐 `prob-block-board-model`），同步 `electricity.ts` 双向引用；② **N2 Q 口径单一真源**——`calculateRadioResonance` 默认值由 16 改为 `DEFAULT_RADIO_TUNING_Q`，悬空 JSDoc 归位，清掉 4 处消费点硬编码 14；③ **N3** 注册表 `cRx` 陈旧 `(μF)` 注释改为 `C₀` 比例因子；④ **N4** 物理层文件尾多余空行收敛；⑤ **N5 题干示意图补齐**——新增 `ProbLcOscillationModelDiagram`（与 `anim-lc-oscillation` 同源几何：上正下负极板 + 六段逆时针电流矢量）并注册进 `problemDiagramRegistry`，同时 `AnalysisPage` 文案按 `verified` 区分，杜绝给模型演练题贴「真题原卷」标签；⑥ **N6 环流矢量闭合**——补齐右侧上引线电流矢量并按引线半段收敛长度。验证：`tsc -b` 0 error + 81 文件/979 单测全绿 + ESLint 0 warning + 6 项架构守卫全绿 |
+| 10-06 | em-oscillation | fix | **LC振荡与无线电调谐深度复审8项缺陷彻底闭环（P1-1~P2-4）**：① **P1-1 调谐回路拓扑**——重构为标准 LC 并联谐振回路，竖直旋转电感消除穿心导线与外凸并精准对接端子，补齐电容上下垂直导线闭合母线并增设接地符号；② **P1-2/P2-1 判定口径与死代码**——物理层收口 `calculateRadioTuning` 与 `calculateCapacitanceWithGap`/`calculateLCFrequency`，中屏指示、共振曲线与右屏看板完全同源，消灭 4 处手写公式与内联双轨制；③ **P1-3/P2-2 真题要素契合与防挤压**——电容器改回右侧水平平行板（上正下负、竖直电场），与真题题干 100% 对应；`CapacitorPlates` 增强电荷密度与字号自适应，根除文字重叠与标签连字；④ **P1-4 题源诚信与唯一单选**——修正 3 题为模型演练题（verified: false），修正全国乙卷题为单项单选并剔除教辅括号；⑤ **P2-3 量级失真**——调谐电容单位规范为相对比 `C₀` 并阐明 pF/μH 真实工程背景；⑥ **P2-4 日志补全**——新建 `2026-W40.md` 并补齐 10-05 提交记录。验证：`tsc -b` 0 error + 81 文件/979 单测全绿 + 6 守门全绿 |
+| 10-05 | em-oscillation | feat | **标准化人教版LC振荡回路与高考真题系统增强** (`43031d2`)：标准化人教版选修第二册 LC 回路展示，增设电容板距动态响应与调谐共振特性曲线，挂接电磁振荡与电磁波谱考点真题 |
+| 10-05 | mechanics | feat | **增强力与运动综合主题新高考考点与真题联动** (`a94a115`)：增强力与运动动力学综合模型因果状态徽标、正交分解与高考真题预设 |
+| 10-05 | nuclear | feat | **增强核物理新高考考点与磁场衰变内切外切圆模型** (`81753f7`)：补充核物理高考必考点，构建磁场中放射性衰变内切/外切轨迹几何模型及真题一键预设 |
+| 10-05 | circuit | fix | **全面规范全站电学页面原理图符号与走线拓扑** (`e95cdf2`)：排查修复全站电学电路图连线、变阻器端子对接、读数避让与符号标准 |
 | 09-30 | circuit/电磁电路 | fix | **电路图相关页面拓扑规范化与高中物理教科书标准对齐**：① **电路动态分析 (`CircuitAnalysis`)**——统一标准 `DCSource`/`DialMeter` 原理图符号化模式，消除手绘越界引线与穿心问题；② **自感实验 (`SelfInductionScene`)**——补齐干路导线闭合（消除 65px 虚空断路），对齐变阻器、电感线圈、双灯泡与导线 Y 轴贴合，移除导线上标量电流矢量箭头，接入标准 `CircuitSwitch`；③ **单棒切割 (`SingleRodAnimation`)**——重构左侧竖直回路直角折弯接入变阻器左/右端子，消除穿心导线，导体棒自然架设在导轨上；④ **变压器 (`TransformerScene`)**——副线圈回路改横向直角接入变阻器滑杆端子与电阻端子；⑤ **安培力导轨 (`BasicAmpereScene`)**——改用垂直电路符号 `DCSource type="symbol"`，极性动态联动并精准平顺对接双导轨；⑥ **传感器电路 (`SensorScene`)**——导线起止点精准吸附电源端子坐标（415/485, 245）。验证：`tsc -b` 0 error + 972 单测全绿 + 6 项架构守卫脚本全绿 |
 | 09-29 | Physics/组件库 | refactor | **实验器材组件 token 化与能力扩展**：① **硬编码色清理（铁律1-1）**——`DialMeter`/`TickerTimer`/`Micrometer`/`VernierCaliper`/`Rheostat`/`SpringBalance`/`ConductingRod`/`Incline`/`Block` 共 9 组件消除硬编码 hex 与 `rgba()` 字面量，改用 `SCENE_COLORS.materials`/`CANVAS_COLORS`/`PHYSICS_COLORS` 语义 token，并同步 `eslint-suppressions.json` 基线收紧 **69 处 / 6 文件**（`eslint --prune-suppressions`）；② **防冲突**——`DialMeter` 接入 `useUniqueSvgId`，多实例渐变/滤镜 ID 不再串扰；③ **新能力**——`Incline` 支持 `direction` 左右倾角、`showAngleArc` 倾角弧线与底部剖面阴影；`ConductingRod` 新增 `currentDir` 上下流向与 `showPolarity` 等效电源极性标记；`Rheostat` 支持 `wiringMode`（限流式 / 分压式）双接线原理图；`SpringBalance` 改真实拉伸螺旋弹簧并支持任意角度旋转与 hook 锚点；④ `COMPONENT_REGISTRY.md` 同步 8 行组件能力说明。验证：`tsc --noEmit` 0 error + ESLint 0 warning + 972 单测（80 文件）全绿 + 6 守门脚本全绿 |
 | 09-29 | experiment | feat | **高考实验专题全量闭环与规范守卫**：① 知识树补全力学实验（`experiment-1-1/2-1/2-2/2-3/2-4`）、电学实验（`experiment-1-2/3-1/3-2/3-5`）与光学实验（`experiment-3-3/3-4`）共 11 个节点，建立完整前置依赖与动画映射；② 力学实验基座扩充牛顿第二定律平衡摩擦力与自由落体打点纸带高考预设及要点提示；③ 题库补齐 2024 新课标卷力学纸带逐差法真题与 2023 全国甲卷双缝干涉测波长真题，完成双向联动闭环；④ 新建 `tests/data/experimentConsistency.test.ts` 自动化守卫测试，全仓 80 个测试文件 / 972 单测、ESLint 0 警告、TypeScript build 与 6 项架构检查全绿（commit: `af76f35`） |

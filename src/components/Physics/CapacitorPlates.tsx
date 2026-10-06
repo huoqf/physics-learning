@@ -67,8 +67,11 @@ export const CapacitorPlates: React.FC<CapacitorPlatesProps> = ({
   const isPositiveFirst = sign === '+'
   const isCharged = sign !== 'none'
 
-  // 单侧极板电荷符号数量 clamp 在 [2, 15] 之间
-  const density = Math.max(2, Math.min(15, chargeDensity))
+  // 单侧极板电荷符号数量：水平模式上限 15，垂直模式根据板高动态收敛以保证行距 > 字号
+  const isVertical = orientation === 'vertical'
+  const plateDimension = isVertical ? (height ?? width) : width
+  const maxSafeDensity = Math.max(2, Math.min(15, Math.floor(plateDimension / 16)))
+  const density = Math.max(2, Math.min(maxSafeDensity, chargeDensity))
   const fieldLineCount = 5
 
   if (orientation === 'vertical') {
@@ -80,6 +83,9 @@ export const CapacitorPlates: React.FC<CapacitorPlatesProps> = ({
     const plateTopY = y - plateH / 2
     const chargeSpacing = plateH / (density + 1)
     const fieldLineSpacing = plateH / (fieldLineCount + 1)
+    // 电荷符号距离极板内表面的安全横向偏移（在窄板距下自适应收缩）
+    const safeChargeXOffset = Math.max(4, Math.min(8, halfGap * 0.35))
+    const chargeFontSize = plateH < 80 || halfGap < 18 ? 10 : 12
 
     return (
       <g className="select-none">
@@ -167,9 +173,9 @@ export const CapacitorPlates: React.FC<CapacitorPlatesProps> = ({
                 <g key={`charge-v-${i}`}>
                   {/* 左极板电荷 */}
                   <text
-                    x={leftPlateRightX + 9}
+                    x={leftPlateRightX + safeChargeXOffset}
                     y={chargeY + 4}
-                    fontSize="12"
+                    fontSize={chargeFontSize}
                     fontWeight="bold"
                     textAnchor="middle"
                     fill={isPositiveFirst ? PHYSICS_COLORS.positiveCharge : PHYSICS_COLORS.negativeCharge}
@@ -178,9 +184,9 @@ export const CapacitorPlates: React.FC<CapacitorPlatesProps> = ({
                   </text>
                   {/* 右极板电荷 */}
                   <text
-                    x={rightPlateLeftX - 9}
+                    x={rightPlateLeftX - safeChargeXOffset}
                     y={chargeY + 4}
-                    fontSize="12"
+                    fontSize={chargeFontSize}
                     fontWeight="bold"
                     textAnchor="middle"
                     fill={isPositiveFirst ? PHYSICS_COLORS.negativeCharge : PHYSICS_COLORS.positiveCharge}

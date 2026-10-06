@@ -1,6 +1,6 @@
 import { lazyWithPreload as lazy } from '@/utils/lazyWithPreload'
 import { defineAnimations } from '../defineAnimations'
-import { calculateLCConstants, LC_DEFAULT_PARAMS } from '@/physics'
+import { calculateLCConstants, calculateCapacitanceWithGap, LC_DEFAULT_PARAMS } from '@/physics'
 import type { ControlMeta, ParamMeta } from '../types'
 
 /**
@@ -28,7 +28,7 @@ function lcMaxTime(params: Record<string, number>): number {
   const L = params.L ?? LC_L_DEFAULT
   const baseC = params.C ?? LC_C_DEFAULT
   const dRatio = params.dRatio ?? 1
-  const C = baseC / Math.max(0.1, dRatio)
+  const C = calculateCapacitanceWithGap(baseC, dRatio)
   if (!(L > 0) || !(C > 0)) return 30
   return 2 * calculateLCConstants({ L, C, Q0: 1 }).T
 }
@@ -39,7 +39,7 @@ function lcCriticalTimes(params: Record<string, number>) {
   const L = params.L ?? LC_L_DEFAULT
   const baseC = params.C ?? LC_C_DEFAULT
   const dRatio = params.dRatio ?? 1
-  const C = baseC / Math.max(0.1, dRatio)
+  const C = calculateCapacitanceWithGap(baseC, dRatio)
   if (!(L > 0) || !(C > 0)) return []
   const { T } = calculateLCConstants({ L, C, Q0: 1 })
   return [
@@ -65,7 +65,8 @@ const sharedParams = {
   // ── 场次 2：电磁波谱与无线电 ──
   radioMode: 0, // 0: 波谱全景, 1: 无线电发射与接收（调谐）
   band: 0,
-  cRx: 1.0, // 接收端调谐电容 (μF)
+  // 接收端可变调谐电容，**相对基准 C₀ 的比例因子**（无量纲；基准 C₀ 对应 100MHz 谐振点）
+  cRx: 1.0,
 } as const
 
 const sharedParamMeta: ParamMeta[] = [
@@ -152,17 +153,17 @@ const sharedParamMeta: ParamMeta[] = [
     min: 0.25,
     max: 2.5,
     step: 0.05,
-    unit: 'μF',
+    unit: 'C₀',
     showIf: 'scene',
     showIfValue: 2,
     hideIf: 'radioMode',
     hideIfValue: 0,
     group: '接收回路可变电容',
-    description: '调节电容使接收回路固有频率与电台相同（发生电谐振选台）',
+    description: '调节电容使回路固有频率等于电台频率（高频模型：基准 C₀ 对应 100MHz，实际回路 C 为 pF 级、L 为 μH 级）',
     marks: [
-      { value: 0.5, label: '141MHz' },
-      { value: 1.0, label: '100MHz(电谐振点)', variant: 'critical' as const },
-      { value: 2.0, label: '70.7MHz' },
+      { value: 0.5, label: '0.5C₀(141MHz)' },
+      { value: 1.0, label: '1.0C₀(100MHz谐振点)', variant: 'critical' as const },
+      { value: 2.0, label: '2.0C₀(70.7MHz)' },
     ],
   },
 ]
@@ -179,10 +180,10 @@ const sharedControlMeta: ControlMeta[] = [
       { value: 2, label: '电磁波谱' },
     ],
   },
-  // ── 高考真题一键预设（gaokao-enhancement Skill 规范） ──
+  // ── 高考真题与经典模型一键预设（gaokao-enhancement Skill 规范） ──
   {
     type: 'preset' as const,
-    label: '📋 2022全国乙卷真题（LC振荡充放电与能量转化）',
+    label: '📋 高考典题（LC振荡充放电与能量转化）',
     description: 'L=0.4H, C=0.4F, Q₀=1.0C，观察电荷-电流90°相位与能量互换',
     params: { scene: 0, L: 0.4, C: 0.4, dRatio: 1.0, Q0: 1.0, showDamping: 0 },
     restartOnApply: true,
@@ -191,7 +192,7 @@ const sharedControlMeta: ControlMeta[] = [
   },
   {
     type: 'preset' as const,
-    label: '📋 2021浙江选考真题（麦克斯韦理论与电磁波性质）',
+    label: '📋 高考典题（麦克斯韦理论与电磁波性质）',
     description: 'f=100MHz, λ=3.0m，周期性电场与磁场正交同相同步传播',
     params: { scene: 1, fEM: 100 },
     restartOnApply: true,
@@ -200,8 +201,8 @@ const sharedControlMeta: ControlMeta[] = [
   },
   {
     type: 'preset' as const,
-    label: '📋 2020浙江选考真题（收音机LC调谐与电谐振选台）',
-    description: '目标电台f=100MHz，调节可变电容C=1.0μF达成电谐振（感应电流最大）',
+    label: '📋 高考典题（收音机LC调谐与电谐振选台）',
+    description: '目标电台f=100MHz，调节可变电容C=1.0C₀达成电谐振（感应电流最大）',
     params: { scene: 2, radioMode: 1, cRx: 1.0 },
     restartOnApply: true,
     showIf: 'scene',

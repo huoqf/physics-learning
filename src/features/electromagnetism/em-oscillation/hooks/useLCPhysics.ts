@@ -7,6 +7,7 @@ import {
   lcMagneticEnergy,
   lcDampingAmplitude,
   sampleLCWaveform,
+  calculateCapacitanceWithGap,
   LC_DEFAULT_PARAMS,
 } from '@/physics'
 
@@ -91,7 +92,7 @@ export function useLCPhysics({
     const safeL = L > 0 ? L : LC_DEFAULT_PARAMS.L
     const baseC = C > 0 ? C : LC_DEFAULT_PARAMS.C
     const safeDRatio = Math.max(0.1, dRatio > 0 ? dRatio : 1.0)
-    const effectiveC = baseC / safeDRatio
+    const effectiveC = calculateCapacitanceWithGap(baseC, safeDRatio)
     const safeQ0 = Q0 > 0 ? Q0 : LC_DEFAULT_PARAMS.Q0
 
     const lc = { L: safeL, C: effectiveC, Q0: safeQ0, damped: showDamping }

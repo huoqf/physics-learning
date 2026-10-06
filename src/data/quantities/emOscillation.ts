@@ -28,6 +28,8 @@ import {
   formatWavelength,
   formatFrequency,
   formatLCEnergy,
+  calculateCapacitanceWithGap,
+  calculateRadioTuning,
   LC_DEFAULT_PARAMS,
   LC_PHYSICS_EPSILON,
   LC_DISPLAY_ENERGY_EPSILON,
@@ -85,7 +87,7 @@ function buildLCPanel(params: Record<string, number>, time: number): PhysicsPane
   const L = params.L ?? LC_DEFAULTS.L
   const baseC = params.C ?? LC_DEFAULTS.C
   const dRatio = params.dRatio ?? 1.0
-  const effectiveC = baseC / Math.max(0.1, dRatio)
+  const effectiveC = calculateCapacitanceWithGap(baseC, dRatio)
   const Q0 = params.Q0 ?? LC_DEFAULTS.Q0
   const showDamping = (params.showDamping ?? 0) === 1
 
@@ -318,9 +320,11 @@ function buildSpectrumPanel(params: Record<string, number>): PhysicsPanelData {
   if (params.radioMode === 1) {
     // ── 无线电发射与接收（调谐）子模式 ──
     const cRx = params.cRx ?? 1.0
-    const fTxMHz = 100
-    const fRxMHz = fTxMHz / Math.sqrt(Math.max(0.2, cRx))
-    const isTuned = Math.abs(fRxMHz - fTxMHz) < 8 // 调谐窗口
+    const tuning = calculateRadioTuning(100e6, cRx)
+    const fTxMHz = tuning.fTx / 1e6
+    const fRxMHz = tuning.fRx / 1e6
+    const isTuned = tuning.isTuned
+    const responsePct = Math.round(tuning.response * 100)
 
     const quantities: PhysicsQuantity[] = [
       { label: '电台发射频率', symbol: 'f_Tx', value: fTxMHz, unit: 'MHz', color: EM_OSCILLATION_COLORS.propagation },
@@ -332,7 +336,15 @@ function buildSpectrumPanel(params: Record<string, number>): PhysicsPanelData {
         color: isTuned ? EM_OSCILLATION_COLORS.current : CANVAS_COLORS.labelText,
         highlight: isTuned ? 'extreme' : undefined,
       },
-      { label: '调谐电容', symbol: 'C_rx', value: cRx, unit: 'μF', color: EM_OSCILLATION_COLORS.charge },
+      { label: '调谐电容', symbol: 'C_rx', value: cRx, unit: 'C₀', color: EM_OSCILLATION_COLORS.charge },
+      {
+        label: '信号响应度',
+        symbol: 'I/I_0',
+        value: `${responsePct}%`,
+        unit: '',
+        color: isTuned ? EM_OSCILLATION_COLORS.current : CANVAS_COLORS.textMuted,
+        highlight: isTuned ? 'extreme' : undefined,
+      },
       {
         label: '调谐状态',
         value: isTuned ? '电谐振·选台成功' : '失谐无信号',
@@ -346,7 +358,7 @@ function buildSpectrumPanel(params: Record<string, number>): PhysicsPanelData {
         name: '电谐振调谐条件',
         latex: 'f_0 = \\frac{1}{2\\pi\\sqrt{LC}} = f_{\\text{发射}}',
         condition: '接收回路固有频率等于所要接收电磁波的频率时发生电谐振',
-        note: '感应电流达到最大值，实现从空中众多电波中选出目标电台。',
+        note: '感应电流达到最大值，实现选台。实际调频回路中通常为 pF 级电容（基准 C₀ ≈ 25.3 pF）与 μH 级电感（L ≈ 0.1 μH）。',
         level: 'core' as const,
       },
       {

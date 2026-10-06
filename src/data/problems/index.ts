@@ -5,7 +5,7 @@ import { energyProblems } from './mechanics/energy-sample'
 import { momentumProblems } from './mechanics/momentum-sample'
 import { projectileProblems } from './mechanics/projectile-sample'
 import { celestialProblems } from './mechanics/celestial-sample'
-import { prob2024Quanguo21 } from './mechanics/prob-2024-quanguo-21'
+import { probBlockBoardModel } from './mechanics/prob-block-board-model'
 import { masterModelProblems } from './masterProblems'
 import { opticsGaokaoProblems } from './optics'
 import { electromagnetismGaokaoProblems } from './electromagnetism'
@@ -15,7 +15,7 @@ import { inductionProblems } from './induction'
 import { nuclearGaokaoProblems } from './nuclear'
 
 export const allProblems: Problem[] = [
-  prob2024Quanguo21,
+  probBlockBoardModel,
   ...masterModelProblems,
   ...nuclearGaokaoProblems,
   ...opticsGaokaoProblems,

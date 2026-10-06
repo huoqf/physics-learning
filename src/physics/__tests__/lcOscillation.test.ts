@@ -4,6 +4,7 @@ import {
   calculateCapacitanceWithGap,
   calculateLCFrequency,
   calculateRadioResonance,
+  calculateRadioTuning,
   LC_DEFAULT_PARAMS,
 } from '../lcOscillation'
 
@@ -45,5 +46,25 @@ describe('LC 振荡与无线电调谐物理模型', () => {
     const f1 = calculateLCFrequency(L, 1e-6)
     const f2 = calculateLCFrequency(L, 4e-6)
     expect(f2).toBeCloseTo(f1 / 2, 4)
+  })
+
+  it('calculateRadioTuning 统一调谐口径与临界阈值判定', () => {
+    const fTx = 100e6
+    // 1. 完全对准 (cRx = 1.0)
+    const exact = calculateRadioTuning(fTx, 1.0, 14)
+    expect(exact.fRx).toBeCloseTo(fTx, 1)
+    expect(exact.response).toBeCloseTo(1.0, 3)
+    expect(exact.isTuned).toBe(true)
+
+    // 2. 审查复现点：cRx = 1.10 时 fRx = 95.3 MHz，失谐 4.7 MHz，响应度约 0.60，必须判定为未谐振 (false)
+    const detuned11 = calculateRadioTuning(fTx, 1.1, 14)
+    expect(detuned11.fRx).toBeCloseTo(95.346e6, -4)
+    expect(detuned11.response).toBeLessThan(0.7)
+    expect(detuned11.isTuned).toBe(false)
+
+    // 3. 微调容差范围：cRx = 1.02 时（失谐约 1 MHz），响应度应超过 0.85 阈值
+    const near = calculateRadioTuning(fTx, 1.02, 14)
+    expect(near.response).toBeGreaterThan(0.85)
+    expect(near.isTuned).toBe(true)
   })
 })

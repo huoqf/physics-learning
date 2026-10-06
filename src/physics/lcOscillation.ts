@@ -112,7 +112,7 @@ export function calculateLCConstants(params: LCParams): LCConstants {
   return {
     omega,
     T,
-    f: 1 / T,
+    f: calculateLCFrequency(L, C),
     eTotal: (Q0 * Q0) / (2 * C),
     iMax: omega * Math.abs(Q0),
   }
@@ -302,6 +302,21 @@ export function calculateLCFrequency(L: number, C: number): number {
 }
 
 /**
+ * 调谐电谐振判定阈值常量（归一化响应度 ≥ 0.85 判定为达成电谐振/选台成功）。
+ * 保证中屏场景指示、共振曲线与右屏物理量看板判定口径 100% 统一（单一可信源 SSOT）。
+ */
+export const RADIO_TUNING_THRESHOLD = 0.85
+
+/**
+ * 默认调谐品质因数 Q。
+ *
+ * 全项目**唯一**的调谐 Q 默认值：`calculateRadioResonance` / `calculateRadioTuning`
+ * 及其全部消费点（场景、右屏物理量、共振曲线）都不得再自行写 14 或 16，
+ * 否则会出现"同一次调谐两套尖锐度"的双真源不一致。
+ */
+export const DEFAULT_RADIO_TUNING_Q = 14
+
+/**
  * 无线电接收回路电谐振响应计算（归一化共振曲线）。
  *
  * 当接收回路固有频率 f0 接近电台发射频率 fTx 时发生电谐振，
@@ -309,13 +324,13 @@ export function calculateLCFrequency(L: number, C: number): number {
  *
  * @param fTx 发射信号频率 (Hz)
  * @param fRx 接收回路固有频率 (Hz)
- * @param Q 回路品质因数（默认 16，决定共振曲线尖锐程度/选择性）
+ * @param Q 回路品质因数（默认 `DEFAULT_RADIO_TUNING_Q`，决定共振曲线尖锐程度/选择性）
  * @returns 响应幅度 (0~1] 及是否达到谐振阈值
  */
 export function calculateRadioResonance(
   fTx: number,
   fRx: number,
-  Q: number = 16,
+  Q: number = DEFAULT_RADIO_TUNING_Q,
 ): { response: number; isTuned: boolean } {
   if (!(fTx > 0) || !(fRx > 0)) {
     return { response: 0, isTuned: false }
@@ -323,8 +338,34 @@ export function calculateRadioResonance(
   const ratio = fRx / fTx
   const detuning = ratio - 1 / ratio
   const response = 1 / Math.sqrt(1 + Q * Q * detuning * detuning)
-  const isTuned = response >= 0.85 // 85% 响应以上视为选台成功
+  const isTuned = response >= RADIO_TUNING_THRESHOLD
 
   return { response, isTuned }
 }
 
+export interface RadioTuningResult {
+  fTx: number
+  fRx: number
+  response: number
+  isTuned: boolean
+}
+
+/**
+ * 无线电接收回路调谐与电谐振计算（单一可信源 SSOT）。
+ *
+ * @param fTx 发射电台载波频率 (Hz)
+ * @param cRx 可变调谐电容相对因子（基准调谐点为 1.0）
+ * @param Q 回路品质因数（默认 `DEFAULT_RADIO_TUNING_Q`）
+ * @returns 调谐结果，包含发射频率、固有频率、归一化响应度及是否谐振
+ */
+export function calculateRadioTuning(
+  fTx: number,
+  cRx: number,
+  Q: number = DEFAULT_RADIO_TUNING_Q,
+): RadioTuningResult {
+  const safeC = Math.max(0.1, cRx)
+  // f₀ ∝ 1 / √C，cRx = 1.0 时 fRx = fTx
+  const fRx = fTx / Math.sqrt(safeC)
+  const { response, isTuned } = calculateRadioResonance(fTx, fRx, Q)
+  return { fTx, fRx, response, isTuned }
+}

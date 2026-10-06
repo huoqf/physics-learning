@@ -5,7 +5,7 @@ import type { Problem } from '../types'
  * 铁律：所有真题的题干问题 100% 严格引用高考原卷原文！
  */
 export const masterModelProblems: Problem[] = [
-  // 1. 板块模型与临界相对滑动 (已有 prob-2024-quanguo-21 引入，此处不重复定义)
+  // 1. 板块模型与临界相对滑动 (已有 prob-block-board-model 引入，此处不重复定义)
 
   // 2. 电磁感应单杆与收尾速度
   {
