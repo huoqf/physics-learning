@@ -29,6 +29,32 @@ export function calculateDopplerWavelength(
 }
 
 /**
+ * 根据相对运动模式获取等效波源速度 vs 与观察者速度 vo
+ *
+ * 单一真源：消除各处组件对 mode === 1 或 mode === 2 判定规则不一致的隐患。
+ *
+ * @param mode 0: 波源运动 (观察者静止), 1: 观察者运动 (波源静止), 2: 超音速激波
+ * @param sourceSpeed 输入波源速度 (m/s)
+ * @param observerSpeed 输入观察者速度 (m/s)
+ * @param waveSpeed 介质波速 (m/s)
+ * @returns { vs: number, vo: number }
+ */
+export function getEffectiveDopplerSpeeds(
+  mode: number,
+  sourceSpeed: number,
+  observerSpeed: number,
+  waveSpeed: number,
+): { vs: number; vo: number } {
+  if (mode === 1) {
+    return { vs: 0, vo: observerSpeed }
+  }
+  if (mode === 2) {
+    return { vs: Math.max(waveSpeed * 1.25, sourceSpeed), vo: 0 }
+  }
+  return { vs: sourceSpeed, vo: 0 }
+}
+
+/**
  * 计算观察者接收到的视在频率 f'
  * 公式：f' = f0 * (v ± vo) / (v ∓ vs)
  *
@@ -122,4 +148,76 @@ export function generateWavefronts(
   }
 
   return circles
+}
+
+/**
+ * 计算超音速马赫角 (Mach Angle)
+ * 公式：sin(θ) = v / vs = 1 / Ma
+ *
+ * @param v 介质波速 (m/s)
+ * @param vs 波源移动速度 (m/s)
+ * @returns 马赫角半顶角（度数），若 vs <= v (亚音速) 则返回 null
+ */
+export function calculateMachAngle(v: number, vs: number): number | null {
+  if (v <= 0 || vs <= v) return null
+  const sinTheta = v / vs
+  const rad = Math.asin(Math.min(1, sinTheta))
+  return (rad * 180) / Math.PI
+}
+
+/**
+ * 马赫锥切线几何数据定义
+ */
+export interface MachConeGeometry {
+  /** 马赫数 Ma = vs / v */
+  machNumber: number
+  /** 马赫角半顶角 θ (度) */
+  halfAngleDeg: number
+  /** 上包络切线端点 (m) */
+  upperLine: { x1: number; y1: number; x2: number; y2: number }
+  /** 下包络切线端点 (m) */
+  lowerLine: { x1: number; y1: number; x2: number; y2: number }
+}
+
+/**
+ * 计算马赫锥包络线几何线段
+ *
+ * @param sourceX 当前波源 X 坐标 (m)
+ * @param sourceY 当前波源 Y 坐标 (m)
+ * @param v 扩散波速 (m/s)
+ * @param vs 波源移动速度 (m/s)
+ * @param coneLength 马赫锥向后延伸的物理长度 (m)
+ */
+export function calculateMachConeGeometry(
+  sourceX: number,
+  sourceY: number,
+  v: number,
+  vs: number,
+  coneLength = 40,
+): MachConeGeometry | null {
+  if (vs <= v || v <= 0) return null
+  const machNumber = vs / v
+  const halfAngleDeg = calculateMachAngle(v, vs)
+  if (halfAngleDeg === null) return null
+
+  const rad = (halfAngleDeg * Math.PI) / 180
+  const dx = coneLength * Math.cos(rad)
+  const dy = coneLength * Math.sin(rad)
+
+  return {
+    machNumber,
+    halfAngleDeg,
+    upperLine: {
+      x1: sourceX,
+      y1: sourceY,
+      x2: sourceX - dx,
+      y2: sourceY - dy,
+    },
+    lowerLine: {
+      x1: sourceX,
+      y1: sourceY,
+      x2: sourceX - dx,
+      y2: sourceY + dy,
+    },
+  }
 }

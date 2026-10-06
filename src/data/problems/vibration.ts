@@ -19,7 +19,7 @@ export const vibrationGaokaoProblems: Problem[] = [
     tags: ['高考真题', '多普勒效应', '彩超测速', '宇宙红移'],
     targetAnimation: {
       animId: 'anim-doppler-effect',
-      presetParams: { sourceSpeed: 0.5, waveSpeed: 1.0 },
+      presetParams: { mode: 0, sourceSpeed: 100, waveSpeed: 340, frequency: 10, observerSpeed: 0 },
       presetDescription: '载入多普勒效应波前挤压与频率接收变化仿真',
     },
     optionExplanations: {

@@ -3,6 +3,8 @@ import {
   calculateDopplerWavelength,
   calculateDopplerFrequency,
   generateWavefronts,
+  calculateMachAngle,
+  calculateMachConeGeometry,
 } from '../doppler'
 
 describe('doppler (多普勒效应纯物理计算单测)', () => {
@@ -59,5 +61,24 @@ describe('doppler (多普勒效应纯物理计算单测)', () => {
     const currentSourceX = x0 + vs * currentTime
     expect(wavefronts[0].sourceX).toBeCloseTo(currentSourceX, 4)
     expect(wavefronts[0].radius).toBeCloseTo(0, 4)
+  })
+
+  it('超音速模式：正确计算马赫数与马赫角（sinθ = 1/Ma）', () => {
+    // 亚音速：无马赫角
+    expect(calculateMachAngle(340, 170)).toBeNull()
+    expect(calculateMachConeGeometry(0, 0, 340, 170)).toBeNull()
+
+    // 超音速：vs = 680 m/s, v = 340 m/s -> Ma = 2.0 -> sinθ = 0.5 -> θ = 30°
+    const angle = calculateMachAngle(340, 680)
+    expect(angle).toBeCloseTo(30, 2)
+
+    const cone = calculateMachConeGeometry(10, 0, 340, 680, 20)
+    expect(cone).not.toBeNull()
+    expect(cone?.machNumber).toBeCloseTo(2, 4)
+    expect(cone?.halfAngleDeg).toBeCloseTo(30, 2)
+    // 验证切线端点 (x = 10 - 20*cos(30°) = 10 - 17.3205 = -7.3205, y = ± 20*sin(30°) = ±10)
+    expect(cone?.upperLine.x2).toBeCloseTo(10 - 20 * Math.cos(Math.PI / 6), 2)
+    expect(cone?.upperLine.y2).toBeCloseTo(-10, 2)
+    expect(cone?.lowerLine.y2).toBeCloseTo(10, 2)
   })
 })

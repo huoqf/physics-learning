@@ -403,13 +403,33 @@ export const vibrationOscillationAnimations = defineAnimations({
         type: 'preset',
         label: '📋 高考真题预设：鸣笛列车高速呼啸驶过',
         group: '快捷预设',
-        params: () => ({ mode: 0, waveSpeed: 340, sourceSpeed: 120, frequency: 10, observerSpeed: 0 }),
+        params: () => ({ mode: 0, waveSpeed: 340, sourceSpeed: 100, frequency: 10, observerSpeed: 0 }),
+      },
+      {
+        type: 'preset',
+        label: '📋 高考模型：高铁乘客迎面驶向广播站 (观察者运动)',
+        group: '快捷预设',
+        params: () => ({ mode: 1, waveSpeed: 340, sourceSpeed: 0, frequency: 10, observerSpeed: 70 }),
+      },
+      {
+        type: 'preset',
+        label: '🚀 强基拓展：战机突破音障产生马赫锥激波',
+        group: '快捷预设',
+        params: () => ({ mode: 2, waveSpeed: 340, sourceSpeed: 450, frequency: 10, observerSpeed: 0 }),
       },
       {
         type: 'tip',
         group: '教学提示',
         variant: 'info',
-        content: '波源朝观察者靠近时，波前被挤压密集，接收频率升高（音调尖锐）；波源背离观察者远去时，波前被拉伸稀疏，接收频率降低（音调低沉）。',
+        content:
+          '【波源运动 vs 观察者运动本质】：波源运动压缩前方空间波长（λ\'变小），波速不变；观察者运动空间波长不变，单位时间迎面截获波峰增多导致频率升高。',
+      },
+      {
+        type: 'tip',
+        group: '教学提示',
+        variant: 'warning',
+        content:
+          '【高考易错防坑】：匀速靠近时音调恒定偏高（并非越来越高！）；掠过观察者瞬间音调发生阶跃突降。波速由介质决定，与波源运动完全无关！',
       },
     ],
     paramMeta: [
