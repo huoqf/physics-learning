@@ -25,11 +25,22 @@ const TEST_ANIM_IDS = [
   'anim-em-wave',
   'anim-em-spectrum',
   'anim-bullet-block',
+  'anim-forced-resonance',
 ]
 
 describe('buildPhysicsQuantities', () => {
   beforeAll(async () => {
     await Promise.all(TEST_ANIM_IDS.map((id) => preloadQuantityBuilder(id)))
+  })
+
+  it('受迫振动与共振物理量构建器正确输出固有频率与振幅', () => {
+    const qs = buildPhysicsQuantities(
+      'anim-forced-resonance',
+      { m: 1.0, k: 39.5, gamma: 0.5, F0: 2.0, f: 1.0, mode: 1 },
+      0
+    )
+    expect(find(qs, '系统固有频率')).toBeCloseTo(1.0, 1)
+    expect(find(qs, '受迫振动振幅')).toBeGreaterThan(0)
   })
 
   it('动量守恒动画满足碰前=碰后总动量', () => {

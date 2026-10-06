@@ -262,6 +262,8 @@ export function build<Topic>Quantities(
 
 ## Step 4：组件速查
 
+> 完整组件清单与 Props 接口定义单一信源 (SSOT) 见 [COMPONENT_REGISTRY.md](file:///d:/code/physic/physics-learning/docs/agent-rules/ui/COMPONENT_REGISTRY.md)。
+
 ### Physics（`@/components/Physics`）
 
 | 需求 | 组件 | 关键 Props |
@@ -310,4 +312,5 @@ font(N)            // SVG 字号，禁止裸 fontSize={N}
 - [ ] 组件：Ball / Block / PhysicsGround / PhysicsVectorArrow / 图表组件均已复用
 - [ ] 颜色：PHYSICS_COLORS / SCENE_COLORS / CANVAS_COLORS 按语义使用；font(N) 包裹字号
 - [ ] Registry：5 个文件全部完成；`defaultParams as const`；controlsMode 正确
+- [ ] 预设与提示：若有预设，标签紧凑（≤15字）、不锁滑块、设 `restartOnApply: true`；观察指引与条件归于底部 Tip（遵循 08_THREE_PANEL_RULES.md §2.6）
 - [ ] `tsc --noEmit` 通过

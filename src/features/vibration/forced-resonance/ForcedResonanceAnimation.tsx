@@ -18,8 +18,10 @@ export default function ForcedResonanceAnimation() {
   const f = params.f ?? 1.0
   const mode = params.mode ?? 1
 
+  const showForces = params.showForces ?? 1
+
   const { containerRef, canvasSize, vp } = useAnimationViewport({
-    preset: CANVAS_PRESETS.splitV,
+    preset: CANVAS_PRESETS.splitH,
   })
 
   const physics = useForcedResonancePhysics({
@@ -30,17 +32,18 @@ export default function ForcedResonanceAnimation() {
     f,
     mode,
     time,
+    showForces,
   })
 
   const sceneScale = useSceneScale({
     vp,
-    preset: CANVAS_PRESETS.splitV,
+    preset: CANVAS_PRESETS.splitH,
     anchor: 'viewport',
-    physicsWidth: 10,
-    physicsHeight: 4,
+    physicsWidth: 4.2,
+    physicsHeight: 6.5,
     refMagnitudes: {
-      velocity: 1.5,
-      force: 4.0,
+      velocity: 2.0,
+      force: 5.0,
     },
   })
 
@@ -52,6 +55,7 @@ export default function ForcedResonanceAnimation() {
         sceneScale={sceneScale}
         vp={vp}
         time={time}
+        showForces={showForces}
       />
     </AnimationSvgCanvas>
   )

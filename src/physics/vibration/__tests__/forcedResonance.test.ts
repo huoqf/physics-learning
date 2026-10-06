@@ -36,15 +36,33 @@ describe('forcedResonance 物理纯函数计算', () => {
     expect(smallDamping.amplitude).toBeGreaterThan(largeDamping.amplitude * 3)
   })
 
+  it('滞后相位满足受迫振动随驱动频率的变化规律 (低频同相, 共振90度, 高频180度)', () => {
+    const base = { m: 1.0, k: 39.478, gamma: 0.4, F0: 2.0 } // f0 ≈ 1.0 Hz
+    // 低频驱动 f = 0.1 Hz << f0 -> 相位差接近 0°
+    const lowFreq = calculateSteadyStateResonance({ ...base, f: 0.1 })
+    expect(lowFreq.phaseLagDeg).toBeLessThan(15)
+
+    // 共振频率 f = f0 = 1.0 Hz -> 相位差等于 90°
+    const resFreq = calculateSteadyStateResonance({ ...base, f: 1.0 })
+    expect(resFreq.phaseLagDeg).toBeCloseTo(90, 0)
+
+    // 高频驱动 f = 2.4 Hz >> f0 -> 相位差接近 180°
+    const highFreq = calculateSteadyStateResonance({ ...base, f: 2.4 })
+    expect(highFreq.phaseLagDeg).toBeGreaterThan(160)
+  })
+
   it('受迫振动瞬时状态满足动力学合外力输出', () => {
     const config = { m: 1.0, k: 25, gamma: 0.5, F0: 5, f: 1.2 }
     const state = calculateForcedVibrationState(config, 1.5, 1)
 
     expect(Number.isFinite(state.x)).toBe(true)
     expect(Number.isFinite(state.v)).toBe(true)
+    expect(Number.isFinite(state.a)).toBe(true)
     expect(Number.isFinite(state.elasticForce)).toBe(true)
     expect(Number.isFinite(state.dampingForce)).toBe(true)
+    expect(Number.isFinite(state.totalForce)).toBe(true)
     expect(state.elasticForce).toBeCloseTo(-25 * state.x, 4)
+    expect(state.totalForce).toBeCloseTo(state.fDriver + state.elasticForce + state.dampingForce, 4)
   })
 
   it('生成共振曲线包含预期数量采样点', () => {

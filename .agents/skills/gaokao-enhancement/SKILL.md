@@ -74,43 +74,46 @@ description: 高考提分扩展 / 高考真题系统开发 / 增强现有页面�
 
 ---
 
-## 🛠️ Step 1：为现有物理动画添加高考真题预设与临界刻度
+## 🎯 Step 0B：适用范围与三屏职责分离边界（核心铁律）
 
-当为已有 93 个物理动画增加高考提分属性时，修改对应的 `src/data/registries/<domain>.ts`：
+在开发高考提分相关功能时，必须严格区分**两类不同性质的页面模块**，严禁混淆职责：
 
-### 1.1 增加高考真题预设 (`controlMeta.preset`)
-```typescript
-// 示例：在 controlMeta 中添加真题一键预设
-export const blockBoardControlMeta: ControlMeta[] = [
-  {
-    type: 'preset',
-    label: '📋 2024新课标卷第21题（板块相对滑动）',
-    description: 'm1=1kg, m2=2kg, μ1=0.2, v0=6m/s',
-    params: { m1: 1, m2: 2, mu1: 0.2, v0: 6 },
-    restartOnApply: true,
-  },
-  // ...其它常规控件
-]
-```
+1. **高考 18 大 Master 模型专区 (`/master-models`) 与真题练习中心 (`/practice`)**：
+   - 本 Skill 的**主要主场**。
+   - 承载完整的原卷题干、选项辨析、详细采分步骤与图解，可使用 `targetAnimation` 实现一键跳转动画。
 
-### 1.2 标记高考临界刻度 (`paramMeta.marks`)
-```typescript
-// 示例：在 paramMeta 中标注高考关键临界点
-export const blockBoardParamMeta: ParamMeta[] = [
-  {
-    key: 'v0',
-    label: '初速度 v0',
-    min: 0,
-    max: 12,
-    unit: 'm/s',
-    marks: [
-      { value: 0, label: '0' },
-      { value: 4.5, label: '临界: 恰好滑脱', variant: 'critical' }, // 高考临界点
-      { value: 10, label: '推荐' },
-    ],
-  },
-]
-```
+2. **93 个高中物理同步基础教学动画页面 (`/animation/:id`)**：
+   - 定位是**高中物理基础概念建构与规律探索（课堂与自学）**，**绝非高考题解刷题板**！
+   - **左屏铁律**：左屏是纯粹的【交互控制台】。**严禁在左屏堆砌真题题干、长篇解析或整道题解论文**！**严禁在左屏用 TipCard 重复输出右屏的高考考点**！
+   - **预设边界**：基础动画若提供典型情境预设（`preset`），必须位于模式切换与显示辅助之后，且 `description` 严格限制为 1 句话物理情境/参数说明（例如：`设定 f=f₀，驱动频率等于固有频率发生共振`）。
+   - **考点归位**：所有高考考点总结与命题陷阱，**必须且只能归拢到右屏 `ExamPointSection`**。
+
+---
+
+## 🛠️ Step 1：真题与动画双向联动规范 (Target Animation Linking)
+
+高考真题与基础物理动画的联动通过**只读参数透传**实现，遵循单向解耦原则：
+
+### 1.1 真题卡片跳转动画规范 (`targetAnimation`)
+- 真题数据中的 `targetAnimation` 负责定义跳转目标与初态参数：
+  ```typescript
+  targetAnimation: {
+    animId: 'anim-block-board',
+    presetParams: { m1: 1, m2: 2, mu1: 0.2, v0: 6 },
+    presetDescription: '载入2024新课标卷第21题初始物理参数',
+  }
+  ```
+- 点击后通过路由跳转至对应基础动画 `#/animation/:animId`，并将 `presetParams` 注入动画 store。
+
+### 1.2 基础动画页面预设边界（严格遵守单一信源 SSOT）
+- **禁止在基础动画左屏反向硬编码高考真题题解或解析**！
+- 基础物理动画本身的典型探究预设与教学提示，**必须且只能严格遵循**权威规则：
+  👉 [08_THREE_PANEL_RULES.md §2.6 典型情境预设与教学指引规范](file:///d:/code/physic/physics-learning/docs/agent-rules/ui/08_THREE_PANEL_RULES.md#L106-L127)
+- 核心要求速查：
+  1. **基准锚点**：预设仅用于一键载入工况初态并自动播放（`restartOnApply: true`），**严禁锁定参数滑块**，保留控制变量探究自由度；
+  2. **极简标签**：预设标签必须紧凑（≤15字，如 `⚡ 临界滑动工况`），禁止在预设项写多行长文本；
+  3. **提示归位**：实验条件、观察重点与启发问题统一收拢到底部 `controlMeta.tip`；
+  4. **考点归位**：高考考点提炼统一收拢到右屏 `ExamPointSection`。
 
 ---
 

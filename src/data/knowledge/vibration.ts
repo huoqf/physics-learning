@@ -29,7 +29,7 @@ export const vibrationKnowledge: KnowledgeNode[] = [
     module: 'vibration',
     importance: 'gaokao',
     animationIds: ['anim-forced-resonance'],
-    problemIds: [],
+    problemIds: ['prob-2020-beijing-03', 'prob-2021-zhejiang-06'],
     prerequisites: ['vibration-1-1'],
   },
   {

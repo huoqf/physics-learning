@@ -146,3 +146,11 @@ export function getLoadedAnimationCount(): number {
 }
 
 export { defineAnimations } from './defineAnimations'
+
+const metaWithHot = import.meta as unknown as { hot?: { accept: (cb: () => void) => void } }
+if (metaWithHot.hot) {
+  metaWithHot.hot.accept(() => {
+    extendedLoaded = false
+    extendedPromise = null
+  })
+}

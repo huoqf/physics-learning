@@ -54,4 +54,104 @@ export const vibrationGaokaoProblems: Problem[] = [
       },
     ],
   },
+  {
+    id: 'prob-2020-beijing-03',
+    year: 2020,
+    province: '北京卷',
+    source: '2020年北京市普通高中学业水平等级性考试物理卷第3题',
+    questionType: 'choice',
+    verified: true,
+    title: '受迫振动的频率由驱动力频率决定',
+    content:
+      '把两个弹簧振子悬挂在同一个支架上，已知振子 A 的固有频率为 $9\\text{ Hz}$，振子 B 的固有频率为 $72\\text{ Hz}$。当支架在驱动力作用下以 $40\\text{ Hz}$ 的频率振动时，两个振子做受迫振动的振动频率分别为（　　）\n\nA. $9\\text{ Hz}$，$72\\text{ Hz}$\nB. $40\\text{ Hz}$，$40\\text{ Hz}$\nC. $49\\text{ Hz}$，$112\\text{ Hz}$\nD. $31\\text{ Hz}$，$32\\text{ Hz}$',
+    difficulty: 2,
+    knowledgeIds: ['vibration-1-3'],
+    tags: ['高考真题', '受迫振动', '驱动力频率', '固有频率'],
+    targetAnimation: {
+      animId: 'anim-forced-resonance',
+      presetParams: { mode: 1, m: 1.0, k: 39.5, gamma: 0.4, F0: 2.0, f: 1.0, showForces: 1 },
+      presetDescription: '载入受迫振动仿真探究稳态频率与驱动力频率的一致性',
+    },
+    optionExplanations: {
+      A: {
+        label: 'A',
+        isCorrect: false,
+        explanation: '错误。误认为物体受迫振动时仍保持自身的固有频率，违背了受迫振动的基本特征。',
+      },
+      B: {
+        label: 'B',
+        isCorrect: true,
+        explanation: '正确。物体做受迫振动达到稳定后，其振动频率恒等于驱动力的频率，与系统的固有频率无关。因此两振子的受迫振动频率均为 40 Hz。',
+      },
+      C: {
+        label: 'C',
+        isCorrect: false,
+        explanation: '错误。误将固有频率与驱动力频率进行代数相加。',
+      },
+      D: {
+        label: 'D',
+        isCorrect: false,
+        explanation: '错误。误将固有频率与驱动力频率作差。',
+      },
+    },
+    steps: [
+      {
+        id: 'step-1',
+        description: '应用受迫振动的频率决定法则',
+        keyCondition: '受迫振动稳定频率恒等于驱动力频率：f_受迫 = f_驱动',
+        scorePoints: 3,
+        explanation: '物体在周期性外力（驱动力）作用下的振动称为受迫振动。系统达到稳定振动时，系统以驱动力的节拍振动，振动频率完全由驱动力决定，故两振子频率均为 40 Hz。',
+      },
+    ],
+  },
+  {
+    id: 'prob-2021-zhejiang-06',
+    year: 2021,
+    province: '浙江卷',
+    source: '2021年6月浙江省普通高校招生选考科目考试物理卷第6题',
+    questionType: 'choice',
+    verified: true,
+    title: '受迫振动与共振现象综合辨析',
+    content:
+      '关于受迫振动和共振，下列说法正确的是（　　）\n\nA. 物体做受迫振动的振动频率由物体固有频率决定\nB. 物体做受迫振动的振幅仅由驱动力的振幅决定\nC. 驱动力频率越接近系统的固有频率，受迫振动的振幅越大\nD. 消除受迫振动危害的有效方法是增大驱动力的频率使其与系统的固有频率一致',
+    difficulty: 3,
+    knowledgeIds: ['vibration-1-3'],
+    tags: ['高考真题', '受迫振动', '共振曲线', '隔振防害'],
+    targetAnimation: {
+      animId: 'anim-forced-resonance',
+      presetParams: { mode: 1, m: 1.0, k: 39.5, gamma: 0.5, F0: 2.0, f: 1.0, showForces: 1 },
+      presetDescription: '载入共振响应特性探究不同驱动频率与阻尼下的振幅响应',
+    },
+    optionExplanations: {
+      A: {
+        label: 'A',
+        isCorrect: false,
+        explanation: '错误。物体做受迫振动的频率由驱动力的频率决定，与固有频率无关。',
+      },
+      B: {
+        label: 'B',
+        isCorrect: false,
+        explanation: '错误。做受迫振动的振幅不仅与驱动力幅值有关，还极大地取决于驱动力频率与固有频率的接近程度（共振特性）以及介质阻尼。',
+      },
+      C: {
+        label: 'C',
+        isCorrect: true,
+        explanation: '正确。驱动力频率越接近系统的固有频率，能量输入效率越高，受迫振动的振幅越大；当两者相等时发生共振，振幅达到极大值。',
+      },
+      D: {
+        label: 'D',
+        isCorrect: false,
+        explanation: '错误。当驱动力频率等于固有频率时会发生剧烈共振，振幅急剧增大反而造成破坏性危害；消除危害应设法使驱动力频率远离固有频率或增大阻尼。',
+      },
+    },
+    steps: [
+      {
+        id: 'step-1',
+        description: '辨析受迫振动的频率决定法则与共振条件',
+        keyCondition: '受迫稳态频率 f=f_驱；共振发生于 f 接近 f0 处',
+        scorePoints: 3,
+        explanation: '根据共振曲线 A-f 规律，当驱动频率接近系统固有频率时发生共振，振幅最大。防止共振危害必须避开共振区（使驱动频率远离固有频率，如桥梁防振、机器加隔振座）。',
+      },
+    ],
+  },
 ]

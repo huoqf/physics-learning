@@ -5,19 +5,21 @@ import type { ControlMeta, ParamMeta } from '@/data/types'
  * 供 Agent 扩展已有 93 个物理动画注册时直接引入与套用
  */
 
-/** 高考真题预设 ControlMeta 示例 */
+/** 典型物理情境预设 ControlMeta 示例（必须置于 segmented 模式与 toggle 开关之后） */
 export const gaokaoExamPresetsMeta: ControlMeta[] = [
   {
     type: 'preset',
-    label: '📋 2024全国新课标卷第21题（板块相对滑动）',
-    description: 'm1=1kg, m2=2kg, μ1=0.2, v0=6m/s',
+    label: '⚡ 临界滑脱工况 (m1=1kg, v0=6m/s)',
+    description: '板块间摩擦力达到最大静摩擦力临界状态',
+    group: '典型情境预设',
     params: { m1: 1, m2: 2, mu1: 0.2, v0: 6 },
     restartOnApply: true,
   },
   {
     type: 'preset',
-    label: '📋 2023北京卷第18题（临界不脱离）',
-    description: 'm1=1.5kg, m2=1.5kg, μ1=0.4, v0=8m/s',
+    label: '⚡ 一同减速工况 (μ1=0.4, v0=8m/s)',
+    description: '两物块保持相对静止一同减速滑行',
+    group: '典型情境预设',
     params: { m1: 1.5, m2: 1.5, mu1: 0.4, v0: 8 },
     restartOnApply: true,
   },

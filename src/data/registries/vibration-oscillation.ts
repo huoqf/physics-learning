@@ -444,6 +444,7 @@ export const vibrationOscillationAnimations = defineAnimations({
     knowledgeId: 'vibration-1-3',
     Component: lazy(() => import('@/features/vibration/forced-resonance')),
     CenterExtra: lazy(() => import('@/features/vibration/forced-resonance/ForcedResonanceCenterExtra')),
+    centerLayout: 'splitH',
     controlsMode: 'timed',
     maxTime: 20,
     defaultParams: {
@@ -453,20 +454,10 @@ export const vibrationOscillationAnimations = defineAnimations({
       gamma: 0.5,
       F0: 2.0,
       f: 1.0,
+      showForces: 1,
     } as const,
     controlMeta: [
-      {
-        type: 'preset',
-        label: '📋 高考真题：共振筛最高工作效率 (f=f0)',
-        group: '快捷预设',
-        params: () => ({ mode: 1, m: 1.0, k: 39.5, gamma: 0.4, F0: 2.5, f: 1.0 }),
-      },
-      {
-        type: 'preset',
-        label: '📋 避开共振区：机器底座减震隔离 (f >> f0)',
-        group: '快捷预设',
-        params: () => ({ mode: 1, m: 1.0, k: 39.5, gamma: 0.8, F0: 2.0, f: 2.2 }),
-      },
+      // 1. 探究主题（置顶，选择实验模式）
       {
         type: 'segmented',
         key: 'mode',
@@ -474,35 +465,73 @@ export const vibrationOscillationAnimations = defineAnimations({
         group: '模型选择',
         resetOnChange: true,
         options: [
-          { value: 0, label: '初态过渡过程' },
-          { value: 1, label: '共振峰响应探究' },
-          { value: 2, label: '阻尼尖锐度对比' },
+          { value: 0, label: '自由衰减至受迫稳定' },
+          { value: 1, label: '共振曲线与频率探究' },
+          { value: 2, label: '不同阻力下的共振对比' },
         ],
       },
+      // 2. 显示选项（辅助矢量开关）
+      {
+        type: 'toggle',
+        key: 'showForces',
+        label: '受力矢量分析 (弹力/阻力/驱动力)',
+        group: '显示选项',
+      },
+      // 3. 典型物理情境预设（纯净紧凑按钮，无冗长卡片占用空间）
+      {
+        type: 'preset',
+        label: '⚡ 强烈共振 (f = f₀ = 1.0Hz)',
+        group: '典型物理情境',
+        restartOnApply: true,
+        params: () => ({ mode: 1, m: 1.0, k: 39.5, gamma: 0.4, F0: 2.0, f: 1.0, showForces: 1 }),
+      },
+      {
+        type: 'preset',
+        label: '🔄 低频随动 (f = 0.5Hz < f₀)',
+        group: '典型物理情境',
+        restartOnApply: true,
+        params: () => ({ mode: 1, m: 1.0, k: 39.5, gamma: 0.5, F0: 2.0, f: 0.5, showForces: 1 }),
+      },
+      {
+        type: 'preset',
+        label: '🛡️ 高频避振 (f = 2.2Hz >> f₀)',
+        group: '典型物理情境',
+        restartOnApply: true,
+        params: () => ({ mode: 1, m: 1.0, k: 39.5, gamma: 0.6, F0: 2.0, f: 2.2, showForces: 1 }),
+      },
+      {
+        type: 'preset',
+        label: '🏭 共振筛增重调频 (m: 1.0→1.6kg)',
+        group: '典型物理情境',
+        restartOnApply: true,
+        params: () => ({ mode: 1, m: 1.6, k: 39.5, gamma: 0.45, F0: 2.4, f: 0.79, showForces: 1 }),
+      },
+      // 4. 探究指引与工况说明（统一收拢条件、物理机制与探究问题）
       {
         type: 'tip',
-        group: '考点要领',
-        variant: 'primary',
-        content: '【高考核心考点】：做受迫振动的物体稳定振动频率恒等于驱动力频率（f受迫 = f驱）；当驱动频率接近系统固有频率时发生共振，振幅达极大值。',
+        group: '实验探究指引',
+        content:
+          '【工况条件与观察重点】：\n• ⚡ 强烈共振：条件 f = f₀，速度与驱动力同向做正功，振幅达到峰值。\n• 🔄 低频随动：条件 f < f₀，外力变化慢，振子位移与驱动滑块同向同步。\n• 🛡️ 高频避振：条件 f >> f₀，外力快速交变，振子受惯性滞后振幅极小。\n• 🏭 共振筛模型：加料增重使 m 增大 -> f₀ 降低 -> 必须降低转速以维持共振。\n💡 说明：点击预设仅注入典型初态，未锁定参数，可自由拖动下方滑块深入探索。',
       },
     ],
     paramMeta: [
       {
         key: 'f',
         label: '驱动频率 f',
+        description: '偏心轮电机驱动频率。系统固有频率 f₀ = 1/(2π)√(k/m)',
         min: 0.2,
         max: 2.4,
         step: 0.05,
         unit: 'Hz',
         marks: [
-          { value: 1.0, label: 'f0: 共振点', variant: 'critical' },
-          { value: 2.0, label: '高频区' },
+          { value: 1.0, label: '固有频率 f₀ (m=1kg)', variant: 'critical' },
+          { value: 2.2, label: '高频避振区' },
         ],
       },
       { key: 'F0', label: '驱动力幅值 F0', min: 0.5, max: 5.0, step: 0.5, unit: 'N' },
+      { key: 'm', label: '振子质量 m', description: '增大 m 将降低固有频率 f₀', min: 0.5, max: 2.5, step: 0.1, unit: 'kg' },
       { key: 'k', label: '弹簧劲度 k', min: 10, max: 80, step: 5, unit: 'N/m' },
-      { key: 'm', label: '振子质量 m', min: 0.5, max: 2.5, step: 0.1, unit: 'kg' },
-      { key: 'gamma', label: '介质阻尼 γ', min: 0.1, max: 1.5, step: 0.1, unit: 'N·s/m' },
+      { key: 'gamma', label: '介质阻力系数 γ', description: '阻力越小共振峰越尖锐；阻力越大共振峰越平缓', min: 0.1, max: 1.5, step: 0.1, unit: 'N·s/m' },
     ],
   },
 })

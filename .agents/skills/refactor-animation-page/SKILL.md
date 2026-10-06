@@ -1,6 +1,6 @@
 ---
 name: refactor-animation-page
-description: 重构动画页面 / 重构已有组件 / 迁移旧动画 / 修复动画规范违规 / 优化现有动画页面 / 迁移 wide/tall preset / 为已有动画增加高考真题预设 / 扩展高考临界刻度 / 升级动画高考考点 / 动画高考提分改造
+description: 重构动画页面 / 重构已有组件 / 迁移旧动画 / 修复动画规范违规 / 优化现有动画页面 / 迁移 wide/tall preset / 三屏职责规范治理 / 修复坐标系与Viewport规范
 ---
 
 # 重构动画页面 Skill
@@ -67,7 +67,7 @@ fontSize={11}           → fontSize={font(11)}
 |------|------|---------|
 | 主屏 SVG | 大段教学文字 / 公式推导 | 右屏 FormulaSection |
 | 主屏 SVG | 高考考点总结 | 右屏 ExamPointSection |
-| 左屏 | 手写 input/button 控件 | `paramMeta` / `controlMeta` |
+| 左屏 | 手写 input/button 控件，或堆砌真题题解/长文本 | `paramMeta` / `controlMeta`（预设遵循 08_THREE_PANEL_RULES.md §2.6） |
 
 ### G. 物理保真度与教学规范（按需查阅资源库）
 
@@ -173,5 +173,6 @@ useSceneScale({ vp, preset, anchor: 'custom',
 - [ ] 物理计算遵循单一可信源（SSOT），数值与单位符合高考课标（已核对对应 references）
 - [ ] 字号 `font(N)`，颜色 PHYSICS/SCENE/CANVAS_COLORS 按语义
 - [ ] 涉及电路时遵循 `CIRCUIT_RULES.md`：组件复用 `variant="symbolic"`、端子直角接合、红进黑出、零文本/元件撞车
+- [ ] 左屏控制纯净：无长篇题解，预设紧凑（≤15字）不锁滑块，观察指引归于底部 Tip（遵循 08_THREE_PANEL_RULES.md §2.6）
 - [ ] `tsc --noEmit` 通过，动画播放/暂停/重置正常
 - [ ] 未改动本次任务无关文件

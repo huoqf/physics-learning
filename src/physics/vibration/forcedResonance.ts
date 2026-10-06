@@ -27,8 +27,10 @@ export interface SteadyStateResonanceResult {
   omega1: number
   /** 稳态受迫振动振幅 A (m) */
   amplitude: number
-  /** 稳态滞后相位 phi (rad) */
+  /** 稳态滞后相位 phi (rad) [0, pi] */
   phaseLag: number
+  /** 稳态滞后相位角度 (deg) [0°, 180°] */
+  phaseLagDeg: number
   /** 共振频率 f_res (Hz) = sqrt(omega0^2 - 2*beta^2) / (2*pi) (当弱阻尼时近似为 f0) */
   fRes: number
   /** 共振最大振幅 A_res (m) */
@@ -55,8 +57,9 @@ export function calculateSteadyStateResonance(config: ForcedResonanceConfig): St
   const denom = Math.sqrt(term1 * term1 + term2 * term2)
   const amplitude = denom > 1e-6 ? (F0 / safeM) / denom : 0
 
-  // 滞后初相位: tan(phi) = 2*beta*omega / (omega0^2 - omega^2)
+  // 滞后初相位: tan(phi) = 2*beta*omega / (omega0^2 - omega^2) -> 范围 [0, pi]
   const phaseLag = Math.atan2(term2, term1)
+  const phaseLagDeg = (phaseLag * 180) / Math.PI
 
   // 位移共振圆频率: omega_res = sqrt(max(0, omega0^2 - 2*beta^2))
   const omegaResSq = Math.max(0, omega0 * omega0 - 2 * beta * beta)
@@ -74,6 +77,7 @@ export function calculateSteadyStateResonance(config: ForcedResonanceConfig): St
     omega1,
     amplitude,
     phaseLag,
+    phaseLagDeg,
     fRes,
     maxAmplitude,
   }
@@ -90,13 +94,19 @@ export function calculateForcedVibrationState(
 ): {
   x: number // 位移 (m)
   v: number // 速度 (m/s)
+  a: number // 加速度 (m/s^2)
   driverX: number // 驱动端位移 (m)
   fDriver: number // 实时驱动力 (N)
   elasticForce: number // 弹簧弹力 -k*x (N)
   dampingForce: number // 阻尼阻力 -gamma*v (N)
+  totalForce: number // 合外力 (N)
+  kineticEnergy: number // 动能 (J)
+  potentialEnergy: number // 弹性势能 (J)
+  powerAbsorbed: number // 瞬时驱动功率 (W)
 } {
   const steady = calculateSteadyStateResonance(config)
-  const { F0, f, k, gamma } = config
+  const { F0, f, k, gamma, m } = config
+  const safeM = Math.max(0.01, m)
   const omega = 2 * Math.PI * f
 
   // 驱动源位移 (偏心轮或连杆)
@@ -121,14 +131,25 @@ export function calculateForcedVibrationState(
 
   const elasticForce = -k * x
   const dampingForce = -gamma * v
+  const totalForce = fDriver + elasticForce + dampingForce
+  const a = totalForce / safeM
+
+  const kineticEnergy = 0.5 * safeM * v * v
+  const potentialEnergy = 0.5 * k * x * x
+  const powerAbsorbed = fDriver * v
 
   return {
     x,
     v,
+    a,
     driverX,
     fDriver,
     elasticForce,
     dampingForce,
+    totalForce,
+    kineticEnergy,
+    potentialEnergy,
+    powerAbsorbed,
   }
 }
 
