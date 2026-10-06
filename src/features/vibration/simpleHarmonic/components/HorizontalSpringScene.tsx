@@ -145,8 +145,8 @@ export function HorizontalSpringScene({
       {/* 左侧固定墙面 */}
       <PhysicsGround x={wallXH} y={axisY - wallH / 2} width={wallW} type="wall" wall={{ height: wallH, hatchSide: 'right' }} />
 
-      {/* 水平地面平台 */}
-      <PhysicsGround x={sceneX0} y={axisY + massSize / 2 + 1} width={sceneW} type="platform" appearance={{ thickness: 8 }} />
+      {/* 水平地面平台（严格贴合滑块底面 axisY + massSize / 2，消除 1px 浮空） */}
+      <PhysicsGround x={sceneX0} y={axisY + massSize / 2} width={sceneW} type="platform" appearance={{ thickness: 8 }} />
 
       {/* 弹簧组件 */}
       <Spring x1={wallXH + wallW} y1={axisY} x2={massLeftH} y2={axisY} coils={11} radius={Math.max(8, massSize * 0.18)} isLightWeight />

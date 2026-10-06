@@ -91,22 +91,29 @@ export function ProjectileScene({
     const W = Math.max(physics.inclineLandingX * 1.25, 14)
     const H = W * Math.tan(phiRad)
 
+    // 小球半径 r=9px，斜面表面沿垂直法向偏移 R，使小球球体外切于斜面，消除穿模
+    const ballR = 9
+    const offsetY = ballR / Math.cos(phiRad)
+
     const pTop = worldToDesign(0, 0, sceneScale)
     const pBot = worldToDesign(W, -H, sceneScale)
+    const topWithOffset = { px: pTop.px, py: pTop.py + offsetY }
+    const botWithOffset = { px: pBot.px, py: pBot.py + offsetY }
     // 抛出点正下方/底边直角顶点 (左下角)
-    const pCorner = { px: pTop.px, py: pBot.py }
+    const pCorner = { px: pTop.px, py: botWithOffset.py }
 
-    // 斜面上的实际物理落点
+    // 斜面上的实际物理落点接触切点
     const pHit = worldToDesign(physics.inclineLandingX, physics.inclineLandingY, sceneScale)
+    const hitWithOffset = { px: pHit.px, py: pHit.py + offsetY }
 
     return {
-      top: pTop,
-      bot: pBot,
+      top: topWithOffset,
+      bot: botWithOffset,
       corner: pCorner,
-      hit: pHit,
+      hit: hitWithOffset,
       W,
       H,
-      polygonPoints: `${pTop.px},${pTop.py} ${pBot.px},${pBot.py} ${pCorner.px},${pCorner.py}`,
+      polygonPoints: `${topWithOffset.px},${topWithOffset.py} ${botWithOffset.px},${botWithOffset.py} ${pCorner.px},${pCorner.py}`,
     }
   }, [modelMode, inclineAngle, physics.inclineLandingX, physics.inclineLandingY, sceneScale])
 
@@ -118,9 +125,9 @@ export function ProjectileScene({
           {/* 水平参考线（抛出高度层） */}
           <line x1={vp.designLeft} y1={originPos.cy} x2={vp.designLeft + vp.designVisibleW} y2={originPos.cy} />
           {/* 竖直参考线（初始水平位置） */}
-          <line x1={originPos.cx} y1={0} x2={originPos.cx} y2={groundLevelPos.cy} />
-          {/* 地面高度参考线 */}
-          <line x1={vp.designLeft} y1={groundLevelPos.cy} x2={vp.designLeft + vp.designVisibleW} y2={groundLevelPos.cy} opacity={0.5} />
+          <line x1={originPos.cx} y1={0} x2={originPos.cx} y2={groundLevelPos.cy + (modelMode !== 2 ? 9 : 0)} />
+          {/* 地面高度参考线（与落地球底对齐） */}
+          <line x1={vp.designLeft} y1={groundLevelPos.cy + 9} x2={vp.designLeft + vp.designVisibleW} y2={groundLevelPos.cy + 9} opacity={0.5} />
         </g>
       )}
 
@@ -154,7 +161,7 @@ export function ProjectileScene({
           <circle
             cx={inclineParams.hit.px}
             cy={inclineParams.hit.py}
-            r={5}
+            r={4}
             fill={PHYSICS_COLORS.displacement}
           />
           <text
@@ -170,7 +177,7 @@ export function ProjectileScene({
       ) : (
         <PhysicsGround
           x={vp.designLeft}
-          y={groundLevelPos.cy}
+          y={groundLevelPos.cy + 9}
           width={vp.designVisibleW}
           type="ground"
         />

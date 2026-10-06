@@ -258,13 +258,13 @@ export default function WorkAnimation() {
               stroke={SCENE_COLORS.materials.specularWhite} strokeWidth={1} opacity={0.6} />
             <line x1={objW * 0.05} y1={objH * 0.55} x2={objW * 0.95} y2={objH * 0.55}
               stroke={PHYSICS_COLORS.velocityY} strokeWidth={1} opacity={0.5} />
-            <g transform={`translate(${objW * 0.22}, ${objH - 3})`}>
+            <g transform={`translate(${objW * 0.22}, ${objH - objH * 0.18})`}>
               <circle r={objH * 0.18} fill="url(#block-wheel-grad)" />
               <circle r={objH * 0.09} fill={SCENE_COLORS.circuit.bulbGlassStroke}
                 stroke={SCENE_COLORS.sphere.steel.gradient[2]} strokeWidth={0.5} />
               <circle r={objH * 0.04} fill={SCENE_COLORS.materials.sliderMetalGrad[0]} />
             </g>
-            <g transform={`translate(${objW * 0.78}, ${objH - 3})`}>
+            <g transform={`translate(${objW * 0.78}, ${objH - objH * 0.18})`}>
               <circle r={objH * 0.18} fill="url(#block-wheel-grad)" />
               <circle r={objH * 0.09} fill={SCENE_COLORS.circuit.bulbGlassStroke}
                 stroke={SCENE_COLORS.sphere.steel.gradient[2]} strokeWidth={0.5} />

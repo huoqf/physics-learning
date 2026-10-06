@@ -51,6 +51,8 @@ export function ObliqueThrowScene({
   const ballPos = worldToDesign(physics.x, physics.y, sceneScale)
   const topPos = worldToDesign(physics.topX, physics.topY, sceneScale)
   const rangePos = worldToDesign(physics.range, 0, sceneScale)
+  // 小球半径 r=10px，小球落地时球心在 y=0 (originPos.py)，地面上表面在球心下方 10px 处相切支撑
+  const groundY = originPos.py + 10
 
   // 2. 动态物理刻度轴与网格线生成 (Physical Ruler Ticks)
   const ticksData = useMemo(() => {
@@ -134,7 +136,7 @@ export function ObliqueThrowScene({
       )}
 
       {/* ── 1. 物理基座与坐标轴刻度数字 ── */}
-      <PhysicsGround x={vp.designLeft} y={originPos.py} width={vp.designVisibleW} type="ground" />
+      <PhysicsGround x={vp.designLeft} y={groundY} width={vp.designVisibleW} type="ground" />
 
       {/* 坐标轴线：从地面延伸到顶部 */}
       <line
@@ -233,7 +235,7 @@ export function ObliqueThrowScene({
 
       {/* 射程落地标记 */}
       {physics.range > 0.5 && (
-        <g transform={`translate(${rangePos.px}, ${originPos.py})`}>
+        <g transform={`translate(${rangePos.px}, ${groundY})`}>
           <line x1={0} y1={-15} x2={0} y2={0} stroke={PHYSICS_COLORS.velocity} strokeWidth={1} />
           <text y={16} fontSize={font(10)} fill={PHYSICS_COLORS.labelText} textAnchor="middle" fontWeight="bold">
             {`射程 X = ${physics.range.toFixed(1)}m`}
@@ -263,6 +265,13 @@ export function ObliqueThrowScene({
         {`θ = ${angle}°`}
       </text>
 
+      {/* 抛射炮台基座 (稳固立于地面，支撑转轴心，杜绝炮身插地) */}
+      <polygon
+        points={`${originPos.px - 6},${originPos.py} ${originPos.px + 6},${originPos.py} ${originPos.px + 9},${groundY} ${originPos.px - 9},${groundY}`}
+        fill={SCENE_COLORS.materials.structStrokeMid}
+        stroke={SCENE_COLORS.materials.structStroke}
+        strokeWidth={1}
+      />
       {/* 抛射炮筒/发射器 */}
       <g transform={`translate(${originPos.px}, ${originPos.py}) rotate(${-angle})`}>
         <rect x={0} y={-6} width={28} height={12} fill={SCENE_COLORS.materials.pulleyDark} rx={2} />
@@ -368,9 +377,9 @@ export function ObliqueThrowScene({
         </g>
       )}
 
-      {/* 落地标记 */}
+      {/* 落地标记 (小球球心平滑停在 originPos.py，球底严格切齐 groundY，消除突变跳跃) */}
       {physics.isLanded && (
-        <g transform={`translate(${ballPos.px}, ${originPos.py - 10})`}>
+        <g transform={`translate(${ballPos.px}, ${ballPos.py})`}>
           <Ball cx={0} cy={0} r={10} type="steel" />
           <text y={-18} fontSize={font(11)} fill={PHYSICS_COLORS.displacement} fontWeight="bold" textAnchor="middle">
             🎯 落地

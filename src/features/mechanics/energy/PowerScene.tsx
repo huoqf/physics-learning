@@ -162,12 +162,12 @@ export function PowerScene({
               <rect width={objW * 0.7 * ekRatio} height={4} rx={1} fill={PHYSICS_COLORS.kineticEnergy} />
               <text x={objW * 0.35} y={3.5} fontSize={font(5)} textAnchor="middle" fill={colors.neutral.white} fontWeight="bold" opacity={0.9}>Ek</text>
             </g>
-            <g transform={`translate(${objW * 0.22}, ${objH - 3})`}>
+            <g transform={`translate(${objW * 0.22}, ${objH - objH * 0.18})`}>
               <circle r={objH * 0.18} fill="url(#car-wheel-grad)" />
               <circle r={objH * 0.08} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.sphere.steel.gradient[2]} strokeWidth={0.5} />
               <circle r={objH * 0.03} fill={SCENE_COLORS.materials.sliderMetalGrad[0]} />
             </g>
-            <g transform={`translate(${objW * 0.78}, ${objH - 3})`}>
+            <g transform={`translate(${objW * 0.78}, ${objH - objH * 0.18})`}>
               <circle r={objH * 0.18} fill="url(#car-wheel-grad)" />
               <circle r={objH * 0.08} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.sphere.steel.gradient[2]} strokeWidth={0.5} />
               <circle r={objH * 0.03} fill={SCENE_COLORS.materials.sliderMetalGrad[0]} />
@@ -196,15 +196,15 @@ export function PowerScene({
               <rect width={objW * 0.48 * ekRatio} height={4} rx={1} fill={PHYSICS_COLORS.kineticEnergy} />
               <text x={objW * 0.24} y={3.5} fontSize={font(5)} textAnchor="middle" fill={colors.neutral[800]} fontWeight="bold" opacity={0.8}>Ek</text>
             </g>
-            <g transform={`translate(${objW * 0.16}, ${objH - 2.5})`}>
+            <g transform={`translate(${objW * 0.16}, ${objH - objH * 0.16})`}>
               <circle r={objH * 0.16} fill="url(#car-wheel-grad)" />
               <circle r={objH * 0.07} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.sphere.steel.gradient[2]} strokeWidth={0.5} />
             </g>
-            <g transform={`translate(${objW * 0.46}, ${objH - 2.5})`}>
+            <g transform={`translate(${objW * 0.46}, ${objH - objH * 0.16})`}>
               <circle r={objH * 0.16} fill="url(#car-wheel-grad)" />
               <circle r={objH * 0.07} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.sphere.steel.gradient[2]} strokeWidth={0.5} />
             </g>
-            <g transform={`translate(${objW * 0.82}, ${objH - 2.5})`}>
+            <g transform={`translate(${objW * 0.82}, ${objH - objH * 0.16})`}>
               <circle r={objH * 0.16} fill="url(#car-wheel-grad)" />
               <circle r={objH * 0.07} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.sphere.steel.gradient[2]} strokeWidth={0.5} />
             </g>
@@ -221,12 +221,12 @@ export function PowerScene({
               <rect width={objW * 0.7 * ekRatio} height={4} rx={1} fill={PHYSICS_COLORS.kineticEnergy} />
               <text x={objW * 0.35} y={3.5} fontSize={font(5)} textAnchor="middle" fill={colors.neutral.white} fontWeight="bold" opacity={0.9}>Ek</text>
             </g>
-            <g transform={`translate(${objW * 0.22}, ${objH - 3})`}>
+            <g transform={`translate(${objW * 0.22}, ${objH - objH * 0.18})`}>
               <circle r={objH * 0.18} fill="url(#car-wheel-grad)" />
               <circle r={objH * 0.08} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.sphere.steel.gradient[2]} strokeWidth={0.5} />
               <circle r={objH * 0.03} fill={SCENE_COLORS.materials.sliderMetalGrad[0]} />
             </g>
-            <g transform={`translate(${objW * 0.78}, ${objH - 3})`}>
+            <g transform={`translate(${objW * 0.78}, ${objH - objH * 0.18})`}>
               <circle r={objH * 0.18} fill="url(#car-wheel-grad)" />
               <circle r={objH * 0.08} fill={SCENE_COLORS.circuit.bulbGlassStroke} stroke={SCENE_COLORS.sphere.steel.gradient[2]} strokeWidth={0.5} />
               <circle r={objH * 0.03} fill={SCENE_COLORS.materials.sliderMetalGrad[0]} />

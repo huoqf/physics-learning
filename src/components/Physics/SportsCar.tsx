@@ -97,9 +97,9 @@ export function SportsCar({
   opacity,
   ...restProps
 }: SportsCarProps) {
-  // 原生设计基准尺寸
+  // 原生设计基准尺寸（车轮底端 y=22+r=27，基准高度设为 27 确保车轮严格切地）
   const BASE_WIDTH = 56;
-  const BASE_HEIGHT = 26;
+  const BASE_HEIGHT = 27;
 
   const scaleX = width / BASE_WIDTH;
   const scaleY = height / BASE_HEIGHT;

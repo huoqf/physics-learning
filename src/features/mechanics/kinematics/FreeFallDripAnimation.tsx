@@ -345,13 +345,13 @@ export default function FreeFallDripAnimation() {
           const age = time - drop.birthTime
           const state = getPhysicsAtTime(points, age, groundTime)
           const pixelY = tubeTopY + state.y * scale
-          if (pixelY > tubeBottomY || pixelY < tubeTopY) return null
-          const isNearest = nearestDrop === drop
-          
           // 水滴拉伸变长动效：速度高或处于初期年龄(0~0.2s)时，拉伸变形，之后表面张力回弹
           const stretch = 1.0 + Math.max(0, 0.45 * Math.sin(Math.min(1, age / 0.25) * Math.PI))
           const rx = (DROP_RADIUS * 0.85) / Math.sqrt(stretch)
           const ry = DROP_RADIUS * stretch
+          // 当水滴下沿触碰管底地面时即触底消失，杜绝水滴半截穿透管底地面
+          if (pixelY + ry > tubeBottomY || pixelY < tubeTopY) return null
+          const isNearest = nearestDrop === drop
 
           return (
             <g key={`drop-${i}`}>

@@ -160,18 +160,20 @@ export function Block({
 
   // 2. 教材简图车轮（仅用于 woodCart / metalCart 小车）
   const wheelR = Math.max(3.5, Math.min(8, height * 0.2));
-  const wheelY = y + height;
+  // 车轮最底端严格相切于 y + height，消除穿模；车身底盘在车轮轴心之上保留离地间隙
+  const wheelY = hasWheels ? y + height - wheelR : y + height;
+  const bodyHeight = hasWheels ? height - wheelR * 0.75 : height;
   const wheelX1 = x + Math.min(18, width * 0.22);
   const wheelX2 = x + Math.max(width - 18, width * 0.78);
   const rotation = (velocity * time * 35) % 360;
 
   // 自适应字号（防止细长滑块溢出）
-  const maxFontSize = Math.max(7, Math.min(font(11), height * 0.45, (width * 0.8) / Math.max(1, (label?.length ?? 1) * 0.6)));
+  const maxFontSize = Math.max(7, Math.min(font(11), bodyHeight * 0.45, (width * 0.8) / Math.max(1, (label?.length ?? 1) * 0.6)));
 
   // 当显示质心十字准心时，文字向上微移，避免压盖力的起始作用点
-  const textCenterY = showCenterOfMass && height > 28
-    ? y + height * 0.3
-    : y + height / 2 + maxFontSize * 0.35;
+  const textCenterY = showCenterOfMass && bodyHeight > 28
+    ? y + bodyHeight * 0.3
+    : y + bodyHeight / 2 + maxFontSize * 0.35;
 
   return (
     <g opacity={opacity} {...restProps}>
@@ -201,7 +203,7 @@ export function Block({
         x={x}
         y={y}
         width={width}
-        height={height}
+        height={bodyHeight}
         fill={fillColor}
         fillOpacity={translucent ? 0.2 : 0.45}
         stroke={stroke ?? defaultStroke}

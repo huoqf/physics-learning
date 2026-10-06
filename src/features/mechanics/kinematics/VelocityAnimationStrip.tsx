@@ -226,17 +226,17 @@ export default function VelocityAnimationStrip({
 
         {/* ══════════ 运动物主体（滑块小车/振动小球） ══════════ */}
         {model === 'shm' ? (
-          // 振动金属球 (立体高光径向渐变)
+          // 振动金属球 (立体高光径向渐变，球底切地)
           <Ball
             cx={currentX}
-            cy={groundY - objH / 2 - 2}
+            cy={groundY - objW * 0.4}
             r={objW * 0.4}
             type="oscillatorMetal"
             strokeWidth={STROKE.objectThin}
           />
         ) : (
-          // 变加速 / 多阶段：不锈钢滑块小车
-          <g transform={`translate(${currentX - objW / 2}, ${groundY - objH - 5})`}>
+          // 变加速 / 多阶段：不锈钢滑块小车（严格贴地，底端在 groundY）
+          <g transform={`translate(${currentX - objW / 2}, ${groundY - objH})`}>
             {/* 滑动小车 */}
             <Block
               x={0}
@@ -331,7 +331,7 @@ export default function VelocityAnimationStrip({
             <PhysicsVectorArrow
               originDesign={{
                 x: currentX + (vInst > 0 ? objW / 2 + 4 : -objW / 2 - 4),
-                y: groundY - objH / 2 - (model === 'shm' ? 2 : 5),
+                y: model === 'shm' ? groundY - objW * 0.4 : groundY - objH / 2,
               }}
               vector={{ x: vInst, y: 0 }}
               type="velocity"
@@ -341,7 +341,7 @@ export default function VelocityAnimationStrip({
             />
             <text
               x={currentX + (vInst > 0 ? objW / 2 + 8 : -objW / 2 - 8) + sceneScale.maxVectorLength * 0.35}
-              y={groundY - objH / 2 + fontSize * 0.35 - (model === 'shm' ? 2 : 5)}
+              y={(model === 'shm' ? groundY - objW * 0.4 : groundY - objH / 2) + fontSize * 0.35}
               fontSize={fontSize} fill={PHYSICS_COLORS.velocity} fontWeight="bold"
             >
               v
