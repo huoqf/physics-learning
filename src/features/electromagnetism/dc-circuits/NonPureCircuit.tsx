@@ -142,14 +142,19 @@ export default function NonPureCircuit() {
           </g>
 
           {/* 机械输出参数实时铭牌 */}
-          {motorState === 1 && (
-            <g transform="translate(60, -20)">
-              <rect x={-5} y={-14} width={88} height={46} rx={4} fill={withAlpha(CANVAS_COLORS.white, 0.92)} stroke={colors.neutral[300]} strokeWidth={1} />
-              <text x={0} y={0} fill={PHYSICS_COLORS.velocity} fontSize={font(9)} fontWeight="bold">v = {res.v_lift.toFixed(2)} m/s</text>
-              <text x={0} y={14} fill={PHYSICS_COLORS.power} fontSize={font(9)} fontWeight="bold">P机 = {res.P_mech.toFixed(1)} W</text>
-              <text x={0} y={26} fill={CANVAS_COLORS.labelTextLight} fontSize={font(8)}>η = {((res.P_mech / (res.P_total || 1)) * 100).toFixed(0)}%</text>
-            </g>
-          )}
+          {motorState === 1 && (() => {
+            const P_in_motor = res.U_M * res.I
+            const etaMotor = P_in_motor > 0 ? (res.P_mech / P_in_motor) * 100 : 0
+            const etaTotal = (res.P_mech / (res.P_total || 1)) * 100
+            return (
+              <g transform="translate(60, -20)">
+                <rect x={-5} y={-14} width={94} height={46} rx={4} fill={withAlpha(CANVAS_COLORS.white, 0.92)} stroke={colors.neutral[300]} strokeWidth={1} />
+                <text x={0} y={0} fill={PHYSICS_COLORS.velocity} fontSize={font(9)} fontWeight="bold">v = {res.v_lift.toFixed(2)} m/s</text>
+                <text x={0} y={14} fill={PHYSICS_COLORS.power} fontSize={font(9)} fontWeight="bold">P机 = {res.P_mech.toFixed(1)} W</text>
+                <text x={0} y={26} fill={CANVAS_COLORS.labelTextLight} fontSize={font(7.8)}>η电机={etaMotor.toFixed(0)}% (总η={etaTotal.toFixed(0)}%)</text>
+              </g>
+            )
+          })()}
         </g>
       </g>
     </AnimationSvgCanvas>

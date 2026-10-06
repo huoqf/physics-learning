@@ -40,7 +40,7 @@ export const ClosedCircuitCenterExtra: FC = () => {
 
   const prPoints = useMemo(() => {
     const points: { x: number; y: number }[] = []
-    const steps = 80
+    const steps = 160
     for (let step = 0; step <= steps; step++) {
       const rVal = (step / steps) * PR_DOMAIN.rMax
       const pVal = rVal + r > 0 ? (EMF * EMF * rVal) / Math.pow(rVal + r, 2) : 0
@@ -83,7 +83,7 @@ export const ClosedCircuitCenterExtra: FC = () => {
           color={PHYSICS_COLORS.electricPotential}
           strokeWidth={2}
           cursorX={I}
-          cursorLabel={(i, u) => `(${i.toFixed(2)}A, ${u.toFixed(2)}V)`}
+          cursorLabel={(i) => `(${i.toFixed(2)}A, ${U_terminal.toFixed(2)}V)`}
           markers={[
             { axis: 'point', x: 0, y: EMF, label: `E=${EMF.toFixed(1)}V`, color: PHYSICS_COLORS.emf },
             ...(EMF / r <= UI_DOMAIN.iMax
@@ -104,7 +104,7 @@ export const ClosedCircuitCenterExtra: FC = () => {
           color={PHYSICS_COLORS.power}
           strokeWidth={2}
           cursorX={R}
-          cursorLabel={(rv, p) => `(${rv.toFixed(1)}Ω, ${p.toFixed(2)}W)`}
+          cursorLabel={(rv) => `(${rv.toFixed(1)}Ω, ${P_output.toFixed(2)}W)`}
           markers={r <= PR_DOMAIN.rMax
             ? [{ axis: 'point', x: r, y: P_max, label: `Pmax=${P_max.toFixed(2)}W`, color: CHART_COLORS.criticalPt }]
             : []}
@@ -131,7 +131,7 @@ export const ClosedCircuitCenterExtra: FC = () => {
         />
       )
     }
-  }, [mode, r, EMF, uiPoints, I, prPoints, prYMax, R, P_max, potPoints, U_terminal])
+  }, [mode, r, EMF, uiPoints, I, prPoints, prYMax, R, P_max, P_output, potPoints, U_terminal])
 
   return (
     <div className="w-full h-full flex gap-3 px-1.5 py-1.5 border-b border-neutral-200/60 bg-neutral-50/50">

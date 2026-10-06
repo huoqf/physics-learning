@@ -5,6 +5,7 @@ import { interpolateY } from './interpolation'
 import {
   PHYSICS_COLORS,
   CHART_COLORS,
+  CANVAS_COLORS,
   SERIES_MAP,
   REFERENCE_MAP,
   STROKE,
@@ -79,6 +80,8 @@ export interface RelationMarker {
   label?: string
   /** 颜色，默认 equilibrium 色 */
   color?: string
+  /** 垂直或水平参考线标签位置：'top' (绘图区顶部内侧) | 'bottom' (默认，坐标轴下方刻度区) */
+  position?: 'top' | 'bottom'
 }
 
 export interface RelationChartProps {
@@ -270,6 +273,10 @@ function RCContent({
 
         if (axis === 'vertical' && m.x != null) {
           const mx = toSvgX(m.x)
+          const isTop = m.position === 'top'
+          const labelY = isTop
+            ? plotOrigin.y + 14
+            : plotOrigin.y + plotSize.height + font(FONT.small) + 6
           return (
             <g key={`marker-${i}`}>
               <line
@@ -280,18 +287,24 @@ function RCContent({
                 strokeDasharray={DASH.reference.join(' ')}
                 opacity={0.6}
               />
-              {/* X 轴外短刻度 */}
-              <line
-                x1={mx} y1={plotOrigin.y + plotSize.height}
-                x2={mx} y2={plotOrigin.y + plotSize.height + 6}
-                stroke={mColor} strokeWidth={STROKE.tick}
-              />
+              {/* X 轴外短刻度 (仅在刻度行模式下渲染) */}
+              {!isTop && (
+                <line
+                  x1={mx} y1={plotOrigin.y + plotSize.height}
+                  x2={mx} y2={plotOrigin.y + plotSize.height + 6}
+                  stroke={mColor} strokeWidth={STROKE.tick}
+                />
+              )}
               {m.label && (
                 <text
                   x={mx}
-                  y={plotOrigin.y + plotSize.height + font(FONT.small) + 6}
+                  y={labelY}
                   fontSize={font(FONT.small)}
                   fill={mColor}
+                  stroke={CANVAS_COLORS.white}
+                  strokeWidth={isTop ? 3 : 0}
+                  strokeLinejoin="round"
+                  paintOrder="stroke fill"
                   textAnchor="middle"
                   fontWeight="bold"
                 >
@@ -419,6 +432,10 @@ function RCContent({
                       y={cy - font(FONT.small) * 0.4}
                       fontSize={font(FONT.small)}
                       fill={cp.color}
+                      stroke={CANVAS_COLORS.white}
+                      strokeWidth={3}
+                      strokeLinejoin="round"
+                      paintOrder="stroke fill"
                       fontWeight="bold"
                     >
                       {txt}

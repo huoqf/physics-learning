@@ -50,10 +50,10 @@ export function handleDcCircuits(
         }
 
         quantitiesList.push(
-          { label: '加在两端电压 U', symbol: 'U', value: U.toFixed(2), unit: 'V', color: PHYSICS_COLORS.electricPotential },
-          { label: '瞬时电流 I', symbol: 'I', value: I.toFixed(3), unit: 'A', color: PHYSICS_COLORS.electricCurrent, highlight: 'extreme' },
-          { label: '等效电阻 R', symbol: 'R', value: R_eff.toFixed(1), unit: 'Ω', color: PHYSICS_COLORS.appliedForce },
-          { label: '消耗电功率 P', symbol: 'P', value: P.toFixed(3), unit: 'W', color: PHYSICS_COLORS.power, highlight: 'extreme' }
+          { label: '加在两端电压', symbol: 'U', value: U.toFixed(2), unit: 'V', color: PHYSICS_COLORS.electricPotential },
+          { label: '瞬时电流', symbol: 'I', value: I.toFixed(3), unit: 'A', color: PHYSICS_COLORS.electricCurrent, highlight: 'extreme' },
+          { label: '等效电阻', symbol: 'R', value: R_eff.toFixed(1), unit: 'Ω', color: PHYSICS_COLORS.appliedForce },
+          { label: '消耗电功率', symbol: 'P', value: P.toFixed(3), unit: 'W', color: PHYSICS_COLORS.power, highlight: 'extreme' }
         )
 
         formulasList = [
@@ -77,12 +77,12 @@ export function handleDcCircuits(
         const deviationPct = res.ratio * 100
 
         quantitiesList.push(
-          { label: '表头满偏电流 Ig', symbol: 'Ig', value: (Ig * 1000).toFixed(1), unit: 'mA', color: PHYSICS_COLORS.electricCurrent },
-          { label: '表头内阻 Rg', symbol: 'Rg', value: Rg.toFixed(0), unit: 'Ω' },
-          { label: '串联分压电阻 Rs', symbol: 'Rs', value: Rs.toFixed(0), unit: 'Ω', color: PHYSICS_COLORS.appliedForce },
-          { label: '改装后总内阻 RV', symbol: 'R_V', value: totalRV.toFixed(0), unit: 'Ω' },
-          { label: '改装电压表量程 Um', symbol: 'U_m', value: Um.toFixed(1), unit: 'V', color: PHYSICS_COLORS.electricPotential, highlight: 'extreme' },
-          { label: '表头电流实际值 I_g\'', symbol: 'I_g\'', value: (res.I_g_meas * 1000).toFixed(3), unit: 'mA', color: PHYSICS_COLORS.electricCurrent },
+          { label: '表头满偏电流', symbol: 'I_g', value: (Ig * 1000).toFixed(1), unit: 'mA', color: PHYSICS_COLORS.electricCurrent },
+          { label: '表头内阻', symbol: 'R_g', value: Rg.toFixed(0), unit: 'Ω' },
+          { label: '串联分压电阻', symbol: 'R_s', value: Rs.toFixed(0), unit: 'Ω', color: PHYSICS_COLORS.appliedForce },
+          { label: '改装后总内阻', symbol: 'R_V', value: totalRV.toFixed(0), unit: 'Ω' },
+          { label: '改装电压表量程', symbol: 'U_m', value: Um.toFixed(1), unit: 'V', color: PHYSICS_COLORS.electricPotential, highlight: 'extreme' },
+          { label: '表头电流实际值', symbol: 'I_g′', value: (res.I_g_meas * 1000).toFixed(3), unit: 'mA', color: PHYSICS_COLORS.electricCurrent },
           { label: '指针满偏偏转百分比', value: deviationPct.toFixed(1), unit: '%', color: PHYSICS_COLORS.work, highlight: 'extreme' }
         )
 
@@ -105,12 +105,12 @@ export function handleDcCircuits(
         const deviationPct = res.ratio * 100
 
         quantitiesList.push(
-          { label: '表头满偏电流 Ig', symbol: 'Ig', value: (Ig * 1000).toFixed(1), unit: 'mA', color: PHYSICS_COLORS.electricCurrent },
-          { label: '表头内阻 Rg', symbol: 'Rg', value: Rg.toFixed(0), unit: 'Ω' },
-          { label: '并联分流电阻 Rp', symbol: 'Rp', value: Rp.toFixed(2), unit: 'Ω', color: PHYSICS_COLORS.appliedForce },
-          { label: '改装后总内阻 RA', symbol: 'R_A', value: totalRA.toFixed(3), unit: 'Ω' },
-          { label: '改装电流表量程 Im', symbol: 'I_m', value: Im.toFixed(3), unit: 'A', color: PHYSICS_COLORS.electricCurrent, highlight: 'extreme' },
-          { label: '表头分流实际值 I_g\'', symbol: 'I_g\'', value: (res.I_g_meas * 1000).toFixed(3), unit: 'mA', color: PHYSICS_COLORS.electricCurrent },
+          { label: '表头满偏电流', symbol: 'I_g', value: (Ig * 1000).toFixed(1), unit: 'mA', color: PHYSICS_COLORS.electricCurrent },
+          { label: '表头内阻', symbol: 'R_g', value: Rg.toFixed(0), unit: 'Ω' },
+          { label: '并联分流电阻', symbol: 'R_p', value: Rp.toFixed(2), unit: 'Ω', color: PHYSICS_COLORS.appliedForce },
+          { label: '改装后总内阻', symbol: 'R_A', value: totalRA.toFixed(3), unit: 'Ω' },
+          { label: '改装电流表量程', symbol: 'I_m', value: Im.toFixed(3), unit: 'A', color: PHYSICS_COLORS.electricCurrent, highlight: 'extreme' },
+          { label: '表头分流实际值', symbol: 'I_g′', value: (res.I_g_meas * 1000).toFixed(3), unit: 'mA', color: PHYSICS_COLORS.electricCurrent },
           { label: '指针满偏偏转百分比', value: deviationPct.toFixed(1), unit: '%', color: PHYSICS_COLORS.work, highlight: 'extreme' }
         )
 
@@ -597,15 +597,15 @@ export function handleDcCircuits(
       return {
         quantities: [
           ...base,
-          { label: '电源总电压 U', symbol: 'U', value: U.toFixed(1), unit: 'V', color: PHYSICS_COLORS.electricPotential },
-          { label: '干路总电流 I', symbol: 'I', value: res.I.toFixed(3), unit: 'A', color: PHYSICS_COLORS.electricCurrent, highlight: 'extreme' },
-          { label: '电动机两端电压 UM', symbol: 'U_M', value: res.U_M.toFixed(2), unit: 'V', color: PHYSICS_COLORS.electricPotential },
-          { label: '电源总输入功率 P_总', symbol: 'P_总', value: res.P_total.toFixed(2), unit: 'W', color: PHYSICS_COLORS.power },
-          { label: '电动机输入电功率 P_入', symbol: 'P_入', value: P_in_motor.toFixed(2), unit: 'W', color: PHYSICS_COLORS.power },
-          { label: '电动机热耗功率 P_热', symbol: 'P_热', value: res.P_heat_M.toFixed(2), unit: 'W', color: PHYSICS_COLORS.internalEnergy },
-          { label: '电动机输出机械功率 P_机', symbol: 'P_机', value: res.P_mech.toFixed(2), unit: 'W', color: PHYSICS_COLORS.work, highlight: 'extreme' },
-          { label: '电动机工作效率 η', symbol: 'η', value: eff.toFixed(1), unit: '%', color: PHYSICS_COLORS.work },
-          ...(motorState === 1 ? [{ label: '重物匀速提升速度 v', symbol: 'v', value: res.v_lift.toFixed(3), unit: 'm/s', color: PHYSICS_COLORS.velocity, highlight: 'extreme' as const }] : [])
+          { label: '电源总电压', symbol: 'U', value: U.toFixed(1), unit: 'V', color: PHYSICS_COLORS.electricPotential },
+          { label: '干路总电流', symbol: 'I', value: res.I.toFixed(3), unit: 'A', color: PHYSICS_COLORS.electricCurrent, highlight: 'extreme' },
+          { label: '电动机两端电压', symbol: 'U_M', value: res.U_M.toFixed(2), unit: 'V', color: PHYSICS_COLORS.electricPotential },
+          { label: '电源总输入功率', symbol: 'P_总', value: res.P_total.toFixed(2), unit: 'W', color: PHYSICS_COLORS.power },
+          { label: '电动机输入电功率', symbol: 'P_入', value: P_in_motor.toFixed(2), unit: 'W', color: PHYSICS_COLORS.power },
+          { label: '电动机热耗功率', symbol: 'P_热', value: res.P_heat_M.toFixed(2), unit: 'W', color: PHYSICS_COLORS.internalEnergy },
+          { label: '电动机输出机械功率', symbol: 'P_机', value: res.P_mech.toFixed(2), unit: 'W', color: PHYSICS_COLORS.work, highlight: 'extreme' },
+          { label: '电动机工作效率', symbol: 'η', value: eff.toFixed(1), unit: '%', color: PHYSICS_COLORS.work },
+          ...(motorState === 1 ? [{ label: '重物匀速提升速度', symbol: 'v', value: res.v_lift.toFixed(3), unit: 'm/s', color: PHYSICS_COLORS.velocity, highlight: 'extreme' as const }] : [])
         ],
         formulas: [
           {

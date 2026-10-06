@@ -21,13 +21,14 @@ export function ImpedanceFreqChart({
   xlCurvePoints,
   xcCurvePoints,
 }: ImpedanceFreqChartProps) {
-  // 辅助标记：谐振频率 f0 垂直参考线
+  // 辅助标记：谐振频率 f0 垂直参考线（置于绘图区顶部，彻底消除与 X 轴刻度重叠）
   const markers = useMemo((): RelationMarker[] => {
     if (f0 <= 0 || f0 > 150) return []
     return [
       {
         axis: 'vertical',
         x: f0,
+        position: 'top',
         label: `f₀ 谐振点 (${f0.toFixed(1)} Hz)`,
         color: CHART_COLORS.reference,
       },

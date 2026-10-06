@@ -219,7 +219,7 @@ export default function ClosedCircuit() {
         />
         <text
           x={LAYOUT.rheostat.x}
-          y={LAYOUT.rheostat.y - 28}
+          y={LAYOUT.rheostat.y - 38}
           fill={PHYSICS_COLORS.labelText}
           fontSize={font(11)}
           fontWeight="bold"

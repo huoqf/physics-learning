@@ -99,3 +99,17 @@ describe('RelationChart · interpolateY', () => {
     expect(y).toBeLessThanOrEqual(Math.max(x0 * x0, x1 * x1))
   })
 })
+
+describe('RelationChart · Marker Configuration', () => {
+  it('RelationMarker 支持 position: top 配置以防刻度重叠', () => {
+    const marker = {
+      axis: 'vertical' as const,
+      x: 22.5,
+      position: 'top' as const,
+      label: 'f₀ 谐振点',
+    }
+    expect(marker.position).toBe('top')
+    expect(marker.axis).toBe('vertical')
+  })
+})
+

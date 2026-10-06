@@ -196,18 +196,17 @@ export function SelfInductionScene({
         const { xLeft, xRight, yTop, yBot, yBase, pPos, pNeg, dcSource, switchPos, rhCenter, coilCenter, bulb1, bulb2 } = mode0Layout
 
         // 变阻器端子 (x=390, y=75, w=90, scale=90/140=0.643)
+        // 限流式接法输入输出端子在变阻器中心水平线上 (yTop = 75)
         const rhScale = rhCenter.w / 140
         const rhInX = rhCenter.x - 73 * rhScale // 343
-        const rhInY = yTop - 20 * rhScale       // 62
         const rhOutX = rhCenter.x + 73 * rhScale // 437
-        const rhOutY = yTop + 10 * rhScale      // 81
 
         // 线圈端子 (x=390, y=165, w=100)
         const coilLeftX = coilCenter.x - 50  // 340
         const coilRightX = coilCenter.x + 50 // 440
 
-        // 灯泡底座接入高度
-        const bulb1BaseY = rhOutY
+        // 灯泡底座接入高度统一水平平齐
+        const bulb1BaseY = yTop
         const bulb2BaseY = yBot
 
         return (
@@ -228,11 +227,11 @@ export function SelfInductionScene({
               <line x1={xRight} y1={yTop} x2={xRight} y2={yBase} />
 
               {/* 上支路 1 (纯阻)：分流点 -> 变阻器左接线柱 */}
-              <path d={`M ${xLeft} ${yTop} H ${rhInX} V ${rhInY}`} />
+              <line x1={xLeft} y1={yTop} x2={rhInX} y2={yTop} />
               {/* 上支路 2：变阻器右接线柱 -> 灯泡 A1 左底座 */}
-              <line x1={rhOutX} y1={rhOutY} x2={bulb1.x - 12} y2={bulb1BaseY} />
+              <line x1={rhOutX} y1={yTop} x2={bulb1.x - 12} y2={yTop} />
               {/* 上支路 3：灯泡 A1 右底座 -> 右汇流竖线 */}
-              <line x1={bulb1.x + 12} y1={bulb1BaseY} x2={xRight} y2={bulb1BaseY} />
+              <line x1={bulb1.x + 12} y1={yTop} x2={xRight} y2={yTop} />
 
               {/* 下支路 1 (电感)：分流点 -> 线圈左端子 */}
               <line x1={xLeft} y1={yBot} x2={coilLeftX} y2={yBot} />
@@ -245,7 +244,7 @@ export function SelfInductionScene({
             {/* 关键电气分流/汇流节点小圆点 */}
             <circle cx={xLeft} cy={yTop} r={3.5} fill={PHYSICS_COLORS.labelText} />
             <circle cx={xLeft} cy={yBot} r={3.5} fill={PHYSICS_COLORS.labelText} />
-            <circle cx={xRight} cy={bulb1BaseY} r={3.5} fill={PHYSICS_COLORS.labelText} />
+            <circle cx={xRight} cy={yTop} r={3.5} fill={PHYSICS_COLORS.labelText} />
             <circle cx={xRight} cy={yBot} r={3.5} fill={PHYSICS_COLORS.labelText} />
 
             {/* B. 器件层 */}

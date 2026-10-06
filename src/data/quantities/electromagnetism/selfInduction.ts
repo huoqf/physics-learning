@@ -26,10 +26,11 @@ export function buildSelfInductionQuantities(
   const gaokaoPoints: GaokaoPoint[] = []
 
   if (mode === 0) {
-    // 通电自感
-    const iCoil = switchClosed ? calcTurnOnCurrent(time, E, RL, L) : 0
-    const iLamp = switchClosed ? E / RA : 0
-    const emfL = switchClosed ? calcSelfInductanceEMF(time, E, RL, L) : 0
+    // 通电自感：两支路总电阻严格匹配为 rBranch = RL + RA（教科书演示实验基准，稳态电流一致）
+    const rBranch = RL + RA
+    const iCoil = switchClosed ? calcTurnOnCurrent(time, E, rBranch, L) : 0
+    const iLamp = switchClosed ? E / rBranch : 0
+    const emfL = switchClosed ? calcSelfInductanceEMF(time, E, rBranch, L) : 0
 
     quantities.push(
       { label: '线圈支路电流', symbol: 'I_L', value: +iCoil.toFixed(2), unit: 'A' },
@@ -61,7 +62,7 @@ export function buildSelfInductionQuantities(
     quantities.push(
       { label: '局部回路放电电流', symbol: 'I', value: +iCoil.toFixed(2), unit: 'A' },
       { label: '稳态线圈初电流', symbol: 'I_0', value: +(E / RL).toFixed(2), unit: 'A' },
-      { label: '灯泡正常发光电流', symbol: 'I_{A0}', value: +(E / RA).toFixed(2), unit: 'A' },
+      { label: '灯泡正常发光电流', symbol: 'I_A0', value: +(E / RA).toFixed(2), unit: 'A' },
       { label: '电流超额倍率', symbol: 'I_0 / I_A', value: +ratio.toFixed(2), unit: '倍' },
     )
 
@@ -86,7 +87,7 @@ export function buildSelfInductionQuantities(
     // 电磁阻尼与涡流
     const res = calcEddyDampingOscillation(time, 0.45, B, isSlotted)
     quantities.push(
-      { label: '当前摆角', symbol: '\\theta', value: +res.theta.toFixed(3), unit: 'rad' },
+      { label: '当前摆角', symbol: 'θ', value: +res.theta.toFixed(3), unit: 'rad' },
       { label: '机械能保留比例', symbol: 'E/E_0', value: +(res.energyRatio * 100).toFixed(1), unit: '%' },
       { label: '磁感应强度', symbol: 'B', value: B, unit: 'T' },
     )

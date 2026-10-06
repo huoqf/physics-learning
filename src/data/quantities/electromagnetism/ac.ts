@@ -201,13 +201,13 @@ export function handleAc(
       return {
         quantities: [
           ...base,
-          { label: '实际发电功率 P₁', symbol: 'P_1', value: (P1_real / 1000).toFixed(1), unit: 'kW', color: PHYSICS_COLORS.power, highlight: mode === 1 ? 'extreme' : undefined },
-          { label: '线路电流 I', symbol: 'I_{line}', value: I_line.toFixed(2), unit: 'A', color: TRANSMISSION_COLORS.currentLine, highlight: isHighlight('I_line') ? 'extreme' : undefined },
-          { label: '电压损失 ΔU', symbol: '\\Delta U', value: deltaU.toFixed(1), unit: 'V', color: TRANSMISSION_COLORS.voltageHigh, highlight: isHighlight('deltaU') ? 'extreme' : undefined },
-          { label: '损耗功率 ΔP', symbol: 'P_{loss}', value: (P_loss / 1000).toFixed(2), unit: 'kW', color: TRANSMISSION_COLORS.powerLoss, highlight: isHighlight('P_loss') ? 'extreme' : undefined },
-          { label: '降压端电压 U₃', symbol: 'U_3', value: U3.toFixed(1), unit: 'V', color: TRANSMISSION_COLORS.voltageHigh, highlight: isHighlight('U3') ? 'extreme' : undefined },
-          { label: '用户电压 U₄', symbol: 'U_4', value: U4.toFixed(1), unit: 'V', color: TRANSMISSION_COLORS.powerUser, highlight: isHighlight('U4') ? 'extreme' : undefined },
-          { label: '输电效率 η', symbol: '\\eta', value: (eta * 100).toFixed(1), unit: '%', color: TRANSMISSION_COLORS.efficiency, highlight: 'extreme' },
+          { label: '实际发电功率', symbol: 'P_1', value: (P1_real / 1000).toFixed(1), unit: 'kW', color: PHYSICS_COLORS.power, highlight: mode === 1 ? 'extreme' : undefined },
+          { label: '线路电流', symbol: 'I_line', value: I_line.toFixed(2), unit: 'A', color: TRANSMISSION_COLORS.currentLine, highlight: isHighlight('I_line') ? 'extreme' : undefined },
+          { label: '电压损失', symbol: 'ΔU', value: deltaU.toFixed(1), unit: 'V', color: TRANSMISSION_COLORS.voltageHigh, highlight: isHighlight('deltaU') ? 'extreme' : undefined },
+          { label: '损耗功率', symbol: 'P_loss', value: (P_loss / 1000).toFixed(2), unit: 'kW', color: TRANSMISSION_COLORS.powerLoss, highlight: isHighlight('P_loss') ? 'extreme' : undefined },
+          { label: '降压端电压', symbol: 'U_3', value: U3.toFixed(1), unit: 'V', color: TRANSMISSION_COLORS.voltageHigh, highlight: isHighlight('U3') ? 'extreme' : undefined },
+          { label: '用户电压', symbol: 'U_4', value: U4.toFixed(1), unit: 'V', color: TRANSMISSION_COLORS.powerUser, highlight: isHighlight('U4') ? 'extreme' : undefined },
+          { label: '输电效率', symbol: 'η', value: (eta * 100).toFixed(1), unit: '%', color: TRANSMISSION_COLORS.efficiency, highlight: 'extreme' },
         ],
         formulas: [
           { name: '输电线电流', latex: 'I_{line} = \\frac{P_1}{U_2}', level: 'core' },

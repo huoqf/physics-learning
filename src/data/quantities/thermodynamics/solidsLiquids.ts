@@ -40,7 +40,7 @@ export function buildSolidsLiquidsQuantities(
     const fTension = calculateSurfaceTensionForce(gamma, 0.08)
 
     quantities.push(
-      { label: '表面张力系数', symbol: '\\gamma', value: +gamma.toFixed(3), unit: 'N/m' },
+      { label: '表面张力系数', symbol: 'γ', value: +gamma.toFixed(3), unit: 'N/m' },
       { label: '液膜活动杆长度', symbol: 'L', value: 0.08, unit: 'm' },
       { label: '双面液膜合收缩力', symbol: 'F', value: +(fTension * 1000).toFixed(1), unit: 'mN' },
     )
@@ -82,9 +82,9 @@ export function buildSolidsLiquidsQuantities(
 
     quantities.push(
       { label: '毛细管内径半径', symbol: 'r', value: capillaryRadius, unit: 'mm' },
-      { label: '液体表面张力系数', symbol: '\\gamma', value: liquidGamma, unit: 'N/m' },
+      { label: '液体表面张力系数', symbol: 'γ', value: liquidGamma, unit: 'N/m' },
       { label: '毛细液面高度差', symbol: 'h', value: +(rise.h * 1000).toFixed(1), unit: 'mm' },
-      { label: '弯月液面形态', symbol: '液面', value: rise.meniscusType === 'concave' ? '凹液面' : '凸液面', unit: '' },
+      { label: '弯月液面形态', value: rise.meniscusType === 'concave' ? '凹液面' : '凸液面', unit: '' },
     )
 
     formulas.push(

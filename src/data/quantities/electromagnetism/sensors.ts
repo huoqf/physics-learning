@@ -59,7 +59,7 @@ export function buildSensorQuantities(
       { label: '环境温度', symbol: 'T', value: temperature, unit: '℃' },
       { label: 'NTC 热敏阻值', symbol: 'R_T', value: +(rSensor / 1000).toFixed(2), unit: 'kΩ' },
       { label: '控制端输出电压', symbol: 'V_out', value: +circuit.vOut.toFixed(2), unit: 'V' },
-      { label: '继电器动作状态', symbol: '状态', value: circuit.isTriggered ? 1 : 0, unit: circuit.isTriggered ? '导通' : '断开' },
+      { label: '继电器动作状态', value: circuit.isTriggered ? 1 : 0, unit: circuit.isTriggered ? '导通' : '断开' },
     )
 
     formulas.push(
@@ -84,7 +84,7 @@ export function buildSensorQuantities(
       { label: '磁感应强度', symbol: 'B', value: magneticB, unit: 'T' },
       { label: '控制电流', symbol: 'I', value: currentI, unit: 'A' },
       { label: '霍尔电压', symbol: 'U_H', value: +(hallRes.uHall * 1000).toFixed(2), unit: 'mV' },
-      { label: '上表面极性', symbol: '极性', value: hallRes.topPolarity === '+' ? 1 : -1, unit: hallRes.topPolarity },
+      { label: '上表面极性', value: hallRes.topPolarity === '+' ? 1 : -1, unit: hallRes.topPolarity },
     )
 
     formulas.push(

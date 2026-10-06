@@ -34,22 +34,11 @@ export interface RheostatProps {
   wiringMode?: 'current-limiting' | 'voltage-divider'
   /** 外观模式：'realistic' (拟物, 默认) | 'symbolic' (电路原理图图例符号) */
   variant?: 'realistic' | 'symbolic'
+  /** 原理图模式下是否显示滑片触头标号 'P' (默认 true) */
+  showWiperMark?: boolean
 }
 
-// 渲染计算函数
-const getRheostatLayout = (width: number) => {
-  const baseW = 140
-  const scale = width / baseW
-  
-  return {
-    scale,
-    baseW: width,
-    coilW: 140 * scale,
-    coilH: 20 * scale,
-    wiperRange: 120 * scale,
-    wiperOffset: -60 * scale,
-  }
-}
+import { getRheostatLayout } from './rheostatGeometry'
 
 export const Rheostat: React.FC<RheostatProps> = ({
   x = 0,
@@ -66,6 +55,7 @@ export const Rheostat: React.FC<RheostatProps> = ({
   font = (base: number) => base,
   wiringMode = 'current-limiting',
   variant = 'realistic',
+  showWiperMark = true,
 }) => {
   const c = SCENE_COLORS.circuit
   const layout = getRheostatLayout(width)
@@ -151,27 +141,32 @@ export const Rheostat: React.FC<RheostatProps> = ({
             />
           </>
         ) : (
-          /* 限流式接法：一上一下（自外部水平端子 (-73, 0) 直角正交折弯平顺连入上方滑杆，电阻框左端完全留空，右端平直引出） */
+          /* 限流式接法：一上一下（教科书标准画法：左下进、右上出）
+             - 左下回路自外部端子 (-73, 0) 平直连入电阻框左端 (-boxW / 2, 0)
+             - 接入电阻丝长度严格为 [-boxW / 2, symbolicWiperX]，滑片右移阻值严格单调增大
+             - 右上回路自上方滑杆右端 (36, sliderY) 正交折弯引出至外部端子 (73, 0)
+             - 电阻框右端完全留空未接，与滑轨左端悬空形成严密的标准一上一下拓扑
+          */
           <>
-            {/* 左侧输入回路：外部导线平直连至 (-42, 0)，90°垂直向上折入滑杆左端 (-36, sliderY) */}
+            {/* 左侧输入回路：外部水平导线平直连至电阻框左端 (-boxW / 2, 0) */}
+            <line
+              x1={-73 * layout.scale}
+              y1={0}
+              x2={-boxW / 2}
+              y2={0}
+              stroke={SCENE_COLORS.circuit.wire}
+              strokeWidth={2.5 * layout.scale}
+            />
+            <circle cx={-boxW / 2} cy={0} r={2.2 * layout.scale} fill={SCENE_COLORS.circuit.wire} />
+            {/* 右侧输出回路：自滑轨右端 (36, sliderY) 正交直角引下至外部端子 (73, 0) */}
             <path
-              d={`M ${-73 * layout.scale} 0 L ${-42 * layout.scale} 0 L ${-42 * layout.scale} ${sliderY} L ${-36 * layout.scale} ${sliderY}`}
+              d={`M ${36 * layout.scale} ${sliderY} L ${42 * layout.scale} ${sliderY} L ${42 * layout.scale} 0 L ${73 * layout.scale} 0`}
               fill="none"
               stroke={SCENE_COLORS.circuit.wire}
               strokeWidth={2.5 * layout.scale}
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-            {/* 右侧输出回路：电阻框右端平直引出至外部端子 (73, 0) */}
-            <line
-              x1={boxW / 2}
-              y1={0}
-              x2={73 * layout.scale}
-              y2={0}
-              stroke={SCENE_COLORS.circuit.wire}
-              strokeWidth={2.5 * layout.scale}
-            />
-            <circle cx={boxW / 2} cy={0} r={2.2 * layout.scale} fill={SCENE_COLORS.circuit.wire} />
           </>
         )}
         
@@ -198,17 +193,19 @@ export const Rheostat: React.FC<RheostatProps> = ({
         </g>
         
         {/* 滑片触头符号标注 P */}
-        <text
-          x={symbolicWiperX}
-          y={sliderY - 6 * layout.scale}
-          fill={PHYSICS_COLORS.alertRed}
-          fontSize={font(9)}
-          fontWeight="bold"
-          textAnchor="middle"
-          style={{ userSelect: 'none' }}
-        >
-          P
-        </text>
+        {showWiperMark && (
+          <text
+            x={symbolicWiperX}
+            y={sliderY - 4 * layout.scale}
+            fill={PHYSICS_COLORS.alertRed}
+            fontSize={font(9)}
+            fontWeight="bold"
+            textAnchor="middle"
+            style={{ userSelect: 'none' }}
+          >
+            P
+          </text>
+        )}
 
         {/* 可选阻值文本标签 */}
         {showLabel && (

@@ -24,9 +24,9 @@ export function buildForcedResonanceQuantities(
     { label: '系统固有频率', symbol: 'f_0', value: +steady.f0.toFixed(2), unit: 'Hz' },
     { label: '驱动力频率', symbol: 'f', value: +f.toFixed(2), unit: 'Hz' },
     { label: '受迫稳态振幅', symbol: 'A', value: +(steady.amplitude * 100).toFixed(1), unit: 'cm' },
-    { label: '共振峰值振幅', symbol: 'A_{\\text{max}}', value: +(steady.maxAmplitude * 100).toFixed(1), unit: 'cm' },
+    { label: '共振峰值振幅', symbol: 'A_max', value: +(steady.maxAmplitude * 100).toFixed(1), unit: 'cm' },
     { label: '实时受迫位移', symbol: 'x', value: +(state.x * 100).toFixed(1), unit: 'cm' },
-    { label: '实时驱动力', symbol: 'F_{\\text{驱}}', value: +state.fDriver.toFixed(2), unit: 'N' },
+    { label: '实时驱动力', symbol: 'F_驱', value: +state.fDriver.toFixed(2), unit: 'N' },
   ]
 
   const formulas: Formula[] = [

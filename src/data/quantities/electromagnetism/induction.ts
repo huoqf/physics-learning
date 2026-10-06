@@ -71,14 +71,14 @@ export function handleInduction(
         quantities: [
           ...base,
           {
-            label: '磁通量变化率 dΦ/dt',
-            symbol: '\\frac{\\Delta\\Phi}{\\Delta t}',
+            label: '磁通量变化率',
+            symbol: 'ΔΦ/Δt',
             value: dPhi_dt_val,
             unit: 'Wb/s',
             highlight: Math.abs(dPhi_dt_val) > 1e-5 ? 'extreme' as const : 'zero' as const
           },
           {
-            label: '感应电动势 E',
+            label: '感应电动势',
             symbol: 'E',
             value: Math.abs(emf),
             unit: 'V',
@@ -238,13 +238,13 @@ export function handleInduction(
         ...base,
         { label: '感应电动势 E', value: Math.abs(EMF).toFixed(3), unit: 'V', color: PHYSICS_COLORS.emf },
         { label: '感应电流 I', value: Math.abs(I).toFixed(3), unit: 'A', color: PHYSICS_COLORS.electricCurrent },
-        { label: '瞬时安培力 F_安', symbol: 'F_{安}', value: F_amp.toFixed(3), unit: 'N', color: PHYSICS_COLORS.lorentzForce, highlight: 'extreme' as const },
-        { label: '回路发热功率 P_热', symbol: 'P_{热}', value: P_heat.toFixed(3), unit: 'W', color: PHYSICS_COLORS.heatLoss },
+        { label: '瞬时安培力', symbol: 'F_安', value: F_amp.toFixed(3), unit: 'N', color: PHYSICS_COLORS.lorentzForce, highlight: 'extreme' as const },
+        { label: '回路发热功率', symbol: 'P_热', value: P_heat.toFixed(3), unit: 'W', color: PHYSICS_COLORS.heatLoss },
       ]
 
       if (mode === 1 || showForceAnalysis === 1) {
         quantities.push({
-          label: '瞬时加速度 a',
+          label: '瞬时加速度',
           symbol: 'a',
           value: a.toFixed(3),
           unit: 'm/s²',
@@ -448,13 +448,13 @@ export function handleInduction(
 
       const quantities = [
         ...base,
-        { label: 'a 棒速度 v_a', symbol: 'v_a', value: state.vA.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity },
-        { label: 'b 棒速度 v_b', symbol: 'v_b', value: state.vB.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity },
-        { label: '瞬时速度差 Δv', symbol: '\\Delta v', value: Math.abs(state.deltaV).toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity },
-        { label: '回路感应电动势 E', symbol: 'E_{\\text{合}}', value: Math.abs(state.emf).toFixed(2), unit: 'V', color: PHYSICS_COLORS.emf },
-        { label: '回路感应电流 I', symbol: 'I', value: Math.abs(state.currentI).toFixed(2), unit: 'A', color: PHYSICS_COLORS.electricCurrent },
-        { label: '相互安培力 F_安', symbol: 'F_{\\text{安}}', value: state.forceAmpere.toFixed(2), unit: 'N', color: PHYSICS_COLORS.lorentzForce, highlight: 'extreme' as const },
-        { label: '系统总动量 P_总', symbol: 'P_{\\text{总}}', value: state.totalMomentum.toFixed(2), unit: 'kg·m/s', color: PHYSICS_COLORS.momentum },
+        { label: 'a 棒速度', symbol: 'v_a', value: state.vA.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity },
+        { label: 'b 棒速度', symbol: 'v_b', value: state.vB.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity },
+        { label: '瞬时速度差', symbol: 'Δv', value: Math.abs(state.deltaV).toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity },
+        { label: '回路感应电动势', symbol: 'E_合', value: Math.abs(state.emf).toFixed(2), unit: 'V', color: PHYSICS_COLORS.emf },
+        { label: '回路感应电流', symbol: 'I', value: Math.abs(state.currentI).toFixed(2), unit: 'A', color: PHYSICS_COLORS.electricCurrent },
+        { label: '相互安培力', symbol: 'F_安', value: state.forceAmpere.toFixed(2), unit: 'N', color: PHYSICS_COLORS.lorentzForce, highlight: 'extreme' as const },
+        { label: '系统总动量', symbol: 'P_总', value: state.totalMomentum.toFixed(2), unit: 'kg·m/s', color: PHYSICS_COLORS.momentum },
       ]
 
       if (scenario === 0) {
@@ -479,8 +479,8 @@ export function handleInduction(
         return {
           quantities: [
             ...quantities,
-            { label: '稳定收尾速度差 Δv_∞', symbol: '\\Delta v_\\infty', value: deltaVInf.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity },
-            { label: '稳定质心加速度 a_共', symbol: 'a_{\\text{共}}', value: state.aCommon.toFixed(2), unit: 'm/s²', color: PHYSICS_COLORS.acceleration },
+            { label: '稳定收尾速度差', symbol: 'Δv_∞', value: deltaVInf.toFixed(2), unit: 'm/s', color: PHYSICS_COLORS.velocity },
+            { label: '稳定质心加速度', symbol: 'a_共', value: state.aCommon.toFixed(2), unit: 'm/s²', color: PHYSICS_COLORS.acceleration },
           ],
           formulas: [
             { name: '动力学耦合关系', latex: 'm_a a_a = F - F_{\\text{安}}, \\quad m_b a_b = F_{\\text{安}}', level: 'core' },
@@ -552,12 +552,12 @@ export function handleInduction(
       return {
         quantities: [
           ...base,
-          { label: '线框前端位移 x', symbol: 'x', value: (frontX * 100).toFixed(1), unit: 'cm' },
+          { label: '线框前端位移', symbol: 'x', value: (frontX * 100).toFixed(1), unit: 'cm' },
           { label: '穿场运动状态', symbol: 'S', value: stateText, unit: '', color: PHYSICS_COLORS.velocity },
-          { label: '瞬时磁通量 Φ', symbol: '\\Phi', value: res.phi.toFixed(4), unit: 'Wb', color: PHYSICS_COLORS.magneticField },
-          { label: '感应电流 I', symbol: 'I', value: res.currentI.toFixed(3), unit: 'A', color: PHYSICS_COLORS.electricCurrent, highlight: Math.abs(res.currentI) > 0 ? 'extreme' : 'zero' },
-          { label: '阻碍安培力 F_A', symbol: 'F_A', value: res.forceAmpere.toFixed(3), unit: 'N', color: PHYSICS_COLORS.lorentzForce, highlight: res.forceAmpere > 0 ? 'extreme' : 'zero' },
-          { label: '焦耳发热功率 P', symbol: 'P_{\\text{热}}', value: res.powerHeat.toFixed(3), unit: 'W', color: PHYSICS_COLORS.heatLoss },
+          { label: '瞬时磁通量', symbol: 'Φ', value: res.phi.toFixed(4), unit: 'Wb', color: PHYSICS_COLORS.magneticField },
+          { label: '感应电流', symbol: 'I', value: res.currentI.toFixed(3), unit: 'A', color: PHYSICS_COLORS.electricCurrent, highlight: Math.abs(res.currentI) > 0 ? 'extreme' : 'zero' },
+          { label: '阻碍安培力', symbol: 'F_A', value: res.forceAmpere.toFixed(3), unit: 'N', color: PHYSICS_COLORS.lorentzForce, highlight: res.forceAmpere > 0 ? 'extreme' : 'zero' },
+          { label: '焦耳发热功率', symbol: 'P_热', value: res.powerHeat.toFixed(3), unit: 'W', color: PHYSICS_COLORS.heatLoss },
         ],
         formulas: [
           {

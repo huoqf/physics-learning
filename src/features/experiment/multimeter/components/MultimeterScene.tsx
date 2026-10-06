@@ -279,7 +279,7 @@ export const MultimeterScene: React.FC<MultimeterSceneProps> = ({ physics, font 
       </g>
 
       {/* ────────────────── 3. 欧姆调零旋钮 (Ohm Zero Adjuster) ────────────────── */}
-      <g transform={`translate(${caseX + 70}, 345)`}>
+      <g transform={`translate(${caseX + 70}, 338)`}>
         <circle
           cx={0}
           cy={0}
@@ -304,11 +304,11 @@ export const MultimeterScene: React.FC<MultimeterSceneProps> = ({ physics, font 
           )
         })}
         <circle cx={0} cy={0} r={6} fill={colors.neutral[800]} />
-        <text x={0} y={34} textAnchor="middle" fill={colors.neutral[200]} fontSize={font(10)} fontWeight="bold">
+        <text x={0} y={38} textAnchor="middle" fill={colors.neutral[200]} fontSize={font(10)} fontWeight="bold">
           Ω 调零旋钮
         </text>
         {!isZeroAdjusted && (
-          <text x={0} y={46} textAnchor="middle" fill={colors.warning[500]} fontSize={font(9)}>
+          <text x={0} y={51} textAnchor="middle" fill={colors.warning[500]} fontSize={font(9)}>
             ⚠️ 请调零
           </text>
         )}
@@ -373,7 +373,7 @@ export const MultimeterScene: React.FC<MultimeterSceneProps> = ({ physics, font 
         {/* 旋钮手柄指示箭头 */}
         <g transform={`rotate(${currentKnobAngle})`}>
           <rect x={-7} y={-knobR + 4} width={14} height={knobR - 8} rx={4} fill={colors.neutral[50]} />
-          <polygon points="0,-knobR -8,-knobR+12 8,-knobR+12" fill={PHYSICS_COLORS.electricCurrent} />
+          <polygon points={`0,${-knobR} -8,${-knobR + 12} 8,${-knobR + 12}`} fill={PHYSICS_COLORS.electricCurrent} />
         </g>
         <circle cx={0} cy={0} r={12} fill={colors.neutral[800]} />
       </g>
