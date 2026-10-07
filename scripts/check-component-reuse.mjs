@@ -229,12 +229,26 @@ function checkFeatureShadowing() {
   return errors
 }
 
+// ── 4. 检查 UI barrel 隔离性（防止 KaTeX CSS 模块级副作用渗入首屏） ────────
+function checkUIBarrelIsolation() {
+  const uiIndex = join(ROOT, 'src/components/UI/index.ts')
+  if (!existsSync(uiIndex)) return []
+  const content = readFileSync(uiIndex, 'utf8')
+  const errors = []
+  if (/export\s+.*?(KatexFormula|PhysicsPanel)/.test(content) || /from\s+['"].*?(Formula|katex)['"]/.test(content)) {
+    errors.push('[barrel-leak] src/components/UI/index.ts 禁止导出 KatexFormula/PhysicsPanel 或引入 Formula 模块（防 KaTeX 渗入首屏）')
+  }
+  return errors
+}
+
 // ── 执行所有检查 ───────────────────────────────────────────
 const allErrors = [
   ...checkBarrelExports('src/components/Physics'),
   ...checkBarrelExports('src/components/Chart'),
+  ...checkBarrelExports('src/components/Formula'),
   ...checkRegistryIndexing(),
   ...checkFeatureShadowing(),
+  ...checkUIBarrelIsolation(),
 ]
 
 if (allErrors.length > 0) {

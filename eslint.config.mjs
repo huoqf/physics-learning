@@ -34,6 +34,16 @@ export default [
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      // 禁止从 @/components/UI 导入已隔离的公式组件（防止 KaTeX CSS 模块级副作用渗透首屏）
+      'no-restricted-imports': ['error', {
+        paths: [
+          {
+            name: '@/components/UI',
+            importNames: ['KatexFormula', 'PhysicsPanel'],
+            message: 'KatexFormula 与 PhysicsPanel 已独立至 @/components/Formula，禁止从 @/components/UI 导入（防止 KaTeX 污染首屏）。',
+          },
+        ],
+      }],
     },
   },
 

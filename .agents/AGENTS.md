@@ -115,6 +115,8 @@ controlMeta → 由 registry 驱动 ControlPanel（模式/开关/提示）
 | 物理图表基座 | `BasePhysicsChart` | `@/components/Chart` |
 | 实时时序图 | `MiniChart` | `@/components/UI` |
 | 左屏容器 | `LeftPanel` / `LeftPanelSection` | `@/components/UI` |
+| 右屏看板 | `PhysicsPanel` | `@/components/Formula` |
+| 公式渲染 | `KatexFormula` | `@/components/Formula` |
 
 **图表约束**：禁止手写 `toSvgX / toSvgY` 坐标轴；禁止 `<foreignObject>` 内嵌 React 图表；需图表时必须在现有组件基础上扩展或组合。
 

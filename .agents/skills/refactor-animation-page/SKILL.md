@@ -50,6 +50,7 @@ description: 重构动画页面 / 重构已有组件 / 迁移旧动画 / 修复�
 | 手写 `<circle>` 渐变球 / `<rect>` 滑块 | → `Ball` / `Block` |
 | 手写刻度尺/标尺/卡尺刻度与循环 | → 强制复用 `@/components/Physics`（`LabRuler`、`VernierCaliper`、`Micrometer`），严禁手写刻度 line/text 循环 |
 | 手写电表/开关/变阻器/电源原理图或通线假遮罩 | → 强制复用 `@/components/Physics`（`DialMeter`、`Rheostat`、`CircuitSwitch`、`DCSource`），统一声明 `variant="symbolic"`，严格遵循高中物理教科书标准画法（横平竖直、端子对准、红进黑出、外接/内接标准拓扑），参考 [CIRCUIT_RULES.md](file:///d:/code/physic/physics-learning/.agents/skills/refactor-animation-page/references/CIRCUIT_RULES.md) |
+| 从 `@/components/UI` 导入 `KatexFormula` 或 `PhysicsPanel` | → 改从 `@/components/Formula` 导入（阻断 KaTeX CSS 模块级副作用渗入首屏） |
 
 ### E. 颜色 / 字体违规
 

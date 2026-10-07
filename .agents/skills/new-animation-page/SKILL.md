@@ -290,6 +290,13 @@ export function build<Topic>Quantities(
 | 自定义关系图 | `BasePhysicsChart` + `ChartLine` + `ChartCursor` |
 | 轻量实时图（CenterExtra） | `MiniChart`（`@/components/UI`） |
 
+### Formula（`@/components/Formula`）
+
+| 需求 | 组件 | 说明 |
+|------|------|------|
+| 右屏物理量与公式看板 | `PhysicsPanel` | 严禁从 `@/components/UI` 导入 |
+| LaTeX 独立公式渲染 | `KatexFormula` | 严禁从 `@/components/UI` 导入（防 KaTeX 首屏泄漏） |
+
 ### 颜色使用规则
 
 ```ts
@@ -313,4 +320,5 @@ font(N)            // SVG 字号，禁止裸 fontSize={N}
 - [ ] 颜色：PHYSICS_COLORS / SCENE_COLORS / CANVAS_COLORS 按语义使用；font(N) 包裹字号
 - [ ] Registry：5 个文件全部完成；`defaultParams as const`；controlsMode 正确
 - [ ] 预设与提示：若有预设，标签紧凑（≤15字）、不锁滑块、设 `restartOnApply: true`；观察指引与条件归于底部 Tip（遵循 08_THREE_PANEL_RULES.md §2.6）
+- [ ] 公式与看板：PhysicsPanel / KatexFormula 统一从 `@/components/Formula` 导入
 - [ ] `tsc --noEmit` 通过
