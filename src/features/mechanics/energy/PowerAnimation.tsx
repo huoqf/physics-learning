@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { colors } from '@/theme/colors'
-import { KatexFormula } from '@/components/UI'
+import { KatexFormula } from '@/components/Formula'
 import {
   precomputeConstantPowerTrajectory,
   precomputeConstantAccelTrajectory,

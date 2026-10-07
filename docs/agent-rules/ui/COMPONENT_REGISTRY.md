@@ -76,10 +76,20 @@
 | `LeftPanel` / `LeftPanelSection` | 左屏控制台 | — | `<LeftPanel><LeftPanelScrollArea><LeftPanelSection title="参数">...</LeftPanelSection></LeftPanelScrollArea></LeftPanel>` |
 | `ParamControl` | 参数滑块 | `params`, `onParamChange` | `<ParamControl params={[{ key:'m', label:'质量', value:params.m, min:0.1, max:10, step:0.1, unit:'kg' }]} onParamChange={updateParam} />` |
 | `ControlPanel` | 声明式控件 | `controls`, `params`, `updateParam`, `setParams`, `resetAnimation`, `restartAnimation` | `<ControlPanel controls={mc} params={params} updateParam={updateParam} setParams={setParams} resetAnimation={handleReset} restartAnimation={handleRestart} />` |
-| `PhysicsPanel` | 右屏公式面板 | `quantities` | `<PhysicsPanel quantities={[{ label:'质量', value:params.m, unit:'kg' }]} formulas={[{ name:'F=ma', latex:'F=ma', level:'core' }]} />` |
 | `AnimationControls` | 播放控制条（支持微步逐帧 ±0.05s 与 criticalTimes 高考临界吸附定格） | `isPlaying`, `speed`, `time`, `maxTime`, `onPlayPause`, `onReset`, `onSpeedChange`, `onTimeChange` | `<AnimationControls isPlaying={p} speed={s} time={t} maxTime={tMax} onPlayPause={toggle} onReset={reset} onSpeedChange={setSpeed} onTimeChange={setTime} criticalTimes={cts} />` |
 | `Button` / `SegmentedControl` / `ToggleSwitch` | 基础控件 | — | 详见源码 interface |
 | `Slider` | 数值范围选择 | `value`, `min`, `max`, `onChange` | `<Slider value={v} min={0} max={10} step={0.1} onChange={setV} label="质量" unit="kg" fillAnchor={0} />` |
+
+---
+
+## Formula（`@/components/Formula`）
+
+> 仅含依赖 KaTeX 的组件，单独成 barrel 以隔离 `katex.min.css` 的模块级副作用。**禁止经由 `@/components/UI` 透出**（否则 katex 会被提升进首屏 entry），仅允许在懒加载页面中引用。
+
+| 组件 | 用途 | 必需 props | 最小调用 |
+|------|------|-----------|---------|
+| `PhysicsPanel` | 右屏公式面板 | `quantities` | `<PhysicsPanel quantities={[{ label:'质量', value:params.m, unit:'kg' }]} formulas={[{ name:'F=ma', latex:'F=ma', level:'core' }]} />` |
+| `KatexFormula` | KaTeX 公式渲染 | `formula` | `<KatexFormula formula="F=ma" mode="inline" />` |
 
 ---
 

@@ -1,6 +1,7 @@
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { Card, KatexFormula } from '@/components/UI'
+import { Card } from '@/components/UI'
+import { KatexFormula } from '@/components/Formula'
 import { useVectorAdditionPhysics } from './useVectorAdditionPhysics'
 
 export default function VectorFormulaPanel() {

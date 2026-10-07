@@ -4,7 +4,7 @@ import { useMemo, useRef } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { PHYSICS_COLORS, SCENE_COLORS, CANVAS_COLORS } from '@/theme/physics'
-import { KatexFormula } from '@/components/UI'
+import { KatexFormula } from '@/components/Formula'
 import {
   precomputeGravityTrajectory,
   precomputeSpringTrajectory,

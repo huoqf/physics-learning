@@ -128,7 +128,7 @@ LeftPanel                         ← AnimationPage 左屏唯一顶层容器
 ### 3.1 三段式结构（不可变骨架）
 
 ```text
-PhysicsPanel
+PhysicsPanel（@/components/Formula）
   ├─ QuantitySection      ← 物理量（名称 + 符号 + 当前值 + 单位）
   ├─ FormulaSection       ← 公式（KaTeX + 适用条件 + 易错提醒）
   └─ ExamPointSection     ← 高考要点（5级重要性标签）

@@ -15,6 +15,7 @@
  * ```
  */
 export * from './Chart'
+export * from './Formula'
 export * from './Layout'
 export * from './Physics'
 export * from './UI'

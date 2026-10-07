@@ -1,5 +1,5 @@
 import React from 'react'
-import { KatexFormula } from '@/components/UI'
+import { KatexFormula } from '@/components/Formula'
 
 export const ContentWithKatex = React.memo(function ContentWithKatex({ content }: { content: string }) {
   if (!content) return null

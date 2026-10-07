@@ -9,7 +9,6 @@ import { useShallow } from 'zustand/react/shallow'
 import { useAppStore } from '@/stores/useAppStore'
 import {
   AnimationControls,
-  PhysicsPanel,
   ParamControl,
   ErrorBoundary,
   DiscoveryGuide,
@@ -17,6 +16,7 @@ import {
   LeftPanelSection,
   ControlPanel,
 } from '@/components/UI'
+import { PhysicsPanel } from '@/components/Formula'
 import { LAYOUT } from '@/theme'
 import { duration, easing } from '@/theme/motion'
 import { ThreePanel } from '@/components/Layout'

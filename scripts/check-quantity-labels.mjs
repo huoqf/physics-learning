@@ -5,7 +5,7 @@
  * 物理量看板数据守卫脚本。
  *
  * 背景：看板渲染约定为 `q.symbol ? `${q.label} ${q.symbol}` : q.label`
- *      （见 src/components/UI/PhysicsPanel.tsx，纯文本拼接，不做 LaTeX 渲染）。
+ *      （见 src/components/Formula/PhysicsPanel.tsx，纯文本拼接，不做 LaTeX 渲染）。
  *      因此数据层必须保证：
  *        - label 为纯中文描述，不得再携带物理符号，否则出现 "感应电动势 E E" 之类重复；
  *        - symbol 为可直接显示的纯文本符号，不得含 LaTeX 命令或花括号下标。

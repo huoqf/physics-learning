@@ -36,7 +36,6 @@ export type { ScrollDataTableColumn, ScrollDataTableProps } from './ScrollDataTa
 // 面板与布局 (Panels & Layout)
 // ============================================================================
 export { LeftPanel, LeftPanelSection } from './LeftPanel'
-export { PhysicsPanel } from './PhysicsPanel'
 export { Card } from './Card'
 
 // ============================================================================
@@ -46,10 +45,8 @@ export { Badge } from './Badge'
 export { TipCard } from './TipCard'
 export { MiniChart } from './MiniChart'
 export type { MiniChartLine, MiniChartStaticLine, MiniChartProps } from './MiniChart'
-export { ScoreReport } from './ScoreReport'
 export { DiscoveryGuide } from './DiscoveryGuide'
 export type { DiscoveryStepData } from './DiscoveryGuide'
-export { KatexFormula } from './KatexFormula'
 
 // ============================================================================
 // 动画与过渡 (Animation & Transition)

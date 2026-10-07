@@ -332,14 +332,25 @@ Primary（primary-600）/ Secondary（white + primary边框）/ Ghost（transpar
 | `LeftPanelScrollArea` | 左屏长内容滚动区域 |
 | `ParamControl` | 参数滑块控件（由 `paramMeta` 生成左屏数值参数区） |
 | `ControlPanel` | 声明式左屏控件渲染器（由 `controlMeta` 生成模式/开关/预设/提示） |
-| `PhysicsPanel` | 右侧公式/信息面板容器 |
 | `Slider` | 通用滑条 |
 | `SegmentedControl` | 分段选择控件（模式切换） |
 | `ToggleSwitch` | 开关切换（显示矢量/网格等） |
 | `Button` | 通用按钮 |
-| `KatexFormula` | KaTeX 公式渲染 |
 | `MiniChart` | 小型内嵌图表（信息面板内） |
 | `TipCard` | 提示卡片 |
+
+#### Formula — 公式组件（`@/components/Formula`）
+
+| 组件 | 适用场景 |
+|------|---------|
+| `PhysicsPanel` | 右侧公式/信息面板容器 |
+| `KatexFormula` | KaTeX 公式渲染 |
+
+> **为何从 UI barrel 独立**：`KatexFormula` 静态引入 `katex/dist/katex.min.css`（模块级 CSS 副作用）。
+> `@/components/UI` barrel 会被 app shell（`main.tsx` / `app/Layout.tsx`）静态引用；若公式组件挂在 UI barrel 下，
+> 即使调用方从未使用它们，Rollup 也会为保留 CSS 副作用而把 `katex` 提升进首屏 entry chunk 并触发
+> `modulepreload`（首屏 CSS +28.93 kB、gzip +8.04 kB，且 katex JS 被预加载）。
+> 因此公式类组件单独成 `@/components/Formula` barrel，**只允许在懒加载页面中引用**，禁止经由 UI barrel 透出。
 
 > **barrel import 规则**：所有组件从对应目录的 barrel 入口导入，禁止子路径导入（如 `@/components/Physics/Ball`）。
 >
@@ -349,6 +360,7 @@ Primary（primary-600）/ Secondary（white + primary边框）/ Ghost（transpar
 > import { Button, ParamControl } from '@/components/UI'
 > import { AnimationSvgCanvas } from '@/components/Layout'
 > import { BasePhysicsChart } from '@/components/Chart'
+> import { KatexFormula, PhysicsPanel } from '@/components/Formula'
 >
 > // 页面层可接受：顶层 barrel
 > import { VectorArrow, Button } from '@/components'

@@ -52,11 +52,11 @@ const FORMULA_LEVEL_STYLES: Record<string, { bg: string; text: string; label: st
 
 // 高考要点级别样式
 const GAOKAO_LEVEL_STYLES: Record<string, { bg: string; border: string; text: string; label: string; labelBg: string; labelText: string }> = {
-  gaokao: { bg: colors.accent[50], border: colors.accent[500], text: colors.accent[700], label: '高考要点', labelBg: colors.accent[600], labelText: '#fff' },
-  hard: { bg: colors.danger[50], border: colors.danger[400], text: colors.danger[700], label: '重难点', labelBg: colors.danger[500], labelText: '#fff' },
-  core: { bg: colors.primary[50], border: colors.primary[400], text: colors.primary[700], label: '核心考点', labelBg: colors.primary[600], labelText: '#fff' },
-  basic: { bg: colors.neutral[50], border: colors.neutral[300], text: colors.neutral[600], label: '基础概念', labelBg: colors.neutral[500], labelText: '#fff' },
-  extend: { bg: colors.secondary[50], border: colors.secondary[400], text: colors.secondary[700], label: '拓展延伸', labelBg: colors.secondary[600], labelText: '#fff' },
+  gaokao: { bg: colors.accent[50], border: colors.accent[500], text: colors.accent[700], label: '高考要点', labelBg: colors.accent[600], labelText: colors.neutral.white },
+  hard: { bg: colors.danger[50], border: colors.danger[400], text: colors.danger[700], label: '重难点', labelBg: colors.danger[500], labelText: colors.neutral.white },
+  core: { bg: colors.primary[50], border: colors.primary[400], text: colors.primary[700], label: '核心考点', labelBg: colors.primary[600], labelText: colors.neutral.white },
+  basic: { bg: colors.neutral[50], border: colors.neutral[300], text: colors.neutral[600], label: '基础概念', labelBg: colors.neutral[500], labelText: colors.neutral.white },
+  extend: { bg: colors.secondary[50], border: colors.secondary[400], text: colors.secondary[700], label: '拓展延伸', labelBg: colors.secondary[600], labelText: colors.neutral.white },
 }
 
 // 易错警示级别样式
