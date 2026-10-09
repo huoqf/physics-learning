@@ -138,6 +138,7 @@ export function stepParticles(
   yMax: number,
   partitionProgress: number = 0, // 0 = 全关，1 = 全开
   temperatureDiffusionRate: number = 0.02,
+  workInput: boolean = false,
 ): void {
   const width = xMax - xMin
   const height = yMax - yMin
@@ -175,19 +176,34 @@ export function stepParticles(
     }
   }
 
-  // 热传导：温度混合（物理半径基于宽度自适应）
+  // 热传导：温度演化
   if (scenario === 'heat-conduction') {
-    const mixRadius = 0.08 * width
-    for (let i = 0; i < particles.length; i++) {
-      for (let j = i + 1; j < particles.length; j++) {
-        const dx = particles[i].x - particles[j].x
-        const dy = particles[i].y - particles[j].y
-        const dist = Math.sqrt(dx * dx + dy * dy)
-        if (dist < mixRadius) {
-          const avgT = (particles[i].temperature + particles[j].temperature) / 2
-          const mix = temperatureDiffusionRate * dt * 10
-          particles[i].temperature += (avgT - particles[i].temperature) * mix
-          particles[j].temperature += (avgT - particles[j].temperature) * mix
+    if (workInput) {
+      // 外界做功介入（电冰箱/热泵）：强行从低温端（右侧）抽热泵向高温端（左侧）
+      const pumpRate = 18 * dt
+      for (const p of particles) {
+        if (p.x < borderX) {
+          // 左侧吸热升温 (最高 550K)
+          p.temperature = Math.min(550, p.temperature + pumpRate)
+        } else if (p.x > borderXRight) {
+          // 右侧放热降温 (最低 150K)
+          p.temperature = Math.max(150, p.temperature - pumpRate)
+        }
+      }
+    } else {
+      // 自发传热：相邻粒子碰撞混合拉平（单向熵增）
+      const mixRadius = 0.08 * width
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x
+          const dy = particles[i].y - particles[j].y
+          const dist = Math.sqrt(dx * dx + dy * dy)
+          if (dist < mixRadius) {
+            const avgT = (particles[i].temperature + particles[j].temperature) / 2
+            const mix = temperatureDiffusionRate * dt * 10
+            particles[i].temperature += (avgT - particles[i].temperature) * mix
+            particles[j].temperature += (avgT - particles[j].temperature) * mix
+          }
         }
       }
     }

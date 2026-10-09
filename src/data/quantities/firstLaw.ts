@@ -89,6 +89,7 @@ export function buildFirstLawQuantities(
 
   let gaokaoPoints: GaokaoPoint[] = [
     { text: '正负号铁律：外界对气体做功 W>0，气体对外界做功 W<0；气体吸热 Q>0，气体放热 Q<0；内能增加 ΔU>0，内能减少 ΔU<0。', importance: 'gaokao' },
+    { text: '【2023 山东卷第13题母题】缓慢加热等压膨胀：气体吸热 Q=500J，膨胀对外做功 W_气=240J (W=-240J)，由 ΔU = W + Q 得内能增加 ΔU=260J。', importance: 'gaokao' },
     { text: '改变内能的两种方式：做功和热传递对改变内能是等效的。', importance: 'core' }
   ]
 
@@ -97,31 +98,31 @@ export function buildFirstLawQuantities(
   ]
 
   if (mode === 1) {
-    // 循环热机模式
+    // 顺时针循环热机模式
     const stepsInfo: { name: string; formula: Formula; point: string; warning: string }[] = [
       {
-        name: '① 等压膨胀 (A→B)',
-        formula: { name: '盖-吕萨克定律 & 做功', latex: '\\frac{V}{T}=C,\\ W = -p\\Delta V', level: 'important', condition: '压强 p 保持恒定不变' },
-        point: '等压膨胀中，气体膨胀对外做功 (W < 0)。为了温度升高内能增加 (ΔU > 0)，气体必须吸收大量的热量 (Q = ΔU - W > 0)。',
-        warning: '等压膨胀中，气体吸收的热量一部分用于增加内能，另一部分用于对外做功！'
-      },
-      {
-        name: '② 等容加热 (B→C)',
+        name: '① 等容加热升压 (A→B)',
         formula: { name: '查理定律 & 等容无功', latex: '\\frac{p}{T}=C,\\ W = 0', level: 'important', condition: '体积 V 恒定，活塞锁定' },
-        point: '等容过程中，因体积不变，外界做功 W = 0。吸收的热量 Q 全部用于增加气体的内能 ΔU，温度急剧上升。',
-        warning: '等容过程 W 严格为 0，ΔU = Q。这是理想气体状态判定最清晰的切入点！'
+        point: '等容吸热过程中，因体积不变，外界做功 W = 0。吸收的热量 Q 全部用于增加气体的内能 ΔU，温度与压强急剧升高。',
+        warning: '等容过程 W 严格为 0，ΔU = Q。这是计算热机吸热的第一步！'
       },
       {
-        name: '③ 等压压缩 (C→D)',
+        name: '② 等压膨胀做功 (B→C)',
         formula: { name: '盖-吕萨克定律 & 做功', latex: '\\frac{V}{T}=C,\\ W = -p\\Delta V', level: 'important', condition: '压强 p 保持恒定不变' },
-        point: '等压压缩中，外界对气体做功 (W > 0)。同时由于温度降低内能减少 (ΔU < 0)，气体必然向外界放出大量的热量 (Q = ΔU - W < 0)。',
-        warning: '等压压缩中，外界对气体做的功与减少 of 内能会全部以热量形式放出！'
+        point: '高压等压膨胀中，气体对外界做大量正功 (外界功 W < 0)。气体继续吸收热量 (Q > 0) 并升温，这是热机对外输出机械功的核心过程。',
+        warning: '等压膨胀中，气体吸收的热量一部分用于增加内能，另一部分用于对外输出做功！'
       },
       {
-        name: '④ 等容冷却 (D→A)',
+        name: '③ 等容冷却降压 (C→D)',
         formula: { name: '查理定律 & 等容无功', latex: '\\frac{p}{T}=C,\\ W = 0', level: 'important', condition: '体积 V 恒定，活塞锁定' },
-        point: '等容降压过程中，外界做功 W = 0。气体放出热量，使得内能 ΔU 减少，温度降回到初始循环状态。',
-        warning: '一个完整的热机循环结束时，末态与初态相同，整周期的内能净变化 ΔU = 0。'
+        point: '等容降压过程中，外界做功 W = 0。气体向低温冷源放出热量 (Q < 0)，内能减少 (ΔU < 0)，温度与压强回落。',
+        warning: '等容放热降压使工质回到低压状态，为下一阶段低温压缩做准备。'
+      },
+      {
+        name: '④ 等压压缩回程 (D→A)',
+        formula: { name: '盖-吕萨克定律 & 做功', latex: '\\frac{V}{T}=C,\\ W = -p\\Delta V', level: 'important', condition: '压强 p 保持恒定不变' },
+        point: '低压等压压缩中，外界消耗较小的功将气体压回初态体积 (W > 0)。全循环一周：高压膨胀对外做的功大于低压压缩外界输入的功，净输出正功等于 p-V 闭合矩形面积！',
+        warning: '全循环净输出正功 W_out = 100 J，全周期内能净变化 ΔU = 0，净吸热 Q_net = 100 J。'
       }
     ]
 
@@ -155,6 +156,10 @@ export function buildFirstLawQuantities(
       gaokaoPoints.push({
         text: '绝热膨胀/压缩：Q = 0。外界压缩气体做功则内能增加（温度升高）；气体膨胀做功则内能减少（温度降低）。',
         importance: 'hard'
+      })
+      gaokaoPoints.push({
+        text: '【高考图像必考辨析】绝热线比等温线更陡！过同一起点，绝热线斜率绝对值为等温线的 γ 倍 (γ=1.67)。压缩时绝热压强高于等温，膨胀时绝热压强低于等温。',
+        importance: 'gaokao'
       })
       warnings.push({
         text: '绝热压缩时温度必定升高！“绝热”并不等于“等温”，这是高频易错题！',

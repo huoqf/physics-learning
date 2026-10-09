@@ -13,10 +13,13 @@ export function buildSecondLawQuantities(
   if (animId !== 'anim-second-law') return null
 
   const scene = params.scene ?? 0
+  const workInput = params.workInput ?? 0
 
   const S = secondLawSharedState.currentS
   const lnOmega = secondLawSharedState.lnOmega
   const omega = Math.exp(lnOmega)
+
+  const isReversePump = scene === 0 && workInput === 1
 
   return {
     quantities: [
@@ -38,16 +41,23 @@ export function buildSecondLawQuantities(
       {
         label: '场景',
         symbol: '',
-        value: scene === 0 ? '热传导' : '气体扩散',
+        value: isReversePump ? '电冰箱泵热 (做功介入)' : scene === 0 ? '自发热传导' : '气体自由扩散',
         unit: '',
+      },
+      {
+        label: '演化状态',
+        symbol: '',
+        value: isReversePump ? '外界做功逆向泵热' : S >= 0.95 ? '已达热平衡' : '自发演化中',
+        unit: '',
+        color: isReversePump ? SECOND_LAW_COLORS.warmParticle : S >= 0.95 ? SECOND_LAW_COLORS.equilibriumLabel : SECOND_LAW_COLORS.entropyLine,
       },
     ],
     formulas: [
       {
-        name: '玻尔兹曼熵公式',
-        latex: 'S = k_B \\ln \\Omega',
+        name: isReversePump ? '电冰箱/热泵能量守恒' : '玻尔兹曼熵公式',
+        latex: isReversePump ? 'Q_1 = Q_2 + W' : 'S = k_B \\ln \\Omega',
         level: 'core',
-        condition: '微观态等概率假设',
+        condition: isReversePump ? '外界做功 W 将热量 Q₂ 泵向高温端 Q₁' : '微观态等概率假设',
       },
       {
         name: '热力学第二定律（孤立系统熵增）',
@@ -75,6 +85,10 @@ export function buildSecondLawQuantities(
       },
     ],
     warnings: [
+      {
+        text: '【高考高频命题陷阱】“热量不能从低温传到高温”是错误的伪命题！题干缺少“自发地”时切勿盲选，电冰箱消耗电功完全可以逆向泵热！',
+        level: 'danger',
+      },
       {
         text: '热力学第二定律不禁止热量从低温传到高温，而是强调"自发"。有外界做功时逆向过程完全可以发生。',
         level: 'warning',

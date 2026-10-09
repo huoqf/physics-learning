@@ -35,6 +35,7 @@ export interface SecondLawPhysicsResult {
 interface UseSecondLawPhysicsParams {
   scenario: Scenario
   partitionOpened: number
+  workInput?: number
   time: number
   isPlaying: boolean
 }
@@ -42,6 +43,7 @@ interface UseSecondLawPhysicsParams {
 export function useSecondLawPhysics({
   scenario,
   partitionOpened,
+  workInput = 0,
   time,
   isPlaying,
 }: UseSecondLawPhysicsParams): SecondLawPhysicsResult {
@@ -129,10 +131,12 @@ export function useSecondLawPhysics({
         PHYSICAL_CONTAINER.xMax,
         PHYSICAL_CONTAINER.yMin,
         PHYSICAL_CONTAINER.yMax,
-        isGasDiffusion ? partitionProgressRef.current : 0
+        isGasDiffusion ? partitionProgressRef.current : 0,
+        0.02,
+        workInput === 1
       )
     },
-    [scenario, partitionOpened],
+    [scenario, partitionOpened, workInput],
   )
 
   // ─── 动画帧回调 ────────────────────────────────────────────────────

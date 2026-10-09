@@ -284,7 +284,12 @@ export function calculateSandboxState(
 
 /**
  * 循环模式下的物理状态求解（时间插值）。
- * 周期 20 秒，4步循环各占 5秒。
+ * 周期 20 秒，4步顺时针热机循环各占 5秒：
+ *   ① A(1L, 100kPa) -> B(1L, 200kPa): 等容吸热升压 (W=0, Q>0, ΔU>0)
+ *   ② B(1L, 200kPa) -> C(2L, 200kPa): 等压吸热膨胀对外做功 (W=-200J, Q>0, ΔU>0)
+ *   ③ C(2L, 200kPa) -> D(2L, 100kPa): 等容放热降温降压 (W=0, Q<0, ΔU<0)
+ *   ④ D(2L, 100kPa) -> A(1L, 100kPa): 等压放热压缩外界做功 (W=+100J, Q<0, ΔU<0)
+ * 全循环：外界做功累计 W_net = -100 J（对外净输出正功 100 J，等于 p-V 闭合矩形面积！），净吸热 Q_net = 100 J，ΔU_net = 0。
  */
 export function calculateCycleState(time: number): FirstLawPhysicsState {
   const cycle = 20
@@ -300,37 +305,37 @@ export function calculateCycleState(time: number): FirstLawPhysicsState {
   let deltaU = 0
 
   if (stepIndex === 0) {
-    // A -> B: 等压膨胀
-    P = 1.0e5
-    V = 1.0e-3 + stepProgress * 1.0e-3
+    // ① A -> B: 等容吸热升压 (1L, 100kPa -> 200kPa)
+    V = 1.0e-3
+    P = 1.0e5 + stepProgress * 1.0e5
     T = 300 + stepProgress * 300
     deltaU = 150 * stepProgress
-    W = -100 * stepProgress
-    Q = 250 * stepProgress
+    W = 0
+    Q = 150 * stepProgress
   } else if (stepIndex === 1) {
-    // B -> C: 等容加热
-    V = 2.0e-3
-    P = 1.0e5 + stepProgress * 1.0e5
+    // ② B -> C: 等压吸热膨胀对外做功 (200kPa, 1L -> 2L)
+    P = 2.0e5
+    V = 1.0e-3 + stepProgress * 1.0e-3
     T = 600 + stepProgress * 600
     deltaU = 150 + 300 * stepProgress
-    W = -100
-    Q = 250 + 300 * stepProgress
+    W = -200 * stepProgress
+    Q = 150 + 500 * stepProgress
   } else if (stepIndex === 2) {
-    // C -> D: 等压压缩
-    P = 2.0e5
-    V = 2.0e-3 - stepProgress * 1.0e-3
+    // ③ C -> D: 等容放热降压 (2L, 200kPa -> 100kPa)
+    V = 2.0e-3
+    P = 2.0e5 - stepProgress * 1.0e5
     T = 1200 - stepProgress * 600
     deltaU = 450 - 300 * stepProgress
-    W = -100 + 200 * stepProgress
-    Q = 550 - 500 * stepProgress
+    W = -200
+    Q = 650 - 300 * stepProgress
   } else {
-    // D -> A: 等容冷却
-    V = 1.0e-3
-    P = 2.0e5 - stepProgress * 1.0e5
+    // ④ D -> A: 等压放热压缩 (100kPa, 2L -> 1L)
+    P = 1.0e5
+    V = 2.0e-3 - stepProgress * 1.0e-3
     T = 600 - stepProgress * 300
     deltaU = 150 - 150 * stepProgress
-    W = 100
-    Q = 50 - 150 * stepProgress
+    W = -200 + 100 * stepProgress
+    Q = 350 - 250 * stepProgress
   }
 
   return { P, V, T, W, Q, deltaU, currentStepIndex: stepIndex, stepProgress }

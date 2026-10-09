@@ -241,7 +241,7 @@ export function FirstLawScene({
           fontWeight="bold"
           fontFamily={FONT.family}
         >
-          {mode === 1 ? `循环步骤: ${['①等压膨胀', '②等容加热', '③等压压缩', '④等容冷却'][currentStepIndex ?? 0]}` : '沙箱自由模拟'}
+          {mode === 1 ? `循环步骤: ${['①等容升压', '②等压膨胀', '③等容降压', '④等压压缩'][currentStepIndex ?? 0]}` : '沙箱自由模拟'}
         </text>
         <text
           x={worldToDesign(0, 5.4, sceneScale).px}

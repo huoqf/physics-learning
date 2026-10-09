@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import { SCENE_COLORS, ENERGY_COLORS, THERMO_COLORS, STROKE, withAlpha } from '@/theme/physics'
+import { SCENE_COLORS, ENERGY_COLORS, THERMO_COLORS, FIRST_LAW_COLORS, STROKE, withAlpha } from '@/theme/physics'
 import { RelationChart } from '@/components/Chart'
 import type { RelationDataSeries, RelationMarker } from '@/components/Chart'
 import { calculateSandboxState, calculateCycleState } from '@/physics/firstLaw'
@@ -37,10 +37,9 @@ export default function FirstLawCenterExtra() {
   const V_L = V * 1000      // 转为 L 方便图表坐标轴展示
   const P_kPa = P / 1000    // 转为 kPa 展示
 
-  // ─── 上半部分：能量收支柱状图数据 ──────────────────────────────────────────
-  // 循环模式单步能量可达 ±550 J；沙箱模式（|W|、|Q| ≤ 50 J）最大 |ΔU| = 100 J。
+  // 循环模式累计吸热量峰值达 650 J；沙箱模式（|W|、|Q| ≤ 50 J）最大 |ΔU| = 100 J。
   // 量程随模式切换，保证两组数据都清晰可读。
-  const maxAbsVal = mode === 1 ? 600 : 100
+  const maxAbsVal = mode === 1 ? 700 : 100
   const zeroY = 90
   const maxBarHeight = 65
 
@@ -69,16 +68,29 @@ export default function FirstLawCenterExtra() {
   // 当前温度等温线 (随 T 变化)
   const isothermCurrentPoints = useMemo(() => generateIsotherm(T), [T])
 
+  // 生成过初态 (1.0L, 100kPa) 的理论绝热线 (P = 100 * (1/V)^(5/3), γ=1.67)
+  const adiabatPoints = useMemo(() => {
+    const points = []
+    const gamma = 5 / 3
+    for (let v = 0.55; v <= 2.8; v += 0.05) {
+      const p = 100 * Math.pow(1.0 / v, gamma)
+      if (p <= 310) {
+        points.push({ x: v, y: p })
+      }
+    }
+    return points
+  }, [])
+
   // P-V 图主线段
   const cyclePoints = useMemo(() => {
     if (mode === 1) {
-      // 封闭的热机循环 A -> B -> C -> D -> A
+      // 封闭的顺时针热机循环 A -> B -> C -> D -> A
       return [
-        { x: 1.0, y: 100 },
-        { x: 2.0, y: 100 },
-        { x: 2.0, y: 200 },
-        { x: 1.0, y: 200 },
-        { x: 1.0, y: 100 },
+        { x: 1.0, y: 100 }, // A (300K)
+        { x: 1.0, y: 200 }, // B (600K)
+        { x: 2.0, y: 200 }, // C (1200K)
+        { x: 2.0, y: 100 }, // D (600K)
+        { x: 1.0, y: 100 }, // A
       ]
     }
     // 沙箱模式不需要闭合主线，只用点和等温虚线
@@ -92,17 +104,17 @@ export default function FirstLawCenterExtra() {
     if (mode === 1) {
       // 循环模式：绘制四条边界线，高亮当前活跃边
       const corners = [
-        { x: 1.0, y: 100 }, // A
-        { x: 2.0, y: 100 }, // B
-        { x: 2.0, y: 200 }, // C
-        { x: 1.0, y: 200 }, // D
+        { x: 1.0, y: 100 }, // A: (1L, 100kPa)
+        { x: 1.0, y: 200 }, // B: (1L, 200kPa)
+        { x: 2.0, y: 200 }, // C: (2L, 200kPa)
+        { x: 2.0, y: 100 }, // D: (2L, 100kPa)
       ]
 
       const stepColors = [
-        THERMO_COLORS.heatAbsorb,        // A->B 等压膨胀 (吸热做负功)
-        ENERGY_COLORS.internalEnergy,    // B->C 等容加热 (吸热升压)
-        ENERGY_COLORS.work,              // C->D 等压压缩 (放热做正功)
-        THERMO_COLORS.heatRelease        // D->A 等容冷却 (放热降压)
+        ENERGY_COLORS.internalEnergy,    // A->B 等容加热 (吸热升压)
+        THERMO_COLORS.heatAbsorb,        // B->C 等压膨胀 (吸热对外做功)
+        THERMO_COLORS.heatRelease,       // C->D 等容冷却 (放热降压)
+        ENERGY_COLORS.work,              // D->A 等压压缩 (放热外界做功)
       ]
 
       for (let i = 0; i < 4; i++) {
@@ -118,13 +130,22 @@ export default function FirstLawCenterExtra() {
         })
       }
     } else {
-      // 沙箱模式：加入初始温度等温线 (灰色) 和当前温度等温线 (彩色)
+      // 沙箱模式：加入初始 300K 等温线 (虚线，较缓)
       series.push({
         points: isothermBasePoints,
         color: SCENE_COLORS.charts.gridLine,
         strokeWidth: 1.5,
         strokeDasharray: [4, 4],
       })
+
+      // 绝热气缸开启时：展示理论绝热曲线 (紫色实线，斜率更大更陡)
+      if (adiabatic === 1) {
+        series.push({
+          points: adiabatPoints,
+          color: FIRST_LAW_COLORS.adiabaticWall,
+          strokeWidth: 2.5,
+        })
+      }
 
       // 仅当温度与 300K 偏离较大时展示当前温度等温线
       if (Math.abs(T - 300) > 5) {
@@ -137,7 +158,7 @@ export default function FirstLawCenterExtra() {
     }
 
     return series
-  }, [mode, currentStepIndex, T, isothermCurrentPoints, isothermBasePoints])
+  }, [mode, currentStepIndex, T, adiabatic, adiabatPoints, isothermCurrentPoints, isothermBasePoints])
 
   // 坐标标记点 (Markers)
   const markers: RelationMarker[] = useMemo(() => {
@@ -147,9 +168,9 @@ export default function FirstLawCenterExtra() {
       // 循环热机：标注 A, B, C, D 四个角点
       const corners = [
         { x: 1.0, y: 100, label: 'A (300K)' },
-        { x: 2.0, y: 100, label: 'B (600K)' },
+        { x: 1.0, y: 200, label: 'B (600K)' },
         { x: 2.0, y: 200, label: 'C (1200K)' },
-        { x: 1.0, y: 200, label: 'D (600K)' },
+        { x: 2.0, y: 100, label: 'D (600K)' },
       ]
       corners.forEach((c) => {
         list.push({
@@ -166,9 +187,19 @@ export default function FirstLawCenterExtra() {
         axis: 'point',
         x: 1.0,
         y: 100,
-        label: '初态 A (300K)',
+        label: adiabatic === 1 ? '初态 A (交点)' : '初态 A (300K)',
         color: SCENE_COLORS.charts.tickLabel,
       })
+
+      if (adiabatic === 1) {
+        list.push({
+          axis: 'point',
+          x: 0.65,
+          y: 200,
+          label: '绝热线 (更陡)',
+          color: FIRST_LAW_COLORS.adiabaticWall,
+        })
+      }
     }
 
     // 无论什么模式，均标出实时气体状态点
@@ -185,7 +216,7 @@ export default function FirstLawCenterExtra() {
     })
 
     return list
-  }, [mode, V_L, P_kPa, deltaU])
+  }, [mode, V_L, P_kPa, deltaU, adiabatic])
 
   return (
     <Card className="w-full h-full flex flex-col p-3 overflow-hidden select-none">

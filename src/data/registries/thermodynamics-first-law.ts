@@ -26,6 +26,16 @@ export const thermodynamicsFirstLawAnimations = defineAnimations({
       // §1 模型选择
       { type: 'segmented', key: 'mode', group: '模型选择', resetOnChange: true,
         options: [{ value: 0, label: '沙箱探索' }, { value: 1, label: '循环热机' }] },
+      // §3 高考真题联动
+      {
+        type: 'preset',
+        label: '📋 2023 山东卷·等压吸热做功 (第13题)',
+        group: '高考真题情境',
+        hideIf: 'mode',
+        hideIfValue: 1,
+        description: '还原2023山东高考原题：气体吸热 500J，膨胀对外做功 240J (W=-24J)，内能净增加 260J。',
+        params: { W: -20, Q: 50, adiabatic: 0 },
+      },
       // §4 显示辅助
       { type: 'toggle', key: 'adiabatic', label: '绝热气缸', group: '显示辅助',
         hideIf: 'mode', hideIfValue: 1,
@@ -36,7 +46,7 @@ export const thermodynamicsFirstLawAnimations = defineAnimations({
       { type: 'tip', group: '教学提示',
         content: '绝热气缸 Q ≡ 0，此时 ΔU = W：压缩则升温、膨胀则降温，绝热不等于等温！' },
       { type: 'tip', group: '教学提示',
-        content: '循环热机：点击下方播放，自动运行等压膨胀→等容加热→等压压缩→等容冷却循环。' },
+        content: '循环热机：点击下方播放，自动运行等容加热→等压膨胀→等容冷却→等压压缩的顺时针正循环，对外净输出机械功等于 p-V 闭合面积。' },
     ],
     centerLayout: 'splitH',
     CenterExtra: lazy(() => import('@/features/thermodynamics/firstLaw/FirstLawCenterExtra')),

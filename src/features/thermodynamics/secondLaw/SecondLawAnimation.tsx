@@ -22,10 +22,12 @@ export default function SecondLawAnimation() {
 
   const scene = params.scene ?? 0
   const scenario: Scenario = scene === 0 ? 'heat-conduction' : 'gas-diffusion'
+  const workInput = params.workInput ?? 0
 
   const { particlesRef, partitionProgressRef, entropy, isEquilibrium } = useSecondLawPhysics({
     scenario,
     partitionOpened: params.partitionOpened ?? 0,
+    workInput,
     time,
     isPlaying,
   })
@@ -37,6 +39,7 @@ export default function SecondLawAnimation() {
       <AnimationSvgCanvas containerRef={containerRef} transform={vp.transform} canvasRef={canvasRef}>
         <SecondLawScene
           scenario={scenario}
+          workInput={workInput}
           particlesRef={particlesRef}
           partitionProgressRef={partitionProgressRef}
           entropy={entropy}

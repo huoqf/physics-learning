@@ -2,8 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { worldToDesign } from '@/scene'
 import type { SceneScale } from '@/scene'
 import { VectorArrow } from '@/components/Physics'
-import { SECOND_LAW_COLORS, SCENE_COLORS, STROKE, FONT } from '@/theme/physics'
-import { colors } from '@/theme/colors'
+import { SECOND_LAW_COLORS, CANVAS_COLORS, STROKE, FONT } from '@/theme/physics'
 import { temperatureToColor, type Particle, type Scenario } from '@/physics/secondLaw'
 import { PARTICLE_COUNT, PHYSICAL_CONTAINER } from '../hooks/useSecondLawPhysics'
 
@@ -13,6 +12,7 @@ const T_COLD = 200
 
 interface SecondLawSceneProps {
   scenario: Scenario
+  workInput?: number
   particlesRef: React.MutableRefObject<Particle[]>
   partitionProgressRef: React.MutableRefObject<number>
   entropy: { lnOmega: number; normalizedEntropy: number }
@@ -27,12 +27,13 @@ interface SecondLawSceneProps {
 
 export function SecondLawScene({
   scenario,
+  workInput = 0,
   particlesRef,
   partitionProgressRef,
-  entropy,
+  entropy: _entropy,
   isEquilibrium,
   sceneScale,
-  vp,
+  vp: _vp,
   canvasSize,
   setupFrame,
   designToPixel,
@@ -119,33 +120,38 @@ export function SecondLawScene({
 
   const partitionProgress = partitionProgressRef.current
 
+  const isReversePump = scenario === 'heat-conduction' && workInput === 1
+
   return (
     <>
-      {/* 场景标题 */}
-      <text
-        x={vp.visibleX + vp.visibleW / 2}
-        y={vp.visibleY + vp.visibleH * 0.02 + 10}
-        fontSize={font(13)}
-        fontWeight="bold"
-        fill={colors.neutral[800]}
-        textAnchor="middle"
-        fontFamily={FONT.family}
-      >
-        {scenario === 'heat-conduction'
-          ? '演示一：热量传导方向（自发过程）'
-          : '演示二：气体自由膨胀（自发过程）'}
-      </text>
-
-      {/* 标注箭头 */}
-      {!isEquilibrium && (
+      {/* 过程流动方向标注箭头 */}
+      {(!isEquilibrium || isReversePump) && (
         <VectorArrow
-          originDesign={{ x: cmidX - 60, y: cy - 14 }}
-          vector={{ x: 120 / sceneScale.scaleX, y: 0 }}
+          originDesign={{
+            x: isReversePump ? cmidX + 60 : cmidX - 60,
+            y: cy - 14,
+          }}
+          vector={{
+            x: (isReversePump ? -120 : 120) / sceneScale.scaleX,
+            y: 0,
+          }}
           type="velocity"
           arrowType="visual-only"
           sceneScale={sceneScale}
-          label={scenario === 'heat-conduction' ? '自发热传导方向 Q' : '气体自发自由膨胀'}
-          color={scenario === 'heat-conduction' ? SECOND_LAW_COLORS.hotParticle : SECOND_LAW_COLORS.entropyLine}
+          label={
+            isReversePump
+              ? '外界做功强制泵热 W > 0 (低温→高温)'
+              : scenario === 'heat-conduction'
+                ? '自发热传导方向 Q'
+                : '自发自由膨胀'
+          }
+          color={
+            isReversePump
+              ? SECOND_LAW_COLORS.warmParticle
+              : scenario === 'heat-conduction'
+                ? SECOND_LAW_COLORS.hotParticle
+                : SECOND_LAW_COLORS.entropyLine
+          }
           font={font}
         />
       )}
@@ -174,7 +180,7 @@ export function SecondLawScene({
         />
       )}
 
-      {/* 热传导隔板 */}
+      {/* 热传导界面 */}
       {scenario === 'heat-conduction' && (
         <line
           x1={cmidX}
@@ -187,12 +193,12 @@ export function SecondLawScene({
         />
       )}
 
-      {/* 左右温度/粒子标注 */}
+      {/* 左右物理状态标注 */}
       {scenario === 'heat-conduction' ? (
         <>
           <text
             x={cx + cw * 0.25}
-            y={cy + ch + 16}
+            y={cy + ch + 18}
             fontSize={font(10)}
             fill={SECOND_LAW_COLORS.hotParticle}
             textAnchor="middle"
@@ -202,7 +208,7 @@ export function SecondLawScene({
           </text>
           <text
             x={cx + cw * 0.75}
-            y={cy + ch + 16}
+            y={cy + ch + 18}
             fontSize={font(10)}
             fill={SECOND_LAW_COLORS.coldParticle}
             textAnchor="middle"
@@ -215,41 +221,26 @@ export function SecondLawScene({
         <>
           <text
             x={cx + cw * 0.25}
-            y={cy + ch + 16}
+            y={cy + ch + 18}
             fontSize={font(10)}
             fill={SECOND_LAW_COLORS.coldParticle}
             textAnchor="middle"
             fontFamily={FONT.family}
           >
-            气体（左侧）
+            气体初始区
           </text>
           <text
             x={cx + cw * 0.75}
-            y={cy + ch + 16}
+            y={cy + ch + 18}
             fontSize={font(10)}
-            fill={colors.neutral[400]}
+            fill={CANVAS_COLORS.textMuted}
             textAnchor="middle"
             fontFamily={FONT.family}
           >
-            真空（右侧）
+            真空区
           </text>
         </>
       )}
-
-      {/* 状态标注 */}
-      <text
-        x={vp.visibleX + vp.visibleW / 2}
-        y={cy + ch + 32}
-        fontSize={font(11)}
-        fill={isEquilibrium ? SECOND_LAW_COLORS.equilibriumLabel : SCENE_COLORS.materials.structStrokeLight}
-        textAnchor="middle"
-        fontWeight={isEquilibrium ? 'bold' : 'normal'}
-        fontFamily={FONT.family}
-      >
-        {isEquilibrium
-          ? '✓ 已达热平衡 / 均匀分布'
-          : `无序度 S = ${entropy.normalizedEntropy.toFixed(3)}  |  Ω = e^${entropy.lnOmega.toFixed(1)}`}
-      </text>
     </>
   )
 }
