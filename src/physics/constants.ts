@@ -26,3 +26,9 @@ export const GAS_CONSTANT = 8.314
  */
 export const SPEED_OF_LIGHT = 3.0e8
 
+/** 玻尔兹曼常量 kB (J/K) */
+export const BOLTZMANN_CONSTANT = 1.38e-23
+
+/** 阿伏伽德罗常量 NA (mol⁻¹) */
+export const AVOGADRO_CONSTANT = 6.02e23
+

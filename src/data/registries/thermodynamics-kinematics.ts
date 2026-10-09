@@ -74,7 +74,7 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
       inputValue: 18,
     } as const,
     paramMeta: [
-      { key: 'inputValue', label: '样本输入量', min: 1, max: 100, step: 1, unit: 'g/cm³' },
+      { key: 'inputValue', label: '样本输入量', min: 0.05, max: 100, step: 0.05, unit: 'g (体积模式下为 cm³)' },
     ],
     controlMeta: [
       {
@@ -104,7 +104,7 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
         type: 'preset',
         label: '1 滴水 (约 0.05g)',
         group: '微观估算预设',
-        params: { substanceIdx: 0, inputMode: 0, inputValue: 1 },
+        params: { substanceIdx: 0, inputMode: 0, inputValue: 0.05 },
       },
       {
         type: 'preset',
@@ -136,7 +136,7 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
       r: 2.0,
     } as const,
     paramMeta: [
-      { key: 'r', label: '分子间距 r', min: 0.5, max: 4.0, step: 0.05, unit: 'r₀' },
+      { key: 'r', label: '分子间距 r', min: 0.5, max: 4.0, step: 0.01, unit: 'r₀' },
     ],
     controlMeta: [
       {
@@ -153,9 +153,9 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
       },
       {
         type: 'preset',
-        label: '引力极值 r ≈ 1.15 r₀ (Ep反弯拐点)',
+        label: '引力极值 r ≈ 1.11 r₀ (Ep反弯拐点)',
         group: '特征间距预设',
-        params: { r: 1.15 },
+        params: { r: 1.11 },
       },
       {
         type: 'preset',
@@ -263,7 +263,7 @@ export const thermodynamicsKinematicsAnimations = defineAnimations({
       {
         type: 'tip',
         group: '数格规则',
-        content: '凡是超过半格的算一格，不足半格的舍去；分子直径计算结果约为 10⁻¹⁰ m (几埃)。',
+        content: '凡是超过半格的算一格，不足半格的舍去；油酸单分子层厚度通常约为 10⁻⁹ m (约 1 nm / 十几埃)，球形小分子(如水)则约为几埃(10⁻¹⁰ m)。',
       },
     ],
   },

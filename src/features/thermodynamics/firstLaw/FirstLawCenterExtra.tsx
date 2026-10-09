@@ -9,10 +9,10 @@ import { Card } from '@/components/UI'
 
 // 物理参考量：
 // nR = 1/3, T0 = 300 K
-// 状态点 A: V = 1.0 L, P = 100 kPa
-// 状态点 B: V = 2.0 L, P = 100 kPa
-// 状态点 C: V = 2.0 L, P = 200 kPa
-// 状态点 D: V = 1.0 L, P = 200 kPa
+// 状态点 A: V = 1.0 L, P = 100 kPa (基准初态)
+// 状态点 B: V = 1.0 L, P = 200 kPa (等容升压)
+// 状态点 C: V = 2.0 L, P = 200 kPa (等压膨胀)
+// 状态点 D: V = 2.0 L, P = 100 kPa (等容降压)
 
 export default function FirstLawCenterExtra() {
   const { params, time } = useAnimationStore(

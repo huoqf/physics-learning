@@ -87,7 +87,7 @@ export function buildIntermolecularForcesQuantities(
         importance: 'gaokao',
       },
       {
-        text: '引力最大值对应的横坐标约为 1.12 r₀，该点为 E_p-r 曲线的一阶导数极值点（拐点）。',
+        text: '引力最大值对应的横坐标约为 1.11 r₀，该点为 E_p-r 曲线的一阶导数极值点（拐点）。',
         importance: 'hard',
       },
     ],

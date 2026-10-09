@@ -335,7 +335,7 @@ export const masterModels: MasterModel[] = [
     examTips: [
       '注意正负号规定：外界对系统做功 W>0，系统吸热 Q>0，内能增加 ΔU>0。活塞封闭气体压强需通过受力平衡求解。',
     ],
-    relatedProblemIds: ['prob-2023-shandong-13'],
+    relatedProblemIds: ['prob-2023-shandong-13', 'prob-thermo-cylinder-piston'],
   },
   {
     id: 'model-photoelectric-decay',

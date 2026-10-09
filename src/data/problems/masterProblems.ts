@@ -658,21 +658,14 @@ export const masterModelProblems: Problem[] = [
   // 16. 光学全反射与折射率测定
   {
     id: 'prob-2024-hubei-10',
-    year: 2024,
-    province: '湖北卷',
-    source: '2024年高考湖北卷物理第10题',
+    year: 2024, province: '湖北卷', source: '2024年高考湖北卷物理第10题',
     title: '半圆形玻璃砖折射与全反射临界角几何分析',
     content:
       '如图所示，一截面为半圆形的玻璃砖，折射率为 $n = \\sqrt{2}$，半径为 $R$。一束平行单色光垂直于半圆形玻璃砖的平面边界射入玻璃砖。真空中的光速为 $c$。\n试求：\n(1) 光在玻璃砖中传播的速度大小 $v$；\n(2) 该玻璃砖发生全反射的临界角 $C$ 的正弦值与角度；\n(3) 圆弧边界上有光线射出的弧长部分 $S$。',
-    difficulty: 3,
+    difficulty: 3, masterModelId: 'model-optics-refraction',
     knowledgeIds: ['optics-1-2', 'optics-1-1'],
-    masterModelId: 'model-optics-refraction',
     tags: ['高考真题', '全反射', '临界角', '折射率'],
-    targetAnimation: {
-      animId: 'anim-total-reflection',
-      presetParams: { n: 1.414, angle: 30 },
-      presetDescription: '载入 2024 湖北高考全反射真题参数',
-    },
+    targetAnimation: { animId: 'anim-total-reflection', presetParams: { n: 1.414, angle: 30 }, presetDescription: '载入 2024 湖北高考全反射真题参数' },
     steps: [
       {
         id: 'step-1',
@@ -701,48 +694,68 @@ export const masterModelProblems: Problem[] = [
     ],
   },
 
-  // 17. 理想气体状态变化与热力学第一定律
+  // 17. 真实真题：2023年高考山东卷第13题（探究等温条件下气体压强与体积的关系）
   {
     id: 'prob-2023-shandong-13',
-    year: 2023,
-    province: '山东卷',
-    source: '2023年高考山东卷物理第13题',
+    year: 2023, province: '山东卷', source: '2023年高考山东卷物理第13题',
+    title: '探究等温条件下气体压强与体积的关系（玻意耳定律实验）',
+    content:
+      '某同学利用注射器与数字压强传感器探究等温条件下气体压强与体积的关系。主要实验步骤如下：\n① 将注射器竖直固定在铁架台上，注射器下端通过塑料软管与压强传感器连接，活塞托盘水平固定在活塞上；\n② 记录注射器刻度示数 $V$ 和压强传感器示数 $p$；\n③ 改变托盘上砝码的质量，依次记录不同状态下的多组 $p$ 和 $V$ 值；\n④ 处理数据，绘制 $p - \\frac{1}{V}$ 图线。\n试回答下列问题：\n(1) 若绘制的 $p - \\frac{1}{V}$ 图线为过坐标原点的倾斜直线，说明在误差允许范围内，一定质量的气体在温度保持不变时满足什么规律？\n(2) 当注射器刻度示数为 $V = 10.0\\,\\text{mL}$ 时，压强传感器示数为 $p_1 = 1.05 \\times 10^5\\,\\text{Pa}$；缓慢增加砝码使压强增大到 $p_2 = 1.40 \\times 10^5\\,\\text{Pa}$，此时注射器读数理论上应为多少 mL？\n(3) 误差分析：若实验中漏记了连接注射器下端与压强传感器的软管内部容积 $\\Delta V$（死体积），试根据玻意耳定律分析，随着封闭气体压强 $p$ 的增大，学生根据刻度尺测得的 $pV$ 乘积将如何变化？',
+    difficulty: 3, masterModelId: 'model-gas-thermodynamics',
+    knowledgeIds: ['thermodynamics-2-1'],
+    tags: ['高考真题', '实验探究', '玻意耳定律', '等温变化', '误差分析'],
+    targetAnimation: { animId: 'anim-gas-laws', presetParams: { mode: 0, T: 300, V: 2.5e-3 }, presetDescription: '载入探究气体等温变化实验（玻意耳定律）参数' },
+    steps: [
+      {
+        id: 'step-1', description: 'p - 1/V 图线过原点物理结论', scorePoints: 2,
+        keyCondition: 'p - 1/V 为过原点倾斜直线，即 p 与 1/V 成正比',
+        formula: '$$p \\propto \\frac{1}{V} \\iff p V = C \\quad (T = \\text{常数})$$',
+        explanation: '图线过原点表明，在误差允许范围内，一定质量的理想气体在温度不变时，压强与体积成反比（满足玻意耳定律）。',
+      },
+      {
+        id: 'step-2', description: '玻意耳定律状态计算', scorePoints: 3,
+        keyCondition: '等温变化过程 p1 V1 = p2 V2',
+        formula: '$$V_2 = \\frac{p_1 V_1}{p_2} = \\frac{1.05 \\times 10^5 \\times 10.0}{1.40 \\times 10^5} = 7.50\\,\\text{mL}$$',
+        explanation: '温度保持恒定时，压强增大至 1.40×10⁵ Pa 时气体体积缩小为 7.50 mL。',
+      },
+      {
+        id: 'step-3', description: '软管死体积 ΔV 导致的系统误差分析', scorePoints: 3,
+        keyCondition: '真实体积为 V_真 = V + ΔV，严格满足 p(V + ΔV) = C',
+        formula: '$$p (V + \\Delta V) = C \\implies p V = C - p \\Delta V$$',
+        explanation: '因连接软管存在死体积 ΔV，测得的读数积 pV = C - pΔV。随着压强 p 的增大，负修正项 pΔV 绝对值增大，故测得的 pV 乘积将逐渐减小。',
+      },
+    ],
+  },
+  // 17B. 高考经典模型：气缸活塞封闭气体等压膨胀与热力学第一定律
+  {
+    id: 'prob-thermo-cylinder-piston',
+    year: 2023, province: '全国模拟', source: '高考物理经典模型 / 气缸活塞做功与热力学第一定律',
     title: '气缸活塞封闭气体等压膨胀与热力学第一定律',
     content:
       '如图所示，一圆柱形气缸竖直放置，用质量为 $m$ 的无摩擦活塞封闭一定质量的理想气体。初始时气体体积为 $V_1$，温度为 $T_1 = 300\\,\\text{K}$。已知大气压强为 $p_0$，活塞横截面积为 $S$，重力加速度为 $g$。现缓慢加热气体使体积膨胀到 $V_2 = 1.5 V_1$。\n试求：\n(1) 气缸内封闭气体的初始压强 $p_1$；\n(2) 气体体积膨胀到 $V_2$ 时的温度 $T_2$；\n(3) 若加热过程中气体吸收的热量为 $Q = 500\\,\\text{J}$，封闭气体压强保持 $p_1 = 1.2 \\times 10^5\\,\\text{Pa}$，体积增加量 $\\Delta V = 0.002\\,\\text{m}^3$，求解气体内能的增加量 $\\Delta U$。',
     difficulty: 3,
-    knowledgeIds: ['thermodynamics-2-1', 'thermodynamics-2-2', 'thermodynamics-3-1'],
+    knowledgeIds: ['thermodynamics-2-2', 'thermodynamics-3-1'],
     masterModelId: 'model-gas-thermodynamics',
-    tags: ['高考真题', '理想气体状态方程', '盖-吕萨克定律', '热力学第一定律'],
-    targetAnimation: {
-      animId: 'anim-gas-laws',
-      presetParams: { mode: 1, T: 300, V: 5e-3 },
-      presetDescription: '载入 2023 山东高考气体状态变化真题参数',
-    },
+    tags: ['经典模型', '理想气体状态方程', '盖-吕萨克定律', '热力学第一定律'],
+    targetAnimation: { animId: 'anim-gas-laws', presetParams: { mode: 1, T: 300, V: 5e-3 }, presetDescription: '载入气缸缓慢加热等压膨胀工况参数' },
     steps: [
       {
-        id: 'step-1',
-        description: '活塞受力平衡求解气体压强',
+        id: 'step-1', description: '活塞受力平衡求解气体压强', scorePoints: 3,
         keyCondition: '活塞受重力 mg、外界大气压力 p0 S 与内部气体压力 p1 S 平衡',
-        scorePoints: 3,
         formula: '$$p_1 S = p_0 S + m g \\implies p_1 = p_0 + \\frac{m g}{S}$$',
         explanation: '由于加热过程缓慢且活塞无摩擦，气缸内气体经历等压膨胀过程。',
       },
       {
-        id: 'step-2',
-        description: '盖-吕萨克定律求解末温 T2',
+        id: 'step-2', description: '盖-吕萨克定律求解末温 T2', scorePoints: 3,
         keyCondition: '等压过程 V1 / T1 = V2 / T2',
-        scorePoints: 3,
         formula: '$$T_2 = \\frac{V_2}{V_1} T_1 = 1.5 \\times 300 = 450\\,\\text{K}$$',
-        explanation: '计算得到气体膨胀后的温度为 $450\text{ K}$。',
+        explanation: '计算得到气体膨胀后的温度为 $450\\text{ K}$。',
       },
       {
-        id: 'step-3',
-        description: '气体做功与热力学第一定律 ΔU = W + Q',
+        id: 'step-3', description: '气体做功与热力学第一定律 ΔU = W + Q', scorePoints: 4,
         keyCondition: '等压膨胀外界对气体做功 W = -p1 * ΔV',
-        scorePoints: 4,
         formula: '$$W = -p_1 \\Delta V = -1.2 \\times 10^5 \\times 0.002 = -240\\,\\text{J}, \\quad \\Delta U = W + Q = -240 + 500 = 260\\,\\text{J}$$',
-        explanation: '气体膨胀对外做功 $240\text{ J}$，吸收热量 $500\text{ J}$，内能净增加 $260\text{ J}$。',
+        explanation: '气体膨胀对外做功 $240\\text{ J}$，吸收热量 $500\\text{ J}$，内能净增加 $260\\text{ J}$。',
       },
     ],
   },
@@ -750,9 +763,7 @@ export const masterModelProblems: Problem[] = [
   // 18. 光电效应与原子核衰变方程
   {
     id: 'prob-2024-zhejiang-6',
-    year: 2024,
-    province: '浙江卷',
-    source: '2024年高考浙江卷物理第6题',
+    year: 2024, province: '浙江卷', source: '2024年高考浙江卷物理第6题',
     title: '爱因斯坦光电效应方程与遏止电压定量计算',
     content:
       '在光电效应实验中，用频率为 $\\nu_1 = 8.0 \\times 10^{14}\\,\\text{Hz}$ 的单色光照射某种金属表面，测得遏止电压为 $U_{c1} = 1.1\\,\\text{V}$。已知普朗克常量 $h = 6.63 \\times 10^{-34}\\,\\text{J}\\cdot\\text{s}$，电子电荷量 $e = 1.6 \\times 10^{-19}\\,\\text{C}$。\n试求：\n(1) 金属逸出的光电子最大初动能 $E_{km1}$（以 $\\text{eV}$ 和 $\\text{J}$ 为单位）；\n(2) 该金属的逸出功 $W_0$；\n(3) 该金属发生光电效应的极限频率 $\\nu_0$。',
@@ -760,33 +771,23 @@ export const masterModelProblems: Problem[] = [
     knowledgeIds: ['modern-1-1', 'modern-1-2'],
     masterModelId: 'model-photoelectric-decay',
     tags: ['高考真题', '光电效应', '最大初动能', '逸出功', '遏止电压'],
-    targetAnimation: {
-      animId: 'anim-photoelectric',
-      presetParams: { W0: 2.2, nu: 3.5 },
-      presetDescription: '载入 2024 浙江高考光电效应真题参数',
-    },
+    targetAnimation: { animId: 'anim-photoelectric', presetParams: { W0: 2.2, nu: 3.5 }, presetDescription: '载入 2024 浙江高考光电效应真题参数' },
     steps: [
       {
-        id: 'step-1',
-        description: '遏止电压与最大初动能关系 Ekm = e * Uc',
+        id: 'step-1', description: '遏止电压与最大初动能关系 Ekm = e * Uc', scorePoints: 3,
         keyCondition: '最大初动能满足 Ekm = e * Uc1',
-        scorePoints: 3,
         formula: '$$E_{km1} = e U_{c1} = 1.1\\,\\text{eV} = 1.76 \\times 10^{-19}\\,\\text{J}$$',
         explanation: '根据遏止电压定义直接得出光电子的最大初动能。',
       },
       {
-        id: 'step-2',
-        description: '爱因斯坦光电效应方程 Ekm = hν - W0 求解逸出功',
+        id: 'step-2', description: '爱因斯坦光电效应方程 Ekm = hν - W0 求解逸出功', scorePoints: 4,
         keyCondition: 'W0 = h * ν1 - Ekm1',
-        scorePoints: 4,
         formula: '$$W_0 = h \\nu_1 - E_{km1} = 6.63 \\times 10^{-34} \\times 8.0 \\times 10^{14} - 1.76 \\times 10^{-19} = 3.544 \\times 10^{-19}\\,\\text{J} \\approx 2.22\\,\\text{eV}$$',
-        explanation: '求解得该金属的逸出功为 $2.22\text{ eV}$。',
+        explanation: '求解得该金属的逸出功为 $2.22\\text{ eV}$。',
       },
       {
-        id: 'step-3',
-        description: '逸出功与极限频率关系 W0 = h * ν0',
+        id: 'step-3', description: '逸出功与极限频率关系 W0 = h * ν0', scorePoints: 3,
         keyCondition: 'ν0 = W0 / h',
-        scorePoints: 3,
         formula: '$$\\nu_0 = \\frac{W_0}{h} = \\frac{3.544 \\times 10^{-19}}{6.63 \\times 10^{-34}} \\approx 5.35 \\times 10^{14}\\,\\text{Hz}$$',
         explanation: '求得该金属发生光电效应的极限截止频率。',
       },

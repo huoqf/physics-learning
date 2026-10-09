@@ -161,7 +161,7 @@ export function OilFilmScene({
             fill={THERMO_COLORS.heatAbsorb}
             fontWeight="bold"
           >
-            单滴纯油酸体积 V = 1/(80×500) mL ≈ 2.5×10⁻¹¹ m³
+            单滴纯油酸体积 V = 1/(80×500) mL = 2.5×10⁻⁵ mL = 2.5×10⁻¹¹ m³
           </text>
         </g>
       )}
@@ -322,7 +322,7 @@ export function OilFilmScene({
         fill={THERMO_COLORS.heatAbsorb}
       >
         {step === 3
-          ? `测得油膜有效方格数 N ≈ ${calcResult.gridCount} 格，有效面积 S = ${calcResult.areaCm2.toFixed(1)} cm²，估算分子直径 d = ${(calcResult.moleculeDiameterM * 1e10).toFixed(2)} × 10⁻¹⁰ m`
+          ? `测得油膜有效方格数 N ≈ ${calcResult.gridCount} 格 (示意)，有效面积 S = ${calcResult.areaCm2.toFixed(1)} cm²，估算分子直径 d = ${(calcResult.moleculeDiameterM * 1e9).toFixed(2)} nm (${(calcResult.moleculeDiameterM * 1e10).toFixed(1)} Å)`
           : '实验核心思想：单分子油膜假设 + 球形分子紧密排列模型'}
       </text>
     </g>

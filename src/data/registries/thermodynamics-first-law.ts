@@ -29,12 +29,12 @@ export const thermodynamicsFirstLawAnimations = defineAnimations({
       // §3 高考真题联动
       {
         type: 'preset',
-        label: '📋 2023 山东卷·等压吸热做功 (第13题)',
-        group: '高考真题情境',
+        label: '📋 典型工况·等压吸热做功',
+        group: '高考典型情境',
         hideIf: 'mode',
         hideIfValue: 1,
-        description: '还原2023山东高考原题：气体吸热 500J，膨胀对外做功 240J (W=-24J)，内能净增加 260J。',
-        params: { W: -20, Q: 50, adiabatic: 0 },
+        description: '等压吸热做功模型 (1:10等比缩放演示)：吸热 500J→50J，膨胀对外做功 240J→24J (W=-24J)，内能净增加 260J→26J。',
+        params: { W: -24, Q: 50, adiabatic: 0 },
       },
       // §4 显示辅助
       { type: 'toggle', key: 'adiabatic', label: '绝热气缸', group: '显示辅助',

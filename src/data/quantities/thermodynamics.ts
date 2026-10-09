@@ -2,7 +2,9 @@
  * 布朗运动动画物理量看板数据构建。
  */
 import { averageKineticEnergy, pollenMass } from '../../physics/brownianMotion'
+import { BOLTZMANN_CONSTANT } from '@/physics/constants'
 import { THERMO_COLORS, PHYSICS_COLORS } from '@/theme/physics'
+import { splitScientific } from '@/utils'
 import type { PhysicsPanelData } from './types'
 
 export function buildThermodynamicsQuantities(
@@ -23,19 +25,22 @@ export function buildThermodynamicsQuantities(
   // 爱因斯坦扩散系数 D = k_B * T / (3 * pi * eta * d)
   // 水在常温下的动力黏度 eta ≈ 1.0e-3 Pa·s
   const eta = 1.0e-3
-  const kB = 1.38e-23
-  const D = (kB * T) / (3 * Math.PI * eta * (d * 1e-6))
+  const D = (BOLTZMANN_CONSTANT * T) / (3 * Math.PI * eta * (d * 1e-6))
 
   // 估算每秒受到撞击的不平衡程度 (与 sqrt(T)/d 相关)
   const collisionFluctuation = (Math.sqrt(T / 300) / (d * 0.2)).toFixed(2)
+
+  const mFmt = splitScientific(mPollen, 2, 'kg')
+  const ekFmt = splitScientific(Ek, 2, 'J')
+  const dFmt = splitScientific(D, 2, 'm²/s')
 
   return {
     quantities: [
       { label: '系统温度 T', value: T.toFixed(0), unit: 'K', color: THERMO_COLORS.temperature },
       { label: '悬浮微粒直径 d', value: d.toFixed(1), unit: 'μm' },
-      { label: '微粒质量 m', value: mPollen.toExponential(2), unit: 'kg' },
-      { label: '液体分子平均动能 Ēk', value: Ek.toExponential(2), unit: 'J', color: THERMO_COLORS.heatAbsorb },
-      { label: '爱因斯坦扩散系数 D', value: D.toExponential(2), unit: 'm²/s', highlight: 'extreme', color: PHYSICS_COLORS.velocity },
+      { label: '微粒质量 m', value: mFmt.value, unit: mFmt.unit },
+      { label: '液体分子平均动能 Ēk', value: ekFmt.value, unit: ekFmt.unit, color: THERMO_COLORS.heatAbsorb },
+      { label: '爱因斯坦扩散系数 D', value: dFmt.value, unit: dFmt.unit, highlight: 'extreme', color: PHYSICS_COLORS.velocity },
       { label: '合力相对涨落强度', value: collisionFluctuation, unit: 'arb.', color: PHYSICS_COLORS.forceNet },
     ],
     formulas: [

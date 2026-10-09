@@ -36,7 +36,7 @@
   },
   "src/components/Physics/ProblemDiagrams/MasterProblemDiagrams.tsx": {
     "no-restricted-syntax": {
-      "count": 172
+      "count": 151
     }
   },
   "src/components/Physics/TimerDisplay.tsx": {

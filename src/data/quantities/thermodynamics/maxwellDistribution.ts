@@ -7,7 +7,9 @@ import {
   calcRmsSpeed,
   M_O2,
 } from '@/physics/maxwellDistribution'
+import { BOLTZMANN_CONSTANT } from '@/physics/constants'
 import { THERMO_COLORS, PHYSICS_COLORS, CHART_COLORS } from '@/theme/physics'
+import { splitScientific } from '@/utils'
 import type { PhysicsPanelData } from '../types'
 
 export function buildMaxwellDistributionData(
@@ -27,8 +29,8 @@ export function buildMaxwellDistributionData(
 
   const vp2 = calcMostProbableSpeed(T2, M_O2)
 
-  const kB = 1.38e-23
-  const EkAvg = 1.5 * kB * T1
+  const EkAvg = 1.5 * BOLTZMANN_CONSTANT * T1
+  const ekFmt = splitScientific(EkAvg, 2, 'J')
 
   return {
     quantities: [
@@ -38,7 +40,7 @@ export function buildMaxwellDistributionData(
       { label: '平均速率 v̄ (T₁)', value: vAvg1.toFixed(1), unit: 'm/s', color: PHYSICS_COLORS.velocity },
       { label: '方均根速率 v_rms (T₁)', value: vRms1.toFixed(1), unit: 'm/s', color: CHART_COLORS.primary },
       { label: '最概然速率 v_p (T₂)', value: vp2.toFixed(1), unit: 'm/s', color: CHART_COLORS.labelText },
-      { label: '平均分子动能 Ēk (T₁)', value: EkAvg.toExponential(2), unit: 'J', color: THERMO_COLORS.heatAbsorb },
+      { label: '平均分子动能 Ēk (T₁)', value: ekFmt.value, unit: ekFmt.unit, color: THERMO_COLORS.heatAbsorb },
       { label: '曲线总面积（概率积分）', value: '1.000', unit: '(100%)', highlight: 'zero', color: PHYSICS_COLORS.forceNet },
     ],
     formulas: [

@@ -18,6 +18,7 @@ import {
   Prob2023Hunan7Diagram,
   Prob2024Hubei10Diagram,
   Prob2023Shandong13Diagram,
+  ProbThermoCylinderPistonDiagram,
   Prob2024Zhejiang6Diagram,
 } from './MasterProblemDiagrams'
 
@@ -50,6 +51,7 @@ export const problemDiagramRegistry: Record<string, React.FC<ProblemDiagramProps
   'prob-2023-hunan-7': Prob2023Hunan7Diagram,
   'prob-2024-hubei-10': Prob2024Hubei10Diagram,
   'prob-2023-shandong-13': Prob2023Shandong13Diagram,
+  'prob-thermo-cylinder-piston': ProbThermoCylinderPistonDiagram,
   'prob-2024-zhejiang-6': Prob2024Zhejiang6Diagram,
   // 模型演练题（verified: false）的题干纯示意图
   'prob-lc-oscillation-model': ProbLcOscillationModelDiagram,

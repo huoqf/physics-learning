@@ -26,23 +26,54 @@ function parseRegistry(filePath) {
   const content = readFileSync(filePath, 'utf-8')
   const entries = []
 
-  // 匹配 'anim-xxx': { ... }, 块（注意逗号）
-  const animBlockRegex = /'([\w-]+)':\s*\{([\s\S]*?)\n\s*\},/g
+  // 匹配所有 'anim-xxx': { 开头
+  const keyRegex = /'([\w-]+)':\s*\{/g
   let match
-  while ((match = animBlockRegex.exec(content)) !== null) {
+  while ((match = keyRegex.exec(content)) !== null) {
     const animId = match[1]
-    const block = match[2]
+    const startIndex = match.index + match[0].length
+    let depth = 1
+    let i = startIndex
+    while (i < content.length && depth > 0) {
+      const char = content[i]
+      if (char === '{') {
+        depth++
+      } else if (char === '}') {
+        depth--
+      } else if (char === "'" || char === '"' || char === '`') {
+        const quote = char
+        i++
+        while (i < content.length) {
+          if (content[i] === '\\') {
+            i += 2
+            continue
+          }
+          if (content[i] === quote) break
+          i++
+        }
+      } else if (char === '/' && content[i + 1] === '/') {
+        i += 2
+        while (i < content.length && content[i] !== '\n') i++
+      } else if (char === '/' && content[i + 1] === '*') {
+        i += 2
+        while (i < content.length && !(content[i] === '*' && content[i + 1] === '/')) i++
+        i++
+      }
+      i++
+    }
+
+    const block = content.slice(startIndex, i - 1)
 
     // 提取 title
-    const titleMatch = block.match(/title:\s*'([^']+)'/)
+    const titleMatch = block.match(/title:\s*['"]([^'"]+)['"]/)
     const title = titleMatch ? titleMatch[1] : ''
 
     // 提取 Component 路径（支持单行和多行 lazy import）
-    const compMatch = block.match(/Component:\s*lazy\(\(\)\s*=>\s*(?:import\('@\/(.+?)'\)|\n\s*import\('@\/(.+?)'\)\s*\))/)
+    const compMatch = block.match(/Component:\s*lazy\(\(\)\s*=>\s*(?:import\(['"]@\/(.+?)['"]\)|[\r\n\s]*import\(['"]@\/(.+?)['"]\)\s*\))/)
     const componentPath = compMatch ? (compMatch[1] || compMatch[2]) : null
 
     // 提取 CenterExtra 路径（支持单行和多行 lazy import）
-    const ceMatch = block.match(/CenterExtra:\s*lazy\(\(\)\s*=>\s*(?:import\('@\/(.+?)'\)|\n\s*import\('@\/(.+?)'\)\s*\))/)
+    const ceMatch = block.match(/CenterExtra:\s*lazy\(\(\)\s*=>\s*(?:import\(['"]@\/(.+?)['"]\)|[\r\n\s]*import\(['"]@\/(.+?)['"]\)\s*\))/)
     const centerExtraPath = ceMatch ? (ceMatch[1] || ceMatch[2]) : null
 
     if (componentPath) {
@@ -119,7 +150,18 @@ function main() {
       const animPath = join(ROOT, 'src', `${entry.componentPath}.tsx`)
 
       // 1. 提取 Scene
-      const sceneRelativePath = extractScene(animPath)
+      let sceneRelativePath = extractScene(animPath)
+      if (entry.componentPath.includes('EMOscillationAnimation')) {
+        if (entry.animId === 'anim-lc-oscillation') {
+          sceneRelativePath = './components/LCOscillationScene'
+        } else if (entry.animId === 'anim-em-wave') {
+          sceneRelativePath = './components/EMWaveScene'
+        } else if (entry.animId === 'anim-em-spectrum') {
+          sceneRelativePath = './components/EMSpectrumScene'
+        }
+      } else if (entry.animId === 'anim-photoelectric') {
+        sceneRelativePath = null
+      }
       // sceneRelativePath 是相对于 Animation 文件的路径，如 './components/SpringForceHookeLawScene'
       // 需要转换为相对于 src 的路径
       let scenePath = null
@@ -143,7 +185,7 @@ function main() {
         }
       }
 
-      // 2. 提取 physics（优先 Scene → hook → Animation）
+      // 2. 提取 physics（优先 Scene → hook → Animation hook → Animation）
       let physicsPath = null
 
       // Step 1: Scene 直接 import physics
@@ -163,8 +205,20 @@ function main() {
         }
       }
 
-      // Step 3: Animation 直接 import physics（合并模式兜底）
+      // Step 3: Animation → hook → physics
       if (!physicsPath) {
+        const animHookName = extractHook(animPath)
+        if (animHookName) {
+          const animDir = dirname(animPath)
+          const animHookFullPath = join(animDir, `${animHookName}.ts`)
+          if (existsSync(animHookFullPath)) {
+            physicsPath = extractPhysics(animHookFullPath)
+          }
+        }
+      }
+
+      // Step 4: Animation 直接 import physics（合并模式兜底）
+      if (!physicsPath && !entry.componentPath.includes('EMOscillationAnimation')) {
         physicsPath = extractPhysics(animPath)
       }
 

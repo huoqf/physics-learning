@@ -282,7 +282,7 @@ export function MicroScene({
             fill={PHYSICS_COLORS.forceNet}
             fontWeight="bold"
           >
-            分子平均间距 L ≈ {(estimation.size * 1e10).toFixed(2)} Å (10⁻⁹ m)
+            分子平均间距 L ≈ {(estimation.size * 1e9).toFixed(2)} nm (10⁻⁹ m)
           </text>
         </g>
       )}

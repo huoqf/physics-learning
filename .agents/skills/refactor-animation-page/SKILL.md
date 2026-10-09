@@ -78,7 +78,7 @@ fontSize={11}           → fontSize={font(11)}
 |---------|---------|-------------|
 | **电学实验与电路原理图** | 伪造连线、假白块遮罩、手写电表开关、红黑极性反接、组件与文字撞车 | [CIRCUIT_RULES.md](file:///d:/code/physic/physics-learning/.agents/skills/refactor-animation-page/references/CIRCUIT_RULES.md) |
 | **矢量与场仿真** | 矢量颠倒、环流不闭合、右手定则反向、三维投影塌缩、单真源分裂 | [PHYSICAL_RULES.md](file:///d:/code/physic/physics-learning/.agents/skills/refactor-animation-page/references/PHYSICAL_RULES.md) |
-| **热学微观与统计** | controlsMode误用timed、多粒子滥用Ball卡顿、SVG嵌HTML图表、极小尺度除零 | [THERMAL_RULES.md](file:///d:/code/physic/physics-learning/.agents/skills/refactor-animation-page/references/THERMAL_RULES.md) |
+| **热学与热力学定律** | controlsMode误用、活塞受力颠倒、热机循环逆顺混淆、油膜/玻意耳实验器材失真、多粒子滥用Ball卡顿 | [THERMAL_RULES.md](file:///d:/code/physic/physics-learning/.agents/skills/refactor-animation-page/references/THERMAL_RULES.md) |
 | **计量与看板规范** | 课标外单位（THz）、裸科学记数法（1.00e+3）、小数跳变、残差负零 | [GAOKAO_STANDARDS.md](file:///d:/code/physic/physics-learning/.agents/skills/refactor-animation-page/references/GAOKAO_STANDARDS.md) |
 
 ---

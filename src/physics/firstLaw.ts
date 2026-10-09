@@ -122,20 +122,18 @@ export function calculateForceVector(
 // ─── 温度与速度 ────────────────────────────────────────────────────────────
 /**
  * 内能增量 → 温度变化量。
- * ΔU = nCvΔT → ΔT = ΔU/(nCv)
+ * ΔT = ΔU / C_sys
  *
  * @param deltaU 内能变化量 (J)
- * @param n 物质的量 (mol)，默认 1
- * @param Cv 定容摩尔热容 (J/(mol·K))，默认单原子 12.47
+ * @param heatCapacity 系统总热容 (J/K)，默认采用本模块沙箱热容 C_SYS (0.5 J/K)
  * @returns deltaT 温度变化量 (K)
  */
 export function deltaUtoDeltaT(
   deltaU: number,
-  n: number = 1,
-  Cv: number = 12.47,
+  heatCapacity: number = C_SYS,
 ): number {
-  if (n <= 0 || Cv <= 0) return 0
-  return deltaU / (n * Cv)
+  if (heatCapacity <= 0) return 0
+  return deltaU / heatCapacity
 }
 
 /**
@@ -291,8 +289,11 @@ export function calculateSandboxState(
  *   ④ D(2L, 100kPa) -> A(1L, 100kPa): 等压放热压缩外界做功 (W=+100J, Q<0, ΔU<0)
  * 全循环：外界做功累计 W_net = -100 J（对外净输出正功 100 J，等于 p-V 闭合矩形面积！），净吸热 Q_net = 100 J，ΔU_net = 0。
  */
+/** 顺时针热机全循环总周期时长 (秒) */
+export const CYCLE_DURATION = 20
+
 export function calculateCycleState(time: number): FirstLawPhysicsState {
-  const cycle = 20
+  const cycle = CYCLE_DURATION
   const t = ((time % cycle) + cycle) % cycle
   const stepIndex = Math.min(3, Math.floor(t / 5))
   const stepProgress = (t % 5) / 5

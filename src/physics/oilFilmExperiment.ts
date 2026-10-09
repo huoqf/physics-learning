@@ -33,7 +33,7 @@ export function calculateOilFilm(params: OilFilmParams): OilFilmResult {
   const vPureAcidMl = vDropMl / ratio
   const vPureAcidM3 = vPureAcidMl * 1e-6
 
-  // 3. 理想油酸分子直径基准 d_true 约为 1.12 × 10⁻¹⁰ m
+  // 3. 理想油酸分子直径基准 d_true 约为 1.12 × 10⁻¹⁰ m (1.12 Å)
   const dTrue = 1.12e-10
 
   // 4. 痱子粉厚度影响扩散受阻程度

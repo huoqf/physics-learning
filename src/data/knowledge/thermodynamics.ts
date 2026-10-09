@@ -52,11 +52,11 @@ export const thermodynamicsKnowledge: KnowledgeNode[] = [
     problemIds: [],
     prerequisites: ['thermodynamics-1-2'],
   },
-  // ── 热学 第2章 气体、液体和物态变化 ────────────────────────────────────
+  // ── 热学 第2章 气体、固体和液体 ────────────────────────────────────
   {
     id: 'thermodynamics-2-1',
     title: '气体实验三定律与探究实验',
-    chapter: '热学 第2章 气体、液体和物态变化',
+    chapter: '热学 第2章 气体、固体和液体',
     module: 'thermodynamics',
     importance: 'gaokao',
     animationIds: ['anim-gas-laws'],
@@ -68,11 +68,11 @@ export const thermodynamicsKnowledge: KnowledgeNode[] = [
   {
     id: 'thermodynamics-2-2',
     title: '理想气体状态方程与微观解释',
-    chapter: '热学 第2章 气体、液体和物态变化',
+    chapter: '热学 第2章 气体、固体和液体',
     module: 'thermodynamics',
     importance: 'gaokao',
     animationIds: ['anim-clapeyron'],
-    problemIds: ['prob-2023-shandong-13'],
+    problemIds: ['prob-thermo-cylinder-piston'],
     prerequisites: ['thermodynamics-2-1'],
     gaokaoFrequency: '高考压轴 / 活塞汽缸与水银柱',
     masterModelId: 'model-gas-thermodynamics',
@@ -80,7 +80,7 @@ export const thermodynamicsKnowledge: KnowledgeNode[] = [
   {
     id: 'thermodynamics-2-3',
     title: '固体、液体与表面张力',
-    chapter: '热学 第2章 气体、液体和物态变化',
+    chapter: '热学 第2章 气体、固体和液体',
     module: 'thermodynamics',
     importance: 'gaokao',
     animationIds: ['anim-solids-liquids'],
@@ -91,13 +91,13 @@ export const thermodynamicsKnowledge: KnowledgeNode[] = [
   {
     id: 'thermodynamics-2-4',
     title: '饱和汽与相对湿度',
-    chapter: '热学 第2章 气体、液体和物态变化',
+    chapter: '热学 第2章 气体、固体和液体',
     module: 'thermodynamics',
-    importance: 'gaokao',
+    importance: 'extend',
     animationIds: ['anim-saturated-vapor'],
     problemIds: [],
     prerequisites: ['thermodynamics-2-2'],
-    gaokaoFrequency: '高考5年4考 / 物态变化',
+    gaokaoFrequency: '课标选学拓展 / 饱和汽与湿度计原理',
   },
   {
     id: 'thermodynamics-3-1',
@@ -106,7 +106,7 @@ export const thermodynamicsKnowledge: KnowledgeNode[] = [
     module: 'thermodynamics',
     importance: 'gaokao',
     animationIds: ['anim-first-law'],
-    problemIds: ['prob-2023-shandong-13'],
+    problemIds: ['prob-thermo-cylinder-piston'],
     prerequisites: ['thermodynamics-2-2'],
     gaokaoFrequency: '高考5年12考 / 热学大题与选择压轴',
     masterModelId: 'model-gas-thermodynamics',

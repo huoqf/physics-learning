@@ -652,7 +652,7 @@ export default function GasLawsAnimation() {
             textAnchor="middle"
             fontWeight="bold"
           >
-            V = {(V * 1000).toFixed(1)} L
+            V = {(effectiveV * 1000).toFixed(1)} L
           </text>
           {/* P 压强值 */}
           <text

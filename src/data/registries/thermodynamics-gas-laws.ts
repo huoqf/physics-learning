@@ -30,7 +30,7 @@ export const thermodynamicsGasLawsAnimations = defineAnimations({
         ] },
       {
         type: 'preset',
-        label: '📋 高考等压膨胀（山东卷）',
+        label: '📋 缓慢加热等压膨胀',
         group: '典型工况',
         description: '恒定活塞重力与大气压，缓慢加热气体等压膨胀',
         params: { mode: 1, T: 300, V: 5e-3 },

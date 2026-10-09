@@ -4,7 +4,9 @@
  * 物理引擎使用模拟单位，通过 useSceneScale + worldToDesign 映射到设计坐标。
  */
 
-const K_B = 1.38e-23      // 玻尔兹曼常数 J/K（用于 MB 分布图表）
+import { BOLTZMANN_CONSTANT, AVOGADRO_CONSTANT } from './constants'
+
+const K_B = BOLTZMANN_CONSTANT      // 玻尔兹曼常数 J/K（用于 MB 分布图表）
 const RHO_POLLEN = 1000   // 花粉密度 kg/m³（用于 MB 分布图表）
 
 // ─── 模拟参数（非 SI，纯模拟单位）──────────────────────────────────────────
@@ -185,7 +187,7 @@ export const SUBSTANCE_PRESETS: SubstancePreset[] = [
   { name: '标况气体', symbol: 'O₂等', molMass: 0.032, density: 1.429, model: 'cube', unitName: '分子分子间距' },
 ]
 
-export const N_A = 6.022e23 // 阿伏伽德罗常数 mol⁻¹
+export const N_A = AVOGADRO_CONSTANT // 阿伏伽德罗常数 mol⁻¹
 
 export interface MicroEstimationResult {
   V_mol: number    // 摩尔体积 (m³/mol)

@@ -1,5 +1,5 @@
 import React from 'react'
-import { PHYSICS_COLORS, CANVAS_COLORS } from '@/theme/physics'
+import { PHYSICS_COLORS, CANVAS_COLORS, CHART_COLORS, withAlpha } from '@/theme/physics'
 
 const font = (size: number) => size
 
@@ -402,19 +402,90 @@ export const Prob2024Hubei10Diagram: React.FC<DiagramProps> = () => {
   )
 }
 
-// 17. 2023高考山东卷第13题 (理想气体状态变化) 纯净原图
+// 17. 2023高考山东卷第13题 (探究气体等温变化实验) 装置与p-1/V图
 export const Prob2023Shandong13Diagram: React.FC<DiagramProps> = () => {
   return (
     <div className="w-full h-[210px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm flex items-center justify-center">
       <svg viewBox="0 0 540 200" className="w-full h-full block select-none">
+        {/* 左侧：图甲 实验装置 */}
+        <g id="apparatus">
+          {/* 铁架台底座与立柱 */}
+          <rect x={40} y={170} width={120} height={10} fill={CANVAS_COLORS.axis} rx={2} />
+          <line x1={60} y1={25} x2={60} y2={170} stroke={CANVAS_COLORS.axis} strokeWidth={5} />
+          {/* 铁夹 */}
+          <rect x={60} y={90} width={50} height={10} fill={CANVAS_COLORS.labelText} rx={1} />
+
+          {/* 注射器外筒 (带刻度) */}
+          <rect x={105} y={55} width={34} height={95} fill={CANVAS_COLORS.white} stroke={PHYSICS_COLORS.velocity} strokeWidth={2} rx={2} />
+          {/* 刻度线 */}
+          <line x1={105} y1={75} x2={115} y2={75} stroke={PHYSICS_COLORS.velocity} strokeWidth={1} />
+          <line x1={105} y1={95} x2={118} y2={95} stroke={PHYSICS_COLORS.velocity} strokeWidth={1.5} />
+          <line x1={105} y1={115} x2={115} y2={115} stroke={PHYSICS_COLORS.velocity} strokeWidth={1} />
+          <line x1={105} y1={135} x2={118} y2={135} stroke={PHYSICS_COLORS.velocity} strokeWidth={1.5} />
+          <text x={95} y={98} fill={PHYSICS_COLORS.velocity} fontSize={font(9)} textAnchor="end">V</text>
+
+          {/* 活塞与推杆 */}
+          <rect x={107} y={70} width={30} height={10} fill={CANVAS_COLORS.axis} />
+          <line x1={122} y1={35} x2={122} y2={70} stroke={CANVAS_COLORS.axis} strokeWidth={3.5} />
+          {/* 活塞托盘与砝码 */}
+          <rect x={100} y={30} width={44} height={5} fill={CANVAS_COLORS.grid} rx={1} />
+          <rect x={112} y={18} width={20} height={12} fill={withAlpha(CANVAS_COLORS.grid, 0.7)} stroke={CANVAS_COLORS.axis} strokeWidth={1} />
+          <text x={122} y={14} fill={CANVAS_COLORS.labelText} fontSize={font(9)} textAnchor="middle">砝码</text>
+
+          {/* 下端塑料软管 */}
+          <path d="M 122 150 L 122 165 C 122 175, 160 175, 175 160 L 185 145" fill="none" stroke={CANVAS_COLORS.grid} strokeWidth={4} />
+          <path d="M 122 150 L 122 165 C 122 175, 160 175, 175 160 L 185 145" fill="none" stroke={CHART_COLORS.criticalPt} strokeWidth={2} strokeDasharray="3 1" />
+          <text x={155} y={185} fill={CHART_COLORS.criticalPt} fontSize={font(9)} textAnchor="middle">橡胶软管(ΔV)</text>
+
+          {/* 压强传感器 */}
+          <rect x={180} y={105} width={45} height={42} fill={CANVAS_COLORS.axis} rx={4} />
+          <rect x={185} y={112} width={35} height={16} fill={CANVAS_COLORS.white} rx={1} />
+          <text x={202} y={124} fill={PHYSICS_COLORS.forceNet} fontSize={font(9)} fontFamily="monospace" textAnchor="middle">101.3</text>
+          <text x={202} y={140} fill={CANVAS_COLORS.white} fontSize={font(9)} textAnchor="middle">压强传感器</text>
+          <text x={122} y={198} fill={CANVAS_COLORS.axis} fontSize={font(11)} fontWeight="bold" textAnchor="middle">图甲 实验装置示意图</text>
+        </g>
+
+        {/* 右侧：图乙 p - 1/V 坐标系 */}
+        <g id="chart" transform="translate(290, 20)">
+          {/* 坐标轴 */}
+          <line x1={40} y1={140} x2={220} y2={140} stroke={CANVAS_COLORS.axis} strokeWidth={1.5} />
+          <polygon points="220,137 226,140 220,143" fill={CANVAS_COLORS.axis} />
+          <text x={215} y={155} fill={CANVAS_COLORS.axis} fontSize={font(11)}>1/V</text>
+
+          <line x1={40} y1={140} x2={40} y2={20} stroke={CANVAS_COLORS.axis} strokeWidth={1.5} />
+          <polygon points="37,20 40,14 43,20" fill={CANVAS_COLORS.axis} />
+          <text x={30} y={25} fill={CANVAS_COLORS.axis} fontSize={font(11)}>p</text>
+          <text x={32} y={152} fill={CANVAS_COLORS.labelText} fontSize={font(10)}>O</text>
+
+          {/* 理论 p - 1/V 理想过原点线 */}
+          <line x1={40} y1={140} x2={190} y2={35} stroke={PHYSICS_COLORS.velocity} strokeWidth={2} />
+          <circle cx={140} cy={70} r={3} fill={PHYSICS_COLORS.velocity} />
+          <text x={148} y={68} fill={PHYSICS_COLORS.velocity} fontSize={font(9)}>真实等温直线</text>
+
+          {/* 软管误差偏差线（虚线，反向延长不交原点） */}
+          <line x1={60} y1={140} x2={195} y2={45} stroke={PHYSICS_COLORS.forceNet} strokeWidth={1.5} strokeDasharray="4 2" />
+          <text x={170} y={115} fill={PHYSICS_COLORS.forceNet} fontSize={font(9)}>漏计软管容积 ΔV</text>
+
+          <text x={125} y={178} fill={CANVAS_COLORS.axis} fontSize={font(11)} fontWeight="bold" textAnchor="middle">图乙 p - 1/V 关系图</text>
+        </g>
+      </svg>
+    </div>
+  )
+}
+
+// 17B. 高考经典模型：气缸活塞封闭气体等压膨胀 示意图
+export const ProbThermoCylinderPistonDiagram: React.FC<DiagramProps> = () => {
+  return (
+    <div className="w-full h-[210px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm flex items-center justify-center">
+      <svg viewBox="0 0 540 200" className="w-full h-full block select-none">
         {/* 竖直气缸 */}
-        <rect x={220} y={45} width={120} height={140} fill="#F8FAFC" stroke="#334155" strokeWidth={3} rx={2} />
+        <rect x={220} y={45} width={120} height={140} fill={CANVAS_COLORS.white} stroke={CANVAS_COLORS.axis} strokeWidth={3} rx={2} />
         {/* 活塞 */}
-        <rect x={223} y={85} width={114} height={16} fill="#64748B" stroke="#1E293B" strokeWidth={1.5} />
-        <text x={280} y={97} fill="#FFFFFF" fontSize={font(11)} textAnchor="middle" fontWeight="bold">活塞 m</text>
+        <rect x={223} y={85} width={114} height={16} fill={CANVAS_COLORS.grid} stroke={CANVAS_COLORS.axis} strokeWidth={1.5} />
+        <text x={280} y={97} fill={CANVAS_COLORS.axis} fontSize={font(11)} textAnchor="middle" fontWeight="bold">活塞 m</text>
         {/* 封闭气体 */}
-        <text x={280} y={140} fill="#0F172A" fontSize={font(12)} textAnchor="middle" fontWeight="bold">封闭理想气体 (V₁, T₁)</text>
-        <text x={280} y={30} fill="#475569" fontSize={font(12)} textAnchor="middle">大气压强 p₀</text>
+        <text x={280} y={140} fill={CANVAS_COLORS.axis} fontSize={font(12)} textAnchor="middle" fontWeight="bold">封闭理想气体 (V₁, T₁)</text>
+        <text x={280} y={30} fill={CANVAS_COLORS.labelText} fontSize={font(12)} textAnchor="middle">大气压强 p₀</text>
       </svg>
     </div>
   )
@@ -426,21 +497,21 @@ export const Prob2024Zhejiang6Diagram: React.FC<DiagramProps> = () => {
     <div className="w-full h-[210px] bg-white rounded-xl border border-neutral-200 p-2 overflow-hidden shadow-sm flex items-center justify-center">
       <svg viewBox="0 0 540 200" className="w-full h-full block select-none">
         {/* 光电管真空管 */}
-        <ellipse cx={260} cy={85} rx={90} ry={48} fill="#F8FAFC" stroke="#0284C7" strokeWidth={2} />
+        <ellipse cx={260} cy={85} rx={90} ry={48} fill={CANVAS_COLORS.white} stroke={PHYSICS_COLORS.velocity} strokeWidth={2} />
         {/* 阴极 K 与 阳极 A */}
-        <line x1={200} y1={55} x2={200} y2={115} stroke="#334155" strokeWidth={4} />
-        <text x={190} y={89} fill="#1E293B" fontSize={font(12)} textAnchor="end" fontWeight="bold">阴极 K</text>
-        <line x1={320} y1={60} x2={320} y2={110} stroke="#334155" strokeWidth={3} />
-        <text x={332} y={89} fill="#1E293B" fontSize={font(12)} fontWeight="bold">阳极 A</text>
+        <line x1={200} y1={55} x2={200} y2={115} stroke={CANVAS_COLORS.axis} strokeWidth={4} />
+        <text x={190} y={89} fill={CANVAS_COLORS.labelText} fontSize={font(12)} textAnchor="end" fontWeight="bold">阴极 K</text>
+        <line x1={320} y1={60} x2={320} y2={110} stroke={CANVAS_COLORS.axis} strokeWidth={3} />
+        <text x={332} y={89} fill={CANVAS_COLORS.labelText} fontSize={font(12)} fontWeight="bold">阳极 A</text>
         {/* 入射单色光 */}
-        <SvgArrow x1={120} y1={35} x2={190} y2={80} color="#EAB308" strokeWidth={2.5} label="单色光 ν₁" labelPos="top" />
+        <SvgArrow x1={120} y1={35} x2={190} y2={80} color={CHART_COLORS.criticalPt} strokeWidth={2.5} label="单色光 ν₁" labelPos="top" />
         {/* 外电路电源与伏特表 */}
-        <line x1={200} y1={115} x2={200} y2={160} stroke="#475569" strokeWidth={2} />
-        <line x1={320} y1={110} x2={320} y2={160} stroke="#475569" strokeWidth={2} />
-        <line x1={200} y1={160} x2={320} y2={160} stroke="#475569" strokeWidth={2} />
-        <circle cx={260} cy={160} r={12} fill="#FFFFFF" stroke="#475569" strokeWidth={1.5} />
-        <text x={260} y={164} fill="#1E293B" fontSize={font(11)} textAnchor="middle" fontWeight="bold">V</text>
-        <text x={260} y={185} fill="#64748B" fontSize={font(10)} textAnchor="middle">遏止电压 Uc₁</text>
+        <line x1={200} y1={115} x2={200} y2={160} stroke={CANVAS_COLORS.axis} strokeWidth={2} />
+        <line x1={320} y1={110} x2={320} y2={160} stroke={CANVAS_COLORS.axis} strokeWidth={2} />
+        <line x1={200} y1={160} x2={320} y2={160} stroke={CANVAS_COLORS.axis} strokeWidth={2} />
+        <circle cx={260} cy={160} r={12} fill={CANVAS_COLORS.white} stroke={CANVAS_COLORS.axis} strokeWidth={1.5} />
+        <text x={260} y={164} fill={CANVAS_COLORS.axis} fontSize={font(11)} textAnchor="middle" fontWeight="bold">V</text>
+        <text x={260} y={185} fill={CANVAS_COLORS.labelText} fontSize={font(10)} textAnchor="middle">遏止电压 Uc₁</text>
       </svg>
     </div>
   )
