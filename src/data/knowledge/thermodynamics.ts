@@ -1,7 +1,7 @@
 import type { KnowledgeNode } from '../types'
 
 export const thermodynamicsKnowledge: KnowledgeNode[] = [
-  // ── 热学 ──────────────────────────────────────────────────────────────────
+  // ── 热学 第1章 分子动理论 ──────────────────────────────────────────
   {
     id: 'thermodynamics-1-1',
     title: '分子热运动与布朗运动',
@@ -14,23 +14,43 @@ export const thermodynamicsKnowledge: KnowledgeNode[] = [
   },
   {
     id: 'thermodynamics-1-2',
-    title: '分子动能、分子势能与内能',
+    title: '阿伏伽德罗常数与微观估算',
     chapter: '热学 第1章 分子动理论',
     module: 'thermodynamics',
     importance: 'gaokao',
-    animationIds: [],
+    animationIds: ['anim-micro-quantities'],
     problemIds: [],
     prerequisites: ['thermodynamics-1-1'],
   },
   {
     id: 'thermodynamics-1-3',
-    title: '分子间作用力',
+    title: '分子间作用力与分子势能',
     chapter: '热学 第1章 分子动理论',
     module: 'thermodynamics',
     importance: 'gaokao',
     animationIds: ['anim-intermolecular-forces'],
     problemIds: [],
     prerequisites: ['thermodynamics-1-1'],
+  },
+  {
+    id: 'thermodynamics-1-4',
+    title: '气体分子运动的统计规律',
+    chapter: '热学 第1章 分子动理论',
+    module: 'thermodynamics',
+    importance: 'gaokao',
+    animationIds: ['anim-maxwell-distribution'],
+    problemIds: [],
+    prerequisites: ['thermodynamics-1-1'],
+  },
+  {
+    id: 'thermodynamics-1-5',
+    title: '学生实验：用油膜法估测油酸分子的大小',
+    chapter: '热学 第1章 分子动理论',
+    module: 'thermodynamics',
+    importance: 'gaokao',
+    animationIds: ['anim-oil-film-experiment'],
+    problemIds: [],
+    prerequisites: ['thermodynamics-1-2'],
   },
   {
     id: 'thermodynamics-2-1',

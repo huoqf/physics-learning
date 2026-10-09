@@ -44,7 +44,7 @@ function gaussianRandom(): number {
 /**
  * 花粉微粒质量（用于 MB 分布图表计算）
  */
-function pollenMass(d: number): number {
+export function pollenMass(d: number): number {
   const r = d / 2
   return (4 / 3) * Math.PI * r * r * r * RHO_POLLEN
 }

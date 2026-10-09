@@ -31,6 +31,9 @@ describe('animationRegistry · ANIMATION_COUNT 一致性守卫', () => {
       'anim-ac-lc-impedance',
       'anim-doppler-effect',
       'anim-thin-film-interference',
+      'anim-micro-quantities',
+      'anim-maxwell-distribution',
+      'anim-oil-film-experiment',
     ]
     for (const id of ids) {
       const config = await getAnimationConfigAsync(id)

@@ -1,7 +1,7 @@
 import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
-import MaxwellBoltzmannChart from './MaxwellBoltzmannChart'
 import BrownianForceNetChart from './BrownianForceNetChart'
+import BrownianMSDChart from './BrownianMSDChart'
 
 export default function BrownianMotionCenterExtra() {
   const { params, time } = useAnimationStore(
@@ -13,13 +13,13 @@ export default function BrownianMotionCenterExtra() {
 
   return (
     <div className="w-full h-full p-2 bg-white rounded-xl border border-neutral-100 shadow-sm flex flex-col justify-between gap-4">
-      {/* 上半部：麦克斯韦分子速率分布 */}
+      {/* 上半部：瞬间碰撞合力涨落 */}
       <div className="flex-1 min-h-0">
-        <MaxwellBoltzmannChart temperature={temperature} particleD={particleD} />
-      </div>
-      {/* 下半部：瞬间碰撞合力涨落 */}
-      <div className="flex-1 min-h-0 border-t border-neutral-100/70 pt-2">
         <BrownianForceNetChart temperature={temperature} particleD={particleD} time={time} />
+      </div>
+      {/* 下半部：爱因斯坦均方位移统计 */}
+      <div className="flex-1 min-h-0 border-t border-neutral-100/70 pt-2">
+        <BrownianMSDChart temperature={temperature} particleD={particleD} time={time} />
       </div>
     </div>
   )

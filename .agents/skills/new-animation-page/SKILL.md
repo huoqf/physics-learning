@@ -32,7 +32,18 @@ description: 新建动画页面 / 创建新的物理动画组件 / 新增动画�
 ### C. 选 controlsMode
 
 - 绝大多数情况用 `'timed'`（有时间轴的过程动画，默认可省略）
-- 永续循环无终点 → `'loop'`；仅参数变化无时间轴 → `'param'`
+- 永续循环无终点（热运动/布朗运动/分子碰撞）→ `'loop'`；纯参数探索无时间轴（分子力势能曲线/微观估算）→ `'param'`
+
+---
+
+### 🌡️ 热学微观与统计专项路由（按需调用）
+
+若任务涉及**分子热运动、布朗运动、分子间作用力与势能、麦克斯韦速率分布、油膜法实验**等热学场景：
+- **权威规范文档**：严格遵守 [THERMAL_RULES.md](file:///d:/code/physic/physics-learning/.agents/skills/refactor-animation-page/references/THERMAL_RULES.md)
+- **controlsMode 铁律**：热运动/碰撞用 `'loop'`，曲线探索用 `'param'`，实验步骤用 `'timed'`。
+- **系综渲染性能**：禁止大量微观粒子套用 `<Ball>` 滤镜，采用扁平原生 `<circle>`。
+- **尺度归一化**：微观距离以 $r_0$ 归一化，严禁直接给 SceneScale 传入 $10^{-10}$。
+- **图表严禁混入 SVG**：禁止在 SVG `<g>` 标签中直接包含 HTML 图表，严格使用 `splitV`/`splitH`。
 
 ---
 
