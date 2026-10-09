@@ -711,12 +711,12 @@ export const masterModelProblems: Problem[] = [
     content:
       '如图所示，一圆柱形气缸竖直放置，用质量为 $m$ 的无摩擦活塞封闭一定质量的理想气体。初始时气体体积为 $V_1$，温度为 $T_1 = 300\\,\\text{K}$。已知大气压强为 $p_0$，活塞横截面积为 $S$，重力加速度为 $g$。现缓慢加热气体使体积膨胀到 $V_2 = 1.5 V_1$。\n试求：\n(1) 气缸内封闭气体的初始压强 $p_1$；\n(2) 气体体积膨胀到 $V_2$ 时的温度 $T_2$；\n(3) 若加热过程中气体吸收的热量为 $Q = 500\\,\\text{J}$，封闭气体压强保持 $p_1 = 1.2 \\times 10^5\\,\\text{Pa}$，体积增加量 $\\Delta V = 0.002\\,\\text{m}^3$，求解气体内能的增加量 $\\Delta U$。',
     difficulty: 3,
-    knowledgeIds: ['thermo-1-2', 'thermo-1-1'],
+    knowledgeIds: ['thermodynamics-2-1', 'thermodynamics-2-2'],
     masterModelId: 'model-gas-thermodynamics',
     tags: ['高考真题', '理想气体状态方程', '盖-吕萨克定律', '热力学第一定律'],
     targetAnimation: {
       animId: 'anim-gas-laws',
-      presetParams: { P1: 1, V1: 2, T1: 300 },
+      presetParams: { mode: 1, T: 300, V: 5e-3 },
       presetDescription: '载入 2023 山东高考气体状态变化真题参数',
     },
     steps: [

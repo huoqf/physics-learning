@@ -247,7 +247,7 @@ export default function ClapeyronAnimation() {
 
   // 计算压力矢量箭头起点和大小
   const arrowLength = Math.min(0.8, 0.25 + (P / 1e5) * 0.55)
-  const arrowXPositions = [-0.4, 0, 0.4]
+  const arrowXPositions = [-0.45, 0.45]
 
   // 是否处于加热模式 (T > 300 K 时电阻丝发红)
   const isHeaterActive = T > 300
@@ -424,18 +424,29 @@ export default function ClapeyronAnimation() {
           opacity={0.9}
         />
 
-        {/* 9. 活塞受力物理箭头 */}
+        {/* 9. 缸内气体压强对活塞底面的向上支持推力 F_内 = pS */}
         {P > 0 && arrowXPositions.map((ax, idx) => (
           <PhysicsVectorArrow
             key={`p-arrow-${idx}`}
-            origin={{ x: ax, y: pistonY + 0.15 + arrowLength }}
-            vector={{ x: 0, y: -arrowLength }}
+            origin={{ x: ax, y: Math.max(0.52, pistonY - arrowLength) }}
+            vector={{ x: 0, y: Math.min(arrowLength, pistonY - 0.52) }}
             type="force"
             sceneScale={sceneScale}
             color={THERMO_COLORS.pressure}
             glow
           />
         ))}
+        <text
+          x={worldToDesign(0, Math.max(0.65, pistonY - arrowLength * 0.5), sceneScale).px}
+          y={worldToDesign(0, Math.max(0.65, pistonY - arrowLength * 0.5), sceneScale).py}
+          fontSize={font(10)}
+          fill={THERMO_COLORS.pressure}
+          fontFamily={FONT.family}
+          textAnchor="middle"
+          fontWeight="bold"
+        >
+          {`F内 = p·S ↑`}
+        </text>
 
         {/* 10. 加热电阻丝 (温度大于 300K 时发红并亮起) */}
         <g>

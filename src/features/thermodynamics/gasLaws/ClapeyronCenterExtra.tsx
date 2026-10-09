@@ -89,7 +89,7 @@ export default function ClapeyronCenterExtra() {
         <span
           className="absolute top-1 right-2 text-[10px] font-bold font-mono bg-neutral-50 px-2 py-0.5 rounded border border-neutral-200 text-neutral-500 shadow-sm"
         >
-          PV/T = ${(P * V / T).toFixed(2)} J/K = const
+          {`PV/T = ${(P * V / T).toFixed(2)} J/K = const`}
         </span>
       </div>
     </Card>

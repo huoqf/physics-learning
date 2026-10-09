@@ -4,7 +4,7 @@ import { useAnimationStore } from '@/stores'
 import { useShallow } from 'zustand/react/shallow'
 import { useAnimationFrame } from '@/utils/animation'
 import { CANVAS_PRESETS } from '@/theme/spacing'
-import { THERMO_COLORS, STROKE, FONT, SCENE_COLORS } from '@/theme/physics'
+import { THERMO_COLORS, PHYSICS_COLORS, STROKE, FONT, SCENE_COLORS } from '@/theme/physics'
 import { PhysicsVectorArrow } from '@/components/Physics'
 import { AnimationSvgCanvas } from '@/components/Layout'
 import { worldToDesign } from '@/scene'
@@ -262,7 +262,7 @@ export default function GasLawsAnimation() {
 
   // 计算压力矢量箭头起点和大小
   const arrowLength = Math.min(0.8, 0.25 + (displayP / 1e5) * 0.55)
-  const arrowXPositions = [-0.4, 0, 0.4]
+  const arrowXPositions = [-0.45, 0.45]
 
   return (
     <div ref={containerRef} className="w-full h-full">
@@ -437,18 +437,145 @@ export default function GasLawsAnimation() {
           opacity={0.9}
         />
 
-        {/* 9. 活塞受力物理箭头 (压强矢量) */}
+        {/* 9. 缸内气体压强对活塞底面的向上支持推力 F_内 = pS */}
         {displayP > 0 && arrowXPositions.map((ax, idx) => (
           <PhysicsVectorArrow
             key={`p-arrow-${idx}`}
-            origin={{ x: ax, y: pistonY + 0.15 + arrowLength }}
-            vector={{ x: 0, y: -arrowLength }}
+            origin={{ x: ax, y: Math.max(0.52, pistonY - arrowLength) }}
+            vector={{ x: 0, y: Math.min(arrowLength, pistonY - 0.52) }}
             type="force"
             sceneScale={sceneScale}
             color={THERMO_COLORS.pressure}
             glow
           />
         ))}
+        {/* 缸内向上气体压力标注 */}
+        <text
+          x={worldToDesign(0, Math.max(0.65, pistonY - arrowLength * 0.5), sceneScale).px}
+          y={worldToDesign(0, Math.max(0.65, pistonY - arrowLength * 0.5), sceneScale).py}
+          fontSize={font(10)}
+          fill={THERMO_COLORS.pressure}
+          fontFamily={FONT.family}
+          textAnchor="middle"
+          fontWeight="bold"
+        >
+          {`F内 = p·S ↑`}
+        </text>
+
+        {/* 9B. 等压模式 (mode === 1)：活塞上方恒定配重砝码与大气压力 F0 = p0·S */}
+        {mode === 1 && (
+          <g>
+            {/* 金属配重砝码 */}
+            <rect
+              x={worldToDesign(-0.35, pistonY + 0.55, sceneScale).px}
+              y={worldToDesign(-0.35, pistonY + 0.55, sceneScale).py}
+              width={0.7 * sceneScale.scaleX}
+              height={0.4 * sceneScale.scaleY}
+              fill="url(#metal-gradient)"
+              stroke={SCENE_COLORS.materials.structStroke}
+              strokeWidth={wallStroke}
+              rx={3}
+            />
+            {/* 砝码标签 */}
+            <text
+              x={worldToDesign(0, pistonY + 0.35, sceneScale).px}
+              y={worldToDesign(0, pistonY + 0.35, sceneScale).py}
+              fontSize={font(9.5)}
+              fill={SCENE_COLORS.materials.structStroke}
+              fontFamily={FONT.family}
+              textAnchor="middle"
+              fontWeight="bold"
+            >
+              恒定砝码 G
+            </text>
+            {/* 活塞左右外界大气压力箭头 (向下指) */}
+            {[-0.55, 0.55].map((ax, idx) => (
+              <PhysicsVectorArrow
+                key={`atm-arrow-${idx}`}
+                origin={{ x: ax, y: pistonY + 0.15 + arrowLength * 0.6 }}
+                vector={{ x: 0, y: -arrowLength * 0.6 }}
+                type="force"
+                sceneScale={sceneScale}
+                color={PHYSICS_COLORS.appliedForce}
+              />
+            ))}
+            <text
+              x={worldToDesign(-0.55, pistonY + 0.22 + arrowLength * 0.6, sceneScale).px}
+              y={worldToDesign(-0.55, pistonY + 0.22 + arrowLength * 0.6, sceneScale).py}
+              fontSize={font(8.5)}
+              fill={PHYSICS_COLORS.appliedForce}
+              textAnchor="middle"
+            >
+              p₀S
+            </text>
+            <text
+              x={worldToDesign(0.55, pistonY + 0.22 + arrowLength * 0.6, sceneScale).px}
+              y={worldToDesign(0.55, pistonY + 0.22 + arrowLength * 0.6, sceneScale).py}
+              fontSize={font(8.5)}
+              fill={PHYSICS_COLORS.appliedForce}
+              textAnchor="middle"
+            >
+              p₀S
+            </text>
+          </g>
+        )}
+
+        {/* 9C. 等容模式 (mode === 2)：汽缸内壁锁止销钉 (保持体积恒定) */}
+        {mode === 2 && (
+          <g>
+            {/* 左侧锁止卡销 */}
+            <rect
+              x={worldToDesign(-0.8, pistonY + 0.28, sceneScale).px}
+              y={worldToDesign(-0.8, pistonY + 0.28, sceneScale).py}
+              width={0.22 * sceneScale.scaleX}
+              height={0.12 * sceneScale.scaleY}
+              fill={PHYSICS_COLORS.referencePoint}
+              stroke={SCENE_COLORS.materials.structStroke}
+              strokeWidth={1.5}
+              rx={1}
+            />
+            {/* 右侧锁止卡销 */}
+            <rect
+              x={worldToDesign(0.58, pistonY + 0.28, sceneScale).px}
+              y={worldToDesign(0.58, pistonY + 0.28, sceneScale).py}
+              width={0.22 * sceneScale.scaleX}
+              height={0.12 * sceneScale.scaleY}
+              fill={PHYSICS_COLORS.referencePoint}
+              stroke={SCENE_COLORS.materials.structStroke}
+              strokeWidth={1.5}
+              rx={1}
+            />
+            {/* 锁止文字提示 */}
+            <text
+              x={worldToDesign(0, pistonY + 0.35, sceneScale).px}
+              y={worldToDesign(0, pistonY + 0.35, sceneScale).py}
+              fontSize={font(9.5)}
+              fill={PHYSICS_COLORS.referencePoint}
+              fontFamily={FONT.family}
+              textAnchor="middle"
+              fontWeight="bold"
+            >
+              🔒 销钉锁止 (V 恒定)
+            </text>
+          </g>
+        )}
+
+        {/* 9D. 等温模式 (mode === 0)：推拉活塞把手提示与恒温水浴 */}
+        {mode === 0 && (
+          <g>
+            <text
+              x={worldToDesign(0, pistonY + 0.35, sceneScale).px}
+              y={worldToDesign(0, pistonY + 0.35, sceneScale).py}
+              fontSize={font(9.5)}
+              fill={THERMO_COLORS.temperature}
+              fontFamily={FONT.family}
+              textAnchor="middle"
+              fontWeight="bold"
+            >
+              ↕ 缓慢推拉 (恒温 T)
+            </text>
+          </g>
+        )}
 
         {/* 10. 加热电阻丝 (等压/等容模式) */}
         {mode !== 0 && (

@@ -324,7 +324,7 @@ export const masterModels: MasterModel[] = [
     category: 'thermodynamics',
     frequencyBadge: '高考5年12考 / 热学大题',
     summary: '气体的等温、等容、等压状态变化（玻意耳、查理、盖-吕萨克定律）与热力学第一定律 ΔU = W + Q。',
-    knowledgeId: 'thermo-1-2',
+    knowledgeId: 'thermodynamics-2-1',
     animId: 'anim-gas-laws',
     presetParams: { P1: 1, V1: 2, T1: 300 },
     quickFormula: {
